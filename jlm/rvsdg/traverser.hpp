@@ -9,13 +9,10 @@
 
 #include <jlm/rvsdg/tracker.hpp>
 
-#include <stdbool.h>
-#include <stdlib.h>
-
 namespace jlm::rvsdg
 {
 
-class graph;
+class Graph;
 class input;
 class output;
 
@@ -27,12 +24,12 @@ class traverser_iterator
 {
 public:
   typedef std::input_iterator_tag iterator_category;
-  typedef jlm::rvsdg::node * value_type;
+  typedef Node * value_type;
   typedef ssize_t difference_type;
   typedef value_type * pointer;
   typedef value_type & reference;
 
-  constexpr traverser_iterator(T * traverser = nullptr, jlm::rvsdg::node * node = nullptr) noexcept
+  constexpr traverser_iterator(T * traverser = nullptr, Node * node = nullptr) noexcept
       : traverser_(traverser),
         node_(node)
   {}
@@ -70,7 +67,7 @@ public:
 
 private:
   T * traverser_;
-  jlm::rvsdg::node * node_;
+  Node * node_;
 };
 
 }
@@ -83,21 +80,21 @@ enum class traversal_nodestate
 };
 
 /* support class to track traversal states of nodes */
-class traversal_tracker final
+class TraversalTracker final
 {
 public:
-  inline traversal_tracker(jlm::rvsdg::graph * graph);
+  explicit inline TraversalTracker(Graph * graph);
 
   inline traversal_nodestate
-  get_nodestate(jlm::rvsdg::node * node);
+  get_nodestate(Node * node);
 
   inline void
-  set_nodestate(jlm::rvsdg::node * node, traversal_nodestate state);
+  set_nodestate(Node * node, traversal_nodestate state);
 
-  inline jlm::rvsdg::node *
+  inline Node *
   peek_top();
 
-  inline jlm::rvsdg::node *
+  inline Node *
   peek_bottom();
 
 private:
@@ -136,24 +133,24 @@ private:
  *
  * @see node::depth()
  */
-class topdown_traverser final
+class TopDownTraverser final
 {
 public:
-  ~topdown_traverser() noexcept;
+  ~TopDownTraverser() noexcept;
 
-  explicit topdown_traverser(jlm::rvsdg::region * region);
+  explicit TopDownTraverser(Region * region);
 
-  jlm::rvsdg::node *
+  Node *
   next();
 
-  inline jlm::rvsdg::region *
+  [[nodiscard]] rvsdg::Region *
   region() const noexcept
   {
     return region_;
   }
 
-  typedef detail::traverser_iterator<topdown_traverser> iterator;
-  typedef jlm::rvsdg::node * value_type;
+  typedef detail::traverser_iterator<TopDownTraverser> iterator;
+  typedef Node * value_type;
 
   inline iterator
   begin()
@@ -169,37 +166,37 @@ public:
 
 private:
   bool
-  predecessors_visited(const jlm::rvsdg::node * node) noexcept;
+  predecessors_visited(const Node * node) noexcept;
 
   void
-  node_create(jlm::rvsdg::node * node);
+  node_create(Node * node);
 
   void
   input_change(input * in, output * old_origin, output * new_origin);
 
-  jlm::rvsdg::region * region_;
-  traversal_tracker tracker_;
+  rvsdg::Region * region_;
+  TraversalTracker tracker_;
   std::vector<jlm::util::callback> callbacks_;
 };
 
-class bottomup_traverser final
+class BottomUpTraverser final
 {
 public:
-  ~bottomup_traverser() noexcept;
+  ~BottomUpTraverser() noexcept;
 
-  explicit bottomup_traverser(jlm::rvsdg::region * region, bool revisit = false);
+  explicit BottomUpTraverser(Region * region, bool revisit = false);
 
-  jlm::rvsdg::node *
+  Node *
   next();
 
-  inline jlm::rvsdg::region *
+  [[nodiscard]] rvsdg::Region *
   region() const noexcept
   {
     return region_;
   }
 
-  typedef detail::traverser_iterator<bottomup_traverser> iterator;
-  typedef jlm::rvsdg::node * value_type;
+  typedef detail::traverser_iterator<BottomUpTraverser> iterator;
+  typedef Node * value_type;
 
   inline iterator
   begin()
@@ -215,46 +212,46 @@ public:
 
 private:
   void
-  node_create(jlm::rvsdg::node * node);
+  node_create(Node * node);
 
   void
-  node_destroy(jlm::rvsdg::node * node);
+  node_destroy(Node * node);
 
   void
   input_change(input * in, output * old_origin, output * new_origin);
 
-  jlm::rvsdg::region * region_;
-  traversal_tracker tracker_;
+  rvsdg::Region * region_;
+  TraversalTracker tracker_;
   std::vector<jlm::util::callback> callbacks_;
   traversal_nodestate new_node_state_;
 };
 
 /* traversal tracker implementation */
 
-traversal_tracker::traversal_tracker(jlm::rvsdg::graph * graph)
+TraversalTracker::TraversalTracker(Graph * graph)
     : tracker_(graph, 2)
 {}
 
 traversal_nodestate
-traversal_tracker::get_nodestate(jlm::rvsdg::node * node)
+TraversalTracker::get_nodestate(Node * node)
 {
   return static_cast<traversal_nodestate>(tracker_.get_nodestate(node));
 }
 
 void
-traversal_tracker::set_nodestate(jlm::rvsdg::node * node, traversal_nodestate state)
+TraversalTracker::set_nodestate(Node * node, traversal_nodestate state)
 {
   tracker_.set_nodestate(node, static_cast<size_t>(state));
 }
 
-jlm::rvsdg::node *
-traversal_tracker::peek_top()
+Node *
+TraversalTracker::peek_top()
 {
   return tracker_.peek_top(static_cast<size_t>(traversal_nodestate::frontier));
 }
 
-jlm::rvsdg::node *
-traversal_tracker::peek_bottom()
+Node *
+TraversalTracker::peek_bottom()
 {
   return tracker_.peek_bottom(static_cast<size_t>(traversal_nodestate::frontier));
 }

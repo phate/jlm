@@ -15,15 +15,15 @@ TestOutputRemoval()
   using namespace jlm;
 
   // Arrange
-  rvsdg::graph rvsdg;
+  rvsdg::Graph rvsdg;
   auto valueType = tests::valuetype::Create();
 
-  auto structuralNode = tests::structural_node::create(rvsdg.root(), 1);
-  auto output0 = rvsdg::structural_output::create(structuralNode, valueType);
-  auto output1 = rvsdg::structural_output::create(structuralNode, valueType);
-  auto output2 = rvsdg::structural_output::create(structuralNode, valueType);
-  auto output3 = rvsdg::structural_output::create(structuralNode, valueType);
-  auto output4 = rvsdg::structural_output::create(structuralNode, valueType);
+  auto structuralNode = tests::structural_node::create(&rvsdg.GetRootRegion(), 1);
+  auto output0 = rvsdg::StructuralOutput::create(structuralNode, valueType);
+  auto output1 = rvsdg::StructuralOutput::create(structuralNode, valueType);
+  auto output2 = rvsdg::StructuralOutput::create(structuralNode, valueType);
+  auto output3 = rvsdg::StructuralOutput::create(structuralNode, valueType);
+  auto output4 = rvsdg::StructuralOutput::create(structuralNode, valueType);
 
   // Act & Assert
   assert(structuralNode->noutputs() == 5);

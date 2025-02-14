@@ -22,28 +22,39 @@ isForbiddenChar(char c);
 class BaseHLS
 {
 public:
+  virtual ~BaseHLS();
+
   std::string
   run(llvm::RvsdgModule & rm)
   {
     JLM_ASSERT(node_map.empty());
     // ensure consistent naming across runs
     create_node_names(get_hls_lambda(rm)->subregion());
-    return get_text(rm);
+    return GetText(rm);
   }
 
   static int
-  JlmSize(const jlm::rvsdg::type * type);
+  JlmSize(const jlm::rvsdg::Type * type);
+
+  /**
+   * @return The size of a pointer in bits.
+   */
+  [[nodiscard]] static size_t
+  GetPointerSizeInBits()
+  {
+    return 64;
+  }
 
 private:
   virtual std::string
   extension() = 0;
 
 protected:
-  std::unordered_map<const jlm::rvsdg::node *, std::string> node_map;
+  std::unordered_map<const rvsdg::Node *, std::string> node_map;
   std::unordered_map<jlm::rvsdg::output *, std::string> output_map;
 
   std::string
-  get_node_name(const jlm::rvsdg::node * node);
+  get_node_name(const rvsdg::Node * node);
 
   static std::string
   get_port_name(jlm::rvsdg::input * port);
@@ -51,75 +62,87 @@ protected:
   static std::string
   get_port_name(jlm::rvsdg::output * port);
 
-  const llvm::lambda::node *
+  const rvsdg::LambdaNode *
   get_hls_lambda(llvm::RvsdgModule & rm);
 
   void
-  create_node_names(jlm::rvsdg::region * r);
+  create_node_names(rvsdg::Region * r);
 
   virtual std::string
-  get_text(llvm::RvsdgModule & rm) = 0;
+  GetText(llvm::RvsdgModule & rm) = 0;
 
   static std::string
   get_base_file_name(const llvm::RvsdgModule & rm);
 
-  std::vector<jlm::rvsdg::argument *>
-  get_mem_resps(const llvm::lambda::node * lambda)
+  /**
+   * Extracts all region arguments of the given kernel that represent memory responses.
+   * They can provide multiple values within a single execution of the region.
+   * @param lambda the lambda node holding the hls kernel
+   * @return the arguments that represent memory responses
+   */
+  std::vector<rvsdg::RegionArgument *>
+  get_mem_resps(const rvsdg::LambdaNode & lambda)
   {
-    std::vector<jlm::rvsdg::argument *> mem_resps;
-    for (size_t i = 0; i < lambda->subregion()->narguments(); ++i)
+    std::vector<rvsdg::RegionArgument *> mem_resps;
+    for (auto arg : lambda.subregion()->Arguments())
     {
-      auto arg = lambda->subregion()->argument(i);
-      if (dynamic_cast<const jlm::hls::bundletype *>(&arg->type()))
-      {
-        mem_resps.push_back(lambda->subregion()->argument(i));
-      }
+      if (rvsdg::is<bundletype>(arg->type()))
+        mem_resps.push_back(arg);
     }
     return mem_resps;
   }
 
-  std::vector<jlm::rvsdg::result *>
-  get_mem_reqs(const llvm::lambda::node * lambda)
+  /**
+   * Extracts all region results of the given kernel that represent memory requests.
+   * They can take multiple values within a single execution of the region.
+   * @param lambda the lambda node holding the hls kernel
+   * @return the results that represent memory requests
+   */
+  std::vector<rvsdg::RegionResult *>
+  get_mem_reqs(const rvsdg::LambdaNode & lambda)
   {
-    std::vector<jlm::rvsdg::result *> mem_resps;
-    for (size_t i = 0; i < lambda->subregion()->nresults(); ++i)
+    std::vector<rvsdg::RegionResult *> mem_resps;
+    for (auto result : lambda.subregion()->Results())
     {
-      if (dynamic_cast<const jlm::hls::bundletype *>(&lambda->subregion()->result(i)->type()))
-      {
-        mem_resps.push_back(lambda->subregion()->result(i));
-      }
+      if (rvsdg::is<bundletype>(result->type()))
+        mem_resps.push_back(result);
     }
     return mem_resps;
   }
 
-  std::vector<jlm::rvsdg::argument *>
-  get_reg_args(const llvm::lambda::node * lambda)
+  /**
+   * Extracts all region arguments of the given kernel that represent kernel inputs,
+   * which may include kernel arguments, state types, and context variables (always in that order).
+   * It will not return any arguments that represent memory responses.
+   * @param lambda the lambda node holding the hls kernel
+   * @return the arguments of the lambda that represent kernel inputs
+   */
+  std::vector<rvsdg::RegionArgument *>
+  get_reg_args(const rvsdg::LambdaNode & lambda)
   {
-    std::vector<jlm::rvsdg::argument *> args;
-    for (size_t i = 0; i < lambda->subregion()->narguments(); ++i)
+    std::vector<rvsdg::RegionArgument *> args;
+    for (auto argument : lambda.subregion()->Arguments())
     {
-      auto argtype = &lambda->subregion()->argument(i)->type();
-      if (!dynamic_cast<const jlm::hls::bundletype *>(
-              argtype) /*&& !dynamic_cast<const jlm::rvsdg::statetype *>(argtype)*/)
-      {
-        args.push_back(lambda->subregion()->argument(i));
-      }
+      if (!rvsdg::is<bundletype>(argument->type()))
+        args.push_back(argument);
     }
     return args;
   }
 
-  std::vector<jlm::rvsdg::result *>
-  get_reg_results(const llvm::lambda::node * lambda)
+  /**
+   * Extracts all region results from the given kernel that represent results from execution,
+   * as opposed to results used for making memory requests.
+   * @param lambda the lambda node holding the hls kernel
+   * @return the results of the lambda that represent the kernel outputs
+   */
+  std::vector<rvsdg::RegionResult *>
+  get_reg_results(const rvsdg::LambdaNode & lambda)
   {
-    std::vector<jlm::rvsdg::result *> results;
-    for (size_t i = 0; i < lambda->subregion()->nresults(); ++i)
+    std::vector<rvsdg::RegionResult *> results;
+    for (auto result : lambda.subregion()->Results())
     {
-      auto argtype = &lambda->subregion()->result(i)->type();
-      if (!dynamic_cast<const jlm::hls::bundletype *>(
-              argtype) /*&& !dynamic_cast<const jlm::rvsdg::statetype *>(argtype)*/)
-      {
-        results.push_back(lambda->subregion()->result(i));
-      }
+      if (!rvsdg::is<bundletype>(result->type()))
+        results.push_back(result);
     }
     return results;
   }

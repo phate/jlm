@@ -123,8 +123,8 @@ class CommandGraph::Node final
   class IncomingEdgeConstIterator;
   class OutgoingEdgeConstIterator;
 
-  using IncomingEdgeConstRange = util::iterator_range<IncomingEdgeConstIterator>;
-  using OutgoingEdgeConstRange = util::iterator_range<OutgoingEdgeConstIterator>;
+  using IncomingEdgeConstRange = util::IteratorRange<IncomingEdgeConstIterator>;
+  using OutgoingEdgeConstRange = util::IteratorRange<OutgoingEdgeConstIterator>;
 
 public:
   ~Node();

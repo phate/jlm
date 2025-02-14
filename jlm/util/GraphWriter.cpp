@@ -269,28 +269,57 @@ GraphElement::HasAttribute(const std::string & attribute) const
   return AttributeMap_.find(attribute) != AttributeMap_.end();
 }
 
-std::string_view
-GraphElement::GetAttribute(const std::string & attribute)
+std::optional<std::string_view>
+GraphElement::GetAttributeString(const std::string & attribute) const
 {
-  auto it = AttributeMap_.find(attribute);
-  if (it == AttributeMap_.end())
-    throw jlm::util::error(strfmt("No attribute '", attribute, "' found"));
-  if (auto stringValue = std::get_if<std::string>(&it->second))
-    return *stringValue;
-  // Attributes that hold GraphElements or pointers to program objects become question marks
-  return "?";
+  if (auto it = AttributeMap_.find(attribute); it != AttributeMap_.end())
+  {
+    if (auto stringValue = std::get_if<std::string>(&it->second))
+    {
+      return *stringValue;
+    }
+  }
+  return std::nullopt;
 }
 
-std::string_view
-GraphElement::GetAttributeOr(const std::string & attribute, std::string_view otherwise)
+std::optional<uintptr_t>
+GraphElement::GetAttributeObject(const std::string & attribute) const
 {
-  auto it = AttributeMap_.find(attribute);
-  if (it == AttributeMap_.end())
-    return otherwise;
-  if (auto stringValue = std::get_if<std::string>(&it->second))
-    return *stringValue;
-  // Attributes that hold GraphElements or pointers to program objects become question marks
-  return "?";
+  if (auto it = AttributeMap_.find(attribute); it != AttributeMap_.end())
+  {
+    if (auto uintptrValue = std::get_if<uintptr_t>(&it->second))
+    {
+      return *uintptrValue;
+    }
+  }
+  return std::nullopt;
+}
+
+const GraphElement *
+GraphElement::GetAttributeGraphElement(const std::string & attribute) const
+{
+  if (auto it = AttributeMap_.find(attribute); it != AttributeMap_.end())
+  {
+    if (auto graphElementValue = std::get_if<const GraphElement *>(&it->second))
+    {
+      return *graphElementValue;
+    }
+
+    // Otherwise, check if this attribute holds a program object that is represented by a
+    // GraphElement in this graph, or in any graph in the GraphWriter.
+    if (auto ptr = std::get_if<uintptr_t>(&it->second))
+    {
+      if (auto gElement = GetGraph().GetElementFromProgramObject(*ptr))
+      {
+        return gElement;
+      }
+      if (auto gwElement = GetGraph().GetGraphWriter().GetElementFromProgramObject(*ptr))
+      {
+        return gwElement;
+      }
+    }
+  }
+  return nullptr;
 }
 
 bool
@@ -318,59 +347,57 @@ GraphElement::IsFinalized() const
 void
 GraphElement::OutputAttributes(std::ostream & out, AttributeOutputFormat format) const
 {
-  auto OutputAttribute = [&](std::string_view name, const AttributeValue & value)
+  auto FormatAttribute = [&](std::string_view name, std::string_view value)
   {
     if (format == AttributeOutputFormat::SpaceSeparatedList)
+    {
       PrintIdentifierSafe(out, name);
+      out << "=";
+      PrintIdentifierSafe(out, value);
+    }
     else if (format == AttributeOutputFormat::HTMLAttributes)
+    {
       PrintStringAsHtmlAttributeName(out, name);
-    else
-      JLM_UNREACHABLE("Unknown AttributeOutputFormat");
-
-    out << "=";
-    if (format == AttributeOutputFormat::HTMLAttributes)
-      out << '"'; // HTML attributes must be quoted
-
-    if (auto string = std::get_if<std::string>(&value))
-    {
-      if (format == AttributeOutputFormat::SpaceSeparatedList)
-        PrintIdentifierSafe(out, *string);
-      else
-        PrintStringAsHtmlText(out, *string, false);
-    }
-    else if (auto graphElement = std::get_if<const GraphElement *>(&value))
-    {
-      out << (*graphElement)->GetFullId();
-    }
-    else if (auto ptr = std::get_if<uintptr_t>(&value))
-    {
-      // Check if some GraphElement in this graph, or in any graph, is mapped to this pointer
-      if (auto gElement = GetGraph().GetElementFromProgramObject(*ptr))
-      {
-        out << gElement->GetFullId();
-      }
-      else if (auto gwElement = GetGraph().GetGraphWriter().GetElementFromProgramObject(*ptr))
-      {
-        out << gwElement->GetFullId();
-      }
-      else
-      {
-        out << "ptr" << strfmt(std::hex, ptr);
-      }
-    }
-    if (format == AttributeOutputFormat::HTMLAttributes)
+      out << "=\""; // HTML attributes must be quoted
+      PrintStringAsHtmlText(out, value, false);
       out << '"'; // Closing quote
-    out << " ";   // Attributes are space separated in both formats
+    }
+    else
+    {
+      JLM_UNREACHABLE("Unknown AttributeOutputFormat");
+    }
+
+    out << " "; // Attributes are space separated in both formats
   };
 
-  for (const auto & [name, value] : AttributeMap_)
+  auto OutputAttribute = [&](const std::string & name)
   {
-    OutputAttribute(name, value);
+    if (auto string = GetAttributeString(name))
+    {
+      FormatAttribute(name, *string);
+    }
+    else if (auto graphElement = GetAttributeGraphElement(name))
+    {
+      FormatAttribute(name, graphElement->GetFullId());
+    }
+    else if (auto object = GetAttributeObject(name))
+    {
+      FormatAttribute(name, strfmt("ptr", std::hex, *object));
+    }
+    else
+    {
+      JLM_UNREACHABLE("Unknown attribute type");
+    }
+  };
+
+  for (const auto & [name, _] : AttributeMap_)
+  {
+    OutputAttribute(name);
   }
 
   // If no other tooltip is set, print the address of the associated program object
   if (HasProgramObject() && !HasAttribute(TOOLTIP_ATTRIBUTE))
-    OutputAttribute(TOOLTIP_ATTRIBUTE, strfmt(std::hex, GetProgramObject()));
+    FormatAttribute(TOOLTIP_ATTRIBUTE, strfmt(std::hex, GetProgramObject()));
 }
 
 Port::Port()
@@ -570,7 +597,7 @@ InputPort::InputPort(jlm::util::InOutNode & node)
 const char *
 InputPort::GetIdPrefix() const
 {
-  return "i";
+  return "in";
 }
 
 Node &
@@ -607,7 +634,7 @@ OutputPort::OutputPort(jlm::util::InOutNode & node)
 const char *
 OutputPort::GetIdPrefix() const
 {
-  return "o";
+  return "out";
 }
 
 Node &
@@ -648,7 +675,7 @@ InOutNode::InOutNode(Graph & graph, size_t inputPorts, size_t outputPorts)
 }
 
 void
-InOutNode::SetShape(std::string shape)
+InOutNode::SetShape(std::string)
 {
   throw jlm::util::error("InOutNodes can not have custom shapes set");
 }
@@ -862,7 +889,7 @@ InOutNode::OutputDot(std::ostream & out, size_t indent) const
     for (auto & graph : SubGraphs_)
     {
       out << "\t\t\t\t\t<TD BORDER=\"1\" STYLE=\"ROUNDED\" WIDTH=\"40\" BGCOLOR=\"white\" ";
-      out << "SUBGRAPH=\"" << graph->GetFullId() << "\">";
+      out << "_SUBGRAPH=\"" << graph->GetFullId() << "\">";
       PrintStringAsHtmlText(out, graph->GetFullId(), true);
       out << "</TD>" << std::endl;
     }
@@ -890,7 +917,7 @@ ArgumentNode::ArgumentNode(jlm::util::Graph & graph)
 const char *
 ArgumentNode::GetIdPrefix() const
 {
-  return "a";
+  return "arg";
 }
 
 bool
@@ -907,7 +934,7 @@ ArgumentNode::SetOutsideSource(const Port & outsideSource)
 }
 
 void
-ArgumentNode::OutputASCII(std::ostream & out, size_t indent) const
+ArgumentNode::OutputASCII(std::ostream & out, size_t) const
 {
   // In ASCII the argument is printed as part of an ARG line
   out << GetFullId();
@@ -931,7 +958,7 @@ ResultNode::ResultNode(jlm::util::Graph & graph)
 const char *
 ResultNode::GetIdPrefix() const
 {
-  return "r";
+  return "res";
 }
 
 bool
@@ -948,7 +975,7 @@ ResultNode::SetOutsideDestination(const Port & outsideDestination)
 }
 
 void
-ResultNode::OutputASCII(std::ostream & out, size_t indent) const
+ResultNode::OutputASCII(std::ostream & out, size_t) const
 {
   // In ASCII the result is printed as part of an RES line
   OutputIncomingEdgesASCII(out);
@@ -1320,7 +1347,9 @@ Graph::OutputDot(std::ostream & out, size_t indent) const
   indent++;
 
   // Default node attributes. Filling nodes by default makes them easier to click
-  out << Indent(indent) << "node[shape=box style=filled fillcolor=white];" << std::endl;
+  out << Indent(indent)
+      << "node[shape=box style=filled fillcolor=white width=0.1 height=0.1 margin=0.05];"
+      << std::endl;
   out << Indent(indent) << "penwidth=6;" << std::endl;
   if (HasLabel())
   {
@@ -1440,11 +1469,17 @@ GraphWriter::GetNextUniqueIdStubSuffix(const char * idStub)
 }
 
 void
-GraphWriter::OutputAllGraphs(std::ostream & out, GraphOutputFormat format)
+GraphWriter::Finalize()
 {
   for (auto & graph : Graphs_)
     if (!graph->IsSubgraph())
       graph->Finalize();
+}
+
+void
+GraphWriter::OutputAllGraphs(std::ostream & out, GraphOutputFormat format)
+{
+  Finalize();
 
   for (auto & graph : Graphs_)
     if (!graph->IsSubgraph())

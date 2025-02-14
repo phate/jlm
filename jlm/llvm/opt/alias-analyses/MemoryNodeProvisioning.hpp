@@ -7,6 +7,8 @@
 #define JLM_LLVM_OPT_ALIAS_ANALYSES_MEMORYNODEPROVISIONING_HPP
 
 #include <jlm/llvm/opt/alias-analyses/PointsToGraph.hpp>
+#include <jlm/rvsdg/gamma.hpp>
+#include <jlm/rvsdg/theta.hpp>
 #include <jlm/util/HashSet.hpp>
 
 #include <vector>
@@ -28,10 +30,10 @@ public:
   GetPointsToGraph() const noexcept = 0;
 
   [[nodiscard]] virtual const jlm::util::HashSet<const PointsToGraph::MemoryNode *> &
-  GetRegionEntryNodes(const jlm::rvsdg::region & region) const = 0;
+  GetRegionEntryNodes(const rvsdg::Region & region) const = 0;
 
   [[nodiscard]] virtual const jlm::util::HashSet<const PointsToGraph::MemoryNode *> &
-  GetRegionExitNodes(const jlm::rvsdg::region & region) const = 0;
+  GetRegionExitNodes(const rvsdg::Region & region) const = 0;
 
   [[nodiscard]] virtual const jlm::util::HashSet<const PointsToGraph::MemoryNode *> &
   GetCallEntryNodes(const CallNode & callNode) const = 0;
@@ -43,19 +45,19 @@ public:
   GetOutputNodes(const jlm::rvsdg::output & output) const = 0;
 
   [[nodiscard]] virtual const jlm::util::HashSet<const PointsToGraph::MemoryNode *> &
-  GetLambdaEntryNodes(const lambda::node & lambdaNode) const
+  GetLambdaEntryNodes(const rvsdg::LambdaNode & lambdaNode) const
   {
     return GetRegionEntryNodes(*lambdaNode.subregion());
   }
 
   [[nodiscard]] virtual const jlm::util::HashSet<const PointsToGraph::MemoryNode *> &
-  GetLambdaExitNodes(const lambda::node & lambdaNode) const
+  GetLambdaExitNodes(const rvsdg::LambdaNode & lambdaNode) const
   {
     return GetRegionExitNodes(*lambdaNode.subregion());
   }
 
   [[nodiscard]] virtual const jlm::util::HashSet<const PointsToGraph::MemoryNode *> &
-  GetThetaEntryExitNodes(const jlm::rvsdg::theta_node & thetaNode) const
+  GetThetaEntryExitNodes(const rvsdg::ThetaNode & thetaNode) const
   {
     auto & entryNodes = GetRegionEntryNodes(*thetaNode.subregion());
     auto & exitNodes = GetRegionExitNodes(*thetaNode.subregion());
@@ -64,7 +66,7 @@ public:
   }
 
   [[nodiscard]] virtual jlm::util::HashSet<const PointsToGraph::MemoryNode *>
-  GetGammaEntryNodes(const jlm::rvsdg::gamma_node & gammaNode) const
+  GetGammaEntryNodes(const rvsdg::GammaNode & gammaNode) const
   {
     jlm::util::HashSet<const PointsToGraph::MemoryNode *> allMemoryNodes;
     for (size_t n = 0; n < gammaNode.nsubregions(); n++)
@@ -78,7 +80,7 @@ public:
   }
 
   [[nodiscard]] virtual jlm::util::HashSet<const PointsToGraph::MemoryNode *>
-  GetGammaExitNodes(const jlm::rvsdg::gamma_node & gammaNode) const
+  GetGammaExitNodes(const rvsdg::GammaNode & gammaNode) const
   {
     jlm::util::HashSet<const PointsToGraph::MemoryNode *> allMemoryNodes;
     for (size_t n = 0; n < gammaNode.nsubregions(); n++)

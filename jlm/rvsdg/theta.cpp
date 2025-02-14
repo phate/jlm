@@ -4,99 +4,100 @@
  * See COPYING for terms of redistribution.
  */
 
+#include <algorithm>
 #include <jlm/rvsdg/substitution.hpp>
 #include <jlm/rvsdg/theta.hpp>
+
+#include <algorithm>
 
 namespace jlm::rvsdg
 {
 
-/* theta operation */
-
-theta_op::~theta_op() noexcept
-{}
+ThetaOperation::~ThetaOperation() noexcept = default;
 
 std::string
-theta_op::debug_string() const
+ThetaOperation::debug_string() const
 {
   return "THETA";
 }
 
-std::unique_ptr<jlm::rvsdg::operation>
-theta_op::copy() const
+std::unique_ptr<Operation>
+ThetaOperation::copy() const
 {
-  return std::unique_ptr<jlm::rvsdg::operation>(new theta_op(*this));
+  return std::make_unique<ThetaOperation>(*this);
 }
 
-/* theta input */
+ThetaNode::~ThetaNode() noexcept = default;
 
-theta_input::~theta_input() noexcept
+[[nodiscard]] const ThetaOperation &
+ThetaNode::GetOperation() const noexcept
 {
-  if (output_)
-    output_->input_ = nullptr;
+  // Theta presently has no parametrization, so we can indeed
+  // just return a singleton here.
+  static const ThetaOperation singleton;
+  return singleton;
 }
 
-/* theta output */
-
-theta_output::~theta_output() noexcept
+ThetaNode::ThetaNode(rvsdg::Region & parent)
+    : StructuralNode(&parent, 1)
 {
-  if (input_)
-    input_->output_ = nullptr;
+  auto predicate = control_false(subregion());
+  RegionResult::Create(*subregion(), *predicate, nullptr, ControlType::Create(2));
 }
 
-/* theta node */
-
-theta_node::~theta_node()
-{}
-
-const theta_node::loopvar_iterator &
-theta_node::loopvar_iterator::operator++() noexcept
+ThetaNode::LoopVar
+ThetaNode::AddLoopVar(rvsdg::output * origin)
 {
-  if (output_ == nullptr)
-    return *this;
+  Node::add_input(std::make_unique<StructuralInput>(this, origin, origin->Type()));
+  Node::add_output(std::make_unique<StructuralOutput>(this, origin->Type()));
 
-  auto node = output_->node();
-  auto index = output_->index();
-  if (index == node->noutputs() - 1)
+  auto input = ThetaNode::input(ninputs() - 1);
+  auto output = ThetaNode::output(noutputs() - 1);
+  auto & thetaArgument = RegionArgument::Create(*subregion(), input, input->Type());
+  auto & thetaResult = RegionResult::Create(*subregion(), thetaArgument, output, output->Type());
+
+  return LoopVar{ input, &thetaArgument, &thetaResult, output };
+}
+
+void
+ThetaNode::RemoveLoopVars(std::vector<LoopVar> loopvars)
+{
+  // Sort them by descending index to avoid renumbering issues.
+  std::sort(
+      loopvars.begin(),
+      loopvars.end(),
+      [](const LoopVar & x, const LoopVar & y)
+      {
+        return x.input->index() > y.input->index();
+      });
+
+  for (const auto & loopvar : loopvars)
   {
-    output_ = nullptr;
-    return *this;
+    JLM_ASSERT(loopvar.output->IsDead());
+    JLM_ASSERT(loopvar.post->origin() == loopvar.pre);
+    JLM_ASSERT(loopvar.pre->nusers() == 1);
+
+    subregion()->RemoveResult(loopvar.post->index());
+    subregion()->RemoveArgument(loopvar.pre->index());
+    RemoveOutput(loopvar.output->index());
+    RemoveInput(loopvar.input->index());
   }
-
-  index++;
-  output_ = node->output(index);
-  return *this;
 }
 
-jlm::rvsdg::theta_output *
-theta_node::add_loopvar(jlm::rvsdg::output * origin)
+ThetaNode *
+ThetaNode::copy(rvsdg::Region * region, rvsdg::SubstitutionMap & smap) const
 {
-  node::add_input(std::make_unique<theta_input>(this, origin, origin->Type()));
-  node::add_output(std::make_unique<theta_output>(this, origin->Type()));
-
-  auto input = theta_node::input(ninputs() - 1);
-  auto output = theta_node::output(noutputs() - 1);
-  input->output_ = output;
-  output->input_ = input;
-
-  auto argument = argument::create(subregion(), input, origin->Type());
-  result::create(subregion(), argument, output, origin->Type());
-  return output;
-}
-
-jlm::rvsdg::theta_node *
-theta_node::copy(jlm::rvsdg::region * region, jlm::rvsdg::substitution_map & smap) const
-{
-  auto nf = graph()->node_normal_form(typeid(jlm::rvsdg::operation));
-  nf->set_mutable(false);
-
-  jlm::rvsdg::substitution_map rmap;
+  SubstitutionMap rmap;
   auto theta = create(region);
 
   /* add loop variables */
-  for (auto olv : *this)
+  std::vector<LoopVar> oldLoopVars = GetLoopVars();
+  std::vector<LoopVar> newLoopVars;
+  for (auto olv : oldLoopVars)
   {
-    auto nlv = theta->add_loopvar(smap.lookup(olv->input()->origin()));
-    rmap.insert(olv->argument(), nlv->argument());
+    auto nlv = theta->AddLoopVar(smap.lookup(olv.input->origin()));
+    newLoopVars.push_back(nlv);
+    rmap.insert(olv.pre, nlv.pre);
   }
 
   /* copy subregion */
@@ -104,14 +105,73 @@ theta_node::copy(jlm::rvsdg::region * region, jlm::rvsdg::substitution_map & sma
   theta->set_predicate(rmap.lookup(predicate()->origin()));
 
   /* redirect loop variables */
-  for (auto olv = begin(), nlv = theta->begin(); olv != end(); olv++, nlv++)
+  for (size_t i = 0; i < oldLoopVars.size(); ++i)
   {
-    (*nlv)->result()->divert_to(rmap.lookup((*olv)->result()->origin()));
-    smap.insert(olv.output(), nlv.output());
+    newLoopVars[i].post->divert_to(rmap.lookup(oldLoopVars[i].post->origin()));
+    smap.insert(oldLoopVars[i].output, newLoopVars[i].output);
   }
 
-  nf->set_mutable(true);
   return theta;
+}
+
+[[nodiscard]] ThetaNode::LoopVar
+ThetaNode::MapInputLoopVar(const rvsdg::input & input) const
+{
+  JLM_ASSERT(rvsdg::TryGetOwnerNode<ThetaNode>(input) == this);
+  return LoopVar{ const_cast<rvsdg::input *>(&input),
+                  subregion()->argument(input.index()),
+                  subregion()->result(input.index() + 1),
+                  output(input.index()) };
+}
+
+[[nodiscard]] ThetaNode::LoopVar
+ThetaNode::MapPreLoopVar(const rvsdg::output & argument) const
+{
+  JLM_ASSERT(rvsdg::TryGetRegionParentNode<ThetaNode>(argument) == this);
+  return LoopVar{ input(argument.index()),
+                  const_cast<rvsdg::output *>(&argument),
+                  subregion()->result(argument.index() + 1),
+                  output(argument.index()) };
+}
+
+[[nodiscard]] ThetaNode::LoopVar
+ThetaNode::MapPostLoopVar(const rvsdg::input & result) const
+{
+  JLM_ASSERT(rvsdg::TryGetRegionParentNode<ThetaNode>(result) == this);
+  if (result.index() == 0)
+  {
+    // This is the loop continuation predicate.
+    // There is nothing sensible to return here.
+    throw std::logic_error("cannot map loop continuation predicate to loop variable");
+  }
+  return LoopVar{ input(result.index() - 1),
+                  subregion()->argument(result.index() - 1),
+                  const_cast<rvsdg::input *>(&result),
+                  output(result.index() - 1) };
+}
+
+[[nodiscard]] ThetaNode::LoopVar
+ThetaNode::MapOutputLoopVar(const rvsdg::output & output) const
+{
+  JLM_ASSERT(rvsdg::TryGetOwnerNode<ThetaNode>(output) == this);
+  return LoopVar{ input(output.index()),
+                  subregion()->argument(output.index()),
+                  subregion()->result(output.index() + 1),
+                  const_cast<rvsdg::output *>(&output) };
+}
+
+[[nodiscard]] std::vector<ThetaNode::LoopVar>
+ThetaNode::GetLoopVars() const
+{
+  std::vector<LoopVar> loopvars;
+  for (size_t index = 0; index < ninputs(); ++index)
+  {
+    loopvars.push_back(LoopVar{ input(index),
+                                subregion()->argument(index),
+                                subregion()->result(index + 1),
+                                output(index) });
+  }
+  return loopvars;
 }
 
 }

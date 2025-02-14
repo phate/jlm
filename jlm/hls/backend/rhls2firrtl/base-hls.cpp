@@ -4,10 +4,9 @@
  */
 
 #include <jlm/hls/backend/rhls2firrtl/base-hls.hpp>
-#include <jlm/hls/ir/hls.hpp>
 
 #include <algorithm>
-#include <math.h>
+#include <cmath>
 
 namespace jlm::hls
 {
@@ -22,8 +21,10 @@ isForbiddenChar(char c)
   return true;
 }
 
+BaseHLS::~BaseHLS() = default;
+
 std::string
-BaseHLS::get_node_name(const jlm::rvsdg::node * node)
+BaseHLS::get_node_name(const jlm::rvsdg::Node * node)
 {
   auto found = node_map.find(node);
   if (found != node_map.end())
@@ -47,7 +48,8 @@ BaseHLS::get_node_name(const jlm::rvsdg::node * node)
     append.append("_W");
     append.append(std::to_string(JlmSize(&node->output(outPorts - 1)->type())));
   }
-  auto name = util::strfmt("op_", node->operation().debug_string(), append, "_", node_map.size());
+  auto name =
+      util::strfmt("op_", node->GetOperation().debug_string(), append, "_", node_map.size());
   // remove chars that are not valid in firrtl module names
   std::replace_if(name.begin(), name.end(), isForbiddenChar, '_');
   node_map[node] = name;
@@ -62,7 +64,7 @@ BaseHLS::get_port_name(jlm::rvsdg::input * port)
   {
     result += "i";
   }
-  else if (dynamic_cast<const jlm::rvsdg::result *>(port))
+  else if (dynamic_cast<const rvsdg::RegionResult *>(port))
   {
     result += "r";
   }
@@ -82,7 +84,7 @@ BaseHLS::get_port_name(jlm::rvsdg::output * port)
     throw std::logic_error("nullptr!");
   }
   std::string result;
-  if (dynamic_cast<const jlm::rvsdg::argument *>(port))
+  if (dynamic_cast<const jlm::rvsdg::RegionArgument *>(port))
   {
     result += "a";
   }
@@ -90,7 +92,7 @@ BaseHLS::get_port_name(jlm::rvsdg::output * port)
   {
     result += "o";
   }
-  else if (dynamic_cast<const jlm::rvsdg::structural_output *>(port))
+  else if (dynamic_cast<const rvsdg::StructuralOutput *>(port))
   {
     result += "so";
   }
@@ -103,25 +105,25 @@ BaseHLS::get_port_name(jlm::rvsdg::output * port)
 }
 
 int
-BaseHLS::JlmSize(const jlm::rvsdg::type * type)
+BaseHLS::JlmSize(const jlm::rvsdg::Type * type)
 {
   if (auto bt = dynamic_cast<const jlm::rvsdg::bittype *>(type))
   {
     return bt->nbits();
   }
-  else if (auto at = dynamic_cast<const llvm::arraytype *>(type))
+  else if (auto at = dynamic_cast<const llvm::ArrayType *>(type))
   {
     return JlmSize(&at->element_type()) * at->nelements();
   }
   else if (dynamic_cast<const llvm::PointerType *>(type))
   {
-    return 64;
+    return GetPointerSizeInBits();
   }
-  else if (auto ct = dynamic_cast<const jlm::rvsdg::ctltype *>(type))
+  else if (auto ct = dynamic_cast<const rvsdg::ControlType *>(type))
   {
     return ceil(log2(ct->nalternatives()));
   }
-  else if (dynamic_cast<const jlm::rvsdg::statetype *>(type))
+  else if (dynamic_cast<const rvsdg::StateType *>(type))
   {
     return 1;
   }
@@ -137,11 +139,11 @@ BaseHLS::JlmSize(const jlm::rvsdg::type * type)
 }
 
 void
-BaseHLS::create_node_names(jlm::rvsdg::region * r)
+BaseHLS::create_node_names(rvsdg::Region * r)
 {
-  for (auto & node : r->nodes)
+  for (auto & node : r->Nodes())
   {
-    if (dynamic_cast<jlm::rvsdg::simple_node *>(&node))
+    if (dynamic_cast<jlm::rvsdg::SimpleNode *>(&node))
     {
       get_node_name(&node);
     }
@@ -152,16 +154,16 @@ BaseHLS::create_node_names(jlm::rvsdg::region * r)
     else
     {
       throw util::error(
-          "Unimplemented op (unexpected structural node) : " + node.operation().debug_string());
+          "Unimplemented op (unexpected structural node) : " + node.GetOperation().debug_string());
     }
   }
 }
 
-const jlm::llvm::lambda::node *
+const jlm::rvsdg::LambdaNode *
 BaseHLS::get_hls_lambda(llvm::RvsdgModule & rm)
 {
-  auto region = rm.Rvsdg().root();
-  auto ln = dynamic_cast<const llvm::lambda::node *>(region->nodes.begin().ptr());
+  auto region = &rm.Rvsdg().GetRootRegion();
+  auto ln = dynamic_cast<const rvsdg::LambdaNode *>(region->Nodes().begin().ptr());
   if (region->nnodes() == 1 && ln)
   {
     return ln;

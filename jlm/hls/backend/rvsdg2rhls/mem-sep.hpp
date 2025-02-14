@@ -12,22 +12,22 @@ namespace jlm::hls
 {
 
 void
-mem_sep_independent(jlm::rvsdg::region * region);
+mem_sep_independent(rvsdg::Region * region);
 
 void
 mem_sep_independent(llvm::RvsdgModule & rm);
 
 void
-mem_sep_argument(jlm::rvsdg::region * region);
+mem_sep_argument(rvsdg::Region * region);
 
 void
 mem_sep_argument(llvm::RvsdgModule & rm);
 
-jlm::rvsdg::argument *
-GetMemoryStateArgument(const llvm::lambda::node & lambda);
+rvsdg::RegionArgument *
+GetMemoryStateArgument(const rvsdg::LambdaNode & lambda);
 
-jlm::rvsdg::result *
-GetMemoryStateResult(const llvm::lambda::node & lambda);
+rvsdg::RegionResult *
+GetMemoryStateResult(const rvsdg::LambdaNode & lambda);
 
 } // namespace jlm::hls
 

@@ -3,16 +3,35 @@
  * See COPYING for terms of redistribution.
  */
 
+#include <jlm/llvm/backend/dot/DotWriter.hpp>
 #include <jlm/llvm/backend/jlm2llvm/jlm2llvm.hpp>
 #include <jlm/llvm/backend/rvsdg2jlm/rvsdg2jlm.hpp>
 #include <jlm/llvm/frontend/InterProceduralGraphConversion.hpp>
 #include <jlm/llvm/frontend/LlvmModuleConversion.hpp>
 #include <jlm/llvm/ir/ipgraph-module.hpp>
 #include <jlm/llvm/ir/RvsdgModule.hpp>
-#include <jlm/llvm/opt/OptimizationSequence.hpp>
+#include <jlm/llvm/opt/alias-analyses/AgnosticMemoryNodeProvider.hpp>
+#include <jlm/llvm/opt/alias-analyses/Andersen.hpp>
+#include <jlm/llvm/opt/alias-analyses/EliminatedMemoryNodeProvider.hpp>
+#include <jlm/llvm/opt/alias-analyses/Optimization.hpp>
+#include <jlm/llvm/opt/alias-analyses/RegionAwareMemoryNodeProvider.hpp>
+#include <jlm/llvm/opt/alias-analyses/Steensgaard.hpp>
+#include <jlm/llvm/opt/alias-analyses/TopDownMemoryNodeEliminator.hpp>
+#include <jlm/llvm/opt/cne.hpp>
+#include <jlm/llvm/opt/DeadNodeElimination.hpp>
+#include <jlm/llvm/opt/inlining.hpp>
+#include <jlm/llvm/opt/InvariantValueRedirection.hpp>
+#include <jlm/llvm/opt/inversion.hpp>
+#include <jlm/llvm/opt/pull.hpp>
+#include <jlm/llvm/opt/push.hpp>
+#include <jlm/llvm/opt/reduction.hpp>
+#include <jlm/llvm/opt/RvsdgTreePrinter.hpp>
+#include <jlm/llvm/opt/unroll.hpp>
 #include <jlm/rvsdg/view.hpp>
 #include <jlm/tooling/Command.hpp>
 #include <jlm/tooling/CommandPaths.hpp>
+
+#include <llvm/IR/Module.h>
 
 #ifdef ENABLE_MLIR
 #include <jlm/mlir/backend/JlmToMlirConverter.hpp>
@@ -33,6 +52,18 @@ namespace jlm::tooling
 {
 
 Command::~Command() = default;
+
+void
+Command::Run() const
+{
+  const auto command = ToString();
+  const auto returnCode = system(command.c_str());
+  if (returnCode != EXIT_SUCCESS)
+  {
+    throw util::error(
+        util::strfmt("Subcommand failed with status code ", returnCode, ": ", command));
+  }
+}
 
 PrintCommandsCommand::~PrintCommandsCommand() = default;
 
@@ -209,13 +240,6 @@ ClangCommand::ReplaceAll(std::string str, const std::string & from, const std::s
   return str;
 }
 
-void
-ClangCommand::Run() const
-{
-  if (system(ToString().c_str()))
-    exit(EXIT_FAILURE);
-}
-
 LlcCommand::~LlcCommand() = default;
 
 std::string
@@ -234,13 +258,6 @@ LlcCommand::ToString() const
       OutputFile_.to_str(),
       " ",
       InputFile_.to_str());
-}
-
-void
-LlcCommand::Run() const
-{
-  if (system(ToString().c_str()))
-    exit(EXIT_FAILURE);
 }
 
 std::string
@@ -270,6 +287,19 @@ LlcCommand::ToString(const RelocationModel & relocationModel)
 
 JlmOptCommand::~JlmOptCommand() = default;
 
+JlmOptCommand::JlmOptCommand(
+    std::string programName,
+    const jlm::tooling::JlmOptCommandLineOptions & commandLineOptions)
+    : ProgramName_(std::move(programName)),
+      CommandLineOptions_(std::move(commandLineOptions))
+{
+  for (auto optimizationId : CommandLineOptions_.GetOptimizationIds())
+  {
+    if (auto it = Optimizations_.find(optimizationId); it == Optimizations_.end())
+      Optimizations_[optimizationId] = CreateTransformation(optimizationId);
+  }
+}
+
 std::string
 JlmOptCommand::ToString() const
 {
@@ -297,10 +327,12 @@ JlmOptCommand::ToString() const
   }
 
   std::string statisticsDirArgument =
-      "-s " + CommandLineOptions_.GetStatisticsCollectorSettings().GetFilePath().path() + " ";
+      "-s " + CommandLineOptions_.GetStatisticsCollectorSettings().GetOutputDirectory().to_str()
+      + " ";
 
   return util::strfmt(
-      ProgramName_ + " ",
+      ProgramName_,
+      " ",
       outputFormatArgument,
       optimizationArguments,
       statisticsDirArgument,
@@ -320,10 +352,10 @@ JlmOptCommand::Run() const
       CommandLineOptions_.GetInputFormat(),
       statisticsCollector);
 
-  llvm::OptimizationSequence::CreateAndRun(
+  rvsdg::TransformationSequence::CreateAndRun(
       *rvsdgModule,
       statisticsCollector,
-      CommandLineOptions_.GetOptimizations());
+      GetTransformations());
 
   PrintRvsdgModule(
       *rvsdgModule,
@@ -332,6 +364,69 @@ JlmOptCommand::Run() const
       statisticsCollector);
 
   statisticsCollector.PrintStatistics();
+}
+
+std::vector<rvsdg::Transformation *>
+JlmOptCommand::GetTransformations() const
+{
+  std::vector<rvsdg::Transformation *> optimizations;
+  for (auto optimizationId : CommandLineOptions_.GetOptimizationIds())
+  {
+    auto it = Optimizations_.find(optimizationId);
+    JLM_ASSERT(it != Optimizations_.end());
+    optimizations.emplace_back(it->second.get());
+  }
+
+  return optimizations;
+}
+
+std::unique_ptr<rvsdg::Transformation>
+JlmOptCommand::CreateTransformation(
+    enum JlmOptCommandLineOptions::OptimizationId optimizationId) const
+{
+  using Andersen = llvm::aa::Andersen;
+  using Steensgaard = llvm::aa::Steensgaard;
+  using AgnosticMnp = llvm::aa::AgnosticMemoryNodeProvider;
+  using RegionAwareMnp = llvm::aa::RegionAwareMemoryNodeProvider;
+  using TopDownLifetimeMnp =
+      llvm::aa::EliminatedMemoryNodeProvider<AgnosticMnp, llvm::aa::TopDownMemoryNodeEliminator>;
+
+  switch (optimizationId)
+  {
+  case JlmOptCommandLineOptions::OptimizationId::AAAndersenAgnostic:
+    return std::make_unique<llvm::aa::AliasAnalysisStateEncoder<Andersen, AgnosticMnp>>();
+  case JlmOptCommandLineOptions::OptimizationId::AAAndersenRegionAware:
+    return std::make_unique<llvm::aa::AliasAnalysisStateEncoder<Andersen, RegionAwareMnp>>();
+  case JlmOptCommandLineOptions::OptimizationId::AAAndersenTopDownLifetimeAware:
+    return std::make_unique<llvm::aa::AliasAnalysisStateEncoder<Andersen, TopDownLifetimeMnp>>();
+  case JlmOptCommandLineOptions::OptimizationId::AASteensgaardAgnostic:
+    return std::make_unique<llvm::aa::AliasAnalysisStateEncoder<Steensgaard, AgnosticMnp>>();
+  case JlmOptCommandLineOptions::OptimizationId::AASteensgaardRegionAware:
+    return std::make_unique<llvm::aa::AliasAnalysisStateEncoder<Steensgaard, RegionAwareMnp>>();
+  case JlmOptCommandLineOptions::OptimizationId::CommonNodeElimination:
+    return std::make_unique<llvm::cne>();
+  case JlmOptCommandLineOptions::OptimizationId::DeadNodeElimination:
+    return std::make_unique<llvm::DeadNodeElimination>();
+  case JlmOptCommandLineOptions::OptimizationId::FunctionInlining:
+    return std::make_unique<llvm::fctinline>();
+  case JlmOptCommandLineOptions::OptimizationId::InvariantValueRedirection:
+    return std::make_unique<llvm::InvariantValueRedirection>();
+  case JlmOptCommandLineOptions::OptimizationId::LoopUnrolling:
+    return std::make_unique<llvm::loopunroll>(4);
+  case JlmOptCommandLineOptions::OptimizationId::NodePullIn:
+    return std::make_unique<llvm::pullin>();
+  case JlmOptCommandLineOptions::OptimizationId::NodePushOut:
+    return std::make_unique<llvm::pushout>();
+  case JlmOptCommandLineOptions::OptimizationId::NodeReduction:
+    return std::make_unique<llvm::NodeReduction>();
+  case JlmOptCommandLineOptions::OptimizationId::RvsdgTreePrinter:
+    return std::make_unique<llvm::RvsdgTreePrinter>(
+        CommandLineOptions_.GetRvsdgTreePrinterConfiguration());
+  case JlmOptCommandLineOptions::OptimizationId::ThetaGammaInversion:
+    return std::make_unique<llvm::tginversion>();
+  default:
+    JLM_UNREACHABLE("Unhandled optimization id.");
+  }
 }
 
 std::unique_ptr<llvm::RvsdgModule>
@@ -363,9 +458,7 @@ JlmOptCommand::ParseLlvmIrFile(
 }
 
 std::unique_ptr<llvm::RvsdgModule>
-JlmOptCommand::ParseMlirIrFile(
-    const util::filepath & mlirIrFile,
-    util::StatisticsCollector & statisticsCollector) const
+JlmOptCommand::ParseMlirIrFile(const util::filepath & mlirIrFile, util::StatisticsCollector &) const
 {
 #ifdef ENABLE_MLIR
   jlm::mlir::MlirToJlmConverter rvsdggen;
@@ -402,7 +495,7 @@ JlmOptCommand::PrintAsAscii(
     const util::filepath & outputFile,
     util::StatisticsCollector &)
 {
-  auto ascii = rvsdg::view(rvsdgModule.Rvsdg().root());
+  auto ascii = view(&rvsdgModule.Rvsdg().GetRootRegion());
 
   if (outputFile == "")
   {
@@ -424,7 +517,7 @@ JlmOptCommand::PrintAsXml(
 {
   auto fd = outputFile == "" ? stdout : fopen(outputFile.to_str().c_str(), "w");
 
-  jlm::rvsdg::view_xml(rvsdgModule.Rvsdg().root(), fd);
+  view_xml(&rvsdgModule.Rvsdg().GetRootRegion(), fd);
 
   if (fd != stdout)
     fclose(fd);
@@ -471,6 +564,52 @@ JlmOptCommand::PrintAsMlir(
 }
 
 void
+JlmOptCommand::PrintAsRvsdgTree(
+    const llvm::RvsdgModule & rvsdgModule,
+    const util::filepath & outputFile,
+    util::StatisticsCollector &)
+{
+  auto & rootRegion = rvsdgModule.Rvsdg().GetRootRegion();
+  auto tree = rvsdg::Region::ToTree(rootRegion);
+
+  if (outputFile == "")
+  {
+    std::cout << tree << std::flush;
+  }
+  else
+  {
+    std::ofstream fs;
+    fs.open(outputFile.to_str());
+    fs << tree;
+    fs.close();
+  }
+}
+
+void
+JlmOptCommand::PrintAsDot(
+    const llvm::RvsdgModule & rvsdgModule,
+    const util::filepath & outputFile,
+    util::StatisticsCollector &)
+{
+  auto & rootRegion = rvsdgModule.Rvsdg().GetRootRegion();
+
+  util::GraphWriter writer;
+  jlm::llvm::dot::WriteGraphs(writer, rootRegion, true);
+
+  if (outputFile == "")
+  {
+    writer.OutputAllGraphs(std::cout, util::GraphOutputFormat::Dot);
+  }
+  else
+  {
+    std::ofstream fs;
+    fs.open(outputFile.to_str());
+    writer.OutputAllGraphs(fs, util::GraphOutputFormat::Dot);
+    fs.close();
+  }
+}
+
+void
 JlmOptCommand::PrintRvsdgModule(
     llvm::RvsdgModule & rvsdgModule,
     const util::filepath & outputFile,
@@ -492,6 +631,14 @@ JlmOptCommand::PrintRvsdgModule(
   else if (outputFormat == tooling::JlmOptCommandLineOptions::OutputFormat::Mlir)
   {
     PrintAsMlir(rvsdgModule, outputFile, statisticsCollector);
+  }
+  else if (outputFormat == tooling::JlmOptCommandLineOptions::OutputFormat::Tree)
+  {
+    PrintAsRvsdgTree(rvsdgModule, outputFile, statisticsCollector);
+  }
+  else if (outputFormat == tooling::JlmOptCommandLineOptions::OutputFormat::Dot)
+  {
+    PrintAsDot(rvsdgModule, outputFile, statisticsCollector);
   }
   else
   {
@@ -539,20 +686,14 @@ LlvmOptCommand::ToString() const
   }
 
   return util::strfmt(
-      clangpath.path() + "opt ",
+      clangpath.Dirname().Join("opt").to_str(),
+      " ",
       optimizationArguments,
       WriteLlvmAssembly_ ? "-S " : "",
       "-o ",
       OutputFile().to_str(),
       " ",
       InputFile_.to_str());
-}
-
-void
-LlvmOptCommand::Run() const
-{
-  if (system(ToString().c_str()))
-    exit(EXIT_FAILURE);
 }
 
 std::string
@@ -576,8 +717,8 @@ LlvmLinkCommand::ToString() const
     inputFilesArgument += inputFile.to_str() + " ";
 
   return util::strfmt(
-      clangpath.path(),
-      "llvm-link ",
+      clangpath.Dirname().Join("llvm-link").to_str(),
+      " ",
       WriteLlvmAssembly_ ? "-S " : "",
       Verbose_ ? "-v " : "",
       "-o ",
@@ -586,32 +727,12 @@ LlvmLinkCommand::ToString() const
       inputFilesArgument);
 }
 
-void
-LlvmLinkCommand::Run() const
-{
-  if (system(ToString().c_str()))
-    exit(EXIT_FAILURE);
-}
-
 JlmHlsCommand::~JlmHlsCommand() noexcept = default;
 
 std::string
 JlmHlsCommand::ToString() const
 {
-  return util::strfmt(
-      "jlm-hls ",
-      "-o ",
-      OutputFolder_.to_str(),
-      " ",
-      UseCirct_ ? "--circt " : "",
-      InputFile_.to_str());
-}
-
-void
-JlmHlsCommand::Run() const
-{
-  if (system(ToString().c_str()))
-    exit(EXIT_FAILURE);
+  return util::strfmt("jlm-hls ", "-o ", OutputFolder_.to_str(), " ", InputFile_.to_str());
 }
 
 JlmHlsExtractCommand::~JlmHlsExtractCommand() noexcept = default;
@@ -629,13 +750,6 @@ JlmHlsExtractCommand::ToString() const
       OutputFolder_.to_str(),
       " ",
       InputFile().to_str());
-}
-
-void
-JlmHlsExtractCommand::Run() const
-{
-  if (system(ToString().c_str()))
-    exit(EXIT_FAILURE);
 }
 
 }

@@ -62,10 +62,10 @@ runs:
       run: |
         export JLM_CONFIGURE_ARGUMENTS="--target release --enable-asserts"
         if [[ "${{inputs.enable-hls}}" == "true" ]]; then
-          JLM_CONFIGURE_ARGUMENTS="$JLM_CONFIGURE_ARGUMENTS --enable-hls ${{ github.workspace }}/build-circt/circt"
+          JLM_CONFIGURE_ARGUMENTS="$JLM_CONFIGURE_ARGUMENTS --enable-hls=${{ github.workspace }}/build-circt/circt"
         fi
         if [[ "${{inputs.enable-mlir}}" == "true" ]]; then
-          JLM_CONFIGURE_ARGUMENTS="$JLM_CONFIGURE_ARGUMENTS --enable-mlir ${{ github.workspace }}/lib/mlir-rvsdg"
+          JLM_CONFIGURE_ARGUMENTS="$JLM_CONFIGURE_ARGUMENTS --enable-mlir=${{ github.workspace }}/build-mlir/usr"
         fi
         if [[ "${{inputs.enable-coverage}}" == "true" ]]; then
           JLM_CONFIGURE_ARGUMENTS="$JLM_CONFIGURE_ARGUMENTS --enable-coverage"

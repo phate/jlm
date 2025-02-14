@@ -6,42 +6,40 @@
 #ifndef JLM_LLVM_OPT_PUSH_HPP
 #define JLM_LLVM_OPT_PUSH_HPP
 
-#include <jlm/llvm/opt/optimization.hpp>
+#include <jlm/rvsdg/Transformation.hpp>
+
+namespace jlm::rvsdg
+{
+class GammaNode;
+class ThetaNode;
+}
 
 namespace jlm::llvm
 {
 
-namespace rvsdg
-{
-class gamma_node;
-class theta_node;
-}
-
-class RvsdgModule;
-
 /**
  * \brief Node Push-Out Optimization
  */
-class pushout final : public optimization
+class pushout final : public rvsdg::Transformation
 {
 public:
   virtual ~pushout();
 
-  virtual void
-  run(RvsdgModule & module, util::StatisticsCollector & statisticsCollector) override;
+  void
+  Run(rvsdg::RvsdgModule & module, util::StatisticsCollector & statisticsCollector) override;
 };
 
 void
-push_top(jlm::rvsdg::theta_node * theta);
+push_top(rvsdg::ThetaNode * theta);
 
 void
-push_bottom(jlm::rvsdg::theta_node * theta);
+push_bottom(rvsdg::ThetaNode * theta);
 
 void
-push(jlm::rvsdg::theta_node * theta);
+push(rvsdg::ThetaNode * theta);
 
 void
-push(jlm::rvsdg::gamma_node * gamma);
+push(rvsdg::GammaNode * gamma);
 
 }
 

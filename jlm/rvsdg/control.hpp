@@ -15,25 +15,24 @@
 
 #include <unordered_map>
 
-#include <inttypes.h>
-
 namespace jlm::rvsdg
 {
 
-/* control type */
-
-class ctltype final : public jlm::rvsdg::statetype
+class ControlType final : public StateType
 {
 public:
-  virtual ~ctltype() noexcept;
+  ~ControlType() noexcept override;
 
-  ctltype(size_t nalternatives);
+  explicit ControlType(size_t nalternatives);
 
   virtual std::string
   debug_string() const override;
 
   virtual bool
-  operator==(const jlm::rvsdg::type & other) const noexcept override;
+  operator==(const jlm::rvsdg::Type & other) const noexcept override;
+
+  std::size_t
+  ComputeHash() const noexcept override;
 
   inline size_t
   nalternatives() const noexcept
@@ -52,7 +51,7 @@ public:
    * the specified number of alternatives. The returned instance
    * will usually be a static singleton for the type.
    */
-  static std::shared_ptr<const ctltype>
+  static std::shared_ptr<const ControlType>
   Create(std::size_t nalternatives);
 
 private:
@@ -60,9 +59,9 @@ private:
 };
 
 static inline bool
-is_ctltype(const jlm::rvsdg::type & type) noexcept
+is_ctltype(const jlm::rvsdg::Type & type) noexcept
 {
-  return dynamic_cast<const ctltype *>(&type) != nullptr;
+  return dynamic_cast<const ControlType *>(&type) != nullptr;
 }
 
 /* control value representation */
@@ -105,10 +104,10 @@ private:
 
 struct ctltype_of_value
 {
-  std::shared_ptr<const ctltype>
+  std::shared_ptr<const ControlType>
   operator()(const ctlvalue_repr & repr) const
   {
-    return ctltype::Create(repr.nalternatives());
+    return ControlType::Create(repr.nalternatives());
   }
 };
 
@@ -121,16 +120,17 @@ struct ctlformat_value
   }
 };
 
-typedef domain_const_op<ctltype, ctlvalue_repr, ctlformat_value, ctltype_of_value> ctlconstant_op;
+typedef domain_const_op<ControlType, ctlvalue_repr, ctlformat_value, ctltype_of_value>
+    ctlconstant_op;
 
 static inline bool
-is_ctlconstant_op(const jlm::rvsdg::operation & op) noexcept
+is_ctlconstant_op(const Operation & op) noexcept
 {
   return dynamic_cast<const ctlconstant_op *>(&op) != nullptr;
 }
 
 static inline const ctlconstant_op &
-to_ctlconstant_op(const jlm::rvsdg::operation & op) noexcept
+to_ctlconstant_op(const Operation & op) noexcept
 {
   JLM_ASSERT(is_ctlconstant_op(op));
   return *static_cast<const ctlconstant_op *>(&op);
@@ -138,7 +138,7 @@ to_ctlconstant_op(const jlm::rvsdg::operation & op) noexcept
 
 /* match operator */
 
-class match_op final : public jlm::rvsdg::unary_op
+class match_op final : public UnaryOperation
 {
   typedef std::unordered_map<uint64_t, uint64_t>::const_iterator const_iterator;
 
@@ -152,7 +152,7 @@ public:
       size_t nalternatives);
 
   virtual bool
-  operator==(const operation & other) const noexcept override;
+  operator==(const Operation & other) const noexcept override;
 
   virtual unop_reduction_path_t
   can_reduce_operand(const jlm::rvsdg::output * arg) const noexcept override;
@@ -163,13 +163,13 @@ public:
   virtual std::string
   debug_string() const override;
 
-  virtual std::unique_ptr<jlm::rvsdg::operation>
+  [[nodiscard]] std::unique_ptr<Operation>
   copy() const override;
 
   inline uint64_t
   nalternatives() const noexcept
   {
-    return static_cast<const ctltype *>(&result(0).type())->nalternatives();
+    return std::static_pointer_cast<const ControlType>(result(0))->nalternatives();
   }
 
   inline uint64_t
@@ -191,7 +191,7 @@ public:
   inline size_t
   nbits() const noexcept
   {
-    return static_cast<const bittype *>(&argument(0).type())->nbits();
+    return std::static_pointer_cast<const bittype>(argument(0))->nbits();
   }
 
   inline const_iterator
@@ -214,14 +214,18 @@ public:
       size_t numAlternatives)
   {
     auto bitType = CheckAndExtractBitType(predicate.type());
-
-    match_op operation(bitType.nbits(), mapping, defaultAlternative, numAlternatives);
-    return rvsdg::simple_node::create_normalized(predicate.region(), operation, { &predicate })[0];
+    return CreateOpNode<match_op>(
+               { &predicate },
+               bitType.nbits(),
+               mapping,
+               defaultAlternative,
+               numAlternatives)
+        .output(0);
   }
 
 private:
   static const bittype &
-  CheckAndExtractBitType(const rvsdg::type & type)
+  CheckAndExtractBitType(const rvsdg::Type & type)
   {
     if (auto bitType = dynamic_cast<const bittype *>(&type))
     {
@@ -244,26 +248,30 @@ match(
     jlm::rvsdg::output * operand);
 
 // declare explicit instantiation
-extern template class domain_const_op<ctltype, ctlvalue_repr, ctlformat_value, ctltype_of_value>;
+extern template class domain_const_op<
+    ControlType,
+    ctlvalue_repr,
+    ctlformat_value,
+    ctltype_of_value>;
 
 static inline const match_op &
-to_match_op(const jlm::rvsdg::operation & op) noexcept
+to_match_op(const Operation & op) noexcept
 {
   JLM_ASSERT(is<match_op>(op));
   return *static_cast<const match_op *>(&op);
 }
 
 jlm::rvsdg::output *
-control_constant(jlm::rvsdg::region * region, size_t nalternatives, size_t alternative);
+control_constant(rvsdg::Region * region, size_t nalternatives, size_t alternative);
 
 static inline jlm::rvsdg::output *
-control_false(jlm::rvsdg::region * region)
+control_false(rvsdg::Region * region)
 {
   return control_constant(region, 2, 0);
 }
 
 static inline jlm::rvsdg::output *
-control_true(jlm::rvsdg::region * region)
+control_true(rvsdg::Region * region)
 {
   return control_constant(region, 2, 1);
 }

@@ -12,8 +12,6 @@
 #include <jlm/llvm/ir/ipgraph-module.hpp>
 #include <jlm/llvm/ir/print.hpp>
 
-#include <assert.h>
-
 static void
 test_straightening()
 {
@@ -67,7 +65,7 @@ test_is_structured()
   bb->add_outedge(join);
   join->add_outedge(cfg.exit());
 
-  print_ascii(cfg, stdout);
+  std::cout << cfg::ToAscii(cfg) << std::flush;
   assert(is_structured(cfg));
 }
 

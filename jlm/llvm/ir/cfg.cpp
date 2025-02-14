@@ -69,6 +69,138 @@ cfg::remove_node(basic_block * bb)
   return remove_node(it);
 }
 
+std::string
+cfg::ToAscii(const cfg & controlFlowGraph)
+{
+  std::string str;
+  auto nodes = breadth_first(controlFlowGraph);
+  auto labels = CreateLabels(nodes);
+  for (const auto & node : nodes)
+  {
+    str += labels.at(node) + ":";
+    str += (is<basic_block>(node) ? "\n" : " ");
+
+    if (auto entryNode = dynamic_cast<const entry_node *>(node))
+    {
+      str += ToAscii(*entryNode);
+    }
+    else if (auto exitNode = dynamic_cast<const exit_node *>(node))
+    {
+      str += ToAscii(*exitNode);
+    }
+    else if (auto basicBlock = dynamic_cast<const basic_block *>(node))
+    {
+      str += ToAscii(*basicBlock, labels);
+    }
+    else
+    {
+      JLM_UNREACHABLE("Unhandled control flow graph node type!");
+    }
+  }
+
+  return str;
+}
+
+std::string
+cfg::ToAscii(const entry_node & entryNode)
+{
+  std::string str;
+  for (size_t n = 0; n < entryNode.narguments(); n++)
+  {
+    str += entryNode.argument(n)->debug_string() + " ";
+  }
+
+  return str + "\n";
+}
+
+std::string
+cfg::ToAscii(const exit_node & exitNode)
+{
+  std::string str;
+  for (size_t n = 0; n < exitNode.nresults(); n++)
+  {
+    str += exitNode.result(n)->debug_string() + " ";
+  }
+
+  return str;
+}
+
+std::string
+cfg::ToAscii(
+    const basic_block & basicBlock,
+    const std::unordered_map<cfg_node *, std::string> & labels)
+{
+  auto & threeAddressCodes = basicBlock.tacs();
+
+  std::string str;
+  for (const auto & tac : threeAddressCodes)
+  {
+    str += "\t" + tac::ToAscii(*tac);
+    if (tac != threeAddressCodes.last())
+      str += "\n";
+  }
+
+  if (threeAddressCodes.last())
+  {
+    if (is<branch_op>(threeAddressCodes.last()->operation()))
+      str += " " + CreateTargets(basicBlock, labels);
+    else
+      str += "\n\t" + CreateTargets(basicBlock, labels);
+  }
+  else
+  {
+    str += "\t" + CreateTargets(basicBlock, labels);
+  }
+
+  return str + "\n";
+}
+
+std::string
+cfg::CreateTargets(
+    const cfg_node & node,
+    const std::unordered_map<cfg_node *, std::string> & labels)
+{
+  size_t n = 0;
+  std::string str("[");
+  for (auto it = node.begin_outedges(); it != node.end_outedges(); it++, n++)
+  {
+    str += labels.at(it->sink());
+    if (n != node.noutedges() - 1)
+      str += ", ";
+  }
+  str += "]";
+
+  return str;
+}
+
+std::unordered_map<cfg_node *, std::string>
+cfg::CreateLabels(const std::vector<cfg_node *> & nodes)
+{
+  std::unordered_map<cfg_node *, std::string> map;
+  for (size_t n = 0; n < nodes.size(); n++)
+  {
+    auto node = nodes[n];
+    if (is<entry_node>(node))
+    {
+      map[node] = "entry";
+    }
+    else if (is<exit_node>(node))
+    {
+      map[node] = "exit";
+    }
+    else if (is<basic_block>(node))
+    {
+      map[node] = util::strfmt("bb", n);
+    }
+    else
+    {
+      JLM_UNREACHABLE("Unhandled control flow graph node type!");
+    }
+  }
+
+  return map;
+}
+
 /* supporting functions */
 
 std::vector<cfg_node *>

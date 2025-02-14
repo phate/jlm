@@ -20,7 +20,7 @@ namespace jlm::llvm
  * FIXME: We currently do not support vector of pointers for the baseAddress.
  *
  */
-class GetElementPtrOperation final : public rvsdg::simple_op
+class GetElementPtrOperation final : public rvsdg::SimpleOperation
 {
 public:
   ~GetElementPtrOperation() noexcept override;
@@ -28,8 +28,8 @@ public:
 public:
   GetElementPtrOperation(
       const std::vector<std::shared_ptr<const rvsdg::bittype>> & offsetTypes,
-      std::shared_ptr<const rvsdg::valuetype> pointeeType)
-      : simple_op(CreateOperandTypes(offsetTypes), { PointerType::Create() }),
+      std::shared_ptr<const rvsdg::ValueType> pointeeType)
+      : SimpleOperation(CreateOperandTypes(offsetTypes), { PointerType::Create() }),
         PointeeType_(std::move(pointeeType))
   {}
 
@@ -38,18 +38,18 @@ public:
   GetElementPtrOperation(GetElementPtrOperation && other) noexcept = default;
 
   bool
-  operator==(const operation & other) const noexcept override;
+  operator==(const Operation & other) const noexcept override;
 
   [[nodiscard]] std::string
   debug_string() const override;
 
-  [[nodiscard]] std::unique_ptr<rvsdg::operation>
+  [[nodiscard]] std::unique_ptr<Operation>
   copy() const override;
 
-  [[nodiscard]] const rvsdg::valuetype &
+  [[nodiscard]] const rvsdg::ValueType &
   GetPointeeType() const noexcept
   {
-    return *dynamic_cast<const rvsdg::valuetype *>(PointeeType_.get());
+    return *dynamic_cast<const rvsdg::ValueType *>(PointeeType_.get());
   }
 
   /**
@@ -69,8 +69,8 @@ public:
   Create(
       const variable * baseAddress,
       const std::vector<const variable *> & offsets,
-      std::shared_ptr<const rvsdg::valuetype> pointeeType,
-      std::shared_ptr<const rvsdg::type> resultType)
+      std::shared_ptr<const rvsdg::ValueType> pointeeType,
+      std::shared_ptr<const rvsdg::Type> resultType)
   {
     CheckPointerType(baseAddress->type());
     auto offsetTypes = CheckAndExtractOffsetTypes<const variable>(offsets);
@@ -100,23 +100,26 @@ public:
   Create(
       rvsdg::output * baseAddress,
       const std::vector<rvsdg::output *> & offsets,
-      std::shared_ptr<const rvsdg::valuetype> pointeeType,
-      std::shared_ptr<const rvsdg::type> resultType)
+      std::shared_ptr<const rvsdg::ValueType> pointeeType,
+      std::shared_ptr<const rvsdg::Type> resultType)
   {
     CheckPointerType(baseAddress->type());
     auto offsetTypes = CheckAndExtractOffsetTypes<rvsdg::output>(offsets);
     CheckPointerType(*resultType);
 
-    GetElementPtrOperation operation(offsetTypes, std::move(pointeeType));
-    std::vector<rvsdg::output *> operands(1, baseAddress);
+    std::vector operands(1, baseAddress);
     operands.insert(operands.end(), offsets.begin(), offsets.end());
 
-    return rvsdg::simple_node::create_normalized(baseAddress->region(), operation, operands)[0];
+    return rvsdg::CreateOpNode<GetElementPtrOperation>(
+               operands,
+               offsetTypes,
+               std::move(pointeeType))
+        .output(0);
   }
 
 private:
   static void
-  CheckPointerType(const rvsdg::type & type)
+  CheckPointerType(const rvsdg::Type & type)
   {
     if (!is<PointerType>(type))
     {
@@ -143,16 +146,16 @@ private:
     return offsetTypes;
   }
 
-  static std::vector<std::shared_ptr<const rvsdg::type>>
+  static std::vector<std::shared_ptr<const rvsdg::Type>>
   CreateOperandTypes(const std::vector<std::shared_ptr<const rvsdg::bittype>> & indexTypes)
   {
-    std::vector<std::shared_ptr<const rvsdg::type>> types({ PointerType::Create() });
+    std::vector<std::shared_ptr<const rvsdg::Type>> types({ PointerType::Create() });
     types.insert(types.end(), indexTypes.begin(), indexTypes.end());
 
     return types;
   }
 
-  std::shared_ptr<const rvsdg::valuetype> PointeeType_;
+  std::shared_ptr<const rvsdg::ValueType> PointeeType_;
 };
 
 }

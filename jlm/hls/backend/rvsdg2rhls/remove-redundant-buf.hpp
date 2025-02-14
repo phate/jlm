@@ -17,7 +17,7 @@ void
 remove_redundant_buf(llvm::RvsdgModule & rm);
 
 void
-remove_redundant_buf(jlm::rvsdg::region * region);
+remove_redundant_buf(rvsdg::Region * region);
 
 }
 

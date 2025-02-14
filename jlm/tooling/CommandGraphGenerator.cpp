@@ -3,6 +3,7 @@
  * See COPYING for terms of redistribution.
  */
 
+#include <jlm/llvm/opt/RvsdgTreePrinter.hpp>
 #include <jlm/tooling/Command.hpp>
 #include <jlm/tooling/CommandGraph.hpp>
 #include <jlm/tooling/CommandGraphGenerator.hpp>
@@ -21,7 +22,7 @@ util::filepath
 JlcCommandGraphGenerator::CreateJlmOptCommandOutputFile(const util::filepath & inputFile)
 {
   return util::filepath::CreateUniqueFileName(
-      std::filesystem::temp_directory_path().string(),
+      util::filepath::TempDirectoryPath(),
       inputFile.base() + "-",
       "-jlm-opt.ll");
 }
@@ -30,7 +31,7 @@ util::filepath
 JlcCommandGraphGenerator::CreateParserCommandOutputFile(const util::filepath & inputFile)
 {
   return util::filepath::CreateUniqueFileName(
-      std::filesystem::temp_directory_path().string(),
+      util::filepath::TempDirectoryPath(),
       inputFile.base() + "-",
       "-clang.ll");
 }
@@ -127,19 +128,19 @@ JlcCommandGraphGenerator::GenerateCommandGraph(const JlcCommandLineOptions & com
     if (compilation.RequiresOptimization())
     {
       auto clangCommand = util::AssertedCast<ClangCommand>(&lastNode->GetCommand());
-      auto statisticsFilePath = util::StatisticsCollectorSettings::CreateUniqueStatisticsFile(
-          util::filepath(std::filesystem::temp_directory_path()),
-          compilation.InputFile());
+
       util::StatisticsCollectorSettings statisticsCollectorSettings(
-          statisticsFilePath,
-          commandLineOptions.JlmOptPassStatistics_);
+          commandLineOptions.JlmOptPassStatistics_,
+          util::filepath::TempDirectoryPath(),
+          compilation.InputFile().base());
 
       JlmOptCommandLineOptions jlmOptCommandLineOptions(
           clangCommand->OutputFile(),
           JlmOptCommandLineOptions::InputFormat::Llvm,
           CreateJlmOptCommandOutputFile(compilation.InputFile()),
           JlmOptCommandLineOptions::OutputFormat::Llvm,
-          statisticsCollectorSettings,
+          std::move(statisticsCollectorSettings),
+          jlm::llvm::RvsdgTreePrinter::Configuration({}),
           commandLineOptions.JlmOptOptimizations_);
 
       auto & jlmOptCommandNode =
@@ -270,17 +271,16 @@ JhlsCommandGraphGenerator::GenerateCommandGraph(const JhlsCommandLineOptions & c
   std::vector<util::filepath> llir_files;
 
   // Create directory in /tmp for storing temporary files
-  std::string tmp_identifier;
+  std::string tmp_identifier = "jhls-";
   for (const auto & compilation : commandLineOptions.Compilations_)
   {
-    tmp_identifier += compilation.InputFile().name() + "_";
+    tmp_identifier += compilation.InputFile().name() + "-";
     if (tmp_identifier.length() > 30)
       break;
   }
-  srandom((unsigned)time(nullptr) * getpid());
-  tmp_identifier += std::to_string(random());
-  util::filepath tmp_folder(
-      std::filesystem::temp_directory_path().string() + "/" + tmp_identifier + "/");
+
+  const auto tmp_folder =
+      util::filepath::CreateUniqueFileName(util::filepath::TempDirectoryPath(), tmp_identifier, "");
   auto & mkdir = MkdirCommand::Create(*commandGraph, tmp_folder);
   commandGraph->GetEntryNode().AddEdge(mkdir);
 
@@ -293,7 +293,7 @@ JhlsCommandGraphGenerator::GenerateCommandGraph(const JhlsCommandLineOptions & c
       auto & parserNode = ClangCommand::CreateParsingCommand(
           *commandGraph,
           compilation.InputFile(),
-          CreateParserCommandOutputFile(tmp_folder, compilation.InputFile()).to_str(),
+          CreateParserCommandOutputFile(tmp_folder, compilation.InputFile()),
           compilation.DependencyFile(),
           commandLineOptions.IncludePaths_,
           commandLineOptions.MacroDefinitions_,
@@ -356,16 +356,22 @@ JhlsCommandGraphGenerator::GenerateCommandGraph(const JhlsCommandLineOptions & c
   auto & hls = JlmHlsCommand::Create(
       *commandGraph,
       dynamic_cast<LlvmOptCommand *>(&m2r2.GetCommand())->OutputFile(),
-      commandLineOptions.OutputFile_,
-      commandLineOptions.UseCirct_);
+      commandLineOptions.OutputFile_);
   m2r2.AddEdge(hls);
 
-  std::vector<util::filepath> lnkifiles;
-  for (const auto & c : commandLineOptions.Compilations_)
-  {
-    if (c.RequiresLinking())
-      lnkifiles.push_back(c.OutputFile());
-  }
+  auto linkerInputFiles = util::filepath(commandLineOptions.OutputFile_.to_str() + ".re*.ll");
+  auto mergedFile = util::filepath(commandLineOptions.OutputFile_.to_str() + ".merged.ll");
+  auto & llvmLink =
+      LlvmLinkCommand::Create(*commandGraph, { linkerInputFiles }, mergedFile, true, false);
+  hls.AddEdge(llvmLink);
+
+  auto & compileMerged = LlcCommand::Create(
+      *commandGraph,
+      mergedFile,
+      util::filepath(commandLineOptions.OutputFile_.to_str() + ".o"),
+      LlcCommand::OptimizationLevel::O3,
+      LlcCommand::RelocationModel::Pic);
+  llvmLink.AddEdge(compileMerged);
 
   for (const auto & leave : leaves)
     leave->AddEdge(commandGraph->GetExitNode());

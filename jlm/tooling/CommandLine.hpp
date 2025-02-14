@@ -6,7 +6,7 @@
 #ifndef JLM_TOOLING_COMMANDLINE_HPP
 #define JLM_TOOLING_COMMANDLINE_HPP
 
-#include <jlm/llvm/opt/optimization.hpp>
+#include <jlm/llvm/opt/RvsdgTreePrinter.hpp>
 #include <jlm/util/BijectiveMap.hpp>
 #include <jlm/util/file.hpp>
 #include <jlm/util/Statistics.hpp>
@@ -52,8 +52,10 @@ public:
     FirstEnumValue, // must always be the first enum value, used for iteration
 
     Ascii,
+    Dot,
     Llvm,
     Mlir,
+    Tree,
     Xml,
 
     LastEnumValue // must always be the last enum value, used for iteration
@@ -65,6 +67,7 @@ public:
 
     AAAndersenAgnostic,
     AAAndersenRegionAware,
+    AAAndersenTopDownLifetimeAware,
     AASteensgaardAgnostic,
     AASteensgaardRegionAware,
     CommonNodeElimination,
@@ -75,6 +78,7 @@ public:
     NodePullIn,
     NodePushOut,
     NodeReduction,
+    RvsdgTreePrinter,
     ThetaGammaInversion,
 
     LastEnumValue // must always be the last enum value, used for iteration
@@ -86,13 +90,15 @@ public:
       util::filepath outputFile,
       OutputFormat outputFormat,
       util::StatisticsCollectorSettings statisticsCollectorSettings,
+      llvm::RvsdgTreePrinter::Configuration rvsdgTreePrinterConfiguration,
       std::vector<OptimizationId> optimizations)
       : InputFile_(std::move(inputFile)),
         InputFormat_(inputFormat),
         OutputFile_(std::move(outputFile)),
         OutputFormat_(outputFormat),
         StatisticsCollectorSettings_(std::move(statisticsCollectorSettings)),
-        OptimizationIds_(std::move(optimizations))
+        OptimizationIds_(std::move(optimizations)),
+        RvsdgTreePrinterConfiguration_(std::move(rvsdgTreePrinterConfiguration))
   {}
 
   void
@@ -134,8 +140,11 @@ public:
     return OptimizationIds_;
   }
 
-  [[nodiscard]] std::vector<llvm::optimization *>
-  GetOptimizations() const noexcept;
+  [[nodiscard]] const llvm::RvsdgTreePrinter::Configuration &
+  GetRvsdgTreePrinterConfiguration() const noexcept
+  {
+    return RvsdgTreePrinterConfiguration_;
+  }
 
   static OptimizationId
   FromCommandLineArgumentToOptimizationId(const std::string & commandLineArgument);
@@ -155,9 +164,6 @@ public:
   static const char *
   ToCommandLineArgument(OutputFormat outputFormat);
 
-  static llvm::optimization *
-  GetOptimization(enum OptimizationId optimizationId);
-
   static std::unique_ptr<JlmOptCommandLineOptions>
   Create(
       util::filepath inputFile,
@@ -165,6 +171,7 @@ public:
       util::filepath outputFile,
       OutputFormat outputFormat,
       util::StatisticsCollectorSettings statisticsCollectorSettings,
+      llvm::RvsdgTreePrinter::Configuration rvsdgTreePrinterConfiguration,
       std::vector<OptimizationId> optimizations)
   {
     return std::make_unique<JlmOptCommandLineOptions>(
@@ -173,6 +180,7 @@ public:
         std::move(outputFile),
         outputFormat,
         std::move(statisticsCollectorSettings),
+        std::move(rvsdgTreePrinterConfiguration),
         std::move(optimizations));
   }
 
@@ -183,11 +191,13 @@ private:
   OutputFormat OutputFormat_;
   util::StatisticsCollectorSettings StatisticsCollectorSettings_;
   std::vector<OptimizationId> OptimizationIds_;
+  llvm::RvsdgTreePrinter::Configuration RvsdgTreePrinterConfiguration_;
 
   struct OptimizationCommandLineArgument
   {
     inline static const char * AaAndersenAgnostic_ = "AAAndersenAgnostic";
     inline static const char * AaAndersenRegionAware_ = "AAAndersenRegionAware";
+    inline static const char * AaAndersenTopDownLifetimeAware_ = "AAAndersenTopDownLifetimeAware";
     inline static const char * AaSteensgaardAgnostic_ = "AASteensgaardAgnostic";
     inline static const char * AaSteensgaardRegionAware_ = "AASteensgaardRegionAware";
     inline static const char * CommonNodeElimination_ = "CommonNodeElimination";
@@ -199,6 +209,7 @@ private:
     inline static const char * ThetaGammaInversion_ = "ThetaGammaInversion";
     inline static const char * LoopUnrolling_ = "LoopUnrolling";
     inline static const char * NodeReduction_ = "NodeReduction";
+    inline static const char * RvsdgTreePrinter_ = "RvsdgTreePrinter";
   };
 
   static const util::BijectiveMap<util::Statistics::Id, std::string_view> &
@@ -385,8 +396,7 @@ public:
       : InputFile_(""),
         OutputFiles_(""),
         OutputFormat_(OutputFormat::Firrtl),
-        ExtractHlsFunction_(false),
-        UseCirct_(false)
+        ExtractHlsFunction_(false)
   {}
 
   void
@@ -397,7 +407,6 @@ public:
   OutputFormat OutputFormat_;
   std::string HlsFunction_;
   bool ExtractHlsFunction_;
-  bool UseCirct_;
 };
 
 /**
@@ -438,7 +447,6 @@ public:
         Suppress_(false),
         UsePthreads_(false),
         GenerateFirrtl_(false),
-        UseCirct_(false),
         Hls_(false),
         Md_(false),
         OptimizationLevel_(OptimizationLevel::O0),
@@ -456,7 +464,6 @@ public:
   bool Suppress_;
   bool UsePthreads_;
   bool GenerateFirrtl_;
-  bool UseCirct_;
   bool Hls_;
 
   bool Md_;
@@ -587,7 +594,7 @@ public:
   CommandLineParser() = default;
 
   virtual const CommandLineOptions &
-  ParseCommandLineArguments(int argc, char ** argv) = 0;
+  ParseCommandLineArguments(int argc, const char * const * argv) = 0;
 };
 
 /**
@@ -599,7 +606,7 @@ public:
   ~JlcCommandLineParser() noexcept override;
 
   const JlcCommandLineOptions &
-  ParseCommandLineArguments(int argc, char ** argv) override;
+  ParseCommandLineArguments(int argc, const char * const * argv) override;
 
 private:
   static bool
@@ -611,13 +618,13 @@ private:
   static util::filepath
   ToObjectFile(const util::filepath & file)
   {
-    return { file.path() + file.base() + ".o" };
+    return file.Dirname().Join(file.base() + ".o");
   }
 
   static util::filepath
   ToDependencyFile(const util::filepath & file)
   {
-    return { file.path() + file.base() + ".d" };
+    return file.Dirname().Join(file.base() + ".d");
   }
 
   JlcCommandLineOptions CommandLineOptions_;
@@ -632,10 +639,10 @@ public:
   ~JlmOptCommandLineParser() noexcept override;
 
   const JlmOptCommandLineOptions &
-  ParseCommandLineArguments(int argc, char ** argv) override;
+  ParseCommandLineArguments(int argc, const char * const * argv) override;
 
   static const JlmOptCommandLineOptions &
-  Parse(int argc, char ** argv);
+  Parse(int argc, const char * const * argv);
 
 private:
   std::unique_ptr<JlmOptCommandLineOptions> CommandLineOptions_;
@@ -650,10 +657,10 @@ public:
   ~JlmHlsCommandLineParser() noexcept override;
 
   const JlmHlsCommandLineOptions &
-  ParseCommandLineArguments(int argc, char ** argv) override;
+  ParseCommandLineArguments(int argc, const char * const * argv) override;
 
   static const JlmHlsCommandLineOptions &
-  Parse(int argc, char ** argv);
+  Parse(int argc, const char * const * argv);
 
 private:
   JlmHlsCommandLineOptions CommandLineOptions_;
@@ -668,10 +675,10 @@ public:
   ~JhlsCommandLineParser() noexcept override;
 
   const JhlsCommandLineOptions &
-  ParseCommandLineArguments(int argc, char ** argv) override;
+  ParseCommandLineArguments(int argc, const char * const * argv) override;
 
   static const JhlsCommandLineOptions &
-  Parse(int argc, char ** arv);
+  Parse(int argc, const char * const * arv);
 
 private:
   static bool

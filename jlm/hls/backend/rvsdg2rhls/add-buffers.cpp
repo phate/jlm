@@ -12,18 +12,18 @@ namespace jlm::hls
 {
 
 void
-add_buffers(jlm::rvsdg::region * region, bool pass_through)
+add_buffers(rvsdg::Region * region, bool pass_through)
 {
-  for (auto & node : jlm::rvsdg::topdown_traverser(region))
+  for (auto & node : rvsdg::TopDownTraverser(region))
   {
-    if (auto structnode = dynamic_cast<jlm::rvsdg::structural_node *>(node))
+    if (auto structnode = dynamic_cast<rvsdg::StructuralNode *>(node))
     {
       for (size_t n = 0; n < structnode->nsubregions(); n++)
       {
         add_buffers(structnode->subregion(n), pass_through);
       }
     }
-    else if (dynamic_cast<jlm::rvsdg::simple_node *>(node))
+    else if (dynamic_cast<jlm::rvsdg::SimpleNode *>(node))
     {
       if (jlm::rvsdg::is<hls::load_op>(node) || jlm::rvsdg::is<hls::decoupled_load_op>(node))
       {
@@ -31,7 +31,7 @@ add_buffers(jlm::rvsdg::region * region, bool pass_through)
         JLM_ASSERT(out->nusers() == 1);
         if (auto ni = dynamic_cast<jlm::rvsdg::node_input *>(*out->begin()))
         {
-          auto buf = dynamic_cast<const hls::buffer_op *>(&ni->node()->operation());
+          auto buf = dynamic_cast<const hls::buffer_op *>(&ni->node()->GetOperation());
           if (buf && (buf->pass_through || !pass_through))
           {
             continue;
@@ -60,7 +60,7 @@ add_buffers(jlm::rvsdg::region * region, bool pass_through)
           JLM_ASSERT(out->nusers() == 1);
           if (auto ni = dynamic_cast<jlm::rvsdg::node_input *>(*out->begin()))
           {
-            auto buf = dynamic_cast<const hls::buffer_op *>(&ni->node()->operation());
+            auto buf = dynamic_cast<const hls::buffer_op *>(&ni->node()->GetOperation());
             if (buf && (buf->pass_through || !pass_through))
             {
               continue;
@@ -90,7 +90,7 @@ void
 add_buffers(llvm::RvsdgModule & rm, bool pass_through)
 {
   auto & graph = rm.Rvsdg();
-  auto root = graph.root();
+  auto root = &graph.GetRootRegion();
   add_buffers(root, pass_through);
 }
 

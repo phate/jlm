@@ -25,7 +25,7 @@ LoadConversion()
   std::unique_ptr<Module> llvmModule(new Module("module", context));
 
   auto int64Type = Type::getInt64Ty(context);
-  auto pointerType = Type::getInt64PtrTy(context);
+  auto pointerType = llvm::PointerType::getUnqual(context);
 
   auto functionType = FunctionType::get(int64Type, ArrayRef<Type *>({ pointerType }), false);
   auto function =
@@ -67,7 +67,7 @@ LoadConversion()
         auto memoryStateAssignment = *std::next(it, 2);
 
         assert(is<assignment_op>(ioStateAssignment->operation()));
-        assert(is<iostatetype>(ioStateAssignment->operand(0)->type()));
+        assert(is<IOStateType>(ioStateAssignment->operand(0)->type()));
 
         assert(is<assignment_op>(memoryStateAssignment->operation()));
         assert(is<MemoryStateType>(memoryStateAssignment->operand(0)->type()));

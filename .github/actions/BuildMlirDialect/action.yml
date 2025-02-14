@@ -4,36 +4,40 @@ description: "Restore MLIR RVSDG Dialect from cache and build if it's not in the
 runs:
   using: "composite"
   steps:
-    - name: "Clone MLIR RVSDG dialect"
-      run: git clone https://github.com/EECS-NTNU/mlir_rvsdg.git ${{ github.workspace }}/mlir-rvsdg
-      shell: bash
-
-    - name: "Extract the hash for latest commit for use in the cache key"
-      id: get-mlir-hash
-      run: |
-        cd ${{ github.workspace }}/mlir-rvsdg
-        echo "hash=$(git rev-parse main)" >> $GITHUB_OUTPUT
-      shell: bash
-
-    - name: "Try to fetch Dialect from the cache"
-      id: cache-mlir
-      uses: actions/cache@v4
-      with:
-        path: |
-          ${{ github.workspace }}/lib/mlir-rvsdg
-        key: ${{ runner.os }}-mlir-${{ steps.get-mlir-hash.outputs.hash }}
-
-    - name: "Install LLVM and Clang"
+    - name: "Install LLVM, MLIR and Ninja"
       uses: ./.github/actions/InstallPackages
       with:
         install-llvm: true
         install-mlir: true
         install-ninja: true
 
-    - name: "Build MLIR RVSDG Dialect if we didn't hit in the cache"
-      if: steps.cache-mlir.outputs.cache-hit != 'true'
+    - name: "Extract the commit hash for building the MLIR Dialect"
+      id: get-mlir-hash
       run: |
-        ./scripts/build-mlir.sh \
-          --install-path ${{ github.workspace }}/lib/mlir-rvsdg
+        echo "hash=$(./scripts/build-mlir.sh --get-commit-hash)" >> $GITHUB_OUTPUT
       shell: bash
 
+    - name: "Try to fetch Dialect from the cache"
+      id: restore-cache-mlir
+      uses: actions/cache@v4
+      with:
+        path: |
+          ${{ github.workspace }}/build-mlir/usr
+        key: ${{ runner.os }}-mlir-${{ steps.get-mlir-hash.outputs.hash }}
+
+    - name: "Build MLIR RVSDG Dialect if we didn't hit in the cache"
+      if: steps.restore-cache-mlir.outputs.cache-hit != 'true'
+      run: |
+        ./scripts/build-mlir.sh \
+          --build-path ${{ github.workspace }}/build-mlir \
+          --install-path ${{ github.workspace }}/build-mlir/usr
+      shell: bash
+
+    - name: "Save MLIR to the cache"
+      if: steps.rstore-cache-mlir.outputs.cache-hit != 'true'
+      id: save-cache-mlir
+      uses: actions/cache/save@v4
+      with:
+        path: |
+          ${{ github.workspace }}/build-mlir/usr
+        key: ${{ runner.os }}-mlir-${{ steps.get-mlir-hash.outputs.hash }}

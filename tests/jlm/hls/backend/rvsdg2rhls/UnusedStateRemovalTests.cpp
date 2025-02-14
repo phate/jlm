@@ -25,37 +25,36 @@ TestGamma()
   auto rvsdgModule = RvsdgModule::Create(jlm::util::filepath(""), "", "");
   auto & rvsdg = rvsdgModule->Rvsdg();
 
-  auto p = rvsdg.add_import({ jlm::rvsdg::ctltype::Create(2), "p" });
-  auto x = rvsdg.add_import({ valueType, "x" });
-  auto y = rvsdg.add_import({ valueType, "y" });
-  auto z = rvsdg.add_import({ valueType, "z" });
+  auto p = &jlm::tests::GraphImport::Create(rvsdg, jlm::rvsdg::ControlType::Create(2), "p");
+  auto x = &jlm::tests::GraphImport::Create(rvsdg, valueType, "x");
+  auto y = &jlm::tests::GraphImport::Create(rvsdg, valueType, "y");
+  auto z = &jlm::tests::GraphImport::Create(rvsdg, valueType, "z");
 
-  auto gammaNode = jlm::rvsdg::gamma_node::create(p, 2);
+  auto gammaNode = jlm::rvsdg::GammaNode::create(p, 2);
 
-  auto gammaInput1 = gammaNode->add_entryvar(x);
-  auto gammaInput2 = gammaNode->add_entryvar(y);
-  auto gammaInput3 = gammaNode->add_entryvar(z);
-  auto gammaInput4 = gammaNode->add_entryvar(x);
-  auto gammaInput5 = gammaNode->add_entryvar(x);
-  auto gammaInput6 = gammaNode->add_entryvar(x);
-  auto gammaInput7 = gammaNode->add_entryvar(x);
+  auto gammaInput1 = gammaNode->AddEntryVar(x);
+  auto gammaInput2 = gammaNode->AddEntryVar(y);
+  auto gammaInput3 = gammaNode->AddEntryVar(z);
+  auto gammaInput4 = gammaNode->AddEntryVar(x);
+  auto gammaInput5 = gammaNode->AddEntryVar(x);
+  auto gammaInput6 = gammaNode->AddEntryVar(x);
+  auto gammaInput7 = gammaNode->AddEntryVar(x);
 
-  auto gammaOutput1 =
-      gammaNode->add_exitvar({ gammaInput1->argument(0), gammaInput1->argument(1) });
+  auto gammaOutput1 = gammaNode->AddExitVar(gammaInput1.branchArgument);
   auto gammaOutput2 =
-      gammaNode->add_exitvar({ gammaInput2->argument(0), gammaInput3->argument(1) });
+      gammaNode->AddExitVar({ gammaInput2.branchArgument[0], gammaInput3.branchArgument[1] });
   auto gammaOutput3 =
-      gammaNode->add_exitvar({ gammaInput4->argument(0), gammaInput5->argument(1) });
+      gammaNode->AddExitVar({ gammaInput4.branchArgument[0], gammaInput5.branchArgument[1] });
   auto gammaOutput4 =
-      gammaNode->add_exitvar({ gammaInput6->argument(0), gammaInput6->argument(1) });
+      gammaNode->AddExitVar({ gammaInput6.branchArgument[0], gammaInput6.branchArgument[1] });
   auto gammaOutput5 =
-      gammaNode->add_exitvar({ gammaInput6->argument(0), gammaInput7->argument(1) });
+      gammaNode->AddExitVar({ gammaInput6.branchArgument[0], gammaInput7.branchArgument[1] });
 
-  rvsdg.add_export(gammaOutput1, { valueType, "" });
-  rvsdg.add_export(gammaOutput2, { valueType, "" });
-  rvsdg.add_export(gammaOutput3, { valueType, "" });
-  rvsdg.add_export(gammaOutput4, { valueType, "" });
-  rvsdg.add_export(gammaOutput5, { valueType, "" });
+  GraphExport::Create(*gammaOutput1.output, "");
+  GraphExport::Create(*gammaOutput2.output, "");
+  GraphExport::Create(*gammaOutput3.output, "");
+  GraphExport::Create(*gammaOutput4.output, "");
+  GraphExport::Create(*gammaOutput5.output, "");
 
   // Act
   jlm::hls::RemoveUnusedStates(*rvsdgModule);
@@ -63,8 +62,8 @@ TestGamma()
   // Assert
   assert(gammaNode->ninputs() == 7);  // gammaInput1 was removed
   assert(gammaNode->noutputs() == 4); // gammaOutput1 was removed
-  assert(gammaInput2->index() == 1);
-  assert(gammaOutput2->index() == 0);
+  assert(gammaInput2.input->index() == 1);
+  assert(gammaOutput2.output->index() == 0);
   // FIXME: The transformation is way too conservative here. The only input and output it removes
   // are gammaInput1 and gammaOutput1, respectively. However, it could also remove gammaOutput3,
   // gammaOutput4, and gammaOutput5 as they are all invariant. This in turn would also render some
@@ -78,35 +77,36 @@ TestTheta()
 
   // Arrange
   auto valueType = jlm::tests::valuetype::Create();
-  auto functionType = FunctionType::Create(
-      { jlm::rvsdg::ctltype::Create(2), valueType, valueType, valueType },
+  auto functionType = jlm::rvsdg::FunctionType::Create(
+      { jlm::rvsdg::ControlType::Create(2), valueType, valueType, valueType },
       { valueType });
 
   auto rvsdgModule = RvsdgModule::Create(jlm::util::filepath(""), "", "");
   auto & rvsdg = rvsdgModule->Rvsdg();
-  auto p = rvsdg.add_import({ jlm::rvsdg::ctltype::Create(2), "p" });
-  auto x = rvsdg.add_import({ valueType, "x" });
-  auto y = rvsdg.add_import({ valueType, "y" });
-  auto z = rvsdg.add_import({ valueType, "z" });
+  auto p = &jlm::tests::GraphImport::Create(rvsdg, jlm::rvsdg::ControlType::Create(2), "p");
+  auto x = &jlm::tests::GraphImport::Create(rvsdg, valueType, "x");
+  auto y = &jlm::tests::GraphImport::Create(rvsdg, valueType, "y");
+  auto z = &jlm::tests::GraphImport::Create(rvsdg, valueType, "z");
 
-  auto thetaNode = jlm::rvsdg::theta_node::create(rvsdg.root());
+  auto thetaNode = jlm::rvsdg::ThetaNode::create(&rvsdg.GetRootRegion());
 
-  auto thetaOutput0 = thetaNode->add_loopvar(p);
-  auto thetaOutput1 = thetaNode->add_loopvar(x);
-  auto thetaOutput2 = thetaNode->add_loopvar(y);
-  auto thetaOutput3 = thetaNode->add_loopvar(z);
+  auto thetaOutput0 = thetaNode->AddLoopVar(p);
+  auto thetaOutput1 = thetaNode->AddLoopVar(x);
+  auto thetaOutput2 = thetaNode->AddLoopVar(y);
+  auto thetaOutput3 = thetaNode->AddLoopVar(z);
 
-  thetaOutput2->result()->divert_to(thetaOutput3->argument());
-  thetaOutput3->result()->divert_to(thetaOutput2->argument());
-  thetaNode->set_predicate(thetaOutput0->argument());
+  thetaOutput2.post->divert_to(thetaOutput3.pre);
+  thetaOutput3.post->divert_to(thetaOutput2.pre);
+  thetaNode->set_predicate(thetaOutput0.pre);
 
-  auto result = jlm::tests::SimpleNode::Create(
-                    *rvsdg.root(),
-                    { thetaOutput0, thetaOutput1, thetaOutput2, thetaOutput3 },
-                    { valueType })
-                    .output(0);
+  auto result =
+      jlm::tests::SimpleNode::Create(
+          rvsdg.GetRootRegion(),
+          { thetaOutput0.output, thetaOutput1.output, thetaOutput2.output, thetaOutput3.output },
+          { valueType })
+          .output(0);
 
-  rvsdg.add_export(result, { valueType, "f" });
+  GraphExport::Create(*result, "f");
 
   // Act
   jlm::hls::RemoveUnusedStates(*rvsdgModule);
@@ -127,21 +127,22 @@ TestLambda()
 
   // Arrange
   auto valueType = jlm::tests::valuetype::Create();
-  auto functionType = FunctionType::Create(
+  auto functionType = jlm::rvsdg::FunctionType::Create(
       { valueType, valueType },
       { valueType, valueType, valueType, valueType });
 
   auto rvsdgModule = RvsdgModule::Create(jlm::util::filepath(""), "", "");
   auto & rvsdg = rvsdgModule->Rvsdg();
 
-  auto x = rvsdg.add_import({ valueType, "x" });
+  auto x = &jlm::tests::GraphImport::Create(rvsdg, valueType, "x");
 
-  auto lambdaNode =
-      lambda::node::create(rvsdg.root(), functionType, "f", linkage::external_linkage);
-  auto argument0 = lambdaNode->fctargument(0);
-  auto argument1 = lambdaNode->fctargument(1);
-  auto argument2 = lambdaNode->add_ctxvar(x);
-  auto argument3 = lambdaNode->add_ctxvar(x);
+  auto lambdaNode = jlm::rvsdg::LambdaNode::Create(
+      rvsdg.GetRootRegion(),
+      LlvmLambdaOperation::Create(functionType, "f", linkage::external_linkage));
+  auto argument0 = lambdaNode->GetFunctionArguments()[0];
+  auto argument1 = lambdaNode->GetFunctionArguments()[1];
+  auto argument2 = lambdaNode->AddContextVar(*x).inner;
+  auto argument3 = lambdaNode->AddContextVar(*x).inner;
 
   auto result1 =
       jlm::tests::SimpleNode::Create(*lambdaNode->subregion(), { argument1 }, { valueType })
@@ -152,14 +153,15 @@ TestLambda()
 
   auto lambdaOutput = lambdaNode->finalize({ argument0, result1, argument2, result3 });
 
-  rvsdg.add_export(lambdaOutput, { PointerType::Create(), "f" });
+  GraphExport::Create(*lambdaOutput, "f");
 
   // Act
   jlm::hls::RemoveUnusedStates(*rvsdgModule);
 
   // Assert
-  assert(rvsdg.root()->nnodes() == 1);
-  auto & newLambdaNode = dynamic_cast<const lambda::node &>(*rvsdg.root()->nodes.begin());
+  assert(rvsdg.GetRootRegion().nnodes() == 1);
+  auto & newLambdaNode =
+      dynamic_cast<const jlm::rvsdg::LambdaNode &>(*rvsdg.GetRootRegion().Nodes().begin());
   assert(newLambdaNode.ninputs() == 2);
   assert(newLambdaNode.subregion()->narguments() == 3);
   assert(newLambdaNode.subregion()->nresults() == 2);

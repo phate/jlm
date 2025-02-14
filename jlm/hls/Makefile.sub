@@ -2,9 +2,10 @@
 # See COPYING for terms of redistribution.
 
 libhls_SOURCES = \
+    jlm/hls/backend/firrtl2verilog/FirrtlToVerilogConverter.cpp \
+    \
     jlm/hls/backend/rhls2firrtl/base-hls.cpp \
     jlm/hls/backend/rhls2firrtl/dot-hls.cpp \
-    jlm/hls/backend/rhls2firrtl/firrtl-hls.cpp \
     jlm/hls/backend/rhls2firrtl/json-hls.cpp \
     jlm/hls/backend/rhls2firrtl/RhlsToFirrtlConverter.cpp \
     jlm/hls/backend/rhls2firrtl/verilator-harness-hls.cpp \
@@ -35,12 +36,16 @@ libhls_SOURCES = \
     \
     jlm/hls/ir/hls.cpp \
     \
+    jlm/hls/opt/cne.cpp \
+    jlm/hls/opt/IOBarrierRemoval.cpp \
+    \
     jlm/hls/util/view.cpp \
 
 libhls_HEADERS = \
+	jlm/hls/backend/firrtl2verilog/FirrtlToVerilogConverter.hpp \
+	\
 	jlm/hls/backend/rhls2firrtl/base-hls.hpp \
 	jlm/hls/backend/rhls2firrtl/dot-hls.hpp \
-	jlm/hls/backend/rhls2firrtl/firrtl-hls.hpp \
 	jlm/hls/backend/rhls2firrtl/json-hls.hpp \
 	jlm/hls/backend/rhls2firrtl/RhlsToFirrtlConverter.hpp \
 	jlm/hls/backend/rhls2firrtl/verilator-harness-hls.hpp \
@@ -61,6 +66,7 @@ libhls_HEADERS = \
 	jlm/hls/backend/rvsdg2rhls/mem-queue.hpp \
 	jlm/hls/backend/rvsdg2rhls/mem-sep.hpp \
 	jlm/hls/backend/rvsdg2rhls/memstate-conv.hpp \
+	jlm/hls/backend/rvsdg2rhls/merge-gamma.hpp \
 	jlm/hls/backend/rvsdg2rhls/remove-redundant-buf.hpp \
 	jlm/hls/backend/rvsdg2rhls/remove-unused-state.hpp \
 	jlm/hls/backend/rvsdg2rhls/rhls-dne.hpp \
@@ -70,14 +76,22 @@ libhls_HEADERS = \
 	\
 	jlm/hls/ir/hls.hpp \
 	\
+	jlm/hls/opt/cne.hpp \
+	jlm/hls/opt/IOBarrierRemoval.hpp \
+	\
 	jlm/hls/util/view.hpp \
 
 libhls_TESTS += \
 	tests/jlm/hls/backend/rvsdg2rhls/DeadNodeEliminationTests \
+	tests/jlm/hls/backend/rvsdg2rhls/MemoryConverterTests \
+	tests/jlm/hls/backend/rvsdg2rhls/MemoryQueueTests \
+	tests/jlm/hls/backend/rvsdg2rhls/TestFork \
 	tests/jlm/hls/backend/rvsdg2rhls/TestGamma \
 	tests/jlm/hls/backend/rvsdg2rhls/TestTheta \
 	tests/jlm/hls/backend/rvsdg2rhls/UnusedStateRemovalTests \
 	tests/jlm/hls/backend/rvsdg2rhls/test-loop-passthrough \
+	tests/jlm/hls/opt/IOBarrierRemovalTests \
+	tests/jlm/hls/util/ViewTests \
 
 libhls_TEST_LIBS += \
 	libjlmtest \

@@ -6,9 +6,9 @@
 #ifndef JLM_LLVM_OPT_UNROLL_HPP
 #define JLM_LLVM_OPT_UNROLL_HPP
 
-#include <jlm/llvm/opt/optimization.hpp>
 #include <jlm/rvsdg/bitstring.hpp>
 #include <jlm/rvsdg/theta.hpp>
+#include <jlm/rvsdg/Transformation.hpp>
 #include <jlm/util/common.hpp>
 
 namespace jlm::llvm
@@ -19,7 +19,7 @@ class RvsdgModule;
 /**
  * \brief Optimization that attempts to unroll loops (thetas).
  */
-class loopunroll final : public optimization
+class loopunroll final : public rvsdg::Transformation
 {
 public:
   virtual ~loopunroll();
@@ -36,8 +36,8 @@ public:
    * \param module Module where the innermost loops are unrolled
    * \param statisticsCollector Statistics collector for collecting loop unrolling statistics.
    */
-  virtual void
-  run(RvsdgModule & module, util::StatisticsCollector & statisticsCollector) override;
+  void
+  Run(rvsdg::RvsdgModule & module, util::StatisticsCollector & statisticsCollector) override;
 
 private:
   size_t factor_;
@@ -51,11 +51,11 @@ public:
 
 private:
   inline unrollinfo(
-      jlm::rvsdg::node * cmpnode,
-      jlm::rvsdg::node * armnode,
-      jlm::rvsdg::argument * idv,
-      jlm::rvsdg::argument * step,
-      jlm::rvsdg::argument * end)
+      rvsdg::Node * cmpnode,
+      rvsdg::Node * armnode,
+      rvsdg::output * idv,
+      rvsdg::output * step,
+      rvsdg::output * end)
       : end_(end),
         step_(step),
         cmpnode_(cmpnode),
@@ -74,12 +74,11 @@ public:
   unrollinfo &
   operator=(unrollinfo &&) = delete;
 
-  inline jlm::rvsdg::theta_node *
+  inline rvsdg::ThetaNode *
   theta() const noexcept
   {
     auto node = idv()->region()->node();
-    JLM_ASSERT(jlm::rvsdg::is<jlm::rvsdg::theta_op>(node));
-    return static_cast<jlm::rvsdg::theta_node *>(node);
+    return util::AssertedCast<rvsdg::ThetaNode>(node);
   }
 
   inline bool
@@ -109,31 +108,31 @@ public:
   std::unique_ptr<jlm::rvsdg::bitvalue_repr>
   niterations() const noexcept;
 
-  inline jlm::rvsdg::node *
+  rvsdg::Node *
   cmpnode() const noexcept
   {
     return cmpnode_;
   }
 
-  inline const jlm::rvsdg::simple_op &
+  [[nodiscard]] const rvsdg::SimpleOperation &
   cmpoperation() const noexcept
   {
-    return *static_cast<const jlm::rvsdg::simple_op *>(&cmpnode()->operation());
+    return *static_cast<const rvsdg::SimpleOperation *>(&cmpnode()->GetOperation());
   }
 
-  inline jlm::rvsdg::node *
+  inline rvsdg::Node *
   armnode() const noexcept
   {
     return armnode_;
   }
 
-  inline const jlm::rvsdg::simple_op &
+  [[nodiscard]] const rvsdg::SimpleOperation &
   armoperation() const noexcept
   {
-    return *static_cast<const jlm::rvsdg::simple_op *>(&armnode()->operation());
+    return *static_cast<const rvsdg::SimpleOperation *>(&armnode()->GetOperation());
   }
 
-  inline jlm::rvsdg::argument *
+  inline rvsdg::output *
   idv() const noexcept
   {
     return idv_;
@@ -142,7 +141,7 @@ public:
   inline jlm::rvsdg::output *
   init() const noexcept
   {
-    return idv()->input()->origin();
+    return theta()->MapPreLoopVar(*idv()).input->origin();
   }
 
   inline const jlm::rvsdg::bitvalue_repr *
@@ -151,7 +150,7 @@ public:
     return value(init());
   }
 
-  inline jlm::rvsdg::argument *
+  inline rvsdg::output *
   step() const noexcept
   {
     return step_;
@@ -163,7 +162,7 @@ public:
     return value(step());
   }
 
-  inline jlm::rvsdg::argument *
+  inline rvsdg::output *
   end() const noexcept
   {
     return end_;
@@ -190,8 +189,8 @@ public:
   inline size_t
   nbits() const noexcept
   {
-    JLM_ASSERT(dynamic_cast<const jlm::rvsdg::bitcompare_op *>(&cmpnode()->operation()));
-    return static_cast<const jlm::rvsdg::bitcompare_op *>(&cmpnode()->operation())->type().nbits();
+    JLM_ASSERT(dynamic_cast<const jlm::rvsdg::bitcompare_op *>(&cmpnode()->GetOperation()));
+    return static_cast<const rvsdg::bitcompare_op *>(&cmpnode()->GetOperation())->type().nbits();
   }
 
   inline jlm::rvsdg::bitvalue_repr
@@ -201,7 +200,7 @@ public:
   }
 
   static std::unique_ptr<unrollinfo>
-  create(jlm::rvsdg::theta_node * theta);
+  create(rvsdg::ThetaNode * theta);
 
 private:
   inline bool
@@ -211,7 +210,7 @@ private:
     if (!p)
       return false;
 
-    auto op = dynamic_cast<const jlm::rvsdg::bitconstant_op *>(&p->operation());
+    auto op = dynamic_cast<const rvsdg::bitconstant_op *>(&p->GetOperation());
     return op && op->value().is_known();
   }
 
@@ -222,14 +221,14 @@ private:
       return nullptr;
 
     auto p = producer(output);
-    return &static_cast<const jlm::rvsdg::bitconstant_op *>(&p->operation())->value();
+    return &static_cast<const rvsdg::bitconstant_op *>(&p->GetOperation())->value();
   }
 
-  jlm::rvsdg::argument * end_;
-  jlm::rvsdg::argument * step_;
-  jlm::rvsdg::node * cmpnode_;
-  jlm::rvsdg::node * armnode_;
-  jlm::rvsdg::argument * idv_;
+  rvsdg::output * end_;
+  rvsdg::output * step_;
+  rvsdg::Node * cmpnode_;
+  rvsdg::Node * armnode_;
+  rvsdg::output * idv_;
 };
 
 /**
@@ -240,7 +239,7 @@ private:
  * body is duplicated in the unrolled loop.
  */
 void
-unroll(jlm::rvsdg::theta_node * node, size_t factor);
+unroll(rvsdg::ThetaNode * node, size_t factor);
 
 }
 

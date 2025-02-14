@@ -13,7 +13,7 @@ namespace jlm::hls
 {
 
 void
-add_prints(rvsdg::region * region);
+add_prints(rvsdg::Region * region);
 
 void
 add_prints(llvm::RvsdgModule & rm);
@@ -23,12 +23,12 @@ convert_prints(llvm::RvsdgModule & rm);
 
 void
 convert_prints(
-    rvsdg::region * region,
+    rvsdg::Region * region,
     rvsdg::output * printf,
-    const std::shared_ptr<const llvm::FunctionType> & functionType);
+    const std::shared_ptr<const rvsdg::FunctionType> & functionType);
 
 rvsdg::output *
-route_to_region(rvsdg::output * output, rvsdg::region * region);
+route_to_region(rvsdg::output * output, rvsdg::Region * region);
 
 }
 

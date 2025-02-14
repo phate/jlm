@@ -20,7 +20,7 @@
 static std::unique_ptr<jlm::llvm::cfg>
 SetupControlFlowGraph(
     jlm::llvm::ipgraph_module & ipgModule,
-    const jlm::rvsdg::simple_op & operation)
+    const jlm::rvsdg::SimpleOperation & operation)
 {
   using namespace jlm::llvm;
 
@@ -29,7 +29,7 @@ SetupControlFlowGraph(
   std::vector<const variable *> operands;
   for (size_t n = 0; n < operation.narguments(); n++)
   {
-    auto & operandType = operation.argument(n).Type();
+    auto & operandType = operation.argument(n);
     auto operand = cfg->entry()->append_argument(argument::create("", operandType));
     operands.emplace_back(operand);
   }
@@ -50,26 +50,26 @@ SetupControlFlowGraph(
 }
 
 static std::unique_ptr<jlm::llvm::ipgraph_module>
-SetupFunctionWithThreeAddressCode(const jlm::rvsdg::simple_op & operation)
+SetupFunctionWithThreeAddressCode(const jlm::rvsdg::SimpleOperation & operation)
 {
   using namespace jlm::llvm;
 
   auto ipgModule = ipgraph_module::create(jlm::util::filepath(""), "", "");
   auto & ipgraph = ipgModule->ipgraph();
 
-  std::vector<std::shared_ptr<const jlm::rvsdg::type>> operandTypes;
+  std::vector<std::shared_ptr<const jlm::rvsdg::Type>> operandTypes;
   for (size_t n = 0; n < operation.narguments(); n++)
   {
-    operandTypes.emplace_back(operation.argument(n).Type());
+    operandTypes.emplace_back(operation.argument(n));
   }
 
-  std::vector<std::shared_ptr<const jlm::rvsdg::type>> resultTypes;
+  std::vector<std::shared_ptr<const jlm::rvsdg::Type>> resultTypes;
   for (size_t n = 0; n < operation.nresults(); n++)
   {
-    resultTypes.emplace_back(operation.result(n).Type());
+    resultTypes.emplace_back(operation.result(n));
   }
 
-  auto functionType = FunctionType::Create(operandTypes, resultTypes);
+  auto functionType = jlm::rvsdg::FunctionType::Create(operandTypes, resultTypes);
 
   auto functionNode =
       function_node::create(ipgraph, "test", functionType, linkage::external_linkage);
@@ -93,13 +93,14 @@ LoadVolatileConversion()
   // Act
   jlm::util::StatisticsCollector statisticsCollector;
   auto rvsdgModule = ConvertInterProceduralGraphModule(*ipgModule, statisticsCollector);
-  std::cout << jlm::rvsdg::view(rvsdgModule->Rvsdg().root()) << std::flush;
+  std::cout << jlm::rvsdg::view(&rvsdgModule->Rvsdg().GetRootRegion()) << std::flush;
 
   // Assert
-  auto lambdaOutput = rvsdgModule->Rvsdg().root()->result(0)->origin();
-  auto lambda = dynamic_cast<const lambda::node *>(jlm::rvsdg::node_output::node(lambdaOutput));
+  auto lambdaOutput = rvsdgModule->Rvsdg().GetRootRegion().result(0)->origin();
+  auto lambda =
+      dynamic_cast<const jlm::rvsdg::LambdaNode *>(jlm::rvsdg::output::GetNode(*lambdaOutput));
 
-  auto loadVolatileNode = lambda->subregion()->nodes.first();
+  auto loadVolatileNode = lambda->subregion()->Nodes().begin().ptr();
   assert(dynamic_cast<const LoadVolatileNode *>(loadVolatileNode));
 
   return 0;
@@ -122,13 +123,14 @@ StoreVolatileConversion()
   // Act
   jlm::util::StatisticsCollector statisticsCollector;
   auto rvsdgModule = ConvertInterProceduralGraphModule(*ipgModule, statisticsCollector);
-  std::cout << jlm::rvsdg::view(rvsdgModule->Rvsdg().root()) << std::flush;
+  std::cout << jlm::rvsdg::view(&rvsdgModule->Rvsdg().GetRootRegion()) << std::flush;
 
   // Assert
-  auto lambdaOutput = rvsdgModule->Rvsdg().root()->result(0)->origin();
-  auto lambda = dynamic_cast<const lambda::node *>(jlm::rvsdg::node_output::node(lambdaOutput));
+  auto lambdaOutput = rvsdgModule->Rvsdg().GetRootRegion().result(0)->origin();
+  auto lambda =
+      dynamic_cast<const jlm::rvsdg::LambdaNode *>(jlm::rvsdg::output::GetNode(*lambdaOutput));
 
-  auto storeVolatileNode = lambda->subregion()->nodes.first();
+  auto storeVolatileNode = lambda->subregion()->Nodes().begin().ptr();
   assert(dynamic_cast<const StoreVolatileNode *>(storeVolatileNode));
 
   return 0;

@@ -23,7 +23,7 @@ class variable
 public:
   virtual ~variable() noexcept;
 
-  variable(std::shared_ptr<const jlm::rvsdg::type> type, const std::string & name)
+  variable(std::shared_ptr<const jlm::rvsdg::Type> type, const std::string & name)
       : name_(name),
         type_(std::move(type))
   {}
@@ -54,13 +54,13 @@ public:
     return name_;
   }
 
-  inline const jlm::rvsdg::type &
+  inline const jlm::rvsdg::Type &
   type() const noexcept
   {
     return *type_;
   }
 
-  inline const std::shared_ptr<const jlm::rvsdg::type>
+  inline const std::shared_ptr<const jlm::rvsdg::Type>
   Type() const noexcept
   {
     return type_;
@@ -68,7 +68,7 @@ public:
 
 private:
   std::string name_;
-  std::shared_ptr<const jlm::rvsdg::type> type_;
+  std::shared_ptr<const jlm::rvsdg::Type> type_;
 };
 
 template<class T>
@@ -89,7 +89,7 @@ class gblvariable : public variable
 public:
   virtual ~gblvariable();
 
-  inline gblvariable(std::shared_ptr<const jlm::rvsdg::type> type, const std::string & name)
+  inline gblvariable(std::shared_ptr<const jlm::rvsdg::Type> type, const std::string & name)
       : variable(std::move(type), name)
   {}
 };

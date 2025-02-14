@@ -5,10 +5,10 @@
  */
 
 #include <jlm/hls/backend/rhls2firrtl/RhlsToFirrtlConverter.hpp>
+#include <jlm/llvm/ir/operators/IntegerOperations.hpp>
 #include <jlm/llvm/ir/operators/MemoryStateOperations.hpp>
 #include <jlm/util/strfmt.hpp>
 
-#include <circt/Dialect/FIRRTL/FIRParser.h>
 #include <llvm/ADT/SmallPtrSet.h>
 
 namespace jlm::hls
@@ -16,12 +16,12 @@ namespace jlm::hls
 
 // Handles nodes with 2 inputs and 1 output
 circt::firrtl::FModuleOp
-RhlsToFirrtlConverter::MlirGenSimpleNode(const jlm::rvsdg::simple_node * node)
+RhlsToFirrtlConverter::MlirGenSimpleNode(const jlm::rvsdg::SimpleNode * node)
 {
   // Only handles nodes with a single output
   if (node->noutputs() != 1)
   {
-    throw std::logic_error(node->operation().debug_string() + " has more than 1 output");
+    throw std::logic_error(node->GetOperation().debug_string() + " has more than 1 output");
   }
 
   // Create the module and its input/output ports
@@ -46,7 +46,7 @@ RhlsToFirrtlConverter::MlirGenSimpleNode(const jlm::rvsdg::simple_node * node)
   // Get the data signal from the bundle
   auto outData = GetSubfield(body, outBundle, "data");
 
-  if (dynamic_cast<const jlm::rvsdg::bitadd_op *>(&(node->operation())))
+  if (rvsdg::is<llvm::IntegerAddOperation>(node))
   {
     auto input0 = GetSubfield(body, inBundles[0], "data");
     auto input1 = GetSubfield(body, inBundles[1], "data");
@@ -55,7 +55,7 @@ RhlsToFirrtlConverter::MlirGenSimpleNode(const jlm::rvsdg::simple_node * node)
     // We drop the carry bit
     Connect(body, outData, DropMSBs(body, op, 1));
   }
-  else if (dynamic_cast<const jlm::rvsdg::bitsub_op *>(&(node->operation())))
+  else if (rvsdg::is<llvm::IntegerSubOperation>(node))
   {
     auto input0 = GetSubfield(body, inBundles[0], "data");
     auto input1 = GetSubfield(body, inBundles[1], "data");
@@ -64,7 +64,7 @@ RhlsToFirrtlConverter::MlirGenSimpleNode(const jlm::rvsdg::simple_node * node)
     // We drop the carry bit
     Connect(body, outData, DropMSBs(body, op, 1));
   }
-  else if (dynamic_cast<const jlm::rvsdg::bitand_op *>(&(node->operation())))
+  else if (rvsdg::is<llvm::IntegerAndOperation>(node))
   {
     auto input0 = GetSubfield(body, inBundles[0], "data");
     auto input1 = GetSubfield(body, inBundles[1], "data");
@@ -72,7 +72,7 @@ RhlsToFirrtlConverter::MlirGenSimpleNode(const jlm::rvsdg::simple_node * node)
     // Connect the op to the output data
     Connect(body, outData, op);
   }
-  else if (dynamic_cast<const jlm::rvsdg::bitxor_op *>(&(node->operation())))
+  else if (rvsdg::is<llvm::IntegerXorOperation>(node))
   {
     auto input0 = GetSubfield(body, inBundles[0], "data");
     auto input1 = GetSubfield(body, inBundles[1], "data");
@@ -80,7 +80,7 @@ RhlsToFirrtlConverter::MlirGenSimpleNode(const jlm::rvsdg::simple_node * node)
     // Connect the op to the output data
     Connect(body, outData, op);
   }
-  else if (dynamic_cast<const jlm::rvsdg::bitor_op *>(&(node->operation())))
+  else if (rvsdg::is<llvm::IntegerOrOperation>(node))
   {
     auto input0 = GetSubfield(body, inBundles[0], "data");
     auto input1 = GetSubfield(body, inBundles[1], "data");
@@ -88,16 +88,16 @@ RhlsToFirrtlConverter::MlirGenSimpleNode(const jlm::rvsdg::simple_node * node)
     // Connect the op to the output data
     Connect(body, outData, op);
   }
-  else if (auto bitmulOp = dynamic_cast<const jlm::rvsdg::bitmul_op *>(&(node->operation())))
+  else if (auto bitmulOp = dynamic_cast<const llvm::IntegerMulOperation *>(&(node->GetOperation())))
   {
     auto input0 = GetSubfield(body, inBundles[0], "data");
     auto input1 = GetSubfield(body, inBundles[1], "data");
     auto op = AddMulOp(body, input0, input1);
     // Connect the op to the output data
     // Multiplication results are double the input width, so we drop the upper half of the result
-    Connect(body, outData, DropMSBs(body, op, bitmulOp->type().nbits()));
+    Connect(body, outData, DropMSBs(body, op, bitmulOp->Type().nbits()));
   }
-  else if (dynamic_cast<const jlm::rvsdg::bitsdiv_op *>(&(node->operation())))
+  else if (rvsdg::is<llvm::IntegerSDivOperation>(node))
   {
     auto input0 = GetSubfield(body, inBundles[0], "data");
     auto input1 = GetSubfield(body, inBundles[1], "data");
@@ -108,7 +108,7 @@ RhlsToFirrtlConverter::MlirGenSimpleNode(const jlm::rvsdg::simple_node * node)
     // Connect the op to the output data
     Connect(body, outData, DropMSBs(body, uIntOp, 1));
   }
-  else if (dynamic_cast<const jlm::rvsdg::bitshr_op *>(&(node->operation())))
+  else if (rvsdg::is<llvm::IntegerLShrOperation>(node))
   {
     auto input0 = GetSubfield(body, inBundles[0], "data");
     auto input1 = GetSubfield(body, inBundles[1], "data");
@@ -116,7 +116,7 @@ RhlsToFirrtlConverter::MlirGenSimpleNode(const jlm::rvsdg::simple_node * node)
     // Connect the op to the output data
     Connect(body, outData, op);
   }
-  else if (dynamic_cast<const jlm::rvsdg::bitashr_op *>(&(node->operation())))
+  else if (rvsdg::is<llvm::IntegerAShrOperation>(node))
   {
     auto input0 = GetSubfield(body, inBundles[0], "data");
     auto input1 = GetSubfield(body, inBundles[1], "data");
@@ -126,7 +126,7 @@ RhlsToFirrtlConverter::MlirGenSimpleNode(const jlm::rvsdg::simple_node * node)
     // Connect the op to the output data
     Connect(body, outData, uIntOp);
   }
-  else if (dynamic_cast<const jlm::rvsdg::bitshl_op *>(&(node->operation())))
+  else if (rvsdg::is<llvm::IntegerShlOperation>(node))
   {
     auto input0 = GetSubfield(body, inBundles[0], "data");
     auto input1 = GetSubfield(body, inBundles[1], "data");
@@ -137,7 +137,7 @@ RhlsToFirrtlConverter::MlirGenSimpleNode(const jlm::rvsdg::simple_node * node)
     // Connect the op to the output data
     Connect(body, outData, slice);
   }
-  else if (dynamic_cast<const jlm::rvsdg::bitsmod_op *>(&(node->operation())))
+  else if (rvsdg::is<llvm::IntegerSRemOperation>(node))
   {
     auto input0 = GetSubfield(body, inBundles[0], "data");
     auto input1 = GetSubfield(body, inBundles[1], "data");
@@ -147,7 +147,7 @@ RhlsToFirrtlConverter::MlirGenSimpleNode(const jlm::rvsdg::simple_node * node)
     auto uIntOp = AddAsUIntOp(body, remOp);
     Connect(body, outData, uIntOp);
   }
-  else if (dynamic_cast<const jlm::rvsdg::biteq_op *>(&(node->operation())))
+  else if (dynamic_cast<const jlm::rvsdg::biteq_op *>(&(node->GetOperation())))
   {
     auto input0 = GetSubfield(body, inBundles[0], "data");
     auto input1 = GetSubfield(body, inBundles[1], "data");
@@ -155,7 +155,7 @@ RhlsToFirrtlConverter::MlirGenSimpleNode(const jlm::rvsdg::simple_node * node)
     // Connect the op to the output data
     Connect(body, outData, op);
   }
-  else if (dynamic_cast<const jlm::rvsdg::bitne_op *>(&(node->operation())))
+  else if (dynamic_cast<const jlm::rvsdg::bitne_op *>(&(node->GetOperation())))
   {
     auto input0 = GetSubfield(body, inBundles[0], "data");
     auto input1 = GetSubfield(body, inBundles[1], "data");
@@ -163,7 +163,7 @@ RhlsToFirrtlConverter::MlirGenSimpleNode(const jlm::rvsdg::simple_node * node)
     // Connect the op to the output data
     Connect(body, outData, op);
   }
-  else if (dynamic_cast<const jlm::rvsdg::bitsgt_op *>(&(node->operation())))
+  else if (dynamic_cast<const jlm::rvsdg::bitsgt_op *>(&(node->GetOperation())))
   {
     auto input0 = GetSubfield(body, inBundles[0], "data");
     auto input1 = GetSubfield(body, inBundles[1], "data");
@@ -173,7 +173,7 @@ RhlsToFirrtlConverter::MlirGenSimpleNode(const jlm::rvsdg::simple_node * node)
     // Connect the op to the output data
     Connect(body, outData, op);
   }
-  else if (dynamic_cast<const jlm::rvsdg::bitult_op *>(&(node->operation())))
+  else if (dynamic_cast<const jlm::rvsdg::bitult_op *>(&(node->GetOperation())))
   {
     auto input0 = GetSubfield(body, inBundles[0], "data");
     auto input1 = GetSubfield(body, inBundles[1], "data");
@@ -181,7 +181,7 @@ RhlsToFirrtlConverter::MlirGenSimpleNode(const jlm::rvsdg::simple_node * node)
     // Connect the op to the output data
     Connect(body, outData, op);
   }
-  else if (dynamic_cast<const jlm::rvsdg::bitule_op *>(&(node->operation())))
+  else if (dynamic_cast<const jlm::rvsdg::bitule_op *>(&(node->GetOperation())))
   {
     auto input0 = GetSubfield(body, inBundles[0], "data");
     auto input1 = GetSubfield(body, inBundles[1], "data");
@@ -189,7 +189,7 @@ RhlsToFirrtlConverter::MlirGenSimpleNode(const jlm::rvsdg::simple_node * node)
     // Connect the op to the output data
     Connect(body, outData, op);
   }
-  else if (dynamic_cast<const jlm::rvsdg::bitugt_op *>(&(node->operation())))
+  else if (dynamic_cast<const jlm::rvsdg::bitugt_op *>(&(node->GetOperation())))
   {
     auto input0 = GetSubfield(body, inBundles[0], "data");
     auto input1 = GetSubfield(body, inBundles[1], "data");
@@ -197,7 +197,7 @@ RhlsToFirrtlConverter::MlirGenSimpleNode(const jlm::rvsdg::simple_node * node)
     // Connect the op to the output data
     Connect(body, outData, op);
   }
-  else if (dynamic_cast<const jlm::rvsdg::bitsge_op *>(&(node->operation())))
+  else if (dynamic_cast<const jlm::rvsdg::bitsge_op *>(&(node->GetOperation())))
   {
     auto input0 = GetSubfield(body, inBundles[0], "data");
     auto input1 = GetSubfield(body, inBundles[1], "data");
@@ -207,7 +207,7 @@ RhlsToFirrtlConverter::MlirGenSimpleNode(const jlm::rvsdg::simple_node * node)
     // Connect the op to the output data
     Connect(body, outData, op);
   }
-  else if (dynamic_cast<const jlm::rvsdg::bitsle_op *>(&(node->operation())))
+  else if (dynamic_cast<const jlm::rvsdg::bitsle_op *>(&(node->GetOperation())))
   {
     auto input0 = GetSubfield(body, inBundles[0], "data");
     auto input1 = GetSubfield(body, inBundles[1], "data");
@@ -217,28 +217,28 @@ RhlsToFirrtlConverter::MlirGenSimpleNode(const jlm::rvsdg::simple_node * node)
     // Connect the op to the output data
     Connect(body, outData, op);
   }
-  else if (dynamic_cast<const llvm::zext_op *>(&(node->operation())))
+  else if (dynamic_cast<const llvm::zext_op *>(&(node->GetOperation())))
   {
     auto input0 = GetSubfield(body, inBundles[0], "data");
     Connect(body, outData, input0);
   }
-  else if (dynamic_cast<const llvm::trunc_op *>(&(node->operation())))
+  else if (dynamic_cast<const llvm::trunc_op *>(&(node->GetOperation())))
   {
     auto inData = GetSubfield(body, inBundles[0], "data");
     int outSize = JlmSize(&node->output(0)->type());
     Connect(body, outData, AddBitsOp(body, inData, outSize - 1, 0));
   }
-  else if (dynamic_cast<const llvm::LambdaExitMemoryStateMergeOperation *>(&(node->operation())))
+  else if (dynamic_cast<const llvm::LambdaExitMemoryStateMergeOperation *>(&(node->GetOperation())))
   {
     auto inData = GetSubfield(body, inBundles[0], "data");
     Connect(body, outData, inData);
   }
-  else if (dynamic_cast<const llvm::MemoryStateMergeOperation *>(&(node->operation())))
+  else if (dynamic_cast<const llvm::MemoryStateMergeOperation *>(&(node->GetOperation())))
   {
     auto inData = GetSubfield(body, inBundles[0], "data");
     Connect(body, outData, inData);
   }
-  else if (auto op = dynamic_cast<const llvm::sext_op *>(&(node->operation())))
+  else if (auto op = dynamic_cast<const llvm::sext_op *>(&(node->GetOperation())))
   {
     auto input0 = GetSubfield(body, inBundles[0], "data");
     auto sintOp = AddAsSIntOp(body, input0);
@@ -246,7 +246,7 @@ RhlsToFirrtlConverter::MlirGenSimpleNode(const jlm::rvsdg::simple_node * node)
     auto uintOp = AddAsUIntOp(body, padOp);
     Connect(body, outData, uintOp);
   }
-  else if (auto op = dynamic_cast<const jlm::rvsdg::bitconstant_op *>(&(node->operation())))
+  else if (auto op = dynamic_cast<const jlm::rvsdg::bitconstant_op *>(&(node->GetOperation())))
   {
     auto value = op->value();
     auto size = value.nbits();
@@ -254,14 +254,14 @@ RhlsToFirrtlConverter::MlirGenSimpleNode(const jlm::rvsdg::simple_node * node)
     auto constant = GetConstant(body, size, value.to_uint());
     Connect(body, outData, constant);
   }
-  else if (auto op = dynamic_cast<const jlm::rvsdg::ctlconstant_op *>(&(node->operation())))
+  else if (auto op = dynamic_cast<const jlm::rvsdg::ctlconstant_op *>(&(node->GetOperation())))
   {
     auto value = op->value().alternative();
     auto size = ceil(log2(op->value().nalternatives()));
     auto constant = GetConstant(body, size, value);
     Connect(body, outData, constant);
   }
-  else if (dynamic_cast<const jlm::rvsdg::bitslt_op *>(&(node->operation())))
+  else if (dynamic_cast<const jlm::rvsdg::bitslt_op *>(&(node->GetOperation())))
   {
     auto input0 = GetSubfield(body, inBundles[0], "data");
     auto input1 = GetSubfield(body, inBundles[1], "data");
@@ -270,12 +270,17 @@ RhlsToFirrtlConverter::MlirGenSimpleNode(const jlm::rvsdg::simple_node * node)
     auto op = AddLtOp(body, sInt0, sInt1);
     Connect(body, outData, op);
   }
-  else if (dynamic_cast<const llvm::bitcast_op *>(&(node->operation())))
+  else if (dynamic_cast<const llvm::bitcast_op *>(&(node->GetOperation())))
   {
     auto input0 = GetSubfield(body, inBundles[0], "data");
     Connect(body, outData, input0);
   }
-  else if (auto op = dynamic_cast<const jlm::rvsdg::match_op *>(&(node->operation())))
+  else if (dynamic_cast<const llvm::bits2ptr_op *>(&(node->GetOperation())))
+  {
+    auto input0 = GetSubfield(body, inBundles[0], "data");
+    Connect(body, outData, input0);
+  }
+  else if (auto op = dynamic_cast<const jlm::rvsdg::match_op *>(&(node->GetOperation())))
   {
     auto inData = GetSubfield(body, inBundles[0], "data");
     auto outData = GetSubfield(body, outBundle, "data");
@@ -309,22 +314,22 @@ RhlsToFirrtlConverter::MlirGenSimpleNode(const jlm::rvsdg::simple_node * node)
       Connect(body, outData, result);
     }
   }
-  else if (auto op = dynamic_cast<const llvm::GetElementPtrOperation *>(&(node->operation())))
+  else if (auto op = dynamic_cast<const llvm::GetElementPtrOperation *>(&(node->GetOperation())))
   {
     // Start of with base pointer
     auto input0 = GetSubfield(body, inBundles[0], "data");
     mlir::Value result = AddCvtOp(body, input0);
 
     // TODO: support structs
-    const jlm::rvsdg::type * pointeeType = &op->GetPointeeType();
+    const jlm::rvsdg::Type * pointeeType = &op->GetPointeeType();
     for (size_t i = 1; i < node->ninputs(); i++)
     {
       int bits = JlmSize(pointeeType);
       if (dynamic_cast<const jlm::rvsdg::bittype *>(pointeeType))
       {
-        ;
+        pointeeType = nullptr;
       }
-      else if (auto arrayType = dynamic_cast<const llvm::arraytype *>(pointeeType))
+      else if (auto arrayType = dynamic_cast<const llvm::ArrayType *>(pointeeType))
       {
         pointeeType = &arrayType->element_type();
       }
@@ -336,21 +341,22 @@ RhlsToFirrtlConverter::MlirGenSimpleNode(const jlm::rvsdg::simple_node * node)
       auto input = GetSubfield(body, inBundles[i], "data");
       auto asSInt = AddAsSIntOp(body, input);
       int bytes = bits / 8;
-      auto constantOp = GetConstant(body, 64, bytes);
+      auto constantOp = GetConstant(body, GetPointerSizeInBits(), bytes);
       auto cvtOp = AddCvtOp(body, constantOp);
       auto offset = AddMulOp(body, asSInt, cvtOp);
       result = AddAddOp(body, result, offset);
     }
     auto asUInt = AddAsUIntOp(body, result);
-    Connect(body, outData, AddBitsOp(body, asUInt, 63, 0));
+    Connect(body, outData, AddBitsOp(body, asUInt, GetPointerSizeInBits() - 1, 0));
   }
-  else if (dynamic_cast<const llvm::UndefValueOperation *>(&(node->operation())))
+  else if (dynamic_cast<const llvm::UndefValueOperation *>(&(node->GetOperation())))
   {
     Connect(body, outData, GetConstant(body, 1, 0));
   }
   else
   {
-    throw std::logic_error("Simple node " + node->operation().debug_string() + " not implemented!");
+    throw std::logic_error(
+        "Simple node " + node->GetOperation().debug_string() + " not implemented!");
   }
 
   // Generate the output valid signal
@@ -380,7 +386,7 @@ RhlsToFirrtlConverter::MlirGenSimpleNode(const jlm::rvsdg::simple_node * node)
 }
 
 circt::firrtl::FModuleOp
-RhlsToFirrtlConverter::MlirGenSink(const jlm::rvsdg::simple_node * node)
+RhlsToFirrtlConverter::MlirGenSink(const jlm::rvsdg::SimpleNode * node)
 {
   // Create the module and its input/output ports
   auto module = nodeToModule(node);
@@ -405,7 +411,7 @@ RhlsToFirrtlConverter::MlirGenSink(const jlm::rvsdg::simple_node * node)
 }
 
 circt::firrtl::FModuleOp
-RhlsToFirrtlConverter::MlirGenLoopConstBuffer(const jlm::rvsdg::simple_node * node)
+RhlsToFirrtlConverter::MlirGenLoopConstBuffer(const jlm::rvsdg::SimpleNode * node)
 {
   // Create the module and its input/output ports
   auto module = nodeToModule(node);
@@ -460,8 +466,10 @@ RhlsToFirrtlConverter::MlirGenLoopConstBuffer(const jlm::rvsdg::simple_node * no
 }
 
 circt::firrtl::FModuleOp
-RhlsToFirrtlConverter::MlirGenFork(const jlm::rvsdg::simple_node * node)
+RhlsToFirrtlConverter::MlirGenFork(const jlm::rvsdg::SimpleNode * node)
 {
+  auto op = dynamic_cast<const jlm::hls::fork_op *>(&node->GetOperation());
+  bool isConstant = op->IsConstant();
   // Create the module and its input/output ports
   auto module = nodeToModule(node);
   auto body = module.getBodyBlock();
@@ -472,78 +480,95 @@ RhlsToFirrtlConverter::MlirGenFork(const jlm::rvsdg::simple_node * node)
   auto inValid = GetSubfield(body, inBundle, "valid");
   auto inData = GetSubfield(body, inBundle, "data");
 
+  auto oneBitValue = GetConstant(body, 1, 1);
+  auto zeroBitValue = GetConstant(body, 1, 0);
+
   //
   // Output registers
   //
-  auto clock = GetClockSignal(module);
-  auto reset = GetResetSignal(module);
-  ::llvm::SmallVector<circt::firrtl::RegResetOp> firedRegs;
-  ::llvm::SmallVector<circt::firrtl::AndPrimOp> whenConditions;
-  auto oneBitValue = GetConstant(body, 1, 1);
-  auto zeroBitValue = GetConstant(body, 1, 0);
-  // outputs can only fire if input is valid. This should not be necessary, unless other components
-  // misbehave
-  mlir::Value allFired = inValid;
-  for (size_t i = 0; i < node->noutputs(); ++i)
+  if (isConstant)
   {
-    std::string validName("out");
-    validName.append(std::to_string(i));
-    validName.append("_fired_reg");
-    auto firedReg = Builder_->create<circt::firrtl::RegResetOp>(
-        Builder_->getUnknownLoc(),
-        GetIntType(1),
-        clock,
-        reset,
-        zeroBitValue,
-        Builder_->getStringAttr(validName));
-    body->push_back(firedReg);
-    firedRegs.push_back(firedReg);
-
-    // Get the bundle
-    auto port = GetOutPort(module, i);
-    auto portReady = GetSubfield(body, port, "ready");
-    auto portValid = GetSubfield(body, port, "valid");
-    auto portData = GetSubfield(body, port, "data");
-
-    auto notFiredReg = AddNotOp(body, firedReg.getResult());
-    auto andOp = AddAndOp(body, inValid, notFiredReg);
-    Connect(body, portValid, andOp);
-    Connect(body, portData, inData);
-
-    auto orOp = AddOrOp(body, portReady, firedReg.getResult());
-    allFired = AddAndOp(body, allFired, orOp);
-
-    // Conditions needed for the when statements
-    whenConditions.push_back(AddAndOp(body, portReady, portValid));
+    Connect(body, inReady, oneBitValue);
+    for (size_t i = 0; i < node->noutputs(); ++i)
+    {
+      // Get the bundle
+      auto port = GetOutPort(module, i);
+      auto portValid = GetSubfield(body, port, "valid");
+      auto portData = GetSubfield(body, port, "data");
+      Connect(body, portValid, inValid);
+      Connect(body, portData, inData);
+    }
   }
-  allFired = AddNodeOp(body, allFired, "all_fired")->getResult(0);
-  Connect(body, inReady, allFired);
+  else
+  {
+    auto clock = GetClockSignal(module);
+    auto reset = GetResetSignal(module);
+    ::llvm::SmallVector<circt::firrtl::RegResetOp> firedRegs;
+    ::llvm::SmallVector<circt::firrtl::AndPrimOp> whenConditions;
+    // outputs can only fire if input is valid. This should not be necessary, unless other
+    // components misbehave
+    mlir::Value allFired = inValid;
+    for (size_t i = 0; i < node->noutputs(); ++i)
+    {
+      std::string validName("out");
+      validName.append(std::to_string(i));
+      validName.append("_fired_reg");
+      auto firedReg = Builder_->create<circt::firrtl::RegResetOp>(
+          Builder_->getUnknownLoc(),
+          GetIntType(1),
+          clock,
+          reset,
+          zeroBitValue,
+          Builder_->getStringAttr(validName));
+      body->push_back(firedReg);
+      firedRegs.push_back(firedReg);
 
-  // When statement
-  auto condition = AddNotOp(body, allFired);
-  auto whenOp = AddWhenOp(body, condition, true);
-  // getThenBlock() cause an error during commpilation
-  // So we first get the builder and then its associated body
-  auto thenBody = whenOp.getThenBodyBuilder().getBlock();
-  // Then region
-  for (size_t i = 0; i < node->noutputs(); i++)
-  {
-    auto nestedWhen = AddWhenOp(thenBody, whenConditions[i], false);
-    auto nestedBody = nestedWhen.getThenBodyBuilder().getBlock();
-    Connect(nestedBody, firedRegs[i].getResult(), oneBitValue);
-  }
-  // Else region
-  auto elseBody = whenOp.getElseBodyBuilder().getBlock();
-  for (size_t i = 0; i < node->noutputs(); i++)
-  {
-    Connect(elseBody, firedRegs[i].getResult(), zeroBitValue);
+      // Get the bundle
+      auto port = GetOutPort(module, i);
+      auto portReady = GetSubfield(body, port, "ready");
+      auto portValid = GetSubfield(body, port, "valid");
+      auto portData = GetSubfield(body, port, "data");
+
+      auto notFiredReg = AddNotOp(body, firedReg.getResult());
+      auto andOp = AddAndOp(body, inValid, notFiredReg.getResult());
+      Connect(body, portValid, andOp);
+      Connect(body, portData, inData);
+
+      auto orOp = AddOrOp(body, portReady, firedReg.getResult());
+      allFired = AddAndOp(body, allFired, orOp);
+
+      // Conditions needed for the when statements
+      whenConditions.push_back(AddAndOp(body, portReady, portValid));
+    }
+    allFired = AddNodeOp(body, allFired, "all_fired").getResult();
+    Connect(body, inReady, allFired);
+
+    // When statement
+    auto condition = AddNotOp(body, allFired);
+    auto whenOp = AddWhenOp(body, condition, true);
+    // getThenBlock() cause an error during commpilation
+    // So we first get the builder and then its associated body
+    auto thenBody = whenOp.getThenBodyBuilder().getBlock();
+    // Then region
+    for (size_t i = 0; i < node->noutputs(); i++)
+    {
+      auto nestedWhen = AddWhenOp(thenBody, whenConditions[i], false);
+      auto nestedBody = nestedWhen.getThenBodyBuilder().getBlock();
+      Connect(nestedBody, firedRegs[i].getResult(), oneBitValue);
+    }
+    // Else region
+    auto elseBody = whenOp.getElseBodyBuilder().getBlock();
+    for (size_t i = 0; i < node->noutputs(); i++)
+    {
+      Connect(elseBody, firedRegs[i].getResult(), zeroBitValue);
+    }
   }
 
   return module;
 }
 
 circt::firrtl::FModuleOp
-RhlsToFirrtlConverter::MlirGenStateGate(const jlm::rvsdg::simple_node * node)
+RhlsToFirrtlConverter::MlirGenStateGate(const jlm::rvsdg::SimpleNode * node)
 {
   // Create the module and its input/output ports
   auto module = nodeToModule(node);
@@ -635,22 +660,14 @@ RhlsToFirrtlConverter::MlirGenStateGate(const jlm::rvsdg::simple_node * node)
 }
 
 circt::firrtl::FModuleOp
-RhlsToFirrtlConverter::MlirGenHlsMemResp(const jlm::rvsdg::simple_node * node)
+RhlsToFirrtlConverter::MlirGenHlsMemResp(const jlm::rvsdg::SimpleNode * node)
 {
   // Create the module and its input/output ports
   auto module = nodeToModule(node, false);
   auto body = module.getBodyBlock();
 
-  mlir::BlockArgument memRes = GetInPort(module, 0);
-  auto memResValid = GetSubfield(body, memRes, "valid");
-  auto memResReady = GetSubfield(body, memRes, "ready");
-  auto memResBundle = GetSubfield(body, memRes, "data");
-  auto memResId = GetSubfield(body, memResBundle, "id");
-  auto memResData = GetSubfield(body, memResBundle, "data");
-
   auto zeroBitValue = GetConstant(body, 1, 0);
   auto oneBitValue = GetConstant(body, 1, 1);
-  Connect(body, memResReady, zeroBitValue);
 
   for (size_t i = 0; i < node->noutputs(); ++i)
   {
@@ -658,62 +675,78 @@ RhlsToFirrtlConverter::MlirGenHlsMemResp(const jlm::rvsdg::simple_node * node)
     auto outValid = GetSubfield(body, outBundle, "valid");
     auto outData = GetSubfield(body, outBundle, "data");
     Connect(body, outValid, zeroBitValue);
-
-    int nbits = JlmSize(&node->output(i)->type());
-    if (nbits == 64)
-    {
-      Connect(body, outData, memResData);
-    }
-    else
-    {
-      Connect(body, outData, AddBitsOp(body, memResData, nbits - 1, 0));
-    }
+    ConnectInvalid(body, outData);
   }
-  auto elseBody = body;
-  for (size_t i = 0; i < node->noutputs(); ++i)
+  for (size_t j = 0; j < node->ninputs(); ++j)
   {
-    auto outBundle = GetOutPort(module, i);
-    auto outValid = GetSubfield(elseBody, outBundle, "valid");
-    auto outReady = GetSubfield(elseBody, outBundle, "ready");
+    mlir::BlockArgument memRes = GetInPort(module, j);
+    auto memResValid = GetSubfield(body, memRes, "valid");
+    auto memResReady = GetSubfield(body, memRes, "ready");
+    auto memResBundle = GetSubfield(body, memRes, "data");
+    auto memResId = GetSubfield(body, memResBundle, "id");
+    auto memResData = GetSubfield(body, memResBundle, "data");
+    auto elseBody = body;
+    for (size_t i = 0; i < node->noutputs(); ++i)
+    {
+      auto outBundle = GetOutPort(module, i);
+      auto outValid = GetSubfield(elseBody, outBundle, "valid");
+      auto outReady = GetSubfield(elseBody, outBundle, "ready");
+      auto outData = GetSubfield(elseBody, outBundle, "data");
+      auto condition =
+          AddAndOp(elseBody, memResValid, AddEqOp(elseBody, GetConstant(elseBody, 8, i), memResId));
+      auto whenOp = AddWhenOp(elseBody, condition, true);
+      auto thenBody = whenOp.getThenBodyBuilder().getBlock();
+      Connect(thenBody, outValid, oneBitValue);
+      Connect(thenBody, memResReady, outReady);
+      int nbits = JlmSize(&node->output(i)->type());
+      if (nbits == 64)
+      {
+        Connect(thenBody, outData, memResData);
+      }
+      else
+      {
+        Connect(thenBody, outData, AddBitsOp(thenBody, memResData, nbits - 1, 0));
+      }
+      elseBody = whenOp.getElseBodyBuilder().getBlock();
+    }
 
-    auto condition = AddEqOp(elseBody, GetConstant(elseBody, 8, i), memResId);
-    auto whenOp = AddWhenOp(elseBody, condition, true);
-    auto thenBody = whenOp.getThenBodyBuilder().getBlock();
-    Connect(thenBody, outValid, memResValid);
-    Connect(thenBody, memResReady, outReady);
-    elseBody = whenOp.getElseBodyBuilder().getBlock();
+    // Connect to ready for other ids - for example stores
+    Connect(elseBody, memResReady, oneBitValue);
+    // Assert we don't get a response to the same ID on several in ports - if this shows up we need
+    // taken logic for outputs
+    for (size_t i = 0; i < j; ++i)
+    {
+      mlir::BlockArgument memRes2 = GetInPort(module, i);
+      auto memResValid2 = GetSubfield(body, memRes2, "valid");
+      auto memResBundle2 = GetSubfield(body, memRes2, "data");
+      auto memResId2 = GetSubfield(body, memResBundle2, "id");
+      auto id_assert = Builder_->create<circt::firrtl::AssertOp>(
+          Builder_->getUnknownLoc(),
+          GetClockSignal(module),
+          AddNotOp(
+              body,
+              AddAndOp(
+                  body,
+                  AddAndOp(body, memResValid, memResValid2),
+                  AddEqOp(body, memResId, memResId2))),
+          AddNotOp(body, GetResetSignal(module)),
+          "overlapping reponse id",
+          mlir::ValueRange(),
+          "response_id_assert_" + std::to_string(j) + "_" + std::to_string(i));
+      body->push_back(id_assert);
+    }
   }
-  // connect to ready for other ids - for example stores
-  Connect(elseBody, memResReady, oneBitValue);
+
   return module;
 }
 
 circt::firrtl::FModuleOp
-RhlsToFirrtlConverter::MlirGenHlsMemReq(const jlm::rvsdg::simple_node * node)
+RhlsToFirrtlConverter::MlirGenHlsMemReq(const jlm::rvsdg::SimpleNode * node)
 {
   // Create the module and its input/output ports
   auto module = nodeToModule(node, false);
   auto body = module.getBodyBlock();
-  auto op = dynamic_cast<const mem_req_op *>(&node->operation());
-
-  auto reqType = dynamic_cast<const bundletype *>(&node->output(0)->type());
-  // TODO: more robust check
-  auto hasWrite = reqType->elements_.size() == 5;
-
-  mlir::BlockArgument memReq = GetOutPort(module, 0);
-  mlir::Value memReqData;
-  mlir::Value memReqWrite;
-  auto memReqReady = GetSubfield(body, memReq, "ready");
-  auto memReqValid = GetSubfield(body, memReq, "valid");
-  auto memReqBundle = GetSubfield(body, memReq, "data");
-  auto memReqAddr = GetSubfield(body, memReqBundle, "addr");
-  auto memReqSize = GetSubfield(body, memReqBundle, "size");
-  auto memReqId = GetSubfield(body, memReqBundle, "id");
-  if (hasWrite)
-  {
-    memReqData = GetSubfield(body, memReqBundle, "data");
-    memReqWrite = GetSubfield(body, memReqBundle, "write");
-  }
+  auto op = dynamic_cast<const mem_req_op *>(&node->GetOperation());
 
   auto loadTypes = op->GetLoadTypes();
   ::llvm::SmallVector<circt::firrtl::SubfieldOp> loadAddrReadys;
@@ -729,12 +762,11 @@ RhlsToFirrtlConverter::MlirGenHlsMemReq(const jlm::rvsdg::simple_node * node)
   ::llvm::SmallVector<circt::firrtl::SubfieldOp> storeDataValids;
   ::llvm::SmallVector<circt::firrtl::SubfieldOp> storeDataDatas;
   ::llvm::SmallVector<mlir::Value> storeIds;
-  // the ports for loads come first and consist only of addresses. Stores have both addresses and
-  // data
+  // The ports for loads come first and consist only of addresses.
+  // Stores have both addresses and data
   size_t id = 0;
   for (size_t i = 0; i < op->get_nloads(); ++i)
   {
-    //        loadAddrTypes.push_back(&node->input(i)->type());
     auto bundle = GetInPort(module, i);
     loadAddrReadys.push_back(GetSubfield(body, bundle, "ready"));
     loadAddrValids.push_back(GetSubfield(body, bundle, "valid"));
@@ -745,7 +777,6 @@ RhlsToFirrtlConverter::MlirGenHlsMemReq(const jlm::rvsdg::simple_node * node)
   for (size_t i = op->get_nloads(); i < node->ninputs(); ++i)
   {
     // Store
-    //        storeAddrTypes.push_back(&node->input(i)->type());
     auto addrBundle = GetInPort(module, i);
     storeAddrReadys.push_back(GetSubfield(body, addrBundle, "ready"));
     storeAddrValids.push_back(GetSubfield(body, addrBundle, "valid"));
@@ -761,96 +792,125 @@ RhlsToFirrtlConverter::MlirGenHlsMemReq(const jlm::rvsdg::simple_node * node)
 
   auto zeroBitValue = GetConstant(body, 1, 0);
   auto oneBitValue = GetConstant(body, 1, 1);
-  // default req connection
-  Connect(body, memReqValid, zeroBitValue);
-  ConnectInvalid(body, memReqBundle);
-  mlir::Value previousGranted = GetConstant(body, 1, 0);
-  for (size_t i = 0; i < loadTypes->size(); ++i)
+  ::llvm::SmallVector<mlir::Value> loadGranted(loadTypes->size(), zeroBitValue);
+  ::llvm::SmallVector<mlir::Value> storeGranted(storeTypes->size(), zeroBitValue);
+  for (size_t j = 0; j < node->noutputs(); ++j)
   {
-    Connect(body, loadAddrReadys[i], zeroBitValue);
-    auto notOp = AddNotOp(body, previousGranted);
-    auto condition = AddAndOp(body, notOp, loadAddrValids[i]);
-    auto whenOp = AddWhenOp(body, condition, false);
-    auto thenBody = whenOp.getThenBodyBuilder().getBlock();
-    Connect(thenBody, loadAddrReadys[i], memReqReady);
-    Connect(thenBody, memReqValid, loadAddrValids[i]);
-    Connect(thenBody, memReqAddr, loadAddrDatas[i]);
-    Connect(thenBody, memReqId, loadIds[i]);
-    // no data or write
-    int bitWidth;
-    auto loadType = loadTypes->at(i).get();
-    if (auto bitType = dynamic_cast<const jlm::rvsdg::bittype *>(loadType))
-    {
-      bitWidth = bitType->nbits();
-    }
-    else if (dynamic_cast<const jlm::llvm::PointerType *>(loadType))
-    {
-      bitWidth = 64;
-    }
-    else
-    {
-      throw jlm::util::error("unknown width for mem request");
-    }
-    int log2Bytes = log2(bitWidth / 8);
-    Connect(thenBody, memReqSize, GetConstant(thenBody, 3, log2Bytes));
+    auto reqType = util::AssertedCast<const jlm::hls::bundletype>(&node->output(j)->type());
+    auto hasWrite = reqType->elements_.size() == 5;
+    mlir::BlockArgument memReq = GetOutPort(module, j);
+    mlir::Value memReqData;
+    mlir::Value memReqWrite;
+    auto memReqReady = GetSubfield(body, memReq, "ready");
+    auto memReqValid = GetSubfield(body, memReq, "valid");
+    auto memReqBundle = GetSubfield(body, memReq, "data");
+    auto memReqAddr = GetSubfield(body, memReqBundle, "addr");
+    auto memReqSize = GetSubfield(body, memReqBundle, "size");
+    auto memReqId = GetSubfield(body, memReqBundle, "id");
     if (hasWrite)
     {
-      Connect(thenBody, memReqWrite, zeroBitValue);
+      memReqData = GetSubfield(body, memReqBundle, "data");
+      memReqWrite = GetSubfield(body, memReqBundle, "write");
     }
-    // update for next iteration
-    previousGranted = AddOrOp(body, previousGranted, loadAddrValids[i]);
+    // Default request connection
+    Connect(body, memReqValid, zeroBitValue);
+    ConnectInvalid(body, memReqBundle);
+    mlir::Value previousGranted = zeroBitValue;
+    for (size_t i = 0; i < loadTypes->size(); ++i)
+    {
+      if (j == 0)
+      {
+        Connect(body, loadAddrReadys[i], zeroBitValue);
+      }
+      auto canGrant = AddNotOp(body, AddOrOp(body, previousGranted, loadGranted[i]));
+      auto grant = AddAndOp(body, canGrant, loadAddrValids[i]);
+      auto whenOp = AddWhenOp(body, grant, false);
+      auto thenBody = whenOp.getThenBodyBuilder().getBlock();
+      Connect(thenBody, loadAddrReadys[i], memReqReady);
+      Connect(thenBody, memReqValid, loadAddrValids[i]);
+      Connect(thenBody, memReqAddr, loadAddrDatas[i]);
+      Connect(thenBody, memReqId, loadIds[i]);
+      // No data or write
+      int bitWidth;
+      auto loadType = loadTypes->at(i).get();
+      if (auto bitType = dynamic_cast<const jlm::rvsdg::bittype *>(loadType))
+      {
+        bitWidth = bitType->nbits();
+      }
+      else if (dynamic_cast<const jlm::llvm::PointerType *>(loadType))
+      {
+        bitWidth = 64;
+      }
+      else
+      {
+        throw jlm::util::error("unknown width for mem request");
+      }
+      int log2Bytes = log2(bitWidth / 8);
+      Connect(thenBody, memReqSize, GetConstant(thenBody, 3, log2Bytes));
+      if (hasWrite)
+      {
+        Connect(thenBody, memReqWrite, zeroBitValue);
+      }
+      // Update for next iteration
+      previousGranted = AddOrOp(body, previousGranted, grant);
+      loadGranted[i] = AddOrOp(body, loadGranted[i], grant);
+    }
+    // Stores
+    for (size_t i = 0; hasWrite && i < storeTypes->size(); ++i)
+    {
+      if (j == 0)
+      {
+        Connect(body, storeAddrReadys[i], zeroBitValue);
+        Connect(body, storeDataReadys[i], zeroBitValue);
+      }
+      auto notOp = AddNotOp(body, AddOrOp(body, previousGranted, storeGranted[i]));
+      auto grant = AddAndOp(body, notOp, storeAddrValids[i]);
+      grant = AddAndOp(body, grant, storeDataValids[i]);
+      auto whenOp = AddWhenOp(body, grant, false);
+      auto thenBody = whenOp.getThenBodyBuilder().getBlock();
+      Connect(thenBody, storeAddrReadys[i], memReqReady);
+      Connect(thenBody, storeDataReadys[i], memReqReady);
+      Connect(thenBody, memReqValid, storeAddrValids[i]);
+      Connect(thenBody, memReqAddr, storeAddrDatas[i]);
+      // TODO: pad
+      Connect(thenBody, memReqData, storeDataDatas[i]);
+      Connect(thenBody, memReqId, storeIds[i]);
+      // No data or write
+      int bitWidth;
+      auto storeType = storeTypes->at(i).get();
+      if (auto bitType = dynamic_cast<const jlm::rvsdg::bittype *>(storeType))
+      {
+        bitWidth = bitType->nbits();
+      }
+      else if (dynamic_cast<const jlm::llvm::PointerType *>(storeType))
+      {
+        bitWidth = 64;
+      }
+      else
+      {
+        throw jlm::util::error("unknown width for mem request");
+      }
+      int log2Bytes = log2(bitWidth / 8);
+      Connect(thenBody, memReqSize, GetConstant(thenBody, 3, log2Bytes));
+      Connect(thenBody, memReqWrite, oneBitValue);
+      // Update for next iteration
+      previousGranted = AddOrOp(body, previousGranted, grant);
+      storeGranted[i] = AddOrOp(body, storeGranted[i], grant);
+    }
   }
-  // stores
-  for (size_t i = 0; i < storeTypes->size(); ++i)
-  {
-    Connect(body, storeAddrReadys[i], zeroBitValue);
-    Connect(body, storeDataReadys[i], zeroBitValue);
-    auto notOp = AddNotOp(body, previousGranted);
-    auto condition = AddAndOp(body, notOp, storeAddrValids[i]);
-    condition = AddAndOp(body, condition, storeDataValids[i]);
-    auto whenOp = AddWhenOp(body, condition, false);
-    auto thenBody = whenOp.getThenBodyBuilder().getBlock();
-    Connect(thenBody, storeAddrReadys[i], memReqReady);
-    Connect(thenBody, storeDataReadys[i], memReqReady);
-    Connect(thenBody, memReqValid, storeAddrValids[i]);
-    Connect(thenBody, memReqAddr, storeAddrDatas[i]);
-    // TODO: pad
-    Connect(thenBody, memReqData, storeDataDatas[i]);
-    Connect(thenBody, memReqId, storeIds[i]);
-    // no data or write
-    int bitWidth;
-    auto storeType = storeTypes->at(i).get();
-    if (auto bitType = dynamic_cast<const jlm::rvsdg::bittype *>(storeType))
-    {
-      bitWidth = bitType->nbits();
-    }
-    else if (dynamic_cast<const jlm::llvm::PointerType *>(storeType))
-    {
-      bitWidth = 64;
-    }
-    else
-    {
-      throw jlm::util::error("unknown width for mem request");
-    }
-    int log2Bytes = log2(bitWidth / 8);
-    Connect(thenBody, memReqSize, GetConstant(thenBody, 3, log2Bytes));
-    Connect(thenBody, memReqWrite, oneBitValue);
-    // update for next iteration
-    previousGranted = AddOrOp(body, previousGranted, condition);
-  }
-  //    WriteModuleToFile(module, node);
+
   return module;
 }
 
 circt::firrtl::FModuleOp
-RhlsToFirrtlConverter::MlirGenHlsLoad(const jlm::rvsdg::simple_node * node)
+RhlsToFirrtlConverter::MlirGenHlsLoad(const jlm::rvsdg::SimpleNode * node)
 {
   // Create the module and its input/output ports
   auto module = nodeToModule(node, false);
   auto body = module.getBodyBlock();
 
-  auto load = dynamic_cast<const load_op *>(&(node->operation()));
-  auto local_load = dynamic_cast<const local_load_op *>(&(node->operation()));
+  auto load = dynamic_cast<const load_op *>(&(node->GetOperation()));
+  auto local_load = dynamic_cast<const local_load_op *>(&(node->GetOperation()));
   JLM_ASSERT(load || local_load);
 
   // Input signals
@@ -1018,13 +1078,13 @@ RhlsToFirrtlConverter::MlirGenHlsLoad(const jlm::rvsdg::simple_node * node)
 }
 
 circt::firrtl::FModuleOp
-RhlsToFirrtlConverter::MlirGenHlsDLoad(const jlm::rvsdg::simple_node * node)
+RhlsToFirrtlConverter::MlirGenHlsDLoad(const jlm::rvsdg::SimpleNode * node)
 {
   // Create the module and its input/output ports
   auto module = nodeToModule(node, false);
   auto body = module.getBodyBlock();
 
-  auto load = dynamic_cast<const decoupled_load_op *>(&(node->operation()));
+  auto load = dynamic_cast<const decoupled_load_op *>(&(node->GetOperation()));
   JLM_ASSERT(load);
 
   // Input signals
@@ -1065,15 +1125,15 @@ RhlsToFirrtlConverter::MlirGenHlsDLoad(const jlm::rvsdg::simple_node * node)
 }
 
 circt::firrtl::FModuleOp
-RhlsToFirrtlConverter::MlirGenHlsLocalMem(const jlm::rvsdg::simple_node * node)
+RhlsToFirrtlConverter::MlirGenHlsLocalMem(const jlm::rvsdg::SimpleNode * node)
 {
-  auto lmem_op = dynamic_cast<const local_mem_op *>(&(node->operation()));
+  auto lmem_op = dynamic_cast<const local_mem_op *>(&(node->GetOperation()));
   JLM_ASSERT(lmem_op);
   auto res_node = rvsdg::input::GetNode(**node->output(0)->begin());
-  auto res_op = dynamic_cast<const local_mem_resp_op *>(&res_node->operation());
+  auto res_op = dynamic_cast<const local_mem_resp_op *>(&res_node->GetOperation());
   JLM_ASSERT(res_op);
   auto req_node = rvsdg::input::GetNode(**node->output(1)->begin());
-  auto req_op = dynamic_cast<const local_mem_req_op *>(&req_node->operation());
+  auto req_op = dynamic_cast<const local_mem_req_op *>(&req_node->GetOperation());
   JLM_ASSERT(req_op);
   // Create the module and its input/output ports - we use a non-standard way here
   // Generate a vector with all inputs and outputs of the module
@@ -1111,7 +1171,9 @@ RhlsToFirrtlConverter::MlirGenHlsLocalMem(const jlm::rvsdg::simple_node * node)
   auto module = Builder_->create<circt::firrtl::FModuleOp>(
       Builder_->getUnknownLoc(),
       name,
-      circt::firrtl::ConventionAttr::get(Builder_->getContext(), Convention::Internal),
+      circt::firrtl::ConventionAttr::get(
+          Builder_->getContext(),
+          circt::firrtl::Convention::Internal),
       ports);
 
   auto body = module.getBodyBlock();
@@ -1174,7 +1236,7 @@ RhlsToFirrtlConverter::MlirGenHlsLocalMem(const jlm::rvsdg::simple_node * node)
   auto oneBitValue = GetConstant(body, 1, 1);
 
   // memory
-  auto arraytype = dynamic_cast<const llvm::arraytype *>(&lmem_op->result(0).type());
+  auto arraytype = std::dynamic_pointer_cast<const llvm::ArrayType>(lmem_op->result(0));
   size_t depth = arraytype->nelements();
   auto dataType = GetFirrtlType(&arraytype->element_type());
   ::llvm::SmallVector<mlir::Type> memTypes;
@@ -1194,7 +1256,7 @@ RhlsToFirrtlConverter::MlirGenHlsLocalMem(const jlm::rvsdg::simple_node * node)
       2,
       1,
       depth,
-      RUWAttr::New,
+      circt::firrtl::RUWAttr::New,
       memNames,
       "mem");
   body->push_back(memory);
@@ -1272,14 +1334,14 @@ RhlsToFirrtlConverter::MlirGenHlsLocalMem(const jlm::rvsdg::simple_node * node)
 }
 
 circt::firrtl::FModuleOp
-RhlsToFirrtlConverter::MlirGenHlsStore(const jlm::rvsdg::simple_node * node)
+RhlsToFirrtlConverter::MlirGenHlsStore(const jlm::rvsdg::SimpleNode * node)
 {
   // Create the module and its input/output ports
   auto module = nodeToModule(node, false);
   auto body = module.getBodyBlock();
 
-  auto store = dynamic_cast<const store_op *>(&(node->operation()));
-  auto local_store = dynamic_cast<const local_store_op *>(&(node->operation()));
+  auto store = dynamic_cast<const store_op *>(&(node->GetOperation()));
+  auto local_store = dynamic_cast<const local_store_op *>(&(node->GetOperation()));
   JLM_ASSERT(store || local_store);
 
   // Input signals
@@ -1416,14 +1478,14 @@ RhlsToFirrtlConverter::MlirGenHlsStore(const jlm::rvsdg::simple_node * node)
 }
 
 circt::firrtl::FModuleOp
-RhlsToFirrtlConverter::MlirGenMem(const jlm::rvsdg::simple_node * node)
+RhlsToFirrtlConverter::MlirGenMem(const jlm::rvsdg::SimpleNode * node)
 {
   // Create the module and its input/output ports
   auto module = nodeToModule(node, true);
   auto body = module.getBodyBlock();
 
-  // Check if it's a load or store operation
-  bool store = dynamic_cast<const llvm::StoreNonVolatileOperation *>(&(node->operation()));
+  // Check if it's a load or store GetOperation
+  bool store = dynamic_cast<const llvm::StoreNonVolatileOperation *>(&(node->GetOperation()));
 
   InitializeMemReq(module);
   // Input signals
@@ -1552,7 +1614,7 @@ RhlsToFirrtlConverter::MlirGenMem(const jlm::rvsdg::simple_node * node)
     }
     else if (dynamic_cast<const llvm::PointerType *>(&node->output(0)->type()))
     {
-      bitWidth = 64;
+      bitWidth = GetPointerSizeInBits();
     }
     else
     {
@@ -1633,7 +1695,7 @@ RhlsToFirrtlConverter::MlirGenMem(const jlm::rvsdg::simple_node * node)
 }
 
 circt::firrtl::FModuleOp
-RhlsToFirrtlConverter::MlirGenTrigger(const jlm::rvsdg::simple_node * node)
+RhlsToFirrtlConverter::MlirGenTrigger(const jlm::rvsdg::SimpleNode * node)
 {
   // Create the module and its input/output ports
   auto module = nodeToModule(node);
@@ -1667,7 +1729,7 @@ RhlsToFirrtlConverter::MlirGenTrigger(const jlm::rvsdg::simple_node * node)
 }
 
 circt::firrtl::FModuleOp
-RhlsToFirrtlConverter::MlirGenPrint(const jlm::rvsdg::simple_node * node)
+RhlsToFirrtlConverter::MlirGenPrint(const jlm::rvsdg::SimpleNode * node)
 {
   // Create the module and its input/output ports
   auto module = nodeToModule(node);
@@ -1685,7 +1747,7 @@ RhlsToFirrtlConverter::MlirGenPrint(const jlm::rvsdg::simple_node * node)
   auto outBundle = GetOutPort(module, 0);
   Connect(body, outBundle, inBundle);
   auto trigger = AddAndOp(body, AddAndOp(body, inReady, inValid), AddNotOp(body, reset));
-  auto pn = dynamic_cast<const print_op *>(&node->operation());
+  auto pn = dynamic_cast<const print_op *>(&node->GetOperation());
   auto formatString = "print node " + std::to_string(pn->id()) + ": %x\n";
   auto name = "print_node_" + std::to_string(pn->id());
   auto printValue = AddPadOp(body, inData, 64);
@@ -1702,7 +1764,7 @@ RhlsToFirrtlConverter::MlirGenPrint(const jlm::rvsdg::simple_node * node)
 }
 
 circt::firrtl::FModuleOp
-RhlsToFirrtlConverter::MlirGenPredicationBuffer(const jlm::rvsdg::simple_node * node)
+RhlsToFirrtlConverter::MlirGenPredicationBuffer(const jlm::rvsdg::SimpleNode * node)
 {
   // Create the module and its input/output ports
   auto module = nodeToModule(node);
@@ -1767,13 +1829,13 @@ RhlsToFirrtlConverter::MlirGenPredicationBuffer(const jlm::rvsdg::simple_node * 
 }
 
 circt::firrtl::FModuleOp
-RhlsToFirrtlConverter::MlirGenBuffer(const jlm::rvsdg::simple_node * node)
+RhlsToFirrtlConverter::MlirGenBuffer(const jlm::rvsdg::SimpleNode * node)
 {
   // Create the module and its input/output ports
   auto module = nodeToModule(node);
   auto body = module.getBodyBlock();
 
-  auto op = dynamic_cast<const hls::buffer_op *>(&(node->operation()));
+  auto op = dynamic_cast<const hls::buffer_op *>(&(node->GetOperation()));
   auto capacity = op->capacity;
 
   auto clock = GetClockSignal(module);
@@ -1907,13 +1969,13 @@ RhlsToFirrtlConverter::MlirGenBuffer(const jlm::rvsdg::simple_node * node)
 }
 
 circt::firrtl::FModuleOp
-RhlsToFirrtlConverter::MlirGenAddrQueue(const jlm::rvsdg::simple_node * node)
+RhlsToFirrtlConverter::MlirGenAddrQueue(const jlm::rvsdg::SimpleNode * node)
 {
   // Create the module and its input/output ports
   auto module = nodeToModule(node);
   auto body = module.getBodyBlock();
 
-  auto op = dynamic_cast<const hls::addr_queue_op *>(&(node->operation()));
+  auto op = dynamic_cast<const hls::addr_queue_op *>(&(node->GetOperation()));
   auto capacity = op->capacity;
 
   auto clock = GetClockSignal(module);
@@ -2075,7 +2137,7 @@ RhlsToFirrtlConverter::MlirGenAddrQueue(const jlm::rvsdg::simple_node * node)
 }
 
 circt::firrtl::FModuleOp
-RhlsToFirrtlConverter::MlirGenDMux(const jlm::rvsdg::simple_node * node)
+RhlsToFirrtlConverter::MlirGenDMux(const jlm::rvsdg::SimpleNode * node)
 {
   // Create the module and its input/output ports
   auto module = nodeToModule(node);
@@ -2214,7 +2276,7 @@ RhlsToFirrtlConverter::MlirGenDMux(const jlm::rvsdg::simple_node * node)
 }
 
 circt::firrtl::FModuleOp
-RhlsToFirrtlConverter::MlirGenNDMux(const jlm::rvsdg::simple_node * node)
+RhlsToFirrtlConverter::MlirGenNDMux(const jlm::rvsdg::SimpleNode * node)
 {
   // Create the module and its input/output ports
   auto module = nodeToModule(node);
@@ -2261,7 +2323,7 @@ RhlsToFirrtlConverter::MlirGenNDMux(const jlm::rvsdg::simple_node * node)
 }
 
 circt::firrtl::FModuleOp
-RhlsToFirrtlConverter::MlirGenBranch(const jlm::rvsdg::simple_node * node)
+RhlsToFirrtlConverter::MlirGenBranch(const jlm::rvsdg::SimpleNode * node)
 {
   // Create the module and its input/output ports
   auto module = nodeToModule(node);
@@ -2308,92 +2370,92 @@ RhlsToFirrtlConverter::MlirGenBranch(const jlm::rvsdg::simple_node * node)
 }
 
 circt::firrtl::FModuleOp
-RhlsToFirrtlConverter::MlirGen(const jlm::rvsdg::simple_node * node)
+RhlsToFirrtlConverter::MlirGen(const jlm::rvsdg::SimpleNode * node)
 {
-  if (dynamic_cast<const hls::sink_op *>(&(node->operation())))
+  if (dynamic_cast<const hls::sink_op *>(&(node->GetOperation())))
   {
     return MlirGenSink(node);
   }
-  else if (dynamic_cast<const hls::fork_op *>(&(node->operation())))
+  else if (dynamic_cast<const hls::fork_op *>(&(node->GetOperation())))
   {
     return MlirGenFork(node);
   }
-  else if (dynamic_cast<const hls::loop_constant_buffer_op *>(&(node->operation())))
+  else if (dynamic_cast<const hls::loop_constant_buffer_op *>(&(node->GetOperation())))
   {
     return MlirGenLoopConstBuffer(node);
-    //	} else if (dynamic_cast<const jlm::LoadOperation *>(&(node->operation()))) {
+    //	} else if (dynamic_cast<const jlm::LoadOperation *>(&(node->GetOperation()))) {
     //		return MlirGenMem(node);
-    //	} else if (dynamic_cast<const jlm::StoreOperation *>(&(node->operation()))) {
+    //	} else if (dynamic_cast<const jlm::StoreOperation *>(&(node->GetOperati()))) {
     //		return MlirGenMem(node);
   }
-  else if (dynamic_cast<const hls::load_op *>(&(node->operation())))
+  else if (dynamic_cast<const hls::load_op *>(&(node->GetOperation())))
   {
     return MlirGenHlsLoad(node);
   }
-  else if (dynamic_cast<const hls::decoupled_load_op *>(&(node->operation())))
+  else if (dynamic_cast<const hls::decoupled_load_op *>(&(node->GetOperation())))
   {
     return MlirGenHlsDLoad(node);
   }
-  else if (dynamic_cast<const hls::store_op *>(&(node->operation())))
+  else if (dynamic_cast<const hls::store_op *>(&(node->GetOperation())))
   {
     return MlirGenHlsStore(node);
   }
-  else if (dynamic_cast<const hls::local_load_op *>(&(node->operation())))
+  else if (dynamic_cast<const hls::local_load_op *>(&(node->GetOperation())))
   {
     // same as normal load for now, but with index instead of address
     return MlirGenHlsLoad(node);
   }
-  else if (dynamic_cast<const hls::local_store_op *>(&(node->operation())))
+  else if (dynamic_cast<const hls::local_store_op *>(&(node->GetOperation())))
   {
     // same as normal store for now, but with index instead of address
     return MlirGenHlsStore(node);
   }
-  else if (dynamic_cast<const hls::local_mem_op *>(&(node->operation())))
+  else if (dynamic_cast<const hls::local_mem_op *>(&(node->GetOperation())))
   {
     return MlirGenHlsLocalMem(node);
   }
-  else if (dynamic_cast<const hls::mem_resp_op *>(&(node->operation())))
+  else if (dynamic_cast<const hls::mem_resp_op *>(&(node->GetOperation())))
   {
     return MlirGenHlsMemResp(node);
   }
-  else if (dynamic_cast<const hls::mem_req_op *>(&(node->operation())))
+  else if (dynamic_cast<const hls::mem_req_op *>(&(node->GetOperation())))
   {
     return MlirGenHlsMemReq(node);
   }
-  else if (dynamic_cast<const hls::predicate_buffer_op *>(&(node->operation())))
+  else if (dynamic_cast<const hls::predicate_buffer_op *>(&(node->GetOperation())))
   {
     return MlirGenPredicationBuffer(node);
   }
-  else if (dynamic_cast<const hls::buffer_op *>(&(node->operation())))
+  else if (dynamic_cast<const hls::buffer_op *>(&(node->GetOperation())))
   {
     return MlirGenBuffer(node);
   }
-  else if (dynamic_cast<const hls::branch_op *>(&(node->operation())))
+  else if (dynamic_cast<const hls::branch_op *>(&(node->GetOperation())))
   {
     return MlirGenBranch(node);
   }
-  else if (dynamic_cast<const hls::trigger_op *>(&(node->operation())))
+  else if (dynamic_cast<const hls::trigger_op *>(&(node->GetOperation())))
   {
     return MlirGenTrigger(node);
   }
-  else if (dynamic_cast<const hls::state_gate_op *>(&(node->operation())))
+  else if (dynamic_cast<const hls::state_gate_op *>(&(node->GetOperation())))
   {
     return MlirGenStateGate(node);
   }
-  else if (dynamic_cast<const hls::print_op *>(&(node->operation())))
+  else if (dynamic_cast<const hls::print_op *>(&(node->GetOperation())))
   {
     return MlirGenPrint(node);
   }
-  else if (dynamic_cast<const hls::addr_queue_op *>(&(node->operation())))
+  else if (dynamic_cast<const hls::addr_queue_op *>(&(node->GetOperation())))
   {
     return MlirGenAddrQueue(node);
   }
-  else if (dynamic_cast<const hls::merge_op *>(&(node->operation())))
+  else if (dynamic_cast<const hls::merge_op *>(&(node->GetOperation())))
   {
     // return merge_to_firrtl(n);
-    throw std::logic_error(node->operation().debug_string() + " not implemented!");
+    throw std::logic_error(node->GetOperation().debug_string() + " not implemented!");
   }
-  else if (auto o = dynamic_cast<const hls::mux_op *>(&(node->operation())))
+  else if (auto o = dynamic_cast<const hls::mux_op *>(&(node->GetOperation())))
   {
     if (o->discarding)
     {
@@ -2407,7 +2469,7 @@ RhlsToFirrtlConverter::MlirGen(const jlm::rvsdg::simple_node * node)
   return MlirGenSimpleNode(node);
 }
 
-std::unordered_map<jlm::rvsdg::simple_node *, circt::firrtl::InstanceOp>
+std::unordered_map<jlm::rvsdg::SimpleNode *, circt::firrtl::InstanceOp>
 RhlsToFirrtlConverter::MlirGen(
     hls::loop_node * loopNode,
     mlir::Block * body,
@@ -2430,7 +2492,7 @@ RhlsToFirrtlConverter::DropMSBs(mlir::Block * body, mlir::Value value, int amoun
 // Returns the output of a node or the argument of a region that has
 // been instantiated as a module
 jlm::rvsdg::output *
-RhlsToFirrtlConverter::TraceArgument(jlm::rvsdg::argument * arg)
+RhlsToFirrtlConverter::TraceArgument(rvsdg::RegionArgument * arg)
 {
   // Check if the argument is part of a hls::loop_node
   auto region = arg->region();
@@ -2449,15 +2511,15 @@ RhlsToFirrtlConverter::TraceArgument(jlm::rvsdg::argument * arg)
       // Check if we are in a nested region and directly
       // connected to the outer regions argument
       auto origin = arg->input()->origin();
-      if (auto o = dynamic_cast<jlm::rvsdg::argument *>(origin))
+      if (auto o = dynamic_cast<rvsdg::RegionArgument *>(origin))
       {
         // Need to find the source of the outer regions argument
         return TraceArgument(o);
       }
-      else if (auto o = dynamic_cast<jlm::rvsdg::structural_output *>(origin))
+      else if (auto o = dynamic_cast<rvsdg::StructuralOutput *>(origin))
       {
         // Check if we the input of one loop_node is connected to the output of another
-        // structural_node, i.e., if the input is connected to the output of another loop_node
+        // StructuralNode, i.e., if the input is connected to the output of another loop_node
         return TraceStructuralOutput(o);
       }
       // Else we have reached the source
@@ -2469,7 +2531,7 @@ RhlsToFirrtlConverter::TraceArgument(jlm::rvsdg::argument * arg)
 }
 
 circt::firrtl::FModuleOp
-RhlsToFirrtlConverter::MlirGen(jlm::rvsdg::region * subRegion, mlir::Block * circuitBody)
+RhlsToFirrtlConverter::MlirGen(rvsdg::Region * subRegion, mlir::Block * circuitBody)
 {
   // Generate a vector with all inputs and outputs of the module
   ::llvm::SmallVector<circt::firrtl::PortInfo> ports;
@@ -2502,13 +2564,15 @@ RhlsToFirrtlConverter::MlirGen(jlm::rvsdg::region * subRegion, mlir::Block * cir
   auto module = Builder_->create<circt::firrtl::FModuleOp>(
       Builder_->getUnknownLoc(),
       moduleName,
-      circt::firrtl::ConventionAttr::get(Builder_->getContext(), Convention::Internal),
+      circt::firrtl::ConventionAttr::get(
+          Builder_->getContext(),
+          circt::firrtl::Convention::Internal),
       ports);
   // Get the body of the module such that we can add contents to the module
   auto body = module.getBodyBlock();
 
   // First we create and instantiate all the modules and keep them in a dictionary
-  std::unordered_map<jlm::rvsdg::simple_node *, circt::firrtl::InstanceOp> instances =
+  std::unordered_map<jlm::rvsdg::SimpleNode *, circt::firrtl::InstanceOp> instances =
       createInstances(subRegion, circuitBody, body);
   // Wire up the instances
   for (const auto & instance : instances)
@@ -2525,19 +2589,19 @@ RhlsToFirrtlConverter::MlirGen(jlm::rvsdg::region * subRegion, mlir::Block * cir
       // The port of the instance is connected to another instance
 
       // Get the RVSDG node that's the origin of this input
-      jlm::rvsdg::simple_input * input = rvsdgNode->input(i);
+      rvsdg::SimpleInput * input = rvsdgNode->input(i);
       auto origin = input->origin();
-      if (auto o = dynamic_cast<jlm::rvsdg::argument *>(origin))
+      if (auto o = dynamic_cast<rvsdg::RegionArgument *>(origin))
       {
         origin = TraceArgument(o);
       }
-      if (auto o = dynamic_cast<jlm::rvsdg::structural_output *>(origin))
+      if (auto o = dynamic_cast<rvsdg::StructuralOutput *>(origin))
       {
         // Need to trace through the region to find the source node
         origin = TraceStructuralOutput(o);
       }
       // now origin is either a simple_output or a top-level argument
-      if (auto o = dynamic_cast<jlm::rvsdg::argument *>(origin))
+      if (auto o = dynamic_cast<rvsdg::RegionArgument *>(origin))
       {
         // The port of the instance is connected to an argument
         // of the region
@@ -2553,11 +2617,11 @@ RhlsToFirrtlConverter::MlirGen(jlm::rvsdg::region * subRegion, mlir::Block * cir
       {
         // Get RVSDG node of the source
         auto source = o->node();
-        if (dynamic_cast<const hls::local_mem_resp_op *>(&(source->operation())))
+        if (dynamic_cast<const local_mem_resp_op *>(&source->GetOperation()))
         {
           // Connect directly to mem
           auto mem_out = dynamic_cast<jlm::rvsdg::node_output *>(source->input(0)->origin());
-          auto sourceNode = instances[dynamic_cast<jlm::rvsdg::simple_node *>(mem_out->node())];
+          auto sourceNode = instances[dynamic_cast<jlm::rvsdg::SimpleNode *>(mem_out->node())];
           auto sourcePort = GetInstancePort(sourceNode, "o" + std::to_string(o->index()));
           auto sinkPort = sinkNode->getResult(i + 2);
           Connect(body, sinkPort, sourcePort);
@@ -2582,7 +2646,7 @@ RhlsToFirrtlConverter::MlirGen(jlm::rvsdg::region * subRegion, mlir::Block * cir
       }
     }
 
-    if (dynamic_cast<const hls::local_mem_op *>(&(rvsdgNode->operation())))
+    if (dynamic_cast<const hls::local_mem_op *>(&(rvsdgNode->GetOperation())))
     {
       // hook up request port
       auto requestNode = rvsdg::input::GetNode(**rvsdgNode->output(1)->begin());
@@ -2590,13 +2654,13 @@ RhlsToFirrtlConverter::MlirGen(jlm::rvsdg::region * subRegion, mlir::Block * cir
       for (size_t i = 1; i < requestNode->ninputs(); i++)
       {
         // Get the RVSDG node that's the origin of this input
-        auto * input = dynamic_cast<jlm::rvsdg::simple_input *>(requestNode->input(i));
+        auto * input = dynamic_cast<rvsdg::SimpleInput *>(requestNode->input(i));
         auto origin = input->origin();
-        if (auto o = dynamic_cast<jlm::rvsdg::argument *>(origin))
+        if (auto o = dynamic_cast<rvsdg::RegionArgument *>(origin))
         {
           origin = TraceArgument(o);
         }
-        if (auto o = dynamic_cast<jlm::rvsdg::structural_output *>(origin))
+        if (auto o = dynamic_cast<rvsdg::StructuralOutput *>(origin))
         {
           // Need to trace through the region to find the source node
           origin = TraceStructuralOutput(o);
@@ -2639,7 +2703,7 @@ RhlsToFirrtlConverter::MlirGen(jlm::rvsdg::region * subRegion, mlir::Block * cir
       // We have found the source output
       output = o;
     }
-    else if (auto o = dynamic_cast<jlm::rvsdg::structural_output *>(origin))
+    else if (auto o = dynamic_cast<rvsdg::StructuralOutput *>(origin))
     {
       // Need to trace through the region to find the source node
       output = TraceStructuralOutput(o);
@@ -2649,7 +2713,7 @@ RhlsToFirrtlConverter::MlirGen(jlm::rvsdg::region * subRegion, mlir::Block * cir
       throw std::logic_error("Unsupported output");
     }
     // Get the node of the output
-    jlm::rvsdg::simple_node * source = output->node();
+    jlm::rvsdg::SimpleNode * source = output->node();
     // Get the corresponding InstanceOp
     auto sourceNode = instances[source];
     // Calculate the result port of the instance:
@@ -2673,22 +2737,22 @@ RhlsToFirrtlConverter::MlirGen(jlm::rvsdg::region * subRegion, mlir::Block * cir
   return module;
 }
 
-std::unordered_map<jlm::rvsdg::simple_node *, circt::firrtl::InstanceOp>
+std::unordered_map<jlm::rvsdg::SimpleNode *, circt::firrtl::InstanceOp>
 RhlsToFirrtlConverter::createInstances(
-    jlm::rvsdg::region * subRegion,
+    rvsdg::Region * subRegion,
     mlir::Block * circuitBody,
     mlir::Block * body)
 {
   // create and instantiate all the modules and keep them in a dictionary
   auto clock = body->getArgument(0);
   auto reset = body->getArgument(1);
-  std::unordered_map<jlm::rvsdg::simple_node *, circt::firrtl::InstanceOp> instances;
-  for (const auto node : jlm::rvsdg::topdown_traverser(subRegion))
+  std::unordered_map<jlm::rvsdg::SimpleNode *, circt::firrtl::InstanceOp> instances;
+  for (const auto node : rvsdg::TopDownTraverser(subRegion))
   {
-    if (auto sn = dynamic_cast<jlm::rvsdg::simple_node *>(node))
+    if (auto sn = dynamic_cast<jlm::rvsdg::SimpleNode *>(node))
     {
-      if (dynamic_cast<const hls::local_mem_req_op *>(&(node->operation()))
-          || dynamic_cast<const hls::local_mem_resp_op *>(&(node->operation())))
+      if (dynamic_cast<const local_mem_req_op *>(&(node->GetOperation()))
+          || dynamic_cast<const local_mem_resp_op *>(&(node->GetOperation())))
       {
         // these are virtual - connections go to local_mem instead
         continue;
@@ -2707,7 +2771,7 @@ RhlsToFirrtlConverter::createInstances(
     else
     {
       throw util::error(
-          "Unimplemented op (unexpected structural node) : " + node->operation().debug_string());
+          "Unimplemented op (unexpected structural node) : " + node->GetOperation().debug_string());
     }
   }
   return instances;
@@ -2716,7 +2780,7 @@ RhlsToFirrtlConverter::createInstances(
 // Trace a structural output back to the "node" generating the value
 // Returns the output of the node
 jlm::rvsdg::simple_output *
-RhlsToFirrtlConverter::TraceStructuralOutput(jlm::rvsdg::structural_output * output)
+RhlsToFirrtlConverter::TraceStructuralOutput(rvsdg::StructuralOutput * output)
 {
   auto node = output->node();
 
@@ -2724,11 +2788,11 @@ RhlsToFirrtlConverter::TraceStructuralOutput(jlm::rvsdg::structural_output * out
   if (!dynamic_cast<hls::loop_node *>(node))
   {
     throw std::logic_error(
-        "Expected a hls::loop_node but found: " + node->operation().debug_string());
+        "Expected a hls::loop_node but found: " + node->GetOperation().debug_string());
   }
   JLM_ASSERT(output->results.size() == 1);
   auto origin = output->results.begin().ptr()->origin();
-  if (auto o = dynamic_cast<jlm::rvsdg::structural_output *>(origin))
+  if (auto o = dynamic_cast<rvsdg::StructuralOutput *>(origin))
   {
     // Need to trace the output of the nested structural node
     return TraceStructuralOutput(o);
@@ -2738,7 +2802,7 @@ RhlsToFirrtlConverter::TraceStructuralOutput(jlm::rvsdg::structural_output * out
     // Found the source node
     return o;
   }
-  else if (dynamic_cast<jlm::rvsdg::argument *>(origin))
+  else if (dynamic_cast<rvsdg::RegionArgument *>(origin))
   {
     throw std::logic_error("Encountered pass through argument - should be eliminated");
   }
@@ -2750,13 +2814,14 @@ RhlsToFirrtlConverter::TraceStructuralOutput(jlm::rvsdg::structural_output * out
 
 // Emit a circuit
 circt::firrtl::CircuitOp
-RhlsToFirrtlConverter::MlirGen(const llvm::lambda::node * lambdaNode)
+RhlsToFirrtlConverter::MlirGen(const rvsdg::LambdaNode * lambdaNode)
 {
 
   // Ensure consistent naming across runs
   create_node_names(lambdaNode->subregion());
   // The same name is used for the circuit and main module
-  auto moduleName = Builder_->getStringAttr(lambdaNode->name() + "_lambda_mod");
+  auto moduleName = Builder_->getStringAttr(
+      dynamic_cast<llvm::LlvmLambdaOperation &>(lambdaNode->GetOperation()).name() + "_lambda_mod");
   // Create the top level FIRRTL circuit
   auto circuit = Builder_->create<circt::firrtl::CircuitOp>(Builder_->getUnknownLoc(), moduleName);
   // The body will be populated with a list of modules
@@ -2775,8 +2840,8 @@ RhlsToFirrtlConverter::MlirGen(const llvm::lambda::node * lambdaNode)
   AddClockPort(&ports);
   AddResetPort(&ports);
 
-  auto reg_args = get_reg_args(lambdaNode);
-  auto reg_results = get_reg_results(lambdaNode);
+  auto reg_args = get_reg_args(*lambdaNode);
+  auto reg_results = get_reg_results(*lambdaNode);
 
   // Input bundle
   using BundleElement = circt::firrtl::BundleType::BundleElement;
@@ -2819,8 +2884,8 @@ RhlsToFirrtlConverter::MlirGen(const llvm::lambda::node * lambdaNode)
   ports.push_back(oBundle);
 
   // Memory ports
-  auto mem_reqs = get_mem_reqs(lambdaNode);
-  auto mem_resps = get_mem_resps(lambdaNode);
+  auto mem_reqs = get_mem_reqs(*lambdaNode);
+  auto mem_resps = get_mem_resps(*lambdaNode);
   JLM_ASSERT(mem_resps.size() == mem_reqs.size());
   for (size_t i = 0; i < mem_reqs.size(); ++i)
   {
@@ -2860,7 +2925,9 @@ RhlsToFirrtlConverter::MlirGen(const llvm::lambda::node * lambdaNode)
   auto module = Builder_->create<circt::firrtl::FModuleOp>(
       Builder_->getUnknownLoc(),
       moduleName,
-      circt::firrtl::ConventionAttr::get(Builder_->getContext(), Convention::Internal),
+      circt::firrtl::ConventionAttr::get(
+          Builder_->getContext(),
+          circt::firrtl::Convention::Internal),
       ports);
   // Get the body of the module such that we can add contents to the module
   auto body = module.getBodyBlock();
@@ -3114,7 +3181,7 @@ RhlsToFirrtlConverter::AddMemReqPort(::llvm::SmallVector<circt::firrtl::PortInfo
   memReqElements.push_back(BundleElement(
       Builder_->getStringAttr("addr"),
       false,
-      circt::firrtl::IntType::get(Builder_->getContext(), false, 64)));
+      circt::firrtl::IntType::get(Builder_->getContext(), false, GetPointerSizeInBits())));
   memReqElements.push_back(BundleElement(
       Builder_->getStringAttr("data"),
       false,
@@ -3543,7 +3610,7 @@ RhlsToFirrtlConverter::check_module(circt::firrtl::FModuleOp & module)
   {
     auto portName = module.getPortName(i);
     auto port = module.getArgument(i);
-    if (portName.startswith("o"))
+    if (portName.starts_with("o"))
     {
       // out port
       for (auto & use : port.getUses())
@@ -3570,7 +3637,7 @@ RhlsToFirrtlConverter::check_module(circt::firrtl::FModuleOp & module)
         else
         {
           user->print(::llvm::outs());
-          llvm_unreachable("unexpected operation");
+          llvm_unreachable("unexpected GetOperation");
         }
       }
     }
@@ -3663,7 +3730,7 @@ RhlsToFirrtlConverter::check_module(circt::firrtl::FModuleOp & module)
 }
 
 circt::firrtl::InstanceOp
-RhlsToFirrtlConverter::AddInstanceOp(mlir::Block * body, jlm::rvsdg::simple_node * node)
+RhlsToFirrtlConverter::AddInstanceOp(mlir::Block * body, jlm::rvsdg::SimpleNode * node)
 {
   auto name = GetModuleName(node);
   // Check if the module has already been instantiated else we need to generate it
@@ -3774,6 +3841,7 @@ RhlsToFirrtlConverter::InitializeMemReq(circt::firrtl::FModuleOp module)
   auto zeroBitValue = GetConstant(body, 1, 0);
   auto invalid1 = GetInvalid(body, 1);
   auto invalid3 = GetInvalid(body, 3);
+  auto invalidPtr = GetInvalid(body, GetPointerSizeInBits());
   auto invalid64 = GetInvalid(body, 64);
 
   auto memValid = GetSubfield(body, mem, "valid");
@@ -3783,17 +3851,17 @@ RhlsToFirrtlConverter::InitializeMemReq(circt::firrtl::FModuleOp module)
   auto memWidth = GetSubfield(body, mem, "width");
 
   Connect(body, memValid, zeroBitValue);
-  Connect(body, memAddr, invalid64);
+  Connect(body, memAddr, invalidPtr);
   Connect(body, memData, invalid64);
   Connect(body, memWrite, invalid1);
   Connect(body, memWidth, invalid3);
 }
 
-// Takes a jlm::rvsdg::simple_node and creates a firrtl module with an input
+// Takes a jlm::rvsdg::SimpleNode and creates a firrtl module with an input
 // bundle for each node input and output bundle for each node output
 // Returns a circt::firrtl::FModuleOp with an empty body
 circt::firrtl::FModuleOp
-RhlsToFirrtlConverter::nodeToModule(const jlm::rvsdg::simple_node * node, bool mem)
+RhlsToFirrtlConverter::nodeToModule(const jlm::rvsdg::SimpleNode * node, bool mem)
 {
   // Generate a vector with all inputs and outputs of the module
   ::llvm::SmallVector<circt::firrtl::PortInfo> ports;
@@ -3836,7 +3904,9 @@ RhlsToFirrtlConverter::nodeToModule(const jlm::rvsdg::simple_node * node, bool m
   return Builder_->create<circt::firrtl::FModuleOp>(
       Builder_->getUnknownLoc(),
       name,
-      circt::firrtl::ConventionAttr::get(Builder_->getContext(), Convention::Internal),
+      circt::firrtl::ConventionAttr::get(
+          Builder_->getContext(),
+          circt::firrtl::Convention::Internal),
       ports);
 }
 
@@ -3856,13 +3926,13 @@ RhlsToFirrtlConverter::GetIntType(int size)
 // which is useful for, e.g., additions where the result has to be 1
 // larger than the operands to accommodate for the carry.
 circt::firrtl::IntType
-RhlsToFirrtlConverter::GetIntType(const jlm::rvsdg::type * type, int extend)
+RhlsToFirrtlConverter::GetIntType(const jlm::rvsdg::Type * type, int extend)
 {
   return circt::firrtl::IntType::get(Builder_->getContext(), false, JlmSize(type) + extend);
 }
 
 circt::firrtl::FIRRTLBaseType
-RhlsToFirrtlConverter::GetFirrtlType(const jlm::rvsdg::type * type)
+RhlsToFirrtlConverter::GetFirrtlType(const jlm::rvsdg::Type * type)
 {
   if (auto bt = dynamic_cast<const bundletype *>(type))
   {
@@ -3883,7 +3953,7 @@ RhlsToFirrtlConverter::GetFirrtlType(const jlm::rvsdg::type * type)
 }
 
 std::string
-RhlsToFirrtlConverter::GetModuleName(const jlm::rvsdg::node * node)
+RhlsToFirrtlConverter::GetModuleName(const rvsdg::Node * node)
 {
 
   std::string append = "";
@@ -3899,17 +3969,17 @@ RhlsToFirrtlConverter::GetModuleName(const jlm::rvsdg::node * node)
     append.append(std::to_string(JlmSize(&node->output(i)->type())));
     append.append("W");
   }
-  if (auto op = dynamic_cast<const llvm::GetElementPtrOperation *>(&node->operation()))
+  if (auto op = dynamic_cast<const llvm::GetElementPtrOperation *>(&node->GetOperation()))
   {
-    const jlm::rvsdg::type * pointeeType = &op->GetPointeeType();
+    const jlm::rvsdg::Type * pointeeType = &op->GetPointeeType();
     for (size_t i = 1; i < node->ninputs(); i++)
     {
       int bits = JlmSize(pointeeType);
       if (dynamic_cast<const jlm::rvsdg::bittype *>(pointeeType))
       {
-        ;
+        pointeeType = nullptr;
       }
-      else if (auto arrayType = dynamic_cast<const llvm::arraytype *>(pointeeType))
+      else if (auto arrayType = dynamic_cast<const llvm::ArrayType *>(pointeeType))
       {
         pointeeType = &arrayType->element_type();
       }
@@ -3922,7 +3992,7 @@ RhlsToFirrtlConverter::GetModuleName(const jlm::rvsdg::node * node)
       append.append(std::to_string(bytes));
     }
   }
-  if (auto op = dynamic_cast<const mem_req_op *>(&node->operation()))
+  if (auto op = dynamic_cast<const mem_req_op *>(&node->GetOperation()))
   {
     auto loadTypes = op->GetLoadTypes();
     for (size_t i = 0; i < loadTypes->size(); i++)
@@ -3935,7 +4005,7 @@ RhlsToFirrtlConverter::GetModuleName(const jlm::rvsdg::node * node)
       }
       else if (dynamic_cast<const jlm::llvm::PointerType *>(loadType))
       {
-        bitWidth = 64;
+        bitWidth = GetPointerSizeInBits();
       }
       else
       {
@@ -3945,11 +4015,11 @@ RhlsToFirrtlConverter::GetModuleName(const jlm::rvsdg::node * node)
       append.append(std::to_string(bitWidth));
     }
   }
-  if (auto op = dynamic_cast<const local_mem_op *>(&node->operation()))
+  if (auto op = dynamic_cast<const local_mem_op *>(&node->GetOperation()))
   {
     append.append("_S");
-    append.append(
-        std::to_string(dynamic_cast<const llvm::arraytype *>(&op->result(0).type())->nelements()));
+    append.append(std::to_string(
+        std::dynamic_pointer_cast<const llvm::ArrayType>(op->result(0))->nelements()));
     append.append("_L");
     size_t loads = rvsdg::input::GetNode(**node->output(0)->begin())->noutputs();
     append.append(std::to_string(loads));
@@ -3957,7 +4027,7 @@ RhlsToFirrtlConverter::GetModuleName(const jlm::rvsdg::node * node)
     size_t stores = (rvsdg::input::GetNode(**node->output(1)->begin())->ninputs() - 1 - loads) / 2;
     append.append(std::to_string(stores));
   }
-  auto name = jlm::util::strfmt("op_", node->operation().debug_string() + append);
+  auto name = jlm::util::strfmt("op_", node->GetOperation().debug_string() + append);
   // Remove characters that are not valid in firrtl module names
   std::replace_if(name.begin(), name.end(), isForbiddenChar, '_');
   return name;
@@ -3980,7 +4050,7 @@ RhlsToFirrtlConverter::IsIdentityMapping(const jlm::rvsdg::match_op & op)
 void
 RhlsToFirrtlConverter::WriteModuleToFile(
     const circt::firrtl::FModuleOp fModuleOp,
-    const jlm::rvsdg::node * node)
+    const rvsdg::Node * node)
 {
   if (!fModuleOp)
     return;
@@ -4018,11 +4088,7 @@ RhlsToFirrtlConverter::WriteCircuitToFile(const circt::firrtl::CircuitOp circuit
   std::error_code EC;
   ::llvm::raw_fd_ostream output(fileName, EC);
   size_t targetLineLength = 100;
-  auto status = circt::firrtl::exportFIRFile(
-      module,
-      output,
-      targetLineLength,
-      circt::firrtl::FIRVersion::defaultFIRVersion());
+  auto status = circt::firrtl::exportFIRFile(module, output, targetLineLength, DefaultFIRVersion_);
 
   if (status.failed())
   {
@@ -4053,11 +4119,7 @@ RhlsToFirrtlConverter::toString(const circt::firrtl::CircuitOp circuit)
   ::llvm::raw_string_ostream output(outputString);
 
   size_t targetLineLength = 100;
-  auto status = circt::firrtl::exportFIRFile(
-      module,
-      output,
-      targetLineLength,
-      circt::firrtl::FIRVersion::defaultFIRVersion());
+  auto status = circt::firrtl::exportFIRFile(module, output, targetLineLength, DefaultFIRVersion_);
   if (status.failed())
     throw std::logic_error("Exporting of firrtl failed");
 

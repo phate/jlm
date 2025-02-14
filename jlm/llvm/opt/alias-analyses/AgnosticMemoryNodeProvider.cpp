@@ -42,25 +42,25 @@ public:
   }
 
   [[nodiscard]] const util::HashSet<const PointsToGraph::MemoryNode *> &
-  GetRegionEntryNodes(const rvsdg::region & region) const override
+  GetRegionEntryNodes(const rvsdg::Region &) const override
   {
     return MemoryNodes_;
   }
 
   [[nodiscard]] const util::HashSet<const PointsToGraph::MemoryNode *> &
-  GetRegionExitNodes(const rvsdg::region & region) const override
+  GetRegionExitNodes(const rvsdg::Region &) const override
   {
     return MemoryNodes_;
   }
 
   [[nodiscard]] const util::HashSet<const PointsToGraph::MemoryNode *> &
-  GetCallEntryNodes(const CallNode & callNode) const override
+  GetCallEntryNodes(const CallNode &) const override
   {
     return MemoryNodes_;
   }
 
   [[nodiscard]] const util::HashSet<const PointsToGraph::MemoryNode *> &
-  GetCallExitNodes(const CallNode & callNode) const override
+  GetCallExitNodes(const CallNode &) const override
   {
     return MemoryNodes_;
   }
@@ -96,12 +96,12 @@ AgnosticMemoryNodeProvider::~AgnosticMemoryNodeProvider() = default;
 
 std::unique_ptr<MemoryNodeProvisioning>
 AgnosticMemoryNodeProvider::ProvisionMemoryNodes(
-    const RvsdgModule & rvsdgModule,
+    const rvsdg::RvsdgModule & rvsdgModule,
     const PointsToGraph & pointsToGraph,
     util::StatisticsCollector & statisticsCollector)
 {
   auto statistics =
-      Statistics::Create(rvsdgModule.SourceFileName(), statisticsCollector, pointsToGraph);
+      Statistics::Create(rvsdgModule.SourceFilePath().value(), statisticsCollector, pointsToGraph);
   statistics->StartCollecting();
 
   util::HashSet<const PointsToGraph::MemoryNode *> memoryNodes;
@@ -132,7 +132,7 @@ AgnosticMemoryNodeProvider::ProvisionMemoryNodes(
 
 std::unique_ptr<MemoryNodeProvisioning>
 AgnosticMemoryNodeProvider::Create(
-    const RvsdgModule & rvsdgModule,
+    const rvsdg::RvsdgModule & rvsdgModule,
     const PointsToGraph & pointsToGraph,
     util::StatisticsCollector & statisticsCollector)
 {
@@ -142,7 +142,7 @@ AgnosticMemoryNodeProvider::Create(
 
 std::unique_ptr<MemoryNodeProvisioning>
 AgnosticMemoryNodeProvider::Create(
-    const RvsdgModule & rvsdgModule,
+    const rvsdg::RvsdgModule & rvsdgModule,
     const PointsToGraph & pointsToGraph)
 {
   util::StatisticsCollector statisticsCollector;

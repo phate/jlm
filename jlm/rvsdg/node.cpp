@@ -4,7 +4,6 @@
  * See COPYING for terms of redistribution.
  */
 
-#include <jlm/rvsdg/node-normal-form.hpp>
 #include <jlm/rvsdg/notifiers.hpp>
 #include <jlm/rvsdg/region.hpp>
 #include <jlm/rvsdg/simple-node.hpp>
@@ -23,36 +22,18 @@ input::~input() noexcept
 
 input::input(
     jlm::rvsdg::output * origin,
-    jlm::rvsdg::region * region,
-    const jlm::rvsdg::port & port)
+    rvsdg::Region * region,
+    std::shared_ptr<const rvsdg::Type> type)
     : index_(0),
       origin_(origin),
       region_(region),
-      port_(port.copy())
+      Type_(std::move(type))
 {
   if (region != origin->region())
     throw jlm::util::error("Invalid operand region.");
 
-  if (port.type() != origin->type())
-    throw jlm::util::type_error(port.type().debug_string(), origin->type().debug_string());
-
-  origin->add_user(this);
-}
-
-input::input(
-    jlm::rvsdg::output * origin,
-    jlm::rvsdg::region * region,
-    std::shared_ptr<const rvsdg::type> type)
-    : index_(0),
-      origin_(origin),
-      region_(region),
-      port_(std::make_unique<rvsdg::port>(std::move(type)))
-{
-  if (region != origin->region())
-    throw jlm::util::error("Invalid operand region.");
-
-  if (port_->type() != origin->type())
-    throw jlm::util::type_error(port_->type().debug_string(), origin->type().debug_string());
+  if (*Type() != origin->type())
+    throw jlm::util::type_error(Type()->debug_string(), origin->type().debug_string());
 
   origin->add_user(this);
 }
@@ -60,7 +41,7 @@ input::input(
 std::string
 input::debug_string() const
 {
-  return jlm::util::strfmt(index());
+  return jlm::util::strfmt("i", index());
 }
 
 void
@@ -83,11 +64,10 @@ input::divert_to(jlm::rvsdg::output * new_origin)
   if (is<node_input>(*this))
     static_cast<node_input *>(this)->node()->recompute_depth();
 
-  region()->graph()->mark_denormalized();
   on_input_change(this, old_origin, new_origin);
 }
 
-rvsdg::node *
+Node *
 input::GetNode(const rvsdg::input & input) noexcept
 {
   auto nodeInput = dynamic_cast<const rvsdg::node_input *>(&input);
@@ -101,22 +81,23 @@ output::~output() noexcept
   JLM_ASSERT(nusers() == 0);
 }
 
-output::output(jlm::rvsdg::region * region, const jlm::rvsdg::port & port)
+output::output(rvsdg::Region * region, std::shared_ptr<const rvsdg::Type> type)
     : index_(0),
       region_(region),
-      port_(port.copy())
-{}
-
-output::output(jlm::rvsdg::region * region, std::shared_ptr<const rvsdg::type> type)
-    : index_(0),
-      region_(region),
-      port_(std::make_unique<rvsdg::port>(std::move(type)))
+      Type_(std::move(type))
 {}
 
 std::string
 output::debug_string() const
 {
-  return jlm::util::strfmt(index());
+  return jlm::util::strfmt("o", index());
+}
+
+Node *
+output::GetNode(const rvsdg::output & output) noexcept
+{
+  auto nodeOutput = dynamic_cast<const rvsdg::node_output *>(&output);
+  return nodeOutput ? nodeOutput->node() : nullptr;
 }
 
 void
@@ -126,10 +107,13 @@ output::remove_user(jlm::rvsdg::input * user)
 
   users_.erase(user);
 
-  if (auto node = node_output::node(this))
+  if (auto node = output::GetNode(*this))
   {
     if (!node->has_users())
-      region()->bottom_nodes.push_back(node);
+    {
+      bool wasAdded = region()->AddBottomNode(*node);
+      JLM_ASSERT(wasAdded);
+    }
   }
 }
 
@@ -138,86 +122,86 @@ output::add_user(jlm::rvsdg::input * user)
 {
   JLM_ASSERT(users_.find(user) == users_.end());
 
-  if (auto node = node_output::node(this))
+  if (auto node = output::GetNode(*this))
   {
     if (!node->has_users())
-      region()->bottom_nodes.erase(node);
+    {
+      bool wasRemoved = region()->RemoveBottomNode(*node);
+      JLM_ASSERT(wasRemoved);
+    }
   }
   users_.insert(user);
 }
 
-}
-
-jlm::rvsdg::node_normal_form *
-node_get_default_normal_form_(
-    const std::type_info & operator_class,
-    jlm::rvsdg::node_normal_form * parent,
-    jlm::rvsdg::graph * graph)
-{
-  return new jlm::rvsdg::node_normal_form(operator_class, parent, graph);
-}
-
-static void __attribute__((constructor)) register_node_normal_form(void)
-{
-  jlm::rvsdg::node_normal_form::register_factory(
-      typeid(jlm::rvsdg::operation),
-      node_get_default_normal_form_);
-}
-
-namespace jlm::rvsdg
-{
-
-/* node_input  class */
-
 node_input::node_input(
     jlm::rvsdg::output * origin,
-    jlm::rvsdg::node * node,
-    std::shared_ptr<const rvsdg::type> type)
+    Node * node,
+    std::shared_ptr<const rvsdg::Type> type)
     : jlm::rvsdg::input(origin, node->region(), std::move(type)),
       node_(node)
 {}
 
+[[nodiscard]] std::variant<Node *, Region *>
+node_input::GetOwner() const noexcept
+{
+  return node_;
+}
+
 /* node_output class */
 
-node_output::node_output(jlm::rvsdg::node * node, std::shared_ptr<const rvsdg::type> type)
+node_output::node_output(Node * node, std::shared_ptr<const rvsdg::Type> type)
     : jlm::rvsdg::output(node->region(), std::move(type)),
       node_(node)
 {}
 
-/* node class */
-
-node::node(std::unique_ptr<jlm::rvsdg::operation> op, jlm::rvsdg::region * region)
-    : depth_(0),
-      graph_(region->graph()),
-      region_(region),
-      operation_(std::move(op))
+[[nodiscard]] std::variant<Node *, Region *>
+node_output::GetOwner() const noexcept
 {
-  region->bottom_nodes.push_back(this);
-  region->top_nodes.push_back(this);
-  region->nodes.push_back(this);
+  return node_;
 }
 
-node::~node()
+/* node class */
+
+Node::Node(Region * region)
+    : depth_(0),
+      graph_(region->graph()),
+      region_(region)
+{
+  bool wasAdded = region->AddBottomNode(*this);
+  JLM_ASSERT(wasAdded);
+  wasAdded = region->AddTopNode(*this);
+  JLM_ASSERT(wasAdded);
+  wasAdded = region->AddNode(*this);
+  JLM_ASSERT(wasAdded);
+}
+
+Node::~Node()
 {
   outputs_.clear();
-  region()->bottom_nodes.erase(this);
+  bool wasRemoved = region()->RemoveBottomNode(*this);
+  JLM_ASSERT(wasRemoved);
 
   if (ninputs() == 0)
-    region()->top_nodes.erase(this);
+  {
+    wasRemoved = region()->RemoveTopNode(*this);
+    JLM_ASSERT(wasRemoved);
+  }
   inputs_.clear();
 
-  region()->nodes.erase(this);
+  wasRemoved = region()->RemoveNode(*this);
+  JLM_ASSERT(wasRemoved);
 }
 
 node_input *
-node::add_input(std::unique_ptr<node_input> input)
+Node::add_input(std::unique_ptr<node_input> input)
 {
-  auto producer = node_output::node(input->origin());
+  auto producer = output::GetNode(*input->origin());
 
   if (ninputs() == 0)
   {
     JLM_ASSERT(depth() == 0);
-    region()->top_nodes.erase(this);
+    const auto wasRemoved = region()->RemoveTopNode(*this);
+    JLM_ASSERT(wasRemoved);
   }
 
   input->index_ = ninputs();
@@ -231,10 +215,10 @@ node::add_input(std::unique_ptr<node_input> input)
 }
 
 void
-node::RemoveInput(size_t index)
+Node::RemoveInput(size_t index)
 {
   JLM_ASSERT(index < ninputs());
-  auto producer = node_output::node(input(index)->origin());
+  auto producer = output::GetNode(*input(index)->origin());
 
   /* remove input */
   for (size_t n = index; n < ninputs() - 1; n++)
@@ -258,12 +242,13 @@ node::RemoveInput(size_t index)
   if (ninputs() == 0)
   {
     JLM_ASSERT(depth() == 0);
-    region()->top_nodes.push_back(this);
+    const auto wasAdded = region()->AddTopNode(*this);
+    JLM_ASSERT(wasAdded);
   }
 }
 
 void
-node::RemoveOutput(size_t index)
+Node::RemoveOutput(size_t index)
 {
   JLM_ASSERT(index < noutputs());
 
@@ -276,7 +261,7 @@ node::RemoveOutput(size_t index)
 }
 
 void
-node::recompute_depth() noexcept
+Node::recompute_depth() noexcept
 {
   /*
     FIXME: This function is inefficient, as it can visit the
@@ -287,7 +272,7 @@ node::recompute_depth() noexcept
   size_t new_depth = 0;
   for (size_t n = 0; n < ninputs(); n++)
   {
-    auto producer = node_output::node(input(n)->origin());
+    auto producer = output::GetNode(*input(n)->origin());
     new_depth = std::max(new_depth, producer ? producer->depth() + 1 : 0);
   }
   if (new_depth == depth())
@@ -310,10 +295,10 @@ node::recompute_depth() noexcept
   }
 }
 
-jlm::rvsdg::node *
-node::copy(jlm::rvsdg::region * region, const std::vector<jlm::rvsdg::output *> & operands) const
+Node *
+Node::copy(rvsdg::Region * region, const std::vector<jlm::rvsdg::output *> & operands) const
 {
-  substitution_map smap;
+  SubstitutionMap smap;
 
   size_t noperands = std::min(operands.size(), ninputs());
   for (size_t n = 0; n < noperands; n++)
@@ -322,31 +307,96 @@ node::copy(jlm::rvsdg::region * region, const std::vector<jlm::rvsdg::output *> 
   return copy(region, smap);
 }
 
-jlm::rvsdg::node *
+Node *
 producer(const jlm::rvsdg::output * output) noexcept
 {
-  if (auto node = node_output::node(output))
+  if (auto node = output::GetNode(*output))
     return node;
 
-  JLM_ASSERT(dynamic_cast<const jlm::rvsdg::argument *>(output));
-  auto argument = static_cast<const jlm::rvsdg::argument *>(output);
+  if (auto theta = TryGetRegionParentNode<ThetaNode>(*output))
+  {
+    auto loopvar = theta->MapPreLoopVar(*output);
+    if (loopvar.post->origin() != output)
+    {
+      return nullptr;
+    }
+    return producer(loopvar.input->origin());
+  }
+
+  JLM_ASSERT(dynamic_cast<const RegionArgument *>(output));
+  auto argument = static_cast<const RegionArgument *>(output);
 
   if (!argument->input())
-    return nullptr;
-
-  if (is<theta_op>(argument->region()->node())
-      && (argument->region()->result(argument->index() + 1)->origin() != argument))
     return nullptr;
 
   return producer(argument->input()->origin());
 }
 
-bool
-normalize(jlm::rvsdg::node * node)
-{
-  const auto & op = node->operation();
-  auto nf = node->graph()->node_normal_form(typeid(op));
-  return nf->normalize_node(node);
-}
+/**
+  \page def_use_inspection Inspecting the graph and matching against different operations
 
+  When inspecting the graph for analysis it is necessary to identify
+  different nodes/operations and structures. Depending on the direction,
+  the two fundamental questions of interest are:
+
+  - what is the origin of a value, what operation is computing it?
+  - what are the users of a particular value, what operations depend on it?
+
+  This requires resolving the type of operation a specific \ref rvsdg::input
+  or \ref rvsdg::output belong to. Every \ref rvsdg::output is one of the following:
+
+  - the output of a node representing an operation
+  - the entry argument into a region
+
+  Likewise, every \ref rvsdg::input is one of the following:
+
+  - the input of a node representing an operation
+  - the exit result of a region
+
+  Analysis code can determine which of the two is the case using
+  \ref rvsdg::output::GetOwner and \ref rvsdg::input::GetOwner, respectively,
+  and then branch deeper based on its results. For convenience, code
+  can more directly match against the specific kinds of nodes using
+  the following convenience functions:
+
+  - \ref rvsdg::TryGetOwnerNode checks if the owner of an output/input
+    is a graph node of the requested kind
+  - \ref rvsdg::TryGetRegionParentNode checks if the output/input is
+    a region entry argument / exit result, and if the parent node
+    of the region is of the requested kind
+
+  Example:
+  \code
+  if (auto lambda = rvsdg::TryGetOwnerNode<LambdaNode>(def))
+  {
+    // This is an output of a lambda node -- so this must
+    // be a function definition.
+  }
+  else if (auto gamma = rvsdg::TryGetOwnerNode<GammaNode>(def))
+  {
+    // This is an output of a gamma node -- so it is potentially
+    // dependent on evaluating a condition.
+  }
+  else if (auto gamma = rvsdg::TryGetRegionParentNode<GammaNode>(def))
+  {
+    // This is an entry argument to a region inside a gamma node.
+  }
+  \endcode
+
+  Similarly, the following variants of the accessor functions
+  assert that the nodes are of requested type and will throw
+  an exception otherwise:
+
+  - \ref rvsdg::AssertGetOwnerNode asserts that the owner of an
+    output/input is a graph node of the requested kind and
+    returns it.
+  - \ref rvsdg::AssertGetRegionParentNode asserts that the
+    output/input is a region entry argument / exit result,
+    and that the parent node of the region is of the requested
+    kind
+
+  These are mostly suitable for unit tests rather, or for the
+  rare circumstances that the type of node can be assumed to
+  be known statically.
+*/
 }

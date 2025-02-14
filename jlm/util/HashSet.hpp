@@ -6,6 +6,7 @@
 #ifndef JLM_UTIL_HASHSET_HPP
 #define JLM_UTIL_HASHSET_HPP
 
+#include <jlm/util/Hash.hpp>
 #include <jlm/util/iterator_range.hpp>
 
 #include <unordered_set>
@@ -14,26 +15,8 @@ namespace jlm::util
 {
 
 /**
- * Our own version of std::hash that also supports hashing std::pair
- */
-template<typename T>
-struct Hash : std::hash<T>
-{
-};
-
-template<typename First, typename Second>
-struct Hash<std::pair<First, Second>>
-{
-  std::size_t
-  operator()(const std::pair<First, Second> & value) const noexcept
-  {
-    return std::hash<First>()(value.first) ^ std::hash<Second>()(value.second) << 1;
-  }
-};
-
-/**
- * Represents a set of values. A set is a collection that contains no duplicate elements, and whose
- * elements are in no particular order.
+ * Represents a set of values. A set is a collection that contains no duplicate elements, and
+ * whose elements are in no particular order.
  * @tparam ItemType The type of the items in the hash set.
  */
 template<typename ItemType, typename HashFunctor = Hash<ItemType>>
@@ -41,6 +24,7 @@ class HashSet
 {
   using InternalSet = std::unordered_set<ItemType, HashFunctor>;
 
+public:
   class ItemConstIterator final
   {
   public:
@@ -107,7 +91,6 @@ class HashSet
     typename InternalSet::const_iterator It_;
   };
 
-public:
   ~HashSet() noexcept = default;
 
   HashSet() = default;
@@ -236,7 +219,7 @@ public:
    *
    * @return A iterator_range.
    */
-  [[nodiscard]] iterator_range<ItemConstIterator>
+  [[nodiscard]] IteratorRange<ItemConstIterator>
   Items() const noexcept
   {
     return { ItemConstIterator(Set_.begin()), ItemConstIterator(Set_.end()) };
@@ -259,6 +242,25 @@ public:
   }
 
   /**
+   * Modifies this HashSet object to contain all elements in either itself, \p other, or both.
+   * Consumes \p other, making it empty.
+   *
+   * @param other the HashSet to be consumed
+   * @return true if elements were added to this HashSet, otherwise false
+   */
+  bool
+  UnionWithAndClear(HashSet<ItemType> & other)
+  {
+    // Make *this the largest of the two sets, to make the union cheaper
+    if (Size() < other.Size())
+      std::swap(*this, other);
+
+    bool result = UnionWith(other);
+    other.Clear();
+    return result;
+  }
+
+  /**
    * Modifies this HashSet object to contain only elements that are present in itself and \p other.
    *
    * @param other A HashSet to intersect with.
@@ -266,12 +268,58 @@ public:
   void
   IntersectWith(const HashSet<ItemType> & other)
   {
-    auto isContained = [&](const ItemType item)
+    auto isContained = [&](const ItemType & item)
     {
       return !other.Contains(item);
     };
 
     RemoveWhere(isContained);
+  }
+
+  /**
+   * Modifies this HashSet object to contain only elements both in itself and \p other.
+   * Consumes \p other, making it empty.
+   *
+   * @param other the HashSet to be consumed
+   */
+  void
+  IntersectWithAndClear(HashSet<ItemType> & other)
+  {
+    // Make *this the smallest of the two sets, to make the intersection cheaper
+    if (Size() > other.Size())
+      std::swap(*this, other);
+
+    IntersectWith(other);
+    other.Clear();
+  }
+
+  /**
+   * Modifies this HashSet object by removing any elements that are present in \p other.
+   *
+   * @param other the HashSet used as the negative side of the set difference.
+   */
+  void
+  DifferenceWith(const HashSet<ItemType> & other)
+  {
+    // If this HashSet is smaller, loop over it and remove elements in other.
+    // If other is smaller, loop over it and remove elements from this.
+
+    if (Size() <= other.Size())
+    {
+      // This branch also handles the unlikely case where this and other are the same set.
+
+      auto isInOther = [&](const ItemType & item)
+      {
+        return other.Contains(item);
+      };
+
+      RemoveWhere(isInOther);
+    }
+    else
+    {
+      for (auto & item : other.Set_)
+        Remove(item);
+    }
   }
 
   /**
@@ -314,6 +362,17 @@ public:
     }
 
     return numRemoved;
+  }
+
+  /**
+   * Removes the element pointed to by the given iterator
+   * @param iterator the element to remove
+   * @return an iterator to the element after the removed element
+   */
+  ItemConstIterator
+  Erase(ItemConstIterator iterator)
+  {
+    return ItemConstIterator(Set_.erase(iterator.It_));
   }
 
   /**

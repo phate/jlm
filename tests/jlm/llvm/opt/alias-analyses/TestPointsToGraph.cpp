@@ -17,14 +17,12 @@ class TestAnalysis final : public jlm::llvm::aa::AliasAnalysis
 {
 public:
   std::unique_ptr<jlm::llvm::aa::PointsToGraph>
-  Analyze(
-      const jlm::llvm::RvsdgModule & rvsdgModule,
-      jlm::util::StatisticsCollector & statisticsCollector) override
+  Analyze(const jlm::rvsdg::RvsdgModule & rvsdgModule, jlm::util::StatisticsCollector &) override
   {
     PointsToGraph_ = jlm::llvm::aa::PointsToGraph::Create();
 
     AnalyzeImports(rvsdgModule.Rvsdg());
-    AnalyzeRegion(*rvsdgModule.Rvsdg().root());
+    AnalyzeRegion(rvsdgModule.Rvsdg().GetRootRegion());
 
     return std::move(PointsToGraph_);
   }
@@ -45,11 +43,11 @@ public:
 
 private:
   void
-  AnalyzeRegion(jlm::rvsdg::region & region)
+  AnalyzeRegion(jlm::rvsdg::Region & region)
   {
     using namespace jlm::llvm;
 
-    for (auto & node : region.nodes)
+    for (auto & node : region.Nodes())
     {
       if (jlm::rvsdg::is<alloca_op>(&node))
       {
@@ -74,7 +72,7 @@ private:
 
         AnalyzeRegion(*deltaNode->subregion());
       }
-      else if (auto lambdaNode = dynamic_cast<const lambda::node *>(&node))
+      else if (auto lambdaNode = dynamic_cast<const jlm::rvsdg::LambdaNode *>(&node))
       {
         auto & lambdaPtgNode = aa::PointsToGraph::LambdaNode::Create(*PointsToGraph_, *lambdaNode);
         auto & registerNode =
@@ -87,17 +85,18 @@ private:
   }
 
   void
-  AnalyzeImports(const jlm::rvsdg::graph & rvsdg)
+  AnalyzeImports(const jlm::rvsdg::Graph & rvsdg)
   {
     using namespace jlm::llvm;
 
-    auto & rootRegion = *rvsdg.root();
+    auto & rootRegion = rvsdg.GetRootRegion();
     for (size_t n = 0; n < rootRegion.narguments(); n++)
     {
-      auto & argument = *rootRegion.argument(n);
+      auto & graphImport = *jlm::util::AssertedCast<const GraphImport>(rootRegion.argument(n));
 
-      auto & importNode = aa::PointsToGraph::ImportNode::Create(*PointsToGraph_, argument);
-      auto & registerNode = aa::PointsToGraph::RegisterNode::Create(*PointsToGraph_, { &argument });
+      auto & importNode = aa::PointsToGraph::ImportNode::Create(*PointsToGraph_, graphImport);
+      auto & registerNode =
+          aa::PointsToGraph::RegisterNode::Create(*PointsToGraph_, { &graphImport });
       registerNode.AddEdge(importNode);
     }
   }

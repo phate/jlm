@@ -8,6 +8,7 @@
 
 #include <jlm/rvsdg/type.hpp>
 #include <jlm/util/common.hpp>
+#include <jlm/util/HashSet.hpp>
 
 #include <memory>
 #include <string>
@@ -32,6 +33,8 @@ public:
     Builtin,
     Cold,
     Convergent,
+    CoroDestroyOnlyWhenComplete,
+    DeadOnUnwind,
     DisableSanitizerInstrumentation,
     FnRetThunkExtern,
     Hot,
@@ -67,6 +70,7 @@ public:
     NonNull,
     NullPointerIsValid,
     OptForFuzzing,
+    OptimizeForDebugging,
     OptimizeForSize,
     OptimizeNone,
     PresplitCoroutine,
@@ -93,6 +97,7 @@ public:
     SwiftError,
     SwiftSelf,
     WillReturn,
+    Writable,
     WriteOnly,
     ZExt,
     LastEnumAttr,
@@ -121,19 +126,7 @@ public:
     EndAttrKinds ///< Sentinel value useful for loops
   };
 
-  virtual ~attribute();
-
-  attribute() = default;
-
-  attribute(const attribute &) = delete;
-
-  attribute(attribute &&) = delete;
-
-  attribute &
-  operator=(const attribute &) = delete;
-
-  attribute &
-  operator=(attribute &&) = delete;
+  virtual ~attribute() noexcept;
 
   virtual bool
   operator==(const attribute &) const = 0;
@@ -143,9 +136,6 @@ public:
   {
     return !operator==(other);
   }
-
-  virtual std::unique_ptr<attribute>
-  copy() const = 0;
 };
 
 /** \brief String attribute
@@ -153,38 +143,27 @@ public:
 class string_attribute final : public attribute
 {
 public:
-  ~string_attribute() override;
+  ~string_attribute() noexcept override;
 
-private:
   string_attribute(const std::string & kind, const std::string & value)
       : kind_(kind),
         value_(value)
   {}
 
-public:
-  const std::string &
+  [[nodiscard]] const std::string &
   kind() const noexcept
   {
     return kind_;
   }
 
-  const std::string &
+  [[nodiscard]] const std::string &
   value() const noexcept
   {
     return value_;
   }
 
-  virtual bool
+  bool
   operator==(const attribute &) const override;
-
-  virtual std::unique_ptr<attribute>
-  copy() const override;
-
-  static std::unique_ptr<attribute>
-  create(const std::string & kind, const std::string & value)
-  {
-    return std::unique_ptr<attribute>(new string_attribute(kind, value));
-  }
 
 private:
   std::string kind_;
@@ -196,31 +175,20 @@ private:
 class enum_attribute : public attribute
 {
 public:
-  ~enum_attribute() override;
+  ~enum_attribute() noexcept override;
 
-protected:
-  enum_attribute(const attribute::kind & kind)
+  explicit enum_attribute(const attribute::kind & kind)
       : kind_(kind)
   {}
 
-public:
-  const attribute::kind &
+  [[nodiscard]] const attribute::kind &
   kind() const noexcept
   {
     return kind_;
   }
 
-  virtual bool
+  bool
   operator==(const attribute &) const override;
-
-  virtual std::unique_ptr<attribute>
-  copy() const override;
-
-  static std::unique_ptr<attribute>
-  create(const attribute::kind & kind)
-  {
-    return std::unique_ptr<attribute>(new enum_attribute(kind));
-  }
 
 private:
   attribute::kind kind_;
@@ -231,32 +199,21 @@ private:
 class int_attribute final : public enum_attribute
 {
 public:
-  ~int_attribute() override;
+  ~int_attribute() noexcept override;
 
-private:
   int_attribute(attribute::kind kind, uint64_t value)
       : enum_attribute(kind),
         value_(value)
   {}
 
-public:
-  uint64_t
+  [[nodiscard]] uint64_t
   value() const noexcept
   {
     return value_;
   }
 
-  virtual bool
+  bool
   operator==(const attribute &) const override;
-
-  virtual std::unique_ptr<attribute>
-  copy() const override;
-
-  static std::unique_ptr<attribute>
-  create(const attribute::kind & kind, uint64_t value)
-  {
-    return std::unique_ptr<attribute>(new int_attribute(kind, value));
-  }
 
 private:
   uint64_t value_;
@@ -267,105 +224,138 @@ private:
 class type_attribute final : public enum_attribute
 {
 public:
-  ~type_attribute() override;
+  ~type_attribute() noexcept override;
 
-  type_attribute(attribute::kind kind, std::shared_ptr<const jlm::rvsdg::valuetype> type)
+  type_attribute(attribute::kind kind, std::shared_ptr<const jlm::rvsdg::ValueType> type)
       : enum_attribute(kind),
         type_(std::move(type))
   {}
 
-  const jlm::rvsdg::valuetype &
+  [[nodiscard]] const jlm::rvsdg::ValueType &
   type() const noexcept
   {
     return *type_;
   }
 
-  virtual bool
+  bool
   operator==(const attribute &) const override;
 
-  virtual std::unique_ptr<attribute>
-  copy() const override;
-
-  static std::unique_ptr<attribute>
-  create_byval(std::shared_ptr<const jlm::rvsdg::valuetype> type)
-  {
-    return std::make_unique<type_attribute>(kind::ByVal, std::move(type));
-  }
-
-  static std::unique_ptr<attribute>
-  CreateStructRetAttribute(std::shared_ptr<const jlm::rvsdg::valuetype> type)
-  {
-    return std::make_unique<type_attribute>(kind::StructRet, std::move(type));
-  }
-
 private:
-  std::shared_ptr<const jlm::rvsdg::valuetype> type_;
+  std::shared_ptr<const jlm::rvsdg::ValueType> type_;
 };
+
+}
+
+namespace jlm::util
+{
+
+template<>
+struct Hash<jlm::llvm::enum_attribute>
+{
+  std::size_t
+  operator()(const jlm::llvm::enum_attribute & attribute) const noexcept
+  {
+    return std::hash<jlm::llvm::attribute::kind>()(attribute.kind());
+  }
+};
+
+template<>
+struct Hash<jlm::llvm::int_attribute>
+{
+  std::size_t
+  operator()(const jlm::llvm::int_attribute & attribute) const noexcept
+  {
+    auto kindHash = std::hash<jlm::llvm::attribute::kind>()(attribute.kind());
+    auto valueHash = std::hash<uint64_t>()(attribute.value());
+    return util::CombineHashes(kindHash, valueHash);
+  }
+};
+
+template<>
+struct Hash<jlm::llvm::string_attribute>
+{
+  std::size_t
+  operator()(const jlm::llvm::string_attribute & attribute) const noexcept
+  {
+    auto kindHash = std::hash<std::string>()(attribute.kind());
+    auto valueHash = std::hash<std::string>()(attribute.value());
+    return util::CombineHashes(kindHash, valueHash);
+  }
+};
+
+template<>
+struct Hash<jlm::llvm::type_attribute>
+{
+  std::size_t
+  operator()(const jlm::llvm::type_attribute & attribute) const noexcept
+  {
+    auto kindHash = std::hash<jlm::llvm::attribute::kind>()(attribute.kind());
+    auto typeHash = attribute.type().ComputeHash();
+    return util::CombineHashes(kindHash, typeHash);
+  }
+};
+
+}
+
+namespace jlm::llvm
+{
 
 /** \brief Attribute set
  */
 class attributeset final
 {
-  class constiterator;
+  using EnumAttributeHashSet = util::HashSet<enum_attribute>;
+  using IntAttributeHashSet = util::HashSet<int_attribute>;
+  using TypeAttributeHashSet = util::HashSet<type_attribute>;
+  using StringAttributeHashSet = util::HashSet<string_attribute>;
+
+  using EnumAttributeRange = util::IteratorRange<EnumAttributeHashSet::ItemConstIterator>;
+  using IntAttributeRange = util::IteratorRange<IntAttributeHashSet::ItemConstIterator>;
+  using TypeAttributeRange = util::IteratorRange<TypeAttributeHashSet::ItemConstIterator>;
+  using StringAttributeRange = util::IteratorRange<StringAttributeHashSet::ItemConstIterator>;
 
 public:
-  ~attributeset()
-  {}
+  [[nodiscard]] EnumAttributeRange
+  EnumAttributes() const;
 
-  attributeset() = default;
+  [[nodiscard]] IntAttributeRange
+  IntAttributes() const;
 
-  attributeset(std::vector<std::unique_ptr<attribute>> attributes)
-      : attributes_(std::move(attributes))
-  {}
+  [[nodiscard]] TypeAttributeRange
+  TypeAttributes() const;
 
-  attributeset(const attributeset & other)
-  {
-    *this = other;
-  }
-
-  attributeset(attributeset && other)
-      : attributes_(std::move(other.attributes_))
-  {}
-
-  attributeset &
-  operator=(const attributeset & other);
-
-  attributeset &
-  operator=(attributeset && other)
-  {
-    if (this == &other)
-      return *this;
-
-    attributes_ = std::move(other.attributes_);
-
-    return *this;
-  }
-
-  constiterator
-  begin() const;
-
-  constiterator
-  end() const;
+  [[nodiscard]] StringAttributeRange
+  StringAttributes() const;
 
   void
-  insert(const attribute & a)
+  InsertEnumAttribute(const enum_attribute & attribute)
   {
-    attributes_.push_back(a.copy());
+    EnumAttributes_.Insert(attribute);
   }
 
   void
-  insert(std::unique_ptr<attribute> a)
+  InsertIntAttribute(const int_attribute & attribute)
   {
-    attributes_.push_back(std::move(a));
+    IntAttributes_.Insert(attribute);
+  }
+
+  void
+  InsertTypeAttribute(const type_attribute & attribute)
+  {
+    TypeAttributes_.Insert(attribute);
+  }
+
+  void
+  InsertStringAttribute(const string_attribute & attribute)
+  {
+    StringAttributes_.Insert(attribute);
   }
 
   bool
   operator==(const attributeset & other) const noexcept
   {
-    /*
-      FIXME: Ah, since this is not a real set, we cannot cheaply implement a comparison.
-    */
-    return false;
+    return IntAttributes_ == other.IntAttributes_ && EnumAttributes_ == other.EnumAttributes_
+        && TypeAttributes_ == other.TypeAttributes_ && StringAttributes_ == other.StringAttributes_;
   }
 
   bool
@@ -375,73 +365,10 @@ public:
   }
 
 private:
-  /*
-    FIXME: Implement a proper set. Elements are not unique here.
-  */
-  std::vector<std::unique_ptr<attribute>> attributes_;
-};
-
-/** \brief Attribute set const iterator
- */
-class attributeset::constiterator final
-{
-public:
-  using iterator_category = std::forward_iterator_tag;
-  using value_type = const attribute *;
-  using difference_type = std::ptrdiff_t;
-  using pointer = const attribute **;
-  using reference = const attribute *&;
-
-private:
-  friend ::jlm::llvm::attributeset;
-
-private:
-  constiterator(const std::vector<std::unique_ptr<attribute>>::const_iterator & it)
-      : it_(it)
-  {}
-
-public:
-  const attribute *
-  operator->() const
-  {
-    return it_->get();
-  }
-
-  const attribute &
-  operator*()
-  {
-    return *operator->();
-  }
-
-  constiterator &
-  operator++()
-  {
-    it_++;
-    return *this;
-  }
-
-  constiterator
-  operator++(int)
-  {
-    constiterator tmp = *this;
-    ++*this;
-    return tmp;
-  }
-
-  bool
-  operator==(const constiterator & other) const
-  {
-    return it_ == other.it_;
-  }
-
-  bool
-  operator!=(const constiterator & other) const
-  {
-    return !operator==(other);
-  }
-
-private:
-  std::vector<std::unique_ptr<attribute>>::const_iterator it_;
+  EnumAttributeHashSet EnumAttributes_{};
+  IntAttributeHashSet IntAttributes_{};
+  TypeAttributeHashSet TypeAttributes_{};
+  StringAttributeHashSet StringAttributes_{};
 };
 
 }

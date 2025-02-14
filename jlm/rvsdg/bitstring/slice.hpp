@@ -14,7 +14,7 @@
 namespace jlm::rvsdg
 {
 
-class bitslice_op : public jlm::rvsdg::unary_op
+class bitslice_op : public UnaryOperation
 {
 public:
   virtual ~bitslice_op() noexcept;
@@ -23,12 +23,12 @@ public:
       const std::shared_ptr<const bittype> & argument,
       size_t low,
       size_t high) noexcept
-      : unary_op(argument, bittype::Create(high - low)),
+      : UnaryOperation(argument, bittype::Create(high - low)),
         low_(low)
   {}
 
   virtual bool
-  operator==(const operation & other) const noexcept override;
+  operator==(const Operation & other) const noexcept override;
 
   virtual std::string
   debug_string() const override;
@@ -48,16 +48,16 @@ public:
   inline size_t
   high() const noexcept
   {
-    return low_ + static_cast<const bittype *>(&result(0).type())->nbits();
+    return low_ + std::static_pointer_cast<const bittype>(result(0))->nbits();
   }
 
-  virtual std::unique_ptr<jlm::rvsdg::operation>
+  [[nodiscard]] std::unique_ptr<Operation>
   copy() const override;
 
-  inline const type &
+  inline const Type &
   argument_type() const noexcept
   {
-    return *static_cast<const bittype *>(&argument(0).type());
+    return *std::static_pointer_cast<const bittype>(argument(0));
   }
 
 private:

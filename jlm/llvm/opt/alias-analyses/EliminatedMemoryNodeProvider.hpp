@@ -50,13 +50,23 @@ public:
 
   std::unique_ptr<MemoryNodeProvisioning>
   ProvisionMemoryNodes(
-      const RvsdgModule & rvsdgModule,
+      const rvsdg::RvsdgModule & rvsdgModule,
       const PointsToGraph & pointsToGraph,
       util::StatisticsCollector & statisticsCollector) override
   {
     auto seedProvisioning =
         Provider_.ProvisionMemoryNodes(rvsdgModule, pointsToGraph, statisticsCollector);
     return Eliminator_.EliminateMemoryNodes(rvsdgModule, *seedProvisioning, statisticsCollector);
+  }
+
+  static std::unique_ptr<MemoryNodeProvisioning>
+  Create(
+      const rvsdg::RvsdgModule & rvsdgModule,
+      const PointsToGraph & pointsToGraph,
+      util::StatisticsCollector & statisticsCollector)
+  {
+    EliminatedMemoryNodeProvider provider{};
+    return provider.ProvisionMemoryNodes(rvsdgModule, pointsToGraph, statisticsCollector);
   }
 
 private:

@@ -12,7 +12,7 @@ namespace jlm::hls
 {
 
 void
-mem_queue(jlm::rvsdg::region * region);
+mem_queue(rvsdg::Region * region);
 
 void
 mem_queue(llvm::RvsdgModule & rm);

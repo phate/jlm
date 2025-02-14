@@ -8,6 +8,7 @@
 #define JLM_LLVM_IR_OPERATORS_PHI_HPP
 
 #include <jlm/rvsdg/graph.hpp>
+#include <jlm/rvsdg/lambda.hpp>
 #include <jlm/rvsdg/node.hpp>
 #include <jlm/rvsdg/region.hpp>
 #include <jlm/rvsdg/structural-node.hpp>
@@ -16,17 +17,12 @@
 namespace jlm::llvm
 {
 
-namespace lambda
-{
-class node;
-}
-
 namespace phi
 {
 
 /* phi operation class  */
 
-class operation final : public jlm::rvsdg::structural_op
+class operation final : public rvsdg::StructuralOperation
 {
 public:
   ~operation() override;
@@ -34,7 +30,7 @@ public:
   virtual std::string
   debug_string() const override;
 
-  virtual std::unique_ptr<jlm::rvsdg::operation>
+  [[nodiscard]] std::unique_ptr<Operation>
   copy() const override;
 };
 
@@ -45,7 +41,7 @@ class cvargument;
 class cvinput;
 class rvoutput;
 
-class node final : public jlm::rvsdg::structural_node
+class node final : public rvsdg::StructuralNode
 {
   friend class phi::builder;
 
@@ -304,17 +300,20 @@ public:
   ~node() override;
 
 private:
-  node(jlm::rvsdg::region * parent, const phi::operation & op)
-      : structural_node(op, parent, 1)
+  explicit node(rvsdg::Region * parent)
+      : StructuralNode(parent, 1)
   {}
 
   static phi::node *
-  create(jlm::rvsdg::region * parent, const phi::operation & op)
+  create(rvsdg::Region * parent)
   {
-    return new phi::node(parent, op);
+    return new phi::node(parent);
   }
 
 public:
+  [[nodiscard]] const phi::operation &
+  GetOperation() const noexcept override;
+
   cvconstiterator
   begin_cv() const
   {
@@ -375,16 +374,10 @@ public:
     return rviterator(nullptr);
   }
 
-  jlm::rvsdg::region *
+  rvsdg::Region *
   subregion() const noexcept
   {
-    return structural_node::subregion(0);
-  }
-
-  const phi::operation &
-  operation() const noexcept
-  {
-    return *static_cast<const phi::operation *>(&jlm::rvsdg::node::operation());
+    return StructuralNode::subregion(0);
   }
 
   cvargument *
@@ -403,7 +396,7 @@ public:
    * outputs might refer to arguments that have been removed by the application of this method. It
    * is up to the caller to ensure that the invariants of the phi node will eventually be met again.
    *
-   * \see argument#IsDead()
+   * \see RegionArgument#IsDead()
    * \see PrunePhiArguments()
    * \see RemovePhiOutputsWhere()
    * \see PrunePhiOutputs()
@@ -426,7 +419,7 @@ public:
   size_t
   PrunePhiArguments()
   {
-    auto match = [](const jlm::rvsdg::argument &)
+    auto match = [](const rvsdg::RegionArgument &)
     {
       return true;
     };
@@ -486,7 +479,7 @@ public:
   output(size_t n) const noexcept;
 
   virtual phi::node *
-  copy(jlm::rvsdg::region * region, jlm::rvsdg::substitution_map & smap) const override;
+  copy(rvsdg::Region * region, rvsdg::SubstitutionMap & smap) const override;
 
   /**
    * Extracts all lambda nodes from a phi node.
@@ -496,7 +489,7 @@ public:
    * @param phiNode The phi node from which the lambda nodes should be extracted.
    * @return A vector of lambda nodes.
    */
-  static std::vector<lambda::node *>
+  static std::vector<rvsdg::LambdaNode *>
   ExtractLambdaNodes(const phi::node & phiNode);
 };
 
@@ -511,19 +504,19 @@ public:
       : node_(nullptr)
   {}
 
-  jlm::rvsdg::region *
+  rvsdg::Region *
   subregion() const noexcept
   {
     return node_ ? node_->subregion() : nullptr;
   }
 
   void
-  begin(jlm::rvsdg::region * parent)
+  begin(rvsdg::Region * parent)
   {
     if (node_)
       return;
 
-    node_ = phi::node::create(parent, phi::operation());
+    node_ = phi::node::create(parent);
   }
 
   phi::cvargument *
@@ -536,7 +529,7 @@ public:
   }
 
   phi::rvoutput *
-  add_recvar(std::shared_ptr<const jlm::rvsdg::type> type);
+  add_recvar(std::shared_ptr<const jlm::rvsdg::Type> type);
 
   phi::node *
   end();
@@ -547,7 +540,7 @@ private:
 
 /* phi context variable input class */
 
-class cvinput final : public jlm::rvsdg::structural_input
+class cvinput final : public rvsdg::StructuralInput
 {
   friend class phi::node;
 
@@ -557,8 +550,8 @@ public:
   cvinput(
       phi::node * node,
       jlm::rvsdg::output * origin,
-      std::shared_ptr<const jlm::rvsdg::type> type)
-      : structural_input(node, origin, std::move(type))
+      std::shared_ptr<const jlm::rvsdg::Type> type)
+      : StructuralInput(node, origin, std::move(type))
   {}
 
 private:
@@ -576,7 +569,7 @@ private:
   create(
       phi::node * node,
       jlm::rvsdg::output * origin,
-      std::shared_ptr<const jlm::rvsdg::type> type)
+      std::shared_ptr<const jlm::rvsdg::Type> type)
   {
     auto input = std::make_unique<cvinput>(node, origin, std::move(type));
     return static_cast<cvinput *>(node->append_input(std::move(input)));
@@ -589,7 +582,7 @@ public:
   phi::node *
   node() const noexcept
   {
-    return static_cast<phi::node *>(structural_input::node());
+    return static_cast<phi::node *>(StructuralInput::node());
   }
 };
 
@@ -598,7 +591,7 @@ public:
 class rvargument;
 class rvresult;
 
-class rvoutput final : public jlm::rvsdg::structural_output
+class rvoutput final : public rvsdg::StructuralOutput
 {
   friend class phi::builder;
 
@@ -606,8 +599,8 @@ public:
   ~rvoutput() override;
 
 private:
-  rvoutput(phi::node * node, rvargument * argument, std::shared_ptr<const rvsdg::type> type)
-      : structural_output(node, std::move(type)),
+  rvoutput(phi::node * node, rvargument * argument, std::shared_ptr<const rvsdg::Type> type)
+      : StructuralOutput(node, std::move(type)),
         argument_(argument)
   {}
 
@@ -622,7 +615,7 @@ private:
   operator=(rvoutput &&) = delete;
 
   static rvoutput *
-  create(phi::node * node, rvargument * argument, std::shared_ptr<const rvsdg::type> type);
+  create(phi::node * node, rvargument * argument, std::shared_ptr<const rvsdg::Type> type);
 
 public:
   rvargument *
@@ -640,7 +633,7 @@ public:
   phi::node *
   node() const noexcept
   {
-    return static_cast<phi::node *>(structural_output::node());
+    return static_cast<phi::node *>(StructuralOutput::node());
   }
 
 private:
@@ -651,7 +644,7 @@ private:
 
 class rvresult;
 
-class rvargument final : public jlm::rvsdg::argument
+class rvargument final : public rvsdg::RegionArgument
 {
   friend class phi::builder;
   friend class phi::rvoutput;
@@ -660,13 +653,8 @@ public:
   ~rvargument() override;
 
 private:
-  rvargument(jlm::rvsdg::region * region, const jlm::rvsdg::port & port)
-      : argument(region, nullptr, port),
-        output_(nullptr)
-  {}
-
-  rvargument(jlm::rvsdg::region * region, const std::shared_ptr<const jlm::rvsdg::type> type)
-      : argument(region, nullptr, std::move(type)),
+  rvargument(rvsdg::Region * region, const std::shared_ptr<const jlm::rvsdg::Type> type)
+      : RegionArgument(region, nullptr, std::move(type)),
         output_(nullptr)
   {}
 
@@ -681,15 +669,7 @@ private:
   operator=(rvargument &&) = delete;
 
   static rvargument *
-  create(jlm::rvsdg::region * region, const jlm::rvsdg::port & port)
-  {
-    auto argument = new rvargument(region, port);
-    region->append_argument(argument);
-    return argument;
-  }
-
-  static rvargument *
-  create(jlm::rvsdg::region * region, std::shared_ptr<const jlm::rvsdg::type> type)
+  create(rvsdg::Region * region, std::shared_ptr<const jlm::rvsdg::Type> type)
   {
     auto argument = new rvargument(region, std::move(type));
     region->append_argument(argument);
@@ -710,6 +690,9 @@ public:
     return output()->result();
   }
 
+  rvargument &
+  Copy(rvsdg::Region & region, rvsdg::StructuralInput * input) override;
+
 private:
   rvoutput * output_;
 };
@@ -719,22 +702,15 @@ private:
 class cvinput;
 class node;
 
-class cvargument final : public jlm::rvsdg::argument
+class cvargument final : public rvsdg::RegionArgument
 {
   friend class phi::node;
 
 public:
   ~cvargument() override;
 
-  cvargument(jlm::rvsdg::region * region, phi::cvinput * input, const jlm::rvsdg::port & port)
-      : jlm::rvsdg::argument(region, input, port)
-  {}
-
-  cvargument(
-      jlm::rvsdg::region * region,
-      phi::cvinput * input,
-      std::shared_ptr<const rvsdg::type> type)
-      : jlm::rvsdg::argument(region, input, std::move(type))
+  cvargument(rvsdg::Region * region, phi::cvinput * input, std::shared_ptr<const rvsdg::Type> type)
+      : rvsdg::RegionArgument(region, input, std::move(type))
   {}
 
 private:
@@ -748,16 +724,11 @@ private:
   cvargument &
   operator=(cvargument &&) = delete;
 
-  static cvargument *
-  create(jlm::rvsdg::region * region, phi::cvinput * input, const jlm::rvsdg::port & port)
-  {
-    auto argument = new cvargument(region, input, port);
-    region->append_argument(argument);
-    return argument;
-  }
+  cvargument &
+  Copy(rvsdg::Region & region, rvsdg::StructuralInput * input) override;
 
   static cvargument *
-  create(jlm::rvsdg::region * region, phi::cvinput * input, std::shared_ptr<const rvsdg::type> type)
+  create(rvsdg::Region * region, phi::cvinput * input, std::shared_ptr<const rvsdg::Type> type)
   {
     auto argument = new cvargument(region, input, std::move(type));
     region->append_argument(argument);
@@ -768,13 +739,13 @@ public:
   cvinput *
   input() const noexcept
   {
-    return static_cast<cvinput *>(argument::input());
+    return static_cast<cvinput *>(RegionArgument::input());
   }
 };
 
 /* phi recursion variable result class */
 
-class rvresult final : public jlm::rvsdg::result
+class rvresult final : public rvsdg::RegionResult
 {
   friend class phi::builder;
 
@@ -783,19 +754,11 @@ public:
 
 private:
   rvresult(
-      jlm::rvsdg::region * region,
+      rvsdg::Region * region,
       jlm::rvsdg::output * origin,
       rvoutput * output,
-      const jlm::rvsdg::port & port)
-      : jlm::rvsdg::result(region, origin, output, port)
-  {}
-
-  rvresult(
-      jlm::rvsdg::region * region,
-      jlm::rvsdg::output * origin,
-      rvoutput * output,
-      std::shared_ptr<const rvsdg::type> type)
-      : jlm::rvsdg::result(region, origin, output, std::move(type))
+      std::shared_ptr<const rvsdg::Type> type)
+      : RegionResult(region, origin, output, std::move(type))
   {}
 
   rvresult(const rvresult &) = delete;
@@ -808,24 +771,15 @@ private:
   rvresult &
   operator=(rvresult &&) = delete;
 
-  static rvresult *
-  create(
-      jlm::rvsdg::region * region,
-      jlm::rvsdg::output * origin,
-      rvoutput * output,
-      const jlm::rvsdg::port & port)
-  {
-    auto result = new rvresult(region, origin, output, port);
-    region->append_result(result);
-    return result;
-  }
+  rvresult &
+  Copy(rvsdg::output & origin, rvsdg::StructuralOutput * output) override;
 
   static rvresult *
   create(
-      jlm::rvsdg::region * region,
+      rvsdg::Region * region,
       jlm::rvsdg::output * origin,
       rvoutput * output,
-      std::shared_ptr<const rvsdg::type> type)
+      std::shared_ptr<const rvsdg::Type> type)
   {
     auto result = new rvresult(region, origin, output, type);
     region->append_result(result);
@@ -836,7 +790,7 @@ public:
   rvoutput *
   output() const noexcept
   {
-    return static_cast<rvoutput *>(result::output());
+    return static_cast<rvoutput *>(RegionResult::output());
   }
 
   rvargument *
@@ -912,7 +866,7 @@ cvinput::argument() const noexcept
 }
 
 inline rvoutput *
-rvoutput::create(phi::node * node, rvargument * argument, std::shared_ptr<const rvsdg::type> type)
+rvoutput::create(phi::node * node, rvargument * argument, std::shared_ptr<const rvsdg::Type> type)
 {
   JLM_ASSERT(argument->type() == *type);
   auto output = std::unique_ptr<rvoutput>(new rvoutput(node, argument, std::move(type)));
@@ -983,50 +937,6 @@ phi::node::RemovePhiOutputsWhere(const F & match)
   return numRemovedOutputs;
 }
 
-}
-
-/*
-  FIXME: This should be defined in librvsdg.
-*/
-static inline bool
-is_phi_output(const jlm::rvsdg::output * output)
-{
-  using namespace jlm::rvsdg;
-
-  return is<phi::operation>(node_output::node(output));
-}
-
-/*
-  FIXME: This should be defined in librvsdg.
-*/
-static inline bool
-is_phi_cv(const jlm::rvsdg::output * output)
-{
-  using namespace jlm::rvsdg;
-
-  auto a = dynamic_cast<const jlm::rvsdg::argument *>(output);
-  return a && is<phi::operation>(a->region()->node()) && a->input() != nullptr;
-}
-
-static inline bool
-is_phi_recvar_argument(const jlm::rvsdg::output * output)
-{
-  using namespace jlm::rvsdg;
-
-  auto a = dynamic_cast<const jlm::rvsdg::argument *>(output);
-  return a && is<phi::operation>(a->region()->node()) && a->input() == nullptr;
-}
-
-/*
-  FIXME: This should be defined in librvsdg.
-*/
-static inline jlm::rvsdg::result *
-phi_result(const jlm::rvsdg::output * output)
-{
-  JLM_ASSERT(is_phi_output(output));
-  auto result = jlm::rvsdg::node_output::node(output)->region()->result(output->index());
-  JLM_ASSERT(result->output() == output);
-  return result;
 }
 
 }

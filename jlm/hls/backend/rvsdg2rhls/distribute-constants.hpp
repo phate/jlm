@@ -15,7 +15,7 @@ namespace jlm
 namespace hls
 {
 void
-distribute_constants(rvsdg::region * region);
+distribute_constants(rvsdg::Region * region);
 
 void
 distribute_constants(llvm::RvsdgModule & rm);

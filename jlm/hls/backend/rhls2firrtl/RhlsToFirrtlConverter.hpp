@@ -23,6 +23,7 @@
 #include <mlir/IR/Verifier.h>
 
 #include <circt/Dialect/FIRRTL/FIREmitter.h>
+#include <circt/Dialect/FIRRTL/FIRParser.h>
 #include <circt/Dialect/FIRRTL/FIRRTLDialect.h>
 #include <circt/Dialect/FIRRTL/FIRRTLOps.h>
 #include <circt/Dialect/FIRRTL/FIRRTLTypes.h>
@@ -42,13 +43,14 @@ class RhlsToFirrtlConverter : public BaseHLS
 
 public:
   std::string
-  get_text(llvm::RvsdgModule & rvsdgModule) override
+  GetText(llvm::RvsdgModule &) override
   {
     return "MLIR/FIRRTL generator";
   }
 
   RhlsToFirrtlConverter()
-      : Context_(std::make_unique<::mlir::MLIRContext>())
+      : Context_(std::make_unique<::mlir::MLIRContext>()),
+        DefaultFIRVersion_{ 4, 0, 0 }
   {
     Context_->getOrLoadDialect<circt::firrtl::FIRRTLDialect>();
     Builder_ = std::make_unique<::mlir::OpBuilder>(Context_.get());
@@ -65,10 +67,10 @@ public:
   operator=(RhlsToFirrtlConverter &&) = delete;
 
   circt::firrtl::CircuitOp
-  MlirGen(const llvm::lambda::node * lamdaNode);
+  MlirGen(const rvsdg::LambdaNode * lamdaNode);
 
   void
-  WriteModuleToFile(const circt::firrtl::FModuleOp fModuleOp, const jlm::rvsdg::node * node);
+  WriteModuleToFile(const circt::firrtl::FModuleOp fModuleOp, const rvsdg::Node * node);
 
   void
   WriteCircuitToFile(const circt::firrtl::CircuitOp circuit, std::string name);
@@ -84,59 +86,83 @@ public:
     return mlirGen.toString(circuit);
   }
 
+  std::unique_ptr<mlir::ModuleOp>
+  ConvertToMduleOp(llvm::RvsdgModule & rvsdgModule)
+  {
+    auto lambdaNode = get_hls_lambda(rvsdgModule);
+    auto mlirGen = RhlsToFirrtlConverter();
+    auto circuit = mlirGen.MlirGen(lambdaNode);
+    std::unique_ptr<mlir::ModuleOp> module =
+        std::make_unique<mlir::ModuleOp>(mlir::ModuleOp::create(Builder_->getUnknownLoc()));
+    module->push_back(circuit);
+    return module;
+  }
+
 private:
   std::string
   toString(const circt::firrtl::CircuitOp circuit);
 
   std::unordered_map<std::string, circt::firrtl::FModuleOp> modules;
   // FIRRTL generating functions
-  std::unordered_map<jlm::rvsdg::simple_node *, circt::firrtl::InstanceOp>
+  std::unordered_map<jlm::rvsdg::SimpleNode *, circt::firrtl::InstanceOp>
   MlirGen(hls::loop_node * loopNode, mlir::Block * body, mlir::Block * circuitBody);
   circt::firrtl::FModuleOp
-  MlirGen(jlm::rvsdg::region * subRegion, mlir::Block * circuitBody);
+  MlirGen(rvsdg::Region * subRegion, mlir::Block * circuitBody);
   circt::firrtl::FModuleOp
-  MlirGen(const jlm::rvsdg::simple_node * node);
+  MlirGen(const jlm::rvsdg::SimpleNode * node);
   // Operations
   circt::firrtl::FModuleOp
-  MlirGenSink(const jlm::rvsdg::simple_node * node);
+  MlirGenSink(const jlm::rvsdg::SimpleNode * node);
   circt::firrtl::FModuleOp
-  MlirGenLoopConstBuffer(const jlm::rvsdg::simple_node * node);
+  MlirGenLoopConstBuffer(const jlm::rvsdg::SimpleNode * node);
   circt::firrtl::FModuleOp
-  MlirGenFork(const jlm::rvsdg::simple_node * node);
+  MlirGenFork(const jlm::rvsdg::SimpleNode * node);
   circt::firrtl::FModuleOp
-  MlirGenStateGate(const jlm::rvsdg::simple_node * node);
+  MlirGenStateGate(const jlm::rvsdg::SimpleNode * node);
   circt::firrtl::FModuleOp
-  MlirGenMem(const jlm::rvsdg::simple_node * node);
+  MlirGenMem(const jlm::rvsdg::SimpleNode * node);
+  /**
+   * Generate a FIRRTL module for a HLS memory response node that implements the functionality for
+   * retreiving memory responses.
+   * @param node The HLS memory response node.
+   * @return The generated FIRRTL module.
+   */
   circt::firrtl::FModuleOp
-  MlirGenHlsMemResp(const jlm::rvsdg::simple_node * node);
+  MlirGenHlsMemResp(const jlm::rvsdg::SimpleNode * node);
+  /**
+   * Generate a FIRRTL module for a HLS memory request node that implements the functionality for
+   * performing memory requests.
+   * @param node The HLS memory request node.
+   * @return The generated FIRRTL module.
+   */
   circt::firrtl::FModuleOp
-  MlirGenHlsMemReq(const jlm::rvsdg::simple_node * node);
+  MlirGenHlsMemReq(const jlm::rvsdg::SimpleNode * node);
   circt::firrtl::FModuleOp
-  MlirGenHlsLoad(const jlm::rvsdg::simple_node * node);
+  MlirGenHlsLoad(const jlm::rvsdg::SimpleNode * node);
   circt::firrtl::FModuleOp
-  MlirGenHlsDLoad(const jlm::rvsdg::simple_node * node);
+  MlirGenHlsDLoad(const jlm::rvsdg::SimpleNode * node);
   circt::firrtl::FModuleOp
-  MlirGenHlsLocalMem(const jlm::rvsdg::simple_node * node);
+  MlirGenHlsLocalMem(const jlm::rvsdg::SimpleNode * node);
   circt::firrtl::FModuleOp
-  MlirGenHlsStore(const jlm::rvsdg::simple_node * node);
+  MlirGenHlsStore(const jlm::rvsdg::SimpleNode * node);
   circt::firrtl::FModuleOp
-  MlirGenTrigger(const jlm::rvsdg::simple_node * node);
+  MlirGenTrigger(const jlm::rvsdg::SimpleNode * node);
   circt::firrtl::FModuleOp
-  MlirGenPrint(const jlm::rvsdg::simple_node * node);
+  MlirGenPrint(const jlm::rvsdg::SimpleNode * node);
   circt::firrtl::FModuleOp
-  MlirGenAddrQueue(const jlm::rvsdg::simple_node * node);
+  MlirGenAddrQueue(const jlm::rvsdg::SimpleNode * node);
   circt::firrtl::FModuleOp
-  MlirGenPredicationBuffer(const jlm::rvsdg::simple_node * node);
+  MlirGenPredicationBuffer(const jlm::rvsdg::SimpleNode * node);
   circt::firrtl::FModuleOp
-  MlirGenBuffer(const jlm::rvsdg::simple_node * node);
+  MlirGenBuffer(const jlm::rvsdg::SimpleNode * node);
   circt::firrtl::FModuleOp
-  MlirGenDMux(const jlm::rvsdg::simple_node * node);
+  MlirGenDMux(const jlm::rvsdg::SimpleNode * node);
   circt::firrtl::FModuleOp
-  MlirGenNDMux(const jlm::rvsdg::simple_node * node);
+  MlirGenNDMux(const jlm::rvsdg::SimpleNode * node);
   circt::firrtl::FModuleOp
-  MlirGenBranch(const jlm::rvsdg::simple_node * node);
+  MlirGenBranch(const jlm::rvsdg::SimpleNode * node);
   circt::firrtl::FModuleOp
-  MlirGenSimpleNode(const jlm::rvsdg::simple_node * node);
+  MlirGenSimpleNode(const jlm::rvsdg::SimpleNode * node);
 
   // Helper functions
   void
@@ -221,7 +247,7 @@ private:
   circt::firrtl::WhenOp
   AddWhenOp(mlir::Block * body, mlir::Value condition, bool elseStatment);
   circt::firrtl::InstanceOp
-  AddInstanceOp(mlir::Block * body, jlm::rvsdg::simple_node * node);
+  AddInstanceOp(mlir::Block * body, jlm::rvsdg::SimpleNode * node);
   circt::firrtl::ConstantOp
   GetConstant(mlir::Block * body, int size, int value);
   circt::firrtl::InvalidValueOp
@@ -233,9 +259,9 @@ private:
   DropMSBs(mlir::Block * body, mlir::Value value, int amount);
 
   jlm::rvsdg::output *
-  TraceArgument(jlm::rvsdg::argument * arg);
+  TraceArgument(rvsdg::RegionArgument * arg);
   jlm::rvsdg::simple_output *
-  TraceStructuralOutput(jlm::rvsdg::structural_output * out);
+  TraceStructuralOutput(rvsdg::StructuralOutput * out);
 
   void
   InitializeMemReq(circt::firrtl::FModuleOp module);
@@ -248,25 +274,26 @@ private:
   mlir::BlockArgument
   GetResetSignal(circt::firrtl::FModuleOp module);
   circt::firrtl::FModuleOp
-  nodeToModule(const jlm::rvsdg::simple_node * node, bool mem = false);
+  nodeToModule(const jlm::rvsdg::SimpleNode * node, bool mem = false);
   circt::firrtl::IntType
   GetIntType(int size);
   circt::firrtl::IntType
-  GetIntType(const jlm::rvsdg::type * type, int extend = 0);
+  GetIntType(const jlm::rvsdg::Type * type, int extend = 0);
   circt::firrtl::FIRRTLBaseType
-  GetFirrtlType(const jlm::rvsdg::type * type);
+  GetFirrtlType(const jlm::rvsdg::Type * type);
   std::string
-  GetModuleName(const jlm::rvsdg::node * node);
+  GetModuleName(const rvsdg::Node * node);
   bool
   IsIdentityMapping(const jlm::rvsdg::match_op & op);
 
-  std::unordered_map<jlm::rvsdg::simple_node *, circt::firrtl::InstanceOp>
-  createInstances(jlm::rvsdg::region * subRegion, mlir::Block * circuitBody, mlir::Block * body);
+  std::unordered_map<jlm::rvsdg::SimpleNode *, circt::firrtl::InstanceOp>
+  createInstances(rvsdg::Region * subRegion, mlir::Block * circuitBody, mlir::Block * body);
   void
   check_module(circt::firrtl::FModuleOp & module);
 
   std::unique_ptr<::mlir::OpBuilder> Builder_;
   std::unique_ptr<::mlir::MLIRContext> Context_;
+  const circt::firrtl::FIRVersion DefaultFIRVersion_;
 };
 
 } // namespace jlm::hls

@@ -7,16 +7,14 @@
 #ifndef JLM_RVSDG_NODE_HPP
 #define JLM_RVSDG_NODE_HPP
 
-#include <stdbool.h>
-#include <stddef.h>
-#include <stdint.h>
-#include <unordered_set>
-#include <utility>
-
 #include <jlm/rvsdg/operation.hpp>
 #include <jlm/util/common.hpp>
 #include <jlm/util/intrusive-list.hpp>
 #include <jlm/util/strfmt.hpp>
+
+#include <unordered_set>
+#include <utility>
+#include <variant>
 
 namespace jlm::rvsdg
 {
@@ -25,27 +23,24 @@ namespace base
 class type;
 }
 
-class graph;
-class node_normal_form;
+class Graph;
 class output;
-class substitution_map;
+class SubstitutionMap;
 
 /* inputs */
 
 class input
 {
-  friend class jlm::rvsdg::node;
-  friend class jlm::rvsdg::region;
+  friend class Node;
+  friend class rvsdg::Region;
 
 public:
   virtual ~input() noexcept;
 
-  input(jlm::rvsdg::output * origin, jlm::rvsdg::region * region, const jlm::rvsdg::port & port);
-
   input(
       jlm::rvsdg::output * origin,
-      jlm::rvsdg::region * region,
-      std::shared_ptr<const rvsdg::type> type);
+      rvsdg::Region * region,
+      std::shared_ptr<const rvsdg::Type> type);
 
   input(const input &) = delete;
 
@@ -72,41 +67,26 @@ public:
   void
   divert_to(jlm::rvsdg::output * new_origin);
 
-  inline const jlm::rvsdg::type &
+  [[nodiscard]] const rvsdg::Type &
   type() const noexcept
   {
-    return port_->type();
+    return *Type();
   }
 
-  inline const std::shared_ptr<const jlm::rvsdg::type> &
+  [[nodiscard]] const std::shared_ptr<const rvsdg::Type> &
   Type() const noexcept
   {
-    return port_->Type();
+    return Type_;
   }
 
-  inline jlm::rvsdg::region *
+  [[nodiscard]] rvsdg::Region *
   region() const noexcept
   {
     return region_;
   }
 
-  inline const jlm::rvsdg::port &
-  port() const noexcept
-  {
-    return *port_;
-  }
-
   virtual std::string
   debug_string() const;
-
-  inline void
-  replace(const jlm::rvsdg::port & port)
-  {
-    if (port_->type() != port.type())
-      throw jlm::util::type_error(port_->type().debug_string(), port.type().debug_string());
-
-    port_ = port.copy();
-  }
 
   /**
    * Retrieve the associated node from \p input if \p input is derived from jlm::rvsdg::node_input.
@@ -115,8 +95,11 @@ public:
    * @return The node associated with \p input if input is derived from jlm::rvsdg::node_input,
    * otherwise nullptr.
    */
-  [[nodiscard]] static rvsdg::node *
+  [[nodiscard]] static Node *
   GetNode(const rvsdg::input & input) noexcept;
+
+  [[nodiscard]] virtual std::variant<Node *, Region *>
+  GetOwner() const noexcept = 0;
 
   template<class T>
   class iterator
@@ -281,8 +264,8 @@ public:
 private:
   size_t index_;
   jlm::rvsdg::output * origin_;
-  jlm::rvsdg::region * region_;
-  std::unique_ptr<jlm::rvsdg::port> port_;
+  rvsdg::Region * region_;
+  std::shared_ptr<const rvsdg::Type> Type_;
 };
 
 template<class T>
@@ -301,17 +284,15 @@ is(const jlm::rvsdg::input & input) noexcept
 class output
 {
   friend input;
-  friend class jlm::rvsdg::node;
-  friend class jlm::rvsdg::region;
+  friend class Node;
+  friend class rvsdg::Region;
 
   typedef std::unordered_set<jlm::rvsdg::input *>::const_iterator user_iterator;
 
 public:
   virtual ~output() noexcept;
 
-  output(jlm::rvsdg::region * region, const jlm::rvsdg::port & port);
-
-  output(jlm::rvsdg::region * region, std::shared_ptr<const rvsdg::type> type);
+  output(rvsdg::Region * region, std::shared_ptr<const rvsdg::Type> type);
 
   output(const output &) = delete;
 
@@ -372,41 +353,40 @@ public:
     return users_.end();
   }
 
-  inline const jlm::rvsdg::type &
+  [[nodiscard]] const rvsdg::Type &
   type() const noexcept
   {
-    return port_->type();
+    return *Type();
   }
 
-  inline const std::shared_ptr<const jlm::rvsdg::type> &
+  [[nodiscard]] const std::shared_ptr<const rvsdg::Type> &
   Type() const noexcept
   {
-    return port_->Type();
+    return Type_;
   }
 
-  inline jlm::rvsdg::region *
+  [[nodiscard]] rvsdg::Region *
   region() const noexcept
   {
     return region_;
   }
 
-  inline const jlm::rvsdg::port &
-  port() const noexcept
-  {
-    return *port_;
-  }
-
   virtual std::string
   debug_string() const;
 
-  inline void
-  replace(const jlm::rvsdg::port & port)
-  {
-    if (port_->type() != port.type())
-      throw jlm::util::type_error(port_->type().debug_string(), port.type().debug_string());
+  [[nodiscard]] virtual std::variant<Node *, Region *>
+  GetOwner() const noexcept = 0;
 
-    port_ = port.copy();
-  }
+  /**
+   * Retrieve the associated node from \p output if \p output is derived from
+   * jlm::rvsdg::node_output.
+   *
+   * @param output The output from which to retrieve the node.
+   * @return The node associated with \p output if output is derived from jlm::rvsdg::node_output,
+   * otherwise nullptr.
+   */
+  [[nodiscard]] static Node *
+  GetNode(const rvsdg::output & output) noexcept;
 
   template<class T>
   class iterator
@@ -576,8 +556,8 @@ private:
   add_user(jlm::rvsdg::input * user);
 
   size_t index_;
-  jlm::rvsdg::region * region_;
-  std::unique_ptr<jlm::rvsdg::port> port_;
+  rvsdg::Region * region_;
+  std::shared_ptr<const rvsdg::Type> Type_;
   std::unordered_set<jlm::rvsdg::input *> users_;
 };
 
@@ -597,19 +577,19 @@ is(const jlm::rvsdg::output * output) noexcept
 class node_input : public jlm::rvsdg::input
 {
 public:
-  node_input(
-      jlm::rvsdg::output * origin,
-      jlm::rvsdg::node * node,
-      std::shared_ptr<const rvsdg::type> type);
+  node_input(jlm::rvsdg::output * origin, Node * node, std::shared_ptr<const rvsdg::Type> type);
 
-  jlm::rvsdg::node *
+  Node *
   node() const noexcept
   {
     return node_;
   }
 
+  [[nodiscard]] std::variant<Node *, Region *>
+  GetOwner() const noexcept override;
+
 private:
-  jlm::rvsdg::node * node_;
+  Node * node_;
 };
 
 /* node_output class */
@@ -617,39 +597,39 @@ private:
 class node_output : public jlm::rvsdg::output
 {
 public:
-  node_output(jlm::rvsdg::node * node, std::shared_ptr<const rvsdg::type> type);
+  node_output(Node * node, std::shared_ptr<const rvsdg::Type> type);
 
-  jlm::rvsdg::node *
+  [[nodiscard]] Node *
   node() const noexcept
   {
     return node_;
   }
 
-  static jlm::rvsdg::node *
+  static Node *
   node(const jlm::rvsdg::output * output)
   {
     auto no = dynamic_cast<const node_output *>(output);
     return no != nullptr ? no->node() : nullptr;
   }
 
+  [[nodiscard]] std::variant<Node *, Region *>
+  GetOwner() const noexcept override;
+
 private:
-  jlm::rvsdg::node * node_;
+  Node * node_;
 };
 
 /* node class */
 
-class node
+class Node
 {
 public:
-  virtual ~node();
+  virtual ~Node();
 
-  node(std::unique_ptr<jlm::rvsdg::operation> op, jlm::rvsdg::region * region);
+  explicit Node(Region * region);
 
-  inline const jlm::rvsdg::operation &
-  operation() const noexcept
-  {
-    return *operation_;
-  }
+  [[nodiscard]] virtual const Operation &
+  GetOperation() const noexcept = 0;
 
   inline bool
   has_users() const noexcept
@@ -719,6 +699,27 @@ public:
   inline void
   recompute_depth() noexcept;
 
+  /**
+   * \brief Determines whether the node is dead.
+   *
+   * A node is considered dead if all its outputs are dead.
+   *
+   * @return True, if the node is dead, otherwise false.
+   *
+   * \see output::IsDead()
+   */
+  [[nodiscard]] bool
+  IsDead() const noexcept
+  {
+    for (auto & output : outputs_)
+    {
+      if (!output->IsDead())
+        return false;
+    }
+
+    return true;
+  }
+
 protected:
   node_input *
   add_input(std::unique_ptr<node_input> input);
@@ -753,7 +754,7 @@ protected:
     // iterate backwards to avoid the invalidation of 'n' by RemoveInput()
     for (size_t n = ninputs() - 1; n != static_cast<size_t>(-1); n--)
     {
-      auto & input = *node::input(n);
+      auto & input = *Node::input(n);
       if (match(input))
       {
         RemoveInput(n);
@@ -802,7 +803,7 @@ protected:
     // iterate backwards to avoid the invalidation of 'n' by RemoveOutput()
     for (size_t n = noutputs() - 1; n != static_cast<size_t>(-1); n--)
     {
-      auto & output = *node::output(n);
+      auto & output = *Node::output(n);
       if (output.nusers() == 0 && match(output))
       {
         RemoveOutput(n);
@@ -811,20 +812,20 @@ protected:
   }
 
 public:
-  inline jlm::rvsdg::graph *
+  [[nodiscard]] Graph *
   graph() const noexcept
   {
     return graph_;
   }
 
-  inline jlm::rvsdg::region *
+  [[nodiscard]] rvsdg::Region *
   region() const noexcept
   {
     return region_;
   }
 
-  virtual jlm::rvsdg::node *
-  copy(jlm::rvsdg::region * region, const std::vector<jlm::rvsdg::output *> & operands) const;
+  virtual Node *
+  copy(rvsdg::Region * region, const std::vector<jlm::rvsdg::output *> & operands) const;
 
   /**
     \brief Copy a node with substitutions
@@ -842,8 +843,8 @@ public:
     corresponding outputs of the newly created node in
     subsequent \ref copy operations.
   */
-  virtual jlm::rvsdg::node *
-  copy(jlm::rvsdg::region * region, jlm::rvsdg::substitution_map & smap) const = 0;
+  virtual Node *
+  copy(rvsdg::Region * region, SubstitutionMap & smap) const = 0;
 
   inline size_t
   depth() const noexcept
@@ -852,36 +853,190 @@ public:
   }
 
 private:
-  jlm::util::intrusive_list_anchor<jlm::rvsdg::node> region_node_list_anchor_;
+  util::intrusive_list_anchor<Node> region_node_list_anchor_;
 
-  jlm::util::intrusive_list_anchor<jlm::rvsdg::node> region_top_node_list_anchor_;
+  util::intrusive_list_anchor<Node> region_top_node_list_anchor_;
 
-  jlm::util::intrusive_list_anchor<jlm::rvsdg::node> region_bottom_node_list_anchor_;
+  util::intrusive_list_anchor<Node> region_bottom_node_list_anchor_;
 
 public:
-  typedef jlm::util::
-      intrusive_list_accessor<jlm::rvsdg::node, &jlm::rvsdg::node::region_node_list_anchor_>
-          region_node_list_accessor;
+  typedef util::intrusive_list_accessor<Node, &Node::region_node_list_anchor_>
+      region_node_list_accessor;
 
-  typedef jlm::util::
-      intrusive_list_accessor<jlm::rvsdg::node, &jlm::rvsdg::node::region_top_node_list_anchor_>
-          region_top_node_list_accessor;
+  typedef util::intrusive_list_accessor<Node, &Node::region_top_node_list_anchor_>
+      region_top_node_list_accessor;
 
-  typedef jlm::util::
-      intrusive_list_accessor<jlm::rvsdg::node, &jlm::rvsdg::node::region_bottom_node_list_anchor_>
-          region_bottom_node_list_accessor;
+  typedef util::intrusive_list_accessor<Node, &Node::region_bottom_node_list_anchor_>
+      region_bottom_node_list_accessor;
 
 private:
   size_t depth_;
-  jlm::rvsdg::graph * graph_;
-  jlm::rvsdg::region * region_;
-  std::unique_ptr<jlm::rvsdg::operation> operation_;
+  Graph * graph_;
+  rvsdg::Region * region_;
   std::vector<std::unique_ptr<node_input>> inputs_;
   std::vector<std::unique_ptr<node_output>> outputs_;
 };
 
+/**
+ * \brief Checks if this is an input to a node of specified type.
+ *
+ * \tparam NodeType
+ *   The node type to be matched against.
+ *
+ * \param input
+ *   Input to be checked.
+ *
+ * \returns
+ *   Owning node of requested type or nullptr.
+ *
+ * Checks if the specified input belongs to a node of requested type.
+ * If this is the case, returns a pointer to the node of matched type.
+ * If this is not the case (because either this as a region exit
+ * result or its owning node is not of the requested type), returns
+ * nullptr.
+ *
+ * See \ref def_use_inspection.
+ */
+template<typename NodeType>
+inline NodeType *
+TryGetOwnerNode(const rvsdg::input & input) noexcept
+{
+  auto owner = input.GetOwner();
+  if (const auto node = std::get_if<Node *>(&owner))
+  {
+    return dynamic_cast<NodeType *>(*node);
+  }
+  else
+  {
+    return nullptr;
+  }
+}
+
+/**
+ * \brief Checks if this is an output to a node of specified type.
+ *
+ * \tparam NodeType
+ *   The node type to be matched against.
+ *
+ * \param output
+ *   Output to be checked.
+ *
+ * \returns
+ *   Owning node of requested type or nullptr.
+ *
+ * Checks if the specified output belongs to a node of requested type.
+ * If this is the case, returns a pointer to the node of matched type.
+ * If this is not the case (because either this as a region entry
+ * argument or its owning node is not of the requested type), returns
+ * nullptr.
+ *
+ * See \ref def_use_inspection.
+ */
+template<typename NodeType>
+inline NodeType *
+TryGetOwnerNode(const rvsdg::output & output) noexcept
+{
+  auto owner = output.GetOwner();
+  if (const auto node = std::get_if<Node *>(&owner))
+  {
+    return dynamic_cast<NodeType *>(*node);
+  }
+  else
+  {
+    return nullptr;
+  }
+}
+
+/**
+ * \brief Asserts that this is an input to a node of specified type.
+ *
+ * \tparam NodeType
+ *   The node type to be matched against.
+ *
+ * \param input
+ *   Input to be checked.
+ *
+ * \returns
+ *   Owning node of requested type.
+ *
+ * Checks if the specified input belongs to a node of requested type.
+ * If this is the case, returns a reference to the node of matched type,
+ * otherwise throws std::logic_error.
+ *
+ * See \ref def_use_inspection.
+ */
+template<typename NodeType>
+inline NodeType &
+AssertGetOwnerNode(const rvsdg::input & input)
+{
+  auto node = TryGetOwnerNode<NodeType>(input);
+  if (!node)
+  {
+    throw std::logic_error(std::string("expected node of type ") + typeid(NodeType).name());
+  }
+  return *node;
+}
+
+/**
+ * \brief Asserts that this is an output of a node of specified type.
+ *
+ * \tparam NodeType
+ *   The node type to be matched against.
+ *
+ * \param output
+ *   Output to be checked.
+ *
+ * \returns
+ *   Owning node of requested type.
+ *
+ * Checks if the specified output belongs to a node of requested type.
+ * If this is the case, returns a reference to the node of matched type,
+ * otherwise throws std::logic_error.
+ *
+ * See \ref def_use_inspection.
+ */
+template<typename NodeType>
+inline NodeType &
+AssertGetOwnerNode(const rvsdg::output & output)
+{
+  auto node = TryGetOwnerNode<NodeType>(output);
+  if (!node)
+  {
+    throw std::logic_error(std::string("expected node of type ") + typeid(NodeType).name());
+  }
+  return *node;
+}
+
+inline Region *
+TryGetOwnerRegion(const rvsdg::input & input) noexcept
+{
+  auto owner = input.GetOwner();
+  if (auto region = std::get_if<Region *>(&owner))
+  {
+    return *region;
+  }
+  else
+  {
+    return nullptr;
+  }
+}
+
+inline Region *
+TryGetOwnerRegion(const rvsdg::output & output) noexcept
+{
+  auto owner = output.GetOwner();
+  if (auto region = std::get_if<Region *>(&owner))
+  {
+    return *region;
+  }
+  else
+  {
+    return nullptr;
+  }
+}
+
 static inline std::vector<jlm::rvsdg::output *>
-operands(const jlm::rvsdg::node * node)
+operands(const Node * node)
 {
   std::vector<jlm::rvsdg::output *> operands;
   for (size_t n = 0; n < node->ninputs(); n++)
@@ -890,7 +1045,7 @@ operands(const jlm::rvsdg::node * node)
 }
 
 static inline std::vector<jlm::rvsdg::output *>
-outputs(const jlm::rvsdg::node * node)
+outputs(const Node * node)
 {
   std::vector<jlm::rvsdg::output *> outputs;
   for (size_t n = 0; n < node->noutputs(); n++)
@@ -899,7 +1054,7 @@ outputs(const jlm::rvsdg::node * node)
 }
 
 static inline void
-divert_users(jlm::rvsdg::node * node, const std::vector<jlm::rvsdg::output *> & outputs)
+divert_users(Node * node, const std::vector<output *> & outputs)
 {
   JLM_ASSERT(node->noutputs() == outputs.size());
 
@@ -909,19 +1064,16 @@ divert_users(jlm::rvsdg::node * node, const std::vector<jlm::rvsdg::output *> & 
 
 template<class T>
 static inline bool
-is(const jlm::rvsdg::node * node) noexcept
+is(const Node * node) noexcept
 {
   if (!node)
     return false;
 
-  return is<T>(node->operation());
+  return is<T>(node->GetOperation());
 }
 
-jlm::rvsdg::node *
+Node *
 producer(const jlm::rvsdg::output * output) noexcept;
-
-bool
-normalize(jlm::rvsdg::node * node);
 
 }
 

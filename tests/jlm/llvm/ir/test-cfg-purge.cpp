@@ -30,7 +30,7 @@ test()
   bb0->add_outedge(cfg.exit());
   bb1->add_outedge(bb1);
 
-  print_ascii(cfg, stdout);
+  std::cout << cfg::ToAscii(cfg) << std::flush;
 
   purge(cfg);
 

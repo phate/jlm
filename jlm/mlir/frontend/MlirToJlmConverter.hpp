@@ -11,8 +11,10 @@
 #include <jlm/rvsdg/bitstring/comparison.hpp>
 #include <jlm/rvsdg/bitstring/constant.hpp>
 #include <jlm/rvsdg/gamma.hpp>
+#include <jlm/rvsdg/theta.hpp>
 
 #include <JLM/JLMDialect.h>
+#include <JLM/JLMOps.h>
 #include <RVSDG/RVSDGDialect.h>
 #include <RVSDG/RVSDGPasses.h>
 
@@ -85,7 +87,7 @@ private:
    * \return The results of the region are returned as a std::vector
    */
   ::llvm::SmallVector<jlm::rvsdg::output *>
-  ConvertRegion(::mlir::Region & region, rvsdg::region & rvsdgRegion);
+  ConvertRegion(::mlir::Region & region, rvsdg::Region & rvsdgRegion);
 
   /**
    * Converts the MLIR block and all operations in it
@@ -95,7 +97,7 @@ private:
    * \return The results of the region are returned as a std::vector
    */
   ::llvm::SmallVector<jlm::rvsdg::output *>
-  ConvertBlock(::mlir::Block & block, rvsdg::region & rvsdgRegion);
+  ConvertBlock(::mlir::Block & block, rvsdg::Region & rvsdgRegion);
 
   /**
    * Retreive the previously converted RVSDG ouputs from the map of operations
@@ -108,8 +110,8 @@ private:
   static ::llvm::SmallVector<jlm::rvsdg::output *>
   GetConvertedInputs(
       ::mlir::Operation & mlirOp,
-      const std::unordered_map<::mlir::Operation *, rvsdg::node *> & operationsMap,
-      const rvsdg::region & rvsdgRegion);
+      const std::unordered_map<::mlir::Operation *, rvsdg::Node *> & operationsMap,
+      const rvsdg::Region & rvsdgRegion);
 
   /**
    * Converts an MLIR integer comparison operation into an RVSDG node.
@@ -118,11 +120,24 @@ private:
    * \param nbits The number of bits in the comparison.
    * \result The converted RVSDG node.
    */
-  rvsdg::node *
+  rvsdg::Node *
   ConvertCmpIOp(
       ::mlir::arith::CmpIOp & CompOp,
       const ::llvm::SmallVector<rvsdg::output *> & inputs,
       size_t nbits);
+
+  /**
+   * Converts an MLIR floating point binary operation into an RVSDG node.
+   * \param mlirOperation The MLIR operation to be converted.
+   * \param rvsdgRegion The RVSDG region that the generated RVSDG node is inserted into.
+   * \param inputs The inputs for the RVSDG node.
+   * \result The converted RVSDG node OR nullptr if the operation cannot be casted to an operation
+   */
+  rvsdg::Node *
+  ConvertFPBinaryNode(
+      const ::mlir::Operation & mlirOperation,
+      rvsdg::Region & rvsdgRegion,
+      const ::llvm::SmallVector<rvsdg::output *> & inputs);
 
   /**
    * Converts an MLIR integer binary operation into an RVSDG node.
@@ -130,7 +145,7 @@ private:
    * \param inputs The inputs for the RVSDG node.
    * \result The converted RVSDG node OR nullptr if the operation cannot be casted to an operation
    */
-  rvsdg::node *
+  rvsdg::Node *
   ConvertBitBinaryNode(
       const ::mlir::Operation & mlirOperation,
       const ::llvm::SmallVector<rvsdg::output *> & inputs);
@@ -142,11 +157,19 @@ private:
    * \param inputs The inputs for the RVSDG node.
    * \result The converted RVSDG node.
    */
-  rvsdg::node *
+  rvsdg::Node *
   ConvertOperation(
       ::mlir::Operation & mlirOperation,
-      rvsdg::region & rvsdgRegion,
+      rvsdg::Region & rvsdgRegion,
       const ::llvm::SmallVector<rvsdg::output *> & inputs);
+
+  /**
+   * Converts a floating point size to jlm::llvm::fpsize.
+   * \param size unsinged int representing the size.
+   * \result The fpsize.
+   */
+  llvm::fpsize
+  ConvertFPSize(unsigned int size);
 
   /**
    * Converts an MLIR omega operation and insterst it into an RVSDG region.
@@ -154,7 +177,7 @@ private:
    * \param rvsdgRegion The RVSDG region that the omega node will reside in.
    */
   void
-  ConvertOmega(::mlir::Operation & mlirOmega, rvsdg::region & rvsdgRegion);
+  ConvertOmega(::mlir::Operation & mlirOmega, rvsdg::Region & rvsdgRegion);
 
   /**
    * Converts an MLIR lambda operation and inserts it into an RVSDG region.
@@ -162,15 +185,15 @@ private:
    * \param rvsdgRegion The RVSDG region that the lambda node will reside in.
    * \result The converted Lambda node.
    */
-  rvsdg::node *
-  ConvertLambda(::mlir::Operation & mlirLambda, rvsdg::region & rvsdgRegion);
+  rvsdg::Node *
+  ConvertLambda(::mlir::Operation & mlirLambda, rvsdg::Region & rvsdgRegion);
 
   /**
    * Converts an MLIR type into an RVSDG type.
    * \param type The MLIR type to be converted.
    * \result The converted RVSDG type.
    */
-  static std::unique_ptr<rvsdg::type>
+  static std::unique_ptr<rvsdg::Type>
   ConvertType(::mlir::Type & type);
 
   std::unique_ptr<::mlir::MLIRContext> Context_;

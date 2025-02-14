@@ -10,10 +10,13 @@
 #include <jlm/tooling/CommandLine.hpp>
 #include <jlm/util/file.hpp>
 
-#include <llvm/IR/Module.h>
-
 #include <memory>
 #include <string>
+
+namespace jlm::llvm
+{
+class RvsdgModule;
+}
 
 namespace jlm::tooling
 {
@@ -32,7 +35,7 @@ public:
   ToString() const = 0;
 
   virtual void
-  Run() const = 0;
+  Run() const;
 };
 
 /**
@@ -160,9 +163,6 @@ public:
 
   [[nodiscard]] std::string
   ToString() const override;
-
-  void
-  Run() const override;
 
   [[nodiscard]] const util::filepath &
   OutputFile() const noexcept
@@ -298,9 +298,6 @@ public:
   [[nodiscard]] std::string
   ToString() const override;
 
-  void
-  Run() const override;
-
   [[nodiscard]] const util::filepath &
   OutputFile() const noexcept
   {
@@ -341,10 +338,7 @@ class JlmOptCommand final : public Command
 public:
   ~JlmOptCommand() override;
 
-  JlmOptCommand(std::string programName, JlmOptCommandLineOptions commandLineOptions)
-      : ProgramName_(std::move(programName)),
-        CommandLineOptions_(std::move(commandLineOptions))
-  {}
+  JlmOptCommand(std::string programName, const JlmOptCommandLineOptions & commandLineOptions);
 
   [[nodiscard]] std::string
   ToString() const override;
@@ -356,7 +350,7 @@ public:
   Create(
       CommandGraph & commandGraph,
       std::string programName,
-      JlmOptCommandLineOptions commandLineOptions)
+      const JlmOptCommandLineOptions & commandLineOptions)
   {
     auto command =
         std::make_unique<JlmOptCommand>(std::move(programName), std::move(commandLineOptions));
@@ -368,6 +362,13 @@ public:
   {
     return CommandLineOptions_;
   }
+
+  static void
+  PrintRvsdgModule(
+      llvm::RvsdgModule & rvsdgModule,
+      const util::filepath & outputFile,
+      const JlmOptCommandLineOptions::OutputFormat & outputFormat,
+      util::StatisticsCollector & statisticsCollector);
 
 private:
   std::unique_ptr<llvm::RvsdgModule>
@@ -383,13 +384,6 @@ private:
   std::unique_ptr<llvm::RvsdgModule>
   ParseMlirIrFile(const util::filepath & inputFile, util::StatisticsCollector & statisticsCollector)
       const;
-
-  static void
-  PrintRvsdgModule(
-      llvm::RvsdgModule & rvsdgModule,
-      const util::filepath & outputFile,
-      const JlmOptCommandLineOptions::OutputFormat & outputFormat,
-      util::StatisticsCollector & statisticsCollector);
 
   static void
   PrintAsAscii(
@@ -415,8 +409,30 @@ private:
       const util::filepath & outputFile,
       util::StatisticsCollector & statisticsCollector);
 
+  static void
+  PrintAsRvsdgTree(
+      const llvm::RvsdgModule & rvsdgModule,
+      const util::filepath & outputFile,
+      util::StatisticsCollector & statisticsCollector);
+
+  static void
+  PrintAsDot(
+      const llvm::RvsdgModule & rvsdgModule,
+      const util::filepath & outputFile,
+      util::StatisticsCollector & statisticsCollector);
+
+  [[nodiscard]] std::vector<rvsdg::Transformation *>
+  GetTransformations() const;
+
+  [[nodiscard]] std::unique_ptr<rvsdg::Transformation>
+  CreateTransformation(JlmOptCommandLineOptions::OptimizationId optimizationId) const;
+
   std::string ProgramName_;
   JlmOptCommandLineOptions CommandLineOptions_;
+  std::unordered_map<
+      JlmOptCommandLineOptions::OptimizationId,
+      std::unique_ptr<rvsdg::Transformation>>
+      Optimizations_ = {};
 };
 
 /**
@@ -481,9 +497,6 @@ public:
     return OutputFile_;
   }
 
-  void
-  Run() const override;
-
   static CommandGraph::Node &
   Create(
       CommandGraph & commandGraph,
@@ -531,9 +544,6 @@ public:
   [[nodiscard]] std::string
   ToString() const override;
 
-  void
-  Run() const override;
-
   [[nodiscard]] const util::filepath &
   OutputFile() const noexcept
   {
@@ -575,40 +585,36 @@ class JlmHlsCommand final : public Command
 public:
   ~JlmHlsCommand() noexcept override;
 
-  JlmHlsCommand(util::filepath inputFile, util::filepath outputFolder, bool useCirct)
+  JlmHlsCommand(util::filepath inputFile, util::filepath outputFolder)
       : InputFile_(std::move(inputFile)),
-        OutputFolder_(std::move(outputFolder)),
-        UseCirct_(useCirct)
+        OutputFolder_(std::move(outputFolder))
   {}
 
   [[nodiscard]] std::string
   ToString() const override;
 
-  void
-  Run() const override;
-
   [[nodiscard]] util::filepath
   FirrtlFile() const noexcept
   {
-    return OutputFolder_.to_str() + ".fir";
+    return OutputFolder_.WithSuffix(".fir");
   }
 
   [[nodiscard]] util::filepath
   LlvmFile() const noexcept
   {
-    return OutputFolder_.to_str() + ".rest.ll";
+    return OutputFolder_.WithSuffix(".rest.ll");
   }
 
   [[nodiscard]] util::filepath
   RefFile() const noexcept
   {
-    return OutputFolder_.to_str() + ".ref.ll";
+    return OutputFolder_.WithSuffix(".ref.ll");
   }
 
   [[nodiscard]] util::filepath
   HarnessFile() const noexcept
   {
-    return OutputFolder_.to_str() + ".harness.cpp";
+    return OutputFolder_.WithSuffix(".harness.cpp");
   }
 
   [[nodiscard]] const util::filepath &
@@ -621,17 +627,15 @@ public:
   Create(
       CommandGraph & commandGraph,
       const util::filepath & inputFile,
-      const util::filepath & outputFolder,
-      bool useCirct)
+      const util::filepath & outputFolder)
   {
-    std::unique_ptr<JlmHlsCommand> command(new JlmHlsCommand(inputFile, outputFolder, useCirct));
+    std::unique_ptr<JlmHlsCommand> command(new JlmHlsCommand(inputFile, outputFolder));
     return CommandGraph::Node::Create(commandGraph, std::move(command));
   }
 
 private:
   util::filepath InputFile_;
   util::filepath OutputFolder_;
-  bool UseCirct_;
 };
 
 /**
@@ -655,19 +659,16 @@ public:
   [[nodiscard]] std::string
   ToString() const override;
 
-  void
-  Run() const override;
-
   [[nodiscard]] util::filepath
   HlsFunctionFile() const noexcept
   {
-    return OutputFolder_.to_str() + ".function.ll";
+    return OutputFolder_.WithSuffix(".function.ll");
   }
 
   [[nodiscard]] util::filepath
   LlvmFile() const noexcept
   {
-    return OutputFolder_.to_str() + ".rest.ll";
+    return OutputFolder_.WithSuffix(".rest.ll");
   }
 
   [[nodiscard]] const util::filepath &

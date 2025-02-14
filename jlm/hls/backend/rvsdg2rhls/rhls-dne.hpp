@@ -25,7 +25,7 @@ bool
 remove_unused_loop_inputs(hls::loop_node * ln);
 
 bool
-dne(jlm::rvsdg::region * sr);
+dne(rvsdg::Region * sr);
 
 void
 dne(llvm::RvsdgModule & rm);

@@ -13,7 +13,7 @@ jlm-hls_LIBS = \
 	libutil \
 
 jlm-hls_EXTRA_LDFLAGS = \
+    ${CIRCT_LDFLAGS} \
     $(shell $(LLVMCONFIG) --libs core irReader --ldflags --system-libs) \
-    ${CIRCT_LDFLAGS}
 
 $(eval $(call common_executable,jlm-hls))

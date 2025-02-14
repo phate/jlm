@@ -14,6 +14,8 @@
 #include <jlm/rvsdg/traverser.hpp>
 #include <jlm/rvsdg/view.hpp>
 
+#include <algorithm>
+
 namespace jlm::hls
 {
 
@@ -26,7 +28,7 @@ hex(size_t i)
 }
 
 std::string
-get_dot_name(jlm::rvsdg::node * node)
+get_dot_name(rvsdg::Node * node)
 {
   return jlm::util::strfmt("n", hex((intptr_t)node));
 }
@@ -34,7 +36,7 @@ get_dot_name(jlm::rvsdg::node * node)
 std::string
 get_dot_name(jlm::rvsdg::output * output)
 {
-  if (dynamic_cast<jlm::rvsdg::argument *>(output))
+  if (dynamic_cast<rvsdg::RegionArgument *>(output))
   {
     return jlm::util::strfmt("a", hex((intptr_t)output), ":", "default");
   }
@@ -42,7 +44,7 @@ get_dot_name(jlm::rvsdg::output * output)
   {
     return jlm::util::strfmt(get_dot_name(no->node()), ":", "o", hex((intptr_t)output));
   }
-  else if (dynamic_cast<jlm::rvsdg::structural_output *>(output))
+  else if (dynamic_cast<rvsdg::StructuralOutput *>(output))
   {
     return jlm::util::strfmt("so", hex((intptr_t)output), ":", "default");
   }
@@ -52,15 +54,15 @@ get_dot_name(jlm::rvsdg::output * output)
 std::string
 get_dot_name(jlm::rvsdg::input * input)
 {
-  if (dynamic_cast<jlm::rvsdg::result *>(input))
+  if (dynamic_cast<rvsdg::RegionResult *>(input))
   {
     return jlm::util::strfmt("r", hex((intptr_t)input), ":", "default");
   }
-  else if (auto ni = dynamic_cast<jlm::rvsdg::simple_input *>(input))
+  if (auto ni = dynamic_cast<rvsdg::SimpleInput *>(input))
   {
     return jlm::util::strfmt(get_dot_name(ni->node()), ":", "i", hex((intptr_t)input));
   }
-  else if (dynamic_cast<jlm::rvsdg::structural_input *>(input))
+  else if (dynamic_cast<rvsdg::StructuralInput *>(input))
   {
     return jlm::util::strfmt("si", hex((intptr_t)input), ":", "default");
   }
@@ -87,7 +89,7 @@ port_to_dot(const std::string & display_name, const std::string & dot_name)
 }
 
 std::string
-argument_to_dot(jlm::rvsdg::argument * argument)
+argument_to_dot(rvsdg::RegionArgument * argument)
 {
   auto display_name = jlm::util::strfmt("a", argument->index());
   auto dot_name = jlm::util::strfmt("a", hex((intptr_t)argument));
@@ -95,7 +97,7 @@ argument_to_dot(jlm::rvsdg::argument * argument)
 }
 
 std::string
-result_to_dot(jlm::rvsdg::result * result)
+result_to_dot(rvsdg::RegionResult * result)
 {
   auto display_name = jlm::util::strfmt("r", result->index());
   auto dot_name = jlm::util::strfmt("r", hex((intptr_t)result));
@@ -103,7 +105,7 @@ result_to_dot(jlm::rvsdg::result * result)
 }
 
 std::string
-structural_input_to_dot(jlm::rvsdg::structural_input * structuralInput)
+structural_input_to_dot(rvsdg::StructuralInput * structuralInput)
 {
   auto display_name = jlm::util::strfmt("si", structuralInput->index());
   auto dot_name = jlm::util::strfmt("si", hex((intptr_t)structuralInput));
@@ -111,7 +113,7 @@ structural_input_to_dot(jlm::rvsdg::structural_input * structuralInput)
 }
 
 std::string
-structural_output_to_dot(jlm::rvsdg::structural_output * structuralOutput)
+structural_output_to_dot(rvsdg::StructuralOutput * structuralOutput)
 {
   auto display_name = jlm::util::strfmt("so", structuralOutput->index());
   auto dot_name = jlm::util::strfmt("so", hex((intptr_t)structuralOutput));
@@ -159,14 +161,14 @@ isForbiddenChar(char c)
 }
 
 std::string
-structural_node_to_dot(jlm::rvsdg::structural_node * structuralNode)
+structural_node_to_dot(rvsdg::StructuralNode * structuralNode)
 {
 
   std::ostringstream dot;
   dot << "subgraph cluster_sn" << hex((intptr_t)structuralNode) << " {\n";
   dot << "color=\"#ff8080\"\n";
   dot << "penwidth=6\n";
-  dot << "label=\"" << structuralNode->operation().debug_string() << "\"\n";
+  dot << "label=\"" << structuralNode->GetOperation().debug_string() << "\"\n";
   dot << "labeljust=l\n";
 
   // input nodes
@@ -234,11 +236,11 @@ structural_node_to_dot(jlm::rvsdg::structural_node * structuralNode)
 }
 
 std::string
-simple_node_to_dot(jlm::rvsdg::simple_node * simpleNode)
+simple_node_to_dot(jlm::rvsdg::SimpleNode * simpleNode)
 {
   auto SPACER = "                    <TD WIDTH=\"10\"></TD>\n";
   auto name = get_dot_name(simpleNode);
-  auto opname = simpleNode->operation().debug_string();
+  auto opname = simpleNode->GetOperation().debug_string();
   std::replace_if(opname.begin(), opname.end(), isForbiddenChar, '_');
 
   std::ostringstream inputs;
@@ -307,7 +309,7 @@ simple_node_to_dot(jlm::rvsdg::simple_node * simpleNode)
 }
 
 std::string
-region_to_dot(jlm::rvsdg::region * region)
+region_to_dot(rvsdg::Region * region)
 {
   std::ostringstream dot;
   dot << "subgraph cluster_reg" << hex((intptr_t)region) << " {\n";
@@ -337,14 +339,14 @@ region_to_dot(jlm::rvsdg::region * region)
   }
 
   // nodes
-  for (auto node : jlm::rvsdg::topdown_traverser(region))
+  for (auto node : rvsdg::TopDownTraverser(region))
   {
-    if (auto simpleNode = dynamic_cast<jlm::rvsdg::simple_node *>(node))
+    if (auto simpleNode = dynamic_cast<jlm::rvsdg::SimpleNode *>(node))
     {
       auto node_dot = simple_node_to_dot(simpleNode);
       dot << node_dot;
     }
-    else if (auto structuralNode = dynamic_cast<jlm::rvsdg::structural_node *>(node))
+    else if (auto structuralNode = dynamic_cast<rvsdg::StructuralNode *>(node))
     {
       auto node_dot = structural_node_to_dot(structuralNode);
       dot << node_dot;
@@ -365,9 +367,10 @@ region_to_dot(jlm::rvsdg::region * region)
     {
       dot << edge(be->argument(), be, true);
     }
-    else if (auto to = dynamic_cast<jlm::rvsdg::theta_output *>(region->result(i)->output()))
+    else if (auto theta = rvsdg::TryGetOwnerNode<rvsdg::ThetaNode>(*region->result(i)))
     {
-      dot << edge(to->argument(), to->result(), true);
+      auto loopvar = theta->MapOutputLoopVar(*region->result(i)->output());
+      dot << edge(loopvar.pre, loopvar.post, true);
     }
   }
 
@@ -392,7 +395,7 @@ region_to_dot(jlm::rvsdg::region * region)
 }
 
 std::string
-to_dot(jlm::rvsdg::region * region)
+to_dot(rvsdg::Region * region)
 {
   std::ostringstream dot;
   dot << "digraph G {\n";
@@ -402,7 +405,7 @@ to_dot(jlm::rvsdg::region * region)
 }
 
 void
-view_dot(jlm::rvsdg::region * region, FILE * out)
+view_dot(rvsdg::Region * region, FILE * out)
 {
   fputs(jlm::hls::to_dot(region).c_str(), out);
   fflush(out);
@@ -412,7 +415,7 @@ void
 dump_dot(jlm::llvm::RvsdgModule & rvsdgModule, const std::string & file_name)
 {
   auto dot_file = fopen(file_name.c_str(), "w");
-  jlm::hls::view_dot(rvsdgModule.Rvsdg().root(), dot_file);
+  jlm::hls::view_dot(&rvsdgModule.Rvsdg().GetRootRegion(), dot_file);
   fclose(dot_file);
 }
 

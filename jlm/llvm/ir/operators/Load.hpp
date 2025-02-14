@@ -10,112 +10,11 @@
 #include <jlm/llvm/ir/types.hpp>
 #include <jlm/rvsdg/graph.hpp>
 #include <jlm/rvsdg/simple-node.hpp>
-#include <jlm/rvsdg/simple-normal-form.hpp>
+
+#include <optional>
 
 namespace jlm::llvm
 {
-
-/* load normal form */
-
-class load_normal_form final : public rvsdg::simple_normal_form
-{
-public:
-  virtual ~load_normal_form();
-
-  load_normal_form(
-      const std::type_info & opclass,
-      rvsdg::node_normal_form * parent,
-      rvsdg::graph * graph) noexcept;
-
-  virtual bool
-  normalize_node(rvsdg::node * node) const override;
-
-  virtual std::vector<rvsdg::output *>
-  normalized_create(
-      rvsdg::region * region,
-      const rvsdg::simple_op & op,
-      const std::vector<rvsdg::output *> & operands) const override;
-
-  inline void
-  set_load_mux_reducible(bool enable) noexcept
-  {
-    enable_load_mux_ = enable;
-  }
-
-  inline bool
-  get_load_mux_reducible() const noexcept
-  {
-    return enable_load_mux_;
-  }
-
-  inline void
-  set_load_alloca_reducible(bool enable) noexcept
-  {
-    enable_load_alloca_ = enable;
-  }
-
-  inline bool
-  get_load_alloca_reducible() const noexcept
-  {
-    return enable_load_alloca_;
-  }
-
-  inline void
-  set_multiple_origin_reducible(bool enable) noexcept
-  {
-    enable_multiple_origin_ = enable;
-  }
-
-  inline bool
-  get_multiple_origin_reducible() const noexcept
-  {
-    return enable_multiple_origin_;
-  }
-
-  inline void
-  set_load_store_state_reducible(bool enable) noexcept
-  {
-    enable_load_store_state_ = enable;
-  }
-
-  inline bool
-  get_load_store_state_reducible() const noexcept
-  {
-    return enable_load_store_state_;
-  }
-
-  inline void
-  set_load_store_reducible(bool enable) noexcept
-  {
-    enable_load_store_ = enable;
-  }
-
-  inline bool
-  get_load_store_reducible() const noexcept
-  {
-    return enable_load_store_;
-  }
-
-  void
-  set_load_load_state_reducible(bool enable) noexcept
-  {
-    enable_load_load_state_ = enable;
-  }
-
-  bool
-  get_load_load_state_reducible() const noexcept
-  {
-    return enable_load_load_state_;
-  }
-
-private:
-  bool enable_load_mux_;
-  bool enable_load_store_;
-  bool enable_load_alloca_;
-  bool enable_load_load_state_;
-  bool enable_multiple_origin_;
-  bool enable_load_store_state_;
-};
 
 /**
  * Abstract base class for load operations.
@@ -123,14 +22,14 @@ private:
  * @see LoadVolatileOperation
  * @see LoadNonVolatileOperation
  */
-class LoadOperation : public rvsdg::simple_op
+class LoadOperation : public rvsdg::SimpleOperation
 {
 protected:
   LoadOperation(
-      const std::vector<std::shared_ptr<const rvsdg::type>> & operandTypes,
-      const std::vector<std::shared_ptr<const rvsdg::type>> & resultTypes,
+      const std::vector<std::shared_ptr<const rvsdg::Type>> & operandTypes,
+      const std::vector<std::shared_ptr<const rvsdg::Type>> & resultTypes,
       size_t alignment)
-      : simple_op(operandTypes, resultTypes),
+      : SimpleOperation(operandTypes, resultTypes),
         Alignment_(alignment)
   {
     JLM_ASSERT(!operandTypes.empty() && !resultTypes.empty());
@@ -139,7 +38,7 @@ protected:
     JLM_ASSERT(is<PointerType>(addressType));
 
     auto & loadedType = *resultTypes[0];
-    JLM_ASSERT(is<rvsdg::valuetype>(loadedType));
+    JLM_ASSERT(is<rvsdg::ValueType>(loadedType));
 
     JLM_ASSERT(operandTypes.size() == resultTypes.size());
     for (size_t n = 1; n < operandTypes.size(); n++)
@@ -147,7 +46,7 @@ protected:
       auto & operandType = *operandTypes[n];
       auto & resultType = *resultTypes[n];
       JLM_ASSERT(operandType == resultType);
-      JLM_ASSERT(is<rvsdg::statetype>(operandType));
+      JLM_ASSERT(is<rvsdg::StateType>(operandType));
     }
   }
 
@@ -158,10 +57,10 @@ public:
     return Alignment_;
   }
 
-  [[nodiscard]] std::shared_ptr<const rvsdg::valuetype>
+  [[nodiscard]] std::shared_ptr<const rvsdg::ValueType>
   GetLoadedType() const noexcept
   {
-    auto type = std::dynamic_pointer_cast<const rvsdg::valuetype>(result(0).Type());
+    auto type = std::dynamic_pointer_cast<const rvsdg::ValueType>(result(0));
     JLM_ASSERT(type);
     return type;
   }
@@ -190,22 +89,22 @@ public:
   ~LoadVolatileOperation() noexcept override;
 
   LoadVolatileOperation(
-      std::shared_ptr<const rvsdg::valuetype> loadedType,
+      std::shared_ptr<const rvsdg::ValueType> loadedType,
       size_t numMemoryStates,
       size_t alignment)
       : LoadOperation(
-          CreateOperandTypes(numMemoryStates),
-          CreateResultTypes(std::move(loadedType), numMemoryStates),
-          alignment)
+            CreateOperandTypes(numMemoryStates),
+            CreateResultTypes(std::move(loadedType), numMemoryStates),
+            alignment)
   {}
 
   bool
-  operator==(const operation & other) const noexcept override;
+  operator==(const Operation & other) const noexcept override;
 
   [[nodiscard]] std::string
   debug_string() const override;
 
-  [[nodiscard]] std::unique_ptr<rvsdg::operation>
+  [[nodiscard]] std::unique_ptr<Operation>
   copy() const override;
 
   [[nodiscard]] size_t
@@ -216,7 +115,7 @@ public:
       const variable * address,
       const variable * iOState,
       const variable * memoryState,
-      std::shared_ptr<const rvsdg::valuetype> loadedType,
+      std::shared_ptr<const rvsdg::ValueType> loadedType,
       size_t alignment)
   {
     LoadVolatileOperation operation(std::move(loadedType), 1, alignment);
@@ -224,24 +123,24 @@ public:
   }
 
 private:
-  static std::vector<std::shared_ptr<const rvsdg::type>>
+  static std::vector<std::shared_ptr<const rvsdg::Type>>
   CreateOperandTypes(size_t numMemoryStates)
   {
-    std::vector<std::shared_ptr<const rvsdg::type>> types(
-        { PointerType::Create(), iostatetype::Create() });
-    std::vector<std::shared_ptr<const rvsdg::type>> states(
+    std::vector<std::shared_ptr<const rvsdg::Type>> types(
+        { PointerType::Create(), IOStateType::Create() });
+    std::vector<std::shared_ptr<const rvsdg::Type>> states(
         numMemoryStates,
         MemoryStateType::Create());
     types.insert(types.end(), states.begin(), states.end());
     return types;
   }
 
-  static std::vector<std::shared_ptr<const rvsdg::type>>
-  CreateResultTypes(std::shared_ptr<const rvsdg::valuetype> loadedType, size_t numMemoryStates)
+  static std::vector<std::shared_ptr<const rvsdg::Type>>
+  CreateResultTypes(std::shared_ptr<const rvsdg::ValueType> loadedType, size_t numMemoryStates)
   {
-    std::vector<std::shared_ptr<const rvsdg::type>> types(
-        { std::move(loadedType), iostatetype::Create() });
-    std::vector<std::shared_ptr<const rvsdg::type>> states(
+    std::vector<std::shared_ptr<const rvsdg::Type>> types(
+        { std::move(loadedType), IOStateType::Create() });
+    std::vector<std::shared_ptr<const rvsdg::Type>> states(
         numMemoryStates,
         MemoryStateType::Create());
     types.insert(types.end(), states.begin(), states.end());
@@ -255,25 +154,25 @@ private:
  * @see LoadVolatileNode
  * @see LoadNonVolatileNode
  */
-class LoadNode : public rvsdg::simple_node
+class LoadNode : public rvsdg::SimpleNode
 {
 protected:
   LoadNode(
-      rvsdg::region & region,
-      const LoadOperation & operation,
+      rvsdg::Region & region,
+      std::unique_ptr<LoadOperation> operation,
       const std::vector<rvsdg::output *> & operands)
-      : simple_node(&region, operation, operands)
+      : SimpleNode(region, std::move(operation), operands)
   {}
 
 public:
-  class MemoryStateInputIterator final : public rvsdg::input::iterator<rvsdg::simple_input>
+  class MemoryStateInputIterator final : public rvsdg::input::iterator<rvsdg::SimpleInput>
   {
   public:
-    constexpr explicit MemoryStateInputIterator(rvsdg::simple_input * input)
-        : rvsdg::input::iterator<rvsdg::simple_input>(input)
+    constexpr explicit MemoryStateInputIterator(rvsdg::SimpleInput * input)
+        : rvsdg::input::iterator<rvsdg::SimpleInput>(input)
     {}
 
-    [[nodiscard]] rvsdg::simple_input *
+    [[nodiscard]] rvsdg::SimpleInput *
     next() const override
     {
       auto index = value()->index();
@@ -300,11 +199,11 @@ public:
     }
   };
 
-  using MemoryStateInputRange = util::iterator_range<MemoryStateInputIterator>;
-  using MemoryStateOutputRange = util::iterator_range<MemoryStateOutputIterator>;
+  using MemoryStateInputRange = util::IteratorRange<MemoryStateInputIterator>;
+  using MemoryStateOutputRange = util::IteratorRange<MemoryStateOutputIterator>;
 
-  [[nodiscard]] virtual const LoadOperation &
-  GetOperation() const noexcept = 0;
+  [[nodiscard]] const LoadOperation &
+  GetOperation() const noexcept override;
 
   [[nodiscard]] size_t
   NumMemoryStates() const noexcept
@@ -330,7 +229,7 @@ public:
   GetLoadedValueOutput() const noexcept
   {
     auto valueOutput = output(0);
-    JLM_ASSERT(is<rvsdg::valuetype>(valueOutput->type()));
+    JLM_ASSERT(is<rvsdg::ValueType>(valueOutput->type()));
     return *valueOutput;
   }
 
@@ -357,15 +256,15 @@ class LoadVolatileNode final : public LoadNode
 {
 private:
   LoadVolatileNode(
-      rvsdg::region & region,
-      const LoadVolatileOperation & operation,
+      rvsdg::Region & region,
+      std::unique_ptr<LoadVolatileOperation> operation,
       const std::vector<rvsdg::output *> & operands)
-      : LoadNode(region, operation, operands)
+      : LoadNode(region, std::move(operation), operands)
   {}
 
 public:
-  rvsdg::node *
-  copy(rvsdg::region * region, const std::vector<rvsdg::output *> & operands) const override;
+  Node *
+  copy(rvsdg::Region * region, const std::vector<rvsdg::output *> & operands) const override;
 
   [[nodiscard]] const LoadVolatileOperation &
   GetOperation() const noexcept override;
@@ -374,7 +273,7 @@ public:
   GetIoStateInput() const noexcept
   {
     auto ioInput = input(1);
-    JLM_ASSERT(is<iostatetype>(ioInput->type()));
+    JLM_ASSERT(is<IOStateType>(ioInput->type()));
     return *ioInput;
   }
 
@@ -382,7 +281,7 @@ public:
   GetIoStateOutput() const noexcept
   {
     auto ioOutput = output(1);
-    JLM_ASSERT(is<iostatetype>(ioOutput->type()));
+    JLM_ASSERT(is<IOStateType>(ioOutput->type()));
     return *ioOutput;
   }
 
@@ -397,11 +296,11 @@ public:
 
   static LoadVolatileNode &
   CreateNode(
-      rvsdg::region & region,
-      const LoadVolatileOperation & loadOperation,
+      rvsdg::Region & region,
+      std::unique_ptr<LoadVolatileOperation> loadOperation,
       const std::vector<rvsdg::output *> & operands)
   {
-    return *(new LoadVolatileNode(region, loadOperation, operands));
+    return *(new LoadVolatileNode(region, std::move(loadOperation), operands));
   }
 
   static LoadVolatileNode &
@@ -409,23 +308,26 @@ public:
       rvsdg::output & address,
       rvsdg::output & iOState,
       const std::vector<rvsdg::output *> & memoryStates,
-      std::shared_ptr<const rvsdg::valuetype> loadedType,
+      std::shared_ptr<const rvsdg::ValueType> loadedType,
       size_t alignment)
   {
     std::vector<rvsdg::output *> operands({ &address, &iOState });
     operands.insert(operands.end(), memoryStates.begin(), memoryStates.end());
 
-    LoadVolatileOperation operation(std::move(loadedType), memoryStates.size(), alignment);
-    return CreateNode(*address.region(), operation, operands);
+    auto operation = std::make_unique<LoadVolatileOperation>(
+        std::move(loadedType),
+        memoryStates.size(),
+        alignment);
+    return CreateNode(*address.region(), std::move(operation), operands);
   }
 
   static std::vector<rvsdg::output *>
   Create(
-      rvsdg::region & region,
-      const LoadVolatileOperation & loadOperation,
+      rvsdg::Region & region,
+      std::unique_ptr<LoadVolatileOperation> loadOperation,
       const std::vector<rvsdg::output *> & operands)
   {
-    return rvsdg::outputs(&CreateNode(region, loadOperation, operands));
+    return rvsdg::outputs(&CreateNode(region, std::move(loadOperation), operands));
   }
 };
 
@@ -440,39 +342,32 @@ public:
   ~LoadNonVolatileOperation() noexcept override;
 
   LoadNonVolatileOperation(
-      std::shared_ptr<const rvsdg::valuetype> loadedType,
+      std::shared_ptr<const rvsdg::ValueType> loadedType,
       size_t numMemoryStates,
       size_t alignment)
       : LoadOperation(
-          CreateOperandTypes(numMemoryStates),
-          CreateResultTypes(std::move(loadedType), numMemoryStates),
-          alignment)
+            CreateOperandTypes(numMemoryStates),
+            CreateResultTypes(std::move(loadedType), numMemoryStates),
+            alignment)
   {}
 
   bool
-  operator==(const operation & other) const noexcept override;
+  operator==(const Operation & other) const noexcept override;
 
   [[nodiscard]] std::string
   debug_string() const override;
 
-  [[nodiscard]] std::unique_ptr<rvsdg::operation>
+  [[nodiscard]] std::unique_ptr<Operation>
   copy() const override;
 
   [[nodiscard]] size_t
   NumMemoryStates() const noexcept override;
 
-  static load_normal_form *
-  GetNormalForm(rvsdg::graph * graph) noexcept
-  {
-    return jlm::util::AssertedCast<load_normal_form>(
-        graph->node_normal_form(typeid(LoadNonVolatileOperation)));
-  }
-
   static std::unique_ptr<llvm::tac>
   Create(
       const variable * address,
       const variable * state,
-      std::shared_ptr<const rvsdg::valuetype> loadedType,
+      std::shared_ptr<const rvsdg::ValueType> loadedType,
       size_t alignment)
   {
     LoadNonVolatileOperation operation(std::move(loadedType), 1, alignment);
@@ -480,22 +375,22 @@ public:
   }
 
 private:
-  static std::vector<std::shared_ptr<const rvsdg::type>>
+  static std::vector<std::shared_ptr<const rvsdg::Type>>
   CreateOperandTypes(size_t numMemoryStates)
   {
-    std::vector<std::shared_ptr<const rvsdg::type>> types(1, PointerType::Create());
-    std::vector<std::shared_ptr<const rvsdg::type>> states(
+    std::vector<std::shared_ptr<const rvsdg::Type>> types(1, PointerType::Create());
+    std::vector<std::shared_ptr<const rvsdg::Type>> states(
         numMemoryStates,
         MemoryStateType::Create());
     types.insert(types.end(), states.begin(), states.end());
     return types;
   }
 
-  static std::vector<std::shared_ptr<const rvsdg::type>>
-  CreateResultTypes(std::shared_ptr<const rvsdg::valuetype> loadedType, size_t numMemoryStates)
+  static std::vector<std::shared_ptr<const rvsdg::Type>>
+  CreateResultTypes(std::shared_ptr<const rvsdg::ValueType> loadedType, size_t numMemoryStates)
   {
-    std::vector<std::shared_ptr<const rvsdg::type>> types(1, std::move(loadedType));
-    std::vector<std::shared_ptr<const rvsdg::type>> states(
+    std::vector<std::shared_ptr<const rvsdg::Type>> types(1, std::move(loadedType));
+    std::vector<std::shared_ptr<const rvsdg::Type>> states(
         numMemoryStates,
         MemoryStateType::Create());
     types.insert(types.end(), states.begin(), states.end());
@@ -510,10 +405,10 @@ class LoadNonVolatileNode final : public LoadNode
 {
 private:
   LoadNonVolatileNode(
-      rvsdg::region & region,
-      const LoadNonVolatileOperation & operation,
+      rvsdg::Region & region,
+      std::unique_ptr<LoadNonVolatileOperation> operation,
       const std::vector<rvsdg::output *> & operands)
-      : LoadNode(region, operation, operands)
+      : LoadNode(region, std::move(operation), operands)
   {}
 
 public:
@@ -529,14 +424,14 @@ public:
   [[nodiscard]] LoadNonVolatileNode &
   CopyWithNewMemoryStates(const std::vector<rvsdg::output *> & memoryStates) const override;
 
-  rvsdg::node *
-  copy(rvsdg::region * region, const std::vector<rvsdg::output *> & operands) const override;
+  Node *
+  copy(rvsdg::Region * region, const std::vector<rvsdg::output *> & operands) const override;
 
   static std::vector<rvsdg::output *>
   Create(
       rvsdg::output * address,
       const std::vector<rvsdg::output *> & memoryStates,
-      std::shared_ptr<const rvsdg::valuetype> loadedType,
+      std::shared_ptr<const rvsdg::ValueType> loadedType,
       size_t alignment)
   {
     return rvsdg::outputs(&CreateNode(*address, memoryStates, std::move(loadedType), alignment));
@@ -546,34 +441,165 @@ public:
   CreateNode(
       rvsdg::output & address,
       const std::vector<rvsdg::output *> & memoryStates,
-      std::shared_ptr<const rvsdg::valuetype> loadedType,
+      std::shared_ptr<const rvsdg::ValueType> loadedType,
       size_t alignment)
   {
     std::vector<rvsdg::output *> operands({ &address });
     operands.insert(operands.end(), memoryStates.begin(), memoryStates.end());
 
-    LoadNonVolatileOperation loadOperation(std::move(loadedType), memoryStates.size(), alignment);
-    return CreateNode(*address.region(), loadOperation, operands);
+    auto operation = std::make_unique<LoadNonVolatileOperation>(
+        std::move(loadedType),
+        memoryStates.size(),
+        alignment);
+    return CreateNode(*address.region(), std::move(operation), operands);
   }
 
   static std::vector<rvsdg::output *>
   Create(
-      rvsdg::region & region,
-      const LoadNonVolatileOperation & loadOperation,
+      rvsdg::Region & region,
+      std::unique_ptr<LoadNonVolatileOperation> loadOperation,
       const std::vector<rvsdg::output *> & operands)
   {
-    return rvsdg::outputs(&CreateNode(region, loadOperation, operands));
+    return rvsdg::outputs(&CreateNode(region, std::move(loadOperation), operands));
   }
 
   static LoadNonVolatileNode &
   CreateNode(
-      rvsdg::region & region,
-      const LoadNonVolatileOperation & loadOperation,
+      rvsdg::Region & region,
+      std::unique_ptr<LoadNonVolatileOperation> loadOperation,
       const std::vector<rvsdg::output *> & operands)
   {
-    return *(new LoadNonVolatileNode(region, loadOperation, operands));
+    return *(new LoadNonVolatileNode(region, std::move(loadOperation), operands));
   }
 };
+
+/**
+ * \brief Swaps a memory state merge operation and a load operation.
+ *
+ * sx1 = MemStateMerge si1 ... siM
+ * v sl1 = load_op a sx1
+ * =>
+ * v sl1 ... slM = load_op a si1 ... siM
+ * sx1 = MemStateMerge sl1 ... slM
+ *
+ * FIXME: The reduction can be generalized: A load node can have multiple operands from different
+ * merge nodes.
+ *
+ * @return If the normalization could be applied, then the results of the load operation after
+ * the transformation. Otherwise, std::nullopt.
+ */
+std::optional<std::vector<rvsdg::output *>>
+NormalizeLoadMux(
+    const LoadNonVolatileOperation & operation,
+    const std::vector<rvsdg::output *> & operands);
+
+/**
+ * \brief If the producer of a load's address is an alloca operation, then we can remove all
+ * state edges originating from other alloca operations.
+ *
+ * a1 s1 = alloca_op ...
+ * a2 s2 = alloca_op ...
+ * s3 = mux_op s1
+ * v sl1 sl2 sl3 = load_op a1 s1 s2 s3
+ * =>
+ * ...
+ * v sl1 sl3 = load_op a1 s1 s3
+ *
+ * @param operation The load operation on which the transformation is performed.
+ * @param operands The operands of the load node.
+ *
+ * @return If the normalization could be applied, then the results of the load operation after
+ * the transformation. Otherwise, std::nullopt.
+ */
+std::optional<std::vector<rvsdg::output *>>
+NormalizeLoadAlloca(
+    const LoadNonVolatileOperation & operation,
+    const std::vector<rvsdg::output *> & operands);
+
+/**
+ * \brief Forwards the value from a store operation.
+ *
+ * s2 = store_op a v1 s1
+ * v2 s3 = load_op a s2
+ * ... = any_op v2
+ * =>
+ * s2 = store_op a v1 s1
+ * ... = any_op v1
+ *
+ * @param operation The load operation on which the transformation is performed.
+ * @param operands The operands of the load node.
+ *
+ * @return If the normalization could be applied, then the results of the load operation after
+ * the transformation. Otherwise, std::nullopt.
+ */
+std::optional<std::vector<rvsdg::output *>>
+NormalizeLoadStore(
+    const LoadNonVolatileOperation & operation,
+    const std::vector<rvsdg::output *> & operands);
+
+/**
+ * \brief If the producer of a load's address is an alloca operation, then we can remove all
+ * state edges originating from other alloca operations coming through store operations.
+ *
+ * a1 sa1 = alloca_op ...
+ * a2 sa2 = alloca_op ...
+ * ss1 = store_op a1 ... sa1
+ * ss2 = store_op a2 ... sa2
+ * ... = load_op a1 ss1 ss2
+ * =>
+ * ...
+ * ... = load_op a1 ss1
+ *
+ * @param operation The load operation on which the transformation is performed.
+ * @param operands The operands of the load node.
+ *
+ * @return If the normalization could be applied, then the results of the load operation after
+ * the transformation. Otherwise, std::nullopt.
+ */
+std::optional<std::vector<rvsdg::output *>>
+NormalizeLoadStoreState(
+    const LoadNonVolatileOperation & operation,
+    const std::vector<rvsdg::output *> & operands);
+
+/**
+ * \brief Remove duplicated state operands
+ *
+ * v so1 so2 so3 = load_op a si1 si1 si1
+ * =>
+ * v so1 = load_op a si1
+ *
+ * @param operation The load operation on which the transformation is performed.
+ * @param operands The operands of the load node.
+ *
+ * @return If the normalization could be applied, then the results of the load operation after
+ * the transformation. Otherwise, std::nullopt.
+ */
+std::optional<std::vector<rvsdg::output *>>
+NormalizeLoadDuplicateState(
+    const LoadNonVolatileOperation & operation,
+    const std::vector<rvsdg::output *> & operands);
+
+/**
+ * \brief Avoid sequentialization of load operations.
+ *
+ * _ so1 = load_op _ si1
+ * _ so2 = load_op _ so1
+ * _ so3 = load_op _ so2
+ * =>
+ * _ so1 = load_op _ si1
+ * _ so2 = load_op _ si1
+ * _ so3 = load_op _ si1
+ *
+ * @param operation The load operation on which the transformation is performed.
+ * @param operands The operands of the load node.
+ *
+ * @return If the normalization could be applied, then the results of the load operation after
+ * the transformation. Otherwise, std::nullopt.
+ */
+std::optional<std::vector<rvsdg::output *>>
+NormalizeLoadLoadState(
+    const LoadNonVolatileOperation & operation,
+    const std::vector<rvsdg::output *> & operands);
 
 }
 

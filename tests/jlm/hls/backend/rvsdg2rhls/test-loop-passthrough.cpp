@@ -34,28 +34,24 @@ test()
 {
   using namespace jlm;
 
-  auto ft = jlm::llvm::FunctionType::Create(
+  auto ft = jlm::rvsdg::FunctionType::Create(
       { rvsdg::bittype::Create(1), rvsdg::bittype::Create(8), rvsdg::bittype::Create(8) },
       { rvsdg::bittype::Create(8) });
 
   jlm::llvm::RvsdgModule rm(util::filepath(""), "", "");
-  auto nf = rm.Rvsdg().node_normal_form(typeid(rvsdg::operation));
-  nf->set_mutable(false);
 
   /* setup graph */
 
-  auto lambda = jlm::llvm::lambda::node::create(
-      rm.Rvsdg().root(),
-      ft,
-      "f",
-      jlm::llvm::linkage::external_linkage);
+  auto lambda = jlm::rvsdg::LambdaNode::Create(
+      rm.Rvsdg().GetRootRegion(),
+      jlm::llvm::LlvmLambdaOperation::Create(ft, "f", jlm::llvm::linkage::external_linkage));
 
   auto loop = hls::loop_node::create(lambda->subregion());
 
-  auto loop_out = loop->add_loopvar(lambda->fctargument(1));
+  auto loop_out = loop->AddLoopVar(lambda->GetFunctionArguments()[1]);
 
   auto f = lambda->finalize({ loop_out });
-  rm.Rvsdg().add_export(f, { f->Type(), "" });
+  jlm::llvm::GraphExport::Create(*f, "");
 
   rvsdg::view(rm.Rvsdg(), stdout);
   hls::DotHLS dhls;
@@ -66,7 +62,7 @@ test()
   stringToFile(dhls2.run(rm), "/tmp/jlm_hls_test_after.dot");
 
   // The whole loop gets eliminated, leading to a direct connection
-  assert(lambda->fctresult(0)->origin() == lambda->fctargument(1));
+  assert(lambda->GetFunctionResults()[0]->origin() == lambda->GetFunctionArguments()[1]);
 
   return 0;
 }

@@ -27,12 +27,13 @@ class node;
 
 namespace jlm::rvsdg
 {
-class gamma_node;
-class node;
-class region;
-class simple_node;
-class structural_node;
-class theta_node;
+class GammaNode;
+class LambdaNode;
+class Node;
+class Region;
+class SimpleNode;
+class StructuralNode;
+class ThetaNode;
 }
 
 namespace jlm::llvm::aa
@@ -77,7 +78,7 @@ public:
 
   std::unique_ptr<MemoryNodeProvisioning>
   EliminateMemoryNodes(
-      const RvsdgModule & rvsdgModule,
+      const rvsdg::RvsdgModule & rvsdgModule,
       const MemoryNodeProvisioning & seedProvisioning,
       util::StatisticsCollector & statisticsCollector) override;
 
@@ -92,7 +93,7 @@ public:
    */
   static std::unique_ptr<MemoryNodeProvisioning>
   CreateAndEliminate(
-      const RvsdgModule & rvsdgModule,
+      const rvsdg::RvsdgModule & rvsdgModule,
       const MemoryNodeProvisioning & seedProvisioning,
       util::StatisticsCollector & statisticsCollector);
 
@@ -106,12 +107,12 @@ public:
    */
   static std::unique_ptr<MemoryNodeProvisioning>
   CreateAndEliminate(
-      const RvsdgModule & rvsdgModule,
+      const rvsdg::RvsdgModule & rvsdgModule,
       const MemoryNodeProvisioning & seedProvisioning);
 
 private:
   void
-  EliminateTopDown(const RvsdgModule & rvsdgModule);
+  EliminateTopDown(const rvsdg::RvsdgModule & rvsdgModule);
 
   /**
    * Processes the inter-procedural RVSDG nodes (lambda, phi, and delta nodes) in the root region
@@ -121,7 +122,7 @@ private:
    * @param region The RVSDG root region or a phi subregion.
    */
   void
-  EliminateTopDownRootRegion(rvsdg::region & region);
+  EliminateTopDownRootRegion(rvsdg::Region & region);
 
   /**
    * Processes the intra-procedural nodes in a lambda, theta, or gamma subregion top-down. The
@@ -131,34 +132,34 @@ private:
    * @param region A lambda, theta, or gamma subregion.
    */
   void
-  EliminateTopDownRegion(rvsdg::region & region);
+  EliminateTopDownRegion(rvsdg::Region & region);
 
   void
-  EliminateTopDownStructuralNode(const rvsdg::structural_node & structuralNode);
+  EliminateTopDownStructuralNode(const rvsdg::StructuralNode & structuralNode);
 
   void
-  EliminateTopDownLambda(const lambda::node & lambdaNode);
+  EliminateTopDownLambda(const rvsdg::LambdaNode & lambdaNode);
 
   void
-  EliminateTopDownLambdaEntry(const lambda::node & lambdaNode);
+  EliminateTopDownLambdaEntry(const rvsdg::LambdaNode & lambdaNode);
 
   void
-  EliminateTopDownLambdaExit(const lambda::node & lambdaNode);
+  EliminateTopDownLambdaExit(const rvsdg::LambdaNode & lambdaNode);
 
   void
   EliminateTopDownPhi(const phi::node & phiNode);
 
   void
-  EliminateTopDownGamma(const rvsdg::gamma_node & gammaNode);
+  EliminateTopDownGamma(const rvsdg::GammaNode & gammaNode);
 
   void
-  EliminateTopDownTheta(const rvsdg::theta_node & thetaNode);
+  EliminateTopDownTheta(const rvsdg::ThetaNode & thetaNode);
 
   void
-  EliminateTopDownSimpleNode(const rvsdg::simple_node & simpleNode);
+  EliminateTopDownSimpleNode(const rvsdg::SimpleNode & simpleNode);
 
   void
-  EliminateTopDownAlloca(const rvsdg::simple_node & node);
+  EliminateTopDownAlloca(const rvsdg::SimpleNode & node);
 
   void
   EliminateTopDownCall(const CallNode & callNode);
@@ -193,7 +194,7 @@ private:
    * @see graph::ExtractTailNodes()
    */
   void
-  InitializeLiveNodesOfTailLambdas(const RvsdgModule & rvsdgModule);
+  InitializeLiveNodesOfTailLambdas(const rvsdg::RvsdgModule & rvsdgModule);
 
   /**
    * Initializes the memory nodes that are alive at the beginning of every tail-lambda.
@@ -203,7 +204,7 @@ private:
    * @see InitializeLiveNodesOfTailLambdas()
    */
   void
-  InitializeLiveNodesOfTailLambda(const lambda::node & tailLambdaNode);
+  InitializeLiveNodesOfTailLambda(const rvsdg::LambdaNode & tailLambdaNode);
 
   /**
    * The function checks the following invariants:
@@ -220,7 +221,7 @@ private:
    */
   static bool
   CheckInvariants(
-      const RvsdgModule & rvsdgModule,
+      const rvsdg::RvsdgModule & rvsdgModule,
       const MemoryNodeProvisioning & seedProvisioning,
       const Provisioning & provisioning);
 

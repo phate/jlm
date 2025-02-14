@@ -161,6 +161,38 @@ PointsToGraph::AddImportNode(std::unique_ptr<PointsToGraph::ImportNode> node)
   return *tmp;
 }
 
+std::pair<size_t, size_t>
+PointsToGraph::NumEdges() const noexcept
+{
+  size_t numEdges = 0;
+
+  auto countMemoryNodes = [&](auto iterable)
+  {
+    for (const MemoryNode & node : iterable)
+    {
+      numEdges += node.NumTargets();
+    }
+  };
+
+  countMemoryNodes(AllocaNodes());
+  countMemoryNodes(DeltaNodes());
+  countMemoryNodes(ImportNodes());
+  countMemoryNodes(LambdaNodes());
+  countMemoryNodes(MallocNodes());
+
+  numEdges += GetExternalMemoryNode().NumTargets();
+
+  // For register nodes, the number of edges and number of points-to relations is different
+  size_t numPointsToRelations = numEdges;
+  for (auto & registerNode : RegisterNodes())
+  {
+    numEdges += registerNode.NumTargets();
+    numPointsToRelations += registerNode.NumTargets() * registerNode.GetOutputs().Size();
+  }
+
+  return std::make_pair(numEdges, numPointsToRelations);
+}
+
 bool
 PointsToGraph::IsSupergraphOf(const jlm::llvm::aa::PointsToGraph & subgraph) const
 {
@@ -481,19 +513,18 @@ PointsToGraph::RegisterNode::~RegisterNode() noexcept = default;
 std::string
 PointsToGraph::RegisterNode::ToString(const rvsdg::output & output)
 {
-  auto node = jlm::rvsdg::node_output::node(&output);
+  auto node = jlm::rvsdg::output::GetNode(*&output);
 
   if (node != nullptr)
-    return util::strfmt(node->operation().debug_string(), ":o", output.index());
+    return util::strfmt(node->GetOperation().debug_string(), ":o", output.index());
 
   node = output.region()->node();
   if (node != nullptr)
-    return util::strfmt(node->operation().debug_string(), ":a", output.index());
+    return util::strfmt(node->GetOperation().debug_string(), ":a", output.index());
 
-  if (is_import(&output))
+  if (auto graphImport = dynamic_cast<const GraphImport *>(&output))
   {
-    auto port = util::AssertedCast<const impport>(&output.port());
-    return util::strfmt("import:", port->name());
+    return util::strfmt("import:", graphImport->Name());
   }
 
   return "RegisterNode";
@@ -523,7 +554,7 @@ PointsToGraph::AllocaNode::~AllocaNode() noexcept = default;
 std::string
 PointsToGraph::AllocaNode::DebugString() const
 {
-  return GetAllocaNode().operation().debug_string();
+  return GetAllocaNode().GetOperation().debug_string();
 }
 
 PointsToGraph::DeltaNode::~DeltaNode() noexcept = default;
@@ -531,7 +562,7 @@ PointsToGraph::DeltaNode::~DeltaNode() noexcept = default;
 std::string
 PointsToGraph::DeltaNode::DebugString() const
 {
-  return GetDeltaNode().operation().debug_string();
+  return GetDeltaNode().GetOperation().debug_string();
 }
 
 PointsToGraph::LambdaNode::~LambdaNode() noexcept = default;
@@ -539,7 +570,7 @@ PointsToGraph::LambdaNode::~LambdaNode() noexcept = default;
 std::string
 PointsToGraph::LambdaNode::DebugString() const
 {
-  return GetLambdaNode().operation().debug_string();
+  return GetLambdaNode().GetOperation().debug_string();
 }
 
 PointsToGraph::MallocNode::~MallocNode() noexcept = default;
@@ -547,7 +578,7 @@ PointsToGraph::MallocNode::~MallocNode() noexcept = default;
 std::string
 PointsToGraph::MallocNode::DebugString() const
 {
-  return GetMallocNode().operation().debug_string();
+  return GetMallocNode().GetOperation().debug_string();
 }
 
 PointsToGraph::ImportNode::~ImportNode() noexcept = default;
@@ -555,8 +586,7 @@ PointsToGraph::ImportNode::~ImportNode() noexcept = default;
 std::string
 PointsToGraph::ImportNode::DebugString() const
 {
-  auto port = util::AssertedCast<const impport>(&GetArgument().port());
-  return port->name();
+  return GetArgument().Name();
 }
 
 PointsToGraph::UnknownMemoryNode::~UnknownMemoryNode() noexcept = default;

@@ -60,7 +60,7 @@ public:
 
   std::unique_ptr<MemoryNodeProvisioning>
   ProvisionMemoryNodes(
-      const RvsdgModule & rvsdgModule,
+      const rvsdg::RvsdgModule & rvsdgModule,
       const PointsToGraph & pointsToGraph,
       jlm::util::StatisticsCollector & statisticsCollector) override;
 
@@ -75,7 +75,7 @@ public:
    */
   static std::unique_ptr<MemoryNodeProvisioning>
   Create(
-      const RvsdgModule & rvsdgModule,
+      const rvsdg::RvsdgModule & rvsdgModule,
       const PointsToGraph & pointsToGraph,
       jlm::util::StatisticsCollector & statisticsCollector);
 
@@ -88,7 +88,7 @@ public:
    * @return A new instance of MemoryNodeProvisioning.
    */
   static std::unique_ptr<MemoryNodeProvisioning>
-  Create(const RvsdgModule & rvsdgModule, const PointsToGraph & pointsToGraph);
+  Create(const rvsdg::RvsdgModule & rvsdgModule, const PointsToGraph & pointsToGraph);
 
 private:
   /**
@@ -104,13 +104,13 @@ private:
    * @param region The to be annotated region.
    */
   void
-  AnnotateRegion(rvsdg::region & region);
+  AnnotateRegion(rvsdg::Region & region);
 
   void
-  AnnotateSimpleNode(const rvsdg::simple_node & provider);
+  AnnotateSimpleNode(const rvsdg::SimpleNode & provider);
 
   void
-  AnnotateStructuralNode(const rvsdg::structural_node & structuralNode);
+  AnnotateStructuralNode(const rvsdg::StructuralNode & structuralNode);
 
   void
   AnnotateLoad(const LoadNode & loadNode);
@@ -119,19 +119,19 @@ private:
   AnnotateStore(const StoreNode & storeNode);
 
   void
-  AnnotateAlloca(const rvsdg::simple_node & allocaNode);
+  AnnotateAlloca(const rvsdg::SimpleNode & allocaNode);
 
   void
-  AnnotateMalloc(const rvsdg::simple_node & mallocNode);
+  AnnotateMalloc(const rvsdg::SimpleNode & mallocNode);
 
   void
-  AnnotateFree(const rvsdg::simple_node & freeNode);
+  AnnotateFree(const rvsdg::SimpleNode & freeNode);
 
   void
   AnnotateCall(const CallNode & callNode);
 
   void
-  AnnotateMemcpy(const rvsdg::simple_node & memcpyNode);
+  AnnotateMemcpy(const rvsdg::SimpleNode & memcpyNode);
 
   /**
    *  Propagates the utilized memory locations and simple RVSDG nodes that reference unknown memory
@@ -155,10 +155,10 @@ private:
    * @see ExtractLambdaNodes()
    */
   void
-  Propagate(const RvsdgModule & rvsdgModule);
+  Propagate(const rvsdg::RvsdgModule & rvsdgModule);
 
   void
-  PropagateRegion(const rvsdg::region & region);
+  PropagateRegion(const rvsdg::Region & region);
 
   void
   PropagatePhi(const phi::node & phiNode);
@@ -172,9 +172,9 @@ private:
    */
   void
   AssignAndPropagateMemoryNodes(
-      const rvsdg::region & region,
+      const rvsdg::Region & region,
       const util::HashSet<const PointsToGraph::MemoryNode *> & memoryNodes,
-      const util::HashSet<const rvsdg::simple_node *> & unknownMemoryNodeReferences);
+      const util::HashSet<const rvsdg::SimpleNode *> & unknownMemoryNodeReferences);
 
   /**
    * Resolves all references to unknown memory locations.
@@ -193,10 +193,10 @@ private:
    * @see ExtractRvsdgTailNodes()
    */
   void
-  ResolveUnknownMemoryNodeReferences(const RvsdgModule & rvsdgModule);
+  ResolveUnknownMemoryNodeReferences(const rvsdg::RvsdgModule & rvsdgModule);
 
   static bool
-  ShouldCreateRegionSummary(const rvsdg::region & region);
+  ShouldCreateRegionSummary(const rvsdg::Region & region);
 
   /**
    * Converts \p rvsdg to an annotated region tree. This method is very useful for debugging the
@@ -208,7 +208,7 @@ private:
    * @return A string that contains the region tree.
    */
   static std::string
-  ToRegionTree(const rvsdg::graph & rvsdg, const RegionAwareMemoryNodeProvisioning & provisioning);
+  ToRegionTree(const rvsdg::Graph & rvsdg, const RegionAwareMemoryNodeProvisioning & provisioning);
 
   std::unique_ptr<RegionAwareMemoryNodeProvisioning> Provisioning_;
 };

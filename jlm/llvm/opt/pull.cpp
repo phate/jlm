@@ -6,6 +6,7 @@
 #include <jlm/llvm/ir/operators.hpp>
 #include <jlm/llvm/ir/RvsdgModule.hpp>
 #include <jlm/llvm/opt/pull.hpp>
+#include <jlm/rvsdg/gamma.hpp>
 #include <jlm/rvsdg/traverser.hpp>
 #include <jlm/util/Statistics.hpp>
 #include <jlm/util/time.hpp>
@@ -23,16 +24,16 @@ public:
   {}
 
   void
-  start(const jlm::rvsdg::graph & graph) noexcept
+  start(const rvsdg::Graph & graph) noexcept
   {
-    AddMeasurement(Label::NumRvsdgInputsBefore, rvsdg::ninputs(graph.root()));
+    AddMeasurement(Label::NumRvsdgInputsBefore, rvsdg::ninputs(&graph.GetRootRegion()));
     AddTimer(Label::Timer).start();
   }
 
   void
-  end(const jlm::rvsdg::graph & graph) noexcept
+  end(const rvsdg::Graph & graph) noexcept
   {
-    AddMeasurement(Label::NumRvsdgInputsAfter, rvsdg::ninputs(graph.root()));
+    AddMeasurement(Label::NumRvsdgInputsAfter, rvsdg::ninputs(&graph.GetRootRegion()));
     GetTimer(Label::Timer).stop();
   }
 
@@ -44,7 +45,7 @@ public:
 };
 
 static bool
-empty(const jlm::rvsdg::gamma_node * gamma)
+empty(const rvsdg::GammaNode * gamma)
 {
   for (size_t n = 0; n < gamma->nsubregions(); n++)
   {
@@ -56,9 +57,9 @@ empty(const jlm::rvsdg::gamma_node * gamma)
 }
 
 static bool
-single_successor(const jlm::rvsdg::node * node)
+single_successor(const rvsdg::Node * node)
 {
-  std::unordered_set<jlm::rvsdg::node *> successors;
+  std::unordered_set<rvsdg::Node *> successors;
   for (size_t n = 0; n < node->noutputs(); n++)
   {
     for (const auto & user : *node->output(n))
@@ -69,9 +70,9 @@ single_successor(const jlm::rvsdg::node * node)
 }
 
 static void
-remove(jlm::rvsdg::gamma_input * input)
+remove(rvsdg::input * input)
 {
-  auto gamma = input->node();
+  auto gamma = jlm::util::AssertedCast<rvsdg::GammaNode>(rvsdg::input::GetNode(*input));
 
   for (size_t n = 0; n < gamma->nsubregions(); n++)
     gamma->subregion(n)->RemoveArgument(input->index() - 1);
@@ -79,15 +80,16 @@ remove(jlm::rvsdg::gamma_input * input)
 }
 
 static void
-pullin_node(jlm::rvsdg::gamma_node * gamma, jlm::rvsdg::node * node)
+pullin_node(rvsdg::GammaNode * gamma, rvsdg::Node * node)
 {
   /* collect operands */
   std::vector<std::vector<jlm::rvsdg::output *>> operands(gamma->nsubregions());
   for (size_t i = 0; i < node->ninputs(); i++)
   {
-    auto ev = gamma->add_entryvar(node->input(i)->origin());
-    for (size_t a = 0; a < ev->narguments(); a++)
-      operands[a].push_back(ev->argument(a));
+    auto ev = gamma->AddEntryVar(node->input(i)->origin());
+    std::size_t index = 0;
+    for (auto input : ev.branchArgument)
+      operands[index++].push_back(input);
   }
 
   /* copy node into subregions */
@@ -100,8 +102,8 @@ pullin_node(jlm::rvsdg::gamma_node * gamma, jlm::rvsdg::node * node)
     {
       for (const auto & user : *node->output(o))
       {
-        JLM_ASSERT(dynamic_cast<jlm::rvsdg::structural_input *>(user));
-        auto sinput = static_cast<jlm::rvsdg::structural_input *>(user);
+        JLM_ASSERT(dynamic_cast<jlm::rvsdg::StructuralInput *>(user));
+        auto sinput = static_cast<rvsdg::StructuralInput *>(user);
         auto argument = gamma->subregion(r)->argument(sinput->index() - 1);
         argument->divert_users(copy->output(o));
       }
@@ -110,7 +112,7 @@ pullin_node(jlm::rvsdg::gamma_node * gamma, jlm::rvsdg::node * node)
 }
 
 static void
-cleanup(jlm::rvsdg::gamma_node * gamma, jlm::rvsdg::node * node)
+cleanup(rvsdg::GammaNode *, rvsdg::Node * node)
 {
   JLM_ASSERT(single_successor(node));
 
@@ -118,40 +120,43 @@ cleanup(jlm::rvsdg::gamma_node * gamma, jlm::rvsdg::node * node)
   for (size_t n = 0; n < node->noutputs(); n++)
   {
     while (node->output(n)->nusers() != 0)
-      remove(static_cast<jlm::rvsdg::gamma_input *>(*node->output(n)->begin()));
+      remove(*node->output(n)->begin());
   }
   remove(node);
 }
 
 void
-pullin_top(jlm::rvsdg::gamma_node * gamma)
+pullin_top(rvsdg::GammaNode * gamma)
 {
   /* FIXME: This is inefficient. We can do better. */
-  auto ev = gamma->begin_entryvar();
-  while (ev != gamma->end_entryvar())
+  auto evs = gamma->GetEntryVars();
+  size_t index = 0;
+  while (index < evs.size())
   {
-    auto node = jlm::rvsdg::node_output::node(ev->origin());
-    auto tmp = jlm::rvsdg::node_output::node(gamma->predicate()->origin());
+    const auto & ev = evs[index];
+    auto node = jlm::rvsdg::output::GetNode(*ev.input->origin());
+    auto tmp = jlm::rvsdg::output::GetNode(*gamma->predicate()->origin());
     if (node && tmp != node && single_successor(node))
     {
       pullin_node(gamma, node);
 
       cleanup(gamma, node);
 
-      ev = gamma->begin_entryvar();
+      evs = gamma->GetEntryVars();
+      index = 0;
     }
     else
     {
-      ev++;
+      index++;
     }
   }
 }
 
 void
-pullin_bottom(jlm::rvsdg::gamma_node * gamma)
+pullin_bottom(rvsdg::GammaNode * gamma)
 {
   /* collect immediate successors of the gamma node */
-  std::unordered_set<jlm::rvsdg::node *> workset;
+  std::unordered_set<rvsdg::Node *> workset;
   for (size_t n = 0; n < gamma->noutputs(); n++)
   {
     auto output = gamma->output(n);
@@ -177,15 +182,15 @@ pullin_bottom(jlm::rvsdg::gamma_node * gamma)
       for (size_t i = 0; i < node->ninputs(); i++)
       {
         auto input = node->input(i);
-        if (jlm::rvsdg::node_output::node(input->origin()) == gamma)
+        if (jlm::rvsdg::output::GetNode(*input->origin()) == gamma)
         {
-          auto output = static_cast<jlm::rvsdg::structural_output *>(input->origin());
+          auto output = static_cast<rvsdg::StructuralOutput *>(input->origin());
           operands.push_back(gamma->subregion(r)->result(output->index())->origin());
         }
         else
         {
-          auto ev = gamma->add_entryvar(input->origin());
-          operands.push_back(ev->argument(r));
+          auto ev = gamma->AddEntryVar(input->origin());
+          operands.push_back(ev.branchArgument[r]);
         }
       }
 
@@ -205,36 +210,35 @@ pullin_bottom(jlm::rvsdg::gamma_node * gamma)
           workset.insert(tmp);
       }
 
-      auto xv = gamma->add_exitvar(outputs[n]);
+      auto xv = gamma->AddExitVar(outputs[n]).output;
       output->divert_users(xv);
     }
   }
 }
 
 static size_t
-is_used_in_nsubregions(const jlm::rvsdg::gamma_node * gamma, const jlm::rvsdg::node * node)
+is_used_in_nsubregions(const rvsdg::GammaNode * gamma, const rvsdg::Node * node)
 {
   JLM_ASSERT(single_successor(node));
 
   /* collect all gamma inputs */
-  std::unordered_set<const jlm::rvsdg::gamma_input *> inputs;
+  std::unordered_set<const rvsdg::input *> inputs;
   for (size_t n = 0; n < node->noutputs(); n++)
   {
     for (const auto & user : *(node->output(n)))
     {
-      JLM_ASSERT(is_gamma_input(user));
-      inputs.insert(static_cast<const jlm::rvsdg::gamma_input *>(user));
+      inputs.insert(user);
     }
   }
 
   /* collect subregions where node is used */
-  std::unordered_set<jlm::rvsdg::region *> subregions;
+  std::unordered_set<rvsdg::Region *> subregions;
   for (const auto & input : inputs)
   {
-    for (const auto & argument : *input)
+    for (const auto & argument : gamma->MapInputEntryVar(*input).branchArgument)
     {
-      if (argument.nusers() != 0)
-        subregions.insert(argument.region());
+      if (argument->nusers() != 0)
+        subregions.insert(argument->region());
     }
   }
 
@@ -242,7 +246,7 @@ is_used_in_nsubregions(const jlm::rvsdg::gamma_node * gamma, const jlm::rvsdg::n
 }
 
 void
-pull(jlm::rvsdg::gamma_node * gamma)
+pull(rvsdg::GammaNode * gamma)
 {
   /*
     We don't want to pull anything into empty gammas with two subregions,
@@ -251,16 +255,18 @@ pull(jlm::rvsdg::gamma_node * gamma)
   if (gamma->nsubregions() == 2 && empty(gamma))
     return;
 
-  auto prednode = jlm::rvsdg::node_output::node(gamma->predicate()->origin());
+  auto prednode = jlm::rvsdg::output::GetNode(*gamma->predicate()->origin());
 
   /* FIXME: This is inefficient. We can do better. */
-  auto ev = gamma->begin_entryvar();
-  while (ev != gamma->end_entryvar())
+  auto evs = gamma->GetEntryVars();
+  size_t index = 0;
+  while (index < evs.size())
   {
-    auto node = jlm::rvsdg::node_output::node(ev->origin());
+    const auto & ev = evs[index];
+    auto node = jlm::rvsdg::output::GetNode(*ev.input->origin());
     if (!node || prednode == node || !single_successor(node))
     {
-      ev++;
+      index++;
       continue;
     }
 
@@ -272,23 +278,24 @@ pull(jlm::rvsdg::gamma_node * gamma)
       */
       pullin_node(gamma, node);
       cleanup(gamma, node);
-      ev = gamma->begin_entryvar();
+      evs = gamma->GetEntryVars();
+      index = 0;
     }
     else
     {
-      ev++;
+      index++;
     }
   }
 }
 
 void
-pull(jlm::rvsdg::region * region)
+pull(rvsdg::Region * region)
 {
-  for (auto & node : jlm::rvsdg::topdown_traverser(region))
+  for (auto & node : rvsdg::TopDownTraverser(region))
   {
-    if (auto structnode = dynamic_cast<jlm::rvsdg::structural_node *>(node))
+    if (auto structnode = dynamic_cast<rvsdg::StructuralNode *>(node))
     {
-      if (auto gamma = dynamic_cast<jlm::rvsdg::gamma_node *>(node))
+      if (auto gamma = dynamic_cast<rvsdg::GammaNode *>(node))
         pull(gamma);
 
       for (size_t n = 0; n < structnode->nsubregions(); n++)
@@ -298,13 +305,13 @@ pull(jlm::rvsdg::region * region)
 }
 
 static void
-pull(RvsdgModule & rm, util::StatisticsCollector & statisticsCollector)
+pull(rvsdg::RvsdgModule & module, util::StatisticsCollector & statisticsCollector)
 {
-  auto statistics = pullstat::Create(rm.SourceFileName());
+  auto statistics = pullstat::Create(module.SourceFilePath().value());
 
-  statistics->start(rm.Rvsdg());
-  pull(rm.Rvsdg().root());
-  statistics->end(rm.Rvsdg());
+  statistics->start(module.Rvsdg());
+  pull(&module.Rvsdg().GetRootRegion());
+  statistics->end(module.Rvsdg());
 
   statisticsCollector.CollectDemandedStatistics(std::move(statistics));
 }
@@ -315,7 +322,7 @@ pullin::~pullin()
 {}
 
 void
-pullin::run(RvsdgModule & module, util::StatisticsCollector & statisticsCollector)
+pullin::Run(rvsdg::RvsdgModule & module, util::StatisticsCollector & statisticsCollector)
 {
   pull(module, statisticsCollector);
 }

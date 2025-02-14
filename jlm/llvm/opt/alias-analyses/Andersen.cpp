@@ -3,6 +3,7 @@
  * See COPYING for terms of redistribution.
  */
 
+#include <jlm/llvm/ir/operators/IOBarrier.hpp>
 #include <jlm/llvm/opt/alias-analyses/Andersen.hpp>
 #include <jlm/llvm/opt/alias-analyses/PointsToGraph.hpp>
 #include <jlm/rvsdg/traverser.hpp>
@@ -17,66 +18,135 @@ namespace jlm::llvm::aa
  * @return true if pointees should be tracked for all values of the given type, otherwise false
  */
 bool
-IsOrContainsPointerType(const rvsdg::type & type)
+IsOrContainsPointerType(const rvsdg::Type & type)
 {
-  return IsOrContains<PointerType>(type);
+  return IsOrContains<PointerType>(type) || is<rvsdg::FunctionType>(type);
 }
 
-Andersen::Configuration
-Andersen::Configuration::DefaultConfiguration()
+std::string
+Andersen::Configuration::ToString() const
 {
-  Configuration config;
-
-  const auto configString = std::getenv(ENV_CONFIG_OVERRIDE);
-  if (configString == nullptr)
-    return config;
-
-  std::istringstream configStream(configString);
-  std::string option;
-  while (true)
+  std::ostringstream str;
+  if (EnableOfflineVariableSubstitution_)
+    str << "OVS_";
+  if (EnableOfflineConstraintNormalization_)
+    str << "NORM_";
+  if (Solver_ == Solver::Naive)
   {
-    configStream >> option;
-    if (configStream.fail())
-      break;
+    str << "Solver=Naive_";
+  }
+  else if (Solver_ == Solver::Worklist)
+  {
+    str << "Solver=Worklist_";
+    str << "Policy=";
+    str << PointerObjectConstraintSet::WorklistSolverPolicyToString(WorklistSolverPolicy_);
+    str << "_";
 
-    using Policy = PointerObjectConstraintSet::WorklistSolverPolicy;
-
-    if (option == CONFIG_OVS_ON)
-      config.EnableOfflineVariableSubstitution(true);
-    else if (option == CONFIG_OVS_OFF)
-      config.EnableOfflineVariableSubstitution(false);
-
-    else if (option == CONFIG_NORMALIZE_ON)
-      config.EnableOfflineConstraintNormalization(true);
-    else if (option == CONFIG_NORMALIZE_OFF)
-      config.EnableOfflineConstraintNormalization(false);
-
-    else if (option == CONFIG_SOLVER_NAIVE)
-      config.SetSolver(Solver::Naive);
-    else if (option == CONFIG_SOLVER_WL)
-      config.SetSolver(Solver::Worklist);
-
-    else if (option == CONFIG_WL_POLICY_LRF)
-      config.SetWorklistSolverPolicy(Policy::LeastRecentlyFired);
-    else if (option == CONFIG_WL_POLICY_TWO_PHASE_LRF)
-      config.SetWorklistSolverPolicy(Policy::TwoPhaseLeastRecentlyFired);
-    else if (option == CONFIG_WL_POLICY_FIFO)
-      config.SetWorklistSolverPolicy(Policy::FirstInFirstOut);
-    else if (option == CONFIG_WL_POLICY_LIFO)
-      config.SetWorklistSolverPolicy(Policy::LastInFirstOut);
-
-    else if (option == CONFIG_ONLINE_CYCLE_DETECTION_ON)
-      config.EnableOnlineCycleDetection(true);
-    else if (option == CONFIG_ONLINE_CYCLE_DETECTION_OFF)
-      config.EnableOnlineCycleDetection(false);
-    else
-    {
-      std::cerr << "Unknown config option string: '" << option << "'" << std::endl;
-      JLM_UNREACHABLE("Andersen default config override string broken");
-    }
+    if (EnableOnlineCycleDetection_)
+      str << "OnlineCD_";
+    if (EnableHybridCycleDetection_)
+      str << "HybridCD_";
+    if (EnableLazyCycleDetection_)
+      str << "LazyCD_";
+    if (EnableDifferencePropagation_)
+      str << "DP_";
+    if (EnablePreferImplicitPointees_)
+      str << "PIP_";
+  }
+  else
+  {
+    JLM_UNREACHABLE("Unknown solver type");
   }
 
-  return config;
+  auto result = str.str();
+  result.erase(result.size() - 1, 1); // Remove trailing '_'
+  return result;
+}
+
+std::vector<Andersen::Configuration>
+Andersen::Configuration::GetAllConfigurations()
+{
+  std::vector<Configuration> configs;
+  auto PickPreferImplicitPointees = [&](Configuration config)
+  {
+    config.EnablePreferImplicitPointees(false);
+    configs.push_back(config);
+    config.EnablePreferImplicitPointees(true);
+    configs.push_back(config);
+  };
+  auto PickDifferencePropagation = [&](Configuration config)
+  {
+    config.EnableDifferencePropagation(false);
+    PickPreferImplicitPointees(config);
+    config.EnableDifferencePropagation(true);
+    PickPreferImplicitPointees(config);
+  };
+  auto PickLazyCycleDetection = [&](Configuration config)
+  {
+    config.EnableLazyCycleDetection(false);
+    PickDifferencePropagation(config);
+    config.EnableLazyCycleDetection(true);
+    PickDifferencePropagation(config);
+  };
+  auto PickHybridCycleDetection = [&](Configuration config)
+  {
+    config.EnableHybridCycleDetection(false);
+    PickLazyCycleDetection(config);
+    // Hybrid Cycle Detection can only be enabled when OVS is enabled
+    if (config.IsOfflineVariableSubstitutionEnabled())
+    {
+      config.EnableHybridCycleDetection(true);
+      PickLazyCycleDetection(config);
+    }
+  };
+  auto PickOnlineCycleDetection = [&](Configuration config)
+  {
+    config.EnableOnlineCycleDetection(false);
+    PickHybridCycleDetection(config);
+    config.EnableOnlineCycleDetection(true);
+    // OnlineCD can not be combined with HybridCD or LazyCD
+    PickDifferencePropagation(config);
+  };
+  auto PickWorklistPolicy = [&](Configuration config)
+  {
+    using Policy = PointerObjectConstraintSet::WorklistSolverPolicy;
+    config.SetWorklistSolverPolicy(Policy::LeastRecentlyFired);
+    PickOnlineCycleDetection(config);
+    config.SetWorklistSolverPolicy(Policy::TwoPhaseLeastRecentlyFired);
+    PickOnlineCycleDetection(config);
+    config.SetWorklistSolverPolicy(Policy::LastInFirstOut);
+    PickOnlineCycleDetection(config);
+    config.SetWorklistSolverPolicy(Policy::FirstInFirstOut);
+    PickOnlineCycleDetection(config);
+    config.SetWorklistSolverPolicy(Policy::TopologicalSort);
+    PickDifferencePropagation(config); // With topo, skip all cycle detection
+  };
+  auto PickOfflineNormalization = [&](Configuration config)
+  {
+    config.EnableOfflineConstraintNormalization(false);
+    configs.push_back(config);
+    config.EnableOfflineConstraintNormalization(true);
+    configs.push_back(config);
+  };
+  auto PickSolver = [&](Configuration config)
+  {
+    config.SetSolver(Solver::Worklist);
+    PickWorklistPolicy(config);
+    config.SetSolver(Solver::Naive);
+    PickOfflineNormalization(config);
+  };
+  auto PickOfflineVariableSubstitution = [&](Configuration config)
+  {
+    config.EnableOfflineVariableSubstitution(false);
+    PickSolver(config);
+    config.EnableOfflineVariableSubstitution(true);
+    PickSolver(config);
+  };
+
+  // Adds one configuration for all valid combinations of features
+  PickOfflineVariableSubstitution(NaiveSolverConfiguration());
+
+  return configs;
 }
 
 /**
@@ -84,33 +154,115 @@ Andersen::Configuration::DefaultConfiguration()
  */
 class Andersen::Statistics final : public util::Statistics
 {
-  inline static const char * NumPointerObjects_ = "#PointerObjects";
-  inline static const char * NumRegisterPointerObjects_ = "#RegisterPointerObjects";
-  inline static const char * NumRegistersMappedToPointerObject_ = "#RegistersMappedToPointerObject";
+  static constexpr const char * NumPointerObjects_ = "#PointerObjects";
+  static constexpr const char * NumMemoryPointerObjects_ = "#MemoryPointerObjects";
+  static constexpr const char * NumMemoryPointerObjectsCanPoint_ = "#MemoryPointerObjectsCanPoint";
+  static constexpr const char * NumRegisterPointerObjects_ = "#RegisterPointerObjects";
+  // A PointerObject of Register kind can represent multiple outputs in RVSDG. Sum them up.
+  static constexpr const char * NumRegistersMappedToPointerObject_ =
+      "#RegistersMappedToPointerObject";
+  static constexpr const char * NumAllocaPointerObjects = "#AllocaPointerObjects";
+  static constexpr const char * NumMallocPointerObjects = "#MallocPointerObjects";
+  static constexpr const char * NumGlobalPointerObjects = "#GlobalPointerObjects";
+  static constexpr const char * NumFunctionPointerObjects = "#FunctionPointerObjects";
+  static constexpr const char * NumImportPointerObjects = "#ImportPointerObjects";
 
-  inline static const char * NumSupersetConstraints_ = "#SupersetConstraints";
-  inline static const char * NumStoreConstraints_ = "#StoreConstraints";
-  inline static const char * NumLoadConstraints_ = "#LoadConstraints";
-  inline static const char * NumFunctionCallConstraints_ = "#FunctionCallConstraints";
+  static constexpr const char * NumBaseConstraints_ = "#BaseConstraints";
+  static constexpr const char * NumSupersetConstraints_ = "#SupersetConstraints";
+  static constexpr const char * NumStoreConstraints_ = "#StoreConstraints";
+  static constexpr const char * NumLoadConstraints_ = "#LoadConstraints";
+  static constexpr const char * NumFunctionCallConstraints_ = "#FunctionCallConstraints";
+  static constexpr const char * NumScalarFlagConstraints_ = "#ScalarFlagConstraints";
+  static constexpr const char * NumOtherFlagConstraints_ = "#OtherFlagConstraints";
 
-  inline static const char * NumUnificationsOvs_ = "#Unifications(OVS)";
-  inline static const char * NumConstraintsRemovedOfflineNorm_ = "#ConstraintsRemoved(OfflineNorm)";
+  static constexpr const char * Configuration_ = "Configuration";
 
-  inline static const char * NumNaiveSolverIterations_ = "#NaiveSolverIterations";
+  // ====== Offline technique statistics ======
+  static constexpr const char * NumUnificationsOvs_ = "#Unifications(OVS)";
+  static constexpr const char * NumConstraintsRemovedOfflineNorm_ =
+      "#ConstraintsRemoved(OfflineNorm)";
 
-  inline static const char * WorklistPolicy_ = "WorklistPolicy";
-  inline static const char * NumWorklistSolverWorkItems_ = "#WorklistSolverWorkItems";
-  inline static const char * NumOnlineCyclesDetected_ = "#OnlineCyclesDetected";
-  inline static const char * NumOnlineCycleUnifications_ = "#OnlineCycleUnifications";
+  // ====== Solver statistics ======
+  static constexpr const char * NumNaiveSolverIterations_ = "#NaiveSolverIterations";
 
-  inline static const char * AnalysisTimer_ = "AnalysisTimer";
-  inline static const char * SetAndConstraintBuildingTimer_ = "SetAndConstraintBuildingTimer";
-  inline static const char * OfflineVariableSubstitutionTimer_ = "OVSTimer";
-  inline static const char * OfflineConstraintNormalizationTimer_ = "OfflineNormTimer";
-  inline static const char * ConstraintSolvingNaiveTimer_ = "ConstraintSolvingNaiveTimer";
-  inline static const char * ConstraintSolvingWorklistTimer_ = "ConstraintSolvingWorklistTimer";
-  inline static const char * PointsToGraphConstructionTimer_ = "PointsToGraphConstructionTimer";
-  inline static const char * PointsToGraphConstructionExternalToEscapedTimer_ =
+  static constexpr const char * WorklistPolicy_ = "WorklistPolicy";
+  static constexpr const char * NumWorklistSolverWorkItemsPopped_ =
+      "#WorklistSolverWorkItemsPopped";
+  static constexpr const char * NumWorklistSolverWorkItemsNewPointees_ =
+      "#WorklistSolverWorkItemsNewPointees";
+  static constexpr const char * NumTopologicalWorklistSweeps_ = "#TopologicalWorklistSweeps";
+
+  // ====== Online technique statistics ======
+  static constexpr const char * NumOnlineCyclesDetected_ = "#OnlineCyclesDetected";
+  static constexpr const char * NumOnlineCycleUnifications_ = "#OnlineCycleUnifications";
+
+  static constexpr const char * NumHybridCycleUnifications_ = "#HybridCycleUnifications";
+
+  static constexpr const char * NumLazyCycleDetectionAttempts_ = "#LazyCycleDetectionAttempts";
+  static constexpr const char * NumLazyCyclesDetected_ = "#LazyCyclesDetected";
+  static constexpr const char * NumLazyCycleUnifications_ = "#LazyCycleUnifications";
+
+  static constexpr const char * NumPIPExplicitPointeesRemoved_ = "#PIPExplicitPointeesRemoved";
+
+  // ====== During solving points-to set statistics ======
+  // How many times a pointee has been attempted inserted into an explicit points-to set.
+  // If a set with 10 elements is unioned into another set, that counts as 10 insertion attempts.
+  static constexpr const char * NumSetInsertionAttempts_ = "#PointsToSetInsertionAttempts";
+  // How many explicit pointees have been removed from points-to sets during solving.
+  // Removal can only happen due to unification, or explicitly when using PIP
+  static constexpr const char * NumExplicitPointeesRemoved_ = "#ExplicitPointeesRemoved";
+
+  // ====== After solving statistics ======
+  // How many disjoint sets of PointerObjects exist
+  static constexpr const char * NumUnificationRoots_ = "#UnificationRoots";
+  // How many memory objects where CanPoint() == true have escaped
+  static constexpr const char * NumCanPointsEscaped_ = "#CanPointsEscaped";
+  // How many memory objects where CanPoint() == false have escaped
+  static constexpr const char * NumCantPointsEscaped_ = "#CantPointsEscaped";
+
+  // The number of explicit pointees, counting only unification roots
+  static constexpr const char * NumExplicitPointees_ = "#ExplicitPointees";
+  // Only unification roots may have explicit pointees, but all PointerObjects in the unification
+  // marked CanPoint effectively have those explicit pointees. Add up the number of such relations.
+  static constexpr const char * NumExplicitPointsToRelations_ = "#ExplicitPointsToRelations";
+
+  // The number of PointsToExternal flags, counting only unification roots
+  static constexpr const char * NumPointsToExternalFlags_ = "#PointsToExternalFlags";
+  // Among all PointerObjects marked CanPoint, how many are in a unification pointing to external
+  static constexpr const char * NumPointsToExternalRelations_ = "#PointsToExternalRelations";
+
+  // Among all PointerObjects marked CanPoint and NOT flagged as pointing to external,
+  // add up how many pointer-pointee relations they have.
+  static constexpr const char * NumExplicitPointsToRelationsAmongPrecise_ =
+      "#ExplicitPointsToRelationsAmongPrecise";
+
+  // The number of PointeesEscaping flags, counting only unification roots
+  static constexpr const char * NumPointeesEscapingFlags_ = "#PointeesEscapingFlags";
+  // Among all PointerObjects marked CanPoint, how many are in a unification where pointees escape.
+  static constexpr const char * NumPointeesEscapingRelations_ = "#PointeesEscapingRelations";
+
+  // The total number of pointer-pointee relations, counting both explicit and implicit.
+  // In the case of doubled up pointees, the same pointer-pointee relation is not counted twice.
+  static constexpr const char * NumPointsToRelations_ = "#PointsToRelations";
+
+  // The number of doubled up pointees, only counting unification roots
+  static constexpr const char * NumDoubledUpPointees_ = "#DoubledUpPointees";
+  // The number of doubled up pointees, counting all PointerObjects marked CanPoint()
+  static constexpr const char * NumDoubledUpPointsToRelations_ = "#DoubledUpPointsToRelations";
+
+  // Number of unifications where no members have the CanPoint flag
+  static constexpr const char * NumCantPointUnifications_ = "#CantPointUnifications";
+  // In unifications where no member CanPoint, add up their explicit pointees
+  static constexpr const char * NumCantPointExplicitPointees_ = "#CantPointExplicitPointees";
+
+  static constexpr const char * AnalysisTimer_ = "AnalysisTimer";
+  static constexpr const char * SetAndConstraintBuildingTimer_ = "SetAndConstraintBuildingTimer";
+  static constexpr const char * OfflineVariableSubstitutionTimer_ = "OVSTimer";
+  static constexpr const char * OfflineConstraintNormalizationTimer_ = "OfflineNormTimer";
+  static constexpr const char * ConstraintSolvingNaiveTimer_ = "ConstraintSolvingNaiveTimer";
+  static constexpr const char * ConstraintSolvingWorklistTimer_ = "ConstraintSolvingWorklistTimer";
+  static constexpr const char * PointsToGraphConstructionTimer_ = "PointsToGraphConstructionTimer";
+  static constexpr const char * PointsToGraphConstructionExternalToEscapedTimer_ =
       "PointsToGraphConstructionExternalToEscapedTimer";
 
 public:
@@ -121,9 +273,9 @@ public:
   {}
 
   void
-  StartAndersenStatistics(const rvsdg::graph & graph) noexcept
+  StartAndersenStatistics(const rvsdg::Graph & graph) noexcept
   {
-    AddMeasurement(Label::NumRvsdgNodes, rvsdg::nnodes(graph.root()));
+    AddMeasurement(Label::NumRvsdgNodes, rvsdg::nnodes(&graph.GetRootRegion()));
     AddTimer(AnalysisTimer_).start();
   }
 
@@ -140,12 +292,30 @@ public:
   {
     GetTimer(SetAndConstraintBuildingTimer_).stop();
 
+    // Measure the number of pointer objects of different kinds
     AddMeasurement(NumPointerObjects_, set.NumPointerObjects());
-    AddMeasurement(
-        NumRegisterPointerObjects_,
-        set.NumPointerObjectsOfKind(PointerObjectKind::Register));
+    AddMeasurement(NumMemoryPointerObjects_, set.NumMemoryPointerObjects());
+    AddMeasurement(NumMemoryPointerObjectsCanPoint_, set.NumMemoryPointerObjectsCanPoint());
+    AddMeasurement(NumRegisterPointerObjects_, set.NumRegisterPointerObjects());
     AddMeasurement(NumRegistersMappedToPointerObject_, set.GetRegisterMap().size());
 
+    AddMeasurement(
+        NumAllocaPointerObjects,
+        set.NumPointerObjectsOfKind(PointerObjectKind::AllocaMemoryObject));
+    AddMeasurement(
+        NumMallocPointerObjects,
+        set.NumPointerObjectsOfKind(PointerObjectKind::MallocMemoryObject));
+    AddMeasurement(
+        NumGlobalPointerObjects,
+        set.NumPointerObjectsOfKind(PointerObjectKind::GlobalMemoryObject));
+    AddMeasurement(
+        NumFunctionPointerObjects,
+        set.NumPointerObjectsOfKind(PointerObjectKind::FunctionMemoryObject));
+    AddMeasurement(
+        NumImportPointerObjects,
+        set.NumPointerObjectsOfKind(PointerObjectKind::ImportMemoryObject));
+
+    // Count the number of constraints of different kinds
     size_t numSupersetConstraints = 0;
     size_t numStoreConstraints = 0;
     size_t numLoadConstraints = 0;
@@ -157,10 +327,14 @@ public:
       numLoadConstraints += std::holds_alternative<LoadConstraint>(constraint);
       numFunctionCallConstraints += std::holds_alternative<FunctionCallConstraint>(constraint);
     }
+    AddMeasurement(NumBaseConstraints_, constraints.NumBaseConstraints());
     AddMeasurement(NumSupersetConstraints_, numSupersetConstraints);
     AddMeasurement(NumStoreConstraints_, numStoreConstraints);
     AddMeasurement(NumLoadConstraints_, numLoadConstraints);
     AddMeasurement(NumFunctionCallConstraints_, numFunctionCallConstraints);
+    const auto [scalarFlags, otherFlags] = constraints.NumFlagConstraints();
+    AddMeasurement(NumScalarFlagConstraints_, scalarFlags);
+    AddMeasurement(NumOtherFlagConstraints_, otherFlags);
   }
 
   void
@@ -220,13 +394,163 @@ public:
         PointerObjectConstraintSet::WorklistSolverPolicyToString(statistics.Policy));
 
     // How many work items were popped from the worklist in total
-    AddMeasurement(NumWorklistSolverWorkItems_, statistics.NumWorkItemsPopped);
+    AddMeasurement(NumWorklistSolverWorkItemsPopped_, statistics.NumWorkItemsPopped);
+    AddMeasurement(NumWorklistSolverWorkItemsNewPointees_, statistics.NumWorkItemNewPointees);
+
+    if (statistics.NumTopologicalWorklistSweeps)
+      AddMeasurement(NumTopologicalWorklistSweeps_, *statistics.NumTopologicalWorklistSweeps);
 
     if (statistics.NumOnlineCyclesDetected)
       AddMeasurement(NumOnlineCyclesDetected_, *statistics.NumOnlineCyclesDetected);
 
     if (statistics.NumOnlineCycleUnifications)
       AddMeasurement(NumOnlineCycleUnifications_, *statistics.NumOnlineCycleUnifications);
+
+    if (statistics.NumHybridCycleUnifications)
+      AddMeasurement(NumHybridCycleUnifications_, *statistics.NumHybridCycleUnifications);
+
+    if (statistics.NumLazyCyclesDetectionAttempts)
+      AddMeasurement(NumLazyCycleDetectionAttempts_, *statistics.NumLazyCyclesDetectionAttempts);
+
+    if (statistics.NumLazyCyclesDetected)
+      AddMeasurement(NumLazyCyclesDetected_, *statistics.NumLazyCyclesDetected);
+
+    if (statistics.NumLazyCycleUnifications)
+      AddMeasurement(NumLazyCycleUnifications_, *statistics.NumLazyCycleUnifications);
+
+    if (statistics.NumPipExplicitPointeesRemoved)
+      AddMeasurement(NumPIPExplicitPointeesRemoved_, *statistics.NumPipExplicitPointeesRemoved);
+  }
+
+  void
+  AddStatisticFromConfiguration(const Configuration & config)
+  {
+    AddMeasurement(Configuration_, config.ToString());
+  }
+
+  void
+  AddStatisticsFromSolution(const PointerObjectSet & set)
+  {
+    AddMeasurement(NumSetInsertionAttempts_, set.GetNumSetInsertionAttempts());
+    AddMeasurement(NumExplicitPointeesRemoved_, set.GetNumExplicitPointeesRemoved());
+
+    size_t numUnificationRoots = 0;
+
+    size_t numCanPointEscaped = 0;
+    size_t numCantPointEscaped = 0;
+
+    size_t numExplicitPointees = 0;
+    size_t numExplicitPointsToRelations = 0;
+    size_t numExplicitPointeeRelationsAmongPrecise = 0;
+
+    size_t numPointsToExternalFlags = 0;
+    size_t numPointsToExternalRelations = 0;
+    size_t numPointeesEscapingFlags = 0;
+    size_t numPointeesEscapingRelations = 0;
+
+    size_t numDoubledUpPointees = 0;
+    size_t numDoubledUpPointsToRelations = 0;
+
+    std::vector<bool> unificationHasCanPoint(set.NumPointerObjects(), false);
+
+    for (PointerObjectIndex i = 0; i < set.NumPointerObjects(); i++)
+    {
+      if (set.HasEscaped(i))
+      {
+        if (set.CanPoint(i))
+          numCanPointEscaped++;
+        else
+          numCantPointEscaped++;
+      }
+
+      const auto & pointees = set.GetPointsToSet(i);
+
+      if (set.CanPoint(i))
+      {
+        numExplicitPointsToRelations += pointees.Size();
+        numPointeesEscapingRelations += set.HasPointeesEscaping(i);
+
+        if (set.IsPointingToExternal(i))
+        {
+          numPointsToExternalRelations++;
+          for (auto pointee : pointees.Items())
+          {
+            if (set.HasEscaped(pointee))
+              numDoubledUpPointsToRelations++;
+          }
+        }
+        else
+        {
+          // When comparing precision, the number of explicit pointees is more interesting among
+          // pointers that do not also point to external.
+          numExplicitPointeeRelationsAmongPrecise += pointees.Size();
+        }
+
+        // This unification has at least one CanPoint member
+        unificationHasCanPoint[set.GetUnificationRoot(i)] = true;
+      }
+
+      // The rest of this loop is only concerned with unification roots, as they are the only
+      // PointerObjects that actually have explicit pointees or flags
+      if (!set.IsUnificationRoot(i))
+        continue;
+
+      numUnificationRoots++;
+      if (set.IsPointingToExternal(i))
+        numPointsToExternalFlags++;
+      if (set.HasPointeesEscaping(i))
+        numPointeesEscapingFlags++;
+
+      numExplicitPointees += pointees.Size();
+
+      // If the PointsToExternal flag is set, any explicit pointee that has escaped is doubled up
+      if (set.IsPointingToExternal(i))
+        for (auto pointee : pointees.Items())
+          if (set.HasEscaped(pointee))
+            numDoubledUpPointees++;
+    }
+
+    // Now find unifications where no member is marked CanPoint, as any explicit pointee is a waste
+    size_t numCantPointUnifications = 0;
+    size_t numCantPointExplicitPointees = 0;
+    for (PointerObjectIndex i = 0; i < set.NumPointerObjects(); i++)
+    {
+      if (!set.IsUnificationRoot(i))
+        continue;
+      if (unificationHasCanPoint[i])
+        continue;
+      numCantPointUnifications++;
+      numCantPointExplicitPointees += set.GetPointsToSet(i).Size();
+    }
+
+    AddMeasurement(NumUnificationRoots_, numUnificationRoots);
+    AddMeasurement(NumCanPointsEscaped_, numCanPointEscaped);
+    AddMeasurement(NumCantPointsEscaped_, numCantPointEscaped);
+
+    AddMeasurement(NumExplicitPointees_, numExplicitPointees);
+    AddMeasurement(NumExplicitPointsToRelations_, numExplicitPointsToRelations);
+    AddMeasurement(
+        NumExplicitPointsToRelationsAmongPrecise_,
+        numExplicitPointeeRelationsAmongPrecise);
+
+    AddMeasurement(NumPointsToExternalFlags_, numPointsToExternalFlags);
+    AddMeasurement(NumPointsToExternalRelations_, numPointsToExternalRelations);
+    AddMeasurement(NumPointeesEscapingFlags_, numPointeesEscapingFlags);
+    AddMeasurement(NumPointeesEscapingRelations_, numPointeesEscapingRelations);
+
+    // Calculate the total number of pointer-pointee relations by adding up all explicit and
+    // implicit relations, and removing the doubled up relations.
+    size_t numPointsToRelations =
+        numExplicitPointsToRelations - numDoubledUpPointsToRelations
+        + numPointsToExternalRelations * (numCanPointEscaped + numCantPointEscaped);
+
+    AddMeasurement(NumPointsToRelations_, numPointsToRelations);
+
+    AddMeasurement(NumDoubledUpPointees_, numDoubledUpPointees);
+    AddMeasurement(NumDoubledUpPointsToRelations_, numDoubledUpPointsToRelations);
+
+    AddMeasurement(NumCantPointUnifications_, numCantPointUnifications);
+    AddMeasurement(NumCantPointExplicitPointees_, numCantPointExplicitPointees);
   }
 
   void
@@ -266,6 +590,9 @@ public:
     AddMeasurement(
         Label::NumPointsToGraphExternalMemorySources,
         pointsToGraph.GetExternalMemoryNode().NumSources());
+    auto [numEdges, numPointsToRelations] = pointsToGraph.NumEdges();
+    AddMeasurement(Label::NumPointsToGraphEdges, numEdges);
+    AddMeasurement(Label::NumPointsToGraphPointsToRelations, numPointsToRelations);
   }
 
   void
@@ -282,9 +609,9 @@ public:
 };
 
 void
-Andersen::AnalyzeSimpleNode(const rvsdg::simple_node & node)
+Andersen::AnalyzeSimpleNode(const rvsdg::SimpleNode & node)
 {
-  const auto & op = node.operation();
+  const auto & op = node.GetOperation();
 
   if (is<alloca_op>(op))
     AnalyzeAlloca(node);
@@ -320,6 +647,12 @@ Andersen::AnalyzeSimpleNode(const rvsdg::simple_node & node)
     AnalyzeExtractValue(node);
   else if (is<valist_op>(op))
     AnalyzeValist(node);
+  else if (is<PointerToFunctionOperation>(op))
+    AnalyzePointerToFunction(node);
+  else if (is<FunctionToPointerOperation>(op))
+    AnalyzeFunctionToPointer(node);
+  else if (is<IOBarrierOperation>(op))
+    AnalyzeIOBarrier(node);
   else if (is<FreeOperation>(op) || is<ptrcmp_op>(op))
   {
     // These operations take pointers as input, but do not affect any points-to sets
@@ -335,24 +668,28 @@ Andersen::AnalyzeSimpleNode(const rvsdg::simple_node & node)
 }
 
 void
-Andersen::AnalyzeAlloca(const rvsdg::simple_node & node)
+Andersen::AnalyzeAlloca(const rvsdg::SimpleNode & node)
 {
-  JLM_ASSERT(is<alloca_op>(&node));
+  const auto allocaOp = util::AssertedCast<const alloca_op>(&node.GetOperation());
 
   const auto & outputRegister = *node.output(0);
   const auto outputRegisterPO = Set_->CreateRegisterPointerObject(outputRegister);
-  const auto allocaPO = Set_->CreateAllocaMemoryObject(node);
+
+  const bool canPoint = IsOrContainsPointerType(*allocaOp->ValueType());
+  const auto allocaPO = Set_->CreateAllocaMemoryObject(node, canPoint);
   Constraints_->AddPointerPointeeConstraint(outputRegisterPO, allocaPO);
 }
 
 void
-Andersen::AnalyzeMalloc(const rvsdg::simple_node & node)
+Andersen::AnalyzeMalloc(const rvsdg::SimpleNode & node)
 {
   JLM_ASSERT(is<malloc_op>(&node));
 
   const auto & outputRegister = *node.output(0);
   const auto outputRegisterPO = Set_->CreateRegisterPointerObject(outputRegister);
-  const auto mallocPO = Set_->CreateMallocMemoryObject(node);
+
+  // We do not know what types will be stored in the malloc, so let it track pointers
+  const auto mallocPO = Set_->CreateMallocMemoryObject(node, true);
   Constraints_->AddPointerPointeeConstraint(outputRegisterPO, mallocPO);
 }
 
@@ -364,15 +701,15 @@ Andersen::AnalyzeLoad(const LoadNode & loadNode)
 
   const auto addressRegisterPO = Set_->GetRegisterPointerObject(addressRegister);
 
-  if (!IsOrContainsPointerType(outputRegister.type()))
+  if (IsOrContainsPointerType(outputRegister.type()))
   {
-    // TODO: When reading address as an integer, some of address' target might still pointers,
-    // which should now be considered as having escaped
-    return;
+    const auto outputRegisterPO = Set_->CreateRegisterPointerObject(outputRegister);
+    Constraints_->AddConstraint(LoadConstraint(outputRegisterPO, addressRegisterPO));
   }
-
-  const auto outputRegisterPO = Set_->CreateRegisterPointerObject(outputRegister);
-  Constraints_->AddConstraint(LoadConstraint(outputRegisterPO, addressRegisterPO));
+  else
+  {
+    Set_->MarkAsLoadingAsScalar(addressRegisterPO);
+  }
 }
 
 void
@@ -381,18 +718,18 @@ Andersen::AnalyzeStore(const StoreNode & storeNode)
   const auto & addressRegister = *storeNode.GetAddressInput().origin();
   const auto & valueRegister = *storeNode.GetStoredValueInput().origin();
 
-  // If the written value is not a pointer, be conservative and mark the address
-  if (!IsOrContainsPointerType(valueRegister.type()))
-  {
-    // TODO: We are writing an integer to *address,
-    // which really should mark all of address' targets as pointing to external
-    // in case they are ever read as pointers.
-    return;
-  }
-
   const auto addressRegisterPO = Set_->GetRegisterPointerObject(addressRegister);
-  const auto valueRegisterPO = Set_->GetRegisterPointerObject(valueRegister);
-  Constraints_->AddConstraint(StoreConstraint(addressRegisterPO, valueRegisterPO));
+
+  // If the written value is not a pointer, be conservative and mark the address
+  if (IsOrContainsPointerType(valueRegister.type()))
+  {
+    const auto valueRegisterPO = Set_->GetRegisterPointerObject(valueRegister);
+    Constraints_->AddConstraint(StoreConstraint(addressRegisterPO, valueRegisterPO));
+  }
+  else
+  {
+    Set_->MarkAsStoringAsScalar(addressRegisterPO);
+  }
 }
 
 void
@@ -417,7 +754,7 @@ Andersen::AnalyzeCall(const CallNode & callNode)
 }
 
 void
-Andersen::AnalyzeGep(const rvsdg::simple_node & node)
+Andersen::AnalyzeGep(const rvsdg::SimpleNode & node)
 {
   JLM_ASSERT(is<GetElementPtrOperation>(&node));
 
@@ -432,7 +769,7 @@ Andersen::AnalyzeGep(const rvsdg::simple_node & node)
 }
 
 void
-Andersen::AnalyzeBitcast(const rvsdg::simple_node & node)
+Andersen::AnalyzeBitcast(const rvsdg::SimpleNode & node)
 {
   JLM_ASSERT(is<bitcast_op>(&node));
 
@@ -451,7 +788,7 @@ Andersen::AnalyzeBitcast(const rvsdg::simple_node & node)
 }
 
 void
-Andersen::AnalyzeBits2ptr(const rvsdg::simple_node & node)
+Andersen::AnalyzeBits2ptr(const rvsdg::SimpleNode & node)
 {
   JLM_ASSERT(is<bits2ptr_op>(&node));
   const auto & output = *node.output(0);
@@ -465,7 +802,7 @@ Andersen::AnalyzeBits2ptr(const rvsdg::simple_node & node)
 }
 
 void
-Andersen::AnalyzePtr2bits(const rvsdg::simple_node & node)
+Andersen::AnalyzePtr2bits(const rvsdg::SimpleNode & node)
 {
   JLM_ASSERT(is<ptr2bits_op>(&node));
   const auto & inputRegister = *node.input(0)->origin();
@@ -477,7 +814,7 @@ Andersen::AnalyzePtr2bits(const rvsdg::simple_node & node)
 }
 
 void
-Andersen::AnalyzeConstantPointerNull(const rvsdg::simple_node & node)
+Andersen::AnalyzeConstantPointerNull(const rvsdg::SimpleNode & node)
 {
   JLM_ASSERT(is<ConstantPointerNullOperation>(&node));
   const auto & output = *node.output(0);
@@ -489,7 +826,7 @@ Andersen::AnalyzeConstantPointerNull(const rvsdg::simple_node & node)
 }
 
 void
-Andersen::AnalyzeUndef(const rvsdg::simple_node & node)
+Andersen::AnalyzeUndef(const rvsdg::SimpleNode & node)
 {
   JLM_ASSERT(is<UndefValueOperation>(&node));
   const auto & output = *node.output(0);
@@ -503,7 +840,7 @@ Andersen::AnalyzeUndef(const rvsdg::simple_node & node)
 }
 
 void
-Andersen::AnalyzeMemcpy(const rvsdg::simple_node & node)
+Andersen::AnalyzeMemcpy(const rvsdg::SimpleNode & node)
 {
   JLM_ASSERT(is<MemCpyOperation>(&node));
 
@@ -525,7 +862,7 @@ Andersen::AnalyzeMemcpy(const rvsdg::simple_node & node)
 }
 
 void
-Andersen::AnalyzeConstantArray(const rvsdg::simple_node & node)
+Andersen::AnalyzeConstantArray(const rvsdg::SimpleNode & node)
 {
   JLM_ASSERT(is<ConstantArray>(&node));
 
@@ -547,7 +884,7 @@ Andersen::AnalyzeConstantArray(const rvsdg::simple_node & node)
 }
 
 void
-Andersen::AnalyzeConstantStruct(const rvsdg::simple_node & node)
+Andersen::AnalyzeConstantStruct(const rvsdg::SimpleNode & node)
 {
   JLM_ASSERT(is<ConstantStruct>(&node));
 
@@ -570,7 +907,7 @@ Andersen::AnalyzeConstantStruct(const rvsdg::simple_node & node)
 }
 
 void
-Andersen::AnalyzeConstantAggregateZero(const rvsdg::simple_node & node)
+Andersen::AnalyzeConstantAggregateZero(const rvsdg::SimpleNode & node)
 {
   JLM_ASSERT(is<ConstantAggregateZero>(&node));
   auto & output = *node.output(0);
@@ -584,7 +921,7 @@ Andersen::AnalyzeConstantAggregateZero(const rvsdg::simple_node & node)
 }
 
 void
-Andersen::AnalyzeExtractValue(const rvsdg::simple_node & node)
+Andersen::AnalyzeExtractValue(const rvsdg::SimpleNode & node)
 {
   JLM_ASSERT(is<ExtractValue>(&node));
 
@@ -599,7 +936,7 @@ Andersen::AnalyzeExtractValue(const rvsdg::simple_node & node)
 }
 
 void
-Andersen::AnalyzeValist(const rvsdg::simple_node & node)
+Andersen::AnalyzeValist(const rvsdg::SimpleNode & node)
 {
   JLM_ASSERT(is<valist_op>(&node));
 
@@ -620,42 +957,87 @@ Andersen::AnalyzeValist(const rvsdg::simple_node & node)
 }
 
 void
-Andersen::AnalyzeStructuralNode(const rvsdg::structural_node & node)
+Andersen::AnalyzePointerToFunction(const rvsdg::SimpleNode & node)
 {
-  if (const auto lambdaNode = dynamic_cast<const lambda::node *>(&node))
+  JLM_ASSERT(is<PointerToFunctionOperation>(&node));
+
+  // For pointer analysis purposes, function objects and pointers
+  // to functions are treated as being the same.
+  const auto & baseRegister = *node.input(0)->origin();
+  JLM_ASSERT(is<PointerType>(baseRegister.type()));
+
+  const auto baseRegisterPO = Set_->GetRegisterPointerObject(baseRegister);
+  const auto & outputRegister = *node.output(0);
+  Set_->MapRegisterToExistingPointerObject(outputRegister, baseRegisterPO);
+}
+
+void
+Andersen::AnalyzeFunctionToPointer(const rvsdg::SimpleNode & node)
+{
+  JLM_ASSERT(is<FunctionToPointerOperation>(&node));
+
+  // For pointer analysis purposes, function objects and pointers
+  // to functions are treated as being the same.
+  const auto & baseRegister = *node.input(0)->origin();
+  JLM_ASSERT(is<rvsdg::FunctionType>(baseRegister.type()));
+
+  const auto baseRegisterPO = Set_->GetRegisterPointerObject(baseRegister);
+  const auto & outputRegister = *node.output(0);
+  Set_->MapRegisterToExistingPointerObject(outputRegister, baseRegisterPO);
+}
+
+void
+Andersen::AnalyzeIOBarrier(const rvsdg::SimpleNode & node)
+{
+  JLM_ASSERT(is<IOBarrierOperation>(&node));
+
+  const auto operation = util::AssertedCast<const IOBarrierOperation>(&node.GetOperation());
+  if (!IsOrContainsPointerType(*operation->Type()))
+    return;
+
+  const auto & inputRegister = *node.input(0)->origin();
+  const auto inputRegisterPO = Set_->GetRegisterPointerObject(inputRegister);
+  const auto & outputRegister = *node.output(0);
+  Set_->MapRegisterToExistingPointerObject(outputRegister, inputRegisterPO);
+}
+
+void
+Andersen::AnalyzeStructuralNode(const rvsdg::StructuralNode & node)
+{
+  if (const auto lambdaNode = dynamic_cast<const rvsdg::LambdaNode *>(&node))
     AnalyzeLambda(*lambdaNode);
   else if (const auto deltaNode = dynamic_cast<const delta::node *>(&node))
     AnalyzeDelta(*deltaNode);
   else if (const auto phiNode = dynamic_cast<const phi::node *>(&node))
     AnalyzePhi(*phiNode);
-  else if (const auto gammaNode = dynamic_cast<const rvsdg::gamma_node *>(&node))
+  else if (const auto gammaNode = dynamic_cast<const rvsdg::GammaNode *>(&node))
     AnalyzeGamma(*gammaNode);
-  else if (const auto thetaNode = dynamic_cast<const rvsdg::theta_node *>(&node))
+  else if (const auto thetaNode = dynamic_cast<const rvsdg::ThetaNode *>(&node))
     AnalyzeTheta(*thetaNode);
   else
     JLM_UNREACHABLE("Unknown structural node operation");
 }
 
 void
-Andersen::AnalyzeLambda(const lambda::node & lambda)
+Andersen::AnalyzeLambda(const rvsdg::LambdaNode & lambda)
 {
   // Handle context variables
-  for (auto & cv : lambda.ctxvars())
+  for (const auto & cv : lambda.GetContextVars())
   {
-    if (!IsOrContainsPointerType(cv.type()))
+    if (!IsOrContainsPointerType(cv.input->type()))
       continue;
 
-    auto & inputRegister = *cv.origin();
-    auto & argumentRegister = *cv.argument();
+    auto & inputRegister = *cv.input->origin();
+    auto & argumentRegister = *cv.inner;
     const auto inputRegisterPO = Set_->GetRegisterPointerObject(inputRegister);
     Set_->MapRegisterToExistingPointerObject(argumentRegister, inputRegisterPO);
   }
 
   // Create Register PointerObjects for each argument of pointing type in the function
-  for (auto & argument : lambda.fctarguments())
+  for (auto argument : lambda.GetFunctionArguments())
   {
-    if (IsOrContainsPointerType(argument.type()))
-      (void)Set_->CreateRegisterPointerObject(argument);
+    if (IsOrContainsPointerType(argument->type()))
+      (void)Set_->CreateRegisterPointerObject(*argument);
   }
 
   AnalyzeRegion(*lambda.subregion());
@@ -689,11 +1071,14 @@ Andersen::AnalyzeDelta(const delta::node & delta)
   // Get the result register from the subregion
   auto & resultRegister = *delta.result()->origin();
 
-  // Create a global memory object representing the global variable
-  const auto globalPO = Set_->CreateGlobalMemoryObject(delta);
+  // If the type of the delta can point, the analysis should track its set of possible pointees
+  bool canPoint = IsOrContainsPointerType(delta.type());
 
-  // If the subregion result is a pointer, make the global point to the same variables
-  if (IsOrContainsPointerType(resultRegister.type()))
+  // Create a global memory object representing the global variable
+  const auto globalPO = Set_->CreateGlobalMemoryObject(delta, canPoint);
+
+  // If the initializer subregion result is a pointer, make the global point to what it points to
+  if (canPoint)
   {
     const auto resultRegisterPO = Set_->GetRegisterPointerObject(resultRegister);
     Constraints_->AddConstraint(SupersetConstraint(globalPO, resultRegisterPO));
@@ -752,19 +1137,19 @@ Andersen::AnalyzePhi(const phi::node & phi)
 }
 
 void
-Andersen::AnalyzeGamma(const rvsdg::gamma_node & gamma)
+Andersen::AnalyzeGamma(const rvsdg::GammaNode & gamma)
 {
   // Handle input variables
-  for (auto ev = gamma.begin_entryvar(); ev != gamma.end_entryvar(); ++ev)
+  for (const auto & ev : gamma.GetEntryVars())
   {
-    if (!IsOrContainsPointerType(ev->type()))
+    if (!IsOrContainsPointerType(ev.input->type()))
       continue;
 
-    auto & inputRegister = *ev->origin();
+    auto & inputRegister = *ev.input->origin();
     const auto inputRegisterPO = Set_->GetRegisterPointerObject(inputRegister);
 
-    for (auto & argument : *ev)
-      Set_->MapRegisterToExistingPointerObject(argument, inputRegisterPO);
+    for (auto & argument : ev.branchArgument)
+      Set_->MapRegisterToExistingPointerObject(*argument, inputRegisterPO);
   }
 
   // Handle subregions
@@ -772,34 +1157,34 @@ Andersen::AnalyzeGamma(const rvsdg::gamma_node & gamma)
     AnalyzeRegion(*gamma.subregion(n));
 
   // Handle exit variables
-  for (auto ex = gamma.begin_exitvar(); ex != gamma.end_exitvar(); ++ex)
+  for (const auto & ex : gamma.GetExitVars())
   {
-    if (!IsOrContainsPointerType(ex->type()))
+    if (!IsOrContainsPointerType(ex.output->type()))
       continue;
 
-    auto & outputRegister = *ex.output();
-    const auto outputRegisterPO = Set_->CreateRegisterPointerObject(outputRegister);
+    auto & outputRegister = ex.output;
+    const auto outputRegisterPO = Set_->CreateRegisterPointerObject(*outputRegister);
 
-    for (auto & result : *ex)
+    for (auto result : ex.branchResult)
     {
-      const auto resultRegisterPO = Set_->GetRegisterPointerObject(*result.origin());
+      const auto resultRegisterPO = Set_->GetRegisterPointerObject(*result->origin());
       Constraints_->AddConstraint(SupersetConstraint(outputRegisterPO, resultRegisterPO));
     }
   }
 }
 
 void
-Andersen::AnalyzeTheta(const rvsdg::theta_node & theta)
+Andersen::AnalyzeTheta(const rvsdg::ThetaNode & theta)
 {
   // Create a PointerObject for each argument in the inner region
   // And make it point to a superset of the corresponding input register
-  for (const auto thetaOutput : theta)
+  for (const auto & loopVar : theta.GetLoopVars())
   {
-    if (!IsOrContainsPointerType(thetaOutput->type()))
+    if (!IsOrContainsPointerType(loopVar.input->type()))
       continue;
 
-    auto & inputReg = *thetaOutput->input()->origin();
-    auto & innerArgumentReg = *thetaOutput->argument();
+    auto & inputReg = *loopVar.input->origin();
+    auto & innerArgumentReg = *loopVar.pre;
     const auto inputRegPO = Set_->GetRegisterPointerObject(inputReg);
     const auto innerArgumentRegPO = Set_->CreateRegisterPointerObject(innerArgumentReg);
 
@@ -811,14 +1196,14 @@ Andersen::AnalyzeTheta(const rvsdg::theta_node & theta)
 
   // Iterate over loop variables again, making the inner arguments point to a superset
   // of what the corresponding result registers point to
-  for (const auto thetaOutput : theta)
+  for (const auto & loopVar : theta.GetLoopVars())
   {
-    if (!IsOrContainsPointerType(thetaOutput->type()))
+    if (!IsOrContainsPointerType(loopVar.input->type()))
       continue;
 
-    auto & innerArgumentReg = *thetaOutput->argument();
-    auto & innerResultReg = *thetaOutput->result()->origin();
-    auto & outputReg = *thetaOutput;
+    auto & innerArgumentReg = *loopVar.pre;
+    auto & innerResultReg = *loopVar.post->origin();
+    auto & outputReg = *loopVar.output;
 
     const auto innerArgumentRegPO = Set_->GetRegisterPointerObject(innerArgumentReg);
     const auto innerResultRegPO = Set_->GetRegisterPointerObject(innerResultReg);
@@ -832,7 +1217,7 @@ Andersen::AnalyzeTheta(const rvsdg::theta_node & theta)
 }
 
 void
-Andersen::AnalyzeRegion(rvsdg::region & region)
+Andersen::AnalyzeRegion(rvsdg::Region & region)
 {
   // Check that all region arguments of pointing types have PointerObjects
   for (size_t i = 0; i < region.narguments(); i++)
@@ -843,15 +1228,15 @@ Andersen::AnalyzeRegion(rvsdg::region & region)
 
   // The use of the top-down traverser is vital, as it ensures all input origins
   // of pointer type are mapped to PointerObjects by the time a node is processed.
-  rvsdg::topdown_traverser traverser(&region);
+  rvsdg::TopDownTraverser traverser(&region);
 
   // While visiting the node we have the responsibility of creating
   // PointerObjects for any of the node's outputs of pointer type
   for (const auto node : traverser)
   {
-    if (auto simpleNode = dynamic_cast<const rvsdg::simple_node *>(node))
+    if (auto simpleNode = dynamic_cast<const rvsdg::SimpleNode *>(node))
       AnalyzeSimpleNode(*simpleNode);
-    else if (auto structuralNode = dynamic_cast<const rvsdg::structural_node *>(node))
+    else if (auto structuralNode = dynamic_cast<const rvsdg::StructuralNode *>(node))
       AnalyzeStructuralNode(*structuralNode);
     else
       JLM_UNREACHABLE("Unknown node type");
@@ -866,26 +1251,24 @@ Andersen::AnalyzeRegion(rvsdg::region & region)
 }
 
 void
-Andersen::AnalyzeRvsdg(const rvsdg::graph & graph)
+Andersen::AnalyzeRvsdg(const rvsdg::Graph & graph)
 {
-  auto & rootRegion = *graph.root();
+  auto & rootRegion = graph.GetRootRegion();
 
   // Iterate over all arguments to the root region - symbols imported from other modules
   // These symbols can either be global variables or functions
   for (size_t n = 0; n < rootRegion.narguments(); n++)
   {
-    auto & argument = *rootRegion.argument(n);
+    auto & argument = *util::AssertedCast<GraphImport>(rootRegion.argument(n));
 
     // Only care about imported pointer values
     if (!IsOrContainsPointerType(argument.type()))
       continue;
 
-    // TODO: Mark the created ImportMemoryObject based on it being a function or a variable
-    // Functions and non-pointer typed globals can not point to other MemoryObjects,
-    // so letting them be ShouldTrackPointees() == false aids analysis.
-
     // Create a memory PointerObject representing the target of the external symbol
     // We can assume that two external symbols don't alias, clang does.
+    // Imported memory objects are always marked as CanPoint() == false, due to the fact that
+    // the analysis can't ever hope to track points-to sets of external memory with any precision.
     const auto importObjectPO = Set_->CreateImportMemoryObject(argument);
 
     // Create a register PointerObject representing the address value itself
@@ -920,7 +1303,7 @@ Andersen::GetConfiguration() const
 }
 
 void
-Andersen::AnalyzeModule(const RvsdgModule & module, Statistics & statistics)
+Andersen::AnalyzeModule(const rvsdg::RvsdgModule & module, Statistics & statistics)
 {
   Set_ = std::make_unique<PointerObjectSet>();
   Constraints_ = std::make_unique<PointerObjectConstraintSet>(*Set_);
@@ -931,34 +1314,45 @@ Andersen::AnalyzeModule(const RvsdgModule & module, Statistics & statistics)
 }
 
 void
-Andersen::SolveConstraints(const Configuration & config, Statistics & statistics)
+Andersen::SolveConstraints(
+    PointerObjectConstraintSet & constraints,
+    const Configuration & config,
+    Statistics & statistics)
 {
+  statistics.AddStatisticFromConfiguration(config);
+
   if (config.IsOfflineVariableSubstitutionEnabled())
   {
     statistics.StartOfflineVariableSubstitution();
-    auto numUnifications = Constraints_->PerformOfflineVariableSubstitution();
+    // If the solver uses hybrid cycle detection, tell OVS to store info about ref node cycles
+    bool hasHCD = config.IsHybridCycleDetectionEnabled();
+    auto numUnifications = constraints.PerformOfflineVariableSubstitution(hasHCD);
     statistics.StopOfflineVariableSubstitution(numUnifications);
   }
 
   if (config.IsOfflineConstraintNormalizationEnabled())
   {
     statistics.StartOfflineConstraintNormalization();
-    auto numConstraintsRemoved = Constraints_->NormalizeConstraints();
+    auto numConstraintsRemoved = constraints.NormalizeConstraints();
     statistics.StopOfflineConstraintNormalization(numConstraintsRemoved);
   }
 
   if (config.GetSolver() == Configuration::Solver::Naive)
   {
     statistics.StartConstraintSolvingNaiveStatistics();
-    size_t numIterations = Constraints_->SolveNaively();
+    size_t numIterations = constraints.SolveNaively();
     statistics.StopConstraintSolvingNaiveStatistics(numIterations);
   }
   else if (config.GetSolver() == Configuration::Solver::Worklist)
   {
     statistics.StartConstraintSolvingWorklistStatistics();
-    auto worklistStatistics = Constraints_->SolveUsingWorklist(
+    auto worklistStatistics = constraints.SolveUsingWorklist(
         config.GetWorklistSoliverPolicy(),
-        config.IsOnlineCycleDetectionEnabled());
+        config.IsOnlineCycleDetectionEnabled(),
+        config.IsHybridCycleDetectionEnabled(),
+        config.IsLazyCycleDetectionEnabled(),
+        config.IsDifferencePropagationEnabled(),
+        config.IsPreferImplicitPointeesEnabled());
     statistics.StopConstraintSolvingWorklistStatistics(worklistStatistics);
   }
   else
@@ -966,35 +1360,50 @@ Andersen::SolveConstraints(const Configuration & config, Statistics & statistics
 }
 
 std::unique_ptr<PointsToGraph>
-Andersen::Analyze(const RvsdgModule & module, util::StatisticsCollector & statisticsCollector)
+Andersen::Analyze(
+    const rvsdg::RvsdgModule & module,
+    util::StatisticsCollector & statisticsCollector)
 {
-  auto statistics = Statistics::Create(module.SourceFileName());
+  auto statistics = Statistics::Create(module.SourceFilePath().value());
   statistics->StartAndersenStatistics(module.Rvsdg());
 
   // Check environment variables for debugging flags
-  const bool checkAgainstNaive =
-      std::getenv(ENV_COMPARE_SOLVE_NAIVE) && Config_ != Configuration::NaiveSolverConfiguration();
+  size_t testAllConfigsIterations = 0;
+  if (auto testAllConfigsString = std::getenv(ENV_TEST_ALL_CONFIGS))
+    testAllConfigsIterations = std::stoi(testAllConfigsString);
+  std::optional<size_t> useExactConfig;
+  if (auto useExactConfigString = std::getenv(ENV_USE_EXACT_CONFIG))
+    useExactConfig = std::stoi(useExactConfigString);
+  const bool doubleCheck = std::getenv(ENV_DOUBLE_CHECK);
+
   const bool dumpGraphs = std::getenv(ENV_DUMP_SUBSET_GRAPH);
   util::GraphWriter writer;
 
   AnalyzeModule(module, *statistics);
 
-  // If double-checking against the naive solver, make a copy of the original constraint set
+  // If solving multiple times, make a copy of the original constraint set
   std::pair<std::unique_ptr<PointerObjectSet>, std::unique_ptr<PointerObjectConstraintSet>> copy;
-  if (checkAgainstNaive)
+  if (testAllConfigsIterations || doubleCheck)
     copy = Constraints_->Clone();
 
   // Draw subset graph both before and after solving
   if (dumpGraphs)
     Constraints_->DrawSubsetGraph(writer);
 
-  SolveConstraints(Config_, *statistics);
+  auto config = Config_;
+  if (useExactConfig.has_value())
+  {
+    auto allConfigs = Configuration::GetAllConfigurations();
+    config = allConfigs.at(*useExactConfig);
+  }
+
+  SolveConstraints(*Constraints_, config, *statistics);
+  statistics->AddStatisticsFromSolution(*Set_);
 
   if (dumpGraphs)
   {
     auto & graph = Constraints_->DrawSubsetGraph(writer);
-    graph.AppendToLabel("After Solving");
-
+    graph.AppendToLabel("After Solving with " + config.ToString());
     writer.OutputAllGraphs(std::cout, util::GraphOutputFormat::Dot);
   }
 
@@ -1004,38 +1413,45 @@ Andersen::Analyze(const RvsdgModule & module, util::StatisticsCollector & statis
   statisticsCollector.CollectDemandedStatistics(std::move(statistics));
 
   // Solve again if double-checking against naive is enabled
-  if (checkAgainstNaive)
+  if (testAllConfigsIterations || doubleCheck)
   {
-    std::cerr << "Double checking Andersen analysis using naive solving" << std::endl;
-    // Restore the problem to before solving started
-    Set_ = std::move(copy.first);
-    Constraints_ = std::move(copy.second);
+    if (doubleCheck)
+      std::cerr << "Double checking Andersen analysis using naive solving" << std::endl;
 
-    // Create a separate Statistics instance for naive statistics
-    auto naiveStatistics = Statistics::Create(module.SourceFileName());
-    SolveConstraints(Configuration::NaiveSolverConfiguration(), *naiveStatistics);
+    // If double-checking, only use the naive configuration. Otherwise, try all configurations
+    std::vector<Configuration> configs;
+    if (testAllConfigsIterations)
+      configs = Configuration::GetAllConfigurations();
+    else
+      configs.push_back(Configuration::NaiveSolverConfiguration());
 
-    auto naiveResult = ConstructPointsToGraphFromPointerObjectSet(*Set_, *naiveStatistics);
+    // If testing all configurations, do it as many times as requested.
+    // Otherwise, do it at least once
+    const auto iterations = std::max<size_t>(testAllConfigsIterations, 1);
 
-    statisticsCollector.CollectDemandedStatistics(std::move(naiveStatistics));
-
-    // Check if the PointsToGraphs are identical
-    bool error = false;
-    if (!naiveResult->IsSupergraphOf(*result))
+    for (size_t i = 0; i < iterations; i++)
     {
-      std::cerr << "The naive PointsToGraph is NOT a supergraph of the PointsToGraph" << std::endl;
-      error = true;
-    }
-    if (!result->IsSupergraphOf(*naiveResult))
-    {
-      std::cerr << "The PointsToGraph is NOT a supergraph of the naive PointsToGraph" << std::endl;
-      error = true;
-    }
-    if (error)
-    {
-      std::cout << PointsToGraph::ToDot(*result) << std::endl;
-      std::cout << PointsToGraph::ToDot(*naiveResult) << std::endl;
-      JLM_UNREACHABLE("PointsToGraph double checking uncovered differences!");
+      for (const auto & config : configs)
+      {
+        // Create a clone of the unsolved pointer object set and constraint set
+        auto workingCopy = copy.second->Clone();
+        // These statistics will only contain solving data
+        auto solvingStats = Statistics::Create(module.SourceFilePath().value());
+        SolveConstraints(*workingCopy.second, config, *solvingStats);
+        solvingStats->AddStatisticsFromSolution(*workingCopy.first);
+        statisticsCollector.CollectDemandedStatistics(std::move(solvingStats));
+
+        // Only double check on the first iteration
+        if (doubleCheck && i == 0)
+        {
+          if (workingCopy.first->HasIdenticalSolAs(*Set_))
+            continue;
+          std::cerr << "Solving with original config: " << Config_.ToString()
+                    << " did not produce the same solution as the config " << config.ToString()
+                    << std::endl;
+          JLM_UNREACHABLE("Andersen solver double checking uncovered differences!");
+        }
+      }
     }
   }
 
@@ -1103,10 +1519,6 @@ Andersen::ConstructPointsToGraphFromPointerObjectSet(
   // PointerObject's points-to set.
   auto applyPointsToSet = [&](PointsToGraph::Node & node, PointerObjectIndex index)
   {
-    // PointerObjects marked as not tracking pointees should not point to anything
-    if (!set.ShouldTrackPointees(index))
-      return;
-
     // Add all PointsToGraph nodes who should point to external to the list
     if (set.IsPointingToExternal(index))
       pointsToExternal.push_back(&node);
@@ -1143,7 +1555,9 @@ Andersen::ConstructPointsToGraphFromPointerObjectSet(
     if (memoryNodes[idx] == nullptr)
       continue; // Skip all nodes that are not MemoryNodes
 
-    applyPointsToSet(*memoryNodes[idx], idx);
+    // Add outgoing edges to nodes representing pointer values
+    if (set.CanPoint(idx))
+      applyPointsToSet(*memoryNodes[idx], idx);
 
     if (set.HasEscaped(idx))
     {
@@ -1164,6 +1578,11 @@ Andersen::ConstructPointsToGraphFromPointerObjectSet(
     source->AddEdge(pointsToGraph->GetExternalMemoryNode());
   }
   statistics.StopExternalToAllEscapedStatistics();
+
+  // We do not use the unknown node, and do not give the external node any targets
+  JLM_ASSERT(pointsToGraph->GetExternalMemoryNode().NumTargets() == 0);
+  JLM_ASSERT(pointsToGraph->GetUnknownMemoryNode().NumSources() == 0);
+  JLM_ASSERT(pointsToGraph->GetUnknownMemoryNode().NumTargets() == 0);
 
   statistics.StopPointsToGraphConstructionStatistics(*pointsToGraph);
   return pointsToGraph;

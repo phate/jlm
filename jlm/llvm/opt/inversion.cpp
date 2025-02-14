@@ -7,6 +7,8 @@
 #include <jlm/llvm/ir/RvsdgModule.hpp>
 #include <jlm/llvm/opt/inversion.hpp>
 #include <jlm/llvm/opt/pull.hpp>
+#include <jlm/rvsdg/gamma.hpp>
+#include <jlm/rvsdg/theta.hpp>
 #include <jlm/rvsdg/traverser.hpp>
 #include <jlm/util/Statistics.hpp>
 #include <jlm/util/time.hpp>
@@ -24,18 +26,18 @@ public:
   {}
 
   void
-  start(const jlm::rvsdg::graph & graph) noexcept
+  start(const rvsdg::Graph & graph) noexcept
   {
-    AddMeasurement(Label::NumRvsdgNodesBefore, rvsdg::nnodes(graph.root()));
-    AddMeasurement(Label::NumRvsdgInputsBefore, rvsdg::ninputs(graph.root()));
+    AddMeasurement(Label::NumRvsdgNodesBefore, rvsdg::nnodes(&graph.GetRootRegion()));
+    AddMeasurement(Label::NumRvsdgInputsBefore, rvsdg::ninputs(&graph.GetRootRegion()));
     AddTimer(Label::Timer).start();
   }
 
   void
-  end(const jlm::rvsdg::graph & graph) noexcept
+  end(const rvsdg::Graph & graph) noexcept
   {
-    AddMeasurement(Label::NumRvsdgNodesAfter, rvsdg::nnodes(graph.root()));
-    AddMeasurement(Label::NumRvsdgInputsAfter, rvsdg::ninputs(graph.root()));
+    AddMeasurement(Label::NumRvsdgNodesAfter, rvsdg::nnodes(&graph.GetRootRegion()));
+    AddMeasurement(Label::NumRvsdgInputsAfter, rvsdg::ninputs(&graph.GetRootRegion()));
     GetTimer(Label::Timer).stop();
   }
 
@@ -46,57 +48,57 @@ public:
   }
 };
 
-static jlm::rvsdg::gamma_node *
-is_applicable(const jlm::rvsdg::theta_node * theta)
+static rvsdg::GammaNode *
+is_applicable(const rvsdg::ThetaNode * theta)
 {
-  auto matchnode = jlm::rvsdg::node_output::node(theta->predicate()->origin());
+  auto matchnode = jlm::rvsdg::output::GetNode(*theta->predicate()->origin());
   if (!jlm::rvsdg::is<jlm::rvsdg::match_op>(matchnode))
     return nullptr;
 
   if (matchnode->output(0)->nusers() != 2)
     return nullptr;
 
-  jlm::rvsdg::gamma_node * gnode = nullptr;
+  rvsdg::GammaNode * gnode = nullptr;
   for (const auto & user : *matchnode->output(0))
   {
     if (user == theta->predicate())
       continue;
 
-    if (!rvsdg::is<rvsdg::gamma_op>(rvsdg::input::GetNode(*user)))
+    if (!rvsdg::is<rvsdg::GammaOperation>(rvsdg::input::GetNode(*user)))
       return nullptr;
 
-    gnode = dynamic_cast<rvsdg::gamma_node *>(rvsdg::input::GetNode(*user));
+    gnode = dynamic_cast<rvsdg::GammaNode *>(rvsdg::input::GetNode(*user));
   }
 
   return gnode;
 }
 
 static void
-pullin(jlm::rvsdg::gamma_node * gamma, jlm::rvsdg::theta_node * theta)
+pullin(rvsdg::GammaNode * gamma, rvsdg::ThetaNode * theta)
 {
   pullin_bottom(gamma);
-  for (const auto & lv : *theta)
+  for (const auto & lv : theta->GetLoopVars())
   {
-    if (jlm::rvsdg::node_output::node(lv->result()->origin()) != gamma)
+    if (jlm::rvsdg::output::GetNode(*lv.post->origin()) != gamma)
     {
-      auto ev = gamma->add_entryvar(lv->result()->origin());
-      JLM_ASSERT(ev->narguments() == 2);
-      auto xv = gamma->add_exitvar({ ev->argument(0), ev->argument(1) });
-      lv->result()->divert_to(xv);
+      auto ev = gamma->AddEntryVar(lv.post->origin());
+      JLM_ASSERT(ev.branchArgument.size() == 2);
+      auto xv = gamma->AddExitVar({ ev.branchArgument[0], ev.branchArgument[1] }).output;
+      lv.post->divert_to(xv);
     }
   }
   pullin_top(gamma);
 }
 
-static std::vector<std::vector<jlm::rvsdg::node *>>
-collect_condition_nodes(jlm::rvsdg::structural_node * tnode, jlm::rvsdg::structural_node * gnode)
+static std::vector<std::vector<rvsdg::Node *>>
+collect_condition_nodes(rvsdg::StructuralNode * tnode, jlm::rvsdg::StructuralNode * gnode)
 {
-  JLM_ASSERT(jlm::rvsdg::is<jlm::rvsdg::theta_op>(tnode));
-  JLM_ASSERT(jlm::rvsdg::is<jlm::rvsdg::gamma_op>(gnode));
+  JLM_ASSERT(is<rvsdg::ThetaOperation>(tnode));
+  JLM_ASSERT(rvsdg::is<rvsdg::GammaOperation>(gnode));
   JLM_ASSERT(gnode->region()->node() == tnode);
 
-  std::vector<std::vector<jlm::rvsdg::node *>> nodes;
-  for (auto & node : tnode->subregion(0)->nodes)
+  std::vector<std::vector<rvsdg::Node *>> nodes;
+  for (auto & node : tnode->subregion(0)->Nodes())
   {
     if (&node == gnode)
       continue;
@@ -111,9 +113,9 @@ collect_condition_nodes(jlm::rvsdg::structural_node * tnode, jlm::rvsdg::structu
 
 static void
 copy_condition_nodes(
-    jlm::rvsdg::region * target,
-    jlm::rvsdg::substitution_map & smap,
-    const std::vector<std::vector<jlm::rvsdg::node *>> & nodes)
+    rvsdg::Region * target,
+    rvsdg::SubstitutionMap & smap,
+    const std::vector<std::vector<rvsdg::Node *>> & nodes)
 {
   for (size_t n = 0; n < nodes.size(); n++)
   {
@@ -122,20 +124,20 @@ copy_condition_nodes(
   }
 }
 
-static jlm::rvsdg::argument *
-to_argument(jlm::rvsdg::output * output)
-{
-  return dynamic_cast<jlm::rvsdg::argument *>(output);
-}
-
-static jlm::rvsdg::structural_output *
+static jlm::rvsdg::StructuralOutput *
 to_structural_output(jlm::rvsdg::output * output)
 {
-  return dynamic_cast<jlm::rvsdg::structural_output *>(output);
+  return dynamic_cast<rvsdg::StructuralOutput *>(output);
+}
+
+static rvsdg::RegionArgument *
+to_argument(jlm::rvsdg::output * output)
+{
+  return dynamic_cast<rvsdg::RegionArgument *>(output);
 }
 
 static void
-invert(jlm::rvsdg::theta_node * otheta)
+invert(rvsdg::ThetaNode * otheta)
 {
   auto ogamma = is_applicable(otheta);
   if (!ogamma)
@@ -144,33 +146,32 @@ invert(jlm::rvsdg::theta_node * otheta)
   pullin(ogamma, otheta);
 
   /* copy condition nodes for new gamma node */
-  jlm::rvsdg::substitution_map smap;
+  rvsdg::SubstitutionMap smap;
   auto cnodes = collect_condition_nodes(otheta, ogamma);
-  for (const auto & olv : *otheta)
-    smap.insert(olv->argument(), olv->input()->origin());
+  for (const auto & olv : otheta->GetLoopVars())
+    smap.insert(olv.pre, olv.input->origin());
   copy_condition_nodes(otheta->region(), smap, cnodes);
 
-  auto ngamma = jlm::rvsdg::gamma_node::create(
-      smap.lookup(ogamma->predicate()->origin()),
-      ogamma->nsubregions());
+  auto ngamma =
+      rvsdg::GammaNode::create(smap.lookup(ogamma->predicate()->origin()), ogamma->nsubregions());
 
   /* handle subregion 0 */
-  jlm::rvsdg::substitution_map r0map;
+  rvsdg::SubstitutionMap r0map;
   {
     /* setup substitution map for exit region copying */
     auto osubregion0 = ogamma->subregion(0);
-    for (auto oev = ogamma->begin_entryvar(); oev != ogamma->end_entryvar(); oev++)
+    for (const auto & oev : ogamma->GetEntryVars())
     {
-      if (auto argument = to_argument(oev->origin()))
+      if (auto argument = to_argument(oev.input->origin()))
       {
-        auto nev = ngamma->add_entryvar(argument->input()->origin());
-        r0map.insert(oev->argument(0), nev->argument(0));
+        auto nev = ngamma->AddEntryVar(argument->input()->origin());
+        r0map.insert(oev.branchArgument[0], nev.branchArgument[0]);
       }
       else
       {
-        auto substitute = smap.lookup(oev->origin());
-        auto nev = ngamma->add_entryvar(substitute);
-        r0map.insert(oev->argument(0), nev->argument(0));
+        auto substitute = smap.lookup(oev.input->origin());
+        auto nev = ngamma->AddEntryVar(substitute);
+        r0map.insert(oev.branchArgument[0], nev.branchArgument[0]);
       }
     }
 
@@ -178,43 +179,42 @@ invert(jlm::rvsdg::theta_node * otheta)
     osubregion0->copy(ngamma->subregion(0), r0map, false, false);
 
     /* update substitution map for insertion of exit variables */
-    for (const auto & olv : *otheta)
+    for (const auto & olv : otheta->GetLoopVars())
     {
-      auto output = to_structural_output(olv->result()->origin());
+      auto output = to_structural_output(olv.post->origin());
       auto substitute = r0map.lookup(osubregion0->result(output->index())->origin());
-      r0map.insert(olv->result()->origin(), substitute);
+      r0map.insert(olv.post->origin(), substitute);
     }
   }
 
   /* handle subregion 1 */
-  jlm::rvsdg::substitution_map r1map;
+  rvsdg::SubstitutionMap r1map;
   {
-    auto ntheta = jlm::rvsdg::theta_node::create(ngamma->subregion(1));
+    auto ntheta = rvsdg::ThetaNode::create(ngamma->subregion(1));
 
     /* add loop variables to new theta node and setup substitution map */
     auto osubregion0 = ogamma->subregion(0);
     auto osubregion1 = ogamma->subregion(1);
-    std::unordered_map<jlm::rvsdg::input *, jlm::rvsdg::theta_output *> nlvs;
-    for (const auto & olv : *otheta)
+    std::unordered_map<jlm::rvsdg::input *, rvsdg::ThetaNode::LoopVar> nlvs;
+    for (const auto & olv : otheta->GetLoopVars())
     {
-      auto ev = ngamma->add_entryvar(olv->input()->origin());
-      auto nlv = ntheta->add_loopvar(ev->argument(1));
-      r1map.insert(olv->argument(), nlv->argument());
-      nlvs[olv->input()] = nlv;
+      auto ev = ngamma->AddEntryVar(olv.input->origin());
+      auto nlv = ntheta->AddLoopVar(ev.branchArgument[1]);
+      r1map.insert(olv.pre, nlv.pre);
+      nlvs[olv.input] = nlv;
     }
-    for (size_t n = 1; n < ogamma->ninputs(); n++)
+    for (const auto & oev : ogamma->GetEntryVars())
     {
-      auto oev = static_cast<jlm::rvsdg::gamma_input *>(ogamma->input(n));
-      if (auto argument = to_argument(oev->origin()))
+      if (auto argument = to_argument(oev.input->origin()))
       {
-        r1map.insert(oev->argument(1), nlvs[argument->input()]->argument());
+        r1map.insert(oev.branchArgument[1], nlvs[argument->input()].pre);
       }
       else
       {
-        auto ev = ngamma->add_entryvar(smap.lookup(oev->origin()));
-        auto nlv = ntheta->add_loopvar(ev->argument(1));
-        r1map.insert(oev->argument(1), nlv->argument());
-        nlvs[oev] = nlv;
+        auto ev = ngamma->AddEntryVar(smap.lookup(oev.input->origin()));
+        auto nlv = ntheta->AddLoopVar(ev.branchArgument[1]);
+        r1map.insert(oev.branchArgument[1], nlv.pre);
+        nlvs[oev.input] = nlv;
       }
     }
 
@@ -222,11 +222,11 @@ invert(jlm::rvsdg::theta_node * otheta)
     osubregion1->copy(ntheta->subregion(), r1map, false, false);
 
     /* adjust values in substitution map for condition node copying */
-    for (const auto & olv : *otheta)
+    for (const auto & olv : otheta->GetLoopVars())
     {
-      auto output = to_structural_output(olv->result()->origin());
+      auto output = to_structural_output(olv.post->origin());
       auto substitute = r1map.lookup(osubregion1->result(output->index())->origin());
-      r1map.insert(olv->argument(), substitute);
+      r1map.insert(olv.pre, substitute);
     }
 
     /* copy condition nodes */
@@ -234,25 +234,24 @@ invert(jlm::rvsdg::theta_node * otheta)
     auto predicate = r1map.lookup(ogamma->predicate()->origin());
 
     /* redirect results of loop variables and adjust substitution map for exit region copying */
-    for (const auto & olv : *otheta)
+    for (const auto & olv : otheta->GetLoopVars())
     {
-      auto output = to_structural_output(olv->result()->origin());
+      auto output = to_structural_output(olv.post->origin());
       auto substitute = r1map.lookup(osubregion1->result(output->index())->origin());
-      nlvs[olv->input()]->result()->divert_to(substitute);
-      r1map.insert(olv->result()->origin(), nlvs[olv->input()]);
+      nlvs[olv.input].post->divert_to(substitute);
+      r1map.insert(olv.post->origin(), nlvs[olv.input].output);
     }
-    for (size_t n = 1; n < ogamma->ninputs(); n++)
+    for (const auto & oev : ogamma->GetEntryVars())
     {
-      auto oev = static_cast<jlm::rvsdg::gamma_input *>(ogamma->input(n));
-      if (auto argument = to_argument(oev->origin()))
+      if (auto argument = to_argument(oev.input->origin()))
       {
-        r1map.insert(oev->argument(0), nlvs[argument->input()]);
+        r1map.insert(oev.branchArgument[0], nlvs[argument->input()].output);
       }
       else
       {
-        auto substitute = r1map.lookup(oev->origin());
-        nlvs[oev]->result()->divert_to(substitute);
-        r1map.insert(oev->argument(0), nlvs[oev]);
+        auto substitute = r1map.lookup(oev.input->origin());
+        nlvs[oev.input].post->divert_to(substitute);
+        r1map.insert(oev.branchArgument[0], nlvs[oev.input].output);
       }
     }
 
@@ -262,53 +261,53 @@ invert(jlm::rvsdg::theta_node * otheta)
     osubregion0->copy(ngamma->subregion(1), r1map, false, false);
 
     /* adjust values in substitution map for exit variable creation */
-    for (const auto & olv : *otheta)
+    for (const auto & olv : otheta->GetLoopVars())
     {
-      auto output = to_structural_output(olv->result()->origin());
+      auto output = to_structural_output(olv.post->origin());
       auto substitute = r1map.lookup(osubregion0->result(output->index())->origin());
-      r1map.insert(olv->result()->origin(), substitute);
+      r1map.insert(olv.post->origin(), substitute);
     }
   }
 
   /* add exit variables to new gamma */
-  for (const auto & olv : *otheta)
+  for (const auto & olv : otheta->GetLoopVars())
   {
-    auto o0 = r0map.lookup(olv->result()->origin());
-    auto o1 = r1map.lookup(olv->result()->origin());
-    auto ex = ngamma->add_exitvar({ o0, o1 });
-    smap.insert(olv, ex);
+    auto o0 = r0map.lookup(olv.post->origin());
+    auto o1 = r1map.lookup(olv.post->origin());
+    auto ex = ngamma->AddExitVar({ o0, o1 });
+    smap.insert(olv.output, ex.output);
   }
 
   /* replace outputs */
-  for (const auto & olv : *otheta)
-    olv->divert_users(smap.lookup(olv));
+  for (const auto & olv : otheta->GetLoopVars())
+    olv.output->divert_users(smap.lookup(olv.output));
   remove(otheta);
 }
 
 static void
-invert(jlm::rvsdg::region * region)
+invert(rvsdg::Region * region)
 {
-  for (auto & node : jlm::rvsdg::topdown_traverser(region))
+  for (auto & node : rvsdg::TopDownTraverser(region))
   {
-    if (auto structnode = dynamic_cast<jlm::rvsdg::structural_node *>(node))
+    if (auto structnode = dynamic_cast<rvsdg::StructuralNode *>(node))
     {
       for (size_t r = 0; r < structnode->nsubregions(); r++)
         invert(structnode->subregion(r));
 
-      if (auto theta = dynamic_cast<jlm::rvsdg::theta_node *>(structnode))
+      if (auto theta = dynamic_cast<rvsdg::ThetaNode *>(structnode))
         invert(theta);
     }
   }
 }
 
 static void
-invert(RvsdgModule & rm, util::StatisticsCollector & statisticsCollector)
+invert(rvsdg::RvsdgModule & rvsdgModule, util::StatisticsCollector & statisticsCollector)
 {
-  auto statistics = ivtstat::Create(rm.SourceFileName());
+  auto statistics = ivtstat::Create(rvsdgModule.SourceFilePath().value());
 
-  statistics->start(rm.Rvsdg());
-  invert(rm.Rvsdg().root());
-  statistics->end(rm.Rvsdg());
+  statistics->start(rvsdgModule.Rvsdg());
+  invert(&rvsdgModule.Rvsdg().GetRootRegion());
+  statistics->end(rvsdgModule.Rvsdg());
 
   statisticsCollector.CollectDemandedStatistics(std::move(statistics));
 }
@@ -319,7 +318,7 @@ tginversion::~tginversion()
 {}
 
 void
-tginversion::run(RvsdgModule & module, jlm::util::StatisticsCollector & statisticsCollector)
+tginversion::Run(rvsdg::RvsdgModule & module, jlm::util::StatisticsCollector & statisticsCollector)
 {
   invert(module, statisticsCollector);
 }

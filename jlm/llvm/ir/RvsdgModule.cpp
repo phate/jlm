@@ -8,22 +8,17 @@
 namespace jlm::llvm
 {
 
-/* impport class */
-
-impport::~impport()
-{}
-
-bool
-impport::operator==(const port & other) const noexcept
+GraphImport &
+GraphImport::Copy(rvsdg::Region & region, rvsdg::StructuralInput *)
 {
-  auto p = dynamic_cast<const impport *>(&other);
-  return p && p->type() == type() && p->name() == name() && p->linkage() == linkage();
+  return GraphImport::Create(*region.graph(), ValueType(), ImportedType(), Name(), Linkage());
 }
 
-std::unique_ptr<jlm::rvsdg::port>
-impport::copy() const
+GraphExport &
+GraphExport::Copy(rvsdg::output & origin, rvsdg::StructuralOutput * output)
 {
-  return std::unique_ptr<port>(new impport(*this));
+  JLM_ASSERT(output == nullptr);
+  return GraphExport::Create(origin, Name());
 }
 
 }

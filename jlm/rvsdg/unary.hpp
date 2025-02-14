@@ -9,60 +9,28 @@
 
 #include <jlm/rvsdg/graph.hpp>
 #include <jlm/rvsdg/node.hpp>
-#include <jlm/rvsdg/simple-normal-form.hpp>
-#include <jlm/util/common.hpp>
+
+#include <optional>
 
 namespace jlm::rvsdg
 {
 
 typedef size_t unop_reduction_path_t;
 
-class unary_normal_form final : public simple_normal_form
-{
-public:
-  virtual ~unary_normal_form() noexcept;
-
-  unary_normal_form(
-      const std::type_info & operator_class,
-      jlm::rvsdg::node_normal_form * parent,
-      jlm::rvsdg::graph * graph);
-
-  virtual bool
-  normalize_node(jlm::rvsdg::node * node) const override;
-
-  virtual std::vector<jlm::rvsdg::output *>
-  normalized_create(
-      jlm::rvsdg::region * region,
-      const jlm::rvsdg::simple_op & op,
-      const std::vector<jlm::rvsdg::output *> & arguments) const override;
-
-  virtual void
-  set_reducible(bool enable);
-
-  inline bool
-  get_reducible() const noexcept
-  {
-    return enable_reducible_;
-  }
-
-private:
-  bool enable_reducible_;
-};
-
 /**
   \brief Unary operator
 
   Operator taking a single argument.
 */
-class unary_op : public simple_op
+class UnaryOperation : public SimpleOperation
 {
 public:
-  virtual ~unary_op() noexcept;
+  ~UnaryOperation() noexcept override;
 
-  inline unary_op(
-      std::shared_ptr<const jlm::rvsdg::type> operand,
-      std::shared_ptr<const jlm::rvsdg::type> result)
-      : simple_op({ std::move(operand) }, { std::move(result) })
+  UnaryOperation(
+      std::shared_ptr<const jlm::rvsdg::Type> operand,
+      std::shared_ptr<const jlm::rvsdg::Type> result)
+      : SimpleOperation({ std::move(operand) }, { std::move(result) })
   {}
 
   virtual unop_reduction_path_t
@@ -70,12 +38,6 @@ public:
 
   virtual jlm::rvsdg::output *
   reduce_operand(unop_reduction_path_t path, jlm::rvsdg::output * arg) const = 0;
-
-  static jlm::rvsdg::unary_normal_form *
-  normal_form(jlm::rvsdg::graph * graph) noexcept
-  {
-    return static_cast<jlm::rvsdg::unary_normal_form *>(graph->node_normal_form(typeid(unary_op)));
-  }
 };
 
 static const unop_reduction_path_t unop_reduction_none = 0;
@@ -89,6 +51,23 @@ static const unop_reduction_path_t unop_reduction_inverse = 4;
 static const unop_reduction_path_t unop_reduction_narrow = 5;
 /* operation can be distributed into operands of preceding operation */
 static const unop_reduction_path_t unop_reduction_distribute = 6;
+
+/**
+ * \brief Applies the reductions implemented in the unary operations reduction functions.
+ *
+ * @param operation The unary operation on which the transformation is performed.
+ * @param operands The single(!) operand of the unary node. It should only be a single operand.
+ *
+ * @return If the normalization could be applied, then the single(!) result of the unary operation
+ * after the transformation. Otherwise, std::nullopt.
+ *
+ * \see unary_op::can_reduce_operand()
+ * \see unary_op::reduce_operand()
+ */
+std::optional<std::vector<rvsdg::output *>>
+NormalizeUnaryOperation(
+    const UnaryOperation & operation,
+    const std::vector<rvsdg::output *> & operands);
 
 }
 

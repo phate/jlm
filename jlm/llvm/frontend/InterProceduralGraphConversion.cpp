@@ -14,6 +14,8 @@
 #include <jlm/llvm/ir/RvsdgModule.hpp>
 #include <jlm/llvm/ir/ssa.hpp>
 #include <jlm/rvsdg/binary.hpp>
+#include <jlm/rvsdg/gamma.hpp>
+#include <jlm/rvsdg/theta.hpp>
 #include <jlm/util/Statistics.hpp>
 #include <jlm/util/time.hpp>
 
@@ -59,7 +61,7 @@ public:
     JLM_ASSERT(NumRegions() == 0);
   }
 
-  RegionalizedVariableMap(const ipgraph_module & interProceduralGraphModule, rvsdg::region & region)
+  RegionalizedVariableMap(const ipgraph_module & interProceduralGraphModule, rvsdg::Region & region)
       : InterProceduralGraphModule_(interProceduralGraphModule)
   {
     PushRegion(region);
@@ -86,14 +88,14 @@ public:
     return VariableMap(NumRegions() - 1);
   }
 
-  rvsdg::region &
+  rvsdg::Region &
   GetRegion(size_t n) noexcept
   {
     JLM_ASSERT(n < NumRegions());
     return *RegionStack_[n];
   }
 
-  rvsdg::region &
+  rvsdg::Region &
   GetTopRegion() noexcept
   {
     JLM_ASSERT(NumRegions() > 0);
@@ -101,7 +103,7 @@ public:
   }
 
   void
-  PushRegion(rvsdg::region & region)
+  PushRegion(rvsdg::Region & region)
   {
     VariableMapStack_.push_back(std::make_unique<llvm::VariableMap>());
     RegionStack_.push_back(&region);
@@ -123,7 +125,7 @@ public:
 private:
   const ipgraph_module & InterProceduralGraphModule_;
   std::vector<std::unique_ptr<llvm::VariableMap>> VariableMapStack_;
-  std::vector<rvsdg::region *> RegionStack_;
+  std::vector<rvsdg::Region *> RegionStack_;
 };
 
 class ControlFlowRestructuringStatistics final : public util::Statistics
@@ -301,10 +303,10 @@ public:
   }
 
   void
-  End(const rvsdg::graph & graph) noexcept
+  End(const rvsdg::Graph & graph) noexcept
   {
     AddTimer(Label::Timer).stop();
-    AddMeasurement(Label::NumRvsdgNodes, rvsdg::nnodes(graph.root()));
+    AddMeasurement(Label::NumRvsdgNodes, rvsdg::nnodes(&graph.GetRootRegion()));
   }
 
   static std::unique_ptr<InterProceduralGraphToRvsdgStatistics>
@@ -459,7 +461,7 @@ requiresExport(const ipgraph_node & ipgNode)
 static void
 ConvertAssignment(
     const llvm::tac & threeAddressCode,
-    rvsdg::region & region,
+    rvsdg::Region &,
     llvm::VariableMap & variableMap)
 {
   JLM_ASSERT(is<assignment_op>(threeAddressCode.operation()));
@@ -470,30 +472,23 @@ ConvertAssignment(
 }
 
 static void
-ConvertSelect(
-    const llvm::tac & threeAddressCode,
-    rvsdg::region & region,
-    llvm::VariableMap & variableMap)
+ConvertSelect(const llvm::tac & threeAddressCode, rvsdg::Region &, llvm::VariableMap & variableMap)
 {
   JLM_ASSERT(is<select_op>(threeAddressCode.operation()));
   JLM_ASSERT(threeAddressCode.noperands() == 3 && threeAddressCode.nresults() == 1);
 
-  auto op = rvsdg::match_op(1, { { 1, 1 } }, 0, 2);
   auto p = variableMap.lookup(threeAddressCode.operand(0));
-  auto predicate = rvsdg::simple_node::create_normalized(&region, op, { p })[0];
+  auto predicate = rvsdg::match_op::Create(*p, { { 1, 1 } }, 0, 2);
 
-  auto gamma = rvsdg::gamma_node::create(predicate, 2);
-  auto ev1 = gamma->add_entryvar(variableMap.lookup(threeAddressCode.operand(2)));
-  auto ev2 = gamma->add_entryvar(variableMap.lookup(threeAddressCode.operand(1)));
-  auto ex = gamma->add_exitvar({ ev1->argument(0), ev2->argument(1) });
-  variableMap.insert(threeAddressCode.result(0), ex);
+  auto gamma = rvsdg::GammaNode::create(predicate, 2);
+  auto ev1 = gamma->AddEntryVar(variableMap.lookup(threeAddressCode.operand(2)));
+  auto ev2 = gamma->AddEntryVar(variableMap.lookup(threeAddressCode.operand(1)));
+  auto ex = gamma->AddExitVar({ ev1.branchArgument[0], ev2.branchArgument[1] });
+  variableMap.insert(threeAddressCode.result(0), ex.output);
 }
 
 static void
-ConvertBranch(
-    const llvm::tac & threeAddressCode,
-    rvsdg::region & region,
-    llvm::VariableMap & variableMap)
+ConvertBranch(const llvm::tac & threeAddressCode, rvsdg::Region &, llvm::VariableMap &)
 {
   JLM_ASSERT(is<branch_op>(threeAddressCode.operation()));
   /*
@@ -503,7 +498,7 @@ ConvertBranch(
 
 template<class TNode, class TOperation>
 static void
-Convert(const llvm::tac & threeAddressCode, rvsdg::region & region, llvm::VariableMap & variableMap)
+Convert(const llvm::tac & threeAddressCode, rvsdg::Region & region, llvm::VariableMap & variableMap)
 {
   std::vector<rvsdg::output *> operands;
   for (size_t n = 0; n < threeAddressCode.noperands(); n++)
@@ -512,8 +507,9 @@ Convert(const llvm::tac & threeAddressCode, rvsdg::region & region, llvm::Variab
     operands.push_back(variableMap.lookup(operand));
   }
 
-  auto operation = util::AssertedCast<const TOperation>(&threeAddressCode.operation());
-  auto results = TNode::Create(region, *operation, operands);
+  std::unique_ptr<TOperation> operation(
+      util::AssertedCast<TOperation>(threeAddressCode.operation().copy().release()));
+  auto results = TNode::Create(region, std::move(operation), operands);
 
   JLM_ASSERT(results.size() == threeAddressCode.nresults());
   for (size_t n = 0; n < threeAddressCode.nresults(); n++)
@@ -526,7 +522,7 @@ Convert(const llvm::tac & threeAddressCode, rvsdg::region & region, llvm::Variab
 static void
 ConvertThreeAddressCode(
     const llvm::tac & threeAddressCode,
-    rvsdg::region & region,
+    rvsdg::Region & region,
     llvm::VariableMap & variableMap)
 {
   if (is<assignment_op>(&threeAddressCode))
@@ -567,8 +563,9 @@ ConvertThreeAddressCode(
     for (size_t n = 0; n < threeAddressCode.noperands(); n++)
       operands.push_back(variableMap.lookup(threeAddressCode.operand(n)));
 
-    auto & simpleOperation = static_cast<const rvsdg::simple_op &>(threeAddressCode.operation());
-    auto results = rvsdg::simple_node::create_normalized(&region, simpleOperation, operands);
+    auto & simpleOperation =
+        static_cast<const rvsdg::SimpleOperation &>(threeAddressCode.operation());
+    auto results = outputs(&rvsdg::SimpleNode::Create(region, simpleOperation, operands));
 
     JLM_ASSERT(results.size() == threeAddressCode.nresults());
     for (size_t n = 0; n < threeAddressCode.nresults(); n++)
@@ -579,7 +576,7 @@ ConvertThreeAddressCode(
 static void
 ConvertBasicBlock(
     const taclist & basicBlock,
-    rvsdg::region & region,
+    rvsdg::Region & region,
     llvm::VariableMap & variableMap)
 {
   for (const auto & threeAddressCode : basicBlock)
@@ -590,14 +587,14 @@ static void
 ConvertAggregationNode(
     const aggnode & aggregationNode,
     const AnnotationMap & demandMap,
-    lambda::node & lambdaNode,
+    rvsdg::LambdaNode & lambdaNode,
     RegionalizedVariableMap & regionalizedVariableMap);
 
 static void
 Convert(
     const entryaggnode & entryAggregationNode,
     const AnnotationMap & demandMap,
-    lambda::node & lambdaNode,
+    rvsdg::LambdaNode & lambdaNode,
     RegionalizedVariableMap & regionalizedVariableMap)
 {
   auto & demandSet = demandMap.Lookup<EntryAnnotationSet>(entryAggregationNode);
@@ -611,14 +608,16 @@ Convert(
   /*
    * Add arguments
    */
-  JLM_ASSERT(entryAggregationNode.narguments() == lambdaNode.nfctarguments());
+  JLM_ASSERT(entryAggregationNode.narguments() == lambdaNode.GetFunctionArguments().size());
+  auto lambdaArgs = lambdaNode.GetFunctionArguments();
   for (size_t n = 0; n < entryAggregationNode.narguments(); n++)
   {
     auto functionNodeArgument = entryAggregationNode.argument(n);
-    auto lambdaNodeArgument = lambdaNode.fctargument(n);
+    auto lambdaNodeArgument = lambdaArgs[n];
 
     topVariableMap.insert(functionNodeArgument, lambdaNodeArgument);
-    lambdaNodeArgument->set_attributes(functionNodeArgument->attributes());
+    dynamic_cast<llvm::LlvmLambdaOperation &>(lambdaNode.GetOperation())
+        .SetArgumentAttributes(n, functionNodeArgument->attributes());
   }
 
   /*
@@ -628,7 +627,7 @@ Convert(
   {
     if (outerVariableMap.contains(&v))
     {
-      topVariableMap.insert(&v, lambdaNode.add_ctxvar(outerVariableMap.lookup(&v)));
+      topVariableMap.insert(&v, lambdaNode.AddContextVar(*outerVariableMap.lookup(&v)).inner);
     }
     else
     {
@@ -641,8 +640,8 @@ Convert(
 static void
 Convert(
     const exitaggnode & exitAggregationNode,
-    const AnnotationMap & demandMap,
-    lambda::node & lambdaNode,
+    const AnnotationMap &,
+    rvsdg::LambdaNode & lambdaNode,
     RegionalizedVariableMap & regionalizedVariableMap)
 {
   std::vector<rvsdg::output *> results;
@@ -659,8 +658,8 @@ Convert(
 static void
 Convert(
     const blockaggnode & blockAggregationNode,
-    const AnnotationMap & demandMap,
-    lambda::node & lambdaNode,
+    const AnnotationMap &,
+    rvsdg::LambdaNode &,
     RegionalizedVariableMap & regionalizedVariableMap)
 {
   ConvertBasicBlock(
@@ -673,7 +672,7 @@ static void
 Convert(
     const linearaggnode & linearAggregationNode,
     const AnnotationMap & demandMap,
-    lambda::node & lambdaNode,
+    rvsdg::LambdaNode & lambdaNode,
     RegionalizedVariableMap & regionalizedVariableMap)
 {
   for (const auto & child : linearAggregationNode)
@@ -684,7 +683,7 @@ static void
 Convert(
     const branchaggnode & branchAggregationNode,
     const AnnotationMap & demandMap,
-    lambda::node & lambdaNode,
+    rvsdg::LambdaNode & lambdaNode,
     RegionalizedVariableMap & regionalizedVariableMap)
 {
   JLM_ASSERT(is<linearaggnode>(branchAggregationNode.parent()));
@@ -699,15 +698,16 @@ Convert(
   JLM_ASSERT(is<branch_op>(sb.last()->operation()));
   auto predicate = regionalizedVariableMap.GetTopVariableMap().lookup(sb.last()->operand(0));
 
-  auto gamma = rvsdg::gamma_node::create(predicate, branchAggregationNode.nchildren());
+  auto gamma = rvsdg::GammaNode::create(predicate, branchAggregationNode.nchildren());
 
   /*
    * Add gamma inputs.
    */
   auto & demandSet = demandMap.Lookup<BranchAnnotationSet>(branchAggregationNode);
-  std::unordered_map<const variable *, rvsdg::gamma_input *> gammaInputMap;
+  std::unordered_map<const variable *, rvsdg::input *> gammaInputMap;
   for (auto & v : demandSet.InputVariables().Variables())
-    gammaInputMap[&v] = gamma->add_entryvar(regionalizedVariableMap.GetTopVariableMap().lookup(&v));
+    gammaInputMap[&v] =
+        gamma->AddEntryVar(regionalizedVariableMap.GetTopVariableMap().lookup(&v)).input;
 
   /*
    * Convert subregions.
@@ -718,7 +718,9 @@ Convert(
   {
     regionalizedVariableMap.PushRegion(*gamma->subregion(n));
     for (const auto & pair : gammaInputMap)
-      regionalizedVariableMap.GetTopVariableMap().insert(pair.first, pair.second->argument(n));
+      regionalizedVariableMap.GetTopVariableMap().insert(
+          pair.first,
+          gamma->MapInputEntryVar(*pair.second).branchArgument[n]);
 
     ConvertAggregationNode(
         *branchAggregationNode.child(n),
@@ -737,7 +739,7 @@ Convert(
   for (auto & v : demandSet.OutputVariables().Variables())
   {
     JLM_ASSERT(xvmap.find(&v) != xvmap.end());
-    regionalizedVariableMap.GetTopVariableMap().insert(&v, gamma->add_exitvar(xvmap[&v]));
+    regionalizedVariableMap.GetTopVariableMap().insert(&v, gamma->AddExitVar(xvmap[&v]).output);
   }
 }
 
@@ -745,12 +747,12 @@ static void
 Convert(
     const loopaggnode & loopAggregationNode,
     const AnnotationMap & demandMap,
-    lambda::node & lambdaNode,
+    rvsdg::LambdaNode & lambdaNode,
     RegionalizedVariableMap & regionalizedVariableMap)
 {
   auto & parentRegion = regionalizedVariableMap.GetTopRegion();
 
-  auto theta = rvsdg::theta_node::create(&parentRegion);
+  auto theta = rvsdg::ThetaNode::create(&parentRegion);
 
   regionalizedVariableMap.PushRegion(*theta->subregion());
   auto & thetaVariableMap = regionalizedVariableMap.GetTopVariableMap();
@@ -761,7 +763,7 @@ Convert(
    * Add loop variables
    */
   auto & demandSet = demandMap.Lookup<LoopAnnotationSet>(loopAggregationNode);
-  std::unordered_map<const variable *, rvsdg::theta_output *> thetaOutputMap;
+  std::unordered_map<const variable *, rvsdg::ThetaNode::LoopVar> thetaLoopVarMap;
   for (auto & v : demandSet.LoopVariables().Variables())
   {
     rvsdg::output * value = nullptr;
@@ -774,8 +776,9 @@ Convert(
     {
       value = outerVariableMap.lookup(&v);
     }
-    thetaOutputMap[&v] = theta->add_loopvar(value);
-    thetaVariableMap.insert(&v, thetaOutputMap[&v]->argument());
+    auto loopvar = theta->AddLoopVar(value);
+    thetaLoopVarMap[&v] = loopvar;
+    thetaVariableMap.insert(&v, loopvar.pre);
   }
 
   /*
@@ -793,8 +796,8 @@ Convert(
    */
   for (auto & v : demandSet.LoopVariables().Variables())
   {
-    JLM_ASSERT(thetaOutputMap.find(&v) != thetaOutputMap.end());
-    thetaOutputMap[&v]->result()->divert_to(thetaVariableMap.lookup(&v));
+    JLM_ASSERT(thetaLoopVarMap.find(&v) != thetaLoopVarMap.end());
+    thetaLoopVarMap[&v].post->divert_to(thetaVariableMap.lookup(&v));
   }
 
   /*
@@ -816,7 +819,7 @@ Convert(
   for (auto & v : demandSet.LoopVariables().Variables())
   {
     JLM_ASSERT(outerVariableMap.contains(&v));
-    outerVariableMap.insert(&v, thetaOutputMap[&v]);
+    outerVariableMap.insert(&v, thetaLoopVarMap[&v].output);
   }
 }
 
@@ -824,7 +827,7 @@ static void
 ConvertAggregationNode(
     const aggnode & aggregationNode,
     const AnnotationMap & demandMap,
-    lambda::node & lambdaNode,
+    rvsdg::LambdaNode & lambdaNode,
     RegionalizedVariableMap & regionalizedVariableMap)
 {
   if (auto entryNode = dynamic_cast<const entryaggnode *>(&aggregationNode))
@@ -909,23 +912,24 @@ AnnotateAggregationTree(
   return demandMap;
 }
 
-static lambda::output *
+static rvsdg::output *
 ConvertAggregationTreeToLambda(
     const aggnode & aggregationTreeRoot,
     const AnnotationMap & demandMap,
     RegionalizedVariableMap & scopedVariableMap,
     const std::string & functionName,
-    std::shared_ptr<const FunctionType> functionType,
+    std::shared_ptr<const rvsdg::FunctionType> functionType,
     const linkage & functionLinkage,
     const attributeset & functionAttributes,
     InterProceduralGraphToRvsdgStatisticsCollector & statisticsCollector)
 {
-  auto lambdaNode = lambda::node::create(
-      &scopedVariableMap.GetTopRegion(),
-      std::move(functionType),
-      functionName,
-      functionLinkage,
-      functionAttributes);
+  auto lambdaNode = rvsdg::LambdaNode::Create(
+      scopedVariableMap.GetTopRegion(),
+      std::make_unique<llvm::LlvmLambdaOperation>(
+          std::move(functionType),
+          functionName,
+          functionLinkage,
+          functionAttributes));
 
   auto convertAggregationTreeToLambda = [&]()
   {
@@ -986,8 +990,12 @@ ConvertFunctionNode(
    */
   if (functionNode.cfg() == nullptr)
   {
-    impport port(functionNode.GetFunctionType(), functionNode.name(), functionNode.linkage());
-    return region.graph()->add_import(port);
+    return &GraphImport::Create(
+        *region.graph(),
+        functionNode.GetFunctionType(),
+        functionNode.GetFunctionType(),
+        functionNode.name(),
+        functionNode.linkage());
   }
 
   return ConvertControlFlowGraph(functionNode, regionalizedVariableMap, statisticsCollector);
@@ -996,7 +1004,7 @@ ConvertFunctionNode(
 static rvsdg::output *
 ConvertDataNodeInitialization(
     const data_node_init & init,
-    rvsdg::region & region,
+    rvsdg::Region & region,
     RegionalizedVariableMap & regionalizedVariableMap)
 {
   auto & variableMap = regionalizedVariableMap.GetTopVariableMap();
@@ -1024,8 +1032,12 @@ ConvertDataNode(
      */
     if (!dataNodeInitialization)
     {
-      impport port(dataNode.GetValueType(), dataNode.name(), dataNode.linkage());
-      return region.graph()->add_import(port);
+      return &GraphImport::Create(
+          *region.graph(),
+          dataNode.GetValueType(),
+          PointerType::Create(),
+          dataNode.name(),
+          dataNode.linkage());
     }
 
     /*
@@ -1087,7 +1099,7 @@ ConvertInterProceduralGraphNode(
 static void
 ConvertStronglyConnectedComponent(
     const std::unordered_set<const ipgraph_node *> & stronglyConnectedComponent,
-    rvsdg::graph & graph,
+    rvsdg::Graph & graph,
     RegionalizedVariableMap & regionalizedVariableMap,
     InterProceduralGraphToRvsdgStatisticsCollector & statisticsCollector)
 {
@@ -1108,13 +1120,13 @@ ConvertStronglyConnectedComponent(
     regionalizedVariableMap.GetTopVariableMap().insert(ipgNodeVariable, output);
 
     if (requiresExport(*ipgNode))
-      graph.add_export(output, { output->Type(), ipgNodeVariable->name() });
+      GraphExport::Create(*output, ipgNodeVariable->name());
 
     return;
   }
 
   phi::builder pb;
-  pb.begin(graph.root());
+  pb.begin(&graph.GetRootRegion());
   regionalizedVariableMap.PushRegion(*pb.subregion());
 
   auto & outerVariableMap =
@@ -1171,7 +1183,7 @@ ConvertStronglyConnectedComponent(
     auto recursionVariable = recursionVariables[ipgNodeVariable];
     regionalizedVariableMap.GetTopVariableMap().insert(ipgNodeVariable, recursionVariable);
     if (requiresExport(*ipgNode))
-      graph.add_export(recursionVariable, { recursionVariable->Type(), ipgNodeVariable->name() });
+      GraphExport::Create(*recursionVariable, ipgNodeVariable->name());
   }
 }
 
@@ -1187,13 +1199,9 @@ ConvertInterProceduralGraphModule(
       std::move(interProceduralGraphModule.ReleaseStructTypeDeclarations()));
   auto graph = &rvsdgModule->Rvsdg();
 
-  auto nf = graph->node_normal_form(typeid(rvsdg::operation));
-  nf->set_mutable(false);
-
-  /* FIXME: we currently cannot handle flattened_binary_op in jlm2llvm pass */
-  rvsdg::binary_op::normal_form(graph)->set_flatten(false);
-
-  RegionalizedVariableMap regionalizedVariableMap(interProceduralGraphModule, *graph->root());
+  RegionalizedVariableMap regionalizedVariableMap(
+      interProceduralGraphModule,
+      graph->GetRootRegion());
 
   auto stronglyConnectedComponents = interProceduralGraphModule.ipgraph().find_sccs();
   for (const auto & stronglyConnectedComponent : stronglyConnectedComponents)

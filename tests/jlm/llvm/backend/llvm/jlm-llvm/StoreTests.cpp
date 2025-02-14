@@ -22,7 +22,7 @@ StoreConversion()
   auto pointerType = PointerType::Create();
   auto memoryStateType = MemoryStateType::Create();
   auto bit64Type = jlm::rvsdg::bittype::Create(64);
-  auto functionType = FunctionType::Create(
+  auto functionType = jlm::rvsdg::FunctionType::Create(
       { PointerType::Create(), jlm::rvsdg::bittype::Create(64), MemoryStateType::Create() },
       { MemoryStateType::Create() });
 
@@ -80,15 +80,15 @@ StoreVolatileConversion()
 
   // Arrange
   auto pointerType = PointerType::Create();
-  auto ioStateType = iostatetype::Create();
+  auto ioStateType = IOStateType::Create();
   auto memoryStateType = MemoryStateType::Create();
   auto bit64Type = jlm::rvsdg::bittype::Create(64);
-  auto functionType = FunctionType::Create(
+  auto functionType = jlm::rvsdg::FunctionType::Create(
       { PointerType::Create(),
         jlm::rvsdg::bittype::Create(64),
-        iostatetype::Create(),
+        IOStateType::Create(),
         MemoryStateType::Create() },
-      { iostatetype::Create(), MemoryStateType::Create() });
+      { IOStateType::Create(), MemoryStateType::Create() });
 
   ipgraph_module ipgModule(jlm::util::filepath(""), "", "");
 

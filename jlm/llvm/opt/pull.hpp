@@ -6,37 +6,40 @@
 #ifndef JLM_LLVM_OPT_PULL_HPP
 #define JLM_LLVM_OPT_PULL_HPP
 
-#include <jlm/llvm/opt/optimization.hpp>
-#include <jlm/rvsdg/graph.hpp>
+#include <jlm/rvsdg/Transformation.hpp>
+
+namespace jlm::rvsdg
+{
+class GammaNode;
+class Region;
+}
 
 namespace jlm::llvm
 {
 
-class RvsdgModule;
-
 /**
  * \brief Node Pull-In Optimization
  */
-class pullin final : public optimization
+class pullin final : public rvsdg::Transformation
 {
 public:
   virtual ~pullin();
 
-  virtual void
-  run(RvsdgModule & module, util::StatisticsCollector & statisticsCollector) override;
+  void
+  Run(rvsdg::RvsdgModule & module, util::StatisticsCollector & statisticsCollector) override;
 };
 
 void
-pullin_top(jlm::rvsdg::gamma_node * gamma);
+pullin_top(rvsdg::GammaNode * gamma);
 
 void
-pullin_bottom(jlm::rvsdg::gamma_node * gamma);
+pullin_bottom(rvsdg::GammaNode * gamma);
 
 void
-pull(jlm::rvsdg::gamma_node * gamma);
+pull(rvsdg::GammaNode * gamma);
 
 void
-pull(jlm::rvsdg::region * region);
+pull(rvsdg::Region * region);
 
 }
 

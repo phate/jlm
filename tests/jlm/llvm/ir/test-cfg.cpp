@@ -24,7 +24,7 @@ test_remove_node()
   bb0->add_outedge(bb0);
   bb0->add_outedge(cfg.exit());
 
-  print_ascii(cfg, stdout);
+  std::cout << cfg::ToAscii(cfg) << std::flush;
 
   /* verify inedge diversion */
 

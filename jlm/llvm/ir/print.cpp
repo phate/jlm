@@ -11,6 +11,8 @@
 #include <jlm/llvm/ir/print.hpp>
 #include <jlm/llvm/ir/tac.hpp>
 
+#include <typeindex>
+
 #include <deque>
 
 namespace jlm::llvm
@@ -19,140 +21,13 @@ namespace jlm::llvm
 /* string converters */
 
 static std::string
-emit_tac(const llvm::tac &);
-
-static std::string
 emit_tacs(const tacsvector_t & tacs)
 {
   std::string str;
   for (const auto & tac : tacs)
-    str += emit_tac(*tac) + ", ";
+    str += tac::ToAscii(*tac) + ", ";
 
   return "[" + str + "]";
-}
-
-static inline std::string
-emit_entry(const cfg_node * node)
-{
-  JLM_ASSERT(is<entry_node>(node));
-  auto & en = *static_cast<const entry_node *>(node);
-
-  std::string str;
-  for (size_t n = 0; n < en.narguments(); n++)
-    str += en.argument(n)->debug_string() + " ";
-
-  return str + "\n";
-}
-
-static inline std::string
-emit_exit(const cfg_node * node)
-{
-  JLM_ASSERT(is<exit_node>(node));
-  auto & xn = *static_cast<const exit_node *>(node);
-
-  std::string str;
-  for (size_t n = 0; n < xn.nresults(); n++)
-    str += xn.result(n)->debug_string() + " ";
-
-  return str;
-}
-
-static inline std::string
-emit_tac(const llvm::tac & tac)
-{
-  /* convert results */
-  std::string results;
-  for (size_t n = 0; n < tac.nresults(); n++)
-  {
-    results += tac.result(n)->debug_string();
-    if (n != tac.nresults() - 1)
-      results += ", ";
-  }
-
-  /* convert operands */
-  std::string operands;
-  for (size_t n = 0; n < tac.noperands(); n++)
-  {
-    operands += tac.operand(n)->debug_string();
-    if (n != tac.noperands() - 1)
-      operands += ", ";
-  }
-
-  std::string op = tac.operation().debug_string();
-  return results + (results.empty() ? "" : " = ") + op + " " + operands;
-}
-
-static inline std::string
-emit_label(const cfg_node * node)
-{
-  return util::strfmt(node);
-}
-
-static inline std::string
-emit_targets(const cfg_node * node)
-{
-  size_t n = 0;
-  std::string str("[");
-  for (auto it = node->begin_outedges(); it != node->end_outedges(); it++, n++)
-  {
-    str += emit_label(it->sink());
-    if (n != node->noutedges() - 1)
-      str += ", ";
-  }
-  str += "]";
-
-  return str;
-}
-
-static inline std::string
-emit_basic_block(const cfg_node * node)
-{
-  JLM_ASSERT(is<basic_block>(node));
-  auto & tacs = static_cast<const basic_block *>(node)->tacs();
-
-  std::string str;
-  for (const auto & tac : tacs)
-  {
-    str += "\t" + emit_tac(*tac);
-    if (tac != tacs.last())
-      str += "\n";
-  }
-
-  if (tacs.last())
-  {
-    if (is<branch_op>(tacs.last()->operation()))
-      str += " " + emit_targets(node);
-    else
-      str += "\n\t" + emit_targets(node);
-  }
-  else
-  {
-    str += "\t" + emit_targets(node);
-  }
-
-  return str + "\n";
-}
-
-std::string
-to_str(const llvm::cfg & cfg)
-{
-  static std::unordered_map<std::type_index, std::string (*)(const cfg_node *)> map(
-      { { typeid(entry_node), emit_entry },
-        { typeid(exit_node), emit_exit },
-        { typeid(basic_block), emit_basic_block } });
-
-  std::string str;
-  auto nodes = breadth_first(cfg);
-  for (const auto & node : nodes)
-  {
-    str += emit_label(node) + ":";
-    str += (is<basic_block>(node) ? "\n" : " ");
-
-    JLM_ASSERT(map.find(typeid(*node)) != map.end());
-    str += map[typeid(*node)](node) + "\n";
-  }
-
-  return str;
 }
 
 static std::string
@@ -183,10 +58,10 @@ emit_function_node(const ipgraph_node & clg_node)
   }
   operands += ">";
 
-  std::string cfg = node.cfg() ? to_str(*node.cfg()) : "";
+  std::string cfg = node.cfg() ? cfg::ToAscii(*node.cfg()) : "";
   std::string exported = !is_externally_visible(node.linkage()) ? "static" : "";
 
-  return exported + results + " " + node.name() + " " + operands + "\n{\n" + cfg + "}\n";
+  return exported + results + " " + node.name() + " " + operands + "\n{\n" + cfg + "\n}\n";
 }
 
 static std::string
@@ -261,7 +136,7 @@ emit_basic_block(const cfg_node & node)
 
   std::string str;
   for (const auto & tac : tacs)
-    str += emit_tac(*tac) + "\\n";
+    str += tac::ToAscii(*tac) + "\\n";
 
   return str;
 }

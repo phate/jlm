@@ -9,13 +9,17 @@
 
 #include <jlm/util/file.hpp>
 #include <jlm/util/HashSet.hpp>
+#include <jlm/util/strfmt.hpp>
 #include <jlm/util/time.hpp>
 
 #include <cstdint>
 #include <list>
 #include <memory>
+#include <optional>
 #include <string>
+#include <unordered_map>
 #include <variant>
+#include <vector>
 
 namespace jlm::util
 {
@@ -50,6 +54,7 @@ public:
     RvsdgConstruction,
     RvsdgDestruction,
     RvsdgOptimization,
+    RvsdgTreePrinter,
     SteensgaardAnalysis,
     ThetaGammaInversion,
     TopDownMemoryNodeEliminator,
@@ -130,7 +135,7 @@ public:
   /**
    * Retrieves the full list of measurements
    */
-  [[nodiscard]] util::iterator_range<MeasurementList::const_iterator>
+  [[nodiscard]] IteratorRange<MeasurementList::const_iterator>
   GetMeasurements() const;
 
   /**
@@ -154,14 +159,14 @@ public:
   /**
    * Retrieves the full list of timers
    */
-  [[nodiscard]] util::iterator_range<TimerList::const_iterator>
+  [[nodiscard]] IteratorRange<TimerList::const_iterator>
   GetTimers() const;
 
 protected:
   /**
    * Adds a measurement, identified by \p name, with the given value.
    * Requires that the measurement doesn't already exist.
-   * @tparam T the type of the measurement, must be one of: std::string, int64_t, uint16_4, double
+   * @tparam T the type of the measurement, must be one of: std::string, int64_t, uint64_t, double
    */
   template<typename T>
   void
@@ -222,6 +227,10 @@ protected:
     inline static const char * NumPointsToGraphUnknownMemorySources =
         "#PointsToGraphUnknownMemorySources";
 
+    inline static const char * NumPointsToGraphEdges = "#PointsToGraphEdges";
+    inline static const char * NumPointsToGraphPointsToRelations =
+        "#PointsToGraphPointsToRelations";
+
     static inline const char * Timer = "Time";
   };
 
@@ -239,70 +248,158 @@ private:
 class StatisticsCollectorSettings final
 {
 public:
-  StatisticsCollectorSettings()
-      : FilePath_("")
-  {}
-
-  explicit StatisticsCollectorSettings(HashSet<Statistics::Id> demandedStatistics)
-      : FilePath_(""),
-        DemandedStatistics_(std::move(demandedStatistics))
-  {}
-
-  StatisticsCollectorSettings(filepath filePath, HashSet<Statistics::Id> demandedStatistics)
-      : FilePath_(std::move(filePath)),
-        DemandedStatistics_(std::move(demandedStatistics))
-  {}
-
-  /** \brief Checks if a statistics is demanded.
-   *
-   * @param id The Id of the statistics.
-   * @return True if a statistics is demanded, otherwise false.
+  /**
+   * Creates settings for a StatisticsCollector that neither demands any statistics,
+   * nor specifies a directory to place statistics and debug output files in.
    */
-  bool
-  IsDemanded(Statistics::Id id) const
-  {
-    return DemandedStatistics_.Contains(id);
-  }
+  StatisticsCollectorSettings()
+  {}
 
-  const filepath &
-  GetFilePath() const noexcept
-  {
-    return FilePath_;
-  }
+  /**
+   * Creates settings for a StatisticsCollector that demands the given statistics be collected in
+   * memory.
+   * @param demandedStatistics a hash set of statistics ids to collect
+   */
+  explicit StatisticsCollectorSettings(HashSet<Statistics::Id> demandedStatistics)
+      : DemandedStatistics_(std::move(demandedStatistics))
+  {}
 
-  void
-  SetFilePath(filepath filePath)
-  {
-    FilePath_ = std::move(filePath);
-  }
+  /**
+   * Creates settings for a StatisticsCollector that demands the given statistics be collected,
+   * and specifies the output directory to place statistics and debug output.
+   *
+   * The directory does not need to exist, but its parent directory must exist.
+   * The output directory is only created if output files are created.
+   *
+   * Output files get the given module name as a prefix,
+   * in addition to a unique random string generated per StatisticsCollectorSettings.
+   *
+   * @param demandedStatistics a hash set of statistics ids to collect
+   * @param directory the directory where statistics and debug output should be placed
+   * @param moduleName a prefix given to all files created in the given directory
+   */
+  StatisticsCollectorSettings(
+      HashSet<Statistics::Id> demandedStatistics,
+      std::optional<filepath> directory,
+      std::string moduleName)
+      : DemandedStatistics_(std::move(demandedStatistics)),
+        Directory_(std::move(directory)),
+        ModuleName_(std::move(moduleName))
+  {}
 
+  /**
+   * Sets the hash set containing the Ids of statistics that should be collected
+   * @param demandedStatistics the new hash set of demanded statistics
+   */
   void
   SetDemandedStatistics(HashSet<Statistics::Id> demandedStatistics)
   {
     DemandedStatistics_ = std::move(demandedStatistics);
   }
 
+  /**
+   * @return the number of demanded statistics
+   */
   [[nodiscard]] size_t
   NumDemandedStatistics() const noexcept
   {
     return DemandedStatistics_.Size();
   }
 
+  /**
+   * @return a hash set containing the Ids of statistics that should be collected
+   */
   [[nodiscard]] const HashSet<Statistics::Id> &
   GetDemandedStatistics() const noexcept
   {
     return DemandedStatistics_;
   }
 
-  static filepath
-  CreateUniqueStatisticsFile(const filepath & directory, const filepath & inputFile)
+  /** \brief Checks if a statistics is demanded.
+   *
+   * @param id The Id of the statistics.
+   * @return True if a statistics is demanded, otherwise false.
+   */
+  [[nodiscard]] bool
+  IsDemanded(Statistics::Id id) const noexcept
   {
-    return filepath::CreateUniqueFileName(directory, inputFile.base() + "-", "-statistics.log");
+    return DemandedStatistics_.Contains(id);
+  }
+
+  /**
+   * @return true if a directory for outputting statistics and debug output files is specified,
+   * otherwise false
+   */
+  [[nodiscard]] bool
+  HasOutputDirectory() const noexcept
+  {
+    return Directory_.has_value();
+  }
+
+  /**
+   * @return the directory used for outputting statistics and debug output files.
+   * If no output directory is given, an assertion failure occurs.
+   */
+  [[nodiscard]] const filepath &
+  GetOutputDirectory() const noexcept
+  {
+    JLM_ASSERT(Directory_.has_value());
+    return Directory_.value();
+  }
+
+  /**
+   * Sets the directory used for outputting statistics and debug output files.
+   * It does not need to exist, but its parent directory must always exist.
+   * @param directory the directory to place statistics and debug output files in
+   */
+  void
+  SetOutputDirectory(filepath directory)
+  {
+    Directory_ = std::move(directory);
+  }
+
+  /**
+   * @return the module name used as a prefix for all output files
+   */
+  [[nodiscard]] const std::string &
+  GetModuleName() const noexcept
+  {
+    return ModuleName_;
+  }
+
+  /**
+   * Sets the module name used as a prefix for all output files
+   */
+  void
+  SetModuleName(std::string moduleName)
+  {
+    ModuleName_ = std::move(moduleName);
+  }
+
+  /**
+   * @return the unique string included in the name of all created files
+   */
+  [[nodiscard]] const std::string &
+  GetUniqueString() const noexcept
+  {
+    return UniqueString_;
+  }
+
+  /**
+   * Sets the unique string to be included in the name of all created files
+   * @param uniqueString the new unique string
+   */
+  void
+  SetUniqueString(std::string uniqueString)
+  {
+    UniqueString_ = std::move(uniqueString);
   }
 
 private:
-  filepath FilePath_;
   HashSet<Statistics::Id> DemandedStatistics_;
+  std::optional<filepath> Directory_;
+  std::string ModuleName_;
+  std::string UniqueString_ = CreateRandomAlphanumericString(6);
 };
 
 /**
@@ -378,7 +475,7 @@ class StatisticsCollector final
   };
 
 public:
-  using StatisticsRange = iterator_range<StatisticsIterator>;
+  using StatisticsRange = IteratorRange<StatisticsIterator>;
 
   StatisticsCollector()
   {}
@@ -433,16 +530,36 @@ public:
       CollectedStatistics_.emplace_back(std::move(statistics));
   }
 
-  /** \brief Print collected statistics to file.
-   *
-   * @see StatisticsCollectorSettings::GetFilePath()
+  /**
+   * \brief Print collected statistics to file.
+   * If no statistics have been collected, this is a no-op.
+   * @throws jlm::util::error if there are statistics to print, but no output directory in settings
    */
   void
-  PrintStatistics() const;
+  PrintStatistics();
+
+  /**
+   * Creates a unique file name in the statistics and debug output directory.
+   *
+   * If the specified output directory does not exist, it is created.
+   *
+   * @param fileNameSuffix the suffix to be used for the output file name, e.g., "statistics.log"
+   * @param includeCount include a counter per suffix, to avoid naming collisions
+   * @return a file representing the new output file
+   * @throws jlm::util::error in any of the following cases:
+   *  - no output directory has been specified in the StatisticsCollectorSettings
+   *  - any issues occur with creating the output directory
+   *  - the resulting output file already exists
+   */
+  [[nodiscard]] util::file
+  CreateOutputFile(std::string fileNameSuffix, bool includeCount = false);
 
 private:
   StatisticsCollectorSettings Settings_;
   std::vector<std::unique_ptr<Statistics>> CollectedStatistics_;
+
+  // Counter used to give unique file names to output files that share suffix
+  std::unordered_map<std::string, size_t> OutputFileCounter_;
 };
 
 }

@@ -7,6 +7,20 @@
 #define JLM_LLVM_OPT_ALIAS_ANALYSES_MEMORYSTATEENCODER_HPP
 
 #include <memory>
+#include <vector>
+
+namespace rvsdg
+{
+class GammaNode;
+class LambdaNode;
+class output;
+class Region;
+class RvsdgModule;
+class SimpleNode;
+class StructuralNode;
+class ThetaNode;
+class ThetaOutput;
+}
 
 namespace jlm::util
 {
@@ -77,25 +91,25 @@ public:
 
   void
   Encode(
-      RvsdgModule & rvsdgModule,
+      rvsdg::RvsdgModule & rvsdgModule,
       const MemoryNodeProvisioning & provisioning,
       util::StatisticsCollector & statisticsCollector);
 
 private:
   void
-  EncodeRegion(rvsdg::region & region);
+  EncodeRegion(rvsdg::Region & region);
 
   void
-  EncodeStructuralNode(rvsdg::structural_node & structuralNode);
+  EncodeStructuralNode(rvsdg::StructuralNode & structuralNode);
 
   void
-  EncodeSimpleNode(const rvsdg::simple_node & simpleNode);
+  EncodeSimpleNode(const rvsdg::SimpleNode & simpleNode);
 
   void
-  EncodeAlloca(const rvsdg::simple_node & allocaNode);
+  EncodeAlloca(const rvsdg::SimpleNode & allocaNode);
 
   void
-  EncodeMalloc(const rvsdg::simple_node & mallocNode);
+  EncodeMalloc(const rvsdg::SimpleNode & mallocNode);
 
   void
   EncodeLoad(const LoadNode & loadNode);
@@ -104,7 +118,7 @@ private:
   EncodeStore(const StoreNode & storeNode);
 
   void
-  EncodeFree(const rvsdg::simple_node & freeNode);
+  EncodeFree(const rvsdg::SimpleNode & freeNode);
 
   void
   EncodeCall(const CallNode & callNode);
@@ -116,16 +130,16 @@ private:
   EncodeCallExit(const CallNode & callNode);
 
   void
-  EncodeMemcpy(const rvsdg::simple_node & memcpyNode);
+  EncodeMemcpy(const rvsdg::SimpleNode & memcpyNode);
 
   void
-  EncodeLambda(const lambda::node & lambda);
+  EncodeLambda(const rvsdg::LambdaNode & lambda);
 
   void
-  EncodeLambdaEntry(const lambda::node & lambdaNode);
+  EncodeLambdaEntry(const rvsdg::LambdaNode & lambdaNode);
 
   void
-  EncodeLambdaExit(const lambda::node & lambdaNode);
+  EncodeLambdaExit(const rvsdg::LambdaNode & lambdaNode);
 
   void
   EncodePhi(const phi::node & phiNode);
@@ -134,24 +148,24 @@ private:
   EncodeDelta(const delta::node & deltaNode);
 
   void
-  EncodeGamma(rvsdg::gamma_node & gammaNode);
+  EncodeGamma(rvsdg::GammaNode & gammaNode);
 
   void
-  EncodeGammaEntry(rvsdg::gamma_node & gammaNode);
+  EncodeGammaEntry(rvsdg::GammaNode & gammaNode);
 
   void
-  EncodeGammaExit(rvsdg::gamma_node & gammaNode);
+  EncodeGammaExit(rvsdg::GammaNode & gammaNode);
 
   void
-  EncodeTheta(rvsdg::theta_node & thetaNode);
+  EncodeTheta(rvsdg::ThetaNode & thetaNode);
 
-  std::vector<rvsdg::theta_output *>
-  EncodeThetaEntry(rvsdg::theta_node & thetaNode);
+  std::vector<rvsdg::output *>
+  EncodeThetaEntry(rvsdg::ThetaNode & thetaNode);
 
   void
   EncodeThetaExit(
-      rvsdg::theta_node & thetaNode,
-      const std::vector<rvsdg::theta_output *> & thetaStateOutputs);
+      rvsdg::ThetaNode & thetaNode,
+      const std::vector<rvsdg::output *> & thetaStateOutputs);
 
   /**
    * Replace \p loadNode with a new copy that takes the provided \p memoryStates. All users of the
@@ -182,24 +196,24 @@ private:
    * the outputs of \p memcpyNode are redirected to the respective outputs of the newly created
    * copy.
    *
-   * @param memcpyNode A rvsdg::simple_node representing a MemCpyOperation.
+   * @param memcpyNode A rvsdg::SimpleNode representing a MemCpyOperation.
    * @param memoryStates The memory states the new memcpy node should consume.
    *
    * @return A vector with the memory states of the newly created copy.
    */
   [[nodiscard]] static std::vector<rvsdg::output *>
   ReplaceMemcpyNode(
-      const rvsdg::simple_node & memcpyNode,
+      const rvsdg::SimpleNode & memcpyNode,
       const std::vector<rvsdg::output *> & memoryStates);
 
   /**
    * Determines whether \p simpleNode should be handled by the MemoryStateEncoder.
    *
-   * @param simpleNode A simple_node.
+   * @param simpleNode A SimpleNode.
    * @return True, if \p simpleNode should be handled, otherwise false.
    */
   [[nodiscard]] static bool
-  ShouldHandle(const rvsdg::simple_node & simpleNode) noexcept;
+  ShouldHandle(const rvsdg::SimpleNode & simpleNode) noexcept;
 
   std::unique_ptr<Context> Context_;
 };

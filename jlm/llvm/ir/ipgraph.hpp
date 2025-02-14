@@ -180,10 +180,10 @@ public:
   virtual const std::string &
   name() const noexcept = 0;
 
-  virtual const jlm::rvsdg::type &
+  virtual const jlm::rvsdg::Type &
   type() const noexcept = 0;
 
-  virtual std::shared_ptr<const jlm::rvsdg::type>
+  virtual std::shared_ptr<const jlm::rvsdg::Type>
   Type() const = 0;
 
   virtual const llvm::linkage &
@@ -206,7 +206,7 @@ private:
   inline function_node(
       llvm::ipgraph & clg,
       const std::string & name,
-      std::shared_ptr<const FunctionType> type,
+      std::shared_ptr<const rvsdg::FunctionType> type,
       const llvm::linkage & linkage,
       const attributeset & attributes)
       : ipgraph_node(clg),
@@ -223,19 +223,19 @@ public:
     return cfg_.get();
   }
 
-  virtual const jlm::rvsdg::type &
+  virtual const jlm::rvsdg::Type &
   type() const noexcept override;
 
-  std::shared_ptr<const jlm::rvsdg::type>
+  std::shared_ptr<const jlm::rvsdg::Type>
   Type() const override;
 
-  const FunctionType &
+  const rvsdg::FunctionType &
   fcttype() const noexcept
   {
     return *FunctionType_;
   }
 
-  const std::shared_ptr<const FunctionType> &
+  const std::shared_ptr<const rvsdg::FunctionType> &
   GetFunctionType() const noexcept
   {
     return FunctionType_;
@@ -267,7 +267,7 @@ public:
   create(
       llvm::ipgraph & ipg,
       const std::string & name,
-      std::shared_ptr<const FunctionType> type,
+      std::shared_ptr<const rvsdg::FunctionType> type,
       const llvm::linkage & linkage,
       const attributeset & attributes)
   {
@@ -282,14 +282,14 @@ public:
   create(
       llvm::ipgraph & ipg,
       const std::string & name,
-      std::shared_ptr<const FunctionType> type,
+      std::shared_ptr<const rvsdg::FunctionType> type,
       const llvm::linkage & linkage)
   {
     return create(ipg, name, std::move(type), linkage, {});
   }
 
 private:
-  std::shared_ptr<const FunctionType> FunctionType_;
+  std::shared_ptr<const rvsdg::FunctionType> FunctionType_;
   std::string name_;
   llvm::linkage linkage_;
   attributeset attributes_;
@@ -377,7 +377,7 @@ private:
   inline data_node(
       llvm::ipgraph & clg,
       const std::string & name,
-      std::shared_ptr<const jlm::rvsdg::valuetype> valueType,
+      std::shared_ptr<const jlm::rvsdg::ValueType> valueType,
       const llvm::linkage & linkage,
       std::string section,
       bool constant)
@@ -393,10 +393,10 @@ public:
   virtual const PointerType &
   type() const noexcept override;
 
-  std::shared_ptr<const jlm::rvsdg::type>
+  std::shared_ptr<const jlm::rvsdg::Type>
   Type() const override;
 
-  [[nodiscard]] const std::shared_ptr<const jlm::rvsdg::valuetype> &
+  [[nodiscard]] const std::shared_ptr<const jlm::rvsdg::ValueType> &
   GetValueType() const noexcept
   {
     return ValueType_;
@@ -445,7 +445,7 @@ public:
   Create(
       llvm::ipgraph & clg,
       const std::string & name,
-      std::shared_ptr<const jlm::rvsdg::valuetype> valueType,
+      std::shared_ptr<const jlm::rvsdg::ValueType> valueType,
       const llvm::linkage & linkage,
       std::string section,
       bool constant)
@@ -462,7 +462,7 @@ private:
   std::string name_;
   std::string Section_;
   llvm::linkage linkage_;
-  std::shared_ptr<const jlm::rvsdg::valuetype> ValueType_;
+  std::shared_ptr<const jlm::rvsdg::ValueType> ValueType_;
   std::unique_ptr<data_node_init> init_;
 };
 

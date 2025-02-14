@@ -10,17 +10,18 @@ namespace jlm::hls
 {
 
 std::string
-JsonHLS::get_text(llvm::RvsdgModule & rm)
+JsonHLS::GetText(llvm::RvsdgModule & rm)
 {
   std::ostringstream json;
-  auto ln = get_hls_lambda(rm);
-  auto function_name = ln->name();
+  const auto & ln = *get_hls_lambda(rm);
+  auto function_name = dynamic_cast<llvm::LlvmLambdaOperation &>(ln.GetOperation()).name();
   auto file_name = get_base_file_name(rm);
   json << "{\n";
 
   auto reg_args = get_reg_args(ln);
   auto reg_results = get_reg_results(ln);
 
+  json << "\"addr_width\": " << GetPointerSizeInBits() << ",\n";
   json << "\"arguments\": [";
   for (size_t i = 0; i < reg_args.size(); ++i)
   {

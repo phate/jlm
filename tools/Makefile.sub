@@ -13,8 +13,8 @@ jlc_LIBS += \
 	libutil \
 
 jlc_EXTRA_LDFLAGS += \
-	$(shell $(LLVMCONFIG) --libs core irReader --ldflags --system-libs) \
 	${MLIR_LDFLAGS} \
+	$(shell $(LLVMCONFIG) --libs core irReader --ldflags --system-libs) \
 
 $(eval $(call common_executable,jlc))
 
@@ -29,7 +29,7 @@ jlm-opt_LIBS = \
 	libutil \
 
 jlm-opt_EXTRA_LDFLAGS = \
-	$(shell $(LLVMCONFIG) --libs core irReader --ldflags --system-libs) \
 	${MLIR_LDFLAGS} \
+	$(shell $(LLVMCONFIG) --libs core irReader --ldflags --system-libs) \
 
 $(eval $(call common_executable,jlm-opt))

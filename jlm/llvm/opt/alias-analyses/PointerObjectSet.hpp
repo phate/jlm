@@ -6,8 +6,10 @@
 #ifndef JLM_LLVM_OPT_ALIAS_ANALYSES_POINTEROBJECTSET_HPP
 #define JLM_LLVM_OPT_ALIAS_ANALYSES_POINTEROBJECTSET_HPP
 
+#include <jlm/llvm/ir/operators/call.hpp>
 #include <jlm/llvm/ir/operators/delta.hpp>
 #include <jlm/llvm/ir/operators/lambda.hpp>
+#include <jlm/llvm/ir/RvsdgModule.hpp>
 #include <jlm/util/BijectiveMap.hpp>
 #include <jlm/util/common.hpp>
 #include <jlm/util/GraphWriter.hpp>
@@ -58,6 +60,11 @@ class PointerObjectSet final
     // The kind of pointer object
     PointerObjectKind Kind : util::BitWidthOfEnum(PointerObjectKind::COUNT);
 
+    // If set, this pointer object may point to other pointer objects.
+    // If unset, the analysis should make no attempt at tracking what this PointerObject may target.
+    // The final PointsToGraph will not have any outgoing edges for this object.
+    const uint8_t CanPointFlag : 1;
+
     // This memory object's address is known outside the module.
     // Can only be true on memory objects.
     uint8_t HasEscaped : 1;
@@ -72,15 +79,33 @@ class PointerObjectSet final
     // This flag is implied by HasEscaped
     uint8_t PointsToExternal : 1;
 
-    explicit PointerObject(PointerObjectKind kind)
+    // If set, any pointee of this object should point to external.
+    // The unification root is the source of truth for this flag!
+    uint8_t StoredAsScalar : 1;
+
+    // If set, any pointee of this object should mark its pointees as escaping.
+    // The unification root is the source of truth for this flag!
+    uint8_t LoadedAsScalar : 1;
+
+    explicit PointerObject(PointerObjectKind kind, bool canPoint)
         : Kind(kind),
+          CanPointFlag(canPoint),
           HasEscaped(0),
           PointeesEscaping(0),
-          PointsToExternal(0)
+          PointsToExternal(0),
+          StoredAsScalar(0),
+          LoadedAsScalar(0)
     {
       JLM_ASSERT(kind != PointerObjectKind::COUNT);
 
-      if (!ShouldTrackPointees())
+      // Ensure that certain kinds of PointerObject always CanPoint or never CanPoint
+      if (kind == PointerObjectKind::FunctionMemoryObject
+          || kind == PointerObjectKind::ImportMemoryObject)
+        JLM_ASSERT(!CanPoint());
+      else if (kind == PointerObjectKind::Register)
+        JLM_ASSERT(CanPoint());
+
+      if (!CanPoint())
       {
         // No attempt is made at tracking pointees, so use these flags to inform others
         PointeesEscaping = 1;
@@ -103,16 +128,13 @@ class PointerObjectSet final
 
     /**
      * Some memory objects can only be pointed to, but never themselves contain pointers.
-     * To avoid tracking their pointees, they are instead marked as both PointsToExternal and
-     * PointeesEscaping. This makes their points-to set equivalent to the set of all escaped
-     * memory objects, which means the set of explicit pointees can be empty.
      * When converting the analysis result to a PointsToGraph, these PointerObjects get no pointees.
-     * @return true if the analysis should attempt track the points-to set of this PointerObject.
+     * @return true if the analysis tracks the points-to set of this PointerObject.
      */
     [[nodiscard]] bool
-    ShouldTrackPointees() const noexcept
+    CanPoint() const noexcept
     {
-      return Kind != PointerObjectKind::FunctionMemoryObject;
+      return CanPointFlag;
     }
 
     /**
@@ -146,23 +168,43 @@ class PointerObjectSet final
   // Unlike the other maps, several rvsdg::output* can share register PointerObject
   std::unordered_map<const rvsdg::output *, PointerObjectIndex> RegisterMap_;
 
-  std::unordered_map<const rvsdg::node *, PointerObjectIndex> AllocaMap_;
+  std::unordered_map<const rvsdg::Node *, PointerObjectIndex> AllocaMap_;
 
-  std::unordered_map<const rvsdg::node *, PointerObjectIndex> MallocMap_;
+  std::unordered_map<const rvsdg::Node *, PointerObjectIndex> MallocMap_;
 
   std::unordered_map<const delta::node *, PointerObjectIndex> GlobalMap_;
 
-  util::BijectiveMap<const lambda::node *, PointerObjectIndex> FunctionMap_;
+  util::BijectiveMap<const rvsdg::LambdaNode *, PointerObjectIndex> FunctionMap_;
 
-  std::unordered_map<const rvsdg::argument *, PointerObjectIndex> ImportMap_;
+  std::unordered_map<const GraphImport *, PointerObjectIndex> ImportMap_;
+
+  // How many items have been attempted added to explicit points-to sets
+  size_t NumSetInsertionAttempts_ = 0;
+
+  // How many pointees have been removed from points-to sets.
+  // Explicit pointees can only be removed through unification, and the remove method
+  size_t NumExplicitPointeesRemoved_ = 0;
 
   /**
    * Internal helper function for adding PointerObjects, use the Create* methods instead
    */
   [[nodiscard]] PointerObjectIndex
-  AddPointerObject(PointerObjectKind kind);
+  AddPointerObject(PointerObjectKind kind, bool canPoint);
+
+  /**
+   * Internal helper function for making P(superset) a superset of P(subset), with a callback.
+   * @see MakePointsToSetSuperset
+   */
+  template<typename NewPointeeFunctor>
+  bool
+  PropagateNewPointees(
+      PointerObjectIndex superset,
+      PointerObjectIndex subset,
+      NewPointeeFunctor & onNewPointee);
 
 public:
+  PointerObjectSet() = default;
+
   [[nodiscard]] size_t
   NumPointerObjects() const noexcept;
 
@@ -171,6 +213,18 @@ public:
    */
   [[nodiscard]] size_t
   NumPointerObjectsOfKind(PointerObjectKind kind) const noexcept;
+
+  /**
+   * @return the number of PointerObjects in the set representing virtual registers
+   */
+  [[nodiscard]] size_t
+  NumRegisterPointerObjects() const noexcept;
+
+  [[nodiscard]] size_t
+  NumMemoryPointerObjects() const noexcept;
+
+  [[nodiscard]] size_t
+  NumMemoryPointerObjectsCanPoint() const noexcept;
 
   /**
    * Creates a PointerObject of Register kind and maps the rvsdg output to the new PointerObject.
@@ -220,13 +274,13 @@ public:
   CreateDummyRegisterPointerObject();
 
   [[nodiscard]] PointerObjectIndex
-  CreateAllocaMemoryObject(const rvsdg::node & allocaNode);
+  CreateAllocaMemoryObject(const rvsdg::Node & allocaNode, bool canPoint);
 
   [[nodiscard]] PointerObjectIndex
-  CreateMallocMemoryObject(const rvsdg::node & mallocNode);
+  CreateMallocMemoryObject(const rvsdg::Node & mallocNode, bool canPoint);
 
   [[nodiscard]] PointerObjectIndex
-  CreateGlobalMemoryObject(const delta::node & deltaNode);
+  CreateGlobalMemoryObject(const delta::node & deltaNode, bool canPoint);
 
   /**
    * Creates a PointerObject of Function kind associated with the given \p lambdaNode.
@@ -235,7 +289,7 @@ public:
    * @return the index of the new PointerObject in the PointerObjectSet
    */
   [[nodiscard]] PointerObjectIndex
-  CreateFunctionMemoryObject(const lambda::node & lambdaNode);
+  CreateFunctionMemoryObject(const rvsdg::LambdaNode & lambdaNode);
 
   /**
    * Retrieves the PointerObject of Function kind associated with the given lambda node
@@ -243,35 +297,35 @@ public:
    * @return the index of the associated PointerObject
    */
   [[nodiscard]] PointerObjectIndex
-  GetFunctionMemoryObject(const lambda::node & lambdaNode) const;
+  GetFunctionMemoryObject(const rvsdg::LambdaNode & lambdaNode) const;
 
   /**
    * Gets the lambda node associated with a given PointerObject.
    * @param index the index of the PointerObject
    * @return the lambda node associated with the PointerObject
    */
-  [[nodiscard]] const lambda::node &
+  [[nodiscard]] const rvsdg::LambdaNode &
   GetLambdaNodeFromFunctionMemoryObject(PointerObjectIndex index) const;
 
   [[nodiscard]] PointerObjectIndex
-  CreateImportMemoryObject(const rvsdg::argument & importNode);
+  CreateImportMemoryObject(const GraphImport & importNode);
 
   const std::unordered_map<const rvsdg::output *, PointerObjectIndex> &
   GetRegisterMap() const noexcept;
 
-  const std::unordered_map<const rvsdg::node *, PointerObjectIndex> &
+  const std::unordered_map<const rvsdg::Node *, PointerObjectIndex> &
   GetAllocaMap() const noexcept;
 
-  const std::unordered_map<const rvsdg::node *, PointerObjectIndex> &
+  const std::unordered_map<const rvsdg::Node *, PointerObjectIndex> &
   GetMallocMap() const noexcept;
 
   const std::unordered_map<const delta::node *, PointerObjectIndex> &
   GetGlobalMap() const noexcept;
 
-  const util::BijectiveMap<const lambda::node *, PointerObjectIndex> &
+  const util::BijectiveMap<const rvsdg::LambdaNode *, PointerObjectIndex> &
   GetFunctionMap() const noexcept;
 
-  const std::unordered_map<const rvsdg::argument *, PointerObjectIndex> &
+  const std::unordered_map<const GraphImport *, PointerObjectIndex> &
   GetImportMap() const noexcept;
 
   /**
@@ -284,7 +338,7 @@ public:
    * @return true if the PointerObject with the given \p index can point, otherwise false
    */
   [[nodiscard]] bool
-  ShouldTrackPointees(PointerObjectIndex index) const noexcept;
+  CanPoint(PointerObjectIndex index) const noexcept;
 
   /**
    * @return true if the PointerObject with the given \p index is a Register
@@ -336,6 +390,42 @@ public:
   MarkAsPointingToExternal(PointerObjectIndex index);
 
   /**
+   * @return true if the PointerObject with the given \p index is flagged as both
+   * PointsToExternal and PointeesEscaping.
+   * In that case, any explicit pointee will also be implicit, so it is better to avoid explicit.
+   */
+  [[nodiscard]] bool
+  CanTrackPointeesImplicitly(PointerObjectIndex index) const noexcept;
+
+  /**
+   * Marks the PointerObject with the given \p index as holding the target of a scalar store.
+   * @return true if the flags was changed by this operation, false otherwise
+   */
+  bool
+  MarkAsStoringAsScalar(PointerObjectIndex index);
+
+  /**
+   * @return true if the PointerObject with the given \p index is the target of a scalar store,
+   * false otherwise. If it is, any pointee of \p index will be marked as pointing to external.
+   */
+  [[nodiscard]] bool
+  IsStoredAsScalar(PointerObjectIndex index) const noexcept;
+
+  /**
+   * Marks the PointerObject with the given \p index as holding the target of a scalar load.
+   * @return true if the flags was changed by this operation, false otherwise
+   */
+  bool
+  MarkAsLoadingAsScalar(PointerObjectIndex index);
+
+  /**
+   * @return true if the PointerObject with the given \p index is the target of a scalar load, false
+   * otherwise. If it is, any pointee of \p index will be marked as making its pointees escape.
+   */
+  [[nodiscard]] bool
+  IsLoadedAsScalar(PointerObjectIndex index) const noexcept;
+
+  /**
    * @return the root in the unification the PointerObject with the given \p index belongs to.
    * PointerObjects that have not been unified will always be their own root.
    */
@@ -381,7 +471,8 @@ public:
   AddToPointsToSet(PointerObjectIndex pointer, PointerObjectIndex pointee);
 
   /**
-   * Makes P(\p superset) a superset of P(\p subset), by adding any elements in the set difference
+   * Makes P(\p superset) a superset of P(\p subset), by adding any elements in the set difference.
+   * Also propagates the PointsToExternal flag.
    * @param superset the index of the PointerObject that shall point to everything subset points to
    * @param subset the index of the PointerObject whose pointees shall all be pointed to by superset
    * as well
@@ -392,12 +483,63 @@ public:
   MakePointsToSetSuperset(PointerObjectIndex superset, PointerObjectIndex subset);
 
   /**
+   * A version of MakePointsToSetSuperset that adds any new pointees of \p superset,
+   * to the set \p newPointees.
+   */
+  bool
+  MakePointsToSetSuperset(
+      PointerObjectIndex superset,
+      PointerObjectIndex subset,
+      util::HashSet<PointerObjectIndex> & newPointees);
+
+  /**
+   * Removes all pointees from the PointerObject with the given \p index.
+   * Can be used, e.g., when the PointerObject already points to all its pointees implicitly.
+   */
+  void
+  RemoveAllPointees(PointerObjectIndex index);
+
+  /**
+   * @param pointer the PointerObject possibly pointing to \p pointee
+   * @param pointee the PointerObject possibly being pointed at
+   * @return true if \p pointer points to \p pointee, either explicitly, implicitly, or both.
+   */
+  bool
+  IsPointingTo(PointerObjectIndex pointer, PointerObjectIndex pointee) const;
+
+  /**
    * Creates a clone of this PointerObjectSet, with all the same PointerObjects,
    * flags, unifications and points-to sets.
    * @return an owned clone of this
    */
   [[nodiscard]] std::unique_ptr<PointerObjectSet>
   Clone() const;
+
+  /**
+   * Compares the Sol sets of all PointerObjects between two PointerObjectSets.
+   * Assumes that this and \p other represent the same set of PointerObjects, and in the same order.
+   * Only the final Sol set of each PointerObject matters, so unifications do not need to match.
+   * The set of escaped PointerObjects must match.
+   * @param other the set being compared to
+   * @return true if this and \p other are identical, false otherwise
+   */
+  [[nodiscard]] bool
+  HasIdenticalSolAs(const PointerObjectSet & other) const;
+
+  /**
+   * @return the number of pointees that have been inserted, or were attempted inserted
+   * but already existed, among all points-to sets in this PointerObjectSet.
+   * Unioning a set x into another makes |x| insertion attempts.
+   */
+  [[nodiscard]] size_t
+  GetNumSetInsertionAttempts() const noexcept;
+
+  /**
+   * @return the number of pointees that have been removed from points-to sets,
+   * due to either unification, or the RemoveAllPointees() method.
+   */
+  [[nodiscard]] size_t
+  GetNumExplicitPointeesRemoved() const noexcept;
 };
 
 /**
@@ -722,6 +864,16 @@ public:
     TwoPhaseLeastRecentlyFired,
 
     /**
+     * Not a real worklist policy.
+     * For each "sweep", all nodes are visited in topological order.
+     * Any cycles found during topological sorting are eliminated.
+     * This continues until a full sweep has been done with no attempts at pushing to the worklist.
+     * Described by:
+     *   Pearce 2007: "Efficient field-sensitive pointer analysis of C"
+     */
+    TopologicalSort,
+
+    /**
      * A worklist policy based on a queue.
      * @see jlm::util::FifoWorklist
      */
@@ -757,7 +909,21 @@ public:
     size_t NumWorkItemsPopped{};
 
     /**
-     * The number of cycles detected by online cycle detection, if enabled.
+     * The sum of the number of new pointees, for each visited work item.
+     * If Difference Propagation is not enabled, all pointees are always regarded as new.
+     */
+    size_t NumWorkItemNewPointees{};
+
+    /**
+     * The number of times the topological worklist orders the whole set of work items
+     * and visits them all in topological order.
+     */
+    std::optional<size_t> NumTopologicalWorklistSweeps;
+
+    /**
+     * The number of cycles detected by online cycle detection,
+     * and number of unifications made to eliminate the cycles,
+     * if Online Cycle Detection is enabled.
      */
     std::optional<size_t> NumOnlineCyclesDetected;
 
@@ -765,6 +931,27 @@ public:
      * The number of unifications made by online cycle detection, if enabled.
      */
     std::optional<size_t> NumOnlineCycleUnifications;
+
+    /**
+     * The number of unifications performed due to hybrid cycle detection.
+     */
+    std::optional<size_t> NumHybridCycleUnifications;
+
+    /**
+     * The number of DFSs started in attempts at detecting cycles,
+     * the number of cycles detected by lazy cycle detection,
+     * and number of unifications made to eliminate the cycles,
+     * if Lazy Cycle Detection is enabled.
+     */
+    std::optional<size_t> NumLazyCyclesDetectionAttempts;
+    std::optional<size_t> NumLazyCyclesDetected;
+    std::optional<size_t> NumLazyCycleUnifications;
+
+    /**
+     * When Prefer Implicit Pointees is enabled, and a node's pointees can be tracked fully
+     * implicitly, its set of explicit pointees is cleared.
+     */
+    std::optional<size_t> NumPipExplicitPointeesRemoved;
   };
 
   explicit PointerObjectConstraintSet(PointerObjectSet & set)
@@ -823,10 +1010,25 @@ public:
   AddConstraint(ConstraintVariant c);
 
   /**
-   * Retrieves all added constraints that were not simple one-off flag changes
+   * @return all added constraints that were not simple one-off pointee inclusions or flag changes
    */
   [[nodiscard]] const std::vector<ConstraintVariant> &
   GetConstraints() const noexcept;
+
+  /**
+   * @return the number of base constraints
+   */
+  [[nodiscard]] size_t
+  NumBaseConstraints() const noexcept;
+
+  /**
+   * Gets the number of flag constraints, among all PointerObjetcs.
+   * Flags that are unified are only counted once (on the unification root).
+   * The count is divided into two: flags for loads/stores of scalars, and the other flags
+   * @return a pair (num flags on scalar operations, num other flags)
+   */
+  [[nodiscard]] std::pair<size_t, size_t>
+  NumFlagConstraints() const noexcept;
 
   /**
    * Creates a subset graph containing all PointerObjects, their current points-to sets,
@@ -855,11 +1057,13 @@ public:
    * All PointerObjects v1, ... vN where n(v1), ... n(vN) share equivalence set label, get unified.
    * The run time is linear in the amount of PointerObjects and constraints.
    *
+   * @param storeRefCycleUnificationRoot if true, ref nodes in cycles with regular nodes are stored,
+   *   to be used by hybrid cycle detection during solving.
    * @return the number PointerObject unifications made
    * @see NormalizeConstraints() call it afterwards to remove constraints made unnecessary.
    */
   size_t
-  PerformOfflineVariableSubstitution();
+  PerformOfflineVariableSubstitution(bool storeRefCycleUnificationRoot);
 
   /**
    * Traverses the list of constraints, and does the following:
@@ -876,14 +1080,28 @@ public:
    * Finds a least solution satisfying all constraints, using the Worklist algorithm.
    * Descriptions of the algorithm can be found in
    *  - Pearce et al. 2003: "Online cycle detection and difference propagation for pointer analysis"
-   *  - Hardekopf et al. 2007: "The Ant and the Grasshopper".
+   *  - Hardekopf and Lin, 2007: "The Ant and the Grasshopper".
+   * These papers also describe a set of techniques that potentially improve solving performance:
+   *  - Online Cycle Detection (Pearce, 2003)
+   *  - Hybrid Cycle Detection (Hardekopf 2007)
+   *  - Lazy Cycle Detection (Hardekopf 2007)
+   *  - Difference Propagation (Pearce, 2003)
    * @param policy the worklist iteration order policy to use
-   * @param enableOnlineCycleDetection if true, online cycle detection will be performed, from
-   *  Pearce et al. 2003: "Online cycle detection and difference propagation for pointer analysis"
+   * @param enableOnlineCycleDetection if true, online cycle detection will be performed.
+   * @param enableHybridCycleDetection if true, hybrid cycle detection will be performed.
+   * @param enableLazyCycleDetection if true, lazy cycle detection will be performed.
+   * @param enableDifferencePropagation if true, difference propagation will be enabled.
+   * @param enablePreferImplicitPropation if true, enables PIP, which is novel to this codebase
    * @return an instance of WorklistStatistics describing solver statistics
    */
   WorklistStatistics
-  SolveUsingWorklist(WorklistSolverPolicy policy, bool enableOnlineCycleDetection);
+  SolveUsingWorklist(
+      WorklistSolverPolicy policy,
+      bool enableOnlineCycleDetection,
+      bool enableHybridCycleDetection,
+      bool enableLazyCycleDetection,
+      bool enableDifferencePropagation,
+      bool enablePreferImplicitPropation);
 
   /**
    * Iterates over and applies constraints until all points-to-sets satisfy them.
@@ -926,9 +1144,19 @@ private:
    * @param statistics the WorklistStatistics instance that will get information about this run.
    * @tparam Worklist a type supporting the worklist interface with PointerObjectIndex as work items
    * @tparam EnableOnlineCycleDetection if true, online cycle detection is enabled.
+   * @tparam EnableHybridCycleDetection if true, hybrid cycle detection is enabled.
+   * @tparam EnableLazyCycleDetection if true, lazy cycle detection is enabled.
+   * @tparam EnableDifferencePropagation if true, difference propagation is enabled.
+   * @tparam EnablePreferImplicitPointees if true, prefer implicit pointees is enabled
    * @see SolveUsingWorklist() for the public interface.
    */
-  template<typename Worklist, bool EnableOnlineCycleDetection>
+  template<
+      typename Worklist,
+      bool EnableOnlineCycleDetection,
+      bool EnableHybridCycleDetection,
+      bool EnableLazyCycleDetection,
+      bool EnableDifferencePropagation,
+      bool EnablePreferImplicitPointees>
   void
   RunWorklistSolver(WorklistStatistics & statistics);
 
@@ -941,6 +1169,11 @@ private:
   // When true, no new constraints can be added.
   // Only offline processing is allowed to modify the constraint set.
   bool ConstraintSetFrozen_;
+
+  // Offline Variable Substitution can determine that all pointees of a node p,
+  // should be unified together, possibly with some other PointerObjects.
+  // This happens when *p is in a cycle with regular nodes
+  std::unordered_map<PointerObjectIndex, PointerObjectIndex> RefNodeUnificationRoot_;
 };
 
 } // namespace jlm::llvm::aa

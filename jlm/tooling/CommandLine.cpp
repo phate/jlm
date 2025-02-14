@@ -16,6 +16,7 @@
 #include <jlm/llvm/opt/pull.hpp>
 #include <jlm/llvm/opt/push.hpp>
 #include <jlm/llvm/opt/reduction.hpp>
+#include <jlm/llvm/opt/RvsdgTreePrinter.hpp>
 #include <jlm/llvm/opt/unroll.hpp>
 #include <jlm/tooling/CommandLine.hpp>
 
@@ -98,20 +99,6 @@ JlmOptCommandLineOptions::Reset() noexcept
   OptimizationIds_.clear();
 }
 
-std::vector<llvm::optimization *>
-JlmOptCommandLineOptions::GetOptimizations() const noexcept
-{
-  std::vector<llvm::optimization *> optimizations;
-  optimizations.reserve(OptimizationIds_.size());
-
-  for (auto & optimizationId : OptimizationIds_)
-  {
-    optimizations.emplace_back(GetOptimization(optimizationId));
-  }
-
-  return optimizations;
-}
-
 JlmOptCommandLineOptions::OptimizationId
 JlmOptCommandLineOptions::FromCommandLineArgumentToOptimizationId(
     const std::string & commandLineArgument)
@@ -121,6 +108,8 @@ JlmOptCommandLineOptions::FromCommandLineArgumentToOptimizationId(
           OptimizationId::AAAndersenAgnostic },
         { OptimizationCommandLineArgument::AaAndersenRegionAware_,
           OptimizationId::AAAndersenRegionAware },
+        { OptimizationCommandLineArgument::AaAndersenTopDownLifetimeAware_,
+          OptimizationId::AAAndersenTopDownLifetimeAware },
         { OptimizationCommandLineArgument::AaSteensgaardAgnostic_,
           OptimizationId::AASteensgaardAgnostic },
         { OptimizationCommandLineArgument::AaSteensgaardRegionAware_,
@@ -135,6 +124,7 @@ JlmOptCommandLineOptions::FromCommandLineArgumentToOptimizationId(
         { OptimizationCommandLineArgument::NodePushOut_, OptimizationId::NodePushOut },
         { OptimizationCommandLineArgument::NodePullIn_, OptimizationId::NodePullIn },
         { OptimizationCommandLineArgument::NodeReduction_, OptimizationId::NodeReduction },
+        { OptimizationCommandLineArgument::RvsdgTreePrinter_, OptimizationId::RvsdgTreePrinter },
         { OptimizationCommandLineArgument::ThetaGammaInversion_,
           OptimizationId::ThetaGammaInversion },
         { OptimizationCommandLineArgument::LoopUnrolling_, OptimizationId::LoopUnrolling } });
@@ -153,6 +143,8 @@ JlmOptCommandLineOptions::ToCommandLineArgument(OptimizationId optimizationId)
           OptimizationCommandLineArgument::AaAndersenAgnostic_ },
         { OptimizationId::AAAndersenRegionAware,
           OptimizationCommandLineArgument::AaAndersenRegionAware_ },
+        { OptimizationId::AAAndersenTopDownLifetimeAware,
+          OptimizationCommandLineArgument::AaAndersenTopDownLifetimeAware_ },
         { OptimizationId::AASteensgaardAgnostic,
           OptimizationCommandLineArgument::AaSteensgaardAgnostic_ },
         { OptimizationId::AASteensgaardRegionAware,
@@ -168,6 +160,7 @@ JlmOptCommandLineOptions::ToCommandLineArgument(OptimizationId optimizationId)
         { OptimizationId::NodePullIn, OptimizationCommandLineArgument::NodePullIn_ },
         { OptimizationId::NodePushOut, OptimizationCommandLineArgument::NodePushOut_ },
         { OptimizationId::NodeReduction, OptimizationCommandLineArgument::NodeReduction_ },
+        { OptimizationId::RvsdgTreePrinter, OptimizationCommandLineArgument::RvsdgTreePrinter_ },
         { OptimizationId::ThetaGammaInversion,
           OptimizationCommandLineArgument::ThetaGammaInversion_ } });
 
@@ -223,48 +216,6 @@ JlmOptCommandLineOptions::ToCommandLineArgument(OutputFormat outputFormat)
   return mapping.at(outputFormat).data();
 }
 
-llvm::optimization *
-JlmOptCommandLineOptions::GetOptimization(enum OptimizationId id)
-{
-  using Andersen = llvm::aa::Andersen;
-  using Steensgaard = llvm::aa::Steensgaard;
-  using AgnosticMNP = llvm::aa::AgnosticMemoryNodeProvider;
-  using RegionAwareMNP = llvm::aa::RegionAwareMemoryNodeProvider;
-  static llvm::aa::AliasAnalysisStateEncoder<Andersen, AgnosticMNP> andersenAgnostic;
-  static llvm::aa::AliasAnalysisStateEncoder<Andersen, RegionAwareMNP> andersenRegionAware;
-  static llvm::aa::AliasAnalysisStateEncoder<Steensgaard, AgnosticMNP> steensgaardAgnostic;
-  static llvm::aa::AliasAnalysisStateEncoder<Steensgaard, RegionAwareMNP> steensgaardRegionAware;
-  static llvm::cne commonNodeElimination;
-  static llvm::DeadNodeElimination deadNodeElimination;
-  static llvm::fctinline functionInlining;
-  static llvm::InvariantValueRedirection invariantValueRedirection;
-  static llvm::pullin nodePullIn;
-  static llvm::pushout nodePushOut;
-  static llvm::tginversion thetaGammaInversion;
-  static llvm::loopunroll loopUnrolling(4);
-  static llvm::nodereduction nodeReduction;
-
-  static std::unordered_map<OptimizationId, llvm::optimization *> map(
-      { { OptimizationId::AAAndersenAgnostic, &andersenAgnostic },
-        { OptimizationId::AAAndersenRegionAware, &andersenRegionAware },
-        { OptimizationId::AASteensgaardAgnostic, &steensgaardAgnostic },
-        { OptimizationId::AASteensgaardRegionAware, &steensgaardRegionAware },
-        { OptimizationId::CommonNodeElimination, &commonNodeElimination },
-        { OptimizationId::DeadNodeElimination, &deadNodeElimination },
-        { OptimizationId::FunctionInlining, &functionInlining },
-        { OptimizationId::InvariantValueRedirection, &invariantValueRedirection },
-        { OptimizationId::LoopUnrolling, &loopUnrolling },
-        { OptimizationId::NodePullIn, &nodePullIn },
-        { OptimizationId::NodePushOut, &nodePushOut },
-        { OptimizationId::NodeReduction, &nodeReduction },
-        { OptimizationId::ThetaGammaInversion, &thetaGammaInversion } });
-
-  if (map.find(id) != map.end())
-    return map[id];
-
-  throw util::error("Unknown optimization identifier");
-}
-
 const util::BijectiveMap<util::Statistics::Id, std::string_view> &
 JlmOptCommandLineOptions::GetStatisticsIdCommandLineArguments()
 {
@@ -290,6 +241,7 @@ JlmOptCommandLineOptions::GetStatisticsIdCommandLineArguments()
     { util::Statistics::Id::RvsdgConstruction, "print-rvsdg-construction" },
     { util::Statistics::Id::RvsdgDestruction, "print-rvsdg-destruction" },
     { util::Statistics::Id::RvsdgOptimization, "print-rvsdg-optimization" },
+    { util::Statistics::Id::RvsdgTreePrinter, "print-rvsdg-tree" },
     { util::Statistics::Id::SteensgaardAnalysis, "print-steensgaard-analysis" },
     { util::Statistics::Id::ThetaGammaInversion, "print-ivt-stat" },
     { util::Statistics::Id::TopDownMemoryNodeEliminator, "TopDownMemoryNodeEliminator" }
@@ -305,10 +257,9 @@ const std::unordered_map<JlmOptCommandLineOptions::OutputFormat, std::string_vie
 JlmOptCommandLineOptions::GetOutputFormatCommandLineArguments()
 {
   static std::unordered_map<OutputFormat, std::string_view> mapping = {
-    { OutputFormat::Ascii, "ascii" },
-    { OutputFormat::Llvm, "llvm" },
-    { OutputFormat::Mlir, "mlir" },
-    { OutputFormat::Xml, "xml" }
+    { OutputFormat::Ascii, "ascii" }, { OutputFormat::Dot, "dot" },
+    { OutputFormat::Llvm, "llvm" },   { OutputFormat::Mlir, "mlir" },
+    { OutputFormat::Tree, "tree" },   { OutputFormat::Xml, "xml" }
   };
 
   auto firstIndex = static_cast<size_t>(OutputFormat::FirstEnumValue);
@@ -325,7 +276,6 @@ JlmHlsCommandLineOptions::Reset() noexcept
   OutputFormat_ = OutputFormat::Firrtl;
   HlsFunction_ = "";
   ExtractHlsFunction_ = false;
-  UseCirct_ = false;
 }
 
 void
@@ -361,7 +311,7 @@ CommandLineParser::Exception::~Exception() noexcept = default;
 JlcCommandLineParser::~JlcCommandLineParser() noexcept = default;
 
 const JlcCommandLineOptions &
-JlcCommandLineParser::ParseCommandLineArguments(int argc, char ** argv)
+JlcCommandLineParser::ParseCommandLineArguments(int argc, const char * const * argv)
 {
   auto checkAndConvertJlmOptOptimizations =
       [](const ::llvm::cl::list<std::string> & optimizations,
@@ -588,6 +538,9 @@ JlcCommandLineParser::ParseCommandLineArguments(int argc, char ** argv)
               util::Statistics::Id::RvsdgOptimization,
               "Collect RVSDG optimization pass statistics."),
           CreateStatisticsOption(
+              util::Statistics::Id::RvsdgTreePrinter,
+              "Collect RVSDG tree printer pass statistics."),
+          CreateStatisticsOption(
               util::Statistics::Id::SteensgaardAnalysis,
               "Collect Steensgaard alias analysis pass statistics."),
           CreateStatisticsOption(
@@ -673,20 +626,21 @@ JlcCommandLineParser::ParseCommandLineArguments(int argc, char ** argv)
 
   for (auto & inputFile : inputFiles)
   {
-    if (IsObjectFile(inputFile))
+    util::filepath inputFilePath(inputFile);
+    if (IsObjectFile(inputFilePath))
     {
       /* FIXME: print a warning like clang if noLinking is true */
       CommandLineOptions_.Compilations_.push_back(
-          { inputFile, util::filepath(""), inputFile, "", false, false, false, true });
+          { inputFilePath, util::filepath(""), inputFilePath, "", false, false, false, true });
 
       continue;
     }
 
     CommandLineOptions_.Compilations_.push_back(
-        { inputFile,
-          mF.empty() ? ToDependencyFile(inputFile) : util::filepath(mF),
-          ToObjectFile(inputFile),
-          mT.empty() ? ToObjectFile(inputFile).name() : mT,
+        { inputFilePath,
+          mF.empty() ? ToDependencyFile(inputFilePath) : util::filepath(mF),
+          ToObjectFile(inputFilePath),
+          mT.empty() ? ToObjectFile(inputFilePath).name() : mT,
           true,
           true,
           true,
@@ -695,14 +649,15 @@ JlcCommandLineParser::ParseCommandLineArguments(int argc, char ** argv)
 
   if (!outputFile.empty())
   {
+    util::filepath outputFilePath(outputFile);
     if (noLinking)
     {
       JLM_ASSERT(CommandLineOptions_.Compilations_.size() == 1);
-      CommandLineOptions_.Compilations_[0].SetOutputFile(outputFile);
+      CommandLineOptions_.Compilations_[0].SetOutputFile(outputFilePath);
     }
     else
     {
-      CommandLineOptions_.OutputFile_ = util::filepath(outputFile);
+      CommandLineOptions_.OutputFile_ = outputFilePath;
     }
   }
 
@@ -712,7 +667,7 @@ JlcCommandLineParser::ParseCommandLineArguments(int argc, char ** argv)
 JlmOptCommandLineParser::~JlmOptCommandLineParser() noexcept = default;
 
 const JlmOptCommandLineOptions &
-JlmOptCommandLineParser::ParseCommandLineArguments(int argc, char ** argv)
+JlmOptCommandLineParser::ParseCommandLineArguments(int argc, const char * const * argv)
 {
   using namespace ::llvm;
 
@@ -733,12 +688,13 @@ JlmOptCommandLineParser::ParseCommandLineArguments(int argc, char ** argv)
       cl::desc("Write output to <file>"),
       cl::value_desc("file"));
 
-  std::string statisticsDirectoryDefault = std::filesystem::temp_directory_path();
+  const auto statisticsDirectoryDefault = util::filepath::TempDirectoryPath().Join("jlm");
   const auto statisticDirectoryDescription =
-      "Write statistics to file in <dir>. Default is " + statisticsDirectoryDefault + ".";
+      "Write statistics and debug output to files in <dir>. Default is "
+      + statisticsDirectoryDefault.to_str() + ".";
   cl::opt<std::string> statisticDirectory(
       "s",
-      cl::init(statisticsDirectoryDefault),
+      cl::init(statisticsDirectoryDefault.to_str()),
       cl::desc(statisticDirectoryDescription),
       cl::value_desc("dir"));
 
@@ -805,6 +761,9 @@ JlmOptCommandLineParser::ParseCommandLineArguments(int argc, char ** argv)
               util::Statistics::Id::RvsdgOptimization,
               "Write RVSDG optimization statistics to file."),
           CreateStatisticsOption(
+              util::Statistics::Id::RvsdgTreePrinter,
+              "Write RVSDG tree printer pass statistics."),
+          CreateStatisticsOption(
               util::Statistics::Id::SteensgaardAnalysis,
               "Write Steensgaard analysis statistics to file."),
           CreateStatisticsOption(
@@ -838,17 +797,23 @@ JlmOptCommandLineParser::ParseCommandLineArguments(int argc, char ** argv)
       cl::desc("Select output format:"),
       cl::values(
           CreateOutputFormatOption(JlmOptCommandLineOptions::OutputFormat::Ascii, "Output Ascii"),
+          CreateOutputFormatOption(JlmOptCommandLineOptions::OutputFormat::Dot, "Output Dot"),
           CreateOutputFormatOption(
               JlmOptCommandLineOptions::OutputFormat::Llvm,
               "Output LLVM IR [default]"),
 #ifdef ENABLE_MLIR
           CreateOutputFormatOption(JlmOptCommandLineOptions::OutputFormat::Mlir, "Output MLIR"),
 #endif
+          CreateOutputFormatOption(
+              JlmOptCommandLineOptions::OutputFormat::Tree,
+              "Output Rvsdg Tree"),
           CreateOutputFormatOption(JlmOptCommandLineOptions::OutputFormat::Xml, "Output XML")),
       cl::init(JlmOptCommandLineOptions::OutputFormat::Llvm));
 
   auto aAAndersenAgnostic = JlmOptCommandLineOptions::OptimizationId::AAAndersenAgnostic;
   auto aAAndersenRegionAware = JlmOptCommandLineOptions::OptimizationId::AAAndersenRegionAware;
+  auto aAAndersenTopDownLifetimeAware =
+      JlmOptCommandLineOptions::OptimizationId::AAAndersenTopDownLifetimeAware;
   auto aASteensgaardAgnostic = JlmOptCommandLineOptions::OptimizationId::AASteensgaardAgnostic;
   auto aASteensgaardRegionAware =
       JlmOptCommandLineOptions::OptimizationId::AASteensgaardRegionAware;
@@ -860,6 +825,7 @@ JlmOptCommandLineParser::ParseCommandLineArguments(int argc, char ** argv)
   auto nodePushOut = JlmOptCommandLineOptions::OptimizationId::NodePushOut;
   auto nodePullIn = JlmOptCommandLineOptions::OptimizationId::NodePullIn;
   auto nodeReduction = JlmOptCommandLineOptions::OptimizationId::NodeReduction;
+  auto rvsdgTreePrinter = JlmOptCommandLineOptions::OptimizationId::RvsdgTreePrinter;
   auto thetaGammaInversion = JlmOptCommandLineOptions::OptimizationId::ThetaGammaInversion;
   auto loopUnrolling = JlmOptCommandLineOptions::OptimizationId::LoopUnrolling;
 
@@ -873,6 +839,10 @@ JlmOptCommandLineParser::ParseCommandLineArguments(int argc, char ** argv)
               aAAndersenRegionAware,
               JlmOptCommandLineOptions::ToCommandLineArgument(aAAndersenRegionAware),
               "Andersen alias analysis with region-aware memory state encoding"),
+          ::clEnumValN(
+              aAAndersenTopDownLifetimeAware,
+              JlmOptCommandLineOptions::ToCommandLineArgument(aAAndersenTopDownLifetimeAware),
+              "Andersen alias analysis with top-down lifetime-aware memory node elimination"),
           ::clEnumValN(
               aASteensgaardAgnostic,
               JlmOptCommandLineOptions::ToCommandLineArgument(aASteensgaardAgnostic),
@@ -910,6 +880,10 @@ JlmOptCommandLineParser::ParseCommandLineArguments(int argc, char ** argv)
               JlmOptCommandLineOptions::ToCommandLineArgument(nodeReduction),
               "Node Reduction"),
           ::clEnumValN(
+              rvsdgTreePrinter,
+              JlmOptCommandLineOptions::ToCommandLineArgument(rvsdgTreePrinter),
+              "Rvsdg Tree Printer"),
+          ::clEnumValN(
               thetaGammaInversion,
               JlmOptCommandLineOptions::ToCommandLineArgument(thetaGammaInversion),
               "Theta-Gamma Inversion"),
@@ -919,41 +893,51 @@ JlmOptCommandLineParser::ParseCommandLineArguments(int argc, char ** argv)
               "Loop Unrolling")),
       cl::desc("Perform optimization"));
 
+  cl::list<llvm::RvsdgTreePrinter::Configuration::Annotation> rvsdgTreePrinterAnnotations(
+      "annotations",
+      cl::values(::clEnumValN(
+          llvm::RvsdgTreePrinter::Configuration::Annotation::NumRvsdgNodes,
+          "NumRvsdgNodes",
+          "Annotate number of RVSDG nodes")),
+      cl::values(::clEnumValN(
+          llvm::RvsdgTreePrinter::Configuration::Annotation::NumMemoryStateInputsOutputs,
+          "NumMemoryStateInputsOutputs",
+          "Annotate number of inputs/outputs with memory state type")),
+      cl::CommaSeparated,
+      cl::desc("Comma separated list of RVSDG tree printer annotations"));
+
   cl::ParseCommandLineOptions(argc, argv);
 
   jlm::util::filepath statisticsDirectoryFilePath(statisticDirectory);
-  if (!statisticsDirectoryFilePath.Exists() && !statisticsDirectoryFilePath.IsDirectory())
-  {
-    throw CommandLineParser::Exception(
-        statisticsDirectoryFilePath.to_str() + " does not exist or is not a directory.");
-  }
-
   jlm::util::filepath inputFilePath(inputFile);
-  jlm::util::filepath statisticsFilePath =
-      jlm::util::StatisticsCollectorSettings::CreateUniqueStatisticsFile(
-          statisticsDirectoryFilePath,
-          inputFilePath);
 
   util::HashSet<util::Statistics::Id> demandedStatistics(
       { printStatistics.begin(), printStatistics.end() });
 
   util::StatisticsCollectorSettings statisticsCollectorSettings(
-      statisticsFilePath,
-      demandedStatistics);
+      std::move(demandedStatistics),
+      statisticsDirectoryFilePath,
+      inputFilePath.base());
+
+  util::HashSet<llvm::RvsdgTreePrinter::Configuration::Annotation> demandedAnnotations(
+      { rvsdgTreePrinterAnnotations.begin(), rvsdgTreePrinterAnnotations.end() });
+
+  llvm::RvsdgTreePrinter::Configuration treePrinterConfiguration(std::move(demandedAnnotations));
 
   CommandLineOptions_ = JlmOptCommandLineOptions::Create(
       std::move(inputFilePath),
       inputFormat,
-      outputFile,
+      util::filepath(outputFile),
       outputFormat,
       std::move(statisticsCollectorSettings),
+      std::move(treePrinterConfiguration),
       std::move(optimizationIds));
 
   return *CommandLineOptions_;
 }
 
 const JlmOptCommandLineOptions &
-JlmOptCommandLineParser::Parse(int argc, char ** argv)
+JlmOptCommandLineParser::Parse(int argc, const char * const * argv)
 {
   static JlmOptCommandLineParser parser;
   return parser.ParseCommandLineArguments(argc, argv);
@@ -962,7 +946,7 @@ JlmOptCommandLineParser::Parse(int argc, char ** argv)
 JlmHlsCommandLineParser::~JlmHlsCommandLineParser() noexcept = default;
 
 const JlmHlsCommandLineOptions &
-JlmHlsCommandLineParser::ParseCommandLineArguments(int argc, char ** argv)
+JlmHlsCommandLineParser::ParseCommandLineArguments(int argc, const char * const * argv)
 {
   CommandLineOptions_.Reset();
 
@@ -995,8 +979,6 @@ JlmHlsCommandLineParser::ParseCommandLineArguments(int argc, char ** argv)
       cl::Prefix,
       cl::desc("Extracts function specified by hls-function"));
 
-  cl::opt<bool> useCirct("circt", cl::Prefix, cl::desc("Use CIRCT to generate FIRRTL"));
-
   cl::opt<JlmHlsCommandLineOptions::OutputFormat> format(
       cl::values(
           ::clEnumValN(
@@ -1015,18 +997,17 @@ JlmHlsCommandLineParser::ParseCommandLineArguments(int argc, char ** argv)
     throw jlm::util::error(
         "jlm-hls: --hls-function is not specified.\n         which is required for --extract\n");
 
-  CommandLineOptions_.InputFile_ = inputFile;
+  CommandLineOptions_.InputFile_ = util::filepath(inputFile);
   CommandLineOptions_.HlsFunction_ = std::move(hlsFunction);
-  CommandLineOptions_.OutputFiles_ = outputFolder;
+  CommandLineOptions_.OutputFiles_ = util::filepath(outputFolder);
   CommandLineOptions_.ExtractHlsFunction_ = extractHlsFunction;
-  CommandLineOptions_.UseCirct_ = useCirct;
   CommandLineOptions_.OutputFormat_ = format;
 
   return CommandLineOptions_;
 }
 
 const JlmHlsCommandLineOptions &
-JlmHlsCommandLineParser::Parse(int argc, char ** argv)
+JlmHlsCommandLineParser::Parse(int argc, const char * const * argv)
 {
   static JlmHlsCommandLineParser parser;
   return parser.ParseCommandLineArguments(argc, argv);
@@ -1035,7 +1016,7 @@ JlmHlsCommandLineParser::Parse(int argc, char ** argv)
 JhlsCommandLineParser::~JhlsCommandLineParser() noexcept = default;
 
 const JhlsCommandLineOptions &
-JhlsCommandLineParser::ParseCommandLineArguments(int argc, char ** argv)
+JhlsCommandLineParser::ParseCommandLineArguments(int argc, const char * const * argv)
 {
   CommandLineOptions_.Reset();
 
@@ -1159,7 +1140,10 @@ JhlsCommandLineParser::ParseCommandLineArguments(int argc, char ** argv)
 
   cl::opt<bool> generateFirrtl("firrtl", cl::ValueDisallowed, cl::desc("Generate firrtl"));
 
-  cl::opt<bool> useCirct("circt", cl::Prefix, cl::desc("Use CIRCT to generate FIRRTL"));
+  cl::opt<bool> useCirct(
+      "circt",
+      cl::Prefix,
+      cl::desc("DEPRACATED - CIRCT is always used to generate FIRRTL"));
 
   cl::ParseCommandLineOptions(argc, argv);
 
@@ -1243,24 +1227,24 @@ JhlsCommandLineParser::ParseCommandLineArguments(int argc, char ** argv)
   CommandLineOptions_.UsePthreads_ = usePthreads;
   CommandLineOptions_.Md_ = mD;
   CommandLineOptions_.GenerateFirrtl_ = generateFirrtl;
-  CommandLineOptions_.UseCirct_ = useCirct;
 
   for (auto & inputFile : inputFiles)
   {
-    if (IsObjectFile(inputFile))
+    util::filepath inputFilePath(inputFile);
+    if (IsObjectFile(inputFilePath))
     {
       /* FIXME: print a warning like clang if noLinking is true */
       CommandLineOptions_.Compilations_.push_back(
-          { inputFile, util::filepath(""), inputFile, "", false, false, false, true });
+          { inputFilePath, util::filepath(""), inputFilePath, "", false, false, false, true });
 
       continue;
     }
 
     CommandLineOptions_.Compilations_.push_back(
-        { inputFile,
-          mF.empty() ? CreateDependencyFileFromFile(inputFile) : util::filepath(mF),
-          CreateObjectFileFromFile(inputFile),
-          mT.empty() ? CreateObjectFileFromFile(inputFile).name() : mT,
+        { inputFilePath,
+          mF.empty() ? CreateDependencyFileFromFile(inputFilePath) : util::filepath(mF),
+          CreateObjectFileFromFile(inputFilePath),
+          mT.empty() ? CreateObjectFileFromFile(inputFilePath).name() : mT,
           true,
           true,
           true,
@@ -1269,14 +1253,15 @@ JhlsCommandLineParser::ParseCommandLineArguments(int argc, char ** argv)
 
   if (!outputFile.empty())
   {
+    util::filepath outputFilePath(outputFile);
     if (noLinking)
     {
       JLM_ASSERT(CommandLineOptions_.Compilations_.size() == 1);
-      CommandLineOptions_.Compilations_[0].SetOutputFile(outputFile);
+      CommandLineOptions_.Compilations_[0].SetOutputFile(outputFilePath);
     }
     else
     {
-      CommandLineOptions_.OutputFile_ = util::filepath(outputFile);
+      CommandLineOptions_.OutputFile_ = outputFilePath;
     }
   }
 
@@ -1292,17 +1277,17 @@ JhlsCommandLineParser::IsObjectFile(const util::filepath & file)
 util::filepath
 JhlsCommandLineParser::CreateObjectFileFromFile(const util::filepath & f)
 {
-  return { f.path() + f.base() + ".o" };
+  return f.Dirname().Join(f.base() + ".o");
 }
 
 util::filepath
 JhlsCommandLineParser::CreateDependencyFileFromFile(const util::filepath & f)
 {
-  return { f.path() + f.base() + ".d" };
+  return f.Dirname().Join(f.base() + ".d");
 }
 
 const JhlsCommandLineOptions &
-JhlsCommandLineParser::Parse(int argc, char ** argv)
+JhlsCommandLineParser::Parse(int argc, const char * const * argv)
 {
   static JhlsCommandLineParser parser;
   return parser.ParseCommandLineArguments(argc, argv);

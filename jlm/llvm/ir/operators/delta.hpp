@@ -20,13 +20,13 @@ namespace delta
 
 /** \brief Delta operation
  */
-class operation final : public rvsdg::structural_op
+class operation final : public rvsdg::StructuralOperation
 {
 public:
   ~operation() override;
 
   operation(
-      std::shared_ptr<const rvsdg::valuetype> type,
+      std::shared_ptr<const rvsdg::ValueType> type,
       const std::string & name,
       const llvm::linkage & linkage,
       std::string section,
@@ -51,11 +51,11 @@ public:
   virtual std::string
   debug_string() const override;
 
-  virtual std::unique_ptr<rvsdg::operation>
+  [[nodiscard]] std::unique_ptr<Operation>
   copy() const override;
 
   virtual bool
-  operator==(const rvsdg::operation & other) const noexcept override;
+  operator==(const Operation & other) const noexcept override;
 
   const std::string &
   name() const noexcept
@@ -81,13 +81,13 @@ public:
     return constant_;
   }
 
-  [[nodiscard]] const rvsdg::valuetype &
+  [[nodiscard]] const rvsdg::ValueType &
   type() const noexcept
   {
     return *type_;
   }
 
-  [[nodiscard]] const std::shared_ptr<const rvsdg::valuetype> &
+  [[nodiscard]] const std::shared_ptr<const rvsdg::ValueType> &
   Type() const noexcept
   {
     return type_;
@@ -98,7 +98,7 @@ private:
   std::string name_;
   std::string Section_;
   llvm::linkage linkage_;
-  std::shared_ptr<const rvsdg::valuetype> type_;
+  std::shared_ptr<const rvsdg::ValueType> type_;
 };
 
 class cvargument;
@@ -127,20 +127,21 @@ class result;
  *   auto output = delta->finalize(...);
  * \endcode
  */
-class node final : public rvsdg::structural_node
+class node final : public rvsdg::StructuralNode
 {
   class cviterator;
   class cvconstiterator;
 
-  using ctxvar_range = jlm::util::iterator_range<cviterator>;
-  using ctxvar_constrange = jlm::util::iterator_range<cvconstiterator>;
+  using ctxvar_range = util::IteratorRange<cviterator>;
+  using ctxvar_constrange = util::IteratorRange<cvconstiterator>;
 
 public:
   ~node() override;
 
 private:
-  node(rvsdg::region * parent, delta::operation && op)
-      : structural_node(op, parent, 1)
+  node(rvsdg::Region * parent, std::unique_ptr<delta::operation> op)
+      : StructuralNode(parent, 1),
+        Operation_(std::move(op))
   {}
 
 public:
@@ -150,52 +151,49 @@ public:
   ctxvar_constrange
   ctxvars() const;
 
-  rvsdg::region *
+  rvsdg::Region *
   subregion() const noexcept
   {
-    return structural_node::subregion(0);
+    return StructuralNode::subregion(0);
   }
 
-  const delta::operation &
-  operation() const noexcept
-  {
-    return *static_cast<const delta::operation *>(&structural_node::operation());
-  }
+  [[nodiscard]] const delta::operation &
+  GetOperation() const noexcept override;
 
-  [[nodiscard]] const rvsdg::valuetype &
+  [[nodiscard]] const rvsdg::ValueType &
   type() const noexcept
   {
-    return operation().type();
+    return GetOperation().type();
   }
 
-  [[nodiscard]] const std::shared_ptr<const rvsdg::valuetype> &
+  [[nodiscard]] const std::shared_ptr<const rvsdg::ValueType> &
   Type() const noexcept
   {
-    return operation().Type();
+    return GetOperation().Type();
   }
 
   const std::string &
   name() const noexcept
   {
-    return operation().name();
+    return GetOperation().name();
   }
 
   [[nodiscard]] const std::string &
   Section() const noexcept
   {
-    return operation().Section();
+    return GetOperation().Section();
   }
 
   const llvm::linkage &
   linkage() const noexcept
   {
-    return operation().linkage();
+    return GetOperation().linkage();
   }
 
   bool
   constant() const noexcept
   {
-    return operation().constant();
+    return GetOperation().constant();
   }
 
   size_t
@@ -259,10 +257,10 @@ public:
   result() const noexcept;
 
   virtual delta::node *
-  copy(rvsdg::region * region, const std::vector<rvsdg::output *> & operands) const override;
+  copy(rvsdg::Region * region, const std::vector<jlm::rvsdg::output *> & operands) const override;
 
   virtual delta::node *
-  copy(rvsdg::region * region, rvsdg::substitution_map & smap) const override;
+  copy(rvsdg::Region * region, rvsdg::SubstitutionMap & smap) const override;
 
   /**
    * Creates a delta node in the region \p parent with the pointer type \p type and name \p name.
@@ -281,14 +279,19 @@ public:
    */
   static node *
   Create(
-      rvsdg::region * parent,
-      std::shared_ptr<const rvsdg::valuetype> type,
+      rvsdg::Region * parent,
+      std::shared_ptr<const rvsdg::ValueType> type,
       const std::string & name,
       const llvm::linkage & linkage,
       std::string section,
       bool constant)
   {
-    delta::operation op(std::move(type), name, linkage, std::move(section), constant);
+    auto op = std::make_unique<delta::operation>(
+        std::move(type),
+        name,
+        linkage,
+        std::move(section),
+        constant);
     return new delta::node(parent, std::move(op));
   }
 
@@ -301,11 +304,14 @@ public:
    */
   delta::output *
   finalize(rvsdg::output * result);
+
+private:
+  std::unique_ptr<delta::operation> Operation_;
 };
 
 /** \brief Delta context variable input
  */
-class cvinput final : public rvsdg::structural_input
+class cvinput final : public rvsdg::StructuralInput
 {
   friend ::jlm::llvm::delta::node;
 
@@ -314,7 +320,7 @@ public:
 
 private:
   cvinput(delta::node * node, rvsdg::output * origin)
-      : structural_input(node, origin, origin->Type())
+      : StructuralInput(node, origin, origin->Type())
   {}
 
   static cvinput *
@@ -331,7 +337,7 @@ public:
   delta::node *
   node() const noexcept
   {
-    return static_cast<delta::node *>(structural_input::node());
+    return static_cast<delta::node *>(StructuralInput::node());
   }
 };
 
@@ -377,31 +383,20 @@ class node::cvconstiterator final : public rvsdg::input::constiterator<cvinput>
 
 /** \brief Delta output
  */
-class output final : public rvsdg::structural_output
+class output final : public rvsdg::StructuralOutput
 {
   friend ::jlm::llvm::delta::node;
 
 public:
   ~output() override;
 
-  output(delta::node * node, const rvsdg::port & port)
-      : structural_output(node, port.Type())
-  {}
-
-  output(delta::node * node, std::shared_ptr<const rvsdg::type> type)
-      : structural_output(node, std::move(type))
+  output(delta::node * node, std::shared_ptr<const rvsdg::Type> type)
+      : StructuralOutput(node, std::move(type))
   {}
 
 private:
   static output *
-  create(delta::node * node, const rvsdg::port & port)
-  {
-    auto output = std::make_unique<delta::output>(node, port);
-    return static_cast<delta::output *>(node->append_output(std::move(output)));
-  }
-
-  static output *
-  create(delta::node * node, std::shared_ptr<const rvsdg::type> type)
+  create(delta::node * node, std::shared_ptr<const rvsdg::Type> type)
   {
     auto output = std::make_unique<delta::output>(node, std::move(type));
     return static_cast<delta::output *>(node->append_output(std::move(output)));
@@ -411,26 +406,29 @@ public:
   delta::node *
   node() const noexcept
   {
-    return static_cast<delta::node *>(structural_output::node());
+    return static_cast<delta::node *>(StructuralOutput::node());
   }
 };
 
 /** \brief Delta context variable argument
  */
-class cvargument final : public rvsdg::argument
+class cvargument final : public rvsdg::RegionArgument
 {
   friend ::jlm::llvm::delta::node;
 
 public:
   ~cvargument() override;
 
+  cvargument &
+  Copy(rvsdg::Region & region, rvsdg::StructuralInput * input) override;
+
 private:
-  cvargument(rvsdg::region * region, cvinput * input)
-      : rvsdg::argument(region, input, input->port())
+  cvargument(rvsdg::Region * region, cvinput * input)
+      : rvsdg::RegionArgument(region, input, input->Type())
   {}
 
   static cvargument *
-  create(rvsdg::region * region, delta::cvinput * input)
+  create(rvsdg::Region * region, delta::cvinput * input)
   {
     auto argument = new cvargument(region, input);
     region->append_argument(argument);
@@ -441,22 +439,25 @@ public:
   cvinput *
   input() const noexcept
   {
-    return static_cast<cvinput *>(rvsdg::argument::input());
+    return static_cast<cvinput *>(rvsdg::RegionArgument::input());
   }
 };
 
 /** \brief Delta result
  */
-class result final : public rvsdg::result
+class result final : public rvsdg::RegionResult
 {
   friend ::jlm::llvm::delta::node;
 
 public:
   ~result() override;
 
+  result &
+  Copy(rvsdg::output & origin, rvsdg::StructuralOutput * output) override;
+
 private:
-  result(rvsdg::output * origin)
-      : rvsdg::result(origin->region(), origin, nullptr, origin->port())
+  explicit result(rvsdg::output * origin)
+      : rvsdg::RegionResult(origin->region(), origin, nullptr, origin->Type())
   {}
 
   static result *
@@ -471,7 +472,7 @@ public:
   delta::output *
   output() const noexcept
   {
-    return static_cast<delta::output *>(rvsdg::result::output());
+    return static_cast<delta::output *>(rvsdg::RegionResult::output());
   }
 };
 

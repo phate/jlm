@@ -9,7 +9,7 @@
 #include <jlm/llvm/ir/operators/alloca.hpp>
 #include <jlm/llvm/ir/operators/call.hpp>
 #include <jlm/llvm/ir/operators/delta.hpp>
-#include <jlm/llvm/ir/operators/gamma.hpp>
+#include <jlm/llvm/ir/operators/FunctionPointer.hpp>
 #include <jlm/llvm/ir/operators/GetElementPtr.hpp>
 #include <jlm/llvm/ir/operators/lambda.hpp>
 #include <jlm/llvm/ir/operators/Load.hpp>
@@ -19,6 +19,5 @@
 #include <jlm/llvm/ir/operators/Phi.hpp>
 #include <jlm/llvm/ir/operators/sext.hpp>
 #include <jlm/llvm/ir/operators/Store.hpp>
-#include <jlm/llvm/ir/operators/theta.hpp>
 
 #endif

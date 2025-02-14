@@ -8,85 +8,96 @@
 
 #include <jlm/rvsdg/graph.hpp>
 #include <jlm/rvsdg/node.hpp>
-#include <jlm/rvsdg/region.hpp>
-#include <jlm/rvsdg/simple-normal-form.hpp>
+
+#include <optional>
 
 namespace jlm::rvsdg
 {
 
-class simple_op;
-class simple_input;
+class SimpleOperation;
+class SimpleInput;
 class simple_output;
 
-/* simple nodes */
-
-class simple_node : public node
+class SimpleNode : public Node
 {
 public:
-  virtual ~simple_node();
+  ~SimpleNode() override;
 
 protected:
-  simple_node(
-      jlm::rvsdg::region * region,
-      const jlm::rvsdg::simple_op & op,
+  SimpleNode(
+      rvsdg::Region & region,
+      std::unique_ptr<SimpleOperation> operation,
       const std::vector<jlm::rvsdg::output *> & operands);
 
 public:
-  jlm::rvsdg::simple_input *
+  SimpleInput *
   input(size_t index) const noexcept;
 
   jlm::rvsdg::simple_output *
   output(size_t index) const noexcept;
 
-  const jlm::rvsdg::simple_op &
-  operation() const noexcept;
+  [[nodiscard]] const SimpleOperation &
+  GetOperation() const noexcept override;
 
-  virtual jlm::rvsdg::node *
-  copy(jlm::rvsdg::region * region, const std::vector<jlm::rvsdg::output *> & operands)
-      const override;
+  Node *
+  copy(rvsdg::Region * region, const std::vector<jlm::rvsdg::output *> & operands) const override;
 
-  virtual jlm::rvsdg::node *
-  copy(jlm::rvsdg::region * region, jlm::rvsdg::substitution_map & smap) const override;
+  Node *
+  copy(rvsdg::Region * region, SubstitutionMap & smap) const override;
 
-  static inline jlm::rvsdg::simple_node *
-  create(
-      jlm::rvsdg::region * region,
-      const jlm::rvsdg::simple_op & op,
-      const std::vector<jlm::rvsdg::output *> & operands)
+  static SimpleNode &
+  Create(Region & region, const SimpleOperation & op, const std::vector<rvsdg::output *> & operands)
   {
-    return new simple_node(region, op, operands);
+    std::unique_ptr<SimpleOperation> newOp(
+        util::AssertedCast<SimpleOperation>(op.copy().release()));
+    return *(new SimpleNode(region, std::move(newOp), operands));
   }
 
-  static inline std::vector<jlm::rvsdg::output *>
-  create_normalized(
-      jlm::rvsdg::region * region,
-      const jlm::rvsdg::simple_op & op,
-      const std::vector<jlm::rvsdg::output *> & operands)
+  static SimpleNode &
+  Create(
+      Region & region,
+      std::unique_ptr<SimpleOperation> operation,
+      const std::vector<rvsdg::output *> & operands)
   {
-    auto nf = static_cast<simple_normal_form *>(region->graph()->node_normal_form(typeid(op)));
-    return nf->normalized_create(region, op, operands);
+    return *new SimpleNode(region, std::move(operation), operands);
   }
+
+private:
+  std::unique_ptr<SimpleOperation> Operation_;
 };
 
-/* inputs */
+/**
+ * \brief Performs common node elimination for a given operation and operands in a region.
+ *
+ * @param region The region in which common node elimination is performed.
+ * @param operation The simple operation on which the transformation is performed.
+ * @param operands The operands of the simple node.
+ * @return If the normalization could be applied, then the results of the binary operation after
+ * the transformation. Otherwise, std::nullopt.
+ */
+std::optional<std::vector<rvsdg::output *>>
+NormalizeSimpleOperationCommonNodeElimination(
+    Region & region,
+    const SimpleOperation & operation,
+    const std::vector<rvsdg::output *> & operands);
 
-class simple_input final : public node_input
+class SimpleInput final : public node_input
 {
   friend class jlm::rvsdg::output;
 
 public:
-  virtual ~simple_input() noexcept;
+  ~SimpleInput() noexcept override;
 
-  simple_input(
-      simple_node * node,
+  SimpleInput(
+      SimpleNode * node,
       jlm::rvsdg::output * origin,
-      std::shared_ptr<const rvsdg::type> type);
+      std::shared_ptr<const rvsdg::Type> type);
 
 public:
-  simple_node *
+  SimpleNode *
   node() const noexcept
   {
-    return static_cast<simple_node *>(node_input::node());
+    return static_cast<SimpleNode *>(node_input::node());
   }
 };
 
@@ -94,39 +105,116 @@ public:
 
 class simple_output final : public node_output
 {
-  friend class jlm::rvsdg::simple_input;
+  friend class SimpleInput;
 
 public:
   virtual ~simple_output() noexcept;
 
-  simple_output(jlm::rvsdg::simple_node * node, std::shared_ptr<const rvsdg::type> type);
+  simple_output(jlm::rvsdg::SimpleNode * node, std::shared_ptr<const rvsdg::Type> type);
 
 public:
-  simple_node *
+  SimpleNode *
   node() const noexcept
   {
-    return static_cast<simple_node *>(node_output::node());
+    return static_cast<SimpleNode *>(node_output::node());
   }
 };
 
-/* simple node method definitions */
-
-inline jlm::rvsdg::simple_input *
-simple_node::input(size_t index) const noexcept
+inline SimpleInput *
+SimpleNode::input(size_t index) const noexcept
 {
-  return static_cast<simple_input *>(node::input(index));
+  return static_cast<SimpleInput *>(Node::input(index));
 }
 
 inline jlm::rvsdg::simple_output *
-simple_node::output(size_t index) const noexcept
+SimpleNode::output(size_t index) const noexcept
 {
-  return static_cast<simple_output *>(node::output(index));
+  return static_cast<simple_output *>(Node::output(index));
 }
 
-inline const jlm::rvsdg::simple_op &
-simple_node::operation() const noexcept
+/**
+ * \brief Creates a simple node characterized by its operator.
+ *
+ * \tparam OperatorType
+ *   The type of operator wrapped by the node.
+ *
+ * \tparam OperatorArguments
+ *   Argument types of the operator to be constructed (should be
+ *   implied, just specify the OperatorType).
+ *
+ * \param operands
+ *   The operands to the operator (i.e. inputs to the node to be constructed).
+ *
+ * \param operatorArguments
+ *   Constructor arguments for the operator to be constructed.
+ *
+ * \returns
+ *   Reference to the node constructed.
+ *
+ * \pre
+ *   \p operands must be non-empty, must be in the same region, and their
+ *   types must match the operator constructed by this call.
+ *
+ * Constructs a new operator of type \p OperatorType using \p operatorArguments
+ * as constructor arguments. Creates a simple node using the constructed operator
+ * and the given \p operands as operands to the constructed operator.
+ *
+ * Usage example:
+ * \code
+ *   auto element_ptr = CreateOpNode<GetElementPtrOperation>(
+ *     { ptr }, offsetTypes, pointeeTypes).outputs(0);
+ * \endcode
+ */
+template<typename OperatorType, typename... OperatorArguments>
+SimpleNode &
+CreateOpNode(const std::vector<output *> & operands, OperatorArguments... operatorArguments)
 {
-  return *static_cast<const simple_op *>(&node::operation());
+  JLM_ASSERT(!operands.empty());
+  return SimpleNode::Create(
+      *operands[0]->region(),
+      std::make_unique<OperatorType>(std::move(operatorArguments)...),
+      operands);
+}
+
+/**
+ * \brief Creates a simple node characterized by its operator.
+ *
+ * \tparam OperatorType
+ *   The type of operator wrapped by the node.
+ *
+ * \tparam OperatorArguments
+ *   Argument types of the operator to be constructed (should be
+ *   implied, just specify the OperatorType).
+ *
+ * \param region
+ *   The region to create the node in.
+ *
+ * \param operatorArguments
+ *   Constructor arguments for the operator to be constructed.
+ *
+ * \returns
+ *   Reference to the node constructed.
+ *
+ * \pre
+ *   The given operator must not take any operands.
+ *
+ * Constructs a new operator of type \p OperatorType using \p operatorArguments
+ * as constructor arguments. Creates a simple node using the constructed operator
+ * with no operands in the specified region.
+ *
+ * Usage example:
+ * \code
+ *   auto val = CreateOpNode<IntegerConstantOperation>(region, 42).outputs(0);
+ * \endcode
+ */
+template<typename OperatorType, typename... OperatorArguments>
+SimpleNode &
+CreateOpNode(Region & region, OperatorArguments... operatorArguments)
+{
+  return SimpleNode::Create(
+      region,
+      std::make_unique<OperatorType>(std::move(operatorArguments)...),
+      {});
 }
 
 }

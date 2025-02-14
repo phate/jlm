@@ -4,96 +4,57 @@
  * See COPYING for terms of redistribution.
  */
 
-#include <cxxabi.h>
-
 #include <jlm/rvsdg/graph.hpp>
 #include <jlm/rvsdg/substitution.hpp>
+#include <jlm/rvsdg/tracker.hpp>
 
 #include <algorithm>
 
 namespace jlm::rvsdg
 {
 
-/* impport */
-
-impport::~impport()
+GraphImport::GraphImport(Graph & graph, std::shared_ptr<const rvsdg::Type> type, std::string name)
+    : RegionArgument(&graph.GetRootRegion(), nullptr, std::move(type)),
+      Name_(std::move(name))
 {}
 
-bool
-impport::operator==(const port & other) const noexcept
+std::string
+GraphImport::debug_string() const
 {
-  auto p = dynamic_cast<const impport *>(&other);
-  return p && p->type() == type() && p->name() == name();
+  return util::strfmt("import[", Name_, "]");
 }
 
-std::unique_ptr<port>
-impport::copy() const
-{
-  return std::unique_ptr<port>(new impport(*this));
-}
-
-/* expport */
-
-expport::~expport()
+GraphExport::GraphExport(rvsdg::output & origin, std::string name)
+    : RegionResult(&origin.region()->graph()->GetRootRegion(), &origin, nullptr, origin.Type()),
+      Name_(std::move(name))
 {}
 
-bool
-expport::operator==(const port & other) const noexcept
+std::string
+GraphExport::debug_string() const
 {
-  auto p = dynamic_cast<const expport *>(&other);
-  return p && p->type() == type() && p->name() == name();
+  return util::strfmt("export[", Name_, "]");
 }
 
-std::unique_ptr<port>
-expport::copy() const
-{
-  return std::unique_ptr<port>(new expport(*this));
-}
-
-/* graph */
-
-graph::~graph()
+Graph::~Graph()
 {
   JLM_ASSERT(!has_active_trackers(this));
-
-  delete root_;
 }
 
-graph::graph()
-    : normalized_(false),
-      root_(new jlm::rvsdg::region(nullptr, this))
+Graph::Graph()
+    : RootRegion_(new Region(nullptr, this))
 {}
 
-std::unique_ptr<jlm::rvsdg::graph>
-graph::copy() const
+std::unique_ptr<Graph>
+Graph::Copy() const
 {
-  jlm::rvsdg::substitution_map smap;
-  std::unique_ptr<jlm::rvsdg::graph> graph(new jlm::rvsdg::graph());
-  root()->copy(graph->root(), smap, true, true);
+  SubstitutionMap substitutionMap;
+  auto graph = std::make_unique<Graph>();
+  GetRootRegion().copy(&graph->GetRootRegion(), substitutionMap, true, true);
   return graph;
 }
 
-jlm::rvsdg::node_normal_form *
-graph::node_normal_form(const std::type_info & type) noexcept
-{
-  auto i = node_normal_forms_.find(std::type_index(type));
-  if (i != node_normal_forms_.end())
-    return i.ptr();
-
-  const auto cinfo = dynamic_cast<const abi::__si_class_type_info *>(&type);
-  auto parent_normal_form = cinfo ? node_normal_form(*cinfo->__base_type) : nullptr;
-
-  std::unique_ptr<jlm::rvsdg::node_normal_form> nf(
-      jlm::rvsdg::node_normal_form::create(type, parent_normal_form, this));
-
-  jlm::rvsdg::node_normal_form * result = nf.get();
-  node_normal_forms_.insert(std::move(nf));
-
-  return result;
-}
-
-std::vector<rvsdg::node *>
-graph::ExtractTailNodes(const graph & rvsdg)
+std::vector<Node *>
+Graph::ExtractTailNodes(const Graph & rvsdg)
 {
   auto IsOnlyExported = [](const rvsdg::output & output)
   {
@@ -104,7 +65,7 @@ graph::ExtractTailNodes(const graph & rvsdg)
         return false;
       }
 
-      if (rvsdg::input::GetNode(*input))
+      if (input::GetNode(*input))
       {
         return false;
       }
@@ -115,12 +76,12 @@ graph::ExtractTailNodes(const graph & rvsdg)
     return std::all_of(output.begin(), output.end(), IsRootRegionExport);
   };
 
-  auto & rootRegion = *rvsdg.root();
+  auto & rootRegion = rvsdg.GetRootRegion();
 
-  std::vector<rvsdg::node *> nodes;
-  for (auto & node : rootRegion.bottom_nodes)
+  std::vector<Node *> nodes;
+  for (auto & bottomNode : rootRegion.BottomNodes())
   {
-    nodes.push_back(&node);
+    nodes.push_back(&bottomNode);
   }
 
   for (size_t n = 0; n < rootRegion.nresults(); n++)
@@ -128,7 +89,7 @@ graph::ExtractTailNodes(const graph & rvsdg)
     auto output = rootRegion.result(n)->origin();
     if (IsOnlyExported(*output))
     {
-      nodes.push_back(rvsdg::node_output::node(output));
+      nodes.push_back(output::GetNode(*output));
     }
   }
 

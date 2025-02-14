@@ -3,14 +3,17 @@ libutil_SOURCES = \
 	jlm/util/common.cpp \
 	jlm/util/GraphWriter.cpp \
 	jlm/util/Statistics.cpp \
+	jlm/util/strfmt.cpp \
 
 libutil_HEADERS = \
+    jlm/util/AnnotationMap.hpp \
     jlm/util/BijectiveMap.hpp \
     jlm/util/callbacks.hpp \
     jlm/util/common.hpp \
     jlm/util/disjointset.hpp \
     jlm/util/file.hpp \
     jlm/util/GraphWriter.hpp \
+    jlm/util/Hash.hpp \
     jlm/util/HashSet.hpp \
     jlm/util/intrusive-hash.hpp \
     jlm/util/intrusive-list.hpp \
@@ -23,6 +26,7 @@ libutil_HEADERS = \
     jlm/util/Worklist.hpp \
 
 libutil_TESTS += \
+	tests/jlm/util/AnnotationMapTests \
 	tests/jlm/util/test-disjointset \
 	tests/jlm/util/test-intrusive-hash \
 	tests/jlm/util/test-intrusive-list \

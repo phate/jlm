@@ -18,24 +18,24 @@ TestWithMatch()
   using namespace jlm::llvm;
 
   auto vt = jlm::tests::valuetype::Create();
-  auto ft = FunctionType::Create({ jlm::rvsdg::bittype::Create(1), vt, vt }, { vt });
+  auto ft = jlm::rvsdg::FunctionType::Create({ jlm::rvsdg::bittype::Create(1), vt, vt }, { vt });
 
   RvsdgModule rm(jlm::util::filepath(""), "", "");
-  auto nf = rm.Rvsdg().node_normal_form(typeid(jlm::rvsdg::operation));
-  nf->set_mutable(false);
 
   /* Setup graph */
 
-  auto lambda = lambda::node::create(rm.Rvsdg().root(), ft, "f", linkage::external_linkage);
+  auto lambda = jlm::rvsdg::LambdaNode::Create(
+      rm.Rvsdg().GetRootRegion(),
+      LlvmLambdaOperation::Create(ft, "f", linkage::external_linkage));
 
-  auto match = jlm::rvsdg::match(1, { { 0, 0 } }, 1, 2, lambda->fctargument(0));
-  auto gamma = jlm::rvsdg::gamma_node::create(match, 2);
-  auto ev1 = gamma->add_entryvar(lambda->fctargument(1));
-  auto ev2 = gamma->add_entryvar(lambda->fctargument(2));
-  auto ex = gamma->add_exitvar({ ev1->argument(0), ev2->argument(1) });
+  auto match = jlm::rvsdg::match(1, { { 0, 0 } }, 1, 2, lambda->GetFunctionArguments()[0]);
+  auto gamma = jlm::rvsdg::GammaNode::create(match, 2);
+  auto ev1 = gamma->AddEntryVar(lambda->GetFunctionArguments()[1]);
+  auto ev2 = gamma->AddEntryVar(lambda->GetFunctionArguments()[2]);
+  auto ex = gamma->AddExitVar({ ev1.branchArgument[0], ev2.branchArgument[1] });
 
-  auto f = lambda->finalize({ ex });
-  rm.Rvsdg().add_export(f, { f->Type(), "" });
+  auto f = lambda->finalize({ ex.output });
+  jlm::llvm::GraphExport::Create(*f, "");
 
   jlm::rvsdg::view(rm.Rvsdg(), stdout);
 
@@ -46,7 +46,7 @@ TestWithMatch()
 
   /* Verify output */
 
-  assert(jlm::rvsdg::region::Contains<jlm::hls::mux_op>(*lambda->subregion(), true));
+  assert(jlm::rvsdg::Region::Contains<jlm::hls::mux_op>(*lambda->subregion(), true));
 }
 
 static void
@@ -55,23 +55,24 @@ TestWithoutMatch()
   using namespace jlm::llvm;
 
   auto vt = jlm::tests::valuetype::Create();
-  auto ft = FunctionType::Create({ jlm::rvsdg::ctltype::Create(2), vt, vt }, { vt });
+  auto ft =
+      jlm::rvsdg::FunctionType::Create({ jlm::rvsdg::ControlType::Create(2), vt, vt }, { vt });
 
   RvsdgModule rm(jlm::util::filepath(""), "", "");
-  auto nf = rm.Rvsdg().node_normal_form(typeid(jlm::rvsdg::operation));
-  nf->set_mutable(false);
 
   /* Setup graph */
 
-  auto lambda = lambda::node::create(rm.Rvsdg().root(), ft, "f", linkage::external_linkage);
+  auto lambda = jlm::rvsdg::LambdaNode::Create(
+      rm.Rvsdg().GetRootRegion(),
+      LlvmLambdaOperation::Create(ft, "f", linkage::external_linkage));
 
-  auto gamma = jlm::rvsdg::gamma_node::create(lambda->fctargument(0), 2);
-  auto ev1 = gamma->add_entryvar(lambda->fctargument(1));
-  auto ev2 = gamma->add_entryvar(lambda->fctargument(2));
-  auto ex = gamma->add_exitvar({ ev1->argument(0), ev2->argument(1) });
+  auto gamma = jlm::rvsdg::GammaNode::create(lambda->GetFunctionArguments()[0], 2);
+  auto ev1 = gamma->AddEntryVar(lambda->GetFunctionArguments()[1]);
+  auto ev2 = gamma->AddEntryVar(lambda->GetFunctionArguments()[2]);
+  auto ex = gamma->AddExitVar({ ev1.branchArgument[0], ev2.branchArgument[1] });
 
-  auto f = lambda->finalize({ ex });
-  rm.Rvsdg().add_export(f, { f->Type(), "" });
+  auto f = lambda->finalize({ ex.output });
+  jlm::llvm::GraphExport::Create(*f, "");
 
   jlm::rvsdg::view(rm.Rvsdg(), stdout);
 
@@ -82,7 +83,7 @@ TestWithoutMatch()
 
   /* Verify output */
 
-  assert(jlm::rvsdg::region::Contains<jlm::hls::mux_op>(*lambda->subregion(), true));
+  assert(jlm::rvsdg::Region::Contains<jlm::hls::mux_op>(*lambda->subregion(), true));
 }
 
 static int

@@ -7,159 +7,90 @@
 #ifndef JLM_RVSDG_GRAPH_HPP
 #define JLM_RVSDG_GRAPH_HPP
 
-#include <stdbool.h>
-#include <stdlib.h>
-
-#include <typeindex>
-
-#include <jlm/rvsdg/node-normal-form.hpp>
 #include <jlm/rvsdg/node.hpp>
 #include <jlm/rvsdg/region.hpp>
-#include <jlm/rvsdg/tracker.hpp>
-
-#include <jlm/util/common.hpp>
 
 namespace jlm::rvsdg
 {
 
-/* impport class */
-
-class impport : public port
+/**
+ * Represents an import into the RVSDG of an external entity.
+ */
+class GraphImport : public RegionArgument
 {
+protected:
+  GraphImport(Graph & graph, std::shared_ptr<const rvsdg::Type> type, std::string name);
+
 public:
-  virtual ~impport();
-
-  impport(std::shared_ptr<const jlm::rvsdg::type> type, const std::string & name)
-      : port(std::move(type)),
-        name_(name)
-  {}
-
-  impport(const impport & other)
-      : port(other),
-        name_(other.name_)
-  {}
-
-  impport(impport && other)
-      : port(other),
-        name_(std::move(other.name_))
-  {}
-
-  impport &
-  operator=(const impport &) = delete;
-
-  impport &
-  operator=(impport &&) = delete;
-
-  const std::string &
-  name() const noexcept
+  [[nodiscard]] const std::string &
+  Name() const noexcept
   {
-    return name_;
+    return Name_;
   }
 
-  virtual bool
-  operator==(const port &) const noexcept override;
-
-  virtual std::unique_ptr<port>
-  copy() const override;
+  [[nodiscard]] std::string
+  debug_string() const override;
 
 private:
-  std::string name_;
+  std::string Name_;
 };
 
-/* expport class */
-
-class expport : public port
+/**
+ * Represents an export from the RVSDG of an internal entity.
+ */
+class GraphExport : public RegionResult
 {
+protected:
+  GraphExport(rvsdg::output & origin, std::string name);
+
 public:
-  virtual ~expport();
-
-  expport(std::shared_ptr<const jlm::rvsdg::type> type, const std::string & name)
-      : port(std::move(type)),
-        name_(name)
-  {}
-
-  expport(const expport & other)
-      : port(other),
-        name_(other.name_)
-  {}
-
-  expport(expport && other)
-      : port(other),
-        name_(std::move(other.name_))
-  {}
-
-  expport &
-  operator=(const expport &) = delete;
-
-  expport &
-  operator=(expport &&) = delete;
-
-  const std::string &
-  name() const noexcept
+  [[nodiscard]] const std::string &
+  Name() const noexcept
   {
-    return name_;
+    return Name_;
   }
 
-  virtual bool
-  operator==(const port &) const noexcept override;
-
-  virtual std::unique_ptr<port>
-  copy() const override;
+  [[nodiscard]] std::string
+  debug_string() const override;
 
 private:
-  std::string name_;
+  std::string Name_;
 };
 
-/* graph */
-
-class graph
+/**
+ * Represents a Regionalized Value State Dependence Graph (RVSDG)
+ */
+class Graph final
 {
 public:
-  ~graph();
+  ~Graph();
 
-  graph();
+  Graph();
 
-  inline jlm::rvsdg::region *
-  root() const noexcept
+  /**
+   * @return The root region of the graph.
+   */
+  [[nodiscard]] Region &
+  GetRootRegion() const noexcept
   {
-    return root_;
+    return *RootRegion_;
   }
 
-  inline void
-  mark_denormalized() noexcept
+  /**
+   * @return A copy of the RVSDG.
+   */
+  [[nodiscard]] std::unique_ptr<Graph>
+  Copy() const;
+
+  /**
+   * Remove all dead nodes in the graph.
+   *
+   * @see Node::IsDead()
+   */
+  void
+  PruneNodes()
   {
-    normalized_ = false;
-  }
-
-  inline void
-  normalize()
-  {
-    root()->normalize(true);
-    normalized_ = true;
-  }
-
-  std::unique_ptr<jlm::rvsdg::graph>
-  copy() const;
-
-  jlm::rvsdg::node_normal_form *
-  node_normal_form(const std::type_info & type) noexcept;
-
-  inline jlm::rvsdg::argument *
-  add_import(const impport & port)
-  {
-    return argument::create(root(), nullptr, port);
-  }
-
-  inline jlm::rvsdg::input *
-  add_export(jlm::rvsdg::output * operand, const expport & port)
-  {
-    return result::create(root(), operand, nullptr, port);
-  }
-
-  inline void
-  prune()
-  {
-    root()->prune(true);
+    GetRootRegion().prune(true);
   }
 
   /**
@@ -171,13 +102,11 @@ public:
    * @param rvsdg The RVSDG from which to extract the tail nodes.
    * @return A vector of tail nodes.
    */
-  static std::vector<rvsdg::node *>
-  ExtractTailNodes(const graph & rvsdg);
+  static std::vector<Node *>
+  ExtractTailNodes(const Graph & rvsdg);
 
 private:
-  bool normalized_;
-  jlm::rvsdg::region * root_;
-  jlm::rvsdg::node_normal_form_hash node_normal_forms_;
+  std::unique_ptr<Region> RootRegion_;
 };
 
 }

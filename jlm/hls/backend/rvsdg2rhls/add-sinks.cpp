@@ -11,7 +11,7 @@ namespace jlm::hls
 {
 
 void
-add_sinks(jlm::rvsdg::region * region)
+add_sinks(rvsdg::Region * region)
 {
   for (size_t i = 0; i < region->narguments(); ++i)
   {
@@ -21,9 +21,9 @@ add_sinks(jlm::rvsdg::region * region)
       hls::sink_op::create(*arg);
     }
   }
-  for (auto & node : jlm::rvsdg::topdown_traverser(region))
+  for (auto & node : rvsdg::TopDownTraverser(region))
   {
-    if (auto structnode = dynamic_cast<jlm::rvsdg::structural_node *>(node))
+    if (auto structnode = dynamic_cast<rvsdg::StructuralNode *>(node))
     {
       for (size_t n = 0; n < structnode->nsubregions(); n++)
       {
@@ -46,7 +46,7 @@ void
 add_sinks(llvm::RvsdgModule & rm)
 {
   auto & graph = rm.Rvsdg();
-  auto root = graph.root();
+  auto root = &graph.GetRootRegion();
   add_sinks(root);
 }
 

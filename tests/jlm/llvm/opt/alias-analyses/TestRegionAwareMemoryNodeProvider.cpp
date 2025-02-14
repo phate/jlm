@@ -62,7 +62,7 @@ TestStore1()
   };
 
   jlm::tests::StoreTest1 test;
-  // jlm::rvsdg::view(test.graph().root(), stdout);
+  // jlm::rvsdg::view(test.graph().GetRootRegion(), stdout);
 
   auto pointsToGraph = RunSteensgaard(test.module());
   // std::cout << jlm::llvm::aa::PointsToGraph::ToDot(*PointsToGraph);
@@ -110,7 +110,7 @@ TestStore2()
   };
 
   jlm::tests::StoreTest2 test;
-  // jlm::rvsdg::view(test.graph().root(), stdout);
+  // jlm::rvsdg::view(test.graph().GetRootRegion(), stdout);
 
   auto pointsToGraph = RunSteensgaard(test.module());
   // std::cout << jlm::llvm::aa::PointsToGraph::ToDot(*PointsToGraph);
@@ -148,7 +148,7 @@ TestLoad1()
   };
 
   jlm::tests::LoadTest1 test;
-  // jlm::rvsdg::view(test.graph().root(), stdout);
+  // jlm::rvsdg::view(test.graph().GetRootRegion(), stdout);
 
   auto pointsToGraph = RunSteensgaard(test.module());
   // std::cout << jlm::llvm::aa::PointsToGraph::ToDot(*pointsToGraph);
@@ -196,7 +196,7 @@ TestLoad2()
   };
 
   jlm::tests::LoadTest2 test;
-  // jlm::rvsdg::view(test.graph().root(), stdout);
+  // jlm::rvsdg::view(test.graph().GetRootRegion(), stdout);
 
   auto pointsToGraph = RunSteensgaard(test.module());
   // std::cout << jlm::llvm::aa::PointsToGraph::ToDot(*pointsToGraph);
@@ -221,7 +221,7 @@ TestLoadFromUndef()
    */
   auto ValidateProvider = [](const jlm::tests::LoadFromUndefTest & test,
                              const jlm::llvm::aa::MemoryNodeProvisioning & provisioning,
-                             const jlm::llvm::aa::PointsToGraph & pointsToGraph)
+                             const jlm::llvm::aa::PointsToGraph &)
   {
     auto numLambdaEntryNodes = provisioning.GetLambdaEntryNodes(test.Lambda()).Size();
     auto numLambdaExitNodes = provisioning.GetLambdaExitNodes(test.Lambda()).Size();
@@ -231,7 +231,7 @@ TestLoadFromUndef()
   };
 
   jlm::tests::LoadFromUndefTest test;
-  // jlm::rvsdg::view(test.graph().root(), stdout);
+  // jlm::rvsdg::view(test.graph().GetRootRegion(), stdout);
 
   auto pointsToGraph = RunSteensgaard(test.module());
   // std::cout << jlm::llvm::aa::PointsToGraph::ToDot(*pointsToGraph);
@@ -313,7 +313,7 @@ TestCall1()
   };
 
   jlm::tests::CallTest1 test;
-  //	jlm::rvsdg::view(test.graph().root(), stdout);
+  //	jlm::rvsdg::view(test.graph().GetRootRegion(), stdout);
 
   auto pointsToGraph = RunSteensgaard(test.module());
   // std::cout << jlm::llvm::aa::PointsToGraph::ToDot(*PointsToGraph);
@@ -401,7 +401,7 @@ TestCall2()
   };
 
   jlm::tests::CallTest2 test;
-  //	jlm::rvsdg::view(test.graph().root(), stdout);
+  //	jlm::rvsdg::view(test.graph().GetRootRegion(), stdout);
 
   auto pointsToGraph = RunSteensgaard(test.module());
   // std::cout << jlm::llvm::aa::PointsToGraph::ToDot(*PointsToGraph);
@@ -494,7 +494,7 @@ TestIndirectCall()
   };
 
   jlm::tests::IndirectCallTest1 test;
-  //	jlm::rvsdg::view(test.graph().root(), stdout);
+  //	jlm::rvsdg::view(test.graph().GetRootRegion(), stdout);
 
   auto pointsToGraph = RunSteensgaard(test.module());
   //	std::cout << jlm::llvm::aa::PointsToGraph::ToDot(*PointsToGraph);
@@ -641,7 +641,7 @@ TestIndirectCall2()
   };
 
   jlm::tests::IndirectCallTest2 test;
-  //	jlm::rvsdg::view(test.graph().root(), stdout);
+  //	jlm::rvsdg::view(test.graph().GetRootRegion(), stdout);
 
   auto pointsToGraph = RunSteensgaard(test.module());
   //	std::cout << jlm::llvm::aa::PointsToGraph::ToDot(*PointsToGraph);
@@ -685,7 +685,7 @@ TestGamma()
   };
 
   jlm::tests::GammaTest test;
-  // jlm::rvsdg::view(test.graph().root(), stdout);
+  // jlm::rvsdg::view(test.graph().GetRootRegion(), stdout);
 
   auto pointsToGraph = RunSteensgaard(test.module());
   // std::cout << jlm::llvm::aa::PointsToGraph::ToDot(*pointsToGraph);
@@ -726,7 +726,7 @@ TestTheta()
   };
 
   jlm::tests::ThetaTest test;
-  //	jlm::rvsdg::view(test.graph().root(), stdout);
+  //	jlm::rvsdg::view(test.graph().GetRootRegion(), stdout);
 
   auto pointsToGraph = RunSteensgaard(test.module());
   //	std::cout << jlm::llvm::aa::PointsToGraph::ToDot(*pointsToGraph);
@@ -785,7 +785,7 @@ TestDelta1()
   };
 
   jlm::tests::DeltaTest1 test;
-  // jlm::rvsdg::view(test.graph().root(), stdout);
+  // jlm::rvsdg::view(test.graph().GetRootRegion(), stdout);
 
   auto pointsToGraph = RunSteensgaard(test.module());
   // std::cout << jlm::llvm::aa::PointsToGraph::ToDot(*pointsToGraph);
@@ -845,7 +845,7 @@ TestDelta2()
   };
 
   jlm::tests::DeltaTest2 test;
-  //	jlm::rvsdg::view(test.graph().root(), stdout);
+  //	jlm::rvsdg::view(test.graph().GetRootRegion(), stdout);
 
   auto pointsToGraph = RunSteensgaard(test.module());
   // std::cout << jlm::llvm::aa::PointsToGraph::ToDot(*pointsToGraph);
@@ -905,7 +905,7 @@ TestImports()
   };
 
   jlm::tests::ImportTest test;
-  //	jlm::rvsdg::view(test.graph().root(), stdout);
+  //	jlm::rvsdg::view(test.graph().GetRootRegion(), stdout);
 
   auto pointsToGraph = RunSteensgaard(test.module());
   // std::cout << jlm::llvm::aa::PointsToGraph::ToDot(*pointsToGraph);
@@ -976,7 +976,7 @@ TestPhi1()
   };
 
   jlm::tests::PhiTest1 test;
-  // jlm::rvsdg::view(test.graph().root(), stdout);
+  // jlm::rvsdg::view(test.graph().GetRootRegion(), stdout);
 
   auto pointsToGraph = RunSteensgaard(test.module());
   // std::cout << jlm::llvm::aa::PointsToGraph::ToDot(*pointsToGraph);
@@ -1146,7 +1146,7 @@ TestPhi2()
   };
 
   jlm::tests::PhiTest2 test;
-  // jlm::rvsdg::view(test.graph().root(), stdout);
+  // jlm::rvsdg::view(test.graph().GetRootRegion(), stdout);
 
   auto pointsToGraph = RunSteensgaard(test.module());
   // std::cout << jlm::llvm::aa::PointsToGraph::ToDot(*pointsToGraph);
@@ -1169,7 +1169,7 @@ TestPhiWithDelta()
   // Assert
   jlm::tests::PhiWithDeltaTest test;
   std::unordered_map<const jlm::rvsdg::output *, std::string> outputMap;
-  std::cout << jlm::rvsdg::view(test.graph().root(), outputMap) << std::flush;
+  std::cout << jlm::rvsdg::view(&test.graph().GetRootRegion(), outputMap) << std::flush;
 
   auto pointsToGraph = RunSteensgaard(test.module());
   std::cout << jlm::llvm::aa::PointsToGraph::ToDot(*pointsToGraph, outputMap) << std::flush;
@@ -1225,7 +1225,7 @@ TestMemcpy()
   };
 
   jlm::tests::MemcpyTest test;
-  //	jlm::rvsdg::view(test.graph().root(), stdout);
+  //	jlm::rvsdg::view(test.graph().GetRootRegion(), stdout);
 
   auto pointsToGraph = RunSteensgaard(test.module());
   // std::cout << jlm::llvm::aa::PointsToGraph::ToDot(*PointsToGraph);
@@ -1275,7 +1275,7 @@ TestEscapedMemory1()
   };
 
   jlm::tests::EscapedMemoryTest1 test;
-  //	jlm::rvsdg::view(test.graph().root(), stdout);
+  //	jlm::rvsdg::view(test.graph().GetRootRegion(), stdout);
 
   auto pointsToGraph = RunSteensgaard(test.module());
   // std::cout << jlm::llvm::aa::PointsToGraph::ToDot(*pointsToGraph);
@@ -1377,7 +1377,7 @@ TestEscapedMemory2()
   };
 
   jlm::tests::EscapedMemoryTest2 test;
-  //	jlm::rvsdg::view(test.graph().root(), stdout);
+  //	jlm::rvsdg::view(test.graph().GetRootRegion(), stdout);
 
   auto pointsToGraph = RunSteensgaard(test.module());
   // std::cout << jlm::llvm::aa::PointsToGraph::ToDot(*pointsToGraph);
@@ -1425,7 +1425,7 @@ TestEscapedMemory3()
   };
 
   jlm::tests::EscapedMemoryTest3 test;
-  //	jlm::rvsdg::view(test.graph().root(), stdout);
+  //	jlm::rvsdg::view(test.graph().GetRootRegion(), stdout);
 
   auto pointsToGraph = RunSteensgaard(test.module());
   // std::cout << jlm::llvm::aa::PointsToGraph::ToDot(*pointsToGraph);
@@ -1465,9 +1465,9 @@ TestStatistics()
   assert(statisticsCollector.NumCollectedStatistics() == 1);
   auto & statistics = *statisticsCollector.CollectedStatistics().begin();
 
-  assert(statistics.GetMeasurementValue<size_t>("#RvsdgNodes") == 3);
-  assert(statistics.GetMeasurementValue<size_t>("#RvsdgRegions") == 2);
-  assert(statistics.GetMeasurementValue<size_t>("#PointsToGraphMemoryNodes") == 2);
+  assert(statistics.GetMeasurementValue<uint64_t>("#RvsdgNodes") == 3);
+  assert(statistics.GetMeasurementValue<uint64_t>("#RvsdgRegions") == 2);
+  assert(statistics.GetMeasurementValue<uint64_t>("#PointsToGraphMemoryNodes") == 2);
 
   assert(statistics.HasTimer("AnnotationTime"));
   assert(statistics.HasTimer("PropagationPass1Time"));

@@ -4,29 +4,34 @@
 libllvm_SOURCES = \
     jlm/llvm/backend/jlm2llvm/instruction.cpp \
     jlm/llvm/backend/jlm2llvm/jlm2llvm.cpp \
-    jlm/llvm/backend/jlm2llvm/type.cpp \
+    jlm/llvm/backend/dot/DotWriter.cpp \
     jlm/llvm/backend/rvsdg2jlm/rvsdg2jlm.cpp \
     \
     jlm/llvm/frontend/ControlFlowRestructuring.cpp \
     jlm/llvm/frontend/InterProceduralGraphConversion.cpp \
     jlm/llvm/frontend/LlvmInstructionConversion.cpp \
     jlm/llvm/frontend/LlvmModuleConversion.cpp \
-    jlm/llvm/frontend/LlvmTypeConversion.cpp \
     \
     jlm/llvm/ir/aggregation.cpp \
     jlm/llvm/ir/Annotation.cpp \
     jlm/llvm/ir/attribute.cpp \
     jlm/llvm/ir/basic-block.cpp \
+    jlm/llvm/ir/CallSummary.cpp \
     jlm/llvm/ir/cfg.cpp \
     jlm/llvm/ir/cfg-structure.cpp \
     jlm/llvm/ir/cfg-node.cpp \
     jlm/llvm/ir/domtree.cpp \
     jlm/llvm/ir/ipgraph.cpp \
     jlm/llvm/ir/ipgraph-module.cpp \
+    jlm/llvm/ir/LambdaMemoryState.cpp \
+    jlm/llvm/ir/TypeConverter.cpp \
     jlm/llvm/ir/operators/alloca.cpp \
     jlm/llvm/ir/operators/call.cpp \
     jlm/llvm/ir/operators/delta.cpp \
+    jlm/llvm/ir/operators/FunctionPointer.cpp \
     jlm/llvm/ir/operators/GetElementPtr.cpp \
+    jlm/llvm/ir/operators/IntegerOperations.cpp \
+    jlm/llvm/ir/operators/IOBarrier.cpp \
     jlm/llvm/ir/operators/lambda.cpp \
     jlm/llvm/ir/operators/Load.cpp \
     jlm/llvm/ir/operators/MemCpy.cpp \
@@ -56,11 +61,10 @@ libllvm_SOURCES = \
     jlm/llvm/opt/inlining.cpp \
     jlm/llvm/opt/InvariantValueRedirection.cpp \
     jlm/llvm/opt/inversion.cpp \
-    jlm/llvm/opt/optimization.cpp \
-    jlm/llvm/opt/OptimizationSequence.cpp \
     jlm/llvm/opt/pull.cpp \
     jlm/llvm/opt/push.cpp \
     jlm/llvm/opt/reduction.cpp \
+    jlm/llvm/opt/RvsdgTreePrinter.cpp \
     jlm/llvm/opt/unroll.cpp \
 
 libllvm_HEADERS = \
@@ -69,22 +73,29 @@ libllvm_HEADERS = \
 	jlm/llvm/opt/inlining.hpp \
 	jlm/llvm/opt/cne.hpp \
 	jlm/llvm/opt/push.hpp \
+	jlm/llvm/opt/alias-analyses/Andersen.hpp \
+	jlm/llvm/opt/alias-analyses/DifferencePropagation.hpp \
+	jlm/llvm/opt/alias-analyses/EliminatedMemoryNodeProvider.hpp \
+	jlm/llvm/opt/alias-analyses/LazyCycleDetection.hpp \
 	jlm/llvm/opt/alias-analyses/MemoryNodeProvider.hpp \
 	jlm/llvm/opt/alias-analyses/OnlineCycleDetection.hpp \
 	jlm/llvm/opt/alias-analyses/Optimization.hpp \
+	jlm/llvm/opt/alias-analyses/MemoryNodeEliminator.hpp \
+	jlm/llvm/opt/alias-analyses/MemoryNodeProvisioning.hpp \
 	jlm/llvm/opt/alias-analyses/MemoryStateEncoder.hpp \
 	jlm/llvm/opt/alias-analyses/Steensgaard.hpp \
+	jlm/llvm/opt/alias-analyses/TopDownMemoryNodeEliminator.hpp \
+	jlm/llvm/opt/alias-analyses/PointerObjectSet.hpp \
 	jlm/llvm/opt/alias-analyses/AgnosticMemoryNodeProvider.hpp \
 	jlm/llvm/opt/alias-analyses/RegionAwareMemoryNodeProvider.hpp \
 	jlm/llvm/opt/alias-analyses/PointsToGraph.hpp \
 	jlm/llvm/opt/alias-analyses/AliasAnalysis.hpp \
 	jlm/llvm/opt/pull.hpp \
-	jlm/llvm/opt/optimization.hpp \
 	jlm/llvm/opt/reduction.hpp \
 	jlm/llvm/opt/InvariantValueRedirection.hpp \
 	jlm/llvm/opt/inversion.hpp \
+	jlm/llvm/opt/RvsdgTreePrinter.hpp \
 	jlm/llvm/frontend/LlvmModuleConversion.hpp \
-	jlm/llvm/frontend/LlvmTypeConversion.hpp \
 	jlm/llvm/frontend/ControlFlowRestructuring.hpp \
 	jlm/llvm/frontend/LlvmConversionContext.hpp \
 	jlm/llvm/frontend/LlvmInstructionConversion.hpp \
@@ -95,12 +106,15 @@ libllvm_HEADERS = \
 	jlm/llvm/ir/linkage.hpp \
 	jlm/llvm/ir/Annotation.hpp \
 	jlm/llvm/ir/attribute.hpp \
+	jlm/llvm/ir/CallSummary.hpp \
+	jlm/llvm/ir/LambdaMemoryState.hpp \
 	jlm/llvm/ir/tac.hpp \
 	jlm/llvm/ir/domtree.hpp \
 	jlm/llvm/ir/cfg-node.hpp \
 	jlm/llvm/ir/ipgraph.hpp \
 	jlm/llvm/ir/cfg.hpp \
 	jlm/llvm/ir/ssa.hpp \
+	jlm/llvm/ir/TypeConverter.hpp \
 	jlm/llvm/ir/variable.hpp \
 	jlm/llvm/ir/basic-block.hpp \
 	jlm/llvm/ir/print.hpp \
@@ -111,9 +125,10 @@ libllvm_HEADERS = \
 	jlm/llvm/ir/operators/Load.hpp \
 	jlm/llvm/ir/operators/MemCpy.hpp \
 	jlm/llvm/ir/operators/MemoryStateOperations.hpp \
-	jlm/llvm/ir/operators/gamma.hpp \
+	jlm/llvm/ir/operators/FunctionPointer.hpp \
 	jlm/llvm/ir/operators/GetElementPtr.hpp \
-	jlm/llvm/ir/operators/theta.hpp \
+	jlm/llvm/ir/operators/IntegerOperations.hpp \
+	jlm/llvm/ir/operators/IOBarrier.hpp \
 	jlm/llvm/ir/operators/delta.hpp \
 	jlm/llvm/ir/operators/Store.hpp \
 	jlm/llvm/ir/operators/alloca.hpp \
@@ -121,79 +136,86 @@ libllvm_HEADERS = \
 	jlm/llvm/ir/operators/sext.hpp \
 	jlm/llvm/ir/operators/lambda.hpp \
 	jlm/llvm/ir/aggregation.hpp \
+	jlm/llvm/backend/dot/DotWriter.hpp \
 	jlm/llvm/backend/rvsdg2jlm/rvsdg2jlm.hpp \
 	jlm/llvm/backend/rvsdg2jlm/context.hpp \
 	jlm/llvm/backend/jlm2llvm/jlm2llvm.hpp \
-	jlm/llvm/backend/jlm2llvm/type.hpp \
 	jlm/llvm/backend/jlm2llvm/instruction.hpp \
 	jlm/llvm/backend/jlm2llvm/context.hpp \
 
 libllvm_TESTS += \
-	tests/jlm/llvm/backend/llvm/r2j/test-empty-gamma \
-	tests/jlm/llvm/backend/llvm/r2j/test-partial-gamma \
-	tests/jlm/llvm/backend/llvm/r2j/test-recursive-data \
-	tests/jlm/llvm/backend/llvm/jlm-llvm/LoadTests \
-	tests/jlm/llvm/backend/llvm/jlm-llvm/MemCpyTests \
-	tests/jlm/llvm/backend/llvm/jlm-llvm/StoreTests \
-	tests/jlm/llvm/backend/llvm/jlm-llvm/TestAttributeConversion \
-	tests/jlm/llvm/backend/llvm/jlm-llvm/test-bitconstant \
-	tests/jlm/llvm/backend/llvm/jlm-llvm/test-function-calls \
-	tests/jlm/llvm/backend/llvm/jlm-llvm/test-select-with-state \
-	tests/jlm/llvm/backend/llvm/jlm-llvm/test-type-conversion \
-	tests/jlm/llvm/frontend/llvm/LoadTests \
-	tests/jlm/llvm/frontend/llvm/MemCpyTests \
-	tests/jlm/llvm/frontend/llvm/StoreTests \
-	tests/jlm/llvm/frontend/llvm/TestAttributeConversion \
-	tests/jlm/llvm/frontend/llvm/test-endless-loop \
-	tests/jlm/llvm/frontend/llvm/test-export \
-	tests/jlm/llvm/frontend/llvm/TestFNeg \
-	tests/jlm/llvm/frontend/llvm/test-function-call \
-	tests/jlm/llvm/frontend/llvm/test-recursive-data \
-	tests/jlm/llvm/frontend/llvm/test-restructuring \
-	tests/jlm/llvm/frontend/llvm/test-select \
-	tests/jlm/llvm/frontend/llvm/ThreeAddressCodeConversionTests \
-	tests/jlm/llvm/ir/operators/LoadTests \
-	tests/jlm/llvm/ir/operators/MemCpyTests \
-	tests/jlm/llvm/ir/operators/MemoryStateOperationTests \
-	tests/jlm/llvm/ir/operators/TestCall \
-	tests/jlm/llvm/ir/operators/test-ConstantFP \
-	tests/jlm/llvm/ir/operators/test-delta \
-	tests/jlm/llvm/ir/operators/TestFree \
-	tests/jlm/llvm/ir/operators/TestGetElementPtr \
-	tests/jlm/llvm/ir/operators/TestLambda \
-	tests/jlm/llvm/ir/operators/TestPhi \
-	tests/jlm/llvm/ir/operators/test-sext \
-	tests/jlm/llvm/ir/operators/StoreTests \
-	tests/jlm/llvm/ir/test-aggregation \
-	tests/jlm/llvm/ir/test-cfg \
-	tests/jlm/llvm/ir/test-cfg-node \
-	tests/jlm/llvm/ir/test-cfg-orderings \
-	tests/jlm/llvm/ir/test-cfg-prune \
-	tests/jlm/llvm/ir/test-cfg-purge \
-	tests/jlm/llvm/ir/test-cfg-structure \
-	tests/jlm/llvm/ir/test-cfg-validity \
-	tests/jlm/llvm/ir/test-domtree \
-	tests/jlm/llvm/ir/test-ssa-destruction \
-	tests/jlm/llvm/ir/TestTypes \
-	tests/jlm/llvm/ir/TestAnnotation \
-	tests/jlm/llvm/opt/alias-analyses/TestAgnosticMemoryNodeProvider \
-	tests/jlm/llvm/opt/alias-analyses/TestAndersen \
-	tests/jlm/llvm/opt/alias-analyses/TestMemoryStateEncoder \
-	tests/jlm/llvm/opt/alias-analyses/TestPointerObjectSet \
-	tests/jlm/llvm/opt/alias-analyses/TestPointsToGraph \
-	tests/jlm/llvm/opt/alias-analyses/TestRegionAwareMemoryNodeProvider \
-	tests/jlm/llvm/opt/alias-analyses/TestSteensgaard \
-	tests/jlm/llvm/opt/alias-analyses/TestTopDownMemoryNodeEliminator \
-	tests/jlm/llvm/opt/InvariantValueRedirectionTests \
-	tests/jlm/llvm/opt/test-cne \
-	tests/jlm/llvm/opt/TestDeadNodeElimination \
-	tests/jlm/llvm/opt/test-inlining \
-	tests/jlm/llvm/opt/test-inversion \
-	tests/jlm/llvm/opt/TestLoadMuxReduction \
-	tests/jlm/llvm/opt/TestLoadStoreReduction \
-	tests/jlm/llvm/opt/test-pull \
-	tests/jlm/llvm/opt/test-push \
-	tests/jlm/llvm/opt/test-unroll \
+    tests/jlm/llvm/backend/dot/DotWriterTests \
+    tests/jlm/llvm/backend/llvm/r2j/GammaTests \
+    tests/jlm/llvm/backend/llvm/r2j/test-recursive-data \
+    tests/jlm/llvm/backend/llvm/jlm-llvm/LoadTests \
+    tests/jlm/llvm/backend/llvm/jlm-llvm/MemCpyTests \
+    tests/jlm/llvm/backend/llvm/jlm-llvm/StoreTests \
+    tests/jlm/llvm/backend/llvm/jlm-llvm/TestAttributeConversion \
+    tests/jlm/llvm/backend/llvm/jlm-llvm/test-bitconstant \
+    tests/jlm/llvm/backend/llvm/jlm-llvm/test-function-calls \
+    tests/jlm/llvm/backend/llvm/jlm-llvm/test-ignore-memory-state \
+    tests/jlm/llvm/backend/llvm/jlm-llvm/test-select-with-state \
+    tests/jlm/llvm/frontend/llvm/LoadTests \
+    tests/jlm/llvm/frontend/llvm/MemCpyTests \
+    tests/jlm/llvm/frontend/llvm/StoreTests \
+    tests/jlm/llvm/frontend/llvm/TestAttributeConversion \
+    tests/jlm/llvm/frontend/llvm/test-endless-loop \
+    tests/jlm/llvm/frontend/llvm/test-export \
+    tests/jlm/llvm/frontend/llvm/TestFNeg \
+    tests/jlm/llvm/frontend/llvm/test-function-call \
+    tests/jlm/llvm/frontend/llvm/LlvmPhiConversionTests \
+    tests/jlm/llvm/frontend/llvm/test-recursive-data \
+    tests/jlm/llvm/frontend/llvm/test-restructuring \
+    tests/jlm/llvm/frontend/llvm/test-select \
+    tests/jlm/llvm/frontend/llvm/ThreeAddressCodeConversionTests \
+    tests/jlm/llvm/ir/operators/LoadTests \
+    tests/jlm/llvm/ir/operators/MemCpyTests \
+    tests/jlm/llvm/ir/operators/MemoryStateOperationTests \
+    tests/jlm/llvm/ir/operators/TestCall \
+    tests/jlm/llvm/ir/operators/test-ConstantFP \
+    tests/jlm/llvm/ir/operators/test-delta \
+    tests/jlm/llvm/ir/operators/TestFree \
+    tests/jlm/llvm/ir/operators/TestGetElementPtr \
+    tests/jlm/llvm/ir/operators/TestLambda \
+    tests/jlm/llvm/ir/operators/TestPhi \
+    tests/jlm/llvm/ir/operators/test-sext \
+    tests/jlm/llvm/ir/operators/StoreTests \
+    tests/jlm/llvm/ir/AttributeSetTests \
+    tests/jlm/llvm/ir/test-aggregation \
+    tests/jlm/llvm/ir/test-cfg \
+    tests/jlm/llvm/ir/test-cfg-node \
+    tests/jlm/llvm/ir/test-cfg-orderings \
+    tests/jlm/llvm/ir/test-cfg-prune \
+    tests/jlm/llvm/ir/test-cfg-purge \
+    tests/jlm/llvm/ir/test-cfg-structure \
+    tests/jlm/llvm/ir/test-cfg-validity \
+    tests/jlm/llvm/ir/test-domtree \
+    tests/jlm/llvm/ir/test-ssa-destruction \
+    tests/jlm/llvm/ir/TestTypes \
+    tests/jlm/llvm/ir/TestAnnotation \
+    tests/jlm/llvm/ir/TestCallSummary \
+    tests/jlm/llvm/ir/ThreeAddressCodeTests \
+    tests/jlm/llvm/ir/TypeConverterTests \
+    tests/jlm/llvm/opt/alias-analyses/TestAgnosticMemoryNodeProvider \
+    tests/jlm/llvm/opt/alias-analyses/TestAndersen \
+    tests/jlm/llvm/opt/alias-analyses/TestDifferencePropagation \
+    tests/jlm/llvm/opt/alias-analyses/TestLazyCycleDetection \
+    tests/jlm/llvm/opt/alias-analyses/TestMemoryStateEncoder \
+    tests/jlm/llvm/opt/alias-analyses/TestPointerObjectSet \
+    tests/jlm/llvm/opt/alias-analyses/TestPointsToGraph \
+    tests/jlm/llvm/opt/alias-analyses/TestRegionAwareMemoryNodeProvider \
+    tests/jlm/llvm/opt/alias-analyses/TestSteensgaard \
+    tests/jlm/llvm/opt/alias-analyses/TestTopDownMemoryNodeEliminator \
+    tests/jlm/llvm/opt/InvariantValueRedirectionTests \
+    tests/jlm/llvm/opt/NodeReductionTests \
+    tests/jlm/llvm/opt/RvsdgTreePrinterTests \
+    tests/jlm/llvm/opt/test-cne \
+    tests/jlm/llvm/opt/TestDeadNodeElimination \
+    tests/jlm/llvm/opt/test-inlining \
+    tests/jlm/llvm/opt/test-inversion \
+    tests/jlm/llvm/opt/test-pull \
+    tests/jlm/llvm/opt/test-push \
+    tests/jlm/llvm/opt/test-unroll \
 
 libllvm_TEST_LIBS = \
 	libjlmtest \

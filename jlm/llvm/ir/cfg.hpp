@@ -30,19 +30,19 @@ public:
 
   argument(
       const std::string & name,
-      std::shared_ptr<const jlm::rvsdg::type> type,
+      std::shared_ptr<const jlm::rvsdg::Type> type,
       const attributeset & attributes)
       : variable(std::move(type), name),
         attributes_(attributes)
   {}
 
-  argument(const std::string & name, std::shared_ptr<const jlm::rvsdg::type> type)
+  argument(const std::string & name, std::shared_ptr<const jlm::rvsdg::Type> type)
       : variable(std::move(type), name)
   {}
 
   argument(
       const std::string & name,
-      std::unique_ptr<jlm::rvsdg::type> type,
+      std::unique_ptr<jlm::rvsdg::Type> type,
       const attributeset & attributes)
       : variable(std::move(type), name),
         attributes_(attributes)
@@ -54,29 +54,17 @@ public:
     return attributes_;
   }
 
-  void
-  add(const llvm::attribute & attribute)
-  {
-    attributes_.insert(attribute);
-  }
-
-  void
-  add(std::unique_ptr<llvm::attribute> attribute)
-  {
-    attributes_.insert(std::move(attribute));
-  }
-
   static std::unique_ptr<argument>
   create(
       const std::string & name,
-      std::shared_ptr<const jlm::rvsdg::type> type,
+      std::shared_ptr<const jlm::rvsdg::Type> type,
       const attributeset & attributes)
   {
     return std::make_unique<argument>(name, std::move(type), attributes);
   }
 
   static std::unique_ptr<argument>
-  create(const std::string & name, std::shared_ptr<const jlm::rvsdg::type> type)
+  create(const std::string & name, std::shared_ptr<const jlm::rvsdg::Type> type)
   {
     return create(name, std::move(type), {});
   }
@@ -368,18 +356,18 @@ public:
     return module_;
   }
 
-  FunctionType
+  rvsdg::FunctionType
   fcttype() const
   {
-    std::vector<std::shared_ptr<const jlm::rvsdg::type>> arguments;
+    std::vector<std::shared_ptr<const jlm::rvsdg::Type>> arguments;
     for (size_t n = 0; n < entry()->narguments(); n++)
       arguments.push_back(entry()->argument(n)->Type());
 
-    std::vector<std::shared_ptr<const jlm::rvsdg::type>> results;
+    std::vector<std::shared_ptr<const jlm::rvsdg::Type>> results;
     for (size_t n = 0; n < exit()->nresults(); n++)
       results.push_back(exit()->result(n)->Type());
 
-    return FunctionType(arguments, results);
+    return rvsdg::FunctionType(arguments, results);
   }
 
   static std::unique_ptr<cfg>
@@ -388,7 +376,27 @@ public:
     return std::unique_ptr<cfg>(new cfg(im));
   }
 
+  static std::string
+  ToAscii(const cfg & controlFlowGraph);
+
 private:
+  static std::string
+  ToAscii(const entry_node & entryNode);
+
+  static std::string
+  ToAscii(const exit_node & exitNode);
+
+  static std::string
+  ToAscii(
+      const basic_block & basicBlock,
+      const std::unordered_map<cfg_node *, std::string> & labels);
+
+  static std::string
+  CreateTargets(const cfg_node & node, const std::unordered_map<cfg_node *, std::string> & labels);
+
+  static std::unordered_map<cfg_node *, std::string>
+  CreateLabels(const std::vector<cfg_node *> & nodes);
+
   ipgraph_module & module_;
   std::unique_ptr<exit_node> exit_;
   std::unique_ptr<entry_node> entry_;

@@ -113,6 +113,9 @@ endif
 echo-depends:
 	echo $(DEPEND)
 
+check-headers: depend
+	@scripts/check_headers.sh $(DEPEND) -h $(HEADERS) -s $(SOURCES)
+
 ################################################################################
 # Unit testing rules
 
@@ -176,11 +179,13 @@ docs: .PHONY
 # Clang format rules
 
 format:
-	@for FILE in $(SOURCES) $(HEADERS) ; do \
-		clang-format-$(LLVM_VERSION) --Werror --style="file:.clang-format" --verbose -i $$FILE ;\
-	done
+	clang-format-$(LLVM_VERSION) --Werror --style="file:.clang-format" --verbose -i $(SOURCES) $(HEADERS)
 
 format-dry-run:
-	@for FILE in $(SOURCES) $(HEADERS) ; do \
-		clang-format-$(LLVM_VERSION) --dry-run --Werror --style="file:.clang-format" --verbose -i $$FILE ;\
-	done
+	clang-format-$(LLVM_VERSION) --dry-run --Werror --style="file:.clang-format" --verbose -i $(SOURCES) $(HEADERS)
+
+#################################################################################
+# Clang tidy rules
+
+tidy: $(COMMANDPATHSFILE)
+	clang-tidy-$(LLVM_VERSION) --config-file=.clang-tidy $(HEADERS) $(SOURCES) -- $(CXXFLAGS) $(CPPFLAGS) -I$(BUILD_OUT_PREFIX)

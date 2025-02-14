@@ -15,7 +15,7 @@ namespace jlm::rvsdg
 
 /* bitstring type */
 
-class bittype final : public jlm::rvsdg::valuetype
+class bittype final : public jlm::rvsdg::ValueType
 {
 public:
   virtual ~bittype() noexcept;
@@ -34,7 +34,10 @@ public:
   debug_string() const override;
 
   virtual bool
-  operator==(const jlm::rvsdg::type & other) const noexcept override;
+  operator==(const jlm::rvsdg::Type & other) const noexcept override;
+
+  [[nodiscard]] std::size_t
+  ComputeHash() const noexcept override;
 
   /**
    * \brief Creates bit type of specified width

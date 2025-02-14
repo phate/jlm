@@ -22,7 +22,7 @@ contains(const jlm::llvm::ipgraph_module & module, const std::string & fctname)
   using namespace jlm::llvm;
 
   bool has_select = false;
-  auto cfg = dynamic_cast<const function_node *>(module.ipgraph().find("f"))->cfg();
+  auto cfg = dynamic_cast<const function_node *>(module.ipgraph().find(fctname))->cfg();
   auto bb = dynamic_cast<const basic_block *>(cfg->entry()->outedge(0)->sink());
   for (auto tac : *bb)
     has_select = has_select || is<OP>(tac);

@@ -4,143 +4,228 @@
  */
 
 #include <jlm/llvm/ir/operators.hpp>
-#include <jlm/llvm/ir/RvsdgModule.hpp>
 #include <jlm/llvm/opt/reduction.hpp>
-#include <jlm/rvsdg/statemux.hpp>
+#include <jlm/rvsdg/gamma.hpp>
+#include <jlm/rvsdg/NodeNormalization.hpp>
+#include <jlm/rvsdg/traverser.hpp>
 #include <jlm/util/Statistics.hpp>
-#include <jlm/util/time.hpp>
 
 namespace jlm::llvm
 {
 
-class redstat final : public util::Statistics
+void
+NodeReduction::Statistics::Start(const rvsdg::Graph & graph) noexcept
 {
-public:
-  ~redstat() override = default;
-
-  explicit redstat(const util::filepath & sourceFile)
-      : Statistics(Statistics::Id::ReduceNodes, sourceFile)
-  {}
-
-  void
-  start(const jlm::rvsdg::graph & graph) noexcept
-  {
-    AddMeasurement(Label::NumRvsdgNodesBefore, rvsdg::nnodes(graph.root()));
-    AddMeasurement(Label::NumRvsdgInputsBefore, rvsdg::ninputs(graph.root()));
-    AddTimer(Label::Timer).start();
-  }
-
-  void
-  end(const jlm::rvsdg::graph & graph) noexcept
-  {
-    AddMeasurement(Label::NumRvsdgNodesAfter, rvsdg::nnodes(graph.root()));
-    AddMeasurement(Label::NumRvsdgInputsAfter, rvsdg::ninputs(graph.root()));
-    GetTimer(Label::Timer).stop();
-  }
-
-  static std::unique_ptr<redstat>
-  Create(const util::filepath & sourceFile)
-  {
-    return std::make_unique<redstat>(sourceFile);
-  }
-};
-
-static void
-enable_mux_reductions(jlm::rvsdg::graph & graph)
-{
-  auto nf = graph.node_normal_form(typeid(jlm::rvsdg::mux_op));
-  auto mnf = static_cast<jlm::rvsdg::mux_normal_form *>(nf);
-  mnf->set_mutable(true);
-  mnf->set_mux_mux_reducible(true);
-  mnf->set_multiple_origin_reducible(true);
+  AddMeasurement(Label::NumRvsdgNodesBefore, rvsdg::nnodes(&graph.GetRootRegion()));
+  AddMeasurement(Label::NumRvsdgInputsBefore, rvsdg::ninputs(&graph.GetRootRegion()));
+  AddTimer(Label::Timer).start();
 }
-
-static void
-enable_store_reductions(jlm::rvsdg::graph & graph)
-{
-  auto nf = StoreNonVolatileOperation::GetNormalForm(&graph);
-  nf->set_mutable(true);
-  nf->set_store_mux_reducible(true);
-  nf->set_store_store_reducible(true);
-  nf->set_store_alloca_reducible(true);
-  nf->set_multiple_origin_reducible(true);
-}
-
-static void
-enable_load_reductions(jlm::rvsdg::graph & graph)
-{
-  auto nf = LoadNonVolatileOperation::GetNormalForm(&graph);
-  nf->set_mutable(true);
-  nf->set_load_mux_reducible(true);
-  nf->set_load_store_reducible(true);
-  nf->set_load_alloca_reducible(true);
-  nf->set_multiple_origin_reducible(true);
-  nf->set_load_store_state_reducible(true);
-  nf->set_load_load_state_reducible(true);
-}
-
-static void
-enable_gamma_reductions(jlm::rvsdg::graph & graph)
-{
-  auto nf = jlm::rvsdg::gamma_op::normal_form(&graph);
-  nf->set_mutable(true);
-  nf->set_predicate_reduction(true);
-  // set_control_constante_reduction cause a PHI node input type error
-  // github issue #303
-  nf->set_control_constant_reduction(false);
-}
-
-static void
-enable_unary_reductions(jlm::rvsdg::graph & graph)
-{
-  auto nf = jlm::rvsdg::unary_op::normal_form(&graph);
-  // set_mutable generates incorrect output for a number of
-  // llvm suite tests when used in combination with other
-  // optimizations than the set_reducible
-  nf->set_mutable(false);
-  // set_reducible generates incorrect output for 18 llvm suite tests
-  // github issue #304
-  nf->set_reducible(false);
-}
-
-static void
-enable_binary_reductions(jlm::rvsdg::graph & graph)
-{
-  auto nf = jlm::rvsdg::binary_op::normal_form(&graph);
-  nf->set_mutable(true);
-  nf->set_reducible(true);
-}
-
-static void
-reduce(RvsdgModule & rm, util::StatisticsCollector & statisticsCollector)
-{
-  auto & graph = rm.Rvsdg();
-  auto statistics = redstat::Create(rm.SourceFileName());
-
-  statistics->start(graph);
-
-  enable_mux_reductions(graph);
-  enable_store_reductions(graph);
-  enable_load_reductions(graph);
-  enable_gamma_reductions(graph);
-  enable_unary_reductions(graph);
-  enable_binary_reductions(graph);
-
-  graph.normalize();
-  statistics->end(graph);
-
-  statisticsCollector.CollectDemandedStatistics(std::move(statistics));
-}
-
-/* nodereduction class */
-
-nodereduction::~nodereduction()
-{}
 
 void
-nodereduction::run(RvsdgModule & module, util::StatisticsCollector & statisticsCollector)
+NodeReduction::Statistics::End(const rvsdg::Graph & graph) noexcept
 {
-  reduce(module, statisticsCollector);
+  AddMeasurement(Label::NumRvsdgNodesAfter, rvsdg::nnodes(&graph.GetRootRegion()));
+  AddMeasurement(Label::NumRvsdgInputsAfter, rvsdg::ninputs(&graph.GetRootRegion()));
+  GetTimer(Label::Timer).stop();
+}
+
+bool
+NodeReduction::Statistics::AddIteration(const rvsdg::Region & region, size_t numIterations)
+{
+  const auto it = NumIterations_.find(&region);
+  NumIterations_[&region] = numIterations;
+  return it != NumIterations_.end();
+}
+
+std::optional<size_t>
+NodeReduction::Statistics::GetNumIterations(const rvsdg::Region & region) const noexcept
+{
+  if (const auto it = NumIterations_.find(&region); it != NumIterations_.end())
+  {
+    return it->second;
+  }
+
+  return std::nullopt;
+}
+
+NodeReduction::~NodeReduction() noexcept = default;
+
+NodeReduction::NodeReduction() = default;
+
+void
+NodeReduction::Run(
+    rvsdg::RvsdgModule & rvsdgModule,
+    util::StatisticsCollector & statisticsCollector)
+{
+  const auto & graph = rvsdgModule.Rvsdg();
+
+  Statistics_ = Statistics::Create(rvsdgModule.SourceFilePath().value());
+  Statistics_->Start(graph);
+
+  ReduceNodesInRegion(graph.GetRootRegion());
+
+  Statistics_->End(graph);
+  statisticsCollector.CollectDemandedStatistics(std::move(Statistics_));
+}
+
+void
+NodeReduction::ReduceNodesInRegion(rvsdg::Region & region)
+{
+  bool reductionPerformed;
+  size_t numIterations = 0;
+  do
+  {
+    numIterations++;
+    reductionPerformed = false;
+
+    for (const auto node : rvsdg::TopDownTraverser(&region))
+    {
+      if (const auto structuralNode = dynamic_cast<rvsdg::StructuralNode *>(node))
+      {
+        reductionPerformed |= ReduceStructuralNode(*structuralNode);
+      }
+      else if (rvsdg::is<rvsdg::SimpleOperation>(node))
+      {
+        reductionPerformed |= ReduceSimpleNode(*node);
+      }
+      else
+      {
+        JLM_UNREACHABLE("Unhandled node type.");
+      }
+    }
+
+    if (reductionPerformed)
+    {
+      // Let's remove all dead nodes in this region to avoid reductions on
+      // dead nodes in the next iteration.
+      region.prune(false);
+    }
+  } while (reductionPerformed);
+
+  Statistics_->AddIteration(region, numIterations);
+}
+
+bool
+NodeReduction::ReduceStructuralNode(rvsdg::StructuralNode & structuralNode)
+{
+  bool reductionPerformed = false;
+
+  // Reduce structural nodes
+  if (is<rvsdg::GammaOperation>(&structuralNode))
+  {
+    reductionPerformed |= ReduceGammaNode(structuralNode);
+  }
+
+  if (reductionPerformed)
+  {
+    // We can not go through the subregions as the structural node might already have been removed.
+    return true;
+  }
+
+  // Reduce all nodes in the subregions
+  for (size_t n = 0; n < structuralNode.nsubregions(); n++)
+  {
+    const auto subregion = structuralNode.subregion(n);
+    ReduceNodesInRegion(*subregion);
+  }
+
+  return false;
+}
+
+bool
+NodeReduction::ReduceGammaNode(rvsdg::StructuralNode & gammaNode)
+{
+  JLM_ASSERT(is<rvsdg::GammaOperation>(&gammaNode));
+
+  // FIXME: We can not apply the reduction below due to a bug. See github issue #303
+  // rvsdg::ReduceGammaControlConstant
+
+  return ReduceGammaWithStaticallyKnownPredicate(gammaNode);
+}
+
+bool
+NodeReduction::ReduceSimpleNode(rvsdg::Node & simpleNode)
+{
+  if (is<LoadNonVolatileOperation>(&simpleNode))
+  {
+    return ReduceLoadNode(simpleNode);
+  }
+  if (is<StoreNonVolatileOperation>(&simpleNode))
+  {
+    return ReduceStoreNode(simpleNode);
+  }
+  if (is<rvsdg::UnaryOperation>(&simpleNode))
+  {
+    // FIXME: handle the unary node
+    // See github issue #304
+    return false;
+  }
+  if (is<rvsdg::BinaryOperation>(&simpleNode))
+  {
+    return ReduceBinaryNode(simpleNode);
+  }
+
+  return false;
+}
+
+bool
+NodeReduction::ReduceLoadNode(rvsdg::Node & simpleNode)
+{
+  JLM_ASSERT(is<LoadNonVolatileOperation>(&simpleNode));
+
+  return rvsdg::ReduceNode<LoadNonVolatileOperation>(NormalizeLoadNode, simpleNode);
+}
+
+bool
+NodeReduction::ReduceStoreNode(rvsdg::Node & simpleNode)
+{
+  JLM_ASSERT(is<StoreNonVolatileOperation>(&simpleNode));
+
+  return rvsdg::ReduceNode<StoreNonVolatileOperation>(NormalizeStoreNode, simpleNode);
+}
+
+bool
+NodeReduction::ReduceBinaryNode(rvsdg::Node & simpleNode)
+{
+  JLM_ASSERT(is<rvsdg::BinaryOperation>(&simpleNode));
+
+  return rvsdg::ReduceNode<rvsdg::BinaryOperation>(rvsdg::NormalizeBinaryOperation, simpleNode);
+}
+
+std::optional<std::vector<rvsdg::output *>>
+NodeReduction::NormalizeLoadNode(
+    const LoadNonVolatileOperation & operation,
+    const std::vector<rvsdg::output *> & operands)
+{
+  static std::vector<rvsdg::NodeNormalization<LoadNonVolatileOperation>> loadNodeNormalizations(
+      { NormalizeLoadMux,
+        NormalizeLoadStore,
+        NormalizeLoadAlloca,
+        NormalizeLoadDuplicateState,
+        NormalizeLoadStoreState,
+        NormalizeLoadLoadState });
+
+  return rvsdg::NormalizeSequence<LoadNonVolatileOperation>(
+      loadNodeNormalizations,
+      operation,
+      operands);
+}
+
+std::optional<std::vector<rvsdg::output *>>
+NodeReduction::NormalizeStoreNode(
+    const StoreNonVolatileOperation & operation,
+    const std::vector<rvsdg::output *> & operands)
+{
+  static std::vector<rvsdg::NodeNormalization<StoreNonVolatileOperation>> storeNodeNormalizations(
+      { NormalizeStoreMux,
+        NormalizeStoreStore,
+        NormalizeStoreAlloca,
+        NormalizeStoreDuplicateState });
+
+  return rvsdg::NormalizeSequence<StoreNonVolatileOperation>(
+      storeNodeNormalizations,
+      operation,
+      operands);
 }
 
 }

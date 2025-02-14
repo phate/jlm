@@ -45,7 +45,7 @@ public:
    * @return true if there are work items left to be visited
    */
   [[nodiscard]] virtual bool
-  HasMoreWorkItems() = 0;
+  HasMoreWorkItems() const noexcept = 0;
 
   /**
    * Removes one work item from the worklist.
@@ -78,8 +78,8 @@ public:
 
   LifoWorklist() = default;
 
-  bool
-  HasMoreWorkItems() override
+  [[nodiscard]] bool
+  HasMoreWorkItems() const noexcept override
   {
     return !WorkItems_.empty();
   }
@@ -123,8 +123,8 @@ public:
 
   FifoWorklist() = default;
 
-  bool
-  HasMoreWorkItems() override
+  [[nodiscard]] bool
+  HasMoreWorkItems() const noexcept override
   {
     return !WorkItems_.empty();
   }
@@ -173,8 +173,8 @@ public:
 
   LrfWorklist() = default;
 
-  bool
-  HasMoreWorkItems() override
+  [[nodiscard]] bool
+  HasMoreWorkItems() const noexcept override
   {
     return !WorkItems_.empty();
   }
@@ -240,8 +240,8 @@ public:
 
   TwoPhaseLrfWorklist() = default;
 
-  bool
-  HasMoreWorkItems() override
+  [[nodiscard]] bool
+  HasMoreWorkItems() const noexcept override
   {
     return !Current_.empty() || !Next_.empty();
   }
@@ -292,6 +292,56 @@ private:
   // For each work item, when the item was last fired.
   // If the work item is currently in the queue, InQueueSentinelValue is used instead
   std::unordered_map<T, size_t> LastFire_;
+};
+
+/**
+ * A fake worklist that remembers which work items have been pushed,
+ * but without providing any kind of iteration interface for accessing them.
+ * Each work item must be explicitly removed by name.
+ * Used to implement the Topological worklist policy, which is not technically a worklist policy.
+ * @tparam T the type of the work items.
+ * @see Worklist
+ */
+template<typename T>
+class Workset final : public Worklist<T>
+{
+public:
+  ~Workset() override = default;
+
+  Workset() = default;
+
+  [[nodiscard]] bool
+  HasMoreWorkItems() const noexcept override
+  {
+    return !PushedItems_.IsEmpty();
+  }
+
+  T
+  PopWorkItem() override
+  {
+    JLM_UNREACHABLE("The Workset does not provide an iteration order");
+  }
+
+  void
+  PushWorkItem(T item) override
+  {
+    PushedItems_.Insert(item);
+  }
+
+  [[nodiscard]] bool
+  HasWorkItem(T item) const noexcept
+  {
+    return PushedItems_.Contains(item);
+  }
+
+  void
+  RemoveWorkItem(T item)
+  {
+    PushedItems_.Remove(item);
+  }
+
+private:
+  util::HashSet<T> PushedItems_;
 };
 
 }
