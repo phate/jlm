@@ -8,6 +8,7 @@
 
 // JLM
 #include <jlm/llvm/ir/operators/lambda.hpp>
+#include <jlm/llvm/ir/operators/operators.hpp>
 #include <jlm/llvm/ir/RvsdgModule.hpp>
 #include <jlm/rvsdg/bitstring/arithmetic.hpp>
 #include <jlm/rvsdg/gamma.hpp>
@@ -114,6 +115,15 @@ private:
       const ::llvm::SmallVector<::mlir::Value> & inputs);
 
   /**
+   * Converts a floating point binary operation to an MLIR operation.
+   * \param op The jlm::llvm::fpbin_op to be converted
+   * \param inputs The inputs to the jlm::llvm::fpbin_op.
+   * \return The converted MLIR operation.
+   */
+  ::mlir::Operation *
+  ConvertFpBinaryNode(const jlm::llvm::fpbin_op & op, ::llvm::SmallVector<::mlir::Value> inputs);
+
+  /**
    * Converts an RVSDG binary_op to an MLIR RVSDG operation.
    * \param bitOp The RVSDG bitbinary_op to be converted
    * \param inputs The inputs to the bitbinary_op.
@@ -173,6 +183,14 @@ private:
       const rvsdg::ThetaNode & thetaNode,
       ::mlir::Block & block,
       const ::llvm::SmallVector<::mlir::Value> & inputs);
+
+  /**
+   * Converts an RVSDG floating point size to an MLIR floating point type.
+   * \param size The jlm::llvm::fpsize to be converted.
+   * \result The corresponding mlir::FloatType.
+   */
+  ::mlir::FloatType
+  ConvertFPType(const llvm::fpsize size);
 
   /**
    * Converts an RVSDG type to an MLIR RVSDG type.
