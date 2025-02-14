@@ -989,8 +989,10 @@ Andersen::AnalyzeFunctionToPointer(const rvsdg::SimpleNode & node)
 void
 Andersen::AnalyzeIOBarrier(const rvsdg::SimpleNode & node)
 {
-  const auto ioBarrierNode = util::AssertedCast<IOBarrierOperation>(&node);
-  if (!IsOrContainsPointerType(*ioBarrierNode->Type()))
+  JLM_ASSERT(is<IOBarrierOperation>(&node));
+
+  const auto operation = util::AssertedCast<const IOBarrierOperation>(&node.GetOperation());
+  if (!IsOrContainsPointerType(*operation->Type()))
     return;
 
   const auto & inputRegister = *node.input(0)->origin();
