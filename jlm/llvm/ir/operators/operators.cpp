@@ -11,20 +11,17 @@
 namespace jlm::llvm
 {
 
-/* phi operator */
-
-phi_op::~phi_op() noexcept
-{}
+SsaPhiOperation::~SsaPhiOperation() noexcept = default;
 
 bool
-phi_op::operator==(const Operation & other) const noexcept
+SsaPhiOperation::operator==(const Operation & other) const noexcept
 {
-  auto op = dynamic_cast<const phi_op *>(&other);
+  const auto op = dynamic_cast<const SsaPhiOperation *>(&other);
   return op && op->nodes_ == nodes_ && op->result(0) == result(0);
 }
 
 std::string
-phi_op::debug_string() const
+SsaPhiOperation::debug_string() const
 {
   std::string str("[");
   for (size_t n = 0; n < narguments(); n++)
@@ -39,9 +36,9 @@ phi_op::debug_string() const
 }
 
 std::unique_ptr<rvsdg::Operation>
-phi_op::copy() const
+SsaPhiOperation::copy() const
 {
-  return std::make_unique<phi_op>(*this);
+  return std::make_unique<SsaPhiOperation>(*this);
 }
 
 /* assignment operator */

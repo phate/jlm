@@ -130,8 +130,9 @@ TestPhiConversion()
   auto & phiPopcnt = *std::next(tacs);
 
   // Check that they are both phi operations
-  auto phiXOp = *jlm::util::AssertedCast<const jlm::llvm::phi_op>(&phiX->operation());
-  auto phiPopcntOp = *jlm::util::AssertedCast<const jlm::llvm::phi_op>(&phiPopcnt->operation());
+  auto phiXOp = *jlm::util::AssertedCast<const jlm::llvm::SsaPhiOperation>(&phiX->operation());
+  auto phiPopcntOp =
+      *jlm::util::AssertedCast<const jlm::llvm::SsaPhiOperation>(&phiPopcnt->operation());
 
   // Both phi nodes should have 3 operands, representing the loop entry, and the two "continue"s
   assert(phiX->noperands() == 3);
@@ -161,7 +162,7 @@ JLM_UNIT_TEST_REGISTER(
  * A dead predecessor is a basic block that is not reachable from the function's entry.
  * This test has one phi node with 4 operands, where two of them are dead,
  * and one with 2 operands, where one of them is dead.
- * The first should be converted to a jlm::llvm::phi_op with two operands,
+ * The first should be converted to a jlm::llvm::SsaPhiOperation with two operands,
  * while the second should become a direct reference to the value from the only alive predecessor.
  * Due to straightening, this last basic block is also merged into its predecessor.
  */
@@ -246,7 +247,7 @@ TestPhiOperandElision()
     numBasicBlocks++;
     for (auto tac : bb)
     {
-      if (jlm::rvsdg::is<jlm::llvm::phi_op>(tac->operation()))
+      if (jlm::rvsdg::is<jlm::llvm::SsaPhiOperation>(tac->operation()))
         phiTacs.push_back(tac);
     }
   }

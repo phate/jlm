@@ -734,10 +734,11 @@ convert_phi_instruction(::llvm::Instruction * i, tacsvector_t & tacs, context & 
   // This phi instruction can be reached from multiple basic blocks.
   // As some of these blocks might not be converted yet, some of the phi's operands may reference
   // instructions that have not yet been converted.
-  // For now, a phi_op with no operands is created.
-  // Once all basic blocks have been converted, all phi_ops get visited again and given operands.
+  // For now, a SsaPhiOperation with no operands is created.
+  // Once all basic blocks have been converted, all SsaPhiOperations get visited again and given
+  // operands.
   auto type = ctx.GetTypeConverter().ConvertLlvmType(*i->getType());
-  tacs.push_back(phi_op::create({}, type));
+  tacs.push_back(SsaPhiOperation::create({}, type));
   return tacs.back()->result(0);
 }
 

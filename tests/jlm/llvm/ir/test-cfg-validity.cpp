@@ -25,7 +25,7 @@ test_single_operand_phi()
   auto arg = cfg.entry()->append_argument(argument::create("arg", vt));
 
   auto bb0 = basic_block::create(cfg);
-  bb0->append_first(phi_op::create({ { arg, cfg.entry() } }, vt));
+  bb0->append_first(SsaPhiOperation::create({ { arg, cfg.entry() } }, vt));
 
   cfg.exit()->divert_inedges(bb0);
   bb0->add_outedge(cfg.exit());
