@@ -464,7 +464,7 @@ ConvertAssignment(
     rvsdg::Region &,
     llvm::VariableMap & variableMap)
 {
-  JLM_ASSERT(is<assignment_op>(threeAddressCode.operation()));
+  JLM_ASSERT(is<AssignmentOperation>(threeAddressCode.operation()));
 
   auto lhs = threeAddressCode.operand(0);
   auto rhs = threeAddressCode.operand(1);
@@ -525,7 +525,7 @@ ConvertThreeAddressCode(
     rvsdg::Region & region,
     llvm::VariableMap & variableMap)
 {
-  if (is<assignment_op>(&threeAddressCode))
+  if (is<AssignmentOperation>(&threeAddressCode))
   {
     ConvertAssignment(threeAddressCode, region, variableMap);
   }

@@ -65,12 +65,12 @@ destruct_ssa(llvm::cfg & cfg)
         {
           JLM_ASSERT(edges.find(phi->node(n)) != edges.end());
           auto bb = edges[phi->node(n)]->split();
-          value = bb->append_last(assignment_op::create(phitac->operand(n), v))->operand(0);
+          value = bb->append_last(AssignmentOperation::create(phitac->operand(n), v))->operand(0);
         }
 
         auto phiresult = std::move(phitac->results()[0]);
         auto undef = firstbb->append_first(UndefValueOperation::Create(std::move(phiresult)));
-        ass_block->append_last(assignment_op::create(value, undef->result(0)));
+        ass_block->append_last(AssignmentOperation::create(value, undef->result(0)));
         tacs.drop_first();
       }
 

@@ -41,28 +41,25 @@ SsaPhiOperation::copy() const
   return std::make_unique<SsaPhiOperation>(*this);
 }
 
-/* assignment operator */
-
-assignment_op::~assignment_op() noexcept
-{}
+AssignmentOperation::~AssignmentOperation() noexcept = default;
 
 bool
-assignment_op::operator==(const Operation & other) const noexcept
+AssignmentOperation::operator==(const Operation & other) const noexcept
 {
-  auto op = dynamic_cast<const assignment_op *>(&other);
+  const auto op = dynamic_cast<const AssignmentOperation *>(&other);
   return op && op->argument(0) == argument(0);
 }
 
 std::string
-assignment_op::debug_string() const
+AssignmentOperation::debug_string() const
 {
   return "ASSIGN";
 }
 
 std::unique_ptr<rvsdg::Operation>
-assignment_op::copy() const
+AssignmentOperation::copy() const
 {
-  return std::make_unique<assignment_op>(*this);
+  return std::make_unique<AssignmentOperation>(*this);
 }
 
 /* select operator */
