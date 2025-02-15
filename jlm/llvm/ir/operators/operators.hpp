@@ -95,20 +95,18 @@ private:
   std::vector<cfg_node *> nodes_;
 };
 
-/* assignment operator */
-
-class assignment_op final : public rvsdg::SimpleOperation
+class AssignmentOperation final : public rvsdg::SimpleOperation
 {
 public:
-  virtual ~assignment_op() noexcept;
+  ~AssignmentOperation() noexcept override;
 
-  explicit inline assignment_op(const std::shared_ptr<const jlm::rvsdg::Type> & type)
+  explicit AssignmentOperation(const std::shared_ptr<const rvsdg::Type> & type)
       : SimpleOperation({ type, type }, {})
   {}
 
-  assignment_op(const assignment_op &) = default;
+  AssignmentOperation(const AssignmentOperation &) = default;
 
-  assignment_op(assignment_op &&) = default;
+  AssignmentOperation(AssignmentOperation &&) = default;
 
   virtual bool
   operator==(const Operation & other) const noexcept override;
@@ -125,7 +123,7 @@ public:
     if (rhs->type() != lhs->type())
       throw jlm::util::error("LHS and RHS of assignment must have same type.");
 
-    return tac::create(assignment_op(rhs->Type()), { lhs, rhs });
+    return tac::create(AssignmentOperation(rhs->Type()), { lhs, rhs });
   }
 };
 

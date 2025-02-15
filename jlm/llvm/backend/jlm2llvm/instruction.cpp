@@ -42,7 +42,7 @@ convert_assignment(
     ::llvm::IRBuilder<> &,
     context & ctx)
 {
-  JLM_ASSERT(is<assignment_op>(op));
+  JLM_ASSERT(is<AssignmentOperation>(op));
   return ctx.value(args[0]);
 }
 
@@ -1164,7 +1164,7 @@ convert_operation(
             { typeid(UndefValueOperation), convert_undef },
             { typeid(PoisonValueOperation), convert<PoisonValueOperation> },
             { typeid(rvsdg::match_op), convert_match },
-            { typeid(assignment_op), convert_assignment },
+            { typeid(AssignmentOperation), convert_assignment },
             { typeid(branch_op), convert_branch },
             { typeid(phi_op), convert_phi },
             { typeid(LoadNonVolatileOperation), convert<LoadNonVolatileOperation> },

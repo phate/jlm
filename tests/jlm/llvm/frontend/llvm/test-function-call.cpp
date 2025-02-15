@@ -170,8 +170,8 @@ test_free_call()
     }
 
     auto bb = dynamic_cast<const basic_block *>(cfg->entry()->outedge(0)->sink());
-    assert(is<assignment_op>(*bb->rbegin()));
-    assert(is<assignment_op>(*std::next(bb->rbegin())));
+    assert(is<AssignmentOperation>(*bb->rbegin()));
+    assert(is<AssignmentOperation>(*std::next(bb->rbegin())));
     assert(is<FreeOperation>(*std::next(bb->rbegin(), 2)));
   };
 
