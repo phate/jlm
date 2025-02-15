@@ -480,7 +480,7 @@ has_valid_phis(const basic_block & bb)
   for (auto it = bb.begin(); it != bb.end(); it++)
   {
     auto tac = *it;
-    if (!is<phi_op>(tac))
+    if (!is<SsaPhiOperation>(tac))
       continue;
 
     /*
@@ -492,14 +492,14 @@ has_valid_phis(const basic_block & bb)
     /*
       Ensure all phi nodes are at the beginning of a basic block
     */
-    if (tac != bb.first() && !is<phi_op>(*std::prev(it)))
+    if (tac != bb.first() && !is<SsaPhiOperation>(*std::prev(it)))
       return false;
 
     /*
       Ensure that a phi node does not have for the same basic block
       multiple incoming variables.
     */
-    auto phi = static_cast<const phi_op *>(&tac->operation());
+    const auto phi = static_cast<const SsaPhiOperation *>(&tac->operation());
     std::unordered_map<cfg_node *, const variable *> map;
     for (size_t n = 0; n < tac->noperands(); n++)
     {
@@ -759,8 +759,7 @@ compute_live_sinks(const std::unordered_set<cfg_node *> & deadnodes)
 static void
 update_phi_operands(llvm::tac & phitac, const std::unordered_set<cfg_node *> & deadnodes)
 {
-  JLM_ASSERT(is<phi_op>(&phitac));
-  auto phi = static_cast<const phi_op *>(&phitac.operation());
+  const auto phi = util::AssertedCast<const SsaPhiOperation>(&phitac.operation());
 
   std::vector<cfg_node *> nodes;
   std::vector<const variable *> operands;
@@ -773,7 +772,7 @@ update_phi_operands(llvm::tac & phitac, const std::unordered_set<cfg_node *> & d
     }
   }
 
-  phitac.replace(phi_op(nodes, phi->Type()), operands);
+  phitac.replace(SsaPhiOperation(nodes, phi->Type()), operands);
 }
 
 static void
@@ -785,7 +784,7 @@ update_phi_operands(
   {
     for (auto & tac : *sink)
     {
-      if (!is<phi_op>(tac))
+      if (!is<SsaPhiOperation>(tac))
         break;
 
       update_phi_operands(*tac, deadnodes);

@@ -1016,7 +1016,7 @@ RegionAwareMemoryNodeProvider::ResolveUnknownMemoryNodeReferences(
 bool
 RegionAwareMemoryNodeProvider::ShouldCreateRegionSummary(const rvsdg::Region & region)
 {
-  return !region.IsRootRegion() && !is<phi_op>(region.node())
+  return !region.IsRootRegion() && !is<SsaPhiOperation>(region.node())
       && !is<delta::operation>(region.node());
 }
 

@@ -24,7 +24,7 @@ destruct_ssa(llvm::cfg & cfg)
     std::unordered_set<basic_block *> phi_blocks;
     for (auto & bb : cfg)
     {
-      if (is<phi_op>(bb.first()))
+      if (is<SsaPhiOperation>(bb.first()))
         phi_blocks.insert(&bb);
     }
 
@@ -54,10 +54,10 @@ destruct_ssa(llvm::cfg & cfg)
       while (tacs.first())
       {
         auto phitac = tacs.first();
-        if (!is<phi_op>(phitac))
+        if (!is<SsaPhiOperation>(phitac))
           break;
 
-        auto phi = static_cast<const phi_op *>(&phitac->operation());
+        const auto phi = static_cast<const SsaPhiOperation *>(&phitac->operation());
         auto v = cfg.module().create_variable(phi->Type());
 
         const variable * value = nullptr;
