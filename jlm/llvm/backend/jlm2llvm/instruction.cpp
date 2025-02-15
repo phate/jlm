@@ -252,8 +252,7 @@ convert_phi(
     ::llvm::IRBuilder<> & builder,
     context & ctx)
 {
-  JLM_ASSERT(is<phi_op>(op));
-  auto & phi = *static_cast<const llvm::phi_op *>(&op);
+  auto & phi = *util::AssertedCast<const SsaPhiOperation>(&op);
   auto & llvmContext = ctx.llvm_module().getContext();
   auto & typeConverter = ctx.GetTypeConverter();
 
@@ -1166,7 +1165,7 @@ convert_operation(
             { typeid(rvsdg::match_op), convert_match },
             { typeid(AssignmentOperation), convert_assignment },
             { typeid(branch_op), convert_branch },
-            { typeid(phi_op), convert_phi },
+            { typeid(SsaPhiOperation), convert_phi },
             { typeid(LoadNonVolatileOperation), convert<LoadNonVolatileOperation> },
             { typeid(LoadVolatileOperation), convert<LoadVolatileOperation> },
             { typeid(StoreNonVolatileOperation), convert_store },

@@ -24,27 +24,25 @@ namespace jlm::llvm
 
 class cfg_node;
 
-/* phi operator */
-
-class phi_op final : public rvsdg::SimpleOperation
+class SsaPhiOperation final : public rvsdg::SimpleOperation
 {
 public:
-  virtual ~phi_op() noexcept;
+  ~SsaPhiOperation() noexcept override;
 
-  inline phi_op(
+  SsaPhiOperation(
       const std::vector<llvm::cfg_node *> & nodes,
       const std::shared_ptr<const jlm::rvsdg::Type> & type)
       : SimpleOperation({ nodes.size(), type }, { type }),
         nodes_(nodes)
   {}
 
-  phi_op(const phi_op &) = default;
+  SsaPhiOperation(const SsaPhiOperation &) = default;
 
-  phi_op &
-  operator=(const phi_op &) = delete;
+  SsaPhiOperation &
+  operator=(const SsaPhiOperation &) = delete;
 
-  phi_op &
-  operator=(phi_op &&) = delete;
+  SsaPhiOperation &
+  operator=(SsaPhiOperation &&) = delete;
 
   virtual bool
   operator==(const Operation & other) const noexcept override;
@@ -87,7 +85,7 @@ public:
       operands.push_back(argument.first);
     }
 
-    phi_op phi(nodes, std::move(type));
+    const SsaPhiOperation phi(nodes, std::move(type));
     return tac::create(phi, operands);
   }
 

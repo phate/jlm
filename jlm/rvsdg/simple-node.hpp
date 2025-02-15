@@ -16,7 +16,7 @@ namespace jlm::rvsdg
 
 class SimpleOperation;
 class SimpleInput;
-class simple_output;
+class SimpleOutput;
 
 class SimpleNode : public Node
 {
@@ -33,7 +33,7 @@ public:
   SimpleInput *
   input(size_t index) const noexcept;
 
-  jlm::rvsdg::simple_output *
+  SimpleOutput *
   output(size_t index) const noexcept;
 
   [[nodiscard]] const SimpleOperation &
@@ -101,16 +101,14 @@ public:
   }
 };
 
-/* outputs */
-
-class simple_output final : public node_output
+class SimpleOutput final : public node_output
 {
   friend class SimpleInput;
 
 public:
-  virtual ~simple_output() noexcept;
+  ~SimpleOutput() noexcept override;
 
-  simple_output(jlm::rvsdg::SimpleNode * node, std::shared_ptr<const rvsdg::Type> type);
+  SimpleOutput(SimpleNode * node, std::shared_ptr<const rvsdg::Type> type);
 
 public:
   SimpleNode *
@@ -126,10 +124,10 @@ SimpleNode::input(size_t index) const noexcept
   return static_cast<SimpleInput *>(Node::input(index));
 }
 
-inline jlm::rvsdg::simple_output *
+inline SimpleOutput *
 SimpleNode::output(size_t index) const noexcept
 {
-  return static_cast<simple_output *>(Node::output(index));
+  return static_cast<SimpleOutput *>(Node::output(index));
 }
 
 /**
