@@ -111,11 +111,11 @@ find_loop_output(jlm::rvsdg::StructuralInput * sti)
     {
       auto res = ba->result();
       JLM_ASSERT(res);
-      auto buffer_out = dynamic_cast<jlm::rvsdg::simple_output *>(res->origin());
+      auto buffer_out = dynamic_cast<jlm::rvsdg::SimpleOutput *>(res->origin());
       JLM_ASSERT(buffer_out);
       JLM_ASSERT(dynamic_cast<const jlm::hls::buffer_op *>(&buffer_out->node()->GetOperation()));
       auto branch_out =
-          dynamic_cast<jlm::rvsdg::simple_output *>(buffer_out->node()->input(0)->origin());
+          dynamic_cast<jlm::rvsdg::SimpleOutput *>(buffer_out->node()->input(0)->origin());
       JLM_ASSERT(branch_out);
       JLM_ASSERT(dynamic_cast<const jlm::hls::branch_op *>(&branch_out->node()->GetOperation()));
       // branch
@@ -366,7 +366,7 @@ separate_load_edge(
           si->divert_to(addr_edge);
           sn->output(1)->divert_users(mem_edge);
           remove(sn);
-          *load = dynamic_cast<jlm::rvsdg::simple_output *>(new_load_outputs[0])->node();
+          *load = dynamic_cast<jlm::rvsdg::SimpleOutput *>(new_load_outputs[0])->node();
           *load_encountered = true;
         }
         else
@@ -497,7 +497,7 @@ process_loops(jlm::rvsdg::output * state_edge)
         JLM_ASSERT(store_nodes.size() == store_addresses.size());
         JLM_ASSERT(store_nodes.size() == store_dequeues.size());
         auto state_gate_addr_in =
-            dynamic_cast<jlm::rvsdg::simple_output *>(load->input(0)->origin())->node()->input(0);
+            dynamic_cast<jlm::rvsdg::SimpleOutput *>(load->input(0)->origin())->node()->input(0);
         for (size_t j = 0; j < store_nodes.size(); ++j)
         {
           JLM_ASSERT(state_gate_addr_in->origin()->region() == store_addresses[j]->region());

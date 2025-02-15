@@ -52,7 +52,7 @@ remove_unused_state(rvsdg::Region * region, bool can_remove_arguments)
         std::vector<jlm::rvsdg::output *> nv;
         for (size_t i = 0; i < simplenode->ninputs(); ++i)
         {
-          if (auto so = dynamic_cast<jlm::rvsdg::simple_output *>(simplenode->input(i)->origin()))
+          if (auto so = dynamic_cast<rvsdg::SimpleOutput *>(simplenode->input(i)->origin()))
           {
             if (dynamic_cast<const llvm::LambdaEntryMemoryStateSplitOperation *>(
                     &so->node()->GetOperation()))
