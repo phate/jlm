@@ -34,8 +34,8 @@ convert_instructions(::llvm::Function & function, context & ctx)
 
       // When an LLVM PhiNode is converted to a jlm SsaPhiOperation, some of its operands may not be
       // ready. The created SsaPhiOperation therefore has no operands, but is instead added to a
-      // list. Once all basic blocks have been converted, all phi_ops are revisited and given
-      // operands.
+      // list. Once all basic blocks have been converted, all SsaPhiOperations are revisited and
+      // given operands.
       if (!tacs.empty() && is<SsaPhiOperation>(tacs.back()->operation()))
       {
         auto phi = ::llvm::dyn_cast<::llvm::PHINode>(&instruction);

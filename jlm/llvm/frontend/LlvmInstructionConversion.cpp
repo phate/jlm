@@ -735,7 +735,8 @@ convert_phi_instruction(::llvm::Instruction * i, tacsvector_t & tacs, context & 
   // As some of these blocks might not be converted yet, some of the phi's operands may reference
   // instructions that have not yet been converted.
   // For now, a SsaPhiOperation with no operands is created.
-  // Once all basic blocks have been converted, all phi_ops get visited again and given operands.
+  // Once all basic blocks have been converted, all SsaPhiOperations get visited again and given
+  // operands.
   auto type = ctx.GetTypeConverter().ConvertLlvmType(*i->getType());
   tacs.push_back(SsaPhiOperation::create({}, type));
   return tacs.back()->result(0);
