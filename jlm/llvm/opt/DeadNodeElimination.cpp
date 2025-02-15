@@ -39,7 +39,7 @@ public:
   void
   MarkAlive(const jlm::rvsdg::output & output)
   {
-    if (auto simpleOutput = dynamic_cast<const jlm::rvsdg::simple_output *>(&output))
+    if (auto simpleOutput = dynamic_cast<const rvsdg::SimpleOutput *>(&output))
     {
       SimpleNodes_.Insert(simpleOutput->node());
       return;
@@ -51,7 +51,7 @@ public:
   bool
   IsAlive(const jlm::rvsdg::output & output) const noexcept
   {
-    if (auto simpleOutput = dynamic_cast<const jlm::rvsdg::simple_output *>(&output))
+    if (auto simpleOutput = dynamic_cast<const rvsdg::SimpleOutput *>(&output))
     {
       return SimpleNodes_.Contains(simpleOutput->node());
     }
@@ -289,7 +289,7 @@ DeadNodeElimination::MarkOutput(const jlm::rvsdg::output & output)
     return;
   }
 
-  if (auto simpleOutput = dynamic_cast<const jlm::rvsdg::simple_output *>(&output))
+  if (auto simpleOutput = dynamic_cast<const rvsdg::SimpleOutput *>(&output))
   {
     auto node = simpleOutput->node();
     for (size_t n = 0; n < node->ninputs(); n++)
