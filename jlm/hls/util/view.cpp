@@ -40,7 +40,8 @@ get_dot_name(jlm::rvsdg::output * output)
   {
     return jlm::util::strfmt("a", hex((intptr_t)output), ":", "default");
   }
-  else if (auto no = dynamic_cast<jlm::rvsdg::simple_output *>(output))
+
+  if (auto no = dynamic_cast<rvsdg::SimpleOutput *>(output))
   {
     return jlm::util::strfmt(get_dot_name(no->node()), ":", "o", hex((intptr_t)output));
   }

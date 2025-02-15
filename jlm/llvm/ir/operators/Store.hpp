@@ -170,14 +170,14 @@ public:
     }
   };
 
-  class MemoryStateOutputIterator final : public rvsdg::output::iterator<rvsdg::simple_output>
+  class MemoryStateOutputIterator final : public rvsdg::output::iterator<rvsdg::SimpleOutput>
   {
   public:
-    constexpr explicit MemoryStateOutputIterator(rvsdg::simple_output * output)
-        : rvsdg::output::iterator<rvsdg::simple_output>(output)
+    constexpr explicit MemoryStateOutputIterator(rvsdg::SimpleOutput * output)
+        : rvsdg::output::iterator<rvsdg::SimpleOutput>(output)
     {}
 
-    [[nodiscard]] rvsdg::simple_output *
+    [[nodiscard]] rvsdg::SimpleOutput *
     next() const override
     {
       auto index = value()->index();
