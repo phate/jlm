@@ -161,12 +161,12 @@ private:
   PropagateRegion(const rvsdg::Region & region);
 
   void
-  PropagatePhi(const phi::node & phiNode);
+  PropagatePhi(const rvsdg::PhiNode & phiNode);
 
   /**
-   * Assigns and propagates memory nodes as well as unknown memory node references in a phi::node.
+   * Assigns and propagates memory nodes as well as unknown memory node references in a PhiNode.
    *
-   * @param region The phi::node subregion.
+   * @param region The PhiNode subregion.
    * @param memoryNodes The memory nodes to propagate.
    * @param unknownMemoryNodeReferences The unknown memory node references to propagate.
    */
