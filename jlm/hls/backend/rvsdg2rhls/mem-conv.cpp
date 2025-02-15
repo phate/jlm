@@ -901,7 +901,8 @@ jlm::hls::ReplaceStore(rvsdg::SubstitutionMap & smap, const jlm::rvsdg::SimpleNo
   // We have the store from the original lambda since it is needed to update the smap
   // We need the store in the new lambda such that we can replace it with a store node with explicit
   // memory ports
-  auto replacedStore = static_cast<rvsdg::SimpleOutput *>(smap.lookup(originalStore->output(0)))->node();
+  auto replacedStore =
+      static_cast<rvsdg::SimpleOutput *>(smap.lookup(originalStore->output(0)))->node();
 
   auto addr = replacedStore->input(0)->origin();
   JLM_ASSERT(dynamic_cast<const jlm::llvm::PointerType *>(&addr->type()));
@@ -933,7 +934,8 @@ ReplaceDecouple(
   // We need the store in the new lambda such that we can replace it with a store node with explicit
   // memory ports
   auto decoupleRequest =
-      static_cast<jlm::rvsdg::SimpleOutput *>(smap.lookup(originalDecoupleRequest->output(0)))->node();
+      static_cast<jlm::rvsdg::SimpleOutput *>(smap.lookup(originalDecoupleRequest->output(0)))
+          ->node();
 
   JLM_ASSERT(dynamic_cast<const jlm::llvm::CallOperation *>(&decoupleRequest->GetOperation()));
   auto channel = decoupleRequest->input(1)->origin();
