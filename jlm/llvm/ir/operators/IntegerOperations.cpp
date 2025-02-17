@@ -609,7 +609,7 @@ IntegerEqOperation::reduce_operand_pair(
 enum rvsdg::BinaryOperation::flags
 IntegerEqOperation::flags() const noexcept
 {
-  return flags::none;
+  return flags::commutative;
 }
 
 IntegerNeOperation::~IntegerNeOperation() noexcept = default;
@@ -652,7 +652,7 @@ IntegerNeOperation::reduce_operand_pair(
 enum rvsdg::BinaryOperation::flags
 IntegerNeOperation::flags() const noexcept
 {
-  return flags::none;
+  return flags::commutative;
 }
 
 IntegerSgeOperation::~IntegerSgeOperation() noexcept = default;

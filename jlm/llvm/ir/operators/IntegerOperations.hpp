@@ -486,7 +486,11 @@ public:
   flags() const noexcept override;
 };
 
-// FIXME: add documentation
+/**
+ * This operation is equivalent to LLVM's 'icmp' instruction with condition 'eq' for integer
+ * operands. See [LLVM Language Reference
+ * Manual](https://llvm.org/docs/LangRef.html#icmp-instruction) for more details.
+ */
 class IntegerEqOperation final : public rvsdg::BinaryOperation
 {
 public:
@@ -494,8 +498,8 @@ public:
 
   explicit IntegerEqOperation(const std::size_t numBits)
       : BinaryOperation(
-            { IntegerType::Create(numBits), IntegerType::Create(numBits) },
-            IntegerType::Create(numBits))
+            { rvsdg::bittype::Create(numBits), rvsdg::bittype::Create(numBits) },
+            rvsdg::bittype::Create(1))
   {}
 
   bool
@@ -519,7 +523,11 @@ public:
   flags() const noexcept override;
 };
 
-// FIXME: add documentation
+/**
+ * This operation is equivalent to LLVM's 'icmp' instruction with condition 'ne' for integer
+ * operands. See [LLVM Language Reference
+ * Manual](https://llvm.org/docs/LangRef.html#icmp-instruction) for more details.
+ */
 class IntegerNeOperation final : public rvsdg::BinaryOperation
 {
 public:
@@ -527,8 +535,8 @@ public:
 
   explicit IntegerNeOperation(const std::size_t numBits)
       : BinaryOperation(
-            { IntegerType::Create(numBits), IntegerType::Create(numBits) },
-            IntegerType::Create(numBits))
+            { rvsdg::bittype::Create(numBits), rvsdg::bittype::Create(numBits) },
+            rvsdg::bittype::Create(1))
   {}
 
   bool
@@ -552,7 +560,11 @@ public:
   flags() const noexcept override;
 };
 
-// FIXME: add documentation
+/**
+ * This operation is equivalent to LLVM's 'icmp' instruction with condition 'sge' for integer
+ * operands. See [LLVM Language Reference
+ * Manual](https://llvm.org/docs/LangRef.html#icmp-instruction) for more details.
+ */
 class IntegerSgeOperation final : public rvsdg::BinaryOperation
 {
 public:
@@ -560,8 +572,8 @@ public:
 
   explicit IntegerSgeOperation(const std::size_t numBits)
       : BinaryOperation(
-            { IntegerType::Create(numBits), IntegerType::Create(numBits) },
-            IntegerType::Create(numBits))
+            { rvsdg::bittype::Create(numBits), rvsdg::bittype::Create(numBits) },
+            rvsdg::bittype::Create(1))
   {}
 
   bool
@@ -585,7 +597,11 @@ public:
   flags() const noexcept override;
 };
 
-// FIXME: add documentation
+/**
+ * This operation is equivalent to LLVM's 'icmp' instruction with condition 'sgt' for integer
+ * operands. See [LLVM Language Reference
+ * Manual](https://llvm.org/docs/LangRef.html#icmp-instruction) for more details.
+ */
 class IntegerSgtOperation final : public rvsdg::BinaryOperation
 {
 public:
@@ -593,8 +609,8 @@ public:
 
   explicit IntegerSgtOperation(const std::size_t numBits)
       : BinaryOperation(
-            { IntegerType::Create(numBits), IntegerType::Create(numBits) },
-            IntegerType::Create(numBits))
+            { rvsdg::bittype::Create(numBits), rvsdg::bittype::Create(numBits) },
+            rvsdg::bittype::Create(1))
   {}
 
   bool
@@ -618,7 +634,11 @@ public:
   flags() const noexcept override;
 };
 
-// FIXME: add documentation
+/**
+ * This operation is equivalent to LLVM's 'icmp' instruction with condition 'sle' for integer
+ * operands. See [LLVM Language Reference
+ * Manual](https://llvm.org/docs/LangRef.html#icmp-instruction) for more details.
+ */
 class IntegerSleOperation final : public rvsdg::BinaryOperation
 {
 public:
@@ -626,8 +646,8 @@ public:
 
   explicit IntegerSleOperation(const std::size_t numBits)
       : BinaryOperation(
-            { IntegerType::Create(numBits), IntegerType::Create(numBits) },
-            IntegerType::Create(numBits))
+            { rvsdg::bittype::Create(numBits), rvsdg::bittype::Create(numBits) },
+            rvsdg::bittype::Create(1))
   {}
 
   bool
@@ -651,7 +671,11 @@ public:
   flags() const noexcept override;
 };
 
-// FIXME: add documentation
+/**
+ * This operation is equivalent to LLVM's 'icmp' instruction with condition 'slt' for integer
+ * operands. See [LLVM Language Reference
+ * Manual](https://llvm.org/docs/LangRef.html#icmp-instruction) for more details.
+ */
 class IntegerSltOperation final : public rvsdg::BinaryOperation
 {
 public:
@@ -659,8 +683,8 @@ public:
 
   explicit IntegerSltOperation(const std::size_t numBits)
       : BinaryOperation(
-            { IntegerType::Create(numBits), IntegerType::Create(numBits) },
-            IntegerType::Create(numBits))
+            { rvsdg::bittype::Create(numBits), rvsdg::bittype::Create(numBits) },
+            rvsdg::bittype::Create(1))
   {}
 
   bool
@@ -684,7 +708,11 @@ public:
   flags() const noexcept override;
 };
 
-// FIXME: add documentation
+/**
+ * This operation is equivalent to LLVM's 'icmp' instruction with condition 'uge' for integer
+ * operands. See [LLVM Language Reference
+ * Manual](https://llvm.org/docs/LangRef.html#icmp-instruction) for more details.
+ */
 class IntegerUgeOperation final : public rvsdg::BinaryOperation
 {
 public:
@@ -692,8 +720,8 @@ public:
 
   explicit IntegerUgeOperation(const std::size_t numBits)
       : BinaryOperation(
-            { IntegerType::Create(numBits), IntegerType::Create(numBits) },
-            IntegerType::Create(numBits))
+            { rvsdg::bittype::Create(numBits), rvsdg::bittype::Create(numBits) },
+            rvsdg::bittype::Create(1))
   {}
 
   bool
@@ -717,7 +745,11 @@ public:
   flags() const noexcept override;
 };
 
-// FIXME: add documentation
+/**
+ * This operation is equivalent to LLVM's 'icmp' instruction with condition 'ugt' for integer
+ * operands. See [LLVM Language Reference
+ * Manual](https://llvm.org/docs/LangRef.html#icmp-instruction) for more details.
+ */
 class IntegerUgtOperation final : public rvsdg::BinaryOperation
 {
 public:
@@ -725,8 +757,8 @@ public:
 
   explicit IntegerUgtOperation(const std::size_t numBits)
       : BinaryOperation(
-            { IntegerType::Create(numBits), IntegerType::Create(numBits) },
-            IntegerType::Create(numBits))
+            { rvsdg::bittype::Create(numBits), rvsdg::bittype::Create(numBits) },
+            rvsdg::bittype::Create(1))
   {}
 
   bool
@@ -750,7 +782,11 @@ public:
   flags() const noexcept override;
 };
 
-// FIXME: add documentation
+/**
+ * This operation is equivalent to LLVM's 'icmp' instruction with condition 'ule' for integer
+ * operands. See [LLVM Language Reference
+ * Manual](https://llvm.org/docs/LangRef.html#icmp-instruction) for more details.
+ */
 class IntegerUleOperation final : public rvsdg::BinaryOperation
 {
 public:
@@ -758,8 +794,8 @@ public:
 
   explicit IntegerUleOperation(const std::size_t numBits)
       : BinaryOperation(
-            { IntegerType::Create(numBits), IntegerType::Create(numBits) },
-            IntegerType::Create(numBits))
+            { rvsdg::bittype::Create(numBits), rvsdg::bittype::Create(numBits) },
+            rvsdg::bittype::Create(1))
   {}
 
   bool
@@ -783,7 +819,11 @@ public:
   flags() const noexcept override;
 };
 
-// FIXME: add documentation
+/**
+ * This operation is equivalent to LLVM's 'icmp' instruction with condition 'ult' for integer
+ * operands. See [LLVM Language Reference
+ * Manual](https://llvm.org/docs/LangRef.html#icmp-instruction) for more details.
+ */
 class IntegerUltOperation final : public rvsdg::BinaryOperation
 {
 public:
@@ -791,8 +831,8 @@ public:
 
   explicit IntegerUltOperation(const std::size_t numBits)
       : BinaryOperation(
-            { IntegerType::Create(numBits), IntegerType::Create(numBits) },
-            IntegerType::Create(numBits))
+            { rvsdg::bittype::Create(numBits), rvsdg::bittype::Create(numBits) },
+            rvsdg::bittype::Create(1))
   {}
 
   bool
