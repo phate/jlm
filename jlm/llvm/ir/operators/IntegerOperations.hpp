@@ -20,8 +20,10 @@ class IntegerBinaryOperation : public rvsdg::BinaryOperation
 public:
   ~IntegerBinaryOperation() override;
 
-  explicit IntegerBinaryOperation(const std::shared_ptr<const rvsdg::bittype> & type) noexcept
-      : BinaryOperation({ type, type }, type)
+  IntegerBinaryOperation(std::size_t numArgumentBits, std::size_t numResultBits) noexcept
+      : BinaryOperation(
+            { rvsdg::bittype::Create(numArgumentBits), rvsdg::bittype::Create(numArgumentBits) },
+            rvsdg::bittype::Create(numResultBits))
   {}
 
   [[nodiscard]] const rvsdg::bittype &
@@ -42,7 +44,7 @@ public:
   ~IntegerAddOperation() noexcept override;
 
   explicit IntegerAddOperation(const std::size_t numBits)
-      : IntegerBinaryOperation(rvsdg::bittype::Create(numBits))
+      : IntegerBinaryOperation(numBits, numBits)
   {}
 
   bool
@@ -77,7 +79,7 @@ public:
   ~IntegerSubOperation() noexcept override;
 
   explicit IntegerSubOperation(const std::size_t numBits)
-      : IntegerBinaryOperation(rvsdg::bittype::Create(numBits))
+      : IntegerBinaryOperation(numBits, numBits)
   {}
 
   bool
@@ -112,7 +114,7 @@ public:
   ~IntegerMulOperation() noexcept override;
 
   explicit IntegerMulOperation(const std::size_t numBits)
-      : IntegerBinaryOperation(rvsdg::bittype::Create(numBits))
+      : IntegerBinaryOperation(numBits, numBits)
   {}
 
   bool
@@ -147,7 +149,7 @@ public:
   ~IntegerSDivOperation() noexcept override;
 
   explicit IntegerSDivOperation(const std::size_t numBits)
-      : IntegerBinaryOperation(rvsdg::bittype::Create(numBits))
+      : IntegerBinaryOperation(numBits, numBits)
   {}
 
   bool
@@ -182,7 +184,7 @@ public:
   ~IntegerUDivOperation() noexcept override;
 
   explicit IntegerUDivOperation(const std::size_t numBits)
-      : IntegerBinaryOperation(rvsdg::bittype::Create(numBits))
+      : IntegerBinaryOperation(numBits, numBits)
   {}
 
   bool
@@ -217,7 +219,7 @@ public:
   ~IntegerSRemOperation() noexcept override;
 
   explicit IntegerSRemOperation(const std::size_t numBits)
-      : IntegerBinaryOperation(rvsdg::bittype::Create(numBits))
+      : IntegerBinaryOperation(numBits, numBits)
   {}
 
   bool
@@ -252,7 +254,7 @@ public:
   ~IntegerURemOperation() noexcept override;
 
   explicit IntegerURemOperation(const std::size_t numBits)
-      : IntegerBinaryOperation(rvsdg::bittype::Create(numBits))
+      : IntegerBinaryOperation(numBits, numBits)
   {}
 
   bool
@@ -287,7 +289,7 @@ public:
   ~IntegerAShrOperation() noexcept override;
 
   explicit IntegerAShrOperation(const std::size_t numBits)
-      : IntegerBinaryOperation(rvsdg::bittype::Create(numBits))
+      : IntegerBinaryOperation(numBits, numBits)
   {}
 
   bool
@@ -322,7 +324,7 @@ public:
   ~IntegerShlOperation() noexcept override;
 
   explicit IntegerShlOperation(const std::size_t numBits)
-      : IntegerBinaryOperation(rvsdg::bittype::Create(numBits))
+      : IntegerBinaryOperation(numBits, numBits)
   {}
 
   bool
@@ -357,7 +359,7 @@ public:
   ~IntegerLShrOperation() noexcept override;
 
   explicit IntegerLShrOperation(const std::size_t numBits)
-      : IntegerBinaryOperation(rvsdg::bittype::Create(numBits))
+      : IntegerBinaryOperation(numBits, numBits)
   {}
 
   bool
@@ -392,7 +394,7 @@ public:
   ~IntegerAndOperation() noexcept override;
 
   explicit IntegerAndOperation(const std::size_t numBits)
-      : IntegerBinaryOperation(rvsdg::bittype::Create(numBits))
+      : IntegerBinaryOperation(numBits, numBits)
   {}
 
   bool
@@ -427,7 +429,7 @@ public:
   ~IntegerOrOperation() noexcept override;
 
   explicit IntegerOrOperation(const std::size_t numBits)
-      : IntegerBinaryOperation(rvsdg::bittype::Create(numBits))
+      : IntegerBinaryOperation(numBits, numBits)
   {}
 
   bool
@@ -462,7 +464,7 @@ public:
   ~IntegerXorOperation() noexcept override;
 
   explicit IntegerXorOperation(const std::size_t numBits)
-      : IntegerBinaryOperation(rvsdg::bittype::Create(numBits))
+      : IntegerBinaryOperation(numBits, numBits)
   {}
 
   bool
@@ -491,15 +493,13 @@ public:
  * operands. See [LLVM Language Reference
  * Manual](https://llvm.org/docs/LangRef.html#icmp-instruction) for more details.
  */
-class IntegerEqOperation final : public rvsdg::BinaryOperation
+class IntegerEqOperation final : public IntegerBinaryOperation
 {
 public:
   ~IntegerEqOperation() noexcept override;
 
   explicit IntegerEqOperation(const std::size_t numBits)
-      : BinaryOperation(
-            { rvsdg::bittype::Create(numBits), rvsdg::bittype::Create(numBits) },
-            rvsdg::bittype::Create(1))
+      : IntegerBinaryOperation(numBits, 1)
   {}
 
   bool
@@ -528,15 +528,13 @@ public:
  * operands. See [LLVM Language Reference
  * Manual](https://llvm.org/docs/LangRef.html#icmp-instruction) for more details.
  */
-class IntegerNeOperation final : public rvsdg::BinaryOperation
+class IntegerNeOperation final : public IntegerBinaryOperation
 {
 public:
   ~IntegerNeOperation() noexcept override;
 
   explicit IntegerNeOperation(const std::size_t numBits)
-      : BinaryOperation(
-            { rvsdg::bittype::Create(numBits), rvsdg::bittype::Create(numBits) },
-            rvsdg::bittype::Create(1))
+      : IntegerBinaryOperation(numBits, 1)
   {}
 
   bool
@@ -565,15 +563,13 @@ public:
  * operands. See [LLVM Language Reference
  * Manual](https://llvm.org/docs/LangRef.html#icmp-instruction) for more details.
  */
-class IntegerSgeOperation final : public rvsdg::BinaryOperation
+class IntegerSgeOperation final : public IntegerBinaryOperation
 {
 public:
   ~IntegerSgeOperation() noexcept override;
 
   explicit IntegerSgeOperation(const std::size_t numBits)
-      : BinaryOperation(
-            { rvsdg::bittype::Create(numBits), rvsdg::bittype::Create(numBits) },
-            rvsdg::bittype::Create(1))
+      : IntegerBinaryOperation(numBits, 1)
   {}
 
   bool
@@ -602,15 +598,13 @@ public:
  * operands. See [LLVM Language Reference
  * Manual](https://llvm.org/docs/LangRef.html#icmp-instruction) for more details.
  */
-class IntegerSgtOperation final : public rvsdg::BinaryOperation
+class IntegerSgtOperation final : public IntegerBinaryOperation
 {
 public:
   ~IntegerSgtOperation() noexcept override;
 
   explicit IntegerSgtOperation(const std::size_t numBits)
-      : BinaryOperation(
-            { rvsdg::bittype::Create(numBits), rvsdg::bittype::Create(numBits) },
-            rvsdg::bittype::Create(1))
+      : IntegerBinaryOperation(numBits, 1)
   {}
 
   bool
@@ -639,15 +633,13 @@ public:
  * operands. See [LLVM Language Reference
  * Manual](https://llvm.org/docs/LangRef.html#icmp-instruction) for more details.
  */
-class IntegerSleOperation final : public rvsdg::BinaryOperation
+class IntegerSleOperation final : public IntegerBinaryOperation
 {
 public:
   ~IntegerSleOperation() noexcept override;
 
   explicit IntegerSleOperation(const std::size_t numBits)
-      : BinaryOperation(
-            { rvsdg::bittype::Create(numBits), rvsdg::bittype::Create(numBits) },
-            rvsdg::bittype::Create(1))
+      : IntegerBinaryOperation(numBits, 1)
   {}
 
   bool
@@ -676,15 +668,13 @@ public:
  * operands. See [LLVM Language Reference
  * Manual](https://llvm.org/docs/LangRef.html#icmp-instruction) for more details.
  */
-class IntegerSltOperation final : public rvsdg::BinaryOperation
+class IntegerSltOperation final : public IntegerBinaryOperation
 {
 public:
   ~IntegerSltOperation() noexcept override;
 
   explicit IntegerSltOperation(const std::size_t numBits)
-      : BinaryOperation(
-            { rvsdg::bittype::Create(numBits), rvsdg::bittype::Create(numBits) },
-            rvsdg::bittype::Create(1))
+      : IntegerBinaryOperation(numBits, 1)
   {}
 
   bool
@@ -713,15 +703,13 @@ public:
  * operands. See [LLVM Language Reference
  * Manual](https://llvm.org/docs/LangRef.html#icmp-instruction) for more details.
  */
-class IntegerUgeOperation final : public rvsdg::BinaryOperation
+class IntegerUgeOperation final : public IntegerBinaryOperation
 {
 public:
   ~IntegerUgeOperation() noexcept override;
 
   explicit IntegerUgeOperation(const std::size_t numBits)
-      : BinaryOperation(
-            { rvsdg::bittype::Create(numBits), rvsdg::bittype::Create(numBits) },
-            rvsdg::bittype::Create(1))
+      : IntegerBinaryOperation(numBits, 1)
   {}
 
   bool
@@ -750,15 +738,13 @@ public:
  * operands. See [LLVM Language Reference
  * Manual](https://llvm.org/docs/LangRef.html#icmp-instruction) for more details.
  */
-class IntegerUgtOperation final : public rvsdg::BinaryOperation
+class IntegerUgtOperation final : public IntegerBinaryOperation
 {
 public:
   ~IntegerUgtOperation() noexcept override;
 
   explicit IntegerUgtOperation(const std::size_t numBits)
-      : BinaryOperation(
-            { rvsdg::bittype::Create(numBits), rvsdg::bittype::Create(numBits) },
-            rvsdg::bittype::Create(1))
+      : IntegerBinaryOperation(numBits, 1)
   {}
 
   bool
@@ -787,15 +773,13 @@ public:
  * operands. See [LLVM Language Reference
  * Manual](https://llvm.org/docs/LangRef.html#icmp-instruction) for more details.
  */
-class IntegerUleOperation final : public rvsdg::BinaryOperation
+class IntegerUleOperation final : public IntegerBinaryOperation
 {
 public:
   ~IntegerUleOperation() noexcept override;
 
   explicit IntegerUleOperation(const std::size_t numBits)
-      : BinaryOperation(
-            { rvsdg::bittype::Create(numBits), rvsdg::bittype::Create(numBits) },
-            rvsdg::bittype::Create(1))
+      : IntegerBinaryOperation(numBits, 1)
   {}
 
   bool
@@ -824,15 +808,13 @@ public:
  * operands. See [LLVM Language Reference
  * Manual](https://llvm.org/docs/LangRef.html#icmp-instruction) for more details.
  */
-class IntegerUltOperation final : public rvsdg::BinaryOperation
+class IntegerUltOperation final : public IntegerBinaryOperation
 {
 public:
   ~IntegerUltOperation() noexcept override;
 
   explicit IntegerUltOperation(const std::size_t numBits)
-      : BinaryOperation(
-            { rvsdg::bittype::Create(numBits), rvsdg::bittype::Create(numBits) },
-            rvsdg::bittype::Create(1))
+      : IntegerBinaryOperation(numBits, 1)
   {}
 
   bool
