@@ -116,7 +116,7 @@ append_constant(basic_block * bb, const tacvariable * result, size_t value)
 
   rvsdg::ctlconstant_op op(rvsdg::ctlvalue_repr(value, nalternatives));
   bb->append_last(tac::create(op, {}));
-  bb->append_last(assignment_op::create(bb->last()->result(0), result));
+  bb->append_last(AssignmentOperation::create(bb->last()->result(0), result));
 }
 
 static inline void

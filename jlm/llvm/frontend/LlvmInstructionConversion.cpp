@@ -390,7 +390,7 @@ convert_return_instruction(::llvm::Instruction * instruction, tacsvector_t & tac
     return {};
 
   auto value = ConvertValue(i->getReturnValue(), tacs, ctx);
-  tacs.push_back(assignment_op::create(value, ctx.result()));
+  tacs.push_back(AssignmentOperation::create(value, ctx.result()));
 
   return ctx.result();
 }
@@ -643,9 +643,9 @@ convert_load_instruction(::llvm::Instruction * i, tacsvector_t & tacs, context &
 
   if (ioState)
   {
-    tacs.push_back(assignment_op::create(ioState, ctx.iostate()));
+    tacs.push_back(AssignmentOperation::create(ioState, ctx.iostate()));
   }
-  tacs.push_back(assignment_op::create(memoryState, ctx.memory_state()));
+  tacs.push_back(AssignmentOperation::create(memoryState, ctx.memory_state()));
 
   return loadedValue;
 }
@@ -685,9 +685,9 @@ convert_store_instruction(::llvm::Instruction * i, tacsvector_t & tacs, context 
 
   if (ioState)
   {
-    tacs.push_back(assignment_op::create(ioState, ctx.iostate()));
+    tacs.push_back(AssignmentOperation::create(ioState, ctx.iostate()));
   }
-  tacs.push_back(assignment_op::create(memoryState, ctx.memory_state()));
+  tacs.push_back(AssignmentOperation::create(memoryState, ctx.memory_state()));
 
   return nullptr;
 }
@@ -734,10 +734,11 @@ convert_phi_instruction(::llvm::Instruction * i, tacsvector_t & tacs, context & 
   // This phi instruction can be reached from multiple basic blocks.
   // As some of these blocks might not be converted yet, some of the phi's operands may reference
   // instructions that have not yet been converted.
-  // For now, a phi_op with no operands is created.
-  // Once all basic blocks have been converted, all phi_ops get visited again and given operands.
+  // For now, a SsaPhiOperation with no operands is created.
+  // Once all basic blocks have been converted, all SsaPhiOperations get visited again and given
+  // operands.
   auto type = ctx.GetTypeConverter().ConvertLlvmType(*i->getType());
-  tacs.push_back(phi_op::create({}, type));
+  tacs.push_back(SsaPhiOperation::create({}, type));
   return tacs.back()->result(0);
 }
 
@@ -773,7 +774,7 @@ convert_malloc_call(const ::llvm::CallInst * i, tacsvector_t & tacs, context & c
   auto mstate = tacs.back()->result(1);
 
   tacs.push_back(MemoryStateMergeOperation::Create({ mstate, memstate }));
-  tacs.push_back(assignment_op::create(tacs.back()->result(0), memstate));
+  tacs.push_back(AssignmentOperation::create(tacs.back()->result(0), memstate));
 
   return result;
 }
@@ -789,8 +790,8 @@ convert_free_call(const ::llvm::CallInst * i, tacsvector_t & tacs, context & ctx
   tacs.push_back(FreeOperation::Create(pointer, { memstate }, iostate));
   auto & freeThreeAddressCode = *tacs.back().get();
 
-  tacs.push_back(assignment_op::create(freeThreeAddressCode.result(0), memstate));
-  tacs.push_back(assignment_op::create(freeThreeAddressCode.result(1), iostate));
+  tacs.push_back(AssignmentOperation::create(freeThreeAddressCode.result(0), memstate));
+  tacs.push_back(AssignmentOperation::create(freeThreeAddressCode.result(1), iostate));
 
   return nullptr;
 }
@@ -834,14 +835,14 @@ convert_memcpy_call(const ::llvm::CallInst * instruction, tacsvector_t & tacs, c
         *ioState,
         { memoryState }));
     auto & memCpyVolatileTac = *tacs.back();
-    tacs.push_back(assignment_op::create(memCpyVolatileTac.result(0), ioState));
-    tacs.push_back(assignment_op::create(memCpyVolatileTac.result(1), memoryState));
+    tacs.push_back(AssignmentOperation::create(memCpyVolatileTac.result(0), ioState));
+    tacs.push_back(AssignmentOperation::create(memCpyVolatileTac.result(1), memoryState));
   }
   else
   {
     tacs.push_back(
         MemCpyNonVolatileOperation::create(destination, source, length, { memoryState }));
-    tacs.push_back(assignment_op::create(tacs.back()->result(0), memoryState));
+    tacs.push_back(AssignmentOperation::create(tacs.back()->result(0), memoryState));
   }
 
   return nullptr;
@@ -949,8 +950,8 @@ convert_call_instruction(::llvm::Instruction * instruction, tacsvector_t & tacs,
   auto memstate = call->result(call->nresults() - 1);
 
   tacs.push_back(std::move(call));
-  tacs.push_back(assignment_op::create(iostate, ctx.iostate()));
-  tacs.push_back(assignment_op::create(memstate, ctx.memory_state()));
+  tacs.push_back(AssignmentOperation::create(iostate, ctx.iostate()));
+  tacs.push_back(AssignmentOperation::create(memstate, ctx.memory_state()));
 
   return result;
 }
@@ -1105,7 +1106,7 @@ convert_alloca_instruction(::llvm::Instruction * instruction, tacsvector_t & tac
   auto astate = tacs.back()->result(1);
 
   tacs.push_back(MemoryStateMergeOperation::Create({ astate, memstate }));
-  tacs.push_back(assignment_op::create(tacs.back()->result(0), memstate));
+  tacs.push_back(AssignmentOperation::create(tacs.back()->result(0), memstate));
 
   return result;
 }

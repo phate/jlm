@@ -169,8 +169,8 @@ TestBranchAnnotation()
     bb2.append_last(tac::create(op, { v1 }));
     auto v2 = bb2.last()->result(0);
 
-    bb1.append_last(assignment_op::create(v2, v3));
-    bb2.append_last(assignment_op::create(v1, v3));
+    bb1.append_last(AssignmentOperation::create(v2, v3));
+    bb2.append_last(AssignmentOperation::create(v1, v3));
     bb2.append_last(tac::create(op, { v3 }));
     auto v4 = bb2.last()->result(0);
 
@@ -314,12 +314,12 @@ TestBranchInLoopAnnotation()
     tl_cb1.append_last(tac::create(op, { v1 }));
     auto v2 = tl_cb1.last()->result(0);
 
-    tl_cb1.append_last(assignment_op::create(v1, v3));
+    tl_cb1.append_last(AssignmentOperation::create(v1, v3));
     tl_cb1.append_last(tac::create(op, { v1 }));
     auto v4 = tl_cb1.last()->result(0);
 
-    tl_cb2.append_last(assignment_op::create(v1, v3));
-    tl_cb2.append_last(assignment_op::create(v4, v3));
+    tl_cb2.append_last(AssignmentOperation::create(v1, v3));
+    tl_cb2.append_last(AssignmentOperation::create(v4, v3));
 
     auto exitNode = exitaggnode::create({ v2, v3 });
 
@@ -402,7 +402,7 @@ TestAssignmentAnnotation()
     auto v2 = module.create_variable(vt, "v2");
 
     taclist bb;
-    bb.append_last(assignment_op::create(v1, v2));
+    bb.append_last(AssignmentOperation::create(v1, v2));
 
     auto root = blockaggnode::create(std::move(bb));
 
@@ -448,9 +448,9 @@ TestBranchPassByAnnotation()
     tlsplit.append_last(tac::create(op, {}));
     auto v2 = tlsplit.last()->result(0);
 
-    tlb1.append_last(assignment_op::create(v1, v2));
-    tlb1.append_last(assignment_op::create(v1, v3));
-    tlb2.append_last(assignment_op::create(v1, v3));
+    tlb1.append_last(AssignmentOperation::create(v1, v2));
+    tlb1.append_last(AssignmentOperation::create(v1, v3));
+    tlb2.append_last(AssignmentOperation::create(v1, v3));
 
     auto splitNode = blockaggnode::create(std::move(tlsplit));
 

@@ -208,10 +208,13 @@ public:
   copy() const override;
 
   static rvsdg::output &
-  Create(rvsdg::Region &, const std::vector<rvsdg::output *> & operands)
+  Create(rvsdg::Region & region, const std::vector<rvsdg::output *> & operands)
   {
-    return *rvsdg::CreateOpNode<CallEntryMemoryStateMergeOperation>(operands, operands.size())
-                .output(0);
+    return operands.empty()
+             ? *rvsdg::CreateOpNode<CallEntryMemoryStateMergeOperation>(region, operands.size())
+                    .output(0)
+             : *rvsdg::CreateOpNode<CallEntryMemoryStateMergeOperation>(operands, operands.size())
+                    .output(0);
   }
 };
 

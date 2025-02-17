@@ -24,7 +24,7 @@ destruct_ssa(llvm::cfg & cfg)
     std::unordered_set<basic_block *> phi_blocks;
     for (auto & bb : cfg)
     {
-      if (is<phi_op>(bb.first()))
+      if (is<SsaPhiOperation>(bb.first()))
         phi_blocks.insert(&bb);
     }
 
@@ -54,10 +54,10 @@ destruct_ssa(llvm::cfg & cfg)
       while (tacs.first())
       {
         auto phitac = tacs.first();
-        if (!is<phi_op>(phitac))
+        if (!is<SsaPhiOperation>(phitac))
           break;
 
-        auto phi = static_cast<const phi_op *>(&phitac->operation());
+        const auto phi = static_cast<const SsaPhiOperation *>(&phitac->operation());
         auto v = cfg.module().create_variable(phi->Type());
 
         const variable * value = nullptr;
@@ -65,12 +65,12 @@ destruct_ssa(llvm::cfg & cfg)
         {
           JLM_ASSERT(edges.find(phi->node(n)) != edges.end());
           auto bb = edges[phi->node(n)]->split();
-          value = bb->append_last(assignment_op::create(phitac->operand(n), v))->operand(0);
+          value = bb->append_last(AssignmentOperation::create(phitac->operand(n), v))->operand(0);
         }
 
         auto phiresult = std::move(phitac->results()[0]);
         auto undef = firstbb->append_first(UndefValueOperation::Create(std::move(phiresult)));
-        ass_block->append_last(assignment_op::create(value, undef->result(0)));
+        ass_block->append_last(AssignmentOperation::create(value, undef->result(0)));
         tacs.drop_first();
       }
 
