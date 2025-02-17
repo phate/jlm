@@ -147,7 +147,7 @@ RhlsToFirrtlConverter::MlirGenSimpleNode(const jlm::rvsdg::SimpleNode * node)
     auto uIntOp = AddAsUIntOp(body, remOp);
     Connect(body, outData, uIntOp);
   }
-  else if (dynamic_cast<const jlm::rvsdg::biteq_op *>(&(node->GetOperation())))
+  else if (rvsdg::is<llvm::IntegerEqOperation>(node))
   {
     auto input0 = GetSubfield(body, inBundles[0], "data");
     auto input1 = GetSubfield(body, inBundles[1], "data");
@@ -155,7 +155,7 @@ RhlsToFirrtlConverter::MlirGenSimpleNode(const jlm::rvsdg::SimpleNode * node)
     // Connect the op to the output data
     Connect(body, outData, op);
   }
-  else if (dynamic_cast<const jlm::rvsdg::bitne_op *>(&(node->GetOperation())))
+  else if (rvsdg::is<llvm::IntegerNeOperation>(node))
   {
     auto input0 = GetSubfield(body, inBundles[0], "data");
     auto input1 = GetSubfield(body, inBundles[1], "data");
@@ -163,7 +163,7 @@ RhlsToFirrtlConverter::MlirGenSimpleNode(const jlm::rvsdg::SimpleNode * node)
     // Connect the op to the output data
     Connect(body, outData, op);
   }
-  else if (dynamic_cast<const jlm::rvsdg::bitsgt_op *>(&(node->GetOperation())))
+  else if (rvsdg::is<llvm::IntegerSgtOperation>(node))
   {
     auto input0 = GetSubfield(body, inBundles[0], "data");
     auto input1 = GetSubfield(body, inBundles[1], "data");
@@ -173,7 +173,7 @@ RhlsToFirrtlConverter::MlirGenSimpleNode(const jlm::rvsdg::SimpleNode * node)
     // Connect the op to the output data
     Connect(body, outData, op);
   }
-  else if (dynamic_cast<const jlm::rvsdg::bitult_op *>(&(node->GetOperation())))
+  else if (rvsdg::is<llvm::IntegerUltOperation>(node))
   {
     auto input0 = GetSubfield(body, inBundles[0], "data");
     auto input1 = GetSubfield(body, inBundles[1], "data");
@@ -181,7 +181,7 @@ RhlsToFirrtlConverter::MlirGenSimpleNode(const jlm::rvsdg::SimpleNode * node)
     // Connect the op to the output data
     Connect(body, outData, op);
   }
-  else if (dynamic_cast<const jlm::rvsdg::bitule_op *>(&(node->GetOperation())))
+  else if (rvsdg::is<llvm::IntegerUleOperation>(node))
   {
     auto input0 = GetSubfield(body, inBundles[0], "data");
     auto input1 = GetSubfield(body, inBundles[1], "data");
@@ -189,7 +189,7 @@ RhlsToFirrtlConverter::MlirGenSimpleNode(const jlm::rvsdg::SimpleNode * node)
     // Connect the op to the output data
     Connect(body, outData, op);
   }
-  else if (dynamic_cast<const jlm::rvsdg::bitugt_op *>(&(node->GetOperation())))
+  else if (rvsdg::is<llvm::IntegerUgtOperation>(node))
   {
     auto input0 = GetSubfield(body, inBundles[0], "data");
     auto input1 = GetSubfield(body, inBundles[1], "data");
@@ -197,7 +197,7 @@ RhlsToFirrtlConverter::MlirGenSimpleNode(const jlm::rvsdg::SimpleNode * node)
     // Connect the op to the output data
     Connect(body, outData, op);
   }
-  else if (dynamic_cast<const jlm::rvsdg::bitsge_op *>(&(node->GetOperation())))
+  else if (rvsdg::is<llvm::IntegerSgeOperation>(node))
   {
     auto input0 = GetSubfield(body, inBundles[0], "data");
     auto input1 = GetSubfield(body, inBundles[1], "data");
@@ -207,7 +207,7 @@ RhlsToFirrtlConverter::MlirGenSimpleNode(const jlm::rvsdg::SimpleNode * node)
     // Connect the op to the output data
     Connect(body, outData, op);
   }
-  else if (dynamic_cast<const jlm::rvsdg::bitsle_op *>(&(node->GetOperation())))
+  else if (rvsdg::is<llvm::IntegerSleOperation>(node))
   {
     auto input0 = GetSubfield(body, inBundles[0], "data");
     auto input1 = GetSubfield(body, inBundles[1], "data");
@@ -215,6 +215,15 @@ RhlsToFirrtlConverter::MlirGenSimpleNode(const jlm::rvsdg::SimpleNode * node)
     auto sIntOp1 = AddAsSIntOp(body, input1);
     auto op = AddLeqOp(body, sIntOp0, sIntOp1);
     // Connect the op to the output data
+    Connect(body, outData, op);
+  }
+  else if (rvsdg::is<llvm::IntegerSltOperation>(node))
+  {
+    auto input0 = GetSubfield(body, inBundles[0], "data");
+    auto input1 = GetSubfield(body, inBundles[1], "data");
+    auto sInt0 = AddAsSIntOp(body, input0);
+    auto sInt1 = AddAsSIntOp(body, input1);
+    auto op = AddLtOp(body, sInt0, sInt1);
     Connect(body, outData, op);
   }
   else if (dynamic_cast<const llvm::zext_op *>(&(node->GetOperation())))
@@ -260,15 +269,6 @@ RhlsToFirrtlConverter::MlirGenSimpleNode(const jlm::rvsdg::SimpleNode * node)
     auto size = ceil(log2(op->value().nalternatives()));
     auto constant = GetConstant(body, size, value);
     Connect(body, outData, constant);
-  }
-  else if (dynamic_cast<const jlm::rvsdg::bitslt_op *>(&(node->GetOperation())))
-  {
-    auto input0 = GetSubfield(body, inBundles[0], "data");
-    auto input1 = GetSubfield(body, inBundles[1], "data");
-    auto sInt0 = AddAsSIntOp(body, input0);
-    auto sInt1 = AddAsSIntOp(body, input1);
-    auto op = AddLtOp(body, sInt0, sInt1);
-    Connect(body, outData, op);
   }
   else if (dynamic_cast<const llvm::bitcast_op *>(&(node->GetOperation())))
   {
