@@ -324,7 +324,7 @@ convert_gamma_node(const rvsdg::Node & node, context & ctx)
     }
 
     /* create phi instruction */
-    exit->append_last(phi_op::create(arguments, output->Type()));
+    exit->append_last(SsaPhiOperation::create(arguments, output->Type()));
     ctx.insert(output, exit->last()->result(0));
   }
 
@@ -373,7 +373,7 @@ convert_theta_node(const rvsdg::Node & node, context & ctx)
     auto v = ctx.variable(argument->input()->origin());
     if (phi_needed(argument->input(), v))
     {
-      auto phi = entry->append_last(phi_op::create({}, argument->Type()));
+      auto phi = entry->append_last(SsaPhiOperation::create({}, argument->Type()));
       phis.push_back(phi);
       v = phi->result(0);
     }
@@ -396,7 +396,7 @@ convert_theta_node(const rvsdg::Node & node, context & ctx)
     auto vr = ctx.variable(result->origin());
     auto phi = phis.front();
     phis.pop_front();
-    phi->replace(phi_op({ pre_entry, ctx.lpbb() }, vr->Type()), { ve, vr });
+    phi->replace(SsaPhiOperation({ pre_entry, ctx.lpbb() }, vr->Type()), { ve, vr });
     ctx.insert(result->output(), vr);
   }
   JLM_ASSERT(phis.empty());

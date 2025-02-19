@@ -31,7 +31,8 @@ test()
   auto bb1 = basic_block::create(cfg);
 
   bb0->append_last(tac::create(op, {}));
-  bb1->append_last(phi_op::create({ { bb0->last()->result(0), bb0 }, { arg, cfg.entry() } }, vt));
+  bb1->append_last(
+      SsaPhiOperation::create({ { bb0->last()->result(0), bb0 }, { arg, cfg.entry() } }, vt));
 
   cfg.exit()->divert_inedges(bb1);
   bb0->add_outedge(bb1);

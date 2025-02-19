@@ -11,6 +11,7 @@
 #include <jlm/llvm/ir/operators.hpp>
 #include <jlm/llvm/ir/operators/FunctionPointer.hpp>
 #include <jlm/llvm/ir/operators/IntegerOperations.hpp>
+#include <jlm/llvm/ir/operators/IOBarrier.hpp>
 #include <jlm/llvm/ir/operators/MemoryStateOperations.hpp>
 
 #include <jlm/llvm/backend/jlm2llvm/context.hpp>
@@ -41,7 +42,7 @@ convert_assignment(
     ::llvm::IRBuilder<> &,
     context & ctx)
 {
-  JLM_ASSERT(is<assignment_op>(op));
+  JLM_ASSERT(is<AssignmentOperation>(op));
   return ctx.value(args[0]);
 }
 
@@ -251,8 +252,7 @@ convert_phi(
     ::llvm::IRBuilder<> & builder,
     context & ctx)
 {
-  JLM_ASSERT(is<phi_op>(op));
-  auto & phi = *static_cast<const llvm::phi_op *>(&op);
+  auto & phi = *util::AssertedCast<const SsaPhiOperation>(&op);
   auto & llvmContext = ctx.llvm_module().getContext();
   auto & typeConverter = ctx.GetTypeConverter();
 
@@ -1146,6 +1146,10 @@ convert_operation(
   {
     return CreateICmpInstruction(::llvm::CmpInst::ICMP_SLE, arguments, builder, ctx);
   }
+  if (is<IOBarrierOperation>(op))
+  {
+    return ctx.value(arguments[0]);
+  }
 
   static std::unordered_map<
       std::type_index,
@@ -1159,9 +1163,9 @@ convert_operation(
             { typeid(UndefValueOperation), convert_undef },
             { typeid(PoisonValueOperation), convert<PoisonValueOperation> },
             { typeid(rvsdg::match_op), convert_match },
-            { typeid(assignment_op), convert_assignment },
+            { typeid(AssignmentOperation), convert_assignment },
             { typeid(branch_op), convert_branch },
-            { typeid(phi_op), convert_phi },
+            { typeid(SsaPhiOperation), convert_phi },
             { typeid(LoadNonVolatileOperation), convert<LoadNonVolatileOperation> },
             { typeid(LoadVolatileOperation), convert<LoadVolatileOperation> },
             { typeid(StoreNonVolatileOperation), convert_store },

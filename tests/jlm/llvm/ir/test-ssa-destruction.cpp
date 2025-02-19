@@ -46,8 +46,8 @@ test_two_phis()
   bb3->append_last(jlm::tests::create_testop_tac({}, { vt }));
   auto v4 = bb3->last()->result(0);
 
-  bb4->append_last(phi_op::create({ { v1, bb2 }, { v2, bb3 } }, vt));
-  bb4->append_last(phi_op::create({ { v3, bb2 }, { v4, bb3 } }, vt));
+  bb4->append_last(SsaPhiOperation::create({ { v1, bb2 }, { v2, bb3 } }, vt));
+  bb4->append_last(SsaPhiOperation::create({ { v3, bb2 }, { v4, bb3 } }, vt));
 
   std::cout << cfg::ToAscii(cfg) << std::flush;
 
