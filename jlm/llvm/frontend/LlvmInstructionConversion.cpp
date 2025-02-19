@@ -427,23 +427,42 @@ convert_switch_instruction(::llvm::Instruction * instruction, tacsvector_t & tac
   auto i = ::llvm::cast<::llvm::SwitchInst>(instruction);
   auto bb = ctx.get(i->getParent());
 
-  size_t n = 0;
+  JLM_ASSERT(bb->noutedges() == 0);
+
+  // It is possible for multiple cases to jump to the same basic block.
+  // In which case the same outgoing edge from this basic block should be re-used.
+  std::unordered_map<basic_block*, uint64_t> existing_out_edges;
+
+  // This function only adds an outgoing edge to the given basic block if it does not exist already.
+  // Returns the index of the outgoing edge
+  const auto AddOutgoingEdgeTo = [&] (::llvm::BasicBlock* block) -> uint64_t
+  {
+    const auto successor_bb = ctx.get(block);
+    if(const auto it = existing_out_edges.find(successor_bb); it != existing_out_edges.end())
+      return it->second;
+
+    const auto new_outedge_index = bb->noutedges();
+    bb->add_outedge(successor_bb);
+    existing_out_edges[successor_bb] = new_outedge_index;
+    return new_outedge_index;
+  };
+
+  // The final mapping from switch input to index of outgoing control flow edge
   std::unordered_map<uint64_t, uint64_t> mapping;
+
   for (auto it = i->case_begin(); it != i->case_end(); it++)
   {
     JLM_ASSERT(it != i->case_default());
-    mapping[it->getCaseValue()->getZExtValue()] = n++;
-    bb->add_outedge(ctx.get(it->getCaseSuccessor()));
+    mapping[it->getCaseValue()->getZExtValue()] = AddOutgoingEdgeTo(it->getCaseSuccessor());
   }
 
-  bb->add_outedge(ctx.get(i->case_default()->getCaseSuccessor()));
-  JLM_ASSERT(i->getNumSuccessors() == n + 1);
+  const auto default_outedge = AddOutgoingEdgeTo(i->case_default()->getCaseSuccessor());
 
   auto c = ConvertValue(i->getCondition(), tacs, ctx);
   auto nbits = i->getCondition()->getType()->getIntegerBitWidth();
-  auto op = rvsdg::match_op(nbits, mapping, n, n + 1);
+  auto op = rvsdg::match_op(nbits, mapping, default_outedge, bb->noutedges());
   tacs.push_back(tac::create(op, { c }));
-  tacs.push_back((branch_op::create(n + 1, tacs.back()->result(0))));
+  tacs.push_back((branch_op::create(bb->noutedges(), tacs.back()->result(0))));
 
   return nullptr;
 }
@@ -698,20 +717,34 @@ convert_store_instruction(::llvm::Instruction * i, tacsvector_t & tacs, context 
  *
  * @param phi the phi instruction
  * @param ctx the context for the current LLVM to tac conversion
- * @return the index of the single reachable predecessor basic block, or std::nullopt if it has many
+ * @return the single reachable predecessor basic block, or std::nullopt if it has multiple
  */
-static std::optional<size_t>
+static std::optional<::llvm::BasicBlock*>
 getSinglePredecessor(::llvm::PHINode * phi, context & ctx)
 {
-  std::optional<size_t> predecessor = std::nullopt;
+  std::optional<::llvm::BasicBlock*> predecessor = std::nullopt;
+
   for (size_t n = 0; n < phi->getNumOperands(); n++)
   {
-    if (!ctx.has(phi->getIncomingBlock(n)))
+    const auto bb = phi->getIncomingBlock(n);
+    if (!ctx.has(bb))
       continue; // This predecessor was unreachable
-    if (predecessor.has_value())
-      return std::nullopt; // This is the second reachable predecessor. Abort!
-    predecessor = n;
+
+    // If this is the first reachable predecessor we have found, store it
+    if (!predecessor.has_value())
+    {
+      predecessor = bb;
+      continue;
+    }
+
+    // If we are seeing the same predecessor basic block again, skip it
+    if (bb == *predecessor)
+      continue;
+
+    // We have found two distinct reachable predecessor basic blocks
+    return std::nullopt;
   }
+
   // Any visited phi should have at least one predecessor
   JLM_ASSERT(predecessor);
   return predecessor;
@@ -728,7 +761,7 @@ convert_phi_instruction(::llvm::Instruction * i, tacsvector_t & tacs, context & 
   {
     // The incoming value is either a constant,
     // or a value from the predecessor basic block that has already been converted
-    return ConvertValue(phi->getIncomingValue(*singlePredecessor), tacs, ctx);
+    return ConvertValue(*singlePredecessor, tacs, ctx);
   }
 
   // This phi instruction can be reached from multiple basic blocks.

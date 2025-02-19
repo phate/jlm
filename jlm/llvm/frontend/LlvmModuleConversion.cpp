@@ -50,7 +50,7 @@ convert_instructions(::llvm::Function & function, context & ctx)
 }
 
 static void
-patch_phi_operands(const std::vector<::llvm::PHINode *> & phis, context & ctx)
+PatchPhiOperands(const std::vector<::llvm::PHINode *> & phis, context & ctx)
 {
   for (const auto & phi : phis)
   {
@@ -58,13 +58,20 @@ patch_phi_operands(const std::vector<::llvm::PHINode *> & phis, context & ctx)
     std::vector<const variable *> operands;
     for (size_t n = 0; n < phi->getNumOperands(); n++)
     {
+      auto bb = ctx.get(phi->getIncomingBlock(n));
+
       // In LLVM, phi instructions may have incoming basic blocks that are unreachable.
       // These are not visited during convert_basic_blocks, and thus do not have corresponding
       // jlm::llvm::basic_blocks. The SsaPhiOperation can safely ignore these, as they are dead.
-      if (!ctx.has(phi->getIncomingBlock(n)))
+      if (!ctx.has(bb))
         continue;
 
-      auto bb = ctx.get(phi->getIncomingBlock(n));
+      // In LLVM, some phi instructions have multiple operands that reference the same basic block.
+      // When that has happened "in the wild" (see issue #612), the operands that refer to the
+      // same basic blocks, also have the same value.
+      // Therefore, we chose to handle this by only keeping the first operand per basic block
+      if ()
+
       tacsvector_t tacs;
       operands.push_back(ConvertValue(phi->getIncomingValue(n), tacs, ctx));
       bb->insert_before_branch(tacs);
@@ -411,7 +418,7 @@ create_cfg(::llvm::Function & f, context & ctx)
   ctx.set_basic_block_map(bbmap);
   ctx.set_result(result);
   auto phis = convert_instructions(f, ctx);
-  patch_phi_operands(phis, ctx);
+  PatchPhiOperands(phis, ctx);
 
   EnsureSingleInEdgeToExitNode(*cfg);
 
