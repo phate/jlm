@@ -866,7 +866,7 @@ RegionAwareMemoryNodeProvider::Propagate(const rvsdg::RvsdgModule & rvsdgModule)
     {
       PropagateRegion(*lambdaNode->subregion());
     }
-    else if (auto phiNode = dynamic_cast<const phi::node *>(node))
+    else if (auto phiNode = dynamic_cast<const rvsdg::PhiNode *>(node))
     {
       PropagatePhi(*phiNode);
     }
@@ -894,9 +894,9 @@ RegionAwareMemoryNodeProvider::Propagate(const rvsdg::RvsdgModule & rvsdgModule)
 }
 
 void
-RegionAwareMemoryNodeProvider::PropagatePhi(const phi::node & phiNode)
+RegionAwareMemoryNodeProvider::PropagatePhi(const rvsdg::PhiNode & phiNode)
 {
-  auto lambdaNodes = phi::node::ExtractLambdaNodes(phiNode);
+  auto lambdaNodes = rvsdg::PhiNode::ExtractLambdaNodes(phiNode);
   if (lambdaNodes.empty())
   {
     // Nothing needs to be done if the phi node only contains delta nodes.
@@ -994,9 +994,9 @@ RegionAwareMemoryNodeProvider::ResolveUnknownMemoryNodeReferences(
     {
       ResolveLambda(*lambdaNode);
     }
-    else if (auto phiNode = dynamic_cast<const phi::node *>(node))
+    else if (auto phiNode = dynamic_cast<const rvsdg::PhiNode *>(node))
     {
-      auto lambdaNodes = phi::node::ExtractLambdaNodes(*phiNode);
+      auto lambdaNodes = rvsdg::PhiNode::ExtractLambdaNodes(*phiNode);
       for (auto & lambda : lambdaNodes)
       {
         ResolveLambda(*lambda);

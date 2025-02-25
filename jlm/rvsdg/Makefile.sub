@@ -9,6 +9,7 @@ librvsdg_SOURCES = \
 	jlm/rvsdg/notifiers.cpp \
 	jlm/rvsdg/nullary.cpp \
 	jlm/rvsdg/operation.cpp \
+	jlm/rvsdg/Phi.cpp \
 	jlm/rvsdg/region.cpp \
 	jlm/rvsdg/simple-node.cpp \
 	jlm/rvsdg/structural-node.cpp \
@@ -62,6 +63,7 @@ librvsdg_HEADERS = \
 	jlm/rvsdg/node.hpp \
 	jlm/rvsdg/NodeNormalization.hpp \
 	jlm/rvsdg/nullary.hpp \
+	jlm/rvsdg/Phi.hpp \
 	jlm/rvsdg/structural-node.hpp \
 	jlm/rvsdg/control.hpp \
 	jlm/rvsdg/region.hpp \
