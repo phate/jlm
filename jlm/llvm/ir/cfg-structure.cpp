@@ -45,31 +45,31 @@ sccstructure::create(const llvm::scc & scc)
   {
     for (auto & inedge : node.inedges())
     {
-      if (!scc.contains(inedge->source()))
+      if (!scc.contains(inedge.source()))
       {
-        sccstruct->eedges_.insert(inedge);
+        sccstruct->eedges_.insert(&inedge);
         if (sccstruct->enodes_.find(&node) == sccstruct->enodes_.end())
           sccstruct->enodes_.insert(&node);
       }
     }
 
-    for (auto it = node.begin_outedges(); it != node.end_outedges(); it++)
+    for (auto & edge : node.outedges())
     {
-      if (!scc.contains(it->sink()))
+      if (!scc.contains(edge.sink()))
       {
-        sccstruct->xedges_.insert(it.edge());
-        if (sccstruct->xnodes_.find(it->sink()) == sccstruct->xnodes_.end())
-          sccstruct->xnodes_.insert(it->sink());
+        sccstruct->xedges_.insert(&edge);
+        if (sccstruct->xnodes_.find(edge.sink()) == sccstruct->xnodes_.end())
+          sccstruct->xnodes_.insert(edge.sink());
       }
     }
   }
 
   for (auto & node : scc)
   {
-    for (auto it = node.begin_outedges(); it != node.end_outedges(); it++)
+    for (auto & edge : node.outedges())
     {
-      if (sccstruct->enodes_.find(it->sink()) != sccstruct->enodes_.end())
-        sccstruct->redges_.insert(it.edge());
+      if (sccstruct->enodes_.find(edge.sink()) != sccstruct->enodes_.end())
+        sccstruct->redges_.insert(&edge);
     }
   }
 
@@ -94,9 +94,9 @@ strongconnect(
 
   if (node != exit)
   {
-    for (auto it = node->begin_outedges(); it != node->end_outedges(); it++)
+    for (auto & edge : node->outedges())
     {
-      auto successor = it->sink();
+      auto successor = edge.sink();
       if (map.find(successor) == map.end())
       {
         /* successor has not been visited yet; recurse on it */
@@ -171,8 +171,8 @@ copy_structural(const jlm::llvm::cfg & in)
   node_map[in.entry()]->add_outedge(node_map[in.entry()->outedge(0)->sink()]);
   for (const auto & node : in)
   {
-    for (auto it = node.begin_outedges(); it != node.end_outedges(); it++)
-      node_map[&node]->add_outedge(node_map[it->sink()]);
+    for (auto & outedge : node.outedges())
+      node_map[&node]->add_outedge(node_map[outedge.sink()]);
   }
 
   return out;
@@ -226,12 +226,12 @@ is_branch(const jlm::llvm::cfg_node * split) noexcept
   if (join == nullptr || join->ninedges() != split->noutedges())
     return false;
 
-  for (auto it = split->begin_outedges(); it != split->end_outedges(); it++)
+  for (auto & outedge : split->outedges())
   {
-    if (it->sink() == join)
+    if (outedge.sink() == join)
       continue;
 
-    auto node = it->sink();
+    auto node = outedge.sink();
     if (node->ninedges() != 1)
       return false;
     if (node->noutedges() != 1 || node->outedge(0)->sink() != join)
@@ -251,13 +251,13 @@ is_proper_branch(const jlm::llvm::cfg_node * split) noexcept
     return false;
 
   auto join = split->outedge(0)->sink()->outedge(0)->sink();
-  for (auto it = split->begin_outedges(); it != split->end_outedges(); it++)
+  for (auto & outedge : split->outedges())
   {
-    if (it->sink()->ninedges() != 1)
+    if (outedge.sink()->ninedges() != 1)
       return false;
-    if (it->sink()->noutedges() != 1)
+    if (outedge.sink()->noutedges() != 1)
       return false;
-    if (it->sink()->outedge(0)->sink() != join)
+    if (outedge.sink()->outedge(0)->sink() != join)
       return false;
   }
 
@@ -267,9 +267,9 @@ is_proper_branch(const jlm::llvm::cfg_node * split) noexcept
 static inline bool
 is_T1(const jlm::llvm::cfg_node * node) noexcept
 {
-  for (auto it = node->begin_outedges(); it != node->end_outedges(); it++)
+  for (auto & outedge : node->outedges())
   {
-    if (it->source() == it->sink())
+    if (outedge.source() == outedge.sink())
       return true;
   }
 
@@ -282,10 +282,10 @@ is_T2(const jlm::llvm::cfg_node * node) noexcept
   if (node->ninedges() == 0)
     return false;
 
-  auto source = (*node->inedges().begin())->source();
+  auto source = node->inedges().begin()->source();
   for (auto & inedge : node->inedges())
   {
-    if (inedge->source() != source)
+    if (inedge.source() != source)
       return false;
   }
 
@@ -299,11 +299,11 @@ reduce_loop(jlm::llvm::cfg_node * node, std::unordered_set<jlm::llvm::cfg_node *
   auto & cfg = node->cfg();
 
   auto reduction = jlm::llvm::basic_block::create(cfg);
-  for (auto it = node->begin_outedges(); it != node->end_outedges(); it++)
+  for (auto & outedge : node->outedges())
   {
-    if (it->is_selfloop())
+    if (outedge.is_selfloop())
     {
-      node->remove_outedge(it->index());
+      node->remove_outedge(outedge.index());
       break;
     }
   }
@@ -325,8 +325,8 @@ reduce_linear(jlm::llvm::cfg_node * entry, std::unordered_set<jlm::llvm::cfg_nod
 
   auto reduction = jlm::llvm::basic_block::create(cfg);
   entry->divert_inedges(reduction);
-  for (auto it = exit->begin_outedges(); it != exit->end_outedges(); it++)
-    reduction->add_outedge(it->sink());
+  for (auto & outedge : exit->outedges())
+    reduction->add_outedge(outedge.sink());
   exit->remove_outedges();
 
   to_visit.erase(entry);
@@ -344,12 +344,12 @@ reduce_branch(jlm::llvm::cfg_node * split, std::unordered_set<jlm::llvm::cfg_nod
   auto reduction = jlm::llvm::basic_block::create(cfg);
   split->divert_inedges(reduction);
   reduction->add_outedge(join);
-  for (auto it = split->begin_outedges(); it != split->end_outedges(); it++)
+  for (auto & outedge : split->outedges())
   {
-    if (it->sink() != join)
+    if (outedge.sink() != join)
     {
-      it->sink()->remove_outedges();
-      to_visit.erase(it->sink());
+      outedge.sink()->remove_outedges();
+      to_visit.erase(outedge.sink());
     }
   }
   split->remove_outedges();
@@ -370,8 +370,8 @@ reduce_proper_branch(
   split->divert_inedges(reduction);
   join->remove_inedges();
   reduction->add_outedge(join);
-  for (auto it = split->begin_outedges(); it != split->end_outedges(); it++)
-    to_visit.erase(it->sink());
+  for (auto & outedge : split->outedges())
+    to_visit.erase(outedge.sink());
 
   to_visit.erase(split);
   to_visit.insert(reduction);
@@ -382,11 +382,11 @@ reduce_T1(jlm::llvm::cfg_node * node)
 {
   JLM_ASSERT(is_T1(node));
 
-  for (auto it = node->begin_outedges(); it != node->end_outedges(); it++)
+  for (auto & outedge : node->outedges())
   {
-    if (it->source() == it->sink())
+    if (outedge.source() == outedge.sink())
     {
-      node->remove_outedge(it->index());
+      node->remove_outedge(outedge.index());
       break;
     }
   }
@@ -397,7 +397,7 @@ reduce_T2(jlm::llvm::cfg_node * node, std::unordered_set<jlm::llvm::cfg_node *> 
 {
   JLM_ASSERT(is_T2(node));
 
-  auto p = (*node->inedges().begin())->source();
+  auto p = node->inedges().begin()->source();
   p->divert_inedges(node);
   p->remove_outedges();
   to_visit.erase(p);
@@ -705,10 +705,11 @@ compute_livenodes(const llvm::cfg & cfg)
     to_visit.erase(to_visit.begin());
     JLM_ASSERT(visited.find(node) == visited.end());
     visited.insert(node);
-    for (auto it = node->begin_outedges(); it != node->end_outedges(); it++)
+    for (auto & outedge : node->outedges())
     {
-      if (visited.find(it->sink()) == visited.end() && to_visit.find(it->sink()) == to_visit.end())
-        to_visit.insert(it->sink());
+      if (visited.find(outedge.sink()) == visited.end()
+          && to_visit.find(outedge.sink()) == to_visit.end())
+        to_visit.insert(outedge.sink());
     }
   }
 

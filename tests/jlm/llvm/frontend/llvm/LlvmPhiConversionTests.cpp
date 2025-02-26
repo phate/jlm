@@ -271,3 +271,111 @@ TestPhiOperandElision()
 JLM_UNIT_TEST_REGISTER(
     "jlm/llvm/frontend/TestLlvmPhiConversion-TestPhiOperandElision",
     TestPhiOperandElision)
+
+/**
+ * Tests converting LLVM IR with "duplicated" predecessor basic blocks.
+ *
+ * The IR look like so:
+ *   define i32 @f() {
+ *   0:
+ *     br i1 false, label %1, label %1
+ *
+ *   1:
+ *     %p = phi i32 [1, %0], [1, %0]
+ *     br i1 true, label %2, label %2
+ *
+ *   2:
+ *     %q = phi i32 [%p, %1], [%p, %1], [0, %2]
+ *     br i1 false, label %2, label %3
+ *
+ *   3:
+ *     ret i32 %q
+ *   }
+ *
+ * After conversion, the first phi should be elided completely,
+ * while the second phi should have no duplicated operands.
+ * The control flow graph should have no duplicated edges.
+}
+ */
+static int
+TestPhiDuplicatedOperand()
+{
+  // Arrange
+  llvm::LLVMContext ctx;
+  llvm::Module module("phi-duplicates.c", ctx);
+
+  // Build LLVM module
+  {
+    llvm::IRBuilder builder(ctx);
+
+    auto i1 = builder.getInt1Ty();
+    auto i32 = builder.getInt32Ty();
+    auto prototype = llvm::FunctionType::get(i32, {}, false);
+    llvm::Function * function =
+        llvm::Function::Create(prototype, llvm::Function::ExternalLinkage, "f", module);
+
+    auto bb0 = llvm::BasicBlock::Create(ctx, "bb0", function);
+    auto bb1 = llvm::BasicBlock::Create(ctx, "bb1", function);
+    auto bb2 = llvm::BasicBlock::Create(ctx, "bb2", function);
+    auto bb3 = llvm::BasicBlock::Create(ctx, "bb3", function);
+
+    builder.SetInsertPoint(bb0); // entry block
+    builder.CreateCondBr(llvm::ConstantInt::getFalse(i1), bb1, bb1);
+
+    builder.SetInsertPoint(bb1); // Predecessors: bb0
+    // Create phi node with duplicate operands for bb0
+    auto p = builder.CreatePHI(i32, 2);
+    p->addIncoming(llvm::ConstantInt::get(i32, 1), bb0);
+    p->addIncoming(llvm::ConstantInt::get(i32, 1), bb0);
+    builder.CreateCondBr(llvm::ConstantInt::getTrue(i1), bb2, bb2);
+
+    builder.SetInsertPoint(bb2); // Predecessors: bb1, bb2
+    auto q = builder.CreatePHI(i32, 3);
+    q->addIncoming(p, bb1);
+    q->addIncoming(p, bb1);
+    q->addIncoming(llvm::ConstantInt::get(i32, 0), bb2);
+    builder.CreateCondBr(llvm::ConstantInt::getFalse(i1), bb2, bb3);
+
+    builder.SetInsertPoint(bb3); // Predecessors: bb2
+    builder.CreateRet(q);
+  }
+
+  jlm::tests::print(module);
+
+  // Act
+  auto ipgmod = jlm::llvm::ConvertLlvmModule(module);
+  print(*ipgmod, stdout);
+
+  // Assert
+  // Get the CFG of the function
+  auto function =
+      jlm::util::AssertedCast<const jlm::llvm::function_node>(ipgmod->ipgraph().find("f"));
+
+  // Traverse the cfg and save every phi node
+  std::vector<jlm::llvm::tac *> phiTacs;
+  for (auto & bb : *function->cfg())
+  {
+    // Ensure there are no duplicate outedges
+    jlm::util::HashSet<jlm::llvm::cfg_node*> successors;
+    for (auto & edge : bb.outedges())
+      successors.Insert(edge.sink());
+    assert(successors.Size() == bb.noutedges());
+
+    for (auto tac : bb)
+    {
+      if (jlm::rvsdg::is<jlm::llvm::SsaPhiOperation>(tac->operation()))
+        phiTacs.push_back(tac);
+    }
+  }
+
+  // There should be exactly one phi tac
+  assert(phiTacs.size() == 1);
+  auto phiTac = phiTacs[0];
+  // The phi should have two operands
+  assert(phiTac->noperands() == 2);
+
+  return 0;
+}
+JLM_UNIT_TEST_REGISTER(
+    "jlm/llvm/frontend/TestLlvmPhiConversion-TestPhiDuplicatedOperand",
+    TestPhiDuplicatedOperand)

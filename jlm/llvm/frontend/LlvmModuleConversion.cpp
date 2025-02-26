@@ -68,14 +68,15 @@ PatchPhiOperands(const std::vector<::llvm::PHINode *> & phis, context & ctx)
 
       // In LLVM, some phi instructions have multiple operands that reference the same basic block.
       // When that has happened "in the wild" (see issue #612), the operands that refer to the
-      // same basic blocks, also have the same value.
+      // same basic blocks, also have the same value, e.g., "phi i32 [0, %bb0], [0, %bb0]".
       // Therefore, we chose to handle this by only keeping the first operand per basic block
-      if ()
+      if (std::find(nodes.begin(), nodes.end(), bb) != nodes.end())
+        continue;
 
+      // Convert the operand value in the predecessor basic block, as that is where it is "used".
       tacsvector_t tacs;
       operands.push_back(ConvertValue(phi->getIncomingValue(n), tacs, ctx));
       bb->insert_before_branch(tacs);
-      nodes.push_back(bb);
     }
 
     // Phi instructions with a single reachable predecessor should have already been elided

@@ -101,10 +101,10 @@ cfg_node::single_successor() const noexcept
   if (noutedges() == 0)
     return false;
 
-  for (auto it = begin_outedges(); it != end_outedges(); it++)
+  for (auto & edge : outedges())
   {
-    JLM_ASSERT(it->source() == this);
-    if (it->sink() != begin_outedges()->sink())
+    JLM_ASSERT(edge.source() == this);
+    if (edge.sink() != outedge(0)->sink())
       return false;
   }
 
@@ -114,9 +114,9 @@ cfg_node::single_successor() const noexcept
 bool
 cfg_node::has_selfloop_edge() const noexcept
 {
-  for (auto it = begin_outedges(); it != end_outedges(); it++)
+  for (auto & edge : outedges())
   {
-    if (it->is_selfloop())
+    if (edge.is_selfloop())
       return true;
   }
 

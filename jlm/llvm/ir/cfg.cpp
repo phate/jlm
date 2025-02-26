@@ -48,7 +48,7 @@ cfg::remove_node(cfg::iterator & nodeit)
 
   for (auto & inedge : nodeit->inedges())
   {
-    if (inedge->source() != nodeit.node())
+    if (inedge.source() != nodeit.node())
       throw util::error("cannot remove node. It has still incoming edges.");
   }
 
@@ -162,9 +162,9 @@ cfg::CreateTargets(
 {
   size_t n = 0;
   std::string str("[");
-  for (auto it = node.begin_outedges(); it != node.end_outedges(); it++, n++)
+  for (auto & outedge : node.outedges())
   {
-    str += labels.at(it->sink());
+    str += labels.at(outedge.sink());
     if (n != node.noutedges() - 1)
       str += ", ";
   }
@@ -250,13 +250,13 @@ breadth_first(const llvm::cfg & cfg)
     auto node = next.front();
     next.pop_front();
 
-    for (auto it = node->begin_outedges(); it != node->end_outedges(); it++)
+    for (auto & outedge : node->outedges())
     {
-      if (visited.find(it->sink()) == visited.end())
+      if (visited.find(outedge.sink()) == visited.end())
       {
-        visited.insert(it->sink());
-        next.push_back(it->sink());
-        nodes.push_back(it->sink());
+        visited.insert(outedge.sink());
+        next.push_back(outedge.sink());
+        nodes.push_back(outedge.sink());
       }
     }
   }
