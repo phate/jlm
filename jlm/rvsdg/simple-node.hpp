@@ -15,7 +15,7 @@ namespace jlm::rvsdg
 {
 
 class SimpleOperation;
-class simple_input;
+class SimpleInput;
 class simple_output;
 
 class SimpleNode : public Node
@@ -30,7 +30,7 @@ protected:
       const std::vector<jlm::rvsdg::output *> & operands);
 
 public:
-  jlm::rvsdg::simple_input *
+  SimpleInput *
   input(size_t index) const noexcept;
 
   jlm::rvsdg::simple_output *
@@ -81,16 +81,14 @@ NormalizeSimpleOperationCommonNodeElimination(
     const SimpleOperation & operation,
     const std::vector<rvsdg::output *> & operands);
 
-/* inputs */
-
-class simple_input final : public node_input
+class SimpleInput final : public node_input
 {
   friend class jlm::rvsdg::output;
 
 public:
-  virtual ~simple_input() noexcept;
+  ~SimpleInput() noexcept override;
 
-  simple_input(
+  SimpleInput(
       SimpleNode * node,
       jlm::rvsdg::output * origin,
       std::shared_ptr<const rvsdg::Type> type);
@@ -107,7 +105,7 @@ public:
 
 class simple_output final : public node_output
 {
-  friend class jlm::rvsdg::simple_input;
+  friend class SimpleInput;
 
 public:
   virtual ~simple_output() noexcept;
@@ -122,12 +120,10 @@ public:
   }
 };
 
-/* simple node method definitions */
-
-inline jlm::rvsdg::simple_input *
+inline SimpleInput *
 SimpleNode::input(size_t index) const noexcept
 {
-  return static_cast<simple_input *>(Node::input(index));
+  return static_cast<SimpleInput *>(Node::input(index));
 }
 
 inline jlm::rvsdg::simple_output *
