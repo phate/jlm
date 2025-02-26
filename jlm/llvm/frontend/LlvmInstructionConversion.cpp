@@ -7,6 +7,7 @@
 #include <jlm/llvm/frontend/LlvmInstructionConversion.hpp>
 #include <jlm/llvm/ir/operators.hpp>
 #include <jlm/llvm/ir/operators/IntegerOperations.hpp>
+#include <jlm/llvm/ir/operators/IOBarrier.hpp>
 
 #include <llvm/ADT/StringExtras.h>
 #include <llvm/IR/Constants.h>
@@ -389,7 +390,7 @@ convert_return_instruction(::llvm::Instruction * instruction, tacsvector_t & tac
     return {};
 
   auto value = ConvertValue(i->getReturnValue(), tacs, ctx);
-  tacs.push_back(assignment_op::create(value, ctx.result()));
+  tacs.push_back(AssignmentOperation::create(value, ctx.result()));
 
   return ctx.result();
 }
@@ -462,25 +463,25 @@ ConvertIntegerIcmpPredicate(const ::llvm::CmpInst::Predicate predicate, const st
   switch (predicate)
   {
   case ::llvm::CmpInst::ICMP_SLT:
-    return std::make_unique<rvsdg::bitslt_op>(numBits);
+    return std::make_unique<IntegerSltOperation>(numBits);
   case ::llvm::CmpInst::ICMP_ULT:
-    return std::make_unique<rvsdg::bitult_op>(numBits);
+    return std::make_unique<IntegerUltOperation>(numBits);
   case ::llvm::CmpInst::ICMP_SLE:
-    return std::make_unique<rvsdg::bitsle_op>(numBits);
+    return std::make_unique<IntegerSleOperation>(numBits);
   case ::llvm::CmpInst::ICMP_ULE:
-    return std::make_unique<rvsdg::bitule_op>(numBits);
+    return std::make_unique<IntegerUleOperation>(numBits);
   case ::llvm::CmpInst::ICMP_EQ:
-    return std::make_unique<rvsdg::biteq_op>(numBits);
+    return std::make_unique<IntegerEqOperation>(numBits);
   case ::llvm::CmpInst::ICMP_NE:
-    return std::make_unique<rvsdg::bitne_op>(numBits);
+    return std::make_unique<IntegerNeOperation>(numBits);
   case ::llvm::CmpInst::ICMP_SGE:
-    return std::make_unique<rvsdg::bitsge_op>(numBits);
+    return std::make_unique<IntegerSgeOperation>(numBits);
   case ::llvm::CmpInst::ICMP_UGE:
-    return std::make_unique<rvsdg::bituge_op>(numBits);
+    return std::make_unique<IntegerUgeOperation>(numBits);
   case ::llvm::CmpInst::ICMP_SGT:
-    return std::make_unique<rvsdg::bitsgt_op>(numBits);
+    return std::make_unique<IntegerSgtOperation>(numBits);
   case ::llvm::CmpInst::ICMP_UGT:
-    return std::make_unique<rvsdg::bitugt_op>(numBits);
+    return std::make_unique<IntegerUgtOperation>(numBits);
   default:
     JLM_UNREACHABLE("ConvertIntegerIcmpPredicate: Unsupported icmp predicate.");
   }
@@ -595,6 +596,14 @@ convert_fcmp_instruction(::llvm::Instruction * instruction, tacsvector_t & tacs,
   return tacs.back()->result(0);
 }
 
+static const variable *
+AddIOBarrier(tacsvector_t & tacs, const variable * operand, const context & ctx)
+{
+  const auto ioBarrierOperation = std::make_unique<IOBarrierOperation>(operand->Type());
+  tacs.push_back(tac::create(*ioBarrierOperation, { operand, ctx.iostate() }));
+  return tacs.back()->result(0);
+}
+
 static inline const variable *
 convert_load_instruction(::llvm::Instruction * i, tacsvector_t & tacs, context & ctx)
 {
@@ -624,6 +633,7 @@ convert_load_instruction(::llvm::Instruction * i, tacsvector_t & tacs, context &
   }
   else
   {
+    address = AddIOBarrier(tacs, address, ctx);
     auto loadTac =
         LoadNonVolatileOperation::Create(address, ctx.memory_state(), loadedType, alignment);
     tacs.push_back(std::move(loadTac));
@@ -633,9 +643,9 @@ convert_load_instruction(::llvm::Instruction * i, tacsvector_t & tacs, context &
 
   if (ioState)
   {
-    tacs.push_back(assignment_op::create(ioState, ctx.iostate()));
+    tacs.push_back(AssignmentOperation::create(ioState, ctx.iostate()));
   }
-  tacs.push_back(assignment_op::create(memoryState, ctx.memory_state()));
+  tacs.push_back(AssignmentOperation::create(memoryState, ctx.memory_state()));
 
   return loadedValue;
 }
@@ -666,6 +676,7 @@ convert_store_instruction(::llvm::Instruction * i, tacsvector_t & tacs, context 
   }
   else
   {
+    address = AddIOBarrier(tacs, address, ctx);
     auto storeTac =
         StoreNonVolatileOperation::Create(address, value, ctx.memory_state(), alignment);
     tacs.push_back(std::move(storeTac));
@@ -674,9 +685,9 @@ convert_store_instruction(::llvm::Instruction * i, tacsvector_t & tacs, context 
 
   if (ioState)
   {
-    tacs.push_back(assignment_op::create(ioState, ctx.iostate()));
+    tacs.push_back(AssignmentOperation::create(ioState, ctx.iostate()));
   }
-  tacs.push_back(assignment_op::create(memoryState, ctx.memory_state()));
+  tacs.push_back(AssignmentOperation::create(memoryState, ctx.memory_state()));
 
   return nullptr;
 }
@@ -723,10 +734,11 @@ convert_phi_instruction(::llvm::Instruction * i, tacsvector_t & tacs, context & 
   // This phi instruction can be reached from multiple basic blocks.
   // As some of these blocks might not be converted yet, some of the phi's operands may reference
   // instructions that have not yet been converted.
-  // For now, a phi_op with no operands is created.
-  // Once all basic blocks have been converted, all phi_ops get visited again and given operands.
+  // For now, a SsaPhiOperation with no operands is created.
+  // Once all basic blocks have been converted, all SsaPhiOperations get visited again and given
+  // operands.
   auto type = ctx.GetTypeConverter().ConvertLlvmType(*i->getType());
-  tacs.push_back(phi_op::create({}, type));
+  tacs.push_back(SsaPhiOperation::create({}, type));
   return tacs.back()->result(0);
 }
 
@@ -762,7 +774,7 @@ convert_malloc_call(const ::llvm::CallInst * i, tacsvector_t & tacs, context & c
   auto mstate = tacs.back()->result(1);
 
   tacs.push_back(MemoryStateMergeOperation::Create({ mstate, memstate }));
-  tacs.push_back(assignment_op::create(tacs.back()->result(0), memstate));
+  tacs.push_back(AssignmentOperation::create(tacs.back()->result(0), memstate));
 
   return result;
 }
@@ -778,8 +790,8 @@ convert_free_call(const ::llvm::CallInst * i, tacsvector_t & tacs, context & ctx
   tacs.push_back(FreeOperation::Create(pointer, { memstate }, iostate));
   auto & freeThreeAddressCode = *tacs.back().get();
 
-  tacs.push_back(assignment_op::create(freeThreeAddressCode.result(0), memstate));
-  tacs.push_back(assignment_op::create(freeThreeAddressCode.result(1), iostate));
+  tacs.push_back(AssignmentOperation::create(freeThreeAddressCode.result(0), memstate));
+  tacs.push_back(AssignmentOperation::create(freeThreeAddressCode.result(1), iostate));
 
   return nullptr;
 }
@@ -823,14 +835,14 @@ convert_memcpy_call(const ::llvm::CallInst * instruction, tacsvector_t & tacs, c
         *ioState,
         { memoryState }));
     auto & memCpyVolatileTac = *tacs.back();
-    tacs.push_back(assignment_op::create(memCpyVolatileTac.result(0), ioState));
-    tacs.push_back(assignment_op::create(memCpyVolatileTac.result(1), memoryState));
+    tacs.push_back(AssignmentOperation::create(memCpyVolatileTac.result(0), ioState));
+    tacs.push_back(AssignmentOperation::create(memCpyVolatileTac.result(1), memoryState));
   }
   else
   {
     tacs.push_back(
         MemCpyNonVolatileOperation::create(destination, source, length, { memoryState }));
-    tacs.push_back(assignment_op::create(tacs.back()->result(0), memoryState));
+    tacs.push_back(AssignmentOperation::create(tacs.back()->result(0), memoryState));
   }
 
   return nullptr;
@@ -938,8 +950,8 @@ convert_call_instruction(::llvm::Instruction * instruction, tacsvector_t & tacs,
   auto memstate = call->result(call->nresults() - 1);
 
   tacs.push_back(std::move(call));
-  tacs.push_back(assignment_op::create(iostate, ctx.iostate()));
-  tacs.push_back(assignment_op::create(memstate, ctx.memory_state()));
+  tacs.push_back(AssignmentOperation::create(iostate, ctx.iostate()));
+  tacs.push_back(AssignmentOperation::create(memstate, ctx.memory_state()));
 
   return result;
 }
@@ -1058,6 +1070,14 @@ convert(const ::llvm::BinaryOperator * instruction, tacsvector_t & tacs, context
   auto operand1 = ConvertValue(instruction->getOperand(0), tacs, ctx);
   auto operand2 = ConvertValue(instruction->getOperand(1), tacs, ctx);
 
+  if (instruction->getOpcode() == ::llvm::Instruction::SDiv
+      || instruction->getOpcode() == ::llvm::Instruction::UDiv
+      || instruction->getOpcode() == ::llvm::Instruction::SRem
+      || instruction->getOpcode() == ::llvm::Instruction::URem)
+  {
+    operand1 = AddIOBarrier(tacs, operand1, ctx);
+  }
+
   if (llvmType->isVectorTy())
   {
     tacs.push_back(vectorbinary_op::create(*operation, operand1, operand2, jlmType));
@@ -1086,7 +1106,7 @@ convert_alloca_instruction(::llvm::Instruction * instruction, tacsvector_t & tac
   auto astate = tacs.back()->result(1);
 
   tacs.push_back(MemoryStateMergeOperation::Create({ astate, memstate }));
-  tacs.push_back(assignment_op::create(tacs.back()->result(0), memstate));
+  tacs.push_back(AssignmentOperation::create(tacs.back()->result(0), memstate));
 
   return result;
 }

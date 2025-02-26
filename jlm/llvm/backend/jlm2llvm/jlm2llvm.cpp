@@ -433,7 +433,7 @@ convert_cfg(llvm::cfg & cfg, ::llvm::Function & f, context & ctx)
     auto & tacs = static_cast<const basic_block *>(node)->tacs();
     for (const auto & tac : tacs)
     {
-      if (!is<phi_op>(tac->operation()))
+      if (!is<SsaPhiOperation>(tac->operation()))
         continue;
 
       if (rvsdg::is<IOStateType>(tac->result(0)->type()))
@@ -442,7 +442,7 @@ convert_cfg(llvm::cfg & cfg, ::llvm::Function & f, context & ctx)
         continue;
 
       JLM_ASSERT(node->ninedges() == tac->noperands());
-      auto & op = *static_cast<const llvm::phi_op *>(&tac->operation());
+      auto & op = *static_cast<const SsaPhiOperation *>(&tac->operation());
       auto phi = ::llvm::dyn_cast<::llvm::PHINode>(ctx.value(tac->result(0)));
       for (size_t n = 0; n < tac->noperands(); n++)
         phi->addIncoming(ctx.value(tac->operand(n)), ctx.basic_block(op.node(n)));

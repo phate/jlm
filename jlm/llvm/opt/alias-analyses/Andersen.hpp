@@ -409,6 +409,9 @@ private:
   AnalyzeFunctionToPointer(const rvsdg::SimpleNode & node);
 
   void
+  AnalyzeIOBarrier(const rvsdg::SimpleNode & node);
+
+  void
   AnalyzeStructuralNode(const rvsdg::StructuralNode & node);
 
   void

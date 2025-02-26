@@ -6,7 +6,12 @@
 
 #include <jlm/mlir/backend/JlmToMlirConverter.hpp>
 
+#include <jlm/llvm/ir/operators/alloca.hpp>
+#include <jlm/llvm/ir/operators/Load.hpp>
+#include <jlm/llvm/ir/operators/MemoryStateOperations.hpp>
 #include <jlm/llvm/ir/operators/operators.hpp>
+#include <jlm/llvm/ir/operators/sext.hpp>
+#include <jlm/llvm/ir/operators/Store.hpp>
 #include <jlm/rvsdg/bitstring/arithmetic.hpp>
 #include <jlm/rvsdg/bitstring/comparison.hpp>
 #include <jlm/rvsdg/bitstring/constant.hpp>
@@ -14,7 +19,21 @@
 #include <jlm/rvsdg/traverser.hpp>
 
 #include <llvm/Support/raw_os_ostream.h>
+
+#include <mlir/Dialect/Arith/IR/Arith.h>
+#include <mlir/IR/Builders.h>
 #include <mlir/IR/Verifier.h>
+
+#include <mlir/IR/Builders.h>
+
+#include <jlm/llvm/ir/operators/alloca.hpp>
+#include <jlm/llvm/ir/operators/call.hpp>
+#include <jlm/llvm/ir/operators/GetElementPtr.hpp>
+#include <jlm/llvm/ir/operators/Load.hpp>
+#include <jlm/llvm/ir/operators/MemoryStateOperations.hpp>
+#include <jlm/llvm/ir/operators/sext.hpp>
+#include <jlm/llvm/ir/operators/Store.hpp>
+#include <mlir/Dialect/Arith/IR/Arith.h>
 
 namespace jlm::mlir
 {
@@ -159,7 +178,7 @@ JlmToMlirConverter::ConvertNode(
   }
   else if (auto lambda = dynamic_cast<const rvsdg::LambdaNode *>(&node))
   {
-    return ConvertLambda(*lambda, block);
+    return ConvertLambda(*lambda, block, inputs);
   }
   else if (auto gamma = dynamic_cast<const rvsdg::GammaNode *>(&node))
   {
@@ -174,6 +193,28 @@ JlmToMlirConverter::ConvertNode(
     auto message =
         util::strfmt("Unimplemented structural node: ", node.GetOperation().debug_string());
     JLM_UNREACHABLE(message.c_str());
+  }
+}
+
+::mlir::Operation *
+JlmToMlirConverter::ConvertFpBinaryNode(
+    const jlm::llvm::fpbin_op & op,
+    ::llvm::SmallVector<::mlir::Value> inputs)
+{
+  switch (op.fpop())
+  {
+  case jlm::llvm::fpop::add:
+    return Builder_->create<::mlir::arith::AddFOp>(Builder_->getUnknownLoc(), inputs[0], inputs[1]);
+  case jlm::llvm::fpop::sub:
+    return Builder_->create<::mlir::arith::SubFOp>(Builder_->getUnknownLoc(), inputs[0], inputs[1]);
+  case jlm::llvm::fpop::mul:
+    return Builder_->create<::mlir::arith::MulFOp>(Builder_->getUnknownLoc(), inputs[0], inputs[1]);
+  case jlm::llvm::fpop::div:
+    return Builder_->create<::mlir::arith::DivFOp>(Builder_->getUnknownLoc(), inputs[0], inputs[1]);
+  case jlm::llvm::fpop::mod:
+    return Builder_->create<::mlir::arith::RemFOp>(Builder_->getUnknownLoc(), inputs[0], inputs[1]);
+  default:
+    JLM_UNREACHABLE("Unknown binary bitop");
   }
 }
 
@@ -317,10 +358,22 @@ JlmToMlirConverter::ConvertSimpleNode(
         value.to_uint(),
         value.nbits());
   }
+  else if (auto fpOp = dynamic_cast<const llvm::ConstantFP *>(&operation))
+  {
+    auto size = ConvertFPType(fpOp->size());
+    auto value = fpOp->constant();
+    MlirOp =
+        Builder_->create<::mlir::arith::ConstantFloatOp>(Builder_->getUnknownLoc(), value, size);
+  }
   else if (jlm::rvsdg::is<const rvsdg::bitbinary_op>(operation))
   {
     MlirOp = ConvertBitBinaryNode(operation, inputs);
   }
+  else if (auto fpBinOp = dynamic_cast<const jlm::llvm::fpbin_op *>(&operation))
+  {
+    MlirOp = ConvertFpBinaryNode(*fpBinOp, inputs);
+  }
+
   else if (jlm::rvsdg::is<const rvsdg::bitcompare_op>(operation))
   {
     MlirOp = BitCompareNode(operation, inputs);
@@ -330,6 +383,20 @@ JlmToMlirConverter::ConvertSimpleNode(
     MlirOp = Builder_->create<::mlir::arith::ExtUIOp>(
         Builder_->getUnknownLoc(),
         Builder_->getIntegerType(bitOp->ndstbits()),
+        inputs[0]);
+  }
+  else if (auto sextOp = dynamic_cast<const jlm::llvm::sext_op *>(&operation))
+  {
+    MlirOp = Builder_->create<::mlir::arith::ExtSIOp>(
+        Builder_->getUnknownLoc(),
+        Builder_->getIntegerType(sextOp->ndstbits()),
+        inputs[0]);
+  }
+  else if (auto sitofpOp = dynamic_cast<const jlm::llvm::sitofp_op *>(&operation))
+  {
+    MlirOp = Builder_->create<::mlir::arith::SIToFPOp>(
+        Builder_->getUnknownLoc(),
+        ConvertType(*sitofpOp->result(0)),
         inputs[0]);
   }
   // ** region structural nodes **
@@ -345,6 +412,55 @@ JlmToMlirConverter::ConvertSimpleNode(
     MlirOp = Builder_->create<::mlir::jlm::Undef>(
         Builder_->getUnknownLoc(),
         ConvertType(undefOp->GetType()));
+  }
+  else if (auto alloca_op = dynamic_cast<const jlm::llvm::alloca_op *>(&operation))
+  {
+    MlirOp = Builder_->create<::mlir::jlm::Alloca>(
+        Builder_->getUnknownLoc(),
+        ConvertType(*alloca_op->result(0)),                               // ptr
+        ConvertType(*alloca_op->result(1)),                               // memstate
+        ConvertType(alloca_op->value_type()),                             // value type
+        inputs[0],                                                        // size
+        alloca_op->alignment(),                                           // alignment
+        ::mlir::ValueRange({ std::next(inputs.begin()), inputs.end() })); // inputMemStates
+  }
+  else if (auto load_op = dynamic_cast<const jlm::llvm::LoadOperation *>(&operation))
+  {
+    MlirOp = Builder_->create<::mlir::jlm::Load>(
+        Builder_->getUnknownLoc(),
+        ConvertType(*load_op->result(0)),                               // ptr
+        ConvertType(*load_op->result(1)),                               // memstate
+        inputs[0],                                                      // pointer
+        Builder_->getUI32IntegerAttr(load_op->GetAlignment()),          // alignment
+        ::mlir::ValueRange({ std::next(inputs.begin()), inputs.end() }) // inputMemStates
+    );
+  }
+  else if (auto store_op = dynamic_cast<const jlm::llvm::StoreOperation *>(&operation))
+  {
+    MlirOp = Builder_->create<::mlir::jlm::Store>(
+        Builder_->getUnknownLoc(),
+        ConvertType(*store_op->result(0)),                                         // memstate
+        inputs[0],                                                                 // ptr
+        inputs[1],                                                                 // value
+        Builder_->getUI32IntegerAttr(store_op->GetAlignment()),                    // alignment
+        ::mlir::ValueRange({ std::next(std::next(inputs.begin())), inputs.end() }) // inputMemStates
+    );
+  }
+  else if (rvsdg::is<jlm::llvm::MemoryStateMergeOperation>(operation))
+  {
+    MlirOp = Builder_->create<::mlir::rvsdg::MemStateMerge>(
+        Builder_->getUnknownLoc(),
+        ConvertType(node.output(0)->type()),
+        inputs);
+  }
+  else if (auto op = dynamic_cast<const llvm::GetElementPtrOperation *>(&operation))
+  {
+    MlirOp = Builder_->create<::mlir::LLVM::GEPOp>(
+        Builder_->getUnknownLoc(),
+        ConvertType(*op->result(0)),                                      // resultType
+        ConvertType(op->GetPointeeType()),                                // elementType
+        inputs[0],                                                        // basePtr
+        ::mlir::ValueRange({ std::next(inputs.begin()), inputs.end() })); // indices
   }
   else if (auto matchOp = dynamic_cast<const rvsdg::match_op *>(&operation))
   {
@@ -375,6 +491,29 @@ JlmToMlirConverter::ConvertSimpleNode(
         inputs[0],                           // input
         ::mlir::ArrayAttr::get(Builder_->getContext(), ::llvm::ArrayRef(mappingVector)));
   }
+  else if (auto callOp = dynamic_cast<const jlm::llvm::CallOperation *>(&operation))
+  {
+    auto functionType = *callOp->GetFunctionType();
+    ::llvm::SmallVector<::mlir::Type> argumentTypes;
+    for (size_t i = 0; i < functionType.NumArguments(); i++)
+    {
+      argumentTypes.push_back(ConvertType(functionType.ArgumentType(i)));
+    }
+    ::llvm::SmallVector<::mlir::Type> resultTypes;
+    for (size_t i = 0; i < functionType.NumResults(); i++)
+    {
+      resultTypes.push_back(ConvertType(functionType.ResultType(i)));
+    }
+    MlirOp = Builder_->create<::mlir::jlm::Call>(
+        Builder_->getUnknownLoc(),
+        resultTypes,
+        inputs[0], // func ptr
+        ::mlir::ValueRange(
+            { std::next(inputs.begin()), std::prev(std::prev(inputs.end())) }), // args
+        inputs[inputs.size() - 2],                                              // io
+        inputs[inputs.size() - 1]                                               // mem
+    );
+  }
   // ** endregion structural nodes **
   else
   {
@@ -387,30 +526,11 @@ JlmToMlirConverter::ConvertSimpleNode(
 }
 
 ::mlir::Operation *
-JlmToMlirConverter::ConvertLambda(const rvsdg::LambdaNode & lambdaNode, ::mlir::Block & block)
+JlmToMlirConverter::ConvertLambda(
+    const rvsdg::LambdaNode & lambdaNode,
+    ::mlir::Block & block,
+    const ::llvm::SmallVector<::mlir::Value> & inputs)
 {
-  ::llvm::SmallVector<::mlir::Type> arguments;
-  for (auto arg : lambdaNode.GetFunctionArguments())
-  {
-    arguments.push_back(ConvertType(arg->type()));
-  }
-
-  ::llvm::SmallVector<::mlir::Type> results;
-  for (auto res : lambdaNode.GetFunctionResults())
-  {
-    results.push_back(ConvertType(res->type()));
-  }
-
-  ::llvm::SmallVector<::mlir::Type> lambdaRef;
-  auto refType = Builder_->getType<::mlir::rvsdg::LambdaRefType>(
-      ::llvm::ArrayRef(arguments),
-      ::llvm::ArrayRef(results));
-  lambdaRef.push_back(refType);
-
-  ::llvm::SmallVector<::mlir::Value> inputs;
-  // TODO
-  // Populate the inputs
-
   // Add function attributes, e.g., the function name and linkage
   ::llvm::SmallVector<::mlir::NamedAttribute> attributes;
   auto symbolName = Builder_->getNamedAttr(
@@ -426,7 +546,7 @@ JlmToMlirConverter::ConvertLambda(const rvsdg::LambdaNode & lambdaNode, ::mlir::
 
   auto lambda = Builder_->create<::mlir::rvsdg::LambdaNode>(
       Builder_->getUnknownLoc(),
-      lambdaRef,
+      Builder_->getType<::mlir::LLVM::LLVMPointerType>(),
       inputs,
       ::llvm::ArrayRef<::mlir::NamedAttribute>(attributes));
   block.push_back(lambda);
@@ -511,12 +631,55 @@ JlmToMlirConverter::ConvertTheta(
   return theta;
 }
 
+::mlir::FloatType
+JlmToMlirConverter::ConvertFPType(const llvm::fpsize size)
+{
+  switch (size)
+  {
+  case jlm::llvm::fpsize::half:
+    return Builder_->getF16Type();
+  case jlm::llvm::fpsize::flt:
+    return Builder_->getF32Type();
+  case jlm::llvm::fpsize::dbl:
+    return Builder_->getF64Type();
+  case jlm::llvm::fpsize::x86fp80:
+    return Builder_->getF80Type();
+  case jlm::llvm::fpsize::fp128:
+    return Builder_->getF128Type();
+  default:
+    auto message = util::strfmt(
+        "Floating point type conversion not implemented: ",
+        llvm::FloatingPointType(size).debug_string());
+    JLM_UNREACHABLE(message.c_str());
+  }
+}
+
+::mlir::FunctionType
+JlmToMlirConverter::ConvertFunctionType(const jlm::rvsdg::FunctionType & functionType)
+{
+  ::llvm::SmallVector<::mlir::Type> argumentTypes;
+  for (size_t i = 0; i < functionType.NumArguments(); i++)
+  {
+    argumentTypes.push_back(ConvertType(functionType.ArgumentType(i)));
+  }
+  ::llvm::SmallVector<::mlir::Type> resultTypes;
+  for (size_t i = 0; i < functionType.NumResults(); i++)
+  {
+    resultTypes.push_back(ConvertType(functionType.ResultType(i)));
+  }
+  return Builder_->getFunctionType(argumentTypes, resultTypes);
+}
+
 ::mlir::Type
 JlmToMlirConverter::ConvertType(const rvsdg::Type & type)
 {
   if (auto bt = dynamic_cast<const rvsdg::bittype *>(&type))
   {
     return Builder_->getIntegerType(bt->nbits());
+  }
+  else if (auto fpt = dynamic_cast<const jlm::llvm::FloatingPointType *>(&type))
+  {
+    return ConvertFPType(fpt->size());
   }
   else if (rvsdg::is<llvm::IOStateType>(type))
   {
@@ -529,6 +692,16 @@ JlmToMlirConverter::ConvertType(const rvsdg::Type & type)
   else if (auto clt = dynamic_cast<const rvsdg::ControlType *>(&type))
   {
     return Builder_->getType<::mlir::rvsdg::RVSDG_CTRLType>(clt->nalternatives());
+  }
+  else if (rvsdg::is<llvm::PointerType>(type))
+  {
+    return Builder_->getType<::mlir::LLVM::LLVMPointerType>();
+  }
+  else if (auto arrayType = dynamic_cast<const llvm::ArrayType *>(&type))
+  {
+    return Builder_->getType<::mlir::LLVM::LLVMArrayType>(
+        ConvertType(arrayType->element_type()),
+        arrayType->nelements());
   }
   else
   {

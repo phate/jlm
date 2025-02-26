@@ -11,6 +11,7 @@
 #include <jlm/llvm/ir/operators.hpp>
 #include <jlm/llvm/ir/operators/FunctionPointer.hpp>
 #include <jlm/llvm/ir/operators/IntegerOperations.hpp>
+#include <jlm/llvm/ir/operators/IOBarrier.hpp>
 #include <jlm/llvm/ir/operators/MemoryStateOperations.hpp>
 
 #include <jlm/llvm/backend/jlm2llvm/context.hpp>
@@ -41,7 +42,7 @@ convert_assignment(
     ::llvm::IRBuilder<> &,
     context & ctx)
 {
-  JLM_ASSERT(is<assignment_op>(op));
+  JLM_ASSERT(is<AssignmentOperation>(op));
   return ctx.value(args[0]);
 }
 
@@ -251,8 +252,7 @@ convert_phi(
     ::llvm::IRBuilder<> & builder,
     context & ctx)
 {
-  JLM_ASSERT(is<phi_op>(op));
-  auto & phi = *static_cast<const llvm::phi_op *>(&op);
+  auto & phi = *util::AssertedCast<const SsaPhiOperation>(&op);
   auto & llvmContext = ctx.llvm_module().getContext();
   auto & typeConverter = ctx.GetTypeConverter();
 
@@ -1106,45 +1106,49 @@ convert_operation(
   {
     return CreateBinOpInstruction(::llvm::Instruction::Mul, arguments, builder, ctx);
   }
-  if (is<rvsdg::biteq_op>(op))
+  if (is<IntegerEqOperation>(op))
   {
     return CreateICmpInstruction(::llvm::CmpInst::ICMP_EQ, arguments, builder, ctx);
   }
-  if (is<rvsdg::bitne_op>(op))
+  if (is<IntegerNeOperation>(op))
   {
     return CreateICmpInstruction(::llvm::CmpInst::ICMP_NE, arguments, builder, ctx);
   }
-  if (is<rvsdg::bitugt_op>(op))
+  if (is<IntegerUgtOperation>(op))
   {
     return CreateICmpInstruction(::llvm::CmpInst::ICMP_UGT, arguments, builder, ctx);
   }
-  if (is<rvsdg::bituge_op>(op))
+  if (is<IntegerUgeOperation>(op))
   {
     return CreateICmpInstruction(::llvm::CmpInst::ICMP_UGE, arguments, builder, ctx);
   }
-  if (is<rvsdg::bitult_op>(op))
+  if (is<IntegerUltOperation>(op))
   {
     return CreateICmpInstruction(::llvm::CmpInst::ICMP_ULT, arguments, builder, ctx);
   }
-  if (is<rvsdg::bitule_op>(op))
+  if (is<IntegerUleOperation>(op))
   {
     return CreateICmpInstruction(::llvm::CmpInst::ICMP_ULE, arguments, builder, ctx);
   }
-  if (is<rvsdg::bitsgt_op>(op))
+  if (is<IntegerSgtOperation>(op))
   {
     return CreateICmpInstruction(::llvm::CmpInst::ICMP_SGT, arguments, builder, ctx);
   }
-  if (is<rvsdg::bitsge_op>(op))
+  if (is<IntegerSgeOperation>(op))
   {
     return CreateICmpInstruction(::llvm::CmpInst::ICMP_SGE, arguments, builder, ctx);
   }
-  if (is<rvsdg::bitslt_op>(op))
+  if (is<IntegerSltOperation>(op))
   {
     return CreateICmpInstruction(::llvm::CmpInst::ICMP_SLT, arguments, builder, ctx);
   }
-  if (is<rvsdg::bitsle_op>(op))
+  if (is<IntegerSleOperation>(op))
   {
     return CreateICmpInstruction(::llvm::CmpInst::ICMP_SLE, arguments, builder, ctx);
+  }
+  if (is<IOBarrierOperation>(op))
+  {
+    return ctx.value(arguments[0]);
   }
 
   static std::unordered_map<
@@ -1159,9 +1163,9 @@ convert_operation(
             { typeid(UndefValueOperation), convert_undef },
             { typeid(PoisonValueOperation), convert<PoisonValueOperation> },
             { typeid(rvsdg::match_op), convert_match },
-            { typeid(assignment_op), convert_assignment },
+            { typeid(AssignmentOperation), convert_assignment },
             { typeid(branch_op), convert_branch },
-            { typeid(phi_op), convert_phi },
+            { typeid(SsaPhiOperation), convert_phi },
             { typeid(LoadNonVolatileOperation), convert<LoadNonVolatileOperation> },
             { typeid(LoadVolatileOperation), convert<LoadVolatileOperation> },
             { typeid(StoreNonVolatileOperation), convert_store },

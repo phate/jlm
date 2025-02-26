@@ -24,27 +24,25 @@ namespace jlm::llvm
 
 class cfg_node;
 
-/* phi operator */
-
-class phi_op final : public rvsdg::SimpleOperation
+class SsaPhiOperation final : public rvsdg::SimpleOperation
 {
 public:
-  virtual ~phi_op() noexcept;
+  ~SsaPhiOperation() noexcept override;
 
-  inline phi_op(
+  SsaPhiOperation(
       const std::vector<llvm::cfg_node *> & nodes,
       const std::shared_ptr<const jlm::rvsdg::Type> & type)
       : SimpleOperation({ nodes.size(), type }, { type }),
         nodes_(nodes)
   {}
 
-  phi_op(const phi_op &) = default;
+  SsaPhiOperation(const SsaPhiOperation &) = default;
 
-  phi_op &
-  operator=(const phi_op &) = delete;
+  SsaPhiOperation &
+  operator=(const SsaPhiOperation &) = delete;
 
-  phi_op &
-  operator=(phi_op &&) = delete;
+  SsaPhiOperation &
+  operator=(SsaPhiOperation &&) = delete;
 
   virtual bool
   operator==(const Operation & other) const noexcept override;
@@ -87,7 +85,7 @@ public:
       operands.push_back(argument.first);
     }
 
-    phi_op phi(nodes, std::move(type));
+    const SsaPhiOperation phi(nodes, std::move(type));
     return tac::create(phi, operands);
   }
 
@@ -95,20 +93,18 @@ private:
   std::vector<cfg_node *> nodes_;
 };
 
-/* assignment operator */
-
-class assignment_op final : public rvsdg::SimpleOperation
+class AssignmentOperation final : public rvsdg::SimpleOperation
 {
 public:
-  virtual ~assignment_op() noexcept;
+  ~AssignmentOperation() noexcept override;
 
-  explicit inline assignment_op(const std::shared_ptr<const jlm::rvsdg::Type> & type)
+  explicit AssignmentOperation(const std::shared_ptr<const rvsdg::Type> & type)
       : SimpleOperation({ type, type }, {})
   {}
 
-  assignment_op(const assignment_op &) = default;
+  AssignmentOperation(const AssignmentOperation &) = default;
 
-  assignment_op(assignment_op &&) = default;
+  AssignmentOperation(AssignmentOperation &&) = default;
 
   virtual bool
   operator==(const Operation & other) const noexcept override;
@@ -125,7 +121,7 @@ public:
     if (rhs->type() != lhs->type())
       throw jlm::util::error("LHS and RHS of assignment must have same type.");
 
-    return tac::create(assignment_op(rhs->Type()), { lhs, rhs });
+    return tac::create(AssignmentOperation(rhs->Type()), { lhs, rhs });
   }
 };
 

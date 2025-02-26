@@ -3,6 +3,7 @@
  * See COPYING for terms of redistribution.
  */
 
+#include <jlm/llvm/ir/operators/IOBarrier.hpp>
 #include <jlm/llvm/opt/alias-analyses/Andersen.hpp>
 #include <jlm/llvm/opt/alias-analyses/PointsToGraph.hpp>
 #include <jlm/rvsdg/traverser.hpp>
@@ -650,6 +651,8 @@ Andersen::AnalyzeSimpleNode(const rvsdg::SimpleNode & node)
     AnalyzePointerToFunction(node);
   else if (is<FunctionToPointerOperation>(op))
     AnalyzeFunctionToPointer(node);
+  else if (is<IOBarrierOperation>(op))
+    AnalyzeIOBarrier(node);
   else if (is<FreeOperation>(op) || is<ptrcmp_op>(op))
   {
     // These operations take pointers as input, but do not affect any points-to sets
@@ -981,6 +984,21 @@ Andersen::AnalyzeFunctionToPointer(const rvsdg::SimpleNode & node)
   const auto baseRegisterPO = Set_->GetRegisterPointerObject(baseRegister);
   const auto & outputRegister = *node.output(0);
   Set_->MapRegisterToExistingPointerObject(outputRegister, baseRegisterPO);
+}
+
+void
+Andersen::AnalyzeIOBarrier(const rvsdg::SimpleNode & node)
+{
+  JLM_ASSERT(is<IOBarrierOperation>(&node));
+
+  const auto operation = util::AssertedCast<const IOBarrierOperation>(&node.GetOperation());
+  if (!IsOrContainsPointerType(*operation->Type()))
+    return;
+
+  const auto & inputRegister = *node.input(0)->origin();
+  const auto inputRegisterPO = Set_->GetRegisterPointerObject(inputRegister);
+  const auto & outputRegister = *node.output(0);
+  Set_->MapRegisterToExistingPointerObject(outputRegister, inputRegisterPO);
 }
 
 void
