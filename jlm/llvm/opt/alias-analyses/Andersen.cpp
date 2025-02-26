@@ -4,6 +4,7 @@
  */
 
 #include <jlm/llvm/ir/operators/IOBarrier.hpp>
+#include <jlm/llvm/backend/dot/DotWriter.hpp>
 #include <jlm/llvm/opt/alias-analyses/Andersen.hpp>
 #include <jlm/llvm/opt/alias-analyses/PointsToGraph.hpp>
 #include <jlm/rvsdg/traverser.hpp>
@@ -1404,6 +1405,7 @@ Andersen::Analyze(
   {
     auto & graph = Constraints_->DrawSubsetGraph(writer);
     graph.AppendToLabel("After Solving with " + config.ToString());
+    dot::WriteGraphs(writer, module.Rvsdg().GetRootRegion(), true);
     writer.OutputAllGraphs(std::cout, util::GraphOutputFormat::Dot);
   }
 
