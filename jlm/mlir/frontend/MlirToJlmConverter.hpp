@@ -177,7 +177,7 @@ private:
 
   /**
    * Converts a string representing a linkage to jlm::llvm::linkage.
-   * \param stringValue 
+   * \param stringValue
    * \result The linkage.
    */
   llvm::linkage
