@@ -6,11 +6,13 @@
 #include <test-registry.hpp>
 #include <TestRvsdgs.hpp>
 
+#include <jlm/llvm/ir/operators/delta.hpp>
 #include <jlm/llvm/ir/operators/lambda.hpp>
 #include <jlm/llvm/ir/RvsdgModule.hpp>
 #include <jlm/llvm/ir/types.hpp>
 #include <jlm/mlir/backend/JlmToMlirConverter.hpp>
 #include <jlm/mlir/frontend/MlirToJlmConverter.hpp>
+#include <jlm/rvsdg/bitstring/constant.hpp>
 #include <jlm/rvsdg/FunctionType.hpp>
 #include <jlm/rvsdg/nullary.hpp>
 #include <jlm/rvsdg/simple-node.hpp>
@@ -739,3 +741,113 @@ TestGetElementPtr()
   return 0;
 }
 JLM_UNIT_TEST_REGISTER("jlm/mlir/TestMlirGetElementPtrGen", TestGetElementPtr)
+
+static int
+TestDelta()
+{
+  using namespace jlm::llvm;
+  using namespace mlir::rvsdg;
+
+  auto rvsdgModule = RvsdgModule::Create(jlm::util::filepath(""), "", "");
+  auto graph = &rvsdgModule->Rvsdg();
+  {
+    auto bitType = jlm::rvsdg::bittype::Create(32);
+
+    auto delta1 = delta::node::Create(
+        &graph->GetRootRegion(),
+        bitType,
+        "non-constant-delta",
+        linkage::external_linkage,
+        "section",
+        false);
+
+    auto bitConstant = jlm::rvsdg::create_bitconstant(delta1->subregion(), 32, 1);
+    delta1->finalize(bitConstant);
+
+    auto delta2 = delta::node::Create(
+        &graph->GetRootRegion(),
+        bitType,
+        "constant-delta",
+        linkage::external_linkage,
+        "section",
+        true);
+    auto bitConstant2 = jlm::rvsdg::create_bitconstant(delta2->subregion(), 32, 1);
+    delta2->finalize(bitConstant2);
+
+    // Convert the RVSDG to MLIR
+    std::cout << "Convert to MLIR" << std::endl;
+    jlm::mlir::JlmToMlirConverter mlirgen;
+    auto omega = mlirgen.ConvertModule(*rvsdgModule);
+
+    // Validate the generated MLIR
+    std::cout << "Validate MLIR" << std::endl;
+
+    auto & omegaBlock = omega.getRegion().front();
+    assert(omegaBlock.getOperations().size() == 3); // 2 delta nodes + 1 omegaresult
+    for (auto & op : omegaBlock.getOperations())
+    {
+      auto mlirDeltaNode = ::mlir::dyn_cast<::mlir::rvsdg::DeltaNode>(&op);
+      auto mlirOmegaResult = ::mlir::dyn_cast<::mlir::rvsdg::OmegaResult>(&op);
+
+      assert(mlirDeltaNode || mlirOmegaResult);
+
+      if (mlirOmegaResult)
+      {
+        break;
+      }
+
+      if (mlirDeltaNode.getConstant())
+      {
+        assert(mlirDeltaNode.getName().str() == "constant-delta");
+      }
+      else
+      {
+        assert(mlirDeltaNode.getName().str() == "non-constant-delta");
+      }
+
+      assert(mlirDeltaNode.getSection() == "section");
+      assert(mlirDeltaNode.getLinkage() == "external_linkage");
+      assert(mlirDeltaNode.getType().isa<mlir::LLVM::LLVMPointerType>());
+      auto terminator = mlirDeltaNode.getRegion().front().getTerminator();
+      assert(terminator);
+      assert(terminator->getNumOperands() == 1);
+      assert(terminator->getOperand(0).getType().isa<mlir::IntegerType>());
+    }
+
+    // Convert the MLIR to RVSDG and check the result
+    std::cout << "Converting MLIR to RVSDG" << std::endl;
+    std::unique_ptr<mlir::Block> rootBlock = std::make_unique<mlir::Block>();
+    rootBlock->push_back(omega);
+    auto rvsdgModule = jlm::mlir::MlirToJlmConverter::CreateAndConvert(rootBlock);
+    auto region = &rvsdgModule->Rvsdg().GetRootRegion();
+
+    {
+      using namespace jlm::llvm;
+
+      assert(region->nnodes() == 2);
+      for (auto & node : region->Nodes())
+      {
+        auto convertedDelta = jlm::util::AssertedCast<delta::node>(&node);
+        assert(convertedDelta->subregion()->nnodes() == 1);
+
+        if (convertedDelta->constant())
+        {
+          assert(convertedDelta->name() == "constant-delta");
+        }
+        else
+        {
+          assert(convertedDelta->name() == "non-constant-delta");
+        }
+
+        assert(is<jlm::rvsdg::bittype>(convertedDelta->type()));
+        assert(convertedDelta->linkage() == linkage::external_linkage);
+        assert(convertedDelta->Section() == "section");
+
+        auto op = convertedDelta->subregion()->Nodes().begin();
+        assert(is<jlm::rvsdg::bitconstant_op>(op->GetOperation()));
+      }
+    }
+  }
+  return 0;
+}
+JLM_UNIT_TEST_REGISTER("jlm/mlir/TestMlirDeltaGen", TestDelta)

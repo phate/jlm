@@ -586,7 +586,9 @@ MlirToJlmConverter::ConvertOperation(
         mlirDeltaNode.getConstant());
 
     auto outputVector = ConvertRegion(mlirDeltaNode.getRegion(), *rvsdgDeltaNode->subregion());
-    JLM_ASSERT(outputVector.size() == 1);
+
+    if (outputVector.size() != 1)
+      JLM_UNREACHABLE("Expected 1 output for Delta operation.");
 
     rvsdgDeltaNode->finalize(outputVector[0]);
 
