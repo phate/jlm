@@ -16,11 +16,11 @@ namespace jlm::hls
 
 void
 InvariantLambdaMemoryStateRemoval::RemoveInvariantMemoryStateEdges(
-    rvsdg::RegionResult * memoryState)
+    rvsdg::RegionResult * memoryStateResult)
 {
   // We only apply this for memory state edges that is invariant between LambdaEntryMemoryStateSplit
   // and LambdaExitMemoryStateMerge nodes.
-  auto exitNode = rvsdg::output::GetNode(*memoryState->origin());
+  auto exitNode = rvsdg::output::GetNode(*memoryStateResult->origin());
   if (!rvsdg::is<const llvm::LambdaExitMemoryStateMergeOperation>(exitNode->GetOperation()))
   {
     return;
@@ -58,16 +58,16 @@ InvariantLambdaMemoryStateRemoval::RemoveInvariantMemoryStateEdges(
   // Replace LambdaEntryMemoryStateSplit and LambdaExitMemoryStateMerge nodes
   if (outputs.size() == 0)
   {
-    // The memory state edge is invariant, so we could in principle remove it from the lambda
-    // But the LLVM dialect expects to always have a memory state, so we connect the argument
+    // The memory state edge(s) are invariant, so we could in principle remove all of them from the
+    // lambda But the LLVM dialect expects to always have a memory state, so we connect the argument
     // directly to the result
-    memoryState->divert_to(entryNode->input(0)->origin());
+    memoryStateResult->divert_to(entryNode->input(0)->origin());
   }
   else if (outputs.size() == 1)
   {
     // Single edge that is not invariant, so we can elmintate the two MemoryState nodes
-    memoryState->divert_to(outputs.front());
-    entryNode->output(indexes.front())->divert_users(entryNode->input(0)->origin());
+    memoryStateResult->divert_to(outputs[0]);
+    entryNode->output(indexes[0])->divert_users(entryNode->input(0)->origin());
   }
   else
   {
@@ -75,12 +75,12 @@ InvariantLambdaMemoryStateRemoval::RemoveInvariantMemoryStateEdges(
     auto newEntryNodeOutputs = llvm::LambdaEntryMemoryStateSplitOperation::Create(
         *entryNode->input(0)->origin(),
         indexes.size());
-    memoryState->divert_to(
+    memoryStateResult->divert_to(
         &llvm::LambdaExitMemoryStateMergeOperation::Create(*exitNode->region(), outputs));
     int i = 0;
     for (auto index : indexes)
     {
-      entryNode->output(index)->divert_users(newEntryNodeOutputs.at(i));
+      entryNode->output(index)->divert_users(newEntryNodeOutputs[i]);
       i++;
     }
   }
@@ -162,10 +162,7 @@ public:
   }
 };
 
-/* InvariantLambdaMemoryStateRemoval class */
-
-InvariantLambdaMemoryStateRemoval::~InvariantLambdaMemoryStateRemoval()
-{}
+InvariantLambdaMemoryStateRemoval::~InvariantLambdaMemoryStateRemoval() = default;
 
 void
 InvariantLambdaMemoryStateRemoval::Run(

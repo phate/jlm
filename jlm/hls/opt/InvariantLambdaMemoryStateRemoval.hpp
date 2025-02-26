@@ -6,8 +6,12 @@
 #ifndef JLM_HLS_OPT_INVARIANTLAMBDAMEMORYSTATEREMOVAL_HPP
 #define JLM_HLS_OPT_INVARIANTLAMBDAMEMORYSTATEREMOVAL_HPP
 
-#include <jlm/rvsdg/region.hpp>
 #include <jlm/rvsdg/Transformation.hpp>
+
+namespace jlm::rvsdg
+{
+class RegionResult;
+}
 
 namespace jlm::hls
 {
@@ -40,21 +44,21 @@ private:
    * edges are removed. The memory state split and merge nodes are removed if there is only a single
    * none-invariant edge.
    *
-   * @param memoryState The lambda region result for which invariant memory state edges are to be
-   * removed.
+   * @param memoryStateResult The lambda region result for which invariant memory state edges are to
+   * be removed.
    */
   void
-  RemoveInvariantMemoryStateEdges(rvsdg::RegionResult * memoryState);
+  RemoveInvariantMemoryStateEdges(rvsdg::RegionResult * memoryStateResult);
 
   /**
    * @brief Remove invariant memory state edges between Lambda[Entry/Exit]MemoryState nodes.
    *
    * The pass applies RemoveInvariantMemoryStateEdges(rvsdg::RegionResult * memoryState) to all
-   * memory states of all lambdas in the module.
+   * memory states of all lambdas in the module that are only exported.
    * @see RemoveInvariantMemoryStateEdges(rvsdg::RegionResult * memoryState)
    *
-   * @param rvsdgModule The RVSDG moduled for which invariant memory state edges in all lambda nodes
-   * are to be removed.
+   * @param rvsdgModule The RVSDG moduled for which invariant memory state edges are removed in
+   * lambdas.
    */
   void
   RemoveInvariantLambdaMemoryStateEdges(rvsdg::RvsdgModule & rvsdgModule);
