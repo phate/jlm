@@ -19,6 +19,7 @@
 #include <RVSDG/RVSDGPasses.h>
 
 #include <mlir/Dialect/Arith/IR/Arith.h>
+#include <mlir/Dialect/LLVMIR/LLVMDialect.h>
 
 namespace jlm::mlir
 {
@@ -35,6 +36,8 @@ public:
     Context_->getOrLoadDialect<::mlir::jlm::JLMDialect>();
     // Load the Arith dialect
     Context_->getOrLoadDialect<::mlir::arith::ArithDialect>();
+    // Load the LLVM dialect
+    Context_->getOrLoadDialect<::mlir::LLVM::LLVMDialect>();
   }
 
   MlirToJlmConverter(const MlirToJlmConverter &) = delete;
@@ -183,10 +186,14 @@ private:
    * Converts an MLIR lambda operation and inserts it into an RVSDG region.
    * \param mlirLambda The MLIR lambda opeation to the converted
    * \param rvsdgRegion The RVSDG region that the lambda node will reside in.
+   * \param inputs The inputs for the RVSDG node.
    * \result The converted Lambda node.
    */
   rvsdg::Node *
-  ConvertLambda(::mlir::Operation & mlirLambda, rvsdg::Region & rvsdgRegion);
+  ConvertLambda(
+      ::mlir::Operation & mlirLambda,
+      rvsdg::Region & rvsdgRegion,
+      const ::llvm::SmallVector<rvsdg::output *> & inputs);
 
   /**
    * Converts an MLIR type into an RVSDG type.

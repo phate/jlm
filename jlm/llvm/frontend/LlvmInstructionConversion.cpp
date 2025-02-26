@@ -463,25 +463,25 @@ ConvertIntegerIcmpPredicate(const ::llvm::CmpInst::Predicate predicate, const st
   switch (predicate)
   {
   case ::llvm::CmpInst::ICMP_SLT:
-    return std::make_unique<rvsdg::bitslt_op>(numBits);
+    return std::make_unique<IntegerSltOperation>(numBits);
   case ::llvm::CmpInst::ICMP_ULT:
-    return std::make_unique<rvsdg::bitult_op>(numBits);
+    return std::make_unique<IntegerUltOperation>(numBits);
   case ::llvm::CmpInst::ICMP_SLE:
-    return std::make_unique<rvsdg::bitsle_op>(numBits);
+    return std::make_unique<IntegerSleOperation>(numBits);
   case ::llvm::CmpInst::ICMP_ULE:
-    return std::make_unique<rvsdg::bitule_op>(numBits);
+    return std::make_unique<IntegerUleOperation>(numBits);
   case ::llvm::CmpInst::ICMP_EQ:
-    return std::make_unique<rvsdg::biteq_op>(numBits);
+    return std::make_unique<IntegerEqOperation>(numBits);
   case ::llvm::CmpInst::ICMP_NE:
-    return std::make_unique<rvsdg::bitne_op>(numBits);
+    return std::make_unique<IntegerNeOperation>(numBits);
   case ::llvm::CmpInst::ICMP_SGE:
-    return std::make_unique<rvsdg::bitsge_op>(numBits);
+    return std::make_unique<IntegerSgeOperation>(numBits);
   case ::llvm::CmpInst::ICMP_UGE:
-    return std::make_unique<rvsdg::bituge_op>(numBits);
+    return std::make_unique<IntegerUgeOperation>(numBits);
   case ::llvm::CmpInst::ICMP_SGT:
-    return std::make_unique<rvsdg::bitsgt_op>(numBits);
+    return std::make_unique<IntegerSgtOperation>(numBits);
   case ::llvm::CmpInst::ICMP_UGT:
-    return std::make_unique<rvsdg::bitugt_op>(numBits);
+    return std::make_unique<IntegerUgtOperation>(numBits);
   default:
     JLM_UNREACHABLE("ConvertIntegerIcmpPredicate: Unsupported icmp predicate.");
   }

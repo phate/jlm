@@ -1106,43 +1106,43 @@ convert_operation(
   {
     return CreateBinOpInstruction(::llvm::Instruction::Mul, arguments, builder, ctx);
   }
-  if (is<rvsdg::biteq_op>(op))
+  if (is<IntegerEqOperation>(op))
   {
     return CreateICmpInstruction(::llvm::CmpInst::ICMP_EQ, arguments, builder, ctx);
   }
-  if (is<rvsdg::bitne_op>(op))
+  if (is<IntegerNeOperation>(op))
   {
     return CreateICmpInstruction(::llvm::CmpInst::ICMP_NE, arguments, builder, ctx);
   }
-  if (is<rvsdg::bitugt_op>(op))
+  if (is<IntegerUgtOperation>(op))
   {
     return CreateICmpInstruction(::llvm::CmpInst::ICMP_UGT, arguments, builder, ctx);
   }
-  if (is<rvsdg::bituge_op>(op))
+  if (is<IntegerUgeOperation>(op))
   {
     return CreateICmpInstruction(::llvm::CmpInst::ICMP_UGE, arguments, builder, ctx);
   }
-  if (is<rvsdg::bitult_op>(op))
+  if (is<IntegerUltOperation>(op))
   {
     return CreateICmpInstruction(::llvm::CmpInst::ICMP_ULT, arguments, builder, ctx);
   }
-  if (is<rvsdg::bitule_op>(op))
+  if (is<IntegerUleOperation>(op))
   {
     return CreateICmpInstruction(::llvm::CmpInst::ICMP_ULE, arguments, builder, ctx);
   }
-  if (is<rvsdg::bitsgt_op>(op))
+  if (is<IntegerSgtOperation>(op))
   {
     return CreateICmpInstruction(::llvm::CmpInst::ICMP_SGT, arguments, builder, ctx);
   }
-  if (is<rvsdg::bitsge_op>(op))
+  if (is<IntegerSgeOperation>(op))
   {
     return CreateICmpInstruction(::llvm::CmpInst::ICMP_SGE, arguments, builder, ctx);
   }
-  if (is<rvsdg::bitslt_op>(op))
+  if (is<IntegerSltOperation>(op))
   {
     return CreateICmpInstruction(::llvm::CmpInst::ICMP_SLT, arguments, builder, ctx);
   }
-  if (is<rvsdg::bitsle_op>(op))
+  if (is<IntegerSleOperation>(op))
   {
     return CreateICmpInstruction(::llvm::CmpInst::ICMP_SLE, arguments, builder, ctx);
   }
