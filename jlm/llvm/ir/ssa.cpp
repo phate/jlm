@@ -47,8 +47,8 @@ destruct_ssa(llvm::cfg & cfg)
       std::unordered_map<cfg_node *, cfg_edge *> edges;
       for (auto & inedge : phi_block->inedges())
       {
-        JLM_ASSERT(edges.find(inedge->source()) == edges.end());
-        edges[inedge->source()] = inedge;
+        JLM_ASSERT(edges.find(inedge.source()) == edges.end());
+        edges[inedge.source()] = &inedge;
       }
 
       while (tacs.first())

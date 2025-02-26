@@ -200,10 +200,10 @@ to_dot(const llvm::cfg & cfg)
   {
     dot += util::strfmt("{", (intptr_t)&node);
     dot += util::strfmt("[shape = box, label = \"", emit_node(node), "\"]; }\n");
-    for (auto it = node.begin_outedges(); it != node.end_outedges(); it++)
+    for (auto & edge : node.outedges())
     {
-      dot += util::strfmt((intptr_t)it->source(), " -> ", (intptr_t)it->sink());
-      dot += util::strfmt("[label = \"", it->index(), "\"];\n");
+      dot += util::strfmt((intptr_t)edge.source(), " -> ", (intptr_t)edge.sink());
+      dot += util::strfmt("[label = \"", edge.index(), "\"];\n");
     }
   }
   dot += "}\n";

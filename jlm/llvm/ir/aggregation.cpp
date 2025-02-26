@@ -218,13 +218,13 @@ is_branch(const cfg_node * split) noexcept
     return false;
 
   auto join = split->outedge(0)->sink()->outedge(0)->sink();
-  for (auto it = split->begin_outedges(); it != split->end_outedges(); it++)
+  for (auto & edge : split->outedges())
   {
-    if (it->sink()->ninedges() != 1)
+    if (edge.sink()->ninedges() != 1)
       return false;
-    if (it->sink()->noutedges() != 1)
+    if (edge.sink()->noutedges() != 1)
       return false;
-    if (it->sink()->outedge(0)->sink() != join)
+    if (edge.sink()->outedge(0)->sink() != join)
       return false;
   }
 
@@ -303,12 +303,12 @@ reduce_branch(cfg_node * split, cfg_node ** entry, aggregation_map & map)
   JLM_ASSERT(map.contains(split));
 
   auto join = split->outedge(0)->sink()->outedge(0)->sink();
-  for (auto it = split->begin_outedges(); it != split->end_outedges(); it++)
+  for (auto & edge : split->outedges())
   {
-    JLM_ASSERT(it->sink()->ninedges() == 1);
-    JLM_ASSERT(map.contains(it->sink()));
-    JLM_ASSERT(it->sink()->noutedges() == 1);
-    JLM_ASSERT(it->sink()->outedge(0)->sink() == join);
+    JLM_ASSERT(edge.sink()->ninedges() == 1);
+    JLM_ASSERT(map.contains(edge.sink()));
+    JLM_ASSERT(edge.sink()->noutedges() == 1);
+    JLM_ASSERT(edge.sink()->outedge(0)->sink() == join);
   }
 
   /* perform reduction */
@@ -317,11 +317,11 @@ reduce_branch(cfg_node * split, cfg_node ** entry, aggregation_map & map)
   sese->add_outedge(join);
 
   auto branch = branchaggnode::create();
-  for (auto it = split->begin_outedges(); it != split->end_outedges(); it++)
+  for (auto & edge : split->outedges())
   {
-    it->sink()->remove_outedge(0);
-    branch->add_child(std::move(map.lookup(it->sink())));
-    map.remove(it->sink());
+    edge.sink()->remove_outedge(0);
+    branch->add_child(std::move(map.lookup(edge.sink())));
+    map.remove(edge.sink());
   }
 
   auto & child = map.lookup(split);
@@ -362,8 +362,8 @@ reduce_linear(cfg_node * source, cfg_node ** entry, cfg_node ** exit, aggregatio
 
   auto sese = basic_block::create(source->cfg());
   source->divert_inedges(sese);
-  for (auto it = sink->begin_outedges(); it != sink->end_outedges(); it++)
-    sese->add_outedge(it->sink());
+  for (auto & edge : sink->outedges())
+    sese->add_outedge(edge.sink());
   sink->remove_outedges();
 
   auto child0 = std::move(map.lookup(source));
@@ -439,8 +439,8 @@ aggregate_acyclic_sese(cfg_node * node, cfg_node ** entry, cfg_node ** exit, agg
     /*
       First, greedily reduce all branches of the branch subgraph...
     */
-    for (auto it = node->begin_outedges(); it != node->end_outedges(); it++)
-      aggregate_acyclic_sese(it->sink(), entry, exit, map);
+    for (auto & edge : node->outedges())
+      aggregate_acyclic_sese(edge.sink(), entry, exit, map);
 
     /*
       ..., then try to reduce the branch subgraph itself.

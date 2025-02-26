@@ -8,9 +8,9 @@
 
 #include <jlm/util/common.hpp>
 #include <jlm/util/iterator_range.hpp>
+#include <jlm/util/PtrIterator.hpp>
 
 #include <memory>
-#include <string>
 #include <unordered_set>
 #include <vector>
 
@@ -24,9 +24,18 @@ class cfg_node;
 class cfg_edge final
 {
 public:
-  ~cfg_edge() noexcept {};
+  ~cfg_edge() noexcept
+  {}
 
   cfg_edge(cfg_node * source, cfg_node * sink, size_t index) noexcept;
+
+  cfg_edge(const cfg_edge & other) = delete;
+  cfg_edge(cfg_edge && other) = default;
+
+  cfg_edge &
+  operator=(const cfg_edge & other) = delete;
+  cfg_edge &
+  operator=(cfg_edge && other) = default;
 
   void
   divert(cfg_node * new_sink);
@@ -34,25 +43,28 @@ public:
   basic_block *
   split();
 
-  inline cfg_node *
+  cfg_node *
   source() const noexcept
   {
     return source_;
   }
 
-  inline cfg_node *
+  cfg_node *
   sink() const noexcept
   {
     return sink_;
   }
 
-  inline size_t
+  /**
+   * @return the index of this edge among the source's out edges
+   */
+  size_t
   index() const noexcept
   {
     return index_;
   }
 
-  inline bool
+  bool
   is_selfloop() const noexcept
   {
     return source_ == sink_;
@@ -68,61 +80,13 @@ private:
 
 class cfg_node
 {
-  typedef std::unordered_set<cfg_edge *>::iterator inedge_iterator;
-  typedef std::unordered_set<cfg_edge *>::const_iterator const_inedge_iterator;
-
+  using inedge_iterator =
+      util::PtrIterator<cfg_edge, std::unordered_set<cfg_edge *>::const_iterator>;
   using inedge_iterator_range = util::IteratorRange<inedge_iterator>;
-  using constinedge_iterator_range = util::IteratorRange<const_inedge_iterator>;
 
-  class const_outedge_iterator final
-  {
-  public:
-    inline const_outedge_iterator(const std::vector<std::unique_ptr<cfg_edge>>::const_iterator & it)
-        : it_(it)
-    {}
-
-    inline const const_outedge_iterator &
-    operator++() noexcept
-    {
-      ++it_;
-      return *this;
-    }
-
-    inline const_outedge_iterator
-    operator++(int) noexcept
-    {
-      auto tmp = *this;
-      ++*this;
-      return tmp;
-    }
-
-    inline bool
-    operator==(const const_outedge_iterator & other) const noexcept
-    {
-      return it_ == other.it_;
-    }
-
-    inline bool
-    operator!=(const const_outedge_iterator & other) const noexcept
-    {
-      return !(other == *this);
-    }
-
-    inline cfg_edge *
-    operator->() const noexcept
-    {
-      return edge();
-    }
-
-    inline cfg_edge *
-    edge() const noexcept
-    {
-      return it_->get();
-    }
-
-  private:
-    std::vector<std::unique_ptr<cfg_edge>>::const_iterator it_;
-  };
+  using outedge_iterator =
+      util::PtrIterator<cfg_edge, std::vector<std::unique_ptr<cfg_edge>>::const_iterator>;
+  using outedge_iterator_range = util::IteratorRange<outedge_iterator>;
 
 public:
   virtual ~cfg_node();
@@ -139,6 +103,24 @@ public:
     return cfg_;
   }
 
+  size_t
+  noutedges() const noexcept;
+
+  cfg_edge *
+  outedge(size_t n) const
+  {
+    JLM_ASSERT(n < noutedges());
+    return outedges_[n].get();
+  }
+
+  outedge_iterator_range
+  outedges() const
+  {
+    return outedge_iterator_range(
+        outedge_iterator(outedges_.begin()),
+        outedge_iterator(outedges_.end()));
+  }
+
   cfg_edge *
   add_outedge(cfg_node * sink)
   {
@@ -147,7 +129,7 @@ public:
     return outedges_.back().get();
   }
 
-  inline void
+  void
   remove_outedge(size_t n)
   {
     JLM_ASSERT(n < noutedges());
@@ -162,45 +144,22 @@ public:
     outedges_.resize(noutedges() - 1);
   }
 
-  inline void
+  void
   remove_outedges()
   {
     while (noutedges() != 0)
       remove_outedge(noutedges() - 1);
   }
 
-  inline cfg_edge *
-  outedge(size_t n) const
-  {
-    JLM_ASSERT(n < noutedges());
-    return outedges_[n].get();
-  }
-
   size_t
-  noutedges() const noexcept;
-
-  inline const_outedge_iterator
-  begin_outedges() const
-  {
-    return const_outedge_iterator(outedges_.begin());
-  }
-
-  inline const_outedge_iterator
-  end_outedges() const
-  {
-    return const_outedge_iterator(outedges_.end());
-  }
+  ninedges() const noexcept;
 
   inedge_iterator_range
-  inedges()
-  {
-    return inedge_iterator_range(inedges_.begin(), inedges_.end());
-  }
-
-  constinedge_iterator_range
   inedges() const
   {
-    return constinedge_iterator_range(inedges_.begin(), inedges_.end());
+    return inedge_iterator_range(
+        inedge_iterator(inedges_.begin()),
+        inedge_iterator(inedges_.end()));
   }
 
   inline void
@@ -210,14 +169,11 @@ public:
       return;
 
     while (ninedges())
-      (*inedges().begin())->divert(new_successor);
+      inedges().begin()->divert(new_successor);
   }
 
   void
   remove_inedges();
-
-  size_t
-  ninedges() const noexcept;
 
   bool
   no_predecessor() const noexcept;
@@ -231,7 +187,7 @@ public:
   bool
   single_successor() const noexcept;
 
-  inline bool
+  bool
   is_branch() const noexcept
   {
     return noutedges() > 1;

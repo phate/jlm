@@ -35,6 +35,7 @@ libutil_TESTS += \
 	tests/jlm/util/TestGraphWriter \
 	tests/jlm/util/TestHashSet \
 	tests/jlm/util/TestMath \
+	tests/jlm/util/TestPtrIterator \
 	tests/jlm/util/TestStatistics \
 	tests/jlm/util/TestTarjanScc \
 	tests/jlm/util/TestTimer \

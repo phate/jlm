@@ -312,7 +312,7 @@ find_dominator_graph(const cfg_edge * edge)
     bool accept = true;
     for (auto & inedge : node->inedges())
     {
-      if (edges.find(inedge) == edges.end())
+      if (edges.find(&inedge) == edges.end())
       {
         accept = false;
         break;
@@ -322,10 +322,10 @@ find_dominator_graph(const cfg_edge * edge)
     if (accept)
     {
       nodes.insert(node);
-      for (auto it = node->begin_outedges(); it != node->end_outedges(); it++)
+      for (auto & outedge : node->outedges())
       {
-        edges.insert(it.edge());
-        to_visit.push_back(it->sink());
+        edges.insert(&outedge);
+        to_visit.push_back(outedge.sink());
       }
     }
   }
@@ -345,28 +345,28 @@ compute_continuation(cfg_node * hb)
   JLM_ASSERT(hb->noutedges() > 1);
 
   std::unordered_map<cfg_edge *, std::unordered_set<cfg_node *>> dgraphs;
-  for (auto it = hb->begin_outedges(); it != hb->end_outedges(); it++)
-    dgraphs[it.edge()] = find_dominator_graph(it.edge());
+  for (auto & outedge : hb->outedges())
+    dgraphs[&outedge] = find_dominator_graph(&outedge);
 
   continuation c;
-  for (auto it = hb->begin_outedges(); it != hb->end_outedges(); it++)
+  for (auto & outedge : hb->outedges())
   {
-    auto & dgraph = dgraphs[it.edge()];
+    auto & dgraph = dgraphs[&outedge];
     if (dgraph.empty())
     {
-      c.edges[it.edge()].insert(it.edge());
-      c.points.insert(it.edge()->sink());
+      c.edges[&outedge].insert(&outedge);
+      c.points.insert(outedge.sink());
       continue;
     }
 
     for (const auto & node : dgraph)
     {
-      for (auto it2 = node->begin_outedges(); it2 != node->end_outedges(); it2++)
+      for (auto & outedge2 : node->outedges())
       {
-        if (dgraph.find(it2->sink()) == dgraph.end())
+        if (dgraph.find(outedge2.sink()) == dgraph.end())
         {
-          c.edges[it.edge()].insert(it2.edge());
-          c.points.insert(it2->sink());
+          c.edges[&outedge].insert(&outedge2);
+          c.points.insert(outedge2.sink());
         }
       }
     }
@@ -393,14 +393,14 @@ restructure_branches(cfg_node * entry, cfg_node * exit)
   if (c.points.size() == 1)
   {
     auto cpoint = *c.points.begin();
-    for (auto it = hb->begin_outedges(); it != hb->end_outedges(); it++)
+    for (auto & outedge : hb->outedges())
     {
-      auto cedges = c.edges[it.edge()];
+      auto cedges = c.edges[&outedge];
 
       /* empty branch subgraph */
-      if (it->sink() == cpoint)
+      if (outedge.sink() == cpoint)
       {
-        it->split();
+        outedge.split();
         continue;
       }
 
@@ -408,8 +408,8 @@ restructure_branches(cfg_node * entry, cfg_node * exit)
       if (cedges.size() == 1)
       {
         auto e = *cedges.begin();
-        JLM_ASSERT(e != it.edge());
-        restructure_branches(it->sink(), e->source());
+        JLM_ASSERT(e != &outedge);
+        restructure_branches(outedge.sink(), e->source());
         continue;
       }
 
@@ -418,7 +418,7 @@ restructure_branches(cfg_node * entry, cfg_node * exit)
       null->add_outedge(cpoint);
       for (const auto & e : cedges)
         e->divert(null);
-      restructure_branches(it->sink(), null);
+      restructure_branches(outedge.sink(), null);
     }
 
     /* restructure tail subgraph */
@@ -438,9 +438,9 @@ restructure_branches(cfg_node * entry, cfg_node * exit)
   }
 
   /* restructure branch subgraphs */
-  for (auto it = hb->begin_outedges(); it != hb->end_outedges(); it++)
+  for (auto & outedge : hb->outedges())
   {
-    auto cedges = c.edges[it.edge()];
+    auto cedges = c.edges[&outedge];
 
     auto null = basic_block::create(cfg);
     null->add_outedge(cn);
@@ -452,7 +452,7 @@ restructure_branches(cfg_node * entry, cfg_node * exit)
       e->divert(bb);
     }
 
-    restructure_branches(it->sink(), null);
+    restructure_branches(outedge.sink(), null);
   }
 
   /* restructure tail subgraph */
