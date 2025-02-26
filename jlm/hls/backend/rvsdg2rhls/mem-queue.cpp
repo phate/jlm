@@ -528,12 +528,6 @@ jlm::hls::mem_queue(jlm::rvsdg::Region * region)
     // No memstate, i.e., no memory used
     return;
   }
-  JLM_ASSERT(state_arg->nusers() == 1);
-  auto state_user = *state_arg->begin();
-  auto entry_input = jlm::util::AssertedCast<rvsdg::SimpleInput>(state_user);
-  auto entry_node = entry_input->node();
-  JLM_ASSERT(dynamic_cast<const jlm::llvm::LambdaEntryMemoryStateSplitOperation *>(
-      &entry_node->GetOperation()));
   // for each state edge:
   //    for each outer loop (theta/loop in lambda region):
   //        split state edge before the loop
