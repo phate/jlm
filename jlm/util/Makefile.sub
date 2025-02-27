@@ -19,6 +19,7 @@ libutil_HEADERS = \
     jlm/util/intrusive-list.hpp \
     jlm/util/iterator_range.hpp \
     jlm/util/Math.hpp \
+    jlm/util/PtrIterator.hpp \
     jlm/util/Statistics.hpp \
     jlm/util/strfmt.hpp \
     jlm/util/TarjanScc.hpp \

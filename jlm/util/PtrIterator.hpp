@@ -3,8 +3,8 @@
  * See COPYING for terms of redistribution.
  */
 
-#ifndef JLM_UTIL_UNIQUEPTRITERATOR_HPP
-#define JLM_UTIL_UNIQUEPTRITERATOR_HPP
+#ifndef JLM_UTIL_PTRITERATOR_HPP
+#define JLM_UTIL_PTRITERATOR_HPP
 
 #include <vector>
 
@@ -32,13 +32,13 @@ public:
   using iterator_category = std::forward_iterator_tag;
 
   explicit PtrIterator(BaseIterator it)
-      : it_(it)
+      : Iterator_(it)
   {}
 
   PtrIterator &
   operator++() noexcept
   {
-    ++it_;
+    ++Iterator_;
     return *this;
   }
 
@@ -53,7 +53,7 @@ public:
   bool
   operator==(const PtrIterator & other) const noexcept
   {
-    return it_ == other.it_;
+    return Iterator_ == other.Iterator_;
   }
 
   bool
@@ -65,18 +65,18 @@ public:
   reference
   operator*() const noexcept
   {
-    return *(*it_);
+    return *(*Iterator_);
   }
 
   pointer
   operator->() const noexcept
   {
-    return &(*(*it_));
+    return &(*(*Iterator_));
   }
 
 private:
-  BaseIterator it_;
+  BaseIterator Iterator_;
 };
 }
 
-#endif // JLM_UTIL_UNIQUEPTRITERATOR_HPP
+#endif // JLM_UTIL_PTRITERATOR_HPP

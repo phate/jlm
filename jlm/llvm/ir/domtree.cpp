@@ -112,7 +112,7 @@ domtree(llvm::cfg & cfg)
 
       /* find first processed predecessor */
       cfg_node * newidom = nullptr;
-      for (auto & inedge : node->inedges())
+      for (auto & inedge : node->InEdges())
       {
         auto p = inedge.source();
         if (doms[p] != nullptr)
@@ -124,7 +124,7 @@ domtree(llvm::cfg & cfg)
       JLM_ASSERT(newidom != nullptr);
 
       auto pred = newidom;
-      for (auto & inedge : node->inedges())
+      for (auto & inedge : node->InEdges())
       {
         auto p = inedge.source();
         if (p == pred)

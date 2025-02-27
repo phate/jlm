@@ -193,38 +193,38 @@ private:
 static bool
 is_sese_basic_block(const cfg_node * node) noexcept
 {
-  return node->ninedges() == 1 && node->noutedges() == 1;
+  return node->NumInEdges() == 1 && node->NumOutEdges() == 1;
 }
 
 static bool
 is_branch_split(const cfg_node * node) noexcept
 {
-  return node->noutedges() > 1;
+  return node->NumOutEdges() > 1;
 }
 
 static bool
 is_branch_join(const cfg_node * node) noexcept
 {
-  return node->ninedges() > 1;
+  return node->NumInEdges() > 1;
 }
 
 static bool
 is_branch(const cfg_node * split) noexcept
 {
-  if (split->noutedges() < 2)
+  if (split->NumOutEdges() < 2)
     return false;
 
-  if (split->outedge(0)->sink()->noutedges() != 1)
+  if (split->OutEdge(0)->sink()->NumOutEdges() != 1)
     return false;
 
-  auto join = split->outedge(0)->sink()->outedge(0)->sink();
-  for (auto & edge : split->outedges())
+  auto join = split->OutEdge(0)->sink()->OutEdge(0)->sink();
+  for (auto & edge : split->OutEdges())
   {
-    if (edge.sink()->ninedges() != 1)
+    if (edge.sink()->NumInEdges() != 1)
       return false;
-    if (edge.sink()->noutedges() != 1)
+    if (edge.sink()->NumOutEdges() != 1)
       return false;
-    if (edge.sink()->outedge(0)->sink() != join)
+    if (edge.sink()->OutEdge(0)->sink() != join)
       return false;
   }
 
@@ -234,11 +234,11 @@ is_branch(const cfg_node * split) noexcept
 static bool
 is_linear(const cfg_node * node) noexcept
 {
-  if (node->noutedges() != 1)
+  if (node->NumOutEdges() != 1)
     return false;
 
-  auto exit = node->outedge(0)->sink();
-  if (exit->ninedges() != 1)
+  auto exit = node->OutEdge(0)->sink();
+  if (exit->NumInEdges() != 1)
     return false;
 
   return true;
@@ -298,17 +298,17 @@ static cfg_node *
 reduce_branch(cfg_node * split, cfg_node ** entry, aggregation_map & map)
 {
   /* sanity checks */
-  JLM_ASSERT(split->noutedges() > 1);
-  JLM_ASSERT(split->outedge(0)->sink()->noutedges() == 1);
+  JLM_ASSERT(split->NumOutEdges() > 1);
+  JLM_ASSERT(split->OutEdge(0)->sink()->NumOutEdges() == 1);
   JLM_ASSERT(map.contains(split));
 
-  auto join = split->outedge(0)->sink()->outedge(0)->sink();
-  for (auto & edge : split->outedges())
+  auto join = split->OutEdge(0)->sink()->OutEdge(0)->sink();
+  for (auto & edge : split->OutEdges())
   {
-    JLM_ASSERT(edge.sink()->ninedges() == 1);
+    JLM_ASSERT(edge.sink()->NumInEdges() == 1);
     JLM_ASSERT(map.contains(edge.sink()));
-    JLM_ASSERT(edge.sink()->noutedges() == 1);
-    JLM_ASSERT(edge.sink()->outedge(0)->sink() == join);
+    JLM_ASSERT(edge.sink()->NumOutEdges() == 1);
+    JLM_ASSERT(edge.sink()->OutEdge(0)->sink() == join);
   }
 
   /* perform reduction */
@@ -317,7 +317,7 @@ reduce_branch(cfg_node * split, cfg_node ** entry, aggregation_map & map)
   sese->add_outedge(join);
 
   auto branch = branchaggnode::create();
-  for (auto & edge : split->outedges())
+  for (auto & edge : split->OutEdges())
   {
     edge.sink()->remove_outedge(0);
     branch->add_child(std::move(map.lookup(edge.sink())));
@@ -358,11 +358,11 @@ static cfg_node *
 reduce_linear(cfg_node * source, cfg_node ** entry, cfg_node ** exit, aggregation_map & map)
 {
   JLM_ASSERT(is_linear(source));
-  auto sink = source->outedge(0)->sink();
+  auto sink = source->OutEdge(0)->sink();
 
   auto sese = basic_block::create(source->cfg());
   source->divert_inedges(sese);
-  for (auto & edge : sink->outedges())
+  for (auto & edge : sink->OutEdges())
     sese->add_outedge(edge.sink());
   sink->remove_outedges();
 
@@ -439,7 +439,7 @@ aggregate_acyclic_sese(cfg_node * node, cfg_node ** entry, cfg_node ** exit, agg
     /*
       First, greedily reduce all branches of the branch subgraph...
     */
-    for (auto & edge : node->outedges())
+    for (auto & edge : node->OutEdges())
       aggregate_acyclic_sese(edge.sink(), entry, exit, map);
 
     /*
@@ -460,7 +460,7 @@ aggregate_acyclic_sese(cfg_node * node, cfg_node ** entry, cfg_node ** exit, agg
   */
   if (is_sese_basic_block(node))
   {
-    aggregate_acyclic_sese(node->outedge(0)->sink(), entry, exit, map);
+    aggregate_acyclic_sese(node->OutEdge(0)->sink(), entry, exit, map);
     return;
   }
 

@@ -104,17 +104,17 @@ public:
   }
 
   size_t
-  noutedges() const noexcept;
+  NumOutEdges() const noexcept;
 
   cfg_edge *
-  outedge(size_t n) const
+  OutEdge(size_t n) const
   {
-    JLM_ASSERT(n < noutedges());
+    JLM_ASSERT(n < NumOutEdges());
     return outedges_[n].get();
   }
 
   outedge_iterator_range
-  outedges() const
+  OutEdges() const
   {
     return outedge_iterator_range(
         outedge_iterator(outedges_.begin()),
@@ -124,7 +124,7 @@ public:
   cfg_edge *
   add_outedge(cfg_node * sink)
   {
-    outedges_.push_back(std::make_unique<cfg_edge>(this, sink, noutedges()));
+    outedges_.push_back(std::make_unique<cfg_edge>(this, sink, NumOutEdges()));
     sink->inedges_.insert(outedges_.back().get());
     return outedges_.back().get();
   }
@@ -132,30 +132,30 @@ public:
   void
   remove_outedge(size_t n)
   {
-    JLM_ASSERT(n < noutedges());
+    JLM_ASSERT(n < NumOutEdges());
     auto edge = outedges_[n].get();
 
     edge->sink()->inedges_.erase(edge);
-    for (size_t i = n + 1; i < noutedges(); i++)
+    for (size_t i = n + 1; i < NumOutEdges(); i++)
     {
       outedges_[i - 1] = std::move(outedges_[i]);
       outedges_[i - 1]->index_ = outedges_[i - 1]->index_ - 1;
     }
-    outedges_.resize(noutedges() - 1);
+    outedges_.resize(NumOutEdges() - 1);
   }
 
   void
   remove_outedges()
   {
-    while (noutedges() != 0)
-      remove_outedge(noutedges() - 1);
+    while (NumOutEdges() != 0)
+      remove_outedge(NumOutEdges() - 1);
   }
 
   size_t
-  ninedges() const noexcept;
+  NumInEdges() const noexcept;
 
   inedge_iterator_range
-  inedges() const
+  InEdges() const
   {
     return inedge_iterator_range(
         inedge_iterator(inedges_.begin()),
@@ -168,8 +168,8 @@ public:
     if (this == new_successor)
       return;
 
-    while (ninedges())
-      inedges().begin()->divert(new_successor);
+    while (NumInEdges())
+      InEdges().begin()->divert(new_successor);
   }
 
   void
@@ -190,7 +190,7 @@ public:
   bool
   is_branch() const noexcept
   {
-    return noutedges() > 1;
+    return NumOutEdges() > 1;
   }
 
   bool
