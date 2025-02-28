@@ -46,7 +46,7 @@ cfg::remove_node(cfg::iterator & nodeit)
 {
   auto & cfg = nodeit->cfg();
 
-  for (auto & inedge : nodeit->inedges())
+  for (auto & inedge : nodeit->InEdges())
   {
     if (inedge.source() != nodeit.node())
       throw util::error("cannot remove node. It has still incoming edges.");
@@ -162,10 +162,10 @@ cfg::CreateTargets(
 {
   size_t n = 0;
   std::string str("[");
-  for (auto & outedge : node.outedges())
+  for (auto & outedge : node.OutEdges())
   {
     str += labels.at(outedge.sink());
-    if (n != node.noutedges() - 1)
+    if (n != node.NumOutEdges() - 1)
       str += ", ";
   }
   str += "]";
@@ -214,9 +214,9 @@ postorder(const llvm::cfg & cfg)
                      std::vector<cfg_node *> & nodes)
   {
     visited.insert(node);
-    for (size_t n = 0; n < node->noutedges(); n++)
+    for (size_t n = 0; n < node->NumOutEdges(); n++)
     {
-      auto edge = node->outedge(n);
+      auto edge = node->OutEdge(n);
       if (visited.find(edge->sink()) == visited.end())
         traverse(edge->sink(), visited, nodes);
     }
@@ -250,7 +250,7 @@ breadth_first(const llvm::cfg & cfg)
     auto node = next.front();
     next.pop_front();
 
-    for (auto & outedge : node->outedges())
+    for (auto & outedge : node->OutEdges())
     {
       if (visited.find(outedge.sink()) == visited.end())
       {

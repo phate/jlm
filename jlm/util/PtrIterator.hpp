@@ -3,12 +3,10 @@
  * See COPYING for terms of redistribution.
  */
 
-#ifndef JLM_UTIL_UNIQUEPTRITERATOR_HPP
-#define JLM_UTIL_UNIQUEPTRITERATOR_HPP
+#ifndef JLM_UTIL_PTRITERATOR_HPP
+#define JLM_UTIL_PTRITERATOR_HPP
 
 #include <vector>
-#include <type_traits>
-#include <memory>
 
 namespace jlm::util
 {
@@ -18,65 +16,67 @@ namespace jlm::util
  * The iterator does one level of pointer dereferencing when yielding elements.
  * This means the user may not modify the pointers, but may modify the elements.
  * To get a const interator, let T be a const type.
+ * This iterator should not be used if any element may be a null pointer.
  *
  * @tparam T the underlying type.
  * @tparam BaseIterator the type of the base iterator, can always be a const iterator.
  */
-template <typename T, typename BaseIterator>
-class PtrIterator final {
-  public:
-    using difference_type = std::ptrdiff_t;
-    using value_type = T;
-    using pointer = T *;
-    using reference = T &;
-    using iterator_category = std::forward_iterator_tag;
+template<typename T, typename BaseIterator>
+class PtrIterator final
+{
+public:
+  using difference_type = std::ptrdiff_t;
+  using value_type = T;
+  using pointer = T *;
+  using reference = T &;
+  using iterator_category = std::forward_iterator_tag;
 
-    explicit PtrIterator(BaseIterator it)
-        : it_(it)
-    {}
+  explicit PtrIterator(BaseIterator it)
+      : Iterator_(it)
+  {}
 
-    PtrIterator &
-    operator++() noexcept
-    {
-      ++it_;
-      return *this;
-    }
+  PtrIterator &
+  operator++() noexcept
+  {
+    ++Iterator_;
+    return *this;
+  }
 
-    PtrIterator
-    operator++(int) noexcept
-    {
-      auto tmp = *this;
-      ++*this;
-      return tmp;
-    }
+  PtrIterator
+  operator++(int) noexcept
+  {
+    auto tmp = *this;
+    ++*this;
+    return tmp;
+  }
 
-    bool
-    operator==(const PtrIterator & other) const noexcept
-    {
-      return it_ == other.it_;
-    }
+  bool
+  operator==(const PtrIterator & other) const noexcept
+  {
+    return Iterator_ == other.Iterator_;
+  }
 
-    bool
-    operator!=(const PtrIterator & other) const noexcept
-    {
-      return !(other == *this);
-    }
+  bool
+  operator!=(const PtrIterator & other) const noexcept
+  {
+    return !(other == *this);
+  }
 
-    reference
-    operator*() const noexcept
-    {
-      return *(*it_);
-    }
+  reference
+  operator*() const noexcept
+  {
+    return *(*Iterator_);
+  }
 
-    pointer
-    operator->() const noexcept
-    {
-      return &(*(*it_));
-    }
+  pointer
+  operator->() const noexcept
+  {
+    return &(*(*Iterator_));
+  }
 
-  private:
-    BaseIterator it_;
-  };
+private:
+  BaseIterator Iterator_;
+};
 }
 
-#endif //JLM_UTIL_UNIQUEPTRITERATOR_HPP
+#endif // JLM_UTIL_PTRITERATOR_HPP

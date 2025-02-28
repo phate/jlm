@@ -56,7 +56,7 @@ StoreConversion()
     auto controlFlowGraph =
         dynamic_cast<const function_node *>(ipgModule->ipgraph().find("f"))->cfg();
     auto basicBlock =
-        dynamic_cast<const basic_block *>(controlFlowGraph->entry()->outedge(0)->sink());
+        dynamic_cast<const basic_block *>(controlFlowGraph->entry()->OutEdge(0)->sink());
 
     size_t numStoreThreeAddressCodes = 0;
     size_t numStoreVolatileThreeAddressCodes = 0;

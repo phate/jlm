@@ -36,7 +36,7 @@ destruct_ssa(llvm::cfg & cfg)
     if (phi_blocks.empty())
       return;
 
-    auto firstbb = static_cast<basic_block *>(cfg.entry()->outedge(0)->sink());
+    auto firstbb = static_cast<basic_block *>(cfg.entry()->OutEdge(0)->sink());
 
     for (auto phi_block : phi_blocks)
     {
@@ -45,10 +45,10 @@ destruct_ssa(llvm::cfg & cfg)
 
       /* collect inedges of phi block */
       std::unordered_map<cfg_node *, cfg_edge *> edges;
-      for (auto & inedge : phi_block->inedges())
+      for (auto & inedge : phi_block->InEdges())
       {
-        JLM_ASSERT(edges.find(inedge->source()) == edges.end());
-        edges[inedge->source()] = inedge;
+        JLM_ASSERT(edges.find(inedge.source()) == edges.end());
+        edges[inedge.source()] = &inedge;
       }
 
       while (tacs.first())

@@ -51,8 +51,8 @@ has_return_value(const llvm::cfg & cfg)
 static void
 create_return(const cfg_node * node, context & ctx)
 {
-  JLM_ASSERT(node->noutedges() == 1);
-  JLM_ASSERT(node->outedge(0)->sink() == node->cfg().exit());
+  JLM_ASSERT(node->NumOutEdges() == 1);
+  JLM_ASSERT(node->OutEdge(0)->sink() == node->cfg().exit());
   ::llvm::IRBuilder<> builder(ctx.basic_block(node));
   auto & cfg = node->cfg();
 
@@ -71,10 +71,10 @@ create_return(const cfg_node * node, context & ctx)
 static void
 create_unconditional_branch(const cfg_node * node, context & ctx)
 {
-  JLM_ASSERT(node->noutedges() == 1);
-  JLM_ASSERT(node->outedge(0)->sink() != node->cfg().exit());
+  JLM_ASSERT(node->NumOutEdges() == 1);
+  JLM_ASSERT(node->OutEdge(0)->sink() != node->cfg().exit());
   ::llvm::IRBuilder<> builder(ctx.basic_block(node));
-  auto target = node->outedge(0)->sink();
+  auto target = node->OutEdge(0)->sink();
 
   builder.CreateBr(ctx.basic_block(target));
 }
@@ -82,9 +82,9 @@ create_unconditional_branch(const cfg_node * node, context & ctx)
 static void
 create_conditional_branch(const cfg_node * node, context & ctx)
 {
-  JLM_ASSERT(node->noutedges() == 2);
-  JLM_ASSERT(node->outedge(0)->sink() != node->cfg().exit());
-  JLM_ASSERT(node->outedge(1)->sink() != node->cfg().exit());
+  JLM_ASSERT(node->NumOutEdges() == 2);
+  JLM_ASSERT(node->OutEdge(0)->sink() != node->cfg().exit());
+  JLM_ASSERT(node->OutEdge(1)->sink() != node->cfg().exit());
   ::llvm::IRBuilder<> builder(ctx.basic_block(node));
 
   auto branch = static_cast<const basic_block *>(node)->tacs().last();
@@ -92,15 +92,15 @@ create_conditional_branch(const cfg_node * node, context & ctx)
   JLM_ASSERT(ctx.value(branch->operand(0))->getType()->isIntegerTy(1));
 
   auto condition = ctx.value(branch->operand(0));
-  auto bbfalse = ctx.basic_block(node->outedge(0)->sink());
-  auto bbtrue = ctx.basic_block(node->outedge(1)->sink());
+  auto bbfalse = ctx.basic_block(node->OutEdge(0)->sink());
+  auto bbtrue = ctx.basic_block(node->OutEdge(1)->sink());
   builder.CreateCondBr(condition, bbtrue, bbfalse);
 }
 
 static void
 create_switch(const cfg_node * node, context & ctx)
 {
-  JLM_ASSERT(node->noutedges() >= 2);
+  JLM_ASSERT(node->NumOutEdges() >= 2);
   ::llvm::LLVMContext & llvmContext = ctx.llvm_module().getContext();
   auto & typeConverter = ctx.GetTypeConverter();
   auto bb = static_cast<const basic_block *>(node);
@@ -116,24 +116,24 @@ create_switch(const cfg_node * node, context & ctx)
     JLM_ASSERT(match->result(0) == branch->operand(0));
     auto mop = static_cast<const rvsdg::match_op *>(&match->operation());
 
-    auto defbb = ctx.basic_block(node->outedge(mop->default_alternative())->sink());
+    auto defbb = ctx.basic_block(node->OutEdge(mop->default_alternative())->sink());
     auto sw = builder.CreateSwitch(condition, defbb);
     for (const auto & alt : *mop)
     {
       auto & type = *std::static_pointer_cast<const rvsdg::bittype>(mop->argument(0));
       auto value =
           ::llvm::ConstantInt::get(typeConverter.ConvertBitType(type, llvmContext), alt.first);
-      sw->addCase(value, ctx.basic_block(node->outedge(alt.second)->sink()));
+      sw->addCase(value, ctx.basic_block(node->OutEdge(alt.second)->sink()));
     }
   }
   else
   {
-    auto defbb = ctx.basic_block(node->outedge(node->noutedges() - 1)->sink());
+    auto defbb = ctx.basic_block(node->OutEdge(node->NumOutEdges() - 1)->sink());
     auto sw = builder.CreateSwitch(condition, defbb);
-    for (size_t n = 0; n < node->noutedges() - 1; n++)
+    for (size_t n = 0; n < node->NumOutEdges() - 1; n++)
     {
       auto value = ::llvm::ConstantInt::get(::llvm::Type::getInt32Ty(builder.getContext()), n);
-      sw->addCase(value, ctx.basic_block(node->outedge(n)->sink()));
+      sw->addCase(value, ctx.basic_block(node->OutEdge(n)->sink()));
     }
   }
 }
@@ -146,9 +146,9 @@ create_terminator_instruction(const llvm::cfg_node * node, context & ctx)
   auto & cfg = node->cfg();
 
   /* unconditional branch or return statement */
-  if (node->noutedges() == 1)
+  if (node->NumOutEdges() == 1)
   {
-    auto target = node->outedge(0)->sink();
+    auto target = node->OutEdge(0)->sink();
     if (target == cfg.exit())
       return create_return(node, ctx);
 
@@ -441,7 +441,7 @@ convert_cfg(llvm::cfg & cfg, ::llvm::Function & f, context & ctx)
       if (rvsdg::is<MemoryStateType>(tac->result(0)->type()))
         continue;
 
-      JLM_ASSERT(node->ninedges() == tac->noperands());
+      JLM_ASSERT(node->NumInEdges() == tac->noperands());
       auto & op = *static_cast<const SsaPhiOperation *>(&tac->operation());
       auto phi = ::llvm::dyn_cast<::llvm::PHINode>(ctx.value(tac->result(0)));
       for (size_t n = 0; n < tac->noperands(); n++)

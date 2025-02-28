@@ -84,16 +84,13 @@ convert_apint(const ::llvm::APInt & value)
 }
 
 static const variable *
-convert_int_constant(
-    ::llvm::Constant * c,
-    std::vector<std::unique_ptr<llvm::tac>> & tacs,
-    context &)
+convert_int_constant(::llvm::Constant * c, std::vector<std::unique_ptr<tac>> & tacs, context &)
 {
   JLM_ASSERT(c->getValueID() == ::llvm::Value::ConstantIntVal);
-  const ::llvm::ConstantInt * constant = static_cast<const ::llvm::ConstantInt *>(c);
+  const auto constant = ::llvm::cast<const ::llvm::ConstantInt>(c);
 
-  rvsdg::bitvalue_repr v = convert_apint(constant->getValue());
-  tacs.push_back(tac::create(rvsdg::bitconstant_op(v), {}));
+  const auto v = convert_apint(constant->getValue());
+  tacs.push_back(tac::create(IntegerConstantOperation(std::move(v)), {}));
 
   return tacs.back()->result(0);
 }
