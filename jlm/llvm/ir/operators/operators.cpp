@@ -62,28 +62,25 @@ AssignmentOperation::copy() const
   return std::make_unique<AssignmentOperation>(*this);
 }
 
-/* select operator */
-
-select_op::~select_op() noexcept
-{}
+SelectOperation::~SelectOperation() noexcept = default;
 
 bool
-select_op::operator==(const Operation & other) const noexcept
+SelectOperation::operator==(const Operation & other) const noexcept
 {
-  auto op = dynamic_cast<const select_op *>(&other);
+  const auto op = dynamic_cast<const SelectOperation *>(&other);
   return op && op->result(0) == result(0);
 }
 
 std::string
-select_op::debug_string() const
+SelectOperation::debug_string() const
 {
-  return "SELECT";
+  return "Select";
 }
 
 std::unique_ptr<rvsdg::Operation>
-select_op::copy() const
+SelectOperation::copy() const
 {
-  return std::make_unique<select_op>(*this);
+  return std::make_unique<SelectOperation>(*this);
 }
 
 VectorSelectOperation::~VectorSelectOperation() noexcept = default;
