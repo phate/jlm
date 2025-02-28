@@ -10,7 +10,6 @@
 #include <jlm/rvsdg/bitstring/type.hpp>
 #include <jlm/rvsdg/bitstring/value-representation.hpp>
 #include <jlm/rvsdg/nullary.hpp>
-#include <jlm/rvsdg/unary.hpp>
 
 namespace jlm::llvm
 {
@@ -75,13 +74,13 @@ public:
       const std::size_t numArgumentBits,
       const std::size_t numResultBits) noexcept
       : BinaryOperation(
-              { rvsdg::bittype::Create(numArgumentBits), rvsdg::bittype::Create(numArgumentBits) },
-              rvsdg::bittype::Create(numResultBits))
-    {}
+            { rvsdg::bittype::Create(numArgumentBits), rvsdg::bittype::Create(numArgumentBits) },
+            rvsdg::bittype::Create(numResultBits))
+  {}
 
-    [[nodiscard]] const rvsdg::bittype &
-    Type() const noexcept
-    {
+  [[nodiscard]] const rvsdg::bittype &
+  Type() const noexcept
+  {
       return *util::AssertedCast<const rvsdg::bittype>(argument(0).get());
     }
 };
