@@ -82,19 +82,18 @@ convert_bitvalue_repr(const rvsdg::bitvalue_repr & vr)
 }
 
 static inline ::llvm::Value *
-convert_bitconstant(
+ConverterIntegerConstant(
     const rvsdg::SimpleOperation & op,
     const std::vector<const variable *> &,
     ::llvm::IRBuilder<> & builder,
     context &)
 {
-  JLM_ASSERT(dynamic_cast<const rvsdg::bitconstant_op *>(&op));
-  auto value = static_cast<const rvsdg::bitconstant_op *>(&op)->value();
+  const auto & representation =
+      util::AssertedCast<const IntegerConstantOperation>(&op)->Representation();
+  const auto type = ::llvm::IntegerType::get(builder.getContext(), representation.nbits());
 
-  auto type = ::llvm::IntegerType::get(builder.getContext(), value.nbits());
-
-  if (value.is_defined())
-    return ::llvm::ConstantInt::get(type, convert_bitvalue_repr(value));
+  if (representation.is_defined())
+    return ::llvm::ConstantInt::get(type, convert_bitvalue_repr(representation));
 
   return ::llvm::UndefValue::get(type);
 }
@@ -1149,6 +1148,10 @@ convert_operation(
   {
     return ctx.value(arguments[0]);
   }
+  if (is<IntegerConstantOperation>(op))
+  {
+    return ConverterIntegerConstant(op, arguments, builder, ctx);
+  }
 
   static std::unordered_map<
       std::type_index,
@@ -1156,8 +1159,7 @@ convert_operation(
                           const std::vector<const variable *> &,
                           ::llvm::IRBuilder<> &,
                           context & ctx)>
-      map({ { typeid(rvsdg::bitconstant_op), convert_bitconstant },
-            { typeid(rvsdg::ctlconstant_op), convert_ctlconstant },
+      map({ { typeid(rvsdg::ctlconstant_op), convert_ctlconstant },
             { typeid(ConstantFP), convert<ConstantFP> },
             { typeid(UndefValueOperation), convert_undef },
             { typeid(PoisonValueOperation), convert<PoisonValueOperation> },
