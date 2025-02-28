@@ -1217,7 +1217,7 @@ convert_cast_instruction(::llvm::Instruction * i, tacsvector_t & tacs, context &
             { ::llvm::Instruction::PtrToInt, create_unop<ptr2bits_op> },
             { ::llvm::Instruction::IntToPtr, create_unop<bits2ptr_op> },
             { ::llvm::Instruction::FPTrunc, create_unop<fptrunc_op> },
-            { ::llvm::Instruction::FPToUI, create_unop<fp2ui_op> },
+            { ::llvm::Instruction::FPToUI, create_unop<FloatingPointToUnsignedIntegerOperation> },
             { ::llvm::Instruction::FPToSI, create_unop<fp2si_op> },
             { ::llvm::Instruction::FPExt, create_unop<fpext_op> },
             { ::llvm::Instruction::BitCast, create_unop<bitcast_op> } });
