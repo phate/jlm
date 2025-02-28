@@ -45,7 +45,7 @@ cfg_node::~cfg_node()
 {}
 
 size_t
-cfg_node::noutedges() const noexcept
+cfg_node::NumOutEdges() const noexcept
 {
   return outedges_.size();
 }
@@ -62,7 +62,7 @@ cfg_node::remove_inedges()
 }
 
 size_t
-cfg_node::ninedges() const noexcept
+cfg_node::NumInEdges() const noexcept
 {
   return inedges_.size();
 }
@@ -70,13 +70,13 @@ cfg_node::ninedges() const noexcept
 bool
 cfg_node::no_predecessor() const noexcept
 {
-  return ninedges() == 0;
+  return NumInEdges() == 0;
 }
 
 bool
 cfg_node::single_predecessor() const noexcept
 {
-  if (ninedges() == 0)
+  if (NumInEdges() == 0)
     return false;
 
   for (auto i = inedges_.begin(); i != inedges_.end(); i++)
@@ -92,19 +92,19 @@ cfg_node::single_predecessor() const noexcept
 bool
 cfg_node::no_successor() const noexcept
 {
-  return noutedges() == 0;
+  return NumOutEdges() == 0;
 }
 
 bool
 cfg_node::single_successor() const noexcept
 {
-  if (noutedges() == 0)
+  if (NumOutEdges() == 0)
     return false;
 
-  for (auto it = begin_outedges(); it != end_outedges(); it++)
+  for (auto & edge : OutEdges())
   {
-    JLM_ASSERT(it->source() == this);
-    if (it->sink() != begin_outedges()->sink())
+    JLM_ASSERT(edge.source() == this);
+    if (edge.sink() != OutEdge(0)->sink())
       return false;
   }
 
@@ -114,9 +114,9 @@ cfg_node::single_successor() const noexcept
 bool
 cfg_node::has_selfloop_edge() const noexcept
 {
-  for (auto it = begin_outedges(); it != end_outedges(); it++)
+  for (auto & edge : OutEdges())
   {
-    if (it->is_selfloop())
+    if (edge.is_selfloop())
       return true;
   }
 
