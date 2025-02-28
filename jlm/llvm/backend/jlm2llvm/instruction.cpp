@@ -1200,7 +1200,7 @@ convert_operation(
             { typeid(fpneg_op), convert_fpneg },
             { typeid(bitcast_op), convert_cast<::llvm::Instruction::BitCast> },
             { typeid(fpext_op), convert_cast<::llvm::Instruction::FPExt> },
-            { typeid(fp2si_op), convert_cast<::llvm::Instruction::FPToSI> },
+            { typeid(FloatingPointToSignedIntegerOperation), convert_cast<::llvm::Instruction::FPToSI> },
             { typeid(fp2ui_op), convert_cast<::llvm::Instruction::FPToUI> },
             { typeid(fptrunc_op), convert_cast<::llvm::Instruction::FPTrunc> },
             { typeid(bits2ptr_op), convert_cast<::llvm::Instruction::IntToPtr> },

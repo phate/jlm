@@ -146,38 +146,36 @@ fp2ui_op::reduce_operand(rvsdg::unop_reduction_path_t, rvsdg::output *) const
   JLM_UNREACHABLE("Not implemented");
 }
 
-/* fp2si operator */
-
-fp2si_op::~fp2si_op() noexcept
-{}
+FloatingPointToSignedIntegerOperation::~FloatingPointToSignedIntegerOperation() noexcept = default;
 
 bool
-fp2si_op::operator==(const Operation & other) const noexcept
+FloatingPointToSignedIntegerOperation::operator==(const Operation & other) const noexcept
 {
-  auto op = dynamic_cast<const fp2si_op *>(&other);
+  const auto op = dynamic_cast<const FloatingPointToSignedIntegerOperation *>(&other);
   return op && op->argument(0) == argument(0) && op->result(0) == result(0);
 }
 
 std::string
-fp2si_op::debug_string() const
+FloatingPointToSignedIntegerOperation::debug_string() const
 {
-  return "FP2UI";
+  return "FpToSInt";
 }
 
 std::unique_ptr<rvsdg::Operation>
-fp2si_op::copy() const
+FloatingPointToSignedIntegerOperation::copy() const
 {
-  return std::make_unique<fp2si_op>(*this);
+  return std::make_unique<FloatingPointToSignedIntegerOperation>(*this);
 }
 
 rvsdg::unop_reduction_path_t
-fp2si_op::can_reduce_operand(const rvsdg::output *) const noexcept
+FloatingPointToSignedIntegerOperation::can_reduce_operand(const rvsdg::output *) const noexcept
 {
   return rvsdg::unop_reduction_none;
 }
 
 rvsdg::output *
-fp2si_op::reduce_operand(rvsdg::unop_reduction_path_t, rvsdg::output *) const
+FloatingPointToSignedIntegerOperation::reduce_operand(rvsdg::unop_reduction_path_t, rvsdg::output *)
+    const
 {
   JLM_UNREACHABLE("Not implemented!");
 }

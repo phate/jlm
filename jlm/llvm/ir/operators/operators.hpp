@@ -295,24 +295,24 @@ public:
   }
 };
 
-/* fp2si operator */
-
-class fp2si_op final : public rvsdg::UnaryOperation
+class FloatingPointToSignedIntegerOperation final : public rvsdg::UnaryOperation
 {
 public:
-  virtual ~fp2si_op() noexcept;
+  ~FloatingPointToSignedIntegerOperation() noexcept override;
 
-  inline fp2si_op(fpsize size, std::shared_ptr<const jlm::rvsdg::bittype> type)
+  FloatingPointToSignedIntegerOperation(
+      const fpsize size,
+      std::shared_ptr<const jlm::rvsdg::bittype> type)
       : UnaryOperation(FloatingPointType::Create(size), std::move(type))
   {}
 
-  inline fp2si_op(
+  FloatingPointToSignedIntegerOperation(
       std::shared_ptr<const FloatingPointType> fpt,
       std::shared_ptr<const jlm::rvsdg::bittype> type)
       : UnaryOperation(std::move(fpt), std::move(type))
   {}
 
-  inline fp2si_op(
+  FloatingPointToSignedIntegerOperation(
       std::shared_ptr<const jlm::rvsdg::Type> srctype,
       std::shared_ptr<const jlm::rvsdg::Type> dsttype)
       : UnaryOperation(srctype, dsttype)
@@ -353,7 +353,7 @@ public:
     if (!dt)
       throw jlm::util::error("expected bitstring type.");
 
-    fp2si_op op(std::move(st), std::move(dt));
+    FloatingPointToSignedIntegerOperation op(std::move(st), std::move(dt));
     return tac::create(op, { operand });
   }
 };
