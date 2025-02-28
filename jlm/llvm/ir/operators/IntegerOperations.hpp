@@ -81,7 +81,7 @@ public:
   [[nodiscard]] const rvsdg::bittype &
   Type() const noexcept
   {
-      return *util::AssertedCast<const rvsdg::bittype>(argument(0).get());
+    return *util::AssertedCast<const rvsdg::bittype>(argument(0).get());
     }
 };
 
