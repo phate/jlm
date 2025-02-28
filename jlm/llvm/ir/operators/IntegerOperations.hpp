@@ -69,10 +69,12 @@ private:
 class IntegerBinaryOperation : public rvsdg::BinaryOperation
 {
 public:
-    ~IntegerBinaryOperation() override;
+  ~IntegerBinaryOperation() noexcept override;
 
-    IntegerBinaryOperation(std::size_t numArgumentBits, std::size_t numResultBits) noexcept
-        : BinaryOperation(
+  IntegerBinaryOperation(
+      const std::size_t numArgumentBits,
+      const std::size_t numResultBits) noexcept
+      : BinaryOperation(
               { rvsdg::bittype::Create(numArgumentBits), rvsdg::bittype::Create(numArgumentBits) },
               rvsdg::bittype::Create(numResultBits))
     {}
