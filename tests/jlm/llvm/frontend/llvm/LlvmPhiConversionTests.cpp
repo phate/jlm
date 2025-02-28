@@ -8,6 +8,7 @@
 
 #include <jlm/llvm/frontend/LlvmModuleConversion.hpp>
 #include <jlm/llvm/ir/operators/call.hpp>
+#include <jlm/llvm/ir/operators/IntegerOperations.hpp>
 #include <jlm/llvm/ir/operators/operators.hpp>
 #include <jlm/llvm/ir/print.hpp>
 #include <jlm/rvsdg/bitstring/constant.hpp>
@@ -145,9 +146,9 @@ TestPhiConversion()
   // The first operand of the phi node is the constant integer 0
   auto constant0variable =
       jlm::util::AssertedCast<const jlm::llvm::tacvariable>(phiPopcnt->operand(0));
-  auto constant0op = jlm::util::AssertedCast<const jlm::rvsdg::bitconstant_op>(
+  auto constant0op = jlm::util::AssertedCast<const jlm::llvm::IntegerConstantOperation>(
       &constant0variable->tac()->operation());
-  assert(constant0op->value() == 0);
+  assert(constant0op->Representation() == 0);
   // The last operand of the popcnt phi is the result of the phi itself
   assert(phiPopcnt->operand(2) == phiPopcnt->result(0));
 
@@ -262,9 +263,9 @@ TestPhiOperandElision()
   // The first phi operand should be a constant 0
   auto constant0variable =
       jlm::util::AssertedCast<const jlm::llvm::tacvariable>(phiTac->operand(0));
-  auto constant0op = jlm::util::AssertedCast<const jlm::rvsdg::bitconstant_op>(
+  auto constant0op = jlm::util::AssertedCast<const jlm::llvm::IntegerConstantOperation>(
       &constant0variable->tac()->operation());
-  assert(constant0op->value() == 0);
+  assert(constant0op->Representation() == 0);
 
   return 0;
 }
