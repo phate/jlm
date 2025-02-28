@@ -8,9 +8,59 @@
 
 #include <jlm/rvsdg/binary.hpp>
 #include <jlm/rvsdg/bitstring/type.hpp>
+#include <jlm/rvsdg/bitstring/value-representation.hpp>
+#include <jlm/rvsdg/nullary.hpp>
 
 namespace jlm::llvm
 {
+
+// FIXME: Implement our own value representation instead of re-using the bitstring value
+// representation
+using IntegerValueRepresentation = rvsdg::bitvalue_repr;
+
+/**
+ * Represents an LLVM integer constant
+ */
+class IntegerConstantOperation final : public rvsdg::NullaryOperation
+{
+public:
+  ~IntegerConstantOperation() override;
+
+  explicit IntegerConstantOperation(IntegerValueRepresentation representation)
+      : NullaryOperation(rvsdg::bittype::Create(representation.nbits())),
+        Representation_(std::move(representation))
+  {}
+
+  std::unique_ptr<Operation>
+  copy() const override;
+
+  std::string
+  debug_string() const override;
+
+  bool
+  operator==(const Operation & other) const noexcept override;
+
+  [[nodiscard]] const IntegerValueRepresentation &
+  Representation() const noexcept
+  {
+    return Representation_;
+  }
+
+  static rvsdg::Node &
+  Create(rvsdg::Region & region, IntegerValueRepresentation representation)
+  {
+    return rvsdg::CreateOpNode<IntegerConstantOperation>(region, std::move(representation));
+  }
+
+  static rvsdg::Node &
+  Create(rvsdg::Region & region, std::size_t numBits, std::int64_t value)
+  {
+    return Create(region, { numBits, value });
+  }
+
+private:
+  IntegerValueRepresentation Representation_;
+};
 
 /**
  * Represents an LLVM integer binary operation
@@ -18,9 +68,11 @@ namespace jlm::llvm
 class IntegerBinaryOperation : public rvsdg::BinaryOperation
 {
 public:
-  ~IntegerBinaryOperation() override;
+  ~IntegerBinaryOperation() noexcept override;
 
-  IntegerBinaryOperation(std::size_t numArgumentBits, std::size_t numResultBits) noexcept
+  IntegerBinaryOperation(
+      const std::size_t numArgumentBits,
+      const std::size_t numResultBits) noexcept
       : BinaryOperation(
             { rvsdg::bittype::Create(numArgumentBits), rvsdg::bittype::Create(numArgumentBits) },
             rvsdg::bittype::Create(numResultBits))

@@ -125,21 +125,19 @@ public:
   }
 };
 
-/* select operator */
-
-class select_op final : public rvsdg::SimpleOperation
+class SelectOperation final : public rvsdg::SimpleOperation
 {
 public:
-  virtual ~select_op() noexcept;
+  ~SelectOperation() noexcept override;
 
-  explicit select_op(const std::shared_ptr<const jlm::rvsdg::Type> & type)
-      : SimpleOperation({ jlm::rvsdg::bittype::Create(1), type, type }, { type })
+  explicit SelectOperation(const std::shared_ptr<const rvsdg::Type> & type)
+      : SimpleOperation({ rvsdg::bittype::Create(1), type, type }, { type })
   {}
 
-  virtual bool
+  bool
   operator==(const Operation & other) const noexcept override;
 
-  virtual std::string
+  std::string
   debug_string() const override;
 
   [[nodiscard]] std::unique_ptr<Operation>
@@ -160,20 +158,18 @@ public:
   static std::unique_ptr<llvm::tac>
   create(const llvm::variable * p, const llvm::variable * t, const llvm::variable * f)
   {
-    select_op op(t->Type());
+    const SelectOperation op(t->Type());
     return tac::create(op, { p, t, f });
   }
 };
 
-/* vector select operator */
-
-class vectorselect_op final : public rvsdg::SimpleOperation
+class VectorSelectOperation final : public rvsdg::SimpleOperation
 {
 public:
-  virtual ~vectorselect_op() noexcept;
+  ~VectorSelectOperation() noexcept override;
 
 private:
-  vectorselect_op(
+  VectorSelectOperation(
       const std::shared_ptr<const VectorType> & pt,
       const std::shared_ptr<const VectorType> & vt)
       : SimpleOperation({ pt, vt, vt }, { vt })
@@ -227,29 +223,29 @@ private:
     auto fvt = static_cast<const T *>(&t->type());
     auto pt = T::Create(jlm::rvsdg::bittype::Create(1), fvt->size());
     auto vt = T::Create(fvt->Type(), fvt->size());
-    vectorselect_op op(pt, vt);
+    const VectorSelectOperation op(pt, vt);
     return tac::create(op, { p, t, f });
   }
 };
 
-/* fp2ui operator */
-
-class fp2ui_op final : public rvsdg::UnaryOperation
+class FloatingPointToUnsignedIntegerOperation final : public rvsdg::UnaryOperation
 {
 public:
-  virtual ~fp2ui_op() noexcept;
+  ~FloatingPointToUnsignedIntegerOperation() noexcept override;
 
-  inline fp2ui_op(fpsize size, std::shared_ptr<const jlm::rvsdg::bittype> type)
+  FloatingPointToUnsignedIntegerOperation(
+      const fpsize size,
+      std::shared_ptr<const rvsdg::bittype> type)
       : UnaryOperation(FloatingPointType::Create(size), std::move(type))
   {}
 
-  inline fp2ui_op(
+  FloatingPointToUnsignedIntegerOperation(
       std::shared_ptr<const FloatingPointType> fpt,
       std::shared_ptr<const jlm::rvsdg::bittype> type)
       : UnaryOperation(std::move(fpt), std::move(type))
   {}
 
-  inline fp2ui_op(
+  FloatingPointToUnsignedIntegerOperation(
       std::shared_ptr<const jlm::rvsdg::Type> srctype,
       std::shared_ptr<const jlm::rvsdg::Type> dsttype)
       : UnaryOperation(srctype, dsttype)
@@ -290,7 +286,7 @@ public:
     if (!dt)
       throw jlm::util::error("expected bitstring type.");
 
-    fp2ui_op op(std::move(st), std::move(dt));
+    const FloatingPointToUnsignedIntegerOperation op(std::move(st), std::move(dt));
     return tac::create(op, { operand });
   }
 };
