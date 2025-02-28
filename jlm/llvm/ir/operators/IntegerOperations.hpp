@@ -82,7 +82,7 @@ public:
   Type() const noexcept
   {
     return *util::AssertedCast<const rvsdg::bittype>(argument(0).get());
-    }
+  }
 };
 
 /**
