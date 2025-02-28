@@ -216,14 +216,14 @@ convert_empty_gamma_node(const rvsdg::GammaNode * gamma, context & ctx)
       auto c = ctx.variable(matchnode->input(0)->origin());
       auto t = d == 0 ? ctx.variable(o1) : ctx.variable(o0);
       auto f = d == 0 ? ctx.variable(o0) : ctx.variable(o1);
-      bb->append_last(select_op::create(c, t, f));
+      bb->append_last(SelectOperation::create(c, t, f));
     }
     else
     {
       auto vo0 = ctx.variable(o0);
       auto vo1 = ctx.variable(o1);
       bb->append_last(ctl2bits_op::create(ctx.variable(predicate), rvsdg::bittype::Create(1)));
-      bb->append_last(select_op::create(bb->last()->result(0), vo0, vo1));
+      bb->append_last(SelectOperation::create(bb->last()->result(0), vo0, vo1));
     }
 
     ctx.insert(output, bb->last()->result(0));
@@ -318,7 +318,7 @@ convert_gamma_node(const rvsdg::Node & node, context & ctx)
       auto c = ctx.variable(matchnode->input(0)->origin());
       auto t = d == 0 ? arguments[1].first : arguments[0].first;
       auto f = d == 0 ? arguments[0].first : arguments[1].first;
-      entry->append_first(select_op::create(c, t, f));
+      entry->append_first(SelectOperation::create(c, t, f));
       ctx.insert(output, entry->first()->result(0));
       continue;
     }

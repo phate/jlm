@@ -663,8 +663,7 @@ convert_select(
     ::llvm::IRBuilder<> & builder,
     context & ctx)
 {
-  JLM_ASSERT(is<select_op>(op));
-  auto & select = *static_cast<const select_op *>(&op);
+  auto & select = *util::AssertedCast<const SelectOperation>(&op);
 
   if (rvsdg::is<rvsdg::StateType>(select.type()))
     return nullptr;
@@ -825,7 +824,7 @@ convert_vectorbinary(
 
 static ::llvm::Value *
 convert(
-    const vectorselect_op &,
+    const VectorSelectOperation &,
     const std::vector<const variable *> & operands,
     ::llvm::IRBuilder<> & builder,
     context & ctx)
@@ -1181,7 +1180,7 @@ convert_operation(
             { typeid(valist_op), convert_valist },
             { typeid(ConstantStruct), convert<ConstantStruct> },
             { typeid(ConstantPointerNullOperation), convert<ConstantPointerNullOperation> },
-            { typeid(select_op), convert_select },
+            { typeid(SelectOperation), convert_select },
             { typeid(ConstantArray), convert<ConstantArray> },
             { typeid(ConstantAggregateZero), convert<ConstantAggregateZero> },
             { typeid(ctl2bits_op), convert_ctl2bits },
@@ -1192,7 +1191,7 @@ convert_operation(
             { typeid(insertelement_op), convert_insertelement },
             { typeid(vectorunary_op), convert_vectorunary },
             { typeid(vectorbinary_op), convert_vectorbinary },
-            { typeid(vectorselect_op), convert<vectorselect_op> },
+            { typeid(VectorSelectOperation), convert<VectorSelectOperation> },
             { typeid(ExtractValue), convert<ExtractValue> },
             { typeid(CallOperation), convert<CallOperation> },
             { typeid(malloc_op), convert<malloc_op> },
@@ -1203,7 +1202,8 @@ convert_operation(
             { typeid(bitcast_op), convert_cast<::llvm::Instruction::BitCast> },
             { typeid(fpext_op), convert_cast<::llvm::Instruction::FPExt> },
             { typeid(fp2si_op), convert_cast<::llvm::Instruction::FPToSI> },
-            { typeid(fp2ui_op), convert_cast<::llvm::Instruction::FPToUI> },
+            { typeid(FloatingPointToUnsignedIntegerOperation),
+              convert_cast<::llvm::Instruction::FPToUI> },
             { typeid(fptrunc_op), convert_cast<::llvm::Instruction::FPTrunc> },
             { typeid(bits2ptr_op), convert_cast<::llvm::Instruction::IntToPtr> },
             { typeid(ptr2bits_op), convert_cast<::llvm::Instruction::PtrToInt> },
