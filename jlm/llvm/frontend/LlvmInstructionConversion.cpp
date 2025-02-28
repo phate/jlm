@@ -392,17 +392,20 @@ convert_return_instruction(::llvm::Instruction * instruction, tacsvector_t & tac
   return ctx.result();
 }
 
-static inline const variable *
-convert_branch_instruction(::llvm::Instruction * instruction, tacsvector_t & tacs, context & ctx)
+static const variable *
+ConvertBranchInstruction(::llvm::Instruction * instruction, tacsvector_t & tacs, context & ctx)
 {
   JLM_ASSERT(instruction->getOpcode() == ::llvm::Instruction::Br);
   auto i = ::llvm::cast<::llvm::BranchInst>(instruction);
   auto bb = ctx.get(i->getParent());
 
-  if (i->isUnconditional())
+  JLM_ASSERT(bb->NumOutEdges() == 0);
+
+  // Avoid duplicate out-edges by making "conditional" branches to the same target unconditional
+  if (i->isUnconditional() || i->getSuccessor(0) == i->getSuccessor(1))
   {
     bb->add_outedge(ctx.get(i->getSuccessor(0)));
-    return {};
+    return nullptr;
   }
 
   bb->add_outedge(ctx.get(i->getSuccessor(1))); /* false */
@@ -417,31 +420,31 @@ convert_branch_instruction(::llvm::Instruction * instruction, tacsvector_t & tac
   return nullptr;
 }
 
-static inline const variable *
-convert_switch_instruction(::llvm::Instruction * instruction, tacsvector_t & tacs, context & ctx)
+static const variable *
+ConvertSwitchInstruction(::llvm::Instruction * instruction, tacsvector_t & tacs, context & ctx)
 {
   JLM_ASSERT(instruction->getOpcode() == ::llvm::Instruction::Switch);
   auto i = ::llvm::cast<::llvm::SwitchInst>(instruction);
   auto bb = ctx.get(i->getParent());
 
-  JLM_ASSERT(bb->noutedges() == 0);
+  JLM_ASSERT(bb->NumOutEdges() == 0);
 
   // It is possible for multiple cases to jump to the same basic block.
   // In which case the same outgoing edge from this basic block should be re-used.
-  std::unordered_map<basic_block*, uint64_t> existing_out_edges;
+  // Mapping from target basic block to out edge index
+  std::unordered_map<basic_block *, uint64_t> existing_out_edges;
 
-  // This function only adds an outgoing edge to the given basic block if it does not exist already.
-  // Returns the index of the outgoing edge
-  const auto AddOutgoingEdgeTo = [&] (::llvm::BasicBlock* block) -> uint64_t
+  // Adds an outgoing edge to the given basic block, only if it does not exist already.
+  // Returns the index of the new or existing outgoing edge
+  const auto AddOutgoingEdgeTo = [&](::llvm::BasicBlock * block) -> uint64_t
   {
     const auto successor_bb = ctx.get(block);
-    if(const auto it = existing_out_edges.find(successor_bb); it != existing_out_edges.end())
+    if (const auto it = existing_out_edges.find(successor_bb); it != existing_out_edges.end())
       return it->second;
 
-    const auto new_outedge_index = bb->noutedges();
-    bb->add_outedge(successor_bb);
-    existing_out_edges[successor_bb] = new_outedge_index;
-    return new_outedge_index;
+    const auto new_edge = bb->add_outedge(successor_bb);
+    existing_out_edges[successor_bb] = new_edge->index();
+    return new_edge->index();
   };
 
   // The final mapping from switch input to index of outgoing control flow edge
@@ -457,9 +460,9 @@ convert_switch_instruction(::llvm::Instruction * instruction, tacsvector_t & tac
 
   auto c = ConvertValue(i->getCondition(), tacs, ctx);
   auto nbits = i->getCondition()->getType()->getIntegerBitWidth();
-  auto op = rvsdg::match_op(nbits, mapping, default_outedge, bb->noutedges());
+  auto op = rvsdg::match_op(nbits, mapping, default_outedge, bb->NumOutEdges());
   tacs.push_back(tac::create(op, { c }));
-  tacs.push_back((branch_op::create(bb->noutedges(), tacs.back()->result(0))));
+  tacs.push_back((branch_op::create(bb->NumOutEdges(), tacs.back()->result(0))));
 
   return nullptr;
 }
@@ -712,34 +715,36 @@ convert_store_instruction(::llvm::Instruction * i, tacsvector_t & tacs, context 
  * Given an LLVM phi instruction, checks if the instruction has only one predecessor basic block
  * that is reachable (i.e., there exists a path from the entry point to the predecessor).
  *
+ * It is possible for a phi instruction to have multiple incoming blocks that are the same block.
+ * In this case, only the first occurrence is counted.
+ *
  * @param phi the phi instruction
  * @param ctx the context for the current LLVM to tac conversion
- * @return the single reachable predecessor basic block, or std::nullopt if it has multiple
+ * @return the index of the single reachable incoming basic block, or nullopt if there are multiple.
  */
-static std::optional<::llvm::BasicBlock*>
+static std::optional<size_t>
 getSinglePredecessor(::llvm::PHINode * phi, context & ctx)
 {
-  std::optional<::llvm::BasicBlock*> predecessor = std::nullopt;
+  std::optional<size_t> predecessor = std::nullopt;
 
   for (size_t n = 0; n < phi->getNumOperands(); n++)
   {
     const auto bb = phi->getIncomingBlock(n);
+
+    // If this predecessor basic block is not reachable, skip it
     if (!ctx.has(bb))
-      continue; // This predecessor was unreachable
+      continue;
 
     // If this is the first reachable predecessor we have found, store it
     if (!predecessor.has_value())
     {
-      predecessor = bb;
+      predecessor = n;
       continue;
     }
 
-    // If we are seeing the same predecessor basic block again, skip it
-    if (bb == *predecessor)
-      continue;
-
-    // We have found two distinct reachable predecessor basic blocks
-    return std::nullopt;
+    // If this reachable predecessor is not the same as the last one, there are multiple
+    if (bb != phi->getIncomingBlock(*predecessor))
+      return std::nullopt;
   }
 
   // Any visited phi should have at least one predecessor
@@ -758,7 +763,7 @@ convert_phi_instruction(::llvm::Instruction * i, tacsvector_t & tacs, context & 
   {
     // The incoming value is either a constant,
     // or a value from the predecessor basic block that has already been converted
-    return ConvertValue(*singlePredecessor, tacs, ctx);
+    return ConvertValue(phi->getIncomingValue(*singlePredecessor), tacs, ctx);
   }
 
   // This phi instruction can be reached from multiple basic blocks.
@@ -1294,8 +1299,8 @@ ConvertInstruction(
                            std::vector<std::unique_ptr<llvm::tac>> &,
                            context &)>
       map({ { ::llvm::Instruction::Ret, convert_return_instruction },
-            { ::llvm::Instruction::Br, convert_branch_instruction },
-            { ::llvm::Instruction::Switch, convert_switch_instruction },
+            { ::llvm::Instruction::Br, ConvertBranchInstruction },
+            { ::llvm::Instruction::Switch, ConvertSwitchInstruction },
             { ::llvm::Instruction::Unreachable, convert_unreachable_instruction },
             { ::llvm::Instruction::Add, convert<::llvm::BinaryOperator> },
             { ::llvm::Instruction::And, convert<::llvm::BinaryOperator> },

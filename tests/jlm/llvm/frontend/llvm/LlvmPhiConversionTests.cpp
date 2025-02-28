@@ -155,7 +155,7 @@ TestPhiConversion()
   return 0;
 }
 JLM_UNIT_TEST_REGISTER(
-    "jlm/llvm/frontend/TestLlvmPhiConversion-TestPhiConversion",
+    "jlm/llvm/frontend/llvm/LlvmPhiConversionTests-TestPhiConversion",
     TestPhiConversion)
 
 /**
@@ -270,7 +270,7 @@ TestPhiOperandElision()
   return 0;
 }
 JLM_UNIT_TEST_REGISTER(
-    "jlm/llvm/frontend/TestLlvmPhiConversion-TestPhiOperandElision",
+    "jlm/llvm/frontend/llvm/LlvmPhiConversionTests-TestPhiOperandElision",
     TestPhiOperandElision)
 
 /**
@@ -357,10 +357,10 @@ TestPhiDuplicatedOperand()
   for (auto & bb : *function->cfg())
   {
     // Ensure there are no duplicate outedges
-    jlm::util::HashSet<jlm::llvm::cfg_node*> successors;
-    for (auto & edge : bb.outedges())
+    jlm::util::HashSet<jlm::llvm::cfg_node *> successors;
+    for (auto & edge : bb.OutEdges())
       successors.Insert(edge.sink());
-    assert(successors.Size() == bb.noutedges());
+    assert(successors.Size() == bb.NumOutEdges());
 
     for (auto tac : bb)
     {
@@ -378,5 +378,5 @@ TestPhiDuplicatedOperand()
   return 0;
 }
 JLM_UNIT_TEST_REGISTER(
-    "jlm/llvm/frontend/TestLlvmPhiConversion-TestPhiDuplicatedOperand",
+    "jlm/llvm/frontend/llvm/LlvmPhiConversionTests-TestPhiDuplicatedOperand",
     TestPhiDuplicatedOperand)

@@ -58,13 +58,13 @@ PatchPhiOperands(const std::vector<::llvm::PHINode *> & phis, context & ctx)
     std::vector<const variable *> operands;
     for (size_t n = 0; n < phi->getNumOperands(); n++)
     {
-      auto bb = ctx.get(phi->getIncomingBlock(n));
-
       // In LLVM, phi instructions may have incoming basic blocks that are unreachable.
       // These are not visited during convert_basic_blocks, and thus do not have corresponding
       // jlm::llvm::basic_blocks. The SsaPhiOperation can safely ignore these, as they are dead.
-      if (!ctx.has(bb))
+      if (!ctx.has(phi->getIncomingBlock(n)))
         continue;
+
+      auto bb = ctx.get(phi->getIncomingBlock(n));
 
       // In LLVM, some phi instructions have multiple operands that reference the same basic block.
       // When that has happened "in the wild" (see issue #612), the operands that refer to the
@@ -72,6 +72,7 @@ PatchPhiOperands(const std::vector<::llvm::PHINode *> & phis, context & ctx)
       // Therefore, we chose to handle this by only keeping the first operand per basic block
       if (std::find(nodes.begin(), nodes.end(), bb) != nodes.end())
         continue;
+      nodes.push_back(bb);
 
       // Convert the operand value in the predecessor basic block, as that is where it is "used".
       tacsvector_t tacs;
