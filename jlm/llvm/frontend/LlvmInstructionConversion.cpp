@@ -969,7 +969,7 @@ convert_select_instruction(::llvm::Instruction * i, tacsvector_t & tacs, context
   if (i->getType()->isVectorTy())
     tacs.push_back(vectorselect_op::create(p, t, f));
   else
-    tacs.push_back(select_op::create(p, t, f));
+    tacs.push_back(SelectOperation::create(p, t, f));
 
   return tacs.back()->result(0);
 }
