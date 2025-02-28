@@ -824,7 +824,7 @@ convert_vectorbinary(
 
 static ::llvm::Value *
 convert(
-    const vectorselect_op &,
+    const VectorSelectOperation &,
     const std::vector<const variable *> & operands,
     ::llvm::IRBuilder<> & builder,
     context & ctx)
@@ -1191,7 +1191,7 @@ convert_operation(
             { typeid(insertelement_op), convert_insertelement },
             { typeid(vectorunary_op), convert_vectorunary },
             { typeid(vectorbinary_op), convert_vectorbinary },
-            { typeid(vectorselect_op), convert<vectorselect_op> },
+            { typeid(VectorSelectOperation), convert<VectorSelectOperation> },
             { typeid(ExtractValue), convert<ExtractValue> },
             { typeid(CallOperation), convert<CallOperation> },
             { typeid(malloc_op), convert<malloc_op> },
