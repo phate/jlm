@@ -58,9 +58,9 @@ GammaWithMatch()
 
   auto cfg = dynamic_cast<const function_node &>(*ipg.begin()).cfg();
   assert(cfg->nnodes() == 1);
-  auto node = cfg->entry()->outedge(0)->sink();
+  auto node = cfg->entry()->OutEdge(0)->sink();
   auto bb = dynamic_cast<const basic_block *>(node);
-  assert(is<select_op>(bb->tacs().last()->operation()));
+  assert(is<SelectOperation>(bb->tacs().last()->operation()));
 
   return 0;
 }
@@ -108,10 +108,10 @@ GammaWithoutMatch()
 
   auto cfg = dynamic_cast<const function_node &>(*ipg.begin()).cfg();
   assert(cfg->nnodes() == 1);
-  auto node = cfg->entry()->outedge(0)->sink();
+  auto node = cfg->entry()->OutEdge(0)->sink();
   auto bb = dynamic_cast<const basic_block *>(node);
   assert(is<ctl2bits_op>(bb->tacs().first()->operation()));
-  assert(is<select_op>(bb->tacs().last()->operation()));
+  assert(is<SelectOperation>(bb->tacs().last()->operation()));
 
   return 0;
 }

@@ -9,6 +9,7 @@
 #include <jlm/llvm/backend/jlm2llvm/jlm2llvm.hpp>
 #include <jlm/llvm/ir/ipgraph-module.hpp>
 #include <jlm/llvm/ir/operators.hpp>
+#include <jlm/llvm/ir/operators/IntegerOperations.hpp>
 #include <jlm/llvm/ir/print.hpp>
 
 #include <llvm/IR/LLVMContext.h>
@@ -34,7 +35,7 @@ test()
 
   auto cfg = cfg::create(im);
   auto bb = basic_block::create(*cfg);
-  bb->append_last(tac::create(jlm::rvsdg::bitconstant_op(vr), {}));
+  bb->append_last(tac::create(IntegerConstantOperation(vr), {}));
   auto c = bb->last()->result(0);
 
   cfg->exit()->divert_inedges(bb);

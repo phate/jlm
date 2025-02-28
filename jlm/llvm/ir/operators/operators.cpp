@@ -62,86 +62,80 @@ AssignmentOperation::copy() const
   return std::make_unique<AssignmentOperation>(*this);
 }
 
-/* select operator */
-
-select_op::~select_op() noexcept
-{}
+SelectOperation::~SelectOperation() noexcept = default;
 
 bool
-select_op::operator==(const Operation & other) const noexcept
+SelectOperation::operator==(const Operation & other) const noexcept
 {
-  auto op = dynamic_cast<const select_op *>(&other);
+  const auto op = dynamic_cast<const SelectOperation *>(&other);
   return op && op->result(0) == result(0);
 }
 
 std::string
-select_op::debug_string() const
+SelectOperation::debug_string() const
 {
-  return "SELECT";
+  return "Select";
 }
 
 std::unique_ptr<rvsdg::Operation>
-select_op::copy() const
+SelectOperation::copy() const
 {
-  return std::make_unique<select_op>(*this);
+  return std::make_unique<SelectOperation>(*this);
 }
 
-/* vectorselect operator */
-
-vectorselect_op::~vectorselect_op() noexcept
-{}
+VectorSelectOperation::~VectorSelectOperation() noexcept = default;
 
 bool
-vectorselect_op::operator==(const Operation & other) const noexcept
+VectorSelectOperation::operator==(const Operation & other) const noexcept
 {
-  auto op = dynamic_cast<const vectorselect_op *>(&other);
+  const auto op = dynamic_cast<const VectorSelectOperation *>(&other);
   return op && op->type() == type();
 }
 
 std::string
-vectorselect_op::debug_string() const
+VectorSelectOperation::debug_string() const
 {
-  return "VECTORSELECT";
+  return "VectorSelect";
 }
 
 std::unique_ptr<rvsdg::Operation>
-vectorselect_op::copy() const
+VectorSelectOperation::copy() const
 {
-  return std::make_unique<vectorselect_op>(*this);
+  return std::make_unique<VectorSelectOperation>(*this);
 }
 
-/* fp2ui operator */
-
-fp2ui_op::~fp2ui_op() noexcept
-{}
+FloatingPointToUnsignedIntegerOperation::~FloatingPointToUnsignedIntegerOperation() noexcept =
+    default;
 
 bool
-fp2ui_op::operator==(const Operation & other) const noexcept
+FloatingPointToUnsignedIntegerOperation::operator==(const Operation & other) const noexcept
 {
-  auto op = dynamic_cast<const fp2ui_op *>(&other);
+  const auto op = dynamic_cast<const FloatingPointToUnsignedIntegerOperation *>(&other);
   return op && op->argument(0) == argument(0) && op->result(0) == result(0);
 }
 
 std::string
-fp2ui_op::debug_string() const
+FloatingPointToUnsignedIntegerOperation::debug_string() const
 {
-  return "FP2UI";
+  return "FpToUInt";
 }
 
 std::unique_ptr<rvsdg::Operation>
-fp2ui_op::copy() const
+FloatingPointToUnsignedIntegerOperation::copy() const
 {
-  return std::make_unique<fp2ui_op>(*this);
+  return std::make_unique<FloatingPointToUnsignedIntegerOperation>(*this);
 }
 
 rvsdg::unop_reduction_path_t
-fp2ui_op::can_reduce_operand(const rvsdg::output *) const noexcept
+FloatingPointToUnsignedIntegerOperation::can_reduce_operand(const rvsdg::output *) const noexcept
 {
   return rvsdg::unop_reduction_none;
 }
 
 rvsdg::output *
-fp2ui_op::reduce_operand(rvsdg::unop_reduction_path_t, rvsdg::output *) const
+FloatingPointToUnsignedIntegerOperation::reduce_operand(
+    rvsdg::unop_reduction_path_t,
+    rvsdg::output *) const
 {
   JLM_UNREACHABLE("Not implemented");
 }

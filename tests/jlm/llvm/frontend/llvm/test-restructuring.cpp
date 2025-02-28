@@ -97,8 +97,8 @@ test_dowhile()
   //	jlm::view_ascii(cfg, stdout);
 
   assert(nnodes == cfg.nnodes());
-  assert(bb2->outedge(0)->sink() == bb2);
-  assert(bb3->outedge(0)->sink() == bb1);
+  assert(bb2->OutEdge(0)->sink() == bb2);
+  assert(bb3->OutEdge(0)->sink() == bb1);
 }
 
 static inline void
