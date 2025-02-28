@@ -88,7 +88,7 @@ ConverterIntegerConstant(
     ::llvm::IRBuilder<> & builder,
     context &)
 {
-  const auto representation =
+  const auto & representation =
       util::AssertedCast<const IntegerConstantOperation>(&op)->Representation();
   const auto type = ::llvm::IntegerType::get(builder.getContext(), representation.nbits());
 
