@@ -86,28 +86,25 @@ select_op::copy() const
   return std::make_unique<select_op>(*this);
 }
 
-/* vectorselect operator */
-
-vectorselect_op::~vectorselect_op() noexcept
-{}
+VectorSelectOperation::~VectorSelectOperation() noexcept = default;
 
 bool
-vectorselect_op::operator==(const Operation & other) const noexcept
+VectorSelectOperation::operator==(const Operation & other) const noexcept
 {
-  auto op = dynamic_cast<const vectorselect_op *>(&other);
+  const auto op = dynamic_cast<const VectorSelectOperation *>(&other);
   return op && op->type() == type();
 }
 
 std::string
-vectorselect_op::debug_string() const
+VectorSelectOperation::debug_string() const
 {
-  return "VECTORSELECT";
+  return "VectorSelect";
 }
 
 std::unique_ptr<rvsdg::Operation>
-vectorselect_op::copy() const
+VectorSelectOperation::copy() const
 {
-  return std::make_unique<vectorselect_op>(*this);
+  return std::make_unique<VectorSelectOperation>(*this);
 }
 
 /* fp2ui operator */

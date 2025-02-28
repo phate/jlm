@@ -165,15 +165,13 @@ public:
   }
 };
 
-/* vector select operator */
-
-class vectorselect_op final : public rvsdg::SimpleOperation
+class VectorSelectOperation final : public rvsdg::SimpleOperation
 {
 public:
-  virtual ~vectorselect_op() noexcept;
+  ~VectorSelectOperation() noexcept override;
 
 private:
-  vectorselect_op(
+  VectorSelectOperation(
       const std::shared_ptr<const VectorType> & pt,
       const std::shared_ptr<const VectorType> & vt)
       : SimpleOperation({ pt, vt, vt }, { vt })
@@ -227,7 +225,7 @@ private:
     auto fvt = static_cast<const T *>(&t->type());
     auto pt = T::Create(jlm::rvsdg::bittype::Create(1), fvt->size());
     auto vt = T::Create(fvt->Type(), fvt->size());
-    vectorselect_op op(pt, vt);
+    const VectorSelectOperation op(pt, vt);
     return tac::create(op, { p, t, f });
   }
 };

@@ -97,7 +97,7 @@ test_vector_select()
   auto ipgmod = jlm::llvm::ConvertLlvmModule(*llmod);
   print(*ipgmod, stdout);
 
-  assert(contains<jlm::llvm::vectorselect_op>(*ipgmod, "f"));
+  assert(contains<jlm::llvm::VectorSelectOperation>(*ipgmod, "f"));
 }
 
 static int
