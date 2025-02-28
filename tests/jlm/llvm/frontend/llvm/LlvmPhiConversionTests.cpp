@@ -8,6 +8,7 @@
 
 #include <jlm/llvm/frontend/LlvmModuleConversion.hpp>
 #include <jlm/llvm/ir/operators/call.hpp>
+#include <jlm/llvm/ir/operators/IntegerOperations.hpp>
 #include <jlm/llvm/ir/operators/operators.hpp>
 #include <jlm/llvm/ir/print.hpp>
 #include <jlm/rvsdg/bitstring/constant.hpp>
@@ -17,7 +18,6 @@
 #include <llvm/IRReader/IRReader.h>
 #include <llvm/Support/SourceMgr.h>
 
-#include <jlm/llvm/ir/operators/IntegerOperations.hpp>
 #include <string>
 
 /**
