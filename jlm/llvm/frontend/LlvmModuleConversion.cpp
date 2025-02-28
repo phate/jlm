@@ -49,6 +49,11 @@ convert_instructions(::llvm::Function & function, context & ctx)
   return phis;
 }
 
+/**
+ * During conversion of LLVM instructions, phi instructions become empty SsaPhiOperations.
+ * Once all instructions have been converted, this function goes over all phi instructions
+ * and assigns proper operands.
+ */
 static void
 PatchPhiOperands(const std::vector<::llvm::PHINode *> & phis, context & ctx)
 {
@@ -69,7 +74,8 @@ PatchPhiOperands(const std::vector<::llvm::PHINode *> & phis, context & ctx)
       // In LLVM, some phi instructions have multiple operands that reference the same basic block.
       // When that has happened "in the wild" (see issue #612), the operands that refer to the
       // same basic blocks, also have the same value, e.g., "phi i32 [0, %bb0], [0, %bb0]".
-      // Therefore, we chose to handle this by only keeping the first operand per basic block
+      // Given handwritten LLVM IR where the values differ, LLVM silently picks the first one.
+      // Therefore, we chose to handle this by only keeping the first operand per basic block.
       if (std::find(nodes.begin(), nodes.end(), bb) != nodes.end())
         continue;
       nodes.push_back(bb);

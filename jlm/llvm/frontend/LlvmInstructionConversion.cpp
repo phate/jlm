@@ -723,7 +723,7 @@ convert_store_instruction(::llvm::Instruction * i, tacsvector_t & tacs, context 
  * @return the index of the single reachable incoming basic block, or nullopt if there are multiple.
  */
 static std::optional<size_t>
-getSinglePredecessor(::llvm::PHINode * phi, context & ctx)
+TryGetSinglePhiPredecessor(::llvm::PHINode * phi, context & ctx)
 {
   std::optional<size_t> predecessor = std::nullopt;
 
@@ -753,13 +753,13 @@ getSinglePredecessor(::llvm::PHINode * phi, context & ctx)
 }
 
 static const variable *
-convert_phi_instruction(::llvm::Instruction * i, tacsvector_t & tacs, context & ctx)
+ConvertPhiInstruction(::llvm::Instruction * i, tacsvector_t & tacs, context & ctx)
 {
   auto phi = ::llvm::dyn_cast<::llvm::PHINode>(i);
 
   // If this phi instruction only has one predecessor basic block that is reachable,
   // the phi operation can be removed.
-  if (auto singlePredecessor = getSinglePredecessor(phi, ctx))
+  if (auto singlePredecessor = TryGetSinglePhiPredecessor(phi, ctx))
   {
     // The incoming value is either a constant,
     // or a value from the predecessor basic block that has already been converted
@@ -773,7 +773,7 @@ convert_phi_instruction(::llvm::Instruction * i, tacsvector_t & tacs, context & 
   // Once all basic blocks have been converted, all SsaPhiOperations get visited again and given
   // operands.
   auto type = ctx.GetTypeConverter().ConvertLlvmType(*i->getType());
-  tacs.push_back(SsaPhiOperation::create({}, type));
+  tacs.push_back(SsaPhiOperation::create({}, std::move(type)));
   return tacs.back()->result(0);
 }
 
@@ -1325,7 +1325,7 @@ ConvertInstruction(
             { ::llvm::Instruction::FCmp, convert_fcmp_instruction },
             { ::llvm::Instruction::Load, convert_load_instruction },
             { ::llvm::Instruction::Store, convert_store_instruction },
-            { ::llvm::Instruction::PHI, convert_phi_instruction },
+            { ::llvm::Instruction::PHI, ConvertPhiInstruction },
             { ::llvm::Instruction::GetElementPtr, convert_getelementptr_instruction },
             { ::llvm::Instruction::Call, convert_call_instruction },
             { ::llvm::Instruction::Select, convert_select_instruction },
