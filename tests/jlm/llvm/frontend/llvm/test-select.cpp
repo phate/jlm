@@ -62,7 +62,7 @@ test_scalar_select()
   auto ipgmod = jlm::llvm::ConvertLlvmModule(*llmod);
   print(*ipgmod, stdout);
 
-  assert(contains<jlm::llvm::select_op>(*ipgmod, "f"));
+  assert(contains<jlm::llvm::SelectOperation>(*ipgmod, "f"));
 }
 
 static void

@@ -663,8 +663,7 @@ convert_select(
     ::llvm::IRBuilder<> & builder,
     context & ctx)
 {
-  JLM_ASSERT(is<select_op>(op));
-  auto & select = *static_cast<const select_op *>(&op);
+  auto & select = *util::AssertedCast<const SelectOperation>(&op);
 
   if (rvsdg::is<rvsdg::StateType>(select.type()))
     return nullptr;
@@ -1181,7 +1180,7 @@ convert_operation(
             { typeid(valist_op), convert_valist },
             { typeid(ConstantStruct), convert<ConstantStruct> },
             { typeid(ConstantPointerNullOperation), convert<ConstantPointerNullOperation> },
-            { typeid(select_op), convert_select },
+            { typeid(SelectOperation), convert_select },
             { typeid(ConstantArray), convert<ConstantArray> },
             { typeid(ConstantAggregateZero), convert<ConstantAggregateZero> },
             { typeid(ctl2bits_op), convert_ctl2bits },
