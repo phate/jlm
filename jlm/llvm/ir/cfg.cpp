@@ -46,9 +46,9 @@ cfg::remove_node(cfg::iterator & nodeit)
 {
   auto & cfg = nodeit->cfg();
 
-  for (auto & inedge : nodeit->inedges())
+  for (auto & inedge : nodeit->InEdges())
   {
-    if (inedge->source() != nodeit.node())
+    if (inedge.source() != nodeit.node())
       throw util::error("cannot remove node. It has still incoming edges.");
   }
 
@@ -162,10 +162,10 @@ cfg::CreateTargets(
 {
   size_t n = 0;
   std::string str("[");
-  for (auto it = node.begin_outedges(); it != node.end_outedges(); it++, n++)
+  for (auto & outedge : node.OutEdges())
   {
-    str += labels.at(it->sink());
-    if (n != node.noutedges() - 1)
+    str += labels.at(outedge.sink());
+    if (n != node.NumOutEdges() - 1)
       str += ", ";
   }
   str += "]";
@@ -214,9 +214,9 @@ postorder(const llvm::cfg & cfg)
                      std::vector<cfg_node *> & nodes)
   {
     visited.insert(node);
-    for (size_t n = 0; n < node->noutedges(); n++)
+    for (size_t n = 0; n < node->NumOutEdges(); n++)
     {
-      auto edge = node->outedge(n);
+      auto edge = node->OutEdge(n);
       if (visited.find(edge->sink()) == visited.end())
         traverse(edge->sink(), visited, nodes);
     }
@@ -250,13 +250,13 @@ breadth_first(const llvm::cfg & cfg)
     auto node = next.front();
     next.pop_front();
 
-    for (auto it = node->begin_outedges(); it != node->end_outedges(); it++)
+    for (auto & outedge : node->OutEdges())
     {
-      if (visited.find(it->sink()) == visited.end())
+      if (visited.find(outedge.sink()) == visited.end())
       {
-        visited.insert(it->sink());
-        next.push_back(it->sink());
-        nodes.push_back(it->sink());
+        visited.insert(outedge.sink());
+        next.push_back(outedge.sink());
+        nodes.push_back(outedge.sink());
       }
     }
   }

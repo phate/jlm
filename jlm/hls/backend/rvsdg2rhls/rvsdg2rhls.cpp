@@ -48,6 +48,7 @@
 #include <llvm/Support/SourceMgr.h>
 
 #include <jlm/hls/opt/IOBarrierRemoval.hpp>
+#include <jlm/llvm/ir/operators/IntegerOperations.hpp>
 #include <regex>
 
 namespace jlm::hls
@@ -206,9 +207,13 @@ convert_alloca(rvsdg::Region * region)
           false);
       // create zero constant of allocated type
       jlm::rvsdg::output * cout;
-      if (auto bt = dynamic_cast<const jlm::rvsdg::bittype *>(&po->value_type()))
+      if (auto bt = dynamic_cast<const llvm::IntegerConstantOperation *>(&po->value_type()))
       {
-        cout = jlm::rvsdg::create_bitconstant(db->subregion(), bt->nbits(), 0);
+        cout = llvm::IntegerConstantOperation::Create(
+                   *db->subregion(),
+                   bt->Representation().nbits(),
+                   0)
+                   .output(0);
       }
       else
       {

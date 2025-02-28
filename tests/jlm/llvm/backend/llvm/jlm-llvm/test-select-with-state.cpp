@@ -34,7 +34,7 @@ test()
   auto s1 = cfg->entry()->append_argument(argument::create("s1", mt));
   auto s2 = cfg->entry()->append_argument(argument::create("s2", mt));
 
-  bb->append_last(select_op::create(p, s1, s2));
+  bb->append_last(SelectOperation::create(p, s1, s2));
   auto s3 = bb->last()->result(0);
 
   cfg->exit()->append_result(s3);
