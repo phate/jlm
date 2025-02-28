@@ -25,42 +25,42 @@ using IntegerValueRepresentation = rvsdg::bitvalue_repr;
 class IntegerConstantOperation final : public rvsdg::NullaryOperation
 {
 public:
-    ~IntegerConstantOperation() override;
+  ~IntegerConstantOperation() override;
 
-    explicit IntegerConstantOperation(IntegerValueRepresentation representation)
-        : NullaryOperation(rvsdg::bittype::Create(representation.nbits())),
-          Representation_(std::move(representation))
-    {}
+  explicit IntegerConstantOperation(IntegerValueRepresentation representation)
+      : NullaryOperation(rvsdg::bittype::Create(representation.nbits())),
+        Representation_(std::move(representation))
+  {}
 
-    std::unique_ptr<Operation>
-    copy() const override;
+  std::unique_ptr<Operation>
+  copy() const override;
 
-    std::string
-    debug_string() const override;
+  std::string
+  debug_string() const override;
 
-    bool
-    operator==(const Operation & other) const noexcept override;
+  bool
+  operator==(const Operation & other) const noexcept override;
 
-    [[nodiscard]] const IntegerValueRepresentation &
-    Representation() const noexcept
-    {
-        return Representation_;
-    }
+  [[nodiscard]] const IntegerValueRepresentation &
+  Representation() const noexcept
+  {
+    return Representation_;
+  }
 
-    static rvsdg::Node &
-    Create(rvsdg::Region & region, IntegerValueRepresentation representation)
-    {
-        return rvsdg::CreateOpNode<IntegerConstantOperation>(region, std::move(representation));
-    }
+  static rvsdg::Node &
+  Create(rvsdg::Region & region, IntegerValueRepresentation representation)
+  {
+    return rvsdg::CreateOpNode<IntegerConstantOperation>(region, std::move(representation));
+  }
 
-    static rvsdg::Node &
-    Create(rvsdg::Region & region, std::size_t numBits, std::int64_t value)
-    {
-        return Create(region, { numBits, value });
-    }
+  static rvsdg::Node &
+  Create(rvsdg::Region & region, std::size_t numBits, std::int64_t value)
+  {
+    return Create(region, { numBits, value });
+  }
 
 private:
-    IntegerValueRepresentation Representation_;
+  IntegerValueRepresentation Representation_;
 };
 
 /**
@@ -80,7 +80,7 @@ public:
     [[nodiscard]] const rvsdg::bittype &
     Type() const noexcept
     {
-        return *util::AssertedCast<const rvsdg::bittype>(argument(0).get());
+      return *util::AssertedCast<const rvsdg::bittype>(argument(0).get());
     }
 };
 
