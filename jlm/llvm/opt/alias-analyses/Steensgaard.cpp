@@ -1022,7 +1022,7 @@ Steensgaard::AnalyzeSimpleNode(const jlm::rvsdg::SimpleNode & node)
   {
     AnalyzeBitcast(node);
   }
-  else if (is<bits2ptr_op>(&node))
+  else if (is<IntegerToPointerOperation>(&node))
   {
     AnalyzeBits2ptr(node);
   }
@@ -1311,7 +1311,7 @@ Steensgaard::AnalyzeBitcast(const jlm::rvsdg::SimpleNode & node)
 void
 Steensgaard::AnalyzeBits2ptr(const jlm::rvsdg::SimpleNode & node)
 {
-  JLM_ASSERT(is<bits2ptr_op>(&node));
+  JLM_ASSERT(is<IntegerToPointerOperation>(&node));
 
   auto & registerLocation = Context_->GetOrInsertRegisterLocation(*node.output(0));
   registerLocation.SetPointsToFlags(

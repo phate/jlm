@@ -1,10 +1,9 @@
 /*
- * Copyright 2017 Nico Reißmann <nico.reissmann@gmail.com>
+ * Copyright 2025 Nico Reißmann <nico.reissmann@gmail.com>
  * See COPYING for terms of redistribution.
  */
 
-#include <jlm/llvm/backend/rvsdg2jlm/context.hpp>
-#include <jlm/llvm/backend/rvsdg2jlm/rvsdg2jlm.hpp>
+#include <jlm/llvm/backend/RvsdgToIpGraphConverter.hpp>
 #include <jlm/llvm/ir/basic-block.hpp>
 #include <jlm/llvm/ir/cfg-structure.hpp>
 #include <jlm/llvm/ir/ipgraph-module.hpp>
@@ -17,18 +16,95 @@
 #include <jlm/util/time.hpp>
 
 #include <deque>
-#include <typeindex>
 
 namespace jlm::llvm
 {
 
-class rvsdg_destruction_stat final : public util::Statistics
+class RvsdgToIpGraphConverter::Context final
 {
 public:
-  ~rvsdg_destruction_stat() override = default;
+  explicit Context(ipgraph_module & im)
+      : cfg_(nullptr),
+        module_(im),
+        lpbb_(nullptr)
+  {}
 
-  explicit rvsdg_destruction_stat(const util::filepath & filename)
-      : Statistics(Statistics::Id::RvsdgDestruction, filename)
+  Context(const Context &) = delete;
+
+  Context(Context &&) = delete;
+
+  Context &
+  operator=(const Context &) = delete;
+
+  Context &
+  operator=(Context &&) = delete;
+
+  ipgraph_module &
+  module() const noexcept
+  {
+    return module_;
+  }
+
+  void
+  insert(const rvsdg::output * output, const llvm::variable * v)
+  {
+    JLM_ASSERT(ports_.find(output) == ports_.end());
+    JLM_ASSERT(*output->Type() == *v->Type());
+    ports_[output] = v;
+  }
+
+  const llvm::variable *
+  variable(const rvsdg::output * port)
+  {
+    auto it = ports_.find(port);
+    JLM_ASSERT(it != ports_.end());
+    return it->second;
+  }
+
+  basic_block *
+  lpbb() const noexcept
+  {
+    return lpbb_;
+  }
+
+  void
+  set_lpbb(basic_block * lpbb) noexcept
+  {
+    lpbb_ = lpbb;
+  }
+
+  llvm::cfg *
+  cfg() const noexcept
+  {
+    return cfg_;
+  }
+
+  void
+  set_cfg(llvm::cfg * cfg) noexcept
+  {
+    cfg_ = cfg;
+  }
+
+  static std::unique_ptr<Context>
+  Create(ipgraph_module & ipGraphModule)
+  {
+    return std::make_unique<Context>(ipGraphModule);
+  }
+
+private:
+  llvm::cfg * cfg_;
+  ipgraph_module & module_;
+  basic_block * lpbb_;
+  std::unordered_map<const rvsdg::output *, const llvm::variable *> ports_;
+};
+
+class RvsdgToIpGraphConverter::Statistics final : public util::Statistics
+{
+public:
+  ~Statistics() override = default;
+
+  explicit Statistics(const util::filepath & filename)
+      : util::Statistics(Id::RvsdgDestruction, filename)
   {}
 
   void
@@ -45,15 +121,16 @@ public:
     GetTimer(Label::Timer).stop();
   }
 
-  static std::unique_ptr<rvsdg_destruction_stat>
+  static std::unique_ptr<Statistics>
   Create(const util::filepath & sourceFile)
   {
-    return std::make_unique<rvsdg_destruction_stat>(sourceFile);
+    return std::make_unique<Statistics>(sourceFile);
   }
 };
 
-namespace rvsdg2jlm
-{
+RvsdgToIpGraphConverter::~RvsdgToIpGraphConverter() = default;
+
+RvsdgToIpGraphConverter::RvsdgToIpGraphConverter() = default;
 
 static std::shared_ptr<const rvsdg::FunctionType>
 is_function_import(const llvm::GraphImport * graphImport)
@@ -61,21 +138,21 @@ is_function_import(const llvm::GraphImport * graphImport)
   return std::dynamic_pointer_cast<const rvsdg::FunctionType>(graphImport->ValueType());
 }
 
-static std::unique_ptr<data_node_init>
-create_initialization(const delta::node * delta, context & ctx)
+std::unique_ptr<data_node_init>
+RvsdgToIpGraphConverter::create_initialization(const delta::node * delta)
 {
   auto subregion = delta->subregion();
 
-  /* add delta dependencies to context */
+  // add delta dependencies to context
   for (size_t n = 0; n < delta->ninputs(); n++)
   {
-    auto v = ctx.variable(delta->input(n)->origin());
-    ctx.insert(delta->input(n)->arguments.first(), v);
+    auto v = Context_->variable(delta->input(n)->origin());
+    Context_->insert(delta->input(n)->arguments.first(), v);
   }
 
   if (subregion->nnodes() == 0)
   {
-    auto value = ctx.variable(subregion->result(0)->origin());
+    auto value = Context_->variable(subregion->result(0)->origin());
     return std::make_unique<data_node_init>(value);
   }
 
@@ -88,44 +165,41 @@ create_initialization(const delta::node * delta, context & ctx)
     /* collect operand variables */
     std::vector<const variable *> operands;
     for (size_t n = 0; n < node->ninputs(); n++)
-      operands.push_back(ctx.variable(node->input(n)->origin()));
+      operands.push_back(Context_->variable(node->input(n)->origin()));
 
     /* convert node to tac */
     auto & op = *static_cast<const rvsdg::SimpleOperation *>(&node->GetOperation());
     tacs.push_back(tac::create(op, operands));
-    ctx.insert(output, tacs.back()->result(0));
+    Context_->insert(output, tacs.back()->result(0));
   }
 
   return std::make_unique<data_node_init>(std::move(tacs));
 }
 
-static void
-convert_node(const rvsdg::Node & node, context & ctx);
-
-static inline void
-convert_region(rvsdg::Region & region, context & ctx)
+void
+RvsdgToIpGraphConverter::convert_region(rvsdg::Region & region)
 {
-  auto entry = basic_block::create(*ctx.cfg());
-  ctx.lpbb()->add_outedge(entry);
-  ctx.set_lpbb(entry);
+  auto entry = basic_block::create(*Context_->cfg());
+  Context_->lpbb()->add_outedge(entry);
+  Context_->set_lpbb(entry);
 
   for (const auto & node : rvsdg::TopDownTraverser(&region))
-    convert_node(*node, ctx);
+    convert_node(*node);
 
-  auto exit = basic_block::create(*ctx.cfg());
-  ctx.lpbb()->add_outedge(exit);
-  ctx.set_lpbb(exit);
+  auto exit = basic_block::create(*Context_->cfg());
+  Context_->lpbb()->add_outedge(exit);
+  Context_->set_lpbb(exit);
 }
 
-static inline std::unique_ptr<llvm::cfg>
-create_cfg(const rvsdg::LambdaNode & lambda, context & ctx)
+std::unique_ptr<llvm::cfg>
+RvsdgToIpGraphConverter::create_cfg(const rvsdg::LambdaNode & lambda)
 {
-  JLM_ASSERT(ctx.lpbb() == nullptr);
-  std::unique_ptr<llvm::cfg> cfg(new llvm::cfg(ctx.module()));
+  JLM_ASSERT(Context_->lpbb() == nullptr);
+  std::unique_ptr<llvm::cfg> cfg(new llvm::cfg(Context_->module()));
   auto entry = basic_block::create(*cfg);
   cfg->exit()->divert_inedges(entry);
-  ctx.set_lpbb(entry);
-  ctx.set_cfg(cfg.get());
+  Context_->set_lpbb(entry);
+  Context_->set_cfg(cfg.get());
 
   /* add arguments */
   for (auto fctarg : lambda.GetFunctionArguments())
@@ -137,49 +211,49 @@ create_cfg(const rvsdg::LambdaNode & lambda, context & ctx)
         dynamic_cast<llvm::LlvmLambdaOperation &>(lambda.GetOperation())
             .GetArgumentAttributes(fctarg->index()));
     auto v = cfg->entry()->append_argument(std::move(argument));
-    ctx.insert(fctarg, v);
+    Context_->insert(fctarg, v);
   }
 
   /* add context variables */
   for (const auto & cv : lambda.GetContextVars())
   {
-    auto v = ctx.variable(cv.input->origin());
-    ctx.insert(cv.inner, v);
+    auto v = Context_->variable(cv.input->origin());
+    Context_->insert(cv.inner, v);
   }
 
-  convert_region(*lambda.subregion(), ctx);
+  convert_region(*lambda.subregion());
 
   /* add results */
   for (auto result : lambda.GetFunctionResults())
-    cfg->exit()->append_result(ctx.variable(result->origin()));
+    cfg->exit()->append_result(Context_->variable(result->origin()));
 
-  ctx.lpbb()->add_outedge(cfg->exit());
-  ctx.set_lpbb(nullptr);
-  ctx.set_cfg(nullptr);
+  Context_->lpbb()->add_outedge(cfg->exit());
+  Context_->set_lpbb(nullptr);
+  Context_->set_cfg(nullptr);
 
   straighten(*cfg);
   JLM_ASSERT(is_closed(*cfg));
   return cfg;
 }
 
-static inline void
-convert_simple_node(const rvsdg::Node & node, context & ctx)
+void
+RvsdgToIpGraphConverter::convert_simple_node(const rvsdg::Node & node)
 {
   JLM_ASSERT(dynamic_cast<const rvsdg::SimpleOperation *>(&node.GetOperation()));
 
   std::vector<const variable *> operands;
   for (size_t n = 0; n < node.ninputs(); n++)
-    operands.push_back(ctx.variable(node.input(n)->origin()));
+    operands.push_back(Context_->variable(node.input(n)->origin()));
 
   auto & op = *static_cast<const rvsdg::SimpleOperation *>(&node.GetOperation());
-  ctx.lpbb()->append_last(tac::create(op, operands));
+  Context_->lpbb()->append_last(tac::create(op, operands));
 
   for (size_t n = 0; n < node.noutputs(); n++)
-    ctx.insert(node.output(n), ctx.lpbb()->last()->result(n));
+    Context_->insert(node.output(n), Context_->lpbb()->last()->result(n));
 }
 
-static void
-convert_empty_gamma_node(const rvsdg::GammaNode * gamma, context & ctx)
+void
+RvsdgToIpGraphConverter::convert_empty_gamma_node(const rvsdg::GammaNode * gamma)
 {
   JLM_ASSERT(gamma->nsubregions() == 2);
   JLM_ASSERT(gamma->subregion(0)->nnodes() == 0 && gamma->subregion(1)->nnodes() == 0);
@@ -187,10 +261,10 @@ convert_empty_gamma_node(const rvsdg::GammaNode * gamma, context & ctx)
   /* both regions are empty, create only select instructions */
 
   auto predicate = gamma->predicate()->origin();
-  auto cfg = ctx.cfg();
+  auto cfg = Context_->cfg();
 
   auto bb = basic_block::create(*cfg);
-  ctx.lpbb()->add_outedge(bb);
+  Context_->lpbb()->add_outedge(bb);
 
   for (size_t n = 0; n < gamma->noutputs(); n++)
   {
@@ -204,7 +278,7 @@ convert_empty_gamma_node(const rvsdg::GammaNode * gamma, context & ctx)
     /* both operands are the same, no select is necessary */
     if (o0 == o1)
     {
-      ctx.insert(output, ctx.variable(o0));
+      Context_->insert(output, Context_->variable(o0));
       continue;
     }
 
@@ -213,45 +287,46 @@ convert_empty_gamma_node(const rvsdg::GammaNode * gamma, context & ctx)
     {
       auto matchop = static_cast<const rvsdg::match_op *>(&matchnode->GetOperation());
       auto d = matchop->default_alternative();
-      auto c = ctx.variable(matchnode->input(0)->origin());
-      auto t = d == 0 ? ctx.variable(o1) : ctx.variable(o0);
-      auto f = d == 0 ? ctx.variable(o0) : ctx.variable(o1);
-      bb->append_last(select_op::create(c, t, f));
+      auto c = Context_->variable(matchnode->input(0)->origin());
+      auto t = d == 0 ? Context_->variable(o1) : Context_->variable(o0);
+      auto f = d == 0 ? Context_->variable(o0) : Context_->variable(o1);
+      bb->append_last(SelectOperation::create(c, t, f));
     }
     else
     {
-      auto vo0 = ctx.variable(o0);
-      auto vo1 = ctx.variable(o1);
-      bb->append_last(ctl2bits_op::create(ctx.variable(predicate), rvsdg::bittype::Create(1)));
-      bb->append_last(select_op::create(bb->last()->result(0), vo0, vo1));
+      auto vo0 = Context_->variable(o0);
+      auto vo1 = Context_->variable(o1);
+      bb->append_last(
+          ctl2bits_op::create(Context_->variable(predicate), rvsdg::bittype::Create(1)));
+      bb->append_last(SelectOperation::create(bb->last()->result(0), vo0, vo1));
     }
 
-    ctx.insert(output, bb->last()->result(0));
+    Context_->insert(output, bb->last()->result(0));
   }
 
-  ctx.set_lpbb(bb);
+  Context_->set_lpbb(bb);
 }
 
-static inline void
-convert_gamma_node(const rvsdg::Node & node, context & ctx)
+void
+RvsdgToIpGraphConverter::convert_gamma_node(const rvsdg::Node & node)
 {
   JLM_ASSERT(is<rvsdg::GammaOperation>(&node));
   auto gamma = static_cast<const rvsdg::GammaNode *>(&node);
   auto nalternatives = gamma->nsubregions();
   auto predicate = gamma->predicate()->origin();
-  auto cfg = ctx.cfg();
+  auto cfg = Context_->cfg();
 
   if (gamma->nsubregions() == 2 && gamma->subregion(0)->nnodes() == 0
       && gamma->subregion(1)->nnodes() == 0)
-    return convert_empty_gamma_node(gamma, ctx);
+    return convert_empty_gamma_node(gamma);
 
   auto entry = basic_block::create(*cfg);
   auto exit = basic_block::create(*cfg);
-  ctx.lpbb()->add_outedge(entry);
+  Context_->lpbb()->add_outedge(entry);
 
   /* convert gamma regions */
   std::vector<cfg_node *> phi_nodes;
-  entry->append_last(branch_op::create(nalternatives, ctx.variable(predicate)));
+  entry->append_last(branch_op::create(nalternatives, Context_->variable(predicate)));
   for (size_t n = 0; n < gamma->nsubregions(); n++)
   {
     auto subregion = gamma->subregion(n);
@@ -260,7 +335,7 @@ convert_gamma_node(const rvsdg::Node & node, context & ctx)
     for (size_t i = 0; i < subregion->narguments(); i++)
     {
       auto argument = subregion->argument(i);
-      ctx.insert(argument, ctx.variable(argument->input()->origin()));
+      Context_->insert(argument, Context_->variable(argument->input()->origin()));
     }
 
     if (subregion->nnodes() == 0 && nalternatives == 2)
@@ -274,11 +349,11 @@ convert_gamma_node(const rvsdg::Node & node, context & ctx)
       /* convert subregion */
       auto region_entry = basic_block::create(*cfg);
       entry->add_outedge(region_entry);
-      ctx.set_lpbb(region_entry);
-      convert_region(*subregion, ctx);
+      Context_->set_lpbb(region_entry);
+      convert_region(*subregion);
 
-      phi_nodes.push_back(ctx.lpbb());
-      ctx.lpbb()->add_outedge(exit);
+      phi_nodes.push_back(Context_->lpbb());
+      Context_->lpbb()->add_outedge(exit);
     }
   }
 
@@ -295,9 +370,9 @@ convert_gamma_node(const rvsdg::Node & node, context & ctx)
     {
       auto origin = gamma->subregion(r)->result(n)->origin();
 
-      auto v = ctx.variable(origin);
+      auto v = Context_->variable(origin);
       arguments.push_back(std::make_pair(v, phi_nodes[r]));
-      invariant &= (v == ctx.variable(gamma->subregion(0)->result(n)->origin()));
+      invariant &= (v == Context_->variable(gamma->subregion(0)->result(n)->origin()));
       auto tmp = rvsdg::output::GetNode(*origin);
       select &= (tmp == nullptr && origin->region()->node() == &node);
     }
@@ -305,7 +380,7 @@ convert_gamma_node(const rvsdg::Node & node, context & ctx)
     if (invariant)
     {
       /* all operands are the same */
-      ctx.insert(output, arguments[0].first);
+      Context_->insert(output, arguments[0].first);
       continue;
     }
 
@@ -315,24 +390,24 @@ convert_gamma_node(const rvsdg::Node & node, context & ctx)
       auto matchnode = rvsdg::output::GetNode(*predicate);
       auto matchop = static_cast<const rvsdg::match_op *>(&matchnode->GetOperation());
       auto d = matchop->default_alternative();
-      auto c = ctx.variable(matchnode->input(0)->origin());
+      auto c = Context_->variable(matchnode->input(0)->origin());
       auto t = d == 0 ? arguments[1].first : arguments[0].first;
       auto f = d == 0 ? arguments[0].first : arguments[1].first;
-      entry->append_first(select_op::create(c, t, f));
-      ctx.insert(output, entry->first()->result(0));
+      entry->append_first(SelectOperation::create(c, t, f));
+      Context_->insert(output, entry->first()->result(0));
       continue;
     }
 
     /* create phi instruction */
     exit->append_last(SsaPhiOperation::create(arguments, output->Type()));
-    ctx.insert(output, exit->last()->result(0));
+    Context_->insert(output, exit->last()->result(0));
   }
 
-  ctx.set_lpbb(exit);
+  Context_->set_lpbb(exit);
 }
 
-static inline bool
-phi_needed(const rvsdg::input * i, const llvm::variable * v)
+bool
+RvsdgToIpGraphConverter::phi_needed(const rvsdg::input * i, const llvm::variable * v)
 {
   auto node = rvsdg::input::GetNode(*i);
   JLM_ASSERT(is<rvsdg::ThetaOperation>(node));
@@ -340,7 +415,7 @@ phi_needed(const rvsdg::input * i, const llvm::variable * v)
   auto input = static_cast<const rvsdg::StructuralInput *>(i);
   auto output = theta->output(input->index());
 
-  /* FIXME: solely decide on the input instead of using the variable */
+  // FIXME: solely decide on the input instead of using the variable
   if (is<gblvariable>(v))
     return false;
 
@@ -353,91 +428,91 @@ phi_needed(const rvsdg::input * i, const llvm::variable * v)
   return true;
 }
 
-static inline void
-convert_theta_node(const rvsdg::Node & node, context & ctx)
+void
+RvsdgToIpGraphConverter::convert_theta_node(const rvsdg::Node & node)
 {
   JLM_ASSERT(is<rvsdg::ThetaOperation>(&node));
   auto subregion = static_cast<const rvsdg::StructuralNode *>(&node)->subregion(0);
   auto predicate = subregion->result(0)->origin();
 
-  auto pre_entry = ctx.lpbb();
-  auto entry = basic_block::create(*ctx.cfg());
+  auto pre_entry = Context_->lpbb();
+  auto entry = basic_block::create(*Context_->cfg());
   pre_entry->add_outedge(entry);
-  ctx.set_lpbb(entry);
+  Context_->set_lpbb(entry);
 
-  /* create phi nodes and add arguments to context */
+  // create phi nodes and add arguments to context
   std::deque<llvm::tac *> phis;
   for (size_t n = 0; n < subregion->narguments(); n++)
   {
     auto argument = subregion->argument(n);
-    auto v = ctx.variable(argument->input()->origin());
+    auto v = Context_->variable(argument->input()->origin());
     if (phi_needed(argument->input(), v))
     {
       auto phi = entry->append_last(SsaPhiOperation::create({}, argument->Type()));
       phis.push_back(phi);
       v = phi->result(0);
     }
-    ctx.insert(argument, v);
+    Context_->insert(argument, v);
   }
 
-  convert_region(*subregion, ctx);
+  convert_region(*subregion);
 
-  /* add phi operands and results to context */
+  // add phi operands and results to context
   for (size_t n = 1; n < subregion->nresults(); n++)
   {
     auto result = subregion->result(n);
-    auto ve = ctx.variable(node.input(n - 1)->origin());
+    auto ve = Context_->variable(node.input(n - 1)->origin());
     if (!phi_needed(node.input(n - 1), ve))
     {
-      ctx.insert(result->output(), ctx.variable(result->origin()));
+      Context_->insert(result->output(), Context_->variable(result->origin()));
       continue;
     }
 
-    auto vr = ctx.variable(result->origin());
+    auto vr = Context_->variable(result->origin());
     auto phi = phis.front();
     phis.pop_front();
-    phi->replace(SsaPhiOperation({ pre_entry, ctx.lpbb() }, vr->Type()), { ve, vr });
-    ctx.insert(result->output(), vr);
+    phi->replace(SsaPhiOperation({ pre_entry, Context_->lpbb() }, vr->Type()), { ve, vr });
+    Context_->insert(result->output(), vr);
   }
   JLM_ASSERT(phis.empty());
 
-  ctx.lpbb()->append_last(branch_op::create(2, ctx.variable(predicate)));
-  auto exit = basic_block::create(*ctx.cfg());
-  ctx.lpbb()->add_outedge(exit);
-  ctx.lpbb()->add_outedge(entry);
-  ctx.set_lpbb(exit);
+  Context_->lpbb()->append_last(branch_op::create(2, Context_->variable(predicate)));
+  auto exit = basic_block::create(*Context_->cfg());
+  Context_->lpbb()->add_outedge(exit);
+  Context_->lpbb()->add_outedge(entry);
+  Context_->set_lpbb(exit);
 }
 
-static inline void
-convert_lambda_node(const rvsdg::Node & node, context & ctx)
+void
+RvsdgToIpGraphConverter::convert_lambda_node(const rvsdg::Node & node)
 {
   JLM_ASSERT(is<llvm::LlvmLambdaOperation>(&node));
   auto lambda = static_cast<const rvsdg::LambdaNode *>(&node);
-  auto & module = ctx.module();
+  auto & module = Context_->module();
   auto & clg = module.ipgraph();
 
   const auto & op = dynamic_cast<llvm::LlvmLambdaOperation &>(lambda->GetOperation());
   auto f = function_node::create(clg, op.name(), op.Type(), op.linkage(), op.attributes());
   auto v = module.create_variable(f);
 
-  f->add_cfg(create_cfg(*lambda, ctx));
-  ctx.insert(node.output(0), v);
+  f->add_cfg(create_cfg(*lambda));
+  Context_->insert(node.output(0), v);
 }
 
-static inline void
-convert_phi_node(const rvsdg::Node & node, context & ctx)
+void
+RvsdgToIpGraphConverter::convert_phi_node(const rvsdg::Node & node)
 {
   JLM_ASSERT(rvsdg::is<phi::operation>(&node));
   auto phi = static_cast<const rvsdg::StructuralNode *>(&node);
   auto subregion = phi->subregion(0);
-  auto & module = ctx.module();
+  auto & module = Context_->module();
   auto & ipg = module.ipgraph();
 
   /* add dependencies to context */
   for (size_t n = 0; n < phi->ninputs(); n++)
   {
-    auto v = ctx.variable(phi->input(n)->origin());
-    ctx.insert(phi->input(n)->arguments.first(), v);
+    auto v = Context_->variable(phi->input(n)->origin());
+    Context_->insert(phi->input(n)->arguments.first(), v);
   }
 
   /* forward declare all functions and globals */
@@ -450,7 +525,7 @@ convert_phi_node(const rvsdg::Node & node, context & ctx)
     {
       const auto & op = dynamic_cast<llvm::LlvmLambdaOperation &>(lambda->GetOperation());
       auto f = function_node::create(ipg, op.name(), op.Type(), op.linkage(), op.attributes());
-      ctx.insert(subregion->argument(n), module.create_variable(f));
+      Context_->insert(subregion->argument(n), module.create_variable(f));
     }
     else
     {
@@ -458,7 +533,7 @@ convert_phi_node(const rvsdg::Node & node, context & ctx)
       auto d = static_cast<const delta::node *>(node);
       auto data =
           data_node::Create(ipg, d->name(), d->Type(), d->linkage(), d->Section(), d->constant());
-      ctx.insert(subregion->argument(n), module.create_global_value(data));
+      Context_->insert(subregion->argument(n), module.create_global_value(data));
     }
   }
 
@@ -471,33 +546,33 @@ convert_phi_node(const rvsdg::Node & node, context & ctx)
 
     if (auto lambda = dynamic_cast<const rvsdg::LambdaNode *>(node))
     {
-      auto v = static_cast<const fctvariable *>(ctx.variable(subregion->argument(n)));
-      v->function()->add_cfg(create_cfg(*lambda, ctx));
-      ctx.insert(node->output(0), v);
+      auto v = static_cast<const fctvariable *>(Context_->variable(subregion->argument(n)));
+      v->function()->add_cfg(create_cfg(*lambda));
+      Context_->insert(node->output(0), v);
     }
     else
     {
       JLM_ASSERT(is<delta::operation>(node));
       auto delta = static_cast<const delta::node *>(node);
-      auto v = static_cast<const gblvalue *>(ctx.variable(subregion->argument(n)));
+      auto v = static_cast<const gblvalue *>(Context_->variable(subregion->argument(n)));
 
-      v->node()->set_initialization(create_initialization(delta, ctx));
-      ctx.insert(node->output(0), v);
+      v->node()->set_initialization(create_initialization(delta));
+      Context_->insert(node->output(0), v);
     }
   }
 
   /* add functions and globals to context */
   JLM_ASSERT(node.noutputs() == subregion->nresults());
   for (size_t n = 0; n < node.noutputs(); n++)
-    ctx.insert(node.output(n), ctx.variable(subregion->result(n)->origin()));
+    Context_->insert(node.output(n), Context_->variable(subregion->result(n)->origin()));
 }
 
-static inline void
-convert_delta_node(const rvsdg::Node & node, context & ctx)
+void
+RvsdgToIpGraphConverter::convert_delta_node(const rvsdg::Node & node)
 {
   JLM_ASSERT(is<delta::operation>(&node));
   auto delta = static_cast<const delta::node *>(&node);
-  auto & m = ctx.module();
+  auto & m = Context_->module();
 
   auto dnode = data_node::Create(
       m.ipgraph(),
@@ -506,41 +581,54 @@ convert_delta_node(const rvsdg::Node & node, context & ctx)
       delta->linkage(),
       delta->Section(),
       delta->constant());
-  dnode->set_initialization(create_initialization(delta, ctx));
+  dnode->set_initialization(create_initialization(delta));
   auto v = m.create_global_value(dnode);
-  ctx.insert(delta->output(), v);
+  Context_->insert(delta->output(), v);
 }
 
-static inline void
-convert_node(const rvsdg::Node & node, context & ctx)
+void
+RvsdgToIpGraphConverter::convert_node(const rvsdg::Node & node)
 {
-  static std::
-      unordered_map<std::type_index, std::function<void(const rvsdg::Node & node, context & ctx)>>
-          map({ { typeid(rvsdg::LambdaNode), convert_lambda_node },
-                { std::type_index(typeid(rvsdg::GammaNode)), convert_gamma_node },
-                { std::type_index(typeid(rvsdg::ThetaNode)), convert_theta_node },
-                { typeid(phi::node), convert_phi_node },
-                { typeid(delta::node), convert_delta_node } });
-
-  if (dynamic_cast<const rvsdg::SimpleNode *>(&node))
+  if (const auto lambdaNode = dynamic_cast<const rvsdg::LambdaNode *>(&node))
   {
-    convert_simple_node(node, ctx);
-    return;
+    convert_lambda_node(*lambdaNode);
   }
-
-  JLM_ASSERT(map.find(typeid(node)) != map.end());
-  map[typeid(node)](node, ctx);
+  else if (const auto gammaNode = dynamic_cast<const rvsdg::GammaNode *>(&node))
+  {
+    convert_gamma_node(*gammaNode);
+  }
+  else if (const auto thetaNode = dynamic_cast<const rvsdg::ThetaNode *>(&node))
+  {
+    convert_theta_node(*thetaNode);
+  }
+  else if (const auto phiNode = dynamic_cast<const phi::node *>(&node))
+  {
+    convert_phi_node(*phiNode);
+  }
+  else if (const auto deltaNode = dynamic_cast<const delta::node *>(&node))
+  {
+    convert_delta_node(*deltaNode);
+  }
+  else if (dynamic_cast<const rvsdg::SimpleNode *>(&node))
+  {
+    convert_simple_node(node);
+  }
+  else
+  {
+    JLM_UNREACHABLE(
+        util::strfmt("Unhandled node type: ", node.GetOperation().debug_string()).c_str());
+  }
 }
 
-static void
-convert_nodes(const rvsdg::Graph & graph, context & ctx)
+void
+RvsdgToIpGraphConverter::convert_nodes(const rvsdg::Graph & graph)
 {
   for (const auto & node : rvsdg::TopDownTraverser(&graph.GetRootRegion()))
-    convert_node(*node, ctx);
+    convert_node(*node);
 }
 
-static void
-convert_imports(const rvsdg::Graph & graph, ipgraph_module & im, context & ctx)
+void
+RvsdgToIpGraphConverter::convert_imports(const rvsdg::Graph & graph, ipgraph_module & im)
 {
   auto & ipg = im.ipgraph();
 
@@ -551,7 +639,7 @@ convert_imports(const rvsdg::Graph & graph, ipgraph_module & im, context & ctx)
     {
       auto f = function_node::create(ipg, graphImport->Name(), ftype, graphImport->Linkage());
       auto v = im.create_variable(f);
-      ctx.insert(graphImport, v);
+      Context_->insert(graphImport, v);
     }
     else
     {
@@ -563,40 +651,42 @@ convert_imports(const rvsdg::Graph & graph, ipgraph_module & im, context & ctx)
           "",
           false);
       auto v = im.create_global_value(dnode);
-      ctx.insert(graphImport, v);
+      Context_->insert(graphImport, v);
     }
   }
 }
 
-static std::unique_ptr<ipgraph_module>
-convert_rvsdg(RvsdgModule & rm)
+std::unique_ptr<ipgraph_module>
+RvsdgToIpGraphConverter::ConvertModule(
+    RvsdgModule & rvsdgModule,
+    util::StatisticsCollector & statisticsCollector)
 {
-  auto im = ipgraph_module::Create(
-      rm.SourceFileName(),
-      rm.TargetTriple(),
-      rm.DataLayout(),
-      std::move(rm.ReleaseStructTypeDeclarations()));
+  auto statistics = Statistics::Create(rvsdgModule.SourceFileName());
+  statistics->start(rvsdgModule.Rvsdg());
 
-  context ctx(*im);
-  convert_imports(rm.Rvsdg(), *im, ctx);
-  convert_nodes(rm.Rvsdg(), ctx);
+  auto ipGraphModule = ipgraph_module::Create(
+      rvsdgModule.SourceFileName(),
+      rvsdgModule.TargetTriple(),
+      rvsdgModule.DataLayout(),
+      std::move(rvsdgModule.ReleaseStructTypeDeclarations()));
 
-  return im;
+  Context_ = Context::Create(*ipGraphModule);
+  convert_imports(rvsdgModule.Rvsdg(), *ipGraphModule);
+  convert_nodes(rvsdgModule.Rvsdg());
+
+  statistics->end(*ipGraphModule);
+  statisticsCollector.CollectDemandedStatistics(std::move(statistics));
+
+  return ipGraphModule;
 }
 
 std::unique_ptr<ipgraph_module>
-rvsdg2jlm(RvsdgModule & rm, jlm::util::StatisticsCollector & statisticsCollector)
+RvsdgToIpGraphConverter::CreateAndConvertModule(
+    RvsdgModule & rvsdgModule,
+    util::StatisticsCollector & statisticsCollector)
 {
-  auto statistics = rvsdg_destruction_stat::Create(rm.SourceFileName());
-
-  statistics->start(rm.Rvsdg());
-  auto im = convert_rvsdg(rm);
-  statistics->end(*im);
-
-  statisticsCollector.CollectDemandedStatistics(std::move(statistics));
-
-  return im;
+  RvsdgToIpGraphConverter converter;
+  return converter.ConvertModule(rvsdgModule, statisticsCollector);
 }
 
-}
 }

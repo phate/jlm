@@ -255,9 +255,9 @@ RhlsToFirrtlConverter::MlirGenSimpleNode(const jlm::rvsdg::SimpleNode * node)
     auto uintOp = AddAsUIntOp(body, padOp);
     Connect(body, outData, uintOp);
   }
-  else if (auto op = dynamic_cast<const jlm::rvsdg::bitconstant_op *>(&(node->GetOperation())))
+  else if (auto op = dynamic_cast<const llvm::IntegerConstantOperation *>(&(node->GetOperation())))
   {
-    auto value = op->value();
+    auto & value = op->Representation();
     auto size = value.nbits();
     // Create a constant of UInt<size>(value) and connect to output data
     auto constant = GetConstant(body, size, value.to_uint());
@@ -275,7 +275,7 @@ RhlsToFirrtlConverter::MlirGenSimpleNode(const jlm::rvsdg::SimpleNode * node)
     auto input0 = GetSubfield(body, inBundles[0], "data");
     Connect(body, outData, input0);
   }
-  else if (dynamic_cast<const llvm::bits2ptr_op *>(&(node->GetOperation())))
+  else if (dynamic_cast<const llvm::IntegerToPointerOperation *>(&(node->GetOperation())))
   {
     auto input0 = GetSubfield(body, inBundles[0], "data");
     Connect(body, outData, input0);

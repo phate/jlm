@@ -7,7 +7,7 @@
 #include <test-registry.hpp>
 #include <test-types.hpp>
 
-#include <jlm/llvm/backend/rvsdg2jlm/rvsdg2jlm.hpp>
+#include <jlm/llvm/backend/RvsdgToIpGraphConverter.hpp>
 #include <jlm/llvm/ir/cfg-structure.hpp>
 #include <jlm/llvm/ir/ipgraph-module.hpp>
 #include <jlm/llvm/ir/operators.hpp>
@@ -49,7 +49,7 @@ GammaWithMatch()
 
   // Act
   StatisticsCollector statisticsCollector;
-  auto module = rvsdg2jlm::rvsdg2jlm(rvsdgModule, statisticsCollector);
+  auto module = RvsdgToIpGraphConverter::CreateAndConvertModule(rvsdgModule, statisticsCollector);
   print(*module, stdout);
 
   // Assert
@@ -58,9 +58,9 @@ GammaWithMatch()
 
   auto cfg = dynamic_cast<const function_node &>(*ipg.begin()).cfg();
   assert(cfg->nnodes() == 1);
-  auto node = cfg->entry()->outedge(0)->sink();
+  auto node = cfg->entry()->OutEdge(0)->sink();
   auto bb = dynamic_cast<const basic_block *>(node);
-  assert(is<select_op>(bb->tacs().last()->operation()));
+  assert(is<SelectOperation>(bb->tacs().last()->operation()));
 
   return 0;
 }
@@ -99,7 +99,7 @@ GammaWithoutMatch()
 
   // Act
   StatisticsCollector statisticsCollector;
-  auto module = rvsdg2jlm::rvsdg2jlm(rvsdgModule, statisticsCollector);
+  auto module = RvsdgToIpGraphConverter::CreateAndConvertModule(rvsdgModule, statisticsCollector);
   print(*module, stdout);
 
   // Assert
@@ -108,10 +108,10 @@ GammaWithoutMatch()
 
   auto cfg = dynamic_cast<const function_node &>(*ipg.begin()).cfg();
   assert(cfg->nnodes() == 1);
-  auto node = cfg->entry()->outedge(0)->sink();
+  auto node = cfg->entry()->OutEdge(0)->sink();
   auto bb = dynamic_cast<const basic_block *>(node);
   assert(is<ctl2bits_op>(bb->tacs().first()->operation()));
-  assert(is<select_op>(bb->tacs().last()->operation()));
+  assert(is<SelectOperation>(bb->tacs().last()->operation()));
 
   return 0;
 }
@@ -154,7 +154,7 @@ EmptyGammaWithThreeSubregions()
 
   // Act
   StatisticsCollector statisticsCollector;
-  auto module = rvsdg2jlm::rvsdg2jlm(rvsdgModule, statisticsCollector);
+  auto module = RvsdgToIpGraphConverter::CreateAndConvertModule(rvsdgModule, statisticsCollector);
   print(*module, stdout);
 
   // Assert
@@ -207,7 +207,7 @@ PartialEmptyGamma()
 
   // Act
   StatisticsCollector statisticsCollector;
-  auto module = rvsdg2jlm::rvsdg2jlm(rvsdgModule, statisticsCollector);
+  auto module = RvsdgToIpGraphConverter::CreateAndConvertModule(rvsdgModule, statisticsCollector);
 
   // Assert
   auto & ipg = module->ipgraph();
