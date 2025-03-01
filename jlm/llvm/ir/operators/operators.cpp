@@ -243,38 +243,35 @@ ConstantPointerNullOperation::copy() const
   return std::make_unique<ConstantPointerNullOperation>(*this);
 }
 
-/* bits2ptr operator */
-
-bits2ptr_op::~bits2ptr_op()
-{}
+IntegerToPointerOperation::~IntegerToPointerOperation() noexcept = default;
 
 bool
-bits2ptr_op::operator==(const Operation & other) const noexcept
+IntegerToPointerOperation::operator==(const Operation & other) const noexcept
 {
-  auto op = dynamic_cast<const bits2ptr_op *>(&other);
+  const auto op = dynamic_cast<const IntegerToPointerOperation *>(&other);
   return op && op->argument(0) == argument(0) && op->result(0) == result(0);
 }
 
 std::string
-bits2ptr_op::debug_string() const
+IntegerToPointerOperation::debug_string() const
 {
-  return "BITS2PTR";
+  return "IntToPtr";
 }
 
 std::unique_ptr<rvsdg::Operation>
-bits2ptr_op::copy() const
+IntegerToPointerOperation::copy() const
 {
-  return std::make_unique<bits2ptr_op>(*this);
+  return std::make_unique<IntegerToPointerOperation>(*this);
 }
 
 rvsdg::unop_reduction_path_t
-bits2ptr_op::can_reduce_operand(const rvsdg::output *) const noexcept
+IntegerToPointerOperation::can_reduce_operand(const rvsdg::output *) const noexcept
 {
   return rvsdg::unop_reduction_none;
 }
 
 rvsdg::output *
-bits2ptr_op::reduce_operand(rvsdg::unop_reduction_path_t, rvsdg::output *) const
+IntegerToPointerOperation::reduce_operand(rvsdg::unop_reduction_path_t, rvsdg::output *) const
 {
   JLM_UNREACHABLE("Not implemented!");
 }
