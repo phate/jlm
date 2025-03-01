@@ -7,7 +7,6 @@
 #include "test-registry.hpp"
 #include "test-types.hpp"
 
-#include <jlm/llvm/backend/rvsdg2jlm/rvsdg2jlm.hpp>
 #include <jlm/llvm/backend/RvsdgToIpGraphConverter.hpp>
 #include <jlm/llvm/ir/operators/delta.hpp>
 #include <jlm/llvm/ir/operators/Phi.hpp>

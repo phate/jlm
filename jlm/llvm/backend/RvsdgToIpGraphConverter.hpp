@@ -15,8 +15,12 @@ class StatisticsCollector;
 
 namespace jlm::rvsdg
 {
+class Graph;
 class GammaNode;
+class input;
 class LambdaNode;
+class Node;
+class Region;
 }
 
 namespace jlm::llvm
@@ -31,6 +35,7 @@ class cfg;
 class data_node_init;
 class ipgraph_module;
 class RvsdgModule;
+class variable;
 
 class RvsdgToIpGraphConverter final
 {

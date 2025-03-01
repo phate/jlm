@@ -5,7 +5,6 @@
 
 #include <jlm/llvm/backend/dot/DotWriter.hpp>
 #include <jlm/llvm/backend/jlm2llvm/jlm2llvm.hpp>
-#include <jlm/llvm/backend/rvsdg2jlm/rvsdg2jlm.hpp>
 #include <jlm/llvm/backend/RvsdgToIpGraphConverter.hpp>
 #include <jlm/llvm/frontend/InterProceduralGraphConversion.hpp>
 #include <jlm/llvm/frontend/LlvmModuleConversion.hpp>

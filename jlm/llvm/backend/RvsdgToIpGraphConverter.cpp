@@ -3,7 +3,6 @@
  * See COPYING for terms of redistribution.
  */
 
-#include <jlm/llvm/backend/rvsdg2jlm/context.hpp>
 #include <jlm/llvm/backend/RvsdgToIpGraphConverter.hpp>
 #include <jlm/llvm/ir/basic-block.hpp>
 #include <jlm/llvm/ir/cfg-structure.hpp>
