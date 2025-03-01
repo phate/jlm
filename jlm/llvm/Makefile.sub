@@ -6,6 +6,7 @@ libllvm_SOURCES = \
     jlm/llvm/backend/jlm2llvm/jlm2llvm.cpp \
     jlm/llvm/backend/dot/DotWriter.cpp \
     jlm/llvm/backend/rvsdg2jlm/rvsdg2jlm.cpp \
+    jlm/llvm/backend/RvsdgToIpGraphConverter.cpp \
     \
     jlm/llvm/frontend/ControlFlowRestructuring.cpp \
     jlm/llvm/frontend/InterProceduralGraphConversion.cpp \
@@ -139,6 +140,7 @@ libllvm_HEADERS = \
 	jlm/llvm/backend/dot/DotWriter.hpp \
 	jlm/llvm/backend/rvsdg2jlm/rvsdg2jlm.hpp \
 	jlm/llvm/backend/rvsdg2jlm/context.hpp \
+    jlm/llvm/backend/RvsdgToIpGraphConverter.hpp \
 	jlm/llvm/backend/jlm2llvm/jlm2llvm.hpp \
 	jlm/llvm/backend/jlm2llvm/instruction.hpp \
 	jlm/llvm/backend/jlm2llvm/context.hpp \

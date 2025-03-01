@@ -7,13 +7,13 @@
 #include "test-registry.hpp"
 #include "test-types.hpp"
 
-#include <jlm/rvsdg/view.hpp>
-
 #include <jlm/llvm/backend/rvsdg2jlm/rvsdg2jlm.hpp>
+#include <jlm/llvm/backend/RvsdgToIpGraphConverter.hpp>
 #include <jlm/llvm/ir/operators/delta.hpp>
 #include <jlm/llvm/ir/operators/Phi.hpp>
 #include <jlm/llvm/ir/print.hpp>
 #include <jlm/llvm/ir/RvsdgModule.hpp>
+#include <jlm/rvsdg/view.hpp>
 #include <jlm/util/Statistics.hpp>
 
 static int
@@ -63,12 +63,12 @@ test()
 
   jlm::rvsdg::view(rm.Rvsdg(), stdout);
 
+  // Act
   jlm::util::StatisticsCollector statisticsCollector;
-  auto module = rvsdg2jlm::rvsdg2jlm(rm, statisticsCollector);
+  auto module = RvsdgToIpGraphConverter::CreateAndConvertModule(rm, statisticsCollector);
   print(*module, stdout);
 
-  /* verify output */
-
+  // Assert
   auto & ipg = module->ipgraph();
   assert(ipg.nnodes() == 3);
 
