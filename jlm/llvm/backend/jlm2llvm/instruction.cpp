@@ -1205,7 +1205,7 @@ convert_operation(
             { typeid(FloatingPointToUnsignedIntegerOperation),
               convert_cast<::llvm::Instruction::FPToUI> },
             { typeid(fptrunc_op), convert_cast<::llvm::Instruction::FPTrunc> },
-            { typeid(bits2ptr_op), convert_cast<::llvm::Instruction::IntToPtr> },
+            { typeid(IntegerToPointerOperation), convert_cast<::llvm::Instruction::IntToPtr> },
             { typeid(ptr2bits_op), convert_cast<::llvm::Instruction::PtrToInt> },
             { typeid(sext_op), convert_cast<::llvm::Instruction::SExt> },
             { typeid(sitofp_op), convert_cast<::llvm::Instruction::SIToFP> },

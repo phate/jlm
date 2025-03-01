@@ -479,20 +479,18 @@ private:
   }
 };
 
-/* bits2ptr operator */
-
-class bits2ptr_op final : public rvsdg::UnaryOperation
+class IntegerToPointerOperation final : public rvsdg::UnaryOperation
 {
 public:
-  virtual ~bits2ptr_op();
+  ~IntegerToPointerOperation() noexcept override;
 
-  inline bits2ptr_op(
+  IntegerToPointerOperation(
       std::shared_ptr<const jlm::rvsdg::bittype> btype,
       std::shared_ptr<const PointerType> ptype)
       : UnaryOperation(std::move(btype), std::move(ptype))
   {}
 
-  inline bits2ptr_op(
+  IntegerToPointerOperation(
       std::shared_ptr<const jlm::rvsdg::Type> srctype,
       std::shared_ptr<const jlm::rvsdg::Type> dsttype)
       : UnaryOperation(srctype, dsttype)
@@ -539,7 +537,7 @@ public:
     if (!pt)
       throw jlm::util::error("expected pointer type.");
 
-    bits2ptr_op op(at, pt);
+    IntegerToPointerOperation op(at, pt);
     return tac::create(op, { argument });
   }
 
@@ -554,7 +552,7 @@ public:
     if (!pt)
       throw jlm::util::error("expected pointer type.");
 
-    return rvsdg::CreateOpNode<bits2ptr_op>({ operand }, ot, pt).output(0);
+    return rvsdg::CreateOpNode<IntegerToPointerOperation>({ operand }, ot, pt).output(0);
   }
 };
 
