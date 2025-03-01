@@ -479,37 +479,25 @@ has_valid_phis(const basic_block & bb)
 {
   for (auto it = bb.begin(); it != bb.end(); it++)
   {
-    auto tac = *it;
-    if (!is<SsaPhiOperation>(tac))
+    const auto tac = *it;
+    const auto phi = dynamic_cast<const SsaPhiOperation *>(&tac->operation());
+    if (!phi)
       continue;
 
-    /*
-      Ensure the number of phi operands equals the number of incoming edges
-    */
-    if (tac->noperands() != bb.NumInEdges())
-      return false;
-
-    /*
-      Ensure all phi nodes are at the beginning of a basic block
-    */
+    // Ensure all phi nodes are at the beginning of a basic block
     if (tac != bb.first() && !is<SsaPhiOperation>(*std::prev(it)))
       return false;
 
-    /*
-      Ensure that a phi node does not have for the same basic block
-      multiple incoming variables.
-    */
-    const auto phi = static_cast<const SsaPhiOperation *>(&tac->operation());
-    std::unordered_map<cfg_node *, const variable *> map;
-    for (size_t n = 0; n < tac->noperands(); n++)
-    {
-      auto mit = map.find(phi->node(n));
-      if (mit != map.end() && mit->second != tac->operand(n))
-        return false;
+    // Ensure the phi operation has distinct incoming basic blocks
+    util::HashSet<cfg_node *> phiPredecessors;
+    for (size_t i = 0; i < tac->noperands(); i++)
+      phiPredecessors.Insert(phi->node(i));
+    if (phiPredecessors.Size() != tac->noperands())
+      return false;
 
-      if (mit == map.end())
-        map[phi->node(n)] = tac->operand(n);
-    }
+    // Ensure the phi operation has operands for every incoming edge
+    if (tac->noperands() != bb.NumInEdges())
+      return false;
   }
 
   return true;
@@ -519,6 +507,20 @@ static bool
 is_valid_basic_block(const basic_block & bb)
 {
   if (bb.no_successor())
+    return false;
+
+  // Check that there are no duplicated in-edges
+  util::HashSet<cfg_node *> predecessors;
+  for (auto & edge : bb.InEdges())
+    predecessors.Insert(edge.source());
+  if (predecessors.Size() != bb.NumInEdges())
+    return false;
+
+  // Check that there are no duplicated out-edges
+  util::HashSet<cfg_node *> successors;
+  for (auto & edge : bb.OutEdges())
+    successors.Insert(edge.sink());
+  if (successors.Size() != bb.NumOutEdges())
     return false;
 
   if (!has_valid_phis(bb))
@@ -555,10 +557,8 @@ is_valid(const llvm::cfg & cfg)
     return false;
 
   /* check basic blocks */
-  for (const auto & node : cfg)
+  for (const auto & bb : cfg)
   {
-    JLM_ASSERT(is<basic_block>(&node));
-    auto & bb = *static_cast<const basic_block *>(&node);
     if (!is_valid_basic_block(bb))
       return false;
   }

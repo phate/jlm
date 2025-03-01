@@ -49,8 +49,13 @@ convert_instructions(::llvm::Function & function, context & ctx)
   return phis;
 }
 
+/**
+ * During conversion of LLVM instructions, phi instructions become empty SsaPhiOperations.
+ * Once all instructions have been converted, this function goes over all phi instructions
+ * and assigns proper operands.
+ */
 static void
-patch_phi_operands(const std::vector<::llvm::PHINode *> & phis, context & ctx)
+PatchPhiOperands(const std::vector<::llvm::PHINode *> & phis, context & ctx)
 {
   for (const auto & phi : phis)
   {
@@ -65,10 +70,20 @@ patch_phi_operands(const std::vector<::llvm::PHINode *> & phis, context & ctx)
         continue;
 
       auto bb = ctx.get(phi->getIncomingBlock(n));
+
+      // In LLVM, some phi instructions have multiple operands that reference the same basic block.
+      // When that has happened "in the wild" (see issue #612), the operands that refer to the
+      // same basic blocks, also have the same value, e.g., "phi i32 [0, %bb0], [0, %bb0]".
+      // Given handwritten LLVM IR where the values differ, LLVM silently picks the first one.
+      // Therefore, we chose to handle this by only keeping the first operand per basic block.
+      if (std::find(nodes.begin(), nodes.end(), bb) != nodes.end())
+        continue;
+      nodes.push_back(bb);
+
+      // Convert the operand value in the predecessor basic block, as that is where it is "used".
       tacsvector_t tacs;
       operands.push_back(ConvertValue(phi->getIncomingValue(n), tacs, ctx));
       bb->insert_before_branch(tacs);
-      nodes.push_back(bb);
     }
 
     // Phi instructions with a single reachable predecessor should have already been elided
@@ -411,7 +426,7 @@ create_cfg(::llvm::Function & f, context & ctx)
   ctx.set_basic_block_map(bbmap);
   ctx.set_result(result);
   auto phis = convert_instructions(f, ctx);
-  patch_phi_operands(phis, ctx);
+  PatchPhiOperands(phis, ctx);
 
   EnsureSingleInEdgeToExitNode(*cfg);
 
