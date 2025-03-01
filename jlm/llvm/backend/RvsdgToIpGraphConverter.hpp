@@ -61,11 +61,9 @@ public:
   ConvertModule(RvsdgModule & rvsdgModule, util::StatisticsCollector & statisticsCollector);
 
   static std::unique_ptr<ipgraph_module>
-  CreateAndConvertModule(RvsdgModule & rvsdgModule, util::StatisticsCollector & statisticsCollector)
-  {
-    RvsdgToIpGraphConverter converter;
-    return converter.ConvertModule(rvsdgModule, statisticsCollector);
-  }
+  CreateAndConvertModule(
+      RvsdgModule & rvsdgModule,
+      util::StatisticsCollector & statisticsCollector);
 
 private:
   void

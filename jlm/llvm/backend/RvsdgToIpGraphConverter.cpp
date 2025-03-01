@@ -680,4 +680,13 @@ RvsdgToIpGraphConverter::ConvertModule(
   return ipGraphModule;
 }
 
+std::unique_ptr<ipgraph_module>
+RvsdgToIpGraphConverter::CreateAndConvertModule(
+    RvsdgModule & rvsdgModule,
+    util::StatisticsCollector & statisticsCollector)
+{
+  RvsdgToIpGraphConverter converter;
+  return converter.ConvertModule(rvsdgModule, statisticsCollector);
+}
+
 }
