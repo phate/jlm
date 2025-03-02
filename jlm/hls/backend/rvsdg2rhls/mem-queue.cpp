@@ -414,8 +414,8 @@ process_loops(jlm::rvsdg::output * state_edge)
     auto user = *state_edge->begin();
     if (dynamic_cast<jlm::rvsdg::RegionResult *>(user))
     {
-      // end of region reached
-      JLM_UNREACHABLE("This should never happen");
+      // End of region reached
+      return user->origin();
     }
     else if (auto si = dynamic_cast<jlm::rvsdg::SimpleInput *>(user))
     {
@@ -525,15 +525,9 @@ jlm::hls::mem_queue(jlm::rvsdg::Region * region)
   auto state_arg = GetMemoryStateArgument(*lambda);
   if (!state_arg)
   {
-    // no memstate - i.e., no memory used
+    // No memstate, i.e., no memory used
     return;
   }
-  JLM_ASSERT(state_arg->nusers() == 1);
-  auto state_user = *state_arg->begin();
-  auto entry_input = jlm::util::AssertedCast<rvsdg::SimpleInput>(state_user);
-  auto entry_node = entry_input->node();
-  JLM_ASSERT(dynamic_cast<const jlm::llvm::LambdaEntryMemoryStateSplitOperation *>(
-      &entry_node->GetOperation()));
   // for each state edge:
   //    for each outer loop (theta/loop in lambda region):
   //        split state edge before the loop
@@ -546,9 +540,22 @@ jlm::hls::mem_queue(jlm::rvsdg::Region * region)
   //            for each store:
   //                insert state gate addr enq + deq after store complete
 
-  for (size_t i = 0; i < entry_node->noutputs(); ++i)
+  // Check if there exists a memory state splitter
+  if (state_arg->nusers() == 1)
   {
-    jlm::rvsdg::output * state_edge = entry_node->output(i);
-    process_loops(state_edge);
+    auto entryNode = jlm::rvsdg::input::GetNode(**state_arg->begin());
+    if (jlm::rvsdg::is<const jlm::llvm::LambdaEntryMemoryStateSplitOperation>(
+            entryNode->GetOperation()))
+    {
+      for (size_t i = 0; i < entryNode->noutputs(); ++i)
+      {
+        // Process each state edge separately
+        jlm::rvsdg::output * stateEdge = entryNode->output(i);
+        process_loops(stateEdge);
+      }
+      return;
+    }
   }
+  // There is no memory state splitter, so process the single state edge in the graph
+  process_loops(state_arg);
 }
