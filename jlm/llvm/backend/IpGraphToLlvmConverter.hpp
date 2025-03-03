@@ -89,7 +89,7 @@ public:
   std::unique_ptr<::llvm::Module>
   ConvertModule(ipgraph_module & ipGraphModule, ::llvm::LLVMContext & llvmContext);
 
-  ::llvm::Attribute::AttrKind
+  static ::llvm::Attribute::AttrKind
   ConvertAttributeKind(const attribute::kind & kind);
 
   static std::unique_ptr<::llvm::Module>

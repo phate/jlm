@@ -6,9 +6,8 @@
 #include "test-operation.hpp"
 #include "test-registry.hpp"
 #include "test-types.hpp"
-#include <jlm/llvm/backend/IpGraphToLlvmConverter.hpp>
 
-#include <jlm/llvm/backend/jlm2llvm/jlm2llvm.hpp>
+#include <jlm/llvm/backend/IpGraphToLlvmConverter.hpp>
 #include <jlm/llvm/ir/ipgraph-module.hpp>
 #include <jlm/llvm/ir/operators.hpp>
 #include <jlm/llvm/ir/print.hpp>
