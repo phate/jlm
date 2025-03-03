@@ -2,8 +2,6 @@
 # See COPYING for terms of redistribution.
 
 libllvm_SOURCES = \
-    jlm/llvm/backend/jlm2llvm/instruction.cpp \
-    jlm/llvm/backend/jlm2llvm/jlm2llvm.cpp \
     jlm/llvm/backend/dot/DotWriter.cpp \
     jlm/llvm/backend/IpGraphToLlvmConverter.cpp \
     jlm/llvm/backend/RvsdgToIpGraphConverter.cpp \
@@ -140,9 +138,6 @@ libllvm_HEADERS = \
 	jlm/llvm/backend/dot/DotWriter.hpp \
 	jlm/llvm/backend/IpGraphToLlvmConverter.hpp \
     jlm/llvm/backend/RvsdgToIpGraphConverter.hpp \
-	jlm/llvm/backend/jlm2llvm/jlm2llvm.hpp \
-	jlm/llvm/backend/jlm2llvm/instruction.hpp \
-	jlm/llvm/backend/jlm2llvm/context.hpp \
 
 libllvm_TESTS += \
     tests/jlm/llvm/backend/dot/DotWriterTests \
