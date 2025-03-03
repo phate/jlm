@@ -27,7 +27,7 @@
 #include <jlm/hls/opt/cne.hpp>
 #include <jlm/hls/opt/IOBarrierRemoval.hpp>
 #include <jlm/hls/util/view.hpp>
-#include <jlm/llvm/backend/jlm2llvm/jlm2llvm.hpp>
+#include <jlm/llvm/backend/IpGraphToLlvmConverter.hpp>
 #include <jlm/llvm/backend/RvsdgToIpGraphConverter.hpp>
 #include <jlm/llvm/ir/CallSummary.hpp>
 #include <jlm/llvm/ir/operators/alloca.hpp>
@@ -483,7 +483,7 @@ dump_ref(llvm::RvsdgModule & rhls, const util::filepath & path)
   ::llvm::LLVMContext ctx;
   jlm::util::StatisticsCollector statisticsCollector;
   auto jm2 = llvm::RvsdgToIpGraphConverter::CreateAndConvertModule(*reference, statisticsCollector);
-  auto lm2 = llvm::jlm2llvm::convert(*jm2, ctx);
+  auto lm2 = llvm::IpGraphToLlvmConverter::CreateAndConvertModule(*jm2, ctx);
   std::error_code EC;
   ::llvm::raw_fd_ostream os(path.to_str(), EC);
   lm2->print(os, nullptr);

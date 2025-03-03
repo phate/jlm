@@ -7,7 +7,7 @@
 #include <test-types.hpp>
 #include <test-util.hpp>
 
-#include <jlm/llvm/backend/jlm2llvm/jlm2llvm.hpp>
+#include <jlm/llvm/backend/IpGraphToLlvmConverter.hpp>
 #include <jlm/llvm/ir/ipgraph-module.hpp>
 #include <jlm/llvm/ir/operators.hpp>
 #include <jlm/llvm/ir/print.hpp>
@@ -53,7 +53,7 @@ StoreConversion()
 
   // Act
   llvm::LLVMContext ctx;
-  auto llvmModule = jlm2llvm::convert(ipgModule, ctx);
+  auto llvmModule = IpGraphToLlvmConverter::CreateAndConvertModule(ipgModule, ctx);
   jlm::tests::print(*llvmModule);
 
   // Assert
@@ -120,7 +120,7 @@ StoreVolatileConversion()
 
   // Act
   llvm::LLVMContext ctx;
-  auto llvmModule = jlm2llvm::convert(ipgModule, ctx);
+  auto llvmModule = IpGraphToLlvmConverter::CreateAndConvertModule(ipgModule, ctx);
   jlm::tests::print(*llvmModule);
 
   // Assert
