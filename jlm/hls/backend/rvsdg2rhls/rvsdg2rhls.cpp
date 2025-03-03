@@ -27,6 +27,7 @@
 #include <jlm/hls/opt/cne.hpp>
 #include <jlm/hls/opt/IOBarrierRemoval.hpp>
 #include <jlm/hls/util/view.hpp>
+#include <jlm/llvm/backend/IpGraphToLlvmConverter.hpp>
 #include <jlm/llvm/backend/RvsdgToIpGraphConverter.hpp>
 #include <jlm/llvm/ir/CallSummary.hpp>
 #include <jlm/llvm/ir/operators/alloca.hpp>
