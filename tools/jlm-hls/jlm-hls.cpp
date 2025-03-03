@@ -9,7 +9,7 @@
 #include <jlm/hls/backend/rhls2firrtl/RhlsToFirrtlConverter.hpp>
 #include <jlm/hls/backend/rhls2firrtl/verilator-harness-hls.hpp>
 #include <jlm/hls/backend/rvsdg2rhls/rvsdg2rhls.hpp>
-#include <jlm/llvm/backend/jlm2llvm/jlm2llvm.hpp>
+#include <jlm/llvm/backend/IpGraphToLlvmConverter.hpp>
 #include <jlm/llvm/backend/RvsdgToIpGraphConverter.hpp>
 #include <jlm/llvm/frontend/InterProceduralGraphConversion.hpp>
 #include <jlm/llvm/frontend/LlvmModuleConversion.hpp>
@@ -36,7 +36,7 @@ llvmToFile(jlm::llvm::RvsdgModule & module, const jlm::util::filepath & fileName
   llvm::LLVMContext ctx;
   jlm::util::StatisticsCollector statisticsCollector;
   auto jm = jlm::llvm::RvsdgToIpGraphConverter::CreateAndConvertModule(module, statisticsCollector);
-  auto lm = jlm::llvm::jlm2llvm::convert(*jm, ctx);
+  auto lm = jlm::llvm::IpGraphToLlvmConverter::CreateAndConvertModule(*jm, ctx);
   std::error_code EC;
   llvm::raw_fd_ostream os(fileName.to_str(), EC);
   lm->print(os, nullptr);
