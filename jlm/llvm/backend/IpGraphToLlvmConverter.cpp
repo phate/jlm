@@ -22,10 +22,8 @@
 #include <llvm/IR/Module.h>
 
 #include <deque>
-#include <TestRvsdgs.hpp>
 #include <unordered_map>
 
-#include <mlir/Dialect/LLVMIR/LLVMOps.h.inc>
 #include <typeindex>
 
 namespace jlm::llvm
