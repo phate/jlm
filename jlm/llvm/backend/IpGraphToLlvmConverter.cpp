@@ -1870,7 +1870,9 @@ IpGraphToLlvmConverter::convert_cfg(llvm::cfg & cfg, ::llvm::Function & f)
       auto & op = *static_cast<const SsaPhiOperation *>(&tac->operation());
       auto phi = ::llvm::dyn_cast<::llvm::PHINode>(Context_->value(tac->result(0)));
       for (size_t n = 0; n < tac->noperands(); n++)
-        phi->addIncoming(Context_->value(tac->operand(n)), Context_->basic_block(op.node(n)));
+        phi->addIncoming(
+            Context_->value(tac->operand(n)),
+            Context_->basic_block(op.GetIncomingNode(n)));
     }
   }
 }
