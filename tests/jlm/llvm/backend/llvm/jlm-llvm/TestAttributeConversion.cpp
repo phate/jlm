@@ -5,7 +5,7 @@
 
 #include <test-registry.hpp>
 
-#include <jlm/llvm/backend/jlm2llvm/jlm2llvm.hpp>
+#include <jlm/llvm/backend/IpGraphToLlvmConverter.hpp>
 
 #include <llvm/IR/Attributes.h>
 
@@ -18,7 +18,7 @@ TestAttributeKindConversion()
   int end = static_cast<int>(ak::EndAttrKinds);
   for (int attributeKind = begin; attributeKind != end; attributeKind++)
   {
-    jlm::llvm::jlm2llvm::convert_attribute_kind(static_cast<ak>(attributeKind));
+    jlm::llvm::IpGraphToLlvmConverter::ConvertAttributeKind(static_cast<ak>(attributeKind));
   }
 }
 

@@ -4,7 +4,7 @@
  */
 
 #include <jlm/llvm/backend/dot/DotWriter.hpp>
-#include <jlm/llvm/backend/jlm2llvm/jlm2llvm.hpp>
+#include <jlm/llvm/backend/IpGraphToLlvmConverter.hpp>
 #include <jlm/llvm/backend/RvsdgToIpGraphConverter.hpp>
 #include <jlm/llvm/frontend/InterProceduralGraphConversion.hpp>
 #include <jlm/llvm/frontend/LlvmModuleConversion.hpp>
@@ -533,7 +533,7 @@ JlmOptCommand::PrintAsLlvm(
       llvm::RvsdgToIpGraphConverter::CreateAndConvertModule(rvsdgModule, statisticsCollector);
 
   ::llvm::LLVMContext ctx;
-  auto llvm_module = jlm::llvm::jlm2llvm::convert(*jlm_module, ctx);
+  auto llvm_module = llvm::IpGraphToLlvmConverter::CreateAndConvertModule(*jlm_module, ctx);
 
   if (outputFile == "")
   {

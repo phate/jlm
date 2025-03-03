@@ -6,7 +6,7 @@
 #include <test-registry.hpp>
 #include <test-util.hpp>
 
-#include <jlm/llvm/backend/jlm2llvm/jlm2llvm.hpp>
+#include <jlm/llvm/backend/IpGraphToLlvmConverter.hpp>
 #include <jlm/llvm/ir/ipgraph-module.hpp>
 #include <jlm/llvm/ir/operators.hpp>
 #include <jlm/llvm/ir/operators/IntegerOperations.hpp>
@@ -48,7 +48,7 @@ test()
   print(im, stdout);
 
   llvm::LLVMContext ctx;
-  auto lm = jlm2llvm::convert(im, ctx);
+  auto lm = IpGraphToLlvmConverter::CreateAndConvertModule(im, ctx);
 
   jlm::tests::print(*lm);
 
