@@ -435,11 +435,11 @@ ConvertSwitchInstruction(::llvm::Instruction * instruction, tacsvector_t & tacs,
     mapping[it->getCaseValue()->getZExtValue()] = edge->index();
   }
 
-  auto default_edge = bb->add_outedge(ctx.get(i->case_default()->getCaseSuccessor()));
+  auto defaultEdge = bb->add_outedge(ctx.get(i->case_default()->getCaseSuccessor()));
 
   auto c = ConvertValue(i->getCondition(), tacs, ctx);
   auto nbits = i->getCondition()->getType()->getIntegerBitWidth();
-  auto op = rvsdg::match_op(nbits, mapping, default_edge->index(), bb->NumOutEdges());
+  auto op = rvsdg::match_op(nbits, mapping, defaultEdge->index(), bb->NumOutEdges());
   tacs.push_back(tac::create(op, { c }));
   tacs.push_back(branch_op::create(bb->NumOutEdges(), tacs.back()->result(0)));
 

@@ -47,7 +47,7 @@ destruct_ssa(llvm::cfg & cfg)
       // All incoming edges get routed through the corresponding intermediate basic block
 
       // Mapping from original incoming block to intermediate block
-      std::unordered_map<cfg_node*, basic_block*> intermediateBlocks;
+      std::unordered_map<cfg_node *, basic_block *> intermediateBlocks;
 
       // Make a copy of the original inEdges to avoid iterator invalidation
       std::vector<cfg_edge *> originalInEdges;

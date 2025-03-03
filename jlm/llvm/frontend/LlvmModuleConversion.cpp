@@ -50,7 +50,7 @@ convert_instructions(::llvm::Function & function, context & ctx)
 }
 
 /**
- * During conversion of LLVM instructions, phi instructions become empty SsaPhiOperations.
+ * During conversion of LLVM instructions, phi instructions were created without operands.
  * Once all instructions have been converted, this function goes over all phi instructions
  * and assigns proper operands.
  */
@@ -86,7 +86,9 @@ PatchPhiOperands(const std::vector<::llvm::PHINode *> & phis, context & ctx)
     JLM_ASSERT(operands.size() >= 1);
 
     auto phi_tac = util::AssertedCast<const tacvariable>(ctx.lookup_value(phi))->tac();
-    phi_tac->replace(SsaPhiOperation(std::move(incomingNodes), phi_tac->result(0)->Type()), operands);
+    phi_tac->replace(
+        SsaPhiOperation(std::move(incomingNodes), phi_tac->result(0)->Type()),
+        operands);
   }
 }
 
