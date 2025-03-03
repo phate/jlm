@@ -445,7 +445,7 @@ convert_cfg(llvm::cfg & cfg, ::llvm::Function & f, context & ctx)
       auto & op = *static_cast<const SsaPhiOperation *>(&tac->operation());
       auto phi = ::llvm::dyn_cast<::llvm::PHINode>(ctx.value(tac->result(0)));
       for (size_t n = 0; n < tac->noperands(); n++)
-        phi->addIncoming(ctx.value(tac->operand(n)), ctx.basic_block(op.node(n)));
+        phi->addIncoming(ctx.value(tac->operand(n)), ctx.basic_block(op.GetIncomingNode(n)));
     }
   }
 }

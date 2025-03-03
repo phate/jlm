@@ -155,17 +155,13 @@ TestPhiConversion()
   return 0;
 }
 JLM_UNIT_TEST_REGISTER(
-    "jlm/llvm/frontend/TestLlvmPhiConversion-TestPhiConversion",
+    "jlm/llvm/frontend/llvm/LlvmPhiConversionTests-TestPhiConversion",
     TestPhiConversion)
 
 /**
  * Tests converting instances of ::llvm::PHINode where some of the predecessors are "dead".
  * A dead predecessor is a basic block that is not reachable from the function's entry.
- * This test has one phi node with 4 operands, where two of them are dead,
- * and one with 2 operands, where one of them is dead.
- * The first should be converted to a jlm::llvm::SsaPhiOperation with two operands,
- * while the second should become a direct reference to the value from the only alive predecessor.
- * Due to straightening, this last basic block is also merged into its predecessor.
+ * This test has one phi node with 4 operands, where two of them are dead.
  */
 static int
 TestPhiOperandElision()
@@ -188,8 +184,6 @@ TestPhiOperandElision()
     auto bb3 = llvm::BasicBlock::Create(ctx, "bb3", function);
     auto bb4 = llvm::BasicBlock::Create(ctx, "bb4", function);
     auto bb5 = llvm::BasicBlock::Create(ctx, "bb5", function);
-    auto bb6 = llvm::BasicBlock::Create(ctx, "bb6", function);
-    auto bb7 = llvm::BasicBlock::Create(ctx, "bb7", function);
 
     builder.SetInsertPoint(bb1); // entry block
     auto xIs0 = builder.CreateICmpEQ(function->getArg(0), llvm::ConstantInt::get(i64, 0));
@@ -209,23 +203,12 @@ TestPhiOperandElision()
 
     builder.SetInsertPoint(bb5); // Predecessors: bb1, bb2 (dead), bb3 (dead), bb4
     auto bb5phi = builder.CreatePHI(i64, 4);
-    builder.CreateBr(bb7);
-
-    builder.SetInsertPoint(bb6); // No predecessors
-    builder.CreateBr(bb7);
-
-    builder.SetInsertPoint(bb7); // Predecessors: bb5, bb6 (dead)
-    auto bb7phi = builder.CreatePHI(i64, 2);
-    auto mul = builder.CreateMul(bb7phi, llvm::ConstantInt::get(i64, 10));
-    builder.CreateRet(mul);
+    builder.CreateRet(bb5phi);
 
     bb5phi->addIncoming(llvm::ConstantInt::get(i64, 0), bb1);
     bb5phi->addIncoming(xPlus1, bb2);              // Dead
     bb5phi->addIncoming(function->getArg(0), bb3); // Dead
     bb5phi->addIncoming(xPlus2, bb4);
-
-    bb7phi->addIncoming(bb5phi, bb5);
-    bb7phi->addIncoming(llvm::PoisonValue::get(i64), bb6); // Dead
   }
 
   jlm::tests::print(module);
@@ -253,7 +236,7 @@ TestPhiOperandElision()
     }
   }
 
-  // There should be 3 basic blocks left (bb1, bb5, bb7)
+  // There should be 3 basic blocks left (bb1, bb4, bb5)
   assert(numBasicBlocks == 3);
   // There should be exactly one phi tac
   assert(phiTacs.size() == 1);
@@ -270,5 +253,5 @@ TestPhiOperandElision()
   return 0;
 }
 JLM_UNIT_TEST_REGISTER(
-    "jlm/llvm/frontend/TestLlvmPhiConversion-TestPhiOperandElision",
+    "jlm/llvm/frontend/llvm/LlvmPhiConversionTests-TestPhiOperandElision",
     TestPhiOperandElision)

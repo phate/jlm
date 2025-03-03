@@ -136,8 +136,14 @@ to_ctlconstant_op(const Operation & op) noexcept
   return *static_cast<const ctlconstant_op *>(&op);
 }
 
-/* match operator */
-
+/**
+ * Match operator
+ * Converts an n-bit integer input into a value of type ControlType.
+ * The ControlType has a given number of alternative values, which are indexed starting at 0.
+ * The match can represent any mapping from integers to alternatives, with a default alternative.
+ * These alternatives represent the different outgoing edges from a basic block,
+ * or the different regions of a gamma node.
+ */
 class match_op final : public UnaryOperation
 {
   typedef std::unordered_map<uint64_t, uint64_t>::const_iterator const_iterator;

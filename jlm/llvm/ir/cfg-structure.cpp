@@ -147,8 +147,6 @@ find_sccs(cfg_node * entry, cfg_node * exit)
   return sccs;
 }
 
-}
-
 static inline std::unique_ptr<jlm::llvm::cfg>
 copy_structural(const jlm::llvm::cfg & in)
 {
@@ -471,45 +469,37 @@ reduce_reducible(jlm::llvm::cfg_node * node, std::unordered_set<jlm::llvm::cfg_n
   return false;
 }
 
-namespace jlm::llvm
-{
-
 static bool
 has_valid_phis(const basic_block & bb)
 {
   for (auto it = bb.begin(); it != bb.end(); it++)
   {
-    auto tac = *it;
-    if (!is<SsaPhiOperation>(tac))
+    const auto tac = *it;
+    const auto phi = dynamic_cast<const SsaPhiOperation *>(&tac->operation());
+    if (!phi)
       continue;
 
-    /*
-      Ensure the number of phi operands equals the number of incoming edges
-    */
-    if (tac->noperands() != bb.NumInEdges())
-      return false;
-
-    /*
-      Ensure all phi nodes are at the beginning of a basic block
-    */
+    // Ensure all phi nodes are at the beginning of a basic block
     if (tac != bb.first() && !is<SsaPhiOperation>(*std::prev(it)))
       return false;
 
-    /*
-      Ensure that a phi node does not have for the same basic block
-      multiple incoming variables.
-    */
-    const auto phi = static_cast<const SsaPhiOperation *>(&tac->operation());
-    std::unordered_map<cfg_node *, const variable *> map;
-    for (size_t n = 0; n < tac->noperands(); n++)
+    // Ensure there are no duplicated incoming blocks in the phi node
+    util::HashSet<cfg_node *> phiIncoming;
+    for (size_t i = 0; i < phi->narguments(); i++)
     {
-      auto mit = map.find(phi->node(n));
-      if (mit != map.end() && mit->second != tac->operand(n))
-        return false;
-
-      if (mit == map.end())
-        map[phi->node(n)] = tac->operand(n);
+      phiIncoming.Insert(phi->GetIncomingNode(i));
     }
+    if (phiIncoming.Size() != phi->narguments())
+      return false;
+
+    // Ensure the set of incoming blocks matches the actual predecessors of this basic block
+    util::HashSet<cfg_node *> predecessors;
+    for (auto & inEdge : bb.InEdges())
+    {
+      predecessors.Insert(inEdge.source());
+    }
+    if (phiIncoming != predecessors)
+      return false;
   }
 
   return true;
@@ -554,11 +544,9 @@ is_valid(const llvm::cfg & cfg)
   if (!has_valid_exit(cfg))
     return false;
 
-  /* check basic blocks */
-  for (const auto & node : cfg)
+  // check all basic blocks
+  for (const auto & bb : cfg)
   {
-    JLM_ASSERT(is<basic_block>(&node));
-    auto & bb = *static_cast<const basic_block *>(&node);
     if (!is_valid_basic_block(bb))
       return false;
   }
@@ -640,17 +628,26 @@ straighten(llvm::cfg & cfg)
   auto it = cfg.begin();
   while (it != cfg.end())
   {
-    if (is_linear_reduction(it.node()) && is<basic_block>(it.node())
-        && is<basic_block>(it->OutEdge(0)->sink()))
-    {
-      static_cast<basic_block *>(it->OutEdge(0)->sink())->append_first(it.node()->tacs());
-      it->divert_inedges(it->OutEdge(0)->sink());
-      it = cfg.remove_node(it);
-    }
-    else
+    basic_block * bb = it.node();
+
+    // Check if bb only has one successor, and that the successor only has one predecessor
+    if (!is_linear_reduction(bb))
     {
       it++;
+      continue;
     }
+
+    auto successor = dynamic_cast<basic_block *>(it->OutEdge(0)->sink());
+    if (!successor || successor->HasSsaPhiOperation())
+    {
+      it++;
+      continue;
+    }
+
+    // successor becomes the single basic block
+    successor->append_first(bb->tacs());
+    bb->divert_inedges(successor);
+    it = cfg.remove_node(it);
   }
 }
 
@@ -762,18 +759,18 @@ update_phi_operands(llvm::tac & phitac, const std::unordered_set<cfg_node *> & d
 {
   const auto phi = util::AssertedCast<const SsaPhiOperation>(&phitac.operation());
 
-  std::vector<cfg_node *> nodes;
+  std::vector<cfg_node *> incomingNodes;
   std::vector<const variable *> operands;
   for (size_t n = 0; n < phitac.noperands(); n++)
   {
-    if (deadnodes.find(phi->node(n)) == deadnodes.end())
+    if (deadnodes.find(phi->GetIncomingNode(n)) == deadnodes.end())
     {
       operands.push_back(phitac.operand(n));
-      nodes.push_back(phi->node(n));
+      incomingNodes.push_back(phi->GetIncomingNode(n));
     }
   }
 
-  phitac.replace(SsaPhiOperation(nodes, phi->Type()), operands);
+  phitac.replace(SsaPhiOperation(std::move(incomingNodes), phi->Type()), operands);
 }
 
 static void

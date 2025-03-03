@@ -392,21 +392,23 @@ convert_return_instruction(::llvm::Instruction * instruction, tacsvector_t & tac
   return ctx.result();
 }
 
-static inline const variable *
-convert_branch_instruction(::llvm::Instruction * instruction, tacsvector_t & tacs, context & ctx)
+static const variable *
+ConvertBranchInstruction(::llvm::Instruction * instruction, tacsvector_t & tacs, context & ctx)
 {
   JLM_ASSERT(instruction->getOpcode() == ::llvm::Instruction::Br);
   auto i = ::llvm::cast<::llvm::BranchInst>(instruction);
   auto bb = ctx.get(i->getParent());
 
+  JLM_ASSERT(bb->NumOutEdges() == 0);
+
   if (i->isUnconditional())
   {
     bb->add_outedge(ctx.get(i->getSuccessor(0)));
-    return {};
+    return nullptr;
   }
 
-  bb->add_outedge(ctx.get(i->getSuccessor(1))); /* false */
-  bb->add_outedge(ctx.get(i->getSuccessor(0))); /* true */
+  bb->add_outedge(ctx.get(i->getSuccessor(1))); // False out-edge
+  bb->add_outedge(ctx.get(i->getSuccessor(0))); // True out-edge
 
   auto c = ConvertValue(i->getCondition(), tacs, ctx);
   auto nbits = i->getCondition()->getType()->getIntegerBitWidth();
@@ -417,30 +419,29 @@ convert_branch_instruction(::llvm::Instruction * instruction, tacsvector_t & tac
   return nullptr;
 }
 
-static inline const variable *
-convert_switch_instruction(::llvm::Instruction * instruction, tacsvector_t & tacs, context & ctx)
+static const variable *
+ConvertSwitchInstruction(::llvm::Instruction * instruction, tacsvector_t & tacs, context & ctx)
 {
   JLM_ASSERT(instruction->getOpcode() == ::llvm::Instruction::Switch);
   auto i = ::llvm::cast<::llvm::SwitchInst>(instruction);
   auto bb = ctx.get(i->getParent());
 
-  size_t n = 0;
+  JLM_ASSERT(bb->NumOutEdges() == 0);
   std::unordered_map<uint64_t, uint64_t> mapping;
   for (auto it = i->case_begin(); it != i->case_end(); it++)
   {
     JLM_ASSERT(it != i->case_default());
-    mapping[it->getCaseValue()->getZExtValue()] = n++;
-    bb->add_outedge(ctx.get(it->getCaseSuccessor()));
+    auto edge = bb->add_outedge(ctx.get(it->getCaseSuccessor()));
+    mapping[it->getCaseValue()->getZExtValue()] = edge->index();
   }
 
-  bb->add_outedge(ctx.get(i->case_default()->getCaseSuccessor()));
-  JLM_ASSERT(i->getNumSuccessors() == n + 1);
+  auto default_edge = bb->add_outedge(ctx.get(i->case_default()->getCaseSuccessor()));
 
   auto c = ConvertValue(i->getCondition(), tacs, ctx);
   auto nbits = i->getCondition()->getType()->getIntegerBitWidth();
-  auto op = rvsdg::match_op(nbits, mapping, n, n + 1);
+  auto op = rvsdg::match_op(nbits, mapping, default_edge->index(), bb->NumOutEdges());
   tacs.push_back(tac::create(op, { c }));
-  tacs.push_back((branch_op::create(n + 1, tacs.back()->result(0))));
+  tacs.push_back(branch_op::create(bb->NumOutEdges(), tacs.back()->result(0)));
 
   return nullptr;
 }
@@ -689,53 +690,15 @@ convert_store_instruction(::llvm::Instruction * i, tacsvector_t & tacs, context 
   return nullptr;
 }
 
-/**
- * Given an LLVM phi instruction, checks if the instruction has only one predecessor basic block
- * that is reachable (i.e., there exists a path from the entry point to the predecessor).
- *
- * @param phi the phi instruction
- * @param ctx the context for the current LLVM to tac conversion
- * @return the index of the single reachable predecessor basic block, or std::nullopt if it has many
- */
-static std::optional<size_t>
-getSinglePredecessor(::llvm::PHINode * phi, context & ctx)
-{
-  std::optional<size_t> predecessor = std::nullopt;
-  for (size_t n = 0; n < phi->getNumOperands(); n++)
-  {
-    if (!ctx.has(phi->getIncomingBlock(n)))
-      continue; // This predecessor was unreachable
-    if (predecessor.has_value())
-      return std::nullopt; // This is the second reachable predecessor. Abort!
-    predecessor = n;
-  }
-  // Any visited phi should have at least one predecessor
-  JLM_ASSERT(predecessor);
-  return predecessor;
-}
-
 static const variable *
-convert_phi_instruction(::llvm::Instruction * i, tacsvector_t & tacs, context & ctx)
+ConvertPhiInstruction(::llvm::Instruction * i, tacsvector_t & tacs, context & ctx)
 {
-  auto phi = ::llvm::dyn_cast<::llvm::PHINode>(i);
-
-  // If this phi instruction only has one predecessor basic block that is reachable,
-  // the phi operation can be removed.
-  if (auto singlePredecessor = getSinglePredecessor(phi, ctx))
-  {
-    // The incoming value is either a constant,
-    // or a value from the predecessor basic block that has already been converted
-    return ConvertValue(phi->getIncomingValue(*singlePredecessor), tacs, ctx);
-  }
-
-  // This phi instruction can be reached from multiple basic blocks.
-  // As some of these blocks might not be converted yet, some of the phi's operands may reference
-  // instructions that have not yet been converted.
+  // Some of the blocks reaching this phi instruction might not be converted yet,
+  // so some of the phi's operands may reference instructions that have not yet been converted.
   // For now, a SsaPhiOperation with no operands is created.
-  // Once all basic blocks have been converted, all SsaPhiOperations get visited again and given
-  // operands.
+  // Once all basic blocks are converted, all SsaPhiOperations are revisited and given operands.
   auto type = ctx.GetTypeConverter().ConvertLlvmType(*i->getType());
-  tacs.push_back(SsaPhiOperation::create({}, type));
+  tacs.push_back(SsaPhiOperation::create({}, std::move(type)));
   return tacs.back()->result(0);
 }
 
@@ -1261,8 +1224,8 @@ ConvertInstruction(
                            std::vector<std::unique_ptr<llvm::tac>> &,
                            context &)>
       map({ { ::llvm::Instruction::Ret, convert_return_instruction },
-            { ::llvm::Instruction::Br, convert_branch_instruction },
-            { ::llvm::Instruction::Switch, convert_switch_instruction },
+            { ::llvm::Instruction::Br, ConvertBranchInstruction },
+            { ::llvm::Instruction::Switch, ConvertSwitchInstruction },
             { ::llvm::Instruction::Unreachable, convert_unreachable_instruction },
             { ::llvm::Instruction::Add, convert<::llvm::BinaryOperator> },
             { ::llvm::Instruction::And, convert<::llvm::BinaryOperator> },
@@ -1287,7 +1250,7 @@ ConvertInstruction(
             { ::llvm::Instruction::FCmp, convert_fcmp_instruction },
             { ::llvm::Instruction::Load, convert_load_instruction },
             { ::llvm::Instruction::Store, convert_store_instruction },
-            { ::llvm::Instruction::PHI, convert_phi_instruction },
+            { ::llvm::Instruction::PHI, ConvertPhiInstruction },
             { ::llvm::Instruction::GetElementPtr, convert_getelementptr_instruction },
             { ::llvm::Instruction::Call, convert_call_instruction },
             { ::llvm::Instruction::Select, convert_select_instruction },
