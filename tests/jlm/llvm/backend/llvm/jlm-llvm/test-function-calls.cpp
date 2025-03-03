@@ -4,6 +4,7 @@
  */
 #include "test-registry.hpp"
 #include "test-util.hpp"
+#include <jlm/llvm/backend/IpGraphToLlvmConverter.hpp>
 
 #include <jlm/llvm/backend/jlm2llvm/jlm2llvm.hpp>
 #include <jlm/llvm/ir/ipgraph-module.hpp>
@@ -63,7 +64,7 @@ test_malloc()
   print(*im, stdout);
 
   llvm::LLVMContext ctx;
-  auto lm = jlm::llvm::jlm2llvm::convert(*im, ctx);
+  auto lm = jlm::llvm::IpGraphToLlvmConverter::CreateAndConvertModule(*im, ctx);
   jlm::tests::print(*lm);
 
   verify(*lm);
@@ -122,7 +123,7 @@ test_free()
   print(*ipgmod, stdout);
 
   llvm::LLVMContext ctx;
-  auto llvmmod = jlm::llvm::jlm2llvm::convert(*ipgmod, ctx);
+  auto llvmmod = jlm::llvm::IpGraphToLlvmConverter::CreateAndConvertModule(*ipgmod, ctx);
   jlm::tests::print(*llvmmod);
 
   verify(*llvmmod);

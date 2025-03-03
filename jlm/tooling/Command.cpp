@@ -46,6 +46,7 @@
 #include <sys/stat.h>
 
 #include <fstream>
+#include <jlm/llvm/backend/IpGraphToLlvmConverter.hpp>
 #include <unordered_map>
 
 namespace jlm::tooling
@@ -533,7 +534,7 @@ JlmOptCommand::PrintAsLlvm(
       llvm::RvsdgToIpGraphConverter::CreateAndConvertModule(rvsdgModule, statisticsCollector);
 
   ::llvm::LLVMContext ctx;
-  auto llvm_module = jlm::llvm::jlm2llvm::convert(*jlm_module, ctx);
+  auto llvm_module = llvm::IpGraphToLlvmConverter::CreateAndConvertModule(*jlm_module, ctx);
 
   if (outputFile == "")
   {

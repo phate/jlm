@@ -3,6 +3,7 @@
  * See COPYING for terms of redistribution.
  */
 
+#include <jlm/llvm/backend/IpGraphToLlvmConverter.hpp>
 #include <test-registry.hpp>
 #include <test-util.hpp>
 
@@ -48,7 +49,7 @@ test()
   print(im, stdout);
 
   llvm::LLVMContext ctx;
-  auto lm = jlm2llvm::convert(im, ctx);
+  auto lm = IpGraphToLlvmConverter::CreateAndConvertModule(im, ctx);
 
   jlm::tests::print(*lm);
 

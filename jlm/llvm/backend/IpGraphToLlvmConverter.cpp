@@ -1419,6 +1419,10 @@ IpGraphToLlvmConverter::convert_operation(
   {
     return convert<PointerToFunctionOperation>(op, arguments, builder);
   }
+  if (is<FunctionToPointerOperation>(op))
+  {
+    return convert<FunctionToPointerOperation>(op, arguments, builder);
+  }
 
   JLM_UNREACHABLE(util::strfmt("Unhandled operation type: ", op.debug_string()).c_str());
 }
@@ -1992,4 +1996,14 @@ IpGraphToLlvmConverter::ConvertModule(
 
   return llvmModule;
 }
+
+std::unique_ptr<::llvm::Module>
+IpGraphToLlvmConverter::CreateAndConvertModule(
+    ipgraph_module & ipGraphModule,
+    ::llvm::LLVMContext & ctx)
+{
+  IpGraphToLlvmConverter converter;
+  return converter.ConvertModule(ipGraphModule, ctx);
+}
+
 }

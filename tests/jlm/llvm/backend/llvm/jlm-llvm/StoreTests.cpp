@@ -3,6 +3,7 @@
  * See COPYING for terms of redistribution.
  */
 
+#include <jlm/llvm/backend/IpGraphToLlvmConverter.hpp>
 #include <test-registry.hpp>
 #include <test-types.hpp>
 #include <test-util.hpp>
@@ -53,7 +54,7 @@ StoreConversion()
 
   // Act
   llvm::LLVMContext ctx;
-  auto llvmModule = jlm2llvm::convert(ipgModule, ctx);
+  auto llvmModule = IpGraphToLlvmConverter::CreateAndConvertModule(ipgModule, ctx);
   jlm::tests::print(*llvmModule);
 
   // Assert
@@ -120,7 +121,7 @@ StoreVolatileConversion()
 
   // Act
   llvm::LLVMContext ctx;
-  auto llvmModule = jlm2llvm::convert(ipgModule, ctx);
+  auto llvmModule = IpGraphToLlvmConverter::CreateAndConvertModule(ipgModule, ctx);
   jlm::tests::print(*llvmModule);
 
   // Assert
