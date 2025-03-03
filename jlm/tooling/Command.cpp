@@ -4,6 +4,7 @@
  */
 
 #include <jlm/llvm/backend/dot/DotWriter.hpp>
+#include <jlm/llvm/backend/IpGraphToLlvmConverter.hpp>
 #include <jlm/llvm/backend/RvsdgToIpGraphConverter.hpp>
 #include <jlm/llvm/frontend/InterProceduralGraphConversion.hpp>
 #include <jlm/llvm/frontend/LlvmModuleConversion.hpp>
@@ -45,7 +46,6 @@
 #include <sys/stat.h>
 
 #include <fstream>
-#include <jlm/llvm/backend/IpGraphToLlvmConverter.hpp>
 #include <unordered_map>
 
 namespace jlm::tooling

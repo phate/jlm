@@ -3,8 +3,9 @@
  * See COPYING for terms of redistribution.
  */
 
-#include <jlm/llvm/backend/IpGraphToLlvmConverter.hpp>
 #include <test-registry.hpp>
+
+#include <jlm/llvm/backend/IpGraphToLlvmConverter.hpp>
 
 #include <llvm/IR/Attributes.h>
 

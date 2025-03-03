@@ -137,7 +137,7 @@ libllvm_HEADERS = \
 	jlm/llvm/ir/aggregation.hpp \
 	jlm/llvm/backend/dot/DotWriter.hpp \
 	jlm/llvm/backend/IpGraphToLlvmConverter.hpp \
-    jlm/llvm/backend/RvsdgToIpGraphConverter.hpp \
+	jlm/llvm/backend/RvsdgToIpGraphConverter.hpp \
 
 libllvm_TESTS += \
     tests/jlm/llvm/backend/dot/DotWriterTests \

@@ -86,10 +86,10 @@ private:
   std::unordered_map<const basic_block *, const ::llvm::BasicBlock *> jlm2llvm_;
 };
 
-class Context final
+class context final
 {
 public:
-  inline Context(ipgraph_module & im)
+  inline context(ipgraph_module & im)
       : module_(im),
         node_(nullptr),
         iostate_(nullptr),
