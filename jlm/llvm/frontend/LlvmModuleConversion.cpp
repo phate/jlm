@@ -288,7 +288,7 @@ EnsureSingleInEdgeToExitNode(llvm::cfg & cfg)
 {
   auto exitNode = cfg.exit();
 
-  if (exitNode->ninedges() == 0)
+  if (exitNode->NumInEdges() == 0)
   {
     /*
       LLVM can produce CFGs that have no incoming edge to the exit node. This can happen if
@@ -334,7 +334,7 @@ EnsureSingleInEdgeToExitNode(llvm::cfg & cfg)
     }
   }
 
-  if (exitNode->ninedges() == 1)
+  if (exitNode->NumInEdges() == 1)
     return;
 
   /*

@@ -474,7 +474,7 @@ ConvertAssignment(
 static void
 ConvertSelect(const llvm::tac & threeAddressCode, rvsdg::Region &, llvm::VariableMap & variableMap)
 {
-  JLM_ASSERT(is<select_op>(threeAddressCode.operation()));
+  JLM_ASSERT(is<SelectOperation>(threeAddressCode.operation()));
   JLM_ASSERT(threeAddressCode.noperands() == 3 && threeAddressCode.nresults() == 1);
 
   auto p = variableMap.lookup(threeAddressCode.operand(0));
@@ -529,7 +529,7 @@ ConvertThreeAddressCode(
   {
     ConvertAssignment(threeAddressCode, region, variableMap);
   }
-  else if (is<select_op>(&threeAddressCode))
+  else if (is<SelectOperation>(&threeAddressCode))
   {
     ConvertSelect(threeAddressCode, region, variableMap);
   }

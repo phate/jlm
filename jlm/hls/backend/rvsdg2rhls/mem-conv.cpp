@@ -11,6 +11,7 @@
 #include <jlm/hls/ir/hls.hpp>
 #include <jlm/llvm/ir/CallSummary.hpp>
 #include <jlm/llvm/ir/operators/call.hpp>
+#include <jlm/llvm/ir/operators/IntegerOperations.hpp>
 #include <jlm/llvm/ir/operators/lambda.hpp>
 #include <jlm/llvm/ir/operators/Load.hpp>
 #include <jlm/llvm/ir/operators/Store.hpp>
@@ -82,7 +83,7 @@ replace_load(jlm::rvsdg::SimpleNode * orig, jlm::rvsdg::output * resp)
   return dynamic_cast<jlm::rvsdg::SimpleNode *>(nn);
 }
 
-const jlm::rvsdg::bitconstant_op *
+const jlm::llvm::IntegerConstantOperation *
 trace_channel(const jlm::rvsdg::output * dst)
 {
   if (auto arg = dynamic_cast<const jlm::rvsdg::RegionArgument *>(dst))
@@ -92,7 +93,8 @@ trace_channel(const jlm::rvsdg::output * dst)
 
   if (auto so = dynamic_cast<const jlm::rvsdg::SimpleOutput *>(dst))
   {
-    if (auto co = dynamic_cast<const jlm::rvsdg::bitconstant_op *>(&so->node()->GetOperation()))
+    if (auto co =
+            dynamic_cast<const jlm::llvm::IntegerConstantOperation *>(&so->node()->GetOperation()))
     {
       return co;
     }
@@ -235,7 +237,7 @@ trace_function_calls(
 jlm::rvsdg::SimpleNode *
 find_decouple_response(
     const jlm::rvsdg::LambdaNode * lambda,
-    const jlm::rvsdg::bitconstant_op * request_constant)
+    const jlm::llvm::IntegerConstantOperation * request_constant)
 {
   jlm::rvsdg::output * response_function = nullptr;
   for (const auto & ctxvar : lambda->GetContextVars())
