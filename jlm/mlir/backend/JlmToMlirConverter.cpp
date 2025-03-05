@@ -652,7 +652,7 @@ JlmToMlirConverter::ConvertDelta(
   block.push_back(delta);
   auto & deltaBlock = delta.getRegion().emplaceBlock();
   auto regionResults = ConvertRegion(*deltaNode.subregion(), deltaBlock);
-  assert(regionResults.size() == 1); // Delta nodes have 1 output
+  JLM_ASSERT(regionResults.size() == 1); // Delta nodes have 1 output
   auto deltaResult =
       Builder_->create<::mlir::rvsdg::DeltaResult>(Builder_->getUnknownLoc(), regionResults[0]);
   deltaBlock.push_back(deltaResult);
