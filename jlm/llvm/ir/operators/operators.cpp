@@ -17,7 +17,7 @@ bool
 SsaPhiOperation::operator==(const Operation & other) const noexcept
 {
   const auto op = dynamic_cast<const SsaPhiOperation *>(&other);
-  return op && op->nodes_ == nodes_ && op->result(0) == result(0);
+  return op && op->IncomingNodes_ == IncomingNodes_ && op->result(0) == result(0);
 }
 
 std::string
@@ -26,7 +26,7 @@ SsaPhiOperation::debug_string() const
   std::string str("[");
   for (size_t n = 0; n < narguments(); n++)
   {
-    str += util::strfmt(node(n));
+    str += util::strfmt(GetIncomingNode(n));
     if (n != narguments() - 1)
       str += ", ";
   }

@@ -16,6 +16,12 @@ namespace jlm::llvm
 basic_block::~basic_block()
 {}
 
+bool
+basic_block::HasSsaPhiOperation() const
+{
+  return is<SsaPhiOperation>(first());
+}
+
 llvm::tac *
 basic_block::insert_before_branch(std::unique_ptr<llvm::tac> tac)
 {

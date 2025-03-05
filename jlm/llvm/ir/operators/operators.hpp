@@ -12,7 +12,6 @@
 #include <jlm/rvsdg/binary.hpp>
 #include <jlm/rvsdg/bitstring/type.hpp>
 #include <jlm/rvsdg/control.hpp>
-#include <jlm/rvsdg/nullary.hpp>
 #include <jlm/rvsdg/simple-node.hpp>
 #include <jlm/rvsdg/type.hpp>
 #include <jlm/rvsdg/unary.hpp>
@@ -22,18 +21,23 @@
 namespace jlm::llvm
 {
 
-class cfg_node;
-
+/**
+ * Operation that picks its value based on which node branched to the current basic block.
+ * All SsaPhiOperations must be at the top of their basic blocks.
+ *
+ * Each operand corresponds to an incoming basic block,
+ * and the list of incoming nodes must include every predecessor in the cfg exactly once.
+ */
 class SsaPhiOperation final : public rvsdg::SimpleOperation
 {
 public:
   ~SsaPhiOperation() noexcept override;
 
   SsaPhiOperation(
-      const std::vector<llvm::cfg_node *> & nodes,
+      std::vector<cfg_node *> incomingNodes,
       const std::shared_ptr<const jlm::rvsdg::Type> & type)
-      : SimpleOperation({ nodes.size(), type }, { type }),
-        nodes_(nodes)
+      : SimpleOperation({ incomingNodes.size(), type }, { type }),
+        IncomingNodes_(std::move(incomingNodes))
   {}
 
   SsaPhiOperation(const SsaPhiOperation &) = default;
@@ -44,32 +48,32 @@ public:
   SsaPhiOperation &
   operator=(SsaPhiOperation &&) = delete;
 
-  virtual bool
+  bool
   operator==(const Operation & other) const noexcept override;
 
-  virtual std::string
+  std::string
   debug_string() const override;
 
   [[nodiscard]] std::unique_ptr<Operation>
   copy() const override;
 
-  inline const jlm::rvsdg::Type &
+  const rvsdg::Type &
   type() const noexcept
   {
     return *result(0);
   }
 
-  inline const std::shared_ptr<const jlm::rvsdg::Type> &
+  const std::shared_ptr<const rvsdg::Type> &
   Type() const noexcept
   {
     return result(0);
   }
 
-  inline cfg_node *
-  node(size_t n) const noexcept
+  cfg_node *
+  GetIncomingNode(size_t n) const noexcept
   {
     JLM_ASSERT(n < narguments());
-    return nodes_[n];
+    return IncomingNodes_[n];
   }
 
   static std::unique_ptr<llvm::tac>
@@ -77,20 +81,20 @@ public:
       const std::vector<std::pair<const variable *, cfg_node *>> & arguments,
       std::shared_ptr<const jlm::rvsdg::Type> type)
   {
-    std::vector<cfg_node *> nodes;
+    std::vector<cfg_node *> basicBlocks;
     std::vector<const variable *> operands;
     for (const auto & argument : arguments)
     {
-      nodes.push_back(argument.second);
+      basicBlocks.push_back(argument.second);
       operands.push_back(argument.first);
     }
 
-    const SsaPhiOperation phi(nodes, std::move(type));
+    const SsaPhiOperation phi(std::move(basicBlocks), std::move(type));
     return tac::create(phi, operands);
   }
 
 private:
-  std::vector<cfg_node *> nodes_;
+  std::vector<cfg_node *> IncomingNodes_;
 };
 
 class AssignmentOperation final : public rvsdg::SimpleOperation
