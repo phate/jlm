@@ -493,71 +493,87 @@ RvsdgToIpGraphConverter::convert_lambda_node(const rvsdg::Node & node)
 }
 
 void
-RvsdgToIpGraphConverter::convert_phi_node(const rvsdg::Node & node)
+RvsdgToIpGraphConverter::ConvertPhiNode(const phi::node & phiNode)
 {
-  JLM_ASSERT(rvsdg::is<phi::operation>(&node));
-  auto phi = static_cast<const rvsdg::StructuralNode *>(&node);
-  auto subregion = phi->subregion(0);
-  auto & module = Context_->GetIpGraphModule();
-  auto & ipg = module.ipgraph();
+  const auto subregion = phiNode.subregion();
+  auto & ipGraphModule = Context_->GetIpGraphModule();
+  auto & ipGraph = ipGraphModule.ipgraph();
 
-  /* add dependencies to context */
-  for (size_t n = 0; n < phi->ninputs(); n++)
+  // add dependencies to context
+  for (size_t n = 0; n < phiNode.ninputs(); n++)
   {
-    auto v = Context_->variable(phi->input(n)->origin());
-    Context_->insert(phi->input(n)->arguments.first(), v);
+    const auto variable = Context_->variable(phiNode.input(n)->origin());
+    Context_->insert(phiNode.input(n)->arguments.first(), variable);
   }
 
-  /* forward declare all functions and globals */
+  // forward declare all functions and global variables
   for (size_t n = 0; n < subregion->nresults(); n++)
   {
     JLM_ASSERT(subregion->argument(n)->input() == nullptr);
-    auto node = rvsdg::output::GetNode(*subregion->result(n)->origin());
+    const auto node = rvsdg::output::GetNode(*subregion->result(n)->origin());
 
-    if (auto lambda = dynamic_cast<const rvsdg::LambdaNode *>(node))
+    if (const auto lambdaNode = dynamic_cast<const rvsdg::LambdaNode *>(node))
     {
-      const auto & op = dynamic_cast<llvm::LlvmLambdaOperation &>(lambda->GetOperation());
-      auto f = function_node::create(ipg, op.name(), op.Type(), op.linkage(), op.attributes());
-      Context_->insert(subregion->argument(n), module.create_variable(f));
+      const auto & lambdaOperation =
+          dynamic_cast<LlvmLambdaOperation &>(lambdaNode->GetOperation());
+      const auto functionNode = function_node::create(
+          ipGraph,
+          lambdaOperation.name(),
+          lambdaOperation.Type(),
+          lambdaOperation.linkage(),
+          lambdaOperation.attributes());
+      Context_->insert(subregion->argument(n), ipGraphModule.create_variable(functionNode));
+    }
+    else if (const auto deltaNode = dynamic_cast<const delta::node *>(node))
+    {
+      const auto dataNode = data_node::Create(
+          ipGraph,
+          deltaNode->name(),
+          deltaNode->Type(),
+          deltaNode->linkage(),
+          deltaNode->Section(),
+          deltaNode->constant());
+      Context_->insert(subregion->argument(n), ipGraphModule.create_global_value(dataNode));
     }
     else
     {
-      JLM_ASSERT(is<delta::operation>(node));
-      auto d = static_cast<const delta::node *>(node);
-      auto data =
-          data_node::Create(ipg, d->name(), d->Type(), d->linkage(), d->Section(), d->constant());
-      Context_->insert(subregion->argument(n), module.create_global_value(data));
+      JLM_UNREACHABLE(
+          util::strfmt("Unhandled node type: ", node->GetOperation().debug_string()).c_str());
     }
   }
 
-  /* convert function bodies and global initializations */
+  // convert function bodies and global variable initializations
   for (size_t n = 0; n < subregion->nresults(); n++)
   {
     JLM_ASSERT(subregion->argument(n)->input() == nullptr);
-    auto result = subregion->result(n);
-    auto node = rvsdg::output::GetNode(*result->origin());
+    const auto result = subregion->result(n);
+    const auto node = rvsdg::output::GetNode(*result->origin());
 
-    if (auto lambda = dynamic_cast<const rvsdg::LambdaNode *>(node))
+    if (const auto lambdaNode = dynamic_cast<const rvsdg::LambdaNode *>(node))
     {
-      auto v = static_cast<const fctvariable *>(Context_->variable(subregion->argument(n)));
-      v->function()->add_cfg(create_cfg(*lambda));
-      Context_->insert(node->output(0), v);
+      const auto variable =
+          util::AssertedCast<const fctvariable>(Context_->variable(subregion->argument(n)));
+      variable->function()->add_cfg(create_cfg(*lambdaNode));
+      Context_->insert(node->output(0), variable);
+    }
+    else if (const auto deltaNode = dynamic_cast<const delta::node *>(node))
+    {
+      const auto variable =
+          util::AssertedCast<const gblvalue>(Context_->variable(subregion->argument(n)));
+      variable->node()->set_initialization(CreateInitialization(*deltaNode));
+      Context_->insert(node->output(0), variable);
     }
     else
     {
-      JLM_ASSERT(is<delta::operation>(node));
-      auto delta = static_cast<const delta::node *>(node);
-      auto v = static_cast<const gblvalue *>(Context_->variable(subregion->argument(n)));
-
-      v->node()->set_initialization(CreateInitialization(*delta));
-      Context_->insert(node->output(0), v);
+      JLM_UNREACHABLE(
+          util::strfmt("Unhandled node type: ", node->GetOperation().debug_string()).c_str());
     }
   }
 
-  /* add functions and globals to context */
-  JLM_ASSERT(node.noutputs() == subregion->nresults());
-  for (size_t n = 0; n < node.noutputs(); n++)
-    Context_->insert(node.output(n), Context_->variable(subregion->result(n)->origin()));
+  // add functions and globals to context
+  JLM_ASSERT(phiNode.noutputs() == subregion->nresults());
+  for (size_t n = 0; n < phiNode.noutputs(); n++)
+    Context_->insert(phiNode.output(n), Context_->variable(subregion->result(n)->origin()));
 }
 
 void
@@ -594,7 +610,7 @@ RvsdgToIpGraphConverter::ConvertNode(const rvsdg::Node & node)
   }
   else if (const auto phiNode = dynamic_cast<const phi::node *>(&node))
   {
-    convert_phi_node(*phiNode);
+    ConvertPhiNode(*phiNode);
   }
   else if (const auto deltaNode = dynamic_cast<const delta::node *>(&node))
   {

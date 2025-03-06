@@ -28,6 +28,11 @@ class Region;
 namespace jlm::llvm
 {
 
+namespace phi
+{
+class node;
+}
+
 namespace delta
 {
 class node;
@@ -81,7 +86,7 @@ private:
   ConvertDeltaNode(const delta::node & deltaNode);
 
   void
-  convert_phi_node(const rvsdg::Node & node);
+  ConvertPhiNode(const phi::node & phiNode);
 
   void
   convert_lambda_node(const rvsdg::Node & node);
