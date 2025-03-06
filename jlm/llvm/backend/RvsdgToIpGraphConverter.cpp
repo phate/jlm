@@ -247,25 +247,26 @@ RvsdgToIpGraphConverter::convert_simple_node(const rvsdg::Node & node)
 }
 
 void
-RvsdgToIpGraphConverter::convert_empty_gamma_node(const rvsdg::GammaNode * gamma)
+RvsdgToIpGraphConverter::ConvertEmptyGammaNode(const rvsdg::GammaNode & gammaNode)
 {
-  JLM_ASSERT(gamma->nsubregions() == 2);
-  JLM_ASSERT(gamma->subregion(0)->nnodes() == 0 && gamma->subregion(1)->nnodes() == 0);
+  JLM_ASSERT(gammaNode.nsubregions() == 2);
+  JLM_ASSERT(gammaNode.subregion(0)->nnodes() == 0 && gammaNode.subregion(1)->nnodes() == 0);
 
-  /* both regions are empty, create only select instructions */
-
-  auto predicate = gamma->predicate()->origin();
+  // both regions are empty, create only select instructions
+  auto predicate = gammaNode.predicate()->origin();
   auto cfg = Context_->cfg();
 
   auto bb = basic_block::create(*cfg);
   Context_->GetLastProcessedBasicBlock()->add_outedge(bb);
 
-  for (size_t n = 0; n < gamma->noutputs(); n++)
+  for (size_t n = 0; n < gammaNode.noutputs(); n++)
   {
-    auto output = gamma->output(n);
+    auto output = gammaNode.output(n);
 
-    auto a0 = static_cast<const rvsdg::RegionArgument *>(gamma->subregion(0)->result(n)->origin());
-    auto a1 = static_cast<const rvsdg::RegionArgument *>(gamma->subregion(1)->result(n)->origin());
+    auto a0 =
+        static_cast<const rvsdg::RegionArgument *>(gammaNode.subregion(0)->result(n)->origin());
+    auto a1 =
+        static_cast<const rvsdg::RegionArgument *>(gammaNode.subregion(1)->result(n)->origin());
     auto o0 = a0->input()->origin();
     auto o1 = a1->input()->origin();
 
@@ -312,7 +313,7 @@ RvsdgToIpGraphConverter::convert_gamma_node(const rvsdg::Node & node)
 
   if (gamma->nsubregions() == 2 && gamma->subregion(0)->nnodes() == 0
       && gamma->subregion(1)->nnodes() == 0)
-    return convert_empty_gamma_node(gamma);
+    return ConvertEmptyGammaNode(*gamma);
 
   auto entry = basic_block::create(*cfg);
   auto exit = basic_block::create(*cfg);

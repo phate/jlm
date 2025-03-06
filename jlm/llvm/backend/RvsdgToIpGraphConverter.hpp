@@ -98,7 +98,7 @@ private:
   convert_gamma_node(const rvsdg::Node & node);
 
   void
-  convert_empty_gamma_node(const rvsdg::GammaNode * gamma);
+  ConvertEmptyGammaNode(const rvsdg::GammaNode & gammaNode);
 
   void
   convert_simple_node(const rvsdg::Node & node);
