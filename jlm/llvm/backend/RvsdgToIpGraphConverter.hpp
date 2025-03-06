@@ -76,7 +76,7 @@ private:
   ConvertNode(const rvsdg::Node & node);
 
   void
-  convert_delta_node(const rvsdg::Node & node);
+  ConvertDeltaNode(const delta::node & deltaNode);
 
   void
   convert_phi_node(const rvsdg::Node & node);
@@ -106,7 +106,7 @@ private:
   convert_region(rvsdg::Region & region);
 
   std::unique_ptr<data_node_init>
-  create_initialization(const delta::node * delta);
+  CreateInitialization(const delta::node & deltaNode);
 
   std::unique_ptr<Context> Context_;
 };

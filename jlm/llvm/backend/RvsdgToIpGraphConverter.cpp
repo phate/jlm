@@ -133,15 +133,15 @@ RvsdgToIpGraphConverter::~RvsdgToIpGraphConverter() = default;
 RvsdgToIpGraphConverter::RvsdgToIpGraphConverter() = default;
 
 std::unique_ptr<data_node_init>
-RvsdgToIpGraphConverter::create_initialization(const delta::node * delta)
+RvsdgToIpGraphConverter::CreateInitialization(const delta::node & deltaNode)
 {
-  auto subregion = delta->subregion();
+  auto subregion = deltaNode.subregion();
 
   // add delta dependencies to context
-  for (size_t n = 0; n < delta->ninputs(); n++)
+  for (size_t n = 0; n < deltaNode.ninputs(); n++)
   {
-    auto v = Context_->variable(delta->input(n)->origin());
-    Context_->insert(delta->input(n)->arguments.first(), v);
+    auto v = Context_->variable(deltaNode.input(n)->origin());
+    Context_->insert(deltaNode.input(n)->arguments.first(), v);
   }
 
   if (subregion->nnodes() == 0)
@@ -151,17 +151,17 @@ RvsdgToIpGraphConverter::create_initialization(const delta::node * delta)
   }
 
   tacsvector_t tacs;
-  for (const auto & node : rvsdg::TopDownTraverser(delta->subregion()))
+  for (const auto & node : rvsdg::TopDownTraverser(deltaNode.subregion()))
   {
     JLM_ASSERT(node->noutputs() == 1);
     auto output = node->output(0);
 
-    /* collect operand variables */
+    // collect operand variables
     std::vector<const variable *> operands;
     for (size_t n = 0; n < node->ninputs(); n++)
       operands.push_back(Context_->variable(node->input(n)->origin()));
 
-    /* convert node to tac */
+    // convert node to tac
     auto & op = *static_cast<const rvsdg::SimpleOperation *>(&node->GetOperation());
     tacs.push_back(tac::create(op, operands));
     Context_->insert(output, tacs.back()->result(0));
@@ -550,7 +550,7 @@ RvsdgToIpGraphConverter::convert_phi_node(const rvsdg::Node & node)
       auto delta = static_cast<const delta::node *>(node);
       auto v = static_cast<const gblvalue *>(Context_->variable(subregion->argument(n)));
 
-      v->node()->set_initialization(create_initialization(delta));
+      v->node()->set_initialization(CreateInitialization(*delta));
       Context_->insert(node->output(0), v);
     }
   }
@@ -562,22 +562,20 @@ RvsdgToIpGraphConverter::convert_phi_node(const rvsdg::Node & node)
 }
 
 void
-RvsdgToIpGraphConverter::convert_delta_node(const rvsdg::Node & node)
+RvsdgToIpGraphConverter::ConvertDeltaNode(const delta::node & deltaNode)
 {
-  JLM_ASSERT(is<delta::operation>(&node));
-  auto delta = static_cast<const delta::node *>(&node);
-  auto & m = Context_->GetIpGraphModule();
+  auto & ipGraphModule = Context_->GetIpGraphModule();
 
-  auto dnode = data_node::Create(
-      m.ipgraph(),
-      delta->name(),
-      delta->Type(),
-      delta->linkage(),
-      delta->Section(),
-      delta->constant());
-  dnode->set_initialization(create_initialization(delta));
-  auto v = m.create_global_value(dnode);
-  Context_->insert(delta->output(), v);
+  const auto dataNode = data_node::Create(
+      ipGraphModule.ipgraph(),
+      deltaNode.name(),
+      deltaNode.Type(),
+      deltaNode.linkage(),
+      deltaNode.Section(),
+      deltaNode.constant());
+  dataNode->set_initialization(CreateInitialization(deltaNode));
+  const auto variable = ipGraphModule.create_global_value(dataNode);
+  Context_->insert(deltaNode.output(), variable);
 }
 
 void
@@ -601,7 +599,7 @@ RvsdgToIpGraphConverter::ConvertNode(const rvsdg::Node & node)
   }
   else if (const auto deltaNode = dynamic_cast<const delta::node *>(&node))
   {
-    convert_delta_node(*deltaNode);
+    ConvertDeltaNode(*deltaNode);
   }
   else if (dynamic_cast<const rvsdg::SimpleNode *>(&node))
   {
