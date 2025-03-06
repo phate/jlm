@@ -89,7 +89,7 @@ private:
   ConvertPhiNode(const phi::node & phiNode);
 
   void
-  convert_lambda_node(const rvsdg::Node & node);
+  ConvertLambdaNode(const rvsdg::LambdaNode & lambdaNode);
 
   void
   ConvertThetaNode(const rvsdg::ThetaNode & thetaNode);

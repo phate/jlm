@@ -482,19 +482,22 @@ RvsdgToIpGraphConverter::ConvertThetaNode(const rvsdg::ThetaNode & thetaNode)
 }
 
 void
-RvsdgToIpGraphConverter::convert_lambda_node(const rvsdg::Node & node)
+RvsdgToIpGraphConverter::ConvertLambdaNode(const rvsdg::LambdaNode & lambdaNode)
 {
-  JLM_ASSERT(is<llvm::LlvmLambdaOperation>(&node));
-  auto lambda = static_cast<const rvsdg::LambdaNode *>(&node);
-  auto & module = Context_->GetIpGraphModule();
-  auto & clg = module.ipgraph();
+  auto & ipGraphModule = Context_->GetIpGraphModule();
+  auto & ipGraph = ipGraphModule.ipgraph();
 
-  const auto & op = dynamic_cast<llvm::LlvmLambdaOperation &>(lambda->GetOperation());
-  auto f = function_node::create(clg, op.name(), op.Type(), op.linkage(), op.attributes());
-  auto v = module.create_variable(f);
+  const auto & operation = *util::AssertedCast<LlvmLambdaOperation>(&lambdaNode.GetOperation());
+  const auto functionNode = function_node::create(
+      ipGraph,
+      operation.name(),
+      operation.Type(),
+      operation.linkage(),
+      operation.attributes());
+  const auto variable = ipGraphModule.create_variable(functionNode);
 
-  f->add_cfg(create_cfg(*lambda));
-  Context_->insert(node.output(0), v);
+  functionNode->add_cfg(create_cfg(lambdaNode));
+  Context_->insert(lambdaNode.output(), variable);
 }
 
 void
@@ -603,7 +606,7 @@ RvsdgToIpGraphConverter::ConvertNode(const rvsdg::Node & node)
 {
   if (const auto lambdaNode = dynamic_cast<const rvsdg::LambdaNode *>(&node))
   {
-    convert_lambda_node(*lambdaNode);
+    ConvertLambdaNode(*lambdaNode);
   }
   else if (const auto gammaNode = dynamic_cast<const rvsdg::GammaNode *>(&node))
   {
