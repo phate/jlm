@@ -306,102 +306,103 @@ RvsdgToIpGraphConverter::ConvertEmptyGammaNode(const rvsdg::GammaNode & gammaNod
 }
 
 void
-RvsdgToIpGraphConverter::convert_gamma_node(const rvsdg::Node & node)
+RvsdgToIpGraphConverter::ConvertGammaNode(const rvsdg::GammaNode & gammaNode)
 {
-  JLM_ASSERT(is<rvsdg::GammaOperation>(&node));
-  auto gamma = static_cast<const rvsdg::GammaNode *>(&node);
-  auto nalternatives = gamma->nsubregions();
-  auto predicate = gamma->predicate()->origin();
-  auto cfg = Context_->cfg();
+  const auto numSubregions = gammaNode.nsubregions();
+  const auto predicate = gammaNode.predicate()->origin();
+  const auto controlFlowGraph = Context_->cfg();
 
-  if (gamma->nsubregions() == 2 && gamma->subregion(0)->nnodes() == 0
-      && gamma->subregion(1)->nnodes() == 0)
-    return ConvertEmptyGammaNode(*gamma);
+  if (gammaNode.nsubregions() == 2 && gammaNode.subregion(0)->nnodes() == 0
+      && gammaNode.subregion(1)->nnodes() == 0)
+    return ConvertEmptyGammaNode(gammaNode);
 
-  auto entry = basic_block::create(*cfg);
-  auto exit = basic_block::create(*cfg);
-  Context_->GetLastProcessedBasicBlock()->add_outedge(entry);
+  const auto entryBlock = basic_block::create(*controlFlowGraph);
+  const auto exitBlock = basic_block::create(*controlFlowGraph);
+  Context_->GetLastProcessedBasicBlock()->add_outedge(entryBlock);
 
-  /* convert gamma regions */
+  // convert gamma regions
   std::vector<cfg_node *> phi_nodes;
-  entry->append_last(branch_op::create(nalternatives, Context_->variable(predicate)));
-  for (size_t n = 0; n < gamma->nsubregions(); n++)
+  entryBlock->append_last(branch_op::create(numSubregions, Context_->variable(predicate)));
+  for (size_t n = 0; n < gammaNode.nsubregions(); n++)
   {
-    auto subregion = gamma->subregion(n);
+    const auto subregion = gammaNode.subregion(n);
 
-    /* add arguments to context */
+    // add arguments to context
     for (size_t i = 0; i < subregion->narguments(); i++)
     {
-      auto argument = subregion->argument(i);
+      const auto argument = subregion->argument(i);
       Context_->insert(argument, Context_->variable(argument->input()->origin()));
     }
 
-    if (subregion->nnodes() == 0 && nalternatives == 2)
+    if (subregion->nnodes() == 0 && numSubregions == 2)
     {
-      /* subregin is empty */
-      phi_nodes.push_back(entry);
-      entry->add_outedge(exit);
+      // subregion is empty
+      phi_nodes.push_back(entryBlock);
+      entryBlock->add_outedge(exitBlock);
     }
     else
     {
-      /* convert subregion */
-      auto region_entry = basic_block::create(*cfg);
-      entry->add_outedge(region_entry);
-      Context_->SetLastProcessedBasicBlock(region_entry);
+      // convert subregion
+      const auto regionEntryBlock = basic_block::create(*controlFlowGraph);
+      entryBlock->add_outedge(regionEntryBlock);
+      Context_->SetLastProcessedBasicBlock(regionEntryBlock);
       convert_region(*subregion);
 
       phi_nodes.push_back(Context_->GetLastProcessedBasicBlock());
-      Context_->GetLastProcessedBasicBlock()->add_outedge(exit);
+      Context_->GetLastProcessedBasicBlock()->add_outedge(exitBlock);
     }
   }
 
-  /* add phi instructions */
-  for (size_t n = 0; n < gamma->noutputs(); n++)
+  // add phi instructions
+  for (size_t n = 0; n < gammaNode.noutputs(); n++)
   {
-    auto output = gamma->output(n);
+    const auto output = gammaNode.output(n);
 
     bool invariant = true;
-    auto matchnode = rvsdg::output::GetNode(*predicate);
-    bool select = (gamma->nsubregions() == 2) && is<rvsdg::match_op>(matchnode);
+    const auto matchNode = rvsdg::output::GetNode(*predicate);
+    bool select = gammaNode.nsubregions() == 2 && is<rvsdg::match_op>(matchNode);
     std::vector<std::pair<const variable *, cfg_node *>> arguments;
-    for (size_t r = 0; r < gamma->nsubregions(); r++)
+    for (size_t r = 0; r < gammaNode.nsubregions(); r++)
     {
-      auto origin = gamma->subregion(r)->result(n)->origin();
+      const auto origin = gammaNode.subregion(r)->result(n)->origin();
 
       auto v = Context_->variable(origin);
       arguments.push_back(std::make_pair(v, phi_nodes[r]));
-      invariant &= (v == Context_->variable(gamma->subregion(0)->result(n)->origin()));
-      auto tmp = rvsdg::output::GetNode(*origin);
-      select &= (tmp == nullptr && origin->region()->node() == &node);
+      invariant &= (v == Context_->variable(gammaNode.subregion(0)->result(n)->origin()));
+      const auto tmpNode = rvsdg::output::GetNode(*origin);
+      select &= tmpNode == nullptr && origin->region()->node() == &gammaNode;
     }
 
     if (invariant)
     {
-      /* all operands are the same */
+      // all operands are the same
       Context_->insert(output, arguments[0].first);
       continue;
     }
 
     if (select)
     {
-      /* use select instead of phi */
-      auto matchnode = rvsdg::output::GetNode(*predicate);
-      auto matchop = static_cast<const rvsdg::match_op *>(&matchnode->GetOperation());
-      auto d = matchop->default_alternative();
-      auto c = Context_->variable(matchnode->input(0)->origin());
-      auto t = d == 0 ? arguments[1].first : arguments[0].first;
-      auto f = d == 0 ? arguments[0].first : arguments[1].first;
-      entry->append_first(SelectOperation::create(c, t, f));
-      Context_->insert(output, entry->first()->result(0));
+      // use select instead of phi
+      const auto matchOperation =
+          util::AssertedCast<const rvsdg::match_op>(&matchNode->GetOperation());
+      const auto defaultAlternative = matchOperation->default_alternative();
+      const auto condition = Context_->variable(matchNode->input(0)->origin());
+      const auto trueAlternative =
+          defaultAlternative == 0 ? arguments[1].first : arguments[0].first;
+      const auto falseAlternative =
+          defaultAlternative == 0 ? arguments[0].first : arguments[1].first;
+      entryBlock->append_first(
+          SelectOperation::create(condition, trueAlternative, falseAlternative));
+      Context_->insert(output, entryBlock->first()->result(0));
       continue;
     }
 
-    /* create phi instruction */
-    exit->append_last(SsaPhiOperation::create(arguments, output->Type()));
-    Context_->insert(output, exit->last()->result(0));
+    // create phi instruction
+    exitBlock->append_last(SsaPhiOperation::create(arguments, output->Type()));
+    Context_->insert(output, exitBlock->last()->result(0));
   }
 
-  Context_->SetLastProcessedBasicBlock(exit);
+  Context_->SetLastProcessedBasicBlock(exitBlock);
 }
 
 bool
@@ -606,7 +607,7 @@ RvsdgToIpGraphConverter::ConvertNode(const rvsdg::Node & node)
   }
   else if (const auto gammaNode = dynamic_cast<const rvsdg::GammaNode *>(&node))
   {
-    convert_gamma_node(*gammaNode);
+    ConvertGammaNode(*gammaNode);
   }
   else if (const auto thetaNode = dynamic_cast<const rvsdg::ThetaNode *>(&node))
   {

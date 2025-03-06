@@ -95,7 +95,7 @@ private:
   ConvertThetaNode(const rvsdg::ThetaNode & thetaNode);
 
   void
-  convert_gamma_node(const rvsdg::Node & node);
+  ConvertGammaNode(const rvsdg::GammaNode & gammaNode);
 
   void
   ConvertEmptyGammaNode(const rvsdg::GammaNode & gammaNode);
