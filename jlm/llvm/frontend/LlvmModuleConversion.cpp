@@ -336,7 +336,7 @@ EnsureSingleInEdgeToExitNode(llvm::cfg & cfg)
 
         rvsdg::ctlconstant_op op(rvsdg::ctlvalue_repr(1, 2));
         auto operand = basicBlock->append_last(tac::create(op, {}))->result(0);
-        basicBlock->append_last(branch_op::create(2, operand));
+        basicBlock->append_last(BranchOperation::create(2, operand));
 
         basicBlock->add_outedge(exitNode);
         basicBlock->add_outedge(repetitionEdge->sink());

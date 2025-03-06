@@ -396,14 +396,12 @@ public:
   }
 };
 
-/* branch operator */
-
-class branch_op final : public rvsdg::SimpleOperation
+class BranchOperation final : public rvsdg::SimpleOperation
 {
 public:
-  virtual ~branch_op() noexcept;
+  ~BranchOperation() noexcept override;
 
-  explicit inline branch_op(std::shared_ptr<const jlm::rvsdg::ControlType> type)
+  explicit BranchOperation(std::shared_ptr<const rvsdg::ControlType> type)
       : SimpleOperation({ std::move(type) }, {})
   {}
 
@@ -425,7 +423,7 @@ public:
   static std::unique_ptr<llvm::tac>
   create(size_t nalternatives, const variable * operand)
   {
-    branch_op op(jlm::rvsdg::ControlType::Create(nalternatives));
+    const BranchOperation op(rvsdg::ControlType::Create(nalternatives));
     return tac::create(op, { operand });
   }
 };
