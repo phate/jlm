@@ -6,6 +6,8 @@
 #ifndef JLM_LLVM_BACKEND_RVSDGTOIPGRAPHCONVERTER_HPP
 #define JLM_LLVM_BACKEND_RVSDGTOIPGRAPHCONVERTER_HPP
 
+#include <jlm/rvsdg/theta.hpp>
+
 #include <memory>
 
 namespace jlm::util
@@ -25,6 +27,11 @@ class Region;
 
 namespace jlm::llvm
 {
+
+namespace phi
+{
+class node;
+}
 
 namespace delta
 {
@@ -67,46 +74,46 @@ public:
 
 private:
   void
-  convert_imports(const rvsdg::Graph & graph, ipgraph_module & im);
+  ConvertImports(const rvsdg::Graph & graph);
 
   void
-  convert_nodes(const rvsdg::Graph & graph);
+  ConvertNodes(const rvsdg::Graph & graph);
 
   void
-  convert_node(const rvsdg::Node & node);
+  ConvertNode(const rvsdg::Node & node);
 
   void
-  convert_delta_node(const rvsdg::Node & node);
+  ConvertDeltaNode(const delta::node & deltaNode);
 
   void
-  convert_phi_node(const rvsdg::Node & node);
+  ConvertPhiNode(const phi::node & phiNode);
 
   void
-  convert_lambda_node(const rvsdg::Node & node);
+  ConvertLambdaNode(const rvsdg::LambdaNode & lambdaNode);
 
   void
-  convert_theta_node(const rvsdg::Node & node);
-
-  bool
-  phi_needed(const rvsdg::input * i, const llvm::variable * v);
+  ConvertThetaNode(const rvsdg::ThetaNode & thetaNode);
 
   void
-  convert_gamma_node(const rvsdg::Node & node);
+  ConvertGammaNode(const rvsdg::GammaNode & gammaNode);
 
   void
-  convert_empty_gamma_node(const rvsdg::GammaNode * gamma);
+  ConvertEmptyGammaNode(const rvsdg::GammaNode & gammaNode);
 
   void
-  convert_simple_node(const rvsdg::Node & node);
+  ConvertSimpleNode(const rvsdg::SimpleNode & simpleNode);
 
   std::unique_ptr<llvm::cfg>
-  create_cfg(const rvsdg::LambdaNode & lambda);
+  CreateControlFlowGraph(const rvsdg::LambdaNode & lambda);
 
   void
-  convert_region(rvsdg::Region & region);
+  ConvertRegion(rvsdg::Region & region);
 
   std::unique_ptr<data_node_init>
-  create_initialization(const delta::node * delta);
+  CreateInitialization(const delta::node & deltaNode);
+
+  static bool
+  RequiresSsaPhiOperation(const rvsdg::ThetaNode::LoopVar & loopVar, const variable & v);
 
   std::unique_ptr<Context> Context_;
 };
