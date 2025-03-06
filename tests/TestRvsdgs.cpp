@@ -4036,7 +4036,7 @@ VariadicFunctionTest2::SetupRvsdg()
         pointerType,
         16);
     auto & zextResult =
-        ZextOperation::Create(*gammaLoadResult.branchArgument[1], rvsdg::bittype::Create(64));
+        ZExtOperation::Create(*gammaLoadResult.branchArgument[1], rvsdg::bittype::Create(64));
     gepResult2 = GetElementPtrOperation::Create(
         loadResultsGamma1[0],
         { &zextResult },

@@ -335,7 +335,7 @@ MlirToJlmConverter::ConvertOperation(
     if (!st)
       JLM_UNREACHABLE("Expected bitstring type for ExtUIOp operation.");
     ::mlir::Type type = castedOp.getType();
-    return rvsdg::output::GetNode(*&llvm::ZextOperation::Create(*(inputs[0]), ConvertType(type)));
+    return rvsdg::output::GetNode(*&llvm::ZExtOperation::Create(*(inputs[0]), ConvertType(type)));
   }
   else if (auto castedOp = ::mlir::dyn_cast<::mlir::arith::ExtSIOp>(&mlirOperation))
   {

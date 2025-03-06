@@ -753,19 +753,19 @@ private:
   llvm::cmp cmp_;
 };
 
-class ZextOperation final : public rvsdg::UnaryOperation
+class ZExtOperation final : public rvsdg::UnaryOperation
 {
 public:
-  ~ZextOperation() noexcept override;
+  ~ZExtOperation() noexcept override;
 
-  ZextOperation(size_t nsrcbits, size_t ndstbits)
+  ZExtOperation(size_t nsrcbits, size_t ndstbits)
       : UnaryOperation(rvsdg::bittype::Create(nsrcbits), rvsdg::bittype::Create(ndstbits))
   {
     if (ndstbits < nsrcbits)
       throw jlm::util::error("# destination bits must be greater than # source bits.");
   }
 
-  ZextOperation(
+  ZExtOperation(
       const std::shared_ptr<const jlm::rvsdg::bittype> & srctype,
       const std::shared_ptr<const jlm::rvsdg::bittype> & dsttype)
       : UnaryOperation(srctype, dsttype)
@@ -774,7 +774,7 @@ public:
       throw jlm::util::error("# destination bits must be greater than # source bits.");
   }
 
-  ZextOperation(
+  ZExtOperation(
       std::shared_ptr<const jlm::rvsdg::Type> srctype,
       std::shared_ptr<const jlm::rvsdg::Type> dsttype)
       : UnaryOperation(srctype, dsttype)
@@ -825,7 +825,7 @@ public:
     auto operandBitType = CheckAndExtractBitType(operand->Type());
     auto resultBitType = CheckAndExtractBitType(type);
 
-    const ZextOperation operation(std::move(operandBitType), std::move(resultBitType));
+    const ZExtOperation operation(std::move(operandBitType), std::move(resultBitType));
     return tac::create(operation, { operand });
   }
 
@@ -835,7 +835,7 @@ public:
     auto operandBitType = CheckAndExtractBitType(operand.Type());
     auto resultBitType = CheckAndExtractBitType(resultType);
 
-    return *rvsdg::CreateOpNode<ZextOperation>(
+    return *rvsdg::CreateOpNode<ZExtOperation>(
                 { &operand },
                 std::move(operandBitType),
                 std::move(resultBitType))

@@ -379,29 +379,29 @@ ptrcmp_op::reduce_operand_pair(rvsdg::binop_reduction_path_t, rvsdg::output *, r
   JLM_UNREACHABLE("Not implemented!");
 }
 
-ZextOperation::~ZextOperation() noexcept = default;
+ZExtOperation::~ZExtOperation() noexcept = default;
 
 bool
-ZextOperation::operator==(const Operation & other) const noexcept
+ZExtOperation::operator==(const Operation & other) const noexcept
 {
-  const auto op = dynamic_cast<const ZextOperation *>(&other);
+  const auto op = dynamic_cast<const ZExtOperation *>(&other);
   return op && op->argument(0) == argument(0) && op->result(0) == result(0);
 }
 
 std::string
-ZextOperation::debug_string() const
+ZExtOperation::debug_string() const
 {
-  return util::strfmt("Zext[", nsrcbits(), " -> ", ndstbits(), "]");
+  return util::strfmt("ZExt[", nsrcbits(), " -> ", ndstbits(), "]");
 }
 
 std::unique_ptr<rvsdg::Operation>
-ZextOperation::copy() const
+ZExtOperation::copy() const
 {
-  return std::make_unique<ZextOperation>(*this);
+  return std::make_unique<ZExtOperation>(*this);
 }
 
 rvsdg::unop_reduction_path_t
-ZextOperation::can_reduce_operand(const rvsdg::output * operand) const noexcept
+ZExtOperation::can_reduce_operand(const rvsdg::output * operand) const noexcept
 {
   if (rvsdg::is<rvsdg::bitconstant_op>(producer(operand)))
     return rvsdg::unop_reduction_constant;
@@ -410,7 +410,7 @@ ZextOperation::can_reduce_operand(const rvsdg::output * operand) const noexcept
 }
 
 rvsdg::output *
-ZextOperation::reduce_operand(rvsdg::unop_reduction_path_t path, rvsdg::output * operand) const
+ZExtOperation::reduce_operand(rvsdg::unop_reduction_path_t path, rvsdg::output * operand) const
 {
   if (path == rvsdg::unop_reduction_constant)
   {

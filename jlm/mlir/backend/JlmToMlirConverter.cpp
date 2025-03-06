@@ -378,7 +378,7 @@ JlmToMlirConverter::ConvertSimpleNode(
   {
     MlirOp = BitCompareNode(operation, inputs);
   }
-  else if (const auto zextOperation = dynamic_cast<const llvm::ZextOperation *>(&operation))
+  else if (const auto zextOperation = dynamic_cast<const llvm::ZExtOperation *>(&operation))
   {
     MlirOp = Builder_->create<::mlir::arith::ExtUIOp>(
         Builder_->getUnknownLoc(),
