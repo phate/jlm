@@ -1290,18 +1290,16 @@ public:
   }
 };
 
-/* fpneg operator */
-
-class fpneg_op final : public rvsdg::UnaryOperation
+class FNegOperation final : public rvsdg::UnaryOperation
 {
 public:
-  ~fpneg_op() override;
+  ~FNegOperation() override;
 
-  explicit fpneg_op(const fpsize & size)
+  explicit FNegOperation(const fpsize & size)
       : UnaryOperation(FloatingPointType::Create(size), FloatingPointType::Create(size))
   {}
 
-  explicit fpneg_op(const std::shared_ptr<const FloatingPointType> & fpt)
+  explicit FNegOperation(const std::shared_ptr<const FloatingPointType> & fpt)
       : UnaryOperation(fpt, fpt)
   {}
 
@@ -1334,7 +1332,7 @@ public:
     if (!type)
       throw jlm::util::error("expected floating point type.");
 
-    fpneg_op op(std::move(type));
+    const FNegOperation op(std::move(type));
     return tac::create(op, { operand });
   }
 };
