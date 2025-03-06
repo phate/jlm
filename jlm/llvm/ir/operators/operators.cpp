@@ -198,28 +198,25 @@ ctl2bits_op::copy() const
   return std::make_unique<ctl2bits_op>(*this);
 }
 
-/* branch operator */
-
-branch_op::~branch_op() noexcept
-{}
+BranchOperation::~BranchOperation() noexcept = default;
 
 bool
-branch_op::operator==(const Operation & other) const noexcept
+BranchOperation::operator==(const Operation & other) const noexcept
 {
-  auto op = dynamic_cast<const branch_op *>(&other);
+  const auto op = dynamic_cast<const BranchOperation *>(&other);
   return op && op->argument(0) == argument(0);
 }
 
 std::string
-branch_op::debug_string() const
+BranchOperation::debug_string() const
 {
-  return "BRANCH";
+  return "Branch";
 }
 
 std::unique_ptr<rvsdg::Operation>
-branch_op::copy() const
+BranchOperation::copy() const
 {
-  return std::make_unique<branch_op>(*this);
+  return std::make_unique<BranchOperation>(*this);
 }
 
 ConstantPointerNullOperation::~ConstantPointerNullOperation() noexcept = default;
