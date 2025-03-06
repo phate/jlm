@@ -1365,7 +1365,7 @@ IpGraphToLlvmConverter::convert_operation(
   {
     return convert_cast<::llvm::Instruction::IntToPtr>(op, arguments, builder);
   }
-  if (is<ptr2bits_op>(op))
+  if (is<PtrToIntOperation>(op))
   {
     return convert_cast<::llvm::Instruction::PtrToInt>(op, arguments, builder);
   }
