@@ -10,7 +10,6 @@
 #include <jlm/llvm/ir/operators.hpp>
 #include <jlm/llvm/ir/RvsdgModule.hpp>
 #include <jlm/rvsdg/gamma.hpp>
-#include <jlm/rvsdg/theta.hpp>
 #include <jlm/rvsdg/traverser.hpp>
 #include <jlm/util/Statistics.hpp>
 #include <jlm/util/time.hpp>
@@ -24,7 +23,7 @@ class RvsdgToIpGraphConverter::Context final
 {
 public:
   explicit Context(ipgraph_module & ipGraphModule)
-      : cfg_(nullptr),
+      : ControlFlowGraph_(nullptr),
         IPGraphModule_(ipGraphModule),
         LastProcessedBasicBlock(nullptr)
   {}
@@ -46,18 +45,18 @@ public:
   }
 
   void
-  insert(const rvsdg::output * output, const llvm::variable * v)
+  InsertVariable(const rvsdg::output * output, const llvm::variable * variable)
   {
-    JLM_ASSERT(ports_.find(output) == ports_.end());
-    JLM_ASSERT(*output->Type() == *v->Type());
-    ports_[output] = v;
+    JLM_ASSERT(VariableMap_.find(output) == VariableMap_.end());
+    JLM_ASSERT(*output->Type() == *variable->Type());
+    VariableMap_[output] = variable;
   }
 
   const llvm::variable *
-  variable(const rvsdg::output * port)
+  GetVariable(const rvsdg::output * output)
   {
-    auto it = ports_.find(port);
-    JLM_ASSERT(it != ports_.end());
+    const auto it = VariableMap_.find(output);
+    JLM_ASSERT(it != VariableMap_.end());
     return it->second;
   }
 
@@ -74,15 +73,15 @@ public:
   }
 
   llvm::cfg *
-  cfg() const noexcept
+  GetControlFlowGraph() const noexcept
   {
-    return cfg_;
+    return ControlFlowGraph_;
   }
 
   void
-  set_cfg(llvm::cfg * cfg) noexcept
+  SetControlFlowGraph(llvm::cfg * cfg) noexcept
   {
-    cfg_ = cfg;
+    ControlFlowGraph_ = cfg;
   }
 
   static std::unique_ptr<Context>
@@ -92,10 +91,10 @@ public:
   }
 
 private:
-  llvm::cfg * cfg_;
+  llvm::cfg * ControlFlowGraph_;
   ipgraph_module & IPGraphModule_;
   basic_block * LastProcessedBasicBlock;
-  std::unordered_map<const rvsdg::output *, const llvm::variable *> ports_;
+  std::unordered_map<const rvsdg::output *, const llvm::variable *> VariableMap_;
 };
 
 class RvsdgToIpGraphConverter::Statistics final : public util::Statistics
@@ -108,14 +107,14 @@ public:
   {}
 
   void
-  start(const rvsdg::Graph & graph) noexcept
+  Start(const rvsdg::Graph & graph) noexcept
   {
     AddMeasurement(Label::NumRvsdgNodes, rvsdg::nnodes(&graph.GetRootRegion()));
     AddTimer(Label::Timer).start();
   }
 
   void
-  end(const ipgraph_module & im)
+  End(const ipgraph_module & im)
   {
     AddMeasurement(Label::NumThreeAddressCodes, llvm::ntacs(im));
     GetTimer(Label::Timer).stop();
@@ -135,18 +134,18 @@ RvsdgToIpGraphConverter::RvsdgToIpGraphConverter() = default;
 std::unique_ptr<data_node_init>
 RvsdgToIpGraphConverter::CreateInitialization(const delta::node & deltaNode)
 {
-  auto subregion = deltaNode.subregion();
+  const auto subregion = deltaNode.subregion();
 
   // add delta dependencies to context
   for (size_t n = 0; n < deltaNode.ninputs(); n++)
   {
-    auto v = Context_->variable(deltaNode.input(n)->origin());
-    Context_->insert(deltaNode.input(n)->arguments.first(), v);
+    const auto variable = Context_->GetVariable(deltaNode.input(n)->origin());
+    Context_->InsertVariable(deltaNode.input(n)->arguments.first(), variable);
   }
 
   if (subregion->nnodes() == 0)
   {
-    auto value = Context_->variable(subregion->result(0)->origin());
+    auto value = Context_->GetVariable(subregion->result(0)->origin());
     return std::make_unique<data_node_init>(value);
   }
 
@@ -154,17 +153,17 @@ RvsdgToIpGraphConverter::CreateInitialization(const delta::node & deltaNode)
   for (const auto & node : rvsdg::TopDownTraverser(deltaNode.subregion()))
   {
     JLM_ASSERT(node->noutputs() == 1);
-    auto output = node->output(0);
+    const auto output = node->output(0);
 
     // collect operand variables
     std::vector<const variable *> operands;
     for (size_t n = 0; n < node->ninputs(); n++)
-      operands.push_back(Context_->variable(node->input(n)->origin()));
+      operands.push_back(Context_->GetVariable(node->input(n)->origin()));
 
     // convert node to tac
     auto & op = *static_cast<const rvsdg::SimpleOperation *>(&node->GetOperation());
     tacs.push_back(tac::create(op, operands));
-    Context_->insert(output, tacs.back()->result(0));
+    Context_->InsertVariable(output, tacs.back()->result(0));
   }
 
   return std::make_unique<data_node_init>(std::move(tacs));
@@ -173,14 +172,14 @@ RvsdgToIpGraphConverter::CreateInitialization(const delta::node & deltaNode)
 void
 RvsdgToIpGraphConverter::ConvertRegion(rvsdg::Region & region)
 {
-  const auto entryBlock = basic_block::create(*Context_->cfg());
+  const auto entryBlock = basic_block::create(*Context_->GetControlFlowGraph());
   Context_->GetLastProcessedBasicBlock()->add_outedge(entryBlock);
   Context_->SetLastProcessedBasicBlock(entryBlock);
 
   for (const auto & node : rvsdg::TopDownTraverser(&region))
     ConvertNode(*node);
 
-  const auto exitBlock = basic_block::create(*Context_->cfg());
+  const auto exitBlock = basic_block::create(*Context_->GetControlFlowGraph());
   Context_->GetLastProcessedBasicBlock()->add_outedge(exitBlock);
   Context_->SetLastProcessedBasicBlock(exitBlock);
 }
@@ -195,7 +194,7 @@ RvsdgToIpGraphConverter::CreateControlFlowGraph(const rvsdg::LambdaNode & lambda
   const auto entryBlock = basic_block::create(*controlFlowGraph);
   controlFlowGraph->exit()->divert_inedges(entryBlock);
   Context_->SetLastProcessedBasicBlock(entryBlock);
-  Context_->set_cfg(controlFlowGraph.get());
+  Context_->SetControlFlowGraph(controlFlowGraph.get());
 
   // add function arguments
   for (const auto functionArgument : lambda.GetFunctionArguments())
@@ -206,25 +205,25 @@ RvsdgToIpGraphConverter::CreateControlFlowGraph(const rvsdg::LambdaNode & lambda
         functionArgument->Type(),
         lambdaOperation.GetArgumentAttributes(functionArgument->index()));
     const auto variable = controlFlowGraph->entry()->append_argument(std::move(argument));
-    Context_->insert(functionArgument, variable);
+    Context_->InsertVariable(functionArgument, variable);
   }
 
   // add context variables
   for (const auto & [input, inner] : lambda.GetContextVars())
   {
-    const auto variable = Context_->variable(input->origin());
-    Context_->insert(inner, variable);
+    const auto variable = Context_->GetVariable(input->origin());
+    Context_->InsertVariable(inner, variable);
   }
 
   ConvertRegion(*lambda.subregion());
 
   // add results
   for (const auto result : lambda.GetFunctionResults())
-    controlFlowGraph->exit()->append_result(Context_->variable(result->origin()));
+    controlFlowGraph->exit()->append_result(Context_->GetVariable(result->origin()));
 
   Context_->GetLastProcessedBasicBlock()->add_outedge(controlFlowGraph->exit());
   Context_->SetLastProcessedBasicBlock(nullptr);
-  Context_->set_cfg(nullptr);
+  Context_->SetControlFlowGraph(nullptr);
 
   straighten(*controlFlowGraph);
   JLM_ASSERT(is_closed(*controlFlowGraph));
@@ -236,13 +235,13 @@ RvsdgToIpGraphConverter::ConvertSimpleNode(const rvsdg::SimpleNode & simpleNode)
 {
   std::vector<const variable *> operands;
   for (size_t n = 0; n < simpleNode.ninputs(); n++)
-    operands.push_back(Context_->variable(simpleNode.input(n)->origin()));
+    operands.push_back(Context_->GetVariable(simpleNode.input(n)->origin()));
 
   Context_->GetLastProcessedBasicBlock()->append_last(
       tac::create(simpleNode.GetOperation(), operands));
 
   for (size_t n = 0; n < simpleNode.noutputs(); n++)
-    Context_->insert(
+    Context_->InsertVariable(
         simpleNode.output(n),
         Context_->GetLastProcessedBasicBlock()->last()->result(n));
 }
@@ -255,7 +254,7 @@ RvsdgToIpGraphConverter::ConvertEmptyGammaNode(const rvsdg::GammaNode & gammaNod
 
   // both regions are empty, create only select instructions
   const auto predicate = gammaNode.predicate()->origin();
-  const auto controlFlowGraph = Context_->cfg();
+  const auto controlFlowGraph = Context_->GetControlFlowGraph();
 
   const auto basicBlock = basic_block::create(*controlFlowGraph);
   Context_->GetLastProcessedBasicBlock()->add_outedge(basicBlock);
@@ -274,7 +273,7 @@ RvsdgToIpGraphConverter::ConvertEmptyGammaNode(const rvsdg::GammaNode & gammaNod
     // both operands are the same, no select is necessary
     if (output0 == output1)
     {
-      Context_->insert(output, Context_->variable(output0));
+      Context_->InsertVariable(output, Context_->GetVariable(output0));
       continue;
     }
 
@@ -283,24 +282,24 @@ RvsdgToIpGraphConverter::ConvertEmptyGammaNode(const rvsdg::GammaNode & gammaNod
     {
       const auto matchOperation = util::AssertedCast<const rvsdg::match_op>(&node->GetOperation());
       const auto defaultAlternative = matchOperation->default_alternative();
-      const auto condition = Context_->variable(node->input(0)->origin());
+      const auto condition = Context_->GetVariable(node->input(0)->origin());
       const auto trueAlternative =
-          defaultAlternative == 0 ? Context_->variable(output1) : Context_->variable(output0);
+          defaultAlternative == 0 ? Context_->GetVariable(output1) : Context_->GetVariable(output0);
       const auto falseAlternative =
-          defaultAlternative == 0 ? Context_->variable(output0) : Context_->variable(output1);
+          defaultAlternative == 0 ? Context_->GetVariable(output0) : Context_->GetVariable(output1);
       basicBlock->append_last(
           SelectOperation::create(condition, trueAlternative, falseAlternative));
     }
     else
     {
-      const auto vo0 = Context_->variable(output0);
-      const auto vo1 = Context_->variable(output1);
+      const auto vo0 = Context_->GetVariable(output0);
+      const auto vo1 = Context_->GetVariable(output1);
       basicBlock->append_last(
-          ctl2bits_op::create(Context_->variable(predicate), rvsdg::bittype::Create(1)));
+          ctl2bits_op::create(Context_->GetVariable(predicate), rvsdg::bittype::Create(1)));
       basicBlock->append_last(SelectOperation::create(basicBlock->last()->result(0), vo0, vo1));
     }
 
-    Context_->insert(output, basicBlock->last()->result(0));
+    Context_->InsertVariable(output, basicBlock->last()->result(0));
   }
 
   Context_->SetLastProcessedBasicBlock(basicBlock);
@@ -311,7 +310,7 @@ RvsdgToIpGraphConverter::ConvertGammaNode(const rvsdg::GammaNode & gammaNode)
 {
   const auto numSubregions = gammaNode.nsubregions();
   const auto predicate = gammaNode.predicate()->origin();
-  const auto controlFlowGraph = Context_->cfg();
+  const auto controlFlowGraph = Context_->GetControlFlowGraph();
 
   if (gammaNode.nsubregions() == 2 && gammaNode.subregion(0)->nnodes() == 0
       && gammaNode.subregion(1)->nnodes() == 0)
@@ -323,7 +322,7 @@ RvsdgToIpGraphConverter::ConvertGammaNode(const rvsdg::GammaNode & gammaNode)
 
   // convert gamma regions
   std::vector<cfg_node *> phi_nodes;
-  entryBlock->append_last(branch_op::create(numSubregions, Context_->variable(predicate)));
+  entryBlock->append_last(branch_op::create(numSubregions, Context_->GetVariable(predicate)));
   for (size_t n = 0; n < gammaNode.nsubregions(); n++)
   {
     const auto subregion = gammaNode.subregion(n);
@@ -332,7 +331,7 @@ RvsdgToIpGraphConverter::ConvertGammaNode(const rvsdg::GammaNode & gammaNode)
     for (size_t i = 0; i < subregion->narguments(); i++)
     {
       const auto argument = subregion->argument(i);
-      Context_->insert(argument, Context_->variable(argument->input()->origin()));
+      Context_->InsertVariable(argument, Context_->GetVariable(argument->input()->origin()));
     }
 
     if (subregion->nnodes() == 0 && numSubregions == 2)
@@ -367,9 +366,9 @@ RvsdgToIpGraphConverter::ConvertGammaNode(const rvsdg::GammaNode & gammaNode)
     {
       const auto origin = gammaNode.subregion(r)->result(n)->origin();
 
-      auto v = Context_->variable(origin);
+      auto v = Context_->GetVariable(origin);
       arguments.push_back(std::make_pair(v, phi_nodes[r]));
-      invariant &= (v == Context_->variable(gammaNode.subregion(0)->result(n)->origin()));
+      invariant &= (v == Context_->GetVariable(gammaNode.subregion(0)->result(n)->origin()));
       const auto tmpNode = rvsdg::output::GetNode(*origin);
       select &= tmpNode == nullptr && origin->region()->node() == &gammaNode;
     }
@@ -377,7 +376,7 @@ RvsdgToIpGraphConverter::ConvertGammaNode(const rvsdg::GammaNode & gammaNode)
     if (invariant)
     {
       // all operands are the same
-      Context_->insert(output, arguments[0].first);
+      Context_->InsertVariable(output, arguments[0].first);
       continue;
     }
 
@@ -387,20 +386,20 @@ RvsdgToIpGraphConverter::ConvertGammaNode(const rvsdg::GammaNode & gammaNode)
       const auto matchOperation =
           util::AssertedCast<const rvsdg::match_op>(&matchNode->GetOperation());
       const auto defaultAlternative = matchOperation->default_alternative();
-      const auto condition = Context_->variable(matchNode->input(0)->origin());
+      const auto condition = Context_->GetVariable(matchNode->input(0)->origin());
       const auto trueAlternative =
           defaultAlternative == 0 ? arguments[1].first : arguments[0].first;
       const auto falseAlternative =
           defaultAlternative == 0 ? arguments[0].first : arguments[1].first;
       entryBlock->append_first(
           SelectOperation::create(condition, trueAlternative, falseAlternative));
-      Context_->insert(output, entryBlock->first()->result(0));
+      Context_->InsertVariable(output, entryBlock->first()->result(0));
       continue;
     }
 
     // create phi instruction
     exitBlock->append_last(SsaPhiOperation::create(arguments, output->Type()));
-    Context_->insert(output, exitBlock->last()->result(0));
+    Context_->InsertVariable(output, exitBlock->last()->result(0));
   }
 
   Context_->SetLastProcessedBasicBlock(exitBlock);
@@ -431,7 +430,7 @@ RvsdgToIpGraphConverter::ConvertThetaNode(const rvsdg::ThetaNode & thetaNode)
   const auto predicate = subregion->result(0)->origin();
 
   auto preEntryBlock = Context_->GetLastProcessedBasicBlock();
-  const auto entryBlock = basic_block::create(*Context_->cfg());
+  const auto entryBlock = basic_block::create(*Context_->GetControlFlowGraph());
   preEntryBlock->add_outedge(entryBlock);
   Context_->SetLastProcessedBasicBlock(entryBlock);
 
@@ -439,14 +438,14 @@ RvsdgToIpGraphConverter::ConvertThetaNode(const rvsdg::ThetaNode & thetaNode)
   std::vector<llvm::tac *> phis;
   for (const auto & loopVar : thetaNode.GetLoopVars())
   {
-    auto variable = Context_->variable(loopVar.input->origin());
+    auto variable = Context_->GetVariable(loopVar.input->origin());
     if (RequiresSsaPhiOperation(loopVar, *variable))
     {
       auto phi = entryBlock->append_last(SsaPhiOperation::create({}, loopVar.pre->Type()));
       phis.push_back(phi);
       variable = phi->result(0);
     }
-    Context_->insert(loopVar.pre, variable);
+    Context_->InsertVariable(loopVar.pre, variable);
   }
 
   ConvertRegion(*subregion);
@@ -455,28 +454,28 @@ RvsdgToIpGraphConverter::ConvertThetaNode(const rvsdg::ThetaNode & thetaNode)
   size_t phiIndex = 0;
   for (const auto & loopVar : thetaNode.GetLoopVars())
   {
-    auto entryVariable = Context_->variable(loopVar.input->origin());
+    auto entryVariable = Context_->GetVariable(loopVar.input->origin());
     if (RequiresSsaPhiOperation(loopVar, *entryVariable))
     {
-      auto resultVariable = Context_->variable(loopVar.post->origin());
+      auto resultVariable = Context_->GetVariable(loopVar.post->origin());
       const auto phi = phis[phiIndex++];
       phi->replace(
           SsaPhiOperation(
               { preEntryBlock, Context_->GetLastProcessedBasicBlock() },
               resultVariable->Type()),
           { entryVariable, resultVariable });
-      Context_->insert(loopVar.output, resultVariable);
+      Context_->InsertVariable(loopVar.output, resultVariable);
     }
     else
     {
-      Context_->insert(loopVar.output, Context_->variable(loopVar.post->origin()));
+      Context_->InsertVariable(loopVar.output, Context_->GetVariable(loopVar.post->origin()));
     }
   }
   JLM_ASSERT(phiIndex == phis.size());
 
   Context_->GetLastProcessedBasicBlock()->append_last(
-      branch_op::create(2, Context_->variable(predicate)));
-  const auto exitBlock = basic_block::create(*Context_->cfg());
+      branch_op::create(2, Context_->GetVariable(predicate)));
+  const auto exitBlock = basic_block::create(*Context_->GetControlFlowGraph());
   Context_->GetLastProcessedBasicBlock()->add_outedge(exitBlock);
   Context_->GetLastProcessedBasicBlock()->add_outedge(entryBlock);
   Context_->SetLastProcessedBasicBlock(exitBlock);
@@ -498,7 +497,7 @@ RvsdgToIpGraphConverter::ConvertLambdaNode(const rvsdg::LambdaNode & lambdaNode)
   const auto variable = ipGraphModule.create_variable(functionNode);
 
   functionNode->add_cfg(CreateControlFlowGraph(lambdaNode));
-  Context_->insert(lambdaNode.output(), variable);
+  Context_->InsertVariable(lambdaNode.output(), variable);
 }
 
 void
@@ -511,8 +510,8 @@ RvsdgToIpGraphConverter::ConvertPhiNode(const phi::node & phiNode)
   // add dependencies to context
   for (size_t n = 0; n < phiNode.ninputs(); n++)
   {
-    const auto variable = Context_->variable(phiNode.input(n)->origin());
-    Context_->insert(phiNode.input(n)->arguments.first(), variable);
+    const auto variable = Context_->GetVariable(phiNode.input(n)->origin());
+    Context_->InsertVariable(phiNode.input(n)->arguments.first(), variable);
   }
 
   // forward declare all functions and global variables
@@ -531,7 +530,7 @@ RvsdgToIpGraphConverter::ConvertPhiNode(const phi::node & phiNode)
           lambdaOperation.Type(),
           lambdaOperation.linkage(),
           lambdaOperation.attributes());
-      Context_->insert(subregion->argument(n), ipGraphModule.create_variable(functionNode));
+      Context_->InsertVariable(subregion->argument(n), ipGraphModule.create_variable(functionNode));
     }
     else if (const auto deltaNode = dynamic_cast<const delta::node *>(node))
     {
@@ -542,7 +541,7 @@ RvsdgToIpGraphConverter::ConvertPhiNode(const phi::node & phiNode)
           deltaNode->linkage(),
           deltaNode->Section(),
           deltaNode->constant());
-      Context_->insert(subregion->argument(n), ipGraphModule.create_global_value(dataNode));
+      Context_->InsertVariable(subregion->argument(n), ipGraphModule.create_global_value(dataNode));
     }
     else
     {
@@ -561,16 +560,16 @@ RvsdgToIpGraphConverter::ConvertPhiNode(const phi::node & phiNode)
     if (const auto lambdaNode = dynamic_cast<const rvsdg::LambdaNode *>(node))
     {
       const auto variable =
-          util::AssertedCast<const fctvariable>(Context_->variable(subregion->argument(n)));
+          util::AssertedCast<const fctvariable>(Context_->GetVariable(subregion->argument(n)));
       variable->function()->add_cfg(CreateControlFlowGraph(*lambdaNode));
-      Context_->insert(node->output(0), variable);
+      Context_->InsertVariable(node->output(0), variable);
     }
     else if (const auto deltaNode = dynamic_cast<const delta::node *>(node))
     {
       const auto variable =
-          util::AssertedCast<const gblvalue>(Context_->variable(subregion->argument(n)));
+          util::AssertedCast<const gblvalue>(Context_->GetVariable(subregion->argument(n)));
       variable->node()->set_initialization(CreateInitialization(*deltaNode));
-      Context_->insert(node->output(0), variable);
+      Context_->InsertVariable(node->output(0), variable);
     }
     else
     {
@@ -582,7 +581,9 @@ RvsdgToIpGraphConverter::ConvertPhiNode(const phi::node & phiNode)
   // add functions and globals to context
   JLM_ASSERT(phiNode.noutputs() == subregion->nresults());
   for (size_t n = 0; n < phiNode.noutputs(); n++)
-    Context_->insert(phiNode.output(n), Context_->variable(subregion->result(n)->origin()));
+    Context_->InsertVariable(
+        phiNode.output(n),
+        Context_->GetVariable(subregion->result(n)->origin()));
 }
 
 void
@@ -599,7 +600,7 @@ RvsdgToIpGraphConverter::ConvertDeltaNode(const delta::node & deltaNode)
       deltaNode.constant());
   dataNode->set_initialization(CreateInitialization(deltaNode));
   const auto variable = ipGraphModule.create_global_value(dataNode);
-  Context_->insert(deltaNode.output(), variable);
+  Context_->InsertVariable(deltaNode.output(), variable);
 }
 
 void
@@ -660,7 +661,7 @@ RvsdgToIpGraphConverter::ConvertImports(const rvsdg::Graph & graph)
       const auto functionNode =
           function_node::create(ipGraph, graphImport->Name(), functionType, graphImport->Linkage());
       const auto variable = ipGraphModule.create_variable(functionNode);
-      Context_->insert(graphImport, variable);
+      Context_->InsertVariable(graphImport, variable);
     }
     else
     {
@@ -672,7 +673,7 @@ RvsdgToIpGraphConverter::ConvertImports(const rvsdg::Graph & graph)
           "",
           false);
       const auto variable = ipGraphModule.create_global_value(dataNode);
-      Context_->insert(graphImport, variable);
+      Context_->InsertVariable(graphImport, variable);
     }
   }
 }
@@ -683,7 +684,7 @@ RvsdgToIpGraphConverter::ConvertModule(
     util::StatisticsCollector & statisticsCollector)
 {
   auto statistics = Statistics::Create(rvsdgModule.SourceFileName());
-  statistics->start(rvsdgModule.Rvsdg());
+  statistics->Start(rvsdgModule.Rvsdg());
 
   auto ipGraphModule = ipgraph_module::Create(
       rvsdgModule.SourceFileName(),
@@ -695,7 +696,7 @@ RvsdgToIpGraphConverter::ConvertModule(
   ConvertImports(rvsdgModule.Rvsdg());
   ConvertNodes(rvsdgModule.Rvsdg());
 
-  statistics->end(*ipGraphModule);
+  statistics->End(*ipGraphModule);
   statisticsCollector.CollectDemandedStatistics(std::move(statistics));
 
   return ipGraphModule;
