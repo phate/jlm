@@ -253,53 +253,56 @@ RvsdgToIpGraphConverter::ConvertEmptyGammaNode(const rvsdg::GammaNode & gammaNod
   JLM_ASSERT(gammaNode.subregion(0)->nnodes() == 0 && gammaNode.subregion(1)->nnodes() == 0);
 
   // both regions are empty, create only select instructions
-  auto predicate = gammaNode.predicate()->origin();
-  auto cfg = Context_->cfg();
+  const auto predicate = gammaNode.predicate()->origin();
+  const auto controlFlowGraph = Context_->cfg();
 
-  auto bb = basic_block::create(*cfg);
-  Context_->GetLastProcessedBasicBlock()->add_outedge(bb);
+  const auto basicBlock = basic_block::create(*controlFlowGraph);
+  Context_->GetLastProcessedBasicBlock()->add_outedge(basicBlock);
 
   for (size_t n = 0; n < gammaNode.noutputs(); n++)
   {
-    auto output = gammaNode.output(n);
+    const auto output = gammaNode.output(n);
 
-    auto a0 =
-        static_cast<const rvsdg::RegionArgument *>(gammaNode.subregion(0)->result(n)->origin());
-    auto a1 =
-        static_cast<const rvsdg::RegionArgument *>(gammaNode.subregion(1)->result(n)->origin());
-    auto o0 = a0->input()->origin();
-    auto o1 = a1->input()->origin();
+    const auto argument0 = util::AssertedCast<const rvsdg::RegionArgument>(
+        gammaNode.subregion(0)->result(n)->origin());
+    const auto argument1 = util::AssertedCast<const rvsdg::RegionArgument>(
+        gammaNode.subregion(1)->result(n)->origin());
+    const auto output0 = argument0->input()->origin();
+    const auto output1 = argument1->input()->origin();
 
-    /* both operands are the same, no select is necessary */
-    if (o0 == o1)
+    // both operands are the same, no select is necessary
+    if (output0 == output1)
     {
-      Context_->insert(output, Context_->variable(o0));
+      Context_->insert(output, Context_->variable(output0));
       continue;
     }
 
-    auto matchnode = rvsdg::output::GetNode(*predicate);
-    if (is<rvsdg::match_op>(matchnode))
+    const auto node = rvsdg::output::GetNode(*predicate);
+    if (is<rvsdg::match_op>(node))
     {
-      auto matchop = static_cast<const rvsdg::match_op *>(&matchnode->GetOperation());
-      auto d = matchop->default_alternative();
-      auto c = Context_->variable(matchnode->input(0)->origin());
-      auto t = d == 0 ? Context_->variable(o1) : Context_->variable(o0);
-      auto f = d == 0 ? Context_->variable(o0) : Context_->variable(o1);
-      bb->append_last(SelectOperation::create(c, t, f));
+      const auto matchOperation = util::AssertedCast<const rvsdg::match_op>(&node->GetOperation());
+      const auto defaultAlternative = matchOperation->default_alternative();
+      const auto condition = Context_->variable(node->input(0)->origin());
+      const auto trueAlternative =
+          defaultAlternative == 0 ? Context_->variable(output1) : Context_->variable(output0);
+      const auto falseAlternative =
+          defaultAlternative == 0 ? Context_->variable(output0) : Context_->variable(output1);
+      basicBlock->append_last(
+          SelectOperation::create(condition, trueAlternative, falseAlternative));
     }
     else
     {
-      auto vo0 = Context_->variable(o0);
-      auto vo1 = Context_->variable(o1);
-      bb->append_last(
+      const auto vo0 = Context_->variable(output0);
+      const auto vo1 = Context_->variable(output1);
+      basicBlock->append_last(
           ctl2bits_op::create(Context_->variable(predicate), rvsdg::bittype::Create(1)));
-      bb->append_last(SelectOperation::create(bb->last()->result(0), vo0, vo1));
+      basicBlock->append_last(SelectOperation::create(basicBlock->last()->result(0), vo0, vo1));
     }
 
-    Context_->insert(output, bb->last()->result(0));
+    Context_->insert(output, basicBlock->last()->result(0));
   }
 
-  Context_->SetLastProcessedBasicBlock(bb);
+  Context_->SetLastProcessedBasicBlock(basicBlock);
 }
 
 void
