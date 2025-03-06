@@ -652,38 +652,35 @@ FNegOperation::reduce_operand(rvsdg::unop_reduction_path_t, rvsdg::output *) con
   JLM_UNREACHABLE("Not implemented!");
 }
 
-/* fptrunc operator */
-
-fptrunc_op::~fptrunc_op()
-{}
+FPTruncOperation::~FPTruncOperation() noexcept = default;
 
 bool
-fptrunc_op::operator==(const Operation & other) const noexcept
+FPTruncOperation::operator==(const Operation & other) const noexcept
 {
-  auto op = dynamic_cast<const fptrunc_op *>(&other);
+  const auto op = dynamic_cast<const FPTruncOperation *>(&other);
   return op && op->srcsize() == srcsize() && op->dstsize() == dstsize();
 }
 
 std::string
-fptrunc_op::debug_string() const
+FPTruncOperation::debug_string() const
 {
-  return "fptrunc";
+  return "FPTrunc";
 }
 
 std::unique_ptr<rvsdg::Operation>
-fptrunc_op::copy() const
+FPTruncOperation::copy() const
 {
-  return std::make_unique<fptrunc_op>(*this);
+  return std::make_unique<FPTruncOperation>(*this);
 }
 
 rvsdg::unop_reduction_path_t
-fptrunc_op::can_reduce_operand(const rvsdg::output *) const noexcept
+FPTruncOperation::can_reduce_operand(const rvsdg::output *) const noexcept
 {
   return rvsdg::unop_reduction_none;
 }
 
 rvsdg::output *
-fptrunc_op::reduce_operand(rvsdg::unop_reduction_path_t, rvsdg::output *) const
+FPTruncOperation::reduce_operand(rvsdg::unop_reduction_path_t, rvsdg::output *) const
 {
   JLM_UNREACHABLE("Not implemented!");
 }
