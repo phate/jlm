@@ -378,11 +378,11 @@ JlmToMlirConverter::ConvertSimpleNode(
   {
     MlirOp = BitCompareNode(operation, inputs);
   }
-  else if (auto bitOp = dynamic_cast<const llvm::zext_op *>(&operation))
+  else if (const auto zextOperation = dynamic_cast<const llvm::ZextOperation *>(&operation))
   {
     MlirOp = Builder_->create<::mlir::arith::ExtUIOp>(
         Builder_->getUnknownLoc(),
-        Builder_->getIntegerType(bitOp->ndstbits()),
+        Builder_->getIntegerType(zextOperation->ndstbits()),
         inputs[0]);
   }
   else if (auto sextOp = dynamic_cast<const jlm::llvm::sext_op *>(&operation))

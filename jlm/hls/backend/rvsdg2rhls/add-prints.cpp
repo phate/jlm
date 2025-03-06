@@ -123,7 +123,7 @@ convert_prints(
       {
         auto bt = dynamic_cast<const jlm::rvsdg::bittype *>(&val->type());
         JLM_ASSERT(bt);
-        val = &llvm::zext_op::Create(*val, rvsdg::bittype::Create(64));
+        val = &llvm::ZextOperation::Create(*val, rvsdg::bittype::Create(64));
       }
       llvm::CallNode::Create(printf_local, functionType, { constantNode.output(0), val });
       node->output(0)->divert_users(node->input(0)->origin());

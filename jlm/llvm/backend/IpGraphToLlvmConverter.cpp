@@ -1385,7 +1385,7 @@ IpGraphToLlvmConverter::convert_operation(
   {
     return convert_cast<::llvm::Instruction::UIToFP>(op, arguments, builder);
   }
-  if (is<zext_op>(op))
+  if (is<ZextOperation>(op))
   {
     return convert_cast<::llvm::Instruction::ZExt>(op, arguments, builder);
   }

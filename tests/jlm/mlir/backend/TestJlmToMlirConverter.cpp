@@ -265,7 +265,7 @@ TestComZeroExt()
     jlm::rvsdg::create_bitconstant(lambda->subregion(), 16, 6); // Unused constant
 
     // zero extension of constant1
-    auto zeroExt = jlm::rvsdg::CreateOpNode<zext_op>({ constant1 }, 8, 16).output(0);
+    const auto zeroExt = jlm::rvsdg::CreateOpNode<ZextOperation>({ constant1 }, 8, 16).output(0);
 
     auto mul = jlm::rvsdg::bitmul_op::create(16, zeroExt, zeroExt);
 
