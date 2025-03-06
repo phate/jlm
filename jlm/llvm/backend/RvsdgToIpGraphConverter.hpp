@@ -6,6 +6,8 @@
 #ifndef JLM_LLVM_BACKEND_RVSDGTOIPGRAPHCONVERTER_HPP
 #define JLM_LLVM_BACKEND_RVSDGTOIPGRAPHCONVERTER_HPP
 
+#include <jlm/rvsdg/theta.hpp>
+
 #include <memory>
 
 namespace jlm::util
@@ -85,10 +87,10 @@ private:
   convert_lambda_node(const rvsdg::Node & node);
 
   void
-  convert_theta_node(const rvsdg::Node & node);
+  ConvertThetaNode(const rvsdg::ThetaNode & thetaNode);
 
   bool
-  phi_needed(const rvsdg::input * i, const llvm::variable * v);
+  RequiresSsaPhiOperation(const rvsdg::ThetaNode::LoopVar & loopVar, const llvm::variable * v);
 
   void
   convert_gamma_node(const rvsdg::Node & node);

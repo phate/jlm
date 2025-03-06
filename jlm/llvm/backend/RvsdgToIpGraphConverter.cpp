@@ -15,7 +15,7 @@
 #include <jlm/util/Statistics.hpp>
 #include <jlm/util/time.hpp>
 
-#include <deque>
+#include <vector>
 
 namespace jlm::llvm
 {
@@ -26,7 +26,7 @@ public:
   explicit Context(ipgraph_module & ipGraphModule)
       : cfg_(nullptr),
         IPGraphModule_(ipGraphModule),
-        lpbb_(nullptr)
+        LastProcessedBasicBlock(nullptr)
   {}
 
   Context(const Context &) = delete;
@@ -62,15 +62,15 @@ public:
   }
 
   basic_block *
-  lpbb() const noexcept
+  GetLastProcessedBasicBlock() const noexcept
   {
-    return lpbb_;
+    return LastProcessedBasicBlock;
   }
 
   void
-  set_lpbb(basic_block * lpbb) noexcept
+  SetLastProcessedBasicBlock(basic_block * lastProcessedBasicBlock) noexcept
   {
-    lpbb_ = lpbb;
+    LastProcessedBasicBlock = lastProcessedBasicBlock;
   }
 
   llvm::cfg *
@@ -94,7 +94,7 @@ public:
 private:
   llvm::cfg * cfg_;
   ipgraph_module & IPGraphModule_;
-  basic_block * lpbb_;
+  basic_block * LastProcessedBasicBlock;
   std::unordered_map<const rvsdg::output *, const llvm::variable *> ports_;
 };
 
@@ -174,25 +174,25 @@ void
 RvsdgToIpGraphConverter::convert_region(rvsdg::Region & region)
 {
   auto entry = basic_block::create(*Context_->cfg());
-  Context_->lpbb()->add_outedge(entry);
-  Context_->set_lpbb(entry);
+  Context_->GetLastProcessedBasicBlock()->add_outedge(entry);
+  Context_->SetLastProcessedBasicBlock(entry);
 
   for (const auto & node : rvsdg::TopDownTraverser(&region))
     ConvertNode(*node);
 
   auto exit = basic_block::create(*Context_->cfg());
-  Context_->lpbb()->add_outedge(exit);
-  Context_->set_lpbb(exit);
+  Context_->GetLastProcessedBasicBlock()->add_outedge(exit);
+  Context_->SetLastProcessedBasicBlock(exit);
 }
 
 std::unique_ptr<llvm::cfg>
 RvsdgToIpGraphConverter::create_cfg(const rvsdg::LambdaNode & lambda)
 {
-  JLM_ASSERT(Context_->lpbb() == nullptr);
+  JLM_ASSERT(Context_->GetLastProcessedBasicBlock() == nullptr);
   std::unique_ptr<llvm::cfg> cfg(new llvm::cfg(Context_->GetIpGraphModule()));
   auto entry = basic_block::create(*cfg);
   cfg->exit()->divert_inedges(entry);
-  Context_->set_lpbb(entry);
+  Context_->SetLastProcessedBasicBlock(entry);
   Context_->set_cfg(cfg.get());
 
   /* add arguments */
@@ -221,8 +221,8 @@ RvsdgToIpGraphConverter::create_cfg(const rvsdg::LambdaNode & lambda)
   for (auto result : lambda.GetFunctionResults())
     cfg->exit()->append_result(Context_->variable(result->origin()));
 
-  Context_->lpbb()->add_outedge(cfg->exit());
-  Context_->set_lpbb(nullptr);
+  Context_->GetLastProcessedBasicBlock()->add_outedge(cfg->exit());
+  Context_->SetLastProcessedBasicBlock(nullptr);
   Context_->set_cfg(nullptr);
 
   straighten(*cfg);
@@ -240,10 +240,10 @@ RvsdgToIpGraphConverter::convert_simple_node(const rvsdg::Node & node)
     operands.push_back(Context_->variable(node.input(n)->origin()));
 
   auto & op = *static_cast<const rvsdg::SimpleOperation *>(&node.GetOperation());
-  Context_->lpbb()->append_last(tac::create(op, operands));
+  Context_->GetLastProcessedBasicBlock()->append_last(tac::create(op, operands));
 
   for (size_t n = 0; n < node.noutputs(); n++)
-    Context_->insert(node.output(n), Context_->lpbb()->last()->result(n));
+    Context_->insert(node.output(n), Context_->GetLastProcessedBasicBlock()->last()->result(n));
 }
 
 void
@@ -258,7 +258,7 @@ RvsdgToIpGraphConverter::convert_empty_gamma_node(const rvsdg::GammaNode * gamma
   auto cfg = Context_->cfg();
 
   auto bb = basic_block::create(*cfg);
-  Context_->lpbb()->add_outedge(bb);
+  Context_->GetLastProcessedBasicBlock()->add_outedge(bb);
 
   for (size_t n = 0; n < gamma->noutputs(); n++)
   {
@@ -298,7 +298,7 @@ RvsdgToIpGraphConverter::convert_empty_gamma_node(const rvsdg::GammaNode * gamma
     Context_->insert(output, bb->last()->result(0));
   }
 
-  Context_->set_lpbb(bb);
+  Context_->SetLastProcessedBasicBlock(bb);
 }
 
 void
@@ -316,7 +316,7 @@ RvsdgToIpGraphConverter::convert_gamma_node(const rvsdg::Node & node)
 
   auto entry = basic_block::create(*cfg);
   auto exit = basic_block::create(*cfg);
-  Context_->lpbb()->add_outedge(entry);
+  Context_->GetLastProcessedBasicBlock()->add_outedge(entry);
 
   /* convert gamma regions */
   std::vector<cfg_node *> phi_nodes;
@@ -343,11 +343,11 @@ RvsdgToIpGraphConverter::convert_gamma_node(const rvsdg::Node & node)
       /* convert subregion */
       auto region_entry = basic_block::create(*cfg);
       entry->add_outedge(region_entry);
-      Context_->set_lpbb(region_entry);
+      Context_->SetLastProcessedBasicBlock(region_entry);
       convert_region(*subregion);
 
-      phi_nodes.push_back(Context_->lpbb());
-      Context_->lpbb()->add_outedge(exit);
+      phi_nodes.push_back(Context_->GetLastProcessedBasicBlock());
+      Context_->GetLastProcessedBasicBlock()->add_outedge(exit);
     }
   }
 
@@ -397,84 +397,83 @@ RvsdgToIpGraphConverter::convert_gamma_node(const rvsdg::Node & node)
     Context_->insert(output, exit->last()->result(0));
   }
 
-  Context_->set_lpbb(exit);
+  Context_->SetLastProcessedBasicBlock(exit);
 }
 
 bool
-RvsdgToIpGraphConverter::phi_needed(const rvsdg::input * i, const llvm::variable * v)
+RvsdgToIpGraphConverter::RequiresSsaPhiOperation(
+    const rvsdg::ThetaNode::LoopVar & loopVar,
+    const llvm::variable * v)
 {
-  auto node = rvsdg::input::GetNode(*i);
-  JLM_ASSERT(is<rvsdg::ThetaOperation>(node));
-  auto theta = static_cast<const rvsdg::StructuralNode *>(node);
-  auto input = static_cast<const rvsdg::StructuralInput *>(i);
-  auto output = theta->output(input->index());
-
   // FIXME: solely decide on the input instead of using the variable
   if (is<gblvariable>(v))
     return false;
 
-  if (output->results.first()->origin() == input->arguments.first())
+  if (ThetaLoopVarIsInvariant(loopVar))
     return false;
 
-  if (input->arguments.first()->nusers() == 0)
+  if (loopVar.pre->nusers() == 0)
     return false;
 
   return true;
 }
 
 void
-RvsdgToIpGraphConverter::convert_theta_node(const rvsdg::Node & node)
+RvsdgToIpGraphConverter::ConvertThetaNode(const rvsdg::ThetaNode & thetaNode)
 {
-  JLM_ASSERT(is<rvsdg::ThetaOperation>(&node));
-  auto subregion = static_cast<const rvsdg::StructuralNode *>(&node)->subregion(0);
-  auto predicate = subregion->result(0)->origin();
+  const auto subregion = thetaNode.subregion();
+  const auto predicate = subregion->result(0)->origin();
 
-  auto pre_entry = Context_->lpbb();
-  auto entry = basic_block::create(*Context_->cfg());
-  pre_entry->add_outedge(entry);
-  Context_->set_lpbb(entry);
+  auto preEntryBlock = Context_->GetLastProcessedBasicBlock();
+  const auto entryBlock = basic_block::create(*Context_->cfg());
+  preEntryBlock->add_outedge(entryBlock);
+  Context_->SetLastProcessedBasicBlock(entryBlock);
 
-  // create phi nodes and add arguments to context
-  std::deque<llvm::tac *> phis;
-  for (size_t n = 0; n < subregion->narguments(); n++)
+  // create SSA phi nodes in entry block and add arguments to context
+  std::vector<llvm::tac *> phis;
+  for (const auto & loopVar : thetaNode.GetLoopVars())
   {
-    auto argument = subregion->argument(n);
-    auto v = Context_->variable(argument->input()->origin());
-    if (phi_needed(argument->input(), v))
+    auto variable = Context_->variable(loopVar.input->origin());
+    if (RequiresSsaPhiOperation(loopVar, variable))
     {
-      auto phi = entry->append_last(SsaPhiOperation::create({}, argument->Type()));
+      auto phi = entryBlock->append_last(SsaPhiOperation::create({}, loopVar.pre->Type()));
       phis.push_back(phi);
-      v = phi->result(0);
+      variable = phi->result(0);
     }
-    Context_->insert(argument, v);
+    Context_->insert(loopVar.pre, variable);
   }
 
   convert_region(*subregion);
 
   // add phi operands and results to context
-  for (size_t n = 1; n < subregion->nresults(); n++)
+  size_t phiIndex = 0;
+  for (const auto & loopVar : thetaNode.GetLoopVars())
   {
-    auto result = subregion->result(n);
-    auto ve = Context_->variable(node.input(n - 1)->origin());
-    if (!phi_needed(node.input(n - 1), ve))
+    auto entryVariable = Context_->variable(loopVar.input->origin());
+    if (RequiresSsaPhiOperation(loopVar, entryVariable))
     {
-      Context_->insert(result->output(), Context_->variable(result->origin()));
-      continue;
+      auto resultVariable = Context_->variable(loopVar.post->origin());
+      const auto phi = phis[phiIndex++];
+      phi->replace(
+          SsaPhiOperation(
+              { preEntryBlock, Context_->GetLastProcessedBasicBlock() },
+              resultVariable->Type()),
+          { entryVariable, resultVariable });
+      Context_->insert(loopVar.output, resultVariable);
     }
-
-    auto vr = Context_->variable(result->origin());
-    auto phi = phis.front();
-    phis.pop_front();
-    phi->replace(SsaPhiOperation({ pre_entry, Context_->lpbb() }, vr->Type()), { ve, vr });
-    Context_->insert(result->output(), vr);
+    else
+    {
+      Context_->insert(loopVar.output, Context_->variable(loopVar.post->origin()));
+    }
   }
-  JLM_ASSERT(phis.empty());
+  JLM_ASSERT(phiIndex == phis.size());
 
-  Context_->lpbb()->append_last(branch_op::create(2, Context_->variable(predicate)));
-  auto exit = basic_block::create(*Context_->cfg());
-  Context_->lpbb()->add_outedge(exit);
-  Context_->lpbb()->add_outedge(entry);
-  Context_->set_lpbb(exit);
+  Context_->GetLastProcessedBasicBlock()->append_last(
+      branch_op::create(2, Context_->variable(predicate)));
+  const auto exitBlock = basic_block::create(*Context_->cfg());
+  Context_->GetLastProcessedBasicBlock()->add_outedge(exitBlock);
+  Context_->GetLastProcessedBasicBlock()->add_outedge(entryBlock);
+  Context_->SetLastProcessedBasicBlock(exitBlock);
 }
 
 void
@@ -591,7 +590,7 @@ RvsdgToIpGraphConverter::ConvertNode(const rvsdg::Node & node)
   }
   else if (const auto thetaNode = dynamic_cast<const rvsdg::ThetaNode *>(&node))
   {
-    convert_theta_node(*thetaNode);
+    ConvertThetaNode(*thetaNode);
   }
   else if (const auto phiNode = dynamic_cast<const phi::node *>(&node))
   {
