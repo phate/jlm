@@ -1339,14 +1339,12 @@ public:
   }
 };
 
-/* fptrunc operator */
-
-class fptrunc_op final : public rvsdg::UnaryOperation
+class FPTruncOperation final : public rvsdg::UnaryOperation
 {
 public:
-  virtual ~fptrunc_op();
+  ~FPTruncOperation() noexcept override;
 
-  inline fptrunc_op(const fpsize & srcsize, const fpsize & dstsize)
+  FPTruncOperation(const fpsize & srcsize, const fpsize & dstsize)
       : UnaryOperation(FloatingPointType::Create(srcsize), FloatingPointType::Create(dstsize))
   {
     if (srcsize == fpsize::half || (srcsize == fpsize::flt && dstsize != fpsize::half)
@@ -1354,7 +1352,7 @@ public:
       throw jlm::util::error("destination tpye size must be smaller than source size type.");
   }
 
-  inline fptrunc_op(
+  FPTruncOperation(
       const std::shared_ptr<const FloatingPointType> & srctype,
       const std::shared_ptr<const FloatingPointType> & dsttype)
       : UnaryOperation(srctype, dsttype)
@@ -1363,7 +1361,7 @@ public:
       throw jlm::util::error("destination type size must be bigger than source type size.");
   }
 
-  inline fptrunc_op(
+  FPTruncOperation(
       std::shared_ptr<const jlm::rvsdg::Type> srctype,
       std::shared_ptr<const jlm::rvsdg::Type> dsttype)
       : UnaryOperation(srctype, dsttype)
@@ -1420,7 +1418,7 @@ public:
     if (!dt)
       throw jlm::util::error("expected floating point type.");
 
-    fptrunc_op op(std::move(st), std::move(dt));
+    const FPTruncOperation op(std::move(st), std::move(dt));
     return tac::create(op, { operand });
   }
 };

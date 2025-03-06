@@ -1357,7 +1357,7 @@ IpGraphToLlvmConverter::convert_operation(
   {
     return convert_cast<::llvm::Instruction::FPToUI>(op, arguments, builder);
   }
-  if (is<fptrunc_op>(op))
+  if (is<FPTruncOperation>(op))
   {
     return convert_cast<::llvm::Instruction::FPTrunc>(op, arguments, builder);
   }
