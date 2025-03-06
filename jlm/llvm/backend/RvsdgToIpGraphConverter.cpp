@@ -186,48 +186,49 @@ RvsdgToIpGraphConverter::ConvertRegion(rvsdg::Region & region)
 }
 
 std::unique_ptr<llvm::cfg>
-RvsdgToIpGraphConverter::create_cfg(const rvsdg::LambdaNode & lambda)
+RvsdgToIpGraphConverter::CreateControlFlowGraph(const rvsdg::LambdaNode & lambda)
 {
   JLM_ASSERT(Context_->GetLastProcessedBasicBlock() == nullptr);
-  std::unique_ptr<llvm::cfg> cfg(new llvm::cfg(Context_->GetIpGraphModule()));
-  auto entry = basic_block::create(*cfg);
-  cfg->exit()->divert_inedges(entry);
-  Context_->SetLastProcessedBasicBlock(entry);
-  Context_->set_cfg(cfg.get());
+  const auto & lambdaOperation = *util::AssertedCast<LlvmLambdaOperation>(&lambda.GetOperation());
 
-  /* add arguments */
-  for (auto fctarg : lambda.GetFunctionArguments())
+  auto controlFlowGraph = cfg::create(Context_->GetIpGraphModule());
+  const auto entryBlock = basic_block::create(*controlFlowGraph);
+  controlFlowGraph->exit()->divert_inedges(entryBlock);
+  Context_->SetLastProcessedBasicBlock(entryBlock);
+  Context_->set_cfg(controlFlowGraph.get());
+
+  // add function arguments
+  for (const auto functionArgument : lambda.GetFunctionArguments())
   {
-    auto name = util::strfmt("_a", fctarg->index(), "_");
-    auto argument = llvm::argument::create(
+    auto name = util::strfmt("_a", functionArgument->index(), "_");
+    auto argument = argument::create(
         name,
-        fctarg->Type(),
-        dynamic_cast<llvm::LlvmLambdaOperation &>(lambda.GetOperation())
-            .GetArgumentAttributes(fctarg->index()));
-    auto v = cfg->entry()->append_argument(std::move(argument));
-    Context_->insert(fctarg, v);
+        functionArgument->Type(),
+        lambdaOperation.GetArgumentAttributes(functionArgument->index()));
+    const auto variable = controlFlowGraph->entry()->append_argument(std::move(argument));
+    Context_->insert(functionArgument, variable);
   }
 
-  /* add context variables */
-  for (const auto & cv : lambda.GetContextVars())
+  // add context variables
+  for (const auto & [input, inner] : lambda.GetContextVars())
   {
-    auto v = Context_->variable(cv.input->origin());
-    Context_->insert(cv.inner, v);
+    const auto variable = Context_->variable(input->origin());
+    Context_->insert(inner, variable);
   }
 
   ConvertRegion(*lambda.subregion());
 
-  /* add results */
-  for (auto result : lambda.GetFunctionResults())
-    cfg->exit()->append_result(Context_->variable(result->origin()));
+  // add results
+  for (const auto result : lambda.GetFunctionResults())
+    controlFlowGraph->exit()->append_result(Context_->variable(result->origin()));
 
-  Context_->GetLastProcessedBasicBlock()->add_outedge(cfg->exit());
+  Context_->GetLastProcessedBasicBlock()->add_outedge(controlFlowGraph->exit());
   Context_->SetLastProcessedBasicBlock(nullptr);
   Context_->set_cfg(nullptr);
 
-  straighten(*cfg);
-  JLM_ASSERT(is_closed(*cfg));
-  return cfg;
+  straighten(*controlFlowGraph);
+  JLM_ASSERT(is_closed(*controlFlowGraph));
+  return controlFlowGraph;
 }
 
 void
@@ -496,7 +497,7 @@ RvsdgToIpGraphConverter::ConvertLambdaNode(const rvsdg::LambdaNode & lambdaNode)
       operation.attributes());
   const auto variable = ipGraphModule.create_variable(functionNode);
 
-  functionNode->add_cfg(create_cfg(lambdaNode));
+  functionNode->add_cfg(CreateControlFlowGraph(lambdaNode));
   Context_->insert(lambdaNode.output(), variable);
 }
 
@@ -561,7 +562,7 @@ RvsdgToIpGraphConverter::ConvertPhiNode(const phi::node & phiNode)
     {
       const auto variable =
           util::AssertedCast<const fctvariable>(Context_->variable(subregion->argument(n)));
-      variable->function()->add_cfg(create_cfg(*lambdaNode));
+      variable->function()->add_cfg(CreateControlFlowGraph(*lambdaNode));
       Context_->insert(node->output(0), variable);
     }
     else if (const auto deltaNode = dynamic_cast<const delta::node *>(node))

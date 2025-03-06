@@ -104,7 +104,7 @@ private:
   ConvertSimpleNode(const rvsdg::SimpleNode & simpleNode);
 
   std::unique_ptr<llvm::cfg>
-  create_cfg(const rvsdg::LambdaNode & lambda);
+  CreateControlFlowGraph(const rvsdg::LambdaNode & lambda);
 
   void
   ConvertRegion(rvsdg::Region & region);
