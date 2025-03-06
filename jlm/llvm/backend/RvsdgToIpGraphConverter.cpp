@@ -23,9 +23,9 @@ namespace jlm::llvm
 class RvsdgToIpGraphConverter::Context final
 {
 public:
-  explicit Context(ipgraph_module & im)
+  explicit Context(ipgraph_module & ipGraphModule)
       : cfg_(nullptr),
-        module_(im),
+        IPGraphModule_(ipGraphModule),
         lpbb_(nullptr)
   {}
 
@@ -40,9 +40,9 @@ public:
   operator=(Context &&) = delete;
 
   ipgraph_module &
-  module() const noexcept
+  GetIpGraphModule() const noexcept
   {
-    return module_;
+    return IPGraphModule_;
   }
 
   void
@@ -93,7 +93,7 @@ public:
 
 private:
   llvm::cfg * cfg_;
-  ipgraph_module & module_;
+  ipgraph_module & IPGraphModule_;
   basic_block * lpbb_;
   std::unordered_map<const rvsdg::output *, const llvm::variable *> ports_;
 };
@@ -131,12 +131,6 @@ public:
 RvsdgToIpGraphConverter::~RvsdgToIpGraphConverter() = default;
 
 RvsdgToIpGraphConverter::RvsdgToIpGraphConverter() = default;
-
-static std::shared_ptr<const rvsdg::FunctionType>
-is_function_import(const llvm::GraphImport * graphImport)
-{
-  return std::dynamic_pointer_cast<const rvsdg::FunctionType>(graphImport->ValueType());
-}
 
 std::unique_ptr<data_node_init>
 RvsdgToIpGraphConverter::create_initialization(const delta::node * delta)
@@ -195,7 +189,7 @@ std::unique_ptr<llvm::cfg>
 RvsdgToIpGraphConverter::create_cfg(const rvsdg::LambdaNode & lambda)
 {
   JLM_ASSERT(Context_->lpbb() == nullptr);
-  std::unique_ptr<llvm::cfg> cfg(new llvm::cfg(Context_->module()));
+  std::unique_ptr<llvm::cfg> cfg(new llvm::cfg(Context_->GetIpGraphModule()));
   auto entry = basic_block::create(*cfg);
   cfg->exit()->divert_inedges(entry);
   Context_->set_lpbb(entry);
@@ -488,7 +482,7 @@ RvsdgToIpGraphConverter::convert_lambda_node(const rvsdg::Node & node)
 {
   JLM_ASSERT(is<llvm::LlvmLambdaOperation>(&node));
   auto lambda = static_cast<const rvsdg::LambdaNode *>(&node);
-  auto & module = Context_->module();
+  auto & module = Context_->GetIpGraphModule();
   auto & clg = module.ipgraph();
 
   const auto & op = dynamic_cast<llvm::LlvmLambdaOperation &>(lambda->GetOperation());
@@ -505,7 +499,7 @@ RvsdgToIpGraphConverter::convert_phi_node(const rvsdg::Node & node)
   JLM_ASSERT(rvsdg::is<phi::operation>(&node));
   auto phi = static_cast<const rvsdg::StructuralNode *>(&node);
   auto subregion = phi->subregion(0);
-  auto & module = Context_->module();
+  auto & module = Context_->GetIpGraphModule();
   auto & ipg = module.ipgraph();
 
   /* add dependencies to context */
@@ -572,7 +566,7 @@ RvsdgToIpGraphConverter::convert_delta_node(const rvsdg::Node & node)
 {
   JLM_ASSERT(is<delta::operation>(&node));
   auto delta = static_cast<const delta::node *>(&node);
-  auto & m = Context_->module();
+  auto & m = Context_->GetIpGraphModule();
 
   auto dnode = data_node::Create(
       m.ipgraph(),
@@ -628,30 +622,33 @@ RvsdgToIpGraphConverter::convert_nodes(const rvsdg::Graph & graph)
 }
 
 void
-RvsdgToIpGraphConverter::convert_imports(const rvsdg::Graph & graph, ipgraph_module & im)
+RvsdgToIpGraphConverter::ConvertImports(const rvsdg::Graph & graph)
 {
-  auto & ipg = im.ipgraph();
+  auto & ipGraphModule = Context_->GetIpGraphModule();
+  auto & ipGraph = ipGraphModule.ipgraph();
 
   for (size_t n = 0; n < graph.GetRootRegion().narguments(); n++)
   {
-    auto graphImport = util::AssertedCast<GraphImport>(graph.GetRootRegion().argument(n));
-    if (auto ftype = is_function_import(graphImport))
+    const auto graphImport = util::AssertedCast<GraphImport>(graph.GetRootRegion().argument(n));
+    if (const auto functionType =
+            std::dynamic_pointer_cast<const rvsdg::FunctionType>(graphImport->ValueType()))
     {
-      auto f = function_node::create(ipg, graphImport->Name(), ftype, graphImport->Linkage());
-      auto v = im.create_variable(f);
-      Context_->insert(graphImport, v);
+      const auto functionNode =
+          function_node::create(ipGraph, graphImport->Name(), functionType, graphImport->Linkage());
+      const auto variable = ipGraphModule.create_variable(functionNode);
+      Context_->insert(graphImport, variable);
     }
     else
     {
-      auto dnode = data_node::Create(
-          ipg,
+      const auto dataNode = data_node::Create(
+          ipGraph,
           graphImport->Name(),
           graphImport->ValueType(),
           graphImport->Linkage(),
           "",
           false);
-      auto v = im.create_global_value(dnode);
-      Context_->insert(graphImport, v);
+      const auto variable = ipGraphModule.create_global_value(dataNode);
+      Context_->insert(graphImport, variable);
     }
   }
 }
@@ -671,7 +668,7 @@ RvsdgToIpGraphConverter::ConvertModule(
       std::move(rvsdgModule.ReleaseStructTypeDeclarations()));
 
   Context_ = Context::Create(*ipGraphModule);
-  convert_imports(rvsdgModule.Rvsdg(), *ipGraphModule);
+  ConvertImports(rvsdgModule.Rvsdg());
   convert_nodes(rvsdgModule.Rvsdg());
 
   statistics->end(*ipGraphModule);

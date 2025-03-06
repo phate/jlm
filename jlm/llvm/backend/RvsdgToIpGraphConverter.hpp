@@ -67,7 +67,7 @@ public:
 
 private:
   void
-  convert_imports(const rvsdg::Graph & graph, ipgraph_module & im);
+  ConvertImports(const rvsdg::Graph & graph);
 
   void
   convert_nodes(const rvsdg::Graph & graph);
