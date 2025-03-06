@@ -63,7 +63,7 @@ TestFNegScalar()
   auto ipgModule = jlm::llvm::ConvertLlvmModule(*llvmModule);
   print(*ipgModule, stdout);
 
-  assert(Contains<jlm::llvm::fpneg_op>(*ipgModule, "f"));
+  assert(Contains<jlm::llvm::FNegOperation>(*ipgModule, "f"));
 }
 
 static void

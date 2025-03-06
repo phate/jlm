@@ -414,7 +414,7 @@ ConvertBranchInstruction(::llvm::Instruction * instruction, tacsvector_t & tacs,
   auto nbits = i->getCondition()->getType()->getIntegerBitWidth();
   auto op = rvsdg::match_op(nbits, { { 1, 1 } }, 0, 2);
   tacs.push_back(tac::create(op, { c }));
-  tacs.push_back(branch_op::create(2, tacs.back()->result(0)));
+  tacs.push_back(BranchOperation::create(2, tacs.back()->result(0)));
 
   return nullptr;
 }
@@ -441,7 +441,7 @@ ConvertSwitchInstruction(::llvm::Instruction * instruction, tacsvector_t & tacs,
   auto nbits = i->getCondition()->getType()->getIntegerBitWidth();
   auto op = rvsdg::match_op(nbits, mapping, defaultEdge->index(), bb->NumOutEdges());
   tacs.push_back(tac::create(op, { c }));
-  tacs.push_back(branch_op::create(bb->NumOutEdges(), tacs.back()->result(0)));
+  tacs.push_back(BranchOperation::create(bb->NumOutEdges(), tacs.back()->result(0)));
 
   return nullptr;
 }
@@ -1137,13 +1137,13 @@ convert(::llvm::UnaryOperator * unaryOperator, tacsvector_t & threeAddressCodeVe
   {
     auto vectorType = typeConverter.ConvertLlvmType(*type);
     threeAddressCodeVector.push_back(vectorunary_op::create(
-        fpneg_op(std::static_pointer_cast<const FloatingPointType>(scalarType)),
+        FNegOperation(std::static_pointer_cast<const FloatingPointType>(scalarType)),
         operand,
         vectorType));
   }
   else
   {
-    threeAddressCodeVector.push_back(fpneg_op::create(operand));
+    threeAddressCodeVector.push_back(FNegOperation::create(operand));
   }
 
   return threeAddressCodeVector.back()->result(0);
@@ -1170,16 +1170,16 @@ convert_cast_instruction(::llvm::Instruction * i, tacsvector_t & tacs, context &
           std::shared_ptr<const rvsdg::Type>,
           std::shared_ptr<const rvsdg::Type>)>
       map({ { ::llvm::Instruction::Trunc, create_unop<trunc_op> },
-            { ::llvm::Instruction::ZExt, create_unop<zext_op> },
+            { ::llvm::Instruction::ZExt, create_unop<ZExtOperation> },
             { ::llvm::Instruction::UIToFP, create_unop<uitofp_op> },
             { ::llvm::Instruction::SIToFP, create_unop<sitofp_op> },
             { ::llvm::Instruction::SExt, create_unop<sext_op> },
-            { ::llvm::Instruction::PtrToInt, create_unop<ptr2bits_op> },
+            { ::llvm::Instruction::PtrToInt, create_unop<PtrToIntOperation> },
             { ::llvm::Instruction::IntToPtr, create_unop<IntegerToPointerOperation> },
             { ::llvm::Instruction::FPTrunc, create_unop<FPTruncOperation> },
             { ::llvm::Instruction::FPToSI, create_unop<FloatingPointToSignedIntegerOperation> },
             { ::llvm::Instruction::FPToUI, create_unop<FloatingPointToUnsignedIntegerOperation> },
-            { ::llvm::Instruction::FPExt, create_unop<fpext_op> },
+            { ::llvm::Instruction::FPExt, create_unop<FPExtOperation> },
             { ::llvm::Instruction::BitCast, create_unop<bitcast_op> } });
 
   auto type = ctx.GetTypeConverter().ConvertLlvmType(*i->getType());

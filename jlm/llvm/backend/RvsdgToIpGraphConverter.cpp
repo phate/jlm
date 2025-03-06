@@ -322,7 +322,7 @@ RvsdgToIpGraphConverter::ConvertGammaNode(const rvsdg::GammaNode & gammaNode)
 
   // convert gamma regions
   std::vector<cfg_node *> phi_nodes;
-  entryBlock->append_last(branch_op::create(numSubregions, Context_->GetVariable(predicate)));
+  entryBlock->append_last(BranchOperation::create(numSubregions, Context_->GetVariable(predicate)));
   for (size_t n = 0; n < gammaNode.nsubregions(); n++)
   {
     const auto subregion = gammaNode.subregion(n);
@@ -474,7 +474,7 @@ RvsdgToIpGraphConverter::ConvertThetaNode(const rvsdg::ThetaNode & thetaNode)
   JLM_ASSERT(phiIndex == phis.size());
 
   Context_->GetLastProcessedBasicBlock()->append_last(
-      branch_op::create(2, Context_->GetVariable(predicate)));
+      BranchOperation::create(2, Context_->GetVariable(predicate)));
   const auto exitBlock = basic_block::create(*Context_->GetControlFlowGraph());
   Context_->GetLastProcessedBasicBlock()->add_outedge(exitBlock);
   Context_->GetLastProcessedBasicBlock()->add_outedge(entryBlock);
