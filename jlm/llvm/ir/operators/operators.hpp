@@ -1293,7 +1293,7 @@ public:
 class FNegOperation final : public rvsdg::UnaryOperation
 {
 public:
-  ~FNegOperation() override;
+  ~FNegOperation() noexcept override;
 
   explicit FNegOperation(const fpsize & size)
       : UnaryOperation(FloatingPointType::Create(size), FloatingPointType::Create(size))
