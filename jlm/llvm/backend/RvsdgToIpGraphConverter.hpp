@@ -70,10 +70,10 @@ private:
   ConvertImports(const rvsdg::Graph & graph);
 
   void
-  convert_nodes(const rvsdg::Graph & graph);
+  ConvertNodes(const rvsdg::Graph & graph);
 
   void
-  convert_node(const rvsdg::Node & node);
+  ConvertNode(const rvsdg::Node & node);
 
   void
   convert_delta_node(const rvsdg::Node & node);

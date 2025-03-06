@@ -178,7 +178,7 @@ RvsdgToIpGraphConverter::convert_region(rvsdg::Region & region)
   Context_->set_lpbb(entry);
 
   for (const auto & node : rvsdg::TopDownTraverser(&region))
-    convert_node(*node);
+    ConvertNode(*node);
 
   auto exit = basic_block::create(*Context_->cfg());
   Context_->lpbb()->add_outedge(exit);
@@ -581,7 +581,7 @@ RvsdgToIpGraphConverter::convert_delta_node(const rvsdg::Node & node)
 }
 
 void
-RvsdgToIpGraphConverter::convert_node(const rvsdg::Node & node)
+RvsdgToIpGraphConverter::ConvertNode(const rvsdg::Node & node)
 {
   if (const auto lambdaNode = dynamic_cast<const rvsdg::LambdaNode *>(&node))
   {
@@ -615,10 +615,12 @@ RvsdgToIpGraphConverter::convert_node(const rvsdg::Node & node)
 }
 
 void
-RvsdgToIpGraphConverter::convert_nodes(const rvsdg::Graph & graph)
+RvsdgToIpGraphConverter::ConvertNodes(const rvsdg::Graph & graph)
 {
   for (const auto & node : rvsdg::TopDownTraverser(&graph.GetRootRegion()))
-    convert_node(*node);
+  {
+    ConvertNode(*node);
+  }
 }
 
 void
@@ -669,7 +671,7 @@ RvsdgToIpGraphConverter::ConvertModule(
 
   Context_ = Context::Create(*ipGraphModule);
   ConvertImports(rvsdgModule.Rvsdg());
-  convert_nodes(rvsdgModule.Rvsdg());
+  ConvertNodes(rvsdgModule.Rvsdg());
 
   statistics->end(*ipGraphModule);
   statisticsCollector.CollectDemandedStatistics(std::move(statistics));
