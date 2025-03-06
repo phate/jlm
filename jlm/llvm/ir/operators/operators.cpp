@@ -595,38 +595,35 @@ fpbin_op::reduce_operand_pair(rvsdg::binop_reduction_path_t, rvsdg::output *, rv
   JLM_UNREACHABLE("Not implemented!");
 }
 
-/* fpext operator */
-
-fpext_op::~fpext_op()
-{}
+FPExtOperation::~FPExtOperation() noexcept = default;
 
 bool
-fpext_op::operator==(const Operation & other) const noexcept
+FPExtOperation::operator==(const Operation & other) const noexcept
 {
-  auto op = dynamic_cast<const fpext_op *>(&other);
+  const auto op = dynamic_cast<const FPExtOperation *>(&other);
   return op && op->srcsize() == srcsize() && op->dstsize() == dstsize();
 }
 
 std::string
-fpext_op::debug_string() const
+FPExtOperation::debug_string() const
 {
-  return "fpext";
+  return "FPExt";
 }
 
 std::unique_ptr<rvsdg::Operation>
-fpext_op::copy() const
+FPExtOperation::copy() const
 {
-  return std::make_unique<fpext_op>(*this);
+  return std::make_unique<FPExtOperation>(*this);
 }
 
 rvsdg::unop_reduction_path_t
-fpext_op::can_reduce_operand(const rvsdg::output *) const noexcept
+FPExtOperation::can_reduce_operand(const rvsdg::output *) const noexcept
 {
   return rvsdg::unop_reduction_none;
 }
 
 rvsdg::output *
-fpext_op::reduce_operand(rvsdg::unop_reduction_path_t, rvsdg::output *) const
+FPExtOperation::reduce_operand(rvsdg::unop_reduction_path_t, rvsdg::output *) const
 {
   JLM_UNREACHABLE("Not implemented!");
 }

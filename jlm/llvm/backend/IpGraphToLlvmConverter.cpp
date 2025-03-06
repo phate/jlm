@@ -1345,7 +1345,7 @@ IpGraphToLlvmConverter::convert_operation(
   {
     return convert_cast<::llvm::Instruction::BitCast>(op, arguments, builder);
   }
-  if (is<fpext_op>(op))
+  if (is<FPExtOperation>(op))
   {
     return convert_cast<::llvm::Instruction::FPExt>(op, arguments, builder);
   }

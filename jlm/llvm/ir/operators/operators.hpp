@@ -1206,21 +1206,19 @@ private:
   llvm::fpop op_;
 };
 
-/* fpext operator */
-
-class fpext_op final : public rvsdg::UnaryOperation
+class FPExtOperation final : public rvsdg::UnaryOperation
 {
 public:
-  virtual ~fpext_op();
+  ~FPExtOperation() noexcept override;
 
-  inline fpext_op(const fpsize & srcsize, const fpsize & dstsize)
+  FPExtOperation(const fpsize & srcsize, const fpsize & dstsize)
       : UnaryOperation(FloatingPointType::Create(srcsize), FloatingPointType::Create(dstsize))
   {
     if (srcsize == fpsize::flt && dstsize == fpsize::half)
       throw jlm::util::error("destination type size must be bigger than source type size.");
   }
 
-  inline fpext_op(
+  FPExtOperation(
       const std::shared_ptr<const FloatingPointType> & srctype,
       const std::shared_ptr<const FloatingPointType> & dsttype)
       : UnaryOperation(srctype, dsttype)
@@ -1229,7 +1227,7 @@ public:
       throw jlm::util::error("destination type size must be bigger than source type size.");
   }
 
-  inline fpext_op(
+  FPExtOperation(
       std::shared_ptr<const jlm::rvsdg::Type> srctype,
       std::shared_ptr<const jlm::rvsdg::Type> dsttype)
       : UnaryOperation(srctype, dsttype)
@@ -1285,7 +1283,7 @@ public:
     if (!dt)
       throw jlm::util::error("expected floating point type.");
 
-    fpext_op op(std::move(st), std::move(dt));
+    const FPExtOperation op(std::move(st), std::move(dt));
     return tac::create(op, { operand });
   }
 };
