@@ -107,7 +107,7 @@ private:
   create_cfg(const rvsdg::LambdaNode & lambda);
 
   void
-  convert_region(rvsdg::Region & region);
+  ConvertRegion(rvsdg::Region & region);
 
   std::unique_ptr<data_node_init>
   CreateInitialization(const delta::node & deltaNode);

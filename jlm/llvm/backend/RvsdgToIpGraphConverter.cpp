@@ -171,18 +171,18 @@ RvsdgToIpGraphConverter::CreateInitialization(const delta::node & deltaNode)
 }
 
 void
-RvsdgToIpGraphConverter::convert_region(rvsdg::Region & region)
+RvsdgToIpGraphConverter::ConvertRegion(rvsdg::Region & region)
 {
-  auto entry = basic_block::create(*Context_->cfg());
-  Context_->GetLastProcessedBasicBlock()->add_outedge(entry);
-  Context_->SetLastProcessedBasicBlock(entry);
+  const auto entryBlock = basic_block::create(*Context_->cfg());
+  Context_->GetLastProcessedBasicBlock()->add_outedge(entryBlock);
+  Context_->SetLastProcessedBasicBlock(entryBlock);
 
   for (const auto & node : rvsdg::TopDownTraverser(&region))
     ConvertNode(*node);
 
-  auto exit = basic_block::create(*Context_->cfg());
-  Context_->GetLastProcessedBasicBlock()->add_outedge(exit);
-  Context_->SetLastProcessedBasicBlock(exit);
+  const auto exitBlock = basic_block::create(*Context_->cfg());
+  Context_->GetLastProcessedBasicBlock()->add_outedge(exitBlock);
+  Context_->SetLastProcessedBasicBlock(exitBlock);
 }
 
 std::unique_ptr<llvm::cfg>
@@ -215,7 +215,7 @@ RvsdgToIpGraphConverter::create_cfg(const rvsdg::LambdaNode & lambda)
     Context_->insert(cv.inner, v);
   }
 
-  convert_region(*lambda.subregion());
+  ConvertRegion(*lambda.subregion());
 
   /* add results */
   for (auto result : lambda.GetFunctionResults())
@@ -346,7 +346,7 @@ RvsdgToIpGraphConverter::ConvertGammaNode(const rvsdg::GammaNode & gammaNode)
       const auto regionEntryBlock = basic_block::create(*controlFlowGraph);
       entryBlock->add_outedge(regionEntryBlock);
       Context_->SetLastProcessedBasicBlock(regionEntryBlock);
-      convert_region(*subregion);
+      ConvertRegion(*subregion);
 
       phi_nodes.push_back(Context_->GetLastProcessedBasicBlock());
       Context_->GetLastProcessedBasicBlock()->add_outedge(exitBlock);
@@ -448,7 +448,7 @@ RvsdgToIpGraphConverter::ConvertThetaNode(const rvsdg::ThetaNode & thetaNode)
     Context_->insert(loopVar.pre, variable);
   }
 
-  convert_region(*subregion);
+  ConvertRegion(*subregion);
 
   // add phi operands and results to context
   size_t phiIndex = 0;
