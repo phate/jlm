@@ -25,14 +25,14 @@ basic_block::HasSsaPhiOperation() const
 llvm::tac *
 basic_block::insert_before_branch(std::unique_ptr<llvm::tac> tac)
 {
-  auto it = is<branch_op>(last()) ? std::prev(end()) : end();
+  auto it = is<BranchOperation>(last()) ? std::prev(end()) : end();
   return insert_before(it, std::move(tac));
 }
 
 void
 basic_block::insert_before_branch(tacsvector_t & tv)
 {
-  auto it = is<branch_op>(last()) ? std::prev(end()) : end();
+  auto it = is<BranchOperation>(last()) ? std::prev(end()) : end();
   insert_before(it, tv);
 }
 
