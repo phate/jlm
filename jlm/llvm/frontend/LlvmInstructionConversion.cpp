@@ -414,7 +414,7 @@ ConvertBranchInstruction(::llvm::Instruction * instruction, tacsvector_t & tacs,
   auto nbits = i->getCondition()->getType()->getIntegerBitWidth();
   auto op = rvsdg::match_op(nbits, { { 1, 1 } }, 0, 2);
   tacs.push_back(tac::create(op, { c }));
-  tacs.push_back(branch_op::create(2, tacs.back()->result(0)));
+  tacs.push_back(BranchOperation::create(2, tacs.back()->result(0)));
 
   return nullptr;
 }
@@ -441,7 +441,7 @@ ConvertSwitchInstruction(::llvm::Instruction * instruction, tacsvector_t & tacs,
   auto nbits = i->getCondition()->getType()->getIntegerBitWidth();
   auto op = rvsdg::match_op(nbits, mapping, defaultEdge->index(), bb->NumOutEdges());
   tacs.push_back(tac::create(op, { c }));
-  tacs.push_back(branch_op::create(bb->NumOutEdges(), tacs.back()->result(0)));
+  tacs.push_back(BranchOperation::create(bb->NumOutEdges(), tacs.back()->result(0)));
 
   return nullptr;
 }
@@ -1174,7 +1174,7 @@ convert_cast_instruction(::llvm::Instruction * i, tacsvector_t & tacs, context &
             { ::llvm::Instruction::UIToFP, create_unop<uitofp_op> },
             { ::llvm::Instruction::SIToFP, create_unop<sitofp_op> },
             { ::llvm::Instruction::SExt, create_unop<sext_op> },
-            { ::llvm::Instruction::PtrToInt, create_unop<ptr2bits_op> },
+            { ::llvm::Instruction::PtrToInt, create_unop<PtrToIntOperation> },
             { ::llvm::Instruction::IntToPtr, create_unop<IntegerToPointerOperation> },
             { ::llvm::Instruction::FPTrunc, create_unop<fptrunc_op> },
             { ::llvm::Instruction::FPToSI, create_unop<FloatingPointToSignedIntegerOperation> },

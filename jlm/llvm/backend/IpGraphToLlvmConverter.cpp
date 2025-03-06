@@ -321,7 +321,7 @@ IpGraphToLlvmConverter::convert_branch(
     const std::vector<const variable *> &,
     ::llvm::IRBuilder<> &)
 {
-  JLM_ASSERT(is<branch_op>(op));
+  JLM_ASSERT(is<BranchOperation>(op));
   return nullptr;
 }
 
@@ -1205,7 +1205,7 @@ IpGraphToLlvmConverter::convert_operation(
   {
     return convert_assignment(op, arguments, builder);
   }
-  if (is<branch_op>(op))
+  if (is<BranchOperation>(op))
   {
     return convert_branch(op, arguments, builder);
   }
@@ -1365,7 +1365,7 @@ IpGraphToLlvmConverter::convert_operation(
   {
     return convert_cast<::llvm::Instruction::IntToPtr>(op, arguments, builder);
   }
-  if (is<ptr2bits_op>(op))
+  if (is<PtrToIntOperation>(op))
   {
     return convert_cast<::llvm::Instruction::PtrToInt>(op, arguments, builder);
   }
@@ -1515,7 +1515,7 @@ IpGraphToLlvmConverter::create_conditional_branch(const cfg_node * node)
   ::llvm::IRBuilder<> builder(Context_->basic_block(node));
 
   auto branch = static_cast<const basic_block *>(node)->tacs().last();
-  JLM_ASSERT(branch && is<branch_op>(branch));
+  JLM_ASSERT(branch && is<BranchOperation>(branch));
   JLM_ASSERT(Context_->value(branch->operand(0))->getType()->isIntegerTy(1));
 
   auto condition = Context_->value(branch->operand(0));
@@ -1534,7 +1534,7 @@ IpGraphToLlvmConverter::create_switch(const cfg_node * node)
   ::llvm::IRBuilder<> builder(Context_->basic_block(node));
 
   auto branch = bb->tacs().last();
-  JLM_ASSERT(branch && is<branch_op>(branch));
+  JLM_ASSERT(branch && is<BranchOperation>(branch));
   auto condition = Context_->value(branch->operand(0));
   auto match = get_match(branch);
 
@@ -1583,7 +1583,7 @@ IpGraphToLlvmConverter::create_terminator_instruction(const llvm::cfg_node * nod
   }
 
   auto branch = tacs.last();
-  JLM_ASSERT(branch && is<branch_op>(branch));
+  JLM_ASSERT(branch && is<BranchOperation>(branch));
 
   // conditional branch
   if (Context_->value(branch->operand(0))->getType()->isIntegerTy(1))

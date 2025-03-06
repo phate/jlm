@@ -142,7 +142,7 @@ cfg::ToAscii(
 
   if (threeAddressCodes.last())
   {
-    if (is<branch_op>(threeAddressCodes.last()->operation()))
+    if (is<BranchOperation>(threeAddressCodes.last()->operation()))
       str += " " + CreateTargets(basicBlock, labels);
     else
       str += "\n\t" + CreateTargets(basicBlock, labels);
