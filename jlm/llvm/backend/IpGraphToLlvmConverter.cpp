@@ -666,7 +666,7 @@ IpGraphToLlvmConverter::convert_fpneg(
     const std::vector<const variable *> & args,
     ::llvm::IRBuilder<> & builder)
 {
-  JLM_ASSERT(is<fpneg_op>(op));
+  JLM_ASSERT(is<FNegOperation>(op));
   auto operand = Context_->value(args[0]);
   return builder.CreateUnOp(::llvm::Instruction::FNeg, operand);
 }
@@ -1337,7 +1337,7 @@ IpGraphToLlvmConverter::convert_operation(
   {
     return convert<MemCpyVolatileOperation>(op, arguments, builder);
   }
-  if (is<fpneg_op>(op))
+  if (is<FNegOperation>(op))
   {
     return convert_fpneg(op, arguments, builder);
   }

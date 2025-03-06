@@ -619,38 +619,35 @@ FPExtOperation::reduce_operand(rvsdg::unop_reduction_path_t, rvsdg::output *) co
   JLM_UNREACHABLE("Not implemented!");
 }
 
-/* fpneg operator */
-
-fpneg_op::~fpneg_op()
-{}
+FNegOperation::~FNegOperation() noexcept = default;
 
 bool
-fpneg_op::operator==(const Operation & other) const noexcept
+FNegOperation::operator==(const Operation & other) const noexcept
 {
-  auto op = dynamic_cast<const fpneg_op *>(&other);
+  const auto op = dynamic_cast<const FNegOperation *>(&other);
   return op && op->size() == size();
 }
 
 std::string
-fpneg_op::debug_string() const
+FNegOperation::debug_string() const
 {
-  return "fpneg";
+  return "FNeg";
 }
 
 std::unique_ptr<rvsdg::Operation>
-fpneg_op::copy() const
+FNegOperation::copy() const
 {
-  return std::make_unique<fpneg_op>(*this);
+  return std::make_unique<FNegOperation>(*this);
 }
 
 rvsdg::unop_reduction_path_t
-fpneg_op::can_reduce_operand(const rvsdg::output *) const noexcept
+FNegOperation::can_reduce_operand(const rvsdg::output *) const noexcept
 {
   return rvsdg::unop_reduction_none;
 }
 
 rvsdg::output *
-fpneg_op::reduce_operand(rvsdg::unop_reduction_path_t, rvsdg::output *) const
+FNegOperation::reduce_operand(rvsdg::unop_reduction_path_t, rvsdg::output *) const
 {
   JLM_UNREACHABLE("Not implemented!");
 }
