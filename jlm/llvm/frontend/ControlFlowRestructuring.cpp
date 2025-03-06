@@ -105,7 +105,7 @@ append_branch(basic_block * bb, const variable * operand)
 {
   JLM_ASSERT(dynamic_cast<const rvsdg::ControlType *>(&operand->type()));
   auto nalternatives = static_cast<const rvsdg::ControlType *>(&operand->type())->nalternatives();
-  bb->append_last(branch_op::create(nalternatives, operand));
+  bb->append_last(BranchOperation::create(nalternatives, operand));
 }
 
 static inline void

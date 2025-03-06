@@ -414,7 +414,7 @@ ConvertBranchInstruction(::llvm::Instruction * instruction, tacsvector_t & tacs,
   auto nbits = i->getCondition()->getType()->getIntegerBitWidth();
   auto op = rvsdg::match_op(nbits, { { 1, 1 } }, 0, 2);
   tacs.push_back(tac::create(op, { c }));
-  tacs.push_back(branch_op::create(2, tacs.back()->result(0)));
+  tacs.push_back(BranchOperation::create(2, tacs.back()->result(0)));
 
   return nullptr;
 }
@@ -441,7 +441,7 @@ ConvertSwitchInstruction(::llvm::Instruction * instruction, tacsvector_t & tacs,
   auto nbits = i->getCondition()->getType()->getIntegerBitWidth();
   auto op = rvsdg::match_op(nbits, mapping, defaultEdge->index(), bb->NumOutEdges());
   tacs.push_back(tac::create(op, { c }));
-  tacs.push_back(branch_op::create(bb->NumOutEdges(), tacs.back()->result(0)));
+  tacs.push_back(BranchOperation::create(bb->NumOutEdges(), tacs.back()->result(0)));
 
   return nullptr;
 }
