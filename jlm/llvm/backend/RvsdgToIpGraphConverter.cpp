@@ -403,10 +403,10 @@ RvsdgToIpGraphConverter::convert_gamma_node(const rvsdg::Node & node)
 bool
 RvsdgToIpGraphConverter::RequiresSsaPhiOperation(
     const rvsdg::ThetaNode::LoopVar & loopVar,
-    const llvm::variable * v)
+    const variable & v)
 {
   // FIXME: solely decide on the input instead of using the variable
-  if (is<gblvariable>(v))
+  if (is<gblvariable>(&v))
     return false;
 
   if (ThetaLoopVarIsInvariant(loopVar))
@@ -434,7 +434,7 @@ RvsdgToIpGraphConverter::ConvertThetaNode(const rvsdg::ThetaNode & thetaNode)
   for (const auto & loopVar : thetaNode.GetLoopVars())
   {
     auto variable = Context_->variable(loopVar.input->origin());
-    if (RequiresSsaPhiOperation(loopVar, variable))
+    if (RequiresSsaPhiOperation(loopVar, *variable))
     {
       auto phi = entryBlock->append_last(SsaPhiOperation::create({}, loopVar.pre->Type()));
       phis.push_back(phi);
@@ -450,7 +450,7 @@ RvsdgToIpGraphConverter::ConvertThetaNode(const rvsdg::ThetaNode & thetaNode)
   for (const auto & loopVar : thetaNode.GetLoopVars())
   {
     auto entryVariable = Context_->variable(loopVar.input->origin());
-    if (RequiresSsaPhiOperation(loopVar, entryVariable))
+    if (RequiresSsaPhiOperation(loopVar, *entryVariable))
     {
       auto resultVariable = Context_->variable(loopVar.post->origin());
       const auto phi = phis[phiIndex++];

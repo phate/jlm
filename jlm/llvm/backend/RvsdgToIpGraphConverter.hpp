@@ -89,9 +89,6 @@ private:
   void
   ConvertThetaNode(const rvsdg::ThetaNode & thetaNode);
 
-  bool
-  RequiresSsaPhiOperation(const rvsdg::ThetaNode::LoopVar & loopVar, const llvm::variable * v);
-
   void
   convert_gamma_node(const rvsdg::Node & node);
 
@@ -109,6 +106,9 @@ private:
 
   std::unique_ptr<data_node_init>
   CreateInitialization(const delta::node & deltaNode);
+
+  static bool
+  RequiresSsaPhiOperation(const rvsdg::ThetaNode::LoopVar & loopVar, const variable & v);
 
   std::unique_ptr<Context> Context_;
 };
