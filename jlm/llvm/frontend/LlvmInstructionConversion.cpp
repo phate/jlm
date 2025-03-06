@@ -1170,7 +1170,7 @@ convert_cast_instruction(::llvm::Instruction * i, tacsvector_t & tacs, context &
           std::shared_ptr<const rvsdg::Type>,
           std::shared_ptr<const rvsdg::Type>)>
       map({ { ::llvm::Instruction::Trunc, create_unop<trunc_op> },
-            { ::llvm::Instruction::ZExt, create_unop<zext_op> },
+            { ::llvm::Instruction::ZExt, create_unop<ZExtOperation> },
             { ::llvm::Instruction::UIToFP, create_unop<uitofp_op> },
             { ::llvm::Instruction::SIToFP, create_unop<sitofp_op> },
             { ::llvm::Instruction::SExt, create_unop<sext_op> },
