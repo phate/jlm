@@ -558,20 +558,18 @@ public:
   }
 };
 
-/* ptr2bits operator */
-
-class ptr2bits_op final : public rvsdg::UnaryOperation
+class PtrToIntOperation final : public rvsdg::UnaryOperation
 {
 public:
-  virtual ~ptr2bits_op();
+  ~PtrToIntOperation() noexcept override;
 
-  inline ptr2bits_op(
+  PtrToIntOperation(
       std::shared_ptr<const PointerType> ptype,
       std::shared_ptr<const jlm::rvsdg::bittype> btype)
       : UnaryOperation(std::move(ptype), std::move(btype))
   {}
 
-  inline ptr2bits_op(
+  PtrToIntOperation(
       std::shared_ptr<const jlm::rvsdg::Type> srctype,
       std::shared_ptr<const jlm::rvsdg::Type> dsttype)
       : UnaryOperation(srctype, dsttype)
@@ -618,7 +616,7 @@ public:
     if (!bt)
       throw jlm::util::error("expected bitstring type.");
 
-    ptr2bits_op op(std::move(pt), std::move(bt));
+    PtrToIntOperation op(std::move(pt), std::move(bt));
     return tac::create(op, { argument });
   }
 };
