@@ -231,19 +231,19 @@ RvsdgToIpGraphConverter::create_cfg(const rvsdg::LambdaNode & lambda)
 }
 
 void
-RvsdgToIpGraphConverter::convert_simple_node(const rvsdg::Node & node)
+RvsdgToIpGraphConverter::ConvertSimpleNode(const rvsdg::SimpleNode & simpleNode)
 {
-  JLM_ASSERT(dynamic_cast<const rvsdg::SimpleOperation *>(&node.GetOperation()));
-
   std::vector<const variable *> operands;
-  for (size_t n = 0; n < node.ninputs(); n++)
-    operands.push_back(Context_->variable(node.input(n)->origin()));
+  for (size_t n = 0; n < simpleNode.ninputs(); n++)
+    operands.push_back(Context_->variable(simpleNode.input(n)->origin()));
 
-  auto & op = *static_cast<const rvsdg::SimpleOperation *>(&node.GetOperation());
-  Context_->GetLastProcessedBasicBlock()->append_last(tac::create(op, operands));
+  Context_->GetLastProcessedBasicBlock()->append_last(
+      tac::create(simpleNode.GetOperation(), operands));
 
-  for (size_t n = 0; n < node.noutputs(); n++)
-    Context_->insert(node.output(n), Context_->GetLastProcessedBasicBlock()->last()->result(n));
+  for (size_t n = 0; n < simpleNode.noutputs(); n++)
+    Context_->insert(
+        simpleNode.output(n),
+        Context_->GetLastProcessedBasicBlock()->last()->result(n));
 }
 
 void
@@ -621,9 +621,9 @@ RvsdgToIpGraphConverter::ConvertNode(const rvsdg::Node & node)
   {
     ConvertDeltaNode(*deltaNode);
   }
-  else if (dynamic_cast<const rvsdg::SimpleNode *>(&node))
+  else if (const auto simpleNode = dynamic_cast<const rvsdg::SimpleNode *>(&node))
   {
-    convert_simple_node(node);
+    ConvertSimpleNode(*simpleNode);
   }
   else
   {

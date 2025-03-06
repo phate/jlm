@@ -101,7 +101,7 @@ private:
   ConvertEmptyGammaNode(const rvsdg::GammaNode & gammaNode);
 
   void
-  convert_simple_node(const rvsdg::Node & node);
+  ConvertSimpleNode(const rvsdg::SimpleNode & simpleNode);
 
   std::unique_ptr<llvm::cfg>
   create_cfg(const rvsdg::LambdaNode & lambda);
