@@ -7,6 +7,7 @@
 #define JLM_MLIR_BACKEND_JLMTOMLIRCONVERTER_HPP
 
 // JLM
+#include <jlm/llvm/ir/operators/delta.hpp>
 #include <jlm/llvm/ir/operators/lambda.hpp>
 #include <jlm/llvm/ir/operators/operators.hpp>
 #include <jlm/llvm/ir/RvsdgModule.hpp>
@@ -187,6 +188,19 @@ private:
   ::mlir::Operation *
   ConvertTheta(
       const rvsdg::ThetaNode & thetaNode,
+      ::mlir::Block & block,
+      const ::llvm::SmallVector<::mlir::Value> & inputs);
+
+  /**
+   * Converts an RVSDG delta node to an MLIR RVSDG DeltaNode.
+   * \param node The RVSDG delta node to be converted
+   * \param block The MLIR RVSDG block to insert the delta node.
+   * \param inputs The inputs to the delta::node.
+   * \return The converted MLIR RVSDG DeltaNode.
+   */
+  ::mlir::Operation *
+  ConvertDelta(
+      const llvm::delta::node & node,
       ::mlir::Block & block,
       const ::llvm::SmallVector<::mlir::Value> & inputs);
 

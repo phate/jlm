@@ -6,6 +6,7 @@
 #ifndef JLM_MLIR_FRONTEND_MLIRTOJLMCONVERTER_HPP
 #define JLM_MLIR_FRONTEND_MLIRTOJLMCONVERTER_HPP
 
+#include <jlm/llvm/ir/operators/delta.hpp>
 #include <jlm/llvm/ir/operators/lambda.hpp>
 #include <jlm/llvm/ir/RvsdgModule.hpp>
 #include <jlm/rvsdg/bitstring/comparison.hpp>
