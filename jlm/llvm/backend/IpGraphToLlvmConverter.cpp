@@ -321,7 +321,7 @@ IpGraphToLlvmConverter::convert_branch(
     const std::vector<const variable *> &,
     ::llvm::IRBuilder<> &)
 {
-  JLM_ASSERT(is<branch_op>(op));
+  JLM_ASSERT(is<BranchOperation>(op));
   return nullptr;
 }
 
@@ -666,7 +666,7 @@ IpGraphToLlvmConverter::convert_fpneg(
     const std::vector<const variable *> & args,
     ::llvm::IRBuilder<> & builder)
 {
-  JLM_ASSERT(is<fpneg_op>(op));
+  JLM_ASSERT(is<FNegOperation>(op));
   auto operand = Context_->value(args[0]);
   return builder.CreateUnOp(::llvm::Instruction::FNeg, operand);
 }
@@ -1205,7 +1205,7 @@ IpGraphToLlvmConverter::convert_operation(
   {
     return convert_assignment(op, arguments, builder);
   }
-  if (is<branch_op>(op))
+  if (is<BranchOperation>(op))
   {
     return convert_branch(op, arguments, builder);
   }
@@ -1337,7 +1337,7 @@ IpGraphToLlvmConverter::convert_operation(
   {
     return convert<MemCpyVolatileOperation>(op, arguments, builder);
   }
-  if (is<fpneg_op>(op))
+  if (is<FNegOperation>(op))
   {
     return convert_fpneg(op, arguments, builder);
   }
@@ -1345,7 +1345,7 @@ IpGraphToLlvmConverter::convert_operation(
   {
     return convert_cast<::llvm::Instruction::BitCast>(op, arguments, builder);
   }
-  if (is<fpext_op>(op))
+  if (is<FPExtOperation>(op))
   {
     return convert_cast<::llvm::Instruction::FPExt>(op, arguments, builder);
   }
@@ -1357,7 +1357,7 @@ IpGraphToLlvmConverter::convert_operation(
   {
     return convert_cast<::llvm::Instruction::FPToUI>(op, arguments, builder);
   }
-  if (is<fptrunc_op>(op))
+  if (is<FPTruncOperation>(op))
   {
     return convert_cast<::llvm::Instruction::FPTrunc>(op, arguments, builder);
   }
@@ -1365,7 +1365,7 @@ IpGraphToLlvmConverter::convert_operation(
   {
     return convert_cast<::llvm::Instruction::IntToPtr>(op, arguments, builder);
   }
-  if (is<ptr2bits_op>(op))
+  if (is<PtrToIntOperation>(op))
   {
     return convert_cast<::llvm::Instruction::PtrToInt>(op, arguments, builder);
   }
@@ -1385,7 +1385,7 @@ IpGraphToLlvmConverter::convert_operation(
   {
     return convert_cast<::llvm::Instruction::UIToFP>(op, arguments, builder);
   }
-  if (is<zext_op>(op))
+  if (is<ZExtOperation>(op))
   {
     return convert_cast<::llvm::Instruction::ZExt>(op, arguments, builder);
   }
@@ -1515,7 +1515,7 @@ IpGraphToLlvmConverter::create_conditional_branch(const cfg_node * node)
   ::llvm::IRBuilder<> builder(Context_->basic_block(node));
 
   auto branch = static_cast<const basic_block *>(node)->tacs().last();
-  JLM_ASSERT(branch && is<branch_op>(branch));
+  JLM_ASSERT(branch && is<BranchOperation>(branch));
   JLM_ASSERT(Context_->value(branch->operand(0))->getType()->isIntegerTy(1));
 
   auto condition = Context_->value(branch->operand(0));
@@ -1534,7 +1534,7 @@ IpGraphToLlvmConverter::create_switch(const cfg_node * node)
   ::llvm::IRBuilder<> builder(Context_->basic_block(node));
 
   auto branch = bb->tacs().last();
-  JLM_ASSERT(branch && is<branch_op>(branch));
+  JLM_ASSERT(branch && is<BranchOperation>(branch));
   auto condition = Context_->value(branch->operand(0));
   auto match = get_match(branch);
 
@@ -1583,7 +1583,7 @@ IpGraphToLlvmConverter::create_terminator_instruction(const llvm::cfg_node * nod
   }
 
   auto branch = tacs.last();
-  JLM_ASSERT(branch && is<branch_op>(branch));
+  JLM_ASSERT(branch && is<BranchOperation>(branch));
 
   // conditional branch
   if (Context_->value(branch->operand(0))->getType()->isIntegerTy(1))
@@ -1870,7 +1870,9 @@ IpGraphToLlvmConverter::convert_cfg(llvm::cfg & cfg, ::llvm::Function & f)
       auto & op = *static_cast<const SsaPhiOperation *>(&tac->operation());
       auto phi = ::llvm::dyn_cast<::llvm::PHINode>(Context_->value(tac->result(0)));
       for (size_t n = 0; n < tac->noperands(); n++)
-        phi->addIncoming(Context_->value(tac->operand(n)), Context_->basic_block(op.node(n)));
+        phi->addIncoming(
+            Context_->value(tac->operand(n)),
+            Context_->basic_block(op.GetIncomingNode(n)));
     }
   }
 }

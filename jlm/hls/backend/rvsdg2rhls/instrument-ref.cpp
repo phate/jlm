@@ -252,7 +252,7 @@ instrument_ref(
       auto dbt = dynamic_cast<const jlm::rvsdg::bittype *>(&data->type());
       if (*dbt != *jlm::rvsdg::bittype::Create(64))
       {
-        data = &llvm::zext_op::Create(*data, rvsdg::bittype::Create(64));
+        data = &llvm::ZExtOperation::Create(*data, rvsdg::bittype::Create(64));
       }
       auto memstate = node->input(2)->origin();
       auto callOp = jlm::llvm::CallNode::Create(

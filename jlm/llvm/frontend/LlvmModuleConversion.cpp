@@ -49,12 +49,17 @@ convert_instructions(::llvm::Function & function, context & ctx)
   return phis;
 }
 
+/**
+ * During conversion of LLVM instructions, phi instructions were created without operands.
+ * Once all instructions have been converted, this function goes over all phi instructions
+ * and assigns proper operands.
+ */
 static void
-patch_phi_operands(const std::vector<::llvm::PHINode *> & phis, context & ctx)
+PatchPhiOperands(const std::vector<::llvm::PHINode *> & phis, context & ctx)
 {
   for (const auto & phi : phis)
   {
-    std::vector<cfg_node *> nodes;
+    std::vector<cfg_node *> incomingNodes;
     std::vector<const variable *> operands;
     for (size_t n = 0; n < phi->getNumOperands(); n++)
     {
@@ -64,18 +69,26 @@ patch_phi_operands(const std::vector<::llvm::PHINode *> & phis, context & ctx)
       if (!ctx.has(phi->getIncomingBlock(n)))
         continue;
 
-      auto bb = ctx.get(phi->getIncomingBlock(n));
+      // The LLVM phi instruction may have multiple operands with the same incoming cfg node.
+      // When this happens in valid LLVM IR, all operands from the same basic block are identical.
+      // We therefore skip any operands that reference already handled basic blocks.
+      auto predecessor = ctx.get(phi->getIncomingBlock(n));
+      if (std::find(incomingNodes.begin(), incomingNodes.end(), predecessor) != incomingNodes.end())
+        continue;
+
+      // Convert the operand value in the predecessor basic block, as that is where it is "used".
       tacsvector_t tacs;
       operands.push_back(ConvertValue(phi->getIncomingValue(n), tacs, ctx));
-      bb->insert_before_branch(tacs);
-      nodes.push_back(bb);
+      predecessor->insert_before_branch(tacs);
+      incomingNodes.push_back(predecessor);
     }
 
-    // Phi instructions with a single reachable predecessor should have already been elided
-    JLM_ASSERT(operands.size() >= 2);
+    JLM_ASSERT(operands.size() >= 1);
 
     auto phi_tac = util::AssertedCast<const tacvariable>(ctx.lookup_value(phi))->tac();
-    phi_tac->replace(SsaPhiOperation(nodes, phi_tac->result(0)->Type()), operands);
+    phi_tac->replace(
+        SsaPhiOperation(std::move(incomingNodes), phi_tac->result(0)->Type()),
+        operands);
   }
 }
 
@@ -323,7 +336,7 @@ EnsureSingleInEdgeToExitNode(llvm::cfg & cfg)
 
         rvsdg::ctlconstant_op op(rvsdg::ctlvalue_repr(1, 2));
         auto operand = basicBlock->append_last(tac::create(op, {}))->result(0);
-        basicBlock->append_last(branch_op::create(2, operand));
+        basicBlock->append_last(BranchOperation::create(2, operand));
 
         basicBlock->add_outedge(exitNode);
         basicBlock->add_outedge(repetitionEdge->sink());
@@ -411,11 +424,13 @@ create_cfg(::llvm::Function & f, context & ctx)
   ctx.set_basic_block_map(bbmap);
   ctx.set_result(result);
   auto phis = convert_instructions(f, ctx);
-  patch_phi_operands(phis, ctx);
+  PatchPhiOperands(phis, ctx);
 
   EnsureSingleInEdgeToExitNode(*cfg);
 
+  // Merge basic blocks A -> B when possible
   straighten(*cfg);
+  // Remove unreachable nodes
   prune(*cfg);
   return cfg;
 }

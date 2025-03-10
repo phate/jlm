@@ -17,7 +17,7 @@ bool
 SsaPhiOperation::operator==(const Operation & other) const noexcept
 {
   const auto op = dynamic_cast<const SsaPhiOperation *>(&other);
-  return op && op->nodes_ == nodes_ && op->result(0) == result(0);
+  return op && op->IncomingNodes_ == IncomingNodes_ && op->result(0) == result(0);
 }
 
 std::string
@@ -26,7 +26,7 @@ SsaPhiOperation::debug_string() const
   std::string str("[");
   for (size_t n = 0; n < narguments(); n++)
   {
-    str += util::strfmt(node(n));
+    str += util::strfmt(GetIncomingNode(n));
     if (n != narguments() - 1)
       str += ", ";
   }
@@ -198,28 +198,25 @@ ctl2bits_op::copy() const
   return std::make_unique<ctl2bits_op>(*this);
 }
 
-/* branch operator */
-
-branch_op::~branch_op() noexcept
-{}
+BranchOperation::~BranchOperation() noexcept = default;
 
 bool
-branch_op::operator==(const Operation & other) const noexcept
+BranchOperation::operator==(const Operation & other) const noexcept
 {
-  auto op = dynamic_cast<const branch_op *>(&other);
+  const auto op = dynamic_cast<const BranchOperation *>(&other);
   return op && op->argument(0) == argument(0);
 }
 
 std::string
-branch_op::debug_string() const
+BranchOperation::debug_string() const
 {
-  return "BRANCH";
+  return "Branch";
 }
 
 std::unique_ptr<rvsdg::Operation>
-branch_op::copy() const
+BranchOperation::copy() const
 {
-  return std::make_unique<branch_op>(*this);
+  return std::make_unique<BranchOperation>(*this);
 }
 
 ConstantPointerNullOperation::~ConstantPointerNullOperation() noexcept = default;
@@ -276,38 +273,35 @@ IntegerToPointerOperation::reduce_operand(rvsdg::unop_reduction_path_t, rvsdg::o
   JLM_UNREACHABLE("Not implemented!");
 }
 
-/* ptr2bits operator */
-
-ptr2bits_op::~ptr2bits_op()
-{}
+PtrToIntOperation::~PtrToIntOperation() noexcept = default;
 
 bool
-ptr2bits_op::operator==(const Operation & other) const noexcept
+PtrToIntOperation::operator==(const Operation & other) const noexcept
 {
-  auto op = dynamic_cast<const ptr2bits_op *>(&other);
+  const auto op = dynamic_cast<const PtrToIntOperation *>(&other);
   return op && op->argument(0) == argument(0) && op->result(0) == result(0);
 }
 
 std::string
-ptr2bits_op::debug_string() const
+PtrToIntOperation::debug_string() const
 {
-  return "PTR2BITS";
+  return "PtrToInt";
 }
 
 std::unique_ptr<rvsdg::Operation>
-ptr2bits_op::copy() const
+PtrToIntOperation::copy() const
 {
-  return std::make_unique<ptr2bits_op>(*this);
+  return std::make_unique<PtrToIntOperation>(*this);
 }
 
 rvsdg::unop_reduction_path_t
-ptr2bits_op::can_reduce_operand(const rvsdg::output *) const noexcept
+PtrToIntOperation::can_reduce_operand(const rvsdg::output *) const noexcept
 {
   return rvsdg::unop_reduction_none;
 }
 
 rvsdg::output *
-ptr2bits_op::reduce_operand(rvsdg::unop_reduction_path_t, rvsdg::output *) const
+PtrToIntOperation::reduce_operand(rvsdg::unop_reduction_path_t, rvsdg::output *) const
 {
   JLM_UNREACHABLE("Not implemented!");
 }
@@ -379,32 +373,29 @@ ptrcmp_op::reduce_operand_pair(rvsdg::binop_reduction_path_t, rvsdg::output *, r
   JLM_UNREACHABLE("Not implemented!");
 }
 
-/* zext operator */
-
-zext_op::~zext_op()
-{}
+ZExtOperation::~ZExtOperation() noexcept = default;
 
 bool
-zext_op::operator==(const Operation & other) const noexcept
+ZExtOperation::operator==(const Operation & other) const noexcept
 {
-  auto op = dynamic_cast<const zext_op *>(&other);
+  const auto op = dynamic_cast<const ZExtOperation *>(&other);
   return op && op->argument(0) == argument(0) && op->result(0) == result(0);
 }
 
 std::string
-zext_op::debug_string() const
+ZExtOperation::debug_string() const
 {
-  return util::strfmt("ZEXT[", nsrcbits(), " -> ", ndstbits(), "]");
+  return util::strfmt("ZExt[", nsrcbits(), " -> ", ndstbits(), "]");
 }
 
 std::unique_ptr<rvsdg::Operation>
-zext_op::copy() const
+ZExtOperation::copy() const
 {
-  return std::make_unique<zext_op>(*this);
+  return std::make_unique<ZExtOperation>(*this);
 }
 
 rvsdg::unop_reduction_path_t
-zext_op::can_reduce_operand(const rvsdg::output * operand) const noexcept
+ZExtOperation::can_reduce_operand(const rvsdg::output * operand) const noexcept
 {
   if (rvsdg::is<rvsdg::bitconstant_op>(producer(operand)))
     return rvsdg::unop_reduction_constant;
@@ -413,7 +404,7 @@ zext_op::can_reduce_operand(const rvsdg::output * operand) const noexcept
 }
 
 rvsdg::output *
-zext_op::reduce_operand(rvsdg::unop_reduction_path_t path, rvsdg::output * operand) const
+ZExtOperation::reduce_operand(rvsdg::unop_reduction_path_t path, rvsdg::output * operand) const
 {
   if (path == rvsdg::unop_reduction_constant)
   {
@@ -595,110 +586,101 @@ fpbin_op::reduce_operand_pair(rvsdg::binop_reduction_path_t, rvsdg::output *, rv
   JLM_UNREACHABLE("Not implemented!");
 }
 
-/* fpext operator */
-
-fpext_op::~fpext_op()
-{}
+FPExtOperation::~FPExtOperation() noexcept = default;
 
 bool
-fpext_op::operator==(const Operation & other) const noexcept
+FPExtOperation::operator==(const Operation & other) const noexcept
 {
-  auto op = dynamic_cast<const fpext_op *>(&other);
+  const auto op = dynamic_cast<const FPExtOperation *>(&other);
   return op && op->srcsize() == srcsize() && op->dstsize() == dstsize();
 }
 
 std::string
-fpext_op::debug_string() const
+FPExtOperation::debug_string() const
 {
-  return "fpext";
+  return "FPExt";
 }
 
 std::unique_ptr<rvsdg::Operation>
-fpext_op::copy() const
+FPExtOperation::copy() const
 {
-  return std::make_unique<fpext_op>(*this);
+  return std::make_unique<FPExtOperation>(*this);
 }
 
 rvsdg::unop_reduction_path_t
-fpext_op::can_reduce_operand(const rvsdg::output *) const noexcept
+FPExtOperation::can_reduce_operand(const rvsdg::output *) const noexcept
 {
   return rvsdg::unop_reduction_none;
 }
 
 rvsdg::output *
-fpext_op::reduce_operand(rvsdg::unop_reduction_path_t, rvsdg::output *) const
+FPExtOperation::reduce_operand(rvsdg::unop_reduction_path_t, rvsdg::output *) const
 {
   JLM_UNREACHABLE("Not implemented!");
 }
 
-/* fpneg operator */
-
-fpneg_op::~fpneg_op()
-{}
+FNegOperation::~FNegOperation() noexcept = default;
 
 bool
-fpneg_op::operator==(const Operation & other) const noexcept
+FNegOperation::operator==(const Operation & other) const noexcept
 {
-  auto op = dynamic_cast<const fpneg_op *>(&other);
+  const auto op = dynamic_cast<const FNegOperation *>(&other);
   return op && op->size() == size();
 }
 
 std::string
-fpneg_op::debug_string() const
+FNegOperation::debug_string() const
 {
-  return "fpneg";
+  return "FNeg";
 }
 
 std::unique_ptr<rvsdg::Operation>
-fpneg_op::copy() const
+FNegOperation::copy() const
 {
-  return std::make_unique<fpneg_op>(*this);
+  return std::make_unique<FNegOperation>(*this);
 }
 
 rvsdg::unop_reduction_path_t
-fpneg_op::can_reduce_operand(const rvsdg::output *) const noexcept
+FNegOperation::can_reduce_operand(const rvsdg::output *) const noexcept
 {
   return rvsdg::unop_reduction_none;
 }
 
 rvsdg::output *
-fpneg_op::reduce_operand(rvsdg::unop_reduction_path_t, rvsdg::output *) const
+FNegOperation::reduce_operand(rvsdg::unop_reduction_path_t, rvsdg::output *) const
 {
   JLM_UNREACHABLE("Not implemented!");
 }
 
-/* fptrunc operator */
-
-fptrunc_op::~fptrunc_op()
-{}
+FPTruncOperation::~FPTruncOperation() noexcept = default;
 
 bool
-fptrunc_op::operator==(const Operation & other) const noexcept
+FPTruncOperation::operator==(const Operation & other) const noexcept
 {
-  auto op = dynamic_cast<const fptrunc_op *>(&other);
+  const auto op = dynamic_cast<const FPTruncOperation *>(&other);
   return op && op->srcsize() == srcsize() && op->dstsize() == dstsize();
 }
 
 std::string
-fptrunc_op::debug_string() const
+FPTruncOperation::debug_string() const
 {
-  return "fptrunc";
+  return "FPTrunc";
 }
 
 std::unique_ptr<rvsdg::Operation>
-fptrunc_op::copy() const
+FPTruncOperation::copy() const
 {
-  return std::make_unique<fptrunc_op>(*this);
+  return std::make_unique<FPTruncOperation>(*this);
 }
 
 rvsdg::unop_reduction_path_t
-fptrunc_op::can_reduce_operand(const rvsdg::output *) const noexcept
+FPTruncOperation::can_reduce_operand(const rvsdg::output *) const noexcept
 {
   return rvsdg::unop_reduction_none;
 }
 
 rvsdg::output *
-fptrunc_op::reduce_operand(rvsdg::unop_reduction_path_t, rvsdg::output *) const
+FPTruncOperation::reduce_operand(rvsdg::unop_reduction_path_t, rvsdg::output *) const
 {
   JLM_UNREACHABLE("Not implemented!");
 }
