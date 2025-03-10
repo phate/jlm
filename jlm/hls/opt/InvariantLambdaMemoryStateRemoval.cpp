@@ -35,21 +35,18 @@ InvariantLambdaMemoryStateRemoval::RemoveInvariantMemoryStateEdges(
   for (size_t i = 0; i < exitNode->ninputs(); i++)
   {
     // Check if the output has only one user and if it is a LambdaEntryMemoryStateMerge
-    if (exitNode->input(i)->origin()->nusers() == 1
-        && jlm::rvsdg::is<const llvm::LambdaEntryMemoryStateSplitOperation>(
-            rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*exitNode->input(i)->origin())
-                ->GetOperation()))
+    auto node = rvsdg::output::GetNode(*exitNode->input(i)->origin());
+    if (jlm::rvsdg::is<const llvm::LambdaEntryMemoryStateSplitOperation>(node->GetOperation()))
     {
       // Found an invariant memory state edge, so going to replace the entryNode
-      entryNode = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*exitNode->input(i)->origin());
+      entryNode = node;
+      continue;
     }
-    else
-    {
-      // Keep track of edges that is to be kept since they are not invariant
-      nonInvariantOutputs.push_back(exitNode->input(i)->origin());
-      // Also keep track of the index to be used for diverting edges
-      indices.push_back(i);
-    }
+
+    // Keep track of edges that is to be kept since they are not invariant
+    nonInvariantOutputs.push_back(exitNode->input(i)->origin());
+    // Also keep track of the index to be used for diverting edges
+    indices.push_back(i);
   }
 
   // If the entryNode is not set, then we haven't found any invariant edges
