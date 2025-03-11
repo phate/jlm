@@ -40,13 +40,14 @@ InvariantLambdaMemoryStateRemoval::RemoveInvariantMemoryStateEdges(
     {
       // Found an invariant memory state edge, so going to replace the entryNode
       entryNode = node;
-      continue;
     }
-
-    // Keep track of edges that is to be kept since they are not invariant
-    nonInvariantOutputs.push_back(exitNode->input(i)->origin());
-    // Also keep track of the index to be used for diverting edges
-    indices.push_back(i);
+    else
+    {
+      // Keep track of edges that is to be kept since they are not invariant
+      nonInvariantOutputs.push_back(exitNode->input(i)->origin());
+      // Also keep track of the index to be used for diverting edges
+      indices.push_back(i);
+    }
   }
 
   // If the entryNode is not set, then we haven't found any invariant edges
@@ -99,17 +100,16 @@ InvariantLambdaMemoryStateRemoval::RemoveInvariantLambdaMemoryStateEdges(
   {
     if (auto lambda = dynamic_cast<const rvsdg::LambdaNode *>(node))
     {
-      if (lambda->output()->nusers() != 1
-          || !dynamic_cast<const jlm::rvsdg::GraphExport *>(*lambda->output()->begin()))
+      if (lambda->output()->nusers() == 1
+          && dynamic_cast<const jlm::rvsdg::GraphExport *>(*lambda->output()->begin()))
       {
-        continue;
-      }
-      // RemoveInvariantMemoryStateEdges(llvm::GetMemoryStateRegionResult(*lambda));
-      for (auto result : lambda->subregion()->Results())
-      {
-        if (jlm::rvsdg::is<const llvm::MemoryStateType>(*result->Type()))
+        // RemoveInvariantMemoryStateEdges(llvm::GetMemoryStateRegionResult(*lambda));
+        for (auto result : lambda->subregion()->Results())
         {
-          RemoveInvariantMemoryStateEdges(result);
+          if (jlm::rvsdg::is<const llvm::MemoryStateType>(*result->Type()))
+          {
+            RemoveInvariantMemoryStateEdges(result);
+          }
         }
       }
     }
