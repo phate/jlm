@@ -35,7 +35,7 @@ InvariantLambdaMemoryStateRemoval::RemoveInvariantMemoryStateEdges(
   for (size_t i = 0; i < exitNode->ninputs(); i++)
   {
     // Check if the output has only one user and if it is a LambdaEntryMemoryStateMerge
-    auto node = rvsdg::output::GetNode(*exitNode->input(i)->origin());
+    auto node = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*exitNode->input(i)->origin());
     if (jlm::rvsdg::is<const llvm::LambdaEntryMemoryStateSplitOperation>(node->GetOperation()))
     {
       // Found an invariant memory state edge, so going to replace the entryNode
