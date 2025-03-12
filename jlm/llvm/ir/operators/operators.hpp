@@ -12,7 +12,6 @@
 #include <jlm/rvsdg/binary.hpp>
 #include <jlm/rvsdg/bitstring/type.hpp>
 #include <jlm/rvsdg/control.hpp>
-#include <jlm/rvsdg/nullary.hpp>
 #include <jlm/rvsdg/simple-node.hpp>
 #include <jlm/rvsdg/type.hpp>
 #include <jlm/rvsdg/unary.hpp>
@@ -22,18 +21,23 @@
 namespace jlm::llvm
 {
 
-class cfg_node;
-
+/**
+ * Operation that picks its value based on which node branched to the current basic block.
+ * All SsaPhiOperations must be at the top of their basic blocks.
+ *
+ * Each operand corresponds to an incoming basic block,
+ * and the list of incoming nodes must include every predecessor in the cfg exactly once.
+ */
 class SsaPhiOperation final : public rvsdg::SimpleOperation
 {
 public:
   ~SsaPhiOperation() noexcept override;
 
   SsaPhiOperation(
-      const std::vector<llvm::cfg_node *> & nodes,
+      std::vector<cfg_node *> incomingNodes,
       const std::shared_ptr<const jlm::rvsdg::Type> & type)
-      : SimpleOperation({ nodes.size(), type }, { type }),
-        nodes_(nodes)
+      : SimpleOperation({ incomingNodes.size(), type }, { type }),
+        IncomingNodes_(std::move(incomingNodes))
   {}
 
   SsaPhiOperation(const SsaPhiOperation &) = default;
@@ -44,32 +48,32 @@ public:
   SsaPhiOperation &
   operator=(SsaPhiOperation &&) = delete;
 
-  virtual bool
+  bool
   operator==(const Operation & other) const noexcept override;
 
-  virtual std::string
+  std::string
   debug_string() const override;
 
   [[nodiscard]] std::unique_ptr<Operation>
   copy() const override;
 
-  inline const jlm::rvsdg::Type &
+  const rvsdg::Type &
   type() const noexcept
   {
     return *result(0);
   }
 
-  inline const std::shared_ptr<const jlm::rvsdg::Type> &
+  const std::shared_ptr<const rvsdg::Type> &
   Type() const noexcept
   {
     return result(0);
   }
 
-  inline cfg_node *
-  node(size_t n) const noexcept
+  cfg_node *
+  GetIncomingNode(size_t n) const noexcept
   {
     JLM_ASSERT(n < narguments());
-    return nodes_[n];
+    return IncomingNodes_[n];
   }
 
   static std::unique_ptr<llvm::tac>
@@ -77,20 +81,20 @@ public:
       const std::vector<std::pair<const variable *, cfg_node *>> & arguments,
       std::shared_ptr<const jlm::rvsdg::Type> type)
   {
-    std::vector<cfg_node *> nodes;
+    std::vector<cfg_node *> basicBlocks;
     std::vector<const variable *> operands;
     for (const auto & argument : arguments)
     {
-      nodes.push_back(argument.second);
+      basicBlocks.push_back(argument.second);
       operands.push_back(argument.first);
     }
 
-    const SsaPhiOperation phi(nodes, std::move(type));
+    const SsaPhiOperation phi(std::move(basicBlocks), std::move(type));
     return tac::create(phi, operands);
   }
 
 private:
-  std::vector<cfg_node *> nodes_;
+  std::vector<cfg_node *> IncomingNodes_;
 };
 
 class AssignmentOperation final : public rvsdg::SimpleOperation
@@ -163,15 +167,13 @@ public:
   }
 };
 
-/* vector select operator */
-
-class vectorselect_op final : public rvsdg::SimpleOperation
+class VectorSelectOperation final : public rvsdg::SimpleOperation
 {
 public:
-  virtual ~vectorselect_op() noexcept;
+  ~VectorSelectOperation() noexcept override;
 
 private:
-  vectorselect_op(
+  VectorSelectOperation(
       const std::shared_ptr<const VectorType> & pt,
       const std::shared_ptr<const VectorType> & vt)
       : SimpleOperation({ pt, vt, vt }, { vt })
@@ -225,29 +227,29 @@ private:
     auto fvt = static_cast<const T *>(&t->type());
     auto pt = T::Create(jlm::rvsdg::bittype::Create(1), fvt->size());
     auto vt = T::Create(fvt->Type(), fvt->size());
-    vectorselect_op op(pt, vt);
+    const VectorSelectOperation op(pt, vt);
     return tac::create(op, { p, t, f });
   }
 };
 
-/* fp2ui operator */
-
-class fp2ui_op final : public rvsdg::UnaryOperation
+class FloatingPointToUnsignedIntegerOperation final : public rvsdg::UnaryOperation
 {
 public:
-  virtual ~fp2ui_op() noexcept;
+  ~FloatingPointToUnsignedIntegerOperation() noexcept override;
 
-  inline fp2ui_op(fpsize size, std::shared_ptr<const jlm::rvsdg::bittype> type)
+  FloatingPointToUnsignedIntegerOperation(
+      const fpsize size,
+      std::shared_ptr<const rvsdg::bittype> type)
       : UnaryOperation(FloatingPointType::Create(size), std::move(type))
   {}
 
-  inline fp2ui_op(
+  FloatingPointToUnsignedIntegerOperation(
       std::shared_ptr<const FloatingPointType> fpt,
       std::shared_ptr<const jlm::rvsdg::bittype> type)
       : UnaryOperation(std::move(fpt), std::move(type))
   {}
 
-  inline fp2ui_op(
+  FloatingPointToUnsignedIntegerOperation(
       std::shared_ptr<const jlm::rvsdg::Type> srctype,
       std::shared_ptr<const jlm::rvsdg::Type> dsttype)
       : UnaryOperation(srctype, dsttype)
@@ -288,29 +290,29 @@ public:
     if (!dt)
       throw jlm::util::error("expected bitstring type.");
 
-    fp2ui_op op(std::move(st), std::move(dt));
+    const FloatingPointToUnsignedIntegerOperation op(std::move(st), std::move(dt));
     return tac::create(op, { operand });
   }
 };
 
-/* fp2si operator */
-
-class fp2si_op final : public rvsdg::UnaryOperation
+class FloatingPointToSignedIntegerOperation final : public rvsdg::UnaryOperation
 {
 public:
-  virtual ~fp2si_op() noexcept;
+  ~FloatingPointToSignedIntegerOperation() noexcept override;
 
-  inline fp2si_op(fpsize size, std::shared_ptr<const jlm::rvsdg::bittype> type)
+  FloatingPointToSignedIntegerOperation(
+      const fpsize size,
+      std::shared_ptr<const jlm::rvsdg::bittype> type)
       : UnaryOperation(FloatingPointType::Create(size), std::move(type))
   {}
 
-  inline fp2si_op(
+  FloatingPointToSignedIntegerOperation(
       std::shared_ptr<const FloatingPointType> fpt,
       std::shared_ptr<const jlm::rvsdg::bittype> type)
       : UnaryOperation(std::move(fpt), std::move(type))
   {}
 
-  inline fp2si_op(
+  FloatingPointToSignedIntegerOperation(
       std::shared_ptr<const jlm::rvsdg::Type> srctype,
       std::shared_ptr<const jlm::rvsdg::Type> dsttype)
       : UnaryOperation(srctype, dsttype)
@@ -351,7 +353,7 @@ public:
     if (!dt)
       throw jlm::util::error("expected bitstring type.");
 
-    fp2si_op op(std::move(st), std::move(dt));
+    FloatingPointToSignedIntegerOperation op(std::move(st), std::move(dt));
     return tac::create(op, { operand });
   }
 };
@@ -394,14 +396,12 @@ public:
   }
 };
 
-/* branch operator */
-
-class branch_op final : public rvsdg::SimpleOperation
+class BranchOperation final : public rvsdg::SimpleOperation
 {
 public:
-  virtual ~branch_op() noexcept;
+  ~BranchOperation() noexcept override;
 
-  explicit inline branch_op(std::shared_ptr<const jlm::rvsdg::ControlType> type)
+  explicit BranchOperation(std::shared_ptr<const rvsdg::ControlType> type)
       : SimpleOperation({ std::move(type) }, {})
   {}
 
@@ -423,7 +423,7 @@ public:
   static std::unique_ptr<llvm::tac>
   create(size_t nalternatives, const variable * operand)
   {
-    branch_op op(jlm::rvsdg::ControlType::Create(nalternatives));
+    const BranchOperation op(rvsdg::ControlType::Create(nalternatives));
     return tac::create(op, { operand });
   }
 };
@@ -481,20 +481,18 @@ private:
   }
 };
 
-/* bits2ptr operator */
-
-class bits2ptr_op final : public rvsdg::UnaryOperation
+class IntegerToPointerOperation final : public rvsdg::UnaryOperation
 {
 public:
-  virtual ~bits2ptr_op();
+  ~IntegerToPointerOperation() noexcept override;
 
-  inline bits2ptr_op(
+  IntegerToPointerOperation(
       std::shared_ptr<const jlm::rvsdg::bittype> btype,
       std::shared_ptr<const PointerType> ptype)
       : UnaryOperation(std::move(btype), std::move(ptype))
   {}
 
-  inline bits2ptr_op(
+  IntegerToPointerOperation(
       std::shared_ptr<const jlm::rvsdg::Type> srctype,
       std::shared_ptr<const jlm::rvsdg::Type> dsttype)
       : UnaryOperation(srctype, dsttype)
@@ -541,7 +539,7 @@ public:
     if (!pt)
       throw jlm::util::error("expected pointer type.");
 
-    bits2ptr_op op(at, pt);
+    IntegerToPointerOperation op(at, pt);
     return tac::create(op, { argument });
   }
 
@@ -556,24 +554,22 @@ public:
     if (!pt)
       throw jlm::util::error("expected pointer type.");
 
-    return rvsdg::CreateOpNode<bits2ptr_op>({ operand }, ot, pt).output(0);
+    return rvsdg::CreateOpNode<IntegerToPointerOperation>({ operand }, ot, pt).output(0);
   }
 };
 
-/* ptr2bits operator */
-
-class ptr2bits_op final : public rvsdg::UnaryOperation
+class PtrToIntOperation final : public rvsdg::UnaryOperation
 {
 public:
-  virtual ~ptr2bits_op();
+  ~PtrToIntOperation() noexcept override;
 
-  inline ptr2bits_op(
+  PtrToIntOperation(
       std::shared_ptr<const PointerType> ptype,
       std::shared_ptr<const jlm::rvsdg::bittype> btype)
       : UnaryOperation(std::move(ptype), std::move(btype))
   {}
 
-  inline ptr2bits_op(
+  PtrToIntOperation(
       std::shared_ptr<const jlm::rvsdg::Type> srctype,
       std::shared_ptr<const jlm::rvsdg::Type> dsttype)
       : UnaryOperation(srctype, dsttype)
@@ -620,7 +616,7 @@ public:
     if (!bt)
       throw jlm::util::error("expected bitstring type.");
 
-    ptr2bits_op op(std::move(pt), std::move(bt));
+    PtrToIntOperation op(std::move(pt), std::move(bt));
     return tac::create(op, { argument });
   }
 };
@@ -753,21 +749,19 @@ private:
   llvm::cmp cmp_;
 };
 
-/* zext operator */
-
-class zext_op final : public rvsdg::UnaryOperation
+class ZExtOperation final : public rvsdg::UnaryOperation
 {
 public:
-  virtual ~zext_op();
+  ~ZExtOperation() noexcept override;
 
-  inline zext_op(size_t nsrcbits, size_t ndstbits)
+  ZExtOperation(size_t nsrcbits, size_t ndstbits)
       : UnaryOperation(rvsdg::bittype::Create(nsrcbits), rvsdg::bittype::Create(ndstbits))
   {
     if (ndstbits < nsrcbits)
       throw jlm::util::error("# destination bits must be greater than # source bits.");
   }
 
-  inline zext_op(
+  ZExtOperation(
       const std::shared_ptr<const jlm::rvsdg::bittype> & srctype,
       const std::shared_ptr<const jlm::rvsdg::bittype> & dsttype)
       : UnaryOperation(srctype, dsttype)
@@ -776,7 +770,7 @@ public:
       throw jlm::util::error("# destination bits must be greater than # source bits.");
   }
 
-  inline zext_op(
+  ZExtOperation(
       std::shared_ptr<const jlm::rvsdg::Type> srctype,
       std::shared_ptr<const jlm::rvsdg::Type> dsttype)
       : UnaryOperation(srctype, dsttype)
@@ -827,7 +821,7 @@ public:
     auto operandBitType = CheckAndExtractBitType(operand->Type());
     auto resultBitType = CheckAndExtractBitType(type);
 
-    zext_op operation(std::move(operandBitType), std::move(resultBitType));
+    const ZExtOperation operation(std::move(operandBitType), std::move(resultBitType));
     return tac::create(operation, { operand });
   }
 
@@ -837,7 +831,7 @@ public:
     auto operandBitType = CheckAndExtractBitType(operand.Type());
     auto resultBitType = CheckAndExtractBitType(resultType);
 
-    return *rvsdg::CreateOpNode<zext_op>(
+    return *rvsdg::CreateOpNode<ZExtOperation>(
                 { &operand },
                 std::move(operandBitType),
                 std::move(resultBitType))
@@ -1206,21 +1200,19 @@ private:
   llvm::fpop op_;
 };
 
-/* fpext operator */
-
-class fpext_op final : public rvsdg::UnaryOperation
+class FPExtOperation final : public rvsdg::UnaryOperation
 {
 public:
-  virtual ~fpext_op();
+  ~FPExtOperation() noexcept override;
 
-  inline fpext_op(const fpsize & srcsize, const fpsize & dstsize)
+  FPExtOperation(const fpsize & srcsize, const fpsize & dstsize)
       : UnaryOperation(FloatingPointType::Create(srcsize), FloatingPointType::Create(dstsize))
   {
     if (srcsize == fpsize::flt && dstsize == fpsize::half)
       throw jlm::util::error("destination type size must be bigger than source type size.");
   }
 
-  inline fpext_op(
+  FPExtOperation(
       const std::shared_ptr<const FloatingPointType> & srctype,
       const std::shared_ptr<const FloatingPointType> & dsttype)
       : UnaryOperation(srctype, dsttype)
@@ -1229,7 +1221,7 @@ public:
       throw jlm::util::error("destination type size must be bigger than source type size.");
   }
 
-  inline fpext_op(
+  FPExtOperation(
       std::shared_ptr<const jlm::rvsdg::Type> srctype,
       std::shared_ptr<const jlm::rvsdg::Type> dsttype)
       : UnaryOperation(srctype, dsttype)
@@ -1285,23 +1277,21 @@ public:
     if (!dt)
       throw jlm::util::error("expected floating point type.");
 
-    fpext_op op(std::move(st), std::move(dt));
+    const FPExtOperation op(std::move(st), std::move(dt));
     return tac::create(op, { operand });
   }
 };
 
-/* fpneg operator */
-
-class fpneg_op final : public rvsdg::UnaryOperation
+class FNegOperation final : public rvsdg::UnaryOperation
 {
 public:
-  ~fpneg_op() override;
+  ~FNegOperation() noexcept override;
 
-  explicit fpneg_op(const fpsize & size)
+  explicit FNegOperation(const fpsize & size)
       : UnaryOperation(FloatingPointType::Create(size), FloatingPointType::Create(size))
   {}
 
-  explicit fpneg_op(const std::shared_ptr<const FloatingPointType> & fpt)
+  explicit FNegOperation(const std::shared_ptr<const FloatingPointType> & fpt)
       : UnaryOperation(fpt, fpt)
   {}
 
@@ -1334,19 +1324,17 @@ public:
     if (!type)
       throw jlm::util::error("expected floating point type.");
 
-    fpneg_op op(std::move(type));
+    const FNegOperation op(std::move(type));
     return tac::create(op, { operand });
   }
 };
 
-/* fptrunc operator */
-
-class fptrunc_op final : public rvsdg::UnaryOperation
+class FPTruncOperation final : public rvsdg::UnaryOperation
 {
 public:
-  virtual ~fptrunc_op();
+  ~FPTruncOperation() noexcept override;
 
-  inline fptrunc_op(const fpsize & srcsize, const fpsize & dstsize)
+  FPTruncOperation(const fpsize & srcsize, const fpsize & dstsize)
       : UnaryOperation(FloatingPointType::Create(srcsize), FloatingPointType::Create(dstsize))
   {
     if (srcsize == fpsize::half || (srcsize == fpsize::flt && dstsize != fpsize::half)
@@ -1354,7 +1342,7 @@ public:
       throw jlm::util::error("destination tpye size must be smaller than source size type.");
   }
 
-  inline fptrunc_op(
+  FPTruncOperation(
       const std::shared_ptr<const FloatingPointType> & srctype,
       const std::shared_ptr<const FloatingPointType> & dsttype)
       : UnaryOperation(srctype, dsttype)
@@ -1363,7 +1351,7 @@ public:
       throw jlm::util::error("destination type size must be bigger than source type size.");
   }
 
-  inline fptrunc_op(
+  FPTruncOperation(
       std::shared_ptr<const jlm::rvsdg::Type> srctype,
       std::shared_ptr<const jlm::rvsdg::Type> dsttype)
       : UnaryOperation(srctype, dsttype)
@@ -1420,7 +1408,7 @@ public:
     if (!dt)
       throw jlm::util::error("expected floating point type.");
 
-    fptrunc_op op(std::move(st), std::move(dt));
+    const FPTruncOperation op(std::move(st), std::move(dt));
     return tac::create(op, { operand });
   }
 };

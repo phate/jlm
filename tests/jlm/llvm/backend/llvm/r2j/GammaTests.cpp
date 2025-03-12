@@ -7,7 +7,7 @@
 #include <test-registry.hpp>
 #include <test-types.hpp>
 
-#include <jlm/llvm/backend/rvsdg2jlm/rvsdg2jlm.hpp>
+#include <jlm/llvm/backend/RvsdgToIpGraphConverter.hpp>
 #include <jlm/llvm/ir/cfg-structure.hpp>
 #include <jlm/llvm/ir/ipgraph-module.hpp>
 #include <jlm/llvm/ir/operators.hpp>
@@ -49,7 +49,7 @@ GammaWithMatch()
 
   // Act
   StatisticsCollector statisticsCollector;
-  auto module = rvsdg2jlm::rvsdg2jlm(rvsdgModule, statisticsCollector);
+  auto module = RvsdgToIpGraphConverter::CreateAndConvertModule(rvsdgModule, statisticsCollector);
   print(*module, stdout);
 
   // Assert
@@ -99,7 +99,7 @@ GammaWithoutMatch()
 
   // Act
   StatisticsCollector statisticsCollector;
-  auto module = rvsdg2jlm::rvsdg2jlm(rvsdgModule, statisticsCollector);
+  auto module = RvsdgToIpGraphConverter::CreateAndConvertModule(rvsdgModule, statisticsCollector);
   print(*module, stdout);
 
   // Assert
@@ -154,7 +154,7 @@ EmptyGammaWithThreeSubregions()
 
   // Act
   StatisticsCollector statisticsCollector;
-  auto module = rvsdg2jlm::rvsdg2jlm(rvsdgModule, statisticsCollector);
+  auto module = RvsdgToIpGraphConverter::CreateAndConvertModule(rvsdgModule, statisticsCollector);
   print(*module, stdout);
 
   // Assert
@@ -207,7 +207,7 @@ PartialEmptyGamma()
 
   // Act
   StatisticsCollector statisticsCollector;
-  auto module = rvsdg2jlm::rvsdg2jlm(rvsdgModule, statisticsCollector);
+  auto module = RvsdgToIpGraphConverter::CreateAndConvertModule(rvsdgModule, statisticsCollector);
 
   // Assert
   auto & ipg = module->ipgraph();

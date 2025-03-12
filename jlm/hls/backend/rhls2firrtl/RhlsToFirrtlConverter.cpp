@@ -226,7 +226,7 @@ RhlsToFirrtlConverter::MlirGenSimpleNode(const jlm::rvsdg::SimpleNode * node)
     auto op = AddLtOp(body, sInt0, sInt1);
     Connect(body, outData, op);
   }
-  else if (dynamic_cast<const llvm::zext_op *>(&(node->GetOperation())))
+  else if (dynamic_cast<const llvm::ZExtOperation *>(&(node->GetOperation())))
   {
     auto input0 = GetSubfield(body, inBundles[0], "data");
     Connect(body, outData, input0);
@@ -275,7 +275,7 @@ RhlsToFirrtlConverter::MlirGenSimpleNode(const jlm::rvsdg::SimpleNode * node)
     auto input0 = GetSubfield(body, inBundles[0], "data");
     Connect(body, outData, input0);
   }
-  else if (dynamic_cast<const llvm::bits2ptr_op *>(&(node->GetOperation())))
+  else if (dynamic_cast<const llvm::IntegerToPointerOperation *>(&(node->GetOperation())))
   {
     auto input0 = GetSubfield(body, inBundles[0], "data");
     Connect(body, outData, input0);

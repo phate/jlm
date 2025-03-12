@@ -490,7 +490,7 @@ ConvertSelect(const llvm::tac & threeAddressCode, rvsdg::Region &, llvm::Variabl
 static void
 ConvertBranch(const llvm::tac & threeAddressCode, rvsdg::Region &, llvm::VariableMap &)
 {
-  JLM_ASSERT(is<branch_op>(threeAddressCode.operation()));
+  JLM_ASSERT(is<BranchOperation>(threeAddressCode.operation()));
   /*
    * Nothing needs to be done. Branches are simply ignored.
    */
@@ -533,7 +533,7 @@ ConvertThreeAddressCode(
   {
     ConvertSelect(threeAddressCode, region, variableMap);
   }
-  else if (is<branch_op>(&threeAddressCode))
+  else if (is<BranchOperation>(&threeAddressCode))
   {
     ConvertBranch(threeAddressCode, region, variableMap);
   }
@@ -695,7 +695,7 @@ Convert(
   while (!is<blockaggnode>(split))
     split = split->child(split->nchildren() - 1);
   auto & sb = dynamic_cast<const blockaggnode *>(split)->tacs();
-  JLM_ASSERT(is<branch_op>(sb.last()->operation()));
+  JLM_ASSERT(is<BranchOperation>(sb.last()->operation()));
   auto predicate = regionalizedVariableMap.GetTopVariableMap().lookup(sb.last()->operand(0));
 
   auto gamma = rvsdg::GammaNode::create(predicate, branchAggregationNode.nchildren());
@@ -808,7 +808,7 @@ Convert(
     lblock = lblock->child(lblock->nchildren() - 1);
   JLM_ASSERT(is<blockaggnode>(lblock));
   auto & bb = static_cast<const blockaggnode *>(lblock)->tacs();
-  JLM_ASSERT(is<branch_op>(bb.last()->operation()));
+  JLM_ASSERT(is<BranchOperation>(bb.last()->operation()));
   auto predicate = bb.last()->operand(0);
 
   /*

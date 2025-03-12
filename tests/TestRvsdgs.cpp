@@ -376,7 +376,7 @@ Bits2PtrTest::SetupRvsdg()
     auto iOStateArgument = lambda->GetFunctionArguments()[1];
     auto memoryStateArgument = lambda->GetFunctionArguments()[2];
 
-    auto cast = bits2ptr_op::create(valueArgument, pt);
+    auto cast = IntegerToPointerOperation::create(valueArgument, pt);
 
     lambda->finalize({ cast, iOStateArgument, memoryStateArgument });
 
@@ -4036,7 +4036,7 @@ VariadicFunctionTest2::SetupRvsdg()
         pointerType,
         16);
     auto & zextResult =
-        zext_op::Create(*gammaLoadResult.branchArgument[1], rvsdg::bittype::Create(64));
+        ZExtOperation::Create(*gammaLoadResult.branchArgument[1], rvsdg::bittype::Create(64));
     gepResult2 = GetElementPtrOperation::Create(
         loadResultsGamma1[0],
         { &zextResult },
