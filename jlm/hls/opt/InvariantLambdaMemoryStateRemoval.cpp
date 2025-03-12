@@ -103,14 +103,8 @@ InvariantLambdaMemoryStateRemoval::RemoveInvariantLambdaMemoryStateEdges(
       if (lambda->output()->nusers() == 1
           && dynamic_cast<const jlm::rvsdg::GraphExport *>(*lambda->output()->begin()))
       {
-        // RemoveInvariantMemoryStateEdges(llvm::GetMemoryStateRegionResult(*lambda));
-        for (auto result : lambda->subregion()->Results())
-        {
-          if (jlm::rvsdg::is<const llvm::MemoryStateType>(*result->Type()))
-          {
-            RemoveInvariantMemoryStateEdges(result);
-          }
-        }
+        RemoveInvariantMemoryStateEdges(
+            dynamic_cast<rvsdg::RegionResult *>(&llvm::GetMemoryStateRegionResult(*lambda)));
       }
     }
   }
