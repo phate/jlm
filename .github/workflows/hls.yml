@@ -12,7 +12,13 @@ jobs:
 
   hls-test-suite:
     runs-on: ubuntu-22.04
-    steps:
+
+    # To enable commenting on the pull request
+    permissions:
+      issues: write
+      pull-requests: write
+
+      steps:
     - uses: actions/checkout@v4
       with:
         fetch-depth: '0'
