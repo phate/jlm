@@ -231,7 +231,7 @@ RhlsToFirrtlConverter::MlirGenSimpleNode(const jlm::rvsdg::SimpleNode * node)
     auto input0 = GetSubfield(body, inBundles[0], "data");
     Connect(body, outData, input0);
   }
-  else if (dynamic_cast<const llvm::trunc_op *>(&(node->GetOperation())))
+  else if (rvsdg::is<const llvm::TruncOperation>(node->GetOperation()))
   {
     auto inData = GetSubfield(body, inBundles[0], "data");
     int outSize = JlmSize(&node->output(0)->type());

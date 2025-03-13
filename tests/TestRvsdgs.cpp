@@ -1902,7 +1902,7 @@ DeltaTest3::SetupRvsdg()
 
     loadResults =
         LoadNonVolatileNode::Create(g1CtxVar, storeResults, jlm::rvsdg::bittype::Create(32), 8);
-    auto truncResult = trunc_op::create(16, loadResults[0]);
+    auto truncResult = TruncOperation::create(16, loadResults[0]);
 
     return lambda->finalize({ truncResult, iOStateArgument, loadResults[1] });
   };
