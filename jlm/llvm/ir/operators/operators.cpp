@@ -816,38 +816,35 @@ TruncOperation::reduce_operand(rvsdg::unop_reduction_path_t, rvsdg::output *) co
   JLM_UNREACHABLE("Not implemented!");
 }
 
-/* uitofp operator */
-
-uitofp_op::~uitofp_op()
-{}
+UIToFPOperation::~UIToFPOperation() noexcept = default;
 
 bool
-uitofp_op::operator==(const Operation & other) const noexcept
+UIToFPOperation::operator==(const Operation & other) const noexcept
 {
-  auto op = dynamic_cast<const uitofp_op *>(&other);
+  const auto op = dynamic_cast<const UIToFPOperation *>(&other);
   return op && op->argument(0) == argument(0) && op->result(0) == result(0);
 }
 
 std::string
-uitofp_op::debug_string() const
+UIToFPOperation::debug_string() const
 {
-  return "UITOFP";
+  return "UIToFP";
 }
 
 std::unique_ptr<rvsdg::Operation>
-uitofp_op::copy() const
+UIToFPOperation::copy() const
 {
-  return std::make_unique<uitofp_op>(*this);
+  return std::make_unique<UIToFPOperation>(*this);
 }
 
 rvsdg::unop_reduction_path_t
-uitofp_op::can_reduce_operand(const rvsdg::output *) const noexcept
+UIToFPOperation::can_reduce_operand(const rvsdg::output *) const noexcept
 {
   return rvsdg::unop_reduction_none;
 }
 
 rvsdg::output *
-uitofp_op::reduce_operand(rvsdg::unop_reduction_path_t, rvsdg::output *) const
+UIToFPOperation::reduce_operand(rvsdg::unop_reduction_path_t, rvsdg::output *) const
 {
   JLM_UNREACHABLE("Not implemented!");
 }
