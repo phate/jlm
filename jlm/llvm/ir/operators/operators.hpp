@@ -1710,20 +1710,18 @@ public:
   }
 };
 
-/* uitofp operator */
-
-class uitofp_op final : public rvsdg::UnaryOperation
+class UIToFPOperation final : public rvsdg::UnaryOperation
 {
 public:
-  virtual ~uitofp_op();
+  ~UIToFPOperation() noexcept override;
 
-  inline uitofp_op(
+  UIToFPOperation(
       std::shared_ptr<const jlm::rvsdg::bittype> srctype,
       std::shared_ptr<const FloatingPointType> dsttype)
       : UnaryOperation(std::move(srctype), std::move(dsttype))
   {}
 
-  inline uitofp_op(
+  UIToFPOperation(
       std::shared_ptr<const jlm::rvsdg::Type> optype,
       std::shared_ptr<const jlm::rvsdg::Type> restype)
       : UnaryOperation(optype, restype)
@@ -1764,7 +1762,7 @@ public:
     if (!rt)
       throw jlm::util::error("expected floating point type.");
 
-    uitofp_op op(std::move(st), std::move(rt));
+    const UIToFPOperation op(std::move(st), std::move(rt));
     return tac::create(op, { operand });
   }
 };
