@@ -783,38 +783,35 @@ ConstantStruct::copy() const
   return std::make_unique<ConstantStruct>(*this);
 }
 
-/* trunc operator */
-
-trunc_op::~trunc_op()
-{}
+TruncOperation::~TruncOperation() noexcept = default;
 
 bool
-trunc_op::operator==(const Operation & other) const noexcept
+TruncOperation::operator==(const Operation & other) const noexcept
 {
-  auto op = dynamic_cast<const trunc_op *>(&other);
+  const auto op = dynamic_cast<const TruncOperation *>(&other);
   return op && op->argument(0) == argument(0) && op->result(0) == result(0);
 }
 
 std::string
-trunc_op::debug_string() const
+TruncOperation::debug_string() const
 {
-  return util::strfmt("TRUNC[", nsrcbits(), " -> ", ndstbits(), "]");
+  return util::strfmt("Trunc[", nsrcbits(), " -> ", ndstbits(), "]");
 }
 
 std::unique_ptr<rvsdg::Operation>
-trunc_op::copy() const
+TruncOperation::copy() const
 {
-  return std::make_unique<trunc_op>(*this);
+  return std::make_unique<TruncOperation>(*this);
 }
 
 rvsdg::unop_reduction_path_t
-trunc_op::can_reduce_operand(const rvsdg::output *) const noexcept
+TruncOperation::can_reduce_operand(const rvsdg::output *) const noexcept
 {
   return rvsdg::unop_reduction_none;
 }
 
 rvsdg::output *
-trunc_op::reduce_operand(rvsdg::unop_reduction_path_t, rvsdg::output *) const
+TruncOperation::reduce_operand(rvsdg::unop_reduction_path_t, rvsdg::output *) const
 {
   JLM_UNREACHABLE("Not implemented!");
 }
