@@ -85,7 +85,7 @@ test_inverse_reduction()
 
   auto x = &jlm::tests::GraphImport::Create(graph, bt64, "x");
 
-  auto y = trunc_op::create(32, x);
+  auto y = TruncOperation::create(32, x);
   auto z = sext_op::create(64, y);
 
   auto & ex = jlm::llvm::GraphExport::Create(*z, "x");

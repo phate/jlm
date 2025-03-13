@@ -1619,14 +1619,12 @@ private:
   }
 };
 
-/* trunc operator */
-
-class trunc_op final : public rvsdg::UnaryOperation
+class TruncOperation final : public rvsdg::UnaryOperation
 {
 public:
-  virtual ~trunc_op();
+  ~TruncOperation() noexcept override;
 
-  inline trunc_op(
+  TruncOperation(
       const std::shared_ptr<const jlm::rvsdg::bittype> & otype,
       const std::shared_ptr<const jlm::rvsdg::bittype> & rtype)
       : UnaryOperation(otype, rtype)
@@ -1635,7 +1633,7 @@ public:
       throw jlm::util::error("expected operand's #bits to be larger than results' #bits.");
   }
 
-  inline trunc_op(
+  TruncOperation(
       std::shared_ptr<const jlm::rvsdg::Type> optype,
       std::shared_ptr<const jlm::rvsdg::Type> restype)
       : UnaryOperation(optype, restype)
@@ -1691,7 +1689,7 @@ public:
     if (!rt)
       throw jlm::util::error("expected bits type.");
 
-    trunc_op op(std::move(ot), std::move(rt));
+    const TruncOperation op(std::move(ot), std::move(rt));
     return tac::create(op, { operand });
   }
 
@@ -1702,7 +1700,7 @@ public:
     if (!ot)
       throw jlm::util::error("expected bits type.");
 
-    return rvsdg::CreateOpNode<trunc_op>(
+    return rvsdg::CreateOpNode<TruncOperation>(
                { operand },
                std::move(ot),
                rvsdg::bittype::Create(ndstbits))
@@ -1710,20 +1708,18 @@ public:
   }
 };
 
-/* uitofp operator */
-
-class uitofp_op final : public rvsdg::UnaryOperation
+class UIToFPOperation final : public rvsdg::UnaryOperation
 {
 public:
-  virtual ~uitofp_op();
+  ~UIToFPOperation() noexcept override;
 
-  inline uitofp_op(
+  UIToFPOperation(
       std::shared_ptr<const jlm::rvsdg::bittype> srctype,
       std::shared_ptr<const FloatingPointType> dsttype)
       : UnaryOperation(std::move(srctype), std::move(dsttype))
   {}
 
-  inline uitofp_op(
+  UIToFPOperation(
       std::shared_ptr<const jlm::rvsdg::Type> optype,
       std::shared_ptr<const jlm::rvsdg::Type> restype)
       : UnaryOperation(optype, restype)
@@ -1764,7 +1760,7 @@ public:
     if (!rt)
       throw jlm::util::error("expected floating point type.");
 
-    uitofp_op op(std::move(st), std::move(rt));
+    const UIToFPOperation op(std::move(st), std::move(rt));
     return tac::create(op, { operand });
   }
 };
