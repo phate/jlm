@@ -425,11 +425,11 @@ MlirToJlmConverter::ConvertOperation(
     auto floatType = ::mlir::cast<::mlir::FloatType>(type);
 
     llvm::fpsize size = ConvertFPSize(floatType.getWidth());
-    auto output = rvsdg::simple_node::create_normalized(
-        &rvsdgRegion,
-        jlm::llvm::fpneg_op(size),
-        {inputs[0]})[0];
-    return rvsdg::output::GetNode(*output);
+    auto & output = rvsdg::SimpleNode::Create(
+        rvsdgRegion,
+        jlm::llvm::FNegOperation(size),
+        {inputs[0]});
+    return &output;
   }
 
   else if (auto extOp = ::mlir::dyn_cast<::mlir::arith::ExtFOp>(&mlirOperation))
@@ -438,18 +438,18 @@ MlirToJlmConverter::ConvertOperation(
     auto floatType = ::mlir::cast<::mlir::FloatType>(type);
 
     llvm::fpsize size = ConvertFPSize(floatType.getWidth());
-    auto output = rvsdg::simple_node::create_normalized(
-        &rvsdgRegion,
-        jlm::llvm::fpext_op(inputs[0]->Type(), llvm::fptype::Create(size)),
-        {inputs[0]})[0];
-    return rvsdg::output::GetNode(*output);
+    auto & output = rvsdg::SimpleNode::Create(
+        rvsdgRegion,
+        jlm::llvm::FPExtOperation(inputs[0]->Type(), llvm::FloatingPointType::Create(size)),
+        {inputs[0]});
+    return &output;
   }
 
   else if (auto truncOp = ::mlir::dyn_cast<::mlir::arith::TruncIOp>(&mlirOperation))
   {
     auto type = truncOp.getResult().getType();
     auto intType = ::mlir::cast<::mlir::IntegerType>(type);
-    return rvsdg::output::GetNode(*jlm::llvm::trunc_op::create(intType.getIntOrFloatBitWidth(), inputs[0]));
+    return rvsdg::output::GetNode(*jlm::llvm::TruncOperation::create(intType.getIntOrFloatBitWidth(), inputs[0]));
   }
 
   // Binary Integer Comparision operations

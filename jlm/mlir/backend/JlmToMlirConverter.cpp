@@ -390,11 +390,11 @@ JlmToMlirConverter::ConvertSimpleNode(
   {
     MlirOp = ConvertFpBinaryNode(*fpBinOp, inputs);
   }
-  else if (rvsdg::is<const jlm::llvm::fpneg_op>((node.operation())))
+  else if (rvsdg::is<const jlm::llvm::FNegOperation>(operation))
   {
     MlirOp = Builder_->create<::mlir::arith::NegFOp>(Builder_->getUnknownLoc(), inputs[0]);
   }
-  else if (auto fpextOp = dynamic_cast<const jlm::llvm::fpext_op *>(&(node.operation())))
+  else if (auto fpextOp = dynamic_cast<const jlm::llvm::FPExtOperation *>(&operation))
   {
     MlirOp = Builder_->create<::mlir::arith::ExtFOp>(
         Builder_->getUnknownLoc(),
@@ -427,7 +427,7 @@ JlmToMlirConverter::ConvertSimpleNode(
         ConvertType(*sitofpOp->result(0)),
         inputs[0]);
   }
-  else if (auto truncOp = dynamic_cast<const jlm::llvm::trunc_op *>(&(node.operation())))
+  else if (auto truncOp = dynamic_cast<const jlm::llvm::TruncOperation *>(&operation))
   {
     MlirOp = Builder_->create<::mlir::arith::TruncIOp>(
         Builder_->getUnknownLoc(),
