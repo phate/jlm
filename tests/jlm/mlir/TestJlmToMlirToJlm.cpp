@@ -851,3 +851,443 @@ TestDelta()
   return 0;
 }
 JLM_UNIT_TEST_REGISTER("jlm/mlir/TestMlirDeltaGen", TestDelta)
+
+static int
+TestConstantDataArray()
+{
+  using namespace jlm::llvm;
+  using namespace mlir::rvsdg;
+
+  auto rvsdgModule = RvsdgModule::Create(jlm::util::filepath(""), "", "");
+  auto graph = &rvsdgModule->Rvsdg();
+
+  {
+    auto bitConstant1 = jlm::rvsdg::create_bitconstant(&graph->GetRootRegion(), 32, 1);
+    auto bitConstant2 = jlm::rvsdg::create_bitconstant(&graph->GetRootRegion(), 32, 2);
+    auto bitType = jlm::rvsdg::bittype::Create(32);
+    jlm::llvm::ConstantDataArray::Create({ bitConstant1, bitConstant2 });
+
+    // Convert the RVSDG to MLIR
+    std::cout << "Convert to MLIR" << std::endl;
+    jlm::mlir::JlmToMlirConverter mlirgen;
+    auto omega = mlirgen.ConvertModule(*rvsdgModule);
+
+    // Validate the generated MLIR
+    std::cout << "Validate MLIR" << std::endl;
+    auto & omegaRegion = omega.getRegion();
+    auto & omegaBlock = omegaRegion.front();
+    bool foundConstantDataArray = false;
+    for (auto & op : omegaBlock.getOperations())
+    {
+      auto mlirConstantDataArray = ::mlir::dyn_cast<::mlir::jlm::ConstantDataArray>(&op);
+      if (mlirConstantDataArray)
+      {
+        assert(mlirConstantDataArray.getNumOperands() == 2);
+        assert(mlirConstantDataArray.getOperand(0).getType().isa<mlir::IntegerType>());
+        assert(mlirConstantDataArray.getOperand(1).getType().isa<mlir::IntegerType>());
+        auto mlirConstantDataArrayResultType =
+            mlirConstantDataArray.getResult().getType().dyn_cast<mlir::LLVM::LLVMArrayType>();
+        assert(mlirConstantDataArrayResultType);
+        assert(mlirConstantDataArrayResultType.getElementType().isa<mlir::IntegerType>());
+        assert(mlirConstantDataArrayResultType.getNumElements() == 2);
+        foundConstantDataArray = true;
+      }
+    }
+    assert(foundConstantDataArray);
+
+    // // Convert the MLIR to RVSDG and check the result
+    std::cout << "Converting MLIR to RVSDG" << std::endl;
+    std::unique_ptr<mlir::Block> rootBlock = std::make_unique<mlir::Block>();
+    rootBlock->push_back(omega);
+    auto rvsdgModule = jlm::mlir::MlirToJlmConverter::CreateAndConvert(rootBlock);
+    auto region = &rvsdgModule->Rvsdg().GetRootRegion();
+
+    {
+      using namespace jlm::llvm;
+
+      assert(region->nnodes() == 3);
+      bool foundConstantDataArray = false;
+      for (auto & node : region->Nodes())
+      {
+        if (auto constantDataArray = dynamic_cast<const ConstantDataArray *>(&node.GetOperation()))
+        {
+          foundConstantDataArray = true;
+          assert(constantDataArray->nresults() == 1);
+          assert(constantDataArray->narguments() == 2);
+          auto resultType = constantDataArray->result(0);
+          auto arrayType = dynamic_cast<const jlm::llvm::ArrayType *>(resultType.get());
+          assert(arrayType);
+          assert(is<jlm::rvsdg::bittype>(arrayType->element_type()));
+          assert(arrayType->nelements() == 2);
+          assert(is<jlm::rvsdg::bittype>(constantDataArray->argument(0)));
+          assert(is<jlm::rvsdg::bittype>(constantDataArray->argument(1)));
+        }
+      }
+      assert(foundConstantDataArray);
+    }
+  }
+  return 0;
+}
+JLM_UNIT_TEST_REGISTER("jlm/mlir/TestMlirConstantDataArrayGen", TestConstantDataArray)
+
+static int
+TestConstantAggregateZero()
+{
+  using namespace jlm::llvm;
+  using namespace mlir::rvsdg;
+
+  auto rvsdgModule = RvsdgModule::Create(jlm::util::filepath(""), "", "");
+  auto graph = &rvsdgModule->Rvsdg();
+
+  {
+    auto bitType = jlm::rvsdg::bittype::Create(32);
+    auto arrayType = jlm::llvm::ArrayType::Create(bitType, 2);
+    jlm::llvm::ConstantAggregateZero::Create(graph->GetRootRegion(), arrayType);
+
+    // Convert the RVSDG to MLIR
+    std::cout << "Convert to MLIR" << std::endl;
+    jlm::mlir::JlmToMlirConverter mlirgen;
+    auto omega = mlirgen.ConvertModule(*rvsdgModule);
+
+    // Validate the generated MLIR
+    std::cout << "Validate MLIR" << std::endl;
+    auto & omegaRegion = omega.getRegion();
+    auto & omegaBlock = omegaRegion.front();
+    auto mlirConstantAggregateZero = ::mlir::dyn_cast<::mlir::LLVM::ZeroOp>(&omegaBlock.front());
+    assert(mlirConstantAggregateZero);
+    auto mlirConstantAggregateZeroResultType =
+        mlirConstantAggregateZero.getType().dyn_cast<mlir::LLVM::LLVMArrayType>();
+    assert(mlirConstantAggregateZeroResultType);
+    assert(mlirConstantAggregateZeroResultType.getElementType().isa<mlir::IntegerType>());
+    assert(mlirConstantAggregateZeroResultType.getNumElements() == 2);
+
+    // // Convert the MLIR to RVSDG and check the result
+    std::cout << "Converting MLIR to RVSDG" << std::endl;
+    std::unique_ptr<mlir::Block> rootBlock = std::make_unique<mlir::Block>();
+    rootBlock->push_back(omega);
+    auto rvsdgModule = jlm::mlir::MlirToJlmConverter::CreateAndConvert(rootBlock);
+    auto region = &rvsdgModule->Rvsdg().GetRootRegion();
+
+    {
+      using namespace jlm::llvm;
+
+      assert(region->nnodes() == 1);
+      auto const convertedConstantAggregateZero =
+          jlm::util::AssertedCast<const ConstantAggregateZero>(
+              &region->Nodes().begin().ptr()->GetOperation());
+      assert(convertedConstantAggregateZero->nresults() == 1);
+      assert(convertedConstantAggregateZero->narguments() == 0);
+      auto resultType = convertedConstantAggregateZero->result(0);
+      auto arrayType = dynamic_cast<const jlm::llvm::ArrayType *>(resultType.get());
+      assert(arrayType);
+      assert(is<jlm::rvsdg::bittype>(arrayType->element_type()));
+      assert(arrayType->nelements() == 2);
+    }
+  }
+  return 0;
+}
+JLM_UNIT_TEST_REGISTER("jlm/mlir/TestMlirConstantAggregateZeroGen", TestConstantAggregateZero)
+
+static int
+TestVarArgList()
+{
+  using namespace jlm::llvm;
+  using namespace mlir::rvsdg;
+
+  auto rvsdgModule = RvsdgModule::Create(jlm::util::filepath(""), "", "");
+  auto graph = &rvsdgModule->Rvsdg();
+
+  {
+    auto bitType = jlm::rvsdg::bittype::Create(32);
+    auto bits1 = jlm::rvsdg::create_bitconstant(&graph->GetRootRegion(), 32, 1);
+    auto bits2 = jlm::rvsdg::create_bitconstant(&graph->GetRootRegion(), 32, 2);
+    jlm::llvm::valist_op::Create(graph->GetRootRegion(), { bits1, bits2 });
+
+    // Convert the RVSDG to MLIR
+    std::cout << "Convert to MLIR" << std::endl;
+    jlm::mlir::JlmToMlirConverter mlirgen;
+    auto omega = mlirgen.ConvertModule(*rvsdgModule);
+
+    // Validate the generated MLIR
+    std::cout << "Validate MLIR" << std::endl;
+    auto & omegaRegion = omega.getRegion();
+    auto & omegaBlock = omegaRegion.front();
+    bool foundVarArgOp = false;
+    for (auto & op : omegaBlock.getOperations())
+    {
+      auto mlirVarArgOp = ::mlir::dyn_cast<::mlir::jlm::CreateVarArgList>(&op);
+      if (mlirVarArgOp)
+      {
+        assert(mlirVarArgOp.getOperands().size() == 2);
+        assert(mlirVarArgOp.getOperands()[0].getType().isa<mlir::IntegerType>());
+        assert(mlirVarArgOp.getOperands()[1].getType().isa<mlir::IntegerType>());
+        assert(mlirVarArgOp.getResult().getType().isa<mlir::jlm::VarargListType>());
+        foundVarArgOp = true;
+      }
+    }
+    assert(foundVarArgOp);
+
+    // // Convert the MLIR to RVSDG and check the result
+    std::cout << "Converting MLIR to RVSDG" << std::endl;
+    std::unique_ptr<mlir::Block> rootBlock = std::make_unique<mlir::Block>();
+    rootBlock->push_back(omega);
+    auto rvsdgModule = jlm::mlir::MlirToJlmConverter::CreateAndConvert(rootBlock);
+    auto region = &rvsdgModule->Rvsdg().GetRootRegion();
+
+    {
+      using namespace jlm::llvm;
+
+      assert(region->nnodes() == 3);
+      bool foundVarArgOp = false;
+      for (auto & node : region->Nodes())
+      {
+        auto convertedVarArgOp = dynamic_cast<const valist_op *>(&node.GetOperation());
+        if (convertedVarArgOp)
+        {
+          assert(convertedVarArgOp->nresults() == 1);
+          assert(convertedVarArgOp->narguments() == 2);
+          auto resultType = convertedVarArgOp->result(0);
+          assert(is<jlm::llvm::VariableArgumentType>(resultType));
+          assert(is<jlm::rvsdg::bittype>(convertedVarArgOp->argument(0)));
+          assert(is<jlm::rvsdg::bittype>(convertedVarArgOp->argument(1)));
+          foundVarArgOp = true;
+        }
+      }
+      assert(foundVarArgOp);
+    }
+  }
+  return 0;
+}
+JLM_UNIT_TEST_REGISTER("jlm/mlir/TestMlirVarArgListGen", TestVarArgList)
+
+static int
+TestFNeg()
+{
+  using namespace jlm::llvm;
+  using namespace mlir::rvsdg;
+
+  auto rvsdgModule = RvsdgModule::Create(jlm::util::filepath(""), "", "");
+  auto graph = &rvsdgModule->Rvsdg();
+
+  {
+    auto floatType = jlm::llvm::FloatingPointType::Create(jlm::llvm::fpsize::flt);
+    auto constOp = ConstantFP(floatType, ::llvm::APFloat(2.0));
+    auto & constNode = jlm::rvsdg::SimpleNode::Create(graph->GetRootRegion(), constOp, {});
+    auto fnegOp = FNegOperation(jlm::llvm::fpsize::flt);
+    jlm::rvsdg::SimpleNode::Create(graph->GetRootRegion(), fnegOp, { constNode.output(0) });
+
+    // Convert the RVSDG to MLIR
+    std::cout << "Convert to MLIR" << std::endl;
+    jlm::mlir::JlmToMlirConverter mlirgen;
+    auto omega = mlirgen.ConvertModule(*rvsdgModule);
+
+    // Validate the generated MLIR
+    std::cout << "Validate MLIR" << std::endl;
+    auto & omegaRegion = omega.getRegion();
+    auto & omegaBlock = omegaRegion.front();
+    bool foundFNegOp = false;
+    for (auto & op : omegaBlock.getOperations())
+    {
+      auto mlirFNegOp = ::mlir::dyn_cast<::mlir::arith::NegFOp>(&op);
+      if (mlirFNegOp)
+      {
+        auto inputFloatType = mlirFNegOp.getOperand().getType().dyn_cast<mlir::FloatType>();
+        assert(inputFloatType);
+        assert(inputFloatType.getWidth() == 32);
+        auto outputFloatType = mlirFNegOp.getResult().getType().dyn_cast<mlir::FloatType>();
+        assert(outputFloatType);
+        assert(outputFloatType.getWidth() == 32);
+        foundFNegOp = true;
+      }
+    }
+    assert(foundFNegOp);
+
+    // // Convert the MLIR to RVSDG and check the result
+    std::cout << "Converting MLIR to RVSDG" << std::endl;
+    std::unique_ptr<mlir::Block> rootBlock = std::make_unique<mlir::Block>();
+    rootBlock->push_back(omega);
+    auto rvsdgModule = jlm::mlir::MlirToJlmConverter::CreateAndConvert(rootBlock);
+    auto region = &rvsdgModule->Rvsdg().GetRootRegion();
+
+    {
+      using namespace jlm::llvm;
+
+      assert(region->nnodes() == 2);
+      bool foundFNegOp = false;
+      for (auto & node : region->Nodes())
+      {
+        auto convertedFNegOp = dynamic_cast<const FNegOperation *>(&node.GetOperation());
+        if (convertedFNegOp)
+        {
+          assert(convertedFNegOp->nresults() == 1);
+          assert(convertedFNegOp->narguments() == 1);
+          auto inputFloatType = jlm::util::AssertedCast<const jlm::llvm::FloatingPointType>(
+              convertedFNegOp->argument(0).get());
+          assert(inputFloatType->size() == jlm::llvm::fpsize::flt);
+          auto outputFloatType = jlm::util::AssertedCast<const jlm::llvm::FloatingPointType>(
+              convertedFNegOp->result(0).get());
+          assert(outputFloatType->size() == jlm::llvm::fpsize::flt);
+          foundFNegOp = true;
+        }
+      }
+      assert(foundFNegOp);
+    }
+  }
+  return 0;
+}
+JLM_UNIT_TEST_REGISTER("jlm/mlir/TestMlirFNegGen", TestFNeg)
+
+static int
+TestFPExt()
+{
+  using namespace jlm::llvm;
+  using namespace mlir::rvsdg;
+
+  auto rvsdgModule = RvsdgModule::Create(jlm::util::filepath(""), "", "");
+  auto graph = &rvsdgModule->Rvsdg();
+
+  {
+    auto floatType1 = jlm::llvm::FloatingPointType::Create(jlm::llvm::fpsize::flt);
+    auto floatType2 = jlm::llvm::FloatingPointType::Create(jlm::llvm::fpsize::dbl);
+    auto constOp = ConstantFP(floatType1, ::llvm::APFloat(2.0));
+    auto & constNode = jlm::rvsdg::SimpleNode::Create(graph->GetRootRegion(), constOp, {});
+    auto fpextOp = FPExtOperation(floatType1, floatType2);
+    jlm::rvsdg::SimpleNode::Create(graph->GetRootRegion(), fpextOp, { constNode.output(0) });
+
+    // Convert the RVSDG to MLIR
+    std::cout << "Convert to MLIR" << std::endl;
+    jlm::mlir::JlmToMlirConverter mlirgen;
+    auto omega = mlirgen.ConvertModule(*rvsdgModule);
+
+    // Validate the generated MLIR
+    std::cout << "Validate MLIR" << std::endl;
+    auto & omegaRegion = omega.getRegion();
+    auto & omegaBlock = omegaRegion.front();
+    bool foundFPExtOp = false;
+    for (auto & op : omegaBlock.getOperations())
+    {
+      auto mlirFPExtOp = ::mlir::dyn_cast<::mlir::arith::ExtFOp>(&op);
+      if (mlirFPExtOp)
+      {
+        auto inputFloatType = mlirFPExtOp.getOperand().getType().dyn_cast<mlir::FloatType>();
+        assert(inputFloatType);
+        assert(inputFloatType.getWidth() == 32);
+        auto outputFloatType = mlirFPExtOp.getResult().getType().dyn_cast<mlir::FloatType>();
+        assert(outputFloatType);
+        assert(outputFloatType.getWidth() == 64);
+        foundFPExtOp = true;
+      }
+    }
+    assert(foundFPExtOp);
+
+    // // Convert the MLIR to RVSDG and check the result
+    std::cout << "Converting MLIR to RVSDG" << std::endl;
+    std::unique_ptr<mlir::Block> rootBlock = std::make_unique<mlir::Block>();
+    rootBlock->push_back(omega);
+    auto rvsdgModule = jlm::mlir::MlirToJlmConverter::CreateAndConvert(rootBlock);
+    auto region = &rvsdgModule->Rvsdg().GetRootRegion();
+
+    {
+      using namespace jlm::llvm;
+
+      assert(region->nnodes() == 2);
+      bool foundFPExtOp = false;
+      for (auto & node : region->Nodes())
+      {
+        auto convertedFPExtOp = dynamic_cast<const FPExtOperation *>(&node.GetOperation());
+        if (convertedFPExtOp)
+        {
+          assert(convertedFPExtOp->nresults() == 1);
+          assert(convertedFPExtOp->narguments() == 1);
+          auto inputFloatType = jlm::util::AssertedCast<const jlm::llvm::FloatingPointType>(
+              convertedFPExtOp->argument(0).get());
+          assert(inputFloatType->size() == jlm::llvm::fpsize::flt);
+          auto outputFloatType = jlm::util::AssertedCast<const jlm::llvm::FloatingPointType>(
+              convertedFPExtOp->result(0).get());
+          assert(outputFloatType->size() == jlm::llvm::fpsize::dbl);
+          foundFPExtOp = true;
+        }
+      }
+      assert(foundFPExtOp);
+    }
+  }
+  return 0;
+}
+JLM_UNIT_TEST_REGISTER("jlm/mlir/TestMlirFPExtGen", TestFPExt)
+
+static int
+TestTrunc()
+{
+  using namespace jlm::llvm;
+  using namespace mlir::rvsdg;
+
+  auto rvsdgModule = RvsdgModule::Create(jlm::util::filepath(""), "", "");
+  auto graph = &rvsdgModule->Rvsdg();
+
+  {
+    auto bitType1 = jlm::rvsdg::bittype::Create(64);
+    auto bitType2 = jlm::rvsdg::bittype::Create(32);
+    auto constOp = jlm::rvsdg::create_bitconstant(&graph->GetRootRegion(), 64, 2);
+    auto truncOp = TruncOperation(bitType1, bitType2);
+    jlm::rvsdg::SimpleNode::Create(graph->GetRootRegion(), truncOp, { constOp });
+
+    // Convert the RVSDG to MLIR
+    std::cout << "Convert to MLIR" << std::endl;
+    jlm::mlir::JlmToMlirConverter mlirgen;
+    auto omega = mlirgen.ConvertModule(*rvsdgModule);
+
+    // Validate the generated MLIR
+    std::cout << "Validate MLIR" << std::endl;
+    auto & omegaRegion = omega.getRegion();
+    auto & omegaBlock = omegaRegion.front();
+    bool foundTruncOp = false;
+    for (auto & op : omegaBlock.getOperations())
+    {
+      auto mlirTruncOp = ::mlir::dyn_cast<::mlir::arith::TruncIOp>(&op);
+      if (mlirTruncOp)
+      {
+        auto inputBitType = mlirTruncOp.getOperand().getType().dyn_cast<mlir::IntegerType>();
+        assert(inputBitType);
+        assert(inputBitType.getWidth() == 64);
+        auto outputBitType = mlirTruncOp.getResult().getType().dyn_cast<mlir::IntegerType>();
+        assert(outputBitType);
+        assert(outputBitType.getWidth() == 32);
+        foundTruncOp = true;
+      }
+    }
+    assert(foundTruncOp);
+
+    // // Convert the MLIR to RVSDG and check the result
+    std::cout << "Converting MLIR to RVSDG" << std::endl;
+    std::unique_ptr<mlir::Block> rootBlock = std::make_unique<mlir::Block>();
+    rootBlock->push_back(omega);
+    auto rvsdgModule = jlm::mlir::MlirToJlmConverter::CreateAndConvert(rootBlock);
+    auto region = &rvsdgModule->Rvsdg().GetRootRegion();
+
+    {
+      using namespace jlm::llvm;
+
+      assert(region->nnodes() == 2);
+      bool foundTruncOp = false;
+      for (auto & node : region->Nodes())
+      {
+        auto convertedTruncOp = dynamic_cast<const TruncOperation *>(&node.GetOperation());
+        if (convertedTruncOp)
+        {
+          assert(convertedTruncOp->nresults() == 1);
+          assert(convertedTruncOp->narguments() == 1);
+          auto inputBitType = jlm::util::AssertedCast<const jlm::rvsdg::bittype>(
+              convertedTruncOp->argument(0).get());
+          assert(inputBitType->nbits() == 64);
+          auto outputBitType =
+              jlm::util::AssertedCast<const jlm::rvsdg::bittype>(convertedTruncOp->result(0).get());
+          assert(outputBitType->nbits() == 32);
+          foundTruncOp = true;
+        }
+      }
+      assert(foundTruncOp);
+    }
+  }
+  return 0;
+}
+JLM_UNIT_TEST_REGISTER("jlm/mlir/TestMlirTruncGen", TestTrunc)
