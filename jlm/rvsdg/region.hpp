@@ -239,17 +239,17 @@ class Region
   using TopNodeRange = util::IteratorRange<TopNodeIterator>;
   using TopNodeConstRange = util::IteratorRange<TopNodeConstIterator>;
 
-  using NodeIterator = region_nodes_list::iterator;
-  using NodeConstIterator = region_nodes_list::const_iterator;
-  using NodeRange = util::IteratorRange<NodeIterator>;
-  using NodeConstRange = util::IteratorRange<NodeConstIterator>;
-
   using BottomNodeIterator = region_bottom_node_list::iterator;
   using BottomNodeConstIterator = region_bottom_node_list::const_iterator;
   using BottomNodeRange = util::IteratorRange<BottomNodeIterator>;
   using BottomNodeConstRange = util::IteratorRange<BottomNodeConstIterator>;
 
 public:
+  using NodeIterator = region_nodes_list::iterator;
+  using NodeConstIterator = region_nodes_list::const_iterator;
+  using NodeRange = util::IteratorRange<NodeIterator>;
+  using NodeConstRange = util::IteratorRange<NodeConstIterator>;
+
   ~Region() noexcept;
 
   Region(rvsdg::Region * parent, Graph * graph);
