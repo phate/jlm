@@ -567,6 +567,33 @@ MlirToJlmConverter::ConvertOperation(
 
     return rvsdgThetaNode;
   }
+  else if (auto mlirDeltaNode = ::mlir::dyn_cast<::mlir::rvsdg::DeltaNode>(&mlirOperation))
+  {
+    auto & deltaRegion = mlirDeltaNode.getRegion();
+    auto & deltaBlock = deltaRegion.front();
+    auto terminator = deltaBlock.getTerminator();
+
+    auto mlirOutputType = terminator->getOperand(0).getType();
+    std::shared_ptr<rvsdg::Type> outputType = ConvertType(mlirOutputType);
+    auto outputValueType = std::dynamic_pointer_cast<const rvsdg::ValueType>(outputType);
+    auto linakgeString = mlirDeltaNode.getLinkage().str();
+    auto rvsdgDeltaNode = llvm::delta::node::Create(
+        &rvsdgRegion,
+        outputValueType,
+        mlirDeltaNode.getName().str(),
+        jlm::llvm::FromString(linakgeString),
+        mlirDeltaNode.getSection().str(),
+        mlirDeltaNode.getConstant());
+
+    auto outputVector = ConvertRegion(mlirDeltaNode.getRegion(), *rvsdgDeltaNode->subregion());
+
+    if (outputVector.size() != 1)
+      JLM_UNREACHABLE("Expected 1 output for Delta operation.");
+
+    rvsdgDeltaNode->finalize(outputVector[0]);
+
+    return rvsdgDeltaNode;
+  }
   else if (auto mlirMatch = ::mlir::dyn_cast<::mlir::rvsdg::Match>(&mlirOperation))
   {
     std::unordered_map<uint64_t, uint64_t> mapping;
@@ -597,7 +624,8 @@ MlirToJlmConverter::ConvertOperation(
       ::mlir::isa<::mlir::rvsdg::LambdaResult>(&mlirOperation)
       || ::mlir::isa<::mlir::rvsdg::OmegaResult>(&mlirOperation)
       || ::mlir::isa<::mlir::rvsdg::GammaResult>(&mlirOperation)
-      || ::mlir::isa<::mlir::rvsdg::ThetaResult>(&mlirOperation))
+      || ::mlir::isa<::mlir::rvsdg::ThetaResult>(&mlirOperation)
+      || ::mlir::isa<::mlir::rvsdg::DeltaResult>(&mlirOperation))
   {
     // This is a terminating operation that doesn't have a corresponding RVSDG node
     return nullptr;

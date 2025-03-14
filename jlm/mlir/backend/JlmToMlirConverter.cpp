@@ -188,6 +188,10 @@ JlmToMlirConverter::ConvertNode(
   {
     return ConvertTheta(*theta, block, inputs);
   }
+  else if (auto delta = dynamic_cast<const llvm::delta::node *>(&node))
+  {
+    return ConvertDelta(*delta, block, inputs);
+  }
   else
   {
     auto message =
@@ -629,6 +633,30 @@ JlmToMlirConverter::ConvertTheta(
       results);
   thetaBlock.push_back(thetaResult);
   return theta;
+}
+
+::mlir::Operation *
+JlmToMlirConverter::ConvertDelta(
+    const llvm::delta::node & deltaNode,
+    ::mlir::Block & block,
+    const ::llvm::SmallVector<::mlir::Value> & inputs)
+{
+  auto delta = Builder_->create<::mlir::rvsdg::DeltaNode>(
+      Builder_->getUnknownLoc(),
+      Builder_->getType<::mlir::LLVM::LLVMPointerType>(),
+      inputs,
+      ::llvm::StringRef(deltaNode.name()),
+      ::llvm::StringRef(llvm::ToString(deltaNode.linkage())),
+      ::llvm::StringRef(deltaNode.Section()),
+      deltaNode.constant());
+  block.push_back(delta);
+  auto & deltaBlock = delta.getRegion().emplaceBlock();
+  auto regionResults = ConvertRegion(*deltaNode.subregion(), deltaBlock);
+  JLM_ASSERT(regionResults.size() == 1); // Delta nodes have 1 output
+  auto deltaResult =
+      Builder_->create<::mlir::rvsdg::DeltaResult>(Builder_->getUnknownLoc(), regionResults[0]);
+  deltaBlock.push_back(deltaResult);
+  return delta;
 }
 
 ::mlir::FloatType
