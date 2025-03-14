@@ -1134,3 +1134,79 @@ TestFNeg()
   return 0;
 }
 JLM_UNIT_TEST_REGISTER("jlm/mlir/TestMlirFNegGen", TestFNeg)
+
+static int
+TestFPExt()
+{
+  using namespace jlm::llvm;
+  using namespace mlir::rvsdg;
+
+  auto rvsdgModule = RvsdgModule::Create(jlm::util::filepath(""), "", "");
+  auto graph = &rvsdgModule->Rvsdg();
+
+  {
+    auto floatType1 = jlm::llvm::FloatingPointType::Create(jlm::llvm::fpsize::flt);
+    auto floatType2 = jlm::llvm::FloatingPointType::Create(jlm::llvm::fpsize::dbl);
+    auto constOp = ConstantFP(floatType1, ::llvm::APFloat(2.0));
+    auto &constNode = jlm::rvsdg::SimpleNode::Create(graph->GetRootRegion(), constOp, {});
+    auto fpextOp = FPExtOperation(floatType1, floatType2);
+    jlm::rvsdg::SimpleNode::Create(graph->GetRootRegion(), fpextOp, { constNode.output(0) });
+
+    // Convert the RVSDG to MLIR
+    std::cout << "Convert to MLIR" << std::endl;
+    jlm::mlir::JlmToMlirConverter mlirgen;
+    auto omega = mlirgen.ConvertModule(*rvsdgModule);
+
+    // Validate the generated MLIR
+    std::cout << "Validate MLIR" << std::endl;
+    auto & omegaRegion = omega.getRegion();
+    auto & omegaBlock = omegaRegion.front();
+    bool foundFPExtOp = false;
+    for (auto & op : omegaBlock.getOperations())
+    {
+      auto mlirFPExtOp = ::mlir::dyn_cast<::mlir::arith::ExtFOp>(&op);
+      if (mlirFPExtOp)
+      {
+        auto inputFloatType = mlirFPExtOp.getOperand().getType().dyn_cast<mlir::FloatType>();
+        assert(inputFloatType);
+        assert(inputFloatType.getWidth() == 32);
+        auto outputFloatType = mlirFPExtOp.getResult().getType().dyn_cast<mlir::FloatType>();
+        assert(outputFloatType);
+        assert(outputFloatType.getWidth() == 64);
+        foundFPExtOp = true;
+      }
+    }
+    assert(foundFPExtOp);
+
+    // // Convert the MLIR to RVSDG and check the result
+    std::cout << "Converting MLIR to RVSDG" << std::endl;
+    std::unique_ptr<mlir::Block> rootBlock = std::make_unique<mlir::Block>();
+    rootBlock->push_back(omega);
+    auto rvsdgModule = jlm::mlir::MlirToJlmConverter::CreateAndConvert(rootBlock);
+    auto region = &rvsdgModule->Rvsdg().GetRootRegion();
+
+    {
+      using namespace jlm::llvm;
+
+      assert(region->nnodes() == 2);
+      bool foundFPExtOp = false;
+      for (auto & node : region->Nodes())
+      {
+        auto convertedFPExtOp = dynamic_cast<const FPExtOperation *>(&node.GetOperation());
+        if (convertedFPExtOp)
+        {
+          assert(convertedFPExtOp->nresults() == 1);
+          assert(convertedFPExtOp->narguments() == 1);
+          auto inputFloatType = jlm::util::AssertedCast<const jlm::llvm::FloatingPointType>(convertedFPExtOp->argument(0).get());
+          assert(inputFloatType->size() == jlm::llvm::fpsize::flt);
+          auto outputFloatType = jlm::util::AssertedCast<const jlm::llvm::FloatingPointType>(convertedFPExtOp->result(0).get());
+          assert(outputFloatType->size() == jlm::llvm::fpsize::dbl);
+          foundFPExtOp = true;
+        }
+      }
+      assert(foundFPExtOp);
+    }
+  }
+  return 0;
+}
+JLM_UNIT_TEST_REGISTER("jlm/mlir/TestMlirFPExtGen", TestFPExt)
