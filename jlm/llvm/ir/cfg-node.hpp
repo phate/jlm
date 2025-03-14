@@ -8,7 +8,7 @@
 
 #include <jlm/util/common.hpp>
 #include <jlm/util/iterator_range.hpp>
-#include <jlm/util/PtrIterator.hpp>
+#include <jlm/util/IteratorWrapper.hpp>
 
 #include <memory>
 #include <unordered_set>

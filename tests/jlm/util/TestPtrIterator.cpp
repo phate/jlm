@@ -7,7 +7,7 @@
 #include <test-util.hpp>
 
 #include <jlm/util/iterator_range.hpp>
-#include <jlm/util/PtrIterator.hpp>
+#include <jlm/util/IteratorWrapper.hpp>
 
 #include <cassert>
 #include <memory>
