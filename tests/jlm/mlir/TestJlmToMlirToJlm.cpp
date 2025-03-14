@@ -1059,3 +1059,78 @@ TestVarArgList()
   return 0;
 }
 JLM_UNIT_TEST_REGISTER("jlm/mlir/TestMlirVarArgListGen", TestVarArgList)
+
+static int
+TestFNeg()
+{
+  using namespace jlm::llvm;
+  using namespace mlir::rvsdg;
+
+  auto rvsdgModule = RvsdgModule::Create(jlm::util::filepath(""), "", "");
+  auto graph = &rvsdgModule->Rvsdg();
+
+  {
+    auto floatType = jlm::llvm::FloatingPointType::Create(jlm::llvm::fpsize::flt);
+    auto constOp = ConstantFP(floatType, ::llvm::APFloat(2.0));
+    auto &constNode = jlm::rvsdg::SimpleNode::Create(graph->GetRootRegion(), constOp, {});
+    auto fnegOp = FNegOperation(jlm::llvm::fpsize::flt);
+    jlm::rvsdg::SimpleNode::Create(graph->GetRootRegion(), fnegOp, { constNode.output(0) });
+
+    // Convert the RVSDG to MLIR
+    std::cout << "Convert to MLIR" << std::endl;
+    jlm::mlir::JlmToMlirConverter mlirgen;
+    auto omega = mlirgen.ConvertModule(*rvsdgModule);
+
+    // Validate the generated MLIR
+    std::cout << "Validate MLIR" << std::endl;
+    auto & omegaRegion = omega.getRegion();
+    auto & omegaBlock = omegaRegion.front();
+    bool foundFNegOp = false;
+    for (auto & op : omegaBlock.getOperations())
+    {
+      auto mlirFNegOp = ::mlir::dyn_cast<::mlir::arith::NegFOp>(&op);
+      if (mlirFNegOp)
+      {
+        auto inputFloatType = mlirFNegOp.getOperand().getType().dyn_cast<mlir::FloatType>();
+        assert(inputFloatType);
+        assert(inputFloatType.getWidth() == 32);
+        auto outputFloatType = mlirFNegOp.getResult().getType().dyn_cast<mlir::FloatType>();
+        assert(outputFloatType);
+        assert(outputFloatType.getWidth() == 32);
+        foundFNegOp = true;
+      }
+    }
+    assert(foundFNegOp);
+
+    // // Convert the MLIR to RVSDG and check the result
+    std::cout << "Converting MLIR to RVSDG" << std::endl;
+    std::unique_ptr<mlir::Block> rootBlock = std::make_unique<mlir::Block>();
+    rootBlock->push_back(omega);
+    auto rvsdgModule = jlm::mlir::MlirToJlmConverter::CreateAndConvert(rootBlock);
+    auto region = &rvsdgModule->Rvsdg().GetRootRegion();
+
+    {
+      using namespace jlm::llvm;
+
+      assert(region->nnodes() == 2);
+      bool foundFNegOp = false;
+      for (auto & node : region->Nodes())
+      {
+        auto convertedFNegOp = dynamic_cast<const FNegOperation *>(&node.GetOperation());
+        if (convertedFNegOp)
+        {
+          assert(convertedFNegOp->nresults() == 1);
+          assert(convertedFNegOp->narguments() == 1);
+          auto inputFloatType = jlm::util::AssertedCast<const jlm::llvm::FloatingPointType>(convertedFNegOp->argument(0).get());
+          assert(inputFloatType->size() == jlm::llvm::fpsize::flt);
+          auto outputFloatType = jlm::util::AssertedCast<const jlm::llvm::FloatingPointType>(convertedFNegOp->result(0).get());
+          assert(outputFloatType->size() == jlm::llvm::fpsize::flt);
+          foundFNegOp = true;
+        }
+      }
+      assert(foundFNegOp);
+    }
+  }
+  return 0;
+}
+JLM_UNIT_TEST_REGISTER("jlm/mlir/TestMlirFNegGen", TestFNeg)
