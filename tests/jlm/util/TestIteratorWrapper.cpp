@@ -49,7 +49,7 @@ TestPtrVector()
   return 0;
 }
 
-JLM_UNIT_TEST_REGISTER("jlm/util/TestPtrIterator-TestPtrVector", TestPtrVector);
+JLM_UNIT_TEST_REGISTER("jlm/util/TestIteratorWrapper-TestPtrVector", TestPtrVector);
 
 static int
 TestPtrUnorderedSet()
@@ -76,7 +76,7 @@ TestPtrUnorderedSet()
   return 0;
 }
 
-JLM_UNIT_TEST_REGISTER("jlm/util/TestPtrIterator-TestPtrUnorderedSet", TestPtrUnorderedSet);
+JLM_UNIT_TEST_REGISTER("jlm/util/TestIteratorWrapper-TestPtrUnorderedSet", TestPtrUnorderedSet);
 
 static int
 TestUniquePtrVector()
@@ -106,4 +106,4 @@ TestUniquePtrVector()
   return 0;
 }
 
-JLM_UNIT_TEST_REGISTER("jlm/util/TestPtrIterator-TestUniquePtrVector", TestUniquePtrVector);
+JLM_UNIT_TEST_REGISTER("jlm/util/TestIteratorWrapper-TestUniquePtrVector", TestUniquePtrVector);
