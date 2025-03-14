@@ -425,10 +425,8 @@ MlirToJlmConverter::ConvertOperation(
     auto floatType = ::mlir::cast<::mlir::FloatType>(type);
 
     llvm::fpsize size = ConvertFPSize(floatType.getWidth());
-    auto & output = rvsdg::SimpleNode::Create(
-        rvsdgRegion,
-        jlm::llvm::FNegOperation(size),
-        {inputs[0]});
+    auto & output =
+        rvsdg::SimpleNode::Create(rvsdgRegion, jlm::llvm::FNegOperation(size), { inputs[0] });
     return &output;
   }
 
@@ -441,7 +439,7 @@ MlirToJlmConverter::ConvertOperation(
     auto & output = rvsdg::SimpleNode::Create(
         rvsdgRegion,
         jlm::llvm::FPExtOperation(inputs[0]->Type(), llvm::FloatingPointType::Create(size)),
-        {inputs[0]});
+        { inputs[0] });
     return &output;
   }
 
@@ -449,7 +447,8 @@ MlirToJlmConverter::ConvertOperation(
   {
     auto type = truncOp.getResult().getType();
     auto intType = ::mlir::cast<::mlir::IntegerType>(type);
-    return rvsdg::output::GetNode(*jlm::llvm::TruncOperation::create(intType.getIntOrFloatBitWidth(), inputs[0]));
+    return rvsdg::output::GetNode(
+        *jlm::llvm::TruncOperation::create(intType.getIntOrFloatBitWidth(), inputs[0]));
   }
 
   // Binary Integer Comparision operations

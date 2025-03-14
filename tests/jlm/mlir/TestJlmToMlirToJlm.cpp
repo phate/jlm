@@ -1001,7 +1001,7 @@ TestVarArgList()
     auto bitType = jlm::rvsdg::bittype::Create(32);
     auto bits1 = jlm::rvsdg::create_bitconstant(&graph->GetRootRegion(), 32, 1);
     auto bits2 = jlm::rvsdg::create_bitconstant(&graph->GetRootRegion(), 32, 2);
-    jlm::llvm::valist_op::Create(graph->GetRootRegion(), {bits1, bits2});
+    jlm::llvm::valist_op::Create(graph->GetRootRegion(), { bits1, bits2 });
 
     // Convert the RVSDG to MLIR
     std::cout << "Convert to MLIR" << std::endl;
@@ -1072,7 +1072,7 @@ TestFNeg()
   {
     auto floatType = jlm::llvm::FloatingPointType::Create(jlm::llvm::fpsize::flt);
     auto constOp = ConstantFP(floatType, ::llvm::APFloat(2.0));
-    auto &constNode = jlm::rvsdg::SimpleNode::Create(graph->GetRootRegion(), constOp, {});
+    auto & constNode = jlm::rvsdg::SimpleNode::Create(graph->GetRootRegion(), constOp, {});
     auto fnegOp = FNegOperation(jlm::llvm::fpsize::flt);
     jlm::rvsdg::SimpleNode::Create(graph->GetRootRegion(), fnegOp, { constNode.output(0) });
 
@@ -1121,9 +1121,11 @@ TestFNeg()
         {
           assert(convertedFNegOp->nresults() == 1);
           assert(convertedFNegOp->narguments() == 1);
-          auto inputFloatType = jlm::util::AssertedCast<const jlm::llvm::FloatingPointType>(convertedFNegOp->argument(0).get());
+          auto inputFloatType = jlm::util::AssertedCast<const jlm::llvm::FloatingPointType>(
+              convertedFNegOp->argument(0).get());
           assert(inputFloatType->size() == jlm::llvm::fpsize::flt);
-          auto outputFloatType = jlm::util::AssertedCast<const jlm::llvm::FloatingPointType>(convertedFNegOp->result(0).get());
+          auto outputFloatType = jlm::util::AssertedCast<const jlm::llvm::FloatingPointType>(
+              convertedFNegOp->result(0).get());
           assert(outputFloatType->size() == jlm::llvm::fpsize::flt);
           foundFNegOp = true;
         }
@@ -1148,7 +1150,7 @@ TestFPExt()
     auto floatType1 = jlm::llvm::FloatingPointType::Create(jlm::llvm::fpsize::flt);
     auto floatType2 = jlm::llvm::FloatingPointType::Create(jlm::llvm::fpsize::dbl);
     auto constOp = ConstantFP(floatType1, ::llvm::APFloat(2.0));
-    auto &constNode = jlm::rvsdg::SimpleNode::Create(graph->GetRootRegion(), constOp, {});
+    auto & constNode = jlm::rvsdg::SimpleNode::Create(graph->GetRootRegion(), constOp, {});
     auto fpextOp = FPExtOperation(floatType1, floatType2);
     jlm::rvsdg::SimpleNode::Create(graph->GetRootRegion(), fpextOp, { constNode.output(0) });
 
@@ -1197,9 +1199,11 @@ TestFPExt()
         {
           assert(convertedFPExtOp->nresults() == 1);
           assert(convertedFPExtOp->narguments() == 1);
-          auto inputFloatType = jlm::util::AssertedCast<const jlm::llvm::FloatingPointType>(convertedFPExtOp->argument(0).get());
+          auto inputFloatType = jlm::util::AssertedCast<const jlm::llvm::FloatingPointType>(
+              convertedFPExtOp->argument(0).get());
           assert(inputFloatType->size() == jlm::llvm::fpsize::flt);
-          auto outputFloatType = jlm::util::AssertedCast<const jlm::llvm::FloatingPointType>(convertedFPExtOp->result(0).get());
+          auto outputFloatType = jlm::util::AssertedCast<const jlm::llvm::FloatingPointType>(
+              convertedFPExtOp->result(0).get());
           assert(outputFloatType->size() == jlm::llvm::fpsize::dbl);
           foundFPExtOp = true;
         }
@@ -1210,7 +1214,6 @@ TestFPExt()
   return 0;
 }
 JLM_UNIT_TEST_REGISTER("jlm/mlir/TestMlirFPExtGen", TestFPExt)
-
 
 static int
 TestTrunc()
@@ -1225,7 +1228,7 @@ TestTrunc()
     auto bitType1 = jlm::rvsdg::bittype::Create(64);
     auto bitType2 = jlm::rvsdg::bittype::Create(32);
     auto constOp = jlm::rvsdg::create_bitconstant(&graph->GetRootRegion(), 64, 2);
-    auto truncOp  = TruncOperation(bitType1, bitType2);
+    auto truncOp = TruncOperation(bitType1, bitType2);
     jlm::rvsdg::SimpleNode::Create(graph->GetRootRegion(), truncOp, { constOp });
 
     // Convert the RVSDG to MLIR
@@ -1273,9 +1276,11 @@ TestTrunc()
         {
           assert(convertedTruncOp->nresults() == 1);
           assert(convertedTruncOp->narguments() == 1);
-          auto inputBitType = jlm::util::AssertedCast<const jlm::rvsdg::bittype>(convertedTruncOp->argument(0).get());
+          auto inputBitType = jlm::util::AssertedCast<const jlm::rvsdg::bittype>(
+              convertedTruncOp->argument(0).get());
           assert(inputBitType->nbits() == 64);
-          auto outputBitType = jlm::util::AssertedCast<const jlm::rvsdg::bittype>(convertedTruncOp->result(0).get());
+          auto outputBitType =
+              jlm::util::AssertedCast<const jlm::rvsdg::bittype>(convertedTruncOp->result(0).get());
           assert(outputBitType->nbits() == 32);
           foundTruncOp = true;
         }
