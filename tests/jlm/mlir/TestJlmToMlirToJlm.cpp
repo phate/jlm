@@ -1210,3 +1210,79 @@ TestFPExt()
   return 0;
 }
 JLM_UNIT_TEST_REGISTER("jlm/mlir/TestMlirFPExtGen", TestFPExt)
+
+
+static int
+TestTrunc()
+{
+  using namespace jlm::llvm;
+  using namespace mlir::rvsdg;
+
+  auto rvsdgModule = RvsdgModule::Create(jlm::util::filepath(""), "", "");
+  auto graph = &rvsdgModule->Rvsdg();
+
+  {
+    auto bitType1 = jlm::rvsdg::bittype::Create(64);
+    auto bitType2 = jlm::rvsdg::bittype::Create(32);
+    auto constOp = jlm::rvsdg::create_bitconstant(&graph->GetRootRegion(), 64, 2);
+    auto truncOp  = TruncOperation(bitType1, bitType2);
+    jlm::rvsdg::SimpleNode::Create(graph->GetRootRegion(), truncOp, { constOp });
+
+    // Convert the RVSDG to MLIR
+    std::cout << "Convert to MLIR" << std::endl;
+    jlm::mlir::JlmToMlirConverter mlirgen;
+    auto omega = mlirgen.ConvertModule(*rvsdgModule);
+
+    // Validate the generated MLIR
+    std::cout << "Validate MLIR" << std::endl;
+    auto & omegaRegion = omega.getRegion();
+    auto & omegaBlock = omegaRegion.front();
+    bool foundTruncOp = false;
+    for (auto & op : omegaBlock.getOperations())
+    {
+      auto mlirTruncOp = ::mlir::dyn_cast<::mlir::arith::TruncIOp>(&op);
+      if (mlirTruncOp)
+      {
+        auto inputBitType = mlirTruncOp.getOperand().getType().dyn_cast<mlir::IntegerType>();
+        assert(inputBitType);
+        assert(inputBitType.getWidth() == 64);
+        auto outputBitType = mlirTruncOp.getResult().getType().dyn_cast<mlir::IntegerType>();
+        assert(outputBitType);
+        assert(outputBitType.getWidth() == 32);
+        foundTruncOp = true;
+      }
+    }
+    assert(foundTruncOp);
+
+    // // Convert the MLIR to RVSDG and check the result
+    std::cout << "Converting MLIR to RVSDG" << std::endl;
+    std::unique_ptr<mlir::Block> rootBlock = std::make_unique<mlir::Block>();
+    rootBlock->push_back(omega);
+    auto rvsdgModule = jlm::mlir::MlirToJlmConverter::CreateAndConvert(rootBlock);
+    auto region = &rvsdgModule->Rvsdg().GetRootRegion();
+
+    {
+      using namespace jlm::llvm;
+
+      assert(region->nnodes() == 2);
+      bool foundTruncOp = false;
+      for (auto & node : region->Nodes())
+      {
+        auto convertedTruncOp = dynamic_cast<const TruncOperation *>(&node.GetOperation());
+        if (convertedTruncOp)
+        {
+          assert(convertedTruncOp->nresults() == 1);
+          assert(convertedTruncOp->narguments() == 1);
+          auto inputBitType = jlm::util::AssertedCast<const jlm::rvsdg::bittype>(convertedTruncOp->argument(0).get());
+          assert(inputBitType->nbits() == 64);
+          auto outputBitType = jlm::util::AssertedCast<const jlm::rvsdg::bittype>(convertedTruncOp->result(0).get());
+          assert(outputBitType->nbits() == 32);
+          foundTruncOp = true;
+        }
+      }
+      assert(foundTruncOp);
+    }
+  }
+  return 0;
+}
+JLM_UNIT_TEST_REGISTER("jlm/mlir/TestMlirTruncGen", TestTrunc)
