@@ -1,5 +1,6 @@
 /*
  * Copyright 2020 Nico Reißmann <nico.reissmann@gmail.com>
+ * Copyright 2025 Håvard Krogstie <krogstie.havard@gmail.com>
  * See COPYING for terms of redistribution.
  */
 
@@ -426,10 +427,8 @@ TestIndirectCall()
    */
   auto ValidateProvider = [](const jlm::tests::IndirectCallTest1 & test,
                              const jlm::llvm::aa::MemoryNodeProvisioning & provisioning,
-                             const jlm::llvm::aa::PointsToGraph & pointsToGraph)
+                             [[maybe_unused]] const jlm::llvm::aa::PointsToGraph & pointsToGraph)
   {
-    auto & externalMemoryNode = pointsToGraph.GetExternalMemoryNode();
-
     /*
      * Validate function four
      */
@@ -457,16 +456,16 @@ TestIndirectCall()
      */
     {
       auto & lambdaEntryNodes = provisioning.GetLambdaEntryNodes(test.GetLambdaIndcall());
-      AssertMemoryNodes(lambdaEntryNodes, { &externalMemoryNode });
+      AssertMemoryNodes(lambdaEntryNodes, {});
 
       auto & callEntryNodes = provisioning.GetCallEntryNodes(test.CallIndcall());
-      AssertMemoryNodes(callEntryNodes, { &externalMemoryNode });
+      AssertMemoryNodes(callEntryNodes, {});
 
       auto & callExitNodes = provisioning.GetCallExitNodes(test.CallIndcall());
-      AssertMemoryNodes(callExitNodes, { &externalMemoryNode });
+      AssertMemoryNodes(callExitNodes, {});
 
       auto & lambdaExitNodes = provisioning.GetLambdaExitNodes(test.GetLambdaIndcall());
-      AssertMemoryNodes(lambdaExitNodes, { &externalMemoryNode });
+      AssertMemoryNodes(lambdaExitNodes, {});
     }
 
     /*
@@ -474,22 +473,22 @@ TestIndirectCall()
      */
     {
       auto & lambdaEntryNodes = provisioning.GetLambdaEntryNodes(test.GetLambdaTest());
-      AssertMemoryNodes(lambdaEntryNodes, { &externalMemoryNode });
+      AssertMemoryNodes(lambdaEntryNodes, {});
 
       auto & callFourEntryNodes = provisioning.GetCallEntryNodes(test.CallFour());
-      AssertMemoryNodes(callFourEntryNodes, { &externalMemoryNode });
+      AssertMemoryNodes(callFourEntryNodes, {});
 
       auto & callFourExitNodes = provisioning.GetCallExitNodes(test.CallFour());
-      AssertMemoryNodes(callFourExitNodes, { &externalMemoryNode });
+      AssertMemoryNodes(callFourExitNodes, {});
 
       auto & callThreeEntryNodes = provisioning.GetCallEntryNodes(test.CallThree());
-      AssertMemoryNodes(callThreeEntryNodes, { &externalMemoryNode });
+      AssertMemoryNodes(callThreeEntryNodes, {});
 
       auto & callThreeExitNodes = provisioning.GetCallExitNodes(test.CallThree());
-      AssertMemoryNodes(callThreeExitNodes, { &externalMemoryNode });
+      AssertMemoryNodes(callThreeExitNodes, {});
 
       auto & lambdaExitNodes = provisioning.GetLambdaExitNodes(test.GetLambdaTest());
-      AssertMemoryNodes(lambdaExitNodes, { &externalMemoryNode });
+      AssertMemoryNodes(lambdaExitNodes, {});
     }
   };
 
@@ -528,15 +527,20 @@ TestIndirectCall2()
     auto & allocaPyMemoryNode = pointsToGraph.GetAllocaNode(test.GetAllocaPy());
     auto & allocaPzMemoryNode = pointsToGraph.GetAllocaNode(test.GetAllocaPz());
 
-    auto & externalMemoryNode = pointsToGraph.GetExternalMemoryNode();
-
-    jlm::util::HashSet<const jlm::llvm::aa::PointsToGraph::MemoryNode *> expectedMemoryNodes(
-        { &deltaG1MemoryNode,
-          &deltaG2MemoryNode,
-          &allocaPxMemoryNode,
-          &allocaPyMemoryNode,
-          &allocaPzMemoryNode,
-          &externalMemoryNode });
+    const jlm::util::HashSet<const jlm::llvm::aa::PointsToGraph::MemoryNode *> pY = {
+      &allocaPyMemoryNode,
+    };
+    const jlm::util::HashSet<const jlm::llvm::aa::PointsToGraph::MemoryNode *> pXZ = {
+      &allocaPxMemoryNode,
+      &allocaPzMemoryNode
+    };
+    const jlm::util::HashSet<const jlm::llvm::aa::PointsToGraph::MemoryNode *> pXYZG1G2 = {
+      &allocaPxMemoryNode,
+      &allocaPyMemoryNode,
+      &allocaPzMemoryNode,
+      &deltaG1MemoryNode,
+      &deltaG2MemoryNode
+    };
 
     /*
      * Validate function four()
@@ -565,16 +569,16 @@ TestIndirectCall2()
      */
     {
       auto & lambdaEntryNodes = provisioning.GetLambdaEntryNodes(test.GetLambdaI());
-      AssertMemoryNodes(lambdaEntryNodes, expectedMemoryNodes);
+      AssertMemoryNodes(lambdaEntryNodes, {});
 
       auto & callEntryNodes = provisioning.GetCallEntryNodes(test.GetIndirectCall());
-      AssertMemoryNodes(callEntryNodes, expectedMemoryNodes);
+      AssertMemoryNodes(callEntryNodes, {});
 
       auto & callExitNodes = provisioning.GetCallExitNodes(test.GetIndirectCall());
-      AssertMemoryNodes(callExitNodes, expectedMemoryNodes);
+      AssertMemoryNodes(callExitNodes, {});
 
       auto & lambdaExitNodes = provisioning.GetLambdaExitNodes(test.GetLambdaI());
-      AssertMemoryNodes(lambdaExitNodes, expectedMemoryNodes);
+      AssertMemoryNodes(lambdaExitNodes, {});
     }
 
     /*
@@ -582,10 +586,10 @@ TestIndirectCall2()
      */
     {
       auto & lambdaEntryNodes = provisioning.GetLambdaEntryNodes(test.GetLambdaX());
-      AssertMemoryNodes(lambdaEntryNodes, expectedMemoryNodes);
+      AssertMemoryNodes(lambdaEntryNodes, pXZ);
 
       auto & lambdaExitNodes = provisioning.GetLambdaExitNodes(test.GetLambdaX());
-      AssertMemoryNodes(lambdaExitNodes, expectedMemoryNodes);
+      AssertMemoryNodes(lambdaExitNodes, pXZ);
     }
 
     /*
@@ -593,10 +597,10 @@ TestIndirectCall2()
      */
     {
       auto & lambdaEntryNodes = provisioning.GetLambdaEntryNodes(test.GetLambdaY());
-      AssertMemoryNodes(lambdaEntryNodes, expectedMemoryNodes);
+      AssertMemoryNodes(lambdaEntryNodes, pY);
 
       auto & lambdaExitNodes = provisioning.GetLambdaExitNodes(test.GetLambdaY());
-      AssertMemoryNodes(lambdaExitNodes, expectedMemoryNodes);
+      AssertMemoryNodes(lambdaExitNodes, pY);
     }
 
     /*
@@ -604,22 +608,22 @@ TestIndirectCall2()
      */
     {
       auto & lambdaEntryNodes = provisioning.GetLambdaEntryNodes(test.GetLambdaTest());
-      AssertMemoryNodes(lambdaEntryNodes, expectedMemoryNodes);
+      AssertMemoryNodes(lambdaEntryNodes, pXYZG1G2);
 
       auto & callXEntryNodes = provisioning.GetCallEntryNodes(test.GetTestCallX());
-      AssertMemoryNodes(callXEntryNodes, expectedMemoryNodes);
+      AssertMemoryNodes(callXEntryNodes, pXZ);
 
       auto & callXExitNodes = provisioning.GetCallExitNodes(test.GetTestCallX());
-      AssertMemoryNodes(callXExitNodes, expectedMemoryNodes);
+      AssertMemoryNodes(callXExitNodes, pXZ);
 
       auto & callYEntryNodes = provisioning.GetCallEntryNodes(test.GetCallY());
-      AssertMemoryNodes(callYEntryNodes, expectedMemoryNodes);
+      AssertMemoryNodes(callYEntryNodes, pY);
 
       auto & callYExitNodes = provisioning.GetCallExitNodes(test.GetCallY());
-      AssertMemoryNodes(callYExitNodes, expectedMemoryNodes);
+      AssertMemoryNodes(callYExitNodes, pY);
 
       auto & lambdaExitNodes = provisioning.GetLambdaExitNodes(test.GetLambdaTest());
-      AssertMemoryNodes(lambdaExitNodes, expectedMemoryNodes);
+      AssertMemoryNodes(lambdaExitNodes, pXYZG1G2);
     }
 
     /*
@@ -627,16 +631,16 @@ TestIndirectCall2()
      */
     {
       auto & lambdaEntryNodes = provisioning.GetLambdaEntryNodes(test.GetLambdaTest2());
-      AssertMemoryNodes(lambdaEntryNodes, expectedMemoryNodes);
+      AssertMemoryNodes(lambdaEntryNodes, pXZ);
 
       auto & callXEntryNodes = provisioning.GetCallEntryNodes(test.GetTest2CallX());
-      AssertMemoryNodes(callXEntryNodes, expectedMemoryNodes);
+      AssertMemoryNodes(callXEntryNodes, pXZ);
 
       auto & callXExitNodes = provisioning.GetCallExitNodes(test.GetTest2CallX());
-      AssertMemoryNodes(callXExitNodes, expectedMemoryNodes);
+      AssertMemoryNodes(callXExitNodes, pXZ);
 
       auto & lambdaExitNodes = provisioning.GetLambdaExitNodes(test.GetLambdaTest2());
-      AssertMemoryNodes(lambdaExitNodes, expectedMemoryNodes);
+      AssertMemoryNodes(lambdaExitNodes, pXZ);
     }
   };
 
@@ -1009,15 +1013,12 @@ TestPhi2()
     auto & pcAllocaMemoryNode = pointsToGraph.GetAllocaNode(test.GetPcAlloca());
     auto & pdAllocaMemoryNode = pointsToGraph.GetAllocaNode(test.GetPdAlloca());
 
-    auto & externalMemoryNode = pointsToGraph.GetExternalMemoryNode();
-
     jlm::util::HashSet<const jlm::llvm::aa::PointsToGraph::MemoryNode *> expectedMemoryNodes(
         { &pTestAllocaMemoryNode,
           &paAllocaMemoryNode,
           &pbAllocaMemoryNode,
           &pcAllocaMemoryNode,
-          &pdAllocaMemoryNode,
-          &externalMemoryNode });
+          &pdAllocaMemoryNode });
 
     /*
      * Validate function eight()
@@ -1035,16 +1036,16 @@ TestPhi2()
      */
     {
       auto & lambdaEntryNodes = provisioning.GetLambdaEntryNodes(test.GetLambdaI());
-      AssertMemoryNodes(lambdaEntryNodes, expectedMemoryNodes);
+      AssertMemoryNodes(lambdaEntryNodes, {});
 
       auto & callEntryNodes = provisioning.GetCallEntryNodes(test.GetIndirectCall());
-      AssertMemoryNodes(callEntryNodes, expectedMemoryNodes);
+      AssertMemoryNodes(callEntryNodes, {});
 
       auto & callExitNodes = provisioning.GetCallExitNodes(test.GetIndirectCall());
-      AssertMemoryNodes(callExitNodes, expectedMemoryNodes);
+      AssertMemoryNodes(callExitNodes, {});
 
       auto & lambdaExitNodes = provisioning.GetLambdaExitNodes(test.GetLambdaI());
-      AssertMemoryNodes(lambdaExitNodes, expectedMemoryNodes);
+      AssertMemoryNodes(lambdaExitNodes, {});
     }
 
     /*
@@ -1078,10 +1079,10 @@ TestPhi2()
       AssertMemoryNodes(lambdaEntryNodes, expectedMemoryNodes);
 
       auto & callIEntryNodes = provisioning.GetCallEntryNodes(test.GetCallI());
-      AssertMemoryNodes(callIEntryNodes, expectedMemoryNodes);
+      AssertMemoryNodes(callIEntryNodes, {});
 
       auto & callIExitNodes = provisioning.GetCallExitNodes(test.GetCallI());
-      AssertMemoryNodes(callIExitNodes, expectedMemoryNodes);
+      AssertMemoryNodes(callIExitNodes, {});
 
       auto & callCEntryNodes = provisioning.GetCallEntryNodes(test.GetCallC());
       AssertMemoryNodes(callCEntryNodes, expectedMemoryNodes);
@@ -1468,11 +1469,11 @@ TestStatistics()
   assert(statistics.GetMeasurementValue<uint64_t>("#RvsdgNodes") == 3);
   assert(statistics.GetMeasurementValue<uint64_t>("#RvsdgRegions") == 2);
   assert(statistics.GetMeasurementValue<uint64_t>("#PointsToGraphMemoryNodes") == 2);
+  assert(statistics.GetMeasurementValue<uint64_t>("#CallGraphSccs") == 2);
 
-  assert(statistics.HasTimer("AnnotationTime"));
-  assert(statistics.HasTimer("PropagationPass1Time"));
-  assert(statistics.HasTimer("PropagationPass2Time"));
-  assert(statistics.HasTimer("ResolveUnknownMemoryReferenceTime"));
+  assert(statistics.HasTimer("CallGraphTimer"));
+  assert(statistics.HasTimer("AnnotationTimer"));
+  assert(statistics.HasTimer("PropagateTimer"));
 }
 
 static int

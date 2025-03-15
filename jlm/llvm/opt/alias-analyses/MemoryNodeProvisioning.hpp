@@ -41,6 +41,11 @@ public:
   [[nodiscard]] virtual const jlm::util::HashSet<const PointsToGraph::MemoryNode *> &
   GetCallExitNodes(const CallNode & callNode) const = 0;
 
+  /**
+   * Retrieves the set of memory locations that may be targeted by the given pointer typed value
+   * @param output the output producing the pointer value
+   * @return a conservative set of memory locations the pointer may target
+   */
   [[nodiscard]] virtual jlm::util::HashSet<const PointsToGraph::MemoryNode *>
   GetOutputNodes(const jlm::rvsdg::output & output) const = 0;
 
