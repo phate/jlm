@@ -141,15 +141,8 @@ libllvm_HEADERS = \
 
 libllvm_TESTS += \
     tests/jlm/llvm/backend/dot/DotWriterTests \
+    tests/jlm/llvm/backend/IpGraphToLlvmConverterTests \
     tests/jlm/llvm/backend/RvsdgToIpGraphConverterTests \
-    tests/jlm/llvm/backend/llvm/jlm-llvm/LoadTests \
-    tests/jlm/llvm/backend/llvm/jlm-llvm/MemCpyTests \
-    tests/jlm/llvm/backend/llvm/jlm-llvm/StoreTests \
-    tests/jlm/llvm/backend/llvm/jlm-llvm/TestAttributeConversion \
-    tests/jlm/llvm/backend/llvm/jlm-llvm/test-bitconstant \
-    tests/jlm/llvm/backend/llvm/jlm-llvm/test-function-calls \
-    tests/jlm/llvm/backend/llvm/jlm-llvm/test-ignore-memory-state \
-    tests/jlm/llvm/backend/llvm/jlm-llvm/test-select-with-state \
     tests/jlm/llvm/frontend/llvm/LoadTests \
     tests/jlm/llvm/frontend/llvm/MemCpyTests \
     tests/jlm/llvm/frontend/llvm/StoreTests \
