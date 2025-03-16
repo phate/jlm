@@ -30,10 +30,27 @@ class InvariantLambdaMemoryStateRemoval final : public rvsdg::Transformation
   class Statistics;
 
 public:
-  virtual ~InvariantLambdaMemoryStateRemoval();
+  virtual ~InvariantLambdaMemoryStateRemoval() noexcept;
 
+  /**
+   * @brief Applies the transformation on the provided RVSDG module.
+   *
+   * @param rvsdgModule The RVSDG module to apply the transformation on.
+   * @param statisticsCollector The collector used for tracking transformation statistics.
+   */
   void
   Run(rvsdg::RvsdgModule & rvsdgModule, util::StatisticsCollector & statisticsCollector) override;
+
+  /**
+   * @brief Creates an instance of the tranformation and and calls the Run method @see
+   * Run(rvsdg::RvsdgModule & rvsdgModule, util::StatisticsCollector & statisticsCollector)
+   * override;
+   *
+   * @param rvsdgModule The RVSDG module to apply the transformation on.
+   * @param statisticsCollector The collector used for tracking transformation statistics.
+   */
+  static void
+  CreateAndRun(rvsdg::RvsdgModule & rvsdgModule, util::StatisticsCollector & statisticsCollector);
 
 private:
   /**
@@ -48,7 +65,7 @@ private:
    * be removed.
    */
   void
-  RemoveInvariantMemoryStateEdges(rvsdg::RegionResult * memoryStateResult);
+  RemoveInvariantMemoryStateEdges(rvsdg::RegionResult & memoryStateResult);
 
   /**
    * @brief Remove invariant memory state edges between Lambda[Entry/Exit]MemoryState nodes.
@@ -57,7 +74,7 @@ private:
    * memory states of all lambdas in the module that are only exported.
    * @see RemoveInvariantMemoryStateEdges(rvsdg::RegionResult * memoryState)
    *
-   * @param rvsdgModule The RVSDG moduled for which invariant memory state edges are removed in
+   * @param rvsdgModule The RVSDG module for which invariant memory state edges are removed in
    * lambdas.
    */
   void

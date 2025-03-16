@@ -53,8 +53,7 @@ TestEliminateSplitAndMergeNodes()
   // Act
   // This pass should remove the Lambda[Entry/Exit]MemoryState[Split/Merge] nodes
   jlm::util::StatisticsCollector collector;
-  InvariantLambdaMemoryStateRemoval memStateRemoval;
-  memStateRemoval.Run(*rvsdgModule, collector);
+  InvariantLambdaMemoryStateRemoval::CreateAndRun(*rvsdgModule, collector);
   // Assert
   auto * node =
       jlm::rvsdg::output::GetNode(*rvsdgModule->Rvsdg().GetRootRegion().result(0)->origin());
@@ -70,7 +69,7 @@ TestEliminateSplitAndMergeNodes()
   return 0;
 }
 JLM_UNIT_TEST_REGISTER(
-    "jlm/hls/backend/rvsdg2rhls/InvariantLambdaMemoryStateRemovalTests-EliminateSplitAndMergeNodes",
+    "jlm/hls/opt/InvariantLambdaMemoryStateRemovalTests-EliminateSplitAndMergeNodes",
     TestEliminateSplitAndMergeNodes)
 
 static int
@@ -149,5 +148,5 @@ TestInvariantMemoryState()
   return 0;
 }
 JLM_UNIT_TEST_REGISTER(
-    "jlm/hls/backend/rvsdg2rhls/InvariantLambdaMemoryStateRemovalTests-InvariantMemoryState",
+    "jlm/hls/opt/InvariantLambdaMemoryStateRemovalTests-InvariantMemoryState",
     TestInvariantMemoryState)

@@ -5,9 +5,9 @@
 
 #include <jlm/hls/opt/InvariantLambdaMemoryStateRemoval.hpp>
 #include <jlm/llvm/ir/LambdaMemoryState.hpp>
+#include <jlm/llvm/ir/operators/lambda.hpp>
 #include <jlm/llvm/ir/operators/MemoryStateOperations.hpp>
 #include <jlm/llvm/ir/operators/Phi.hpp>
-#include <jlm/rvsdg/lambda.hpp>
 #include <jlm/rvsdg/RvsdgModule.hpp>
 #include <jlm/rvsdg/traverser.hpp>
 #include <jlm/util/Statistics.hpp>
@@ -17,26 +17,27 @@ namespace jlm::hls
 
 void
 InvariantLambdaMemoryStateRemoval::RemoveInvariantMemoryStateEdges(
-    rvsdg::RegionResult * memoryStateResult)
+    rvsdg::RegionResult & memoryStateResult)
 {
   // We only apply this for memory state edges that is invariant between LambdaEntryMemoryStateSplit
   // and LambdaExitMemoryStateMerge nodes.
-  //  auto exitNode = rvsdg::output::GetNode(*memoryStateResult->origin());
-  auto exitNode = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*memoryStateResult->origin());
-  if (!rvsdg::is<const llvm::LambdaExitMemoryStateMergeOperation>(exitNode->GetOperation()))
+  auto exitNode = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*memoryStateResult.origin());
+  if (exitNode == nullptr
+      || !rvsdg::is<const llvm::LambdaExitMemoryStateMergeOperation>(exitNode->GetOperation()))
   {
     return;
   }
 
   // Check if we have any invariant edge(s) between the two nodes
-  std::vector<size_t> indices;
+  std::vector<size_t> nonInvariantIndices;
   std::vector<rvsdg::output *> nonInvariantOutputs;
   rvsdg::Node * entryNode = nullptr;
   for (size_t i = 0; i < exitNode->ninputs(); i++)
   {
     // Check if the output has only one user and if it is a LambdaEntryMemoryStateMerge
-    auto node = rvsdg::TryGetOwnerNode<rvsdg::Node>(*exitNode->input(i)->origin());
-    if (jlm::rvsdg::is<const llvm::LambdaEntryMemoryStateSplitOperation>(node->GetOperation()))
+    auto node = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*exitNode->input(i)->origin());
+    if (node != nullptr
+        && jlm::rvsdg::is<const llvm::LambdaEntryMemoryStateSplitOperation>(node->GetOperation()))
     {
       // Found an invariant memory state edge, so going to replace the entryNode
       entryNode = node;
@@ -46,7 +47,7 @@ InvariantLambdaMemoryStateRemoval::RemoveInvariantMemoryStateEdges(
       // Keep track of edges that is to be kept since they are not invariant
       nonInvariantOutputs.push_back(exitNode->input(i)->origin());
       // Also keep track of the index to be used for diverting edges
-      indices.push_back(i);
+      nonInvariantIndices.push_back(i);
     }
   }
 
@@ -60,27 +61,27 @@ InvariantLambdaMemoryStateRemoval::RemoveInvariantMemoryStateEdges(
   if (nonInvariantOutputs.size() == 0)
   {
     // The memory state edge(s) are invariant, so we could in principle remove all of them from the
-    // lambda But the LLVM dialect expects to always have a memory state, so we connect the argument
-    // directly to the result
-    memoryStateResult->divert_to(entryNode->input(0)->origin());
+    // lambda. However, the LLVM dialect expects to always have a memory state, so we connect the
+    // argument directly to the result
+    memoryStateResult.divert_to(entryNode->input(0)->origin());
   }
   else if (nonInvariantOutputs.size() == 1)
   {
     // Single edge that is not invariant, so we can elmintate the two MemoryState nodes
-    memoryStateResult->divert_to(nonInvariantOutputs[0]);
-    entryNode->output(indices[0])->divert_users(entryNode->input(0)->origin());
+    memoryStateResult.divert_to(nonInvariantOutputs[0]);
+    entryNode->output(nonInvariantIndices[0])->divert_users(entryNode->input(0)->origin());
   }
   else
   {
     // Replace the entry and exit node with new ones without the invariant edge(s)
     auto newEntryNodeOutputs = llvm::LambdaEntryMemoryStateSplitOperation::Create(
         *entryNode->input(0)->origin(),
-        indices.size());
-    memoryStateResult->divert_to(&llvm::LambdaExitMemoryStateMergeOperation::Create(
+        nonInvariantIndices.size());
+    memoryStateResult.divert_to(&llvm::LambdaExitMemoryStateMergeOperation::Create(
         *exitNode->region(),
         nonInvariantOutputs));
     int i = 0;
-    for (auto index : indices)
+    for (auto index : nonInvariantIndices)
     {
       entryNode->output(index)->divert_users(newEntryNodeOutputs[i]);
       i++;
@@ -100,11 +101,12 @@ InvariantLambdaMemoryStateRemoval::RemoveInvariantLambdaMemoryStateEdges(
   {
     if (auto lambda = dynamic_cast<const rvsdg::LambdaNode *>(node))
     {
-      if (lambda->output()->nusers() == 1
+      if (rvsdg::is<const llvm::LlvmLambdaOperation>(node->GetOperation())
+          && lambda->output()->nusers() == 1
           && dynamic_cast<const jlm::rvsdg::GraphExport *>(*lambda->output()->begin()))
       {
         RemoveInvariantMemoryStateEdges(
-            dynamic_cast<rvsdg::RegionResult *>(&llvm::GetMemoryStateRegionResult(*lambda)));
+            *dynamic_cast<rvsdg::RegionResult *>(&llvm::GetMemoryStateRegionResult(*lambda)));
       }
     }
   }
@@ -113,7 +115,7 @@ InvariantLambdaMemoryStateRemoval::RemoveInvariantLambdaMemoryStateEdges(
 class InvariantLambdaMemoryStateRemoval::Statistics final : public util::Statistics
 {
 public:
-  ~Statistics() override = default;
+  ~Statistics() noexcept override = default;
 
   explicit Statistics(const util::filepath & sourceFile)
       : util::Statistics(Statistics::Id::InvariantValueRedirection, sourceFile)
@@ -138,7 +140,7 @@ public:
   }
 };
 
-InvariantLambdaMemoryStateRemoval::~InvariantLambdaMemoryStateRemoval() = default;
+InvariantLambdaMemoryStateRemoval::~InvariantLambdaMemoryStateRemoval() noexcept = default;
 
 void
 InvariantLambdaMemoryStateRemoval::Run(
@@ -152,6 +154,15 @@ InvariantLambdaMemoryStateRemoval::Run(
   statistics->Stop();
 
   statisticsCollector.CollectDemandedStatistics(std::move(statistics));
+}
+
+void
+InvariantLambdaMemoryStateRemoval::CreateAndRun(
+    rvsdg::RvsdgModule & rvsdgModule,
+    util::StatisticsCollector & statisticsCollector)
+{
+  hls::InvariantLambdaMemoryStateRemoval memStateRemoval;
+  memStateRemoval.Run(rvsdgModule, statisticsCollector);
 }
 
 } // namespace jlm::hls
