@@ -1377,11 +1377,11 @@ IpGraphToLlvmConverter::convert_operation(
   {
     return convert_cast<::llvm::Instruction::SIToFP>(op, arguments, builder);
   }
-  if (is<trunc_op>(op))
+  if (is<TruncOperation>(op))
   {
     return convert_cast<::llvm::Instruction::Trunc>(op, arguments, builder);
   }
-  if (is<uitofp_op>(op))
+  if (is<UIToFPOperation>(op))
   {
     return convert_cast<::llvm::Instruction::UIToFP>(op, arguments, builder);
   }

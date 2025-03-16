@@ -1672,7 +1672,7 @@ ValidateDeltaTest3SteensgaardAgnostic(const jlm::tests::DeltaTest3 & test)
     assert(is<LambdaExitMemoryStateMergeOperation>(*lambdaExitMerge, 5, 1));
 
     auto truncNode = jlm::rvsdg::output::GetNode(*test.LambdaF().GetFunctionResults()[0]->origin());
-    assert(is<trunc_op>(*truncNode, 1, 1));
+    assert(is<TruncOperation>(*truncNode, 1, 1));
 
     auto loadG1Node = jlm::rvsdg::output::GetNode(*truncNode->input(0)->origin());
     assert(is<LoadNonVolatileOperation>(*loadG1Node, 2, 2));
@@ -1715,7 +1715,7 @@ ValidateDeltaTest3SteensgaardRegionAware(const jlm::tests::DeltaTest3 & test)
     assert(is<LambdaExitMemoryStateMergeOperation>(*lambdaExitMerge, 2, 1));
 
     auto truncNode = jlm::rvsdg::output::GetNode(*test.LambdaF().GetFunctionResults()[0]->origin());
-    assert(is<trunc_op>(*truncNode, 1, 1));
+    assert(is<TruncOperation>(*truncNode, 1, 1));
 
     auto loadG1Node = jlm::rvsdg::output::GetNode(*truncNode->input(0)->origin());
     assert(is<LoadNonVolatileOperation>(*loadG1Node, 2, 2));
@@ -1758,7 +1758,7 @@ ValidateDeltaTest3SteensgaardAgnosticTopDown(const jlm::tests::DeltaTest3 & test
     assert(is<LambdaExitMemoryStateMergeOperation>(*lambdaExitMerge, 5, 1));
 
     auto truncNode = jlm::rvsdg::output::GetNode(*test.LambdaF().GetFunctionResults()[0]->origin());
-    assert(is<trunc_op>(*truncNode, 1, 1));
+    assert(is<TruncOperation>(*truncNode, 1, 1));
 
     auto loadG1Node = jlm::rvsdg::output::GetNode(*truncNode->input(0)->origin());
     assert(is<LoadNonVolatileOperation>(*loadG1Node, 2, 2));

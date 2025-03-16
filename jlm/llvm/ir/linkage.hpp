@@ -7,6 +7,7 @@
 #define JLM_LLVM_IR_LINKAGE_HPP
 
 #include <jlm/util/common.hpp>
+#include <jlm/util/strfmt.hpp>
 #include <string>
 #include <unordered_map>
 
@@ -56,6 +57,31 @@ ToString(const linkage & lnk)
   return strings[lnk];
 }
 
+static inline linkage
+FromString(const std::string_view stringValue)
+{
+  static std::unordered_map<std::string_view, linkage> linkages = {
+    { "external_linkage", linkage::external_linkage },
+    { "available_externally_linkage", linkage::available_externally_linkage },
+    { "link_once_any_linkage", linkage::link_once_any_linkage },
+    { "link_once_odr_linkage", linkage::link_once_odr_linkage },
+    { "weak_any_linkage", linkage::weak_any_linkage },
+    { "weak_odr_linkage", linkage::weak_odr_linkage },
+    { "appending_linkage", linkage::appending_linkage },
+    { "internal_linkage", linkage::internal_linkage },
+    { "private_linkage", linkage::private_linkage },
+    { "external_weak_linkage", linkage::external_weak_linkage },
+    { "common_linkage", linkage::common_linkage }
+  };
+
+  if (linkages.find(stringValue) == linkages.end())
+  {
+    auto message = util::strfmt("Unsupported linkage: ", stringValue, "\n");
+    JLM_UNREACHABLE(message.c_str());
+  }
+
+  return linkages[stringValue];
+}
 }
 
 #endif
