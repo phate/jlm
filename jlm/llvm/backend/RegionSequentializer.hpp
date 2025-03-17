@@ -21,7 +21,7 @@ namespace jlm::llvm
 {
 
 using Sequentialization = std::vector<const rvsdg::Node *>;
-using SequentializationMap = std::unordered_map<const rvsdg::Region *, Sequentialization>;
+using SequentializationMap = std::unordered_map<rvsdg::Region *, Sequentialization>;
 
 // FIXME: add documentation
 class RegionSequentializer
@@ -29,8 +29,14 @@ class RegionSequentializer
 public:
   virtual ~RegionSequentializer() noexcept;
 
-  virtual std::optional<SequentializationMap>
+  virtual void
+  Initialize(rvsdg::Region & region) = 0;
+
+  virtual void
   ComputeNextSequentialization() = 0;
+
+  virtual std::optional<SequentializationMap>
+  GetSequentializations() const = 0;
 };
 
 // FIXME: add documentation
@@ -39,10 +45,16 @@ class ExhaustiveSingleRegionSequentializer final : public RegionSequentializer
 public:
   ~ExhaustiveSingleRegionSequentializer() noexcept override;
 
-  explicit ExhaustiveSingleRegionSequentializer(const rvsdg::Region & region);
+  ExhaustiveSingleRegionSequentializer();
+
+  void
+  Initialize(rvsdg::Region & region) override;
+
+  void
+  ComputeNextSequentialization() override;
 
   std::optional<SequentializationMap>
-  ComputeNextSequentialization() override;
+  GetSequentializations() const override;
 
   void
   Reset();
@@ -50,13 +62,10 @@ public:
   bool
   HasMoreSequentializations() const noexcept
   {
-    return CurrentSequentialization_ < Sequentializations_.size();
+    return CurrentSequentialization_ < Sequentializations_.value().size();
   }
 
 private:
-  void
-  ComputeSequentializations(const rvsdg::Region & region);
-
   void
   ComputeSequentializations(
       const rvsdg::Region & region,
@@ -68,9 +77,9 @@ private:
       const rvsdg::Node & node,
       const util::HashSet<const rvsdg::Node *> & visited);
 
-  const rvsdg::Region * Region_;
+  rvsdg::Region * Region_;
   size_t CurrentSequentialization_ = 0;
-  std::vector<Sequentialization> Sequentializations_;
+  std::optional<std::vector<Sequentialization>> Sequentializations_;
 };
 
 // FIXME: add documentation
@@ -79,20 +88,43 @@ class ExhaustiveRegionSequentializer final : public RegionSequentializer
 public:
   ~ExhaustiveRegionSequentializer() noexcept override;
 
-  explicit ExhaustiveRegionSequentializer(const rvsdg::Region & region);
+  explicit ExhaustiveRegionSequentializer(rvsdg::Region & region);
 
   bool
   HasMoreSequentializations() const noexcept;
 
-  std::optional<SequentializationMap>
+  void
   ComputeNextSequentialization() override;
+
+  std::optional<SequentializationMap>
+  GetSequentializations() const override;
 
 private:
   void
-  InitializeSequentializers(const rvsdg::Region & region);
+  InitializeSequentializers(rvsdg::Region & topRegion);
 
-  std::unordered_map<const rvsdg::Region *, std::unique_ptr<ExhaustiveSingleRegionSequentializer>>
+  std::optional<SequentializationMap> CurrentSequentializations_;
+  std::unordered_map<rvsdg::Region *, std::unique_ptr<ExhaustiveSingleRegionSequentializer>>
       Sequentializers_;
+};
+
+// FIXME: add documentation
+class IdempotentRegionSequentializer final : public RegionSequentializer
+{
+public:
+  ~IdempotentRegionSequentializer() noexcept override;
+
+  explicit IdempotentRegionSequentializer(rvsdg::Region & region);
+
+  void
+  ComputeNextSequentialization() override;
+
+  std::optional<SequentializationMap>
+  GetSequentializations() const override;
+
+private:
+  rvsdg::Region * Region_;
+  SequentializationMap Sequentialization_;
 };
 
 }

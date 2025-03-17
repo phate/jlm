@@ -6,6 +6,7 @@
 #ifndef JLM_LLVM_BACKEND_RVSDGTOIPGRAPHCONVERTER_HPP
 #define JLM_LLVM_BACKEND_RVSDGTOIPGRAPHCONVERTER_HPP
 
+#include <jlm/llvm/backend/RegionSequentializer.hpp>
 #include <jlm/rvsdg/theta.hpp>
 
 #include <memory>
@@ -77,10 +78,13 @@ private:
   ConvertImports(const rvsdg::Graph & graph);
 
   void
-  ConvertNodes(const rvsdg::Graph & graph);
+  ConvertInterProceduralNodes(const rvsdg::Graph & graph);
 
   void
-  ConvertNode(const rvsdg::Node & node);
+  ConvertInterProceduralNode(const rvsdg::Node & node);
+
+  void
+  ConvertIntraProceduralNode(const rvsdg::Node & node, RegionSequentializer & sequentializer);
 
   void
   ConvertDeltaNode(const delta::node & deltaNode);
@@ -92,10 +96,10 @@ private:
   ConvertLambdaNode(const rvsdg::LambdaNode & lambdaNode);
 
   void
-  ConvertThetaNode(const rvsdg::ThetaNode & thetaNode);
+  ConvertThetaNode(const rvsdg::ThetaNode & thetaNode, RegionSequentializer & sequentializer);
 
   void
-  ConvertGammaNode(const rvsdg::GammaNode & gammaNode);
+  ConvertGammaNode(const rvsdg::GammaNode & gammaNode, RegionSequentializer & sequentializer);
 
   void
   ConvertEmptyGammaNode(const rvsdg::GammaNode & gammaNode);
@@ -107,7 +111,7 @@ private:
   CreateControlFlowGraph(const rvsdg::LambdaNode & lambda);
 
   void
-  ConvertRegion(rvsdg::Region & region);
+  ConvertRegion(rvsdg::Region & region, RegionSequentializer & sequentializer);
 
   std::unique_ptr<data_node_init>
   CreateInitialization(const delta::node & deltaNode);
@@ -115,7 +119,13 @@ private:
   static bool
   RequiresSsaPhiOperation(const rvsdg::ThetaNode::LoopVar & loopVar, const variable & v);
 
+  RegionSequentializer &
+  GetOrCreateRegionSequentializer(const rvsdg::LambdaNode & lambdaNode);
+
   std::unique_ptr<Context> Context_;
+
+  std::unordered_map<const rvsdg::LambdaNode *, std::unique_ptr<RegionSequentializer>>
+      RegionSequentializers_;
 };
 
 }

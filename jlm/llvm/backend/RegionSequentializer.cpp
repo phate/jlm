@@ -5,6 +5,7 @@
 
 #include <jlm/llvm/backend/RegionSequentializer.hpp>
 #include <jlm/rvsdg/region.hpp>
+#include <jlm/rvsdg/traverser.hpp>
 #include <jlm/util/HashSet.hpp>
 
 namespace jlm::llvm
@@ -14,16 +15,13 @@ RegionSequentializer::~RegionSequentializer() noexcept = default;
 
 ExhaustiveSingleRegionSequentializer::~ExhaustiveSingleRegionSequentializer() noexcept = default;
 
-ExhaustiveSingleRegionSequentializer::ExhaustiveSingleRegionSequentializer(
-    const rvsdg::Region & region)
-    : Region_(&region)
-{
-  ComputeSequentializations(region);
-}
+ExhaustiveSingleRegionSequentializer::ExhaustiveSingleRegionSequentializer() = default;
 
 void
-ExhaustiveSingleRegionSequentializer::ComputeSequentializations(const rvsdg::Region & region)
+ExhaustiveSingleRegionSequentializer::Initialize(rvsdg::Region & region)
 {
+  Sequentializations_ = std::vector<Sequentialization>();
+
   util::HashSet<const rvsdg::Node *> visited;
   std::vector<const rvsdg::Node *> sequentializedNodes;
   ComputeSequentializations(region, visited, sequentializedNodes);
@@ -51,18 +49,29 @@ ExhaustiveSingleRegionSequentializer::ComputeSequentializations(
 
   if (sequentializedNodes.size() == region.nnodes())
   {
-    Sequentializations_.emplace_back(sequentializedNodes);
+    Sequentializations_.value().emplace_back(sequentializedNodes);
   }
 }
 
-std::optional<SequentializationMap>
+void
 ExhaustiveSingleRegionSequentializer::ComputeNextSequentialization()
+{
+  if (!HasMoreSequentializations())
+    return;
+
+  CurrentSequentialization_++;
+}
+
+std::optional<SequentializationMap>
+ExhaustiveSingleRegionSequentializer::GetSequentializations() const
 {
   if (!HasMoreSequentializations())
     return std::nullopt;
 
-  const auto sequentialization = Sequentializations_[CurrentSequentialization_];
-  CurrentSequentialization_++;
+  if (!Sequentializations_.has_value())
+    return std::nullopt;
+
+  const auto sequentialization = Sequentializations_.value()[CurrentSequentialization_];
 
   SequentializationMap sequentializationMap;
   sequentializationMap[Region_] = sequentialization;
@@ -97,13 +106,13 @@ ExhaustiveSingleRegionSequentializer::AllPredecessorsVisited(
 
 ExhaustiveRegionSequentializer::~ExhaustiveRegionSequentializer() noexcept = default;
 
-ExhaustiveRegionSequentializer::ExhaustiveRegionSequentializer(const rvsdg::Region & region)
+ExhaustiveRegionSequentializer::ExhaustiveRegionSequentializer(rvsdg::Region & region)
 {
   InitializeSequentializers(region);
 }
 
 void
-ExhaustiveRegionSequentializer::InitializeSequentializers(const rvsdg::Region & region)
+ExhaustiveRegionSequentializer::InitializeSequentializers(rvsdg::Region & region)
 {
   Sequentializers_[&region] = std::make_unique<ExhaustiveSingleRegionSequentializer>(region);
   for (auto & node : region.Nodes())
@@ -119,13 +128,15 @@ ExhaustiveRegionSequentializer::InitializeSequentializers(const rvsdg::Region & 
   }
 }
 
-std::optional<SequentializationMap>
+void
 ExhaustiveRegionSequentializer::ComputeNextSequentialization()
 {
   if (!HasMoreSequentializations())
-    return std::nullopt;
+  {
+    CurrentSequentializations_ = std::nullopt;
+    return;
+  }
 
-  SequentializationMap sequentializationMap;
   for (auto & [region, sequentializer] : Sequentializers_)
   {
     auto sequentialization = sequentializer->ComputeNextSequentialization();
@@ -135,10 +146,14 @@ ExhaustiveRegionSequentializer::ComputeNextSequentialization()
       sequentialization = sequentializer->ComputeNextSequentialization();
     }
 
-    sequentializationMap[region] = std::move(sequentialization.value()[region]);
+    CurrentSequentializations_[region] = std::move(sequentialization.value()[region]);
   }
+}
 
-  return sequentializationMap;
+std::optional<SequentializationMap>
+ExhaustiveRegionSequentializer::GetSequentializations() const
+{
+  return CurrentSequentializations_;
 }
 
 bool
@@ -151,6 +166,27 @@ ExhaustiveRegionSequentializer::HasMoreSequentializations() const noexcept
   }
 
   return false;
+}
+
+IdempotentRegionSequentializer::~IdempotentRegionSequentializer() noexcept = default;
+
+IdempotentRegionSequentializer::IdempotentRegionSequentializer(rvsdg::Region & region)
+    : Region_(&region)
+{
+  for (const auto & node : rvsdg::TopDownTraverser(&region))
+  {
+    Sequentialization_.push_back(node);
+  }
+}
+
+void
+IdempotentRegionSequentializer::ComputeNextSequentialization()
+{}
+
+std::optional<SequentializationMap>
+IdempotentRegionSequentializer::GetSequentializations() const
+{
+  return Sequentialization_;
 }
 
 }

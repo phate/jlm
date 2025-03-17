@@ -131,6 +131,22 @@ RvsdgToIpGraphConverter::~RvsdgToIpGraphConverter() = default;
 
 RvsdgToIpGraphConverter::RvsdgToIpGraphConverter() = default;
 
+RegionSequentializer &
+RvsdgToIpGraphConverter::GetOrCreateRegionSequentializer(const rvsdg::LambdaNode & lambdaNode)
+{
+  if (RegionSequentializers_.find(&lambdaNode) != RegionSequentializers_.end())
+  {
+    return *RegionSequentializers_[&lambdaNode];
+  }
+
+  auto regionSequentializer = std::make_unique<RegionSequentializer>();
+  const auto regionSequentializerPtr = regionSequentializer.get();
+  regionSequentializer->Initialize(*lambdaNode.subregion());
+  RegionSequentializers_[&lambdaNode] = std::move(regionSequentializer);
+
+  return *regionSequentializerPtr;
+}
+
 std::unique_ptr<data_node_init>
 RvsdgToIpGraphConverter::CreateInitialization(const delta::node & deltaNode)
 {
@@ -170,14 +186,16 @@ RvsdgToIpGraphConverter::CreateInitialization(const delta::node & deltaNode)
 }
 
 void
-RvsdgToIpGraphConverter::ConvertRegion(rvsdg::Region & region)
+RvsdgToIpGraphConverter::ConvertRegion(
+    rvsdg::Region & region,
+    RegionSequentializer & sequentializer)
 {
   const auto entryBlock = basic_block::create(*Context_->GetControlFlowGraph());
   Context_->GetLastProcessedBasicBlock()->add_outedge(entryBlock);
   Context_->SetLastProcessedBasicBlock(entryBlock);
 
-  for (const auto & node : rvsdg::TopDownTraverser(&region))
-    ConvertNode(*node);
+  for (auto & node : sequentializer.GetSequentializations().value()[&region])
+    ConvertIntraProceduralNode(*node, sequentializer);
 
   const auto exitBlock = basic_block::create(*Context_->GetControlFlowGraph());
   Context_->GetLastProcessedBasicBlock()->add_outedge(exitBlock);
@@ -215,7 +233,8 @@ RvsdgToIpGraphConverter::CreateControlFlowGraph(const rvsdg::LambdaNode & lambda
     Context_->InsertVariable(inner, variable);
   }
 
-  ConvertRegion(*lambda.subregion());
+  auto & sequentializer = GetOrCreateRegionSequentializer(lambda);
+  ConvertRegion(*lambda.subregion(), sequentializer);
 
   // add results
   for (const auto result : lambda.GetFunctionResults())
@@ -306,7 +325,9 @@ RvsdgToIpGraphConverter::ConvertEmptyGammaNode(const rvsdg::GammaNode & gammaNod
 }
 
 void
-RvsdgToIpGraphConverter::ConvertGammaNode(const rvsdg::GammaNode & gammaNode)
+RvsdgToIpGraphConverter::ConvertGammaNode(
+    const rvsdg::GammaNode & gammaNode,
+    RegionSequentializer & sequentializer)
 {
   const auto numSubregions = gammaNode.nsubregions();
   const auto predicate = gammaNode.predicate()->origin();
@@ -346,7 +367,7 @@ RvsdgToIpGraphConverter::ConvertGammaNode(const rvsdg::GammaNode & gammaNode)
       const auto regionEntryBlock = basic_block::create(*controlFlowGraph);
       entryBlock->add_outedge(regionEntryBlock);
       Context_->SetLastProcessedBasicBlock(regionEntryBlock);
-      ConvertRegion(*subregion);
+      ConvertRegion(*subregion, sequentializer);
 
       phi_nodes.push_back(Context_->GetLastProcessedBasicBlock());
       Context_->GetLastProcessedBasicBlock()->add_outedge(exitBlock);
@@ -424,7 +445,9 @@ RvsdgToIpGraphConverter::RequiresSsaPhiOperation(
 }
 
 void
-RvsdgToIpGraphConverter::ConvertThetaNode(const rvsdg::ThetaNode & thetaNode)
+RvsdgToIpGraphConverter::ConvertThetaNode(
+    const rvsdg::ThetaNode & thetaNode,
+    RegionSequentializer & sequentializer)
 {
   const auto subregion = thetaNode.subregion();
   const auto predicate = subregion->result(0)->origin();
@@ -448,7 +471,7 @@ RvsdgToIpGraphConverter::ConvertThetaNode(const rvsdg::ThetaNode & thetaNode)
     Context_->InsertVariable(loopVar.pre, variable);
   }
 
-  ConvertRegion(*subregion);
+  ConvertRegion(*subregion, sequentializer);
 
   // add phi operands and results to context
   size_t phiIndex = 0;
@@ -604,19 +627,11 @@ RvsdgToIpGraphConverter::ConvertDeltaNode(const delta::node & deltaNode)
 }
 
 void
-RvsdgToIpGraphConverter::ConvertNode(const rvsdg::Node & node)
+RvsdgToIpGraphConverter::ConvertInterProceduralNode(const rvsdg::Node & node)
 {
   if (const auto lambdaNode = dynamic_cast<const rvsdg::LambdaNode *>(&node))
   {
     ConvertLambdaNode(*lambdaNode);
-  }
-  else if (const auto gammaNode = dynamic_cast<const rvsdg::GammaNode *>(&node))
-  {
-    ConvertGammaNode(*gammaNode);
-  }
-  else if (const auto thetaNode = dynamic_cast<const rvsdg::ThetaNode *>(&node))
-  {
-    ConvertThetaNode(*thetaNode);
   }
   else if (const auto phiNode = dynamic_cast<const phi::node *>(&node))
   {
@@ -625,6 +640,26 @@ RvsdgToIpGraphConverter::ConvertNode(const rvsdg::Node & node)
   else if (const auto deltaNode = dynamic_cast<const delta::node *>(&node))
   {
     ConvertDeltaNode(*deltaNode);
+  }
+  else
+  {
+    JLM_UNREACHABLE(
+        util::strfmt("Unhandled node type: ", node.GetOperation().debug_string()).c_str());
+  }
+}
+
+void
+RvsdgToIpGraphConverter::ConvertIntraProceduralNode(
+    const rvsdg::Node & node,
+    RegionSequentializer & sequentializer)
+{
+  if (const auto gammaNode = dynamic_cast<const rvsdg::GammaNode *>(&node))
+  {
+    ConvertGammaNode(*gammaNode, sequentializer);
+  }
+  else if (const auto thetaNode = dynamic_cast<const rvsdg::ThetaNode *>(&node))
+  {
+    ConvertThetaNode(*thetaNode, sequentializer);
   }
   else if (const auto simpleNode = dynamic_cast<const rvsdg::SimpleNode *>(&node))
   {
@@ -638,11 +673,11 @@ RvsdgToIpGraphConverter::ConvertNode(const rvsdg::Node & node)
 }
 
 void
-RvsdgToIpGraphConverter::ConvertNodes(const rvsdg::Graph & graph)
+RvsdgToIpGraphConverter::ConvertInterProceduralNodes(const rvsdg::Graph & graph)
 {
   for (const auto & node : rvsdg::TopDownTraverser(&graph.GetRootRegion()))
   {
-    ConvertNode(*node);
+    ConvertInterProceduralNode(*node);
   }
 }
 
@@ -694,7 +729,7 @@ RvsdgToIpGraphConverter::ConvertModule(
 
   Context_ = Context::Create(*ipGraphModule);
   ConvertImports(rvsdgModule.Rvsdg());
-  ConvertNodes(rvsdgModule.Rvsdg());
+  ConvertInterProceduralNodes(rvsdgModule.Rvsdg());
 
   statistics->End(*ipGraphModule);
   statisticsCollector.CollectDemandedStatistics(std::move(statistics));
