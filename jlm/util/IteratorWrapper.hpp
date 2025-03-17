@@ -15,7 +15,7 @@ namespace jlm::util
 
 /**
  * Functor for dereferencing iterators to (smart)pointers.
- * The iterator may for example be a std::vector<std::unique_ptr<T>>::iterator.
+ * The iterator may for example be a vector<unique_ptr<T>>:: iterator.
  *
  * @tparam T the result type
  * @tparam BaseIterator the iterator type
@@ -33,7 +33,7 @@ struct PtrDereferenceFunc
 
 /**
  * Functor for dereferencing iterators to maps, where the values are (smart)pointers.
- * The iterator may for example be an std::unordered_map<int, std::unique_ptr<T>>::iterator.
+ * The iterator may for example be an unordered_map<int, unique_ptr<T>>:: iterator.
  *
  * @tparam T the result type
  * @tparam BaseIterator the iterator type
