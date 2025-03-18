@@ -18,8 +18,8 @@ libutil_HEADERS = \
     jlm/util/intrusive-hash.hpp \
     jlm/util/intrusive-list.hpp \
     jlm/util/iterator_range.hpp \
+    jlm/util/IteratorWrapper.hpp \
     jlm/util/Math.hpp \
-    jlm/util/PtrIterator.hpp \
     jlm/util/Statistics.hpp \
     jlm/util/strfmt.hpp \
     jlm/util/TarjanScc.hpp \
@@ -28,6 +28,7 @@ libutil_HEADERS = \
 
 libutil_TESTS += \
 	tests/jlm/util/AnnotationMapTests \
+	tests/jlm/util/IteratorWrapperTests \
 	tests/jlm/util/test-disjointset \
 	tests/jlm/util/test-intrusive-hash \
 	tests/jlm/util/test-intrusive-list \
@@ -36,7 +37,6 @@ libutil_TESTS += \
 	tests/jlm/util/TestGraphWriter \
 	tests/jlm/util/TestHashSet \
 	tests/jlm/util/TestMath \
-	tests/jlm/util/TestPtrIterator \
 	tests/jlm/util/TestStatistics \
 	tests/jlm/util/TestTarjanScc \
 	tests/jlm/util/TestTimer \
