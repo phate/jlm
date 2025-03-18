@@ -5,6 +5,7 @@
  */
 
 #include <jlm/hls/backend/rhls2firrtl/RhlsToFirrtlConverter.hpp>
+#include <jlm/llvm/ir/operators/IntegerOperations.hpp>
 #include <jlm/llvm/ir/operators/MemoryStateOperations.hpp>
 #include <jlm/util/strfmt.hpp>
 
@@ -45,7 +46,7 @@ RhlsToFirrtlConverter::MlirGenSimpleNode(const jlm::rvsdg::SimpleNode * node)
   // Get the data signal from the bundle
   auto outData = GetSubfield(body, outBundle, "data");
 
-  if (dynamic_cast<const jlm::rvsdg::bitadd_op *>(&(node->GetOperation())))
+  if (rvsdg::is<llvm::IntegerAddOperation>(node))
   {
     auto input0 = GetSubfield(body, inBundles[0], "data");
     auto input1 = GetSubfield(body, inBundles[1], "data");
@@ -54,7 +55,7 @@ RhlsToFirrtlConverter::MlirGenSimpleNode(const jlm::rvsdg::SimpleNode * node)
     // We drop the carry bit
     Connect(body, outData, DropMSBs(body, op, 1));
   }
-  else if (dynamic_cast<const jlm::rvsdg::bitsub_op *>(&(node->GetOperation())))
+  else if (rvsdg::is<llvm::IntegerSubOperation>(node))
   {
     auto input0 = GetSubfield(body, inBundles[0], "data");
     auto input1 = GetSubfield(body, inBundles[1], "data");
@@ -63,7 +64,7 @@ RhlsToFirrtlConverter::MlirGenSimpleNode(const jlm::rvsdg::SimpleNode * node)
     // We drop the carry bit
     Connect(body, outData, DropMSBs(body, op, 1));
   }
-  else if (dynamic_cast<const jlm::rvsdg::bitand_op *>(&(node->GetOperation())))
+  else if (rvsdg::is<llvm::IntegerAndOperation>(node))
   {
     auto input0 = GetSubfield(body, inBundles[0], "data");
     auto input1 = GetSubfield(body, inBundles[1], "data");
@@ -71,7 +72,7 @@ RhlsToFirrtlConverter::MlirGenSimpleNode(const jlm::rvsdg::SimpleNode * node)
     // Connect the op to the output data
     Connect(body, outData, op);
   }
-  else if (dynamic_cast<const jlm::rvsdg::bitxor_op *>(&(node->GetOperation())))
+  else if (rvsdg::is<llvm::IntegerXorOperation>(node))
   {
     auto input0 = GetSubfield(body, inBundles[0], "data");
     auto input1 = GetSubfield(body, inBundles[1], "data");
@@ -79,7 +80,7 @@ RhlsToFirrtlConverter::MlirGenSimpleNode(const jlm::rvsdg::SimpleNode * node)
     // Connect the op to the output data
     Connect(body, outData, op);
   }
-  else if (dynamic_cast<const jlm::rvsdg::bitor_op *>(&(node->GetOperation())))
+  else if (rvsdg::is<llvm::IntegerOrOperation>(node))
   {
     auto input0 = GetSubfield(body, inBundles[0], "data");
     auto input1 = GetSubfield(body, inBundles[1], "data");
@@ -87,16 +88,16 @@ RhlsToFirrtlConverter::MlirGenSimpleNode(const jlm::rvsdg::SimpleNode * node)
     // Connect the op to the output data
     Connect(body, outData, op);
   }
-  else if (auto bitmulOp = dynamic_cast<const jlm::rvsdg::bitmul_op *>(&(node->GetOperation())))
+  else if (auto bitmulOp = dynamic_cast<const llvm::IntegerMulOperation *>(&(node->GetOperation())))
   {
     auto input0 = GetSubfield(body, inBundles[0], "data");
     auto input1 = GetSubfield(body, inBundles[1], "data");
     auto op = AddMulOp(body, input0, input1);
     // Connect the op to the output data
     // Multiplication results are double the input width, so we drop the upper half of the result
-    Connect(body, outData, DropMSBs(body, op, bitmulOp->type().nbits()));
+    Connect(body, outData, DropMSBs(body, op, bitmulOp->Type().nbits()));
   }
-  else if (dynamic_cast<const jlm::rvsdg::bitsdiv_op *>(&(node->GetOperation())))
+  else if (rvsdg::is<llvm::IntegerSDivOperation>(node))
   {
     auto input0 = GetSubfield(body, inBundles[0], "data");
     auto input1 = GetSubfield(body, inBundles[1], "data");
@@ -107,7 +108,7 @@ RhlsToFirrtlConverter::MlirGenSimpleNode(const jlm::rvsdg::SimpleNode * node)
     // Connect the op to the output data
     Connect(body, outData, DropMSBs(body, uIntOp, 1));
   }
-  else if (dynamic_cast<const jlm::rvsdg::bitshr_op *>(&(node->GetOperation())))
+  else if (rvsdg::is<llvm::IntegerLShrOperation>(node))
   {
     auto input0 = GetSubfield(body, inBundles[0], "data");
     auto input1 = GetSubfield(body, inBundles[1], "data");
@@ -115,7 +116,7 @@ RhlsToFirrtlConverter::MlirGenSimpleNode(const jlm::rvsdg::SimpleNode * node)
     // Connect the op to the output data
     Connect(body, outData, op);
   }
-  else if (dynamic_cast<const jlm::rvsdg::bitashr_op *>(&(node->GetOperation())))
+  else if (rvsdg::is<llvm::IntegerAShrOperation>(node))
   {
     auto input0 = GetSubfield(body, inBundles[0], "data");
     auto input1 = GetSubfield(body, inBundles[1], "data");
@@ -125,7 +126,7 @@ RhlsToFirrtlConverter::MlirGenSimpleNode(const jlm::rvsdg::SimpleNode * node)
     // Connect the op to the output data
     Connect(body, outData, uIntOp);
   }
-  else if (dynamic_cast<const jlm::rvsdg::bitshl_op *>(&(node->GetOperation())))
+  else if (rvsdg::is<llvm::IntegerShlOperation>(node))
   {
     auto input0 = GetSubfield(body, inBundles[0], "data");
     auto input1 = GetSubfield(body, inBundles[1], "data");
@@ -136,7 +137,7 @@ RhlsToFirrtlConverter::MlirGenSimpleNode(const jlm::rvsdg::SimpleNode * node)
     // Connect the op to the output data
     Connect(body, outData, slice);
   }
-  else if (dynamic_cast<const jlm::rvsdg::bitsmod_op *>(&(node->GetOperation())))
+  else if (rvsdg::is<llvm::IntegerSRemOperation>(node))
   {
     auto input0 = GetSubfield(body, inBundles[0], "data");
     auto input1 = GetSubfield(body, inBundles[1], "data");
@@ -146,7 +147,7 @@ RhlsToFirrtlConverter::MlirGenSimpleNode(const jlm::rvsdg::SimpleNode * node)
     auto uIntOp = AddAsUIntOp(body, remOp);
     Connect(body, outData, uIntOp);
   }
-  else if (dynamic_cast<const jlm::rvsdg::biteq_op *>(&(node->GetOperation())))
+  else if (rvsdg::is<llvm::IntegerEqOperation>(node))
   {
     auto input0 = GetSubfield(body, inBundles[0], "data");
     auto input1 = GetSubfield(body, inBundles[1], "data");
@@ -154,7 +155,7 @@ RhlsToFirrtlConverter::MlirGenSimpleNode(const jlm::rvsdg::SimpleNode * node)
     // Connect the op to the output data
     Connect(body, outData, op);
   }
-  else if (dynamic_cast<const jlm::rvsdg::bitne_op *>(&(node->GetOperation())))
+  else if (rvsdg::is<llvm::IntegerNeOperation>(node))
   {
     auto input0 = GetSubfield(body, inBundles[0], "data");
     auto input1 = GetSubfield(body, inBundles[1], "data");
@@ -162,7 +163,7 @@ RhlsToFirrtlConverter::MlirGenSimpleNode(const jlm::rvsdg::SimpleNode * node)
     // Connect the op to the output data
     Connect(body, outData, op);
   }
-  else if (dynamic_cast<const jlm::rvsdg::bitsgt_op *>(&(node->GetOperation())))
+  else if (rvsdg::is<llvm::IntegerSgtOperation>(node))
   {
     auto input0 = GetSubfield(body, inBundles[0], "data");
     auto input1 = GetSubfield(body, inBundles[1], "data");
@@ -172,7 +173,7 @@ RhlsToFirrtlConverter::MlirGenSimpleNode(const jlm::rvsdg::SimpleNode * node)
     // Connect the op to the output data
     Connect(body, outData, op);
   }
-  else if (dynamic_cast<const jlm::rvsdg::bitult_op *>(&(node->GetOperation())))
+  else if (rvsdg::is<llvm::IntegerUltOperation>(node))
   {
     auto input0 = GetSubfield(body, inBundles[0], "data");
     auto input1 = GetSubfield(body, inBundles[1], "data");
@@ -180,7 +181,7 @@ RhlsToFirrtlConverter::MlirGenSimpleNode(const jlm::rvsdg::SimpleNode * node)
     // Connect the op to the output data
     Connect(body, outData, op);
   }
-  else if (dynamic_cast<const jlm::rvsdg::bitule_op *>(&(node->GetOperation())))
+  else if (rvsdg::is<llvm::IntegerUleOperation>(node))
   {
     auto input0 = GetSubfield(body, inBundles[0], "data");
     auto input1 = GetSubfield(body, inBundles[1], "data");
@@ -188,7 +189,7 @@ RhlsToFirrtlConverter::MlirGenSimpleNode(const jlm::rvsdg::SimpleNode * node)
     // Connect the op to the output data
     Connect(body, outData, op);
   }
-  else if (dynamic_cast<const jlm::rvsdg::bitugt_op *>(&(node->GetOperation())))
+  else if (rvsdg::is<llvm::IntegerUgtOperation>(node))
   {
     auto input0 = GetSubfield(body, inBundles[0], "data");
     auto input1 = GetSubfield(body, inBundles[1], "data");
@@ -196,7 +197,7 @@ RhlsToFirrtlConverter::MlirGenSimpleNode(const jlm::rvsdg::SimpleNode * node)
     // Connect the op to the output data
     Connect(body, outData, op);
   }
-  else if (dynamic_cast<const jlm::rvsdg::bitsge_op *>(&(node->GetOperation())))
+  else if (rvsdg::is<llvm::IntegerSgeOperation>(node))
   {
     auto input0 = GetSubfield(body, inBundles[0], "data");
     auto input1 = GetSubfield(body, inBundles[1], "data");
@@ -206,7 +207,7 @@ RhlsToFirrtlConverter::MlirGenSimpleNode(const jlm::rvsdg::SimpleNode * node)
     // Connect the op to the output data
     Connect(body, outData, op);
   }
-  else if (dynamic_cast<const jlm::rvsdg::bitsle_op *>(&(node->GetOperation())))
+  else if (rvsdg::is<llvm::IntegerSleOperation>(node))
   {
     auto input0 = GetSubfield(body, inBundles[0], "data");
     auto input1 = GetSubfield(body, inBundles[1], "data");
@@ -216,12 +217,21 @@ RhlsToFirrtlConverter::MlirGenSimpleNode(const jlm::rvsdg::SimpleNode * node)
     // Connect the op to the output data
     Connect(body, outData, op);
   }
-  else if (dynamic_cast<const llvm::zext_op *>(&(node->GetOperation())))
+  else if (rvsdg::is<llvm::IntegerSltOperation>(node))
+  {
+    auto input0 = GetSubfield(body, inBundles[0], "data");
+    auto input1 = GetSubfield(body, inBundles[1], "data");
+    auto sInt0 = AddAsSIntOp(body, input0);
+    auto sInt1 = AddAsSIntOp(body, input1);
+    auto op = AddLtOp(body, sInt0, sInt1);
+    Connect(body, outData, op);
+  }
+  else if (dynamic_cast<const llvm::ZExtOperation *>(&(node->GetOperation())))
   {
     auto input0 = GetSubfield(body, inBundles[0], "data");
     Connect(body, outData, input0);
   }
-  else if (dynamic_cast<const llvm::trunc_op *>(&(node->GetOperation())))
+  else if (rvsdg::is<const llvm::TruncOperation>(node->GetOperation()))
   {
     auto inData = GetSubfield(body, inBundles[0], "data");
     int outSize = JlmSize(&node->output(0)->type());
@@ -245,9 +255,9 @@ RhlsToFirrtlConverter::MlirGenSimpleNode(const jlm::rvsdg::SimpleNode * node)
     auto uintOp = AddAsUIntOp(body, padOp);
     Connect(body, outData, uintOp);
   }
-  else if (auto op = dynamic_cast<const jlm::rvsdg::bitconstant_op *>(&(node->GetOperation())))
+  else if (auto op = dynamic_cast<const llvm::IntegerConstantOperation *>(&(node->GetOperation())))
   {
-    auto value = op->value();
+    auto & value = op->Representation();
     auto size = value.nbits();
     // Create a constant of UInt<size>(value) and connect to output data
     auto constant = GetConstant(body, size, value.to_uint());
@@ -260,21 +270,12 @@ RhlsToFirrtlConverter::MlirGenSimpleNode(const jlm::rvsdg::SimpleNode * node)
     auto constant = GetConstant(body, size, value);
     Connect(body, outData, constant);
   }
-  else if (dynamic_cast<const jlm::rvsdg::bitslt_op *>(&(node->GetOperation())))
-  {
-    auto input0 = GetSubfield(body, inBundles[0], "data");
-    auto input1 = GetSubfield(body, inBundles[1], "data");
-    auto sInt0 = AddAsSIntOp(body, input0);
-    auto sInt1 = AddAsSIntOp(body, input1);
-    auto op = AddLtOp(body, sInt0, sInt1);
-    Connect(body, outData, op);
-  }
   else if (dynamic_cast<const llvm::bitcast_op *>(&(node->GetOperation())))
   {
     auto input0 = GetSubfield(body, inBundles[0], "data");
     Connect(body, outData, input0);
   }
-  else if (dynamic_cast<const llvm::bits2ptr_op *>(&(node->GetOperation())))
+  else if (dynamic_cast<const llvm::IntegerToPointerOperation *>(&(node->GetOperation())))
   {
     auto input0 = GetSubfield(body, inBundles[0], "data");
     Connect(body, outData, input0);
@@ -2588,7 +2589,7 @@ RhlsToFirrtlConverter::MlirGen(rvsdg::Region * subRegion, mlir::Block * circuitB
       // The port of the instance is connected to another instance
 
       // Get the RVSDG node that's the origin of this input
-      jlm::rvsdg::simple_input * input = rvsdgNode->input(i);
+      rvsdg::SimpleInput * input = rvsdgNode->input(i);
       auto origin = input->origin();
       if (auto o = dynamic_cast<rvsdg::RegionArgument *>(origin))
       {
@@ -2599,7 +2600,7 @@ RhlsToFirrtlConverter::MlirGen(rvsdg::Region * subRegion, mlir::Block * circuitB
         // Need to trace through the region to find the source node
         origin = TraceStructuralOutput(o);
       }
-      // now origin is either a simple_output or a top-level argument
+      // now origin is either a SimpleOutput or a top-level argument
       if (auto o = dynamic_cast<rvsdg::RegionArgument *>(origin))
       {
         // The port of the instance is connected to an argument
@@ -2612,7 +2613,7 @@ RhlsToFirrtlConverter::MlirGen(rvsdg::Region * subRegion, mlir::Block * circuitB
         auto sinkPort = sinkNode->getResult(i + 2);
         Connect(body, sinkPort, sourcePort);
       }
-      else if (auto o = dynamic_cast<jlm::rvsdg::simple_output *>(origin))
+      else if (auto o = dynamic_cast<rvsdg::SimpleOutput *>(origin))
       {
         // Get RVSDG node of the source
         auto source = o->node();
@@ -2653,7 +2654,7 @@ RhlsToFirrtlConverter::MlirGen(rvsdg::Region * subRegion, mlir::Block * circuitB
       for (size_t i = 1; i < requestNode->ninputs(); i++)
       {
         // Get the RVSDG node that's the origin of this input
-        auto * input = dynamic_cast<jlm::rvsdg::simple_input *>(requestNode->input(i));
+        auto * input = dynamic_cast<rvsdg::SimpleInput *>(requestNode->input(i));
         auto origin = input->origin();
         if (auto o = dynamic_cast<rvsdg::RegionArgument *>(origin))
         {
@@ -2664,8 +2665,8 @@ RhlsToFirrtlConverter::MlirGen(rvsdg::Region * subRegion, mlir::Block * circuitB
           // Need to trace through the region to find the source node
           origin = TraceStructuralOutput(o);
         }
-        // we know this has to be a simple_output now
-        if (auto o = dynamic_cast<jlm::rvsdg::simple_output *>(origin))
+        // we know this has to be a SimpleOutput now
+        if (auto o = dynamic_cast<rvsdg::SimpleOutput *>(origin))
         {
           // Get RVSDG node of the source
           auto source = o->node();
@@ -2696,8 +2697,8 @@ RhlsToFirrtlConverter::MlirGen(rvsdg::Region * subRegion, mlir::Block * circuitB
   {
     auto result = subRegion->result(i);
     auto origin = result->origin();
-    jlm::rvsdg::simple_output * output;
-    if (auto o = dynamic_cast<jlm::rvsdg::simple_output *>(origin))
+    rvsdg::SimpleOutput * output;
+    if (auto o = dynamic_cast<rvsdg::SimpleOutput *>(origin))
     {
       // We have found the source output
       output = o;
@@ -2778,7 +2779,7 @@ RhlsToFirrtlConverter::createInstances(
 
 // Trace a structural output back to the "node" generating the value
 // Returns the output of the node
-jlm::rvsdg::simple_output *
+rvsdg::SimpleOutput *
 RhlsToFirrtlConverter::TraceStructuralOutput(rvsdg::StructuralOutput * output)
 {
   auto node = output->node();
@@ -2796,7 +2797,8 @@ RhlsToFirrtlConverter::TraceStructuralOutput(rvsdg::StructuralOutput * output)
     // Need to trace the output of the nested structural node
     return TraceStructuralOutput(o);
   }
-  else if (auto o = dynamic_cast<jlm::rvsdg::simple_output *>(origin))
+
+  if (auto o = dynamic_cast<rvsdg::SimpleOutput *>(origin))
   {
     // Found the source node
     return o;
@@ -2813,13 +2815,14 @@ RhlsToFirrtlConverter::TraceStructuralOutput(rvsdg::StructuralOutput * output)
 
 // Emit a circuit
 circt::firrtl::CircuitOp
-RhlsToFirrtlConverter::MlirGen(const llvm::lambda::node * lambdaNode)
+RhlsToFirrtlConverter::MlirGen(const rvsdg::LambdaNode * lambdaNode)
 {
 
   // Ensure consistent naming across runs
   create_node_names(lambdaNode->subregion());
   // The same name is used for the circuit and main module
-  auto moduleName = Builder_->getStringAttr(lambdaNode->GetOperation().name() + "_lambda_mod");
+  auto moduleName = Builder_->getStringAttr(
+      dynamic_cast<llvm::LlvmLambdaOperation &>(lambdaNode->GetOperation()).name() + "_lambda_mod");
   // Create the top level FIRRTL circuit
   auto circuit = Builder_->create<circt::firrtl::CircuitOp>(Builder_->getUnknownLoc(), moduleName);
   // The body will be populated with a list of modules

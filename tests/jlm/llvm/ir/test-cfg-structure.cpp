@@ -39,7 +39,7 @@ test_straightening()
   straighten(cfg);
 
   assert(cfg.nnodes() == 1);
-  auto node = cfg.entry()->outedge(0)->sink();
+  auto node = cfg.entry()->OutEdge(0)->sink();
 
   assert(is<basic_block>(node));
   auto & tacs = static_cast<const basic_block *>(node)->tacs();

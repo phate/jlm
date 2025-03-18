@@ -11,27 +11,23 @@
 namespace jlm::rvsdg
 {
 
-/* inputs */
-
-simple_input::~simple_input() noexcept
+SimpleInput::~SimpleInput() noexcept
 {
   on_input_destroy(this);
 }
 
-simple_input::simple_input(
+SimpleInput::SimpleInput(
     jlm::rvsdg::SimpleNode * node,
     jlm::rvsdg::output * origin,
     std::shared_ptr<const rvsdg::Type> type)
     : node_input(origin, node, std::move(type))
 {}
 
-/* outputs */
-
-simple_output::simple_output(jlm::rvsdg::SimpleNode * node, std::shared_ptr<const rvsdg::Type> type)
+SimpleOutput::SimpleOutput(SimpleNode * node, std::shared_ptr<const rvsdg::Type> type)
     : node_output(node, std::move(type))
 {}
 
-simple_output::~simple_output() noexcept
+SimpleOutput::~SimpleOutput() noexcept
 {
   on_output_destroy(this);
 }
@@ -59,11 +55,11 @@ SimpleNode::SimpleNode(
   for (size_t n = 0; n < SimpleNode::GetOperation().narguments(); n++)
   {
     add_input(
-        std::make_unique<simple_input>(this, operands[n], SimpleNode::GetOperation().argument(n)));
+        std::make_unique<SimpleInput>(this, operands[n], SimpleNode::GetOperation().argument(n)));
   }
 
   for (size_t n = 0; n < SimpleNode::GetOperation().nresults(); n++)
-    add_output(std::make_unique<simple_output>(this, SimpleNode::GetOperation().result(n)));
+    add_output(std::make_unique<SimpleOutput>(this, SimpleNode::GetOperation().result(n)));
 
   on_node_create(this);
 }

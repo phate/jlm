@@ -14,7 +14,6 @@
 #include <jlm/hls/backend/rvsdg2rhls/distribute-constants.hpp>
 #include <jlm/hls/backend/rvsdg2rhls/GammaConversion.hpp>
 #include <jlm/hls/backend/rvsdg2rhls/instrument-ref.hpp>
-#include <jlm/hls/backend/rvsdg2rhls/InvariantLambdaMemoryStateRemoval.hpp>
 #include <jlm/hls/backend/rvsdg2rhls/mem-conv.hpp>
 #include <jlm/hls/backend/rvsdg2rhls/mem-queue.hpp>
 #include <jlm/hls/backend/rvsdg2rhls/mem-sep.hpp>
@@ -26,13 +25,16 @@
 #include <jlm/hls/backend/rvsdg2rhls/rvsdg2rhls.hpp>
 #include <jlm/hls/backend/rvsdg2rhls/ThetaConversion.hpp>
 #include <jlm/hls/opt/cne.hpp>
+#include <jlm/hls/opt/InvariantLambdaMemoryStateRemoval.hpp>
+#include <jlm/hls/opt/IOBarrierRemoval.hpp>
 #include <jlm/hls/util/view.hpp>
-#include <jlm/llvm/backend/jlm2llvm/jlm2llvm.hpp>
-#include <jlm/llvm/backend/rvsdg2jlm/rvsdg2jlm.hpp>
+#include <jlm/llvm/backend/IpGraphToLlvmConverter.hpp>
+#include <jlm/llvm/backend/RvsdgToIpGraphConverter.hpp>
 #include <jlm/llvm/ir/CallSummary.hpp>
 #include <jlm/llvm/ir/operators/alloca.hpp>
 #include <jlm/llvm/ir/operators/call.hpp>
 #include <jlm/llvm/ir/operators/delta.hpp>
+#include <jlm/llvm/ir/operators/IntegerOperations.hpp>
 #include <jlm/llvm/ir/RvsdgModule.hpp>
 #include <jlm/llvm/opt/alias-analyses/Optimization.hpp>
 #include <jlm/llvm/opt/DeadNodeElimination.hpp>
@@ -98,10 +100,12 @@ dump_xml(llvm::RvsdgModule & rvsdgModule, const std::string & file_name)
 }
 
 bool
-function_match(llvm::lambda::node * ln, const std::string & function_name)
+function_match(rvsdg::LambdaNode * ln, const std::string & function_name)
 {
   const std::regex fn_regex(function_name);
-  if (std::regex_match(ln->GetOperation().name(), fn_regex))
+  if (std::regex_match(
+          dynamic_cast<llvm::LlvmLambdaOperation &>(ln->GetOperation()).name(),
+          fn_regex))
   { // TODO: handle C++ name mangling
     return true;
   }
@@ -163,11 +167,11 @@ inline_calls(rvsdg::Region * region)
           throw jlm::util::error("can not inline external function " + graphImport->Name());
         }
       }
-      JLM_ASSERT(rvsdg::is<llvm::lambda::operation>(so->node()));
+      JLM_ASSERT(rvsdg::is<rvsdg::LambdaOperation>(so->node()));
       auto ln = dynamic_cast<const rvsdg::StructuralOutput *>(traced)->node();
       llvm::inlineCall(
           dynamic_cast<jlm::rvsdg::SimpleNode *>(node),
-          dynamic_cast<const llvm::lambda::node *>(ln));
+          dynamic_cast<const rvsdg::LambdaNode *>(ln));
       // restart for this region
       inline_calls(region);
       return;
@@ -204,9 +208,13 @@ convert_alloca(rvsdg::Region * region)
           false);
       // create zero constant of allocated type
       jlm::rvsdg::output * cout;
-      if (auto bt = dynamic_cast<const jlm::rvsdg::bittype *>(&po->value_type()))
+      if (auto bt = dynamic_cast<const llvm::IntegerConstantOperation *>(&po->value_type()))
       {
-        cout = jlm::rvsdg::create_bitconstant(db->subregion(), bt->nbits(), 0);
+        cout = llvm::IntegerConstantOperation::Create(
+                   *db->subregion(),
+                   bt->Representation().nbits(),
+                   0)
+                   .output(0);
       }
       else
       {
@@ -280,12 +288,13 @@ rename_delta(llvm::delta::node * odn)
   return static_cast<llvm::delta::node *>(jlm::rvsdg::output::GetNode(*data));
 }
 
-llvm::lambda::node *
-change_linkage(llvm::lambda::node * ln, llvm::linkage link)
+rvsdg::LambdaNode *
+change_linkage(rvsdg::LambdaNode * ln, llvm::linkage link)
 {
-  const auto & op = ln->GetOperation();
-  auto lambda =
-      llvm::lambda::node::create(ln->region(), op.Type(), op.name(), link, op.attributes());
+  const auto & op = dynamic_cast<llvm::LlvmLambdaOperation &>(ln->GetOperation());
+  auto lambda = rvsdg::LambdaNode::Create(
+      *ln->region(),
+      llvm::LlvmLambdaOperation::Create(op.Type(), op.name(), link, op.attributes()));
 
   /* add context variables */
   rvsdg::SubstitutionMap subregionmap;
@@ -331,7 +340,7 @@ split_hls_function(llvm::RvsdgModule & rm, const std::string & function_name)
   auto root = &rm.Rvsdg().GetRootRegion();
   for (auto node : rvsdg::TopDownTraverser(root))
   {
-    if (auto ln = dynamic_cast<llvm::lambda::node *>(node))
+    if (auto ln = dynamic_cast<rvsdg::LambdaNode *>(node))
     {
       if (!function_match(ln, function_name))
       {
@@ -358,10 +367,12 @@ split_hls_function(llvm::RvsdgModule & rm, const std::string & function_name)
           continue;
         }
         auto orig_node = orig_node_output->node();
-        if (auto oln = dynamic_cast<llvm::lambda::node *>(orig_node))
+        if (auto oln = dynamic_cast<rvsdg::LambdaNode *>(orig_node))
         {
           throw jlm::util::error(
-              "Inlining of function " + oln->GetOperation().name() + " not supported");
+              "Inlining of function "
+              + dynamic_cast<llvm::LlvmLambdaOperation &>(oln->GetOperation()).name()
+              + " not supported");
         }
         else if (auto odn = dynamic_cast<llvm::delta::node *>(orig_node))
         {
@@ -394,7 +405,7 @@ split_hls_function(llvm::RvsdgModule & rm, const std::string & function_name)
       auto oldExport = jlm::llvm::ComputeCallSummary(*ln).GetRvsdgExport();
       jlm::llvm::GraphExport::Create(*new_ln->output(), oldExport ? oldExport->Name() : "");
       // add function as input to rm and remove it
-      const auto & op = ln->GetOperation();
+      const auto & op = dynamic_cast<llvm::LlvmLambdaOperation &>(ln->GetOperation());
       auto & graphImport = llvm::GraphImport::Create(
           rm.Rvsdg(),
           op.Type(),
@@ -403,7 +414,9 @@ split_hls_function(llvm::RvsdgModule & rm, const std::string & function_name)
           llvm::linkage::external_linkage); // TODO: change linkage?
       ln->output()->divert_users(&graphImport);
       remove(ln);
-      std::cout << "function " << new_ln->GetOperation().name() << " extracted for HLS\n";
+      std::cout << "function "
+                << dynamic_cast<llvm::LlvmLambdaOperation &>(new_ln->GetOperation()).name()
+                << " extracted for HLS\n";
       return rhls;
     }
   }
@@ -420,28 +433,26 @@ void
 rvsdg2rhls(llvm::RvsdgModule & rhls, util::StatisticsCollector & collector)
 {
   pre_opt(rhls);
+
+  IOBarrierRemoval ioBarrierRemoval;
+  ioBarrierRemoval.Run(rhls, collector);
+
   merge_gamma(rhls);
 
   llvm::DeadNodeElimination llvmDne;
   llvmDne.Run(rhls, collector);
 
-  dump_dot(rhls, "1-before-mem-sep.dot");
   mem_sep_argument(rhls);
-  /*
-    dump_dot(rhls, "2-before-remove-unused-state.dot");
-    remove_unused_state(rhls);
-  */
-  dump_dot(rhls, "2a-before-InvariantValueRedirection.dot");
-  llvm::InvariantValueRedirection llvmIvr;
-  llvmIvr.Run(rhls, collector);
-  dump_dot(rhls, "2b-before-dne.dot");
-  llvmDne.Run(rhls, collector);
-  dump_dot(rhls, "2c-before-remove-lambda-passthrough.dot");
-  RemoveInvariantLambdaMemoryStateEdges(rhls);
-  RemoveInvariantLambdaStateEdges(rhls);
-  dump_dot(rhls, "3-before-distribute-constants.dot");
+//  llvm::InvariantValueRedirection llvmIvr;
+//  llvmIvr.Run(rhls, collector);
+//  llvmDne.Run(rhls, collector);
+//  RemoveInvariantLambdaMemoryStateEdges(rhls);
+//  jlm::hls::InvariantLambdaMemoryStateRemoval::CreateAndRun(rhls, collector);
+//  RemoveInvariantLambdaStateEdges(rhls);
+  hls::InvariantLambdaMemoryStateRemoval::CreateAndRun(rhls, collector);
+  remove_unused_state(rhls);
   // main conversion steps
-  //  distribute_constants(rhls);
+  distribute_constants(rhls);
   ConvertGammaNodes(rhls);
   ConvertThetaNodes(rhls);
   hls::cne hlsCne;
@@ -451,8 +462,8 @@ rvsdg2rhls(llvm::RvsdgModule & rhls, util::StatisticsCollector & collector)
   alloca_conv(rhls);
   mem_queue(rhls);
   MemoryConverter(rhls);
-  llvm::NodeReduction llvmRed;
-  llvmRed.Run(rhls, collector);
+//  llvm::NodeReduction llvmRed;
+//  llvmRed.Run(rhls, collector);
   memstate_conv(rhls);
   remove_redundant_buf(rhls);
   // enforce 1:1 input output relationship
@@ -481,8 +492,8 @@ dump_ref(llvm::RvsdgModule & rhls, const util::filepath & path)
   }
   ::llvm::LLVMContext ctx;
   jlm::util::StatisticsCollector statisticsCollector;
-  auto jm2 = llvm::rvsdg2jlm::rvsdg2jlm(*reference, statisticsCollector);
-  auto lm2 = llvm::jlm2llvm::convert(*jm2, ctx);
+  auto jm2 = llvm::RvsdgToIpGraphConverter::CreateAndConvertModule(*reference, statisticsCollector);
+  auto lm2 = llvm::IpGraphToLlvmConverter::CreateAndConvertModule(*jm2, ctx);
   std::error_code EC;
   ::llvm::raw_fd_ostream os(path.to_str(), EC);
   lm2->print(os, nullptr);

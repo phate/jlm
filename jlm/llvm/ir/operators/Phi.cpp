@@ -100,15 +100,15 @@ node::copy(rvsdg::Region * region, rvsdg::SubstitutionMap & smap) const
   return pb.end();
 }
 
-std::vector<lambda::node *>
+std::vector<rvsdg::LambdaNode *>
 node::ExtractLambdaNodes(const phi::node & phiNode)
 {
-  std::function<void(const phi::node &, std::vector<lambda::node *> &)> extractLambdaNodes =
+  std::function<void(const phi::node &, std::vector<rvsdg::LambdaNode *> &)> extractLambdaNodes =
       [&](auto & phiNode, auto & lambdaNodes)
   {
     for (auto & node : phiNode.subregion()->Nodes())
     {
-      if (auto lambdaNode = dynamic_cast<lambda::node *>(&node))
+      if (auto lambdaNode = dynamic_cast<rvsdg::LambdaNode *>(&node))
       {
         lambdaNodes.push_back(lambdaNode);
       }
@@ -119,7 +119,7 @@ node::ExtractLambdaNodes(const phi::node & phiNode)
     }
   };
 
-  std::vector<lambda::node *> lambdaNodes;
+  std::vector<rvsdg::LambdaNode *> lambdaNodes;
   extractLambdaNodes(phiNode, lambdaNodes);
 
   return lambdaNodes;

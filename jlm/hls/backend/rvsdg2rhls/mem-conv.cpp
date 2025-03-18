@@ -11,6 +11,7 @@
 #include <jlm/hls/ir/hls.hpp>
 #include <jlm/llvm/ir/CallSummary.hpp>
 #include <jlm/llvm/ir/operators/call.hpp>
+#include <jlm/llvm/ir/operators/IntegerOperations.hpp>
 #include <jlm/llvm/ir/operators/lambda.hpp>
 #include <jlm/llvm/ir/operators/Load.hpp>
 #include <jlm/llvm/ir/operators/Store.hpp>
@@ -82,16 +83,18 @@ replace_load(jlm::rvsdg::SimpleNode * orig, jlm::rvsdg::output * resp)
   return dynamic_cast<jlm::rvsdg::SimpleNode *>(nn);
 }
 
-const jlm::rvsdg::bitconstant_op *
+const jlm::llvm::IntegerConstantOperation *
 trace_channel(const jlm::rvsdg::output * dst)
 {
   if (auto arg = dynamic_cast<const jlm::rvsdg::RegionArgument *>(dst))
   {
     return trace_channel(arg->input()->origin());
   }
-  else if (auto so = dynamic_cast<const jlm::rvsdg::simple_output *>(dst))
+
+  if (auto so = dynamic_cast<const jlm::rvsdg::SimpleOutput *>(dst))
   {
-    if (auto co = dynamic_cast<const jlm::rvsdg::bitconstant_op *>(&so->node()->GetOperation()))
+    if (auto co =
+            dynamic_cast<const jlm::llvm::IntegerConstantOperation *>(&so->node()->GetOperation()))
     {
       return co;
     }
@@ -145,7 +148,7 @@ trace_call(const jlm::rvsdg::output * output)
       }
     }
   }
-  else if (auto so = dynamic_cast<const jlm::rvsdg::simple_output *>(output))
+  else if (auto so = dynamic_cast<const jlm::rvsdg::SimpleOutput *>(output))
   {
     for (size_t i = 0; i < so->node()->ninputs(); ++i)
     {
@@ -190,7 +193,7 @@ trace_function_calls(
   visited.insert(output);
   for (auto user : *output)
   {
-    if (auto si = dynamic_cast<jlm::rvsdg::simple_input *>(user))
+    if (auto si = dynamic_cast<jlm::rvsdg::SimpleInput *>(user))
     {
       auto simplenode = si->node();
       if (dynamic_cast<const jlm::llvm::CallOperation *>(&simplenode->GetOperation()))
@@ -233,8 +236,8 @@ trace_function_calls(
 
 jlm::rvsdg::SimpleNode *
 find_decouple_response(
-    const jlm::llvm::lambda::node * lambda,
-    const jlm::rvsdg::bitconstant_op * request_constant)
+    const jlm::rvsdg::LambdaNode * lambda,
+    const jlm::llvm::IntegerConstantOperation * request_constant)
 {
   jlm::rvsdg::output * response_function = nullptr;
   for (const auto & ctxvar : lambda->GetContextVars())
@@ -264,7 +267,7 @@ find_decouple_response(
 
 jlm::rvsdg::SimpleNode *
 replace_decouple(
-    const jlm::llvm::lambda::node * lambda,
+    const jlm::rvsdg::LambdaNode * lambda,
     jlm::rvsdg::SimpleNode * decouple_request,
     jlm::rvsdg::output * resp)
 {
@@ -392,7 +395,7 @@ TracePointer(
   visited.insert(output);
   for (auto user : *output)
   {
-    if (auto si = dynamic_cast<jlm::rvsdg::simple_input *>(user))
+    if (auto si = dynamic_cast<jlm::rvsdg::SimpleInput *>(user))
     {
       auto simplenode = si->node();
       if (dynamic_cast<const jlm::llvm::StoreNonVolatileOperation *>(&simplenode->GetOperation()))
@@ -475,7 +478,7 @@ IsDecoupledFunctionPointer(
   // Iterate through all users of the output
   for (auto user : *output)
   {
-    if (auto simpleInput = dynamic_cast<jlm::rvsdg::simple_input *>(user))
+    if (auto simpleInput = dynamic_cast<jlm::rvsdg::SimpleInput *>(user))
     {
       auto simpleNode = simpleInput->node();
       if (dynamic_cast<const jlm::llvm::CallOperation *>(&simpleNode->GetOperation()))
@@ -527,7 +530,7 @@ IsDecoupledFunctionPointer(
 
 void
 jlm::hls::TracePointerArguments(
-    const jlm::llvm::lambda::node * lambda,
+    const jlm::rvsdg::LambdaNode * lambda,
     port_load_store_decouple & portNodes)
 {
   for (size_t i = 0; i < lambda->subregion()->narguments(); ++i)
@@ -568,13 +571,13 @@ jlm::hls::MemoryConverter(jlm::llvm::RvsdgModule & rm)
   //
 
   auto root = &rm.Rvsdg().GetRootRegion();
-  auto lambda = dynamic_cast<jlm::llvm::lambda::node *>(root->Nodes().begin().ptr());
+  auto lambda = dynamic_cast<jlm::rvsdg::LambdaNode *>(root->Nodes().begin().ptr());
 
   //
   // Converting loads and stores to explicitly use memory ports
   // This modifies the function signature so we create a new lambda node to replace the old one
   //
-  const auto & op = lambda->GetOperation();
+  const auto & op = dynamic_cast<llvm::LlvmLambdaOperation &>(lambda->GetOperation());
   auto oldFunctionType = op.type();
   std::vector<std::shared_ptr<const jlm::rvsdg::Type>> newArgumentTypes;
   for (size_t i = 0; i < oldFunctionType.NumArguments(); ++i)
@@ -641,12 +644,9 @@ jlm::hls::MemoryConverter(jlm::llvm::RvsdgModule & rm)
   // Create new lambda and copy the region from the old lambda
   //
   auto newFunctionType = jlm::rvsdg::FunctionType::Create(newArgumentTypes, newResultTypes);
-  auto newLambda = jlm::llvm::lambda::node::create(
-      lambda->region(),
-      newFunctionType,
-      op.name(),
-      op.linkage(),
-      op.attributes());
+  auto newLambda = jlm::rvsdg::LambdaNode::Create(
+      *lambda->region(),
+      llvm::LlvmLambdaOperation::Create(newFunctionType, op.name(), op.linkage(), op.attributes()));
 
   rvsdg::SubstitutionMap smap;
   for (const auto & ctxvar : lambda->GetContextVars())
@@ -727,7 +727,7 @@ jlm::hls::MemoryConverter(jlm::llvm::RvsdgModule & rm)
 
   // Need to get the lambda from the root since remote_unused_state replaces the lambda
   JLM_ASSERT(root->nnodes() == 1);
-  newLambda = jlm::util::AssertedCast<jlm::llvm::lambda::node>(root->Nodes().begin().ptr());
+  newLambda = jlm::util::AssertedCast<jlm::rvsdg::LambdaNode>(root->Nodes().begin().ptr());
 
   // Go through in reverse since we are removing things
   auto ctxvars = newLambda->GetContextVars();
@@ -755,7 +755,7 @@ jlm::hls::MemoryConverter(jlm::llvm::RvsdgModule & rm)
 
 jlm::rvsdg::output *
 jlm::hls::ConnectRequestResponseMemPorts(
-    const jlm::llvm::lambda::node * lambda,
+    const jlm::rvsdg::LambdaNode * lambda,
     size_t argumentIndex,
     rvsdg::SubstitutionMap & smap,
     const std::vector<jlm::rvsdg::SimpleNode *> & originalLoadNodes,
@@ -771,7 +771,7 @@ jlm::hls::ConnectRequestResponseMemPorts(
   for (auto loadNode : originalLoadNodes)
   {
     JLM_ASSERT(smap.contains(*loadNode->output(0)));
-    auto loadOutput = dynamic_cast<jlm::rvsdg::simple_output *>(smap.lookup(loadNode->output(0)));
+    auto loadOutput = dynamic_cast<rvsdg::SimpleOutput *>(smap.lookup(loadNode->output(0)));
     loadNodes.push_back(loadOutput->node());
     auto loadOp = jlm::util::AssertedCast<const jlm::llvm::LoadNonVolatileOperation>(
         &loadOutput->node()->GetOperation());
@@ -781,7 +781,7 @@ jlm::hls::ConnectRequestResponseMemPorts(
   for (auto storeNode : originalStoreNodes)
   {
     JLM_ASSERT(smap.contains(*storeNode->output(0)));
-    auto storeOutput = dynamic_cast<jlm::rvsdg::simple_output *>(smap.lookup(storeNode->output(0)));
+    auto storeOutput = dynamic_cast<rvsdg::SimpleOutput *>(smap.lookup(storeNode->output(0)));
     storeNodes.push_back(storeOutput->node());
   }
   std::vector<jlm::rvsdg::SimpleNode *> decoupledNodes;
@@ -789,7 +789,7 @@ jlm::hls::ConnectRequestResponseMemPorts(
   {
     JLM_ASSERT(smap.contains(*decoupledNode->output(0)));
     auto decoupledOutput =
-        dynamic_cast<jlm::rvsdg::simple_output *>(smap.lookup(decoupledNode->output(0)));
+        dynamic_cast<rvsdg::SimpleOutput *>(smap.lookup(decoupledNode->output(0)));
     decoupledNodes.push_back(decoupledOutput->node());
     loadTypes.push_back(jlm::rvsdg::bittype::Create(32));
   }
@@ -866,7 +866,8 @@ jlm::hls::ReplaceLoad(
   // We have the load from the original lambda since it is needed to update the smap
   // We need the load in the new lambda such that we can replace it with a load node with explicit
   // memory ports
-  auto replacedLoad = ((jlm::rvsdg::simple_output *)smap.lookup(originalLoad->output(0)))->node();
+  auto replacedLoad =
+      static_cast<rvsdg::SimpleOutput *>(smap.lookup(originalLoad->output(0)))->node();
 
   auto loadAddress = replacedLoad->input(0)->origin();
   std::vector<jlm::rvsdg::output *> states;
@@ -902,7 +903,8 @@ jlm::hls::ReplaceStore(rvsdg::SubstitutionMap & smap, const jlm::rvsdg::SimpleNo
   // We have the store from the original lambda since it is needed to update the smap
   // We need the store in the new lambda such that we can replace it with a store node with explicit
   // memory ports
-  auto replacedStore = ((jlm::rvsdg::simple_output *)smap.lookup(originalStore->output(0)))->node();
+  auto replacedStore =
+      static_cast<rvsdg::SimpleOutput *>(smap.lookup(originalStore->output(0)))->node();
 
   auto addr = replacedStore->input(0)->origin();
   JLM_ASSERT(dynamic_cast<const jlm::llvm::PointerType *>(&addr->type()));
@@ -926,7 +928,7 @@ jlm::hls::ReplaceStore(rvsdg::SubstitutionMap & smap, const jlm::rvsdg::SimpleNo
 jlm::rvsdg::SimpleNode *
 ReplaceDecouple(
     jlm::rvsdg::SubstitutionMap & smap,
-    const jlm::llvm::lambda::node * lambda,
+    const jlm::rvsdg::LambdaNode * lambda,
     jlm::rvsdg::SimpleNode * originalDecoupleRequest,
     jlm::rvsdg::output * response)
 {
@@ -934,7 +936,8 @@ ReplaceDecouple(
   // We need the store in the new lambda such that we can replace it with a store node with explicit
   // memory ports
   auto decoupleRequest =
-      ((jlm::rvsdg::simple_output *)smap.lookup(originalDecoupleRequest->output(0)))->node();
+      static_cast<jlm::rvsdg::SimpleOutput *>(smap.lookup(originalDecoupleRequest->output(0)))
+          ->node();
 
   JLM_ASSERT(dynamic_cast<const jlm::llvm::CallOperation *>(&decoupleRequest->GetOperation()));
   auto channel = decoupleRequest->input(1)->origin();

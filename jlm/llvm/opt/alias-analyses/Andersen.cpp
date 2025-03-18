@@ -3,6 +3,7 @@
  * See COPYING for terms of redistribution.
  */
 
+#include <jlm/llvm/ir/operators/IOBarrier.hpp>
 #include <jlm/llvm/opt/alias-analyses/Andersen.hpp>
 #include <jlm/llvm/opt/alias-analyses/PointsToGraph.hpp>
 #include <jlm/rvsdg/traverser.hpp>
@@ -626,10 +627,10 @@ Andersen::AnalyzeSimpleNode(const rvsdg::SimpleNode & node)
     AnalyzeGep(node);
   else if (is<bitcast_op>(op))
     AnalyzeBitcast(node);
-  else if (is<bits2ptr_op>(op))
+  else if (is<IntegerToPointerOperation>(op))
     AnalyzeBits2ptr(node);
-  else if (is<ptr2bits_op>(op))
-    AnalyzePtr2bits(node);
+  else if (is<PtrToIntOperation>(op))
+    AnalyzePtrToInt(node);
   else if (is<ConstantPointerNullOperation>(op))
     AnalyzeConstantPointerNull(node);
   else if (is<UndefValueOperation>(op))
@@ -650,6 +651,8 @@ Andersen::AnalyzeSimpleNode(const rvsdg::SimpleNode & node)
     AnalyzePointerToFunction(node);
   else if (is<FunctionToPointerOperation>(op))
     AnalyzeFunctionToPointer(node);
+  else if (is<IOBarrierOperation>(op))
+    AnalyzeIOBarrier(node);
   else if (is<FreeOperation>(op) || is<ptrcmp_op>(op))
   {
     // These operations take pointers as input, but do not affect any points-to sets
@@ -787,7 +790,7 @@ Andersen::AnalyzeBitcast(const rvsdg::SimpleNode & node)
 void
 Andersen::AnalyzeBits2ptr(const rvsdg::SimpleNode & node)
 {
-  JLM_ASSERT(is<bits2ptr_op>(&node));
+  JLM_ASSERT(is<IntegerToPointerOperation>(&node));
   const auto & output = *node.output(0);
   JLM_ASSERT(is<PointerType>(output.type()));
 
@@ -799,9 +802,9 @@ Andersen::AnalyzeBits2ptr(const rvsdg::SimpleNode & node)
 }
 
 void
-Andersen::AnalyzePtr2bits(const rvsdg::SimpleNode & node)
+Andersen::AnalyzePtrToInt(const rvsdg::SimpleNode & node)
 {
-  JLM_ASSERT(is<ptr2bits_op>(&node));
+  JLM_ASSERT(is<PtrToIntOperation>(&node));
   const auto & inputRegister = *node.input(0)->origin();
   JLM_ASSERT(is<PointerType>(inputRegister.type()));
 
@@ -984,9 +987,24 @@ Andersen::AnalyzeFunctionToPointer(const rvsdg::SimpleNode & node)
 }
 
 void
+Andersen::AnalyzeIOBarrier(const rvsdg::SimpleNode & node)
+{
+  JLM_ASSERT(is<IOBarrierOperation>(&node));
+
+  const auto operation = util::AssertedCast<const IOBarrierOperation>(&node.GetOperation());
+  if (!IsOrContainsPointerType(*operation->Type()))
+    return;
+
+  const auto & inputRegister = *node.input(0)->origin();
+  const auto inputRegisterPO = Set_->GetRegisterPointerObject(inputRegister);
+  const auto & outputRegister = *node.output(0);
+  Set_->MapRegisterToExistingPointerObject(outputRegister, inputRegisterPO);
+}
+
+void
 Andersen::AnalyzeStructuralNode(const rvsdg::StructuralNode & node)
 {
-  if (const auto lambdaNode = dynamic_cast<const lambda::node *>(&node))
+  if (const auto lambdaNode = dynamic_cast<const rvsdg::LambdaNode *>(&node))
     AnalyzeLambda(*lambdaNode);
   else if (const auto deltaNode = dynamic_cast<const delta::node *>(&node))
     AnalyzeDelta(*deltaNode);
@@ -1001,7 +1019,7 @@ Andersen::AnalyzeStructuralNode(const rvsdg::StructuralNode & node)
 }
 
 void
-Andersen::AnalyzeLambda(const lambda::node & lambda)
+Andersen::AnalyzeLambda(const rvsdg::LambdaNode & lambda)
 {
   // Handle context variables
   for (const auto & cv : lambda.GetContextVars())

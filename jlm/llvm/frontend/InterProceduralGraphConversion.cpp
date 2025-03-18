@@ -464,7 +464,7 @@ ConvertAssignment(
     rvsdg::Region &,
     llvm::VariableMap & variableMap)
 {
-  JLM_ASSERT(is<assignment_op>(threeAddressCode.operation()));
+  JLM_ASSERT(is<AssignmentOperation>(threeAddressCode.operation()));
 
   auto lhs = threeAddressCode.operand(0);
   auto rhs = threeAddressCode.operand(1);
@@ -474,7 +474,7 @@ ConvertAssignment(
 static void
 ConvertSelect(const llvm::tac & threeAddressCode, rvsdg::Region &, llvm::VariableMap & variableMap)
 {
-  JLM_ASSERT(is<select_op>(threeAddressCode.operation()));
+  JLM_ASSERT(is<SelectOperation>(threeAddressCode.operation()));
   JLM_ASSERT(threeAddressCode.noperands() == 3 && threeAddressCode.nresults() == 1);
 
   auto p = variableMap.lookup(threeAddressCode.operand(0));
@@ -490,7 +490,7 @@ ConvertSelect(const llvm::tac & threeAddressCode, rvsdg::Region &, llvm::Variabl
 static void
 ConvertBranch(const llvm::tac & threeAddressCode, rvsdg::Region &, llvm::VariableMap &)
 {
-  JLM_ASSERT(is<branch_op>(threeAddressCode.operation()));
+  JLM_ASSERT(is<BranchOperation>(threeAddressCode.operation()));
   /*
    * Nothing needs to be done. Branches are simply ignored.
    */
@@ -525,15 +525,15 @@ ConvertThreeAddressCode(
     rvsdg::Region & region,
     llvm::VariableMap & variableMap)
 {
-  if (is<assignment_op>(&threeAddressCode))
+  if (is<AssignmentOperation>(&threeAddressCode))
   {
     ConvertAssignment(threeAddressCode, region, variableMap);
   }
-  else if (is<select_op>(&threeAddressCode))
+  else if (is<SelectOperation>(&threeAddressCode))
   {
     ConvertSelect(threeAddressCode, region, variableMap);
   }
-  else if (is<branch_op>(&threeAddressCode))
+  else if (is<BranchOperation>(&threeAddressCode))
   {
     ConvertBranch(threeAddressCode, region, variableMap);
   }
@@ -587,14 +587,14 @@ static void
 ConvertAggregationNode(
     const aggnode & aggregationNode,
     const AnnotationMap & demandMap,
-    lambda::node & lambdaNode,
+    rvsdg::LambdaNode & lambdaNode,
     RegionalizedVariableMap & regionalizedVariableMap);
 
 static void
 Convert(
     const entryaggnode & entryAggregationNode,
     const AnnotationMap & demandMap,
-    lambda::node & lambdaNode,
+    rvsdg::LambdaNode & lambdaNode,
     RegionalizedVariableMap & regionalizedVariableMap)
 {
   auto & demandSet = demandMap.Lookup<EntryAnnotationSet>(entryAggregationNode);
@@ -616,7 +616,8 @@ Convert(
     auto lambdaNodeArgument = lambdaArgs[n];
 
     topVariableMap.insert(functionNodeArgument, lambdaNodeArgument);
-    lambdaNode.GetOperation().SetArgumentAttributes(n, functionNodeArgument->attributes());
+    dynamic_cast<llvm::LlvmLambdaOperation &>(lambdaNode.GetOperation())
+        .SetArgumentAttributes(n, functionNodeArgument->attributes());
   }
 
   /*
@@ -640,7 +641,7 @@ static void
 Convert(
     const exitaggnode & exitAggregationNode,
     const AnnotationMap &,
-    lambda::node & lambdaNode,
+    rvsdg::LambdaNode & lambdaNode,
     RegionalizedVariableMap & regionalizedVariableMap)
 {
   std::vector<rvsdg::output *> results;
@@ -658,7 +659,7 @@ static void
 Convert(
     const blockaggnode & blockAggregationNode,
     const AnnotationMap &,
-    lambda::node &,
+    rvsdg::LambdaNode &,
     RegionalizedVariableMap & regionalizedVariableMap)
 {
   ConvertBasicBlock(
@@ -671,7 +672,7 @@ static void
 Convert(
     const linearaggnode & linearAggregationNode,
     const AnnotationMap & demandMap,
-    lambda::node & lambdaNode,
+    rvsdg::LambdaNode & lambdaNode,
     RegionalizedVariableMap & regionalizedVariableMap)
 {
   for (const auto & child : linearAggregationNode)
@@ -682,7 +683,7 @@ static void
 Convert(
     const branchaggnode & branchAggregationNode,
     const AnnotationMap & demandMap,
-    lambda::node & lambdaNode,
+    rvsdg::LambdaNode & lambdaNode,
     RegionalizedVariableMap & regionalizedVariableMap)
 {
   JLM_ASSERT(is<linearaggnode>(branchAggregationNode.parent()));
@@ -694,7 +695,7 @@ Convert(
   while (!is<blockaggnode>(split))
     split = split->child(split->nchildren() - 1);
   auto & sb = dynamic_cast<const blockaggnode *>(split)->tacs();
-  JLM_ASSERT(is<branch_op>(sb.last()->operation()));
+  JLM_ASSERT(is<BranchOperation>(sb.last()->operation()));
   auto predicate = regionalizedVariableMap.GetTopVariableMap().lookup(sb.last()->operand(0));
 
   auto gamma = rvsdg::GammaNode::create(predicate, branchAggregationNode.nchildren());
@@ -746,7 +747,7 @@ static void
 Convert(
     const loopaggnode & loopAggregationNode,
     const AnnotationMap & demandMap,
-    lambda::node & lambdaNode,
+    rvsdg::LambdaNode & lambdaNode,
     RegionalizedVariableMap & regionalizedVariableMap)
 {
   auto & parentRegion = regionalizedVariableMap.GetTopRegion();
@@ -807,7 +808,7 @@ Convert(
     lblock = lblock->child(lblock->nchildren() - 1);
   JLM_ASSERT(is<blockaggnode>(lblock));
   auto & bb = static_cast<const blockaggnode *>(lblock)->tacs();
-  JLM_ASSERT(is<branch_op>(bb.last()->operation()));
+  JLM_ASSERT(is<BranchOperation>(bb.last()->operation()));
   auto predicate = bb.last()->operand(0);
 
   /*
@@ -826,7 +827,7 @@ static void
 ConvertAggregationNode(
     const aggnode & aggregationNode,
     const AnnotationMap & demandMap,
-    lambda::node & lambdaNode,
+    rvsdg::LambdaNode & lambdaNode,
     RegionalizedVariableMap & regionalizedVariableMap)
 {
   if (auto entryNode = dynamic_cast<const entryaggnode *>(&aggregationNode))
@@ -922,12 +923,13 @@ ConvertAggregationTreeToLambda(
     const attributeset & functionAttributes,
     InterProceduralGraphToRvsdgStatisticsCollector & statisticsCollector)
 {
-  auto lambdaNode = lambda::node::create(
-      &scopedVariableMap.GetTopRegion(),
-      std::move(functionType),
-      functionName,
-      functionLinkage,
-      functionAttributes);
+  auto lambdaNode = rvsdg::LambdaNode::Create(
+      scopedVariableMap.GetTopRegion(),
+      std::make_unique<llvm::LlvmLambdaOperation>(
+          std::move(functionType),
+          functionName,
+          functionLinkage,
+          functionAttributes));
 
   auto convertAggregationTreeToLambda = [&]()
   {

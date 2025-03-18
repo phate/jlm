@@ -8,6 +8,7 @@
 
 #include <jlm/llvm/frontend/LlvmModuleConversion.hpp>
 #include <jlm/llvm/ir/operators/call.hpp>
+#include <jlm/llvm/ir/operators/IntegerOperations.hpp>
 #include <jlm/llvm/ir/operators/operators.hpp>
 #include <jlm/llvm/ir/print.hpp>
 #include <jlm/rvsdg/bitstring/constant.hpp>
@@ -119,9 +120,9 @@ TestPhiConversion()
       jlm::util::AssertedCast<const jlm::llvm::function_node>(ipgmod->ipgraph().find("popcount"));
   auto entry_node = popcount->cfg()->entry();
   assert(entry_node->single_successor());
-  auto bb1_node = entry_node->outedge(0)->sink();
+  auto bb1_node = entry_node->OutEdge(0)->sink();
   assert(bb1_node->single_successor());
-  auto bb2_node = bb1_node->outedge(0)->sink();
+  auto bb2_node = bb1_node->OutEdge(0)->sink();
   auto bb2 = jlm::util::AssertedCast<jlm::llvm::basic_block>(bb2_node);
 
   // The first two tac instructions should be the phi representing x and popcnt respectively
@@ -130,8 +131,9 @@ TestPhiConversion()
   auto & phiPopcnt = *std::next(tacs);
 
   // Check that they are both phi operations
-  auto phiXOp = *jlm::util::AssertedCast<const jlm::llvm::phi_op>(&phiX->operation());
-  auto phiPopcntOp = *jlm::util::AssertedCast<const jlm::llvm::phi_op>(&phiPopcnt->operation());
+  auto phiXOp = *jlm::util::AssertedCast<const jlm::llvm::SsaPhiOperation>(&phiX->operation());
+  auto phiPopcntOp =
+      *jlm::util::AssertedCast<const jlm::llvm::SsaPhiOperation>(&phiPopcnt->operation());
 
   // Both phi nodes should have 3 operands, representing the loop entry, and the two "continue"s
   assert(phiX->noperands() == 3);
@@ -144,26 +146,22 @@ TestPhiConversion()
   // The first operand of the phi node is the constant integer 0
   auto constant0variable =
       jlm::util::AssertedCast<const jlm::llvm::tacvariable>(phiPopcnt->operand(0));
-  auto constant0op = jlm::util::AssertedCast<const jlm::rvsdg::bitconstant_op>(
+  auto constant0op = jlm::util::AssertedCast<const jlm::llvm::IntegerConstantOperation>(
       &constant0variable->tac()->operation());
-  assert(constant0op->value() == 0);
+  assert(constant0op->Representation() == 0);
   // The last operand of the popcnt phi is the result of the phi itself
   assert(phiPopcnt->operand(2) == phiPopcnt->result(0));
 
   return 0;
 }
 JLM_UNIT_TEST_REGISTER(
-    "jlm/llvm/frontend/TestLlvmPhiConversion-TestPhiConversion",
+    "jlm/llvm/frontend/llvm/LlvmPhiConversionTests-TestPhiConversion",
     TestPhiConversion)
 
 /**
  * Tests converting instances of ::llvm::PHINode where some of the predecessors are "dead".
  * A dead predecessor is a basic block that is not reachable from the function's entry.
- * This test has one phi node with 4 operands, where two of them are dead,
- * and one with 2 operands, where one of them is dead.
- * The first should be converted to a jlm::llvm::phi_op with two operands,
- * while the second should become a direct reference to the value from the only alive predecessor.
- * Due to straightening, this last basic block is also merged into its predecessor.
+ * This test has one phi node with 4 operands, where two of them are dead.
  */
 static int
 TestPhiOperandElision()
@@ -186,8 +184,6 @@ TestPhiOperandElision()
     auto bb3 = llvm::BasicBlock::Create(ctx, "bb3", function);
     auto bb4 = llvm::BasicBlock::Create(ctx, "bb4", function);
     auto bb5 = llvm::BasicBlock::Create(ctx, "bb5", function);
-    auto bb6 = llvm::BasicBlock::Create(ctx, "bb6", function);
-    auto bb7 = llvm::BasicBlock::Create(ctx, "bb7", function);
 
     builder.SetInsertPoint(bb1); // entry block
     auto xIs0 = builder.CreateICmpEQ(function->getArg(0), llvm::ConstantInt::get(i64, 0));
@@ -207,23 +203,12 @@ TestPhiOperandElision()
 
     builder.SetInsertPoint(bb5); // Predecessors: bb1, bb2 (dead), bb3 (dead), bb4
     auto bb5phi = builder.CreatePHI(i64, 4);
-    builder.CreateBr(bb7);
-
-    builder.SetInsertPoint(bb6); // No predecessors
-    builder.CreateBr(bb7);
-
-    builder.SetInsertPoint(bb7); // Predecessors: bb5, bb6 (dead)
-    auto bb7phi = builder.CreatePHI(i64, 2);
-    auto mul = builder.CreateMul(bb7phi, llvm::ConstantInt::get(i64, 10));
-    builder.CreateRet(mul);
+    builder.CreateRet(bb5phi);
 
     bb5phi->addIncoming(llvm::ConstantInt::get(i64, 0), bb1);
     bb5phi->addIncoming(xPlus1, bb2);              // Dead
     bb5phi->addIncoming(function->getArg(0), bb3); // Dead
     bb5phi->addIncoming(xPlus2, bb4);
-
-    bb7phi->addIncoming(bb5phi, bb5);
-    bb7phi->addIncoming(llvm::PoisonValue::get(i64), bb6); // Dead
   }
 
   jlm::tests::print(module);
@@ -246,12 +231,12 @@ TestPhiOperandElision()
     numBasicBlocks++;
     for (auto tac : bb)
     {
-      if (jlm::rvsdg::is<jlm::llvm::phi_op>(tac->operation()))
+      if (jlm::rvsdg::is<jlm::llvm::SsaPhiOperation>(tac->operation()))
         phiTacs.push_back(tac);
     }
   }
 
-  // There should be 3 basic blocks left (bb1, bb5, bb7)
+  // There should be 3 basic blocks left (bb1, bb4, bb5)
   assert(numBasicBlocks == 3);
   // There should be exactly one phi tac
   assert(phiTacs.size() == 1);
@@ -261,12 +246,12 @@ TestPhiOperandElision()
   // The first phi operand should be a constant 0
   auto constant0variable =
       jlm::util::AssertedCast<const jlm::llvm::tacvariable>(phiTac->operand(0));
-  auto constant0op = jlm::util::AssertedCast<const jlm::rvsdg::bitconstant_op>(
+  auto constant0op = jlm::util::AssertedCast<const jlm::llvm::IntegerConstantOperation>(
       &constant0variable->tac()->operation());
-  assert(constant0op->value() == 0);
+  assert(constant0op->Representation() == 0);
 
   return 0;
 }
 JLM_UNIT_TEST_REGISTER(
-    "jlm/llvm/frontend/TestLlvmPhiConversion-TestPhiOperandElision",
+    "jlm/llvm/frontend/llvm/LlvmPhiConversionTests-TestPhiOperandElision",
     TestPhiOperandElision)

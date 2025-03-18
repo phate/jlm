@@ -23,8 +23,9 @@ TestFork()
 
   RvsdgModule rm(util::filepath(""), "", "");
 
-  auto lambda =
-      lambda::node::create(&rm.Rvsdg().GetRootRegion(), ft, "f", linkage::external_linkage);
+  auto lambda = jlm::rvsdg::LambdaNode::Create(
+      rm.Rvsdg().GetRootRegion(),
+      LlvmLambdaOperation::Create(ft, "f", linkage::external_linkage));
 
   auto loop = hls::loop_node::create(lambda->subregion());
   rvsdg::output * idvBuffer;
@@ -53,8 +54,8 @@ TestFork()
   {
     auto omegaRegion = &rm.Rvsdg().GetRootRegion();
     assert(omegaRegion->nnodes() == 1);
-    auto lambda = util::AssertedCast<lambda::node>(omegaRegion->Nodes().begin().ptr());
-    assert(is<lambda::operation>(lambda));
+    auto lambda = util::AssertedCast<jlm::rvsdg::LambdaNode>(omegaRegion->Nodes().begin().ptr());
+    assert(is<jlm::rvsdg::LambdaOperation>(lambda));
 
     auto lambdaRegion = lambda->subregion();
     assert(lambdaRegion->nnodes() == 1);
@@ -86,8 +87,9 @@ TestConstantFork()
 
   RvsdgModule rm(util::filepath(""), "", "");
 
-  auto lambda =
-      lambda::node::create(&rm.Rvsdg().GetRootRegion(), ft, "f", linkage::external_linkage);
+  auto lambda = jlm::rvsdg::LambdaNode::Create(
+      rm.Rvsdg().GetRootRegion(),
+      LlvmLambdaOperation::Create(ft, "f", linkage::external_linkage));
   auto lambdaRegion = lambda->subregion();
 
   auto loop = hls::loop_node::create(lambdaRegion);
@@ -115,8 +117,8 @@ TestConstantFork()
   {
     auto omegaRegion = &rm.Rvsdg().GetRootRegion();
     assert(omegaRegion->nnodes() == 1);
-    auto lambda = util::AssertedCast<lambda::node>(omegaRegion->Nodes().begin().ptr());
-    assert(is<lambda::operation>(lambda));
+    auto lambda = util::AssertedCast<jlm::rvsdg::LambdaNode>(omegaRegion->Nodes().begin().ptr());
+    assert(is<jlm::rvsdg::LambdaOperation>(lambda));
 
     auto lambdaRegion = lambda->subregion();
     assert(lambdaRegion->nnodes() == 1);

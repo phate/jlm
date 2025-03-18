@@ -31,7 +31,9 @@ TestPhiCreation()
 
   auto SetupEmptyLambda = [&](jlm::rvsdg::Region * region, const std::string & name)
   {
-    auto lambda = lambda::node::create(region, f0type, name, linkage::external_linkage);
+    auto lambda = jlm::rvsdg::LambdaNode::Create(
+        *region,
+        LlvmLambdaOperation::Create(f0type, name, linkage::external_linkage));
     auto iOStateArgument = lambda->GetFunctionArguments()[1];
     auto memoryStateArgument = lambda->GetFunctionArguments()[2];
 
@@ -40,7 +42,9 @@ TestPhiCreation()
 
   auto SetupF2 = [&](jlm::rvsdg::Region * region, jlm::rvsdg::RegionArgument * f2)
   {
-    auto lambda = lambda::node::create(region, f1type, "f2", linkage::external_linkage);
+    auto lambda = jlm::rvsdg::LambdaNode::Create(
+        *region,
+        LlvmLambdaOperation::Create(f1type, "f2", linkage::external_linkage));
     auto ctxVarF2 = lambda->AddContextVar(*f2).inner;
     auto valueArgument = lambda->GetFunctionArguments()[0];
     auto iOStateArgument = lambda->GetFunctionArguments()[1];

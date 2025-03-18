@@ -376,7 +376,7 @@ private:
   AnalyzeBits2ptr(const rvsdg::SimpleNode & node);
 
   void
-  AnalyzePtr2bits(const rvsdg::SimpleNode & node);
+  AnalyzePtrToInt(const rvsdg::SimpleNode & node);
 
   void
   AnalyzeConstantPointerNull(const rvsdg::SimpleNode & node);
@@ -409,10 +409,13 @@ private:
   AnalyzeFunctionToPointer(const rvsdg::SimpleNode & node);
 
   void
+  AnalyzeIOBarrier(const rvsdg::SimpleNode & node);
+
+  void
   AnalyzeStructuralNode(const rvsdg::StructuralNode & node);
 
   void
-  AnalyzeLambda(const lambda::node & node);
+  AnalyzeLambda(const rvsdg::LambdaNode & node);
 
   void
   AnalyzeDelta(const delta::node & node);

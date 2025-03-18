@@ -367,7 +367,7 @@ producer(const jlm::rvsdg::output * output) noexcept
 
   Example:
   \code
-  if (auto lambda = rvsdg::TryGetOwnerNode<lambda::node>(def))
+  if (auto lambda = rvsdg::TryGetOwnerNode<LambdaNode>(def))
   {
     // This is an output of a lambda node -- so this must
     // be a function definition.

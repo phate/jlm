@@ -31,7 +31,7 @@ remove_unused_state(rvsdg::Region * region, bool can_remove_arguments)
         }
         remove_gamma_passthrough(gn);
       }
-      else if (auto ln = dynamic_cast<llvm::lambda::node *>(node))
+      else if (auto ln = dynamic_cast<rvsdg::LambdaNode *>(node))
       {
         remove_unused_state(structnode->subregion(0), false);
         remove_lambda_passthrough(ln);
@@ -53,7 +53,7 @@ remove_unused_state(rvsdg::Region * region, bool can_remove_arguments)
         std::vector<jlm::rvsdg::output *> nv;
         for (size_t i = 0; i < simplenode->ninputs(); ++i)
         {
-          if (auto so = dynamic_cast<jlm::rvsdg::simple_output *>(simplenode->input(i)->origin()))
+          if (auto so = dynamic_cast<rvsdg::SimpleOutput *>(simplenode->input(i)->origin()))
           {
             if (dynamic_cast<const llvm::LambdaEntryMemoryStateSplitOperation *>(
                     &so->node()->GetOperation()))
@@ -174,10 +174,10 @@ remove_gamma_passthrough(rvsdg::GammaNode * gn)
   }
 }
 
-jlm::llvm::lambda::node *
-remove_lambda_passthrough(llvm::lambda::node * ln)
+jlm::rvsdg::LambdaNode *
+remove_lambda_passthrough(rvsdg::LambdaNode * ln)
 {
-  const auto & op = ln->GetOperation();
+  const auto & op = dynamic_cast<llvm::LlvmLambdaOperation &>(ln->GetOperation());
   auto old_fcttype = op.type();
   std::vector<std::shared_ptr<const jlm::rvsdg::Type>> new_argument_types;
   for (size_t i = 0; i < old_fcttype.NumArguments(); ++i)
@@ -202,12 +202,9 @@ remove_lambda_passthrough(llvm::lambda::node * ln)
     }
   }
   auto new_fcttype = rvsdg::FunctionType::Create(new_argument_types, new_result_types);
-  auto new_lambda = llvm::lambda::node::create(
-      ln->region(),
-      new_fcttype,
-      op.name(),
-      op.linkage(),
-      op.attributes());
+  auto new_lambda = rvsdg::LambdaNode::Create(
+      *ln->region(),
+      llvm::LlvmLambdaOperation::Create(new_fcttype, op.name(), op.linkage(), op.attributes()));
 
   rvsdg::SubstitutionMap smap;
   for (const auto & ctxvar : ln->GetContextVars())
@@ -300,9 +297,9 @@ RemoveInvariantLambdaStateEdges(llvm::RvsdgModule & rvsdgModule)
   auto & root = rvsdgModule.Rvsdg().GetRootRegion();
   for (auto & node : rvsdg::TopDownTraverser(&root))
   {
-    if (rvsdg::is<llvm::lambda::operation>(node))
+    if (rvsdg::is<llvm::LlvmLambdaOperation>(node))
     {
-      remove_lambda_passthrough(static_cast<llvm::lambda::node *>(node));
+      remove_lambda_passthrough(static_cast<rvsdg::LambdaNode *>(node));
     }
   }
 }

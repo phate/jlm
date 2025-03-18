@@ -40,7 +40,7 @@ mem_sep_argument(llvm::RvsdgModule & rm)
 
 // from MemoryStateEncoder.cpp
 rvsdg::RegionArgument *
-GetMemoryStateArgument(const llvm::lambda::node & lambda)
+GetMemoryStateArgument(const rvsdg::LambdaNode & lambda)
 {
   auto subregion = lambda.subregion();
   for (size_t n = 0; n < subregion->narguments(); n++)
@@ -53,7 +53,7 @@ GetMemoryStateArgument(const llvm::lambda::node & lambda)
 }
 
 rvsdg::RegionResult *
-GetMemoryStateResult(const llvm::lambda::node & lambda)
+GetMemoryStateResult(const rvsdg::LambdaNode & lambda)
 {
   auto subregion = lambda.subregion();
   for (size_t n = 0; n < subregion->nresults(); n++)
@@ -128,7 +128,7 @@ route_through(rvsdg::Region * target, jlm::rvsdg::output * response)
 void
 mem_sep_independent(rvsdg::Region * region)
 {
-  auto lambda = dynamic_cast<const llvm::lambda::node *>(region->Nodes().begin().ptr());
+  auto lambda = dynamic_cast<const rvsdg::LambdaNode *>(region->Nodes().begin().ptr());
   auto lambda_region = lambda->subregion();
   auto state_arg = GetMemoryStateArgument(*lambda);
   if (!state_arg)
@@ -216,7 +216,7 @@ trace_edge(
       new_edge = lv.output;
       new_next->divert_to(new_edge);
     }
-    else if (auto si = dynamic_cast<jlm::rvsdg::simple_input *>(user))
+    else if (auto si = dynamic_cast<rvsdg::SimpleInput *>(user))
     {
       auto sn = si->node();
       auto op = &si->node()->GetOperation();
@@ -273,7 +273,7 @@ trace_edge(
 void
 mem_sep_argument(rvsdg::Region * region)
 {
-  auto lambda = dynamic_cast<const llvm::lambda::node *>(region->Nodes().begin().ptr());
+  auto lambda = dynamic_cast<const rvsdg::LambdaNode *>(region->Nodes().begin().ptr());
   auto lambda_region = lambda->subregion();
   auto state_arg = GetMemoryStateArgument(*lambda);
   if (!state_arg)

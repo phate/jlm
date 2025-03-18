@@ -25,7 +25,7 @@ Contains(const jlm::llvm::ipgraph_module & module, const std::string &)
   auto controlFlowGraph =
       dynamic_cast<const jlm::llvm::function_node *>(module.ipgraph().find("f"))->cfg();
   auto basicBlock =
-      dynamic_cast<const jlm::llvm::basic_block *>(controlFlowGraph->entry()->outedge(0)->sink());
+      dynamic_cast<const jlm::llvm::basic_block *>(controlFlowGraph->entry()->OutEdge(0)->sink());
   for (auto threeAddressCode : *basicBlock)
     hasInstruction = hasInstruction || jlm::llvm::is<OP>(threeAddressCode);
 
@@ -63,7 +63,7 @@ TestFNegScalar()
   auto ipgModule = jlm::llvm::ConvertLlvmModule(*llvmModule);
   print(*ipgModule, stdout);
 
-  assert(Contains<jlm::llvm::fpneg_op>(*ipgModule, "f"));
+  assert(Contains<jlm::llvm::FNegOperation>(*ipgModule, "f"));
 }
 
 static void

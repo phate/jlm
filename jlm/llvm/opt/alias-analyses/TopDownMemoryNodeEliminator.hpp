@@ -28,6 +28,7 @@ class node;
 namespace jlm::rvsdg
 {
 class GammaNode;
+class LambdaNode;
 class Node;
 class Region;
 class SimpleNode;
@@ -137,13 +138,13 @@ private:
   EliminateTopDownStructuralNode(const rvsdg::StructuralNode & structuralNode);
 
   void
-  EliminateTopDownLambda(const lambda::node & lambdaNode);
+  EliminateTopDownLambda(const rvsdg::LambdaNode & lambdaNode);
 
   void
-  EliminateTopDownLambdaEntry(const lambda::node & lambdaNode);
+  EliminateTopDownLambdaEntry(const rvsdg::LambdaNode & lambdaNode);
 
   void
-  EliminateTopDownLambdaExit(const lambda::node & lambdaNode);
+  EliminateTopDownLambdaExit(const rvsdg::LambdaNode & lambdaNode);
 
   void
   EliminateTopDownPhi(const phi::node & phiNode);
@@ -203,7 +204,7 @@ private:
    * @see InitializeLiveNodesOfTailLambdas()
    */
   void
-  InitializeLiveNodesOfTailLambda(const lambda::node & tailLambdaNode);
+  InitializeLiveNodesOfTailLambda(const rvsdg::LambdaNode & tailLambdaNode);
 
   /**
    * The function checks the following invariants:

@@ -5,12 +5,9 @@
 
 #include "test-registry.hpp"
 
-#include <jlm/hls/backend/rvsdg2rhls/InvariantLambdaMemoryStateRemoval.hpp>
-#include <jlm/hls/ir/hls.hpp>
+#include <jlm/hls/opt/InvariantLambdaMemoryStateRemoval.hpp>
 #include <jlm/llvm/ir/operators.hpp>
-#include <jlm/rvsdg/traverser.hpp>
 #include <jlm/rvsdg/view.hpp>
-#include <jlm/util/Statistics.hpp>
 
 static int
 TestEliminateSplitAndMergeNodes()
@@ -26,11 +23,9 @@ TestEliminateSplitAndMergeNodes()
       { jlm::llvm::PointerType::Create(), MemoryStateType::Create() },
       { MemoryStateType::Create() });
 
-  auto lambda = lambda::node::create(
-      &rvsdgModule->Rvsdg().GetRootRegion(),
-      functionType,
-      "test",
-      linkage::external_linkage);
+  auto lambda = jlm::rvsdg::LambdaNode::Create(
+      rvsdgModule->Rvsdg().GetRootRegion(),
+      LlvmLambdaOperation::Create(functionType, "test", linkage::external_linkage));
 
   auto functionArguments = lambda->GetFunctionArguments();
 
@@ -57,22 +52,24 @@ TestEliminateSplitAndMergeNodes()
 
   // Act
   // This pass should remove the Lambda[Entry/Exit]MemoryState[Split/Merge] nodes
-  RemoveInvariantLambdaMemoryStateEdges(*rvsdgModule);
+  jlm::util::StatisticsCollector collector;
+  InvariantLambdaMemoryStateRemoval::CreateAndRun(*rvsdgModule, collector);
   // Assert
   auto * node =
       jlm::rvsdg::output::GetNode(*rvsdgModule->Rvsdg().GetRootRegion().result(0)->origin());
-  auto lambdaSubregion = jlm::util::AssertedCast<lambda::node>(node)->subregion();
+  auto lambdaSubregion = jlm::util::AssertedCast<jlm::rvsdg::LambdaNode>(node)->subregion();
   jlm::rvsdg::view(rvsdgModule->Rvsdg(), stdout);
   assert(lambdaSubregion->narguments() == 2);
   assert(lambdaSubregion->nresults() == 1);
   assert(is<MemoryStateType>(lambdaSubregion->result(0)->Type()));
-  assert(is<LoadNonVolatileOperation>(
-      jlm::rvsdg::output::GetNode(*lambdaSubregion->result(0)->origin())->GetOperation()));
+  auto loadNode = jlm::rvsdg::output::GetNode(*lambdaSubregion->result(0)->origin());
+  assert(is<LoadNonVolatileOperation>(loadNode->GetOperation()));
+  jlm::util::AssertedCast<jlm::rvsdg::RegionArgument>(loadNode->input(1)->origin());
 
   return 0;
 }
 JLM_UNIT_TEST_REGISTER(
-    "jlm/hls/backend/rvsdg2rhls/InvariantLambdaMemoryStateRemovalTests-InvariantMemoryState",
+    "jlm/hls/opt/InvariantLambdaMemoryStateRemovalTests-EliminateSplitAndMergeNodes",
     TestEliminateSplitAndMergeNodes)
 
 static int
@@ -89,11 +86,9 @@ TestInvariantMemoryState()
       { jlm::llvm::PointerType::Create(), MemoryStateType::Create() },
       { MemoryStateType::Create() });
 
-  auto lambda = lambda::node::create(
-      &rvsdgModule->Rvsdg().GetRootRegion(),
-      functionType,
-      "test",
-      linkage::external_linkage);
+  auto lambda = jlm::rvsdg::LambdaNode::Create(
+      rvsdgModule->Rvsdg().GetRootRegion(),
+      LlvmLambdaOperation::Create(functionType, "test", linkage::external_linkage));
 
   auto functionArguments = lambda->GetFunctionArguments();
 
@@ -127,28 +122,31 @@ TestInvariantMemoryState()
 
   // Act
   // This pass should remove the Lambda[Entry/Exit]MemoryState[Split/Merge] nodes
-  RemoveInvariantLambdaMemoryStateEdges(*rvsdgModule);
+  jlm::util::StatisticsCollector collector;
+  InvariantLambdaMemoryStateRemoval memStateRemoval;
+  memStateRemoval.Run(*rvsdgModule, collector);
   // Assert
   auto * node =
       jlm::rvsdg::output::GetNode(*rvsdgModule->Rvsdg().GetRootRegion().result(0)->origin());
-  auto lambdaSubregion = jlm::util::AssertedCast<lambda::node>(node)->subregion();
+  auto lambdaSubregion = jlm::util::AssertedCast<jlm::rvsdg::LambdaNode>(node)->subregion();
   jlm::rvsdg::view(rvsdgModule->Rvsdg(), stdout);
   assert(lambdaSubregion->narguments() == 2);
   assert(lambdaSubregion->nresults() == 1);
   assert(is<MemoryStateType>(lambdaSubregion->result(0)->Type()));
-  // Check MemoryStateMerge node
+  // Since there is more than one invariant memory state edge, the MemoryStateMerge node should
+  // still exists
   node = jlm::rvsdg::output::GetNode(*lambdaSubregion->result(0)->origin());
   assert(is<LambdaExitMemoryStateMergeOperation>(node->GetOperation()));
   assert(node->ninputs() == 2);
-  // Check load node
+  // Need to pass a load node to reach the MemoryStateSplit node
   node = jlm::rvsdg::output::GetNode(*node->input(1)->origin());
   assert(is<LoadNonVolatileOperation>(node->GetOperation()));
-  // Check MemoryStateSplit node
+  // Check that the MemoryStateSplit node is still present
   node = jlm::rvsdg::output::GetNode(*node->input(1)->origin());
   assert(is<LambdaEntryMemoryStateSplitOperation>(node->GetOperation()));
 
   return 0;
 }
 JLM_UNIT_TEST_REGISTER(
-    "jlm/hls/backend/rvsdg2rhls/InvariantLambdaMemoryStateRemovalTests-InvariantMemoryState2",
+    "jlm/hls/opt/InvariantLambdaMemoryStateRemovalTests-InvariantMemoryState",
     TestInvariantMemoryState)

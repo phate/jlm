@@ -9,7 +9,6 @@
 #include <jlm/hls/backend/rhls2firrtl/dot-hls.hpp>
 #include <jlm/hls/backend/rvsdg2rhls/rhls-dne.hpp>
 #include <jlm/hls/ir/hls.hpp>
-#include <jlm/llvm/backend/rvsdg2jlm/rvsdg2jlm.hpp>
 #include <jlm/llvm/ir/cfg-structure.hpp>
 #include <jlm/llvm/ir/ipgraph-module.hpp>
 #include <jlm/llvm/ir/operators.hpp>
@@ -42,11 +41,9 @@ test()
 
   /* setup graph */
 
-  auto lambda = jlm::llvm::lambda::node::create(
-      &rm.Rvsdg().GetRootRegion(),
-      ft,
-      "f",
-      jlm::llvm::linkage::external_linkage);
+  auto lambda = jlm::rvsdg::LambdaNode::Create(
+      rm.Rvsdg().GetRootRegion(),
+      jlm::llvm::LlvmLambdaOperation::Create(ft, "f", jlm::llvm::linkage::external_linkage));
 
   auto loop = hls::loop_node::create(lambda->subregion());
 

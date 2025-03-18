@@ -40,7 +40,8 @@ get_dot_name(jlm::rvsdg::output * output)
   {
     return jlm::util::strfmt("a", hex((intptr_t)output), ":", "default");
   }
-  else if (auto no = dynamic_cast<jlm::rvsdg::simple_output *>(output))
+
+  if (auto no = dynamic_cast<rvsdg::SimpleOutput *>(output))
   {
     return jlm::util::strfmt(get_dot_name(no->node()), ":", "o", hex((intptr_t)output));
   }
@@ -58,7 +59,7 @@ get_dot_name(jlm::rvsdg::input * input)
   {
     return jlm::util::strfmt("r", hex((intptr_t)input), ":", "default");
   }
-  else if (auto ni = dynamic_cast<jlm::rvsdg::simple_input *>(input))
+  if (auto ni = dynamic_cast<rvsdg::SimpleInput *>(input))
   {
     return jlm::util::strfmt(get_dot_name(ni->node()), ":", "i", hex((intptr_t)input));
   }

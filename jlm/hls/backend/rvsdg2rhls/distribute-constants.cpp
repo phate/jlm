@@ -15,7 +15,7 @@ namespace jlm
 {
 
 void
-distribute_constant(const rvsdg::SimpleOperation & op, rvsdg::simple_output * out)
+distribute_constant(const rvsdg::SimpleOperation & op, rvsdg::SimpleOutput * out)
 {
   JLM_ASSERT(jlm::hls::is_constant(out->node()));
   bool changed = true;
@@ -32,7 +32,7 @@ distribute_constant(const rvsdg::SimpleOperation & op, rvsdg::simple_output * ou
           // pass-through
           auto arg_replacement = rvsdg::SimpleNode::Create(*theta->subregion(), op, {}).output(0);
           loopvar.pre->divert_users(arg_replacement);
-          loopvar.output->divert_users(rvsdg::SimpleNode::Create(*out->region(), op, {}).output(0));
+          loopvar.output->divert_users(out);
           distribute_constant(op, arg_replacement);
           theta->subregion()->RemoveResult(loopvar.post->index());
           theta->subregion()->RemoveArgument(loopvar.pre->index());
@@ -75,7 +75,7 @@ hls::distribute_constants(rvsdg::Region * region)
   {
     if (rvsdg::is<rvsdg::StructuralOperation>(node))
     {
-      if (auto ln = dynamic_cast<llvm::lambda::node *>(node))
+      if (auto ln = dynamic_cast<rvsdg::LambdaNode *>(node))
       {
         distribute_constants(ln->subregion());
       }
