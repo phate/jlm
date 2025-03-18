@@ -685,6 +685,8 @@ RhlsToFirrtlConverter::MlirGenHlsMemResp(const jlm::rvsdg::SimpleNode * node)
     auto memResBundle = GetSubfield(body, memRes, "data");
     auto memResId = GetSubfield(body, memResBundle, "id");
     auto memResData = GetSubfield(body, memResBundle, "data");
+    auto portWidth = memResData->getResult(0).getType().cast<circt::firrtl::IntType>().getWidth().value();
+
     auto elseBody = body;
     for (size_t i = 0; i < node->noutputs(); ++i)
     {
@@ -699,7 +701,7 @@ RhlsToFirrtlConverter::MlirGenHlsMemResp(const jlm::rvsdg::SimpleNode * node)
       Connect(thenBody, outValid, oneBitValue);
       Connect(thenBody, memResReady, outReady);
       int nbits = JlmSize(&node->output(i)->type());
-      if (nbits == 64)
+      if (nbits == portWidth)
       {
         Connect(thenBody, outData, memResData);
       }
@@ -831,20 +833,8 @@ RhlsToFirrtlConverter::MlirGenHlsMemReq(const jlm::rvsdg::SimpleNode * node)
       Connect(thenBody, memReqAddr, loadAddrDatas[i]);
       Connect(thenBody, memReqId, loadIds[i]);
       // No data or write
-      int bitWidth;
       auto loadType = loadTypes->at(i).get();
-      if (auto bitType = dynamic_cast<const jlm::rvsdg::bittype *>(loadType))
-      {
-        bitWidth = bitType->nbits();
-      }
-      else if (dynamic_cast<const jlm::llvm::PointerType *>(loadType))
-      {
-        bitWidth = 64;
-      }
-      else
-      {
-        throw jlm::util::error("unknown width for mem request");
-      }
+      int bitWidth = JlmSize(loadType);
       int log2Bytes = log2(bitWidth / 8);
       Connect(thenBody, memReqSize, GetConstant(thenBody, 3, log2Bytes));
       if (hasWrite)
@@ -872,24 +862,13 @@ RhlsToFirrtlConverter::MlirGenHlsMemReq(const jlm::rvsdg::SimpleNode * node)
       Connect(thenBody, storeDataReadys[i], memReqReady);
       Connect(thenBody, memReqValid, storeAddrValids[i]);
       Connect(thenBody, memReqAddr, storeAddrDatas[i]);
-      // TODO: pad
       Connect(thenBody, memReqData, storeDataDatas[i]);
+      // TODO: pad
+//      auto portWidth = memReqData.getType().cast<circt::firrtl::IntType>().getWidth().value();
       Connect(thenBody, memReqId, storeIds[i]);
       // No data or write
-      int bitWidth;
       auto storeType = storeTypes->at(i).get();
-      if (auto bitType = dynamic_cast<const jlm::rvsdg::bittype *>(storeType))
-      {
-        bitWidth = bitType->nbits();
-      }
-      else if (dynamic_cast<const jlm::llvm::PointerType *>(storeType))
-      {
-        bitWidth = 64;
-      }
-      else
-      {
-        throw jlm::util::error("unknown width for mem request");
-      }
+      int bitWidth = JlmSize(storeType);
       int log2Bytes = log2(bitWidth / 8);
       Connect(thenBody, memReqSize, GetConstant(thenBody, 3, log2Bytes));
       Connect(thenBody, memReqWrite, oneBitValue);
@@ -3998,20 +3977,8 @@ RhlsToFirrtlConverter::GetModuleName(const rvsdg::Node * node)
     auto loadTypes = op->GetLoadTypes();
     for (size_t i = 0; i < loadTypes->size(); i++)
     {
-      int bitWidth;
       auto loadType = loadTypes->at(i).get();
-      if (auto bitType = dynamic_cast<const jlm::rvsdg::bittype *>(loadType))
-      {
-        bitWidth = bitType->nbits();
-      }
-      else if (dynamic_cast<const jlm::llvm::PointerType *>(loadType))
-      {
-        bitWidth = GetPointerSizeInBits();
-      }
-      else
-      {
-        throw jlm::util::error("unknown width for mem request");
-      }
+      int bitWidth = JlmSize(loadType);
       append.append("_");
       append.append(std::to_string(bitWidth));
     }

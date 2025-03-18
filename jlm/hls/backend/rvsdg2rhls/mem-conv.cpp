@@ -558,6 +558,30 @@ jlm::hls::TracePointerArguments(
   }
 }
 
+size_t
+CalcualtePortWidth(
+    const std::tuple<
+        std::vector<jlm::rvsdg::SimpleNode *>,
+        std::vector<jlm::rvsdg::SimpleNode *>,
+        std::vector<jlm::rvsdg::SimpleNode *>> & loadStoreDecouple)
+{
+  int max_width = 0;
+  for (auto node:std::get<0>(loadStoreDecouple)) {
+    auto loadOp = jlm::util::AssertedCast<const jlm::llvm::LoadNonVolatileOperation>(
+        &node->GetOperation());
+    auto sz = jlm::hls::JlmSize(loadOp->GetLoadedType().get());
+    max_width = sz>max_width?sz:max_width;
+  }
+  for (auto node:std::get<1>(loadStoreDecouple)) {
+    auto storeOp = jlm::util::AssertedCast<const jlm::llvm::StoreNonVolatileOperation>(
+        &node->GetOperation());
+    auto sz = jlm::hls::JlmSize(&storeOp->GetStoredType());
+    max_width = sz>max_width?sz:max_width;
+  }
+  // TODO: size for decouple type
+  return max_width;
+}
+
 void
 jlm::hls::MemoryConverter(jlm::llvm::RvsdgModule & rm)
 {
@@ -597,13 +621,13 @@ jlm::hls::MemoryConverter(jlm::llvm::RvsdgModule & rm)
   port_load_store_decouple portNodes;
   TracePointerArguments(lambda, portNodes);
 
-  auto responseTypePtr = get_mem_res_type(jlm::rvsdg::bittype::Create(64));
-  auto requestTypePtr = get_mem_req_type(jlm::rvsdg::bittype::Create(64), false);
-  auto requestTypePtrWrite = get_mem_req_type(jlm::rvsdg::bittype::Create(64), true);
-
   std::unordered_set<jlm::rvsdg::SimpleNode *> accountedNodes;
   for (auto & portNode : portNodes)
   {
+    auto portWidth = CalcualtePortWidth(portNode);
+    auto responseTypePtr = get_mem_res_type(jlm::rvsdg::bittype::Create(portWidth));
+    auto requestTypePtr = get_mem_req_type(jlm::rvsdg::bittype::Create(portWidth), false);
+    auto requestTypePtrWrite = get_mem_req_type(jlm::rvsdg::bittype::Create(portWidth), true);
     newArgumentTypes.push_back(responseTypePtr);
     if (std::get<1>(portNode).empty())
     {
@@ -628,6 +652,11 @@ jlm::hls::MemoryConverter(jlm::llvm::RvsdgModule & rm)
       accountedNodes);
   if (!unknownLoadNodes.empty() || !unknownStoreNodes.empty() || !unknownDecoupledNodes.empty())
   {
+    auto portWidth = CalcualtePortWidth(
+        std::make_tuple(unknownLoadNodes, unknownStoreNodes, unknownDecoupledNodes));
+    auto responseTypePtr = get_mem_res_type(jlm::rvsdg::bittype::Create(portWidth));
+    auto requestTypePtr = get_mem_req_type(jlm::rvsdg::bittype::Create(portWidth), false);
+    auto requestTypePtrWrite = get_mem_req_type(jlm::rvsdg::bittype::Create(portWidth), true);
     // Extra port for loads/stores not associated to a port yet (i.e., unknown base pointer)
     newArgumentTypes.push_back(responseTypePtr);
     if (unknownStoreNodes.empty())
@@ -792,11 +821,13 @@ jlm::hls::ConnectRequestResponseMemPorts(
         dynamic_cast<rvsdg::SimpleOutput *>(smap.lookup(decoupledNode->output(0)));
     decoupledNodes.push_back(decoupledOutput->node());
     loadTypes.push_back(jlm::rvsdg::bittype::Create(32));
+    // TODO: fix width
   }
 
   auto lambdaRegion = lambda->subregion();
-
-  auto loadResponses = mem_resp_op::create(*lambdaRegion->argument(argumentIndex), loadTypes);
+  auto portWidth = CalcualtePortWidth(
+      std::make_tuple(originalLoadNodes, originalStoreNodes, originalDecoupledNodes));
+  auto loadResponses = mem_resp_op::create(*lambdaRegion->argument(argumentIndex), loadTypes, portWidth);
   // The (decoupled) load nodes are replaced so the pointer to the types will become invalid
   loadTypes.clear();
   std::vector<jlm::rvsdg::output *> loadAddresses;
@@ -828,8 +859,9 @@ jlm::hls::ConnectRequestResponseMemPorts(
   }
   for (size_t i = 0; i < decoupledNodes.size(); ++i)
   {
-    JLM_UNREACHABLE("Handling of decoupled loads has not been updated after changing to the "
-                    "version were a new lambda is created.");
+    JLM_UNREACHABLE(
+        "Handling of decoupled loads has not been updated after changing to the "
+        "version were a new lambda is created.");
 
     auto reponse = loadResponses[+loadNodes.size() + i];
     auto node = decoupledNodes[i];

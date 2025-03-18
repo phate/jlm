@@ -3,6 +3,7 @@
  * See COPYING for terms of redistribution.
  */
 
+#include <cmath>
 #include <jlm/hls/ir/hls.hpp>
 #include <jlm/util/Hash.hpp>
 
@@ -217,5 +218,49 @@ get_mem_res_type(std::shared_ptr<const jlm::rvsdg::ValueType> dataType)
   elements.emplace_back("data", std::move(dataType));
   elements.emplace_back("id", jlm::rvsdg::bittype::Create(8));
   return std::make_shared<bundletype>(std::move(elements));
+}
+
+int
+JlmSize(const jlm::rvsdg::Type * type)
+{
+  if (auto bt = dynamic_cast<const jlm::rvsdg::bittype *>(type))
+  {
+    return bt->nbits();
+  }
+  else if (auto at = dynamic_cast<const llvm::ArrayType *>(type))
+  {
+    return JlmSize(&at->element_type()) * at->nelements();
+  }
+  else if (auto vt = dynamic_cast<const llvm::VectorType *>(type))
+  {
+    return JlmSize(&vt->type()) * vt->size();
+  }
+  else if (dynamic_cast<const llvm::PointerType *>(type))
+  {
+    return GetPointerSizeInBits();
+  }
+  else if (auto ct = dynamic_cast<const rvsdg::ControlType *>(type))
+  {
+    return ceil(log2(ct->nalternatives()));
+  }
+  else if (dynamic_cast<const rvsdg::StateType *>(type))
+  {
+    return 1;
+  }
+  else if (dynamic_cast<const bundletype *>(type))
+  {
+    // TODO: fix this ugly hack needed for get_node_name
+    return 0;
+  }
+  else
+  {
+    throw std::logic_error("Size of '" + type->debug_string() + "' is not implemented!");
+  }
+}
+
+size_t
+GetPointerSizeInBits()
+{
+  return 64;
 }
 }

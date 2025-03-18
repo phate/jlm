@@ -19,6 +19,14 @@
 
 namespace jlm::hls
 {
+/**
+ * @return The size of a pointer in bits.
+ */
+[[nodiscard]] size_t
+GetPointerSizeInBits();
+
+int
+JlmSize(const jlm::rvsdg::Type * type);
 
 class branch_op final : public rvsdg::SimpleOperation
 {
@@ -1159,8 +1167,10 @@ public:
   virtual ~mem_resp_op()
   {}
 
-  explicit mem_resp_op(const std::vector<std::shared_ptr<const rvsdg::ValueType>> & output_types)
-      : SimpleOperation(CreateInTypes(output_types), CreateOutTypes(output_types))
+  explicit mem_resp_op(
+      const std::vector<std::shared_ptr<const rvsdg::ValueType>> & output_types,
+      int in_width)
+      : SimpleOperation(CreateInTypes(in_width), CreateOutTypes(output_types))
   {}
 
   bool
@@ -1173,17 +1183,10 @@ public:
   }
 
   static std::vector<std::shared_ptr<const jlm::rvsdg::Type>>
-  CreateInTypes(const std::vector<std::shared_ptr<const rvsdg::ValueType>> &)
+  CreateInTypes(int in_width)
   {
-    size_t max_width = 64;
-    // TODO: calculate size onece JlmSize is moved
-    //                size_t max_width = 0;
-    //                for (auto tp:output_types) {
-    //                    auto sz = jlm::hls::BaseHLS::JlmSize(tp);
-    //                    max_width = sz>max_width?sz:max_width;
-    //                }
     std::vector<std::shared_ptr<const jlm::rvsdg::Type>> types;
-    types.emplace_back(get_mem_res_type(jlm::rvsdg::bittype::Create(max_width)));
+    types.emplace_back(get_mem_res_type(jlm::rvsdg::bittype::Create(in_width)));
     return types;
   }
 
@@ -1214,12 +1217,10 @@ public:
   static std::vector<jlm::rvsdg::output *>
   create(
       rvsdg::output & result,
-      const std::vector<std::shared_ptr<const rvsdg::ValueType>> & output_types)
+      const std::vector<std::shared_ptr<const rvsdg::ValueType>> & output_types,
+      int in_width)
   {
-    // TODO: verify port here
-    //                auto result_type = dynamic_cast<const jlm::rvsdg::bittype*>(&result.type());
-    //                JLM_ASSERT(result_type && result_type->nbits()==64);
-    return outputs(&rvsdg::CreateOpNode<mem_resp_op>({ &result }, output_types));
+    return outputs(&rvsdg::CreateOpNode<mem_resp_op>({ &result }, output_types, in_width));
   }
 };
 
@@ -1279,20 +1280,20 @@ public:
 
   static std::vector<std::shared_ptr<const jlm::rvsdg::Type>>
   CreateOutTypes(
-      const std::vector<std::shared_ptr<const rvsdg::ValueType>> &,
+      const std::vector<std::shared_ptr<const rvsdg::ValueType>> & load_types,
       const std::vector<std::shared_ptr<const rvsdg::ValueType>> & store_types)
   {
-    size_t max_width = 64;
-    // TODO: fix once JlmSize is moved
-    //                size_t max_width = 0;
-    //                for (auto tp:load_types) {
-    //                    auto sz = jlm::hls::BaseHLS::JlmSize(tp);
-    //                    max_width = sz>max_width?sz:max_width;
-    //                }
-    //                for (auto tp:store_types) {
-    //                    auto sz = jlm::hls::BaseHLS::JlmSize(tp);
-    //                    max_width = sz>max_width?sz:max_width;
-    //                }
+    int max_width = 0;
+    for (auto tp : load_types)
+    {
+      auto sz = JlmSize(tp.get());
+      max_width = sz > max_width ? sz : max_width;
+    }
+    for (auto tp : store_types)
+    {
+      auto sz = JlmSize(tp.get());
+      max_width = sz > max_width ? sz : max_width;
+    }
     std::vector<std::shared_ptr<const jlm::rvsdg::Type>> types;
     types.emplace_back(
         get_mem_req_type(jlm::rvsdg::bittype::Create(max_width), !store_types.empty()));

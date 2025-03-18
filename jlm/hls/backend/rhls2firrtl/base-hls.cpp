@@ -107,35 +107,7 @@ BaseHLS::get_port_name(jlm::rvsdg::output * port)
 int
 BaseHLS::JlmSize(const jlm::rvsdg::Type * type)
 {
-  if (auto bt = dynamic_cast<const jlm::rvsdg::bittype *>(type))
-  {
-    return bt->nbits();
-  }
-  else if (auto at = dynamic_cast<const llvm::ArrayType *>(type))
-  {
-    return JlmSize(&at->element_type()) * at->nelements();
-  }
-  else if (dynamic_cast<const llvm::PointerType *>(type))
-  {
-    return GetPointerSizeInBits();
-  }
-  else if (auto ct = dynamic_cast<const rvsdg::ControlType *>(type))
-  {
-    return ceil(log2(ct->nalternatives()));
-  }
-  else if (dynamic_cast<const rvsdg::StateType *>(type))
-  {
-    return 1;
-  }
-  else if (dynamic_cast<const bundletype *>(type))
-  {
-    // TODO: fix this ugly hack needed for get_node_name
-    return 0;
-  }
-  else
-  {
-    throw std::logic_error("Size of '" + type->debug_string() + "' is not implemented!");
-  }
+  return jlm::hls::JlmSize(type);
 }
 
 void

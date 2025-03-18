@@ -166,10 +166,10 @@ struct mem_access {
     void * addr;
     bool write;
     uint8_t width; // 2^width bytes
-    uint64_t data;
+    void* data;
 
     bool operator==(const mem_access & other) const {
-        return addr == other.addr && write == other.write && width == other.width && data == other.data;
+        return addr == other.addr && write == other.write && width == other.width && !memcmp(data, other.data, 1<<width);
     }
 };
 
@@ -190,38 +190,57 @@ static bool in_ignored_region(void* addr) {
     return false;
 }
 
-static uint64_t instrumented_load(void* addr, uint8_t width) {
-    uint64_t data = 0;
-    assert(width <= 3);
-    memcpy(&data, addr, 1 << width);
+static void* instrumented_load(void* addr, uint8_t width) {
+    void * data = malloc(1 << width);
+    memcpy(data, addr, 1 << width);
     if (!in_ignored_region(addr))
         memory_accesses.push_back({addr, false, width, data});
     return data;
 }
 
-static void instrumented_store(void* addr, uint64_t data, uint8_t width) {
-    assert(width <= 3);
-    memcpy(addr, &data, 1 << width);
+static void instrumented_store(void* addr, void *data, uint8_t width) {
+    void * data_copy = malloc(1 << width);
+    memcpy(data_copy, data, 1 << width);
+    memcpy(addr, data_copy, 1 << width);
     if(!in_ignored_region(addr))
-        memory_accesses.push_back({addr, true, width, data});
+        memory_accesses.push_back({addr, true, width, data_copy});
 }
 
-
+uint32_t dummy_data[16] = {
+        0xDEADBEE0,
+        0xDEADBEE1,
+        0xDEADBEE2,
+        0xDEADBEE3,
+        0xDEADBEE4,
+        0xDEADBEE5,
+        0xDEADBEE6,
+        0xDEADBEE7,
+        0xDEADBEE8,
+        0xDEADBEE9,
+        0xDEADBEEA,
+        0xDEADBEEB,
+        0xDEADBEEC,
+        0xDEADBEED,
+        0xDEADBEEE,
+        0xDEADBEEF,
+};
 // ======== Implementation of external memory queues, adding latency to loads ========
 class MemoryQueue {
     struct Response {
         uint64_t request_time;
-        uint64_t data;
+        void* data;
+        uint8_t size;
         uint8_t id;
     };
     int latency;
+    int width;
     std::deque<Response> responses;
 
 public:
-    MemoryQueue(int latency) : latency(latency) {}
+    MemoryQueue(int latency, int width) : latency(latency), width(width) {}
 
     // Called right before posedge, can only read from the model
-    void accept_request(uint8_t req_ready, uint8_t req_valid, uint8_t req_write, uint64_t req_addr, uint8_t req_size, uint64_t req_data, uint8_t req_id, uint8_t res_valid, uint8_t res_ready) {
+    void accept_request(uint8_t req_ready, uint8_t req_valid, uint8_t req_write, uint64_t req_addr, uint8_t req_size, void* req_data, uint8_t req_id, uint8_t res_valid, uint8_t res_ready) {
         if (top->reset) {
             responses.clear();
             return;
@@ -241,20 +260,20 @@ public:
             instrumented_store((void*) req_addr, req_data, req_size);
         } else {
             // Loads are performed immediately, but their response is placed in the queue
-            uint64_t data = instrumented_load((void*) req_addr, req_size);
-            responses.push_back({main_time, data, req_id});
+            void* data = instrumented_load((void*) req_addr, req_size);
+            responses.push_back({main_time, data, req_size, req_id});
         }
     }
 
     // Called right after posedge, can only write to the model
-    void produce_response(uint8_t& req_ready, uint8_t& res_valid, uint64_t& res_data, uint8_t& res_id) {
+    void produce_response(uint8_t& req_ready, uint8_t& res_valid, void* res_data, uint8_t& res_id) {
         if (!responses.empty() && responses.front().request_time + latency <= main_time + 1) {
             res_valid = 1;
-            res_data = responses.front().data;
+            memcpy(res_data, responses.front().data, 1<<responses.front().size);
             res_id = responses.front().id;
         } else {
             res_valid = 0;
-            res_data = 0xDEADBEEF;
+            memcpy(res_data, dummy_data, width);
             res_id = 0;
         }
 
@@ -270,7 +289,12 @@ public:
 
   cpp << "MemoryQueue memory_queues[] = {";
   for (size_t i = 0; i < mem_reqs.size(); i++)
-    cpp << MEMORY_RESPONSE_LATENCY << ", ";
+  {
+    auto bundle = dynamic_cast<const bundletype*>(mem_resps[i]->Type().get());
+    auto size = JlmSize(&*bundle->get_element_type("data"))/8;
+//    int width =
+    cpp << "{" << MEMORY_RESPONSE_LATENCY << ", " << size << "}, ";
+  }
   cpp << "};" << R"(
 
 // ======== Variables and functions for tracing the verilated model ========
@@ -386,6 +410,14 @@ static void verilator_init(int argc, char **argv) {
     posedge();
     negedge();
     posedge();
+    negedge();
+    posedge();
+    negedge();
+    posedge();
+    negedge();
+    posedge();
+    negedge();
+    posedge();
     top->reset = 0;
     negedge();
 }
@@ -419,9 +451,9 @@ static void posedge() {
     cpp << "top->mem_" << i << "_req_data_addr, ";
     cpp << "top->mem_" << i << "_req_data_size, ";
     if (has_write)
-      cpp << "top->mem_" << i << "_req_data_data, ";
+      cpp << "&top->mem_" << i << "_req_data_data, ";
     else
-      cpp << "0, ";
+      cpp << "nullptr, ";
     cpp << "top->mem_" << i << "_req_data_id, ";
     cpp << "top->mem_" << i << "_res_ready, ";
     cpp << "top->mem_" << i << "_res_valid);" << std::endl;
@@ -447,7 +479,7 @@ static void negedge() {
     cpp << "    memory_queues[" << i << "].produce_response(";
     cpp << "top->mem_" << i << "_req_ready, ";
     cpp << "top->mem_" << i << "_res_valid, ";
-    cpp << "top->mem_" << i << "_res_data_data, ";
+    cpp << "&top->mem_" << i << "_res_data_data, ";
     cpp << "top->mem_" << i << "_res_data_id);" << std::endl;
   }
 
@@ -550,8 +582,8 @@ extern "C" void reference_load(void* addr, uint64_t width) {
     instrumented_load(addr, width);
 }
 
-extern "C" void reference_store(void* addr, uint64_t data, uint64_t width) {
-    instrumented_store(addr, data, width);
+extern "C" void reference_store(void* addr, uint64_t width) {
+    instrumented_store(addr, addr, width);
 }
 
 extern "C" void reference_alloca(void* start, uint64_t length) {
@@ -577,8 +609,10 @@ static void run_ref(
         // Send all memory accesses to the parent
         size_t cnt = memory_accesses.size();
         tmp = write(fd[1], &cnt, sizeof(size_t));
-        for (auto & access : memory_accesses)
+        for (auto & access : memory_accesses){
             tmp = write(fd[1], &access, sizeof(mem_access));
+            tmp = write(fd[1], access.data, 1<< access.width);
+        }
 
         close(fd[1]);
         exit(0);
@@ -589,8 +623,11 @@ static void run_ref(
         size_t cnt;
         tmp = read(fd[0], &cnt, sizeof(size_t));
         ref_memory_accesses.resize(cnt);
-        for (auto & access : ref_memory_accesses)
+        for (auto & access : ref_memory_accesses) {
             tmp = read(fd[0], &access, sizeof(mem_access));
+            access.data = malloc(1 << access.width);
+            tmp = read(fd[0], access.data, 1 << access.width);
+        }
 
         close(fd[0]);
     }
@@ -609,14 +646,17 @@ static void compare_memory_accesses() {
     assert(memory_accesses == ref_memory_accesses);
 }
 
+static void empty_mem_acces_vector(std::vector<mem_access> &vec){
+    for (auto &m: vec) {
+        free(m.data);
+    }
+    vec.erase(vec.begin(), vec.end());
+}
+
 // ======== Entry point for calling kernel from host device (C code) ========
 extern "C" )"
       << c_return_type.value_or("void") << " " << function_name << "(" << c_params << ")" << R"(
 {
-    // Reset structures used for tracing memory operations
-    memory_accesses.clear();
-    ignored_memory_regions.clear();
-
     // Execute instrumented version of kernel compiled for the host in a fork
     run_ref()"
       << c_call_args << R"();
@@ -630,6 +670,11 @@ extern "C" )"
   cpp << R"(
     // Compare traced memory accesses
     compare_memory_accesses();
+
+    // Reset structures used for tracing memory operations
+    empty_mem_acces_vector(memory_accesses);
+    empty_mem_acces_vector(ref_memory_accesses);
+    ignored_memory_regions.clear();
 )";
 
   if (c_return_type.has_value())
