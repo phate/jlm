@@ -685,7 +685,8 @@ RhlsToFirrtlConverter::MlirGenHlsMemResp(const jlm::rvsdg::SimpleNode * node)
     auto memResBundle = GetSubfield(body, memRes, "data");
     auto memResId = GetSubfield(body, memResBundle, "id");
     auto memResData = GetSubfield(body, memResBundle, "data");
-    auto portWidth = memResData->getResult(0).getType().cast<circt::firrtl::IntType>().getWidth().value();
+    auto portWidth =
+        memResData->getResult(0).getType().cast<circt::firrtl::IntType>().getWidth().value();
 
     auto elseBody = body;
     for (size_t i = 0; i < node->noutputs(); ++i)
@@ -864,7 +865,8 @@ RhlsToFirrtlConverter::MlirGenHlsMemReq(const jlm::rvsdg::SimpleNode * node)
       Connect(thenBody, memReqAddr, storeAddrDatas[i]);
       Connect(thenBody, memReqData, storeDataDatas[i]);
       // TODO: pad
-//      auto portWidth = memReqData.getType().cast<circt::firrtl::IntType>().getWidth().value();
+      //      auto portWidth =
+      //      memReqData.getType().cast<circt::firrtl::IntType>().getWidth().value();
       Connect(thenBody, memReqId, storeIds[i]);
       // No data or write
       auto storeType = storeTypes->at(i).get();
@@ -1220,10 +1222,11 @@ RhlsToFirrtlConverter::MlirGenHlsLocalMem(const jlm::rvsdg::SimpleNode * node)
   auto dataType = GetFirrtlType(&arraytype->element_type());
   ::llvm::SmallVector<mlir::Type> memTypes;
   ::llvm::SmallVector<mlir::Attribute> memNames;
-  memTypes.push_back(circt::firrtl::MemOp::getTypeForPort(
-      depth,
-      dataType,
-      circt::firrtl::MemOp::PortKind::ReadWrite));
+  memTypes.push_back(
+      circt::firrtl::MemOp::getTypeForPort(
+          depth,
+          dataType,
+          circt::firrtl::MemOp::PortKind::ReadWrite));
   memNames.push_back(Builder_->getStringAttr("rw0"));
   //    memTypes.push_back(circt::firrtl::MemOp::getTypeForPort(depth, dataType,
   //    circt::firrtl::MemOp::PortKind::ReadWrite));
@@ -2348,7 +2351,7 @@ RhlsToFirrtlConverter::MlirGenBranch(const jlm::rvsdg::SimpleNode * node)
   return module;
 }
 
-circt::firrtl::FModuleOp
+circt::firrtl::FModuleLike
 RhlsToFirrtlConverter::MlirGen(const jlm::rvsdg::SimpleNode * node)
 {
   if (dynamic_cast<const hls::sink_op *>(&(node->GetOperation())))
@@ -2445,6 +2448,21 @@ RhlsToFirrtlConverter::MlirGen(const jlm::rvsdg::SimpleNode * node)
       return MlirGenNDMux(node);
     }
   }
+  bool is_float = false;
+  for (size_t i = 0; i < node->ninputs(); ++i)
+  {
+    is_float =
+        is_float || dynamic_cast<const jlm::llvm::FloatingPointType *>(&node->input(i)->type());
+  }
+  for (size_t i = 0; i < node->noutputs(); ++i)
+  {
+    is_float =
+        is_float || dynamic_cast<const jlm::llvm::FloatingPointType *>(&node->output(i)->type());
+  }
+  if (is_float)
+  {
+    return MlirGenExtModule(node);
+  }
   return MlirGenSimpleNode(node);
 }
 
@@ -2509,7 +2527,7 @@ RhlsToFirrtlConverter::TraceArgument(rvsdg::RegionArgument * arg)
   return arg;
 }
 
-circt::firrtl::FModuleOp
+circt::firrtl::FModuleLike
 RhlsToFirrtlConverter::MlirGen(rvsdg::Region * subRegion, mlir::Block * circuitBody)
 {
   // Generate a vector with all inputs and outputs of the module
@@ -3717,8 +3735,8 @@ RhlsToFirrtlConverter::AddInstanceOp(mlir::Block * body, jlm::rvsdg::SimpleNode 
   if (!modules[name])
   {
     auto module = MlirGen(node);
-
-    check_module(module);
+    if (circt::isa<circt::firrtl::FModuleOp>(module))
+      check_module(circt::cast<circt::firrtl::FModuleOp>(module));
     modules[name] = module;
     body->push_back(module);
   }
@@ -3986,8 +4004,9 @@ RhlsToFirrtlConverter::GetModuleName(const rvsdg::Node * node)
   if (auto op = dynamic_cast<const local_mem_op *>(&node->GetOperation()))
   {
     append.append("_S");
-    append.append(std::to_string(
-        std::dynamic_pointer_cast<const llvm::ArrayType>(op->result(0))->nelements()));
+    append.append(
+        std::to_string(
+            std::dynamic_pointer_cast<const llvm::ArrayType>(op->result(0))->nelements()));
     append.append("_L");
     size_t loads = rvsdg::input::GetNode(**node->output(0)->begin())->noutputs();
     append.append(std::to_string(loads));
@@ -4094,4 +4113,47 @@ RhlsToFirrtlConverter::toString(const circt::firrtl::CircuitOp circuit)
   return outputString;
 }
 
+circt::firrtl::FExtModuleOp
+RhlsToFirrtlConverter::MlirGenExtModule(const jlm::rvsdg::SimpleNode * node)
+{
+  // Generate a vector with all inputs and outputs of the module
+  ::llvm::SmallVector<circt::firrtl::PortInfo> ports;
+
+  // Clock and reset ports
+  AddClockPort(&ports);
+  AddResetPort(&ports);
+  // Input bundle port
+  for (size_t i = 0; i < node->ninputs(); ++i)
+  {
+    std::string name("i");
+    name.append(std::to_string(i));
+    AddBundlePort(
+        &ports,
+        circt::firrtl::Direction::In,
+        name,
+        GetFirrtlType(&node->input(i)->type()));
+  }
+  for (size_t i = 0; i < node->noutputs(); ++i)
+  {
+    std::string name("o");
+    name.append(std::to_string(i));
+    AddBundlePort(
+        &ports,
+        circt::firrtl::Direction::Out,
+        name,
+        GetFirrtlType(&node->output(i)->type()));
+  }
+
+  // Creat a name for the module
+  auto nodeName = GetModuleName(node);
+  mlir::StringAttr name = Builder_->getStringAttr(nodeName);
+  // Create the module
+  return Builder_->create<circt::firrtl::FExtModuleOp>(
+      Builder_->getUnknownLoc(),
+      name,
+      circt::firrtl::ConventionAttr::get(
+          Builder_->getContext(),
+          circt::firrtl::Convention::Internal),
+      ports);
+}
 } // namespace jlm::hls

@@ -252,6 +252,20 @@ JlmSize(const jlm::rvsdg::Type * type)
     // TODO: fix this ugly hack needed for get_node_name
     return 0;
   }
+  else if (auto ft = dynamic_cast<const llvm::FloatingPointType *>(type))
+  {
+    switch (ft->size())
+    {
+    case llvm::fpsize::half:
+      return 16;
+    case llvm::fpsize::flt:
+      return 32;
+    case llvm::fpsize::dbl:
+      return 64;
+    default:
+      throw std::logic_error("Size of '" + type->debug_string() + "' is not implemented!");
+    }
+  }
   else
   {
     throw std::logic_error("Size of '" + type->debug_string() + "' is not implemented!");

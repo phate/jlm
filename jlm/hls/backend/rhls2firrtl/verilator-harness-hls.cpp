@@ -26,6 +26,10 @@ ConvertToCType(const rvsdg::Type * type)
   {
     return "void*";
   }
+  if (jlm::rvsdg::is<llvm::FloatingPointType>(*type))
+  {
+    return "float";
+  }
   if (auto t = dynamic_cast<const llvm::ArrayType *>(type))
   {
     return ConvertToCType(&t->element_type()) + "*";
@@ -290,9 +294,9 @@ public:
   cpp << "MemoryQueue memory_queues[] = {";
   for (size_t i = 0; i < mem_reqs.size(); i++)
   {
-    auto bundle = dynamic_cast<const bundletype*>(mem_resps[i]->Type().get());
-    auto size = JlmSize(&*bundle->get_element_type("data"))/8;
-//    int width =
+    auto bundle = dynamic_cast<const bundletype *>(mem_resps[i]->Type().get());
+    auto size = JlmSize(&*bundle->get_element_type("data")) / 8;
+    //    int width =
     cpp << "{" << MEMORY_RESPONSE_LATENCY << ", " << size << "}, ";
   }
   cpp << "};" << R"(
@@ -530,7 +534,18 @@ static )"
 
   for (size_t i = 0; i < num_c_params; i++)
   {
-    cpp << "top->i_data_" << i << " = (uint64_t) a" << i << ";" << std::endl;
+    if (auto ft = dynamic_cast<const jlm::llvm::FloatingPointType *>(
+            kernel.GetOperation().type().Arguments()[i].get()))
+    {
+      if (ft->size() == llvm::fpsize::flt)
+        cpp << "top->i_data_" << i << " = *(uint32_t*) &a" << i << ";" << std::endl;
+      else if (ft->size() == llvm::fpsize::dbl)
+        cpp << "top->i_data_" << i << " = *(uint64_t*) &a" << i << ";" << std::endl;
+    }
+    else
+    {
+      cpp << "top->i_data_" << i << " = (uint64_t) a" << i << ";" << std::endl;
+    }
   }
 
   cpp << R"(
