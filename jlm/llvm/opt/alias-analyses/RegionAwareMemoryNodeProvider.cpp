@@ -522,35 +522,6 @@ public:
     return std::make_unique<RegionAwareMemoryNodeProvisioning>(pointsToGraph);
   }
 
-  /**
-   * This function checks the following two invariants:
-   *
-   * 1. For any structural node
-   *
-   * @param provisioning \see RegionAwareMemoryNodeProvisioning
-   * @return Returns true if all invariants are fulfilled, otherwise false.
-   */
-  static bool
-  CheckStructuralNodeInvariants(
-      [[maybe_unused]] const RegionAwareMemoryNodeProvisioning & provisioning)
-  {
-    // TODO
-    return true;
-  }
-
-  /**
-   * This function checks the following two invariants:
-   *
-   * @param provisioning \see RegionAwareMemoryNodeProvisioning
-   * @return Returns true if all invariants are fulfilled, otherwise false.
-   */
-  static bool
-  CheckCallInvariants([[maybe_unused]] const RegionAwareMemoryNodeProvisioning & provisioning)
-  {
-    // TODO
-    return true;
-  }
-
 private:
   const PointsToGraph & PointsToGraph_;
   RegionSummaryMap RegionSummaries_;
