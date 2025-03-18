@@ -284,19 +284,6 @@ public:
   }
 
   /**
-   * Propagate information about memory locations being read from / written to in a region,
-   * to a call that may target the given region.
-   * @param callSummary the call summary representing a call to the region
-   * @param regionSummary the region summary representing the root region of the function being
-   * called
-   */
-  static void
-  PropagateToCaller(CallSummary & callSummary, const RegionSummary & regionSummary)
-  {
-    callSummary.AddMemoryNodes(regionSummary.GetMemoryNodes());
-  }
-
-  /**
    * Propagate information about memory locations being read from / written to by a call,
    * to the region containing the call.
    * @param callSummary the call summary
