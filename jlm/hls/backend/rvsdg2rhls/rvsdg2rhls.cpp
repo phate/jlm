@@ -20,10 +20,10 @@
 #include <jlm/hls/backend/rvsdg2rhls/memstate-conv.hpp>
 #include <jlm/hls/backend/rvsdg2rhls/merge-gamma.hpp>
 #include <jlm/hls/backend/rvsdg2rhls/remove-redundant-buf.hpp>
-#include <jlm/hls/backend/rvsdg2rhls/remove-unused-state.hpp>
 #include <jlm/hls/backend/rvsdg2rhls/rhls-dne.hpp>
 #include <jlm/hls/backend/rvsdg2rhls/rvsdg2rhls.hpp>
 #include <jlm/hls/backend/rvsdg2rhls/ThetaConversion.hpp>
+#include <jlm/hls/backend/rvsdg2rhls/UnusedStateRemoval.hpp>
 #include <jlm/hls/opt/cne.hpp>
 #include <jlm/hls/opt/InvariantLambdaMemoryStateRemoval.hpp>
 #include <jlm/hls/opt/IOBarrierRemoval.hpp>
@@ -446,14 +446,13 @@ rvsdg2rhls(llvm::RvsdgModule & rhls, util::StatisticsCollector & collector)
   llvm::InvariantValueRedirection llvmIvr;
   llvmIvr.Run(rhls, collector);
   llvmDne.Run(rhls, collector);
-  hls::InvariantLambdaMemoryStateRemoval::CreateAndRun(rhls, collector);
+  InvariantLambdaMemoryStateRemoval::CreateAndRun(rhls, collector);
   RemoveInvariantLambdaStateEdges(rhls);
-  remove_unused_state(rhls);
   // main conversion steps
   distribute_constants(rhls);
   ConvertGammaNodes(rhls);
   ConvertThetaNodes(rhls);
-  hls::cne hlsCne;
+  cne hlsCne;
   hlsCne.Run(rhls, collector);
   // rhls optimization
   dne(rhls);

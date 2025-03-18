@@ -231,4 +231,17 @@ RemoveUnusedStates(llvm::RvsdgModule & rvsdgModule)
   RemoveUnusedStatesInRegion(rvsdgModule.Rvsdg().GetRootRegion());
 }
 
+void
+RemoveInvariantLambdaStateEdges(llvm::RvsdgModule & rvsdgModule)
+{
+  auto & root = rvsdgModule.Rvsdg().GetRootRegion();
+  for (auto & node : rvsdg::TopDownTraverser(&root))
+  {
+    if (rvsdg::is<llvm::LlvmLambdaOperation>(node))
+    {
+      RemoveUnusedStatesFromLambda(*static_cast<rvsdg::LambdaNode *>(node));
+    }
+  }
+}
+
 }
