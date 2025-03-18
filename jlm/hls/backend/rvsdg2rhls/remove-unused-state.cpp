@@ -259,10 +259,13 @@ remove_region_passthrough(const rvsdg::RegionArgument * arg)
   // divert users of output to origin of input
   arg->region()->node()->output(res->output()->index())->divert_users(origin);
   // remove result first so argument has no users
-  arg->region()->RemoveResult(res->index());
-  arg->region()->RemoveArgument(arg->index());
-  arg->region()->node()->RemoveInput(arg->input()->index());
-  arg->region()->node()->RemoveOutput(res->output()->index());
+  auto region = arg->region();
+  auto argInputIndex = arg->input()->index();
+  auto resInputIndex = res->output()->index();
+  region->RemoveResult(res->index());
+  region->RemoveArgument(arg->index());
+  region->node()->RemoveInput(argInputIndex);
+  region->node()->RemoveOutput(resInputIndex);
 }
 
 bool
