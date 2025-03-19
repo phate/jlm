@@ -325,7 +325,7 @@ RhlsToFirrtlConverter::MlirGenSimpleNode(const jlm::rvsdg::SimpleNode * node)
     for (size_t i = 1; i < node->ninputs(); i++)
     {
       int bits = JlmSize(pointeeType);
-      if (dynamic_cast<const jlm::rvsdg::bittype *>(pointeeType))
+      if (dynamic_cast<const rvsdg::bittype *>(pointeeType)||dynamic_cast<const llvm::FloatingPointType *>(pointeeType))
       {
         pointeeType = nullptr;
       }
