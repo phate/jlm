@@ -28,7 +28,6 @@ libhls_SOURCES = \
     jlm/hls/backend/rvsdg2rhls/memstate-conv.cpp \
     jlm/hls/backend/rvsdg2rhls/merge-gamma.cpp \
     jlm/hls/backend/rvsdg2rhls/remove-redundant-buf.cpp \
-    jlm/hls/backend/rvsdg2rhls/remove-unused-state.cpp \
     jlm/hls/backend/rvsdg2rhls/rhls-dne.cpp \
     jlm/hls/backend/rvsdg2rhls/rvsdg2rhls.cpp \
     jlm/hls/backend/rvsdg2rhls/ThetaConversion.cpp \
@@ -69,7 +68,6 @@ libhls_HEADERS = \
 	jlm/hls/backend/rvsdg2rhls/memstate-conv.hpp \
 	jlm/hls/backend/rvsdg2rhls/merge-gamma.hpp \
 	jlm/hls/backend/rvsdg2rhls/remove-redundant-buf.hpp \
-	jlm/hls/backend/rvsdg2rhls/remove-unused-state.hpp \
 	jlm/hls/backend/rvsdg2rhls/rhls-dne.hpp \
 	jlm/hls/backend/rvsdg2rhls/rvsdg2rhls.hpp \
 	jlm/hls/backend/rvsdg2rhls/ThetaConversion.hpp \
