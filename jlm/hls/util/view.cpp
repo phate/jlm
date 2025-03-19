@@ -368,8 +368,9 @@ region_to_dot(rvsdg::Region * region)
     {
       dot << edge(be->argument(), be, true);
     }
-    else if (auto theta = rvsdg::TryGetOwnerNode<rvsdg::ThetaNode>(*region->result(i)))
+    else if (region->result(i)->output() && rvsdg::TryGetOwnerNode<rvsdg::ThetaNode>(*region->result(i)->output()))
     {
+      auto theta = rvsdg::TryGetOwnerNode<rvsdg::ThetaNode>(*region->result(i)->output());
       auto loopvar = theta->MapOutputLoopVar(*region->result(i)->output());
       dot << edge(loopvar.pre, loopvar.post, true);
     }
