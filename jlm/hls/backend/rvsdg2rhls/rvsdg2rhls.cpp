@@ -441,7 +441,13 @@ rvsdg2rhls(llvm::RvsdgModule & rhls, util::StatisticsCollector & collector)
 
   llvm::DeadNodeElimination llvmDne;
   llvmDne.Run(rhls, collector);
-
+  jlm::llvm::tginversion tgi;
+  // simplify loops
+  tgi.Run(rhls, collector);
+  jlm::hls::cne cne;
+  // tginversion seems to duplicate state edge inputs to gammas
+  cne.Run(rhls, collector);
+  llvmDne.Run(rhls, collector);
   mem_sep_argument(rhls);
   hls::InvariantLambdaMemoryStateRemoval::CreateAndRun(rhls, collector);
   remove_unused_state(rhls);
