@@ -26,9 +26,16 @@ ConvertToCType(const rvsdg::Type * type)
   {
     return "void*";
   }
-  if (jlm::rvsdg::is<llvm::FloatingPointType>(*type))
+  if (auto ft = dynamic_cast<const llvm::FloatingPointType*>(type))
   {
-    return "float";
+    switch (ft->size()) {
+    case llvm::fpsize::flt:
+      return "float";
+    case llvm::fpsize::dbl:
+      return "double";
+    default:
+      throw std::logic_error(type->debug_string() + " not implemented!");
+    }
   }
   if (auto t = dynamic_cast<const llvm::ArrayType *>(type))
   {
