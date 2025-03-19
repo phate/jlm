@@ -231,7 +231,7 @@ public:
   RegionSummary(const rvsdg::Region & region, size_t sccIndex)
       : Region_(&region),
         CallGraphSccIndex_(sccIndex),
-        PossiblyRecursive_(false)
+        ContainsPossiblyRecursiveCall_(false)
   {}
 
   RegionSummary(const RegionSummary &) = delete;
@@ -262,16 +262,10 @@ public:
     MemoryNodes_.UnionWith(memoryNodes);
   }
 
-  void
-  SetPossiblyRecursive() noexcept
-  {
-    PossiblyRecursive_ = true;
-  }
-
   bool
-  IsPossiblyRecursive() const noexcept
+  IsContainingPossiblyRecursiveCall() const noexcept
   {
-    return PossiblyRecursive_;
+    return ContainsPossiblyRecursiveCall_;
   }
 
   /**
@@ -293,7 +287,7 @@ public:
   PropagateFromCall(RegionSummary & regionSummary, const CallSummary & callSummary)
   {
     regionSummary.AddMemoryNodes(callSummary.GetMemoryNodes());
-    regionSummary.PossiblyRecursive_ |= callSummary.IsPossiblyRecursive();
+    regionSummary.ContainsPossiblyRecursiveCall_ |= callSummary.IsPossiblyRecursive();
   }
 
   /**
@@ -306,7 +300,7 @@ public:
   PropagateToParentRegion(RegionSummary & dstSummary, const RegionSummary & srcSummary)
   {
     dstSummary.AddMemoryNodes(srcSummary.GetMemoryNodes());
-    dstSummary.PossiblyRecursive_ |= srcSummary.PossiblyRecursive_;
+    dstSummary.ContainsPossiblyRecursiveCall_ |= srcSummary.ContainsPossiblyRecursiveCall_;
   }
 
   /**
@@ -330,8 +324,9 @@ private:
 
   // Which SCC in the call graph does the function containing this region belong to
   size_t CallGraphSccIndex_;
+
   // If this region contains a call that may enter a new instance of this same region
-  bool PossiblyRecursive_;
+  bool ContainsPossiblyRecursiveCall_;
 };
 
 /** \brief Memory node provisioning of region-aware memory node provider
@@ -626,7 +621,7 @@ RegionAwareMemoryNodeProvider::CreateCallGraph(const rvsdg::RvsdgModule & rvsdgM
   const auto & pointsToGraph = Provisioning_->GetPointsToGraph();
 
   // Add outgoing edges from the given caller to any function the call may target
-  const auto HandleCall = [&](rvsdg::Node & callNode, size_t callerIndex)
+  const auto HandleCall = [&](rvsdg::Node & callNode, size_t callerIndex) -> void
   {
     JLM_ASSERT(is<CallOperation>(&callNode));
     const auto targetPtr = callNode.input(0)->origin();
@@ -647,8 +642,8 @@ RegionAwareMemoryNodeProvider::CreateCallGraph(const rvsdg::RvsdgModule & rvsdgM
         callGraphSuccessors[callerIndex].Insert(calleeCallGraphNode);
       }
       else if (
-          dynamic_cast<const PointsToGraph::ExternalMemoryNode *>(&callee)
-          || dynamic_cast<const PointsToGraph::ImportNode *>(&callee))
+          PointsToGraph::Node::Is<PointsToGraph::ExternalMemoryNode>(callee)
+          || PointsToGraph::Node::Is<PointsToGraph::ImportNode>(callee))
       {
         // Add the edge caller -> node representing external functions
         callGraphSuccessors[callerIndex].Insert(externalNodeIndex);
@@ -656,8 +651,9 @@ RegionAwareMemoryNodeProvider::CreateCallGraph(const rvsdg::RvsdgModule & rvsdgM
     }
   };
 
-  // Recursive function finding call nodes, adding edges to the call graph
-  const auto HandleCalls = [&](rvsdg::Region & region, size_t callerIndex, auto recurse) -> void
+  // Recursive function finding all call operations, adding edges to the call graph
+  const std::function<void(rvsdg::Region &, size_t)> HandleCalls = [&](rvsdg::Region & region,
+                                                                       size_t callerIndex) -> void
   {
     for (auto & node : region.Nodes())
     {
@@ -669,7 +665,7 @@ RegionAwareMemoryNodeProvider::CreateCallGraph(const rvsdg::RvsdgModule & rvsdgM
       {
         for (size_t i = 0; i < structural->nsubregions(); i++)
         {
-          recurse(*structural->subregion(i), callerIndex, recurse);
+          HandleCalls(*structural->subregion(i), callerIndex);
         }
       }
     }
@@ -678,7 +674,7 @@ RegionAwareMemoryNodeProvider::CreateCallGraph(const rvsdg::RvsdgModule & rvsdgM
   // For all functions, visit all their calls and add outgoing edges in the call graph
   for (size_t i = 0; i < lambdaNodes.size(); i++)
   {
-    HandleCalls(*lambdaNodes[i]->subregion(), i, HandleCalls);
+    HandleCalls(*lambdaNodes[i]->subregion(), i);
 
     // If the function has escaped, add an edge from the node representing all external functions
     const auto & lambdaMemoryNode = pointsToGraph.GetLambdaNode(*lambdaNodes[i]);
@@ -714,35 +710,6 @@ RegionAwareMemoryNodeProvider::CreateCallGraph(const rvsdg::RvsdgModule & rvsdgM
 
   // Also note which SCC contains all external functions
   ExternalNodeSccIndex_ = sccIndex[externalNodeIndex];
-}
-
-std::vector<const rvsdg::LambdaNode *>
-RegionAwareMemoryNodeProvider::CollectLambdaNodes(const rvsdg::RvsdgModule & rvsdgModule)
-{
-  std::vector<const rvsdg::LambdaNode *> result;
-
-  // Recursively traverses all structural nodes, but does not enter into lambdas
-  const auto CollectLambdasInRegion = [&](rvsdg::Region & region, auto recurse) -> void
-  {
-    for (auto & node : region.Nodes())
-    {
-      if (auto lambda = dynamic_cast<rvsdg::LambdaNode *>(&node))
-      {
-        result.push_back(lambda);
-      }
-      else if (auto structural = dynamic_cast<rvsdg::StructuralNode *>(&node))
-      {
-        for (size_t i = 0; i < structural->nsubregions(); i++)
-        {
-          recurse(*structural->subregion(0), recurse);
-        }
-      }
-    }
-  };
-
-  CollectLambdasInRegion(rvsdgModule.Rvsdg().GetRootRegion(), CollectLambdasInRegion);
-
-  return result;
 }
 
 void
@@ -919,8 +886,8 @@ RegionAwareMemoryNodeProvider::AnnotateCall(
       targetSccIndex = FunctionToSccIndex_[&lambdaNode];
     }
     else if (
-        dynamic_cast<const PointsToGraph::ExternalMemoryNode *>(&callee)
-        || dynamic_cast<const PointsToGraph::ImportNode *>(&callee))
+        PointsToGraph::Node::Is<PointsToGraph::ExternalMemoryNode>(callee)
+        || PointsToGraph::Node::Is<PointsToGraph::ImportNode>(callee))
     {
       targetSccIndex = ExternalNodeSccIndex_;
     }
@@ -955,7 +922,7 @@ RegionAwareMemoryNodeProvider::PropagateRecursiveMemoryLocations()
   // anywhere in the SCC to the summary.
   for (auto & regionSummary : Provisioning_->GetRegionSummaries())
   {
-    if (!regionSummary.IsPossiblyRecursive())
+    if (!regionSummary.IsContainingPossiblyRecursiveCall())
       continue;
 
     const auto sccIndex = regionSummary.GetCallGraphSccIndex();
@@ -970,6 +937,36 @@ RegionAwareMemoryNodeProvider::PropagateRecursiveMemoryLocations()
     const auto sccIndex = callSummary.GetCallGraphSccIndex();
     callSummary.AddMemoryNodes(SccSummaries_[sccIndex]);
   }
+}
+
+std::vector<const rvsdg::LambdaNode *>
+RegionAwareMemoryNodeProvider::CollectLambdaNodes(const rvsdg::RvsdgModule & rvsdgModule)
+{
+  std::vector<const rvsdg::LambdaNode *> result;
+
+  // Recursively traverses all structural nodes, but does not enter into lambdas
+  const std::function<void(rvsdg::Region &)> CollectLambdasInRegion =
+      [&](rvsdg::Region & region) -> void
+  {
+    for (auto & node : region.Nodes())
+    {
+      if (auto lambda = dynamic_cast<rvsdg::LambdaNode *>(&node))
+      {
+        result.push_back(lambda);
+      }
+      else if (auto structural = dynamic_cast<rvsdg::StructuralNode *>(&node))
+      {
+        for (size_t i = 0; i < structural->nsubregions(); i++)
+        {
+          CollectLambdasInRegion(*structural->subregion(i));
+        }
+      }
+    }
+  };
+
+  CollectLambdasInRegion(rvsdgModule.Rvsdg().GetRootRegion());
+
+  return result;
 }
 
 std::string

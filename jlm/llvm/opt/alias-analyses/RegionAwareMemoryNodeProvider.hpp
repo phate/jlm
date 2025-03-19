@@ -22,7 +22,7 @@ class RegionSummary;
  * states will be routed through structural nodes and renders them independent if they do not
  * reference the same memory location. The region-aware analysis proceeds as follows:
  *
- * 1. Call Graph Creation: creates a call graph by looking at all CALLs.
+ * 1. Call Graph Creation: creates a call graph by looking at all call operations.
  * This graph includes calls to external functions, and calls from external functions.
  * Each function is assigned to a strongly connected component.
  *
@@ -102,14 +102,6 @@ private:
   CreateCallGraph(const rvsdg::RvsdgModule & rvsdgModule);
 
   /**
-   * Collects all lambda nodes defined in the given module, in an unspecified order.
-   * @param rvsdgModule the module
-   * @return a list of all lambda nodes in the module
-   */
-  std::vector<const rvsdg::LambdaNode *>
-  CollectLambdaNodes(const rvsdg::RvsdgModule & rvsdgModule);
-
-  /**
    * Creates RegionSummaries and CallSummaries for the given function.
    * These summaries will contain the memory locations utilized in each region / call,
    * including in sub-regions and inside call targets.
@@ -174,6 +166,14 @@ private:
   PropagateRecursiveMemoryLocations();
 
   /**
+   * Collects all lambda nodes defined in the given module, in an unspecified order.
+   * @param rvsdgModule the module
+   * @return a list of all lambda nodes in the module
+   */
+  static std::vector<const rvsdg::LambdaNode *>
+  CollectLambdaNodes(const rvsdg::RvsdgModule & rvsdgModule);
+
+  /**
    * Helper function for debugging, listing out all functions, grouped by call graph SCC.
    */
   static std::string
@@ -191,18 +191,30 @@ private:
   static std::string
   ToRegionTree(const rvsdg::Graph & rvsdg, const RegionAwareMemoryNodeProvisioning & provisioning);
 
-  // The provisioning produced
+  /**
+   * The provisioning produced by this provider
+   */
   std::unique_ptr<RegionAwareMemoryNodeProvisioning> Provisioning_;
 
-  // The SCCs of functions, in reverse topological order
-  // If function a() calls b(), and they are not in the same SCC, a()'s SCC comes after b()'s SCC.
+  /**
+   * The SCCs of functions, in reverse topological order
+   * If function a() calls b(), and they are not in the same SCC, a()'s SCC comes after b()'s SCC.
+   */
   std::vector<util::HashSet<const rvsdg::LambdaNode *>> FunctionSCCs_;
-  // Which SCC contains the node representing external functions
+
+  /**
+   * Which SCC contains the node representing external functions
+   */
   size_t ExternalNodeSccIndex_;
-  // A mapping from functions to the index of the SCC they belong to in the call graph
+
+  /**
+   * A mapping from functions to the index of the SCC they belong to in the call graph
+   */
   std::unordered_map<const rvsdg::LambdaNode *, size_t> FunctionToSccIndex_;
 
-  // The set of memory nodes that may be affected within a given SCC. Indexed by sccIndex.
+  /**
+   * The set of memory nodes that may be affected within a given SCC. Indexed by sccIndex.
+   */
   std::vector<util::HashSet<const PointsToGraph::MemoryNode *>> SccSummaries_;
 };
 
