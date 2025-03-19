@@ -26,9 +26,10 @@ ConvertToCType(const rvsdg::Type * type)
   {
     return "void*";
   }
-  if (auto ft = dynamic_cast<const llvm::FloatingPointType*>(type))
+  if (auto ft = dynamic_cast<const llvm::FloatingPointType *>(type))
   {
-    switch (ft->size()) {
+    switch (ft->size())
+    {
     case llvm::fpsize::flt:
       return "float";
     case llvm::fpsize::dbl:
@@ -36,6 +37,11 @@ ConvertToCType(const rvsdg::Type * type)
     default:
       throw std::logic_error(type->debug_string() + " not implemented!");
     }
+  }
+  if (auto t = dynamic_cast<const llvm::VectorType *>(type))
+  {
+    return ConvertToCType(&t->type()) + " __attribute__((vector_size("
+         + std::to_string(JlmSize(type) / 8) + ")))";
   }
   if (auto t = dynamic_cast<const llvm::ArrayType *>(type))
   {

@@ -349,6 +349,35 @@ RhlsToFirrtlConverter::MlirGenSimpleNode(const jlm::rvsdg::SimpleNode * node)
     auto asUInt = AddAsUIntOp(body, result);
     Connect(body, outData, AddBitsOp(body, asUInt, GetPointerSizeInBits() - 1, 0));
   }
+  else if (auto op = dynamic_cast<const llvm::extractelement_op *>(&(node->GetOperation()))) {
+    // Start of with base pointer
+    auto input0 = GetSubfield(body, inBundles[0], "data");
+    auto input1 = GetSubfield(body, inBundles[1], "data");
+    auto vt = dynamic_cast<const llvm::VectorType*>(op->argument(0).get());
+    auto vec = Builder_->create<circt::firrtl::WireOp>(
+        Builder_->getUnknownLoc(),
+        circt::firrtl::FVectorType::get(GetFirrtlType(&vt->type()), vt->size()),
+        "vec"
+    );
+    auto elementBits = JlmSize(&vt->type());
+    body->push_back(vec);
+    for (size_t i = 0; i < vt->size(); ++i) {
+      auto subindexOp = Builder_->create<circt::firrtl::SubindexOp>(
+          Builder_->getUnknownLoc(),
+          vec.getResult(),
+          i
+      );
+      body->push_back(subindexOp);
+      Connect(body, subindexOp, AddBitsOp(body, input0, elementBits*(i+1)-1, elementBits*i));
+    }
+    auto subaccessOp = Builder_->create<circt::firrtl::SubaccessOp>(
+        Builder_->getUnknownLoc(),
+        vec.getResult(),
+        input1
+    );
+    body->push_back(subaccessOp);
+    Connect(body, outData, subaccessOp);
+  }
   else if (dynamic_cast<const llvm::UndefValueOperation *>(&(node->GetOperation())))
   {
     Connect(body, outData, GetConstant(body, 1, 0));
