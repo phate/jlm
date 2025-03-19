@@ -42,6 +42,19 @@ distribute_constant(const rvsdg::SimpleOperation & op, rvsdg::SimpleOutput * out
           break;
         }
       }
+      // push constants that are returned by loops out of them
+      if (auto res = dynamic_cast<rvsdg::RegionResult *>(user)) {
+        auto out = res->output();
+        if (out && rvsdg::TryGetOwnerNode<rvsdg::ThetaNode>(*out)) {
+          if(out->nusers()){
+            auto out_replacement = rvsdg::SimpleNode::Create( *out->node()->region(), op, {}).output(0);
+            out->divert_users(out_replacement);
+            distribute_constant(op, out_replacement);
+            changed = true;
+            break;
+          }
+        }
+      }
       if (auto gammaNode = rvsdg::TryGetOwnerNode<rvsdg::GammaNode>(*user))
       {
         if (gammaNode->predicate() == user)
