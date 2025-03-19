@@ -1238,7 +1238,6 @@ public:
   {
     for (auto loadType : load_types)
     {
-      JLM_ASSERT(rvsdg::is<rvsdg::bittype>(loadType) || rvsdg::is<llvm::PointerType>(loadType));
       LoadTypes_.emplace_back(loadType);
     }
     for (auto storeType : store_types)

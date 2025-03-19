@@ -228,9 +228,7 @@ instrument_ref(
     {
       auto addr = node->input(0)->origin();
       JLM_ASSERT(dynamic_cast<const jlm::llvm::PointerType *>(&addr->type()));
-      auto bt = dynamic_cast<const jlm::rvsdg::bittype *>(&so->GetStoredType());
-      JLM_ASSERT(bt);
-      auto bitWidth = bt->nbits();
+      auto bitWidth = JlmSize(&so->GetStoredType());
       int log2Bytes = log2(bitWidth / 8);
       auto & widthNode = llvm::IntegerConstantOperation::Create(*region, 64, log2Bytes);
 
