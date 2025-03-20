@@ -49,17 +49,8 @@ replace_load(jlm::rvsdg::SimpleNode * orig, jlm::rvsdg::output * resp)
   return dynamic_cast<jlm::rvsdg::SimpleNode *>(nn);
 }
 
-std::string
-get_impport_function_name(jlm::rvsdg::input * input)
-{
-  auto traced = jlm::hls::trace_call(input);
-  JLM_ASSERT(traced);
-  auto arg = jlm::util::AssertedCast<const jlm::llvm::GraphImport>(traced);
-  return arg->Name();
-}
-
 jlm::rvsdg::SimpleNode *
-find_decouple_response(
+jlm::hls::find_decouple_response(
     const jlm::rvsdg::LambdaNode * lambda,
     const jlm::llvm::IntegerConstantOperation * request_constant)
 {
@@ -68,7 +59,7 @@ find_decouple_response(
   {
     auto ip = ctxvar.input;
     if (dynamic_cast<const jlm::llvm::PointerType *>(ip)
-        && get_impport_function_name(ip) == "decouple_response")
+        && get_function_name(ip) == "decouple_response")
     {
       response_function = ctxvar.inner;
     }
@@ -99,7 +90,7 @@ replace_decouple(
   auto channel = decouple_request->input(1)->origin();
   auto channel_constant = jlm::hls::trace_constant(channel);
 
-  auto decouple_response = find_decouple_response(lambda, channel_constant);
+  auto decouple_response = jlm::hls::find_decouple_response(lambda, channel_constant);
 
   auto addr = decouple_request->input(2)->origin();
   // connect out states to in states
@@ -233,7 +224,9 @@ TracePointer(
       }
       else if (dynamic_cast<const jlm::llvm::CallOperation *>(&simplenode->GetOperation()))
       {
-        // TODO: verify this is the right type of function call
+        // request
+        auto name = jlm::hls::get_function_name(simplenode->input(0));
+        JLM_ASSERT(name.rfind("decouple")!=name.npos);
         decoupleNodes.push_back(simplenode);
       }
       else
@@ -721,7 +714,7 @@ ReplaceDecouple(
   auto channel = decoupleRequest->input(1)->origin();
   auto channelConstant = jlm::hls::trace_constant(channel);
 
-  auto decoupledResponse = find_decouple_response(lambda, channelConstant);
+  auto decoupledResponse = jlm::hls::find_decouple_response(lambda, channelConstant);
 
   auto addr = decoupleRequest->input(2)->origin();
   // connect out states to in states

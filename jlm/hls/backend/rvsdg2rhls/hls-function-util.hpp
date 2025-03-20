@@ -45,6 +45,9 @@ trace_call_rhls(const rvsdg::input * input);
 
 const rvsdg::output *
 trace_call_rhls(const rvsdg::output * output);
+
+std::string
+get_function_name(jlm::rvsdg::input * input);
 }
 
 #endif // JLM_HLS_BACKEND_RVSDG2RHLS_HLS_FUNCTION_UTIL_HPP

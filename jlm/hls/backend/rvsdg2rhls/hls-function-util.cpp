@@ -148,21 +148,10 @@ route_to_region_rhls(rvsdg::Region * target, rvsdg::output * out)
   }
   else
   {
-    // lambda is common region
-    auto node = rvsdg::output::GetNode(*common_out);
-    JLM_ASSERT(target_regions.front()->node());
-    // output higher up than target and not the same - i.e. there can be no cycle
-    if(node->depth() <= target_regions.front()->node()->depth() && target_regions.front()->node()!=node){
-      // out is in the same region as node above target region
+    // lambda is common region - might create cycle
+    // TODO: how to check that this won't create a cycle
       JLM_ASSERT(target_regions.front()->node()->region() == common_out->region());
       return route_response_rhls(target, common_out);
-    } else {
-      throw util::error("can't rout because it might create a cycle");
-//      auto lambda = dynamic_cast<rvsdg::LambdaNode *>(common_region->node());
-//      auto arg = backedge_argument::add_backedge(lambda->subregion(), common_out->Type());
-//      arg->result()->divert_to(common_out);
-//      return route_response_rhls(target, arg);
-    }
   }
 }
 
@@ -279,5 +268,14 @@ is_function_argument(const rvsdg::LambdaNode::ContextVar & cv)
   JLM_ASSERT(traced);
   auto arg = util::AssertedCast<const llvm::GraphImport>(traced);
   return dynamic_cast<const rvsdg::FunctionType*>(arg->ImportedType().get());
+}
+
+std::string
+get_function_name(jlm::rvsdg::input * input)
+{
+  auto traced = jlm::hls::trace_call_rhls(input);
+  JLM_ASSERT(traced);
+  auto arg = jlm::util::AssertedCast<const jlm::llvm::GraphImport>(traced);
+  return arg->Name();
 }
 }
