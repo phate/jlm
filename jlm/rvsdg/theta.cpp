@@ -4,8 +4,11 @@
  * See COPYING for terms of redistribution.
  */
 
+#include <algorithm>
 #include <jlm/rvsdg/substitution.hpp>
 #include <jlm/rvsdg/theta.hpp>
+
+#include <algorithm>
 
 namespace jlm::rvsdg
 {
@@ -84,10 +87,7 @@ ThetaNode::RemoveLoopVars(std::vector<LoopVar> loopvars)
 ThetaNode *
 ThetaNode::copy(rvsdg::Region * region, rvsdg::SubstitutionMap & smap) const
 {
-  auto nf = graph()->GetNodeNormalForm(typeid(Operation));
-  nf->set_mutable(false);
-
-  rvsdg::SubstitutionMap rmap;
+  SubstitutionMap rmap;
   auto theta = create(region);
 
   /* add loop variables */
@@ -111,7 +111,6 @@ ThetaNode::copy(rvsdg::Region * region, rvsdg::SubstitutionMap & smap) const
     smap.insert(oldLoopVars[i].output, newLoopVars[i].output);
   }
 
-  nf->set_mutable(true);
   return theta;
 }
 

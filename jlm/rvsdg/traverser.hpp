@@ -80,10 +80,10 @@ enum class traversal_nodestate
 };
 
 /* support class to track traversal states of nodes */
-class traversal_tracker final
+class TraversalTracker final
 {
 public:
-  inline traversal_tracker(Graph * graph);
+  explicit inline TraversalTracker(Graph * graph);
 
   inline traversal_nodestate
   get_nodestate(Node * node);
@@ -133,12 +133,12 @@ private:
  *
  * @see node::depth()
  */
-class topdown_traverser final
+class TopDownTraverser final
 {
 public:
-  ~topdown_traverser() noexcept;
+  ~TopDownTraverser() noexcept;
 
-  explicit topdown_traverser(rvsdg::Region * region);
+  explicit TopDownTraverser(Region * region);
 
   Node *
   next();
@@ -149,7 +149,7 @@ public:
     return region_;
   }
 
-  typedef detail::traverser_iterator<topdown_traverser> iterator;
+  typedef detail::traverser_iterator<TopDownTraverser> iterator;
   typedef Node * value_type;
 
   inline iterator
@@ -175,16 +175,16 @@ private:
   input_change(input * in, output * old_origin, output * new_origin);
 
   rvsdg::Region * region_;
-  traversal_tracker tracker_;
+  TraversalTracker tracker_;
   std::vector<jlm::util::callback> callbacks_;
 };
 
-class bottomup_traverser final
+class BottomUpTraverser final
 {
 public:
-  ~bottomup_traverser() noexcept;
+  ~BottomUpTraverser() noexcept;
 
-  explicit bottomup_traverser(rvsdg::Region * region, bool revisit = false);
+  explicit BottomUpTraverser(Region * region, bool revisit = false);
 
   Node *
   next();
@@ -195,7 +195,7 @@ public:
     return region_;
   }
 
-  typedef detail::traverser_iterator<bottomup_traverser> iterator;
+  typedef detail::traverser_iterator<BottomUpTraverser> iterator;
   typedef Node * value_type;
 
   inline iterator
@@ -221,37 +221,37 @@ private:
   input_change(input * in, output * old_origin, output * new_origin);
 
   rvsdg::Region * region_;
-  traversal_tracker tracker_;
+  TraversalTracker tracker_;
   std::vector<jlm::util::callback> callbacks_;
   traversal_nodestate new_node_state_;
 };
 
 /* traversal tracker implementation */
 
-traversal_tracker::traversal_tracker(Graph * graph)
+TraversalTracker::TraversalTracker(Graph * graph)
     : tracker_(graph, 2)
 {}
 
 traversal_nodestate
-traversal_tracker::get_nodestate(Node * node)
+TraversalTracker::get_nodestate(Node * node)
 {
   return static_cast<traversal_nodestate>(tracker_.get_nodestate(node));
 }
 
 void
-traversal_tracker::set_nodestate(Node * node, traversal_nodestate state)
+TraversalTracker::set_nodestate(Node * node, traversal_nodestate state)
 {
   tracker_.set_nodestate(node, static_cast<size_t>(state));
 }
 
 Node *
-traversal_tracker::peek_top()
+TraversalTracker::peek_top()
 {
   return tracker_.peek_top(static_cast<size_t>(traversal_nodestate::frontier));
 }
 
 Node *
-traversal_tracker::peek_bottom()
+TraversalTracker::peek_bottom()
 {
   return tracker_.peek_bottom(static_cast<size_t>(traversal_nodestate::frontier));
 }

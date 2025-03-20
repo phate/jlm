@@ -10,7 +10,6 @@
 #include <jlm/llvm/ir/types.hpp>
 #include <jlm/rvsdg/graph.hpp>
 #include <jlm/rvsdg/simple-node.hpp>
-#include <jlm/rvsdg/simple-normal-form.hpp>
 
 #include <optional>
 
@@ -128,7 +127,7 @@ private:
   CreateOperandTypes(size_t numMemoryStates)
   {
     std::vector<std::shared_ptr<const rvsdg::Type>> types(
-        { PointerType::Create(), iostatetype::Create() });
+        { PointerType::Create(), IOStateType::Create() });
     std::vector<std::shared_ptr<const rvsdg::Type>> states(
         numMemoryStates,
         MemoryStateType::Create());
@@ -140,7 +139,7 @@ private:
   CreateResultTypes(std::shared_ptr<const rvsdg::ValueType> loadedType, size_t numMemoryStates)
   {
     std::vector<std::shared_ptr<const rvsdg::Type>> types(
-        { std::move(loadedType), iostatetype::Create() });
+        { std::move(loadedType), IOStateType::Create() });
     std::vector<std::shared_ptr<const rvsdg::Type>> states(
         numMemoryStates,
         MemoryStateType::Create());
@@ -166,14 +165,14 @@ protected:
   {}
 
 public:
-  class MemoryStateInputIterator final : public rvsdg::input::iterator<rvsdg::simple_input>
+  class MemoryStateInputIterator final : public rvsdg::input::iterator<rvsdg::SimpleInput>
   {
   public:
-    constexpr explicit MemoryStateInputIterator(rvsdg::simple_input * input)
-        : rvsdg::input::iterator<rvsdg::simple_input>(input)
+    constexpr explicit MemoryStateInputIterator(rvsdg::SimpleInput * input)
+        : rvsdg::input::iterator<rvsdg::SimpleInput>(input)
     {}
 
-    [[nodiscard]] rvsdg::simple_input *
+    [[nodiscard]] rvsdg::SimpleInput *
     next() const override
     {
       auto index = value()->index();
@@ -183,14 +182,14 @@ public:
     }
   };
 
-  class MemoryStateOutputIterator final : public rvsdg::output::iterator<rvsdg::simple_output>
+  class MemoryStateOutputIterator final : public rvsdg::output::iterator<rvsdg::SimpleOutput>
   {
   public:
-    constexpr explicit MemoryStateOutputIterator(rvsdg::simple_output * output)
-        : rvsdg::output::iterator<rvsdg::simple_output>(output)
+    constexpr explicit MemoryStateOutputIterator(rvsdg::SimpleOutput * output)
+        : rvsdg::output::iterator<rvsdg::SimpleOutput>(output)
     {}
 
-    [[nodiscard]] rvsdg::simple_output *
+    [[nodiscard]] rvsdg::SimpleOutput *
     next() const override
     {
       auto index = value()->index();
@@ -274,7 +273,7 @@ public:
   GetIoStateInput() const noexcept
   {
     auto ioInput = input(1);
-    JLM_ASSERT(is<iostatetype>(ioInput->type()));
+    JLM_ASSERT(is<IOStateType>(ioInput->type()));
     return *ioInput;
   }
 
@@ -282,7 +281,7 @@ public:
   GetIoStateOutput() const noexcept
   {
     auto ioOutput = output(1);
-    JLM_ASSERT(is<iostatetype>(ioOutput->type()));
+    JLM_ASSERT(is<IOStateType>(ioOutput->type()));
     return *ioOutput;
   }
 

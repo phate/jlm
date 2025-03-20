@@ -9,7 +9,7 @@
 
 #include <jlm/llvm/opt/alias-analyses/AliasAnalysis.hpp>
 #include <jlm/llvm/opt/alias-analyses/MemoryNodeProvider.hpp>
-#include <jlm/llvm/opt/optimization.hpp>
+#include <jlm/rvsdg/Transformation.hpp>
 
 #include <type_traits>
 
@@ -32,7 +32,7 @@ namespace jlm::llvm::aa
  * @see RegionAwareMemoryNodeProvider
  */
 template<typename AliasAnalysisPass, typename MemoryNodeProviderPass>
-class AliasAnalysisStateEncoder final : public optimization
+class AliasAnalysisStateEncoder final : public rvsdg::Transformation
 {
   static_assert(std::is_base_of_v<AliasAnalysis, AliasAnalysisPass>);
   static_assert(std::is_base_of_v<MemoryNodeProvider, MemoryNodeProviderPass>);
@@ -41,7 +41,7 @@ public:
   ~AliasAnalysisStateEncoder() noexcept override;
 
   void
-  run(RvsdgModule & rvsdgModule, util::StatisticsCollector & statisticsCollector) override;
+  Run(rvsdg::RvsdgModule & rvsdgModule, util::StatisticsCollector & statisticsCollector) override;
 };
 
 }

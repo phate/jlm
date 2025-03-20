@@ -396,7 +396,7 @@ push(rvsdg::ThetaNode * theta)
 static void
 push(rvsdg::Region * region)
 {
-  for (auto node : jlm::rvsdg::topdown_traverser(region))
+  for (auto node : rvsdg::TopDownTraverser(region))
   {
     if (auto strnode = dynamic_cast<const rvsdg::StructuralNode *>(node))
     {
@@ -413,13 +413,13 @@ push(rvsdg::Region * region)
 }
 
 static void
-push(RvsdgModule & rm, util::StatisticsCollector & statisticsCollector)
+push(rvsdg::RvsdgModule & rvsdgModule, util::StatisticsCollector & statisticsCollector)
 {
-  auto statistics = pushstat::Create(rm.SourceFileName());
+  auto statistics = pushstat::Create(rvsdgModule.SourceFilePath().value());
 
-  statistics->start(rm.Rvsdg());
-  push(&rm.Rvsdg().GetRootRegion());
-  statistics->end(rm.Rvsdg());
+  statistics->start(rvsdgModule.Rvsdg());
+  push(&rvsdgModule.Rvsdg().GetRootRegion());
+  statistics->end(rvsdgModule.Rvsdg());
 
   statisticsCollector.CollectDemandedStatistics(std::move(statistics));
 }
@@ -430,7 +430,7 @@ pushout::~pushout()
 {}
 
 void
-pushout::run(RvsdgModule & module, util::StatisticsCollector & statisticsCollector)
+pushout::Run(rvsdg::RvsdgModule & module, util::StatisticsCollector & statisticsCollector)
 {
   push(module, statisticsCollector);
 }

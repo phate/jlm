@@ -12,39 +12,13 @@
 #include <jlm/rvsdg/unary.hpp>
 #include <jlm/rvsdg/view.hpp>
 
-class NullaryOperation final : public jlm::rvsdg::nullary_op
-{
-public:
-  explicit NullaryOperation(const std::shared_ptr<const jlm::rvsdg::Type> & resultType)
-      : nullary_op(resultType)
-  {}
-
-  bool
-  operator==(const Operation &) const noexcept override
-  {
-    JLM_UNREACHABLE("Not implemented.");
-  }
-
-  [[nodiscard]] std::string
-  debug_string() const override
-  {
-    return "NullaryOperation";
-  }
-
-  [[nodiscard]] std::unique_ptr<Operation>
-  copy() const override
-  {
-    return std::make_unique<NullaryOperation>(this->result(0));
-  }
-};
-
-class UnaryOperation final : public jlm::rvsdg::unary_op
+class UnaryOperation final : public jlm::rvsdg::UnaryOperation
 {
 public:
   UnaryOperation(
       const std::shared_ptr<const jlm::rvsdg::Type> & operandType,
       const std::shared_ptr<const jlm::rvsdg::Type> & resultType)
-      : unary_op(operandType, resultType)
+      : jlm::rvsdg::UnaryOperation(operandType, resultType)
   {}
 
   jlm::rvsdg::unop_reduction_path_t
@@ -52,7 +26,7 @@ public:
   {
 
     if (const auto node = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(*operand);
-        jlm::rvsdg::is<NullaryOperation>(node))
+        jlm::rvsdg::is<jlm::tests::NullaryOperation>(node))
     {
       return jlm::rvsdg::unop_reduction_constant;
     }
@@ -100,19 +74,19 @@ NormalizeUnaryOperation_Success()
   Graph graph;
   const auto valueType = jlm::tests::valuetype::Create();
 
-  const NullaryOperation nullaryOperation(valueType);
-  const auto nullaryNode = SimpleNode::create(&graph.GetRootRegion(), nullaryOperation, {});
+  const jlm::tests::NullaryOperation nullaryOperation(valueType);
+  const auto nullaryNode = &SimpleNode::Create(graph.GetRootRegion(), nullaryOperation, {});
 
-  const UnaryOperation unaryOperation(valueType, valueType);
+  const ::UnaryOperation unaryOperation(valueType, valueType);
   const auto unaryNode =
-      SimpleNode::create(&graph.GetRootRegion(), unaryOperation, { nullaryNode->output(0) });
+      &SimpleNode::Create(graph.GetRootRegion(), unaryOperation, { nullaryNode->output(0) });
 
   auto & ex = jlm::tests::GraphExport::Create(*unaryNode->output(0), "o2");
 
   view(graph, stdout);
 
   // Act
-  const auto success = ReduceNode<UnaryOperation>(NormalizeUnaryOperation, *unaryNode);
+  const auto success = ReduceNode<::UnaryOperation>(NormalizeUnaryOperation, *unaryNode);
   view(graph, stdout);
 
   // Assert
@@ -142,15 +116,15 @@ NormalizeUnaryOperation_Failure()
   Graph graph;
   auto i0 = &jlm::tests::GraphImport::Create(graph, valueType, "i0");
 
-  const UnaryOperation unaryOperation(valueType, valueType);
-  const auto unaryNode = SimpleNode::create(&graph.GetRootRegion(), unaryOperation, { i0 });
+  const ::UnaryOperation unaryOperation(valueType, valueType);
+  const auto unaryNode = &SimpleNode::Create(graph.GetRootRegion(), unaryOperation, { i0 });
 
   auto & ex = jlm::tests::GraphExport::Create(*unaryNode->output(0), "o2");
 
   view(graph, stdout);
 
   // Act
-  const auto success = ReduceNode<unary_op>(NormalizeUnaryOperation, *unaryNode);
+  const auto success = ReduceNode<::UnaryOperation>(NormalizeUnaryOperation, *unaryNode);
   view(graph, stdout);
 
   // Assert

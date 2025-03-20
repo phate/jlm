@@ -92,7 +92,7 @@ match_op::match_op(
     const std::unordered_map<uint64_t, uint64_t> & mapping,
     uint64_t default_alternative,
     size_t nalternatives)
-    : jlm::rvsdg::unary_op(bittype::Create(nbits), ControlType::Create(nalternatives)),
+    : UnaryOperation(bittype::Create(nbits), ControlType::Create(nalternatives)),
       default_alternative_(default_alternative),
       mapping_(mapping)
 {}
@@ -154,15 +154,14 @@ match(
     size_t nalternatives,
     jlm::rvsdg::output * operand)
 {
-  match_op op(nbits, mapping, default_alternative, nalternatives);
-  return SimpleNode::create_normalized(operand->region(), op, { operand })[0];
+  return CreateOpNode<match_op>({ operand }, nbits, mapping, default_alternative, nalternatives)
+      .output(0);
 }
 
 jlm::rvsdg::output *
 control_constant(rvsdg::Region * region, size_t nalternatives, size_t alternative)
 {
-  jlm::rvsdg::ctlconstant_op op({ alternative, nalternatives });
-  return jlm::rvsdg::SimpleNode::create_normalized(region, op, {})[0];
+  return CreateOpNode<ctlconstant_op>(*region, ctlvalue_repr(alternative, nalternatives)).output(0);
 }
 
 }

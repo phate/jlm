@@ -16,18 +16,19 @@ TestDeadLoopNode()
 
   // Arrange
   auto valueType = jlm::tests::valuetype::Create();
-  auto functionType = jlm::llvm::FunctionType::Create(
+  auto functionType = jlm::rvsdg::FunctionType::Create(
       { jlm::rvsdg::ControlType::Create(2), valueType },
       { valueType });
 
   jlm::llvm::RvsdgModule rvsdgModule(jlm::util::filepath(""), "", "");
   auto & rvsdg = rvsdgModule.Rvsdg();
 
-  auto lambdaNode = jlm::llvm::lambda::node::create(
-      &rvsdg.GetRootRegion(),
-      functionType,
-      "f",
-      jlm::llvm::linkage::external_linkage);
+  auto lambdaNode = jlm::rvsdg::LambdaNode::Create(
+      rvsdg.GetRootRegion(),
+      jlm::llvm::LlvmLambdaOperation::Create(
+          functionType,
+          "f",
+          jlm::llvm::linkage::external_linkage));
 
   loop_node::create(lambdaNode->subregion());
 
@@ -47,18 +48,19 @@ TestDeadLoopNodeOutput()
 
   // Arrange
   auto valueType = jlm::tests::valuetype::Create();
-  auto functionType = jlm::llvm::FunctionType::Create(
+  auto functionType = jlm::rvsdg::FunctionType::Create(
       { jlm::rvsdg::ControlType::Create(2), valueType },
       { jlm::rvsdg::ControlType::Create(2) });
 
   jlm::llvm::RvsdgModule rvsdgModule(jlm::util::filepath(""), "", "");
   auto & rvsdg = rvsdgModule.Rvsdg();
 
-  auto lambdaNode = jlm::llvm::lambda::node::create(
-      &rvsdg.GetRootRegion(),
-      functionType,
-      "f",
-      jlm::llvm::linkage::external_linkage);
+  auto lambdaNode = jlm::rvsdg::LambdaNode::Create(
+      rvsdg.GetRootRegion(),
+      jlm::llvm::LlvmLambdaOperation::Create(
+          functionType,
+          "f",
+          jlm::llvm::linkage::external_linkage));
 
   auto p = lambdaNode->GetFunctionArguments()[0];
   auto x = lambdaNode->GetFunctionArguments()[1];

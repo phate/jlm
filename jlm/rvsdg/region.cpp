@@ -43,6 +43,12 @@ RegionArgument::RegionArgument(
   }
 }
 
+std::string
+RegionArgument::debug_string() const
+{
+  return util::strfmt("a", index());
+}
+
 [[nodiscard]] std::variant<Node *, Region *>
 RegionArgument::GetOwner() const noexcept
 {
@@ -94,6 +100,12 @@ RegionResult::RegionResult(
 
     output->results.push_back(this);
   }
+}
+
+std::string
+RegionResult::debug_string() const
+{
+  return util::strfmt("r", index());
 }
 
 [[nodiscard]] std::variant<Node *, Region *>
@@ -353,22 +365,6 @@ Region::prune(bool recursive)
       for (size_t n = 0; n < snode->nsubregions(); n++)
         snode->subregion(n)->prune(recursive);
     }
-  }
-}
-
-void
-Region::normalize(bool recursive)
-{
-  for (auto node : jlm::rvsdg::topdown_traverser(this))
-  {
-    if (auto structnode = dynamic_cast<const rvsdg::StructuralNode *>(node))
-    {
-      for (size_t n = 0; n < structnode->nsubregions(); n++)
-        structnode->subregion(n)->normalize(recursive);
-    }
-
-    const auto & op = node->GetOperation();
-    graph()->GetNodeNormalForm(typeid(op))->normalize_node(node);
   }
 }
 

@@ -25,7 +25,7 @@ typedef std::vector<std::tuple<
  * @param portNodes A vector where each element contains all memory operations traced from a pointer
  */
 void
-TracePointerArguments(const llvm::lambda::node * lambda, port_load_store_decouple & portNodes);
+TracePointerArguments(const rvsdg::LambdaNode * lambda, port_load_store_decouple & portNodes);
 
 void
 MemoryConverter(llvm::RvsdgModule & rm);
@@ -42,7 +42,7 @@ MemoryConverter(llvm::RvsdgModule & rm);
  */
 jlm::rvsdg::output *
 ConnectRequestResponseMemPorts(
-    const llvm::lambda::node * lambda,
+    const rvsdg::LambdaNode * lambda,
     size_t argumentIndex,
     rvsdg::SubstitutionMap & smap,
     const std::vector<jlm::rvsdg::SimpleNode *> & originalLoadNodes,

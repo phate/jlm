@@ -5,6 +5,7 @@
 
 #include <jlm/llvm/ir/CallSummary.hpp>
 #include <jlm/llvm/ir/operators.hpp>
+#include <jlm/llvm/ir/operators/IOBarrier.hpp>
 #include <jlm/llvm/ir/RvsdgModule.hpp>
 #include <jlm/llvm/opt/alias-analyses/PointsToGraph.hpp>
 #include <jlm/llvm/opt/alias-analyses/Steensgaard.hpp>
@@ -25,7 +26,7 @@ namespace jlm::llvm::aa
 static bool
 HasOrContainsPointerType(const rvsdg::output & output)
 {
-  return IsOrContains<PointerType>(output.type()) || is<llvm::FunctionType>(output.type());
+  return IsOrContains<PointerType>(output.type()) || is<rvsdg::FunctionType>(output.type());
 }
 
 /**
@@ -210,7 +211,7 @@ public:
       return jlm::util::strfmt(nodestr, ":", index, "[" + outputstr + "]");
     }
 
-    if (auto node = rvsdg::TryGetRegionParentNode<lambda::node>(*Output_))
+    if (auto node = rvsdg::TryGetRegionParentNode<rvsdg::LambdaNode>(*Output_))
     {
       auto dbgstr = node->GetOperation().debug_string();
       if (auto ctxvar = node->MapBinderContextVar(*Output_))
@@ -393,13 +394,13 @@ class LambdaLocation final : public MemoryLocation
 {
   ~LambdaLocation() override = default;
 
-  constexpr explicit LambdaLocation(const lambda::node & lambda)
+  constexpr explicit LambdaLocation(const rvsdg::LambdaNode & lambda)
       : MemoryLocation(),
         Lambda_(lambda)
   {}
 
 public:
-  [[nodiscard]] const lambda::node &
+  [[nodiscard]] const rvsdg::LambdaNode &
   GetNode() const noexcept
   {
     return Lambda_;
@@ -412,13 +413,13 @@ public:
   }
 
   static std::unique_ptr<Location>
-  Create(const lambda::node & node)
+  Create(const rvsdg::LambdaNode & node)
   {
     return std::unique_ptr<Location>(new LambdaLocation(node));
   }
 
 private:
-  const lambda::node & Lambda_;
+  const rvsdg::LambdaNode & Lambda_;
 };
 
 /** \brief DeltaLocation class
@@ -493,7 +494,7 @@ public:
   static std::unique_ptr<Location>
   Create(const GraphImport & graphImport)
   {
-    JLM_ASSERT(is<PointerType>(graphImport.type()) || is<FunctionType>(graphImport.type()));
+    JLM_ASSERT(is<PointerType>(graphImport.type()) || is<rvsdg::FunctionType>(graphImport.type()));
 
     // If the imported memory location is a pointer type or contains a pointer type, then these
     // pointers can point to values that escaped this module.
@@ -587,7 +588,7 @@ public:
   }
 
   Location &
-  InsertLambdaLocation(const lambda::node & lambda)
+  InsertLambdaLocation(const rvsdg::LambdaNode & lambda)
   {
     Locations_.push_back(LambdaLocation::Create(lambda));
     auto location = Locations_.back().get();
@@ -1021,13 +1022,13 @@ Steensgaard::AnalyzeSimpleNode(const jlm::rvsdg::SimpleNode & node)
   {
     AnalyzeBitcast(node);
   }
-  else if (is<bits2ptr_op>(&node))
+  else if (is<IntegerToPointerOperation>(&node))
   {
     AnalyzeBits2ptr(node);
   }
-  else if (is<ptr2bits_op>(&node))
+  else if (is<PtrToIntOperation>(&node))
   {
-    AnalyzePtr2Bits(node);
+    AnalyzePtrToInt(node);
   }
   else if (is<ConstantPointerNullOperation>(&node))
   {
@@ -1068,6 +1069,10 @@ Steensgaard::AnalyzeSimpleNode(const jlm::rvsdg::SimpleNode & node)
   else if (is<FunctionToPointerOperation>(&node))
   {
     AnalyzeFunctionToPointer(node);
+  }
+  else if (is<IOBarrierOperation>(&node))
+  {
+    AnalyzeIOBarrier(node);
   }
   else if (is<FreeOperation>(&node) || is<ptrcmp_op>(&node))
   {
@@ -1156,7 +1161,7 @@ Steensgaard::AnalyzeCall(const CallNode & callNode)
   case CallTypeClassifier::CallType::RecursiveDirectCall:
     AnalyzeDirectCall(
         callNode,
-        rvsdg::AssertGetOwnerNode<lambda::node>(callTypeClassifier->GetLambdaOutput()));
+        rvsdg::AssertGetOwnerNode<rvsdg::LambdaNode>(callTypeClassifier->GetLambdaOutput()));
     break;
   case CallTypeClassifier::CallType::ExternalCall:
     AnalyzeExternalCall(callNode);
@@ -1170,7 +1175,7 @@ Steensgaard::AnalyzeCall(const CallNode & callNode)
 }
 
 void
-Steensgaard::AnalyzeDirectCall(const CallNode & callNode, const lambda::node & lambdaNode)
+Steensgaard::AnalyzeDirectCall(const CallNode & callNode, const rvsdg::LambdaNode & lambdaNode)
 {
   auto & lambdaFunctionType = lambdaNode.GetOperation().type();
   auto & callFunctionType = *callNode.GetOperation().GetFunctionType();
@@ -1306,7 +1311,7 @@ Steensgaard::AnalyzeBitcast(const jlm::rvsdg::SimpleNode & node)
 void
 Steensgaard::AnalyzeBits2ptr(const jlm::rvsdg::SimpleNode & node)
 {
-  JLM_ASSERT(is<bits2ptr_op>(&node));
+  JLM_ASSERT(is<IntegerToPointerOperation>(&node));
 
   auto & registerLocation = Context_->GetOrInsertRegisterLocation(*node.output(0));
   registerLocation.SetPointsToFlags(
@@ -1317,9 +1322,9 @@ Steensgaard::AnalyzeBits2ptr(const jlm::rvsdg::SimpleNode & node)
 }
 
 void
-Steensgaard::AnalyzePtr2Bits(const rvsdg::SimpleNode & node)
+Steensgaard::AnalyzePtrToInt(const rvsdg::SimpleNode & node)
 {
-  JLM_ASSERT(is<ptr2bits_op>(&node));
+  JLM_ASSERT(is<PtrToIntOperation>(&node));
 
   MarkAsEscaped(*node.input(0)->origin());
 }
@@ -1492,6 +1497,21 @@ Steensgaard::AnalyzeFunctionToPointer(const rvsdg::SimpleNode & node)
 }
 
 void
+Steensgaard::AnalyzeIOBarrier(const rvsdg::SimpleNode & node)
+{
+  JLM_ASSERT(is<IOBarrierOperation>(&node));
+  const auto & origin = *node.input(0)->origin();
+  const auto & output = *node.output(0);
+
+  if (!HasOrContainsPointerType(origin))
+    return;
+
+  auto & originLocation = Context_->GetOrInsertRegisterLocation(origin);
+  auto & outputLocation = Context_->GetOrInsertRegisterLocation(output);
+  Context_->Join(originLocation, outputLocation);
+}
+
+void
 Steensgaard::AnalyzePointerToFunction(const rvsdg::SimpleNode & node)
 {
   auto & outputLocation = Context_->GetOrInsertRegisterLocation(*node.output(0));
@@ -1500,7 +1520,7 @@ Steensgaard::AnalyzePointerToFunction(const rvsdg::SimpleNode & node)
 }
 
 void
-Steensgaard::AnalyzeLambda(const lambda::node & lambda)
+Steensgaard::AnalyzeLambda(const rvsdg::LambdaNode & lambda)
 {
   // Handle context variables
   for (const auto & cv : lambda.GetContextVars())
@@ -1713,7 +1733,7 @@ Steensgaard::AnalyzeTheta(const rvsdg::ThetaNode & theta)
 void
 Steensgaard::AnalyzeStructuralNode(const rvsdg::StructuralNode & node)
 {
-  if (auto lambdaNode = dynamic_cast<const lambda::node *>(&node))
+  if (auto lambdaNode = dynamic_cast<const rvsdg::LambdaNode *>(&node))
   {
     AnalyzeLambda(*lambdaNode);
   }
@@ -1754,7 +1774,7 @@ Steensgaard::AnalyzeRegion(rvsdg::Region & region)
 
   using namespace jlm::rvsdg;
 
-  topdown_traverser traverser(&region);
+  TopDownTraverser traverser(&region);
   for (auto & node : traverser)
   {
     if (auto simpleNode = dynamic_cast<const SimpleNode *>(node))
@@ -1818,14 +1838,14 @@ Steensgaard::Analyze(const RvsdgModule & rvsdgModule)
 
 std::unique_ptr<PointsToGraph>
 Steensgaard::Analyze(
-    const RvsdgModule & module,
-    jlm::util::StatisticsCollector & statisticsCollector)
+    const rvsdg::RvsdgModule & module,
+    util::StatisticsCollector & statisticsCollector)
 {
   // std::unordered_map<const rvsdg::output *, std::string> outputMap;
   // std::cout << jlm::rvsdg::view(module.Rvsdg().root(), outputMap) << std::flush;
 
   Context_ = Context::Create();
-  auto statistics = Statistics::Create(module.SourceFileName());
+  auto statistics = Statistics::Create(module.SourceFilePath().value());
 
   // Perform Steensgaard analysis
   statistics->StartSteensgaardStatistics(module.Rvsdg());

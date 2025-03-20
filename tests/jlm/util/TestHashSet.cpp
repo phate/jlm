@@ -127,16 +127,26 @@ TestUnionWith()
   HashSet<int> set123({ 1, 2, 3 });
   HashSet<int> set45({ 4, 5 });
 
-  assert(!set123.UnionWith(set12));
+  // Unioning with a subset should not change anything
+  bool result = set123.UnionWith(set12);
+  assert(!result);
+  assert(set123.Size() == 3);
 
-  assert(set12.UnionWith(set123));
-  assert(!set12.UnionWith(set123));
-
+  // Putting {1, 2, 3} into {1, 2} should make it grow
+  result = set12.UnionWith(set123);
+  assert(result);
   assert(set12.Size() == 3);
   assert(set12 == set123);
 
-  assert(set45.UnionWith(set123));
+  // Unioning again does nothing
+  result = set12.UnionWith(set123);
+  assert(!result);
+
+  // Test union and clear
+  result = set45.UnionWithAndClear(set123);
+  assert(result);
   assert(set45.Size() == 5);
+  assert(set123.IsEmpty());
 
   return 0;
 }
@@ -157,7 +167,56 @@ TestIntersectWith()
 
   set123.IntersectWith(set45);
   assert(set123.Size() == 0);
+
+  set123.Insert(1);
+  set123.Insert(2);
+  set123.Insert(3);
+  set123.IntersectWithAndClear(set12);
+
+  assert(set123.Size() == 2);
+  assert(set12.Size() == 0);
+
   return 0;
 }
 
 JLM_UNIT_TEST_REGISTER("jlm/util/TestHashSet-TestIntersectWith", TestIntersectWith)
+
+static int
+TestDifferenceWith()
+{
+  using namespace jlm::util;
+
+  HashSet<int> set12({ 1, 2 });
+  HashSet<int> set123({ 1, 2, 3 });
+  HashSet<int> set45({ 4, 5 });
+
+  const auto set12Copy = set12;
+
+  set123.DifferenceWith(set12); // {1, 2, 3} - {1, 2}
+  assert(set123.Size() == 1);
+  assert(set123.Contains(3));
+
+  // set12 was not touched
+  assert(set12 == set12Copy);
+
+  // Create the set {0, 1, 3}
+  set123.Insert(0);
+  set123.Insert(1);
+
+  set12.DifferenceWith(set123); // {1, 2} - {0, 1, 3}
+  assert(set12.Size() == 1);
+  assert(set12.Contains(2));
+
+  // Difference with other sets becomes empty
+  set45.DifferenceWith(set123);
+  set45.DifferenceWith(set12);
+  assert(set45.Size() == 2);
+
+  // We handle the case where both sets are the same set without crashing
+  set45.DifferenceWith(set45);
+  assert(set45.IsEmpty());
+
+  return 0;
+}
+
+JLM_UNIT_TEST_REGISTER("jlm/util/TestHashSet-TestDifferenceWith", TestDifferenceWith)

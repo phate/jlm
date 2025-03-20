@@ -8,6 +8,7 @@
 
 #include <jlm/rvsdg/binary.hpp>
 #include <jlm/rvsdg/node.hpp>
+#include <jlm/rvsdg/nullary.hpp>
 #include <jlm/rvsdg/operation.hpp>
 #include <jlm/rvsdg/simple-node.hpp>
 #include <jlm/rvsdg/structural-node.hpp>
@@ -66,9 +67,36 @@ public:
   }
 };
 
+class NullaryOperation final : public rvsdg::NullaryOperation
+{
+public:
+  explicit NullaryOperation(const std::shared_ptr<const jlm::rvsdg::Type> & resultType)
+      : rvsdg::NullaryOperation(resultType)
+  {}
+
+  bool
+  operator==(const Operation & other) const noexcept override
+  {
+    const auto nullaryOperation = dynamic_cast<const NullaryOperation *>(&other);
+    return nullaryOperation && *result(0) == *nullaryOperation->result(0);
+  }
+
+  [[nodiscard]] std::string
+  debug_string() const override
+  {
+    return "NullaryOperation";
+  }
+
+  [[nodiscard]] std::unique_ptr<Operation>
+  copy() const override
+  {
+    return std::make_unique<NullaryOperation>(this->result(0));
+  }
+};
+
 /* unary operation */
 
-class unary_op final : public rvsdg::unary_op
+class unary_op final : public rvsdg::UnaryOperation
 {
 public:
   virtual ~unary_op() noexcept;
@@ -76,7 +104,7 @@ public:
   inline unary_op(
       std::shared_ptr<const rvsdg::Type> srctype,
       std::shared_ptr<const rvsdg::Type> dsttype) noexcept
-      : rvsdg::unary_op(std::move(srctype), std::move(dsttype))
+      : rvsdg::UnaryOperation(std::move(srctype), std::move(dsttype))
   {}
 
   virtual bool
@@ -96,15 +124,12 @@ public:
 
   static rvsdg::Node *
   create(
-      rvsdg::Region * region,
+      rvsdg::Region *,
       std::shared_ptr<const rvsdg::Type> srctype,
       rvsdg::output * operand,
       std::shared_ptr<const rvsdg::Type> dsttype)
   {
-    return rvsdg::SimpleNode::create(
-        region,
-        unary_op(std::move(srctype), std::move(dsttype)),
-        { operand });
+    return &rvsdg::CreateOpNode<unary_op>({ operand }, std::move(srctype), std::move(dsttype));
   }
 
   static inline rvsdg::output *
@@ -113,8 +138,8 @@ public:
       rvsdg::output * operand,
       std::shared_ptr<const rvsdg::Type> dsttype)
   {
-    unary_op op(std::move(srctype), std::move(dsttype));
-    return rvsdg::SimpleNode::create_normalized(operand->region(), op, { operand })[0];
+    return rvsdg::CreateOpNode<unary_op>({ operand }, std::move(srctype), std::move(dsttype))
+        .output(0);
   }
 };
 
@@ -173,7 +198,7 @@ public:
       rvsdg::output * op2)
   {
     binary_op op(srctype, std::move(dsttype), BinaryOperation::flags::none);
-    return rvsdg::SimpleNode::create(op1->region(), op, { op1, op2 });
+    return &rvsdg::SimpleNode::Create(*op1->region(), op, { op1, op2 });
   }
 
   static inline rvsdg::output *
@@ -183,8 +208,8 @@ public:
       rvsdg::output * op1,
       rvsdg::output * op2)
   {
-    binary_op op(srctype, std::move(dsttype), BinaryOperation::flags::none);
-    return rvsdg::SimpleNode::create_normalized(op1->region(), op, { op1, op2 })[0];
+    return rvsdg::CreateOpNode<binary_op>({ op1, op2 }, srctype, std::move(dsttype), flags::none)
+        .output(0);
   }
 
 private:
@@ -396,7 +421,7 @@ public:
       operand_types.push_back(operand->Type());
 
     test_op op(std::move(operand_types), std::move(result_types));
-    return rvsdg::SimpleNode::create(region, op, { operands });
+    return &rvsdg::SimpleNode::Create(*region, op, { operands });
   }
 
   static rvsdg::SimpleNode *
@@ -407,7 +432,7 @@ public:
       std::vector<std::shared_ptr<const rvsdg::Type>> resultTypes)
   {
     test_op op(std::move(operandTypes), std::move(resultTypes));
-    return rvsdg::SimpleNode::create(region, op, { operands });
+    return &rvsdg::SimpleNode::Create(*region, op, { operands });
   }
 };
 
@@ -477,8 +502,14 @@ create_testop(
   for (const auto & operand : operands)
     operand_types.push_back(operand->Type());
 
-  test_op op(std::move(operand_types), std::move(result_types));
-  return rvsdg::SimpleNode::create_normalized(region, op, { operands });
+  return operands.empty() ? outputs(&rvsdg::CreateOpNode<test_op>(
+                                *region,
+                                std::move(operand_types),
+                                std::move(result_types)))
+                          : outputs(&rvsdg::CreateOpNode<test_op>(
+                                operands,
+                                std::move(operand_types),
+                                std::move(result_types)));
 }
 
 class TestGraphArgument final : public jlm::rvsdg::RegionArgument

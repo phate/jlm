@@ -21,21 +21,16 @@ TestLambda()
   auto rvsdgModule = RvsdgModule::Create(jlm::util::filepath(""), "", "");
   auto graph = &rvsdgModule->Rvsdg();
 
-  auto nf = graph->GetNodeNormalForm(typeid(jlm::rvsdg::Operation));
-  nf->set_mutable(false);
-
   {
     // Setup the function
     std::cout << "Function Setup" << std::endl;
-    auto functionType = FunctionType::Create(
-        { iostatetype::Create(), MemoryStateType::Create() },
-        { jlm::rvsdg::bittype::Create(32), iostatetype::Create(), MemoryStateType::Create() });
+    auto functionType = jlm::rvsdg::FunctionType::Create(
+        { IOStateType::Create(), MemoryStateType::Create() },
+        { jlm::rvsdg::bittype::Create(32), IOStateType::Create(), MemoryStateType::Create() });
 
-    auto lambda = lambda::node::create(
-        &graph->GetRootRegion(),
-        functionType,
-        "test",
-        linkage::external_linkage);
+    auto lambda = jlm::rvsdg::LambdaNode::Create(
+        graph->GetRootRegion(),
+        LlvmLambdaOperation::Create(functionType, "test", linkage::external_linkage));
     auto iOStateArgument = lambda->GetFunctionArguments()[0];
     auto memoryStateArgument = lambda->GetFunctionArguments()[1];
 
@@ -56,7 +51,7 @@ TestLambda()
     // Lamda + terminating operation
     assert(omegaBlock.getOperations().size() == 2);
     auto & mlirLambda = omegaBlock.front();
-    assert(mlirLambda.getName().getStringRef().equals(LambdaNode::getOperationName()));
+    assert(mlirLambda.getName().getStringRef().equals(mlir::rvsdg::LambdaNode::getOperationName()));
 
     // Verify function name
     std::cout << "Verify function name" << std::endl;
@@ -67,24 +62,32 @@ TestLambda()
 
     // Verify function signature
     std::cout << "Verify function signature" << std::endl;
+
     auto result = mlirLambda.getResult(0).getType();
-    assert(result.getTypeID() == LambdaRefType::getTypeID());
-    auto * lambdaRefType = static_cast<LambdaRefType *>(&result);
+    assert(result.getTypeID() == mlir::LLVM::LLVMPointerType::getTypeID());
+
+    auto lambdaOp = ::mlir::dyn_cast<::mlir::rvsdg::LambdaNode>(&mlirLambda);
+
+    auto lamdbaTerminator = lambdaOp.getRegion().front().getTerminator();
+    auto lambdaResult = mlir::dyn_cast<mlir::rvsdg::LambdaResult>(lamdbaTerminator);
+    assert(lambdaResult != nullptr);
+    lambdaResult->dump();
+
     std::vector<mlir::Type> arguments;
-    for (auto argumentType : lambdaRefType->getParameterTypes())
+    for (auto argument : lambdaOp->getRegion(0).getArguments())
     {
-      arguments.push_back(argumentType);
+      arguments.push_back(argument.getType());
     }
     assert(arguments[0].getTypeID() == IOStateEdgeType::getTypeID());
     assert(arguments[1].getTypeID() == MemStateEdgeType::getTypeID());
     std::vector<mlir::Type> results;
-    for (auto returnType : lambdaRefType->getReturnTypes())
+    for (auto returnType : lambdaResult->getOperandTypes())
     {
       results.push_back(returnType);
     }
-    assert(results[0].getTypeID() == mlir::IntegerType::getTypeID());
-    assert(results[1].getTypeID() == IOStateEdgeType::getTypeID());
-    assert(results[2].getTypeID() == MemStateEdgeType::getTypeID());
+    assert(results[0].isa<mlir::IntegerType>());
+    assert(results[1].isa<mlir::rvsdg::IOStateEdgeType>());
+    assert(results[2].isa<mlir::rvsdg::MemStateEdgeType>());
 
     auto & lambdaRegion = mlirLambda.getRegion(0);
     auto & lambdaBlock = lambdaRegion.front();
@@ -143,21 +146,16 @@ TestAddOperation()
   auto rvsdgModule = RvsdgModule::Create(jlm::util::filepath(""), "", "");
   auto graph = &rvsdgModule->Rvsdg();
 
-  auto nf = graph->GetNodeNormalForm(typeid(jlm::rvsdg::Operation));
-  nf->set_mutable(false);
-
   {
     // Setup the function
     std::cout << "Function Setup" << std::endl;
-    auto functionType = FunctionType::Create(
-        { iostatetype::Create(), MemoryStateType::Create() },
-        { jlm::rvsdg::bittype::Create(32), iostatetype::Create(), MemoryStateType::Create() });
+    auto functionType = jlm::rvsdg::FunctionType::Create(
+        { IOStateType::Create(), MemoryStateType::Create() },
+        { jlm::rvsdg::bittype::Create(32), IOStateType::Create(), MemoryStateType::Create() });
 
-    auto lambda = lambda::node::create(
-        &graph->GetRootRegion(),
-        functionType,
-        "test",
-        linkage::external_linkage);
+    auto lambda = jlm::rvsdg::LambdaNode::Create(
+        graph->GetRootRegion(),
+        LlvmLambdaOperation::Create(functionType, "test", linkage::external_linkage));
     auto iOStateArgument = lambda->GetFunctionArguments()[0];
     auto memoryStateArgument = lambda->GetFunctionArguments()[1];
 
@@ -247,21 +245,16 @@ TestComZeroExt()
   auto rvsdgModule = RvsdgModule::Create(jlm::util::filepath(""), "", "");
   auto graph = &rvsdgModule->Rvsdg();
 
-  auto nf = graph->GetNodeNormalForm(typeid(jlm::rvsdg::Operation));
-  nf->set_mutable(false);
-
   {
     // Setup the function
     std::cout << "Function Setup" << std::endl;
-    auto functionType = FunctionType::Create(
-        { iostatetype::Create(), MemoryStateType::Create() },
-        { jlm::rvsdg::bittype::Create(1), iostatetype::Create(), MemoryStateType::Create() });
+    auto functionType = jlm::rvsdg::FunctionType::Create(
+        { IOStateType::Create(), MemoryStateType::Create() },
+        { jlm::rvsdg::bittype::Create(1), IOStateType::Create(), MemoryStateType::Create() });
 
-    auto lambda = lambda::node::create(
-        &graph->GetRootRegion(),
-        functionType,
-        "test",
-        linkage::external_linkage);
+    auto lambda = jlm::rvsdg::LambdaNode::Create(
+        graph->GetRootRegion(),
+        LlvmLambdaOperation::Create(functionType, "test", linkage::external_linkage));
     auto iOStateArgument = lambda->GetFunctionArguments()[0];
     auto memoryStateArgument = lambda->GetFunctionArguments()[1];
 
@@ -272,9 +265,7 @@ TestComZeroExt()
     jlm::rvsdg::create_bitconstant(lambda->subregion(), 16, 6); // Unused constant
 
     // zero extension of constant1
-    auto zeroExtOp = jlm::llvm::zext_op(8, 16);
-    auto zeroExt =
-        jlm::rvsdg::SimpleNode::create_normalized(lambda->subregion(), zeroExtOp, { constant1 })[0];
+    const auto zeroExt = jlm::rvsdg::CreateOpNode<ZExtOperation>({ constant1 }, 8, 16).output(0);
 
     auto mul = jlm::rvsdg::bitmul_op::create(16, zeroExt, zeroExt);
 
@@ -394,21 +385,16 @@ TestMatch()
   auto rvsdgModule = RvsdgModule::Create(jlm::util::filepath(""), "", "");
   auto graph = &rvsdgModule->Rvsdg();
 
-  auto nf = graph->GetNodeNormalForm(typeid(jlm::rvsdg::Operation));
-  nf->set_mutable(false);
-
   {
     // Setup the function
     std::cout << "Function Setup" << std::endl;
-    auto functionType = FunctionType::Create(
-        { iostatetype::Create(), MemoryStateType::Create() },
-        { jlm::rvsdg::ControlType::Create(2), iostatetype::Create(), MemoryStateType::Create() });
+    auto functionType = jlm::rvsdg::FunctionType::Create(
+        { IOStateType::Create(), MemoryStateType::Create() },
+        { jlm::rvsdg::ControlType::Create(2), IOStateType::Create(), MemoryStateType::Create() });
 
-    auto lambda = lambda::node::create(
-        &graph->GetRootRegion(),
-        functionType,
-        "test",
-        linkage::external_linkage);
+    auto lambda = jlm::rvsdg::LambdaNode::Create(
+        graph->GetRootRegion(),
+        LlvmLambdaOperation::Create(functionType, "test", linkage::external_linkage));
     auto iOStateArgument = lambda->GetFunctionArguments()[0];
     auto memoryStateArgument = lambda->GetFunctionArguments()[1];
 
@@ -503,9 +489,6 @@ TestGamma()
 
   auto rvsdgModule = RvsdgModule::Create(jlm::util::filepath(""), "", "");
   auto graph = &rvsdgModule->Rvsdg();
-
-  auto nf = graph->GetNodeNormalForm(typeid(jlm::rvsdg::Operation));
-  nf->set_mutable(false);
 
   {
 
@@ -623,8 +606,6 @@ TestTheta()
   auto rvsdgModule = RvsdgModule::Create(jlm::util::filepath(""), "", "");
   auto graph = &rvsdgModule->Rvsdg();
 
-  auto nf = graph->GetNodeNormalForm(typeid(jlm::rvsdg::Operation));
-  nf->set_mutable(false);
   {
     // Create a theta operation
     std::cout << "Theta Operation" << std::endl;

@@ -62,7 +62,7 @@ protected:
   static std::string
   get_port_name(jlm::rvsdg::output * port);
 
-  const llvm::lambda::node *
+  const rvsdg::LambdaNode *
   get_hls_lambda(llvm::RvsdgModule & rm);
 
   void
@@ -81,7 +81,7 @@ protected:
    * @return the arguments that represent memory responses
    */
   std::vector<rvsdg::RegionArgument *>
-  get_mem_resps(const llvm::lambda::node & lambda)
+  get_mem_resps(const rvsdg::LambdaNode & lambda)
   {
     std::vector<rvsdg::RegionArgument *> mem_resps;
     for (auto arg : lambda.subregion()->Arguments())
@@ -99,7 +99,7 @@ protected:
    * @return the results that represent memory requests
    */
   std::vector<rvsdg::RegionResult *>
-  get_mem_reqs(const llvm::lambda::node & lambda)
+  get_mem_reqs(const rvsdg::LambdaNode & lambda)
   {
     std::vector<rvsdg::RegionResult *> mem_resps;
     for (auto result : lambda.subregion()->Results())
@@ -118,7 +118,7 @@ protected:
    * @return the arguments of the lambda that represent kernel inputs
    */
   std::vector<rvsdg::RegionArgument *>
-  get_reg_args(const llvm::lambda::node & lambda)
+  get_reg_args(const rvsdg::LambdaNode & lambda)
   {
     std::vector<rvsdg::RegionArgument *> args;
     for (auto argument : lambda.subregion()->Arguments())
@@ -136,7 +136,7 @@ protected:
    * @return the results of the lambda that represent the kernel outputs
    */
   std::vector<rvsdg::RegionResult *>
-  get_reg_results(const llvm::lambda::node & lambda)
+  get_reg_results(const rvsdg::LambdaNode & lambda)
   {
     std::vector<rvsdg::RegionResult *> results;
     for (auto result : lambda.subregion()->Results())

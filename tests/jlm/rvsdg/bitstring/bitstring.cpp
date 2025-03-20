@@ -18,9 +18,6 @@ types_bitstring_arithmetic_test_bitand()
 
   // Arrange
   Graph graph;
-  const auto nf = graph.GetNodeNormalForm(typeid(bitand_op));
-  nf->set_mutable(false);
-
   const auto s0 = &jlm::tests::GraphImport::Create(graph, bittype::Create(32), "s0");
   const auto s1 = &jlm::tests::GraphImport::Create(graph, bittype::Create(32), "s1");
 
@@ -56,9 +53,6 @@ types_bitstring_arithmetic_test_bitashr()
 
   // Arrange
   Graph graph;
-  auto nf = graph.GetNodeNormalForm(typeid(bitashr_op));
-  nf->set_mutable(false);
-
   auto s0 = &jlm::tests::GraphImport::Create(graph, bittype::Create(32), "s0");
   auto s1 = &jlm::tests::GraphImport::Create(graph, bittype::Create(32), "s1");
 
@@ -108,9 +102,6 @@ types_bitstring_arithmetic_test_bitdifference()
 
   // Arrange
   Graph graph;
-  auto nf = graph.GetNodeNormalForm(typeid(bitsub_op));
-  nf->set_mutable(false);
-
   auto s0 = &jlm::tests::GraphImport::Create(graph, bittype::Create(32), "s0");
   auto s1 = &jlm::tests::GraphImport::Create(graph, bittype::Create(32), "s1");
 
@@ -139,9 +130,6 @@ types_bitstring_arithmetic_test_bitnegate()
 
   // Arrange
   Graph graph;
-  auto nf = graph.GetNodeNormalForm(typeid(bitneg_op));
-  nf->set_mutable(false);
-
   auto s0 = &jlm::tests::GraphImport::Create(graph, bittype::Create(32), "s0");
   auto c0 = create_bitconstant(&graph.GetRootRegion(), 32, 3);
 
@@ -178,9 +166,6 @@ types_bitstring_arithmetic_test_bitnot()
 
   // Arrange
   Graph graph;
-  auto nf = graph.GetNodeNormalForm(typeid(bitnot_op));
-  nf->set_mutable(false);
-
   auto s0 = &jlm::tests::GraphImport::Create(graph, bittype::Create(32), "s0");
   auto c0 = create_bitconstant(&graph.GetRootRegion(), 32, 3);
 
@@ -217,9 +202,6 @@ types_bitstring_arithmetic_test_bitor()
 
   // Arrange
   Graph graph;
-  auto nf = graph.GetNodeNormalForm(typeid(bitor_op));
-  nf->set_mutable(false);
-
   auto s0 = &jlm::tests::GraphImport::Create(graph, bittype::Create(32), "s0");
   auto s1 = &jlm::tests::GraphImport::Create(graph, bittype::Create(32), "s1");
 
@@ -255,9 +237,6 @@ types_bitstring_arithmetic_test_bitproduct()
 
   // Arrange
   Graph graph;
-  auto nf = graph.GetNodeNormalForm(typeid(bitashr_op));
-  nf->set_mutable(false);
-
   auto s0 = &jlm::tests::GraphImport::Create(graph, bittype::Create(32), "s0");
   auto s1 = &jlm::tests::GraphImport::Create(graph, bittype::Create(32), "s1");
 
@@ -293,9 +272,6 @@ types_bitstring_arithmetic_test_bitshiproduct()
 
   // Arrange
   Graph graph;
-  auto nf = graph.GetNodeNormalForm(typeid(bitsmulh_op));
-  nf->set_mutable(false);
-
   auto s0 = &jlm::tests::GraphImport::Create(graph, bittype::Create(32), "s0");
   auto s1 = &jlm::tests::GraphImport::Create(graph, bittype::Create(32), "s1");
 
@@ -324,9 +300,6 @@ types_bitstring_arithmetic_test_bitshl()
 
   // Arrange
   Graph graph;
-  auto nf = graph.GetNodeNormalForm(typeid(bitshl_op));
-  nf->set_mutable(false);
-
   auto s0 = &jlm::tests::GraphImport::Create(graph, bittype::Create(32), "s0");
   auto s1 = &jlm::tests::GraphImport::Create(graph, bittype::Create(32), "s1");
 
@@ -367,9 +340,6 @@ types_bitstring_arithmetic_test_bitshr()
 
   // Arrange
   Graph graph;
-  auto nf = graph.GetNodeNormalForm(typeid(bitshr_op));
-  nf->set_mutable(false);
-
   auto s0 = &jlm::tests::GraphImport::Create(graph, bittype::Create(32), "s0");
   auto s1 = &jlm::tests::GraphImport::Create(graph, bittype::Create(32), "s1");
 
@@ -410,9 +380,6 @@ types_bitstring_arithmetic_test_bitsmod()
 
   // Arrange
   Graph graph;
-  auto nf = graph.GetNodeNormalForm(typeid(bitsmod_op));
-  nf->set_mutable(false);
-
   auto s0 = &jlm::tests::GraphImport::Create(graph, bittype::Create(32), "s0");
   auto s1 = &jlm::tests::GraphImport::Create(graph, bittype::Create(32), "s1");
 
@@ -448,9 +415,6 @@ types_bitstring_arithmetic_test_bitsquotient()
 
   // Arrange
   Graph graph;
-  auto nf = graph.GetNodeNormalForm(typeid(bitsdiv_op));
-  nf->set_mutable(false);
-
   auto s0 = &jlm::tests::GraphImport::Create(graph, bittype::Create(32), "s0");
   auto s1 = &jlm::tests::GraphImport::Create(graph, bittype::Create(32), "s1");
 
@@ -486,9 +450,6 @@ types_bitstring_arithmetic_test_bitsum()
 
   // Arrange
   Graph graph;
-  auto nf = graph.GetNodeNormalForm(typeid(bitadd_op));
-  nf->set_mutable(false);
-
   auto s0 = &jlm::tests::GraphImport::Create(graph, bittype::Create(32), "s0");
   auto s1 = &jlm::tests::GraphImport::Create(graph, bittype::Create(32), "s1");
 
@@ -524,9 +485,6 @@ types_bitstring_arithmetic_test_bituhiproduct()
 
   // Arrange
   Graph graph;
-  auto nf = graph.GetNodeNormalForm(typeid(bitumulh_op));
-  nf->set_mutable(false);
-
   auto s0 = &jlm::tests::GraphImport::Create(graph, bittype::Create(32), "s0");
   auto s1 = &jlm::tests::GraphImport::Create(graph, bittype::Create(32), "s1");
 
@@ -555,9 +513,6 @@ types_bitstring_arithmetic_test_bitumod()
 
   // Arrange
   Graph graph;
-  auto nf = graph.GetNodeNormalForm(typeid(bitumod_op));
-  nf->set_mutable(false);
-
   auto s0 = &jlm::tests::GraphImport::Create(graph, bittype::Create(32), "s0");
   auto s1 = &jlm::tests::GraphImport::Create(graph, bittype::Create(32), "s1");
 
@@ -593,9 +548,6 @@ types_bitstring_arithmetic_test_bituquotient()
 
   // Arrange
   Graph graph;
-  auto nf = graph.GetNodeNormalForm(typeid(bitudiv_op));
-  nf->set_mutable(false);
-
   auto s0 = &jlm::tests::GraphImport::Create(graph, bittype::Create(32), "s0");
   auto s1 = &jlm::tests::GraphImport::Create(graph, bittype::Create(32), "s1");
 
@@ -631,9 +583,6 @@ types_bitstring_arithmetic_test_bitxor()
 
   // Arrange
   Graph graph;
-  auto nf = graph.GetNodeNormalForm(typeid(bitxor_op));
-  nf->set_mutable(false);
-
   auto s0 = &jlm::tests::GraphImport::Create(graph, bittype::Create(32), "s0");
   auto s1 = &jlm::tests::GraphImport::Create(graph, bittype::Create(32), "s1");
 
@@ -685,9 +634,6 @@ types_bitstring_comparison_test_bitequal()
 
   // Arrange
   Graph graph;
-  auto nf = graph.GetNodeNormalForm(typeid(biteq_op));
-  nf->set_mutable(false);
-
   auto s0 = &jlm::tests::GraphImport::Create(graph, bittype::Create(32), "s0");
   auto s1 = &jlm::tests::GraphImport::Create(graph, bittype::Create(32), "s1");
   auto c0 = create_bitconstant(&graph.GetRootRegion(), 32, 4);
@@ -731,9 +677,6 @@ types_bitstring_comparison_test_bitnotequal()
 
   // Arrange
   Graph graph;
-  auto nf = graph.GetNodeNormalForm(typeid(bitne_op));
-  nf->set_mutable(false);
-
   auto s0 = &jlm::tests::GraphImport::Create(graph, bittype::Create(32), "s0");
   auto s1 = &jlm::tests::GraphImport::Create(graph, bittype::Create(32), "s1");
   auto c0 = create_bitconstant(&graph.GetRootRegion(), 32, 4);
@@ -777,9 +720,6 @@ types_bitstring_comparison_test_bitsgreater()
 
   // Arrange
   Graph graph;
-  auto nf = graph.GetNodeNormalForm(typeid(bitsgt_op));
-  nf->set_mutable(false);
-
   auto s0 = &jlm::tests::GraphImport::Create(graph, bittype::Create(32), "s0");
   auto s1 = &jlm::tests::GraphImport::Create(graph, bittype::Create(32), "s1");
 
@@ -829,9 +769,6 @@ types_bitstring_comparison_test_bitsgreatereq()
 
   // Arrange
   Graph graph;
-  auto nf = graph.GetNodeNormalForm(typeid(bitsge_op));
-  nf->set_mutable(false);
-
   auto s0 = &jlm::tests::GraphImport::Create(graph, bittype::Create(32), "s0");
   auto s1 = &jlm::tests::GraphImport::Create(graph, bittype::Create(32), "s1");
   auto c0 = create_bitconstant(&graph.GetRootRegion(), 32, 4);
@@ -884,9 +821,6 @@ types_bitstring_comparison_test_bitsless()
 
   // Arrange
   Graph graph;
-  auto nf = graph.GetNodeNormalForm(typeid(bitslt_op));
-  nf->set_mutable(false);
-
   auto s0 = &jlm::tests::GraphImport::Create(graph, bittype::Create(32), "s0");
   auto s1 = &jlm::tests::GraphImport::Create(graph, bittype::Create(32), "s1");
 
@@ -936,9 +870,6 @@ types_bitstring_comparison_test_bitslesseq()
 
   // Arrange
   Graph graph;
-  auto nf = graph.GetNodeNormalForm(typeid(bitsle_op));
-  nf->set_mutable(false);
-
   auto s0 = &jlm::tests::GraphImport::Create(graph, bittype::Create(32), "s0");
   auto s1 = &jlm::tests::GraphImport::Create(graph, bittype::Create(32), "s1");
 
@@ -991,9 +922,6 @@ types_bitstring_comparison_test_bitugreater()
   using namespace jlm::rvsdg;
 
   Graph graph;
-  auto nf = graph.GetNodeNormalForm(typeid(bitugt_op));
-  nf->set_mutable(false);
-
   auto s0 = &jlm::tests::GraphImport::Create(graph, bittype::Create(32), "s0");
   auto s1 = &jlm::tests::GraphImport::Create(graph, bittype::Create(32), "s1");
 
@@ -1042,9 +970,6 @@ types_bitstring_comparison_test_bitugreatereq()
   using namespace jlm::rvsdg;
 
   Graph graph;
-  auto nf = graph.GetNodeNormalForm(typeid(bituge_op));
-  nf->set_mutable(false);
-
   auto s0 = &jlm::tests::GraphImport::Create(graph, bittype::Create(32), "s0");
   auto s1 = &jlm::tests::GraphImport::Create(graph, bittype::Create(32), "s1");
 
@@ -1098,9 +1023,6 @@ types_bitstring_comparison_test_bituless()
 
   // Arrange
   Graph graph;
-  auto nf = graph.GetNodeNormalForm(typeid(bitult_op));
-  nf->set_mutable(false);
-
   auto s0 = &jlm::tests::GraphImport::Create(graph, bittype::Create(32), "s0");
   auto s1 = &jlm::tests::GraphImport::Create(graph, bittype::Create(32), "s1");
 
@@ -1150,9 +1072,6 @@ types_bitstring_comparison_test_bitulesseq()
 
   // Arrange
   Graph graph;
-  auto nf = graph.GetNodeNormalForm(typeid(bitule_op));
-  nf->set_mutable(false);
-
   auto s0 = &jlm::tests::GraphImport::Create(graph, bittype::Create(32), "s0");
   auto s1 = &jlm::tests::GraphImport::Create(graph, bittype::Create(32), "s1");
 
@@ -1232,32 +1151,56 @@ types_bitstring_test_constant()
 {
   using namespace jlm::rvsdg;
 
+  // Arrange
   Graph graph;
 
-  auto b1 = output::GetNode(*create_bitconstant(&graph.GetRootRegion(), "00110011"));
-  auto b2 = output::GetNode(*create_bitconstant(&graph.GetRootRegion(), 8, 204));
-  auto b3 = output::GetNode(*create_bitconstant(&graph.GetRootRegion(), 8, 204));
-  auto b4 = output::GetNode(*create_bitconstant(&graph.GetRootRegion(), "001100110"));
+  auto NormalizeCne =
+      [&](const SimpleOperation & operation, const std::vector<jlm::rvsdg::output *> & operands)
+  {
+    return NormalizeSimpleOperationCommonNodeElimination(
+        graph.GetRootRegion(),
+        operation,
+        operands);
+  };
 
-  assert(b1->GetOperation() == uint_constant_op(8, 204));
-  assert(b1->GetOperation() == int_constant_op(8, -52));
+  auto & b1 = CreateOpNode<bitconstant_op>(graph.GetRootRegion(), "00110011");
+  auto & b2 = *output::GetNode(*create_bitconstant(&graph.GetRootRegion(), 8, 204));
+  auto & b3 = *output::GetNode(*create_bitconstant(&graph.GetRootRegion(), 8, 204));
+  auto & b4 = CreateOpNode<bitconstant_op>(graph.GetRootRegion(), "001100110");
 
-  assert(b1 == b2);
-  assert(b1 == b3);
+  auto & ex1 = jlm::tests::GraphExport::Create(*b1.output(0), "b1");
+  auto & ex2 = jlm::tests::GraphExport::Create(*b2.output(0), "b2");
+  auto & ex3 = jlm::tests::GraphExport::Create(*b3.output(0), "b3");
+  auto & ex4 = jlm::tests::GraphExport::Create(*b4.output(0), "b4");
 
-  assert(b1->GetOperation() == uint_constant_op(8, 204));
-  assert(b1->GetOperation() == int_constant_op(8, -52));
+  view(graph, stdout);
 
-  assert(b4->GetOperation() == uint_constant_op(9, 204));
-  assert(b4->GetOperation() == int_constant_op(9, 204));
+  // Act & Assert
+  assert(b1.GetOperation() == uint_constant_op(8, 204));
+  assert(b1.GetOperation() == int_constant_op(8, -52));
 
-  auto plus_one_128 = output::GetNode(*create_bitconstant(&graph.GetRootRegion(), ONE_64 ZERO_64));
-  assert(plus_one_128->GetOperation() == uint_constant_op(128, 1));
-  assert(plus_one_128->GetOperation() == int_constant_op(128, 1));
+  ReduceNode<bitconstant_op>(NormalizeCne, *output::GetNode(*ex1.origin()));
+  ReduceNode<bitconstant_op>(NormalizeCne, *output::GetNode(*ex2.origin()));
+  ReduceNode<bitconstant_op>(NormalizeCne, *output::GetNode(*ex3.origin()));
+  ReduceNode<bitconstant_op>(NormalizeCne, *output::GetNode(*ex4.origin()));
 
-  auto minus_one_128 =
-      output::GetNode(*create_bitconstant(&graph.GetRootRegion(), MONE_64 MONE_64));
-  assert(minus_one_128->GetOperation() == int_constant_op(128, -1));
+  assert(ex1.origin() == ex2.origin());
+  assert(ex1.origin() == ex3.origin());
+
+  const auto node1 = output::GetNode(*ex1.origin());
+  assert(node1->GetOperation() == uint_constant_op(8, 204));
+  assert(node1->GetOperation() == int_constant_op(8, -52));
+
+  const auto node4 = output::GetNode(*ex4.origin());
+  assert(node4->GetOperation() == uint_constant_op(9, 204));
+  assert(node4->GetOperation() == int_constant_op(9, 204));
+
+  const auto & plus_one_128 = CreateOpNode<bitconstant_op>(graph.GetRootRegion(), ONE_64 ZERO_64);
+  assert(plus_one_128.GetOperation() == uint_constant_op(128, 1));
+  assert(plus_one_128.GetOperation() == int_constant_op(128, 1));
+
+  const auto & minus_one_128 = CreateOpNode<bitconstant_op>(graph.GetRootRegion(), MONE_64 MONE_64);
+  assert(minus_one_128.GetOperation() == int_constant_op(128, -1));
 
   view(&graph.GetRootRegion(), stdout);
 
@@ -1271,8 +1214,6 @@ types_bitstring_test_normalize()
 
   // Arrange
   Graph graph;
-  auto sum_nf = graph.GetNodeNormalForm(typeid(Operation));
-  sum_nf->set_mutable(false);
 
   bittype bits32(32);
   auto imp = &jlm::tests::GraphImport::Create(graph, bittype::Create(32), "imp");
@@ -1290,7 +1231,7 @@ types_bitstring_test_normalize()
   // Act
   ReduceNode<bitadd_op>(FlattenAssociativeBinaryOperation, sum1);
   auto & flattenedBinaryNode = *output::GetNode(*ex.origin());
-  ReduceNode<flattened_binary_op>(NormalizeFlattenedBinaryOperation, flattenedBinaryNode);
+  ReduceNode<FlattenedBinaryOperation>(NormalizeFlattenedBinaryOperation, flattenedBinaryNode);
   graph.PruneNodes();
 
   view(&graph.GetRootRegion(), stdout);
@@ -1331,9 +1272,6 @@ types_bitstring_test_reduction()
 
   // Arrange
   Graph graph;
-  auto nf = graph.GetNodeNormalForm(typeid(Operation));
-  nf->set_mutable(false);
-
   auto bit4Type = bittype::Create(4);
   std::vector types({ bit4Type, bit4Type });
 
@@ -1392,9 +1330,6 @@ SliceOfConcatReduction()
 
   // Arrange
   Graph graph;
-  auto nf = graph.GetNodeNormalForm(typeid(Operation));
-  nf->set_mutable(false);
-
   auto bit16Type = bittype::Create(16);
   auto bit32Type = bittype::Create(32);
   std::vector types({ bit16Type, bit16Type });
@@ -1446,9 +1381,6 @@ ConcatOfSliceReduction()
 
   // Arrange
   Graph graph;
-  auto nf = graph.GetNodeNormalForm(typeid(Operation));
-  nf->set_mutable(false);
-
   auto bit8Type = bittype::Create(8);
   auto bit16Type = bittype::Create(16);
   std::vector types({ bit8Type, bit8Type });
@@ -1488,9 +1420,6 @@ SliceOfConstant()
 
   // Arrange
   Graph graph;
-  auto nf = graph.GetNodeNormalForm(typeid(Operation));
-  nf->set_mutable(false);
-
   auto bit8Type = bittype::Create(8);
 
   const auto constant = create_bitconstant(&graph.GetRootRegion(), "00110111");
@@ -1522,9 +1451,6 @@ SliceOfSlice()
 
   // Arrange
   Graph graph;
-  auto nf = graph.GetNodeNormalForm(typeid(Operation));
-  nf->set_mutable(false);
-
   auto bit4Type = bittype::Create(4);
 
   auto x = &jlm::tests::GraphImport::Create(graph, bittype::Create(8), "x");
@@ -1558,9 +1484,6 @@ SliceOfFullNode()
 
   // Arrange
   Graph graph;
-  auto nf = graph.GetNodeNormalForm(typeid(Operation));
-  nf->set_mutable(false);
-
   auto bit8Type = bittype::Create(8);
 
   const auto x = &jlm::tests::GraphImport::Create(graph, bittype::Create(8), "x");
@@ -1591,9 +1514,6 @@ SliceOfConcat()
 
   // Arrange
   Graph graph;
-  auto nf = graph.GetNodeNormalForm(typeid(Operation));
-  nf->set_mutable(false);
-
   auto bit16Type = bittype::Create(16);
 
   auto x = &jlm::tests::GraphImport::Create(graph, bittype::Create(8), "x");
@@ -1634,9 +1554,6 @@ ConcatFlattening()
 
   // Arrange
   Graph graph;
-  const auto nf = graph.GetNodeNormalForm(typeid(bitconcat_op));
-  nf->set_mutable(false);
-
   auto x = &jlm::tests::GraphImport::Create(graph, bittype::Create(8), "x");
   auto y = &jlm::tests::GraphImport::Create(graph, bittype::Create(8), "y");
   auto z = &jlm::tests::GraphImport::Create(graph, bittype::Create(8), "z");
@@ -1673,9 +1590,6 @@ ConcatWithSingleOperand()
 
   // Arrange
   Graph graph;
-  auto nf = graph.GetNodeNormalForm(typeid(Operation));
-  nf->set_mutable(false);
-
   auto bit8Type = bittype::Create(8);
   std::vector bit8Types({ bit8Type });
 
@@ -1709,9 +1623,6 @@ ConcatOfSlices()
 
   // Assert
   Graph graph;
-  auto nf = graph.GetNodeNormalForm(typeid(Operation));
-  nf->set_mutable(false);
-
   auto bit4Type = bittype::Create(4);
   std::vector bit4Types({ bit4Type, bit4Type });
 
@@ -1746,9 +1657,6 @@ ConcatOfConstants()
 
   // Arrange
   Graph graph;
-  auto nf = graph.GetNodeNormalForm(typeid(Operation));
-  nf->set_mutable(false);
-
   auto c1 = create_bitconstant(&graph.GetRootRegion(), "00110111");
   auto c2 = create_bitconstant(&graph.GetRootRegion(), "11001000");
 
@@ -1777,17 +1685,38 @@ ConcatCne()
 
   // Arrange & Act
   Graph graph;
+  auto NormalizeCne =
+      [&](const SimpleOperation & operation, const std::vector<jlm::rvsdg::output *> & operands)
+  {
+    return NormalizeSimpleOperationCommonNodeElimination(
+        graph.GetRootRegion(),
+        operation,
+        operands);
+  };
 
-  auto x = &jlm::tests::GraphImport::Create(graph, bittype::Create(8), "x");
-  auto y = &jlm::tests::GraphImport::Create(graph, bittype::Create(8), "y");
+  auto bitType8 = bittype::Create(8);
+  std::vector bitTypes({ bitType8, bitType8 });
 
-  auto slice1 = bitslice(x, 2, 6);
-  auto slice2 = bitslice(x, 2, 6);
-  assert(slice1 == slice2);
+  auto x = &jlm::tests::GraphImport::Create(graph, bitType8, "x");
+  auto y = &jlm::tests::GraphImport::Create(graph, bitType8, "y");
 
-  auto concat1 = bitconcat({ x, y });
-  auto concat2 = bitconcat({ x, y });
-  assert(concat1 == concat2);
+  auto & concatNode1 = CreateOpNode<bitconcat_op>({ x, y }, bitTypes);
+  auto & concatNode2 = CreateOpNode<bitconcat_op>({ x, y }, bitTypes);
+
+  auto & ex1 = jlm::tests::GraphExport::Create(*concatNode1.output(0), "dummy");
+  auto & ex2 = jlm::tests::GraphExport::Create(*concatNode2.output(0), "dummy");
+
+  view(graph, stdout);
+
+  // Act
+  ReduceNode<bitconcat_op>(NormalizeCne, *output::GetNode(*ex1.origin()));
+  ReduceNode<bitconcat_op>(NormalizeCne, *output::GetNode(*ex2.origin()));
+  graph.PruneNodes();
+
+  view(graph, stdout);
+
+  // Assert
+  assert(ex1.origin() == ex2.origin());
 
   return 0;
 }
@@ -1799,16 +1728,33 @@ SliceCne()
 {
   using namespace jlm::rvsdg;
 
-  // Arrange & Act
+  // Arrange
   Graph graph;
+  auto NormalizeCne =
+      [&](const SimpleOperation & operation, const std::vector<jlm::rvsdg::output *> & operands)
+  {
+    return NormalizeSimpleOperationCommonNodeElimination(
+        graph.GetRootRegion(),
+        operation,
+        operands);
+  };
 
-  auto x = &jlm::tests::GraphImport::Create(graph, bittype::Create(8), "x");
+  auto bitType8 = bittype::Create(8);
 
-  auto slice1 = bitslice(x, 2, 6);
-  auto slice2 = bitslice(x, 2, 6);
+  auto x = &jlm::tests::GraphImport::Create(graph, bitType8, "x");
 
-  auto & ex1 = jlm::tests::GraphExport::Create(*slice1, "dummy");
-  auto & ex2 = jlm::tests::GraphExport::Create(*slice2, "dummy");
+  auto & sliceNode1 = CreateOpNode<bitslice_op>({ x }, bitType8, 2, 6);
+  auto & sliceNode2 = CreateOpNode<bitslice_op>({ x }, bitType8, 2, 6);
+
+  auto & ex1 = jlm::tests::GraphExport::Create(*sliceNode1.output(0), "dummy");
+  auto & ex2 = jlm::tests::GraphExport::Create(*sliceNode2.output(0), "dummy");
+
+  view(graph, stdout);
+
+  // Act
+  ReduceNode<bitslice_op>(NormalizeCne, *output::GetNode(*ex1.origin()));
+  ReduceNode<bitslice_op>(NormalizeCne, *output::GetNode(*ex2.origin()));
+  graph.PruneNodes();
   view(graph, stdout);
 
   // Assert

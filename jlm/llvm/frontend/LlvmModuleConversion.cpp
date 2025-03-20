@@ -8,6 +8,7 @@
 #include <jlm/llvm/frontend/LlvmModuleConversion.hpp>
 #include <jlm/llvm/ir/cfg-structure.hpp>
 #include <jlm/llvm/ir/operators/operators.hpp>
+#include <jlm/llvm/ir/TypeConverter.hpp>
 
 #include <llvm/ADT/PostOrderIterator.h>
 #include <llvm/IR/BasicBlock.h>
@@ -31,10 +32,11 @@ convert_instructions(::llvm::Function & function, context & ctx)
       if (auto result = ConvertInstruction(&instruction, tacs, ctx))
         ctx.insert_value(&instruction, result);
 
-      // When an LLVM PhiNode is converted to a jlm phi_op, some of its operands may not be ready.
-      // The created phi_op therefore has no operands, but is instead added to a list.
-      // Once all basic blocks have been converted, all phi_ops are revisited and given operands.
-      if (!tacs.empty() && is<phi_op>(tacs.back()->operation()))
+      // When an LLVM PhiNode is converted to a jlm SsaPhiOperation, some of its operands may not be
+      // ready. The created SsaPhiOperation therefore has no operands, but is instead added to a
+      // list. Once all basic blocks have been converted, all SsaPhiOperations are revisited and
+      // given operands.
+      if (!tacs.empty() && is<SsaPhiOperation>(tacs.back()->operation()))
       {
         auto phi = ::llvm::dyn_cast<::llvm::PHINode>(&instruction);
         phis.push_back(phi);
@@ -47,33 +49,46 @@ convert_instructions(::llvm::Function & function, context & ctx)
   return phis;
 }
 
+/**
+ * During conversion of LLVM instructions, phi instructions were created without operands.
+ * Once all instructions have been converted, this function goes over all phi instructions
+ * and assigns proper operands.
+ */
 static void
-patch_phi_operands(const std::vector<::llvm::PHINode *> & phis, context & ctx)
+PatchPhiOperands(const std::vector<::llvm::PHINode *> & phis, context & ctx)
 {
   for (const auto & phi : phis)
   {
-    std::vector<cfg_node *> nodes;
+    std::vector<cfg_node *> incomingNodes;
     std::vector<const variable *> operands;
     for (size_t n = 0; n < phi->getNumOperands(); n++)
     {
       // In LLVM, phi instructions may have incoming basic blocks that are unreachable.
       // These are not visited during convert_basic_blocks, and thus do not have corresponding
-      // jlm::llvm::basic_blocks. The phi_op can safely ignore these, as they are dead.
+      // jlm::llvm::basic_blocks. The SsaPhiOperation can safely ignore these, as they are dead.
       if (!ctx.has(phi->getIncomingBlock(n)))
         continue;
 
-      auto bb = ctx.get(phi->getIncomingBlock(n));
+      // The LLVM phi instruction may have multiple operands with the same incoming cfg node.
+      // When this happens in valid LLVM IR, all operands from the same basic block are identical.
+      // We therefore skip any operands that reference already handled basic blocks.
+      auto predecessor = ctx.get(phi->getIncomingBlock(n));
+      if (std::find(incomingNodes.begin(), incomingNodes.end(), predecessor) != incomingNodes.end())
+        continue;
+
+      // Convert the operand value in the predecessor basic block, as that is where it is "used".
       tacsvector_t tacs;
       operands.push_back(ConvertValue(phi->getIncomingValue(n), tacs, ctx));
-      bb->insert_before_branch(tacs);
-      nodes.push_back(bb);
+      predecessor->insert_before_branch(tacs);
+      incomingNodes.push_back(predecessor);
     }
 
-    // Phi instructions with a single reachable predecessor should have already been elided
-    JLM_ASSERT(operands.size() >= 2);
+    JLM_ASSERT(operands.size() >= 1);
 
     auto phi_tac = util::AssertedCast<const tacvariable>(ctx.lookup_value(phi))->tac();
-    phi_tac->replace(phi_op(nodes, phi_tac->result(0)->Type()), operands);
+    phi_tac->replace(
+        SsaPhiOperation(std::move(incomingNodes), phi_tac->result(0)->Type()),
+        operands);
   }
 }
 
@@ -218,13 +233,13 @@ ConvertTypeAttribute(const ::llvm::Attribute & attribute, context & ctx)
 
   if (attribute.getKindAsEnum() == ::llvm::Attribute::AttrKind::ByVal)
   {
-    auto type = ConvertType(attribute.getValueAsType(), ctx);
+    auto type = ctx.GetTypeConverter().ConvertLlvmType(*attribute.getValueAsType());
     return { attribute::kind::ByVal, std::move(type) };
   }
 
   if (attribute.getKindAsEnum() == ::llvm::Attribute::AttrKind::StructRet)
   {
-    auto type = ConvertType(attribute.getValueAsType(), ctx);
+    auto type = ctx.GetTypeConverter().ConvertLlvmType(*attribute.getValueAsType());
     return { attribute::kind::StructRet, std::move(type) };
   }
 
@@ -274,7 +289,7 @@ convert_argument(const ::llvm::Argument & argument, context & ctx)
 {
   auto function = argument.getParent();
   auto name = argument.getName().str();
-  auto type = ConvertType(argument.getType(), ctx);
+  auto type = ctx.GetTypeConverter().ConvertLlvmType(*argument.getType());
   auto attributes =
       convert_attributes(function->getAttributes().getParamAttrs(argument.getArgNo()), ctx);
 
@@ -286,7 +301,7 @@ EnsureSingleInEdgeToExitNode(llvm::cfg & cfg)
 {
   auto exitNode = cfg.exit();
 
-  if (exitNode->ninedges() == 0)
+  if (exitNode->NumInEdges() == 0)
   {
     /*
       LLVM can produce CFGs that have no incoming edge to the exit node. This can happen if
@@ -321,7 +336,7 @@ EnsureSingleInEdgeToExitNode(llvm::cfg & cfg)
 
         rvsdg::ctlconstant_op op(rvsdg::ctlvalue_repr(1, 2));
         auto operand = basicBlock->append_last(tac::create(op, {}))->result(0);
-        basicBlock->append_last(branch_op::create(2, operand));
+        basicBlock->append_last(BranchOperation::create(2, operand));
 
         basicBlock->add_outedge(exitNode);
         basicBlock->add_outedge(repetitionEdge->sink());
@@ -332,7 +347,7 @@ EnsureSingleInEdgeToExitNode(llvm::cfg & cfg)
     }
   }
 
-  if (exitNode->ninedges() == 1)
+  if (exitNode->NumInEdges() == 1)
     return;
 
   /*
@@ -394,7 +409,7 @@ create_cfg(::llvm::Function & f, context & ctx)
   const tacvariable * result = nullptr;
   if (!f.getReturnType()->isVoidTy())
   {
-    auto type = ConvertType(f.getReturnType(), ctx);
+    auto type = ctx.GetTypeConverter().ConvertLlvmType(*f.getReturnType());
     entry_block->append_last(UndefValueOperation::Create(type, "_r_"));
     result = entry_block->last()->result(0);
 
@@ -409,11 +424,13 @@ create_cfg(::llvm::Function & f, context & ctx)
   ctx.set_basic_block_map(bbmap);
   ctx.set_result(result);
   auto phis = convert_instructions(f, ctx);
-  patch_phi_operands(phis, ctx);
+  PatchPhiOperands(phis, ctx);
 
   EnsureSingleInEdgeToExitNode(*cfg);
 
+  // Merge basic blocks A -> B when possible
   straighten(*cfg);
+  // Remove unreachable nodes
   prune(*cfg);
   return cfg;
 }
@@ -459,7 +476,7 @@ declare_globals(::llvm::Module & lm, context & ctx)
   {
     auto name = gv.getName().str();
     auto constant = gv.isConstant();
-    auto type = ConvertType(gv.getValueType(), ctx);
+    auto type = ctx.GetTypeConverter().ConvertLlvmType(*gv.getValueType());
     auto linkage = convert_linkage(gv.getLinkage());
     auto section = gv.getSection().str();
 
@@ -476,7 +493,7 @@ declare_globals(::llvm::Module & lm, context & ctx)
   {
     auto name = f.getName().str();
     auto linkage = convert_linkage(f.getLinkage());
-    auto type = ConvertFunctionType(f.getFunctionType(), ctx);
+    auto type = ctx.GetTypeConverter().ConvertFunctionType(*f.getFunctionType());
     auto attributes = convert_attributes(f.getAttributes().getFnAttrs(), ctx);
 
     return function_node::create(ctx.module().ipgraph(), name, type, linkage, attributes);
@@ -538,6 +555,8 @@ ConvertLlvmModule(::llvm::Module & m)
   context ctx(*im);
   declare_globals(m, ctx);
   convert_globals(m, ctx);
+
+  im->SetStructTypeDeclarations(ctx.GetTypeConverter().ReleaseStructTypeDeclarations());
 
   return im;
 }

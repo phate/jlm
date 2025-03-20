@@ -11,27 +11,23 @@
 namespace jlm::rvsdg
 {
 
-/* inputs */
-
-simple_input::~simple_input() noexcept
+SimpleInput::~SimpleInput() noexcept
 {
   on_input_destroy(this);
 }
 
-simple_input::simple_input(
+SimpleInput::SimpleInput(
     jlm::rvsdg::SimpleNode * node,
     jlm::rvsdg::output * origin,
     std::shared_ptr<const rvsdg::Type> type)
     : node_input(origin, node, std::move(type))
 {}
 
-/* outputs */
-
-simple_output::simple_output(jlm::rvsdg::SimpleNode * node, std::shared_ptr<const rvsdg::Type> type)
+SimpleOutput::SimpleOutput(SimpleNode * node, std::shared_ptr<const rvsdg::Type> type)
     : node_output(node, std::move(type))
 {}
 
-simple_output::~simple_output() noexcept
+SimpleOutput::~SimpleOutput() noexcept
 {
   on_output_destroy(this);
 }
@@ -59,11 +55,11 @@ SimpleNode::SimpleNode(
   for (size_t n = 0; n < SimpleNode::GetOperation().narguments(); n++)
   {
     add_input(
-        std::make_unique<simple_input>(this, operands[n], SimpleNode::GetOperation().argument(n)));
+        std::make_unique<SimpleInput>(this, operands[n], SimpleNode::GetOperation().argument(n)));
   }
 
   for (size_t n = 0; n < SimpleNode::GetOperation().nresults(); n++)
-    add_output(std::make_unique<simple_output>(this, SimpleNode::GetOperation().result(n)));
+    add_output(std::make_unique<SimpleOutput>(this, SimpleNode::GetOperation().result(n)));
 
   on_node_create(this);
 }
@@ -77,9 +73,9 @@ SimpleNode::GetOperation() const noexcept
 Node *
 SimpleNode::copy(rvsdg::Region * region, const std::vector<jlm::rvsdg::output *> & operands) const
 {
-  auto node = create(region, GetOperation(), operands);
-  graph()->MarkDenormalized();
-  return node;
+  std::unique_ptr<SimpleOperation> operation(
+      util::AssertedCast<SimpleOperation>(GetOperation().copy().release()));
+  return &Create(*region, std::move(operation), operands);
 }
 
 Node *
@@ -109,6 +105,46 @@ SimpleNode::copy(rvsdg::Region * region, SubstitutionMap & smap) const
     smap.insert(output(n), node->output(n));
 
   return node;
+}
+
+std::optional<std::vector<rvsdg::output *>>
+NormalizeSimpleOperationCommonNodeElimination(
+    Region & region,
+    const SimpleOperation & operation,
+    const std::vector<rvsdg::output *> & operands)
+{
+  auto isCongruent = [&](const Node & node)
+  {
+    auto & nodeOperation = node.GetOperation();
+    return nodeOperation == operation && operands == rvsdg::operands(&node)
+        && &nodeOperation != &operation;
+  };
+
+  if (operands.empty())
+  {
+    for (auto & node : region.TopNodes())
+    {
+      if (isCongruent(node))
+      {
+        return outputs(&node);
+      }
+    }
+  }
+  else
+  {
+    for (const auto & user : *operands[0])
+    {
+      if (const auto node = TryGetOwnerNode<SimpleNode>(*user))
+      {
+        if (isCongruent(*node))
+        {
+          return outputs(node);
+        }
+      }
+    }
+  }
+
+  return std::nullopt;
 }
 
 }

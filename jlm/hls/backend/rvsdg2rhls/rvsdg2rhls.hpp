@@ -6,10 +6,11 @@
 #ifndef JLM_HLS_BACKEND_RVSDG2RHLS_RVSDG2RHLS_HPP
 #define JLM_HLS_BACKEND_RVSDG2RHLS_RVSDG2RHLS_HPP
 
+#include <jlm/llvm/ir/operators/IntegerOperations.hpp>
 #include <jlm/llvm/ir/operators/operators.hpp>
 #include <jlm/llvm/ir/RvsdgModule.hpp>
-#include <jlm/rvsdg/bitstring/constant.hpp>
 #include <jlm/rvsdg/node.hpp>
+#include <jlm/util/Statistics.hpp>
 
 namespace jlm::hls
 {
@@ -17,19 +18,19 @@ namespace jlm::hls
 static inline bool
 is_constant(const rvsdg::Node * node)
 {
-  return jlm::rvsdg::is<jlm::rvsdg::bitconstant_op>(node)
+  return jlm::rvsdg::is<llvm::IntegerConstantOperation>(node)
       || jlm::rvsdg::is<llvm::UndefValueOperation>(node)
       || jlm::rvsdg::is<jlm::rvsdg::ctlconstant_op>(node);
 }
 
 void
-rvsdg2rhls(llvm::RvsdgModule & rm);
+rvsdg2rhls(llvm::RvsdgModule & rm, util::StatisticsCollector & collector);
 
 void
-rvsdg2ref(llvm::RvsdgModule & rm, std::string path);
+rvsdg2ref(llvm::RvsdgModule & rm, const util::filepath & function_name);
 
 void
-dump_ref(llvm::RvsdgModule & rhls, std::string & path);
+dump_ref(llvm::RvsdgModule & rhls, const util::filepath & function_name);
 
 const jlm::rvsdg::output *
 trace_call(jlm::rvsdg::input * input);

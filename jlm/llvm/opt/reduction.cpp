@@ -53,18 +53,13 @@ NodeReduction::~NodeReduction() noexcept = default;
 NodeReduction::NodeReduction() = default;
 
 void
-NodeReduction::run(RvsdgModule & rvsdgModule)
-{
-  util::StatisticsCollector statisticsCollector;
-  run(rvsdgModule, statisticsCollector);
-}
-
-void
-NodeReduction::run(RvsdgModule & rvsdgModule, util::StatisticsCollector & statisticsCollector)
+NodeReduction::Run(
+    rvsdg::RvsdgModule & rvsdgModule,
+    util::StatisticsCollector & statisticsCollector)
 {
   const auto & graph = rvsdgModule.Rvsdg();
 
-  Statistics_ = Statistics::Create(rvsdgModule.SourceFileName());
+  Statistics_ = Statistics::Create(rvsdgModule.SourceFilePath().value());
   Statistics_->Start(graph);
 
   ReduceNodesInRegion(graph.GetRootRegion());
@@ -83,7 +78,7 @@ NodeReduction::ReduceNodesInRegion(rvsdg::Region & region)
     numIterations++;
     reductionPerformed = false;
 
-    for (const auto node : rvsdg::topdown_traverser(&region))
+    for (const auto node : rvsdg::TopDownTraverser(&region))
     {
       if (const auto structuralNode = dynamic_cast<rvsdg::StructuralNode *>(node))
       {
@@ -159,7 +154,7 @@ NodeReduction::ReduceSimpleNode(rvsdg::Node & simpleNode)
   {
     return ReduceStoreNode(simpleNode);
   }
-  if (is<rvsdg::unary_op>(&simpleNode))
+  if (is<rvsdg::UnaryOperation>(&simpleNode))
   {
     // FIXME: handle the unary node
     // See github issue #304

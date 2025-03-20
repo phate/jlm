@@ -28,7 +28,8 @@ public:
     auto n1 = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(*operand1);
     auto n2 = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(*operand2);
 
-    if (jlm::rvsdg::is<jlm::rvsdg::unary_op>(n1) && jlm::rvsdg::is<jlm::rvsdg::unary_op>(n2))
+    if (jlm::rvsdg::is<jlm::rvsdg::UnaryOperation>(n1)
+        && jlm::rvsdg::is<jlm::rvsdg::UnaryOperation>(n2))
     {
       return 1;
     }
@@ -92,22 +93,19 @@ ReduceFlattenedBinaryReductionParallel()
       jlm::rvsdg::BinaryOperation::flags::associative);
 
   Graph graph;
-  const auto nf = graph.GetNodeNormalForm(typeid(flattened_binary_op));
-  nf->set_mutable(false);
-
   auto i0 = &jlm::tests::GraphImport::Create(graph, valueType, "");
   auto i1 = &jlm::tests::GraphImport::Create(graph, valueType, "");
   auto i2 = &jlm::tests::GraphImport::Create(graph, valueType, "");
   auto i3 = &jlm::tests::GraphImport::Create(graph, valueType, "");
 
-  auto & node = CreateOpNode<flattened_binary_op>({ i0, i1, i2, i3 }, binaryOperation, 4);
+  auto & node = CreateOpNode<FlattenedBinaryOperation>({ i0, i1, i2, i3 }, binaryOperation, 4);
 
   auto & ex = jlm::tests::GraphExport::Create(*node.output(0), "");
 
   view(graph, stdout);
 
   // Act
-  flattened_binary_op::reduce(&graph, flattened_binary_op::reduction::parallel);
+  FlattenedBinaryOperation::reduce(&graph, FlattenedBinaryOperation::reduction::parallel);
   graph.PruneNodes();
   view(graph, stdout);
 
@@ -143,22 +141,19 @@ ReduceFlattenedBinaryReductionLinear()
       jlm::rvsdg::BinaryOperation::flags::associative);
 
   Graph graph;
-  const auto nf = graph.GetNodeNormalForm(typeid(flattened_binary_op));
-  nf->set_mutable(false);
-
   auto i0 = &jlm::tests::GraphImport::Create(graph, valueType, "");
   auto i1 = &jlm::tests::GraphImport::Create(graph, valueType, "");
   auto i2 = &jlm::tests::GraphImport::Create(graph, valueType, "");
   auto i3 = &jlm::tests::GraphImport::Create(graph, valueType, "");
 
-  auto & node = CreateOpNode<flattened_binary_op>({ i0, i1, i2, i3 }, binaryOperation, 4);
+  auto & node = CreateOpNode<FlattenedBinaryOperation>({ i0, i1, i2, i3 }, binaryOperation, 4);
 
   auto & ex = jlm::tests::GraphExport::Create(*node.output(0), "");
 
   view(graph, stdout);
 
   // Act
-  flattened_binary_op::reduce(&graph, flattened_binary_op::reduction::linear);
+  FlattenedBinaryOperation::reduce(&graph, FlattenedBinaryOperation::reduction::linear);
   graph.PruneNodes();
 
   view(graph, stdout);
@@ -199,8 +194,8 @@ FlattenAssociativeBinaryOperation_NotAssociativeBinary()
       valueType,
       valueType,
       jlm::rvsdg::BinaryOperation::flags::none);
-  auto o1 = SimpleNode::create(&graph.GetRootRegion(), binaryOperation, { i0, i1 });
-  auto o2 = SimpleNode::create(&graph.GetRootRegion(), binaryOperation, { o1->output(0), i2 });
+  auto o1 = &SimpleNode::Create(graph.GetRootRegion(), binaryOperation, { i0, i1 });
+  auto o2 = &SimpleNode::Create(graph.GetRootRegion(), binaryOperation, { o1->output(0), i2 });
 
   auto & ex = jlm::tests::GraphExport::Create(*o2->output(0), "o2");
 
@@ -240,10 +235,10 @@ FlattenAssociativeBinaryOperation_NoNewOperands()
       valueType,
       valueType,
       jlm::rvsdg::BinaryOperation::flags::associative);
-  auto u1 = SimpleNode::create(&graph.GetRootRegion(), unaryOperation, { i0 });
-  auto u2 = SimpleNode::create(&graph.GetRootRegion(), unaryOperation, { i1 });
+  auto u1 = &SimpleNode::Create(graph.GetRootRegion(), unaryOperation, { i0 });
+  auto u2 = &SimpleNode::Create(graph.GetRootRegion(), unaryOperation, { i1 });
   auto b2 =
-      SimpleNode::create(&graph.GetRootRegion(), binaryOperation, { u1->output(0), u2->output(0) });
+      &SimpleNode::Create(graph.GetRootRegion(), binaryOperation, { u1->output(0), u2->output(0) });
 
   auto & ex = jlm::tests::GraphExport::Create(*b2->output(0), "o2");
 
@@ -283,8 +278,8 @@ FlattenAssociativeBinaryOperation_Success()
       valueType,
       valueType,
       jlm::rvsdg::BinaryOperation::flags::associative);
-  auto o1 = SimpleNode::create(&graph.GetRootRegion(), binaryOperation, { i0, i1 });
-  auto o2 = SimpleNode::create(&graph.GetRootRegion(), binaryOperation, { o1->output(0), i2 });
+  auto o1 = &SimpleNode::Create(graph.GetRootRegion(), binaryOperation, { i0, i1 });
+  auto o2 = &SimpleNode::Create(graph.GetRootRegion(), binaryOperation, { o1->output(0), i2 });
 
   auto & ex = jlm::tests::GraphExport::Create(*o2->output(0), "o2");
 
@@ -299,7 +294,7 @@ FlattenAssociativeBinaryOperation_Success()
   // Assert
   assert(success);
   auto flattenedBinaryNode = TryGetOwnerNode<SimpleNode>(*ex.origin());
-  assert(is<flattened_binary_op>(flattenedBinaryNode));
+  assert(is<FlattenedBinaryOperation>(flattenedBinaryNode));
   assert(flattenedBinaryNode->ninputs() == 3);
 
   return 0;
@@ -325,7 +320,7 @@ NormalizeBinaryOperation_NoNewOperands()
       valueType,
       valueType,
       jlm::rvsdg::BinaryOperation::flags::associative);
-  auto o1 = SimpleNode::create(&graph.GetRootRegion(), binaryOperation, { i0, i1 });
+  auto o1 = &SimpleNode::Create(graph.GetRootRegion(), binaryOperation, { i0, i1 });
 
   auto & ex = jlm::tests::GraphExport::Create(*o1->output(0), "o2");
 
@@ -362,11 +357,11 @@ NormalizeBinaryOperation_SingleOperand()
   auto s0 = &jlm::tests::GraphImport::Create(graph, valueType, "s0");
   auto s1 = &jlm::tests::GraphImport::Create(graph, valueType, "s1");
 
-  auto u1 = SimpleNode::create(&graph.GetRootRegion(), unaryOperation, { s0 });
-  auto u2 = SimpleNode::create(&graph.GetRootRegion(), unaryOperation, { s1 });
+  auto u1 = &SimpleNode::Create(graph.GetRootRegion(), unaryOperation, { s0 });
+  auto u2 = &SimpleNode::Create(graph.GetRootRegion(), unaryOperation, { s1 });
 
   auto o1 =
-      SimpleNode::create(&graph.GetRootRegion(), binaryOperation, { u1->output(0), u2->output(0) });
+      &SimpleNode::Create(graph.GetRootRegion(), binaryOperation, { u1->output(0), u2->output(0) });
 
   auto & ex = jlm::tests::GraphExport::Create(*o1->output(0), "ex");
 

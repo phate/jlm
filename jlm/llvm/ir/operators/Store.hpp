@@ -10,7 +10,6 @@
 #include <jlm/llvm/ir/types.hpp>
 #include <jlm/rvsdg/graph.hpp>
 #include <jlm/rvsdg/simple-node.hpp>
-#include <jlm/rvsdg/simple-normal-form.hpp>
 
 #include <optional>
 
@@ -154,14 +153,14 @@ protected:
   {}
 
 public:
-  class MemoryStateInputIterator final : public rvsdg::input::iterator<rvsdg::simple_input>
+  class MemoryStateInputIterator final : public rvsdg::input::iterator<rvsdg::SimpleInput>
   {
   public:
-    constexpr explicit MemoryStateInputIterator(rvsdg::simple_input * input)
-        : rvsdg::input::iterator<jlm::rvsdg::simple_input>(input)
+    constexpr explicit MemoryStateInputIterator(rvsdg::SimpleInput * input)
+        : rvsdg::input::iterator<rvsdg::SimpleInput>(input)
     {}
 
-    [[nodiscard]] rvsdg::simple_input *
+    [[nodiscard]] rvsdg::SimpleInput *
     next() const override
     {
       auto index = value()->index();
@@ -171,14 +170,14 @@ public:
     }
   };
 
-  class MemoryStateOutputIterator final : public rvsdg::output::iterator<rvsdg::simple_output>
+  class MemoryStateOutputIterator final : public rvsdg::output::iterator<rvsdg::SimpleOutput>
   {
   public:
-    constexpr explicit MemoryStateOutputIterator(rvsdg::simple_output * output)
-        : rvsdg::output::iterator<rvsdg::simple_output>(output)
+    constexpr explicit MemoryStateOutputIterator(rvsdg::SimpleOutput * output)
+        : rvsdg::output::iterator<rvsdg::SimpleOutput>(output)
     {}
 
-    [[nodiscard]] rvsdg::simple_output *
+    [[nodiscard]] rvsdg::SimpleOutput *
     next() const override
     {
       auto index = value()->index();
@@ -393,7 +392,7 @@ private:
   CreateOperandTypes(std::shared_ptr<const rvsdg::ValueType> storedType, size_t numMemoryStates)
   {
     std::vector<std::shared_ptr<const rvsdg::Type>> types(
-        { PointerType::Create(), std::move(storedType), iostatetype::Create() });
+        { PointerType::Create(), std::move(storedType), IOStateType::Create() });
     std::vector<std::shared_ptr<const rvsdg::Type>> states(
         numMemoryStates,
         MemoryStateType::Create());
@@ -404,7 +403,7 @@ private:
   static std::vector<std::shared_ptr<const rvsdg::Type>>
   CreateResultTypes(size_t numMemoryStates)
   {
-    std::vector<std::shared_ptr<const rvsdg::Type>> types({ iostatetype::Create() });
+    std::vector<std::shared_ptr<const rvsdg::Type>> types({ IOStateType::Create() });
     std::vector<std::shared_ptr<const rvsdg::Type>> memoryStates(
         numMemoryStates,
         MemoryStateType::Create());
@@ -442,7 +441,7 @@ public:
   GetIoStateInput() const noexcept
   {
     auto ioStateInput = input(2);
-    JLM_ASSERT(is<iostatetype>(ioStateInput->type()));
+    JLM_ASSERT(is<IOStateType>(ioStateInput->type()));
     return *ioStateInput;
   }
 
@@ -450,7 +449,7 @@ public:
   GetIoStateOutput() const noexcept
   {
     auto ioStateOutput = output(0);
-    JLM_ASSERT(is<iostatetype>(ioStateOutput->type()));
+    JLM_ASSERT(is<IOStateType>(ioStateOutput->type()));
     return *ioStateOutput;
   }
 

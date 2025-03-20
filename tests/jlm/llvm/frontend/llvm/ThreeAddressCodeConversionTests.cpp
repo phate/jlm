@@ -69,7 +69,7 @@ SetupFunctionWithThreeAddressCode(const jlm::rvsdg::SimpleOperation & operation)
     resultTypes.emplace_back(operation.result(n));
   }
 
-  auto functionType = FunctionType::Create(operandTypes, resultTypes);
+  auto functionType = jlm::rvsdg::FunctionType::Create(operandTypes, resultTypes);
 
   auto functionNode =
       function_node::create(ipgraph, "test", functionType, linkage::external_linkage);
@@ -97,7 +97,8 @@ LoadVolatileConversion()
 
   // Assert
   auto lambdaOutput = rvsdgModule->Rvsdg().GetRootRegion().result(0)->origin();
-  auto lambda = dynamic_cast<const lambda::node *>(jlm::rvsdg::output::GetNode(*lambdaOutput));
+  auto lambda =
+      dynamic_cast<const jlm::rvsdg::LambdaNode *>(jlm::rvsdg::output::GetNode(*lambdaOutput));
 
   auto loadVolatileNode = lambda->subregion()->Nodes().begin().ptr();
   assert(dynamic_cast<const LoadVolatileNode *>(loadVolatileNode));
@@ -126,7 +127,8 @@ StoreVolatileConversion()
 
   // Assert
   auto lambdaOutput = rvsdgModule->Rvsdg().GetRootRegion().result(0)->origin();
-  auto lambda = dynamic_cast<const lambda::node *>(jlm::rvsdg::output::GetNode(*lambdaOutput));
+  auto lambda =
+      dynamic_cast<const jlm::rvsdg::LambdaNode *>(jlm::rvsdg::output::GetNode(*lambdaOutput));
 
   auto storeVolatileNode = lambda->subregion()->Nodes().begin().ptr();
   assert(dynamic_cast<const StoreVolatileNode *>(storeVolatileNode));

@@ -50,7 +50,7 @@ public:
 
   std::unique_ptr<MemoryNodeProvisioning>
   ProvisionMemoryNodes(
-      const RvsdgModule & rvsdgModule,
+      const rvsdg::RvsdgModule & rvsdgModule,
       const PointsToGraph & pointsToGraph,
       util::StatisticsCollector & statisticsCollector) override
   {
@@ -61,7 +61,7 @@ public:
 
   static std::unique_ptr<MemoryNodeProvisioning>
   Create(
-      const RvsdgModule & rvsdgModule,
+      const rvsdg::RvsdgModule & rvsdgModule,
       const PointsToGraph & pointsToGraph,
       util::StatisticsCollector & statisticsCollector)
   {

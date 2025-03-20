@@ -51,7 +51,7 @@ TestThreeAddressCodeCreator()
 
   auto address = ipgModule.create_variable(PointerType::Create(), "p");
   auto memoryState = ipgModule.create_variable(MemoryStateType::Create(), "m");
-  auto iOState = ipgModule.create_variable(iostatetype::Create(), "io");
+  auto iOState = ipgModule.create_variable(IOStateType::Create(), "io");
 
   // Act
   auto free0 = FreeOperation::Create(address, {}, iOState);
@@ -72,7 +72,7 @@ TestRvsdgCreator()
 
   auto address = &jlm::tests::GraphImport::Create(rvsdg, PointerType::Create(), "p");
   auto memoryState = &jlm::tests::GraphImport::Create(rvsdg, MemoryStateType::Create(), "m");
-  auto iOState = &jlm::tests::GraphImport::Create(rvsdg, iostatetype::Create(), "io");
+  auto iOState = &jlm::tests::GraphImport::Create(rvsdg, IOStateType::Create(), "io");
 
   // Act
   auto freeResults0 = FreeOperation::Create(address, {}, iOState);

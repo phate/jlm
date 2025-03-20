@@ -214,7 +214,7 @@ DotHLS::loop_to_dot(hls::loop_node * ln)
     }
   }
 
-  for (auto node : jlm::rvsdg::topdown_traverser(sr))
+  for (auto node : rvsdg::TopDownTraverser(sr))
   {
     if (dynamic_cast<jlm::rvsdg::SimpleNode *>(node))
     {
@@ -246,7 +246,7 @@ DotHLS::loop_to_dot(hls::loop_node * ln)
 
   // all loop muxes at one level
   dot << "{rank=same ";
-  for (auto node : jlm::rvsdg::topdown_traverser(sr))
+  for (auto node : rvsdg::TopDownTraverser(sr))
   {
     auto mx = dynamic_cast<const hls::mux_op *>(&node->GetOperation());
     auto lc = dynamic_cast<const hls::loop_constant_buffer_op *>(&node->GetOperation());
@@ -258,7 +258,7 @@ DotHLS::loop_to_dot(hls::loop_node * ln)
   dot << "}\n";
   // all loop branches at one level
   dot << "{rank=same ";
-  for (auto node : jlm::rvsdg::topdown_traverser(sr))
+  for (auto node : rvsdg::TopDownTraverser(sr))
   {
     auto br = dynamic_cast<const hls::branch_op *>(&node->GetOperation());
     if (br && br->loop)
@@ -270,7 +270,7 @@ DotHLS::loop_to_dot(hls::loop_node * ln)
 
   dot << "}\n";
   // do edges outside in order not to pull other nodes into the cluster
-  for (auto node : jlm::rvsdg::topdown_traverser(sr))
+  for (auto node : rvsdg::TopDownTraverser(sr))
   {
     if (dynamic_cast<jlm::rvsdg::SimpleNode *>(node))
     {
@@ -305,7 +305,7 @@ DotHLS::prepare_loop_out_port(hls::loop_node * ln)
 
   auto sr = ln->subregion();
   // just translate outputs
-  for (auto node : jlm::rvsdg::topdown_traverser(sr))
+  for (auto node : rvsdg::TopDownTraverser(sr))
   {
     if (dynamic_cast<jlm::rvsdg::SimpleNode *>(node))
     {
@@ -386,7 +386,7 @@ DotHLS::subregion_to_dot(rvsdg::Region * sr)
     output_map[sr->argument(i)] = get_port_name(sr->argument(i));
   }
   // process nodes
-  for (auto node : jlm::rvsdg::topdown_traverser(sr))
+  for (auto node : rvsdg::TopDownTraverser(sr))
   {
     if (dynamic_cast<jlm::rvsdg::SimpleNode *>(node))
     {

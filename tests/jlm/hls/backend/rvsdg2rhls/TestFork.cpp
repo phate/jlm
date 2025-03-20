@@ -19,20 +19,15 @@ TestFork()
 
   // Arrange
   auto b32 = rvsdg::bittype::Create(32);
-  auto ft = FunctionType::Create({ b32, b32, b32 }, { b32, b32, b32 });
+  auto ft = jlm::rvsdg::FunctionType::Create({ b32, b32, b32 }, { b32, b32, b32 });
 
   RvsdgModule rm(util::filepath(""), "", "");
-  auto nf = rm.Rvsdg().GetNodeNormalForm(typeid(rvsdg::Operation));
-  nf->set_mutable(false);
 
-  auto lambda =
-      lambda::node::create(&rm.Rvsdg().GetRootRegion(), ft, "f", linkage::external_linkage);
-
-  rvsdg::bitult_op ult(32);
-  rvsdg::bitadd_op add(32);
+  auto lambda = jlm::rvsdg::LambdaNode::Create(
+      rm.Rvsdg().GetRootRegion(),
+      LlvmLambdaOperation::Create(ft, "f", linkage::external_linkage));
 
   auto loop = hls::loop_node::create(lambda->subregion());
-  auto subregion = loop->subregion();
   rvsdg::output * idvBuffer;
   loop->AddLoopVar(lambda->GetFunctionArguments()[0], &idvBuffer);
   rvsdg::output * lvsBuffer;
@@ -40,8 +35,8 @@ TestFork()
   rvsdg::output * lveBuffer;
   loop->AddLoopVar(lambda->GetFunctionArguments()[2], &lveBuffer);
 
-  auto arm = rvsdg::SimpleNode::create_normalized(subregion, add, { idvBuffer, lvsBuffer })[0];
-  auto cmp = rvsdg::SimpleNode::create_normalized(subregion, ult, { arm, lveBuffer })[0];
+  auto arm = rvsdg::CreateOpNode<rvsdg::bitadd_op>({ idvBuffer, lvsBuffer }, 32).output(0);
+  auto cmp = rvsdg::CreateOpNode<rvsdg::bitult_op>({ arm, lveBuffer }, 32).output(0);
   auto match = rvsdg::match(1, { { 1, 1 } }, 0, 2, cmp);
 
   loop->set_predicate(match);
@@ -59,8 +54,8 @@ TestFork()
   {
     auto omegaRegion = &rm.Rvsdg().GetRootRegion();
     assert(omegaRegion->nnodes() == 1);
-    auto lambda = util::AssertedCast<lambda::node>(omegaRegion->Nodes().begin().ptr());
-    assert(is<lambda::operation>(lambda));
+    auto lambda = util::AssertedCast<jlm::rvsdg::LambdaNode>(omegaRegion->Nodes().begin().ptr());
+    assert(is<jlm::rvsdg::LambdaOperation>(lambda));
 
     auto lambdaRegion = lambda->subregion();
     assert(lambdaRegion->nnodes() == 1);
@@ -88,18 +83,14 @@ TestConstantFork()
 
   // Arrange
   auto b32 = rvsdg::bittype::Create(32);
-  auto ft = FunctionType::Create({ b32 }, { b32 });
+  auto ft = jlm::rvsdg::FunctionType::Create({ b32 }, { b32 });
 
   RvsdgModule rm(util::filepath(""), "", "");
-  auto nf = rm.Rvsdg().GetNodeNormalForm(typeid(rvsdg::Operation));
-  nf->set_mutable(false);
 
-  auto lambda =
-      lambda::node::create(&rm.Rvsdg().GetRootRegion(), ft, "f", linkage::external_linkage);
+  auto lambda = jlm::rvsdg::LambdaNode::Create(
+      rm.Rvsdg().GetRootRegion(),
+      LlvmLambdaOperation::Create(ft, "f", linkage::external_linkage));
   auto lambdaRegion = lambda->subregion();
-
-  rvsdg::bitult_op ult(32);
-  rvsdg::bitadd_op add(32);
 
   auto loop = hls::loop_node::create(lambdaRegion);
   auto subregion = loop->subregion();
@@ -107,8 +98,8 @@ TestConstantFork()
   loop->AddLoopVar(lambda->GetFunctionArguments()[0], &idvBuffer);
   auto bitConstant1 = rvsdg::create_bitconstant(subregion, 32, 1);
 
-  auto arm = rvsdg::SimpleNode::create_normalized(subregion, add, { idvBuffer, bitConstant1 })[0];
-  auto cmp = rvsdg::SimpleNode::create_normalized(subregion, ult, { arm, bitConstant1 })[0];
+  auto arm = rvsdg::CreateOpNode<rvsdg::bitadd_op>({ idvBuffer, bitConstant1 }, 32).output(0);
+  auto cmp = rvsdg::CreateOpNode<rvsdg::bitult_op>({ arm, bitConstant1 }, 32).output(0);
   auto match = rvsdg::match(1, { { 1, 1 } }, 0, 2, cmp);
 
   loop->set_predicate(match);
@@ -126,8 +117,8 @@ TestConstantFork()
   {
     auto omegaRegion = &rm.Rvsdg().GetRootRegion();
     assert(omegaRegion->nnodes() == 1);
-    auto lambda = util::AssertedCast<lambda::node>(omegaRegion->Nodes().begin().ptr());
-    assert(is<lambda::operation>(lambda));
+    auto lambda = util::AssertedCast<jlm::rvsdg::LambdaNode>(omegaRegion->Nodes().begin().ptr());
+    assert(is<jlm::rvsdg::LambdaOperation>(lambda));
 
     auto lambdaRegion = lambda->subregion();
     assert(lambdaRegion->nnodes() == 1);

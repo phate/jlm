@@ -43,7 +43,7 @@ TargetsExactly(
 
 /**
  * @brief Checks that the set of Memory Nodes escaping the PointsToGraph is exactly equal
- * to the given set of nodes.
+ * to the given set of nodes. The external node is included implicitly if omitted.
  * @param ptg the PointsToGraph
  * @param nodes the complete set of nodes that should have escaped
  * @return true if the \p ptg's escaped set is identical to \p nodes, false otherwise
@@ -53,7 +53,9 @@ EscapedIsExactly(
     const jlm::llvm::aa::PointsToGraph & ptg,
     const std::unordered_set<const jlm::llvm::aa::PointsToGraph::MemoryNode *> & nodes)
 {
-  return ptg.GetEscapedMemoryNodes() == jlm::util::HashSet(nodes);
+  jlm::util::HashSet hashSet(nodes);
+  hashSet.Insert(&ptg.GetExternalMemoryNode());
+  return ptg.GetEscapedMemoryNodes() == hashSet;
 }
 
 static int
@@ -975,7 +977,6 @@ TestStatistics()
   // Arrange
   jlm::tests::LoadTest1 test;
   jlm::util::StatisticsCollectorSettings statisticsCollectorSettings(
-      jlm::util::filepath("/tmp/stats.txt"),
       { jlm::util::Statistics::Id::AndersenAnalysis });
   jlm::util::StatisticsCollector statisticsCollector(statisticsCollectorSettings);
 

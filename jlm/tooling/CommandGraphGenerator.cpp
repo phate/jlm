@@ -22,7 +22,7 @@ util::filepath
 JlcCommandGraphGenerator::CreateJlmOptCommandOutputFile(const util::filepath & inputFile)
 {
   return util::filepath::CreateUniqueFileName(
-      std::filesystem::temp_directory_path().string(),
+      util::filepath::TempDirectoryPath(),
       inputFile.base() + "-",
       "-jlm-opt.ll");
 }
@@ -31,7 +31,7 @@ util::filepath
 JlcCommandGraphGenerator::CreateParserCommandOutputFile(const util::filepath & inputFile)
 {
   return util::filepath::CreateUniqueFileName(
-      std::filesystem::temp_directory_path().string(),
+      util::filepath::TempDirectoryPath(),
       inputFile.base() + "-",
       "-clang.ll");
 }
@@ -127,22 +127,20 @@ JlcCommandGraphGenerator::GenerateCommandGraph(const JlcCommandLineOptions & com
 
     if (compilation.RequiresOptimization())
     {
-      util::filepath tempDirectory(std::filesystem::temp_directory_path());
       auto clangCommand = util::AssertedCast<ClangCommand>(&lastNode->GetCommand());
-      auto statisticsFilePath = util::StatisticsCollectorSettings::CreateUniqueStatisticsFile(
-          tempDirectory,
-          compilation.InputFile());
+
       util::StatisticsCollectorSettings statisticsCollectorSettings(
-          statisticsFilePath,
-          commandLineOptions.JlmOptPassStatistics_);
+          commandLineOptions.JlmOptPassStatistics_,
+          util::filepath::TempDirectoryPath(),
+          compilation.InputFile().base());
 
       JlmOptCommandLineOptions jlmOptCommandLineOptions(
           clangCommand->OutputFile(),
           JlmOptCommandLineOptions::InputFormat::Llvm,
           CreateJlmOptCommandOutputFile(compilation.InputFile()),
           JlmOptCommandLineOptions::OutputFormat::Llvm,
-          statisticsCollectorSettings,
-          jlm::llvm::RvsdgTreePrinter::Configuration(tempDirectory, {}),
+          std::move(statisticsCollectorSettings),
+          jlm::llvm::RvsdgTreePrinter::Configuration({}),
           commandLineOptions.JlmOptOptimizations_);
 
       auto & jlmOptCommandNode =
@@ -273,17 +271,16 @@ JhlsCommandGraphGenerator::GenerateCommandGraph(const JhlsCommandLineOptions & c
   std::vector<util::filepath> llir_files;
 
   // Create directory in /tmp for storing temporary files
-  std::string tmp_identifier;
+  std::string tmp_identifier = "jhls-";
   for (const auto & compilation : commandLineOptions.Compilations_)
   {
-    tmp_identifier += compilation.InputFile().name() + "_";
+    tmp_identifier += compilation.InputFile().name() + "-";
     if (tmp_identifier.length() > 30)
       break;
   }
-  srandom((unsigned)time(nullptr) * getpid());
-  tmp_identifier += std::to_string(random());
-  util::filepath tmp_folder(
-      std::filesystem::temp_directory_path().string() + "/" + tmp_identifier + "/");
+
+  const auto tmp_folder =
+      util::filepath::CreateUniqueFileName(util::filepath::TempDirectoryPath(), tmp_identifier, "");
   auto & mkdir = MkdirCommand::Create(*commandGraph, tmp_folder);
   commandGraph->GetEntryNode().AddEdge(mkdir);
 
@@ -296,7 +293,7 @@ JhlsCommandGraphGenerator::GenerateCommandGraph(const JhlsCommandLineOptions & c
       auto & parserNode = ClangCommand::CreateParsingCommand(
           *commandGraph,
           compilation.InputFile(),
-          CreateParserCommandOutputFile(tmp_folder, compilation.InputFile()).to_str(),
+          CreateParserCommandOutputFile(tmp_folder, compilation.InputFile()),
           compilation.DependencyFile(),
           commandLineOptions.IncludePaths_,
           commandLineOptions.MacroDefinitions_,

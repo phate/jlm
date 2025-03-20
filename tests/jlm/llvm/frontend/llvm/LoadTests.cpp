@@ -54,7 +54,7 @@ LoadConversion()
     auto controlFlowGraph =
         dynamic_cast<const function_node *>(ipgModule->ipgraph().find("f"))->cfg();
     auto basicBlock =
-        dynamic_cast<const basic_block *>(controlFlowGraph->entry()->outedge(0)->sink());
+        dynamic_cast<const basic_block *>(controlFlowGraph->entry()->OutEdge(0)->sink());
 
     size_t numLoadThreeAddressCodes = 0;
     size_t numLoadVolatileThreeAddressCodes = 0;
@@ -66,10 +66,10 @@ LoadConversion()
         auto ioStateAssignment = *std::next(it);
         auto memoryStateAssignment = *std::next(it, 2);
 
-        assert(is<assignment_op>(ioStateAssignment->operation()));
-        assert(is<iostatetype>(ioStateAssignment->operand(0)->type()));
+        assert(is<AssignmentOperation>(ioStateAssignment->operation()));
+        assert(is<IOStateType>(ioStateAssignment->operand(0)->type()));
 
-        assert(is<assignment_op>(memoryStateAssignment->operation()));
+        assert(is<AssignmentOperation>(memoryStateAssignment->operation()));
         assert(is<MemoryStateType>(memoryStateAssignment->operand(0)->type()));
       }
       else if (is<LoadNonVolatileOperation>(*it))
@@ -77,7 +77,7 @@ LoadConversion()
         numLoadThreeAddressCodes++;
         auto memoryStateAssignment = *std::next(it, 1);
 
-        assert(is<assignment_op>(memoryStateAssignment->operation()));
+        assert(is<AssignmentOperation>(memoryStateAssignment->operation()));
         assert(is<MemoryStateType>(memoryStateAssignment->operand(0)->type()));
       }
     }

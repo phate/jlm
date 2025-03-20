@@ -37,11 +37,12 @@ GetOrCreateTypeGraphNode(const rvsdg::Type & type, util::Graph & typeGraph)
 
   // Some types get special handling, such as adding incoming edges from aggregate types
   if (rvsdg::is<rvsdg::StateType>(type) || rvsdg::is<rvsdg::bittype>(type)
-      || rvsdg::is<PointerType>(type) || rvsdg::is<fptype>(type) || rvsdg::is<varargtype>(type))
+      || rvsdg::is<PointerType>(type) || rvsdg::is<FloatingPointType>(type)
+      || rvsdg::is<VariableArgumentType>(type))
   {
     // No need to provide any information beyond the debug string
   }
-  else if (auto arrayType = dynamic_cast<const arraytype *>(&type))
+  else if (auto arrayType = dynamic_cast<const ArrayType *>(&type))
   {
     auto & elementTypeNode = GetOrCreateTypeGraphNode(arrayType->element_type(), typeGraph);
     typeGraph.CreateDirectedEdge(elementTypeNode, node);
@@ -55,12 +56,12 @@ GetOrCreateTypeGraphNode(const rvsdg::Type & type, util::Graph & typeGraph)
       typeGraph.CreateDirectedEdge(elementTypeNode, node);
     }
   }
-  else if (auto vectorType = dynamic_cast<const vectortype *>(&type))
+  else if (const auto vectorType = dynamic_cast<const VectorType *>(&type))
   {
     auto & elementTypeNode = GetOrCreateTypeGraphNode(vectorType->type(), typeGraph);
     typeGraph.CreateDirectedEdge(elementTypeNode, node);
   }
-  else if (auto functionType = dynamic_cast<const FunctionType *>(&type))
+  else if (auto functionType = dynamic_cast<const rvsdg::FunctionType *>(&type))
   {
     for (size_t n = 0; n < functionType->NumArguments(); n++)
     {
@@ -102,7 +103,7 @@ AttachNodeInput(util::Port & inputPort, const rvsdg::input & rvsdgInput)
     auto & edge = graph.CreateDirectedEdge(*originPort, inputPort);
     if (rvsdg::is<MemoryStateType>(rvsdgInput.type()))
       edge.SetAttribute("color", util::Colors::Red);
-    if (rvsdg::is<iostatetype>(rvsdgInput.type()))
+    if (rvsdg::is<IOStateType>(rvsdgInput.type()))
       edge.SetAttribute("color", util::Colors::Green);
   }
 }
@@ -144,21 +145,24 @@ CreateGraphNodes(util::Graph & graph, rvsdg::Region & region, util::Graph * type
     auto & argument = *region.argument(n);
     AttachNodeOutput(node, argument, typeGraph);
 
-    // Give the argument a label using its local index, not the global argument index
-    node.SetLabel(util::strfmt("a", n));
+    // Include the index among the region's attributes
+    node.SetAttribute("index", std::to_string(n));
+
+    // Use the debug string as the label
+    node.SetLabel(argument.debug_string());
 
     // If this argument corresponds to one of the structural node's inputs, reference it
     if (argument.input())
     {
       node.SetAttributeObject("input", *argument.input());
       // Include the local index of the node's input in the label
-      node.AppendToLabel(util::strfmt("<- i", argument.input()->index()), " ");
+      node.AppendToLabel(util::strfmt("<- ", argument.input()->debug_string()), " ");
     }
   }
 
   // Create a node for each node in the region in topological order.
   // Inputs expect the node representing their origin to exist before being visited.
-  rvsdg::topdown_traverser traverser(&region);
+  rvsdg::TopDownTraverser traverser(&region);
   for (const auto rvsdgNode : traverser)
   {
     auto & node = graph.CreateInOutNode(rvsdgNode->ninputs(), rvsdgNode->noutputs());
@@ -189,15 +193,18 @@ CreateGraphNodes(util::Graph & graph, rvsdg::Region & region, util::Graph * type
     auto & result = *region.result(n);
     AttachNodeInput(node, result);
 
-    // Use the result's local index as the label
-    node.SetLabel(util::strfmt("r", n));
+    // Include the index among the region's results
+    node.SetAttribute("index", std::to_string(n));
+
+    // Use the debug string as the label
+    node.SetLabel(result.debug_string());
 
     // If this result corresponds to one of the structural node's outputs, reference it
     if (result.output())
     {
       node.SetAttributeObject("output", *result.output());
       // Include the local index of the node's output in the label
-      node.AppendToLabel(util::strfmt("-> o", result.output()->index()), " ");
+      node.AppendToLabel(util::strfmt("-> ", result.output()->debug_string()), " ");
     }
   }
 }
