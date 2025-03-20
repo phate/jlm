@@ -58,12 +58,6 @@ ReplaceLoad(
 jlm::rvsdg::SimpleNode *
 ReplaceStore(rvsdg::SubstitutionMap & smap, const jlm::rvsdg::SimpleNode * originalStore);
 
-jlm::rvsdg::output *
-route_response(rvsdg::Region * target, jlm::rvsdg::output * response);
-
-jlm::rvsdg::output *
-route_request(rvsdg::Region * target, jlm::rvsdg::output * request);
-
 } // namespace jlm::hls
 
 #endif // JLM_BACKEND_HLS_RVSDG2RHLS_MEM_CONV_HPP

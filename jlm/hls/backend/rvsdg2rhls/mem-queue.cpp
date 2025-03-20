@@ -6,6 +6,7 @@
 #include <jlm/hls/backend/rvsdg2rhls/mem-conv.hpp>
 #include <jlm/hls/backend/rvsdg2rhls/mem-queue.hpp>
 #include <jlm/hls/backend/rvsdg2rhls/mem-sep.hpp>
+#include <jlm/hls/backend/rvsdg2rhls/hls-function-util.hpp>
 #include <jlm/hls/ir/hls.hpp>
 #include <jlm/llvm/ir/operators/call.hpp>
 #include <jlm/llvm/ir/operators/lambda.hpp>
@@ -132,48 +133,6 @@ find_loop_output(jlm::rvsdg::StructuralInput * sti)
     }
   }
   JLM_UNREACHABLE("This should never happen");
-}
-
-std::deque<jlm::rvsdg::Region *>
-get_parent_regions(jlm::rvsdg::Region * region)
-{
-  std::deque<jlm::rvsdg::Region *> regions;
-  jlm::rvsdg::Region * target_region = region;
-  while (
-      !dynamic_cast<const jlm::llvm::LlvmLambdaOperation *>(&target_region->node()->GetOperation()))
-  {
-    regions.push_front(target_region);
-    target_region = target_region->node()->region();
-  }
-  return regions;
-}
-
-jlm::rvsdg::output *
-route_to_region(jlm::rvsdg::Region * target, jlm::rvsdg::output * out)
-{
-  // create lists of nested regions
-  std::deque<jlm::rvsdg::Region *> target_regions = get_parent_regions(target);
-  std::deque<jlm::rvsdg::Region *> out_regions = get_parent_regions(out->region());
-  JLM_ASSERT(target_regions.front() == out_regions.front());
-  // remove common ancestor regions
-  jlm::rvsdg::Region * common_region = nullptr;
-  while (!target_regions.empty() && !out_regions.empty()
-         && target_regions.front() == out_regions.front())
-  {
-    common_region = target_regions.front();
-    target_regions.pop_front();
-    out_regions.pop_front();
-  }
-  JLM_ASSERT(common_region != nullptr);
-  auto common_loop = jlm::util::AssertedCast<jlm::hls::loop_node>(common_region->node());
-  // route out to convergence point from out
-  jlm::rvsdg::output * common_out = jlm::hls::route_request(common_region, out);
-  // add a backedge to prevent cycles
-  auto arg = common_loop->add_backedge(out->Type());
-  arg->result()->divert_to(common_out);
-  // route inwards from convergence point to target
-  auto result = jlm::hls::route_response(target, arg);
-  return result;
 }
 
 jlm::rvsdg::output *
@@ -307,7 +266,7 @@ separate_load_edge(
         auto sg_out = jlm::hls::state_gate_op::create(*sn->input(0)->origin(), { addr_edge });
         addr_edge = sg_out[1];
         addr_edge_user->divert_to(addr_edge);
-        store_addresses.push_back(route_to_region((*load)->region(), sg_out[0]));
+        store_addresses.push_back(jlm::hls::route_to_region_rhls((*load)->region(), sg_out[0]));
         store_precedes.push_back(!*load_encountered);
         mem_edge = sn->output(0);
         JLM_ASSERT(mem_edge->nusers() == 1);
@@ -329,14 +288,16 @@ separate_load_edge(
           }
           remove(ui->node());
           mem_edge = store_split[0];
-          store_dequeues.push_back(route_to_region((*load)->region(), store_split.back()));
+          store_dequeues.push_back(
+              jlm::hls::route_to_region_rhls((*load)->region(), store_split.back()));
         }
         else
         {
           auto store_split = jlm::llvm::MemoryStateSplitOperation::Create(*mem_edge, 2);
           mem_edge = store_split[0];
           user->divert_to(mem_edge);
-          store_dequeues.push_back(route_to_region((*load)->region(), store_split[1]));
+          store_dequeues.push_back(
+              jlm::hls::route_to_region_rhls((*load)->region(), store_split[1]));
         }
       }
       else if (auto lo = dynamic_cast<const jlm::llvm::LoadNonVolatileOperation *>(op))

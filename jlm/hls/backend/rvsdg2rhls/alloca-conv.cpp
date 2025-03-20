@@ -17,6 +17,7 @@
 #include <jlm/rvsdg/bitstring/constant.hpp>
 #include <jlm/rvsdg/substitution.hpp>
 #include <jlm/rvsdg/traverser.hpp>
+#include <jlm/hls/backend/rvsdg2rhls/hls-function-util.hpp>
 
 namespace jlm::hls
 {
@@ -153,7 +154,7 @@ alloca_conv(rvsdg::Region * region)
       for (auto l : ta.load_nodes)
       {
         auto index = gep_to_index(l->input(0)->origin());
-        auto response = route_response(l->region(), resp_outs.front());
+        auto response = route_response_rhls(l->region(), resp_outs.front());
         resp_outs.erase(resp_outs.begin());
         std::vector<jlm::rvsdg::output *> states;
         for (size_t i = 1; i < l->ninputs(); ++i)
@@ -167,7 +168,7 @@ alloca_conv(rvsdg::Region * region)
           l->output(i)->divert_users(nn->output(i));
         }
         remove(l);
-        auto addr = route_request(node->region(), load_outs.back());
+        auto addr = route_request_rhls(node->region(), load_outs.back());
         load_addrs.push_back(addr);
       }
       std::vector<jlm::rvsdg::output *> store_operands;
@@ -186,8 +187,8 @@ alloca_conv(rvsdg::Region * region)
           s->output(i)->divert_users(nn->output(i));
         }
         remove(s);
-        auto addr = route_request(node->region(), store_outs[store_outs.size() - 2]);
-        auto data = route_request(node->region(), store_outs.back());
+        auto addr = route_request_rhls(node->region(), store_outs[store_outs.size() - 2]);
+        auto data = route_request_rhls(node->region(), store_outs.back());
         store_operands.push_back(addr);
         store_operands.push_back(data);
       }
