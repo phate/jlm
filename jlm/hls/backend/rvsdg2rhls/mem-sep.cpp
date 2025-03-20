@@ -254,7 +254,16 @@ trace_edge(
       }
       else if (dynamic_cast<const jlm::llvm::CallOperation *>(op))
       {
-        JLM_ASSERT("Decoupled nodes not implemented yet");
+        int oi = sn->noutputs()-sn->ninputs()+si->index();
+        // TODO: verify this is the right type of function call
+        if(decouple_nodes.end() != std::find(decouple_nodes.begin(), decouple_nodes.end(),sn)){
+          auto new_next = *new_edge->begin();
+          si->divert_to(new_edge);
+          sn->output(oi)->divert_users(common_edge);
+          new_next->divert_to(sn->output(oi));
+        } else {
+          common_edge = sn->output(oi);
+        }
       }
       else
       {
