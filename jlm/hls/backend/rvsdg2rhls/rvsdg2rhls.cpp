@@ -442,10 +442,11 @@ rvsdg2rhls(llvm::RvsdgModule & rhls, util::StatisticsCollector & collector)
   IOBarrierRemoval ioBarrierRemoval;
   ioBarrierRemoval.Run(rhls, collector);
 
+  // TODO: do mem state separation early, so there are no false dependencies between loops
+  mem_sep_argument(rhls);
   merge_gamma(rhls);
 
   llvm::DeadNodeElimination llvmDne;
-  llvmDne.Run(rhls, collector);
   jlm::llvm::tginversion tgi;
   // simplify loops
   tgi.Run(rhls, collector);
@@ -453,7 +454,9 @@ rvsdg2rhls(llvm::RvsdgModule & rhls, util::StatisticsCollector & collector)
   // tginversion seems to duplicate state edge inputs to gammas
   cne.Run(rhls, collector);
   llvmDne.Run(rhls, collector);
-  mem_sep_argument(rhls);
+  // merge gammas that were pulled out of loops
+  merge_gamma(rhls);
+  llvmDne.Run(rhls, collector);
   hls::InvariantLambdaMemoryStateRemoval::CreateAndRun(rhls, collector);
   remove_unused_state(rhls);
   // main conversion steps
