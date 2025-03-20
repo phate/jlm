@@ -534,30 +534,31 @@ RegionAwareMemoryNodeProvider::ProvisionMemoryNodes(
     util::StatisticsCollector & statisticsCollector)
 {
   Provisioning_ = RegionAwareMemoryNodeProvisioning::Create(pointsToGraph);
+  Context_ = Context{};
   auto statistics = Statistics::Create(statisticsCollector, rvsdgModule, pointsToGraph);
 
   statistics->StartCallGraphStatistics();
   CreateCallGraph(rvsdgModule);
-  statistics->StopCallGraphStatistics(FunctionSCCs_.size());
+  statistics->StopCallGraphStatistics(Context_.SccFunctions.size());
 
   // Create summaries per SCC to quickly handle function calls and recursion
-  SccSummaries_.resize(FunctionSCCs_.size());
+  Context_.SccSummaries.resize(Context_.SccFunctions.size());
 
   statistics->StartAnnotationStatistics();
   // Go through SCCs in reverse topological order and annotate all functions
-  for (size_t sccIndex = 0; sccIndex < FunctionSCCs_.size(); sccIndex++)
+  for (size_t sccIndex = 0; sccIndex < Context_.SccFunctions.size(); sccIndex++)
   {
-    for (auto function : FunctionSCCs_[sccIndex].Items())
+    for (auto function : Context_.SccFunctions[sccIndex].Items())
     {
       AnnotateFunction(*function, sccIndex);
     }
 
     // The SCC containing all external functions possibly utilizes any memory location that has
     // escaped
-    if (sccIndex == ExternalNodeSccIndex_)
+    if (sccIndex == Context_.ExternalNodeSccIndex)
     {
       auto escapedMemoryLocation = Provisioning_->GetPointsToGraph().GetEscapedMemoryNodes();
-      SccSummaries_[ExternalNodeSccIndex_].UnionWithAndClear(escapedMemoryLocation);
+      Context_.SccSummaries[Context_.ExternalNodeSccIndex].UnionWithAndClear(escapedMemoryLocation);
     }
   }
   statistics->StopAnnotationStatistics();
@@ -701,15 +702,15 @@ RegionAwareMemoryNodeProvider::CreateCallGraph(const rvsdg::RvsdgModule & rvsdgM
 
   // sccIndex are distributed in a reverse topological order, so the sccIndex is used
   // when creating the list of SCCs and the functions they contain
-  FunctionSCCs_.resize(numSCCs);
+  Context_.SccFunctions.resize(numSCCs);
   for (size_t i = 0; i < lambdaNodes.size(); i++)
   {
-    FunctionSCCs_[sccIndex[i]].Insert(lambdaNodes[i]);
-    FunctionToSccIndex_[lambdaNodes[i]] = sccIndex[i];
+    Context_.SccFunctions[sccIndex[i]].Insert(lambdaNodes[i]);
+    Context_.FunctionToSccIndex[lambdaNodes[i]] = sccIndex[i];
   }
 
   // Also note which SCC contains all external functions
-  ExternalNodeSccIndex_ = sccIndex[externalNodeIndex];
+  Context_.ExternalNodeSccIndex = sccIndex[externalNodeIndex];
 }
 
 void
@@ -718,7 +719,7 @@ RegionAwareMemoryNodeProvider::AnnotateFunction(const rvsdg::LambdaNode & lambda
   auto & summary = AnnotateRegion(*lambda.subregion(), sccIndex);
 
   // Inform the SCC about the memory locations being affected by functions inside it
-  SccSummaries_[sccIndex].UnionWith(summary.GetMemoryNodes());
+  Context_.SccSummaries[sccIndex].UnionWith(summary.GetMemoryNodes());
 }
 
 RegionSummary &
@@ -882,14 +883,15 @@ RegionAwareMemoryNodeProvider::AnnotateCall(
       const auto & lambdaNode = lambdaCallee->GetLambdaNode();
 
       // Look up which SCC the callee belongs to
-      JLM_ASSERT(FunctionToSccIndex_.find(&lambdaNode) != FunctionToSccIndex_.end());
-      targetSccIndex = FunctionToSccIndex_[&lambdaNode];
+      JLM_ASSERT(
+          Context_.FunctionToSccIndex.find(&lambdaNode) != Context_.FunctionToSccIndex.end());
+      targetSccIndex = Context_.FunctionToSccIndex[&lambdaNode];
     }
     else if (
         PointsToGraph::Node::Is<PointsToGraph::ExternalMemoryNode>(callee)
         || PointsToGraph::Node::Is<PointsToGraph::ImportNode>(callee))
     {
-      targetSccIndex = ExternalNodeSccIndex_;
+      targetSccIndex = Context_.ExternalNodeSccIndex;
     }
     else
     {
@@ -899,7 +901,7 @@ RegionAwareMemoryNodeProvider::AnnotateCall(
 
     if (targetSccIndex < sccIndex)
     {
-      callSummary.AddMemoryNodes(SccSummaries_[targetSccIndex]);
+      callSummary.AddMemoryNodes(Context_.SccSummaries[targetSccIndex]);
     }
     else if (targetSccIndex == sccIndex)
     {
@@ -926,7 +928,7 @@ RegionAwareMemoryNodeProvider::PropagateRecursiveMemoryLocations()
       continue;
 
     const auto sccIndex = regionSummary.GetCallGraphSccIndex();
-    regionSummary.AddMemoryNodes(SccSummaries_[sccIndex]);
+    regionSummary.AddMemoryNodes(Context_.SccSummaries[sccIndex]);
   }
 
   for (auto & callSummary : Provisioning_->GetCallSummaries())
@@ -935,7 +937,7 @@ RegionAwareMemoryNodeProvider::PropagateRecursiveMemoryLocations()
       continue;
 
     const auto sccIndex = callSummary.GetCallGraphSccIndex();
-    callSummary.AddMemoryNodes(SccSummaries_[sccIndex]);
+    callSummary.AddMemoryNodes(Context_.SccSummaries[sccIndex]);
   }
 }
 
@@ -973,16 +975,16 @@ std::string
 RegionAwareMemoryNodeProvider::CallGraphSCCsToString(const RegionAwareMemoryNodeProvider & provider)
 {
   std::ostringstream ss;
-  for (size_t i = 0; i < provider.FunctionSCCs_.size(); i++)
+  for (size_t i = 0; i < provider.Context_.SccFunctions.size(); i++)
   {
     if (i != 0)
       ss << " <- ";
     ss << "[" << std::endl;
-    if (i == provider.ExternalNodeSccIndex_)
+    if (i == provider.Context_.ExternalNodeSccIndex)
     {
       ss << "  " << "<external>" << std::endl;
     }
-    for (auto function : provider.FunctionSCCs_[i].Items())
+    for (auto function : provider.Context_.SccFunctions[i].Items())
     {
       ss << "  " << function->GetOperation().debug_string() << std::endl;
     }

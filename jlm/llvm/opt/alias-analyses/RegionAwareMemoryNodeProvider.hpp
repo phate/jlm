@@ -197,25 +197,35 @@ private:
   std::unique_ptr<RegionAwareMemoryNodeProvisioning> Provisioning_;
 
   /**
-   * The SCCs of functions, in reverse topological order
-   * If function a() calls b(), and they are not in the same SCC, a()'s SCC comes after b()'s SCC.
+   * Struct holding temporary data used during the creation of a single provisioning
    */
-  std::vector<util::HashSet<const rvsdg::LambdaNode *>> FunctionSCCs_;
+  struct Context
+  {
+    /**
+     * The set of functions belonging to each SCC in the call graph.
+     * The SCCs are ordered in reverse topological order, so
+     * if function a() calls b(), and they are not in the same SCC,
+     * the SCC containing a() comes after the SCC containing b().
+     */
+    std::vector<util::HashSet<const rvsdg::LambdaNode *>> SccFunctions;
 
-  /**
-   * Which SCC contains the node representing external functions
-   */
-  size_t ExternalNodeSccIndex_;
+    /**
+     * Which SCC contains the node representing external functions
+     */
+    size_t ExternalNodeSccIndex = 0;
 
-  /**
-   * A mapping from functions to the index of the SCC they belong to in the call graph
-   */
-  std::unordered_map<const rvsdg::LambdaNode *, size_t> FunctionToSccIndex_;
+    /**
+     * A mapping from functions to the index of the SCC they belong to in the call graph
+     */
+    std::unordered_map<const rvsdg::LambdaNode *, size_t> FunctionToSccIndex;
 
-  /**
-   * The set of memory nodes that may be affected within a given SCC. Indexed by sccIndex.
-   */
-  std::vector<util::HashSet<const PointsToGraph::MemoryNode *>> SccSummaries_;
+    /**
+     * The set of memory nodes that may be affected within a given SCC. Indexed by sccIndex.
+     */
+    std::vector<util::HashSet<const PointsToGraph::MemoryNode *>> SccSummaries;
+  };
+
+  Context Context_;
 };
 
 }
