@@ -270,4 +270,14 @@ trace_call_rhls(const rvsdg::input * input)
   // version of trace call for rhls
   return trace_call_rhls(input->origin());
 }
+
+bool
+is_function_argument(const rvsdg::LambdaNode::ContextVar & cv)
+{
+  auto ip = cv.input;
+  auto traced = trace_call_rhls(ip);
+  JLM_ASSERT(traced);
+  auto arg = util::AssertedCast<const llvm::GraphImport>(traced);
+  return dynamic_cast<const rvsdg::FunctionType*>(arg->ImportedType().get());
+}
 }

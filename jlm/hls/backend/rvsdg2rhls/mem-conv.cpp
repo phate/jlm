@@ -269,111 +269,33 @@ TracePointer(
   }
 }
 
-/**
- * Decoupled loads are user specified and encoded as function calls that need special treatment.
- * This function traces the output to all nodes and checks if it is the first argument to a call
- * operation.
- * @param output The output to check if it is a function pointer
- * @param visited A set of already visited outputs (nodes)
- * @return True if the output is a function pointer
- */
-bool
-IsDecoupledFunctionPointer(
-    jlm::rvsdg::output * output,
-    std::unordered_set<jlm::rvsdg::output *> & visited)
-{
-  if (!output)
-  {
-    return false;
-  }
-  if (!dynamic_cast<const jlm::llvm::PointerType *>(&output->type()))
-  {
-    // Only process pointer outputs
-    return false;
-  }
-  if (visited.count(output))
-  {
-    // Skip already processed outputs
-    return false;
-  }
-  visited.insert(output);
-
-  bool isDecoupled = false;
-  // Iterate through all users of the output
-  for (auto user : *output)
-  {
-    if (auto simpleInput = dynamic_cast<jlm::rvsdg::SimpleInput *>(user))
-    {
-      auto simpleNode = simpleInput->node();
-      if (dynamic_cast<const jlm::llvm::CallOperation *>(&simpleNode->GetOperation()))
-      {
-        if (simpleNode->input(0)->origin() == output)
-        {
-          // The output is the first argument to a call operation so this is a function pointer.
-          // TODO
-          // Currently, we only support decoupled load functions, so all other functions should
-          // have bene inlined by now. Maybe a check that this is truly a decoupled load function
-          // should be added.
-          return true;
-        }
-      }
-      else
-      {
-        for (size_t i = 0; i < simpleNode->noutputs(); ++i)
-        {
-          isDecoupled |= IsDecoupledFunctionPointer(simpleNode->output(i), visited);
-        }
-      }
-    }
-    else if (auto structuralInput = dynamic_cast<jlm::rvsdg::StructuralInput *>(user))
-    {
-      for (auto & arg : structuralInput->arguments)
-      {
-        isDecoupled |= IsDecoupledFunctionPointer(&arg, visited);
-      }
-    }
-    else if (auto result = dynamic_cast<jlm::rvsdg::RegionResult *>(user))
-    {
-      if (auto backedgeResult = dynamic_cast<jlm::hls::backedge_result *>(result))
-      {
-        isDecoupled |= IsDecoupledFunctionPointer(backedgeResult->argument(), visited);
-      }
-      else
-      {
-        isDecoupled |= IsDecoupledFunctionPointer(result->output(), visited);
-      }
-    }
-    else
-    {
-      JLM_UNREACHABLE("THIS SHOULD BE COVERED");
-    }
-  }
-
-  return isDecoupled;
-}
 
 void
 jlm::hls::TracePointerArguments(
     const jlm::rvsdg::LambdaNode * lambda,
     port_load_store_decouple & portNodes)
 {
-  for (size_t i = 0; i < lambda->subregion()->narguments(); ++i)
+  for (auto arg : lambda->GetFunctionArguments())
   {
-    auto arg = lambda->subregion()->argument(i);
     if (dynamic_cast<const jlm::llvm::PointerType *>(&arg->type()))
     {
-      // Decoupled loads are user specified and encoded as function calls that need special
-      // treatment
       std::unordered_set<jlm::rvsdg::output *> visited;
-      if (IsDecoupledFunctionPointer((jlm::rvsdg::output *)(arg), visited))
-      {
-        // We are only interested in the address of the load and not the function pointer itself
-        continue;
-      }
-      visited.clear();
       portNodes.emplace_back();
       TracePointer(
           arg,
+          std::get<0>(portNodes.back()),
+          std::get<1>(portNodes.back()),
+          std::get<2>(portNodes.back()),
+          visited);
+    }
+  }
+  for (auto cv :lambda->GetContextVars())
+  {
+    if(dynamic_cast<const jlm::llvm::PointerType *>(&cv.inner->type()) && !is_function_argument(cv)){
+      std::unordered_set<jlm::rvsdg::output *> visited;
+      portNodes.emplace_back();
+      TracePointer(
+          cv.inner,
           std::get<0>(portNodes.back()),
           std::get<1>(portNodes.back()),
           std::get<2>(portNodes.back()),
@@ -591,8 +513,7 @@ jlm::hls::MemoryConverter(jlm::llvm::RvsdgModule & rm)
     {
       // The only functions at this time is decoupled loads that are encoded as functions by the
       // user
-      auto visited = std::unordered_set<jlm::rvsdg::output *>();
-      if (IsDecoupledFunctionPointer(ctxvar.input->origin(), visited))
+      if (is_function_argument(ctxvar))
       {
         JLM_ASSERT(ctxvar.inner->nusers() == 0);
         auto cvip = ctxvar.input;
