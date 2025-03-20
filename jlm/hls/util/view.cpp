@@ -421,4 +421,12 @@ dump_dot(jlm::llvm::RvsdgModule & rvsdgModule, const std::string & file_name)
   fclose(dot_file);
 }
 
+void
+dump_dot(rvsdg::Region * region, const std::string & file_name)
+{
+  auto dot_file = fopen(file_name.c_str(), "w");
+  jlm::hls::view_dot(region, dot_file);
+  fclose(dot_file);
+}
+
 } // namespace jlm::hls

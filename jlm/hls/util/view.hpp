@@ -25,6 +25,9 @@ view_dot(rvsdg::Region * region, FILE * out);
 void
 dump_dot(llvm::RvsdgModule & rvsdgModule, const std::string & file_name);
 
+void
+dump_dot(rvsdg::Region * region, const std::string & file_name);
+
 } // namespace jlm::hls
 
 #endif // JLM_BACKEND_HLS_UTIL_VIEW_HPP
