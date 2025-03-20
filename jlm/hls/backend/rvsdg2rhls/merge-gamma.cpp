@@ -267,6 +267,17 @@ eliminate_gamma_eol(rvsdg::GammaNode * gamma)
   return changed;
 }
 
+bool
+eliminate_dead_gamma(rvsdg::GammaNode * gamma)
+{
+  // eliminates gammas that have no used outputs - dne does not seem to do this and empty gammas make tginversion go mayham and duplicate loops
+  if(gamma->IsDead()){
+    remove(gamma);
+    return true;
+  }
+  return false;
+}
+
 void
 merge_gamma(rvsdg::Region * region)
 {
@@ -283,7 +294,7 @@ merge_gamma(rvsdg::Region * region)
         if (auto gamma = dynamic_cast<rvsdg::GammaNode *>(node))
         {
           if (fix_match_inversion(gamma) || eliminate_gamma_ctl(gamma) || eliminate_gamma_eol(gamma)
-              || merge_gamma(gamma) || bit_type_to_ctl_type(gamma))
+              || merge_gamma(gamma) || bit_type_to_ctl_type(gamma) || eliminate_dead_gamma(gamma))
           {
             changed = true;
             break;
