@@ -4,6 +4,7 @@
  */
 
 #include <jlm/hls/backend/rvsdg2rhls/UnusedStateRemoval.hpp>
+#include <jlm/llvm/ir/CallSummary.hpp>
 #include <jlm/llvm/ir/operators/lambda.hpp>
 #include <jlm/llvm/ir/RvsdgModule.hpp>
 #include <jlm/rvsdg/gamma.hpp>
@@ -32,9 +33,10 @@ IsPassthroughResult(const rvsdg::input & result)
 }
 
 static void
-RemoveUnusedStatesFromLambda(llvm::lambda::node & lambdaNode)
+RemoveUnusedStatesFromLambda(rvsdg::LambdaNode & lambdaNode)
 {
-  auto & oldFunctionType = lambdaNode.type();
+  const auto & op = dynamic_cast<llvm::LlvmLambdaOperation &>(lambdaNode.GetOperation());
+  auto & oldFunctionType = op.type();
 
   std::vector<std::shared_ptr<const jlm::rvsdg::Type>> newArgumentTypes;
   for (size_t i = 0; i < oldFunctionType.NumArguments(); ++i)
@@ -62,13 +64,10 @@ RemoveUnusedStatesFromLambda(llvm::lambda::node & lambdaNode)
     }
   }
 
-  auto newFunctionType = llvm::FunctionType::Create(newArgumentTypes, newResultTypes);
-  auto newLambda = llvm::lambda::node::create(
-      lambdaNode.region(),
-      newFunctionType,
-      lambdaNode.name(),
-      lambdaNode.linkage(),
-      lambdaNode.attributes());
+  auto newFunctionType = rvsdg::FunctionType::Create(newArgumentTypes, newResultTypes);
+  auto newLambda = rvsdg::LambdaNode::Create(
+      *lambdaNode.region(),
+      llvm::LlvmLambdaOperation::Create(newFunctionType, op.name(), op.linkage(), op.attributes()));
 
   rvsdg::SubstitutionMap substitutionMap;
   for (const auto & ctxvar : lambdaNode.GetContextVars())
@@ -109,7 +108,7 @@ RemoveUnusedStatesFromLambda(llvm::lambda::node & lambdaNode)
 
   JLM_ASSERT(lambdaNode.output()->nusers() == 1);
   lambdaNode.region()->RemoveResult((*lambdaNode.output()->begin())->index());
-  auto oldExport = lambdaNode.ComputeCallSummary()->GetRvsdgExport();
+  auto oldExport = jlm::llvm::ComputeCallSummary(lambdaNode).GetRvsdgExport();
   jlm::llvm::GraphExport::Create(*newLambdaOutput, oldExport ? oldExport->Name() : "");
   remove(&lambdaNode);
 }
@@ -208,7 +207,7 @@ RemoveUnusedStatesInStructuralNode(rvsdg::StructuralNode & structuralNode)
   {
     RemoveUnusedStatesFromThetaNode(*thetaNode);
   }
-  else if (auto lambdaNode = dynamic_cast<llvm::lambda::node *>(&structuralNode))
+  else if (auto lambdaNode = dynamic_cast<rvsdg::LambdaNode *>(&structuralNode))
   {
     RemoveUnusedStatesFromLambda(*lambdaNode);
   }
@@ -217,7 +216,7 @@ RemoveUnusedStatesInStructuralNode(rvsdg::StructuralNode & structuralNode)
 static void
 RemoveUnusedStatesInRegion(rvsdg::Region & region)
 {
-  for (auto & node : rvsdg::topdown_traverser(&region))
+  for (auto & node : rvsdg::TopDownTraverser(&region))
   {
     if (auto structuralNode = dynamic_cast<rvsdg::StructuralNode *>(node))
     {
@@ -230,6 +229,19 @@ void
 RemoveUnusedStates(llvm::RvsdgModule & rvsdgModule)
 {
   RemoveUnusedStatesInRegion(rvsdgModule.Rvsdg().GetRootRegion());
+}
+
+void
+RemoveInvariantLambdaStateEdges(llvm::RvsdgModule & rvsdgModule)
+{
+  auto & root = rvsdgModule.Rvsdg().GetRootRegion();
+  for (auto & node : rvsdg::TopDownTraverser(&root))
+  {
+    if (auto lambdaNode = dynamic_cast<rvsdg::LambdaNode *>(node))
+    {
+      RemoveUnusedStatesFromLambda(*lambdaNode);
+    }
+  }
 }
 
 }

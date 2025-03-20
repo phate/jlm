@@ -6,6 +6,7 @@
 #include <jlm/hls/backend/rvsdg2rhls/add-prints.hpp>
 #include <jlm/hls/ir/hls.hpp>
 #include <jlm/llvm/ir/operators.hpp>
+#include <jlm/llvm/ir/operators/IntegerOperations.hpp>
 #include <jlm/rvsdg/gamma.hpp>
 #include <jlm/rvsdg/theta.hpp>
 #include <jlm/rvsdg/traverser.hpp>
@@ -16,7 +17,7 @@ namespace jlm::hls
 void
 add_prints(rvsdg::Region * region)
 {
-  for (auto & node : jlm::rvsdg::topdown_traverser(region))
+  for (auto & node : rvsdg::TopDownTraverser(region))
   {
     if (auto structnode = dynamic_cast<rvsdg::StructuralNode *>(node))
     {
@@ -61,9 +62,9 @@ convert_prints(llvm::RvsdgModule & rm)
   auto root = &graph.GetRootRegion();
   // TODO: make this less hacky by using the correct state types
   auto fct =
-      llvm::FunctionType::Create({ rvsdg::bittype::Create(64), rvsdg::bittype::Create(64) }, {});
+      rvsdg::FunctionType::Create({ rvsdg::bittype::Create(64), rvsdg::bittype::Create(64) }, {});
   auto & printf =
-      llvm::GraphImport::Create(graph, fct, "printnode", llvm::linkage::external_linkage);
+      llvm::GraphImport::Create(graph, fct, fct, "printnode", llvm::linkage::external_linkage);
   convert_prints(root, &printf, fct);
 }
 
@@ -86,7 +87,7 @@ route_to_region(jlm::rvsdg::output * output, rvsdg::Region * region)
   {
     output = theta->AddLoopVar(output).pre;
   }
-  else if (auto lambda = dynamic_cast<llvm::lambda::node *>(region->node()))
+  else if (auto lambda = dynamic_cast<rvsdg::LambdaNode *>(region->node()))
   {
     output = lambda->AddContextVar(*output).inner;
   }
@@ -102,9 +103,9 @@ void
 convert_prints(
     rvsdg::Region * region,
     jlm::rvsdg::output * printf,
-    const std::shared_ptr<const llvm::FunctionType> & functionType)
+    const std::shared_ptr<const rvsdg::FunctionType> & functionType)
 {
-  for (auto & node : jlm::rvsdg::topdown_traverser(region))
+  for (auto & node : rvsdg::TopDownTraverser(region))
   {
     if (auto structnode = dynamic_cast<rvsdg::StructuralNode *>(node))
     {
@@ -116,16 +117,15 @@ convert_prints(
     else if (auto po = dynamic_cast<const print_op *>(&(node->GetOperation())))
     {
       auto printf_local = route_to_region(printf, region); // TODO: prevent repetition?
-      auto bc = jlm::rvsdg::create_bitconstant(region, 64, po->id());
+      auto & constantNode = llvm::IntegerConstantOperation::Create(*region, 64, po->id());
       jlm::rvsdg::output * val = node->input(0)->origin();
       if (val->type() != *jlm::rvsdg::bittype::Create(64))
       {
         auto bt = dynamic_cast<const jlm::rvsdg::bittype *>(&val->type());
         JLM_ASSERT(bt);
-        auto op = llvm::zext_op(bt->nbits(), 64);
-        val = jlm::rvsdg::SimpleNode::create_normalized(region, op, { val })[0];
+        val = &llvm::ZExtOperation::Create(*val, rvsdg::bittype::Create(64));
       }
-      llvm::CallNode::Create(printf_local, functionType, { bc, val });
+      llvm::CallNode::Create(printf_local, functionType, { constantNode.output(0), val });
       node->output(0)->divert_users(node->input(0)->origin());
       jlm::rvsdg::remove(node);
     }

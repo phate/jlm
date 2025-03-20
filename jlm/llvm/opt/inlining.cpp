@@ -3,6 +3,7 @@
  * See COPYING for terms of redistribution.
  */
 
+#include <jlm/llvm/ir/CallSummary.hpp>
 #include <jlm/llvm/ir/operators.hpp>
 #include <jlm/llvm/ir/RvsdgModule.hpp>
 #include <jlm/llvm/opt/inlining.hpp>
@@ -80,7 +81,7 @@ route_to_region(jlm::rvsdg::output * output, rvsdg::Region * region)
   {
     output = theta->AddLoopVar(output).pre;
   }
-  else if (auto lambda = dynamic_cast<lambda::node *>(region->node()))
+  else if (auto lambda = dynamic_cast<rvsdg::LambdaNode *>(region->node()))
   {
     output = lambda->AddContextVar(*output).inner;
   }
@@ -97,7 +98,7 @@ route_to_region(jlm::rvsdg::output * output, rvsdg::Region * region)
 }
 
 static std::vector<jlm::rvsdg::output *>
-route_dependencies(const lambda::node * lambda, const jlm::rvsdg::SimpleNode * apply)
+route_dependencies(const rvsdg::LambdaNode * lambda, const jlm::rvsdg::SimpleNode * apply)
 {
   JLM_ASSERT(is<CallOperation>(apply));
 
@@ -114,7 +115,7 @@ route_dependencies(const lambda::node * lambda, const jlm::rvsdg::SimpleNode * a
 }
 
 void
-inlineCall(jlm::rvsdg::SimpleNode * call, const lambda::node * lambda)
+inlineCall(jlm::rvsdg::SimpleNode * call, const rvsdg::LambdaNode * lambda)
 {
   JLM_ASSERT(is<CallOperation>(call));
 
@@ -146,25 +147,25 @@ inlineCall(jlm::rvsdg::SimpleNode * call, const lambda::node * lambda)
 static void
 inlining(rvsdg::Graph & rvsdg)
 {
-  for (auto node : rvsdg::topdown_traverser(&rvsdg.GetRootRegion()))
+  for (auto node : rvsdg::TopDownTraverser(&rvsdg.GetRootRegion()))
   {
-    if (auto lambda = dynamic_cast<const lambda::node *>(node))
+    if (auto lambda = dynamic_cast<const rvsdg::LambdaNode *>(node))
     {
-      auto callSummary = lambda->ComputeCallSummary();
+      auto callSummary = jlm::llvm::ComputeCallSummary(*lambda);
 
-      if (callSummary->HasOnlyDirectCalls() && callSummary->NumDirectCalls() == 1)
+      if (callSummary.HasOnlyDirectCalls() && callSummary.NumDirectCalls() == 1)
       {
-        inlineCall(*callSummary->DirectCalls().begin(), lambda);
+        inlineCall(*callSummary.DirectCalls().begin(), lambda);
       }
     }
   }
 }
 
 static void
-inlining(RvsdgModule & rm, util::StatisticsCollector & statisticsCollector)
+inlining(rvsdg::RvsdgModule & rvsdgModule, util::StatisticsCollector & statisticsCollector)
 {
-  auto & graph = rm.Rvsdg();
-  auto statistics = ilnstat::Create(rm.SourceFileName());
+  auto & graph = rvsdgModule.Rvsdg();
+  auto statistics = ilnstat::Create(rvsdgModule.SourceFilePath().value());
 
   statistics->start(graph);
   inlining(graph);
@@ -179,7 +180,7 @@ fctinline::~fctinline()
 {}
 
 void
-fctinline::run(RvsdgModule & module, util::StatisticsCollector & statisticsCollector)
+fctinline::Run(rvsdg::RvsdgModule & module, util::StatisticsCollector & statisticsCollector)
 {
   inlining(module, statisticsCollector);
 }

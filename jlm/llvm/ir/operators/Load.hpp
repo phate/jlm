@@ -10,7 +10,6 @@
 #include <jlm/llvm/ir/types.hpp>
 #include <jlm/rvsdg/graph.hpp>
 #include <jlm/rvsdg/simple-node.hpp>
-#include <jlm/rvsdg/simple-normal-form.hpp>
 
 #include <optional>
 
@@ -128,7 +127,7 @@ private:
   CreateOperandTypes(size_t numMemoryStates)
   {
     std::vector<std::shared_ptr<const rvsdg::Type>> types(
-        { PointerType::Create(), iostatetype::Create() });
+        { PointerType::Create(), IOStateType::Create() });
     std::vector<std::shared_ptr<const rvsdg::Type>> states(
         numMemoryStates,
         MemoryStateType::Create());
@@ -140,7 +139,7 @@ private:
   CreateResultTypes(std::shared_ptr<const rvsdg::ValueType> loadedType, size_t numMemoryStates)
   {
     std::vector<std::shared_ptr<const rvsdg::Type>> types(
-        { std::move(loadedType), iostatetype::Create() });
+        { std::move(loadedType), IOStateType::Create() });
     std::vector<std::shared_ptr<const rvsdg::Type>> states(
         numMemoryStates,
         MemoryStateType::Create());
@@ -160,20 +159,20 @@ class LoadNode : public rvsdg::SimpleNode
 protected:
   LoadNode(
       rvsdg::Region & region,
-      const LoadOperation & operation,
+      std::unique_ptr<LoadOperation> operation,
       const std::vector<rvsdg::output *> & operands)
-      : SimpleNode(&region, operation, operands)
+      : SimpleNode(region, std::move(operation), operands)
   {}
 
 public:
-  class MemoryStateInputIterator final : public rvsdg::input::iterator<rvsdg::simple_input>
+  class MemoryStateInputIterator final : public rvsdg::input::iterator<rvsdg::SimpleInput>
   {
   public:
-    constexpr explicit MemoryStateInputIterator(rvsdg::simple_input * input)
-        : rvsdg::input::iterator<rvsdg::simple_input>(input)
+    constexpr explicit MemoryStateInputIterator(rvsdg::SimpleInput * input)
+        : rvsdg::input::iterator<rvsdg::SimpleInput>(input)
     {}
 
-    [[nodiscard]] rvsdg::simple_input *
+    [[nodiscard]] rvsdg::SimpleInput *
     next() const override
     {
       auto index = value()->index();
@@ -183,14 +182,14 @@ public:
     }
   };
 
-  class MemoryStateOutputIterator final : public rvsdg::output::iterator<rvsdg::simple_output>
+  class MemoryStateOutputIterator final : public rvsdg::output::iterator<rvsdg::SimpleOutput>
   {
   public:
-    constexpr explicit MemoryStateOutputIterator(rvsdg::simple_output * output)
-        : rvsdg::output::iterator<rvsdg::simple_output>(output)
+    constexpr explicit MemoryStateOutputIterator(rvsdg::SimpleOutput * output)
+        : rvsdg::output::iterator<rvsdg::SimpleOutput>(output)
     {}
 
-    [[nodiscard]] rvsdg::simple_output *
+    [[nodiscard]] rvsdg::SimpleOutput *
     next() const override
     {
       auto index = value()->index();
@@ -258,9 +257,9 @@ class LoadVolatileNode final : public LoadNode
 private:
   LoadVolatileNode(
       rvsdg::Region & region,
-      const LoadVolatileOperation & operation,
+      std::unique_ptr<LoadVolatileOperation> operation,
       const std::vector<rvsdg::output *> & operands)
-      : LoadNode(region, operation, operands)
+      : LoadNode(region, std::move(operation), operands)
   {}
 
 public:
@@ -274,7 +273,7 @@ public:
   GetIoStateInput() const noexcept
   {
     auto ioInput = input(1);
-    JLM_ASSERT(is<iostatetype>(ioInput->type()));
+    JLM_ASSERT(is<IOStateType>(ioInput->type()));
     return *ioInput;
   }
 
@@ -282,7 +281,7 @@ public:
   GetIoStateOutput() const noexcept
   {
     auto ioOutput = output(1);
-    JLM_ASSERT(is<iostatetype>(ioOutput->type()));
+    JLM_ASSERT(is<IOStateType>(ioOutput->type()));
     return *ioOutput;
   }
 
@@ -298,10 +297,10 @@ public:
   static LoadVolatileNode &
   CreateNode(
       rvsdg::Region & region,
-      const LoadVolatileOperation & loadOperation,
+      std::unique_ptr<LoadVolatileOperation> loadOperation,
       const std::vector<rvsdg::output *> & operands)
   {
-    return *(new LoadVolatileNode(region, loadOperation, operands));
+    return *(new LoadVolatileNode(region, std::move(loadOperation), operands));
   }
 
   static LoadVolatileNode &
@@ -315,17 +314,20 @@ public:
     std::vector<rvsdg::output *> operands({ &address, &iOState });
     operands.insert(operands.end(), memoryStates.begin(), memoryStates.end());
 
-    LoadVolatileOperation operation(std::move(loadedType), memoryStates.size(), alignment);
-    return CreateNode(*address.region(), operation, operands);
+    auto operation = std::make_unique<LoadVolatileOperation>(
+        std::move(loadedType),
+        memoryStates.size(),
+        alignment);
+    return CreateNode(*address.region(), std::move(operation), operands);
   }
 
   static std::vector<rvsdg::output *>
   Create(
       rvsdg::Region & region,
-      const LoadVolatileOperation & loadOperation,
+      std::unique_ptr<LoadVolatileOperation> loadOperation,
       const std::vector<rvsdg::output *> & operands)
   {
-    return rvsdg::outputs(&CreateNode(region, loadOperation, operands));
+    return rvsdg::outputs(&CreateNode(region, std::move(loadOperation), operands));
   }
 };
 
@@ -404,9 +406,9 @@ class LoadNonVolatileNode final : public LoadNode
 private:
   LoadNonVolatileNode(
       rvsdg::Region & region,
-      const LoadNonVolatileOperation & operation,
+      std::unique_ptr<LoadNonVolatileOperation> operation,
       const std::vector<rvsdg::output *> & operands)
-      : LoadNode(region, operation, operands)
+      : LoadNode(region, std::move(operation), operands)
   {}
 
 public:
@@ -445,26 +447,29 @@ public:
     std::vector<rvsdg::output *> operands({ &address });
     operands.insert(operands.end(), memoryStates.begin(), memoryStates.end());
 
-    LoadNonVolatileOperation loadOperation(std::move(loadedType), memoryStates.size(), alignment);
-    return CreateNode(*address.region(), loadOperation, operands);
+    auto operation = std::make_unique<LoadNonVolatileOperation>(
+        std::move(loadedType),
+        memoryStates.size(),
+        alignment);
+    return CreateNode(*address.region(), std::move(operation), operands);
   }
 
   static std::vector<rvsdg::output *>
   Create(
       rvsdg::Region & region,
-      const LoadNonVolatileOperation & loadOperation,
+      std::unique_ptr<LoadNonVolatileOperation> loadOperation,
       const std::vector<rvsdg::output *> & operands)
   {
-    return rvsdg::outputs(&CreateNode(region, loadOperation, operands));
+    return rvsdg::outputs(&CreateNode(region, std::move(loadOperation), operands));
   }
 
   static LoadNonVolatileNode &
   CreateNode(
       rvsdg::Region & region,
-      const LoadNonVolatileOperation & loadOperation,
+      std::unique_ptr<LoadNonVolatileOperation> loadOperation,
       const std::vector<rvsdg::output *> & operands)
   {
-    return *(new LoadNonVolatileNode(region, loadOperation, operands));
+    return *(new LoadNonVolatileNode(region, std::move(loadOperation), operands));
   }
 };
 

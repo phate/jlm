@@ -13,7 +13,6 @@
 
 namespace jlm::util
 {
-
 // Mapping between each statistics id and identifier used when serializing the statistic
 static const util::BijectiveMap<Statistics::Id, std::string_view> &
 GetStatisticsIdNames()
@@ -161,26 +160,52 @@ Statistics::AddTimer(std::string name)
 }
 
 void
-StatisticsCollector::PrintStatistics() const
+StatisticsCollector::PrintStatistics()
 {
   if (NumCollectedStatistics() == 0)
     return;
 
-  auto & filePath = GetSettings().GetFilePath();
-  if (filePath.Exists() && !filePath.IsFile())
-  {
-    return;
-  }
-
-  util::file file(filePath);
+  auto file = CreateOutputFile("statistics.log");
   file.open("w");
 
   for (auto & statistics : CollectedStatistics())
   {
     fprintf(file.fd(), "%s\n", statistics.Serialize(' ', ':').c_str());
   }
+}
 
-  file.close();
+util::file
+StatisticsCollector::CreateOutputFile(std::string fileNameSuffix, bool includeCount)
+{
+  JLM_ASSERT(Settings_.HasOutputDirectory());
+
+  // Ensure the output folder exists, or create it
+  auto directory = Settings_.GetOutputDirectory();
+  if (directory.IsFile())
+    throw error("The specified statistics output directory is a file: " + directory.to_str());
+  if (!directory.Exists())
+    directory.CreateDirectory();
+
+  // If the fileNameSuffix should have a count included, place it before the '.' (or at the end)
+  if (includeCount)
+  {
+    size_t count = OutputFileCounter_[fileNameSuffix]++;
+    auto firstDot = fileNameSuffix.find('.');
+    if (firstDot == std::string::npos)
+      firstDot = fileNameSuffix.size();
+
+    fileNameSuffix =
+        strfmt(fileNameSuffix.substr(0, firstDot), "-", count, fileNameSuffix.substr(firstDot));
+  }
+
+  const auto fileName =
+      strfmt(Settings_.GetModuleName(), '-', Settings_.GetUniqueString(), '-', fileNameSuffix);
+
+  auto fullPath = directory.Join(fileName);
+  if (fullPath.Exists())
+    throw error("The generated output file name already exists: " + fullPath.to_str());
+
+  return fullPath;
 }
 
 }

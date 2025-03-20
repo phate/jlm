@@ -13,8 +13,6 @@
 #include <jlm/llvm/ir/operators/operators.hpp>
 #include <jlm/llvm/ir/operators/sext.hpp>
 #include <jlm/llvm/ir/operators/Store.hpp>
-#include <jlm/rvsdg/bitstring/comparison.hpp>
-#include <jlm/rvsdg/bitstring/type.hpp>
 #include <jlm/rvsdg/traverser.hpp>
 
 #include <mlir/IR/Builders.h>
@@ -67,7 +65,7 @@ public:
   operator=(RhlsToFirrtlConverter &&) = delete;
 
   circt::firrtl::CircuitOp
-  MlirGen(const llvm::lambda::node * lamdaNode);
+  MlirGen(const rvsdg::LambdaNode * lamdaNode);
 
   void
   WriteModuleToFile(const circt::firrtl::FModuleOp fModuleOp, const rvsdg::Node * node);
@@ -260,7 +258,8 @@ private:
 
   jlm::rvsdg::output *
   TraceArgument(rvsdg::RegionArgument * arg);
-  jlm::rvsdg::simple_output *
+
+  rvsdg::SimpleOutput *
   TraceStructuralOutput(rvsdg::StructuralOutput * out);
 
   void

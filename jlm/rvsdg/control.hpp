@@ -136,9 +136,15 @@ to_ctlconstant_op(const Operation & op) noexcept
   return *static_cast<const ctlconstant_op *>(&op);
 }
 
-/* match operator */
-
-class match_op final : public jlm::rvsdg::unary_op
+/**
+ * Match operator
+ * Converts an n-bit integer input into a value of type ControlType.
+ * The ControlType has a given number of alternative values, which are indexed starting at 0.
+ * The match can represent any mapping from integers to alternatives, with a default alternative.
+ * These alternatives represent the different outgoing edges from a basic block,
+ * or the different regions of a gamma node.
+ */
+class match_op final : public UnaryOperation
 {
   typedef std::unordered_map<uint64_t, uint64_t>::const_iterator const_iterator;
 
@@ -214,9 +220,13 @@ public:
       size_t numAlternatives)
   {
     auto bitType = CheckAndExtractBitType(predicate.type());
-
-    match_op operation(bitType.nbits(), mapping, defaultAlternative, numAlternatives);
-    return rvsdg::SimpleNode::create_normalized(predicate.region(), operation, { &predicate })[0];
+    return CreateOpNode<match_op>(
+               { &predicate },
+               bitType.nbits(),
+               mapping,
+               defaultAlternative,
+               numAlternatives)
+        .output(0);
   }
 
 private:

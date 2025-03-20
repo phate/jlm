@@ -34,9 +34,11 @@ jobs:
         script: |
           const fs = require("fs");
           const comment = fs.readFileSync("./usr/hls-test-suite/build/cycle-diff.log", { encoding: "utf8" });
+          console.log("Writing comment on PR: \n" + comment);
           github.rest.issues.createComment({
             issue_number: context.issue.number,
             owner: context.repo.owner,
             repo: context.repo.repo,
             body: "```\n" + comment + "```"
           });
+      continue-on-error: true

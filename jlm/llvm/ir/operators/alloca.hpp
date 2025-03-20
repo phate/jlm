@@ -9,9 +9,7 @@
 #include <jlm/llvm/ir/tac.hpp>
 #include <jlm/llvm/ir/types.hpp>
 #include <jlm/rvsdg/bitstring/type.hpp>
-#include <jlm/rvsdg/graph.hpp>
 #include <jlm/rvsdg/simple-node.hpp>
-#include <jlm/rvsdg/simple-normal-form.hpp>
 
 namespace jlm::llvm
 {
@@ -91,10 +89,13 @@ public:
   {
     auto bt = std::dynamic_pointer_cast<const rvsdg::bittype>(size->Type());
     if (!bt)
-      throw jlm::util::error("expected bits type.");
+      throw util::error("expected bits type.");
 
-    alloca_op op(std::move(allocatedType), std::move(bt), alignment);
-    return rvsdg::SimpleNode::create_normalized(size->region(), op, { size });
+    return outputs(&rvsdg::CreateOpNode<alloca_op>(
+        { size },
+        std::move(allocatedType),
+        std::move(bt),
+        alignment));
   }
 
 private:

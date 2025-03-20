@@ -26,6 +26,17 @@ namespace jlm::hls
 void
 RemoveUnusedStates(llvm::RvsdgModule & rvsdgModule);
 
+/**
+ * @brief Removes invariant state edges from the lambdas in the RVSDG module.
+ *
+ * The pass replaces the lambda with a new function signature if a state edge is found to be
+ * invariant.
+ *
+ * @param rvsdgModule The RVSDG module for which to remove invariant state edges.
+ */
+void
+RemoveInvariantLambdaStateEdges(llvm::RvsdgModule & rvsdgModule);
+
 }
 
 #endif // JLM_HLS_BACKEND_RVSDG2RHLS_UNUSEDSTATEREMOVAL_HPP

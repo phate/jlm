@@ -4,8 +4,8 @@
  */
 
 #include <jlm/llvm/backend/dot/DotWriter.hpp>
-#include <jlm/llvm/backend/jlm2llvm/jlm2llvm.hpp>
-#include <jlm/llvm/backend/rvsdg2jlm/rvsdg2jlm.hpp>
+#include <jlm/llvm/backend/IpGraphToLlvmConverter.hpp>
+#include <jlm/llvm/backend/RvsdgToIpGraphConverter.hpp>
 #include <jlm/llvm/frontend/InterProceduralGraphConversion.hpp>
 #include <jlm/llvm/frontend/LlvmModuleConversion.hpp>
 #include <jlm/llvm/ir/ipgraph-module.hpp>
@@ -22,7 +22,6 @@
 #include <jlm/llvm/opt/inlining.hpp>
 #include <jlm/llvm/opt/InvariantValueRedirection.hpp>
 #include <jlm/llvm/opt/inversion.hpp>
-#include <jlm/llvm/opt/OptimizationSequence.hpp>
 #include <jlm/llvm/opt/pull.hpp>
 #include <jlm/llvm/opt/push.hpp>
 #include <jlm/llvm/opt/reduction.hpp>
@@ -31,6 +30,8 @@
 #include <jlm/rvsdg/view.hpp>
 #include <jlm/tooling/Command.hpp>
 #include <jlm/tooling/CommandPaths.hpp>
+
+#include <llvm/IR/Module.h>
 
 #ifdef ENABLE_MLIR
 #include <jlm/mlir/backend/JlmToMlirConverter.hpp>
@@ -51,6 +52,18 @@ namespace jlm::tooling
 {
 
 Command::~Command() = default;
+
+void
+Command::Run() const
+{
+  const auto command = ToString();
+  const auto returnCode = system(command.c_str());
+  if (returnCode != EXIT_SUCCESS)
+  {
+    throw util::error(
+        util::strfmt("Subcommand failed with status code ", returnCode, ": ", command));
+  }
+}
 
 PrintCommandsCommand::~PrintCommandsCommand() = default;
 
@@ -227,13 +240,6 @@ ClangCommand::ReplaceAll(std::string str, const std::string & from, const std::s
   return str;
 }
 
-void
-ClangCommand::Run() const
-{
-  if (system(ToString().c_str()))
-    exit(EXIT_FAILURE);
-}
-
 LlcCommand::~LlcCommand() = default;
 
 std::string
@@ -252,13 +258,6 @@ LlcCommand::ToString() const
       OutputFile_.to_str(),
       " ",
       InputFile_.to_str());
-}
-
-void
-LlcCommand::Run() const
-{
-  if (system(ToString().c_str()))
-    exit(EXIT_FAILURE);
 }
 
 std::string
@@ -297,7 +296,7 @@ JlmOptCommand::JlmOptCommand(
   for (auto optimizationId : CommandLineOptions_.GetOptimizationIds())
   {
     if (auto it = Optimizations_.find(optimizationId); it == Optimizations_.end())
-      Optimizations_[optimizationId] = CreateOptimization(optimizationId);
+      Optimizations_[optimizationId] = CreateTransformation(optimizationId);
   }
 }
 
@@ -328,10 +327,12 @@ JlmOptCommand::ToString() const
   }
 
   std::string statisticsDirArgument =
-      "-s " + CommandLineOptions_.GetStatisticsCollectorSettings().GetFilePath().path() + " ";
+      "-s " + CommandLineOptions_.GetStatisticsCollectorSettings().GetOutputDirectory().to_str()
+      + " ";
 
   return util::strfmt(
-      ProgramName_ + " ",
+      ProgramName_,
+      " ",
       outputFormatArgument,
       optimizationArguments,
       statisticsDirArgument,
@@ -351,7 +352,10 @@ JlmOptCommand::Run() const
       CommandLineOptions_.GetInputFormat(),
       statisticsCollector);
 
-  llvm::OptimizationSequence::CreateAndRun(*rvsdgModule, statisticsCollector, GetOptimizations());
+  rvsdg::TransformationSequence::CreateAndRun(
+      *rvsdgModule,
+      statisticsCollector,
+      GetTransformations());
 
   PrintRvsdgModule(
       *rvsdgModule,
@@ -362,10 +366,10 @@ JlmOptCommand::Run() const
   statisticsCollector.PrintStatistics();
 }
 
-std::vector<llvm::optimization *>
-JlmOptCommand::GetOptimizations() const
+std::vector<rvsdg::Transformation *>
+JlmOptCommand::GetTransformations() const
 {
-  std::vector<llvm::optimization *> optimizations;
+  std::vector<rvsdg::Transformation *> optimizations;
   for (auto optimizationId : CommandLineOptions_.GetOptimizationIds())
   {
     auto it = Optimizations_.find(optimizationId);
@@ -376,8 +380,8 @@ JlmOptCommand::GetOptimizations() const
   return optimizations;
 }
 
-std::unique_ptr<llvm::optimization>
-JlmOptCommand::CreateOptimization(
+std::unique_ptr<rvsdg::Transformation>
+JlmOptCommand::CreateTransformation(
     enum JlmOptCommandLineOptions::OptimizationId optimizationId) const
 {
   using Andersen = llvm::aa::Andersen;
@@ -525,10 +529,11 @@ JlmOptCommand::PrintAsLlvm(
     const util::filepath & outputFile,
     util::StatisticsCollector & statisticsCollector)
 {
-  auto jlm_module = llvm::rvsdg2jlm::rvsdg2jlm(rvsdgModule, statisticsCollector);
+  auto jlm_module =
+      llvm::RvsdgToIpGraphConverter::CreateAndConvertModule(rvsdgModule, statisticsCollector);
 
   ::llvm::LLVMContext ctx;
-  auto llvm_module = jlm::llvm::jlm2llvm::convert(*jlm_module, ctx);
+  auto llvm_module = llvm::IpGraphToLlvmConverter::CreateAndConvertModule(*jlm_module, ctx);
 
   if (outputFile == "")
   {
@@ -682,20 +687,14 @@ LlvmOptCommand::ToString() const
   }
 
   return util::strfmt(
-      clangpath.path() + "opt ",
+      clangpath.Dirname().Join("opt").to_str(),
+      " ",
       optimizationArguments,
       WriteLlvmAssembly_ ? "-S " : "",
       "-o ",
       OutputFile().to_str(),
       " ",
       InputFile_.to_str());
-}
-
-void
-LlvmOptCommand::Run() const
-{
-  if (system(ToString().c_str()))
-    exit(EXIT_FAILURE);
 }
 
 std::string
@@ -719,8 +718,8 @@ LlvmLinkCommand::ToString() const
     inputFilesArgument += inputFile.to_str() + " ";
 
   return util::strfmt(
-      clangpath.path(),
-      "llvm-link ",
+      clangpath.Dirname().Join("llvm-link").to_str(),
+      " ",
       WriteLlvmAssembly_ ? "-S " : "",
       Verbose_ ? "-v " : "",
       "-o ",
@@ -729,26 +728,12 @@ LlvmLinkCommand::ToString() const
       inputFilesArgument);
 }
 
-void
-LlvmLinkCommand::Run() const
-{
-  if (system(ToString().c_str()))
-    exit(EXIT_FAILURE);
-}
-
 JlmHlsCommand::~JlmHlsCommand() noexcept = default;
 
 std::string
 JlmHlsCommand::ToString() const
 {
   return util::strfmt("jlm-hls ", "-o ", OutputFolder_.to_str(), " ", InputFile_.to_str());
-}
-
-void
-JlmHlsCommand::Run() const
-{
-  if (system(ToString().c_str()))
-    exit(EXIT_FAILURE);
 }
 
 JlmHlsExtractCommand::~JlmHlsExtractCommand() noexcept = default;
@@ -766,13 +751,6 @@ JlmHlsExtractCommand::ToString() const
       OutputFolder_.to_str(),
       " ",
       InputFile().to_str());
-}
-
-void
-JlmHlsExtractCommand::Run() const
-{
-  if (system(ToString().c_str()))
-    exit(EXIT_FAILURE);
 }
 
 }

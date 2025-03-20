@@ -11,6 +11,8 @@
 #include <jlm/llvm/ir/print.hpp>
 #include <jlm/llvm/ir/tac.hpp>
 
+#include <typeindex>
+
 #include <deque>
 
 namespace jlm::llvm
@@ -183,7 +185,7 @@ to_dot(const llvm::cfg & cfg)
   dot += util::strfmt(
       (intptr_t)entry,
       " -> ",
-      (intptr_t)entry->outedge(0)->sink(),
+      (intptr_t)entry->OutEdge(0)->sink(),
       "[label=\"0\"];\n");
 
   /* emit exit node */
@@ -198,10 +200,10 @@ to_dot(const llvm::cfg & cfg)
   {
     dot += util::strfmt("{", (intptr_t)&node);
     dot += util::strfmt("[shape = box, label = \"", emit_node(node), "\"]; }\n");
-    for (auto it = node.begin_outedges(); it != node.end_outedges(); it++)
+    for (auto & edge : node.OutEdges())
     {
-      dot += util::strfmt((intptr_t)it->source(), " -> ", (intptr_t)it->sink());
-      dot += util::strfmt("[label = \"", it->index(), "\"];\n");
+      dot += util::strfmt((intptr_t)edge.source(), " -> ", (intptr_t)edge.sink());
+      dot += util::strfmt("[label = \"", edge.index(), "\"];\n");
     }
   }
   dot += "}\n";

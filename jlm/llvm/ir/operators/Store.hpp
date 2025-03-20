@@ -10,7 +10,6 @@
 #include <jlm/llvm/ir/types.hpp>
 #include <jlm/rvsdg/graph.hpp>
 #include <jlm/rvsdg/simple-node.hpp>
-#include <jlm/rvsdg/simple-normal-form.hpp>
 
 #include <optional>
 
@@ -148,20 +147,20 @@ class StoreNode : public rvsdg::SimpleNode
 protected:
   StoreNode(
       rvsdg::Region & region,
-      const StoreOperation & operation,
+      std::unique_ptr<StoreOperation> operation,
       const std::vector<rvsdg::output *> & operands)
-      : SimpleNode(&region, operation, operands)
+      : SimpleNode(region, std::move(operation), operands)
   {}
 
 public:
-  class MemoryStateInputIterator final : public rvsdg::input::iterator<rvsdg::simple_input>
+  class MemoryStateInputIterator final : public rvsdg::input::iterator<rvsdg::SimpleInput>
   {
   public:
-    constexpr explicit MemoryStateInputIterator(rvsdg::simple_input * input)
-        : rvsdg::input::iterator<jlm::rvsdg::simple_input>(input)
+    constexpr explicit MemoryStateInputIterator(rvsdg::SimpleInput * input)
+        : rvsdg::input::iterator<rvsdg::SimpleInput>(input)
     {}
 
-    [[nodiscard]] rvsdg::simple_input *
+    [[nodiscard]] rvsdg::SimpleInput *
     next() const override
     {
       auto index = value()->index();
@@ -171,14 +170,14 @@ public:
     }
   };
 
-  class MemoryStateOutputIterator final : public rvsdg::output::iterator<rvsdg::simple_output>
+  class MemoryStateOutputIterator final : public rvsdg::output::iterator<rvsdg::SimpleOutput>
   {
   public:
-    constexpr explicit MemoryStateOutputIterator(rvsdg::simple_output * output)
-        : rvsdg::output::iterator<rvsdg::simple_output>(output)
+    constexpr explicit MemoryStateOutputIterator(rvsdg::SimpleOutput * output)
+        : rvsdg::output::iterator<rvsdg::SimpleOutput>(output)
     {}
 
-    [[nodiscard]] rvsdg::simple_output *
+    [[nodiscard]] rvsdg::SimpleOutput *
     next() const override
     {
       auto index = value()->index();
@@ -246,9 +245,9 @@ class StoreNonVolatileNode final : public StoreNode
 private:
   StoreNonVolatileNode(
       rvsdg::Region & region,
-      const StoreNonVolatileOperation & operation,
+      std::unique_ptr<StoreNonVolatileOperation> operation,
       const std::vector<jlm::rvsdg::output *> & operands)
-      : StoreNode(region, operation, operands)
+      : StoreNode(region, std::move(operation), operands)
   {}
 
 public:
@@ -289,26 +288,29 @@ public:
     std::vector<rvsdg::output *> operands({ &address, &value });
     operands.insert(operands.end(), memoryStates.begin(), memoryStates.end());
 
-    StoreNonVolatileOperation storeOperation(std::move(storedType), memoryStates.size(), alignment);
-    return CreateNode(*address.region(), storeOperation, operands);
+    auto operation = std::make_unique<StoreNonVolatileOperation>(
+        std::move(storedType),
+        memoryStates.size(),
+        alignment);
+    return CreateNode(*address.region(), std::move(operation), operands);
   }
 
   static std::vector<rvsdg::output *>
   Create(
       rvsdg::Region & region,
-      const StoreNonVolatileOperation & storeOperation,
+      std::unique_ptr<StoreNonVolatileOperation> storeOperation,
       const std::vector<rvsdg::output *> & operands)
   {
-    return rvsdg::outputs(&CreateNode(region, storeOperation, operands));
+    return rvsdg::outputs(&CreateNode(region, std::move(storeOperation), operands));
   }
 
   static StoreNonVolatileNode &
   CreateNode(
       rvsdg::Region & region,
-      const StoreNonVolatileOperation & storeOperation,
+      std::unique_ptr<StoreNonVolatileOperation> storeOperation,
       const std::vector<rvsdg::output *> & operands)
   {
-    return *(new StoreNonVolatileNode(region, storeOperation, operands));
+    return *(new StoreNonVolatileNode(region, std::move(storeOperation), operands));
   }
 
 private:
@@ -390,7 +392,7 @@ private:
   CreateOperandTypes(std::shared_ptr<const rvsdg::ValueType> storedType, size_t numMemoryStates)
   {
     std::vector<std::shared_ptr<const rvsdg::Type>> types(
-        { PointerType::Create(), std::move(storedType), iostatetype::Create() });
+        { PointerType::Create(), std::move(storedType), IOStateType::Create() });
     std::vector<std::shared_ptr<const rvsdg::Type>> states(
         numMemoryStates,
         MemoryStateType::Create());
@@ -401,7 +403,7 @@ private:
   static std::vector<std::shared_ptr<const rvsdg::Type>>
   CreateResultTypes(size_t numMemoryStates)
   {
-    std::vector<std::shared_ptr<const rvsdg::Type>> types({ iostatetype::Create() });
+    std::vector<std::shared_ptr<const rvsdg::Type>> types({ IOStateType::Create() });
     std::vector<std::shared_ptr<const rvsdg::Type>> memoryStates(
         numMemoryStates,
         MemoryStateType::Create());
@@ -417,9 +419,9 @@ class StoreVolatileNode final : public StoreNode
 {
   StoreVolatileNode(
       rvsdg::Region & region,
-      const StoreVolatileOperation & operation,
+      std::unique_ptr<StoreVolatileOperation> operation,
       const std::vector<rvsdg::output *> & operands)
-      : StoreNode(region, operation, operands)
+      : StoreNode(region, std::move(operation), operands)
   {}
 
 public:
@@ -439,7 +441,7 @@ public:
   GetIoStateInput() const noexcept
   {
     auto ioStateInput = input(2);
-    JLM_ASSERT(is<iostatetype>(ioStateInput->type()));
+    JLM_ASSERT(is<IOStateType>(ioStateInput->type()));
     return *ioStateInput;
   }
 
@@ -447,7 +449,7 @@ public:
   GetIoStateOutput() const noexcept
   {
     auto ioStateOutput = output(0);
-    JLM_ASSERT(is<iostatetype>(ioStateOutput->type()));
+    JLM_ASSERT(is<IOStateType>(ioStateOutput->type()));
     return *ioStateOutput;
   }
 
@@ -457,10 +459,10 @@ public:
   static StoreVolatileNode &
   CreateNode(
       rvsdg::Region & region,
-      const StoreVolatileOperation & storeOperation,
+      std::unique_ptr<StoreVolatileOperation> storeOperation,
       const std::vector<rvsdg::output *> & operands)
   {
-    return *(new StoreVolatileNode(region, storeOperation, operands));
+    return *(new StoreVolatileNode(region, std::move(storeOperation), operands));
   }
 
   static StoreVolatileNode &
@@ -476,17 +478,18 @@ public:
     std::vector<rvsdg::output *> operands({ &address, &value, &ioState });
     operands.insert(operands.end(), memoryStates.begin(), memoryStates.end());
 
-    StoreVolatileOperation storeOperation(storedType, memoryStates.size(), alignment);
-    return CreateNode(*address.region(), storeOperation, operands);
+    auto operation =
+        std::make_unique<StoreVolatileOperation>(storedType, memoryStates.size(), alignment);
+    return CreateNode(*address.region(), std::move(operation), operands);
   }
 
   static std::vector<rvsdg::output *>
   Create(
       rvsdg::Region & region,
-      const StoreVolatileOperation & loadOperation,
+      std::unique_ptr<StoreVolatileOperation> storeOperation,
       const std::vector<rvsdg::output *> & operands)
   {
-    return rvsdg::outputs(&CreateNode(region, loadOperation, operands));
+    return rvsdg::outputs(&CreateNode(region, std::move(storeOperation), operands));
   }
 
 private:

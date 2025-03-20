@@ -6,14 +6,17 @@
 #ifndef JLM_LLVM_OPT_DEADNODEELIMINATION_HPP
 #define JLM_LLVM_OPT_DEADNODEELIMINATION_HPP
 
-#include <jlm/llvm/opt/optimization.hpp>
-#include <jlm/rvsdg/simple-node.hpp>
-#include <jlm/rvsdg/structural-node.hpp>
+#include <jlm/rvsdg/lambda.hpp>
+#include <jlm/rvsdg/Transformation.hpp>
 
 namespace jlm::rvsdg
 {
 class GammaNode;
+class Graph;
+class output;
+class StructuralNode;
 class ThetaNode;
+class Region;
 }
 
 namespace jlm::llvm
@@ -24,17 +27,12 @@ namespace delta
 class node;
 }
 
-namespace lambda
-{
-class node;
-}
+class LambdaNode;
 
 namespace phi
 {
 class node;
 }
-
-class RvsdgModule;
 
 /** \brief Dead Node Elimination Optimization
  *
@@ -51,7 +49,7 @@ class RvsdgModule;
  *
  * Please see TestDeadNodeElimination.cpp for Dead Node Elimination examples.
  */
-class DeadNodeElimination final : public optimization
+class DeadNodeElimination final : public rvsdg::Transformation
 {
   class Context;
   class Statistics;
@@ -75,7 +73,7 @@ public:
   run(rvsdg::Region & region);
 
   void
-  run(RvsdgModule & module, jlm::util::StatisticsCollector & statisticsCollector) override;
+  Run(rvsdg::RvsdgModule & module, util::StatisticsCollector & statisticsCollector) override;
 
 private:
   void
@@ -100,7 +98,7 @@ private:
   SweepTheta(rvsdg::ThetaNode & thetaNode) const;
 
   void
-  SweepLambda(lambda::node & lambdaNode) const;
+  SweepLambda(rvsdg::LambdaNode & lambdaNode) const;
 
   void
   SweepPhi(phi::node & phiNode) const;

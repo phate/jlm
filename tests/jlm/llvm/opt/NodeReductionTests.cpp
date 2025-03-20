@@ -44,7 +44,7 @@ MultipleReductionsPerRegion()
   NodeReduction nodeReduction;
   jlm::util::StatisticsCollector statisticsCollector(
       jlm::util::StatisticsCollectorSettings({ jlm::util::Statistics::Id::ReduceNodes }));
-  nodeReduction.run(rvsdgModule, statisticsCollector);
+  nodeReduction.Run(rvsdgModule, statisticsCollector);
 
   view(graph, stdout);
 

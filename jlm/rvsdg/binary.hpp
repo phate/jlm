@@ -9,7 +9,6 @@
 
 #include <jlm/rvsdg/graph.hpp>
 #include <jlm/rvsdg/operation.hpp>
-#include <jlm/rvsdg/simple-normal-form.hpp>
 #include <jlm/util/common.hpp>
 
 #include <optional>
@@ -18,105 +17,6 @@ namespace jlm::rvsdg
 {
 
 typedef size_t binop_reduction_path_t;
-
-class BinaryOperation;
-
-class binary_normal_form final : public simple_normal_form
-{
-public:
-  virtual ~binary_normal_form() noexcept;
-
-  binary_normal_form(
-      const std::type_info & operator_class,
-      jlm::rvsdg::node_normal_form * parent,
-      Graph * graph);
-
-  virtual bool
-  normalize_node(Node * node) const override;
-
-  virtual std::vector<jlm::rvsdg::output *>
-  normalized_create(
-      rvsdg::Region * region,
-      const SimpleOperation & op,
-      const std::vector<jlm::rvsdg::output *> & arguments) const override;
-
-  virtual void
-  set_reducible(bool enable);
-
-  inline bool
-  get_reducible() const noexcept
-  {
-    return enable_reducible_;
-  }
-
-  virtual void
-  set_flatten(bool enable);
-
-  inline bool
-  get_flatten() const noexcept
-  {
-    return enable_flatten_;
-  }
-
-  virtual void
-  set_reorder(bool enable);
-
-  inline bool
-  get_reorder() const noexcept
-  {
-    return enable_reorder_;
-  }
-
-  virtual void
-  set_distribute(bool enable);
-
-  inline bool
-  get_distribute() const noexcept
-  {
-    return enable_distribute_;
-  }
-
-  virtual void
-  set_factorize(bool enable);
-
-  inline bool
-  get_factorize() const noexcept
-  {
-    return enable_factorize_;
-  }
-
-private:
-  bool
-  normalize_node(Node * node, const BinaryOperation & op) const;
-
-  bool enable_reducible_;
-  bool enable_reorder_;
-  bool enable_flatten_;
-  bool enable_distribute_;
-  bool enable_factorize_;
-
-  friend class flattened_binary_normal_form;
-};
-
-class flattened_binary_normal_form final : public simple_normal_form
-{
-public:
-  virtual ~flattened_binary_normal_form() noexcept;
-
-  flattened_binary_normal_form(
-      const std::type_info & operator_class,
-      jlm::rvsdg::node_normal_form * parent,
-      Graph * graph);
-
-  virtual bool
-  normalize_node(Node * node) const override;
-
-  virtual std::vector<jlm::rvsdg::output *>
-  normalized_create(
-      rvsdg::Region * region,
-      const SimpleOperation & op,
-      const std::vector<jlm::rvsdg::output *> & arguments) const override;
-};
 
 /**
  * Binary operation taking two arguments (with well-defined reduction for more
@@ -158,13 +58,6 @@ public:
 
   inline bool
   is_commutative() const noexcept;
-
-  static jlm::rvsdg::binary_normal_form *
-  normal_form(Graph * graph) noexcept
-  {
-    return static_cast<jlm::rvsdg::binary_normal_form *>(
-        graph->GetNodeNormalForm(typeid(BinaryOperation)));
-  }
 };
 
 /**
@@ -204,7 +97,7 @@ NormalizeBinaryOperation(
     const BinaryOperation & operation,
     const std::vector<rvsdg::output *> & operands);
 
-class flattened_binary_op final : public SimpleOperation
+class FlattenedBinaryOperation final : public SimpleOperation
 {
 public:
   enum class reduction
@@ -213,16 +106,16 @@ public:
     parallel
   };
 
-  virtual ~flattened_binary_op() noexcept;
+  ~FlattenedBinaryOperation() noexcept override;
 
-  inline flattened_binary_op(std::unique_ptr<BinaryOperation> op, size_t narguments) noexcept
+  FlattenedBinaryOperation(std::unique_ptr<BinaryOperation> op, size_t narguments) noexcept
       : SimpleOperation({ narguments, op->argument(0) }, { op->result(0) }),
         op_(std::move(op))
   {
     JLM_ASSERT(op_->is_associative());
   }
 
-  flattened_binary_op(const BinaryOperation & op, size_t narguments)
+  FlattenedBinaryOperation(const BinaryOperation & op, size_t narguments)
       : SimpleOperation({ narguments, op.argument(0) }, { op.result(0) }),
         op_(std::unique_ptr<BinaryOperation>(static_cast<BinaryOperation *>(op.copy().release())))
   {
@@ -244,23 +137,16 @@ public:
     return *op_;
   }
 
-  static jlm::rvsdg::flattened_binary_normal_form *
-  normal_form(Graph * graph) noexcept
-  {
-    return static_cast<flattened_binary_normal_form *>(
-        graph->GetNodeNormalForm(typeid(flattened_binary_op)));
-  }
-
   jlm::rvsdg::output *
   reduce(
-      const flattened_binary_op::reduction & reduction,
+      const FlattenedBinaryOperation::reduction & reduction,
       const std::vector<jlm::rvsdg::output *> & operands) const;
 
   static void
-  reduce(rvsdg::Region * region, const flattened_binary_op::reduction & reduction);
+  reduce(rvsdg::Region * region, const FlattenedBinaryOperation::reduction & reduction);
 
   static inline void
-  reduce(Graph * graph, const flattened_binary_op::reduction & reduction)
+  reduce(Graph * graph, const FlattenedBinaryOperation::reduction & reduction)
   {
     reduce(&graph->GetRootRegion(), reduction);
   }
@@ -268,6 +154,23 @@ public:
 private:
   std::unique_ptr<BinaryOperation> op_;
 };
+
+/**
+ * \brief Applies the reductions of the binary operation represented by the flattened binary
+ * operation.
+ *
+ * @param operation The flattened binary operation on which the transformation is performed.
+ * @param operands The operands of the flattened binary node.
+ *
+ * @return If the normalization could be applied, then the results of the flattened binary operation
+ * after the transformation. Otherwise, std::nullopt.
+ *
+ * \see NormalizeBinaryOperation()
+ */
+std::optional<std::vector<rvsdg::output *>>
+NormalizeFlattenedBinaryOperation(
+    const FlattenedBinaryOperation & operation,
+    const std::vector<rvsdg::output *> & operands);
 
 /* binary flags operators */
 

@@ -21,20 +21,16 @@ TestSingleLoad()
   using namespace jlm::hls;
 
   auto rvsdgModule = RvsdgModule::Create(jlm::util::filepath(""), "", "");
-  auto nf = rvsdgModule->Rvsdg().GetNodeNormalForm(typeid(jlm::rvsdg::Operation));
-  nf->set_mutable(false);
 
   // Setup the function
   std::cout << "Function Setup" << std::endl;
-  auto functionType = FunctionType::Create(
+  auto functionType = jlm::rvsdg::FunctionType::Create(
       { jlm::llvm::PointerType::Create(), MemoryStateType::Create() },
       { jlm::llvm::PointerType::Create(), MemoryStateType::Create() });
 
-  auto lambda = lambda::node::create(
-      &rvsdgModule->Rvsdg().GetRootRegion(),
-      functionType,
-      "test",
-      linkage::external_linkage);
+  auto lambda = jlm::rvsdg::LambdaNode::Create(
+      rvsdgModule->Rvsdg().GetRootRegion(),
+      LlvmLambdaOperation::Create(functionType, "test", linkage::external_linkage));
 
   // Theta
   auto theta = jlm::rvsdg::ThetaNode::create(lambda->subregion());
@@ -97,22 +93,18 @@ TestLoadStore()
   using namespace jlm::hls;
 
   auto rvsdgModule = RvsdgModule::Create(jlm::util::filepath(""), "", "");
-  auto nf = rvsdgModule->Rvsdg().GetNodeNormalForm(typeid(jlm::rvsdg::Operation));
-  nf->set_mutable(false);
 
   // Setup the function
   std::cout << "Function Setup" << std::endl;
-  auto functionType = FunctionType::Create(
+  auto functionType = jlm::rvsdg::FunctionType::Create(
       { jlm::llvm::PointerType::Create(),
         jlm::llvm::PointerType::Create(),
         MemoryStateType::Create() },
       { jlm::llvm::PointerType::Create(), MemoryStateType::Create() });
 
-  auto lambda = lambda::node::create(
-      &rvsdgModule->Rvsdg().GetRootRegion(),
-      functionType,
-      "test",
-      linkage::external_linkage);
+  auto lambda = jlm::rvsdg::LambdaNode::Create(
+      rvsdgModule->Rvsdg().GetRootRegion(),
+      LlvmLambdaOperation::Create(functionType, "test", linkage::external_linkage));
 
   // Theta
   auto theta = jlm::rvsdg::ThetaNode::create(lambda->subregion());
@@ -182,20 +174,16 @@ TestAddrQueue()
   using namespace jlm::hls;
 
   auto rvsdgModule = RvsdgModule::Create(jlm::util::filepath(""), "", "");
-  auto nf = rvsdgModule->Rvsdg().GetNodeNormalForm(typeid(jlm::rvsdg::Operation));
-  nf->set_mutable(false);
 
   // Setup the function
   std::cout << "Function Setup" << std::endl;
-  auto functionType = FunctionType::Create(
+  auto functionType = jlm::rvsdg::FunctionType::Create(
       { jlm::llvm::PointerType::Create(), MemoryStateType::Create() },
       { jlm::llvm::PointerType::Create(), MemoryStateType::Create() });
 
-  auto lambda = lambda::node::create(
-      &rvsdgModule->Rvsdg().GetRootRegion(),
-      functionType,
-      "test",
-      linkage::external_linkage);
+  auto lambda = jlm::rvsdg::LambdaNode::Create(
+      rvsdgModule->Rvsdg().GetRootRegion(),
+      LlvmLambdaOperation::Create(functionType, "test", linkage::external_linkage));
 
   // Theta
   auto theta = jlm::rvsdg::ThetaNode::create(lambda->subregion());
@@ -250,11 +238,11 @@ TestAddrQueue()
   assert(jlm::rvsdg::Region::Contains<state_gate_op>(*lambdaRegion, true));
   assert(jlm::rvsdg::Region::Contains<addr_queue_op>(*lambdaRegion, true));
 
-  for (auto & node : jlm::rvsdg::topdown_traverser(lambdaRegion))
+  for (auto & node : jlm::rvsdg::TopDownTraverser(lambdaRegion))
   {
     if (auto loopNode = dynamic_cast<jlm::hls::loop_node *>(node))
     {
-      for (auto & node : jlm::rvsdg::topdown_traverser(loopNode->subregion()))
+      for (auto & node : jlm::rvsdg::TopDownTraverser(loopNode->subregion()))
       {
         if (auto storeNode = dynamic_cast<const jlm::llvm::StoreNode *>(node))
         {

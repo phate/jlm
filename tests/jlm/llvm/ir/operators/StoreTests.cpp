@@ -137,7 +137,7 @@ StoreVolatileNodeCopy()
 
   // Arrange
   auto pointerType = PointerType::Create();
-  auto ioStateType = iostatetype::Create();
+  auto ioStateType = IOStateType::Create();
   auto memoryType = MemoryStateType::Create();
   auto valueType = jlm::tests::valuetype::Create();
 

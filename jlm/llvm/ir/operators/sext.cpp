@@ -31,7 +31,7 @@ is_inverse_reducible(const sext_op & op, const rvsdg::output * operand)
   if (!node)
     return false;
 
-  auto top = dynamic_cast<const trunc_op *>(&node->GetOperation());
+  const auto top = dynamic_cast<const TruncOperation *>(&node->GetOperation());
   return top && top->nsrcbits() == op.ndstbits();
 }
 
@@ -44,7 +44,9 @@ perform_bitunary_reduction(const sext_op & op, rvsdg::output * operand)
   auto uop = static_cast<const rvsdg::bitunary_op *>(&unary->GetOperation());
 
   auto output = sext_op::create(op.ndstbits(), unary->input(0)->origin());
-  return rvsdg::SimpleNode::create_normalized(region, *uop->create(op.ndstbits()), { output })[0];
+  std::unique_ptr<rvsdg::SimpleOperation> simpleOperation(
+      util::AssertedCast<rvsdg::SimpleOperation>(uop->create(op.ndstbits()).release()));
+  return rvsdg::SimpleNode::Create(*region, std::move(simpleOperation), { output }).output(0);
 }
 
 static rvsdg::output *
@@ -59,7 +61,9 @@ perform_bitbinary_reduction(const sext_op & op, rvsdg::output * operand)
   auto op1 = sext_op::create(op.ndstbits(), binary->input(0)->origin());
   auto op2 = sext_op::create(op.ndstbits(), binary->input(1)->origin());
 
-  return rvsdg::SimpleNode::create_normalized(region, *bop->create(op.ndstbits()), { op1, op2 })[0];
+  std::unique_ptr<rvsdg::SimpleOperation> simpleOperation(
+      util::AssertedCast<rvsdg::SimpleOperation>(bop->create(op.ndstbits()).release()));
+  return rvsdg::SimpleNode::Create(*region, std::move(simpleOperation), { op1, op2 }).output(0);
 }
 
 static rvsdg::output *

@@ -22,8 +22,8 @@ AliasAnalysisStateEncoder<AliasAnalysisPass, MemoryNodeProviderPass>::
 
 template<typename AliasAnalysisPass, typename MemoryNodeProviderPass>
 void
-AliasAnalysisStateEncoder<AliasAnalysisPass, MemoryNodeProviderPass>::run(
-    RvsdgModule & rvsdgModule,
+AliasAnalysisStateEncoder<AliasAnalysisPass, MemoryNodeProviderPass>::Run(
+    rvsdg::RvsdgModule & rvsdgModule,
     util::StatisticsCollector & statisticsCollector)
 {
   AliasAnalysisPass aaPass;

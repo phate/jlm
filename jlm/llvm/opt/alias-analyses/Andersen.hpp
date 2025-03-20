@@ -315,7 +315,8 @@ public:
    * @see SetConfiguration to configure settings for the analysis
    */
   std::unique_ptr<PointsToGraph>
-  Analyze(const RvsdgModule & module, util::StatisticsCollector & statisticsCollector) override;
+  Analyze(const rvsdg::RvsdgModule & module, util::StatisticsCollector & statisticsCollector)
+      override;
 
   /**
    * @brief Shorthand for Analyze, ignoring collecting any statistics.
@@ -375,7 +376,7 @@ private:
   AnalyzeBits2ptr(const rvsdg::SimpleNode & node);
 
   void
-  AnalyzePtr2bits(const rvsdg::SimpleNode & node);
+  AnalyzePtrToInt(const rvsdg::SimpleNode & node);
 
   void
   AnalyzeConstantPointerNull(const rvsdg::SimpleNode & node);
@@ -402,10 +403,19 @@ private:
   AnalyzeValist(const rvsdg::SimpleNode & node);
 
   void
+  AnalyzePointerToFunction(const rvsdg::SimpleNode & node);
+
+  void
+  AnalyzeFunctionToPointer(const rvsdg::SimpleNode & node);
+
+  void
+  AnalyzeIOBarrier(const rvsdg::SimpleNode & node);
+
+  void
   AnalyzeStructuralNode(const rvsdg::StructuralNode & node);
 
   void
-  AnalyzeLambda(const lambda::node & node);
+  AnalyzeLambda(const rvsdg::LambdaNode & node);
 
   void
   AnalyzeDelta(const delta::node & node);
@@ -429,7 +439,7 @@ private:
    * @param statistics the Statistics instance used to track info about the analysis
    */
   void
-  AnalyzeModule(const RvsdgModule & module, Statistics & statistics);
+  AnalyzeModule(const rvsdg::RvsdgModule & module, Statistics & statistics);
 
   /**
    * Solves the constraint problem using the techniques and solver specified in the given config.

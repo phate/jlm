@@ -9,6 +9,7 @@
 #include <jlm/llvm/ir/operators/alloca.hpp>
 #include <jlm/llvm/ir/operators/call.hpp>
 #include <jlm/llvm/ir/operators/GetElementPtr.hpp>
+#include <jlm/llvm/ir/operators/IntegerOperations.hpp>
 #include <jlm/llvm/ir/operators/Load.hpp>
 #include <jlm/llvm/ir/operators/MemoryStateOperations.hpp>
 #include <jlm/llvm/ir/operators/operators.hpp>
@@ -48,7 +49,7 @@ private:
     visited.insert(op);
     for (auto user : *op)
     {
-      if (auto si = dynamic_cast<jlm::rvsdg::simple_input *>(user))
+      if (auto si = dynamic_cast<rvsdg::SimpleInput *>(user))
       {
         auto simplenode = si->node();
         if (dynamic_cast<const jlm::llvm::StoreNonVolatileOperation *>(&simplenode->GetOperation()))
@@ -118,7 +119,7 @@ gep_to_index(jlm::rvsdg::output * o)
 void
 alloca_conv(rvsdg::Region * region)
 {
-  for (auto & node : jlm::rvsdg::topdown_traverser(region))
+  for (auto & node : rvsdg::TopDownTraverser(region))
   {
     if (auto structnode = dynamic_cast<rvsdg::StructuralNode *>(node))
     {
@@ -133,12 +134,12 @@ alloca_conv(rvsdg::Region * region)
       JLM_ASSERT(node->ninputs() == 1);
       auto constant_output = dynamic_cast<jlm::rvsdg::node_output *>(node->input(0)->origin());
       JLM_ASSERT(constant_output);
-      auto constant_operation = dynamic_cast<const jlm::rvsdg::bitconstant_op *>(
+      auto constant_operation = dynamic_cast<const llvm::IntegerConstantOperation *>(
           &constant_output->node()->GetOperation());
       JLM_ASSERT(constant_operation);
-      JLM_ASSERT(constant_operation->value().to_uint() == 1);
+      JLM_ASSERT(constant_operation->Representation().to_uint() == 1);
       // ensure that the alloca is an array type
-      auto at = std::dynamic_pointer_cast<const jlm::llvm::arraytype>(po->ValueType());
+      auto at = std::dynamic_pointer_cast<const llvm::ArrayType>(po->ValueType());
       JLM_ASSERT(at);
       // detect loads and stores attached to alloca
       TraceAllocaUses ta(node->output(0));

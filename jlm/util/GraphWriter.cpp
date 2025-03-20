@@ -1347,7 +1347,9 @@ Graph::OutputDot(std::ostream & out, size_t indent) const
   indent++;
 
   // Default node attributes. Filling nodes by default makes them easier to click
-  out << Indent(indent) << "node[shape=box style=filled fillcolor=white];" << std::endl;
+  out << Indent(indent)
+      << "node[shape=box style=filled fillcolor=white width=0.1 height=0.1 margin=0.05];"
+      << std::endl;
   out << Indent(indent) << "penwidth=6;" << std::endl;
   if (HasLabel())
   {

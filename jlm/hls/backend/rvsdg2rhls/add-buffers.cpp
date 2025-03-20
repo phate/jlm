@@ -14,7 +14,7 @@ namespace jlm::hls
 void
 add_buffers(rvsdg::Region * region, bool pass_through)
 {
-  for (auto & node : jlm::rvsdg::topdown_traverser(region))
+  for (auto & node : rvsdg::TopDownTraverser(region))
   {
     if (auto structnode = dynamic_cast<rvsdg::StructuralNode *>(node))
     {

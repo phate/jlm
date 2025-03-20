@@ -76,7 +76,7 @@ public:
   operator=(Steensgaard &&) = delete;
 
   std::unique_ptr<PointsToGraph>
-  Analyze(const RvsdgModule & module, jlm::util::StatisticsCollector & statisticsCollector)
+  Analyze(const rvsdg::RvsdgModule & module, util::StatisticsCollector & statisticsCollector)
       override;
 
   /**
@@ -103,7 +103,7 @@ private:
   AnalyzeRegion(rvsdg::Region & region);
 
   void
-  AnalyzeLambda(const lambda::node & node);
+  AnalyzeLambda(const rvsdg::LambdaNode & node);
 
   void
   AnalyzeDelta(const delta::node & node);
@@ -139,7 +139,7 @@ private:
   AnalyzeCall(const CallNode & callNode);
 
   void
-  AnalyzeDirectCall(const CallNode & callNode, const lambda::node & lambdaNode);
+  AnalyzeDirectCall(const CallNode & callNode, const rvsdg::LambdaNode & lambdaNode);
 
   void
   AnalyzeExternalCall(const CallNode & callNode);
@@ -157,7 +157,7 @@ private:
   AnalyzeBits2ptr(const rvsdg::SimpleNode & node);
 
   void
-  AnalyzePtr2Bits(const rvsdg::SimpleNode & node);
+  AnalyzePtrToInt(const rvsdg::SimpleNode & node);
 
   void
   AnalyzeConstantPointerNull(const rvsdg::SimpleNode & node);
@@ -182,6 +182,15 @@ private:
 
   void
   AnalyzeVaList(const rvsdg::SimpleNode & node);
+
+  void
+  AnalyzePointerToFunction(const rvsdg::SimpleNode & node);
+
+  void
+  AnalyzeIOBarrier(const rvsdg::SimpleNode & node);
+
+  void
+  AnalyzeFunctionToPointer(const rvsdg::SimpleNode & node);
 
   /**
    * Marks register \p output as escaping the module. This indicates that the pointer in \p output

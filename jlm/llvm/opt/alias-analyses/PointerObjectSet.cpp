@@ -5,7 +5,6 @@
 
 #include <jlm/llvm/opt/alias-analyses/PointerObjectSet.hpp>
 
-#include <jlm/llvm/ir/operators/call.hpp>
 #include <jlm/llvm/opt/alias-analyses/DifferencePropagation.hpp>
 #include <jlm/llvm/opt/alias-analyses/LazyCycleDetection.hpp>
 #include <jlm/llvm/opt/alias-analyses/OnlineCycleDetection.hpp>
@@ -144,7 +143,7 @@ PointerObjectSet::CreateGlobalMemoryObject(const delta::node & deltaNode, bool c
 }
 
 PointerObjectIndex
-PointerObjectSet::CreateFunctionMemoryObject(const lambda::node & lambdaNode)
+PointerObjectSet::CreateFunctionMemoryObject(const rvsdg::LambdaNode & lambdaNode)
 {
   JLM_ASSERT(!FunctionMap_.HasKey(&lambdaNode));
   const auto pointerObject = AddPointerObject(PointerObjectKind::FunctionMemoryObject, false);
@@ -153,13 +152,13 @@ PointerObjectSet::CreateFunctionMemoryObject(const lambda::node & lambdaNode)
 }
 
 PointerObjectIndex
-PointerObjectSet::GetFunctionMemoryObject(const lambda::node & lambdaNode) const
+PointerObjectSet::GetFunctionMemoryObject(const rvsdg::LambdaNode & lambdaNode) const
 {
   JLM_ASSERT(FunctionMap_.HasKey(&lambdaNode));
   return FunctionMap_.LookupKey(&lambdaNode);
 }
 
-const lambda::node &
+const rvsdg::LambdaNode &
 PointerObjectSet::GetLambdaNodeFromFunctionMemoryObject(PointerObjectIndex index) const
 {
   JLM_ASSERT(FunctionMap_.HasValue(index));
@@ -205,7 +204,7 @@ PointerObjectSet::GetGlobalMap() const noexcept
   return GlobalMap_;
 }
 
-const util::BijectiveMap<const lambda::node *, PointerObjectIndex> &
+const util::BijectiveMap<const rvsdg::LambdaNode *, PointerObjectIndex> &
 PointerObjectSet::GetFunctionMap() const noexcept
 {
   return FunctionMap_;
@@ -395,10 +394,9 @@ PointerObjectSet::UnifyPointerObjects(PointerObjectIndex object1, PointerObjectI
   auto & oldRootPointees = PointsToSets_[oldRoot];
 
   NumSetInsertionAttempts_ += oldRootPointees.Size();
-  PointsToSets_[newRoot].UnionWith(oldRootPointees);
-
   NumExplicitPointeesRemoved_ += oldRootPointees.Size();
-  oldRootPointees.Clear();
+
+  PointsToSets_[newRoot].UnionWithAndClear(oldRootPointees);
 
   return newRoot;
 }
@@ -669,7 +667,7 @@ static void
 HandleLambdaCallParameters(
     PointerObjectSet & set,
     const jlm::llvm::CallNode & callNode,
-    const lambda::node & lambdaNode,
+    const rvsdg::LambdaNode & lambdaNode,
     MakeSupersetFunctor & makeSuperset)
 {
   auto lambdaArgs = lambdaNode.GetFunctionArguments();
@@ -696,7 +694,7 @@ static void
 HandleLambdaCallReturnValues(
     PointerObjectSet & set,
     const jlm::llvm::CallNode & callNode,
-    const lambda::node & lambdaNode,
+    const rvsdg::LambdaNode & lambdaNode,
     MakeSupersetFunctor & makeSuperset)
 {
   auto lambdaResults = lambdaNode.GetFunctionResults();
@@ -920,7 +918,7 @@ EscapedFunctionConstraint::PropagateEscapedFunctionsDirectly(PointerObjectSet & 
     modified |= set.MarkAsPointingToExternal(index);
   };
 
-  for (const auto [lambda, lambdaPO] : set.GetFunctionMap())
+  for (const auto & [lambda, lambdaPO] : set.GetFunctionMap())
   {
     if (set.HasEscaped(lambdaPO))
       HandleEscapedFunction(set, lambdaPO, markAsPointeesEscaping, markAsPointsToExternal);
@@ -1650,19 +1648,17 @@ PointerObjectConstraintSet::RunWorklistSolver(WorklistStatistics & statistics)
     const auto nonRoot = root == aRoot ? bRoot : aRoot;
 
     // Move constraints owned by the non-root to the root
-    supersetEdges[root].UnionWith(supersetEdges[nonRoot]);
-    supersetEdges[nonRoot].Clear();
+    supersetEdges[root].UnionWithAndClear(supersetEdges[nonRoot]);
+
     // Try to avoid self-edges, but indirect self-edges can still exist
     supersetEdges[root].Remove(root);
+    supersetEdges[root].Remove(nonRoot);
 
-    storeConstraints[root].UnionWith(storeConstraints[nonRoot]);
-    storeConstraints[nonRoot].Clear();
+    storeConstraints[root].UnionWithAndClear(storeConstraints[nonRoot]);
 
-    loadConstraints[root].UnionWith(loadConstraints[nonRoot]);
-    loadConstraints[nonRoot].Clear();
+    loadConstraints[root].UnionWithAndClear(loadConstraints[nonRoot]);
 
-    callConstraints[root].UnionWith(callConstraints[nonRoot]);
-    callConstraints[nonRoot].Clear();
+    callConstraints[root].UnionWithAndClear(callConstraints[nonRoot]);
 
     if constexpr (EnableDifferencePropagation)
       differencePropagation.OnPointerObjectsUnified(root, nonRoot);

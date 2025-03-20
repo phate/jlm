@@ -69,6 +69,12 @@ TestWriteGraphs()
   assert(stateConnections.size() == 1);
   assert(stateConnections.front()->GetAttributeString("color") == "#FF0000");
 
+  // Check that the output of the lambda leads to a graph export
+  auto & lambdaConnections = lambdaNode.GetOutputPort(0).GetConnections();
+  assert(lambdaConnections.size() == 1);
+  auto & graphExport = lambdaConnections.front()->GetTo().GetNode();
+  assert(graphExport.GetLabel() == "export[f]");
+
   return 0;
 }
 JLM_UNIT_TEST_REGISTER("jlm/llvm/backend/dot/DotWriterTests-TestWriteGraphs", TestWriteGraphs)

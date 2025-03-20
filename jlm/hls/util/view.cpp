@@ -40,7 +40,8 @@ get_dot_name(jlm::rvsdg::output * output)
   {
     return jlm::util::strfmt("a", hex((intptr_t)output), ":", "default");
   }
-  else if (auto no = dynamic_cast<jlm::rvsdg::simple_output *>(output))
+
+  if (auto no = dynamic_cast<rvsdg::SimpleOutput *>(output))
   {
     return jlm::util::strfmt(get_dot_name(no->node()), ":", "o", hex((intptr_t)output));
   }
@@ -58,7 +59,7 @@ get_dot_name(jlm::rvsdg::input * input)
   {
     return jlm::util::strfmt("r", hex((intptr_t)input), ":", "default");
   }
-  else if (auto ni = dynamic_cast<jlm::rvsdg::simple_input *>(input))
+  if (auto ni = dynamic_cast<rvsdg::SimpleInput *>(input))
   {
     return jlm::util::strfmt(get_dot_name(ni->node()), ":", "i", hex((intptr_t)input));
   }
@@ -339,7 +340,7 @@ region_to_dot(rvsdg::Region * region)
   }
 
   // nodes
-  for (auto node : jlm::rvsdg::topdown_traverser(region))
+  for (auto node : rvsdg::TopDownTraverser(region))
   {
     if (auto simpleNode = dynamic_cast<jlm::rvsdg::SimpleNode *>(node))
     {
@@ -367,7 +368,7 @@ region_to_dot(rvsdg::Region * region)
     {
       dot << edge(be->argument(), be, true);
     }
-    else if (auto theta = rvsdg::TryGetOwnerNode<rvsdg::ThetaNode>(*region->result(i)->output()))
+    else if (auto theta = rvsdg::TryGetOwnerNode<rvsdg::ThetaNode>(*region->result(i)))
     {
       auto loopvar = theta->MapOutputLoopVar(*region->result(i)->output());
       dot << edge(loopvar.pre, loopvar.post, true);

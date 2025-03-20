@@ -6,7 +6,6 @@
 #ifndef JLM_TOOLING_COMMANDLINE_HPP
 #define JLM_TOOLING_COMMANDLINE_HPP
 
-#include <jlm/llvm/opt/optimization.hpp>
 #include <jlm/llvm/opt/RvsdgTreePrinter.hpp>
 #include <jlm/util/BijectiveMap.hpp>
 #include <jlm/util/file.hpp>
@@ -619,13 +618,13 @@ private:
   static util::filepath
   ToObjectFile(const util::filepath & file)
   {
-    return { file.path() + file.base() + ".o" };
+    return file.Dirname().Join(file.base() + ".o");
   }
 
   static util::filepath
   ToDependencyFile(const util::filepath & file)
   {
-    return { file.path() + file.base() + ".d" };
+    return file.Dirname().Join(file.base() + ".d");
   }
 
   JlcCommandLineOptions CommandLineOptions_;

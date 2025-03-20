@@ -12,8 +12,9 @@ namespace jlm::llvm
 FunctionToPointerOperation::~FunctionToPointerOperation() noexcept
 {}
 
-FunctionToPointerOperation::FunctionToPointerOperation(std::shared_ptr<const llvm::FunctionType> fn)
-    : unary_op(fn, llvm::PointerType::Create()),
+FunctionToPointerOperation::FunctionToPointerOperation(
+    std::shared_ptr<const rvsdg::FunctionType> fn)
+    : UnaryOperation(fn, PointerType::Create()),
       FunctionType_(std::move(fn))
 {}
 
@@ -77,7 +78,7 @@ FunctionToPointerOperation::reduce_operand(
 }
 
 std::unique_ptr<FunctionToPointerOperation>
-FunctionToPointerOperation::Create(std::shared_ptr<const llvm::FunctionType> fn)
+FunctionToPointerOperation::Create(std::shared_ptr<const rvsdg::FunctionType> fn)
 {
   return std::make_unique<FunctionToPointerOperation>(std::move(fn));
 }
@@ -85,8 +86,9 @@ FunctionToPointerOperation::Create(std::shared_ptr<const llvm::FunctionType> fn)
 PointerToFunctionOperation::~PointerToFunctionOperation() noexcept
 {}
 
-PointerToFunctionOperation::PointerToFunctionOperation(std::shared_ptr<const llvm::FunctionType> fn)
-    : unary_op(llvm::PointerType::Create(), fn),
+PointerToFunctionOperation::PointerToFunctionOperation(
+    std::shared_ptr<const rvsdg::FunctionType> fn)
+    : UnaryOperation(PointerType::Create(), fn),
       FunctionType_(std::move(fn))
 {}
 
@@ -150,7 +152,7 @@ PointerToFunctionOperation::reduce_operand(
 }
 
 std::unique_ptr<PointerToFunctionOperation>
-PointerToFunctionOperation::Create(std::shared_ptr<const llvm::FunctionType> fn)
+PointerToFunctionOperation::Create(std::shared_ptr<const rvsdg::FunctionType> fn)
 {
   return std::make_unique<PointerToFunctionOperation>(std::move(fn));
 }

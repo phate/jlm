@@ -1,7 +1,8 @@
 #!/bin/bash
 set -eu
 
-GIT_COMMIT=3cdd282061b1f167fe4c3cb79f89b55666a4cff8
+GIT_REPOSITORY=https://github.com/EECS-NTNU/mlir_rvsdg.git
+GIT_COMMIT=e01d4ef44766b2da278e5a4e48d80d877c8017ce
 
 # Get the absolute path to this script and set default build and install paths
 SCRIPT_DIR="$(dirname "$(realpath "$0")")"
@@ -67,17 +68,16 @@ MLIR_BUILD_DIR=${MLIR_BUILD}/build
 
 if [ ! -d "$MLIR_GIT_DIR" ] ;
 then
-	git clone https://github.com/EECS-NTNU/mlir_rvsdg.git ${MLIR_GIT_DIR}
+	git clone ${GIT_REPOSITORY} ${MLIR_GIT_DIR}
 fi
 
 git -C ${MLIR_GIT_DIR} checkout ${GIT_COMMIT}
 cmake -G Ninja \
 	${MLIR_GIT_DIR} \
 	-B ${MLIR_BUILD_DIR} \
-	-DCMAKE_C_COMPILER=${LLVM_BINDIR}/clang \
-	-DCMAKE_CXX_COMPILER=${LLVM_BINDIR}/clang++ \
 	-DLLVM_DIR=${LLVM_CMAKEDIR} \
 	-DMLIR_DIR=${LLVM_CMAKEDIR}/../mlir \
+	-DCMAKE_PREFIX_PATH=${LLVM_CMAKEDIR}/../mlir \
 	-DCMAKE_INSTALL_PREFIX=${MLIR_INSTALL} \
 	-Wno-dev
 ninja -C ${MLIR_BUILD_DIR}

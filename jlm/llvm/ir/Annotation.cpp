@@ -234,7 +234,7 @@ AnnotateReadWrite(const blockaggnode & basicBlockAggregationNode, AnnotationMap 
   for (auto it = threeAddressCodeList.rbegin(); it != threeAddressCodeList.rend(); it++)
   {
     auto & tac = *it;
-    if (is<assignment_op>(tac->operation()))
+    if (is<AssignmentOperation>(tac->operation()))
     {
       /*
           We need special treatment for assignment operation, since the variable
