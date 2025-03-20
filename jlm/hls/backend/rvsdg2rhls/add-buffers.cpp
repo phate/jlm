@@ -52,7 +52,8 @@ add_buffers(rvsdg::Region * region, bool pass_through)
           user->divert_to(new_out);
         }
       }
-      if (jlm::rvsdg::is<hls::fork_op>(node) || jlm::rvsdg::is<hls::state_gate_op>(node))
+      auto fo = dynamic_cast<const fork_op*>(&node->GetOperation());
+      if ((fo && !fo->IsConstant()) || jlm::rvsdg::is<hls::state_gate_op>(node))
       {
         for (size_t i = 0; i < node->noutputs(); ++i)
         {
