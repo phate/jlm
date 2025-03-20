@@ -69,6 +69,10 @@ public:
 
   virtual ~Statistics();
 
+  explicit Statistics(const Id & statisticsId)
+      : StatisticsId_(statisticsId)
+  {}
+
   Statistics(const Statistics::Id & statisticsId, util::filepath sourceFile)
       : StatisticsId_(statisticsId),
         SourceFile_(std::move(sourceFile))
@@ -89,7 +93,7 @@ public:
   /**
    * @return the source file that was worked on while capturing these statistics
    */
-  [[nodiscard]] const util::filepath &
+  [[nodiscard]] std::optional<filepath>
   GetSourceFile() const;
 
   /**
@@ -236,7 +240,7 @@ protected:
 
 private:
   Statistics::Id StatisticsId_;
-  util::filepath SourceFile_;
+  std::optional<filepath> SourceFile_;
 
   MeasurementList Measurements_;
   TimerList Timers_;
