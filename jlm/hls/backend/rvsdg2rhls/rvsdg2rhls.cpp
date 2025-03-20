@@ -50,6 +50,7 @@
 #include <llvm/Support/raw_ostream.h>
 #include <llvm/Support/SourceMgr.h>
 
+#include "stream-conv.hpp"
 #include <regex>
 
 namespace jlm::hls
@@ -162,6 +163,10 @@ inline_calls(rvsdg::Region * region)
           if (graphImport->Name().rfind("decouple_", 0) == 0)
           {
             // can't inline pseudo functions used for decoupling
+            continue;
+          }
+          if(graphImport->Name().rfind("hls_", 0)==0){
+            // can't inline pseudo functions used for streaming
             continue;
           }
           throw jlm::util::error("can not inline external function " + graphImport->Name());
@@ -460,6 +465,7 @@ rvsdg2rhls(llvm::RvsdgModule & rhls, util::StatisticsCollector & collector)
   // rhls optimization
   dne(rhls);
   alloca_conv(rhls);
+  jlm::hls::stream_conv(rhls);
   mem_queue(rhls);
   MemoryConverter(rhls);
   memstate_conv(rhls);

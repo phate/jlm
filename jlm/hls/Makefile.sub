@@ -16,6 +16,7 @@ libhls_SOURCES = \
     jlm/hls/backend/rvsdg2rhls/add-sinks.cpp \
     jlm/hls/backend/rvsdg2rhls/add-triggers.cpp \
     jlm/hls/backend/rvsdg2rhls/alloca-conv.cpp \
+	jlm/hls/backend/rvsdg2rhls/stream-conv.cpp \
     jlm/hls/backend/rvsdg2rhls/hls-function-util.cpp \
     jlm/hls/backend/rvsdg2rhls/check-rhls.cpp \
     jlm/hls/backend/rvsdg2rhls/dae-conv.cpp \
@@ -58,6 +59,7 @@ libhls_HEADERS = \
 	jlm/hls/backend/rvsdg2rhls/add-sinks.hpp \
 	jlm/hls/backend/rvsdg2rhls/add-triggers.hpp \
 	jlm/hls/backend/rvsdg2rhls/alloca-conv.hpp \
+	jlm/hls/backend/rvsdg2rhls/stream-conv.hpp \
 	jlm/hls/backend/rvsdg2rhls/hls-function-util.hpp \
 	jlm/hls/backend/rvsdg2rhls/check-rhls.hpp \
 	jlm/hls/backend/rvsdg2rhls/dae-conv.hpp \
