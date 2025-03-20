@@ -31,7 +31,7 @@ is_inverse_reducible(const sext_op & op, const rvsdg::output * operand)
   if (!node)
     return false;
 
-  auto top = dynamic_cast<const trunc_op *>(&node->GetOperation());
+  const auto top = dynamic_cast<const TruncOperation *>(&node->GetOperation());
   return top && top->nsrcbits() == op.ndstbits();
 }
 

@@ -30,15 +30,15 @@ struct tcloop
 static inline tcloop
 extract_tcloop(cfg_node * ne, cfg_node * nx)
 {
-  JLM_ASSERT(nx->noutedges() == 2);
+  JLM_ASSERT(nx->NumOutEdges() == 2);
   auto & cfg = ne->cfg();
 
-  auto er = nx->outedge(0);
-  auto ex = nx->outedge(1);
+  auto er = nx->OutEdge(0);
+  auto ex = nx->OutEdge(1);
   if (er->sink() != ne)
   {
-    er = nx->outedge(1);
-    ex = nx->outedge(0);
+    er = nx->OutEdge(1);
+    ex = nx->OutEdge(0);
   }
   JLM_ASSERT(er->sink() == ne);
 
@@ -55,12 +55,12 @@ extract_tcloop(cfg_node * ne, cfg_node * nx)
 static inline void
 reinsert_tcloop(const tcloop & l)
 {
-  JLM_ASSERT(l.insert->ninedges() == 1);
-  JLM_ASSERT(l.replacement->noutedges() == 1);
+  JLM_ASSERT(l.insert->NumInEdges() == 1);
+  JLM_ASSERT(l.replacement->NumOutEdges() == 1);
   auto & cfg = l.ne->cfg();
 
   l.replacement->divert_inedges(l.ne);
-  l.insert->divert_inedges(l.replacement->outedge(0)->sink());
+  l.insert->divert_inedges(l.replacement->OutEdge(0)->sink());
 
   cfg.remove_node(l.insert);
   cfg.remove_node(l.replacement);
@@ -105,7 +105,7 @@ append_branch(basic_block * bb, const variable * operand)
 {
   JLM_ASSERT(dynamic_cast<const rvsdg::ControlType *>(&operand->type()));
   auto nalternatives = static_cast<const rvsdg::ControlType *>(&operand->type())->nalternatives();
-  bb->append_last(branch_op::create(nalternatives, operand));
+  bb->append_last(BranchOperation::create(nalternatives, operand));
 }
 
 static inline void
@@ -220,7 +220,7 @@ find_tvariable_bb(cfg_node * node)
   if (auto bb = dynamic_cast<basic_block *>(node))
     return bb;
 
-  auto sink = node->outedge(0)->sink();
+  auto sink = node->OutEdge(0)->sink();
   JLM_ASSERT(is<basic_block>(sink));
 
   return static_cast<basic_block *>(sink);
@@ -289,7 +289,7 @@ find_head_branch(cfg_node * start, cfg_node * end)
     if (start->is_branch() || start == end)
       break;
 
-    start = start->outedge(0)->sink();
+    start = start->OutEdge(0)->sink();
   } while (1);
 
   return start;
@@ -310,9 +310,9 @@ find_dominator_graph(const cfg_edge * edge)
       continue;
 
     bool accept = true;
-    for (auto & inedge : node->inedges())
+    for (auto & inedge : node->InEdges())
     {
-      if (edges.find(inedge) == edges.end())
+      if (edges.find(&inedge) == edges.end())
       {
         accept = false;
         break;
@@ -322,10 +322,10 @@ find_dominator_graph(const cfg_edge * edge)
     if (accept)
     {
       nodes.insert(node);
-      for (auto it = node->begin_outedges(); it != node->end_outedges(); it++)
+      for (auto & outedge : node->OutEdges())
       {
-        edges.insert(it.edge());
-        to_visit.push_back(it->sink());
+        edges.insert(&outedge);
+        to_visit.push_back(outedge.sink());
       }
     }
   }
@@ -342,31 +342,31 @@ struct continuation
 static inline continuation
 compute_continuation(cfg_node * hb)
 {
-  JLM_ASSERT(hb->noutedges() > 1);
+  JLM_ASSERT(hb->NumOutEdges() > 1);
 
   std::unordered_map<cfg_edge *, std::unordered_set<cfg_node *>> dgraphs;
-  for (auto it = hb->begin_outedges(); it != hb->end_outedges(); it++)
-    dgraphs[it.edge()] = find_dominator_graph(it.edge());
+  for (auto & outedge : hb->OutEdges())
+    dgraphs[&outedge] = find_dominator_graph(&outedge);
 
   continuation c;
-  for (auto it = hb->begin_outedges(); it != hb->end_outedges(); it++)
+  for (auto & outedge : hb->OutEdges())
   {
-    auto & dgraph = dgraphs[it.edge()];
+    auto & dgraph = dgraphs[&outedge];
     if (dgraph.empty())
     {
-      c.edges[it.edge()].insert(it.edge());
-      c.points.insert(it.edge()->sink());
+      c.edges[&outedge].insert(&outedge);
+      c.points.insert(outedge.sink());
       continue;
     }
 
     for (const auto & node : dgraph)
     {
-      for (auto it2 = node->begin_outedges(); it2 != node->end_outedges(); it2++)
+      for (auto & outedge2 : node->OutEdges())
       {
-        if (dgraph.find(it2->sink()) == dgraph.end())
+        if (dgraph.find(outedge2.sink()) == dgraph.end())
         {
-          c.edges[it.edge()].insert(it2.edge());
-          c.points.insert(it2->sink());
+          c.edges[&outedge].insert(&outedge2);
+          c.points.insert(outedge2.sink());
         }
       }
     }
@@ -393,14 +393,14 @@ restructure_branches(cfg_node * entry, cfg_node * exit)
   if (c.points.size() == 1)
   {
     auto cpoint = *c.points.begin();
-    for (auto it = hb->begin_outedges(); it != hb->end_outedges(); it++)
+    for (auto & outedge : hb->OutEdges())
     {
-      auto cedges = c.edges[it.edge()];
+      auto cedges = c.edges[&outedge];
 
       /* empty branch subgraph */
-      if (it->sink() == cpoint)
+      if (outedge.sink() == cpoint)
       {
-        it->split();
+        outedge.split();
         continue;
       }
 
@@ -408,8 +408,8 @@ restructure_branches(cfg_node * entry, cfg_node * exit)
       if (cedges.size() == 1)
       {
         auto e = *cedges.begin();
-        JLM_ASSERT(e != it.edge());
-        restructure_branches(it->sink(), e->source());
+        JLM_ASSERT(e != &outedge);
+        restructure_branches(outedge.sink(), e->source());
         continue;
       }
 
@@ -418,7 +418,7 @@ restructure_branches(cfg_node * entry, cfg_node * exit)
       null->add_outedge(cpoint);
       for (const auto & e : cedges)
         e->divert(null);
-      restructure_branches(it->sink(), null);
+      restructure_branches(outedge.sink(), null);
     }
 
     /* restructure tail subgraph */
@@ -438,9 +438,9 @@ restructure_branches(cfg_node * entry, cfg_node * exit)
   }
 
   /* restructure branch subgraphs */
-  for (auto it = hb->begin_outedges(); it != hb->end_outedges(); it++)
+  for (auto & outedge : hb->OutEdges())
   {
-    auto cedges = c.edges[it.edge()];
+    auto cedges = c.edges[&outedge];
 
     auto null = basic_block::create(cfg);
     null->add_outedge(cn);
@@ -452,7 +452,7 @@ restructure_branches(cfg_node * entry, cfg_node * exit)
       e->divert(bb);
     }
 
-    restructure_branches(it->sink(), null);
+    restructure_branches(outedge.sink(), null);
   }
 
   /* restructure tail subgraph */

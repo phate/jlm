@@ -120,6 +120,11 @@ H. Bahmann, N. Reissmann, M. Jahre, and J. C. Meyer
 ACM Transactions on Architecture and Code Optimization (TACO), no. 66, Jan. 2015.
 https://dl.acm.org/doi/10.1145/2693261
 
+D. Metz, N. Reissmann, and M. Själander
+*"R-HLS: An IR for Dynamic High-Level Synthesis and Memory Disambiguation based on Regions and State Edges"*
+Proceedings of the ACM/IEEE International Conference on Computer-Aided Design (ICCAD), Oct. 2024.
+http://www.sjalander.com/research/pdf/sjalander-iccad2024-rhls.pdf
+
 N. Reissmann, J. C. Meyer, and M. Själander
 *"RVSDG: An Intermediate Representation for the Multi-Core Era"*
 Nordic Workshop on Multi-Core Computing (MCC), Nov. 2018.

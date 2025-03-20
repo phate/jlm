@@ -20,18 +20,21 @@
 #include <jlm/hls/backend/rvsdg2rhls/memstate-conv.hpp>
 #include <jlm/hls/backend/rvsdg2rhls/merge-gamma.hpp>
 #include <jlm/hls/backend/rvsdg2rhls/remove-redundant-buf.hpp>
-#include <jlm/hls/backend/rvsdg2rhls/remove-unused-state.hpp>
 #include <jlm/hls/backend/rvsdg2rhls/rhls-dne.hpp>
 #include <jlm/hls/backend/rvsdg2rhls/rvsdg2rhls.hpp>
 #include <jlm/hls/backend/rvsdg2rhls/ThetaConversion.hpp>
+#include <jlm/hls/backend/rvsdg2rhls/UnusedStateRemoval.hpp>
 #include <jlm/hls/opt/cne.hpp>
+#include <jlm/hls/opt/InvariantLambdaMemoryStateRemoval.hpp>
+#include <jlm/hls/opt/IOBarrierRemoval.hpp>
 #include <jlm/hls/util/view.hpp>
-#include <jlm/llvm/backend/jlm2llvm/jlm2llvm.hpp>
-#include <jlm/llvm/backend/rvsdg2jlm/rvsdg2jlm.hpp>
+#include <jlm/llvm/backend/IpGraphToLlvmConverter.hpp>
+#include <jlm/llvm/backend/RvsdgToIpGraphConverter.hpp>
 #include <jlm/llvm/ir/CallSummary.hpp>
 #include <jlm/llvm/ir/operators/alloca.hpp>
 #include <jlm/llvm/ir/operators/call.hpp>
 #include <jlm/llvm/ir/operators/delta.hpp>
+#include <jlm/llvm/ir/operators/IntegerOperations.hpp>
 #include <jlm/llvm/ir/RvsdgModule.hpp>
 #include <jlm/llvm/opt/alias-analyses/Optimization.hpp>
 #include <jlm/llvm/opt/DeadNodeElimination.hpp>
@@ -47,7 +50,6 @@
 #include <llvm/Support/raw_ostream.h>
 #include <llvm/Support/SourceMgr.h>
 
-#include <jlm/hls/opt/IOBarrierRemoval.hpp>
 #include <regex>
 
 namespace jlm::hls
@@ -206,9 +208,13 @@ convert_alloca(rvsdg::Region * region)
           false);
       // create zero constant of allocated type
       jlm::rvsdg::output * cout;
-      if (auto bt = dynamic_cast<const jlm::rvsdg::bittype *>(&po->value_type()))
+      if (auto bt = dynamic_cast<const llvm::IntegerConstantOperation *>(&po->value_type()))
       {
-        cout = jlm::rvsdg::create_bitconstant(db->subregion(), bt->nbits(), 0);
+        cout = llvm::IntegerConstantOperation::Create(
+                   *db->subregion(),
+                   bt->Representation().nbits(),
+                   0)
+                   .output(0);
       }
       else
       {
@@ -437,18 +443,24 @@ rvsdg2rhls(llvm::RvsdgModule & rhls, util::StatisticsCollector & collector)
   llvmDne.Run(rhls, collector);
 
   mem_sep_argument(rhls);
-  remove_unused_state(rhls);
+  llvm::InvariantValueRedirection llvmIvr;
+  llvmIvr.Run(rhls, collector);
+  llvmDne.Run(rhls, collector);
+  InvariantLambdaMemoryStateRemoval::CreateAndRun(rhls, collector);
+  RemoveInvariantLambdaStateEdges(rhls);
   // main conversion steps
   distribute_constants(rhls);
   ConvertGammaNodes(rhls);
   ConvertThetaNodes(rhls);
-  hls::cne hlsCne;
+  cne hlsCne;
   hlsCne.Run(rhls, collector);
   // rhls optimization
   dne(rhls);
   alloca_conv(rhls);
   mem_queue(rhls);
   MemoryConverter(rhls);
+  llvm::NodeReduction llvmRed;
+  llvmRed.Run(rhls, collector);
   memstate_conv(rhls);
   remove_redundant_buf(rhls);
   // enforce 1:1 input output relationship
@@ -477,8 +489,8 @@ dump_ref(llvm::RvsdgModule & rhls, const util::filepath & path)
   }
   ::llvm::LLVMContext ctx;
   jlm::util::StatisticsCollector statisticsCollector;
-  auto jm2 = llvm::rvsdg2jlm::rvsdg2jlm(*reference, statisticsCollector);
-  auto lm2 = llvm::jlm2llvm::convert(*jm2, ctx);
+  auto jm2 = llvm::RvsdgToIpGraphConverter::CreateAndConvertModule(*reference, statisticsCollector);
+  auto lm2 = llvm::IpGraphToLlvmConverter::CreateAndConvertModule(*jm2, ctx);
   std::error_code EC;
   ::llvm::raw_fd_ostream os(path.to_str(), EC);
   lm2->print(os, nullptr);

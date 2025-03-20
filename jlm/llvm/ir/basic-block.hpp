@@ -152,6 +152,15 @@ public:
     tv.clear();
   }
 
+  /**
+   * Checks if there are any SsaPhiOperations in the basic block.
+   * If any are present, they must be at the very beginning of the block.
+   *
+   * @return true if the basic block has phi operations, false otherwise
+   */
+  bool
+  HasSsaPhiOperation() const;
+
   llvm::tac *
   insert_before_branch(std::unique_ptr<llvm::tac> tac);
 

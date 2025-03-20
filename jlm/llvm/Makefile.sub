@@ -2,10 +2,9 @@
 # See COPYING for terms of redistribution.
 
 libllvm_SOURCES = \
-    jlm/llvm/backend/jlm2llvm/instruction.cpp \
-    jlm/llvm/backend/jlm2llvm/jlm2llvm.cpp \
     jlm/llvm/backend/dot/DotWriter.cpp \
-    jlm/llvm/backend/rvsdg2jlm/rvsdg2jlm.cpp \
+    jlm/llvm/backend/IpGraphToLlvmConverter.cpp \
+    jlm/llvm/backend/RvsdgToIpGraphConverter.cpp \
     \
     jlm/llvm/frontend/ControlFlowRestructuring.cpp \
     jlm/llvm/frontend/InterProceduralGraphConversion.cpp \
@@ -137,24 +136,13 @@ libllvm_HEADERS = \
 	jlm/llvm/ir/operators/lambda.hpp \
 	jlm/llvm/ir/aggregation.hpp \
 	jlm/llvm/backend/dot/DotWriter.hpp \
-	jlm/llvm/backend/rvsdg2jlm/rvsdg2jlm.hpp \
-	jlm/llvm/backend/rvsdg2jlm/context.hpp \
-	jlm/llvm/backend/jlm2llvm/jlm2llvm.hpp \
-	jlm/llvm/backend/jlm2llvm/instruction.hpp \
-	jlm/llvm/backend/jlm2llvm/context.hpp \
+	jlm/llvm/backend/IpGraphToLlvmConverter.hpp \
+	jlm/llvm/backend/RvsdgToIpGraphConverter.hpp \
 
 libllvm_TESTS += \
     tests/jlm/llvm/backend/dot/DotWriterTests \
-    tests/jlm/llvm/backend/llvm/r2j/GammaTests \
-    tests/jlm/llvm/backend/llvm/r2j/test-recursive-data \
-    tests/jlm/llvm/backend/llvm/jlm-llvm/LoadTests \
-    tests/jlm/llvm/backend/llvm/jlm-llvm/MemCpyTests \
-    tests/jlm/llvm/backend/llvm/jlm-llvm/StoreTests \
-    tests/jlm/llvm/backend/llvm/jlm-llvm/TestAttributeConversion \
-    tests/jlm/llvm/backend/llvm/jlm-llvm/test-bitconstant \
-    tests/jlm/llvm/backend/llvm/jlm-llvm/test-function-calls \
-    tests/jlm/llvm/backend/llvm/jlm-llvm/test-ignore-memory-state \
-    tests/jlm/llvm/backend/llvm/jlm-llvm/test-select-with-state \
+    tests/jlm/llvm/backend/IpGraphToLlvmConverterTests \
+    tests/jlm/llvm/backend/RvsdgToIpGraphConverterTests \
     tests/jlm/llvm/frontend/llvm/LoadTests \
     tests/jlm/llvm/frontend/llvm/MemCpyTests \
     tests/jlm/llvm/frontend/llvm/StoreTests \

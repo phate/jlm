@@ -255,6 +255,17 @@ is_proper_structured(const llvm::cfg & cfg);
 bool
 is_reducible(const llvm::cfg & cfg);
 
+/**
+ * Finds all pairs of basic blocks A, B where the edge
+ *  A -> B
+ * is A's only out-edge, and B's only in-edge.
+ *
+ * B may not have any Phi operations.
+ *
+ * For each such pair, A and B are merged into a single basic block.
+ *
+ * @param cfg the control flow graph for a function
+ */
 void
 straighten(llvm::cfg & cfg);
 
@@ -263,6 +274,10 @@ straighten(llvm::cfg & cfg);
 void
 purge(llvm::cfg & cfg);
 
+/**
+ * Removes unreachable nodes from the control flow graph.
+ * @param cfg the control flow graph of a function
+ */
 void
 prune(llvm::cfg & cfg);
 

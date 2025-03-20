@@ -36,21 +36,49 @@ destruct_ssa(llvm::cfg & cfg)
     if (phi_blocks.empty())
       return;
 
-    auto firstbb = static_cast<basic_block *>(cfg.entry()->outedge(0)->sink());
+    auto firstbb = static_cast<basic_block *>(cfg.entry()->OutEdge(0)->sink());
 
     for (auto phi_block : phi_blocks)
     {
       auto ass_block = basic_block::create(cfg);
       auto & tacs = phi_block->tacs();
 
-      /* collect inedges of phi block */
-      std::unordered_map<cfg_node *, cfg_edge *> edges;
-      for (auto & inedge : phi_block->inedges())
-      {
-        JLM_ASSERT(edges.find(inedge->source()) == edges.end());
-        edges[inedge->source()] = inedge;
-      }
+      // For each incoming basic block, create a new basic block where phi operands are stored
+      // All incoming edges get routed through the corresponding intermediate basic block
 
+      // Mapping from original incoming block to intermediate block
+      std::unordered_map<cfg_node *, basic_block *> intermediateBlocks;
+
+      // Make a copy of the original inEdges to avoid iterator invalidation
+      std::vector<cfg_edge *> originalInEdges;
+      for (auto & inEdge : phi_block->InEdges())
+        originalInEdges.push_back(&inEdge);
+
+      // For each inEdge, route it through a corresponding intermediate block instead
+      for (auto inEdge : originalInEdges)
+      {
+        auto source = inEdge->source();
+        basic_block * intermediate;
+
+        if (intermediateBlocks.find(source) == intermediateBlocks.end())
+        {
+          intermediate = basic_block::create(cfg);
+          intermediate->add_outedge(ass_block);
+          intermediateBlocks[source] = intermediate;
+        }
+        else
+        {
+          intermediate = intermediateBlocks[source];
+        }
+
+        // Re-route this in-edge through the intermediate
+        inEdge->divert(intermediate);
+      }
+      // Finally give the phi_block a single input
+      ass_block->add_outedge(phi_block);
+      JLM_ASSERT(phi_block->NumInEdges() == 1);
+
+      // For each phi operation, move its operands to the corresponding intermediate blocks instead
       while (tacs.first())
       {
         auto phitac = tacs.first();
@@ -58,24 +86,30 @@ destruct_ssa(llvm::cfg & cfg)
           break;
 
         const auto phi = static_cast<const SsaPhiOperation *>(&phitac->operation());
-        auto v = cfg.module().create_variable(phi->Type());
 
-        const variable * value = nullptr;
-        for (size_t n = 0; n < phitac->noperands(); n++)
-        {
-          JLM_ASSERT(edges.find(phi->node(n)) != edges.end());
-          auto bb = edges[phi->node(n)]->split();
-          value = bb->append_last(AssignmentOperation::create(phitac->operand(n), v))->operand(0);
-        }
-
+        // Instead of having a phi operation, extract its result and give it to an undef operation
         auto phiresult = std::move(phitac->results()[0]);
         auto undef = firstbb->append_first(UndefValueOperation::Create(std::move(phiresult)));
-        ass_block->append_last(AssignmentOperation::create(value, undef->result(0)));
+
+        // Create a mutable variable that will hold the value of the phi result
+        auto variable = cfg.module().create_variable(phi->Type());
+
+        JLM_ASSERT(phitac->noperands() == intermediateBlocks.size());
+        for (size_t n = 0; n < phitac->noperands(); n++)
+        {
+          auto incoming = phi->GetIncomingNode(n);
+          auto intermediate = intermediateBlocks[incoming];
+          JLM_ASSERT(intermediate != nullptr);
+
+          intermediate->append_last(AssignmentOperation::create(phitac->operand(n), variable));
+        }
+
+        // In the assignment block, store the variable into the result of the undef operation
+        ass_block->append_last(AssignmentOperation::create(variable, undef->result(0)));
+
+        // Remove the phi tac
         tacs.drop_first();
       }
-
-      phi_block->divert_inedges(ass_block);
-      ass_block->add_outedge(phi_block);
     }
   };
 

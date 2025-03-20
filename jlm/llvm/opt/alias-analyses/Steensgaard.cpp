@@ -1022,13 +1022,13 @@ Steensgaard::AnalyzeSimpleNode(const jlm::rvsdg::SimpleNode & node)
   {
     AnalyzeBitcast(node);
   }
-  else if (is<bits2ptr_op>(&node))
+  else if (is<IntegerToPointerOperation>(&node))
   {
     AnalyzeBits2ptr(node);
   }
-  else if (is<ptr2bits_op>(&node))
+  else if (is<PtrToIntOperation>(&node))
   {
-    AnalyzePtr2Bits(node);
+    AnalyzePtrToInt(node);
   }
   else if (is<ConstantPointerNullOperation>(&node))
   {
@@ -1311,7 +1311,7 @@ Steensgaard::AnalyzeBitcast(const jlm::rvsdg::SimpleNode & node)
 void
 Steensgaard::AnalyzeBits2ptr(const jlm::rvsdg::SimpleNode & node)
 {
-  JLM_ASSERT(is<bits2ptr_op>(&node));
+  JLM_ASSERT(is<IntegerToPointerOperation>(&node));
 
   auto & registerLocation = Context_->GetOrInsertRegisterLocation(*node.output(0));
   registerLocation.SetPointsToFlags(
@@ -1322,9 +1322,9 @@ Steensgaard::AnalyzeBits2ptr(const jlm::rvsdg::SimpleNode & node)
 }
 
 void
-Steensgaard::AnalyzePtr2Bits(const rvsdg::SimpleNode & node)
+Steensgaard::AnalyzePtrToInt(const rvsdg::SimpleNode & node)
 {
-  JLM_ASSERT(is<ptr2bits_op>(&node));
+  JLM_ASSERT(is<PtrToIntOperation>(&node));
 
   MarkAsEscaped(*node.input(0)->origin());
 }

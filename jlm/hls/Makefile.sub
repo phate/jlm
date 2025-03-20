@@ -28,7 +28,6 @@ libhls_SOURCES = \
     jlm/hls/backend/rvsdg2rhls/memstate-conv.cpp \
     jlm/hls/backend/rvsdg2rhls/merge-gamma.cpp \
     jlm/hls/backend/rvsdg2rhls/remove-redundant-buf.cpp \
-    jlm/hls/backend/rvsdg2rhls/remove-unused-state.cpp \
     jlm/hls/backend/rvsdg2rhls/rhls-dne.cpp \
     jlm/hls/backend/rvsdg2rhls/rvsdg2rhls.cpp \
     jlm/hls/backend/rvsdg2rhls/ThetaConversion.cpp \
@@ -37,6 +36,7 @@ libhls_SOURCES = \
     jlm/hls/ir/hls.cpp \
     \
     jlm/hls/opt/cne.cpp \
+    jlm/hls/opt/InvariantLambdaMemoryStateRemoval.cpp \
     jlm/hls/opt/IOBarrierRemoval.cpp \
     \
     jlm/hls/util/view.cpp \
@@ -68,7 +68,6 @@ libhls_HEADERS = \
 	jlm/hls/backend/rvsdg2rhls/memstate-conv.hpp \
 	jlm/hls/backend/rvsdg2rhls/merge-gamma.hpp \
 	jlm/hls/backend/rvsdg2rhls/remove-redundant-buf.hpp \
-	jlm/hls/backend/rvsdg2rhls/remove-unused-state.hpp \
 	jlm/hls/backend/rvsdg2rhls/rhls-dne.hpp \
 	jlm/hls/backend/rvsdg2rhls/rvsdg2rhls.hpp \
 	jlm/hls/backend/rvsdg2rhls/ThetaConversion.hpp \
@@ -77,6 +76,7 @@ libhls_HEADERS = \
 	jlm/hls/ir/hls.hpp \
 	\
 	jlm/hls/opt/cne.hpp \
+	jlm/hls/opt/InvariantLambdaMemoryStateRemoval.hpp \
 	jlm/hls/opt/IOBarrierRemoval.hpp \
 	\
 	jlm/hls/util/view.hpp \
@@ -92,6 +92,8 @@ libhls_TESTS += \
 	tests/jlm/hls/backend/rvsdg2rhls/test-loop-passthrough \
 	tests/jlm/hls/opt/IOBarrierRemovalTests \
 	tests/jlm/hls/util/ViewTests \
+	\
+	tests/jlm/hls/opt/InvariantLambdaMemoryStateRemovalTests \
 
 libhls_TEST_LIBS += \
 	libjlmtest \
