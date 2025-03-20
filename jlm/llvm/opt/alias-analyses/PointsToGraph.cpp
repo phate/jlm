@@ -17,6 +17,9 @@ PointsToGraph::PointsToGraph()
 {
   UnknownMemoryNode_ = UnknownMemoryNode::Create(*this);
   ExternalMemoryNode_ = ExternalMemoryNode::Create(*this);
+
+  // The external memory node has by definition always escaped
+  EscapedMemoryNodes_.Insert(ExternalMemoryNode_.get());
 }
 
 void
