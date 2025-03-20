@@ -596,7 +596,7 @@ static )"
     cpp << "assert(memory_queues[" << i << "].empty());" << std::endl;
 
   if (c_return_type.has_value())
-    cpp << "return top->o_data_0;" << std::endl;
+    cpp << "return *(" << c_return_type.value() << "*)&top->o_data_0;" << std::endl;
 
   cpp << R"(
 }
