@@ -370,9 +370,9 @@ mem_sep_argument(rvsdg::Region * region)
   auto state_user = *state_arg->begin();
   port_load_store_decouple port_nodes;
   TracePointerArguments(lambda, port_nodes);
-  for (auto tp : port_nodes)
+  for (auto & tp : port_nodes)
   {
-    auto decouple_nodes = std::get<2>(tp);
+    auto & decouple_nodes = std::get<2>(tp);
     auto decouple_requests_cnt = decouple_nodes.size();
     // place decouple responses along same state edge
     for (size_t i = 0; i < decouple_requests_cnt; ++i)
