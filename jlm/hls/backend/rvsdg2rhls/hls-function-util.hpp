@@ -16,7 +16,7 @@ bool
 is_function_argument(const rvsdg::LambdaNode::ContextVar & cv);
 
 std::vector<rvsdg::LambdaNode::ContextVar>
-find_function_arguments(const rvsdg::LambdaNode * lambda, std::string name_prefix);;
+find_function_arguments(const rvsdg::LambdaNode * lambda, std::string name_contains);;
 
 void
 trace_function_calls(

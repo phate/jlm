@@ -4,6 +4,7 @@
  * See COPYING for terms of redistribution.
  */
 
+#include <jlm/hls/backend/rvsdg2rhls/hls-function-util.hpp>
 #include <jlm/hls/backend/rvsdg2rhls/mem-conv.hpp>
 #include <jlm/hls/backend/rvsdg2rhls/remove-unused-state.hpp>
 #include <jlm/hls/backend/rvsdg2rhls/rhls-dne.hpp>
@@ -19,69 +20,32 @@
 #include <jlm/rvsdg/theta.hpp>
 #include <jlm/rvsdg/traverser.hpp>
 #include <jlm/rvsdg/view.hpp>
-#include <jlm/hls/backend/rvsdg2rhls/hls-function-util.hpp>
-
-jlm::rvsdg::SimpleNode *
-replace_load(jlm::rvsdg::SimpleNode * orig, jlm::rvsdg::output * resp)
-{
-  auto addr = orig->input(0)->origin();
-  std::vector<jlm::rvsdg::output *> states;
-  for (size_t i = 1; i < orig->ninputs(); ++i)
-  {
-    states.push_back(orig->input(i)->origin());
-  }
-  jlm::rvsdg::Node * nn;
-  if (states.empty())
-  {
-    auto outputs = jlm::hls::decoupled_load_op::create(*addr, *resp);
-    nn = dynamic_cast<jlm::rvsdg::node_output *>(outputs[0])->node();
-  }
-  else
-  {
-    auto outputs = jlm::hls::load_op::create(*addr, states, *resp);
-    nn = dynamic_cast<jlm::rvsdg::node_output *>(outputs[0])->node();
-  }
-  for (size_t i = 0; i < orig->noutputs(); ++i)
-  {
-    orig->output(i)->divert_users(nn->output(i));
-  }
-  remove(orig);
-  return dynamic_cast<jlm::rvsdg::SimpleNode *>(nn);
-}
 
 jlm::rvsdg::SimpleNode *
 jlm::hls::find_decouple_response(
     const jlm::rvsdg::LambdaNode * lambda,
     const jlm::llvm::IntegerConstantOperation * request_constant)
 {
-  jlm::rvsdg::output * response_function = nullptr;
-  for (const auto & ctxvar : lambda->GetContextVars())
+  auto response_functions = jlm::hls::find_function_arguments(lambda, "decouple_res");
+  for (auto & func : response_functions)
   {
-    auto ip = ctxvar.input;
-    if (dynamic_cast<const jlm::llvm::PointerType *>(ip)
-        && get_function_name(ip) == "decouple_response")
+    std::unordered_set<rvsdg::output *> visited;
+    std::vector<jlm::rvsdg::SimpleNode *> reponse_calls;
+    jlm::hls::trace_function_calls(func.inner, reponse_calls, visited);
+    for (auto & rc : reponse_calls)
     {
-      response_function = ctxvar.inner;
-    }
-  }
-  JLM_ASSERT(response_function == nullptr);
-  std::vector<jlm::rvsdg::SimpleNode *> reponse_calls;
-  std::unordered_set<jlm::rvsdg::output *> visited;
-  jlm::hls::trace_function_calls(response_function, reponse_calls, visited);
-  JLM_ASSERT(!reponse_calls.empty());
-  for (auto & rc : reponse_calls)
-  {
-    auto response_constant = jlm::hls::trace_constant(rc->input(1)->origin());
-    if (*response_constant == *request_constant)
-    {
-      return rc;
+      auto response_constant = jlm::hls::trace_constant(rc->input(1)->origin());
+      if (*response_constant == *request_constant)
+      {
+        return rc;
+      }
     }
   }
   JLM_UNREACHABLE("No response found");
 }
 
 jlm::rvsdg::SimpleNode *
-replace_decouple(
+ReplaceDecouple(
     const jlm::rvsdg::LambdaNode * lambda,
     jlm::rvsdg::SimpleNode * decouple_request,
     jlm::rvsdg::output * resp)
@@ -92,52 +56,41 @@ replace_decouple(
 
   auto decouple_response = jlm::hls::find_decouple_response(lambda, channel_constant);
 
+  //handle request
   auto addr = decouple_request->input(2)->origin();
-  // connect out states to in states
-  // TODO: use stategate?
-  // one function pointer + 2 params
-  for (size_t i = 3; i < decouple_request->ninputs(); ++i)
-  {
-    decouple_request->output(i - 3)->divert_users(decouple_request->input(i)->origin());
-  }
-  for (size_t i = 2; i < decouple_response->ninputs(); ++i)
-  {
-    decouple_response->output(i - 2 + 1)->divert_users(decouple_response->input(i)->origin());
+  auto req_mem_state = decouple_request->input(decouple_request->ninputs()-1)->origin();
+  // state gate for req
+  auto sg_out = jlm::hls::state_gate_op::create(*addr, {req_mem_state});
+  addr = sg_out[0];
+  req_mem_state = sg_out[1];
+  // redirect memstate - iostate output has already been removed by mem-sep pass
+  decouple_request->output(decouple_request->noutputs()-1)->divert_users(req_mem_state);
+
+  // handle response
+  int buffer_capacity = 10;
+  if(dynamic_cast<const jlm::rvsdg::bittype*>(&decouple_response->input(2)->type())){
+    auto constant = jlm::hls::trace_constant(decouple_response->input(2)->origin());
+    buffer_capacity = constant->Representation().to_int();
+    assert(buffer_capacity>=0);
   }
   // create this outside loop - need to tunnel outward from request and inward to response
-  auto routed_addr = jlm::hls::route_request_rhls(lambda->subregion(), addr);
+  auto routed_resp = jlm::hls::route_response_rhls(decouple_request->region(), resp);
   // response is not routed inward for this case
-  auto dload_out = jlm::hls::decoupled_load_op::create(*routed_addr, *resp);
+  auto dload_out = jlm::hls::decoupled_load_op::create(*addr, *routed_resp);
   // use a buffer here to make ready logic for response easy and consistent
-  auto buf = jlm::hls::buffer_op::create(*dload_out[0], 2, true)[0];
+  // TODO: should this buffer be non-passthrough?
+  auto buf = jlm::hls::buffer_op::create(*dload_out[0], buffer_capacity, true)[0];
 
-  auto routed_data = jlm::hls::route_response_rhls(decouple_response->region(), buf);
+  auto routed_data = jlm::hls::route_to_region_rhls(decouple_response->region(), buf);
+  // TODO: use state edge once response is moved to its own
+  decouple_response->output(decouple_response->noutputs()-1)->divert_users(decouple_response->input(decouple_response->ninputs()-1)->origin());
   decouple_response->output(0)->divert_users(routed_data);
-  // TODO: handle state edges?
-  remove(decouple_request);
+  JLM_ASSERT(decouple_response->IsDead());
   remove(decouple_response);
+  JLM_ASSERT(decouple_request->IsDead());
+  remove(decouple_request);
 
   auto nn = dynamic_cast<jlm::rvsdg::node_output *>(dload_out[0])->node();
-  return dynamic_cast<jlm::rvsdg::SimpleNode *>(nn);
-}
-
-jlm::rvsdg::SimpleNode *
-replace_store(jlm::rvsdg::SimpleNode * orig)
-{
-  auto addr = orig->input(0)->origin();
-  auto data = orig->input(1)->origin();
-  std::vector<jlm::rvsdg::output *> states;
-  for (size_t i = 2; i < orig->ninputs(); ++i)
-  {
-    states.push_back(orig->input(i)->origin());
-  }
-  auto outputs = jlm::hls::store_op::create(*addr, *data, states);
-  auto nn = dynamic_cast<jlm::rvsdg::node_output *>(outputs[0])->node();
-  for (size_t i = 0; i < orig->noutputs(); ++i)
-  {
-    orig->output(i)->divert_users(nn->output(i));
-  }
-  remove(orig);
   return dynamic_cast<jlm::rvsdg::SimpleNode *>(nn);
 }
 
@@ -173,8 +126,10 @@ gather_mem_nodes(
       }
       else if (dynamic_cast<const jlm::llvm::CallOperation *>(&simplenode->GetOperation()))
       {
-        // TODO: verify this is the right type of function call
-        decoupleNodes.push_back(simplenode);
+        // we only want to collect requests
+        auto name = jlm::hls::get_function_name(simplenode->input(0));
+        if(name.rfind("decouple_req") != name.npos)
+          decoupleNodes.push_back(simplenode);
       }
     }
   }
@@ -226,7 +181,7 @@ TracePointer(
       {
         // request
         auto name = jlm::hls::get_function_name(simplenode->input(0));
-        JLM_ASSERT(name.rfind("decouple")!=name.npos);
+        JLM_ASSERT(name.rfind("decouple_req") != name.npos);
         decoupleNodes.push_back(simplenode);
       }
       else
@@ -262,7 +217,6 @@ TracePointer(
   }
 }
 
-
 void
 jlm::hls::TracePointerArguments(
     const jlm::rvsdg::LambdaNode * lambda,
@@ -282,9 +236,11 @@ jlm::hls::TracePointerArguments(
           visited);
     }
   }
-  for (auto cv :lambda->GetContextVars())
+  for (auto cv : lambda->GetContextVars())
   {
-    if(dynamic_cast<const jlm::llvm::PointerType *>(&cv.inner->type()) && !is_function_argument(cv)){
+    if (dynamic_cast<const jlm::llvm::PointerType *>(&cv.inner->type())
+        && !is_function_argument(cv))
+    {
       std::unordered_set<jlm::rvsdg::output *> visited;
       portNodes.emplace_back();
       TracePointer(
@@ -297,6 +253,16 @@ jlm::hls::TracePointerArguments(
   }
 }
 
+jlm::rvsdg::LambdaNode *
+find_containing_lambda(jlm::rvsdg::Region * region)
+{
+  if (auto l = dynamic_cast<jlm::rvsdg::LambdaNode *>(region->node()))
+  {
+    return l;
+  }
+  return find_containing_lambda(region->node()->region());
+}
+
 size_t
 CalcualtePortWidth(
     const std::tuple<
@@ -305,19 +271,30 @@ CalcualtePortWidth(
         std::vector<jlm::rvsdg::SimpleNode *>> & loadStoreDecouple)
 {
   int max_width = 0;
-  for (auto node:std::get<0>(loadStoreDecouple)) {
-    auto loadOp = jlm::util::AssertedCast<const jlm::llvm::LoadNonVolatileOperation>(
-        &node->GetOperation());
+  for (auto node : std::get<0>(loadStoreDecouple))
+  {
+    auto loadOp =
+        jlm::util::AssertedCast<const jlm::llvm::LoadNonVolatileOperation>(&node->GetOperation());
     auto sz = jlm::hls::JlmSize(loadOp->GetLoadedType().get());
-    max_width = sz>max_width?sz:max_width;
+    max_width = sz > max_width ? sz : max_width;
   }
-  for (auto node:std::get<1>(loadStoreDecouple)) {
-    auto storeOp = jlm::util::AssertedCast<const jlm::llvm::StoreNonVolatileOperation>(
-        &node->GetOperation());
+  for (auto node : std::get<1>(loadStoreDecouple))
+  {
+    auto storeOp =
+        jlm::util::AssertedCast<const jlm::llvm::StoreNonVolatileOperation>(&node->GetOperation());
     auto sz = jlm::hls::JlmSize(&storeOp->GetStoredType());
-    max_width = sz>max_width?sz:max_width;
+    max_width = sz > max_width ? sz : max_width;
   }
-  // TODO: size for decouple type
+  for (auto decoupleRequest : std::get<2>(loadStoreDecouple))
+  {
+    auto lambda = find_containing_lambda(decoupleRequest->region());
+    auto channel = decoupleRequest->input(1)->origin();
+    auto channelConstant = jlm::hls::trace_constant(channel);
+    auto reponse = jlm::hls::find_decouple_response(lambda, channelConstant);
+    auto sz = jlm::hls::JlmSize(&reponse->output(0)->type());
+    max_width = sz > max_width ? sz : max_width;
+  }
+  JLM_ASSERT(max_width != 0);
   return max_width;
 }
 
@@ -496,28 +473,14 @@ jlm::hls::MemoryConverter(jlm::llvm::RvsdgModule & rm)
   // Need to get the lambda from the root since remote_unused_state replaces the lambda
   JLM_ASSERT(root->nnodes() == 1);
   newLambda = jlm::util::AssertedCast<jlm::rvsdg::LambdaNode>(root->Nodes().begin().ptr());
-
-  // Go through in reverse since we are removing things
-  auto ctxvars = newLambda->GetContextVars();
-  for (size_t n = ctxvars.size(); n > 0; --n)
+  auto decouple_funcs = find_function_arguments(newLambda, "decoupled");
+  // make sure context vars are actually dead
+  for (auto cv: decouple_funcs)
   {
-    const auto & ctxvar = ctxvars[n - 1];
-    if (dynamic_cast<const jlm::llvm::PointerType *>(&ctxvar.input->type()))
-    {
-      // The only functions at this time is decoupled loads that are encoded as functions by the
-      // user
-      if (is_function_argument(ctxvar))
-      {
-        JLM_ASSERT(ctxvar.inner->nusers() == 0);
-        auto cvip = ctxvar.input;
-        newLambda->subregion()->RemoveArgument(ctxvar.inner->index());
-        // TODO: work around const
-        newLambda->RemoveInput(cvip->index());
-        auto graphImport = util::AssertedCast<const llvm::GraphImport>(cvip->origin());
-        root->RemoveArgument(graphImport->index());
-      }
-    }
+    JLM_ASSERT(cv.inner->nusers()==0);
   }
+  // remove dead cvargs
+  newLambda->PruneLambdaInputs();
 }
 
 jlm::rvsdg::output *
@@ -552,20 +515,25 @@ jlm::hls::ConnectRequestResponseMemPorts(
     storeNodes.push_back(storeOutput->node());
   }
   std::vector<jlm::rvsdg::SimpleNode *> decoupledNodes;
-  for (auto decoupledNode : originalDecoupledNodes)
+  for (auto decoupleRequest : originalDecoupledNodes)
   {
-    JLM_ASSERT(smap.contains(*decoupledNode->output(0)));
+    JLM_ASSERT(smap.contains(*decoupleRequest->output(0)));
     auto decoupledOutput =
-        dynamic_cast<rvsdg::SimpleOutput *>(smap.lookup(decoupledNode->output(0)));
+        dynamic_cast<rvsdg::SimpleOutput *>(smap.lookup(decoupleRequest->output(0)));
     decoupledNodes.push_back(decoupledOutput->node());
-    loadTypes.push_back(jlm::rvsdg::bittype::Create(32));
-    // TODO: fix width
+    // get load type from response output
+    auto channel = decoupleRequest->input(1)->origin();
+    auto channelConstant = jlm::hls::trace_constant(channel);
+    auto reponse = jlm::hls::find_decouple_response(lambda, channelConstant);
+    auto vt = std::dynamic_pointer_cast<const jlm::rvsdg::ValueType>(reponse->output(0)->Type());
+    loadTypes.push_back(vt);
   }
 
   auto lambdaRegion = lambda->subregion();
   auto portWidth = CalcualtePortWidth(
       std::make_tuple(originalLoadNodes, originalStoreNodes, originalDecoupledNodes));
-  auto loadResponses = mem_resp_op::create(*lambdaRegion->argument(argumentIndex), loadTypes, portWidth);
+  auto loadResponses =
+      mem_resp_op::create(*lambdaRegion->argument(argumentIndex), loadTypes, portWidth);
   // The (decoupled) load nodes are replaced so the pointer to the types will become invalid
   loadTypes.clear();
   std::vector<jlm::rvsdg::output *> loadAddresses;
@@ -598,14 +566,10 @@ jlm::hls::ConnectRequestResponseMemPorts(
   }
   for (size_t i = 0; i < decoupledNodes.size(); ++i)
   {
-    JLM_UNREACHABLE(
-        "Handling of decoupled loads has not been updated after changing to the "
-        "version were a new lambda is created.");
-
     auto reponse = loadResponses[+loadNodes.size() + i];
     auto node = decoupledNodes[i];
 
-    auto replacement = replace_decouple(lambda, node, reponse);
+    auto replacement = ReplaceDecouple(lambda, node, reponse);
     // TODO: routing is probably not necessary
     auto addr = route_request_rhls(lambdaRegion, replacement->output(1));
     loadAddresses.push_back(addr);
@@ -694,53 +658,4 @@ jlm::hls::ReplaceStore(rvsdg::SubstitutionMap & smap, const jlm::rvsdg::SimpleNo
   }
   remove(replacedStore);
   return dynamic_cast<jlm::rvsdg::SimpleNode *>(newStore);
-}
-
-jlm::rvsdg::SimpleNode *
-ReplaceDecouple(
-    jlm::rvsdg::SubstitutionMap & smap,
-    const jlm::rvsdg::LambdaNode * lambda,
-    jlm::rvsdg::SimpleNode * originalDecoupleRequest,
-    jlm::rvsdg::output * response)
-{
-  // We have the load from the original lambda since it is needed to update the smap
-  // We need the store in the new lambda such that we can replace it with a store node with explicit
-  // memory ports
-  auto decoupleRequest =
-      static_cast<jlm::rvsdg::SimpleOutput *>(smap.lookup(originalDecoupleRequest->output(0)))
-          ->node();
-
-  JLM_ASSERT(dynamic_cast<const jlm::llvm::CallOperation *>(&decoupleRequest->GetOperation()));
-  auto channel = decoupleRequest->input(1)->origin();
-  auto channelConstant = jlm::hls::trace_constant(channel);
-
-  auto decoupledResponse = jlm::hls::find_decouple_response(lambda, channelConstant);
-
-  auto addr = decoupleRequest->input(2)->origin();
-  // connect out states to in states
-  // TODO: use stategate?
-  // one function pointer + 2 params
-  for (size_t i = 3; i < decoupleRequest->ninputs(); ++i)
-  {
-    decoupleRequest->output(i - 3)->divert_users(decoupleRequest->input(i)->origin());
-  }
-  for (size_t i = 2; i < decoupledResponse->ninputs(); ++i)
-  {
-    decoupledResponse->output(i - 2 + 1)->divert_users(decoupledResponse->input(i)->origin());
-  }
-  // create this outside loop - need to tunnel outward from request and inward to response
-  auto routedAddress = jlm::hls::route_request_rhls(lambda->subregion(), addr);
-  // response is not routed inward for this case
-  auto decoupledLoadOutput = jlm::hls::decoupled_load_op::create(*routedAddress, *response);
-  // use a buffer here to make ready logic for response easy and consistent
-  auto buf = jlm::hls::buffer_op::create(*decoupledLoadOutput[0], 2, true)[0];
-
-  auto routedData = jlm::hls::route_response_rhls(decoupledResponse->region(), buf);
-  decoupledResponse->output(0)->divert_users(routedData);
-  // TODO: handle state edges?
-  remove(decoupleRequest);
-  remove(decoupledResponse);
-
-  auto nodeOutput = dynamic_cast<jlm::rvsdg::node_output *>(decoupledLoadOutput[0])->node();
-  return dynamic_cast<jlm::rvsdg::SimpleNode *>(nodeOutput);
 }

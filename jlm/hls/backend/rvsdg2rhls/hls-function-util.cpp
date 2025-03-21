@@ -20,7 +20,7 @@ namespace jlm::hls
 {
 
 std::vector<rvsdg::LambdaNode::ContextVar>
-find_function_arguments(const rvsdg::LambdaNode * lambda, std::string name_prefix)
+find_function_arguments(const rvsdg::LambdaNode * lambda, std::string name_contains)
 {
   std::vector<rvsdg::LambdaNode::ContextVar> result;
   for (auto cv : lambda->GetContextVars())
@@ -29,7 +29,7 @@ find_function_arguments(const rvsdg::LambdaNode * lambda, std::string name_prefi
     auto traced = trace_call_rhls(ip);
     JLM_ASSERT(traced);
     auto arg = util::AssertedCast<const llvm::GraphImport>(traced);
-    if (dynamic_cast<const rvsdg::FunctionType*>(arg->ImportedType().get()) && arg->Name().rfind(name_prefix, 0) == 0)
+    if (dynamic_cast<const rvsdg::FunctionType*>(arg->ImportedType().get()) && arg->Name().find(name_contains) != arg->Name().npos)
     {
       result.push_back(cv);
     }
