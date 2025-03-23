@@ -35,6 +35,7 @@ libhls_SOURCES = \
     jlm/hls/backend/rvsdg2rhls/rvsdg2rhls.cpp \
     jlm/hls/backend/rvsdg2rhls/ThetaConversion.cpp \
     jlm/hls/backend/rvsdg2rhls/UnusedStateRemoval.cpp \
+    jlm/hls/backend/rvsdg2rhls/decouple-mem-state.cpp \
     \
     jlm/hls/ir/hls.cpp \
     \
@@ -78,6 +79,7 @@ libhls_HEADERS = \
 	jlm/hls/backend/rvsdg2rhls/rvsdg2rhls.hpp \
 	jlm/hls/backend/rvsdg2rhls/ThetaConversion.hpp \
 	jlm/hls/backend/rvsdg2rhls/UnusedStateRemoval.hpp \
+	jlm/hls/backend/rvsdg2rhls/decouple-mem-state.hpp \
 	\
 	jlm/hls/ir/hls.hpp \
 	\

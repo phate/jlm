@@ -50,6 +50,7 @@
 #include <llvm/Support/raw_ostream.h>
 #include <llvm/Support/SourceMgr.h>
 
+#include "decouple-mem-state.hpp"
 #include "stream-conv.hpp"
 #include <regex>
 
@@ -470,6 +471,8 @@ rvsdg2rhls(llvm::RvsdgModule & rhls, util::StatisticsCollector & collector)
   alloca_conv(rhls);
   jlm::hls::stream_conv(rhls);
   mem_queue(rhls);
+  decouple_mem_state(rhls);
+  remove_unused_state(rhls);
   MemoryConverter(rhls);
   memstate_conv(rhls);
   remove_redundant_buf(rhls);

@@ -86,9 +86,11 @@ ReplaceDecouple(
 
   auto routed_data = route_to_region_rhls(decouple_response->region(), buf);
   // TODO: use state edge once response is moved to its own
-  decouple_response->output(decouple_response->noutputs() - 1)
-      ->divert_users(decouple_response->input(decouple_response->ninputs() - 1)->origin());
+  auto sg_resp = state_gate_op::create(
+      *routed_data,
+      { decouple_response->input(decouple_response->ninputs() - 1)->origin() });
   decouple_response->output(0)->divert_users(routed_data);
+  decouple_response->output(decouple_response->noutputs() - 1)->divert_users(sg_resp[1]);
   JLM_ASSERT(decouple_response->IsDead());
   remove(decouple_response);
   JLM_ASSERT(decouple_request->IsDead());
