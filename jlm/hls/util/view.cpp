@@ -195,21 +195,21 @@ structural_node_to_dot(
         get_default_color<rvsdg::input>(i_color, structuralNode->input(i)));
   }
 
-  if (structuralNode->ninputs() > 1)
-  {
-
-    // order inputs horizontally
-    dot << "{rank=source; ";
-    for (size_t i = 0; i < structuralNode->ninputs(); ++i)
-    {
-      if (i > 0)
-      {
-        dot << " -> ";
-      }
-      dot << get_dot_name(structuralNode->input(i));
-    }
-    dot << "[style = invis]}\n";
-  }
+//  if (structuralNode->ninputs() > 1)
+//  {
+//
+//    // order inputs horizontally
+//    dot << "{rank=source; ";
+//    for (size_t i = 0; i < structuralNode->ninputs(); ++i)
+//    {
+//      if (i > 0)
+//      {
+//        dot << " -> ";
+//      }
+//      dot << get_dot_name(structuralNode->input(i));
+//    }
+//    dot << "[style = invis]}\n";
+//  }
 
   for (size_t i = 0; i < structuralNode->nsubregions(); ++i)
   {
@@ -235,20 +235,20 @@ structural_node_to_dot(
       dot << symbolic_edge(&result, structuralNode->output(i));
     }
   }
-  if (structuralNode->noutputs() > 1)
-  {
-    // order results horizontally
-    dot << "{rank=sink; ";
-    for (size_t i = 0; i < structuralNode->noutputs(); ++i)
-    {
-      if (i > 0)
-      {
-        dot << " -> ";
-      }
-      dot << get_dot_name(structuralNode->output(i));
-    }
-    dot << "[style = invis]}\n";
-  }
+//  if (structuralNode->noutputs() > 1)
+//  {
+//    // order outputs horizontally
+//    dot << "{rank=sink; ";
+//    for (size_t i = 0; i < structuralNode->noutputs(); ++i)
+//    {
+//      if (i > 0)
+//      {
+//        dot << " -> ";
+//      }
+//      dot << get_dot_name(structuralNode->output(i));
+//    }
+//    dot << "[style = invis]}\n";
+//  }
 
   dot << "}\n";
 
@@ -291,7 +291,7 @@ simple_node_to_dot(
     }
     outputs << "                    <TD PORT=\"o" << hex((intptr_t)simpleNode->output(i))
             << "\" BORDER=\"1\" CELLPADDING=\"1\" COLOR=\"" << color
-            << "\"><FONT POINT-SIZE=\"10\" COLOR=\"" << color << "\"> i" << i << "</FONT></TD>\n";
+            << "\"><FONT POINT-SIZE=\"10\" COLOR=\"" << color << "\"> o" << i << "</FONT></TD>\n";
   }
 
   std::string color = "black";
