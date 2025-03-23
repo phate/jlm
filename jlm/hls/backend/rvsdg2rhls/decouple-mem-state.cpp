@@ -45,27 +45,19 @@ trace_edge(
     rvsdg::SimpleNode * target_call,
     rvsdg::output * end)
 {
-  std::cout << "trace_edge(" << std::hex << state_edge << ", " << std::hex << new_edge << ")"
-            << std::endl;
   rvsdg::input * initial_state_edge = state_edge;
   rvsdg::input * previous_state_edge = nullptr;
   while (true)
   {
-
-    if (previous_state_edge == state_edge)
-      dump_dot(&state_edge->region()->graph()->GetRootRegion(), "trace_edge_dump.dot");
     // make sure we make progress
     JLM_ASSERT(previous_state_edge != state_edge);
     previous_state_edge = state_edge;
     // terminate once desired point is reached
     if (state_edge->origin() == end)
     {
-      std::cout << "end reached" << std::endl;
       return end;
     }
     auto new_edge_user = get_mem_state_user(new_edge);
-    std::cout << "state_edge = " << std::hex << state_edge << std::endl;
-    std::cout << "new_edge_user = " << std::hex << new_edge_user << std::endl;
     JLM_ASSERT(new_edge_user->region() == state_edge->region());
     if (auto rr = dynamic_cast<jlm::rvsdg::RegionResult *>(state_edge))
     {
@@ -73,7 +65,6 @@ trace_edge(
     }
     else if (auto ln = rvsdg::TryGetOwnerNode<loop_node>(*state_edge))
     {
-      std::cout << "loop start" << std::endl;
       auto si = util::AssertedCast<rvsdg::StructuralInput>(state_edge);
       auto arg = si->arguments.begin().ptr();
       std::vector<rvsdg::SimpleNode *> mem_ops;
@@ -98,19 +89,12 @@ trace_edge(
     }
     auto si = util::AssertedCast<rvsdg::SimpleInput>(state_edge);
     auto sn = si->node();
-    std::cout << "sn = " << std::hex << sn << std::endl;
-    if (!dynamic_cast<rvsdg::SimpleInput *>(new_edge_user))
-    {
-      dump_dot(&state_edge->region()->graph()->GetRootRegion(), "trace_edge_dump.dot");
-    }
     auto new_si = util::AssertedCast<rvsdg::SimpleInput>(new_edge_user);
     auto new_sn = new_si->node();
-    std::cout << "new_sn = " << std::hex << new_sn << std::endl;
     auto br = TryGetOwnerOp<branch_op>(*state_edge);
     auto mux = TryGetOwnerOp<mux_op>(*state_edge);
     if (br && !br->loop) // this is an example of why preserving structural nodes would be nice
     {
-      std::cout << "gamma start" << std::endl;
       // start of gamma
       auto nbr = branch_op::create(*sn->input(0)->origin(), *new_edge);
       auto nmux = mux_op::create(*sn->input(0)->origin(), nbr, false)[0];
@@ -121,40 +105,19 @@ trace_edge(
         out = trace_edge(get_mem_state_user(sn->output(i)), nbr[i], target_call, end);
       }
       JLM_ASSERT(out);
-      if (!TryGetOwnerOp<mux_op>(*out))
-      {
-        std::unordered_map<rvsdg::output *, std::string> o_color;
-        std::unordered_map<rvsdg::input *, std::string> i_color;
-        i_color[initial_state_edge] = "orange";
-        i_color[state_edge] = "red";
-        o_color[out] = "green";
-        o_color[new_edge] = "blue";
-        dump_dot(
-            &state_edge->region()->graph()->GetRootRegion(),
-            "trace_edge_dump.dot",
-            o_color,
-            i_color);
-      }
-      //      if(out == end){
-      //        return end;
-      //      }
       JLM_ASSERT(TryGetOwnerOp<mux_op>(*out));
       state_edge = get_mem_state_user(out);
       new_edge = nmux;
     }
     else if (br)
     {
-      std::cout << "loop end" << std::endl;
       // end of loop
-      if (!TryGetOwnerOp<branch_op>(*new_edge_user))
-        dump_dot(&state_edge->region()->graph()->GetRootRegion(), "trace_edge_dump.dot");
       JLM_ASSERT(TryGetOwnerOp<branch_op>(*new_edge_user));
       JLM_ASSERT(br->loop);
       return util::AssertedCast<rvsdg::RegionResult>(get_mem_state_user(sn->output(0)))->output();
     }
     else if (mux && !mux->loop)
     {
-      std::cout << "gamma end" << std::endl;
       // end of gamma
       JLM_ASSERT(TryGetOwnerOp<mux_op>(*new_edge_user));
       return sn->output(0);
@@ -169,7 +132,6 @@ trace_edge(
     }
     else if (TryGetOwnerOp<llvm::MemoryStateSplitOperation>(*state_edge))
     {
-      std::cout << "mem split" << std::endl;
       rvsdg::output * after_merge = nullptr;
       bool follow_split = false;
       for (size_t i = 0; i < sn->noutputs(); ++i)
@@ -186,7 +148,6 @@ trace_edge(
       }
       if (!follow_split)
       {
-        std::cout << "split skipped" << std::endl;
         // nothing relevant below the split - can just ignore it
         JLM_ASSERT(after_merge);
         state_edge = get_mem_state_user(after_merge);
@@ -195,7 +156,6 @@ trace_edge(
     }
     else if (TryGetOwnerOp<llvm::MemoryStateMergeOperation>(*state_edge))
     {
-      std::cout << "mem merge" << std::endl;
       // we did not split the new state
       return sn->output(0);
     }
@@ -226,7 +186,6 @@ trace_edge(
     }
     else
     {
-      dump_dot(&state_edge->region()->graph()->GetRootRegion(), "trace_edge_unreachable_dump.dot");
       JLM_UNREACHABLE("whoops");
     }
   }
@@ -271,33 +230,12 @@ handle_structural(
         // in this area both the req and resp can run separate from the main edge
         auto split_outputs = llvm::MemoryStateSplitOperation::Create(*state_edge_req->origin(), 3);
         state_edge_req->divert_to(split_outputs[0]);
-        if (state_edge_after->region() != split_outputs[1]->region())
-        {
-          std::unordered_map<rvsdg::output *, std::string> o_color;
-          std::unordered_map<rvsdg::input *, std::string> i_color;
-          i_color[state_edge_req] = "orange";
-          i_color[state_edge_before] = "green";
-          o_color[state_edge_after] = "blue";
-          o_color[split_outputs[1]] = "purple";
-          dump_dot(
-              &state_edge_after->region()->graph()->GetRootRegion(),
-              "handle_structural_dump.dot",
-              o_color,
-              i_color);
-        }
         JLM_ASSERT(state_edge_after->region() == split_outputs[1]->region());
         auto after_user = get_mem_state_user(state_edge_after);
         std::vector<rvsdg::output *> operands(
             { state_edge_after, split_outputs[1], split_outputs[2] });
         auto merge_out = llvm::MemoryStateMergeOperation::Create(operands);
         after_user->divert_to(merge_out);
-        //        std::unordered_map<rvsdg::output *, std::string> o_color;
-        //        std::unordered_map<rvsdg::input *, std::string> i_color;
-        //        i_color[state_edge_req] = "orange";
-        //        i_color[state_edge_before] = "green";
-        //        o_color[state_edge_after] = "blue";
-        //        dump_dot(&state_edge_after->region()->graph()->GetRootRegion(),
-        //        "handle_structural_dump.dot", o_color, i_color);
         trace_edge(state_edge_req, split_outputs[1], req, state_edge_after);
         trace_edge(state_edge_req, split_outputs[2], resp, state_edge_after);
       }
@@ -336,12 +274,10 @@ follow_state_edge(
         * special case for store - can have multiple users because of addr_deq
   */
   rvsdg::input * state_edge_initial = state_edge;
-  std::cout << "follow_state_edge(" << std::hex << state_edge << ")" << std::endl;
   // this tracks decouple requests that have not been handled yet
   std::vector<std::tuple<rvsdg::SimpleNode *, rvsdg::input *>> outstanding_dec_reqs;
   while (true)
   {
-    std::cout << "state_edge = " << std::hex << state_edge << std::endl;
     if (auto rr = dynamic_cast<jlm::rvsdg::RegionResult *>(state_edge))
     {
       return rr->output();
@@ -375,19 +311,6 @@ follow_state_edge(
       {
         out = follow_state_edge(get_mem_state_user(sn->output(i)), gamma_mem_ops, modify);
       }
-      if (!TryGetOwnerOp<mux_op>(*out))
-      {
-        std::unordered_map<rvsdg::output *, std::string> o_color;
-        std::unordered_map<rvsdg::input *, std::string> i_color;
-        i_color[state_edge_initial] = "orange";
-        i_color[state_edge] = "green";
-        o_color[out] = "blue";
-        dump_dot(
-            &state_edge->region()->graph()->GetRootRegion(),
-            "follow_state_edge_dump.dot",
-            o_color,
-            i_color);
-      }
       JLM_ASSERT(TryGetOwnerOp<mux_op>(*out));
       JLM_ASSERT(out);
       // get this here before the graph is modified by handle_structural
@@ -396,7 +319,6 @@ follow_state_edge(
         handle_structural(outstanding_dec_reqs, gamma_mem_ops, state_edge, out);
       state_edge = new_state_edge;
       mem_ops.insert(mem_ops.cend(), gamma_mem_ops.begin(), gamma_mem_ops.end());
-      // TODO: are unnescessary state edge splits a problem? - and can a pass fix it?
     }
     else if (br)
     {
@@ -423,19 +345,6 @@ follow_state_edge(
       {
         auto followed = follow_state_edge(get_mem_state_user(sn->output(i)), mem_ops, modify);
         JLM_ASSERT(followed);
-//        if (!TryGetOwnerOp<llvm::MemoryStateMergeOperation>(*followed))
-//        {
-//          std::unordered_map<rvsdg::output *, std::string> o_color;
-//          std::unordered_map<rvsdg::input *, std::string> i_color;
-//          i_color[state_edge_initial] = "orange";
-//          i_color[state_edge] = "green";
-//          o_color[followed] = "blue";
-//          dump_dot(
-//              &state_edge->region()->graph()->GetRootRegion(),
-//              "follow_state_edge_dump.dot",
-//              o_color,
-//              i_color);
-//        }
         JLM_ASSERT(TryGetOwnerOp<llvm::MemoryStateMergeOperation>(*followed)||TryGetOwnerOp<llvm::LambdaExitMemoryStateMergeOperation>(*followed));
         state_edge = get_mem_state_user(followed);
       }
@@ -501,7 +410,6 @@ decouple_mem_state(rvsdg::Region * region)
   //      * split at highest loop that contains no store on edge
   //          * store not being at higher level doesn't work
   //  * apply recursively - i.e. the same way for inner loops as for outer
-  // TODO: there could be a gamma around the loop
 
   std::vector<rvsdg::SimpleNode *> mem_ops;
   follow_state_edge(get_mem_state_user(state_arg), mem_ops, true);
