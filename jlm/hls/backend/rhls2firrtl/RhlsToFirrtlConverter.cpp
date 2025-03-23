@@ -207,6 +207,14 @@ RhlsToFirrtlConverter::MlirGenSimpleNode(const jlm::rvsdg::SimpleNode * node)
     // Connect the op to the output data
     Connect(body, outData, op);
   }
+  else if (rvsdg::is<llvm::IntegerUgeOperation>(node))
+  {
+    auto input0 = GetSubfield(body, inBundles[0], "data");
+    auto input1 = GetSubfield(body, inBundles[1], "data");
+    auto op = AddGeqOp(body, input0, input1);
+    // Connect the op to the output data
+    Connect(body, outData, op);
+  }
   else if (rvsdg::is<llvm::IntegerSleOperation>(node))
   {
     auto input0 = GetSubfield(body, inBundles[0], "data");
