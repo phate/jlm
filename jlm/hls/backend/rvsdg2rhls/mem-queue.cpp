@@ -409,6 +409,10 @@ process_loops(jlm::rvsdg::output * state_edge)
         JLM_ASSERT(sn->noutputs() == 2);
         state_edge = sn->output(1);
       }
+      else if (dynamic_cast<const jlm::llvm::CallOperation *>(op))
+      {
+        state_edge = sn->output(sn->noutputs()-1);
+      }
       else
       {
         JLM_ASSERT(sn->noutputs() == 1);

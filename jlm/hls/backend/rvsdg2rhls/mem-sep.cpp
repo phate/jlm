@@ -277,6 +277,7 @@ trace_edge(
           si->divert_to(new_edge);
           sn->output(oi)->divert_users(common_edge);
           new_next->divert_to(sn->output(oi));
+          new_edge = new_next->origin();
         }
         else
         {
