@@ -133,6 +133,10 @@ VerilatorHarnessHLS::GetText(llvm::RvsdgModule & rm)
 #define TRACE_CHUNK_SIZE 100000
 #define TIMEOUT 10000000
 
+#ifndef MEMORY_LATENCY
+#define MEMORY_LATENCY )" << MEMORY_RESPONSE_LATENCY << R"(
+#endif
+
 #include <verilated.h>
 #include <algorithm>
 #include <cassert>
@@ -184,6 +188,8 @@ struct mem_access {
     bool write;
     uint8_t width; // 2^width bytes
     void* data;
+    uint32_t port;
+    uint64_t timestamp;
 
     bool operator==(const mem_access & other) const {
         return addr == other.addr && write == other.write && width == other.width && !memcmp(data, other.data, 1<<width);
@@ -207,20 +213,20 @@ static bool in_ignored_region(void* addr) {
     return false;
 }
 
-static void* instrumented_load(void* addr, uint8_t width) {
+static void* instrumented_load(void* addr, uint8_t width, uint32_t port=0) {
     void * data = malloc(1 << width);
     memcpy(data, addr, 1 << width);
     if (!in_ignored_region(addr))
-        memory_accesses.push_back({addr, false, width, data});
+        memory_accesses.push_back({addr, false, width, data, port, main_time});
     return data;
 }
 
-static void instrumented_store(void* addr, void *data, uint8_t width) {
+static void instrumented_store(void* addr, void *data, uint8_t width, uint32_t port=0) {
     void * data_copy = malloc(1 << width);
     memcpy(data_copy, data, 1 << width);
     memcpy(addr, data_copy, 1 << width);
     if(!in_ignored_region(addr))
-        memory_accesses.push_back({addr, true, width, data_copy});
+        memory_accesses.push_back({addr, true, width, data_copy, port, main_time});
 }
 
 uint32_t dummy_data[16] = {
@@ -251,10 +257,11 @@ class MemoryQueue {
     };
     int latency;
     int width;
+    int port;
     std::deque<Response> responses;
 
 public:
-    MemoryQueue(int latency, int width) : latency(latency), width(width) {}
+    MemoryQueue(int latency, int width, int port) : latency(latency), width(width), port(port) {}
 
     // Called right before posedge, can only read from the model
     void accept_request(uint8_t req_ready, uint8_t req_valid, uint8_t req_write, uint64_t req_addr, uint8_t req_size, void* req_data, uint8_t req_id, uint8_t res_valid, uint8_t res_ready) {
@@ -274,10 +281,10 @@ public:
 
         if (req_write) {
             // Stores are performed immediately
-            instrumented_store((void*) req_addr, req_data, req_size);
+            instrumented_store((void*) req_addr, req_data, req_size, port);
         } else {
             // Loads are performed immediately, but their response is placed in the queue
-            void* data = instrumented_load((void*) req_addr, req_size);
+            void* data = instrumented_load((void*) req_addr, req_size, port);
             responses.push_back({main_time, data, req_size, req_id});
         }
     }
@@ -310,7 +317,7 @@ public:
     auto bundle = dynamic_cast<const bundletype *>(mem_resps[i]->Type().get());
     auto size = JlmSize(&*bundle->get_element_type("data")) / 8;
     //    int width =
-    cpp << "{" << MEMORY_RESPONSE_LATENCY << ", " << size << "}, ";
+    cpp << "{MEMORY_LATENCY, " << size << ", " << i << "}, ";
   }
   cpp << "};" << R"(
 
