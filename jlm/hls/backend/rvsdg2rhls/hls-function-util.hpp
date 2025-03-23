@@ -16,14 +16,13 @@ bool
 is_function_argument(const rvsdg::LambdaNode::ContextVar & cv);
 
 std::vector<rvsdg::LambdaNode::ContextVar>
-find_function_arguments(const rvsdg::LambdaNode * lambda, std::string name_contains);;
+find_function_arguments(const rvsdg::LambdaNode * lambda, std::string name_contains);
 
 void
 trace_function_calls(
     rvsdg::output * output,
     std::vector<rvsdg::SimpleNode *> & calls,
     std::unordered_set<rvsdg::output *> & visited);
-
 
 const llvm::IntegerConstantOperation *
 trace_constant(const rvsdg::output * dst);
@@ -48,6 +47,46 @@ trace_call_rhls(const rvsdg::output * output);
 
 std::string
 get_function_name(jlm::rvsdg::input * input);
+
+// this might already exist somewhere
+template<typename OpType>
+inline const OpType *
+TryGetOwnerOp(const rvsdg::input & input) noexcept
+{
+  auto owner = input.GetOwner();
+  if (const auto node = std::get_if<rvsdg::Node *>(&owner))
+  {
+    return dynamic_cast<const OpType *>(&(*node)->GetOperation());
+  }
+  else
+  {
+    return nullptr;
+  }
+}
+
+template<typename OpType>
+inline const OpType *
+TryGetOwnerOp(const rvsdg::output & output) noexcept
+{
+  auto owner = output.GetOwner();
+  if (const auto node = std::get_if<rvsdg::Node *>(&owner))
+  {
+    return dynamic_cast<const OpType *>(&(*node)->GetOperation());
+  }
+  else
+  {
+    return nullptr;
+  }
+}
+
+bool
+is_dec_req(rvsdg::SimpleNode * node);
+
+bool
+is_dec_res(rvsdg::SimpleNode * node);
+
+rvsdg::input *
+get_mem_state_user(rvsdg::output * state_edge);
 }
 
 #endif // JLM_HLS_BACKEND_RVSDG2RHLS_HLS_FUNCTION_UTIL_HPP

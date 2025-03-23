@@ -3,6 +3,7 @@
  * See COPYING for terms of redistribution.
  */
 
+#include "hls-function-util.hpp"
 #include "jlm/llvm/ir/operators/IntegerOperations.hpp"
 #include "jlm/rvsdg/gamma.hpp"
 #include <jlm/hls/backend/rvsdg2rhls/merge-gamma.hpp>
@@ -60,37 +61,6 @@ eliminate_gamma_ctl(rvsdg::GammaNode * gamma)
     }
   }
   return changed;
-}
-
-// this might already exist somewhere
-template<typename OpType>
-inline const OpType *
-TryGetOwnerOp(const rvsdg::input & input) noexcept
-{
-  auto owner = input.GetOwner();
-  if (const auto node = std::get_if<rvsdg::Node *>(&owner))
-  {
-    return dynamic_cast<const OpType *>(&(*node)->GetOperation());
-  }
-  else
-  {
-    return nullptr;
-  }
-}
-
-template<typename OpType>
-inline const OpType *
-TryGetOwnerOp(const rvsdg::output & output) noexcept
-{
-  auto owner = output.GetOwner();
-  if (const auto node = std::get_if<rvsdg::Node *>(&owner))
-  {
-    return dynamic_cast<const OpType *>(&(*node)->GetOperation());
-  }
-  else
-  {
-    return nullptr;
-  }
 }
 
 bool

@@ -130,8 +130,7 @@ gather_mem_nodes(
       else if (dynamic_cast<const llvm::CallOperation *>(&simplenode->GetOperation()))
       {
         // we only want to collect requests
-        auto name = get_function_name(simplenode->input(0));
-        if (name.rfind("decouple_req") != name.npos)
+        if (is_dec_req(simplenode))
           decoupleNodes.push_back(simplenode);
       }
     }
@@ -182,8 +181,7 @@ TracePointer(
       else if (dynamic_cast<const llvm::CallOperation *>(&simplenode->GetOperation()))
       {
         // request
-        auto name = get_function_name(simplenode->input(0));
-        JLM_ASSERT(name.rfind("decouple_req") != name.npos);
+        JLM_ASSERT(is_dec_req(simplenode));
         decoupleNodes.push_back(simplenode);
       }
       else
@@ -565,8 +563,9 @@ ConnectRequestResponseMemPorts(
     auto reponse = loadResponses[+loadNodes.size() + i];
     auto node = decoupledNodes[i];
 
+    // TODO: this beahvior is not completly correct - if a function returns a top-level result from a decouple
+    // it fails and smap translation would be required
     auto replacement = ReplaceDecouple(lambda, node, reponse);
-    // TODO: routing is probably not necessary
     auto addr = route_request_rhls(lambdaRegion, replacement->output(1));
     loadAddresses.push_back(addr);
     loadTypes.push_back(

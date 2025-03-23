@@ -150,7 +150,7 @@ route_to_region_rhls(rvsdg::Region * target, rvsdg::output * out)
   {
     // lambda is common region - might create cycle
     // TODO: how to check that this won't create a cycle
-      JLM_ASSERT(target_regions.front()->node()->region() == common_out->region());
+      JLM_ASSERT(target_regions.empty() || target_regions.front()->node()->region() == common_out->region());
       return route_response_rhls(target, common_out);
   }
 }
@@ -277,5 +277,39 @@ get_function_name(jlm::rvsdg::input * input)
   JLM_ASSERT(traced);
   auto arg = jlm::util::AssertedCast<const jlm::llvm::GraphImport>(traced);
   return arg->Name();
+}
+
+bool
+is_dec_req(rvsdg::SimpleNode * node)
+{
+  if (dynamic_cast<const llvm::CallOperation *>(&node->GetOperation()))
+  {
+    auto name = get_function_name(node->input(0));
+    if (name.rfind("decouple_req") != name.npos)
+      return true;
+  }
+  return false;
+}
+
+bool
+is_dec_res(rvsdg::SimpleNode * node)
+{
+  if (dynamic_cast<const llvm::CallOperation *>(&node->GetOperation()))
+  {
+    auto name = get_function_name(node->input(0));
+    if (name.rfind("decouple_res") != name.npos)
+      return true;
+  }
+  return false;
+}
+
+rvsdg::input *
+get_mem_state_user(rvsdg::output * state_edge)
+{
+  JLM_ASSERT(state_edge);
+  JLM_ASSERT(state_edge->nusers() == 1);
+  JLM_ASSERT(dynamic_cast<const llvm::MemoryStateType *>(&state_edge->type()));
+  auto user = *state_edge->begin();
+  return user;
 }
 }
