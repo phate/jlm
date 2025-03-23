@@ -3,6 +3,8 @@
  * See COPYING for terms of redistribution.
  */
 
+#include "hls-function-util.hpp"
+#include "jlm/llvm/ir/operators/MemoryStateOperations.hpp"
 #include <jlm/hls/backend/rvsdg2rhls/rhls-dne.hpp>
 #include <jlm/llvm/ir/operators/lambda.hpp>
 #include <jlm/rvsdg/traverser.hpp>
@@ -268,6 +270,85 @@ dead_loop(rvsdg::Node * ndmux_node)
 }
 
 bool
+fix_mem_split(rvsdg::Node * split_node)
+{
+  if (split_node->noutputs() == 1)
+  {
+    split_node->output(0)->divert_users(split_node->input(0)->origin());
+    JLM_ASSERT(split_node->IsDead());
+    remove(split_node);
+    return true;
+  }
+  std::vector<rvsdg::output *> combined_outputs;
+  for (size_t i = 0; i < split_node->noutputs(); ++i)
+  {
+    auto user = get_mem_state_user(split_node->output(i));
+    if (TryGetOwnerOp<llvm::MemoryStateSplitOperation>(*user))
+    {
+      auto sub_split = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*user);
+      for (size_t j = 0; j < sub_split->noutputs(); ++j)
+      {
+        combined_outputs.push_back(sub_split->output(j));
+      }
+    }
+    else
+    {
+      combined_outputs.push_back(split_node->output(i));
+    }
+  }
+  if (combined_outputs.size() != split_node->noutputs())
+  {
+    auto new_outputs = llvm::MemoryStateSplitOperation::Create(
+        *split_node->input(0)->origin(),
+        combined_outputs.size());
+    for (size_t i = 0; i < combined_outputs.size(); ++i)
+    {
+      combined_outputs[i]->divert_users(new_outputs[i]);
+    }
+    return true;
+  }
+  return false;
+}
+
+bool
+fix_mem_merge(rvsdg::Node * merge_node)
+{
+  if (merge_node->ninputs() == 1)
+  {
+    merge_node->output(0)->divert_users(merge_node->input(0)->origin());
+    JLM_ASSERT(merge_node->IsDead());
+    remove(merge_node);
+    return true;
+  }
+  std::vector<rvsdg::output *> combined_origins;
+  for (size_t i = 0; i < merge_node->ninputs(); ++i)
+  {
+    auto origin = merge_node->input(i)->origin();
+    if (TryGetOwnerOp<llvm::MemoryStateMergeOperation>(*origin))
+    {
+      auto sub_merge = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*origin);
+      for (size_t j = 0; j < sub_merge->ninputs(); ++j)
+      {
+        combined_origins.push_back(sub_merge->input(j)->origin());
+      }
+    }
+    else
+    {
+      combined_origins.push_back(merge_node->input(i)->origin());
+    }
+  }
+
+  if (combined_origins.size() != merge_node->ninputs())
+  {
+    auto new_output = llvm::MemoryStateMergeOperation::Create(combined_origins);
+    merge_node->output(0)->divert_users(new_output);
+    JLM_ASSERT(merge_node->IsDead());
+    return true;
+  }
+  return false;
+}
+
+bool
 dne(rvsdg::Region * sr)
 {
   bool any_changed = false;
@@ -296,6 +377,10 @@ dne(rvsdg::Region * sr)
         remove(node);
         changed = true;
       }
+      else if (dynamic_cast<rvsdg::LambdaNode *>(node))
+      {
+        JLM_UNREACHABLE("This function works on lambda subregions");
+      }
       else if (auto ln = dynamic_cast<loop_node *>(node))
       {
         changed |= remove_unused_loop_outputs(ln);
@@ -313,6 +398,24 @@ dne(rvsdg::Region * sr)
         else
         {
           changed |= dead_nonspec_gamma(node) || dead_loop(node);
+        }
+      }
+      else if (dynamic_cast<const llvm::MemoryStateSplitOperation *>(&node->GetOperation()))
+      {
+        if (fix_mem_split(node))
+        {
+          changed = true;
+          // might break bottom up traversal
+          break;
+        }
+      }
+      else if (dynamic_cast<const llvm::MemoryStateMergeOperation *>(&node->GetOperation()))
+      {
+        if (fix_mem_merge(node))
+        {
+          changed = true;
+          // might break bottom up traversal
+          break;
         }
       }
     }
