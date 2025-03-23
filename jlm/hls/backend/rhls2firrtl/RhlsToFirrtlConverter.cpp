@@ -333,6 +333,10 @@ RhlsToFirrtlConverter::MlirGenSimpleNode(const jlm::rvsdg::SimpleNode * node)
       {
         pointeeType = &arrayType->element_type();
       }
+      else if (auto vectorType = dynamic_cast<const llvm::VectorType *>(pointeeType))
+      {
+        pointeeType = &vectorType->type();
+      }
       else
       {
         throw std::logic_error(pointeeType->debug_string() + " pointer not implemented!");
@@ -4009,6 +4013,10 @@ RhlsToFirrtlConverter::GetModuleName(const rvsdg::Node * node)
       else if (auto arrayType = dynamic_cast<const llvm::ArrayType *>(pointeeType))
       {
         pointeeType = &arrayType->element_type();
+      }
+      else if (auto vectorType = dynamic_cast<const llvm::VectorType *>(pointeeType))
+      {
+        pointeeType = &vectorType->type();
       }
       else
       {
