@@ -45,7 +45,6 @@ trace_edge(
     rvsdg::SimpleNode * target_call,
     rvsdg::output * end)
 {
-  rvsdg::input * initial_state_edge = state_edge;
   rvsdg::input * previous_state_edge = nullptr;
   while (true)
   {
@@ -273,7 +272,6 @@ follow_state_edge(
         * continue on state output
         * special case for store - can have multiple users because of addr_deq
   */
-  rvsdg::input * state_edge_initial = state_edge;
   // this tracks decouple requests that have not been handled yet
   std::vector<std::tuple<rvsdg::SimpleNode *, rvsdg::input *>> outstanding_dec_reqs;
   while (true)
