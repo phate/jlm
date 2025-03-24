@@ -83,6 +83,8 @@ trace_edge(
                 end));
         new_edge = new_out;
       }
+      JLM_ASSERT(TryGetOwnerOp<loop_op>(*out));
+      JLM_ASSERT(out->region() == state_edge->region());
       state_edge = get_mem_state_user(out);
       continue;
     }
