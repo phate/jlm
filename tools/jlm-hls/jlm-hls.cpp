@@ -35,7 +35,11 @@ llvmToFile(jlm::llvm::RvsdgModule & module, const jlm::util::filepath & fileName
 {
   llvm::LLVMContext ctx;
   jlm::util::StatisticsCollector statisticsCollector;
-  auto jm = jlm::llvm::RvsdgToIpGraphConverter::CreateAndConvertModule(module, statisticsCollector);
+  auto sequentializer = std::make_shared<jlm::llvm::IdempotentRegionSequentializer>();
+  auto jm = jlm::llvm::RvsdgToIpGraphConverter::CreateAndConvertModule(
+      module,
+      statisticsCollector,
+      sequentializer);
   auto lm = jlm::llvm::IpGraphToLlvmConverter::CreateAndConvertModule(*jm, ctx);
   std::error_code EC;
   llvm::raw_fd_ostream os(fileName.to_str(), EC);

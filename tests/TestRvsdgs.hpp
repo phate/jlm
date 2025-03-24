@@ -76,6 +76,13 @@ private:
  */
 class StoreTest1 final : public RvsdgTest
 {
+public:
+  rvsdg::LambdaNode &
+  GetLambdaNode() const noexcept
+  {
+    return *lambda;
+  }
+
 private:
   std::unique_ptr<jlm::llvm::RvsdgModule>
   SetupRvsdg() override;
@@ -148,6 +155,13 @@ public:
  */
 class LoadTest1 final : public RvsdgTest
 {
+public:
+  const rvsdg::LambdaNode &
+  GetLambdaNode() const noexcept
+  {
+    return *lambda;
+  }
+
 private:
   std::unique_ptr<jlm::llvm::RvsdgModule>
   SetupRvsdg() override;

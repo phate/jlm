@@ -489,7 +489,11 @@ dump_ref(llvm::RvsdgModule & rhls, const util::filepath & path)
   }
   ::llvm::LLVMContext ctx;
   jlm::util::StatisticsCollector statisticsCollector;
-  auto jm2 = llvm::RvsdgToIpGraphConverter::CreateAndConvertModule(*reference, statisticsCollector);
+  auto sequentializer = std::make_shared<llvm::IdempotentRegionSequentializer>();
+  auto jm2 = llvm::RvsdgToIpGraphConverter::CreateAndConvertModule(
+      *reference,
+      statisticsCollector,
+      sequentializer);
   auto lm2 = llvm::IpGraphToLlvmConverter::CreateAndConvertModule(*jm2, ctx);
   std::error_code EC;
   ::llvm::raw_fd_ostream os(path.to_str(), EC);
