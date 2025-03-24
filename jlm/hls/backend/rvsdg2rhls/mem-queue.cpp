@@ -18,6 +18,7 @@
 #include <jlm/rvsdg/traverser.hpp>
 #include <jlm/rvsdg/view.hpp>
 
+#include "jlm/hls/util/view.hpp"
 #include <deque>
 
 void
@@ -28,13 +29,6 @@ jlm::hls::mem_queue(llvm::RvsdgModule & rm)
   mem_queue(root);
 }
 
-void
-dump_xml(const jlm::rvsdg::Region * region, const std::string & file_name)
-{
-  auto xml_file = fopen(file_name.c_str(), "w");
-  jlm::rvsdg::view_xml(region, xml_file);
-  fclose(xml_file);
-}
 
 void
 find_load_store(
@@ -153,10 +147,6 @@ separate_load_edge(
   {
     // each iteration should update common_edge and/or new_edge
     JLM_ASSERT(mem_edge->nusers() == 1);
-    if (addr_edge->nusers() != 1)
-    {
-      dump_xml(addr_edge->region(), "no_users.rvsdg");
-    }
     JLM_ASSERT(addr_edge->nusers() == 1);
     JLM_ASSERT(mem_edge != addr_edge);
     JLM_ASSERT(mem_edge->region() == addr_edge->region());
@@ -253,10 +243,6 @@ separate_load_edge(
       {
         JLM_ASSERT(!mx->loop);
         // end of gamma
-        if (!new_mem_edge)
-        {
-          dump_xml(addr_edge->region(), "no_new_common_edge.rvsdg");
-        }
         JLM_ASSERT(new_mem_edge);
         *new_mem_edge = mem_edge;
         return addr_edge;
