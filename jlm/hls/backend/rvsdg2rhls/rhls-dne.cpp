@@ -279,9 +279,13 @@ fix_mem_split(rvsdg::Node * split_node)
     remove(split_node);
     return true;
   }
+  // this merges downward and removes unused outputs (should only exist as a result of eliminating
+  // merges)
   std::vector<rvsdg::output *> combined_outputs;
   for (size_t i = 0; i < split_node->noutputs(); ++i)
   {
+    if (split_node->output(i)->IsDead())
+      continue;
     auto user = get_mem_state_user(split_node->output(i));
     if (TryGetOwnerOp<llvm::MemoryStateSplitOperation>(*user))
     {
@@ -313,6 +317,7 @@ fix_mem_split(rvsdg::Node * split_node)
 bool
 fix_mem_merge(rvsdg::Node * merge_node)
 {
+  // remove single merge
   if (merge_node->ninputs() == 1)
   {
     merge_node->output(0)->divert_users(merge_node->input(0)->origin());
@@ -332,12 +337,20 @@ fix_mem_merge(rvsdg::Node * merge_node)
         combined_origins.push_back(sub_merge->input(j)->origin());
       }
     }
+    else if (TryGetOwnerOp<llvm::MemoryStateSplitOperation>(*origin))
+    {
+      // TODO: I'm not entirely sure if this is generally correct, but under the current assumptions (each merge has an equivalent split) it holds
+      continue;
+    }
     else
     {
       combined_origins.push_back(merge_node->input(i)->origin());
     }
   }
-
+  if (combined_origins.empty()){
+    // if none of the inputs are real keep the first one
+    combined_origins.push_back(merge_node->input(0)->origin());
+  }
   if (combined_origins.size() != merge_node->ninputs())
   {
     auto new_output = llvm::MemoryStateMergeOperation::Create(combined_origins);
