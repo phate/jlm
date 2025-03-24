@@ -132,28 +132,25 @@ trace_edge(
     else if (TryGetOwnerOp<llvm::MemoryStateSplitOperation>(*state_edge))
     {
       rvsdg::output * after_merge = nullptr;
-      bool follow_split = false;
       for (size_t i = 0; i < sn->noutputs(); ++i)
       {
         // pick right edge by searching for target
         std::vector<rvsdg::SimpleNode *> mem_ops;
-        after_merge = follow_state_edge(state_edge, mem_ops, false);
+        after_merge = follow_state_edge(get_mem_state_user(sn->output(i)), mem_ops, false);
+        JLM_ASSERT(after_merge);
+        JLM_ASSERT(TryGetOwnerOp<llvm::MemoryStateMergeOperation>(*after_merge));
         if (std::count(mem_ops.begin(), mem_ops.end(), target_call))
         {
-          state_edge = get_mem_state_user(
-              trace_edge(get_mem_state_user(sn->output(i)), new_edge, target_call, end));
-          follow_split = true;
+          auto out = trace_edge(get_mem_state_user(sn->output(i)), new_edge, target_call, end);
+          JLM_ASSERT(out == after_merge);
+        } else {
+          // nothing relevant below the split - can just ignore it
         }
       }
-      if (!follow_split)
-      {
-        // nothing relevant below the split - can just ignore it
-        JLM_ASSERT(after_merge);
-        state_edge = get_mem_state_user(after_merge);
-      }
+      state_edge = get_mem_state_user(after_merge);
       new_edge = new_edge_user->origin();
     }
-    else if (TryGetOwnerOp<llvm::MemoryStateMergeOperation>(*state_edge))
+    else if (TryGetOwnerOp<llvm::MemoryStateMergeOperation>(*state_edge)|| TryGetOwnerOp<llvm::LambdaExitMemoryStateMergeOperation>(*state_edge))
     {
       // we did not split the new state
       return sn->output(0);
@@ -408,10 +405,28 @@ decouple_mem_state(rvsdg::Region * region)
   //      * split at highest loop that contains no store on edge
   //          * store not being at higher level doesn't work
   //  * apply recursively - i.e. the same way for inner loops as for outer
+  auto state_user = get_mem_state_user(state_arg);
+  auto entry_op = TryGetOwnerOp<llvm::LambdaEntryMemoryStateSplitOperation>(*state_user);
+  JLM_ASSERT(entry_op);
+  auto entry_node = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*state_user);
+  JLM_ASSERT(entry_node);
+  auto state_res = GetMemoryStateResult(*lambda);
+  auto exit_op = TryGetOwnerOp<llvm::LambdaExitMemoryStateMergeOperation>(*state_res->origin());
+  auto exit_node = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*state_res->origin());
+  JLM_ASSERT(exit_node);
+  JLM_ASSERT(exit_op);
+  JLM_ASSERT(entry_node->noutputs() == exit_node->ninputs());
+  // process different pointer arg edges separately
+  for (size_t i = 0; i < entry_node->noutputs(); ++i)
+  {
+    std::vector<rvsdg::SimpleNode *> mem_ops;
+    std::vector<std::tuple<rvsdg::SimpleNode *, rvsdg::input *>> dummy;
+    follow_state_edge(get_mem_state_user(entry_node->output(i)), mem_ops, true);
+    // we need this one final time across the whole lambda - at least for this edge
+    handle_structural(dummy, mem_ops, get_mem_state_user(entry_node->output(i)), exit_node->input(i)->origin());
+  }
 
-  std::vector<rvsdg::SimpleNode *> mem_ops;
-  follow_state_edge(get_mem_state_user(state_arg), mem_ops, true);
-  // TODO: check if mem-ops are sane
+
   dne(lambda->subregion());
 }
 
