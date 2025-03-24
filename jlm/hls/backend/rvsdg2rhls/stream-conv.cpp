@@ -80,7 +80,7 @@ stream_conv(llvm::RvsdgModule & rm)
         }
         remove(enq_call);
         // remove deq_call from list
-        std::remove(deq_calls.begin(), deq_calls.end(), deq_call);
+        deq_calls.erase(std::find(deq_calls.begin(), deq_calls.end(), deq_call));
         break;
       }
     }
