@@ -38,7 +38,7 @@ Sequentialization
 ExhaustiveRegionSequentializer::GetSequentialization()
 {
   if (!HasMoreSequentializations())
-    CurrentSequentialization_ = 0;
+    ComputeNextSequentialization();
 
   return Sequentializations_[CurrentSequentialization_];
 }
@@ -46,8 +46,8 @@ ExhaustiveRegionSequentializer::GetSequentialization()
 bool
 ExhaustiveRegionSequentializer::HasMoreSequentializations() const noexcept
 {
-  JLM_ASSERT(CurrentSequentialization_ < Sequentializations_.size());
-  return (CurrentSequentialization_ + 1) != Sequentializations_.size();
+  JLM_ASSERT(CurrentSequentialization_ <= Sequentializations_.size());
+  return CurrentSequentialization_ != Sequentializations_.size();
 }
 
 void

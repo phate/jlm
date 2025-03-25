@@ -7,25 +7,29 @@
 #include <test-registry.hpp>
 #include <TestRvsdgs.hpp>
 
-#if 0
 static int
 Test()
 {
   jlm::tests::LoadTest1 test;
   test.InitializeTest();
 
-  jlm::llvm::ExhaustiveRegionSequentializer sequentializer(*test.GetLambdaNode().subregion());
+  jlm::llvm::ExhaustiveRegionTreeSequentializer sequentializer(*test.GetLambdaNode().subregion());
   assert(sequentializer.HasMoreSequentializations());
 
-  auto sequentializationMap = sequentializer.ComputeNextSequentialization();
-  assert(sequentializationMap.has_value());
-  assert(!sequentializer.HasMoreSequentializations());
+  auto & regionSequentializer = sequentializer.GetSequentializer(*test.GetLambdaNode().subregion());
+  while (sequentializer.HasMoreSequentializations())
+  {
+    auto sequentialization = regionSequentializer.GetSequentialization();
+    for (const auto & node : sequentialization)
+    {
+      std::cout << node->GetOperation().debug_string() << std::endl;
+    }
+    std::cout << std::endl;
 
-  sequentializationMap = sequentializer.ComputeNextSequentialization();
-  assert(!sequentializationMap.has_value());
+    sequentializer.ComputeNextSequentializations();
+  }
 
   return 0;
 }
 
 JLM_UNIT_TEST_REGISTER("jlm/llvm/backend/ExhaustiveSequentializerTests-Test", Test)
-#endif
