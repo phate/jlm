@@ -179,7 +179,8 @@ RvsdgToIpGraphConverter::ConvertRegion(rvsdg::Region & region)
   Context_->GetLastProcessedBasicBlock()->add_outedge(entryBlock);
   Context_->SetLastProcessedBasicBlock(entryBlock);
 
-  for (const auto & node : RegionSequentializer_->GetSequentializations()[&region])
+  auto sequentializationMap = RegionSequentializer_->GetSequentializations();
+  for (const auto & node : sequentializationMap[&region])
     ConvertIntraProceduralNode(*node);
 
   const auto exitBlock = basic_block::create(*Context_->GetControlFlowGraph());

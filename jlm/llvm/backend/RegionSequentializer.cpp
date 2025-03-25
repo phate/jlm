@@ -173,10 +173,11 @@ void
 IdempotentRegionSequentializer::Initialize(rvsdg::Region & region)
 {
   auto sequentialization = Sequentialization();
-  for (const auto & node : rvsdg::TopDownTraverser(&region))
+  for (const auto node : rvsdg::TopDownTraverser(&region))
   {
     sequentialization.push_back(node);
-    if (auto structuralNode = dynamic_cast<const rvsdg::StructuralNode *>(node))
+
+    if (const auto structuralNode = dynamic_cast<const rvsdg::StructuralNode *>(node))
     {
       for (size_t n = 0; n < structuralNode->nsubregions(); n++)
       {
