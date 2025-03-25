@@ -489,7 +489,8 @@ dump_ref(llvm::RvsdgModule & rhls, const util::filepath & path)
   }
   ::llvm::LLVMContext ctx;
   jlm::util::StatisticsCollector statisticsCollector;
-  auto sequentializer = std::make_shared<llvm::IdempotentRegionSequentializer>();
+  auto sequentializer = std::make_shared<llvm::IdempotentRegionTreeSequentializer>(
+      reference->Rvsdg().GetRootRegion());
   auto jm2 = llvm::RvsdgToIpGraphConverter::CreateAndConvertModule(
       *reference,
       statisticsCollector,

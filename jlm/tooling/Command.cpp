@@ -529,7 +529,8 @@ JlmOptCommand::PrintAsLlvm(
     const util::filepath & outputFile,
     util::StatisticsCollector & statisticsCollector)
 {
-  auto sequentializer = std::make_shared<llvm::IdempotentRegionSequentializer>();
+  auto sequentializer = std::make_shared<llvm::IdempotentRegionTreeSequentializer>(
+      rvsdgModule.Rvsdg().GetRootRegion());
   auto jlm_module = llvm::RvsdgToIpGraphConverter::CreateAndConvertModule(
       rvsdgModule,
       statisticsCollector,

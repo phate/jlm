@@ -29,73 +29,163 @@ class RegionSequentializer
 public:
   virtual ~RegionSequentializer() noexcept;
 
-  virtual void
-  Initialize(rvsdg::Region & region) = 0;
+  explicit RegionSequentializer(rvsdg::Region & region);
 
-  virtual void
-  ComputeNextSequentializations() = 0;
+  RegionSequentializer(const RegionSequentializer &) = delete;
 
-  virtual SequentializationMap
-  GetSequentializations() = 0;
+  RegionSequentializer(RegionSequentializer &&) = delete;
+
+  RegionSequentializer &
+  operator=(const RegionSequentializer &) = delete;
+
+  RegionSequentializer &
+  operator=(RegionSequentializer &&) = delete;
+
+  virtual Sequentialization
+  GetSequentialization() = 0;
 
   virtual bool
   HasMoreSequentializations() const noexcept = 0;
-};
 
-class ExhaustiveSingleRegionSequentializer;
+  virtual void
+  ComputeNextSequentialization() = 0;
+
+  rvsdg::Region &
+  GetRegion() const noexcept
+  {
+    return *Region_;
+  }
+
+private:
+  rvsdg::Region * Region_;
+};
 
 // FIXME: add documentation
 class ExhaustiveRegionSequentializer final : public RegionSequentializer
 {
 public:
-  ~ExhaustiveRegionSequentializer() noexcept override;
+  ~ExhaustiveRegionSequentializer() noexcept override = default;
 
-  ExhaustiveRegionSequentializer();
-
-  void
-  Initialize(rvsdg::Region & region) override;
+  explicit ExhaustiveRegionSequentializer(rvsdg::Region & region);
 
   void
-  ComputeNextSequentializations() override;
+  ComputeNextSequentialization() override;
 
-  SequentializationMap
-  GetSequentializations() override;
+  Sequentialization
+  GetSequentialization() override;
 
   bool
   HasMoreSequentializations() const noexcept override;
 
 private:
   void
-  InitializeSequentializers(rvsdg::Region & topRegion);
+  ComputeSequentializations(
+      const rvsdg::Region & region,
+      util::HashSet<const rvsdg::Node *> & visited,
+      std::vector<const rvsdg::Node *> & sequentializedNodes) noexcept;
 
-  SequentializationMap CurrentSequentializations_;
-  std::unordered_map<rvsdg::Region *, std::unique_ptr<ExhaustiveSingleRegionSequentializer>>
-      Sequentializers_;
+  static bool
+  AllPredecessorsVisited(
+      const rvsdg::Node & node,
+      const util::HashSet<const rvsdg::Node *> & visited);
+
+  size_t CurrentSequentialization_ = 0;
+  std::vector<Sequentialization> Sequentializations_;
 };
 
-// FIXME: add documentation
 class IdempotentRegionSequentializer final : public RegionSequentializer
 {
 public:
   ~IdempotentRegionSequentializer() noexcept override;
 
-  IdempotentRegionSequentializer();
+  explicit IdempotentRegionSequentializer(rvsdg::Region & region);
+
+  Sequentialization
+  GetSequentialization() override;
+
+  bool
+  HasMoreSequentializations() const noexcept override;
 
   void
-  Initialize(rvsdg::Region & region) override;
+  ComputeNextSequentialization() override;
+};
+
+// FIXME: add documentation
+class RegionTreeSequentializer
+{
+public:
+  virtual ~RegionTreeSequentializer() noexcept;
+
+  RegionTreeSequentializer();
+
+  RegionTreeSequentializer(const RegionTreeSequentializer &) = delete;
+
+  RegionTreeSequentializer(RegionTreeSequentializer &&) = delete;
+
+  RegionTreeSequentializer &
+  operator=(const RegionTreeSequentializer &) = delete;
+
+  RegionTreeSequentializer &
+  operator=(RegionTreeSequentializer &&) = delete;
+
+  virtual void
+  ComputeNextSequentializations() = 0;
+
+  virtual RegionSequentializer &
+  GetSequentializer(rvsdg::Region & region) = 0;
+
+  virtual bool
+  HasMoreSequentializations() const noexcept = 0;
+};
+
+// FIXME: add documentation
+class IdempotentRegionTreeSequentializer final : public RegionTreeSequentializer
+{
+public:
+  ~IdempotentRegionTreeSequentializer() noexcept override;
+
+  explicit IdempotentRegionTreeSequentializer(rvsdg::Region & region);
 
   void
   ComputeNextSequentializations() override;
 
-  SequentializationMap
-  GetSequentializations() override;
+  RegionSequentializer &
+  GetSequentializer(rvsdg::Region & region) override;
 
   bool
   HasMoreSequentializations() const noexcept override;
 
 private:
-  rvsdg::Region * Region_;
-  SequentializationMap Sequentialization_;
+  void
+  InitializeSequentializers(rvsdg::Region & region);
+
+  std::unordered_map<rvsdg::Region *, std::unique_ptr<IdempotentRegionSequentializer>>
+      Sequentializers_;
+};
+
+// FIXME: add documentation
+class ExhaustiveRegionTreeSequentializer final : public RegionTreeSequentializer
+{
+public:
+  ~ExhaustiveRegionTreeSequentializer() noexcept override;
+
+  explicit ExhaustiveRegionTreeSequentializer(rvsdg::Region & region);
+
+  void
+  ComputeNextSequentializations() override;
+
+  RegionSequentializer &
+  GetSequentializer(rvsdg::Region & region) override;
+
+  bool
+  HasMoreSequentializations() const noexcept override;
+
+private:
+  void
+  InitializeSequentializers(rvsdg::Region & region);
+
+  std::unordered_map<rvsdg::Region *, std::unique_ptr<ExhaustiveRegionSequentializer>>
+      Sequentializers_;
 };
 
 }

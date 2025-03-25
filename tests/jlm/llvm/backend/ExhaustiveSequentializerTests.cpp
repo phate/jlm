@@ -14,7 +14,7 @@ Test()
   jlm::tests::LoadTest1 test;
   test.InitializeTest();
 
-  jlm::llvm::ExhaustiveSingleRegionSequentializer sequentializer(*test.GetLambdaNode().subregion());
+  jlm::llvm::ExhaustiveRegionSequentializer sequentializer(*test.GetLambdaNode().subregion());
   assert(sequentializer.HasMoreSequentializations());
 
   auto sequentializationMap = sequentializer.ComputeNextSequentialization();

@@ -35,7 +35,8 @@ llvmToFile(jlm::llvm::RvsdgModule & module, const jlm::util::filepath & fileName
 {
   llvm::LLVMContext ctx;
   jlm::util::StatisticsCollector statisticsCollector;
-  auto sequentializer = std::make_shared<jlm::llvm::IdempotentRegionSequentializer>();
+  auto sequentializer = std::make_shared<jlm::llvm::IdempotentRegionTreeSequentializer>(
+      module.Rvsdg().GetRootRegion());
   auto jm = jlm::llvm::RvsdgToIpGraphConverter::CreateAndConvertModule(
       module,
       statisticsCollector,
