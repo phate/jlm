@@ -493,8 +493,8 @@ MlirToJlmConverter::ConvertOperation(
   else if (auto FreeOp = ::mlir::dyn_cast<::mlir::jlm::Free>(&mlirOperation))
   {
     llvm::FreeOperation freeOp(inputs.size() - 2);
-    return rvsdg::simple_node::create(
-        &rvsdgRegion,
+    return &rvsdg::SimpleNode::Create(
+        rvsdgRegion,
         freeOp,
         std::vector(inputs.begin(), inputs.end()));
   }
