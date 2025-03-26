@@ -16,7 +16,7 @@ Test()
   jlm::llvm::ExhaustiveRegionTreeSequentializer sequentializer(*test.GetLambdaNode().subregion());
   assert(sequentializer.HasMoreSequentializations());
 
-  auto & regionSequentializer = sequentializer.GetSequentializer(*test.GetLambdaNode().subregion());
+  auto & regionSequentializer = sequentializer.GetRegionSequentializer(*test.GetLambdaNode().subregion());
   while (sequentializer.HasMoreSequentializations())
   {
     auto sequentialization = regionSequentializer.GetSequentialization();

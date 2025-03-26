@@ -21,9 +21,13 @@ namespace jlm::llvm
 {
 
 using Sequentialization = std::vector<const rvsdg::Node *>;
-using SequentializationMap = std::unordered_map<rvsdg::Region *, Sequentialization>;
 
-// FIXME: add documentation
+/**
+ * The RegionSequentializer class computes sequentializations, i.e., topological orderings, for a
+ * <b>single</b> region. The interface permits the computation of different sequentializations
+ * by invoking ComputeNextSequentialization(). It can be checked whether there are still orderings
+ * available by invoking HasMoreSequentializations().
+ */
 class RegionSequentializer
 {
 public:
@@ -41,15 +45,29 @@ public:
   RegionSequentializer &
   operator=(RegionSequentializer &&) = delete;
 
+  /**
+   * @return The current sequentialization of the region. Nodes are stored in dependency-order in
+   * the sequentialization, i.e., nodes without any dependency appear first in the
+   * sequentialization.
+   */
   virtual Sequentialization
   GetSequentialization() = 0;
 
+  /**
+   * @return True, if there are more sequentializations to return, otherwise false.
+   */
   virtual bool
   HasMoreSequentializations() const noexcept = 0;
 
+  /**
+   * Computes the next sequentialization of the region.
+   */
   virtual void
   ComputeNextSequentialization() = 0;
 
+  /**
+   * @return The region for which sequentializations are computed.
+   */
   rvsdg::Region &
   GetRegion() const noexcept
   {
@@ -60,7 +78,22 @@ private:
   rvsdg::Region * Region_;
 };
 
-// FIXME: add documentation
+/**
+ * The ExhaustiveRegionSequentializer computes <b>all</b> sequentializations of a region. It is
+ * possible to iterate through these sequentializations as follows:
+ *
+ * \code{.c}
+ * while(sequentializer.HasMoreSequentializations)
+ * {
+ *   auto sequentialization = sequentializer.GetSequentialization();
+ *   ...
+ *   sequentializer.ComputeNextSequentialization();
+ * }
+ * \endcode
+ *
+ * The sequentializer will wrap around after the "last" sequentialization and
+ * return the "first" sequentialization again.
+ */
 class ExhaustiveRegionSequentializer final : public RegionSequentializer
 {
 public:
@@ -93,6 +126,10 @@ private:
   std::vector<Sequentialization> Sequentializations_;
 };
 
+/**
+ * The IdempotentRegionSequentializer computes a <b>single</b> sequentialization of a region and
+ * only ever returns this single sequentialization.
+ */
 class IdempotentRegionSequentializer final : public RegionSequentializer
 {
 public:
@@ -132,7 +169,7 @@ public:
   ComputeNextSequentializations() = 0;
 
   virtual RegionSequentializer &
-  GetSequentializer(rvsdg::Region & region) = 0;
+  GetRegionSequentializer(rvsdg::Region & region) = 0;
 
   virtual bool
   HasMoreSequentializations() const noexcept = 0;
@@ -150,7 +187,7 @@ public:
   ComputeNextSequentializations() override;
 
   RegionSequentializer &
-  GetSequentializer(rvsdg::Region & region) override;
+  GetRegionSequentializer(rvsdg::Region & region) override;
 
   bool
   HasMoreSequentializations() const noexcept override;
@@ -175,7 +212,7 @@ public:
   ComputeNextSequentializations() override;
 
   RegionSequentializer &
-  GetSequentializer(rvsdg::Region & region) override;
+  GetRegionSequentializer(rvsdg::Region & region) override;
 
   bool
   HasMoreSequentializations() const noexcept override;

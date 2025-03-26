@@ -180,7 +180,7 @@ RvsdgToIpGraphConverter::ConvertRegion(rvsdg::Region & region)
   Context_->SetLastProcessedBasicBlock(entryBlock);
 
   auto sequentialization =
-      RegionTreeSequentializer_->GetSequentializer(region).GetSequentialization();
+      RegionTreeSequentializer_->GetRegionSequentializer(region).GetSequentialization();
   for (const auto & node : sequentialization)
     ConvertIntraProceduralNode(*node);
 

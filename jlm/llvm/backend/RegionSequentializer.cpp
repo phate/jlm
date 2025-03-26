@@ -144,7 +144,7 @@ IdempotentRegionTreeSequentializer::ComputeNextSequentializations()
 }
 
 RegionSequentializer &
-IdempotentRegionTreeSequentializer::GetSequentializer(rvsdg::Region & region)
+IdempotentRegionTreeSequentializer::GetRegionSequentializer(rvsdg::Region & region)
 {
   JLM_ASSERT(Sequentializers_.find(&region) != Sequentializers_.end());
   return *Sequentializers_[&region];
@@ -219,7 +219,7 @@ ExhaustiveRegionTreeSequentializer::ComputeNextSequentializations()
 }
 
 RegionSequentializer &
-ExhaustiveRegionTreeSequentializer::GetSequentializer(rvsdg::Region & region)
+ExhaustiveRegionTreeSequentializer::GetRegionSequentializer(rvsdg::Region & region)
 {
   JLM_ASSERT(Sequentializers_.find(&region) != Sequentializers_.end());
   return *Sequentializers_[&region];
