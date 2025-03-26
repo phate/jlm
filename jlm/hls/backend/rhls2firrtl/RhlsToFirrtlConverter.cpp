@@ -3686,7 +3686,7 @@ RhlsToFirrtlConverter::check_module(circt::firrtl::FModuleOp & module)
 
 #ifdef FIRRTL_RUNTIME_ASSERTIONS
   // run time: valid/ready may not go down without firing once they are up - insert assertions
-  auto body = &module.body().back();
+  auto body = &module.getBody().back();
   auto clock = GetClockSignal(module);
   auto reset = GetResetSignal(module);
   auto zeroBitValue = GetConstant(body, 1, 0);
@@ -3694,7 +3694,7 @@ RhlsToFirrtlConverter::check_module(circt::firrtl::FModuleOp & module)
   {
     auto portName = module.getPortName(i);
     auto port = module.getArgument(i);
-    if (portName.startswith("o") || portName.startswith("i"))
+    if (portName.starts_with("o") || portName.starts_with("i"))
     {
       auto ready = GetSubfield(body, port, "ready");
       auto valid = GetSubfield(body, port, "valid");
@@ -3727,17 +3727,17 @@ RhlsToFirrtlConverter::check_module(circt::firrtl::FModuleOp & module)
           clock,
           std::string(portName) + "_prev_data_reg");
       body->push_back(prev_data_reg);
-      Connect(body, prev_ready_reg, ready);
-      Connect(body, prev_valid_reg, valid);
-      Connect(body, prev_data_reg, data);
+      Connect(body, prev_ready_reg.getResult(), ready);
+      Connect(body, prev_valid_reg.getResult(), valid);
+      Connect(body, prev_data_reg.getResult(), data);
       auto fireBody = &AddWhenOp(body, fire, false).getThenBlock();
-      Connect(fireBody, prev_ready_reg, zeroBitValue);
-      Connect(fireBody, prev_valid_reg, zeroBitValue);
+      Connect(fireBody, prev_ready_reg.getResult(), zeroBitValue);
+      Connect(fireBody, prev_valid_reg.getResult(), zeroBitValue);
 
       auto valid_assert = Builder_->create<circt::firrtl::AssertOp>(
           Builder_->getUnknownLoc(),
           clock,
-          AddNotOp(body, AddAndOp(body, prev_valid_reg, AddNotOp(body, valid))),
+          AddNotOp(body, AddAndOp(body, prev_valid_reg.getResult(), AddNotOp(body, valid))),
           AddNotOp(body, reset),
           std::string(portName) + "_valid went down without firing",
           mlir::ValueRange(),
@@ -3747,7 +3747,7 @@ RhlsToFirrtlConverter::check_module(circt::firrtl::FModuleOp & module)
       auto ready_assert = Builder_->create<circt::firrtl::AssertOp>(
           Builder_->getUnknownLoc(),
           clock,
-          AddNotOp(body, AddAndOp(body, prev_ready_reg, AddNotOp(body, ready))),
+          AddNotOp(body, AddAndOp(body, prev_ready_reg.getResult(), AddNotOp(body, ready))),
           AddNotOp(body, reset),
           std::string(portName) + "_ready went down without firing",
           mlir::ValueRange(),
@@ -3757,7 +3757,7 @@ RhlsToFirrtlConverter::check_module(circt::firrtl::FModuleOp & module)
       auto data_assert = Builder_->create<circt::firrtl::AssertOp>(
           Builder_->getUnknownLoc(),
           clock,
-          AddNotOp(body, AddAndOp(body, prev_valid_reg, AddNeqOp(body, prev_data_reg, data))),
+          AddNotOp(body, AddAndOp(body, prev_valid_reg.getResult(), AddNeqOp(body, prev_data_reg.getResult(), data))),
           AddNotOp(body, reset),
           std::string(portName) + "_data changed without firing",
           mlir::ValueRange(),
