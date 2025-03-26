@@ -455,6 +455,21 @@ JlmToMlirConverter::ConvertSimpleNode(
         Builder_->getUnknownLoc(),
         ConvertType(undefOp->GetType()));
   }
+  else if (auto freeOp = dynamic_cast<const jlm::llvm::FreeOperation *>(&operation))
+  {
+    auto nMemstates = freeOp->narguments() - 2; // Subtract for pointer and io state
+
+    std::vector<::mlir::Type> memoryStates(
+        nMemstates,
+        Builder_->getType<::mlir::rvsdg::MemStateEdgeType>());
+    MlirOp = Builder_->create<::mlir::jlm::Free>(
+        Builder_->getUnknownLoc(),
+        ::mlir::TypeRange(::llvm::ArrayRef(memoryStates)),
+        Builder_->getType<::mlir::rvsdg::IOStateEdgeType>(),
+        inputs[0],
+        ::mlir::ValueRange({ std::next(inputs.begin()), std::prev(inputs.end()) }),
+        inputs[inputs.size() - 1]);
+  }
   else if (auto alloca_op = dynamic_cast<const jlm::llvm::alloca_op *>(&operation))
   {
     MlirOp = Builder_->create<::mlir::jlm::Alloca>(

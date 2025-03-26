@@ -490,6 +490,15 @@ MlirToJlmConverter::ConvertOperation(
 
   // Memory operations
 
+  else if (auto FreeOp = ::mlir::dyn_cast<::mlir::jlm::Free>(&mlirOperation))
+  {
+    llvm::FreeOperation freeOp(inputs.size() - 2);
+    return &rvsdg::SimpleNode::Create(
+        rvsdgRegion,
+        freeOp,
+        std::vector(inputs.begin(), inputs.end()));
+  }
+
   else if (auto AllocaOp = ::mlir::dyn_cast<::mlir::jlm::Alloca>(&mlirOperation))
   {
     auto outputType = AllocaOp.getValueType();
