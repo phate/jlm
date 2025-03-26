@@ -28,7 +28,7 @@ convert_prints(
     const std::shared_ptr<const rvsdg::FunctionType> & functionType);
 
 rvsdg::output *
-route_to_region(rvsdg::output * output, rvsdg::Region * region);
+route_to_region_rvsdg(jlm::rvsdg::output * output, rvsdg::Region * region);
 
 }
 

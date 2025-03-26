@@ -21,6 +21,7 @@ libhls_SOURCES = \
     jlm/hls/backend/rvsdg2rhls/DeadNodeElimination.cpp \
     jlm/hls/backend/rvsdg2rhls/distribute-constants.cpp \
     jlm/hls/backend/rvsdg2rhls/GammaConversion.cpp \
+    jlm/hls/backend/rvsdg2rhls/hls-function-util.cpp \
     jlm/hls/backend/rvsdg2rhls/instrument-ref.cpp \
     jlm/hls/backend/rvsdg2rhls/mem-conv.cpp \
     jlm/hls/backend/rvsdg2rhls/mem-queue.cpp \
@@ -61,6 +62,7 @@ libhls_HEADERS = \
 	jlm/hls/backend/rvsdg2rhls/DeadNodeElimination.hpp \
 	jlm/hls/backend/rvsdg2rhls/distribute-constants.hpp \
 	jlm/hls/backend/rvsdg2rhls/GammaConversion.hpp \
+	jlm/hls/backend/rvsdg2rhls/hls-function-util.hpp \
 	jlm/hls/backend/rvsdg2rhls/instrument-ref.hpp \
 	jlm/hls/backend/rvsdg2rhls/mem-conv.hpp \
 	jlm/hls/backend/rvsdg2rhls/mem-queue.hpp \

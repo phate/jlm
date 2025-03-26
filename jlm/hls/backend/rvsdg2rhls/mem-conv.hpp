@@ -6,6 +6,7 @@
 #ifndef JLM_BACKEND_HLS_RVSDG2RHLS_MEM_CONV_HPP
 #define JLM_BACKEND_HLS_RVSDG2RHLS_MEM_CONV_HPP
 
+#include "jlm/llvm/ir/operators/IntegerOperations.hpp"
 #include <jlm/llvm/ir/operators/lambda.hpp>
 #include <jlm/llvm/ir/RvsdgModule.hpp>
 
@@ -26,6 +27,11 @@ typedef std::vector<std::tuple<
  */
 void
 TracePointerArguments(const rvsdg::LambdaNode * lambda, port_load_store_decouple & portNodes);
+
+jlm::rvsdg::SimpleNode *
+find_decouple_response(
+    const jlm::rvsdg::LambdaNode * lambda,
+    const jlm::llvm::IntegerConstantOperation * request_constant);
 
 void
 MemoryConverter(llvm::RvsdgModule & rm);
@@ -57,12 +63,6 @@ ReplaceLoad(
 
 jlm::rvsdg::SimpleNode *
 ReplaceStore(rvsdg::SubstitutionMap & smap, const jlm::rvsdg::SimpleNode * originalStore);
-
-jlm::rvsdg::output *
-route_response(rvsdg::Region * target, jlm::rvsdg::output * response);
-
-jlm::rvsdg::output *
-route_request(rvsdg::Region * target, jlm::rvsdg::output * request);
 
 } // namespace jlm::hls
 
