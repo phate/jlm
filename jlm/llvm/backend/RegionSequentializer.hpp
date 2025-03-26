@@ -27,6 +27,17 @@ using Sequentialization = std::vector<const rvsdg::Node *>;
  * <b>single</b> region. The interface permits the computation of different sequentializations
  * by invoking ComputeNextSequentialization(). It can be checked whether there are still orderings
  * available by invoking HasMoreSequentializations().
+ *
+ * Thus, all sequentializations can be obtained as follows:
+ *
+ * \code{.c}
+ * while(sequentializer.HasMoreSequentializations)
+ * {
+ *   auto sequentialization = sequentializer.GetSequentialization();
+ *   ...
+ *   sequentializer.ComputeNextSequentialization();
+ * }
+ * \endcode
  */
 class RegionSequentializer
 {
@@ -79,20 +90,9 @@ private:
 };
 
 /**
- * The ExhaustiveRegionSequentializer computes <b>all</b> sequentializations of a region. It is
- * possible to iterate through these sequentializations as follows:
- *
- * \code{.c}
- * while(sequentializer.HasMoreSequentializations)
- * {
- *   auto sequentialization = sequentializer.GetSequentialization();
- *   ...
- *   sequentializer.ComputeNextSequentialization();
- * }
- * \endcode
- *
- * The sequentializer will wrap around after the "last" sequentialization and
- * return the "first" sequentialization again.
+ * The ExhaustiveRegionSequentializer class computes <b>all</b> sequentializations of a region. The
+ * sequentializer will wrap around after the "last" sequentialization and return the "first"
+ * sequentialization again.
  */
 class ExhaustiveRegionSequentializer final : public RegionSequentializer
 {
@@ -127,8 +127,8 @@ private:
 };
 
 /**
- * The IdempotentRegionSequentializer computes a <b>single</b> sequentialization of a region and
- * only ever returns this single sequentialization.
+ * The IdempotentRegionSequentializer class computes a <b>single</b> sequentialization of a region
+ * and only ever returns this single sequentialization.
  */
 class IdempotentRegionSequentializer final : public RegionSequentializer
 {
@@ -147,13 +147,20 @@ public:
   ComputeNextSequentialization() override;
 };
 
-// FIXME: add documentation
-class RegionTreeSequentializer
+using SequentializerMap =
+    std::unordered_map<rvsdg::Region *, std::unique_ptr<RegionSequentializer>>;
+
+/**
+ * The RegionTreeSequentializer class extends the concepts of the RegionSequentializer from a single
+ * region to a region tree. Thus, it computes the sequentializations for a root region and all its
+ * subregions.
+ */
+class RegionTreeSequentializer final
 {
 public:
-  virtual ~RegionTreeSequentializer() noexcept;
+  ~RegionTreeSequentializer() noexcept;
 
-  RegionTreeSequentializer();
+  explicit RegionTreeSequentializer(SequentializerMap sequentializerMap);
 
   RegionTreeSequentializer(const RegionTreeSequentializer &) = delete;
 
@@ -165,65 +172,48 @@ public:
   RegionTreeSequentializer &
   operator=(RegionTreeSequentializer &&) = delete;
 
-  virtual void
-  ComputeNextSequentializations() = 0;
-
-  virtual RegionSequentializer &
-  GetRegionSequentializer(rvsdg::Region & region) = 0;
-
-  virtual bool
-  HasMoreSequentializations() const noexcept = 0;
-};
-
-// FIXME: add documentation
-class IdempotentRegionTreeSequentializer final : public RegionTreeSequentializer
-{
-public:
-  ~IdempotentRegionTreeSequentializer() noexcept override;
-
-  explicit IdempotentRegionTreeSequentializer(rvsdg::Region & region);
-
+  /**
+   * Computes the next sequentialization for the regions in the tree.
+   */
   void
-  ComputeNextSequentializations() override;
+  ComputeNextSequentializations();
 
-  RegionSequentializer &
-  GetRegionSequentializer(rvsdg::Region & region) override;
+  /**
+   * @param region A (sub-)region of the region tree.
+   * @return The current sequentialization of the region.
+   */
+  Sequentialization
+  GetSequentialization(rvsdg::Region & region);
 
+  /**
+   * @return True, if there are more sequentializations to return, otherwise false.
+   */
   bool
-  HasMoreSequentializations() const noexcept override;
+  HasMoreSequentializations() const noexcept;
 
 private:
-  void
-  InitializeSequentializers(rvsdg::Region & region);
-
-  std::unordered_map<rvsdg::Region *, std::unique_ptr<IdempotentRegionSequentializer>>
-      Sequentializers_;
+  SequentializerMap Sequentializers_;
 };
 
-// FIXME: add documentation
-class ExhaustiveRegionTreeSequentializer final : public RegionTreeSequentializer
-{
-public:
-  ~ExhaustiveRegionTreeSequentializer() noexcept override;
+/**
+ * Creates an instance of RegionTreeSequentializer where IdempotentRegionSequentializer instances
+ * are used for all regions in the tree.
+ *
+ * @param rootRegion The root of the region tree.
+ * @return An instance of RegionTreeSequentializer.
+ */
+RegionTreeSequentializer
+CreateIdempotentRegionTreeSequentializer(rvsdg::Region & rootRegion);
 
-  explicit ExhaustiveRegionTreeSequentializer(rvsdg::Region & region);
-
-  void
-  ComputeNextSequentializations() override;
-
-  RegionSequentializer &
-  GetRegionSequentializer(rvsdg::Region & region) override;
-
-  bool
-  HasMoreSequentializations() const noexcept override;
-
-private:
-  void
-  InitializeSequentializers(rvsdg::Region & region);
-
-  std::unordered_map<rvsdg::Region *, std::unique_ptr<ExhaustiveRegionSequentializer>>
-      Sequentializers_;
-};
+/**
+ * Creates an instance of RegionTreeSequentializer where IdempotentRegionSequentializer instances
+ * are used for all regions in the tree.
+ *
+ * @param rootRegion The root of the region tree.
+ * @return An instance of RegionTreeSequentializer.
+ */
+RegionTreeSequentializer
+CreateExhaustiveRegionTreeSequentializer(rvsdg::Region & rootRegion);
 
 }
 

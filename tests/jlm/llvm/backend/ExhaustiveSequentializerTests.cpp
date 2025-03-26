@@ -13,13 +13,14 @@ Test()
   jlm::tests::LoadTest1 test;
   test.InitializeTest();
 
-  jlm::llvm::ExhaustiveRegionTreeSequentializer sequentializer(*test.GetLambdaNode().subregion());
+  auto & lambdaRegion = *test.GetLambdaNode().subregion();
+  auto sequentializer =
+      jlm::llvm::CreateExhaustiveRegionTreeSequentializer(*test.GetLambdaNode().subregion());
   assert(sequentializer.HasMoreSequentializations());
 
-  auto & regionSequentializer = sequentializer.GetRegionSequentializer(*test.GetLambdaNode().subregion());
   while (sequentializer.HasMoreSequentializations())
   {
-    auto sequentialization = regionSequentializer.GetSequentialization();
+    auto sequentialization = sequentializer.GetSequentialization(lambdaRegion);
     for (const auto & node : sequentialization)
     {
       std::cout << node->GetOperation().debug_string() << std::endl;

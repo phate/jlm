@@ -129,9 +129,8 @@ public:
 
 RvsdgToIpGraphConverter::~RvsdgToIpGraphConverter() = default;
 
-RvsdgToIpGraphConverter::RvsdgToIpGraphConverter(
-    const std::shared_ptr<RegionTreeSequentializer> & regionSequentializer)
-    : RegionTreeSequentializer_(regionSequentializer)
+RvsdgToIpGraphConverter::RvsdgToIpGraphConverter(RegionTreeSequentializer & regionSequentializer)
+    : RegionTreeSequentializer_(&regionSequentializer)
 {}
 
 std::unique_ptr<data_node_init>
@@ -179,8 +178,7 @@ RvsdgToIpGraphConverter::ConvertRegion(rvsdg::Region & region)
   Context_->GetLastProcessedBasicBlock()->add_outedge(entryBlock);
   Context_->SetLastProcessedBasicBlock(entryBlock);
 
-  auto sequentialization =
-      RegionTreeSequentializer_->GetRegionSequentializer(region).GetSequentialization();
+  const auto sequentialization = RegionTreeSequentializer_->GetSequentialization(region);
   for (const auto & node : sequentialization)
     ConvertIntraProceduralNode(*node);
 
@@ -721,7 +719,7 @@ std::unique_ptr<ipgraph_module>
 RvsdgToIpGraphConverter::CreateAndConvertModule(
     RvsdgModule & rvsdgModule,
     util::StatisticsCollector & statisticsCollector,
-    const std::shared_ptr<RegionTreeSequentializer> & regionSequentializer)
+    RegionTreeSequentializer & regionSequentializer)
 {
   RvsdgToIpGraphConverter converter(regionSequentializer);
   return converter.ConvertModule(rvsdgModule, statisticsCollector);

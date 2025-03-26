@@ -53,8 +53,7 @@ class RvsdgToIpGraphConverter final
 public:
   ~RvsdgToIpGraphConverter();
 
-  explicit RvsdgToIpGraphConverter(
-      const std::shared_ptr<RegionTreeSequentializer> & regionSequentializer);
+  explicit RvsdgToIpGraphConverter(RegionTreeSequentializer & regionSequentializer);
 
   RvsdgToIpGraphConverter(const RvsdgToIpGraphConverter &) = delete;
 
@@ -73,7 +72,7 @@ public:
   CreateAndConvertModule(
       RvsdgModule & rvsdgModule,
       util::StatisticsCollector & statisticsCollector,
-      const std::shared_ptr<RegionTreeSequentializer> & regionSequentializer);
+      RegionTreeSequentializer & regionSequentializer);
 
 private:
   void
@@ -123,7 +122,7 @@ private:
 
   std::unique_ptr<Context> Context_;
 
-  std::shared_ptr<RegionTreeSequentializer> RegionTreeSequentializer_;
+  RegionTreeSequentializer * RegionTreeSequentializer_;
 };
 
 }

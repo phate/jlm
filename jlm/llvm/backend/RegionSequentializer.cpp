@@ -125,17 +125,12 @@ IdempotentRegionSequentializer::HasMoreSequentializations() const noexcept
 
 RegionTreeSequentializer::~RegionTreeSequentializer() noexcept = default;
 
-RegionTreeSequentializer::RegionTreeSequentializer() = default;
-
-IdempotentRegionTreeSequentializer::~IdempotentRegionTreeSequentializer() noexcept = default;
-
-IdempotentRegionTreeSequentializer::IdempotentRegionTreeSequentializer(rvsdg::Region & region)
-{
-  InitializeSequentializers(region);
-}
+RegionTreeSequentializer::RegionTreeSequentializer(SequentializerMap sequentializerMap)
+    : Sequentializers_(std::move(sequentializerMap))
+{}
 
 void
-IdempotentRegionTreeSequentializer::ComputeNextSequentializations()
+RegionTreeSequentializer::ComputeNextSequentializations()
 {
   for (auto & [region, sequentializer] : Sequentializers_)
   {
@@ -143,15 +138,8 @@ IdempotentRegionTreeSequentializer::ComputeNextSequentializations()
   }
 }
 
-RegionSequentializer &
-IdempotentRegionTreeSequentializer::GetRegionSequentializer(rvsdg::Region & region)
-{
-  JLM_ASSERT(Sequentializers_.find(&region) != Sequentializers_.end());
-  return *Sequentializers_[&region];
-}
-
 bool
-IdempotentRegionTreeSequentializer::HasMoreSequentializations() const noexcept
+RegionTreeSequentializer::HasMoreSequentializations() const noexcept
 {
   for (auto & [_, sequentializer] : Sequentializers_)
   {
@@ -162,79 +150,56 @@ IdempotentRegionTreeSequentializer::HasMoreSequentializations() const noexcept
   return false;
 }
 
-void
-IdempotentRegionTreeSequentializer::InitializeSequentializers(rvsdg::Region & region)
-{
-  auto sequentializer = std::make_unique<IdempotentRegionSequentializer>(region);
-
-  for (auto & node : region.Nodes())
-  {
-    if (const auto structuralNode = dynamic_cast<const rvsdg::StructuralNode *>(&node))
-    {
-      for (size_t n = 0; n < structuralNode->nsubregions(); n++)
-      {
-        const auto subregion = structuralNode->subregion(n);
-        InitializeSequentializers(*subregion);
-      }
-    }
-  }
-
-  Sequentializers_[&region] = std::move(sequentializer);
-}
-
-ExhaustiveRegionTreeSequentializer::~ExhaustiveRegionTreeSequentializer() noexcept = default;
-
-ExhaustiveRegionTreeSequentializer::ExhaustiveRegionTreeSequentializer(rvsdg::Region & region)
-{
-  InitializeSequentializers(region);
-}
-
-void
-ExhaustiveRegionTreeSequentializer::InitializeSequentializers(rvsdg::Region & region)
-{
-  auto sequentializer = std::make_unique<ExhaustiveRegionSequentializer>(region);
-
-  for (auto & node : region.Nodes())
-  {
-    if (const auto structuralNode = dynamic_cast<const rvsdg::StructuralNode *>(&node))
-    {
-      for (size_t n = 0; n < structuralNode->nsubregions(); n++)
-      {
-        const auto subregion = structuralNode->subregion(n);
-        InitializeSequentializers(*subregion);
-      }
-    }
-  }
-
-  Sequentializers_[&region] = std::move(sequentializer);
-}
-
-void
-ExhaustiveRegionTreeSequentializer::ComputeNextSequentializations()
-{
-  for (auto & [region, sequentializer] : Sequentializers_)
-  {
-    sequentializer->ComputeNextSequentialization();
-  }
-}
-
-RegionSequentializer &
-ExhaustiveRegionTreeSequentializer::GetRegionSequentializer(rvsdg::Region & region)
+Sequentialization
+RegionTreeSequentializer::GetSequentialization(rvsdg::Region & region)
 {
   JLM_ASSERT(Sequentializers_.find(&region) != Sequentializers_.end());
-  return *Sequentializers_[&region];
+  return Sequentializers_[&region]->GetSequentialization();
 }
 
-bool
-ExhaustiveRegionTreeSequentializer::HasMoreSequentializations() const noexcept
+template<class TRegionSequentializer>
+void
+InitializeUniformRegionTreeSequentializer(
+    rvsdg::Region & region,
+    SequentializerMap & sequentializerMap)
 {
-  for (auto & [_, sequentializer] : Sequentializers_)
+  auto sequentializer = std::make_unique<TRegionSequentializer>(region);
+
+  for (auto & node : region.Nodes())
   {
-    if (sequentializer->HasMoreSequentializations())
-      return true;
+    if (const auto structuralNode = dynamic_cast<const rvsdg::StructuralNode *>(&node))
+    {
+      for (size_t n = 0; n < structuralNode->nsubregions(); n++)
+      {
+        const auto subregion = structuralNode->subregion(n);
+        InitializeUniformRegionTreeSequentializer<TRegionSequentializer>(
+            *subregion,
+            sequentializerMap);
+      }
+    }
   }
 
-  return false;
+  sequentializerMap[&region] = std::move(sequentializer);
+}
+
+RegionTreeSequentializer
+CreateIdempotentRegionTreeSequentializer(rvsdg::Region & rootRegion)
+{
+  SequentializerMap sequentializerMap;
+  InitializeUniformRegionTreeSequentializer<IdempotentRegionSequentializer>(
+      rootRegion,
+      sequentializerMap);
+  return RegionTreeSequentializer(std::move(sequentializerMap));
+}
+
+RegionTreeSequentializer
+CreateExhaustiveRegionTreeSequentializer(rvsdg::Region & rootRegion)
+{
+  SequentializerMap sequentializerMap;
+  InitializeUniformRegionTreeSequentializer<ExhaustiveRegionSequentializer>(
+      rootRegion,
+      sequentializerMap);
+  return RegionTreeSequentializer(std::move(sequentializerMap));
 }
 
 }

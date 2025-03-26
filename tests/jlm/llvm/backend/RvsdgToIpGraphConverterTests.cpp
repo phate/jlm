@@ -50,7 +50,7 @@ GammaWithMatch()
   // Act
   StatisticsCollector statisticsCollector;
   auto sequentializer =
-      std::make_shared<IdempotentRegionTreeSequentializer>(rvsdgModule.Rvsdg().GetRootRegion());
+      CreateIdempotentRegionTreeSequentializer(rvsdgModule.Rvsdg().GetRootRegion());
   auto module = RvsdgToIpGraphConverter::CreateAndConvertModule(
       rvsdgModule,
       statisticsCollector,
@@ -107,7 +107,7 @@ GammaWithoutMatch()
   // Act
   StatisticsCollector statisticsCollector;
   auto sequentializer =
-      std::make_shared<IdempotentRegionTreeSequentializer>(rvsdgModule.Rvsdg().GetRootRegion());
+      CreateIdempotentRegionTreeSequentializer(rvsdgModule.Rvsdg().GetRootRegion());
   auto module = RvsdgToIpGraphConverter::CreateAndConvertModule(
       rvsdgModule,
       statisticsCollector,
@@ -169,7 +169,7 @@ EmptyGammaWithThreeSubregions()
   // Act
   StatisticsCollector statisticsCollector;
   auto sequentializer =
-      std::make_shared<IdempotentRegionTreeSequentializer>(rvsdgModule.Rvsdg().GetRootRegion());
+      CreateIdempotentRegionTreeSequentializer(rvsdgModule.Rvsdg().GetRootRegion());
   auto module = RvsdgToIpGraphConverter::CreateAndConvertModule(
       rvsdgModule,
       statisticsCollector,
@@ -227,7 +227,7 @@ PartialEmptyGamma()
   // Act
   StatisticsCollector statisticsCollector;
   auto sequentializer =
-      std::make_shared<IdempotentRegionTreeSequentializer>(rvsdgModule.Rvsdg().GetRootRegion());
+      CreateIdempotentRegionTreeSequentializer(rvsdgModule.Rvsdg().GetRootRegion());
   auto module = RvsdgToIpGraphConverter::CreateAndConvertModule(
       rvsdgModule,
       statisticsCollector,
@@ -299,8 +299,7 @@ RecursiveData()
 
   // Act
   jlm::util::StatisticsCollector statisticsCollector;
-  auto sequentializer =
-      std::make_shared<IdempotentRegionTreeSequentializer>(rm.Rvsdg().GetRootRegion());
+  auto sequentializer = CreateIdempotentRegionTreeSequentializer(rm.Rvsdg().GetRootRegion());
   auto module =
       RvsdgToIpGraphConverter::CreateAndConvertModule(rm, statisticsCollector, sequentializer);
   print(*module, stdout);
