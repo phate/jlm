@@ -1383,3 +1383,149 @@ TestFree()
   return 0;
 }
 JLM_UNIT_TEST_REGISTER("jlm/mlir/TestMlirFreeGen", TestFree)
+
+static int
+TestFunctionGraphImport()
+{
+  using namespace jlm::llvm;
+  using namespace mlir::rvsdg;
+
+  auto rvsdgModule = RvsdgModule::Create(jlm::util::filepath(""), "", "");
+  auto graph = &rvsdgModule->Rvsdg();
+
+  {
+    auto functionType = jlm::rvsdg::FunctionType::Create(
+        { IOStateType::Create(), MemoryStateType::Create(), PointerType::Create() },
+        { IOStateType::Create(), MemoryStateType::Create() });
+
+      jlm::llvm::GraphImport::Create(
+          *graph,
+          functionType,
+          functionType,
+          "test",
+          linkage::external_linkage);
+
+    // Convert the RVSDG to MLIR
+    std::cout << "Convert to MLIR" << std::endl;
+    jlm::mlir::JlmToMlirConverter mlirgen;
+    auto omega = mlirgen.ConvertModule(*rvsdgModule);
+
+    // Validate the generated MLIR
+    std::cout << "Validate MLIR" << std::endl;
+    auto & omegaRegion = omega.getRegion();
+    auto & omegaBlock = omegaRegion.front();
+    auto & mlirOp = omegaBlock.front();
+
+    assert(mlir::isa<mlir::rvsdg::OmegaArgument>(mlirOp));
+
+    auto mlirOmegaArgument = mlir::cast<mlir::rvsdg::OmegaArgument>(mlirOp);
+
+    auto valueType = mlirOmegaArgument.getValueType();
+    auto linkage = mlirOmegaArgument.getLinkage();
+    auto name = mlirOmegaArgument.getName();
+
+    auto mlirFunctionType = valueType.dyn_cast<mlir::FunctionType>();
+    assert(mlirFunctionType);
+    assert(mlirFunctionType.getNumInputs() == 3);
+    assert(mlirFunctionType.getNumResults() == 2);
+    assert(mlir::isa<mlir::rvsdg::IOStateEdgeType>(mlirFunctionType.getInput(0)));
+    assert(mlir::isa<mlir::rvsdg::MemStateEdgeType>(mlirFunctionType.getInput(1)));
+    assert(mlir::isa<mlir::LLVM::LLVMPointerType>(mlirFunctionType.getInput(2)));
+    assert(mlir::isa<mlir::rvsdg::IOStateEdgeType>(mlirFunctionType.getResult(0)));
+    assert(mlir::isa<mlir::rvsdg::MemStateEdgeType>(mlirFunctionType.getResult(1)));
+    assert(linkage == "external_linkage");
+    assert(name == "test");
+
+    // // Convert the MLIR to RVSDG and check the result
+    std::cout << "Converting MLIR to RVSDG" << std::endl;
+    std::unique_ptr<mlir::Block> rootBlock = std::make_unique<mlir::Block>();
+    rootBlock->push_back(omega);
+    auto rvsdgModule = jlm::mlir::MlirToJlmConverter::CreateAndConvert(rootBlock);
+    auto region = &rvsdgModule->Rvsdg().GetRootRegion();
+
+    {
+      using namespace jlm::llvm;
+
+      assert(region->nnodes() == 0);
+
+      assert(region->graph()->GetRootRegion().narguments() == 1);
+      auto arg = region->graph()->GetRootRegion().argument(0);
+      auto imp = dynamic_cast<jlm::llvm::GraphImport *>(arg);
+      assert(imp);
+      assert(imp->Name() == "test");
+      assert(imp->Linkage() == linkage::external_linkage);
+      assert(*imp->ValueType() == *functionType);
+      assert(*imp->ImportedType() == *functionType);
+    }
+  }
+  return 0;
+}
+JLM_UNIT_TEST_REGISTER("jlm/mlir/TestMlirFunctionGraphImportGen", TestFunctionGraphImport)
+
+static int
+TestPointerGraphImport()
+{
+  using namespace jlm::llvm;
+  using namespace mlir::rvsdg;
+
+  auto rvsdgModule = RvsdgModule::Create(jlm::util::filepath(""), "", "");
+  auto graph = &rvsdgModule->Rvsdg();
+
+  {
+    jlm::llvm::GraphImport::Create(
+        *graph,
+        jlm::rvsdg::bittype::Create(32),
+        PointerType::Create(),
+        "test",
+        linkage::external_linkage);
+
+    // Convert the RVSDG to MLIR
+    std::cout << "Convert to MLIR" << std::endl;
+    jlm::mlir::JlmToMlirConverter mlirgen;
+    auto omega = mlirgen.ConvertModule(*rvsdgModule);
+
+    // Validate the generated MLIR
+    std::cout << "Validate MLIR" << std::endl;
+    auto & omegaRegion = omega.getRegion();
+    auto & omegaBlock = omegaRegion.front();
+    auto & mlirOp = omegaBlock.front();
+
+    assert(mlir::isa<mlir::rvsdg::OmegaArgument>(mlirOp));
+
+    auto mlirOmegaArgument = mlir::cast<mlir::rvsdg::OmegaArgument>(mlirOp);
+
+    auto valueType = mlirOmegaArgument.getValueType();
+    auto linkage = mlirOmegaArgument.getLinkage();
+    auto name = mlirOmegaArgument.getName();
+
+    auto mlirIntType = valueType.dyn_cast<mlir::IntegerType>();
+    assert(mlirIntType);
+    assert(mlirIntType.getWidth() == 32);
+    assert(linkage == "external_linkage");
+    assert(name == "test");
+
+    // // Convert the MLIR to RVSDG and check the result
+    std::cout << "Converting MLIR to RVSDG" << std::endl;
+    std::unique_ptr<mlir::Block> rootBlock = std::make_unique<mlir::Block>();
+    rootBlock->push_back(omega);
+    auto rvsdgModule = jlm::mlir::MlirToJlmConverter::CreateAndConvert(rootBlock);
+    auto region = &rvsdgModule->Rvsdg().GetRootRegion();
+
+    {
+      using namespace jlm::llvm;
+
+      assert(region->nnodes() == 0);
+
+      assert(region->graph()->GetRootRegion().narguments() == 1);
+      auto arg = region->graph()->GetRootRegion().argument(0);
+      auto imp = dynamic_cast<jlm::llvm::GraphImport *>(arg);
+      assert(imp);
+      assert(imp->Name() == "test");
+      assert(imp->Linkage() == linkage::external_linkage);
+      assert(*imp->ValueType() == *jlm::rvsdg::bittype::Create(32));
+      assert(*imp->ImportedType() == *PointerType::Create());
+    }
+  }
+  return 0;
+}
+JLM_UNIT_TEST_REGISTER("jlm/mlir/TestMlirPointerGraphImportGen", TestPointerGraphImport)
