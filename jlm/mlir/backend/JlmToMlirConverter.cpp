@@ -795,6 +795,10 @@ JlmToMlirConverter::ConvertType(const rvsdg::Type & type)
         ConvertType(arrayType->element_type()),
         arrayType->nelements());
   }
+  else if (auto functionType = dynamic_cast<const jlm::rvsdg::FunctionType *>(&type))
+  {
+    return ConvertFunctionType(*functionType);
+  }
   else if (rvsdg::is<const llvm::VariableArgumentType>(type))
   {
     return Builder_->getType<::mlir::jlm::VarargListType>();

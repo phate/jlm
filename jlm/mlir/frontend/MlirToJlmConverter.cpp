@@ -62,12 +62,15 @@ MlirToJlmConverter::ConvertOmega(::mlir::rvsdg::OmegaNode & omegaNode)
     if (auto argument = ::mlir::dyn_cast<::mlir::rvsdg::OmegaArgument>(operation))
     {
       auto valueType = argument.getValueType();
-      std::shared_ptr<rvsdg::Type> jlmValueType = ConvertType(valueType);
+      std::shared_ptr<rvsdg::Type> jlmType = ConvertType(valueType);
+      auto jlmValueType = std::dynamic_pointer_cast<const rvsdg::ValueType>(jlmType);
+      auto pointerType = jlm::llvm::PointerType::Create();
 
       jlm::llvm::GraphImport::Create(
           graph,
-          std::dynamic_pointer_cast<rvsdg::ValueType>(jlmValueType),
-          std::dynamic_pointer_cast<rvsdg::ValueType>(jlmValueType),
+          jlmValueType,
+          jlm::rvsdg::is<rvsdg::FunctionType>(jlmValueType) ? jlmValueType
+                                                            : pointerType,
           argument.getNameAttr().cast<::mlir::StringAttr>().str(),
           llvm::FromString(argument.getLinkageAttr().cast<::mlir::StringAttr>().str()));
     }
@@ -860,6 +863,20 @@ MlirToJlmConverter::ConvertType(::mlir::Type & type)
     std::shared_ptr<rvsdg::Type> elementType = ConvertType(mlirElementType);
     auto elemenValueType = std::dynamic_pointer_cast<const rvsdg::ValueType>(elementType);
     return std::make_unique<llvm::ArrayType>(elemenValueType, arrayType.getNumElements());
+  }
+  else if (auto functionType = ::mlir::dyn_cast<::mlir::FunctionType>(type))
+  {
+    std::vector<std::shared_ptr<const rvsdg::Type>> argumentTypes;
+    for (auto argumentType : functionType.getInputs())
+    {
+      argumentTypes.push_back(ConvertType(argumentType));
+    }
+    std::vector<std::shared_ptr<const rvsdg::Type>> resultTypes;
+    for (auto resultType : functionType.getResults())
+    {
+      resultTypes.push_back(ConvertType(resultType));
+    }
+    return std::make_unique<rvsdg::FunctionType>(argumentTypes, resultTypes);
   }
   else
   {
