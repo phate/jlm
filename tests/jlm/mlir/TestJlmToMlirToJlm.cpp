@@ -1398,12 +1398,12 @@ TestFunctionGraphImport()
         { IOStateType::Create(), MemoryStateType::Create(), PointerType::Create() },
         { IOStateType::Create(), MemoryStateType::Create() });
 
-      jlm::llvm::GraphImport::Create(
-          *graph,
-          functionType,
-          functionType,
-          "test",
-          linkage::external_linkage);
+    jlm::llvm::GraphImport::Create(
+        *graph,
+        functionType,
+        functionType,
+        "test",
+        linkage::external_linkage);
 
     // Convert the RVSDG to MLIR
     std::cout << "Convert to MLIR" << std::endl;

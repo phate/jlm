@@ -69,8 +69,7 @@ MlirToJlmConverter::ConvertOmega(::mlir::rvsdg::OmegaNode & omegaNode)
       jlm::llvm::GraphImport::Create(
           graph,
           jlmValueType,
-          jlm::rvsdg::is<rvsdg::FunctionType>(jlmValueType) ? jlmValueType
-                                                            : pointerType,
+          jlm::rvsdg::is<rvsdg::FunctionType>(jlmValueType) ? jlmValueType : pointerType,
           argument.getNameAttr().cast<::mlir::StringAttr>().str(),
           llvm::FromString(argument.getLinkageAttr().cast<::mlir::StringAttr>().str()));
     }
