@@ -115,12 +115,7 @@ TestTheta()
   jlm::hls::RemoveUnusedStates(*rvsdgModule);
 
   // Assert
-  // This assert is only here so that we do not forget this test when we refactor the code
-  assert(thetaNode->ninputs() == 1);
-
-  // FIXME: This transformation is broken for theta nodes. For the setup above, it
-  // removes all inputs/outputs, except the predicate. However, the only
-  // input and output it should remove are input 1 and output 0, respectively.
+  assert(thetaNode->ninputs() == 3);
 }
 
 static void
