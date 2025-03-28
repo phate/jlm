@@ -1291,3 +1291,95 @@ TestTrunc()
   return 0;
 }
 JLM_UNIT_TEST_REGISTER("jlm/mlir/TestMlirTruncGen", TestTrunc)
+
+static int
+TestFree()
+{
+  using namespace jlm::llvm;
+  using namespace mlir::rvsdg;
+
+  auto rvsdgModule = RvsdgModule::Create(jlm::util::filepath(""), "", "");
+  auto graph = &rvsdgModule->Rvsdg();
+
+  {
+    auto functionType = jlm::rvsdg::FunctionType::Create(
+        { IOStateType::Create(), MemoryStateType::Create(), PointerType::Create() },
+        {});
+    auto lambda = jlm::rvsdg::LambdaNode::Create(
+        graph->GetRootRegion(),
+        LlvmLambdaOperation::Create(functionType, "test", linkage::external_linkage));
+    auto iOStateArgument = lambda->GetFunctionArguments().at(0);
+    auto memoryStateArgument = lambda->GetFunctionArguments().at(1);
+    auto pointerArgument = lambda->GetFunctionArguments().at(2);
+
+    // Create load operation
+    auto freeOp =
+        jlm::llvm::FreeOperation::Create(pointerArgument, { memoryStateArgument }, iOStateArgument);
+    lambda->finalize({});
+
+    // Convert the RVSDG to MLIR
+    std::cout << "Convert to MLIR" << std::endl;
+    jlm::mlir::JlmToMlirConverter mlirgen;
+    auto omega = mlirgen.ConvertModule(*rvsdgModule);
+
+    // Validate the generated MLIR
+    std::cout << "Validate MLIR" << std::endl;
+    auto & omegaRegion = omega.getRegion();
+    auto & omegaBlock = omegaRegion.front();
+    auto & mlirLambda = omegaBlock.front();
+    auto & mlirLambdaRegion = mlirLambda.getRegion(0);
+    auto & mlirLambdaBlock = mlirLambdaRegion.front();
+    auto & mlirOp = mlirLambdaBlock.front();
+
+    assert(mlir::isa<mlir::jlm::Free>(mlirOp));
+
+    auto mlirFree = mlir::cast<mlir::jlm::Free>(mlirOp);
+    assert(mlirFree.getNumOperands() == 3);
+    assert(mlirFree.getNumResults() == 2);
+
+    auto inputType1 = mlirFree.getOperand(0).getType();
+    auto inputType2 = mlirFree.getOperand(1).getType();
+    auto inputType3 = mlirFree.getOperand(2).getType();
+    assert(mlir::isa<mlir::LLVM::LLVMPointerType>(inputType1));
+    assert(mlir::isa<mlir::rvsdg::MemStateEdgeType>(inputType2));
+    assert(mlir::isa<mlir::rvsdg::IOStateEdgeType>(inputType3));
+
+    auto outputType1 = mlirFree.getResult(0).getType();
+    auto outputType2 = mlirFree.getResult(1).getType();
+    assert(mlir::isa<mlir::rvsdg::MemStateEdgeType>(outputType1));
+    assert(mlir::isa<mlir::rvsdg::IOStateEdgeType>(outputType2));
+
+    // // Convert the MLIR to RVSDG and check the result
+    std::cout << "Converting MLIR to RVSDG" << std::endl;
+    std::unique_ptr<mlir::Block> rootBlock = std::make_unique<mlir::Block>();
+    rootBlock->push_back(omega);
+    auto rvsdgModule = jlm::mlir::MlirToJlmConverter::CreateAndConvert(rootBlock);
+    auto region = &rvsdgModule->Rvsdg().GetRootRegion();
+
+    {
+      using namespace jlm::llvm;
+
+      assert(region->nnodes() == 1);
+      auto convertedLambda =
+          jlm::util::AssertedCast<jlm::rvsdg::LambdaNode>(region->Nodes().begin().ptr());
+      assert(is<jlm::rvsdg::LambdaOperation>(convertedLambda));
+
+      assert(convertedLambda->subregion()->nnodes() == 1);
+      assert(is<FreeOperation>(convertedLambda->subregion()->Nodes().begin()->GetOperation()));
+      auto convertedFree = dynamic_cast<const FreeOperation *>(
+          &convertedLambda->subregion()->Nodes().begin()->GetOperation());
+
+      assert(convertedFree->narguments() == 3);
+      assert(convertedFree->nresults() == 2);
+
+      assert(is<jlm::llvm::PointerType>(convertedFree->argument(0)));
+      assert(is<jlm::llvm::MemoryStateType>(convertedFree->argument(1)));
+      assert(is<jlm::llvm::IOStateType>(convertedFree->argument(2)));
+
+      assert(is<jlm::llvm::MemoryStateType>(convertedFree->result(0)));
+      assert(is<jlm::llvm::IOStateType>(convertedFree->result(1)));
+    }
+  }
+  return 0;
+}
+JLM_UNIT_TEST_REGISTER("jlm/mlir/TestMlirFreeGen", TestFree)
