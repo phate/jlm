@@ -11,7 +11,7 @@
 namespace jlm::llvm
 {
 
-RegionSequentializer::~RegionSequentializer() = default;
+RegionSequentializer::~RegionSequentializer() noexcept = default;
 
 RegionSequentializer::RegionSequentializer(rvsdg::Region & region)
     : Region_(&region)
