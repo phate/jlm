@@ -1421,11 +1421,15 @@ TestFunctionGraphImport()
     auto mlirOmegaArgument = mlir::cast<mlir::rvsdg::OmegaArgument>(mlirOp);
 
     auto valueType = mlirOmegaArgument.getValueType();
+    auto importedValueType = mlirOmegaArgument.getImportedValue().getType();
     auto linkage = mlirOmegaArgument.getLinkage();
     auto name = mlirOmegaArgument.getName();
 
     auto mlirFunctionType = valueType.dyn_cast<mlir::FunctionType>();
+    auto mlirImportedFunctionType = importedValueType.dyn_cast<mlir::FunctionType>();
     assert(mlirFunctionType);
+    assert(mlirImportedFunctionType);
+    assert(mlirFunctionType == mlirImportedFunctionType);
     assert(mlirFunctionType.getNumInputs() == 3);
     assert(mlirFunctionType.getNumResults() == 2);
     assert(mlir::isa<mlir::rvsdg::IOStateEdgeType>(mlirFunctionType.getInput(0)));
@@ -1495,8 +1499,11 @@ TestPointerGraphImport()
     auto mlirOmegaArgument = mlir::cast<mlir::rvsdg::OmegaArgument>(mlirOp);
 
     auto valueType = mlirOmegaArgument.getValueType();
+    auto importedValueType = mlirOmegaArgument.getImportedValue().getType();
     auto linkage = mlirOmegaArgument.getLinkage();
     auto name = mlirOmegaArgument.getName();
+
+    assert(mlir::isa<mlir::LLVM::LLVMPointerType>(importedValueType));
 
     auto mlirIntType = valueType.dyn_cast<mlir::IntegerType>();
     assert(mlirIntType);

@@ -74,9 +74,10 @@ JlmToMlirConverter::ConvertModule(const llvm::RvsdgModule & rvsdgModule)
     auto nameAttr = Builder_->getStringAttr(imp->Name());
     auto linkageAttr = Builder_->getStringAttr(llvm::ToString(imp->Linkage()));
     auto typeAttr = ConvertType(*imp->ValueType());
+    auto importedValueType = ConvertType(*imp->ImportedType());
     omegaBlock.push_back(Builder_->create<::mlir::rvsdg::OmegaArgument>(
         Builder_->getUnknownLoc(),
-        Builder_->getType<::mlir::LLVM::LLVMPointerType>(),
+        importedValueType,
         typeAttr,
         linkageAttr,
         nameAttr));

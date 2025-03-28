@@ -62,14 +62,14 @@ MlirToJlmConverter::ConvertOmega(::mlir::rvsdg::OmegaNode & omegaNode)
     if (auto argument = ::mlir::dyn_cast<::mlir::rvsdg::OmegaArgument>(operation))
     {
       auto valueType = argument.getValueType();
-      std::shared_ptr<rvsdg::Type> jlmType = ConvertType(valueType);
-      auto jlmValueType = std::dynamic_pointer_cast<const rvsdg::ValueType>(jlmType);
-      auto pointerType = jlm::llvm::PointerType::Create();
+      auto importedType = argument.getImportedValue().getType();
+      std::shared_ptr<rvsdg::Type> jlmValueType = ConvertType(valueType);
+      std::shared_ptr<rvsdg::Type> jlmImportedType = ConvertType(importedType);
 
       jlm::llvm::GraphImport::Create(
           graph,
-          jlmValueType,
-          jlm::rvsdg::is<rvsdg::FunctionType>(jlmValueType) ? jlmValueType : pointerType,
+          std::dynamic_pointer_cast<const rvsdg::ValueType>(jlmValueType),
+          std::dynamic_pointer_cast<const rvsdg::ValueType>(jlmImportedType),
           argument.getNameAttr().cast<::mlir::StringAttr>().str(),
           llvm::FromString(argument.getLinkageAttr().cast<::mlir::StringAttr>().str()));
     }
