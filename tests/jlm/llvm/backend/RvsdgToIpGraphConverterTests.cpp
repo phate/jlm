@@ -123,6 +123,83 @@ JLM_UNIT_TEST_REGISTER(
     GammaWithoutMatch)
 
 static int
+EmptyGammaWithTwoSubregions()
+{
+  using namespace jlm::llvm;
+  using namespace jlm::tests;
+  using namespace jlm::util;
+
+  // Arrange
+  auto valueType = valuetype::Create();
+  auto functionType = jlm::rvsdg::FunctionType::Create(
+      { jlm::rvsdg::bittype::Create(32), valueType, valueType },
+      { valueType });
+
+  RvsdgModule rvsdgModule(filepath(""), "", "");
+
+  const auto lambdaNode = jlm::rvsdg::LambdaNode::Create(
+      rvsdgModule.Rvsdg().GetRootRegion(),
+      LlvmLambdaOperation::Create(functionType, "lambdaOutput", linkage::external_linkage));
+  const auto trueValue = lambdaNode->GetFunctionArguments()[1];
+  const auto falseValue = lambdaNode->GetFunctionArguments()[2];
+
+  const auto matchResult = match(32, { { 0, 0 } }, 1, 2, lambdaNode->GetFunctionArguments()[0]);
+
+  const auto gammaNode0 = jlm::rvsdg::GammaNode::create(matchResult, 2);
+  const auto & c0 = jlm::rvsdg::CreateOpNode<jlm::rvsdg::ctlconstant_op>(
+      *gammaNode0->subregion(0),
+      jlm::rvsdg::ctlvalue_repr(0, 2));
+  const auto & c1 = jlm::rvsdg::CreateOpNode<jlm::rvsdg::ctlconstant_op>(
+      *gammaNode0->subregion(1),
+      jlm::rvsdg::ctlvalue_repr(1, 2));
+  auto c = gammaNode0->AddExitVar({ c0.output(0), c1.output(0) });
+
+  const auto gammaNode1 = jlm::rvsdg::GammaNode::create(c.output, 2);
+  auto [inputTrue, branchArgumentTrue] = gammaNode1->AddEntryVar(trueValue);
+  auto [inputFalse, branchArgumentFalse] = gammaNode1->AddEntryVar(falseValue);
+  auto [_, gammaOutput] = gammaNode1->AddExitVar({ branchArgumentFalse[0], branchArgumentTrue[1] });
+
+  const auto lambdaOutput = lambdaNode->finalize({ gammaOutput });
+  jlm::llvm::GraphExport::Create(*lambdaOutput, "");
+
+  view(rvsdgModule.Rvsdg(), stdout);
+
+  // Act
+  StatisticsCollector statisticsCollector;
+  const auto module =
+      RvsdgToIpGraphConverter::CreateAndConvertModule(rvsdgModule, statisticsCollector);
+  print(*module, stdout);
+
+  // Assert
+  const auto & ipGraph = module->ipgraph();
+  assert(ipGraph.nnodes() == 1);
+
+  const auto controlFlowGraph = dynamic_cast<const function_node &>(*ipGraph.begin()).cfg();
+  assert(is_closed(*controlFlowGraph));
+
+  {
+    const auto exitNode = controlFlowGraph->exit();
+    const auto entryNode = controlFlowGraph->entry();
+    const auto trueArgument = entryNode->argument(1);
+    const auto falseArgument = entryNode->argument(2);
+    const auto basicBlock = dynamic_cast<basic_block *>(exitNode->InEdges().begin()->source());
+
+    const auto selectTac = basicBlock->last();
+    assert(is<SelectOperation>(selectTac));
+    const auto trueAlternative = selectTac->operand(1);
+    const auto falseAlternative = selectTac->operand(2);
+    assert(trueAlternative == trueArgument);
+    assert(falseAlternative == falseArgument);
+  }
+
+  return 0;
+}
+
+JLM_UNIT_TEST_REGISTER(
+    "jlm/tests/jlm/llvm/backend/RvsdgToIpGraphConverterTests-EmptyGammaWithTwoSubregions",
+    EmptyGammaWithTwoSubregions)
+
+static int
 EmptyGammaWithThreeSubregions()
 {
   using namespace jlm::llvm;
