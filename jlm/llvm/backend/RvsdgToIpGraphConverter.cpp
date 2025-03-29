@@ -296,7 +296,7 @@ RvsdgToIpGraphConverter::ConvertEmptyGammaNode(const rvsdg::GammaNode & gammaNod
       const auto vo1 = Context_->GetVariable(output1);
       basicBlock->append_last(
           ctl2bits_op::create(Context_->GetVariable(predicate), rvsdg::bittype::Create(1)));
-      basicBlock->append_last(SelectOperation::create(basicBlock->last()->result(0), vo0, vo1));
+      basicBlock->append_last(SelectOperation::create(basicBlock->last()->result(0), vo1, vo0));
     }
 
     Context_->InsertVariable(output, basicBlock->last()->result(0));
