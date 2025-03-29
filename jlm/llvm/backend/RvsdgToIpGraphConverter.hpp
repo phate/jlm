@@ -6,6 +6,7 @@
 #ifndef JLM_LLVM_BACKEND_RVSDGTOIPGRAPHCONVERTER_HPP
 #define JLM_LLVM_BACKEND_RVSDGTOIPGRAPHCONVERTER_HPP
 
+#include <jlm/llvm/backend/RegionSequentializer.hpp>
 #include <jlm/rvsdg/theta.hpp>
 
 #include <memory>
@@ -52,7 +53,7 @@ class RvsdgToIpGraphConverter final
 public:
   ~RvsdgToIpGraphConverter();
 
-  RvsdgToIpGraphConverter();
+  explicit RvsdgToIpGraphConverter(RegionTreeSequentializer & regionSequentializer);
 
   RvsdgToIpGraphConverter(const RvsdgToIpGraphConverter &) = delete;
 
@@ -70,17 +71,21 @@ public:
   static std::unique_ptr<ipgraph_module>
   CreateAndConvertModule(
       RvsdgModule & rvsdgModule,
-      util::StatisticsCollector & statisticsCollector);
+      util::StatisticsCollector & statisticsCollector,
+      RegionTreeSequentializer & regionSequentializer);
 
 private:
   void
   ConvertImports(const rvsdg::Graph & graph);
 
   void
-  ConvertNodes(const rvsdg::Graph & graph);
+  ConvertInterProceduralNodes(const rvsdg::Graph & graph);
 
   void
-  ConvertNode(const rvsdg::Node & node);
+  ConvertInterProceduralNode(const rvsdg::Node & node);
+
+  void
+  ConvertIntraProceduralNode(const rvsdg::Node & node);
 
   void
   ConvertDeltaNode(const delta::node & deltaNode);
@@ -116,6 +121,8 @@ private:
   RequiresSsaPhiOperation(const rvsdg::ThetaNode::LoopVar & loopVar, const variable & v);
 
   std::unique_ptr<Context> Context_;
+
+  RegionTreeSequentializer * RegionTreeSequentializer_;
 };
 
 }
