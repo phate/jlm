@@ -292,11 +292,14 @@ RvsdgToIpGraphConverter::ConvertEmptyGammaNode(const rvsdg::GammaNode & gammaNod
     }
     else
     {
-      const auto vo0 = Context_->GetVariable(output0);
-      const auto vo1 = Context_->GetVariable(output1);
+      const auto falseAlternative = Context_->GetVariable(output0);
+      const auto trueAlternative = Context_->GetVariable(output1);
       basicBlock->append_last(
           ctl2bits_op::create(Context_->GetVariable(predicate), rvsdg::bittype::Create(1)));
-      basicBlock->append_last(SelectOperation::create(basicBlock->last()->result(0), vo0, vo1));
+      basicBlock->append_last(SelectOperation::create(
+          basicBlock->last()->result(0),
+          trueAlternative,
+          falseAlternative));
     }
 
     Context_->InsertVariable(output, basicBlock->last()->result(0));
