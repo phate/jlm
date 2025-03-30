@@ -1042,7 +1042,7 @@ Steensgaard::AnalyzeSimpleNode(const jlm::rvsdg::SimpleNode & node)
   {
     AnalyzeMemcpy(node);
   }
-  else if (is<ConstantArray>(&node))
+  else if (is<ConstantArrayOperation>(&node))
   {
     AnalyzeConstantArray(node);
   }
@@ -1385,9 +1385,9 @@ Steensgaard::AnalyzeUndef(const jlm::rvsdg::SimpleNode & node)
 }
 
 void
-Steensgaard::AnalyzeConstantArray(const jlm::rvsdg::SimpleNode & node)
+Steensgaard::AnalyzeConstantArray(const rvsdg::SimpleNode & node)
 {
-  JLM_ASSERT(is<ConstantArray>(&node));
+  JLM_ASSERT(is<ConstantArrayOperation>(&node));
 
   auto & output = *node.output(0);
   if (!HasOrContainsPointerType(output))
