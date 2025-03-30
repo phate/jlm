@@ -1765,20 +1765,18 @@ public:
   }
 };
 
-/* sitofp operator */
-
-class sitofp_op final : public rvsdg::UnaryOperation
+class SIToFPOperation final : public rvsdg::UnaryOperation
 {
 public:
-  virtual ~sitofp_op();
+  ~SIToFPOperation() noexcept override;
 
-  inline sitofp_op(
+  SIToFPOperation(
       std::shared_ptr<const jlm::rvsdg::bittype> srctype,
       std::shared_ptr<const FloatingPointType> dsttype)
       : UnaryOperation(std::move(srctype), std::move(dsttype))
   {}
 
-  inline sitofp_op(
+  SIToFPOperation(
       std::shared_ptr<const jlm::rvsdg::Type> srctype,
       std::shared_ptr<const jlm::rvsdg::Type> dsttype)
       : UnaryOperation(srctype, dsttype)
@@ -1819,7 +1817,7 @@ public:
     if (!rt)
       throw jlm::util::error("expected floating point type.");
 
-    sitofp_op op(std::move(st), std::move(rt));
+    SIToFPOperation op(std::move(st), std::move(rt));
     return tac::create(op, { operand });
   }
 };
