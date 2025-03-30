@@ -548,11 +548,10 @@ IpGraphToLlvmConverter::convert(
 
 ::llvm::Value *
 IpGraphToLlvmConverter::convert(
-    const ConstantArray & op,
+    const ConstantArrayOperation & op,
     const std::vector<const variable *> & operands,
     ::llvm::IRBuilder<> &)
 {
-  JLM_ASSERT(is<ConstantArray>(op));
   ::llvm::LLVMContext & llvmContext = Context_->llvm_module().getContext();
   auto & typeConverter = Context_->GetTypeConverter();
 
@@ -1269,9 +1268,9 @@ IpGraphToLlvmConverter::convert_operation(
   {
     return convert_select(op, arguments, builder);
   }
-  if (is<ConstantArray>(op))
+  if (is<ConstantArrayOperation>(op))
   {
-    return convert<ConstantArray>(op, arguments, builder);
+    return convert<ConstantArrayOperation>(op, arguments, builder);
   }
   if (is<ConstantAggregateZeroOperation>(op))
   {

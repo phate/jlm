@@ -1824,14 +1824,12 @@ public:
   }
 };
 
-/* ConstantArray */
-
-class ConstantArray final : public rvsdg::SimpleOperation
+class ConstantArrayOperation final : public rvsdg::SimpleOperation
 {
 public:
-  virtual ~ConstantArray();
+  ~ConstantArrayOperation() noexcept override;
 
-  ConstantArray(const std::shared_ptr<const jlm::rvsdg::ValueType> & type, size_t size)
+  ConstantArrayOperation(const std::shared_ptr<const jlm::rvsdg::ValueType> & type, size_t size)
       : SimpleOperation({ size, type }, { ArrayType::Create(type, size) })
   {
     if (size == 0)
@@ -1869,7 +1867,7 @@ public:
     if (!vt)
       throw jlm::util::error("expected value Type.\n");
 
-    ConstantArray op(vt, elements.size());
+    ConstantArrayOperation op(vt, elements.size());
     return tac::create(op, elements);
   }
 
@@ -1885,7 +1883,8 @@ public:
       throw util::error("Expected value type.\n");
     }
 
-    return rvsdg::CreateOpNode<ConstantArray>(operands, valueType, operands.size()).output(0);
+    return rvsdg::CreateOpNode<ConstantArrayOperation>(operands, valueType, operands.size())
+        .output(0);
   }
 };
 
