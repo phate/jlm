@@ -377,7 +377,7 @@ JlmToMlirConverter::ConvertSimpleNode(
         arrayType,
         inputs);
   }
-  else if (auto zeroOp = dynamic_cast<const llvm::ConstantAggregateZero *>(&operation))
+  else if (auto zeroOp = dynamic_cast<const llvm::ConstantAggregateZeroOperation *>(&operation))
   {
     auto type = ConvertType(*zeroOp->result(0));
     MlirOp = Builder_->create<::mlir::LLVM::ZeroOp>(Builder_->getUnknownLoc(), type);

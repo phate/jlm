@@ -2598,7 +2598,7 @@ PhiWithDeltaTest::SetupRvsdg()
       false);
   auto myArrayArgument = delta->add_ctxvar(myArrayRecVar->argument());
 
-  auto aggregateZero = ConstantAggregateZero::Create(*delta->subregion(), structType);
+  auto aggregateZero = ConstantAggregateZeroOperation::Create(*delta->subregion(), structType);
   auto & constantStruct =
       ConstantStruct::Create(*delta->subregion(), { myArrayArgument }, structType);
   auto constantArray = ConstantArray::Create({ aggregateZero, &constantStruct });
@@ -3109,7 +3109,7 @@ MemcpyTest::SetupRvsdg()
         "",
         false);
 
-    auto constantAggregateZero = ConstantAggregateZero::Create(*delta->subregion(), arrayType);
+    auto constantAggregateZero = ConstantAggregateZeroOperation::Create(*delta->subregion(), arrayType);
 
     auto deltaOutput = delta->finalize(constantAggregateZero);
 

@@ -194,7 +194,7 @@ convert_constantAggregateZero(
   JLM_ASSERT(c->getValueID() == ::llvm::Value::ConstantAggregateZeroVal);
 
   auto type = ctx.GetTypeConverter().ConvertLlvmType(*c->getType());
-  tacs.push_back(ConstantAggregateZero::create(type));
+  tacs.push_back(ConstantAggregateZeroOperation::create(type));
 
   return tacs.back()->result(0);
 }

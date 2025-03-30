@@ -479,7 +479,7 @@ MlirToJlmConverter::ConvertOperation(
   {
     auto type = ZeroOp.getType();
     return rvsdg::output::GetNode(
-        *llvm::ConstantAggregateZero::Create(rvsdgRegion, ConvertType(type)));
+        *llvm::ConstantAggregateZeroOperation::Create(rvsdgRegion, ConvertType(type)));
   }
 
   else if (auto VarArgOp = ::mlir::dyn_cast<::mlir::jlm::CreateVarArgList>(&mlirOperation))

@@ -218,7 +218,7 @@ convert_alloca(rvsdg::Region * region)
       }
       else
       {
-        cout = llvm::ConstantAggregateZero::Create(*db->subregion(), po->ValueType());
+        cout = llvm::ConstantAggregateZeroOperation::Create(*db->subregion(), po->ValueType());
       }
       auto delta = db->finalize(cout);
       jlm::llvm::GraphExport::Create(*delta, delta_name);

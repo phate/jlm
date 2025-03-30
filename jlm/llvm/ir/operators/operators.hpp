@@ -1889,14 +1889,12 @@ public:
   }
 };
 
-/* ConstantAggregateZero operator */
-
-class ConstantAggregateZero final : public rvsdg::SimpleOperation
+class ConstantAggregateZeroOperation final : public rvsdg::SimpleOperation
 {
 public:
-  virtual ~ConstantAggregateZero();
+  ~ConstantAggregateZeroOperation() noexcept override;
 
-  ConstantAggregateZero(std::shared_ptr<const jlm::rvsdg::Type> type)
+  explicit ConstantAggregateZeroOperation(std::shared_ptr<const rvsdg::Type> type)
       : SimpleOperation({}, { type })
   {
     auto st = dynamic_cast<const StructType *>(type.get());
@@ -1918,14 +1916,14 @@ public:
   static std::unique_ptr<llvm::tac>
   create(std::shared_ptr<const jlm::rvsdg::Type> type)
   {
-    ConstantAggregateZero op(std::move(type));
+    const ConstantAggregateZeroOperation op(std::move(type));
     return tac::create(op, {});
   }
 
   static jlm::rvsdg::output *
   Create(rvsdg::Region & region, std::shared_ptr<const jlm::rvsdg::Type> type)
   {
-    return rvsdg::CreateOpNode<ConstantAggregateZero>(region, std::move(type)).output(0);
+    return rvsdg::CreateOpNode<ConstantAggregateZeroOperation>(region, std::move(type)).output(0);
   }
 };
 

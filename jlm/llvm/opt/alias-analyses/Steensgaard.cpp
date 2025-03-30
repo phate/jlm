@@ -1050,7 +1050,7 @@ Steensgaard::AnalyzeSimpleNode(const jlm::rvsdg::SimpleNode & node)
   {
     AnalyzeConstantStruct(node);
   }
-  else if (is<ConstantAggregateZero>(&node))
+  else if (is<ConstantAggregateZeroOperation>(&node))
   {
     AnalyzeConstantAggregateZero(node);
   }
@@ -1357,9 +1357,9 @@ Steensgaard::AnalyzeConstantPointerNull(const jlm::rvsdg::SimpleNode & node)
 }
 
 void
-Steensgaard::AnalyzeConstantAggregateZero(const jlm::rvsdg::SimpleNode & node)
+Steensgaard::AnalyzeConstantAggregateZero(const rvsdg::SimpleNode & node)
 {
-  JLM_ASSERT(is<ConstantAggregateZero>(&node));
+  JLM_ASSERT(is<ConstantAggregateZeroOperation>(&node));
   auto & output = *node.output(0);
 
   if (HasOrContainsPointerType(output))

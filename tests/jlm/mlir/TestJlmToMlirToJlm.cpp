@@ -942,7 +942,7 @@ TestConstantAggregateZero()
   {
     auto bitType = jlm::rvsdg::bittype::Create(32);
     auto arrayType = jlm::llvm::ArrayType::Create(bitType, 2);
-    jlm::llvm::ConstantAggregateZero::Create(graph->GetRootRegion(), arrayType);
+    ConstantAggregateZeroOperation::Create(graph->GetRootRegion(), arrayType);
 
     // Convert the RVSDG to MLIR
     std::cout << "Convert to MLIR" << std::endl;
@@ -973,7 +973,7 @@ TestConstantAggregateZero()
 
       assert(region->nnodes() == 1);
       auto const convertedConstantAggregateZero =
-          jlm::util::AssertedCast<const ConstantAggregateZero>(
+          jlm::util::AssertedCast<const ConstantAggregateZeroOperation>(
               &region->Nodes().begin().ptr()->GetOperation());
       assert(convertedConstantAggregateZero->nresults() == 1);
       assert(convertedConstantAggregateZero->narguments() == 0);
