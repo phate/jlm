@@ -637,7 +637,7 @@ Andersen::AnalyzeSimpleNode(const rvsdg::SimpleNode & node)
     AnalyzeUndef(node);
   else if (is<MemCpyOperation>(op))
     AnalyzeMemcpy(node);
-  else if (is<ConstantArray>(op))
+  else if (is<ConstantArrayOperation>(op))
     AnalyzeConstantArray(node);
   else if (is<ConstantStruct>(op))
     AnalyzeConstantStruct(node);
@@ -864,7 +864,7 @@ Andersen::AnalyzeMemcpy(const rvsdg::SimpleNode & node)
 void
 Andersen::AnalyzeConstantArray(const rvsdg::SimpleNode & node)
 {
-  JLM_ASSERT(is<ConstantArray>(&node));
+  JLM_ASSERT(is<ConstantArrayOperation>(&node));
 
   if (!IsOrContainsPointerType(node.output(0)->type()))
     return;
