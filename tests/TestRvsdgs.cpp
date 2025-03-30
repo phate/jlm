@@ -3109,7 +3109,8 @@ MemcpyTest::SetupRvsdg()
         "",
         false);
 
-    auto constantAggregateZero = ConstantAggregateZeroOperation::Create(*delta->subregion(), arrayType);
+    auto constantAggregateZero =
+        ConstantAggregateZeroOperation::Create(*delta->subregion(), arrayType);
 
     auto deltaOutput = delta->finalize(constantAggregateZero);
 
