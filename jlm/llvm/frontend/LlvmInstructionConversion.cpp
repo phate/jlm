@@ -1172,7 +1172,7 @@ convert_cast_instruction(::llvm::Instruction * i, tacsvector_t & tacs, context &
       map({ { ::llvm::Instruction::Trunc, create_unop<TruncOperation> },
             { ::llvm::Instruction::ZExt, create_unop<ZExtOperation> },
             { ::llvm::Instruction::UIToFP, create_unop<UIToFPOperation> },
-            { ::llvm::Instruction::SIToFP, create_unop<sitofp_op> },
+            { ::llvm::Instruction::SIToFP, create_unop<SIToFPOperation> },
             { ::llvm::Instruction::SExt, create_unop<sext_op> },
             { ::llvm::Instruction::PtrToInt, create_unop<PtrToIntOperation> },
             { ::llvm::Instruction::IntToPtr, create_unop<IntegerToPointerOperation> },

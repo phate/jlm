@@ -356,7 +356,7 @@ MlirToJlmConverter::ConvertOperation(
     auto mlirOutputType = sitofpOp.getType();
     std::shared_ptr<rvsdg::Type> rt = ConvertType(mlirOutputType);
 
-    llvm::sitofp_op op(std::move(st), std::move(rt));
+    llvm::SIToFPOperation op(std::move(st), std::move(rt));
     return &rvsdg::SimpleNode::Create(
         rvsdgRegion,
         op,

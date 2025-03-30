@@ -457,7 +457,7 @@ TestSitofp()
     auto bitsArgument = lambda->GetFunctionArguments().at(0);
 
     // Create sitofp operation
-    auto sitofpOp = jlm::llvm::sitofp_op(bitsType, floatType);
+    auto sitofpOp = SIToFPOperation(bitsType, floatType);
     jlm::rvsdg::SimpleNode::Create(*lambda->subregion(), sitofpOp, { bitsArgument });
 
     lambda->finalize({});
@@ -498,8 +498,8 @@ TestSitofp()
       auto convertedLambda =
           jlm::util::AssertedCast<jlm::rvsdg::LambdaNode>(region->Nodes().begin().ptr());
       assert(convertedLambda->subregion()->nnodes() == 1);
-      assert(is<sitofp_op>(convertedLambda->subregion()->Nodes().begin()->GetOperation()));
-      auto convertedSitofp = dynamic_cast<const sitofp_op *>(
+      assert(is<SIToFPOperation>(convertedLambda->subregion()->Nodes().begin()->GetOperation()));
+      auto convertedSitofp = dynamic_cast<const SIToFPOperation *>(
           &convertedLambda->subregion()->Nodes().begin()->GetOperation());
 
       assert(jlm::rvsdg::is<jlm::rvsdg::bittype>(*convertedSitofp->argument(0).get()));

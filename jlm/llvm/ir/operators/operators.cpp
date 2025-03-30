@@ -849,38 +849,35 @@ UIToFPOperation::reduce_operand(rvsdg::unop_reduction_path_t, rvsdg::output *) c
   JLM_UNREACHABLE("Not implemented!");
 }
 
-/* sitofp operator */
-
-sitofp_op::~sitofp_op()
-{}
+SIToFPOperation::~SIToFPOperation() noexcept = default;
 
 bool
-sitofp_op::operator==(const Operation & other) const noexcept
+SIToFPOperation::operator==(const Operation & other) const noexcept
 {
-  auto op = dynamic_cast<const sitofp_op *>(&other);
+  const auto op = dynamic_cast<const SIToFPOperation *>(&other);
   return op && op->argument(0) == argument(0) && op->result(0) == result(0);
 }
 
 std::string
-sitofp_op::debug_string() const
+SIToFPOperation::debug_string() const
 {
-  return "SITOFP";
+  return "SIToFP";
 }
 
 std::unique_ptr<rvsdg::Operation>
-sitofp_op::copy() const
+SIToFPOperation::copy() const
 {
-  return std::make_unique<sitofp_op>(*this);
+  return std::make_unique<SIToFPOperation>(*this);
 }
 
 rvsdg::unop_reduction_path_t
-sitofp_op::can_reduce_operand(const rvsdg::output *) const noexcept
+SIToFPOperation::can_reduce_operand(const rvsdg::output *) const noexcept
 {
   return rvsdg::unop_reduction_none;
 }
 
 rvsdg::output *
-sitofp_op::reduce_operand(rvsdg::unop_reduction_path_t, rvsdg::output *) const
+SIToFPOperation::reduce_operand(rvsdg::unop_reduction_path_t, rvsdg::output *) const
 {
   JLM_UNREACHABLE("Not implemented!");
 }
