@@ -570,7 +570,7 @@ IpGraphToLlvmConverter::convert(
 
 ::llvm::Value *
 IpGraphToLlvmConverter::convert(
-    const ConstantAggregateZero & op,
+    const ConstantAggregateZeroOperation & op,
     const std::vector<const variable *> &,
     ::llvm::IRBuilder<> &)
 {
@@ -1272,9 +1272,9 @@ IpGraphToLlvmConverter::convert_operation(
   {
     return convert<ConstantArrayOperation>(op, arguments, builder);
   }
-  if (is<ConstantAggregateZero>(op))
+  if (is<ConstantAggregateZeroOperation>(op))
   {
-    return convert<ConstantAggregateZero>(op, arguments, builder);
+    return convert<ConstantAggregateZeroOperation>(op, arguments, builder);
   }
   if (is<ctl2bits_op>(op))
   {
