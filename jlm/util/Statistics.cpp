@@ -18,6 +18,7 @@ static const util::BijectiveMap<Statistics::Id, std::string_view> &
 GetStatisticsIdNames()
 {
   static util::BijectiveMap<Statistics::Id, std::string_view> mapping = {
+    { Statistics::Id::AliasAnalysisPrecisionEvaluation, "AliasAnalysisPrecisionEvaluation" },
     { Statistics::Id::Aggregation, "Aggregation" },
     { Statistics::Id::AgnosticMemoryNodeProvisioning, "AgnosticMemoryNodeProvider" },
     { Statistics::Id::AndersenAnalysis, "AndersenAnalysis" },

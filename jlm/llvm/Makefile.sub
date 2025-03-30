@@ -52,6 +52,7 @@ libllvm_SOURCES = \
     jlm/llvm/opt/alias-analyses/Optimization.cpp \
     jlm/llvm/opt/alias-analyses/PointerObjectSet.cpp \
     jlm/llvm/opt/alias-analyses/PointsToGraph.cpp \
+    jlm/llvm/opt/alias-analyses/PrecisionEvaluator.cpp \
     jlm/llvm/opt/alias-analyses/RegionAwareMemoryNodeProvider.cpp \
     jlm/llvm/opt/alias-analyses/Steensgaard.cpp \
     jlm/llvm/opt/alias-analyses/TopDownMemoryNodeEliminator.cpp \
@@ -88,6 +89,7 @@ libllvm_HEADERS = \
 	jlm/llvm/opt/alias-analyses/AgnosticMemoryNodeProvider.hpp \
 	jlm/llvm/opt/alias-analyses/RegionAwareMemoryNodeProvider.hpp \
 	jlm/llvm/opt/alias-analyses/PointsToGraph.hpp \
+	jlm/llvm/opt/alias-analyses/PrecisionEvaluator.hpp \
 	jlm/llvm/opt/alias-analyses/AliasAnalysis.hpp \
 	jlm/llvm/opt/pull.hpp \
 	jlm/llvm/opt/reduction.hpp \
