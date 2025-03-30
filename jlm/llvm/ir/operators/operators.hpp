@@ -1822,14 +1822,12 @@ public:
   }
 };
 
-/* ConstantArray */
-
-class ConstantArray final : public rvsdg::SimpleOperation
+class ConstantArrayOperation final : public rvsdg::SimpleOperation
 {
 public:
-  virtual ~ConstantArray();
+  ~ConstantArrayOperation() noexcept override;
 
-  ConstantArray(const std::shared_ptr<const jlm::rvsdg::ValueType> & type, size_t size)
+  ConstantArrayOperation(const std::shared_ptr<const jlm::rvsdg::ValueType> & type, size_t size)
       : SimpleOperation({ size, type }, { ArrayType::Create(type, size) })
   {
     if (size == 0)
@@ -1867,7 +1865,7 @@ public:
     if (!vt)
       throw jlm::util::error("expected value Type.\n");
 
-    ConstantArray op(vt, elements.size());
+    ConstantArrayOperation op(vt, elements.size());
     return tac::create(op, elements);
   }
 
@@ -1883,18 +1881,17 @@ public:
       throw util::error("Expected value type.\n");
     }
 
-    return rvsdg::CreateOpNode<ConstantArray>(operands, valueType, operands.size()).output(0);
+    return rvsdg::CreateOpNode<ConstantArrayOperation>(operands, valueType, operands.size())
+        .output(0);
   }
 };
 
-/* ConstantAggregateZero operator */
-
-class ConstantAggregateZero final : public rvsdg::SimpleOperation
+class ConstantAggregateZeroOperation final : public rvsdg::SimpleOperation
 {
 public:
-  virtual ~ConstantAggregateZero();
+  ~ConstantAggregateZeroOperation() noexcept override;
 
-  ConstantAggregateZero(std::shared_ptr<const jlm::rvsdg::Type> type)
+  explicit ConstantAggregateZeroOperation(std::shared_ptr<const rvsdg::Type> type)
       : SimpleOperation({}, { type })
   {
     auto st = dynamic_cast<const StructType *>(type.get());
@@ -1916,14 +1913,14 @@ public:
   static std::unique_ptr<llvm::tac>
   create(std::shared_ptr<const jlm::rvsdg::Type> type)
   {
-    ConstantAggregateZero op(std::move(type));
+    const ConstantAggregateZeroOperation op(std::move(type));
     return tac::create(op, {});
   }
 
   static jlm::rvsdg::output *
   Create(rvsdg::Region & region, std::shared_ptr<const jlm::rvsdg::Type> type)
   {
-    return rvsdg::CreateOpNode<ConstantAggregateZero>(region, std::move(type)).output(0);
+    return rvsdg::CreateOpNode<ConstantAggregateZeroOperation>(region, std::move(type)).output(0);
   }
 };
 

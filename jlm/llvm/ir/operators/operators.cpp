@@ -882,52 +882,46 @@ SIToFPOperation::reduce_operand(rvsdg::unop_reduction_path_t, rvsdg::output *) c
   JLM_UNREACHABLE("Not implemented!");
 }
 
-/* ConstantArray operator */
-
-ConstantArray::~ConstantArray()
-{}
+ConstantArrayOperation::~ConstantArrayOperation() noexcept = default;
 
 bool
-ConstantArray::operator==(const Operation & other) const noexcept
+ConstantArrayOperation::operator==(const Operation & other) const noexcept
 {
-  auto op = dynamic_cast<const ConstantArray *>(&other);
+  const auto op = dynamic_cast<const ConstantArrayOperation *>(&other);
   return op && op->result(0) == result(0);
 }
 
 std::string
-ConstantArray::debug_string() const
+ConstantArrayOperation::debug_string() const
 {
   return "ConstantArray";
 }
 
 std::unique_ptr<rvsdg::Operation>
-ConstantArray::copy() const
+ConstantArrayOperation::copy() const
 {
-  return std::make_unique<ConstantArray>(*this);
+  return std::make_unique<ConstantArrayOperation>(*this);
 }
 
-/* ConstantAggregateZero operator */
-
-ConstantAggregateZero::~ConstantAggregateZero()
-{}
+ConstantAggregateZeroOperation::~ConstantAggregateZeroOperation() noexcept = default;
 
 bool
-ConstantAggregateZero::operator==(const Operation & other) const noexcept
+ConstantAggregateZeroOperation::operator==(const Operation & other) const noexcept
 {
-  auto op = dynamic_cast<const ConstantAggregateZero *>(&other);
+  const auto op = dynamic_cast<const ConstantAggregateZeroOperation *>(&other);
   return op && op->result(0) == result(0);
 }
 
 std::string
-ConstantAggregateZero::debug_string() const
+ConstantAggregateZeroOperation::debug_string() const
 {
   return "ConstantAggregateZero";
 }
 
 std::unique_ptr<rvsdg::Operation>
-ConstantAggregateZero::copy() const
+ConstantAggregateZeroOperation::copy() const
 {
-  return std::make_unique<ConstantAggregateZero>(*this);
+  return std::make_unique<ConstantAggregateZeroOperation>(*this);
 }
 
 /* extractelement operator */
