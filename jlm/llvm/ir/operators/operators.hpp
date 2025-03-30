@@ -1883,7 +1883,8 @@ public:
       throw util::error("Expected value type.\n");
     }
 
-    return rvsdg::CreateOpNode<ConstantArrayOperation>(operands, valueType, operands.size()).output(0);
+    return rvsdg::CreateOpNode<ConstantArrayOperation>(operands, valueType, operands.size())
+        .output(0);
   }
 };
 
