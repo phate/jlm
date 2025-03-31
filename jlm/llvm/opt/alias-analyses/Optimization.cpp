@@ -9,6 +9,7 @@
 #include <jlm/llvm/opt/alias-analyses/EliminatedMemoryNodeProvider.hpp>
 #include <jlm/llvm/opt/alias-analyses/MemoryStateEncoder.hpp>
 #include <jlm/llvm/opt/alias-analyses/Optimization.hpp>
+#include <jlm/llvm/opt/alias-analyses/PrecisionEvaluator.hpp>
 #include <jlm/llvm/opt/alias-analyses/RegionAwareMemoryNodeProvider.hpp>
 #include <jlm/llvm/opt/alias-analyses/Steensgaard.hpp>
 #include <jlm/llvm/opt/alias-analyses/TopDownMemoryNodeEliminator.hpp>
@@ -28,6 +29,16 @@ AliasAnalysisStateEncoder<AliasAnalysisPass, MemoryNodeProviderPass>::Run(
 {
   AliasAnalysisPass aaPass;
   auto pointsToGraph = aaPass.Analyze(rvsdgModule, statisticsCollector);
+
+  // Evaluate alias analysis precision if the statistic is demanded
+  PrecisionEvaluator precisionEvaluator(PrecisionEvaluationMode::AllPointerPairs);
+  PointsToGraphAliasAnalysis ptgAA(*pointsToGraph);
+  precisionEvaluator.EvaluateAliasAnalysisClient(rvsdgModule, ptgAA, statisticsCollector);
+
+  // Evaluate precision again with a different mode
+  precisionEvaluator.SetMode(PrecisionEvaluationMode::ClobberingStores);
+  precisionEvaluator.EvaluateAliasAnalysisClient(rvsdgModule, ptgAA, statisticsCollector);
+
   auto provisioning =
       MemoryNodeProviderPass::Create(rvsdgModule, *pointsToGraph, statisticsCollector);
 
