@@ -2449,9 +2449,16 @@ RhlsToFirrtlConverter::MlirGen(const jlm::rvsdg::SimpleNode * node)
   {
     return MlirGenPredicationBuffer(node);
   }
-  else if (dynamic_cast<const hls::buffer_op *>(&(node->GetOperation())))
+  else if (auto b = dynamic_cast<const hls::buffer_op *>(&(node->GetOperation())))
   {
-    return MlirGenBuffer(node);
+//    // implement big buffers using Chisel queues
+//    if (b->capacity > 1000)
+//    {
+//      return MlirGenExtModule(node);
+//    }
+//    return MlirGenBuffer(node);
+    JLM_ASSERT(b->capacity);
+    return MlirGenExtModule(node);
   }
   else if (dynamic_cast<const hls::branch_op *>(&(node->GetOperation())))
   {
