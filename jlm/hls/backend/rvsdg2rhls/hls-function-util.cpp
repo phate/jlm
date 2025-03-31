@@ -29,7 +29,8 @@ find_function_arguments(const rvsdg::LambdaNode * lambda, std::string name_conta
     auto traced = trace_call_rhls(ip);
     JLM_ASSERT(traced);
     auto arg = util::AssertedCast<const llvm::GraphImport>(traced);
-    if (dynamic_cast<const rvsdg::FunctionType*>(arg->ImportedType().get()) && arg->Name().find(name_contains) != arg->Name().npos)
+    if (dynamic_cast<const rvsdg::FunctionType *>(arg->ImportedType().get())
+        && arg->Name().find(name_contains) != arg->Name().npos)
     {
       result.push_back(cv);
     }
@@ -150,8 +151,9 @@ route_to_region_rhls(rvsdg::Region * target, rvsdg::output * out)
   {
     // lambda is common region - might create cycle
     // TODO: how to check that this won't create a cycle
-      JLM_ASSERT(target_regions.empty() || target_regions.front()->node()->region() == common_out->region());
-      return route_response_rhls(target, common_out);
+    JLM_ASSERT(
+        target_regions.empty() || target_regions.front()->node()->region() == common_out->region());
+    return route_response_rhls(target, common_out);
   }
 }
 
@@ -267,7 +269,7 @@ is_function_argument(const rvsdg::LambdaNode::ContextVar & cv)
   auto traced = trace_call_rhls(ip);
   JLM_ASSERT(traced);
   auto arg = util::AssertedCast<const llvm::GraphImport>(traced);
-  return dynamic_cast<const rvsdg::FunctionType*>(arg->ImportedType().get());
+  return dynamic_cast<const rvsdg::FunctionType *>(arg->ImportedType().get());
 }
 
 std::string
@@ -311,5 +313,38 @@ get_mem_state_user(rvsdg::output * state_edge)
   JLM_ASSERT(dynamic_cast<const llvm::MemoryStateType *>(&state_edge->type()));
   auto user = *state_edge->begin();
   return user;
+}
+
+rvsdg::output *
+FindSourceNode(rvsdg::output * out)
+{
+  if (auto ba = dynamic_cast<backedge_argument *>(out))
+  {
+    return FindSourceNode(ba->result()->origin());
+  }
+  else if (auto ra = dynamic_cast<rvsdg::RegionArgument *>(out))
+  {
+    if (ra->input() && rvsdg::TryGetOwnerNode<loop_node>(*ra->input()))
+    {
+      return FindSourceNode(ra->input()->origin());
+    }
+    else
+    {
+      // lambda argument
+      return ra;
+    }
+  }
+  else if (auto so = dynamic_cast<rvsdg::StructuralOutput *>(out))
+  {
+    JLM_ASSERT(rvsdg::TryGetOwnerNode<loop_node>(*out));
+    return FindSourceNode(so->results.begin()->origin());
+  }
+  else
+  {
+    auto result = dynamic_cast<rvsdg::SimpleOutput *>(out);
+    JLM_ASSERT(result);
+    return result;
+  }
+  return nullptr;
 }
 }

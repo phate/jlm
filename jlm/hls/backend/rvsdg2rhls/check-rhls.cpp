@@ -3,6 +3,7 @@
  * See COPYING for terms of redistribution.
  */
 
+#include "hls-function-util.hpp"
 #include <jlm/hls/backend/rvsdg2rhls/check-rhls.hpp>
 #include <jlm/hls/backend/rvsdg2rhls/rvsdg2rhls.hpp>
 #include <jlm/hls/ir/hls.hpp>
@@ -11,6 +12,20 @@
 
 namespace jlm::hls
 {
+void
+CheckAddrQueue(rvsdg::Node * node)
+{
+  auto addrQ = TryGetOwnerOp<addr_queue_op>(*node->output(0));
+  JLM_ASSERT(rvsdg::is<addr_queue_op>(node));
+  // Check that there is no buffer between state_gate and addr_queue input 1 and 2.
+  // These are SG1 and SG2 in the paper. Otherwise, there might be a race condition in the disambiguation
+  // TODO: fix for multiple addq - like polybench/correlation
+//  JLM_ASSERT(TryGetOwnerOp<state_gate_op>(*FindSourceNode(node->input(0)->origin())));
+//  JLM_ASSERT(TryGetOwnerOp<state_gate_op>(*FindSourceNode(node->input(1)->origin())));
+  // make sure there is enough buffer space, so there can be no race condition (probably oversized)
+  auto buf = TryGetOwnerOp<buffer_op>(**node->output(0)->begin());
+  JLM_ASSERT(buf && buf->capacity >= addrQ->capacity);
+}
 
 void
 check_rhls(rvsdg::Region * sr)
@@ -38,6 +53,10 @@ check_rhls(rvsdg::Region * sr)
       {
         throw jlm::util::error("Output has more than one user");
       }
+    }
+    if (rvsdg::is<addr_queue_op>(node))
+    {
+      CheckAddrQueue(node);
     }
   }
 }
