@@ -96,7 +96,9 @@ class PrecisionEvaluator::PrecisionStatistics final : public util::Statistics
   static constexpr auto PairwiseAliasAnalysisType_ = "PairwiseAliasAnalysisType";
   static constexpr auto NumMayAliasQueries_ = "#MayAliasQueries";
   static constexpr auto PrecisionDumpFile_ = "DumpFile";
+  static constexpr auto ModuleNumPointerUsages_ = "ModuleNumPointerUsages";
   static constexpr auto ModuleAverageMayAliasRate_ = "ModuleAverageMayAliasRate";
+
   static constexpr auto PrecisionEvaluationTimer_ = "PrecisionEvaluationTimer";
 
 public:
@@ -122,9 +124,13 @@ public:
   }
 
   void
-  AddPrecisionSummaryStatistics(const util::filepath & outputFile, double moduleAverageMayAliasRate)
+  AddPrecisionSummaryStatistics(
+      const util::filepath & outputFile,
+      uint64_t moduleNumPointerUsages,
+      double moduleAverageMayAliasRate)
   {
     AddMeasurement(PrecisionDumpFile_, outputFile.to_str());
+    AddMeasurement(ModuleNumPointerUsages_, moduleNumPointerUsages);
     AddMeasurement(ModuleAverageMayAliasRate_, moduleAverageMayAliasRate);
   }
 
@@ -304,8 +310,8 @@ PrecisionEvaluator::CollectPointersFromStructuralNode(const rvsdg::StructuralNod
 bool
 PrecisionEvaluator::IsPointerCompatible(const rvsdg::output * value)
 {
-  // We omit including function types as pointers, as we otherwise risk including a bunch of trivial
-  // direct calls.
+  // Omit including function types as pointers, as direct calls are trivial for the analysis.
+  // This is also closer to LLVM, as they do not include direct function calls in alias pairs.
   const auto & type = value->type();
   return IsOrContains<PointerType>(type);
 }
@@ -362,7 +368,10 @@ PrecisionEvaluator::CalculateAverageMayAliasRate(
 
   out.close();
 
-  statistics.AddPrecisionSummaryStatistics(outputFile.path(), moduleAverageMayAlias);
+  statistics.AddPrecisionSummaryStatistics(
+      outputFile.path(),
+      moduleNumUsages,
+      moduleAverageMayAlias);
 }
 
 }

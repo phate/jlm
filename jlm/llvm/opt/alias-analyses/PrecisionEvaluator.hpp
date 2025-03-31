@@ -197,6 +197,11 @@ private:
       // If this use is itself a clobber, omit it from the ratio calculation
       numClobbersMayAlias -= useIsClobber;
       auto numOtherClobbers = NumClobberingPointers - useIsClobber;
+
+      // Skip functions that do not have any clobbering points, to avoid division by zero
+      if (numOtherClobbers == 0)
+        return;
+
       auto ratio = numClobbersMayAlias / static_cast<double>(numOtherClobbers);
       UsedPointerMayAlias.push_back(ratio);
     }
