@@ -340,7 +340,7 @@ decouple_load(
   new_loop->subregion()->RemoveArgument(mem_data_loop_arg->index());
   new_loop->RemoveInput(mem_data_loop_in->index());
   // create new decoupled load
-  auto dload_out = decoupled_load_op::create(*addr_output, *mem_data_resp);
+  auto dload_out = decoupled_load_op::create(*addr_output, *mem_data_resp, 10);
 
   // redirect mem_req_addr to dload_out[1]
   auto old_mem_req_res =

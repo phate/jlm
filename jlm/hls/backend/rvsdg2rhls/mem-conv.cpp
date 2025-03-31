@@ -69,22 +69,19 @@ ReplaceDecouple(
   decouple_request->output(decouple_request->noutputs() - 1)->divert_users(req_mem_state);
 
   // handle response
-  int buffer_capacity = 10;
+  int load_capacity = 10;
   if (dynamic_cast<const rvsdg::bittype *>(&decouple_response->input(2)->type()))
   {
     auto constant = trace_constant(decouple_response->input(2)->origin());
-    buffer_capacity = constant->Representation().to_int();
-    assert(buffer_capacity >= 0);
+    load_capacity = constant->Representation().to_int();
+    assert(load_capacity >= 0);
   }
   // create this outside loop - need to tunnel outward from request and inward to response
   auto routed_resp = route_response_rhls(decouple_request->region(), resp);
   // response is not routed inward for this case
-  auto dload_out = decoupled_load_op::create(*addr, *routed_resp);
-  // use a buffer here to make ready logic for response easy and consistent
-  // TODO: should this buffer be non-passthrough?
-  auto buf = buffer_op::create(*dload_out[0], buffer_capacity, true)[0];
+  auto dload_out = decoupled_load_op::create(*addr, *routed_resp, load_capacity);
 
-  auto routed_data = route_to_region_rhls(decouple_response->region(), buf);
+  auto routed_data = route_to_region_rhls(decouple_response->region(), dload_out[0]);
   // TODO: use state edge once response is moved to its own
   auto sg_resp = state_gate_op::create(
       *routed_data,
@@ -610,7 +607,8 @@ ReplaceLoad(
   rvsdg::Node * newLoad;
   if (states.empty())
   {
-    auto outputs = decoupled_load_op::create(*loadAddress, *response);
+    size_t load_capacity = 10;
+    auto outputs = decoupled_load_op::create(*loadAddress, *response, load_capacity);
     newLoad = dynamic_cast<rvsdg::node_output *>(outputs[0])->node();
   }
   else

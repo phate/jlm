@@ -2417,7 +2417,8 @@ RhlsToFirrtlConverter::MlirGen(const jlm::rvsdg::SimpleNode * node)
   }
   else if (dynamic_cast<const hls::decoupled_load_op *>(&(node->GetOperation())))
   {
-    return MlirGenHlsDLoad(node);
+    return MlirGenExtModule(node);
+//    return MlirGenHlsDLoad(node);
   }
   else if (dynamic_cast<const hls::store_op *>(&(node->GetOperation())))
   {
