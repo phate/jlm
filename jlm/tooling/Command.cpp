@@ -394,15 +394,15 @@ JlmOptCommand::CreateTransformation(
   switch (optimizationId)
   {
   case JlmOptCommandLineOptions::OptimizationId::AAAndersenAgnostic:
-    return std::make_unique<llvm::aa::AliasAnalysisStateEncoder<Andersen, AgnosticMnp>>();
+    return std::make_unique<llvm::aa::PointsToAnalysisStateEncoder<Andersen, AgnosticMnp>>();
   case JlmOptCommandLineOptions::OptimizationId::AAAndersenRegionAware:
-    return std::make_unique<llvm::aa::AliasAnalysisStateEncoder<Andersen, RegionAwareMnp>>();
+    return std::make_unique<llvm::aa::PointsToAnalysisStateEncoder<Andersen, RegionAwareMnp>>();
   case JlmOptCommandLineOptions::OptimizationId::AAAndersenTopDownLifetimeAware:
-    return std::make_unique<llvm::aa::AliasAnalysisStateEncoder<Andersen, TopDownLifetimeMnp>>();
+    return std::make_unique<llvm::aa::PointsToAnalysisStateEncoder<Andersen, TopDownLifetimeMnp>>();
   case JlmOptCommandLineOptions::OptimizationId::AASteensgaardAgnostic:
-    return std::make_unique<llvm::aa::AliasAnalysisStateEncoder<Steensgaard, AgnosticMnp>>();
+    return std::make_unique<llvm::aa::PointsToAnalysisStateEncoder<Steensgaard, AgnosticMnp>>();
   case JlmOptCommandLineOptions::OptimizationId::AASteensgaardRegionAware:
-    return std::make_unique<llvm::aa::AliasAnalysisStateEncoder<Steensgaard, RegionAwareMnp>>();
+    return std::make_unique<llvm::aa::PointsToAnalysisStateEncoder<Steensgaard, RegionAwareMnp>>();
   case JlmOptCommandLineOptions::OptimizationId::CommonNodeElimination:
     return std::make_unique<llvm::cne>();
   case JlmOptCommandLineOptions::OptimizationId::DeadNodeElimination:
