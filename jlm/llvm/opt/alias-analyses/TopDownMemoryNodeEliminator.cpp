@@ -46,7 +46,7 @@ public:
 /** \brief Memory node provisioning of TopDownMemoryNodeEliminator
  *
  */
-class TopDownMemoryNodeEliminator::Provisioning final : public MemoryNodeProvisioning
+class TopDownMemoryNodeEliminator::ModRefSummary final : public aa::ModRefSummary
 {
   using RegionMap =
       std::unordered_map<const rvsdg::Region *, util::HashSet<const PointsToGraph::MemoryNode *>>;
@@ -54,19 +54,19 @@ class TopDownMemoryNodeEliminator::Provisioning final : public MemoryNodeProvisi
       std::unordered_map<const CallNode *, util::HashSet<const PointsToGraph::MemoryNode *>>;
 
 public:
-  explicit Provisioning(const PointsToGraph & pointsToGraph)
+  explicit ModRefSummary(const PointsToGraph & pointsToGraph)
       : PointsToGraph_(pointsToGraph)
   {}
 
-  Provisioning(const Provisioning &) = delete;
+  ModRefSummary(const ModRefSummary &) = delete;
 
-  Provisioning(Provisioning &&) = delete;
+  ModRefSummary(ModRefSummary &&) = delete;
 
-  Provisioning &
-  operator=(const Provisioning &) = delete;
+  ModRefSummary &
+  operator=(const ModRefSummary &) = delete;
 
-  Provisioning &
-  operator=(Provisioning &&) = delete;
+  ModRefSummary &
+  operator=(ModRefSummary &&) = delete;
 
   [[nodiscard]] const PointsToGraph &
   GetPointsToGraph() const noexcept override
@@ -186,10 +186,10 @@ public:
     set.UnionWith(memoryNodes);
   }
 
-  static std::unique_ptr<Provisioning>
+  static std::unique_ptr<ModRefSummary>
   Create(const PointsToGraph & pointsToGraph)
   {
-    return std::make_unique<Provisioning>(pointsToGraph);
+    return std::make_unique<ModRefSummary>(pointsToGraph);
   }
 
 private:
@@ -292,9 +292,9 @@ private:
 class TopDownMemoryNodeEliminator::Context final
 {
 public:
-  explicit Context(const MemoryNodeProvisioning & seedProvisioning)
-      : SeedProvisioning_(seedProvisioning),
-        Provisioning_(Provisioning::Create(seedProvisioning.GetPointsToGraph()))
+  explicit Context(const aa::ModRefSummary & seedModRefSummary)
+      : SeedModRefSummary_(seedModRefSummary),
+        ModRefSummary_(ModRefSummary::Create(seedModRefSummary.GetPointsToGraph()))
   {}
 
   Context(const Context &) = delete;
@@ -307,28 +307,28 @@ public:
   Context &
   operator=(Context &&) noexcept = delete;
 
-  [[nodiscard]] const MemoryNodeProvisioning &
-  GetSeedProvisioning() const noexcept
+  [[nodiscard]] const aa::ModRefSummary &
+  GetSeedModRefSummary() const noexcept
   {
-    return SeedProvisioning_;
+    return SeedModRefSummary_;
   }
 
   [[nodiscard]] const PointsToGraph &
   GetPointsToGraph() const noexcept
   {
-    return GetSeedProvisioning().GetPointsToGraph();
+    return GetSeedModRefSummary().GetPointsToGraph();
   }
 
-  [[nodiscard]] Provisioning &
-  GetProvisioning() noexcept
+  [[nodiscard]] ModRefSummary &
+  GetModRefSummary() noexcept
   {
-    return *Provisioning_;
+    return *ModRefSummary_;
   }
 
-  [[nodiscard]] std::unique_ptr<Provisioning>
-  ReleaseProvisioning() noexcept
+  [[nodiscard]] std::unique_ptr<ModRefSummary>
+  ReleaseModRefSummary() noexcept
   {
-    return std::move(Provisioning_);
+    return std::move(ModRefSummary_);
   }
 
   /**
@@ -381,9 +381,9 @@ public:
   }
 
   static std::unique_ptr<Context>
-  Create(const MemoryNodeProvisioning & seedProvisioning)
+  Create(const aa::ModRefSummary & seedModRefSummary)
   {
-    return std::make_unique<Context>(seedProvisioning);
+    return std::make_unique<Context>(seedModRefSummary);
   }
 
 private:
@@ -404,8 +404,8 @@ private:
     return LiveNodes_[&region];
   }
 
-  const MemoryNodeProvisioning & SeedProvisioning_;
-  std::unique_ptr<Provisioning> Provisioning_;
+  const aa::ModRefSummary & SeedModRefSummary_;
+  std::unique_ptr<ModRefSummary> ModRefSummary_;
 
   // Keeps track of the memory nodes that are live within a region.
   std::unordered_map<const rvsdg::Region *, util::HashSet<const PointsToGraph::MemoryNode *>>
@@ -420,13 +420,13 @@ TopDownMemoryNodeEliminator::~TopDownMemoryNodeEliminator() noexcept = default;
 
 TopDownMemoryNodeEliminator::TopDownMemoryNodeEliminator() = default;
 
-std::unique_ptr<MemoryNodeProvisioning>
+std::unique_ptr<ModRefSummary>
 TopDownMemoryNodeEliminator::EliminateMemoryNodes(
     const rvsdg::RvsdgModule & rvsdgModule,
-    const MemoryNodeProvisioning & seedProvisioning,
+    const aa::ModRefSummary & seedModRefSummary,
     util::StatisticsCollector & statisticsCollector)
 {
-  Context_ = Context::Create(seedProvisioning);
+  Context_ = Context::Create(seedModRefSummary);
   auto statistics = Statistics::Create(rvsdgModule.SourceFilePath().value());
 
   statistics->Start(rvsdgModule.Rvsdg());
@@ -435,31 +435,31 @@ TopDownMemoryNodeEliminator::EliminateMemoryNodes(
 
   statisticsCollector.CollectDemandedStatistics(std::move(statistics));
 
-  auto provisioning = Context_->ReleaseProvisioning();
+  auto provisioning = Context_->ReleaseModRefSummary();
   Context_.reset();
 
-  JLM_ASSERT(CheckInvariants(rvsdgModule, seedProvisioning, *provisioning));
+  JLM_ASSERT(CheckInvariants(rvsdgModule, seedModRefSummary, *provisioning));
 
   return provisioning;
 }
 
-std::unique_ptr<MemoryNodeProvisioning>
+std::unique_ptr<ModRefSummary>
 TopDownMemoryNodeEliminator::CreateAndEliminate(
     const rvsdg::RvsdgModule & rvsdgModule,
-    const MemoryNodeProvisioning & seedProvisioning,
+    const aa::ModRefSummary & modRefSummary,
     util::StatisticsCollector & statisticsCollector)
 {
   TopDownMemoryNodeEliminator provider;
-  return provider.EliminateMemoryNodes(rvsdgModule, seedProvisioning, statisticsCollector);
+  return provider.EliminateMemoryNodes(rvsdgModule, modRefSummary, statisticsCollector);
 }
 
-std::unique_ptr<MemoryNodeProvisioning>
+std::unique_ptr<ModRefSummary>
 TopDownMemoryNodeEliminator::CreateAndEliminate(
     const rvsdg::RvsdgModule & rvsdgModule,
-    const MemoryNodeProvisioning & seedProvisioning)
+    const aa::ModRefSummary & seedModRefSummary)
 {
   util::StatisticsCollector statisticsCollector;
-  return CreateAndEliminate(rvsdgModule, seedProvisioning, statisticsCollector);
+  return CreateAndEliminate(rvsdgModule, seedModRefSummary, statisticsCollector);
 }
 
 void
@@ -568,8 +568,8 @@ void
 TopDownMemoryNodeEliminator::EliminateTopDownLambdaEntry(const rvsdg::LambdaNode & lambdaNode)
 {
   auto & lambdaSubregion = *lambdaNode.subregion();
-  auto & provisioning = Context_->GetProvisioning();
-  auto & seedProvisioning = Context_->GetSeedProvisioning();
+  auto & modRefSummary = Context_->GetModRefSummary();
+  auto & seedModRefSummary = Context_->GetSeedModRefSummary();
 
   if (Context_->HasAnnotatedLiveNodes(lambdaNode))
   {
@@ -578,7 +578,7 @@ TopDownMemoryNodeEliminator::EliminateTopDownLambdaEntry(const rvsdg::LambdaNode
     // 2. This lambda is a tail-lambda and live nodes were annotated by
     // InitializeLiveNodesOfTailLambdas()
     auto & liveNodes = Context_->GetLiveNodes(lambdaSubregion);
-    provisioning.AddRegionEntryNodes(lambdaSubregion, liveNodes);
+    modRefSummary.AddRegionEntryNodes(lambdaSubregion, liveNodes);
   }
   else
   {
@@ -588,9 +588,9 @@ TopDownMemoryNodeEliminator::EliminateTopDownLambdaEntry(const rvsdg::LambdaNode
     //
     // Thus, we have no idea what memory nodes are live at its entry. Thus, we need to be
     // conservative and simply say that all memory nodes from the seed provisioning are live.
-    auto & seedLambdaEntryNodes = seedProvisioning.GetLambdaEntryNodes(lambdaNode);
+    auto & seedLambdaEntryNodes = seedModRefSummary.GetLambdaEntryNodes(lambdaNode);
     Context_->AddLiveNodes(lambdaSubregion, seedLambdaEntryNodes);
-    provisioning.AddRegionEntryNodes(lambdaSubregion, seedLambdaEntryNodes);
+    modRefSummary.AddRegionEntryNodes(lambdaSubregion, seedLambdaEntryNodes);
   }
 }
 
@@ -598,8 +598,8 @@ void
 TopDownMemoryNodeEliminator::EliminateTopDownLambdaExit(const rvsdg::LambdaNode & lambdaNode)
 {
   auto & lambdaSubregion = *lambdaNode.subregion();
-  auto & provisioning = Context_->GetProvisioning();
-  auto & seedProvisioning = Context_->GetSeedProvisioning();
+  auto & modRefSummary = Context_->GetModRefSummary();
+  auto & seedModRefSummary = Context_->GetSeedModRefSummary();
 
   if (Context_->HasAnnotatedLiveNodes(lambdaNode))
   {
@@ -607,8 +607,8 @@ TopDownMemoryNodeEliminator::EliminateTopDownLambdaExit(const rvsdg::LambdaNode 
     // 1. This lambda node has direct calls that were already handled due to bottom-up visitation.
     // 2. This lambda is a tail-lambda and live nodes were annotated by
     // InitializeLiveNodesOfTailLambdas()
-    auto & entryNodes = provisioning.GetLambdaEntryNodes(lambdaNode);
-    provisioning.AddRegionExitNodes(lambdaSubregion, entryNodes);
+    auto & entryNodes = modRefSummary.GetLambdaEntryNodes(lambdaNode);
+    modRefSummary.AddRegionExitNodes(lambdaSubregion, entryNodes);
   }
   else
   {
@@ -618,8 +618,8 @@ TopDownMemoryNodeEliminator::EliminateTopDownLambdaExit(const rvsdg::LambdaNode 
     //
     // Thus, we have no idea what memory nodes are live at its entry. Thus, we need to be
     // conservative and simply say that all memory nodes from the seed provisioning are live.
-    auto & seedLambdaExitNodes = seedProvisioning.GetLambdaExitNodes(lambdaNode);
-    provisioning.AddRegionExitNodes(lambdaSubregion, seedLambdaExitNodes);
+    auto & seedLambdaExitNodes = seedModRefSummary.GetLambdaExitNodes(lambdaNode);
+    modRefSummary.AddRegionExitNodes(lambdaSubregion, seedLambdaExitNodes);
   }
 }
 
@@ -675,19 +675,19 @@ TopDownMemoryNodeEliminator::EliminateTopDownGamma(const rvsdg::GammaNode & gamm
       [](const rvsdg::GammaNode & gammaNode, TopDownMemoryNodeEliminator::Context & context)
   {
     auto & gammaRegion = *gammaNode.region();
-    auto & seedProvisioning = context.GetSeedProvisioning();
-    auto & provisioning = context.GetProvisioning();
+    auto & seedModRefSummary = context.GetSeedModRefSummary();
+    auto & modRefSummary = context.GetModRefSummary();
     auto & gammaRegionLiveNodes = context.GetLiveNodes(gammaRegion);
 
     for (size_t n = 0; n < gammaNode.nsubregions(); n++)
     {
       auto & subregion = *gammaNode.subregion(n);
 
-      auto subregionEntryNodes = seedProvisioning.GetRegionEntryNodes(subregion);
+      auto subregionEntryNodes = seedModRefSummary.GetRegionEntryNodes(subregion);
       subregionEntryNodes.IntersectWith(gammaRegionLiveNodes);
 
       context.AddLiveNodes(subregion, subregionEntryNodes);
-      provisioning.AddRegionEntryNodes(subregion, subregionEntryNodes);
+      modRefSummary.AddRegionEntryNodes(subregion, subregionEntryNodes);
     }
   };
 
@@ -703,13 +703,13 @@ TopDownMemoryNodeEliminator::EliminateTopDownGamma(const rvsdg::GammaNode & gamm
   auto addSubregionExitNodes =
       [](const rvsdg::GammaNode & gammaNode, TopDownMemoryNodeEliminator::Context & context)
   {
-    auto & provisioning = context.GetProvisioning();
+    auto & modRefSummary = context.GetModRefSummary();
 
     for (size_t n = 0; n < gammaNode.nsubregions(); n++)
     {
       auto & subregion = *gammaNode.subregion(n);
       auto & liveNodes = context.GetLiveNodes(subregion);
-      provisioning.AddRegionExitNodes(subregion, liveNodes);
+      modRefSummary.AddRegionExitNodes(subregion, liveNodes);
     }
   };
 
@@ -717,12 +717,12 @@ TopDownMemoryNodeEliminator::EliminateTopDownGamma(const rvsdg::GammaNode & gamm
       [](const rvsdg::GammaNode & gammaNode, TopDownMemoryNodeEliminator::Context & context)
   {
     auto & gammaRegion = *gammaNode.region();
-    auto & provisioning = context.GetProvisioning();
+    auto & modRefSummary = context.GetModRefSummary();
 
     for (size_t n = 0; n < gammaNode.nsubregions(); n++)
     {
       auto & subregion = *gammaNode.subregion(n);
-      auto & subregionExitNodes = provisioning.GetRegionExitNodes(subregion);
+      auto & subregionExitNodes = modRefSummary.GetRegionExitNodes(subregion);
       context.AddLiveNodes(gammaRegion, subregionExitNodes);
     }
   };
@@ -738,25 +738,25 @@ TopDownMemoryNodeEliminator::EliminateTopDownTheta(const rvsdg::ThetaNode & thet
 {
   auto & thetaRegion = *thetaNode.region();
   auto & thetaSubregion = *thetaNode.subregion();
-  auto & seedProvisioning = Context_->GetSeedProvisioning();
-  auto & provisioning = Context_->GetProvisioning();
+  auto & seedModRefSummary = Context_->GetSeedModRefSummary();
+  auto & modRefSummary = Context_->GetModRefSummary();
   auto & thetaRegionLiveNodes = Context_->GetLiveNodes(thetaRegion);
 
-  auto subregionEntryNodes = seedProvisioning.GetRegionEntryNodes(thetaSubregion);
+  auto subregionEntryNodes = seedModRefSummary.GetRegionEntryNodes(thetaSubregion);
   subregionEntryNodes.IntersectWith(thetaRegionLiveNodes);
 
   Context_->AddLiveNodes(thetaSubregion, subregionEntryNodes);
-  provisioning.AddRegionEntryNodes(thetaSubregion, subregionEntryNodes);
+  modRefSummary.AddRegionEntryNodes(thetaSubregion, subregionEntryNodes);
 
   EliminateTopDownRegion(thetaSubregion);
 
   auto & thetaSubregionRegionLiveNodes = Context_->GetLiveNodes(thetaSubregion);
-  auto subregionExitNodes = seedProvisioning.GetRegionExitNodes(thetaSubregion);
+  auto subregionExitNodes = seedModRefSummary.GetRegionExitNodes(thetaSubregion);
   subregionExitNodes.IntersectWith(thetaSubregionRegionLiveNodes);
 
   // Theta entry and exit needs to be equivalent
-  provisioning.AddRegionEntryNodes(thetaSubregion, subregionExitNodes);
-  provisioning.AddRegionExitNodes(thetaSubregion, subregionExitNodes);
+  modRefSummary.AddRegionEntryNodes(thetaSubregion, subregionExitNodes);
+  modRefSummary.AddRegionExitNodes(thetaSubregion, subregionExitNodes);
 
   Context_->AddLiveNodes(thetaRegion, subregionExitNodes);
 }
@@ -847,13 +847,13 @@ TopDownMemoryNodeEliminator::EliminateTopDownExternalCall(
 
   auto & liveNodes = Context_->GetLiveNodes(*callNode.region());
 
-  auto & seedCallEntryNodes = Context_->GetSeedProvisioning().GetCallEntryNodes(callNode);
+  auto & seedCallEntryNodes = Context_->GetSeedModRefSummary().GetCallEntryNodes(callNode);
   JLM_ASSERT(liveNodes.IsSubsetOf(seedCallEntryNodes));
 
-  auto & seedCallExitNodes = Context_->GetSeedProvisioning().GetCallExitNodes(callNode);
+  auto & seedCallExitNodes = Context_->GetSeedModRefSummary().GetCallExitNodes(callNode);
   JLM_ASSERT(liveNodes.IsSubsetOf(seedCallExitNodes));
 
-  Context_->GetProvisioning().AddExternalCallNodes(callNode, liveNodes);
+  Context_->GetModRefSummary().AddExternalCallNodes(callNode, liveNodes);
 }
 
 void
@@ -865,13 +865,13 @@ TopDownMemoryNodeEliminator::EliminateTopDownIndirectCall(
 
   auto & liveNodes = Context_->GetLiveNodes(*indirectCall.region());
 
-  auto & seedCallEntryNodes = Context_->GetSeedProvisioning().GetCallEntryNodes(indirectCall);
+  auto & seedCallEntryNodes = Context_->GetSeedModRefSummary().GetCallEntryNodes(indirectCall);
   JLM_ASSERT(liveNodes.IsSubsetOf(seedCallEntryNodes));
 
-  auto & seedCallExitNodes = Context_->GetSeedProvisioning().GetCallExitNodes(indirectCall);
+  auto & seedCallExitNodes = Context_->GetSeedModRefSummary().GetCallExitNodes(indirectCall);
   JLM_ASSERT(liveNodes.IsSubsetOf(seedCallExitNodes));
 
-  Context_->GetProvisioning().AddIndirectCallNodes(indirectCall, liveNodes);
+  Context_->GetModRefSummary().AddIndirectCallNodes(indirectCall, liveNodes);
 }
 
 void
@@ -917,9 +917,9 @@ TopDownMemoryNodeEliminator::InitializeLiveNodesOfTailLambda(
   };
 
   auto & lambdaSubregion = *tailLambdaNode.subregion();
-  auto & seedProvisioning = Context_->GetSeedProvisioning();
+  auto & seedModRefSummary = Context_->GetSeedModRefSummary();
 
-  auto memoryNodes = seedProvisioning.GetLambdaEntryNodes(tailLambdaNode);
+  auto memoryNodes = seedModRefSummary.GetLambdaEntryNodes(tailLambdaNode);
   memoryNodes.RemoveWhere(IsUnescapedAllocaNode);
 
   Context_->AddLiveNodes(lambdaSubregion, memoryNodes);
@@ -929,8 +929,8 @@ TopDownMemoryNodeEliminator::InitializeLiveNodesOfTailLambda(
 bool
 TopDownMemoryNodeEliminator::CheckInvariants(
     const rvsdg::RvsdgModule & rvsdgModule,
-    const MemoryNodeProvisioning & seedProvisioning,
-    const Provisioning & provisioning)
+    const aa::ModRefSummary & seedModRefSummary,
+    const aa::ModRefSummary & modRefSummary)
 {
   std::function<void(
       const rvsdg::Region &,
@@ -981,15 +981,15 @@ TopDownMemoryNodeEliminator::CheckInvariants(
 
   for (auto region : regions)
   {
-    auto & regionEntry = provisioning.GetRegionEntryNodes(*region);
-    auto & seedRegionEntry = seedProvisioning.GetRegionEntryNodes(*region);
+    auto & regionEntry = modRefSummary.GetRegionEntryNodes(*region);
+    auto & seedRegionEntry = seedModRefSummary.GetRegionEntryNodes(*region);
     if (!regionEntry.IsSubsetOf(seedRegionEntry))
     {
       return false;
     }
 
-    auto & regionExit = provisioning.GetRegionExitNodes(*region);
-    auto & seedRegionExit = provisioning.GetRegionExitNodes(*region);
+    auto & regionExit = modRefSummary.GetRegionExitNodes(*region);
+    auto & seedRegionExit = modRefSummary.GetRegionExitNodes(*region);
     if (!regionExit.IsSubsetOf(seedRegionExit))
     {
       return false;
@@ -998,15 +998,15 @@ TopDownMemoryNodeEliminator::CheckInvariants(
 
   for (auto callNode : callNodes)
   {
-    auto & callEntry = provisioning.GetCallEntryNodes(*callNode);
-    auto & seedCallEntry = provisioning.GetCallEntryNodes(*callNode);
+    auto & callEntry = modRefSummary.GetCallEntryNodes(*callNode);
+    auto & seedCallEntry = modRefSummary.GetCallEntryNodes(*callNode);
     if (!callEntry.IsSubsetOf(seedCallEntry))
     {
       return false;
     }
 
-    auto & callExit = provisioning.GetCallExitNodes(*callNode);
-    auto & seedCallExit = provisioning.GetCallExitNodes(*callNode);
+    auto & callExit = modRefSummary.GetCallExitNodes(*callNode);
+    auto & seedCallExit = modRefSummary.GetCallExitNodes(*callNode);
     if (!callExit.IsSubsetOf(seedCallExit))
     {
       return false;

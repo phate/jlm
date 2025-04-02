@@ -32,11 +32,11 @@ TestStore1()
    * Arrange
    */
   auto ValidateProvider = [](const jlm::tests::StoreTest1 & test,
-                             const jlm::llvm::aa::MemoryNodeProvisioning & provisioning,
+                             const jlm::llvm::aa::ModRefSummary & modRefSummary,
                              const jlm::llvm::aa::PointsToGraph & pointsToGraph)
   {
-    auto numLambdaEntryNodes = provisioning.GetLambdaEntryNodes(*test.lambda).Size();
-    auto numLambdaExitNodes = provisioning.GetLambdaExitNodes(*test.lambda).Size();
+    auto numLambdaEntryNodes = modRefSummary.GetLambdaEntryNodes(*test.lambda).Size();
+    auto numLambdaExitNodes = modRefSummary.GetLambdaExitNodes(*test.lambda).Size();
 
     assert(numLambdaEntryNodes == pointsToGraph.NumMemoryNodes());
     assert(numLambdaExitNodes == pointsToGraph.NumMemoryNodes());
@@ -67,11 +67,11 @@ TestStore2()
    * Arrange
    */
   auto ValidateProvider = [](const jlm::tests::StoreTest2 & test,
-                             const jlm::llvm::aa::MemoryNodeProvisioning & provisioning,
+                             const jlm::llvm::aa::ModRefSummary & modRefSummary,
                              const jlm::llvm::aa::PointsToGraph & pointsToGraph)
   {
-    auto numLambdaEntryNodes = provisioning.GetLambdaEntryNodes(*test.lambda).Size();
-    auto numLambdaExitNodes = provisioning.GetLambdaExitNodes(*test.lambda).Size();
+    auto numLambdaEntryNodes = modRefSummary.GetLambdaEntryNodes(*test.lambda).Size();
+    auto numLambdaExitNodes = modRefSummary.GetLambdaExitNodes(*test.lambda).Size();
 
     assert(numLambdaEntryNodes == pointsToGraph.NumMemoryNodes());
     assert(numLambdaExitNodes == pointsToGraph.NumMemoryNodes());
@@ -102,11 +102,11 @@ TestLoad1()
    * Arrange
    */
   auto ValidateProvider = [](const jlm::tests::LoadTest1 & test,
-                             const jlm::llvm::aa::MemoryNodeProvisioning & provisioning,
+                             const jlm::llvm::aa::ModRefSummary & modRefSummary,
                              const jlm::llvm::aa::PointsToGraph & pointsToGraph)
   {
-    auto numLambdaEntryNodes = provisioning.GetLambdaEntryNodes(*test.lambda).Size();
-    auto numLambdaExitNodes = provisioning.GetLambdaExitNodes(*test.lambda).Size();
+    auto numLambdaEntryNodes = modRefSummary.GetLambdaEntryNodes(*test.lambda).Size();
+    auto numLambdaExitNodes = modRefSummary.GetLambdaExitNodes(*test.lambda).Size();
 
     assert(numLambdaEntryNodes == pointsToGraph.NumMemoryNodes());
     assert(numLambdaExitNodes == pointsToGraph.NumMemoryNodes());
@@ -137,11 +137,11 @@ TestLoad2()
    * Arrange
    */
   auto ValidateProvider = [](const jlm::tests::LoadTest2 & test,
-                             const jlm::llvm::aa::MemoryNodeProvisioning & provisioning,
+                             const jlm::llvm::aa::ModRefSummary & modRefSummary,
                              const jlm::llvm::aa::PointsToGraph & pointsToGraph)
   {
-    auto numLambdaEntryNodes = provisioning.GetLambdaEntryNodes(*test.lambda).Size();
-    auto numLambdaExitNodes = provisioning.GetLambdaExitNodes(*test.lambda).Size();
+    auto numLambdaEntryNodes = modRefSummary.GetLambdaEntryNodes(*test.lambda).Size();
+    auto numLambdaExitNodes = modRefSummary.GetLambdaExitNodes(*test.lambda).Size();
 
     assert(numLambdaEntryNodes == pointsToGraph.NumMemoryNodes());
     assert(numLambdaExitNodes == pointsToGraph.NumMemoryNodes());
@@ -171,11 +171,11 @@ TestLoadFromUndef()
    * Arrange
    */
   auto ValidateProvider = [](const jlm::tests::LoadFromUndefTest & test,
-                             const jlm::llvm::aa::MemoryNodeProvisioning & provisioning,
+                             const jlm::llvm::aa::ModRefSummary & modRefSummary,
                              const jlm::llvm::aa::PointsToGraph & pointsToGraph)
   {
-    auto numLambdaEntryNodes = provisioning.GetLambdaEntryNodes(test.Lambda()).Size();
-    auto numLambdaExitNodes = provisioning.GetLambdaExitNodes(test.Lambda()).Size();
+    auto numLambdaEntryNodes = modRefSummary.GetLambdaEntryNodes(test.Lambda()).Size();
+    auto numLambdaExitNodes = modRefSummary.GetLambdaExitNodes(test.Lambda()).Size();
 
     assert(numLambdaEntryNodes == pointsToGraph.NumMemoryNodes());
     assert(numLambdaExitNodes == pointsToGraph.NumMemoryNodes());
@@ -206,15 +206,15 @@ TestCall1()
    * Arrange
    */
   auto ValidateProvider = [](const jlm::tests::CallTest1 & test,
-                             const jlm::llvm::aa::MemoryNodeProvisioning & provisioning,
+                             const jlm::llvm::aa::ModRefSummary & modRefSummary,
                              const jlm::llvm::aa::PointsToGraph & pointsToGraph)
   {
     /*
      * Validate function f
      */
     {
-      auto numLambdaEntryNodes = provisioning.GetLambdaEntryNodes(*test.lambda_f).Size();
-      auto numLambdaExitNodes = provisioning.GetLambdaExitNodes(*test.lambda_f).Size();
+      auto numLambdaEntryNodes = modRefSummary.GetLambdaEntryNodes(*test.lambda_f).Size();
+      auto numLambdaExitNodes = modRefSummary.GetLambdaExitNodes(*test.lambda_f).Size();
 
       assert(numLambdaEntryNodes == pointsToGraph.NumMemoryNodes());
       assert(numLambdaExitNodes == pointsToGraph.NumMemoryNodes());
@@ -224,8 +224,8 @@ TestCall1()
      * Validate function g
      */
     {
-      auto numLambdaEntryNodes = provisioning.GetLambdaEntryNodes(*test.lambda_g).Size();
-      auto numLambdaExitNodes = provisioning.GetLambdaExitNodes(*test.lambda_g).Size();
+      auto numLambdaEntryNodes = modRefSummary.GetLambdaEntryNodes(*test.lambda_g).Size();
+      auto numLambdaExitNodes = modRefSummary.GetLambdaExitNodes(*test.lambda_g).Size();
 
       assert(numLambdaEntryNodes == pointsToGraph.NumMemoryNodes());
       assert(numLambdaExitNodes == pointsToGraph.NumMemoryNodes());
@@ -235,20 +235,20 @@ TestCall1()
      * Validate function h
      */
     {
-      auto numLambdaEntryNodes = provisioning.GetLambdaEntryNodes(*test.lambda_h).Size();
-      auto numLambdaExitNodes = provisioning.GetLambdaExitNodes(*test.lambda_h).Size();
+      auto numLambdaEntryNodes = modRefSummary.GetLambdaEntryNodes(*test.lambda_h).Size();
+      auto numLambdaExitNodes = modRefSummary.GetLambdaExitNodes(*test.lambda_h).Size();
 
       assert(numLambdaEntryNodes == pointsToGraph.NumMemoryNodes());
       assert(numLambdaExitNodes == pointsToGraph.NumMemoryNodes());
 
-      auto numCallFEntryNodes = provisioning.GetCallEntryNodes(test.CallF()).Size();
-      auto numCallFExitNodes = provisioning.GetCallExitNodes(test.CallF()).Size();
+      auto numCallFEntryNodes = modRefSummary.GetCallEntryNodes(test.CallF()).Size();
+      auto numCallFExitNodes = modRefSummary.GetCallExitNodes(test.CallF()).Size();
 
       assert(numCallFEntryNodes == pointsToGraph.NumMemoryNodes());
       assert(numCallFExitNodes == pointsToGraph.NumMemoryNodes());
 
-      auto numCallGEntryNodes = provisioning.GetCallEntryNodes(test.CallG()).Size();
-      auto numCallGExitNodes = provisioning.GetCallExitNodes(test.CallG()).Size();
+      auto numCallGEntryNodes = modRefSummary.GetCallEntryNodes(test.CallG()).Size();
+      auto numCallGExitNodes = modRefSummary.GetCallExitNodes(test.CallG()).Size();
 
       assert(numCallGEntryNodes == pointsToGraph.NumMemoryNodes());
       assert(numCallGExitNodes == pointsToGraph.NumMemoryNodes());
@@ -280,15 +280,15 @@ TestCall2()
    * Arrange
    */
   auto ValidateProvider = [](const jlm::tests::CallTest2 & test,
-                             const jlm::llvm::aa::MemoryNodeProvisioning & provisioning,
+                             const jlm::llvm::aa::ModRefSummary & modRefSummary,
                              const jlm::llvm::aa::PointsToGraph & pointsToGraph)
   {
     /*
      * Validate function create
      */
     {
-      auto numLambdaEntryNodes = provisioning.GetLambdaEntryNodes(*test.lambda_create).Size();
-      auto numLambdaExitNodes = provisioning.GetLambdaExitNodes(*test.lambda_create).Size();
+      auto numLambdaEntryNodes = modRefSummary.GetLambdaEntryNodes(*test.lambda_create).Size();
+      auto numLambdaExitNodes = modRefSummary.GetLambdaExitNodes(*test.lambda_create).Size();
 
       assert(numLambdaEntryNodes == pointsToGraph.NumMemoryNodes());
       assert(numLambdaExitNodes == pointsToGraph.NumMemoryNodes());
@@ -298,8 +298,8 @@ TestCall2()
      * Validate function destroy
      */
     {
-      auto numLambdaEntryNodes = provisioning.GetLambdaEntryNodes(*test.lambda_destroy).Size();
-      auto numLambdaExitNodes = provisioning.GetLambdaExitNodes(*test.lambda_destroy).Size();
+      auto numLambdaEntryNodes = modRefSummary.GetLambdaEntryNodes(*test.lambda_destroy).Size();
+      auto numLambdaExitNodes = modRefSummary.GetLambdaExitNodes(*test.lambda_destroy).Size();
 
       assert(numLambdaEntryNodes == pointsToGraph.NumMemoryNodes());
       assert(numLambdaExitNodes == pointsToGraph.NumMemoryNodes());
@@ -309,32 +309,32 @@ TestCall2()
      * Validate function test
      */
     {
-      auto numLambdaEntryNodes = provisioning.GetLambdaEntryNodes(*test.lambda_test).Size();
-      auto numLambdaExitNodes = provisioning.GetLambdaExitNodes(*test.lambda_test).Size();
+      auto numLambdaEntryNodes = modRefSummary.GetLambdaEntryNodes(*test.lambda_test).Size();
+      auto numLambdaExitNodes = modRefSummary.GetLambdaExitNodes(*test.lambda_test).Size();
 
       assert(numLambdaEntryNodes == pointsToGraph.NumMemoryNodes());
       assert(numLambdaExitNodes == pointsToGraph.NumMemoryNodes());
 
-      auto numCallCreate1EntryNodes = provisioning.GetCallEntryNodes(test.CallCreate1()).Size();
-      auto numCallCreate1ExitNodes = provisioning.GetCallExitNodes(test.CallCreate1()).Size();
+      auto numCallCreate1EntryNodes = modRefSummary.GetCallEntryNodes(test.CallCreate1()).Size();
+      auto numCallCreate1ExitNodes = modRefSummary.GetCallExitNodes(test.CallCreate1()).Size();
 
       assert(numCallCreate1EntryNodes == pointsToGraph.NumMemoryNodes());
       assert(numCallCreate1ExitNodes == pointsToGraph.NumMemoryNodes());
 
-      auto numCallCreate2EntryNodes = provisioning.GetCallEntryNodes(test.CallCreate2()).Size();
-      auto numCallCreate2ExitNodes = provisioning.GetCallExitNodes(test.CallCreate2()).Size();
+      auto numCallCreate2EntryNodes = modRefSummary.GetCallEntryNodes(test.CallCreate2()).Size();
+      auto numCallCreate2ExitNodes = modRefSummary.GetCallExitNodes(test.CallCreate2()).Size();
 
       assert(numCallCreate2EntryNodes == pointsToGraph.NumMemoryNodes());
       assert(numCallCreate2ExitNodes == pointsToGraph.NumMemoryNodes());
 
-      auto numCallDestroy1EntryNodes = provisioning.GetCallEntryNodes(test.CallDestroy1()).Size();
-      auto numCallDestroy1ExitNodes = provisioning.GetCallExitNodes(test.CallDestroy1()).Size();
+      auto numCallDestroy1EntryNodes = modRefSummary.GetCallEntryNodes(test.CallDestroy1()).Size();
+      auto numCallDestroy1ExitNodes = modRefSummary.GetCallExitNodes(test.CallDestroy1()).Size();
 
       assert(numCallDestroy1EntryNodes == pointsToGraph.NumMemoryNodes());
       assert(numCallDestroy1ExitNodes == pointsToGraph.NumMemoryNodes());
 
-      auto numCallDestroy2EntryNodes = provisioning.GetCallEntryNodes(test.CallDestroy2()).Size();
-      auto numCallDestroy2ExitNodes = provisioning.GetCallExitNodes(test.CallDestroy2()).Size();
+      auto numCallDestroy2EntryNodes = modRefSummary.GetCallEntryNodes(test.CallDestroy2()).Size();
+      auto numCallDestroy2ExitNodes = modRefSummary.GetCallExitNodes(test.CallDestroy2()).Size();
 
       assert(numCallDestroy2EntryNodes == pointsToGraph.NumMemoryNodes());
       assert(numCallDestroy2ExitNodes == pointsToGraph.NumMemoryNodes());
@@ -366,15 +366,15 @@ TestIndirectCall()
    * Arrange
    */
   auto ValidateProvider = [](const jlm::tests::IndirectCallTest1 & test,
-                             const jlm::llvm::aa::MemoryNodeProvisioning & provisioning,
+                             const jlm::llvm::aa::ModRefSummary & modRefSummary,
                              const jlm::llvm::aa::PointsToGraph & pointsToGraph)
   {
     /*
      * Validate function four
      */
     {
-      auto numLambdaEntryNodes = provisioning.GetLambdaEntryNodes(test.GetLambdaFour()).Size();
-      auto numLambdaExitNodes = provisioning.GetLambdaExitNodes(test.GetLambdaFour()).Size();
+      auto numLambdaEntryNodes = modRefSummary.GetLambdaEntryNodes(test.GetLambdaFour()).Size();
+      auto numLambdaExitNodes = modRefSummary.GetLambdaExitNodes(test.GetLambdaFour()).Size();
 
       assert(numLambdaEntryNodes == pointsToGraph.NumMemoryNodes());
       assert(numLambdaExitNodes == pointsToGraph.NumMemoryNodes());
@@ -384,8 +384,8 @@ TestIndirectCall()
      * Validate function three
      */
     {
-      auto numLambdaEntryNodes = provisioning.GetLambdaEntryNodes(test.GetLambdaThree()).Size();
-      auto numLambdaExitNodes = provisioning.GetLambdaExitNodes(test.GetLambdaThree()).Size();
+      auto numLambdaEntryNodes = modRefSummary.GetLambdaEntryNodes(test.GetLambdaThree()).Size();
+      auto numLambdaExitNodes = modRefSummary.GetLambdaExitNodes(test.GetLambdaThree()).Size();
 
       assert(numLambdaEntryNodes == pointsToGraph.NumMemoryNodes());
       assert(numLambdaExitNodes == pointsToGraph.NumMemoryNodes());
@@ -395,14 +395,14 @@ TestIndirectCall()
      * Validate function indcall
      */
     {
-      auto numLambdaEntryNodes = provisioning.GetLambdaEntryNodes(test.GetLambdaIndcall()).Size();
-      auto numLambdaExitNodes = provisioning.GetLambdaExitNodes(test.GetLambdaIndcall()).Size();
+      auto numLambdaEntryNodes = modRefSummary.GetLambdaEntryNodes(test.GetLambdaIndcall()).Size();
+      auto numLambdaExitNodes = modRefSummary.GetLambdaExitNodes(test.GetLambdaIndcall()).Size();
 
       assert(numLambdaEntryNodes == pointsToGraph.NumMemoryNodes());
       assert(numLambdaExitNodes == pointsToGraph.NumMemoryNodes());
 
-      auto numCallIndcallEntryNodes = provisioning.GetCallEntryNodes(test.CallIndcall()).Size();
-      auto numCallIndcallExitNodes = provisioning.GetCallExitNodes(test.CallIndcall()).Size();
+      auto numCallIndcallEntryNodes = modRefSummary.GetCallEntryNodes(test.CallIndcall()).Size();
+      auto numCallIndcallExitNodes = modRefSummary.GetCallExitNodes(test.CallIndcall()).Size();
 
       assert(numCallIndcallEntryNodes == pointsToGraph.NumMemoryNodes());
       assert(numCallIndcallExitNodes == pointsToGraph.NumMemoryNodes());
@@ -412,20 +412,20 @@ TestIndirectCall()
      * Validate function test
      */
     {
-      auto numLambdaEntryNodes = provisioning.GetLambdaEntryNodes(test.GetLambdaTest()).Size();
-      auto numLambdaExitNodes = provisioning.GetLambdaExitNodes(test.GetLambdaTest()).Size();
+      auto numLambdaEntryNodes = modRefSummary.GetLambdaEntryNodes(test.GetLambdaTest()).Size();
+      auto numLambdaExitNodes = modRefSummary.GetLambdaExitNodes(test.GetLambdaTest()).Size();
 
       assert(numLambdaEntryNodes == pointsToGraph.NumMemoryNodes());
       assert(numLambdaExitNodes == pointsToGraph.NumMemoryNodes());
 
-      auto numCallThreeEntryNodes = provisioning.GetCallEntryNodes(test.CallThree()).Size();
-      auto numCallThreeExitNodes = provisioning.GetCallExitNodes(test.CallThree()).Size();
+      auto numCallThreeEntryNodes = modRefSummary.GetCallEntryNodes(test.CallThree()).Size();
+      auto numCallThreeExitNodes = modRefSummary.GetCallExitNodes(test.CallThree()).Size();
 
       assert(numCallThreeEntryNodes == pointsToGraph.NumMemoryNodes());
       assert(numCallThreeExitNodes == pointsToGraph.NumMemoryNodes());
 
-      auto numCallFourEntryNodes = provisioning.GetCallEntryNodes(test.CallFour()).Size();
-      auto numCallFourExitNodes = provisioning.GetCallExitNodes(test.CallFour()).Size();
+      auto numCallFourEntryNodes = modRefSummary.GetCallEntryNodes(test.CallFour()).Size();
+      auto numCallFourExitNodes = modRefSummary.GetCallExitNodes(test.CallFour()).Size();
 
       assert(numCallFourEntryNodes == pointsToGraph.NumMemoryNodes());
       assert(numCallFourExitNodes == pointsToGraph.NumMemoryNodes());
@@ -457,13 +457,13 @@ TestGamma()
    * Arrange
    */
   auto ValidateProvider = [](const jlm::tests::GammaTest & test,
-                             const jlm::llvm::aa::MemoryNodeProvisioning & provisioning,
+                             const jlm::llvm::aa::ModRefSummary & modRefSummary,
                              const jlm::llvm::aa::PointsToGraph & pointsToGraph)
   {
-    auto numLambdaEntryNodes = provisioning.GetLambdaEntryNodes(*test.lambda).Size();
-    auto numLambdaExitNodes = provisioning.GetLambdaExitNodes(*test.lambda).Size();
-    auto numGammaEntryNodes = provisioning.GetGammaEntryNodes(*test.gamma).Size();
-    auto numGammaExitNodes = provisioning.GetGammaExitNodes(*test.gamma).Size();
+    auto numLambdaEntryNodes = modRefSummary.GetLambdaEntryNodes(*test.lambda).Size();
+    auto numLambdaExitNodes = modRefSummary.GetLambdaExitNodes(*test.lambda).Size();
+    auto numGammaEntryNodes = modRefSummary.GetGammaEntryNodes(*test.gamma).Size();
+    auto numGammaExitNodes = modRefSummary.GetGammaExitNodes(*test.gamma).Size();
 
     assert(numLambdaEntryNodes == pointsToGraph.NumMemoryNodes());
     assert(numLambdaExitNodes == pointsToGraph.NumMemoryNodes());
@@ -496,12 +496,12 @@ TestTheta()
    * Arrange
    */
   auto ValidateProvider = [](const jlm::tests::ThetaTest & test,
-                             const jlm::llvm::aa::MemoryNodeProvisioning & provisioning,
+                             const jlm::llvm::aa::ModRefSummary & modRefSummary,
                              const jlm::llvm::aa::PointsToGraph & pointsToGraph)
   {
-    auto numLambdaEntryNodes = provisioning.GetLambdaEntryNodes(*test.lambda).Size();
-    auto numLambdaExitNodes = provisioning.GetLambdaExitNodes(*test.lambda).Size();
-    auto numThetaNodes = provisioning.GetThetaEntryExitNodes(*test.theta).Size();
+    auto numLambdaEntryNodes = modRefSummary.GetLambdaEntryNodes(*test.lambda).Size();
+    auto numLambdaExitNodes = modRefSummary.GetLambdaExitNodes(*test.lambda).Size();
+    auto numThetaNodes = modRefSummary.GetThetaEntryExitNodes(*test.theta).Size();
 
     assert(numLambdaEntryNodes == pointsToGraph.NumMemoryNodes());
     assert(numLambdaExitNodes == pointsToGraph.NumMemoryNodes());
@@ -533,15 +533,15 @@ TestDelta1()
    * Arrange
    */
   auto ValidateProvider = [](const jlm::tests::DeltaTest1 & test,
-                             const jlm::llvm::aa::MemoryNodeProvisioning & provisioning,
+                             const jlm::llvm::aa::ModRefSummary & modRefSummary,
                              const jlm::llvm::aa::PointsToGraph & pointsToGraph)
   {
     /*
      * Validate function g
      */
     {
-      auto numLambdaEntryNodes = provisioning.GetLambdaEntryNodes(*test.lambda_g).Size();
-      auto numLambdaExitNodes = provisioning.GetLambdaExitNodes(*test.lambda_g).Size();
+      auto numLambdaEntryNodes = modRefSummary.GetLambdaEntryNodes(*test.lambda_g).Size();
+      auto numLambdaExitNodes = modRefSummary.GetLambdaExitNodes(*test.lambda_g).Size();
 
       assert(numLambdaEntryNodes == pointsToGraph.NumMemoryNodes());
       assert(numLambdaExitNodes == pointsToGraph.NumMemoryNodes());
@@ -551,10 +551,10 @@ TestDelta1()
      * Validate function h
      */
     {
-      auto numLambdaEntryNodes = provisioning.GetLambdaEntryNodes(*test.lambda_h).Size();
-      auto numLambdaExitNodes = provisioning.GetLambdaExitNodes(*test.lambda_h).Size();
-      auto numCallEntryNodes = provisioning.GetCallEntryNodes(test.CallG()).Size();
-      auto numCallExitNodes = provisioning.GetCallExitNodes(test.CallG()).Size();
+      auto numLambdaEntryNodes = modRefSummary.GetLambdaEntryNodes(*test.lambda_h).Size();
+      auto numLambdaExitNodes = modRefSummary.GetLambdaExitNodes(*test.lambda_h).Size();
+      auto numCallEntryNodes = modRefSummary.GetCallEntryNodes(test.CallG()).Size();
+      auto numCallExitNodes = modRefSummary.GetCallExitNodes(test.CallG()).Size();
 
       assert(numLambdaEntryNodes == pointsToGraph.NumMemoryNodes());
       assert(numLambdaExitNodes == pointsToGraph.NumMemoryNodes());
@@ -588,15 +588,15 @@ TestDelta2()
    * Arrange
    */
   auto ValidateProvider = [](const jlm::tests::DeltaTest2 & test,
-                             const jlm::llvm::aa::MemoryNodeProvisioning & provisioning,
+                             const jlm::llvm::aa::ModRefSummary & modRefSummary,
                              const jlm::llvm::aa::PointsToGraph & pointsToGraph)
   {
     /*
      * Validate function f1
      */
     {
-      auto numLambdaEntryNodes = provisioning.GetLambdaEntryNodes(*test.lambda_f1).Size();
-      auto numLambdaExitNodes = provisioning.GetLambdaExitNodes(*test.lambda_f1).Size();
+      auto numLambdaEntryNodes = modRefSummary.GetLambdaEntryNodes(*test.lambda_f1).Size();
+      auto numLambdaExitNodes = modRefSummary.GetLambdaExitNodes(*test.lambda_f1).Size();
 
       assert(numLambdaEntryNodes == pointsToGraph.NumMemoryNodes());
       assert(numLambdaExitNodes == pointsToGraph.NumMemoryNodes());
@@ -606,10 +606,10 @@ TestDelta2()
      * Validate function f2
      */
     {
-      auto numLambdaEntryNodes = provisioning.GetLambdaEntryNodes(*test.lambda_f2).Size();
-      auto numLambdaExitNodes = provisioning.GetLambdaExitNodes(*test.lambda_f2).Size();
-      auto numCallEntryNodes = provisioning.GetCallEntryNodes(test.CallF1()).Size();
-      auto numCallExitNodes = provisioning.GetCallExitNodes(test.CallF1()).Size();
+      auto numLambdaEntryNodes = modRefSummary.GetLambdaEntryNodes(*test.lambda_f2).Size();
+      auto numLambdaExitNodes = modRefSummary.GetLambdaExitNodes(*test.lambda_f2).Size();
+      auto numCallEntryNodes = modRefSummary.GetCallEntryNodes(test.CallF1()).Size();
+      auto numCallExitNodes = modRefSummary.GetCallExitNodes(test.CallF1()).Size();
 
       assert(numLambdaEntryNodes == pointsToGraph.NumMemoryNodes());
       assert(numLambdaExitNodes == pointsToGraph.NumMemoryNodes());
@@ -643,15 +643,15 @@ TestImports()
    * Arrange
    */
   auto ValidateProvider = [](const jlm::tests::ImportTest & test,
-                             const jlm::llvm::aa::MemoryNodeProvisioning & provisioning,
+                             const jlm::llvm::aa::ModRefSummary & modRefSummary,
                              const jlm::llvm::aa::PointsToGraph & pointsToGraph)
   {
     /*
      * Validate function f1
      */
     {
-      auto numLambdaEntryNodes = provisioning.GetLambdaEntryNodes(*test.lambda_f1).Size();
-      auto numLambdaExitNodes = provisioning.GetLambdaExitNodes(*test.lambda_f1).Size();
+      auto numLambdaEntryNodes = modRefSummary.GetLambdaEntryNodes(*test.lambda_f1).Size();
+      auto numLambdaExitNodes = modRefSummary.GetLambdaExitNodes(*test.lambda_f1).Size();
 
       assert(numLambdaEntryNodes == pointsToGraph.NumMemoryNodes());
       assert(numLambdaExitNodes == pointsToGraph.NumMemoryNodes());
@@ -661,10 +661,10 @@ TestImports()
      * Validate function f2
      */
     {
-      auto numLambdaEntryNodes = provisioning.GetLambdaEntryNodes(*test.lambda_f2).Size();
-      auto numLambdaExitNodes = provisioning.GetLambdaExitNodes(*test.lambda_f2).Size();
-      auto numCallEntryNodes = provisioning.GetCallEntryNodes(test.CallF1()).Size();
-      auto numCallExitNodes = provisioning.GetCallExitNodes(test.CallF1()).Size();
+      auto numLambdaEntryNodes = modRefSummary.GetLambdaEntryNodes(*test.lambda_f2).Size();
+      auto numLambdaExitNodes = modRefSummary.GetLambdaExitNodes(*test.lambda_f2).Size();
+      auto numCallEntryNodes = modRefSummary.GetCallEntryNodes(test.CallF1()).Size();
+      auto numCallExitNodes = modRefSummary.GetCallExitNodes(test.CallF1()).Size();
 
       assert(numLambdaEntryNodes == pointsToGraph.NumMemoryNodes());
       assert(numLambdaExitNodes == pointsToGraph.NumMemoryNodes());
@@ -698,21 +698,21 @@ TestPhi1()
    * Arrange
    */
   auto ValidateProvider = [](const jlm::tests::PhiTest1 & test,
-                             const jlm::llvm::aa::MemoryNodeProvisioning & provisioning,
+                             const jlm::llvm::aa::ModRefSummary & modRefSummary,
                              const jlm::llvm::aa::PointsToGraph & pointsToGraph)
   {
     /*
      * Validate function fib
      */
     {
-      auto numLambdaEntryNodes = provisioning.GetLambdaEntryNodes(*test.lambda_fib).Size();
-      auto numLambdaExitNodes = provisioning.GetLambdaExitNodes(*test.lambda_fib).Size();
-      auto numGammaEntryNodes = provisioning.GetGammaEntryNodes(*test.gamma).Size();
-      auto numGammaExitNodes = provisioning.GetGammaExitNodes(*test.gamma).Size();
-      auto numCallFibm1EntryNodes = provisioning.GetCallEntryNodes(test.CallFibm1()).Size();
-      auto numCallFibm1ExitNodes = provisioning.GetCallExitNodes(test.CallFibm1()).Size();
-      auto numCallFibm2EntryNodes = provisioning.GetCallEntryNodes(test.CallFibm2()).Size();
-      auto numCallFibm2ExitNodes = provisioning.GetCallExitNodes(test.CallFibm2()).Size();
+      auto numLambdaEntryNodes = modRefSummary.GetLambdaEntryNodes(*test.lambda_fib).Size();
+      auto numLambdaExitNodes = modRefSummary.GetLambdaExitNodes(*test.lambda_fib).Size();
+      auto numGammaEntryNodes = modRefSummary.GetGammaEntryNodes(*test.gamma).Size();
+      auto numGammaExitNodes = modRefSummary.GetGammaExitNodes(*test.gamma).Size();
+      auto numCallFibm1EntryNodes = modRefSummary.GetCallEntryNodes(test.CallFibm1()).Size();
+      auto numCallFibm1ExitNodes = modRefSummary.GetCallExitNodes(test.CallFibm1()).Size();
+      auto numCallFibm2EntryNodes = modRefSummary.GetCallEntryNodes(test.CallFibm2()).Size();
+      auto numCallFibm2ExitNodes = modRefSummary.GetCallExitNodes(test.CallFibm2()).Size();
 
       assert(numLambdaEntryNodes == pointsToGraph.NumMemoryNodes());
       assert(numLambdaExitNodes == pointsToGraph.NumMemoryNodes());
@@ -728,10 +728,10 @@ TestPhi1()
      * Validate function test
      */
     {
-      auto numLambdaEntryNodes = provisioning.GetLambdaEntryNodes(*test.lambda_test).Size();
-      auto numLambdaExitNodes = provisioning.GetLambdaExitNodes(*test.lambda_test).Size();
-      auto numCallFibEntryNodes = provisioning.GetCallEntryNodes(test.CallFib()).Size();
-      auto numCallFibExitNodes = provisioning.GetCallExitNodes(test.CallFib()).Size();
+      auto numLambdaEntryNodes = modRefSummary.GetLambdaEntryNodes(*test.lambda_test).Size();
+      auto numLambdaExitNodes = modRefSummary.GetLambdaExitNodes(*test.lambda_test).Size();
+      auto numCallFibEntryNodes = modRefSummary.GetCallEntryNodes(test.CallFib()).Size();
+      auto numCallFibExitNodes = modRefSummary.GetCallExitNodes(test.CallFib()).Size();
 
       assert(numLambdaEntryNodes == pointsToGraph.NumMemoryNodes());
       assert(numLambdaExitNodes == pointsToGraph.NumMemoryNodes());
@@ -765,15 +765,15 @@ TestMemcpy()
    * Arrange
    */
   auto ValidateProvider = [](const jlm::tests::MemcpyTest & test,
-                             const jlm::llvm::aa::MemoryNodeProvisioning & provisioning,
+                             const jlm::llvm::aa::ModRefSummary & modRefSummary,
                              const jlm::llvm::aa::PointsToGraph & pointsToGraph)
   {
     /*
      * Validate function f
      */
     {
-      auto numLambdaEntryNodes = provisioning.GetLambdaEntryNodes(test.LambdaF()).Size();
-      auto numLambdaExitNodes = provisioning.GetLambdaExitNodes(test.LambdaF()).Size();
+      auto numLambdaEntryNodes = modRefSummary.GetLambdaEntryNodes(test.LambdaF()).Size();
+      auto numLambdaExitNodes = modRefSummary.GetLambdaExitNodes(test.LambdaF()).Size();
 
       assert(numLambdaEntryNodes == pointsToGraph.NumMemoryNodes());
       assert(numLambdaExitNodes == pointsToGraph.NumMemoryNodes());
@@ -783,15 +783,15 @@ TestMemcpy()
      * Validate function g
      */
     {
-      auto numLambdaEntryNodes = provisioning.GetLambdaEntryNodes(test.LambdaG()).Size();
-      auto numLambdaExitNodes = provisioning.GetLambdaExitNodes(test.LambdaG()).Size();
-      auto numCallFEntryNodes = provisioning.GetCallEntryNodes(test.CallF()).Size();
-      auto numCallFExitNodes = provisioning.GetCallExitNodes(test.CallF()).Size();
+      auto numLambdaEntryNodes = modRefSummary.GetLambdaEntryNodes(test.LambdaG()).Size();
+      auto numLambdaExitNodes = modRefSummary.GetLambdaExitNodes(test.LambdaG()).Size();
+      auto numCallFEntryNodes = modRefSummary.GetCallEntryNodes(test.CallF()).Size();
+      auto numCallFExitNodes = modRefSummary.GetCallExitNodes(test.CallF()).Size();
 
       auto numMemcpyDestNodes =
-          provisioning.GetOutputNodes(*test.Memcpy().input(0)->origin()).Size();
+          modRefSummary.GetOutputNodes(*test.Memcpy().input(0)->origin()).Size();
       auto numMemcpySrcNodes =
-          provisioning.GetOutputNodes(*test.Memcpy().input(1)->origin()).Size();
+          modRefSummary.GetOutputNodes(*test.Memcpy().input(1)->origin()).Size();
 
       assert(numLambdaEntryNodes == pointsToGraph.NumMemoryNodes());
       assert(numLambdaExitNodes == pointsToGraph.NumMemoryNodes());
