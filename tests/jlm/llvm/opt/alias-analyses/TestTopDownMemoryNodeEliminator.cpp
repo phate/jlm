@@ -20,8 +20,8 @@ ValidateTest(
       "Test should be derived from RvsdgTest class.");
 
   static_assert(
-      std::is_base_of<jlm::llvm::aa::AliasAnalysis, Analysis>::value,
-      "Analysis should be derived from AliasAnalysis class.");
+      std::is_base_of_v<jlm::llvm::aa::PointsToAnalysis, Analysis>,
+      "Analysis should be derived from PointsToAnalysis class.");
 
   static_assert(
       std::is_base_of<jlm::llvm::aa::MemoryNodeProvider, Provider>::value,

@@ -87,8 +87,8 @@ libllvm_HEADERS = \
 	jlm/llvm/opt/alias-analyses/PointerObjectSet.hpp \
 	jlm/llvm/opt/alias-analyses/AgnosticMemoryNodeProvider.hpp \
 	jlm/llvm/opt/alias-analyses/RegionAwareMemoryNodeProvider.hpp \
+	jlm/llvm/opt/alias-analyses/PointsToAnalysis.hpp \
 	jlm/llvm/opt/alias-analyses/PointsToGraph.hpp \
-	jlm/llvm/opt/alias-analyses/AliasAnalysis.hpp \
 	jlm/llvm/opt/pull.hpp \
 	jlm/llvm/opt/reduction.hpp \
 	jlm/llvm/opt/InvariantValueRedirection.hpp \
