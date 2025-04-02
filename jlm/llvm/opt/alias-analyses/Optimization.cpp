@@ -20,13 +20,13 @@ template<typename TPointsToAnalysis, typename MemoryNodeProviderPass>
 PointsToAnalysisStateEncoder<TPointsToAnalysis, MemoryNodeProviderPass>::
     ~PointsToAnalysisStateEncoder() noexcept = default;
 
-template<typename TPointsToAnalysisPass, typename MemoryNodeProviderPass>
+template<typename TPointsToAnalysis, typename MemoryNodeProviderPass>
 void
-PointsToAnalysisStateEncoder<TPointsToAnalysisPass, MemoryNodeProviderPass>::Run(
+PointsToAnalysisStateEncoder<TPointsToAnalysis, MemoryNodeProviderPass>::Run(
     rvsdg::RvsdgModule & rvsdgModule,
     util::StatisticsCollector & statisticsCollector)
 {
-  TPointsToAnalysisPass ptaPass;
+  TPointsToAnalysis ptaPass;
   auto pointsToGraph = ptaPass.Analyze(rvsdgModule, statisticsCollector);
   auto provisioning =
       MemoryNodeProviderPass::Create(rvsdgModule, *pointsToGraph, statisticsCollector);
