@@ -420,7 +420,7 @@ JlmToMlirConverter::ConvertSimpleNode(
         Builder_->getIntegerType(sextOp->ndstbits()),
         inputs[0]);
   }
-  else if (auto sitofpOp = dynamic_cast<const jlm::llvm::sitofp_op *>(&operation))
+  else if (auto sitofpOp = dynamic_cast<const llvm::SIToFPOperation *>(&operation))
   {
     MlirOp = Builder_->create<::mlir::arith::SIToFPOp>(
         Builder_->getUnknownLoc(),

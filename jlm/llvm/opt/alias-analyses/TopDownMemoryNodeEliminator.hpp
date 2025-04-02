@@ -58,7 +58,7 @@ namespace jlm::llvm::aa
 class TopDownMemoryNodeEliminator final : public MemoryNodeEliminator
 {
   class Context;
-  class Provisioning;
+  class ModRefSummary;
   class Statistics;
 
 public:
@@ -76,39 +76,39 @@ public:
   TopDownMemoryNodeEliminator &
   operator=(TopDownMemoryNodeEliminator &&) = delete;
 
-  std::unique_ptr<MemoryNodeProvisioning>
+  std::unique_ptr<aa::ModRefSummary>
   EliminateMemoryNodes(
       const rvsdg::RvsdgModule & rvsdgModule,
-      const MemoryNodeProvisioning & seedProvisioning,
+      const aa::ModRefSummary & seedModRefSummary,
       util::StatisticsCollector & statisticsCollector) override;
 
   /**
    * Creates a TopDownMemoryNodeEliminator and calls the EliminateMemoryNodes() method.
    *
    * @param rvsdgModule The RVSDG module on which the provisioning should be performed.
-   * @param seedProvisioning A provisioning from which memory nodes will be eliminated.
+   * @param modRefSummary A Mod/Ref summary from which memory nodes will be eliminated.
    * @param statisticsCollector The statistics collector for collecting pass statistics.
    *
    * @return A new instance of MemoryNodeProvisioning.
    */
-  static std::unique_ptr<MemoryNodeProvisioning>
+  static std::unique_ptr<aa::ModRefSummary>
   CreateAndEliminate(
       const rvsdg::RvsdgModule & rvsdgModule,
-      const MemoryNodeProvisioning & seedProvisioning,
+      const aa::ModRefSummary & modRefSummary,
       util::StatisticsCollector & statisticsCollector);
 
   /**
    * Creates a TopDownMemoryNodeEliminator and calls the EliminateMemoryNodes() method.
    *
    * @param rvsdgModule The RVSDG module on which the provisioning should be performed.
-   * @param seedProvisioning A provisioning from which memory nodes will be eliminated.
+   * @param seedModRefSummary A Mod/Ref summary from which memory nodes will be eliminated.
    *
    * @return A new instance of MemoryNodeProvisioning.
    */
-  static std::unique_ptr<MemoryNodeProvisioning>
+  static std::unique_ptr<aa::ModRefSummary>
   CreateAndEliminate(
       const rvsdg::RvsdgModule & rvsdgModule,
-      const MemoryNodeProvisioning & seedProvisioning);
+      const aa::ModRefSummary & seedModRefSummary);
 
 private:
   void
@@ -214,16 +214,16 @@ private:
    * provisioning.
    *
    * @param rvsdgModule The RVSDG module for which the provisioning is computed.
-   * @param seedProvisioning The seed provisioning. \see EliminateMemoryNodes
-   * @param provisioning The computed provisioning from TopDownMemoryNodeEliminator.
+   * @param seedModRefSummary The seed Mod/Ref summary. \see EliminateMemoryNodes
+   * @param modRefSummary The computed Mod/Ref summary from TopDownMemoryNodeEliminator.
    *
    * @return Returns true if all invariants are fulfilled, otherwise false.
    */
   static bool
   CheckInvariants(
       const rvsdg::RvsdgModule & rvsdgModule,
-      const MemoryNodeProvisioning & seedProvisioning,
-      const Provisioning & provisioning);
+      const aa::ModRefSummary & seedModRefSummary,
+      const aa::ModRefSummary & modRefSummary);
 
   std::unique_ptr<Context> Context_;
 };

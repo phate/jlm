@@ -8,10 +8,10 @@
 namespace jlm::llvm::aa
 {
 
-/** \brief Memory Node Provisioning of agnostic memory node provider
+/** \brief Mod/Ref summary of agnostic memory node provider
  *
  */
-class AgnosticMemoryNodeProvisioning final : public MemoryNodeProvisioning
+class AgnosticMemoryNodeProvisioning final : public ModRefSummary
 {
 public:
   ~AgnosticMemoryNodeProvisioning() noexcept override = default;
@@ -94,7 +94,7 @@ private:
 
 AgnosticMemoryNodeProvider::~AgnosticMemoryNodeProvider() = default;
 
-std::unique_ptr<MemoryNodeProvisioning>
+std::unique_ptr<ModRefSummary>
 AgnosticMemoryNodeProvider::ProvisionMemoryNodes(
     const rvsdg::RvsdgModule & rvsdgModule,
     const PointsToGraph & pointsToGraph,
@@ -130,7 +130,7 @@ AgnosticMemoryNodeProvider::ProvisionMemoryNodes(
   return provisioning;
 }
 
-std::unique_ptr<MemoryNodeProvisioning>
+std::unique_ptr<ModRefSummary>
 AgnosticMemoryNodeProvider::Create(
     const rvsdg::RvsdgModule & rvsdgModule,
     const PointsToGraph & pointsToGraph,
@@ -140,7 +140,7 @@ AgnosticMemoryNodeProvider::Create(
   return provider.ProvisionMemoryNodes(rvsdgModule, pointsToGraph, statisticsCollector);
 }
 
-std::unique_ptr<MemoryNodeProvisioning>
+std::unique_ptr<ModRefSummary>
 AgnosticMemoryNodeProvider::Create(
     const rvsdg::RvsdgModule & rvsdgModule,
     const PointsToGraph & pointsToGraph)

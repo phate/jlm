@@ -17,18 +17,18 @@
 namespace jlm::llvm::aa
 {
 
-template<typename AliasAnalysisPass, typename MemoryNodeProviderPass>
-AliasAnalysisStateEncoder<AliasAnalysisPass, MemoryNodeProviderPass>::
-    ~AliasAnalysisStateEncoder() noexcept = default;
+template<typename TPointsToAnalysis, typename MemoryNodeProviderPass>
+PointsToAnalysisStateEncoder<TPointsToAnalysis, MemoryNodeProviderPass>::
+    ~PointsToAnalysisStateEncoder() noexcept = default;
 
-template<typename AliasAnalysisPass, typename MemoryNodeProviderPass>
+template<typename TPointsToAnalysis, typename MemoryNodeProviderPass>
 void
-AliasAnalysisStateEncoder<AliasAnalysisPass, MemoryNodeProviderPass>::Run(
+PointsToAnalysisStateEncoder<TPointsToAnalysis, MemoryNodeProviderPass>::Run(
     rvsdg::RvsdgModule & rvsdgModule,
     util::StatisticsCollector & statisticsCollector)
 {
-  AliasAnalysisPass aaPass;
-  auto pointsToGraph = aaPass.Analyze(rvsdgModule, statisticsCollector);
+  TPointsToAnalysis ptaPass;
+  auto pointsToGraph = ptaPass.Analyze(rvsdgModule, statisticsCollector);
 
   // Evaluate alias analysis precision if the statistic is demanded
   PrecisionEvaluator precisionEvaluator(PrecisionEvaluationMode::AllPointerPairs);
@@ -47,11 +47,11 @@ AliasAnalysisStateEncoder<AliasAnalysisPass, MemoryNodeProviderPass>::Run(
 }
 
 // Explicitly initialize all combinations
-template class AliasAnalysisStateEncoder<Steensgaard, AgnosticMemoryNodeProvider>;
-template class AliasAnalysisStateEncoder<Steensgaard, RegionAwareMemoryNodeProvider>;
-template class AliasAnalysisStateEncoder<Andersen, AgnosticMemoryNodeProvider>;
-template class AliasAnalysisStateEncoder<Andersen, RegionAwareMemoryNodeProvider>;
-template class AliasAnalysisStateEncoder<
+template class PointsToAnalysisStateEncoder<Steensgaard, AgnosticMemoryNodeProvider>;
+template class PointsToAnalysisStateEncoder<Steensgaard, RegionAwareMemoryNodeProvider>;
+template class PointsToAnalysisStateEncoder<Andersen, AgnosticMemoryNodeProvider>;
+template class PointsToAnalysisStateEncoder<Andersen, RegionAwareMemoryNodeProvider>;
+template class PointsToAnalysisStateEncoder<
     Andersen,
     EliminatedMemoryNodeProvider<AgnosticMemoryNodeProvider, TopDownMemoryNodeEliminator>>;
 

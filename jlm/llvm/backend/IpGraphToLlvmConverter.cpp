@@ -1372,7 +1372,7 @@ IpGraphToLlvmConverter::convert_operation(
   {
     return convert_cast<::llvm::Instruction::SExt>(op, arguments, builder);
   }
-  if (is<sitofp_op>(op))
+  if (is<SIToFPOperation>(op))
   {
     return convert_cast<::llvm::Instruction::SIToFP>(op, arguments, builder);
   }

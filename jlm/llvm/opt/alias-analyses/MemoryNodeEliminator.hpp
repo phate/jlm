@@ -21,7 +21,7 @@ class StatisticsCollector;
 namespace jlm::llvm::aa
 {
 
-class MemoryNodeProvisioning;
+class ModRefSummary;
 
 class MemoryNodeEliminator
 {
@@ -32,16 +32,16 @@ public:
    * Eliminates unnecessary memory nodes from a MemoryNodeProvisioning.
    *
    * @param rvsdgModule The RVSDG module from which the seedProvisioning was computed from.
-   * @param seedProvisioning A provisioning from which memory nodes will be eliminated.
+   * @param seedModRefSummary A Mod/Ref summary from which memory nodes will be eliminated.
    * @param statisticsCollector The statistics collector for collecting pass statistics.
    *
-   * @return An instance of MemoryNodeProvisioning.
+   * @return An instance of ModRefSummary.
    */
-  virtual std::unique_ptr<MemoryNodeProvisioning>
+  virtual std::unique_ptr<ModRefSummary>
   EliminateMemoryNodes(
       const rvsdg::RvsdgModule & rvsdgModule,
-      const MemoryNodeProvisioning & seedProvisioning,
-      jlm::util::StatisticsCollector & statisticsCollector) = 0;
+      const ModRefSummary & seedModRefSummary,
+      util::StatisticsCollector & statisticsCollector) = 0;
 };
 
 }

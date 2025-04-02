@@ -3,8 +3,8 @@
  * See COPYING for terms of redistribution.
  */
 
-#ifndef JLM_LLVM_OPT_ALIAS_ANALYSES_ALIASANALYSIS_HPP
-#define JLM_LLVM_OPT_ALIAS_ANALYSES_ALIASANALYSIS_HPP
+#ifndef JLM_LLVM_OPT_ALIAS_ANALYSES_POINTSTOANALYSIS_HPP
+#define JLM_LLVM_OPT_ALIAS_ANALYSES_POINTSTOANALYSIS_HPP
 
 #include <memory>
 
@@ -27,12 +27,12 @@ namespace aa
 class PointsToGraph;
 
 /**
- * \brief Alias Analysis Interface
+ * \brief Points-to Analysis Interface
  */
-class AliasAnalysis
+class PointsToAnalysis
 {
 public:
-  virtual ~AliasAnalysis() = default;
+  virtual ~PointsToAnalysis() = default;
 
   /**
    * \brief Analyze RVSDG module
