@@ -12,8 +12,8 @@
 
 template<class Test, class Analysis, class Provider>
 static void
-ValidateTest(std::function<void(const Test &, const jlm::llvm::aa::MemoryNodeProvisioning &)>
-                 validateProvisioning)
+ValidateTest(
+    std::function<void(const Test &, const jlm::llvm::aa::ModRefSummary &)> validateModRefSummary)
 {
   static_assert(
       std::is_base_of<jlm::tests::RvsdgTest, Test>::value,
@@ -34,21 +34,21 @@ ValidateTest(std::function<void(const Test &, const jlm::llvm::aa::MemoryNodePro
   auto pointsToGraph = aliasAnalysis.Analyze(rvsdgModule);
   std::cout << jlm::llvm::aa::PointsToGraph::ToDot(*pointsToGraph);
 
-  auto seedProvisioning = Provider::Create(rvsdgModule, *pointsToGraph);
+  auto seedModRefSummary = Provider::Create(rvsdgModule, *pointsToGraph);
 
-  auto provisioning = jlm::llvm::aa::TopDownMemoryNodeEliminator::CreateAndEliminate(
+  auto modRefSummary = jlm::llvm::aa::TopDownMemoryNodeEliminator::CreateAndEliminate(
       test.module(),
-      *seedProvisioning);
+      *seedModRefSummary);
 
-  validateProvisioning(test, *provisioning);
+  validateModRefSummary(test, *modRefSummary);
 }
 
 static void
 ValidateStoreTest1SteensgaardAgnostic(
     const jlm::tests::StoreTest1 & test,
-    const jlm::llvm::aa::MemoryNodeProvisioning & provisioning)
+    const jlm::llvm::aa::ModRefSummary & modRefSummary)
 {
-  auto & pointsToGraph = provisioning.GetPointsToGraph();
+  auto & pointsToGraph = modRefSummary.GetPointsToGraph();
 
   auto & lambdaMemoryNode = pointsToGraph.GetLambdaNode(*test.lambda);
   auto & externalMemoryNode = pointsToGraph.GetExternalMemoryNode();
@@ -56,19 +56,19 @@ ValidateStoreTest1SteensgaardAgnostic(
   jlm::util::HashSet<const jlm::llvm::aa::PointsToGraph::MemoryNode *> expectedMemoryNodes(
       { &lambdaMemoryNode, &externalMemoryNode });
 
-  auto & lambdaEntryNodes = provisioning.GetLambdaEntryNodes(*test.lambda);
+  auto & lambdaEntryNodes = modRefSummary.GetLambdaEntryNodes(*test.lambda);
   assert(lambdaEntryNodes == expectedMemoryNodes);
 
-  auto & lambdaExitNodes = provisioning.GetLambdaExitNodes(*test.lambda);
+  auto & lambdaExitNodes = modRefSummary.GetLambdaExitNodes(*test.lambda);
   assert(lambdaExitNodes == expectedMemoryNodes);
 }
 
 static void
 ValidateStoreTest2SteensgaardAgnostic(
     const jlm::tests::StoreTest2 & test,
-    const jlm::llvm::aa::MemoryNodeProvisioning & provisioning)
+    const jlm::llvm::aa::ModRefSummary & modRefSummary)
 {
-  auto & pointsToGraph = provisioning.GetPointsToGraph();
+  auto & pointsToGraph = modRefSummary.GetPointsToGraph();
 
   auto & lambdaMemoryNode = pointsToGraph.GetLambdaNode(*test.lambda);
   auto & externalMemoryNode = pointsToGraph.GetExternalMemoryNode();
@@ -76,19 +76,19 @@ ValidateStoreTest2SteensgaardAgnostic(
   jlm::util::HashSet<const jlm::llvm::aa::PointsToGraph::MemoryNode *> expectedMemoryNodes(
       { &lambdaMemoryNode, &externalMemoryNode });
 
-  auto & lambdaEntryNodes = provisioning.GetLambdaEntryNodes(*test.lambda);
+  auto & lambdaEntryNodes = modRefSummary.GetLambdaEntryNodes(*test.lambda);
   assert(lambdaEntryNodes == expectedMemoryNodes);
 
-  auto & lambdaExitNodes = provisioning.GetLambdaExitNodes(*test.lambda);
+  auto & lambdaExitNodes = modRefSummary.GetLambdaExitNodes(*test.lambda);
   assert(lambdaExitNodes == expectedMemoryNodes);
 }
 
 static void
 ValidateLoadTest1SteensgaardAgnostic(
     const jlm::tests::LoadTest1 & test,
-    const jlm::llvm::aa::MemoryNodeProvisioning & provisioning)
+    const jlm::llvm::aa::ModRefSummary & modRefSummary)
 {
-  auto & pointsToGraph = provisioning.GetPointsToGraph();
+  auto & pointsToGraph = modRefSummary.GetPointsToGraph();
 
   auto & lambdaMemoryNode = pointsToGraph.GetLambdaNode(*test.lambda);
   auto & externalMemoryNode = pointsToGraph.GetExternalMemoryNode();
@@ -96,19 +96,19 @@ ValidateLoadTest1SteensgaardAgnostic(
   jlm::util::HashSet<const jlm::llvm::aa::PointsToGraph::MemoryNode *> expectedMemoryNodes(
       { &lambdaMemoryNode, &externalMemoryNode });
 
-  auto & lambdaEntryNodes = provisioning.GetLambdaEntryNodes(*test.lambda);
+  auto & lambdaEntryNodes = modRefSummary.GetLambdaEntryNodes(*test.lambda);
   assert(lambdaEntryNodes == expectedMemoryNodes);
 
-  auto & lambdaExitNodes = provisioning.GetLambdaExitNodes(*test.lambda);
+  auto & lambdaExitNodes = modRefSummary.GetLambdaExitNodes(*test.lambda);
   assert(lambdaExitNodes == expectedMemoryNodes);
 }
 
 static void
 ValidateLoadTest2SteensgaardAgnostic(
     const jlm::tests::LoadTest2 & test,
-    const jlm::llvm::aa::MemoryNodeProvisioning & provisioning)
+    const jlm::llvm::aa::ModRefSummary & modRefSummary)
 {
-  auto & pointsToGraph = provisioning.GetPointsToGraph();
+  auto & pointsToGraph = modRefSummary.GetPointsToGraph();
 
   auto & lambdaMemoryNode = pointsToGraph.GetLambdaNode(*test.lambda);
   auto & externalMemoryNode = pointsToGraph.GetExternalMemoryNode();
@@ -116,19 +116,19 @@ ValidateLoadTest2SteensgaardAgnostic(
   jlm::util::HashSet<const jlm::llvm::aa::PointsToGraph::MemoryNode *> expectedMemoryNodes(
       { &lambdaMemoryNode, &externalMemoryNode });
 
-  auto & lambdaEntryNodes = provisioning.GetLambdaEntryNodes(*test.lambda);
+  auto & lambdaEntryNodes = modRefSummary.GetLambdaEntryNodes(*test.lambda);
   assert(lambdaEntryNodes == expectedMemoryNodes);
 
-  auto & lambdaExitNodes = provisioning.GetLambdaExitNodes(*test.lambda);
+  auto & lambdaExitNodes = modRefSummary.GetLambdaExitNodes(*test.lambda);
   assert(lambdaExitNodes == expectedMemoryNodes);
 }
 
 static void
 ValidateLoadFromUndefTestSteensgaardAgnostic(
     const jlm::tests::LoadFromUndefTest & test,
-    const jlm::llvm::aa::MemoryNodeProvisioning & provisioning)
+    const jlm::llvm::aa::ModRefSummary & modRefSummary)
 {
-  auto & pointsToGraph = provisioning.GetPointsToGraph();
+  auto & pointsToGraph = modRefSummary.GetPointsToGraph();
 
   auto & lambdaMemoryNode = pointsToGraph.GetLambdaNode(test.Lambda());
   auto & externalMemoryNode = pointsToGraph.GetExternalMemoryNode();
@@ -136,19 +136,19 @@ ValidateLoadFromUndefTestSteensgaardAgnostic(
   jlm::util::HashSet<const jlm::llvm::aa::PointsToGraph::MemoryNode *> expectedMemoryNodes(
       { &lambdaMemoryNode, &externalMemoryNode });
 
-  auto & lambdaEntryNodes = provisioning.GetLambdaEntryNodes(test.Lambda());
+  auto & lambdaEntryNodes = modRefSummary.GetLambdaEntryNodes(test.Lambda());
   assert(lambdaEntryNodes == expectedMemoryNodes);
 
-  auto & lambdaExitNodes = provisioning.GetLambdaExitNodes(test.Lambda());
+  auto & lambdaExitNodes = modRefSummary.GetLambdaExitNodes(test.Lambda());
   assert(lambdaExitNodes == expectedMemoryNodes);
 }
 
 static void
 ValidateCallTest1SteensgaardAgnostic(
     const jlm::tests::CallTest1 & test,
-    const jlm::llvm::aa::MemoryNodeProvisioning & provisioning)
+    const jlm::llvm::aa::ModRefSummary & modRefSummary)
 {
-  auto & pointsToGraph = provisioning.GetPointsToGraph();
+  auto & pointsToGraph = modRefSummary.GetPointsToGraph();
 
   auto & allocaXMemoryNode = pointsToGraph.GetAllocaNode(*test.alloca_x);
   auto & allocaYMemoryNode = pointsToGraph.GetAllocaNode(*test.alloca_y);
@@ -169,10 +169,10 @@ ValidateCallTest1SteensgaardAgnostic(
           &lambdaHMemoryNode,
           &externalMemoryNode });
 
-    auto & lambdaEntryNodes = provisioning.GetLambdaEntryNodes(*test.lambda_f);
+    auto & lambdaEntryNodes = modRefSummary.GetLambdaEntryNodes(*test.lambda_f);
     assert(lambdaEntryNodes == expectedMemoryNodes);
 
-    auto & lambdaExitNodes = provisioning.GetLambdaExitNodes(*test.lambda_f);
+    auto & lambdaExitNodes = modRefSummary.GetLambdaExitNodes(*test.lambda_f);
     assert(lambdaExitNodes == expectedMemoryNodes);
   }
 
@@ -187,10 +187,10 @@ ValidateCallTest1SteensgaardAgnostic(
           &lambdaHMemoryNode,
           &externalMemoryNode });
 
-    auto & lambdaEntryNodes = provisioning.GetLambdaEntryNodes(*test.lambda_g);
+    auto & lambdaEntryNodes = modRefSummary.GetLambdaEntryNodes(*test.lambda_g);
     assert(lambdaEntryNodes == expectedMemoryNodes);
 
-    auto & lambdaExitNodes = provisioning.GetLambdaExitNodes(*test.lambda_g);
+    auto & lambdaExitNodes = modRefSummary.GetLambdaExitNodes(*test.lambda_g);
     assert(lambdaExitNodes == expectedMemoryNodes);
   }
 
@@ -199,10 +199,10 @@ ValidateCallTest1SteensgaardAgnostic(
     jlm::util::HashSet<const jlm::llvm::aa::PointsToGraph::MemoryNode *> expectedMemoryNodes(
         { &lambdaFMemoryNode, &lambdaGMemoryNode, &lambdaHMemoryNode, &externalMemoryNode });
 
-    auto & lambdaEntryNodes = provisioning.GetLambdaEntryNodes(*test.lambda_h);
+    auto & lambdaEntryNodes = modRefSummary.GetLambdaEntryNodes(*test.lambda_h);
     assert(lambdaEntryNodes == expectedMemoryNodes);
 
-    auto & lambdaExitNodes = provisioning.GetLambdaExitNodes(*test.lambda_h);
+    auto & lambdaExitNodes = modRefSummary.GetLambdaExitNodes(*test.lambda_h);
     assert(lambdaExitNodes == expectedMemoryNodes);
   }
 
@@ -217,10 +217,10 @@ ValidateCallTest1SteensgaardAgnostic(
           &lambdaHMemoryNode,
           &externalMemoryNode });
 
-    auto & callEntryNodes = provisioning.GetCallEntryNodes(test.CallF());
+    auto & callEntryNodes = modRefSummary.GetCallEntryNodes(test.CallF());
     assert(callEntryNodes == expectedMemoryNodes);
 
-    auto & callExitNodes = provisioning.GetCallExitNodes(test.CallF());
+    auto & callExitNodes = modRefSummary.GetCallExitNodes(test.CallF());
     assert(callExitNodes == expectedMemoryNodes);
   }
 
@@ -235,10 +235,10 @@ ValidateCallTest1SteensgaardAgnostic(
           &lambdaHMemoryNode,
           &externalMemoryNode });
 
-    auto & callEntryNodes = provisioning.GetCallEntryNodes(test.CallG());
+    auto & callEntryNodes = modRefSummary.GetCallEntryNodes(test.CallG());
     assert(callEntryNodes == expectedMemoryNodes);
 
-    auto & callExitNodes = provisioning.GetCallExitNodes(test.CallG());
+    auto & callExitNodes = modRefSummary.GetCallExitNodes(test.CallG());
     assert(callExitNodes == expectedMemoryNodes);
   }
 }
@@ -246,9 +246,9 @@ ValidateCallTest1SteensgaardAgnostic(
 static void
 ValidateIndirectCallTest1SteensgaardAgnostic(
     const jlm::tests::IndirectCallTest1 & test,
-    const jlm::llvm::aa::MemoryNodeProvisioning & provisioning)
+    const jlm::llvm::aa::ModRefSummary & modRefSummary)
 {
-  auto & pointsToGraph = provisioning.GetPointsToGraph();
+  auto & pointsToGraph = modRefSummary.GetPointsToGraph();
 
   auto & lambdaFourMemoryNode = pointsToGraph.GetLambdaNode(test.GetLambdaFour());
   auto & lambdaThreeMemoryNode = pointsToGraph.GetLambdaNode(test.GetLambdaThree());
@@ -265,64 +265,64 @@ ValidateIndirectCallTest1SteensgaardAgnostic(
 
   // Validate function four
   {
-    auto & lambdaEntryNodes = provisioning.GetLambdaEntryNodes(test.GetLambdaFour());
+    auto & lambdaEntryNodes = modRefSummary.GetLambdaEntryNodes(test.GetLambdaFour());
     assert(lambdaEntryNodes == expectedMemoryNodes);
 
-    auto & lambdaExitNodes = provisioning.GetLambdaExitNodes(test.GetLambdaFour());
+    auto & lambdaExitNodes = modRefSummary.GetLambdaExitNodes(test.GetLambdaFour());
     assert(lambdaExitNodes == expectedMemoryNodes);
   }
 
   // Validate function three
   {
-    auto & lambdaEntryNodes = provisioning.GetLambdaEntryNodes(test.GetLambdaThree());
+    auto & lambdaEntryNodes = modRefSummary.GetLambdaEntryNodes(test.GetLambdaThree());
     assert(lambdaEntryNodes == expectedMemoryNodes);
 
-    auto & lambdaExitNodes = provisioning.GetLambdaExitNodes(test.GetLambdaThree());
+    auto & lambdaExitNodes = modRefSummary.GetLambdaExitNodes(test.GetLambdaThree());
     assert(lambdaExitNodes == expectedMemoryNodes);
   }
 
   // Validate function indcall
   {
-    auto & lambdaEntryNodes = provisioning.GetLambdaEntryNodes(test.GetLambdaIndcall());
+    auto & lambdaEntryNodes = modRefSummary.GetLambdaEntryNodes(test.GetLambdaIndcall());
     assert(lambdaEntryNodes == expectedMemoryNodes);
 
-    auto & lambdaExitNodes = provisioning.GetLambdaExitNodes(test.GetLambdaIndcall());
+    auto & lambdaExitNodes = modRefSummary.GetLambdaExitNodes(test.GetLambdaIndcall());
     assert(lambdaExitNodes == expectedMemoryNodes);
   }
 
   // Validate function test
   {
-    auto & lambdaEntryNodes = provisioning.GetLambdaEntryNodes(test.GetLambdaIndcall());
+    auto & lambdaEntryNodes = modRefSummary.GetLambdaEntryNodes(test.GetLambdaIndcall());
     assert(lambdaEntryNodes == expectedMemoryNodes);
 
-    auto & lambdaExitNodes = provisioning.GetLambdaExitNodes(test.GetLambdaIndcall());
+    auto & lambdaExitNodes = modRefSummary.GetLambdaExitNodes(test.GetLambdaIndcall());
     assert(lambdaExitNodes == expectedMemoryNodes);
   }
 
   // Validate call to indcall with four
   {
-    auto & callEntryNodes = provisioning.GetCallEntryNodes(test.CallFour());
+    auto & callEntryNodes = modRefSummary.GetCallEntryNodes(test.CallFour());
     assert(callEntryNodes == expectedMemoryNodes);
 
-    auto & callExitNodes = provisioning.GetCallExitNodes(test.CallFour());
+    auto & callExitNodes = modRefSummary.GetCallExitNodes(test.CallFour());
     assert(callExitNodes == expectedMemoryNodes);
   }
 
   // Validate call to indcall with three
   {
-    auto & callEntryNodes = provisioning.GetCallEntryNodes(test.CallThree());
+    auto & callEntryNodes = modRefSummary.GetCallEntryNodes(test.CallThree());
     assert(callEntryNodes == expectedMemoryNodes);
 
-    auto & callExitNodes = provisioning.GetCallExitNodes(test.CallThree());
+    auto & callExitNodes = modRefSummary.GetCallExitNodes(test.CallThree());
     assert(callExitNodes == expectedMemoryNodes);
   }
 
   // Validate indirect call
   {
-    auto & callEntryNodes = provisioning.GetCallEntryNodes(test.CallIndcall());
+    auto & callEntryNodes = modRefSummary.GetCallEntryNodes(test.CallIndcall());
     assert(callEntryNodes == expectedMemoryNodes);
 
-    auto & callExitNodes = provisioning.GetCallExitNodes(test.CallIndcall());
+    auto & callExitNodes = modRefSummary.GetCallExitNodes(test.CallIndcall());
     assert(callExitNodes == expectedMemoryNodes);
   }
 }
@@ -330,9 +330,9 @@ ValidateIndirectCallTest1SteensgaardAgnostic(
 static void
 ValidateIndirectCallTest2SteensgaardAgnostic(
     const jlm::tests::IndirectCallTest2 & test,
-    const jlm::llvm::aa::MemoryNodeProvisioning & provisioning)
+    const jlm::llvm::aa::ModRefSummary & modRefSummary)
 {
-  auto & pointsToGraph = provisioning.GetPointsToGraph();
+  auto & pointsToGraph = modRefSummary.GetPointsToGraph();
 
   auto & lambdaThreeMemoryNode = pointsToGraph.GetLambdaNode(test.GetLambdaThree());
   auto & lambdaFourMemoryNode = pointsToGraph.GetLambdaNode(test.GetLambdaFour());
@@ -367,10 +367,10 @@ ValidateIndirectCallTest2SteensgaardAgnostic(
 
           &externalMemoryNode });
 
-    auto & lambdaEntryNodes = provisioning.GetLambdaEntryNodes(test.GetLambdaTest2());
+    auto & lambdaEntryNodes = modRefSummary.GetLambdaEntryNodes(test.GetLambdaTest2());
     assert(lambdaEntryNodes == expectedMemoryNodes);
 
-    auto & lambdaExitNodes = provisioning.GetLambdaExitNodes(test.GetLambdaTest2());
+    auto & lambdaExitNodes = modRefSummary.GetLambdaExitNodes(test.GetLambdaTest2());
     assert(lambdaExitNodes == expectedMemoryNodes);
   }
 
@@ -390,10 +390,10 @@ ValidateIndirectCallTest2SteensgaardAgnostic(
 
           &externalMemoryNode });
 
-    auto & lambdaEntryNodes = provisioning.GetLambdaEntryNodes(test.GetLambdaTest());
+    auto & lambdaEntryNodes = modRefSummary.GetLambdaEntryNodes(test.GetLambdaTest());
     assert(lambdaEntryNodes == expectedMemoryNodes);
 
-    auto & lambdaExitNodes = provisioning.GetLambdaExitNodes(test.GetLambdaTest());
+    auto & lambdaExitNodes = modRefSummary.GetLambdaExitNodes(test.GetLambdaTest());
     assert(lambdaExitNodes == expectedMemoryNodes);
   }
 
@@ -416,10 +416,10 @@ ValidateIndirectCallTest2SteensgaardAgnostic(
 
           &externalMemoryNode });
 
-    auto & lambdaEntryNodes = provisioning.GetLambdaEntryNodes(test.GetLambdaY());
+    auto & lambdaEntryNodes = modRefSummary.GetLambdaEntryNodes(test.GetLambdaY());
     assert(lambdaEntryNodes == expectedMemoryNodes);
 
-    auto & lambdaExitNodes = provisioning.GetLambdaExitNodes(test.GetLambdaY());
+    auto & lambdaExitNodes = modRefSummary.GetLambdaExitNodes(test.GetLambdaY());
     assert(lambdaExitNodes == expectedMemoryNodes);
   }
 
@@ -443,10 +443,10 @@ ValidateIndirectCallTest2SteensgaardAgnostic(
 
           &externalMemoryNode });
 
-    auto & lambdaEntryNodes = provisioning.GetLambdaEntryNodes(test.GetLambdaX());
+    auto & lambdaEntryNodes = modRefSummary.GetLambdaEntryNodes(test.GetLambdaX());
     assert(lambdaEntryNodes == expectedMemoryNodes);
 
-    auto & lambdaExitNodes = provisioning.GetLambdaExitNodes(test.GetLambdaX());
+    auto & lambdaExitNodes = modRefSummary.GetLambdaExitNodes(test.GetLambdaX());
     assert(lambdaExitNodes == expectedMemoryNodes);
   }
 
@@ -470,10 +470,10 @@ ValidateIndirectCallTest2SteensgaardAgnostic(
 
           &externalMemoryNode });
 
-    auto & lambdaEntryNodes = provisioning.GetLambdaEntryNodes(test.GetLambdaI());
+    auto & lambdaEntryNodes = modRefSummary.GetLambdaEntryNodes(test.GetLambdaI());
     assert(lambdaEntryNodes == expectedMemoryNodes);
 
-    auto & lambdaExitNodes = provisioning.GetLambdaExitNodes(test.GetLambdaI());
+    auto & lambdaExitNodes = modRefSummary.GetLambdaExitNodes(test.GetLambdaI());
     assert(lambdaExitNodes == expectedMemoryNodes);
   }
 
@@ -497,10 +497,10 @@ ValidateIndirectCallTest2SteensgaardAgnostic(
 
           &externalMemoryNode });
 
-    auto & lambdaEntryNodes = provisioning.GetLambdaEntryNodes(test.GetLambdaFour());
+    auto & lambdaEntryNodes = modRefSummary.GetLambdaEntryNodes(test.GetLambdaFour());
     assert(lambdaEntryNodes == expectedMemoryNodes);
 
-    auto & lambdaExitNodes = provisioning.GetLambdaExitNodes(test.GetLambdaFour());
+    auto & lambdaExitNodes = modRefSummary.GetLambdaExitNodes(test.GetLambdaFour());
     assert(lambdaExitNodes == expectedMemoryNodes);
   }
 
@@ -524,10 +524,10 @@ ValidateIndirectCallTest2SteensgaardAgnostic(
 
           &externalMemoryNode });
 
-    auto & lambdaEntryNodes = provisioning.GetLambdaEntryNodes(test.GetLambdaThree());
+    auto & lambdaEntryNodes = modRefSummary.GetLambdaEntryNodes(test.GetLambdaThree());
     assert(lambdaEntryNodes == expectedMemoryNodes);
 
-    auto & lambdaExitNodes = provisioning.GetLambdaExitNodes(test.GetLambdaThree());
+    auto & lambdaExitNodes = modRefSummary.GetLambdaExitNodes(test.GetLambdaThree());
     assert(lambdaExitNodes == expectedMemoryNodes);
   }
 
@@ -551,10 +551,10 @@ ValidateIndirectCallTest2SteensgaardAgnostic(
 
           &externalMemoryNode });
 
-    auto & callEntryNodes = provisioning.GetCallEntryNodes(test.GetIndirectCall());
+    auto & callEntryNodes = modRefSummary.GetCallEntryNodes(test.GetIndirectCall());
     assert(callEntryNodes == expectedMemoryNodes);
 
-    auto & callExitNodes = provisioning.GetCallExitNodes(test.GetIndirectCall());
+    auto & callExitNodes = modRefSummary.GetCallExitNodes(test.GetIndirectCall());
     assert(callExitNodes == expectedMemoryNodes);
   }
 
@@ -578,10 +578,10 @@ ValidateIndirectCallTest2SteensgaardAgnostic(
 
           &externalMemoryNode });
 
-    auto & callEntryNodes = provisioning.GetCallEntryNodes(test.GetCallIWithThree());
+    auto & callEntryNodes = modRefSummary.GetCallEntryNodes(test.GetCallIWithThree());
     assert(callEntryNodes == expectedMemoryNodes);
 
-    auto & callExitNodes = provisioning.GetCallExitNodes(test.GetCallIWithThree());
+    auto & callExitNodes = modRefSummary.GetCallExitNodes(test.GetCallIWithThree());
     assert(callExitNodes == expectedMemoryNodes);
   }
 
@@ -605,10 +605,10 @@ ValidateIndirectCallTest2SteensgaardAgnostic(
 
           &externalMemoryNode });
 
-    auto & callEntryNodes = provisioning.GetCallEntryNodes(test.GetCallIWithFour());
+    auto & callEntryNodes = modRefSummary.GetCallEntryNodes(test.GetCallIWithFour());
     assert(callEntryNodes == expectedMemoryNodes);
 
-    auto & callExitNodes = provisioning.GetCallExitNodes(test.GetCallIWithFour());
+    auto & callExitNodes = modRefSummary.GetCallExitNodes(test.GetCallIWithFour());
     assert(callExitNodes == expectedMemoryNodes);
   }
 
@@ -632,10 +632,10 @@ ValidateIndirectCallTest2SteensgaardAgnostic(
 
           &externalMemoryNode });
 
-    auto & callEntryNodes = provisioning.GetCallEntryNodes(test.GetTestCallX());
+    auto & callEntryNodes = modRefSummary.GetCallEntryNodes(test.GetTestCallX());
     assert(callEntryNodes == expectedMemoryNodes);
 
-    auto & callExitNodes = provisioning.GetCallExitNodes(test.GetTestCallX());
+    auto & callExitNodes = modRefSummary.GetCallExitNodes(test.GetTestCallX());
     assert(callExitNodes == expectedMemoryNodes);
   }
 
@@ -658,10 +658,10 @@ ValidateIndirectCallTest2SteensgaardAgnostic(
 
           &externalMemoryNode });
 
-    auto & callEntryNodes = provisioning.GetCallEntryNodes(test.GetCallY());
+    auto & callEntryNodes = modRefSummary.GetCallEntryNodes(test.GetCallY());
     assert(callEntryNodes == expectedMemoryNodes);
 
-    auto & callExitNodes = provisioning.GetCallExitNodes(test.GetCallY());
+    auto & callExitNodes = modRefSummary.GetCallExitNodes(test.GetCallY());
     assert(callExitNodes == expectedMemoryNodes);
   }
 
@@ -685,10 +685,10 @@ ValidateIndirectCallTest2SteensgaardAgnostic(
 
           &externalMemoryNode });
 
-    auto & callEntryNodes = provisioning.GetCallEntryNodes(test.GetTest2CallX());
+    auto & callEntryNodes = modRefSummary.GetCallEntryNodes(test.GetTest2CallX());
     assert(callEntryNodes == expectedMemoryNodes);
 
-    auto & callExitNodes = provisioning.GetCallExitNodes(test.GetTest2CallX());
+    auto & callExitNodes = modRefSummary.GetCallExitNodes(test.GetTest2CallX());
     assert(callExitNodes == expectedMemoryNodes);
   }
 }
@@ -696,9 +696,9 @@ ValidateIndirectCallTest2SteensgaardAgnostic(
 static void
 ValidateGammaTestSteensgaardAgnostic(
     const jlm::tests::GammaTest & test,
-    const jlm::llvm::aa::MemoryNodeProvisioning & provisioning)
+    const jlm::llvm::aa::ModRefSummary & modRefSummary)
 {
-  auto & pointsToGraph = provisioning.GetPointsToGraph();
+  auto & pointsToGraph = modRefSummary.GetPointsToGraph();
 
   auto & lambdaMemoryNode = pointsToGraph.GetLambdaNode(*test.lambda);
   auto & externalMemoryNode = pointsToGraph.GetExternalMemoryNode();
@@ -706,36 +706,36 @@ ValidateGammaTestSteensgaardAgnostic(
   jlm::util::HashSet<const jlm::llvm::aa::PointsToGraph::MemoryNode *> expectedMemoryNodes(
       { &lambdaMemoryNode, &externalMemoryNode });
 
-  auto & lambdaEntryNodes = provisioning.GetLambdaEntryNodes(*test.lambda);
+  auto & lambdaEntryNodes = modRefSummary.GetLambdaEntryNodes(*test.lambda);
   assert(lambdaEntryNodes == expectedMemoryNodes);
 
-  auto gammaEntryNodes = provisioning.GetGammaEntryNodes(*test.gamma);
+  auto gammaEntryNodes = modRefSummary.GetGammaEntryNodes(*test.gamma);
   assert(gammaEntryNodes == expectedMemoryNodes);
 
   for (size_t n = 0; n < test.gamma->nsubregions(); n++)
   {
     auto & subregion = *test.gamma->subregion(n);
 
-    auto & subregionEntryNodes = provisioning.GetRegionEntryNodes(subregion);
+    auto & subregionEntryNodes = modRefSummary.GetRegionEntryNodes(subregion);
     assert(subregionEntryNodes == expectedMemoryNodes);
 
-    auto & subregionExitNodes = provisioning.GetRegionExitNodes(subregion);
+    auto & subregionExitNodes = modRefSummary.GetRegionExitNodes(subregion);
     assert(subregionExitNodes == expectedMemoryNodes);
   }
 
-  auto gammaExitNodes = provisioning.GetGammaExitNodes(*test.gamma);
+  auto gammaExitNodes = modRefSummary.GetGammaExitNodes(*test.gamma);
   assert(gammaExitNodes == expectedMemoryNodes);
 
-  auto & lambdaExitNodes = provisioning.GetLambdaExitNodes(*test.lambda);
+  auto & lambdaExitNodes = modRefSummary.GetLambdaExitNodes(*test.lambda);
   assert(lambdaExitNodes == expectedMemoryNodes);
 }
 
 static void
 ValidateGammaTest2SteensgaardAgnostic(
     const jlm::tests::GammaTest2 & test,
-    const jlm::llvm::aa::MemoryNodeProvisioning & provisioning)
+    const jlm::llvm::aa::ModRefSummary & modRefSummary)
 {
-  auto & pointsToGraph = provisioning.GetPointsToGraph();
+  auto & pointsToGraph = modRefSummary.GetPointsToGraph();
 
   auto & allocaXFromGMemoryNode = pointsToGraph.GetAllocaNode(test.GetAllocaXFromG());
   auto & allocaYFromGMemoryNode = pointsToGraph.GetAllocaNode(test.GetAllocaYFromG());
@@ -763,31 +763,31 @@ ValidateGammaTest2SteensgaardAgnostic(
 
   // Validate g
   {
-    auto & lambdaEntryNodes = provisioning.GetLambdaEntryNodes(test.GetLambdaG());
+    auto & lambdaEntryNodes = modRefSummary.GetLambdaEntryNodes(test.GetLambdaG());
     assert(lambdaEntryNodes == expectedLambdaGHEntryExitMemoryNodes);
 
-    auto & callEntryNodes = provisioning.GetCallEntryNodes(test.GetCallFromG());
+    auto & callEntryNodes = modRefSummary.GetCallEntryNodes(test.GetCallFromG());
     assert(callEntryNodes == expectedLambdaFEntryExitMemoryNodes);
 
-    auto & callExitNodes = provisioning.GetCallExitNodes(test.GetCallFromG());
+    auto & callExitNodes = modRefSummary.GetCallExitNodes(test.GetCallFromG());
     assert(callExitNodes == expectedLambdaFEntryExitMemoryNodes);
 
-    auto & lambdaExitNodes = provisioning.GetLambdaExitNodes(test.GetLambdaG());
+    auto & lambdaExitNodes = modRefSummary.GetLambdaExitNodes(test.GetLambdaG());
     assert(lambdaExitNodes == expectedLambdaGHEntryExitMemoryNodes);
   }
 
   // Validate h
   {
-    auto & lambdaEntryNodes = provisioning.GetLambdaEntryNodes(test.GetLambdaH());
+    auto & lambdaEntryNodes = modRefSummary.GetLambdaEntryNodes(test.GetLambdaH());
     assert(lambdaEntryNodes == expectedLambdaGHEntryExitMemoryNodes);
 
-    auto & callEntryNodes = provisioning.GetCallEntryNodes(test.GetCallFromH());
+    auto & callEntryNodes = modRefSummary.GetCallEntryNodes(test.GetCallFromH());
     assert(callEntryNodes == expectedLambdaFEntryExitMemoryNodes);
 
-    auto & callExitNodes = provisioning.GetCallExitNodes(test.GetCallFromH());
+    auto & callExitNodes = modRefSummary.GetCallExitNodes(test.GetCallFromH());
     assert(callExitNodes == expectedLambdaFEntryExitMemoryNodes);
 
-    auto & lambdaExitNodes = provisioning.GetLambdaExitNodes(test.GetLambdaH());
+    auto & lambdaExitNodes = modRefSummary.GetLambdaExitNodes(test.GetLambdaH());
     assert(lambdaExitNodes == expectedLambdaGHEntryExitMemoryNodes);
   }
 
@@ -804,27 +804,27 @@ ValidateGammaTest2SteensgaardAgnostic(
           &lambdaHMemoryNode,
           &externalMemoryNode });
 
-    auto & lambdaEntryNodes = provisioning.GetLambdaEntryNodes(test.GetLambdaF());
+    auto & lambdaEntryNodes = modRefSummary.GetLambdaEntryNodes(test.GetLambdaF());
     assert(lambdaEntryNodes == expectedLambdaFEntryExitMemoryNodes);
 
-    auto gammaEntryNodes = provisioning.GetGammaEntryNodes(test.GetGamma());
+    auto gammaEntryNodes = modRefSummary.GetGammaEntryNodes(test.GetGamma());
     assert(gammaEntryNodes == expectedGammaMemoryNodes);
 
     for (size_t n = 0; n < test.GetGamma().nsubregions(); n++)
     {
       auto & subregion = *test.GetGamma().subregion(n);
 
-      auto & subregionEntryNodes = provisioning.GetRegionEntryNodes(subregion);
+      auto & subregionEntryNodes = modRefSummary.GetRegionEntryNodes(subregion);
       assert(subregionEntryNodes == expectedGammaMemoryNodes);
 
-      auto & subregionExitNodes = provisioning.GetRegionExitNodes(subregion);
+      auto & subregionExitNodes = modRefSummary.GetRegionExitNodes(subregion);
       assert(subregionExitNodes == expectedGammaMemoryNodes);
     }
 
-    auto gammaExitNodes = provisioning.GetGammaExitNodes(test.GetGamma());
+    auto gammaExitNodes = modRefSummary.GetGammaExitNodes(test.GetGamma());
     assert(gammaExitNodes == expectedGammaMemoryNodes);
 
-    auto & lambdaExitNodes = provisioning.GetLambdaExitNodes(test.GetLambdaF());
+    auto & lambdaExitNodes = modRefSummary.GetLambdaExitNodes(test.GetLambdaF());
     assert(lambdaExitNodes == expectedLambdaFEntryExitMemoryNodes);
   }
 }
@@ -832,9 +832,9 @@ ValidateGammaTest2SteensgaardAgnostic(
 static void
 ValidateThetaTestSteensgaardAgnostic(
     const jlm::tests::ThetaTest & test,
-    const jlm::llvm::aa::MemoryNodeProvisioning & provisioning)
+    const jlm::llvm::aa::ModRefSummary & modRefSummary)
 {
-  auto & pointsToGraph = provisioning.GetPointsToGraph();
+  auto & pointsToGraph = modRefSummary.GetPointsToGraph();
 
   auto & lambdaMemoryNode = pointsToGraph.GetLambdaNode(*test.lambda);
   auto & externalMemoryNode = pointsToGraph.GetExternalMemoryNode();
@@ -842,22 +842,22 @@ ValidateThetaTestSteensgaardAgnostic(
   jlm::util::HashSet<const jlm::llvm::aa::PointsToGraph::MemoryNode *> expectedMemoryNodes(
       { &lambdaMemoryNode, &externalMemoryNode });
 
-  auto & lambdaEntryNodes = provisioning.GetLambdaEntryNodes(*test.lambda);
+  auto & lambdaEntryNodes = modRefSummary.GetLambdaEntryNodes(*test.lambda);
   assert(lambdaEntryNodes == expectedMemoryNodes);
 
-  auto & thetaEntryExitNodes = provisioning.GetThetaEntryExitNodes(*test.theta);
+  auto & thetaEntryExitNodes = modRefSummary.GetThetaEntryExitNodes(*test.theta);
   assert(thetaEntryExitNodes == expectedMemoryNodes);
 
-  auto & lambdaExitNodes = provisioning.GetLambdaExitNodes(*test.lambda);
+  auto & lambdaExitNodes = modRefSummary.GetLambdaExitNodes(*test.lambda);
   assert(lambdaExitNodes == expectedMemoryNodes);
 }
 
 static void
 ValidatePhiTest1SteensgaardAgnostic(
     const jlm::tests::PhiTest1 & test,
-    const jlm::llvm::aa::MemoryNodeProvisioning & provisioning)
+    const jlm::llvm::aa::ModRefSummary & modRefSummary)
 {
-  auto & pointsToGraph = provisioning.GetPointsToGraph();
+  auto & pointsToGraph = modRefSummary.GetPointsToGraph();
 
   auto & lambdaFibMemoryNode = pointsToGraph.GetLambdaNode(*test.lambda_fib);
   auto & lambdaTestMemoryNode = pointsToGraph.GetLambdaNode(*test.lambda_test);
@@ -869,28 +869,28 @@ ValidatePhiTest1SteensgaardAgnostic(
     jlm::util::HashSet<const jlm::llvm::aa::PointsToGraph::MemoryNode *> expectedMemoryNodes(
         { &lambdaFibMemoryNode, &lambdaTestMemoryNode, &allocaMemoryNode, &externalMemoryNode });
 
-    auto & lambdaEntryNodes = provisioning.GetLambdaEntryNodes(*test.lambda_fib);
+    auto & lambdaEntryNodes = modRefSummary.GetLambdaEntryNodes(*test.lambda_fib);
     assert(lambdaEntryNodes == expectedMemoryNodes);
 
-    auto gammaEntryNodes = provisioning.GetGammaEntryNodes(*test.gamma);
+    auto gammaEntryNodes = modRefSummary.GetGammaEntryNodes(*test.gamma);
     assert(gammaEntryNodes == expectedMemoryNodes);
 
-    auto & callFib1EntryNodes = provisioning.GetCallEntryNodes(test.CallFibm1());
+    auto & callFib1EntryNodes = modRefSummary.GetCallEntryNodes(test.CallFibm1());
     assert(callFib1EntryNodes == expectedMemoryNodes);
 
-    auto & callFib1ExitNodes = provisioning.GetCallExitNodes(test.CallFibm1());
+    auto & callFib1ExitNodes = modRefSummary.GetCallExitNodes(test.CallFibm1());
     assert(callFib1ExitNodes == expectedMemoryNodes);
 
-    auto & callFib2EntryNodes = provisioning.GetCallEntryNodes(test.CallFibm2());
+    auto & callFib2EntryNodes = modRefSummary.GetCallEntryNodes(test.CallFibm2());
     assert(callFib2EntryNodes == expectedMemoryNodes);
 
-    auto & callFib2ExitNodes = provisioning.GetCallExitNodes(test.CallFibm2());
+    auto & callFib2ExitNodes = modRefSummary.GetCallExitNodes(test.CallFibm2());
     assert(callFib2ExitNodes == expectedMemoryNodes);
 
-    auto gammaExitNodes = provisioning.GetGammaExitNodes(*test.gamma);
+    auto gammaExitNodes = modRefSummary.GetGammaExitNodes(*test.gamma);
     assert(gammaExitNodes == expectedMemoryNodes);
 
-    auto & lambdaExitNodes = provisioning.GetLambdaExitNodes(*test.lambda_fib);
+    auto & lambdaExitNodes = modRefSummary.GetLambdaExitNodes(*test.lambda_fib);
     assert(lambdaExitNodes == expectedMemoryNodes);
   }
 
@@ -902,16 +902,16 @@ ValidatePhiTest1SteensgaardAgnostic(
     jlm::util::HashSet<const jlm::llvm::aa::PointsToGraph::MemoryNode *> expectedCallMemoryNodes(
         { &lambdaFibMemoryNode, &lambdaTestMemoryNode, &allocaMemoryNode, &externalMemoryNode });
 
-    auto & lambdaEntryNodes = provisioning.GetLambdaEntryNodes(*test.lambda_test);
+    auto & lambdaEntryNodes = modRefSummary.GetLambdaEntryNodes(*test.lambda_test);
     assert(lambdaEntryNodes == expectedLambdaMemoryNodes);
 
-    auto & callEntryNodes = provisioning.GetCallEntryNodes(test.CallFib());
+    auto & callEntryNodes = modRefSummary.GetCallEntryNodes(test.CallFib());
     assert(callEntryNodes == expectedCallMemoryNodes);
 
-    auto & callExitNodes = provisioning.GetCallExitNodes(test.CallFib());
+    auto & callExitNodes = modRefSummary.GetCallExitNodes(test.CallFib());
     assert(callExitNodes == expectedCallMemoryNodes);
 
-    auto & lambdaExitNodes = provisioning.GetLambdaExitNodes(*test.lambda_test);
+    auto & lambdaExitNodes = modRefSummary.GetLambdaExitNodes(*test.lambda_test);
     assert(lambdaExitNodes == expectedLambdaMemoryNodes);
   }
 }
@@ -919,9 +919,9 @@ ValidatePhiTest1SteensgaardAgnostic(
 static void
 ValidatePhiTest2SteensgaardAgnostic(
     const jlm::tests::PhiTest2 & test,
-    const jlm::llvm::aa::MemoryNodeProvisioning & provisioning)
+    const jlm::llvm::aa::ModRefSummary & modRefSummary)
 {
-  auto & pointsToGraph = provisioning.GetPointsToGraph();
+  auto & pointsToGraph = modRefSummary.GetPointsToGraph();
 
   auto & lambdaAMemoryNode = pointsToGraph.GetLambdaNode(test.GetLambdaA());
   auto & lambdaBMemoryNode = pointsToGraph.GetLambdaNode(test.GetLambdaB());
@@ -954,97 +954,97 @@ ValidatePhiTest2SteensgaardAgnostic(
 
   // validate function eight()
   {
-    auto & lambdaEntryNodes = provisioning.GetLambdaEntryNodes(test.GetLambdaEight());
+    auto & lambdaEntryNodes = modRefSummary.GetLambdaEntryNodes(test.GetLambdaEight());
     assert(lambdaEntryNodes == expectedMemoryNodes);
 
-    auto & lambdaExitNodes = provisioning.GetLambdaExitNodes(test.GetLambdaEight());
+    auto & lambdaExitNodes = modRefSummary.GetLambdaExitNodes(test.GetLambdaEight());
     assert(lambdaExitNodes == expectedMemoryNodes);
   }
 
   // validate function i()
   {
-    auto & lambdaEntryNodes = provisioning.GetLambdaEntryNodes(test.GetLambdaI());
+    auto & lambdaEntryNodes = modRefSummary.GetLambdaEntryNodes(test.GetLambdaI());
     assert(lambdaEntryNodes == expectedMemoryNodes);
 
-    auto & callEntryNodes = provisioning.GetCallEntryNodes(test.GetIndirectCall());
+    auto & callEntryNodes = modRefSummary.GetCallEntryNodes(test.GetIndirectCall());
     assert(callEntryNodes == expectedMemoryNodes);
 
-    auto & callExitNodes = provisioning.GetCallExitNodes(test.GetIndirectCall());
+    auto & callExitNodes = modRefSummary.GetCallExitNodes(test.GetIndirectCall());
     assert(callExitNodes == expectedMemoryNodes);
 
-    auto & lambdaExitNodes = provisioning.GetLambdaExitNodes(test.GetLambdaI());
+    auto & lambdaExitNodes = modRefSummary.GetLambdaExitNodes(test.GetLambdaI());
     assert(lambdaExitNodes == expectedMemoryNodes);
   }
 
   // validate function a()
   {
-    auto & lambdaEntryNodes = provisioning.GetLambdaEntryNodes(test.GetLambdaA());
+    auto & lambdaEntryNodes = modRefSummary.GetLambdaEntryNodes(test.GetLambdaA());
     assert(lambdaEntryNodes == expectedMemoryNodes);
 
-    auto & callBEntryNodes = provisioning.GetCallEntryNodes(test.GetCallB());
+    auto & callBEntryNodes = modRefSummary.GetCallEntryNodes(test.GetCallB());
     assert(callBEntryNodes == expectedMemoryNodes);
 
-    auto & callBExitNodes = provisioning.GetCallExitNodes(test.GetCallB());
+    auto & callBExitNodes = modRefSummary.GetCallExitNodes(test.GetCallB());
     assert(callBExitNodes == expectedMemoryNodes);
 
-    auto & callDEntryNodes = provisioning.GetCallEntryNodes(test.GetCallD());
+    auto & callDEntryNodes = modRefSummary.GetCallEntryNodes(test.GetCallD());
     assert(callDEntryNodes == expectedMemoryNodes);
 
-    auto & callDExitNodes = provisioning.GetCallExitNodes(test.GetCallD());
+    auto & callDExitNodes = modRefSummary.GetCallExitNodes(test.GetCallD());
     assert(callDExitNodes == expectedMemoryNodes);
 
-    auto & lambdaExitNodes = provisioning.GetLambdaExitNodes(test.GetLambdaA());
+    auto & lambdaExitNodes = modRefSummary.GetLambdaExitNodes(test.GetLambdaA());
     assert(lambdaExitNodes == expectedMemoryNodes);
   }
 
   // validate function b()
   {
-    auto & lambdaEntryNodes = provisioning.GetLambdaEntryNodes(test.GetLambdaB());
+    auto & lambdaEntryNodes = modRefSummary.GetLambdaEntryNodes(test.GetLambdaB());
     assert(lambdaEntryNodes == expectedMemoryNodes);
 
-    auto & callIEntryNodes = provisioning.GetCallEntryNodes(test.GetCallI());
+    auto & callIEntryNodes = modRefSummary.GetCallEntryNodes(test.GetCallI());
     assert(callIEntryNodes == expectedMemoryNodes);
 
-    auto & callIExitNodes = provisioning.GetCallExitNodes(test.GetCallI());
+    auto & callIExitNodes = modRefSummary.GetCallExitNodes(test.GetCallI());
     assert(callIExitNodes == expectedMemoryNodes);
 
-    auto & callCEntryNodes = provisioning.GetCallEntryNodes(test.GetCallC());
+    auto & callCEntryNodes = modRefSummary.GetCallEntryNodes(test.GetCallC());
     assert(callCEntryNodes == expectedMemoryNodes);
 
-    auto & callCExitNodes = provisioning.GetCallExitNodes(test.GetCallC());
+    auto & callCExitNodes = modRefSummary.GetCallExitNodes(test.GetCallC());
     assert(callCExitNodes == expectedMemoryNodes);
 
-    auto & lambdaExitNodes = provisioning.GetLambdaExitNodes(test.GetLambdaB());
+    auto & lambdaExitNodes = modRefSummary.GetLambdaExitNodes(test.GetLambdaB());
     assert(lambdaExitNodes == expectedMemoryNodes);
   }
 
   // validate function c()
   {
-    auto & lambdaEntryNodes = provisioning.GetLambdaEntryNodes(test.GetLambdaC());
+    auto & lambdaEntryNodes = modRefSummary.GetLambdaEntryNodes(test.GetLambdaC());
     assert(lambdaEntryNodes == expectedMemoryNodes);
 
-    auto & callEntryNodes = provisioning.GetCallEntryNodes(test.GetCallAFromC());
+    auto & callEntryNodes = modRefSummary.GetCallEntryNodes(test.GetCallAFromC());
     assert(callEntryNodes == expectedMemoryNodes);
 
-    auto & callExitNodes = provisioning.GetCallExitNodes(test.GetCallAFromC());
+    auto & callExitNodes = modRefSummary.GetCallExitNodes(test.GetCallAFromC());
     assert(callExitNodes == expectedMemoryNodes);
 
-    auto & lambdaExitNodes = provisioning.GetLambdaExitNodes(test.GetLambdaC());
+    auto & lambdaExitNodes = modRefSummary.GetLambdaExitNodes(test.GetLambdaC());
     assert(lambdaExitNodes == expectedMemoryNodes);
   }
 
   // validate function d()
   {
-    auto & lambdaEntryNodes = provisioning.GetLambdaEntryNodes(test.GetLambdaD());
+    auto & lambdaEntryNodes = modRefSummary.GetLambdaEntryNodes(test.GetLambdaD());
     assert(lambdaEntryNodes == expectedMemoryNodes);
 
-    auto & callEntryNodes = provisioning.GetCallEntryNodes(test.GetCallAFromD());
+    auto & callEntryNodes = modRefSummary.GetCallEntryNodes(test.GetCallAFromD());
     assert(callEntryNodes == expectedMemoryNodes);
 
-    auto & callExitNodes = provisioning.GetCallExitNodes(test.GetCallAFromD());
+    auto & callExitNodes = modRefSummary.GetCallExitNodes(test.GetCallAFromD());
     assert(callExitNodes == expectedMemoryNodes);
 
-    auto & lambdaExitNodes = provisioning.GetLambdaExitNodes(test.GetLambdaD());
+    auto & lambdaExitNodes = modRefSummary.GetLambdaExitNodes(test.GetLambdaD());
     assert(lambdaExitNodes == expectedMemoryNodes);
   }
 
@@ -1060,16 +1060,16 @@ ValidatePhiTest2SteensgaardAgnostic(
           &lambdaTestMemoryNode,
           &externalMemoryNode });
 
-    auto & lambdaEntryNodes = provisioning.GetLambdaEntryNodes(test.GetLambdaTest());
+    auto & lambdaEntryNodes = modRefSummary.GetLambdaEntryNodes(test.GetLambdaTest());
     assert(lambdaEntryNodes == expectedLambdaMemoryNodes);
 
-    auto & callEntryNodes = provisioning.GetCallEntryNodes(test.GetCallAFromTest());
+    auto & callEntryNodes = modRefSummary.GetCallEntryNodes(test.GetCallAFromTest());
     assert(callEntryNodes == expectedMemoryNodes);
 
-    auto & callExitNodes = provisioning.GetCallExitNodes(test.GetCallAFromTest());
+    auto & callExitNodes = modRefSummary.GetCallExitNodes(test.GetCallAFromTest());
     assert(callExitNodes == expectedMemoryNodes);
 
-    auto & lambdaExitNodes = provisioning.GetLambdaExitNodes(test.GetLambdaTest());
+    auto & lambdaExitNodes = modRefSummary.GetLambdaExitNodes(test.GetLambdaTest());
     assert(lambdaExitNodes == expectedLambdaMemoryNodes);
   }
 }
@@ -1077,9 +1077,9 @@ ValidatePhiTest2SteensgaardAgnostic(
 static void
 ValidateEscapedMemoryTest3SteensgaardAgnostic(
     const jlm::tests::EscapedMemoryTest3 & test,
-    const jlm::llvm::aa::MemoryNodeProvisioning & provisioning)
+    const jlm::llvm::aa::ModRefSummary & modRefSummary)
 {
-  auto & pointsToGraph = provisioning.GetPointsToGraph();
+  auto & pointsToGraph = modRefSummary.GetPointsToGraph();
 
   auto & lambdaTestMemoryNode = pointsToGraph.GetLambdaNode(*test.LambdaTest);
   auto & deltaGlobalMemoryNode = pointsToGraph.GetDeltaNode(*test.DeltaGlobal);
@@ -1089,25 +1089,25 @@ ValidateEscapedMemoryTest3SteensgaardAgnostic(
   jlm::util::HashSet<const jlm::llvm::aa::PointsToGraph::MemoryNode *> expectedMemoryNodes(
       { &lambdaTestMemoryNode, &deltaGlobalMemoryNode, &importMemoryNode, &externalMemoryNode });
 
-  auto & lambdaEntryNodes = provisioning.GetLambdaEntryNodes(*test.LambdaTest);
+  auto & lambdaEntryNodes = modRefSummary.GetLambdaEntryNodes(*test.LambdaTest);
   assert(lambdaEntryNodes == expectedMemoryNodes);
 
-  auto & externalCallEntryNodes = provisioning.GetCallEntryNodes(*test.CallExternalFunction);
+  auto & externalCallEntryNodes = modRefSummary.GetCallEntryNodes(*test.CallExternalFunction);
   assert(externalCallEntryNodes == expectedMemoryNodes);
 
-  auto & externalCallExitNodes = provisioning.GetCallExitNodes(*test.CallExternalFunction);
+  auto & externalCallExitNodes = modRefSummary.GetCallExitNodes(*test.CallExternalFunction);
   assert(externalCallExitNodes == expectedMemoryNodes);
 
-  auto & lambdaExitNodes = provisioning.GetLambdaExitNodes(*test.LambdaTest);
+  auto & lambdaExitNodes = modRefSummary.GetLambdaExitNodes(*test.LambdaTest);
   assert(lambdaExitNodes == expectedMemoryNodes);
 }
 
 static void
 ValidateMemcpyTestSteensgaardAgnostic(
     const jlm::tests::MemcpyTest & test,
-    const jlm::llvm::aa::MemoryNodeProvisioning & provisioning)
+    const jlm::llvm::aa::ModRefSummary & modRefSummary)
 {
-  auto & pointsToGraph = provisioning.GetPointsToGraph();
+  auto & pointsToGraph = modRefSummary.GetPointsToGraph();
 
   auto & lambdaFMemoryNode = pointsToGraph.GetLambdaNode(test.LambdaF());
   auto & lambdaGMemoryNode = pointsToGraph.GetLambdaNode(test.LambdaG());
@@ -1124,25 +1124,25 @@ ValidateMemcpyTestSteensgaardAgnostic(
 
   // Validate function f()
   {
-    auto & lambdaEntryNodes = provisioning.GetLambdaEntryNodes(test.LambdaF());
+    auto & lambdaEntryNodes = modRefSummary.GetLambdaEntryNodes(test.LambdaF());
     assert(lambdaEntryNodes == expectedMemoryNodes);
 
-    auto & lambdaExitNodes = provisioning.GetLambdaExitNodes(test.LambdaF());
+    auto & lambdaExitNodes = modRefSummary.GetLambdaExitNodes(test.LambdaF());
     assert(lambdaExitNodes == expectedMemoryNodes);
   }
 
   // Validate function g()
   {
-    auto & lambdaEntryNodes = provisioning.GetLambdaEntryNodes(test.LambdaG());
+    auto & lambdaEntryNodes = modRefSummary.GetLambdaEntryNodes(test.LambdaG());
     assert(lambdaEntryNodes == expectedMemoryNodes);
 
-    auto & callEntryNodes = provisioning.GetCallEntryNodes(test.CallF());
+    auto & callEntryNodes = modRefSummary.GetCallEntryNodes(test.CallF());
     assert(callEntryNodes == expectedMemoryNodes);
 
-    auto & callExitNodes = provisioning.GetCallExitNodes(test.CallF());
+    auto & callExitNodes = modRefSummary.GetCallExitNodes(test.CallF());
     assert(callExitNodes == expectedMemoryNodes);
 
-    auto & lambdaExitNodes = provisioning.GetLambdaExitNodes(test.LambdaG());
+    auto & lambdaExitNodes = modRefSummary.GetLambdaExitNodes(test.LambdaG());
     assert(lambdaExitNodes == expectedMemoryNodes);
   }
 }
@@ -1158,7 +1158,7 @@ TestStatistics()
   jlm::util::StatisticsCollector statisticsCollector(statisticsCollectorSettings);
 
   auto pointsToGraph = jlm::llvm::aa::PointsToGraph::Create();
-  auto provisioning = jlm::llvm::aa::AgnosticMemoryNodeProvider::Create(
+  auto modRefSummary = jlm::llvm::aa::AgnosticMemoryNodeProvider::Create(
       test.module(),
       *pointsToGraph,
       statisticsCollector);
@@ -1166,7 +1166,7 @@ TestStatistics()
   // Act
   jlm::llvm::aa::TopDownMemoryNodeEliminator::CreateAndEliminate(
       test.module(),
-      *provisioning,
+      *modRefSummary,
       statisticsCollector);
 
   // Assert

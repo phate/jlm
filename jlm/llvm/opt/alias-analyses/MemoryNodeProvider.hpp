@@ -6,7 +6,7 @@
 #ifndef JLM_LLVM_OPT_ALIAS_ANALYSES_MEMORYNODEPROVIDER_HPP
 #define JLM_LLVM_OPT_ALIAS_ANALYSES_MEMORYNODEPROVIDER_HPP
 
-#include <jlm/llvm/opt/alias-analyses/MemoryNodeProvisioning.hpp>
+#include <jlm/llvm/opt/alias-analyses/ModRefSummary.hpp>
 #include <jlm/llvm/opt/alias-analyses/PointsToGraph.hpp>
 
 namespace jlm::util
@@ -30,9 +30,9 @@ public:
    * @param pointsToGraph The points-to graph corresponding to \p rvsdgModule.
    * @param statisticsCollector The statistics collector for collecting pass statistics.
    *
-   * @return An instance of MemoryNodeProvisioning.
+   * @return An instance of ModRefSummary.
    */
-  virtual std::unique_ptr<MemoryNodeProvisioning>
+  virtual std::unique_ptr<ModRefSummary>
   ProvisionMemoryNodes(
       const rvsdg::RvsdgModule & rvsdgModule,
       const PointsToGraph & pointsToGraph,

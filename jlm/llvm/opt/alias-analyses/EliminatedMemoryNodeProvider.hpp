@@ -48,18 +48,18 @@ public:
   EliminatedMemoryNodeProvider &
   operator=(EliminatedMemoryNodeProvider &&) = delete;
 
-  std::unique_ptr<MemoryNodeProvisioning>
+  std::unique_ptr<ModRefSummary>
   ProvisionMemoryNodes(
       const rvsdg::RvsdgModule & rvsdgModule,
       const PointsToGraph & pointsToGraph,
       util::StatisticsCollector & statisticsCollector) override
   {
-    auto seedProvisioning =
+    auto seedModRefSummary =
         Provider_.ProvisionMemoryNodes(rvsdgModule, pointsToGraph, statisticsCollector);
-    return Eliminator_.EliminateMemoryNodes(rvsdgModule, *seedProvisioning, statisticsCollector);
+    return Eliminator_.EliminateMemoryNodes(rvsdgModule, *seedModRefSummary, statisticsCollector);
   }
 
-  static std::unique_ptr<MemoryNodeProvisioning>
+  static std::unique_ptr<ModRefSummary>
   Create(
       const rvsdg::RvsdgModule & rvsdgModule,
       const PointsToGraph & pointsToGraph,

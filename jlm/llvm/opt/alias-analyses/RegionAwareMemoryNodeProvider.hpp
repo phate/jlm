@@ -12,7 +12,7 @@
 namespace jlm::llvm::aa
 {
 
-class RegionAwareMemoryNodeProvisioning;
+class RegionAwareModRefSummary;
 class RegionSummary;
 
 /** \brief Region-aware memory node provider
@@ -60,7 +60,7 @@ public:
   RegionAwareMemoryNodeProvider &
   operator=(RegionAwareMemoryNodeProvider &&) = delete;
 
-  std::unique_ptr<MemoryNodeProvisioning>
+  std::unique_ptr<ModRefSummary>
   ProvisionMemoryNodes(
       const rvsdg::RvsdgModule & rvsdgModule,
       const PointsToGraph & pointsToGraph,
@@ -75,7 +75,7 @@ public:
    *
    * @return A new instance of MemoryNodeProvisioning.
    */
-  static std::unique_ptr<MemoryNodeProvisioning>
+  static std::unique_ptr<ModRefSummary>
   Create(
       const rvsdg::RvsdgModule & rvsdgModule,
       const PointsToGraph & pointsToGraph,
@@ -89,7 +89,7 @@ public:
    *
    * @return A new instance of MemoryNodeProvisioning.
    */
-  static std::unique_ptr<MemoryNodeProvisioning>
+  static std::unique_ptr<ModRefSummary>
   Create(const rvsdg::RvsdgModule & rvsdgModule, const PointsToGraph & pointsToGraph);
 
 private:
@@ -184,17 +184,17 @@ private:
    * RegionAwareMemoryNodeProvider.
    *
    * @param rvsdg The RVSDG that is converted to a region tree.
-   * @param provisioning The provisioning used for annotating the region tree.
+   * @param modRefSummary The Mod/Ref summary used for annotating the region tree.
    *
    * @return A string that contains the region tree.
    */
   static std::string
-  ToRegionTree(const rvsdg::Graph & rvsdg, const RegionAwareMemoryNodeProvisioning & provisioning);
+  ToRegionTree(const rvsdg::Graph & rvsdg, const RegionAwareModRefSummary & modRefSummary);
 
   /**
-   * The provisioning produced by this provider
+   * The Mod/Ref summary produced by this provider
    */
-  std::unique_ptr<RegionAwareMemoryNodeProvisioning> Provisioning_;
+  std::unique_ptr<RegionAwareModRefSummary> ModRefSummary_;
 
   /**
    * Struct holding temporary data used during the creation of a single provisioning
