@@ -6,7 +6,7 @@
 #ifndef JLM_LLVM_OPT_ALIAS_ANALYSES_REGIONAWAREMEMORYNODEPROVIDER_HPP
 #define JLM_LLVM_OPT_ALIAS_ANALYSES_REGIONAWAREMEMORYNODEPROVIDER_HPP
 
-#include <jlm/llvm/opt/alias-analyses/MemoryNodeProvider.hpp>
+#include <jlm/llvm/opt/alias-analyses/ModRefSummarizer.hpp>
 #include <jlm/llvm/opt/alias-analyses/PointsToGraph.hpp>
 
 namespace jlm::llvm::aa
@@ -41,7 +41,7 @@ class RegionSummary;
  * @see MemoryNodeProvider
  * @see MemoryStateEncoder
  */
-class RegionAwareMemoryNodeProvider final : public MemoryNodeProvider
+class RegionAwareMemoryNodeProvider final : public ModRefSummarizer
 {
 public:
   class Statistics;
@@ -61,7 +61,7 @@ public:
   operator=(RegionAwareMemoryNodeProvider &&) = delete;
 
   std::unique_ptr<ModRefSummary>
-  ProvisionMemoryNodes(
+  SummarizeModRefs(
       const rvsdg::RvsdgModule & rvsdgModule,
       const PointsToGraph & pointsToGraph,
       util::StatisticsCollector & statisticsCollector) override;
