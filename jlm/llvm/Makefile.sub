@@ -80,7 +80,7 @@ libllvm_HEADERS = \
 	jlm/llvm/opt/alias-analyses/Optimization.hpp \
 	jlm/llvm/opt/alias-analyses/MemoryNodeEliminator.hpp \
 	jlm/llvm/opt/alias-analyses/MemoryStateEncoder.hpp \
-    jlm/llvm/opt/alias-analyses/ModRefSummarizer.hpp \
+	jlm/llvm/opt/alias-analyses/ModRefSummarizer.hpp \
 	jlm/llvm/opt/alias-analyses/ModRefSummary.hpp \
 	jlm/llvm/opt/alias-analyses/Steensgaard.hpp \
 	jlm/llvm/opt/alias-analyses/TopDownMemoryNodeEliminator.hpp \
