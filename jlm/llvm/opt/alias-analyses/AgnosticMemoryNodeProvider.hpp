@@ -6,7 +6,7 @@
 #ifndef JLM_LLVM_OPT_ALIAS_ANALYSES_AGNOSTICMEMORYNODEPROVIDER_HPP
 #define JLM_LLVM_OPT_ALIAS_ANALYSES_AGNOSTICMEMORYNODEPROVIDER_HPP
 
-#include <jlm/llvm/opt/alias-analyses/MemoryNodeProvider.hpp>
+#include <jlm/llvm/opt/alias-analyses/ModRefSummarizer.hpp>
 #include <jlm/util/Statistics.hpp>
 #include <jlm/util/time.hpp>
 
@@ -26,7 +26,7 @@ namespace jlm::llvm::aa
  * @see MemoryNodeProvider
  * @see MemoryStateEncoder
  */
-class AgnosticMemoryNodeProvider final : public MemoryNodeProvider
+class AgnosticMemoryNodeProvider final : public ModRefSummarizer
 {
 public:
   class Statistics;
@@ -46,7 +46,7 @@ public:
   operator=(AgnosticMemoryNodeProvider &&) = delete;
 
   std::unique_ptr<ModRefSummary>
-  ProvisionMemoryNodes(
+  SummarizeModRefs(
       const rvsdg::RvsdgModule & rvsdgModule,
       const PointsToGraph & pointsToGraph,
       util::StatisticsCollector & statisticsCollector) override;

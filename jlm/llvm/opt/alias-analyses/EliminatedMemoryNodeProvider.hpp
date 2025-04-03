@@ -7,7 +7,7 @@
 #define JLM_LLVM_OPT_ALIAS_ANALYSES_ELIMINATEDMEMORYNODEPROVIDER_HPP
 
 #include <jlm/llvm/opt/alias-analyses/MemoryNodeEliminator.hpp>
-#include <jlm/llvm/opt/alias-analyses/MemoryNodeProvider.hpp>
+#include <jlm/llvm/opt/alias-analyses/ModRefSummarizer.hpp>
 
 namespace jlm::llvm::aa
 {
@@ -23,11 +23,11 @@ namespace jlm::llvm::aa
  * @tparam Eliminator A MemoryNodeEliminator
  */
 template<class Provider, class Eliminator>
-class EliminatedMemoryNodeProvider final : public MemoryNodeProvider
+class EliminatedMemoryNodeProvider final : public ModRefSummarizer
 {
   static_assert(
-      std::is_base_of<MemoryNodeProvider, Provider>::value,
-      "T is not derived from MemoryNodeProvider.");
+      std::is_base_of_v<ModRefSummarizer, Provider>,
+      "T is not derived from ModRefSummarizer.");
 
   static_assert(
       std::is_base_of<MemoryNodeEliminator, Eliminator>::value,
@@ -49,13 +49,13 @@ public:
   operator=(EliminatedMemoryNodeProvider &&) = delete;
 
   std::unique_ptr<ModRefSummary>
-  ProvisionMemoryNodes(
+  SummarizeModRefs(
       const rvsdg::RvsdgModule & rvsdgModule,
       const PointsToGraph & pointsToGraph,
       util::StatisticsCollector & statisticsCollector) override
   {
     auto seedModRefSummary =
-        Provider_.ProvisionMemoryNodes(rvsdgModule, pointsToGraph, statisticsCollector);
+        Provider_.SummarizeModRefs(rvsdgModule, pointsToGraph, statisticsCollector);
     return Eliminator_.EliminateMemoryNodes(rvsdgModule, *seedModRefSummary, statisticsCollector);
   }
 
@@ -66,7 +66,7 @@ public:
       util::StatisticsCollector & statisticsCollector)
   {
     EliminatedMemoryNodeProvider provider{};
-    return provider.ProvisionMemoryNodes(rvsdgModule, pointsToGraph, statisticsCollector);
+    return provider.SummarizeModRefs(rvsdgModule, pointsToGraph, statisticsCollector);
   }
 
 private:

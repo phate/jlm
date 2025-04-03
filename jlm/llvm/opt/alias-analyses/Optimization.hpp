@@ -7,7 +7,7 @@
 #ifndef JLM_LLVM_OPT_ALIAS_ANALYSES_OPTIMIZATION_HPP
 #define JLM_LLVM_OPT_ALIAS_ANALYSES_OPTIMIZATION_HPP
 
-#include <jlm/llvm/opt/alias-analyses/MemoryNodeProvider.hpp>
+#include <jlm/llvm/opt/alias-analyses/ModRefSummarizer.hpp>
 #include <jlm/llvm/opt/alias-analyses/PointsToAnalysis.hpp>
 #include <jlm/rvsdg/Transformation.hpp>
 
@@ -24,18 +24,18 @@ namespace jlm::llvm::aa
  * The type of points-to analysis and memory node provider is specified by the template parameters.
  *
  * @tparam TPointsToAnalysis the subclass of PointsToAnalysis to use
- * @tparam MemoryNodeProviderPass the subclass of MemoryNodeProvider to use
+ * @tparam TModRefSummarizer the subclass of MemoryNodeProvider to use
  *
  * @see Steensgaard
  * @see Andersen
  * @see AgnosticMemoryNodeProvider
  * @see RegionAwareMemoryNodeProvider
  */
-template<typename TPointsToAnalysis, typename MemoryNodeProviderPass>
+template<typename TPointsToAnalysis, typename TModRefSummarizer>
 class PointsToAnalysisStateEncoder final : public rvsdg::Transformation
 {
   static_assert(std::is_base_of_v<PointsToAnalysis, TPointsToAnalysis>);
-  static_assert(std::is_base_of_v<MemoryNodeProvider, MemoryNodeProviderPass>);
+  static_assert(std::is_base_of_v<ModRefSummarizer, TModRefSummarizer>);
 
 public:
   ~PointsToAnalysisStateEncoder() noexcept override;
