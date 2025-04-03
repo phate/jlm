@@ -167,12 +167,54 @@ OptimizeBuffer(rvsdg::SimpleNode * node)
 }
 
 void
+OptimizeLoop(loop_node * loopNode)
+{
+  // TODO: should this be changed?
+    bool outerLoop = true;//!rvsdg::is<loop_op>(loopNode->region()->node());
+    if(outerLoop){
+      // push buffers above branches, so they also act as output buffers
+      for (size_t i = 0; i < loopNode->noutputs(); ++i)
+      {
+        auto out = loopNode->output(i);
+        auto res = out->results.begin().ptr();
+        auto branch = TryGetOwnerOp<branch_op>(*res->origin());
+        if(!branch){
+          // this is a memory operation or stream
+          continue;
+        }
+        JLM_ASSERT(branch->loop);
+        auto branchNode = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*res->origin());
+        auto oldBufInput = GetUser(branchNode->output(1));
+        auto oldBuf = TryGetOwnerOp<buffer_op>(*oldBufInput);
+        auto isSink = TryGetOwnerOp<sink_op>(*oldBufInput);
+        if(isSink){
+          // no backedge
+          continue;
+        }
+        JLM_ASSERT(oldBuf);
+        auto oldBufNode = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*oldBufInput);
+        // place new buffers
+        PlaceBuffer(branchNode->input(1)->origin(), oldBuf->capacity, oldBuf->pass_through);
+        // this buffer should just make the fork buf non-passthrough - needed to avoid combinatorial cycle
+        PlaceBuffer(branchNode->input(0)->origin(), oldBuf->capacity, oldBuf->pass_through);
+        // remove old buffer
+        oldBufNode->output(0)->divert_users(oldBufInput->origin());
+        JLM_ASSERT(oldBufNode->IsDead());
+        remove(oldBufNode);
+      }
+    }
+}
+
+void
 AddBuffers(rvsdg::Region * region)
 {
   for (auto & node : rvsdg::TopDownTraverser(region))
   {
     if (auto structnode = dynamic_cast<rvsdg::StructuralNode *>(node))
     {
+      auto loop = dynamic_cast<loop_node *>(node);
+      JLM_ASSERT(loop);
+      OptimizeLoop(loop);
       for (size_t n = 0; n < structnode->nsubregions(); n++)
       {
         AddBuffers(structnode->subregion(n));
