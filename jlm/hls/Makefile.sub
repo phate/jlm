@@ -9,6 +9,7 @@ libhls_SOURCES = \
     jlm/hls/backend/rhls2firrtl/json-hls.cpp \
     jlm/hls/backend/rhls2firrtl/RhlsToFirrtlConverter.cpp \
     jlm/hls/backend/rhls2firrtl/verilator-harness-hls.cpp \
+    jlm/hls/backend/rhls2firrtl/VerilatorHarnessAxi.cpp \
     \
     jlm/hls/backend/rvsdg2rhls/add-buffers.cpp \
     jlm/hls/backend/rvsdg2rhls/add-forks.cpp \

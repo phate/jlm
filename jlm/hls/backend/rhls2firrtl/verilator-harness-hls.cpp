@@ -41,7 +41,7 @@ ConvertToCType(const rvsdg::Type * type)
   if (auto t = dynamic_cast<const llvm::VectorType *>(type))
   {
     return ConvertToCType(&t->type()) + " __attribute__((vector_size("
-         + std::to_string(JlmSize(type) / 8) + ")))";
+           + std::to_string(JlmSize(type) / 8) + ")))";
   }
   if (auto t = dynamic_cast<const llvm::ArrayType *>(type))
   {

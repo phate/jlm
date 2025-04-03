@@ -3,32 +3,22 @@
  * See COPYING for terms of redistribution.
  */
 
-#ifndef JLM_HLS_BACKEND_RHLS2FIRRTL_VERILATOR_HARNESS_HLS_HPP
-#define JLM_HLS_BACKEND_RHLS2FIRRTL_VERILATOR_HARNESS_HLS_HPP
+#ifndef JLM_HLS_BACKEND_RHLS2FIRRTL_VERILATORHARNESSAXI_HPP
+#define JLM_HLS_BACKEND_RHLS2FIRRTL_VERILATORHARNESSAXI_HPP
 
 #include <jlm/hls/backend/rhls2firrtl/base-hls.hpp>
 #include <jlm/rvsdg/bitstring/type.hpp>
 
 namespace jlm::hls
 {
-
-std::string
-ConvertToCType(const rvsdg::Type * type);
-
-std::optional<std::string>
-GetReturnTypeAsC(const rvsdg::LambdaNode & kernel);
-
-std::tuple<size_t, std::string, std::string>
-GetParameterListAsC(const rvsdg::LambdaNode & kernel);
-
-class VerilatorHarnessHLS : public BaseHLS
+class VerilatorHarnessAxi : public BaseHLS
 {
   const util::filepath VerilogFile_;
 
   std::string
   extension() override
   {
-    return "_harness.cpp";
+    return "harness_axi.cpp";
   }
 
   std::string
@@ -41,11 +31,11 @@ public:
    * @param verilogFile The filename to the Verilog file that is to be used together with the
    * generated harness as input to Verilator.
    */
-  explicit VerilatorHarnessHLS(util::filepath verilogFile)
+  explicit VerilatorHarnessAxi(util::filepath verilogFile)
       : VerilogFile_(std::move(verilogFile))
   {}
 };
 
 }
 
-#endif // JLM_HLS_BACKEND_RHLS2FIRRTL_VERILATOR_HARNESS_HLS_HPP
+#endif // JLM_HLS_BACKEND_RHLS2FIRRTL_VERILATORHARNESSAXI_HPP
