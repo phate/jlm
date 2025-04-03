@@ -528,7 +528,7 @@ RegionAwareMemoryNodeProvider::~RegionAwareMemoryNodeProvider() noexcept = defau
 RegionAwareMemoryNodeProvider::RegionAwareMemoryNodeProvider() = default;
 
 std::unique_ptr<ModRefSummary>
-RegionAwareMemoryNodeProvider::ProvisionMemoryNodes(
+RegionAwareMemoryNodeProvider::SummarizeModRefs(
     const rvsdg::RvsdgModule & rvsdgModule,
     const PointsToGraph & pointsToGraph,
     util::StatisticsCollector & statisticsCollector)
@@ -586,7 +586,7 @@ RegionAwareMemoryNodeProvider::Create(
     util::StatisticsCollector & statisticsCollector)
 {
   RegionAwareMemoryNodeProvider provider;
-  return provider.ProvisionMemoryNodes(rvsdgModule, pointsToGraph, statisticsCollector);
+  return provider.SummarizeModRefs(rvsdgModule, pointsToGraph, statisticsCollector);
 }
 
 std::unique_ptr<ModRefSummary>

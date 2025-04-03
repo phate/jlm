@@ -24,7 +24,7 @@ using AgnosticTopDownMemoryNodeProvider = jlm::llvm::aa::EliminatedMemoryNodePro
     jlm::llvm::aa::AgnosticMemoryNodeProvider,
     jlm::llvm::aa::TopDownMemoryNodeEliminator>;
 
-template<class Test, class Analysis, class Provider>
+template<class Test, class Analysis, class TModRefSummarizer>
 static void
 ValidateTest(std::function<void(const Test &)> validateEncoding)
 {
@@ -37,12 +37,12 @@ ValidateTest(std::function<void(const Test &)> validateEncoding)
       "Analysis should be derived from PointsToAnalysis class.");
 
   static_assert(
-      std::is_base_of<jlm::llvm::aa::MemoryNodeProvider, Provider>::value,
-      "Provider should be derived from MemoryNodeProvider class.");
+      std::is_base_of_v<jlm::llvm::aa::ModRefSummarizer, TModRefSummarizer>,
+      "TModRefSummarizer should be derived from ModRefSummarizer class.");
 
   std::cout << "\n###\n";
   std::cout << "### Performing Test " << typeid(Test).name() << " using ["
-            << typeid(Analysis).name() << ", " << typeid(Provider).name() << "]\n";
+            << typeid(Analysis).name() << ", " << typeid(TModRefSummarizer).name() << "]\n";
   std::cout << "###\n";
 
   Test test;
@@ -55,12 +55,12 @@ ValidateTest(std::function<void(const Test &)> validateEncoding)
   auto pointsToGraph = aliasAnalysis.Analyze(rvsdgModule, statisticsCollector);
   std::cout << jlm::llvm::aa::PointsToGraph::ToDot(*pointsToGraph);
 
-  Provider provider;
-  auto provisioning =
-      provider.ProvisionMemoryNodes(rvsdgModule, *pointsToGraph, statisticsCollector);
+  TModRefSummarizer summarizer;
+  auto modRefSummary =
+      summarizer.SummarizeModRefs(rvsdgModule, *pointsToGraph, statisticsCollector);
 
   jlm::llvm::aa::MemoryStateEncoder encoder;
-  encoder.Encode(rvsdgModule, *provisioning, statisticsCollector);
+  encoder.Encode(rvsdgModule, *modRefSummary, statisticsCollector);
   jlm::rvsdg::view(&rvsdgModule.Rvsdg().GetRootRegion(), stdout);
 
   validateEncoding(test);

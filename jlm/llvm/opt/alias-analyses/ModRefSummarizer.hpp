@@ -3,8 +3,8 @@
  * See COPYING for terms of redistribution.
  */
 
-#ifndef JLM_LLVM_OPT_ALIAS_ANALYSES_MEMORYNODEPROVIDER_HPP
-#define JLM_LLVM_OPT_ALIAS_ANALYSES_MEMORYNODEPROVIDER_HPP
+#ifndef JLM_LLVM_OPT_ALIAS_ANALYSES_MODREFSUMMARIZER_HPP
+#define JLM_LLVM_OPT_ALIAS_ANALYSES_MODREFSUMMARIZER_HPP
 
 #include <jlm/llvm/opt/alias-analyses/ModRefSummary.hpp>
 #include <jlm/llvm/opt/alias-analyses/PointsToGraph.hpp>
@@ -17,10 +17,10 @@ class StatisticsCollector;
 namespace jlm::llvm::aa
 {
 
-class MemoryNodeProvider
+class ModRefSummarizer
 {
 public:
-  virtual ~MemoryNodeProvider() noexcept = default;
+  virtual ~ModRefSummarizer() noexcept = default;
 
   /**
    * Computes the memory nodes that are required at the entry and exit of a region,
@@ -33,12 +33,12 @@ public:
    * @return An instance of ModRefSummary.
    */
   virtual std::unique_ptr<ModRefSummary>
-  ProvisionMemoryNodes(
+  SummarizeModRefs(
       const rvsdg::RvsdgModule & rvsdgModule,
       const PointsToGraph & pointsToGraph,
-      jlm::util::StatisticsCollector & statisticsCollector) = 0;
+      util::StatisticsCollector & statisticsCollector) = 0;
 };
 
 }
 
-#endif // JLM_LLVM_OPT_ALIAS_ANALYSES_MEMORYNODEPROVIDER_HPP
+#endif // JLM_LLVM_OPT_ALIAS_ANALYSES_MODREFSUMMARIZER_HPP

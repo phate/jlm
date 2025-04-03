@@ -95,7 +95,7 @@ private:
 AgnosticMemoryNodeProvider::~AgnosticMemoryNodeProvider() = default;
 
 std::unique_ptr<ModRefSummary>
-AgnosticMemoryNodeProvider::ProvisionMemoryNodes(
+AgnosticMemoryNodeProvider::SummarizeModRefs(
     const rvsdg::RvsdgModule & rvsdgModule,
     const PointsToGraph & pointsToGraph,
     util::StatisticsCollector & statisticsCollector)
@@ -137,7 +137,7 @@ AgnosticMemoryNodeProvider::Create(
     util::StatisticsCollector & statisticsCollector)
 {
   AgnosticMemoryNodeProvider provider;
-  return provider.ProvisionMemoryNodes(rvsdgModule, pointsToGraph, statisticsCollector);
+  return provider.SummarizeModRefs(rvsdgModule, pointsToGraph, statisticsCollector);
 }
 
 std::unique_ptr<ModRefSummary>

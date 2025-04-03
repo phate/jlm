@@ -10,7 +10,7 @@
 #include <jlm/llvm/opt/alias-analyses/Steensgaard.hpp>
 #include <jlm/llvm/opt/alias-analyses/TopDownMemoryNodeEliminator.hpp>
 
-template<class Test, class Analysis, class Provider>
+template<class Test, class Analysis, class TModRefSummarizer>
 static void
 ValidateTest(
     std::function<void(const Test &, const jlm::llvm::aa::ModRefSummary &)> validateModRefSummary)
@@ -24,8 +24,8 @@ ValidateTest(
       "Analysis should be derived from PointsToAnalysis class.");
 
   static_assert(
-      std::is_base_of<jlm::llvm::aa::MemoryNodeProvider, Provider>::value,
-      "Provider should be derived from MemoryNodeProvider class.");
+      std::is_base_of_v<jlm::llvm::aa::ModRefSummarizer, TModRefSummarizer>,
+      "TModRefSummarizer should be derived from ModRefSummarizer class.");
 
   Test test;
   auto & rvsdgModule = test.module();
@@ -34,7 +34,7 @@ ValidateTest(
   auto pointsToGraph = aliasAnalysis.Analyze(rvsdgModule);
   std::cout << jlm::llvm::aa::PointsToGraph::ToDot(*pointsToGraph);
 
-  auto seedModRefSummary = Provider::Create(rvsdgModule, *pointsToGraph);
+  auto seedModRefSummary = TModRefSummarizer::Create(rvsdgModule, *pointsToGraph);
 
   auto modRefSummary = jlm::llvm::aa::TopDownMemoryNodeEliminator::CreateAndEliminate(
       test.module(),

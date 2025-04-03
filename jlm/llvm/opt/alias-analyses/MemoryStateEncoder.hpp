@@ -9,7 +9,7 @@
 #include <memory>
 #include <vector>
 
-namespace rvsdg
+namespace jlm::rvsdg
 {
 class GammaNode;
 class LambdaNode;
