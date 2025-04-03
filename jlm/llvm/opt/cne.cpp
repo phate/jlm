@@ -360,21 +360,21 @@ mark_lambda(const rvsdg::StructuralNode * node, cnectx & ctx)
 static void
 mark_phi(const rvsdg::StructuralNode * node, cnectx & ctx)
 {
-  JLM_ASSERT(is<phi::operation>(node));
+  auto & phi = *util::AssertedCast<const rvsdg::PhiNode>(node);
 
   /* mark dependencies */
-  for (size_t i1 = 0; i1 < node->ninputs(); i1++)
+  for (size_t i1 = 0; i1 < phi.ninputs(); i1++)
   {
-    for (size_t i2 = i1 + 1; i2 < node->ninputs(); i2++)
+    for (size_t i2 = i1 + 1; i2 < phi.ninputs(); i2++)
     {
-      auto input1 = node->input(i1);
-      auto input2 = node->input(i2);
+      auto input1 = phi.input(i1);
+      auto input2 = phi.input(i2);
       if (ctx.congruent(input1, input2))
         ctx.mark(input1->arguments.first(), input2->arguments.first());
     }
   }
 
-  mark(node->subregion(0), ctx);
+  mark(phi.subregion(), ctx);
 }
 
 static void
@@ -390,7 +390,7 @@ mark(const rvsdg::StructuralNode * node, cnectx & ctx)
       { { std::type_index(typeid(rvsdg::GammaNode)), mark_gamma },
         { std::type_index(typeid(rvsdg::ThetaNode)), mark_theta },
         { typeid(rvsdg::LambdaNode), mark_lambda },
-        { typeid(phi::node), mark_phi },
+        { typeid(rvsdg::PhiNode), mark_phi },
         { typeid(delta::node), mark_delta } });
 
   JLM_ASSERT(map.find(typeid(*node)) != map.end());
@@ -523,10 +523,10 @@ divert_lambda(rvsdg::StructuralNode * node, cnectx & ctx)
 static void
 divert_phi(rvsdg::StructuralNode * node, cnectx & ctx)
 {
-  JLM_ASSERT(is<phi::operation>(node));
+  auto & phi = *util::AssertedCast<const rvsdg::PhiNode>(node);
 
-  divert_arguments(node->subregion(0), ctx);
-  divert(node->subregion(0), ctx);
+  divert_arguments(phi.subregion(), ctx);
+  divert(phi.subregion(), ctx);
 }
 
 static void
@@ -542,7 +542,7 @@ divert(rvsdg::StructuralNode * node, cnectx & ctx)
       { { std::type_index(typeid(rvsdg::GammaNode)), divert_gamma },
         { std::type_index(typeid(rvsdg::ThetaNode)), divert_theta },
         { typeid(rvsdg::LambdaNode), divert_lambda },
-        { typeid(phi::node), divert_phi },
+        { typeid(rvsdg::PhiNode), divert_phi },
         { typeid(delta::node), divert_delta } });
 
   JLM_ASSERT(map.find(typeid(*node)) != map.end());
