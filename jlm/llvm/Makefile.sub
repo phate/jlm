@@ -79,7 +79,7 @@ libllvm_HEADERS = \
 	jlm/llvm/opt/alias-analyses/LazyCycleDetection.hpp \
 	jlm/llvm/opt/alias-analyses/OnlineCycleDetection.hpp \
 	jlm/llvm/opt/alias-analyses/Optimization.hpp \
-	jlm/llvm/opt/alias-analyses/MemoryNodeEliminator.hpp \
+	jlm/llvm/opt/alias-analyses/ModRefEliminator.hpp \
 	jlm/llvm/opt/alias-analyses/MemoryStateEncoder.hpp \
 	jlm/llvm/opt/alias-analyses/ModRefSummarizer.hpp \
 	jlm/llvm/opt/alias-analyses/ModRefSummary.hpp \
