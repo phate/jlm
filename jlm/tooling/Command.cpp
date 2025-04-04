@@ -10,7 +10,7 @@
 #include <jlm/llvm/frontend/LlvmModuleConversion.hpp>
 #include <jlm/llvm/ir/ipgraph-module.hpp>
 #include <jlm/llvm/ir/RvsdgModule.hpp>
-#include <jlm/llvm/opt/alias-analyses/AgnosticMemoryNodeProvider.hpp>
+#include <jlm/llvm/opt/alias-analyses/AgnosticModRefSummarizer.hpp>
 #include <jlm/llvm/opt/alias-analyses/Andersen.hpp>
 #include <jlm/llvm/opt/alias-analyses/EliminatedMemoryNodeProvider.hpp>
 #include <jlm/llvm/opt/alias-analyses/Optimization.hpp>
@@ -386,21 +386,21 @@ JlmOptCommand::CreateTransformation(
 {
   using Andersen = llvm::aa::Andersen;
   using Steensgaard = llvm::aa::Steensgaard;
-  using AgnosticMnp = llvm::aa::AgnosticMemoryNodeProvider;
+  using AgnosticMrs = llvm::aa::AgnosticModRefSummarizer;
   using RegionAwareMrs = llvm::aa::RegionAwareModRefSummarizer;
   using TopDownLifetimeMnp =
-      llvm::aa::EliminatedMemoryNodeProvider<AgnosticMnp, llvm::aa::TopDownMemoryNodeEliminator>;
+      llvm::aa::EliminatedMemoryNodeProvider<AgnosticMrs, llvm::aa::TopDownMemoryNodeEliminator>;
 
   switch (optimizationId)
   {
   case JlmOptCommandLineOptions::OptimizationId::AAAndersenAgnostic:
-    return std::make_unique<llvm::aa::PointsToAnalysisStateEncoder<Andersen, AgnosticMnp>>();
+    return std::make_unique<llvm::aa::PointsToAnalysisStateEncoder<Andersen, AgnosticMrs>>();
   case JlmOptCommandLineOptions::OptimizationId::AAAndersenRegionAware:
     return std::make_unique<llvm::aa::PointsToAnalysisStateEncoder<Andersen, RegionAwareMrs>>();
   case JlmOptCommandLineOptions::OptimizationId::AAAndersenTopDownLifetimeAware:
     return std::make_unique<llvm::aa::PointsToAnalysisStateEncoder<Andersen, TopDownLifetimeMnp>>();
   case JlmOptCommandLineOptions::OptimizationId::AASteensgaardAgnostic:
-    return std::make_unique<llvm::aa::PointsToAnalysisStateEncoder<Steensgaard, AgnosticMnp>>();
+    return std::make_unique<llvm::aa::PointsToAnalysisStateEncoder<Steensgaard, AgnosticMrs>>();
   case JlmOptCommandLineOptions::OptimizationId::AASteensgaardRegionAware:
     return std::make_unique<llvm::aa::PointsToAnalysisStateEncoder<Steensgaard, RegionAwareMrs>>();
   case JlmOptCommandLineOptions::OptimizationId::CommonNodeElimination:
