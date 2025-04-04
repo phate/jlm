@@ -14,7 +14,7 @@
 #include <jlm/llvm/opt/alias-analyses/Andersen.hpp>
 #include <jlm/llvm/opt/alias-analyses/EliminatedMemoryNodeProvider.hpp>
 #include <jlm/llvm/opt/alias-analyses/Optimization.hpp>
-#include <jlm/llvm/opt/alias-analyses/RegionAwareMemoryNodeProvider.hpp>
+#include <jlm/llvm/opt/alias-analyses/RegionAwareModRefSummarizer.hpp>
 #include <jlm/llvm/opt/alias-analyses/Steensgaard.hpp>
 #include <jlm/llvm/opt/alias-analyses/TopDownMemoryNodeEliminator.hpp>
 #include <jlm/llvm/opt/cne.hpp>
@@ -387,7 +387,7 @@ JlmOptCommand::CreateTransformation(
   using Andersen = llvm::aa::Andersen;
   using Steensgaard = llvm::aa::Steensgaard;
   using AgnosticMrs = llvm::aa::AgnosticModRefSummarizer;
-  using RegionAwareMnp = llvm::aa::RegionAwareMemoryNodeProvider;
+  using RegionAwareMrs = llvm::aa::RegionAwareModRefSummarizer;
   using TopDownLifetimeMnp =
       llvm::aa::EliminatedMemoryNodeProvider<AgnosticMrs, llvm::aa::TopDownMemoryNodeEliminator>;
 
@@ -396,13 +396,13 @@ JlmOptCommand::CreateTransformation(
   case JlmOptCommandLineOptions::OptimizationId::AAAndersenAgnostic:
     return std::make_unique<llvm::aa::PointsToAnalysisStateEncoder<Andersen, AgnosticMrs>>();
   case JlmOptCommandLineOptions::OptimizationId::AAAndersenRegionAware:
-    return std::make_unique<llvm::aa::PointsToAnalysisStateEncoder<Andersen, RegionAwareMnp>>();
+    return std::make_unique<llvm::aa::PointsToAnalysisStateEncoder<Andersen, RegionAwareMrs>>();
   case JlmOptCommandLineOptions::OptimizationId::AAAndersenTopDownLifetimeAware:
     return std::make_unique<llvm::aa::PointsToAnalysisStateEncoder<Andersen, TopDownLifetimeMnp>>();
   case JlmOptCommandLineOptions::OptimizationId::AASteensgaardAgnostic:
     return std::make_unique<llvm::aa::PointsToAnalysisStateEncoder<Steensgaard, AgnosticMrs>>();
   case JlmOptCommandLineOptions::OptimizationId::AASteensgaardRegionAware:
-    return std::make_unique<llvm::aa::PointsToAnalysisStateEncoder<Steensgaard, RegionAwareMnp>>();
+    return std::make_unique<llvm::aa::PointsToAnalysisStateEncoder<Steensgaard, RegionAwareMrs>>();
   case JlmOptCommandLineOptions::OptimizationId::CommonNodeElimination:
     return std::make_unique<llvm::cne>();
   case JlmOptCommandLineOptions::OptimizationId::DeadNodeElimination:

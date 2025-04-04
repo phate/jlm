@@ -8,7 +8,7 @@
 #include <jlm/llvm/ir/operators/lambda.hpp>
 #include <jlm/llvm/ir/operators/Store.hpp>
 #include <jlm/llvm/ir/RvsdgModule.hpp>
-#include <jlm/llvm/opt/alias-analyses/RegionAwareMemoryNodeProvider.hpp>
+#include <jlm/llvm/opt/alias-analyses/RegionAwareModRefSummarizer.hpp>
 #include <jlm/llvm/opt/DeadNodeElimination.hpp>
 #include <jlm/rvsdg/traverser.hpp>
 #include <jlm/util/Statistics.hpp>
@@ -17,13 +17,13 @@
 namespace jlm::llvm::aa
 {
 
-/** \brief Region-aware memory node provider statistics
+/** \brief Region-aware mod/ref summarizer statistics
  *
- * The statistics collected when running the region-aware memory node provider.
+ * The statistics collected when running the region-aware mod/ref summarizer.
  *
- * @see RegionAwareMemoryNodeProvider
+ * @see RegionAwareModRefSummarizer
  */
-class RegionAwareMemoryNodeProvider::Statistics final : public util::Statistics
+class RegionAwareModRefSummarizer::Statistics final : public util::Statistics
 {
   const char * NumRvsdgRegionsLabel_ = "#RvsdgRegions";
   const char * NumCallGraphSccs_ = "#CallGraphSccs";
@@ -523,12 +523,12 @@ private:
   CallSummaryMap CallSummaries_;
 };
 
-RegionAwareMemoryNodeProvider::~RegionAwareMemoryNodeProvider() noexcept = default;
+RegionAwareModRefSummarizer::~RegionAwareModRefSummarizer() noexcept = default;
 
-RegionAwareMemoryNodeProvider::RegionAwareMemoryNodeProvider() = default;
+RegionAwareModRefSummarizer::RegionAwareModRefSummarizer() = default;
 
 std::unique_ptr<ModRefSummary>
-RegionAwareMemoryNodeProvider::SummarizeModRefs(
+RegionAwareModRefSummarizer::SummarizeModRefs(
     const rvsdg::RvsdgModule & rvsdgModule,
     const PointsToGraph & pointsToGraph,
     util::StatisticsCollector & statisticsCollector)
@@ -580,17 +580,17 @@ RegionAwareMemoryNodeProvider::SummarizeModRefs(
 }
 
 std::unique_ptr<ModRefSummary>
-RegionAwareMemoryNodeProvider::Create(
+RegionAwareModRefSummarizer::Create(
     const rvsdg::RvsdgModule & rvsdgModule,
     const PointsToGraph & pointsToGraph,
     util::StatisticsCollector & statisticsCollector)
 {
-  RegionAwareMemoryNodeProvider provider;
+  RegionAwareModRefSummarizer provider;
   return provider.SummarizeModRefs(rvsdgModule, pointsToGraph, statisticsCollector);
 }
 
 std::unique_ptr<ModRefSummary>
-RegionAwareMemoryNodeProvider::Create(
+RegionAwareModRefSummarizer::Create(
     const rvsdg::RvsdgModule & rvsdgModule,
     const PointsToGraph & pointsToGraph)
 {
@@ -599,7 +599,7 @@ RegionAwareMemoryNodeProvider::Create(
 }
 
 void
-RegionAwareMemoryNodeProvider::CreateCallGraph(const rvsdg::RvsdgModule & rvsdgModule)
+RegionAwareModRefSummarizer::CreateCallGraph(const rvsdg::RvsdgModule & rvsdgModule)
 {
   // The list of lambdas becomes the list of nodes in the call graph
   auto lambdaNodes = CollectLambdaNodes(rvsdgModule);
@@ -714,7 +714,7 @@ RegionAwareMemoryNodeProvider::CreateCallGraph(const rvsdg::RvsdgModule & rvsdgM
 }
 
 void
-RegionAwareMemoryNodeProvider::AnnotateFunction(const rvsdg::LambdaNode & lambda, size_t sccIndex)
+RegionAwareModRefSummarizer::AnnotateFunction(const rvsdg::LambdaNode & lambda, size_t sccIndex)
 {
   auto & summary = AnnotateRegion(*lambda.subregion(), sccIndex);
 
@@ -723,7 +723,7 @@ RegionAwareMemoryNodeProvider::AnnotateFunction(const rvsdg::LambdaNode & lambda
 }
 
 RegionSummary &
-RegionAwareMemoryNodeProvider::AnnotateRegion(rvsdg::Region & region, size_t sccIndex)
+RegionAwareModRefSummarizer::AnnotateRegion(rvsdg::Region & region, size_t sccIndex)
 {
   auto & summary = ModRefSummary_->AddRegionSummary(RegionSummary::Create(region, sccIndex));
 
@@ -747,7 +747,7 @@ RegionAwareMemoryNodeProvider::AnnotateRegion(rvsdg::Region & region, size_t scc
 }
 
 void
-RegionAwareMemoryNodeProvider::AnnotateStructuralNode(
+RegionAwareModRefSummarizer::AnnotateStructuralNode(
     const rvsdg::StructuralNode & structuralNode,
     RegionSummary & regionSummary)
 {
@@ -762,7 +762,7 @@ RegionAwareMemoryNodeProvider::AnnotateStructuralNode(
 }
 
 void
-RegionAwareMemoryNodeProvider::AnnotateSimpleNode(
+RegionAwareModRefSummarizer::AnnotateSimpleNode(
     const rvsdg::SimpleNode & simpleNode,
     RegionSummary & regionSummary)
 {
@@ -797,16 +797,14 @@ RegionAwareMemoryNodeProvider::AnnotateSimpleNode(
 }
 
 void
-RegionAwareMemoryNodeProvider::AnnotateLoad(
-    const LoadNode & loadNode,
-    RegionSummary & regionSummary)
+RegionAwareModRefSummarizer::AnnotateLoad(const LoadNode & loadNode, RegionSummary & regionSummary)
 {
   auto memoryNodes = ModRefSummary_->GetOutputNodes(*loadNode.GetAddressInput().origin());
   regionSummary.AddMemoryNodes(memoryNodes);
 }
 
 void
-RegionAwareMemoryNodeProvider::AnnotateStore(
+RegionAwareModRefSummarizer::AnnotateStore(
     const StoreNode & storeNode,
     RegionSummary & regionSummary)
 {
@@ -815,7 +813,7 @@ RegionAwareMemoryNodeProvider::AnnotateStore(
 }
 
 void
-RegionAwareMemoryNodeProvider::AnnotateAlloca(
+RegionAwareModRefSummarizer::AnnotateAlloca(
     const rvsdg::SimpleNode & allocaNode,
     RegionSummary & regionSummary)
 {
@@ -826,7 +824,7 @@ RegionAwareMemoryNodeProvider::AnnotateAlloca(
 }
 
 void
-RegionAwareMemoryNodeProvider::AnnotateMalloc(
+RegionAwareModRefSummarizer::AnnotateMalloc(
     const rvsdg::SimpleNode & mallocNode,
     RegionSummary & regionSummary)
 {
@@ -837,7 +835,7 @@ RegionAwareMemoryNodeProvider::AnnotateMalloc(
 }
 
 void
-RegionAwareMemoryNodeProvider::AnnotateFree(
+RegionAwareModRefSummarizer::AnnotateFree(
     const rvsdg::SimpleNode & freeNode,
     RegionSummary & regionSummary)
 {
@@ -848,7 +846,7 @@ RegionAwareMemoryNodeProvider::AnnotateFree(
 }
 
 void
-RegionAwareMemoryNodeProvider::AnnotateMemcpy(
+RegionAwareModRefSummarizer::AnnotateMemcpy(
     const rvsdg::SimpleNode & memcpyNode,
     RegionSummary & regionSummary)
 {
@@ -862,9 +860,7 @@ RegionAwareMemoryNodeProvider::AnnotateMemcpy(
 }
 
 void
-RegionAwareMemoryNodeProvider::AnnotateCall(
-    const CallNode & callNode,
-    RegionSummary & regionSummary)
+RegionAwareModRefSummarizer::AnnotateCall(const CallNode & callNode, RegionSummary & regionSummary)
 {
   // A call has the same sccIndex as the region it lives in
   const auto sccIndex = regionSummary.GetCallGraphSccIndex();
@@ -918,7 +914,7 @@ RegionAwareMemoryNodeProvider::AnnotateCall(
 }
 
 void
-RegionAwareMemoryNodeProvider::PropagateRecursiveMemoryLocations()
+RegionAwareModRefSummarizer::PropagateRecursiveMemoryLocations()
 {
   // Go over all summaries that may contain recursion and add all memory locations utilized
   // anywhere in the SCC to the summary.
@@ -942,7 +938,7 @@ RegionAwareMemoryNodeProvider::PropagateRecursiveMemoryLocations()
 }
 
 std::vector<const rvsdg::LambdaNode *>
-RegionAwareMemoryNodeProvider::CollectLambdaNodes(const rvsdg::RvsdgModule & rvsdgModule)
+RegionAwareModRefSummarizer::CollectLambdaNodes(const rvsdg::RvsdgModule & rvsdgModule)
 {
   std::vector<const rvsdg::LambdaNode *> result;
 
@@ -972,7 +968,7 @@ RegionAwareMemoryNodeProvider::CollectLambdaNodes(const rvsdg::RvsdgModule & rvs
 }
 
 std::string
-RegionAwareMemoryNodeProvider::CallGraphSCCsToString(const RegionAwareMemoryNodeProvider & provider)
+RegionAwareModRefSummarizer::CallGraphSCCsToString(const RegionAwareModRefSummarizer & provider)
 {
   std::ostringstream ss;
   for (size_t i = 0; i < provider.Context_.SccFunctions.size(); i++)
@@ -994,7 +990,7 @@ RegionAwareMemoryNodeProvider::CallGraphSCCsToString(const RegionAwareMemoryNode
 }
 
 std::string
-RegionAwareMemoryNodeProvider::ToRegionTree(
+RegionAwareModRefSummarizer::ToRegionTree(
     const rvsdg::Graph & rvsdg,
     const RegionAwareModRefSummary & modRefSummary)
 {
