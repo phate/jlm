@@ -6,7 +6,7 @@
 #include <test-registry.hpp>
 #include <TestRvsdgs.hpp>
 
-#include <jlm/llvm/opt/alias-analyses/AgnosticMemoryNodeProvider.hpp>
+#include <jlm/llvm/opt/alias-analyses/AgnosticModRefSummarizer.hpp>
 #include <jlm/llvm/opt/alias-analyses/Steensgaard.hpp>
 #include <jlm/llvm/opt/alias-analyses/TopDownMemoryNodeEliminator.hpp>
 
@@ -1158,7 +1158,7 @@ TestStatistics()
   jlm::util::StatisticsCollector statisticsCollector(statisticsCollectorSettings);
 
   auto pointsToGraph = jlm::llvm::aa::PointsToGraph::Create();
-  auto modRefSummary = jlm::llvm::aa::AgnosticMemoryNodeProvider::Create(
+  auto modRefSummary = jlm::llvm::aa::AgnosticModRefSummarizer::Create(
       test.module(),
       *pointsToGraph,
       statisticsCollector);
@@ -1178,49 +1178,49 @@ TestTopDownMemoryNodeEliminator()
 {
   using namespace jlm::llvm::aa;
 
-  ValidateTest<jlm::tests::StoreTest1, Steensgaard, AgnosticMemoryNodeProvider>(
+  ValidateTest<jlm::tests::StoreTest1, Steensgaard, AgnosticModRefSummarizer>(
       ValidateStoreTest1SteensgaardAgnostic);
 
-  ValidateTest<jlm::tests::StoreTest2, Steensgaard, AgnosticMemoryNodeProvider>(
+  ValidateTest<jlm::tests::StoreTest2, Steensgaard, AgnosticModRefSummarizer>(
       ValidateStoreTest2SteensgaardAgnostic);
 
-  ValidateTest<jlm::tests::LoadTest1, Steensgaard, AgnosticMemoryNodeProvider>(
+  ValidateTest<jlm::tests::LoadTest1, Steensgaard, AgnosticModRefSummarizer>(
       ValidateLoadTest1SteensgaardAgnostic);
 
-  ValidateTest<jlm::tests::LoadTest2, Steensgaard, AgnosticMemoryNodeProvider>(
+  ValidateTest<jlm::tests::LoadTest2, Steensgaard, AgnosticModRefSummarizer>(
       ValidateLoadTest2SteensgaardAgnostic);
 
-  ValidateTest<jlm::tests::LoadFromUndefTest, Steensgaard, AgnosticMemoryNodeProvider>(
+  ValidateTest<jlm::tests::LoadFromUndefTest, Steensgaard, AgnosticModRefSummarizer>(
       ValidateLoadFromUndefTestSteensgaardAgnostic);
 
-  ValidateTest<jlm::tests::CallTest1, Steensgaard, AgnosticMemoryNodeProvider>(
+  ValidateTest<jlm::tests::CallTest1, Steensgaard, AgnosticModRefSummarizer>(
       ValidateCallTest1SteensgaardAgnostic);
 
-  ValidateTest<jlm::tests::IndirectCallTest1, Steensgaard, AgnosticMemoryNodeProvider>(
+  ValidateTest<jlm::tests::IndirectCallTest1, Steensgaard, AgnosticModRefSummarizer>(
       ValidateIndirectCallTest1SteensgaardAgnostic);
 
-  ValidateTest<jlm::tests::IndirectCallTest2, Steensgaard, AgnosticMemoryNodeProvider>(
+  ValidateTest<jlm::tests::IndirectCallTest2, Steensgaard, AgnosticModRefSummarizer>(
       ValidateIndirectCallTest2SteensgaardAgnostic);
 
-  ValidateTest<jlm::tests::GammaTest, Steensgaard, AgnosticMemoryNodeProvider>(
+  ValidateTest<jlm::tests::GammaTest, Steensgaard, AgnosticModRefSummarizer>(
       ValidateGammaTestSteensgaardAgnostic);
 
-  ValidateTest<jlm::tests::GammaTest2, Steensgaard, AgnosticMemoryNodeProvider>(
+  ValidateTest<jlm::tests::GammaTest2, Steensgaard, AgnosticModRefSummarizer>(
       ValidateGammaTest2SteensgaardAgnostic);
 
-  ValidateTest<jlm::tests::ThetaTest, Steensgaard, AgnosticMemoryNodeProvider>(
+  ValidateTest<jlm::tests::ThetaTest, Steensgaard, AgnosticModRefSummarizer>(
       ValidateThetaTestSteensgaardAgnostic);
 
-  ValidateTest<jlm::tests::PhiTest1, Steensgaard, AgnosticMemoryNodeProvider>(
+  ValidateTest<jlm::tests::PhiTest1, Steensgaard, AgnosticModRefSummarizer>(
       ValidatePhiTest1SteensgaardAgnostic);
 
-  ValidateTest<jlm::tests::PhiTest2, Steensgaard, AgnosticMemoryNodeProvider>(
+  ValidateTest<jlm::tests::PhiTest2, Steensgaard, AgnosticModRefSummarizer>(
       ValidatePhiTest2SteensgaardAgnostic);
 
-  ValidateTest<jlm::tests::EscapedMemoryTest3, Steensgaard, AgnosticMemoryNodeProvider>(
+  ValidateTest<jlm::tests::EscapedMemoryTest3, Steensgaard, AgnosticModRefSummarizer>(
       ValidateEscapedMemoryTest3SteensgaardAgnostic);
 
-  ValidateTest<jlm::tests::MemcpyTest, Steensgaard, AgnosticMemoryNodeProvider>(
+  ValidateTest<jlm::tests::MemcpyTest, Steensgaard, AgnosticModRefSummarizer>(
       ValidateMemcpyTestSteensgaardAgnostic);
 
   TestStatistics();

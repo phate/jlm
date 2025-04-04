@@ -3,21 +3,21 @@
  * See COPYING for terms of redistribution.
  */
 
-#include <jlm/llvm/opt/alias-analyses/AgnosticMemoryNodeProvider.hpp>
+#include <jlm/llvm/opt/alias-analyses/AgnosticModRefSummarizer.hpp>
 
 namespace jlm::llvm::aa
 {
 
-/** \brief Mod/Ref summary of agnostic memory node provider
+/** \brief Mod/Ref summary of agnostic mod/ref summarizer
  *
  */
-class AgnosticMemoryNodeProvisioning final : public ModRefSummary
+class AgnosticModRefSummary final : public ModRefSummary
 {
 public:
-  ~AgnosticMemoryNodeProvisioning() noexcept override = default;
+  ~AgnosticModRefSummary() noexcept override = default;
 
 private:
-  AgnosticMemoryNodeProvisioning(
+  AgnosticModRefSummary(
       const PointsToGraph & pointsToGraph,
       util::HashSet<const PointsToGraph::MemoryNode *> memoryNodes)
       : PointsToGraph_(pointsToGraph),
@@ -25,15 +25,15 @@ private:
   {}
 
 public:
-  AgnosticMemoryNodeProvisioning(const AgnosticMemoryNodeProvisioning &) = delete;
+  AgnosticModRefSummary(const AgnosticModRefSummary &) = delete;
 
-  AgnosticMemoryNodeProvisioning(AgnosticMemoryNodeProvisioning &&) = delete;
+  AgnosticModRefSummary(AgnosticModRefSummary &&) = delete;
 
-  AgnosticMemoryNodeProvisioning &
-  operator=(const AgnosticMemoryNodeProvisioning &) = delete;
+  AgnosticModRefSummary &
+  operator=(const AgnosticModRefSummary &) = delete;
 
-  AgnosticMemoryNodeProvisioning &
-  operator=(AgnosticMemoryNodeProvisioning &&) = delete;
+  AgnosticModRefSummary &
+  operator=(AgnosticModRefSummary &&) = delete;
 
   [[nodiscard]] const PointsToGraph &
   GetPointsToGraph() const noexcept override
@@ -78,13 +78,13 @@ public:
     return memoryNodes;
   }
 
-  static std::unique_ptr<AgnosticMemoryNodeProvisioning>
+  static std::unique_ptr<AgnosticModRefSummary>
   Create(
       const PointsToGraph & pointsToGraph,
       util::HashSet<const PointsToGraph::MemoryNode *> memoryNodes)
   {
-    return std::unique_ptr<AgnosticMemoryNodeProvisioning>(
-        new AgnosticMemoryNodeProvisioning(pointsToGraph, std::move(memoryNodes)));
+    return std::unique_ptr<AgnosticModRefSummary>(
+        new AgnosticModRefSummary(pointsToGraph, std::move(memoryNodes)));
   }
 
 private:
@@ -92,10 +92,10 @@ private:
   util::HashSet<const PointsToGraph::MemoryNode *> MemoryNodes_;
 };
 
-AgnosticMemoryNodeProvider::~AgnosticMemoryNodeProvider() = default;
+AgnosticModRefSummarizer::~AgnosticModRefSummarizer() = default;
 
 std::unique_ptr<ModRefSummary>
-AgnosticMemoryNodeProvider::SummarizeModRefs(
+AgnosticModRefSummarizer::SummarizeModRefs(
     const rvsdg::RvsdgModule & rvsdgModule,
     const PointsToGraph & pointsToGraph,
     util::StatisticsCollector & statisticsCollector)
@@ -122,26 +122,26 @@ AgnosticMemoryNodeProvider::SummarizeModRefs(
 
   memoryNodes.Insert(&pointsToGraph.GetExternalMemoryNode());
 
-  auto provisioning = AgnosticMemoryNodeProvisioning::Create(pointsToGraph, std::move(memoryNodes));
+  auto modRefSummary = AgnosticModRefSummary::Create(pointsToGraph, std::move(memoryNodes));
 
   statistics->StopCollecting();
   statisticsCollector.CollectDemandedStatistics(std::move(statistics));
 
-  return provisioning;
+  return modRefSummary;
 }
 
 std::unique_ptr<ModRefSummary>
-AgnosticMemoryNodeProvider::Create(
+AgnosticModRefSummarizer::Create(
     const rvsdg::RvsdgModule & rvsdgModule,
     const PointsToGraph & pointsToGraph,
     util::StatisticsCollector & statisticsCollector)
 {
-  AgnosticMemoryNodeProvider provider;
+  AgnosticModRefSummarizer provider;
   return provider.SummarizeModRefs(rvsdgModule, pointsToGraph, statisticsCollector);
 }
 
 std::unique_ptr<ModRefSummary>
-AgnosticMemoryNodeProvider::Create(
+AgnosticModRefSummarizer::Create(
     const rvsdg::RvsdgModule & rvsdgModule,
     const PointsToGraph & pointsToGraph)
 {

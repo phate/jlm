@@ -9,7 +9,7 @@
 
 #include <jlm/rvsdg/view.hpp>
 
-#include <jlm/llvm/opt/alias-analyses/AgnosticMemoryNodeProvider.hpp>
+#include <jlm/llvm/opt/alias-analyses/AgnosticModRefSummarizer.hpp>
 #include <jlm/llvm/opt/alias-analyses/Steensgaard.hpp>
 #include <jlm/util/Statistics.hpp>
 
@@ -52,7 +52,7 @@ TestStore1()
    * Act
    */
   auto provisioning =
-      jlm::llvm::aa::AgnosticMemoryNodeProvider::Create(test.module(), *pointsToGraph);
+      jlm::llvm::aa::AgnosticModRefSummarizer::Create(test.module(), *pointsToGraph);
 
   /*
    * Assert
@@ -87,7 +87,7 @@ TestStore2()
    * Act
    */
   auto provisioning =
-      jlm::llvm::aa::AgnosticMemoryNodeProvider::Create(test.module(), *pointsToGraph);
+      jlm::llvm::aa::AgnosticModRefSummarizer::Create(test.module(), *pointsToGraph);
 
   /*
    * Assert
@@ -122,7 +122,7 @@ TestLoad1()
    * Act
    */
   auto provisioning =
-      jlm::llvm::aa::AgnosticMemoryNodeProvider::Create(test.module(), *pointsToGraph);
+      jlm::llvm::aa::AgnosticModRefSummarizer::Create(test.module(), *pointsToGraph);
 
   /*
    * Assert
@@ -156,7 +156,7 @@ TestLoad2()
    * Act
    */
   auto provisioning =
-      jlm::llvm::aa::AgnosticMemoryNodeProvider::Create(test.module(), *pointsToGraph);
+      jlm::llvm::aa::AgnosticModRefSummarizer::Create(test.module(), *pointsToGraph);
 
   /*
    * Assert
@@ -191,7 +191,7 @@ TestLoadFromUndef()
    * Act
    */
   auto provisioning =
-      jlm::llvm::aa::AgnosticMemoryNodeProvider::Create(test.module(), *pointsToGraph);
+      jlm::llvm::aa::AgnosticModRefSummarizer::Create(test.module(), *pointsToGraph);
 
   /*
    * Assert
@@ -265,7 +265,7 @@ TestCall1()
    * Act
    */
   auto provisioning =
-      jlm::llvm::aa::AgnosticMemoryNodeProvider::Create(test.module(), *pointsToGraph);
+      jlm::llvm::aa::AgnosticModRefSummarizer::Create(test.module(), *pointsToGraph);
 
   /*
    * Assert
@@ -351,7 +351,7 @@ TestCall2()
    * Act
    */
   auto provisioning =
-      jlm::llvm::aa::AgnosticMemoryNodeProvider::Create(test.module(), *pointsToGraph);
+      jlm::llvm::aa::AgnosticModRefSummarizer::Create(test.module(), *pointsToGraph);
 
   /*
    * Assert
@@ -442,7 +442,7 @@ TestIndirectCall()
    * Act
    */
   auto provisioning =
-      jlm::llvm::aa::AgnosticMemoryNodeProvider::Create(test.module(), *pointsToGraph);
+      jlm::llvm::aa::AgnosticModRefSummarizer::Create(test.module(), *pointsToGraph);
 
   /*
    * Assert
@@ -481,7 +481,7 @@ TestGamma()
    * Act
    */
   auto provisioning =
-      jlm::llvm::aa::AgnosticMemoryNodeProvider::Create(test.module(), *pointsToGraph);
+      jlm::llvm::aa::AgnosticModRefSummarizer::Create(test.module(), *pointsToGraph);
 
   /*
    * Assert
@@ -518,7 +518,7 @@ TestTheta()
    * Act
    */
   auto provisioning =
-      jlm::llvm::aa::AgnosticMemoryNodeProvider::Create(test.module(), *pointsToGraph);
+      jlm::llvm::aa::AgnosticModRefSummarizer::Create(test.module(), *pointsToGraph);
 
   /*
    * Assert
@@ -573,7 +573,7 @@ TestDelta1()
    * Act
    */
   auto provisioning =
-      jlm::llvm::aa::AgnosticMemoryNodeProvider::Create(test.module(), *pointsToGraph);
+      jlm::llvm::aa::AgnosticModRefSummarizer::Create(test.module(), *pointsToGraph);
 
   /*
    * Assert
@@ -628,7 +628,7 @@ TestDelta2()
    * Act
    */
   auto provisioning =
-      jlm::llvm::aa::AgnosticMemoryNodeProvider::Create(test.module(), *pointsToGraph);
+      jlm::llvm::aa::AgnosticModRefSummarizer::Create(test.module(), *pointsToGraph);
 
   /*
    * Assert
@@ -683,7 +683,7 @@ TestImports()
    * Act
    */
   auto provisioning =
-      jlm::llvm::aa::AgnosticMemoryNodeProvider::Create(test.module(), *pointsToGraph);
+      jlm::llvm::aa::AgnosticModRefSummarizer::Create(test.module(), *pointsToGraph);
 
   /*
    * Assert
@@ -750,7 +750,7 @@ TestPhi1()
    * Act
    */
   auto provisioning =
-      jlm::llvm::aa::AgnosticMemoryNodeProvider::Create(test.module(), *pointsToGraph);
+      jlm::llvm::aa::AgnosticModRefSummarizer::Create(test.module(), *pointsToGraph);
 
   /*
    * Assert
@@ -812,7 +812,7 @@ TestMemcpy()
    * Act
    */
   auto provisioning =
-      jlm::llvm::aa::AgnosticMemoryNodeProvider::Create(test.module(), *pointsToGraph);
+      jlm::llvm::aa::AgnosticModRefSummarizer::Create(test.module(), *pointsToGraph);
 
   /*
    * Assert
@@ -832,7 +832,7 @@ TestStatistics()
   jlm::util::StatisticsCollector statisticsCollector(statisticsCollectorSettings);
 
   // Act
-  jlm::llvm::aa::AgnosticMemoryNodeProvider::Create(
+  jlm::llvm::aa::AgnosticModRefSummarizer::Create(
       test.module(),
       *pointsToGraph,
       statisticsCollector);
@@ -840,7 +840,7 @@ TestStatistics()
   // Assert
   assert(statisticsCollector.NumCollectedStatistics() == 1);
 
-  auto & statistics = dynamic_cast<const jlm::llvm::aa::AgnosticMemoryNodeProvider::Statistics &>(
+  auto & statistics = dynamic_cast<const jlm::llvm::aa::AgnosticModRefSummarizer::Statistics &>(
       *statisticsCollector.CollectedStatistics().begin());
 
   assert(statistics.GetSourceFile() == test.module().SourceFileName());
@@ -879,4 +879,4 @@ test()
   return 0;
 }
 
-JLM_UNIT_TEST_REGISTER("jlm/llvm/opt/alias-analyses/TestAgnosticMemoryNodeProvider", test)
+JLM_UNIT_TEST_REGISTER("jlm/llvm/opt/alias-analyses/AgnosticModRefSummarizerTests", test)

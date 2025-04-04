@@ -4,7 +4,7 @@
  * See COPYING for terms of redistribution.
  */
 
-#include <jlm/llvm/opt/alias-analyses/AgnosticMemoryNodeProvider.hpp>
+#include <jlm/llvm/opt/alias-analyses/AgnosticModRefSummarizer.hpp>
 #include <jlm/llvm/opt/alias-analyses/Andersen.hpp>
 #include <jlm/llvm/opt/alias-analyses/EliminatedMemoryNodeProvider.hpp>
 #include <jlm/llvm/opt/alias-analyses/MemoryStateEncoder.hpp>
@@ -36,12 +36,12 @@ PointsToAnalysisStateEncoder<TPointsToAnalysis, MemoryNodeProviderPass>::Run(
 }
 
 // Explicitly initialize all combinations
-template class PointsToAnalysisStateEncoder<Steensgaard, AgnosticMemoryNodeProvider>;
+template class PointsToAnalysisStateEncoder<Steensgaard, AgnosticModRefSummarizer>;
 template class PointsToAnalysisStateEncoder<Steensgaard, RegionAwareMemoryNodeProvider>;
-template class PointsToAnalysisStateEncoder<Andersen, AgnosticMemoryNodeProvider>;
+template class PointsToAnalysisStateEncoder<Andersen, AgnosticModRefSummarizer>;
 template class PointsToAnalysisStateEncoder<Andersen, RegionAwareMemoryNodeProvider>;
 template class PointsToAnalysisStateEncoder<
     Andersen,
-    EliminatedMemoryNodeProvider<AgnosticMemoryNodeProvider, TopDownMemoryNodeEliminator>>;
+    EliminatedMemoryNodeProvider<AgnosticModRefSummarizer, TopDownMemoryNodeEliminator>>;
 
 }
