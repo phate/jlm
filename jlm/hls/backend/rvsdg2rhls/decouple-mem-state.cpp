@@ -241,6 +241,33 @@ handle_structural(
   }
 }
 
+void
+optimize_single_store_loop(
+    std::vector<rvsdg::SimpleNode *> & mem_ops,
+    rvsdg::input * state_edge_before,
+    rvsdg::output * state_edge_after)
+{
+  // the idea here is that if there is only one store, and no other memory operations/staet gates on a state edge in a loop
+  // we can remove the backedge part and treat the edge like a loop constant, albeit with an output
+  // this will especially be important for stores that have a response.
+  if (mem_ops.size() == 1 && is_store(mem_ops[0]))
+  {
+    JLM_ASSERT(rvsdg::TryGetOwnerNode<loop_node>(*state_edge_before));
+    // before and after belong to same loop node
+    JLM_ASSERT(rvsdg::TryGetOwnerNode<loop_node>(*state_edge_before) == rvsdg::TryGetOwnerNode<loop_node>(*state_edge_after));
+    auto si = jlm::util::AssertedCast<rvsdg::StructuralInput>(state_edge_before);
+    auto arg = si->arguments.begin().ptr();
+    auto user = get_mem_state_user(arg);
+    auto mux = TryGetOwnerOp<mux_op>(*user);
+    JLM_ASSERT(mux && mux->loop);
+    auto mux_node = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*user);
+    auto lcb_out = loop_constant_buffer_op::create(*mux_node->input(0)->origin(), *mux_node->input(1)->origin())[0];
+    mux_node->output(0)->divert_users(lcb_out);
+    JLM_ASSERT(mux_node->IsDead());
+    remove(mux_node);
+  }
+}
+
 rvsdg::output *
 follow_state_edge(
     rvsdg::input * state_edge,
@@ -290,6 +317,7 @@ follow_state_edge(
       if (modify)
       {
         handle_structural(outstanding_dec_reqs, loop_mem_ops, state_edge, out);
+        optimize_single_store_loop(loop_mem_ops, state_edge, out);
       }
       state_edge = new_state_edge;
       mem_ops.insert(mem_ops.cend(), loop_mem_ops.begin(), loop_mem_ops.end());
@@ -354,10 +382,12 @@ follow_state_edge(
     }
     else if (TryGetOwnerOp<state_gate_op>(*state_edge))
     {
+      mem_ops.push_back(sn);
       state_edge = get_mem_state_user(sn->output(si->index()));
     }
     else if (TryGetOwnerOp<llvm::LoadNonVolatileOperation>(*state_edge))
     {
+      mem_ops.push_back(sn);
       state_edge = get_mem_state_user(sn->output(1));
     }
     else if (TryGetOwnerOp<llvm::CallOperation>(*state_edge))
