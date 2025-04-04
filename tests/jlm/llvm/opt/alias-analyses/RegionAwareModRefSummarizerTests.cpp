@@ -8,7 +8,7 @@
 
 #include <test-registry.hpp>
 
-#include <jlm/llvm/opt/alias-analyses/RegionAwareMemoryNodeProvider.hpp>
+#include <jlm/llvm/opt/alias-analyses/RegionAwareModRefSummarizer.hpp>
 #include <jlm/llvm/opt/alias-analyses/Steensgaard.hpp>
 #include <jlm/rvsdg/view.hpp>
 #include <jlm/util/Statistics.hpp>
@@ -71,13 +71,13 @@ TestStore1()
   /*
    * Act
    */
-  auto provisioning =
-      jlm::llvm::aa::RegionAwareMemoryNodeProvider::Create(test.module(), *pointsToGraph);
+  auto modRefSummary =
+      jlm::llvm::aa::RegionAwareModRefSummarizer::Create(test.module(), *pointsToGraph);
 
   /*
    * Assert
    */
-  ValidateProvider(test, *provisioning, *pointsToGraph);
+  ValidateProvider(test, *modRefSummary, *pointsToGraph);
 }
 
 static void
@@ -119,13 +119,13 @@ TestStore2()
   /*
    * Act
    */
-  auto provisioning =
-      jlm::llvm::aa::RegionAwareMemoryNodeProvider::Create(test.module(), *pointsToGraph);
+  auto modRefSummary =
+      jlm::llvm::aa::RegionAwareModRefSummarizer::Create(test.module(), *pointsToGraph);
 
   /*
    * Assert
    */
-  ValidateProvider(test, *provisioning, *pointsToGraph);
+  ValidateProvider(test, *modRefSummary, *pointsToGraph);
 }
 
 static void
@@ -157,13 +157,13 @@ TestLoad1()
   /*
    * Act
    */
-  auto provisioning =
-      jlm::llvm::aa::RegionAwareMemoryNodeProvider::Create(test.module(), *pointsToGraph);
+  auto modRefSummary =
+      jlm::llvm::aa::RegionAwareModRefSummarizer::Create(test.module(), *pointsToGraph);
 
   /*
    * Assert
    */
-  ValidateProvider(test, *provisioning, *pointsToGraph);
+  ValidateProvider(test, *modRefSummary, *pointsToGraph);
 }
 
 static void
@@ -205,13 +205,13 @@ TestLoad2()
   /*
    * Act
    */
-  auto provisioning =
-      jlm::llvm::aa::RegionAwareMemoryNodeProvider::Create(test.module(), *pointsToGraph);
+  auto modRefSummary =
+      jlm::llvm::aa::RegionAwareModRefSummarizer::Create(test.module(), *pointsToGraph);
 
   /*
    * Assert
    */
-  ValidateProvider(test, *provisioning, *pointsToGraph);
+  ValidateProvider(test, *modRefSummary, *pointsToGraph);
 }
 
 static void
@@ -240,13 +240,13 @@ TestLoadFromUndef()
   /*
    * Act
    */
-  auto provisioning =
-      jlm::llvm::aa::RegionAwareMemoryNodeProvider::Create(test.module(), *pointsToGraph);
+  auto modRefSummary =
+      jlm::llvm::aa::RegionAwareModRefSummarizer::Create(test.module(), *pointsToGraph);
 
   /*
    * Assert
    */
-  ValidateProvider(test, *provisioning, *pointsToGraph);
+  ValidateProvider(test, *modRefSummary, *pointsToGraph);
 }
 
 static void
@@ -322,13 +322,13 @@ TestCall1()
   /*
    * Act
    */
-  auto provisioning =
-      jlm::llvm::aa::RegionAwareMemoryNodeProvider::Create(test.module(), *pointsToGraph);
+  auto modRefSummary =
+      jlm::llvm::aa::RegionAwareModRefSummarizer::Create(test.module(), *pointsToGraph);
 
   /*
    * Assert
    */
-  ValidateProvider(test, *provisioning, *pointsToGraph);
+  ValidateProvider(test, *modRefSummary, *pointsToGraph);
 }
 
 static void
@@ -410,13 +410,13 @@ TestCall2()
   /*
    * Act
    */
-  auto provisioning =
-      jlm::llvm::aa::RegionAwareMemoryNodeProvider::Create(test.module(), *pointsToGraph);
+  auto modRefSummary =
+      jlm::llvm::aa::RegionAwareModRefSummarizer::Create(test.module(), *pointsToGraph);
 
   /*
    * Assert
    */
-  ValidateProvider(test, *provisioning, *pointsToGraph);
+  ValidateProvider(test, *modRefSummary, *pointsToGraph);
 }
 
 static void
@@ -501,13 +501,13 @@ TestIndirectCall()
   /*
    * Act
    */
-  auto provisioning =
-      jlm::llvm::aa::RegionAwareMemoryNodeProvider::Create(test.module(), *pointsToGraph);
+  auto modRefSummary =
+      jlm::llvm::aa::RegionAwareModRefSummarizer::Create(test.module(), *pointsToGraph);
 
   /*
    * Assert
    */
-  ValidateProvider(test, *provisioning, *pointsToGraph);
+  ValidateProvider(test, *modRefSummary, *pointsToGraph);
 }
 
 static void
@@ -653,13 +653,13 @@ TestIndirectCall2()
   /*
    * Act
    */
-  auto provisioning =
-      jlm::llvm::aa::RegionAwareMemoryNodeProvider::Create(test.module(), *pointsToGraph);
+  auto modRefSummary =
+      jlm::llvm::aa::RegionAwareModRefSummarizer::Create(test.module(), *pointsToGraph);
 
   /*
    * Assert
    */
-  ValidateProvider(test, *provisioning, *pointsToGraph);
+  ValidateProvider(test, *modRefSummary, *pointsToGraph);
 }
 
 static void
@@ -697,13 +697,13 @@ TestGamma()
   /*
    * Act
    */
-  auto provisioning =
-      jlm::llvm::aa::RegionAwareMemoryNodeProvider::Create(test.module(), *pointsToGraph);
+  auto modRefSummary =
+      jlm::llvm::aa::RegionAwareModRefSummarizer::Create(test.module(), *pointsToGraph);
 
   /*
    * Assert
    */
-  ValidateProvider(test, *provisioning, *pointsToGraph);
+  ValidateProvider(test, *modRefSummary, *pointsToGraph);
 }
 
 static void
@@ -738,13 +738,13 @@ TestTheta()
   /*
    * Act
    */
-  auto provisioning =
-      jlm::llvm::aa::RegionAwareMemoryNodeProvider::Create(test.module(), *pointsToGraph);
+  auto modRefSummary =
+      jlm::llvm::aa::RegionAwareModRefSummarizer::Create(test.module(), *pointsToGraph);
 
   /*
    * Assert
    */
-  ValidateProvider(test, *provisioning, *pointsToGraph);
+  ValidateProvider(test, *modRefSummary, *pointsToGraph);
 }
 
 static void
@@ -797,13 +797,13 @@ TestDelta1()
   /*
    * Act
    */
-  auto provisioning =
-      jlm::llvm::aa::RegionAwareMemoryNodeProvider::Create(test.module(), *pointsToGraph);
+  auto modRefSummary =
+      jlm::llvm::aa::RegionAwareModRefSummarizer::Create(test.module(), *pointsToGraph);
 
   /*
    * Assert
    */
-  ValidateProvider(test, *provisioning, *pointsToGraph);
+  ValidateProvider(test, *modRefSummary, *pointsToGraph);
 }
 
 static void
@@ -857,13 +857,13 @@ TestDelta2()
   /*
    * Act
    */
-  auto provisioning =
-      jlm::llvm::aa::RegionAwareMemoryNodeProvider::Create(test.module(), *pointsToGraph);
+  auto modRefSummary =
+      jlm::llvm::aa::RegionAwareModRefSummarizer::Create(test.module(), *pointsToGraph);
 
   /*
    * Assert
    */
-  ValidateProvider(test, *provisioning, *pointsToGraph);
+  ValidateProvider(test, *modRefSummary, *pointsToGraph);
 }
 
 static void
@@ -917,13 +917,13 @@ TestImports()
   /*
    * Act
    */
-  auto provisioning =
-      jlm::llvm::aa::RegionAwareMemoryNodeProvider::Create(test.module(), *pointsToGraph);
+  auto modRefSummary =
+      jlm::llvm::aa::RegionAwareModRefSummarizer::Create(test.module(), *pointsToGraph);
 
   /*
    * Assert
    */
-  ValidateProvider(test, *provisioning, *pointsToGraph);
+  ValidateProvider(test, *modRefSummary, *pointsToGraph);
 }
 
 static void
@@ -988,13 +988,13 @@ TestPhi1()
   /*
    * Act
    */
-  auto provisioning =
-      jlm::llvm::aa::RegionAwareMemoryNodeProvider::Create(test.module(), *pointsToGraph);
+  auto modRefSummary =
+      jlm::llvm::aa::RegionAwareModRefSummarizer::Create(test.module(), *pointsToGraph);
 
   /*
    * Assert
    */
-  ValidateProvider(test, *provisioning, *pointsToGraph);
+  ValidateProvider(test, *modRefSummary, *pointsToGraph);
 }
 
 static void
@@ -1155,13 +1155,13 @@ TestPhi2()
   /*
    * Act
    */
-  auto provisioning =
-      jlm::llvm::aa::RegionAwareMemoryNodeProvider::Create(test.module(), *pointsToGraph);
+  auto modRefSummary =
+      jlm::llvm::aa::RegionAwareModRefSummarizer::Create(test.module(), *pointsToGraph);
 
   /*
    * Assert
    */
-  ValidateProvider(test, *provisioning, *pointsToGraph);
+  ValidateProvider(test, *modRefSummary, *pointsToGraph);
 }
 
 static void
@@ -1176,8 +1176,8 @@ TestPhiWithDelta()
   std::cout << jlm::llvm::aa::PointsToGraph::ToDot(*pointsToGraph, outputMap) << std::flush;
 
   // Act
-  auto provisioning =
-      jlm::llvm::aa::RegionAwareMemoryNodeProvider::Create(test.module(), *pointsToGraph);
+  auto modRefSummary =
+      jlm::llvm::aa::RegionAwareModRefSummarizer::Create(test.module(), *pointsToGraph);
 
   // Assert
   // Nothing needs to be validated as there are only phi and delta nodes in the RVSDG.
@@ -1234,13 +1234,13 @@ TestMemcpy()
   /*
    * Act
    */
-  auto provisioning =
-      jlm::llvm::aa::RegionAwareMemoryNodeProvider::Create(test.module(), *pointsToGraph);
+  auto modRefSummary =
+      jlm::llvm::aa::RegionAwareModRefSummarizer::Create(test.module(), *pointsToGraph);
 
   /*
    * Assert
    */
-  ValidateProvider(test, *provisioning, *pointsToGraph);
+  ValidateProvider(test, *modRefSummary, *pointsToGraph);
 }
 
 static void
@@ -1284,13 +1284,13 @@ TestEscapedMemory1()
   /*
    * Act
    */
-  auto provisioning =
-      jlm::llvm::aa::RegionAwareMemoryNodeProvider::Create(test.module(), *pointsToGraph);
+  auto modRefSummary =
+      jlm::llvm::aa::RegionAwareModRefSummarizer::Create(test.module(), *pointsToGraph);
 
   /*
    * Assert
    */
-  ValidateProvider(test, *provisioning, *pointsToGraph);
+  ValidateProvider(test, *modRefSummary, *pointsToGraph);
 }
 
 static void
@@ -1386,13 +1386,13 @@ TestEscapedMemory2()
   /*
    * Act
    */
-  auto provisioning =
-      jlm::llvm::aa::RegionAwareMemoryNodeProvider::Create(test.module(), *pointsToGraph);
+  auto modRefSummary =
+      jlm::llvm::aa::RegionAwareModRefSummarizer::Create(test.module(), *pointsToGraph);
 
   /*
    * Assert
    */
-  ValidateProvider(test, *provisioning, *pointsToGraph);
+  ValidateProvider(test, *modRefSummary, *pointsToGraph);
 }
 
 static void
@@ -1434,13 +1434,13 @@ TestEscapedMemory3()
   /*
    * Act
    */
-  auto provisioning =
-      jlm::llvm::aa::RegionAwareMemoryNodeProvider::Create(test.module(), *pointsToGraph);
+  auto modRefSummary =
+      jlm::llvm::aa::RegionAwareModRefSummarizer::Create(test.module(), *pointsToGraph);
 
   /*
    * Assert
    */
-  ValidateProvider(test, *provisioning, *pointsToGraph);
+  ValidateProvider(test, *modRefSummary, *pointsToGraph);
 }
 
 static void
@@ -1457,7 +1457,7 @@ TestStatistics()
   util::StatisticsCollector statisticsCollector(statisticsCollectorSettings);
 
   // Act
-  jlm::llvm::aa::RegionAwareMemoryNodeProvider::Create(
+  jlm::llvm::aa::RegionAwareModRefSummarizer::Create(
       test.module(),
       *pointsToGraph,
       statisticsCollector);
@@ -1517,5 +1517,5 @@ TestRegionAwareMemoryNodeProvider()
 }
 
 JLM_UNIT_TEST_REGISTER(
-    "jlm/llvm/opt/alias-analyses/TestRegionAwareMemoryNodeProvider",
+    "jlm/llvm/opt/alias-analyses/RegionAwareModRefSummarizerTests",
     TestRegionAwareMemoryNodeProvider)

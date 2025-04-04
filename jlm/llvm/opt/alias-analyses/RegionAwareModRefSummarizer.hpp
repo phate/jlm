@@ -3,8 +3,8 @@
  * See COPYING for terms of redistribution.
  */
 
-#ifndef JLM_LLVM_OPT_ALIAS_ANALYSES_REGIONAWAREMEMORYNODEPROVIDER_HPP
-#define JLM_LLVM_OPT_ALIAS_ANALYSES_REGIONAWAREMEMORYNODEPROVIDER_HPP
+#ifndef JLM_LLVM_OPT_ALIAS_ANALYSES_REGIONAWAREMODREFSUMMARIZER_HPP
+#define JLM_LLVM_OPT_ALIAS_ANALYSES_REGIONAWAREMODREFSUMMARIZER_HPP
 
 #include <jlm/llvm/opt/alias-analyses/ModRefSummarizer.hpp>
 #include <jlm/llvm/opt/alias-analyses/PointsToGraph.hpp>
@@ -15,9 +15,9 @@ namespace jlm::llvm::aa
 class RegionAwareModRefSummary;
 class RegionSummary;
 
-/** \brief Region-aware memory node provider
+/** \brief Region-aware mod/ref summarizer
  *
- * The key idea of the region-aware memory node provider is to only provide memory locations for a
+ * The key idea of the region-aware memory mod/ref summarizer is to only provide memory locations for a
  * structural node that are actually utilized within its regions. This ensures that no superfluous
  * states will be routed through structural nodes and renders them independent if they do not
  * reference the same memory location. The region-aware analysis proceeds as follows:
@@ -38,27 +38,27 @@ class RegionSummary;
  * were flagged as possibly containing recursion. Their sets of memory locations are expanded to
  * include all memory locations that may be affected by any function inside the SCC.
  *
- * @see MemoryNodeProvider
+ * @see ModRefSummarizer
  * @see MemoryStateEncoder
  */
-class RegionAwareMemoryNodeProvider final : public ModRefSummarizer
+class RegionAwareModRefSummarizer final : public ModRefSummarizer
 {
 public:
   class Statistics;
 
-  ~RegionAwareMemoryNodeProvider() noexcept override;
+  ~RegionAwareModRefSummarizer() noexcept override;
 
-  RegionAwareMemoryNodeProvider();
+  RegionAwareModRefSummarizer();
 
-  RegionAwareMemoryNodeProvider(const RegionAwareMemoryNodeProvider &) = delete;
+  RegionAwareModRefSummarizer(const RegionAwareModRefSummarizer &) = delete;
 
-  RegionAwareMemoryNodeProvider(RegionAwareMemoryNodeProvider &&) = delete;
+  RegionAwareModRefSummarizer(RegionAwareModRefSummarizer &&) = delete;
 
-  RegionAwareMemoryNodeProvider &
-  operator=(const RegionAwareMemoryNodeProvider &) = delete;
+  RegionAwareModRefSummarizer &
+  operator=(const RegionAwareModRefSummarizer &) = delete;
 
-  RegionAwareMemoryNodeProvider &
-  operator=(RegionAwareMemoryNodeProvider &&) = delete;
+  RegionAwareModRefSummarizer &
+  operator=(RegionAwareModRefSummarizer &&) = delete;
 
   std::unique_ptr<ModRefSummary>
   SummarizeModRefs(
@@ -67,13 +67,13 @@ public:
       util::StatisticsCollector & statisticsCollector) override;
 
   /**
-   * Creates a RegionAwareMemoryNodeProvider and calls the ProvisionMemoryNodes() method.
+   * Creates a RegionAwareModRefSummarizer and calls the SummarizeModRefs() method.
    *
    * @param rvsdgModule The RVSDG module on which the provision should be performed.
    * @param pointsToGraph The PointsToGraph corresponding to the RVSDG module.
    * @param statisticsCollector The statistics collector for collecting pass statistics.
    *
-   * @return A new instance of MemoryNodeProvisioning.
+   * @return A new instance of ModRefSummary.
    */
   static std::unique_ptr<ModRefSummary>
   Create(
@@ -82,12 +82,12 @@ public:
       util::StatisticsCollector & statisticsCollector);
 
   /**
-   * Creates a RegionAwareMemoryNodeProvider and calls the ProvisionMemoryNodes() method.
+   * Creates a RegionAwareModRefSummarizer and calls the SummarizeModRefs() method.
    *
    * @param rvsdgModule The RVSDG module on which the provision should be performed.
    * @param pointsToGraph The PointsToGraph corresponding to the RVSDG module.
    *
-   * @return A new instance of MemoryNodeProvisioning.
+   * @return A new instance of ModRefSummary.
    */
   static std::unique_ptr<ModRefSummary>
   Create(const rvsdg::RvsdgModule & rvsdgModule, const PointsToGraph & pointsToGraph);
@@ -177,7 +177,7 @@ private:
    * Helper function for debugging, listing out all functions, grouped by call graph SCC.
    */
   static std::string
-  CallGraphSCCsToString(const RegionAwareMemoryNodeProvider & provider);
+  CallGraphSCCsToString(const RegionAwareModRefSummarizer & provider);
 
   /**
    * Converts \p rvsdg to an annotated region tree. This method is very useful for debugging the
@@ -230,4 +230,4 @@ private:
 
 }
 
-#endif // JLM_LLVM_OPT_ALIAS_ANALYSES_REGIONAWAREMEMORYNODEPROVIDER_HPP
+#endif // JLM_LLVM_OPT_ALIAS_ANALYSES_REGIONAWAREMODREFSUMMARIZER_HPP

@@ -14,7 +14,7 @@
 #include <jlm/llvm/opt/alias-analyses/AgnosticMemoryNodeProvider.hpp>
 #include <jlm/llvm/opt/alias-analyses/EliminatedMemoryNodeProvider.hpp>
 #include <jlm/llvm/opt/alias-analyses/MemoryStateEncoder.hpp>
-#include <jlm/llvm/opt/alias-analyses/RegionAwareMemoryNodeProvider.hpp>
+#include <jlm/llvm/opt/alias-analyses/RegionAwareModRefSummarizer.hpp>
 #include <jlm/llvm/opt/alias-analyses/Steensgaard.hpp>
 #include <jlm/llvm/opt/alias-analyses/TopDownMemoryNodeEliminator.hpp>
 
@@ -2111,119 +2111,119 @@ TestMemoryStateEncoder()
 
   ValidateTest<jlm::tests::StoreTest1, Steensgaard, AgnosticMemoryNodeProvider>(
       ValidateStoreTest1SteensgaardAgnostic);
-  ValidateTest<jlm::tests::StoreTest1, Steensgaard, RegionAwareMemoryNodeProvider>(
+  ValidateTest<jlm::tests::StoreTest1, Steensgaard, RegionAwareModRefSummarizer>(
       ValidateStoreTest1SteensgaardRegionAware);
   ValidateTest<jlm::tests::StoreTest1, Steensgaard, AgnosticTopDownMemoryNodeProvider>(
       ValidateStoreTest1SteensgaardAgnosticTopDown);
 
   ValidateTest<jlm::tests::StoreTest2, Steensgaard, AgnosticMemoryNodeProvider>(
       ValidateStoreTest2SteensgaardAgnostic);
-  ValidateTest<jlm::tests::StoreTest2, Steensgaard, RegionAwareMemoryNodeProvider>(
+  ValidateTest<jlm::tests::StoreTest2, Steensgaard, RegionAwareModRefSummarizer>(
       ValidateStoreTest2SteensgaardRegionAware);
   ValidateTest<jlm::tests::StoreTest2, Steensgaard, AgnosticTopDownMemoryNodeProvider>(
       ValidateStoreTest2SteensgaardAgnosticTopDown);
 
   ValidateTest<jlm::tests::LoadTest1, Steensgaard, AgnosticMemoryNodeProvider>(
       ValidateLoadTest1SteensgaardAgnostic);
-  ValidateTest<jlm::tests::LoadTest1, Steensgaard, RegionAwareMemoryNodeProvider>(
+  ValidateTest<jlm::tests::LoadTest1, Steensgaard, RegionAwareModRefSummarizer>(
       ValidateLoadTest1SteensgaardRegionAware);
   ValidateTest<jlm::tests::LoadTest1, Steensgaard, AgnosticTopDownMemoryNodeProvider>(
       ValidateLoadTest1SteensgaardAgnosticTopDown);
 
   ValidateTest<jlm::tests::LoadTest2, Steensgaard, AgnosticMemoryNodeProvider>(
       ValidateLoadTest2SteensgaardAgnostic);
-  ValidateTest<jlm::tests::LoadTest2, Steensgaard, RegionAwareMemoryNodeProvider>(
+  ValidateTest<jlm::tests::LoadTest2, Steensgaard, RegionAwareModRefSummarizer>(
       ValidateLoadTest2SteensgaardRegionAware);
   ValidateTest<jlm::tests::LoadTest2, Steensgaard, AgnosticTopDownMemoryNodeProvider>(
       ValidateLoadTest2SteensgaardAgnosticTopDown);
 
   ValidateTest<jlm::tests::LoadFromUndefTest, Steensgaard, AgnosticMemoryNodeProvider>(
       ValidateLoadFromUndefSteensgaardAgnostic);
-  ValidateTest<jlm::tests::LoadFromUndefTest, Steensgaard, RegionAwareMemoryNodeProvider>(
+  ValidateTest<jlm::tests::LoadFromUndefTest, Steensgaard, RegionAwareModRefSummarizer>(
       ValidateLoadFromUndefSteensgaardRegionAware);
   ValidateTest<jlm::tests::LoadFromUndefTest, Steensgaard, AgnosticTopDownMemoryNodeProvider>(
       ValidateLoadFromUndefSteensgaardAgnosticTopDown);
 
   ValidateTest<jlm::tests::CallTest1, Steensgaard, AgnosticMemoryNodeProvider>(
       ValidateCallTest1SteensgaardAgnostic);
-  ValidateTest<jlm::tests::CallTest1, Steensgaard, RegionAwareMemoryNodeProvider>(
+  ValidateTest<jlm::tests::CallTest1, Steensgaard, RegionAwareModRefSummarizer>(
       ValidateCallTest1SteensgaardRegionAware);
   ValidateTest<jlm::tests::CallTest1, Steensgaard, AgnosticTopDownMemoryNodeProvider>(
       ValidateCallTest1SteensgaardAgnosticTopDown);
 
   ValidateTest<jlm::tests::CallTest2, Steensgaard, AgnosticMemoryNodeProvider>(
       ValidateCallTest2SteensgaardAgnostic);
-  ValidateTest<jlm::tests::CallTest2, Steensgaard, RegionAwareMemoryNodeProvider>(
+  ValidateTest<jlm::tests::CallTest2, Steensgaard, RegionAwareModRefSummarizer>(
       ValidateCallTest2SteensgaardRegionAware);
   ValidateTest<jlm::tests::CallTest2, Steensgaard, AgnosticTopDownMemoryNodeProvider>(
       ValidateCallTest2SteensgaardAgnosticTopDown);
 
   ValidateTest<jlm::tests::IndirectCallTest1, Steensgaard, AgnosticMemoryNodeProvider>(
       ValidateIndirectCallTest1SteensgaardAgnostic);
-  ValidateTest<jlm::tests::IndirectCallTest1, Steensgaard, RegionAwareMemoryNodeProvider>(
+  ValidateTest<jlm::tests::IndirectCallTest1, Steensgaard, RegionAwareModRefSummarizer>(
       ValidateIndirectCallTest1SteensgaardRegionAware);
   ValidateTest<jlm::tests::IndirectCallTest1, Steensgaard, AgnosticTopDownMemoryNodeProvider>(
       ValidateIndirectCallTest1SteensgaardAgnosticTopDown);
 
   ValidateTest<jlm::tests::IndirectCallTest2, Steensgaard, AgnosticMemoryNodeProvider>(
       ValidateIndirectCallTest2SteensgaardAgnostic);
-  ValidateTest<jlm::tests::IndirectCallTest2, Steensgaard, RegionAwareMemoryNodeProvider>(
+  ValidateTest<jlm::tests::IndirectCallTest2, Steensgaard, RegionAwareModRefSummarizer>(
       ValidateIndirectCallTest2SteensgaardRegionAware);
   ValidateTest<jlm::tests::IndirectCallTest2, Steensgaard, AgnosticTopDownMemoryNodeProvider>(
       ValidateIndirectCallTest2SteensgaardAgnosticTopDown);
 
   ValidateTest<jlm::tests::GammaTest, Steensgaard, AgnosticMemoryNodeProvider>(
       ValidateGammaTestSteensgaardAgnostic);
-  ValidateTest<jlm::tests::GammaTest, Steensgaard, RegionAwareMemoryNodeProvider>(
+  ValidateTest<jlm::tests::GammaTest, Steensgaard, RegionAwareModRefSummarizer>(
       ValidateGammaTestSteensgaardRegionAware);
   ValidateTest<jlm::tests::GammaTest, Steensgaard, AgnosticTopDownMemoryNodeProvider>(
       ValidateGammaTestSteensgaardAgnosticTopDown);
 
   ValidateTest<jlm::tests::ThetaTest, Steensgaard, AgnosticMemoryNodeProvider>(
       ValidateThetaTestSteensgaardAgnostic);
-  ValidateTest<jlm::tests::ThetaTest, Steensgaard, RegionAwareMemoryNodeProvider>(
+  ValidateTest<jlm::tests::ThetaTest, Steensgaard, RegionAwareModRefSummarizer>(
       ValidateThetaTestSteensgaardRegionAware);
   ValidateTest<jlm::tests::ThetaTest, Steensgaard, AgnosticMemoryNodeProvider>(
       ValidateThetaTestSteensgaardAgnosticTopDown);
 
   ValidateTest<jlm::tests::DeltaTest1, Steensgaard, AgnosticMemoryNodeProvider>(
       ValidateDeltaTest1SteensgaardAgnostic);
-  ValidateTest<jlm::tests::DeltaTest1, Steensgaard, RegionAwareMemoryNodeProvider>(
+  ValidateTest<jlm::tests::DeltaTest1, Steensgaard, RegionAwareModRefSummarizer>(
       ValidateDeltaTest1SteensgaardRegionAware);
   ValidateTest<jlm::tests::DeltaTest1, Steensgaard, AgnosticMemoryNodeProvider>(
       ValidateDeltaTest1SteensgaardAgnosticTopDown);
 
   ValidateTest<jlm::tests::DeltaTest2, Steensgaard, AgnosticMemoryNodeProvider>(
       ValidateDeltaTest2SteensgaardAgnostic);
-  ValidateTest<jlm::tests::DeltaTest2, Steensgaard, RegionAwareMemoryNodeProvider>(
+  ValidateTest<jlm::tests::DeltaTest2, Steensgaard, RegionAwareModRefSummarizer>(
       ValidateDeltaTest2SteensgaardRegionAware);
   ValidateTest<jlm::tests::DeltaTest2, Steensgaard, AgnosticMemoryNodeProvider>(
       ValidateDeltaTest2SteensgaardAgnosticTopDown);
 
   ValidateTest<jlm::tests::DeltaTest3, Steensgaard, AgnosticMemoryNodeProvider>(
       ValidateDeltaTest3SteensgaardAgnostic);
-  ValidateTest<jlm::tests::DeltaTest3, Steensgaard, RegionAwareMemoryNodeProvider>(
+  ValidateTest<jlm::tests::DeltaTest3, Steensgaard, RegionAwareModRefSummarizer>(
       ValidateDeltaTest3SteensgaardRegionAware);
   ValidateTest<jlm::tests::DeltaTest3, Steensgaard, AgnosticMemoryNodeProvider>(
       ValidateDeltaTest3SteensgaardAgnosticTopDown);
 
   ValidateTest<jlm::tests::ImportTest, Steensgaard, AgnosticMemoryNodeProvider>(
       ValidateImportTestSteensgaardAgnostic);
-  ValidateTest<jlm::tests::ImportTest, Steensgaard, RegionAwareMemoryNodeProvider>(
+  ValidateTest<jlm::tests::ImportTest, Steensgaard, RegionAwareModRefSummarizer>(
       ValidateImportTestSteensgaardRegionAware);
   ValidateTest<jlm::tests::ImportTest, Steensgaard, AgnosticMemoryNodeProvider>(
       ValidateImportTestSteensgaardAgnosticTopDown);
 
   ValidateTest<jlm::tests::PhiTest1, Steensgaard, AgnosticMemoryNodeProvider>(
       ValidatePhiTestSteensgaardAgnostic);
-  ValidateTest<jlm::tests::PhiTest1, Steensgaard, RegionAwareMemoryNodeProvider>(
+  ValidateTest<jlm::tests::PhiTest1, Steensgaard, RegionAwareModRefSummarizer>(
       ValidatePhiTestSteensgaardRegionAware);
   ValidateTest<jlm::tests::PhiTest1, Steensgaard, AgnosticMemoryNodeProvider>(
       ValidatePhiTestSteensgaardAgnosticTopDown);
 
   ValidateTest<jlm::tests::MemcpyTest, Steensgaard, AgnosticMemoryNodeProvider>(
       ValidateMemcpySteensgaardAgnostic);
-  ValidateTest<jlm::tests::MemcpyTest, Steensgaard, RegionAwareMemoryNodeProvider>(
+  ValidateTest<jlm::tests::MemcpyTest, Steensgaard, RegionAwareModRefSummarizer>(
       ValidateMemcpySteensgaardRegionAware);
   ValidateTest<jlm::tests::MemcpyTest, Steensgaard, AgnosticMemoryNodeProvider>(
       ValidateMemcpyTestSteensgaardAgnosticTopDown);

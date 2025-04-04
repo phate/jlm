@@ -6,7 +6,7 @@
 #include <jlm/llvm/opt/alias-analyses/AgnosticMemoryNodeProvider.hpp>
 #include <jlm/llvm/opt/alias-analyses/Andersen.hpp>
 #include <jlm/llvm/opt/alias-analyses/Optimization.hpp>
-#include <jlm/llvm/opt/alias-analyses/RegionAwareMemoryNodeProvider.hpp>
+#include <jlm/llvm/opt/alias-analyses/RegionAwareModRefSummarizer.hpp>
 #include <jlm/llvm/opt/alias-analyses/Steensgaard.hpp>
 #include <jlm/llvm/opt/cne.hpp>
 #include <jlm/llvm/opt/DeadNodeElimination.hpp>
