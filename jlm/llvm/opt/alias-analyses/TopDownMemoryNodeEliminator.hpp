@@ -6,7 +6,7 @@
 #ifndef JLM_LLVM_OPT_ALIAS_ANALYSIS_TOPDOWNMEMORYNODEELIMINATOR_HPP
 #define JLM_LLVM_OPT_ALIAS_ANALYSIS_TOPDOWNMEMORYNODEELIMINATOR_HPP
 
-#include <jlm/llvm/opt/alias-analyses/MemoryNodeEliminator.hpp>
+#include <jlm/llvm/opt/alias-analyses/ModRefEliminator.hpp>
 #include <jlm/util/Statistics.hpp>
 
 namespace jlm::llvm
@@ -55,7 +55,7 @@ namespace jlm::llvm::aa
  * The TopDownMemoryNodeEliminator only restricts the lifetime of memory states from alloca nodes
  * before the nodes are alive.
  */
-class TopDownMemoryNodeEliminator final : public MemoryNodeEliminator
+class TopDownMemoryNodeEliminator final : public ModRefEliminator
 {
   class Context;
   class ModRefSummary;
@@ -77,7 +77,7 @@ public:
   operator=(TopDownMemoryNodeEliminator &&) = delete;
 
   std::unique_ptr<aa::ModRefSummary>
-  EliminateMemoryNodes(
+  EliminateModRefs(
       const rvsdg::RvsdgModule & rvsdgModule,
       const aa::ModRefSummary & seedModRefSummary,
       util::StatisticsCollector & statisticsCollector) override;

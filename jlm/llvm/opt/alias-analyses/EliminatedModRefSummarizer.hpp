@@ -6,23 +6,23 @@
 #ifndef JLM_LLVM_OPT_ALIAS_ANALYSES_ELIMINATEDMODREFSUMMARIZER_HPP
 #define JLM_LLVM_OPT_ALIAS_ANALYSES_ELIMINATEDMODREFSUMMARIZER_HPP
 
-#include <jlm/llvm/opt/alias-analyses/MemoryNodeEliminator.hpp>
+#include <jlm/llvm/opt/alias-analyses/ModRefEliminator.hpp>
 #include <jlm/llvm/opt/alias-analyses/ModRefSummarizer.hpp>
 
 namespace jlm::llvm::aa
 {
 
-/** \brief Combines a ModeRefSummarizer and a MemoryNodeEliminator
+/** \brief Combines a ModeRefSummarizer and a ModRefEliminator
  *
- * Combines a ModRefSummarizer and a MemoryNodeEliminator by applying them sequentially. The
+ * Combines a ModRefSummarizer and a ModRefEliminator by applying them sequentially. The
  * Provider is applied to a given RvsdgModule and PointsToGraph, which results in a
  * ModRefSummary. This ModRefSummary is then fed in to the Eliminator, which
  * removes superfluous memory nodes.
  *
  * @tparam TModRefSummarizer A ModRefSummarizer
- * @tparam Eliminator A MemoryNodeEliminator
+ * @tparam TModRefEliminator A ModRefEliminator
  */
-template<class TModRefSummarizer, class Eliminator>
+template<class TModRefSummarizer, class TModRefEliminator>
 class EliminatedModRefSummarizer final : public ModRefSummarizer
 {
   static_assert(
@@ -30,8 +30,8 @@ class EliminatedModRefSummarizer final : public ModRefSummarizer
       "T is not derived from ModRefSummarizer.");
 
   static_assert(
-      std::is_base_of<MemoryNodeEliminator, Eliminator>::value,
-      "T is not derived from MemoryNodeEliminator.");
+      std::is_base_of_v<ModRefEliminator, TModRefEliminator>,
+      "T is not derived from ModRefEliminator.");
 
 public:
   ~EliminatedModRefSummarizer() noexcept override = default;
@@ -56,7 +56,7 @@ public:
   {
     auto seedModRefSummary =
         ModRefSummarizer_.SummarizeModRefs(rvsdgModule, pointsToGraph, statisticsCollector);
-    return Eliminator_.EliminateMemoryNodes(rvsdgModule, *seedModRefSummary, statisticsCollector);
+    return ModRefEliminator_.EliminateModRefs(rvsdgModule, *seedModRefSummary, statisticsCollector);
   }
 
   static std::unique_ptr<ModRefSummary>
@@ -71,7 +71,7 @@ public:
 
 private:
   TModRefSummarizer ModRefSummarizer_;
-  Eliminator Eliminator_;
+  TModRefEliminator ModRefEliminator_;
 };
 
 }

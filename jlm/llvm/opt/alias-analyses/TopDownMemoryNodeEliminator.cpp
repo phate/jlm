@@ -421,7 +421,7 @@ TopDownMemoryNodeEliminator::~TopDownMemoryNodeEliminator() noexcept = default;
 TopDownMemoryNodeEliminator::TopDownMemoryNodeEliminator() = default;
 
 std::unique_ptr<ModRefSummary>
-TopDownMemoryNodeEliminator::EliminateMemoryNodes(
+TopDownMemoryNodeEliminator::EliminateModRefs(
     const rvsdg::RvsdgModule & rvsdgModule,
     const aa::ModRefSummary & seedModRefSummary,
     util::StatisticsCollector & statisticsCollector)
@@ -450,7 +450,7 @@ TopDownMemoryNodeEliminator::CreateAndEliminate(
     util::StatisticsCollector & statisticsCollector)
 {
   TopDownMemoryNodeEliminator provider;
-  return provider.EliminateMemoryNodes(rvsdgModule, modRefSummary, statisticsCollector);
+  return provider.EliminateModRefs(rvsdgModule, modRefSummary, statisticsCollector);
 }
 
 std::unique_ptr<ModRefSummary>
