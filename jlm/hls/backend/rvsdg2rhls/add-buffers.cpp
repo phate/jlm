@@ -170,7 +170,7 @@ void
 OptimizeLoop(loop_node * loopNode)
 {
   // TODO: should this be changed?
-    bool outerLoop = true;//!rvsdg::is<loop_op>(loopNode->region()->node());
+    bool outerLoop = !rvsdg::is<loop_op>(loopNode->region()->node());
     if(outerLoop){
       // push buffers above branches, so they also act as output buffers
       for (size_t i = 0; i < loopNode->noutputs(); ++i)
