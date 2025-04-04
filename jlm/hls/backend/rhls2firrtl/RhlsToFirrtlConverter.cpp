@@ -2898,6 +2898,9 @@ RhlsToFirrtlConverter::MlirGen(const rvsdg::LambdaNode * lambdaNode)
 
   for (size_t i = 0; i < reg_args.size(); ++i)
   {
+    // don't generate ports for state edges
+    if (rvsdg::is<rvsdg::StateType>(reg_args[i]->type()))
+      continue;
     std::string portName("data_");
     portName.append(std::to_string(i));
     inputElements.push_back(
@@ -2916,6 +2919,9 @@ RhlsToFirrtlConverter::MlirGen(const rvsdg::LambdaNode * lambdaNode)
   outputElements.push_back(GetValidElement());
   for (size_t i = 0; i < reg_results.size(); ++i)
   {
+    // don't generate ports for state edges
+    if (rvsdg::is<rvsdg::StateType>(reg_results[i]->type()))
+      continue;
     std::string portName("data_");
     portName.append(std::to_string(i));
     outputElements.push_back(BundleElement(
@@ -3137,6 +3143,9 @@ RhlsToFirrtlConverter::MlirGen(const rvsdg::LambdaNode * lambdaNode)
   // Connect output data signals
   for (size_t i = 0; i < outputDataRegs.size(); i++)
   {
+    // don't generate ports for state edges
+    if (rvsdg::is<rvsdg::StateType>(reg_results[i]->type()))
+      continue;
     auto outData = GetSubfield(body, outBundle, "data_" + std::to_string(i));
     Connect(body, outData, outputDataRegs[i].getResult());
   }
@@ -3154,6 +3163,9 @@ RhlsToFirrtlConverter::MlirGen(const rvsdg::LambdaNode * lambdaNode)
     for (size_t i = 0; i < inputValidRegs.size(); i++)
     {
       Connect(thenBody, inputValidRegs[i].getResult(), oneBitValue);
+      // don't generate ports for state edges
+      if (rvsdg::is<rvsdg::StateType>(reg_args[i]->type()))
+        continue;
       auto inData = GetSubfield(thenBody, inBundle, "data_" + std::to_string(i));
       Connect(thenBody, inputDataRegs[i].getResult(), inData);
     }

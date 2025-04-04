@@ -25,6 +25,9 @@ JsonHLS::GetText(llvm::RvsdgModule & rm)
   json << "\"arguments\": [";
   for (size_t i = 0; i < reg_args.size(); ++i)
   {
+    // don't generate ports for state edges
+    if(rvsdg::is<rvsdg::StateType>(reg_args[i]->type()))
+      continue;
     if (i != 0)
     {
       json << ", ";
@@ -35,6 +38,9 @@ JsonHLS::GetText(llvm::RvsdgModule & rm)
   json << "\"results\": [";
   for (size_t i = 0; i < reg_results.size(); ++i)
   {
+    // don't generate ports for state edges
+    if(rvsdg::is<rvsdg::StateType>(reg_results[i]->type()))
+      continue;
     if (i != 0)
     {
       json << ", ";
