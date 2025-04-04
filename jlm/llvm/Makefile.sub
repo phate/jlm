@@ -75,7 +75,7 @@ libllvm_HEADERS = \
 	jlm/llvm/opt/alias-analyses/AgnosticModRefSummarizer.hpp \
 	jlm/llvm/opt/alias-analyses/Andersen.hpp \
 	jlm/llvm/opt/alias-analyses/DifferencePropagation.hpp \
-	jlm/llvm/opt/alias-analyses/EliminatedMemoryNodeProvider.hpp \
+	jlm/llvm/opt/alias-analyses/EliminatedModRefSummarizer.hpp \
 	jlm/llvm/opt/alias-analyses/LazyCycleDetection.hpp \
 	jlm/llvm/opt/alias-analyses/OnlineCycleDetection.hpp \
 	jlm/llvm/opt/alias-analyses/Optimization.hpp \

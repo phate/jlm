@@ -6,7 +6,7 @@
 
 #include <jlm/llvm/opt/alias-analyses/AgnosticModRefSummarizer.hpp>
 #include <jlm/llvm/opt/alias-analyses/Andersen.hpp>
-#include <jlm/llvm/opt/alias-analyses/EliminatedMemoryNodeProvider.hpp>
+#include <jlm/llvm/opt/alias-analyses/EliminatedModRefSummarizer.hpp>
 #include <jlm/llvm/opt/alias-analyses/MemoryStateEncoder.hpp>
 #include <jlm/llvm/opt/alias-analyses/Optimization.hpp>
 #include <jlm/llvm/opt/alias-analyses/RegionAwareModRefSummarizer.hpp>
@@ -42,6 +42,6 @@ template class PointsToAnalysisStateEncoder<Andersen, AgnosticModRefSummarizer>;
 template class PointsToAnalysisStateEncoder<Andersen, RegionAwareModRefSummarizer>;
 template class PointsToAnalysisStateEncoder<
     Andersen,
-    EliminatedMemoryNodeProvider<AgnosticModRefSummarizer, TopDownMemoryNodeEliminator>>;
+    EliminatedModRefSummarizer<AgnosticModRefSummarizer, TopDownMemoryNodeEliminator>>;
 
 }
