@@ -12,7 +12,7 @@
 #include <jlm/llvm/ir/LambdaMemoryState.hpp>
 #include <jlm/llvm/ir/operators/MemoryStateOperations.hpp>
 #include <jlm/llvm/opt/alias-analyses/AgnosticModRefSummarizer.hpp>
-#include <jlm/llvm/opt/alias-analyses/EliminatedMemoryNodeProvider.hpp>
+#include <jlm/llvm/opt/alias-analyses/EliminatedModRefSummarizer.hpp>
 #include <jlm/llvm/opt/alias-analyses/MemoryStateEncoder.hpp>
 #include <jlm/llvm/opt/alias-analyses/RegionAwareMemoryNodeProvider.hpp>
 #include <jlm/llvm/opt/alias-analyses/Steensgaard.hpp>
@@ -20,7 +20,7 @@
 
 #include <iostream>
 
-using AgnosticTopDownMemoryNodeProvider = jlm::llvm::aa::EliminatedMemoryNodeProvider<
+using AgnosticTopDownMemoryNodeProvider = jlm::llvm::aa::EliminatedModRefSummarizer<
     jlm::llvm::aa::AgnosticModRefSummarizer,
     jlm::llvm::aa::TopDownMemoryNodeEliminator>;
 

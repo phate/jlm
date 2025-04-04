@@ -3,8 +3,8 @@
  * See COPYING for terms of redistribution.
  */
 
-#ifndef JLM_LLVM_OPT_ALIAS_ANALYSES_ELIMINATEDMEMORYNODEPROVIDER_HPP
-#define JLM_LLVM_OPT_ALIAS_ANALYSES_ELIMINATEDMEMORYNODEPROVIDER_HPP
+#ifndef JLM_LLVM_OPT_ALIAS_ANALYSES_ELIMINATEDMODREFSUMMARIZER_HPP
+#define JLM_LLVM_OPT_ALIAS_ANALYSES_ELIMINATEDMODREFSUMMARIZER_HPP
 
 #include <jlm/llvm/opt/alias-analyses/MemoryNodeEliminator.hpp>
 #include <jlm/llvm/opt/alias-analyses/ModRefSummarizer.hpp>
@@ -12,21 +12,21 @@
 namespace jlm::llvm::aa
 {
 
-/** \brief Combines a MemoryNodeProvider and a MemoryNodeEliminator
+/** \brief Combines a ModeRefSummarizer and a MemoryNodeEliminator
  *
- * Combines a MemoryNodeProvider and a MemoryNodeEliminator by applying them sequentially. The
+ * Combines a ModRefSummarizer and a MemoryNodeEliminator by applying them sequentially. The
  * Provider is applied to a given RvsdgModule and PointsToGraph, which results in a
- * MemoryNodeProvisioning. This MemoryNodeProvisioning is then fed in to the Eliminator, which
+ * ModRefSummary. This ModRefSummary is then fed in to the Eliminator, which
  * removes superfluous memory nodes.
  *
- * @tparam Provider A MemoryNodeProvider
+ * @tparam TModRefSummarizer A ModRefSummarizer
  * @tparam Eliminator A MemoryNodeEliminator
  */
-template<class Provider, class Eliminator>
-class EliminatedMemoryNodeProvider final : public ModRefSummarizer
+template<class TModRefSummarizer, class Eliminator>
+class EliminatedModRefSummarizer final : public ModRefSummarizer
 {
   static_assert(
-      std::is_base_of_v<ModRefSummarizer, Provider>,
+      std::is_base_of_v<ModRefSummarizer, TModRefSummarizer>,
       "T is not derived from ModRefSummarizer.");
 
   static_assert(
@@ -34,19 +34,19 @@ class EliminatedMemoryNodeProvider final : public ModRefSummarizer
       "T is not derived from MemoryNodeEliminator.");
 
 public:
-  ~EliminatedMemoryNodeProvider() noexcept override = default;
+  ~EliminatedModRefSummarizer() noexcept override = default;
 
-  EliminatedMemoryNodeProvider() = default;
+  EliminatedModRefSummarizer() = default;
 
-  EliminatedMemoryNodeProvider(const EliminatedMemoryNodeProvider &) = delete;
+  EliminatedModRefSummarizer(const EliminatedModRefSummarizer &) = delete;
 
-  EliminatedMemoryNodeProvider(EliminatedMemoryNodeProvider &&) = delete;
+  EliminatedModRefSummarizer(EliminatedModRefSummarizer &&) = delete;
 
-  EliminatedMemoryNodeProvider &
-  operator=(const EliminatedMemoryNodeProvider &) = delete;
+  EliminatedModRefSummarizer &
+  operator=(const EliminatedModRefSummarizer &) = delete;
 
-  EliminatedMemoryNodeProvider &
-  operator=(EliminatedMemoryNodeProvider &&) = delete;
+  EliminatedModRefSummarizer &
+  operator=(EliminatedModRefSummarizer &&) = delete;
 
   std::unique_ptr<ModRefSummary>
   SummarizeModRefs(
@@ -55,7 +55,7 @@ public:
       util::StatisticsCollector & statisticsCollector) override
   {
     auto seedModRefSummary =
-        Provider_.SummarizeModRefs(rvsdgModule, pointsToGraph, statisticsCollector);
+        ModRefSummarizer_.SummarizeModRefs(rvsdgModule, pointsToGraph, statisticsCollector);
     return Eliminator_.EliminateMemoryNodes(rvsdgModule, *seedModRefSummary, statisticsCollector);
   }
 
@@ -65,15 +65,15 @@ public:
       const PointsToGraph & pointsToGraph,
       util::StatisticsCollector & statisticsCollector)
   {
-    EliminatedMemoryNodeProvider provider{};
+    EliminatedModRefSummarizer provider{};
     return provider.SummarizeModRefs(rvsdgModule, pointsToGraph, statisticsCollector);
   }
 
 private:
-  Provider Provider_;
+  TModRefSummarizer ModRefSummarizer_;
   Eliminator Eliminator_;
 };
 
 }
 
-#endif // JLM_LLVM_OPT_ALIAS_ANALYSES_ELIMINATEDMEMORYNODEPROVIDER_HPP
+#endif // JLM_LLVM_OPT_ALIAS_ANALYSES_ELIMINATEDMODREFSUMMARIZER_HPP
