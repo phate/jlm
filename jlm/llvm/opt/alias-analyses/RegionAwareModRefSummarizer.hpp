@@ -17,10 +17,10 @@ class RegionSummary;
 
 /** \brief Region-aware mod/ref summarizer
  *
- * The key idea of the region-aware memory mod/ref summarizer is to only provide memory locations for a
- * structural node that are actually utilized within its regions. This ensures that no superfluous
- * states will be routed through structural nodes and renders them independent if they do not
- * reference the same memory location. The region-aware analysis proceeds as follows:
+ * The key idea of the region-aware memory mod/ref summarizer is to only provide memory locations
+ * for a structural node that are actually utilized within its regions. This ensures that no
+ * superfluous states will be routed through structural nodes and renders them independent if they
+ * do not reference the same memory location. The region-aware analysis proceeds as follows:
  *
  * 1. Call Graph Creation: creates a call graph by looking at all call operations.
  * This graph includes calls to external functions, and calls from external functions.
