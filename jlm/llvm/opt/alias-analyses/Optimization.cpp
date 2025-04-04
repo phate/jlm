@@ -6,10 +6,10 @@
 
 #include <jlm/llvm/opt/alias-analyses/AgnosticModRefSummarizer.hpp>
 #include <jlm/llvm/opt/alias-analyses/Andersen.hpp>
-#include <jlm/llvm/opt/alias-analyses/EliminatedMemoryNodeProvider.hpp>
+#include <jlm/llvm/opt/alias-analyses/EliminatedModRefSummarizer.hpp>
 #include <jlm/llvm/opt/alias-analyses/MemoryStateEncoder.hpp>
 #include <jlm/llvm/opt/alias-analyses/Optimization.hpp>
-#include <jlm/llvm/opt/alias-analyses/RegionAwareMemoryNodeProvider.hpp>
+#include <jlm/llvm/opt/alias-analyses/RegionAwareModRefSummarizer.hpp>
 #include <jlm/llvm/opt/alias-analyses/Steensgaard.hpp>
 #include <jlm/llvm/opt/alias-analyses/TopDownMemoryNodeEliminator.hpp>
 
@@ -37,11 +37,11 @@ PointsToAnalysisStateEncoder<TPointsToAnalysis, MemoryNodeProviderPass>::Run(
 
 // Explicitly initialize all combinations
 template class PointsToAnalysisStateEncoder<Steensgaard, AgnosticModRefSummarizer>;
-template class PointsToAnalysisStateEncoder<Steensgaard, RegionAwareMemoryNodeProvider>;
+template class PointsToAnalysisStateEncoder<Steensgaard, RegionAwareModRefSummarizer>;
 template class PointsToAnalysisStateEncoder<Andersen, AgnosticModRefSummarizer>;
-template class PointsToAnalysisStateEncoder<Andersen, RegionAwareMemoryNodeProvider>;
+template class PointsToAnalysisStateEncoder<Andersen, RegionAwareModRefSummarizer>;
 template class PointsToAnalysisStateEncoder<
     Andersen,
-    EliminatedMemoryNodeProvider<AgnosticModRefSummarizer, TopDownMemoryNodeEliminator>>;
+    EliminatedModRefSummarizer<AgnosticModRefSummarizer, TopDownMemoryNodeEliminator>>;
 
 }
