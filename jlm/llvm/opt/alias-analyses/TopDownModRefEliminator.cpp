@@ -5,7 +5,7 @@
 
 #include <jlm/llvm/ir/operators/FunctionPointer.hpp>
 #include <jlm/llvm/opt/alias-analyses/ModRefSummarizer.hpp>
-#include <jlm/llvm/opt/alias-analyses/TopDownMemoryNodeEliminator.hpp>
+#include <jlm/llvm/opt/alias-analyses/TopDownModRefEliminator.hpp>
 #include <jlm/rvsdg/traverser.hpp>
 
 namespace jlm::llvm::aa
