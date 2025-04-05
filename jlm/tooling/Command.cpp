@@ -389,7 +389,7 @@ JlmOptCommand::CreateTransformation(
   using AgnosticMrs = llvm::aa::AgnosticModRefSummarizer;
   using RegionAwareMrs = llvm::aa::RegionAwareModRefSummarizer;
   using TopDownLifetimeMrs =
-      llvm::aa::EliminatedModRefSummarizer<AgnosticMrs, llvm::aa::TopDownMemoryNodeEliminator>;
+      llvm::aa::EliminatedModRefSummarizer<AgnosticMrs, llvm::aa::TopDownModRefEliminator>;
 
   switch (optimizationId)
   {

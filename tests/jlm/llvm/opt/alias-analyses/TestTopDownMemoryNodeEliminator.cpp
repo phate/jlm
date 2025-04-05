@@ -36,9 +36,8 @@ ValidateTest(
 
   auto seedModRefSummary = TModRefSummarizer::Create(rvsdgModule, *pointsToGraph);
 
-  auto modRefSummary = jlm::llvm::aa::TopDownMemoryNodeEliminator::CreateAndEliminate(
-      test.module(),
-      *seedModRefSummary);
+  auto modRefSummary =
+      jlm::llvm::aa::TopDownModRefEliminator::CreateAndEliminate(test.module(), *seedModRefSummary);
 
   validateModRefSummary(test, *modRefSummary);
 }
@@ -1164,7 +1163,7 @@ TestStatistics()
       statisticsCollector);
 
   // Act
-  jlm::llvm::aa::TopDownMemoryNodeEliminator::CreateAndEliminate(
+  jlm::llvm::aa::TopDownModRefEliminator::CreateAndEliminate(
       test.module(),
       *modRefSummary,
       statisticsCollector);

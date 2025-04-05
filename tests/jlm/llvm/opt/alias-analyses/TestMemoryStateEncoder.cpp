@@ -22,7 +22,7 @@
 
 using AgnosticTopDownMemoryNodeProvider = jlm::llvm::aa::EliminatedModRefSummarizer<
     jlm::llvm::aa::AgnosticModRefSummarizer,
-    jlm::llvm::aa::TopDownMemoryNodeEliminator>;
+    jlm::llvm::aa::TopDownModRefEliminator>;
 
 template<class Test, class Analysis, class TModRefSummarizer>
 static void

@@ -42,6 +42,6 @@ template class PointsToAnalysisStateEncoder<Andersen, AgnosticModRefSummarizer>;
 template class PointsToAnalysisStateEncoder<Andersen, RegionAwareModRefSummarizer>;
 template class PointsToAnalysisStateEncoder<
     Andersen,
-    EliminatedModRefSummarizer<AgnosticModRefSummarizer, TopDownMemoryNodeEliminator>>;
+    EliminatedModRefSummarizer<AgnosticModRefSummarizer, TopDownModRefEliminator>>;
 
 }

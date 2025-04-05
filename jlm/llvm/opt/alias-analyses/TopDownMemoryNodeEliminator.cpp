@@ -11,10 +11,10 @@
 namespace jlm::llvm::aa
 {
 
-/** \brief Collect statistics about TopDownMemoryNodeEliminator pass
+/** \brief Collect statistics about \ref TopDownModRefEliminator pass
  *
  */
-class TopDownMemoryNodeEliminator::Statistics final : public util::Statistics
+class TopDownModRefEliminator::Statistics final : public util::Statistics
 {
 public:
   ~Statistics() override = default;
@@ -43,10 +43,10 @@ public:
   }
 };
 
-/** \brief Memory node provisioning of TopDownMemoryNodeEliminator
+/** \brief Memory node summary of \ref TopDownModRefEliminator
  *
  */
-class TopDownMemoryNodeEliminator::ModRefSummary final : public aa::ModRefSummary
+class TopDownModRefEliminator::ModRefSummary final : public aa::ModRefSummary
 {
   using RegionMap =
       std::unordered_map<const rvsdg::Region *, util::HashSet<const PointsToGraph::MemoryNode *>>;
@@ -284,12 +284,12 @@ private:
   CallMap IndirectCallNodes_;
 };
 
-/** \brief Context for TopDownMemoryNodeEliminator
+/** \brief Context for \ref TopDownModRefEliminator
  *
  * This class keeps track of all the required state throughout the transformation.
  *
  */
-class TopDownMemoryNodeEliminator::Context final
+class TopDownModRefEliminator::Context final
 {
 public:
   explicit Context(const aa::ModRefSummary & seedModRefSummary)
@@ -416,12 +416,12 @@ private:
   util::HashSet<const rvsdg::LambdaNode *> LiveNodesAnnotatedLambdaNodes_;
 };
 
-TopDownMemoryNodeEliminator::~TopDownMemoryNodeEliminator() noexcept = default;
+TopDownModRefEliminator::~TopDownModRefEliminator() noexcept = default;
 
-TopDownMemoryNodeEliminator::TopDownMemoryNodeEliminator() = default;
+TopDownModRefEliminator::TopDownModRefEliminator() = default;
 
 std::unique_ptr<ModRefSummary>
-TopDownMemoryNodeEliminator::EliminateModRefs(
+TopDownModRefEliminator::EliminateModRefs(
     const rvsdg::RvsdgModule & rvsdgModule,
     const aa::ModRefSummary & seedModRefSummary,
     util::StatisticsCollector & statisticsCollector)
@@ -444,17 +444,17 @@ TopDownMemoryNodeEliminator::EliminateModRefs(
 }
 
 std::unique_ptr<ModRefSummary>
-TopDownMemoryNodeEliminator::CreateAndEliminate(
+TopDownModRefEliminator::CreateAndEliminate(
     const rvsdg::RvsdgModule & rvsdgModule,
     const aa::ModRefSummary & modRefSummary,
     util::StatisticsCollector & statisticsCollector)
 {
-  TopDownMemoryNodeEliminator provider;
+  TopDownModRefEliminator provider;
   return provider.EliminateModRefs(rvsdgModule, modRefSummary, statisticsCollector);
 }
 
 std::unique_ptr<ModRefSummary>
-TopDownMemoryNodeEliminator::CreateAndEliminate(
+TopDownModRefEliminator::CreateAndEliminate(
     const rvsdg::RvsdgModule & rvsdgModule,
     const aa::ModRefSummary & seedModRefSummary)
 {
@@ -463,7 +463,7 @@ TopDownMemoryNodeEliminator::CreateAndEliminate(
 }
 
 void
-TopDownMemoryNodeEliminator::EliminateTopDown(const rvsdg::RvsdgModule & rvsdgModule)
+TopDownModRefEliminator::EliminateTopDown(const rvsdg::RvsdgModule & rvsdgModule)
 {
   // Initialize the memory nodes that are alive at beginning of every tail-lambda
   InitializeLiveNodesOfTailLambdas(rvsdgModule);
@@ -473,7 +473,7 @@ TopDownMemoryNodeEliminator::EliminateTopDown(const rvsdg::RvsdgModule & rvsdgMo
 }
 
 void
-TopDownMemoryNodeEliminator::EliminateTopDownRootRegion(rvsdg::Region & region)
+TopDownModRefEliminator::EliminateTopDownRootRegion(rvsdg::Region & region)
 {
   JLM_ASSERT(region.IsRootRegion() || rvsdg::is<phi::operation>(region.node()));
 
@@ -510,7 +510,7 @@ TopDownMemoryNodeEliminator::EliminateTopDownRootRegion(rvsdg::Region & region)
 }
 
 void
-TopDownMemoryNodeEliminator::EliminateTopDownRegion(rvsdg::Region & region)
+TopDownModRefEliminator::EliminateTopDownRegion(rvsdg::Region & region)
 {
   auto isLambdaSubregion = rvsdg::is<rvsdg::LambdaOperation>(region.node());
   auto isThetaSubregion = rvsdg::is<rvsdg::ThetaOperation>(region.node());
@@ -539,7 +539,7 @@ TopDownMemoryNodeEliminator::EliminateTopDownRegion(rvsdg::Region & region)
 }
 
 void
-TopDownMemoryNodeEliminator::EliminateTopDownStructuralNode(
+TopDownModRefEliminator::EliminateTopDownStructuralNode(
     const rvsdg::StructuralNode & structuralNode)
 {
   if (auto gammaNode = dynamic_cast<const rvsdg::GammaNode *>(&structuralNode))
@@ -557,7 +557,7 @@ TopDownMemoryNodeEliminator::EliminateTopDownStructuralNode(
 }
 
 void
-TopDownMemoryNodeEliminator::EliminateTopDownLambda(const rvsdg::LambdaNode & lambdaNode)
+TopDownModRefEliminator::EliminateTopDownLambda(const rvsdg::LambdaNode & lambdaNode)
 {
   EliminateTopDownLambdaEntry(lambdaNode);
   EliminateTopDownRegion(*lambdaNode.subregion());
@@ -565,7 +565,7 @@ TopDownMemoryNodeEliminator::EliminateTopDownLambda(const rvsdg::LambdaNode & la
 }
 
 void
-TopDownMemoryNodeEliminator::EliminateTopDownLambdaEntry(const rvsdg::LambdaNode & lambdaNode)
+TopDownModRefEliminator::EliminateTopDownLambdaEntry(const rvsdg::LambdaNode & lambdaNode)
 {
   auto & lambdaSubregion = *lambdaNode.subregion();
   auto & modRefSummary = Context_->GetModRefSummary();
@@ -595,7 +595,7 @@ TopDownMemoryNodeEliminator::EliminateTopDownLambdaEntry(const rvsdg::LambdaNode
 }
 
 void
-TopDownMemoryNodeEliminator::EliminateTopDownLambdaExit(const rvsdg::LambdaNode & lambdaNode)
+TopDownModRefEliminator::EliminateTopDownLambdaExit(const rvsdg::LambdaNode & lambdaNode)
 {
   auto & lambdaSubregion = *lambdaNode.subregion();
   auto & modRefSummary = Context_->GetModRefSummary();
@@ -624,7 +624,7 @@ TopDownMemoryNodeEliminator::EliminateTopDownLambdaExit(const rvsdg::LambdaNode 
 }
 
 void
-TopDownMemoryNodeEliminator::EliminateTopDownPhi(const phi::node & phiNode)
+TopDownModRefEliminator::EliminateTopDownPhi(const phi::node & phiNode)
 {
   auto unifyLiveNodes = [&](const rvsdg::Region & phiSubregion)
   {
@@ -669,10 +669,10 @@ TopDownMemoryNodeEliminator::EliminateTopDownPhi(const phi::node & phiNode)
 }
 
 void
-TopDownMemoryNodeEliminator::EliminateTopDownGamma(const rvsdg::GammaNode & gammaNode)
+TopDownModRefEliminator::EliminateTopDownGamma(const rvsdg::GammaNode & gammaNode)
 {
   auto addSubregionLiveAndEntryNodes =
-      [](const rvsdg::GammaNode & gammaNode, TopDownMemoryNodeEliminator::Context & context)
+      [](const rvsdg::GammaNode & gammaNode, TopDownModRefEliminator::Context & context)
   {
     auto & gammaRegion = *gammaNode.region();
     auto & seedModRefSummary = context.GetSeedModRefSummary();
@@ -701,7 +701,7 @@ TopDownMemoryNodeEliminator::EliminateTopDownGamma(const rvsdg::GammaNode & gamm
   };
 
   auto addSubregionExitNodes =
-      [](const rvsdg::GammaNode & gammaNode, TopDownMemoryNodeEliminator::Context & context)
+      [](const rvsdg::GammaNode & gammaNode, TopDownModRefEliminator::Context & context)
   {
     auto & modRefSummary = context.GetModRefSummary();
 
@@ -714,7 +714,7 @@ TopDownMemoryNodeEliminator::EliminateTopDownGamma(const rvsdg::GammaNode & gamm
   };
 
   auto updateGammaRegionLiveNodes =
-      [](const rvsdg::GammaNode & gammaNode, TopDownMemoryNodeEliminator::Context & context)
+      [](const rvsdg::GammaNode & gammaNode, TopDownModRefEliminator::Context & context)
   {
     auto & gammaRegion = *gammaNode.region();
     auto & modRefSummary = context.GetModRefSummary();
@@ -734,7 +734,7 @@ TopDownMemoryNodeEliminator::EliminateTopDownGamma(const rvsdg::GammaNode & gamm
 }
 
 void
-TopDownMemoryNodeEliminator::EliminateTopDownTheta(const rvsdg::ThetaNode & thetaNode)
+TopDownModRefEliminator::EliminateTopDownTheta(const rvsdg::ThetaNode & thetaNode)
 {
   auto & thetaRegion = *thetaNode.region();
   auto & thetaSubregion = *thetaNode.subregion();
@@ -762,7 +762,7 @@ TopDownMemoryNodeEliminator::EliminateTopDownTheta(const rvsdg::ThetaNode & thet
 }
 
 void
-TopDownMemoryNodeEliminator::EliminateTopDownSimpleNode(const rvsdg::SimpleNode & simpleNode)
+TopDownModRefEliminator::EliminateTopDownSimpleNode(const rvsdg::SimpleNode & simpleNode)
 {
   if (is<alloca_op>(&simpleNode))
   {
@@ -775,7 +775,7 @@ TopDownMemoryNodeEliminator::EliminateTopDownSimpleNode(const rvsdg::SimpleNode 
 }
 
 void
-TopDownMemoryNodeEliminator::EliminateTopDownAlloca(const rvsdg::SimpleNode & node)
+TopDownModRefEliminator::EliminateTopDownAlloca(const rvsdg::SimpleNode & node)
 {
   JLM_ASSERT(is<alloca_op>(&node));
 
@@ -785,7 +785,7 @@ TopDownMemoryNodeEliminator::EliminateTopDownAlloca(const rvsdg::SimpleNode & no
 }
 
 void
-TopDownMemoryNodeEliminator::EliminateTopDownCall(const CallNode & callNode)
+TopDownModRefEliminator::EliminateTopDownCall(const CallNode & callNode)
 {
   auto callTypeClassifier = CallNode::ClassifyCall(callNode);
 
@@ -809,7 +809,7 @@ TopDownMemoryNodeEliminator::EliminateTopDownCall(const CallNode & callNode)
 }
 
 void
-TopDownMemoryNodeEliminator::EliminateTopDownNonRecursiveDirectCall(
+TopDownModRefEliminator::EliminateTopDownNonRecursiveDirectCall(
     const CallNode & callNode,
     const CallTypeClassifier & callTypeClassifier)
 {
@@ -824,7 +824,7 @@ TopDownMemoryNodeEliminator::EliminateTopDownNonRecursiveDirectCall(
 }
 
 void
-TopDownMemoryNodeEliminator::EliminateTopDownRecursiveDirectCall(
+TopDownModRefEliminator::EliminateTopDownRecursiveDirectCall(
     const CallNode & callNode,
     const CallTypeClassifier & callTypeClassifier)
 {
@@ -839,7 +839,7 @@ TopDownMemoryNodeEliminator::EliminateTopDownRecursiveDirectCall(
 }
 
 void
-TopDownMemoryNodeEliminator::EliminateTopDownExternalCall(
+TopDownModRefEliminator::EliminateTopDownExternalCall(
     const CallNode & callNode,
     const CallTypeClassifier & callTypeClassifier)
 {
@@ -857,7 +857,7 @@ TopDownMemoryNodeEliminator::EliminateTopDownExternalCall(
 }
 
 void
-TopDownMemoryNodeEliminator::EliminateTopDownIndirectCall(
+TopDownModRefEliminator::EliminateTopDownIndirectCall(
     const CallNode & indirectCall,
     const CallTypeClassifier & callTypeClassifier)
 {
@@ -875,7 +875,7 @@ TopDownMemoryNodeEliminator::EliminateTopDownIndirectCall(
 }
 
 void
-TopDownMemoryNodeEliminator::InitializeLiveNodesOfTailLambdas(
+TopDownModRefEliminator::InitializeLiveNodesOfTailLambdas(
     const rvsdg::RvsdgModule & rvsdgModule)
 {
   auto nodes = rvsdg::Graph::ExtractTailNodes(rvsdgModule.Rvsdg());
@@ -905,7 +905,7 @@ TopDownMemoryNodeEliminator::InitializeLiveNodesOfTailLambdas(
 }
 
 void
-TopDownMemoryNodeEliminator::InitializeLiveNodesOfTailLambda(
+TopDownModRefEliminator::InitializeLiveNodesOfTailLambda(
     const rvsdg::LambdaNode & tailLambdaNode)
 {
   auto IsUnescapedAllocaNode = [&](const PointsToGraph::MemoryNode * memoryNode)
@@ -927,7 +927,7 @@ TopDownMemoryNodeEliminator::InitializeLiveNodesOfTailLambda(
 }
 
 bool
-TopDownMemoryNodeEliminator::CheckInvariants(
+TopDownModRefEliminator::CheckInvariants(
     const rvsdg::RvsdgModule & rvsdgModule,
     const aa::ModRefSummary & seedModRefSummary,
     const aa::ModRefSummary & modRefSummary)
