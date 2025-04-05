@@ -501,16 +501,6 @@ ConnectRequestResponseMemPorts(
         &loadOutput->node()->GetOperation());
     responseTypes.push_back(loadOp->GetLoadedType());
   }
-  std::vector<rvsdg::SimpleNode *> storeNodes;
-  for (auto storeNode : originalStoreNodes)
-  {
-    JLM_ASSERT(smap.contains(*storeNode->output(0)));
-    auto storeOutput = dynamic_cast<rvsdg::SimpleOutput *>(smap.lookup(storeNode->output(0)));
-    storeNodes.push_back(storeOutput->node());
-    // use memory state type as response for stores
-    auto vt = std::make_shared<llvm::MemoryStateType>();
-    responseTypes.push_back(vt);
-  }
   std::vector<rvsdg::SimpleNode *> decoupledNodes;
   for (auto decoupleRequest : originalDecoupledNodes)
   {
@@ -523,6 +513,16 @@ ConnectRequestResponseMemPorts(
     auto channelConstant = trace_constant(channel);
     auto reponse = find_decouple_response(lambda, channelConstant);
     auto vt = std::dynamic_pointer_cast<const rvsdg::ValueType>(reponse->output(0)->Type());
+    responseTypes.push_back(vt);
+  }
+  std::vector<rvsdg::SimpleNode *> storeNodes;
+  for (auto storeNode : originalStoreNodes)
+  {
+    JLM_ASSERT(smap.contains(*storeNode->output(0)));
+    auto storeOutput = dynamic_cast<rvsdg::SimpleOutput *>(smap.lookup(storeNode->output(0)));
+    storeNodes.push_back(storeOutput->node());
+    // use memory state type as response for stores
+    auto vt = std::make_shared<llvm::MemoryStateType>();
     responseTypes.push_back(vt);
   }
 
