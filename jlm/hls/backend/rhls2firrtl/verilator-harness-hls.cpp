@@ -20,6 +20,8 @@ ConvertToCType(const rvsdg::Type * type)
 {
   if (auto t = dynamic_cast<const rvsdg::bittype *>(type))
   {
+    if(t->nbits() == 1)
+      return "bool";
     return "int" + util::strfmt(t->nbits()) + "_t";
   }
   if (jlm::rvsdg::is<llvm::PointerType>(*type))
