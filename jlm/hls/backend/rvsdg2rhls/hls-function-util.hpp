@@ -87,9 +87,6 @@ is_dec_res(rvsdg::SimpleNode * node);
 
 rvsdg::input *
 get_mem_state_user(rvsdg::output * state_edge);
-
-rvsdg::output *
-FindSourceNode(rvsdg::output * out);
 }
 
 #endif // JLM_HLS_BACKEND_RVSDG2RHLS_HLS_FUNCTION_UTIL_HPP

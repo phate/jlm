@@ -83,9 +83,9 @@ PlaceBuffer(rvsdg::output * out, size_t capacity, bool passThrough)
   }
 }
 
-const size_t BufferSizeForkState = 1;
-const size_t BufferSizeForkControl = 8;
-const size_t BufferSizeForkOther = 4;
+const size_t BufferSizeForkState = 8;
+const size_t BufferSizeForkControl = 16;
+const size_t BufferSizeForkOther = 16;
 
 void
 OptimizeFork(rvsdg::SimpleNode * node)
