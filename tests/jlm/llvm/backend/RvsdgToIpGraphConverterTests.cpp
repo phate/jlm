@@ -11,6 +11,7 @@
 #include <jlm/llvm/ir/cfg-structure.hpp>
 #include <jlm/llvm/ir/ipgraph-module.hpp>
 #include <jlm/llvm/ir/operators.hpp>
+#include <jlm/llvm/ir/operators/IntegerOperations.hpp>
 #include <jlm/llvm/ir/print.hpp>
 #include <jlm/rvsdg/gamma.hpp>
 #include <jlm/rvsdg/view.hpp>
@@ -121,6 +122,86 @@ GammaWithoutMatch()
 JLM_UNIT_TEST_REGISTER(
     "jlm/tests/jlm/llvm/backend/RvsdgToIpGraphConverterTests-GammaWithoutMatch",
     GammaWithoutMatch)
+
+static int
+EmptyGammaWithTwoSubregionsAndMatch()
+{
+  using namespace jlm::llvm;
+  using namespace jlm::tests;
+  using namespace jlm::util;
+
+  // Arrange
+  auto valueType = valuetype::Create();
+  const auto functionType = jlm::rvsdg::FunctionType::Create(
+      { jlm::rvsdg::bittype::Create(32), valueType, valueType },
+      { valueType });
+
+  RvsdgModule rvsdgModule(filepath(""), "", "");
+
+  const auto lambdaNode = jlm::rvsdg::LambdaNode::Create(
+      rvsdgModule.Rvsdg().GetRootRegion(),
+      LlvmLambdaOperation::Create(functionType, "lambdaOutput", linkage::external_linkage));
+  const auto conditionValue = lambdaNode->GetFunctionArguments()[0];
+  const auto trueValue = lambdaNode->GetFunctionArguments()[1];
+  const auto falseValue = lambdaNode->GetFunctionArguments()[2];
+
+  auto caseValue = 24;
+  const auto matchResult = match(32, { { caseValue, 0 } }, 1, 2, conditionValue);
+
+  const auto gammaNode = jlm::rvsdg::GammaNode::create(matchResult, 2);
+  auto [inputTrue, branchArgumentTrue] = gammaNode->AddEntryVar(trueValue);
+  auto [inputFalse, branchArgumentFalse] = gammaNode->AddEntryVar(falseValue);
+  auto [_, gammaOutput] = gammaNode->AddExitVar({ branchArgumentTrue[0], branchArgumentFalse[1] });
+
+  const auto lambdaOutput = lambdaNode->finalize({ gammaOutput });
+  jlm::llvm::GraphExport::Create(*lambdaOutput, "");
+
+  view(rvsdgModule.Rvsdg(), stdout);
+
+  // Act
+  StatisticsCollector statisticsCollector;
+  const auto module =
+      RvsdgToIpGraphConverter::CreateAndConvertModule(rvsdgModule, statisticsCollector);
+  print(*module, stdout);
+
+  // Assert
+  const auto & ipGraph = module->ipgraph();
+  assert(ipGraph.nnodes() == 1);
+
+  const auto controlFlowGraph = dynamic_cast<const function_node &>(*ipGraph.begin()).cfg();
+  assert(is_closed(*controlFlowGraph));
+
+  {
+    const auto exitNode = controlFlowGraph->exit();
+    const auto entryNode = controlFlowGraph->entry();
+    const auto conditionArgument = entryNode->argument(0);
+    const auto trueArgument = entryNode->argument(1);
+    const auto falseArgument = entryNode->argument(2);
+    const auto basicBlock = dynamic_cast<basic_block *>(exitNode->InEdges().begin()->source());
+
+    const auto selectTac = basicBlock->last();
+    assert(is<SelectOperation>(selectTac));
+    const auto trueAlternative = selectTac->operand(1);
+    const auto falseAlternative = selectTac->operand(2);
+    assert(trueAlternative == trueArgument);
+    assert(falseAlternative == falseArgument);
+
+    const auto eqTac = *std::next(basicBlock->rbegin());
+    assert(is<IntegerEqOperation>(eqTac));
+    assert(eqTac->operand(0) == conditionArgument || eqTac->operand(1) == conditionArgument);
+
+    const auto constantTac = *std::next(basicBlock->rbegin(), 2);
+    const auto constantOp =
+        dynamic_cast<const IntegerConstantOperation *>(&constantTac->operation());
+    assert(constantOp && constantOp->Representation() == caseValue);
+  }
+
+  return 0;
+}
+
+JLM_UNIT_TEST_REGISTER(
+    "jlm/tests/jlm/llvm/backend/RvsdgToIpGraphConverterTests-EmptyGammaWithTwoSubregionsAndMatch",
+    EmptyGammaWithTwoSubregionsAndMatch)
 
 static int
 EmptyGammaWithTwoSubregions()

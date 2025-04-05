@@ -8,6 +8,7 @@
 #include <jlm/llvm/ir/cfg-structure.hpp>
 #include <jlm/llvm/ir/ipgraph-module.hpp>
 #include <jlm/llvm/ir/operators.hpp>
+#include <jlm/llvm/ir/operators/IntegerOperations.hpp>
 #include <jlm/llvm/ir/RvsdgModule.hpp>
 #include <jlm/rvsdg/gamma.hpp>
 #include <jlm/rvsdg/traverser.hpp>
@@ -253,7 +254,7 @@ RvsdgToIpGraphConverter::ConvertEmptyGammaNode(const rvsdg::GammaNode & gammaNod
   JLM_ASSERT(gammaNode.subregion(0)->nnodes() == 0 && gammaNode.subregion(1)->nnodes() == 0);
 
   // both regions are empty, create only select instructions
-  const auto predicate = gammaNode.predicate()->origin();
+  const auto gammaPredicate = gammaNode.predicate()->origin();
   const auto controlFlowGraph = Context_->GetControlFlowGraph();
 
   const auto basicBlock = basic_block::create(*controlFlowGraph);
@@ -277,25 +278,58 @@ RvsdgToIpGraphConverter::ConvertEmptyGammaNode(const rvsdg::GammaNode & gammaNod
       continue;
     }
 
-    const auto node = rvsdg::output::GetNode(*predicate);
-    if (is<rvsdg::match_op>(node))
+    const auto matchNode = rvsdg::output::GetNode(*gammaPredicate);
+    if (is<rvsdg::match_op>(matchNode))
     {
-      const auto matchOperation = util::AssertedCast<const rvsdg::match_op>(&node->GetOperation());
-      const auto defaultAlternative = matchOperation->default_alternative();
-      const auto condition = Context_->GetVariable(node->input(0)->origin());
-      const auto trueAlternative =
-          defaultAlternative == 0 ? Context_->GetVariable(output1) : Context_->GetVariable(output0);
-      const auto falseAlternative =
-          defaultAlternative == 0 ? Context_->GetVariable(output0) : Context_->GetVariable(output1);
+      const auto matchOperation =
+          util::AssertedCast<const rvsdg::match_op>(&matchNode->GetOperation());
+      assert(matchOperation->nalternatives() == 2);
+
+      const auto matchOrigin = Context_->GetVariable(matchNode->input(0)->origin());
+      const auto caseValue = matchOperation->begin()->first;
+      const auto caseSubregion = matchOperation->begin()->second;
+      const auto defaultSubregion = matchOperation->default_alternative();
+      const auto numMatchBits = matchOperation->nbits();
+      assert(caseSubregion != defaultSubregion);
+
+      const variable * selectPredicate = nullptr;
+      const variable * trueAlternative = nullptr;
+      const variable * falseAlternative = nullptr;
+      if (numMatchBits == 1 && caseValue == caseSubregion)
+      {
+        // We have an identity mapping:
+        // 1. 0 -> 0, default 1, or
+        // 2. 1 -> 1, default 0
+        // There is no need to insert operations for the select predicate
+        selectPredicate = matchOrigin;
+        trueAlternative = Context_->GetVariable(output1);
+        falseAlternative = Context_->GetVariable(output0);
+      }
+      else
+      {
+        // FIXME: This will recreate the select predicate operations for each gamma output for
+        // which we create a select.
+        const auto constantTac = basicBlock->append_last(tac::create(
+            IntegerConstantOperation(IntegerValueRepresentation(numMatchBits, caseValue)),
+            {}));
+        const auto eqTac = basicBlock->append_last(
+            tac::create(IntegerEqOperation(numMatchBits), { constantTac->result(0), matchOrigin }));
+        selectPredicate = eqTac->result(0);
+        trueAlternative =
+            caseSubregion == 0 ? Context_->GetVariable(output0) : Context_->GetVariable(output1);
+        falseAlternative =
+            caseSubregion == 0 ? Context_->GetVariable(output1) : Context_->GetVariable(output0);
+      }
+
       basicBlock->append_last(
-          SelectOperation::create(condition, trueAlternative, falseAlternative));
+          SelectOperation::create(selectPredicate, trueAlternative, falseAlternative));
     }
     else
     {
       const auto falseAlternative = Context_->GetVariable(output0);
       const auto trueAlternative = Context_->GetVariable(output1);
       basicBlock->append_last(
-          ctl2bits_op::create(Context_->GetVariable(predicate), rvsdg::bittype::Create(1)));
+          ctl2bits_op::create(Context_->GetVariable(gammaPredicate), rvsdg::bittype::Create(1)));
       basicBlock->append_last(SelectOperation::create(
           basicBlock->last()->result(0),
           trueAlternative,
