@@ -46,11 +46,11 @@ namespace jlm::llvm::aa
  * alive. For example, the lifetime of a stack allocation from an alloca node is only within the
  * function the alloca node is alive.
  *
- * The \ref AgnosticModRefSummarizer and the \ref RegionAwareModRefSummarizer are only region-aware, but
- * not lifetime-aware. In other words, they restrict the number of regions a memory state needs to
- * be routed through, but do not limit the lifetime of the respective memory states. The
- * Mod/Ref summary produced by these summarizers serves as seed summary for the
- * TopDownModRefEliminator, which restricts then the lifetime of memory locations.
+ * The \ref AgnosticModRefSummarizer and the \ref RegionAwareModRefSummarizer are only region-aware,
+ * but not lifetime-aware. In other words, they restrict the number of regions a memory state needs
+ * to be routed through, but do not limit the lifetime of the respective memory states. The Mod/Ref
+ * summary produced by these summarizers serves as seed summary for the TopDownModRefEliminator,
+ * which restricts then the lifetime of memory locations.
  *
  * The \ref TopDownModRefEliminator only restricts the lifetime of memory states from alloca nodes
  * before the nodes are alive.

@@ -875,8 +875,7 @@ TopDownModRefEliminator::EliminateTopDownIndirectCall(
 }
 
 void
-TopDownModRefEliminator::InitializeLiveNodesOfTailLambdas(
-    const rvsdg::RvsdgModule & rvsdgModule)
+TopDownModRefEliminator::InitializeLiveNodesOfTailLambdas(const rvsdg::RvsdgModule & rvsdgModule)
 {
   auto nodes = rvsdg::Graph::ExtractTailNodes(rvsdgModule.Rvsdg());
   for (auto & node : nodes)
@@ -905,8 +904,7 @@ TopDownModRefEliminator::InitializeLiveNodesOfTailLambdas(
 }
 
 void
-TopDownModRefEliminator::InitializeLiveNodesOfTailLambda(
-    const rvsdg::LambdaNode & tailLambdaNode)
+TopDownModRefEliminator::InitializeLiveNodesOfTailLambda(const rvsdg::LambdaNode & tailLambdaNode)
 {
   auto IsUnescapedAllocaNode = [&](const PointsToGraph::MemoryNode * memoryNode)
   {
