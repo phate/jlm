@@ -284,6 +284,7 @@ RvsdgToIpGraphConverter::ConvertEmptyGammaNode(const rvsdg::GammaNode & gammaNod
       const auto matchOperation =
           util::AssertedCast<const rvsdg::match_op>(&matchNode->GetOperation());
       JLM_ASSERT(matchOperation->nalternatives() == 2);
+      JLM_ASSERT(std::distance(matchOperation->begin(), matchOperation->end()) == 1);
 
       const auto matchOrigin = Context_->GetVariable(matchNode->input(0)->origin());
       const auto caseValue = matchOperation->begin()->first;
