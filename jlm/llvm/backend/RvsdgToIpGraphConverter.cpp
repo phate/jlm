@@ -283,14 +283,14 @@ RvsdgToIpGraphConverter::ConvertEmptyGammaNode(const rvsdg::GammaNode & gammaNod
     {
       const auto matchOperation =
           util::AssertedCast<const rvsdg::match_op>(&matchNode->GetOperation());
-      assert(matchOperation->nalternatives() == 2);
+      JLM_ASSERT(matchOperation->nalternatives() == 2);
 
       const auto matchOrigin = Context_->GetVariable(matchNode->input(0)->origin());
       const auto caseValue = matchOperation->begin()->first;
       const auto caseSubregion = matchOperation->begin()->second;
       const auto defaultSubregion = matchOperation->default_alternative();
       const auto numMatchBits = matchOperation->nbits();
-      assert(caseSubregion != defaultSubregion);
+      JLM_ASSERT(caseSubregion != defaultSubregion);
 
       const variable * selectPredicate = nullptr;
       const variable * trueAlternative = nullptr;
