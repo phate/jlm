@@ -221,7 +221,8 @@ OptimizeLoop(loop_node * loopNode)
       auto oldBufNode = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*oldBufInput);
       // place new buffers
       PlaceBuffer(branchNode->input(1)->origin(), oldBuf->capacity, oldBuf->pass_through);
-        // this buffer should just make the fork buf non-passthrough - needed to avoid combinatorial cycle
+      // this buffer should just make the fork buf non-passthrough - needed to avoid combinatorial
+      // cycle
       PlaceBuffer(branchNode->input(0)->origin(), oldBuf->capacity, oldBuf->pass_through);
       // remove old buffer
       oldBufNode->output(0)->divert_users(oldBufInput->origin());
