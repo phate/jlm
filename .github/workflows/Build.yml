@@ -1,4 +1,4 @@
-name: BuildTests
+name: Build
 on:
   pull_request:
     branches: [ master ]
