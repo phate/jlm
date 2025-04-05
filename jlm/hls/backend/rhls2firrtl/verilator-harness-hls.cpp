@@ -284,6 +284,7 @@ public:
         if (req_write) {
             // Stores are performed immediately
             instrumented_store((void*) req_addr, req_data, req_size, port);
+            responses.push_back({main_time, req_data, req_size, req_id});
         } else {
             // Loads are performed immediately, but their response is placed in the queue
             void* data = instrumented_load((void*) req_addr, req_size, port);

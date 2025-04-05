@@ -732,6 +732,7 @@ RhlsToFirrtlConverter::MlirGenHlsMemResp(const jlm::rvsdg::SimpleNode * node)
     auto elseBody = body;
     for (size_t i = 0; i < node->noutputs(); ++i)
     {
+      bool isStore = rvsdg::is<rvsdg::StateType>(node->output(i)->type());
       auto outBundle = GetOutPort(module, i);
       auto outValid = GetSubfield(elseBody, outBundle, "valid");
       auto outReady = GetSubfield(elseBody, outBundle, "ready");
@@ -742,14 +743,18 @@ RhlsToFirrtlConverter::MlirGenHlsMemResp(const jlm::rvsdg::SimpleNode * node)
       auto thenBody = whenOp.getThenBodyBuilder().getBlock();
       Connect(thenBody, outValid, oneBitValue);
       Connect(thenBody, memResReady, outReady);
-      int nbits = JlmSize(&node->output(i)->type());
-      if (nbits == portWidth)
+      // don't connect data for stores
+      if (!isStore)
       {
-        Connect(thenBody, outData, memResData);
-      }
-      else
-      {
-        Connect(thenBody, outData, AddBitsOp(thenBody, memResData, nbits - 1, 0));
+        int nbits = JlmSize(&node->output(i)->type());
+        if (nbits == portWidth)
+        {
+          Connect(thenBody, outData, memResData);
+        }
+        else
+        {
+          Connect(thenBody, outData, AddBitsOp(thenBody, memResData, nbits - 1, 0));
+        }
       }
       elseBody = whenOp.getElseBodyBuilder().getBlock();
     }
@@ -1454,13 +1459,15 @@ RhlsToFirrtlConverter::MlirGenHlsStore(const jlm::rvsdg::SimpleNode * node)
   {
     canRequest = AddAndOp(body, canRequest, vld);
   }
-  for (size_t i = 0; i < oValidRegs.size(); ++i)
-  {
-    // register is empty or being drained
-    //        canRequest = AddAndOp(body, canRequest, AddOrOp(body, AddNotOp(body, oValidRegs[i]),
-    //        outReadyStates[i]));
-    canRequest = AddAndOp(body, canRequest, AddNotOp(body, oValidRegs[i].getResult()));
-  }
+  // TODO: for now just assume that there is always room for state edges
+  //  for (size_t i = 0; i < oValidRegs.size(); ++i)
+  //  {
+  //    // register is empty or being drained
+  //    //        canRequest = AddAndOp(body, canRequest, AddOrOp(body, AddNotOp(body,
+  //    oValidRegs[i]),
+  //    //        outReadyStates[i]));
+  //    canRequest = AddAndOp(body, canRequest, AddNotOp(body, oValidRegs[i].getResult()));
+  //  }
 
   // Block until all inputs and no outputs are valid
   Connect(body, outValidMemAddr, canRequest);

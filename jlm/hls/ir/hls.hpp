@@ -1174,7 +1174,7 @@ public:
   {}
 
   explicit mem_resp_op(
-      const std::vector<std::shared_ptr<const rvsdg::ValueType>> & output_types,
+      const std::vector<std::shared_ptr<const rvsdg::Type>> & output_types,
       int in_width)
       : SimpleOperation(CreateInTypes(in_width), CreateOutTypes(output_types))
   {}
@@ -1197,7 +1197,7 @@ public:
   }
 
   static std::vector<std::shared_ptr<const jlm::rvsdg::Type>>
-  CreateOutTypes(const std::vector<std::shared_ptr<const rvsdg::ValueType>> & output_types)
+  CreateOutTypes(const std::vector<std::shared_ptr<const rvsdg::Type>> & output_types)
   {
     std::vector<std::shared_ptr<const jlm::rvsdg::Type>> types;
     types.reserve(output_types.size());
@@ -1223,7 +1223,7 @@ public:
   static std::vector<jlm::rvsdg::output *>
   create(
       rvsdg::output & result,
-      const std::vector<std::shared_ptr<const rvsdg::ValueType>> & output_types,
+      const std::vector<std::shared_ptr<const rvsdg::Type>> & output_types,
       int in_width)
   {
     return outputs(&rvsdg::CreateOpNode<mem_resp_op>({ &result }, output_types, in_width));
