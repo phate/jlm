@@ -8,7 +8,7 @@
 
 #include <jlm/llvm/opt/alias-analyses/AgnosticModRefSummarizer.hpp>
 #include <jlm/llvm/opt/alias-analyses/Steensgaard.hpp>
-#include <jlm/llvm/opt/alias-analyses/TopDownMemoryNodeEliminator.hpp>
+#include <jlm/llvm/opt/alias-analyses/TopDownModRefEliminator.hpp>
 
 template<class Test, class Analysis, class TModRefSummarizer>
 static void
@@ -36,9 +36,8 @@ ValidateTest(
 
   auto seedModRefSummary = TModRefSummarizer::Create(rvsdgModule, *pointsToGraph);
 
-  auto modRefSummary = jlm::llvm::aa::TopDownMemoryNodeEliminator::CreateAndEliminate(
-      test.module(),
-      *seedModRefSummary);
+  auto modRefSummary =
+      jlm::llvm::aa::TopDownModRefEliminator::CreateAndEliminate(test.module(), *seedModRefSummary);
 
   validateModRefSummary(test, *modRefSummary);
 }
@@ -1164,7 +1163,7 @@ TestStatistics()
       statisticsCollector);
 
   // Act
-  jlm::llvm::aa::TopDownMemoryNodeEliminator::CreateAndEliminate(
+  jlm::llvm::aa::TopDownModRefEliminator::CreateAndEliminate(
       test.module(),
       *modRefSummary,
       statisticsCollector);
@@ -1229,5 +1228,5 @@ TestTopDownMemoryNodeEliminator()
 }
 
 JLM_UNIT_TEST_REGISTER(
-    "jlm/llvm/opt/alias-analyses/TestTopDownMemoryNodeEliminator",
+    "jlm/llvm/opt/alias-analyses/TopDownModRefEliminatorTests",
     TestTopDownMemoryNodeEliminator)

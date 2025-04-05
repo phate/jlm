@@ -11,7 +11,7 @@
 #include <jlm/llvm/opt/alias-analyses/Optimization.hpp>
 #include <jlm/llvm/opt/alias-analyses/RegionAwareModRefSummarizer.hpp>
 #include <jlm/llvm/opt/alias-analyses/Steensgaard.hpp>
-#include <jlm/llvm/opt/alias-analyses/TopDownMemoryNodeEliminator.hpp>
+#include <jlm/llvm/opt/alias-analyses/TopDownModRefEliminator.hpp>
 
 namespace jlm::llvm::aa
 {
@@ -42,6 +42,6 @@ template class PointsToAnalysisStateEncoder<Andersen, AgnosticModRefSummarizer>;
 template class PointsToAnalysisStateEncoder<Andersen, RegionAwareModRefSummarizer>;
 template class PointsToAnalysisStateEncoder<
     Andersen,
-    EliminatedModRefSummarizer<AgnosticModRefSummarizer, TopDownMemoryNodeEliminator>>;
+    EliminatedModRefSummarizer<AgnosticModRefSummarizer, TopDownModRefEliminator>>;
 
 }

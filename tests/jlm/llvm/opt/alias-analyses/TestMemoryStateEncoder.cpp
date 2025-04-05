@@ -16,13 +16,13 @@
 #include <jlm/llvm/opt/alias-analyses/MemoryStateEncoder.hpp>
 #include <jlm/llvm/opt/alias-analyses/RegionAwareModRefSummarizer.hpp>
 #include <jlm/llvm/opt/alias-analyses/Steensgaard.hpp>
-#include <jlm/llvm/opt/alias-analyses/TopDownMemoryNodeEliminator.hpp>
+#include <jlm/llvm/opt/alias-analyses/TopDownModRefEliminator.hpp>
 
 #include <iostream>
 
 using AgnosticTopDownMemoryNodeProvider = jlm::llvm::aa::EliminatedModRefSummarizer<
     jlm::llvm::aa::AgnosticModRefSummarizer,
-    jlm::llvm::aa::TopDownMemoryNodeEliminator>;
+    jlm::llvm::aa::TopDownModRefEliminator>;
 
 template<class Test, class Analysis, class TModRefSummarizer>
 static void

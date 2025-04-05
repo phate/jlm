@@ -16,7 +16,7 @@
 #include <jlm/llvm/opt/alias-analyses/Optimization.hpp>
 #include <jlm/llvm/opt/alias-analyses/RegionAwareModRefSummarizer.hpp>
 #include <jlm/llvm/opt/alias-analyses/Steensgaard.hpp>
-#include <jlm/llvm/opt/alias-analyses/TopDownMemoryNodeEliminator.hpp>
+#include <jlm/llvm/opt/alias-analyses/TopDownModRefEliminator.hpp>
 #include <jlm/llvm/opt/cne.hpp>
 #include <jlm/llvm/opt/DeadNodeElimination.hpp>
 #include <jlm/llvm/opt/inlining.hpp>
@@ -389,7 +389,7 @@ JlmOptCommand::CreateTransformation(
   using AgnosticMrs = llvm::aa::AgnosticModRefSummarizer;
   using RegionAwareMrs = llvm::aa::RegionAwareModRefSummarizer;
   using TopDownLifetimeMrs =
-      llvm::aa::EliminatedModRefSummarizer<AgnosticMrs, llvm::aa::TopDownMemoryNodeEliminator>;
+      llvm::aa::EliminatedModRefSummarizer<AgnosticMrs, llvm::aa::TopDownModRefEliminator>;
 
   switch (optimizationId)
   {
