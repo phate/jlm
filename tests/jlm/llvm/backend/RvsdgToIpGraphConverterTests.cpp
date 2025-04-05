@@ -50,7 +50,12 @@ GammaWithMatch()
 
   // Act
   StatisticsCollector statisticsCollector;
-  auto module = RvsdgToIpGraphConverter::CreateAndConvertModule(rvsdgModule, statisticsCollector);
+  auto sequentializer =
+      CreateIdempotentRegionTreeSequentializer(rvsdgModule.Rvsdg().GetRootRegion());
+  auto module = RvsdgToIpGraphConverter::CreateAndConvertModule(
+      rvsdgModule,
+      statisticsCollector,
+      sequentializer);
   print(*module, stdout);
 
   // Assert
@@ -102,7 +107,12 @@ GammaWithoutMatch()
 
   // Act
   StatisticsCollector statisticsCollector;
-  auto module = RvsdgToIpGraphConverter::CreateAndConvertModule(rvsdgModule, statisticsCollector);
+  auto sequentializer =
+      CreateIdempotentRegionTreeSequentializer(rvsdgModule.Rvsdg().GetRootRegion());
+  auto module = RvsdgToIpGraphConverter::CreateAndConvertModule(
+      rvsdgModule,
+      statisticsCollector,
+      sequentializer);
   print(*module, stdout);
 
   // Assert
@@ -316,7 +326,12 @@ EmptyGammaWithThreeSubregions()
 
   // Act
   StatisticsCollector statisticsCollector;
-  auto module = RvsdgToIpGraphConverter::CreateAndConvertModule(rvsdgModule, statisticsCollector);
+  auto sequentializer =
+      CreateIdempotentRegionTreeSequentializer(rvsdgModule.Rvsdg().GetRootRegion());
+  auto module = RvsdgToIpGraphConverter::CreateAndConvertModule(
+      rvsdgModule,
+      statisticsCollector,
+      sequentializer);
   print(*module, stdout);
 
   // Assert
@@ -369,7 +384,12 @@ PartialEmptyGamma()
 
   // Act
   StatisticsCollector statisticsCollector;
-  auto module = RvsdgToIpGraphConverter::CreateAndConvertModule(rvsdgModule, statisticsCollector);
+  auto sequentializer =
+      CreateIdempotentRegionTreeSequentializer(rvsdgModule.Rvsdg().GetRootRegion());
+  auto module = RvsdgToIpGraphConverter::CreateAndConvertModule(
+      rvsdgModule,
+      statisticsCollector,
+      sequentializer);
 
   // Assert
   auto & ipg = module->ipgraph();
@@ -437,7 +457,9 @@ RecursiveData()
 
   // Act
   jlm::util::StatisticsCollector statisticsCollector;
-  auto module = RvsdgToIpGraphConverter::CreateAndConvertModule(rm, statisticsCollector);
+  auto sequentializer = CreateIdempotentRegionTreeSequentializer(rm.Rvsdg().GetRootRegion());
+  auto module =
+      RvsdgToIpGraphConverter::CreateAndConvertModule(rm, statisticsCollector, sequentializer);
   print(*module, stdout);
 
   // Assert

@@ -130,7 +130,9 @@ public:
 
 RvsdgToIpGraphConverter::~RvsdgToIpGraphConverter() = default;
 
-RvsdgToIpGraphConverter::RvsdgToIpGraphConverter() = default;
+RvsdgToIpGraphConverter::RvsdgToIpGraphConverter(RegionTreeSequentializer & regionSequentializer)
+    : RegionTreeSequentializer_(&regionSequentializer)
+{}
 
 std::unique_ptr<data_node_init>
 RvsdgToIpGraphConverter::CreateInitialization(const delta::node & deltaNode)
@@ -177,8 +179,9 @@ RvsdgToIpGraphConverter::ConvertRegion(rvsdg::Region & region)
   Context_->GetLastProcessedBasicBlock()->add_outedge(entryBlock);
   Context_->SetLastProcessedBasicBlock(entryBlock);
 
-  for (const auto & node : rvsdg::TopDownTraverser(&region))
-    ConvertNode(*node);
+  const auto sequentialization = RegionTreeSequentializer_->GetSequentialization(region);
+  for (const auto & node : sequentialization)
+    ConvertIntraProceduralNode(*node);
 
   const auto exitBlock = basic_block::create(*Context_->GetControlFlowGraph());
   Context_->GetLastProcessedBasicBlock()->add_outedge(exitBlock);
@@ -642,19 +645,11 @@ RvsdgToIpGraphConverter::ConvertDeltaNode(const delta::node & deltaNode)
 }
 
 void
-RvsdgToIpGraphConverter::ConvertNode(const rvsdg::Node & node)
+RvsdgToIpGraphConverter::ConvertInterProceduralNode(const rvsdg::Node & node)
 {
   if (const auto lambdaNode = dynamic_cast<const rvsdg::LambdaNode *>(&node))
   {
     ConvertLambdaNode(*lambdaNode);
-  }
-  else if (const auto gammaNode = dynamic_cast<const rvsdg::GammaNode *>(&node))
-  {
-    ConvertGammaNode(*gammaNode);
-  }
-  else if (const auto thetaNode = dynamic_cast<const rvsdg::ThetaNode *>(&node))
-  {
-    ConvertThetaNode(*thetaNode);
   }
   else if (const auto phiNode = dynamic_cast<const phi::node *>(&node))
   {
@@ -663,6 +658,24 @@ RvsdgToIpGraphConverter::ConvertNode(const rvsdg::Node & node)
   else if (const auto deltaNode = dynamic_cast<const delta::node *>(&node))
   {
     ConvertDeltaNode(*deltaNode);
+  }
+  else
+  {
+    JLM_UNREACHABLE(
+        util::strfmt("Unhandled node type: ", node.GetOperation().debug_string()).c_str());
+  }
+}
+
+void
+RvsdgToIpGraphConverter::ConvertIntraProceduralNode(const rvsdg::Node & node)
+{
+  if (const auto gammaNode = dynamic_cast<const rvsdg::GammaNode *>(&node))
+  {
+    ConvertGammaNode(*gammaNode);
+  }
+  else if (const auto thetaNode = dynamic_cast<const rvsdg::ThetaNode *>(&node))
+  {
+    ConvertThetaNode(*thetaNode);
   }
   else if (const auto simpleNode = dynamic_cast<const rvsdg::SimpleNode *>(&node))
   {
@@ -676,11 +689,11 @@ RvsdgToIpGraphConverter::ConvertNode(const rvsdg::Node & node)
 }
 
 void
-RvsdgToIpGraphConverter::ConvertNodes(const rvsdg::Graph & graph)
+RvsdgToIpGraphConverter::ConvertInterProceduralNodes(const rvsdg::Graph & graph)
 {
   for (const auto & node : rvsdg::TopDownTraverser(&graph.GetRootRegion()))
   {
-    ConvertNode(*node);
+    ConvertInterProceduralNode(*node);
   }
 }
 
@@ -732,7 +745,7 @@ RvsdgToIpGraphConverter::ConvertModule(
 
   Context_ = Context::Create(*ipGraphModule);
   ConvertImports(rvsdgModule.Rvsdg());
-  ConvertNodes(rvsdgModule.Rvsdg());
+  ConvertInterProceduralNodes(rvsdgModule.Rvsdg());
 
   statistics->End(*ipGraphModule);
   statisticsCollector.CollectDemandedStatistics(std::move(statistics));
@@ -743,9 +756,10 @@ RvsdgToIpGraphConverter::ConvertModule(
 std::unique_ptr<ipgraph_module>
 RvsdgToIpGraphConverter::CreateAndConvertModule(
     RvsdgModule & rvsdgModule,
-    util::StatisticsCollector & statisticsCollector)
+    util::StatisticsCollector & statisticsCollector,
+    RegionTreeSequentializer & regionSequentializer)
 {
-  RvsdgToIpGraphConverter converter;
+  RvsdgToIpGraphConverter converter(regionSequentializer);
   return converter.ConvertModule(rvsdgModule, statisticsCollector);
 }
 

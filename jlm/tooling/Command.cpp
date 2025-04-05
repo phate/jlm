@@ -529,8 +529,12 @@ JlmOptCommand::PrintAsLlvm(
     const util::filepath & outputFile,
     util::StatisticsCollector & statisticsCollector)
 {
-  auto jlm_module =
-      llvm::RvsdgToIpGraphConverter::CreateAndConvertModule(rvsdgModule, statisticsCollector);
+  auto sequentializer =
+      llvm::CreateIdempotentRegionTreeSequentializer(rvsdgModule.Rvsdg().GetRootRegion());
+  auto jlm_module = llvm::RvsdgToIpGraphConverter::CreateAndConvertModule(
+      rvsdgModule,
+      statisticsCollector,
+      sequentializer);
 
   ::llvm::LLVMContext ctx;
   auto llvm_module = llvm::IpGraphToLlvmConverter::CreateAndConvertModule(*jlm_module, ctx);

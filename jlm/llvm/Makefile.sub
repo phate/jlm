@@ -4,6 +4,7 @@
 libllvm_SOURCES = \
     jlm/llvm/backend/dot/DotWriter.cpp \
     jlm/llvm/backend/IpGraphToLlvmConverter.cpp \
+    jlm/llvm/backend/RegionSequentializer.cpp \
     jlm/llvm/backend/RvsdgToIpGraphConverter.cpp \
     \
     jlm/llvm/frontend/ControlFlowRestructuring.cpp \
@@ -137,10 +138,12 @@ libllvm_HEADERS = \
 	jlm/llvm/ir/aggregation.hpp \
 	jlm/llvm/backend/dot/DotWriter.hpp \
 	jlm/llvm/backend/IpGraphToLlvmConverter.hpp \
+	jlm/llvm/backend/RegionSequentializer.hpp \
 	jlm/llvm/backend/RvsdgToIpGraphConverter.hpp \
 
 libllvm_TESTS += \
     tests/jlm/llvm/backend/dot/DotWriterTests \
+    tests/jlm/llvm/backend/ExhaustiveSequentializerTests \
     tests/jlm/llvm/backend/IpGraphToLlvmConverterTests \
     tests/jlm/llvm/backend/RvsdgToIpGraphConverterTests \
     tests/jlm/llvm/frontend/llvm/LoadTests \
