@@ -1,0 +1,89 @@
+name: BuildTests
+on:
+  pull_request:
+    branches: [ master ]
+
+jobs:
+  clang-debug-all-dialects-asserts:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: "Build jlm with clang++ for all dialects in debug mode."
+        uses: ./.github/actions/BuildJlm
+        with:
+          build-mode: debug
+          cxx: clang++
+          enable-hls: true
+          enable-mlir: true
+          make-target: all
+          enable-asserts: 'true'
+
+  clang-release-all-dialects:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: "Build jlm with clang++ for all dialects in release mode."
+        uses: ./.github/actions/BuildJlm
+        with:
+          build-mode: release
+          cxx: clang++
+          enable-hls: true
+          enable-mlir: true
+          make-target: all
+          enable-asserts: 'false'
+
+  clang-release-no-dialects:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: "Build jlm with clang++ for all dialects in release mode."
+        uses: ./.github/actions/BuildJlm
+        with:
+          build-mode: release
+          cxx: clang++
+          enable-hls: false
+          enable-mlir: false
+          make-target: all
+          enable-asserts: 'false'
+
+  gcc-debug-all-dialects-asserts:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: "Build jlm dialects with g++ in debug mode."
+        uses: ./.github/actions/BuildJlm
+        with:
+          build-mode: debug
+          cxx: g++
+          enable-hls: true
+          enable-mlir: true
+          make-target: all
+          enable-asserts: 'true'
+
+  gcc-release-all-dialects:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: "Build jlm dialects with g++ in release mode."
+        uses: ./.github/actions/BuildJlm
+        with:
+          build-mode: release
+          cxx: g++
+          enable-hls: true
+          enable-mlir: true
+          make-target: all
+          enable-asserts: 'false'
+
+  gcc-release-no-dialects:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: "Build jlm dialects with g++ in release mode."
+        uses: ./.github/actions/BuildJlm
+        with:
+          build-mode: release
+          cxx: g++
+          enable-hls: false
+          enable-mlir: false
+          make-target: all
+          enable-asserts: 'false'
