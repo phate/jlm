@@ -69,7 +69,7 @@ public:
   /**
    * Creates a RegionAwareModRefSummarizer and calls the SummarizeModRefs() method.
    *
-   * @param rvsdgModule The RVSDG module on which the provision should be performed.
+   * @param rvsdgModule The RVSDG module for which the \ref ModRefSummary should be computed.
    * @param pointsToGraph The PointsToGraph corresponding to the RVSDG module.
    * @param statisticsCollector The statistics collector for collecting pass statistics.
    *
@@ -84,7 +84,7 @@ public:
   /**
    * Creates a RegionAwareModRefSummarizer and calls the SummarizeModRefs() method.
    *
-   * @param rvsdgModule The RVSDG module on which the provision should be performed.
+   * @param rvsdgModule The RVSDG module for which the \ref ModRefSummary should be computed.
    * @param pointsToGraph The PointsToGraph corresponding to the RVSDG module.
    *
    * @return A new instance of ModRefSummary.
@@ -96,7 +96,8 @@ private:
   /**
    * Creates a call graph including all functions in the module, and groups all functions into SCCs.
    * The resulting SCCs and topological order will be stored in the `FunctionSCCs_` field.
-   * @param rvsdgModule the module being provisioned
+   *
+   * @param rvsdgModule the module for which a mod/ref summary is computed.
    */
   void
   CreateCallGraph(const rvsdg::RvsdgModule & rvsdgModule);
@@ -134,7 +135,7 @@ private:
       RegionSummary & regionSummary);
 
   void
-  AnnotateSimpleNode(const rvsdg::SimpleNode & provider, RegionSummary & regionSummary);
+  AnnotateSimpleNode(const rvsdg::SimpleNode & simpleNode, RegionSummary & regionSummary);
 
   void
   AnnotateLoad(const LoadNode & loadNode, RegionSummary & regionSummary);
@@ -177,7 +178,7 @@ private:
    * Helper function for debugging, listing out all functions, grouped by call graph SCC.
    */
   static std::string
-  CallGraphSCCsToString(const RegionAwareModRefSummarizer & provider);
+  CallGraphSCCsToString(const RegionAwareModRefSummarizer & summarizer);
 
   /**
    * Converts \p rvsdg to an annotated region tree. This method is very useful for debugging the
@@ -192,12 +193,12 @@ private:
   ToRegionTree(const rvsdg::Graph & rvsdg, const RegionAwareModRefSummary & modRefSummary);
 
   /**
-   * The Mod/Ref summary produced by this provider
+   * The Mod/Ref summary produced by this summarizer
    */
   std::unique_ptr<RegionAwareModRefSummary> ModRefSummary_;
 
   /**
-   * Struct holding temporary data used during the creation of a single provisioning
+   * Struct holding temporary data used during the creation of a single mod/ref summary
    */
   struct Context
   {

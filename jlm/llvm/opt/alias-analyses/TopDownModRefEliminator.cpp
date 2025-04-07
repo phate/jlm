@@ -435,12 +435,12 @@ TopDownModRefEliminator::EliminateModRefs(
 
   statisticsCollector.CollectDemandedStatistics(std::move(statistics));
 
-  auto provisioning = Context_->ReleaseModRefSummary();
+  auto modRefSummary = Context_->ReleaseModRefSummary();
   Context_.reset();
 
-  JLM_ASSERT(CheckInvariants(rvsdgModule, seedModRefSummary, *provisioning));
+  JLM_ASSERT(CheckInvariants(rvsdgModule, seedModRefSummary, *modRefSummary));
 
-  return provisioning;
+  return modRefSummary;
 }
 
 std::unique_ptr<ModRefSummary>
@@ -449,8 +449,8 @@ TopDownModRefEliminator::CreateAndEliminate(
     const aa::ModRefSummary & modRefSummary,
     util::StatisticsCollector & statisticsCollector)
 {
-  TopDownModRefEliminator provider;
-  return provider.EliminateModRefs(rvsdgModule, modRefSummary, statisticsCollector);
+  TopDownModRefEliminator summarizer;
+  return summarizer.EliminateModRefs(rvsdgModule, modRefSummary, statisticsCollector);
 }
 
 std::unique_ptr<ModRefSummary>
@@ -587,7 +587,7 @@ TopDownModRefEliminator::EliminateTopDownLambdaEntry(const rvsdg::LambdaNode & l
     // 2. This lambda is dead and is not used at all
     //
     // Thus, we have no idea what memory nodes are live at its entry. Thus, we need to be
-    // conservative and simply say that all memory nodes from the seed provisioning are live.
+    // conservative and simply say that all memory nodes from the seed mod/ref summary are live.
     auto & seedLambdaEntryNodes = seedModRefSummary.GetLambdaEntryNodes(lambdaNode);
     Context_->AddLiveNodes(lambdaSubregion, seedLambdaEntryNodes);
     modRefSummary.AddRegionEntryNodes(lambdaSubregion, seedLambdaEntryNodes);
@@ -617,7 +617,7 @@ TopDownModRefEliminator::EliminateTopDownLambdaExit(const rvsdg::LambdaNode & la
     // 2. This lambda is dead and is not used at all
     //
     // Thus, we have no idea what memory nodes are live at its entry. Thus, we need to be
-    // conservative and simply say that all memory nodes from the seed provisioning are live.
+    // conservative and simply say that all memory nodes from the seed mod/ref summary are live.
     auto & seedLambdaExitNodes = seedModRefSummary.GetLambdaExitNodes(lambdaNode);
     modRefSummary.AddRegionExitNodes(lambdaSubregion, seedLambdaExitNodes);
   }

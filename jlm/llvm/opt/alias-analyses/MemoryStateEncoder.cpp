@@ -591,7 +591,7 @@ MemoryStateEncoder::EncodeAlloca(const rvsdg::SimpleNode & allocaNode)
   if (stateMap.HasState(*allocaNode.region(), allocaMemoryNode))
   {
     // The state for the alloca memory node should already exist in case of lifetime agnostic
-    // provisioning.
+    // mod/ref summarization.
     auto memoryNodeStatePair = stateMap.GetState(*allocaNode.region(), allocaMemoryNode);
     memoryNodeStatePair->ReplaceState(allocaNodeStateOutput);
   }
@@ -700,7 +700,7 @@ MemoryStateEncoder::EncodeCallEntry(const CallNode & callNode)
     }
     else
     {
-      // The state might not exist on the call side in case of lifetime aware provisioning
+      // The state might not exist on the call side in case of lifetime aware mod/ref summarization
       memoryNodeStatePairs.emplace_back(
           regionalizedStateMap.InsertUndefinedState(*region, *memoryNode));
     }
