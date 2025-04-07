@@ -16,23 +16,22 @@
 namespace jlm::llvm::aa
 {
 
-template<typename TPointsToAnalysis, typename MemoryNodeProviderPass>
-PointsToAnalysisStateEncoder<TPointsToAnalysis, MemoryNodeProviderPass>::
+template<typename TPointsToAnalysis, typename TModRefSummarizer>
+PointsToAnalysisStateEncoder<TPointsToAnalysis, TModRefSummarizer>::
     ~PointsToAnalysisStateEncoder() noexcept = default;
 
-template<typename TPointsToAnalysis, typename MemoryNodeProviderPass>
+template<typename TPointsToAnalysis, typename TModRefSummarizer>
 void
-PointsToAnalysisStateEncoder<TPointsToAnalysis, MemoryNodeProviderPass>::Run(
+PointsToAnalysisStateEncoder<TPointsToAnalysis, TModRefSummarizer>::Run(
     rvsdg::RvsdgModule & rvsdgModule,
     util::StatisticsCollector & statisticsCollector)
 {
   TPointsToAnalysis ptaPass;
   auto pointsToGraph = ptaPass.Analyze(rvsdgModule, statisticsCollector);
-  auto provisioning =
-      MemoryNodeProviderPass::Create(rvsdgModule, *pointsToGraph, statisticsCollector);
+  auto modRefSummary = TModRefSummarizer::Create(rvsdgModule, *pointsToGraph, statisticsCollector);
 
   MemoryStateEncoder encoder;
-  encoder.Encode(rvsdgModule, *provisioning, statisticsCollector);
+  encoder.Encode(rvsdgModule, *modRefSummary, statisticsCollector);
 }
 
 // Explicitly initialize all combinations

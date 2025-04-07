@@ -39,9 +39,7 @@ public:
       const util::StatisticsCollector & statisticsCollector,
       const rvsdg::RvsdgModule & rvsdgModule,
       const PointsToGraph & pointsToGraph)
-      : util::Statistics(
-            Statistics::Id::RegionAwareMemoryNodeProvisioning,
-            rvsdgModule.SourceFilePath().value()),
+      : util::Statistics(Id::RegionAwareModRefSummarizer, rvsdgModule.SourceFilePath().value()),
         StatisticsCollector_(statisticsCollector)
   {
     if (!IsDemanded())
@@ -329,7 +327,7 @@ private:
   bool ContainsPossiblyRecursiveCall_;
 };
 
-/** \brief Memory node provisioning of region-aware memory node provider
+/** \brief Mod/Ref summary of region-aware mod/ref summarizer
  *
  */
 class RegionAwareModRefSummary final : public ModRefSummary
@@ -585,8 +583,8 @@ RegionAwareModRefSummarizer::Create(
     const PointsToGraph & pointsToGraph,
     util::StatisticsCollector & statisticsCollector)
 {
-  RegionAwareModRefSummarizer provider;
-  return provider.SummarizeModRefs(rvsdgModule, pointsToGraph, statisticsCollector);
+  RegionAwareModRefSummarizer summarizer;
+  return summarizer.SummarizeModRefs(rvsdgModule, pointsToGraph, statisticsCollector);
 }
 
 std::unique_ptr<ModRefSummary>
@@ -968,19 +966,19 @@ RegionAwareModRefSummarizer::CollectLambdaNodes(const rvsdg::RvsdgModule & rvsdg
 }
 
 std::string
-RegionAwareModRefSummarizer::CallGraphSCCsToString(const RegionAwareModRefSummarizer & provider)
+RegionAwareModRefSummarizer::CallGraphSCCsToString(const RegionAwareModRefSummarizer & summarizer)
 {
   std::ostringstream ss;
-  for (size_t i = 0; i < provider.Context_.SccFunctions.size(); i++)
+  for (size_t i = 0; i < summarizer.Context_.SccFunctions.size(); i++)
   {
     if (i != 0)
       ss << " <- ";
     ss << "[" << std::endl;
-    if (i == provider.Context_.ExternalNodeSccIndex)
+    if (i == summarizer.Context_.ExternalNodeSccIndex)
     {
       ss << "  " << "<external>" << std::endl;
     }
-    for (auto function : provider.Context_.SccFunctions[i].Items())
+    for (auto function : summarizer.Context_.SccFunctions[i].Items())
     {
       ss << "  " << function->GetOperation().debug_string() << std::endl;
     }

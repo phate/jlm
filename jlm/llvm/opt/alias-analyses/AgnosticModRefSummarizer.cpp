@@ -136,8 +136,8 @@ AgnosticModRefSummarizer::Create(
     const PointsToGraph & pointsToGraph,
     util::StatisticsCollector & statisticsCollector)
 {
-  AgnosticModRefSummarizer provider;
-  return provider.SummarizeModRefs(rvsdgModule, pointsToGraph, statisticsCollector);
+  AgnosticModRefSummarizer summarizer;
+  return summarizer.SummarizeModRefs(rvsdgModule, pointsToGraph, statisticsCollector);
 }
 
 std::unique_ptr<ModRefSummary>
