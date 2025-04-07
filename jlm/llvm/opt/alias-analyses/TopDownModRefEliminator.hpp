@@ -210,8 +210,8 @@ private:
    * The function checks the following invariants:
    *
    * 1. The set of memory nodes computed for each region and call node by
-   * \ref TopDownModRefEliminator are a subset of the corresponding set of memory nodes from the seed
-   * mod/ref summary.
+   * \ref TopDownModRefEliminator are a subset of the corresponding set of memory nodes from the
+   * seed mod/ref summary.
    *
    * @param rvsdgModule The RVSDG module for which the mod/ref summary is computed.
    * @param seedModRefSummary The seed Mod/Ref summary. \see EliminateModRefs
