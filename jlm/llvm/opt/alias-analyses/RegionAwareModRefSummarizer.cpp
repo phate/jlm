@@ -39,9 +39,7 @@ public:
       const util::StatisticsCollector & statisticsCollector,
       const rvsdg::RvsdgModule & rvsdgModule,
       const PointsToGraph & pointsToGraph)
-      : util::Statistics(
-            Statistics::Id::RegionAwareMemoryNodeProvisioning,
-            rvsdgModule.SourceFilePath().value()),
+      : util::Statistics(Id::RegionAwareModRefSummarizer, rvsdgModule.SourceFilePath().value()),
         StatisticsCollector_(statisticsCollector)
   {
     if (!IsDemanded())
