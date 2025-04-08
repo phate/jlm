@@ -307,12 +307,61 @@ AddBuffers(rvsdg::Region * region)
 }
 
 void
+MaximizeBuffers(rvsdg::Region * region)
+{
+  const size_t capacity = 256;
+  std::vector<jlm::rvsdg::SimpleNode *> nodes;
+  for (auto & node : rvsdg::TopDownTraverser(region))
+  {
+    if (auto structnode = dynamic_cast<rvsdg::StructuralNode *>(node))
+    {
+      auto loop = dynamic_cast<loop_node *>(node);
+      JLM_ASSERT(loop);
+      for (size_t n = 0; n < structnode->nsubregions(); n++)
+      {
+        MaximizeBuffers(structnode->subregion(n));
+      }
+    }
+    else if (auto sn = dynamic_cast<jlm::rvsdg::SimpleNode *>(node))
+    {
+      if (dynamic_cast<const buffer_op *>(&node->GetOperation()))
+      {
+        nodes.push_back(sn);
+      }
+      else if (dynamic_cast<const decoupled_load_op *>(&node->GetOperation()))
+      {
+        nodes.push_back(sn);
+      }
+    }
+  }
+  for (auto node : nodes)
+  {
+    if (auto buf = dynamic_cast<const buffer_op *>(&node->GetOperation()))
+    {
+      divert_users(node, buffer_op::create(*node->input(0)->origin(), capacity, buf->pass_through));
+      remove(node);
+    }
+    else if (dynamic_cast<const decoupled_load_op *>(&node->GetOperation()))
+    {
+      divert_users(
+          node,
+          decoupled_load_op::create(
+              *node->input(0)->origin(),
+              *node->input(1)->origin(),
+              capacity));
+      remove(node);
+    }
+  }
+}
+
+void
 add_buffers(llvm::RvsdgModule & rm, bool pass_through)
 {
   auto & graph = rm.Rvsdg();
   auto root = &graph.GetRootRegion();
   auto lambda = dynamic_cast<rvsdg::LambdaNode *>(root->Nodes().begin().ptr());
   AddBuffers(lambda->subregion());
+  MaximizeBuffers(lambda->subregion());
 }
 
 }
