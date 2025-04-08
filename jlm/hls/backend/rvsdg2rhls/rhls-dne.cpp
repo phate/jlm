@@ -21,7 +21,7 @@ remove_unused_loop_backedges(loop_node * ln)
   for (int i = sr->narguments() - 1; i >= 0; --i)
   {
     auto arg = sr->argument(i);
-    if (dynamic_cast<backedge_argument *>(arg) && arg->nusers() == 1)
+    if ((dynamic_cast<backedge_argument *>(arg) && arg->nusers() == 1) || arg->IsDead())
     {
       auto user = *arg->begin();
       if (auto result = dynamic_cast<backedge_result *>(user))
@@ -270,6 +270,59 @@ dead_loop(rvsdg::Node * ndmux_node)
 }
 
 bool
+dead_loop_lcb(rvsdg::Node * lcb_node)
+{
+  auto lcb_op = dynamic_cast<const hls::loop_constant_buffer_op *>(&lcb_node->GetOperation());
+  JLM_ASSERT(lcb_op);
+  // one branch
+  if (lcb_node->output(0)->nusers() != 1)
+  {
+    return false;
+  }
+  auto branch_in = dynamic_cast<jlm::rvsdg::node_input *>(*lcb_node->output(0)->begin());
+  auto bo = dynamic_cast<const branch_op *>(&branch_in->node()->GetOperation());
+  if (!branch_in || !bo || !bo->loop)
+  {
+    return false;
+  }
+  // no user
+  if (branch_in->node()->output(1)->nusers())
+  {
+    return false;
+  }
+  // depend on same control
+  auto branch_cond_origin = branch_in->node()->input(0)->origin();
+  auto pred_buf_out = dynamic_cast<jlm::rvsdg::node_output *>(lcb_node->input(0)->origin());
+  if (!pred_buf_out
+      || !dynamic_cast<const predicate_buffer_op *>(&pred_buf_out->node()->GetOperation()))
+  {
+    return false;
+  }
+  auto pred_buf_cond_origin = pred_buf_out->node()->input(0)->origin();
+  // TODO: remove this once predicate buffers decouple combinatorial loops
+  auto extra_buf_out = dynamic_cast<jlm::rvsdg::node_output *>(pred_buf_cond_origin);
+  if (!extra_buf_out || !dynamic_cast<const buffer_op *>(&extra_buf_out->node()->GetOperation()))
+  {
+    return false;
+  }
+  auto extra_buf_cond_origin = extra_buf_out->node()->input(0)->origin();
+
+  if (auto pred_be = dynamic_cast<backedge_argument *>(extra_buf_cond_origin))
+  {
+    extra_buf_cond_origin = pred_be->result()->origin();
+  }
+  if (extra_buf_cond_origin != branch_cond_origin)
+  {
+    return false;
+  }
+  // divert users
+  branch_in->node()->output(0)->divert_users(lcb_node->input(1)->origin());
+  remove(branch_in->node());
+  remove(lcb_node);
+  return true;
+}
+
+bool
 fix_mem_split(rvsdg::Node * split_node)
 {
   if (split_node->noutputs() == 1)
@@ -412,6 +465,10 @@ dne(rvsdg::Region * sr)
         {
           changed |= dead_nonspec_gamma(node) || dead_loop(node);
         }
+      }
+      else if (dynamic_cast<const loop_constant_buffer_op *>(&node->GetOperation()))
+      {
+        changed |= dead_loop_lcb(node);
       }
       else if (dynamic_cast<const llvm::MemoryStateSplitOperation *>(&node->GetOperation()))
       {
