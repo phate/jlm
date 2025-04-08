@@ -17,6 +17,7 @@
 #include <jlm/rvsdg/theta.hpp>
 #include <jlm/rvsdg/traverser.hpp>
 #include <jlm/rvsdg/view.hpp>
+#include <jlm/hls/backend/rvsdg2rhls/decouple-mem-state.hpp>
 
 #include "jlm/hls/util/view.hpp"
 #include <deque>
@@ -161,7 +162,7 @@ separate_load_edge(
     {
       auto loop_node = jlm::util::AssertedCast<jlm::hls::loop_node>(sti->node());
       jlm::rvsdg::output * buffer;
-
+      auto addr_edge_before_loop = addr_edge;
       addr_edge = loop_node->AddLoopVar(addr_edge, &buffer);
       addr_edge_user->divert_to(addr_edge);
       mem_edge = find_loop_output(sti);
@@ -171,15 +172,22 @@ separate_load_edge(
       auto si = dynamic_cast<jlm::rvsdg::SimpleInput *>(user);
       JLM_ASSERT(dynamic_cast<const jlm::hls::mux_op *>(&si->node()->GetOperation()));
       JLM_ASSERT(buffer->nusers() == 1);
+      // use a separate vector to check if the loop contains stores
+      std::vector<jlm::rvsdg::output *> loop_store_addresses;
       separate_load_edge(
           si->node()->output(0),
           buffer,
           load,
           nullptr,
-          store_addresses,
+          loop_store_addresses,
           store_dequeues,
           store_precedes,
           load_encountered);
+      if(loop_store_addresses.empty()){
+        jlm::hls::convert_loop_state_to_lcb(*addr_edge_before_loop->begin());
+      } else {
+        store_addresses.insert(store_addresses.cend(), loop_store_addresses.begin(), loop_store_addresses.end());
+      }
     }
     else if (auto si = dynamic_cast<jlm::rvsdg::SimpleInput *>(user))
     {
