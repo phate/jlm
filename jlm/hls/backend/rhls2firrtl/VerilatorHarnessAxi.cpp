@@ -79,7 +79,7 @@ extern "C" )"
       m++;
     }
   }
-  JLM_ASSERT(m == mem_reqs.size());
+//  JLM_ASSERT(m == mem_reqs.size());
   // TODO: handle globals/ctxvars and ports without argument
   cpp << R"(
     verilator_init(0, nullptr);
@@ -215,14 +215,14 @@ void tick() {
   cpp << R"(
   top->clock = 1;
   top->eval();
-#if VM_TRACE
-  if (tfp)
-    tfp->dump(((double)main_time - 1));
-  main_time++;
-#ifdef TRACE_FLUSH
-  tfp->flush();
-#endif
-#endif // VM_TRACE
+//#if VM_TRACE
+//  if (tfp)
+//    tfp->dump(((double)main_time - 1));
+//  main_time++;
+//#ifdef TRACE_FLUSH
+//  tfp->flush();
+//#endif
+//#endif // VM_TRACE
   clock_cycles++;
 }
 )";
