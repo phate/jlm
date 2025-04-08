@@ -82,10 +82,9 @@ ReplaceDecouple(
   auto dload_out = decoupled_load_op::create(*addr, *routed_resp, load_capacity);
 
   auto routed_data = route_to_region_rhls(decouple_response->region(), dload_out[0]);
-  // TODO: use state edge once response is moved to its own
-  auto sg_resp = state_gate_op::create(
-      *routed_data,
-      { decouple_response->input(decouple_response->ninputs() - 1)->origin() });
+  auto response_state_origin = decouple_response->input(decouple_response->ninputs() - 1)->origin();
+  auto state_dummy = llvm::UndefValueOperation::Create(*response_state_origin->region(), response_state_origin->Type());
+  auto sg_resp = state_gate_op::create(*routed_data, { state_dummy });
   decouple_response->output(0)->divert_users(routed_data);
   decouple_response->output(decouple_response->noutputs() - 1)->divert_users(sg_resp[1]);
   JLM_ASSERT(decouple_response->IsDead());
@@ -578,8 +577,8 @@ ConnectRequestResponseMemPorts(
   {
     auto response = responses[loadNodes.size() + decoupledNodes.size() + i];
     auto routed = route_response_rhls(storeNodes[i]->region(), response);
-    // The smap contains the nodes from the original lambda so we need to use the original store node
-    // when replacing the store since the smap must be updated
+    // The smap contains the nodes from the original lambda so we need to use the original store
+    // node when replacing the store since the smap must be updated
     auto replacement = ReplaceStore(smap, originalStoreNodes[i], routed);
     auto addr = route_request_rhls(lambdaRegion, replacement->output(replacement->noutputs() - 2));
     auto data = route_request_rhls(lambdaRegion, replacement->output(replacement->noutputs() - 1));
