@@ -62,6 +62,11 @@ PlaceBuffer(rvsdg::output * out, size_t capacity, bool passThrough)
 {
   // places or re-places a buffer on an output
   auto user = FindUserNode(out);
+  // don't place buffers after constants
+  if (is_constant(rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*out)))
+  {
+    return;
+  }
   auto buf = TryGetOwnerOp<buffer_op>(*user);
   if (buf && (buf->pass_through != passThrough || buf->capacity != capacity))
   {
@@ -181,6 +186,7 @@ OptimizeBuffer(rvsdg::SimpleNode * node)
     bool passThrough = buf->pass_through && buf2->pass_through;
     auto capacity = std::max(buf->capacity, buf2->capacity);
     auto newOut = buffer_op::create(*node->input(0)->origin(), capacity, passThrough)[0];
+    JLM_ASSERT(node2->region() == newOut->region());
     node2->output(0)->divert_users(newOut);
     JLM_ASSERT(node2->IsDead());
     remove(node2);
@@ -221,12 +227,40 @@ OptimizeLoop(loop_node * loopNode)
       auto oldBufNode = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*oldBufInput);
       // place new buffers
       PlaceBuffer(branchNode->input(1)->origin(), oldBuf->capacity, oldBuf->pass_through);
-        // this buffer should just make the fork buf non-passthrough - needed to avoid combinatorial cycle
+      // this buffer should just make the fork buf non-passthrough - needed to avoid combinatorial
+      // cycle
       PlaceBuffer(branchNode->input(0)->origin(), oldBuf->capacity, oldBuf->pass_through);
       // remove old buffer
       oldBufNode->output(0)->divert_users(oldBufInput->origin());
       JLM_ASSERT(oldBufNode->IsDead());
       remove(oldBufNode);
+    }
+  }
+  else
+  {
+    // add input buffers
+    for (size_t i = 0; i < loopNode->ninputs(); ++i)
+    {
+      auto in = loopNode->input(i);
+      auto arg = in->arguments.begin().ptr();
+      auto user = GetUser(arg);
+      // only do this for proper loop variables
+      if (auto mux = TryGetOwnerOp<mux_op>(*user))
+      {
+        if (mux->loop)
+        {
+          // stream
+          continue;
+        }
+      }
+      else if (TryGetOwnerOp<loop_constant_buffer_op>(*user))
+      {
+      }
+      else
+      {
+        continue;
+      }
+      PlaceBuffer(in->origin(), 2, false);
     }
   }
 }
