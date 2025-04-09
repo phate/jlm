@@ -119,6 +119,7 @@ JlmOptCommandLineOptions::FromCommandLineArgumentToOptimizationId(
         { OptimizationCommandLineArgument::DeadNodeElimination_,
           OptimizationId::DeadNodeElimination },
         { OptimizationCommandLineArgument::FunctionInlining_, OptimizationId::FunctionInlining },
+        { OptimizationCommandLineArgument::IfConversion_, OptimizationId::IfConversion },
         { OptimizationCommandLineArgument::InvariantValueRedirection_,
           OptimizationId::InvariantValueRedirection },
         { OptimizationCommandLineArgument::NodePushOut_, OptimizationId::NodePushOut },
@@ -154,6 +155,7 @@ JlmOptCommandLineOptions::ToCommandLineArgument(OptimizationId optimizationId)
         { OptimizationId::DeadNodeElimination,
           OptimizationCommandLineArgument::DeadNodeElimination_ },
         { OptimizationId::FunctionInlining, OptimizationCommandLineArgument::FunctionInlining_ },
+        { OptimizationId::IfConversion, OptimizationCommandLineArgument::IfConversion_ },
         { OptimizationId::InvariantValueRedirection,
           OptimizationCommandLineArgument::InvariantValueRedirection_ },
         { OptimizationId::LoopUnrolling, OptimizationCommandLineArgument::LoopUnrolling_ },
@@ -229,6 +231,7 @@ JlmOptCommandLineOptions::GetStatisticsIdCommandLineArguments()
     { util::Statistics::Id::DataNodeToDelta, "printDataNodeToDelta" },
     { util::Statistics::Id::DeadNodeElimination, "print-dne-stat" },
     { util::Statistics::Id::FunctionInlining, "print-iln-stat" },
+    { util::Statistics::Id::IfConversion, "print-if-conversion" },
     { util::Statistics::Id::InvariantValueRedirection, "printInvariantValueRedirection" },
     { util::Statistics::Id::JlmToRvsdgConversion, "print-jlm-rvsdg-conversion" },
     { util::Statistics::Id::LoopUnrolling, "print-unroll-stat" },
@@ -318,25 +321,29 @@ JlcCommandLineParser::ParseCommandLineArguments(int argc, const char * const * a
   {
     if (optimizations.empty() && optimizationLevel == JlcCommandLineOptions::OptimizationLevel::O3)
     {
-      return std::vector<JlmOptCommandLineOptions::OptimizationId>(
-          { JlmOptCommandLineOptions::OptimizationId::FunctionInlining,
-            JlmOptCommandLineOptions::OptimizationId::InvariantValueRedirection,
-            JlmOptCommandLineOptions::OptimizationId::NodeReduction,
-            JlmOptCommandLineOptions::OptimizationId::DeadNodeElimination,
-            JlmOptCommandLineOptions::OptimizationId::ThetaGammaInversion,
-            JlmOptCommandLineOptions::OptimizationId::InvariantValueRedirection,
-            JlmOptCommandLineOptions::OptimizationId::DeadNodeElimination,
-            JlmOptCommandLineOptions::OptimizationId::NodePushOut,
-            JlmOptCommandLineOptions::OptimizationId::InvariantValueRedirection,
-            JlmOptCommandLineOptions::OptimizationId::DeadNodeElimination,
-            JlmOptCommandLineOptions::OptimizationId::NodeReduction,
-            JlmOptCommandLineOptions::OptimizationId::CommonNodeElimination,
-            JlmOptCommandLineOptions::OptimizationId::DeadNodeElimination,
-            JlmOptCommandLineOptions::OptimizationId::NodePullIn,
-            JlmOptCommandLineOptions::OptimizationId::InvariantValueRedirection,
-            JlmOptCommandLineOptions::OptimizationId::DeadNodeElimination,
-            JlmOptCommandLineOptions::OptimizationId::LoopUnrolling,
-            JlmOptCommandLineOptions::OptimizationId::InvariantValueRedirection });
+      return std::vector({
+          JlmOptCommandLineOptions::OptimizationId::FunctionInlining,
+          JlmOptCommandLineOptions::OptimizationId::InvariantValueRedirection,
+          JlmOptCommandLineOptions::OptimizationId::NodeReduction,
+          JlmOptCommandLineOptions::OptimizationId::DeadNodeElimination,
+          JlmOptCommandLineOptions::OptimizationId::ThetaGammaInversion,
+          JlmOptCommandLineOptions::OptimizationId::InvariantValueRedirection,
+          JlmOptCommandLineOptions::OptimizationId::DeadNodeElimination,
+          JlmOptCommandLineOptions::OptimizationId::NodePushOut,
+          JlmOptCommandLineOptions::OptimizationId::InvariantValueRedirection,
+          JlmOptCommandLineOptions::OptimizationId::DeadNodeElimination,
+          JlmOptCommandLineOptions::OptimizationId::NodeReduction,
+          JlmOptCommandLineOptions::OptimizationId::CommonNodeElimination,
+          JlmOptCommandLineOptions::OptimizationId::DeadNodeElimination,
+          JlmOptCommandLineOptions::OptimizationId::NodePullIn,
+          JlmOptCommandLineOptions::OptimizationId::InvariantValueRedirection,
+          JlmOptCommandLineOptions::OptimizationId::DeadNodeElimination,
+          JlmOptCommandLineOptions::OptimizationId::LoopUnrolling,
+          JlmOptCommandLineOptions::OptimizationId::InvariantValueRedirection,
+          JlmOptCommandLineOptions::OptimizationId::IfConversion,
+          JlmOptCommandLineOptions::OptimizationId::CommonNodeElimination,
+          JlmOptCommandLineOptions::OptimizationId::DeadNodeElimination,
+      });
     }
 
     std::vector<JlmOptCommandLineOptions::OptimizationId> optimizationIds;
@@ -730,6 +737,9 @@ JlmOptCommandLineParser::ParseCommandLineArguments(int argc, const char * const 
               util::Statistics::Id::FunctionInlining,
               "Write function inlining statistics to file."),
           CreateStatisticsOption(
+              util::Statistics::Id::IfConversion,
+              "Collect if-conversion transformation statistics"),
+          CreateStatisticsOption(
               util::Statistics::Id::InvariantValueRedirection,
               "Write invariant value redirection statistics to file."),
           CreateStatisticsOption(
@@ -819,6 +829,7 @@ JlmOptCommandLineParser::ParseCommandLineArguments(int argc, const char * const 
   auto commonNodeElimination = JlmOptCommandLineOptions::OptimizationId::CommonNodeElimination;
   auto deadNodeElimination = JlmOptCommandLineOptions::OptimizationId::DeadNodeElimination;
   auto functionInlining = JlmOptCommandLineOptions::OptimizationId::FunctionInlining;
+  auto ifConversion = JlmOptCommandLineOptions::OptimizationId::IfConversion;
   auto invariantValueRedirection =
       JlmOptCommandLineOptions::OptimizationId::InvariantValueRedirection;
   auto nodePushOut = JlmOptCommandLineOptions::OptimizationId::NodePushOut;
@@ -862,6 +873,10 @@ JlmOptCommandLineParser::ParseCommandLineArguments(int argc, const char * const 
               functionInlining,
               JlmOptCommandLineOptions::ToCommandLineArgument(functionInlining),
               "Function Inlining"),
+          ::clEnumValN(
+              ifConversion,
+              JlmOptCommandLineOptions::ToCommandLineArgument(ifConversion),
+              "Convert pass-through values of gamma nodes to select operations"),
           ::clEnumValN(
               invariantValueRedirection,
               JlmOptCommandLineOptions::ToCommandLineArgument(invariantValueRedirection),
