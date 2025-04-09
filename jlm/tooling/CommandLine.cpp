@@ -320,25 +320,29 @@ JlcCommandLineParser::ParseCommandLineArguments(int argc, const char * const * a
   {
     if (optimizations.empty() && optimizationLevel == JlcCommandLineOptions::OptimizationLevel::O3)
     {
-      return std::vector<JlmOptCommandLineOptions::OptimizationId>(
-          { JlmOptCommandLineOptions::OptimizationId::FunctionInlining,
-            JlmOptCommandLineOptions::OptimizationId::InvariantValueRedirection,
-            JlmOptCommandLineOptions::OptimizationId::NodeReduction,
-            JlmOptCommandLineOptions::OptimizationId::DeadNodeElimination,
-            JlmOptCommandLineOptions::OptimizationId::ThetaGammaInversion,
-            JlmOptCommandLineOptions::OptimizationId::InvariantValueRedirection,
-            JlmOptCommandLineOptions::OptimizationId::DeadNodeElimination,
-            JlmOptCommandLineOptions::OptimizationId::NodePushOut,
-            JlmOptCommandLineOptions::OptimizationId::InvariantValueRedirection,
-            JlmOptCommandLineOptions::OptimizationId::DeadNodeElimination,
-            JlmOptCommandLineOptions::OptimizationId::NodeReduction,
-            JlmOptCommandLineOptions::OptimizationId::CommonNodeElimination,
-            JlmOptCommandLineOptions::OptimizationId::DeadNodeElimination,
-            JlmOptCommandLineOptions::OptimizationId::NodePullIn,
-            JlmOptCommandLineOptions::OptimizationId::InvariantValueRedirection,
-            JlmOptCommandLineOptions::OptimizationId::DeadNodeElimination,
-            JlmOptCommandLineOptions::OptimizationId::LoopUnrolling,
-            JlmOptCommandLineOptions::OptimizationId::InvariantValueRedirection });
+      return std::vector({
+          JlmOptCommandLineOptions::OptimizationId::FunctionInlining,
+          JlmOptCommandLineOptions::OptimizationId::InvariantValueRedirection,
+          JlmOptCommandLineOptions::OptimizationId::NodeReduction,
+          JlmOptCommandLineOptions::OptimizationId::DeadNodeElimination,
+          JlmOptCommandLineOptions::OptimizationId::ThetaGammaInversion,
+          JlmOptCommandLineOptions::OptimizationId::InvariantValueRedirection,
+          JlmOptCommandLineOptions::OptimizationId::DeadNodeElimination,
+          JlmOptCommandLineOptions::OptimizationId::NodePushOut,
+          JlmOptCommandLineOptions::OptimizationId::InvariantValueRedirection,
+          JlmOptCommandLineOptions::OptimizationId::DeadNodeElimination,
+          JlmOptCommandLineOptions::OptimizationId::NodeReduction,
+          JlmOptCommandLineOptions::OptimizationId::CommonNodeElimination,
+          JlmOptCommandLineOptions::OptimizationId::DeadNodeElimination,
+          JlmOptCommandLineOptions::OptimizationId::NodePullIn,
+          JlmOptCommandLineOptions::OptimizationId::InvariantValueRedirection,
+          JlmOptCommandLineOptions::OptimizationId::DeadNodeElimination,
+          JlmOptCommandLineOptions::OptimizationId::LoopUnrolling,
+          JlmOptCommandLineOptions::OptimizationId::InvariantValueRedirection,
+          JlmOptCommandLineOptions::OptimizationId::IfConversion,
+          JlmOptCommandLineOptions::OptimizationId::CommonNodeElimination,
+          JlmOptCommandLineOptions::OptimizationId::DeadNodeElimination,
+      });
     }
 
     std::vector<JlmOptCommandLineOptions::OptimizationId> optimizationIds;
