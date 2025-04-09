@@ -18,7 +18,13 @@ class Region;
 namespace jlm::llvm
 {
 
-// FIXME: add documentation
+/** \brief If-Conversion Transformation
+ *
+ * The If-Conversion transformation converts gamma outputs to select operations iff:
+ * 1. A gamma node has only two subregions
+ * 2. The value in every subregion that leads to the gamma output are only routed through the
+ * subregion.
+ */
 class IfConversion final : public rvsdg::Transformation
 {
 public:
