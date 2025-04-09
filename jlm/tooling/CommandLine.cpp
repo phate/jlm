@@ -119,6 +119,7 @@ JlmOptCommandLineOptions::FromCommandLineArgumentToOptimizationId(
         { OptimizationCommandLineArgument::DeadNodeElimination_,
           OptimizationId::DeadNodeElimination },
         { OptimizationCommandLineArgument::FunctionInlining_, OptimizationId::FunctionInlining },
+        { OptimizationCommandLineArgument::IfConversion_, OptimizationId::IfConversion },
         { OptimizationCommandLineArgument::InvariantValueRedirection_,
           OptimizationId::InvariantValueRedirection },
         { OptimizationCommandLineArgument::NodePushOut_, OptimizationId::NodePushOut },
@@ -154,6 +155,7 @@ JlmOptCommandLineOptions::ToCommandLineArgument(OptimizationId optimizationId)
         { OptimizationId::DeadNodeElimination,
           OptimizationCommandLineArgument::DeadNodeElimination_ },
         { OptimizationId::FunctionInlining, OptimizationCommandLineArgument::FunctionInlining_ },
+        { OptimizationId::IfConversion, OptimizationCommandLineArgument::IfConversion_ },
         { OptimizationId::InvariantValueRedirection,
           OptimizationCommandLineArgument::InvariantValueRedirection_ },
         { OptimizationId::LoopUnrolling, OptimizationCommandLineArgument::LoopUnrolling_ },
@@ -819,6 +821,7 @@ JlmOptCommandLineParser::ParseCommandLineArguments(int argc, const char * const 
   auto commonNodeElimination = JlmOptCommandLineOptions::OptimizationId::CommonNodeElimination;
   auto deadNodeElimination = JlmOptCommandLineOptions::OptimizationId::DeadNodeElimination;
   auto functionInlining = JlmOptCommandLineOptions::OptimizationId::FunctionInlining;
+  auto ifConversion = JlmOptCommandLineOptions::OptimizationId::IfConversion;
   auto invariantValueRedirection =
       JlmOptCommandLineOptions::OptimizationId::InvariantValueRedirection;
   auto nodePushOut = JlmOptCommandLineOptions::OptimizationId::NodePushOut;
@@ -862,6 +865,10 @@ JlmOptCommandLineParser::ParseCommandLineArguments(int argc, const char * const 
               functionInlining,
               JlmOptCommandLineOptions::ToCommandLineArgument(functionInlining),
               "Function Inlining"),
+          ::clEnumValN(
+              ifConversion,
+              JlmOptCommandLineOptions::ToCommandLineArgument(ifConversion),
+              "Convert pass-through values of gamma nodes to select operations"),
           ::clEnumValN(
               invariantValueRedirection,
               JlmOptCommandLineOptions::ToCommandLineArgument(invariantValueRedirection),

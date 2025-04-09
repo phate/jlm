@@ -73,6 +73,7 @@ public:
     CommonNodeElimination,
     DeadNodeElimination,
     FunctionInlining,
+    IfConversion,
     InvariantValueRedirection,
     LoopUnrolling,
     NodePullIn,
@@ -203,6 +204,7 @@ private:
     inline static const char * CommonNodeElimination_ = "CommonNodeElimination";
     inline static const char * DeadNodeElimination_ = "DeadNodeElimination";
     inline static const char * FunctionInlining_ = "FunctionInlining";
+    inline static const char * IfConversion_ = "IfConversion";
     inline static const char * InvariantValueRedirection_ = "InvariantValueRedirection";
     inline static const char * NodePullIn_ = "NodePullIn";
     inline static const char * NodePushOut_ = "NodePushOut";
