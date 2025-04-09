@@ -231,6 +231,7 @@ JlmOptCommandLineOptions::GetStatisticsIdCommandLineArguments()
     { util::Statistics::Id::DataNodeToDelta, "printDataNodeToDelta" },
     { util::Statistics::Id::DeadNodeElimination, "print-dne-stat" },
     { util::Statistics::Id::FunctionInlining, "print-iln-stat" },
+    { util::Statistics::Id::IfConversion, "IfConversion" },
     { util::Statistics::Id::InvariantValueRedirection, "printInvariantValueRedirection" },
     { util::Statistics::Id::JlmToRvsdgConversion, "print-jlm-rvsdg-conversion" },
     { util::Statistics::Id::LoopUnrolling, "print-unroll-stat" },

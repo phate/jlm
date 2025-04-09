@@ -13,6 +13,37 @@
 namespace jlm::llvm
 {
 
+/** \brief If-Conversion Transformation statistics
+ *
+ */
+class IfConversionStatistics final : public util::Statistics
+{
+public:
+  ~IfConversionStatistics() override = default;
+
+  explicit IfConversionStatistics(const util::filepath & sourceFile)
+      : Statistics(Id::IfConversion, sourceFile)
+  {}
+
+  void
+  Start() noexcept
+  {
+    AddTimer(Label::Timer).start();
+  }
+
+  void
+  Stop() noexcept
+  {
+    GetTimer(Label::Timer).stop();
+  }
+
+  static std::unique_ptr<IfConversionStatistics>
+  Create(const util::filepath & sourceFile)
+  {
+    return std::make_unique<IfConversionStatistics>(sourceFile);
+  }
+};
+
 IfConversion::~IfConversion() noexcept = default;
 
 IfConversion::IfConversion() = default;
@@ -20,8 +51,13 @@ IfConversion::IfConversion() = default;
 void
 IfConversion::Run(rvsdg::RvsdgModule & module, util::StatisticsCollector & statisticsCollector)
 {
-  // FIXME: add statistics
+  auto statistics = IfConversionStatistics::Create(module.SourceFilePath().value());
+
+  statistics->Start();
   HandleRegion(module.Rvsdg().GetRootRegion());
+  statistics->Stop();
+
+  statisticsCollector.CollectDemandedStatistics(std::move(statistics));
 }
 
 void
