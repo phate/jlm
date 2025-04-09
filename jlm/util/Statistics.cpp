@@ -27,6 +27,7 @@ GetStatisticsIdNames()
     { Statistics::Id::DataNodeToDelta, "DataNodeToDeltaStatistics" },
     { Statistics::Id::DeadNodeElimination, "DeadNodeElimination" },
     { Statistics::Id::FunctionInlining, "ILN" },
+    { Statistics::Id::IfConversion, "IfConversion" },
     { Statistics::Id::JlmToRvsdgConversion, "ControlFlowGraphToLambda" },
     { Statistics::Id::LoopUnrolling, "UNROLL" },
     { Statistics::Id::InvariantValueRedirection, "InvariantValueRedirection" },

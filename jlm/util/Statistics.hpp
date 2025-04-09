@@ -43,6 +43,7 @@ public:
     DataNodeToDelta,
     DeadNodeElimination,
     FunctionInlining,
+    IfConversion,
     InvariantValueRedirection,
     JlmToRvsdgConversion,
     LoopUnrolling,

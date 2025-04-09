@@ -19,6 +19,7 @@
 #include <jlm/llvm/opt/alias-analyses/TopDownModRefEliminator.hpp>
 #include <jlm/llvm/opt/cne.hpp>
 #include <jlm/llvm/opt/DeadNodeElimination.hpp>
+#include <jlm/llvm/opt/IfConversion.hpp>
 #include <jlm/llvm/opt/inlining.hpp>
 #include <jlm/llvm/opt/InvariantValueRedirection.hpp>
 #include <jlm/llvm/opt/inversion.hpp>
@@ -409,6 +410,8 @@ JlmOptCommand::CreateTransformation(
     return std::make_unique<llvm::DeadNodeElimination>();
   case JlmOptCommandLineOptions::OptimizationId::FunctionInlining:
     return std::make_unique<llvm::fctinline>();
+  case JlmOptCommandLineOptions::OptimizationId::IfConversion:
+    return std::make_unique<llvm::IfConversion>();
   case JlmOptCommandLineOptions::OptimizationId::InvariantValueRedirection:
     return std::make_unique<llvm::InvariantValueRedirection>();
   case JlmOptCommandLineOptions::OptimizationId::LoopUnrolling:
