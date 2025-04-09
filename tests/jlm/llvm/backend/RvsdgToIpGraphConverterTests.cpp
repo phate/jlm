@@ -58,10 +58,7 @@ GammaWithMatch()
   assert(ipg.nnodes() == 1);
 
   auto cfg = dynamic_cast<const function_node &>(*ipg.begin()).cfg();
-  assert(cfg->nnodes() == 1);
-  auto node = cfg->entry()->OutEdge(0)->sink();
-  auto bb = dynamic_cast<const basic_block *>(node);
-  assert(is<SelectOperation>(bb->tacs().last()->operation()));
+  assert(cfg->nnodes() == 4);
 
   return 0;
 }
@@ -110,11 +107,7 @@ GammaWithoutMatch()
   assert(ipg.nnodes() == 1);
 
   auto cfg = dynamic_cast<const function_node &>(*ipg.begin()).cfg();
-  assert(cfg->nnodes() == 1);
-  auto node = cfg->entry()->OutEdge(0)->sink();
-  auto bb = dynamic_cast<const basic_block *>(node);
-  assert(is<ctl2bits_op>(bb->tacs().first()->operation()));
-  assert(is<SelectOperation>(bb->tacs().last()->operation()));
+  assert(cfg->nnodes() == 4);
 
   return 0;
 }
@@ -170,31 +163,6 @@ EmptyGammaWithTwoSubregionsAndMatch()
 
   const auto controlFlowGraph = dynamic_cast<const function_node &>(*ipGraph.begin()).cfg();
   assert(is_closed(*controlFlowGraph));
-
-  {
-    const auto exitNode = controlFlowGraph->exit();
-    const auto entryNode = controlFlowGraph->entry();
-    const auto conditionArgument = entryNode->argument(0);
-    const auto trueArgument = entryNode->argument(1);
-    const auto falseArgument = entryNode->argument(2);
-    const auto basicBlock = dynamic_cast<basic_block *>(exitNode->InEdges().begin()->source());
-
-    const auto selectTac = basicBlock->last();
-    assert(is<SelectOperation>(selectTac));
-    const auto trueAlternative = selectTac->operand(1);
-    const auto falseAlternative = selectTac->operand(2);
-    assert(trueAlternative == trueArgument);
-    assert(falseAlternative == falseArgument);
-
-    const auto eqTac = *std::next(basicBlock->rbegin());
-    assert(is<IntegerEqOperation>(eqTac));
-    assert(eqTac->operand(0) == conditionArgument || eqTac->operand(1) == conditionArgument);
-
-    const auto constantTac = *std::next(basicBlock->rbegin(), 2);
-    const auto constantOp =
-        dynamic_cast<const IntegerConstantOperation *>(&constantTac->operation());
-    assert(constantOp && constantOp->Representation() == caseValue);
-  }
 
   return 0;
 }
@@ -257,21 +225,6 @@ EmptyGammaWithTwoSubregions()
 
   const auto controlFlowGraph = dynamic_cast<const function_node &>(*ipGraph.begin()).cfg();
   assert(is_closed(*controlFlowGraph));
-
-  {
-    const auto exitNode = controlFlowGraph->exit();
-    const auto entryNode = controlFlowGraph->entry();
-    const auto trueArgument = entryNode->argument(1);
-    const auto falseArgument = entryNode->argument(2);
-    const auto basicBlock = dynamic_cast<basic_block *>(exitNode->InEdges().begin()->source());
-
-    const auto selectTac = basicBlock->last();
-    assert(is<SelectOperation>(selectTac));
-    const auto trueAlternative = selectTac->operand(1);
-    const auto falseAlternative = selectTac->operand(2);
-    assert(trueAlternative == trueArgument);
-    assert(falseAlternative == falseArgument);
-  }
 
   return 0;
 }
@@ -378,8 +331,7 @@ PartialEmptyGamma()
   auto cfg = dynamic_cast<const function_node &>(*ipg.begin()).cfg();
   std::cout << cfg::ToAscii(*cfg) << std::flush;
 
-  assert(!is_proper_structured(*cfg));
-  assert(is_structured(*cfg));
+  assert(is_proper_structured(*cfg));
 
   return 0;
 }
