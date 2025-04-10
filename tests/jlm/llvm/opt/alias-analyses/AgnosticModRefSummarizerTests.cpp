@@ -9,7 +9,7 @@
 
 #include <jlm/rvsdg/view.hpp>
 
-#include <jlm/llvm/opt/alias-analyses/AgnosticMemoryNodeProvider.hpp>
+#include <jlm/llvm/opt/alias-analyses/AgnosticModRefSummarizer.hpp>
 #include <jlm/llvm/opt/alias-analyses/Steensgaard.hpp>
 #include <jlm/util/Statistics.hpp>
 
@@ -51,13 +51,13 @@ TestStore1()
   /*
    * Act
    */
-  auto provisioning =
-      jlm::llvm::aa::AgnosticMemoryNodeProvider::Create(test.module(), *pointsToGraph);
+  auto modRefSummary =
+      jlm::llvm::aa::AgnosticModRefSummarizer::Create(test.module(), *pointsToGraph);
 
   /*
    * Assert
    */
-  ValidateProvider(test, *provisioning, *pointsToGraph);
+  ValidateProvider(test, *modRefSummary, *pointsToGraph);
 }
 
 static void
@@ -86,13 +86,13 @@ TestStore2()
   /*
    * Act
    */
-  auto provisioning =
-      jlm::llvm::aa::AgnosticMemoryNodeProvider::Create(test.module(), *pointsToGraph);
+  auto modRefSummary =
+      jlm::llvm::aa::AgnosticModRefSummarizer::Create(test.module(), *pointsToGraph);
 
   /*
    * Assert
    */
-  ValidateProvider(test, *provisioning, *pointsToGraph);
+  ValidateProvider(test, *modRefSummary, *pointsToGraph);
 }
 
 static void
@@ -121,13 +121,13 @@ TestLoad1()
   /*
    * Act
    */
-  auto provisioning =
-      jlm::llvm::aa::AgnosticMemoryNodeProvider::Create(test.module(), *pointsToGraph);
+  auto modRefSummary =
+      jlm::llvm::aa::AgnosticModRefSummarizer::Create(test.module(), *pointsToGraph);
 
   /*
    * Assert
    */
-  ValidateProvider(test, *provisioning, *pointsToGraph);
+  ValidateProvider(test, *modRefSummary, *pointsToGraph);
 }
 
 static void
@@ -155,13 +155,13 @@ TestLoad2()
   /*
    * Act
    */
-  auto provisioning =
-      jlm::llvm::aa::AgnosticMemoryNodeProvider::Create(test.module(), *pointsToGraph);
+  auto modRefSummary =
+      jlm::llvm::aa::AgnosticModRefSummarizer::Create(test.module(), *pointsToGraph);
 
   /*
    * Assert
    */
-  ValidateProvider(test, *provisioning, *pointsToGraph);
+  ValidateProvider(test, *modRefSummary, *pointsToGraph);
 }
 
 static void
@@ -190,13 +190,13 @@ TestLoadFromUndef()
   /*
    * Act
    */
-  auto provisioning =
-      jlm::llvm::aa::AgnosticMemoryNodeProvider::Create(test.module(), *pointsToGraph);
+  auto modRefSummary =
+      jlm::llvm::aa::AgnosticModRefSummarizer::Create(test.module(), *pointsToGraph);
 
   /*
    * Assert
    */
-  ValidateProvider(test, *provisioning, *pointsToGraph);
+  ValidateProvider(test, *modRefSummary, *pointsToGraph);
 }
 
 static void
@@ -264,13 +264,13 @@ TestCall1()
   /*
    * Act
    */
-  auto provisioning =
-      jlm::llvm::aa::AgnosticMemoryNodeProvider::Create(test.module(), *pointsToGraph);
+  auto modRefSummary =
+      jlm::llvm::aa::AgnosticModRefSummarizer::Create(test.module(), *pointsToGraph);
 
   /*
    * Assert
    */
-  ValidateProvider(test, *provisioning, *pointsToGraph);
+  ValidateProvider(test, *modRefSummary, *pointsToGraph);
 }
 
 static void
@@ -350,13 +350,13 @@ TestCall2()
   /*
    * Act
    */
-  auto provisioning =
-      jlm::llvm::aa::AgnosticMemoryNodeProvider::Create(test.module(), *pointsToGraph);
+  auto modRefSummary =
+      jlm::llvm::aa::AgnosticModRefSummarizer::Create(test.module(), *pointsToGraph);
 
   /*
    * Assert
    */
-  ValidateProvider(test, *provisioning, *pointsToGraph);
+  ValidateProvider(test, *modRefSummary, *pointsToGraph);
 }
 
 static void
@@ -441,13 +441,13 @@ TestIndirectCall()
   /*
    * Act
    */
-  auto provisioning =
-      jlm::llvm::aa::AgnosticMemoryNodeProvider::Create(test.module(), *pointsToGraph);
+  auto modRefSummary =
+      jlm::llvm::aa::AgnosticModRefSummarizer::Create(test.module(), *pointsToGraph);
 
   /*
    * Assert
    */
-  ValidateProvider(test, *provisioning, *pointsToGraph);
+  ValidateProvider(test, *modRefSummary, *pointsToGraph);
 }
 
 static void
@@ -480,13 +480,13 @@ TestGamma()
   /*
    * Act
    */
-  auto provisioning =
-      jlm::llvm::aa::AgnosticMemoryNodeProvider::Create(test.module(), *pointsToGraph);
+  auto modRefSummary =
+      jlm::llvm::aa::AgnosticModRefSummarizer::Create(test.module(), *pointsToGraph);
 
   /*
    * Assert
    */
-  ValidateProvider(test, *provisioning, *pointsToGraph);
+  ValidateProvider(test, *modRefSummary, *pointsToGraph);
 }
 
 static void
@@ -517,13 +517,13 @@ TestTheta()
   /*
    * Act
    */
-  auto provisioning =
-      jlm::llvm::aa::AgnosticMemoryNodeProvider::Create(test.module(), *pointsToGraph);
+  auto modRefSummary =
+      jlm::llvm::aa::AgnosticModRefSummarizer::Create(test.module(), *pointsToGraph);
 
   /*
    * Assert
    */
-  ValidateProvider(test, *provisioning, *pointsToGraph);
+  ValidateProvider(test, *modRefSummary, *pointsToGraph);
 }
 
 static void
@@ -572,13 +572,13 @@ TestDelta1()
   /*
    * Act
    */
-  auto provisioning =
-      jlm::llvm::aa::AgnosticMemoryNodeProvider::Create(test.module(), *pointsToGraph);
+  auto modRefSummary =
+      jlm::llvm::aa::AgnosticModRefSummarizer::Create(test.module(), *pointsToGraph);
 
   /*
    * Assert
    */
-  ValidateProvider(test, *provisioning, *pointsToGraph);
+  ValidateProvider(test, *modRefSummary, *pointsToGraph);
 }
 
 static void
@@ -627,13 +627,13 @@ TestDelta2()
   /*
    * Act
    */
-  auto provisioning =
-      jlm::llvm::aa::AgnosticMemoryNodeProvider::Create(test.module(), *pointsToGraph);
+  auto modRefSummary =
+      jlm::llvm::aa::AgnosticModRefSummarizer::Create(test.module(), *pointsToGraph);
 
   /*
    * Assert
    */
-  ValidateProvider(test, *provisioning, *pointsToGraph);
+  ValidateProvider(test, *modRefSummary, *pointsToGraph);
 }
 
 static void
@@ -682,13 +682,13 @@ TestImports()
   /*
    * Act
    */
-  auto provisioning =
-      jlm::llvm::aa::AgnosticMemoryNodeProvider::Create(test.module(), *pointsToGraph);
+  auto modRefSummary =
+      jlm::llvm::aa::AgnosticModRefSummarizer::Create(test.module(), *pointsToGraph);
 
   /*
    * Assert
    */
-  ValidateProvider(test, *provisioning, *pointsToGraph);
+  ValidateProvider(test, *modRefSummary, *pointsToGraph);
 }
 
 static void
@@ -749,13 +749,13 @@ TestPhi1()
   /*
    * Act
    */
-  auto provisioning =
-      jlm::llvm::aa::AgnosticMemoryNodeProvider::Create(test.module(), *pointsToGraph);
+  auto modRefSummary =
+      jlm::llvm::aa::AgnosticModRefSummarizer::Create(test.module(), *pointsToGraph);
 
   /*
    * Assert
    */
-  ValidateProvider(test, *provisioning, *pointsToGraph);
+  ValidateProvider(test, *modRefSummary, *pointsToGraph);
 }
 
 static void
@@ -811,13 +811,13 @@ TestMemcpy()
   /*
    * Act
    */
-  auto provisioning =
-      jlm::llvm::aa::AgnosticMemoryNodeProvider::Create(test.module(), *pointsToGraph);
+  auto modRefSummary =
+      jlm::llvm::aa::AgnosticModRefSummarizer::Create(test.module(), *pointsToGraph);
 
   /*
    * Assert
    */
-  ValidateProvider(test, *provisioning, *pointsToGraph);
+  ValidateProvider(test, *modRefSummary, *pointsToGraph);
 }
 
 static void
@@ -828,11 +828,11 @@ TestStatistics()
   auto pointsToGraph = RunSteensgaard(test.module());
 
   jlm::util::StatisticsCollectorSettings statisticsCollectorSettings(
-      { jlm::util::Statistics::Id::AgnosticMemoryNodeProvisioning });
+      { jlm::util::Statistics::Id::AgnosticModRefSummarizer });
   jlm::util::StatisticsCollector statisticsCollector(statisticsCollectorSettings);
 
   // Act
-  jlm::llvm::aa::AgnosticMemoryNodeProvider::Create(
+  jlm::llvm::aa::AgnosticModRefSummarizer::Create(
       test.module(),
       *pointsToGraph,
       statisticsCollector);
@@ -840,7 +840,7 @@ TestStatistics()
   // Assert
   assert(statisticsCollector.NumCollectedStatistics() == 1);
 
-  auto & statistics = dynamic_cast<const jlm::llvm::aa::AgnosticMemoryNodeProvider::Statistics &>(
+  auto & statistics = dynamic_cast<const jlm::llvm::aa::AgnosticModRefSummarizer::Statistics &>(
       *statisticsCollector.CollectedStatistics().begin());
 
   assert(statistics.GetSourceFile() == test.module().SourceFileName());
@@ -879,4 +879,4 @@ test()
   return 0;
 }
 
-JLM_UNIT_TEST_REGISTER("jlm/llvm/opt/alias-analyses/TestAgnosticMemoryNodeProvider", test)
+JLM_UNIT_TEST_REGISTER("jlm/llvm/opt/alias-analyses/AgnosticModRefSummarizerTests", test)

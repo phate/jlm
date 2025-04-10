@@ -4,26 +4,26 @@
  * See COPYING for terms of redistribution.
  */
 
-#include <jlm/llvm/opt/alias-analyses/AgnosticMemoryNodeProvider.hpp>
+#include <jlm/llvm/opt/alias-analyses/AgnosticModRefSummarizer.hpp>
 #include <jlm/llvm/opt/alias-analyses/Andersen.hpp>
-#include <jlm/llvm/opt/alias-analyses/EliminatedMemoryNodeProvider.hpp>
+#include <jlm/llvm/opt/alias-analyses/EliminatedModRefSummarizer.hpp>
 #include <jlm/llvm/opt/alias-analyses/MemoryStateEncoder.hpp>
 #include <jlm/llvm/opt/alias-analyses/Optimization.hpp>
 #include <jlm/llvm/opt/alias-analyses/PrecisionEvaluator.hpp>
-#include <jlm/llvm/opt/alias-analyses/RegionAwareMemoryNodeProvider.hpp>
+#include <jlm/llvm/opt/alias-analyses/RegionAwareModRefSummarizer.hpp>
 #include <jlm/llvm/opt/alias-analyses/Steensgaard.hpp>
-#include <jlm/llvm/opt/alias-analyses/TopDownMemoryNodeEliminator.hpp>
+#include <jlm/llvm/opt/alias-analyses/TopDownModRefEliminator.hpp>
 
 namespace jlm::llvm::aa
 {
 
-template<typename TPointsToAnalysis, typename MemoryNodeProviderPass>
-PointsToAnalysisStateEncoder<TPointsToAnalysis, MemoryNodeProviderPass>::
+template<typename TPointsToAnalysis, typename TModRefSummarizer>
+PointsToAnalysisStateEncoder<TPointsToAnalysis, TModRefSummarizer>::
     ~PointsToAnalysisStateEncoder() noexcept = default;
 
-template<typename TPointsToAnalysis, typename MemoryNodeProviderPass>
+template<typename TPointsToAnalysis, typename TModRefSummarizer>
 void
-PointsToAnalysisStateEncoder<TPointsToAnalysis, MemoryNodeProviderPass>::Run(
+PointsToAnalysisStateEncoder<TPointsToAnalysis, TModRefSummarizer>::Run(
     rvsdg::RvsdgModule & rvsdgModule,
     util::StatisticsCollector & statisticsCollector)
 {
@@ -31,28 +31,27 @@ PointsToAnalysisStateEncoder<TPointsToAnalysis, MemoryNodeProviderPass>::Run(
   auto pointsToGraph = ptaPass.Analyze(rvsdgModule, statisticsCollector);
 
   // Evaluate alias analysis precision if the statistic is demanded
-  PrecisionEvaluator precisionEvaluator(PrecisionEvaluationMode::AllPointerPairs);
+  PrecisionEvaluator precisionEvaluator(PrecisionEvaluator::Mode::AllPointerPairs);
   PointsToGraphAliasAnalysis ptgAA(*pointsToGraph);
   precisionEvaluator.EvaluateAliasAnalysisClient(rvsdgModule, ptgAA, statisticsCollector);
 
   // Evaluate precision again with a different mode
-  precisionEvaluator.SetMode(PrecisionEvaluationMode::ClobberingStores);
+  precisionEvaluator.SetMode(PrecisionEvaluator::Mode::ClobberingStores);
   precisionEvaluator.EvaluateAliasAnalysisClient(rvsdgModule, ptgAA, statisticsCollector);
 
-  // auto provisioning =
-  //     MemoryNodeProviderPass::Create(rvsdgModule, *pointsToGraph, statisticsCollector);
+  // auto modRefSummary = TModRefSummarizer::Create(rvsdgModule, *pointsToGraph, statisticsCollector);
 
   // MemoryStateEncoder encoder;
-  // encoder.Encode(rvsdgModule, *provisioning, statisticsCollector);
+  // encoder.Encode(rvsdgModule, *modRefSummary, statisticsCollector);
 }
 
 // Explicitly initialize all combinations
-template class PointsToAnalysisStateEncoder<Steensgaard, AgnosticMemoryNodeProvider>;
-template class PointsToAnalysisStateEncoder<Steensgaard, RegionAwareMemoryNodeProvider>;
-template class PointsToAnalysisStateEncoder<Andersen, AgnosticMemoryNodeProvider>;
-template class PointsToAnalysisStateEncoder<Andersen, RegionAwareMemoryNodeProvider>;
+template class PointsToAnalysisStateEncoder<Steensgaard, AgnosticModRefSummarizer>;
+template class PointsToAnalysisStateEncoder<Steensgaard, RegionAwareModRefSummarizer>;
+template class PointsToAnalysisStateEncoder<Andersen, AgnosticModRefSummarizer>;
+template class PointsToAnalysisStateEncoder<Andersen, RegionAwareModRefSummarizer>;
 template class PointsToAnalysisStateEncoder<
     Andersen,
-    EliminatedMemoryNodeProvider<AgnosticMemoryNodeProvider, TopDownMemoryNodeEliminator>>;
+    EliminatedModRefSummarizer<AgnosticModRefSummarizer, TopDownModRefEliminator>>;
 
 }

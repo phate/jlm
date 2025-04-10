@@ -3,8 +3,8 @@
  * See COPYING for terms of redistribution.
  */
 
-#ifndef JLM_LLVM_OPT_ALIAS_ANALYSES_MEMORYNODEELIMINATOR_HPP
-#define JLM_LLVM_OPT_ALIAS_ANALYSES_MEMORYNODEELIMINATOR_HPP
+#ifndef JLM_LLVM_OPT_ALIAS_ANALYSES_MODREFELIMINATOR_HPP
+#define JLM_LLVM_OPT_ALIAS_ANALYSES_MODREFELIMINATOR_HPP
 
 #include <memory>
 
@@ -23,13 +23,13 @@ namespace jlm::llvm::aa
 
 class ModRefSummary;
 
-class MemoryNodeEliminator
+class ModRefEliminator
 {
 public:
-  virtual ~MemoryNodeEliminator() noexcept = default;
+  virtual ~ModRefEliminator() noexcept = default;
 
   /**
-   * Eliminates unnecessary memory nodes from a MemoryNodeProvisioning.
+   * Eliminates unnecessary memory nodes from a ModRefSummary.
    *
    * @param rvsdgModule The RVSDG module from which the seedProvisioning was computed from.
    * @param seedModRefSummary A Mod/Ref summary from which memory nodes will be eliminated.
@@ -38,7 +38,7 @@ public:
    * @return An instance of ModRefSummary.
    */
   virtual std::unique_ptr<ModRefSummary>
-  EliminateMemoryNodes(
+  EliminateModRefs(
       const rvsdg::RvsdgModule & rvsdgModule,
       const ModRefSummary & seedModRefSummary,
       util::StatisticsCollector & statisticsCollector) = 0;
@@ -46,4 +46,4 @@ public:
 
 }
 
-#endif // JLM_LLVM_OPT_ALIAS_ANALYSES_MEMORYNODEELIMINATOR_HPP
+#endif // JLM_LLVM_OPT_ALIAS_ANALYSES_MODREFELIMINATOR_HPP

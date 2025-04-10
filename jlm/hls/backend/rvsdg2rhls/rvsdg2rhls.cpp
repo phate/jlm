@@ -10,7 +10,6 @@
 #include <jlm/hls/backend/rvsdg2rhls/add-triggers.hpp>
 #include <jlm/hls/backend/rvsdg2rhls/alloca-conv.hpp>
 #include <jlm/hls/backend/rvsdg2rhls/check-rhls.hpp>
-#include <jlm/hls/backend/rvsdg2rhls/dae-conv.hpp>
 #include <jlm/hls/backend/rvsdg2rhls/distribute-constants.hpp>
 #include <jlm/hls/backend/rvsdg2rhls/GammaConversion.hpp>
 #include <jlm/hls/backend/rvsdg2rhls/instrument-ref.hpp>

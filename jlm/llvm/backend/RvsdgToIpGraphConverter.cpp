@@ -8,6 +8,7 @@
 #include <jlm/llvm/ir/cfg-structure.hpp>
 #include <jlm/llvm/ir/ipgraph-module.hpp>
 #include <jlm/llvm/ir/operators.hpp>
+#include <jlm/llvm/ir/operators/IntegerOperations.hpp>
 #include <jlm/llvm/ir/RvsdgModule.hpp>
 #include <jlm/rvsdg/gamma.hpp>
 #include <jlm/rvsdg/traverser.hpp>
@@ -247,77 +248,11 @@ RvsdgToIpGraphConverter::ConvertSimpleNode(const rvsdg::SimpleNode & simpleNode)
 }
 
 void
-RvsdgToIpGraphConverter::ConvertEmptyGammaNode(const rvsdg::GammaNode & gammaNode)
-{
-  JLM_ASSERT(gammaNode.nsubregions() == 2);
-  JLM_ASSERT(gammaNode.subregion(0)->nnodes() == 0 && gammaNode.subregion(1)->nnodes() == 0);
-
-  // both regions are empty, create only select instructions
-  const auto predicate = gammaNode.predicate()->origin();
-  const auto controlFlowGraph = Context_->GetControlFlowGraph();
-
-  const auto basicBlock = basic_block::create(*controlFlowGraph);
-  Context_->GetLastProcessedBasicBlock()->add_outedge(basicBlock);
-
-  for (size_t n = 0; n < gammaNode.noutputs(); n++)
-  {
-    const auto output = gammaNode.output(n);
-
-    const auto argument0 = util::AssertedCast<const rvsdg::RegionArgument>(
-        gammaNode.subregion(0)->result(n)->origin());
-    const auto argument1 = util::AssertedCast<const rvsdg::RegionArgument>(
-        gammaNode.subregion(1)->result(n)->origin());
-    const auto output0 = argument0->input()->origin();
-    const auto output1 = argument1->input()->origin();
-
-    // both operands are the same, no select is necessary
-    if (output0 == output1)
-    {
-      Context_->InsertVariable(output, Context_->GetVariable(output0));
-      continue;
-    }
-
-    const auto node = rvsdg::output::GetNode(*predicate);
-    if (is<rvsdg::match_op>(node))
-    {
-      const auto matchOperation = util::AssertedCast<const rvsdg::match_op>(&node->GetOperation());
-      const auto defaultAlternative = matchOperation->default_alternative();
-      const auto condition = Context_->GetVariable(node->input(0)->origin());
-      const auto trueAlternative =
-          defaultAlternative == 0 ? Context_->GetVariable(output1) : Context_->GetVariable(output0);
-      const auto falseAlternative =
-          defaultAlternative == 0 ? Context_->GetVariable(output0) : Context_->GetVariable(output1);
-      basicBlock->append_last(
-          SelectOperation::create(condition, trueAlternative, falseAlternative));
-    }
-    else
-    {
-      const auto falseAlternative = Context_->GetVariable(output0);
-      const auto trueAlternative = Context_->GetVariable(output1);
-      basicBlock->append_last(
-          ctl2bits_op::create(Context_->GetVariable(predicate), rvsdg::bittype::Create(1)));
-      basicBlock->append_last(SelectOperation::create(
-          basicBlock->last()->result(0),
-          trueAlternative,
-          falseAlternative));
-    }
-
-    Context_->InsertVariable(output, basicBlock->last()->result(0));
-  }
-
-  Context_->SetLastProcessedBasicBlock(basicBlock);
-}
-
-void
 RvsdgToIpGraphConverter::ConvertGammaNode(const rvsdg::GammaNode & gammaNode)
 {
   const auto numSubregions = gammaNode.nsubregions();
   const auto predicate = gammaNode.predicate()->origin();
   const auto controlFlowGraph = Context_->GetControlFlowGraph();
-
-  if (gammaNode.nsubregions() == 2 && gammaNode.subregion(0)->nnodes() == 0
-      && gammaNode.subregion(1)->nnodes() == 0)
-    return ConvertEmptyGammaNode(gammaNode);
 
   const auto entryBlock = basic_block::create(*controlFlowGraph);
   const auto exitBlock = basic_block::create(*controlFlowGraph);
@@ -337,23 +272,14 @@ RvsdgToIpGraphConverter::ConvertGammaNode(const rvsdg::GammaNode & gammaNode)
       Context_->InsertVariable(argument, Context_->GetVariable(argument->input()->origin()));
     }
 
-    if (subregion->nnodes() == 0 && numSubregions == 2)
-    {
-      // subregion is empty
-      phi_nodes.push_back(entryBlock);
-      entryBlock->add_outedge(exitBlock);
-    }
-    else
-    {
-      // convert subregion
-      const auto regionEntryBlock = basic_block::create(*controlFlowGraph);
-      entryBlock->add_outedge(regionEntryBlock);
-      Context_->SetLastProcessedBasicBlock(regionEntryBlock);
-      ConvertRegion(*subregion);
+    // convert subregion
+    const auto regionEntryBlock = basic_block::create(*controlFlowGraph);
+    entryBlock->add_outedge(regionEntryBlock);
+    Context_->SetLastProcessedBasicBlock(regionEntryBlock);
+    ConvertRegion(*subregion);
 
-      phi_nodes.push_back(Context_->GetLastProcessedBasicBlock());
-      Context_->GetLastProcessedBasicBlock()->add_outedge(exitBlock);
-    }
+    phi_nodes.push_back(Context_->GetLastProcessedBasicBlock());
+    Context_->GetLastProcessedBasicBlock()->add_outedge(exitBlock);
   }
 
   // add phi instructions
@@ -362,8 +288,6 @@ RvsdgToIpGraphConverter::ConvertGammaNode(const rvsdg::GammaNode & gammaNode)
     const auto output = gammaNode.output(n);
 
     bool invariant = true;
-    const auto matchNode = rvsdg::output::GetNode(*predicate);
-    bool select = gammaNode.nsubregions() == 2 && is<rvsdg::match_op>(matchNode);
     std::vector<std::pair<const variable *, cfg_node *>> arguments;
     for (size_t r = 0; r < gammaNode.nsubregions(); r++)
     {
@@ -372,31 +296,12 @@ RvsdgToIpGraphConverter::ConvertGammaNode(const rvsdg::GammaNode & gammaNode)
       auto v = Context_->GetVariable(origin);
       arguments.push_back(std::make_pair(v, phi_nodes[r]));
       invariant &= (v == Context_->GetVariable(gammaNode.subregion(0)->result(n)->origin()));
-      const auto tmpNode = rvsdg::output::GetNode(*origin);
-      select &= tmpNode == nullptr && origin->region()->node() == &gammaNode;
     }
 
     if (invariant)
     {
       // all operands are the same
       Context_->InsertVariable(output, arguments[0].first);
-      continue;
-    }
-
-    if (select)
-    {
-      // use select instead of phi
-      const auto matchOperation =
-          util::AssertedCast<const rvsdg::match_op>(&matchNode->GetOperation());
-      const auto defaultAlternative = matchOperation->default_alternative();
-      const auto condition = Context_->GetVariable(matchNode->input(0)->origin());
-      const auto trueAlternative =
-          defaultAlternative == 0 ? arguments[1].first : arguments[0].first;
-      const auto falseAlternative =
-          defaultAlternative == 0 ? arguments[0].first : arguments[1].first;
-      entryBlock->append_first(
-          SelectOperation::create(condition, trueAlternative, falseAlternative));
-      Context_->InsertVariable(output, entryBlock->first()->result(0));
       continue;
     }
 
