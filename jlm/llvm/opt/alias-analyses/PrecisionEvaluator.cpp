@@ -11,79 +11,16 @@
 
 namespace jlm::llvm::aa
 {
-PairwiseAliasAnalysis::PairwiseAliasAnalysis() = default;
-
-PairwiseAliasAnalysis::~PairwiseAliasAnalysis() = default;
-
-bool
-PairwiseAliasAnalysis::MayAlias(const rvsdg::output & p1, const rvsdg::output & p2)
-{
-  if (!MayAliasImpl(p1, p2))
-    return false;
-
-  // This analysis was unable to determine that p1 and p2 do not alias, do we have a backup?
-  if (Backup_)
-    return Backup_->MayAlias(p1, p2);
-
-  return true;
-}
-
-std::string
-PairwiseAliasAnalysis::ToString() const
-{
-  std::string result = ToStringImpl();
-  if (Backup_)
-    result = util::strfmt(result, "(", Backup_->ToString(), ")");
-  return result;
-}
-
-PointsToGraphAliasAnalysis::PointsToGraphAliasAnalysis(PointsToGraph & pointsToGraph)
-    : PointsToGraph_(pointsToGraph)
-{}
-
-PointsToGraphAliasAnalysis::~PointsToGraphAliasAnalysis() = default;
-
-bool
-PointsToGraphAliasAnalysis::MayAliasImpl(const rvsdg::output & p1, const rvsdg::output & p2)
-{
-  // Assume that all pointers actually exist in the PointsToGraph
-  auto & p1RegisterNode = PointsToGraph_.GetRegisterNode(p1);
-  auto & p2RegisterNode = PointsToGraph_.GetRegisterNode(p2);
-
-  // If the registers are represented by the same node, they may alias
-  if (&p1RegisterNode == &p2RegisterNode)
-    return true;
-
-  // Check if both pointers may target the external node, to avoid iterating over large sets
-  const auto & externalNode = PointsToGraph_.GetExternalMemoryNode();
-  if (p1RegisterNode.HasTarget(externalNode) && p2RegisterNode.HasTarget(externalNode))
-    return true;
-
-  // Check if p1 and p2 share any target memory nodes
-  for (auto & target : p1RegisterNode.Targets())
-  {
-    if (p2RegisterNode.HasTarget(target))
-      return true;
-  }
-
-  return false;
-}
-
-std::string
-PointsToGraphAliasAnalysis::ToStringImpl() const
-{
-  return "PointsToGraphAliasAnalysis";
-}
 
 std::string_view
-PrecisionEvaluationModeToString(PrecisionEvaluationMode mode)
+PrecisionEvaluationModeToString(PrecisionEvaluator::Mode mode)
 {
   switch (mode)
   {
-  case PrecisionEvaluationMode::ClobberingStores:
+  case PrecisionEvaluator::Mode::ClobberingStores:
     return "ClobberingStores";
-  case PrecisionEvaluationMode::AllPointerPairs:
-    return "AllPointerPairs";
+  case PrecisionEvaluator::Mode::AllLoadStorePairs:
+    return "AllLoadStorePairs";
   default:
     JLM_UNREACHABLE("Unknown precision evaluation mode");
   }
@@ -94,10 +31,12 @@ class PrecisionEvaluator::PrecisionStatistics final : public util::Statistics
   // This statistic places additional information in a separate file. This is the path of the file.
   static constexpr auto PrecisionEvaluationMode_ = "PrecisionEvaluationMode";
   static constexpr auto PairwiseAliasAnalysisType_ = "PairwiseAliasAnalysisType";
-  static constexpr auto NumMayAliasQueries_ = "#MayAliasQueries";
   static constexpr auto PrecisionDumpFile_ = "DumpFile";
-  static constexpr auto ModuleNumPointerUsages_ = "ModuleNumPointerUsages";
+  static constexpr auto ModuleNumUseOperations_ = "ModuleNumUseOperations";
   static constexpr auto ModuleAverageMayAliasRate_ = "ModuleAverageMayAliasRate";
+  static constexpr auto NumNoAlias_ = "#NoAlias";
+  static constexpr auto NumMayAlias_ = "#MayAlias";
+  static constexpr auto NumMustAlias_ = "#MustAlias";
 
   static constexpr auto PrecisionEvaluationTimer_ = "PrecisionEvaluationTimer";
 
@@ -109,7 +48,7 @@ public:
   {}
 
   void
-  StartEvaluatingPrecision(PrecisionEvaluationMode mode, PairwiseAliasAnalysis & aliasAnalysis)
+  StartEvaluatingPrecision(PrecisionEvaluator::Mode mode, AliasAnalysis & aliasAnalysis)
   {
     AddTimer(PrecisionEvaluationTimer_).start();
     AddMeasurement(PrecisionEvaluationMode_, std::string(PrecisionEvaluationModeToString(mode)));
@@ -117,21 +56,27 @@ public:
   }
 
   void
-  StopEvaluatingPrecision(uint64_t numMayAliasQueries)
+  StopEvaluatingPrecision()
   {
     GetTimer(PrecisionEvaluationTimer_).stop();
-    AddMeasurement(NumMayAliasQueries_, numMayAliasQueries);
   }
 
   void
   AddPrecisionSummaryStatistics(
       const util::filepath & outputFile,
-      uint64_t moduleNumPointerUsages,
-      double moduleAverageMayAliasRate)
+      uint64_t moduleNumUseOperations,
+      double moduleAverageMayAliasRate,
+      uint64_t numNoAlias,
+      uint64_t numMayAlias,
+      uint64_t numMustAlias
+      )
   {
     AddMeasurement(PrecisionDumpFile_, outputFile.to_str());
-    AddMeasurement(ModuleNumPointerUsages_, moduleNumPointerUsages);
+    AddMeasurement(ModuleNumUseOperations_, moduleNumUseOperations);
     AddMeasurement(ModuleAverageMayAliasRate_, moduleAverageMayAliasRate);
+    AddMeasurement(NumNoAlias_, numNoAlias);
+    AddMeasurement(NumMayAlias_, numMayAlias);
+    AddMeasurement(NumMustAlias_, numMustAlias);
   }
 
   static std::unique_ptr<PrecisionStatistics>
@@ -144,7 +89,7 @@ public:
 void
 PrecisionEvaluator::EvaluateAliasAnalysisClient(
     const rvsdg::RvsdgModule & rvsdgModule,
-    PairwiseAliasAnalysis & aliasAnalysis,
+    AliasAnalysis & aliasAnalysis,
     util::StatisticsCollector & statisticsCollector)
 {
   auto statistics = PrecisionStatistics::Create(rvsdgModule.SourceFilePath().value());
@@ -159,7 +104,7 @@ PrecisionEvaluator::EvaluateAliasAnalysisClient(
 
   EvaluateAllFunctions(rvsdgModule.Rvsdg().GetRootRegion(), aliasAnalysis);
 
-  statistics->StopEvaluatingPrecision(Context_.NumMayAliasQueries);
+  statistics->StopEvaluatingPrecision();
 
   // Calculate average precision in functions and for the whole module, and print to output
   const auto outputFile = statisticsCollector.CreateOutputFile("AAPrecisionEvaluation.log", true);
@@ -171,7 +116,7 @@ PrecisionEvaluator::EvaluateAliasAnalysisClient(
 void
 PrecisionEvaluator::EvaluateAllFunctions(
     const rvsdg::Region & region,
-    PairwiseAliasAnalysis & aliasAnalysis)
+    AliasAnalysis & aliasAnalysis)
 {
   for (auto & node : region.Nodes())
   {
@@ -192,45 +137,51 @@ PrecisionEvaluator::EvaluateAllFunctions(
 void
 PrecisionEvaluator::EvaluateFunction(
     const rvsdg::LambdaNode & function,
-    PairwiseAliasAnalysis & aliasAnalysis)
+    AliasAnalysis & aliasAnalysis)
 {
-  // Reset collected pointer uses and pointer clobbers
-  Context_.PointerUses.clear();
-  Context_.PointerClobbers.clear();
+  // Starting a new function, reset previously collected pointer operations
+  Context_.PointerOperations.clear();
 
   // Collect all pointer uses and clobbers from this function
-  CollectPointersFromFunctionArguments(function);
   CollectPointersFromRegion(*function.subregion());
 
   // Create a PrecisionInfo instance for this function
   auto & precisionEvaluation = Context_.PerFunctionPrecision[&function];
-  precisionEvaluation.NumClobberingPointers = Context_.PointerClobbers.size();
 
   // Go over all pointer usages, find the ratio of clobbering points that may alias with it
-  for (auto [usedPointer, useIsClobber] : Context_.PointerUses)
+  for (size_t i = 0; i < Context_.PointerOperations.size(); i++)
   {
-    uint64_t mayAliasClobbers = 0;
-    for (auto clobberedPointer : Context_.PointerClobbers)
+    auto [p1, s1, p1IsUse, p1IsClobber] = Context_.PointerOperations[i];
+
+    precisionEvaluation.NumOperations++;
+    precisionEvaluation.NumClobberingOperations += p1IsClobber;
+
+    if (!p1IsUse)
+      continue;
+
+    PrecisionInfo::UseInfo useInfo;
+
+    for (size_t j = 0; j < Context_.PointerOperations.size(); j++)
     {
-      Context_.NumMayAliasQueries++;
-      mayAliasClobbers += aliasAnalysis.MayAlias(*usedPointer, *clobberedPointer);
+      if (i == j)
+        continue;
+
+      auto [p2, s2, p2IsUse, p2IsClobber] = Context_.PointerOperations[j];
+      if (!p2IsClobber)
+        continue;
+
+      auto response = aliasAnalysis.Query(*p1, s1, *p2, s2);
+      if (response == AliasAnalysis::NoAlias)
+        useInfo.NumNoAlias++;
+      else if (response == AliasAnalysis::MayAlias)
+        useInfo.NumMayAlias++;
+      else if (response == AliasAnalysis::MustAlias)
+        useInfo.NumMustAlias++;
+      else
+        JLM_UNREACHABLE("Unknown AliasAnalysis query response");
     }
-    precisionEvaluation.AddPointerUse(useIsClobber, mayAliasClobbers);
-  }
-}
 
-void
-PrecisionEvaluator::CollectPointersFromFunctionArguments(const rvsdg::LambdaNode & function)
-{
-  // In this mode, only loads and stores constitute uses and clobbers, so ignore function arguments
-  if (Mode_ == PrecisionEvaluationMode::ClobberingStores)
-    return;
-
-  JLM_ASSERT(Mode_ == PrecisionEvaluationMode::AllPointerPairs);
-  for (const auto arg : function.GetFunctionArguments())
-  {
-    if (IsPointerCompatible(arg))
-      CollectPointer(arg, true, true);
+    precisionEvaluation.UseOperations.push_back(useInfo);
   }
 }
 
@@ -257,30 +208,24 @@ PrecisionEvaluator::CollectPointersFromRegion(const rvsdg::Region & region)
 void
 PrecisionEvaluator::CollectPointersFromSimpleNode(const rvsdg::SimpleNode & node)
 {
-  if (Mode_ == PrecisionEvaluationMode::ClobberingStores)
-  {
-    // In this mode, only (volatile) load and store operations count as uses and clobbers
-    if (auto load = dynamic_cast<const LoadNode *>(&node))
-    {
-      CollectPointer(load->GetAddressInput().origin(), true, false);
-    }
-    else if (auto store = dynamic_cast<const StoreNode *>(&node))
-    {
-      CollectPointer(store->GetAddressInput().origin(), true, true);
-    }
-  }
-  else if (Mode_ == PrecisionEvaluationMode::AllPointerPairs)
-  {
-    // In this mode, all pointer compatible outputs are regarded as both uses and clobbers
-    for (size_t n = 0; n < node.noutputs(); n++)
-    {
-      if (const auto output = node.output(n); IsPointerCompatible(output))
-        CollectPointer(output, true, true);
-    }
-  }
+  bool loadsClobber;
+  if (Mode_ == Mode::AllLoadStorePairs)
+    loadsClobber = true;
+  else if (Mode_ == Mode::ClobberingStores)
+    loadsClobber = false;
   else
+    JLM_UNREACHABLE("Unknown mode");
+
+  // In this mode, only (volatile) load and store operations count as uses and clobbers
+  if (auto load = dynamic_cast<const LoadNode *>(&node))
   {
-    JLM_UNREACHABLE("Unknown precision evaluation mode");
+    const auto size = load->GetOperation().GetLoadedType()->GetSize();
+    CollectPointer(load->GetAddressInput().origin(), size, true, loadsClobber);
+  }
+  else if (auto store = dynamic_cast<const StoreNode *>(&node))
+  {
+    const auto size = store->GetOperation().GetStoredType().GetSize();
+    CollectPointer(store->GetAddressInput().origin(), size, true, true);
   }
 }
 
@@ -291,41 +236,24 @@ PrecisionEvaluator::CollectPointersFromStructuralNode(const rvsdg::StructuralNod
   {
     CollectPointersFromRegion(*node.subregion(n));
   }
-
-  if (Mode_ == PrecisionEvaluationMode::AllPointerPairs)
-  {
-    // In this mode, pointer compatible outputs from structural nodes represent new pointers.
-    // This is to mimic LLVM phi nodes more closely
-    // If the output has no users, such as a theta loop variable only used in the loop, it is
-    // skipped
-    for (size_t n = 0; n < node.noutputs(); n++)
-    {
-      const auto output = node.output(n);
-      if (IsPointerCompatible(output) && output->nusers() > 0)
-        CollectPointer(output, true, true);
-    }
-  }
 }
 
 bool
 PrecisionEvaluator::IsPointerCompatible(const rvsdg::output * value)
 {
-  // Omit including function types as pointers, as direct calls are trivial for the analysis.
-  // This is also closer to LLVM, as they do not include direct function calls in alias pairs.
   const auto & type = value->type();
   return IsOrContains<PointerType>(type);
 }
 
 void
-PrecisionEvaluator::CollectPointer(const rvsdg::output * value, bool isUse, bool isClobber)
+PrecisionEvaluator::CollectPointer(
+    const rvsdg::output * value,
+    size_t size,
+    bool isUse,
+    bool isClobber)
 {
   JLM_ASSERT(IsPointerCompatible(value));
-
-  if (isUse)
-    Context_.PointerUses.push_back({ value, isClobber });
-
-  if (isClobber)
-    Context_.PointerClobbers.push_back(value);
+  Context_.PointerOperations.push_back({ value, size, isUse, isClobber });
 }
 
 void
@@ -333,45 +261,74 @@ PrecisionEvaluator::CalculateAverageMayAliasRate(
     const util::file & outputFile,
     PrecisionStatistics & statistics) const
 {
-  // Create one average alias analysis precision for the whole module
+  // Average may alias ratio among uses in the whole module
   size_t moduleNumUsages = 0;
-  double moduleUseMayAliasTotal = 0.0;
+  double moduleUseMayAliasRatioSum = 0.0;
+
+  // As an alternative measurement, add up all alias query responses
+  size_t moduleTotalNoAlias = 0;
+  size_t moduleTotalMayAlias = 0;
+  size_t moduleTotalMustAlias = 0;
 
   // Write precision info about each function to an output file
   std::ofstream out(outputFile.path().to_str());
   for (auto [function, precision] : Context_.PerFunctionPrecision)
   {
-    // Calculate the average alias analysis precision rate for this function
-    auto functionNumUsages = precision.UsedPointerMayAlias.size();
-    double functionUseMayAliasTotal = 0.0;
-    for (double mayAlias : precision.UsedPointerMayAlias)
-      functionUseMayAliasTotal += mayAlias;
+    // Average may alias ratio among uses in the function
+    double functionUseMayAliasRatioSum = 0.0;
+    size_t functionNumUsages = precision.UseOperations.size();
 
-    // Also include the pointer uses in the module average
+    size_t functionTotalNoAlias = 0;
+    size_t functionTotalMayAlias = 0;
+    size_t functionTotalMustAlias = 0;
+
+    for (const auto & use : precision.UseOperations)
+    {
+      functionTotalNoAlias += use.NumNoAlias;
+      functionTotalMayAlias += use.NumNoAlias;
+      functionTotalMustAlias += use.NumNoAlias;
+
+      functionUseMayAliasRatioSum += static_cast<double>(use.NumMayAlias)
+                                   / (use.NumNoAlias + use.NumMayAlias + use.NumMustAlias);
+    }
+    // Calculate the average may use ratio for uses in the function
+    const auto functionAverageMayAliasRatio = functionUseMayAliasRatioSum / functionNumUsages;
+
+    // Add function's contributions to module totals
     moduleNumUsages += functionNumUsages;
-    moduleUseMayAliasTotal += functionUseMayAliasTotal;
-
-    const auto functionAverageMayAlias = functionUseMayAliasTotal / functionNumUsages;
+    moduleUseMayAliasRatioSum += functionUseMayAliasRatioSum;
+    moduleTotalNoAlias += functionTotalNoAlias;
+    moduleTotalMayAlias += functionTotalMayAlias;
+    moduleTotalMustAlias += functionTotalMustAlias;
 
     out << function->GetOperation().debug_string() << " [";
-    out << precision.UsedPointerMayAlias.size() << " used pointers, ";
-    out << precision.NumClobberingPointers << " clobbering pointers]: ";
-    out << functionAverageMayAlias;
+    out << precision.NumOperations << " pointer operations: ";
+    out << functionNumUsages << " use operations, ";
+    out << precision.NumClobberingOperations << " clobbering operations]:" << std::endl;
+    out << "Average use MayAlias rate: " << functionAverageMayAliasRatio << std::endl;
+    out << "In total: " << functionTotalNoAlias << " NoAlias \t\t";
+    out << functionTotalMayAlias << " MayAlias \t\t";
+    out << functionTotalMustAlias << " MustAlias" << std::endl;
     out << std::endl;
   }
 
   // Calculate the module-wide average precision for each pointer use
-  const auto moduleAverageMayAlias = moduleUseMayAliasTotal / moduleNumUsages;
+  const auto moduleAverageMayAliasRatio = moduleUseMayAliasRatioSum / moduleNumUsages;
   out << std::endl; // Empty line before the final result
-  out << "Total: " << moduleNumUsages << " used pointers. ";
-  out << "Average use may alias clobber rate: " << moduleAverageMayAlias << std::endl;
-
+  out << "Module total: " << moduleNumUsages << " pointer usages. ";
+  out << "Average use MayAlias rate: " << moduleAverageMayAliasRatio << std::endl;
+  out << "In total: " << moduleTotalNoAlias << " NoAlias \t\t";
+  out << moduleTotalMayAlias << " MayAlias \t\t";
+  out << moduleTotalMustAlias << " MustAlias" << std::endl;
   out.close();
 
   statistics.AddPrecisionSummaryStatistics(
       outputFile.path(),
       moduleNumUsages,
-      moduleAverageMayAlias);
+      moduleAverageMayAliasRatio,
+      moduleTotalNoAlias,
+      moduleTotalMayAlias,
+      moduleTotalMustAlias);
 }
 
 }

@@ -46,6 +46,7 @@ libllvm_SOURCES = \
     jlm/llvm/ir/types.cpp \
     jlm/llvm/ir/variable.cpp \
     \
+    jlm/llvm/opt/alias-analyses/AliasAnalysis.cpp \
     jlm/llvm/opt/alias-analyses/AgnosticMemoryNodeProvider.cpp \
     jlm/llvm/opt/alias-analyses/Andersen.cpp \
     jlm/llvm/opt/alias-analyses/MemoryStateEncoder.cpp \
@@ -73,6 +74,7 @@ libllvm_HEADERS = \
 	jlm/llvm/opt/inlining.hpp \
 	jlm/llvm/opt/cne.hpp \
 	jlm/llvm/opt/push.hpp \
+	jlm/llvm/opt/alias-analyses/AliasAnalysis.hpp \
 	jlm/llvm/opt/alias-analyses/Andersen.hpp \
 	jlm/llvm/opt/alias-analyses/DifferencePropagation.hpp \
 	jlm/llvm/opt/alias-analyses/EliminatedMemoryNodeProvider.hpp \

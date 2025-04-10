@@ -6,103 +6,13 @@
 #ifndef JLM_LLVM_OPT_ALIAS_ANALYSES_PRECISIONEVALUATOR_HPP
 #define JLM_LLVM_OPT_ALIAS_ANALYSES_PRECISIONEVALUATOR_HPP
 
-#include <jlm/llvm/opt/alias-analyses/PointsToGraph.hpp>
-#include <jlm/rvsdg/RvsdgModule.hpp>
+#include <jlm/llvm/opt/alias-analyses/AliasAnalysis.hpp>
 #include <jlm/util/Statistics.hpp>
 
 #include <unordered_map>
 
 namespace jlm::llvm::aa
 {
-
-/**
- * Interface for making alias analysis queries about pairs of pointers
- */
-class PairwiseAliasAnalysis
-{
-public:
-  PairwiseAliasAnalysis();
-  virtual ~PairwiseAliasAnalysis();
-
-  /**
-   * If this alias analysis is unable to determine NoAlias, it queries the optional backup analysis.
-   * @param backup the PairwiseAliasAnalysis instance to use as backup
-   */
-  void
-  SetBackup(PairwiseAliasAnalysis * backup) noexcept
-  {
-    Backup_ = backup;
-  }
-
-  PairwiseAliasAnalysis *
-  GetBackup() const noexcept
-  {
-    return Backup_;
-  }
-
-  /**
-   * Checks if the pointers represented by p1 and p2 may alias.
-   * If this analysis is unable to prove No Alias, and a backup is provided, the backup is asked.
-   * @param p1 the first pointer value
-   * @param p2 the second pointer value
-   * @return false if the analysis is able to prove that they do not alias, true otherwise
-   */
-  bool
-  MayAlias(const rvsdg::output & p1, const rvsdg::output & p2);
-
-  /**
-   * @return a string description of the pairwise alias analysis, including any backup instances
-   */
-  [[nodiscard]] std::string
-  ToString() const;
-
-protected:
-  virtual bool
-  MayAliasImpl(const rvsdg::output & p1, const rvsdg::output & p2) = 0;
-
-  virtual std::string
-  ToStringImpl() const = 0;
-
-private:
-  // Another instance of PairwiseAliasAnalysis, queried if the current analysis says "May Alias"
-  PairwiseAliasAnalysis * Backup_ = nullptr;
-};
-
-/**
- * Interface for making alias pairwise analysis queries to a PointsToGraph
- */
-class PointsToGraphAliasAnalysis final : public PairwiseAliasAnalysis
-{
-public:
-  explicit PointsToGraphAliasAnalysis(PointsToGraph & pointsToGraph);
-  ~PointsToGraphAliasAnalysis() override;
-
-protected:
-  bool
-  MayAliasImpl(const rvsdg::output & p1, const rvsdg::output & p2) override;
-
-  std::string
-  ToStringImpl() const override;
-
-private:
-  // The PointsToGraph used to answer alias queries
-  PointsToGraph & PointsToGraph_;
-};
-
-/**
- * Option configuring how pointers are collected and evaluated for may-alias precision
- */
-enum class PrecisionEvaluationMode
-{
-  // In this mode, a pointer use is a store / load, and a clobber is a store
-  ClobberingStores,
-
-  // In this mode, all pointer outputs are both used, and considered to clobber.
-  // This is equivalent to checking all pairs of pointers in each function.
-  // Temporary pointers, such as the result of a pointer offset, are counted as separate pointers.
-  // This is consistent with Lattner's 2007 DSA paper.
-  AllPointerPairs
-};
 
 /**
  * Class for evaluating the precision of a PointsToGraph on an RVSDG module.
@@ -113,17 +23,29 @@ class PrecisionEvaluator
   class PrecisionStatistics;
 
 public:
-  explicit PrecisionEvaluator(PrecisionEvaluationMode mode)
+  /**
+   * Option configuring how pointers are collected and evaluated for may-alias precision
+   */
+  enum class Mode
+  {
+    // Load operations are only uses, while store operations both use and clobber
+    ClobberingStores,
+
+    // In this mode, all loads and stores are both uses and clobbers
+    AllLoadStorePairs
+  };
+
+  explicit PrecisionEvaluator(Mode mode)
       : Mode_(mode)
   {}
 
   void
-  SetMode(PrecisionEvaluationMode mode)
+  SetMode(Mode mode)
   {
     Mode_ = mode;
   }
 
-  PrecisionEvaluationMode
+  Mode
   GetMode() const noexcept
   {
     return Mode_;
@@ -132,18 +54,15 @@ public:
   void
   EvaluateAliasAnalysisClient(
       const rvsdg::RvsdgModule & rvsdgModule,
-      PairwiseAliasAnalysis & aliasAnalysis,
+      AliasAnalysis & aliasAnalysis,
       util::StatisticsCollector & statisticsCollector);
 
 private:
   void
-  EvaluateAllFunctions(const rvsdg::Region & region, PairwiseAliasAnalysis & aliasAnalysis);
+  EvaluateAllFunctions(const rvsdg::Region & region, AliasAnalysis & aliasAnalysis);
 
   void
-  EvaluateFunction(const rvsdg::LambdaNode & function, PairwiseAliasAnalysis & aliasAnalysis);
-
-  void
-  CollectPointersFromFunctionArguments(const rvsdg::LambdaNode & function);
+  EvaluateFunction(const rvsdg::LambdaNode & function, AliasAnalysis & aliasAnalysis);
 
   void
   CollectPointersFromRegion(const rvsdg::Region & region);
@@ -158,10 +77,9 @@ private:
   bool
   IsPointerCompatible(const rvsdg::output * value);
 
-  // Adds a value to the list of pointer uses and/or clobbers in the function being evaluated
-  // currently
+  // Adds a value to the list of pointer operations in the function being evaluated
   void
-  CollectPointer(const rvsdg::output * value, bool isUse, bool isClobber);
+  CollectPointer(const rvsdg::output * value, size_t size, bool isUse, bool isClobber);
 
   // Called once all functions have been evaluated, to calculate and print averages
   void
@@ -169,42 +87,32 @@ private:
       const;
 
   // How pointers are counted in the precision evaluation
-  PrecisionEvaluationMode Mode_;
+  Mode Mode_;
 
   // Alias analysis precision info for a set of pointer usages
   struct PrecisionInfo
   {
-    // The number of points in the function that are considered to be pointer clobbering
-    uint64_t NumClobberingPointers;
-
-    /**
-     * When a pointer is used, how many of the clobbering pointers in the function may it alias?
-     * Each value is a double between 0 and 1, where 1 means it may alias with every clobber.
-     * If the use is itself a clobber, it only considers all other clobbers.
-     */
-    std::vector<double> UsedPointerMayAlias;
-
-    /**
-     * Adds a pointer use to the statistics.
-     * Calculates the ratio:
-     *  other clobbers I may alias / number of other clobbers in function
-     * @param useIsClobber true if the pointer use is also a clobber
-     * @param numClobbersMayAlias the number of clobber operations in the function the use may alias
-     */
-    void
-    AddPointerUse(bool useIsClobber, uint64_t numClobbersMayAlias)
+    struct UseInfo
     {
-      // If this use is itself a clobber, omit it from the ratio calculation
-      numClobbersMayAlias -= useIsClobber;
-      auto numOtherClobbers = NumClobberingPointers - useIsClobber;
+      uint64_t NumNoAlias = 0;
+      uint64_t NumMayAlias = 0;
+      uint64_t NumMustAlias = 0;
+    };
+    /**
+     * For each pointer use, how it relates to all (other) clobbering operations in the function.
+     * The relationships are represented as alias query results.
+     */
+    std::vector<UseInfo> UseOperations;
 
-      // Skip functions that do not have any clobbering points, to avoid division by zero
-      if (numOtherClobbers == 0)
-        return;
+    /**
+     * The number of operations classified as clobbers
+     */
+    uint64_t NumClobberingOperations = 0;
 
-      auto ratio = numClobbersMayAlias / static_cast<double>(numOtherClobbers);
-      UsedPointerMayAlias.push_back(ratio);
-    }
+    /**
+     * The number of operations that are either uses, clobbers, or both
+     */
+    uint64_t NumOperations = 0;
   };
 
   struct Context
@@ -213,17 +121,12 @@ private:
     std::unordered_map<const rvsdg::LambdaNode *, PrecisionInfo> PerFunctionPrecision;
 
     /**
-     * During traversal of the current function, which pointers are used.
-     * The use consists of a pointer value, and a bool that is true if the use is also a clobber.
-     * How pointers are counted depends on the configured mode.
-     * The same pointer can also be used multiple times.
-     * @see PrecisionEvaluationMode
+     * During traversal of the current function, collects relevant operations on pointers.
+     * Each operation is represented by a tuple (pointer value, byte size, isUse, isClobber).
+     * All operations should be either a use, a clobber or both.
+     * @see PrecisionEvaluationMode for setting which operations are counted and how
      */
-    std::vector<std::pair<const rvsdg::output *, bool>> PointerUses;
-    std::vector<const rvsdg::output *> PointerClobbers;
-
-    // Keeps count of the number of MayAlias queries made
-    uint64_t NumMayAliasQueries = 0;
+    std::vector<std::tuple<const rvsdg::output *, size_t, bool, bool>> PointerOperations;
   };
 
   Context Context_;

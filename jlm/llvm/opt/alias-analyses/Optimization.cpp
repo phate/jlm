@@ -39,11 +39,11 @@ PointsToAnalysisStateEncoder<TPointsToAnalysis, MemoryNodeProviderPass>::Run(
   precisionEvaluator.SetMode(PrecisionEvaluationMode::ClobberingStores);
   precisionEvaluator.EvaluateAliasAnalysisClient(rvsdgModule, ptgAA, statisticsCollector);
 
-  auto provisioning =
-      MemoryNodeProviderPass::Create(rvsdgModule, *pointsToGraph, statisticsCollector);
+  // auto provisioning =
+  //     MemoryNodeProviderPass::Create(rvsdgModule, *pointsToGraph, statisticsCollector);
 
-  MemoryStateEncoder encoder;
-  encoder.Encode(rvsdgModule, *provisioning, statisticsCollector);
+  // MemoryStateEncoder encoder;
+  // encoder.Encode(rvsdgModule, *provisioning, statisticsCollector);
 }
 
 // Explicitly initialize all combinations
