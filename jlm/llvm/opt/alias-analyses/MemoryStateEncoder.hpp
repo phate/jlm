@@ -112,7 +112,7 @@ private:
   EncodeMalloc(const rvsdg::SimpleNode & mallocNode);
 
   void
-  EncodeLoad(const LoadNode & loadNode);
+  EncodeLoad(const rvsdg::SimpleNode & node);
 
   void
   EncodeStore(const StoreNode & storeNode);
@@ -171,13 +171,15 @@ private:
    * Replace \p loadNode with a new copy that takes the provided \p memoryStates. All users of the
    * outputs of \p loadNode are redirected to the respective outputs of the newly created copy.
    *
-   * @param loadNode A LoadNode.
+   * @param node A LoadNode.
    * @param memoryStates The memory states the new LoadNode should consume.
    *
    * @return The newly created LoadNode.
    */
   [[nodiscard]] static rvsdg::SimpleNode &
-  ReplaceLoadNode(const LoadNode & loadNode, const std::vector<rvsdg::output *> & memoryStates);
+  ReplaceLoadNode(
+      const rvsdg::SimpleNode & node,
+      const std::vector<rvsdg::output *> & memoryStates);
 
   /**
    * Replace \p storeNode with a new copy that takes the provided \p memoryStates. All users of the
