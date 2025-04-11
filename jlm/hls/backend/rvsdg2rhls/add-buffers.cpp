@@ -5,6 +5,7 @@
 
 #include "hls-function-util.hpp"
 #include "jlm/hls/util/view.hpp"
+#include "jlm/llvm/ir/operators/operators.hpp"
 #include "jlm/rvsdg/lambda.hpp"
 #include <jlm/hls/backend/rvsdg2rhls/add-buffers.hpp>
 #include <jlm/hls/backend/rvsdg2rhls/rvsdg2rhls.hpp>
@@ -67,6 +68,7 @@ PlaceBuffer(rvsdg::output * out, size_t capacity, bool passThrough)
   {
     return;
   }
+  // TODO: handle out being a buf?
   auto buf = TryGetOwnerOp<buffer_op>(*user);
   if (buf && (buf->pass_through != passThrough || buf->capacity != capacity))
   {
@@ -288,15 +290,15 @@ AddBuffers(rvsdg::Region * region)
       }
       else if (jlm::rvsdg::is<fork_op>(node))
       {
-        OptimizeFork(simple);
+        //        OptimizeFork(simple);
       }
       else if (jlm::rvsdg::is<branch_op>(node))
       {
-        OptimizeBranch(simple);
+        //        OptimizeBranch(simple);
       }
       else if (jlm::rvsdg::is<state_gate_op>(node))
       {
-        OptimizeStateGate(simple);
+        //        OptimizeStateGate(simple);
       }
       else if (jlm::rvsdg::is<addr_queue_op>(node))
       {
@@ -306,10 +308,26 @@ AddBuffers(rvsdg::Region * region)
   }
 }
 
+const size_t MemoryLatency = 100;
+
+constexpr uint32_t
+round_up_pow2(uint32_t x)
+{
+  if (x == 0)
+    return 1;
+  --x;
+  x |= x >> 1;
+  x |= x >> 2;
+  x |= x >> 4;
+  x |= x >> 8;
+  x |= x >> 16;
+  return x + 1;
+}
+
 void
 MaximizeBuffers(rvsdg::Region * region)
 {
-  const size_t capacity = 256;
+  //  const size_t capacity = 256;
   std::vector<jlm::rvsdg::SimpleNode *> nodes;
   for (auto & node : rvsdg::TopDownTraverser(region))
   {
@@ -336,20 +354,560 @@ MaximizeBuffers(rvsdg::Region * region)
   }
   for (auto node : nodes)
   {
-    if (auto buf = dynamic_cast<const buffer_op *>(&node->GetOperation()))
-    {
-      divert_users(node, buffer_op::create(*node->input(0)->origin(), capacity, buf->pass_through));
-      remove(node);
-    }
-    else if (dynamic_cast<const decoupled_load_op *>(&node->GetOperation()))
+    //    if (auto buf = dynamic_cast<const buffer_op *>(&node->GetOperation()))
+    //    {
+    //      divert_users(node, buffer_op::create(*node->input(0)->origin(), capacity,
+    //      buf->pass_through)); remove(node);
+    //    }
+    //    else
+    if (dynamic_cast<const decoupled_load_op *>(&node->GetOperation()))
     {
       divert_users(
           node,
           decoupled_load_op::create(
               *node->input(0)->origin(),
               *node->input(1)->origin(),
-              capacity));
+              round_up_pow2(MemoryLatency)));
       remove(node);
+    }
+  }
+}
+
+size_t
+NodeCycles(rvsdg::SimpleNode * node)
+{
+  if (auto op = dynamic_cast<const llvm::fpbin_op *>(&node->GetOperation()))
+  {
+    if (op->fpop() == llvm::fpop::add)
+    {
+      return 1;
+    }
+  }
+  else if (auto op = dynamic_cast<const buffer_op *>(&node->GetOperation()))
+  {
+    if (op->pass_through)
+    {
+      return 0;
+    }
+    return 1;
+  }
+  else if (rvsdg::is<decoupled_load_op>(node))
+  {
+    return MemoryLatency;
+  }
+  else if (rvsdg::is<store_op>(node))
+  {
+    return MemoryLatency;
+  }
+  return 0;
+}
+
+size_t
+NodeCapacity(rvsdg::SimpleNode * node)
+{
+  if (auto op = dynamic_cast<const llvm::fpbin_op *>(&node->GetOperation()))
+  {
+    if (op->fpop() == llvm::fpop::add)
+    {
+      return 1;
+    }
+  }
+  else if (auto op = dynamic_cast<const buffer_op *>(&node->GetOperation()))
+  {
+    return op->capacity;
+  }
+  else if (auto op = dynamic_cast<const decoupled_load_op *>(&node->GetOperation()))
+  {
+    return op->capacity;
+  }
+  else if (dynamic_cast<const store_op *>(&node->GetOperation()))
+  {
+    return MemoryLatency;
+  }
+  return 0;
+}
+
+void
+CreateLoopFrontier(
+    const loop_node * loop,
+    std::unordered_map<rvsdg::output *, size_t> & output_cycles,
+    std::unordered_set<rvsdg::input *> & frontier,
+    std::unordered_set<rvsdg::SimpleNode *> & top_muxes)
+{
+  for (size_t i = 0; i < loop->ninputs(); ++i)
+  {
+    auto in = loop->input(i);
+    auto arg = in->arguments.begin().ptr();
+
+    auto user = GetUser(arg);
+    auto userNode = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*user);
+    auto mux = TryGetOwnerOp<mux_op>(*user);
+    if ((mux && mux->loop) || TryGetOwnerOp<loop_constant_buffer_op>(*user))
+    {
+      top_muxes.insert(userNode);
+      // we start from these
+      auto out = userNode->output(0);
+      output_cycles[out] = output_cycles[in->origin()];
+      frontier.insert(GetUser(out));
+    }
+    // these are needed so we can finish with an empty frontier
+    output_cycles[arg] = output_cycles[in->origin()];
+    frontier.insert(GetUser(arg));
+  }
+  for (auto & tn : loop->subregion()->TopNodes())
+  {
+    JLM_ASSERT(is_constant(&tn));
+    auto out = tn.output(0);
+    output_cycles[out] = 0;
+    frontier.insert(GetUser(out));
+  }
+}
+
+void
+CalculateLoopCycleDepth(
+    loop_node * loop,
+    std::unordered_map<rvsdg::output *, size_t> & output_cycles,
+    bool analyze_inner_loop = false);
+
+void
+PushCycleFrontier(
+    const loop_node * loop,
+    std::unordered_map<rvsdg::output *, size_t> & output_cycles,
+    std::unordered_set<rvsdg::input *> & frontier,
+    std::unordered_set<rvsdg::SimpleNode *> & top_muxes)
+{
+  bool changed = false;
+  //  uint32_t iteration = 0;
+  do
+  {
+    //    std::stringstream stream;
+    //    stream << "CalculateLoopCycleDepth_" << loop << "_" << iteration++
+    //           << ".dot";
+    //    std::unordered_map<rvsdg::output *, std::string> o_color;
+    //    std::unordered_map<rvsdg::input *, std::string> i_color;
+    //    for (auto i : frontier)
+    //    {
+    //      i_color.insert({ i, "red" });
+    //    }
+    //    dump_dot(&loop->region()->graph()->GetRootRegion(), stream.str(), o_color, i_color);
+    //    dot_to_svg(stream.str());
+
+    changed = false;
+    for (auto in : frontier)
+    {
+      if (auto simpleNode = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*in))
+      {
+        bool all_contained = true;
+        for (size_t i = 0; i < simpleNode->ninputs(); ++i)
+        {
+          auto f = frontier.find(simpleNode->input(i));
+          if (f == frontier.end())
+          {
+            all_contained = false;
+          }
+        }
+        if (!all_contained)
+          continue;
+        // all inputs of node are in frontier - move them forward
+        size_t max_cycles = 0;
+        for (size_t i = 0; i < simpleNode->ninputs(); ++i)
+        {
+          max_cycles = std::max(max_cycles, output_cycles[simpleNode->input(i)->origin()]);
+          frontier.erase(simpleNode->input(i));
+        }
+        size_t out_cycles = max_cycles + NodeCycles(simpleNode);
+
+        if (top_muxes.find(simpleNode) != top_muxes.end())
+        {
+          // we reached our starting point again
+          for (size_t i = 0; i < simpleNode->noutputs(); ++i)
+          {
+            auto out = simpleNode->output(i);
+            output_cycles[out] = out_cycles;
+          }
+          auto mux = dynamic_cast<const mux_op *>(&simpleNode->GetOperation());
+          if (mux)
+          {
+            std::cout << "top_mux " << simpleNode
+                      << " pred latency: " << output_cycles[simpleNode->input(0)->origin()]
+                      << " backedge latency: " << output_cycles[simpleNode->input(2)->origin()]
+                      << std::endl;
+          }
+        }
+        else
+        {
+          for (size_t i = 0; i < simpleNode->noutputs(); ++i)
+          {
+            auto out = simpleNode->output(i);
+            output_cycles[out] = out_cycles;
+            frontier.insert(GetUser(out));
+          }
+        }
+        changed = true;
+        break;
+      }
+      else if (auto be = dynamic_cast<backedge_result *>(in))
+      {
+        frontier.erase(in);
+        auto out = be->argument();
+        output_cycles[out] = output_cycles[in->origin()];
+        frontier.insert(GetUser(out));
+        changed = true;
+        break;
+      }
+      else if (auto rr = dynamic_cast<rvsdg::RegionResult *>(in))
+      {
+        frontier.erase(in);
+        auto out = rr->output();
+        JLM_ASSERT(out);
+        output_cycles[out] = output_cycles[in->origin()];
+        // don't continue frontier out of loop
+        changed = true;
+        break;
+      }
+      else
+      {
+        auto inner_loop = rvsdg::TryGetOwnerNode<loop_node>(*in);
+        JLM_ASSERT(inner_loop);
+        bool all_contained = true;
+        for (size_t i = 0; i < inner_loop->ninputs(); ++i)
+        {
+          auto f = frontier.find(inner_loop->input(i));
+          if (f == frontier.end())
+          {
+            all_contained = false;
+          }
+        }
+        if (!all_contained)
+          continue;
+        for (size_t i = 0; i < inner_loop->ninputs(); ++i)
+        {
+          frontier.erase(inner_loop->input(i));
+        }
+        // TODO: do we just want the latency of a single iteration here?
+        CalculateLoopCycleDepth(inner_loop, output_cycles, true);
+        for (size_t i = 0; i < inner_loop->noutputs(); ++i)
+        {
+          std::cout << "output latency " << i << " " << output_cycles[inner_loop->output(i)]
+                    << std::endl;
+          frontier.insert(GetUser(inner_loop->output(i)));
+        }
+        changed = true;
+        break;
+      }
+    }
+  } while (changed);
+  // TODO: is "changed" even necessary or can we just wait for frontier to be empty?
+  if (!frontier.empty())
+  {
+    std::unordered_map<rvsdg::output *, std::string> o_color;
+    std::unordered_map<rvsdg::input *, std::string> i_color;
+    for (auto i : frontier)
+    {
+      i_color.insert({ i, "red" });
+    }
+    dump_dot(&loop->region()->graph()->GetRootRegion(), "crash.dot", o_color, i_color);
+  }
+  JLM_ASSERT(frontier.empty());
+}
+
+void
+CalculateLoopCycleDepth(
+    loop_node * loop,
+    std::unordered_map<rvsdg::output *, size_t> & output_cycles,
+    bool analyze_inner_loop)
+{
+  if (!analyze_inner_loop)
+  {
+    for (size_t i = 0; i < loop->ninputs(); ++i)
+    {
+      auto in = loop->input(i);
+      output_cycles[in->origin()] = 0;
+    }
+  }
+  std::unordered_set<rvsdg::input *> frontier;
+  std::unordered_set<rvsdg::SimpleNode *> top_muxes;
+  CreateLoopFrontier(loop, output_cycles, frontier, top_muxes);
+  std::unordered_set<rvsdg::input *> frontier2(frontier);
+  std::cout << "CalculateLoopCycleDepth(" << loop << ", " << analyze_inner_loop << ")" << std::endl;
+  /* the reason for having two iterations here is a loop value being updated at the end of the loop,
+   * for example the nextRow in SPMV. In theory more iterations could be necessary, until things
+   * only increase by the iterative intensity.
+   * */
+  // TODO: should there be more iterations of this?
+  PushCycleFrontier(loop, output_cycles, frontier, top_muxes);
+  //  if (!analyze_inner_loop)
+  //  {
+  // for analysis we only care about one cycle depth
+  std::cout << "second iteration" << std::endl;
+  PushCycleFrontier(loop, output_cycles, frontier2, top_muxes);
+  //  }
+}
+
+size_t
+PlaceBufferLoop(rvsdg::output * out, size_t min_capacity, bool passThrough)
+{
+  // places or re-places a buffer on an output
+  // don't place buffers after constants
+  JLM_ASSERT(!is_constant(rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*out)));
+  auto fork = TryGetOwnerOp<fork_op>(*out);
+  JLM_ASSERT(!(fork && fork->IsConstant()));
+
+  auto node = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*out);
+
+  if (rvsdg::is<rvsdg::LambdaOperation>(out->region()->node()))
+  {
+    // don't place buffers outside loops
+    return min_capacity;
+  }
+
+  auto arg = dynamic_cast<rvsdg::RegionArgument *>(out);
+  if (arg && arg->input())
+  {
+    return PlaceBufferLoop(arg->input()->origin(), min_capacity, passThrough);
+  }
+
+  // push buf above loop_const_buf
+  if (TryGetOwnerOp<loop_constant_buffer_op>(*out))
+  {
+    return std::min(
+        PlaceBufferLoop(node->input(0)->origin(), min_capacity, passThrough),
+        PlaceBufferLoop(node->input(1)->origin(), min_capacity, passThrough));
+  }
+
+  if (auto buf = TryGetOwnerOp<buffer_op>(*out))
+  {
+    // replace buffer and keep larger size
+    passThrough = passThrough && buf->pass_through;
+    auto capacity = round_up_pow2(buf->capacity + min_capacity);
+    auto bufOut = buffer_op::create(*node->input(0)->origin(), capacity, passThrough)[0];
+    node->output(0)->divert_users(bufOut);
+    JLM_ASSERT(node->IsDead());
+    remove(node);
+    return capacity;
+  }
+  else
+  {
+    // create new buffer
+    auto directUser = *out->begin();
+    auto capacity = round_up_pow2(min_capacity);
+    auto newOut = buffer_op::create(*out, capacity, passThrough)[0];
+    directUser->divert_to(newOut);
+    return capacity;
+  }
+}
+
+void
+AdjustLoopBuffers(
+    loop_node * loop,
+    std::unordered_map<rvsdg::output *, size_t> & output_cycles,
+    std::unordered_map<rvsdg::output *, size_t> & buffer_capacity,
+    bool analyze_inner_loop = false)
+{
+  if (!analyze_inner_loop)
+  {
+    for (size_t i = 0; i < loop->ninputs(); ++i)
+    {
+      auto in = loop->input(i);
+      buffer_capacity[in->origin()] = 0;
+    }
+  }
+  std::unordered_set<rvsdg::input *> frontier;
+  std::unordered_set<rvsdg::SimpleNode *> top_muxes;
+  CreateLoopFrontier(loop, buffer_capacity, frontier, top_muxes);
+  // set buffer capacity for constant nodes to max
+  for (auto & tn : loop->subregion()->TopNodes())
+  {
+    auto out = tn.output(0);
+    // don't use size_t max, since that is used to signal down below
+    buffer_capacity[out] = std::numeric_limits<uint32_t>::max();
+  }
+
+  bool changed = false;
+  //  uint32_t iteration = 0;
+  do
+  {
+    //    std::stringstream stream;
+    //    stream << "AdjustLoopBuffers_" << << loop << "_" << << iteration++
+    //           << ".dot";
+    //    std::unordered_map<rvsdg::output *, std::string> o_color;
+    //    std::unordered_map<rvsdg::input *, std::string> i_color;
+    //    for (auto i : frontier)
+    //    {
+    //      i_color.insert({ i, "red" });
+    //    }
+    //    dump_dot(&loop->region()->graph()->GetRootRegion(), stream.str(), o_color, i_color);
+    //    dot_to_svg(stream.str());
+
+    changed = false;
+    for (auto in : frontier)
+    {
+      // TODO: handle nested loops and other stuff
+      if (auto simpleNode = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*in))
+      {
+        bool all_contained = true;
+        for (size_t i = 0; i < simpleNode->ninputs(); ++i)
+        {
+          auto f = frontier.find(simpleNode->input(i));
+          if (f == frontier.end())
+          {
+            all_contained = false;
+          }
+        }
+        if (!all_contained)
+          continue;
+        // all inputs of node are in frontier - move them forward
+        size_t max_cycles = 0;
+        for (size_t i = 0; i < simpleNode->ninputs(); ++i)
+        {
+          max_cycles = std::max(max_cycles, output_cycles[simpleNode->input(i)->origin()]);
+          frontier.erase(simpleNode->input(i));
+        }
+
+        // adjust capacities
+        size_t min_capacity = std::numeric_limits<size_t>::max();
+        for (size_t i = 0; i < simpleNode->ninputs(); ++i)
+        {
+          auto capacity = buffer_capacity[simpleNode->input(i)->origin()];
+          // don't place buffers on loop inputs
+          auto ra = dynamic_cast<rvsdg::RegionArgument *>(simpleNode->input(i)->origin());
+          if ((!ra || !ra->input()))
+          {
+            if (!analyze_inner_loop && capacity < max_cycles)
+            {
+              size_t capacity_diff = max_cycles - capacity;
+              capacity += PlaceBufferLoop(simpleNode->input(i)->origin(), capacity_diff, true);
+              buffer_capacity[simpleNode->input(i)->origin()] = capacity;
+            }
+            min_capacity = std::min(min_capacity, capacity);
+          }
+        }
+        if (min_capacity == std::numeric_limits<size_t>::max())
+        {
+          //          dump_dot(&loop->region()->graph()->GetRootRegion(), "crash.dot");
+          min_capacity = output_cycles[simpleNode->input(0)->origin()];
+        }
+        //        JLM_ASSERT(min_capacity != std::numeric_limits<size_t>::max());
+
+        if (top_muxes.find(simpleNode) != top_muxes.end())
+        {
+          // we reached our starting point again
+          auto mux = dynamic_cast<const mux_op *>(&simpleNode->GetOperation());
+          if (mux)
+          {
+            std::cout << "top_mux " << simpleNode
+                      << " pred capacity: " << buffer_capacity[simpleNode->input(0)->origin()]
+                      << " backedge capacity: " << buffer_capacity[simpleNode->input(2)->origin()]
+                      << std::endl;
+          }
+        }
+        else
+        {
+          size_t out_capacity = min_capacity + NodeCapacity(simpleNode);
+          for (size_t i = 0; i < simpleNode->noutputs(); ++i)
+          {
+            auto out = simpleNode->output(i);
+            buffer_capacity[out] = out_capacity;
+            JLM_ASSERT(analyze_inner_loop || buffer_capacity[out] >= output_cycles[out]);
+            frontier.insert(GetUser(out));
+          }
+        }
+        changed = true;
+        break;
+      }
+      else if (auto be = dynamic_cast<backedge_result *>(in))
+      {
+        frontier.erase(in);
+        auto out = be->argument();
+        buffer_capacity[out] = buffer_capacity[in->origin()];
+        frontier.insert(GetUser(out));
+        changed = true;
+        break;
+      }
+      else if (auto rr = dynamic_cast<rvsdg::RegionResult *>(in))
+      {
+        frontier.erase(in);
+        auto out = rr->output();
+        JLM_ASSERT(out);
+        buffer_capacity[out] = buffer_capacity[in->origin()];
+        // don't continue frontier out of loop
+        changed = true;
+        break;
+      }
+      else
+      {
+        auto inner_loop = rvsdg::TryGetOwnerNode<loop_node>(*in);
+        JLM_ASSERT(inner_loop);
+        bool all_contained = true;
+        for (size_t i = 0; i < inner_loop->ninputs(); ++i)
+        {
+          auto f = frontier.find(inner_loop->input(i));
+          if (f == frontier.end())
+          {
+            all_contained = false;
+          }
+        }
+        if (!all_contained)
+          continue;
+        // all inputs of node are in frontier - move them forward
+        size_t max_cycles = 0;
+        for (size_t i = 0; i < inner_loop->ninputs(); ++i)
+        {
+          max_cycles = std::max(max_cycles, output_cycles[inner_loop->input(i)->origin()]);
+          frontier.erase(inner_loop->input(i));
+        }
+        //        dump_dot(&loop->region()->graph()->GetRootRegion(), "crash.dot");
+        // adjust capacities
+        for (size_t i = 0; i < inner_loop->ninputs(); ++i)
+        {
+          auto capacity = buffer_capacity[inner_loop->input(i)->origin()];
+          // don't place buffers on loop inputs
+          auto ra = dynamic_cast<rvsdg::RegionArgument *>(inner_loop->input(i)->origin());
+          if ((!ra || !ra->input()))
+          {
+            if (!analyze_inner_loop && capacity < max_cycles)
+            {
+              size_t capacity_diff = max_cycles - capacity;
+              capacity += PlaceBufferLoop(inner_loop->input(i)->origin(), capacity_diff, true);
+              buffer_capacity[inner_loop->input(i)->origin()] = capacity;
+            }
+          }
+        }
+
+        AdjustLoopBuffers(inner_loop, output_cycles, buffer_capacity, true);
+//        AdjustLoopBuffers(inner_loop, output_cycles, buffer_capacity, false);
+        for (size_t i = 0; i < inner_loop->noutputs(); ++i)
+        {
+          frontier.insert(GetUser(inner_loop->output(i)));
+        }
+        changed = true;
+        break;
+      }
+    }
+  } while (changed);
+  // TODO: is "changed" even necessary or can we just wait for frontier to be empty?
+  // benefit of it is we won't get infinite loop in case something violates this
+  JLM_ASSERT(frontier.empty());
+  // TODO: take iterative intensity into account. E.g. we can use half the buffer capacity if II is
+  // 2
+  // TODO: remove buffers on cycles?
+  // TODO: don't place buf2 on const buf if it gos up to another const buf - even through a branch?
+  // TODO: still run buffer resize pass, but without upsizing?
+}
+
+void
+CalculateLoopDepths(rvsdg::Region * region)
+{
+  for (auto node : rvsdg::TopDownTraverser(region))
+  {
+    if (auto loop = dynamic_cast<loop_node *>(node))
+    {
+      // process inner loops first
+      CalculateLoopDepths(loop->subregion());
+      std::unordered_map<rvsdg::output *, size_t> output_cycles;
+      CalculateLoopCycleDepth(loop, output_cycles);
+      std::unordered_map<rvsdg::output *, size_t> buffer_capacity;
+      AdjustLoopBuffers(loop, output_cycles, buffer_capacity);
     }
   }
 }
@@ -362,6 +920,7 @@ add_buffers(llvm::RvsdgModule & rm, bool pass_through)
   auto lambda = dynamic_cast<rvsdg::LambdaNode *>(root->Nodes().begin().ptr());
   AddBuffers(lambda->subregion());
   MaximizeBuffers(lambda->subregion());
+  CalculateLoopDepths(lambda->subregion());
 }
 
 }
