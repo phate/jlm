@@ -432,6 +432,7 @@ CreateLoopFrontier(
     const loop_node * loop,
     std::unordered_map<rvsdg::output *, size_t> & output_cycles,
     std::unordered_set<rvsdg::input *> & frontier,
+    std::unordered_set<backedge_result *> & stream_backedges,
     std::unordered_set<rvsdg::SimpleNode *> & top_muxes)
 {
   for (size_t i = 0; i < loop->ninputs(); ++i)
@@ -461,6 +462,33 @@ CreateLoopFrontier(
     output_cycles[out] = 0;
     frontier.insert(GetUser(out));
   }
+  for (auto arg : loop->subregion()->Arguments())
+  {
+    auto backedge = dynamic_cast<backedge_argument *>(arg);
+    if (!backedge)
+    {
+      continue;
+    }
+    auto user = GetUser(arg);
+    auto mux = TryGetOwnerOp<mux_op>(*user);
+    if ((mux && mux->loop))
+    {
+      continue;
+    }
+    if (TryGetOwnerOp<buffer_op>(*user))
+    {
+      auto bufNode = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*user);
+      if (TryGetOwnerOp<predicate_buffer_op>(*GetUser(bufNode->output(0))))
+      {
+        // skip predicate buffer
+        continue;
+      }
+    }
+    // this comes from somewhere inside the loop
+    output_cycles[arg] = 0;
+    frontier.insert(GetUser(arg));
+    stream_backedges.insert(backedge->result());
+  }
 }
 
 void
@@ -474,6 +502,7 @@ PushCycleFrontier(
     const loop_node * loop,
     std::unordered_map<rvsdg::output *, size_t> & output_cycles,
     std::unordered_set<rvsdg::input *> & frontier,
+    std::unordered_set<backedge_result *> & stream_backedges,
     std::unordered_set<rvsdg::SimpleNode *> & top_muxes)
 {
   bool changed = false;
@@ -551,7 +580,11 @@ PushCycleFrontier(
         frontier.erase(in);
         auto out = be->argument();
         output_cycles[out] = output_cycles[in->origin()];
-        frontier.insert(GetUser(out));
+        if (stream_backedges.find(be) == stream_backedges.end())
+        {
+          // skip stream backedges
+          frontier.insert(GetUser(out));
+        }
         changed = true;
         break;
       }
@@ -626,8 +659,9 @@ CalculateLoopCycleDepth(
     }
   }
   std::unordered_set<rvsdg::input *> frontier;
+  std::unordered_set<backedge_result *> stream_backedges;
   std::unordered_set<rvsdg::SimpleNode *> top_muxes;
-  CreateLoopFrontier(loop, output_cycles, frontier, top_muxes);
+  CreateLoopFrontier(loop, output_cycles, frontier, stream_backedges, top_muxes);
   std::unordered_set<rvsdg::input *> frontier2(frontier);
   std::cout << "CalculateLoopCycleDepth(" << loop << ", " << analyze_inner_loop << ")" << std::endl;
   /* the reason for having two iterations here is a loop value being updated at the end of the loop,
@@ -635,12 +669,12 @@ CalculateLoopCycleDepth(
    * only increase by the iterative intensity.
    * */
   // TODO: should there be more iterations of this?
-  PushCycleFrontier(loop, output_cycles, frontier, top_muxes);
+  PushCycleFrontier(loop, output_cycles, frontier, stream_backedges, top_muxes);
   //  if (!analyze_inner_loop)
   //  {
   // for analysis we only care about one cycle depth
   std::cout << "second iteration" << std::endl;
-  PushCycleFrontier(loop, output_cycles, frontier2, top_muxes);
+  PushCycleFrontier(loop, output_cycles, frontier2, stream_backedges, top_muxes);
   //  }
 }
 
@@ -713,8 +747,9 @@ AdjustLoopBuffers(
     }
   }
   std::unordered_set<rvsdg::input *> frontier;
+  std::unordered_set<backedge_result *> stream_backedges;
   std::unordered_set<rvsdg::SimpleNode *> top_muxes;
-  CreateLoopFrontier(loop, buffer_capacity, frontier, top_muxes);
+  CreateLoopFrontier(loop, buffer_capacity, frontier, stream_backedges, top_muxes);
   // set buffer capacity for constant nodes to max
   for (auto & tn : loop->subregion()->TopNodes())
   {
@@ -742,7 +777,6 @@ AdjustLoopBuffers(
     changed = false;
     for (auto in : frontier)
     {
-      // TODO: handle nested loops and other stuff
       if (auto simpleNode = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*in))
       {
         bool all_contained = true;
@@ -820,7 +854,10 @@ AdjustLoopBuffers(
         frontier.erase(in);
         auto out = be->argument();
         buffer_capacity[out] = buffer_capacity[in->origin()];
-        frontier.insert(GetUser(out));
+        if (stream_backedges.find(be) == stream_backedges.end())
+        {
+          frontier.insert(GetUser(out));
+        }
         changed = true;
         break;
       }
