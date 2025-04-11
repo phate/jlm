@@ -167,7 +167,7 @@ public:
     static void
     ReplaceStates(
         const std::vector<MemoryNodeStatePair *> & memoryNodeStatePairs,
-        const LoadNode::MemoryStateOutputRange & states)
+        const LoadOperation::MemoryStateOutputRange & states)
     {
       auto it = states.begin();
       for (auto memoryNodeStatePair : memoryNodeStatePairs)
@@ -634,10 +634,14 @@ MemoryStateEncoder::EncodeLoad(const LoadNode & loadNode)
 
   StateMap::MemoryNodeStatePair::ReplaceStates(
       memoryNodeStatePairs,
-      newLoadNode.MemoryStateOutputs());
+      LoadOperation::MemoryStateOutputs(newLoadNode));
 
   if (is<PointerType>(loadNode.GetOperation().GetLoadedType()))
-    stateMap.ReplaceAddress(loadNode.GetLoadedValueOutput(), newLoadNode.GetLoadedValueOutput());
+  {
+    stateMap.ReplaceAddress(
+        LoadOperation::LoadedValueOutput(loadNode),
+        LoadOperation::LoadedValueOutput(newLoadNode));
+  }
 }
 
 void
@@ -943,16 +947,26 @@ MemoryStateEncoder::EncodeThetaExit(
   }
 }
 
-LoadNode &
+rvsdg::SimpleNode &
 MemoryStateEncoder::ReplaceLoadNode(
     const LoadNode & loadNode,
     const std::vector<rvsdg::output *> & memoryStates)
 {
-  if (auto loadVolatileNode = dynamic_cast<const LoadVolatileNode *>(&loadNode))
+  if (auto loadVolatileOperation =
+          dynamic_cast<const LoadVolatileOperation *>(&loadNode.GetOperation()))
   {
-    auto & newLoadNode = loadVolatileNode->CopyWithNewMemoryStates(memoryStates);
-    loadVolatileNode->GetLoadedValueOutput().divert_users(&newLoadNode.GetLoadedValueOutput());
-    loadVolatileNode->GetIoStateOutput().divert_users(&newLoadNode.GetIoStateOutput());
+    auto & newLoadNode = LoadVolatileOperation::CreateNode(
+        *loadNode.GetAddressInput().origin(),
+        *LoadVolatileOperation::IOStateInput(loadNode).origin(),
+        memoryStates,
+        loadVolatileOperation->GetLoadedType(),
+        loadVolatileOperation->GetAlignment());
+    auto & oldLoadedValueOutput = LoadOperation::LoadedValueOutput(loadNode);
+    auto & newLoadedValueOutput = LoadOperation::LoadedValueOutput(newLoadNode);
+    auto & oldIOStateOutput = LoadVolatileOperation::IOStateOutput(loadNode);
+    auto & newIOStateOutput = LoadVolatileOperation::IOStateOutput(newLoadNode);
+    oldLoadedValueOutput.divert_users(&newLoadedValueOutput);
+    oldIOStateOutput.divert_users(&newIOStateOutput);
     return newLoadNode;
   }
   else if (auto loadNonVolatileNode = dynamic_cast<const LoadNonVolatileNode *>(&loadNode))
