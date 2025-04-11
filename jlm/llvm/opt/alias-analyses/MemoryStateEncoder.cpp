@@ -167,7 +167,7 @@ public:
     static void
     ReplaceStates(
         const std::vector<MemoryNodeStatePair *> & memoryNodeStatePairs,
-        const LoadNode::MemoryStateOutputRange & states)
+        const LoadOperation::MemoryStateOutputRange & states)
     {
       auto it = states.begin();
       for (auto memoryNodeStatePair : memoryNodeStatePairs)
@@ -547,9 +547,9 @@ MemoryStateEncoder::EncodeSimpleNode(const rvsdg::SimpleNode & simpleNode)
   {
     EncodeMalloc(simpleNode);
   }
-  else if (auto loadNode = dynamic_cast<const LoadNode *>(&simpleNode))
+  else if (is<LoadOperation>(&simpleNode))
   {
-    EncodeLoad(*loadNode);
+    EncodeLoad(simpleNode);
   }
   else if (auto storeNode = dynamic_cast<const StoreNode *>(&simpleNode))
   {
@@ -622,22 +622,27 @@ MemoryStateEncoder::EncodeMalloc(const rvsdg::SimpleNode & mallocNode)
 }
 
 void
-MemoryStateEncoder::EncodeLoad(const LoadNode & loadNode)
+MemoryStateEncoder::EncodeLoad(const rvsdg::SimpleNode & node)
 {
+  JLM_ASSERT(is<LoadOperation>(&node));
   auto & stateMap = Context_->GetRegionalizedStateMap();
 
-  auto address = loadNode.GetAddressInput().origin();
+  auto address = LoadOperation::AddressInput(node).origin();
   auto memoryNodeStatePairs = stateMap.GetStates(*address);
   auto memoryStates = StateMap::MemoryNodeStatePair::States(memoryNodeStatePairs);
 
-  auto & newLoadNode = ReplaceLoadNode(loadNode, memoryStates);
+  auto & newLoadNode = ReplaceLoadNode(node, memoryStates);
 
   StateMap::MemoryNodeStatePair::ReplaceStates(
       memoryNodeStatePairs,
-      newLoadNode.MemoryStateOutputs());
+      LoadOperation::MemoryStateOutputs(newLoadNode));
 
-  if (is<PointerType>(loadNode.GetOperation().GetLoadedType()))
-    stateMap.ReplaceAddress(loadNode.GetLoadedValueOutput(), newLoadNode.GetLoadedValueOutput());
+  if (is<PointerType>(LoadOperation::LoadedValueOutput(node).Type()))
+  {
+    stateMap.ReplaceAddress(
+        LoadOperation::LoadedValueOutput(node),
+        LoadOperation::LoadedValueOutput(newLoadNode));
+  }
 }
 
 void
@@ -943,22 +948,34 @@ MemoryStateEncoder::EncodeThetaExit(
   }
 }
 
-LoadNode &
+rvsdg::SimpleNode &
 MemoryStateEncoder::ReplaceLoadNode(
-    const LoadNode & loadNode,
+    const rvsdg::SimpleNode & node,
     const std::vector<rvsdg::output *> & memoryStates)
 {
-  if (auto loadVolatileNode = dynamic_cast<const LoadVolatileNode *>(&loadNode))
+  JLM_ASSERT(is<LoadOperation>(&node));
+
+  if (auto loadVolatileOperation =
+          dynamic_cast<const LoadVolatileOperation *>(&node.GetOperation()))
   {
-    auto & newLoadNode = loadVolatileNode->CopyWithNewMemoryStates(memoryStates);
-    loadVolatileNode->GetLoadedValueOutput().divert_users(&newLoadNode.GetLoadedValueOutput());
-    loadVolatileNode->GetIoStateOutput().divert_users(&newLoadNode.GetIoStateOutput());
+    auto & newLoadNode = LoadVolatileOperation::CreateNode(
+        *LoadOperation::AddressInput(node).origin(),
+        *LoadVolatileOperation::IOStateInput(node).origin(),
+        memoryStates,
+        loadVolatileOperation->GetLoadedType(),
+        loadVolatileOperation->GetAlignment());
+    auto & oldLoadedValueOutput = LoadOperation::LoadedValueOutput(node);
+    auto & newLoadedValueOutput = LoadOperation::LoadedValueOutput(newLoadNode);
+    auto & oldIOStateOutput = LoadVolatileOperation::IOStateOutput(node);
+    auto & newIOStateOutput = LoadVolatileOperation::IOStateOutput(newLoadNode);
+    oldLoadedValueOutput.divert_users(&newLoadedValueOutput);
+    oldIOStateOutput.divert_users(&newIOStateOutput);
     return newLoadNode;
   }
-  else if (auto loadNonVolatileNode = dynamic_cast<const LoadNonVolatileNode *>(&loadNode))
+  else if (auto loadNonVolatileNode = dynamic_cast<const LoadNonVolatileNode *>(&node))
   {
     auto & newLoadNode = loadNonVolatileNode->CopyWithNewMemoryStates(memoryStates);
-    loadNode.GetLoadedValueOutput().divert_users(&newLoadNode.GetLoadedValueOutput());
+    LoadOperation::LoadedValueOutput(node).divert_users(&newLoadNode.GetLoadedValueOutput());
     return newLoadNode;
   }
   else

@@ -608,6 +608,8 @@ static int
 NodeCopy()
 {
   using namespace jlm::llvm;
+  using namespace jlm::rvsdg;
+  using namespace jlm::util;
 
   // Arrange
   auto pointerType = PointerType::Create();
@@ -624,18 +626,21 @@ NodeCopy()
   auto & iOState2 = jlm::tests::GraphImport::Create(graph, iOStateType, "iOState2");
   auto & memoryState2 = jlm::tests::GraphImport::Create(graph, memoryType, "memoryState2");
 
-  auto & loadNode =
-      LoadVolatileNode::CreateNode(address1, iOState1, { &memoryState1 }, valueType, 4);
+  auto & loadNode = jlm::rvsdg::CreateOpNode<LoadVolatileOperation>(
+      { &address1, &iOState1, &memoryState1 },
+      valueType,
+      1,
+      4);
 
   // Act
   auto copiedNode = loadNode.copy(&graph.GetRootRegion(), { &address2, &iOState2, &memoryState2 });
 
   // Assert
-  auto copiedLoadNode = dynamic_cast<const LoadVolatileNode *>(copiedNode);
-  assert(loadNode.GetOperation() == copiedLoadNode->GetOperation());
-  assert(copiedLoadNode->GetAddressInput().origin() == &address2);
-  assert(copiedLoadNode->GetIoStateInput().origin() == &iOState2);
-  assert(copiedLoadNode->GetLoadedValueOutput().type() == *valueType);
+  auto copiedOperation = dynamic_cast<const LoadVolatileOperation *>(&copiedNode->GetOperation());
+  assert(copiedOperation != nullptr);
+  assert(LoadOperation::AddressInput(*copiedNode).origin() == &address2);
+  assert(LoadVolatileOperation::IOStateInput(*copiedNode).origin() == &iOState2);
+  assert(*copiedOperation->GetLoadedType() == *valueType);
 
   return 0;
 }

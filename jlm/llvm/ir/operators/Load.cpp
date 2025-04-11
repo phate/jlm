@@ -41,13 +41,6 @@ LoadNonVolatileOperation::copy() const
   return std::make_unique<LoadNonVolatileOperation>(*this);
 }
 
-size_t
-LoadNonVolatileOperation::NumMemoryStates() const noexcept
-{
-  // Subtracting address
-  return narguments() - 1;
-}
-
 const LoadNonVolatileOperation &
 LoadNonVolatileNode::GetOperation() const noexcept
 {
@@ -119,61 +112,14 @@ LoadVolatileOperation::copy() const
   return std::make_unique<LoadVolatileOperation>(*this);
 }
 
-size_t
-LoadVolatileOperation::NumMemoryStates() const noexcept
+rvsdg::SimpleNode &
+LoadVolatileOperation::CreateNode(
+    rvsdg::Region & region,
+    std::unique_ptr<LoadVolatileOperation> loadOperation,
+    const std::vector<rvsdg::output *> & operands)
 {
-  // Subtracting address and I/O state
-  return narguments() - 2;
+  return rvsdg::SimpleNode::Create(region, std::move(loadOperation), operands);
 }
-
-[[nodiscard]] const LoadVolatileOperation &
-LoadVolatileNode::GetOperation() const noexcept
-{
-  return *util::AssertedCast<const LoadVolatileOperation>(&LoadNode::GetOperation());
-}
-
-[[nodiscard]] LoadNode::MemoryStateInputRange
-LoadVolatileNode::MemoryStateInputs() const noexcept
-{
-  if (NumMemoryStates() == 0)
-  {
-    return { MemoryStateInputIterator(nullptr), MemoryStateInputIterator(nullptr) };
-  }
-
-  return { MemoryStateInputIterator(input(2)), MemoryStateInputIterator(nullptr) };
-}
-
-[[nodiscard]] LoadNode::MemoryStateOutputRange
-LoadVolatileNode::MemoryStateOutputs() const noexcept
-{
-  if (NumMemoryStates() == 0)
-  {
-    return { MemoryStateOutputIterator(nullptr), MemoryStateOutputIterator(nullptr) };
-  }
-
-  return { MemoryStateOutputIterator(output(2)), MemoryStateOutputIterator(nullptr) };
-}
-
-LoadVolatileNode &
-LoadVolatileNode::CopyWithNewMemoryStates(const std::vector<rvsdg::output *> & memoryStates) const
-{
-  return CreateNode(
-      *GetAddressInput().origin(),
-      *GetIoStateInput().origin(),
-      memoryStates,
-      GetOperation().GetLoadedType(),
-      GetAlignment());
-}
-
-rvsdg::Node *
-LoadVolatileNode::copy(rvsdg::Region * region, const std::vector<rvsdg::output *> & operands) const
-{
-  std::unique_ptr<LoadVolatileOperation> op(
-      util::AssertedCast<LoadVolatileOperation>(GetOperation().copy().release()));
-  return &CreateNode(*region, std::move(op), operands);
-}
-
-/* load normal form */
 
 /*
   sx1 = MemStateMerge si1 ... siM
