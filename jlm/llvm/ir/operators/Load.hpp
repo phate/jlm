@@ -28,6 +28,8 @@ public:
   class MemoryStateInputIterator final : public rvsdg::input::iterator<rvsdg::SimpleInput>
   {
   public:
+    virtual ~MemoryStateInputIterator() = default;
+
     constexpr explicit MemoryStateInputIterator(rvsdg::SimpleInput * input)
         : rvsdg::input::iterator<rvsdg::SimpleInput>(input)
     {}
@@ -35,16 +37,18 @@ public:
     [[nodiscard]] rvsdg::SimpleInput *
     next() const override
     {
-      auto index = value()->index();
-      auto node = value()->node();
+      const auto index = value()->index();
+      const auto node = value()->node();
 
-      return node->ninputs() > index + 1 ? node->input(index + 1) : nullptr;
+      return index + 1 < node->ninputs() ? node->input(index + 1) : nullptr;
     }
   };
 
   class MemoryStateOutputIterator final : public rvsdg::output::iterator<rvsdg::SimpleOutput>
   {
   public:
+    virtual ~MemoryStateOutputIterator() = default;
+
     constexpr explicit MemoryStateOutputIterator(rvsdg::SimpleOutput * output)
         : rvsdg::output::iterator<rvsdg::SimpleOutput>(output)
     {}
@@ -52,10 +56,10 @@ public:
     [[nodiscard]] rvsdg::SimpleOutput *
     next() const override
     {
-      auto index = value()->index();
-      auto node = value()->node();
+      const auto index = value()->index();
+      const auto node = value()->node();
 
-      return node->noutputs() > index + 1 ? node->output(index + 1) : nullptr;
+      return index + 1 < node->noutputs() ? node->output(index + 1) : nullptr;
     }
   };
 
