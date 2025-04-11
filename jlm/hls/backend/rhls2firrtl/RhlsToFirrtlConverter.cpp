@@ -1386,13 +1386,18 @@ RhlsToFirrtlConverter::MlirGenHlsStore(const jlm::rvsdg::SimpleNode * node)
   ::llvm::SmallVector<circt::firrtl::SubfieldOp> inReadyStates;
   ::llvm::SmallVector<circt::firrtl::SubfieldOp> inValidStates;
   ::llvm::SmallVector<circt::firrtl::SubfieldOp> inDataStates;
-  for (size_t i = 2; i < node->ninputs(); ++i)
+  for (size_t i = 2; i < node->ninputs() - 1; ++i)
   {
     auto bundle = GetInPort(module, i);
     inReadyStates.push_back(GetSubfield(body, bundle, "ready"));
     inValidStates.push_back(GetSubfield(body, bundle, "valid"));
     inDataStates.push_back(GetSubfield(body, bundle, "data"));
   }
+
+  auto inBundleResp = GetInPort(module, node->ninputs() - 1);
+  auto inReadyResp = GetSubfield(body, inBundleResp, "ready");
+  auto inValidResp = GetSubfield(body, inBundleResp, "valid");
+  //  auto inDataResp = GetSubfield(body, inBundleResp, "data");
 
   ::llvm::SmallVector<circt::firrtl::SubfieldOp> outReadyStates;
   ::llvm::SmallVector<circt::firrtl::SubfieldOp> outValidStates;
@@ -1415,43 +1420,10 @@ RhlsToFirrtlConverter::MlirGenHlsStore(const jlm::rvsdg::SimpleNode * node)
   auto outValidMemData = GetSubfield(body, outBundleMemData, "valid");
   auto outDataMemData = GetSubfield(body, outBundleMemData, "data");
 
-  auto clock = GetClockSignal(module);
-  auto reset = GetResetSignal(module);
-  auto zeroBitValue = GetConstant(body, 1, 0);
+  //  auto clock = GetClockSignal(module);
+  //  auto reset = GetResetSignal(module);
+  //  auto zeroBitValue = GetConstant(body, 1, 0);
   auto oneBitValue = GetConstant(body, 1, 1);
-
-  // Registers
-  ::llvm::SmallVector<circt::firrtl::RegResetOp> oValidRegs;
-  ::llvm::SmallVector<circt::firrtl::RegResetOp> oDataRegs;
-  for (size_t i = 0; i < node->noutputs() - 2; i++)
-  {
-    std::string validName("o");
-    validName.append(std::to_string(i));
-    validName.append("_valid_reg");
-    auto validReg = Builder_->create<circt::firrtl::RegResetOp>(
-        Builder_->getUnknownLoc(),
-        GetIntType(1),
-        clock,
-        reset,
-        zeroBitValue,
-        Builder_->getStringAttr(validName));
-    body->push_back(validReg);
-    oValidRegs.push_back(validReg);
-
-    auto zeroValue = GetConstant(body, JlmSize(&node->output(i)->type()), 0);
-    std::string dataName("o");
-    dataName.append(std::to_string(i));
-    dataName.append("_data_reg");
-    auto dataReg = Builder_->create<circt::firrtl::RegResetOp>(
-        Builder_->getUnknownLoc(),
-        GetIntType(&node->output(i)->type()),
-        clock,
-        reset,
-        zeroValue,
-        Builder_->getStringAttr(dataName));
-    body->push_back(dataReg);
-    oDataRegs.push_back(dataReg);
-  }
 
   mlir::Value canRequest = inValidAddr;
   canRequest = AddAndOp(body, canRequest, inValidData);
@@ -1475,32 +1447,20 @@ RhlsToFirrtlConverter::MlirGenHlsStore(const jlm::rvsdg::SimpleNode * node)
   Connect(body, outValidMemData, canRequest);
   Connect(body, outDataMemData, inDataData);
 
+  mlir::Value outStatesReady = oneBitValue;
   for (size_t i = 0; i < node->noutputs() - 2; ++i)
   {
-    Connect(body, outValidStates[i], oValidRegs[i].getResult());
-    Connect(body, outDataStates[i], oDataRegs[i].getResult());
-    auto andOp2 = AddAndOp(body, outReadyStates[i], outValidStates[i]);
-    Connect(
-        // When o1 fires
-        AddWhenOp(body, andOp2, false).getThenBodyBuilder().getBlock(),
-        oValidRegs[i].getResult(),
-        zeroBitValue);
+    Connect(body, outValidStates[i], inValidResp);
+    ConnectInvalid(body, outDataStates[i]);
+    outStatesReady = AddAndOp(body, outReadyStates[i], outStatesReady);
   }
-
-  // mem_req fire
-  auto whenReqFireOp = AddWhenOp(body, outReadyMemAddr, false);
-  auto whenReqFireBody = whenReqFireOp.getThenBodyBuilder().getBlock();
-  for (size_t i = 0; i < node->noutputs() - 2; ++i)
-  {
-    Connect(whenReqFireBody, oValidRegs[i].getResult(), oneBitValue);
-    Connect(whenReqFireBody, oDataRegs[i].getResult(), inDataStates[i]);
-  }
+  Connect(body, inReadyResp, outStatesReady);
 
   // Handshaking
   Connect(body, inReadyAddr, outReadyMemAddr);
   // TODO: check readyness seperately?
   Connect(body, inReadyData, outReadyMemAddr);
-  for (size_t i = 2; i < node->ninputs(); ++i)
+  for (size_t i = 2; i < node->ninputs() - 1; ++i)
   {
     Connect(body, inReadyStates[i - 2], outReadyMemAddr);
   }

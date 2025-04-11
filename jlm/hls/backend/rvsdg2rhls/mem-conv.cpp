@@ -650,16 +650,14 @@ ReplaceStore(
   {
     states.push_back(replacedStore->input(i)->origin());
   }
-  auto outputs = store_op::create(*addr, *data, states);
-  auto newStore = dynamic_cast<rvsdg::node_output *>(outputs[0])->node();
-  // ignore store state outputs for now and use response instead
-  auto split = llvm::MemoryStateSplitOperation::Create(*response, replacedStore->noutputs());
+  auto storeOuts = store_op::create(*addr, *data, states, *response);
+  auto newStore = dynamic_cast<rvsdg::node_output *>(storeOuts[0])->node();
   // TODO: add a proper store node that consumes the response
   // iterate over output states
   for (size_t i = 0; i < replacedStore->noutputs(); ++i)
   {
-    smap.insert(originalStore->output(i), split[i]);
-    replacedStore->output(i)->divert_users(split[i]);
+    smap.insert(originalStore->output(i), storeOuts[i]);
+    replacedStore->output(i)->divert_users(storeOuts[i]);
   }
   remove(replacedStore);
   return dynamic_cast<rvsdg::SimpleNode *>(newStore);

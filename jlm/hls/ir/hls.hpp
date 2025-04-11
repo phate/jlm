@@ -1388,7 +1388,7 @@ public:
     std::vector<std::shared_ptr<const jlm::rvsdg::Type>> types(
         { llvm::PointerType::Create(), pointeeType });
     std::vector<std::shared_ptr<const jlm::rvsdg::Type>> states(
-        numStates,
+        numStates+1,
         llvm::MemoryStateType::Create());
     types.insert(types.end(), states.begin(), states.end());
     return types;
@@ -1421,12 +1421,14 @@ public:
   create(
       jlm::rvsdg::output & addr,
       jlm::rvsdg::output & value,
-      const std::vector<jlm::rvsdg::output *> & states)
+      const std::vector<jlm::rvsdg::output *> & states,
+      jlm::rvsdg::output & resp)
   {
     std::vector<jlm::rvsdg::output *> inputs;
     inputs.push_back(&addr);
     inputs.push_back(&value);
     inputs.insert(inputs.end(), states.begin(), states.end());
+    inputs.push_back(&resp);
     return outputs(&rvsdg::CreateOpNode<store_op>(
         inputs,
         std::dynamic_pointer_cast<const rvsdg::ValueType>(value.Type()),
