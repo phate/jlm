@@ -126,6 +126,15 @@ LoadVolatileOperation::NumMemoryStates() const noexcept
   return narguments() - 2;
 }
 
+rvsdg::SimpleNode &
+LoadVolatileOperation::CreateNode(
+    rvsdg::Region & region,
+    std::unique_ptr<LoadVolatileOperation> loadOperation,
+    const std::vector<rvsdg::output *> & operands)
+{
+  return rvsdg::SimpleNode::Create(region, std::move(loadOperation), operands);
+}
+
 [[nodiscard]] const LoadVolatileOperation &
 LoadVolatileNode::GetOperation() const noexcept
 {

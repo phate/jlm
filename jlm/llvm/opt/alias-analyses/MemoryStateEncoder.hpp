@@ -176,7 +176,7 @@ private:
    *
    * @return The newly created LoadNode.
    */
-  [[nodiscard]] static LoadNode &
+  [[nodiscard]] static rvsdg::SimpleNode &
   ReplaceLoadNode(const LoadNode & loadNode, const std::vector<rvsdg::output *> & memoryStates);
 
   /**

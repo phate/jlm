@@ -68,6 +68,15 @@ public:
   [[nodiscard]] virtual size_t
   NumMemoryStates() const noexcept = 0;
 
+  [[nodiscard]] static rvsdg::output &
+  LoadedValueOutput(const rvsdg::SimpleNode & simpleNode)
+  {
+    JLM_ASSERT(is<LoadOperation>(&simpleNode));
+    const auto output = simpleNode.output(0);
+    JLM_ASSERT(is<rvsdg::ValueType>(output->Type()));
+    return *output;
+  }
+
 private:
   size_t Alignment_;
 };
@@ -86,6 +95,43 @@ private:
 class LoadVolatileOperation final : public LoadOperation
 {
 public:
+  class MemoryStateInputIterator final : public rvsdg::input::iterator<rvsdg::SimpleInput>
+  {
+  public:
+    constexpr explicit MemoryStateInputIterator(rvsdg::SimpleInput * input)
+        : rvsdg::input::iterator<rvsdg::SimpleInput>(input)
+    {}
+
+    [[nodiscard]] rvsdg::SimpleInput *
+    next() const override
+    {
+      auto index = value()->index();
+      auto node = value()->node();
+
+      return node->ninputs() > index + 1 ? node->input(index + 1) : nullptr;
+    }
+  };
+
+  class MemoryStateOutputIterator final : public rvsdg::output::iterator<rvsdg::SimpleOutput>
+  {
+  public:
+    constexpr explicit MemoryStateOutputIterator(rvsdg::SimpleOutput * output)
+        : rvsdg::output::iterator<rvsdg::SimpleOutput>(output)
+    {}
+
+    [[nodiscard]] rvsdg::SimpleOutput *
+    next() const override
+    {
+      auto index = value()->index();
+      auto node = value()->node();
+
+      return node->noutputs() > index + 1 ? node->output(index + 1) : nullptr;
+    }
+  };
+
+  using MemoryStateInputRange = util::IteratorRange<MemoryStateInputIterator>;
+  using MemoryStateOutputRange = util::IteratorRange<MemoryStateOutputIterator>;
+
   ~LoadVolatileOperation() noexcept override;
 
   LoadVolatileOperation(
@@ -110,6 +156,42 @@ public:
   [[nodiscard]] size_t
   NumMemoryStates() const noexcept override;
 
+  [[nodiscard]] static size_t
+  AddressInputIndex() noexcept
+  {
+    return 0;
+  }
+
+  [[nodiscard]] static size_t
+  IOStateInputIndex() noexcept
+  {
+    return 1;
+  }
+
+  [[nodiscard]] static rvsdg::output &
+  IOStateOutput(const rvsdg::SimpleNode & simpleNode)
+  {
+    JLM_ASSERT(is<LoadVolatileOperation>(&simpleNode));
+    const auto output = simpleNode.output(1);
+    JLM_ASSERT(is<IOStateType>(output->Type()));
+    return *output;
+  }
+
+  [[nodiscard]] static MemoryStateOutputRange
+  MemoryStateOutputs(const rvsdg::SimpleNode & simpleNode) noexcept
+  {
+    JLM_ASSERT(is<LoadVolatileOperation>(&simpleNode));
+
+    if (simpleNode.noutputs() == 2)
+    {
+      return { MemoryStateOutputIterator(nullptr), MemoryStateOutputIterator(nullptr) };
+    }
+
+    const auto output = simpleNode.output(2);
+    JLM_ASSERT(is<MemoryStateType>(output->Type()));
+    return { MemoryStateOutputIterator(output), MemoryStateOutputIterator(nullptr) };
+  }
+
   static std::unique_ptr<llvm::tac>
   Create(
       const variable * address,
@@ -120,6 +202,30 @@ public:
   {
     LoadVolatileOperation operation(std::move(loadedType), 1, alignment);
     return tac::create(operation, { address, iOState, memoryState });
+  }
+
+  static rvsdg::SimpleNode &
+  CreateNode(
+      rvsdg::Region & region,
+      std::unique_ptr<LoadVolatileOperation> loadOperation,
+      const std::vector<rvsdg::output *> & operands);
+
+  static rvsdg::SimpleNode &
+  CreateNode(
+      rvsdg::output & address,
+      rvsdg::output & iOState,
+      const std::vector<rvsdg::output *> & memoryStates,
+      std::shared_ptr<const rvsdg::ValueType> loadedType,
+      size_t alignment)
+  {
+    std::vector operands({ &address, &iOState });
+    operands.insert(operands.end(), memoryStates.begin(), memoryStates.end());
+
+    auto operation = std::make_unique<LoadVolatileOperation>(
+        std::move(loadedType),
+        memoryStates.size(),
+        alignment);
+    return CreateNode(*address.region(), std::move(operation), operands);
   }
 
 private:
