@@ -392,7 +392,8 @@ RhlsToFirrtlConverter::MlirGenSimpleNode(const jlm::rvsdg::SimpleNode * node)
   }
   else if (dynamic_cast<const llvm::UndefValueOperation *>(&(node->GetOperation())))
   {
-    Connect(body, outData, GetConstant(body, 1, 0));
+    //    Connect(body, outData, GetConstant(body, 1, 0));
+    ConnectInvalid(body, outData);
   }
   else
   {
