@@ -1002,9 +1002,9 @@ Steensgaard::AnalyzeSimpleNode(const jlm::rvsdg::SimpleNode & node)
   {
     AnalyzeMalloc(node);
   }
-  else if (auto loadNode = dynamic_cast<const LoadNode *>(&node))
+  else if (is<LoadOperation>(&node))
   {
-    AnalyzeLoad(*loadNode);
+    AnalyzeLoad(node);
   }
   else if (auto storeNode = dynamic_cast<const StoreNode *>(&node))
   {
@@ -1106,10 +1106,10 @@ Steensgaard::AnalyzeMalloc(const jlm::rvsdg::SimpleNode & node)
 }
 
 void
-Steensgaard::AnalyzeLoad(const LoadNode & loadNode)
+Steensgaard::AnalyzeLoad(const rvsdg::SimpleNode & node)
 {
-  auto & result = loadNode.GetLoadedValueOutput();
-  auto & address = *loadNode.GetAddressInput().origin();
+  auto & result = LoadOperation::LoadedValueOutput(node);
+  auto & address = *LoadOperation::AddressInput(node).origin();
 
   if (!HasOrContainsPointerType(result))
     return;
