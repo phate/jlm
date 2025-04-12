@@ -68,6 +68,11 @@ PlaceBuffer(rvsdg::output * out, size_t capacity, bool passThrough)
   {
     return;
   }
+  auto fork = TryGetOwnerOp<fork_op>(*out);
+  if(fork && fork->IsConstant()){
+    return;
+  }
+
   // TODO: handle out being a buf?
   auto buf = TryGetOwnerOp<buffer_op>(*user);
   if (buf && (buf->pass_through != passThrough || buf->capacity != capacity))
@@ -249,7 +254,7 @@ OptimizeLoop(loop_node * loopNode)
       // only do this for proper loop variables
       if (auto mux = TryGetOwnerOp<mux_op>(*user))
       {
-        if (mux->loop)
+        if (!mux->loop)
         {
           // stream
           continue;
