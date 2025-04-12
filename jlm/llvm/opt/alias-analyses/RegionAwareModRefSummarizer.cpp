@@ -800,6 +800,7 @@ RegionAwareModRefSummarizer::AnnotateLoad(
     RegionSummary & regionSummary)
 {
   const auto origin = LoadOperation::AddressInput(loadNode).origin();
+
   const auto memoryNodes = ModRefSummary_->GetOutputNodes(*origin);
   regionSummary.AddMemoryNodes(memoryNodes);
 }
