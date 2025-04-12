@@ -212,7 +212,7 @@ TestUsedMemoryState()
 
   // Load node
   auto functionArguments = lambda->GetFunctionArguments();
-  auto loadOutput = LoadNonVolatileNode::Create(
+  auto loadOutput = LoadNonVolatileOperation::Create(
       functionArguments[0],
       { functionArguments[1] },
       PointerType::Create(),
@@ -259,7 +259,7 @@ TestUnusedMemoryState()
 
   // Load node
   auto functionArguments = lambda->GetFunctionArguments();
-  auto loadOutput = LoadNonVolatileNode::Create(
+  auto loadOutput = LoadNonVolatileOperation::Create(
       functionArguments[0],
       { functionArguments[1] },
       PointerType::Create(),
@@ -311,7 +311,7 @@ TestInvariantMemoryState()
   auto memoryStateSplit = LambdaEntryMemoryStateSplitOperation::Create(*functionArguments[1], 2);
 
   // Load node
-  auto loadOutput = LoadNonVolatileNode::Create(
+  auto loadOutput = LoadNonVolatileOperation::Create(
       functionArguments[0],
       { memoryStateSplit[0] },
       PointerType::Create(),

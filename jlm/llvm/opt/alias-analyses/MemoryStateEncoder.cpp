@@ -955,7 +955,7 @@ MemoryStateEncoder::ReplaceLoadNode(
 {
   JLM_ASSERT(is<LoadOperation>(&node));
 
-  if (auto loadVolatileOperation =
+  if (const auto loadVolatileOperation =
           dynamic_cast<const LoadVolatileOperation *>(&node.GetOperation()))
   {
     auto & newLoadNode = LoadVolatileOperation::CreateNode(
@@ -972,16 +972,22 @@ MemoryStateEncoder::ReplaceLoadNode(
     oldIOStateOutput.divert_users(&newIOStateOutput);
     return newLoadNode;
   }
-  else if (auto loadNonVolatileNode = dynamic_cast<const LoadNonVolatileNode *>(&node))
+
+  if (const auto loadNonVolatileOperation =
+          dynamic_cast<const LoadNonVolatileOperation *>(&node.GetOperation()))
   {
-    auto & newLoadNode = loadNonVolatileNode->CopyWithNewMemoryStates(memoryStates);
-    LoadOperation::LoadedValueOutput(node).divert_users(&newLoadNode.GetLoadedValueOutput());
+    auto & newLoadNode = LoadNonVolatileOperation::CreateNode(
+        *LoadOperation::AddressInput(node).origin(),
+        memoryStates,
+        loadNonVolatileOperation->GetLoadedType(),
+        loadNonVolatileOperation->GetAlignment());
+    auto & oldLoadedValueOutput = LoadOperation::LoadedValueOutput(node);
+    auto & newLoadedValueOutput = LoadNonVolatileOperation::LoadedValueOutput(newLoadNode);
+    oldLoadedValueOutput.divert_users(&newLoadedValueOutput);
     return newLoadNode;
   }
-  else
-  {
-    JLM_UNREACHABLE("Unhandled load node type.");
-  }
+
+  JLM_UNREACHABLE("Unhandled load node type.");
 }
 
 StoreNode &

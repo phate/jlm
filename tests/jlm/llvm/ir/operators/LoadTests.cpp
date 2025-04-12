@@ -63,17 +63,15 @@ TestCopy()
   auto address2 = &jlm::tests::GraphImport::Create(graph, pointerType, "address2");
   auto memoryState2 = &jlm::tests::GraphImport::Create(graph, memoryType, "memoryState2");
 
-  auto loadResults = LoadNonVolatileNode::Create(address1, { memoryState1 }, valueType, 4);
+  auto loadResults = LoadNonVolatileOperation::Create(address1, { memoryState1 }, valueType, 4);
 
   // Act
   auto node = jlm::rvsdg::output::GetNode(*loadResults[0]);
-  auto loadNode = jlm::util::AssertedCast<const LoadNonVolatileNode>(node);
-  auto copiedNode = loadNode->copy(&graph.GetRootRegion(), { address2, memoryState2 });
+  assert(is<LoadNonVolatileOperation>(node));
+  auto copiedNode = node->copy(&graph.GetRootRegion(), { address2, memoryState2 });
 
   // Assert
-  auto copiedLoadNode = dynamic_cast<const LoadNonVolatileNode *>(copiedNode);
-  assert(copiedLoadNode != nullptr);
-  assert(loadNode->GetOperation() == copiedLoadNode->GetOperation());
+  assert(node->GetOperation() == copiedNode->GetOperation());
 
   return 0;
 }
@@ -96,7 +94,7 @@ TestLoadAllocaReduction()
   auto alloca2 = alloca_op::create(bt, size, 4);
   auto mux = MemoryStateMergeOperation::Create({ alloca1[1] });
   auto & loadNode =
-      LoadNonVolatileNode::CreateNode(*alloca1[0], { alloca1[1], alloca2[1], mux }, bt, 4);
+      LoadNonVolatileOperation::CreateNode(*alloca1[0], { alloca1[1], alloca2[1], mux }, bt, 4);
 
   auto & ex = GraphExport::Create(*loadNode.output(0), "l");
 
@@ -139,7 +137,7 @@ LoadMuxReduction_Success()
   auto s3 = &jlm::tests::GraphImport::Create(graph, memoryStateType, "state3");
 
   auto mux = MemoryStateMergeOperation::Create({ s1, s2, s3 });
-  auto & loadNode = LoadNonVolatileNode::CreateNode(*address, { mux }, bitstringType, 4);
+  auto & loadNode = LoadNonVolatileOperation::CreateNode(*address, { mux }, bitstringType, 4);
 
   auto & ex1 = GraphExport::Create(*loadNode.output(0), "l");
   auto & ex2 = GraphExport::Create(*loadNode.output(1), "s");
@@ -194,7 +192,7 @@ LoadMuxReduction_WrongNumberOfOperands()
   const auto s2 = &jlm::tests::GraphImport::Create(graph, mt, "s2");
 
   auto merge = MemoryStateMergeOperation::Create(std::vector<jlm::rvsdg::output *>{ s1, s2 });
-  auto & loadNode = LoadNonVolatileNode::CreateNode(*a, { merge, merge }, vt, 4);
+  auto & loadNode = LoadNonVolatileOperation::CreateNode(*a, { merge, merge }, vt, 4);
 
   auto & ex1 = GraphExport::Create(*loadNode.output(0), "v");
   auto & ex2 = GraphExport::Create(*loadNode.output(1), "s1");
@@ -236,7 +234,7 @@ LoadMuxReduction_LoadWithoutStates()
   jlm::rvsdg::Graph graph;
   const auto address = &jlm::tests::GraphImport::Create(graph, pointerType, "address");
 
-  auto & loadNode = LoadNonVolatileNode::CreateNode(*address, {}, valueType, 4);
+  auto & loadNode = LoadNonVolatileOperation::CreateNode(*address, {}, valueType, 4);
 
   auto & ex = GraphExport::Create(*loadNode.output(0), "v");
 
@@ -278,7 +276,7 @@ TestDuplicateStateReduction()
   auto s2 = &jlm::tests::GraphImport::Create(graph, memoryType, "s2");
   auto s3 = &jlm::tests::GraphImport::Create(graph, memoryType, "s3");
 
-  auto & loadNode = LoadNonVolatileNode::CreateNode(*a, { s1, s2, s1, s2, s3 }, valueType, 4);
+  auto & loadNode = LoadNonVolatileOperation::CreateNode(*a, { s1, s2, s1, s2, s3 }, valueType, 4);
 
   auto & exA = GraphExport::Create(*loadNode.output(0), "exA");
   auto & exS1 = GraphExport::Create(*loadNode.output(1), "exS1");
@@ -332,8 +330,9 @@ TestLoadStoreStateReduction()
   auto store1 = StoreNonVolatileNode::Create(alloca1[0], size, { alloca1[1] }, 4);
   auto store2 = StoreNonVolatileNode::Create(alloca2[0], size, { alloca2[1] }, 4);
 
-  auto & loadNode1 = LoadNonVolatileNode::CreateNode(*alloca1[0], { store1[0], store2[0] }, bt, 4);
-  auto & loadNode2 = LoadNonVolatileNode::CreateNode(*alloca1[0], { store1[0] }, bt, 8);
+  auto & loadNode1 =
+      LoadNonVolatileOperation::CreateNode(*alloca1[0], { store1[0], store2[0] }, bt, 4);
+  auto & loadNode2 = LoadNonVolatileOperation::CreateNode(*alloca1[0], { store1[0] }, bt, 8);
 
   auto & ex1 = GraphExport::Create(*loadNode1.output(0), "l1");
   auto & ex2 = GraphExport::Create(*loadNode2.output(0), "l2");
@@ -383,7 +382,7 @@ TestLoadStoreReduction_Success()
   auto s = &jlm::tests::GraphImport::Create(graph, mt, "state");
 
   auto s1 = StoreNonVolatileNode::Create(a, v, { s }, 4)[0];
-  auto & loadNode = LoadNonVolatileNode::CreateNode(*a, { s1 }, vt, 4);
+  auto & loadNode = LoadNonVolatileOperation::CreateNode(*a, { s1 }, vt, 4);
 
   auto & x1 = GraphExport::Create(*loadNode.output(0), "value");
   auto & x2 = GraphExport::Create(*loadNode.output(1), "state");
@@ -427,7 +426,7 @@ LoadStoreReduction_DifferentValueOperandType()
   auto memoryState = &jlm::tests::GraphImport::Create(graph, memoryStateType, "memoryState");
 
   auto & storeNode = StoreNonVolatileNode::CreateNode(address, value, { memoryState }, 4);
-  auto & loadNode = LoadNonVolatileNode::CreateNode(
+  auto & loadNode = LoadNonVolatileOperation::CreateNode(
       address,
       outputs(&storeNode),
       jlm::rvsdg::bittype::Create(8),
@@ -482,10 +481,10 @@ TestLoadLoadReduction()
   auto s2 = &jlm::tests::GraphImport::Create(graph, mt, "s2");
 
   auto st1 = StoreNonVolatileNode::Create(a1, v1, { s1 }, 4);
-  auto ld1 = LoadNonVolatileNode::Create(a2, { s1 }, vt, 4);
-  auto ld2 = LoadNonVolatileNode::Create(a3, { s2 }, vt, 4);
+  auto ld1 = LoadNonVolatileOperation::Create(a2, { s1 }, vt, 4);
+  auto ld2 = LoadNonVolatileOperation::Create(a3, { s2 }, vt, 4);
 
-  auto & loadNode = LoadNonVolatileNode::CreateNode(*a4, { st1[0], ld1[1], ld2[1] }, vt, 4);
+  auto & loadNode = LoadNonVolatileOperation::CreateNode(*a4, { st1[0], ld1[1], ld2[1] }, vt, 4);
 
   auto & x1 = GraphExport::Create(*loadNode.output(1), "s");
   auto & x2 = GraphExport::Create(*loadNode.output(2), "s");

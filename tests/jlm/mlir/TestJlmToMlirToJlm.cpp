@@ -193,7 +193,7 @@ TestLoad()
     auto loadType = jlm::rvsdg::bittype::Create(32);
     auto loadOp = jlm::llvm::LoadNonVolatileOperation(loadType, 1, 4);
     auto & subregion = *(lambda->subregion());
-    jlm::llvm::LoadNonVolatileNode::Create(
+    LoadNonVolatileOperation::Create(
         subregion,
         std::make_unique<LoadNonVolatileOperation>(loadOp),
         { pointerArgument, memoryStateArgument });
@@ -245,11 +245,12 @@ TestLoad()
       assert(convertedLambda->subregion()->nnodes() == 1);
       assert(is<LoadNonVolatileOperation>(
           convertedLambda->subregion()->Nodes().begin()->GetOperation()));
-      auto convertedLoad = dynamic_cast<const LoadNonVolatileNode *>(
-          convertedLambda->subregion()->Nodes().begin().ptr());
+      auto convertedLoad = convertedLambda->subregion()->Nodes().begin().ptr();
+      auto loadOperation =
+          dynamic_cast<const LoadNonVolatileOperation *>(&convertedLoad->GetOperation());
 
-      assert(convertedLoad->GetAlignment() == 4);
-      assert(convertedLoad->NumMemoryStates() == 1);
+      assert(loadOperation->GetAlignment() == 4);
+      assert(loadOperation->NumMemoryStates() == 1);
 
       assert(is<jlm::llvm::PointerType>(convertedLoad->input(0)->type()));
       assert(is<jlm::llvm::MemoryStateType>(convertedLoad->input(1)->type()));

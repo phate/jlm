@@ -541,10 +541,6 @@ ConvertThreeAddressCode(
   {
     Convert<CallNode, CallOperation>(threeAddressCode, region, variableMap);
   }
-  else if (is<LoadNonVolatileOperation>(&threeAddressCode))
-  {
-    Convert<LoadNonVolatileNode, LoadNonVolatileOperation>(threeAddressCode, region, variableMap);
-  }
   else if (is<StoreVolatileOperation>(&threeAddressCode))
   {
     Convert<StoreVolatileNode, StoreVolatileOperation>(threeAddressCode, region, variableMap);

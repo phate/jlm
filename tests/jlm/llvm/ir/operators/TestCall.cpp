@@ -131,7 +131,7 @@ TestCallTypeClassifierIndirectCall()
         { alloca[1] },
         8);
 
-    auto load = LoadNonVolatileNode::Create(alloca[0], store, PointerType::Create(), 8);
+    auto load = LoadNonVolatileOperation::Create(alloca[0], store, PointerType::Create(), 8);
     auto fn = jlm::rvsdg::CreateOpNode<PointerToFunctionOperation>({ load[0] }, fcttype1).output(0);
 
     auto callResults = CallNode::Create(fn, fcttype1, { iOStateArgument, memoryStateArgument });
@@ -434,7 +434,7 @@ TestCallTypeClassifierRecursiveDirectCall()
         { nm1 },
         jlm::rvsdg::bittype::Create(64),
         pbit64);
-    auto ldnm1 = LoadNonVolatileNode::Create(
+    auto ldnm1 = LoadNonVolatileOperation::Create(
         gepnm1,
         { callfibm2Results[1] },
         jlm::rvsdg::bittype::Create(64),
@@ -446,7 +446,7 @@ TestCallTypeClassifierRecursiveDirectCall()
         jlm::rvsdg::bittype::Create(64),
         pbit64);
     auto ldnm2 =
-        LoadNonVolatileNode::Create(gepnm2, { ldnm1[1] }, jlm::rvsdg::bittype::Create(64), 8);
+        LoadNonVolatileOperation::Create(gepnm2, { ldnm1[1] }, jlm::rvsdg::bittype::Create(64), 8);
 
     auto sum = jlm::rvsdg::bitadd_op::create(64, ldnm1[0], ldnm2[0]);
 
