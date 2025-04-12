@@ -46,6 +46,95 @@ find_decouple_response(
   JLM_UNREACHABLE("No response found");
 }
 
+std::pair<rvsdg::SimpleInput *, std::vector<rvsdg::SimpleInput *>>
+TraceEdgeToMerge(rvsdg::input * state_edge)
+{
+  std::vector<rvsdg::SimpleInput *> encountered_muxes;
+  // should encounter no new loops, or gammas, only exit them
+  rvsdg::input * previous_state_edge = nullptr;
+  while (true)
+  {
+    // make sure we make progress
+    JLM_ASSERT(previous_state_edge != state_edge);
+    if (dynamic_cast<jlm::rvsdg::RegionResult *>(state_edge))
+    {
+      JLM_UNREACHABLE("this should be handled by branch");
+    }
+    else if (rvsdg::TryGetOwnerNode<loop_node>(*state_edge))
+    {
+      JLM_UNREACHABLE("there should be no new loops");
+    }
+    auto si = util::AssertedCast<rvsdg::SimpleInput>(state_edge);
+    auto sn = si->node();
+    auto br = TryGetOwnerOp<branch_op>(*state_edge);
+    auto mux = TryGetOwnerOp<mux_op>(*state_edge);
+    if (br)
+    {
+      // end of loop
+      JLM_ASSERT(br->loop);
+      state_edge = get_mem_state_user(
+          util::AssertedCast<rvsdg::RegionResult>(get_mem_state_user(sn->output(0)))->output());
+    }
+    else if (mux && !mux->loop)
+    {
+      // end of gamma
+      encountered_muxes.push_back(si);
+      state_edge = get_mem_state_user(sn->output(0));
+    }
+    else if (
+        TryGetOwnerOp<llvm::MemoryStateMergeOperation>(*state_edge)
+        || TryGetOwnerOp<llvm::LambdaExitMemoryStateMergeOperation>(*state_edge))
+    {
+      return {util::AssertedCast<rvsdg::SimpleInput>(state_edge), encountered_muxes};
+    }
+    else
+    {
+      JLM_UNREACHABLE("whoops");
+    }
+  }
+}
+
+void
+OptimizeResMemState(rvsdg::output * res_mem_state)
+{
+  // replace other branches with undefs, so the stateedge before the res can be killed.
+  auto [merge_in, encountered_muxes] =  TraceEdgeToMerge(get_mem_state_user(res_mem_state));
+  JLM_ASSERT(merge_in);
+  for (auto si :encountered_muxes)
+  {
+    auto sn = si->node();
+    for (size_t i = 1; i < sn->ninputs(); ++i)
+    {
+      if (i != si->index()){
+        auto state_dummy =
+            llvm::UndefValueOperation::Create(*si->region(), si->Type());
+        sn->input(i)->divert_to(state_dummy);
+      }
+    }
+  }
+}
+
+void
+OtimizeReqMemState(rvsdg::output * req_mem_state)
+{ // there is no reason to wait for requests, if we already wait for responses, so we kill the rest
+  // of this state edge
+  auto [merge_in, _] = TraceEdgeToMerge(get_mem_state_user(req_mem_state));
+  JLM_ASSERT(merge_in);
+  auto merge_node = merge_in->node();
+  std::vector<rvsdg::output *> merge_origins;
+  for (size_t i = 0; i < merge_in->node()->ninputs(); ++i)
+  {
+    if (i != merge_in->index())
+    {
+      merge_origins.push_back(merge_in->node()->input(i)->origin());
+    }
+  }
+  auto new_merge_output = llvm::MemoryStateMergeOperation::Create(merge_origins);
+  merge_node->output(0)->divert_users(new_merge_output);
+  JLM_ASSERT(merge_node->IsDead());
+  remove(merge_node);
+}
+
 rvsdg::SimpleNode *
 ReplaceDecouple(
     const rvsdg::LambdaNode * lambda,
@@ -68,6 +157,7 @@ ReplaceDecouple(
   // redirect memstate - iostate output has already been removed by mem-sep pass
   decouple_request->output(decouple_request->noutputs() - 1)->divert_users(req_mem_state);
 
+
   // handle response
   int load_capacity = 10;
   if (dynamic_cast<const rvsdg::bittype *>(&decouple_response->input(2)->type()))
@@ -83,7 +173,9 @@ ReplaceDecouple(
 
   auto routed_data = route_to_region_rhls(decouple_response->region(), dload_out[0]);
   auto response_state_origin = decouple_response->input(decouple_response->ninputs() - 1)->origin();
-  auto state_dummy = llvm::UndefValueOperation::Create(*response_state_origin->region(), response_state_origin->Type());
+  auto state_dummy = llvm::UndefValueOperation::Create(
+      *response_state_origin->region(),
+      response_state_origin->Type());
   auto sg_resp = state_gate_op::create(*routed_data, { state_dummy });
   decouple_response->output(0)->divert_users(routed_data);
   decouple_response->output(decouple_response->noutputs() - 1)->divert_users(sg_resp[1]);
@@ -91,6 +183,9 @@ ReplaceDecouple(
   remove(decouple_response);
   JLM_ASSERT(decouple_request->IsDead());
   remove(decouple_request);
+
+  OptimizeResMemState(sg_resp[1]);
+  OtimizeReqMemState(req_mem_state);
 
   auto nn = dynamic_cast<rvsdg::node_output *>(dload_out[0])->node();
   return dynamic_cast<rvsdg::SimpleNode *>(nn);
@@ -617,6 +712,7 @@ ReplaceLoad(
   }
   else
   {
+    // TODO: switch this to a decoupled load?
     auto outputs = load_op::create(*loadAddress, states, *response);
     newLoad = dynamic_cast<rvsdg::node_output *>(outputs[0])->node();
   }

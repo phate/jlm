@@ -379,6 +379,7 @@ fix_mem_merge(rvsdg::Node * merge_node)
     return true;
   }
   std::vector<rvsdg::output *> combined_origins;
+  std::unordered_set<rvsdg::SimpleNode *> splits;
   for (size_t i = 0; i < merge_node->ninputs(); ++i)
   {
     auto origin = merge_node->input(i)->origin();
@@ -392,8 +393,13 @@ fix_mem_merge(rvsdg::Node * merge_node)
     }
     else if (TryGetOwnerOp<llvm::MemoryStateSplitOperation>(*origin))
     {
-      // TODO: I'm not entirely sure if this is generally correct, but under the current assumptions (each merge has an equivalent split) it holds
-      continue;
+      // ensure that there is only one direct connection to a split.
+      // We need to keep one, so that the optimizations for decouple edges work
+      auto split = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*origin);
+      if(!splits.count(split)){
+        splits.insert(split);
+        combined_origins.push_back(origin);
+      }
     }
     else
     {
