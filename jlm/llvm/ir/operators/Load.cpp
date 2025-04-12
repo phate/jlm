@@ -12,12 +12,6 @@
 namespace jlm::llvm
 {
 
-const LoadOperation &
-LoadNode::GetOperation() const noexcept
-{
-  return *util::AssertedCast<const LoadOperation>(&SimpleNode::GetOperation());
-}
-
 LoadNonVolatileOperation::~LoadNonVolatileOperation() noexcept = default;
 
 bool
