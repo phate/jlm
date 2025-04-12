@@ -398,6 +398,20 @@ RhlsToFirrtlConverter::MlirGenSimpleNode(const jlm::rvsdg::SimpleNode * node)
     //    Connect(body, outData, GetConstant(body, 1, 0));
     ConnectInvalid(body, outData);
   }
+  else if (auto op = dynamic_cast<const hls::mux_op *>(&(node->GetOperation())))
+  {
+    JLM_ASSERT(op->discarding);
+    auto select = GetSubfield(body, inBundles[0], "data");
+    for (size_t i = 1; i < node->ninputs(); i++)
+    {
+      auto data = GetSubfield(body, inBundles[i], "data");
+      auto constant = GetConstant(body, JlmSize(&node->input(0)->type()), i - 1);
+      auto eqOp = AddEqOp(body, select, constant);
+      auto whenOp = AddWhenOp(body, eqOp, false);
+      auto thenBody = whenOp.getThenBodyBuilder().getBlock();
+      Connect(thenBody, outData, data);
+    }
+  }
   else
   {
     throw std::logic_error(
@@ -2237,7 +2251,6 @@ RhlsToFirrtlConverter::MlirGenDMux(const jlm::rvsdg::SimpleNode * node)
   auto matchBlock =
       &AddWhenOp(body, AddAndOp(body, inValid0, AddNotOp(body, any_discard_full)), false)
            .getThenBlock();
-
   for (size_t i = 1; i < inputs; i++)
   {
     auto inBundle = GetInPort(module, i);
@@ -2461,7 +2474,8 @@ RhlsToFirrtlConverter::MlirGen(const jlm::rvsdg::SimpleNode * node)
   {
     if (o->discarding)
     {
-      return MlirGenDMux(node);
+//      return MlirGenDMux(node);
+      return MlirGenSimpleNode(node);
     }
     else
     {
