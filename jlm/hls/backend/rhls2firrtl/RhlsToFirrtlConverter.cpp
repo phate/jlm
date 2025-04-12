@@ -402,6 +402,7 @@ RhlsToFirrtlConverter::MlirGenSimpleNode(const jlm::rvsdg::SimpleNode * node)
   {
     JLM_ASSERT(op->discarding);
     auto select = GetSubfield(body, inBundles[0], "data");
+    ConnectInvalid(body, outData);
     for (size_t i = 1; i < node->ninputs(); i++)
     {
       auto data = GetSubfield(body, inBundles[i], "data");
