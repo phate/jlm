@@ -412,6 +412,51 @@ public:
     return tac::create(operation, { address, state });
   }
 
+  static std::vector<rvsdg::output *>
+  Create(
+      rvsdg::output * address,
+      const std::vector<rvsdg::output *> & memoryStates,
+      std::shared_ptr<const rvsdg::ValueType> loadedType,
+      const size_t alignment)
+  {
+    return rvsdg::outputs(&CreateNode(*address, memoryStates, std::move(loadedType), alignment));
+  }
+
+  static rvsdg::SimpleNode &
+  CreateNode(
+      rvsdg::Region & region,
+      std::unique_ptr<LoadNonVolatileOperation> loadOperation,
+      const std::vector<rvsdg::output *> & operands)
+  {
+    return rvsdg::SimpleNode::Create(region, std::move(loadOperation), operands);
+  }
+
+  static std::vector<rvsdg::output *>
+  Create(
+      rvsdg::Region & region,
+      std::unique_ptr<LoadNonVolatileOperation> loadOperation,
+      const std::vector<rvsdg::output *> & operands)
+  {
+    return outputs(&CreateNode(region, std::move(loadOperation), operands));
+  }
+
+  static rvsdg::SimpleNode &
+  CreateNode(
+      rvsdg::output & address,
+      const std::vector<rvsdg::output *> & memoryStates,
+      std::shared_ptr<const rvsdg::ValueType> loadedType,
+      size_t alignment)
+  {
+    std::vector operands({ &address });
+    operands.insert(operands.end(), memoryStates.begin(), memoryStates.end());
+
+    auto operation = std::make_unique<LoadNonVolatileOperation>(
+        std::move(loadedType),
+        memoryStates.size(),
+        alignment);
+    return CreateNode(*address.region(), std::move(operation), operands);
+  }
+
 private:
   static std::vector<std::shared_ptr<const rvsdg::Type>>
   CreateOperandTypes(size_t numMemoryStates)
@@ -433,81 +478,6 @@ private:
         MemoryStateType::Create());
     types.insert(types.end(), states.begin(), states.end());
     return types;
-  }
-};
-
-/**
- * Represents a LoadNonVolatileOperation in an RVSDG.
- */
-class LoadNonVolatileNode final : public LoadNode
-{
-private:
-  LoadNonVolatileNode(
-      rvsdg::Region & region,
-      std::unique_ptr<LoadNonVolatileOperation> operation,
-      const std::vector<rvsdg::output *> & operands)
-      : LoadNode(region, std::move(operation), operands)
-  {}
-
-public:
-  [[nodiscard]] const LoadNonVolatileOperation &
-  GetOperation() const noexcept override;
-
-  [[nodiscard]] MemoryStateInputRange
-  MemoryStateInputs() const noexcept override;
-
-  [[nodiscard]] MemoryStateOutputRange
-  MemoryStateOutputs() const noexcept override;
-
-  [[nodiscard]] LoadNonVolatileNode &
-  CopyWithNewMemoryStates(const std::vector<rvsdg::output *> & memoryStates) const override;
-
-  Node *
-  copy(rvsdg::Region * region, const std::vector<rvsdg::output *> & operands) const override;
-
-  static std::vector<rvsdg::output *>
-  Create(
-      rvsdg::output * address,
-      const std::vector<rvsdg::output *> & memoryStates,
-      std::shared_ptr<const rvsdg::ValueType> loadedType,
-      size_t alignment)
-  {
-    return rvsdg::outputs(&CreateNode(*address, memoryStates, std::move(loadedType), alignment));
-  }
-
-  static LoadNonVolatileNode &
-  CreateNode(
-      rvsdg::output & address,
-      const std::vector<rvsdg::output *> & memoryStates,
-      std::shared_ptr<const rvsdg::ValueType> loadedType,
-      size_t alignment)
-  {
-    std::vector<rvsdg::output *> operands({ &address });
-    operands.insert(operands.end(), memoryStates.begin(), memoryStates.end());
-
-    auto operation = std::make_unique<LoadNonVolatileOperation>(
-        std::move(loadedType),
-        memoryStates.size(),
-        alignment);
-    return CreateNode(*address.region(), std::move(operation), operands);
-  }
-
-  static std::vector<rvsdg::output *>
-  Create(
-      rvsdg::Region & region,
-      std::unique_ptr<LoadNonVolatileOperation> loadOperation,
-      const std::vector<rvsdg::output *> & operands)
-  {
-    return rvsdg::outputs(&CreateNode(region, std::move(loadOperation), operands));
-  }
-
-  static LoadNonVolatileNode &
-  CreateNode(
-      rvsdg::Region & region,
-      std::unique_ptr<LoadNonVolatileOperation> loadOperation,
-      const std::vector<rvsdg::output *> & operands)
-  {
-    return *(new LoadNonVolatileNode(region, std::move(loadOperation), operands));
   }
 };
 

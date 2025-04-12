@@ -41,54 +41,6 @@ LoadNonVolatileOperation::copy() const
   return std::make_unique<LoadNonVolatileOperation>(*this);
 }
 
-const LoadNonVolatileOperation &
-LoadNonVolatileNode::GetOperation() const noexcept
-{
-  return *util::AssertedCast<const LoadNonVolatileOperation>(&SimpleNode::GetOperation());
-}
-
-[[nodiscard]] LoadNode::MemoryStateInputRange
-LoadNonVolatileNode::MemoryStateInputs() const noexcept
-{
-  if (NumMemoryStates() == 0)
-  {
-    return { MemoryStateInputIterator(nullptr), MemoryStateInputIterator(nullptr) };
-  }
-
-  return { MemoryStateInputIterator(input(1)), MemoryStateInputIterator(nullptr) };
-}
-
-[[nodiscard]] LoadNode::MemoryStateOutputRange
-LoadNonVolatileNode::MemoryStateOutputs() const noexcept
-{
-  if (NumMemoryStates() == 0)
-  {
-    return { MemoryStateOutputIterator(nullptr), MemoryStateOutputIterator(nullptr) };
-  }
-
-  return { MemoryStateOutputIterator(output(1)), MemoryStateOutputIterator(nullptr) };
-}
-
-LoadNonVolatileNode &
-LoadNonVolatileNode::CopyWithNewMemoryStates(
-    const std::vector<rvsdg::output *> & memoryStates) const
-{
-  return CreateNode(
-      *GetAddressInput().origin(),
-      memoryStates,
-      GetOperation().GetLoadedType(),
-      GetAlignment());
-}
-
-rvsdg::Node *
-LoadNonVolatileNode::copy(rvsdg::Region * region, const std::vector<rvsdg::output *> & operands)
-    const
-{
-  std::unique_ptr<LoadNonVolatileOperation> op(
-      util::AssertedCast<LoadNonVolatileOperation>(GetOperation().copy().release()));
-  return &CreateNode(*region, std::move(op), operands);
-}
-
 LoadVolatileOperation::~LoadVolatileOperation() noexcept = default;
 
 bool
@@ -325,7 +277,7 @@ perform_load_mux_reduction(
 {
   auto memStateMergeNode = rvsdg::output::GetNode(*operands[1]);
 
-  auto ld = LoadNonVolatileNode::Create(
+  auto ld = LoadNonVolatileOperation::Create(
       operands[0],
       rvsdg::operands(memStateMergeNode),
       op.GetLoadedType(),
@@ -355,8 +307,11 @@ perform_load_alloca_reduction(
       otherstates.push_back(operands[n]);
   }
 
-  auto ld =
-      LoadNonVolatileNode::Create(operands[0], loadstates, op.GetLoadedType(), op.GetAlignment());
+  auto ld = LoadNonVolatileOperation::Create(
+      operands[0],
+      loadstates,
+      op.GetLoadedType(),
+      op.GetAlignment());
 
   std::vector<rvsdg::output *> results(1, ld[0]);
   results.insert(results.end(), std::next(ld.begin()), ld.end());
@@ -383,7 +338,7 @@ perform_load_store_state_reduction(
       new_loadstates.push_back(state);
   }
 
-  auto ld = LoadNonVolatileNode::Create(
+  auto ld = LoadNonVolatileOperation::Create(
       operands[0],
       new_loadstates,
       op.GetLoadedType(),
@@ -420,8 +375,11 @@ perform_multiple_origin_reduction(
     }
   }
 
-  const auto loadResults =
-      LoadNonVolatileNode::Create(address, newInputStates, op.GetLoadedType(), op.GetAlignment());
+  const auto loadResults = LoadNonVolatileOperation::Create(
+      address,
+      newInputStates,
+      op.GetLoadedType(),
+      op.GetAlignment());
 
   std::vector<rvsdg::output *> results(operands.size(), nullptr);
   results[0] = loadResults[0];
@@ -501,8 +459,11 @@ perform_load_load_state_reduction(
   for (size_t n = 1; n < operands.size(); n++)
     ldstates.push_back(reduce_state(n - 1, operands[n], mxstates));
 
-  auto ld =
-      LoadNonVolatileNode::Create(operands[0], ldstates, op.GetLoadedType(), op.GetAlignment());
+  auto ld = LoadNonVolatileOperation::Create(
+      operands[0],
+      ldstates,
+      op.GetLoadedType(),
+      op.GetAlignment());
   for (size_t n = 0; n < mxstates.size(); n++)
   {
     auto & states = mxstates[n];

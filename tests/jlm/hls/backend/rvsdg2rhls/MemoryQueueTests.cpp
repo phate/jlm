@@ -42,7 +42,7 @@ TestSingleLoad()
   auto functionArguments = lambda->GetFunctionArguments();
   auto loadAddress = theta->AddLoopVar(functionArguments[0]);
   auto memoryStateArgument = theta->AddLoopVar(functionArguments[1]);
-  auto loadOutput = LoadNonVolatileNode::Create(
+  auto loadOutput = LoadNonVolatileOperation::Create(
       loadAddress.pre,
       { memoryStateArgument.pre },
       PointerType::Create(),
@@ -117,7 +117,7 @@ TestLoadStore()
   auto loadAddress = theta->AddLoopVar(functionArguments[0]);
   auto storeAddress = theta->AddLoopVar(functionArguments[1]);
   auto memoryStateArgument = theta->AddLoopVar(functionArguments[2]);
-  auto loadOutput = LoadNonVolatileNode::Create(
+  auto loadOutput = LoadNonVolatileOperation::Create(
       loadAddress.pre,
       { memoryStateArgument.pre },
       PointerType::Create(),
@@ -195,7 +195,7 @@ TestAddrQueue()
   auto functionArguments = lambda->GetFunctionArguments();
   auto address = theta->AddLoopVar(functionArguments[0]);
   auto memoryStateArgument = theta->AddLoopVar(functionArguments[1]);
-  auto loadOutput = LoadNonVolatileNode::Create(
+  auto loadOutput = LoadNonVolatileOperation::Create(
       address.pre,
       { memoryStateArgument.pre },
       PointerType::Create(),
@@ -249,7 +249,7 @@ TestAddrQueue()
           auto loadNode =
               jlm::util::AssertedCast<jlm::rvsdg::node_output>(storeNode->input(1)->origin())
                   ->node();
-          jlm::util::AssertedCast<const jlm::llvm::LoadNode>(loadNode);
+          jlm::util::AssertedCast<const LoadOperation>(&loadNode->GetOperation());
           auto stateGate =
               jlm::util::AssertedCast<jlm::rvsdg::node_output>(loadNode->input(0)->origin())
                   ->node();

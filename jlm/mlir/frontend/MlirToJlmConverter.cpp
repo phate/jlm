@@ -544,7 +544,7 @@ MlirToJlmConverter::ConvertOperation(
     if (!rvsdg::is<const rvsdg::ValueType>(jlmType))
       JLM_UNREACHABLE("Expected ValueType for LoadOp operation output.");
     auto jlmValueType = std::dynamic_pointer_cast<const rvsdg::ValueType>(jlmType);
-    auto & loadNode = jlm::llvm::LoadNonVolatileNode::CreateNode(
+    auto & loadNode = llvm::LoadNonVolatileOperation::CreateNode(
         *address,
         memoryStateInputs,
         jlmValueType,
