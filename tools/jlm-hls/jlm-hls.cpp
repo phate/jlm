@@ -16,6 +16,7 @@
 #include <jlm/tooling/CommandLine.hpp>
 
 #include "jlm/hls/backend/rhls2firrtl/VerilatorHarnessAxi.hpp"
+#include "jlm/hls/backend/rvsdg2rhls/add-buffers.hpp"
 #include <llvm/IR/LLVMContext.h>
 #include <llvm/IR/Module.h>
 #include <llvm/IRReader/IRReader.h>
@@ -70,6 +71,8 @@ main(int argc, char ** argv)
   auto jlmModule = jlm::llvm::ConvertLlvmModule(*llvmModule);
 
   auto rvsdgModule = jlm::llvm::ConvertInterProceduralGraphModule(*jlmModule, collector);
+
+  jlm::hls::setMemoryLatency(commandLineOptions.MemoryLatency_);
 
   if (commandLineOptions.ExtractHlsFunction_)
   {

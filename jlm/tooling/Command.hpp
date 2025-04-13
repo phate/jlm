@@ -585,9 +585,10 @@ class JlmHlsCommand final : public Command
 public:
   ~JlmHlsCommand() noexcept override;
 
-  JlmHlsCommand(util::filepath inputFile, util::filepath outputFolder)
+  JlmHlsCommand(util::filepath inputFile, util::filepath outputFolder, std::vector<std::string> options)
       : InputFile_(std::move(inputFile)),
-        OutputFolder_(std::move(outputFolder))
+        OutputFolder_(std::move(outputFolder)),
+        Options(std::move(options))
   {}
 
   [[nodiscard]] std::string
@@ -627,15 +628,17 @@ public:
   Create(
       CommandGraph & commandGraph,
       const util::filepath & inputFile,
-      const util::filepath & outputFolder)
+      const util::filepath & outputFolder,
+      const std::vector<std::string> & options)
   {
-    std::unique_ptr<JlmHlsCommand> command(new JlmHlsCommand(inputFile, outputFolder));
+    std::unique_ptr<JlmHlsCommand> command(new JlmHlsCommand(inputFile, outputFolder, options));
     return CommandGraph::Node::Create(commandGraph, std::move(command));
   }
 
 private:
   util::filepath InputFile_;
   util::filepath OutputFolder_;
+  std::vector<std::string> Options;
 };
 
 /**

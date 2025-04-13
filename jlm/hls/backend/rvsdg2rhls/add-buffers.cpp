@@ -313,7 +313,7 @@ AddBuffers(rvsdg::Region * region)
   }
 }
 
-const size_t MemoryLatency = 100;
+size_t MemoryLatency = 10;
 
 constexpr uint32_t
 round_up_pow2(uint32_t x)
@@ -681,6 +681,12 @@ CalculateLoopCycleDepth(
   std::cout << "second iteration" << std::endl;
   PushCycleFrontier(loop, output_cycles, frontier2, stream_backedges, top_muxes);
   //  }
+}
+
+void
+setMemoryLatency(size_t memoryLatency)
+{
+  MemoryLatency = memoryLatency;
 }
 
 size_t
