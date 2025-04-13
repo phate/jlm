@@ -748,12 +748,16 @@ ReplaceStore(
   }
   auto storeOuts = store_op::create(*addr, *data, states, *response);
   auto newStore = dynamic_cast<rvsdg::node_output *>(storeOuts[0])->node();
-  // TODO: add a proper store node that consumes the response
   // iterate over output states
   for (size_t i = 0; i < replacedStore->noutputs(); ++i)
   {
-    smap.insert(originalStore->output(i), storeOuts[i]);
-    replacedStore->output(i)->divert_users(storeOuts[i]);
+    // create a buffer to avoid a scenario where the reponse port is blocked because a merge waits
+    // for the store
+    // TODO: It might be better to have memstate merges consume individual tokens instead,, and fire
+    // the output once all inputs have consumed
+    auto bo = buffer_op::create(*storeOuts[i], 1, true)[0];
+    smap.insert(originalStore->output(i), bo);
+    replacedStore->output(i)->divert_users(bo);
   }
   remove(replacedStore);
   return dynamic_cast<rvsdg::SimpleNode *>(newStore);
