@@ -17,13 +17,15 @@ std::string
 region_to_dot(
     rvsdg::Region * region,
     std::unordered_map<rvsdg::output *, std::string> & o_color,
-    std::unordered_map<rvsdg::input *, std::string> & i_color);
+    std::unordered_map<rvsdg::input *, std::string> & i_color,
+    std::unordered_map<rvsdg::output *, std::string> & tail_label);
 
 std::string
 to_dot(
     rvsdg::Region * region,
     std::unordered_map<rvsdg::output *, std::string> & o_color,
-    std::unordered_map<rvsdg::input *, std::string> & i_color);
+    std::unordered_map<rvsdg::input *, std::string> & i_color,
+    std::unordered_map<rvsdg::output *, std::string> & tail_label);
 
 void
 view_dot(rvsdg::Region * region, FILE * out);
@@ -32,14 +34,16 @@ view_dot(
     rvsdg::Region * region,
     FILE * out,
     std::unordered_map<rvsdg::output *, std::string> & o_color,
-    std::unordered_map<rvsdg::input *, std::string> & i_color);
+    std::unordered_map<rvsdg::input *, std::string> & i_color,
+    std::unordered_map<rvsdg::output *, std::string> & tail_label);
 
 void
 dump_dot(
     llvm::RvsdgModule & rvsdgModule,
     const std::string & file_name,
-    std::unordered_map<rvsdg::output *, std::string> & o_color,
-    std::unordered_map<rvsdg::input *, std::string> & i_color);
+    std::unordered_map<rvsdg::output *, std::string> o_color,
+    std::unordered_map<rvsdg::input *, std::string> i_color,
+    std::unordered_map<rvsdg::output *, std::string> tail_label);
 void
 
 dump_dot(llvm::RvsdgModule & rvsdgModule, const std::string & file_name);
@@ -48,8 +52,9 @@ void
 dump_dot(
     rvsdg::Region * region,
     const std::string & file_name,
-    std::unordered_map<rvsdg::output *, std::string> & o_color,
-    std::unordered_map<rvsdg::input *, std::string> & i_color);
+    std::unordered_map<rvsdg::output *, std::string> o_color,
+    std::unordered_map<rvsdg::input *, std::string> i_color,
+    std::unordered_map<rvsdg::output *, std::string> tail_label);
 void
 dump_dot(rvsdg::Region * region, const std::string & file_name);
 

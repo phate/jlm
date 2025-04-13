@@ -40,9 +40,10 @@ TestDumpDot()
 
   std::unordered_map<rvsdg::output *, std::string> o_color;
   std::unordered_map<rvsdg::input *, std::string> i_color;
+  std::unordered_map<rvsdg::output *, std::string> tail_label;
 
   // Act
-  auto dotOutput = to_dot(lambda->region(), o_color, i_color);
+  auto dotOutput = to_dot(lambda->region(), o_color, i_color, tail_label);
 
   // Assert
   assert(dotOutput.size() > 0);
@@ -92,8 +93,9 @@ TestDumpDotTheta()
 
   std::unordered_map<rvsdg::output *, std::string> o_color;
   std::unordered_map<rvsdg::input *, std::string> i_color;
+  std::unordered_map<rvsdg::output *, std::string> tail_label;
   // Act
-  auto dotOutput = to_dot(lambda->region(), o_color, i_color);
+  auto dotOutput = to_dot(lambda->region(), o_color, i_color, tail_label);
 
   // Assert
   assert(dotOutput.size() > 0);
