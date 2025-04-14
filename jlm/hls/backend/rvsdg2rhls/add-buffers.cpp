@@ -365,71 +365,100 @@ MaximizeBuffers(rvsdg::Region * region)
     //      buf->pass_through)); remove(node);
     //    }
     //    else
-    if (dynamic_cast<const decoupled_load_op *>(&node->GetOperation()))
+    if (auto dl = dynamic_cast<const decoupled_load_op *>(&node->GetOperation()))
     {
-      divert_users(
-          node,
-          decoupled_load_op::create(
-              *node->input(0)->origin(),
-              *node->input(1)->origin(),
-              round_up_pow2(MemoryLatency)));
-      remove(node);
+      auto capacity = round_up_pow2(MemoryLatency);
+      if (dl->capacity < capacity)
+      {
+        divert_users(
+            node,
+            decoupled_load_op::create(
+                *node->input(0)->origin(),
+                *node->input(1)->origin(),
+                capacity));
+        remove(node);
+      }
     }
   }
 }
 
-size_t
-NodeCycles(rvsdg::SimpleNode * node)
+std::vector<size_t>
+NodeCycles(rvsdg::SimpleNode * node, std::vector<size_t> & input_cycles)
 {
+  auto max_cycles = *std::max_element(input_cycles.begin(), input_cycles.end());
   if (auto op = dynamic_cast<const llvm::fpbin_op *>(&node->GetOperation()))
   {
     if (op->fpop() == llvm::fpop::add)
     {
-      return 1;
+      return { max_cycles + 1 };
     }
   }
   else if (auto op = dynamic_cast<const buffer_op *>(&node->GetOperation()))
   {
     if (op->pass_through)
     {
-      return 0;
+      return { max_cycles + 0 };
     }
-    return 1;
+    return { max_cycles + 1 };
   }
-  else if (rvsdg::is<decoupled_load_op>(node))
+  else if (dynamic_cast<const decoupled_load_op *>(&node->GetOperation()))
   {
-    return MemoryLatency;
+    return { max_cycles + MemoryLatency, 0 };
+  }
+  else if (rvsdg::is<state_gate_op>(node))
+  {
+    // handle special state gate that sits on dec_load response
+    auto sg0_user = GetUser(node->output(0));
+    if (TryGetOwnerOp<decoupled_load_op>(*sg0_user) && sg0_user->index() == 1)
+    {
+      JLM_ASSERT(max_cycles == 0);
+      return { 0, MemoryLatency };
+    }
   }
   else if (rvsdg::is<store_op>(node))
   {
-    return MemoryLatency;
+    JLM_ASSERT(node->noutputs() == 3);
+    return { max_cycles + MemoryLatency, 0, 0 };
   }
-  return 0;
+  return std::vector<size_t>(node->noutputs(), max_cycles);
 }
 
-size_t
-NodeCapacity(rvsdg::SimpleNode * node)
+const size_t MaxBufferCapacity = std::numeric_limits<uint32_t>::max();
+
+std::vector<size_t>
+NodeCapacity(rvsdg::SimpleNode * node, std::vector<size_t> & input_capacities)
 {
+  auto min_capacity = *std::min_element(input_capacities.begin(), input_capacities.end());
   if (auto op = dynamic_cast<const llvm::fpbin_op *>(&node->GetOperation()))
   {
     if (op->fpop() == llvm::fpop::add)
     {
-      return 1;
+      return { min_capacity + 1 };
     }
   }
   else if (auto op = dynamic_cast<const buffer_op *>(&node->GetOperation()))
   {
-    return op->capacity;
+    return { min_capacity + op->capacity };
   }
   else if (auto op = dynamic_cast<const decoupled_load_op *>(&node->GetOperation()))
   {
-    return op->capacity;
+    return { min_capacity + op->capacity, 0 };
+  }
+  else if (rvsdg::is<state_gate_op>(node))
+  {
+    // handle special state gate that sits on dec_load response
+    auto sg0_user = GetUser(node->output(0));
+    if (TryGetOwnerOp<decoupled_load_op>(*sg0_user) && sg0_user->index() == 1)
+    {
+      JLM_ASSERT(min_capacity == MaxBufferCapacity);
+      return { 0, MemoryLatency };
+    }
   }
   else if (dynamic_cast<const store_op *>(&node->GetOperation()))
   {
-    return MemoryLatency;
+    return { min_capacity + MemoryLatency, 0, 0 };
   }
-  return 0;
+  return std::vector<size_t>(node->noutputs(), min_capacity);
 }
 
 void
@@ -511,20 +540,20 @@ PushCycleFrontier(
     std::unordered_set<rvsdg::SimpleNode *> & top_muxes)
 {
   bool changed = false;
-  //  uint32_t iteration = 0;
+  //    uint32_t iteration = 0;
   do
   {
-    //    std::stringstream stream;
-    //    stream << "CalculateLoopCycleDepth_" << loop << "_" << iteration++
-    //           << ".dot";
-    //    std::unordered_map<rvsdg::output *, std::string> o_color;
-    //    std::unordered_map<rvsdg::input *, std::string> i_color;
-    //    for (auto i : frontier)
-    //    {
-    //      i_color.insert({ i, "red" });
-    //    }
-    //    dump_dot(&loop->region()->graph()->GetRootRegion(), stream.str(), o_color, i_color);
-    //    dot_to_svg(stream.str());
+    //        std::stringstream stream;
+    //        stream << "CalculateLoopCycleDepth_" << loop << "_" << iteration++
+    //               << ".dot";
+    //        std::unordered_map<rvsdg::output *, std::string> o_color;
+    //        std::unordered_map<rvsdg::input *, std::string> i_color;
+    //        for (auto i : frontier)
+    //        {
+    //          i_color.insert({ i, "red" });
+    //        }
+    //        dump_dot(&loop->region()->graph()->GetRootRegion(), stream.str(), o_color, i_color);
+    //        dot_to_svg(stream.str());
 
     changed = false;
     for (auto in : frontier)
@@ -543,29 +572,35 @@ PushCycleFrontier(
         if (!all_contained)
           continue;
         // all inputs of node are in frontier - move them forward
-        size_t max_cycles = 0;
+        std::vector<size_t> input_cycles;
         for (size_t i = 0; i < simpleNode->ninputs(); ++i)
         {
-          max_cycles = std::max(max_cycles, output_cycles[simpleNode->input(i)->origin()]);
+          input_cycles.push_back(output_cycles[simpleNode->input(i)->origin()]);
           frontier.erase(simpleNode->input(i));
         }
-        size_t out_cycles = max_cycles + NodeCycles(simpleNode);
+        std::vector<size_t> out_cycles = NodeCycles(simpleNode, input_cycles);
 
         if (top_muxes.find(simpleNode) != top_muxes.end())
         {
-          // we reached our starting point again
-          for (size_t i = 0; i < simpleNode->noutputs(); ++i)
+          if (dynamic_cast<const mux_op *>(&simpleNode->GetOperation()))
           {
-            auto out = simpleNode->output(i);
-            output_cycles[out] = out_cycles;
+            // TODO: do this in NodeCycles instead?
+            // this works for most cases, but is not ideal if the backedge has an II > 1, and the
+            // predicate hasn't
+            auto pred_latency = output_cycles[simpleNode->input(0)->origin()];
+            auto input_latency = output_cycles[simpleNode->input(1)->origin()];
+            auto backedge_latency = output_cycles[simpleNode->input(2)->origin()];
+            auto out_latency = backedge_latency - pred_latency + input_latency;
+            std::cout << "top_mux " << simpleNode << " pred latency: " << pred_latency
+                      << " input latency: " << input_latency
+                      << " backedge latency: " << backedge_latency
+                      << " out latency: " << out_latency << std::endl;
+            output_cycles[simpleNode->output(0)] = out_latency;
           }
-          auto mux = dynamic_cast<const mux_op *>(&simpleNode->GetOperation());
-          if (mux)
+          else
           {
-            std::cout << "top_mux " << simpleNode
-                      << " pred latency: " << output_cycles[simpleNode->input(0)->origin()]
-                      << " backedge latency: " << output_cycles[simpleNode->input(2)->origin()]
-                      << std::endl;
+            JLM_ASSERT(dynamic_cast<const loop_constant_buffer_op *>(&simpleNode->GetOperation()));
+            // don't update output cycles
           }
         }
         else
@@ -573,7 +608,7 @@ PushCycleFrontier(
           for (size_t i = 0; i < simpleNode->noutputs(); ++i)
           {
             auto out = simpleNode->output(i);
-            output_cycles[out] = out_cycles;
+            output_cycles[out] = out_cycles[i];
             frontier.insert(GetUser(out));
           }
         }
@@ -584,10 +619,10 @@ PushCycleFrontier(
       {
         frontier.erase(in);
         auto out = be->argument();
-        output_cycles[out] = output_cycles[in->origin()];
         if (stream_backedges.find(be) == stream_backedges.end())
         {
           // skip stream backedges
+          output_cycles[out] = output_cycles[in->origin()];
           frontier.insert(GetUser(out));
         }
         changed = true;
@@ -644,7 +679,7 @@ PushCycleFrontier(
     {
       i_color.insert({ i, "red" });
     }
-    dump_dot(&loop->region()->graph()->GetRootRegion(), "crash.dot", o_color, i_color);
+    dump_dot(&loop->region()->graph()->GetRootRegion(), "crash.dot", o_color, i_color, {});
   }
   JLM_ASSERT(frontier.empty());
 }
@@ -673,13 +708,45 @@ CalculateLoopCycleDepth(
    * for example the nextRow in SPMV. In theory more iterations could be necessary, until things
    * only increase by the iterative intensity.
    * */
-  // TODO: should there be more iterations of this?
+  // TODO: should there be more iterations of this? We could iterate until there is no more change
+  // in the difference. This would also give us the II
   PushCycleFrontier(loop, output_cycles, frontier, stream_backedges, top_muxes);
-  //  if (!analyze_inner_loop)
-  //  {
-  // for analysis we only care about one cycle depth
+
+  std::unordered_map<rvsdg::output *, std::string> o_color;
+  std::unordered_map<rvsdg::input *, std::string> i_color;
+  std::unordered_map<rvsdg::output *, std::string> tail_label;
+  if (!analyze_inner_loop)
+  {
+    for (auto i : frontier2)
+    {
+      i_color.insert({ i, "red" });
+    }
+    for (auto [o, l] : output_cycles)
+    {
+      tail_label[o] = std::to_string(l);
+    }
+    dump_dot(
+        &loop->region()->graph()->GetRootRegion(),
+        util::strfmt("CalculateLoopCycleDepth_", loop, "_first.dot"),
+        o_color,
+        i_color,
+        tail_label);
+  }
   std::cout << "second iteration" << std::endl;
   PushCycleFrontier(loop, output_cycles, frontier2, stream_backedges, top_muxes);
+  if (!analyze_inner_loop)
+  {
+    for (auto [o, l] : output_cycles)
+    {
+      tail_label[o] = std::to_string(l);
+    }
+    dump_dot(
+        &loop->region()->graph()->GetRootRegion(),
+        util::strfmt("CalculateLoopCycleDepth_", loop, "_second.dot"),
+        o_color,
+        i_color,
+        tail_label);
+  }
   //  }
 }
 
@@ -766,7 +833,35 @@ AdjustLoopBuffers(
   {
     auto out = tn.output(0);
     // don't use size_t max, since that is used to signal down below
-    buffer_capacity[out] = std::numeric_limits<uint32_t>::max();
+    buffer_capacity[out] = MaxBufferCapacity;
+  }
+  // same for inputs - we only care what happens within the loop
+  for (size_t i = 0; i < loop->ninputs(); ++i)
+  {
+    auto in = loop->input(i);
+    buffer_capacity[in->origin()] = MaxBufferCapacity;
+    buffer_capacity[in->arguments.begin().ptr()] = MaxBufferCapacity;
+  }
+
+  std::unordered_map<rvsdg::output *, std::string> o_color;
+  std::unordered_map<rvsdg::input *, std::string> i_color;
+  std::unordered_map<rvsdg::output *, std::string> tail_label;
+  if (!analyze_inner_loop)
+  {
+    for (auto i : frontier)
+    {
+      i_color.insert({ i, "red" });
+    }
+    for (auto [o, l] : buffer_capacity)
+    {
+      tail_label[o] = std::to_string(l);
+    }
+    dump_dot(
+        &loop->region()->graph()->GetRootRegion(),
+        util::strfmt("AdjustLoopBuffers_", loop, "_begin.dot"),
+        o_color,
+        i_color,
+        tail_label);
   }
 
   bool changed = false;
@@ -809,30 +904,19 @@ AdjustLoopBuffers(
           frontier.erase(simpleNode->input(i));
         }
 
+        std::vector<size_t> input_capacities;
         // adjust capacities
-        size_t min_capacity = std::numeric_limits<size_t>::max();
         for (size_t i = 0; i < simpleNode->ninputs(); ++i)
         {
           auto capacity = buffer_capacity[simpleNode->input(i)->origin()];
-          // don't place buffers on loop inputs
-          auto ra = dynamic_cast<rvsdg::RegionArgument *>(simpleNode->input(i)->origin());
-          if ((!ra || !ra->input()))
+          if (!analyze_inner_loop && capacity < max_cycles)
           {
-            if (!analyze_inner_loop && capacity < max_cycles)
-            {
-              size_t capacity_diff = max_cycles - capacity;
-              capacity += PlaceBufferLoop(simpleNode->input(i)->origin(), capacity_diff, true);
-              buffer_capacity[simpleNode->input(i)->origin()] = capacity;
-            }
-            min_capacity = std::min(min_capacity, capacity);
+            size_t capacity_diff = max_cycles - capacity;
+            capacity += PlaceBufferLoop(simpleNode->input(i)->origin(), capacity_diff, true);
+            buffer_capacity[simpleNode->input(i)->origin()] = capacity;
           }
+          input_capacities.push_back(capacity);
         }
-        if (min_capacity == std::numeric_limits<size_t>::max())
-        {
-          //          dump_dot(&loop->region()->graph()->GetRootRegion(), "crash.dot");
-          min_capacity = output_cycles[simpleNode->input(0)->origin()];
-        }
-        //        JLM_ASSERT(min_capacity != std::numeric_limits<size_t>::max());
 
         if (top_muxes.find(simpleNode) != top_muxes.end())
         {
@@ -848,11 +932,11 @@ AdjustLoopBuffers(
         }
         else
         {
-          size_t out_capacity = min_capacity + NodeCapacity(simpleNode);
+          std::vector<size_t> out_capacities = NodeCapacity(simpleNode, input_capacities);
           for (size_t i = 0; i < simpleNode->noutputs(); ++i)
           {
             auto out = simpleNode->output(i);
-            buffer_capacity[out] = out_capacity;
+            buffer_capacity[out] = out_capacities[i];
             JLM_ASSERT(analyze_inner_loop || buffer_capacity[out] >= output_cycles[out]);
             frontier.insert(GetUser(out));
           }
@@ -909,21 +993,24 @@ AdjustLoopBuffers(
         for (size_t i = 0; i < inner_loop->ninputs(); ++i)
         {
           auto capacity = buffer_capacity[inner_loop->input(i)->origin()];
-          // don't place buffers on loop inputs
-          auto ra = dynamic_cast<rvsdg::RegionArgument *>(inner_loop->input(i)->origin());
-          if ((!ra || !ra->input()))
+          if (!analyze_inner_loop && capacity < max_cycles)
           {
-            if (!analyze_inner_loop && capacity < max_cycles)
+            auto user = GetUser(inner_loop->input(i)->arguments.begin().ptr());
+            auto mux = TryGetOwnerOp<mux_op>(*user);
+            if ((mux && mux->loop) || TryGetOwnerOp<loop_constant_buffer_op>(*user))
             {
               size_t capacity_diff = max_cycles - capacity;
               capacity += PlaceBufferLoop(inner_loop->input(i)->origin(), capacity_diff, true);
               buffer_capacity[inner_loop->input(i)->origin()] = capacity;
             }
+            else
+            {
+              // don't put buffers on decouples, streams, and addrq stuff
+            }
           }
         }
 
         AdjustLoopBuffers(inner_loop, output_cycles, buffer_capacity, true);
-//        AdjustLoopBuffers(inner_loop, output_cycles, buffer_capacity, false);
         for (size_t i = 0; i < inner_loop->noutputs(); ++i)
         {
           frontier.insert(GetUser(inner_loop->output(i)));
@@ -941,6 +1028,20 @@ AdjustLoopBuffers(
   // TODO: remove buffers on cycles?
   // TODO: don't place buf2 on const buf if it gos up to another const buf - even through a branch?
   // TODO: still run buffer resize pass, but without upsizing?
+
+  if (!analyze_inner_loop)
+  {
+    for (auto [o, l] : buffer_capacity)
+    {
+      tail_label[o] = std::to_string(l);
+    }
+    dump_dot(
+        &loop->region()->graph()->GetRootRegion(),
+        util::strfmt("AdjustLoopBuffers_", loop, "_end.dot"),
+        o_color,
+        i_color,
+        tail_label);
+  }
 }
 
 void
