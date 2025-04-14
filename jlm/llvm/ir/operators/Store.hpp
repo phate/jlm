@@ -337,8 +337,6 @@ public:
   CopyWithNewMemoryStates(const std::vector<rvsdg::output *> & memoryStates) const = 0;
 };
 
-
-
 /**
  * Represents a volatile LLVM store instruction.
  *
