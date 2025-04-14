@@ -115,7 +115,7 @@ private:
   EncodeLoad(const rvsdg::SimpleNode & node);
 
   void
-  EncodeStore(const StoreNode & storeNode);
+  EncodeStore(const rvsdg::SimpleNode & node);
 
   void
   EncodeFree(const rvsdg::SimpleNode & freeNode);
@@ -185,13 +185,15 @@ private:
    * Replace \p storeNode with a new copy that takes the provided \p memoryStates. All users of the
    * outputs of \p storeNode are redirected to the respective outputs of the newly created copy.
    *
-   * @param storeNode A StoreNode.
+   * @param node A StoreNode.
    * @param memoryStates The memory states the new StoreNode should consume.
    *
    * @return The newly created StoreNode.
    */
-  [[nodiscard]] static StoreNode &
-  ReplaceStoreNode(const StoreNode & storeNode, const std::vector<rvsdg::output *> & memoryStates);
+  [[nodiscard]] static rvsdg::SimpleNode &
+  ReplaceStoreNode(
+      const rvsdg::SimpleNode & node,
+      const std::vector<rvsdg::output *> & memoryStates);
 
   /**
    * Replace \p memcpyNode with a new copy that takes the provided \p memoryStates. All users of

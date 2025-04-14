@@ -361,7 +361,7 @@ private:
   AnalyzeLoad(const rvsdg::SimpleNode & node);
 
   void
-  AnalyzeStore(const StoreNode & storeNode);
+  AnalyzeStore(const rvsdg::SimpleNode & node);
 
   void
   AnalyzeCall(const CallNode & callNode);

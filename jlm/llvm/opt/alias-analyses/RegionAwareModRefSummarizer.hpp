@@ -141,7 +141,7 @@ private:
   AnnotateLoad(const rvsdg::SimpleNode & loadNode, RegionSummary & regionSummary);
 
   void
-  AnnotateStore(const StoreNode & storeNode, RegionSummary & regionSummary);
+  AnnotateStore(const rvsdg::SimpleNode & storeNode, RegionSummary & regionSummary);
 
   void
   AnnotateAlloca(const rvsdg::SimpleNode & allocaNode, RegionSummary & regionSummary);

@@ -1006,9 +1006,9 @@ Steensgaard::AnalyzeSimpleNode(const jlm::rvsdg::SimpleNode & node)
   {
     AnalyzeLoad(node);
   }
-  else if (auto storeNode = dynamic_cast<const StoreNode *>(&node))
+  else if (is<StoreOperation>(&node))
   {
-    AnalyzeStore(*storeNode);
+    AnalyzeStore(node);
   }
   else if (auto callNode = dynamic_cast<const CallNode *>(&node))
   {
@@ -1130,10 +1130,10 @@ Steensgaard::AnalyzeLoad(const rvsdg::SimpleNode & node)
 }
 
 void
-Steensgaard::AnalyzeStore(const StoreNode & storeNode)
+Steensgaard::AnalyzeStore(const rvsdg::SimpleNode & node)
 {
-  auto & address = *storeNode.GetAddressInput().origin();
-  auto & value = *storeNode.GetStoredValueInput().origin();
+  auto & address = *StoreOperation::AddressInput(node).origin();
+  auto & value = *StoreOperation::StoredValueInput(node).origin();
 
   if (!HasOrContainsPointerType(value))
     return;

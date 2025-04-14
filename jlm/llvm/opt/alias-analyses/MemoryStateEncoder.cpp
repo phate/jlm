@@ -181,7 +181,7 @@ public:
     static void
     ReplaceStates(
         const std::vector<MemoryNodeStatePair *> & memoryNodeStatePairs,
-        const StoreNode::MemoryStateOutputRange & states)
+        const StoreOperation::MemoryStateOutputRange & states)
     {
       auto it = states.begin();
       for (auto memoryNodeStatePair : memoryNodeStatePairs)
@@ -551,9 +551,9 @@ MemoryStateEncoder::EncodeSimpleNode(const rvsdg::SimpleNode & simpleNode)
   {
     EncodeLoad(simpleNode);
   }
-  else if (auto storeNode = dynamic_cast<const StoreNode *>(&simpleNode))
+  else if (is<StoreOperation>(&simpleNode))
   {
-    EncodeStore(*storeNode);
+    EncodeStore(simpleNode);
   }
   else if (auto callNode = dynamic_cast<const CallNode *>(&simpleNode))
   {
@@ -646,19 +646,19 @@ MemoryStateEncoder::EncodeLoad(const rvsdg::SimpleNode & node)
 }
 
 void
-MemoryStateEncoder::EncodeStore(const StoreNode & storeNode)
+MemoryStateEncoder::EncodeStore(const rvsdg::SimpleNode & node)
 {
   auto & stateMap = Context_->GetRegionalizedStateMap();
 
-  auto address = storeNode.GetAddressInput().origin();
-  auto memoryNodeStatePairs = stateMap.GetStates(*address);
-  auto memoryStates = StateMap::MemoryNodeStatePair::States(memoryNodeStatePairs);
+  const auto address = StoreOperation::AddressInput(node).origin();
+  const auto memoryNodeStatePairs = stateMap.GetStates(*address);
+  const auto memoryStates = StateMap::MemoryNodeStatePair::States(memoryNodeStatePairs);
 
-  auto & newStoreNode = ReplaceStoreNode(storeNode, memoryStates);
+  const auto & newStoreNode = ReplaceStoreNode(node, memoryStates);
 
   StateMap::MemoryNodeStatePair::ReplaceStates(
       memoryNodeStatePairs,
-      newStoreNode.MemoryStateOutputs());
+      StoreOperation::MemoryStateOutputs(newStoreNode));
 }
 
 void
@@ -990,18 +990,26 @@ MemoryStateEncoder::ReplaceLoadNode(
   JLM_UNREACHABLE("Unhandled load node type.");
 }
 
-StoreNode &
+rvsdg::SimpleNode &
 MemoryStateEncoder::ReplaceStoreNode(
-    const jlm::llvm::StoreNode & storeNode,
+    const rvsdg::SimpleNode & node,
     const std::vector<rvsdg::output *> & memoryStates)
 {
-  if (auto storeVolatileNode = dynamic_cast<const StoreVolatileNode *>(&storeNode))
+  if (const auto oldStoreVolatileOperation =
+          dynamic_cast<const StoreVolatileOperation *>(&node.GetOperation()))
   {
-    auto & newStoreNode = storeVolatileNode->CopyWithNewMemoryStates(memoryStates);
-    storeVolatileNode->GetIoStateOutput().divert_users(&newStoreNode.GetIoStateOutput());
+    auto & newStoreNode = StoreVolatileOperation::CreateNode(
+        *StoreOperation::AddressInput(node).origin(),
+        *StoreOperation::StoredValueInput(node).origin(),
+        *StoreVolatileOperation::IOStateInput(node).origin(),
+        memoryStates,
+        oldStoreVolatileOperation->GetAlignment());
+    auto & oldIOStateOutput = StoreVolatileOperation::IOStateOutput(node);
+    auto & newIOStateOutput = StoreVolatileOperation::IOStateOutput(newStoreNode);
+    oldIOStateOutput.divert_users(&newIOStateOutput);
     return newStoreNode;
   }
-  else if (auto storeNonVolatileNode = dynamic_cast<const StoreNonVolatileNode *>(&storeNode))
+  else if (auto storeNonVolatileNode = dynamic_cast<const StoreNonVolatileNode *>(&node))
   {
     return storeNonVolatileNode->CopyWithNewMemoryStates(memoryStates);
   }
