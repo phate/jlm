@@ -327,8 +327,8 @@ TestLoadStoreStateReduction()
 
   auto alloca1 = alloca_op::create(bt, size, 4);
   auto alloca2 = alloca_op::create(bt, size, 4);
-  auto store1 = StoreNonVolatileNode::Create(alloca1[0], size, { alloca1[1] }, 4);
-  auto store2 = StoreNonVolatileNode::Create(alloca2[0], size, { alloca2[1] }, 4);
+  auto store1 = StoreNonVolatileOperation::Create(alloca1[0], size, { alloca1[1] }, 4);
+  auto store2 = StoreNonVolatileOperation::Create(alloca2[0], size, { alloca2[1] }, 4);
 
   auto & loadNode1 =
       LoadNonVolatileOperation::CreateNode(*alloca1[0], { store1[0], store2[0] }, bt, 4);
@@ -381,7 +381,7 @@ TestLoadStoreReduction_Success()
   auto v = &jlm::tests::GraphImport::Create(graph, vt, "value");
   auto s = &jlm::tests::GraphImport::Create(graph, mt, "state");
 
-  auto s1 = StoreNonVolatileNode::Create(a, v, { s }, 4)[0];
+  auto s1 = StoreNonVolatileOperation::Create(a, v, { s }, 4)[0];
   auto & loadNode = LoadNonVolatileOperation::CreateNode(*a, { s1 }, vt, 4);
 
   auto & x1 = GraphExport::Create(*loadNode.output(0), "value");
@@ -425,7 +425,7 @@ LoadStoreReduction_DifferentValueOperandType()
   auto & value = jlm::tests::GraphImport::Create(graph, jlm::rvsdg::bittype::Create(32), "value");
   auto memoryState = &jlm::tests::GraphImport::Create(graph, memoryStateType, "memoryState");
 
-  auto & storeNode = StoreNonVolatileNode::CreateNode(address, value, { memoryState }, 4);
+  auto & storeNode = StoreNonVolatileOperation::CreateNode(address, value, { memoryState }, 4);
   auto & loadNode = LoadNonVolatileOperation::CreateNode(
       address,
       outputs(&storeNode),
@@ -480,7 +480,7 @@ TestLoadLoadReduction()
   auto s1 = &jlm::tests::GraphImport::Create(graph, mt, "s1");
   auto s2 = &jlm::tests::GraphImport::Create(graph, mt, "s2");
 
-  auto st1 = StoreNonVolatileNode::Create(a1, v1, { s1 }, 4);
+  auto st1 = StoreNonVolatileOperation::Create(a1, v1, { s1 }, 4);
   auto ld1 = LoadNonVolatileOperation::Create(a2, { s1 }, vt, 4);
   auto ld2 = LoadNonVolatileOperation::Create(a3, { s2 }, vt, 4);
 

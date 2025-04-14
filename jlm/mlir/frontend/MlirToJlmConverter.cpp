@@ -528,7 +528,7 @@ MlirToJlmConverter::ConvertOperation(
     auto address = inputs[0];
     auto value = inputs[1];
     auto memoryStateInputs = std::vector(std::next(inputs.begin(), 2), inputs.end());
-    auto & storeNode = jlm::llvm::StoreNonVolatileNode::CreateNode(
+    auto & storeNode = jlm::llvm::StoreNonVolatileOperation::CreateNode(
         *address,
         *value,
         memoryStateInputs,

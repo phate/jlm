@@ -122,7 +122,7 @@ TestLoadStore()
       { memoryStateArgument.pre },
       PointerType::Create(),
       32);
-  auto storeOutput = StoreNonVolatileNode::Create(
+  auto storeOutput = StoreNonVolatileOperation::Create(
       storeAddress.pre,
       jlm::rvsdg::create_bitconstant(theta->subregion(), 32, 1),
       { loadOutput[1] },
@@ -201,7 +201,7 @@ TestAddrQueue()
       PointerType::Create(),
       32);
   auto storeOutput =
-      StoreNonVolatileNode::Create(address.pre, loadOutput[0], { loadOutput[1] }, 32);
+      StoreNonVolatileOperation::Create(address.pre, loadOutput[0], { loadOutput[1] }, 32);
 
   address.post->divert_to(loadOutput[0]);
   memoryStateArgument.post->divert_to(storeOutput[0]);
@@ -244,11 +244,10 @@ TestAddrQueue()
     {
       for (auto & node : jlm::rvsdg::TopDownTraverser(loopNode->subregion()))
       {
-        if (auto storeNode = dynamic_cast<const jlm::llvm::StoreNode *>(node))
+        if (is<StoreNonVolatileOperation>(node))
         {
           auto loadNode =
-              jlm::util::AssertedCast<jlm::rvsdg::node_output>(storeNode->input(1)->origin())
-                  ->node();
+              jlm::util::AssertedCast<jlm::rvsdg::node_output>(node->input(1)->origin())->node();
           jlm::util::AssertedCast<const LoadOperation>(&loadNode->GetOperation());
           auto stateGate =
               jlm::util::AssertedCast<jlm::rvsdg::node_output>(loadNode->input(0)->origin())
