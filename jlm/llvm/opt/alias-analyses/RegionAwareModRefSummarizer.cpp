@@ -768,9 +768,9 @@ RegionAwareModRefSummarizer::AnnotateSimpleNode(
   {
     AnnotateLoad(simpleNode, regionSummary);
   }
-  else if (auto storeNode = dynamic_cast<const StoreNode *>(&simpleNode))
+  else if (is<StoreOperation>(&simpleNode))
   {
-    AnnotateStore(*storeNode, regionSummary);
+    AnnotateStore(simpleNode, regionSummary);
   }
   else if (is<alloca_op>(&simpleNode))
   {
@@ -806,10 +806,11 @@ RegionAwareModRefSummarizer::AnnotateLoad(
 
 void
 RegionAwareModRefSummarizer::AnnotateStore(
-    const StoreNode & storeNode,
+    const rvsdg::SimpleNode & storeNode,
     RegionSummary & regionSummary)
 {
-  auto memoryNodes = ModRefSummary_->GetOutputNodes(*storeNode.GetAddressInput().origin());
+  const auto origin = StoreOperation::AddressInput(storeNode).origin();
+  const auto memoryNodes = ModRefSummary_->GetOutputNodes(*origin);
   regionSummary.AddMemoryNodes(memoryNodes);
 }
 

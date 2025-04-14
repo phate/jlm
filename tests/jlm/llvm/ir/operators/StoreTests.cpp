@@ -153,19 +153,18 @@ StoreVolatileNodeCopy()
   auto & memoryState2 = jlm::tests::GraphImport::Create(graph, memoryType, "memoryState2");
 
   auto & storeNode =
-      StoreVolatileNode::CreateNode(address1, value1, ioState1, { &memoryState1 }, 4);
+      StoreVolatileOperation::CreateNode(address1, value1, ioState1, { &memoryState1 }, 4);
 
   // Act
   auto copiedNode =
       storeNode.copy(&graph.GetRootRegion(), { &address2, &value2, &ioState2, &memoryState2 });
 
   // Assert
-  auto copiedStoreNode = dynamic_cast<const StoreVolatileNode *>(copiedNode);
-  assert(storeNode.GetOperation() == copiedStoreNode->GetOperation());
-  assert(copiedStoreNode->GetAddressInput().origin() == &address2);
-  assert(copiedStoreNode->GetStoredValueInput().origin() == &value2);
-  assert(copiedStoreNode->GetIoStateInput().origin() == &ioState2);
-  assert(copiedStoreNode->GetIoStateOutput().type() == *ioStateType);
+  assert(storeNode.GetOperation() == storeNode.GetOperation());
+  assert(StoreOperation::AddressInput(*copiedNode).origin() == &address2);
+  assert(StoreOperation::StoredValueInput(*copiedNode).origin() == &value2);
+  assert(StoreVolatileOperation::IOStateInput(*copiedNode).origin() == &ioState2);
+  assert(StoreVolatileOperation::IOStateOutput(*copiedNode).type() == *ioStateType);
 
   return 0;
 }

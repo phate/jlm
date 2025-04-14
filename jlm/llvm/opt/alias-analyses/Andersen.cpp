@@ -619,8 +619,8 @@ Andersen::AnalyzeSimpleNode(const rvsdg::SimpleNode & node)
     AnalyzeMalloc(node);
   else if (is<LoadOperation>(&node))
     AnalyzeLoad(node);
-  else if (const auto storeNode = dynamic_cast<const StoreNode *>(&node))
-    AnalyzeStore(*storeNode);
+  else if (is<StoreOperation>(&node))
+    AnalyzeStore(node);
   else if (const auto callNode = dynamic_cast<const CallNode *>(&node))
     AnalyzeCall(*callNode);
   else if (is<GetElementPtrOperation>(op))
@@ -715,10 +715,10 @@ Andersen::AnalyzeLoad(const rvsdg::SimpleNode & node)
 }
 
 void
-Andersen::AnalyzeStore(const StoreNode & storeNode)
+Andersen::AnalyzeStore(const rvsdg::SimpleNode & node)
 {
-  const auto & addressRegister = *storeNode.GetAddressInput().origin();
-  const auto & valueRegister = *storeNode.GetStoredValueInput().origin();
+  const auto & addressRegister = *StoreOperation::AddressInput(node).origin();
+  const auto & valueRegister = *StoreOperation::StoredValueInput(node).origin();
 
   const auto addressRegisterPO = Set_->GetRegisterPointerObject(addressRegister);
 
