@@ -85,7 +85,7 @@ TraceEdgeToMerge(rvsdg::input * state_edge)
         TryGetOwnerOp<llvm::MemoryStateMergeOperation>(*state_edge)
         || TryGetOwnerOp<llvm::LambdaExitMemoryStateMergeOperation>(*state_edge))
     {
-      return {util::AssertedCast<rvsdg::SimpleInput>(state_edge), encountered_muxes};
+      return { util::AssertedCast<rvsdg::SimpleInput>(state_edge), encountered_muxes };
     }
     else
     {
@@ -98,16 +98,16 @@ void
 OptimizeResMemState(rvsdg::output * res_mem_state)
 {
   // replace other branches with undefs, so the stateedge before the res can be killed.
-  auto [merge_in, encountered_muxes] =  TraceEdgeToMerge(get_mem_state_user(res_mem_state));
+  auto [merge_in, encountered_muxes] = TraceEdgeToMerge(get_mem_state_user(res_mem_state));
   JLM_ASSERT(merge_in);
-  for (auto si :encountered_muxes)
+  for (auto si : encountered_muxes)
   {
     auto sn = si->node();
     for (size_t i = 1; i < sn->ninputs(); ++i)
     {
-      if (i != si->index()){
-        auto state_dummy =
-            llvm::UndefValueOperation::Create(*si->region(), si->Type());
+      if (i != si->index())
+      {
+        auto state_dummy = llvm::UndefValueOperation::Create(*si->region(), si->Type());
         sn->input(i)->divert_to(state_dummy);
       }
     }
@@ -115,7 +115,7 @@ OptimizeResMemState(rvsdg::output * res_mem_state)
 }
 
 void
-OtimizeReqMemState(rvsdg::output * req_mem_state)
+OptimizeReqMemState(rvsdg::output * req_mem_state)
 { // there is no reason to wait for requests, if we already wait for responses, so we kill the rest
   // of this state edge
   auto [merge_in, _] = TraceEdgeToMerge(get_mem_state_user(req_mem_state));
@@ -157,7 +157,6 @@ ReplaceDecouple(
   // redirect memstate - iostate output has already been removed by mem-sep pass
   decouple_request->output(decouple_request->noutputs() - 1)->divert_users(req_mem_state);
 
-
   // handle response
   int load_capacity = 10;
   if (dynamic_cast<const rvsdg::bittype *>(&decouple_response->input(2)->type()))
@@ -166,26 +165,55 @@ ReplaceDecouple(
     load_capacity = constant->Representation().to_int();
     assert(load_capacity >= 0);
   }
-  // create this outside loop - need to tunnel outward from request and inward to response
   auto routed_resp = route_response_rhls(decouple_request->region(), resp);
-  // response is not routed inward for this case
   auto dload_out = decoupled_load_op::create(*addr, *routed_resp, load_capacity);
+  auto dload_node = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*dload_out[0]);
 
   auto routed_data = route_to_region_rhls(decouple_response->region(), dload_out[0]);
-  auto response_state_origin = decouple_response->input(decouple_response->ninputs() - 1)->origin();
-  auto state_dummy = llvm::UndefValueOperation::Create(
-      *response_state_origin->region(),
-      response_state_origin->Type());
-  auto sg_resp = state_gate_op::create(*routed_data, { state_dummy });
   decouple_response->output(0)->divert_users(routed_data);
-  decouple_response->output(decouple_response->noutputs() - 1)->divert_users(sg_resp[1]);
-  JLM_ASSERT(decouple_response->IsDead());
-  remove(decouple_response);
-  JLM_ASSERT(decouple_request->IsDead());
-  remove(decouple_request);
+  auto response_state_origin =
+      decouple_response->input(decouple_response->ninputs() - 1)->origin();
 
-  OptimizeResMemState(sg_resp[1]);
-  OtimizeReqMemState(req_mem_state);
+  if(decouple_request->region() != decouple_response->region())
+  {
+    // they are in different regions, so we handle state edge at response
+    auto state_dummy = llvm::UndefValueOperation::Create(
+        *response_state_origin->region(),
+        response_state_origin->Type());
+    auto sg_resp = state_gate_op::create(*routed_data, { state_dummy });
+    decouple_response->output(decouple_response->noutputs() - 1)->divert_users(sg_resp[1]);
+    JLM_ASSERT(decouple_response->IsDead());
+    remove(decouple_response);
+    JLM_ASSERT(decouple_request->IsDead());
+    remove(decouple_request);
+
+    OptimizeResMemState(sg_resp[1]);
+    OptimizeReqMemState(req_mem_state);
+  }
+  else
+  {
+    // they are in the same region, handle at request
+    // remove mem state from response call
+    decouple_response->output(decouple_response->noutputs() - 1)->divert_users(response_state_origin);
+
+    auto state_dummy = llvm::UndefValueOperation::Create(
+        *response_state_origin->region(),
+        response_state_origin->Type());
+    // put state gate on load response
+    auto sg_resp = state_gate_op::create(*dload_node->input(1)->origin(), { state_dummy });
+    dload_node->input(1)->divert_to(sg_resp[0]);
+    auto state_user = get_mem_state_user(req_mem_state);
+    state_user->divert_to(sg_resp[1]);
+
+    JLM_ASSERT(decouple_response->IsDead());
+    remove(decouple_response);
+    JLM_ASSERT(decouple_request->IsDead());
+    remove(decouple_request);
+
+    // these are swapped in this scenario, since we keep the one from request
+    OptimizeReqMemState(response_state_origin);
+    OptimizeResMemState(sg_resp[1]);
+  }
 
   auto nn = dynamic_cast<rvsdg::node_output *>(dload_out[0])->node();
   return dynamic_cast<rvsdg::SimpleNode *>(nn);
