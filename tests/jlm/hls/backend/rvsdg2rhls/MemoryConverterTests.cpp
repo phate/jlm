@@ -47,7 +47,8 @@ TestTraceArgument()
 
   auto storeAddress = lambda->GetFunctionArguments()[1];
   auto storeData = lambda->GetFunctionArguments()[2];
-  auto storeOutput = StoreNonVolatileOperation::Create(storeAddress, storeData, { loadOutput[1] }, 32);
+  auto storeOutput =
+      StoreNonVolatileOperation::Create(storeAddress, storeData, { loadOutput[1] }, 32);
 
   auto lambdaOutput = lambda->finalize({ storeOutput[0] });
   jlm::llvm::GraphExport::Create(*lambdaOutput, "f");
@@ -248,7 +249,8 @@ TestLoadStore()
       { memoryStateArgument },
       jlm::llvm::PointerType::Create(),
       32);
-  auto storeOutput = StoreNonVolatileOperation::Create(loadOutput[0], storeData, { loadOutput[1] }, 32);
+  auto storeOutput =
+      StoreNonVolatileOperation::Create(loadOutput[0], storeData, { loadOutput[1] }, 32);
 
   auto lambdaOutput = lambda->finalize({ storeOutput[0] });
   jlm::llvm::GraphExport::Create(*lambdaOutput, "f");

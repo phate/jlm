@@ -1195,8 +1195,10 @@ ExternalCallTest1::SetupRvsdg()
     auto mergeMode = MemoryStateMergeOperation::Create(
         std::vector<jlm::rvsdg::output *>({ allocaMode[1], mergePath }));
 
-    auto storePath = StoreNonVolatileOperation::Create(allocaPath[0], pathArgument, { mergeMode }, 4);
-    auto storeMode = StoreNonVolatileOperation::Create(allocaMode[0], modeArgument, { storePath[0] }, 4);
+    auto storePath =
+        StoreNonVolatileOperation::Create(allocaPath[0], pathArgument, { mergeMode }, 4);
+    auto storeMode =
+        StoreNonVolatileOperation::Create(allocaMode[0], modeArgument, { storePath[0] }, 4);
 
     auto loadPath = LoadNonVolatileOperation::Create(allocaPath[0], storeMode, pointerType, 4);
     auto loadMode =
@@ -1430,8 +1432,11 @@ GammaTest2::SetupRvsdg()
           4);
 
       auto one = rvsdg::create_bitconstant(gammaNode->subregion(0), 32, 1);
-      auto storeZRegion0Results =
-          StoreNonVolatileOperation::Create(gammaInputZ.branchArgument[0], one, { loadXResults[1] }, 4);
+      auto storeZRegion0Results = StoreNonVolatileOperation::Create(
+          gammaInputZ.branchArgument[0],
+          one,
+          { loadXResults[1] },
+          4);
 
       // gamma subregion 1
       auto loadYResults = LoadNonVolatileOperation::Create(
@@ -1441,8 +1446,11 @@ GammaTest2::SetupRvsdg()
           4);
 
       auto two = rvsdg::create_bitconstant(gammaNode->subregion(1), 32, 2);
-      auto storeZRegion1Results =
-          StoreNonVolatileOperation::Create(gammaInputZ.branchArgument[1], two, { loadYResults[1] }, 4);
+      auto storeZRegion1Results = StoreNonVolatileOperation::Create(
+          gammaInputZ.branchArgument[1],
+          two,
+          { loadYResults[1] },
+          4);
 
       // finalize gamma
       auto gammaOutputA = gammaNode->AddExitVar({ loadXResults[0], loadYResults[0] });
@@ -2305,7 +2313,8 @@ PhiTest2::SetupRvsdg()
     auto functionDCv = lambda->AddContextVar(functionD).inner;
 
     auto one = jlm::rvsdg::create_bitconstant(lambda->subregion(), 32, 1);
-    auto storeNode = StoreNonVolatileOperation::Create(pointerArgument, one, { memoryStateArgument }, 4);
+    auto storeNode =
+        StoreNonVolatileOperation::Create(pointerArgument, one, { memoryStateArgument }, 4);
 
     auto four = jlm::rvsdg::create_bitconstant(lambda->subregion(), 32, 4);
     auto paAlloca = alloca_op::create(jlm::rvsdg::bittype::Create(32), four, 4);
@@ -2351,7 +2360,8 @@ PhiTest2::SetupRvsdg()
     auto functionEightCv = lambda->AddContextVar(functionEight).inner;
 
     auto two = jlm::rvsdg::create_bitconstant(lambda->subregion(), 32, 2);
-    auto storeNode = StoreNonVolatileOperation::Create(pointerArgument, two, { memoryStateArgument }, 4);
+    auto storeNode =
+        StoreNonVolatileOperation::Create(pointerArgument, two, { memoryStateArgument }, 4);
 
     auto four = jlm::rvsdg::create_bitconstant(lambda->subregion(), 32, 4);
     auto pbAlloca = alloca_op::create(jlm::rvsdg::bittype::Create(32), four, 4);
@@ -2395,7 +2405,8 @@ PhiTest2::SetupRvsdg()
     auto functionACv = lambda->AddContextVar(functionA).inner;
 
     auto three = jlm::rvsdg::create_bitconstant(lambda->subregion(), 32, 3);
-    auto storeNode = StoreNonVolatileOperation::Create(xArgument, three, { memoryStateArgument }, 4);
+    auto storeNode =
+        StoreNonVolatileOperation::Create(xArgument, three, { memoryStateArgument }, 4);
 
     auto four = jlm::rvsdg::create_bitconstant(lambda->subregion(), 32, 4);
     auto pcAlloca = alloca_op::create(jlm::rvsdg::bittype::Create(32), four, 4);
@@ -3660,8 +3671,11 @@ EscapingLocalFunctionTest::SetupRvsdg()
       std::vector<rvsdg::output *>{ LocalFunc_->GetFunctionArguments()[1], allocaOutputs[1] });
 
   // Store the function parameter into the alloca node
-  auto storeOutputs =
-      StoreNonVolatileOperation::Create(allocaOutputs[0], LocalFuncParam_, { mergedMemoryState }, 4);
+  auto storeOutputs = StoreNonVolatileOperation::Create(
+      allocaOutputs[0],
+      LocalFuncParam_,
+      { mergedMemoryState },
+      4);
 
   // Bring in deltaOuput as a context variable
   const auto deltaOutputCtxVar = LocalFunc_->AddContextVar(*deltaOutput).inner;
@@ -3782,7 +3796,8 @@ LambdaCallArgumentMismatch::SetupRvsdg()
     auto memoryState = MemoryStateMergeOperation::Create(
         std::vector<rvsdg::output *>{ memoryStateArgument, allocaResults[1] });
 
-    auto storeResults = StoreNonVolatileOperation::Create(allocaResults[0], six, { memoryState }, 4);
+    auto storeResults =
+        StoreNonVolatileOperation::Create(allocaResults[0], six, { memoryState }, 4);
 
     auto loadResults = LoadNonVolatileOperation::Create(
         allocaResults[0],
