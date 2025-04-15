@@ -12,8 +12,6 @@
 
 namespace jlm::hls
 {
-// The number of cycles before a load is ready
-static constexpr int MEMORY_RESPONSE_LATENCY = 10;
 
 std::string
 VerilatorHarnessAxi::GetText(llvm::RvsdgModule & rm)

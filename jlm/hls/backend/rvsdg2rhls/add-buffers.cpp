@@ -688,7 +688,7 @@ PushCycleFrontier(
     {
       i_color.insert({ i, "red" });
     }
-    dump_dot(&loop->region()->graph()->GetRootRegion(), "crash.dot", o_color, i_color, {});
+//    dump_dot(&loop->region()->graph()->GetRootRegion(), "crash.dot", o_color, i_color, {});
   }
   JLM_ASSERT(frontier.empty());
 }
@@ -734,12 +734,12 @@ CalculateLoopCycleDepth(
     {
       tail_label[o] = std::to_string(l);
     }
-    dump_dot(
-        &loop->region()->graph()->GetRootRegion(),
-        util::strfmt("CalculateLoopCycleDepth_", loop, "_first.dot"),
-        o_color,
-        i_color,
-        tail_label);
+//    dump_dot(
+//        &loop->region()->graph()->GetRootRegion(),
+//        util::strfmt("CalculateLoopCycleDepth_", loop, "_first.dot"),
+//        o_color,
+//        i_color,
+//        tail_label);
   }
   std::cout << "second iteration" << std::endl;
   PushCycleFrontier(loop, output_cycles, frontier2, stream_backedges, top_muxes);
@@ -749,12 +749,12 @@ CalculateLoopCycleDepth(
     {
       tail_label[o] = std::to_string(l);
     }
-    dump_dot(
-        &loop->region()->graph()->GetRootRegion(),
-        util::strfmt("CalculateLoopCycleDepth_", loop, "_second.dot"),
-        o_color,
-        i_color,
-        tail_label);
+//    dump_dot(
+//        &loop->region()->graph()->GetRootRegion(),
+//        util::strfmt("CalculateLoopCycleDepth_", loop, "_second.dot"),
+//        o_color,
+//        i_color,
+//        tail_label);
   }
   //  }
 }
@@ -875,12 +875,12 @@ AdjustLoopBuffers(
     {
       tail_label[o] = std::to_string(l);
     }
-    dump_dot(
-        &loop->region()->graph()->GetRootRegion(),
-        util::strfmt("AdjustLoopBuffers_", loop, "_begin.dot"),
-        o_color,
-        i_color,
-        tail_label);
+//    dump_dot(
+//        &loop->region()->graph()->GetRootRegion(),
+//        util::strfmt("AdjustLoopBuffers_", loop, "_begin.dot"),
+//        o_color,
+//        i_color,
+//        tail_label);
   }
 
   bool changed = false;
@@ -1055,12 +1055,12 @@ AdjustLoopBuffers(
     {
       tail_label[o] = std::to_string(l);
     }
-    dump_dot(
-        &loop->region()->graph()->GetRootRegion(),
-        util::strfmt("AdjustLoopBuffers_", loop, "_end.dot"),
-        o_color,
-        i_color,
-        tail_label);
+//    dump_dot(
+//        &loop->region()->graph()->GetRootRegion(),
+//        util::strfmt("AdjustLoopBuffers_", loop, "_end.dot"),
+//        o_color,
+//        i_color,
+//        tail_label);
   }
 }
 

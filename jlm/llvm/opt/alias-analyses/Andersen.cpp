@@ -617,10 +617,10 @@ Andersen::AnalyzeSimpleNode(const rvsdg::SimpleNode & node)
     AnalyzeAlloca(node);
   else if (is<malloc_op>(op))
     AnalyzeMalloc(node);
-  else if (const auto loadNode = dynamic_cast<const LoadNode *>(&node))
-    AnalyzeLoad(*loadNode);
-  else if (const auto storeNode = dynamic_cast<const StoreNode *>(&node))
-    AnalyzeStore(*storeNode);
+  else if (is<LoadOperation>(&node))
+    AnalyzeLoad(node);
+  else if (is<StoreOperation>(&node))
+    AnalyzeStore(node);
   else if (const auto callNode = dynamic_cast<const CallNode *>(&node))
     AnalyzeCall(*callNode);
   else if (is<GetElementPtrOperation>(op))
@@ -637,11 +637,11 @@ Andersen::AnalyzeSimpleNode(const rvsdg::SimpleNode & node)
     AnalyzeUndef(node);
   else if (is<MemCpyOperation>(op))
     AnalyzeMemcpy(node);
-  else if (is<ConstantArray>(op))
+  else if (is<ConstantArrayOperation>(op))
     AnalyzeConstantArray(node);
   else if (is<ConstantStruct>(op))
     AnalyzeConstantStruct(node);
-  else if (is<ConstantAggregateZero>(op))
+  else if (is<ConstantAggregateZeroOperation>(op))
     AnalyzeConstantAggregateZero(node);
   else if (is<ExtractValue>(op))
     AnalyzeExtractValue(node);
@@ -694,10 +694,12 @@ Andersen::AnalyzeMalloc(const rvsdg::SimpleNode & node)
 }
 
 void
-Andersen::AnalyzeLoad(const LoadNode & loadNode)
+Andersen::AnalyzeLoad(const rvsdg::SimpleNode & node)
 {
-  const auto & addressRegister = *loadNode.GetAddressInput().origin();
-  const auto & outputRegister = loadNode.GetLoadedValueOutput();
+  JLM_ASSERT(is<LoadOperation>(&node));
+
+  const auto & addressRegister = *LoadOperation::AddressInput(node).origin();
+  const auto & outputRegister = LoadOperation::LoadedValueOutput(node);
 
   const auto addressRegisterPO = Set_->GetRegisterPointerObject(addressRegister);
 
@@ -713,10 +715,10 @@ Andersen::AnalyzeLoad(const LoadNode & loadNode)
 }
 
 void
-Andersen::AnalyzeStore(const StoreNode & storeNode)
+Andersen::AnalyzeStore(const rvsdg::SimpleNode & node)
 {
-  const auto & addressRegister = *storeNode.GetAddressInput().origin();
-  const auto & valueRegister = *storeNode.GetStoredValueInput().origin();
+  const auto & addressRegister = *StoreOperation::AddressInput(node).origin();
+  const auto & valueRegister = *StoreOperation::StoredValueInput(node).origin();
 
   const auto addressRegisterPO = Set_->GetRegisterPointerObject(addressRegister);
 
@@ -864,7 +866,7 @@ Andersen::AnalyzeMemcpy(const rvsdg::SimpleNode & node)
 void
 Andersen::AnalyzeConstantArray(const rvsdg::SimpleNode & node)
 {
-  JLM_ASSERT(is<ConstantArray>(&node));
+  JLM_ASSERT(is<ConstantArrayOperation>(&node));
 
   if (!IsOrContainsPointerType(node.output(0)->type()))
     return;
@@ -909,7 +911,7 @@ Andersen::AnalyzeConstantStruct(const rvsdg::SimpleNode & node)
 void
 Andersen::AnalyzeConstantAggregateZero(const rvsdg::SimpleNode & node)
 {
-  JLM_ASSERT(is<ConstantAggregateZero>(&node));
+  JLM_ASSERT(is<ConstantAggregateZeroOperation>(&node));
   auto & output = *node.output(0);
 
   if (!IsOrContainsPointerType(output.type()))

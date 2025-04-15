@@ -356,7 +356,7 @@ MlirToJlmConverter::ConvertOperation(
     auto mlirOutputType = sitofpOp.getType();
     std::shared_ptr<rvsdg::Type> rt = ConvertType(mlirOutputType);
 
-    llvm::sitofp_op op(std::move(st), std::move(rt));
+    llvm::SIToFPOperation op(std::move(st), std::move(rt));
     return &rvsdg::SimpleNode::Create(
         rvsdgRegion,
         op,
@@ -419,6 +419,38 @@ MlirToJlmConverter::ConvertOperation(
     return &output;
   }
 
+  else if (auto negOp = ::mlir::dyn_cast<::mlir::arith::NegFOp>(&mlirOperation))
+  {
+    auto type = negOp.getResult().getType();
+    auto floatType = ::mlir::cast<::mlir::FloatType>(type);
+
+    llvm::fpsize size = ConvertFPSize(floatType.getWidth());
+    auto & output =
+        rvsdg::SimpleNode::Create(rvsdgRegion, jlm::llvm::FNegOperation(size), { inputs[0] });
+    return &output;
+  }
+
+  else if (auto extOp = ::mlir::dyn_cast<::mlir::arith::ExtFOp>(&mlirOperation))
+  {
+    auto type = extOp.getResult().getType();
+    auto floatType = ::mlir::cast<::mlir::FloatType>(type);
+
+    llvm::fpsize size = ConvertFPSize(floatType.getWidth());
+    auto & output = rvsdg::SimpleNode::Create(
+        rvsdgRegion,
+        jlm::llvm::FPExtOperation(inputs[0]->Type(), llvm::FloatingPointType::Create(size)),
+        { inputs[0] });
+    return &output;
+  }
+
+  else if (auto truncOp = ::mlir::dyn_cast<::mlir::arith::TruncIOp>(&mlirOperation))
+  {
+    auto type = truncOp.getResult().getType();
+    auto intType = ::mlir::cast<::mlir::IntegerType>(type);
+    return rvsdg::output::GetNode(
+        *jlm::llvm::TruncOperation::create(intType.getIntOrFloatBitWidth(), inputs[0]));
+  }
+
   // Binary Integer Comparision operations
   else if (auto ComOp = ::mlir::dyn_cast<::mlir::arith::CmpIOp>(&mlirOperation))
   {
@@ -437,7 +469,35 @@ MlirToJlmConverter::ConvertOperation(
     return rvsdg::output::GetNode(*jlmUndefOutput);
   }
 
+  else if (auto ArrayOp = ::mlir::dyn_cast<::mlir::jlm::ConstantDataArray>(&mlirOperation))
+  {
+    return rvsdg::output::GetNode(
+        *llvm::ConstantDataArray::Create(std::vector(inputs.begin(), inputs.end())));
+  }
+
+  else if (auto ZeroOp = ::mlir::dyn_cast<::mlir::LLVM::ZeroOp>(&mlirOperation))
+  {
+    auto type = ZeroOp.getType();
+    return rvsdg::output::GetNode(
+        *llvm::ConstantAggregateZeroOperation::Create(rvsdgRegion, ConvertType(type)));
+  }
+
+  else if (auto VarArgOp = ::mlir::dyn_cast<::mlir::jlm::CreateVarArgList>(&mlirOperation))
+  {
+    return rvsdg::output::GetNode(
+        *llvm::valist_op::Create(rvsdgRegion, std::vector(inputs.begin(), inputs.end())));
+  }
+
   // Memory operations
+
+  else if (auto FreeOp = ::mlir::dyn_cast<::mlir::jlm::Free>(&mlirOperation))
+  {
+    llvm::FreeOperation freeOp(inputs.size() - 2);
+    return &rvsdg::SimpleNode::Create(
+        rvsdgRegion,
+        freeOp,
+        std::vector(inputs.begin(), inputs.end()));
+  }
 
   else if (auto AllocaOp = ::mlir::dyn_cast<::mlir::jlm::Alloca>(&mlirOperation))
   {
@@ -468,7 +528,7 @@ MlirToJlmConverter::ConvertOperation(
     auto address = inputs[0];
     auto value = inputs[1];
     auto memoryStateInputs = std::vector(std::next(inputs.begin(), 2), inputs.end());
-    auto & storeNode = jlm::llvm::StoreNonVolatileNode::CreateNode(
+    auto & storeNode = jlm::llvm::StoreNonVolatileOperation::CreateNode(
         *address,
         *value,
         memoryStateInputs,
@@ -484,7 +544,7 @@ MlirToJlmConverter::ConvertOperation(
     if (!rvsdg::is<const rvsdg::ValueType>(jlmType))
       JLM_UNREACHABLE("Expected ValueType for LoadOp operation output.");
     auto jlmValueType = std::dynamic_pointer_cast<const rvsdg::ValueType>(jlmType);
-    auto & loadNode = jlm::llvm::LoadNonVolatileNode::CreateNode(
+    auto & loadNode = llvm::LoadNonVolatileOperation::CreateNode(
         *address,
         memoryStateInputs,
         jlmValueType,
@@ -764,6 +824,10 @@ MlirToJlmConverter::ConvertType(::mlir::Type & type)
   else if (::mlir::isa<::mlir::LLVM::LLVMPointerType>(type))
   {
     return std::make_unique<llvm::PointerType>();
+  }
+  else if (::mlir::isa<::mlir::jlm::VarargListType>(type))
+  {
+    return std::make_unique<llvm::VariableArgumentType>();
   }
   else if (auto arrayType = ::mlir::dyn_cast<::mlir::LLVM::LLVMArrayType>(type))
   {

@@ -313,7 +313,7 @@ separate_load_edge(
           addr_edge = addr_sg_out2[1];
           addr_edge_user->divert_to(addr_edge);
           // remove state edges from load
-          auto new_load_outputs = jlm::llvm::LoadNonVolatileNode::Create(
+          auto new_load_outputs = jlm::llvm::LoadNonVolatileOperation::Create(
               addr_sg_out2[0],
               {},
               lo->GetLoadedType(),

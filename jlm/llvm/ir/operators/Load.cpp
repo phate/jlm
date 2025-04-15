@@ -12,12 +12,6 @@
 namespace jlm::llvm
 {
 
-const LoadOperation &
-LoadNode::GetOperation() const noexcept
-{
-  return *util::AssertedCast<const LoadOperation>(&SimpleNode::GetOperation());
-}
-
 LoadNonVolatileOperation::~LoadNonVolatileOperation() noexcept = default;
 
 bool
@@ -39,61 +33,6 @@ std::unique_ptr<rvsdg::Operation>
 LoadNonVolatileOperation::copy() const
 {
   return std::make_unique<LoadNonVolatileOperation>(*this);
-}
-
-size_t
-LoadNonVolatileOperation::NumMemoryStates() const noexcept
-{
-  // Subtracting address
-  return narguments() - 1;
-}
-
-const LoadNonVolatileOperation &
-LoadNonVolatileNode::GetOperation() const noexcept
-{
-  return *util::AssertedCast<const LoadNonVolatileOperation>(&SimpleNode::GetOperation());
-}
-
-[[nodiscard]] LoadNode::MemoryStateInputRange
-LoadNonVolatileNode::MemoryStateInputs() const noexcept
-{
-  if (NumMemoryStates() == 0)
-  {
-    return { MemoryStateInputIterator(nullptr), MemoryStateInputIterator(nullptr) };
-  }
-
-  return { MemoryStateInputIterator(input(1)), MemoryStateInputIterator(nullptr) };
-}
-
-[[nodiscard]] LoadNode::MemoryStateOutputRange
-LoadNonVolatileNode::MemoryStateOutputs() const noexcept
-{
-  if (NumMemoryStates() == 0)
-  {
-    return { MemoryStateOutputIterator(nullptr), MemoryStateOutputIterator(nullptr) };
-  }
-
-  return { MemoryStateOutputIterator(output(1)), MemoryStateOutputIterator(nullptr) };
-}
-
-LoadNonVolatileNode &
-LoadNonVolatileNode::CopyWithNewMemoryStates(
-    const std::vector<rvsdg::output *> & memoryStates) const
-{
-  return CreateNode(
-      *GetAddressInput().origin(),
-      memoryStates,
-      GetOperation().GetLoadedType(),
-      GetAlignment());
-}
-
-rvsdg::Node *
-LoadNonVolatileNode::copy(rvsdg::Region * region, const std::vector<rvsdg::output *> & operands)
-    const
-{
-  std::unique_ptr<LoadNonVolatileOperation> op(
-      util::AssertedCast<LoadNonVolatileOperation>(GetOperation().copy().release()));
-  return &CreateNode(*region, std::move(op), operands);
 }
 
 LoadVolatileOperation::~LoadVolatileOperation() noexcept = default;
@@ -119,61 +58,14 @@ LoadVolatileOperation::copy() const
   return std::make_unique<LoadVolatileOperation>(*this);
 }
 
-size_t
-LoadVolatileOperation::NumMemoryStates() const noexcept
+rvsdg::SimpleNode &
+LoadVolatileOperation::CreateNode(
+    rvsdg::Region & region,
+    std::unique_ptr<LoadVolatileOperation> loadOperation,
+    const std::vector<rvsdg::output *> & operands)
 {
-  // Subtracting address and I/O state
-  return narguments() - 2;
+  return rvsdg::SimpleNode::Create(region, std::move(loadOperation), operands);
 }
-
-[[nodiscard]] const LoadVolatileOperation &
-LoadVolatileNode::GetOperation() const noexcept
-{
-  return *util::AssertedCast<const LoadVolatileOperation>(&LoadNode::GetOperation());
-}
-
-[[nodiscard]] LoadNode::MemoryStateInputRange
-LoadVolatileNode::MemoryStateInputs() const noexcept
-{
-  if (NumMemoryStates() == 0)
-  {
-    return { MemoryStateInputIterator(nullptr), MemoryStateInputIterator(nullptr) };
-  }
-
-  return { MemoryStateInputIterator(input(2)), MemoryStateInputIterator(nullptr) };
-}
-
-[[nodiscard]] LoadNode::MemoryStateOutputRange
-LoadVolatileNode::MemoryStateOutputs() const noexcept
-{
-  if (NumMemoryStates() == 0)
-  {
-    return { MemoryStateOutputIterator(nullptr), MemoryStateOutputIterator(nullptr) };
-  }
-
-  return { MemoryStateOutputIterator(output(2)), MemoryStateOutputIterator(nullptr) };
-}
-
-LoadVolatileNode &
-LoadVolatileNode::CopyWithNewMemoryStates(const std::vector<rvsdg::output *> & memoryStates) const
-{
-  return CreateNode(
-      *GetAddressInput().origin(),
-      *GetIoStateInput().origin(),
-      memoryStates,
-      GetOperation().GetLoadedType(),
-      GetAlignment());
-}
-
-rvsdg::Node *
-LoadVolatileNode::copy(rvsdg::Region * region, const std::vector<rvsdg::output *> & operands) const
-{
-  std::unique_ptr<LoadVolatileOperation> op(
-      util::AssertedCast<LoadVolatileOperation>(GetOperation().copy().release()));
-  return &CreateNode(*region, std::move(op), operands);
-}
-
-/* load normal form */
 
 /*
   sx1 = MemStateMerge si1 ... siM
@@ -314,14 +206,21 @@ is_load_store_reducible(
 
   // Check that the first state edge originates from a store
   auto firstState = operands[1];
-  auto storeNode = dynamic_cast<const StoreNonVolatileNode *>(rvsdg::output::GetNode(*firstState));
-  if (!storeNode)
+  auto storeNode = rvsdg::output::GetNode(*firstState);
+  if (storeNode == nullptr)
+  {
+    return false;
+  }
+
+  const auto storeOperation =
+      dynamic_cast<const StoreNonVolatileOperation *>(&storeNode->GetOperation());
+  if (storeOperation == nullptr)
   {
     return false;
   }
 
   // Check that all state edges to the load originate from the same store
-  if (storeNode->NumMemoryStates() != loadOperation.NumMemoryStates())
+  if (storeOperation->NumMemoryStates() != loadOperation.NumMemoryStates())
   {
     return false;
   }
@@ -337,7 +236,7 @@ is_load_store_reducible(
 
   // Check that the address to the load and store originate from the same value
   auto loadAddress = operands[0];
-  auto storeAddress = storeNode->GetAddressInput().origin();
+  auto storeAddress = StoreNonVolatileOperation::AddressInput(*storeNode).origin();
   if (loadAddress != storeAddress)
   {
     return false;
@@ -349,13 +248,13 @@ is_load_store_reducible(
   // operations instead. For example, a store of a 32 bit integer followed by a load of a 8 bit
   // integer can be converted to a trunc operation.
   auto loadedValueType = loadOperation.GetLoadedType();
-  auto & storedValueType = storeNode->GetStoredValueInput().type();
+  auto & storedValueType = StoreNonVolatileOperation::StoredValueInput(*storeNode).type();
   if (*loadedValueType != storedValueType)
   {
     return false;
   }
 
-  JLM_ASSERT(loadOperation.GetAlignment() == storeNode->GetAlignment());
+  JLM_ASSERT(loadOperation.GetAlignment() == storeOperation->GetAlignment());
   return true;
 }
 
@@ -379,7 +278,7 @@ perform_load_mux_reduction(
 {
   auto memStateMergeNode = rvsdg::output::GetNode(*operands[1]);
 
-  auto ld = LoadNonVolatileNode::Create(
+  auto ld = LoadNonVolatileOperation::Create(
       operands[0],
       rvsdg::operands(memStateMergeNode),
       op.GetLoadedType(),
@@ -409,8 +308,11 @@ perform_load_alloca_reduction(
       otherstates.push_back(operands[n]);
   }
 
-  auto ld =
-      LoadNonVolatileNode::Create(operands[0], loadstates, op.GetLoadedType(), op.GetAlignment());
+  auto ld = LoadNonVolatileOperation::Create(
+      operands[0],
+      loadstates,
+      op.GetLoadedType(),
+      op.GetAlignment());
 
   std::vector<rvsdg::output *> results(1, ld[0]);
   results.insert(results.end(), std::next(ld.begin()), ld.end());
@@ -437,7 +339,7 @@ perform_load_store_state_reduction(
       new_loadstates.push_back(state);
   }
 
-  auto ld = LoadNonVolatileNode::Create(
+  auto ld = LoadNonVolatileOperation::Create(
       operands[0],
       new_loadstates,
       op.GetLoadedType(),
@@ -474,8 +376,11 @@ perform_multiple_origin_reduction(
     }
   }
 
-  const auto loadResults =
-      LoadNonVolatileNode::Create(address, newInputStates, op.GetLoadedType(), op.GetAlignment());
+  const auto loadResults = LoadNonVolatileOperation::Create(
+      address,
+      newInputStates,
+      op.GetLoadedType(),
+      op.GetAlignment());
 
   std::vector<rvsdg::output *> results(operands.size(), nullptr);
   results[0] = loadResults[0];
@@ -555,8 +460,11 @@ perform_load_load_state_reduction(
   for (size_t n = 1; n < operands.size(); n++)
     ldstates.push_back(reduce_state(n - 1, operands[n], mxstates));
 
-  auto ld =
-      LoadNonVolatileNode::Create(operands[0], ldstates, op.GetLoadedType(), op.GetAlignment());
+  auto ld = LoadNonVolatileOperation::Create(
+      operands[0],
+      ldstates,
+      op.GetLoadedType(),
+      op.GetAlignment());
   for (size_t n = 0; n < mxstates.size(); n++)
   {
     auto & states = mxstates[n];

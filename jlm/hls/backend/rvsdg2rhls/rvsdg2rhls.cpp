@@ -10,7 +10,6 @@
 #include <jlm/hls/backend/rvsdg2rhls/add-triggers.hpp>
 #include <jlm/hls/backend/rvsdg2rhls/alloca-conv.hpp>
 #include <jlm/hls/backend/rvsdg2rhls/check-rhls.hpp>
-#include <jlm/hls/backend/rvsdg2rhls/dae-conv.hpp>
 #include <jlm/hls/backend/rvsdg2rhls/distribute-constants.hpp>
 #include <jlm/hls/backend/rvsdg2rhls/GammaConversion.hpp>
 #include <jlm/hls/backend/rvsdg2rhls/instrument-ref.hpp>
@@ -20,10 +19,10 @@
 #include <jlm/hls/backend/rvsdg2rhls/memstate-conv.hpp>
 #include <jlm/hls/backend/rvsdg2rhls/merge-gamma.hpp>
 #include <jlm/hls/backend/rvsdg2rhls/remove-redundant-buf.hpp>
-#include <jlm/hls/backend/rvsdg2rhls/remove-unused-state.hpp>
 #include <jlm/hls/backend/rvsdg2rhls/rhls-dne.hpp>
 #include <jlm/hls/backend/rvsdg2rhls/rvsdg2rhls.hpp>
 #include <jlm/hls/backend/rvsdg2rhls/ThetaConversion.hpp>
+#include <jlm/hls/backend/rvsdg2rhls/UnusedStateRemoval.hpp>
 #include <jlm/hls/opt/cne.hpp>
 #include <jlm/hls/opt/InvariantLambdaMemoryStateRemoval.hpp>
 #include <jlm/hls/opt/IOBarrierRemoval.hpp>
@@ -225,7 +224,7 @@ convert_alloca(rvsdg::Region * region)
       }
       else
       {
-        cout = llvm::ConstantAggregateZero::Create(*db->subregion(), po->ValueType());
+        cout = llvm::ConstantAggregateZeroOperation::Create(*db->subregion(), po->ValueType());
       }
       auto delta = db->finalize(cout);
       jlm::llvm::GraphExport::Create(*delta, delta_name);
@@ -447,7 +446,7 @@ rvsdg2rhls(llvm::RvsdgModule & rhls, util::StatisticsCollector & collector)
   // TODO: do mem state separation early, so there are no false dependencies between loops
   mem_sep_argument(rhls);
   merge_gamma(rhls);
-  remove_unused_state(rhls);
+  RemoveUnusedStates(rhls);
 
   llvm::DeadNodeElimination llvmDne;
   jlm::llvm::tginversion tgi;
@@ -461,21 +460,22 @@ rvsdg2rhls(llvm::RvsdgModule & rhls, util::StatisticsCollector & collector)
   merge_gamma(rhls);
   llvmDne.Run(rhls, collector);
   //  hls::InvariantLambdaMemoryStateRemoval::CreateAndRun(rhls, collector);
-  remove_unused_state(rhls);
+  RemoveUnusedStates(rhls);
   // main conversion steps
   distribute_constants(rhls);
   ConvertGammaNodes(rhls);
   ConvertThetaNodes(rhls);
-  hls::cne hlsCne;
-  hlsCne.Run(rhls, collector);
+  cne.Run(rhls, collector);
   // rhls optimization
   dne(rhls);
   alloca_conv(rhls);
   jlm::hls::stream_conv(rhls);
   mem_queue(rhls);
   decouple_mem_state(rhls);
-  remove_unused_state(rhls);
+  RemoveUnusedStates(rhls);
   MemoryConverter(rhls);
+  llvm::NodeReduction llvmRed;
+  llvmRed.Run(rhls, collector);
   memstate_conv(rhls);
   remove_redundant_buf(rhls);
   // enforce 1:1 input output relationship

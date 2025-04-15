@@ -6,14 +6,14 @@
 #include <test-registry.hpp>
 #include <TestRvsdgs.hpp>
 
-#include <jlm/llvm/opt/alias-analyses/AliasAnalysis.hpp>
+#include <jlm/llvm/opt/alias-analyses/PointsToAnalysis.hpp>
 #include <jlm/llvm/opt/alias-analyses/PointsToGraph.hpp>
 #include <jlm/util/Statistics.hpp>
 
 /**
  * A simple test analysis that does nothing else than creating some points-to graph nodes and edges.
  */
-class TestAnalysis final : public jlm::llvm::aa::AliasAnalysis
+class TestAnalysis final : public jlm::llvm::aa::PointsToAnalysis
 {
 public:
   std::unique_ptr<jlm::llvm::aa::PointsToGraph>

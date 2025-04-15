@@ -3,28 +3,26 @@
  * See COPYING for terms of redistribution.
  */
 
-#ifndef JLM_LLVM_OPT_ALIAS_ANALYSES_MEMORYNODEPROVISIONING_HPP
-#define JLM_LLVM_OPT_ALIAS_ANALYSES_MEMORYNODEPROVISIONING_HPP
+#ifndef JLM_LLVM_OPT_ALIAS_ANALYSES_MODREFSUMMARY_HPP
+#define JLM_LLVM_OPT_ALIAS_ANALYSES_MODREFSUMMARY_HPP
 
 #include <jlm/llvm/opt/alias-analyses/PointsToGraph.hpp>
 #include <jlm/rvsdg/gamma.hpp>
 #include <jlm/rvsdg/theta.hpp>
 #include <jlm/util/HashSet.hpp>
 
-#include <vector>
-
 namespace jlm::llvm::aa
 {
 
-/** \brief Memory Node Provisioning
+/** \brief Mod/Ref Summary
  *
  * Contains the memory nodes that are required at the entry and exit of a region, and for call
  * nodes.
  */
-class MemoryNodeProvisioning
+class ModRefSummary
 {
 public:
-  virtual ~MemoryNodeProvisioning() noexcept = default;
+  virtual ~ModRefSummary() noexcept = default;
 
   [[nodiscard]] virtual const PointsToGraph &
   GetPointsToGraph() const noexcept = 0;
@@ -41,6 +39,11 @@ public:
   [[nodiscard]] virtual const jlm::util::HashSet<const PointsToGraph::MemoryNode *> &
   GetCallExitNodes(const CallNode & callNode) const = 0;
 
+  /**
+   * Retrieves the set of memory locations that may be targeted by the given pointer typed value
+   * @param output the output producing the pointer value
+   * @return a conservative set of memory locations the pointer may target
+   */
   [[nodiscard]] virtual jlm::util::HashSet<const PointsToGraph::MemoryNode *>
   GetOutputNodes(const jlm::rvsdg::output & output) const = 0;
 
@@ -96,4 +99,4 @@ public:
 
 }
 
-#endif // JLM_LLVM_OPT_ALIAS_ANALYSES_MEMORYNODEPROVISIONING_HPP
+#endif // JLM_LLVM_OPT_ALIAS_ANALYSES_MODREFSUMMARY_HPP

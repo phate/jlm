@@ -20,10 +20,10 @@ libhls_SOURCES = \
 	jlm/hls/backend/rvsdg2rhls/stream-conv.cpp \
     jlm/hls/backend/rvsdg2rhls/hls-function-util.cpp \
     jlm/hls/backend/rvsdg2rhls/check-rhls.cpp \
-    jlm/hls/backend/rvsdg2rhls/dae-conv.cpp \
     jlm/hls/backend/rvsdg2rhls/DeadNodeElimination.cpp \
     jlm/hls/backend/rvsdg2rhls/distribute-constants.cpp \
     jlm/hls/backend/rvsdg2rhls/GammaConversion.cpp \
+    jlm/hls/backend/rvsdg2rhls/hls-function-util.cpp \
     jlm/hls/backend/rvsdg2rhls/instrument-ref.cpp \
     jlm/hls/backend/rvsdg2rhls/mem-conv.cpp \
     jlm/hls/backend/rvsdg2rhls/mem-queue.cpp \
@@ -31,7 +31,6 @@ libhls_SOURCES = \
     jlm/hls/backend/rvsdg2rhls/memstate-conv.cpp \
     jlm/hls/backend/rvsdg2rhls/merge-gamma.cpp \
     jlm/hls/backend/rvsdg2rhls/remove-redundant-buf.cpp \
-    jlm/hls/backend/rvsdg2rhls/remove-unused-state.cpp \
     jlm/hls/backend/rvsdg2rhls/rhls-dne.cpp \
     jlm/hls/backend/rvsdg2rhls/rvsdg2rhls.cpp \
     jlm/hls/backend/rvsdg2rhls/ThetaConversion.cpp \
@@ -64,10 +63,10 @@ libhls_HEADERS = \
 	jlm/hls/backend/rvsdg2rhls/stream-conv.hpp \
 	jlm/hls/backend/rvsdg2rhls/hls-function-util.hpp \
 	jlm/hls/backend/rvsdg2rhls/check-rhls.hpp \
-	jlm/hls/backend/rvsdg2rhls/dae-conv.hpp \
 	jlm/hls/backend/rvsdg2rhls/DeadNodeElimination.hpp \
 	jlm/hls/backend/rvsdg2rhls/distribute-constants.hpp \
 	jlm/hls/backend/rvsdg2rhls/GammaConversion.hpp \
+	jlm/hls/backend/rvsdg2rhls/hls-function-util.hpp \
 	jlm/hls/backend/rvsdg2rhls/instrument-ref.hpp \
 	jlm/hls/backend/rvsdg2rhls/mem-conv.hpp \
 	jlm/hls/backend/rvsdg2rhls/mem-queue.hpp \
@@ -75,7 +74,6 @@ libhls_HEADERS = \
 	jlm/hls/backend/rvsdg2rhls/memstate-conv.hpp \
 	jlm/hls/backend/rvsdg2rhls/merge-gamma.hpp \
 	jlm/hls/backend/rvsdg2rhls/remove-redundant-buf.hpp \
-	jlm/hls/backend/rvsdg2rhls/remove-unused-state.hpp \
 	jlm/hls/backend/rvsdg2rhls/rhls-dne.hpp \
 	jlm/hls/backend/rvsdg2rhls/rvsdg2rhls.hpp \
 	jlm/hls/backend/rvsdg2rhls/ThetaConversion.hpp \

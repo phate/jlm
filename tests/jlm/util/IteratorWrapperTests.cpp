@@ -7,7 +7,7 @@
 #include <test-util.hpp>
 
 #include <jlm/util/iterator_range.hpp>
-#include <jlm/util/PtrIterator.hpp>
+#include <jlm/util/IteratorWrapper.hpp>
 
 #include <cassert>
 #include <memory>
@@ -49,7 +49,7 @@ TestPtrVector()
   return 0;
 }
 
-JLM_UNIT_TEST_REGISTER("jlm/util/TestPtrIterator-TestPtrVector", TestPtrVector);
+JLM_UNIT_TEST_REGISTER("jlm/util/TestIteratorWrapper-TestPtrVector", TestPtrVector);
 
 static int
 TestPtrUnorderedSet()
@@ -76,12 +76,11 @@ TestPtrUnorderedSet()
   return 0;
 }
 
-JLM_UNIT_TEST_REGISTER("jlm/util/TestPtrIterator-TestPtrUnorderedSet", TestPtrUnorderedSet);
+JLM_UNIT_TEST_REGISTER("jlm/util/TestIteratorWrapper-TestPtrUnorderedSet", TestPtrUnorderedSet);
 
 static int
 TestUniquePtrVector()
 {
-
   // Arrange
   std::vector<std::unique_ptr<int>> vector;
   vector.emplace_back(std::make_unique<int>(10));
@@ -106,4 +105,33 @@ TestUniquePtrVector()
   return 0;
 }
 
-JLM_UNIT_TEST_REGISTER("jlm/util/TestPtrIterator-TestUniquePtrVector", TestUniquePtrVector);
+JLM_UNIT_TEST_REGISTER("jlm/util/TestIteratorWrapper-TestUniquePtrVector", TestUniquePtrVector);
+
+static int
+TestMapValuePtr()
+{
+  // Arrange
+  std::unordered_map<size_t, std::unique_ptr<int>> map;
+  map.insert({ 1, std::make_unique<int>(10) });
+  map.insert({ 2, std::make_unique<int>(20) });
+  map.insert({ 3, std::make_unique<int>(30) });
+
+  // The iterator still works with a const_iterator, as the pointer itself is not const
+  using ItType = jlm::util::MapValuePtrIterator<int, decltype(map)::const_iterator>;
+
+  // Act
+  jlm::util::IteratorRange range(ItType(map.begin()), ItType(map.end()));
+  for (auto & i : range)
+  {
+    i++;
+  }
+
+  // Assert
+  assert(*map[1] == 11);
+  assert(*map[2] == 21);
+  assert(*map[3] == 31);
+
+  return 0;
+}
+
+JLM_UNIT_TEST_REGISTER("jlm/util/TestIteratorWrapper-TestMapValuePtr", TestMapValuePtr);

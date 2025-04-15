@@ -6,9 +6,9 @@
 
 #include <jlm/hls/backend/rvsdg2rhls/hls-function-util.hpp>
 #include <jlm/hls/backend/rvsdg2rhls/mem-conv.hpp>
-#include <jlm/hls/backend/rvsdg2rhls/remove-unused-state.hpp>
 #include <jlm/hls/backend/rvsdg2rhls/rhls-dne.hpp>
 #include <jlm/hls/backend/rvsdg2rhls/rvsdg2rhls.hpp>
+#include <jlm/hls/backend/rvsdg2rhls/UnusedStateRemoval.hpp>
 #include <jlm/hls/ir/hls.hpp>
 #include <jlm/llvm/ir/CallSummary.hpp>
 #include <jlm/llvm/ir/operators/call.hpp>
@@ -579,11 +579,11 @@ MemoryConverter(llvm::RvsdgModule & rm)
 
   //
   // TODO
-  // Remove unused state also creates a new lambda, which we have already done above.
-  // It would be better to apply this functionality above such that we only create a new lambda
+  // RemoveUnusedStates also creates a new lambda, which we have already done above.
+  // It might be better to apply this functionality above such that we only create a new lambda
   // once.
   //
-  remove_unused_state(root);
+  RemoveUnusedStates(rm);
 
   // Need to get the lambda from the root since remote_unused_state replaces the lambda
   JLM_ASSERT(root->nnodes() == 1);

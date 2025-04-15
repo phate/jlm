@@ -369,6 +369,19 @@ JlmToMlirConverter::ConvertSimpleNode(
     MlirOp =
         Builder_->create<::mlir::arith::ConstantFloatOp>(Builder_->getUnknownLoc(), value, size);
   }
+  else if (auto arrOp = dynamic_cast<const llvm::ConstantDataArray *>(&operation))
+  {
+    auto arrayType = ConvertType(*arrOp->result(0));
+    MlirOp = Builder_->create<::mlir::jlm::ConstantDataArray>(
+        Builder_->getUnknownLoc(),
+        arrayType,
+        inputs);
+  }
+  else if (auto zeroOp = dynamic_cast<const llvm::ConstantAggregateZeroOperation *>(&operation))
+  {
+    auto type = ConvertType(*zeroOp->result(0));
+    MlirOp = Builder_->create<::mlir::LLVM::ZeroOp>(Builder_->getUnknownLoc(), type);
+  }
   else if (jlm::rvsdg::is<const rvsdg::bitbinary_op>(operation))
   {
     MlirOp = ConvertBitBinaryNode(operation, inputs);
@@ -376,6 +389,17 @@ JlmToMlirConverter::ConvertSimpleNode(
   else if (auto fpBinOp = dynamic_cast<const jlm::llvm::fpbin_op *>(&operation))
   {
     MlirOp = ConvertFpBinaryNode(*fpBinOp, inputs);
+  }
+  else if (rvsdg::is<const jlm::llvm::FNegOperation>(operation))
+  {
+    MlirOp = Builder_->create<::mlir::arith::NegFOp>(Builder_->getUnknownLoc(), inputs[0]);
+  }
+  else if (auto fpextOp = dynamic_cast<const jlm::llvm::FPExtOperation *>(&operation))
+  {
+    MlirOp = Builder_->create<::mlir::arith::ExtFOp>(
+        Builder_->getUnknownLoc(),
+        ConvertType(*fpextOp->result(0)),
+        inputs[0]);
   }
 
   else if (jlm::rvsdg::is<const rvsdg::bitcompare_op>(operation))
@@ -396,11 +420,18 @@ JlmToMlirConverter::ConvertSimpleNode(
         Builder_->getIntegerType(sextOp->ndstbits()),
         inputs[0]);
   }
-  else if (auto sitofpOp = dynamic_cast<const jlm::llvm::sitofp_op *>(&operation))
+  else if (auto sitofpOp = dynamic_cast<const llvm::SIToFPOperation *>(&operation))
   {
     MlirOp = Builder_->create<::mlir::arith::SIToFPOp>(
         Builder_->getUnknownLoc(),
         ConvertType(*sitofpOp->result(0)),
+        inputs[0]);
+  }
+  else if (auto truncOp = dynamic_cast<const jlm::llvm::TruncOperation *>(&operation))
+  {
+    MlirOp = Builder_->create<::mlir::arith::TruncIOp>(
+        Builder_->getUnknownLoc(),
+        ConvertType(*truncOp->result(0)),
         inputs[0]);
   }
   // ** region structural nodes **
@@ -411,11 +442,33 @@ JlmToMlirConverter::ConvertSimpleNode(
         ConvertType(node.output(0)->type()), // Control, ouput type
         ctlOp->value().alternative());
   }
+  else if (auto vaOp = dynamic_cast<const llvm::valist_op *>(&operation))
+  {
+    MlirOp = Builder_->create<::mlir::jlm::CreateVarArgList>(
+        Builder_->getUnknownLoc(),
+        ConvertType(*vaOp->result(0)),
+        inputs);
+  }
   else if (auto undefOp = dynamic_cast<const llvm::UndefValueOperation *>(&operation))
   {
     MlirOp = Builder_->create<::mlir::jlm::Undef>(
         Builder_->getUnknownLoc(),
         ConvertType(undefOp->GetType()));
+  }
+  else if (auto freeOp = dynamic_cast<const jlm::llvm::FreeOperation *>(&operation))
+  {
+    auto nMemstates = freeOp->narguments() - 2; // Subtract for pointer and io state
+
+    std::vector<::mlir::Type> memoryStates(
+        nMemstates,
+        Builder_->getType<::mlir::rvsdg::MemStateEdgeType>());
+    MlirOp = Builder_->create<::mlir::jlm::Free>(
+        Builder_->getUnknownLoc(),
+        ::mlir::TypeRange(::llvm::ArrayRef(memoryStates)),
+        Builder_->getType<::mlir::rvsdg::IOStateEdgeType>(),
+        inputs[0],
+        ::mlir::ValueRange({ std::next(inputs.begin()), std::prev(inputs.end()) }),
+        inputs[inputs.size() - 1]);
   }
   else if (auto alloca_op = dynamic_cast<const jlm::llvm::alloca_op *>(&operation))
   {
@@ -730,6 +783,10 @@ JlmToMlirConverter::ConvertType(const rvsdg::Type & type)
     return Builder_->getType<::mlir::LLVM::LLVMArrayType>(
         ConvertType(arrayType->element_type()),
         arrayType->nelements());
+  }
+  else if (rvsdg::is<const llvm::VariableArgumentType>(type))
+  {
+    return Builder_->getType<::mlir::jlm::VarargListType>();
   }
   else
   {
