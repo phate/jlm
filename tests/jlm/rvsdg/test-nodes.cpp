@@ -122,21 +122,23 @@ test_node_depth()
 static void
 TestRemoveOutputsWhere()
 {
+  using namespace jlm::rvsdg;
+
   // Arrange
-  jlm::rvsdg::Graph rvsdg;
+  Graph rvsdg;
 
   auto valueType = jlm::tests::valuetype::Create();
-  auto & node1 = jlm::tests::SimpleNode::Create(
+  auto & node1 = CreateOpNode<jlm::tests::test_op>(
       rvsdg.GetRootRegion(),
-      {},
-      { valueType, valueType, valueType });
+      std::vector<std::shared_ptr<const Type>>(),
+      std::vector<std::shared_ptr<const Type>>{ valueType, valueType, valueType });
   auto output0 = node1.output(0);
   auto output2 = node1.output(2);
 
-  auto & node2 = jlm::tests::SimpleNode::Create(
-      rvsdg.GetRootRegion(),
-      { output0, output2 },
-      { valueType, valueType });
+  auto & node2 = CreateOpNode<jlm::tests::test_op>(
+      std::vector<output *>({ output0, output2 }),
+      std::vector<std::shared_ptr<const Type>>{ valueType, valueType },
+      std::vector<std::shared_ptr<const Type>>{ valueType, valueType });
 
   // Act & Assert
   node2.RemoveOutputsWhere(
@@ -189,12 +191,17 @@ TestRemoveOutputsWhere()
 static void
 TestRemoveInputsWhere()
 {
+  using namespace jlm::rvsdg;
+
   // Arrange
   jlm::rvsdg::Graph rvsdg;
   auto valueType = jlm::tests::valuetype::Create();
   auto x = &jlm::tests::GraphImport::Create(rvsdg, valueType, "x");
 
-  auto & node = jlm::tests::SimpleNode::Create(rvsdg.GetRootRegion(), { x, x, x }, {});
+  auto & node = CreateOpNode<jlm::tests::test_op>(
+      { x, x, x },
+      std::vector<std::shared_ptr<const Type>>{ valueType, valueType, valueType },
+      std::vector<std::shared_ptr<const Type>>{});
   auto input0 = node.input(0);
   auto input2 = node.input(2);
 
