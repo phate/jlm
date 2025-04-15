@@ -69,7 +69,8 @@ PlaceBuffer(rvsdg::output * out, size_t capacity, bool passThrough)
     return;
   }
   auto fork = TryGetOwnerOp<fork_op>(*out);
-  if(fork && fork->IsConstant()){
+  if (fork && fork->IsConstant())
+  {
     return;
   }
 
@@ -401,6 +402,10 @@ NodeCycles(rvsdg::SimpleNode * node, std::vector<size_t> & input_cycles)
     }
     return { max_cycles + 1 };
   }
+  else if (dynamic_cast<const addr_queue_op *>(&node->GetOperation()))
+  {
+    return { input_cycles[0] };
+  }
   else if (dynamic_cast<const decoupled_load_op *>(&node->GetOperation()))
   {
     return { max_cycles + MemoryLatency, 0 };
@@ -423,7 +428,7 @@ NodeCycles(rvsdg::SimpleNode * node, std::vector<size_t> & input_cycles)
   return std::vector<size_t>(node->noutputs(), max_cycles);
 }
 
-const size_t MaxBufferCapacity = std::numeric_limits<uint32_t>::max();
+const size_t UnlimitedBufferCapacity = std::numeric_limits<uint32_t>::max();
 
 std::vector<size_t>
 NodeCapacity(rvsdg::SimpleNode * node, std::vector<size_t> & input_capacities)
@@ -440,6 +445,10 @@ NodeCapacity(rvsdg::SimpleNode * node, std::vector<size_t> & input_capacities)
   {
     return { min_capacity + op->capacity };
   }
+  else if (dynamic_cast<const addr_queue_op *>(&node->GetOperation()))
+  {
+    return { input_capacities[0] };
+  }
   else if (auto op = dynamic_cast<const decoupled_load_op *>(&node->GetOperation()))
   {
     return { min_capacity + op->capacity, 0 };
@@ -450,7 +459,7 @@ NodeCapacity(rvsdg::SimpleNode * node, std::vector<size_t> & input_capacities)
     auto sg0_user = GetUser(node->output(0));
     if (TryGetOwnerOp<decoupled_load_op>(*sg0_user) && sg0_user->index() == 1)
     {
-      JLM_ASSERT(min_capacity == MaxBufferCapacity);
+      JLM_ASSERT(min_capacity == UnlimitedBufferCapacity);
       return { 0, MemoryLatency };
     }
   }
@@ -756,6 +765,8 @@ setMemoryLatency(size_t memoryLatency)
   MemoryLatency = memoryLatency;
 }
 
+const size_t MaximumBufferSize = 512;
+
 size_t
 PlaceBufferLoop(rvsdg::output * out, size_t min_capacity, bool passThrough)
 {
@@ -791,8 +802,11 @@ PlaceBufferLoop(rvsdg::output * out, size_t min_capacity, bool passThrough)
   {
     // replace buffer and keep larger size
     passThrough = passThrough && buf->pass_through;
-    auto capacity = round_up_pow2(buf->capacity + min_capacity);
-    auto bufOut = buffer_op::create(*node->input(0)->origin(), capacity, passThrough)[0];
+    size_t capacity = round_up_pow2(buf->capacity + min_capacity);
+    // if the maximum buffer size is exceeded place a smaller buffer, but pretend a large one was
+    // placed, to prevent additional buffers further down
+    auto actual_capacity = std::min(capacity, MaximumBufferSize);
+    auto bufOut = buffer_op::create(*node->input(0)->origin(), actual_capacity, passThrough)[0];
     node->output(0)->divert_users(bufOut);
     JLM_ASSERT(node->IsDead());
     remove(node);
@@ -802,8 +816,11 @@ PlaceBufferLoop(rvsdg::output * out, size_t min_capacity, bool passThrough)
   {
     // create new buffer
     auto directUser = *out->begin();
-    auto capacity = round_up_pow2(min_capacity);
-    auto newOut = buffer_op::create(*out, capacity, passThrough)[0];
+    size_t capacity = round_up_pow2(min_capacity);
+    // if the maximum buffer size is exceeded place a smaller buffer, but pretend a large one was
+    // placed, to prevent additional buffers further down
+    auto actual_capacity = std::min(capacity, MaximumBufferSize);
+    auto newOut = buffer_op::create(*out, actual_capacity, passThrough)[0];
     directUser->divert_to(newOut);
     return capacity;
   }
@@ -833,15 +850,17 @@ AdjustLoopBuffers(
   {
     auto out = tn.output(0);
     // don't use size_t max, since that is used to signal down below
-    buffer_capacity[out] = MaxBufferCapacity;
+    buffer_capacity[out] = UnlimitedBufferCapacity;
   }
   // same for inputs - we only care what happens within the loop
   for (size_t i = 0; i < loop->ninputs(); ++i)
   {
     auto in = loop->input(i);
-    buffer_capacity[in->origin()] = MaxBufferCapacity;
-    buffer_capacity[in->arguments.begin().ptr()] = MaxBufferCapacity;
+    buffer_capacity[in->origin()] = UnlimitedBufferCapacity;
+    buffer_capacity[in->arguments.begin().ptr()] = UnlimitedBufferCapacity;
   }
+  // TODO: unlimited buffers for stream backedges, but loose that property if a fork is reached?
+  // this might also make the current special case handling of addrqs unnecessary
 
   std::unordered_map<rvsdg::output *, std::string> o_color;
   std::unordered_map<rvsdg::input *, std::string> i_color;
@@ -909,7 +928,8 @@ AdjustLoopBuffers(
         for (size_t i = 0; i < simpleNode->ninputs(); ++i)
         {
           auto capacity = buffer_capacity[simpleNode->input(i)->origin()];
-          if (!analyze_inner_loop && capacity < max_cycles)
+          if (!analyze_inner_loop && (!rvsdg::is<addr_queue_op>(simpleNode))
+              && capacity < max_cycles)
           {
             size_t capacity_diff = max_cycles - capacity;
             capacity += PlaceBufferLoop(simpleNode->input(i)->origin(), capacity_diff, true);
