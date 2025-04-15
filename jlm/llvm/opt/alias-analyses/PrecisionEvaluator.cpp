@@ -8,6 +8,7 @@
 #include <jlm/rvsdg/RvsdgModule.hpp>
 
 #include <fstream>
+#include <map>
 
 namespace jlm::llvm::aa
 {
@@ -144,6 +145,12 @@ PrecisionEvaluator::EvaluateFunction(
   // Collect all pointer uses and clobbers from this function
   CollectPointersFromRegion(*function.subregion());
 
+  // In order to get results more comparable with LLVM, duplicates are removed.
+  // First, pointers are normalized, to prevent pointers that trivially originate
+  // from the same output to be regarded as different.
+  NormalizePointerValues();
+  RemoveDuplicates();
+
   // Create a PrecisionInfo instance for this function
   auto & precisionEvaluation = Context_.PerFunctionPrecision[&function];
 
@@ -216,15 +223,15 @@ PrecisionEvaluator::CollectPointersFromSimpleNode(const rvsdg::SimpleNode & node
     JLM_UNREACHABLE("Unknown mode");
 
   // In this mode, only (volatile) load and store operations count as uses and clobbers
-  if (auto load = dynamic_cast<const LoadNode *>(&node))
+  if (const auto load = dynamic_cast<const LoadOperation *>(&node.GetOperation()))
   {
-    const auto size = GetLlvmTypeSize(*load->GetOperation().GetLoadedType());
-    CollectPointer(load->GetAddressInput().origin(), size, true, loadsClobber);
+    const auto size = GetLlvmTypeSize(*load->GetLoadedType());
+    CollectPointer(LoadOperation::AddressInput(node).origin(), size, true, loadsClobber);
   }
-  else if (auto store = dynamic_cast<const StoreNode *>(&node))
+  else if (auto store = dynamic_cast<const StoreOperation *>(&node.GetOperation()))
   {
-    const auto size = GetLlvmTypeSize(store->GetOperation().GetStoredType());
-    CollectPointer(store->GetAddressInput().origin(), size, true, true);
+    const auto size = GetLlvmTypeSize(store->GetStoredType());
+    CollectPointer(StoreOperation::AddressInput(node).origin(), size, true, true);
   }
 }
 
@@ -237,13 +244,6 @@ PrecisionEvaluator::CollectPointersFromStructuralNode(const rvsdg::StructuralNod
   }
 }
 
-bool
-PrecisionEvaluator::IsPointerCompatible(const rvsdg::output * value)
-{
-  const auto & type = value->type();
-  return IsOrContains<PointerType>(type);
-}
-
 void
 PrecisionEvaluator::CollectPointer(
     const rvsdg::output * value,
@@ -251,8 +251,40 @@ PrecisionEvaluator::CollectPointer(
     bool isUse,
     bool isClobber)
 {
-  JLM_ASSERT(IsPointerCompatible(value));
+  JLM_ASSERT(IsPointerCompatible(*value));
   Context_.PointerOperations.push_back({ value, size, isUse, isClobber });
+}
+
+void
+PrecisionEvaluator::NormalizePointerValues()
+{
+  for (size_t i = 0; i < Context_.PointerOperations.size(); i++)
+  {
+    auto & pointer = std::get<0>(Context_.PointerOperations[i]);
+    pointer = &NormalizePointerValue(*pointer);
+  }
+}
+
+void
+PrecisionEvaluator::RemoveDuplicates()
+{
+  // For each occurrence of a (pointer, size) pair, perform logical or to find the final isUse and
+  // isClobber values
+  std::map<std::pair<const rvsdg::output *, size_t>, std::pair<bool, bool>> uniquePointerOps;
+
+  for (const auto & [pointer, size, isUse, isClobber] : Context_.PointerOperations)
+  {
+    auto & op = uniquePointerOps[{ pointer, size }];
+    op.first |= isUse;
+    op.second |= isClobber;
+  }
+
+  Context_.PointerOperations.clear();
+  for (const auto & [pointerSize, isUseClobber] : uniquePointerOps)
+  {
+    Context_.PointerOperations.push_back(
+        { pointerSize.first, pointerSize.second, isUseClobber.first, isUseClobber.second });
+  }
 }
 
 void

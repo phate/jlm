@@ -119,16 +119,47 @@ public:
 
 private:
   /**
-   * Traces the origin of the given pointer value until a single origin object is found.
-   * Does not trace through GEPs, or operations that chose between multiple inputs.
-   * Fills the given hash set while traversing
-   * @param pointer
-   * @param trace
-   * @return
+   * Checks if the given pointer is the result of a memory location defining operation.
+   * These operations are guaranteed to output pointers that do not alias any pointer
+   * that is not based on the pointer itself.
+   *
+   * For example, the output of an ALLOCA, or a GraphImport, are such pointer origins.
+   *
+   * @param pointer the pointer value to check
+   * @return true if the pointer is the original pointer to a created memory location
    */
-  std::optional<const rvsdg::output *>
-  GetSingleTarget(const rvsdg::output & pointer, util::HashSet<const rvsdg::output *> & trace);
+  [[nodiscard]] bool
+  IsOriginalMemoryLocation(const rvsdg::output & pointer);
 };
+
+/**
+ * Determines if the given value is regarded as representing a pointer
+ * @param value the value
+ * @return true if value represents a pointer, false otherwise
+ */
+[[nodiscard]] bool
+IsPointerCompatible(const rvsdg::output & value);
+
+/**
+ * Follows the definition of the given pointer value when it is a trivial copy of another pointer,
+ * resulting in a possibly different rvsdg::output that produces exactly the same value.
+ * Take for example a program like:
+ *
+ * p1 = alloca
+ * p2, _ = IOBarrier(p1, _)
+ * _ = Delta(_, p2)
+ *   [p3]{
+ *     x = load p3
+ *   }[x]
+ *   ...
+ *
+ * Normalizing p3 yields p1
+ *
+ * @param pointer the pointer value to be normalized
+ * @return a definition of pointer normalized as much as possible
+ */
+[[nodiscard]] const rvsdg::output &
+NormalizePointerValue(const rvsdg::output & pointer);
 
 /**
  * Returns the size of the given type's in-memory representation, in bytes.
@@ -136,7 +167,7 @@ private:
  * @param type the ValueType
  * @return the byte size of the type
  */
-size_t
+[[nodiscard]] size_t
 GetLlvmTypeSize(const rvsdg::ValueType & type);
 
 }

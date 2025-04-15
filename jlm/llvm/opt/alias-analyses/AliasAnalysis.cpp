@@ -116,28 +116,25 @@ BasicAliasAnalysis::Query(
     const rvsdg::output & p2,
     [[maybe_unused]] size_t s2)
 {
+  const auto & p1Norm = NormalizePointerValue(p1);
+  const auto & p2Norm = NormalizePointerValue(p2);
+
   // If the two pointers are the same value, they must alias
-  if (&p1 == &p2)
+  if (&p1Norm == &p2Norm)
     return MustAlias;
 
-  // Trace the origin of the pointers as long as possible
-  util::HashSet<const rvsdg::output *> p1Trace, p2Trace;
-  const auto p1SingleTarget = GetSingleTarget(p1, p1Trace);
-  const auto p2SingleTarget = GetSingleTarget(p2, p2Trace);
+  // Check if p1 and p2 are the outputs of memory location creating operations
+  bool p1Original = IsOriginalMemoryLocation(p1Norm);
+  bool p2Original = IsOriginalMemoryLocation(p2Norm);
 
-  // If it was possible to track both p1 and p2 to a single target object
-  // they are either identical, or point to completely different objects
-  if (p1SingleTarget && p2SingleTarget)
+  // If it is possible to track both p1 and p2 to memory location defining operations,
+  // and they have different origins, they must point to distinct memory locations.
+  if (p1Original && p2Original)
   {
-    if (*p1SingleTarget == *p2SingleTarget)
-      return MustAlias;
     return NoAlias;
   }
 
-  // Check if the trace from tracking the origin of p1 and p2 reach the same output at any point
-  p1Trace.IntersectWithAndClear(p2Trace);
-  if (!p1Trace.IsEmpty())
-    return MustAlias;
+  // TODO: Trace through GEP operations
 
   return MayAlias;
 }
@@ -148,106 +145,102 @@ BasicAliasAnalysis::ToString() const
   return "BasicAA";
 }
 
-std::optional<const rvsdg::output *>
-BasicAliasAnalysis::GetSingleTarget(
-    const rvsdg::output & pointer,
-    util::HashSet<const rvsdg::output *> & trace)
+bool
+BasicAliasAnalysis::IsOriginalMemoryLocation(const rvsdg::output & pointer)
 {
-  // The head of the trace
-  const rvsdg::output * p = &pointer;
+  // Each GraphImport represents a unique object
+  if (dynamic_cast<const GraphImport *>(&pointer))
+    return true;
 
-  while (true)
+  if (rvsdg::TryGetOwnerNode<llvm::delta::node>(pointer))
+    return true;
+
+  // Is pointer the output of one of the nodes
+  if (const auto node = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(pointer))
   {
-    // Insert p in the trace, quit if it was already there
-    if (!trace.Insert(p))
-      return std::nullopt;
+    if (is<alloca_op>(node))
+      return true;
 
-    // Try either tracing the origin of p further, or stopping if a single target is found
+    if (is<malloc_op>(node))
+      return true;
 
-    if (const auto import = dynamic_cast<const GraphImport *>(p))
-    {
-      // Each GraphImport represents a unique object
-      return p;
-    }
+    if (is<LlvmLambdaOperation>(node))
+      return true;
+  }
 
-    if (const auto node = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*p))
-    {
-      if (is<IOBarrierOperation>(node))
-      {
-        p = node->input(0)->origin();
-      }
-      else if (is<alloca_op>(node))
-      {
-        return p;
-      }
-      else if (is<delta::operation>(node))
-      {
-        return p;
-      }
-      else if (is<malloc_op>(node))
-      {
-        return p;
-      }
-      else if (is<LlvmLambdaOperation>(node))
-      {
-        return p;
-      }
-    }
-    else if (
-        [[maybe_unused]] const auto structNode = rvsdg::TryGetOwnerNode<rvsdg::StructuralNode>(*p))
-    {
-      // If the output is a phi recursion variable, continue tracing inside the phi
-      if (const auto phiResult = dynamic_cast<const llvm::phi::rvoutput *>(p))
-      {
-        p = phiResult->result()->origin();
-      }
-      else
-      {
-        // TODO: Outputs of structural nodes may be invariant, so do not give up already
-        return std::nullopt;
-      }
-    }
-    else if (const auto outerGamma = rvsdg::TryGetRegionParentNode<rvsdg::GammaNode>(*p))
-    {
-      // Follow the gamma input
-      p = outerGamma->GetEntryVar(p->index()).input->origin();
-    }
-    else if (const auto outerTheta = rvsdg::TryGetRegionParentNode<rvsdg::ThetaNode>(*p))
-    {
-      const auto loopVar = outerTheta->GetLoopVars()[p->index()];
+  return false;
+}
 
-      // If the loop variable is not invariant, stop tracing now
-      if (!ThetaLoopVarIsInvariant(loopVar))
-        return std::nullopt;
+bool
+IsPointerCompatible(const rvsdg::output & value)
+{
+  const auto & type = value.type();
+  return IsOrContains<PointerType>(type);
+}
 
-      p = loopVar.input->origin();
-    }
-    else if (const auto outerLambda = rvsdg::TryGetRegionParentNode<rvsdg::LambdaNode>(*p))
+const rvsdg::output &
+NormalizePointerValue(const rvsdg::output & pointer)
+{
+  JLM_ASSERT(IsPointerCompatible(pointer));
+
+  if (const auto node = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(pointer))
+  {
+    if (is<IOBarrierOperation>(node))
     {
-      const auto ctxVar = outerLambda->MapBinderContextVar(*p);
-
-      // If it was not a contex variable, stop tracing
-      if (!ctxVar)
-        return std::nullopt;
-
-      p = ctxVar->input->origin();
-    }
-    else if (rvsdg::TryGetRegionParentNode<llvm::phi::node>(*p) != nullptr)
-    {
-      if (const auto cvArg = dynamic_cast<const llvm::phi::cvargument*>(p))
-      {
-        // Follow the context variable to outside the phi
-        p = cvArg->input()->origin();
-      }
-      else if (const auto rvArg = dynamic_cast<const llvm::phi::rvargument*>(p))
-      {
-        // Follow to the recursion variable's definition
-        p = rvArg->result()->origin();
-      }
-      else
-        JLM_UNREACHABLE("Unknown phi argument");
+      return NormalizePointerValue(*node->input(0)->origin());
     }
   }
+  else if (rvsdg::TryGetOwnerNode<rvsdg::StructuralNode>(pointer))
+  {
+      // If the output is a phi recursion variable, continue tracing inside the phi
+      if (const auto phiResult = dynamic_cast<const llvm::phi::rvoutput *>(&pointer))
+      {
+        return NormalizePointerValue(*phiResult->result()->origin());
+      }
+
+      // TODO: We could also handle invariant theta loop variables
+      return pointer;
+  }
+  else if (const auto outerGamma = rvsdg::TryGetRegionParentNode<rvsdg::GammaNode>(pointer))
+  {
+    // Follow the gamma input
+    return NormalizePointerValue(*outerGamma->GetEntryVar(pointer.index()).input->origin());
+  }
+  else if (const auto outerTheta = rvsdg::TryGetRegionParentNode<rvsdg::ThetaNode>(pointer))
+  {
+    const auto loopVar = outerTheta->GetLoopVars()[pointer.index()];
+
+    // If the loop variable is invariant, continue normalizing
+    if (ThetaLoopVarIsInvariant(loopVar))
+      return NormalizePointerValue(*loopVar.input->origin());
+  }
+  else if (const auto outerLambda = rvsdg::TryGetRegionParentNode<rvsdg::LambdaNode>(pointer))
+  {
+    const auto ctxVar = outerLambda->MapBinderContextVar(pointer);
+
+    // If the argument is a contex variable, continue normalizing
+    if (ctxVar)
+      return NormalizePointerValue(*ctxVar->input->origin());
+  }
+  else if (rvsdg::TryGetRegionParentNode<llvm::phi::node>(pointer) != nullptr)
+  {
+    // The arguments inside a phi node are either context variables or recursion variables, both can be followed
+    if (const auto cvArg = dynamic_cast<const llvm::phi::cvargument*>(&pointer))
+    {
+      // Follow the context variable to outside the phi
+      return NormalizePointerValue(*cvArg->input()->origin());
+    }
+
+    if (const auto rvArg = dynamic_cast<const llvm::phi::rvargument*>(&pointer))
+    {
+      // Follow to the recursion variable's definition
+      return NormalizePointerValue(*rvArg->result()->origin());
+    }
+
+    JLM_UNREACHABLE("Unknown phi argument");
+  }
+
+  return pointer;
 }
 
 /**

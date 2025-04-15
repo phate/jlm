@@ -73,13 +73,21 @@ private:
   void
   CollectPointersFromStructuralNode(const rvsdg::StructuralNode & node);
 
-  // Determines if the given value is regarded as representing a pointer
-  bool
-  IsPointerCompatible(const rvsdg::output * value);
-
   // Adds a value to the list of pointer operations in the function being evaluated
   void
   CollectPointer(const rvsdg::output * value, size_t size, bool isUse, bool isClobber);
+
+  /**
+   * Updates the pointers collected in the current context by tracing their origin.
+   * This is only done for pointers that are trivially passed directly through nodes or into regions.
+   * @see NormalizePointerValue() in AliasAnalysis.hpp
+   */
+  void NormalizePointerValues();
+
+  /**
+   * Removes repeated instances of the same (pointer, size) pair in the current context
+   */
+  void RemoveDuplicates();
 
   // Called once all functions have been evaluated, to calculate and print averages
   void
