@@ -11,12 +11,6 @@
 namespace jlm::llvm
 {
 
-const StoreOperation &
-StoreNode::GetOperation() const noexcept
-{
-  return *util::AssertedCast<const StoreOperation>(&SimpleNode::GetOperation());
-}
-
 StoreNonVolatileOperation::~StoreNonVolatileOperation() noexcept = default;
 
 bool
