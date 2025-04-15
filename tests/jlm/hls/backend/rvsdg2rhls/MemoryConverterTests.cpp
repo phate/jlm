@@ -39,7 +39,7 @@ TestTraceArgument()
   // Load followed by store
   auto loadAddress = lambda->GetFunctionArguments()[0];
   auto memoryStateArgument = lambda->GetFunctionArguments()[3];
-  auto loadOutput = LoadNonVolatileNode::Create(
+  auto loadOutput = LoadNonVolatileOperation::Create(
       loadAddress,
       { memoryStateArgument },
       jlm::llvm::PointerType::Create(),
@@ -47,7 +47,8 @@ TestTraceArgument()
 
   auto storeAddress = lambda->GetFunctionArguments()[1];
   auto storeData = lambda->GetFunctionArguments()[2];
-  auto storeOutput = StoreNonVolatileNode::Create(storeAddress, storeData, { loadOutput[1] }, 32);
+  auto storeOutput =
+      StoreNonVolatileOperation::Create(storeAddress, storeData, { loadOutput[1] }, 32);
 
   auto lambdaOutput = lambda->finalize({ storeOutput[0] });
   jlm::llvm::GraphExport::Create(*lambdaOutput, "f");
@@ -94,7 +95,7 @@ TestLoad()
   // Single load
   auto loadAddress = lambda->GetFunctionArguments()[0];
   auto memoryStateArgument = lambda->GetFunctionArguments()[1];
-  auto loadOutput = LoadNonVolatileNode::Create(
+  auto loadOutput = LoadNonVolatileOperation::Create(
       loadAddress,
       { memoryStateArgument },
       jlm::rvsdg::bittype::Create(32),
@@ -176,7 +177,7 @@ TestStore()
   auto storeData = lambda->GetFunctionArguments()[1];
   auto memoryStateArgument = lambda->GetFunctionArguments()[2];
   auto storeOutput =
-      StoreNonVolatileNode::Create(storeAddress, storeData, { memoryStateArgument }, 32);
+      StoreNonVolatileOperation::Create(storeAddress, storeData, { memoryStateArgument }, 32);
 
   auto lambdaOutput = lambda->finalize({ storeOutput[0] });
   jlm::llvm::GraphExport::Create(*lambdaOutput, "f");
@@ -243,12 +244,13 @@ TestLoadStore()
   auto loadAddress = lambda->GetFunctionArguments()[0];
   auto storeData = lambda->GetFunctionArguments()[1];
   auto memoryStateArgument = lambda->GetFunctionArguments()[2];
-  auto loadOutput = LoadNonVolatileNode::Create(
+  auto loadOutput = LoadNonVolatileOperation::Create(
       loadAddress,
       { memoryStateArgument },
       jlm::llvm::PointerType::Create(),
       32);
-  auto storeOutput = StoreNonVolatileNode::Create(loadOutput[0], storeData, { loadOutput[1] }, 32);
+  auto storeOutput =
+      StoreNonVolatileOperation::Create(loadOutput[0], storeData, { loadOutput[1] }, 32);
 
   auto lambdaOutput = lambda->finalize({ storeOutput[0] });
   jlm::llvm::GraphExport::Create(*lambdaOutput, "f");
@@ -339,7 +341,7 @@ TestThetaLoad()
   // Load node
   auto loadAddress = theta->AddLoopVar(lambda->GetFunctionArguments()[3]);
   auto memoryStateArgument = theta->AddLoopVar(lambda->GetFunctionArguments()[4]);
-  auto loadOutput = LoadNonVolatileNode::Create(
+  auto loadOutput = LoadNonVolatileOperation::Create(
       loadAddress.pre,
       { memoryStateArgument.pre },
       PointerType::Create(),
@@ -467,7 +469,7 @@ TestThetaStore()
   auto storeAddress = theta->AddLoopVar(lambda->GetFunctionArguments()[3]);
   auto storeData = theta->AddLoopVar(lambda->GetFunctionArguments()[4]);
   auto memoryStateArgument = theta->AddLoopVar(lambda->GetFunctionArguments()[5]);
-  auto storeOutput = StoreNonVolatileNode::Create(
+  auto storeOutput = StoreNonVolatileOperation::Create(
       storeAddress.pre,
       storeData.pre,
       { memoryStateArgument.pre },

@@ -167,7 +167,7 @@ public:
     static void
     ReplaceStates(
         const std::vector<MemoryNodeStatePair *> & memoryNodeStatePairs,
-        const LoadNode::MemoryStateOutputRange & states)
+        const LoadOperation::MemoryStateOutputRange & states)
     {
       auto it = states.begin();
       for (auto memoryNodeStatePair : memoryNodeStatePairs)
@@ -181,7 +181,7 @@ public:
     static void
     ReplaceStates(
         const std::vector<MemoryNodeStatePair *> & memoryNodeStatePairs,
-        const StoreNode::MemoryStateOutputRange & states)
+        const StoreOperation::MemoryStateOutputRange & states)
     {
       auto it = states.begin();
       for (auto memoryNodeStatePair : memoryNodeStatePairs)
@@ -547,13 +547,13 @@ MemoryStateEncoder::EncodeSimpleNode(const rvsdg::SimpleNode & simpleNode)
   {
     EncodeMalloc(simpleNode);
   }
-  else if (auto loadNode = dynamic_cast<const LoadNode *>(&simpleNode))
+  else if (is<LoadOperation>(&simpleNode))
   {
-    EncodeLoad(*loadNode);
+    EncodeLoad(simpleNode);
   }
-  else if (auto storeNode = dynamic_cast<const StoreNode *>(&simpleNode))
+  else if (is<StoreOperation>(&simpleNode))
   {
-    EncodeStore(*storeNode);
+    EncodeStore(simpleNode);
   }
   else if (auto callNode = dynamic_cast<const CallNode *>(&simpleNode))
   {
@@ -622,38 +622,43 @@ MemoryStateEncoder::EncodeMalloc(const rvsdg::SimpleNode & mallocNode)
 }
 
 void
-MemoryStateEncoder::EncodeLoad(const LoadNode & loadNode)
+MemoryStateEncoder::EncodeLoad(const rvsdg::SimpleNode & node)
 {
+  JLM_ASSERT(is<LoadOperation>(&node));
   auto & stateMap = Context_->GetRegionalizedStateMap();
 
-  auto address = loadNode.GetAddressInput().origin();
+  auto address = LoadOperation::AddressInput(node).origin();
   auto memoryNodeStatePairs = stateMap.GetStates(*address);
   auto memoryStates = StateMap::MemoryNodeStatePair::States(memoryNodeStatePairs);
 
-  auto & newLoadNode = ReplaceLoadNode(loadNode, memoryStates);
+  auto & newLoadNode = ReplaceLoadNode(node, memoryStates);
 
   StateMap::MemoryNodeStatePair::ReplaceStates(
       memoryNodeStatePairs,
-      newLoadNode.MemoryStateOutputs());
+      LoadOperation::MemoryStateOutputs(newLoadNode));
 
-  if (is<PointerType>(loadNode.GetOperation().GetLoadedType()))
-    stateMap.ReplaceAddress(loadNode.GetLoadedValueOutput(), newLoadNode.GetLoadedValueOutput());
+  if (is<PointerType>(LoadOperation::LoadedValueOutput(node).Type()))
+  {
+    stateMap.ReplaceAddress(
+        LoadOperation::LoadedValueOutput(node),
+        LoadOperation::LoadedValueOutput(newLoadNode));
+  }
 }
 
 void
-MemoryStateEncoder::EncodeStore(const StoreNode & storeNode)
+MemoryStateEncoder::EncodeStore(const rvsdg::SimpleNode & node)
 {
   auto & stateMap = Context_->GetRegionalizedStateMap();
 
-  auto address = storeNode.GetAddressInput().origin();
-  auto memoryNodeStatePairs = stateMap.GetStates(*address);
-  auto memoryStates = StateMap::MemoryNodeStatePair::States(memoryNodeStatePairs);
+  const auto address = StoreOperation::AddressInput(node).origin();
+  const auto memoryNodeStatePairs = stateMap.GetStates(*address);
+  const auto memoryStates = StateMap::MemoryNodeStatePair::States(memoryNodeStatePairs);
 
-  auto & newStoreNode = ReplaceStoreNode(storeNode, memoryStates);
+  const auto & newStoreNode = ReplaceStoreNode(node, memoryStates);
 
   StateMap::MemoryNodeStatePair::ReplaceStates(
       memoryNodeStatePairs,
-      newStoreNode.MemoryStateOutputs());
+      StoreOperation::MemoryStateOutputs(newStoreNode));
 }
 
 void
@@ -943,49 +948,79 @@ MemoryStateEncoder::EncodeThetaExit(
   }
 }
 
-LoadNode &
+rvsdg::SimpleNode &
 MemoryStateEncoder::ReplaceLoadNode(
-    const LoadNode & loadNode,
+    const rvsdg::SimpleNode & node,
     const std::vector<rvsdg::output *> & memoryStates)
 {
-  if (auto loadVolatileNode = dynamic_cast<const LoadVolatileNode *>(&loadNode))
+  JLM_ASSERT(is<LoadOperation>(&node));
+
+  if (const auto loadVolatileOperation =
+          dynamic_cast<const LoadVolatileOperation *>(&node.GetOperation()))
   {
-    auto & newLoadNode = loadVolatileNode->CopyWithNewMemoryStates(memoryStates);
-    loadVolatileNode->GetLoadedValueOutput().divert_users(&newLoadNode.GetLoadedValueOutput());
-    loadVolatileNode->GetIoStateOutput().divert_users(&newLoadNode.GetIoStateOutput());
+    auto & newLoadNode = LoadVolatileOperation::CreateNode(
+        *LoadOperation::AddressInput(node).origin(),
+        *LoadVolatileOperation::IOStateInput(node).origin(),
+        memoryStates,
+        loadVolatileOperation->GetLoadedType(),
+        loadVolatileOperation->GetAlignment());
+    auto & oldLoadedValueOutput = LoadOperation::LoadedValueOutput(node);
+    auto & newLoadedValueOutput = LoadOperation::LoadedValueOutput(newLoadNode);
+    auto & oldIOStateOutput = LoadVolatileOperation::IOStateOutput(node);
+    auto & newIOStateOutput = LoadVolatileOperation::IOStateOutput(newLoadNode);
+    oldLoadedValueOutput.divert_users(&newLoadedValueOutput);
+    oldIOStateOutput.divert_users(&newIOStateOutput);
     return newLoadNode;
   }
-  else if (auto loadNonVolatileNode = dynamic_cast<const LoadNonVolatileNode *>(&loadNode))
+
+  if (const auto loadNonVolatileOperation =
+          dynamic_cast<const LoadNonVolatileOperation *>(&node.GetOperation()))
   {
-    auto & newLoadNode = loadNonVolatileNode->CopyWithNewMemoryStates(memoryStates);
-    loadNode.GetLoadedValueOutput().divert_users(&newLoadNode.GetLoadedValueOutput());
+    auto & newLoadNode = LoadNonVolatileOperation::CreateNode(
+        *LoadOperation::AddressInput(node).origin(),
+        memoryStates,
+        loadNonVolatileOperation->GetLoadedType(),
+        loadNonVolatileOperation->GetAlignment());
+    auto & oldLoadedValueOutput = LoadOperation::LoadedValueOutput(node);
+    auto & newLoadedValueOutput = LoadNonVolatileOperation::LoadedValueOutput(newLoadNode);
+    oldLoadedValueOutput.divert_users(&newLoadedValueOutput);
     return newLoadNode;
   }
-  else
-  {
-    JLM_UNREACHABLE("Unhandled load node type.");
-  }
+
+  JLM_UNREACHABLE("Unhandled load node type.");
 }
 
-StoreNode &
+rvsdg::SimpleNode &
 MemoryStateEncoder::ReplaceStoreNode(
-    const jlm::llvm::StoreNode & storeNode,
+    const rvsdg::SimpleNode & node,
     const std::vector<rvsdg::output *> & memoryStates)
 {
-  if (auto storeVolatileNode = dynamic_cast<const StoreVolatileNode *>(&storeNode))
+  if (const auto oldStoreVolatileOperation =
+          dynamic_cast<const StoreVolatileOperation *>(&node.GetOperation()))
   {
-    auto & newStoreNode = storeVolatileNode->CopyWithNewMemoryStates(memoryStates);
-    storeVolatileNode->GetIoStateOutput().divert_users(&newStoreNode.GetIoStateOutput());
+    auto & newStoreNode = StoreVolatileOperation::CreateNode(
+        *StoreOperation::AddressInput(node).origin(),
+        *StoreOperation::StoredValueInput(node).origin(),
+        *StoreVolatileOperation::IOStateInput(node).origin(),
+        memoryStates,
+        oldStoreVolatileOperation->GetAlignment());
+    auto & oldIOStateOutput = StoreVolatileOperation::IOStateOutput(node);
+    auto & newIOStateOutput = StoreVolatileOperation::IOStateOutput(newStoreNode);
+    oldIOStateOutput.divert_users(&newIOStateOutput);
     return newStoreNode;
   }
-  else if (auto storeNonVolatileNode = dynamic_cast<const StoreNonVolatileNode *>(&storeNode))
+
+  if (const auto oldStoreNonVolatileOperation =
+          dynamic_cast<const StoreNonVolatileOperation *>(&node.GetOperation()))
   {
-    return storeNonVolatileNode->CopyWithNewMemoryStates(memoryStates);
+    return StoreNonVolatileOperation::CreateNode(
+        *StoreOperation::AddressInput(node).origin(),
+        *StoreOperation::StoredValueInput(node).origin(),
+        memoryStates,
+        oldStoreNonVolatileOperation->GetAlignment());
   }
-  else
-  {
-    JLM_UNREACHABLE("Unhandled store node type.");
-  }
+
+  JLM_UNREACHABLE("Unhandled store node type.");
 }
 
 std::vector<rvsdg::output *>

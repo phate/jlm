@@ -40,60 +40,6 @@ StoreNonVolatileOperation::copy() const
   return std::make_unique<StoreNonVolatileOperation>(*this);
 }
 
-[[nodiscard]] size_t
-StoreNonVolatileOperation::NumMemoryStates() const noexcept
-{
-  return nresults();
-}
-
-[[nodiscard]] const StoreNonVolatileOperation &
-StoreNonVolatileNode::GetOperation() const noexcept
-{
-  return *util::AssertedCast<const StoreNonVolatileOperation>(&StoreNode::GetOperation());
-}
-
-[[nodiscard]] StoreNode::MemoryStateInputRange
-StoreNonVolatileNode::MemoryStateInputs() const noexcept
-{
-  if (NumMemoryStates() == 0)
-  {
-    return { MemoryStateInputIterator(nullptr), MemoryStateInputIterator(nullptr) };
-  }
-
-  return { MemoryStateInputIterator(input(2)), MemoryStateInputIterator(nullptr) };
-}
-
-[[nodiscard]] StoreNode::MemoryStateOutputRange
-StoreNonVolatileNode::MemoryStateOutputs() const noexcept
-{
-  if (NumMemoryStates() == 0)
-  {
-    return { MemoryStateOutputIterator(nullptr), MemoryStateOutputIterator(nullptr) };
-  }
-
-  return { MemoryStateOutputIterator(output(0)), MemoryStateOutputIterator(nullptr) };
-}
-
-StoreNonVolatileNode &
-StoreNonVolatileNode::CopyWithNewMemoryStates(
-    const std::vector<rvsdg::output *> & memoryStates) const
-{
-  return CreateNode(
-      *GetAddressInput().origin(),
-      *GetStoredValueInput().origin(),
-      memoryStates,
-      GetAlignment());
-}
-
-rvsdg::Node *
-StoreNonVolatileNode::copy(rvsdg::Region * region, const std::vector<rvsdg::output *> & operands)
-    const
-{
-  std::unique_ptr<StoreNonVolatileOperation> op(
-      util::AssertedCast<StoreNonVolatileOperation>(GetOperation().copy().release()));
-  return &CreateNode(*region, std::move(op), operands);
-}
-
 StoreVolatileOperation::~StoreVolatileOperation() noexcept = default;
 
 bool
@@ -116,62 +62,6 @@ StoreVolatileOperation::copy() const
 {
   return std::make_unique<StoreVolatileOperation>(*this);
 }
-
-[[nodiscard]] size_t
-StoreVolatileOperation::NumMemoryStates() const noexcept
-{
-  // Subtracting I/O state
-  return nresults() - 1;
-}
-
-[[nodiscard]] const StoreVolatileOperation &
-StoreVolatileNode::GetOperation() const noexcept
-{
-  return *util::AssertedCast<const StoreVolatileOperation>(&StoreNode::GetOperation());
-}
-
-[[nodiscard]] StoreNode::MemoryStateInputRange
-StoreVolatileNode::MemoryStateInputs() const noexcept
-{
-  if (NumMemoryStates() == 0)
-  {
-    return { MemoryStateInputIterator(nullptr), MemoryStateInputIterator(nullptr) };
-  }
-
-  return { MemoryStateInputIterator(input(3)), MemoryStateInputIterator(nullptr) };
-}
-
-[[nodiscard]] StoreNode::MemoryStateOutputRange
-StoreVolatileNode::MemoryStateOutputs() const noexcept
-{
-  if (NumMemoryStates() == 0)
-  {
-    return { MemoryStateOutputIterator(nullptr), MemoryStateOutputIterator(nullptr) };
-  }
-
-  return { MemoryStateOutputIterator(output(1)), MemoryStateOutputIterator(nullptr) };
-}
-
-StoreVolatileNode &
-StoreVolatileNode::CopyWithNewMemoryStates(const std::vector<rvsdg::output *> & memoryStates) const
-{
-  return CreateNode(
-      *GetAddressInput().origin(),
-      *GetStoredValueInput().origin(),
-      *GetIoStateInput().origin(),
-      memoryStates,
-      GetAlignment());
-}
-
-rvsdg::Node *
-StoreVolatileNode::copy(rvsdg::Region * region, const std::vector<rvsdg::output *> & operands) const
-{
-  std::unique_ptr<StoreVolatileOperation> op(
-      util::AssertedCast<StoreVolatileOperation>(GetOperation().copy().release()));
-  return &CreateNode(*region, std::move(op), operands);
-}
-
-/* store normal form */
 
 static bool
 is_store_mux_reducible(const std::vector<jlm::rvsdg::output *> & operands)
@@ -258,7 +148,7 @@ perform_store_mux_reduction(
   auto memStateMergeNode = jlm::rvsdg::output::GetNode(*operands[2]);
   auto memStateMergeOperands = jlm::rvsdg::operands(memStateMergeNode);
 
-  auto states = StoreNonVolatileNode::Create(
+  auto states = StoreNonVolatileOperation::Create(
       operands[0],
       operands[1],
       memStateMergeOperands,
@@ -276,7 +166,7 @@ perform_store_store_reduction(
 
   auto storeops = jlm::rvsdg::operands(storenode);
   std::vector<jlm::rvsdg::output *> states(std::next(std::next(storeops.begin())), storeops.end());
-  return StoreNonVolatileNode::Create(operands[0], operands[1], states, op.GetAlignment());
+  return StoreNonVolatileOperation::Create(operands[0], operands[1], states, op.GetAlignment());
 }
 
 static std::vector<jlm::rvsdg::output *>
@@ -291,7 +181,8 @@ perform_store_alloca_reduction(
       std::next(std::next(operands.begin())),
       operands.end());
 
-  auto outputs = StoreNonVolatileNode::Create(address, value, { alloca_state }, op.GetAlignment());
+  auto outputs =
+      StoreNonVolatileOperation::Create(address, value, { alloca_state }, op.GetAlignment());
   states.erase(alloca_state);
   states.insert(outputs[0]);
   return { states.begin(), states.end() };
@@ -322,7 +213,7 @@ perform_multiple_origin_reduction(
   }
 
   const auto storeResults =
-      StoreNonVolatileNode::Create(address, value, newInputStates, operation.GetAlignment());
+      StoreNonVolatileOperation::Create(address, value, newInputStates, operation.GetAlignment());
 
   std::vector<rvsdg::output *> results(operation.nresults(), nullptr);
   for (size_t n = 2; n < operands.size(); n++)

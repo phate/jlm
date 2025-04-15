@@ -101,7 +101,7 @@ LoadVolatileConversion()
       dynamic_cast<const jlm::rvsdg::LambdaNode *>(jlm::rvsdg::output::GetNode(*lambdaOutput));
 
   auto loadVolatileNode = lambda->subregion()->Nodes().begin().ptr();
-  assert(dynamic_cast<const LoadVolatileNode *>(loadVolatileNode));
+  assert(is<LoadVolatileOperation>(loadVolatileNode));
 
   return 0;
 }
@@ -131,7 +131,7 @@ StoreVolatileConversion()
       dynamic_cast<const jlm::rvsdg::LambdaNode *>(jlm::rvsdg::output::GetNode(*lambdaOutput));
 
   auto storeVolatileNode = lambda->subregion()->Nodes().begin().ptr();
-  assert(dynamic_cast<const StoreVolatileNode *>(storeVolatileNode));
+  assert(is<StoreVolatileOperation>(storeVolatileNode));
 
   return 0;
 }

@@ -528,7 +528,7 @@ MlirToJlmConverter::ConvertOperation(
     auto address = inputs[0];
     auto value = inputs[1];
     auto memoryStateInputs = std::vector(std::next(inputs.begin(), 2), inputs.end());
-    auto & storeNode = jlm::llvm::StoreNonVolatileNode::CreateNode(
+    auto & storeNode = jlm::llvm::StoreNonVolatileOperation::CreateNode(
         *address,
         *value,
         memoryStateInputs,
@@ -544,7 +544,7 @@ MlirToJlmConverter::ConvertOperation(
     if (!rvsdg::is<const rvsdg::ValueType>(jlmType))
       JLM_UNREACHABLE("Expected ValueType for LoadOp operation output.");
     auto jlmValueType = std::dynamic_pointer_cast<const rvsdg::ValueType>(jlmType);
-    auto & loadNode = jlm::llvm::LoadNonVolatileNode::CreateNode(
+    auto & loadNode = llvm::LoadNonVolatileOperation::CreateNode(
         *address,
         memoryStateInputs,
         jlmValueType,

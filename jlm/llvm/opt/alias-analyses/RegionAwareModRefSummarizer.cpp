@@ -764,13 +764,13 @@ RegionAwareModRefSummarizer::AnnotateSimpleNode(
     const rvsdg::SimpleNode & simpleNode,
     RegionSummary & regionSummary)
 {
-  if (auto loadNode = dynamic_cast<const LoadNode *>(&simpleNode))
+  if (is<LoadOperation>(&simpleNode))
   {
-    AnnotateLoad(*loadNode, regionSummary);
+    AnnotateLoad(simpleNode, regionSummary);
   }
-  else if (auto storeNode = dynamic_cast<const StoreNode *>(&simpleNode))
+  else if (is<StoreOperation>(&simpleNode))
   {
-    AnnotateStore(*storeNode, regionSummary);
+    AnnotateStore(simpleNode, regionSummary);
   }
   else if (is<alloca_op>(&simpleNode))
   {
@@ -795,18 +795,22 @@ RegionAwareModRefSummarizer::AnnotateSimpleNode(
 }
 
 void
-RegionAwareModRefSummarizer::AnnotateLoad(const LoadNode & loadNode, RegionSummary & regionSummary)
+RegionAwareModRefSummarizer::AnnotateLoad(
+    const rvsdg::SimpleNode & loadNode,
+    RegionSummary & regionSummary)
 {
-  auto memoryNodes = ModRefSummary_->GetOutputNodes(*loadNode.GetAddressInput().origin());
+  const auto origin = LoadOperation::AddressInput(loadNode).origin();
+  const auto memoryNodes = ModRefSummary_->GetOutputNodes(*origin);
   regionSummary.AddMemoryNodes(memoryNodes);
 }
 
 void
 RegionAwareModRefSummarizer::AnnotateStore(
-    const StoreNode & storeNode,
+    const rvsdg::SimpleNode & storeNode,
     RegionSummary & regionSummary)
 {
-  auto memoryNodes = ModRefSummary_->GetOutputNodes(*storeNode.GetAddressInput().origin());
+  const auto origin = StoreOperation::AddressInput(storeNode).origin();
+  const auto memoryNodes = ModRefSummary_->GetOutputNodes(*origin);
   regionSummary.AddMemoryNodes(memoryNodes);
 }
 

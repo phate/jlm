@@ -1718,7 +1718,7 @@ public:
   jlm::llvm::delta::node * DeltaX;
   jlm::llvm::delta::node * DeltaY;
 
-  jlm::llvm::LoadNonVolatileNode * LoadNode1;
+  rvsdg::SimpleNode * LoadNode1;
 };
 
 /** \brief EscapedMemoryTest2 class
@@ -1773,7 +1773,7 @@ public:
   jlm::rvsdg::RegionArgument * ExternalFunction1Import;
   jlm::rvsdg::RegionArgument * ExternalFunction2Import;
 
-  jlm::llvm::LoadNonVolatileNode * LoadNode;
+  rvsdg::SimpleNode * LoadNode;
 };
 
 /** \brief EscapedMemoryTest3 class
@@ -1808,7 +1808,7 @@ public:
 
   jlm::llvm::CallNode * CallExternalFunction;
 
-  jlm::llvm::LoadNonVolatileNode * LoadNode;
+  rvsdg::SimpleNode * LoadNode;
 };
 
 /** \brief MemcpyTest class
