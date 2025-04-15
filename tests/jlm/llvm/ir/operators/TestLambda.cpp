@@ -109,12 +109,13 @@ static void
 TestRemoveLambdaInputsWhere()
 {
   using namespace jlm::llvm;
+  using namespace jlm::rvsdg;
 
   // Arrange
   auto valueType = jlm::tests::valuetype::Create();
   auto functionType = jlm::rvsdg::FunctionType::Create({}, { valueType });
 
-  auto rvsdgModule = RvsdgModule::Create(jlm::util::filepath(""), "", "");
+  auto rvsdgModule = jlm::llvm::RvsdgModule::Create(jlm::util::filepath(""), "", "");
   auto & rvsdg = rvsdgModule->Rvsdg();
 
   auto x = &jlm::tests::GraphImport::Create(rvsdg, valueType, "x");
@@ -127,10 +128,10 @@ TestRemoveLambdaInputsWhere()
   auto lambdaBinder1 = lambdaNode->AddContextVar(*x);
   lambdaNode->AddContextVar(*x);
 
-  auto result = jlm::tests::SimpleNode::Create(
-                    *lambdaNode->subregion(),
+  auto result = jlm::rvsdg::CreateOpNode<jlm::tests::test_op>(
                     { lambdaBinder1.inner },
-                    { valueType })
+                    std::vector<std::shared_ptr<const Type>>{ valueType },
+                    std::vector<std::shared_ptr<const Type>>{ valueType })
                     .output(0);
 
   lambdaNode->finalize({ result });
@@ -179,12 +180,13 @@ static void
 TestPruneLambdaInputs()
 {
   using namespace jlm::llvm;
+  using namespace jlm::rvsdg;
 
   // Arrange
   auto valueType = jlm::tests::valuetype::Create();
   auto functionType = jlm::rvsdg::FunctionType::Create({}, { valueType });
 
-  auto rvsdgModule = RvsdgModule::Create(jlm::util::filepath(""), "", "");
+  auto rvsdgModule = jlm::llvm::RvsdgModule::Create(jlm::util::filepath(""), "", "");
   auto & rvsdg = rvsdgModule->Rvsdg();
 
   auto x = &jlm::tests::GraphImport::Create(rvsdg, valueType, "x");
@@ -197,10 +199,10 @@ TestPruneLambdaInputs()
   auto lambdaInput1 = lambdaNode->AddContextVar(*x);
   lambdaNode->AddContextVar(*x);
 
-  auto result = jlm::tests::SimpleNode::Create(
-                    *lambdaNode->subregion(),
+  auto result = jlm::rvsdg::CreateOpNode<jlm::tests::test_op>(
                     { lambdaInput1.inner },
-                    { valueType })
+                    std::vector<std::shared_ptr<const Type>>{ valueType },
+                    std::vector<std::shared_ptr<const Type>>{ valueType })
                     .output(0);
 
   lambdaNode->finalize({ result });
