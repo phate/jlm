@@ -541,10 +541,6 @@ ConvertThreeAddressCode(
   {
     Convert<CallNode, CallOperation>(threeAddressCode, region, variableMap);
   }
-  else if (is<StoreNonVolatileOperation>(&threeAddressCode))
-  {
-    Convert<StoreNonVolatileNode, StoreNonVolatileOperation>(threeAddressCode, region, variableMap);
-  }
   else
   {
     std::vector<rvsdg::output *> operands;

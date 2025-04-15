@@ -291,7 +291,7 @@ TestStore()
 
     // Create store operation
     auto storeOp = jlm::llvm::StoreNonVolatileOperation(bitsType, 1, 4);
-    jlm::llvm::StoreNonVolatileNode::Create(
+    jlm::llvm::StoreNonVolatileOperation::Create(
         *lambda->subregion(),
         std::make_unique<StoreNonVolatileOperation>(storeOp),
         { pointerArgument, bitsArgument, memoryStateArgument });
@@ -342,11 +342,12 @@ TestStore()
       assert(convertedLambda->subregion()->nnodes() == 1);
       assert(is<StoreNonVolatileOperation>(
           convertedLambda->subregion()->Nodes().begin()->GetOperation()));
-      auto convertedStore = dynamic_cast<const StoreNonVolatileNode *>(
-          convertedLambda->subregion()->Nodes().begin().ptr());
+      auto convertedStore = convertedLambda->subregion()->Nodes().begin().ptr();
+      auto convertedStoreOperation =
+          dynamic_cast<const StoreNonVolatileOperation *>(&convertedStore->GetOperation());
 
-      assert(convertedStore->GetAlignment() == 4);
-      assert(convertedStore->NumMemoryStates() == 1);
+      assert(convertedStoreOperation->GetAlignment() == 4);
+      assert(convertedStoreOperation->NumMemoryStates() == 1);
 
       assert(is<jlm::llvm::PointerType>(convertedStore->input(0)->type()));
       assert(is<jlm::rvsdg::bittype>(convertedStore->input(1)->type()));

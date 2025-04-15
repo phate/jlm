@@ -1009,14 +1009,18 @@ MemoryStateEncoder::ReplaceStoreNode(
     oldIOStateOutput.divert_users(&newIOStateOutput);
     return newStoreNode;
   }
-  else if (auto storeNonVolatileNode = dynamic_cast<const StoreNonVolatileNode *>(&node))
+
+  if (const auto oldStoreNonVolatileOperation =
+          dynamic_cast<const StoreNonVolatileOperation *>(&node.GetOperation()))
   {
-    return storeNonVolatileNode->CopyWithNewMemoryStates(memoryStates);
+    return StoreNonVolatileOperation::CreateNode(
+        *StoreOperation::AddressInput(node).origin(),
+        *StoreOperation::StoredValueInput(node).origin(),
+        memoryStates,
+        oldStoreNonVolatileOperation->GetAlignment());
   }
-  else
-  {
-    JLM_UNREACHABLE("Unhandled store node type.");
-  }
+
+  JLM_UNREACHABLE("Unhandled store node type.");
 }
 
 std::vector<rvsdg::output *>

@@ -206,14 +206,21 @@ is_load_store_reducible(
 
   // Check that the first state edge originates from a store
   auto firstState = operands[1];
-  auto storeNode = dynamic_cast<const StoreNonVolatileNode *>(rvsdg::output::GetNode(*firstState));
-  if (!storeNode)
+  auto storeNode = rvsdg::output::GetNode(*firstState);
+  if (storeNode == nullptr)
+  {
+    return false;
+  }
+
+  const auto storeOperation =
+      dynamic_cast<const StoreNonVolatileOperation *>(&storeNode->GetOperation());
+  if (storeOperation == nullptr)
   {
     return false;
   }
 
   // Check that all state edges to the load originate from the same store
-  if (storeNode->NumMemoryStates() != loadOperation.NumMemoryStates())
+  if (storeOperation->NumMemoryStates() != loadOperation.NumMemoryStates())
   {
     return false;
   }
@@ -229,7 +236,7 @@ is_load_store_reducible(
 
   // Check that the address to the load and store originate from the same value
   auto loadAddress = operands[0];
-  auto storeAddress = storeNode->GetAddressInput().origin();
+  auto storeAddress = StoreNonVolatileOperation::AddressInput(*storeNode).origin();
   if (loadAddress != storeAddress)
   {
     return false;
@@ -241,13 +248,13 @@ is_load_store_reducible(
   // operations instead. For example, a store of a 32 bit integer followed by a load of a 8 bit
   // integer can be converted to a trunc operation.
   auto loadedValueType = loadOperation.GetLoadedType();
-  auto & storedValueType = storeNode->GetStoredValueInput().type();
+  auto & storedValueType = StoreNonVolatileOperation::StoredValueInput(*storeNode).type();
   if (*loadedValueType != storedValueType)
   {
     return false;
   }
 
-  JLM_ASSERT(loadOperation.GetAlignment() == storeNode->GetAlignment());
+  JLM_ASSERT(loadOperation.GetAlignment() == storeOperation->GetAlignment());
   return true;
 }
 

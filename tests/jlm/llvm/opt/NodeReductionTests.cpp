@@ -30,7 +30,8 @@ MultipleReductionsPerRegion()
   auto allocaResults = alloca_op::create(bitType, &sizeArgument, 4);
 
   const auto c3 = bitconstant_op::create(&graph.GetRootRegion(), bitvalue_repr(32, 3));
-  auto storeResults = StoreNonVolatileNode::Create(allocaResults[0], c3, { allocaResults[1] }, 4);
+  auto storeResults =
+      StoreNonVolatileOperation::Create(allocaResults[0], c3, { allocaResults[1] }, 4);
   auto loadResults =
       LoadNonVolatileOperation::Create(allocaResults[0], { storeResults[0] }, bitType, 4);
 

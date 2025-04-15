@@ -191,17 +191,14 @@ TestCopy()
   auto value2 = &jlm::tests::GraphImport::Create(graph, valueType, "value2");
   auto memoryState2 = &jlm::tests::GraphImport::Create(graph, memoryStateType, "state2");
 
-  auto storeResults = StoreNonVolatileNode::Create(address1, value1, { memoryState1 }, 4);
+  auto storeResults = StoreNonVolatileOperation::Create(address1, value1, { memoryState1 }, 4);
 
   // Act
   auto node = jlm::rvsdg::output::GetNode(*storeResults[0]);
-  auto storeNode = jlm::util::AssertedCast<const StoreNonVolatileNode>(node);
-  auto copiedNode = storeNode->copy(&graph.GetRootRegion(), { address2, value2, memoryState2 });
+  auto copiedNode = node->copy(&graph.GetRootRegion(), { address2, value2, memoryState2 });
 
   // Assert
-  auto copiedStoreNode = dynamic_cast<const StoreNonVolatileNode *>(copiedNode);
-  assert(copiedNode != nullptr);
-  assert(storeNode->GetOperation() == copiedStoreNode->GetOperation());
+  assert(node->GetOperation() == copiedNode->GetOperation());
 
   return 0;
 }
@@ -226,7 +223,7 @@ TestStoreMuxNormalization()
   auto s3 = &jlm::tests::GraphImport::Create(graph, mt, "s3");
 
   auto mux = MemoryStateMergeOperation::Create({ s1, s2, s3 });
-  auto & storeNode = StoreNonVolatileNode::CreateNode(*a, *v, { mux }, 4);
+  auto & storeNode = StoreNonVolatileOperation::CreateNode(*a, *v, { mux }, 4);
 
   auto & ex = GraphExport::Create(*storeNode.output(0), "s");
 
@@ -274,7 +271,7 @@ TestDuplicateStateReduction()
   auto s2 = &jlm::tests::GraphImport::Create(graph, memoryStateType, "s2");
   auto s3 = &jlm::tests::GraphImport::Create(graph, memoryStateType, "s3");
 
-  auto & storeNode = StoreNonVolatileNode::CreateNode(*a, *v, { s1, s2, s1, s2, s3 }, 4);
+  auto & storeNode = StoreNonVolatileOperation::CreateNode(*a, *v, { s1, s2, s1, s2, s3 }, 4);
 
   auto & exS1 = GraphExport::Create(*storeNode.output(0), "exS1");
   auto & exS2 = GraphExport::Create(*storeNode.output(1), "exS2");
@@ -328,9 +325,9 @@ TestStoreAllocaReduction()
   auto alloca1 = alloca_op::create(vt, size, 4);
   auto alloca2 = alloca_op::create(vt, size, 4);
   auto & storeNode1 =
-      StoreNonVolatileNode::CreateNode(*alloca1[0], *value, { alloca1[1], alloca2[1], s }, 4);
+      StoreNonVolatileOperation::CreateNode(*alloca1[0], *value, { alloca1[1], alloca2[1], s }, 4);
   auto & storeNode2 =
-      StoreNonVolatileNode::CreateNode(*alloca2[0], *value, outputs(&storeNode1), 4);
+      StoreNonVolatileOperation::CreateNode(*alloca2[0], *value, outputs(&storeNode1), 4);
 
   GraphExport::Create(*storeNode2.output(0), "s1");
   GraphExport::Create(*storeNode2.output(1), "s2");
@@ -380,8 +377,8 @@ TestStoreStoreReduction()
   auto v2 = &jlm::tests::GraphImport::Create(graph, vt, "value");
   auto s = &jlm::tests::GraphImport::Create(graph, mt, "state");
 
-  auto & storeNode1 = StoreNonVolatileNode::CreateNode(*a, *v1, { s }, 4);
-  auto & storeNode2 = StoreNonVolatileNode::CreateNode(*a, *v2, outputs(&storeNode1), 4);
+  auto & storeNode1 = StoreNonVolatileOperation::CreateNode(*a, *v1, { s }, 4);
+  auto & storeNode2 = StoreNonVolatileOperation::CreateNode(*a, *v2, outputs(&storeNode1), 4);
 
   auto & ex = GraphExport::Create(*storeNode2.output(0), "state");
 

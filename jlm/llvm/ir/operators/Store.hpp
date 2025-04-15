@@ -170,6 +170,53 @@ public:
     return tac::create(op, { address, value, state });
   }
 
+  static std::vector<rvsdg::output *>
+  Create(
+      rvsdg::output * address,
+      rvsdg::output * value,
+      const std::vector<rvsdg::output *> & memoryStates,
+      size_t alignment)
+  {
+    return outputs(&CreateNode(*address, *value, memoryStates, alignment));
+  }
+
+  static rvsdg::SimpleNode &
+  CreateNode(
+      rvsdg::output & address,
+      rvsdg::output & value,
+      const std::vector<rvsdg::output *> & memoryStates,
+      size_t alignment)
+  {
+    auto storedType = CheckAndExtractStoredType(value.Type());
+
+    std::vector operands({ &address, &value });
+    operands.insert(operands.end(), memoryStates.begin(), memoryStates.end());
+
+    auto operation = std::make_unique<StoreNonVolatileOperation>(
+        std::move(storedType),
+        memoryStates.size(),
+        alignment);
+    return CreateNode(*address.region(), std::move(operation), operands);
+  }
+
+  static std::vector<rvsdg::output *>
+  Create(
+      rvsdg::Region & region,
+      std::unique_ptr<StoreNonVolatileOperation> storeOperation,
+      const std::vector<rvsdg::output *> & operands)
+  {
+    return outputs(&CreateNode(region, std::move(storeOperation), operands));
+  }
+
+  static rvsdg::SimpleNode &
+  CreateNode(
+      rvsdg::Region & region,
+      std::unique_ptr<StoreNonVolatileOperation> storeOperation,
+      const std::vector<rvsdg::output *> & operands)
+  {
+    return rvsdg::SimpleNode::Create(region, std::move(storeOperation), operands);
+  }
+
 private:
   static const std::shared_ptr<const jlm::rvsdg::ValueType>
   CheckAndExtractStoredType(const std::shared_ptr<const rvsdg::Type> & type)
@@ -288,89 +335,6 @@ public:
    */
   [[nodiscard]] virtual StoreNode &
   CopyWithNewMemoryStates(const std::vector<rvsdg::output *> & memoryStates) const = 0;
-};
-
-/**
- * Represents a StoreNonVolatileOperation in an RVSDG.
- */
-class StoreNonVolatileNode final : public StoreNode
-{
-private:
-  StoreNonVolatileNode(
-      rvsdg::Region & region,
-      std::unique_ptr<StoreNonVolatileOperation> operation,
-      const std::vector<jlm::rvsdg::output *> & operands)
-      : StoreNode(region, std::move(operation), operands)
-  {}
-
-public:
-  [[nodiscard]] const StoreNonVolatileOperation &
-  GetOperation() const noexcept override;
-
-  [[nodiscard]] StoreNonVolatileNode &
-  CopyWithNewMemoryStates(const std::vector<rvsdg::output *> & memoryStates) const override;
-
-  Node *
-  copy(rvsdg::Region * region, const std::vector<rvsdg::output *> & operands) const override;
-
-  static std::vector<rvsdg::output *>
-  Create(
-      rvsdg::output * address,
-      rvsdg::output * value,
-      const std::vector<rvsdg::output *> & memoryStates,
-      size_t alignment)
-  {
-    return rvsdg::outputs(&CreateNode(*address, *value, memoryStates, alignment));
-  }
-
-  static StoreNonVolatileNode &
-  CreateNode(
-      rvsdg::output & address,
-      rvsdg::output & value,
-      const std::vector<rvsdg::output *> & memoryStates,
-      size_t alignment)
-  {
-    auto storedType = CheckAndExtractStoredType(value.Type());
-
-    std::vector<rvsdg::output *> operands({ &address, &value });
-    operands.insert(operands.end(), memoryStates.begin(), memoryStates.end());
-
-    auto operation = std::make_unique<StoreNonVolatileOperation>(
-        std::move(storedType),
-        memoryStates.size(),
-        alignment);
-    return CreateNode(*address.region(), std::move(operation), operands);
-  }
-
-  static std::vector<rvsdg::output *>
-  Create(
-      rvsdg::Region & region,
-      std::unique_ptr<StoreNonVolatileOperation> storeOperation,
-      const std::vector<rvsdg::output *> & operands)
-  {
-    return rvsdg::outputs(&CreateNode(region, std::move(storeOperation), operands));
-  }
-
-  static StoreNonVolatileNode &
-  CreateNode(
-      rvsdg::Region & region,
-      std::unique_ptr<StoreNonVolatileOperation> storeOperation,
-      const std::vector<rvsdg::output *> & operands)
-  {
-    return *(new StoreNonVolatileNode(region, std::move(storeOperation), operands));
-  }
-
-private:
-  static std::shared_ptr<const rvsdg::ValueType>
-  CheckAndExtractStoredType(const std::shared_ptr<const rvsdg::Type> & type)
-  {
-    if (auto storedType = std::dynamic_pointer_cast<const rvsdg::ValueType>(type))
-    {
-      return storedType;
-    }
-
-    throw util::error("Expected value type.");
-  }
 };
 
 /**
