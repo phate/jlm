@@ -10,6 +10,7 @@
 #include <jlm/llvm/opt/alias-analyses/AliasAnalysis.hpp>
 #include <jlm/rvsdg/gamma.hpp>
 #include <jlm/rvsdg/theta.hpp>
+#include <jlm/rvsdg/lambda.hpp>
 
 #include <numeric>
 
@@ -162,6 +163,13 @@ BasicAliasAnalysis::GetSingleTarget(
       return std::nullopt;
 
     // Try either tracing the origin of p further, or stopping if a single target is found
+
+    if (const auto import = dynamic_cast<const GraphImport *>(p))
+    {
+      // Each GraphImport represents a unique object
+      return p;
+    }
+
     if (const auto node = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*p))
     {
       if (is<IOBarrierOperation>(node))
@@ -180,17 +188,24 @@ BasicAliasAnalysis::GetSingleTarget(
       {
         return p;
       }
-    }
-    else if (const auto import = dynamic_cast<const GraphImport *>(p))
-    {
-      // Each GraphImport represents a unique object
-      return p;
+      else if (is<LlvmLambdaOperation>(node))
+      {
+        return p;
+      }
     }
     else if (
         [[maybe_unused]] const auto structNode = rvsdg::TryGetOwnerNode<rvsdg::StructuralNode>(*p))
     {
-      // TODO: Outputs of structural nodes may be invariant, so do not give up already
-      return std::nullopt;
+      // If the output is a phi recursion variable, continue tracing inside the phi
+      if (const auto phiResult = dynamic_cast<const llvm::phi::rvoutput *>(p))
+      {
+        p = phiResult->result()->origin();
+      }
+      else
+      {
+        // TODO: Outputs of structural nodes may be invariant, so do not give up already
+        return std::nullopt;
+      }
     }
     else if (const auto outerGamma = rvsdg::TryGetRegionParentNode<rvsdg::GammaNode>(*p))
     {
@@ -206,6 +221,31 @@ BasicAliasAnalysis::GetSingleTarget(
         return std::nullopt;
 
       p = loopVar.input->origin();
+    }
+    else if (const auto outerLambda = rvsdg::TryGetRegionParentNode<rvsdg::LambdaNode>(*p))
+    {
+      const auto ctxVar = outerLambda->MapBinderContextVar(*p);
+
+      // If it was not a contex variable, stop tracing
+      if (!ctxVar)
+        return std::nullopt;
+
+      p = ctxVar->input->origin();
+    }
+    else if (rvsdg::TryGetRegionParentNode<llvm::phi::node>(*p) != nullptr)
+    {
+      if (const auto cvArg = dynamic_cast<const llvm::phi::cvargument*>(p))
+      {
+        // Follow the context variable to outside the phi
+        p = cvArg->input()->origin();
+      }
+      else if (const auto rvArg = dynamic_cast<const llvm::phi::rvargument*>(p))
+      {
+        // Follow to the recursion variable's definition
+        p = rvArg->result()->origin();
+      }
+      else
+        JLM_UNREACHABLE("Unknown phi argument");
     }
   }
 }
