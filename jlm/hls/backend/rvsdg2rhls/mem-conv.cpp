@@ -171,10 +171,9 @@ ReplaceDecouple(
 
   auto routed_data = route_to_region_rhls(decouple_response->region(), dload_out[0]);
   decouple_response->output(0)->divert_users(routed_data);
-  auto response_state_origin =
-      decouple_response->input(decouple_response->ninputs() - 1)->origin();
+  auto response_state_origin = decouple_response->input(decouple_response->ninputs() - 1)->origin();
 
-  if(decouple_request->region() != decouple_response->region())
+  if (decouple_request->region() != decouple_response->region())
   {
     // they are in different regions, so we handle state edge at response
     auto state_dummy = llvm::UndefValueOperation::Create(
@@ -194,7 +193,8 @@ ReplaceDecouple(
   {
     // they are in the same region, handle at request
     // remove mem state from response call
-    decouple_response->output(decouple_response->noutputs() - 1)->divert_users(response_state_origin);
+    decouple_response->output(decouple_response->noutputs() - 1)
+        ->divert_users(response_state_origin);
 
     auto state_dummy = llvm::UndefValueOperation::Create(
         *response_state_origin->region(),
@@ -382,11 +382,10 @@ find_containing_lambda(rvsdg::Region * region)
 }
 
 size_t
-CalcualtePortWidth(
-    const std::tuple<
-        std::vector<rvsdg::SimpleNode *>,
-        std::vector<rvsdg::SimpleNode *>,
-        std::vector<rvsdg::SimpleNode *>> & loadStoreDecouple)
+CalcualtePortWidth(const std::tuple<
+                   std::vector<rvsdg::SimpleNode *>,
+                   std::vector<rvsdg::SimpleNode *>,
+                   std::vector<rvsdg::SimpleNode *>> & loadStoreDecouple)
 {
   int max_width = 0;
   for (auto node : std::get<0>(loadStoreDecouple))

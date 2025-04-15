@@ -146,7 +146,11 @@ structural_output_to_dot(rvsdg::StructuralOutput * structuralOutput, std::string
 }
 
 std::string
-edge(rvsdg::output * output, rvsdg::input * input, std::unordered_map<rvsdg::output *, std::string> & tail_label, bool back_edge = false)
+edge(
+    rvsdg::output * output,
+    rvsdg::input * input,
+    std::unordered_map<rvsdg::output *, std::string> & tail_label,
+    bool back_edge = false)
 {
   auto color = "black";
   auto tl = get_default_label(tail_label, output);
@@ -156,13 +160,13 @@ edge(rvsdg::output * output, rvsdg::input * input, std::unordered_map<rvsdg::out
          + " [style=\"\", arrowhead=\"normal\", color=" + color
          + ", headlabel=<>, fontsize=15, labelangle=45, labeldistance=2.0, labelfontcolor=blue, "
            "tooltip=\""
-         + output->type().debug_string() + "\", taillabel=\""+tl+"\"];\n";
+         + output->type().debug_string() + "\", taillabel=\"" + tl + "\"];\n";
   }
   return get_dot_name(input) + " -> " + get_dot_name(output)
        + " [style=\"\", arrowhead=\"normal\", color=" + color
        + ", headlabel=<>, fontsize=15, labelangle=45, labeldistance=2.0, labelfontcolor=blue, "
          "constraint=false, tooltip=\""
-       + output->type().debug_string() + "\", taillabel=\""+tl+"\"];\n";
+       + output->type().debug_string() + "\", taillabel=\"" + tl + "\"];\n";
 }
 
 std::string
@@ -209,21 +213,21 @@ structural_node_to_dot(
         get_default_color<rvsdg::input>(i_color, structuralNode->input(i)));
   }
 
-//  if (structuralNode->ninputs() > 1)
-//  {
-//
-//    // order inputs horizontally
-//    dot << "{rank=source; ";
-//    for (size_t i = 0; i < structuralNode->ninputs(); ++i)
-//    {
-//      if (i > 0)
-//      {
-//        dot << " -> ";
-//      }
-//      dot << get_dot_name(structuralNode->input(i));
-//    }
-//    dot << "[style = invis]}\n";
-//  }
+  //  if (structuralNode->ninputs() > 1)
+  //  {
+  //
+  //    // order inputs horizontally
+  //    dot << "{rank=source; ";
+  //    for (size_t i = 0; i < structuralNode->ninputs(); ++i)
+  //    {
+  //      if (i > 0)
+  //      {
+  //        dot << " -> ";
+  //      }
+  //      dot << get_dot_name(structuralNode->input(i));
+  //    }
+  //    dot << "[style = invis]}\n";
+  //  }
 
   for (size_t i = 0; i < structuralNode->nsubregions(); ++i)
   {
@@ -249,20 +253,20 @@ structural_node_to_dot(
       dot << symbolic_edge(&result, structuralNode->output(i));
     }
   }
-//  if (structuralNode->noutputs() > 1)
-//  {
-//    // order outputs horizontally
-//    dot << "{rank=sink; ";
-//    for (size_t i = 0; i < structuralNode->noutputs(); ++i)
-//    {
-//      if (i > 0)
-//      {
-//        dot << " -> ";
-//      }
-//      dot << get_dot_name(structuralNode->output(i));
-//    }
-//    dot << "[style = invis]}\n";
-//  }
+  //  if (structuralNode->noutputs() > 1)
+  //  {
+  //    // order outputs horizontally
+  //    dot << "{rank=sink; ";
+  //    for (size_t i = 0; i < structuralNode->noutputs(); ++i)
+  //    {
+  //      if (i > 0)
+  //      {
+  //        dot << " -> ";
+  //      }
+  //      dot << get_dot_name(structuralNode->output(i));
+  //    }
+  //    dot << "[style = invis]}\n";
+  //  }
 
   dot << "}\n";
 
@@ -370,20 +374,20 @@ region_to_dot(
   }
   dot << "}\n";
 
-//    if (region->narguments() > 1)
-//    {
-//      // order arguments horizontally
-//      dot << "{rank=source; ";
-//      for (size_t i = 0; i < region->narguments(); ++i)
-//      {
-//        if (i > 0)
-//        {
-//          dot << " -> ";
-//        }
-//        dot << get_dot_name(region->argument(i));
-//      }
-//      dot << "[style = invis]}\n";
-//    }
+  //    if (region->narguments() > 1)
+  //    {
+  //      // order arguments horizontally
+  //      dot << "{rank=source; ";
+  //      for (size_t i = 0; i < region->narguments(); ++i)
+  //      {
+  //        if (i > 0)
+  //        {
+  //          dot << " -> ";
+  //        }
+  //        dot << get_dot_name(region->argument(i));
+  //      }
+  //      dot << "[style = invis]}\n";
+  //    }
 
   // nodes
   for (auto node : rvsdg::TopDownTraverser(region))
@@ -431,20 +435,20 @@ region_to_dot(
     }
   }
 
-//    if (region->nresults() > 1)
-//    {
-//      // order results horizontally
-//      dot << "{rank=sink; ";
-//      for (size_t i = 0; i < region->nresults(); ++i)
-//      {
-//        if (i > 0)
-//        {
-//          dot << " -> ";
-//        }
-//        dot << get_dot_name(region->result(i));
-//      }
-//      dot << "[style = invis]}\n";
-//    }
+  //    if (region->nresults() > 1)
+  //    {
+  //      // order results horizontally
+  //      dot << "{rank=sink; ";
+  //      for (size_t i = 0; i < region->nresults(); ++i)
+  //      {
+  //        if (i > 0)
+  //        {
+  //          dot << " -> ";
+  //        }
+  //        dot << get_dot_name(region->result(i));
+  //      }
+  //      dot << "[style = invis]}\n";
+  //    }
 
   dot << "}\n";
 

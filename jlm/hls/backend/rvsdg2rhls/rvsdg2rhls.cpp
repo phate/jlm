@@ -166,7 +166,8 @@ inline_calls(rvsdg::Region * region)
             // can't inline pseudo functions used for decoupling
             continue;
           }
-          if(graphImport->Name().rfind("hls_", 0)==0){
+          if (graphImport->Name().rfind("hls_", 0) == 0)
+          {
             // can't inline pseudo functions used for streaming
             continue;
           }
@@ -459,7 +460,7 @@ rvsdg2rhls(llvm::RvsdgModule & rhls, util::StatisticsCollector & collector)
   // merge gammas that were pulled out of loops
   merge_gamma(rhls);
   llvmDne.Run(rhls, collector);
-//  hls::InvariantLambdaMemoryStateRemoval::CreateAndRun(rhls, collector);
+  //  hls::InvariantLambdaMemoryStateRemoval::CreateAndRun(rhls, collector);
   remove_unused_state(rhls);
   // main conversion steps
   distribute_constants(rhls);

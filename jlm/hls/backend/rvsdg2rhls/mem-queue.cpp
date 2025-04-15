@@ -3,10 +3,11 @@
  * See COPYING for terms of redistribution.
  */
 
+#include <jlm/hls/backend/rvsdg2rhls/decouple-mem-state.hpp>
+#include <jlm/hls/backend/rvsdg2rhls/hls-function-util.hpp>
 #include <jlm/hls/backend/rvsdg2rhls/mem-conv.hpp>
 #include <jlm/hls/backend/rvsdg2rhls/mem-queue.hpp>
 #include <jlm/hls/backend/rvsdg2rhls/mem-sep.hpp>
-#include <jlm/hls/backend/rvsdg2rhls/hls-function-util.hpp>
 #include <jlm/hls/ir/hls.hpp>
 #include <jlm/llvm/ir/operators/call.hpp>
 #include <jlm/llvm/ir/operators/lambda.hpp>
@@ -17,7 +18,6 @@
 #include <jlm/rvsdg/theta.hpp>
 #include <jlm/rvsdg/traverser.hpp>
 #include <jlm/rvsdg/view.hpp>
-#include <jlm/hls/backend/rvsdg2rhls/decouple-mem-state.hpp>
 
 #include "jlm/hls/util/view.hpp"
 #include <deque>
@@ -29,7 +29,6 @@ jlm::hls::mem_queue(llvm::RvsdgModule & rm)
   auto root = &graph.GetRootRegion();
   mem_queue(root);
 }
-
 
 void
 find_load_store(
@@ -183,10 +182,16 @@ separate_load_edge(
           store_dequeues,
           store_precedes,
           load_encountered);
-      if(loop_store_addresses.empty()){
+      if (loop_store_addresses.empty())
+      {
         jlm::hls::convert_loop_state_to_lcb(*addr_edge_before_loop->begin());
-      } else {
-        store_addresses.insert(store_addresses.cend(), loop_store_addresses.begin(), loop_store_addresses.end());
+      }
+      else
+      {
+        store_addresses.insert(
+            store_addresses.cend(),
+            loop_store_addresses.begin(),
+            loop_store_addresses.end());
       }
     }
     else if (auto si = dynamic_cast<jlm::rvsdg::SimpleInput *>(user))
@@ -405,7 +410,7 @@ process_loops(jlm::rvsdg::output * state_edge)
       }
       else if (dynamic_cast<const jlm::llvm::CallOperation *>(op))
       {
-        state_edge = sn->output(sn->noutputs()-1);
+        state_edge = sn->output(sn->noutputs() - 1);
       }
       else
       {

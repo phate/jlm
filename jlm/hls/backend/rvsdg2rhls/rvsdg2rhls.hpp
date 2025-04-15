@@ -19,8 +19,7 @@ static inline bool
 is_constant(const rvsdg::Node * node)
 {
   return jlm::rvsdg::is<llvm::IntegerConstantOperation>(node)
-      || jlm::rvsdg::is<llvm::UndefValueOperation>(node)
-      || jlm::rvsdg::is<llvm::ConstantFP>(node)
+      || jlm::rvsdg::is<llvm::UndefValueOperation>(node) || jlm::rvsdg::is<llvm::ConstantFP>(node)
       || jlm::rvsdg::is<jlm::rvsdg::ctlconstant_op>(node);
 }
 

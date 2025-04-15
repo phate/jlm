@@ -1287,11 +1287,10 @@ RhlsToFirrtlConverter::MlirGenHlsLocalMem(const jlm::rvsdg::SimpleNode * node)
   auto dataType = GetFirrtlType(&arraytype->element_type());
   ::llvm::SmallVector<mlir::Type> memTypes;
   ::llvm::SmallVector<mlir::Attribute> memNames;
-  memTypes.push_back(
-      circt::firrtl::MemOp::getTypeForPort(
-          depth,
-          dataType,
-          circt::firrtl::MemOp::PortKind::ReadWrite));
+  memTypes.push_back(circt::firrtl::MemOp::getTypeForPort(
+      depth,
+      dataType,
+      circt::firrtl::MemOp::PortKind::ReadWrite));
   memNames.push_back(Builder_->getStringAttr("rw0"));
   //    memTypes.push_back(circt::firrtl::MemOp::getTypeForPort(depth, dataType,
   //    circt::firrtl::MemOp::PortKind::ReadWrite));
@@ -2475,7 +2474,7 @@ RhlsToFirrtlConverter::MlirGen(const jlm::rvsdg::SimpleNode * node)
   {
     if (o->discarding)
     {
-//      return MlirGenDMux(node);
+      //      return MlirGenDMux(node);
       return MlirGenSimpleNode(node);
     }
     else
@@ -2623,7 +2622,7 @@ RhlsToFirrtlConverter::MlirGen(rvsdg::Region * subRegion, mlir::Block * circuitB
   }
 
   // Create a name for the module
-  auto moduleName = Builder_->getStringAttr("subregion_mod_"+util::strfmt(subRegion));
+  auto moduleName = Builder_->getStringAttr("subregion_mod_" + util::strfmt(subRegion));
   // Now when we have all the port information we can create the module
   auto module = Builder_->create<circt::firrtl::FModuleOp>(
       Builder_->getUnknownLoc(),
@@ -2655,7 +2654,8 @@ RhlsToFirrtlConverter::MlirGen(rvsdg::Region * subRegion, mlir::Block * circuitB
     {
       auto ix = i;
       // handle indices of lambdas, that have no inputs and loops, that have backedges
-      if(!rvsdg::is<rvsdg::LambdaOperation>(subRegion->node())){
+      if (!rvsdg::is<rvsdg::LambdaOperation>(subRegion->node()))
+      {
         ix = subRegion->argument(i)->input()->index();
       }
       auto sourcePort = body->getArgument(ix + clockAndResetOffset);
@@ -2707,7 +2707,8 @@ RhlsToFirrtlConverter::MlirGen(rvsdg::Region * subRegion, mlir::Block * circuitB
     {
       auto ix = i;
       // handle indices of lambdas, that have no outputs and loops, that have backedges
-      if(!rvsdg::is<rvsdg::LambdaOperation>(subRegion->node())){
+      if (!rvsdg::is<rvsdg::LambdaOperation>(subRegion->node()))
+      {
         ix = subRegion->result(i)->output()->index();
       }
       resultSink = body->getArgument(ix + module.getNumInputPorts());
@@ -3986,9 +3987,8 @@ RhlsToFirrtlConverter::GetModuleName(const rvsdg::Node * node)
   if (auto op = dynamic_cast<const local_mem_op *>(&node->GetOperation()))
   {
     append.append("_S");
-    append.append(
-        std::to_string(
-            std::dynamic_pointer_cast<const llvm::ArrayType>(op->result(0))->nelements()));
+    append.append(std::to_string(
+        std::dynamic_pointer_cast<const llvm::ArrayType>(op->result(0))->nelements()));
     append.append("_L");
     size_t loads = rvsdg::input::GetNode(**node->output(0)->begin())->noutputs();
     append.append(std::to_string(loads));

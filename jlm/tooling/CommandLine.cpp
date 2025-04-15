@@ -1010,7 +1010,8 @@ JlmHlsCommandLineParser::ParseCommandLineArguments(int argc, const char * const 
   CommandLineOptions_.ExtractHlsFunction_ = extractHlsFunction;
   CommandLineOptions_.OutputFormat_ = format;
 
-  if (!latency.empty()){
+  if (!latency.empty())
+  {
     CommandLineOptions_.MemoryLatency_ = std::stol(latency);
   }
 

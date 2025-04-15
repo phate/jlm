@@ -20,7 +20,8 @@ CheckAddrQueue(rvsdg::Node * node)
   // Ensure that there is no buffer between state_gate and addr_queue enq.
   // This is SG1 in the paper. Otherwise, there might be a race condition in the disambiguation
   JLM_ASSERT(TryGetOwnerOp<state_gate_op>(*FindSourceNode(node->input(1)->origin())));
-  // make sure there is enough buffer space on the output, so there can be no race condition with SG3
+  // make sure there is enough buffer space on the output, so there can be no race condition with
+  // SG3
   auto buf = TryGetOwnerOp<buffer_op>(**node->output(0)->begin());
   JLM_ASSERT(buf && buf->capacity >= addrQ->capacity);
 }

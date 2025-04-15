@@ -64,39 +64,42 @@ eliminate_gamma_ctl(rvsdg::GammaNode * gamma)
 }
 
 bool
-bit_type_to_ctl_type(rvsdg::GammaNode * old_gamma){
+bit_type_to_ctl_type(rvsdg::GammaNode * old_gamma)
+{
   // for some reason some gamma nodes seem to have bittypes followed by a match instead of ctltypes
   for (size_t i = 0; i < old_gamma->noutputs(); ++i)
   {
     auto o = old_gamma->output(i);
-    if(!dynamic_cast<const jlm::rvsdg::bittype*>(&o->type()))
+    if (!dynamic_cast<const jlm::rvsdg::bittype *>(&o->type()))
       continue;
-    if(o->nusers()!=1)
+    if (o->nusers() != 1)
       continue;
     auto user = *o->begin();
     auto match = TryGetOwnerOp<rvsdg::match_op>(*user);
-    if(!match)
+    if (!match)
       continue;
     // output is only used by match
     bool all_bittype = true;
     for (size_t j = 0; j < old_gamma->nsubregions(); ++j)
     {
       auto origin = old_gamma->subregion(j)->result(i)->origin();
-      if(!TryGetOwnerOp<llvm::IntegerConstantOperation>(*origin)){
+      if (!TryGetOwnerOp<llvm::IntegerConstantOperation>(*origin))
+      {
         all_bittype = false;
         break;
       }
     }
-    if(!all_bittype)
+    if (!all_bittype)
       continue;
     // actual conversion - instead of copying we just add a new output
-    std::vector<rvsdg::output*> new_outputs;
+    std::vector<rvsdg::output *> new_outputs;
     for (size_t j = 0; j < old_gamma->nsubregions(); ++j)
     {
       auto origin = old_gamma->subregion(j)->result(i)->origin();
       auto constant = TryGetOwnerOp<llvm::IntegerConstantOperation>(*origin);
       auto ctl_value = match->alternative(constant->Representation().to_uint());
-      auto no = rvsdg::ctlconstant_op::create(origin->region(), {ctl_value, match->nalternatives()});
+      auto no =
+          rvsdg::ctlconstant_op::create(origin->region(), { ctl_value, match->nalternatives() });
       new_outputs.push_back(no);
     }
     auto match_replacement = old_gamma->AddExitVar(new_outputs).output;
@@ -240,8 +243,10 @@ eliminate_gamma_eol(rvsdg::GammaNode * gamma)
 bool
 eliminate_dead_gamma(rvsdg::GammaNode * gamma)
 {
-  // eliminates gammas that have no used outputs - dne does not seem to do this and empty gammas make tginversion go mayham and duplicate loops
-  if(gamma->IsDead()){
+  // eliminates gammas that have no used outputs - dne does not seem to do this and empty gammas
+  // make tginversion go mayham and duplicate loops
+  if (gamma->IsDead())
+  {
     remove(gamma);
     return true;
   }

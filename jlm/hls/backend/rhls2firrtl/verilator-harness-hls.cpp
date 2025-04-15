@@ -20,7 +20,7 @@ ConvertToCType(const rvsdg::Type * type)
 {
   if (auto t = dynamic_cast<const rvsdg::bittype *>(type))
   {
-    if(t->nbits() == 1)
+    if (t->nbits() == 1)
       return "bool";
     return "int" + util::strfmt(t->nbits()) + "_t";
   }
@@ -43,7 +43,7 @@ ConvertToCType(const rvsdg::Type * type)
   if (auto t = dynamic_cast<const llvm::VectorType *>(type))
   {
     return ConvertToCType(&t->type()) + " __attribute__((vector_size("
-           + std::to_string(JlmSize(type) / 8) + ")))";
+         + std::to_string(JlmSize(type) / 8) + ")))";
   }
   if (auto t = dynamic_cast<const llvm::ArrayType *>(type))
   {
@@ -136,20 +136,21 @@ VerilatorHarnessHLS::GetText(llvm::RvsdgModule & rm)
 #define TIMEOUT 10000000
 
 #ifndef MEMORY_LATENCY
-#define MEMORY_LATENCY )" << MEMORY_RESPONSE_LATENCY << R"(
+#define MEMORY_LATENCY )"
+      << MEMORY_RESPONSE_LATENCY << R"(
 #endif
 
-#include <verilated.h>
 #include <algorithm>
 #include <cassert>
-#include <iostream>
 #include <csignal>
 #include <cstdint>
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
 #include <deque>
+#include <iostream>
 #include <vector>
+#include <verilated.h>
 #ifdef FST
 #include "verilated_fst_c.h"
 #else
@@ -422,7 +423,7 @@ static void verilator_init(int argc, char **argv) {
   for (size_t i = 0; i < first_ctx_var; i++)
   {
     // don't generate ports for state edges
-    if(rvsdg::is<rvsdg::StateType>(reg_args[i]->type()))
+    if (rvsdg::is<rvsdg::StateType>(reg_args[i]->type()))
       continue;
     cpp << "    top->i_data_" << i << " = 0;" << std::endl;
   }

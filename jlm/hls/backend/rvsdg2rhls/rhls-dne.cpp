@@ -396,7 +396,8 @@ fix_mem_merge(rvsdg::Node * merge_node)
       // ensure that there is only one direct connection to a split.
       // We need to keep one, so that the optimizations for decouple edges work
       auto split = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*origin);
-      if(!splits.count(split)){
+      if (!splits.count(split))
+      {
         splits.insert(split);
         combined_origins.push_back(origin);
       }
@@ -406,7 +407,8 @@ fix_mem_merge(rvsdg::Node * merge_node)
       combined_origins.push_back(merge_node->input(i)->origin());
     }
   }
-  if (combined_origins.empty()){
+  if (combined_origins.empty())
+  {
     // if none of the inputs are real keep the first one
     combined_origins.push_back(merge_node->input(0)->origin());
   }

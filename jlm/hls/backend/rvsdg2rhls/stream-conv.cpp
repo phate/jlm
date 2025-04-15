@@ -90,9 +90,9 @@ stream_conv(llvm::RvsdgModule & rm)
   std::vector<rvsdg::LambdaNode::ContextVar> remove_vars(stream_enqs);
   remove_vars.insert(remove_vars.cend(), stream_deqs.begin(), stream_deqs.end());
   // make sure context vars are actually dead
-  for (auto cv: remove_vars)
+  for (auto cv : remove_vars)
   {
-    JLM_ASSERT(cv.inner->nusers()==0);
+    JLM_ASSERT(cv.inner->nusers() == 0);
   }
   // remove dead cvargs
   lambda->PruneLambdaInputs();

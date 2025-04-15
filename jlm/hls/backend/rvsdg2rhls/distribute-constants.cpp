@@ -43,11 +43,15 @@ distribute_constant(const rvsdg::SimpleOperation & op, rvsdg::SimpleOutput * out
         }
       }
       // push constants that are returned by loops out of them
-      if (auto res = dynamic_cast<rvsdg::RegionResult *>(user)) {
+      if (auto res = dynamic_cast<rvsdg::RegionResult *>(user))
+      {
         auto out = res->output();
-        if (out && rvsdg::TryGetOwnerNode<rvsdg::ThetaNode>(*out)) {
-          if(out->nusers()){
-            auto out_replacement = rvsdg::SimpleNode::Create( *out->node()->region(), op, {}).output(0);
+        if (out && rvsdg::TryGetOwnerNode<rvsdg::ThetaNode>(*out))
+        {
+          if (out->nusers())
+          {
+            auto out_replacement =
+                rvsdg::SimpleNode::Create(*out->node()->region(), op, {}).output(0);
             out->divert_users(out_replacement);
             distribute_constant(op, out_replacement);
             changed = true;

@@ -79,7 +79,7 @@ extern "C" )"
       m++;
     }
   }
-//  JLM_ASSERT(m == mem_reqs.size());
+  //  JLM_ASSERT(m == mem_reqs.size());
   // TODO: handle globals/ctxvars and ports without argument
   cpp << R"(
     verilator_init(0, nullptr);

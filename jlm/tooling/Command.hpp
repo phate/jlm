@@ -585,7 +585,10 @@ class JlmHlsCommand final : public Command
 public:
   ~JlmHlsCommand() noexcept override;
 
-  JlmHlsCommand(util::filepath inputFile, util::filepath outputFolder, std::vector<std::string> options)
+  JlmHlsCommand(
+      util::filepath inputFile,
+      util::filepath outputFolder,
+      std::vector<std::string> options)
       : InputFile_(std::move(inputFile)),
         OutputFolder_(std::move(outputFolder)),
         Options(std::move(options))

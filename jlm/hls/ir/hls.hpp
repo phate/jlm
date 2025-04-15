@@ -1145,7 +1145,7 @@ public:
     std::vector<jlm::rvsdg::output *> inputs;
     inputs.push_back(&addr);
     inputs.push_back(&load_result);
-    JLM_ASSERT(capacity>=1);
+    JLM_ASSERT(capacity >= 1);
     return outputs(&rvsdg::CreateOpNode<decoupled_load_op>(
         inputs,
         std::dynamic_pointer_cast<const rvsdg::ValueType>(load_result.Type()),
@@ -1388,7 +1388,7 @@ public:
     std::vector<std::shared_ptr<const jlm::rvsdg::Type>> types(
         { llvm::PointerType::Create(), pointeeType });
     std::vector<std::shared_ptr<const jlm::rvsdg::Type>> states(
-        numStates+1,
+        numStates + 1,
         llvm::MemoryStateType::Create());
     types.insert(types.end(), states.begin(), states.end());
     return types;

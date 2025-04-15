@@ -4,6 +4,7 @@
  */
 
 #include <jlm/hls/backend/rvsdg2rhls/alloca-conv.hpp>
+#include <jlm/hls/backend/rvsdg2rhls/hls-function-util.hpp>
 #include <jlm/hls/backend/rvsdg2rhls/mem-conv.hpp>
 #include <jlm/hls/ir/hls.hpp>
 #include <jlm/llvm/ir/operators/alloca.hpp>
@@ -17,7 +18,6 @@
 #include <jlm/rvsdg/bitstring/constant.hpp>
 #include <jlm/rvsdg/substitution.hpp>
 #include <jlm/rvsdg/traverser.hpp>
-#include <jlm/hls/backend/rvsdg2rhls/hls-function-util.hpp>
 
 namespace jlm::hls
 {
