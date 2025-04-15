@@ -68,8 +68,7 @@ public:
       double moduleAverageMayAliasRate,
       uint64_t numNoAlias,
       uint64_t numMayAlias,
-      uint64_t numMustAlias
-      )
+      uint64_t numMustAlias)
   {
     AddMeasurement(PrecisionDumpFile_, outputFile.to_str());
     AddMeasurement(ModuleNumUseOperations_, moduleNumUseOperations);
@@ -219,12 +218,12 @@ PrecisionEvaluator::CollectPointersFromSimpleNode(const rvsdg::SimpleNode & node
   // In this mode, only (volatile) load and store operations count as uses and clobbers
   if (auto load = dynamic_cast<const LoadNode *>(&node))
   {
-    const auto size = load->GetOperation().GetLoadedType()->GetSize();
+    const auto size = GetLlvmTypeSize(*load->GetOperation().GetLoadedType());
     CollectPointer(load->GetAddressInput().origin(), size, true, loadsClobber);
   }
   else if (auto store = dynamic_cast<const StoreNode *>(&node))
   {
-    const auto size = store->GetOperation().GetStoredType().GetSize();
+    const auto size = GetLlvmTypeSize(store->GetOperation().GetStoredType());
     CollectPointer(store->GetAddressInput().origin(), size, true, true);
   }
 }
@@ -276,7 +275,8 @@ PrecisionEvaluator::CalculateAverageMayAliasRate(
   {
     // Average may alias ratio among uses in the function
     double functionUseMayAliasRatioSum = 0.0;
-    size_t functionNumUsages = precision.UseOperations.size();
+    // Only usages with at least one clobber are counted, to avoid division by 0
+    size_t functionNumUsages = 0;
 
     size_t functionTotalNoAlias = 0;
     size_t functionTotalMayAlias = 0;
@@ -285,11 +285,15 @@ PrecisionEvaluator::CalculateAverageMayAliasRate(
     for (const auto & use : precision.UseOperations)
     {
       functionTotalNoAlias += use.NumNoAlias;
-      functionTotalMayAlias += use.NumNoAlias;
-      functionTotalMustAlias += use.NumNoAlias;
+      functionTotalMayAlias += use.NumMayAlias;
+      functionTotalMustAlias += use.NumMustAlias;
 
-      functionUseMayAliasRatioSum += static_cast<double>(use.NumMayAlias)
-                                   / (use.NumNoAlias + use.NumMayAlias + use.NumMustAlias);
+      const auto totalQueries = use.NumNoAlias + use.NumMayAlias + use.NumMustAlias;
+      if (totalQueries == 0)
+        continue;
+
+      functionUseMayAliasRatioSum += static_cast<double>(use.NumMayAlias) / totalQueries;
+      functionNumUsages++;
     }
     // Calculate the average may use ratio for uses in the function
     const auto functionAverageMayAliasRatio = functionUseMayAliasRatioSum / functionNumUsages;

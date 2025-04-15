@@ -98,6 +98,7 @@ private:
       uint64_t NumMayAlias = 0;
       uint64_t NumMustAlias = 0;
     };
+
     /**
      * For each pointer use, how it relates to all (other) clobbering operations in the function.
      * The relationships are represented as alias query results.
