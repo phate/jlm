@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 David Metz <david.c.metz@ntnu.no>
+ * Copyright 2025 David Metz <david.c.metz@ntnu.no>
  * See COPYING for terms of redistribution.
  */
 
@@ -7,20 +7,20 @@
 #include <jlm/hls/backend/rvsdg2rhls/hls-function-util.hpp>
 #include <jlm/hls/backend/rvsdg2rhls/mem-conv.hpp>
 #include <jlm/hls/backend/rvsdg2rhls/mem-sep.hpp>
+#include <jlm/hls/backend/rvsdg2rhls/rhls-dne.hpp>
 #include <jlm/hls/ir/hls.hpp>
+#include <jlm/hls/util/view.hpp>
 #include <jlm/llvm/ir/operators/call.hpp>
 #include <jlm/llvm/ir/operators/lambda.hpp>
 #include <jlm/llvm/ir/operators/Load.hpp>
 #include <jlm/llvm/ir/operators/MemoryStateOperations.hpp>
 #include <jlm/llvm/ir/operators/Store.hpp>
+#include <jlm/rvsdg/node.hpp>
 #include <jlm/rvsdg/substitution.hpp>
 #include <jlm/rvsdg/theta.hpp>
 #include <jlm/rvsdg/traverser.hpp>
 #include <jlm/rvsdg/view.hpp>
 
-#include "jlm/hls/util/view.hpp"
-#include "jlm/rvsdg/node.hpp"
-#include "rhls-dne.hpp"
 #include <deque>
 
 namespace jlm::hls
