@@ -2,48 +2,48 @@
 # See COPYING for terms of redistribution.
 
 libhls_SOURCES = \
-    jlm/hls/backend/firrtl2verilog/FirrtlToVerilogConverter.cpp \
-    \
-    jlm/hls/backend/rhls2firrtl/base-hls.cpp \
-    jlm/hls/backend/rhls2firrtl/dot-hls.cpp \
-    jlm/hls/backend/rhls2firrtl/json-hls.cpp \
-    jlm/hls/backend/rhls2firrtl/RhlsToFirrtlConverter.cpp \
-    jlm/hls/backend/rhls2firrtl/verilator-harness-hls.cpp \
-    jlm/hls/backend/rhls2firrtl/VerilatorHarnessAxi.cpp \
-    \
-    jlm/hls/backend/rvsdg2rhls/add-buffers.cpp \
-    jlm/hls/backend/rvsdg2rhls/add-forks.cpp \
-    jlm/hls/backend/rvsdg2rhls/add-prints.cpp \
-    jlm/hls/backend/rvsdg2rhls/add-sinks.cpp \
-    jlm/hls/backend/rvsdg2rhls/add-triggers.cpp \
-    jlm/hls/backend/rvsdg2rhls/alloca-conv.cpp \
-	jlm/hls/backend/rvsdg2rhls/stream-conv.cpp \
-    jlm/hls/backend/rvsdg2rhls/hls-function-util.cpp \
-    jlm/hls/backend/rvsdg2rhls/check-rhls.cpp \
-    jlm/hls/backend/rvsdg2rhls/DeadNodeElimination.cpp \
-    jlm/hls/backend/rvsdg2rhls/distribute-constants.cpp \
-    jlm/hls/backend/rvsdg2rhls/GammaConversion.cpp \
-    jlm/hls/backend/rvsdg2rhls/hls-function-util.cpp \
-    jlm/hls/backend/rvsdg2rhls/instrument-ref.cpp \
-    jlm/hls/backend/rvsdg2rhls/mem-conv.cpp \
-    jlm/hls/backend/rvsdg2rhls/mem-queue.cpp \
-    jlm/hls/backend/rvsdg2rhls/mem-sep.cpp \
-    jlm/hls/backend/rvsdg2rhls/memstate-conv.cpp \
-    jlm/hls/backend/rvsdg2rhls/merge-gamma.cpp \
-    jlm/hls/backend/rvsdg2rhls/remove-redundant-buf.cpp \
-    jlm/hls/backend/rvsdg2rhls/rhls-dne.cpp \
-    jlm/hls/backend/rvsdg2rhls/rvsdg2rhls.cpp \
-    jlm/hls/backend/rvsdg2rhls/ThetaConversion.cpp \
-    jlm/hls/backend/rvsdg2rhls/UnusedStateRemoval.cpp \
-    jlm/hls/backend/rvsdg2rhls/decouple-mem-state.cpp \
-    \
-    jlm/hls/ir/hls.cpp \
-    \
-    jlm/hls/opt/cne.cpp \
-    jlm/hls/opt/InvariantLambdaMemoryStateRemoval.cpp \
-    jlm/hls/opt/IOBarrierRemoval.cpp \
-    \
-    jlm/hls/util/view.cpp \
+	jlm/hls/backend/firrtl2verilog/FirrtlToVerilogConverter.cpp \
+	\
+	jlm/hls/backend/rhls2firrtl/base-hls.cpp \
+	jlm/hls/backend/rhls2firrtl/dot-hls.cpp \
+	jlm/hls/backend/rhls2firrtl/json-hls.cpp \
+	jlm/hls/backend/rhls2firrtl/RhlsToFirrtlConverter.cpp \
+	jlm/hls/backend/rhls2firrtl/verilator-harness-hls.cpp \
+	jlm/hls/backend/rhls2firrtl/VerilatorHarnessAxi.cpp \
+	\
+	jlm/hls/backend/rvsdg2rhls/add-buffers.cpp \
+	jlm/hls/backend/rvsdg2rhls/add-forks.cpp \
+	jlm/hls/backend/rvsdg2rhls/add-prints.cpp \
+	jlm/hls/backend/rvsdg2rhls/add-sinks.cpp \
+	jlm/hls/backend/rvsdg2rhls/add-triggers.cpp \
+	jlm/hls/backend/rvsdg2rhls/alloca-conv.cpp \
+		jlm/hls/backend/rvsdg2rhls/stream-conv.cpp \
+	jlm/hls/backend/rvsdg2rhls/hls-function-util.cpp \
+	jlm/hls/backend/rvsdg2rhls/check-rhls.cpp \
+	jlm/hls/backend/rvsdg2rhls/DeadNodeElimination.cpp \
+	jlm/hls/backend/rvsdg2rhls/distribute-constants.cpp \
+	jlm/hls/backend/rvsdg2rhls/GammaConversion.cpp \
+	jlm/hls/backend/rvsdg2rhls/hls-function-util.cpp \
+	jlm/hls/backend/rvsdg2rhls/instrument-ref.cpp \
+	jlm/hls/backend/rvsdg2rhls/mem-conv.cpp \
+	jlm/hls/backend/rvsdg2rhls/mem-queue.cpp \
+	jlm/hls/backend/rvsdg2rhls/mem-sep.cpp \
+	jlm/hls/backend/rvsdg2rhls/memstate-conv.cpp \
+	jlm/hls/backend/rvsdg2rhls/merge-gamma.cpp \
+	jlm/hls/backend/rvsdg2rhls/remove-redundant-buf.cpp \
+	jlm/hls/backend/rvsdg2rhls/rhls-dne.cpp \
+	jlm/hls/backend/rvsdg2rhls/rvsdg2rhls.cpp \
+	jlm/hls/backend/rvsdg2rhls/ThetaConversion.cpp \
+	jlm/hls/backend/rvsdg2rhls/UnusedStateRemoval.cpp \
+	jlm/hls/backend/rvsdg2rhls/decouple-mem-state.cpp \
+	\
+	jlm/hls/ir/hls.cpp \
+	\
+	jlm/hls/opt/cne.cpp \
+	jlm/hls/opt/InvariantLambdaMemoryStateRemoval.cpp \
+	jlm/hls/opt/IOBarrierRemoval.cpp \
+	\
+	jlm/hls/util/view.cpp \
 
 libhls_HEADERS = \
 	jlm/hls/backend/firrtl2verilog/FirrtlToVerilogConverter.hpp \
