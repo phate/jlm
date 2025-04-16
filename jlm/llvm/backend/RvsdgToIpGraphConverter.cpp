@@ -248,6 +248,68 @@ RvsdgToIpGraphConverter::ConvertSimpleNode(const rvsdg::SimpleNode & simpleNode)
 }
 
 void
+RvsdgToIpGraphConverter::ConvertEmptyGammaNode(const rvsdg::GammaNode & gammaNode)
+{
+  JLM_ASSERT(gammaNode.nsubregions() == 2);
+  JLM_ASSERT(gammaNode.subregion(0)->nnodes() == 0 && gammaNode.subregion(1)->nnodes() == 0);
+
+  // both regions are empty, create only select instructions
+  const auto predicate = gammaNode.predicate()->origin();
+  const auto controlFlowGraph = Context_->GetControlFlowGraph();
+
+  const auto basicBlock = basic_block::create(*controlFlowGraph);
+  Context_->GetLastProcessedBasicBlock()->add_outedge(basicBlock);
+
+  for (size_t n = 0; n < gammaNode.noutputs(); n++)
+  {
+    const auto output = gammaNode.output(n);
+
+    const auto argument0 = util::AssertedCast<const rvsdg::RegionArgument>(
+        gammaNode.subregion(0)->result(n)->origin());
+    const auto argument1 = util::AssertedCast<const rvsdg::RegionArgument>(
+        gammaNode.subregion(1)->result(n)->origin());
+    const auto output0 = argument0->input()->origin();
+    const auto output1 = argument1->input()->origin();
+
+    // both operands are the same, no select is necessary
+    if (output0 == output1)
+    {
+      Context_->InsertVariable(output, Context_->GetVariable(output0));
+      continue;
+    }
+
+    const auto node = rvsdg::output::GetNode(*predicate);
+    if (is<rvsdg::match_op>(node))
+    {
+      const auto matchOperation = util::AssertedCast<const rvsdg::match_op>(&node->GetOperation());
+      const auto defaultAlternative = matchOperation->default_alternative();
+      const auto condition = Context_->GetVariable(node->input(0)->origin());
+      const auto trueAlternative =
+          defaultAlternative == 0 ? Context_->GetVariable(output1) : Context_->GetVariable(output0);
+      const auto falseAlternative =
+          defaultAlternative == 0 ? Context_->GetVariable(output0) : Context_->GetVariable(output1);
+      basicBlock->append_last(
+          SelectOperation::create(condition, trueAlternative, falseAlternative));
+    }
+    else
+    {
+      const auto falseAlternative = Context_->GetVariable(output0);
+      const auto trueAlternative = Context_->GetVariable(output1);
+      basicBlock->append_last(
+          ctl2bits_op::create(Context_->GetVariable(predicate), rvsdg::bittype::Create(1)));
+      basicBlock->append_last(SelectOperation::create(
+          basicBlock->last()->result(0),
+          trueAlternative,
+          falseAlternative));
+    }
+
+    Context_->InsertVariable(output, basicBlock->last()->result(0));
+  }
+
+  Context_->SetLastProcessedBasicBlock(basicBlock);
+}
+
+void
 RvsdgToIpGraphConverter::ConvertGammaNode(const rvsdg::GammaNode & gammaNode)
 {
   const auto numSubregions = gammaNode.nsubregions();
