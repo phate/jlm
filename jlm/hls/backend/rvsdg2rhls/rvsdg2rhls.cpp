@@ -10,6 +10,7 @@
 #include <jlm/hls/backend/rvsdg2rhls/add-triggers.hpp>
 #include <jlm/hls/backend/rvsdg2rhls/alloca-conv.hpp>
 #include <jlm/hls/backend/rvsdg2rhls/check-rhls.hpp>
+#include <jlm/hls/backend/rvsdg2rhls/decouple-mem-state.hpp>
 #include <jlm/hls/backend/rvsdg2rhls/distribute-constants.hpp>
 #include <jlm/hls/backend/rvsdg2rhls/GammaConversion.hpp>
 #include <jlm/hls/backend/rvsdg2rhls/instrument-ref.hpp>
@@ -21,6 +22,7 @@
 #include <jlm/hls/backend/rvsdg2rhls/remove-redundant-buf.hpp>
 #include <jlm/hls/backend/rvsdg2rhls/rhls-dne.hpp>
 #include <jlm/hls/backend/rvsdg2rhls/rvsdg2rhls.hpp>
+#include <jlm/hls/backend/rvsdg2rhls/stream-conv.hpp>
 #include <jlm/hls/backend/rvsdg2rhls/ThetaConversion.hpp>
 #include <jlm/hls/backend/rvsdg2rhls/UnusedStateRemoval.hpp>
 #include <jlm/hls/opt/cne.hpp>
@@ -49,8 +51,6 @@
 #include <llvm/Support/raw_ostream.h>
 #include <llvm/Support/SourceMgr.h>
 
-#include "decouple-mem-state.hpp"
-#include "stream-conv.hpp"
 #include <regex>
 
 namespace jlm::hls
