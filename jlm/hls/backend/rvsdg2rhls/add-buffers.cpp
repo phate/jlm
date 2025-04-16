@@ -542,7 +542,6 @@ CalculateLoopCycleDepth(
 
 void
 PushCycleFrontier(
-    const loop_node * loop,
     std::unordered_map<rvsdg::output *, size_t> & output_cycles,
     std::unordered_set<rvsdg::input *> & frontier,
     std::unordered_set<backedge_result *> & stream_backedges,
@@ -705,7 +704,7 @@ CalculateLoopCycleDepth(
    * */
   // TODO: should there be more iterations of this? We could iterate until there is no more change
   // in the difference. This would also give us the II
-  PushCycleFrontier(loop, output_cycles, frontier, stream_backedges, top_muxes);
+  PushCycleFrontier(output_cycles, frontier, stream_backedges, top_muxes);
 
   std::unordered_map<rvsdg::output *, std::string> o_color;
   std::unordered_map<rvsdg::input *, std::string> i_color;
@@ -722,7 +721,7 @@ CalculateLoopCycleDepth(
     }
   }
   std::cout << "second iteration" << std::endl;
-  PushCycleFrontier(loop, output_cycles, frontier2, stream_backedges, top_muxes);
+  PushCycleFrontier(output_cycles, frontier2, stream_backedges, top_muxes);
   if (!analyze_inner_loop)
   {
     for (auto [o, l] : output_cycles)
@@ -1029,7 +1028,7 @@ CalculateLoopDepths(rvsdg::Region * region)
 }
 
 void
-add_buffers(llvm::RvsdgModule & rm, bool pass_through)
+add_buffers(llvm::RvsdgModule & rm)
 {
   auto & graph = rm.Rvsdg();
   auto root = &graph.GetRootRegion();

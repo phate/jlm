@@ -481,7 +481,7 @@ rvsdg2rhls(llvm::RvsdgModule & rhls, util::StatisticsCollector & collector)
   // enforce 1:1 input output relationship
   add_sinks(rhls);
   add_forks(rhls);
-  add_buffers(rhls, true);
+  add_buffers(rhls);
   // ensure that all rhls rules are met
   check_rhls(rhls);
 }
