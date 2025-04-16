@@ -549,21 +549,8 @@ PushCycleFrontier(
     std::unordered_set<rvsdg::SimpleNode *> & top_muxes)
 {
   bool changed = false;
-  //    uint32_t iteration = 0;
   do
   {
-    //        std::stringstream stream;
-    //        stream << "CalculateLoopCycleDepth_" << loop << "_" << iteration++
-    //               << ".dot";
-    //        std::unordered_map<rvsdg::output *, std::string> o_color;
-    //        std::unordered_map<rvsdg::input *, std::string> i_color;
-    //        for (auto i : frontier)
-    //        {
-    //          i_color.insert({ i, "red" });
-    //        }
-    //        dump_dot(&loop->region()->graph()->GetRootRegion(), stream.str(), o_color, i_color);
-    //        dot_to_svg(stream.str());
-
     changed = false;
     for (auto in : frontier)
     {
@@ -688,7 +675,6 @@ PushCycleFrontier(
     {
       i_color.insert({ i, "red" });
     }
-    //    dump_dot(&loop->region()->graph()->GetRootRegion(), "crash.dot", o_color, i_color, {});
   }
   JLM_ASSERT(frontier.empty());
 }
@@ -734,12 +720,6 @@ CalculateLoopCycleDepth(
     {
       tail_label[o] = std::to_string(l);
     }
-    //    dump_dot(
-    //        &loop->region()->graph()->GetRootRegion(),
-    //        util::strfmt("CalculateLoopCycleDepth_", loop, "_first.dot"),
-    //        o_color,
-    //        i_color,
-    //        tail_label);
   }
   std::cout << "second iteration" << std::endl;
   PushCycleFrontier(loop, output_cycles, frontier2, stream_backedges, top_muxes);
@@ -749,14 +729,7 @@ CalculateLoopCycleDepth(
     {
       tail_label[o] = std::to_string(l);
     }
-    //    dump_dot(
-    //        &loop->region()->graph()->GetRootRegion(),
-    //        util::strfmt("CalculateLoopCycleDepth_", loop, "_second.dot"),
-    //        o_color,
-    //        i_color,
-    //        tail_label);
   }
-  //  }
 }
 
 void
@@ -875,30 +848,11 @@ AdjustLoopBuffers(
     {
       tail_label[o] = std::to_string(l);
     }
-    //    dump_dot(
-    //        &loop->region()->graph()->GetRootRegion(),
-    //        util::strfmt("AdjustLoopBuffers_", loop, "_begin.dot"),
-    //        o_color,
-    //        i_color,
-    //        tail_label);
   }
 
   bool changed = false;
-  //  uint32_t iteration = 0;
   do
   {
-    //    std::stringstream stream;
-    //    stream << "AdjustLoopBuffers_" << << loop << "_" << << iteration++
-    //           << ".dot";
-    //    std::unordered_map<rvsdg::output *, std::string> o_color;
-    //    std::unordered_map<rvsdg::input *, std::string> i_color;
-    //    for (auto i : frontier)
-    //    {
-    //      i_color.insert({ i, "red" });
-    //    }
-    //    dump_dot(&loop->region()->graph()->GetRootRegion(), stream.str(), o_color, i_color);
-    //    dot_to_svg(stream.str());
-
     changed = false;
     for (auto in : frontier)
     {
@@ -1008,7 +962,6 @@ AdjustLoopBuffers(
           max_cycles = std::max(max_cycles, output_cycles[inner_loop->input(i)->origin()]);
           frontier.erase(inner_loop->input(i));
         }
-        //        dump_dot(&loop->region()->graph()->GetRootRegion(), "crash.dot");
         // adjust capacities
         for (size_t i = 0; i < inner_loop->ninputs(); ++i)
         {
@@ -1055,12 +1008,6 @@ AdjustLoopBuffers(
     {
       tail_label[o] = std::to_string(l);
     }
-    //    dump_dot(
-    //        &loop->region()->graph()->GetRootRegion(),
-    //        util::strfmt("AdjustLoopBuffers_", loop, "_end.dot"),
-    //        o_color,
-    //        i_color,
-    //        tail_label);
   }
 }
 
