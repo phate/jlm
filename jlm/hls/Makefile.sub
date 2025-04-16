@@ -17,7 +17,7 @@ libhls_SOURCES = \
 	jlm/hls/backend/rvsdg2rhls/add-sinks.cpp \
 	jlm/hls/backend/rvsdg2rhls/add-triggers.cpp \
 	jlm/hls/backend/rvsdg2rhls/alloca-conv.cpp \
-		jlm/hls/backend/rvsdg2rhls/stream-conv.cpp \
+	jlm/hls/backend/rvsdg2rhls/stream-conv.cpp \
 	jlm/hls/backend/rvsdg2rhls/hls-function-util.cpp \
 	jlm/hls/backend/rvsdg2rhls/check-rhls.cpp \
 	jlm/hls/backend/rvsdg2rhls/DeadNodeElimination.cpp \
