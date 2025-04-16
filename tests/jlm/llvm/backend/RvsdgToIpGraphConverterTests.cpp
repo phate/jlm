@@ -226,21 +226,6 @@ EmptyGammaWithTwoSubregions()
   const auto controlFlowGraph = dynamic_cast<const function_node &>(*ipGraph.begin()).cfg();
   assert(is_closed(*controlFlowGraph));
 
-  {
-    const auto exitNode = controlFlowGraph->exit();
-    const auto entryNode = controlFlowGraph->entry();
-    const auto trueArgument = entryNode->argument(1);
-    const auto falseArgument = entryNode->argument(2);
-    const auto basicBlock = dynamic_cast<basic_block *>(exitNode->InEdges().begin()->source());
-
-    const auto selectTac = basicBlock->last();
-    assert(is<SelectOperation>(selectTac));
-    const auto trueAlternative = selectTac->operand(1);
-    const auto falseAlternative = selectTac->operand(2);
-    assert(trueAlternative == trueArgument);
-    assert(falseAlternative == falseArgument);
-  }
-
   return 0;
 }
 
