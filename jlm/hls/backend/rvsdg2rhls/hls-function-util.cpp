@@ -339,12 +339,8 @@ FindSourceNode(rvsdg::output * out)
     JLM_ASSERT(rvsdg::TryGetOwnerNode<loop_node>(*out));
     return FindSourceNode(so->results.begin()->origin());
   }
-  else
-  {
-    auto result = dynamic_cast<rvsdg::SimpleOutput *>(out);
-    JLM_ASSERT(result);
-    return result;
-  }
-  return nullptr;
+  auto result = dynamic_cast<rvsdg::SimpleOutput *>(out);
+  JLM_ASSERT(result);
+  return result;
 }
 }
