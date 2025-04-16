@@ -3,13 +3,13 @@
  * See COPYING for terms of redistribution.
  */
 
-#include "hls-function-util.hpp"
-#include "jlm/hls/util/view.hpp"
-#include "jlm/llvm/ir/operators/operators.hpp"
-#include "jlm/rvsdg/lambda.hpp"
 #include <jlm/hls/backend/rvsdg2rhls/add-buffers.hpp>
+#include <jlm/hls/backend/rvsdg2rhls/hls-function-util.hpp>
 #include <jlm/hls/backend/rvsdg2rhls/rvsdg2rhls.hpp>
 #include <jlm/hls/ir/hls.hpp>
+#include <jlm/hls/util/view.hpp>
+#include <jlm/llvm/ir/operators/operators.hpp>
+#include <jlm/rvsdg/lambda.hpp>
 #include <jlm/rvsdg/traverser.hpp>
 
 namespace jlm::hls
