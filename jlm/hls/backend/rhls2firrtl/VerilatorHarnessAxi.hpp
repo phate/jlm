@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 David Metz <david.c.metz@ntnu.no>
+ * Copyright 2025 David Metz <david.c.metz@ntnu.no>
  * See COPYING for terms of redistribution.
  */
 
