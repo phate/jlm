@@ -62,14 +62,26 @@ JlmToMlirConverter::Print(::mlir::rvsdg::OmegaNode & omega, const util::filepath
 ::mlir::rvsdg::OmegaNode
 JlmToMlirConverter::ConvertModule(const llvm::RvsdgModule & rvsdgModule)
 {
-  return ConvertOmega(rvsdgModule.Rvsdg());
-}
+  auto & graph = rvsdgModule.Rvsdg();
 
-::mlir::rvsdg::OmegaNode
-JlmToMlirConverter::ConvertOmega(const rvsdg::Graph & graph)
-{
   auto omega = Builder_->create<::mlir::rvsdg::OmegaNode>(Builder_->getUnknownLoc());
   auto & omegaBlock = omega.getRegion().emplaceBlock();
+
+  for (size_t i = 0; i < graph.GetRootRegion().narguments(); ++i)
+  {
+    auto arg = graph.GetRootRegion().argument(i);
+    auto imp = dynamic_cast<llvm::GraphImport *>(arg);
+    auto nameAttr = Builder_->getStringAttr(imp->Name());
+    auto linkageAttr = Builder_->getStringAttr(llvm::ToString(imp->Linkage()));
+    auto typeAttr = ConvertType(*imp->ValueType());
+    auto importedValueType = ConvertType(*imp->ImportedType());
+    omegaBlock.push_back(Builder_->create<::mlir::rvsdg::OmegaArgument>(
+        Builder_->getUnknownLoc(),
+        importedValueType,
+        typeAttr,
+        linkageAttr,
+        nameAttr));
+  }
 
   ::llvm::SmallVector<::mlir::Value> regionResults =
       ConvertRegion(graph.GetRootRegion(), omegaBlock);
@@ -783,6 +795,10 @@ JlmToMlirConverter::ConvertType(const rvsdg::Type & type)
     return Builder_->getType<::mlir::LLVM::LLVMArrayType>(
         ConvertType(arrayType->element_type()),
         arrayType->nelements());
+  }
+  else if (auto functionType = dynamic_cast<const jlm::rvsdg::FunctionType *>(&type))
+  {
+    return ConvertFunctionType(*functionType);
   }
   else if (rvsdg::is<const llvm::VariableArgumentType>(type))
   {
