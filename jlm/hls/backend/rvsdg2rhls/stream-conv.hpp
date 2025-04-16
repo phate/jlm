@@ -1,6 +1,7 @@
-//
-// Created by david on 7/2/21.
-//
+/*
+ * Copyright 2025 David Metz <david.c.metz@ntnu.no>
+ * See COPYING for terms of redistribution.
+ */
 
 #ifndef JLM_HLS_BACKEND_RVSDG2RHLS_STREAM_CONV_HPP
 #define JLM_HLS_BACKEND_RVSDG2RHLS_STREAM_CONV_HPP
