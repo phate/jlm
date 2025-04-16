@@ -1,10 +1,10 @@
 /*
- * Copyright 2021 David Metz <david.c.metz@ntnu.no>
+ * Copyright 2025 David Metz <david.c.metz@ntnu.no>
  * See COPYING for terms of redistribution.
  */
 
-#ifndef JLM_BACKEND_HLS_RVSDG2RHLS_DECOUPLE_MEM_STATE_HPP
-#define JLM_BACKEND_HLS_RVSDG2RHLS_DECOUPLE_MEM_STATE_HPP
+#ifndef JLM_HLS_BACKEND_RVSDG2RHLS_DECOUPLE_MEM_STATE_HPP
+#define JLM_HLS_BACKEND_RVSDG2RHLS_DECOUPLE_MEM_STATE_HPP
 
 #include <jlm/llvm/ir/RvsdgModule.hpp>
 
@@ -21,4 +21,4 @@ void
 convert_loop_state_to_lcb(rvsdg::input * loop_state_input);
 }
 
-#endif // JLM_BACKEND_HLS_RVSDG2RHLS_DECOUPLE_MEM_STATE_HPP
+#endif // JLM_HLS_BACKEND_RVSDG2RHLS_DECOUPLE_MEM_STATE_HPP
