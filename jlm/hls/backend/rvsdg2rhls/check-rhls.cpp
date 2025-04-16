@@ -3,8 +3,8 @@
  * See COPYING for terms of redistribution.
  */
 
-#include "hls-function-util.hpp"
 #include <jlm/hls/backend/rvsdg2rhls/check-rhls.hpp>
+#include <jlm/hls/backend/rvsdg2rhls/hls-function-util.hpp>
 #include <jlm/hls/backend/rvsdg2rhls/rvsdg2rhls.hpp>
 #include <jlm/hls/ir/hls.hpp>
 #include <jlm/llvm/ir/operators/lambda.hpp>
