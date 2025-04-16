@@ -395,7 +395,6 @@ RhlsToFirrtlConverter::MlirGenSimpleNode(const jlm::rvsdg::SimpleNode * node)
   }
   else if (dynamic_cast<const llvm::UndefValueOperation *>(&(node->GetOperation())))
   {
-    //    Connect(body, outData, GetConstant(body, 1, 0));
     ConnectInvalid(body, outData);
   }
   else if (auto op = dynamic_cast<const hls::mux_op *>(&(node->GetOperation())))
@@ -1415,7 +1414,6 @@ RhlsToFirrtlConverter::MlirGenHlsStore(const jlm::rvsdg::SimpleNode * node)
   auto inBundleResp = GetInPort(module, node->ninputs() - 1);
   auto inReadyResp = GetSubfield(body, inBundleResp, "ready");
   auto inValidResp = GetSubfield(body, inBundleResp, "valid");
-  //  auto inDataResp = GetSubfield(body, inBundleResp, "data");
 
   ::llvm::SmallVector<circt::firrtl::SubfieldOp> outReadyStates;
   ::llvm::SmallVector<circt::firrtl::SubfieldOp> outValidStates;
@@ -1438,9 +1436,6 @@ RhlsToFirrtlConverter::MlirGenHlsStore(const jlm::rvsdg::SimpleNode * node)
   auto outValidMemData = GetSubfield(body, outBundleMemData, "valid");
   auto outDataMemData = GetSubfield(body, outBundleMemData, "data");
 
-  //  auto clock = GetClockSignal(module);
-  //  auto reset = GetResetSignal(module);
-  //  auto zeroBitValue = GetConstant(body, 1, 0);
   auto oneBitValue = GetConstant(body, 1, 1);
 
   mlir::Value canRequest = inValidAddr;
@@ -2402,7 +2397,6 @@ RhlsToFirrtlConverter::MlirGen(const jlm::rvsdg::SimpleNode * node)
   else if (dynamic_cast<const hls::decoupled_load_op *>(&(node->GetOperation())))
   {
     return MlirGenExtModule(node);
-    //    return MlirGenHlsDLoad(node);
   }
   else if (dynamic_cast<const hls::store_op *>(&(node->GetOperation())))
   {
@@ -2436,12 +2430,6 @@ RhlsToFirrtlConverter::MlirGen(const jlm::rvsdg::SimpleNode * node)
   }
   else if (auto b = dynamic_cast<const hls::buffer_op *>(&(node->GetOperation())))
   {
-    //    // implement big buffers using Chisel queues
-    //    if (b->capacity > 1000)
-    //    {
-    //      return MlirGenExtModule(node);
-    //    }
-    //    return MlirGenBuffer(node);
     JLM_ASSERT(b->capacity);
     return MlirGenExtModule(node);
   }
@@ -2474,7 +2462,6 @@ RhlsToFirrtlConverter::MlirGen(const jlm::rvsdg::SimpleNode * node)
   {
     if (o->discarding)
     {
-      //      return MlirGenDMux(node);
       return MlirGenSimpleNode(node);
     }
     else
