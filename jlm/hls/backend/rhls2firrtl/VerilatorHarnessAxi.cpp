@@ -1,6 +1,6 @@
 /*
- * Copyright 2021 David Metz <david.c.metz@ntnu.no>
- * Copyright 2024 Håvard Krogstie <krogstie.havard@gmail.com>
+ * Copyright 2025 David Metz <david.c.metz@ntnu.no>
+ * Copyright 2025 Håvard Krogstie <krogstie.havard@gmail.com>
  * See COPYING for terms of redistribution.
  */
 
@@ -36,7 +36,6 @@ VerilatorHarnessAxi::GetText(llvm::RvsdgModule & rm)
   cpp << R"(
 #include "mmio.h"
 #include "mm.h"
-//#include "mm_dramsim2.h"
 #include <memory>
 #include <cassert>
 #include <cmath>
@@ -77,7 +76,6 @@ extern "C" )"
       m++;
     }
   }
-  //  JLM_ASSERT(m == mem_reqs.size());
   // TODO: handle globals/ctxvars and ports without argument
   cpp << R"(
     verilator_init(0, nullptr);
@@ -213,14 +211,6 @@ void tick() {
   cpp << R"(
   top->clock = 1;
   top->eval();
-//#if VM_TRACE
-//  if (tfp)
-//    tfp->dump(((double)main_time - 1));
-//  main_time++;
-//#ifdef TRACE_FLUSH
-//  tfp->flush();
-//#endif
-//#endif // VM_TRACE
   clock_cycles++;
 }
 )";
