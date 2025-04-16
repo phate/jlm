@@ -3,6 +3,8 @@
  * See COPYING for terms of redistribution.
  */
 
+#include <jlm/hls/backend/rvsdg2rhls/add-prints.hpp>
+#include <jlm/hls/backend/rvsdg2rhls/hls-function-util.hpp>
 #include <jlm/hls/backend/rvsdg2rhls/mem-conv.hpp>
 #include <jlm/hls/backend/rvsdg2rhls/mem-sep.hpp>
 #include <jlm/hls/ir/hls.hpp>
@@ -17,8 +19,6 @@
 #include <jlm/rvsdg/traverser.hpp>
 #include <jlm/rvsdg/view.hpp>
 
-#include "add-prints.hpp"
-#include "hls-function-util.hpp"
 #include <algorithm>
 
 namespace jlm::hls
