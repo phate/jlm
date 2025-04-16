@@ -1,13 +1,15 @@
-//
-// Created by david on 7/2/21.
-//
+/*
+ * Copyright 2025 David Metz <david.c.metz@ntnu.no>
+ * See COPYING for terms of redistribution.
+ */
 
-#include "jlm/hls/ir/hls.hpp"
-#include "rhls-dne.hpp"
-#include <algorithm>
 #include <jlm/hls/backend/rvsdg2rhls/hls-function-util.hpp>
+#include <jlm/hls/backend/rvsdg2rhls/rhls-dne.hpp>
 #include <jlm/hls/backend/rvsdg2rhls/stream-conv.hpp>
+#include <jlm/hls/ir/hls.hpp>
 #include <jlm/rvsdg/lambda.hpp>
+
+#include <algorithm>
 
 namespace jlm::hls
 {
