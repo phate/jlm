@@ -69,6 +69,25 @@ is_applicable(const rvsdg::ThetaNode * theta)
 
     gnode = dynamic_cast<rvsdg::GammaNode *>(rvsdg::input::GetNode(*user));
   }
+  // only apply tgi if theta is a converted for loop - i.e. everything but the predicate is
+  // contained in the gamma
+  for (auto & lv : theta->GetLoopVars())
+  {
+    auto origin = lv.post->origin();
+    if (dynamic_cast<rvsdg::RegionArgument *>(origin))
+    {
+      // origin is a theta argument
+    }
+    else if (rvsdg::TryGetOwnerNode<rvsdg::GammaNode>(*origin) == gnode)
+    {
+      // origin is gnode
+    }
+    else
+    {
+      // we don't want to invert this
+      return nullptr;
+    }
+  }
 
   return gnode;
 }
