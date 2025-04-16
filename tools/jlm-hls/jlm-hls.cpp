@@ -15,6 +15,8 @@
 #include <jlm/llvm/frontend/LlvmModuleConversion.hpp>
 #include <jlm/tooling/CommandLine.hpp>
 
+#include "jlm/hls/backend/rhls2firrtl/VerilatorHarnessAxi.hpp"
+#include "jlm/hls/backend/rvsdg2rhls/add-buffers.hpp"
 #include <llvm/IR/LLVMContext.h>
 #include <llvm/IR/Module.h>
 #include <llvm/IRReader/IRReader.h>
@@ -70,6 +72,8 @@ main(int argc, char ** argv)
 
   auto rvsdgModule = jlm::llvm::ConvertInterProceduralGraphModule(*jlmModule, collector);
 
+  jlm::hls::setMemoryLatency(commandLineOptions.MemoryLatency_);
+
   if (commandLineOptions.ExtractHlsFunction_)
   {
     auto hlsFunction = jlm::hls::split_hls_function(*rvsdgModule, commandLineOptions.HlsFunction_);
@@ -105,6 +109,11 @@ main(int argc, char ** argv)
     stringToFile(
         vhls.run(*rvsdgModule),
         commandLineOptions.OutputFiles_.WithSuffix(".harness.cpp"));
+
+    jlm::hls::VerilatorHarnessAxi ahls(outputVerilogFile);
+    stringToFile(
+        ahls.run(*rvsdgModule),
+        commandLineOptions.OutputFiles_.WithSuffix(".harness_axi.cpp"));
 
     // TODO: hide behind flag
     jlm::hls::JsonHLS jhls;
