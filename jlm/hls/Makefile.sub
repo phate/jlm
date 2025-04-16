@@ -53,6 +53,7 @@ libhls_HEADERS = \
 	jlm/hls/backend/rhls2firrtl/json-hls.hpp \
 	jlm/hls/backend/rhls2firrtl/RhlsToFirrtlConverter.hpp \
 	jlm/hls/backend/rhls2firrtl/verilator-harness-hls.hpp \
+	jlm/hls/backend/rhls2firrtl/VerilatorHarnessAxi.hpp \
 	\
 	jlm/hls/backend/rvsdg2rhls/add-buffers.hpp \
 	jlm/hls/backend/rvsdg2rhls/add-forks.hpp \
