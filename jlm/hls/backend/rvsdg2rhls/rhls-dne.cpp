@@ -3,10 +3,10 @@
  * See COPYING for terms of redistribution.
  */
 
-#include "hls-function-util.hpp"
-#include "jlm/llvm/ir/operators/MemoryStateOperations.hpp"
+#include <jlm/hls/backend/rvsdg2rhls/hls-function-util.hpp>
 #include <jlm/hls/backend/rvsdg2rhls/rhls-dne.hpp>
 #include <jlm/llvm/ir/operators/lambda.hpp>
+#include <jlm/llvm/ir/operators/MemoryStateOperations.hpp>
 #include <jlm/rvsdg/traverser.hpp>
 
 namespace jlm::hls
