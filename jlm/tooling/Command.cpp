@@ -736,7 +736,12 @@ JlmHlsCommand::~JlmHlsCommand() noexcept = default;
 std::string
 JlmHlsCommand::ToString() const
 {
-  return util::strfmt("jlm-hls ", "-o ", OutputFolder_.to_str(), " ", InputFile_.to_str());
+  std::string options;
+  for (auto & o : Options)
+  {
+    options += o + " ";
+  }
+  return util::strfmt("jlm-hls ", options, "-o ", OutputFolder_.to_str(), " ", InputFile_.to_str());
 }
 
 JlmHlsExtractCommand::~JlmHlsExtractCommand() noexcept = default;
