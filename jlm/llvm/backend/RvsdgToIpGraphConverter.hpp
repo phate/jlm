@@ -98,9 +98,6 @@ private:
   ConvertGammaNode(const rvsdg::GammaNode & gammaNode);
 
   void
-  ConvertEmptyGammaNode(const rvsdg::GammaNode & gammaNode);
-
-  void
   ConvertSimpleNode(const rvsdg::SimpleNode & simpleNode);
 
   std::unique_ptr<llvm::cfg>
