@@ -103,6 +103,7 @@ extern "C" )"
       {
       case llvm::fpsize::flt:
         cpp << "    write(RHLSAXI_substruct->i_data_" << i << ", *(uint32_t*)&a" << i << ");" << std::endl;
+        break;
       default:
         throw std::logic_error(type->debug_string() + " not implemented!");
       }
