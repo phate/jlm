@@ -97,7 +97,17 @@ extern "C" )"
   for (size_t i = 0; i < num_c_params; ++i)
   {
     auto type = kernel.GetOperation().type().Arguments()[i].get();
-    if (!rvsdg::is<llvm::PointerType>(*type))
+    if(auto ft = dynamic_cast<const llvm::FloatingPointType *>(type))
+    {
+      switch (ft->size())
+      {
+      case llvm::fpsize::flt:
+        cpp << "    write(RHLSAXI_substruct->i_data_" << i << ", *(uint32_t*)&a" << i << ");" << std::endl;
+      default:
+        throw std::logic_error(type->debug_string() + " not implemented!");
+      }
+    }
+    else if (!rvsdg::is<llvm::PointerType>(*type))
     {
       JLM_ASSERT(JlmSize(type) <= 32);
       cpp << "    write(RHLSAXI_substruct->i_data_" << i << ", a" << i << ");" << std::endl;
