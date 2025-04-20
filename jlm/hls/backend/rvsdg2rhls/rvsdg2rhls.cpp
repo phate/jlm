@@ -449,17 +449,18 @@ rvsdg2rhls(llvm::RvsdgModule & rhls, util::StatisticsCollector & collector)
   remove_unused_state(rhls);
 
   llvm::DeadNodeElimination llvmDne;
+  jlm::hls::cne cne;
+  cne.Run(rhls, collector);
   jlm::llvm::tginversion tgi;
   // simplify loops
   tgi.Run(rhls, collector);
-  jlm::hls::cne cne;
   // tginversion seems to duplicate state edge inputs to gammas
   cne.Run(rhls, collector);
   llvmDne.Run(rhls, collector);
   // merge gammas that were pulled out of loops
   merge_gamma(rhls);
   llvmDne.Run(rhls, collector);
-//  hls::InvariantLambdaMemoryStateRemoval::CreateAndRun(rhls, collector);
+  //  hls::InvariantLambdaMemoryStateRemoval::CreateAndRun(rhls, collector);
   remove_unused_state(rhls);
   // main conversion steps
   distribute_constants(rhls);
@@ -476,7 +477,7 @@ rvsdg2rhls(llvm::RvsdgModule & rhls, util::StatisticsCollector & collector)
   remove_unused_state(rhls);
   MemoryConverter(rhls);
   memstate_conv(rhls);
-  remove_redundant_buf(rhls);
+//  remove_redundant_buf(rhls);
   // enforce 1:1 input output relationship
   add_sinks(rhls);
   add_forks(rhls);
