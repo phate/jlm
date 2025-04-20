@@ -270,7 +270,8 @@ optimize_single_mem_op_loop(
   // edge like a loop constant, albeit with an output this will especially be important for stores
   // that have a response.
   // TODO: should this also be enabled for just memory state gates?
-  if (mem_ops.size() == 1 && (is_store(mem_ops[0]) || is_load(mem_ops[0])))
+  //  if (mem_ops.size() == 1 && (is_store(mem_ops[0]) || is_load(mem_ops[0])))
+  if (mem_ops.size() == 1)
   {
     // before and after belong to same loop node
     JLM_ASSERT(rvsdg::TryGetOwnerNode<loop_node>(*state_edge_before));

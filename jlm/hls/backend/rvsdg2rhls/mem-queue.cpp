@@ -467,6 +467,7 @@ process_loops(jlm::rvsdg::output * state_edge)
               *store_dequeues[j],
               store_precedes[j]));
         }
+        // TODO: remove second state gate if there is no store/addrq (SG2+SG3 in paper)
       }
     }
     else
