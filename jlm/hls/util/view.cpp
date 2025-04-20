@@ -198,7 +198,7 @@ structural_node_to_dot(
   dot << "subgraph cluster_sn" << hex((intptr_t)structuralNode) << " {\n";
   dot << "color=\"#ff8080\"\n";
   dot << "penwidth=6\n";
-  dot << "label=\"" << structuralNode->GetOperation().debug_string() << "\"\n";
+  dot << "label=\"" << structuralNode->GetOperation().debug_string() << " " << hex((intptr_t)structuralNode) << "\"\n";
   dot << "labeljust=l\n";
 
   // input nodes
