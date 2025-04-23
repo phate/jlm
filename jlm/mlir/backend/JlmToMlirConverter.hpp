@@ -87,14 +87,12 @@ public:
    * Retreive the previously converted MLIR values from the map of operations
    * \param node The RVSDG node to get the inputs for.
    * \param valueMap A map of RVSDG outputs to their corresponding MLIR values.
-   * \param block The MLIR block to get argument type inputs from.
    * \return The vector of inputs to the node.
    */
   static ::llvm::SmallVector<::mlir::Value>
   GetConvertedInputs(
       const rvsdg::Node & node,
-      const std::unordered_map<rvsdg::output *, ::mlir::Value> & valueMap,
-      ::mlir::Block & block);
+      const std::unordered_map<rvsdg::output *, ::mlir::Value> & valueMap);
 
   /**
    * Converts an RVSDG node to an MLIR RVSDG operation.

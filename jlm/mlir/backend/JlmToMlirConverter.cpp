@@ -105,7 +105,7 @@ JlmToMlirConverter::ConvertRegion(rvsdg::Region & region, ::mlir::Block & block,
   // hash map for easy lookup of corresponding MLIR operation
   for (rvsdg::Node * rvsdgNode : rvsdg::TopDownTraverser(&region))
   {
-    ::llvm::SmallVector<::mlir::Value> inputs = GetConvertedInputs(*rvsdgNode, valueMap, block);
+    ::llvm::SmallVector<::mlir::Value> inputs = GetConvertedInputs(*rvsdgNode, valueMap);
 
     auto convertedNode = ConvertNode(*rvsdgNode, block, inputs);
     for (size_t i = 0; i < rvsdgNode->noutputs(); i++)
@@ -145,8 +145,8 @@ JlmToMlirConverter::ConvertRegion(rvsdg::Region & region, ::mlir::Block & block,
 ::llvm::SmallVector<::mlir::Value>
 JlmToMlirConverter::GetConvertedInputs(
     const rvsdg::Node & node,
-    const std::unordered_map<rvsdg::output *, ::mlir::Value> & valueMap,
-    ::mlir::Block & block)
+    const std::unordered_map<rvsdg::output *, ::mlir::Value> & valueMap
+    )
 {
   ::llvm::SmallVector<::mlir::Value> inputs;
   for (size_t i = 0; i < node.ninputs(); i++)
