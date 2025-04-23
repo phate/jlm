@@ -3,95 +3,95 @@
  * See COPYING for terms of redistribution.
  */
 
-#ifndef JLM_LLVM_OPT_ALIAS_ANALYSES_AGNOSTICMEMORYNODEPROVIDER_HPP
-#define JLM_LLVM_OPT_ALIAS_ANALYSES_AGNOSTICMEMORYNODEPROVIDER_HPP
+#ifndef JLM_LLVM_OPT_ALIAS_ANALYSES_AGNOSTICMODREFSUMMARIZER_HPP
+#define JLM_LLVM_OPT_ALIAS_ANALYSES_AGNOSTICMODREFSUMMARIZER_HPP
 
-#include <jlm/llvm/opt/alias-analyses/MemoryNodeProvider.hpp>
+#include <jlm/llvm/opt/alias-analyses/ModRefSummarizer.hpp>
 #include <jlm/util/Statistics.hpp>
 #include <jlm/util/time.hpp>
 
 namespace jlm::llvm::aa
 {
 
-/** \brief Agnostic memory node provider
+/** \brief Agnostic mod/ref summarizer
  *
- * The key idea of the agnostic memory node provider is that \b all memory states are routed through
- * \b all structural nodes irregardless of whether these states are required by any simple nodes
+ * The key idea of the agnostic mod/ref summarizer is that \b all memory states are routed through
+ * \b all structural nodes regardless of whether these states are required by any simple nodes
  * within the structural nodes. This strategy ensures that the state of a memory location is always
  * present for encoding while avoiding the complexity of an additional analysis for determining the
  * required routing path of the states. The drawback is that a lot of states are routed through
  * structural nodes where they are not needed, potentially leading to a significant runtime of the
  * encoder for bigger RVSDGs.
  *
- * @see MemoryNodeProvider
+ * @see ModRefSummarizer
  * @see MemoryStateEncoder
  */
-class AgnosticMemoryNodeProvider final : public MemoryNodeProvider
+class AgnosticModRefSummarizer final : public ModRefSummarizer
 {
 public:
   class Statistics;
 
-  ~AgnosticMemoryNodeProvider() override;
+  ~AgnosticModRefSummarizer() override;
 
-  AgnosticMemoryNodeProvider() = default;
+  AgnosticModRefSummarizer() = default;
 
-  AgnosticMemoryNodeProvider(const AgnosticMemoryNodeProvider &) = delete;
+  AgnosticModRefSummarizer(const AgnosticModRefSummarizer &) = delete;
 
-  AgnosticMemoryNodeProvider(AgnosticMemoryNodeProvider &&) = delete;
+  AgnosticModRefSummarizer(AgnosticModRefSummarizer &&) = delete;
 
-  AgnosticMemoryNodeProvider &
-  operator=(const AgnosticMemoryNodeProvider &) = delete;
+  AgnosticModRefSummarizer &
+  operator=(const AgnosticModRefSummarizer &) = delete;
 
-  AgnosticMemoryNodeProvider &
-  operator=(AgnosticMemoryNodeProvider &&) = delete;
+  AgnosticModRefSummarizer &
+  operator=(AgnosticModRefSummarizer &&) = delete;
 
-  std::unique_ptr<MemoryNodeProvisioning>
-  ProvisionMemoryNodes(
+  std::unique_ptr<ModRefSummary>
+  SummarizeModRefs(
       const rvsdg::RvsdgModule & rvsdgModule,
       const PointsToGraph & pointsToGraph,
       util::StatisticsCollector & statisticsCollector) override;
 
   /**
-   * Creates a AgnosticMemoryNodeProvider and calls the ProvisionMemoryNodes() method.
+   * Creates a AgnosticModRefSummarizer and calls the SummarizeModeRefs() method.
    *
-   * @param rvsdgModule The RVSDG module on which the provision should be performed.
+   * @param rvsdgModule The RVSDG module for which a \ref ModRefSummary should be computed.
    * @param pointsToGraph The PointsToGraph corresponding to the RVSDG module.
    * @param statisticsCollector The statistics collector for collecting pass statistics.
    *
-   * @return A new instance of MemoryNodeProvisioning.
+   * @return A new instance of ModRefSummary.
    */
-  static std::unique_ptr<MemoryNodeProvisioning>
+  static std::unique_ptr<ModRefSummary>
   Create(
       const rvsdg::RvsdgModule & rvsdgModule,
       const PointsToGraph & pointsToGraph,
       util::StatisticsCollector & statisticsCollector);
 
   /**
-   * Creates a AgnosticMemoryNodeProvider and calls the ProvisionMemoryNodes() method.
+   * Creates a AgnosticModRefSummarizer and calls the SummarizeModRefs() method.
    *
-   * @param rvsdgModule The RVSDG module on which the provision should be performed.
+   * @param rvsdgModule The RVSDG module for which the \ref ModRefSummary should be computed.
    * @param pointsToGraph The PointsToGraph corresponding to the RVSDG module.
    *
-   * @return A new instance of MemoryNodeProvisioning.
+   * @return A new instance of ModRefSummary.
    */
-  static std::unique_ptr<MemoryNodeProvisioning>
+  static std::unique_ptr<ModRefSummary>
   Create(const rvsdg::RvsdgModule & rvsdgModule, const PointsToGraph & pointsToGraph);
 };
 
-/** \brief Agnostic memory node provider statistics
+/** \brief Agnostic mod/ref summarizer statistics
  *
- * The statistics collected when running the agnostic memory node provider.
+ * The statistics collected when running the agnostic mod/ref summarizer.
  *
- * @see AgnosticMemoryNodeProvider
+ * @see AgnosticModRefSummarizer
  */
-class AgnosticMemoryNodeProvider::Statistics final : public util::Statistics
+class AgnosticModRefSummarizer::Statistics final : public util::Statistics
 {
 public:
   Statistics(
       const util::filepath & sourceFile,
       const util::StatisticsCollector & statisticsCollector,
       const PointsToGraph & pointsToGraph)
-      : util::Statistics(Statistics::Id::AgnosticMemoryNodeProvisioning, sourceFile),
+      : util::Statistics(Id::AgnosticModRefSummarizer, sourceFile),
         StatisticsCollector_(statisticsCollector)
   {
     if (!StatisticsCollector_.IsDemanded(*this))
@@ -145,4 +145,4 @@ private:
 
 }
 
-#endif // JLM_LLVM_OPT_ALIAS_ANALYSES_AGNOSTICMEMORYNODEPROVIDER_HPP
+#endif // JLM_LLVM_OPT_ALIAS_ANALYSES_AGNOSTICMODREFSUMMARIZER_HPP

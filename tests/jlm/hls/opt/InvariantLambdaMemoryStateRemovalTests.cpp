@@ -33,7 +33,7 @@ TestEliminateSplitAndMergeNodes()
   auto memoryStateSplit = LambdaEntryMemoryStateSplitOperation::Create(*functionArguments[1], 2);
 
   // Load node
-  auto loadOutput = LoadNonVolatileNode::Create(
+  auto loadOutput = LoadNonVolatileOperation::Create(
       functionArguments[0],
       { memoryStateSplit[0] },
       PointerType::Create(),
@@ -96,14 +96,14 @@ TestInvariantMemoryState()
   auto memoryStateSplit = LambdaEntryMemoryStateSplitOperation::Create(*functionArguments[1], 3);
 
   // Load node
-  auto loadOutput1 = LoadNonVolatileNode::Create(
+  auto loadOutput1 = LoadNonVolatileOperation::Create(
       functionArguments[0],
       { memoryStateSplit[0] },
       PointerType::Create(),
       32);
 
   // Load node
-  auto loadOutput2 = LoadNonVolatileNode::Create(
+  auto loadOutput2 = LoadNonVolatileOperation::Create(
       functionArguments[0],
       { memoryStateSplit[2] },
       PointerType::Create(),

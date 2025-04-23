@@ -1002,13 +1002,13 @@ Steensgaard::AnalyzeSimpleNode(const jlm::rvsdg::SimpleNode & node)
   {
     AnalyzeMalloc(node);
   }
-  else if (auto loadNode = dynamic_cast<const LoadNode *>(&node))
+  else if (is<LoadOperation>(&node))
   {
-    AnalyzeLoad(*loadNode);
+    AnalyzeLoad(node);
   }
-  else if (auto storeNode = dynamic_cast<const StoreNode *>(&node))
+  else if (is<StoreOperation>(&node))
   {
-    AnalyzeStore(*storeNode);
+    AnalyzeStore(node);
   }
   else if (auto callNode = dynamic_cast<const CallNode *>(&node))
   {
@@ -1042,7 +1042,7 @@ Steensgaard::AnalyzeSimpleNode(const jlm::rvsdg::SimpleNode & node)
   {
     AnalyzeMemcpy(node);
   }
-  else if (is<ConstantArray>(&node))
+  else if (is<ConstantArrayOperation>(&node))
   {
     AnalyzeConstantArray(node);
   }
@@ -1050,7 +1050,7 @@ Steensgaard::AnalyzeSimpleNode(const jlm::rvsdg::SimpleNode & node)
   {
     AnalyzeConstantStruct(node);
   }
-  else if (is<ConstantAggregateZero>(&node))
+  else if (is<ConstantAggregateZeroOperation>(&node))
   {
     AnalyzeConstantAggregateZero(node);
   }
@@ -1106,10 +1106,10 @@ Steensgaard::AnalyzeMalloc(const jlm::rvsdg::SimpleNode & node)
 }
 
 void
-Steensgaard::AnalyzeLoad(const LoadNode & loadNode)
+Steensgaard::AnalyzeLoad(const rvsdg::SimpleNode & node)
 {
-  auto & result = loadNode.GetLoadedValueOutput();
-  auto & address = *loadNode.GetAddressInput().origin();
+  auto & result = LoadOperation::LoadedValueOutput(node);
+  auto & address = *LoadOperation::AddressInput(node).origin();
 
   if (!HasOrContainsPointerType(result))
     return;
@@ -1130,10 +1130,10 @@ Steensgaard::AnalyzeLoad(const LoadNode & loadNode)
 }
 
 void
-Steensgaard::AnalyzeStore(const StoreNode & storeNode)
+Steensgaard::AnalyzeStore(const rvsdg::SimpleNode & node)
 {
-  auto & address = *storeNode.GetAddressInput().origin();
-  auto & value = *storeNode.GetStoredValueInput().origin();
+  auto & address = *StoreOperation::AddressInput(node).origin();
+  auto & value = *StoreOperation::StoredValueInput(node).origin();
 
   if (!HasOrContainsPointerType(value))
     return;
@@ -1357,9 +1357,9 @@ Steensgaard::AnalyzeConstantPointerNull(const jlm::rvsdg::SimpleNode & node)
 }
 
 void
-Steensgaard::AnalyzeConstantAggregateZero(const jlm::rvsdg::SimpleNode & node)
+Steensgaard::AnalyzeConstantAggregateZero(const rvsdg::SimpleNode & node)
 {
-  JLM_ASSERT(is<ConstantAggregateZero>(&node));
+  JLM_ASSERT(is<ConstantAggregateZeroOperation>(&node));
   auto & output = *node.output(0);
 
   if (HasOrContainsPointerType(output))
@@ -1385,9 +1385,9 @@ Steensgaard::AnalyzeUndef(const jlm::rvsdg::SimpleNode & node)
 }
 
 void
-Steensgaard::AnalyzeConstantArray(const jlm::rvsdg::SimpleNode & node)
+Steensgaard::AnalyzeConstantArray(const rvsdg::SimpleNode & node)
 {
-  JLM_ASSERT(is<ConstantArray>(&node));
+  JLM_ASSERT(is<ConstantArrayOperation>(&node));
 
   auto & output = *node.output(0);
   if (!HasOrContainsPointerType(output))

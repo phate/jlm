@@ -10,7 +10,6 @@
 #include <jlm/hls/backend/rvsdg2rhls/add-triggers.hpp>
 #include <jlm/hls/backend/rvsdg2rhls/alloca-conv.hpp>
 #include <jlm/hls/backend/rvsdg2rhls/check-rhls.hpp>
-#include <jlm/hls/backend/rvsdg2rhls/dae-conv.hpp>
 #include <jlm/hls/backend/rvsdg2rhls/distribute-constants.hpp>
 #include <jlm/hls/backend/rvsdg2rhls/GammaConversion.hpp>
 #include <jlm/hls/backend/rvsdg2rhls/instrument-ref.hpp>
@@ -218,11 +217,11 @@ convert_alloca(rvsdg::Region * region)
       }
       else
       {
-        cout = llvm::ConstantAggregateZero::Create(*db->subregion(), po->ValueType());
+        cout = llvm::ConstantAggregateZeroOperation::Create(*db->subregion(), po->ValueType());
       }
       auto delta = db->finalize(cout);
       jlm::llvm::GraphExport::Create(*delta, delta_name);
-      auto delta_local = route_to_region(delta, region);
+      auto delta_local = route_to_region_rvsdg(delta, region);
       node->output(0)->divert_users(delta_local);
       // TODO: check that the input to alloca is a bitconst 1
       // TODO: handle general case of other nodes getting state edge without a merge

@@ -194,7 +194,7 @@ convert_constantAggregateZero(
   JLM_ASSERT(c->getValueID() == ::llvm::Value::ConstantAggregateZeroVal);
 
   auto type = ctx.GetTypeConverter().ConvertLlvmType(*c->getType());
-  tacs.push_back(ConstantAggregateZero::create(type));
+  tacs.push_back(ConstantAggregateZeroOperation::create(type));
 
   return tacs.back()->result(0);
 }
@@ -216,7 +216,7 @@ convert_constantArray(
     elements.push_back(ConvertConstant(constant, tacs, ctx));
   }
 
-  tacs.push_back(ConstantArray::create(elements));
+  tacs.push_back(ConstantArrayOperation::create(elements));
 
   return tacs.back()->result(0);
 }
@@ -1172,7 +1172,7 @@ convert_cast_instruction(::llvm::Instruction * i, tacsvector_t & tacs, context &
       map({ { ::llvm::Instruction::Trunc, create_unop<TruncOperation> },
             { ::llvm::Instruction::ZExt, create_unop<ZExtOperation> },
             { ::llvm::Instruction::UIToFP, create_unop<UIToFPOperation> },
-            { ::llvm::Instruction::SIToFP, create_unop<sitofp_op> },
+            { ::llvm::Instruction::SIToFP, create_unop<SIToFPOperation> },
             { ::llvm::Instruction::SExt, create_unop<sext_op> },
             { ::llvm::Instruction::PtrToInt, create_unop<PtrToIntOperation> },
             { ::llvm::Instruction::IntToPtr, create_unop<IntegerToPointerOperation> },

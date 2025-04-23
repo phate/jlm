@@ -193,7 +193,7 @@ TestLoad()
     auto loadType = jlm::rvsdg::bittype::Create(32);
     auto loadOp = jlm::llvm::LoadNonVolatileOperation(loadType, 1, 4);
     auto & subregion = *(lambda->subregion());
-    jlm::llvm::LoadNonVolatileNode::Create(
+    LoadNonVolatileOperation::Create(
         subregion,
         std::make_unique<LoadNonVolatileOperation>(loadOp),
         { pointerArgument, memoryStateArgument });
@@ -245,11 +245,12 @@ TestLoad()
       assert(convertedLambda->subregion()->nnodes() == 1);
       assert(is<LoadNonVolatileOperation>(
           convertedLambda->subregion()->Nodes().begin()->GetOperation()));
-      auto convertedLoad = dynamic_cast<const LoadNonVolatileNode *>(
-          convertedLambda->subregion()->Nodes().begin().ptr());
+      auto convertedLoad = convertedLambda->subregion()->Nodes().begin().ptr();
+      auto loadOperation =
+          dynamic_cast<const LoadNonVolatileOperation *>(&convertedLoad->GetOperation());
 
-      assert(convertedLoad->GetAlignment() == 4);
-      assert(convertedLoad->NumMemoryStates() == 1);
+      assert(loadOperation->GetAlignment() == 4);
+      assert(loadOperation->NumMemoryStates() == 1);
 
       assert(is<jlm::llvm::PointerType>(convertedLoad->input(0)->type()));
       assert(is<jlm::llvm::MemoryStateType>(convertedLoad->input(1)->type()));
@@ -290,7 +291,7 @@ TestStore()
 
     // Create store operation
     auto storeOp = jlm::llvm::StoreNonVolatileOperation(bitsType, 1, 4);
-    jlm::llvm::StoreNonVolatileNode::Create(
+    jlm::llvm::StoreNonVolatileOperation::Create(
         *lambda->subregion(),
         std::make_unique<StoreNonVolatileOperation>(storeOp),
         { pointerArgument, bitsArgument, memoryStateArgument });
@@ -341,11 +342,12 @@ TestStore()
       assert(convertedLambda->subregion()->nnodes() == 1);
       assert(is<StoreNonVolatileOperation>(
           convertedLambda->subregion()->Nodes().begin()->GetOperation()));
-      auto convertedStore = dynamic_cast<const StoreNonVolatileNode *>(
-          convertedLambda->subregion()->Nodes().begin().ptr());
+      auto convertedStore = convertedLambda->subregion()->Nodes().begin().ptr();
+      auto convertedStoreOperation =
+          dynamic_cast<const StoreNonVolatileOperation *>(&convertedStore->GetOperation());
 
-      assert(convertedStore->GetAlignment() == 4);
-      assert(convertedStore->NumMemoryStates() == 1);
+      assert(convertedStoreOperation->GetAlignment() == 4);
+      assert(convertedStoreOperation->NumMemoryStates() == 1);
 
       assert(is<jlm::llvm::PointerType>(convertedStore->input(0)->type()));
       assert(is<jlm::rvsdg::bittype>(convertedStore->input(1)->type()));
@@ -457,7 +459,7 @@ TestSitofp()
     auto bitsArgument = lambda->GetFunctionArguments().at(0);
 
     // Create sitofp operation
-    auto sitofpOp = jlm::llvm::sitofp_op(bitsType, floatType);
+    auto sitofpOp = SIToFPOperation(bitsType, floatType);
     jlm::rvsdg::SimpleNode::Create(*lambda->subregion(), sitofpOp, { bitsArgument });
 
     lambda->finalize({});
@@ -498,8 +500,8 @@ TestSitofp()
       auto convertedLambda =
           jlm::util::AssertedCast<jlm::rvsdg::LambdaNode>(region->Nodes().begin().ptr());
       assert(convertedLambda->subregion()->nnodes() == 1);
-      assert(is<sitofp_op>(convertedLambda->subregion()->Nodes().begin()->GetOperation()));
-      auto convertedSitofp = dynamic_cast<const sitofp_op *>(
+      assert(is<SIToFPOperation>(convertedLambda->subregion()->Nodes().begin()->GetOperation()));
+      auto convertedSitofp = dynamic_cast<const SIToFPOperation *>(
           &convertedLambda->subregion()->Nodes().begin()->GetOperation());
 
       assert(jlm::rvsdg::is<jlm::rvsdg::bittype>(*convertedSitofp->argument(0).get()));
@@ -942,7 +944,7 @@ TestConstantAggregateZero()
   {
     auto bitType = jlm::rvsdg::bittype::Create(32);
     auto arrayType = jlm::llvm::ArrayType::Create(bitType, 2);
-    jlm::llvm::ConstantAggregateZero::Create(graph->GetRootRegion(), arrayType);
+    ConstantAggregateZeroOperation::Create(graph->GetRootRegion(), arrayType);
 
     // Convert the RVSDG to MLIR
     std::cout << "Convert to MLIR" << std::endl;
@@ -973,7 +975,7 @@ TestConstantAggregateZero()
 
       assert(region->nnodes() == 1);
       auto const convertedConstantAggregateZero =
-          jlm::util::AssertedCast<const ConstantAggregateZero>(
+          jlm::util::AssertedCast<const ConstantAggregateZeroOperation>(
               &region->Nodes().begin().ptr()->GetOperation());
       assert(convertedConstantAggregateZero->nresults() == 1);
       assert(convertedConstantAggregateZero->narguments() == 0);

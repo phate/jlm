@@ -741,6 +741,8 @@ protected:
   void
   RemoveInput(size_t index);
 
+  // FIXME: I really would not like to be RemoveInputsWhere() to be public
+public:
   /**
    * Removes all inputs that match the condition specified by \p match.
    *
@@ -762,6 +764,7 @@ protected:
     }
   }
 
+protected:
   node_output *
   add_output(std::unique_ptr<node_output> output)
   {
@@ -788,6 +791,8 @@ protected:
   void
   RemoveOutput(size_t index);
 
+  // FIXME: I really would not like to be RemoveOutputsWhere() to be public
+public:
   /**
    * Removes all outputs that have no users and match the condition specified by \p match.
    *

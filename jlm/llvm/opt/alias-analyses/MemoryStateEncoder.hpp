@@ -9,7 +9,7 @@
 #include <memory>
 #include <vector>
 
-namespace rvsdg
+namespace jlm::rvsdg
 {
 class GammaNode;
 class LambdaNode;
@@ -54,7 +54,7 @@ class StoreNode;
 namespace aa
 {
 
-class MemoryNodeProvisioning;
+class ModRefSummary;
 
 /** \brief Memory State Encoder
  *
@@ -92,7 +92,7 @@ public:
   void
   Encode(
       rvsdg::RvsdgModule & rvsdgModule,
-      const MemoryNodeProvisioning & provisioning,
+      const ModRefSummary & modRefSummary,
       util::StatisticsCollector & statisticsCollector);
 
 private:
@@ -112,10 +112,10 @@ private:
   EncodeMalloc(const rvsdg::SimpleNode & mallocNode);
 
   void
-  EncodeLoad(const LoadNode & loadNode);
+  EncodeLoad(const rvsdg::SimpleNode & node);
 
   void
-  EncodeStore(const StoreNode & storeNode);
+  EncodeStore(const rvsdg::SimpleNode & node);
 
   void
   EncodeFree(const rvsdg::SimpleNode & freeNode);
@@ -171,25 +171,29 @@ private:
    * Replace \p loadNode with a new copy that takes the provided \p memoryStates. All users of the
    * outputs of \p loadNode are redirected to the respective outputs of the newly created copy.
    *
-   * @param loadNode A LoadNode.
+   * @param node A LoadNode.
    * @param memoryStates The memory states the new LoadNode should consume.
    *
    * @return The newly created LoadNode.
    */
-  [[nodiscard]] static LoadNode &
-  ReplaceLoadNode(const LoadNode & loadNode, const std::vector<rvsdg::output *> & memoryStates);
+  [[nodiscard]] static rvsdg::SimpleNode &
+  ReplaceLoadNode(
+      const rvsdg::SimpleNode & node,
+      const std::vector<rvsdg::output *> & memoryStates);
 
   /**
    * Replace \p storeNode with a new copy that takes the provided \p memoryStates. All users of the
    * outputs of \p storeNode are redirected to the respective outputs of the newly created copy.
    *
-   * @param storeNode A StoreNode.
+   * @param node A StoreNode.
    * @param memoryStates The memory states the new StoreNode should consume.
    *
    * @return The newly created StoreNode.
    */
-  [[nodiscard]] static StoreNode &
-  ReplaceStoreNode(const StoreNode & storeNode, const std::vector<rvsdg::output *> & memoryStates);
+  [[nodiscard]] static rvsdg::SimpleNode &
+  ReplaceStoreNode(
+      const rvsdg::SimpleNode & node,
+      const std::vector<rvsdg::output *> & memoryStates);
 
   /**
    * Replace \p memcpyNode with a new copy that takes the provided \p memoryStates. All users of

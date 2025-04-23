@@ -8,8 +8,8 @@
 
 #include <jlm/llvm/ir/operators.hpp>
 #include <jlm/llvm/ir/RvsdgModule.hpp>
-#include <jlm/llvm/opt/alias-analyses/AliasAnalysis.hpp>
 #include <jlm/llvm/opt/alias-analyses/PointerObjectSet.hpp>
+#include <jlm/llvm/opt/alias-analyses/PointsToAnalysis.hpp>
 #include <jlm/rvsdg/gamma.hpp>
 #include <jlm/rvsdg/theta.hpp>
 
@@ -22,7 +22,7 @@ namespace jlm::llvm::aa
  * The analysis is inter-procedural, field-insensitive, context-insensitive,
  * flow-insensitive, and uses a static heap model.
  */
-class Andersen final : public AliasAnalysis
+class Andersen final : public PointsToAnalysis
 {
   class Statistics;
 
@@ -358,10 +358,10 @@ private:
   AnalyzeMalloc(const rvsdg::SimpleNode & node);
 
   void
-  AnalyzeLoad(const LoadNode & loadNode);
+  AnalyzeLoad(const rvsdg::SimpleNode & node);
 
   void
-  AnalyzeStore(const StoreNode & storeNode);
+  AnalyzeStore(const rvsdg::SimpleNode & node);
 
   void
   AnalyzeCall(const CallNode & callNode);

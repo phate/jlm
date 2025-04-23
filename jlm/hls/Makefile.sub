@@ -9,6 +9,7 @@ libhls_SOURCES = \
     jlm/hls/backend/rhls2firrtl/json-hls.cpp \
     jlm/hls/backend/rhls2firrtl/RhlsToFirrtlConverter.cpp \
     jlm/hls/backend/rhls2firrtl/verilator-harness-hls.cpp \
+    jlm/hls/backend/rhls2firrtl/VerilatorHarnessAxi.cpp \
     \
     jlm/hls/backend/rvsdg2rhls/add-buffers.cpp \
     jlm/hls/backend/rvsdg2rhls/add-forks.cpp \
@@ -17,10 +18,10 @@ libhls_SOURCES = \
     jlm/hls/backend/rvsdg2rhls/add-triggers.cpp \
     jlm/hls/backend/rvsdg2rhls/alloca-conv.cpp \
     jlm/hls/backend/rvsdg2rhls/check-rhls.cpp \
-    jlm/hls/backend/rvsdg2rhls/dae-conv.cpp \
     jlm/hls/backend/rvsdg2rhls/DeadNodeElimination.cpp \
     jlm/hls/backend/rvsdg2rhls/distribute-constants.cpp \
     jlm/hls/backend/rvsdg2rhls/GammaConversion.cpp \
+    jlm/hls/backend/rvsdg2rhls/hls-function-util.cpp \
     jlm/hls/backend/rvsdg2rhls/instrument-ref.cpp \
     jlm/hls/backend/rvsdg2rhls/mem-conv.cpp \
     jlm/hls/backend/rvsdg2rhls/mem-queue.cpp \
@@ -30,6 +31,7 @@ libhls_SOURCES = \
     jlm/hls/backend/rvsdg2rhls/remove-redundant-buf.cpp \
     jlm/hls/backend/rvsdg2rhls/rhls-dne.cpp \
     jlm/hls/backend/rvsdg2rhls/rvsdg2rhls.cpp \
+    jlm/hls/backend/rvsdg2rhls/stream-conv.cpp \
     jlm/hls/backend/rvsdg2rhls/ThetaConversion.cpp \
     jlm/hls/backend/rvsdg2rhls/UnusedStateRemoval.cpp \
     \
@@ -49,6 +51,7 @@ libhls_HEADERS = \
 	jlm/hls/backend/rhls2firrtl/json-hls.hpp \
 	jlm/hls/backend/rhls2firrtl/RhlsToFirrtlConverter.hpp \
 	jlm/hls/backend/rhls2firrtl/verilator-harness-hls.hpp \
+	jlm/hls/backend/rhls2firrtl/VerilatorHarnessAxi.hpp \
 	\
 	jlm/hls/backend/rvsdg2rhls/add-buffers.hpp \
 	jlm/hls/backend/rvsdg2rhls/add-forks.hpp \
@@ -57,10 +60,10 @@ libhls_HEADERS = \
 	jlm/hls/backend/rvsdg2rhls/add-triggers.hpp \
 	jlm/hls/backend/rvsdg2rhls/alloca-conv.hpp \
 	jlm/hls/backend/rvsdg2rhls/check-rhls.hpp \
-	jlm/hls/backend/rvsdg2rhls/dae-conv.hpp \
 	jlm/hls/backend/rvsdg2rhls/DeadNodeElimination.hpp \
 	jlm/hls/backend/rvsdg2rhls/distribute-constants.hpp \
 	jlm/hls/backend/rvsdg2rhls/GammaConversion.hpp \
+	jlm/hls/backend/rvsdg2rhls/hls-function-util.hpp \
 	jlm/hls/backend/rvsdg2rhls/instrument-ref.hpp \
 	jlm/hls/backend/rvsdg2rhls/mem-conv.hpp \
 	jlm/hls/backend/rvsdg2rhls/mem-queue.hpp \
@@ -69,6 +72,7 @@ libhls_HEADERS = \
 	jlm/hls/backend/rvsdg2rhls/merge-gamma.hpp \
 	jlm/hls/backend/rvsdg2rhls/remove-redundant-buf.hpp \
 	jlm/hls/backend/rvsdg2rhls/rhls-dne.hpp \
+        jlm/hls/backend/rvsdg2rhls/stream-conv.hpp \
 	jlm/hls/backend/rvsdg2rhls/rvsdg2rhls.hpp \
 	jlm/hls/backend/rvsdg2rhls/ThetaConversion.hpp \
 	jlm/hls/backend/rvsdg2rhls/UnusedStateRemoval.hpp \

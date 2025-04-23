@@ -389,7 +389,7 @@ JlmToMlirConverter::ConvertSimpleNode(
         arrayType,
         inputs);
   }
-  else if (auto zeroOp = dynamic_cast<const llvm::ConstantAggregateZero *>(&operation))
+  else if (auto zeroOp = dynamic_cast<const llvm::ConstantAggregateZeroOperation *>(&operation))
   {
     auto type = ConvertType(*zeroOp->result(0));
     MlirOp = Builder_->create<::mlir::LLVM::ZeroOp>(Builder_->getUnknownLoc(), type);
@@ -432,7 +432,7 @@ JlmToMlirConverter::ConvertSimpleNode(
         Builder_->getIntegerType(sextOp->ndstbits()),
         inputs[0]);
   }
-  else if (auto sitofpOp = dynamic_cast<const jlm::llvm::sitofp_op *>(&operation))
+  else if (auto sitofpOp = dynamic_cast<const llvm::SIToFPOperation *>(&operation))
   {
     MlirOp = Builder_->create<::mlir::arith::SIToFPOp>(
         Builder_->getUnknownLoc(),
