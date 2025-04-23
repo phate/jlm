@@ -846,7 +846,7 @@ TestDelta()
         assert(convertedDelta->Section() == "section");
 
         auto op = convertedDelta->subregion()->Nodes().begin();
-        assert(is<jlm::rvsdg::bitconstant_op>(op->GetOperation()));
+        assert(is<jlm::llvm::IntegerConstantOperation>(op->GetOperation()));
       }
     }
   }

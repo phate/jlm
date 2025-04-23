@@ -13,6 +13,7 @@ libmlir_TESTS += \
 	tests/jlm/mlir/backend/TestJlmToMlirConverter \
 	tests/jlm/mlir/frontend/TestMlirToJlmConverter \
 	tests/jlm/mlir/TestJlmToMlirToJlm \
+	tests/jlm/mlir/TestIntegerOperationsJlmToMlirToJlm \
 
 libmlir_TEST_LIBS += \
 	libmlir \

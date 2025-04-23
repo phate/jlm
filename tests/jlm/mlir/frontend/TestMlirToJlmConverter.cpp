@@ -7,6 +7,7 @@
 #include <test-registry.hpp>
 #include <TestRvsdgs.hpp>
 
+#include <jlm/llvm/ir/operators/IntegerOperations.hpp>
 #include <jlm/llvm/ir/operators/lambda.hpp>
 #include <jlm/llvm/ir/operators/operators.hpp>
 #include <jlm/llvm/ir/RvsdgModule.hpp>
@@ -117,7 +118,9 @@ TestLambda()
       assert(is<jlm::llvm::LlvmLambdaOperation>(convertedLambda));
 
       assert(convertedLambda->subregion()->nnodes() == 1);
-      assert(is<bitconstant_op>(convertedLambda->subregion()->Nodes().begin().ptr()));
+      assert(
+          is<jlm::llvm::IntegerConstantOperation>(
+              convertedLambda->subregion()->Nodes().begin().ptr()));
     }
   }
   return 0;
@@ -276,7 +279,7 @@ TestDivOperation()
           lambdaResultOriginNodeOuput = dynamic_cast<jlm::rvsdg::node_output *>(
               convertedLambda->subregion()->result(0)->origin()));
       Node * lambdaResultOriginNode = lambdaResultOriginNodeOuput->node();
-      assert(is<bitudiv_op>(lambdaResultOriginNode->GetOperation()));
+      assert(is<jlm::llvm::IntegerUDivOperation>(lambdaResultOriginNode->GetOperation()));
       assert(lambdaResultOriginNode->ninputs() == 2);
 
       // Check first input
@@ -293,10 +296,10 @@ TestDivOperation()
           DivInput1NodeOuput =
               dynamic_cast<jlm::rvsdg::node_output *>(lambdaResultOriginNode->input(1)->origin()));
       Node * DivInput1Node = DivInput1NodeOuput->node();
-      assert(is<bitconstant_op>(DivInput1Node->GetOperation()));
-      const jlm::rvsdg::bitconstant_op * DivInput1Constant =
-          dynamic_cast<const bitconstant_op *>(&DivInput1Node->GetOperation());
-      assert(DivInput1Constant->value() == 5);
+      assert(is<jlm::llvm::IntegerConstantOperation>(DivInput1Node->GetOperation()));
+      auto DivInput1Constant =
+          dynamic_cast<const jlm::llvm::IntegerConstantOperation *>(&DivInput1Node->GetOperation());
+      assert(DivInput1Constant->Representation().to_int() == 5);
       assert(is<const bittype>(DivInput1Constant->result(0)));
       assert(std::dynamic_pointer_cast<const bittype>(DivInput1Constant->result(0))->nbits() == 32);
     }
@@ -466,11 +469,13 @@ TestCompZeroExt()
       jlm::rvsdg::node_output * ZExtInput0;
       assert(ZExtInput0 = dynamic_cast<jlm::rvsdg::node_output *>(ZExtNode->input(0)->origin()));
       Node * BitEqNode = ZExtInput0->node();
-      assert(is<jlm::rvsdg::biteq_op>(BitEqNode->GetOperation()));
+      assert(is<jlm::llvm::IntegerEqOperation>(BitEqNode->GetOperation()));
 
       // Check BitEq
       assert(
-          dynamic_cast<const jlm::rvsdg::biteq_op *>(&BitEqNode->GetOperation())->type().nbits()
+          dynamic_cast<const jlm::llvm::IntegerEqOperation *>(&BitEqNode->GetOperation())
+              ->Type()
+              .nbits()
           == 32);
       assert(BitEqNode->ninputs() == 2);
 
@@ -478,26 +483,25 @@ TestCompZeroExt()
       jlm::rvsdg::node_output * AddOuput;
       assert(AddOuput = dynamic_cast<jlm::rvsdg::node_output *>(BitEqNode->input(0)->origin()));
       Node * AddNode = AddOuput->node();
-      assert(is<bitadd_op>(AddNode->GetOperation()));
+      assert(is<jlm::llvm::IntegerAddOperation>(AddNode->GetOperation()));
       assert(AddNode->ninputs() == 2);
 
       // Check BitEq input 1
       jlm::rvsdg::node_output * Const2Ouput;
       assert(Const2Ouput = dynamic_cast<jlm::rvsdg::node_output *>(BitEqNode->input(1)->origin()));
       Node * Const2Node = Const2Ouput->node();
-      assert(is<bitconstant_op>(Const2Node->GetOperation()));
+      assert(is<jlm::llvm::IntegerConstantOperation>(Const2Node->GetOperation()));
 
       // Check Const2
-      const jlm::rvsdg::bitconstant_op * Const2Op =
-          dynamic_cast<const bitconstant_op *>(&Const2Node->GetOperation());
-      assert(Const2Op->value() == 5);
+      auto Const2Op =
+          dynamic_cast<const jlm::llvm::IntegerConstantOperation *>(&Const2Node->GetOperation());
+      assert(Const2Op->Representation().to_int() == 5);
       assert(is<const bittype>(Const2Op->result(0)));
       assert(std::dynamic_pointer_cast<const bittype>(Const2Op->result(0))->nbits() == 32);
 
       // Check add op
-      const jlm::rvsdg::bitadd_op * AddOp =
-          dynamic_cast<const bitadd_op *>(&AddNode->GetOperation());
-      assert(AddOp->type().nbits() == 32);
+      auto AddOp = dynamic_cast<const jlm::llvm::IntegerAddOperation *>(&AddNode->GetOperation());
+      assert(AddOp->Type().nbits() == 32);
 
       // Check add input0
       jlm::rvsdg::RegionArgument * AddInput0;
@@ -509,12 +513,12 @@ TestCompZeroExt()
       jlm::rvsdg::node_output * Const1Output;
       assert(Const1Output = dynamic_cast<jlm::rvsdg::node_output *>(AddNode->input(1)->origin()));
       Node * Const1Node = Const1Output->node();
-      assert(is<bitconstant_op>(Const1Node->GetOperation()));
+      assert(is<jlm::llvm::IntegerConstantOperation>(Const1Node->GetOperation()));
 
       // Check Const1
-      const jlm::rvsdg::bitconstant_op * Const1Op =
-          dynamic_cast<const bitconstant_op *>(&Const1Node->GetOperation());
-      assert(Const1Op->value() == 20);
+      auto Const1Op =
+          dynamic_cast<const jlm::llvm::IntegerConstantOperation *>(&Const1Node->GetOperation());
+      assert(Const1Op->Representation().to_int() == 20);
       assert(is<const bittype>(Const1Op->result(0)));
       assert(std::dynamic_pointer_cast<const bittype>(Const1Op->result(0))->nbits() == 32);
     }
@@ -596,18 +600,21 @@ TestMatchOp()
 
     ::llvm::SmallVector<::mlir::Attribute> mappingVector;
 
-    mappingVector.push_back(::mlir::rvsdg::MatchRuleAttr::get(
-        Builder_->getContext(),
-        ::llvm::ArrayRef(static_cast<int64_t>(0)),
-        4));
-    mappingVector.push_back(::mlir::rvsdg::MatchRuleAttr::get(
-        Builder_->getContext(),
-        ::llvm::ArrayRef(static_cast<int64_t>(1)),
-        5));
-    mappingVector.push_back(::mlir::rvsdg::MatchRuleAttr::get(
-        Builder_->getContext(),
-        ::llvm::ArrayRef(static_cast<int64_t>(1)),
-        6));
+    mappingVector.push_back(
+        ::mlir::rvsdg::MatchRuleAttr::get(
+            Builder_->getContext(),
+            ::llvm::ArrayRef(static_cast<int64_t>(0)),
+            4));
+    mappingVector.push_back(
+        ::mlir::rvsdg::MatchRuleAttr::get(
+            Builder_->getContext(),
+            ::llvm::ArrayRef(static_cast<int64_t>(1)),
+            5));
+    mappingVector.push_back(
+        ::mlir::rvsdg::MatchRuleAttr::get(
+            Builder_->getContext(),
+            ::llvm::ArrayRef(static_cast<int64_t>(1)),
+            6));
     //! The default alternative has an empty mapping
     mappingVector.push_back(
         ::mlir::rvsdg::MatchRuleAttr::get(Builder_->getContext(), ::llvm::ArrayRef<int64_t>(), 2));

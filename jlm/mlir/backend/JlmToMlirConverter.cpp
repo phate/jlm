@@ -29,6 +29,7 @@
 #include <jlm/llvm/ir/operators/alloca.hpp>
 #include <jlm/llvm/ir/operators/call.hpp>
 #include <jlm/llvm/ir/operators/GetElementPtr.hpp>
+#include <jlm/llvm/ir/operators/IntegerOperations.hpp>
 #include <jlm/llvm/ir/operators/Load.hpp>
 #include <jlm/llvm/ir/operators/MemoryStateOperations.hpp>
 #include <jlm/llvm/ir/operators/sext.hpp>
@@ -229,6 +230,60 @@ JlmToMlirConverter::ConvertFpBinaryNode(
   }
 }
 
+::mlir::arith::CmpFPredicate
+JlmToMlirConverter::ConvertFPCMP(const llvm::fpcmp & op)
+{
+  switch (op)
+  {
+  case llvm::fpcmp::TRUE:
+    return (::mlir::arith::CmpFPredicate::AlwaysTrue);
+  case llvm::fpcmp::FALSE:
+    return (::mlir::arith::CmpFPredicate::AlwaysFalse);
+  case llvm::fpcmp::oeq:
+    return (::mlir::arith::CmpFPredicate::OEQ);
+  case llvm::fpcmp::ogt:
+    return (::mlir::arith::CmpFPredicate::OGT);
+  case llvm::fpcmp::oge:
+    return (::mlir::arith::CmpFPredicate::OGE);
+  case llvm::fpcmp::olt:
+    return (::mlir::arith::CmpFPredicate::OLT);
+  case llvm::fpcmp::ole:
+    return (::mlir::arith::CmpFPredicate::OLE);
+  case llvm::fpcmp::one:
+    return (::mlir::arith::CmpFPredicate::ONE);
+  case llvm::fpcmp::ord:
+    return (::mlir::arith::CmpFPredicate::ORD);
+  case llvm::fpcmp::ueq:
+    return (::mlir::arith::CmpFPredicate::UEQ);
+  case llvm::fpcmp::ugt:
+    return (::mlir::arith::CmpFPredicate::UGT);
+  case llvm::fpcmp::uge:
+    return (::mlir::arith::CmpFPredicate::UGE);
+  case llvm::fpcmp::ult:
+    return (::mlir::arith::CmpFPredicate::ULT);
+  case llvm::fpcmp::ule:
+    return (::mlir::arith::CmpFPredicate::ULE);
+  case llvm::fpcmp::une:
+    return (::mlir::arith::CmpFPredicate::UNE);
+  case llvm::fpcmp::uno:
+    return (::mlir::arith::CmpFPredicate::UNO);
+  default:
+    JLM_UNREACHABLE("Unknown fp comp");
+  }
+}
+
+::mlir::Operation *
+JlmToMlirConverter::ConvertFpCompareNode(
+    const llvm::fpcmp_op & op,
+    ::llvm::SmallVector<::mlir::Value> inputs)
+{
+  return Builder_->create<::mlir::arith::CmpFOp>(
+      Builder_->getUnknownLoc(),
+      Builder_->getAttr<::mlir::arith::CmpFPredicateAttr>(ConvertFPCMP(op.cmp())),
+      inputs[0],
+      inputs[1]);
+}
+
 ::mlir::Operation *
 JlmToMlirConverter::ConvertBitBinaryNode(
     const rvsdg::SimpleOperation & bitOp,
@@ -369,6 +424,23 @@ JlmToMlirConverter::ConvertSimpleNode(
         value.to_uint(),
         value.nbits());
   }
+  else if (
+      auto integerConstOp = dynamic_cast<const jlm::llvm::IntegerConstantOperation *>(&operation))
+  {
+    auto isNegative = integerConstOp->Representation().is_negative();
+    auto value = isNegative ? integerConstOp->Representation().to_int()
+                            : integerConstOp->Representation().to_uint();
+    MlirOp = Builder_->create<::mlir::arith::ConstantIntOp>(
+        Builder_->getUnknownLoc(),
+        value,
+        integerConstOp->Representation().nbits());
+  }
+  else if (rvsdg::is<jlm::llvm::IntegerBinaryOperation>(operation))
+  {
+    MlirOp = ConvertIntegerBinaryOperation(
+        *dynamic_cast<const jlm::llvm::IntegerBinaryOperation *>(&operation),
+        inputs);
+  }
   else if (auto fpOp = dynamic_cast<const llvm::ConstantFP *>(&operation))
   {
     auto size = ConvertFPType(fpOp->size());
@@ -412,6 +484,10 @@ JlmToMlirConverter::ConvertSimpleNode(
   else if (jlm::rvsdg::is<const rvsdg::bitcompare_op>(operation))
   {
     MlirOp = BitCompareNode(operation, inputs);
+  }
+  else if (auto fpCmpOp = dynamic_cast<const llvm::fpcmp_op *>(&operation))
+  {
+    MlirOp = ConvertFpCompareNode(*fpCmpOp, inputs);
   }
   else if (const auto zextOperation = dynamic_cast<const llvm::ZExtOperation *>(&operation))
   {
@@ -802,6 +878,163 @@ JlmToMlirConverter::ConvertType(const rvsdg::Type & type)
   else
   {
     auto message = util::strfmt("Type conversion not implemented: ", type.debug_string());
+    JLM_UNREACHABLE(message.c_str());
+  }
+}
+
+::mlir::Operation *
+JlmToMlirConverter::ConvertIntegerBinaryOperation(
+    const jlm::llvm::IntegerBinaryOperation & operation,
+    ::llvm::SmallVector<::mlir::Value> inputs)
+{
+  if (rvsdg::is<jlm::llvm::IntegerAddOperation>(operation))
+  {
+    return Builder_->create<::mlir::arith::AddIOp>(Builder_->getUnknownLoc(), inputs[0], inputs[1]);
+  }
+  else if (rvsdg::is<jlm::llvm::IntegerSubOperation>(operation))
+  {
+    return Builder_->create<::mlir::arith::SubIOp>(Builder_->getUnknownLoc(), inputs[0], inputs[1]);
+  }
+  else if (rvsdg::is<jlm::llvm::IntegerMulOperation>(operation))
+  {
+    return Builder_->create<::mlir::arith::MulIOp>(Builder_->getUnknownLoc(), inputs[0], inputs[1]);
+  }
+  else if (rvsdg::is<jlm::llvm::IntegerSDivOperation>(operation))
+  {
+    return Builder_->create<::mlir::arith::DivSIOp>(
+        Builder_->getUnknownLoc(),
+        inputs[0],
+        inputs[1]);
+  }
+  else if (rvsdg::is<jlm::llvm::IntegerUDivOperation>(operation))
+  {
+    return Builder_->create<::mlir::arith::DivUIOp>(
+        Builder_->getUnknownLoc(),
+        inputs[0],
+        inputs[1]);
+  }
+  else if (rvsdg::is<jlm::llvm::IntegerSRemOperation>(operation))
+  {
+    return Builder_->create<::mlir::arith::RemSIOp>(
+        Builder_->getUnknownLoc(),
+        inputs[0],
+        inputs[1]);
+  }
+  else if (rvsdg::is<jlm::llvm::IntegerURemOperation>(operation))
+  {
+    return Builder_->create<::mlir::arith::RemUIOp>(
+        Builder_->getUnknownLoc(),
+        inputs[0],
+        inputs[1]);
+  }
+  else if (rvsdg::is<jlm::llvm::IntegerAShrOperation>(operation))
+  {
+    return Builder_->create<::mlir::LLVM::AShrOp>(Builder_->getUnknownLoc(), inputs[0], inputs[1]);
+  }
+  else if (rvsdg::is<jlm::llvm::IntegerShlOperation>(operation))
+  {
+    return Builder_->create<::mlir::LLVM::ShlOp>(Builder_->getUnknownLoc(), inputs[0], inputs[1]);
+  }
+  else if (rvsdg::is<jlm::llvm::IntegerLShrOperation>(operation))
+  {
+    return Builder_->create<::mlir::LLVM::LShrOp>(Builder_->getUnknownLoc(), inputs[0], inputs[1]);
+  }
+  else if (rvsdg::is<jlm::llvm::IntegerAndOperation>(operation))
+  {
+    return Builder_->create<::mlir::arith::AndIOp>(Builder_->getUnknownLoc(), inputs[0], inputs[1]);
+  }
+  else if (rvsdg::is<jlm::llvm::IntegerOrOperation>(operation))
+  {
+    return Builder_->create<::mlir::arith::OrIOp>(Builder_->getUnknownLoc(), inputs[0], inputs[1]);
+  }
+  else if (rvsdg::is<jlm::llvm::IntegerXorOperation>(operation))
+  {
+    return Builder_->create<::mlir::arith::XOrIOp>(Builder_->getUnknownLoc(), inputs[0], inputs[1]);
+  }
+  else if (rvsdg::is<jlm::llvm::IntegerEqOperation>(operation))
+  {
+    return Builder_->create<::mlir::arith::CmpIOp>(
+        Builder_->getUnknownLoc(),
+        ::mlir::arith::CmpIPredicate::eq,
+        inputs[0],
+        inputs[1]);
+  }
+  else if (rvsdg::is<jlm::llvm::IntegerNeOperation>(operation))
+  {
+    return Builder_->create<::mlir::arith::CmpIOp>(
+        Builder_->getUnknownLoc(),
+        ::mlir::arith::CmpIPredicate::ne,
+        inputs[0],
+        inputs[1]);
+  }
+  else if (rvsdg::is<jlm::llvm::IntegerSgeOperation>(operation))
+  {
+    return Builder_->create<::mlir::arith::CmpIOp>(
+        Builder_->getUnknownLoc(),
+        ::mlir::arith::CmpIPredicate::sge,
+        inputs[0],
+        inputs[1]);
+  }
+  else if (rvsdg::is<jlm::llvm::IntegerSgtOperation>(operation))
+  {
+    return Builder_->create<::mlir::arith::CmpIOp>(
+        Builder_->getUnknownLoc(),
+        ::mlir::arith::CmpIPredicate::sgt,
+        inputs[0],
+        inputs[1]);
+  }
+  else if (rvsdg::is<jlm::llvm::IntegerSleOperation>(operation))
+  {
+    return Builder_->create<::mlir::arith::CmpIOp>(
+        Builder_->getUnknownLoc(),
+        ::mlir::arith::CmpIPredicate::sle,
+        inputs[0],
+        inputs[1]);
+  }
+  else if (rvsdg::is<jlm::llvm::IntegerSltOperation>(operation))
+  {
+    return Builder_->create<::mlir::arith::CmpIOp>(
+        Builder_->getUnknownLoc(),
+        ::mlir::arith::CmpIPredicate::slt,
+        inputs[0],
+        inputs[1]);
+  }
+  else if (rvsdg::is<jlm::llvm::IntegerUgeOperation>(operation))
+  {
+    return Builder_->create<::mlir::arith::CmpIOp>(
+        Builder_->getUnknownLoc(),
+        ::mlir::arith::CmpIPredicate::uge,
+        inputs[0],
+        inputs[1]);
+  }
+  else if (rvsdg::is<jlm::llvm::IntegerUgtOperation>(operation))
+  {
+    return Builder_->create<::mlir::arith::CmpIOp>(
+        Builder_->getUnknownLoc(),
+        ::mlir::arith::CmpIPredicate::ugt,
+        inputs[0],
+        inputs[1]);
+  }
+  else if (rvsdg::is<jlm::llvm::IntegerUleOperation>(operation))
+  {
+    return Builder_->create<::mlir::arith::CmpIOp>(
+        Builder_->getUnknownLoc(),
+        ::mlir::arith::CmpIPredicate::ule,
+        inputs[0],
+        inputs[1]);
+  }
+  else if (rvsdg::is<jlm::llvm::IntegerUltOperation>(operation))
+  {
+    return Builder_->create<::mlir::arith::CmpIOp>(
+        Builder_->getUnknownLoc(),
+        ::mlir::arith::CmpIPredicate::ult,
+        inputs[0],
+        inputs[1]);
+  }
+  else
+  {
+    auto message =
+        util::strfmt("Unimplemented integer binary operation: ", operation.debug_string());
     JLM_UNREACHABLE(message.c_str());
   }
 }
