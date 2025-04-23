@@ -14,6 +14,43 @@
 namespace jlm::hls
 {
 
+const int DefaultBufferCapacity = 10;
+
+void
+ConnectStreamBuffer(rvsdg::SimpleNode * enq_call, rvsdg::SimpleNode * deq_call)
+{
+  int buffer_capacity = DefaultBufferCapacity;
+  // buffer size as second argument
+  if (dynamic_cast<const jlm::rvsdg::bittype *>(&deq_call->input(2)->type()))
+  {
+    auto constant = trace_constant(deq_call->input(2)->origin());
+    buffer_capacity = constant->Representation().to_int();
+    JLM_ASSERT(buffer_capacity >= 0);
+  }
+  auto buf = buffer_op::create(*enq_call->input(2)->origin(), buffer_capacity, false)[0];
+  auto routed = route_to_region_rhls(deq_call->region(), buf);
+  // remove call nodes
+  for (size_t i = 0; i < deq_call->ninputs(); ++i)
+  {
+    if (dynamic_cast<const rvsdg::StateType *>(&deq_call->input(i)->type()))
+    {
+      int oi = deq_call->noutputs() - deq_call->ninputs() + i;
+      deq_call->output(oi)->divert_users(deq_call->input(i)->origin());
+    }
+  }
+  deq_call->output(0)->divert_users(routed);
+  remove(deq_call);
+  for (size_t i = 0; i < enq_call->ninputs(); ++i)
+  {
+    if (dynamic_cast<const rvsdg::StateType *>(&enq_call->input(i)->type()))
+    {
+      int oi = enq_call->noutputs() - enq_call->ninputs() + i;
+      enq_call->output(oi)->divert_users(enq_call->input(i)->origin());
+    }
+  }
+  remove(enq_call);
+}
+
 void
 stream_conv(llvm::RvsdgModule & rm)
 {
@@ -33,12 +70,12 @@ stream_conv(llvm::RvsdgModule & rm)
   {
     JLM_ASSERT(stream_enq.inner);
     trace_function_calls(stream_enq.inner, enq_calls, visited);
-    visited.erase(visited.begin(), visited.end());
+    visited.clear();
   }
   for (auto stream_deq : stream_deqs)
   {
     trace_function_calls(stream_deq.inner, deq_calls, visited);
-    visited.erase(visited.begin(), visited.end());
+    visited.clear();
   }
   JLM_ASSERT(!enq_calls.empty());
   JLM_ASSERT(!deq_calls.empty());
@@ -50,38 +87,7 @@ stream_conv(llvm::RvsdgModule & rm)
       auto deq_constant = trace_constant(deq_call->input(1)->origin());
       if (*enq_constant == *deq_constant)
       {
-        int buffer_capacity = 10;
-        // buffer size as second argument
-        if (dynamic_cast<const jlm::rvsdg::bittype *>(&deq_call->input(2)->type()))
-        {
-          auto constant = trace_constant(deq_call->input(2)->origin());
-          buffer_capacity = constant->Representation().to_int();
-          JLM_ASSERT(buffer_capacity >= 0);
-        }
-        auto buf =
-            jlm::hls::buffer_op::create(*enq_call->input(2)->origin(), buffer_capacity, false)[0];
-        auto routed = route_to_region_rhls(deq_call->region(), buf);
-        // remove call nodes
-        for (size_t i = 0; i < deq_call->ninputs(); ++i)
-        {
-          if (dynamic_cast<const rvsdg::StateType *>(&deq_call->input(i)->type()))
-          {
-            int oi = deq_call->noutputs() - deq_call->ninputs() + i;
-            deq_call->output(oi)->divert_users(deq_call->input(i)->origin());
-          }
-        }
-        deq_call->output(0)->divert_users(routed);
-        remove(deq_call);
-        for (size_t i = 0; i < enq_call->ninputs(); ++i)
-        {
-          if (dynamic_cast<const rvsdg::StateType *>(&enq_call->input(i)->type()))
-          {
-            int oi = enq_call->noutputs() - enq_call->ninputs() + i;
-            enq_call->output(oi)->divert_users(enq_call->input(i)->origin());
-          }
-        }
-        remove(enq_call);
-        // remove deq_call from list
+        ConnectStreamBuffer(enq_call, deq_call);
         deq_calls.erase(std::find(deq_calls.begin(), deq_calls.end(), deq_call));
         break;
       }
