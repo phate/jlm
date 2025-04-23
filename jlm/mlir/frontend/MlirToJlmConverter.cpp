@@ -56,10 +56,58 @@ MlirToJlmConverter::ConvertOmega(::mlir::rvsdg::OmegaNode & omegaNode)
   auto rvsdgModule = llvm::RvsdgModule::Create(util::filepath(""), std::string(), std::string());
   auto & graph = rvsdgModule->Rvsdg();
   auto & root = graph.GetRootRegion();
-  for (auto & operation : omegaNode.getRegion().front().getOperations())
-  {
+  ConvertRegion(omegaNode.getRegion(), root, true);
 
-    if (auto argument = ::mlir::dyn_cast<::mlir::rvsdg::OmegaArgument>(operation))
+  return rvsdgModule;
+}
+
+::llvm::SmallVector<jlm::rvsdg::output *>
+MlirToJlmConverter::ConvertRegion(
+    ::mlir::Region & region,
+    rvsdg::Region & rvsdgRegion,
+    bool isOmega)
+{
+  // MLIR use blocks as the innermost "container"
+  // In the RVSDG Dialect a region should contain one and only one block
+  JLM_ASSERT(region.getBlocks().size() == 1);
+  return ConvertBlock(region.front(), rvsdgRegion, isOmega);
+}
+
+::llvm::SmallVector<jlm::rvsdg::output *>
+MlirToJlmConverter::GetConvertedInputs(
+    ::mlir::Operation & mlirOp,
+    const std::unordered_map<void *, rvsdg::output *> & outputMap,
+    const rvsdg::Region & rvsdgRegion)
+{
+  ::llvm::SmallVector<jlm::rvsdg::output *> inputs;
+  for (::mlir::Value operand : mlirOp.getOperands())
+  {
+    auto key = operand.getAsOpaquePointer();
+    JLM_ASSERT(outputMap.find(key) != outputMap.end());
+    inputs.push_back(outputMap.at(key));
+  }
+  return inputs;
+}
+
+::llvm::SmallVector<jlm::rvsdg::output *>
+MlirToJlmConverter::ConvertBlock(::mlir::Block & block, rvsdg::Region & rvsdgRegion, bool isOmega)
+{
+  ::mlir::sortTopologically(&block);
+
+  // Create an RVSDG node for each MLIR operation and store each pair in a
+  // hash map for easy lookup of corresponding RVSDG nodes
+  std::unordered_map<void *, rvsdg::output *> outputMap;
+
+  for (size_t i = 0; i < block.getNumArguments(); i++)
+  {
+    auto arg = block.getArgument(i);
+    auto key = arg.getAsOpaquePointer();
+    outputMap[key] = rvsdgRegion.argument(i);
+  }
+
+  for (auto & mlirOp : block.getOperations())
+  {
+    if (auto argument = ::mlir::dyn_cast<::mlir::rvsdg::OmegaArgument>(mlirOp))
     {
       auto valueType = argument.getValueType();
       auto importedType = argument.getImportedValue().getType();
@@ -67,80 +115,36 @@ MlirToJlmConverter::ConvertOmega(::mlir::rvsdg::OmegaNode & omegaNode)
       std::shared_ptr<rvsdg::Type> jlmImportedType = ConvertType(importedType);
 
       jlm::llvm::GraphImport::Create(
-          graph,
+          *rvsdgRegion.graph(),
           std::dynamic_pointer_cast<const rvsdg::ValueType>(jlmValueType),
           std::dynamic_pointer_cast<const rvsdg::ValueType>(jlmImportedType),
           argument.getNameAttr().cast<::mlir::StringAttr>().str(),
           llvm::FromString(argument.getLinkageAttr().cast<::mlir::StringAttr>().str()));
+
+      auto key = argument.getResult().getAsOpaquePointer();
+      outputMap[key] = rvsdgRegion.argument(rvsdgRegion.narguments() - 1);
     }
     else
     {
-      break; // OmegaArguments should be a prefix of the omega block
-    }
-  }
-  ConvertRegion(omegaNode.getRegion(), root);
+      ::llvm::SmallVector<jlm::rvsdg::output *> inputs =
+          GetConvertedInputs(mlirOp, outputMap, rvsdgRegion);
 
-  return rvsdgModule;
-}
-
-::llvm::SmallVector<jlm::rvsdg::output *>
-MlirToJlmConverter::ConvertRegion(::mlir::Region & region, rvsdg::Region & rvsdgRegion)
-{
-  // MLIR use blocks as the innermost "container"
-  // In the RVSDG Dialect a region should contain one and only one block
-  JLM_ASSERT(region.getBlocks().size() == 1);
-  return ConvertBlock(region.front(), rvsdgRegion);
-}
-
-::llvm::SmallVector<jlm::rvsdg::output *>
-MlirToJlmConverter::GetConvertedInputs(
-    ::mlir::Operation & mlirOp,
-    const std::unordered_map<::mlir::Operation *, rvsdg::Node *> & operationsMap,
-    const rvsdg::Region & rvsdgRegion)
-{
-  ::llvm::SmallVector<jlm::rvsdg::output *> inputs;
-  for (::mlir::Value operand : mlirOp.getOperands())
-  {
-    if (::mlir::Operation * producer = operand.getDefiningOp())
-    {
-      JLM_ASSERT(operationsMap.find(producer) != operationsMap.end());
-      JLM_ASSERT(::mlir::isa<::mlir::OpResult>(operand));
-      inputs.push_back(
-          operationsMap.at(producer)->output(operand.cast<::mlir::OpResult>().getResultNumber()));
-    }
-    else
-    {
-      // If there is no defining op, the Value is necessarily a Block argument.
-      JLM_ASSERT(::mlir::isa<::mlir::BlockArgument>(operand));
-      inputs.push_back(rvsdgRegion.argument(operand.cast<::mlir::BlockArgument>().getArgNumber()));
-    }
-  }
-  return inputs;
-}
-
-::llvm::SmallVector<jlm::rvsdg::output *>
-MlirToJlmConverter::ConvertBlock(::mlir::Block & block, rvsdg::Region & rvsdgRegion)
-{
-  ::mlir::sortTopologically(&block);
-
-  // Create an RVSDG node for each MLIR operation and store each pair in a
-  // hash map for easy lookup of corresponding RVSDG nodes
-  std::unordered_map<::mlir::Operation *, rvsdg::Node *> operationsMap;
-  for (auto & mlirOp : block.getOperations())
-  {
-    ::llvm::SmallVector<jlm::rvsdg::output *> inputs =
-        GetConvertedInputs(mlirOp, operationsMap, rvsdgRegion);
-
-    if (auto * node = ConvertOperation(mlirOp, rvsdgRegion, inputs))
-    {
-      operationsMap[&mlirOp] = node;
+      if (auto * node = ConvertOperation(mlirOp, rvsdgRegion, inputs))
+      {
+        for (size_t i = 0; i < mlirOp.getNumResults(); i++)
+        {
+          auto result = mlirOp.getResult(i);
+          auto key = result.getAsOpaquePointer();
+          outputMap[key] = node->output(i);
+        }
+      }
     }
   }
 
   // The results of the region/block are encoded in the terminator operation
   ::mlir::Operation * terminator = block.getTerminator();
 
-  return GetConvertedInputs(*terminator, operationsMap, rvsdgRegion);
+  return GetConvertedInputs(*terminator, outputMap, rvsdgRegion);
 }
 
 rvsdg::Node *

@@ -67,24 +67,8 @@ JlmToMlirConverter::ConvertModule(const llvm::RvsdgModule & rvsdgModule)
   auto omega = Builder_->create<::mlir::rvsdg::OmegaNode>(Builder_->getUnknownLoc());
   auto & omegaBlock = omega.getRegion().emplaceBlock();
 
-  for (size_t i = 0; i < graph.GetRootRegion().narguments(); ++i)
-  {
-    auto arg = graph.GetRootRegion().argument(i);
-    auto imp = dynamic_cast<llvm::GraphImport *>(arg);
-    auto nameAttr = Builder_->getStringAttr(imp->Name());
-    auto linkageAttr = Builder_->getStringAttr(llvm::ToString(imp->Linkage()));
-    auto typeAttr = ConvertType(*imp->ValueType());
-    auto importedValueType = ConvertType(*imp->ImportedType());
-    omegaBlock.push_back(Builder_->create<::mlir::rvsdg::OmegaArgument>(
-        Builder_->getUnknownLoc(),
-        importedValueType,
-        typeAttr,
-        linkageAttr,
-        nameAttr));
-  }
-
   ::llvm::SmallVector<::mlir::Value> regionResults =
-      ConvertRegion(graph.GetRootRegion(), omegaBlock);
+      ConvertRegion(graph.GetRootRegion(), omegaBlock, true);
 
   auto omegaResult =
       Builder_->create<::mlir::rvsdg::OmegaResult>(Builder_->getUnknownLoc(), regionResults);
@@ -93,23 +77,41 @@ JlmToMlirConverter::ConvertModule(const llvm::RvsdgModule & rvsdgModule)
 }
 
 ::llvm::SmallVector<::mlir::Value>
-JlmToMlirConverter::ConvertRegion(rvsdg::Region & region, ::mlir::Block & block)
+JlmToMlirConverter::ConvertRegion(rvsdg::Region & region, ::mlir::Block & block, bool isRoot)
 {
+  std::unordered_map<rvsdg::output *, ::mlir::Value> valueMap;
   for (size_t i = 0; i < region.narguments(); ++i)
   {
-    auto type = ConvertType(region.argument(i)->type());
-    block.addArgument(type, Builder_->getUnknownLoc());
+    auto arg = region.argument(i);
+    if (isRoot) // Omega arguments are treated separately
+    {
+      auto imp = dynamic_cast<llvm::GraphImport *>(arg);
+      block.push_back(Builder_->create<::mlir::rvsdg::OmegaArgument>(
+          Builder_->getUnknownLoc(),
+          ConvertType(*imp->ImportedType()),
+          ConvertType(*imp->ValueType()),
+          Builder_->getStringAttr(llvm::ToString(imp->Linkage())),
+          Builder_->getStringAttr(imp->Name())));
+      valueMap[arg] = block.back().getResult(0); // Add the output of the omega argument
+    }
+    else
+    {
+      block.addArgument(ConvertType(arg->type()), Builder_->getUnknownLoc());
+      valueMap[arg] = block.getArgument(i);
+    }
   }
 
   // Create an MLIR operation for each RVSDG node and store each pair in a
   // hash map for easy lookup of corresponding MLIR operation
-  std::unordered_map<rvsdg::Node *, ::mlir::Operation *> operationsMap;
   for (rvsdg::Node * rvsdgNode : rvsdg::TopDownTraverser(&region))
   {
-    ::llvm::SmallVector<::mlir::Value> inputs =
-        GetConvertedInputs(*rvsdgNode, operationsMap, block);
+    ::llvm::SmallVector<::mlir::Value> inputs = GetConvertedInputs(*rvsdgNode, valueMap, block);
 
-    operationsMap[rvsdgNode] = ConvertNode(*rvsdgNode, block, inputs);
+    auto convertedNode = ConvertNode(*rvsdgNode, block, inputs);
+    for (size_t i = 0; i < rvsdgNode->noutputs(); i++)
+    {
+      valueMap[rvsdgNode->output(i)] = convertedNode->getResult(i);
+    }
   }
 
   // This code is used to get the results of the region
@@ -117,14 +119,10 @@ JlmToMlirConverter::ConvertRegion(rvsdg::Region & region, ::mlir::Block & block)
   ::llvm::SmallVector<::mlir::Value> results;
   for (size_t i = 0; i < region.nresults(); i++)
   {
-    if (jlm::rvsdg::node_output * nodeOuput =
-            dynamic_cast<jlm::rvsdg::node_output *>(region.result(i)->origin()))
+    auto it = valueMap.find(region.result(i)->origin());
+    if (it != valueMap.end())
     {
-      results.push_back(operationsMap.at(nodeOuput->node())->getResult(nodeOuput->index()));
-    }
-    else if (auto arg = dynamic_cast<rvsdg::RegionArgument *>(region.result(i)->origin()))
-    {
-      results.push_back(block.getArgument(arg->index()));
+      results.push_back(it->second);
     }
     else
     {
@@ -147,19 +145,16 @@ JlmToMlirConverter::ConvertRegion(rvsdg::Region & region, ::mlir::Block & block)
 ::llvm::SmallVector<::mlir::Value>
 JlmToMlirConverter::GetConvertedInputs(
     const rvsdg::Node & node,
-    const std::unordered_map<rvsdg::Node *, ::mlir::Operation *> & operationsMap,
+    const std::unordered_map<rvsdg::output *, ::mlir::Value> & valueMap,
     ::mlir::Block & block)
 {
   ::llvm::SmallVector<::mlir::Value> inputs;
   for (size_t i = 0; i < node.ninputs(); i++)
   {
-    if (auto nodeOuput = dynamic_cast<jlm::rvsdg::node_output *>(node.input(i)->origin()))
+    auto it = valueMap.find(node.input(i)->origin());
+    if (it != valueMap.end())
     {
-      inputs.push_back(operationsMap.at(nodeOuput->node())->getResult(nodeOuput->index()));
-    }
-    else if (auto arg = dynamic_cast<rvsdg::RegionArgument *>(node.input(i)->origin()))
-    {
-      inputs.push_back(block.getArgument(arg->index()));
+      inputs.push_back(it->second);
     }
     else
     {
@@ -548,10 +543,11 @@ JlmToMlirConverter::ConvertSimpleNode(
       mappingVector.push_back(matchRule);
     }
     //! The default alternative has an empty mapping
-    mappingVector.push_back(::mlir::rvsdg::MatchRuleAttr::get(
-        Builder_->getContext(),
-        ::llvm::ArrayRef<int64_t>(),
-        matchOp->default_alternative()));
+    mappingVector.push_back(
+        ::mlir::rvsdg::MatchRuleAttr::get(
+            Builder_->getContext(),
+            ::llvm::ArrayRef<int64_t>(),
+            matchOp->default_alternative()));
     // ** endregion Create the MLIR mapping vector **
 
     MlirOp = Builder_->create<::mlir::rvsdg::Match>(
@@ -609,13 +605,14 @@ JlmToMlirConverter::ConvertLambda(
   attributes.push_back(symbolName);
   auto linkage = Builder_->getNamedAttr(
       Builder_->getStringAttr("linkage"),
-      Builder_->getStringAttr(llvm::ToString(
-          dynamic_cast<llvm::LlvmLambdaOperation &>(lambdaNode.GetOperation()).linkage())));
+      Builder_->getStringAttr(
+          llvm::ToString(
+              dynamic_cast<llvm::LlvmLambdaOperation &>(lambdaNode.GetOperation()).linkage())));
   attributes.push_back(linkage);
 
   auto lambda = Builder_->create<::mlir::rvsdg::LambdaNode>(
       Builder_->getUnknownLoc(),
-      Builder_->getType<::mlir::LLVM::LLVMPointerType>(),
+      ConvertType(lambdaNode.output()->type()),
       inputs,
       ::llvm::ArrayRef<::mlir::NamedAttribute>(attributes));
   block.push_back(lambda);

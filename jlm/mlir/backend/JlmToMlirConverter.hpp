@@ -71,15 +71,6 @@ public:
   ::mlir::rvsdg::OmegaNode
   ConvertModule(const llvm::RvsdgModule & rvsdgModule);
 
-private:
-  /**
-   * Converts an omega and all nodes in its (sub)region(s) to an MLIR RVSDG OmegaNode.
-   * \param graph The root RVSDG graph.
-   * \return An MLIR RVSDG OmegaNode.
-   */
-  ::mlir::rvsdg::OmegaNode
-  ConvertOmega(const rvsdg::Graph & graph);
-
   /**
    * Converts all nodes in an RVSDG region. Conversion of structural nodes cause their regions to
    * also be converted.
@@ -89,19 +80,19 @@ private:
    * \return A list of outputs of the converted region/block.
    */
   ::llvm::SmallVector<::mlir::Value>
-  ConvertRegion(rvsdg::Region & region, ::mlir::Block & block);
+  ConvertRegion(rvsdg::Region & region, ::mlir::Block & block, bool isRoot = false);
 
   /**
    * Retreive the previously converted MLIR values from the map of operations
    * \param node The RVSDG node to get the inputs for.
-   * \param operationsMap A map of RVSDG nodes to their corresponding MLIR operations.
+   * \param valueMap A map of RVSDG outputs to their corresponding MLIR values.
    * \param block The MLIR block to get argument type inputs from.
    * \return The vector of inputs to the node.
    */
   static ::llvm::SmallVector<::mlir::Value>
   GetConvertedInputs(
       const rvsdg::Node & node,
-      const std::unordered_map<rvsdg::Node *, ::mlir::Operation *> & operationsMap,
+      const std::unordered_map<rvsdg::output *, ::mlir::Value> & valueMap,
       ::mlir::Block & block);
 
   /**

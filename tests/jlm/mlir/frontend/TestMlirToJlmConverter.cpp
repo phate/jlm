@@ -67,7 +67,7 @@ TestLambda()
     std::cout << "Creating LambdaNode" << std::endl;
     auto lambda = Builder_->create<LambdaNode>(
         Builder_->getUnknownLoc(),
-        Builder_->getType<mlir::LLVM::LLVMPointerType>(),
+        Builder_->getType<mlir::FunctionType>(arguments, results),
         inputs,
         attributesRef);
     omegaBlock->push_back(lambda);
@@ -96,7 +96,7 @@ TestLambda()
     // Handle the result of the omega
     std::cout << "Creating OmegaResult" << std::endl;
     ::llvm::SmallVector<mlir::Value> omegaRegionResults;
-    omegaRegionResults.push_back(lambda);
+    omegaRegionResults.push_back(lambda.getResult());
     auto omegaResult = Builder_->create<OmegaResult>(Builder_->getUnknownLoc(), omegaRegionResults);
     omegaBlock->push_back(omegaResult);
 
@@ -182,7 +182,7 @@ TestDivOperation()
     std::cout << "Creating LambdaNode" << std::endl;
     auto lambda = Builder_->create<LambdaNode>(
         Builder_->getUnknownLoc(),
-        Builder_->getType<mlir::LLVM::LLVMPointerType>(),
+        Builder_->getType<mlir::FunctionType>(arguments, results),
         inputs,
         attributesRef);
     omegaBlock->push_back(lambda);
@@ -243,7 +243,7 @@ TestDivOperation()
     // Handle the result of the omega
     std::cout << "Creating OmegaResult" << std::endl;
     ::llvm::SmallVector<mlir::Value> omegaRegionResults;
-    omegaRegionResults.push_back(lambda);
+    omegaRegionResults.push_back(lambda.getResult());
     auto omegaResult = Builder_->create<OmegaResult>(Builder_->getUnknownLoc(), omegaRegionResults);
     omegaBlock->push_back(omegaResult);
 
@@ -364,7 +364,7 @@ TestCompZeroExt()
     std::cout << "Creating LambdaNode" << std::endl;
     auto lambda = Builder_->create<LambdaNode>(
         Builder_->getUnknownLoc(),
-        Builder_->getType<mlir::LLVM::LLVMPointerType>(),
+        Builder_->getType<mlir::FunctionType>(arguments, results),
         inputs,
         attributesRef);
     omegaBlock->push_back(lambda);
@@ -419,7 +419,7 @@ TestCompZeroExt()
     // Handle the result of the omega
     std::cout << "Creating OmegaResult" << std::endl;
     ::llvm::SmallVector<mlir::Value> omegaRegionResults;
-    omegaRegionResults.push_back(lambda);
+    omegaRegionResults.push_back(lambda.getResult());
     auto omegaResult = Builder_->create<OmegaResult>(Builder_->getUnknownLoc(), omegaRegionResults);
     omegaBlock->push_back(omegaResult);
 
@@ -580,7 +580,7 @@ TestMatchOp()
     std::cout << "Creating LambdaNode" << std::endl;
     auto lambda = Builder_->create<LambdaNode>(
         Builder_->getUnknownLoc(),
-        Builder_->getType<mlir::LLVM::LLVMPointerType>(),
+        Builder_->getType<mlir::FunctionType>(arguments, results),
         inputs,
         attributesRef);
     omegaBlock->push_back(lambda);
@@ -634,7 +634,7 @@ TestMatchOp()
     // Handle the result of the omega
     std::cout << "Creating OmegaResult" << std::endl;
     ::llvm::SmallVector<mlir::Value> omegaRegionResults;
-    omegaRegionResults.push_back(lambda);
+    omegaRegionResults.push_back(lambda.getResult());
     auto omegaResult = Builder_->create<OmegaResult>(Builder_->getUnknownLoc(), omegaRegionResults);
     omegaBlock->push_back(omegaResult);
 
@@ -742,7 +742,7 @@ TestGammaOp()
     std::cout << "Creating LambdaNode" << std::endl;
     auto lambda = Builder_->create<LambdaNode>(
         Builder_->getUnknownLoc(),
-        Builder_->getType<mlir::LLVM::LLVMPointerType>(),
+        Builder_->getType<mlir::FunctionType>(arguments, results),
         inputs,
         attributesRef);
     omegaBlock->push_back(lambda);
@@ -803,7 +803,7 @@ TestGammaOp()
     // Handle the result of the omega
     std::cout << "Creating OmegaResult" << std::endl;
     ::llvm::SmallVector<mlir::Value> omegaRegionResults;
-    omegaRegionResults.push_back(lambda);
+    omegaRegionResults.push_back(lambda.getResult());
     auto omegaResult = Builder_->create<OmegaResult>(Builder_->getUnknownLoc(), omegaRegionResults);
     omegaBlock->push_back(omegaResult);
 
@@ -871,39 +871,24 @@ TestThetaOp()
     auto * omegaBlock = new mlir::Block;
     omegaRegion.push_back(omegaBlock);
 
-    // Handle function arguments
-    std::cout << "Creating function arguments" << std::endl;
-    ::llvm::SmallVector<mlir::Type> arguments;
-    arguments.push_back(Builder_->getType<IOStateEdgeType>());
-    arguments.push_back(Builder_->getType<MemStateEdgeType>());
-    ::llvm::ArrayRef argumentsArray(arguments);
-
-    // Handle function results
-    std::cout << "Creating function results" << std::endl;
-    ::llvm::SmallVector<mlir::Type> results;
-    results.push_back(Builder_->getType<IOStateEdgeType>());
-    results.push_back(Builder_->getType<MemStateEdgeType>());
-    ::llvm::ArrayRef resultsArray(results);
-
     // Add function attributes
     std::cout << "Creating function attributes" << std::endl;
-    ::llvm::SmallVector<mlir::NamedAttribute> attributes;
     auto attributeName = Builder_->getStringAttr("sym_name");
     auto attributeValue = Builder_->getStringAttr("test");
     auto symbolName = Builder_->getNamedAttr(attributeName, attributeValue);
-    attributes.push_back(symbolName);
-    ::llvm::ArrayRef<::mlir::NamedAttribute> attributesRef(attributes);
 
-    // Add inputs to the function
-    ::llvm::SmallVector<mlir::Value> inputs;
+    auto iotype = Builder_->getType<IOStateEdgeType>();
+    auto memtype = Builder_->getType<MemStateEdgeType>();
 
     // Create the lambda node and add it to the region/block it resides in
     std::cout << "Creating LambdaNode" << std::endl;
     auto lambda = Builder_->create<LambdaNode>(
         Builder_->getUnknownLoc(),
-        Builder_->getType<mlir::LLVM::LLVMPointerType>(),
-        inputs,
-        attributesRef);
+        Builder_->getType<mlir::FunctionType>(
+            ::mlir::TypeRange({ iotype, memtype }),
+            ::mlir::TypeRange({ iotype, memtype })),
+        ::llvm::SmallVector<mlir::Value>(),
+        ::llvm::ArrayRef<::mlir::NamedAttribute>({ symbolName }));
     omegaBlock->push_back(lambda);
     auto & lambdaRegion = lambda.getRegion();
     auto * lambdaBlock = new mlir::Block;
@@ -911,22 +896,19 @@ TestThetaOp()
 
     // Add arguments to the region
     std::cout << "Adding arguments to the region" << std::endl;
-    lambdaBlock->addArgument(Builder_->getType<IOStateEdgeType>(), Builder_->getUnknownLoc());
-    lambdaBlock->addArgument(Builder_->getType<MemStateEdgeType>(), Builder_->getUnknownLoc());
+    lambdaBlock->addArgument(iotype, Builder_->getUnknownLoc());
+    lambdaBlock->addArgument(memtype, Builder_->getUnknownLoc());
 
-    ::llvm::SmallVector<::mlir::NamedAttribute> thetaAttributes;
-    ::llvm::SmallVector<::mlir::Type> typeRangeOuput;
-    typeRangeOuput.push_back(Builder_->getType<IOStateEdgeType>());
-    typeRangeOuput.push_back(Builder_->getType<MemStateEdgeType>());
-    ::mlir::rvsdg::ThetaNode theta = Builder_->create<::mlir::rvsdg::ThetaNode>(
+    auto theta = Builder_->create<::mlir::rvsdg::ThetaNode>(
         Builder_->getUnknownLoc(),
-        ::mlir::TypeRange(::llvm::ArrayRef(typeRangeOuput)), // Ouputs types
-        ::mlir::ValueRange(::llvm::ArrayRef<::mlir::Value>(
-            { lambdaBlock->getArgument(0), lambdaBlock->getArgument(1) })), // Inputs
-        thetaAttributes);
+        ::mlir::TypeRange({ iotype, memtype }), // Ouputs types
+        ::mlir::ValueRange({ lambdaBlock->getArgument(0), lambdaBlock->getArgument(1) }), // Inputs
+        ::llvm::SmallVector<::mlir::NamedAttribute>({}));
     lambdaBlock->push_back(theta);
 
     auto & thetaBlock = theta.getRegion().emplaceBlock();
+    thetaBlock.addArgument(iotype, Builder_->getUnknownLoc());
+    thetaBlock.addArgument(memtype, Builder_->getUnknownLoc());
     auto predicate = Builder_->create<mlir::rvsdg::ConstantCtrl>(
         Builder_->getUnknownLoc(),
         Builder_->getType<::mlir::rvsdg::RVSDG_CTRLType>(2),
@@ -936,7 +918,7 @@ TestThetaOp()
     auto thetaResult = Builder_->create<::mlir::rvsdg::ThetaResult>(
         Builder_->getUnknownLoc(),
         predicate,
-        ::llvm::SmallVector<mlir::Value>(theta.getInputs()));
+        ::llvm::SmallVector<mlir::Value>(thetaBlock.getArguments()));
     thetaBlock.push_back(thetaResult);
 
     // Handle the result of the lambda

@@ -93,7 +93,7 @@ private:
    * \return The results of the region are returned as a std::vector
    */
   ::llvm::SmallVector<jlm::rvsdg::output *>
-  ConvertRegion(::mlir::Region & region, rvsdg::Region & rvsdgRegion);
+  ConvertRegion(::mlir::Region & region, rvsdg::Region & rvsdgRegion, bool isOmega = false);
 
   /**
    * Converts the MLIR block and all operations in it
@@ -103,20 +103,20 @@ private:
    * \return The results of the region are returned as a std::vector
    */
   ::llvm::SmallVector<jlm::rvsdg::output *>
-  ConvertBlock(::mlir::Block & block, rvsdg::Region & rvsdgRegion);
+  ConvertBlock(::mlir::Block & block, rvsdg::Region & rvsdgRegion, bool isOmega = false);
 
   /**
    * Retreive the previously converted RVSDG ouputs from the map of operations
    * and return them in the inputs vector.
    * \param mlirOp The MLIR operation that the inputs are retrieved for.
-   * \param operationsMap The map of operations that have been converted.
+   * \param outputMap The map of operations that have been converted.
    * \param rvsdgRegion The RVSDG region that the inputs are retrieved from (if it's a region
    * argument). \return The vector that is populated with the inputs.
    */
   static ::llvm::SmallVector<jlm::rvsdg::output *>
   GetConvertedInputs(
       ::mlir::Operation & mlirOp,
-      const std::unordered_map<::mlir::Operation *, rvsdg::Node *> & operationsMap,
+      const std::unordered_map<void *, rvsdg::output *> & outputMap,
       const rvsdg::Region & rvsdgRegion);
 
   /**
