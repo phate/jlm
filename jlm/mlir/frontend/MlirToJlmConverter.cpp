@@ -58,7 +58,7 @@ MlirToJlmConverter::ConvertOmega(::mlir::rvsdg::OmegaNode & omegaNode)
   auto rvsdgModule = llvm::RvsdgModule::Create(util::filepath(""), std::string(), std::string());
   auto & graph = rvsdgModule->Rvsdg();
   auto & root = graph.GetRootRegion();
-  ConvertRegion(omegaNode.getRegion(), root, true);
+  ConvertRegion(omegaNode.getRegion(), root);
 
   return rvsdgModule;
 }
@@ -66,20 +66,18 @@ MlirToJlmConverter::ConvertOmega(::mlir::rvsdg::OmegaNode & omegaNode)
 ::llvm::SmallVector<jlm::rvsdg::output *>
 MlirToJlmConverter::ConvertRegion(
     ::mlir::Region & region,
-    rvsdg::Region & rvsdgRegion,
-    bool isOmega)
+    rvsdg::Region & rvsdgRegion)
 {
   // MLIR use blocks as the innermost "container"
   // In the RVSDG Dialect a region should contain one and only one block
   JLM_ASSERT(region.getBlocks().size() == 1);
-  return ConvertBlock(region.front(), rvsdgRegion, isOmega);
+  return ConvertBlock(region.front(), rvsdgRegion);
 }
 
 ::llvm::SmallVector<jlm::rvsdg::output *>
 MlirToJlmConverter::GetConvertedInputs(
     ::mlir::Operation & mlirOp,
-    const std::unordered_map<void *, rvsdg::output *> & outputMap,
-    const rvsdg::Region & rvsdgRegion)
+    const std::unordered_map<void *, rvsdg::output *> & outputMap)
 {
   ::llvm::SmallVector<jlm::rvsdg::output *> inputs;
   for (::mlir::Value operand : mlirOp.getOperands())
@@ -92,7 +90,7 @@ MlirToJlmConverter::GetConvertedInputs(
 }
 
 ::llvm::SmallVector<jlm::rvsdg::output *>
-MlirToJlmConverter::ConvertBlock(::mlir::Block & block, rvsdg::Region & rvsdgRegion, bool isOmega)
+MlirToJlmConverter::ConvertBlock(::mlir::Block & block, rvsdg::Region & rvsdgRegion)
 {
   ::mlir::sortTopologically(&block);
 
@@ -129,7 +127,7 @@ MlirToJlmConverter::ConvertBlock(::mlir::Block & block, rvsdg::Region & rvsdgReg
     else
     {
       ::llvm::SmallVector<jlm::rvsdg::output *> inputs =
-          GetConvertedInputs(mlirOp, outputMap, rvsdgRegion);
+          GetConvertedInputs(mlirOp, outputMap);
 
       if (auto * node = ConvertOperation(mlirOp, rvsdgRegion, inputs))
       {
@@ -146,7 +144,7 @@ MlirToJlmConverter::ConvertBlock(::mlir::Block & block, rvsdg::Region & rvsdgReg
   // The results of the region/block are encoded in the terminator operation
   ::mlir::Operation * terminator = block.getTerminator();
 
-  return GetConvertedInputs(*terminator, outputMap, rvsdgRegion);
+  return GetConvertedInputs(*terminator, outputMap);
 }
 
 rvsdg::Node *
