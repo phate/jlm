@@ -2,7 +2,7 @@
 set -eu
 
 GIT_REPOSITORY=https://github.com/EECS-NTNU/mlir_rvsdg.git
-GIT_COMMIT=488837f8ae88121c55f780e24b098c7bc2984fdd
+GIT_COMMIT=613388ca1055ad7fcbb31b114218d9781133e6ae
 
 # Get the absolute path to this script and set default build and install paths
 SCRIPT_DIR="$(dirname "$(realpath "$0")")"

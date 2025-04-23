@@ -78,6 +78,7 @@ public:
    * \param region The RVSDG region to be converted
    * \param block The MLIR RVSDG block that corresponds to this RVSDG region, and to which
    *              converted nodes are insterted.
+   * \param isRoot Whether the region is the root of the RVSDG.
    * \return A list of outputs of the converted region/block.
    */
   ::llvm::SmallVector<::mlir::Value>
