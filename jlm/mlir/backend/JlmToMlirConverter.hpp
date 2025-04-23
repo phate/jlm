@@ -121,7 +121,7 @@ public:
 
   /**
    * Converts an fpcmp an mlir::arith::CmpFPredicate.
-   * \param size The fpcmp to be converted.
+   * \param op The fpcmp to be converted.
    * \result The corresponding CmpFPredicate.
    */
   ::mlir::arith::CmpFPredicate
