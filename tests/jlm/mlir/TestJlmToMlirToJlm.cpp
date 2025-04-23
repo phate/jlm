@@ -1552,8 +1552,7 @@ TestIOBarrier()
 
   {
     // Create a function to contain the test
-    auto functionType =
-        jlm::rvsdg::FunctionType::Create({ IOStateType::Create() }, {});
+    auto functionType = jlm::rvsdg::FunctionType::Create({ IOStateType::Create() }, {});
 
     auto lambda = jlm::rvsdg::LambdaNode::Create(
         graph->GetRootRegion(),
@@ -1565,10 +1564,7 @@ TestIOBarrier()
 
     // Create the IOBarrier operation
     auto ioBarrierOp = jlm::llvm::IOBarrierOperation(std::make_shared<jlm::rvsdg::bittype>(32));
-    jlm::rvsdg::SimpleNode::Create(
-        *lambda->subregion(),
-        ioBarrierOp,
-        { value, ioStateArgument });
+    jlm::rvsdg::SimpleNode::Create(*lambda->subregion(), ioBarrierOp, { value, ioStateArgument });
 
     // Finalize the lambda
     lambda->finalize({});
