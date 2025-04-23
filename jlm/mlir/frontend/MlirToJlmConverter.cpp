@@ -20,6 +20,7 @@
 #include <jlm/llvm/ir/operators/alloca.hpp>
 #include <jlm/llvm/ir/operators/call.hpp>
 #include <jlm/llvm/ir/operators/GetElementPtr.hpp>
+#include <jlm/llvm/ir/operators/IOBarrier.hpp>
 #include <jlm/llvm/ir/operators/Load.hpp>
 #include <jlm/llvm/ir/operators/MemoryStateOperations.hpp>
 #include <jlm/llvm/ir/operators/Store.hpp>
@@ -657,6 +658,21 @@ MlirToJlmConverter::ConvertOperation(
     auto operands = std::vector(inputs.begin(), inputs.end());
     auto memoryStateMergeOutput = jlm::llvm::MemoryStateMergeOperation::Create(operands);
     return rvsdg::output::GetNode(*memoryStateMergeOutput);
+  }
+  else if (auto IOBarrierOp = ::mlir::dyn_cast<::mlir::jlm::IOBarrier>(&mlirOperation))
+  {
+    // auto operands = std::vector(inputs.begin(), inputs.end());
+    auto type = IOBarrierOp.getResult().getType();
+    auto ioBarrierOp = jlm::llvm::IOBarrierOperation(ConvertType(type));
+    return &rvsdg::SimpleNode::Create(
+        rvsdgRegion,
+        ioBarrierOp,
+        std::vector(inputs.begin(), inputs.end()));
+  }
+  else if (auto MallocOp = ::mlir::dyn_cast<::mlir::jlm::Malloc>(&mlirOperation))
+  {
+    auto mallocOutputs = jlm::llvm::malloc_op::create(inputs[0]);
+    return rvsdg::output::GetNode(*mallocOutputs[0]);
   }
   else if (auto StoreOp = ::mlir::dyn_cast<::mlir::jlm::Store>(&mlirOperation))
   {
