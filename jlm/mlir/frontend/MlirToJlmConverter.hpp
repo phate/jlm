@@ -90,6 +90,7 @@ private:
    * \param region The MLIR region to the converted
    * \param rvsdgRegion The corresponding RVSDG region that will be populated with all the contents
    * of the MLIR region.
+   * \param isOmega Whether the region is an omega region.
    * \return The results of the region are returned as a std::vector
    */
   ::llvm::SmallVector<jlm::rvsdg::output *>
@@ -100,6 +101,7 @@ private:
    * \param block The MLIR block to the converted
    * \param rvsdgRegion The corresponding RVSDG region that will be populated with all the contents
    * of the MLIR region.
+   * \param isOmega Whether the region is an omega region.
    * \return The results of the region are returned as a std::vector
    */
   ::llvm::SmallVector<jlm::rvsdg::output *>
