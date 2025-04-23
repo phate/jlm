@@ -118,9 +118,8 @@ TestLambda()
       assert(is<jlm::llvm::LlvmLambdaOperation>(convertedLambda));
 
       assert(convertedLambda->subregion()->nnodes() == 1);
-      assert(
-          is<jlm::llvm::IntegerConstantOperation>(
-              convertedLambda->subregion()->Nodes().begin().ptr()));
+      assert(is<jlm::llvm::IntegerConstantOperation>(
+          convertedLambda->subregion()->Nodes().begin().ptr()));
     }
   }
   return 0;
@@ -600,21 +599,18 @@ TestMatchOp()
 
     ::llvm::SmallVector<::mlir::Attribute> mappingVector;
 
-    mappingVector.push_back(
-        ::mlir::rvsdg::MatchRuleAttr::get(
-            Builder_->getContext(),
-            ::llvm::ArrayRef(static_cast<int64_t>(0)),
-            4));
-    mappingVector.push_back(
-        ::mlir::rvsdg::MatchRuleAttr::get(
-            Builder_->getContext(),
-            ::llvm::ArrayRef(static_cast<int64_t>(1)),
-            5));
-    mappingVector.push_back(
-        ::mlir::rvsdg::MatchRuleAttr::get(
-            Builder_->getContext(),
-            ::llvm::ArrayRef(static_cast<int64_t>(1)),
-            6));
+    mappingVector.push_back(::mlir::rvsdg::MatchRuleAttr::get(
+        Builder_->getContext(),
+        ::llvm::ArrayRef(static_cast<int64_t>(0)),
+        4));
+    mappingVector.push_back(::mlir::rvsdg::MatchRuleAttr::get(
+        Builder_->getContext(),
+        ::llvm::ArrayRef(static_cast<int64_t>(1)),
+        5));
+    mappingVector.push_back(::mlir::rvsdg::MatchRuleAttr::get(
+        Builder_->getContext(),
+        ::llvm::ArrayRef(static_cast<int64_t>(1)),
+        6));
     //! The default alternative has an empty mapping
     mappingVector.push_back(
         ::mlir::rvsdg::MatchRuleAttr::get(Builder_->getContext(), ::llvm::ArrayRef<int64_t>(), 2));
