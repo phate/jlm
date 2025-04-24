@@ -809,7 +809,7 @@ IndirectCallTest1::SetupRvsdg()
         constantFunctionType,
         { iOStateArgument, memoryStateArgument });
 
-    auto lambdaOutput = lambda->finalize(call.Results());
+    auto lambdaOutput = lambda->finalize(outputs(&call));
 
     return std::make_tuple(lambdaOutput, &call);
   };
@@ -952,7 +952,7 @@ IndirectCallTest2::SetupRvsdg()
         constantFunctionType,
         { iOStateArgument, memoryStateArgument });
 
-    auto lambdaOutput = lambda->finalize(call.Results());
+    auto lambdaOutput = lambda->finalize(outputs(&call));
 
     return std::make_tuple(lambdaOutput, &call);
   };
@@ -991,7 +991,7 @@ IndirectCallTest2::SetupRvsdg()
         functionIType,
         { argumentFunctionPtr, iOStateArgument, storeNode[0] });
 
-    auto lambdaOutput = lambda->finalize(call.Results());
+    auto lambdaOutput = lambda->finalize(outputs(&call));
 
     return std::make_tuple(lambdaOutput, &call);
   };
@@ -1088,7 +1088,7 @@ IndirectCallTest2::SetupRvsdg()
         rvsdg::AssertGetOwnerNode<rvsdg::LambdaNode>(functionX).GetOperation().Type(),
         { pzAlloca[0], iOStateArgument, pzMerge });
 
-    auto lambdaOutput = lambda->finalize(callX.Results());
+    auto lambdaOutput = lambda->finalize(outputs(&callX));
     GraphExport::Create(*lambdaOutput, "test2");
 
     return std::make_tuple(
@@ -1209,7 +1209,7 @@ ExternalCallTest1::SetupRvsdg()
         functionGType,
         { loadPath[0], loadMode[0], iOStateArgument, loadMode[1] });
 
-    lambda->finalize(callG.Results());
+    lambda->finalize(outputs(&callG));
     GraphExport::Create(*lambda->output(), "f");
 
     return std::make_tuple(lambda, &callG);
@@ -1338,7 +1338,7 @@ ExternalCallTest2::SetupRvsdg()
       lambdaLlvmLifetimeEndType,
       { twentyFour, allocaResults[0], CallF_->GetIoStateOutput(), storeResults2[0] });
 
-  LambdaG_->finalize(callLLvmLifetimeEnd.Results());
+  LambdaG_->finalize(outputs(&callLLvmLifetimeEnd));
 
   return rvsdgModule;
 }
@@ -1559,7 +1559,7 @@ GammaTest2::SetupRvsdg()
         rvsdg::AssertGetOwnerNode<rvsdg::LambdaNode>(lambdaF).GetOperation().Type(),
         { predicate, allocaXResults[0], allocaYResults[0], iOStateArgument, storeYResults[0] });
 
-    lambda->finalize(call.Results());
+    lambda->finalize(outputs(&call));
     GraphExport::Create(*lambda->output(), functionName);
 
     return std::make_tuple(
@@ -1724,7 +1724,7 @@ DeltaTest1::SetupRvsdg()
         rvsdg::AssertGetOwnerNode<rvsdg::LambdaNode>(*g).GetOperation().Type(),
         { cvf, iOStateArgument, st[0] });
 
-    auto lambdaOutput = lambda->finalize(callG.Results());
+    auto lambdaOutput = lambda->finalize(outputs(&callG));
     GraphExport::Create(*lambda->output(), "h");
 
     return std::make_tuple(lambdaOutput, &callG, jlm::rvsdg::output::GetNode(*five));
@@ -1834,7 +1834,7 @@ DeltaTest2::SetupRvsdg()
         { iOStateArgument, st[0] });
     st = StoreNonVolatileOperation::Create(cvd2, b42, { call.GetMemoryStateOutput() }, 4);
 
-    auto lambdaOutput = lambda->finalize(call.Results());
+    auto lambdaOutput = lambda->finalize(outputs(&call));
     GraphExport::Create(*lambdaOutput, "f2");
 
     return std::make_tuple(lambdaOutput, &call);
@@ -2033,7 +2033,7 @@ ImportTest::SetupRvsdg()
         { iOStateArgument, st[0] });
     st = StoreNonVolatileOperation::Create(cvd2, b21, { call.GetMemoryStateOutput() }, 4);
 
-    auto lambdaOutput = lambda->finalize(call.Results());
+    auto lambdaOutput = lambda->finalize(outputs(&call));
     GraphExport::Create(*lambda->output(), "f2");
 
     return std::make_tuple(lambdaOutput, &call);
@@ -2206,7 +2206,7 @@ PhiTest1::SetupRvsdg()
     auto & call =
         CallNode::CreateNode(fibcv, fibFunctionType, { ten, gep, iOStateArgument, state });
 
-    auto lambdaOutput = lambda->finalize(call.Results());
+    auto lambdaOutput = lambda->finalize(outputs(&call));
     GraphExport::Create(*lambdaOutput, "test");
 
     return std::make_tuple(lambdaOutput, &call, jlm::rvsdg::output::GetNode(*allocaResults[0]));
@@ -2294,7 +2294,7 @@ PhiTest2::SetupRvsdg()
         constantFunctionType,
         { iOStateArgument, memoryStateArgument });
 
-    auto lambdaOutput = lambda->finalize(call.Results());
+    auto lambdaOutput = lambda->finalize(outputs(&call));
 
     return std::make_tuple(lambdaOutput, &call);
   };
@@ -2457,7 +2457,7 @@ PhiTest2::SetupRvsdg()
         recFunctionType,
         { pdAlloca[0], iOStateArgument, pdMerge });
 
-    auto lambdaOutput = lambda->finalize(callA.Results());
+    auto lambdaOutput = lambda->finalize(outputs(&callA));
 
     return std::make_tuple(
         lambdaOutput,
@@ -2538,7 +2538,7 @@ PhiTest2::SetupRvsdg()
         recFunctionType,
         { pTestAlloca[0], iOStateArgument, pTestMerge });
 
-    auto lambdaOutput = lambda->finalize(callA.Results());
+    auto lambdaOutput = lambda->finalize(outputs(&callA));
     GraphExport::Create(*lambdaOutput, "test");
 
     return std::make_tuple(
@@ -2912,7 +2912,7 @@ EscapedMemoryTest2::SetupRvsdg()
         externalFunction1Type,
         { mallocResults[0], iOStateArgument, mergeResult });
 
-    auto lambdaOutput = lambda->finalize(call.Results());
+    auto lambdaOutput = lambda->finalize(outputs(&call));
 
     GraphExport::Create(*lambdaOutput, "CallExternalFunction1");
 
@@ -3219,7 +3219,7 @@ MemcpyTest::SetupRvsdg()
         rvsdg::AssertGetOwnerNode<rvsdg::LambdaNode>(lambdaF).GetOperation().Type(),
         { iOStateArgument, memcpyResults[0] });
 
-    auto lambdaOutput = lambda->finalize(call.Results());
+    auto lambdaOutput = lambda->finalize(outputs(&call));
 
     GraphExport::Create(*lambdaOutput, "g");
 
@@ -3329,7 +3329,7 @@ MemcpyTest2::SetupRvsdg()
         rvsdg::AssertGetOwnerNode<rvsdg::LambdaNode>(functionF).GetOperation().Type(),
         { ldS1[0], ldS2[0], iOStateArgument, ldS2[1] });
 
-    auto lambdaOutput = lambda->finalize(call.Results());
+    auto lambdaOutput = lambda->finalize(outputs(&call));
 
     GraphExport::Create(*lambdaOutput, "f");
 
@@ -3810,7 +3810,7 @@ LambdaCallArgumentMismatch::SetupRvsdg()
         functionTypeCall,
         { loadResults[0], vaList, iOStateArgument, loadResults[1] });
 
-    auto lambdaOutput = lambda->finalize(call.Results());
+    auto lambdaOutput = lambda->finalize(outputs(&call));
 
     GraphExport::Create(*lambdaOutput, "main");
 
@@ -3915,7 +3915,7 @@ VariadicFunctionTest1::SetupRvsdg()
         lambdaFType,
         { allocaResults[0], iOStateArgument, storeResults[0] });
 
-    LambdaG_->finalize(callF.Results());
+    LambdaG_->finalize(outputs(&callF));
   }
 
   return rvsdgModule;
@@ -4132,7 +4132,7 @@ VariadicFunctionTest2::SetupRvsdg()
         lambdaFstType,
         { three, vaListResult, iOStateArgument, memoryStateArgument });
 
-    LambdaG_->finalize(callFst.Results());
+    LambdaG_->finalize(outputs(&callFst));
   }
 
   return rvsdgModule;

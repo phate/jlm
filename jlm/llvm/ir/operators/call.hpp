@@ -328,15 +328,6 @@ public:
   }
 
   /**
-   * @return The outputs of the call node.
-   */
-  [[nodiscard]] std::vector<rvsdg::output *>
-  Results() const noexcept
-  {
-    return rvsdg::outputs(this);
-  }
-
-  /**
    * @return The call node's function input.
    */
   [[nodiscard]] jlm::rvsdg::input *
@@ -440,7 +431,7 @@ public:
       std::shared_ptr<const rvsdg::FunctionType> functionType,
       const std::vector<rvsdg::output *> & arguments)
   {
-    return CreateNode(function, std::move(functionType), arguments).Results();
+    return outputs(&CreateNode(function, std::move(functionType), arguments));
   }
 
   static std::vector<jlm::rvsdg::output *>
@@ -449,7 +440,7 @@ public:
       std::unique_ptr<CallOperation> callOperation,
       const std::vector<rvsdg::output *> & operands)
   {
-    return CreateNode(region, std::move(callOperation), operands).Results();
+    return outputs(&CreateNode(region, std::move(callOperation), operands));
   }
 
   static CallNode &
