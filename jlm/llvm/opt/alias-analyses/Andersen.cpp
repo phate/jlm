@@ -621,8 +621,8 @@ Andersen::AnalyzeSimpleNode(const rvsdg::SimpleNode & node)
     AnalyzeLoad(node);
   else if (is<StoreOperation>(&node))
     AnalyzeStore(node);
-  else if (const auto callNode = dynamic_cast<const CallNode *>(&node))
-    AnalyzeCall(*callNode);
+  else if (is<CallOperation>(&node))
+    AnalyzeCall(node);
   else if (is<GetElementPtrOperation>(op))
     AnalyzeGep(node);
   else if (is<bitcast_op>(op))
@@ -735,8 +735,10 @@ Andersen::AnalyzeStore(const rvsdg::SimpleNode & node)
 }
 
 void
-Andersen::AnalyzeCall(const CallNode & callNode)
+Andersen::AnalyzeCall(const rvsdg::SimpleNode & callNode)
 {
+  JLM_ASSERT(is<CallOperation>(&callNode));
+
   // The address being called by the call node
   const auto & callTarget = *CallOperation::GetFunctionInput(callNode).origin();
   const auto callTargetPO = Set_->GetRegisterPointerObject(callTarget);
