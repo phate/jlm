@@ -118,14 +118,6 @@ public:
   ConvertFpBinaryNode(const jlm::llvm::fpbin_op & op, ::llvm::SmallVector<::mlir::Value> inputs);
 
   /**
-   * Converts an fpcmp an mlir::arith::CmpFPredicate.
-   * \param op The fpcmp to be converted.
-   * \result The corresponding CmpFPredicate.
-   */
-  ::mlir::arith::CmpFPredicate
-  ConvertFPCMP(const llvm::fpcmp & op);
-
-  /**
    * Converts an fpcmp_op to an MLIR operation.
    * \param op The fpcmp_op to be converted.
    * \param inputs The inputs to the fpcmp_op.
