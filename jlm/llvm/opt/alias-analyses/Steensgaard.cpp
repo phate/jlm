@@ -1245,7 +1245,7 @@ Steensgaard::AnalyzeExternalCall(const CallNode & callNode)
   // Mark results of external function call as pointing to escaped and external
   for (size_t n = 0; n < callNode.noutputs(); n++)
   {
-    auto & callResult = *callNode.Result(n);
+    auto & callResult = *callNode.output(n);
 
     if (HasOrContainsPointerType(callResult))
     {

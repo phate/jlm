@@ -624,7 +624,7 @@ HandleCallingExternalFunction(
 
   for (size_t n = 0; n < callNode.noutputs(); n++)
   {
-    const auto & outputRegister = *callNode.Result(n);
+    const auto & outputRegister = *callNode.output(n);
     const auto outputRegisterPO = set.TryGetRegisterPointerObject(outputRegister);
     if (outputRegisterPO)
       markAsPointsToExternal(outputRegisterPO.value());
@@ -700,7 +700,7 @@ HandleLambdaCallReturnValues(
   auto lambdaResults = lambdaNode.GetFunctionResults();
   for (size_t n = 0; n < callNode.noutputs() && n < lambdaResults.size(); n++)
   {
-    const auto & outputRegister = *callNode.Result(n);
+    const auto & outputRegister = *callNode.output(n);
     const auto & resultRegister = *lambdaResults[n]->origin();
 
     const auto outputRegisterPO = set.TryGetRegisterPointerObject(outputRegister);
@@ -1175,7 +1175,7 @@ CreateSubsetGraphEdges(
       }
       for (size_t i = 0; i < callNode.noutputs(); i++)
       {
-        if (auto outputRegister = set.TryGetRegisterPointerObject(*callNode.Result(i)))
+        if (auto outputRegister = set.TryGetRegisterPointerObject(*callNode.output(i)))
         {
           const auto label = util::strfmt("call", callConstraintIndex, " output", i);
           graph.GetNode(*outputRegister).AppendToLabel(label);
@@ -1301,7 +1301,7 @@ PointerObjectConstraintSet::CreateOvsSubsetGraph()
       // Mark all results of function calls as non-direct nodes
       for (size_t n = 0; n < callNode.noutputs(); n++)
       {
-        if (auto resultPO = Set_.TryGetRegisterPointerObject(*callNode.Result(n)))
+        if (auto resultPO = Set_.TryGetRegisterPointerObject(*callNode.output(n)))
           isDirectNode[*resultPO] = false;
       }
     }

@@ -325,17 +325,6 @@ public:
   }
 
   /**
-   * @param n The index of the function result.
-   * @return The output for the given index \p n.
-   */
-  [[nodiscard]] jlm::rvsdg::output *
-  Result(size_t n) const noexcept
-  {
-    JLM_ASSERT(n < noutputs());
-    return output(n);
-  }
-
-  /**
    * @return The outputs of the call node.
    */
   [[nodiscard]] std::vector<rvsdg::output *>

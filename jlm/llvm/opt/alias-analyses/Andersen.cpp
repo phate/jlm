@@ -744,7 +744,7 @@ Andersen::AnalyzeCall(const CallNode & callNode)
   // Create PointerObjects for all output values of pointer type
   for (size_t n = 0; n < callNode.noutputs(); n++)
   {
-    const auto & outputRegister = *callNode.Result(n);
+    const auto & outputRegister = *callNode.output(n);
     if (IsOrContainsPointerType(outputRegister.type()))
       (void)Set_->CreateRegisterPointerObject(outputRegister);
   }

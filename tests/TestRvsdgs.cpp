@@ -594,7 +594,7 @@ CallTest1::SetupRvsdg()
         g->GetOperation().Type(),
         { z[0], z[0], callF.GetIoStateOutput(), callF.GetMemoryStateOutput() });
 
-    auto sum = jlm::rvsdg::bitadd_op::create(32, callF.Result(0), callG.Result(0));
+    auto sum = jlm::rvsdg::bitadd_op::create(32, callF.output(0), callG.output(0));
 
     lambda->finalize({ sum, callG.GetIoStateOutput(), callG.GetMemoryStateOutput() });
     GraphExport::Create(*lambda->output(), "h");
@@ -722,11 +722,11 @@ CallTest2::SetupRvsdg()
     auto & destroy1 = CallNode::CreateNode(
         destroy_cv,
         lambdaDestroy->GetOperation().Type(),
-        { create1.Result(0), create2.GetIoStateOutput(), create2.GetMemoryStateOutput() });
+        { create1.output(0), create2.GetIoStateOutput(), create2.GetMemoryStateOutput() });
     auto & destroy2 = CallNode::CreateNode(
         destroy_cv,
         lambdaDestroy->GetOperation().Type(),
-        { create2.Result(0), destroy1.GetIoStateOutput(), destroy1.GetMemoryStateOutput() });
+        { create2.output(0), destroy1.GetIoStateOutput(), destroy1.GetMemoryStateOutput() });
 
     lambda->finalize({ destroy2.GetIoStateOutput(), destroy2.GetMemoryStateOutput() });
     GraphExport::Create(*lambda->output(), "test");
@@ -840,7 +840,7 @@ IndirectCallTest1::SetupRvsdg()
         rvsdg::AssertGetOwnerNode<rvsdg::LambdaNode>(*fctindcall).GetOperation().Type(),
         { fctthree_cv, call_four.GetIoStateOutput(), call_four.GetMemoryStateOutput() });
 
-    auto add = jlm::rvsdg::bitadd_op::create(32, call_four.Result(0), call_three.Result(0));
+    auto add = jlm::rvsdg::bitadd_op::create(32, call_four.output(0), call_three.output(0));
 
     auto lambdaOutput =
         lambda->finalize({ add, call_three.GetIoStateOutput(), call_three.GetMemoryStateOutput() });
@@ -1047,7 +1047,7 @@ IndirectCallTest2::SetupRvsdg()
         jlm::rvsdg::bittype::Create(32),
         4);
 
-    auto sum = jlm::rvsdg::bitadd_op::create(32, callX.Result(0), callY.Result(0));
+    auto sum = jlm::rvsdg::bitadd_op::create(32, callX.output(0), callY.output(0));
     sum = jlm::rvsdg::bitadd_op::create(32, sum, loadG1[0]);
     sum = jlm::rvsdg::bitadd_op::create(32, sum, loadG2[0]);
 
@@ -2331,7 +2331,7 @@ PhiTest2::SetupRvsdg()
         recFunctionType,
         { paAlloca[0], callB.GetIoStateOutput(), callB.GetMemoryStateOutput() });
 
-    auto sum = jlm::rvsdg::bitadd_op::create(32, callB.Result(0), callD.Result(0));
+    auto sum = jlm::rvsdg::bitadd_op::create(32, callB.output(0), callD.output(0));
 
     auto lambdaOutput =
         lambda->finalize({ sum, callD.GetIoStateOutput(), callD.GetMemoryStateOutput() });
@@ -2381,7 +2381,7 @@ PhiTest2::SetupRvsdg()
         recFunctionType,
         { pbAlloca[0], callI.GetIoStateOutput(), callI.GetMemoryStateOutput() });
 
-    auto sum = jlm::rvsdg::bitadd_op::create(32, callI.Result(0), callC.Result(0));
+    auto sum = jlm::rvsdg::bitadd_op::create(32, callI.output(0), callC.output(0));
 
     auto lambdaOutput =
         lambda->finalize({ sum, callC.GetIoStateOutput(), callC.GetMemoryStateOutput() });
@@ -2424,7 +2424,7 @@ PhiTest2::SetupRvsdg()
         jlm::rvsdg::bittype::Create(32),
         4);
 
-    auto sum = jlm::rvsdg::bitadd_op::create(32, callA.Result(0), loadX[0]);
+    auto sum = jlm::rvsdg::bitadd_op::create(32, callA.output(0), loadX[0]);
 
     auto lambdaOutput = lambda->finalize({ sum, callA.GetIoStateOutput(), loadX[1] });
 
@@ -2944,7 +2944,7 @@ EscapedMemoryTest2::SetupRvsdg()
         { iOStateArgument, memoryStateArgument });
 
     auto loadResults = LoadNonVolatileOperation::Create(
-        call.Result(0),
+        call.output(0),
         { call.GetMemoryStateOutput() },
         jlm::rvsdg::bittype::Create(32),
         4);
@@ -3058,7 +3058,7 @@ EscapedMemoryTest3::SetupRvsdg()
         { iOStateArgument, memoryStateArgument });
 
     auto loadResults = LoadNonVolatileOperation::Create(
-        call.Result(0),
+        call.output(0),
         { call.GetMemoryStateOutput() },
         rvsdg::bittype::Create(32),
         4);
@@ -3883,7 +3883,7 @@ VariadicFunctionTest1::SetupRvsdg()
         { one, varArgList, iOStateArgument, memoryStateArgument });
 
     auto storeResults = StoreNonVolatileOperation::Create(
-        CallH_->Result(0),
+        CallH_->output(0),
         three,
         { CallH_->GetMemoryStateOutput() },
         4);

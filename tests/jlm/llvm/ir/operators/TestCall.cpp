@@ -82,9 +82,9 @@ TestCallNodeAccessors()
   assert(callNode.Argument(2)->origin() == m);
 
   assert(callNode.noutputs() == 3);
-  assert(callNode.Result(0)->type() == *valueType);
-  assert(callNode.Result(1)->type() == *iOStateType);
-  assert(callNode.Result(2)->type() == *memoryStateType);
+  assert(callNode.output(0)->type() == *valueType);
+  assert(callNode.output(1)->type() == *iOStateType);
+  assert(callNode.output(2)->type() == *memoryStateType);
 
   assert(callNode.GetFunctionInput()->origin() == f);
   assert(callNode.GetIoStateInput()->origin() == i);
