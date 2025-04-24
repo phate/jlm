@@ -81,6 +81,18 @@ public:
     return *functionInput;
   }
 
+  /**
+   * @return The call node's input/output state input.
+   */
+  [[nodiscard]] static rvsdg::input &
+  GetIOStateInput(const rvsdg::SimpleNode & node) noexcept
+  {
+    JLM_ASSERT(is<CallOperation>(&node));
+    const auto ioState = node.input(node.ninputs() - 2);
+    JLM_ASSERT(is<IOStateType>(ioState->type()));
+    return *ioState;
+  }
+
   static std::unique_ptr<tac>
   create(
       const variable * function,
@@ -337,17 +349,6 @@ public:
   GetOperation() const noexcept override
   {
     return *jlm::util::AssertedCast<const CallOperation>(&SimpleNode::GetOperation());
-  }
-
-  /**
-   * @return The call node's input/output state input.
-   */
-  [[nodiscard]] jlm::rvsdg::input *
-  GetIoStateInput() const noexcept
-  {
-    auto iOState = input(ninputs() - 2);
-    JLM_ASSERT(is<IOStateType>(iOState->type()));
-    return iOState;
   }
 
   /**
