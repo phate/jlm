@@ -1026,13 +1026,13 @@ public:
     return *Gamma_;
   }
 
-  [[nodiscard]] llvm::CallNode &
+  [[nodiscard]] rvsdg::SimpleNode &
   GetCallFromG() const noexcept
   {
     return *CallFromG_;
   }
 
-  [[nodiscard]] llvm::CallNode &
+  [[nodiscard]] rvsdg::SimpleNode &
   GetCallFromH() const noexcept
   {
     return *CallFromH_;
@@ -1078,8 +1078,8 @@ private:
 
   rvsdg::GammaNode * Gamma_;
 
-  llvm::CallNode * CallFromG_;
-  llvm::CallNode * CallFromH_;
+  rvsdg::SimpleNode * CallFromG_;
+  rvsdg::SimpleNode * CallFromH_;
 
   rvsdg::Node * AllocaXFromG_;
   rvsdg::Node * AllocaYFromG_;
@@ -2349,7 +2349,7 @@ public:
     return *LambdaG_;
   }
 
-  [[nodiscard]] const llvm::CallNode &
+  [[nodiscard]] const rvsdg::SimpleNode &
   GetCall() const noexcept
   {
     return *Call_;
@@ -2361,7 +2361,7 @@ private:
 
   rvsdg::LambdaNode * LambdaG_ = {};
   rvsdg::LambdaNode * LambdaMain_ = {};
-  llvm::CallNode * Call_ = {};
+  rvsdg::SimpleNode * Call_ = {};
 };
 
 /** \brief RVSDG module with a call to free(NULL).
@@ -2445,7 +2445,7 @@ public:
     return *ImportH_;
   }
 
-  [[nodiscard]] llvm::CallNode &
+  [[nodiscard]] rvsdg::SimpleNode &
   GetCallH() const noexcept
   {
     JLM_ASSERT(CallH_ != nullptr);
@@ -2468,7 +2468,7 @@ private:
 
   rvsdg::RegionArgument * ImportH_ = {};
 
-  llvm::CallNode * CallH_ = {};
+  rvsdg::SimpleNode * CallH_ = {};
 
   rvsdg::Node * AllocaNode_ = {};
 };
