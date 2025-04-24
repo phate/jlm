@@ -615,7 +615,7 @@ HandleCallingExternalFunction(
   // Mark all the call's inputs as escaped, and all the outputs as pointing to external
   for (size_t n = 0; n < CallOperation::NumArguments(callNode); n++)
   {
-    const auto & inputRegister = *callNode.Argument(n)->origin();
+    const auto & inputRegister = *CallOperation::Argument(callNode, n)->origin();
     const auto inputRegisterPO = set.TryGetRegisterPointerObject(inputRegister);
 
     if (inputRegisterPO)
@@ -673,7 +673,7 @@ HandleLambdaCallParameters(
   auto lambdaArgs = lambdaNode.GetFunctionArguments();
   for (size_t n = 0; n < CallOperation::NumArguments(callNode) && n < lambdaArgs.size(); n++)
   {
-    const auto & inputRegister = *callNode.Argument(n)->origin();
+    const auto & inputRegister = *CallOperation::Argument(callNode, n)->origin();
     const auto & argumentRegister = *lambdaArgs[n];
 
     const auto inputRegisterPO = set.TryGetRegisterPointerObject(inputRegister);
@@ -1167,7 +1167,8 @@ CreateSubsetGraphEdges(
       auto & callNode = callConstraint->GetCallNode();
       for (size_t i = 0; i < CallOperation::NumArguments(callNode); i++)
       {
-        if (auto inputRegister = set.TryGetRegisterPointerObject(*callNode.Argument(i)->origin()))
+        if (auto inputRegister =
+                set.TryGetRegisterPointerObject(*CallOperation::Argument(callNode, i)->origin()))
         {
           const auto label = util::strfmt("call", callConstraintIndex, " input", i);
           graph.GetNode(*inputRegister).AppendToLabel(label);

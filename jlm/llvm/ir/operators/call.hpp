@@ -56,6 +56,19 @@ public:
     return node.ninputs() - 1;
   }
 
+  /**
+   * @param node The call node
+   * @param n The index of the function argument.
+   * @return The input for the given index \p n.
+   */
+  [[nodiscard]] static rvsdg::input *
+  Argument(const rvsdg::SimpleNode & node, const size_t n)
+  {
+    JLM_ASSERT(is<CallOperation>(&node));
+    JLM_ASSERT(n < CallOperation::NumArguments(node));
+    return node.input(n + 1);
+  }
+
   static std::unique_ptr<tac>
   create(
       const variable * function,
@@ -312,17 +325,6 @@ public:
   GetOperation() const noexcept override
   {
     return *jlm::util::AssertedCast<const CallOperation>(&SimpleNode::GetOperation());
-  }
-
-  /**
-   * @param n The index of the function argument.
-   * @return The input for the given index \p n.
-   */
-  [[nodiscard]] jlm::rvsdg::input *
-  Argument(size_t n) const
-  {
-    JLM_ASSERT(n < CallOperation::NumArguments(*this));
-    return input(n + 1);
   }
 
   /**

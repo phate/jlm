@@ -77,9 +77,9 @@ TestCallNodeAccessors()
   // Assert
   assert(CallOperation::NumArguments(callNode) == 3);
   assert(CallOperation::NumArguments(callNode) == callNode.ninputs() - 1);
-  assert(callNode.Argument(0)->origin() == v);
-  assert(callNode.Argument(1)->origin() == i);
-  assert(callNode.Argument(2)->origin() == m);
+  assert(CallOperation::Argument(callNode, 0)->origin() == v);
+  assert(CallOperation::Argument(callNode, 1)->origin() == i);
+  assert(CallOperation::Argument(callNode, 2)->origin() == m);
 
   assert(callNode.noutputs() == 3);
   assert(callNode.output(0)->type() == *valueType);

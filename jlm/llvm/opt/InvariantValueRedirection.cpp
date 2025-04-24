@@ -247,7 +247,7 @@ InvariantValueRedirection::RedirectCallOutputs(CallNode & callNode)
         }
         else
         {
-          auto callOperand = callNode.Argument(origin->index())->origin();
+          auto callOperand = CallOperation::Argument(callNode, origin->index())->origin();
           callOutput->divert_users(callOperand);
         }
       }
