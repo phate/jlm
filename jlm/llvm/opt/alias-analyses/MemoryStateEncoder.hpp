@@ -121,13 +121,13 @@ private:
   EncodeFree(const rvsdg::SimpleNode & freeNode);
 
   void
-  EncodeCall(const CallNode & callNode);
+  EncodeCall(const rvsdg::SimpleNode & callNode);
 
   void
-  EncodeCallEntry(const CallNode & callNode);
+  EncodeCallEntry(const rvsdg::SimpleNode & callNode);
 
   void
-  EncodeCallExit(const CallNode & callNode);
+  EncodeCallExit(const rvsdg::SimpleNode & callNode);
 
   void
   EncodeMemcpy(const rvsdg::SimpleNode & memcpyNode);
