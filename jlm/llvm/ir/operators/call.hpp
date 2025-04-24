@@ -16,197 +16,6 @@
 namespace jlm::llvm
 {
 
-/** \brief Call operation class
- *
- */
-class CallOperation final : public jlm::rvsdg::SimpleOperation
-{
-public:
-  ~CallOperation() override;
-
-  explicit CallOperation(std::shared_ptr<const rvsdg::FunctionType> functionType)
-      : SimpleOperation(create_srctypes(functionType), functionType->Results()),
-        FunctionType_(std::move(functionType))
-  {}
-
-  bool
-  operator==(const Operation & other) const noexcept override;
-
-  [[nodiscard]] std::string
-  debug_string() const override;
-
-  [[nodiscard]] const std::shared_ptr<const rvsdg::FunctionType> &
-  GetFunctionType() const noexcept
-  {
-    return FunctionType_;
-  }
-
-  [[nodiscard]] std::unique_ptr<Operation>
-  copy() const override;
-
-  /**
-   * @return The number of arguments to the call.
-   *
-   * \note This is equivalent to ninputs() - 1 as NumArguments() ignores the function input.
-   */
-  [[nodiscard]] static size_t
-  NumArguments(const rvsdg::SimpleNode & node) noexcept
-  {
-    JLM_ASSERT(is<CallOperation>(&node));
-    return node.ninputs() - 1;
-  }
-
-  /**
-   * @param node The call node
-   * @param n The index of the function argument.
-   * @return The input for the given index \p n.
-   */
-  [[nodiscard]] static rvsdg::input *
-  Argument(const rvsdg::SimpleNode & node, const size_t n)
-  {
-    JLM_ASSERT(is<CallOperation>(&node));
-    JLM_ASSERT(n < CallOperation::NumArguments(node));
-    return node.input(n + 1);
-  }
-
-  /**
-   * @return The call node's function input.
-   */
-  [[nodiscard]] static rvsdg::input &
-  GetFunctionInput(const rvsdg::SimpleNode & node) noexcept
-  {
-    JLM_ASSERT(is<CallOperation>(&node));
-    const auto functionInput = node.input(0);
-    JLM_ASSERT(is<rvsdg::FunctionType>(functionInput->type()));
-    return *functionInput;
-  }
-
-  /**
-   * @return The call node's input/output state input.
-   */
-  [[nodiscard]] static rvsdg::input &
-  GetIOStateInput(const rvsdg::SimpleNode & node) noexcept
-  {
-    JLM_ASSERT(is<CallOperation>(&node));
-    const auto ioState = node.input(node.ninputs() - 2);
-    JLM_ASSERT(is<IOStateType>(ioState->type()));
-    return *ioState;
-  }
-
-  /**
-   * @return The call node's input/output state output.
-   */
-  [[nodiscard]] static rvsdg::output &
-  GetIOStateOutput(const rvsdg::SimpleNode & node) noexcept
-  {
-    JLM_ASSERT(is<CallOperation>(&node));
-    const auto ioState = node.output(node.noutputs() - 2);
-    JLM_ASSERT(is<IOStateType>(ioState->type()));
-    return *ioState;
-  }
-
-  /**
-   * @return The call node's memory state input.
-   */
-  [[nodiscard]] static rvsdg::input &
-  GetMemoryStateInput(const rvsdg::SimpleNode & node) noexcept
-  {
-    JLM_ASSERT(is<CallOperation>(&node));
-    const auto memoryState = node.input(node.ninputs() - 1);
-    JLM_ASSERT(is<MemoryStateType>(memoryState->type()));
-    return *memoryState;
-  }
-
-  /**
-   * @return The call node's memory state output.
-   */
-  [[nodiscard]] static rvsdg::output &
-  GetMemoryStateOutput(const rvsdg::SimpleNode & node) noexcept
-  {
-    JLM_ASSERT(is<CallOperation>(&node));
-    const auto memoryState = node.output(node.noutputs() - 1);
-    JLM_ASSERT(is<MemoryStateType>(memoryState->type()));
-    return *memoryState;
-  }
-
-  /**
-   *
-   * @param callNode The call node for which to retrieve the CallEntryMemoryStateMergeOperation
-   * node.
-   * @return The CallEntryMemoryStateMergeOperation node connected to the memory state input if
-   * present, otherwise nullptr.
-   *
-   * @see GetMemoryStateInput()
-   * @see GetMemoryStateExitSplit()
-   */
-  [[nodiscard]] static rvsdg::SimpleNode *
-  GetMemoryStateEntryMerge(const rvsdg::SimpleNode & callNode) noexcept
-  {
-    JLM_ASSERT(is<CallOperation>(&callNode));
-    const auto node = rvsdg::output::GetNode(*GetMemoryStateInput(callNode).origin());
-    return is<CallEntryMemoryStateMergeOperation>(node) ? dynamic_cast<rvsdg::SimpleNode *>(node)
-                                                        : nullptr;
-  }
-
-  /**
-   *
-   * @param callNode The call node for which to retrieve the CallExitMemoryStateSplitOperation node.
-   * @return The CallExitMemoryStateSplitOperation node connected to the memory state output if
-   * present, otherwise nullptr.
-   *
-   * @see GetMemoryStateOutput()
-   * @see GetMemoryStateEntryMerge()
-   */
-  [[nodiscard]] static rvsdg::SimpleNode *
-  GetMemoryStateExitSplit(const rvsdg::SimpleNode & callNode) noexcept
-  {
-    JLM_ASSERT(is<CallOperation>(&callNode));
-
-    // If a memory state exit split node is present, then we would expect the node to be the only
-    // user of the memory state output.
-    if (GetMemoryStateOutput(callNode).nusers() != 1)
-      return nullptr;
-
-    auto node = rvsdg::node_input::GetNode(**GetMemoryStateOutput(callNode).begin());
-    return is<CallExitMemoryStateSplitOperation>(node) ? dynamic_cast<rvsdg::SimpleNode *>(node)
-                                                       : nullptr;
-  }
-
-  static std::unique_ptr<tac>
-  create(
-      const variable * function,
-      std::shared_ptr<const rvsdg::FunctionType> functionType,
-      const std::vector<const variable *> & arguments)
-  {
-    CheckFunctionInputType(function->type());
-
-    CallOperation op(std::move(functionType));
-    std::vector<const variable *> operands({ function });
-    operands.insert(operands.end(), arguments.begin(), arguments.end());
-    return tac::create(op, operands);
-  }
-
-private:
-  static inline std::vector<std::shared_ptr<const rvsdg::Type>>
-  create_srctypes(const std::shared_ptr<const rvsdg::FunctionType> & functionType)
-  {
-    std::vector<std::shared_ptr<const rvsdg::Type>> types({ functionType });
-    for (auto & argumentType : functionType->Arguments())
-      types.emplace_back(argumentType);
-
-    return types;
-  }
-
-  static void
-  CheckFunctionInputType(const jlm::rvsdg::Type & type)
-  {
-    if (!is<rvsdg::FunctionType>(type))
-      throw jlm::util::error("Expected function type.");
-  }
-
-  std::shared_ptr<const rvsdg::FunctionType> FunctionType_;
-};
-
 /** \brief Call node classifier
  *
  * The CallTypeClassifier class provides information about the call type of a call node.
@@ -410,6 +219,221 @@ private:
   jlm::rvsdg::output * Output_;
 };
 
+/** \brief Call operation class
+ *
+ */
+class CallOperation final : public jlm::rvsdg::SimpleOperation
+{
+public:
+  ~CallOperation() override;
+
+  explicit CallOperation(std::shared_ptr<const rvsdg::FunctionType> functionType)
+      : SimpleOperation(create_srctypes(functionType), functionType->Results()),
+        FunctionType_(std::move(functionType))
+  {}
+
+  bool
+  operator==(const Operation & other) const noexcept override;
+
+  [[nodiscard]] std::string
+  debug_string() const override;
+
+  [[nodiscard]] const std::shared_ptr<const rvsdg::FunctionType> &
+  GetFunctionType() const noexcept
+  {
+    return FunctionType_;
+  }
+
+  [[nodiscard]] std::unique_ptr<Operation>
+  copy() const override;
+
+  /**
+   * @return The number of arguments to the call.
+   *
+   * \note This is equivalent to ninputs() - 1 as NumArguments() ignores the function input.
+   */
+  [[nodiscard]] static size_t
+  NumArguments(const rvsdg::SimpleNode & node) noexcept
+  {
+    JLM_ASSERT(is<CallOperation>(&node));
+    return node.ninputs() - 1;
+  }
+
+  /**
+   * @param node The call node
+   * @param n The index of the function argument.
+   * @return The input for the given index \p n.
+   */
+  [[nodiscard]] static rvsdg::input *
+  Argument(const rvsdg::SimpleNode & node, const size_t n)
+  {
+    JLM_ASSERT(is<CallOperation>(&node));
+    JLM_ASSERT(n < CallOperation::NumArguments(node));
+    return node.input(n + 1);
+  }
+
+  /**
+   * @return The call node's function input.
+   */
+  [[nodiscard]] static rvsdg::input &
+  GetFunctionInput(const rvsdg::SimpleNode & node) noexcept
+  {
+    JLM_ASSERT(is<CallOperation>(&node));
+    const auto functionInput = node.input(0);
+    JLM_ASSERT(is<rvsdg::FunctionType>(functionInput->type()));
+    return *functionInput;
+  }
+
+  /**
+   * @return The call node's input/output state input.
+   */
+  [[nodiscard]] static rvsdg::input &
+  GetIOStateInput(const rvsdg::SimpleNode & node) noexcept
+  {
+    JLM_ASSERT(is<CallOperation>(&node));
+    const auto ioState = node.input(node.ninputs() - 2);
+    JLM_ASSERT(is<IOStateType>(ioState->type()));
+    return *ioState;
+  }
+
+  /**
+   * @return The call node's input/output state output.
+   */
+  [[nodiscard]] static rvsdg::output &
+  GetIOStateOutput(const rvsdg::SimpleNode & node) noexcept
+  {
+    JLM_ASSERT(is<CallOperation>(&node));
+    const auto ioState = node.output(node.noutputs() - 2);
+    JLM_ASSERT(is<IOStateType>(ioState->type()));
+    return *ioState;
+  }
+
+  /**
+   * @return The call node's memory state input.
+   */
+  [[nodiscard]] static rvsdg::input &
+  GetMemoryStateInput(const rvsdg::SimpleNode & node) noexcept
+  {
+    JLM_ASSERT(is<CallOperation>(&node));
+    const auto memoryState = node.input(node.ninputs() - 1);
+    JLM_ASSERT(is<MemoryStateType>(memoryState->type()));
+    return *memoryState;
+  }
+
+  /**
+   * @return The call node's memory state output.
+   */
+  [[nodiscard]] static rvsdg::output &
+  GetMemoryStateOutput(const rvsdg::SimpleNode & node) noexcept
+  {
+    JLM_ASSERT(is<CallOperation>(&node));
+    const auto memoryState = node.output(node.noutputs() - 1);
+    JLM_ASSERT(is<MemoryStateType>(memoryState->type()));
+    return *memoryState;
+  }
+
+  /**
+   *
+   * @param callNode The call node for which to retrieve the CallEntryMemoryStateMergeOperation
+   * node.
+   * @return The CallEntryMemoryStateMergeOperation node connected to the memory state input if
+   * present, otherwise nullptr.
+   *
+   * @see GetMemoryStateInput()
+   * @see GetMemoryStateExitSplit()
+   */
+  [[nodiscard]] static rvsdg::SimpleNode *
+  GetMemoryStateEntryMerge(const rvsdg::SimpleNode & callNode) noexcept
+  {
+    JLM_ASSERT(is<CallOperation>(&callNode));
+    const auto node = rvsdg::output::GetNode(*GetMemoryStateInput(callNode).origin());
+    return is<CallEntryMemoryStateMergeOperation>(node) ? dynamic_cast<rvsdg::SimpleNode *>(node)
+                                                        : nullptr;
+  }
+
+  /**
+   *
+   * @param callNode The call node for which to retrieve the CallExitMemoryStateSplitOperation node.
+   * @return The CallExitMemoryStateSplitOperation node connected to the memory state output if
+   * present, otherwise nullptr.
+   *
+   * @see GetMemoryStateOutput()
+   * @see GetMemoryStateEntryMerge()
+   */
+  [[nodiscard]] static rvsdg::SimpleNode *
+  GetMemoryStateExitSplit(const rvsdg::SimpleNode & callNode) noexcept
+  {
+    JLM_ASSERT(is<CallOperation>(&callNode));
+
+    // If a memory state exit split node is present, then we would expect the node to be the only
+    // user of the memory state output.
+    if (GetMemoryStateOutput(callNode).nusers() != 1)
+      return nullptr;
+
+    auto node = rvsdg::node_input::GetNode(**GetMemoryStateOutput(callNode).begin());
+    return is<CallExitMemoryStateSplitOperation>(node) ? dynamic_cast<rvsdg::SimpleNode *>(node)
+                                                       : nullptr;
+  }
+
+  /**
+   * \brief Traces function input of call node
+   *
+   * Traces the function input of a call node upwards, trying to
+   * find the corresponding lambda output. The function can handle
+   * invariant gamma exit variables and invariant theta loop variables.
+   *
+   * \param callNode A call node.
+   *
+   * \return The traced output.
+   */
+  static rvsdg::output *
+  TraceFunctionInput(const rvsdg::SimpleNode & callNode);
+
+  /** \brief Classifies a call node.
+   *
+   * Classifies a call node according to its call type.
+   *
+   * @param callNode A call node.
+   * @return A CallTypeClassifier.
+   */
+  static std::unique_ptr<CallTypeClassifier>
+  ClassifyCall(const rvsdg::SimpleNode & callNode);
+
+  static std::unique_ptr<tac>
+  create(
+      const variable * function,
+      std::shared_ptr<const rvsdg::FunctionType> functionType,
+      const std::vector<const variable *> & arguments)
+  {
+    CheckFunctionInputType(function->type());
+
+    CallOperation op(std::move(functionType));
+    std::vector<const variable *> operands({ function });
+    operands.insert(operands.end(), arguments.begin(), arguments.end());
+    return tac::create(op, operands);
+  }
+
+private:
+  static inline std::vector<std::shared_ptr<const rvsdg::Type>>
+  create_srctypes(const std::shared_ptr<const rvsdg::FunctionType> & functionType)
+  {
+    std::vector<std::shared_ptr<const rvsdg::Type>> types({ functionType });
+    for (auto & argumentType : functionType->Arguments())
+      types.emplace_back(argumentType);
+
+    return types;
+  }
+
+  static void
+  CheckFunctionInputType(const jlm::rvsdg::Type & type)
+  {
+    if (!is<rvsdg::FunctionType>(type))
+      throw jlm::util::error("Expected function type.");
+  }
+
+  std::shared_ptr<const rvsdg::FunctionType> FunctionType_;
+};
+
 /** \brief Call node
  *
  */
@@ -476,30 +500,6 @@ public:
 
     return CreateNode(*function->region(), std::move(callOperation), operands);
   }
-
-  /**
-   * \brief Traces function input of call node
-   *
-   * Traces the function input of a call node upwards, trying to
-   * find the corresponding lambda output. The function can handle
-   * invariant gamma exit variables and invariant theta loop variables.
-   *
-   * \param callNode A call node.
-   *
-   * \return The traced output.
-   */
-  static jlm::rvsdg::output *
-  TraceFunctionInput(const CallNode & callNode);
-
-  /** \brief Classifies a call node.
-   *
-   * Classifies a call node according to its call type.
-   *
-   * @param callNode A call node.
-   * @return A CallTypeClassifier.
-   */
-  static std::unique_ptr<CallTypeClassifier>
-  ClassifyCall(const CallNode & callNode);
 
 private:
   static void

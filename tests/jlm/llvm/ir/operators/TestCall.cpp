@@ -148,7 +148,7 @@ TestCallTypeClassifierIndirectCall()
   auto [callNode, loadOutput] = SetupFunction();
 
   // Act
-  auto callTypeClassifier = CallNode::ClassifyCall(*callNode);
+  auto callTypeClassifier = CallOperation::ClassifyCall(*callNode);
 
   // Assert
   assert(callTypeClassifier->IsIndirectCall());
@@ -244,7 +244,7 @@ TestCallTypeClassifierNonRecursiveDirectCall()
   //	jlm::rvsdg::view(&graph->GetRootRegion(), stdout);
 
   // Act
-  auto callTypeClassifier = CallNode::ClassifyCall(*callNode);
+  auto callTypeClassifier = CallOperation::ClassifyCall(*callNode);
 
   // Assert
   assert(callTypeClassifier->IsNonRecursiveDirectCall());
@@ -358,7 +358,7 @@ TestCallTypeClassifierNonRecursiveDirectCallTheta()
   jlm::rvsdg::view(&graph->GetRootRegion(), stdout);
 
   // Act
-  auto callTypeClassifier = CallNode::ClassifyCall(*callNode);
+  auto callTypeClassifier = CallOperation::ClassifyCall(*callNode);
 
   // Assert
   assert(callTypeClassifier->IsNonRecursiveDirectCall());
@@ -480,8 +480,8 @@ TestCallTypeClassifierRecursiveDirectCall()
   auto [fibfct, callFib1, callFib2] = SetupFib();
 
   // Act
-  auto callTypeClassifier1 = CallNode::ClassifyCall(*callFib1);
-  auto callTypeClassifier2 = CallNode::ClassifyCall(*callFib2);
+  auto callTypeClassifier1 = CallOperation::ClassifyCall(*callFib1);
+  auto callTypeClassifier2 = CallOperation::ClassifyCall(*callFib2);
 
   // Assert
   assert(callTypeClassifier1->IsRecursiveDirectCall());

@@ -1154,7 +1154,7 @@ Steensgaard::AnalyzeStore(const rvsdg::SimpleNode & node)
 void
 Steensgaard::AnalyzeCall(const CallNode & callNode)
 {
-  auto callTypeClassifier = CallNode::ClassifyCall(callNode);
+  auto callTypeClassifier = CallOperation::ClassifyCall(callNode);
   switch (callTypeClassifier->GetCallType())
   {
   case CallTypeClassifier::CallType::NonRecursiveDirectCall:

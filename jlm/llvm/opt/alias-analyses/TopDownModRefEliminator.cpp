@@ -91,7 +91,7 @@ public:
   [[nodiscard]] const util::HashSet<const PointsToGraph::MemoryNode *> &
   GetCallEntryNodes(const CallNode & callNode) const override
   {
-    auto callTypeClassifier = CallNode::ClassifyCall(callNode);
+    auto callTypeClassifier = CallOperation::ClassifyCall(callNode);
 
     if (callTypeClassifier->IsNonRecursiveDirectCall()
         || callTypeClassifier->IsRecursiveDirectCall())
@@ -115,7 +115,7 @@ public:
   [[nodiscard]] const util::HashSet<const PointsToGraph::MemoryNode *> &
   GetCallExitNodes(const CallNode & callNode) const override
   {
-    auto callTypeClassifier = CallNode::ClassifyCall(callNode);
+    auto callTypeClassifier = CallOperation::ClassifyCall(callNode);
 
     if (callTypeClassifier->IsNonRecursiveDirectCall()
         || callTypeClassifier->IsRecursiveDirectCall())
@@ -181,7 +181,7 @@ public:
       const CallNode & indirectCall,
       const util::HashSet<const PointsToGraph::MemoryNode *> & memoryNodes)
   {
-    JLM_ASSERT(CallNode::ClassifyCall(indirectCall)->IsIndirectCall());
+    JLM_ASSERT(CallOperation::ClassifyCall(indirectCall)->IsIndirectCall());
     auto & set = GetOrCreateIndirectCallNodesSet(indirectCall);
     set.UnionWith(memoryNodes);
   }
@@ -787,7 +787,7 @@ TopDownModRefEliminator::EliminateTopDownAlloca(const rvsdg::SimpleNode & node)
 void
 TopDownModRefEliminator::EliminateTopDownCall(const CallNode & callNode)
 {
-  auto callTypeClassifier = CallNode::ClassifyCall(callNode);
+  auto callTypeClassifier = CallOperation::ClassifyCall(callNode);
 
   switch (callTypeClassifier->GetCallType())
   {

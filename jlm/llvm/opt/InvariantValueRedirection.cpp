@@ -175,7 +175,7 @@ InvariantValueRedirection::RedirectThetaOutputs(rvsdg::ThetaNode & thetaNode)
 void
 InvariantValueRedirection::RedirectCallOutputs(CallNode & callNode)
 {
-  auto callTypeClassifier = CallNode::ClassifyCall(callNode);
+  auto callTypeClassifier = CallOperation::ClassifyCall(callNode);
   auto callType = callTypeClassifier->GetCallType();
 
   // FIXME: We currently only support non-recursive direct calls. We would also like to get this
