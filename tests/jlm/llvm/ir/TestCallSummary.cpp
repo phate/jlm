@@ -153,8 +153,10 @@ TestCallSummaryComputationDirectCalls()
         lambdaXCv,
         functionType,
         { iOStateArgument, memoryStateArgument });
-    auto callYResults =
-        jlm::llvm::CallOperation::Create(lambdaYCv, functionType, { callXResults[1], callXResults[2] });
+    auto callYResults = jlm::llvm::CallOperation::Create(
+        lambdaYCv,
+        functionType,
+        { callXResults[1], callXResults[2] });
 
     auto result = tests::create_testop(
         lambdaNode->subregion(),
