@@ -171,7 +171,7 @@ public:
 
   void
   AddExternalCallNodes(
-      const CallNode & externalCall,
+      const rvsdg::SimpleNode & externalCall,
       const util::HashSet<const PointsToGraph::MemoryNode *> & memoryNodes)
   {
     auto & set = GetOrCreateExternalCallNodesSet(externalCall);
@@ -180,7 +180,7 @@ public:
 
   void
   AddIndirectCallNodes(
-      const CallNode & indirectCall,
+      const rvsdg::SimpleNode & indirectCall,
       const util::HashSet<const PointsToGraph::MemoryNode *> & memoryNodes)
   {
     JLM_ASSERT(CallOperation::ClassifyCall(indirectCall)->IsIndirectCall());
@@ -244,8 +244,10 @@ private:
   }
 
   util::HashSet<const PointsToGraph::MemoryNode *> &
-  GetOrCreateExternalCallNodesSet(const CallNode & externalCall)
+  GetOrCreateExternalCallNodesSet(const rvsdg::SimpleNode & externalCall)
   {
+    JLM_ASSERT(is<CallOperation>(&externalCall));
+
     if (!HasExternalCallNodesSet(externalCall))
     {
       ExternalCallNodes_[&externalCall] = {};
@@ -255,8 +257,10 @@ private:
   }
 
   util::HashSet<const PointsToGraph::MemoryNode *> &
-  GetOrCreateIndirectCallNodesSet(const CallNode & indirectCall)
+  GetOrCreateIndirectCallNodesSet(const rvsdg::SimpleNode & indirectCall)
   {
+    JLM_ASSERT(is<CallOperation>(&indirectCall));
+
     if (!HasIndirectCallNodesSet(indirectCall))
     {
       IndirectCallNodes_[&indirectCall] = {};
@@ -772,9 +776,9 @@ TopDownModRefEliminator::EliminateTopDownSimpleNode(const rvsdg::SimpleNode & si
   {
     EliminateTopDownAlloca(simpleNode);
   }
-  else if (auto callNode = dynamic_cast<const CallNode *>(&simpleNode))
+  else if (is<CallOperation>(&simpleNode))
   {
-    EliminateTopDownCall(*callNode);
+    EliminateTopDownCall(simpleNode);
   }
 }
 
@@ -789,7 +793,7 @@ TopDownModRefEliminator::EliminateTopDownAlloca(const rvsdg::SimpleNode & node)
 }
 
 void
-TopDownModRefEliminator::EliminateTopDownCall(const CallNode & callNode)
+TopDownModRefEliminator::EliminateTopDownCall(const rvsdg::SimpleNode & callNode)
 {
   auto callTypeClassifier = CallOperation::ClassifyCall(callNode);
 
@@ -814,7 +818,7 @@ TopDownModRefEliminator::EliminateTopDownCall(const CallNode & callNode)
 
 void
 TopDownModRefEliminator::EliminateTopDownNonRecursiveDirectCall(
-    const CallNode & callNode,
+    const rvsdg::SimpleNode & callNode,
     const CallTypeClassifier & callTypeClassifier)
 {
   JLM_ASSERT(callTypeClassifier.IsNonRecursiveDirectCall());
@@ -829,7 +833,7 @@ TopDownModRefEliminator::EliminateTopDownNonRecursiveDirectCall(
 
 void
 TopDownModRefEliminator::EliminateTopDownRecursiveDirectCall(
-    const CallNode & callNode,
+    const rvsdg::SimpleNode & callNode,
     const CallTypeClassifier & callTypeClassifier)
 {
   JLM_ASSERT(callTypeClassifier.IsRecursiveDirectCall());
@@ -844,7 +848,7 @@ TopDownModRefEliminator::EliminateTopDownRecursiveDirectCall(
 
 void
 TopDownModRefEliminator::EliminateTopDownExternalCall(
-    const CallNode & callNode,
+    const rvsdg::SimpleNode & callNode,
     const CallTypeClassifier & callTypeClassifier)
 {
   JLM_ASSERT(callTypeClassifier.IsExternalCall());
@@ -862,7 +866,7 @@ TopDownModRefEliminator::EliminateTopDownExternalCall(
 
 void
 TopDownModRefEliminator::EliminateTopDownIndirectCall(
-    const CallNode & indirectCall,
+    const rvsdg::SimpleNode & indirectCall,
     const CallTypeClassifier & callTypeClassifier)
 {
   JLM_ASSERT(callTypeClassifier.IsIndirectCall());
@@ -937,10 +941,10 @@ TopDownModRefEliminator::CheckInvariants(
   std::function<void(
       const rvsdg::Region &,
       std::vector<const rvsdg::Region *> &,
-      std::vector<const CallNode *> &)>
+      std::vector<const rvsdg::SimpleNode *> &)>
       collectRegionsAndCalls = [&](const rvsdg::Region & rootRegion,
                                    std::vector<const rvsdg::Region *> & regions,
-                                   std::vector<const CallNode *> & callNodes)
+                                   std::vector<const rvsdg::SimpleNode *> & callNodes)
   {
     for (auto & node : rootRegion.Nodes())
     {
@@ -970,14 +974,14 @@ TopDownModRefEliminator::CheckInvariants(
         regions.push_back(subregion);
         collectRegionsAndCalls(*subregion, regions, callNodes);
       }
-      else if (auto callNode = dynamic_cast<const CallNode *>(&node))
+      else if (is<CallOperation>(&node))
       {
-        callNodes.push_back(callNode);
+        callNodes.push_back(util::AssertedCast<const rvsdg::SimpleNode>(&node));
       }
     }
   };
 
-  std::vector<const CallNode *> callNodes;
+  std::vector<const rvsdg::SimpleNode *> callNodes;
   std::vector<const rvsdg::Region *> regions;
   collectRegionsAndCalls(rvsdgModule.Rvsdg().GetRootRegion(), regions, callNodes);
 
