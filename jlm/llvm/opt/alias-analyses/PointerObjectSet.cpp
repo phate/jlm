@@ -607,10 +607,11 @@ template<typename MarkAsPointeesEscaping, typename MarkAsPointsToExternal>
 void
 HandleCallingExternalFunction(
     PointerObjectSet & set,
-    const jlm::llvm::CallNode & callNode,
+    const rvsdg::SimpleNode & callNode,
     MarkAsPointeesEscaping & markAsPointeesEscaping,
     MarkAsPointsToExternal & markAsPointsToExternal)
 {
+  JLM_ASSERT(is<CallOperation>(&callNode));
 
   // Mark all the call's inputs as escaped, and all the outputs as pointing to external
   for (size_t n = 0; n < CallOperation::NumArguments(callNode); n++)
@@ -644,11 +645,13 @@ template<typename MarkAsPointeesEscaping, typename MarkAsPointsToExternal>
 static void
 HandleCallingImportedFunction(
     PointerObjectSet & set,
-    const jlm::llvm::CallNode & callNode,
+    const rvsdg::SimpleNode & callNode,
     [[maybe_unused]] PointerObjectIndex imported,
     MarkAsPointeesEscaping & markAsPointeesEscaping,
     MarkAsPointsToExternal & markAsPointsToExternal)
 {
+  JLM_ASSERT(is<CallOperation>(&callNode));
+
   // FIXME: Add special handling of common library functions
   // Otherwise we don't know anything about the function
   return HandleCallingExternalFunction(
@@ -666,10 +669,12 @@ template<typename MakeSupersetFunctor>
 static void
 HandleLambdaCallParameters(
     PointerObjectSet & set,
-    const jlm::llvm::CallNode & callNode,
+    const rvsdg::SimpleNode & callNode,
     const rvsdg::LambdaNode & lambdaNode,
     MakeSupersetFunctor & makeSuperset)
 {
+  JLM_ASSERT(is<CallOperation>(&callNode));
+
   auto lambdaArgs = lambdaNode.GetFunctionArguments();
   for (size_t n = 0; n < CallOperation::NumArguments(callNode) && n < lambdaArgs.size(); n++)
   {
@@ -693,10 +698,12 @@ template<typename MakeSupersetFunctor>
 static void
 HandleLambdaCallReturnValues(
     PointerObjectSet & set,
-    const jlm::llvm::CallNode & callNode,
+    const rvsdg::SimpleNode & callNode,
     const rvsdg::LambdaNode & lambdaNode,
     MakeSupersetFunctor & makeSuperset)
 {
+  JLM_ASSERT(is<CallOperation>(&callNode));
+
   auto lambdaResults = lambdaNode.GetFunctionResults();
   for (size_t n = 0; n < callNode.noutputs() && n < lambdaResults.size(); n++)
   {
@@ -727,10 +734,11 @@ template<typename MakeSupersetFunctor>
 static void
 HandleCallingLambdaFunction(
     PointerObjectSet & set,
-    const jlm::llvm::CallNode & callNode,
+    const rvsdg::SimpleNode & callNode,
     PointerObjectIndex lambda,
     MakeSupersetFunctor & makeSuperset)
 {
+  JLM_ASSERT(is<CallOperation>(&callNode));
   auto & lambdaNode = set.GetLambdaNodeFromFunctionMemoryObject(lambda);
 
   // LLVM allows calling functions even when the number of arguments don't match,
@@ -1484,7 +1492,7 @@ PointerObjectConstraintSet::NormalizeConstraints()
   util::HashSet<std::pair<PointerObjectIndex, PointerObjectIndex>> addedSupersetConstraints;
   util::HashSet<std::pair<PointerObjectIndex, PointerObjectIndex>> addedStoreConstraints;
   util::HashSet<std::pair<PointerObjectIndex, PointerObjectIndex>> addedLoadConstraints;
-  util::HashSet<std::pair<PointerObjectIndex, const CallNode *>> addedCallConstraints;
+  util::HashSet<std::pair<PointerObjectIndex, const rvsdg::SimpleNode *>> addedCallConstraints;
 
   for (auto constraint : Constraints_)
   {
@@ -1565,7 +1573,7 @@ PointerObjectConstraintSet::RunWorklistSolver(WorklistStatistics & statistics)
   // are allowed on the worklist. The sets are empty for all non-root nodes.
   std::vector<util::HashSet<PointerObjectIndex>> storeConstraints(Set_.NumPointerObjects());
   std::vector<util::HashSet<PointerObjectIndex>> loadConstraints(Set_.NumPointerObjects());
-  std::vector<util::HashSet<const jlm::llvm::CallNode *>> callConstraints(Set_.NumPointerObjects());
+  std::vector<util::HashSet<const rvsdg::SimpleNode *>> callConstraints(Set_.NumPointerObjects());
 
   for (const auto & constraint : Constraints_)
   {

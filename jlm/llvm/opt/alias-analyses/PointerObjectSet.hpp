@@ -752,13 +752,15 @@ class FunctionCallConstraint final
   /**
    * The RVSDG node representing the function call
    */
-  const jlm::llvm::CallNode & CallNode_;
+  const rvsdg::SimpleNode & CallNode_;
 
 public:
-  FunctionCallConstraint(PointerObjectIndex pointer, const jlm::llvm::CallNode & callNode)
+  FunctionCallConstraint(PointerObjectIndex pointer, const rvsdg::SimpleNode & callNode)
       : Pointer_(pointer),
         CallNode_(callNode)
-  {}
+  {
+    JLM_ASSERT(is<CallOperation>(&callNode));
+  }
 
   /**
    * @return the PointerObject representing the function pointer being called
@@ -781,7 +783,7 @@ public:
   /**
    * @return the RVSDG call node for the function call
    */
-  [[nodiscard]] const jlm::llvm::CallNode &
+  [[nodiscard]] const rvsdg::SimpleNode &
   GetCallNode() const noexcept
   {
     return CallNode_;
