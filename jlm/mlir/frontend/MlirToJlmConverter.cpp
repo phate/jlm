@@ -5,6 +5,7 @@
  */
 
 #include <jlm/mlir/frontend/MlirToJlmConverter.hpp>
+#include <jlm/mlir/MLIRConverterCommon.hpp>
 
 #include <llvm/Support/raw_os_ostream.h>
 #include <mlir/Parser/Parser.h>
@@ -23,6 +24,8 @@
 #include <jlm/llvm/ir/operators/Load.hpp>
 #include <jlm/llvm/ir/operators/MemoryStateOperations.hpp>
 #include <jlm/llvm/ir/operators/Store.hpp>
+
+#include <jlm/llvm/ir/operators/IntegerOperations.hpp>
 
 namespace jlm::mlir
 {
@@ -43,8 +46,18 @@ MlirToJlmConverter::ReadAndConvertMlir(const util::filepath & filePath)
 std::unique_ptr<llvm::RvsdgModule>
 MlirToJlmConverter::ConvertMlir(std::unique_ptr<::mlir::Block> & block)
 {
+  auto & topNode = block->front();
+  auto omegaNode = ::mlir::dyn_cast<::mlir::rvsdg::OmegaNode>(topNode);
+  return ConvertOmega(omegaNode);
+}
+
+std::unique_ptr<llvm::RvsdgModule>
+MlirToJlmConverter::ConvertOmega(::mlir::rvsdg::OmegaNode & omegaNode)
+{
   auto rvsdgModule = llvm::RvsdgModule::Create(util::filepath(""), std::string(), std::string());
-  ConvertBlock(*block, rvsdgModule->Rvsdg().GetRootRegion());
+  auto & graph = rvsdgModule->Rvsdg();
+  auto & root = graph.GetRootRegion();
+  ConvertRegion(omegaNode.getRegion(), root);
 
   return rvsdgModule;
 }
@@ -61,25 +74,14 @@ MlirToJlmConverter::ConvertRegion(::mlir::Region & region, rvsdg::Region & rvsdg
 ::llvm::SmallVector<jlm::rvsdg::output *>
 MlirToJlmConverter::GetConvertedInputs(
     ::mlir::Operation & mlirOp,
-    const std::unordered_map<::mlir::Operation *, rvsdg::Node *> & operationsMap,
-    const rvsdg::Region & rvsdgRegion)
+    const std::unordered_map<void *, rvsdg::output *> & outputMap)
 {
   ::llvm::SmallVector<jlm::rvsdg::output *> inputs;
   for (::mlir::Value operand : mlirOp.getOperands())
   {
-    if (::mlir::Operation * producer = operand.getDefiningOp())
-    {
-      JLM_ASSERT(operationsMap.find(producer) != operationsMap.end());
-      JLM_ASSERT(::mlir::isa<::mlir::OpResult>(operand));
-      inputs.push_back(
-          operationsMap.at(producer)->output(operand.cast<::mlir::OpResult>().getResultNumber()));
-    }
-    else
-    {
-      // If there is no defining op, the Value is necessarily a Block argument.
-      JLM_ASSERT(::mlir::isa<::mlir::BlockArgument>(operand));
-      inputs.push_back(rvsdgRegion.argument(operand.cast<::mlir::BlockArgument>().getArgNumber()));
-    }
+    auto key = operand.getAsOpaquePointer();
+    JLM_ASSERT(outputMap.find(key) != outputMap.end());
+    inputs.push_back(outputMap.at(key));
   }
   return inputs;
 }
@@ -89,71 +91,134 @@ MlirToJlmConverter::ConvertBlock(::mlir::Block & block, rvsdg::Region & rvsdgReg
 {
   ::mlir::sortTopologically(&block);
 
-  // Create an RVSDG node for each MLIR operation and store each pair in a
-  // hash map for easy lookup of corresponding RVSDG nodes
-  std::unordered_map<::mlir::Operation *, rvsdg::Node *> operationsMap;
+  // Create an RVSDG node for each MLIR operation and store the mapping from
+  // MLIR values to RVSDG outputs in a hash map for easy lookup
+  std::unordered_map<void *, rvsdg::output *> outputMap;
+
+  for (size_t i = 0; i < block.getNumArguments(); i++)
+  {
+    auto arg = block.getArgument(i);
+    auto key = arg.getAsOpaquePointer();
+    outputMap[key] = rvsdgRegion.argument(i);
+  }
+
   for (auto & mlirOp : block.getOperations())
   {
-    ::llvm::SmallVector<jlm::rvsdg::output *> inputs =
-        GetConvertedInputs(mlirOp, operationsMap, rvsdgRegion);
-
-    if (auto * node = ConvertOperation(mlirOp, rvsdgRegion, inputs))
+    if (auto argument = ::mlir::dyn_cast<::mlir::rvsdg::OmegaArgument>(mlirOp))
     {
-      operationsMap[&mlirOp] = node;
+      auto valueType = argument.getValueType();
+      auto importedType = argument.getImportedValue().getType();
+      std::shared_ptr<rvsdg::Type> jlmValueType = ConvertType(valueType);
+      std::shared_ptr<rvsdg::Type> jlmImportedType = ConvertType(importedType);
+
+      jlm::llvm::GraphImport::Create(
+          *rvsdgRegion.graph(),
+          std::dynamic_pointer_cast<const rvsdg::ValueType>(jlmValueType),
+          std::dynamic_pointer_cast<const rvsdg::ValueType>(jlmImportedType),
+          argument.getNameAttr().cast<::mlir::StringAttr>().str(),
+          llvm::FromString(argument.getLinkageAttr().cast<::mlir::StringAttr>().str()));
+
+      auto key = argument.getResult().getAsOpaquePointer();
+      outputMap[key] = rvsdgRegion.argument(rvsdgRegion.narguments() - 1);
+    }
+    else
+    {
+      ::llvm::SmallVector<jlm::rvsdg::output *> inputs = GetConvertedInputs(mlirOp, outputMap);
+
+      if (auto * node = ConvertOperation(mlirOp, rvsdgRegion, inputs))
+      {
+        for (size_t i = 0; i < mlirOp.getNumResults(); i++)
+        {
+          auto result = mlirOp.getResult(i);
+          auto key = result.getAsOpaquePointer();
+          outputMap[key] = node->output(i);
+        }
+      }
     }
   }
 
   // The results of the region/block are encoded in the terminator operation
   ::mlir::Operation * terminator = block.getTerminator();
 
-  return GetConvertedInputs(*terminator, operationsMap, rvsdgRegion);
+  return GetConvertedInputs(*terminator, outputMap);
 }
 
 rvsdg::Node *
 MlirToJlmConverter::ConvertCmpIOp(
     ::mlir::arith::CmpIOp & CompOp,
+    rvsdg::Region & rvsdgRegion,
     const ::llvm::SmallVector<rvsdg::output *> & inputs,
     size_t nbits)
 {
   if (CompOp.getPredicate() == ::mlir::arith::CmpIPredicate::eq)
   {
-    return rvsdg::output::GetNode(*rvsdg::biteq_op::create(nbits, inputs[0], inputs[1]));
+    return &rvsdg::SimpleNode::Create(
+        rvsdgRegion,
+        jlm::llvm::IntegerEqOperation(nbits),
+        { inputs[0], inputs[1] });
   }
   else if (CompOp.getPredicate() == ::mlir::arith::CmpIPredicate::ne)
   {
-    return rvsdg::output::GetNode(*rvsdg::bitne_op::create(nbits, inputs[0], inputs[1]));
+    return &rvsdg::SimpleNode::Create(
+        rvsdgRegion,
+        jlm::llvm::IntegerNeOperation(nbits),
+        { inputs[0], inputs[1] });
   }
   else if (CompOp.getPredicate() == ::mlir::arith::CmpIPredicate::sge)
   {
-    return rvsdg::output::GetNode(*rvsdg::bitsge_op::create(nbits, inputs[0], inputs[1]));
+    return &rvsdg::SimpleNode::Create(
+        rvsdgRegion,
+        jlm::llvm::IntegerSgeOperation(nbits),
+        { inputs[0], inputs[1] });
   }
   else if (CompOp.getPredicate() == ::mlir::arith::CmpIPredicate::sgt)
   {
-    return rvsdg::output::GetNode(*rvsdg::bitsgt_op::create(nbits, inputs[0], inputs[1]));
+    return &rvsdg::SimpleNode::Create(
+        rvsdgRegion,
+        jlm::llvm::IntegerSgtOperation(nbits),
+        { inputs[0], inputs[1] });
   }
   else if (CompOp.getPredicate() == ::mlir::arith::CmpIPredicate::sle)
   {
-    return rvsdg::output::GetNode(*rvsdg::bitsle_op::create(nbits, inputs[0], inputs[1]));
+    return &rvsdg::SimpleNode::Create(
+        rvsdgRegion,
+        jlm::llvm::IntegerSleOperation(nbits),
+        { inputs[0], inputs[1] });
   }
   else if (CompOp.getPredicate() == ::mlir::arith::CmpIPredicate::slt)
   {
-    return rvsdg::output::GetNode(*rvsdg::bitslt_op::create(nbits, inputs[0], inputs[1]));
+    return &rvsdg::SimpleNode::Create(
+        rvsdgRegion,
+        jlm::llvm::IntegerSltOperation(nbits),
+        { inputs[0], inputs[1] });
   }
   else if (CompOp.getPredicate() == ::mlir::arith::CmpIPredicate::uge)
   {
-    return rvsdg::output::GetNode(*rvsdg::bituge_op::create(nbits, inputs[0], inputs[1]));
+    return &rvsdg::SimpleNode::Create(
+        rvsdgRegion,
+        jlm::llvm::IntegerUgeOperation(nbits),
+        { inputs[0], inputs[1] });
   }
   else if (CompOp.getPredicate() == ::mlir::arith::CmpIPredicate::ugt)
   {
-    return rvsdg::output::GetNode(*rvsdg::bitugt_op::create(nbits, inputs[0], inputs[1]));
+    return &rvsdg::SimpleNode::Create(
+        rvsdgRegion,
+        jlm::llvm::IntegerUgtOperation(nbits),
+        { inputs[0], inputs[1] });
   }
   else if (CompOp.getPredicate() == ::mlir::arith::CmpIPredicate::ule)
   {
-    return rvsdg::output::GetNode(*rvsdg::bitule_op::create(nbits, inputs[0], inputs[1]));
+    return &rvsdg::SimpleNode::Create(
+        rvsdgRegion,
+        jlm::llvm::IntegerUleOperation(nbits),
+        { inputs[0], inputs[1] });
   }
   else if (CompOp.getPredicate() == ::mlir::arith::CmpIPredicate::ult)
   {
-    return rvsdg::output::GetNode(*rvsdg::bitult_op::create(nbits, inputs[0], inputs[1]));
+    return &rvsdg::SimpleNode::Create(
+        rvsdgRegion,
+        jlm::llvm::IntegerUltOperation(nbits),
+        { inputs[0], inputs[1] });
   }
   else
   {
@@ -206,106 +271,125 @@ MlirToJlmConverter::ConvertFPBinaryNode(
       { inputs[0], inputs[1] });
 }
 
+llvm::fpcmp
+MlirToJlmConverter::TryConvertFPCMP(const ::mlir::arith::CmpFPredicate & op)
+{
+  const auto & map = GetFpCmpPredicateMap();
+  return map.LookupKey(op);
+}
+
 rvsdg::Node *
 MlirToJlmConverter::ConvertBitBinaryNode(
-    const ::mlir::Operation & mlirOperation,
+    ::mlir::Operation & mlirOperation,
+    rvsdg::Region & rvsdgRegion,
     const ::llvm::SmallVector<rvsdg::output *> & inputs)
 {
-  if (inputs.size() != 2)
+  if (inputs.size() != 2 || mlirOperation.getNumResults() != 1)
     return nullptr;
-  if (auto castedOp = ::mlir::dyn_cast<::mlir::arith::AddIOp>(&mlirOperation))
-  {
-    return rvsdg::output::GetNode(*rvsdg::bitadd_op::create(
-        static_cast<size_t>(castedOp.getType().cast<::mlir::IntegerType>().getWidth()),
-        inputs[0],
-        inputs[1]));
-  }
-  else if (auto castedOp = ::mlir::dyn_cast<::mlir::arith::AndIOp>(&mlirOperation))
-  {
-    return rvsdg::output::GetNode(*rvsdg::bitand_op::create(
-        static_cast<size_t>(castedOp.getType().cast<::mlir::IntegerType>().getWidth()),
-        inputs[0],
-        inputs[1]));
-  }
-  else if (auto castedOp = ::mlir::dyn_cast<::mlir::arith::ShRUIOp>(&mlirOperation))
-  {
-    return rvsdg::output::GetNode(*rvsdg::bitashr_op::create(
-        static_cast<size_t>(castedOp.getType().cast<::mlir::IntegerType>().getWidth()),
-        inputs[0],
-        inputs[1]));
-  }
-  else if (auto castedOp = ::mlir::dyn_cast<::mlir::arith::MulIOp>(&mlirOperation))
-  {
-    return rvsdg::output::GetNode(*rvsdg::bitmul_op::create(
-        static_cast<size_t>(castedOp.getType().cast<::mlir::IntegerType>().getWidth()),
-        inputs[0],
-        inputs[1]));
-  }
-  else if (auto castedOp = ::mlir::dyn_cast<::mlir::arith::OrIOp>(&mlirOperation))
-  {
-    return rvsdg::output::GetNode(*rvsdg::bitor_op::create(
-        static_cast<size_t>(castedOp.getType().cast<::mlir::IntegerType>().getWidth()),
-        inputs[0],
-        inputs[1]));
-  }
-  else if (auto castedOp = ::mlir::dyn_cast<::mlir::arith::DivSIOp>(&mlirOperation))
-  {
-    return rvsdg::output::GetNode(*rvsdg::bitsdiv_op::create(
-        static_cast<size_t>(castedOp.getType().cast<::mlir::IntegerType>().getWidth()),
-        inputs[0],
-        inputs[1]));
-  }
-  else if (auto castedOp = ::mlir::dyn_cast<::mlir::arith::ShLIOp>(&mlirOperation))
-  {
-    return rvsdg::output::GetNode(*rvsdg::bitshl_op::create(
-        static_cast<size_t>(castedOp.getType().cast<::mlir::IntegerType>().getWidth()),
-        inputs[0],
-        inputs[1]));
-  }
-  else if (auto castedOp = ::mlir::dyn_cast<::mlir::arith::ShRUIOp>(&mlirOperation))
-  {
-    return rvsdg::output::GetNode(*rvsdg::bitshr_op::create(
-        static_cast<size_t>(castedOp.getType().cast<::mlir::IntegerType>().getWidth()),
-        inputs[0],
-        inputs[1]));
-  }
-  else if (auto castedOp = ::mlir::dyn_cast<::mlir::arith::RemSIOp>(&mlirOperation))
-  {
-    return rvsdg::output::GetNode(*rvsdg::bitsmod_op::create(
-        static_cast<size_t>(castedOp.getType().cast<::mlir::IntegerType>().getWidth()),
-        inputs[0],
-        inputs[1]));
-  }
-  else if (auto castedOp = ::mlir::dyn_cast<::mlir::arith::SubIOp>(&mlirOperation))
-  {
-    return rvsdg::output::GetNode(*rvsdg::bitsub_op::create(
-        static_cast<size_t>(castedOp.getType().cast<::mlir::IntegerType>().getWidth()),
-        inputs[0],
-        inputs[1]));
-  }
-  else if (auto castedOp = ::mlir::dyn_cast<::mlir::arith::DivUIOp>(&mlirOperation))
-  {
-    return rvsdg::output::GetNode(*rvsdg::bitudiv_op::create(
-        static_cast<size_t>(castedOp.getType().cast<::mlir::IntegerType>().getWidth()),
-        inputs[0],
-        inputs[1]));
-  }
-  else if (auto castedOp = ::mlir::dyn_cast<::mlir::arith::RemUIOp>(&mlirOperation))
-  {
-    return rvsdg::output::GetNode(*rvsdg::bitumod_op::create(
-        static_cast<size_t>(castedOp.getType().cast<::mlir::IntegerType>().getWidth()),
-        inputs[0],
-        inputs[1]));
-  }
-  else if (auto castedOp = ::mlir::dyn_cast<::mlir::arith::XOrIOp>(&mlirOperation))
-  {
-    return rvsdg::output::GetNode(*rvsdg::bitxor_op::create(
-        static_cast<size_t>(castedOp.getType().cast<::mlir::IntegerType>().getWidth()),
-        inputs[0],
-        inputs[1]));
-  }
 
-  return nullptr;
+  auto type = mlirOperation.getResult(0).getType();
+
+  if (!type.isa<::mlir::IntegerType>())
+    return nullptr;
+
+  auto integerType = type.cast<::mlir::IntegerType>();
+  auto width = integerType.getWidth();
+
+  if (::mlir::isa<::mlir::arith::AddIOp>(mlirOperation))
+  {
+    return &rvsdg::SimpleNode::Create(
+        rvsdgRegion,
+        jlm::llvm::IntegerAddOperation(width),
+        { inputs[0], inputs[1] });
+  }
+  else if (::mlir::isa<::mlir::arith::SubIOp>(mlirOperation))
+  {
+    return &rvsdg::SimpleNode::Create(
+        rvsdgRegion,
+        jlm::llvm::IntegerSubOperation(width),
+        { inputs[0], inputs[1] });
+  }
+  else if (::mlir::isa<::mlir::arith::MulIOp>(mlirOperation))
+  {
+    return &rvsdg::SimpleNode::Create(
+        rvsdgRegion,
+        jlm::llvm::IntegerMulOperation(width),
+        { inputs[0], inputs[1] });
+  }
+  else if (::mlir::isa<::mlir::arith::DivSIOp>(mlirOperation))
+  {
+    return &rvsdg::SimpleNode::Create(
+        rvsdgRegion,
+        jlm::llvm::IntegerSDivOperation(width),
+        { inputs[0], inputs[1] });
+  }
+  else if (::mlir::isa<::mlir::arith::DivUIOp>(mlirOperation))
+  {
+    return &rvsdg::SimpleNode::Create(
+        rvsdgRegion,
+        jlm::llvm::IntegerUDivOperation(width),
+        { inputs[0], inputs[1] });
+  }
+  else if (::mlir::isa<::mlir::arith::RemSIOp>(mlirOperation))
+  {
+    return &rvsdg::SimpleNode::Create(
+        rvsdgRegion,
+        jlm::llvm::IntegerSRemOperation(width),
+        { inputs[0], inputs[1] });
+  }
+  else if (::mlir::isa<::mlir::arith::RemUIOp>(mlirOperation))
+  {
+    return &rvsdg::SimpleNode::Create(
+        rvsdgRegion,
+        jlm::llvm::IntegerURemOperation(width),
+        { inputs[0], inputs[1] });
+  }
+  else if (::mlir::isa<::mlir::LLVM::ShlOp>(mlirOperation))
+  {
+    return &rvsdg::SimpleNode::Create(
+        rvsdgRegion,
+        jlm::llvm::IntegerShlOperation(width),
+        { inputs[0], inputs[1] });
+  }
+  else if (::mlir::isa<::mlir::LLVM::AShrOp>(mlirOperation))
+  {
+    return &rvsdg::SimpleNode::Create(
+        rvsdgRegion,
+        jlm::llvm::IntegerAShrOperation(width),
+        { inputs[0], inputs[1] });
+  }
+  else if (::mlir::isa<::mlir::LLVM::LShrOp>(mlirOperation))
+  {
+    return &rvsdg::SimpleNode::Create(
+        rvsdgRegion,
+        jlm::llvm::IntegerLShrOperation(width),
+        { inputs[0], inputs[1] });
+  }
+  else if (::mlir::isa<::mlir::arith::AndIOp>(mlirOperation))
+  {
+    return &rvsdg::SimpleNode::Create(
+        rvsdgRegion,
+        jlm::llvm::IntegerAndOperation(width),
+        { inputs[0], inputs[1] });
+  }
+  else if (::mlir::isa<::mlir::arith::OrIOp>(mlirOperation))
+  {
+    return &rvsdg::SimpleNode::Create(
+        rvsdgRegion,
+        jlm::llvm::IntegerOrOperation(width),
+        { inputs[0], inputs[1] });
+  }
+  else if (::mlir::isa<::mlir::arith::XOrIOp>(mlirOperation))
+  {
+    return &rvsdg::SimpleNode::Create(
+        rvsdgRegion,
+        jlm::llvm::IntegerXorOperation(width),
+        { inputs[0], inputs[1] });
+  }
+  else
+  {
+    return nullptr;
+  }
 }
 
 rvsdg::Node *
@@ -316,7 +400,7 @@ MlirToJlmConverter::ConvertOperation(
 {
 
   // ** region Arithmetic Integer Operation **
-  auto convertedBitBinaryNode = ConvertBitBinaryNode(mlirOperation, inputs);
+  auto convertedBitBinaryNode = ConvertBitBinaryNode(mlirOperation, rvsdgRegion, inputs);
   // If the operation was converted it means it has been casted to a bit binary operation
   if (convertedBitBinaryNode)
     return convertedBitBinaryNode;
@@ -365,7 +449,6 @@ MlirToJlmConverter::ConvertOperation(
 
   else if (::mlir::isa<::mlir::rvsdg::OmegaNode>(&mlirOperation))
   {
-    ConvertOmega(mlirOperation, rvsdgRegion);
     // Omega doesn't have a corresponding RVSDG node so we return nullptr
     return nullptr;
   }
@@ -403,8 +486,10 @@ MlirToJlmConverter::ConvertOperation(
     JLM_ASSERT(type.getTypeID() == ::mlir::IntegerType::getTypeID());
     auto integerType = ::mlir::cast<::mlir::IntegerType>(type);
 
-    return rvsdg::output::GetNode(
-        *rvsdg::create_bitconstant(&rvsdgRegion, integerType.getWidth(), constant.value()));
+    return &jlm::llvm::IntegerConstantOperation::Create(
+        rvsdgRegion,
+        integerType.getWidth(),
+        constant.value());
   }
   else if (auto constant = ::mlir::dyn_cast<::mlir::arith::ConstantFloatOp>(&mlirOperation))
   {
@@ -458,7 +543,16 @@ MlirToJlmConverter::ConvertOperation(
     JLM_ASSERT(type.getTypeID() == ::mlir::IntegerType::getTypeID());
     auto integerType = ::mlir::cast<::mlir::IntegerType>(type);
 
-    return ConvertCmpIOp(ComOp, inputs, integerType.getWidth());
+    return ConvertCmpIOp(ComOp, rvsdgRegion, inputs, integerType.getWidth());
+  }
+
+  else if (auto ComOp = ::mlir::dyn_cast<::mlir::arith::CmpFOp>(&mlirOperation))
+  {
+    auto type = ComOp.getOperandTypes()[0];
+    auto floatType = ::mlir::cast<::mlir::FloatType>(type);
+    auto op =
+        llvm::fpcmp_op(TryConvertFPCMP(ComOp.getPredicate()), ConvertFPSize(floatType.getWidth()));
+    return &rvsdg::SimpleNode::Create(rvsdgRegion, op, std::vector(inputs.begin(), inputs.end()));
   }
 
   else if (auto UndefOp = ::mlir::dyn_cast<::mlir::jlm::Undef>(&mlirOperation))
@@ -528,7 +622,7 @@ MlirToJlmConverter::ConvertOperation(
     auto address = inputs[0];
     auto value = inputs[1];
     auto memoryStateInputs = std::vector(std::next(inputs.begin(), 2), inputs.end());
-    auto & storeNode = jlm::llvm::StoreNonVolatileNode::CreateNode(
+    auto & storeNode = jlm::llvm::StoreNonVolatileOperation::CreateNode(
         *address,
         *value,
         memoryStateInputs,
@@ -544,7 +638,7 @@ MlirToJlmConverter::ConvertOperation(
     if (!rvsdg::is<const rvsdg::ValueType>(jlmType))
       JLM_UNREACHABLE("Expected ValueType for LoadOp operation output.");
     auto jlmValueType = std::dynamic_pointer_cast<const rvsdg::ValueType>(jlmType);
-    auto & loadNode = jlm::llvm::LoadNonVolatileNode::CreateNode(
+    auto & loadNode = llvm::LoadNonVolatileOperation::CreateNode(
         *address,
         memoryStateInputs,
         jlmValueType,
@@ -685,9 +779,10 @@ MlirToJlmConverter::ConvertOperation(
       || ::mlir::isa<::mlir::rvsdg::OmegaResult>(&mlirOperation)
       || ::mlir::isa<::mlir::rvsdg::GammaResult>(&mlirOperation)
       || ::mlir::isa<::mlir::rvsdg::ThetaResult>(&mlirOperation)
-      || ::mlir::isa<::mlir::rvsdg::DeltaResult>(&mlirOperation))
+      || ::mlir::isa<::mlir::rvsdg::DeltaResult>(&mlirOperation)
+      // This is a terminating operation that doesn't have a corresponding RVSDG node
+      || ::mlir::isa<::mlir::rvsdg::OmegaArgument>(&mlirOperation)) // Handled at the top level
   {
-    // This is a terminating operation that doesn't have a corresponding RVSDG node
     return nullptr;
   }
   else
@@ -720,13 +815,6 @@ MlirToJlmConverter::ConvertFPSize(unsigned int size)
     JLM_UNREACHABLE(message.c_str());
     break;
   }
-}
-
-void
-MlirToJlmConverter::ConvertOmega(::mlir::Operation & mlirOmega, rvsdg::Region & rvsdgRegion)
-{
-  JLM_ASSERT(mlirOmega.getRegions().size() == 1);
-  ConvertRegion(mlirOmega.getRegion(0), rvsdgRegion);
 }
 
 jlm::rvsdg::Node *
@@ -835,6 +923,20 @@ MlirToJlmConverter::ConvertType(::mlir::Type & type)
     std::shared_ptr<rvsdg::Type> elementType = ConvertType(mlirElementType);
     auto elemenValueType = std::dynamic_pointer_cast<const rvsdg::ValueType>(elementType);
     return std::make_unique<llvm::ArrayType>(elemenValueType, arrayType.getNumElements());
+  }
+  else if (auto functionType = ::mlir::dyn_cast<::mlir::FunctionType>(type))
+  {
+    std::vector<std::shared_ptr<const rvsdg::Type>> argumentTypes;
+    for (auto argumentType : functionType.getInputs())
+    {
+      argumentTypes.push_back(ConvertType(argumentType));
+    }
+    std::vector<std::shared_ptr<const rvsdg::Type>> resultTypes;
+    for (auto resultType : functionType.getResults())
+    {
+      resultTypes.push_back(ConvertType(resultType));
+    }
+    return std::make_unique<rvsdg::FunctionType>(argumentTypes, resultTypes);
   }
   else
   {

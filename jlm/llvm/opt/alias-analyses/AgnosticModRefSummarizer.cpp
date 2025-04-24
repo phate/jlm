@@ -54,13 +54,13 @@ public:
   }
 
   [[nodiscard]] const util::HashSet<const PointsToGraph::MemoryNode *> &
-  GetCallEntryNodes(const CallNode &) const override
+  GetCallEntryNodes(const rvsdg::SimpleNode &) const override
   {
     return MemoryNodes_;
   }
 
   [[nodiscard]] const util::HashSet<const PointsToGraph::MemoryNode *> &
-  GetCallExitNodes(const CallNode &) const override
+  GetCallExitNodes(const rvsdg::SimpleNode &) const override
   {
     return MemoryNodes_;
   }
@@ -136,8 +136,8 @@ AgnosticModRefSummarizer::Create(
     const PointsToGraph & pointsToGraph,
     util::StatisticsCollector & statisticsCollector)
 {
-  AgnosticModRefSummarizer provider;
-  return provider.SummarizeModRefs(rvsdgModule, pointsToGraph, statisticsCollector);
+  AgnosticModRefSummarizer summarizer;
+  return summarizer.SummarizeModRefs(rvsdgModule, pointsToGraph, statisticsCollector);
 }
 
 std::unique_ptr<ModRefSummary>

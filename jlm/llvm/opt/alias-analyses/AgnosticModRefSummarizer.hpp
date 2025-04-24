@@ -54,7 +54,7 @@ public:
   /**
    * Creates a AgnosticModRefSummarizer and calls the SummarizeModeRefs() method.
    *
-   * @param rvsdgModule The RVSDG module on which the provision should be performed.
+   * @param rvsdgModule The RVSDG module for which a \ref ModRefSummary should be computed.
    * @param pointsToGraph The PointsToGraph corresponding to the RVSDG module.
    * @param statisticsCollector The statistics collector for collecting pass statistics.
    *
@@ -69,7 +69,7 @@ public:
   /**
    * Creates a AgnosticModRefSummarizer and calls the SummarizeModRefs() method.
    *
-   * @param rvsdgModule The RVSDG module on which the provision should be performed.
+   * @param rvsdgModule The RVSDG module for which the \ref ModRefSummary should be computed.
    * @param pointsToGraph The PointsToGraph corresponding to the RVSDG module.
    *
    * @return A new instance of ModRefSummary.
@@ -91,7 +91,7 @@ public:
       const util::filepath & sourceFile,
       const util::StatisticsCollector & statisticsCollector,
       const PointsToGraph & pointsToGraph)
-      : util::Statistics(Statistics::Id::AgnosticMemoryNodeProvisioning, sourceFile),
+      : util::Statistics(Id::AgnosticModRefSummarizer, sourceFile),
         StatisticsCollector_(statisticsCollector)
   {
     if (!StatisticsCollector_.IsDemanded(*this))

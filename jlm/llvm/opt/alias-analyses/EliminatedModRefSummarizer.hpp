@@ -65,8 +65,8 @@ public:
       const PointsToGraph & pointsToGraph,
       util::StatisticsCollector & statisticsCollector)
   {
-    EliminatedModRefSummarizer provider{};
-    return provider.SummarizeModRefs(rvsdgModule, pointsToGraph, statisticsCollector);
+    EliminatedModRefSummarizer summarizer{};
+    return summarizer.SummarizeModRefs(rvsdgModule, pointsToGraph, statisticsCollector);
   }
 
 private:

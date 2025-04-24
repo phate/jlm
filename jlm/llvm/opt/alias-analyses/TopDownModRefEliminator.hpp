@@ -11,7 +11,6 @@
 
 namespace jlm::llvm
 {
-class CallNode;
 class CallTypeClassifier;
 
 namespace lambda
@@ -162,26 +161,26 @@ private:
   EliminateTopDownAlloca(const rvsdg::SimpleNode & node);
 
   void
-  EliminateTopDownCall(const CallNode & callNode);
+  EliminateTopDownCall(const rvsdg::SimpleNode & callNode);
 
   void
   EliminateTopDownNonRecursiveDirectCall(
-      const CallNode & callNode,
+      const rvsdg::SimpleNode & callNode,
       const CallTypeClassifier & callTypeClassifier);
 
   void
   EliminateTopDownRecursiveDirectCall(
-      const CallNode & callNode,
+      const rvsdg::SimpleNode & callNode,
       const CallTypeClassifier & callTypeClassifier);
 
   void
   EliminateTopDownExternalCall(
-      const CallNode & callNode,
+      const rvsdg::SimpleNode & callNode,
       const CallTypeClassifier & callTypeClassifier);
 
   void
   EliminateTopDownIndirectCall(
-      const CallNode & indirectCall,
+      const rvsdg::SimpleNode & indirectCall,
       const CallTypeClassifier & callTypeClassifier);
 
   /**
@@ -210,12 +209,12 @@ private:
    * The function checks the following invariants:
    *
    * 1. The set of memory nodes computed for each region and call node by
-   * TopDownMemoryNodeEliminator are a subset of the corresponding set of memory nodes from the seed
-   * provisioning.
+   * \ref TopDownModRefEliminator are a subset of the corresponding set of memory nodes from the
+   * seed mod/ref summary.
    *
-   * @param rvsdgModule The RVSDG module for which the provisioning is computed.
-   * @param seedModRefSummary The seed Mod/Ref summary. \see EliminateMemoryNodes
-   * @param modRefSummary The computed Mod/Ref summary from TopDownMemoryNodeEliminator.
+   * @param rvsdgModule The RVSDG module for which the mod/ref summary is computed.
+   * @param seedModRefSummary The seed Mod/Ref summary. \see EliminateModRefs
+   * @param modRefSummary The computed Mod/Ref summary from \ref TopDownModRefEliminator.
    *
    * @return Returns true if all invariants are fulfilled, otherwise false.
    */

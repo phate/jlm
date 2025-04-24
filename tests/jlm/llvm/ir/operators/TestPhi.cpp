@@ -50,8 +50,10 @@ TestPhiCreation()
     auto iOStateArgument = lambda->GetFunctionArguments()[1];
     auto memoryStateArgument = lambda->GetFunctionArguments()[2];
 
-    auto callResults =
-        CallNode::Create(ctxVarF2, f1type, { valueArgument, iOStateArgument, memoryStateArgument });
+    auto callResults = CallOperation::Create(
+        ctxVarF2,
+        f1type,
+        { valueArgument, iOStateArgument, memoryStateArgument });
 
     return lambda->finalize(callResults);
   };
@@ -82,11 +84,12 @@ static void
 TestRemovePhiArgumentsWhere()
 {
   using namespace jlm::llvm;
+  using namespace jlm::rvsdg;
 
   // Arrange
   // The phi setup is nonsense, but it is sufficient for this test
   auto valueType = jlm::tests::valuetype::Create();
-  RvsdgModule rvsdgModule(jlm::util::filepath(""), "", "");
+  jlm::llvm::RvsdgModule rvsdgModule(jlm::util::filepath(""), "", "");
 
   auto x = &jlm::tests::GraphImport::Create(rvsdgModule.Rvsdg(), valueType, "");
 
@@ -99,10 +102,10 @@ TestRemovePhiArgumentsWhere()
   auto phiArgument3 = phiBuilder.add_ctxvar(x);
   auto phiArgument4 = phiBuilder.add_ctxvar(x);
 
-  auto result = jlm::tests::SimpleNode::Create(
-                    *phiBuilder.subregion(),
+  auto result = jlm::rvsdg::CreateOpNode<jlm::tests::test_op>(
                     { phiOutput0->argument(), phiOutput2->argument(), phiArgument4 },
-                    { valueType })
+                    std::vector<std::shared_ptr<const Type>>{ valueType, valueType, valueType },
+                    std::vector<std::shared_ptr<const Type>>{ valueType })
                     .output(0);
 
   phiOutput0->set_rvorigin(result);
@@ -165,11 +168,12 @@ static void
 TestPrunePhiArguments()
 {
   using namespace jlm::llvm;
+  using namespace jlm::rvsdg;
 
   // Arrange
   // The phi setup is nonsense, but it is sufficient for this test
   auto valueType = jlm::tests::valuetype::Create();
-  RvsdgModule rvsdgModule(jlm::util::filepath(""), "", "");
+  jlm::llvm::RvsdgModule rvsdgModule(jlm::util::filepath(""), "", "");
 
   auto x = &jlm::tests::GraphImport::Create(rvsdgModule.Rvsdg(), valueType, "");
 
@@ -182,10 +186,10 @@ TestPrunePhiArguments()
   phiBuilder.add_ctxvar(x);
   auto phiArgument4 = phiBuilder.add_ctxvar(x);
 
-  auto result = jlm::tests::SimpleNode::Create(
-                    *phiBuilder.subregion(),
+  auto result = jlm::rvsdg::CreateOpNode<jlm::tests::test_op>(
                     { phiOutput0->argument(), phiOutput2->argument(), phiArgument4 },
-                    { valueType })
+                    std::vector<std::shared_ptr<const Type>>{ valueType, valueType, valueType },
+                    std::vector<std::shared_ptr<const Type>>{ valueType })
                     .output(0);
 
   phiOutput0->set_rvorigin(result);
@@ -211,11 +215,12 @@ static void
 TestRemovePhiOutputsWhere()
 {
   using namespace jlm::llvm;
+  using namespace jlm::rvsdg;
 
   // Arrange
   // The phi setup is nonsense, but it is sufficient for this test
   auto valueType = jlm::tests::valuetype::Create();
-  RvsdgModule rvsdgModule(jlm::util::filepath(""), "", "");
+  jlm::llvm::RvsdgModule rvsdgModule(jlm::util::filepath(""), "", "");
 
   phi::builder phiBuilder;
   phiBuilder.begin(&rvsdgModule.Rvsdg().GetRootRegion());
@@ -224,10 +229,10 @@ TestRemovePhiOutputsWhere()
   auto phiOutput1 = phiBuilder.add_recvar(valueType);
   auto phiOutput2 = phiBuilder.add_recvar(valueType);
 
-  auto result = jlm::tests::SimpleNode::Create(
-                    *phiBuilder.subregion(),
+  auto result = jlm::rvsdg::CreateOpNode<jlm::tests::test_op>(
                     { phiOutput0->argument(), phiOutput2->argument() },
-                    { valueType })
+                    std::vector<std::shared_ptr<const Type>>{ valueType, valueType },
+                    std::vector<std::shared_ptr<const Type>>{ valueType })
                     .output(0);
 
   phiOutput0->set_rvorigin(result);
@@ -260,11 +265,12 @@ static void
 TestPrunePhiOutputs()
 {
   using namespace jlm::llvm;
+  using namespace jlm::rvsdg;
 
   // Arrange
   // The phi setup is nonsense, but it is sufficient for this test
   auto valueType = jlm::tests::valuetype::Create();
-  RvsdgModule rvsdgModule(jlm::util::filepath(""), "", "");
+  jlm::llvm::RvsdgModule rvsdgModule(jlm::util::filepath(""), "", "");
 
   phi::builder phiBuilder;
   phiBuilder.begin(&rvsdgModule.Rvsdg().GetRootRegion());
@@ -273,10 +279,10 @@ TestPrunePhiOutputs()
   auto phiOutput1 = phiBuilder.add_recvar(valueType);
   auto phiOutput2 = phiBuilder.add_recvar(valueType);
 
-  auto result = jlm::tests::SimpleNode::Create(
-                    *phiBuilder.subregion(),
+  auto result = jlm::rvsdg::CreateOpNode<jlm::tests::test_op>(
                     { phiOutput0->argument(), phiOutput2->argument() },
-                    { valueType })
+                    std::vector<std::shared_ptr<const Type>>{ valueType, valueType },
+                    std::vector<std::shared_ptr<const Type>>{ valueType })
                     .output(0);
 
   phiOutput0->set_rvorigin(result);

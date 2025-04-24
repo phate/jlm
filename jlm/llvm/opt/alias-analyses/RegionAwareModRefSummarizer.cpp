@@ -39,9 +39,7 @@ public:
       const util::StatisticsCollector & statisticsCollector,
       const rvsdg::RvsdgModule & rvsdgModule,
       const PointsToGraph & pointsToGraph)
-      : util::Statistics(
-            Statistics::Id::RegionAwareMemoryNodeProvisioning,
-            rvsdgModule.SourceFilePath().value()),
+      : util::Statistics(Id::RegionAwareModRefSummarizer, rvsdgModule.SourceFilePath().value()),
         StatisticsCollector_(statisticsCollector)
   {
     if (!IsDemanded())
@@ -140,11 +138,13 @@ private:
 class CallSummary final
 {
 public:
-  CallSummary(const CallNode & callNode, size_t sccIndex)
+  CallSummary(const rvsdg::SimpleNode & callNode, size_t sccIndex)
       : CallNode_(&callNode),
         CallGraphSccIndex_(sccIndex),
         PossiblyRecursive_(false)
-  {}
+  {
+    JLM_ASSERT(is<CallOperation>(&callNode));
+  }
 
   CallSummary(const CallSummary &) = delete;
 
@@ -156,7 +156,7 @@ public:
   CallSummary &
   operator=(CallSummary &&) = delete;
 
-  [[nodiscard]] const CallNode &
+  [[nodiscard]] const rvsdg::SimpleNode &
   GetCallNode() const noexcept
   {
     return *CallNode_;
@@ -203,14 +203,14 @@ public:
    * @return the newly created RegionSummary
    */
   static std::unique_ptr<CallSummary>
-  Create(const CallNode & callNode, size_t sccIndex)
+  Create(const rvsdg::SimpleNode & callNode, size_t sccIndex)
   {
     return std::make_unique<CallSummary>(callNode, sccIndex);
   }
 
 private:
   // The call node represented by this summary
-  const CallNode * CallNode_;
+  const rvsdg::SimpleNode * CallNode_;
 
   // The set of memory locations that may be read from or written to by this call
   util::HashSet<const PointsToGraph::MemoryNode *> MemoryNodes_;
@@ -329,14 +329,15 @@ private:
   bool ContainsPossiblyRecursiveCall_;
 };
 
-/** \brief Memory node provisioning of region-aware memory node provider
+/** \brief Mod/Ref summary of region-aware mod/ref summarizer
  *
  */
 class RegionAwareModRefSummary final : public ModRefSummary
 {
   using RegionSummaryMap =
       std::unordered_map<const rvsdg::Region *, std::unique_ptr<RegionSummary>>;
-  using CallSummaryMap = std::unordered_map<const CallNode *, std::unique_ptr<CallSummary>>;
+  using CallSummaryMap =
+      std::unordered_map<const rvsdg::SimpleNode *, std::unique_ptr<CallSummary>>;
 
   using RegionSummaryIterator =
       util::MapValuePtrIterator<RegionSummary, RegionSummaryMap::const_iterator>;
@@ -390,14 +391,14 @@ public:
   }
 
   [[nodiscard]] const util::HashSet<const PointsToGraph::MemoryNode *> &
-  GetCallEntryNodes(const CallNode & callNode) const override
+  GetCallEntryNodes(const rvsdg::SimpleNode & callNode) const override
   {
     const auto & callSummary = GetCallSummary(callNode);
     return callSummary.GetMemoryNodes();
   }
 
   [[nodiscard]] const util::HashSet<const PointsToGraph::MemoryNode *> &
-  GetCallExitNodes(const CallNode & callNode) const override
+  GetCallExitNodes(const rvsdg::SimpleNode & callNode) const override
   {
     return GetCallEntryNodes(callNode);
   }
@@ -478,7 +479,7 @@ public:
   }
 
   [[nodiscard]] CallSummary *
-  TryGetCallSummary(const CallNode & call) const
+  TryGetCallSummary(const rvsdg::SimpleNode & call) const
   {
     const auto it = CallSummaries_.find(&call);
     if (it == CallSummaries_.end())
@@ -487,13 +488,14 @@ public:
   }
 
   [[nodiscard]] bool
-  ContainsCallSummary(const CallNode & call) const
+  ContainsCallSummary(const rvsdg::SimpleNode & call) const
   {
+    JLM_ASSERT(is<CallOperation>(&call));
     return TryGetCallSummary(call) != nullptr;
   }
 
   [[nodiscard]] CallSummary &
-  GetCallSummary(const CallNode & call) const
+  GetCallSummary(const rvsdg::SimpleNode & call) const
   {
     const auto callSummary = TryGetCallSummary(call);
     JLM_ASSERT(callSummary != nullptr);
@@ -585,8 +587,8 @@ RegionAwareModRefSummarizer::Create(
     const PointsToGraph & pointsToGraph,
     util::StatisticsCollector & statisticsCollector)
 {
-  RegionAwareModRefSummarizer provider;
-  return provider.SummarizeModRefs(rvsdgModule, pointsToGraph, statisticsCollector);
+  RegionAwareModRefSummarizer summarizer;
+  return summarizer.SummarizeModRefs(rvsdgModule, pointsToGraph, statisticsCollector);
 }
 
 std::unique_ptr<ModRefSummary>
@@ -766,13 +768,13 @@ RegionAwareModRefSummarizer::AnnotateSimpleNode(
     const rvsdg::SimpleNode & simpleNode,
     RegionSummary & regionSummary)
 {
-  if (auto loadNode = dynamic_cast<const LoadNode *>(&simpleNode))
+  if (is<LoadOperation>(&simpleNode))
   {
-    AnnotateLoad(*loadNode, regionSummary);
+    AnnotateLoad(simpleNode, regionSummary);
   }
-  else if (auto storeNode = dynamic_cast<const StoreNode *>(&simpleNode))
+  else if (is<StoreOperation>(&simpleNode))
   {
-    AnnotateStore(*storeNode, regionSummary);
+    AnnotateStore(simpleNode, regionSummary);
   }
   else if (is<alloca_op>(&simpleNode))
   {
@@ -786,9 +788,9 @@ RegionAwareModRefSummarizer::AnnotateSimpleNode(
   {
     AnnotateFree(simpleNode, regionSummary);
   }
-  else if (auto callNode = dynamic_cast<const CallNode *>(&simpleNode))
+  else if (is<CallOperation>(&simpleNode))
   {
-    AnnotateCall(*callNode, regionSummary);
+    AnnotateCall(simpleNode, regionSummary);
   }
   else if (is<MemCpyOperation>(&simpleNode))
   {
@@ -797,18 +799,22 @@ RegionAwareModRefSummarizer::AnnotateSimpleNode(
 }
 
 void
-RegionAwareModRefSummarizer::AnnotateLoad(const LoadNode & loadNode, RegionSummary & regionSummary)
+RegionAwareModRefSummarizer::AnnotateLoad(
+    const rvsdg::SimpleNode & loadNode,
+    RegionSummary & regionSummary)
 {
-  auto memoryNodes = ModRefSummary_->GetOutputNodes(*loadNode.GetAddressInput().origin());
+  const auto origin = LoadOperation::AddressInput(loadNode).origin();
+  const auto memoryNodes = ModRefSummary_->GetOutputNodes(*origin);
   regionSummary.AddMemoryNodes(memoryNodes);
 }
 
 void
 RegionAwareModRefSummarizer::AnnotateStore(
-    const StoreNode & storeNode,
+    const rvsdg::SimpleNode & storeNode,
     RegionSummary & regionSummary)
 {
-  auto memoryNodes = ModRefSummary_->GetOutputNodes(*storeNode.GetAddressInput().origin());
+  const auto origin = StoreOperation::AddressInput(storeNode).origin();
+  const auto memoryNodes = ModRefSummary_->GetOutputNodes(*origin);
   regionSummary.AddMemoryNodes(memoryNodes);
 }
 
@@ -860,8 +866,12 @@ RegionAwareModRefSummarizer::AnnotateMemcpy(
 }
 
 void
-RegionAwareModRefSummarizer::AnnotateCall(const CallNode & callNode, RegionSummary & regionSummary)
+RegionAwareModRefSummarizer::AnnotateCall(
+    const rvsdg::SimpleNode & callNode,
+    RegionSummary & regionSummary)
 {
+  JLM_ASSERT(is<CallOperation>(&callNode));
+
   // A call has the same sccIndex as the region it lives in
   const auto sccIndex = regionSummary.GetCallGraphSccIndex();
   auto & callSummary = ModRefSummary_->AddCallSummary(CallSummary::Create(callNode, sccIndex));
@@ -968,19 +978,19 @@ RegionAwareModRefSummarizer::CollectLambdaNodes(const rvsdg::RvsdgModule & rvsdg
 }
 
 std::string
-RegionAwareModRefSummarizer::CallGraphSCCsToString(const RegionAwareModRefSummarizer & provider)
+RegionAwareModRefSummarizer::CallGraphSCCsToString(const RegionAwareModRefSummarizer & summarizer)
 {
   std::ostringstream ss;
-  for (size_t i = 0; i < provider.Context_.SccFunctions.size(); i++)
+  for (size_t i = 0; i < summarizer.Context_.SccFunctions.size(); i++)
   {
     if (i != 0)
       ss << " <- ";
     ss << "[" << std::endl;
-    if (i == provider.Context_.ExternalNodeSccIndex)
+    if (i == summarizer.Context_.ExternalNodeSccIndex)
     {
       ss << "  " << "<external>" << std::endl;
     }
-    for (auto function : provider.Context_.SccFunctions[i].Items())
+    for (auto function : summarizer.Context_.SccFunctions[i].Items())
     {
       ss << "  " << function->GetOperation().debug_string() << std::endl;
     }

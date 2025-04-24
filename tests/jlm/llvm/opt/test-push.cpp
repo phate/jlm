@@ -123,7 +123,7 @@ test_push_theta_bottom()
   auto lvv = theta->AddLoopVar(v);
   auto lvs = theta->AddLoopVar(s);
 
-  auto s1 = StoreNonVolatileNode::Create(lva.pre, lvv.pre, { lvs.pre }, 4)[0];
+  auto s1 = StoreNonVolatileOperation::Create(lva.pre, lvv.pre, { lvs.pre }, 4)[0];
 
   lvs.post->divert_to(s1);
   theta->set_predicate(lvc.pre);

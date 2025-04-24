@@ -537,26 +537,6 @@ ConvertThreeAddressCode(
   {
     ConvertBranch(threeAddressCode, region, variableMap);
   }
-  else if (is<CallOperation>(&threeAddressCode))
-  {
-    Convert<CallNode, CallOperation>(threeAddressCode, region, variableMap);
-  }
-  else if (is<LoadVolatileOperation>(&threeAddressCode))
-  {
-    Convert<LoadVolatileNode, LoadVolatileOperation>(threeAddressCode, region, variableMap);
-  }
-  else if (is<LoadNonVolatileOperation>(&threeAddressCode))
-  {
-    Convert<LoadNonVolatileNode, LoadNonVolatileOperation>(threeAddressCode, region, variableMap);
-  }
-  else if (is<StoreVolatileOperation>(&threeAddressCode))
-  {
-    Convert<StoreVolatileNode, StoreVolatileOperation>(threeAddressCode, region, variableMap);
-  }
-  else if (is<StoreNonVolatileOperation>(&threeAddressCode))
-  {
-    Convert<StoreNonVolatileNode, StoreNonVolatileOperation>(threeAddressCode, region, variableMap);
-  }
   else
   {
     std::vector<rvsdg::output *> operands;

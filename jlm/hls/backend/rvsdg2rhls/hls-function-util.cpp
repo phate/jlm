@@ -314,4 +314,33 @@ get_mem_state_user(rvsdg::output * state_edge)
   auto user = *state_edge->begin();
   return user;
 }
+
+rvsdg::output *
+FindSourceNode(rvsdg::output * out)
+{
+  if (auto ba = dynamic_cast<backedge_argument *>(out))
+  {
+    return FindSourceNode(ba->result()->origin());
+  }
+  else if (auto ra = dynamic_cast<rvsdg::RegionArgument *>(out))
+  {
+    if (ra->input() && rvsdg::TryGetOwnerNode<loop_node>(*ra->input()))
+    {
+      return FindSourceNode(ra->input()->origin());
+    }
+    else
+    {
+      // lambda argument
+      return ra;
+    }
+  }
+  else if (auto so = dynamic_cast<rvsdg::StructuralOutput *>(out))
+  {
+    JLM_ASSERT(rvsdg::TryGetOwnerNode<loop_node>(*out));
+    return FindSourceNode(so->results.begin()->origin());
+  }
+  auto result = dynamic_cast<rvsdg::SimpleOutput *>(out);
+  JLM_ASSERT(result);
+  return result;
+}
 }

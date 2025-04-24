@@ -79,7 +79,7 @@ test1()
     auto gammaInputIoState = gamma->AddEntryVar(iOStateArgument);
     auto gammaInputMemoryState = gamma->AddEntryVar(memoryStateArgument);
 
-    auto callResults = CallNode::Create(
+    auto callResults = CallOperation::Create(
         gammaInputF1.branchArgument[0],
         jlm::rvsdg::AssertGetOwnerNode<jlm::rvsdg::LambdaNode>(*f1).GetOperation().Type(),
         { gammaInputValue.branchArgument[0],
@@ -162,7 +162,7 @@ test2()
     auto memoryStateArgument = lambda->GetFunctionArguments()[1];
 
     auto callResults =
-        CallNode::Create(cvi, functionType2, { cvf1, iOStateArgument, memoryStateArgument });
+        CallOperation::Create(cvi, functionType2, { cvf1, iOStateArgument, memoryStateArgument });
 
     return lambda->finalize(callResults);
   };

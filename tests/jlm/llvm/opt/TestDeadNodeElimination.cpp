@@ -282,12 +282,13 @@ static void
 TestPhi()
 {
   using namespace jlm::llvm;
+  using namespace jlm::rvsdg;
 
   // Arrange
   auto valueType = jlm::tests::valuetype::Create();
   auto functionType = jlm::rvsdg::FunctionType::Create({ valueType }, { valueType });
 
-  RvsdgModule rvsdgModule(jlm::util::filepath(""), "", "");
+  jlm::llvm::RvsdgModule rvsdgModule(jlm::util::filepath(""), "", "");
   auto & rvsdg = rvsdgModule.Rvsdg();
   auto x = &jlm::tests::GraphImport::Create(rvsdg, valueType, "x");
   auto y = &jlm::tests::GraphImport::Create(rvsdg, valueType, "y");
@@ -302,11 +303,12 @@ TestPhi()
     auto f2Argument = lambda1->AddContextVar(*rv2.argument()).inner;
     auto xArgument = lambda1->AddContextVar(dx).inner;
 
-    auto result = jlm::tests::SimpleNode::Create(
-                      *lambda1->subregion(),
-                      { lambda1->GetFunctionArguments()[0], f2Argument, xArgument },
-                      { valueType })
-                      .output(0);
+    auto result =
+        jlm::rvsdg::CreateOpNode<jlm::tests::test_op>(
+            { lambda1->GetFunctionArguments()[0], f2Argument, xArgument },
+            std::vector<std::shared_ptr<const Type>>{ valueType, functionType, valueType },
+            std::vector<std::shared_ptr<const Type>>{ valueType })
+            .output(0);
 
     return lambda1->finalize({ result });
   };
@@ -320,10 +322,10 @@ TestPhi()
     auto f1Argument = lambda2->AddContextVar(*rv1.argument()).inner;
     lambda2->AddContextVar(dy);
 
-    auto result = jlm::tests::SimpleNode::Create(
-                      *lambda2->subregion(),
+    auto result = jlm::rvsdg::CreateOpNode<jlm::tests::test_op>(
                       { lambda2->GetFunctionArguments()[0], f1Argument },
-                      { valueType })
+                      std::vector<std::shared_ptr<const Type>>{ valueType, functionType },
+                      std::vector<std::shared_ptr<const Type>>{ valueType })
                       .output(0);
 
     return lambda2->finalize({ result });
@@ -336,10 +338,10 @@ TestPhi()
         LlvmLambdaOperation::Create(functionType, "f3", linkage::external_linkage));
     auto zArgument = lambda3->AddContextVar(dz).inner;
 
-    auto result = jlm::tests::SimpleNode::Create(
-                      *lambda3->subregion(),
+    auto result = jlm::rvsdg::CreateOpNode<jlm::tests::test_op>(
                       { lambda3->GetFunctionArguments()[0], zArgument },
-                      { valueType })
+                      std::vector<std::shared_ptr<const Type>>{ valueType, valueType },
+                      std::vector<std::shared_ptr<const Type>>{ valueType })
                       .output(0);
 
     return lambda3->finalize({ result });
@@ -376,8 +378,8 @@ TestPhi()
   rv4->set_rvorigin(f4);
   auto phiNode = phiBuilder.end();
 
-  GraphExport::Create(*phiNode->output(0), "f1");
-  GraphExport::Create(*phiNode->output(3), "f4");
+  jlm::tests::GraphExport::Create(*phiNode->output(0), "f1");
+  jlm::tests::GraphExport::Create(*phiNode->output(3), "f4");
 
   // Act
   RunDeadNodeElimination(rvsdgModule);
@@ -404,11 +406,12 @@ static void
 TestDelta()
 {
   using namespace jlm::llvm;
+  using namespace jlm::rvsdg;
 
   // Arrange
   auto valueType = jlm::tests::valuetype::Create();
 
-  RvsdgModule rvsdgModule(jlm::util::filepath(""), "", "");
+  jlm::llvm::RvsdgModule rvsdgModule(jlm::util::filepath(""), "", "");
   auto & rvsdg = rvsdgModule.Rvsdg();
 
   auto x = &jlm::tests::GraphImport::Create(rvsdg, valueType, "x");
@@ -427,14 +430,19 @@ TestDelta()
   deltaNode->add_ctxvar(y);
   auto zArgument = deltaNode->add_ctxvar(z);
 
-  auto result =
-      jlm::tests::SimpleNode::Create(*deltaNode->subregion(), { xArgument }, { valueType })
-          .output(0);
+  auto result = jlm::rvsdg::CreateOpNode<jlm::tests::test_op>(
+                    { xArgument },
+                    std::vector<std::shared_ptr<const Type>>{ valueType },
+                    std::vector<std::shared_ptr<const Type>>{ valueType })
+                    .output(0);
 
-  jlm::tests::SimpleNode::Create(*deltaNode->subregion(), { zArgument }, {});
+  jlm::rvsdg::CreateOpNode<jlm::tests::test_op>(
+      { zArgument },
+      std::vector<std::shared_ptr<const Type>>{ valueType },
+      std::vector<std::shared_ptr<const Type>>{ valueType });
 
   auto deltaOutput = deltaNode->finalize(result);
-  GraphExport::Create(*deltaOutput, "");
+  jlm::tests::GraphExport::Create(*deltaOutput, "");
 
   // Act
   RunDeadNodeElimination(rvsdgModule);

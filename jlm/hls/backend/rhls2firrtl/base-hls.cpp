@@ -7,6 +7,7 @@
 
 #include <algorithm>
 #include <cmath>
+#include <regex>
 
 namespace jlm::hls
 {
@@ -52,6 +53,8 @@ BaseHLS::get_node_name(const jlm::rvsdg::Node * node)
       util::strfmt("op_", node->GetOperation().debug_string(), append, "_", node_map.size());
   // remove chars that are not valid in firrtl module names
   std::replace_if(name.begin(), name.end(), isForbiddenChar, '_');
+  // verilator seems to throw a fit if there are too many underscores in some scenarios
+  name = std::regex_replace(name, std::regex("_+"), "_");
   node_map[node] = name;
   return name;
 }

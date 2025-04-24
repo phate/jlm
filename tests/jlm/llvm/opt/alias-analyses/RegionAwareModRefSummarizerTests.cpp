@@ -1453,7 +1453,7 @@ TestStatistics()
   auto pointsToGraph = RunSteensgaard(test.module());
 
   util::StatisticsCollectorSettings statisticsCollectorSettings(
-      { util::Statistics::Id::RegionAwareMemoryNodeProvisioning });
+      { util::Statistics::Id::RegionAwareModRefSummarizer });
   util::StatisticsCollector statisticsCollector(statisticsCollectorSettings);
 
   // Act

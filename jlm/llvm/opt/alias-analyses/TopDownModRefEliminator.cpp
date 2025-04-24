@@ -50,8 +50,8 @@ class TopDownModRefEliminator::ModRefSummary final : public aa::ModRefSummary
 {
   using RegionMap =
       std::unordered_map<const rvsdg::Region *, util::HashSet<const PointsToGraph::MemoryNode *>>;
-  using CallMap =
-      std::unordered_map<const CallNode *, util::HashSet<const PointsToGraph::MemoryNode *>>;
+  using CallMap = std::
+      unordered_map<const rvsdg::SimpleNode *, util::HashSet<const PointsToGraph::MemoryNode *>>;
 
 public:
   explicit ModRefSummary(const PointsToGraph & pointsToGraph)
@@ -89,9 +89,10 @@ public:
   }
 
   [[nodiscard]] const util::HashSet<const PointsToGraph::MemoryNode *> &
-  GetCallEntryNodes(const CallNode & callNode) const override
+  GetCallEntryNodes(const rvsdg::SimpleNode & callNode) const override
   {
-    auto callTypeClassifier = CallNode::ClassifyCall(callNode);
+    JLM_ASSERT(is<CallOperation>(&callNode));
+    auto callTypeClassifier = CallOperation::ClassifyCall(callNode);
 
     if (callTypeClassifier->IsNonRecursiveDirectCall()
         || callTypeClassifier->IsRecursiveDirectCall())
@@ -113,9 +114,10 @@ public:
   }
 
   [[nodiscard]] const util::HashSet<const PointsToGraph::MemoryNode *> &
-  GetCallExitNodes(const CallNode & callNode) const override
+  GetCallExitNodes(const rvsdg::SimpleNode & callNode) const override
   {
-    auto callTypeClassifier = CallNode::ClassifyCall(callNode);
+    JLM_ASSERT(is<CallOperation>(&callNode));
+    auto callTypeClassifier = CallOperation::ClassifyCall(callNode);
 
     if (callTypeClassifier->IsNonRecursiveDirectCall()
         || callTypeClassifier->IsRecursiveDirectCall())
@@ -169,7 +171,7 @@ public:
 
   void
   AddExternalCallNodes(
-      const CallNode & externalCall,
+      const rvsdg::SimpleNode & externalCall,
       const util::HashSet<const PointsToGraph::MemoryNode *> & memoryNodes)
   {
     auto & set = GetOrCreateExternalCallNodesSet(externalCall);
@@ -178,10 +180,10 @@ public:
 
   void
   AddIndirectCallNodes(
-      const CallNode & indirectCall,
+      const rvsdg::SimpleNode & indirectCall,
       const util::HashSet<const PointsToGraph::MemoryNode *> & memoryNodes)
   {
-    JLM_ASSERT(CallNode::ClassifyCall(indirectCall)->IsIndirectCall());
+    JLM_ASSERT(CallOperation::ClassifyCall(indirectCall)->IsIndirectCall());
     auto & set = GetOrCreateIndirectCallNodesSet(indirectCall);
     set.UnionWith(memoryNodes);
   }
@@ -194,14 +196,16 @@ public:
 
 private:
   bool
-  HasExternalCallNodesSet(const CallNode & externalCall) const noexcept
+  HasExternalCallNodesSet(const rvsdg::SimpleNode & externalCall) const noexcept
   {
+    JLM_ASSERT(is<CallOperation>(&externalCall));
     return ExternalCallNodes_.find(&externalCall) != ExternalCallNodes_.end();
   }
 
   bool
-  HasIndirectCallNodesSet(const CallNode & indirectCall) const noexcept
+  HasIndirectCallNodesSet(const rvsdg::SimpleNode & indirectCall) const noexcept
   {
+    JLM_ASSERT(is<CallOperation>(&indirectCall));
     return IndirectCallNodes_.find(&indirectCall) != IndirectCallNodes_.end();
   }
 
@@ -240,8 +244,10 @@ private:
   }
 
   util::HashSet<const PointsToGraph::MemoryNode *> &
-  GetOrCreateExternalCallNodesSet(const CallNode & externalCall)
+  GetOrCreateExternalCallNodesSet(const rvsdg::SimpleNode & externalCall)
   {
+    JLM_ASSERT(is<CallOperation>(&externalCall));
+
     if (!HasExternalCallNodesSet(externalCall))
     {
       ExternalCallNodes_[&externalCall] = {};
@@ -251,8 +257,10 @@ private:
   }
 
   util::HashSet<const PointsToGraph::MemoryNode *> &
-  GetOrCreateIndirectCallNodesSet(const CallNode & indirectCall)
+  GetOrCreateIndirectCallNodesSet(const rvsdg::SimpleNode & indirectCall)
   {
+    JLM_ASSERT(is<CallOperation>(&indirectCall));
+
     if (!HasIndirectCallNodesSet(indirectCall))
     {
       IndirectCallNodes_[&indirectCall] = {};
@@ -262,14 +270,14 @@ private:
   }
 
   const util::HashSet<const PointsToGraph::MemoryNode *> &
-  GetExternalCallNodesSet(const CallNode & externalCall) const
+  GetExternalCallNodesSet(const rvsdg::SimpleNode & externalCall) const
   {
     JLM_ASSERT(HasExternalCallNodesSet(externalCall));
     return (*ExternalCallNodes_.find(&externalCall)).second;
   }
 
   const util::HashSet<const PointsToGraph::MemoryNode *> &
-  GetIndirectCallNodesSet(const CallNode & indirectCall) const
+  GetIndirectCallNodesSet(const rvsdg::SimpleNode & indirectCall) const
   {
     JLM_ASSERT(HasIndirectCallNodesSet(indirectCall));
     return (*IndirectCallNodes_.find(&indirectCall)).second;
@@ -435,12 +443,12 @@ TopDownModRefEliminator::EliminateModRefs(
 
   statisticsCollector.CollectDemandedStatistics(std::move(statistics));
 
-  auto provisioning = Context_->ReleaseModRefSummary();
+  auto modRefSummary = Context_->ReleaseModRefSummary();
   Context_.reset();
 
-  JLM_ASSERT(CheckInvariants(rvsdgModule, seedModRefSummary, *provisioning));
+  JLM_ASSERT(CheckInvariants(rvsdgModule, seedModRefSummary, *modRefSummary));
 
-  return provisioning;
+  return modRefSummary;
 }
 
 std::unique_ptr<ModRefSummary>
@@ -449,8 +457,8 @@ TopDownModRefEliminator::CreateAndEliminate(
     const aa::ModRefSummary & modRefSummary,
     util::StatisticsCollector & statisticsCollector)
 {
-  TopDownModRefEliminator provider;
-  return provider.EliminateModRefs(rvsdgModule, modRefSummary, statisticsCollector);
+  TopDownModRefEliminator summarizer;
+  return summarizer.EliminateModRefs(rvsdgModule, modRefSummary, statisticsCollector);
 }
 
 std::unique_ptr<ModRefSummary>
@@ -587,7 +595,7 @@ TopDownModRefEliminator::EliminateTopDownLambdaEntry(const rvsdg::LambdaNode & l
     // 2. This lambda is dead and is not used at all
     //
     // Thus, we have no idea what memory nodes are live at its entry. Thus, we need to be
-    // conservative and simply say that all memory nodes from the seed provisioning are live.
+    // conservative and simply say that all memory nodes from the seed mod/ref summary are live.
     auto & seedLambdaEntryNodes = seedModRefSummary.GetLambdaEntryNodes(lambdaNode);
     Context_->AddLiveNodes(lambdaSubregion, seedLambdaEntryNodes);
     modRefSummary.AddRegionEntryNodes(lambdaSubregion, seedLambdaEntryNodes);
@@ -617,7 +625,7 @@ TopDownModRefEliminator::EliminateTopDownLambdaExit(const rvsdg::LambdaNode & la
     // 2. This lambda is dead and is not used at all
     //
     // Thus, we have no idea what memory nodes are live at its entry. Thus, we need to be
-    // conservative and simply say that all memory nodes from the seed provisioning are live.
+    // conservative and simply say that all memory nodes from the seed mod/ref summary are live.
     auto & seedLambdaExitNodes = seedModRefSummary.GetLambdaExitNodes(lambdaNode);
     modRefSummary.AddRegionExitNodes(lambdaSubregion, seedLambdaExitNodes);
   }
@@ -768,9 +776,9 @@ TopDownModRefEliminator::EliminateTopDownSimpleNode(const rvsdg::SimpleNode & si
   {
     EliminateTopDownAlloca(simpleNode);
   }
-  else if (auto callNode = dynamic_cast<const CallNode *>(&simpleNode))
+  else if (is<CallOperation>(&simpleNode))
   {
-    EliminateTopDownCall(*callNode);
+    EliminateTopDownCall(simpleNode);
   }
 }
 
@@ -785,9 +793,9 @@ TopDownModRefEliminator::EliminateTopDownAlloca(const rvsdg::SimpleNode & node)
 }
 
 void
-TopDownModRefEliminator::EliminateTopDownCall(const CallNode & callNode)
+TopDownModRefEliminator::EliminateTopDownCall(const rvsdg::SimpleNode & callNode)
 {
-  auto callTypeClassifier = CallNode::ClassifyCall(callNode);
+  auto callTypeClassifier = CallOperation::ClassifyCall(callNode);
 
   switch (callTypeClassifier->GetCallType())
   {
@@ -810,7 +818,7 @@ TopDownModRefEliminator::EliminateTopDownCall(const CallNode & callNode)
 
 void
 TopDownModRefEliminator::EliminateTopDownNonRecursiveDirectCall(
-    const CallNode & callNode,
+    const rvsdg::SimpleNode & callNode,
     const CallTypeClassifier & callTypeClassifier)
 {
   JLM_ASSERT(callTypeClassifier.IsNonRecursiveDirectCall());
@@ -825,7 +833,7 @@ TopDownModRefEliminator::EliminateTopDownNonRecursiveDirectCall(
 
 void
 TopDownModRefEliminator::EliminateTopDownRecursiveDirectCall(
-    const CallNode & callNode,
+    const rvsdg::SimpleNode & callNode,
     const CallTypeClassifier & callTypeClassifier)
 {
   JLM_ASSERT(callTypeClassifier.IsRecursiveDirectCall());
@@ -840,7 +848,7 @@ TopDownModRefEliminator::EliminateTopDownRecursiveDirectCall(
 
 void
 TopDownModRefEliminator::EliminateTopDownExternalCall(
-    const CallNode & callNode,
+    const rvsdg::SimpleNode & callNode,
     const CallTypeClassifier & callTypeClassifier)
 {
   JLM_ASSERT(callTypeClassifier.IsExternalCall());
@@ -858,7 +866,7 @@ TopDownModRefEliminator::EliminateTopDownExternalCall(
 
 void
 TopDownModRefEliminator::EliminateTopDownIndirectCall(
-    const CallNode & indirectCall,
+    const rvsdg::SimpleNode & indirectCall,
     const CallTypeClassifier & callTypeClassifier)
 {
   JLM_ASSERT(callTypeClassifier.IsIndirectCall());
@@ -933,10 +941,10 @@ TopDownModRefEliminator::CheckInvariants(
   std::function<void(
       const rvsdg::Region &,
       std::vector<const rvsdg::Region *> &,
-      std::vector<const CallNode *> &)>
+      std::vector<const rvsdg::SimpleNode *> &)>
       collectRegionsAndCalls = [&](const rvsdg::Region & rootRegion,
                                    std::vector<const rvsdg::Region *> & regions,
-                                   std::vector<const CallNode *> & callNodes)
+                                   std::vector<const rvsdg::SimpleNode *> & callNodes)
   {
     for (auto & node : rootRegion.Nodes())
     {
@@ -966,14 +974,14 @@ TopDownModRefEliminator::CheckInvariants(
         regions.push_back(subregion);
         collectRegionsAndCalls(*subregion, regions, callNodes);
       }
-      else if (auto callNode = dynamic_cast<const CallNode *>(&node))
+      else if (is<CallOperation>(&node))
       {
-        callNodes.push_back(callNode);
+        callNodes.push_back(util::AssertedCast<const rvsdg::SimpleNode>(&node));
       }
     }
   };
 
-  std::vector<const CallNode *> callNodes;
+  std::vector<const rvsdg::SimpleNode *> callNodes;
   std::vector<const rvsdg::Region *> regions;
   collectRegionsAndCalls(rvsdgModule.Rvsdg().GetRootRegion(), regions, callNodes);
 

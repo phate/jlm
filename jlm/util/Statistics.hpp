@@ -35,7 +35,7 @@ public:
     FirstEnumValue, // must always be the first enum value, used for iteration
 
     Aggregation,
-    AgnosticMemoryNodeProvisioning,
+    AgnosticModRefSummarizer,
     AndersenAnalysis,
     Annotation,
     CommonNodeElimination,
@@ -43,6 +43,7 @@ public:
     DataNodeToDelta,
     DeadNodeElimination,
     FunctionInlining,
+    IfConversion,
     InvariantValueRedirection,
     JlmToRvsdgConversion,
     LoopUnrolling,
@@ -50,7 +51,7 @@ public:
     PullNodes,
     PushNodes,
     ReduceNodes,
-    RegionAwareMemoryNodeProvisioning,
+    RegionAwareModRefSummarizer,
     RvsdgConstruction,
     RvsdgDestruction,
     RvsdgOptimization,

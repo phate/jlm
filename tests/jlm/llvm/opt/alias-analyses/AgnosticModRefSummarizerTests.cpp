@@ -51,13 +51,13 @@ TestStore1()
   /*
    * Act
    */
-  auto provisioning =
+  auto modRefSummary =
       jlm::llvm::aa::AgnosticModRefSummarizer::Create(test.module(), *pointsToGraph);
 
   /*
    * Assert
    */
-  ValidateProvider(test, *provisioning, *pointsToGraph);
+  ValidateProvider(test, *modRefSummary, *pointsToGraph);
 }
 
 static void
@@ -86,13 +86,13 @@ TestStore2()
   /*
    * Act
    */
-  auto provisioning =
+  auto modRefSummary =
       jlm::llvm::aa::AgnosticModRefSummarizer::Create(test.module(), *pointsToGraph);
 
   /*
    * Assert
    */
-  ValidateProvider(test, *provisioning, *pointsToGraph);
+  ValidateProvider(test, *modRefSummary, *pointsToGraph);
 }
 
 static void
@@ -121,13 +121,13 @@ TestLoad1()
   /*
    * Act
    */
-  auto provisioning =
+  auto modRefSummary =
       jlm::llvm::aa::AgnosticModRefSummarizer::Create(test.module(), *pointsToGraph);
 
   /*
    * Assert
    */
-  ValidateProvider(test, *provisioning, *pointsToGraph);
+  ValidateProvider(test, *modRefSummary, *pointsToGraph);
 }
 
 static void
@@ -155,13 +155,13 @@ TestLoad2()
   /*
    * Act
    */
-  auto provisioning =
+  auto modRefSummary =
       jlm::llvm::aa::AgnosticModRefSummarizer::Create(test.module(), *pointsToGraph);
 
   /*
    * Assert
    */
-  ValidateProvider(test, *provisioning, *pointsToGraph);
+  ValidateProvider(test, *modRefSummary, *pointsToGraph);
 }
 
 static void
@@ -190,13 +190,13 @@ TestLoadFromUndef()
   /*
    * Act
    */
-  auto provisioning =
+  auto modRefSummary =
       jlm::llvm::aa::AgnosticModRefSummarizer::Create(test.module(), *pointsToGraph);
 
   /*
    * Assert
    */
-  ValidateProvider(test, *provisioning, *pointsToGraph);
+  ValidateProvider(test, *modRefSummary, *pointsToGraph);
 }
 
 static void
@@ -264,13 +264,13 @@ TestCall1()
   /*
    * Act
    */
-  auto provisioning =
+  auto modRefSummary =
       jlm::llvm::aa::AgnosticModRefSummarizer::Create(test.module(), *pointsToGraph);
 
   /*
    * Assert
    */
-  ValidateProvider(test, *provisioning, *pointsToGraph);
+  ValidateProvider(test, *modRefSummary, *pointsToGraph);
 }
 
 static void
@@ -350,13 +350,13 @@ TestCall2()
   /*
    * Act
    */
-  auto provisioning =
+  auto modRefSummary =
       jlm::llvm::aa::AgnosticModRefSummarizer::Create(test.module(), *pointsToGraph);
 
   /*
    * Assert
    */
-  ValidateProvider(test, *provisioning, *pointsToGraph);
+  ValidateProvider(test, *modRefSummary, *pointsToGraph);
 }
 
 static void
@@ -441,13 +441,13 @@ TestIndirectCall()
   /*
    * Act
    */
-  auto provisioning =
+  auto modRefSummary =
       jlm::llvm::aa::AgnosticModRefSummarizer::Create(test.module(), *pointsToGraph);
 
   /*
    * Assert
    */
-  ValidateProvider(test, *provisioning, *pointsToGraph);
+  ValidateProvider(test, *modRefSummary, *pointsToGraph);
 }
 
 static void
@@ -480,13 +480,13 @@ TestGamma()
   /*
    * Act
    */
-  auto provisioning =
+  auto modRefSummary =
       jlm::llvm::aa::AgnosticModRefSummarizer::Create(test.module(), *pointsToGraph);
 
   /*
    * Assert
    */
-  ValidateProvider(test, *provisioning, *pointsToGraph);
+  ValidateProvider(test, *modRefSummary, *pointsToGraph);
 }
 
 static void
@@ -517,13 +517,13 @@ TestTheta()
   /*
    * Act
    */
-  auto provisioning =
+  auto modRefSummary =
       jlm::llvm::aa::AgnosticModRefSummarizer::Create(test.module(), *pointsToGraph);
 
   /*
    * Assert
    */
-  ValidateProvider(test, *provisioning, *pointsToGraph);
+  ValidateProvider(test, *modRefSummary, *pointsToGraph);
 }
 
 static void
@@ -572,13 +572,13 @@ TestDelta1()
   /*
    * Act
    */
-  auto provisioning =
+  auto modRefSummary =
       jlm::llvm::aa::AgnosticModRefSummarizer::Create(test.module(), *pointsToGraph);
 
   /*
    * Assert
    */
-  ValidateProvider(test, *provisioning, *pointsToGraph);
+  ValidateProvider(test, *modRefSummary, *pointsToGraph);
 }
 
 static void
@@ -627,13 +627,13 @@ TestDelta2()
   /*
    * Act
    */
-  auto provisioning =
+  auto modRefSummary =
       jlm::llvm::aa::AgnosticModRefSummarizer::Create(test.module(), *pointsToGraph);
 
   /*
    * Assert
    */
-  ValidateProvider(test, *provisioning, *pointsToGraph);
+  ValidateProvider(test, *modRefSummary, *pointsToGraph);
 }
 
 static void
@@ -682,13 +682,13 @@ TestImports()
   /*
    * Act
    */
-  auto provisioning =
+  auto modRefSummary =
       jlm::llvm::aa::AgnosticModRefSummarizer::Create(test.module(), *pointsToGraph);
 
   /*
    * Assert
    */
-  ValidateProvider(test, *provisioning, *pointsToGraph);
+  ValidateProvider(test, *modRefSummary, *pointsToGraph);
 }
 
 static void
@@ -749,13 +749,13 @@ TestPhi1()
   /*
    * Act
    */
-  auto provisioning =
+  auto modRefSummary =
       jlm::llvm::aa::AgnosticModRefSummarizer::Create(test.module(), *pointsToGraph);
 
   /*
    * Assert
    */
-  ValidateProvider(test, *provisioning, *pointsToGraph);
+  ValidateProvider(test, *modRefSummary, *pointsToGraph);
 }
 
 static void
@@ -811,13 +811,13 @@ TestMemcpy()
   /*
    * Act
    */
-  auto provisioning =
+  auto modRefSummary =
       jlm::llvm::aa::AgnosticModRefSummarizer::Create(test.module(), *pointsToGraph);
 
   /*
    * Assert
    */
-  ValidateProvider(test, *provisioning, *pointsToGraph);
+  ValidateProvider(test, *modRefSummary, *pointsToGraph);
 }
 
 static void
@@ -828,7 +828,7 @@ TestStatistics()
   auto pointsToGraph = RunSteensgaard(test.module());
 
   jlm::util::StatisticsCollectorSettings statisticsCollectorSettings(
-      { jlm::util::Statistics::Id::AgnosticMemoryNodeProvisioning });
+      { jlm::util::Statistics::Id::AgnosticModRefSummarizer });
   jlm::util::StatisticsCollector statisticsCollector(statisticsCollectorSettings);
 
   // Act

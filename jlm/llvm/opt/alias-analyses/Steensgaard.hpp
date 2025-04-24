@@ -39,7 +39,6 @@ namespace phi
 class node;
 }
 
-class CallNode;
 class LoadNode;
 class StoreNode;
 
@@ -130,22 +129,22 @@ private:
   AnalyzeMalloc(const rvsdg::SimpleNode & node);
 
   void
-  AnalyzeLoad(const LoadNode & loadNode);
+  AnalyzeLoad(const rvsdg::SimpleNode & node);
 
   void
-  AnalyzeStore(const StoreNode & storeNode);
+  AnalyzeStore(const rvsdg::SimpleNode & node);
 
   void
-  AnalyzeCall(const CallNode & callNode);
+  AnalyzeCall(const rvsdg::SimpleNode & callNode);
 
   void
-  AnalyzeDirectCall(const CallNode & callNode, const rvsdg::LambdaNode & lambdaNode);
+  AnalyzeDirectCall(const rvsdg::SimpleNode & callNode, const rvsdg::LambdaNode & lambdaNode);
 
   void
-  AnalyzeExternalCall(const CallNode & callNode);
+  AnalyzeExternalCall(const rvsdg::SimpleNode & callNode);
 
   void
-  AnalyzeIndirectCall(const CallNode & callNode);
+  AnalyzeIndirectCall(const rvsdg::SimpleNode & callNode);
 
   void
   AnalyzeGep(const rvsdg::SimpleNode & node);

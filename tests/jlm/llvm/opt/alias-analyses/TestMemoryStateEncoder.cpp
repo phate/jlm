@@ -1901,14 +1901,14 @@ ValidatePhiTestSteensgaardAgnosticTopDown(const jlm::tests::PhiTest1 & test)
       jlm::rvsdg::output::GetNode(*test.lambda_fib->GetFunctionResults()[1]->origin());
   assert(is<LambdaExitMemoryStateMergeOperation>(*lambdaExitMerge, 4, 1));
 
-  const StoreNonVolatileNode * storeNode = nullptr;
+  const jlm::rvsdg::Node * storeNode = nullptr;
   const jlm::rvsdg::GammaNode * gammaNode = nullptr;
   for (size_t n = 0; n < lambdaExitMerge->ninputs(); n++)
   {
     auto node = jlm::rvsdg::output::GetNode(*lambdaExitMerge->input(n)->origin());
-    if (auto castedStoreNode = dynamic_cast<const StoreNonVolatileNode *>(node))
+    if (is<StoreNonVolatileOperation>(node))
     {
-      storeNode = castedStoreNode;
+      storeNode = node;
     }
     else if (auto castedGammaNode = dynamic_cast<const jlm::rvsdg::GammaNode *>(node))
     {

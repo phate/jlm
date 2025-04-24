@@ -18,18 +18,18 @@ namespace jlm::llvm::aa
 
 /** Applies points-to analysis and memory state encoding.
  * Uses the information collected during points-to analysis and
- * the memory nodes provided by the memory node provider
- * to reencode memory state edges between the operations touching memory.
+ * the memory nodes provided by the mod/ref summarizer
+ * to re-encode memory state edges between the operations touching memory.
  *
- * The type of points-to analysis and memory node provider is specified by the template parameters.
+ * The type of points-to analysis and mod/ref summarizer is specified by the template parameters.
  *
- * @tparam TPointsToAnalysis the subclass of PointsToAnalysis to use
- * @tparam TModRefSummarizer the subclass of MemoryNodeProvider to use
+ * @tparam TPointsToAnalysis the subclass of \ref PointsToAnalysis to use
+ * @tparam TModRefSummarizer the subclass of \ref ModRefSummarizer to use
  *
  * @see Steensgaard
  * @see Andersen
- * @see AgnosticMemoryNodeProvider
- * @see RegionAwareMemoryNodeProvider
+ * @see AgnosticModRefSummarizer
+ * @see RegionAwareModRefSummarizer
  */
 template<typename TPointsToAnalysis, typename TModRefSummarizer>
 class PointsToAnalysisStateEncoder final : public rvsdg::Transformation

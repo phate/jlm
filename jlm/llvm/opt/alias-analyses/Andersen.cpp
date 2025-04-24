@@ -617,12 +617,12 @@ Andersen::AnalyzeSimpleNode(const rvsdg::SimpleNode & node)
     AnalyzeAlloca(node);
   else if (is<malloc_op>(op))
     AnalyzeMalloc(node);
-  else if (const auto loadNode = dynamic_cast<const LoadNode *>(&node))
-    AnalyzeLoad(*loadNode);
-  else if (const auto storeNode = dynamic_cast<const StoreNode *>(&node))
-    AnalyzeStore(*storeNode);
-  else if (const auto callNode = dynamic_cast<const CallNode *>(&node))
-    AnalyzeCall(*callNode);
+  else if (is<LoadOperation>(&node))
+    AnalyzeLoad(node);
+  else if (is<StoreOperation>(&node))
+    AnalyzeStore(node);
+  else if (is<CallOperation>(&node))
+    AnalyzeCall(node);
   else if (is<GetElementPtrOperation>(op))
     AnalyzeGep(node);
   else if (is<bitcast_op>(op))
@@ -694,10 +694,12 @@ Andersen::AnalyzeMalloc(const rvsdg::SimpleNode & node)
 }
 
 void
-Andersen::AnalyzeLoad(const LoadNode & loadNode)
+Andersen::AnalyzeLoad(const rvsdg::SimpleNode & node)
 {
-  const auto & addressRegister = *loadNode.GetAddressInput().origin();
-  const auto & outputRegister = loadNode.GetLoadedValueOutput();
+  JLM_ASSERT(is<LoadOperation>(&node));
+
+  const auto & addressRegister = *LoadOperation::AddressInput(node).origin();
+  const auto & outputRegister = LoadOperation::LoadedValueOutput(node);
 
   const auto addressRegisterPO = Set_->GetRegisterPointerObject(addressRegister);
 
@@ -713,10 +715,10 @@ Andersen::AnalyzeLoad(const LoadNode & loadNode)
 }
 
 void
-Andersen::AnalyzeStore(const StoreNode & storeNode)
+Andersen::AnalyzeStore(const rvsdg::SimpleNode & node)
 {
-  const auto & addressRegister = *storeNode.GetAddressInput().origin();
-  const auto & valueRegister = *storeNode.GetStoredValueInput().origin();
+  const auto & addressRegister = *StoreOperation::AddressInput(node).origin();
+  const auto & valueRegister = *StoreOperation::StoredValueInput(node).origin();
 
   const auto addressRegisterPO = Set_->GetRegisterPointerObject(addressRegister);
 
@@ -733,16 +735,18 @@ Andersen::AnalyzeStore(const StoreNode & storeNode)
 }
 
 void
-Andersen::AnalyzeCall(const CallNode & callNode)
+Andersen::AnalyzeCall(const rvsdg::SimpleNode & callNode)
 {
+  JLM_ASSERT(is<CallOperation>(&callNode));
+
   // The address being called by the call node
-  const auto & callTarget = *callNode.GetFunctionInput()->origin();
+  const auto & callTarget = *CallOperation::GetFunctionInput(callNode).origin();
   const auto callTargetPO = Set_->GetRegisterPointerObject(callTarget);
 
   // Create PointerObjects for all output values of pointer type
-  for (size_t n = 0; n < callNode.NumResults(); n++)
+  for (size_t n = 0; n < callNode.noutputs(); n++)
   {
-    const auto & outputRegister = *callNode.Result(n);
+    const auto & outputRegister = *callNode.output(n);
     if (IsOrContainsPointerType(outputRegister.type()))
       (void)Set_->CreateRegisterPointerObject(outputRegister);
   }
