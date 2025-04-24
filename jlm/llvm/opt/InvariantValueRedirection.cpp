@@ -196,7 +196,7 @@ InvariantValueRedirection::RedirectCallOutputs(CallNode & callNode)
     return;
 
   auto memoryStateOutput = &CallOperation::GetMemoryStateOutput(callNode);
-  auto callExitSplit = CallNode::GetMemoryStateExitSplit(callNode);
+  auto callExitSplit = CallOperation::GetMemoryStateExitSplit(callNode);
   auto hasCallExitSplit = callExitSplit != nullptr;
 
   auto results = lambdaNode.GetFunctionResults();
@@ -210,7 +210,7 @@ InvariantValueRedirection::RedirectCallOutputs(CallNode & callNode)
     {
       auto lambdaEntrySplit = GetMemoryStateEntrySplit(lambdaNode);
       auto lambdaExitMerge = GetMemoryStateExitMerge(lambdaNode);
-      auto callEntryMerge = CallNode::GetMemoryStateEntryMerge(callNode);
+      auto callEntryMerge = CallOperation::GetMemoryStateEntryMerge(callNode);
 
       // The callExitSplit is present. We therefore expect the other nodes to be present as well.
       JLM_ASSERT(lambdaEntrySplit && lambdaExitMerge && callEntryMerge);
