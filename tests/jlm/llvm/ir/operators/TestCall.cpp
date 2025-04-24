@@ -37,24 +37,23 @@ TestCopy()
   auto iOState2 = &jlm::tests::GraphImport::Create(rvsdg, iOStateType, "iOState2");
   auto memoryState2 = &jlm::tests::GraphImport::Create(rvsdg, memoryStateType, "memoryState2");
 
-  auto callResults = CallNode::Create(function1, functionType, { value1, iOState1, memoryState1 });
+  auto callResults =
+      CallOperation::Create(function1, functionType, { value1, iOState1, memoryState1 });
 
   // Act
   auto node = jlm::rvsdg::output::GetNode(*callResults[0]);
-  auto callNode = jlm::util::AssertedCast<const CallNode>(node);
   auto copiedNode =
-      callNode->copy(&rvsdg.GetRootRegion(), { function2, value2, iOState2, memoryState2 });
+      node->copy(&rvsdg.GetRootRegion(), { function2, value2, iOState2, memoryState2 });
 
   // Assert
-  auto copiedCallNode = dynamic_cast<const CallNode *>(copiedNode);
-  assert(copiedNode != nullptr);
-  assert(callNode->GetOperation() == copiedCallNode->GetOperation());
+  assert(node->GetOperation() == copiedNode->GetOperation());
 }
 
 static void
 TestCallNodeAccessors()
 {
   using namespace jlm::llvm;
+  using namespace jlm::rvsdg;
 
   // Arrange
   auto valueType = jlm::tests::valuetype::Create();
@@ -71,27 +70,27 @@ TestCallNodeAccessors()
   auto m = &jlm::tests::GraphImport::Create(rvsdg, memoryStateType, "memoryState");
 
   // Act
-  auto results = CallNode::Create(f, functionType, { v, i, m });
-  auto & callNode = *jlm::util::AssertedCast<CallNode>(jlm::rvsdg::output::GetNode(*results[0]));
+  auto results = CallOperation::Create(f, functionType, { v, i, m });
+  auto & callNode = *jlm::util::AssertedCast<SimpleNode>(jlm::rvsdg::output::GetNode(*results[0]));
 
   // Assert
-  assert(callNode.NumArguments() == 3);
-  assert(callNode.NumArguments() == callNode.ninputs() - 1);
-  assert(callNode.Argument(0)->origin() == v);
-  assert(callNode.Argument(1)->origin() == i);
-  assert(callNode.Argument(2)->origin() == m);
+  assert(CallOperation::NumArguments(callNode) == 3);
+  assert(CallOperation::NumArguments(callNode) == callNode.ninputs() - 1);
+  assert(CallOperation::Argument(callNode, 0)->origin() == v);
+  assert(CallOperation::Argument(callNode, 1)->origin() == i);
+  assert(CallOperation::Argument(callNode, 2)->origin() == m);
 
-  assert(callNode.NumResults() == 3);
-  assert(callNode.Result(0)->type() == *valueType);
-  assert(callNode.Result(1)->type() == *iOStateType);
-  assert(callNode.Result(2)->type() == *memoryStateType);
+  assert(callNode.noutputs() == 3);
+  assert(callNode.output(0)->type() == *valueType);
+  assert(callNode.output(1)->type() == *iOStateType);
+  assert(callNode.output(2)->type() == *memoryStateType);
 
-  assert(callNode.GetFunctionInput()->origin() == f);
-  assert(callNode.GetIoStateInput()->origin() == i);
-  assert(callNode.GetMemoryStateInput()->origin() == m);
+  assert(CallOperation::GetFunctionInput(callNode).origin() == f);
+  assert(CallOperation::GetIOStateInput(callNode).origin() == i);
+  assert(CallOperation::GetMemoryStateInput(callNode).origin() == m);
 
-  assert(callNode.GetIoStateOutput()->type() == *iOStateType);
-  assert(callNode.GetMemoryStateOutput()->type() == *memoryStateType);
+  assert(CallOperation::GetIOStateOutput(callNode).type() == *iOStateType);
+  assert(CallOperation::GetMemoryStateOutput(callNode).type() == *memoryStateType);
 }
 
 static void
@@ -134,21 +133,23 @@ TestCallTypeClassifierIndirectCall()
     auto load = LoadNonVolatileOperation::Create(alloca[0], store, PointerType::Create(), 8);
     auto fn = jlm::rvsdg::CreateOpNode<PointerToFunctionOperation>({ load[0] }, fcttype1).output(0);
 
-    auto callResults = CallNode::Create(fn, fcttype1, { iOStateArgument, memoryStateArgument });
+    auto callResults =
+        CallOperation::Create(fn, fcttype1, { iOStateArgument, memoryStateArgument });
 
     lambda->finalize(callResults);
 
     GraphExport::Create(*lambda->output(), "f");
 
     return std::make_tuple(
-        jlm::util::AssertedCast<CallNode>(jlm::rvsdg::output::GetNode(*callResults[0])),
+        jlm::util::AssertedCast<jlm::rvsdg::SimpleNode>(
+            jlm::rvsdg::output::GetNode(*callResults[0])),
         fn);
   };
 
   auto [callNode, loadOutput] = SetupFunction();
 
   // Act
-  auto callTypeClassifier = CallNode::ClassifyCall(*callNode);
+  auto callTypeClassifier = CallOperation::ClassifyCall(*callNode);
 
   // Assert
   assert(callTypeClassifier->IsIndirectCall());
@@ -226,14 +227,17 @@ TestCallTypeClassifierNonRecursiveDirectCall()
 
     auto functionG = SetupOuterTheta(lambda->subregion(), functionGArgument);
 
-    auto callResults =
-        CallNode::Create(functionG.output, functionTypeG, { iOStateArgument, memoryStateArgument });
+    auto callResults = CallOperation::Create(
+        functionG.output,
+        functionTypeG,
+        { iOStateArgument, memoryStateArgument });
 
     lambda->finalize(callResults);
 
     return std::make_tuple(
         lambda,
-        jlm::util::AssertedCast<CallNode>(jlm::rvsdg::output::GetNode(*callResults[0])));
+        jlm::util::AssertedCast<jlm::rvsdg::SimpleNode>(
+            jlm::rvsdg::output::GetNode(*callResults[0])));
   };
 
   auto g = SetupFunctionG();
@@ -244,7 +248,7 @@ TestCallTypeClassifierNonRecursiveDirectCall()
   //	jlm::rvsdg::view(&graph->GetRootRegion(), stdout);
 
   // Act
-  auto callTypeClassifier = CallNode::ClassifyCall(*callNode);
+  auto callTypeClassifier = CallOperation::ClassifyCall(*callNode);
 
   // Assert
   assert(callTypeClassifier->IsNonRecursiveDirectCall());
@@ -305,7 +309,7 @@ TestCallTypeClassifierNonRecursiveDirectCallTheta()
 
       auto functionG = SetupInnerTheta(outerTheta->subregion(), thetaOutputG.pre);
 
-      auto callResults = CallNode::Create(
+      auto callResults = CallOperation::Create(
           functionG.output,
           functionTypeG,
           { thetaOutputIoState.pre, thetaOutputMemoryState.pre });
@@ -319,7 +323,8 @@ TestCallTypeClassifierNonRecursiveDirectCallTheta()
           thetaOutputValue,
           thetaOutputIoState,
           thetaOutputMemoryState,
-          jlm::util::AssertedCast<CallNode>(jlm::rvsdg::output::GetNode(*callResults[0])));
+          jlm::util::AssertedCast<jlm::rvsdg::SimpleNode>(
+              jlm::rvsdg::output::GetNode(*callResults[0])));
     };
 
     auto vt = jlm::tests::valuetype::Create();
@@ -358,7 +363,7 @@ TestCallTypeClassifierNonRecursiveDirectCallTheta()
   jlm::rvsdg::view(&graph->GetRootRegion(), stdout);
 
   // Act
-  auto callTypeClassifier = CallNode::ClassifyCall(*callNode);
+  auto callTypeClassifier = CallOperation::ClassifyCall(*callNode);
 
   // Assert
   assert(callTypeClassifier->IsNonRecursiveDirectCall());
@@ -414,7 +419,7 @@ TestCallTypeClassifierRecursiveDirectCall()
     /* gamma subregion 0 */
     auto one = jlm::rvsdg::create_bitconstant(gammaNode->subregion(0), 64, 1);
     auto nm1 = jlm::rvsdg::bitsub_op::create(64, nev.branchArgument[0], one);
-    auto callfibm1Results = CallNode::Create(
+    auto callfibm1Results = CallOperation::Create(
         fibev.branchArgument[0],
         functionType,
         { nm1,
@@ -424,7 +429,7 @@ TestCallTypeClassifierRecursiveDirectCall()
 
     two = jlm::rvsdg::create_bitconstant(gammaNode->subregion(0), 64, 2);
     auto nm2 = jlm::rvsdg::bitsub_op::create(64, nev.branchArgument[0], two);
-    auto callfibm2Results = CallNode::Create(
+    auto callfibm2Results = CallOperation::Create(
         fibev.branchArgument[0],
         functionType,
         { nm2, resultev.branchArgument[0], callfibm1Results[0], callfibm1Results[1] });
@@ -473,15 +478,17 @@ TestCallTypeClassifierRecursiveDirectCall()
 
     return std::make_tuple(
         lambdaOutput,
-        jlm::util::AssertedCast<CallNode>(jlm::rvsdg::output::GetNode(*callfibm1Results[0])),
-        jlm::util::AssertedCast<CallNode>(jlm::rvsdg::output::GetNode(*callfibm2Results[0])));
+        jlm::util::AssertedCast<jlm::rvsdg::SimpleNode>(
+            jlm::rvsdg::output::GetNode(*callfibm1Results[0])),
+        jlm::util::AssertedCast<jlm::rvsdg::SimpleNode>(
+            jlm::rvsdg::output::GetNode(*callfibm2Results[0])));
   };
 
   auto [fibfct, callFib1, callFib2] = SetupFib();
 
   // Act
-  auto callTypeClassifier1 = CallNode::ClassifyCall(*callFib1);
-  auto callTypeClassifier2 = CallNode::ClassifyCall(*callFib2);
+  auto callTypeClassifier1 = CallOperation::ClassifyCall(*callFib1);
+  auto callTypeClassifier2 = CallOperation::ClassifyCall(*callFib2);
 
   // Assert
   assert(callTypeClassifier1->IsRecursiveDirectCall());

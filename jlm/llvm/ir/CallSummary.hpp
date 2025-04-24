@@ -14,8 +14,6 @@
 namespace jlm::llvm
 {
 
-class CallNode;
-
 /**
  * The CallSummary of a lambda summarizes all call usages of the lambda. It distinguishes between
  * three call usages:
@@ -26,13 +24,14 @@ class CallNode;
  */
 class CallSummary final
 {
-  using DirectCallsConstRange = util::IteratorRange<std::vector<CallNode *>::const_iterator>;
+  using DirectCallsConstRange =
+      util::IteratorRange<std::vector<rvsdg::SimpleNode *>::const_iterator>;
   using OtherUsersConstRange = util::IteratorRange<std::vector<rvsdg::input *>::const_iterator>;
 
 public:
   CallSummary(
       GraphExport * rvsdgExport,
-      std::vector<CallNode *> directCalls,
+      std::vector<rvsdg::SimpleNode *> directCalls,
       std::vector<rvsdg::input *> otherUsers)
       : RvsdgExport_(rvsdgExport),
         DirectCalls_(std::move(directCalls)),
@@ -175,7 +174,7 @@ public:
   static std::unique_ptr<CallSummary>
   Create(
       GraphExport * rvsdgExport,
-      std::vector<CallNode *> directCalls,
+      std::vector<rvsdg::SimpleNode *> directCalls,
       std::vector<rvsdg::input *> otherUsers)
   {
     return std::make_unique<CallSummary>(
@@ -186,7 +185,7 @@ public:
 
 private:
   GraphExport * RvsdgExport_;
-  std::vector<CallNode *> DirectCalls_;
+  std::vector<rvsdg::SimpleNode *> DirectCalls_;
   std::vector<rvsdg::input *> OtherUsers_;
 };
 
