@@ -23,7 +23,7 @@ ComputeCallSummary(const rvsdg::LambdaNode & lambdaNode)
   std::deque<rvsdg::input *> worklist;
   worklist.insert(worklist.end(), lambdaNode.output()->begin(), lambdaNode.output()->end());
 
-  std::vector<CallNode *> directCalls;
+  std::vector<rvsdg::SimpleNode *> directCalls;
   GraphExport * rvsdgExport = nullptr;
   std::vector<rvsdg::input *> otherUsers;
 
@@ -109,7 +109,7 @@ ComputeCallSummary(const rvsdg::LambdaNode & lambdaNode)
 
     if (is<CallOperation>(inputNode) && input == inputNode->input(0))
     {
-      directCalls.emplace_back(util::AssertedCast<CallNode>(inputNode));
+      directCalls.emplace_back(util::AssertedCast<rvsdg::SimpleNode>(inputNode));
       continue;
     }
 

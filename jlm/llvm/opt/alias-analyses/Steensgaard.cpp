@@ -1010,9 +1010,9 @@ Steensgaard::AnalyzeSimpleNode(const jlm::rvsdg::SimpleNode & node)
   {
     AnalyzeStore(node);
   }
-  else if (auto callNode = dynamic_cast<const CallNode *>(&node))
+  else if (is<CallOperation>(&node))
   {
-    AnalyzeCall(*callNode);
+    AnalyzeCall(node);
   }
   else if (is<GetElementPtrOperation>(&node))
   {
@@ -1152,9 +1152,11 @@ Steensgaard::AnalyzeStore(const rvsdg::SimpleNode & node)
 }
 
 void
-Steensgaard::AnalyzeCall(const CallNode & callNode)
+Steensgaard::AnalyzeCall(const rvsdg::SimpleNode & callNode)
 {
-  auto callTypeClassifier = CallNode::ClassifyCall(callNode);
+  JLM_ASSERT(is<CallOperation>(&callNode));
+
+  auto callTypeClassifier = CallOperation::ClassifyCall(callNode);
   switch (callTypeClassifier->GetCallType())
   {
   case CallTypeClassifier::CallType::NonRecursiveDirectCall:
@@ -1175,10 +1177,14 @@ Steensgaard::AnalyzeCall(const CallNode & callNode)
 }
 
 void
-Steensgaard::AnalyzeDirectCall(const CallNode & callNode, const rvsdg::LambdaNode & lambdaNode)
+Steensgaard::AnalyzeDirectCall(
+    const rvsdg::SimpleNode & callNode,
+    const rvsdg::LambdaNode & lambdaNode)
 {
+  JLM_ASSERT(is<CallOperation>(&callNode));
+
   auto & lambdaFunctionType = lambdaNode.GetOperation().type();
-  auto & callFunctionType = *callNode.GetOperation().GetFunctionType();
+  auto & callFunctionType = CallOperation::GetFunctionInput(callNode).type();
   if (callFunctionType != lambdaFunctionType)
   {
     // LLVM permits code where it can happen that the number and type of the arguments handed in to
@@ -1227,12 +1233,14 @@ Steensgaard::AnalyzeDirectCall(const CallNode & callNode, const rvsdg::LambdaNod
 }
 
 void
-Steensgaard::AnalyzeExternalCall(const CallNode & callNode)
+Steensgaard::AnalyzeExternalCall(const rvsdg::SimpleNode & callNode)
 {
+  JLM_ASSERT(is<CallOperation>(&callNode));
+
   // Mark arguments of external function call as escaped
   //
   // Variadic arguments are taken care of in AnalyzeVaList().
-  for (size_t n = 1; n < callNode.NumArguments(); n++)
+  for (size_t n = 1; n < CallOperation::NumArguments(callNode); n++)
   {
     auto & callArgument = *callNode.input(n)->origin();
 
@@ -1243,9 +1251,9 @@ Steensgaard::AnalyzeExternalCall(const CallNode & callNode)
   }
 
   // Mark results of external function call as pointing to escaped and external
-  for (size_t n = 0; n < callNode.NumResults(); n++)
+  for (size_t n = 0; n < callNode.noutputs(); n++)
   {
-    auto & callResult = *callNode.Result(n);
+    auto & callResult = *callNode.output(n);
 
     if (HasOrContainsPointerType(callResult))
     {
@@ -1258,8 +1266,10 @@ Steensgaard::AnalyzeExternalCall(const CallNode & callNode)
 }
 
 void
-Steensgaard::AnalyzeIndirectCall(const CallNode & callNode)
+Steensgaard::AnalyzeIndirectCall(const rvsdg::SimpleNode & callNode)
 {
+  JLM_ASSERT(is<CallOperation>(&callNode));
+
   // Nothing can be done for the call/lambda arguments, as it is
   // an indirect call and the lambda node cannot be retrieved.
   //

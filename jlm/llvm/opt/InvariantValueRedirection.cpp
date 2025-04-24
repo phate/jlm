@@ -125,9 +125,9 @@ InvariantValueRedirection::RedirectInRegion(rvsdg::Region & region)
       RedirectInSubregions(*thetaNode);
       RedirectThetaOutputs(*thetaNode);
     }
-    else if (auto callNode = dynamic_cast<CallNode *>(&node))
+    else if (is<CallOperation>(&node))
     {
-      RedirectCallOutputs(*callNode);
+      RedirectCallOutputs(*util::AssertedCast<rvsdg::SimpleNode>(&node));
     }
   }
 }
@@ -173,9 +173,11 @@ InvariantValueRedirection::RedirectThetaOutputs(rvsdg::ThetaNode & thetaNode)
 }
 
 void
-InvariantValueRedirection::RedirectCallOutputs(CallNode & callNode)
+InvariantValueRedirection::RedirectCallOutputs(rvsdg::SimpleNode & callNode)
 {
-  auto callTypeClassifier = CallNode::ClassifyCall(callNode);
+  JLM_ASSERT(is<CallOperation>(&callNode));
+
+  auto callTypeClassifier = CallOperation::ClassifyCall(callNode);
   auto callType = callTypeClassifier->GetCallType();
 
   // FIXME: We currently only support non-recursive direct calls. We would also like to get this
@@ -192,11 +194,11 @@ InvariantValueRedirection::RedirectCallOutputs(CallNode & callNode)
   // direct call. See jlm::tests::LambdaCallArgumentMismatch for an example. In this case, we cannot
   // redirect the call outputs to the call operand as the types would not align, resulting in type
   // errors.
-  if (callNode.NumArguments() != lambdaNode.GetFunctionArguments().size())
+  if (CallOperation::NumArguments(callNode) != lambdaNode.GetFunctionArguments().size())
     return;
 
-  auto memoryStateOutput = callNode.GetMemoryStateOutput();
-  auto callExitSplit = CallNode::GetMemoryStateExitSplit(callNode);
+  auto memoryStateOutput = &CallOperation::GetMemoryStateOutput(callNode);
+  auto callExitSplit = CallOperation::GetMemoryStateExitSplit(callNode);
   auto hasCallExitSplit = callExitSplit != nullptr;
 
   auto results = lambdaNode.GetFunctionResults();
@@ -210,7 +212,7 @@ InvariantValueRedirection::RedirectCallOutputs(CallNode & callNode)
     {
       auto lambdaEntrySplit = GetMemoryStateEntrySplit(lambdaNode);
       auto lambdaExitMerge = GetMemoryStateExitMerge(lambdaNode);
-      auto callEntryMerge = CallNode::GetMemoryStateEntryMerge(callNode);
+      auto callEntryMerge = CallOperation::GetMemoryStateEntryMerge(callNode);
 
       // The callExitSplit is present. We therefore expect the other nodes to be present as well.
       JLM_ASSERT(lambdaEntrySplit && lambdaExitMerge && callEntryMerge);
@@ -247,7 +249,7 @@ InvariantValueRedirection::RedirectCallOutputs(CallNode & callNode)
         }
         else
         {
-          auto callOperand = callNode.Argument(origin->index())->origin();
+          auto callOperand = CallOperation::Argument(callNode, origin->index())->origin();
           callOutput->divert_users(callOperand);
         }
       }
