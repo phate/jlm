@@ -20,8 +20,6 @@ class ThetaNode;
 namespace jlm::llvm
 {
 
-class CallNode;
-
 /** \brief Invariant Value Redirection Optimization
  *
  * Invariant Value Redirection (IVR) redirects invariant edges around gamma, theta, and call nodes.
@@ -76,7 +74,7 @@ private:
   RedirectThetaOutputs(rvsdg::ThetaNode & thetaNode);
 
   static void
-  RedirectCallOutputs(CallNode & callNode);
+  RedirectCallOutputs(rvsdg::SimpleNode & callNode);
 };
 
 }

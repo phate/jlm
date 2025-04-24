@@ -125,9 +125,9 @@ InvariantValueRedirection::RedirectInRegion(rvsdg::Region & region)
       RedirectInSubregions(*thetaNode);
       RedirectThetaOutputs(*thetaNode);
     }
-    else if (auto callNode = dynamic_cast<CallNode *>(&node))
+    else if (is<CallOperation>(&node))
     {
-      RedirectCallOutputs(*callNode);
+      RedirectCallOutputs(*util::AssertedCast<rvsdg::SimpleNode>(&node));
     }
   }
 }
@@ -173,8 +173,10 @@ InvariantValueRedirection::RedirectThetaOutputs(rvsdg::ThetaNode & thetaNode)
 }
 
 void
-InvariantValueRedirection::RedirectCallOutputs(CallNode & callNode)
+InvariantValueRedirection::RedirectCallOutputs(rvsdg::SimpleNode & callNode)
 {
+  JLM_ASSERT(is<CallOperation>(&callNode));
+
   auto callTypeClassifier = CallOperation::ClassifyCall(callNode);
   auto callType = callTypeClassifier->GetCallType();
 
