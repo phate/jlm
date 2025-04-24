@@ -1152,8 +1152,10 @@ Steensgaard::AnalyzeStore(const rvsdg::SimpleNode & node)
 }
 
 void
-Steensgaard::AnalyzeCall(const CallNode & callNode)
+Steensgaard::AnalyzeCall(const rvsdg::SimpleNode & callNode)
 {
+  JLM_ASSERT(is<CallOperation>(&callNode));
+
   auto callTypeClassifier = CallOperation::ClassifyCall(callNode);
   switch (callTypeClassifier->GetCallType())
   {
@@ -1175,10 +1177,14 @@ Steensgaard::AnalyzeCall(const CallNode & callNode)
 }
 
 void
-Steensgaard::AnalyzeDirectCall(const CallNode & callNode, const rvsdg::LambdaNode & lambdaNode)
+Steensgaard::AnalyzeDirectCall(
+    const rvsdg::SimpleNode & callNode,
+    const rvsdg::LambdaNode & lambdaNode)
 {
+  JLM_ASSERT(is<CallOperation>(&callNode));
+
   auto & lambdaFunctionType = lambdaNode.GetOperation().type();
-  auto & callFunctionType = *callNode.GetOperation().GetFunctionType();
+  auto & callFunctionType = CallOperation::GetFunctionInput(callNode).type();
   if (callFunctionType != lambdaFunctionType)
   {
     // LLVM permits code where it can happen that the number and type of the arguments handed in to
@@ -1227,8 +1233,10 @@ Steensgaard::AnalyzeDirectCall(const CallNode & callNode, const rvsdg::LambdaNod
 }
 
 void
-Steensgaard::AnalyzeExternalCall(const CallNode & callNode)
+Steensgaard::AnalyzeExternalCall(const rvsdg::SimpleNode & callNode)
 {
+  JLM_ASSERT(is<CallOperation>(&callNode));
+
   // Mark arguments of external function call as escaped
   //
   // Variadic arguments are taken care of in AnalyzeVaList().
@@ -1258,8 +1266,10 @@ Steensgaard::AnalyzeExternalCall(const CallNode & callNode)
 }
 
 void
-Steensgaard::AnalyzeIndirectCall(const CallNode & callNode)
+Steensgaard::AnalyzeIndirectCall(const rvsdg::SimpleNode & callNode)
 {
+  JLM_ASSERT(is<CallOperation>(&callNode));
+
   // Nothing can be done for the call/lambda arguments, as it is
   // an indirect call and the lambda node cannot be retrieved.
   //
