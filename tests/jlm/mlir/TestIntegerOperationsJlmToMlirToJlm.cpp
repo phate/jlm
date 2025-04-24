@@ -33,7 +33,7 @@ struct IntegerBinaryOpTest
 // Template function to test an integer binary operation
 template<typename JlmOperation, typename MlirOperation>
 static int
-TestIntegerBinaryOperation(const IntegerBinaryOpTest<JlmOperation, MlirOperation> & test)
+TestIntegerBinaryOperation()
 {
   using namespace jlm::llvm;
   using namespace mlir::rvsdg;
@@ -121,14 +121,13 @@ TestIntegerBinaryOperation(const IntegerBinaryOpTest<JlmOperation, MlirOperation
 }
 
 // Macro to define and register a test for an integer binary operation
-#define REGISTER_INT_BINARY_OP_TEST(JLM_OP, MLIR_NS, MLIR_OP, TEST_NAME)                          \
-  static int Test##TEST_NAME()                                                                    \
-  {                                                                                               \
-    IntegerBinaryOpTest<jlm::llvm::Integer##JLM_OP##Operation, ::mlir::MLIR_NS::MLIR_OP> test = { \
-      #TEST_NAME                                                                                  \
-    };                                                                                            \
-    return TestIntegerBinaryOperation(test);                                                      \
-  }                                                                                               \
+#define REGISTER_INT_BINARY_OP_TEST(JLM_OP, MLIR_NS, MLIR_OP, TEST_NAME) \
+  static int Test##TEST_NAME()                                           \
+  {                                                                      \
+    return TestIntegerBinaryOperation<                                   \
+        jlm::llvm::Integer##JLM_OP##Operation,                           \
+        ::mlir::MLIR_NS::MLIR_OP>();                                     \
+  }                                                                      \
   JLM_UNIT_TEST_REGISTER("jlm/mlir/TestMlir" #TEST_NAME "OpGen", Test##TEST_NAME)
 
 // Register tests for all the integer binary operations

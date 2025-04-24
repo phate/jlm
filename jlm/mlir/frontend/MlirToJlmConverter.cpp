@@ -40,9 +40,7 @@ MlirToJlmConverter::ReadAndConvertMlir(const util::filepath & filePath)
   {
     JLM_ASSERT("Parsing MLIR input file failed.");
   }
-  auto & topNode = block->front();
-  auto omegaNode = ::mlir::dyn_cast<::mlir::rvsdg::OmegaNode>(topNode);
-  return ConvertOmega(omegaNode);
+  return ConvertMlir(block);
 }
 
 std::unique_ptr<llvm::RvsdgModule>
@@ -65,9 +63,7 @@ MlirToJlmConverter::ConvertOmega(::mlir::rvsdg::OmegaNode & omegaNode)
 }
 
 ::llvm::SmallVector<jlm::rvsdg::output *>
-MlirToJlmConverter::ConvertRegion(
-    ::mlir::Region & region,
-    rvsdg::Region & rvsdgRegion)
+MlirToJlmConverter::ConvertRegion(::mlir::Region & region, rvsdg::Region & rvsdgRegion)
 {
   // MLIR use blocks as the innermost "container"
   // In the RVSDG Dialect a region should contain one and only one block
@@ -95,8 +91,8 @@ MlirToJlmConverter::ConvertBlock(::mlir::Block & block, rvsdg::Region & rvsdgReg
 {
   ::mlir::sortTopologically(&block);
 
-  // Create an RVSDG node for each MLIR operation and store each pair in a
-  // hash map for easy lookup of corresponding RVSDG nodes
+  // Create an RVSDG node for each MLIR operation and store the mapping from
+  // MLIR values to RVSDG outputs in a hash map for easy lookup
   std::unordered_map<void *, rvsdg::output *> outputMap;
 
   for (size_t i = 0; i < block.getNumArguments(); i++)
@@ -127,8 +123,7 @@ MlirToJlmConverter::ConvertBlock(::mlir::Block & block, rvsdg::Region & rvsdgReg
     }
     else
     {
-      ::llvm::SmallVector<jlm::rvsdg::output *> inputs =
-          GetConvertedInputs(mlirOp, outputMap);
+      ::llvm::SmallVector<jlm::rvsdg::output *> inputs = GetConvertedInputs(mlirOp, outputMap);
 
       if (auto * node = ConvertOperation(mlirOp, rvsdgRegion, inputs))
       {

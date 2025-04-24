@@ -115,12 +115,12 @@ private:
   static ::llvm::SmallVector<jlm::rvsdg::output *>
   GetConvertedInputs(
       ::mlir::Operation & mlirOp,
-      const std::unordered_map<void *, rvsdg::output *> & outputMap
-      );
+      const std::unordered_map<void *, rvsdg::output *> & outputMap);
 
   /**
    * Converts an MLIR integer comparison operation into an RVSDG node.
    * \param CompOp The MLIR comparison operation to be converted.
+   * \param rvsdgRegion The RVSDG region that the generated RVSDG node is inserted into.
    * \param inputs The inputs for the RVSDG node.
    * \param nbits The number of bits in the comparison.
    * \result The converted RVSDG node.
