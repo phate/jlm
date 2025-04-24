@@ -356,7 +356,7 @@ TestLambdaCallArgumentMismatch()
   auto & lambdaNode = test.GetLambdaMain();
 
   assert(lambdaNode.GetFunctionResults().size() == 3);
-  assert(lambdaNode.GetFunctionResults().size() == callNode.NumResults());
+  assert(lambdaNode.GetFunctionResults().size() == callNode.noutputs());
   assert(lambdaNode.GetFunctionResults()[0]->origin() == callNode.Result(0));
   assert(lambdaNode.GetFunctionResults()[1]->origin() == callNode.Result(1));
   assert(lambdaNode.GetFunctionResults()[2]->origin() == callNode.Result(2));

@@ -325,22 +325,13 @@ public:
   }
 
   /**
-   * @return The number of results from the call.
-   */
-  [[nodiscard]] size_t
-  NumResults() const noexcept
-  {
-    return noutputs();
-  }
-
-  /**
    * @param n The index of the function result.
    * @return The output for the given index \p n.
    */
   [[nodiscard]] jlm::rvsdg::output *
   Result(size_t n) const noexcept
   {
-    JLM_ASSERT(n < NumResults());
+    JLM_ASSERT(n < noutputs());
     return output(n);
   }
 

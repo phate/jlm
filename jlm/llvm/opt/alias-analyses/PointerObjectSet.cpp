@@ -622,7 +622,7 @@ HandleCallingExternalFunction(
       markAsPointeesEscaping(inputRegisterPO.value());
   }
 
-  for (size_t n = 0; n < callNode.NumResults(); n++)
+  for (size_t n = 0; n < callNode.noutputs(); n++)
   {
     const auto & outputRegister = *callNode.Result(n);
     const auto outputRegisterPO = set.TryGetRegisterPointerObject(outputRegister);
@@ -698,7 +698,7 @@ HandleLambdaCallReturnValues(
     MakeSupersetFunctor & makeSuperset)
 {
   auto lambdaResults = lambdaNode.GetFunctionResults();
-  for (size_t n = 0; n < callNode.NumResults() && n < lambdaResults.size(); n++)
+  for (size_t n = 0; n < callNode.noutputs() && n < lambdaResults.size(); n++)
   {
     const auto & outputRegister = *callNode.Result(n);
     const auto & resultRegister = *lambdaResults[n]->origin();
@@ -1173,7 +1173,7 @@ CreateSubsetGraphEdges(
           graph.GetNode(*inputRegister).AppendToLabel(label);
         }
       }
-      for (size_t i = 0; i < callNode.NumResults(); i++)
+      for (size_t i = 0; i < callNode.noutputs(); i++)
       {
         if (auto outputRegister = set.TryGetRegisterPointerObject(*callNode.Result(i)))
         {
@@ -1299,7 +1299,7 @@ PointerObjectConstraintSet::CreateOvsSubsetGraph()
     {
       auto & callNode = callConstraint->GetCallNode();
       // Mark all results of function calls as non-direct nodes
-      for (size_t n = 0; n < callNode.NumResults(); n++)
+      for (size_t n = 0; n < callNode.noutputs(); n++)
       {
         if (auto resultPO = Set_.TryGetRegisterPointerObject(*callNode.Result(n)))
           isDirectNode[*resultPO] = false;
