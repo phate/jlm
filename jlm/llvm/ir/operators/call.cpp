@@ -153,18 +153,11 @@ CallOperation::copy() const
   return std::make_unique<CallOperation>(*this);
 }
 
-rvsdg::Node *
-CallNode::copy(rvsdg::Region * region, const std::vector<rvsdg::output *> & operands) const
-{
-  std::unique_ptr<CallOperation> op(
-      util::AssertedCast<CallOperation>(GetOperation().copy().release()));
-  return &CreateNode(*region, std::move(op), operands);
-}
-
 rvsdg::output *
-CallNode::TraceFunctionInput(const CallNode & callNode)
+CallOperation::TraceFunctionInput(const rvsdg::SimpleNode & callNode)
 {
-  auto origin = callNode.GetFunctionInput()->origin();
+  JLM_ASSERT(is<CallOperation>(&callNode));
+  auto origin = GetFunctionInput(callNode).origin();
 
   while (true)
   {
@@ -251,9 +244,10 @@ CallNode::TraceFunctionInput(const CallNode & callNode)
 }
 
 std::unique_ptr<CallTypeClassifier>
-CallNode::ClassifyCall(const CallNode & callNode)
+CallOperation::ClassifyCall(const rvsdg::SimpleNode & callNode)
 {
-  auto output = CallNode::TraceFunctionInput(callNode);
+  JLM_ASSERT(is<CallOperation>(&callNode));
+  const auto output = TraceFunctionInput(callNode);
 
   if (rvsdg::TryGetOwnerNode<rvsdg::LambdaNode>(*output))
   {

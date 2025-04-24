@@ -555,9 +555,9 @@ MemoryStateEncoder::EncodeSimpleNode(const rvsdg::SimpleNode & simpleNode)
   {
     EncodeStore(simpleNode);
   }
-  else if (auto callNode = dynamic_cast<const CallNode *>(&simpleNode))
+  else if (is<CallOperation>(&simpleNode))
   {
-    EncodeCall(*callNode);
+    EncodeCall(simpleNode);
   }
   else if (is<FreeOperation>(&simpleNode))
   {
@@ -683,14 +683,14 @@ MemoryStateEncoder::EncodeFree(const rvsdg::SimpleNode & freeNode)
 }
 
 void
-MemoryStateEncoder::EncodeCall(const CallNode & callNode)
+MemoryStateEncoder::EncodeCall(const rvsdg::SimpleNode & callNode)
 {
   EncodeCallEntry(callNode);
   EncodeCallExit(callNode);
 }
 
 void
-MemoryStateEncoder::EncodeCallEntry(const CallNode & callNode)
+MemoryStateEncoder::EncodeCallEntry(const rvsdg::SimpleNode & callNode)
 {
   auto region = callNode.region();
   auto & regionalizedStateMap = Context_->GetRegionalizedStateMap();
@@ -713,17 +713,17 @@ MemoryStateEncoder::EncodeCallEntry(const CallNode & callNode)
 
   auto states = StateMap::MemoryNodeStatePair::States(memoryNodeStatePairs);
   auto & state = CallEntryMemoryStateMergeOperation::Create(*region, states);
-  callNode.GetMemoryStateInput()->divert_to(&state);
+  CallOperation::GetMemoryStateInput(callNode).divert_to(&state);
 }
 
 void
-MemoryStateEncoder::EncodeCallExit(const CallNode & callNode)
+MemoryStateEncoder::EncodeCallExit(const rvsdg::SimpleNode & callNode)
 {
   auto & stateMap = Context_->GetRegionalizedStateMap();
   auto & memoryNodes = Context_->GetModRefSummary().GetCallExitNodes(callNode);
 
   auto states = CallExitMemoryStateSplitOperation::Create(
-      *callNode.GetMemoryStateOutput(),
+      CallOperation::GetMemoryStateOutput(callNode),
       memoryNodes.Size());
   auto memoryNodeStatePairs = stateMap.GetStates(*callNode.region(), memoryNodes);
   StateMap::MemoryNodeStatePair::ReplaceStates(memoryNodeStatePairs, states);
