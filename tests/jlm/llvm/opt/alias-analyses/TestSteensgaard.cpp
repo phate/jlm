@@ -591,7 +591,7 @@ TestExternalCall1()
     auto & lambdaFArgument1 =
         pointsToGraph.GetRegisterNode(*test.LambdaF().GetFunctionArguments()[1]);
 
-    auto & callResult = pointsToGraph.GetRegisterNode(*test.CallG().Result(0));
+    auto & callResult = pointsToGraph.GetRegisterNode(*test.CallG().output(0));
 
     auto & externalMemory = pointsToGraph.GetExternalMemoryNode();
 
@@ -991,7 +991,7 @@ TestEscapedMemory2()
     auto externalMemory = &pointsToGraph.GetExternalMemoryNode();
 
     auto & externalFunction2CallResult =
-        pointsToGraph.GetRegisterNode(*test.ExternalFunction2Call->Result(0));
+        pointsToGraph.GetRegisterNode(*test.ExternalFunction2Call->output(0));
 
     assertTargets(
         externalFunction2CallResult,
@@ -1035,7 +1035,7 @@ TestEscapedMemory3()
     auto externalMemory = &pointsToGraph.GetExternalMemoryNode();
 
     auto & callExternalFunctionResult =
-        pointsToGraph.GetRegisterNode(*test.CallExternalFunction->Result(0));
+        pointsToGraph.GetRegisterNode(*test.CallExternalFunction->output(0));
 
     assertTargets(callExternalFunctionResult, { lambdaTest, deltaGlobal, externalMemory });
 
