@@ -15,6 +15,7 @@ class Graph;
 class Region;
 class StructuralNode;
 class ThetaNode;
+class SimpleNode;
 }
 
 namespace jlm::llvm
