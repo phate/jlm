@@ -30,6 +30,7 @@
 #include <jlm/llvm/ir/operators/call.hpp>
 #include <jlm/llvm/ir/operators/GetElementPtr.hpp>
 #include <jlm/llvm/ir/operators/IntegerOperations.hpp>
+#include <jlm/llvm/ir/operators/IOBarrier.hpp>
 #include <jlm/llvm/ir/operators/Load.hpp>
 #include <jlm/llvm/ir/operators/MemoryStateOperations.hpp>
 #include <jlm/llvm/ir/operators/sext.hpp>
@@ -523,6 +524,15 @@ JlmToMlirConverter::ConvertSimpleNode(
         alloca_op->alignment(),                                           // alignment
         ::mlir::ValueRange({ std::next(inputs.begin()), inputs.end() })); // inputMemStates
   }
+  else if (auto malloc_op = dynamic_cast<const jlm::llvm::malloc_op *>(&operation))
+  {
+    MlirOp = Builder_->create<::mlir::jlm::Malloc>(
+        Builder_->getUnknownLoc(),
+        ConvertType(*malloc_op->result(0)), // ptr
+        ConvertType(*malloc_op->result(1)), // memstate
+        inputs[0]                           // size
+    );
+  }
   else if (auto load_op = dynamic_cast<const jlm::llvm::LoadOperation *>(&operation))
   {
     MlirOp = Builder_->create<::mlir::jlm::Load>(
@@ -551,6 +561,14 @@ JlmToMlirConverter::ConvertSimpleNode(
         Builder_->getUnknownLoc(),
         ConvertType(node.output(0)->type()),
         inputs);
+  }
+  else if (rvsdg::is<jlm::llvm::IOBarrierOperation>(operation))
+  {
+    MlirOp = Builder_->create<::mlir::jlm::IOBarrier>(
+        Builder_->getUnknownLoc(),
+        ConvertType(node.output(0)->type()),
+        inputs[0],
+        inputs[1]);
   }
   else if (auto op = dynamic_cast<const llvm::GetElementPtrOperation *>(&operation))
   {
