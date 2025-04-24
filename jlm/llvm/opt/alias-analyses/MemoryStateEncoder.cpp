@@ -713,7 +713,7 @@ MemoryStateEncoder::EncodeCallEntry(const CallNode & callNode)
 
   auto states = StateMap::MemoryNodeStatePair::States(memoryNodeStatePairs);
   auto & state = CallEntryMemoryStateMergeOperation::Create(*region, states);
-  callNode.GetMemoryStateInput()->divert_to(&state);
+  CallOperation::GetMemoryStateInput(callNode).divert_to(&state);
 }
 
 void

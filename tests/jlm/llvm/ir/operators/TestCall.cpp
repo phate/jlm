@@ -88,7 +88,7 @@ TestCallNodeAccessors()
 
   assert(CallOperation::GetFunctionInput(callNode).origin() == f);
   assert(CallOperation::GetIOStateInput(callNode).origin() == i);
-  assert(callNode.GetMemoryStateInput()->origin() == m);
+  assert(CallOperation::GetMemoryStateInput(callNode).origin() == m);
 
   assert(callNode.GetIoStateOutput()->type() == *iOStateType);
   assert(callNode.GetMemoryStateOutput()->type() == *memoryStateType);

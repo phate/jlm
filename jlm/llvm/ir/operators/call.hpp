@@ -93,6 +93,18 @@ public:
     return *ioState;
   }
 
+  /**
+   * @return The call node's memory state input.
+   */
+  [[nodiscard]] static rvsdg::input &
+  GetMemoryStateInput(const rvsdg::SimpleNode & node) noexcept
+  {
+    JLM_ASSERT(is<CallOperation>(&node));
+    const auto memoryState = node.input(node.ninputs() - 1);
+    JLM_ASSERT(is<MemoryStateType>(memoryState->type()));
+    return *memoryState;
+  }
+
   static std::unique_ptr<tac>
   create(
       const variable * function,
@@ -352,17 +364,6 @@ public:
   }
 
   /**
-   * @return The call node's memory state input.
-   */
-  [[nodiscard]] jlm::rvsdg::input *
-  GetMemoryStateInput() const noexcept
-  {
-    auto memoryState = input(ninputs() - 1);
-    JLM_ASSERT(is<MemoryStateType>(memoryState->type()));
-    return memoryState;
-  }
-
-  /**
    * @return The call node's input/output state output.
    */
   [[nodiscard]] jlm::rvsdg::output *
@@ -397,7 +398,8 @@ public:
   [[nodiscard]] static rvsdg::SimpleNode *
   GetMemoryStateEntryMerge(const CallNode & callNode) noexcept
   {
-    auto node = rvsdg::output::GetNode(*callNode.GetMemoryStateInput()->origin());
+    const auto node =
+        rvsdg::output::GetNode(*CallOperation::GetMemoryStateInput(callNode).origin());
     return is<CallEntryMemoryStateMergeOperation>(node) ? dynamic_cast<rvsdg::SimpleNode *>(node)
                                                         : nullptr;
   }
