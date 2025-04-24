@@ -738,7 +738,7 @@ void
 Andersen::AnalyzeCall(const CallNode & callNode)
 {
   // The address being called by the call node
-  const auto & callTarget = *callNode.GetFunctionInput()->origin();
+  const auto & callTarget = *CallOperation::GetFunctionInput(callNode).origin();
   const auto callTargetPO = Set_->GetRegisterPointerObject(callTarget);
 
   // Create PointerObjects for all output values of pointer type

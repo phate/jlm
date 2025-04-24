@@ -69,6 +69,18 @@ public:
     return node.input(n + 1);
   }
 
+  /**
+   * @return The call node's function input.
+   */
+  [[nodiscard]] static rvsdg::input &
+  GetFunctionInput(const rvsdg::SimpleNode & node) noexcept
+  {
+    JLM_ASSERT(is<CallOperation>(&node));
+    const auto functionInput = node.input(0);
+    JLM_ASSERT(is<rvsdg::FunctionType>(functionInput->type()));
+    return *functionInput;
+  }
+
   static std::unique_ptr<tac>
   create(
       const variable * function,
@@ -325,17 +337,6 @@ public:
   GetOperation() const noexcept override
   {
     return *jlm::util::AssertedCast<const CallOperation>(&SimpleNode::GetOperation());
-  }
-
-  /**
-   * @return The call node's function input.
-   */
-  [[nodiscard]] jlm::rvsdg::input *
-  GetFunctionInput() const noexcept
-  {
-    auto functionInput = input(0);
-    JLM_ASSERT(is<rvsdg::FunctionType>(functionInput->type()));
-    return functionInput;
   }
 
   /**

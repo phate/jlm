@@ -164,7 +164,7 @@ CallNode::copy(rvsdg::Region * region, const std::vector<rvsdg::output *> & oper
 rvsdg::output *
 CallNode::TraceFunctionInput(const CallNode & callNode)
 {
-  auto origin = callNode.GetFunctionInput()->origin();
+  auto origin = CallOperation::GetFunctionInput(callNode).origin();
 
   while (true)
   {
