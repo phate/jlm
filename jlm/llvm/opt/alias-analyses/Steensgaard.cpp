@@ -1010,9 +1010,9 @@ Steensgaard::AnalyzeSimpleNode(const jlm::rvsdg::SimpleNode & node)
   {
     AnalyzeStore(node);
   }
-  else if (auto callNode = dynamic_cast<const CallNode *>(&node))
+  else if (is<CallOperation>(&node))
   {
-    AnalyzeCall(*callNode);
+    AnalyzeCall(node);
   }
   else if (is<GetElementPtrOperation>(&node))
   {
