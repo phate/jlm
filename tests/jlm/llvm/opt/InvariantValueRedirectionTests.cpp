@@ -205,7 +205,7 @@ TestCall()
 
     auto controlResult = jlm::rvsdg::control_constant(lambdaNode->subregion(), 2, 0);
 
-    auto & callNode = CallNode::CreateNode(
+    auto & callNode = CallOperation::CreateNode(
         lambdaArgumentTest1,
         functionTypeTest1,
         { controlResult, xArgument, yArgument, ioStateArgument, memoryStateArgument });
@@ -302,7 +302,7 @@ TestCallWithMemoryStateNodes()
 
     auto controlResult = jlm::rvsdg::control_constant(lambdaNode->subregion(), 2, 0);
 
-    auto & callNode = CallNode::CreateNode(
+    auto & callNode = CallOperation::CreateNode(
         lambdaArgumentTest1,
         functionTypeTest1,
         { controlResult, xArgument, ioStateArgument, &callEntryMergeResult });

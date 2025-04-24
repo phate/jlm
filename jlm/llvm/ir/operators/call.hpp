@@ -413,6 +413,50 @@ public:
     return tac::create(op, operands);
   }
 
+  static std::vector<rvsdg::output *>
+  Create(
+      rvsdg::output * function,
+      std::shared_ptr<const rvsdg::FunctionType> functionType,
+      const std::vector<rvsdg::output *> & arguments)
+  {
+    return outputs(&CreateNode(function, std::move(functionType), arguments));
+  }
+
+  static std::vector<rvsdg::output *>
+  Create(
+      rvsdg::Region & region,
+      std::unique_ptr<CallOperation> callOperation,
+      const std::vector<rvsdg::output *> & operands)
+  {
+    return outputs(&CreateNode(region, std::move(callOperation), operands));
+  }
+
+  static rvsdg::SimpleNode &
+  CreateNode(
+      rvsdg::Region & region,
+      std::unique_ptr<CallOperation> callOperation,
+      const std::vector<rvsdg::output *> & operands)
+  {
+    CheckFunctionType(*callOperation->GetFunctionType());
+
+    return rvsdg::SimpleNode::Create(region, std::move(callOperation), operands);
+  }
+
+  static rvsdg::SimpleNode &
+  CreateNode(
+      rvsdg::output * function,
+      std::shared_ptr<const rvsdg::FunctionType> functionType,
+      const std::vector<rvsdg::output *> & arguments)
+  {
+    CheckFunctionInputType(function->type());
+
+    auto callOperation = std::make_unique<CallOperation>(std::move(functionType));
+    std::vector operands({ function });
+    operands.insert(operands.end(), arguments.begin(), arguments.end());
+
+    return CreateNode(*function->region(), std::move(callOperation), operands);
+  }
+
 private:
   static inline std::vector<std::shared_ptr<const rvsdg::Type>>
   create_srctypes(const std::shared_ptr<const rvsdg::FunctionType> & functionType)
@@ -424,84 +468,6 @@ private:
     return types;
   }
 
-  static void
-  CheckFunctionInputType(const jlm::rvsdg::Type & type)
-  {
-    if (!is<rvsdg::FunctionType>(type))
-      throw jlm::util::error("Expected function type.");
-  }
-
-  std::shared_ptr<const rvsdg::FunctionType> FunctionType_;
-};
-
-/** \brief Call node
- *
- */
-class CallNode final : public jlm::rvsdg::SimpleNode
-{
-private:
-  CallNode(
-      rvsdg::Region & region,
-      std::unique_ptr<CallOperation> operation,
-      const std::vector<jlm::rvsdg::output *> & operands)
-      : SimpleNode(region, std::move(operation), operands)
-  {}
-
-public:
-  [[nodiscard]] const CallOperation &
-  GetOperation() const noexcept override
-  {
-    return *jlm::util::AssertedCast<const CallOperation>(&SimpleNode::GetOperation());
-  }
-
-  Node *
-  copy(rvsdg::Region * region, const std::vector<rvsdg::output *> & operands) const override;
-
-  static std::vector<jlm::rvsdg::output *>
-  Create(
-      rvsdg::output * function,
-      std::shared_ptr<const rvsdg::FunctionType> functionType,
-      const std::vector<rvsdg::output *> & arguments)
-  {
-    return outputs(&CreateNode(function, std::move(functionType), arguments));
-  }
-
-  static std::vector<jlm::rvsdg::output *>
-  Create(
-      rvsdg::Region & region,
-      std::unique_ptr<CallOperation> callOperation,
-      const std::vector<rvsdg::output *> & operands)
-  {
-    return outputs(&CreateNode(region, std::move(callOperation), operands));
-  }
-
-  static CallNode &
-  CreateNode(
-      rvsdg::Region & region,
-      std::unique_ptr<CallOperation> callOperation,
-      const std::vector<rvsdg::output *> & operands)
-  {
-    CheckFunctionType(*callOperation->GetFunctionType());
-
-    return *(new CallNode(region, std::move(callOperation), operands));
-  }
-
-  static CallNode &
-  CreateNode(
-      rvsdg::output * function,
-      std::shared_ptr<const rvsdg::FunctionType> functionType,
-      const std::vector<rvsdg::output *> & arguments)
-  {
-    CheckFunctionInputType(function->type());
-
-    auto callOperation = std::make_unique<CallOperation>(std::move(functionType));
-    std::vector<rvsdg::output *> operands({ function });
-    operands.insert(operands.end(), arguments.begin(), arguments.end());
-
-    return CreateNode(*function->region(), std::move(callOperation), operands);
-  }
-
-private:
   static void
   CheckFunctionInputType(const jlm::rvsdg::Type & type)
   {
@@ -545,6 +511,32 @@ private:
     CheckArgumentTypes(functionType);
     CheckResultTypes(functionType);
   }
+
+  std::shared_ptr<const rvsdg::FunctionType> FunctionType_;
+};
+
+/** \brief Call node
+ *
+ */
+class CallNode final : public jlm::rvsdg::SimpleNode
+{
+private:
+  CallNode(
+      rvsdg::Region & region,
+      std::unique_ptr<CallOperation> operation,
+      const std::vector<jlm::rvsdg::output *> & operands)
+      : SimpleNode(region, std::move(operation), operands)
+  {}
+
+public:
+  [[nodiscard]] const CallOperation &
+  GetOperation() const noexcept override
+  {
+    return *jlm::util::AssertedCast<const CallOperation>(&SimpleNode::GetOperation());
+  }
+
+  Node *
+  copy(rvsdg::Region * region, const std::vector<rvsdg::output *> & operands) const override;
 };
 
 }

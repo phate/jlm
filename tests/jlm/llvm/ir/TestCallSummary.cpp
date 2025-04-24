@@ -125,7 +125,7 @@ TestCallSummaryComputationDirectCalls()
     auto memoryStateArgument = lambdaNode->GetFunctionArguments()[1];
     auto lambdaXCv = lambdaNode->AddContextVar(lambdaX).inner;
 
-    auto callResults = jlm::llvm::CallNode::Create(
+    auto callResults = jlm::llvm::CallOperation::Create(
         lambdaXCv,
         functionType,
         { iOStateArgument, memoryStateArgument });
@@ -149,12 +149,12 @@ TestCallSummaryComputationDirectCalls()
     auto lambdaXCv = lambdaNode->AddContextVar(lambdaX).inner;
     auto lambdaYCv = lambdaNode->AddContextVar(lambdaY).inner;
 
-    auto callXResults = jlm::llvm::CallNode::Create(
+    auto callXResults = jlm::llvm::CallOperation::Create(
         lambdaXCv,
         functionType,
         { iOStateArgument, memoryStateArgument });
     auto callYResults =
-        jlm::llvm::CallNode::Create(lambdaYCv, functionType, { callXResults[1], callXResults[2] });
+        jlm::llvm::CallOperation::Create(lambdaYCv, functionType, { callXResults[1], callXResults[2] });
 
     auto result = tests::create_testop(
         lambdaNode->subregion(),

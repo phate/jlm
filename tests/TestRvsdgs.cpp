@@ -401,7 +401,7 @@ Bits2PtrTest::SetupRvsdg()
 
     auto cvbits2ptr = lambda->AddContextVar(*b2p).inner;
 
-    auto & call = CallNode::CreateNode(
+    auto & call = CallOperation::CreateNode(
         cvbits2ptr,
         rvsdg::AssertGetOwnerNode<rvsdg::LambdaNode>(*b2p).GetOperation().Type(),
         { valueArgument, iOStateArgument, memoryStateArgument });
@@ -586,11 +586,11 @@ CallTest1::SetupRvsdg()
     auto sty = StoreNonVolatileOperation::Create(y[0], six, { stx[0] }, 4);
     auto stz = StoreNonVolatileOperation::Create(z[0], seven, { sty[0] }, 4);
 
-    auto & callF = CallNode::CreateNode(
+    auto & callF = CallOperation::CreateNode(
         cvf,
         f->GetOperation().Type(),
         { x[0], y[0], iOStateArgument, stz[0] });
-    auto & callG = CallNode::CreateNode(
+    auto & callG = CallOperation::CreateNode(
         cvg,
         g->GetOperation().Type(),
         { z[0],
@@ -716,24 +716,24 @@ CallTest2::SetupRvsdg()
     auto six = jlm::rvsdg::create_bitconstant(lambda->subregion(), 32, 6);
     auto seven = jlm::rvsdg::create_bitconstant(lambda->subregion(), 32, 7);
 
-    auto & create1 = CallNode::CreateNode(
+    auto & create1 = CallOperation::CreateNode(
         create_cv,
         lambdaCreate->GetOperation().Type(),
         { six, iOStateArgument, memoryStateArgument });
-    auto & create2 = CallNode::CreateNode(
+    auto & create2 = CallOperation::CreateNode(
         create_cv,
         lambdaCreate->GetOperation().Type(),
         { seven,
           &CallOperation::GetIOStateOutput(create1),
           &CallOperation::GetMemoryStateOutput(create1) });
 
-    auto & destroy1 = CallNode::CreateNode(
+    auto & destroy1 = CallOperation::CreateNode(
         destroy_cv,
         lambdaDestroy->GetOperation().Type(),
         { create1.output(0),
           &CallOperation::GetIOStateOutput(create2),
           &CallOperation::GetMemoryStateOutput(create2) });
-    auto & destroy2 = CallNode::CreateNode(
+    auto & destroy2 = CallOperation::CreateNode(
         destroy_cv,
         lambdaDestroy->GetOperation().Type(),
         { create2.output(0),
@@ -817,7 +817,7 @@ IndirectCallTest1::SetupRvsdg()
     auto iOStateArgument = lambda->GetFunctionArguments()[1];
     auto memoryStateArgument = lambda->GetFunctionArguments()[2];
 
-    auto & call = CallNode::CreateNode(
+    auto & call = CallOperation::CreateNode(
         functionOfPointer,
         constantFunctionType,
         { iOStateArgument, memoryStateArgument });
@@ -844,11 +844,11 @@ IndirectCallTest1::SetupRvsdg()
     auto fctfour_cv = lambda->AddContextVar(*fctfour).inner;
     auto fctthree_cv = lambda->AddContextVar(*fctthree).inner;
 
-    auto & call_four = CallNode::CreateNode(
+    auto & call_four = CallOperation::CreateNode(
         fctindcall_cv,
         rvsdg::AssertGetOwnerNode<rvsdg::LambdaNode>(*fctindcall).GetOperation().Type(),
         { fctfour_cv, iOStateArgument, memoryStateArgument });
-    auto & call_three = CallNode::CreateNode(
+    auto & call_three = CallOperation::CreateNode(
         fctindcall_cv,
         rvsdg::AssertGetOwnerNode<rvsdg::LambdaNode>(*fctindcall).GetOperation().Type(),
         { fctthree_cv,
@@ -962,7 +962,7 @@ IndirectCallTest2::SetupRvsdg()
     auto iOStateArgument = lambda->GetFunctionArguments()[1];
     auto memoryStateArgument = lambda->GetFunctionArguments()[2];
 
-    auto & call = CallNode::CreateNode(
+    auto & call = CallOperation::CreateNode(
         rvsdg::CreateOpNode<PointerToFunctionOperation>({ pointerArgument }, constantFunctionType)
             .output(0),
         constantFunctionType,
@@ -1002,7 +1002,7 @@ IndirectCallTest2::SetupRvsdg()
     auto storeNode =
         StoreNonVolatileOperation::Create(pointerArgument, five, { memoryStateArgument }, 4);
 
-    auto & call = CallNode::CreateNode(
+    auto & call = CallOperation::CreateNode(
         functionICv,
         functionIType,
         { argumentFunctionPtr, iOStateArgument, storeNode[0] });
@@ -1042,12 +1042,12 @@ IndirectCallTest2::SetupRvsdg()
     auto pyMerge = MemoryStateMergeOperation::Create(
         std::vector<jlm::rvsdg::output *>({ pyAlloca[1], pxMerge }));
 
-    auto & callX = CallNode::CreateNode(
+    auto & callX = CallOperation::CreateNode(
         functionXCv,
         rvsdg::AssertGetOwnerNode<rvsdg::LambdaNode>(functionX).GetOperation().Type(),
         { pxAlloca[0], iOStateArgument, pyMerge });
 
-    auto & callY = CallNode::CreateNode(
+    auto & callY = CallOperation::CreateNode(
         functionYCv,
         rvsdg::AssertGetOwnerNode<rvsdg::LambdaNode>(functionY).GetOperation().Type(),
         { pyAlloca[0],
@@ -1102,7 +1102,7 @@ IndirectCallTest2::SetupRvsdg()
 
     auto functionXCv = lambda->AddContextVar(functionX).inner;
 
-    auto & callX = CallNode::CreateNode(
+    auto & callX = CallOperation::CreateNode(
         functionXCv,
         rvsdg::AssertGetOwnerNode<rvsdg::LambdaNode>(functionX).GetOperation().Type(),
         { pzAlloca[0], iOStateArgument, pzMerge });
@@ -1223,7 +1223,7 @@ ExternalCallTest1::SetupRvsdg()
     auto loadMode =
         LoadNonVolatileOperation::Create(allocaMode[0], { loadPath[1] }, pointerType, 4);
 
-    auto & callG = CallNode::CreateNode(
+    auto & callG = CallOperation::CreateNode(
         functionGCv,
         functionGType,
         { loadPath[0], loadMode[0], iOStateArgument, loadMode[1] });
@@ -1311,12 +1311,12 @@ ExternalCallTest2::SetupRvsdg()
   auto memoryState = MemoryStateMergeOperation::Create(
       std::vector<jlm::rvsdg::output *>{ allocaResults[1], memoryStateArgument });
 
-  auto & callLLvmLifetimeStart = CallNode::CreateNode(
+  auto & callLLvmLifetimeStart = CallOperation::CreateNode(
       llvmLifetimeStartArgument,
       lambdaLlvmLifetimeStartType,
       { twentyFour, allocaResults[0], iOStateArgument, memoryState });
 
-  CallF_ = &CallNode::CreateNode(
+  CallF_ = &CallOperation::CreateNode(
       lambdaFArgument,
       lambdaFType,
       { allocaResults[0],
@@ -1352,7 +1352,7 @@ ExternalCallTest2::SetupRvsdg()
   auto storeResults2 =
       StoreNonVolatileOperation::Create(loadResults5[0], loadResults2[0], { loadResults5[1] }, 8);
 
-  auto & callLLvmLifetimeEnd = CallNode::CreateNode(
+  auto & callLLvmLifetimeEnd = CallOperation::CreateNode(
       llvmLifetimeEndArgument,
       lambdaLlvmLifetimeEndType,
       { twentyFour,
@@ -1576,7 +1576,7 @@ GammaTest2::SetupRvsdg()
     auto storeYResults =
         StoreNonVolatileOperation::Create(allocaYResults[0], y, { storeXResults[0] }, 4);
 
-    auto & call = CallNode::CreateNode(
+    auto & call = CallOperation::CreateNode(
         lambdaFArgument,
         rvsdg::AssertGetOwnerNode<rvsdg::LambdaNode>(lambdaF).GetOperation().Type(),
         { predicate, allocaXResults[0], allocaYResults[0], iOStateArgument, storeYResults[0] });
@@ -1741,7 +1741,7 @@ DeltaTest1::SetupRvsdg()
 
     auto five = jlm::rvsdg::create_bitconstant(lambda->subregion(), 32, 5);
     auto st = StoreNonVolatileOperation::Create(cvf, five, { memoryStateArgument }, 4);
-    auto & callG = CallNode::CreateNode(
+    auto & callG = CallOperation::CreateNode(
         cvg,
         rvsdg::AssertGetOwnerNode<rvsdg::LambdaNode>(*g).GetOperation().Type(),
         { cvf, iOStateArgument, st[0] });
@@ -1850,7 +1850,7 @@ DeltaTest2::SetupRvsdg()
     auto b5 = jlm::rvsdg::create_bitconstant(lambda->subregion(), 32, 5);
     auto b42 = jlm::rvsdg::create_bitconstant(lambda->subregion(), 32, 42);
     auto st = StoreNonVolatileOperation::Create(cvd1, b5, { memoryStateArgument }, 4);
-    auto & call = CallNode::CreateNode(
+    auto & call = CallOperation::CreateNode(
         cvf1,
         rvsdg::AssertGetOwnerNode<rvsdg::LambdaNode>(*f1).GetOperation().Type(),
         { iOStateArgument, st[0] });
@@ -1973,7 +1973,7 @@ DeltaTest3::SetupRvsdg()
 
     auto lambdaFArgument = lambda->AddContextVar(lambdaF).inner;
 
-    auto & call = CallNode::CreateNode(
+    auto & call = CallOperation::CreateNode(
         lambdaFArgument,
         rvsdg::AssertGetOwnerNode<rvsdg::LambdaNode>(lambdaF).GetOperation().Type(),
         { iOStateArgument, memoryStateArgument });
@@ -2054,7 +2054,7 @@ ImportTest::SetupRvsdg()
     auto b2 = jlm::rvsdg::create_bitconstant(lambda->subregion(), 32, 2);
     auto b21 = jlm::rvsdg::create_bitconstant(lambda->subregion(), 32, 21);
     auto st = StoreNonVolatileOperation::Create(cvd1, b2, { memoryStateArgument }, 4);
-    auto & call = CallNode::CreateNode(
+    auto & call = CallOperation::CreateNode(
         cvf1,
         rvsdg::AssertGetOwnerNode<rvsdg::LambdaNode>(*f1).GetOperation().Type(),
         { iOStateArgument, st[0] });
@@ -2147,7 +2147,7 @@ PhiTest1::SetupRvsdg()
     /* gamma subregion 0 */
     auto one = jlm::rvsdg::create_bitconstant(gammaNode->subregion(0), 64, 1);
     auto nm1 = jlm::rvsdg::bitsub_op::create(64, nev.branchArgument[0], one);
-    auto & callFibm1 = CallNode::CreateNode(
+    auto & callFibm1 = CallOperation::CreateNode(
         fibev.branchArgument[0],
         fibFunctionType,
         { nm1,
@@ -2157,7 +2157,7 @@ PhiTest1::SetupRvsdg()
 
     two = jlm::rvsdg::create_bitconstant(gammaNode->subregion(0), 64, 2);
     auto nm2 = jlm::rvsdg::bitsub_op::create(64, nev.branchArgument[0], two);
-    auto & callFibm2 = CallNode::CreateNode(
+    auto & callFibm2 = CallOperation::CreateNode(
         fibev.branchArgument[0],
         fibFunctionType,
         { nm2,
@@ -2235,7 +2235,7 @@ PhiTest1::SetupRvsdg()
     auto gep = GetElementPtrOperation::Create(allocaResults[0], { zero, zero }, at, pbit64);
 
     auto & call =
-        CallNode::CreateNode(fibcv, fibFunctionType, { ten, gep, iOStateArgument, state });
+        CallOperation::CreateNode(fibcv, fibFunctionType, { ten, gep, iOStateArgument, state });
 
     auto lambdaOutput = lambda->finalize(outputs(&call));
     GraphExport::Create(*lambdaOutput, "test");
@@ -2320,7 +2320,7 @@ PhiTest2::SetupRvsdg()
     auto iOStateArgument = lambda->GetFunctionArguments()[1];
     auto memoryStateArgument = lambda->GetFunctionArguments()[2];
 
-    auto & call = CallNode::CreateNode(
+    auto & call = CallOperation::CreateNode(
         functionArgument,
         constantFunctionType,
         { iOStateArgument, memoryStateArgument });
@@ -2352,12 +2352,12 @@ PhiTest2::SetupRvsdg()
     auto paMerge = MemoryStateMergeOperation::Create(
         std::vector<jlm::rvsdg::output *>({ paAlloca[1], storeNode[0] }));
 
-    auto & callB = CallNode::CreateNode(
+    auto & callB = CallOperation::CreateNode(
         functionBCv,
         recFunctionType,
         { paAlloca[0], iOStateArgument, paMerge });
 
-    auto & callD = CallNode::CreateNode(
+    auto & callD = CallOperation::CreateNode(
         functionDCv,
         recFunctionType,
         { paAlloca[0],
@@ -2402,7 +2402,7 @@ PhiTest2::SetupRvsdg()
     auto pbMerge = MemoryStateMergeOperation::Create(
         std::vector<jlm::rvsdg::output *>({ pbAlloca[1], storeNode[0] }));
 
-    auto & callI = CallNode::CreateNode(
+    auto & callI = CallOperation::CreateNode(
         functionICv,
         functionIType,
         { rvsdg::CreateOpNode<FunctionToPointerOperation>({ functionEightCv }, constantFunctionType)
@@ -2410,7 +2410,7 @@ PhiTest2::SetupRvsdg()
           iOStateArgument,
           pbMerge });
 
-    auto & callC = CallNode::CreateNode(
+    auto & callC = CallOperation::CreateNode(
         functionCCv,
         recFunctionType,
         { pbAlloca[0],
@@ -2450,7 +2450,7 @@ PhiTest2::SetupRvsdg()
     auto pcMerge = MemoryStateMergeOperation::Create(
         std::vector<jlm::rvsdg::output *>({ pcAlloca[1], storeNode[0] }));
 
-    auto & callA = CallNode::CreateNode(
+    auto & callA = CallOperation::CreateNode(
         functionACv,
         recFunctionType,
         { pcAlloca[0], iOStateArgument, pcMerge });
@@ -2490,7 +2490,7 @@ PhiTest2::SetupRvsdg()
     auto pdMerge = MemoryStateMergeOperation::Create(
         std::vector<jlm::rvsdg::output *>({ pdAlloca[1], storeNode[0] }));
 
-    auto & callA = CallNode::CreateNode(
+    auto & callA = CallOperation::CreateNode(
         functionACv,
         recFunctionType,
         { pdAlloca[0], iOStateArgument, pdMerge });
@@ -2571,7 +2571,7 @@ PhiTest2::SetupRvsdg()
     auto pTestMerge = MemoryStateMergeOperation::Create(
         std::vector<jlm::rvsdg::output *>({ pTestAlloca[1], memoryStateArgument }));
 
-    auto & callA = CallNode::CreateNode(
+    auto & callA = CallOperation::CreateNode(
         functionACv,
         recFunctionType,
         { pTestAlloca[0], iOStateArgument, pTestMerge });
@@ -2945,7 +2945,7 @@ EscapedMemoryTest2::SetupRvsdg()
     auto mergeResult = MemoryStateMergeOperation::Create(
         std::vector<jlm::rvsdg::output *>({ memoryStateArgument, mallocResults[1] }));
 
-    auto & call = CallNode::CreateNode(
+    auto & call = CallOperation::CreateNode(
         externalFunction1,
         externalFunction1Type,
         { mallocResults[0], iOStateArgument, mergeResult });
@@ -2976,7 +2976,7 @@ EscapedMemoryTest2::SetupRvsdg()
 
     auto externalFunction2 = lambda->AddContextVar(*externalFunction2Argument).inner;
 
-    auto & call = CallNode::CreateNode(
+    auto & call = CallOperation::CreateNode(
         externalFunction2,
         externalFunction2Type,
         { iOStateArgument, memoryStateArgument });
@@ -3090,7 +3090,7 @@ EscapedMemoryTest3::SetupRvsdg()
 
     auto externalFunction = lambda->AddContextVar(*externalFunctionArgument).inner;
 
-    auto & call = CallNode::CreateNode(
+    auto & call = CallOperation::CreateNode(
         externalFunction,
         externalFunctionType,
         { iOStateArgument, memoryStateArgument });
@@ -3252,7 +3252,7 @@ MemcpyTest::SetupRvsdg()
         twenty,
         { memoryStateArgument });
 
-    auto & call = CallNode::CreateNode(
+    auto & call = CallOperation::CreateNode(
         functionFArgument,
         rvsdg::AssertGetOwnerNode<rvsdg::LambdaNode>(lambdaF).GetOperation().Type(),
         { iOStateArgument, memcpyResults[0] });
@@ -3362,7 +3362,7 @@ MemcpyTest2::SetupRvsdg()
     auto gepS2 = GetElementPtrOperation::Create(s2Argument, { c0, c0 }, structTypeB, pointerType);
     auto ldS2 = LoadNonVolatileOperation::Create(gepS2, { ldS1[1] }, pointerType, 8);
 
-    auto & call = CallNode::CreateNode(
+    auto & call = CallOperation::CreateNode(
         functionFArgument,
         rvsdg::AssertGetOwnerNode<rvsdg::LambdaNode>(functionF).GetOperation().Type(),
         { ldS1[0], ldS2[0], iOStateArgument, ldS2[1] });
@@ -3843,7 +3843,7 @@ LambdaCallArgumentMismatch::SetupRvsdg()
         rvsdg::bittype::Create(32),
         4);
 
-    auto & call = CallNode::CreateNode(
+    auto & call = CallOperation::CreateNode(
         lambdaGArgument,
         functionTypeCall,
         { loadResults[0], vaList, iOStateArgument, loadResults[1] });
@@ -3915,7 +3915,7 @@ VariadicFunctionTest1::SetupRvsdg()
 
     auto varArgList = valist_op::Create(*LambdaF_->subregion(), { iArgument });
 
-    CallH_ = &CallNode::CreateNode(
+    CallH_ = &CallOperation::CreateNode(
         lambdaHArgument,
         lambdaHType,
         { one, varArgList, iOStateArgument, memoryStateArgument });
@@ -3948,7 +3948,7 @@ VariadicFunctionTest1::SetupRvsdg()
 
     auto storeResults = StoreNonVolatileOperation::Create(allocaResults[0], five, { merge }, 4);
 
-    auto & callF = CallNode::CreateNode(
+    auto & callF = CallOperation::CreateNode(
         lambdaFArgument,
         lambdaFType,
         { allocaResults[0], iOStateArgument, storeResults[0] });
@@ -4049,11 +4049,11 @@ VariadicFunctionTest2::SetupRvsdg()
         std::vector<jlm::rvsdg::output *>{ allocaResults[1], memoryStateArgument });
     AllocaNode_ = rvsdg::output::GetNode(*allocaResults[0]);
 
-    auto & callLLvmLifetimeStart = CallNode::CreateNode(
+    auto & callLLvmLifetimeStart = CallOperation::CreateNode(
         llvmLifetimeStartArgument,
         lambdaLlvmLifetimeStartType,
         { twentyFour, allocaResults[0], iOStateArgument, memoryState });
-    auto & callVaStart = CallNode::CreateNode(
+    auto & callVaStart = CallOperation::CreateNode(
         llvmVaStartArgument,
         lambdaVaStartType,
         { allocaResults[0],
@@ -4132,11 +4132,11 @@ VariadicFunctionTest2::SetupRvsdg()
         { gammaOutputMemoryState.output },
         rvsdg::bittype::Create(32),
         4);
-    auto & callVaEnd = CallNode::CreateNode(
+    auto & callVaEnd = CallOperation::CreateNode(
         llvmVaEndArgument,
         lambdaVaEndType,
         { allocaResults[0], &CallOperation::GetIOStateOutput(callVaStart), loadResults[1] });
-    auto & callLLvmLifetimeEnd = CallNode::CreateNode(
+    auto & callLLvmLifetimeEnd = CallOperation::CreateNode(
         llvmLifetimeEndArgument,
         lambdaLlvmLifetimeEndType,
         { twentyFour,
@@ -4165,7 +4165,7 @@ VariadicFunctionTest2::SetupRvsdg()
 
     auto vaListResult = valist_op::Create(*LambdaG_->subregion(), { zero, one, two });
 
-    auto & callFst = CallNode::CreateNode(
+    auto & callFst = CallOperation::CreateNode(
         lambdaFstArgument,
         lambdaFstType,
         { three, vaListResult, iOStateArgument, memoryStateArgument });
