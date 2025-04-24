@@ -30,7 +30,6 @@ class StatisticsCollector;
 namespace jlm::llvm
 {
 
-class CallNode;
 class RvsdgModule;
 
 namespace delta

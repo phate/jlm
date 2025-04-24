@@ -39,7 +39,6 @@ namespace phi
 class node;
 }
 
-class CallNode;
 class LoadNode;
 class StoreNode;
 

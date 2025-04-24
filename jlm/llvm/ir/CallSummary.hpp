@@ -14,8 +14,6 @@
 namespace jlm::llvm
 {
 
-class CallNode;
-
 /**
  * The CallSummary of a lambda summarizes all call usages of the lambda. It distinguishes between
  * three call usages:
