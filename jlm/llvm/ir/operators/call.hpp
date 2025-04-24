@@ -94,6 +94,18 @@ public:
   }
 
   /**
+   * @return The call node's input/output state output.
+   */
+  [[nodiscard]] static rvsdg::output &
+  GetIOStateOutput(const rvsdg::SimpleNode & node) noexcept
+  {
+    JLM_ASSERT(is<CallOperation>(&node));
+    const auto ioState = node.output(node.noutputs() - 2);
+    JLM_ASSERT(is<IOStateType>(ioState->type()));
+    return *ioState;
+  }
+
+  /**
    * @return The call node's memory state input.
    */
   [[nodiscard]] static rvsdg::input &
@@ -361,17 +373,6 @@ public:
   GetOperation() const noexcept override
   {
     return *jlm::util::AssertedCast<const CallOperation>(&SimpleNode::GetOperation());
-  }
-
-  /**
-   * @return The call node's input/output state output.
-   */
-  [[nodiscard]] jlm::rvsdg::output *
-  GetIoStateOutput() const noexcept
-  {
-    auto iOState = output(noutputs() - 2);
-    JLM_ASSERT(is<IOStateType>(iOState->type()));
-    return iOState;
   }
 
   /**

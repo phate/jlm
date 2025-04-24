@@ -314,7 +314,7 @@ TestCallWithMemoryStateNodes()
         LambdaExitMemoryStateMergeOperation::Create(*lambdaNode->subregion(), callExitSplitResults);
 
     lambdaOutputTest2 = lambdaNode->finalize(
-        { callNode.output(0), callNode.GetIoStateOutput(), &lambdaExitMergeResult });
+        { callNode.output(0), &CallOperation::GetIOStateOutput(callNode), &lambdaExitMergeResult });
     GraphExport::Create(*lambdaOutputTest2, "test2");
   }
 

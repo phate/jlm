@@ -406,7 +406,7 @@ Bits2PtrTest::SetupRvsdg()
         rvsdg::AssertGetOwnerNode<rvsdg::LambdaNode>(*b2p).GetOperation().Type(),
         { valueArgument, iOStateArgument, memoryStateArgument });
 
-    lambda->finalize({ call.GetIoStateOutput(), call.GetMemoryStateOutput() });
+    lambda->finalize({ &CallOperation::GetIOStateOutput(call), call.GetMemoryStateOutput() });
     GraphExport::Create(*lambda->output(), "testfct");
 
     return std::make_tuple(lambda, &call);
@@ -592,11 +592,12 @@ CallTest1::SetupRvsdg()
     auto & callG = CallNode::CreateNode(
         cvg,
         g->GetOperation().Type(),
-        { z[0], z[0], callF.GetIoStateOutput(), callF.GetMemoryStateOutput() });
+        { z[0], z[0], &CallOperation::GetIOStateOutput(callF), callF.GetMemoryStateOutput() });
 
     auto sum = jlm::rvsdg::bitadd_op::create(32, callF.output(0), callG.output(0));
 
-    lambda->finalize({ sum, callG.GetIoStateOutput(), callG.GetMemoryStateOutput() });
+    lambda->finalize(
+        { sum, &CallOperation::GetIOStateOutput(callG), callG.GetMemoryStateOutput() });
     GraphExport::Create(*lambda->output(), "h");
 
     auto allocaX = jlm::rvsdg::output::GetNode(*x[0]);
@@ -717,18 +718,23 @@ CallTest2::SetupRvsdg()
     auto & create2 = CallNode::CreateNode(
         create_cv,
         lambdaCreate->GetOperation().Type(),
-        { seven, create1.GetIoStateOutput(), create1.GetMemoryStateOutput() });
+        { seven, &CallOperation::GetIOStateOutput(create1), create1.GetMemoryStateOutput() });
 
     auto & destroy1 = CallNode::CreateNode(
         destroy_cv,
         lambdaDestroy->GetOperation().Type(),
-        { create1.output(0), create2.GetIoStateOutput(), create2.GetMemoryStateOutput() });
+        { create1.output(0),
+          &CallOperation::GetIOStateOutput(create2),
+          create2.GetMemoryStateOutput() });
     auto & destroy2 = CallNode::CreateNode(
         destroy_cv,
         lambdaDestroy->GetOperation().Type(),
-        { create2.output(0), destroy1.GetIoStateOutput(), destroy1.GetMemoryStateOutput() });
+        { create2.output(0),
+          &CallOperation::GetIOStateOutput(destroy1),
+          destroy1.GetMemoryStateOutput() });
 
-    lambda->finalize({ destroy2.GetIoStateOutput(), destroy2.GetMemoryStateOutput() });
+    lambda->finalize(
+        { &CallOperation::GetIOStateOutput(destroy2), destroy2.GetMemoryStateOutput() });
     GraphExport::Create(*lambda->output(), "test");
 
     return std::make_tuple(lambda, &create1, &create2, &destroy1, &destroy2);
@@ -838,12 +844,14 @@ IndirectCallTest1::SetupRvsdg()
     auto & call_three = CallNode::CreateNode(
         fctindcall_cv,
         rvsdg::AssertGetOwnerNode<rvsdg::LambdaNode>(*fctindcall).GetOperation().Type(),
-        { fctthree_cv, call_four.GetIoStateOutput(), call_four.GetMemoryStateOutput() });
+        { fctthree_cv,
+          &CallOperation::GetIOStateOutput(call_four),
+          call_four.GetMemoryStateOutput() });
 
     auto add = jlm::rvsdg::bitadd_op::create(32, call_four.output(0), call_three.output(0));
 
-    auto lambdaOutput =
-        lambda->finalize({ add, call_three.GetIoStateOutput(), call_three.GetMemoryStateOutput() });
+    auto lambdaOutput = lambda->finalize(
+        { add, &CallOperation::GetIOStateOutput(call_three), call_three.GetMemoryStateOutput() });
     GraphExport::Create(*lambda->output(), "test");
 
     return std::make_tuple(lambdaOutput, &call_three, &call_four);
@@ -1034,7 +1042,7 @@ IndirectCallTest2::SetupRvsdg()
     auto & callY = CallNode::CreateNode(
         functionYCv,
         rvsdg::AssertGetOwnerNode<rvsdg::LambdaNode>(functionY).GetOperation().Type(),
-        { pyAlloca[0], callX.GetIoStateOutput(), callX.GetMemoryStateOutput() });
+        { pyAlloca[0], &CallOperation::GetIOStateOutput(callX), callX.GetMemoryStateOutput() });
 
     auto loadG1 = LoadNonVolatileOperation::Create(
         globalG1Cv,
@@ -1051,8 +1059,8 @@ IndirectCallTest2::SetupRvsdg()
     sum = jlm::rvsdg::bitadd_op::create(32, sum, loadG1[0]);
     sum = jlm::rvsdg::bitadd_op::create(32, sum, loadG2[0]);
 
-    auto lambdaOutput =
-        lambda->finalize({ sum, callY.GetIoStateOutput(), callY.GetMemoryStateOutput() });
+    auto lambdaOutput = lambda->finalize(
+        { sum, &CallOperation::GetIOStateOutput(callY), callY.GetMemoryStateOutput() });
     GraphExport::Create(*lambdaOutput, "test");
 
     return std::make_tuple(
@@ -1301,7 +1309,7 @@ ExternalCallTest2::SetupRvsdg()
       lambdaFArgument,
       lambdaFType,
       { allocaResults[0],
-        callLLvmLifetimeStart.GetIoStateOutput(),
+        &CallOperation::GetIOStateOutput(callLLvmLifetimeStart),
         callLLvmLifetimeStart.GetMemoryStateOutput() });
 
   auto zero = jlm::rvsdg::create_bitconstant(LambdaG_->subregion(), 64, 0);
@@ -1336,7 +1344,10 @@ ExternalCallTest2::SetupRvsdg()
   auto & callLLvmLifetimeEnd = CallNode::CreateNode(
       llvmLifetimeEndArgument,
       lambdaLlvmLifetimeEndType,
-      { twentyFour, allocaResults[0], CallF_->GetIoStateOutput(), storeResults2[0] });
+      { twentyFour,
+        allocaResults[0],
+        &CallOperation::GetIOStateOutput(*CallF_),
+        storeResults2[0] });
 
   LambdaG_->finalize(outputs(&callLLvmLifetimeEnd));
 
@@ -1952,7 +1963,8 @@ DeltaTest3::SetupRvsdg()
         rvsdg::AssertGetOwnerNode<rvsdg::LambdaNode>(lambdaF).GetOperation().Type(),
         { iOStateArgument, memoryStateArgument });
 
-    auto lambdaOutput = lambda->finalize({ call.GetIoStateOutput(), call.GetMemoryStateOutput() });
+    auto lambdaOutput =
+        lambda->finalize({ &CallOperation::GetIOStateOutput(call), call.GetMemoryStateOutput() });
     GraphExport::Create(*lambdaOutput, "test");
 
     return std::make_tuple(lambdaOutput, &call);
@@ -2131,7 +2143,7 @@ PhiTest1::SetupRvsdg()
         fibFunctionType,
         { nm2,
           resultev.branchArgument[0],
-          callFibm1.GetIoStateOutput(),
+          &CallOperation::GetIOStateOutput(callFibm1),
           callFibm1.GetMemoryStateOutput() });
 
     auto gepnm1 = GetElementPtrOperation::Create(
@@ -2159,8 +2171,8 @@ PhiTest1::SetupRvsdg()
     /* Nothing needs to be done */
 
     auto sumex = gammaNode->AddExitVar({ sum, nev.branchArgument[1] });
-    auto gOIoState =
-        gammaNode->AddExitVar({ callFibm2.GetIoStateOutput(), gIIoState.branchArgument[1] });
+    auto gOIoState = gammaNode->AddExitVar(
+        { &CallOperation::GetIOStateOutput(callFibm2), gIIoState.branchArgument[1] });
     auto gOMemoryState = gammaNode->AddExitVar({ ldnm2[1], gIMemoryState.branchArgument[1] });
 
     auto gepn = GetElementPtrOperation::Create(
@@ -2329,12 +2341,12 @@ PhiTest2::SetupRvsdg()
     auto & callD = CallNode::CreateNode(
         functionDCv,
         recFunctionType,
-        { paAlloca[0], callB.GetIoStateOutput(), callB.GetMemoryStateOutput() });
+        { paAlloca[0], &CallOperation::GetIOStateOutput(callB), callB.GetMemoryStateOutput() });
 
     auto sum = jlm::rvsdg::bitadd_op::create(32, callB.output(0), callD.output(0));
 
-    auto lambdaOutput =
-        lambda->finalize({ sum, callD.GetIoStateOutput(), callD.GetMemoryStateOutput() });
+    auto lambdaOutput = lambda->finalize(
+        { sum, &CallOperation::GetIOStateOutput(callD), callD.GetMemoryStateOutput() });
 
     return std::make_tuple(
         lambdaOutput,
@@ -2379,12 +2391,12 @@ PhiTest2::SetupRvsdg()
     auto & callC = CallNode::CreateNode(
         functionCCv,
         recFunctionType,
-        { pbAlloca[0], callI.GetIoStateOutput(), callI.GetMemoryStateOutput() });
+        { pbAlloca[0], &CallOperation::GetIOStateOutput(callI), callI.GetMemoryStateOutput() });
 
     auto sum = jlm::rvsdg::bitadd_op::create(32, callI.output(0), callC.output(0));
 
-    auto lambdaOutput =
-        lambda->finalize({ sum, callC.GetIoStateOutput(), callC.GetMemoryStateOutput() });
+    auto lambdaOutput = lambda->finalize(
+        { sum, &CallOperation::GetIOStateOutput(callC), callC.GetMemoryStateOutput() });
 
     return std::make_tuple(
         lambdaOutput,
@@ -2426,7 +2438,8 @@ PhiTest2::SetupRvsdg()
 
     auto sum = jlm::rvsdg::bitadd_op::create(32, callA.output(0), loadX[0]);
 
-    auto lambdaOutput = lambda->finalize({ sum, callA.GetIoStateOutput(), loadX[1] });
+    auto lambdaOutput =
+        lambda->finalize({ sum, &CallOperation::GetIOStateOutput(callA), loadX[1] });
 
     return std::make_tuple(
         lambdaOutput,
@@ -2949,8 +2962,8 @@ EscapedMemoryTest2::SetupRvsdg()
         jlm::rvsdg::bittype::Create(32),
         4);
 
-    auto lambdaOutput =
-        lambda->finalize({ loadResults[0], call.GetIoStateOutput(), loadResults[1] });
+    auto lambdaOutput = lambda->finalize(
+        { loadResults[0], &CallOperation::GetIOStateOutput(call), loadResults[1] });
 
     GraphExport::Create(*lambdaOutput, "CallExternalFunction2");
 
@@ -3063,8 +3076,8 @@ EscapedMemoryTest3::SetupRvsdg()
         rvsdg::bittype::Create(32),
         4);
 
-    auto lambdaOutput =
-        lambda->finalize({ loadResults[0], call.GetIoStateOutput(), loadResults[1] });
+    auto lambdaOutput = lambda->finalize(
+        { loadResults[0], &CallOperation::GetIOStateOutput(call), loadResults[1] });
 
     GraphExport::Create(*lambdaOutput, "test");
 
@@ -3888,7 +3901,7 @@ VariadicFunctionTest1::SetupRvsdg()
         { CallH_->GetMemoryStateOutput() },
         4);
 
-    LambdaF_->finalize({ CallH_->GetIoStateOutput(), storeResults[0] });
+    LambdaF_->finalize({ &CallOperation::GetIOStateOutput(*CallH_), storeResults[0] });
   }
 
   // Setup g()
@@ -4019,7 +4032,7 @@ VariadicFunctionTest2::SetupRvsdg()
         llvmVaStartArgument,
         lambdaVaStartType,
         { allocaResults[0],
-          callLLvmLifetimeStart.GetIoStateOutput(),
+          &CallOperation::GetIOStateOutput(callLLvmLifetimeStart),
           callLLvmLifetimeStart.GetMemoryStateOutput() });
 
     auto loadResults = LoadNonVolatileOperation::Create(
@@ -4097,17 +4110,17 @@ VariadicFunctionTest2::SetupRvsdg()
     auto & callVaEnd = CallNode::CreateNode(
         llvmVaEndArgument,
         lambdaVaEndType,
-        { allocaResults[0], callVaStart.GetIoStateOutput(), loadResults[1] });
+        { allocaResults[0], &CallOperation::GetIOStateOutput(callVaStart), loadResults[1] });
     auto & callLLvmLifetimeEnd = CallNode::CreateNode(
         llvmLifetimeEndArgument,
         lambdaLlvmLifetimeEndType,
         { twentyFour,
           allocaResults[0],
-          callVaEnd.GetIoStateOutput(),
+          &CallOperation::GetIOStateOutput(callVaEnd),
           callVaEnd.GetMemoryStateOutput() });
 
     LambdaFst_->finalize({ loadResults[0],
-                           callLLvmLifetimeEnd.GetIoStateOutput(),
+                           &CallOperation::GetIOStateOutput(callLLvmLifetimeEnd),
                            callLLvmLifetimeEnd.GetMemoryStateOutput() });
   }
 
