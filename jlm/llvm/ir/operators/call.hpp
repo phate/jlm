@@ -44,6 +44,18 @@ public:
   [[nodiscard]] std::unique_ptr<Operation>
   copy() const override;
 
+  /**
+   * @return The number of arguments to the call.
+   *
+   * \note This is equivalent to ninputs() - 1 as NumArguments() ignores the function input.
+   */
+  [[nodiscard]] static size_t
+  NumArguments(const rvsdg::SimpleNode & node) noexcept
+  {
+    JLM_ASSERT(is<CallOperation>(&node));
+    return node.ninputs() - 1;
+  }
+
   static std::unique_ptr<tac>
   create(
       const variable * function,
@@ -303,24 +315,13 @@ public:
   }
 
   /**
-   * @return The number of arguments to the call.
-   *
-   * \note This is equivalent to ninputs() - 1 as NumArguments() ignores the function input.
-   */
-  [[nodiscard]] size_t
-  NumArguments() const noexcept
-  {
-    return ninputs() - 1;
-  }
-
-  /**
    * @param n The index of the function argument.
    * @return The input for the given index \p n.
    */
   [[nodiscard]] jlm::rvsdg::input *
   Argument(size_t n) const
   {
-    JLM_ASSERT(n < NumArguments());
+    JLM_ASSERT(n < CallOperation::NumArguments(*this));
     return input(n + 1);
   }
 

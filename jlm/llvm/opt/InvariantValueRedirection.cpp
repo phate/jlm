@@ -192,7 +192,7 @@ InvariantValueRedirection::RedirectCallOutputs(CallNode & callNode)
   // direct call. See jlm::tests::LambdaCallArgumentMismatch for an example. In this case, we cannot
   // redirect the call outputs to the call operand as the types would not align, resulting in type
   // errors.
-  if (callNode.NumArguments() != lambdaNode.GetFunctionArguments().size())
+  if (CallOperation::NumArguments(callNode) != lambdaNode.GetFunctionArguments().size())
     return;
 
   auto memoryStateOutput = callNode.GetMemoryStateOutput();

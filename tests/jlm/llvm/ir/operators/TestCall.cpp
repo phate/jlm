@@ -75,8 +75,8 @@ TestCallNodeAccessors()
   auto & callNode = *jlm::util::AssertedCast<CallNode>(jlm::rvsdg::output::GetNode(*results[0]));
 
   // Assert
-  assert(callNode.NumArguments() == 3);
-  assert(callNode.NumArguments() == callNode.ninputs() - 1);
+  assert(CallOperation::NumArguments(callNode) == 3);
+  assert(CallOperation::NumArguments(callNode) == callNode.ninputs() - 1);
   assert(callNode.Argument(0)->origin() == v);
   assert(callNode.Argument(1)->origin() == i);
   assert(callNode.Argument(2)->origin() == m);

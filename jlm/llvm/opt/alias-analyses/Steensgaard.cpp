@@ -1232,7 +1232,7 @@ Steensgaard::AnalyzeExternalCall(const CallNode & callNode)
   // Mark arguments of external function call as escaped
   //
   // Variadic arguments are taken care of in AnalyzeVaList().
-  for (size_t n = 1; n < callNode.NumArguments(); n++)
+  for (size_t n = 1; n < CallOperation::NumArguments(callNode); n++)
   {
     auto & callArgument = *callNode.input(n)->origin();
 
