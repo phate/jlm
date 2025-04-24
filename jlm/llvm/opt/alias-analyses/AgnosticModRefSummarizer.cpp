@@ -54,13 +54,13 @@ public:
   }
 
   [[nodiscard]] const util::HashSet<const PointsToGraph::MemoryNode *> &
-  GetCallEntryNodes(const CallNode &) const override
+  GetCallEntryNodes(const rvsdg::SimpleNode &) const override
   {
     return MemoryNodes_;
   }
 
   [[nodiscard]] const util::HashSet<const PointsToGraph::MemoryNode *> &
-  GetCallExitNodes(const CallNode &) const override
+  GetCallExitNodes(const rvsdg::SimpleNode &) const override
   {
     return MemoryNodes_;
   }

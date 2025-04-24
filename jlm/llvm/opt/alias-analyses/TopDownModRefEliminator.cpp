@@ -50,8 +50,8 @@ class TopDownModRefEliminator::ModRefSummary final : public aa::ModRefSummary
 {
   using RegionMap =
       std::unordered_map<const rvsdg::Region *, util::HashSet<const PointsToGraph::MemoryNode *>>;
-  using CallMap =
-      std::unordered_map<const CallNode *, util::HashSet<const PointsToGraph::MemoryNode *>>;
+  using CallMap = std::
+      unordered_map<const rvsdg::SimpleNode *, util::HashSet<const PointsToGraph::MemoryNode *>>;
 
 public:
   explicit ModRefSummary(const PointsToGraph & pointsToGraph)
@@ -89,8 +89,9 @@ public:
   }
 
   [[nodiscard]] const util::HashSet<const PointsToGraph::MemoryNode *> &
-  GetCallEntryNodes(const CallNode & callNode) const override
+  GetCallEntryNodes(const rvsdg::SimpleNode & callNode) const override
   {
+    JLM_ASSERT(is<CallOperation>(&callNode));
     auto callTypeClassifier = CallOperation::ClassifyCall(callNode);
 
     if (callTypeClassifier->IsNonRecursiveDirectCall()
@@ -113,8 +114,9 @@ public:
   }
 
   [[nodiscard]] const util::HashSet<const PointsToGraph::MemoryNode *> &
-  GetCallExitNodes(const CallNode & callNode) const override
+  GetCallExitNodes(const rvsdg::SimpleNode & callNode) const override
   {
+    JLM_ASSERT(is<CallOperation>(&callNode));
     auto callTypeClassifier = CallOperation::ClassifyCall(callNode);
 
     if (callTypeClassifier->IsNonRecursiveDirectCall()
@@ -194,14 +196,16 @@ public:
 
 private:
   bool
-  HasExternalCallNodesSet(const CallNode & externalCall) const noexcept
+  HasExternalCallNodesSet(const rvsdg::SimpleNode & externalCall) const noexcept
   {
+    JLM_ASSERT(is<CallOperation>(&externalCall));
     return ExternalCallNodes_.find(&externalCall) != ExternalCallNodes_.end();
   }
 
   bool
-  HasIndirectCallNodesSet(const CallNode & indirectCall) const noexcept
+  HasIndirectCallNodesSet(const rvsdg::SimpleNode & indirectCall) const noexcept
   {
+    JLM_ASSERT(is<CallOperation>(&indirectCall));
     return IndirectCallNodes_.find(&indirectCall) != IndirectCallNodes_.end();
   }
 
@@ -262,14 +266,14 @@ private:
   }
 
   const util::HashSet<const PointsToGraph::MemoryNode *> &
-  GetExternalCallNodesSet(const CallNode & externalCall) const
+  GetExternalCallNodesSet(const rvsdg::SimpleNode & externalCall) const
   {
     JLM_ASSERT(HasExternalCallNodesSet(externalCall));
     return (*ExternalCallNodes_.find(&externalCall)).second;
   }
 
   const util::HashSet<const PointsToGraph::MemoryNode *> &
-  GetIndirectCallNodesSet(const CallNode & indirectCall) const
+  GetIndirectCallNodesSet(const rvsdg::SimpleNode & indirectCall) const
   {
     JLM_ASSERT(HasIndirectCallNodesSet(indirectCall));
     return (*IndirectCallNodes_.find(&indirectCall)).second;

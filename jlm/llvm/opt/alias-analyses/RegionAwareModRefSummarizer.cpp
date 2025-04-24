@@ -334,7 +334,8 @@ class RegionAwareModRefSummary final : public ModRefSummary
 {
   using RegionSummaryMap =
       std::unordered_map<const rvsdg::Region *, std::unique_ptr<RegionSummary>>;
-  using CallSummaryMap = std::unordered_map<const CallNode *, std::unique_ptr<CallSummary>>;
+  using CallSummaryMap =
+      std::unordered_map<const rvsdg::SimpleNode *, std::unique_ptr<CallSummary>>;
 
   using RegionSummaryIterator =
       util::MapValuePtrIterator<RegionSummary, RegionSummaryMap::const_iterator>;
@@ -388,14 +389,14 @@ public:
   }
 
   [[nodiscard]] const util::HashSet<const PointsToGraph::MemoryNode *> &
-  GetCallEntryNodes(const CallNode & callNode) const override
+  GetCallEntryNodes(const rvsdg::SimpleNode & callNode) const override
   {
     const auto & callSummary = GetCallSummary(callNode);
     return callSummary.GetMemoryNodes();
   }
 
   [[nodiscard]] const util::HashSet<const PointsToGraph::MemoryNode *> &
-  GetCallExitNodes(const CallNode & callNode) const override
+  GetCallExitNodes(const rvsdg::SimpleNode & callNode) const override
   {
     return GetCallEntryNodes(callNode);
   }
@@ -476,7 +477,7 @@ public:
   }
 
   [[nodiscard]] CallSummary *
-  TryGetCallSummary(const CallNode & call) const
+  TryGetCallSummary(const rvsdg::SimpleNode & call) const
   {
     const auto it = CallSummaries_.find(&call);
     if (it == CallSummaries_.end())
@@ -491,7 +492,7 @@ public:
   }
 
   [[nodiscard]] CallSummary &
-  GetCallSummary(const CallNode & call) const
+  GetCallSummary(const rvsdg::SimpleNode & call) const
   {
     const auto callSummary = TryGetCallSummary(call);
     JLM_ASSERT(callSummary != nullptr);
