@@ -151,7 +151,7 @@ private:
    * \result The corresponding fpcmp.
    */
   jlm::llvm::fpcmp
-  ConvertFPCMP(const ::mlir::arith::CmpFPredicate & op);
+  TryConvertFPCMP(const ::mlir::arith::CmpFPredicate & op);
 
   /**
    * Converts an MLIR integer binary operation into an RVSDG node.

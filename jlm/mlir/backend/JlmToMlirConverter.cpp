@@ -4,14 +4,14 @@
  * See COPYING for terms of redistribution.
  */
 
-#include <jlm/mlir/backend/JlmToMlirConverter.hpp>
-
 #include <jlm/llvm/ir/operators/alloca.hpp>
 #include <jlm/llvm/ir/operators/Load.hpp>
 #include <jlm/llvm/ir/operators/MemoryStateOperations.hpp>
 #include <jlm/llvm/ir/operators/operators.hpp>
 #include <jlm/llvm/ir/operators/sext.hpp>
 #include <jlm/llvm/ir/operators/Store.hpp>
+#include <jlm/mlir/backend/JlmToMlirConverter.hpp>
+#include <jlm/mlir/MLIRConverterCommon.hpp>
 #include <jlm/rvsdg/bitstring/arithmetic.hpp>
 #include <jlm/rvsdg/bitstring/comparison.hpp>
 #include <jlm/rvsdg/bitstring/constant.hpp>
@@ -230,56 +230,16 @@ JlmToMlirConverter::ConvertFpBinaryNode(
   }
 }
 
-::mlir::arith::CmpFPredicate
-JlmToMlirConverter::ConvertFPCMP(const llvm::fpcmp & op)
-{
-  switch (op)
-  {
-  case llvm::fpcmp::TRUE:
-    return (::mlir::arith::CmpFPredicate::AlwaysTrue);
-  case llvm::fpcmp::FALSE:
-    return (::mlir::arith::CmpFPredicate::AlwaysFalse);
-  case llvm::fpcmp::oeq:
-    return (::mlir::arith::CmpFPredicate::OEQ);
-  case llvm::fpcmp::ogt:
-    return (::mlir::arith::CmpFPredicate::OGT);
-  case llvm::fpcmp::oge:
-    return (::mlir::arith::CmpFPredicate::OGE);
-  case llvm::fpcmp::olt:
-    return (::mlir::arith::CmpFPredicate::OLT);
-  case llvm::fpcmp::ole:
-    return (::mlir::arith::CmpFPredicate::OLE);
-  case llvm::fpcmp::one:
-    return (::mlir::arith::CmpFPredicate::ONE);
-  case llvm::fpcmp::ord:
-    return (::mlir::arith::CmpFPredicate::ORD);
-  case llvm::fpcmp::ueq:
-    return (::mlir::arith::CmpFPredicate::UEQ);
-  case llvm::fpcmp::ugt:
-    return (::mlir::arith::CmpFPredicate::UGT);
-  case llvm::fpcmp::uge:
-    return (::mlir::arith::CmpFPredicate::UGE);
-  case llvm::fpcmp::ult:
-    return (::mlir::arith::CmpFPredicate::ULT);
-  case llvm::fpcmp::ule:
-    return (::mlir::arith::CmpFPredicate::ULE);
-  case llvm::fpcmp::une:
-    return (::mlir::arith::CmpFPredicate::UNE);
-  case llvm::fpcmp::uno:
-    return (::mlir::arith::CmpFPredicate::UNO);
-  default:
-    JLM_UNREACHABLE("Unknown fp comp");
-  }
-}
-
 ::mlir::Operation *
 JlmToMlirConverter::ConvertFpCompareNode(
     const llvm::fpcmp_op & op,
     ::llvm::SmallVector<::mlir::Value> inputs)
 {
+  const auto & map = GetFpCmpPredicateMap();
+  auto predicate = map.LookupValue(op.cmp());
   return Builder_->create<::mlir::arith::CmpFOp>(
       Builder_->getUnknownLoc(),
-      Builder_->getAttr<::mlir::arith::CmpFPredicateAttr>(ConvertFPCMP(op.cmp())),
+      Builder_->getAttr<::mlir::arith::CmpFPredicateAttr>(predicate),
       inputs[0],
       inputs[1]);
 }
