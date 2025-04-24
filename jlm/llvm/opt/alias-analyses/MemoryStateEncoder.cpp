@@ -723,7 +723,7 @@ MemoryStateEncoder::EncodeCallExit(const CallNode & callNode)
   auto & memoryNodes = Context_->GetModRefSummary().GetCallExitNodes(callNode);
 
   auto states = CallExitMemoryStateSplitOperation::Create(
-      *callNode.GetMemoryStateOutput(),
+      CallOperation::GetMemoryStateOutput(callNode),
       memoryNodes.Size());
   auto memoryNodeStatePairs = stateMap.GetStates(*callNode.region(), memoryNodes);
   StateMap::MemoryNodeStatePair::ReplaceStates(memoryNodeStatePairs, states);

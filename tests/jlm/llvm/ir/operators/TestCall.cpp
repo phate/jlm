@@ -91,7 +91,7 @@ TestCallNodeAccessors()
   assert(CallOperation::GetMemoryStateInput(callNode).origin() == m);
 
   assert(CallOperation::GetIOStateOutput(callNode).type() == *iOStateType);
-  assert(callNode.GetMemoryStateOutput()->type() == *memoryStateType);
+  assert(CallOperation::GetMemoryStateOutput(callNode).type() == *memoryStateType);
 }
 
 static void

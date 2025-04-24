@@ -308,7 +308,7 @@ TestCallWithMemoryStateNodes()
         { controlResult, xArgument, ioStateArgument, &callEntryMergeResult });
 
     auto callExitSplitResults =
-        CallExitMemoryStateSplitOperation::Create(*callNode.GetMemoryStateOutput(), 2);
+        CallExitMemoryStateSplitOperation::Create(CallOperation::GetMemoryStateOutput(callNode), 2);
 
     auto & lambdaExitMergeResult =
         LambdaExitMemoryStateMergeOperation::Create(*lambdaNode->subregion(), callExitSplitResults);

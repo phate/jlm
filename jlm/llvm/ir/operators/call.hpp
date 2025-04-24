@@ -117,6 +117,18 @@ public:
     return *memoryState;
   }
 
+  /**
+   * @return The call node's memory state output.
+   */
+  [[nodiscard]] static rvsdg::output &
+  GetMemoryStateOutput(const rvsdg::SimpleNode & node) noexcept
+  {
+    JLM_ASSERT(is<CallOperation>(&node));
+    const auto memoryState = node.output(node.noutputs() - 1);
+    JLM_ASSERT(is<MemoryStateType>(memoryState->type()));
+    return *memoryState;
+  }
+
   static std::unique_ptr<tac>
   create(
       const variable * function,
@@ -376,17 +388,6 @@ public:
   }
 
   /**
-   * @return The call node's memory state output.
-   */
-  [[nodiscard]] jlm::rvsdg::output *
-  GetMemoryStateOutput() const noexcept
-  {
-    auto memoryState = output(noutputs() - 1);
-    JLM_ASSERT(is<MemoryStateType>(memoryState->type()));
-    return memoryState;
-  }
-
-  /**
    *
    * @param callNode The call node for which to retrieve the CallEntryMemoryStateMergeOperation
    * node.
@@ -419,10 +420,10 @@ public:
   {
     // If a memory state exit split node is present, then we would expect the node to be the only
     // user of the memory state output.
-    if (callNode.GetMemoryStateOutput()->nusers() != 1)
+    if (CallOperation::GetMemoryStateOutput(callNode).nusers() != 1)
       return nullptr;
 
-    auto node = rvsdg::node_input::GetNode(**callNode.GetMemoryStateOutput()->begin());
+    auto node = rvsdg::node_input::GetNode(**CallOperation::GetMemoryStateOutput(callNode).begin());
     return is<CallExitMemoryStateSplitOperation>(node) ? dynamic_cast<rvsdg::SimpleNode *>(node)
                                                        : nullptr;
   }

@@ -195,7 +195,7 @@ InvariantValueRedirection::RedirectCallOutputs(CallNode & callNode)
   if (CallOperation::NumArguments(callNode) != lambdaNode.GetFunctionArguments().size())
     return;
 
-  auto memoryStateOutput = callNode.GetMemoryStateOutput();
+  auto memoryStateOutput = &CallOperation::GetMemoryStateOutput(callNode);
   auto callExitSplit = CallNode::GetMemoryStateExitSplit(callNode);
   auto hasCallExitSplit = callExitSplit != nullptr;
 
