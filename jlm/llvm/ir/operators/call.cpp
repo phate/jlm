@@ -153,14 +153,6 @@ CallOperation::copy() const
   return std::make_unique<CallOperation>(*this);
 }
 
-rvsdg::Node *
-CallNode::copy(rvsdg::Region * region, const std::vector<rvsdg::output *> & operands) const
-{
-  std::unique_ptr<CallOperation> op(
-      util::AssertedCast<CallOperation>(GetOperation().copy().release()));
-  return &rvsdg::SimpleNode::Create(*region, std::move(op), operands);
-}
-
 rvsdg::output *
 CallOperation::TraceFunctionInput(const rvsdg::SimpleNode & callNode)
 {

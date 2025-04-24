@@ -515,30 +515,6 @@ private:
   std::shared_ptr<const rvsdg::FunctionType> FunctionType_;
 };
 
-/** \brief Call node
- *
- */
-class CallNode final : public jlm::rvsdg::SimpleNode
-{
-private:
-  CallNode(
-      rvsdg::Region & region,
-      std::unique_ptr<CallOperation> operation,
-      const std::vector<jlm::rvsdg::output *> & operands)
-      : SimpleNode(region, std::move(operation), operands)
-  {}
-
-public:
-  [[nodiscard]] const CallOperation &
-  GetOperation() const noexcept override
-  {
-    return *jlm::util::AssertedCast<const CallOperation>(&SimpleNode::GetOperation());
-  }
-
-  Node *
-  copy(rvsdg::Region * region, const std::vector<rvsdg::output *> & operands) const override;
-};
-
 }
 
 #endif
