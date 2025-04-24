@@ -8,6 +8,7 @@
 
 // JLM
 #include <jlm/llvm/ir/operators/delta.hpp>
+#include <jlm/llvm/ir/operators/IntegerOperations.hpp>
 #include <jlm/llvm/ir/operators/lambda.hpp>
 #include <jlm/llvm/ir/operators/operators.hpp>
 #include <jlm/llvm/ir/RvsdgModule.hpp>
@@ -117,6 +118,15 @@ public:
   ConvertFpBinaryNode(const jlm::llvm::fpbin_op & op, ::llvm::SmallVector<::mlir::Value> inputs);
 
   /**
+   * Converts an fpcmp_op to an MLIR operation.
+   * \param op The fpcmp_op to be converted.
+   * \param inputs The inputs to the fpcmp_op.
+   * \return The converted MLIR operation.
+   */
+  ::mlir::Operation *
+  ConvertFpCompareNode(const jlm::llvm::fpcmp_op & op, ::llvm::SmallVector<::mlir::Value> inputs);
+
+  /**
    * Converts an RVSDG binary_op to an MLIR RVSDG operation.
    * \param bitOp The RVSDG bitbinary_op to be converted
    * \param inputs The inputs to the bitbinary_op.
@@ -125,6 +135,17 @@ public:
   ::mlir::Operation *
   ConvertBitBinaryNode(
       const rvsdg::SimpleOperation & bitOp,
+      ::llvm::SmallVector<::mlir::Value> inputs);
+
+  /**
+   * Converts an integer binary operation to an MLIR operation.
+   * \param operation The integer binary operation to be converted
+   * \param inputs The inputs to the operation
+   * \return The converted MLIR operation
+   */
+  ::mlir::Operation *
+  ConvertIntegerBinaryOperation(
+      const jlm::llvm::IntegerBinaryOperation & operation,
       ::llvm::SmallVector<::mlir::Value> inputs);
 
   /**

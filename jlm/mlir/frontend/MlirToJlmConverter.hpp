@@ -120,6 +120,7 @@ private:
   /**
    * Converts an MLIR integer comparison operation into an RVSDG node.
    * \param CompOp The MLIR comparison operation to be converted.
+   * \param rvsdgRegion The RVSDG region that the generated RVSDG node is inserted into.
    * \param inputs The inputs for the RVSDG node.
    * \param nbits The number of bits in the comparison.
    * \result The converted RVSDG node.
@@ -127,6 +128,7 @@ private:
   rvsdg::Node *
   ConvertCmpIOp(
       ::mlir::arith::CmpIOp & CompOp,
+      rvsdg::Region & rvsdgRegion,
       const ::llvm::SmallVector<rvsdg::output *> & inputs,
       size_t nbits);
 
@@ -144,14 +146,24 @@ private:
       const ::llvm::SmallVector<rvsdg::output *> & inputs);
 
   /**
+   * Converts a floating point compare predicate to jlm::llvm::fpcmp.
+   * \param op the predicate.
+   * \result The corresponding fpcmp.
+   */
+  jlm::llvm::fpcmp
+  TryConvertFPCMP(const ::mlir::arith::CmpFPredicate & op);
+
+  /**
    * Converts an MLIR integer binary operation into an RVSDG node.
    * \param mlirOperation The MLIR operation to be converted.
+   * \param rvsdgRegion The RVSDG region that the generated RVSDG node is inserted into.
    * \param inputs The inputs for the RVSDG node.
    * \result The converted RVSDG node OR nullptr if the operation cannot be casted to an operation
    */
   rvsdg::Node *
   ConvertBitBinaryNode(
-      const ::mlir::Operation & mlirOperation,
+      ::mlir::Operation & mlirOperation,
+      rvsdg::Region & rvsdgRegion,
       const ::llvm::SmallVector<rvsdg::output *> & inputs);
 
   /**
