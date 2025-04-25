@@ -34,10 +34,10 @@ public:
   GetRegionExitNodes(const rvsdg::Region & region) const = 0;
 
   [[nodiscard]] virtual const jlm::util::HashSet<const PointsToGraph::MemoryNode *> &
-  GetCallEntryNodes(const CallNode & callNode) const = 0;
+  GetCallEntryNodes(const rvsdg::SimpleNode & callNode) const = 0;
 
   [[nodiscard]] virtual const jlm::util::HashSet<const PointsToGraph::MemoryNode *> &
-  GetCallExitNodes(const CallNode & callNode) const = 0;
+  GetCallExitNodes(const rvsdg::SimpleNode & callNode) const = 0;
 
   /**
    * Retrieves the set of memory locations that may be targeted by the given pointer typed value

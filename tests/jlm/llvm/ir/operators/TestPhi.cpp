@@ -50,8 +50,10 @@ TestPhiCreation()
     auto iOStateArgument = lambda->GetFunctionArguments()[1];
     auto memoryStateArgument = lambda->GetFunctionArguments()[2];
 
-    auto callResults =
-        CallNode::Create(ctxVarF2, f1type, { valueArgument, iOStateArgument, memoryStateArgument });
+    auto callResults = CallOperation::Create(
+        ctxVarF2,
+        f1type,
+        { valueArgument, iOStateArgument, memoryStateArgument });
 
     return lambda->finalize(callResults);
   };

@@ -537,10 +537,6 @@ ConvertThreeAddressCode(
   {
     ConvertBranch(threeAddressCode, region, variableMap);
   }
-  else if (is<CallOperation>(&threeAddressCode))
-  {
-    Convert<CallNode, CallOperation>(threeAddressCode, region, variableMap);
-  }
   else
   {
     std::vector<rvsdg::output *> operands;

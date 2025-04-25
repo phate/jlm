@@ -15,12 +15,11 @@ class Graph;
 class Region;
 class StructuralNode;
 class ThetaNode;
+class SimpleNode;
 }
 
 namespace jlm::llvm
 {
-
-class CallNode;
 
 /** \brief Invariant Value Redirection Optimization
  *
@@ -76,7 +75,7 @@ private:
   RedirectThetaOutputs(rvsdg::ThetaNode & thetaNode);
 
   static void
-  RedirectCallOutputs(CallNode & callNode);
+  RedirectCallOutputs(rvsdg::SimpleNode & callNode);
 };
 
 }

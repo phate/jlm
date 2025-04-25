@@ -6,7 +6,6 @@
 #ifndef JLM_RVSDG_SIMPLE_NODE_HPP
 #define JLM_RVSDG_SIMPLE_NODE_HPP
 
-#include <jlm/rvsdg/graph.hpp>
 #include <jlm/rvsdg/node.hpp>
 
 #include <optional>
@@ -18,12 +17,12 @@ class SimpleOperation;
 class SimpleInput;
 class SimpleOutput;
 
-class SimpleNode : public Node
+class SimpleNode final : public Node
 {
 public:
   ~SimpleNode() override;
 
-protected:
+private:
   SimpleNode(
       rvsdg::Region & region,
       std::unique_ptr<SimpleOperation> operation,

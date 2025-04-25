@@ -529,7 +529,7 @@ TestExternalCall1()
   auto & lambdaFArgument1 = ptg->GetRegisterNode(*test.LambdaF().GetFunctionArguments()[1]);
   auto & importG = ptg->GetImportNode(test.ExternalGArgument());
 
-  auto & callResult = ptg->GetRegisterNode(*test.CallG().Result(0));
+  auto & callResult = ptg->GetRegisterNode(*test.CallG().output(0));
 
   auto & externalMemory = ptg->GetExternalMemoryNode();
 
@@ -861,7 +861,7 @@ TestEscapedMemory2()
   auto externalFunction1Import = &ptg->GetImportNode(*test.ExternalFunction1Import);
   auto externalFunction2Import = &ptg->GetImportNode(*test.ExternalFunction2Import);
 
-  auto & externalFunction2CallResult = ptg->GetRegisterNode(*test.ExternalFunction2Call->Result(0));
+  auto & externalFunction2CallResult = ptg->GetRegisterNode(*test.ExternalFunction2Call->output(0));
 
   assert(TargetsExactly(
       externalFunction2CallResult,
@@ -906,7 +906,7 @@ TestEscapedMemory3()
   auto importExternalFunction = &ptg->GetImportNode(*test.ImportExternalFunction);
   auto externalMemory = &ptg->GetExternalMemoryNode();
 
-  auto & callExternalFunctionResult = ptg->GetRegisterNode(*test.CallExternalFunction->Result(0));
+  auto & callExternalFunctionResult = ptg->GetRegisterNode(*test.CallExternalFunction->output(0));
 
   assert(TargetsExactly(
       callExternalFunctionResult,
