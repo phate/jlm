@@ -259,42 +259,48 @@ DeadNodeElimination::MarkOutput(const jlm::rvsdg::output & output)
     }
   }
 
-  if (auto phiOutput = dynamic_cast<const phi::rvoutput *>(&output))
+  if (const auto phiNode = rvsdg::TryGetOwnerNode<phi::node>(output))
   {
-    MarkOutput(*phiOutput->result()->origin());
+    const auto result = phiNode->subregion()->result(output.index());
+    MarkOutput(*result->origin());
     return;
   }
 
-  if (auto phiRecursionArgument = dynamic_cast<const phi::rvargument *>(&output))
+  if (const auto phiNode = rvsdg::TryGetRegionParentNode<phi::node>(output))
   {
-    MarkOutput(*phiRecursionArgument->result()->origin());
-    return;
-  }
-
-  if (auto phiInputArgument = dynamic_cast<const phi::cvargument *>(&output))
-  {
-    MarkOutput(*phiInputArgument->input()->origin());
-    return;
-  }
-
-  if (auto deltaOutput = dynamic_cast<const delta::output *>(&output))
-  {
-    MarkOutput(*deltaOutput->node()->subregion()->result(0)->origin());
-    return;
-  }
-
-  if (auto deltaCvArgument = dynamic_cast<const delta::cvargument *>(&output))
-  {
-    MarkOutput(*deltaCvArgument->input()->origin());
-    return;
-  }
-
-  if (auto simpleOutput = dynamic_cast<const rvsdg::SimpleOutput *>(&output))
-  {
-    auto node = simpleOutput->node();
-    for (size_t n = 0; n < node->ninputs(); n++)
+    const auto argument = util::AssertedCast<const rvsdg::RegionArgument>(&output);
+    if (argument->input())
     {
-      MarkOutput(*node->input(n)->origin());
+      // Bound context variable
+      MarkOutput(*argument->input()->origin());
+      return;
+    }
+
+    // Recursion argument
+    const auto result = phiNode->subregion()->result(argument->index());
+    MarkOutput(*result->origin());
+    return;
+  }
+
+  if (const auto deltaNode = rvsdg::TryGetOwnerNode<delta::node>(output))
+  {
+    const auto result = deltaNode->subregion()->result(0);
+    MarkOutput(*result->origin());
+    return;
+  }
+
+  if (rvsdg::TryGetRegionParentNode<delta::node>(output))
+  {
+    const auto argument = util::AssertedCast<const rvsdg::RegionArgument>(&output);
+    MarkOutput(*argument->input()->origin());
+    return;
+  }
+
+  if (const auto simpleNode = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(output))
+  {
+    for (size_t n = 0; n < simpleNode->ninputs(); n++)
+    {
+      MarkOutput(*simpleNode->input(n)->origin());
     }
     return;
   }
