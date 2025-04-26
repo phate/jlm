@@ -12,6 +12,15 @@
 namespace jlm::hls
 {
 
+std::string
+ConvertToCType(const rvsdg::Type * type);
+
+std::optional<std::string>
+GetReturnTypeAsC(const rvsdg::LambdaNode & kernel);
+
+std::tuple<size_t, std::string, std::string>
+GetParameterListAsC(const rvsdg::LambdaNode & kernel);
+
 class VerilatorHarnessHLS : public BaseHLS
 {
   const util::filepath VerilogFile_;

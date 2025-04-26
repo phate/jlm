@@ -56,7 +56,7 @@ FirrtlToVerilogConverter::Convert(
   firtool::FirtoolOptions firtoolOptions;
   firtoolOptions.setOutputFilename(outputVerilogFile.to_str());
   firtoolOptions.setPreserveAggregate(firrtl::PreserveAggregate::PreserveMode::None);
-  firtoolOptions.setPreserveValues(firrtl::PreserveValues::PreserveMode::None);
+  firtoolOptions.setPreserveValues(firrtl::PreserveValues::PreserveMode::Named);
   firtoolOptions.setBuildMode(firtool::FirtoolOptions::BuildModeDefault);
   firtoolOptions.setChiselInterfaceOutDirectory("");
   firtoolOptions.setDisableHoistingHWPassthrough(true);

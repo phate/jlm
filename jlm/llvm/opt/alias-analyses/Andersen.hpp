@@ -364,7 +364,7 @@ private:
   AnalyzeStore(const rvsdg::SimpleNode & node);
 
   void
-  AnalyzeCall(const CallNode & callNode);
+  AnalyzeCall(const rvsdg::SimpleNode & callNode);
 
   void
   AnalyzeGep(const rvsdg::SimpleNode & node);
@@ -421,7 +421,7 @@ private:
   AnalyzeDelta(const delta::node & node);
 
   void
-  AnalyzePhi(const phi::node & node);
+  AnalyzePhi(const rvsdg::PhiNode & node);
 
   void
   AnalyzeGamma(const rvsdg::GammaNode & node);
