@@ -34,6 +34,15 @@ namespace phi
 class node;
 }
 
+class DNEStructuralNodeHandler
+{
+public:
+  virtual ~DNEStructuralNodeHandler();
+
+  virtual void
+  SweepNode(rvsdg::StructuralNode & structuralNode) = 0;
+};
+
 /** \brief Dead Node Elimination Optimization
  *
  * Dead Node Elimination removes all nodes that do not contribute to the result of a computation. A
