@@ -11,18 +11,7 @@
 
 namespace jlm::llvm
 {
-class CallNode;
 class CallTypeClassifier;
-
-namespace lambda
-{
-class node;
-}
-
-namespace phi
-{
-class node;
-}
 }
 
 namespace jlm::rvsdg
@@ -30,6 +19,7 @@ namespace jlm::rvsdg
 class GammaNode;
 class LambdaNode;
 class Node;
+class PhiNode;
 class Region;
 class SimpleNode;
 class StructuralNode;
@@ -147,7 +137,7 @@ private:
   EliminateTopDownLambdaExit(const rvsdg::LambdaNode & lambdaNode);
 
   void
-  EliminateTopDownPhi(const phi::node & phiNode);
+  EliminateTopDownPhi(const rvsdg::PhiNode & phiNode);
 
   void
   EliminateTopDownGamma(const rvsdg::GammaNode & gammaNode);
@@ -162,26 +152,26 @@ private:
   EliminateTopDownAlloca(const rvsdg::SimpleNode & node);
 
   void
-  EliminateTopDownCall(const CallNode & callNode);
+  EliminateTopDownCall(const rvsdg::SimpleNode & callNode);
 
   void
   EliminateTopDownNonRecursiveDirectCall(
-      const CallNode & callNode,
+      const rvsdg::SimpleNode & callNode,
       const CallTypeClassifier & callTypeClassifier);
 
   void
   EliminateTopDownRecursiveDirectCall(
-      const CallNode & callNode,
+      const rvsdg::SimpleNode & callNode,
       const CallTypeClassifier & callTypeClassifier);
 
   void
   EliminateTopDownExternalCall(
-      const CallNode & callNode,
+      const rvsdg::SimpleNode & callNode,
       const CallTypeClassifier & callTypeClassifier);
 
   void
   EliminateTopDownIndirectCall(
-      const CallNode & indirectCall,
+      const rvsdg::SimpleNode & indirectCall,
       const CallTypeClassifier & callTypeClassifier);
 
   /**

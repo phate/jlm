@@ -39,7 +39,6 @@ namespace phi
 class node;
 }
 
-class CallNode;
 class LoadNode;
 class StoreNode;
 
@@ -109,7 +108,7 @@ private:
   AnalyzeDelta(const delta::node & node);
 
   void
-  AnalyzePhi(const phi::node & node);
+  AnalyzePhi(const rvsdg::PhiNode & node);
 
   void
   AnalyzeGamma(const rvsdg::GammaNode & node);
@@ -136,16 +135,16 @@ private:
   AnalyzeStore(const rvsdg::SimpleNode & node);
 
   void
-  AnalyzeCall(const CallNode & callNode);
+  AnalyzeCall(const rvsdg::SimpleNode & callNode);
 
   void
-  AnalyzeDirectCall(const CallNode & callNode, const rvsdg::LambdaNode & lambdaNode);
+  AnalyzeDirectCall(const rvsdg::SimpleNode & callNode, const rvsdg::LambdaNode & lambdaNode);
 
   void
-  AnalyzeExternalCall(const CallNode & callNode);
+  AnalyzeExternalCall(const rvsdg::SimpleNode & callNode);
 
   void
-  AnalyzeIndirectCall(const CallNode & callNode);
+  AnalyzeIndirectCall(const rvsdg::SimpleNode & callNode);
 
   void
   AnalyzeGep(const rvsdg::SimpleNode & node);
