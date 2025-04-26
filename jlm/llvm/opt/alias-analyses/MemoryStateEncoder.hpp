@@ -14,6 +14,7 @@ namespace jlm::rvsdg
 class GammaNode;
 class LambdaNode;
 class output;
+class PhiNode;
 class Region;
 class RvsdgModule;
 class SimpleNode;
@@ -33,16 +34,6 @@ namespace jlm::llvm
 class RvsdgModule;
 
 namespace delta
-{
-class node;
-}
-
-namespace lambda
-{
-class node;
-}
-
-namespace phi
 {
 class node;
 }
@@ -141,7 +132,7 @@ private:
   EncodeLambdaExit(const rvsdg::LambdaNode & lambdaNode);
 
   void
-  EncodePhi(const phi::node & phiNode);
+  EncodePhi(const rvsdg::PhiNode & phiNode);
 
   void
   EncodeDelta(const delta::node & deltaNode);

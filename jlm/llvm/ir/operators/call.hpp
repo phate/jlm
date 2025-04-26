@@ -8,9 +8,9 @@
 
 #include <jlm/llvm/ir/operators/lambda.hpp>
 #include <jlm/llvm/ir/operators/MemoryStateOperations.hpp>
-#include <jlm/llvm/ir/operators/Phi.hpp>
 #include <jlm/llvm/ir/tac.hpp>
 #include <jlm/llvm/ir/types.hpp>
+#include <jlm/rvsdg/Phi.hpp>
 #include <jlm/rvsdg/simple-node.hpp>
 
 namespace jlm::llvm
@@ -180,9 +180,8 @@ public:
       The given output must belong to a phi node.
   */
   static std::unique_ptr<CallTypeClassifier>
-  CreateRecursiveDirectCallClassifier(rvsdg::RegionArgument & output)
+  CreateRecursiveDirectCallClassifier(rvsdg::output & output)
   {
-    JLM_ASSERT(is<phi::rvargument>(&output));
     return std::make_unique<CallTypeClassifier>(CallType::RecursiveDirectCall, output);
   }
 

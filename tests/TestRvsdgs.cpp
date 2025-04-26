@@ -2120,9 +2120,9 @@ PhiTest1::SetupRvsdg()
   {
     auto pt = PointerType::Create();
 
-    jlm::llvm::phi::builder pb;
+    jlm::rvsdg::PhiBuilder pb;
     pb.begin(&graph->GetRootRegion());
-    auto fibrv = pb.add_recvar(fibFunctionType);
+    auto fibrv = pb.AddFixVar(fibFunctionType);
 
     auto lambda = rvsdg::LambdaNode::Create(
         *pb.subregion(),
@@ -2131,7 +2131,7 @@ PhiTest1::SetupRvsdg()
     auto pointerArgument = lambda->GetFunctionArguments()[1];
     auto iOStateArgument = lambda->GetFunctionArguments()[2];
     auto memoryStateArgument = lambda->GetFunctionArguments()[3];
-    auto ctxVarFib = lambda->AddContextVar(*fibrv->argument()).inner;
+    auto ctxVarFib = lambda->AddContextVar(*fibrv.recref).inner;
 
     auto two = jlm::rvsdg::create_bitconstant(lambda->subregion(), 64, 2);
     auto bitult = jlm::rvsdg::bitult_op::create(64, valueArgument, two);
@@ -2203,13 +2203,13 @@ PhiTest1::SetupRvsdg()
 
     auto lambdaOutput = lambda->finalize({ gOIoState.output, store[0] });
 
-    fibrv->result()->divert_to(lambdaOutput);
+    fibrv.result->divert_to(lambdaOutput);
     auto phiNode = pb.end();
 
     return std::make_tuple(phiNode, lambdaOutput, gammaNode, &callFibm1, &callFibm2);
   };
 
-  auto SetupTestFunction = [&](phi::node * phiNode)
+  auto SetupTestFunction = [&](rvsdg::PhiNode * phiNode)
   {
     auto at = ArrayType::Create(jlm::rvsdg::bittype::Create(64), 10);
     auto pbit64 = PointerType::Create();
@@ -2330,8 +2330,9 @@ PhiTest2::SetupRvsdg()
     return std::make_tuple(lambdaOutput, &call);
   };
 
-  auto SetupA =
-      [&](jlm::rvsdg::Region & region, phi::rvargument & functionB, phi::rvargument & functionD)
+  auto SetupA = [&](jlm::rvsdg::Region & region,
+                    jlm::rvsdg::output & functionB,
+                    jlm::rvsdg::output & functionD)
   {
     auto lambda = rvsdg::LambdaNode::Create(
         region,
@@ -2378,9 +2379,9 @@ PhiTest2::SetupRvsdg()
   };
 
   auto SetupB = [&](jlm::rvsdg::Region & region,
-                    phi::cvargument & functionI,
-                    phi::rvargument & functionC,
-                    phi::cvargument & functionEight)
+                    jlm::rvsdg::output & functionI,
+                    jlm::rvsdg::output & functionC,
+                    jlm::rvsdg::output & functionEight)
   {
     auto lambda = rvsdg::LambdaNode::Create(
         region,
@@ -2430,7 +2431,7 @@ PhiTest2::SetupRvsdg()
         jlm::util::AssertedCast<jlm::rvsdg::SimpleNode>(jlm::rvsdg::output::GetNode(*pbAlloca[0])));
   };
 
-  auto SetupC = [&](jlm::rvsdg::Region & region, phi::rvargument & functionA)
+  auto SetupC = [&](jlm::rvsdg::Region & region, jlm::rvsdg::output & functionA)
   {
     auto lambda = rvsdg::LambdaNode::Create(
         region,
@@ -2472,7 +2473,7 @@ PhiTest2::SetupRvsdg()
         jlm::util::AssertedCast<jlm::rvsdg::SimpleNode>(jlm::rvsdg::output::GetNode(*pcAlloca[0])));
   };
 
-  auto SetupD = [&](jlm::rvsdg::Region & region, phi::rvargument & functionA)
+  auto SetupD = [&](jlm::rvsdg::Region & region, jlm::rvsdg::output & functionA)
   {
     auto lambda = rvsdg::LambdaNode::Create(
         region,
@@ -2505,31 +2506,29 @@ PhiTest2::SetupRvsdg()
 
   auto SetupPhi = [&](rvsdg::output & lambdaEight, rvsdg::output & lambdaI)
   {
-    jlm::llvm::phi::builder phiBuilder;
+    jlm::rvsdg::PhiBuilder phiBuilder;
     phiBuilder.begin(&graph->GetRootRegion());
-    auto lambdaARv = phiBuilder.add_recvar(recFunctionType);
-    auto lambdaBRv = phiBuilder.add_recvar(recFunctionType);
-    auto lambdaCRv = phiBuilder.add_recvar(recFunctionType);
-    auto lambdaDRv = phiBuilder.add_recvar(recFunctionType);
-    auto lambdaEightCv = phiBuilder.add_ctxvar(&lambdaEight);
-    auto lambdaICv = phiBuilder.add_ctxvar(&lambdaI);
+    auto lambdaARv = phiBuilder.AddFixVar(recFunctionType);
+    auto lambdaBRv = phiBuilder.AddFixVar(recFunctionType);
+    auto lambdaCRv = phiBuilder.AddFixVar(recFunctionType);
+    auto lambdaDRv = phiBuilder.AddFixVar(recFunctionType);
+    auto lambdaEightCv = phiBuilder.AddContextVar(lambdaEight);
+    auto lambdaICv = phiBuilder.AddContextVar(lambdaI);
 
     auto [lambdaAOutput, callB, callD, paAlloca] =
-        SetupA(*phiBuilder.subregion(), *lambdaBRv->argument(), *lambdaDRv->argument());
+        SetupA(*phiBuilder.subregion(), *lambdaBRv.recref, *lambdaDRv.recref);
 
     auto [lambdaBOutput, callI, callC, pbAlloca] =
-        SetupB(*phiBuilder.subregion(), *lambdaICv, *lambdaCRv->argument(), *lambdaEightCv);
+        SetupB(*phiBuilder.subregion(), *lambdaICv.inner, *lambdaCRv.recref, *lambdaEightCv.inner);
 
-    auto [lambdaCOutput, callAFromC, pcAlloca] =
-        SetupC(*phiBuilder.subregion(), *lambdaARv->argument());
+    auto [lambdaCOutput, callAFromC, pcAlloca] = SetupC(*phiBuilder.subregion(), *lambdaARv.recref);
 
-    auto [lambdaDOutput, callAFromD, pdAlloca] =
-        SetupD(*phiBuilder.subregion(), *lambdaARv->argument());
+    auto [lambdaDOutput, callAFromD, pdAlloca] = SetupD(*phiBuilder.subregion(), *lambdaARv.recref);
 
-    lambdaARv->result()->divert_to(lambdaAOutput);
-    lambdaBRv->result()->divert_to(lambdaBOutput);
-    lambdaCRv->result()->divert_to(lambdaCOutput);
-    lambdaDRv->result()->divert_to(lambdaDOutput);
+    lambdaARv.result->divert_to(lambdaAOutput);
+    lambdaBRv.result->divert_to(lambdaBOutput);
+    lambdaCRv.result->divert_to(lambdaCOutput);
+    lambdaDRv.result->divert_to(lambdaDOutput);
 
     phiBuilder.end();
 
@@ -2550,7 +2549,7 @@ PhiTest2::SetupRvsdg()
         pdAlloca);
   };
 
-  auto SetupTest = [&](phi::rvoutput & functionA)
+  auto SetupTest = [&](rvsdg::output & functionA)
   {
     auto pointerType = PointerType::Create();
 
@@ -2605,17 +2604,17 @@ PhiTest2::SetupRvsdg()
        pcAlloca,
        pdAlloca] = SetupPhi(*lambdaEight, *lambdaI);
 
-  auto [lambdaTest, callAFromTest, pTestAlloca] = SetupTest(*lambdaA);
+  auto [lambdaTest, callAFromTest, pTestAlloca] = SetupTest(*lambdaA.output);
 
   /*
    * Assign nodes
    */
   this->LambdaEight_ = &rvsdg::AssertGetOwnerNode<rvsdg::LambdaNode>(*lambdaEight);
   this->LambdaI_ = &rvsdg::AssertGetOwnerNode<rvsdg::LambdaNode>(*lambdaI);
-  this->LambdaA_ = &rvsdg::AssertGetOwnerNode<rvsdg::LambdaNode>(*lambdaA->result()->origin());
-  this->LambdaB_ = &rvsdg::AssertGetOwnerNode<rvsdg::LambdaNode>(*lambdaB->result()->origin());
-  this->LambdaC_ = &rvsdg::AssertGetOwnerNode<rvsdg::LambdaNode>(*lambdaC->result()->origin());
-  this->LambdaD_ = &rvsdg::AssertGetOwnerNode<rvsdg::LambdaNode>(*lambdaD->result()->origin());
+  this->LambdaA_ = &rvsdg::AssertGetOwnerNode<rvsdg::LambdaNode>(*lambdaA.result->origin());
+  this->LambdaB_ = &rvsdg::AssertGetOwnerNode<rvsdg::LambdaNode>(*lambdaB.result->origin());
+  this->LambdaC_ = &rvsdg::AssertGetOwnerNode<rvsdg::LambdaNode>(*lambdaC.result->origin());
+  this->LambdaD_ = &rvsdg::AssertGetOwnerNode<rvsdg::LambdaNode>(*lambdaD.result->origin());
   this->LambdaTest_ = &rvsdg::AssertGetOwnerNode<rvsdg::LambdaNode>(*lambdaTest);
 
   this->CallAFromTest_ = callAFromTest;
@@ -2650,9 +2649,9 @@ PhiWithDeltaTest::SetupRvsdg()
   auto structType = StructType::Create("myStruct", false, structDeclaration);
   auto arrayType = ArrayType::Create(structType, 2);
 
-  jlm::llvm::phi::builder pb;
+  jlm::rvsdg::PhiBuilder pb;
   pb.begin(&rvsdg.GetRootRegion());
-  auto myArrayRecVar = pb.add_recvar(pointerType);
+  auto myArrayRecVar = pb.AddFixVar(pointerType);
 
   auto delta = delta::node::Create(
       pb.subregion(),
@@ -2661,7 +2660,7 @@ PhiWithDeltaTest::SetupRvsdg()
       linkage::external_linkage,
       "",
       false);
-  auto myArrayArgument = delta->add_ctxvar(myArrayRecVar->argument());
+  auto myArrayArgument = delta->add_ctxvar(myArrayRecVar.recref);
 
   auto aggregateZero = ConstantAggregateZeroOperation::Create(*delta->subregion(), structType);
   auto & constantStruct =
@@ -2670,7 +2669,7 @@ PhiWithDeltaTest::SetupRvsdg()
 
   auto deltaOutput = delta->finalize(constantArray);
   Delta_ = deltaOutput->node();
-  myArrayRecVar->result()->divert_to(deltaOutput);
+  myArrayRecVar.result->divert_to(deltaOutput);
 
   auto phiNode = pb.end();
   GraphExport::Create(*phiNode->output(0), "myArray");

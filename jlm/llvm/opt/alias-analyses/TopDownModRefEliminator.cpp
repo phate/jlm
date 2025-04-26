@@ -483,7 +483,7 @@ TopDownModRefEliminator::EliminateTopDown(const rvsdg::RvsdgModule & rvsdgModule
 void
 TopDownModRefEliminator::EliminateTopDownRootRegion(rvsdg::Region & region)
 {
-  JLM_ASSERT(region.IsRootRegion() || rvsdg::is<phi::operation>(region.node()));
+  JLM_ASSERT(region.IsRootRegion() || rvsdg::is<rvsdg::PhiOperation>(region.node()));
 
   // Process the lambda, phi, and delta nodes bottom-up.
   // This ensures that we visit all the call nodes before we visit the respective lambda nodes.
@@ -496,7 +496,7 @@ TopDownModRefEliminator::EliminateTopDownRootRegion(rvsdg::Region & region)
     {
       EliminateTopDownLambda(*lambdaNode);
     }
-    else if (auto phiNode = dynamic_cast<const phi::node *>(node))
+    else if (auto phiNode = dynamic_cast<const rvsdg::PhiNode *>(node))
     {
       EliminateTopDownPhi(*phiNode);
     }
@@ -632,7 +632,7 @@ TopDownModRefEliminator::EliminateTopDownLambdaExit(const rvsdg::LambdaNode & la
 }
 
 void
-TopDownModRefEliminator::EliminateTopDownPhi(const phi::node & phiNode)
+TopDownModRefEliminator::EliminateTopDownPhi(const rvsdg::PhiNode & phiNode)
 {
   auto unifyLiveNodes = [&](const rvsdg::Region & phiSubregion)
   {
@@ -892,9 +892,9 @@ TopDownModRefEliminator::InitializeLiveNodesOfTailLambdas(const rvsdg::RvsdgModu
     {
       InitializeLiveNodesOfTailLambda(*lambdaNode);
     }
-    else if (auto phiNode = dynamic_cast<const phi::node *>(node))
+    else if (auto phiNode = dynamic_cast<const rvsdg::PhiNode *>(node))
     {
-      auto lambdaNodes = phi::node::ExtractLambdaNodes(*phiNode);
+      auto lambdaNodes = rvsdg::PhiNode::ExtractLambdaNodes(*phiNode);
       for (auto & phiLambdaNode : lambdaNodes)
       {
         InitializeLiveNodesOfTailLambda(*phiLambdaNode);
@@ -954,7 +954,7 @@ TopDownModRefEliminator::CheckInvariants(
         regions.push_back(lambdaSubregion);
         collectRegionsAndCalls(*lambdaSubregion, regions, callNodes);
       }
-      else if (auto phiNode = dynamic_cast<const phi::node *>(&node))
+      else if (auto phiNode = dynamic_cast<const rvsdg::PhiNode *>(&node))
       {
         auto subregion = phiNode->subregion();
         collectRegionsAndCalls(*subregion, regions, callNodes);

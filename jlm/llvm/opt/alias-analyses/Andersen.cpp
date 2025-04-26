@@ -1012,7 +1012,7 @@ Andersen::AnalyzeStructuralNode(const rvsdg::StructuralNode & node)
     AnalyzeLambda(*lambdaNode);
   else if (const auto deltaNode = dynamic_cast<const delta::node *>(&node))
     AnalyzeDelta(*deltaNode);
-  else if (const auto phiNode = dynamic_cast<const phi::node *>(&node))
+  else if (const auto phiNode = dynamic_cast<const rvsdg::PhiNode *>(&node))
     AnalyzePhi(*phiNode);
   else if (const auto gammaNode = dynamic_cast<const rvsdg::GammaNode *>(&node))
     AnalyzeGamma(*gammaNode);
@@ -1095,47 +1095,47 @@ Andersen::AnalyzeDelta(const delta::node & delta)
 }
 
 void
-Andersen::AnalyzePhi(const phi::node & phi)
+Andersen::AnalyzePhi(const rvsdg::PhiNode & phi)
 {
   // Handle context variables
-  for (auto cv = phi.begin_cv(); cv != phi.end_cv(); ++cv)
+  for (auto var : phi.GetContextVars())
   {
-    if (!IsOrContainsPointerType(cv->type()))
+    if (!IsOrContainsPointerType(var.inner->type()))
       continue;
 
-    auto & inputRegister = *cv->origin();
-    auto & argumentRegister = *cv->argument();
+    auto & inputRegister = *var.input->origin();
+    auto & argumentRegister = *var.inner;
     const auto inputRegisterPO = Set_->GetRegisterPointerObject(inputRegister);
     Set_->MapRegisterToExistingPointerObject(argumentRegister, inputRegisterPO);
   }
 
-  // Create Register PointerObjects for each recursion variable argument
-  for (auto rv = phi.begin_rv(); rv != phi.end_rv(); ++rv)
+  // Create Register PointerObjects for each fixpoint variable argument
+  for (auto var : phi.GetFixVars())
   {
-    if (!IsOrContainsPointerType(rv->type()))
+    if (!IsOrContainsPointerType(var.output->type()))
       continue;
 
-    auto & argumentRegister = *rv->argument();
+    auto & argumentRegister = *var.recref;
     (void)Set_->CreateRegisterPointerObject(argumentRegister);
   }
 
   AnalyzeRegion(*phi.subregion());
 
-  // Handle recursion variable results
-  for (auto rv = phi.begin_rv(); rv != phi.end_rv(); ++rv)
+  // Handle recursive definition results
+  for (auto var : phi.GetFixVars())
   {
-    if (!IsOrContainsPointerType(rv->type()))
+    if (!IsOrContainsPointerType(var.output->type()))
       continue;
 
     // Make the recursion variable argument point to what the result register points to
-    auto & argumentRegister = *rv->argument();
-    auto & resultRegister = *rv->result()->origin();
+    auto & argumentRegister = *var.recref;
+    auto & resultRegister = *var.result->origin();
     const auto argumentRegisterPO = Set_->GetRegisterPointerObject(argumentRegister);
     const auto resultRegisterPO = Set_->GetRegisterPointerObject(resultRegister);
     Constraints_->AddConstraint(SupersetConstraint(argumentRegisterPO, resultRegisterPO));
 
     // Map the output register to the recursion result's pointer object
-    auto & outputRegister = *rv;
+    auto & outputRegister = *var.output;
     Set_->MapRegisterToExistingPointerObject(outputRegister, resultRegisterPO);
   }
 }

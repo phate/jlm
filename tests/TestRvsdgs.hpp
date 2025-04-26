@@ -1388,7 +1388,7 @@ public:
 
   rvsdg::GammaNode * gamma;
 
-  jlm::llvm::phi::node * phi;
+  jlm::rvsdg::PhiNode * phi;
 
   rvsdg::Node * alloca;
 
