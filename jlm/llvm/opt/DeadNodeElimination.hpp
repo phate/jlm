@@ -177,7 +177,7 @@ class DeadNodeElimination final : public rvsdg::Transformation
 public:
   ~DeadNodeElimination() noexcept override;
 
-  explicit DeadNodeElimination(std::vector<const DNEStructuralNodeHandler *> handlers);
+  explicit DeadNodeElimination(const std::vector<const DNEStructuralNodeHandler *> & handlers);
 
   DeadNodeElimination(const DeadNodeElimination &) = delete;
 
@@ -224,7 +224,7 @@ private:
   SweepDelta(delta::node & deltaNode);
 
   DNEContext Context_;
-  std::vector<const DNEStructuralNodeHandler *> Handlers_;
+  std::unordered_map<std::type_index, const DNEStructuralNodeHandler *> Handlers_;
 };
 
 }

@@ -163,9 +163,15 @@ public:
 
 DeadNodeElimination::~DeadNodeElimination() noexcept = default;
 
-DeadNodeElimination::DeadNodeElimination(std::vector<const DNEStructuralNodeHandler *> handlers)
-    : Handlers_(std::move(handlers))
-{}
+DeadNodeElimination::DeadNodeElimination(
+    const std::vector<const DNEStructuralNodeHandler *> & handlers)
+{
+  for (const auto handler : handlers)
+  {
+    JLM_ASSERT(Handlers_.find(handler->GetTypeInfo()) == Handlers_.end());
+    Handlers_[handler->GetTypeInfo()] = handler;
+  }
+}
 
 void
 DeadNodeElimination::run(rvsdg::Region & region)
@@ -221,7 +227,7 @@ DeadNodeElimination::MarkOutput(const jlm::rvsdg::output & output)
     return;
   }
 
-  for (const auto handler : Handlers_)
+  for (const auto [_, handler] : Handlers_)
   {
     if (const auto continuations = handler->ComputeMarkPhaseContinuations(output))
     {
@@ -372,20 +378,18 @@ DeadNodeElimination::SweepRegion(rvsdg::Region & region) const
 void
 DeadNodeElimination::SweepStructuralNode(rvsdg::StructuralNode & node) const
 {
-  for (const auto handler : Handlers_)
+  if (const auto it = Handlers_.find(typeid(node)); it != Handlers_.end())
   {
-    if (handler->GetTypeInfo() == typeid(node))
+    const auto handler = it->second;
+    handler->SweepNodeExit(node, Context_);
+
+    for (size_t r = 0; r < node.nsubregions(); r++)
     {
-      handler->SweepNodeExit(node, Context_);
-
-      for (size_t r = 0; r < node.nsubregions(); r++)
-      {
-        SweepRegion(*node.subregion(r));
-      }
-
-      handler->SweepNodeEntry(node, Context_);
-      return;
+      SweepRegion(*node.subregion(r));
     }
+
+    handler->SweepNodeEntry(node, Context_);
+    return;
   }
 
   auto sweepTheta = [](auto & d, auto & n)
