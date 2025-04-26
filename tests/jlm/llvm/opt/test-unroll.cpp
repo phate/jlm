@@ -257,7 +257,7 @@ test_unknown_boundaries()
   assert(jlm::rvsdg::is<jlm::rvsdg::GammaOperation>(node));
 
   /* Create cleaner output */
-  DeadNodeElimination dne;
+  DeadNodeElimination dne({ DNEGammaNodeHandler::GetInstance() });
   dne.Run(rm, statisticsCollector);
   //	jlm::rvsdg::view(graph, stdout);
 }

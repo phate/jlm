@@ -407,7 +407,8 @@ JlmOptCommand::CreateTransformation(
   case JlmOptCommandLineOptions::OptimizationId::CommonNodeElimination:
     return std::make_unique<llvm::cne>();
   case JlmOptCommandLineOptions::OptimizationId::DeadNodeElimination:
-    return std::make_unique<llvm::DeadNodeElimination>();
+    return std::unique_ptr<llvm::DeadNodeElimination>(
+        new llvm::DeadNodeElimination({ llvm::DNEGammaNodeHandler::GetInstance() }));
   case JlmOptCommandLineOptions::OptimizationId::FunctionInlining:
     return std::make_unique<llvm::fctinline>();
   case JlmOptCommandLineOptions::OptimizationId::IfConversion:

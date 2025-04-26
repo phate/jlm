@@ -9,6 +9,8 @@
 #include <jlm/rvsdg/lambda.hpp>
 #include <jlm/rvsdg/Transformation.hpp>
 
+#include <typeindex>
+
 namespace jlm::rvsdg
 {
 class GammaNode;
@@ -34,13 +36,123 @@ namespace phi
 class node;
 }
 
+/** \brief Dead Node Elimination context class
+ *
+ * This class keeps track of all the nodes and outputs that are alive. In contrast to all other
+ * nodes, a simple node is considered alive if already a single of its outputs is alive. For this
+ * reason, this class keeps separately track of simple nodes and therefore avoids to store all its
+ * outputs (and instead stores the node itself). By marking the entire node as alive, we also avoid
+ * that we reiterate through all inputs of this node again in the future. The following example
+ * illustrates the issue:
+ *
+ * o1 ... oN = Node2 i1 ... iN
+ * p1 ... pN = Node1 o1 ... oN
+ *
+ * When we mark o1 as alive, we actually mark the entire Node2 as alive. This means that when we try
+ * to mark o2 alive in the future, we can immediately stop marking instead of reiterating through i1
+ * ... iN again. Thus, by marking the entire simple node instead of just its outputs, we reduce the
+ * runtime for marking Node2 from O(oN x iN) to O(oN + iN).
+ */
+class DNEContext final
+{
+public:
+  void
+  MarkAlive(const rvsdg::output & output)
+  {
+    if (const auto simpleOutput = dynamic_cast<const rvsdg::SimpleOutput *>(&output))
+    {
+      SimpleNodes_.Insert(simpleOutput->node());
+      return;
+    }
+
+    Outputs_.Insert(&output);
+  }
+
+  bool
+  IsAlive(const rvsdg::output & output) const noexcept
+  {
+    if (const auto simpleOutput = dynamic_cast<const rvsdg::SimpleOutput *>(&output))
+    {
+      return SimpleNodes_.Contains(simpleOutput->node());
+    }
+
+    return Outputs_.Contains(&output);
+  }
+
+  bool
+  IsAlive(const rvsdg::Node & node) const noexcept
+  {
+    if (const auto simpleNode = dynamic_cast<const rvsdg::SimpleNode *>(&node))
+    {
+      return SimpleNodes_.Contains(simpleNode);
+    }
+
+    for (size_t n = 0; n < node.noutputs(); n++)
+    {
+      if (IsAlive(*node.output(n)))
+      {
+        return true;
+      }
+    }
+
+    return false;
+  }
+
+private:
+  util::HashSet<const rvsdg::SimpleNode *> SimpleNodes_;
+  util::HashSet<const rvsdg::output *> Outputs_;
+};
+
 class DNEStructuralNodeHandler
 {
 public:
   virtual ~DNEStructuralNodeHandler();
 
+  virtual std::type_index
+  GetTypeInfo() const = 0;
+
+  virtual std::optional<std::vector<rvsdg::output *>>
+  ComputeMarkPhaseContinuations(const rvsdg::output & output) const = 0;
+
   virtual void
-  SweepNode(rvsdg::StructuralNode & structuralNode) = 0;
+  SweepNodeEntry(rvsdg::StructuralNode & structuralNode, const DNEContext & context) const = 0;
+
+  virtual void
+  SweepNodeExit(rvsdg::StructuralNode & structuralNode, const DNEContext & context) const = 0;
+};
+
+class DNEGammaNodeHandler final : public DNEStructuralNodeHandler
+{
+public:
+  ~DNEGammaNodeHandler() override;
+
+  DNEGammaNodeHandler(const DNEGammaNodeHandler &) = delete;
+
+  DNEGammaNodeHandler &
+  operator=(const DNEGammaNodeHandler &) = delete;
+
+  DNEGammaNodeHandler(DNEGammaNodeHandler &&) = delete;
+
+  DNEGammaNodeHandler &
+  operator=(DNEGammaNodeHandler &&) = delete;
+
+  std::type_index
+  GetTypeInfo() const override;
+
+  std::optional<std::vector<rvsdg::output *>>
+  ComputeMarkPhaseContinuations(const rvsdg::output & output) const override;
+
+  void
+  SweepNodeEntry(rvsdg::StructuralNode & structuralNode, const DNEContext & context) const override;
+
+  void
+  SweepNodeExit(rvsdg::StructuralNode & structuralNode, const DNEContext & context) const override;
+
+  static DNEStructuralNodeHandler *
+  GetInstance();
+
+private:
+  DNEGammaNodeHandler();
 };
 
 /** \brief Dead Node Elimination Optimization
@@ -60,13 +172,12 @@ public:
  */
 class DeadNodeElimination final : public rvsdg::Transformation
 {
-  class Context;
   class Statistics;
 
 public:
   ~DeadNodeElimination() noexcept override;
 
-  DeadNodeElimination();
+  explicit DeadNodeElimination(std::vector<const DNEStructuralNodeHandler *> handlers);
 
   DeadNodeElimination(const DeadNodeElimination &) = delete;
 
@@ -101,9 +212,6 @@ private:
   SweepStructuralNode(rvsdg::StructuralNode & node) const;
 
   void
-  SweepGamma(rvsdg::GammaNode & gammaNode) const;
-
-  void
   SweepTheta(rvsdg::ThetaNode & thetaNode) const;
 
   void
@@ -115,7 +223,8 @@ private:
   static void
   SweepDelta(delta::node & deltaNode);
 
-  std::unique_ptr<Context> Context_;
+  DNEContext Context_;
+  std::vector<const DNEStructuralNodeHandler *> Handlers_;
 };
 
 }

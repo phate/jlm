@@ -21,8 +21,9 @@
 static void
 RunDeadNodeElimination(jlm::llvm::RvsdgModule & rvsdgModule)
 {
+  using namespace jlm::llvm;
   jlm::util::StatisticsCollector statisticsCollector;
-  jlm::llvm::DeadNodeElimination deadNodeElimination;
+  DeadNodeElimination deadNodeElimination({ DNEGammaNodeHandler::GetInstance() });
   deadNodeElimination.Run(rvsdgModule, statisticsCollector);
 }
 

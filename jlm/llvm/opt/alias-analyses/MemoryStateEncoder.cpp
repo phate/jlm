@@ -480,7 +480,7 @@ MemoryStateEncoder::Encode(
   Context_.reset();
 
   // Remove all nodes that became dead throughout the encoding.
-  DeadNodeElimination deadNodeElimination;
+  DeadNodeElimination deadNodeElimination({ DNEGammaNodeHandler::GetInstance() });
   deadNodeElimination.Run(rvsdgModule, statisticsCollector);
 }
 

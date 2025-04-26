@@ -16,78 +16,100 @@
 namespace jlm::llvm
 {
 
-/** \brief Dead Node Elimination context class
- *
- * This class keeps track of all the nodes and outputs that are alive. In contrast to all other
- * nodes, a simple node is considered alive if already a single of its outputs is alive. For this
- * reason, this class keeps separately track of simple nodes and therefore avoids to store all its
- * outputs (and instead stores the node itself). By marking the entire node as alive, we also avoid
- * that we reiterate through all inputs of this node again in the future. The following example
- * illustrates the issue:
- *
- * o1 ... oN = Node2 i1 ... iN
- * p1 ... pN = Node1 o1 ... oN
- *
- * When we mark o1 as alive, we actually mark the entire Node2 as alive. This means that when we try
- * to mark o2 alive in the future, we can immediately stop marking instead of reiterating through i1
- * ... iN again. Thus, by marking the entire simple node instead of just its outputs, we reduce the
- * runtime for marking Node2 from O(oN x iN) to O(oN + iN).
- */
-class DeadNodeElimination::Context final
+DNEStructuralNodeHandler::~DNEStructuralNodeHandler() = default;
+
+DNEGammaNodeHandler::~DNEGammaNodeHandler() = default;
+
+DNEGammaNodeHandler::DNEGammaNodeHandler() = default;
+
+std::type_index
+DNEGammaNodeHandler::GetTypeInfo() const
 {
-public:
-  void
-  MarkAlive(const jlm::rvsdg::output & output)
-  {
-    if (auto simpleOutput = dynamic_cast<const rvsdg::SimpleOutput *>(&output))
-    {
-      SimpleNodes_.Insert(simpleOutput->node());
-      return;
-    }
+  return typeid(rvsdg::GammaNode);
+}
 
-    Outputs_.Insert(&output);
+std::optional<std::vector<rvsdg::output *>>
+DNEGammaNodeHandler::ComputeMarkPhaseContinuations(const rvsdg::output & output) const
+{
+  if (const auto gammaNode = rvsdg::TryGetRegionParentNode<rvsdg::GammaNode>(output))
+  {
+    return std::vector{ gammaNode->MapBranchArgumentEntryVar(output).input->origin() };
   }
 
-  bool
-  IsAlive(const jlm::rvsdg::output & output) const noexcept
+  if (const auto gammaNode = rvsdg::TryGetOwnerNode<rvsdg::GammaNode>(output))
   {
-    if (auto simpleOutput = dynamic_cast<const rvsdg::SimpleOutput *>(&output))
+    std::vector continuations({ gammaNode->predicate()->origin() });
+    for (const auto & result : gammaNode->MapOutputExitVar(output).branchResult)
     {
-      return SimpleNodes_.Contains(simpleOutput->node());
+      continuations.push_back(result->origin());
     }
-
-    return Outputs_.Contains(&output);
+    return continuations;
   }
 
-  bool
-  IsAlive(const rvsdg::Node & node) const noexcept
-  {
-    if (auto simpleNode = dynamic_cast<const jlm::rvsdg::SimpleNode *>(&node))
-    {
-      return SimpleNodes_.Contains(simpleNode);
-    }
+  return std::nullopt;
+}
 
-    for (size_t n = 0; n < node.noutputs(); n++)
+void
+DNEGammaNodeHandler::SweepNodeEntry(
+    rvsdg::StructuralNode & structuralNode,
+    const DNEContext & context) const
+{
+  auto & gammaNode = *util::AssertedCast<rvsdg::GammaNode>(&structuralNode);
+
+  // Remove dead arguments and inputs
+  for (size_t n = gammaNode.ninputs() - 1; n >= 1; n--)
+  {
+    auto input = gammaNode.input(n);
+
+    bool alive = false;
+    for (auto & argument : input->arguments)
     {
-      if (IsAlive(*node.output(n)))
+      if (context.IsAlive(argument))
       {
-        return true;
+        alive = true;
+        break;
       }
     }
-
-    return false;
+    if (!alive)
+    {
+      for (size_t r = 0; r < gammaNode.nsubregions(); r++)
+      {
+        gammaNode.subregion(r)->RemoveArgument(n - 1);
+      }
+      gammaNode.RemoveInput(n);
+    }
   }
+}
 
-  static std::unique_ptr<Context>
-  Create()
+void
+DNEGammaNodeHandler::SweepNodeExit(
+    rvsdg::StructuralNode & structuralNode,
+    const DNEContext & context) const
+{
+  auto & gammaNode = *util::AssertedCast<rvsdg::GammaNode>(&structuralNode);
+
+  // Remove dead outputs and results
+  for (size_t n = gammaNode.noutputs() - 1; n != static_cast<size_t>(-1); n--)
   {
-    return std::make_unique<Context>();
-  }
+    if (context.IsAlive(*gammaNode.output(n)))
+    {
+      continue;
+    }
 
-private:
-  util::HashSet<const jlm::rvsdg::SimpleNode *> SimpleNodes_;
-  util::HashSet<const jlm::rvsdg::output *> Outputs_;
-};
+    for (size_t r = 0; r < gammaNode.nsubregions(); r++)
+    {
+      gammaNode.subregion(r)->RemoveResult(n);
+    }
+    gammaNode.RemoveOutput(n);
+  }
+}
+
+DNEStructuralNodeHandler *
+DNEGammaNodeHandler::GetInstance()
+{
+  static DNEGammaNodeHandler singleton;
+  return &singleton;
+}
 
 /** \brief Dead Node Elimination statistics class
  *
@@ -141,18 +163,17 @@ public:
 
 DeadNodeElimination::~DeadNodeElimination() noexcept = default;
 
-DeadNodeElimination::DeadNodeElimination() = default;
+DeadNodeElimination::DeadNodeElimination(std::vector<const DNEStructuralNodeHandler *> handlers)
+    : Handlers_(std::move(handlers))
+{}
 
 void
 DeadNodeElimination::run(rvsdg::Region & region)
 {
-  Context_ = Context::Create();
+  Context_ = DNEContext{};
 
   MarkRegion(region);
   SweepRegion(region);
-
-  // Discard internal state to free up memory after we are done
-  Context_.reset();
 }
 
 void
@@ -160,10 +181,11 @@ DeadNodeElimination::Run(
     rvsdg::RvsdgModule & module,
     util::StatisticsCollector & statisticsCollector)
 {
-  Context_ = Context::Create();
-
   auto & rvsdg = module.Rvsdg();
+
+  Context_ = DNEContext{};
   auto statistics = Statistics::Create(module.SourceFilePath().value());
+
   statistics->StartMarkStatistics(rvsdg);
   MarkRegion(rvsdg.GetRootRegion());
   statistics->StopMarkStatistics();
@@ -173,9 +195,6 @@ DeadNodeElimination::Run(
   statistics->StopSweepStatistics(rvsdg);
 
   statisticsCollector.CollectDemandedStatistics(std::move(statistics));
-
-  // Discard internal state to free up memory after we are done
-  Context_.reset();
 }
 
 void
@@ -190,32 +209,28 @@ DeadNodeElimination::MarkRegion(const rvsdg::Region & region)
 void
 DeadNodeElimination::MarkOutput(const jlm::rvsdg::output & output)
 {
-  if (Context_->IsAlive(output))
+  if (Context_.IsAlive(output))
   {
     return;
   }
 
-  Context_->MarkAlive(output);
+  Context_.MarkAlive(output);
 
   if (is<rvsdg::GraphImport>(&output))
   {
     return;
   }
 
-  if (auto gamma = rvsdg::TryGetOwnerNode<rvsdg::GammaNode>(output))
+  for (const auto handler : Handlers_)
   {
-    MarkOutput(*gamma->predicate()->origin());
-    for (const auto & result : gamma->MapOutputExitVar(output).branchResult)
+    if (const auto continuations = handler->ComputeMarkPhaseContinuations(output))
     {
-      MarkOutput(*result->origin());
+      for (const auto & continuation : continuations.value())
+      {
+        MarkOutput(*continuation);
+      }
+      return;
     }
-    return;
-  }
-
-  if (auto gamma = rvsdg::TryGetRegionParentNode<rvsdg::GammaNode>(output))
-  {
-    MarkOutput(*gamma->MapBranchArgumentEntryVar(output).input->origin());
-    return;
   }
 
   if (auto theta = rvsdg::TryGetOwnerNode<rvsdg::ThetaNode>(output))
@@ -316,7 +331,7 @@ DeadNodeElimination::SweepRvsdg(rvsdg::Graph & rvsdg) const
   // Remove dead imports
   for (size_t n = rvsdg.GetRootRegion().narguments() - 1; n != static_cast<size_t>(-1); n--)
   {
-    if (!Context_->IsAlive(*rvsdg.GetRootRegion().argument(n)))
+    if (!Context_.IsAlive(*rvsdg.GetRootRegion().argument(n)))
     {
       rvsdg.GetRootRegion().RemoveArgument(n);
     }
@@ -338,7 +353,7 @@ DeadNodeElimination::SweepRegion(rvsdg::Region & region) const
   {
     for (auto node : *it)
     {
-      if (!Context_->IsAlive(*node))
+      if (!Context_.IsAlive(*node))
       {
         remove(node);
         continue;
@@ -357,10 +372,22 @@ DeadNodeElimination::SweepRegion(rvsdg::Region & region) const
 void
 DeadNodeElimination::SweepStructuralNode(rvsdg::StructuralNode & node) const
 {
-  auto sweepGamma = [](auto & d, auto & n)
+  for (const auto handler : Handlers_)
   {
-    d.SweepGamma(*util::AssertedCast<rvsdg::GammaNode>(&n));
-  };
+    if (handler->GetTypeInfo() == typeid(node))
+    {
+      handler->SweepNodeExit(node, Context_);
+
+      for (size_t r = 0; r < node.nsubregions(); r++)
+      {
+        SweepRegion(*node.subregion(r));
+      }
+
+      handler->SweepNodeEntry(node, Context_);
+      return;
+    }
+  }
+
   auto sweepTheta = [](auto & d, auto & n)
   {
     d.SweepTheta(*util::AssertedCast<rvsdg::ThetaNode>(&n));
@@ -381,8 +408,7 @@ DeadNodeElimination::SweepStructuralNode(rvsdg::StructuralNode & node) const
   static std::unordered_map<
       std::type_index,
       std::function<void(const DeadNodeElimination &, rvsdg::StructuralNode &)>>
-      map({ { typeid(rvsdg::GammaOperation), sweepGamma },
-            { typeid(rvsdg::ThetaOperation), sweepTheta },
+      map({ { typeid(rvsdg::ThetaOperation), sweepTheta },
             { typeid(llvm::LlvmLambdaOperation), sweepLambda },
             { typeid(phi::operation), sweepPhi },
             { typeid(delta::operation), sweepDelta } });
@@ -393,62 +419,13 @@ DeadNodeElimination::SweepStructuralNode(rvsdg::StructuralNode & node) const
 }
 
 void
-DeadNodeElimination::SweepGamma(rvsdg::GammaNode & gammaNode) const
-{
-  // Remove dead outputs and results
-  for (size_t n = gammaNode.noutputs() - 1; n != static_cast<size_t>(-1); n--)
-  {
-    if (Context_->IsAlive(*gammaNode.output(n)))
-    {
-      continue;
-    }
-
-    for (size_t r = 0; r < gammaNode.nsubregions(); r++)
-    {
-      gammaNode.subregion(r)->RemoveResult(n);
-    }
-    gammaNode.RemoveOutput(n);
-  }
-
-  // Sweep gamma subregions
-  for (size_t r = 0; r < gammaNode.nsubregions(); r++)
-  {
-    SweepRegion(*gammaNode.subregion(r));
-  }
-
-  // Remove dead arguments and inputs
-  for (size_t n = gammaNode.ninputs() - 1; n >= 1; n--)
-  {
-    auto input = gammaNode.input(n);
-
-    bool alive = false;
-    for (auto & argument : input->arguments)
-    {
-      if (Context_->IsAlive(argument))
-      {
-        alive = true;
-        break;
-      }
-    }
-    if (!alive)
-    {
-      for (size_t r = 0; r < gammaNode.nsubregions(); r++)
-      {
-        gammaNode.subregion(r)->RemoveArgument(n - 1);
-      }
-      gammaNode.RemoveInput(n);
-    }
-  }
-}
-
-void
 DeadNodeElimination::SweepTheta(rvsdg::ThetaNode & thetaNode) const
 {
   // Determine loop variables to be removed.
   std::vector<rvsdg::ThetaNode::LoopVar> loopvars;
   for (const auto & loopvar : thetaNode.GetLoopVars())
   {
-    if (!Context_->IsAlive(*loopvar.pre) && !Context_->IsAlive(*loopvar.output))
+    if (!Context_.IsAlive(*loopvar.pre) && !Context_.IsAlive(*loopvar.output))
     {
       loopvar.post->divert_to(loopvar.pre);
       loopvars.push_back(loopvar);
@@ -485,7 +462,7 @@ DeadNodeElimination::SweepPhi(phi::node & phiNode) const
     auto argument = output.argument();
 
     // A recursion variable is only dead iff its output AND argument are dead
-    auto isDead = !Context_->IsAlive(output) && !Context_->IsAlive(*argument);
+    auto isDead = !Context_.IsAlive(output) && !Context_.IsAlive(*argument);
     if (isDead)
     {
       deadRecursionArguments.Insert(argument);

@@ -58,7 +58,7 @@ void
 split_opt(llvm::RvsdgModule & rm)
 {
   // TODO: figure out which optimizations to use here
-  jlm::llvm::DeadNodeElimination dne;
+  jlm::llvm::DeadNodeElimination dne({ llvm::DNEGammaNodeHandler::GetInstance() });
   jlm::hls::cne cne;
   jlm::llvm::InvariantValueRedirection ivr;
   jlm::llvm::tginversion tgi;
@@ -76,7 +76,7 @@ void
 pre_opt(jlm::llvm::RvsdgModule & rm)
 {
   // TODO: figure out which optimizations to use here
-  jlm::llvm::DeadNodeElimination dne;
+  jlm::llvm::DeadNodeElimination dne({ llvm::DNEGammaNodeHandler::GetInstance() });
   jlm::hls::cne cne;
   jlm::llvm::InvariantValueRedirection ivr;
   jlm::llvm::tginversion tgi;
@@ -438,7 +438,7 @@ rvsdg2rhls(llvm::RvsdgModule & rhls, util::StatisticsCollector & collector)
 
   merge_gamma(rhls);
 
-  llvm::DeadNodeElimination llvmDne;
+  llvm::DeadNodeElimination llvmDne({ llvm::DNEGammaNodeHandler::GetInstance() });
   llvmDne.Run(rhls, collector);
 
   mem_sep_argument(rhls);
