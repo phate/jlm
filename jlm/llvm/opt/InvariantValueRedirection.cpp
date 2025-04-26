@@ -73,9 +73,9 @@ InvariantValueRedirection::RedirectInRootRegion(rvsdg::Graph & rvsdg)
     {
       RedirectInRegion(*lambdaNode->subregion());
     }
-    else if (auto phiNode = dynamic_cast<phi::node *>(node))
+    else if (auto phiNode = dynamic_cast<rvsdg::PhiNode *>(node))
     {
-      auto phiLambdaNodes = phi::node::ExtractLambdaNodes(*phiNode);
+      auto phiLambdaNodes = rvsdg::PhiNode::ExtractLambdaNodes(*phiNode);
       for (auto phiLambdaNode : phiLambdaNodes)
       {
         RedirectInRegion(*phiLambdaNode->subregion());
