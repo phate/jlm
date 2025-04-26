@@ -13,9 +13,9 @@
 
 #include <jlm/llvm/ir/operators/delta.hpp>
 #include <jlm/llvm/ir/operators/lambda.hpp>
-#include <jlm/llvm/ir/operators/Phi.hpp>
 #include <jlm/llvm/ir/RvsdgModule.hpp>
 #include <jlm/llvm/opt/DeadNodeElimination.hpp>
+#include <jlm/rvsdg/Phi.hpp>
 #include <jlm/util/Statistics.hpp>
 
 static void
@@ -294,13 +294,12 @@ TestPhi()
   auto y = &jlm::tests::GraphImport::Create(rvsdg, valueType, "y");
   auto z = &jlm::tests::GraphImport::Create(rvsdg, valueType, "z");
 
-  auto setupF1 =
-      [&](jlm::rvsdg::Region & region, phi::rvoutput & rv2, jlm::rvsdg::RegionArgument & dx)
+  auto setupF1 = [&](jlm::rvsdg::Region & region, jlm::rvsdg::output & rv2, jlm::rvsdg::output & dx)
   {
     auto lambda1 = jlm::rvsdg::LambdaNode::Create(
         region,
         LlvmLambdaOperation::Create(functionType, "f1", linkage::external_linkage));
-    auto f2Argument = lambda1->AddContextVar(*rv2.argument()).inner;
+    auto f2Argument = lambda1->AddContextVar(rv2).inner;
     auto xArgument = lambda1->AddContextVar(dx).inner;
 
     auto result =
@@ -313,13 +312,12 @@ TestPhi()
     return lambda1->finalize({ result });
   };
 
-  auto setupF2 =
-      [&](jlm::rvsdg::Region & region, phi::rvoutput & rv1, jlm::rvsdg::RegionArgument & dy)
+  auto setupF2 = [&](jlm::rvsdg::Region & region, jlm::rvsdg::output & rv1, jlm::rvsdg::output & dy)
   {
     auto lambda2 = jlm::rvsdg::LambdaNode::Create(
         region,
         LlvmLambdaOperation::Create(functionType, "f2", linkage::external_linkage));
-    auto f1Argument = lambda2->AddContextVar(*rv1.argument()).inner;
+    auto f1Argument = lambda2->AddContextVar(rv1).inner;
     lambda2->AddContextVar(dy);
 
     auto result = jlm::rvsdg::CreateOpNode<jlm::tests::test_op>(
@@ -331,7 +329,7 @@ TestPhi()
     return lambda2->finalize({ result });
   };
 
-  auto setupF3 = [&](jlm::rvsdg::Region & region, jlm::rvsdg::RegionArgument & dz)
+  auto setupF3 = [&](jlm::rvsdg::Region & region, jlm::rvsdg::output & dz)
   {
     auto lambda3 = jlm::rvsdg::LambdaNode::Create(
         region,
@@ -355,27 +353,27 @@ TestPhi()
     return lambda->finalize({ lambda->GetFunctionArguments()[0] });
   };
 
-  phi::builder phiBuilder;
+  jlm::rvsdg::PhiBuilder phiBuilder;
   phiBuilder.begin(&rvsdg.GetRootRegion());
   auto & phiSubregion = *phiBuilder.subregion();
 
-  auto rv1 = phiBuilder.add_recvar(functionType);
-  auto rv2 = phiBuilder.add_recvar(functionType);
-  auto rv3 = phiBuilder.add_recvar(functionType);
-  auto rv4 = phiBuilder.add_recvar(functionType);
-  auto dx = phiBuilder.add_ctxvar(x);
-  auto dy = phiBuilder.add_ctxvar(y);
-  auto dz = phiBuilder.add_ctxvar(z);
+  auto rv1 = phiBuilder.AddFixVar(functionType);
+  auto rv2 = phiBuilder.AddFixVar(functionType);
+  auto rv3 = phiBuilder.AddFixVar(functionType);
+  auto rv4 = phiBuilder.AddFixVar(functionType);
+  auto dx = phiBuilder.AddContextVar(*x);
+  auto dy = phiBuilder.AddContextVar(*y);
+  auto dz = phiBuilder.AddContextVar(*z);
 
-  auto f1 = setupF1(phiSubregion, *rv2, *dx);
-  auto f2 = setupF2(phiSubregion, *rv1, *dy);
-  auto f3 = setupF3(phiSubregion, *dz);
+  auto f1 = setupF1(phiSubregion, *rv2.recref, *dx.inner);
+  auto f2 = setupF2(phiSubregion, *rv1.recref, *dy.inner);
+  auto f3 = setupF3(phiSubregion, *dz.inner);
   auto f4 = setupF4(phiSubregion);
 
-  rv1->set_rvorigin(f1);
-  rv2->set_rvorigin(f2);
-  rv3->set_rvorigin(f3);
-  rv4->set_rvorigin(f4);
+  rv1.result->divert_to(f1);
+  rv2.result->divert_to(f2);
+  rv3.result->divert_to(f3);
+  rv4.result->divert_to(f4);
   auto phiNode = phiBuilder.end();
 
   jlm::tests::GraphExport::Create(*phiNode->output(0), "f1");
@@ -386,20 +384,20 @@ TestPhi()
 
   // Assert
   assert(phiNode->noutputs() == 3); // f1, f2, and f4 are alive
-  assert(phiNode->output(0) == rv1);
-  assert(phiNode->output(1) == rv2);
-  assert(phiNode->output(2) == rv4);
+  assert(phiNode->output(0) == rv1.output);
+  assert(phiNode->output(1) == rv2.output);
+  assert(phiNode->output(2) == rv4.output);
   assert(phiSubregion.nresults() == 3); // f1, f2, and f4 are alive
-  assert(phiSubregion.result(0) == rv1->result());
-  assert(phiSubregion.result(1) == rv2->result());
-  assert(phiSubregion.result(2) == rv4->result());
+  assert(phiSubregion.result(0) == rv1.result);
+  assert(phiSubregion.result(1) == rv2.result);
+  assert(phiSubregion.result(2) == rv4.result);
   assert(phiSubregion.narguments() == 4); // f1, f2, f4, and dx are alive
-  assert(phiSubregion.argument(0) == rv1->argument());
-  assert(phiSubregion.argument(1) == rv2->argument());
-  assert(phiSubregion.argument(2) == rv4->argument());
-  assert(phiSubregion.argument(3) == dx);
+  assert(phiSubregion.argument(0) == rv1.recref);
+  assert(phiSubregion.argument(1) == rv2.recref);
+  assert(phiSubregion.argument(2) == rv4.recref);
+  assert(phiSubregion.argument(3) == dx.inner);
   assert(phiNode->ninputs() == 1); // dx is alive
-  assert(phiNode->input(0) == dx->input());
+  assert(phiNode->input(0) == dx.input);
 }
 
 static void

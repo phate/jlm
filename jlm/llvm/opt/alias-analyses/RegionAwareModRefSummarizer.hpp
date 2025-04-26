@@ -156,7 +156,7 @@ private:
   AnnotateMemcpy(const rvsdg::SimpleNode & memcpyNode, RegionSummary & regionSummary);
 
   void
-  AnnotateCall(const CallNode & callNode, RegionSummary & regionSummary);
+  AnnotateCall(const rvsdg::SimpleNode & callNode, RegionSummary & regionSummary);
 
   /**
    * Revisits all Region- and Call-Summaries and adds utilized memory locations that were not

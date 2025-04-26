@@ -36,7 +36,6 @@ libllvm_SOURCES = \
     jlm/llvm/ir/operators/MemCpy.cpp \
     jlm/llvm/ir/operators/MemoryStateOperations.cpp \
     jlm/llvm/ir/operators/operators.cpp \
-    jlm/llvm/ir/operators/Phi.cpp \
     jlm/llvm/ir/operators/sext.cpp \
     jlm/llvm/ir/operators/Store.cpp \
     jlm/llvm/ir/print.cpp \
@@ -122,7 +121,6 @@ libllvm_HEADERS = \
 	jlm/llvm/ir/types.hpp \
 	jlm/llvm/ir/cfg-structure.hpp \
 	jlm/llvm/ir/operators/operators.hpp \
-	jlm/llvm/ir/operators/Phi.hpp \
 	jlm/llvm/ir/operators/Load.hpp \
 	jlm/llvm/ir/operators/MemCpy.hpp \
 	jlm/llvm/ir/operators/MemoryStateOperations.hpp \

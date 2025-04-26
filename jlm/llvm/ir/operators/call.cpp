@@ -153,18 +153,11 @@ CallOperation::copy() const
   return std::make_unique<CallOperation>(*this);
 }
 
-rvsdg::Node *
-CallNode::copy(rvsdg::Region * region, const std::vector<rvsdg::output *> & operands) const
-{
-  std::unique_ptr<CallOperation> op(
-      util::AssertedCast<CallOperation>(GetOperation().copy().release()));
-  return &CreateNode(*region, std::move(op), operands);
-}
-
 rvsdg::output *
-CallNode::TraceFunctionInput(const CallNode & callNode)
+CallOperation::TraceFunctionInput(const rvsdg::SimpleNode & callNode)
 {
-  auto origin = callNode.GetFunctionInput()->origin();
+  JLM_ASSERT(is<CallOperation>(&callNode));
+  auto origin = GetFunctionInput(callNode).origin();
 
   while (true)
   {
@@ -176,11 +169,6 @@ CallNode::TraceFunctionInput(const CallNode & callNode)
 
     if (is<rvsdg::SimpleOperation>(rvsdg::output::GetNode(*origin)))
       return origin;
-
-    if (is<phi::rvargument>(origin))
-    {
-      return origin;
-    }
 
     if (auto lambda = rvsdg::TryGetRegionParentNode<rvsdg::LambdaNode>(*origin))
     {
@@ -234,15 +222,27 @@ CallNode::TraceFunctionInput(const CallNode & callNode)
       return origin;
     }
 
-    if (auto phiInputArgument = dynamic_cast<const phi::cvargument *>(origin))
+    if (auto phi = rvsdg::TryGetRegionParentNode<rvsdg::PhiNode>(*origin))
     {
-      origin = phiInputArgument->input()->origin();
-      continue;
+      auto var = phi->MapArgument(*origin);
+      if (auto fix = std::get_if<rvsdg::PhiNode::FixVar>(&var))
+      {
+        return fix->recref;
+      }
+      else if (auto ctx = std::get_if<rvsdg::PhiNode::ContextVar>(&var))
+      {
+        origin = ctx->input->origin();
+        continue;
+      }
+      else
+      {
+        JLM_UNREACHABLE("Phi argument must be either fixpoint or context variable");
+      }
     }
 
-    if (auto rvoutput = dynamic_cast<const phi::rvoutput *>(origin))
+    if (auto phi = rvsdg::TryGetOwnerNode<rvsdg::PhiNode>(*origin))
     {
-      origin = rvoutput->result()->origin();
+      origin = phi->MapOutputFixVar(*origin).result->origin();
       continue;
     }
 
@@ -251,22 +251,26 @@ CallNode::TraceFunctionInput(const CallNode & callNode)
 }
 
 std::unique_ptr<CallTypeClassifier>
-CallNode::ClassifyCall(const CallNode & callNode)
+CallOperation::ClassifyCall(const rvsdg::SimpleNode & callNode)
 {
-  auto output = CallNode::TraceFunctionInput(callNode);
+  JLM_ASSERT(is<CallOperation>(&callNode));
+  const auto output = TraceFunctionInput(callNode);
 
   if (rvsdg::TryGetOwnerNode<rvsdg::LambdaNode>(*output))
   {
     return CallTypeClassifier::CreateNonRecursiveDirectCallClassifier(*output);
   }
 
+  if (auto phi = rvsdg::TryGetRegionParentNode<rvsdg::PhiNode>(*output))
+  {
+    if (auto fix = phi->MapArgumentFixVar(*output))
+    {
+      return CallTypeClassifier::CreateRecursiveDirectCallClassifier(*output);
+    }
+  }
+
   if (auto argument = dynamic_cast<rvsdg::RegionArgument *>(output))
   {
-    if (is<phi::rvargument>(argument))
-    {
-      return CallTypeClassifier::CreateRecursiveDirectCallClassifier(*argument);
-    }
-
     if (argument->region() == &argument->region()->graph()->GetRootRegion())
     {
       return CallTypeClassifier::CreateExternalCallClassifier(*argument);
