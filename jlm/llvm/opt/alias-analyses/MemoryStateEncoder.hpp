@@ -14,6 +14,7 @@ namespace jlm::rvsdg
 class GammaNode;
 class LambdaNode;
 class output;
+class PhiNode;
 class Region;
 class RvsdgModule;
 class SimpleNode;
@@ -30,20 +31,9 @@ class StatisticsCollector;
 namespace jlm::llvm
 {
 
-class CallNode;
 class RvsdgModule;
 
 namespace delta
-{
-class node;
-}
-
-namespace lambda
-{
-class node;
-}
-
-namespace phi
 {
 class node;
 }
@@ -121,13 +111,13 @@ private:
   EncodeFree(const rvsdg::SimpleNode & freeNode);
 
   void
-  EncodeCall(const CallNode & callNode);
+  EncodeCall(const rvsdg::SimpleNode & callNode);
 
   void
-  EncodeCallEntry(const CallNode & callNode);
+  EncodeCallEntry(const rvsdg::SimpleNode & callNode);
 
   void
-  EncodeCallExit(const CallNode & callNode);
+  EncodeCallExit(const rvsdg::SimpleNode & callNode);
 
   void
   EncodeMemcpy(const rvsdg::SimpleNode & memcpyNode);
@@ -142,7 +132,7 @@ private:
   EncodeLambdaExit(const rvsdg::LambdaNode & lambdaNode);
 
   void
-  EncodePhi(const phi::node & phiNode);
+  EncodePhi(const rvsdg::PhiNode & phiNode);
 
   void
   EncodeDelta(const delta::node & deltaNode);

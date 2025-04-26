@@ -87,6 +87,17 @@ is_dec_res(rvsdg::SimpleNode * node);
 
 rvsdg::input *
 get_mem_state_user(rvsdg::output * state_edge);
+
+/**
+ * Traces the origin of the given RVSDG output to find the original source of the value, which is
+ * either the output of a SimpleNode, or a function argument.
+ *
+ * Assumes no gamma or theta nodes are present.
+ *
+ * @param out The output to be traced to its source
+ */
+rvsdg::output *
+FindSourceNode(rvsdg::output * out);
 }
 
 #endif // JLM_HLS_BACKEND_RVSDG2RHLS_HLS_FUNCTION_UTIL_HPP
