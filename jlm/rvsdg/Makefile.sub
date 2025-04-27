@@ -19,6 +19,7 @@ librvsdg_SOURCES = \
 	jlm/rvsdg/traverser.cpp \
 	jlm/rvsdg/type.cpp \
 	jlm/rvsdg/unary.cpp \
+	jlm/rvsdg/UnitType.cpp \
 	jlm/rvsdg/view.cpp \
 	\
 	jlm/rvsdg/bitstring/arithmetic.cpp \
@@ -51,6 +52,7 @@ librvsdg_HEADERS = \
 	jlm/rvsdg/lambda.hpp \
 	jlm/rvsdg/substitution.hpp \
 	jlm/rvsdg/unary.hpp \
+	jlm/rvsdg/UnitType.hpp \
 	jlm/rvsdg/tracker.hpp \
 	jlm/rvsdg/simple-node.hpp \
 	jlm/rvsdg/type.hpp \
