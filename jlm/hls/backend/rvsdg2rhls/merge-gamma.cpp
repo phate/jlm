@@ -253,7 +253,11 @@ get_entryvar(jlm::rvsdg::output * origin, rvsdg::GammaNode * gamma)
   {
     if (rvsdg::TryGetOwnerNode<rvsdg::GammaNode>(*user) == gamma)
     {
-      return gamma->MapInputEntryVar(*user);
+      auto rolevar = gamma->MapInput(*user);
+      if (auto entryvar = std::get_if<rvsdg::GammaNode::EntryVar>(&rolevar))
+      {
+        return *entryvar;
+      }
     }
   }
   return gamma->AddEntryVar(origin);
