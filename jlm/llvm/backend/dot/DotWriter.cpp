@@ -12,6 +12,7 @@
 #include <jlm/rvsdg/structural-node.hpp>
 #include <jlm/rvsdg/traverser.hpp>
 #include <jlm/rvsdg/type.hpp>
+#include <jlm/rvsdg/UnitType.hpp>
 
 namespace jlm::llvm::dot
 {
@@ -38,7 +39,7 @@ GetOrCreateTypeGraphNode(const rvsdg::Type & type, util::Graph & typeGraph)
   // Some types get special handling, such as adding incoming edges from aggregate types
   if (rvsdg::is<rvsdg::StateType>(type) || rvsdg::is<rvsdg::bittype>(type)
       || rvsdg::is<PointerType>(type) || rvsdg::is<FloatingPointType>(type)
-      || rvsdg::is<VariableArgumentType>(type))
+      || rvsdg::is<VariableArgumentType>(type) || rvsdg::is<rvsdg::UnitType>(type))
   {
     // No need to provide any information beyond the debug string
   }
