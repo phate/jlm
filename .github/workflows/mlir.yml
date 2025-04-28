@@ -18,4 +18,4 @@ jobs:
         with:
           enable-mlir: true
       - name: "Run polybench"
-        run: JLC=../../scripts/jlc-mlir-roundtrip.py ./scripts/run-polybench.sh
+        run: ./scripts/run-polybench.sh --mlir
