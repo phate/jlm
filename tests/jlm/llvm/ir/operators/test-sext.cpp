@@ -74,7 +74,7 @@ test_bitbinary_reduction()
   view(graph, stdout);
 
   // Assert
-  assert(is<bitadd_op>(jlm::rvsdg::output::GetNode(*ex.origin())));
+  assert(is<bitadd_op>(jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*ex.origin())));
 }
 
 static void

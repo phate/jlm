@@ -393,7 +393,7 @@ TestStoreStoreReduction()
   // Assert
   assert(success);
   assert(graph.GetRootRegion().nnodes() == 1);
-  assert(jlm::rvsdg::output::GetNode(*ex.origin())->input(1)->origin() == v2);
+  assert(jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*ex.origin())->input(1)->origin() == v2);
 
   return 0;
 }
