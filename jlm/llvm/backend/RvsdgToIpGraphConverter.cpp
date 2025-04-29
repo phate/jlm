@@ -426,9 +426,9 @@ RvsdgToIpGraphConverter::ConvertPhiNode(const rvsdg::PhiNode & phiNode)
   for (size_t n = 0; n < subregion->nresults(); n++)
   {
     JLM_ASSERT(subregion->argument(n)->input() == nullptr);
-    const auto node = rvsdg::output::GetNode(*subregion->result(n)->origin());
+    const auto & origin = *subregion->result(n)->origin();
 
-    if (const auto lambdaNode = dynamic_cast<const rvsdg::LambdaNode *>(node))
+    if (const auto lambdaNode = rvsdg::TryGetOwnerNode<rvsdg::LambdaNode>(origin))
     {
       const auto & lambdaOperation =
           dynamic_cast<LlvmLambdaOperation &>(lambdaNode->GetOperation());
@@ -440,7 +440,7 @@ RvsdgToIpGraphConverter::ConvertPhiNode(const rvsdg::PhiNode & phiNode)
           lambdaOperation.attributes());
       Context_->InsertVariable(subregion->argument(n), ipGraphModule.create_variable(functionNode));
     }
-    else if (const auto deltaNode = dynamic_cast<const delta::node *>(node))
+    else if (const auto deltaNode = rvsdg::TryGetOwnerNode<delta::node>(origin))
     {
       const auto dataNode = data_node::Create(
           ipGraph,
@@ -454,7 +454,10 @@ RvsdgToIpGraphConverter::ConvertPhiNode(const rvsdg::PhiNode & phiNode)
     else
     {
       JLM_UNREACHABLE(
-          util::strfmt("Unhandled node type: ", node->GetOperation().debug_string()).c_str());
+          util::strfmt(
+              "Unhandled node type: ",
+              rvsdg::TryGetOwnerNode<rvsdg::Node>(origin)->GetOperation().debug_string())
+              .c_str());
     }
   }
 
@@ -463,26 +466,29 @@ RvsdgToIpGraphConverter::ConvertPhiNode(const rvsdg::PhiNode & phiNode)
   {
     JLM_ASSERT(subregion->argument(n)->input() == nullptr);
     const auto result = subregion->result(n);
-    const auto node = rvsdg::output::GetNode(*result->origin());
+    const auto & origin = *result->origin();
 
-    if (const auto lambdaNode = dynamic_cast<const rvsdg::LambdaNode *>(node))
+    if (const auto lambdaNode = rvsdg::TryGetOwnerNode<rvsdg::LambdaNode>(origin))
     {
       const auto variable =
           util::AssertedCast<const fctvariable>(Context_->GetVariable(subregion->argument(n)));
       variable->function()->add_cfg(CreateControlFlowGraph(*lambdaNode));
-      Context_->InsertVariable(node->output(0), variable);
+      Context_->InsertVariable(lambdaNode->output(), variable);
     }
-    else if (const auto deltaNode = dynamic_cast<const delta::node *>(node))
+    else if (const auto deltaNode = rvsdg::TryGetOwnerNode<delta::node>(origin))
     {
       const auto variable =
           util::AssertedCast<const gblvalue>(Context_->GetVariable(subregion->argument(n)));
       variable->node()->set_initialization(CreateInitialization(*deltaNode));
-      Context_->InsertVariable(node->output(0), variable);
+      Context_->InsertVariable(deltaNode->output(), variable);
     }
     else
     {
       JLM_UNREACHABLE(
-          util::strfmt("Unhandled node type: ", node->GetOperation().debug_string()).c_str());
+          util::strfmt(
+              "Unhandled node type: ",
+              rvsdg::TryGetOwnerNode<rvsdg::Node>(origin)->GetOperation().debug_string())
+              .c_str());
     }
   }
 

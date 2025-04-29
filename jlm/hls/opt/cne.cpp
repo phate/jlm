@@ -219,8 +219,8 @@ congruent(jlm::rvsdg::output * o1, jlm::rvsdg::output * o2, vset & vs, cnectx & 
     }
   }
 
-  auto n1 = jlm::rvsdg::output::GetNode(*o1);
-  auto n2 = jlm::rvsdg::output::GetNode(*o2);
+  auto n1 = TryGetOwnerNode<Node>(*o1);
+  auto n2 = TryGetOwnerNode<Node>(*o2);
 
   auto a1 = dynamic_cast<rvsdg::RegionArgument *>(o1);
   auto a2 = dynamic_cast<rvsdg::RegionArgument *>(o2);
