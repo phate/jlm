@@ -52,12 +52,12 @@ StoreTest1::SetupRvsdg()
 
   this->lambda = fct;
 
-  this->size = jlm::rvsdg::output::GetNode(*csize);
+  this->size = rvsdg::TryGetOwnerNode<rvsdg::Node>(*csize);
 
-  this->alloca_a = jlm::rvsdg::output::GetNode(*a[0]);
-  this->alloca_b = jlm::rvsdg::output::GetNode(*b[0]);
-  this->alloca_c = jlm::rvsdg::output::GetNode(*c[0]);
-  this->alloca_d = jlm::rvsdg::output::GetNode(*d[0]);
+  this->alloca_a = rvsdg::TryGetOwnerNode<rvsdg::Node>(*a[0]);
+  this->alloca_b = rvsdg::TryGetOwnerNode<rvsdg::Node>(*b[0]);
+  this->alloca_c = rvsdg::TryGetOwnerNode<rvsdg::Node>(*c[0]);
+  this->alloca_d = rvsdg::TryGetOwnerNode<rvsdg::Node>(*d[0]);
 
   return module;
 }
@@ -110,13 +110,13 @@ StoreTest2::SetupRvsdg()
 
   this->lambda = fct;
 
-  this->size = jlm::rvsdg::output::GetNode(*csize);
+  this->size = rvsdg::TryGetOwnerNode<rvsdg::Node>(*csize);
 
-  this->alloca_a = jlm::rvsdg::output::GetNode(*a[0]);
-  this->alloca_b = jlm::rvsdg::output::GetNode(*b[0]);
-  this->alloca_x = jlm::rvsdg::output::GetNode(*x[0]);
-  this->alloca_y = jlm::rvsdg::output::GetNode(*y[0]);
-  this->alloca_p = jlm::rvsdg::output::GetNode(*p[0]);
+  this->alloca_a = rvsdg::TryGetOwnerNode<rvsdg::Node>(*a[0]);
+  this->alloca_b = rvsdg::TryGetOwnerNode<rvsdg::Node>(*b[0]);
+  this->alloca_x = rvsdg::TryGetOwnerNode<rvsdg::Node>(*x[0]);
+  this->alloca_y = rvsdg::TryGetOwnerNode<rvsdg::Node>(*y[0]);
+  this->alloca_p = rvsdg::TryGetOwnerNode<rvsdg::Node>(*p[0]);
 
   return module;
 }
@@ -155,8 +155,8 @@ LoadTest1::SetupRvsdg()
 
   this->lambda = fct;
 
-  this->load_p = jlm::rvsdg::output::GetNode(*ld1[0]);
-  this->load_x = jlm::rvsdg::output::GetNode(*ld2[0]);
+  this->load_p = rvsdg::TryGetOwnerNode<rvsdg::Node>(*ld1[0]);
+  this->load_x = rvsdg::TryGetOwnerNode<rvsdg::Node>(*ld2[0]);
 
   return module;
 }
@@ -213,16 +213,16 @@ LoadTest2::SetupRvsdg()
 
   this->lambda = fct;
 
-  this->size = jlm::rvsdg::output::GetNode(*csize);
+  this->size = rvsdg::TryGetOwnerNode<rvsdg::Node>(*csize);
 
-  this->alloca_a = jlm::rvsdg::output::GetNode(*a[0]);
-  this->alloca_b = jlm::rvsdg::output::GetNode(*b[0]);
-  this->alloca_x = jlm::rvsdg::output::GetNode(*x[0]);
-  this->alloca_y = jlm::rvsdg::output::GetNode(*y[0]);
-  this->alloca_p = jlm::rvsdg::output::GetNode(*p[0]);
+  this->alloca_a = rvsdg::TryGetOwnerNode<rvsdg::Node>(*a[0]);
+  this->alloca_b = rvsdg::TryGetOwnerNode<rvsdg::Node>(*b[0]);
+  this->alloca_x = rvsdg::TryGetOwnerNode<rvsdg::Node>(*x[0]);
+  this->alloca_y = rvsdg::TryGetOwnerNode<rvsdg::Node>(*y[0]);
+  this->alloca_p = rvsdg::TryGetOwnerNode<rvsdg::Node>(*p[0]);
 
-  this->load_x = jlm::rvsdg::output::GetNode(*ld1[0]);
-  this->load_a = jlm::rvsdg::output::GetNode(*ld2[0]);
+  this->load_x = rvsdg::TryGetOwnerNode<rvsdg::Node>(*ld1[0]);
+  this->load_a = rvsdg::TryGetOwnerNode<rvsdg::Node>(*ld2[0]);
 
   return module;
 }
@@ -258,7 +258,7 @@ LoadFromUndefTest::SetupRvsdg()
   /*
    * Extract nodes
    */
-  UndefValueNode_ = jlm::rvsdg::output::GetNode(*undefValue);
+  UndefValueNode_ = rvsdg::TryGetOwnerNode<rvsdg::Node>(*undefValue);
 
   return rvsdgModule;
 }
@@ -317,8 +317,8 @@ GetElementPtrTest::SetupRvsdg()
    */
   this->lambda = fct;
 
-  this->getElementPtrX = jlm::rvsdg::output::GetNode(*gepx);
-  this->getElementPtrY = jlm::rvsdg::output::GetNode(*gepy);
+  this->getElementPtrX = rvsdg::TryGetOwnerNode<rvsdg::Node>(*gepx);
+  this->getElementPtrY = rvsdg::TryGetOwnerNode<rvsdg::Node>(*gepy);
 
   return module;
 }
@@ -344,11 +344,9 @@ BitCastTest::SetupRvsdg()
 
   GraphExport::Create(*fct->output(), "f");
 
-  /*
-   * Assign nodes
-   */
+  // Assign nodes
   this->lambda = fct;
-  this->bitCast = jlm::rvsdg::output::GetNode(*cast);
+  this->bitCast = rvsdg::TryGetOwnerNode<rvsdg::Node>(*cast);
 
   return module;
 }
@@ -381,7 +379,7 @@ Bits2PtrTest::SetupRvsdg()
 
     lambda->finalize({ cast, iOStateArgument, memoryStateArgument });
 
-    return std::make_tuple(lambda, jlm::rvsdg::output::GetNode(*cast));
+    return std::make_tuple(lambda, rvsdg::TryGetOwnerNode<rvsdg::Node>(*cast));
   };
 
   auto setupTestFunction = [&](rvsdg::output * b2p)
@@ -461,7 +459,7 @@ ConstantPointerNullTest::SetupRvsdg()
    * Assign nodes
    */
   this->lambda = fct;
-  this->constantPointerNullNode = jlm::rvsdg::output::GetNode(*constantPointerNullResult);
+  this->constantPointerNullNode = rvsdg::TryGetOwnerNode<rvsdg::Node>(*constantPointerNullResult);
 
   return module;
 }
@@ -605,9 +603,9 @@ CallTest1::SetupRvsdg()
                        &CallOperation::GetMemoryStateOutput(callG) });
     GraphExport::Create(*lambda->output(), "h");
 
-    auto allocaX = jlm::rvsdg::output::GetNode(*x[0]);
-    auto allocaY = jlm::rvsdg::output::GetNode(*y[0]);
-    auto allocaZ = jlm::rvsdg::output::GetNode(*z[0]);
+    auto allocaX = rvsdg::TryGetOwnerNode<rvsdg::Node>(*x[0]);
+    auto allocaY = rvsdg::TryGetOwnerNode<rvsdg::Node>(*y[0]);
+    auto allocaZ = rvsdg::TryGetOwnerNode<rvsdg::Node>(*z[0]);
 
     return std::make_tuple(lambda, allocaX, allocaY, allocaZ, &callF, &callG);
   };
@@ -667,7 +665,7 @@ CallTest2::SetupRvsdg()
 
     lambda->finalize({ cast, iOStateArgument, mx });
 
-    auto mallocNode = jlm::rvsdg::output::GetNode(*alloc[0]);
+    auto mallocNode = rvsdg::TryGetOwnerNode<rvsdg::Node>(*alloc[0]);
     return std::make_tuple(lambda, mallocNode);
   };
 
@@ -692,7 +690,7 @@ CallTest2::SetupRvsdg()
 
     lambda->finalize({ freeResults[1], freeResults[0] });
 
-    auto freeNode = jlm::rvsdg::output::GetNode(*freeResults[0]);
+    auto freeNode = rvsdg::TryGetOwnerNode<rvsdg::Node>(*freeResults[0]);
     return std::make_tuple(lambda, freeNode);
   };
 
@@ -1078,8 +1076,10 @@ IndirectCallTest2::SetupRvsdg()
         lambdaOutput,
         &callX,
         &callY,
-        jlm::util::AssertedCast<jlm::rvsdg::SimpleNode>(jlm::rvsdg::output::GetNode(*pxAlloca[0])),
-        jlm::util::AssertedCast<jlm::rvsdg::SimpleNode>(jlm::rvsdg::output::GetNode(*pyAlloca[0])));
+        jlm::util::AssertedCast<rvsdg::SimpleNode>(
+            rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*pxAlloca[0])),
+        jlm::util::AssertedCast<rvsdg::SimpleNode>(
+            rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*pyAlloca[0])));
   };
 
   auto SetupTest2Function = [&](rvsdg::output & functionX)
@@ -1113,7 +1113,8 @@ IndirectCallTest2::SetupRvsdg()
     return std::make_tuple(
         lambdaOutput,
         &callX,
-        jlm::util::AssertedCast<jlm::rvsdg::SimpleNode>(jlm::rvsdg::output::GetNode(*pzAlloca[0])));
+        jlm::util::AssertedCast<jlm::rvsdg::SimpleNode>(
+            rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*pzAlloca[0])));
   };
 
   auto deltaG1 = SetupG1();
@@ -1533,7 +1534,7 @@ GammaTest2::SetupRvsdg()
     return std::make_tuple(
         lambda->output(),
         &rvsdg::AssertGetOwnerNode<jlm::rvsdg::GammaNode>(*gammaOutputA),
-        rvsdg::output::GetNode(*allocaZResults[0]));
+        rvsdg::TryGetOwnerNode<rvsdg::Node>(*allocaZResults[0]));
   };
 
   auto SetupLambdaGH = [&](rvsdg::output & lambdaF,
@@ -1587,8 +1588,8 @@ GammaTest2::SetupRvsdg()
     return std::make_tuple(
         lambda->output(),
         &call,
-        rvsdg::output::GetNode(*allocaXResults[0]),
-        rvsdg::output::GetNode(*allocaYResults[1]));
+        rvsdg::TryGetOwnerNode<rvsdg::Node>(*allocaXResults[0]),
+        rvsdg::TryGetOwnerNode<rvsdg::Node>(*allocaYResults[1]));
   };
 
   auto [lambdaF, gammaNode, allocaZ] = SetupLambdaF();
@@ -1669,7 +1670,7 @@ ThetaTest::SetupRvsdg()
    */
   this->lambda = fct;
   this->theta = thetanode;
-  this->gep = jlm::rvsdg::output::GetNode(*gepnode);
+  this->gep = rvsdg::TryGetOwnerNode<rvsdg::Node>(*gepnode);
 
   return module;
 }
@@ -1749,7 +1750,7 @@ DeltaTest1::SetupRvsdg()
     auto lambdaOutput = lambda->finalize(outputs(&callG));
     GraphExport::Create(*lambda->output(), "h");
 
-    return std::make_tuple(lambdaOutput, &callG, jlm::rvsdg::output::GetNode(*five));
+    return std::make_tuple(lambdaOutput, &callG, rvsdg::TryGetOwnerNode<rvsdg::Node>(*five));
   };
 
   auto f = SetupGlobalF();
@@ -2240,7 +2241,10 @@ PhiTest1::SetupRvsdg()
     auto lambdaOutput = lambda->finalize(outputs(&call));
     GraphExport::Create(*lambdaOutput, "test");
 
-    return std::make_tuple(lambdaOutput, &call, jlm::rvsdg::output::GetNode(*allocaResults[0]));
+    return std::make_tuple(
+        lambdaOutput,
+        &call,
+        rvsdg::TryGetOwnerNode<rvsdg::Node>(*allocaResults[0]));
   };
 
   auto [phiNode, fibfct, gammaNode, callFib1, callFib2] = SetupFib();
@@ -2375,7 +2379,8 @@ PhiTest2::SetupRvsdg()
         lambdaOutput,
         &callB,
         &callD,
-        jlm::util::AssertedCast<jlm::rvsdg::SimpleNode>(jlm::rvsdg::output::GetNode(*paAlloca[0])));
+        jlm::util::AssertedCast<jlm::rvsdg::SimpleNode>(
+            rvsdg::TryGetOwnerNode<rvsdg::Node>(*paAlloca[0])));
   };
 
   auto SetupB = [&](jlm::rvsdg::Region & region,
@@ -2428,7 +2433,8 @@ PhiTest2::SetupRvsdg()
         lambdaOutput,
         &callI,
         &callC,
-        jlm::util::AssertedCast<jlm::rvsdg::SimpleNode>(jlm::rvsdg::output::GetNode(*pbAlloca[0])));
+        jlm::util::AssertedCast<jlm::rvsdg::SimpleNode>(
+            rvsdg::TryGetOwnerNode<rvsdg::Node>(*pbAlloca[0])));
   };
 
   auto SetupC = [&](jlm::rvsdg::Region & region, jlm::rvsdg::output & functionA)
@@ -2470,7 +2476,8 @@ PhiTest2::SetupRvsdg()
     return std::make_tuple(
         lambdaOutput,
         &callA,
-        jlm::util::AssertedCast<jlm::rvsdg::SimpleNode>(jlm::rvsdg::output::GetNode(*pcAlloca[0])));
+        jlm::util::AssertedCast<jlm::rvsdg::SimpleNode>(
+            rvsdg::TryGetOwnerNode<rvsdg::Node>(*pcAlloca[0])));
   };
 
   auto SetupD = [&](jlm::rvsdg::Region & region, jlm::rvsdg::output & functionA)
@@ -2501,7 +2508,7 @@ PhiTest2::SetupRvsdg()
     return std::make_tuple(
         lambdaOutput,
         &callA,
-        jlm::util::AssertedCast<jlm::rvsdg::SimpleNode>(jlm::rvsdg::output::GetNode(*pdAlloca[0])));
+        jlm::util::AssertedCast<jlm::rvsdg::SimpleNode>(rvsdg::TryGetOwnerNode<rvsdg::Node>(*pdAlloca[0])));
   };
 
   auto SetupPhi = [&](rvsdg::output & lambdaEight, rvsdg::output & lambdaI)
@@ -2582,7 +2589,7 @@ PhiTest2::SetupRvsdg()
         lambdaOutput,
         &callA,
         jlm::util::AssertedCast<jlm::rvsdg::SimpleNode>(
-            jlm::rvsdg::output::GetNode(*pTestAlloca[0])));
+            rvsdg::TryGetOwnerNode<rvsdg::Node>(*pTestAlloca[0])));
   };
 
   auto lambdaEight = SetupEight();
@@ -2824,7 +2831,8 @@ EscapedMemoryTest1::SetupRvsdg()
 
     return std::make_tuple(
         lambdaOutput,
-        jlm::util::AssertedCast<rvsdg::SimpleNode>(rvsdg::output::GetNode(*loadResults1[0])));
+        jlm::util::AssertedCast<rvsdg::SimpleNode>(
+            rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*loadResults1[0])));
   };
 
   auto deltaA = SetupDeltaA();
@@ -2916,7 +2924,7 @@ EscapedMemoryTest2::SetupRvsdg()
 
     GraphExport::Create(*lambdaOutput, "ReturnAddress");
 
-    return std::make_tuple(lambdaOutput, jlm::rvsdg::output::GetNode(*mallocResults[0]));
+    return std::make_tuple(lambdaOutput, rvsdg::TryGetOwnerNode<rvsdg::Node>(*mallocResults[0]));
   };
 
   auto SetupCallExternalFunction1 = [&](jlm::rvsdg::RegionArgument * externalFunction1Argument)
@@ -2953,7 +2961,10 @@ EscapedMemoryTest2::SetupRvsdg()
 
     GraphExport::Create(*lambdaOutput, "CallExternalFunction1");
 
-    return std::make_tuple(lambdaOutput, &call, jlm::rvsdg::output::GetNode(*mallocResults[0]));
+    return std::make_tuple(
+        lambdaOutput,
+        &call,
+        rvsdg::TryGetOwnerNode<rvsdg::Node>(*mallocResults[0]));
   };
 
   auto SetupCallExternalFunction2 = [&](jlm::rvsdg::RegionArgument * externalFunction2Argument)
@@ -2994,7 +3005,8 @@ EscapedMemoryTest2::SetupRvsdg()
     return std::make_tuple(
         lambdaOutput,
         &call,
-        jlm::util::AssertedCast<rvsdg::SimpleNode>(rvsdg::output::GetNode(*loadResults[0])));
+        jlm::util::AssertedCast<rvsdg::SimpleNode>(
+            rvsdg::TryGetOwnerNode<rvsdg::Node>(*loadResults[0])));
   };
 
   auto externalFunction1 = SetupExternalFunction1Declaration();
@@ -3108,7 +3120,8 @@ EscapedMemoryTest3::SetupRvsdg()
     return std::make_tuple(
         lambdaOutput,
         &call,
-        jlm::util::AssertedCast<rvsdg::SimpleNode>(rvsdg::output::GetNode(*loadResults[0])));
+        jlm::util::AssertedCast<rvsdg::SimpleNode>(
+            rvsdg::TryGetOwnerNode<rvsdg::Node>(*loadResults[0])));
   };
 
   auto importExternalFunction = SetupExternalFunctionDeclaration();
@@ -3260,7 +3273,9 @@ MemcpyTest::SetupRvsdg()
 
     GraphExport::Create(*lambdaOutput, "g");
 
-    return std::make_tuple(lambdaOutput, &call, jlm::rvsdg::output::GetNode(*memcpyResults[0]));
+    return std::make_tuple(
+        lambdaOutput,
+        &call, rvsdg::TryGetOwnerNode<rvsdg::Node>(*memcpyResults[0]));
   };
 
   auto localArray = SetupLocalArray();
@@ -3329,7 +3344,7 @@ MemcpyTest2::SetupRvsdg()
 
     auto lambdaOutput = lambda->finalize({ iOStateArgument, memcpyResults[0] });
 
-    return std::make_tuple(lambdaOutput, jlm::rvsdg::output::GetNode(*memcpyResults[0]));
+    return std::make_tuple(lambdaOutput, rvsdg::TryGetOwnerNode<rvsdg::Node>(*memcpyResults[0]));
   };
 
   auto SetupFunctionF = [&](rvsdg::output & functionF)
@@ -3435,8 +3450,8 @@ MemcpyTest3::SetupRvsdg()
 
   GraphExport::Create(*lambdaOutput, "f");
 
-  Alloca_ = rvsdg::output::GetNode(*allocaResults[0]);
-  Memcpy_ = rvsdg::output::GetNode(*memcpyResults[0]);
+  Alloca_ = rvsdg::TryGetOwnerNode<rvsdg::Node>(*allocaResults[0]);
+  Memcpy_ = rvsdg::TryGetOwnerNode<rvsdg::Node>(*memcpyResults[0]);
 
   return rvsdgModule;
 }
@@ -3511,7 +3526,7 @@ LinkedListTest::SetupRvsdg()
     auto lambdaOutput = lambda->finalize({ load4[0], iOStateArgument, load4[1] });
     GraphExport::Create(*lambdaOutput, "next");
 
-    return std::make_tuple(jlm::rvsdg::output::GetNode(*alloca[0]), lambdaOutput);
+    return std::make_tuple(rvsdg::TryGetOwnerNode<rvsdg::Node>(*alloca[0]), lambdaOutput);
   };
 
   auto deltaMyList = SetupDeltaMyList();
@@ -3571,7 +3586,7 @@ AllMemoryNodesTest::SetupRvsdg()
   // Create alloca node
   auto allocaSize = jlm::rvsdg::create_bitconstant(Lambda_->subregion(), 32, 1);
   auto allocaOutputs = alloca_op::create(pointerType, allocaSize, 8);
-  Alloca_ = jlm::rvsdg::output::GetNode(*allocaOutputs[0]);
+  Alloca_ = rvsdg::TryGetOwnerNode<rvsdg::Node>(*allocaOutputs[0]);
 
   auto afterAllocaMemoryState = MemoryStateMergeOperation::Create(
       std::vector<jlm::rvsdg::output *>{ entryMemoryState, allocaOutputs[1] });
@@ -3579,7 +3594,7 @@ AllMemoryNodesTest::SetupRvsdg()
   // Create malloc node
   auto mallocSize = jlm::rvsdg::create_bitconstant(Lambda_->subregion(), 32, 4);
   auto mallocOutputs = malloc_op::create(mallocSize);
-  Malloc_ = jlm::rvsdg::output::GetNode(*mallocOutputs[0]);
+  Malloc_ = rvsdg::TryGetOwnerNode<rvsdg::Node>(*mallocOutputs[0]);
 
   auto afterMallocMemoryState = MemoryStateMergeOperation::Create(
       std::vector<jlm::rvsdg::output *>{ afterAllocaMemoryState, mallocOutputs[1] });
@@ -3649,7 +3664,7 @@ NAllocaNodesTest::SetupRvsdg()
   for (size_t i = 0; i < NumAllocaNodes_; i++)
   {
     auto allocaOutputs = alloca_op::create(jlm::rvsdg::bittype::Create(32), allocaSize, 4);
-    auto allocaNode = jlm::rvsdg::output::GetNode(*allocaOutputs[0]);
+    auto allocaNode = rvsdg::TryGetOwnerNode<rvsdg::Node>(*allocaOutputs[0]);
 
     AllocaNodes_.push_back(allocaNode);
 
@@ -3701,7 +3716,7 @@ EscapingLocalFunctionTest::SetupRvsdg()
 
   const auto allocaSize = rvsdg::create_bitconstant(LocalFunc_->subregion(), 32, 1);
   const auto allocaOutputs = alloca_op::create(uint32Type, allocaSize, 4);
-  LocalFuncParamAllocaNode_ = rvsdg::output::GetNode(*allocaOutputs[0]);
+  LocalFuncParamAllocaNode_ = rvsdg::TryGetOwnerNode<rvsdg::Node>(*allocaOutputs[0]);
 
   // Merge function's input Memory State and alloca node's memory state
   rvsdg::output * mergedMemoryState = MemoryStateMergeOperation::Create(
@@ -3943,7 +3958,7 @@ VariadicFunctionTest1::SetupRvsdg()
     auto allocaResults = alloca_op::create(jlm::rvsdg::bittype::Create(32), one, 4);
     auto merge = MemoryStateMergeOperation::Create(
         std::vector<jlm::rvsdg::output *>{ allocaResults[1], memoryStateArgument });
-    AllocaNode_ = rvsdg::output::GetNode(*allocaResults[0]);
+    AllocaNode_ = rvsdg::TryGetOwnerNode<rvsdg::Node>(*allocaResults[0]);
 
     auto storeResults = StoreNonVolatileOperation::Create(allocaResults[0], five, { merge }, 4);
 
@@ -4046,7 +4061,7 @@ VariadicFunctionTest2::SetupRvsdg()
     auto allocaResults = alloca_op::create(arrayType, one, 16);
     auto memoryState = MemoryStateMergeOperation::Create(
         std::vector<jlm::rvsdg::output *>{ allocaResults[1], memoryStateArgument });
-    AllocaNode_ = rvsdg::output::GetNode(*allocaResults[0]);
+    AllocaNode_ = rvsdg::TryGetOwnerNode<rvsdg::Node>(*allocaResults[0]);
 
     auto & callLLvmLifetimeStart = CallOperation::CreateNode(
         llvmLifetimeStartArgument,
