@@ -2508,7 +2508,8 @@ PhiTest2::SetupRvsdg()
     return std::make_tuple(
         lambdaOutput,
         &callA,
-        jlm::util::AssertedCast<jlm::rvsdg::SimpleNode>(rvsdg::TryGetOwnerNode<rvsdg::Node>(*pdAlloca[0])));
+        jlm::util::AssertedCast<jlm::rvsdg::SimpleNode>(
+            rvsdg::TryGetOwnerNode<rvsdg::Node>(*pdAlloca[0])));
   };
 
   auto SetupPhi = [&](rvsdg::output & lambdaEight, rvsdg::output & lambdaI)
@@ -3275,7 +3276,8 @@ MemcpyTest::SetupRvsdg()
 
     return std::make_tuple(
         lambdaOutput,
-        &call, rvsdg::TryGetOwnerNode<rvsdg::Node>(*memcpyResults[0]));
+        &call,
+        rvsdg::TryGetOwnerNode<rvsdg::Node>(*memcpyResults[0]));
   };
 
   auto localArray = SetupLocalArray();

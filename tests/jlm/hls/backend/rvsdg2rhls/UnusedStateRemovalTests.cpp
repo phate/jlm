@@ -237,8 +237,8 @@ TestUsedMemoryState()
   RemoveInvariantLambdaStateEdges(*rvsdgModule);
   // Assert
   jlm::rvsdg::view(rvsdgModule->Rvsdg(), stdout);
-  auto * node =
-      jlm::rvsdg::output::GetNode(*rvsdgModule->Rvsdg().GetRootRegion().result(0)->origin());
+  auto * node = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
+      *rvsdgModule->Rvsdg().GetRootRegion().result(0)->origin());
   auto lambdaSubregion = jlm::util::AssertedCast<jlm::rvsdg::LambdaNode>(node)->subregion();
   assert(lambdaSubregion->nresults() == 1);
   assert(is<MemoryStateType>(lambdaSubregion->result(0)->Type()));
@@ -283,8 +283,8 @@ TestUnusedMemoryState()
   // Act
   RemoveInvariantLambdaStateEdges(*rvsdgModule);
   // Assert
-  auto * node =
-      jlm::rvsdg::output::GetNode(*rvsdgModule->Rvsdg().GetRootRegion().result(0)->origin());
+  auto * node = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
+      *rvsdgModule->Rvsdg().GetRootRegion().result(0)->origin());
   auto lambdaSubregion = jlm::util::AssertedCast<jlm::rvsdg::LambdaNode>(node)->subregion();
   jlm::rvsdg::view(rvsdgModule->Rvsdg(), stdout);
   assert(lambdaSubregion->narguments() == 2);
@@ -342,8 +342,8 @@ TestInvariantMemoryState()
   // This pass should have no effect on the graph
   RemoveInvariantLambdaStateEdges(*rvsdgModule);
   // Assert
-  auto * node =
-      jlm::rvsdg::output::GetNode(*rvsdgModule->Rvsdg().GetRootRegion().result(0)->origin());
+  auto * node = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
+      *rvsdgModule->Rvsdg().GetRootRegion().result(0)->origin());
   auto lambdaSubregion = jlm::util::AssertedCast<jlm::rvsdg::LambdaNode>(node)->subregion();
   jlm::rvsdg::view(rvsdgModule->Rvsdg(), stdout);
   assert(lambdaSubregion->narguments() == 2);
