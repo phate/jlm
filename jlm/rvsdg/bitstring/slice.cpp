@@ -31,7 +31,7 @@ bitslice_op::debug_string() const
 unop_reduction_path_t
 bitslice_op::can_reduce_operand(const jlm::rvsdg::output * arg) const noexcept
 {
-  auto node = output::GetNode(*arg);
+  auto node = TryGetOwnerNode<Node>(*arg);
   auto & arg_type = *dynamic_cast<const bittype *>(&arg->type());
 
   if ((low() == 0) && (high() == arg_type.nbits()))
