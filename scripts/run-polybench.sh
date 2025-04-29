@@ -37,7 +37,7 @@ function usage()
 	echo "                        [${BENCHMARK_DIR}]"
 	echo "  --parallel #THREADS   The number of threads to run in parallel."
 	echo "                        Default=[${PARALLEL_THREADS}]"
-	echo "  --mlir                Compile polybench with jlc-mlri-roundtrip.py."
+	echo "  --mlir                Compile polybench with jlc-mlir-roundtrip.py."
 	echo "  --get-commit-hash     Prints the commit hash used for the build."
 	echo "  --help                Prints this message and stops."
 }
