@@ -1105,7 +1105,7 @@ ConvertStronglyConnectedComponent(
     return;
   }
 
-  phi::builder pb;
+  rvsdg::PhiBuilder pb;
   pb.begin(&graph.GetRootRegion());
   regionalizedVariableMap.PushRegion(*pb.subregion());
 
@@ -1116,12 +1116,12 @@ ConvertStronglyConnectedComponent(
   /*
    * Add recursion variables
    */
-  std::unordered_map<const variable *, phi::rvoutput *> recursionVariables;
+  std::unordered_map<const variable *, rvsdg::PhiNode::FixVar> recursionVariables;
   for (const auto & ipgNode : stronglyConnectedComponent)
   {
-    auto recursionVariable = pb.add_recvar(ipgNode->Type());
+    auto recursionVariable = pb.AddFixVar(ipgNode->Type());
     auto ipgNodeVariable = interProceduralGraphModule.variable(ipgNode);
-    phiVariableMap.insert(ipgNodeVariable, recursionVariable->argument());
+    phiVariableMap.insert(ipgNodeVariable, recursionVariable.recref);
     JLM_ASSERT(recursionVariables.find(ipgNodeVariable) == recursionVariables.end());
     recursionVariables[ipgNodeVariable] = recursionVariable;
   }
@@ -1137,7 +1137,7 @@ ConvertStronglyConnectedComponent(
       if (recursionVariables.find(dependencyVariable) == recursionVariables.end())
         phiVariableMap.insert(
             dependencyVariable,
-            pb.add_ctxvar(outerVariableMap.lookup(dependencyVariable)));
+            pb.AddContextVar(*outerVariableMap.lookup(dependencyVariable)).inner);
     }
   }
 
@@ -1148,7 +1148,7 @@ ConvertStronglyConnectedComponent(
   {
     auto output =
         ConvertInterProceduralGraphNode(*ipgNode, regionalizedVariableMap, statisticsCollector);
-    recursionVariables[interProceduralGraphModule.variable(ipgNode)]->set_rvorigin(output);
+    recursionVariables[interProceduralGraphModule.variable(ipgNode)].result->divert_to(output);
   }
 
   regionalizedVariableMap.PopRegion();
@@ -1161,9 +1161,9 @@ ConvertStronglyConnectedComponent(
   {
     auto ipgNodeVariable = interProceduralGraphModule.variable(ipgNode);
     auto recursionVariable = recursionVariables[ipgNodeVariable];
-    regionalizedVariableMap.GetTopVariableMap().insert(ipgNodeVariable, recursionVariable);
+    regionalizedVariableMap.GetTopVariableMap().insert(ipgNodeVariable, recursionVariable.output);
     if (requiresExport(*ipgNode))
-      GraphExport::Create(*recursionVariable, ipgNodeVariable->name());
+      GraphExport::Create(*recursionVariable.output, ipgNodeVariable->name());
   }
 }
 

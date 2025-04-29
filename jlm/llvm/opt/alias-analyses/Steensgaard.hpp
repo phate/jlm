@@ -108,7 +108,7 @@ private:
   AnalyzeDelta(const delta::node & node);
 
   void
-  AnalyzePhi(const phi::node & node);
+  AnalyzePhi(const rvsdg::PhiNode & node);
 
   void
   AnalyzeGamma(const rvsdg::GammaNode & node);

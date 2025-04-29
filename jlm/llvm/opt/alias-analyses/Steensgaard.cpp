@@ -261,16 +261,18 @@ public:
       return jlm::util::strfmt("imp:", graphImport->Name());
     }
 
-    if (is<phi::rvargument>(Output_))
+    if (auto phi = rvsdg::TryGetRegionParentNode<rvsdg::PhiNode>(*Output_))
     {
-      auto dbgstr = Output_->region()->node()->GetOperation().debug_string();
-      return jlm::util::strfmt(dbgstr, ":rvarg", index);
-    }
-
-    if (is<phi::cvargument>(Output_))
-    {
-      auto dbgstr = Output_->region()->node()->GetOperation().debug_string();
-      return jlm::util::strfmt(dbgstr, ":cvarg", index);
+      auto dbgstr = phi->GetOperation().debug_string();
+      auto var = phi->MapArgument(*Output_);
+      if (auto fix = std::get_if<rvsdg::PhiNode::FixVar>(&var))
+      {
+        return jlm::util::strfmt(dbgstr, ":rvarg", fix->output->index());
+      }
+      else if (auto ctx = std::get_if<rvsdg::PhiNode::ContextVar>(&var))
+      {
+        return jlm::util::strfmt(dbgstr, ":cvarg", ctx->input->index());
+      }
     }
 
     return jlm::util::strfmt(
@@ -1625,25 +1627,25 @@ Steensgaard::AnalyzeDelta(const delta::node & delta)
 }
 
 void
-Steensgaard::AnalyzePhi(const phi::node & phi)
+Steensgaard::AnalyzePhi(const rvsdg::PhiNode & phi)
 {
   // Handle context variables
-  for (auto cv = phi.begin_cv(); cv != phi.end_cv(); cv++)
+  for (auto cv : phi.GetContextVars())
   {
-    auto & origin = *cv->origin();
+    auto & origin = *cv.input->origin();
 
     if (HasOrContainsPointerType(origin))
     {
       auto & originLocation = Context_->GetLocation(origin);
-      auto & argumentLocation = Context_->GetOrInsertRegisterLocation(*cv->argument());
+      auto & argumentLocation = Context_->GetOrInsertRegisterLocation(*cv.inner);
       Context_->Join(originLocation, argumentLocation);
     }
   }
 
-  // Handle recursion variable arguments
-  for (auto rv = phi.begin_rv(); rv != phi.end_rv(); rv++)
+  // Create Register PointerObjects for each fixpoint variable argument
+  for (auto var : phi.GetFixVars())
   {
-    auto & argument = *rv->argument();
+    auto & argument = *var.recref;
 
     if (HasOrContainsPointerType(argument))
     {
@@ -1654,11 +1656,11 @@ Steensgaard::AnalyzePhi(const phi::node & phi)
   AnalyzeRegion(*phi.subregion());
 
   // Handle recursion variable outputs
-  for (auto rv = phi.begin_rv(); rv != phi.end_rv(); rv++)
+  for (auto var : phi.GetFixVars())
   {
-    auto & argument = *rv->argument();
-    auto & output = *rv.output();
-    auto & result = *rv->result();
+    auto & argument = *var.recref;
+    auto & output = *var.output;
+    auto & result = *var.result;
 
     if (HasOrContainsPointerType(argument))
     {
@@ -1759,7 +1761,7 @@ Steensgaard::AnalyzeStructuralNode(const rvsdg::StructuralNode & node)
   {
     AnalyzeTheta(*thetaNode);
   }
-  else if (auto phiNode = dynamic_cast<const phi::node *>(&node))
+  else if (auto phiNode = dynamic_cast<const rvsdg::PhiNode *>(&node))
   {
     AnalyzePhi(*phiNode);
   }

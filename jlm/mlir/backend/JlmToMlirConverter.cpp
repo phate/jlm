@@ -17,6 +17,7 @@
 #include <jlm/rvsdg/bitstring/constant.hpp>
 #include <jlm/rvsdg/node.hpp>
 #include <jlm/rvsdg/traverser.hpp>
+#include <jlm/rvsdg/UnitType.hpp>
 
 #include <llvm/Support/raw_os_ostream.h>
 
@@ -85,6 +86,11 @@ JlmToMlirConverter::ConvertRegion(rvsdg::Region & region, ::mlir::Block & block,
   for (size_t i = 0; i < region.narguments(); ++i)
   {
     auto arg = region.argument(i);
+    // Ignore unit type.
+    if (*arg->Type() == *rvsdg::UnitType::Create())
+    {
+      continue;
+    }
     if (isRoot) // Omega arguments are treated separately
     {
       auto imp = util::AssertedCast<llvm::GraphImport>(arg);

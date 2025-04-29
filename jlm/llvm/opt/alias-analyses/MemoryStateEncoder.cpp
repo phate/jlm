@@ -518,7 +518,7 @@ MemoryStateEncoder::EncodeStructuralNode(rvsdg::StructuralNode & structuralNode)
   {
     EncodeDelta(*deltaNode);
   }
-  else if (auto phiNode = dynamic_cast<const phi::node *>(&structuralNode))
+  else if (auto phiNode = dynamic_cast<const rvsdg::PhiNode *>(&structuralNode))
   {
     EncodePhi(*phiNode);
   }
@@ -825,7 +825,7 @@ MemoryStateEncoder::EncodeLambdaExit(const rvsdg::LambdaNode & lambdaNode)
 }
 
 void
-MemoryStateEncoder::EncodePhi(const phi::node & phiNode)
+MemoryStateEncoder::EncodePhi(const rvsdg::PhiNode & phiNode)
 {
   EncodeRegion(*phiNode.subregion());
 }

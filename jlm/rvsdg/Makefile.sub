@@ -9,6 +9,7 @@ librvsdg_SOURCES = \
 	jlm/rvsdg/notifiers.cpp \
 	jlm/rvsdg/nullary.cpp \
 	jlm/rvsdg/operation.cpp \
+	jlm/rvsdg/Phi.cpp \
 	jlm/rvsdg/region.cpp \
 	jlm/rvsdg/simple-node.cpp \
 	jlm/rvsdg/structural-node.cpp \
@@ -18,6 +19,7 @@ librvsdg_SOURCES = \
 	jlm/rvsdg/traverser.cpp \
 	jlm/rvsdg/type.cpp \
 	jlm/rvsdg/unary.cpp \
+	jlm/rvsdg/UnitType.cpp \
 	jlm/rvsdg/view.cpp \
 	\
 	jlm/rvsdg/bitstring/arithmetic.cpp \
@@ -50,6 +52,7 @@ librvsdg_HEADERS = \
 	jlm/rvsdg/lambda.hpp \
 	jlm/rvsdg/substitution.hpp \
 	jlm/rvsdg/unary.hpp \
+	jlm/rvsdg/UnitType.hpp \
 	jlm/rvsdg/tracker.hpp \
 	jlm/rvsdg/simple-node.hpp \
 	jlm/rvsdg/type.hpp \
@@ -62,6 +65,7 @@ librvsdg_HEADERS = \
 	jlm/rvsdg/node.hpp \
 	jlm/rvsdg/NodeNormalization.hpp \
 	jlm/rvsdg/nullary.hpp \
+	jlm/rvsdg/Phi.hpp \
 	jlm/rvsdg/structural-node.hpp \
 	jlm/rvsdg/control.hpp \
 	jlm/rvsdg/region.hpp \

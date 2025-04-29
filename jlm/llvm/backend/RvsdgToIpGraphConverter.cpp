@@ -409,7 +409,7 @@ RvsdgToIpGraphConverter::ConvertLambdaNode(const rvsdg::LambdaNode & lambdaNode)
 }
 
 void
-RvsdgToIpGraphConverter::ConvertPhiNode(const phi::node & phiNode)
+RvsdgToIpGraphConverter::ConvertPhiNode(const rvsdg::PhiNode & phiNode)
 {
   const auto subregion = phiNode.subregion();
   auto & ipGraphModule = Context_->GetIpGraphModule();
@@ -526,7 +526,7 @@ RvsdgToIpGraphConverter::ConvertNode(const rvsdg::Node & node)
   {
     ConvertThetaNode(*thetaNode);
   }
-  else if (const auto phiNode = dynamic_cast<const phi::node *>(&node))
+  else if (const auto phiNode = dynamic_cast<const rvsdg::PhiNode *>(&node))
   {
     ConvertPhiNode(*phiNode);
   }
