@@ -16,7 +16,7 @@ namespace jlm::rvsdg
 static bool
 is_predicate_reducible(const GammaNode * gamma)
 {
-  auto constant = output::GetNode(*gamma->predicate()->origin());
+  auto constant = rvsdg::TryGetOwnerNode<SimpleNode>(*gamma->predicate()->origin());
   return constant && is_ctlconstant_op(constant->GetOperation());
 }
 
@@ -73,8 +73,8 @@ perform_invariant_reduction(GammaNode * gamma)
 static std::unordered_set<jlm::rvsdg::output *>
 is_control_constant_reducible(GammaNode * gamma)
 {
-  /* check gamma predicate */
-  auto match = output::GetNode(*gamma->predicate()->origin());
+  // check gamma predicate
+  auto match = rvsdg::TryGetOwnerNode<SimpleNode>(*gamma->predicate()->origin());
   if (!is<match_op>(match))
     return {};
 
@@ -97,7 +97,7 @@ is_control_constant_reducible(GammaNode * gamma)
     size_t n;
     for (n = 0; n < exitvar.branchResult.size(); n++)
     {
-      auto node = output::GetNode(*exitvar.branchResult[n]->origin());
+      auto node = rvsdg::TryGetOwnerNode<SimpleNode>(*exitvar.branchResult[n]->origin());
       if (!is<ctlconstant_op>(node))
         break;
 

@@ -107,7 +107,7 @@ output::remove_user(jlm::rvsdg::input * user)
 
   users_.erase(user);
 
-  if (auto node = output::GetNode(*this))
+  if (auto node = TryGetOwnerNode<Node>(*this))
   {
     if (!node->has_users())
     {
@@ -122,7 +122,7 @@ output::add_user(jlm::rvsdg::input * user)
 {
   JLM_ASSERT(users_.find(user) == users_.end());
 
-  if (auto node = output::GetNode(*this))
+  if (auto node = TryGetOwnerNode<Node>(*this))
   {
     if (!node->has_users())
     {
@@ -195,7 +195,7 @@ Node::~Node()
 node_input *
 Node::add_input(std::unique_ptr<node_input> input)
 {
-  auto producer = output::GetNode(*input->origin());
+  auto producer = rvsdg::TryGetOwnerNode<Node>(*input->origin());
 
   if (ninputs() == 0)
   {
@@ -218,7 +218,7 @@ void
 Node::RemoveInput(size_t index)
 {
   JLM_ASSERT(index < ninputs());
-  auto producer = output::GetNode(*input(index)->origin());
+  auto producer = rvsdg::TryGetOwnerNode<Node>(*input(index)->origin());
 
   /* remove input */
   for (size_t n = index; n < ninputs() - 1; n++)
@@ -272,7 +272,7 @@ Node::recompute_depth() noexcept
   size_t new_depth = 0;
   for (size_t n = 0; n < ninputs(); n++)
   {
-    auto producer = output::GetNode(*input(n)->origin());
+    auto producer = rvsdg::TryGetOwnerNode<Node>(*input(n)->origin());
     new_depth = std::max(new_depth, producer ? producer->depth() + 1 : 0);
   }
   if (new_depth == depth())
@@ -310,7 +310,7 @@ Node::copy(rvsdg::Region * region, const std::vector<jlm::rvsdg::output *> & ope
 Node *
 producer(const jlm::rvsdg::output * output) noexcept
 {
-  if (auto node = output::GetNode(*output))
+  if (auto node = TryGetOwnerNode<Node>(*output))
     return node;
 
   if (auto theta = TryGetRegionParentNode<ThetaNode>(*output))
