@@ -165,7 +165,8 @@ LoadMuxReduction_Success()
   assert(merge->ninputs() == 3);
   for (size_t n = 0; n < merge->ninputs(); n++)
   {
-    const auto expectedLoadNode = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*merge->input(n)->origin());
+    const auto expectedLoadNode =
+        jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*merge->input(n)->origin());
     assert(expectedLoadNode == reducedLoadNode);
   }
 
@@ -447,11 +448,13 @@ LoadStoreReduction_DifferentValueOperandType()
   // Assert
   assert(success == false);
 
-  const auto expectedLoadNode = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*exportedValue.origin());
+  const auto expectedLoadNode =
+      jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*exportedValue.origin());
   assert(expectedLoadNode == &loadNode);
   assert(expectedLoadNode->ninputs() == 2);
 
-  const auto expectedStoreNode = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*expectedLoadNode->input(1)->origin());
+  const auto expectedStoreNode =
+      jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*expectedLoadNode->input(1)->origin());
   assert(expectedStoreNode == &storeNode);
 
   return 0;

@@ -63,7 +63,8 @@ GammaWithoutMatch()
   assert(selectNode->input(1)->origin() == falseValue);
   assert(selectNode->input(2)->origin() == trueValue);
 
-  const auto controlToBitsNode = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*selectNode->input(0)->origin());
+  const auto controlToBitsNode =
+      jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*selectNode->input(0)->origin());
   assert(controlToBitsNode && is<ctl2bits_op>(controlToBitsNode));
   assert(controlToBitsNode->input(0)->origin() == conditionValue);
 
@@ -125,7 +126,8 @@ EmptyGammaWithTwoSubregionsAndMatch()
   assert(selectNode->input(1)->origin() == trueValue);
   assert(selectNode->input(2)->origin() == falseValue);
 
-  const auto eqNode = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*selectNode->input(0)->origin());
+  const auto eqNode =
+      jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*selectNode->input(0)->origin());
   assert(eqNode && is<IntegerEqOperation>(eqNode));
 
   auto constantNode = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*eqNode->input(0)->origin());

@@ -71,7 +71,8 @@ TestCallNodeAccessors()
 
   // Act
   auto results = CallOperation::Create(f, functionType, { v, i, m });
-  auto & callNode = *jlm::util::AssertedCast<SimpleNode>(jlm::rvsdg::TryGetOwnerNode<Node>(*results[0]));
+  auto & callNode =
+      *jlm::util::AssertedCast<SimpleNode>(jlm::rvsdg::TryGetOwnerNode<Node>(*results[0]));
 
   // Assert
   assert(CallOperation::NumArguments(callNode) == 3);
