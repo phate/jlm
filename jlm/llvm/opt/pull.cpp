@@ -70,16 +70,6 @@ single_successor(const rvsdg::Node * node)
 }
 
 static void
-remove(rvsdg::input * input)
-{
-  auto gamma = jlm::util::AssertedCast<rvsdg::GammaNode>(rvsdg::input::GetNode(*input));
-
-  for (size_t n = 0; n < gamma->nsubregions(); n++)
-    gamma->subregion(n)->RemoveArgument(input->index() - 1);
-  gamma->RemoveInput(input->index());
-}
-
-static void
 pullin_node(rvsdg::GammaNode * gamma, rvsdg::Node * node)
 {
   /* collect operands */
@@ -102,26 +92,28 @@ pullin_node(rvsdg::GammaNode * gamma, rvsdg::Node * node)
     {
       for (const auto & user : *node->output(o))
       {
-        JLM_ASSERT(dynamic_cast<jlm::rvsdg::StructuralInput *>(user));
-        auto sinput = static_cast<rvsdg::StructuralInput *>(user);
-        auto argument = gamma->subregion(r)->argument(sinput->index() - 1);
-        argument->divert_users(copy->output(o));
+        auto entryvar = gamma->MapInputEntryVar(*user);
+        entryvar.branchArgument[r]->divert_users(copy->output(o));
       }
     }
   }
 }
 
 static void
-cleanup(rvsdg::GammaNode *, rvsdg::Node * node)
+cleanup(rvsdg::GammaNode * gamma, rvsdg::Node * node)
 {
   JLM_ASSERT(single_successor(node));
 
   /* remove entry variables and node */
+  std::vector<rvsdg::GammaNode::EntryVar> entryvars;
   for (size_t n = 0; n < node->noutputs(); n++)
   {
-    while (node->output(n)->nusers() != 0)
-      remove(*node->output(n)->begin());
+    for (auto user : *node->output(n))
+    {
+      entryvars.push_back(gamma->MapInputEntryVar(*user));
+    }
   }
+  gamma->RemoveEntryVars(entryvars);
   remove(node);
 }
 

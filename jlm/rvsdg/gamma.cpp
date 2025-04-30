@@ -1,8 +1,10 @@
 /*
- * Copyright 2010 2011 2012 2013 2014 Helge Bahmann <hcb@chaoticmind.net>
+ * Copyright 2010 2011 2012 2013 2014 2025 Helge Bahmann <hcb@chaoticmind.net>
  * Copyright 2013 2014 2015 2016 Nico Reißmann <nico.reissmann@gmail.com>
  * See COPYING for terms of redistribution.
  */
+
+#include <algorithm>
 
 #include <jlm/rvsdg/control.hpp>
 #include <jlm/rvsdg/gamma.hpp>
@@ -342,6 +344,60 @@ GammaNode::MapBranchResultExitVar(const rvsdg::input & input) const
     branchResults.push_back(subregion(k)->result(input.index()));
   }
   return ExitVar{ std::move(branchResults), Node::output(input.index()) };
+}
+
+void
+GammaNode::RemoveExitVars(const std::vector<ExitVar> & exitvars)
+{
+  std::vector<std::size_t> indices;
+  for (const auto & exitvar : exitvars)
+  {
+    JLM_ASSERT(TryGetOwnerNode<GammaNode>(*exitvar.output) == this);
+    indices.push_back(exitvar.output->index());
+  }
+  std::sort(
+      indices.begin(),
+      indices.end(),
+      [](std::size_t x, std::size_t y)
+      {
+        return x > y;
+      });
+  indices.erase(std::unique(indices.begin(), indices.end()), indices.end());
+  for (std::size_t index : indices)
+  {
+    for (std::size_t r = 0; r < nsubregions(); ++r)
+    {
+      subregion(r)->RemoveResult(index);
+    }
+    RemoveOutput(index);
+  }
+}
+
+void
+GammaNode::RemoveEntryVars(const std::vector<EntryVar> & entryvars)
+{
+  std::vector<std::size_t> indices;
+  for (const auto & entryvar : entryvars)
+  {
+    JLM_ASSERT(TryGetOwnerNode<GammaNode>(*entryvar.input) == this);
+    indices.push_back(entryvar.input->index());
+  }
+  std::sort(
+      indices.begin(),
+      indices.end(),
+      [](std::size_t x, std::size_t y)
+      {
+        return x > y;
+      });
+  indices.erase(std::unique(indices.begin(), indices.end()), indices.end());
+  for (auto index : indices)
+  {
+    for (std::size_t r = 0; r < nsubregions(); ++r)
+    {
+      subregion(r)->RemoveArgument(index - 1);
+    }
+    RemoveInput(index);
+  }
 }
 
 GammaNode *
