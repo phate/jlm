@@ -51,15 +51,15 @@ public:
 static rvsdg::GammaNode *
 is_applicable(const rvsdg::ThetaNode * theta)
 {
-  auto matchnode = jlm::rvsdg::output::GetNode(*theta->predicate()->origin());
-  if (!jlm::rvsdg::is<jlm::rvsdg::match_op>(matchnode))
+  auto matchNode = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*theta->predicate()->origin());
+  if (!jlm::rvsdg::is<jlm::rvsdg::match_op>(matchNode))
     return nullptr;
 
-  if (matchnode->output(0)->nusers() != 2)
+  if (matchNode->output(0)->nusers() != 2)
     return nullptr;
 
   rvsdg::GammaNode * gnode = nullptr;
-  for (const auto & user : *matchnode->output(0))
+  for (const auto & user : *matchNode->output(0))
   {
     if (user == theta->predicate())
       continue;
@@ -98,7 +98,7 @@ pullin(rvsdg::GammaNode * gamma, rvsdg::ThetaNode * theta)
   pullin_bottom(gamma);
   for (const auto & lv : theta->GetLoopVars())
   {
-    if (jlm::rvsdg::output::GetNode(*lv.post->origin()) != gamma)
+    if (rvsdg::TryGetOwnerNode<rvsdg::Node>(*lv.post->origin()) != gamma)
     {
       auto ev = gamma->AddEntryVar(lv.post->origin());
       JLM_ASSERT(ev.branchArgument.size() == 2);

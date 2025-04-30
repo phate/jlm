@@ -58,12 +58,13 @@ GammaWithoutMatch()
 
   assert(gammaNode->IsDead());
   const auto selectNode =
-      jlm::rvsdg::output::GetNode(*lambdaNode->subregion()->result(0)->origin());
+      jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*lambdaNode->subregion()->result(0)->origin());
   assert(selectNode && is<SelectOperation>(selectNode));
   assert(selectNode->input(1)->origin() == falseValue);
   assert(selectNode->input(2)->origin() == trueValue);
 
-  const auto controlToBitsNode = jlm::rvsdg::output::GetNode(*selectNode->input(0)->origin());
+  const auto controlToBitsNode =
+      jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*selectNode->input(0)->origin());
   assert(controlToBitsNode && is<ctl2bits_op>(controlToBitsNode));
   assert(controlToBitsNode->input(0)->origin() == conditionValue);
 
@@ -120,15 +121,16 @@ EmptyGammaWithTwoSubregionsAndMatch()
 
   assert(gammaNode->IsDead());
   const auto selectNode =
-      jlm::rvsdg::output::GetNode(*lambdaNode->subregion()->result(0)->origin());
+      jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*lambdaNode->subregion()->result(0)->origin());
   assert(selectNode && is<SelectOperation>(selectNode));
   assert(selectNode->input(1)->origin() == trueValue);
   assert(selectNode->input(2)->origin() == falseValue);
 
-  const auto eqNode = jlm::rvsdg::output::GetNode(*selectNode->input(0)->origin());
+  const auto eqNode =
+      jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*selectNode->input(0)->origin());
   assert(eqNode && is<IntegerEqOperation>(eqNode));
 
-  auto constantNode = jlm::rvsdg::output::GetNode(*eqNode->input(0)->origin());
+  auto constantNode = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*eqNode->input(0)->origin());
   if (constantNode)
   {
     assert(eqNode->input(1)->origin() == conditionValue);
@@ -140,7 +142,7 @@ EmptyGammaWithTwoSubregionsAndMatch()
   else
   {
     assert(eqNode->input(0)->origin() == conditionValue);
-    constantNode = jlm::rvsdg::output::GetNode(*eqNode->input(1)->origin());
+    constantNode = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*eqNode->input(1)->origin());
     auto constantOperation =
         dynamic_cast<const IntegerConstantOperation *>(&constantNode->GetOperation());
     assert(constantOperation);
@@ -206,7 +208,7 @@ EmptyGammaWithTwoSubregions()
   // Assert
   assert(gammaNode1->IsDead());
   const auto selectNode =
-      jlm::rvsdg::output::GetNode(*lambdaNode->subregion()->result(0)->origin());
+      jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*lambdaNode->subregion()->result(0)->origin());
   assert(selectNode && is<SelectOperation>(selectNode));
   assert(selectNode->input(1)->origin() == trueValue);
   assert(selectNode->input(2)->origin() == falseValue);

@@ -167,7 +167,7 @@ CallOperation::TraceFunctionInput(const rvsdg::SimpleNode & callNode)
     if (is<rvsdg::GraphImport>(origin))
       return origin;
 
-    if (is<rvsdg::SimpleOperation>(rvsdg::output::GetNode(*origin)))
+    if (rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*origin))
       return origin;
 
     if (auto lambda = rvsdg::TryGetRegionParentNode<rvsdg::LambdaNode>(*origin))

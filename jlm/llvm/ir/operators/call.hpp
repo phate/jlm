@@ -345,9 +345,9 @@ public:
   GetMemoryStateEntryMerge(const rvsdg::SimpleNode & callNode) noexcept
   {
     JLM_ASSERT(is<CallOperation>(&callNode));
-    const auto node = rvsdg::output::GetNode(*GetMemoryStateInput(callNode).origin());
-    return is<CallEntryMemoryStateMergeOperation>(node) ? dynamic_cast<rvsdg::SimpleNode *>(node)
-                                                        : nullptr;
+    const auto node =
+        rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*GetMemoryStateInput(callNode).origin());
+    return is<CallEntryMemoryStateMergeOperation>(node) ? node : nullptr;
   }
 
   /**
