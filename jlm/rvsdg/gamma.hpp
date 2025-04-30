@@ -234,6 +234,30 @@ public:
   MapBranchResultExitVar(const rvsdg::input & input) const;
 
   /**
+   * \brief Removes the given exit variables.
+   *
+   * \pre
+   *   All exit variables must be unused (= the corresponding gamma outputs
+   *   must not have any users).
+   *
+   * Removes the variables as exit variables from this gamma.
+   */
+  void
+  RemoveExitVars(const std::vector<ExitVar> & exitvars);
+
+  /**
+   * \brief Removes the given entry variables
+   *
+   * \pre
+   *   All entry variables must be unused in the gamma branch subregions
+   *   (= the corresponding region arguments must not have any users).
+   *
+   * Removes the variables as entry variables from this gamma.
+   */
+  void
+  RemoveEntryVars(const std::vector<EntryVar> & entryvars);
+
+  /**
    * Removes all gamma outputs and their respective results. The outputs must have no users and
    * match the condition specified by \p match.
    *

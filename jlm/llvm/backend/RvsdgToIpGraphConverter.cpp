@@ -261,15 +261,18 @@ RvsdgToIpGraphConverter::ConvertGammaNode(const rvsdg::GammaNode & gammaNode)
   // convert gamma regions
   std::vector<cfg_node *> phi_nodes;
   entryBlock->append_last(BranchOperation::create(numSubregions, Context_->GetVariable(predicate)));
+  auto entryvars = gammaNode.GetEntryVars();
   for (size_t n = 0; n < gammaNode.nsubregions(); n++)
   {
     const auto subregion = gammaNode.subregion(n);
 
     // add arguments to context
-    for (size_t i = 0; i < subregion->narguments(); i++)
+    for (size_t i = 0; i < entryvars.size(); i++)
     {
-      const auto argument = subregion->argument(i);
-      Context_->InsertVariable(argument, Context_->GetVariable(argument->input()->origin()));
+      auto & entryvar = entryvars[i];
+      Context_->InsertVariable(
+          entryvar.branchArgument[n],
+          Context_->GetVariable(entryvar.input->origin()));
     }
 
     // convert subregion
