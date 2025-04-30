@@ -213,8 +213,8 @@ congruent(jlm::rvsdg::output * o1, jlm::rvsdg::output * o2, vset & vs, cnectx & 
     }
   }
 
-  auto n1 = jlm::rvsdg::output::GetNode(*o1);
-  auto n2 = jlm::rvsdg::output::GetNode(*o2);
+  auto n1 = rvsdg::TryGetOwnerNode<rvsdg::Node>(*o1);
+  auto n2 = rvsdg::TryGetOwnerNode<rvsdg::Node>(*o2);
 
   if (rvsdg::is<rvsdg::GammaOperation>(n1) && n1 == n2)
   {

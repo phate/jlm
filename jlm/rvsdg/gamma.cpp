@@ -1,8 +1,10 @@
 /*
- * Copyright 2010 2011 2012 2013 2014 Helge Bahmann <hcb@chaoticmind.net>
+ * Copyright 2010 2011 2012 2013 2014 2025 Helge Bahmann <hcb@chaoticmind.net>
  * Copyright 2013 2014 2015 2016 Nico Reißmann <nico.reissmann@gmail.com>
  * See COPYING for terms of redistribution.
  */
+
+#include <algorithm>
 
 #include <jlm/rvsdg/control.hpp>
 #include <jlm/rvsdg/gamma.hpp>
@@ -16,7 +18,7 @@ namespace jlm::rvsdg
 static bool
 is_predicate_reducible(const GammaNode * gamma)
 {
-  auto constant = output::GetNode(*gamma->predicate()->origin());
+  auto constant = rvsdg::TryGetOwnerNode<SimpleNode>(*gamma->predicate()->origin());
   return constant && is_ctlconstant_op(constant->GetOperation());
 }
 
@@ -73,8 +75,8 @@ perform_invariant_reduction(GammaNode * gamma)
 static std::unordered_set<jlm::rvsdg::output *>
 is_control_constant_reducible(GammaNode * gamma)
 {
-  /* check gamma predicate */
-  auto match = output::GetNode(*gamma->predicate()->origin());
+  // check gamma predicate
+  auto match = rvsdg::TryGetOwnerNode<SimpleNode>(*gamma->predicate()->origin());
   if (!is<match_op>(match))
     return {};
 
@@ -97,7 +99,7 @@ is_control_constant_reducible(GammaNode * gamma)
     size_t n;
     for (n = 0; n < exitvar.branchResult.size(); n++)
     {
-      auto node = output::GetNode(*exitvar.branchResult[n]->origin());
+      auto node = rvsdg::TryGetOwnerNode<SimpleNode>(*exitvar.branchResult[n]->origin());
       if (!is<ctlconstant_op>(node))
         break;
 
@@ -342,6 +344,60 @@ GammaNode::MapBranchResultExitVar(const rvsdg::input & input) const
     branchResults.push_back(subregion(k)->result(input.index()));
   }
   return ExitVar{ std::move(branchResults), Node::output(input.index()) };
+}
+
+void
+GammaNode::RemoveExitVars(const std::vector<ExitVar> & exitvars)
+{
+  std::vector<std::size_t> indices;
+  for (const auto & exitvar : exitvars)
+  {
+    JLM_ASSERT(TryGetOwnerNode<GammaNode>(*exitvar.output) == this);
+    indices.push_back(exitvar.output->index());
+  }
+  std::sort(
+      indices.begin(),
+      indices.end(),
+      [](std::size_t x, std::size_t y)
+      {
+        return x > y;
+      });
+  indices.erase(std::unique(indices.begin(), indices.end()), indices.end());
+  for (std::size_t index : indices)
+  {
+    for (std::size_t r = 0; r < nsubregions(); ++r)
+    {
+      subregion(r)->RemoveResult(index);
+    }
+    RemoveOutput(index);
+  }
+}
+
+void
+GammaNode::RemoveEntryVars(const std::vector<EntryVar> & entryvars)
+{
+  std::vector<std::size_t> indices;
+  for (const auto & entryvar : entryvars)
+  {
+    JLM_ASSERT(TryGetOwnerNode<GammaNode>(*entryvar.input) == this);
+    indices.push_back(entryvar.input->index());
+  }
+  std::sort(
+      indices.begin(),
+      indices.end(),
+      [](std::size_t x, std::size_t y)
+      {
+        return x > y;
+      });
+  indices.erase(std::unique(indices.begin(), indices.end()), indices.end());
+  for (auto index : indices)
+  {
+    for (std::size_t r = 0; r < nsubregions(); ++r)
+    {
+      subregion(r)->RemoveArgument(index - 1);
+    }
+    RemoveInput(index);
+  }
 }
 
 GammaNode *
