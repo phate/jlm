@@ -182,10 +182,10 @@ test2()
 
   // Assert
   // Function f1 should not have been inlined.
-  assert(is<CallOperation>(
-      jlm::rvsdg::output::GetNode(*jlm::rvsdg::AssertGetOwnerNode<jlm::rvsdg::LambdaNode>(*f2)
-                                       .GetFunctionResults()[0]
-                                       ->origin())));
+  assert(is<CallOperation>(jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
+      *jlm::rvsdg::AssertGetOwnerNode<jlm::rvsdg::LambdaNode>(*f2)
+           .GetFunctionResults()[0]
+           ->origin())));
 }
 
 static int

@@ -354,7 +354,8 @@ pushout_store(rvsdg::Node * storenode)
     std::unordered_set<jlm::rvsdg::input *> users;
     for (const auto & user : *states[n])
     {
-      if (jlm::rvsdg::input::GetNode(*user) != jlm::rvsdg::output::GetNode(*nstates[0]))
+      if (rvsdg::TryGetOwnerNode<rvsdg::Node>(*user)
+          != rvsdg::TryGetOwnerNode<rvsdg::Node>(*nstates[0]))
         users.insert(user);
     }
 
@@ -370,10 +371,10 @@ push_bottom(rvsdg::ThetaNode * theta)
 {
   for (const auto & lv : theta->GetLoopVars())
   {
-    auto storenode = jlm::rvsdg::output::GetNode(*lv.post->origin());
-    if (jlm::rvsdg::is<StoreNonVolatileOperation>(storenode) && is_movable_store(storenode))
+    const auto storeNode = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*lv.post->origin());
+    if (jlm::rvsdg::is<StoreNonVolatileOperation>(storeNode) && is_movable_store(storeNode))
     {
-      pushout_store(storenode);
+      pushout_store(storeNode);
       break;
     }
   }
