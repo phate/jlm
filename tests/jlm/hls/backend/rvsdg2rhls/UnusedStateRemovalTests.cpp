@@ -77,6 +77,7 @@ static void
 TestTheta()
 {
   using namespace jlm::llvm;
+  using namespace jlm::rvsdg;
 
   // Arrange
   auto valueType = jlm::tests::valuetype::Create();
@@ -84,7 +85,7 @@ TestTheta()
       { jlm::rvsdg::ControlType::Create(2), valueType, valueType, valueType },
       { valueType });
 
-  auto rvsdgModule = RvsdgModule::Create(jlm::util::filepath(""), "", "");
+  auto rvsdgModule = jlm::llvm::RvsdgModule::Create(jlm::util::filepath(""), "", "");
   auto & rvsdg = rvsdgModule->Rvsdg();
   auto p = &jlm::tests::GraphImport::Create(rvsdg, jlm::rvsdg::ControlType::Create(2), "p");
   auto x = &jlm::tests::GraphImport::Create(rvsdg, valueType, "x");
@@ -103,13 +104,16 @@ TestTheta()
   thetaNode->set_predicate(thetaOutput0.pre);
 
   auto result =
-      jlm::tests::SimpleNode::Create(
-          rvsdg.GetRootRegion(),
+      jlm::rvsdg::CreateOpNode<jlm::tests::test_op>(
           { thetaOutput0.output, thetaOutput1.output, thetaOutput2.output, thetaOutput3.output },
-          { valueType })
+          std::vector<std::shared_ptr<const Type>>{ ControlType::Create(2),
+                                                    valueType,
+                                                    valueType,
+                                                    valueType },
+          std::vector<std::shared_ptr<const Type>>{ valueType })
           .output(0);
 
-  GraphExport::Create(*result, "f");
+  jlm::tests::GraphExport::Create(*result, "f");
 
   // Act
   jlm::hls::RemoveUnusedStates(*rvsdgModule);
@@ -127,6 +131,7 @@ static void
 TestLambda()
 {
   using namespace jlm::llvm;
+  using namespace jlm::rvsdg;
 
   // Arrange
   auto valueType = jlm::tests::valuetype::Create();
@@ -134,7 +139,7 @@ TestLambda()
       { valueType, valueType },
       { valueType, valueType, valueType, valueType });
 
-  auto rvsdgModule = RvsdgModule::Create(jlm::util::filepath(""), "", "");
+  auto rvsdgModule = jlm::llvm::RvsdgModule::Create(jlm::util::filepath(""), "", "");
   auto & rvsdg = rvsdgModule->Rvsdg();
 
   auto x = &jlm::tests::GraphImport::Create(rvsdg, valueType, "x");
@@ -147,16 +152,21 @@ TestLambda()
   auto argument2 = lambdaNode->AddContextVar(*x).inner;
   auto argument3 = lambdaNode->AddContextVar(*x).inner;
 
-  auto result1 =
-      jlm::tests::SimpleNode::Create(*lambdaNode->subregion(), { argument1 }, { valueType })
-          .output(0);
-  auto result3 =
-      jlm::tests::SimpleNode::Create(*lambdaNode->subregion(), { argument3 }, { valueType })
-          .output(0);
+  auto result1 = jlm::rvsdg::CreateOpNode<jlm::tests::test_op>(
+                     { argument1 },
+                     std::vector<std::shared_ptr<const Type>>{ valueType },
+                     std::vector<std::shared_ptr<const Type>>{ valueType })
+                     .output(0);
+
+  auto result3 = jlm::rvsdg::CreateOpNode<jlm::tests::test_op>(
+                     { argument3 },
+                     std::vector<std::shared_ptr<const Type>>{ valueType },
+                     std::vector<std::shared_ptr<const Type>>{ valueType })
+                     .output(0);
 
   auto lambdaOutput = lambdaNode->finalize({ argument0, result1, argument2, result3 });
 
-  GraphExport::Create(*lambdaOutput, "f");
+  jlm::tests::GraphExport::Create(*lambdaOutput, "f");
 
   // Act
   jlm::hls::RemoveUnusedStates(*rvsdgModule);
@@ -212,7 +222,7 @@ TestUsedMemoryState()
 
   // Load node
   auto functionArguments = lambda->GetFunctionArguments();
-  auto loadOutput = LoadNonVolatileNode::Create(
+  auto loadOutput = LoadNonVolatileOperation::Create(
       functionArguments[0],
       { functionArguments[1] },
       PointerType::Create(),
@@ -227,8 +237,8 @@ TestUsedMemoryState()
   RemoveInvariantLambdaStateEdges(*rvsdgModule);
   // Assert
   jlm::rvsdg::view(rvsdgModule->Rvsdg(), stdout);
-  auto * node =
-      jlm::rvsdg::output::GetNode(*rvsdgModule->Rvsdg().GetRootRegion().result(0)->origin());
+  auto * node = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
+      *rvsdgModule->Rvsdg().GetRootRegion().result(0)->origin());
   auto lambdaSubregion = jlm::util::AssertedCast<jlm::rvsdg::LambdaNode>(node)->subregion();
   assert(lambdaSubregion->nresults() == 1);
   assert(is<MemoryStateType>(lambdaSubregion->result(0)->Type()));
@@ -259,7 +269,7 @@ TestUnusedMemoryState()
 
   // Load node
   auto functionArguments = lambda->GetFunctionArguments();
-  auto loadOutput = LoadNonVolatileNode::Create(
+  auto loadOutput = LoadNonVolatileOperation::Create(
       functionArguments[0],
       { functionArguments[1] },
       PointerType::Create(),
@@ -273,8 +283,8 @@ TestUnusedMemoryState()
   // Act
   RemoveInvariantLambdaStateEdges(*rvsdgModule);
   // Assert
-  auto * node =
-      jlm::rvsdg::output::GetNode(*rvsdgModule->Rvsdg().GetRootRegion().result(0)->origin());
+  auto * node = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
+      *rvsdgModule->Rvsdg().GetRootRegion().result(0)->origin());
   auto lambdaSubregion = jlm::util::AssertedCast<jlm::rvsdg::LambdaNode>(node)->subregion();
   jlm::rvsdg::view(rvsdgModule->Rvsdg(), stdout);
   assert(lambdaSubregion->narguments() == 2);
@@ -311,7 +321,7 @@ TestInvariantMemoryState()
   auto memoryStateSplit = LambdaEntryMemoryStateSplitOperation::Create(*functionArguments[1], 2);
 
   // Load node
-  auto loadOutput = LoadNonVolatileNode::Create(
+  auto loadOutput = LoadNonVolatileOperation::Create(
       functionArguments[0],
       { memoryStateSplit[0] },
       PointerType::Create(),
@@ -332,8 +342,8 @@ TestInvariantMemoryState()
   // This pass should have no effect on the graph
   RemoveInvariantLambdaStateEdges(*rvsdgModule);
   // Assert
-  auto * node =
-      jlm::rvsdg::output::GetNode(*rvsdgModule->Rvsdg().GetRootRegion().result(0)->origin());
+  auto * node = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
+      *rvsdgModule->Rvsdg().GetRootRegion().result(0)->origin());
   auto lambdaSubregion = jlm::util::AssertedCast<jlm::rvsdg::LambdaNode>(node)->subregion();
   jlm::rvsdg::view(rvsdgModule->Rvsdg(), stdout);
   assert(lambdaSubregion->narguments() == 2);

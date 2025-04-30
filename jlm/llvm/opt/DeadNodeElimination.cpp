@@ -259,42 +259,52 @@ DeadNodeElimination::MarkOutput(const jlm::rvsdg::output & output)
     }
   }
 
-  if (auto phiOutput = dynamic_cast<const phi::rvoutput *>(&output))
+  if (auto phi = rvsdg::TryGetOwnerNode<rvsdg::PhiNode>(output))
   {
-    MarkOutput(*phiOutput->result()->origin());
+    MarkOutput(*phi->MapOutputFixVar(output).result->origin());
     return;
   }
 
-  if (auto phiRecursionArgument = dynamic_cast<const phi::rvargument *>(&output))
+  if (auto phi = rvsdg::TryGetRegionParentNode<rvsdg::PhiNode>(output))
   {
-    MarkOutput(*phiRecursionArgument->result()->origin());
-    return;
-  }
-
-  if (auto phiInputArgument = dynamic_cast<const phi::cvargument *>(&output))
-  {
-    MarkOutput(*phiInputArgument->input()->origin());
-    return;
-  }
-
-  if (auto deltaOutput = dynamic_cast<const delta::output *>(&output))
-  {
-    MarkOutput(*deltaOutput->node()->subregion()->result(0)->origin());
-    return;
-  }
-
-  if (auto deltaCvArgument = dynamic_cast<const delta::cvargument *>(&output))
-  {
-    MarkOutput(*deltaCvArgument->input()->origin());
-    return;
-  }
-
-  if (auto simpleOutput = dynamic_cast<const rvsdg::SimpleOutput *>(&output))
-  {
-    auto node = simpleOutput->node();
-    for (size_t n = 0; n < node->ninputs(); n++)
+    auto var = phi->MapArgument(output);
+    if (auto fix = std::get_if<rvsdg::PhiNode::FixVar>(&var))
     {
-      MarkOutput(*node->input(n)->origin());
+      // Recursion argument
+      MarkOutput(*fix->result->origin());
+      return;
+    }
+    else if (auto ctx = std::get_if<rvsdg::PhiNode::ContextVar>(&var))
+    {
+      // Bound context variable.
+      MarkOutput(*ctx->input->origin());
+      return;
+    }
+    else
+    {
+      JLM_UNREACHABLE("Phi argument must be either fixpoint or context variable");
+    }
+  }
+
+  if (const auto deltaNode = rvsdg::TryGetOwnerNode<delta::node>(output))
+  {
+    const auto result = deltaNode->subregion()->result(0);
+    MarkOutput(*result->origin());
+    return;
+  }
+
+  if (rvsdg::TryGetRegionParentNode<delta::node>(output))
+  {
+    const auto argument = util::AssertedCast<const rvsdg::RegionArgument>(&output);
+    MarkOutput(*argument->input()->origin());
+    return;
+  }
+
+  if (const auto simpleNode = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(output))
+  {
+    for (size_t n = 0; n < simpleNode->ninputs(); n++)
+    {
+      MarkOutput(*simpleNode->input(n)->origin());
     }
     return;
   }
@@ -365,7 +375,7 @@ DeadNodeElimination::SweepStructuralNode(rvsdg::StructuralNode & node) const
   };
   auto sweepPhi = [](auto & d, auto & n)
   {
-    d.SweepPhi(*util::AssertedCast<phi::node>(&n));
+    d.SweepPhi(*util::AssertedCast<rvsdg::PhiNode>(&n));
   };
   auto sweepDelta = [](auto & d, auto & n)
   {
@@ -378,7 +388,7 @@ DeadNodeElimination::SweepStructuralNode(rvsdg::StructuralNode & node) const
       map({ { typeid(rvsdg::GammaOperation), sweepGamma },
             { typeid(rvsdg::ThetaOperation), sweepTheta },
             { typeid(llvm::LlvmLambdaOperation), sweepLambda },
-            { typeid(phi::operation), sweepPhi },
+            { typeid(rvsdg::PhiOperation), sweepPhi },
             { typeid(delta::operation), sweepDelta } });
 
   auto & op = node.GetOperation();
@@ -389,20 +399,16 @@ DeadNodeElimination::SweepStructuralNode(rvsdg::StructuralNode & node) const
 void
 DeadNodeElimination::SweepGamma(rvsdg::GammaNode & gammaNode) const
 {
-  // Remove dead outputs and results
-  for (size_t n = gammaNode.noutputs() - 1; n != static_cast<size_t>(-1); n--)
+  // Remove dead exit vars.
+  std::vector<rvsdg::GammaNode::ExitVar> deadExitVars;
+  for (const auto & exitvar : gammaNode.GetExitVars())
   {
-    if (Context_->IsAlive(*gammaNode.output(n)))
+    if (!Context_->IsAlive(*exitvar.output))
     {
-      continue;
+      deadExitVars.push_back(exitvar);
     }
-
-    for (size_t r = 0; r < gammaNode.nsubregions(); r++)
-    {
-      gammaNode.subregion(r)->RemoveResult(n);
-    }
-    gammaNode.RemoveOutput(n);
   }
+  gammaNode.RemoveExitVars(deadExitVars);
 
   // Sweep gamma subregions
   for (size_t r = 0; r < gammaNode.nsubregions(); r++)
@@ -410,29 +416,23 @@ DeadNodeElimination::SweepGamma(rvsdg::GammaNode & gammaNode) const
     SweepRegion(*gammaNode.subregion(r));
   }
 
-  // Remove dead arguments and inputs
-  for (size_t n = gammaNode.ninputs() - 1; n >= 1; n--)
+  // Remove dead entry vars.
+  std::vector<rvsdg::GammaNode::EntryVar> deadEntryVars;
+  for (const auto & entryvar : gammaNode.GetEntryVars())
   {
-    auto input = gammaNode.input(n);
-
-    bool alive = false;
-    for (auto & argument : input->arguments)
-    {
-      if (Context_->IsAlive(argument))
-      {
-        alive = true;
-        break;
-      }
-    }
+    bool alive = std::any_of(
+        entryvar.branchArgument.begin(),
+        entryvar.branchArgument.end(),
+        [this](const rvsdg::output * arg)
+        {
+          return Context_->IsAlive(*arg);
+        });
     if (!alive)
     {
-      for (size_t r = 0; r < gammaNode.nsubregions(); r++)
-      {
-        gammaNode.subregion(r)->RemoveArgument(n - 1);
-      }
-      gammaNode.RemoveInput(n);
+      deadEntryVars.push_back(entryvar);
     }
   }
+  gammaNode.RemoveEntryVars(deadEntryVars);
 }
 
 void
@@ -470,40 +470,35 @@ DeadNodeElimination::SweepLambda(rvsdg::LambdaNode & lambdaNode) const
 }
 
 void
-DeadNodeElimination::SweepPhi(phi::node & phiNode) const
+DeadNodeElimination::SweepPhi(rvsdg::PhiNode & phiNode) const
 {
-  util::HashSet<const rvsdg::RegionArgument *> deadRecursionArguments;
+  std::vector<rvsdg::PhiNode::FixVar> deadFixvars;
+  std::vector<rvsdg::PhiNode::ContextVar> deadCtxvars;
 
-  auto isDeadOutput = [&](const phi::rvoutput & output)
+  for (const auto & fixvar : phiNode.GetFixVars())
   {
-    auto argument = output.argument();
-
-    // A recursion variable is only dead iff its output AND argument are dead
-    auto isDead = !Context_->IsAlive(output) && !Context_->IsAlive(*argument);
+    bool isDead = !Context_->IsAlive(*fixvar.output) && !Context_->IsAlive(*fixvar.recref);
     if (isDead)
     {
-      deadRecursionArguments.Insert(argument);
+      deadFixvars.push_back(fixvar);
+      // Temporarily redirect the variable so it refers to itself
+      // (so the object is simply defined to be "itself").
+      fixvar.result->divert_to(fixvar.recref);
     }
-
-    return isDead;
-  };
-  phiNode.RemovePhiOutputsWhere(isDeadOutput);
+  }
 
   SweepRegion(*phiNode.subregion());
 
-  auto isDeadArgument = [&](const rvsdg::RegionArgument & argument)
+  for (const auto & ctxvar : phiNode.GetContextVars())
   {
-    if (argument.input())
+    if (ctxvar.inner->IsDead())
     {
-      // It is always safe to remove context variables if they are dead
-      return argument.IsDead();
+      deadCtxvars.push_back(ctxvar);
     }
+  }
 
-    // Only remove the recursion argument if its output was removed in isDeadOutput()
-    JLM_ASSERT(is<phi::rvargument>(&argument));
-    return deadRecursionArguments.Contains(&argument);
-  };
-  phiNode.RemovePhiArgumentsWhere(isDeadArgument);
+  phiNode.RemoveContextVars(std::move(deadCtxvars));
+  phiNode.RemoveFixVars(std::move(deadFixvars));
 }
 
 void

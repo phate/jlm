@@ -377,17 +377,6 @@ public:
   [[nodiscard]] virtual std::variant<Node *, Region *>
   GetOwner() const noexcept = 0;
 
-  /**
-   * Retrieve the associated node from \p output if \p output is derived from
-   * jlm::rvsdg::node_output.
-   *
-   * @param output The output from which to retrieve the node.
-   * @return The node associated with \p output if output is derived from jlm::rvsdg::node_output,
-   * otherwise nullptr.
-   */
-  [[nodiscard]] static Node *
-  GetNode(const rvsdg::output & output) noexcept;
-
   template<class T>
   class iterator
   {
@@ -741,6 +730,8 @@ protected:
   void
   RemoveInput(size_t index);
 
+  // FIXME: I really would not like to be RemoveInputsWhere() to be public
+public:
   /**
    * Removes all inputs that match the condition specified by \p match.
    *
@@ -762,6 +753,7 @@ protected:
     }
   }
 
+protected:
   node_output *
   add_output(std::unique_ptr<node_output> output)
   {
@@ -788,6 +780,8 @@ protected:
   void
   RemoveOutput(size_t index);
 
+  // FIXME: I really would not like to be RemoveOutputsWhere() to be public
+public:
   /**
    * Removes all outputs that have no users and match the condition specified by \p match.
    *

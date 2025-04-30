@@ -10,7 +10,6 @@
 #include <jlm/hls/backend/rvsdg2rhls/add-triggers.hpp>
 #include <jlm/hls/backend/rvsdg2rhls/alloca-conv.hpp>
 #include <jlm/hls/backend/rvsdg2rhls/check-rhls.hpp>
-#include <jlm/hls/backend/rvsdg2rhls/dae-conv.hpp>
 #include <jlm/hls/backend/rvsdg2rhls/distribute-constants.hpp>
 #include <jlm/hls/backend/rvsdg2rhls/GammaConversion.hpp>
 #include <jlm/hls/backend/rvsdg2rhls/instrument-ref.hpp>
@@ -218,7 +217,7 @@ convert_alloca(rvsdg::Region * region)
       }
       else
       {
-        cout = llvm::ConstantAggregateZero::Create(*db->subregion(), po->ValueType());
+        cout = llvm::ConstantAggregateZeroOperation::Create(*db->subregion(), po->ValueType());
       }
       auto delta = db->finalize(cout);
       jlm::llvm::GraphExport::Create(*delta, delta_name);
@@ -285,7 +284,7 @@ rename_delta(llvm::delta::node * odn)
 
   odn->output()->divert_users(data);
   jlm::rvsdg::remove(odn);
-  return static_cast<llvm::delta::node *>(jlm::rvsdg::output::GetNode(*data));
+  return rvsdg::TryGetOwnerNode<llvm::delta::node>(*data);
 }
 
 rvsdg::LambdaNode *

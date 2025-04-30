@@ -591,7 +591,7 @@ TestExternalCall1()
     auto & lambdaFArgument1 =
         pointsToGraph.GetRegisterNode(*test.LambdaF().GetFunctionArguments()[1]);
 
-    auto & callResult = pointsToGraph.GetRegisterNode(*test.CallG().Result(0));
+    auto & callResult = pointsToGraph.GetRegisterNode(*test.CallG().output(0));
 
     auto & externalMemory = pointsToGraph.GetExternalMemoryNode();
 
@@ -651,9 +651,10 @@ TestGamma()
       assertTargets(lambdaArgument, { &lambda, &pointsToGraph.GetExternalMemoryNode() });
     }
 
-    for (size_t n = 0; n < 4; n++)
+    auto entryvars = test.gamma->GetEntryVars();
+    assert(entryvars.size() == 4);
+    for (const auto & entryvar : entryvars)
     {
-      auto entryvar = test.gamma->GetEntryVar(n);
       auto & argument0 = pointsToGraph.GetRegisterNode(*entryvar.branchArgument[0]);
       auto & argument1 = pointsToGraph.GetRegisterNode(*entryvar.branchArgument[1]);
 
@@ -871,11 +872,11 @@ TestPhi1()
     auto & lambda_test = ptg.GetLambdaNode(*test.lambda_test);
     auto & lambda_test_out = ptg.GetRegisterNode(*test.lambda_test->output());
 
-    auto & phi_rv = ptg.GetRegisterNode(*test.phi->begin_rv().output());
-    auto & phi_rv_arg = ptg.GetRegisterNode(*test.phi->begin_rv().output()->argument());
+    auto & phi_rv = ptg.GetRegisterNode(*test.phi->GetFixVars()[0].output);
+    auto & phi_rv_arg = ptg.GetRegisterNode(*test.phi->GetFixVars()[0].recref);
 
-    auto & gamma_result = ptg.GetRegisterNode(*test.gamma->subregion(0)->argument(1));
-    auto & gamma_fib = ptg.GetRegisterNode(*test.gamma->subregion(0)->argument(2));
+    auto & gamma_result = ptg.GetRegisterNode(*test.gamma->GetEntryVars()[1].branchArgument[0]);
+    auto & gamma_fib = ptg.GetRegisterNode(*test.gamma->GetEntryVars()[2].branchArgument[0]);
 
     auto & alloca = ptg.GetAllocaNode(*test.alloca);
     auto & alloca_out = ptg.GetRegisterNode(*test.alloca->output(0));
@@ -991,7 +992,7 @@ TestEscapedMemory2()
     auto externalMemory = &pointsToGraph.GetExternalMemoryNode();
 
     auto & externalFunction2CallResult =
-        pointsToGraph.GetRegisterNode(*test.ExternalFunction2Call->Result(0));
+        pointsToGraph.GetRegisterNode(*test.ExternalFunction2Call->output(0));
 
     assertTargets(
         externalFunction2CallResult,
@@ -1035,7 +1036,7 @@ TestEscapedMemory3()
     auto externalMemory = &pointsToGraph.GetExternalMemoryNode();
 
     auto & callExternalFunctionResult =
-        pointsToGraph.GetRegisterNode(*test.CallExternalFunction->Result(0));
+        pointsToGraph.GetRegisterNode(*test.CallExternalFunction->output(0));
 
     assertTargets(callExternalFunctionResult, { lambdaTest, deltaGlobal, externalMemory });
 

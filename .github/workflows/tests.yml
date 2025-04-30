@@ -9,34 +9,22 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  build:
+  UnitTests:
     runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v4
-      - name: "Build jlm"
+      - name: "Run unit tests and C tests"
         uses: ./.github/actions/BuildJlm
         with:
           enable-hls: true
           enable-mlir: true
           make-target: check
 
-  gcc:
+  UnitTestsWithValgrind:
     runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v4
-      - name: "Build jlm"
-        uses: ./.github/actions/BuildJlm
-        with:
-          enable-hls: true
-          enable-mlir: true
-          cxx: g++
-          make-target: check
-
-  valgrind:
-    runs-on: ubuntu-22.04
-    steps:
-      - uses: actions/checkout@v4
-      - name: "Build jlm"
+      - name: "Run unit tests with valgrind"
         uses: ./.github/actions/BuildJlm
         with:
           enable-hls: true

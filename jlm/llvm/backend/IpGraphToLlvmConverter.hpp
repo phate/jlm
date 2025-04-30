@@ -41,8 +41,8 @@ class LoadNonVolatileOperation;
 class LoadVolatileOperation;
 class StoreVolatileOperation;
 class ConstantDataArray;
-class ConstantArray;
-class ConstantAggregateZero;
+class ConstantArrayOperation;
+class ConstantAggregateZeroOperation;
 class ConstantStruct;
 class ConstantPointerNullOperation;
 class shufflevector_op;
@@ -355,13 +355,13 @@ private:
 
   ::llvm::Value *
   convert(
-      const ConstantAggregateZero & op,
+      const ConstantAggregateZeroOperation & op,
       const std::vector<const variable *> &,
       ::llvm::IRBuilder<> &);
 
   ::llvm::Value *
   convert(
-      const ConstantArray & op,
+      const ConstantArrayOperation & op,
       const std::vector<const variable *> & operands,
       ::llvm::IRBuilder<> &);
 

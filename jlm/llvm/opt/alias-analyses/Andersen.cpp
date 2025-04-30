@@ -617,12 +617,12 @@ Andersen::AnalyzeSimpleNode(const rvsdg::SimpleNode & node)
     AnalyzeAlloca(node);
   else if (is<malloc_op>(op))
     AnalyzeMalloc(node);
-  else if (const auto loadNode = dynamic_cast<const LoadNode *>(&node))
-    AnalyzeLoad(*loadNode);
-  else if (const auto storeNode = dynamic_cast<const StoreNode *>(&node))
-    AnalyzeStore(*storeNode);
-  else if (const auto callNode = dynamic_cast<const CallNode *>(&node))
-    AnalyzeCall(*callNode);
+  else if (is<LoadOperation>(&node))
+    AnalyzeLoad(node);
+  else if (is<StoreOperation>(&node))
+    AnalyzeStore(node);
+  else if (is<CallOperation>(&node))
+    AnalyzeCall(node);
   else if (is<GetElementPtrOperation>(op))
     AnalyzeGep(node);
   else if (is<bitcast_op>(op))
@@ -637,11 +637,11 @@ Andersen::AnalyzeSimpleNode(const rvsdg::SimpleNode & node)
     AnalyzeUndef(node);
   else if (is<MemCpyOperation>(op))
     AnalyzeMemcpy(node);
-  else if (is<ConstantArray>(op))
+  else if (is<ConstantArrayOperation>(op))
     AnalyzeConstantArray(node);
   else if (is<ConstantStruct>(op))
     AnalyzeConstantStruct(node);
-  else if (is<ConstantAggregateZero>(op))
+  else if (is<ConstantAggregateZeroOperation>(op))
     AnalyzeConstantAggregateZero(node);
   else if (is<ExtractValue>(op))
     AnalyzeExtractValue(node);
@@ -694,10 +694,12 @@ Andersen::AnalyzeMalloc(const rvsdg::SimpleNode & node)
 }
 
 void
-Andersen::AnalyzeLoad(const LoadNode & loadNode)
+Andersen::AnalyzeLoad(const rvsdg::SimpleNode & node)
 {
-  const auto & addressRegister = *loadNode.GetAddressInput().origin();
-  const auto & outputRegister = loadNode.GetLoadedValueOutput();
+  JLM_ASSERT(is<LoadOperation>(&node));
+
+  const auto & addressRegister = *LoadOperation::AddressInput(node).origin();
+  const auto & outputRegister = LoadOperation::LoadedValueOutput(node);
 
   const auto addressRegisterPO = Set_->GetRegisterPointerObject(addressRegister);
 
@@ -713,10 +715,10 @@ Andersen::AnalyzeLoad(const LoadNode & loadNode)
 }
 
 void
-Andersen::AnalyzeStore(const StoreNode & storeNode)
+Andersen::AnalyzeStore(const rvsdg::SimpleNode & node)
 {
-  const auto & addressRegister = *storeNode.GetAddressInput().origin();
-  const auto & valueRegister = *storeNode.GetStoredValueInput().origin();
+  const auto & addressRegister = *StoreOperation::AddressInput(node).origin();
+  const auto & valueRegister = *StoreOperation::StoredValueInput(node).origin();
 
   const auto addressRegisterPO = Set_->GetRegisterPointerObject(addressRegister);
 
@@ -733,16 +735,18 @@ Andersen::AnalyzeStore(const StoreNode & storeNode)
 }
 
 void
-Andersen::AnalyzeCall(const CallNode & callNode)
+Andersen::AnalyzeCall(const rvsdg::SimpleNode & callNode)
 {
+  JLM_ASSERT(is<CallOperation>(&callNode));
+
   // The address being called by the call node
-  const auto & callTarget = *callNode.GetFunctionInput()->origin();
+  const auto & callTarget = *CallOperation::GetFunctionInput(callNode).origin();
   const auto callTargetPO = Set_->GetRegisterPointerObject(callTarget);
 
   // Create PointerObjects for all output values of pointer type
-  for (size_t n = 0; n < callNode.NumResults(); n++)
+  for (size_t n = 0; n < callNode.noutputs(); n++)
   {
-    const auto & outputRegister = *callNode.Result(n);
+    const auto & outputRegister = *callNode.output(n);
     if (IsOrContainsPointerType(outputRegister.type()))
       (void)Set_->CreateRegisterPointerObject(outputRegister);
   }
@@ -864,7 +868,7 @@ Andersen::AnalyzeMemcpy(const rvsdg::SimpleNode & node)
 void
 Andersen::AnalyzeConstantArray(const rvsdg::SimpleNode & node)
 {
-  JLM_ASSERT(is<ConstantArray>(&node));
+  JLM_ASSERT(is<ConstantArrayOperation>(&node));
 
   if (!IsOrContainsPointerType(node.output(0)->type()))
     return;
@@ -909,7 +913,7 @@ Andersen::AnalyzeConstantStruct(const rvsdg::SimpleNode & node)
 void
 Andersen::AnalyzeConstantAggregateZero(const rvsdg::SimpleNode & node)
 {
-  JLM_ASSERT(is<ConstantAggregateZero>(&node));
+  JLM_ASSERT(is<ConstantAggregateZeroOperation>(&node));
   auto & output = *node.output(0);
 
   if (!IsOrContainsPointerType(output.type()))
@@ -1008,7 +1012,7 @@ Andersen::AnalyzeStructuralNode(const rvsdg::StructuralNode & node)
     AnalyzeLambda(*lambdaNode);
   else if (const auto deltaNode = dynamic_cast<const delta::node *>(&node))
     AnalyzeDelta(*deltaNode);
-  else if (const auto phiNode = dynamic_cast<const phi::node *>(&node))
+  else if (const auto phiNode = dynamic_cast<const rvsdg::PhiNode *>(&node))
     AnalyzePhi(*phiNode);
   else if (const auto gammaNode = dynamic_cast<const rvsdg::GammaNode *>(&node))
     AnalyzeGamma(*gammaNode);
@@ -1091,47 +1095,47 @@ Andersen::AnalyzeDelta(const delta::node & delta)
 }
 
 void
-Andersen::AnalyzePhi(const phi::node & phi)
+Andersen::AnalyzePhi(const rvsdg::PhiNode & phi)
 {
   // Handle context variables
-  for (auto cv = phi.begin_cv(); cv != phi.end_cv(); ++cv)
+  for (auto var : phi.GetContextVars())
   {
-    if (!IsOrContainsPointerType(cv->type()))
+    if (!IsOrContainsPointerType(var.inner->type()))
       continue;
 
-    auto & inputRegister = *cv->origin();
-    auto & argumentRegister = *cv->argument();
+    auto & inputRegister = *var.input->origin();
+    auto & argumentRegister = *var.inner;
     const auto inputRegisterPO = Set_->GetRegisterPointerObject(inputRegister);
     Set_->MapRegisterToExistingPointerObject(argumentRegister, inputRegisterPO);
   }
 
-  // Create Register PointerObjects for each recursion variable argument
-  for (auto rv = phi.begin_rv(); rv != phi.end_rv(); ++rv)
+  // Create Register PointerObjects for each fixpoint variable argument
+  for (auto var : phi.GetFixVars())
   {
-    if (!IsOrContainsPointerType(rv->type()))
+    if (!IsOrContainsPointerType(var.output->type()))
       continue;
 
-    auto & argumentRegister = *rv->argument();
+    auto & argumentRegister = *var.recref;
     (void)Set_->CreateRegisterPointerObject(argumentRegister);
   }
 
   AnalyzeRegion(*phi.subregion());
 
-  // Handle recursion variable results
-  for (auto rv = phi.begin_rv(); rv != phi.end_rv(); ++rv)
+  // Handle recursive definition results
+  for (auto var : phi.GetFixVars())
   {
-    if (!IsOrContainsPointerType(rv->type()))
+    if (!IsOrContainsPointerType(var.output->type()))
       continue;
 
     // Make the recursion variable argument point to what the result register points to
-    auto & argumentRegister = *rv->argument();
-    auto & resultRegister = *rv->result()->origin();
+    auto & argumentRegister = *var.recref;
+    auto & resultRegister = *var.result->origin();
     const auto argumentRegisterPO = Set_->GetRegisterPointerObject(argumentRegister);
     const auto resultRegisterPO = Set_->GetRegisterPointerObject(resultRegister);
     Constraints_->AddConstraint(SupersetConstraint(argumentRegisterPO, resultRegisterPO));
 
     // Map the output register to the recursion result's pointer object
-    auto & outputRegister = *rv;
+    auto & outputRegister = *var.output;
     Set_->MapRegisterToExistingPointerObject(outputRegister, resultRegisterPO);
   }
 }

@@ -6,7 +6,7 @@
 #ifndef JLM_LLVM_OPT_ALIAS_ANALYSES_STEENSGAARD_HPP
 #define JLM_LLVM_OPT_ALIAS_ANALYSES_STEENSGAARD_HPP
 
-#include <jlm/llvm/opt/alias-analyses/AliasAnalysis.hpp>
+#include <jlm/llvm/opt/alias-analyses/PointsToAnalysis.hpp>
 #include <jlm/llvm/opt/alias-analyses/PointsToGraph.hpp>
 #include <jlm/util/disjointset.hpp>
 
@@ -39,7 +39,6 @@ namespace phi
 class node;
 }
 
-class CallNode;
 class LoadNode;
 class StoreNode;
 
@@ -55,7 +54,7 @@ class RegisterLocation;
  * implementation corresponding to the algorithm presented in Bjarne Steensgaard - Points-to
  * Analysis in Almost Linear Time.
  */
-class Steensgaard final : public AliasAnalysis
+class Steensgaard final : public PointsToAnalysis
 {
   class Context;
   class Statistics;
@@ -109,7 +108,7 @@ private:
   AnalyzeDelta(const delta::node & node);
 
   void
-  AnalyzePhi(const phi::node & node);
+  AnalyzePhi(const rvsdg::PhiNode & node);
 
   void
   AnalyzeGamma(const rvsdg::GammaNode & node);
@@ -130,22 +129,22 @@ private:
   AnalyzeMalloc(const rvsdg::SimpleNode & node);
 
   void
-  AnalyzeLoad(const LoadNode & loadNode);
+  AnalyzeLoad(const rvsdg::SimpleNode & node);
 
   void
-  AnalyzeStore(const StoreNode & storeNode);
+  AnalyzeStore(const rvsdg::SimpleNode & node);
 
   void
-  AnalyzeCall(const CallNode & callNode);
+  AnalyzeCall(const rvsdg::SimpleNode & callNode);
 
   void
-  AnalyzeDirectCall(const CallNode & callNode, const rvsdg::LambdaNode & lambdaNode);
+  AnalyzeDirectCall(const rvsdg::SimpleNode & callNode, const rvsdg::LambdaNode & lambdaNode);
 
   void
-  AnalyzeExternalCall(const CallNode & callNode);
+  AnalyzeExternalCall(const rvsdg::SimpleNode & callNode);
 
   void
-  AnalyzeIndirectCall(const CallNode & callNode);
+  AnalyzeIndirectCall(const rvsdg::SimpleNode & callNode);
 
   void
   AnalyzeGep(const rvsdg::SimpleNode & node);

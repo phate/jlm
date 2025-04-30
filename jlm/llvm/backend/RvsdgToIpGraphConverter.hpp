@@ -22,16 +22,12 @@ class GammaNode;
 class input;
 class LambdaNode;
 class Node;
+class PhiNode;
 class Region;
 }
 
 namespace jlm::llvm
 {
-
-namespace phi
-{
-class node;
-}
 
 namespace delta
 {
@@ -86,7 +82,7 @@ private:
   ConvertDeltaNode(const delta::node & deltaNode);
 
   void
-  ConvertPhiNode(const phi::node & phiNode);
+  ConvertPhiNode(const rvsdg::PhiNode & phiNode);
 
   void
   ConvertLambdaNode(const rvsdg::LambdaNode & lambdaNode);
@@ -96,9 +92,6 @@ private:
 
   void
   ConvertGammaNode(const rvsdg::GammaNode & gammaNode);
-
-  void
-  ConvertEmptyGammaNode(const rvsdg::GammaNode & gammaNode);
 
   void
   ConvertSimpleNode(const rvsdg::SimpleNode & simpleNode);
