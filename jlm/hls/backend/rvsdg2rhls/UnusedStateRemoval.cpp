@@ -129,53 +129,48 @@ RemovePassthroughArgument(const rvsdg::RegionArgument & argument)
   region->node()->RemoveOutput(outputIndex);
 }
 
-// If this output has a single user and that single user happens to be
-// the exit variable of this gamma node, then return it.
-static std::optional<rvsdg::GammaNode::ExitVar>
-TryGetSingleUserExitVar(rvsdg::GammaNode & gammaNode, rvsdg::output & argument)
-{
-  if (argument.nusers() == 1)
-  {
-    rvsdg::input * user = *argument.begin();
-    if (rvsdg::TryGetRegionParentNode<rvsdg::GammaNode>(*user) == &gammaNode)
-    {
-      return gammaNode.MapBranchResultExitVar(*user);
-    }
-  }
-  return std::nullopt;
-}
-
 static void
 RemoveUnusedStatesFromGammaNode(rvsdg::GammaNode & gammaNode)
 {
-  std::vector<rvsdg::GammaNode::EntryVar> deadEntryVars;
-  std::vector<rvsdg::GammaNode::ExitVar> deadExitVars;
-
-  for (const auto & entryvar : gammaNode.GetEntryVars())
+  auto entryvars = gammaNode.GetEntryVars();
+  for (int i = entryvars.size() - 1; i >= 0; --i)
   {
-    std::optional<rvsdg::GammaNode::ExitVar> exitvar0 =
-        TryGetSingleUserExitVar(gammaNode, *entryvar.branchArgument[0]);
+    size_t resultIndex = 0;
+    auto argument = entryvars[i].branchArgument[0];
+    if (argument->nusers() == 1)
+    {
+      auto result = dynamic_cast<rvsdg::RegionResult *>(*argument->begin());
+      resultIndex = result ? result->index() : resultIndex;
+    }
 
-    bool shouldRemove = exitvar0
-                     && std::all_of(
-                            entryvar.branchArgument.begin(),
-                            entryvar.branchArgument.end(),
-                            [&gammaNode, &exitvar0](rvsdg::output * argument) -> bool
-                            {
-                              auto exitvar = TryGetSingleUserExitVar(gammaNode, *argument);
-                              return exitvar && exitvar->output == exitvar0->output;
-                            });
+    bool shouldRemove = true;
+    for (size_t n = 0; n < gammaNode.nsubregions(); n++)
+    {
+      auto subregion = gammaNode.subregion(n);
+      shouldRemove &=
+          IsPassthroughArgument(*subregion->argument(i))
+          && dynamic_cast<jlm::rvsdg::RegionResult *>(*subregion->argument(i)->begin())->index()
+                 == resultIndex;
+    }
 
     if (shouldRemove)
     {
-      exitvar0->output->divert_users(entryvar.input->origin());
-      deadEntryVars.push_back(entryvar);
-      deadExitVars.push_back(*exitvar0);
+      auto origin = entryvars[i].input->origin();
+      gammaNode.output(resultIndex)->divert_users(origin);
+
+      for (size_t r = 0; r < gammaNode.nsubregions(); r++)
+      {
+        gammaNode.subregion(r)->RemoveResult(resultIndex);
+      }
+      gammaNode.RemoveOutput(resultIndex);
+
+      for (size_t r = 0; r < gammaNode.nsubregions(); r++)
+      {
+        gammaNode.subregion(r)->RemoveArgument(i);
+      }
+      gammaNode.RemoveInput(i + 1);
     }
   }
-
-  gammaNode.RemoveExitVars(deadExitVars);
-  gammaNode.RemoveEntryVars(deadEntryVars);
 }
 
 static void
