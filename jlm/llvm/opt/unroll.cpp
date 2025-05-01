@@ -97,7 +97,7 @@ is_idv(jlm::rvsdg::input * input)
 {
   using namespace jlm::rvsdg;
 
-  auto node = rvsdg::input::GetNode(*input);
+  auto node = TryGetOwnerNode<SimpleNode>(*input);
   JLM_ASSERT(is<bitadd_op>(node) || is<bitsub_op>(node));
 
   if (auto theta = rvsdg::TryGetRegionParentNode<ThetaNode>(*input->origin()))

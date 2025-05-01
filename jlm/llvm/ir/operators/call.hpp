@@ -369,9 +369,9 @@ public:
     if (GetMemoryStateOutput(callNode).nusers() != 1)
       return nullptr;
 
-    auto node = rvsdg::node_input::GetNode(**GetMemoryStateOutput(callNode).begin());
-    return is<CallExitMemoryStateSplitOperation>(node) ? dynamic_cast<rvsdg::SimpleNode *>(node)
-                                                       : nullptr;
+    const auto node =
+        rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(**GetMemoryStateOutput(callNode).begin());
+    return is<CallExitMemoryStateSplitOperation>(node) ? node : nullptr;
   }
 
   /**

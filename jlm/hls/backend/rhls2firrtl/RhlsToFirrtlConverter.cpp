@@ -1154,10 +1154,10 @@ RhlsToFirrtlConverter::MlirGenHlsLocalMem(const jlm::rvsdg::SimpleNode * node)
 {
   auto lmem_op = dynamic_cast<const local_mem_op *>(&(node->GetOperation()));
   JLM_ASSERT(lmem_op);
-  auto res_node = rvsdg::input::GetNode(**node->output(0)->begin());
+  auto res_node = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(**node->output(0)->begin());
   auto res_op = dynamic_cast<const local_mem_resp_op *>(&res_node->GetOperation());
   JLM_ASSERT(res_op);
-  auto req_node = rvsdg::input::GetNode(**node->output(1)->begin());
+  auto req_node = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(**node->output(1)->begin());
   auto req_op = dynamic_cast<const local_mem_req_op *>(&req_node->GetOperation());
   JLM_ASSERT(req_op);
   // Create the module and its input/output ports - we use a non-standard way here
@@ -1203,7 +1203,7 @@ RhlsToFirrtlConverter::MlirGenHlsLocalMem(const jlm::rvsdg::SimpleNode * node)
 
   auto body = module.getBodyBlock();
 
-  size_t loads = rvsdg::input::GetNode(**node->output(0)->begin())->noutputs();
+  size_t loads = rvsdg::TryGetOwnerNode<rvsdg::Node>(**node->output(0)->begin())->noutputs();
 
   // Input signals
   ::llvm::SmallVector<circt::firrtl::SubfieldOp> loadAddrReadys;
@@ -2689,12 +2689,12 @@ RhlsToFirrtlConverter::MlirGen(rvsdg::Region * subRegion, mlir::Block * circuitB
     if (dynamic_cast<const hls::local_mem_op *>(&(rvsdgNode->GetOperation())))
     {
       // hook up request port
-      auto requestNode = rvsdg::input::GetNode(**rvsdgNode->output(1)->begin());
+      auto requestNode = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(**rvsdgNode->output(1)->begin());
       // skip connection to mem
       for (size_t i = 1; i < requestNode->ninputs(); i++)
       {
         // Get the RVSDG node that's the origin of this input
-        auto * input = dynamic_cast<rvsdg::SimpleInput *>(requestNode->input(i));
+        auto * input = requestNode->input(i);
         auto origin = input->origin();
         if (auto o = dynamic_cast<rvsdg::RegionArgument *>(origin))
         {
@@ -4055,10 +4055,12 @@ RhlsToFirrtlConverter::GetModuleName(const rvsdg::Node * node)
     append.append(std::to_string(
         std::dynamic_pointer_cast<const llvm::ArrayType>(op->result(0))->nelements()));
     append.append("_L");
-    size_t loads = rvsdg::input::GetNode(**node->output(0)->begin())->noutputs();
+    size_t loads = rvsdg::TryGetOwnerNode<rvsdg::Node>(**node->output(0)->begin())->noutputs();
     append.append(std::to_string(loads));
     append.append("_S");
-    size_t stores = (rvsdg::input::GetNode(**node->output(1)->begin())->ninputs() - 1 - loads) / 2;
+    size_t stores =
+        (rvsdg::TryGetOwnerNode<rvsdg::Node>(**node->output(1)->begin())->ninputs() - 1 - loads)
+        / 2;
     append.append(std::to_string(stores));
   }
   auto name = jlm::util::strfmt("op_", node->GetOperation().debug_string() + append);
