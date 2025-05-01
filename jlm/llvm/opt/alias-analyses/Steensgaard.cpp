@@ -1186,7 +1186,7 @@ Steensgaard::AnalyzeDirectCall(
   JLM_ASSERT(is<CallOperation>(&callNode));
 
   auto & lambdaFunctionType = lambdaNode.GetOperation().type();
-  auto & callFunctionType = CallOperation::GetFunctionInput(callNode).type();
+  auto & callFunctionType = *CallOperation::GetFunctionInput(callNode).Type();
   if (callFunctionType != lambdaFunctionType)
   {
     // LLVM permits code where it can happen that the number and type of the arguments handed in to
