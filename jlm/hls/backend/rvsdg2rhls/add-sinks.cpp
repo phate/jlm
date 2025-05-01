@@ -3,7 +3,6 @@
  * See COPYING for terms of redistribution.
  */
 
-#include "jlm/rvsdg/lambda.hpp"
 #include <jlm/hls/backend/rvsdg2rhls/add-sinks.hpp>
 #include <jlm/hls/ir/hls.hpp>
 #include <jlm/rvsdg/lambda.hpp>
