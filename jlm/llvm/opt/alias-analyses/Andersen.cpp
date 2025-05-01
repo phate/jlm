@@ -662,7 +662,7 @@ Andersen::AnalyzeSimpleNode(const rvsdg::SimpleNode & node)
     // This node operation is unknown, make sure it doesn't consume any pointers
     for (size_t i = 0; i < node.ninputs(); i++)
     {
-      JLM_ASSERT(!IsOrContainsPointerType(node.input(i)->type()));
+      JLM_ASSERT(!IsOrContainsPointerType(*node.input(i)->Type()));
     }
   }
 }
