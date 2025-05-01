@@ -16,6 +16,7 @@
 #include <jlm/llvm/ir/RvsdgModule.hpp>
 #include <jlm/llvm/opt/DeadNodeElimination.hpp>
 #include <jlm/rvsdg/Phi.hpp>
+#include <jlm/rvsdg/view.hpp>
 #include <jlm/util/Statistics.hpp>
 
 static void
@@ -26,45 +27,55 @@ RunDeadNodeElimination(jlm::llvm::RvsdgModule & rvsdgModule)
   deadNodeElimination.Run(rvsdgModule, statisticsCollector);
 }
 
-static void
-TestRoot()
+static int
+RootRegion()
 {
   using namespace jlm::llvm;
 
-  RvsdgModule rm(jlm::util::filepath(""), "", "");
-  auto & graph = rm.Rvsdg();
+  // Arrange
+  RvsdgModule rvsdgModule(jlm::util::filepath(""), "", "");
+  auto & graph = rvsdgModule.Rvsdg();
 
   jlm::tests::GraphImport::Create(graph, jlm::tests::valuetype::Create(), "x");
   auto y = &jlm::tests::GraphImport::Create(graph, jlm::tests::valuetype::Create(), "y");
+
   GraphExport::Create(*y, "z");
+  jlm::rvsdg::view(graph, stdout);
 
-  //	jlm::rvsdg::view(graph.GetRootRegion(), stdout);
-  RunDeadNodeElimination(rm);
-  //	jlm::rvsdg::view(graph.GetRootRegion(), stdout);
+  // Act
+  RunDeadNodeElimination(rvsdgModule);
+  jlm::rvsdg::view(graph, stdout);
 
+  // Assert
   assert(graph.GetRootRegion().narguments() == 1);
+
+  return 0;
 }
 
-static void
-TestGamma()
+JLM_UNIT_TEST_REGISTER("jlm/llvm/opt/DeadNodeEliminationTests-RootRegion", RootRegion)
+
+static int
+Gamma1()
 {
   using namespace jlm::llvm;
 
-  auto vt = jlm::tests::valuetype::Create();
-  auto ct = jlm::rvsdg::ControlType::Create(2);
+  // Arrange
+  auto valueType = jlm::tests::valuetype::Create();
+  auto controlType = jlm::rvsdg::ControlType::Create(2);
 
-  RvsdgModule rm(jlm::util::filepath(""), "", "");
-  auto & graph = rm.Rvsdg();
-  auto c = &jlm::tests::GraphImport::Create(graph, ct, "c");
-  auto x = &jlm::tests::GraphImport::Create(graph, vt, "x");
-  auto y = &jlm::tests::GraphImport::Create(graph, vt, "y");
+  RvsdgModule rvsdgModule(jlm::util::filepath(""), "", "");
+  auto & graph = rvsdgModule.Rvsdg();
+  auto c = &jlm::tests::GraphImport::Create(graph, controlType, "c");
+  auto x = &jlm::tests::GraphImport::Create(graph, valueType, "x");
+  auto y = &jlm::tests::GraphImport::Create(graph, valueType, "y");
 
   auto gamma = jlm::rvsdg::GammaNode::create(c, 2);
   auto ev1 = gamma->AddEntryVar(x);
   auto ev2 = gamma->AddEntryVar(y);
   auto ev3 = gamma->AddEntryVar(x);
 
-  auto t = jlm::tests::create_testop(gamma->subregion(1), { ev2.branchArgument[1] }, { vt })[0];
+  auto t =
+      jlm::tests::create_testop(gamma->subregion(1), { ev2.branchArgument[1] }, { valueType })[0];
 
   gamma->AddExitVar(ev1.branchArgument);
   gamma->AddExitVar({ ev2.branchArgument[0], t });
@@ -72,61 +83,75 @@ TestGamma()
 
   GraphExport::Create(*gamma->output(0), "z");
   GraphExport::Create(*gamma->output(2), "w");
+  jlm::rvsdg::view(graph, stdout);
 
-  //	jlm::rvsdg::view(graph.GetRootRegion(), stdout);
-  RunDeadNodeElimination(rm);
-  //	jlm::rvsdg::view(graph.GetRootRegion(), stdout);
+  // Act
+  RunDeadNodeElimination(rvsdgModule);
+  jlm::rvsdg::view(graph, stdout);
 
+  // Assert
   assert(gamma->noutputs() == 2);
   assert(gamma->subregion(1)->nnodes() == 0);
   assert(gamma->subregion(1)->narguments() == 3);
   assert(gamma->ninputs() == 3);
   assert(graph.GetRootRegion().narguments() == 2);
+
+  return 0;
 }
 
-static void
-TestGamma2()
+JLM_UNIT_TEST_REGISTER("jlm/llvm/opt/DeadNodeEliminationTests-Gamma1", Gamma1)
+
+static int
+Gamma2()
 {
   using namespace jlm::llvm;
 
-  auto vt = jlm::tests::valuetype::Create();
-  auto ct = jlm::rvsdg::ControlType::Create(2);
+  // Arrange
+  auto valueType = jlm::tests::valuetype::Create();
+  auto controlType = jlm::rvsdg::ControlType::Create(2);
 
-  RvsdgModule rm(jlm::util::filepath(""), "", "");
-  auto & graph = rm.Rvsdg();
-  auto c = &jlm::tests::GraphImport::Create(graph, ct, "c");
-  auto x = &jlm::tests::GraphImport::Create(graph, vt, "x");
+  RvsdgModule rvsdgModule(jlm::util::filepath(""), "", "");
+  auto & graph = rvsdgModule.Rvsdg();
+  auto c = &jlm::tests::GraphImport::Create(graph, controlType, "c");
+  auto x = &jlm::tests::GraphImport::Create(graph, valueType, "x");
 
   auto gamma = jlm::rvsdg::GammaNode::create(c, 2);
   gamma->AddEntryVar(x);
 
-  auto n1 = jlm::tests::create_testop(gamma->subregion(0), {}, { vt })[0];
-  auto n2 = jlm::tests::create_testop(gamma->subregion(1), {}, { vt })[0];
+  auto n1 = jlm::tests::create_testop(gamma->subregion(0), {}, { valueType })[0];
+  auto n2 = jlm::tests::create_testop(gamma->subregion(1), {}, { valueType })[0];
 
   gamma->AddExitVar({ n1, n2 });
 
   GraphExport::Create(*gamma->output(0), "x");
+  jlm::rvsdg::view(graph, stdout);
 
-  //	jlm::rvsdg::view(graph, stdout);
-  RunDeadNodeElimination(rm);
-  //	jlm::rvsdg::view(graph, stdout);
+  // Act
+  RunDeadNodeElimination(rvsdgModule);
+  jlm::rvsdg::view(graph, stdout);
 
+  // Assert
   assert(graph.GetRootRegion().narguments() == 1);
+
+  return 0;
 }
 
-static void
-TestTheta()
+JLM_UNIT_TEST_REGISTER("jlm/llvm/opt/DeadNodeEliminationTests-Gamma2", Gamma2)
+
+static int
+Theta()
 {
   using namespace jlm::llvm;
 
-  auto vt = jlm::tests::valuetype::Create();
-  auto ct = jlm::rvsdg::ControlType::Create(2);
+  // Arrange
+  auto valueType = jlm::tests::valuetype::Create();
+  auto controlType = jlm::rvsdg::ControlType::Create(2);
 
-  RvsdgModule rm(jlm::util::filepath(""), "", "");
-  auto & graph = rm.Rvsdg();
-  auto x = &jlm::tests::GraphImport::Create(graph, vt, "x");
-  auto y = &jlm::tests::GraphImport::Create(graph, vt, "y");
-  auto z = &jlm::tests::GraphImport::Create(graph, vt, "z");
+  RvsdgModule rvsdgModule(jlm::util::filepath(""), "", "");
+  auto & graph = rvsdgModule.Rvsdg();
+  auto x = &jlm::tests::GraphImport::Create(graph, valueType, "x");
+  auto y = &jlm::tests::GraphImport::Create(graph, valueType, "y");
+  auto z = &jlm::tests::GraphImport::Create(graph, valueType, "z");
 
   auto theta = jlm::rvsdg::ThetaNode::create(&graph.GetRootRegion());
 
@@ -138,84 +163,98 @@ TestTheta()
   lv1.post->divert_to(lv2.pre);
   lv2.post->divert_to(lv1.pre);
 
-  auto t = jlm::tests::create_testop(theta->subregion(), { lv3.pre }, { vt })[0];
+  auto t = jlm::tests::create_testop(theta->subregion(), { lv3.pre }, { valueType })[0];
   lv3.post->divert_to(t);
   lv4.post->divert_to(lv2.pre);
 
-  auto c = jlm::tests::create_testop(theta->subregion(), {}, { ct })[0];
+  auto c = jlm::tests::create_testop(theta->subregion(), {}, { controlType })[0];
   theta->set_predicate(c);
 
   GraphExport::Create(*lv1.output, "a");
   GraphExport::Create(*lv4.output, "b");
+  jlm::rvsdg::view(graph, stdout);
 
-  //	jlm::rvsdg::view(graph.GetRootRegion(), stdout);
-  RunDeadNodeElimination(rm);
-  //	jlm::rvsdg::view(graph.GetRootRegion(), stdout);
+  // Act
+  RunDeadNodeElimination(rvsdgModule);
+  jlm::rvsdg::view(graph, stdout);
 
+  // Assert
   assert(theta->noutputs() == 3);
   assert(theta->subregion()->nnodes() == 1);
   assert(graph.GetRootRegion().narguments() == 2);
+
+  return 0;
 }
 
-static void
-TestNestedTheta()
+JLM_UNIT_TEST_REGISTER("jlm/llvm/opt/DeadNodeEliminationTests-Theta", Theta)
+
+static int
+NestedTheta()
 {
   using namespace jlm::llvm;
 
-  auto vt = jlm::tests::valuetype::Create();
-  auto ct = jlm::rvsdg::ControlType::Create(2);
+  // Arrange
+  auto valueType = jlm::tests::valuetype::Create();
+  auto controlType = jlm::rvsdg::ControlType::Create(2);
 
-  RvsdgModule rm(jlm::util::filepath(""), "", "");
-  auto & graph = rm.Rvsdg();
-  auto c = &jlm::tests::GraphImport::Create(graph, ct, "c");
-  auto x = &jlm::tests::GraphImport::Create(graph, vt, "x");
-  auto y = &jlm::tests::GraphImport::Create(graph, vt, "y");
+  RvsdgModule rvsdgModule(jlm::util::filepath(""), "", "");
+  auto & graph = rvsdgModule.Rvsdg();
+  auto c = &jlm::tests::GraphImport::Create(graph, controlType, "c");
+  auto x = &jlm::tests::GraphImport::Create(graph, valueType, "x");
+  auto y = &jlm::tests::GraphImport::Create(graph, valueType, "y");
 
-  auto otheta = jlm::rvsdg::ThetaNode::create(&graph.GetRootRegion());
+  auto outerTheta = jlm::rvsdg::ThetaNode::create(&graph.GetRootRegion());
 
-  auto lvo1 = otheta->AddLoopVar(c);
-  auto lvo2 = otheta->AddLoopVar(x);
-  auto lvo3 = otheta->AddLoopVar(y);
+  auto lvo1 = outerTheta->AddLoopVar(c);
+  auto lvo2 = outerTheta->AddLoopVar(x);
+  auto lvo3 = outerTheta->AddLoopVar(y);
 
-  auto itheta = jlm::rvsdg::ThetaNode::create(otheta->subregion());
+  auto innerTheta = jlm::rvsdg::ThetaNode::create(outerTheta->subregion());
 
-  auto lvi1 = itheta->AddLoopVar(lvo1.pre);
-  auto lvi2 = itheta->AddLoopVar(lvo2.pre);
-  auto lvi3 = itheta->AddLoopVar(lvo3.pre);
+  auto lvi1 = innerTheta->AddLoopVar(lvo1.pre);
+  auto lvi2 = innerTheta->AddLoopVar(lvo2.pre);
+  auto lvi3 = innerTheta->AddLoopVar(lvo3.pre);
 
   lvi2.post->divert_to(lvi3.pre);
 
-  itheta->set_predicate(lvi1.pre);
+  innerTheta->set_predicate(lvi1.pre);
 
   lvo2.post->divert_to(lvi2.output);
   lvo3.post->divert_to(lvi2.output);
 
-  otheta->set_predicate(lvo1.pre);
+  outerTheta->set_predicate(lvo1.pre);
 
   GraphExport::Create(*lvo3.output, "y");
+  jlm::rvsdg::view(graph, stdout);
 
-  //	jlm::rvsdg::view(graph, stdout);
-  RunDeadNodeElimination(rm);
-  //	jlm::rvsdg::view(graph, stdout);
+  // Act
+  RunDeadNodeElimination(rvsdgModule);
+  jlm::rvsdg::view(graph, stdout);
 
-  assert(otheta->noutputs() == 3);
+  // Assert
+  assert(outerTheta->noutputs() == 3);
+
+  return 0;
 }
 
-static void
-TestEvolvingTheta()
+JLM_UNIT_TEST_REGISTER("jlm/llvm/opt/DeadNodeEliminationTests-NestedTheta", NestedTheta)
+
+static int
+EvolvingTheta()
 {
   using namespace jlm::llvm;
 
-  auto vt = jlm::tests::valuetype::Create();
-  auto ct = jlm::rvsdg::ControlType::Create(2);
+  // Arrange
+  auto valueType = jlm::tests::valuetype::Create();
+  auto controlType = jlm::rvsdg::ControlType::Create(2);
 
-  RvsdgModule rm(jlm::util::filepath(""), "", "");
-  auto & graph = rm.Rvsdg();
-  auto c = &jlm::tests::GraphImport::Create(graph, ct, "c");
-  auto x1 = &jlm::tests::GraphImport::Create(graph, vt, "x1");
-  auto x2 = &jlm::tests::GraphImport::Create(graph, vt, "x2");
-  auto x3 = &jlm::tests::GraphImport::Create(graph, vt, "x3");
-  auto x4 = &jlm::tests::GraphImport::Create(graph, vt, "x4");
+  RvsdgModule rvsdgModule(jlm::util::filepath(""), "", "");
+  auto & graph = rvsdgModule.Rvsdg();
+  auto c = &jlm::tests::GraphImport::Create(graph, controlType, "c");
+  auto x1 = &jlm::tests::GraphImport::Create(graph, valueType, "x1");
+  auto x2 = &jlm::tests::GraphImport::Create(graph, valueType, "x2");
+  auto x3 = &jlm::tests::GraphImport::Create(graph, valueType, "x3");
+  auto x4 = &jlm::tests::GraphImport::Create(graph, valueType, "x4");
 
   auto theta = jlm::rvsdg::ThetaNode::create(&graph.GetRootRegion());
 
@@ -232,30 +271,37 @@ TestEvolvingTheta()
   theta->set_predicate(lv0.pre);
 
   GraphExport::Create(*lv1.output, "x1");
+  jlm::rvsdg::view(graph, stdout);
 
-  //	jlm::rvsdg::view(graph, stdout);
-  RunDeadNodeElimination(rm);
-  //	jlm::rvsdg::view(graph, stdout);
+  // Act
+  RunDeadNodeElimination(rvsdgModule);
+  jlm::rvsdg::view(graph, stdout);
 
+  // Assert
   assert(theta->noutputs() == 5);
+
+  return 0;
 }
 
-static void
-TestLambda()
+JLM_UNIT_TEST_REGISTER("jlm/llvm/opt/DeadNodeEliminationTests-EvolvingTheta", EvolvingTheta)
+
+static int
+Lambda()
 {
   using namespace jlm::llvm;
 
-  auto vt = jlm::tests::valuetype::Create();
+  // Arrange
+  auto valueType = jlm::tests::valuetype::Create();
 
-  RvsdgModule rm(jlm::util::filepath(""), "", "");
-  auto & graph = rm.Rvsdg();
-  auto x = &jlm::tests::GraphImport::Create(graph, vt, "x");
-  auto y = &jlm::tests::GraphImport::Create(graph, vt, "y");
+  RvsdgModule rvsdgModule(jlm::util::filepath(""), "", "");
+  auto & graph = rvsdgModule.Rvsdg();
+  auto x = &jlm::tests::GraphImport::Create(graph, valueType, "x");
+  auto y = &jlm::tests::GraphImport::Create(graph, valueType, "y");
 
   auto lambda = jlm::rvsdg::LambdaNode::Create(
       graph.GetRootRegion(),
       LlvmLambdaOperation::Create(
-          jlm::rvsdg::FunctionType::Create({ vt }, { vt, vt }),
+          jlm::rvsdg::FunctionType::Create({ valueType }, { valueType, valueType }),
           "f",
           linkage::external_linkage));
 
@@ -264,29 +310,35 @@ TestLambda()
   jlm::tests::create_testop(
       lambda->subregion(),
       { lambda->GetFunctionArguments()[0], cv1 },
-      { vt });
+      { valueType });
 
   auto output = lambda->finalize({ lambda->GetFunctionArguments()[0], cv2 });
 
   GraphExport::Create(*output, "f");
+  jlm::rvsdg::view(graph, stdout);
 
-  //	jlm::rvsdg::view(graph.GetRootRegion(), stdout);
-  RunDeadNodeElimination(rm);
-  //	jlm::rvsdg::view(graph.GetRootRegion(), stdout);
+  // Act
+  RunDeadNodeElimination(rvsdgModule);
+  jlm::rvsdg::view(graph, stdout);
 
+  // Assert
   assert(lambda->subregion()->nnodes() == 0);
   assert(graph.GetRootRegion().narguments() == 1);
+
+  return 0;
 }
 
-static void
-TestPhi()
+JLM_UNIT_TEST_REGISTER("jlm/llvm/opt/DeadNodeEliminationTests-Lambda", Lambda)
+
+static int
+Phi()
 {
   using namespace jlm::llvm;
   using namespace jlm::rvsdg;
 
   // Arrange
   auto valueType = jlm::tests::valuetype::Create();
-  auto functionType = jlm::rvsdg::FunctionType::Create({ valueType }, { valueType });
+  auto functionType = FunctionType::Create({ valueType }, { valueType });
 
   jlm::llvm::RvsdgModule rvsdgModule(jlm::util::filepath(""), "", "");
   auto & rvsdg = rvsdgModule.Rvsdg();
@@ -294,7 +346,7 @@ TestPhi()
   auto y = &jlm::tests::GraphImport::Create(rvsdg, valueType, "y");
   auto z = &jlm::tests::GraphImport::Create(rvsdg, valueType, "z");
 
-  auto setupF1 = [&](jlm::rvsdg::Region & region, jlm::rvsdg::output & rv2, jlm::rvsdg::output & dx)
+  auto setupF1 = [&](Region & region, output & rv2, output & dx)
   {
     auto lambda1 = jlm::rvsdg::LambdaNode::Create(
         region,
@@ -312,7 +364,7 @@ TestPhi()
     return lambda1->finalize({ result });
   };
 
-  auto setupF2 = [&](jlm::rvsdg::Region & region, jlm::rvsdg::output & rv1, jlm::rvsdg::output & dy)
+  auto setupF2 = [&](Region & region, output & rv1, output & dy)
   {
     auto lambda2 = jlm::rvsdg::LambdaNode::Create(
         region,
@@ -329,7 +381,7 @@ TestPhi()
     return lambda2->finalize({ result });
   };
 
-  auto setupF3 = [&](jlm::rvsdg::Region & region, jlm::rvsdg::output & dz)
+  auto setupF3 = [&](Region & region, output & dz)
   {
     auto lambda3 = jlm::rvsdg::LambdaNode::Create(
         region,
@@ -345,7 +397,7 @@ TestPhi()
     return lambda3->finalize({ result });
   };
 
-  auto setupF4 = [&](jlm::rvsdg::Region & region)
+  auto setupF4 = [&](Region & region)
   {
     auto lambda = jlm::rvsdg::LambdaNode::Create(
         region,
@@ -353,7 +405,7 @@ TestPhi()
     return lambda->finalize({ lambda->GetFunctionArguments()[0] });
   };
 
-  jlm::rvsdg::PhiBuilder phiBuilder;
+  PhiBuilder phiBuilder;
   phiBuilder.begin(&rvsdg.GetRootRegion());
   auto & phiSubregion = *phiBuilder.subregion();
 
@@ -378,9 +430,11 @@ TestPhi()
 
   jlm::tests::GraphExport::Create(*phiNode->output(0), "f1");
   jlm::tests::GraphExport::Create(*phiNode->output(3), "f4");
+  view(rvsdg, stdout);
 
   // Act
   RunDeadNodeElimination(rvsdgModule);
+  view(rvsdg, stdout);
 
   // Assert
   assert(phiNode->noutputs() == 3); // f1, f2, and f4 are alive
@@ -398,10 +452,14 @@ TestPhi()
   assert(phiSubregion.argument(3) == dx.inner);
   assert(phiNode->ninputs() == 1); // dx is alive
   assert(phiNode->input(0) == dx.input);
+
+  return 0;
 }
 
-static void
-TestDelta()
+JLM_UNIT_TEST_REGISTER("jlm/llvm/opt/DeadNodeEliminationTests-Phi", Phi)
+
+static int
+Delta()
 {
   using namespace jlm::llvm;
   using namespace jlm::rvsdg;
@@ -441,29 +499,17 @@ TestDelta()
 
   auto deltaOutput = deltaNode->finalize(result);
   jlm::tests::GraphExport::Create(*deltaOutput, "");
+  view(rvsdg, stdout);
 
   // Act
   RunDeadNodeElimination(rvsdgModule);
+  view(rvsdg, stdout);
 
   // Assert
   assert(deltaNode->subregion()->nnodes() == 1);
   assert(deltaNode->ninputs() == 1);
-}
-
-static int
-TestDeadNodeElimination()
-{
-  TestRoot();
-  TestGamma();
-  TestGamma2();
-  TestTheta();
-  TestNestedTheta();
-  TestEvolvingTheta();
-  TestLambda();
-  TestPhi();
-  TestDelta();
 
   return 0;
 }
 
-JLM_UNIT_TEST_REGISTER("jlm/llvm/opt/TestDeadNodeElimination", TestDeadNodeElimination)
+JLM_UNIT_TEST_REGISTER("jlm/llvm/opt/DeadNodeEliminationTests-Delta", Delta)

@@ -159,7 +159,7 @@ ReplaceDecouple(
 
   // handle response
   int load_capacity = 10;
-  if (dynamic_cast<const rvsdg::bittype *>(&decouple_response->input(2)->type()))
+  if (rvsdg::is<const rvsdg::bittype>(decouple_response->input(2)->Type()))
   {
     auto constant = trace_constant(decouple_response->input(2)->origin());
     load_capacity = constant->Representation().to_int();

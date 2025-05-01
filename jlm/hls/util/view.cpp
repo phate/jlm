@@ -202,7 +202,7 @@ SymbolicEdge(rvsdg::input * output, rvsdg::output * input)
        + " [style=\"\", arrowhead=\"normal\", color=" + color
        + ", headlabel=<>, fontsize=10, labelangle=45, labeldistance=2.0, labelfontcolor=black, "
          "tooltip=\""
-       + output->type().debug_string() + "\"];\n";
+       + output->Type()->debug_string() + "\"];\n";
 }
 
 static bool

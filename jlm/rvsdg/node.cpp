@@ -50,8 +50,8 @@ input::divert_to(jlm::rvsdg::output * new_origin)
   if (origin() == new_origin)
     return;
 
-  if (type() != new_origin->type())
-    throw jlm::util::type_error(type().debug_string(), new_origin->type().debug_string());
+  if (*Type() != new_origin->type())
+    throw jlm::util::type_error(Type()->debug_string(), new_origin->type().debug_string());
 
   if (region() != new_origin->region())
     throw jlm::util::error("Invalid operand region.");

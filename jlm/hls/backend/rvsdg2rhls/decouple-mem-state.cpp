@@ -426,7 +426,7 @@ follow_state_edge(
 void
 convert_loop_state_to_lcb(rvsdg::input * loop_state_input)
 {
-  JLM_ASSERT(rvsdg::is<rvsdg::StateType>(loop_state_input->type()));
+  JLM_ASSERT(rvsdg::is<rvsdg::StateType>(loop_state_input->Type()));
   JLM_ASSERT(rvsdg::TryGetOwnerNode<loop_node>(*loop_state_input));
   auto si = util::AssertedCast<rvsdg::StructuralInput>(loop_state_input);
   auto arg = si->arguments.begin().ptr();
