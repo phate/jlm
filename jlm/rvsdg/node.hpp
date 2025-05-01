@@ -867,8 +867,8 @@ private:
 /**
  * \brief Checks if this is an input to a node of specified type.
  *
- * \tparam NodeType
- *   The node type to be matched against.
+ * \tparam TNodeType
+ *   The node type to be matched against. The default type is \ref Node.
  *
  * \param input
  *   Input to be checked.
@@ -884,14 +884,14 @@ private:
  *
  * See \ref def_use_inspection.
  */
-template<typename NodeType>
-inline NodeType *
+template<typename TNodeType = Node>
+TNodeType *
 TryGetOwnerNode(const rvsdg::input & input) noexcept
 {
   auto owner = input.GetOwner();
   if (const auto node = std::get_if<Node *>(&owner))
   {
-    return dynamic_cast<NodeType *>(*node);
+    return dynamic_cast<TNodeType *>(*node);
   }
   else
   {
@@ -902,8 +902,8 @@ TryGetOwnerNode(const rvsdg::input & input) noexcept
 /**
  * \brief Checks if this is an output to a node of specified type.
  *
- * \tparam NodeType
- *   The node type to be matched against.
+ * \tparam TNodeType
+ *   The node type to be matched against. The default type is \ref Node.
  *
  * \param output
  *   Output to be checked.
@@ -919,14 +919,14 @@ TryGetOwnerNode(const rvsdg::input & input) noexcept
  *
  * See \ref def_use_inspection.
  */
-template<typename NodeType>
-inline NodeType *
+template<typename TNodeType = Node>
+TNodeType *
 TryGetOwnerNode(const rvsdg::output & output) noexcept
 {
   auto owner = output.GetOwner();
   if (const auto node = std::get_if<Node *>(&owner))
   {
-    return dynamic_cast<NodeType *>(*node);
+    return dynamic_cast<TNodeType *>(*node);
   }
   else
   {
@@ -937,8 +937,8 @@ TryGetOwnerNode(const rvsdg::output & output) noexcept
 /**
  * \brief Asserts that this is an input to a node of specified type.
  *
- * \tparam NodeType
- *   The node type to be matched against.
+ * \tparam TNodeType
+ *   The node type to be matched against. The default type is \ref Node.
  *
  * \param input
  *   Input to be checked.
@@ -952,14 +952,14 @@ TryGetOwnerNode(const rvsdg::output & output) noexcept
  *
  * See \ref def_use_inspection.
  */
-template<typename NodeType>
-inline NodeType &
+template<typename TNodeType = Node>
+TNodeType &
 AssertGetOwnerNode(const rvsdg::input & input)
 {
-  auto node = TryGetOwnerNode<NodeType>(input);
+  auto node = TryGetOwnerNode<TNodeType>(input);
   if (!node)
   {
-    throw std::logic_error(std::string("expected node of type ") + typeid(NodeType).name());
+    throw std::logic_error(std::string("expected node of type ") + typeid(TNodeType).name());
   }
   return *node;
 }
@@ -967,8 +967,8 @@ AssertGetOwnerNode(const rvsdg::input & input)
 /**
  * \brief Asserts that this is an output of a node of specified type.
  *
- * \tparam NodeType
- *   The node type to be matched against.
+ * \tparam TNodeType
+ *   The node type to be matched against. The default type is \ref Node.
  *
  * \param output
  *   Output to be checked.
@@ -982,14 +982,14 @@ AssertGetOwnerNode(const rvsdg::input & input)
  *
  * See \ref def_use_inspection.
  */
-template<typename NodeType>
-inline NodeType &
+template<typename TNodeType = Node>
+TNodeType &
 AssertGetOwnerNode(const rvsdg::output & output)
 {
-  auto node = TryGetOwnerNode<NodeType>(output);
+  auto node = TryGetOwnerNode<TNodeType>(output);
   if (!node)
   {
-    throw std::logic_error(std::string("expected node of type ") + typeid(NodeType).name());
+    throw std::logic_error(std::string("expected node of type ") + typeid(TNodeType).name());
   }
   return *node;
 }
