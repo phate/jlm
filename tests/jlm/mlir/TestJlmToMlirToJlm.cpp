@@ -384,7 +384,7 @@ TestSext()
 
     // Create sext operation
     auto sextOp = jlm::llvm::sext_op::create((size_t)64, bitsArgument);
-    auto node = jlm::rvsdg::output::GetNode(*sextOp);
+    auto node = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*sextOp);
     assert(node);
 
     lambda->finalize({});

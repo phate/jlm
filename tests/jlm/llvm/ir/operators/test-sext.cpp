@@ -34,13 +34,15 @@ test_bitunary_reduction()
   view(graph, stdout);
 
   // Act
-  ReduceNode<sext_op>(NormalizeUnaryOperation, *jlm::rvsdg::output::GetNode(*ex.origin()));
+  ReduceNode<sext_op>(
+      NormalizeUnaryOperation,
+      *jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*ex.origin()));
   graph.PruneNodes();
 
   view(graph, stdout);
 
   // Assert
-  assert(is<bitnot_op>(jlm::rvsdg::output::GetNode(*ex.origin())));
+  assert(is<bitnot_op>(jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*ex.origin())));
 }
 
 static void
@@ -64,13 +66,15 @@ test_bitbinary_reduction()
   view(graph, stdout);
 
   // Act
-  ReduceNode<sext_op>(NormalizeUnaryOperation, *jlm::rvsdg::output::GetNode(*ex.origin()));
+  ReduceNode<sext_op>(
+      NormalizeUnaryOperation,
+      *jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*ex.origin()));
   graph.PruneNodes();
 
   view(graph, stdout);
 
   // Assert
-  assert(is<bitadd_op>(jlm::rvsdg::output::GetNode(*ex.origin())));
+  assert(is<bitadd_op>(jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*ex.origin())));
 }
 
 static void
@@ -93,7 +97,7 @@ test_inverse_reduction()
   view(graph, stdout);
 
   // Act
-  ReduceNode<sext_op>(NormalizeUnaryOperation, *jlm::rvsdg::output::GetNode(*ex.origin()));
+  ReduceNode<sext_op>(NormalizeUnaryOperation, *jlm::rvsdg::TryGetOwnerNode<Node>(*ex.origin()));
   graph.PruneNodes();
 
   view(graph, stdout);

@@ -214,7 +214,13 @@ DeadNodeElimination::MarkOutput(const jlm::rvsdg::output & output)
 
   if (auto gamma = rvsdg::TryGetRegionParentNode<rvsdg::GammaNode>(output))
   {
-    MarkOutput(*gamma->MapBranchArgumentEntryVar(output).input->origin());
+    auto external_origin = std::visit(
+        [](const auto & rolevar) -> rvsdg::output *
+        {
+          return rolevar.input->origin();
+        },
+        gamma->MapBranchArgument(output));
+    MarkOutput(*external_origin);
     return;
   }
 
@@ -399,20 +405,16 @@ DeadNodeElimination::SweepStructuralNode(rvsdg::StructuralNode & node) const
 void
 DeadNodeElimination::SweepGamma(rvsdg::GammaNode & gammaNode) const
 {
-  // Remove dead outputs and results
-  for (size_t n = gammaNode.noutputs() - 1; n != static_cast<size_t>(-1); n--)
+  // Remove dead exit vars.
+  std::vector<rvsdg::GammaNode::ExitVar> deadExitVars;
+  for (const auto & exitvar : gammaNode.GetExitVars())
   {
-    if (Context_->IsAlive(*gammaNode.output(n)))
+    if (!Context_->IsAlive(*exitvar.output))
     {
-      continue;
+      deadExitVars.push_back(exitvar);
     }
-
-    for (size_t r = 0; r < gammaNode.nsubregions(); r++)
-    {
-      gammaNode.subregion(r)->RemoveResult(n);
-    }
-    gammaNode.RemoveOutput(n);
   }
+  gammaNode.RemoveExitVars(deadExitVars);
 
   // Sweep gamma subregions
   for (size_t r = 0; r < gammaNode.nsubregions(); r++)
@@ -420,29 +422,23 @@ DeadNodeElimination::SweepGamma(rvsdg::GammaNode & gammaNode) const
     SweepRegion(*gammaNode.subregion(r));
   }
 
-  // Remove dead arguments and inputs
-  for (size_t n = gammaNode.ninputs() - 1; n >= 1; n--)
+  // Remove dead entry vars.
+  std::vector<rvsdg::GammaNode::EntryVar> deadEntryVars;
+  for (const auto & entryvar : gammaNode.GetEntryVars())
   {
-    auto input = gammaNode.input(n);
-
-    bool alive = false;
-    for (auto & argument : input->arguments)
-    {
-      if (Context_->IsAlive(argument))
-      {
-        alive = true;
-        break;
-      }
-    }
+    bool alive = std::any_of(
+        entryvar.branchArgument.begin(),
+        entryvar.branchArgument.end(),
+        [this](const rvsdg::output * arg)
+        {
+          return Context_->IsAlive(*arg);
+        });
     if (!alive)
     {
-      for (size_t r = 0; r < gammaNode.nsubregions(); r++)
-      {
-        gammaNode.subregion(r)->RemoveArgument(n - 1);
-      }
-      gammaNode.RemoveInput(n);
+      deadEntryVars.push_back(entryvar);
     }
   }
+  gammaNode.RemoveEntryVars(deadEntryVars);
 }
 
 void

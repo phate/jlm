@@ -318,7 +318,11 @@ get_entryvar(jlm::rvsdg::output * origin, rvsdg::GammaNode * gamma)
   {
     if (rvsdg::TryGetOwnerNode<rvsdg::GammaNode>(*user) == gamma)
     {
-      return gamma->MapInputEntryVar(*user);
+      auto rolevar = gamma->MapInput(*user);
+      if (auto entryvar = std::get_if<rvsdg::GammaNode::EntryVar>(&rolevar))
+      {
+        return *entryvar;
+      }
     }
   }
   return gamma->AddEntryVar(origin);
@@ -329,7 +333,7 @@ merge_gamma(rvsdg::GammaNode * gamma)
 {
   for (auto user : *gamma->predicate()->origin())
   {
-    auto other_gamma = dynamic_cast<rvsdg::GammaNode *>(rvsdg::input::GetNode(*user));
+    auto other_gamma = rvsdg::TryGetOwnerNode<rvsdg::GammaNode>(*user);
     if (other_gamma && gamma != other_gamma)
     {
       // other gamma depending on same predicate
