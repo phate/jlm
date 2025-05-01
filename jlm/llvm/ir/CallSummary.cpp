@@ -47,9 +47,13 @@ ComputeCallSummary(const rvsdg::LambdaNode & lambdaNode)
 
     if (auto gammaNode = rvsdg::TryGetOwnerNode<rvsdg::GammaNode>(*input))
     {
-      for (auto & argument : gammaNode->MapInputEntryVar(*input).branchArgument)
+      auto rolevar = gammaNode->MapInput(*input);
+      if (auto entryvar = std::get_if<rvsdg::GammaNode::EntryVar>(&rolevar))
       {
-        worklist.insert(worklist.end(), argument->begin(), argument->end());
+        for (auto & argument : entryvar->branchArgument)
+        {
+          worklist.insert(worklist.end(), argument->begin(), argument->end());
+        }
       }
       continue;
     }
