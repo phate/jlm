@@ -37,7 +37,7 @@ find_load_store(
     std::vector<jlm::rvsdg::SimpleNode *> & store_nodes,
     std::unordered_set<jlm::rvsdg::output *> & visited)
 {
-  if (!jlm::rvsdg::is<const jlm::llvm::MemoryStateType>(op->Type()))
+  if (!jlm::rvsdg::is<jlm::llvm::MemoryStateType>(op->Type()))
   {
     return;
   }

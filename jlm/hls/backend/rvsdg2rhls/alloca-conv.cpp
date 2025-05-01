@@ -37,7 +37,7 @@ private:
   void
   trace(jlm::rvsdg::output * op)
   {
-    if (!rvsdg::is<const llvm::PointerType>(op->Type()))
+    if (!rvsdg::is<llvm::PointerType>(op->Type()))
     {
       // only process pointer outputs
       return;

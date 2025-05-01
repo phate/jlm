@@ -168,7 +168,7 @@ instrument_ref(
             dynamic_cast<const jlm::llvm::LoadNonVolatileOperation *>(&(node->GetOperation())))
     {
       auto addr = node->input(0)->origin();
-      JLM_ASSERT(rvsdg::is<const jlm::llvm::PointerType>(addr->Type()));
+      JLM_ASSERT(rvsdg::is<jlm::llvm::PointerType>(addr->Type()));
       size_t bitWidth = BaseHLS::JlmSize(&*loadOp->GetLoadedType());
       int log2Bytes = log2(bitWidth / 8);
       auto & widthNode = llvm::IntegerConstantOperation::Create(*region, 64, log2Bytes);
@@ -198,7 +198,7 @@ instrument_ref(
       JLM_ASSERT(constant_operation->Representation().to_uint() == 1);
       jlm::rvsdg::output * addr = node->output(0);
       // ensure that the alloca is an array type
-      JLM_ASSERT(jlm::rvsdg::is<const llvm::PointerType>(addr->Type()));
+      JLM_ASSERT(jlm::rvsdg::is<llvm::PointerType>(addr->Type()));
       auto at = dynamic_cast<const llvm::ArrayType *>(&ao->value_type());
       JLM_ASSERT(at);
       auto & sizeNode =
@@ -226,7 +226,7 @@ instrument_ref(
             dynamic_cast<const jlm::llvm::StoreNonVolatileOperation *>(&(node->GetOperation())))
     {
       auto addr = node->input(0)->origin();
-      JLM_ASSERT(rvsdg::is<const jlm::llvm::PointerType>(addr->Type()));
+      JLM_ASSERT(rvsdg::is<jlm::llvm::PointerType>(addr->Type()));
       auto bitWidth = JlmSize(&so->GetStoredType());
       int log2Bytes = log2(bitWidth / 8);
       auto & widthNode = llvm::IntegerConstantOperation::Create(*region, 64, log2Bytes);

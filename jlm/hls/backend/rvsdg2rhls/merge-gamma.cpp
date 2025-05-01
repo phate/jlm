@@ -29,7 +29,7 @@ eliminate_gamma_ctl(rvsdg::GammaNode * gamma)
   for (size_t i = 0; i < gamma->noutputs(); ++i)
   {
     auto o = gamma->output(i);
-    if (rvsdg::is<const rvsdg::ControlType>(o->Type()))
+    if (rvsdg::is<rvsdg::ControlType>(o->Type()))
     {
       bool eliminate = true;
       for (size_t j = 0; j < gamma->nsubregions(); ++j)
@@ -73,7 +73,7 @@ fix_match_inversion(rvsdg::GammaNode * old_gamma)
   for (size_t i = 0; i < old_gamma->noutputs(); ++i)
   {
     auto o = old_gamma->output(i);
-    if (rvsdg::is<const rvsdg::ControlType>(o->Type()))
+    if (rvsdg::is<rvsdg::ControlType>(o->Type()))
     {
       ctl_cnt++;
       swapped = true;

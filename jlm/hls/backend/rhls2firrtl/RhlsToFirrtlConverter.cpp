@@ -1637,7 +1637,7 @@ RhlsToFirrtlConverter::MlirGenMem(const jlm::rvsdg::SimpleNode * node)
     {
       bitWidth = bitType->nbits();
     }
-    else if (rvsdg::is<const llvm::PointerType>(node->output(0)->Type()))
+    else if (rvsdg::is<llvm::PointerType>(node->output(0)->Type()))
     {
       bitWidth = GetPointerSizeInBits();
     }
