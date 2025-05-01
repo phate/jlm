@@ -210,16 +210,20 @@ trace_edge(
       new_edge = gammaNode->AddExitVar(ip.branchArgument).output;
       new_next->divert_to(new_edge);
 
-      auto entryvar = gammaNode->MapInputEntryVar(*user);
-      for (size_t i = 0; i < gammaNode->nsubregions(); ++i)
+      auto rolevar = gammaNode->MapInput(*user);
+
+      if (auto entryvar = std::get_if<rvsdg::GammaNode::EntryVar>(&rolevar))
       {
-        auto subres = trace_edge(
-            entryvar.branchArgument[i],
-            ip.branchArgument[i],
-            load_nodes,
-            store_nodes,
-            decouple_nodes);
-        common_edge = subres->output();
+        for (size_t i = 0; i < gammaNode->nsubregions(); ++i)
+        {
+          auto subres = trace_edge(
+              entryvar->branchArgument[i],
+              ip.branchArgument[i],
+              load_nodes,
+              store_nodes,
+              decouple_nodes);
+          common_edge = subres->output();
+        }
       }
     }
     else if (auto theta = rvsdg::TryGetOwnerNode<rvsdg::ThetaNode>(*user))

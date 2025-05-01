@@ -64,10 +64,9 @@ is_applicable(const rvsdg::ThetaNode * theta)
     if (user == theta->predicate())
       continue;
 
-    if (!rvsdg::is<rvsdg::GammaOperation>(rvsdg::input::GetNode(*user)))
+    gnode = rvsdg::TryGetOwnerNode<rvsdg::GammaNode>(*user);
+    if (!gnode)
       return nullptr;
-
-    gnode = dynamic_cast<rvsdg::GammaNode *>(rvsdg::input::GetNode(*user));
   }
   // only apply tgi if theta is a converted for loop - i.e. everything but the predicate is
   // contained in the gamma

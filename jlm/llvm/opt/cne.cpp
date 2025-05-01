@@ -236,8 +236,18 @@ congruent(jlm::rvsdg::output * o1, jlm::rvsdg::output * o2, vset & vs, cnectx & 
     if (auto g2 = rvsdg::TryGetRegionParentNode<rvsdg::GammaNode>(*o2))
     {
       JLM_ASSERT(g1 == g2);
-      auto origin1 = g1->MapBranchArgumentEntryVar(*o1).input->origin();
-      auto origin2 = g2->MapBranchArgumentEntryVar(*o2).input->origin();
+      auto origin1 = std::visit(
+          [](const auto & rolevar) -> rvsdg::output *
+          {
+            return rolevar.input->origin();
+          },
+          g1->MapBranchArgument(*o1));
+      auto origin2 = std::visit(
+          [](const auto & rolevar) -> rvsdg::output *
+          {
+            return rolevar.input->origin();
+          },
+          g2->MapBranchArgument(*o2));
       return congruent(origin1, origin2, vs, ctx);
     }
   }

@@ -6,6 +6,7 @@
 #include "jlm/rvsdg/lambda.hpp"
 #include <jlm/hls/backend/rvsdg2rhls/add-sinks.hpp>
 #include <jlm/hls/ir/hls.hpp>
+#include <jlm/rvsdg/lambda.hpp>
 #include <jlm/rvsdg/traverser.hpp>
 
 namespace jlm::hls
@@ -48,7 +49,8 @@ add_sinks(llvm::RvsdgModule & rm)
 {
   auto & graph = rm.Rvsdg();
   auto root = &graph.GetRootRegion();
-  auto lambda = dynamic_cast<rvsdg::LambdaNode *>(root->Nodes().begin().ptr());
+  JLM_ASSERT(root->nnodes() == 1);
+  auto lambda = util::AssertedCast<rvsdg::LambdaNode>(root->Nodes().begin().ptr());
   add_sinks(lambda->subregion());
 }
 

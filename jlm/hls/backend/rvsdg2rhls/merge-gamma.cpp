@@ -103,7 +103,7 @@ bit_type_to_ctl_type(rvsdg::GammaNode * old_gamma)
       new_outputs.push_back(no);
     }
     auto match_replacement = old_gamma->AddExitVar(new_outputs).output;
-    auto match_node = rvsdg::input::GetNode(*user);
+    auto match_node = rvsdg::TryGetOwnerNode<rvsdg::Node>(*user);
     match_node->output(0)->divert_users(match_replacement);
     // TODO: divert match users
     remove(match_node);
@@ -318,7 +318,11 @@ get_entryvar(jlm::rvsdg::output * origin, rvsdg::GammaNode * gamma)
   {
     if (rvsdg::TryGetOwnerNode<rvsdg::GammaNode>(*user) == gamma)
     {
-      return gamma->MapInputEntryVar(*user);
+      auto rolevar = gamma->MapInput(*user);
+      if (auto entryvar = std::get_if<rvsdg::GammaNode::EntryVar>(&rolevar))
+      {
+        return *entryvar;
+      }
     }
   }
   return gamma->AddEntryVar(origin);
@@ -329,7 +333,7 @@ merge_gamma(rvsdg::GammaNode * gamma)
 {
   for (auto user : *gamma->predicate()->origin())
   {
-    auto other_gamma = dynamic_cast<rvsdg::GammaNode *>(rvsdg::input::GetNode(*user));
+    auto other_gamma = rvsdg::TryGetOwnerNode<rvsdg::GammaNode>(*user);
     if (other_gamma && gamma != other_gamma)
     {
       // other gamma depending on same predicate

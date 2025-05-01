@@ -1174,10 +1174,10 @@ RhlsToFirrtlConverter::MlirGenHlsLocalMem(const jlm::rvsdg::SimpleNode * node)
 {
   auto lmem_op = dynamic_cast<const local_mem_op *>(&(node->GetOperation()));
   JLM_ASSERT(lmem_op);
-  auto res_node = rvsdg::input::GetNode(**node->output(0)->begin());
+  auto res_node = rvsdg::TryGetOwnerNode<rvsdg::Node>(**node->output(0)->begin());
   auto res_op = dynamic_cast<const local_mem_resp_op *>(&res_node->GetOperation());
   JLM_ASSERT(res_op);
-  auto req_node = rvsdg::input::GetNode(**node->output(1)->begin());
+  auto req_node = rvsdg::TryGetOwnerNode<rvsdg::Node>(**node->output(1)->begin());
   auto req_op = dynamic_cast<const local_mem_req_op *>(&req_node->GetOperation());
   JLM_ASSERT(req_op);
   // Create the module and its input/output ports - we use a non-standard way here
@@ -1223,7 +1223,7 @@ RhlsToFirrtlConverter::MlirGenHlsLocalMem(const jlm::rvsdg::SimpleNode * node)
 
   auto body = module.getBodyBlock();
 
-  size_t loads = rvsdg::input::GetNode(**node->output(0)->begin())->noutputs();
+  size_t loads = rvsdg::TryGetOwnerNode<rvsdg::Node>(**node->output(0)->begin())->noutputs();
 
   // Input signals
   ::llvm::SmallVector<circt::firrtl::SubfieldOp> loadAddrReadys;
@@ -3977,10 +3977,12 @@ RhlsToFirrtlConverter::GetModuleName(const rvsdg::Node * node)
     append.append(std::to_string(
         std::dynamic_pointer_cast<const llvm::ArrayType>(op->result(0))->nelements()));
     append.append("_L");
-    size_t loads = rvsdg::input::GetNode(**node->output(0)->begin())->noutputs();
+    size_t loads = rvsdg::TryGetOwnerNode<rvsdg::Node>(**node->output(0)->begin())->noutputs();
     append.append(std::to_string(loads));
     append.append("_S");
-    size_t stores = (rvsdg::input::GetNode(**node->output(1)->begin())->ninputs() - 1 - loads) / 2;
+    size_t stores =
+        (rvsdg::TryGetOwnerNode<rvsdg::Node>(**node->output(1)->begin())->ninputs() - 1 - loads)
+        / 2;
     append.append(std::to_string(stores));
   }
   if (dynamic_cast<const loop_op *>(&node->GetOperation()))
