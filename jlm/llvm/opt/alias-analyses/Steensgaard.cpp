@@ -496,7 +496,7 @@ public:
   static std::unique_ptr<Location>
   Create(const GraphImport & graphImport)
   {
-    JLM_ASSERT(is<PointerType>(graphImport.Type()) || is<rvsdg::FunctionType>(graphImport.type()));
+    JLM_ASSERT(is<PointerType>(graphImport.Type()) || is<rvsdg::FunctionType>(graphImport.Type()));
 
     // If the imported memory location is a pointer type or contains a pointer type, then these
     // pointers can point to values that escaped this module.
