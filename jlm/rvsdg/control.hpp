@@ -219,7 +219,7 @@ public:
       uint64_t defaultAlternative,
       size_t numAlternatives)
   {
-    auto bitType = CheckAndExtractBitType(predicate.type());
+    auto bitType = CheckAndExtractBitType(*predicate.Type());
     return CreateOpNode<match_op>(
                { &predicate },
                bitType.nbits(),

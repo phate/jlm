@@ -272,7 +272,7 @@ TestLoadStore()
   assert(lambdaRegion->nresults() == 3);
 
   // Memory state
-  std::cout << lambdaRegion->result(0)->origin()->type().debug_string() << std::endl;
+  std::cout << lambdaRegion->result(0)->origin()->Type()->debug_string() << std::endl;
   assert(is<MemoryStateType>(lambdaRegion->result(0)->origin()->type()));
 
   // Store Node

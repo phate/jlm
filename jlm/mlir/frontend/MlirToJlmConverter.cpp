@@ -416,7 +416,7 @@ MlirToJlmConverter::ConvertOperation(
 
   if (auto castedOp = ::mlir::dyn_cast<::mlir::arith::ExtUIOp>(&mlirOperation))
   {
-    auto st = dynamic_cast<const jlm::rvsdg::bittype *>(&inputs[0]->type());
+    auto st = std::dynamic_pointer_cast<const rvsdg::bittype>(inputs[0]->Type());
     if (!st)
       JLM_UNREACHABLE("Expected bitstring type for ExtUIOp operation.");
     ::mlir::Type type = castedOp.getType();

@@ -1072,7 +1072,7 @@ MemoryStateEncoder::ShouldHandle(const rvsdg::SimpleNode & simpleNode) noexcept
   for (size_t n = 0; n < simpleNode.noutputs(); n++)
   {
     auto output = simpleNode.output(n);
-    if (is<MemoryStateType>(output->type()))
+    if (is<MemoryStateType>(output->Type()))
     {
       return true;
     }

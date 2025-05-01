@@ -260,7 +260,7 @@ TestLoad()
       assert(is<jlm::llvm::MemoryStateType>(convertedLoad->output(1)->type()));
 
       auto outputBitType =
-          dynamic_cast<const jlm::rvsdg::bittype *>(&convertedLoad->output(0)->type());
+          std::dynamic_pointer_cast<const jlm::rvsdg::bittype>(convertedLoad->output(0)->Type());
       assert(outputBitType->nbits() == 32);
     }
   }

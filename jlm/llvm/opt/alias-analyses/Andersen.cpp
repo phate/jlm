@@ -703,7 +703,7 @@ Andersen::AnalyzeLoad(const rvsdg::SimpleNode & node)
 
   const auto addressRegisterPO = Set_->GetRegisterPointerObject(addressRegister);
 
-  if (IsOrContainsPointerType(outputRegister.type()))
+  if (IsOrContainsPointerType(*outputRegister.Type()))
   {
     const auto outputRegisterPO = Set_->CreateRegisterPointerObject(outputRegister);
     Constraints_->AddConstraint(LoadConstraint(outputRegisterPO, addressRegisterPO));
@@ -723,7 +723,7 @@ Andersen::AnalyzeStore(const rvsdg::SimpleNode & node)
   const auto addressRegisterPO = Set_->GetRegisterPointerObject(addressRegister);
 
   // If the written value is not a pointer, be conservative and mark the address
-  if (IsOrContainsPointerType(valueRegister.type()))
+  if (IsOrContainsPointerType(*valueRegister.Type()))
   {
     const auto valueRegisterPO = Set_->GetRegisterPointerObject(valueRegister);
     Constraints_->AddConstraint(StoreConstraint(addressRegisterPO, valueRegisterPO));
@@ -747,7 +747,7 @@ Andersen::AnalyzeCall(const rvsdg::SimpleNode & callNode)
   for (size_t n = 0; n < callNode.noutputs(); n++)
   {
     const auto & outputRegister = *callNode.output(n);
-    if (IsOrContainsPointerType(outputRegister.type()))
+    if (IsOrContainsPointerType(*outputRegister.Type()))
       (void)Set_->CreateRegisterPointerObject(outputRegister);
   }
 
@@ -781,7 +781,7 @@ Andersen::AnalyzeBitcast(const rvsdg::SimpleNode & node)
   const auto & outputRegister = *node.output(0);
 
   JLM_ASSERT(!IsAggregateType(inputRegister.type()) && !IsAggregateType(outputRegister.type()));
-  if (!IsOrContainsPointerType(inputRegister.type()))
+  if (!IsOrContainsPointerType(*inputRegister.Type()))
     return;
 
   // If the input is a pointer type, the output must also be a pointer type
@@ -835,7 +835,7 @@ Andersen::AnalyzeUndef(const rvsdg::SimpleNode & node)
   JLM_ASSERT(is<UndefValueOperation>(&node));
   const auto & output = *node.output(0);
 
-  if (!IsOrContainsPointerType(output.type()))
+  if (!IsOrContainsPointerType(*output.Type()))
     return;
 
   // UndefValue cannot point to any memory location. We therefore only insert a register node for
@@ -870,7 +870,7 @@ Andersen::AnalyzeConstantArray(const rvsdg::SimpleNode & node)
 {
   JLM_ASSERT(is<ConstantArrayOperation>(&node));
 
-  if (!IsOrContainsPointerType(node.output(0)->type()))
+  if (!IsOrContainsPointerType(*node.output(0)->Type()))
     return;
 
   // Make the resulting array point to everything its members are pointing to
@@ -892,7 +892,7 @@ Andersen::AnalyzeConstantStruct(const rvsdg::SimpleNode & node)
 {
   JLM_ASSERT(is<ConstantStruct>(&node));
 
-  if (!IsOrContainsPointerType(node.output(0)->type()))
+  if (!IsOrContainsPointerType(*node.output(0)->Type()))
     return;
 
   // Make the resulting struct point to everything its members are pointing to
@@ -902,7 +902,7 @@ Andersen::AnalyzeConstantStruct(const rvsdg::SimpleNode & node)
   for (size_t n = 0; n < node.ninputs(); n++)
   {
     const auto & inputRegister = *node.input(n)->origin();
-    if (!IsOrContainsPointerType(inputRegister.type()))
+    if (!IsOrContainsPointerType(*inputRegister.Type()))
       continue;
 
     const auto inputRegisterPO = Set_->GetRegisterPointerObject(inputRegister);
@@ -916,7 +916,7 @@ Andersen::AnalyzeConstantAggregateZero(const rvsdg::SimpleNode & node)
   JLM_ASSERT(is<ConstantAggregateZeroOperation>(&node));
   auto & output = *node.output(0);
 
-  if (!IsOrContainsPointerType(output.type()))
+  if (!IsOrContainsPointerType(*output.Type()))
     return;
 
   // ConstantAggregateZero cannot point to any memory location.
@@ -930,7 +930,7 @@ Andersen::AnalyzeExtractValue(const rvsdg::SimpleNode & node)
   JLM_ASSERT(is<ExtractValue>(&node));
 
   const auto & result = *node.output(0);
-  if (!IsOrContainsPointerType(result.type()))
+  if (!IsOrContainsPointerType(*result.Type()))
     return;
 
   const auto & inputRegister = *node.input(0)->origin();
@@ -1040,7 +1040,7 @@ Andersen::AnalyzeLambda(const rvsdg::LambdaNode & lambda)
   // Create Register PointerObjects for each argument of pointing type in the function
   for (auto argument : lambda.GetFunctionArguments())
   {
-    if (IsOrContainsPointerType(argument->type()))
+    if (IsOrContainsPointerType(*argument->Type()))
       (void)Set_->CreateRegisterPointerObject(*argument);
   }
 
@@ -1100,7 +1100,7 @@ Andersen::AnalyzePhi(const rvsdg::PhiNode & phi)
   // Handle context variables
   for (auto var : phi.GetContextVars())
   {
-    if (!IsOrContainsPointerType(var.inner->type()))
+    if (!IsOrContainsPointerType(*var.inner->Type()))
       continue;
 
     auto & inputRegister = *var.input->origin();
@@ -1112,7 +1112,7 @@ Andersen::AnalyzePhi(const rvsdg::PhiNode & phi)
   // Create Register PointerObjects for each fixpoint variable argument
   for (auto var : phi.GetFixVars())
   {
-    if (!IsOrContainsPointerType(var.output->type()))
+    if (!IsOrContainsPointerType(*var.output->Type()))
       continue;
 
     auto & argumentRegister = *var.recref;
@@ -1124,7 +1124,7 @@ Andersen::AnalyzePhi(const rvsdg::PhiNode & phi)
   // Handle recursive definition results
   for (auto var : phi.GetFixVars())
   {
-    if (!IsOrContainsPointerType(var.output->type()))
+    if (!IsOrContainsPointerType(*var.output->Type()))
       continue;
 
     // Make the recursion variable argument point to what the result register points to
@@ -1163,7 +1163,7 @@ Andersen::AnalyzeGamma(const rvsdg::GammaNode & gamma)
   // Handle exit variables
   for (const auto & ex : gamma.GetExitVars())
   {
-    if (!IsOrContainsPointerType(ex.output->type()))
+    if (!IsOrContainsPointerType(*ex.output->Type()))
       continue;
 
     auto & outputRegister = ex.output;
@@ -1226,7 +1226,7 @@ Andersen::AnalyzeRegion(rvsdg::Region & region)
   // Check that all region arguments of pointing types have PointerObjects
   for (size_t i = 0; i < region.narguments(); i++)
   {
-    if (IsOrContainsPointerType(region.argument(i)->type()))
+    if (IsOrContainsPointerType(*region.argument(i)->Type()))
       JLM_ASSERT(Set_->GetRegisterMap().count(region.argument(i)));
   }
 
@@ -1248,7 +1248,7 @@ Andersen::AnalyzeRegion(rvsdg::Region & region)
     // Check that all outputs with pointing types have PointerObjects created
     for (size_t i = 0; i < node->noutputs(); i++)
     {
-      if (IsOrContainsPointerType(node->output(i)->type()))
+      if (IsOrContainsPointerType(*node->output(i)->Type()))
         JLM_ASSERT(Set_->GetRegisterMap().count(node->output(i)));
     }
   }
@@ -1266,7 +1266,7 @@ Andersen::AnalyzeRvsdg(const rvsdg::Graph & graph)
     auto & argument = *util::AssertedCast<GraphImport>(rootRegion.argument(n));
 
     // Only care about imported pointer values
-    if (!IsOrContainsPointerType(argument.type()))
+    if (!IsOrContainsPointerType(*argument.Type()))
       continue;
 
     // Create a memory PointerObject representing the target of the external symbol
@@ -1286,7 +1286,7 @@ Andersen::AnalyzeRvsdg(const rvsdg::Graph & graph)
   for (size_t n = 0; n < rootRegion.nresults(); n++)
   {
     auto & escapedRegister = *rootRegion.result(n)->origin();
-    if (!IsOrContainsPointerType(escapedRegister.type()))
+    if (!IsOrContainsPointerType(*escapedRegister.Type()))
       continue;
 
     const auto escapedRegisterPO = Set_->GetRegisterPointerObject(escapedRegister);

@@ -26,7 +26,7 @@ namespace jlm::llvm::aa
 static bool
 HasOrContainsPointerType(const rvsdg::output & output)
 {
-  return IsOrContains<PointerType>(output.type()) || is<rvsdg::FunctionType>(output.type());
+  return IsOrContains<PointerType>(*output.Type()) || is<rvsdg::FunctionType>(output.Type());
 }
 
 /**
