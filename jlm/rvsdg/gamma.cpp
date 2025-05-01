@@ -94,7 +94,7 @@ is_control_constant_reducible(GammaNode * gamma)
   std::unordered_set<jlm::rvsdg::output *> outputs;
   for (const auto & exitvar : gamma->GetExitVars())
   {
-    if (!is_ctltype(exitvar.output->type()))
+    if (!is_ctltype(*exitvar.output->Type()))
       continue;
 
     size_t n;

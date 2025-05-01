@@ -44,7 +44,7 @@ public:
   void
   insert(const variable * v, rvsdg::output * o)
   {
-    JLM_ASSERT(v->type() == o->type());
+    JLM_ASSERT(v->type() == *o->Type());
     Map_[v] = o;
   }
 

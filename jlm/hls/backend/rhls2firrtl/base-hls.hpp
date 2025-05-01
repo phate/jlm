@@ -77,7 +77,7 @@ protected:
     std::vector<rvsdg::RegionArgument *> mem_resps;
     for (auto arg : lambda.subregion()->Arguments())
     {
-      if (rvsdg::is<bundletype>(arg->type()))
+      if (rvsdg::is<bundletype>(arg->Type()))
         mem_resps.push_back(arg);
     }
     return mem_resps;
@@ -114,7 +114,7 @@ protected:
     std::vector<rvsdg::RegionArgument *> args;
     for (auto argument : lambda.subregion()->Arguments())
     {
-      if (!rvsdg::is<bundletype>(argument->type()))
+      if (!rvsdg::is<bundletype>(argument->Type()))
         args.push_back(argument);
     }
     return args;
