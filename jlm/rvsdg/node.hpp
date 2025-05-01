@@ -67,12 +67,6 @@ public:
   void
   divert_to(jlm::rvsdg::output * new_origin);
 
-  [[nodiscard]] const rvsdg::Type &
-  type() const noexcept
-  {
-    return *Type();
-  }
-
   [[nodiscard]] const std::shared_ptr<const rvsdg::Type> &
   Type() const noexcept
   {

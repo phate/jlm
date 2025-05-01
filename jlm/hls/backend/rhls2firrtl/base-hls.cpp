@@ -40,7 +40,7 @@ BaseHLS::get_node_name(const jlm::rvsdg::Node * node)
     append.append("_IN");
     append.append(std::to_string(inPorts));
     append.append("_W");
-    append.append(std::to_string(JlmSize(&node->input(inPorts - 1)->type())));
+    append.append(std::to_string(JlmSize(node->input(inPorts - 1)->Type().get())));
   }
   if (outPorts)
   {

@@ -775,7 +775,7 @@ public:
   predicate() const noexcept
   {
     auto result = subregion()->result(0);
-    JLM_ASSERT(dynamic_cast<const rvsdg::ControlType *>(&result->type()));
+    JLM_ASSERT(rvsdg::is<const rvsdg::ControlType>(result->Type()));
     return result;
   }
 

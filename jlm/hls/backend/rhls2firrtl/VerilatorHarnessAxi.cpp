@@ -150,7 +150,7 @@ void tick() {
   size_t m_read = 0, m_write = 0;
   for (size_t i = 0; i < mem_reqs.size(); i++)
   {
-    const auto req_bundle = util::AssertedCast<const bundletype>(&mem_reqs[i]->type());
+    const auto req_bundle = util::AssertedCast<const bundletype>(mem_reqs[i]->Type().get());
     const auto res_bundle = util::AssertedCast<const bundletype>(mem_resps[i]->Type().get());
     auto size = JlmSize(&*res_bundle->get_element_type("data")) / 8;
     const auto has_write = req_bundle->get_element_type("write") != nullptr;
@@ -195,7 +195,7 @@ void tick() {
   m_write = 0;
   for (size_t i = 0; i < mem_reqs.size(); i++)
   {
-    const auto bundle = util::AssertedCast<const bundletype>(&mem_reqs[i]->type());
+    const auto bundle = util::AssertedCast<const bundletype>(mem_reqs[i]->Type().get());
     const auto has_write = bundle->get_element_type("write") != nullptr;
     if (has_write)
     {

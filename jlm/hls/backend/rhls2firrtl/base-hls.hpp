@@ -95,7 +95,7 @@ protected:
     std::vector<rvsdg::RegionResult *> mem_resps;
     for (auto result : lambda.subregion()->Results())
     {
-      if (rvsdg::is<bundletype>(result->type()))
+      if (rvsdg::is<bundletype>(result->Type()))
         mem_resps.push_back(result);
     }
     return mem_resps;
@@ -132,7 +132,7 @@ protected:
     std::vector<rvsdg::RegionResult *> results;
     for (auto result : lambda.subregion()->Results())
     {
-      if (!rvsdg::is<bundletype>(result->type()))
+      if (!rvsdg::is<bundletype>(result->Type()))
         results.push_back(result);
     }
     return results;

@@ -249,7 +249,7 @@ is_load_store_reducible(
   // operations instead. For example, a store of a 32 bit integer followed by a load of a 8 bit
   // integer can be converted to a trunc operation.
   auto loadedValueType = loadOperation.GetLoadedType();
-  auto & storedValueType = StoreNonVolatileOperation::StoredValueInput(*storeNode).type();
+  auto & storedValueType = *StoreNonVolatileOperation::StoredValueInput(*storeNode).Type();
   if (*loadedValueType != storedValueType)
   {
     return false;
