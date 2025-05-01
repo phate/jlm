@@ -463,7 +463,7 @@ static void posedge() {
   // Emit calls to MemoryQueue::accept_request()
   for (size_t i = 0; i < mem_reqs.size(); i++)
   {
-    const auto req_bt = util::AssertedCast<const bundletype>(&mem_reqs[i]->type());
+    const auto req_bt = util::AssertedCast<const bundletype>(mem_reqs[i]->Type().get());
     const auto has_write = req_bt->get_element_type("write") != nullptr;
 
     cpp << "    memory_queues[" << i << "].accept_request(";
