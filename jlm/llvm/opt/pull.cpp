@@ -63,7 +63,7 @@ single_successor(const rvsdg::Node * node)
   for (size_t n = 0; n < node->noutputs(); n++)
   {
     for (const auto & user : *node->output(n))
-      successors.insert(rvsdg::input::GetNode(*user));
+      successors.insert(rvsdg::TryGetOwnerNode<rvsdg::Node>(*user));
   }
 
   return successors.size() == 1;
@@ -92,7 +92,7 @@ pullin_node(rvsdg::GammaNode * gamma, rvsdg::Node * node)
     {
       for (const auto & user : *node->output(o))
       {
-        auto entryvar = gamma->MapInputEntryVar(*user);
+        auto entryvar = std::get<rvsdg::GammaNode::EntryVar>(gamma->MapInput(*user));
         entryvar.branchArgument[r]->divert_users(copy->output(o));
       }
     }
@@ -110,7 +110,7 @@ cleanup(rvsdg::GammaNode * gamma, rvsdg::Node * node)
   {
     for (auto user : *node->output(n))
     {
-      entryvars.push_back(gamma->MapInputEntryVar(*user));
+      entryvars.push_back(std::get<rvsdg::GammaNode::EntryVar>(gamma->MapInput(*user)));
     }
   }
   gamma->RemoveEntryVars(entryvars);
@@ -154,7 +154,7 @@ pullin_bottom(rvsdg::GammaNode * gamma)
     auto output = gamma->output(n);
     for (const auto & user : *output)
     {
-      auto node = rvsdg::input::GetNode(*user);
+      auto node = rvsdg::TryGetOwnerNode<rvsdg::Node>(*user);
       if (node && node->depth() == gamma->depth() + 1)
         workset.insert(node);
     }
@@ -197,7 +197,7 @@ pullin_bottom(rvsdg::GammaNode * gamma)
       auto output = node->output(n);
       for (const auto & user : *output)
       {
-        auto tmp = rvsdg::input::GetNode(*user);
+        auto tmp = rvsdg::TryGetOwnerNode<rvsdg::Node>(*user);
         if (tmp && tmp->depth() == node->depth() + 1)
           workset.insert(tmp);
       }
@@ -227,11 +227,33 @@ is_used_in_nsubregions(const rvsdg::GammaNode * gamma, const rvsdg::Node * node)
   std::unordered_set<rvsdg::Region *> subregions;
   for (const auto & input : inputs)
   {
-    for (const auto & argument : gamma->MapInputEntryVar(*input).branchArgument)
-    {
-      if (argument->nusers() != 0)
-        subregions.insert(argument->region());
-    }
+    std::visit(
+        [&subregions](const auto & rolevar)
+        {
+          if constexpr (std::is_same<std::decay_t<decltype(rolevar)>, rvsdg::GammaNode::EntryVar>())
+          {
+            for (const auto & argument : rolevar.branchArgument)
+            {
+              if (argument->nusers() != 0)
+                subregions.insert(argument->region());
+            }
+          }
+          else if constexpr (std::is_same<
+                                 std::decay_t<decltype(rolevar)>,
+                                 rvsdg::GammaNode::MatchVar>())
+          {
+            for (const auto & argument : rolevar.matchContent)
+            {
+              if (argument->nusers() != 0)
+                subregions.insert(argument->region());
+            }
+          }
+          else
+          {
+            JLM_UNREACHABLE("A gamma input must either be the match variable or an entry variable");
+          }
+        },
+        gamma->MapInput(*input));
   }
 
   return subregions.size();

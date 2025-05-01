@@ -361,7 +361,8 @@ TestThetaLoad()
   // Assert
   jlm::rvsdg::view(rvsdgModule->Rvsdg(), stdout);
   auto * const entryMemoryStateSplitInput = *lambdaRegion->argument(4)->begin();
-  auto * entryMemoryStateSplitNode = jlm::rvsdg::input::GetNode(*entryMemoryStateSplitInput);
+  auto * entryMemoryStateSplitNode =
+      jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(*entryMemoryStateSplitInput);
   assert(is<LambdaEntryMemoryStateSplitOperation>(entryMemoryStateSplitNode));
   auto exitMemoryStateMergeNode =
       jlm::util::AssertedCast<jlm::rvsdg::node_output>(lambdaRegion->result(1)->origin())->node();
@@ -488,7 +489,8 @@ TestThetaStore()
   // Assert
   jlm::rvsdg::view(rvsdgModule->Rvsdg(), stdout);
   auto * const entryMemoryStateSplitInput = *lambdaRegion->argument(5)->begin();
-  auto * entryMemoryStateSplitNode = jlm::rvsdg::input::GetNode(*entryMemoryStateSplitInput);
+  auto * entryMemoryStateSplitNode =
+      jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(*entryMemoryStateSplitInput);
   assert(is<LambdaEntryMemoryStateSplitOperation>(entryMemoryStateSplitNode));
   auto exitMemoryStateMergeNode =
       jlm::util::AssertedCast<jlm::rvsdg::node_output>(lambdaRegion->result(0)->origin())->node();

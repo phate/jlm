@@ -196,7 +196,12 @@ CallOperation::TraceFunctionInput(const rvsdg::SimpleNode & callNode)
 
     if (auto gamma = rvsdg::TryGetRegionParentNode<rvsdg::GammaNode>(*origin))
     {
-      origin = gamma->MapBranchArgumentEntryVar(*origin).input->origin();
+      origin = std::visit(
+          [](const auto & rolevar) -> rvsdg::output *
+          {
+            return rolevar.input->origin();
+          },
+          gamma->MapBranchArgument(*origin));
       continue;
     }
 
