@@ -662,7 +662,7 @@ Andersen::AnalyzeSimpleNode(const rvsdg::SimpleNode & node)
     // This node operation is unknown, make sure it doesn't consume any pointers
     for (size_t i = 0; i < node.ninputs(); i++)
     {
-      JLM_ASSERT(!IsOrContainsPointerType(node.input(i)->type()));
+      JLM_ASSERT(!IsOrContainsPointerType(*node.input(i)->Type()));
     }
   }
 }
@@ -951,7 +951,7 @@ Andersen::AnalyzeValist(const rvsdg::SimpleNode & node)
 
   for (size_t i = 0; i < node.ninputs(); i++)
   {
-    if (!IsOrContainsPointerType(node.input(i)->type()))
+    if (!IsOrContainsPointerType(*node.input(i)->Type()))
       continue;
 
     const auto & inputRegister = *node.input(i)->origin();
@@ -1028,7 +1028,7 @@ Andersen::AnalyzeLambda(const rvsdg::LambdaNode & lambda)
   // Handle context variables
   for (const auto & cv : lambda.GetContextVars())
   {
-    if (!IsOrContainsPointerType(cv.input->type()))
+    if (!IsOrContainsPointerType(*cv.input->Type()))
       continue;
 
     auto & inputRegister = *cv.input->origin();
@@ -1061,7 +1061,7 @@ Andersen::AnalyzeDelta(const delta::node & delta)
   // Handle context variables
   for (auto & cv : delta.ctxvars())
   {
-    if (!IsOrContainsPointerType(cv.type()))
+    if (!IsOrContainsPointerType(*cv.Type()))
       continue;
 
     auto & inputRegister = *cv.origin();
@@ -1146,7 +1146,7 @@ Andersen::AnalyzeGamma(const rvsdg::GammaNode & gamma)
   // Handle input variables
   for (const auto & ev : gamma.GetEntryVars())
   {
-    if (!IsOrContainsPointerType(ev.input->type()))
+    if (!IsOrContainsPointerType(*ev.input->Type()))
       continue;
 
     auto & inputRegister = *ev.input->origin();
@@ -1184,7 +1184,7 @@ Andersen::AnalyzeTheta(const rvsdg::ThetaNode & theta)
   // And make it point to a superset of the corresponding input register
   for (const auto & loopVar : theta.GetLoopVars())
   {
-    if (!IsOrContainsPointerType(loopVar.input->type()))
+    if (!IsOrContainsPointerType(*loopVar.input->Type()))
       continue;
 
     auto & inputReg = *loopVar.input->origin();
@@ -1202,7 +1202,7 @@ Andersen::AnalyzeTheta(const rvsdg::ThetaNode & theta)
   // of what the corresponding result registers point to
   for (const auto & loopVar : theta.GetLoopVars())
   {
-    if (!IsOrContainsPointerType(loopVar.input->type()))
+    if (!IsOrContainsPointerType(*loopVar.input->Type()))
       continue;
 
     auto & innerArgumentReg = *loopVar.pre;

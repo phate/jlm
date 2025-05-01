@@ -21,7 +21,7 @@ ConnectStreamBuffer(rvsdg::SimpleNode * enq_call, rvsdg::SimpleNode * deq_call)
 {
   int buffer_capacity = DefaultBufferCapacity;
   // buffer size as second argument
-  if (dynamic_cast<const jlm::rvsdg::bittype *>(&deq_call->input(2)->type()))
+  if (rvsdg::is<const rvsdg::bittype>(deq_call->input(2)->Type()))
   {
     auto constant = trace_constant(deq_call->input(2)->origin());
     buffer_capacity = constant->Representation().to_int();
@@ -32,7 +32,7 @@ ConnectStreamBuffer(rvsdg::SimpleNode * enq_call, rvsdg::SimpleNode * deq_call)
   // remove call nodes
   for (size_t i = 0; i < deq_call->ninputs(); ++i)
   {
-    if (dynamic_cast<const rvsdg::StateType *>(&deq_call->input(i)->type()))
+    if (rvsdg::is<const rvsdg::StateType>(deq_call->input(i)->Type()))
     {
       int oi = deq_call->noutputs() - deq_call->ninputs() + i;
       deq_call->output(oi)->divert_users(deq_call->input(i)->origin());
@@ -42,7 +42,7 @@ ConnectStreamBuffer(rvsdg::SimpleNode * enq_call, rvsdg::SimpleNode * deq_call)
   remove(deq_call);
   for (size_t i = 0; i < enq_call->ninputs(); ++i)
   {
-    if (dynamic_cast<const rvsdg::StateType *>(&enq_call->input(i)->type()))
+    if (rvsdg::is<const rvsdg::StateType>(enq_call->input(i)->Type()))
     {
       int oi = enq_call->noutputs() - enq_call->ninputs() + i;
       enq_call->output(oi)->divert_users(enq_call->input(i)->origin());

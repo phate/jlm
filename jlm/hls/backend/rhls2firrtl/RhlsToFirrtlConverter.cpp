@@ -292,8 +292,8 @@ RhlsToFirrtlConverter::MlirGenSimpleNode(const jlm::rvsdg::SimpleNode * node)
   {
     auto inData = GetSubfield(body, inBundles[0], "data");
     auto outData = GetSubfield(body, outBundle, "data");
-    int inSize = JlmSize(&node->input(0)->type());
-    int outSize = JlmSize(&node->output(0)->type());
+    int inSize = JlmSize(node->input(0)->Type().get());
+    int outSize = JlmSize(node->output(0)->Type().get());
     if (IsIdentityMapping(*op))
     {
       if (inSize == outSize)
@@ -482,7 +482,7 @@ RhlsToFirrtlConverter::MlirGenLoopConstBuffer(const jlm::rvsdg::SimpleNode * nod
 
   auto dataReg = Builder_->create<circt::firrtl::RegOp>(
       Builder_->getUnknownLoc(),
-      GetIntType(&node->input(1)->type()),
+      GetIntType(node->input(1)->Type().get()),
       clock,
       Builder_->getStringAttr("data_reg"));
   body->push_back(dataReg);
@@ -1176,7 +1176,7 @@ RhlsToFirrtlConverter::MlirGenHlsLocalMem(const jlm::rvsdg::SimpleNode * node)
         &ports,
         circt::firrtl::Direction::In,
         name,
-        GetFirrtlType(&req_node->input(i)->type()));
+        GetFirrtlType(req_node->input(i)->Type().get()));
   }
   for (size_t i = 0; i < res_node->noutputs(); ++i)
   {
@@ -1626,7 +1626,7 @@ RhlsToFirrtlConverter::MlirGenMem(const jlm::rvsdg::SimpleNode * node)
   {
     Connect(body, memReqWrite, oneBitValue);
     Connect(body, memReqData, inData1);
-    bitWidth = dynamic_cast<const jlm::rvsdg::bittype *>(&node->input(1)->type())->nbits();
+    bitWidth = std::dynamic_pointer_cast<const rvsdg::bittype>(node->input(1)->Type())->nbits();
   }
   else
   {
@@ -1813,7 +1813,7 @@ RhlsToFirrtlConverter::MlirGenPredicationBuffer(const jlm::rvsdg::SimpleNode * n
   std::string dataName("buf_data_reg");
   auto dataReg = Builder_->create<circt::firrtl::RegResetOp>(
       Builder_->getUnknownLoc(),
-      GetIntType(&node->input(0)->type()),
+      GetIntType(node->input(0)->Type().get()),
       clock,
       reset,
       zeroBitValue,
@@ -1866,7 +1866,7 @@ RhlsToFirrtlConverter::MlirGenBuffer(const jlm::rvsdg::SimpleNode * node)
   auto clock = GetClockSignal(module);
   auto reset = GetResetSignal(module);
   auto zeroBitValue = GetConstant(body, 1, 0);
-  auto zeroValue = GetConstant(body, JlmSize(&node->input(0)->type()), 0);
+  auto zeroValue = GetConstant(body, JlmSize(node->input(0)->Type().get()), 0);
   auto oneBitValue = GetConstant(body, 1, 1);
 
   // Registers
@@ -1892,7 +1892,7 @@ RhlsToFirrtlConverter::MlirGenBuffer(const jlm::rvsdg::SimpleNode * node)
     dataName.append("_data_reg");
     auto dataReg = Builder_->create<circt::firrtl::RegResetOp>(
         Builder_->getUnknownLoc(),
-        GetIntType(&node->input(0)->type()),
+        GetIntType(node->input(0)->Type().get()),
         clock,
         reset,
         zeroValue,
@@ -2006,7 +2006,7 @@ RhlsToFirrtlConverter::MlirGenAddrQueue(const jlm::rvsdg::SimpleNode * node)
   auto clock = GetClockSignal(module);
   auto reset = GetResetSignal(module);
   auto zeroBitValue = GetConstant(body, 1, 0);
-  auto zeroValue = GetConstant(body, JlmSize(&node->input(0)->type()), 0);
+  auto zeroValue = GetConstant(body, JlmSize(node->input(0)->Type().get()), 0);
   auto oneBitValue = GetConstant(body, 1, 1);
 
   // Registers
@@ -2032,7 +2032,7 @@ RhlsToFirrtlConverter::MlirGenAddrQueue(const jlm::rvsdg::SimpleNode * node)
     dataName.append("_data_reg");
     auto dataReg = Builder_->create<circt::firrtl::RegResetOp>(
         Builder_->getUnknownLoc(),
-        GetIntType(&node->input(0)->type()),
+        GetIntType(node->input(0)->Type().get()),
         clock,
         reset,
         zeroValue,
@@ -2333,7 +2333,7 @@ RhlsToFirrtlConverter::MlirGenNDMux(const jlm::rvsdg::SimpleNode * node)
     auto inValid = GetSubfield(body, inBundle, "valid");
     auto inData = GetSubfield(body, inBundle, "data");
     Connect(body, inReady, zeroBitValue);
-    auto constant = GetConstant(body, JlmSize(&node->input(0)->type()), i - 1);
+    auto constant = GetConstant(body, JlmSize(node->input(0)->Type().get()), i - 1);
     auto eqOp = AddEqOp(body, inData0, constant);
     auto andOp = AddAndOp(body, inValid0, eqOp);
     auto whenOp = AddWhenOp(body, andOp, false);
@@ -2379,7 +2379,7 @@ RhlsToFirrtlConverter::MlirGenBranch(const jlm::rvsdg::SimpleNode * node)
     Connect(body, outValid, zeroBitValue);
     Connect(body, outData, invalid);
 
-    auto constant = GetConstant(body, JlmSize(&node->input(0)->type()), i);
+    auto constant = GetConstant(body, JlmSize(node->input(0)->Type().get()), i);
     auto eqOp = AddEqOp(body, inData0, constant);
     auto condition = AddAndOp(body, inValid0, eqOp);
     auto whenOp = AddWhenOp(body, condition, false);
@@ -2494,13 +2494,11 @@ RhlsToFirrtlConverter::MlirGen(const jlm::rvsdg::SimpleNode * node)
   bool is_float = false;
   for (size_t i = 0; i < node->ninputs(); ++i)
   {
-    is_float =
-        is_float || dynamic_cast<const jlm::llvm::FloatingPointType *>(&node->input(i)->type());
+    is_float = is_float || rvsdg::is<const llvm::FloatingPointType>(node->input(i)->Type());
   }
   for (size_t i = 0; i < node->noutputs(); ++i)
   {
-    is_float =
-        is_float || dynamic_cast<const jlm::llvm::FloatingPointType *>(&node->output(i)->type());
+    is_float = is_float || rvsdg::is<const llvm::FloatingPointType>(node->output(i)->Type());
   }
   if (is_float)
   {
@@ -2595,7 +2593,7 @@ RhlsToFirrtlConverter::MlirGen(rvsdg::Region * subRegion, mlir::Block * circuitB
         &ports,
         circt::firrtl::Direction::Out,
         get_port_name(subRegion->result(i)),
-        GetFirrtlType(&subRegion->result(i)->type()));
+        GetFirrtlType(subRegion->result(i)->Type().get()));
   }
 
   // Create a name for the module
@@ -2915,7 +2913,7 @@ RhlsToFirrtlConverter::MlirGen(const rvsdg::LambdaNode * lambdaNode)
     outputElements.push_back(BundleElement(
         Builder_->getStringAttr(portName),
         false,
-        GetIntType(&reg_results[i]->type())));
+        GetIntType(reg_results[i]->Type().get())));
   }
   auto outputType = circt::firrtl::BundleType::get(Builder_->getContext(), outputElements);
   struct circt::firrtl::PortInfo oBundle = {
@@ -2935,8 +2933,10 @@ RhlsToFirrtlConverter::MlirGen(const rvsdg::LambdaNode * lambdaNode)
     ::llvm::SmallVector<BundleElement> reqElements;
     reqElements.push_back(GetReadyElement());
     reqElements.push_back(GetValidElement());
-    reqElements.push_back(
-        BundleElement(Builder_->getStringAttr("data"), false, GetFirrtlType(&mem_reqs[i]->type())));
+    reqElements.push_back(BundleElement(
+        Builder_->getStringAttr("data"),
+        false,
+        GetFirrtlType(mem_reqs[i]->Type().get())));
     auto reqType = circt::firrtl::BundleType::get(Builder_->getContext(), reqElements);
     memElements.push_back(BundleElement(Builder_->getStringAttr("req"), false, reqType));
 
@@ -3069,7 +3069,7 @@ RhlsToFirrtlConverter::MlirGen(const rvsdg::LambdaNode * lambdaNode)
     dataName.append("_data_reg");
     auto dataReg = Builder_->create<circt::firrtl::RegResetOp>(
         Builder_->getUnknownLoc(),
-        GetIntType(&reg_results[i]->type()),
+        GetIntType(reg_results[i]->Type().get()),
         clock,
         reset,
         zeroBitValue,
@@ -3919,7 +3919,7 @@ RhlsToFirrtlConverter::nodeToModule(const jlm::rvsdg::SimpleNode * node, bool me
         &ports,
         circt::firrtl::Direction::In,
         name,
-        GetFirrtlType(&node->input(i)->type()));
+        GetFirrtlType(node->input(i)->Type().get()));
   }
   for (size_t i = 0; i < node->noutputs(); ++i)
   {
@@ -4001,7 +4001,7 @@ RhlsToFirrtlConverter::GetModuleName(const rvsdg::Node * node)
   for (size_t i = 0; i < node->ninputs(); ++i)
   {
     append.append("_I");
-    append.append(std::to_string(JlmSize(&node->input(i)->type())));
+    append.append(std::to_string(JlmSize(node->input(i)->Type().get())));
     append.append("W");
   }
   for (size_t i = 0; i < node->noutputs(); ++i)
@@ -4180,7 +4180,7 @@ RhlsToFirrtlConverter::MlirGenExtModule(const jlm::rvsdg::SimpleNode * node)
         &ports,
         circt::firrtl::Direction::In,
         name,
-        GetFirrtlType(&node->input(i)->type()));
+        GetFirrtlType(node->input(i)->Type().get()));
   }
   for (size_t i = 0; i < node->noutputs(); ++i)
   {

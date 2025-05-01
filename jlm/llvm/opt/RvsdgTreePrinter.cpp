@@ -155,7 +155,7 @@ RvsdgTreePrinter::AnnotateNumMemoryStateInputsOutputs(
         for (size_t n = 0; n < structuralNode->ninputs(); n++)
         {
           auto input = structuralNode->input(n);
-          if (rvsdg::is<MemoryStateType>(input->type()))
+          if (rvsdg::is<MemoryStateType>(input->Type()))
           {
             numMemoryStateInputs++;
           }

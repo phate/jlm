@@ -21,7 +21,7 @@ rvsdg::input &
 GetMemoryStateRegionResult(const rvsdg::LambdaNode & lambdaNode) noexcept
 {
   auto result = lambdaNode.GetFunctionResults().back();
-  JLM_ASSERT(is<MemoryStateType>(result->type()));
+  JLM_ASSERT(is<MemoryStateType>(result->Type()));
   return *result;
 }
 
