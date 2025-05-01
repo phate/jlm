@@ -58,8 +58,8 @@ bitconcat_op::can_reduce_operand_pair(
     const jlm::rvsdg::output * arg1,
     const jlm::rvsdg::output * arg2) const noexcept
 {
-  auto node1 = output::GetNode(*arg1);
-  auto node2 = output::GetNode(*arg2);
+  auto node1 = TryGetOwnerNode<Node>(*arg1);
+  auto node2 = TryGetOwnerNode<Node>(*arg2);
 
   if (!node1 || !node2)
     return binop_reduction_none;
@@ -162,7 +162,7 @@ FlattenBitConcatOperation(const bitconcat_op &, const std::vector<rvsdg::output 
       {
         // FIXME: switch to comparing operator, not just typeid, after
         // converting "concat" to not be a binary operator anymore
-        return is<bitconcat_op>(output::GetNode(*arg));
+        return is<bitconcat_op>(TryGetOwnerNode<Node>(*arg));
       });
 
   if (operands == newOperands)

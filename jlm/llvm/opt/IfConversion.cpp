@@ -119,7 +119,7 @@ IfConversion::HandleGammaNode(const rvsdg::GammaNode & gammaNode)
       continue;
     }
 
-    const auto matchNode = rvsdg::output::GetNode(*gammaPredicate);
+    const auto matchNode = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*gammaPredicate);
     if (is<rvsdg::match_op>(matchNode))
     {
       const auto matchOperation =

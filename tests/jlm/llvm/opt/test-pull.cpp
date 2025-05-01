@@ -80,7 +80,7 @@ test_pullin_bottom()
   jlm::llvm::pullin_bottom(gamma);
   //	jlm::rvsdg::view(graph, stdout);
 
-  assert(jlm::rvsdg::output::GetNode(*xp.origin()) == gamma);
+  assert(jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*xp.origin()) == gamma);
   assert(gamma->subregion(0)->nnodes() == 2);
   assert(gamma->subregion(1)->nnodes() == 2);
 }

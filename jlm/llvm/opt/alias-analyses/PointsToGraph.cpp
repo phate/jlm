@@ -516,7 +516,7 @@ PointsToGraph::RegisterNode::~RegisterNode() noexcept = default;
 std::string
 PointsToGraph::RegisterNode::ToString(const rvsdg::output & output)
 {
-  auto node = jlm::rvsdg::output::GetNode(*&output);
+  auto node = rvsdg::TryGetOwnerNode<rvsdg::Node>(output);
 
   if (node != nullptr)
     return util::strfmt(node->GetOperation().debug_string(), ":o", output.index());

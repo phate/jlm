@@ -55,12 +55,12 @@ TestWriteGraphs()
   assert(gammaNode.NumOutputPorts() == 2);
   assert(gammaNode.NumSubgraphs() == 2);
 
-  // The first argument of the first region of the gamma references the second gamma input
-  auto & argument = gammaNode.GetSubgraph(0).GetArgumentNode(0);
+  // The second argument of the first region of the gamma references the second gamma input
+  auto & argument = gammaNode.GetSubgraph(0).GetArgumentNode(1);
   auto & input = gammaNode.GetInputPort(1);
   assert(argument.GetAttributeGraphElement("input") == &input);
   // The label also includes the attribute index and input index
-  assert(argument.GetLabel() == "a0 <- i1");
+  assert(argument.GetLabel() == "a1 <- i1");
   auto & result = argument.GetConnections().front()->GetOtherEnd(argument);
   assert(result.GetLabel() == "r0 -> o0");
 

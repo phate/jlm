@@ -167,7 +167,7 @@ CallOperation::TraceFunctionInput(const rvsdg::SimpleNode & callNode)
     if (is<rvsdg::GraphImport>(origin))
       return origin;
 
-    if (is<rvsdg::SimpleOperation>(rvsdg::output::GetNode(*origin)))
+    if (rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*origin))
       return origin;
 
     if (auto lambda = rvsdg::TryGetRegionParentNode<rvsdg::LambdaNode>(*origin))
@@ -196,7 +196,12 @@ CallOperation::TraceFunctionInput(const rvsdg::SimpleNode & callNode)
 
     if (auto gamma = rvsdg::TryGetRegionParentNode<rvsdg::GammaNode>(*origin))
     {
-      origin = gamma->MapBranchArgumentEntryVar(*origin).input->origin();
+      origin = std::visit(
+          [](const auto & rolevar) -> rvsdg::output *
+          {
+            return rolevar.input->origin();
+          },
+          gamma->MapBranchArgument(*origin));
       continue;
     }
 

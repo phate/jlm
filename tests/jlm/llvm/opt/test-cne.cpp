@@ -166,9 +166,9 @@ test_theta()
   cne.Run(rm, statisticsCollector);
   //	jlm::rvsdg::view(graph.GetRootRegion(), stdout);
 
-  auto un1 = jlm::rvsdg::output::GetNode(*u1);
-  auto un2 = jlm::rvsdg::output::GetNode(*u2);
-  auto bn1 = jlm::rvsdg::output::GetNode(*b1);
+  auto un1 = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*u1);
+  auto un2 = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*u2);
+  auto bn1 = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*b1);
   assert(un1->input(0)->origin() == un2->input(0)->origin());
   assert(bn1->input(0)->origin() == un1->input(0)->origin());
   assert(bn1->input(1)->origin() == region->argument(3));
@@ -402,7 +402,7 @@ test_lambda()
   cne.Run(rm, statisticsCollector);
   //	jlm::rvsdg::view(graph.GetRootRegion(), stdout);
 
-  auto bn1 = jlm::rvsdg::output::GetNode(*b1);
+  auto bn1 = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*b1);
   assert(bn1->input(0)->origin() == bn1->input(1)->origin());
 }
 

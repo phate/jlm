@@ -112,13 +112,13 @@ ReduceFlattenedBinaryReductionParallel()
   // Assert
   assert(graph.GetRootRegion().nnodes() == 3);
 
-  auto node0 = output::GetNode(*ex.origin());
+  auto node0 = TryGetOwnerNode<Node>(*ex.origin());
   assert(is<jlm::tests::binary_op>(node0));
 
-  auto node1 = output::GetNode(*node0->input(0)->origin());
+  auto node1 = TryGetOwnerNode<Node>(*node0->input(0)->origin());
   assert(is<jlm::tests::binary_op>(node1));
 
-  auto node2 = output::GetNode(*node0->input(1)->origin());
+  auto node2 = TryGetOwnerNode<Node>(*node0->input(1)->origin());
   assert(is<jlm::tests::binary_op>(node2));
 
   return 0;
@@ -161,13 +161,13 @@ ReduceFlattenedBinaryReductionLinear()
   // Assert
   assert(graph.GetRootRegion().nnodes() == 3);
 
-  auto node0 = output::GetNode(*ex.origin());
+  auto node0 = TryGetOwnerNode<Node>(*ex.origin());
   assert(is<jlm::tests::binary_op>(node0));
 
-  auto node1 = output::GetNode(*node0->input(0)->origin());
+  auto node1 = TryGetOwnerNode<Node>(*node0->input(0)->origin());
   assert(is<jlm::tests::binary_op>(node1));
 
-  auto node2 = output::GetNode(*node1->input(0)->origin());
+  auto node2 = TryGetOwnerNode<Node>(*node1->input(0)->origin());
   assert(is<jlm::tests::binary_op>(node2));
 
   return 0;

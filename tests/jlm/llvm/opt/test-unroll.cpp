@@ -251,9 +251,9 @@ test_unknown_boundaries()
   loopunroll.Run(rm, statisticsCollector);
   //	jlm::rvsdg::view(graph, stdout);
 
-  auto node = jlm::rvsdg::output::GetNode(*ex1.origin());
+  auto node = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*ex1.origin());
   assert(jlm::rvsdg::is<jlm::rvsdg::GammaOperation>(node));
-  node = jlm::rvsdg::output::GetNode(*node->input(1)->origin());
+  node = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*node->input(1)->origin());
   assert(jlm::rvsdg::is<jlm::rvsdg::GammaOperation>(node));
 
   /* Create cleaner output */
