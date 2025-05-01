@@ -88,16 +88,6 @@ public:
   virtual std::string
   debug_string() const;
 
-  /**
-   * Retrieve the associated node from \p input if \p input is derived from jlm::rvsdg::node_input.
-   *
-   * @param input The input from which to retrieve the node.
-   * @return The node associated with \p input if input is derived from jlm::rvsdg::node_input,
-   * otherwise nullptr.
-   */
-  [[nodiscard]] static Node *
-  GetNode(const rvsdg::input & input) noexcept;
-
   [[nodiscard]] virtual std::variant<Node *, Region *>
   GetOwner() const noexcept = 0;
 

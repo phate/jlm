@@ -493,7 +493,7 @@ jlm::hls::mem_queue(jlm::rvsdg::Region * region)
   // Check if there exists a memory state splitter
   if (state_arg->nusers() == 1)
   {
-    auto entryNode = jlm::rvsdg::input::GetNode(**state_arg->begin());
+    auto entryNode = rvsdg::TryGetOwnerNode<rvsdg::Node>(**state_arg->begin());
     if (jlm::rvsdg::is<const jlm::llvm::LambdaEntryMemoryStateSplitOperation>(
             entryNode->GetOperation()))
     {

@@ -63,7 +63,7 @@ single_successor(const rvsdg::Node * node)
   for (size_t n = 0; n < node->noutputs(); n++)
   {
     for (const auto & user : *node->output(n))
-      successors.insert(rvsdg::input::GetNode(*user));
+      successors.insert(rvsdg::TryGetOwnerNode<rvsdg::Node>(*user));
   }
 
   return successors.size() == 1;
@@ -154,7 +154,7 @@ pullin_bottom(rvsdg::GammaNode * gamma)
     auto output = gamma->output(n);
     for (const auto & user : *output)
     {
-      auto node = rvsdg::input::GetNode(*user);
+      auto node = rvsdg::TryGetOwnerNode<rvsdg::Node>(*user);
       if (node && node->depth() == gamma->depth() + 1)
         workset.insert(node);
     }
@@ -197,7 +197,7 @@ pullin_bottom(rvsdg::GammaNode * gamma)
       auto output = node->output(n);
       for (const auto & user : *output)
       {
-        auto tmp = rvsdg::input::GetNode(*user);
+        auto tmp = rvsdg::TryGetOwnerNode<rvsdg::Node>(*user);
         if (tmp && tmp->depth() == node->depth() + 1)
           workset.insert(tmp);
       }
