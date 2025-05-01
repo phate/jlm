@@ -2689,12 +2689,12 @@ RhlsToFirrtlConverter::MlirGen(rvsdg::Region * subRegion, mlir::Block * circuitB
     if (dynamic_cast<const hls::local_mem_op *>(&(rvsdgNode->GetOperation())))
     {
       // hook up request port
-      auto requestNode = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(**rvsdgNode->output(1)->begin());
+      auto requestNode = rvsdg::TryGetOwnerNode<rvsdg::Node>(**rvsdgNode->output(1)->begin());
       // skip connection to mem
       for (size_t i = 1; i < requestNode->ninputs(); i++)
       {
         // Get the RVSDG node that's the origin of this input
-        auto * input = requestNode->input(i);
+        auto * input = dynamic_cast<rvsdg::SimpleInput *>(requestNode->input(i));
         auto origin = input->origin();
         if (auto o = dynamic_cast<rvsdg::RegionArgument *>(origin))
         {
