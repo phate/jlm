@@ -256,8 +256,8 @@ TestLoad()
       assert(is<jlm::llvm::PointerType>(convertedLoad->input(0)->type()));
       assert(is<jlm::llvm::MemoryStateType>(convertedLoad->input(1)->type()));
 
-      assert(is<jlm::rvsdg::bittype>(convertedLoad->output(0)->type()));
-      assert(is<jlm::llvm::MemoryStateType>(convertedLoad->output(1)->type()));
+      assert(is<jlm::rvsdg::bittype>(convertedLoad->output(0)->Type()));
+      assert(is<jlm::llvm::MemoryStateType>(convertedLoad->output(1)->Type()));
 
       auto outputBitType =
           std::dynamic_pointer_cast<const jlm::rvsdg::bittype>(convertedLoad->output(0)->Type());
@@ -354,7 +354,7 @@ TestStore()
       assert(is<jlm::rvsdg::bittype>(convertedStore->input(1)->type()));
       assert(is<jlm::llvm::MemoryStateType>(convertedStore->input(2)->type()));
 
-      assert(is<jlm::llvm::MemoryStateType>(convertedStore->output(0)->type()));
+      assert(is<jlm::llvm::MemoryStateType>(convertedStore->output(0)->Type()));
 
       auto inputBitType =
           dynamic_cast<const jlm::rvsdg::bittype *>(&convertedStore->input(1)->type());

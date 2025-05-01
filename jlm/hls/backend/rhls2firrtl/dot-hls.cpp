@@ -338,7 +338,7 @@ DotHLS::prepare_loop_out_port(hls::loop_node * ln)
     else
     {
       auto result = ba->result();
-      JLM_ASSERT(result->type() == arg->type());
+      JLM_ASSERT(result->type() == *arg->Type());
       // map to end of loop (origin of associated result)
       output_map[arg] = output_map[result->origin()];
     }

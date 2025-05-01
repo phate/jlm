@@ -637,7 +637,7 @@ ReplaceStore(rvsdg::SubstitutionMap & smap, const rvsdg::SimpleNode * originalSt
       static_cast<rvsdg::SimpleOutput *>(smap.lookup(originalStore->output(0)))->node();
 
   auto addr = replacedStore->input(0)->origin();
-  JLM_ASSERT(dynamic_cast<const llvm::PointerType *>(&addr->type()));
+  JLM_ASSERT(rvsdg::is<const llvm::PointerType>(addr->Type()));
   auto data = replacedStore->input(1)->origin();
   std::vector<rvsdg::output *> states;
   for (size_t i = 2; i < replacedStore->ninputs(); ++i)

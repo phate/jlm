@@ -168,7 +168,7 @@ instrument_ref(
             dynamic_cast<const jlm::llvm::LoadNonVolatileOperation *>(&(node->GetOperation())))
     {
       auto addr = node->input(0)->origin();
-      JLM_ASSERT(dynamic_cast<const jlm::llvm::PointerType *>(&addr->type()));
+      JLM_ASSERT(rvsdg::is<const jlm::llvm::PointerType>(addr->Type()));
       size_t bitWidth = BaseHLS::JlmSize(&*loadOp->GetLoadedType());
       int log2Bytes = log2(bitWidth / 8);
       auto & widthNode = llvm::IntegerConstantOperation::Create(*region, 64, log2Bytes);
@@ -226,7 +226,7 @@ instrument_ref(
             dynamic_cast<const jlm::llvm::StoreNonVolatileOperation *>(&(node->GetOperation())))
     {
       auto addr = node->input(0)->origin();
-      JLM_ASSERT(dynamic_cast<const jlm::llvm::PointerType *>(&addr->type()));
+      JLM_ASSERT(rvsdg::is<const jlm::llvm::PointerType>(addr->Type()));
       auto bitWidth = JlmSize(&so->GetStoredType());
       int log2Bytes = log2(bitWidth / 8);
       auto & widthNode = llvm::IntegerConstantOperation::Create(*region, 64, log2Bytes);

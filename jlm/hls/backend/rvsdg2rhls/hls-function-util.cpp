@@ -310,7 +310,7 @@ get_mem_state_user(rvsdg::output * state_edge)
 {
   JLM_ASSERT(state_edge);
   JLM_ASSERT(state_edge->nusers() == 1);
-  JLM_ASSERT(dynamic_cast<const llvm::MemoryStateType *>(&state_edge->type()));
+  JLM_ASSERT(rvsdg::is<const llvm::MemoryStateType>(state_edge->Type()));
   auto user = *state_edge->begin();
   return user;
 }

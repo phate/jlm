@@ -765,7 +765,7 @@ Andersen::AnalyzeGep(const rvsdg::SimpleNode & node)
   // The analysis is field insensitive, so ignoring the offset and mapping the output
   // to the same PointerObject as the input is sufficient.
   const auto & baseRegister = *node.input(0)->origin();
-  JLM_ASSERT(is<PointerType>(baseRegister.type()));
+  JLM_ASSERT(is<PointerType>(baseRegister.Type()));
 
   const auto baseRegisterPO = Set_->GetRegisterPointerObject(baseRegister);
   const auto & outputRegister = *node.output(0);
@@ -780,12 +780,12 @@ Andersen::AnalyzeBitcast(const rvsdg::SimpleNode & node)
   const auto & inputRegister = *node.input(0)->origin();
   const auto & outputRegister = *node.output(0);
 
-  JLM_ASSERT(!IsAggregateType(inputRegister.type()) && !IsAggregateType(outputRegister.type()));
+  JLM_ASSERT(!IsAggregateType(*inputRegister.Type()) && !IsAggregateType(*outputRegister.Type()));
   if (!IsOrContainsPointerType(*inputRegister.Type()))
     return;
 
   // If the input is a pointer type, the output must also be a pointer type
-  JLM_ASSERT(IsOrContainsPointerType(outputRegister.type()));
+  JLM_ASSERT(IsOrContainsPointerType(*outputRegister.Type()));
 
   const auto inputRegisterPO = Set_->GetRegisterPointerObject(inputRegister);
   Set_->MapRegisterToExistingPointerObject(outputRegister, inputRegisterPO);
@@ -796,7 +796,7 @@ Andersen::AnalyzeBits2ptr(const rvsdg::SimpleNode & node)
 {
   JLM_ASSERT(is<IntegerToPointerOperation>(&node));
   const auto & output = *node.output(0);
-  JLM_ASSERT(is<PointerType>(output.type()));
+  JLM_ASSERT(is<PointerType>(output.Type()));
 
   // This operation synthesizes a pointer from bytes.
   // Since no points-to information is tracked through integers, the resulting pointer must
@@ -810,7 +810,7 @@ Andersen::AnalyzePtrToInt(const rvsdg::SimpleNode & node)
 {
   JLM_ASSERT(is<PtrToIntOperation>(&node));
   const auto & inputRegister = *node.input(0)->origin();
-  JLM_ASSERT(is<PointerType>(inputRegister.type()));
+  JLM_ASSERT(is<PointerType>(inputRegister.Type()));
 
   // This operation converts a pointer to bytes, exposing it as an integer, which we can't track.
   const auto inputRegisterPO = Set_->GetRegisterPointerObject(inputRegister);
@@ -822,7 +822,7 @@ Andersen::AnalyzeConstantPointerNull(const rvsdg::SimpleNode & node)
 {
   JLM_ASSERT(is<ConstantPointerNullOperation>(&node));
   const auto & output = *node.output(0);
-  JLM_ASSERT(is<PointerType>(output.type()));
+  JLM_ASSERT(is<PointerType>(output.Type()));
 
   // ConstantPointerNull cannot point to any memory location. We therefore only insert a register
   // node for it, but let this node not point to anything.
@@ -850,8 +850,8 @@ Andersen::AnalyzeMemcpy(const rvsdg::SimpleNode & node)
 
   auto & dstAddressRegister = *node.input(0)->origin();
   auto & srcAddressRegister = *node.input(1)->origin();
-  JLM_ASSERT(is<PointerType>(dstAddressRegister.type()));
-  JLM_ASSERT(is<PointerType>(srcAddressRegister.type()));
+  JLM_ASSERT(is<PointerType>(dstAddressRegister.Type()));
+  JLM_ASSERT(is<PointerType>(srcAddressRegister.Type()));
 
   const auto dstAddressRegisterPO = Set_->GetRegisterPointerObject(dstAddressRegister);
   const auto srcAddressRegisterPO = Set_->GetRegisterPointerObject(srcAddressRegister);
@@ -880,7 +880,7 @@ Andersen::AnalyzeConstantArray(const rvsdg::SimpleNode & node)
   for (size_t n = 0; n < node.ninputs(); n++)
   {
     const auto & inputRegister = *node.input(n)->origin();
-    JLM_ASSERT(IsOrContainsPointerType(inputRegister.type()));
+    JLM_ASSERT(IsOrContainsPointerType(*inputRegister.Type()));
 
     const auto inputRegisterPO = Set_->GetRegisterPointerObject(inputRegister);
     Constraints_->AddConstraint(SupersetConstraint(outputRegisterPO, inputRegisterPO));
@@ -968,7 +968,7 @@ Andersen::AnalyzePointerToFunction(const rvsdg::SimpleNode & node)
   // For pointer analysis purposes, function objects and pointers
   // to functions are treated as being the same.
   const auto & baseRegister = *node.input(0)->origin();
-  JLM_ASSERT(is<PointerType>(baseRegister.type()));
+  JLM_ASSERT(is<PointerType>(baseRegister.Type()));
 
   const auto baseRegisterPO = Set_->GetRegisterPointerObject(baseRegister);
   const auto & outputRegister = *node.output(0);
@@ -983,7 +983,7 @@ Andersen::AnalyzeFunctionToPointer(const rvsdg::SimpleNode & node)
   // For pointer analysis purposes, function objects and pointers
   // to functions are treated as being the same.
   const auto & baseRegister = *node.input(0)->origin();
-  JLM_ASSERT(is<rvsdg::FunctionType>(baseRegister.type()));
+  JLM_ASSERT(is<rvsdg::FunctionType>(baseRegister.Type()));
 
   const auto baseRegisterPO = Set_->GetRegisterPointerObject(baseRegister);
   const auto & outputRegister = *node.output(0);
