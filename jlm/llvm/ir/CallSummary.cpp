@@ -32,8 +32,6 @@ ComputeCallSummary(const rvsdg::LambdaNode & lambdaNode)
     auto input = worklist.front();
     worklist.pop_front();
 
-    auto inputNode = rvsdg::input::GetNode(*input);
-
     if (auto lambdaNode = rvsdg::TryGetOwnerNode<rvsdg::LambdaNode>(*input))
     {
       auto & argument = *lambdaNode->MapInputContextVar(*input).inner;
@@ -47,7 +45,7 @@ ComputeCallSummary(const rvsdg::LambdaNode & lambdaNode)
       continue;
     }
 
-    if (auto gammaNode = dynamic_cast<rvsdg::GammaNode *>(inputNode))
+    if (auto gammaNode = rvsdg::TryGetOwnerNode<rvsdg::GammaNode>(*input))
     {
       for (auto & argument : gammaNode->MapInputEntryVar(*input).branchArgument)
       {
@@ -107,9 +105,10 @@ ComputeCallSummary(const rvsdg::LambdaNode & lambdaNode)
       continue;
     }
 
+    auto inputNode = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*input);
     if (is<CallOperation>(inputNode) && input == inputNode->input(0))
     {
-      directCalls.emplace_back(util::AssertedCast<rvsdg::SimpleNode>(inputNode));
+      directCalls.emplace_back(inputNode);
       continue;
     }
 
