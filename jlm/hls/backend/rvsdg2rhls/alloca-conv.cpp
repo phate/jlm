@@ -37,7 +37,7 @@ private:
   void
   trace(jlm::rvsdg::output * op)
   {
-    if (!dynamic_cast<const jlm::llvm::PointerType *>(&op->type()))
+    if (!rvsdg::is<const llvm::PointerType>(op->Type()))
     {
       // only process pointer outputs
       return;

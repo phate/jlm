@@ -174,7 +174,7 @@ instrument_ref(
       auto & widthNode = llvm::IntegerConstantOperation::Create(*region, 64, log2Bytes);
 
       // Does this IF make sense now when the void_ptr doesn't have a type?
-      if (addr->type() != *void_ptr)
+      if (*addr->Type() != *void_ptr)
       {
         addr = jlm::llvm::bitcast_op::create(addr, void_ptr);
       }
@@ -198,15 +198,14 @@ instrument_ref(
       JLM_ASSERT(constant_operation->Representation().to_uint() == 1);
       jlm::rvsdg::output * addr = node->output(0);
       // ensure that the alloca is an array type
-      auto pt = dynamic_cast<const jlm::llvm::PointerType *>(&addr->type());
-      JLM_ASSERT(pt);
+      JLM_ASSERT(jlm::rvsdg::is<const llvm::PointerType>(addr->Type()));
       auto at = dynamic_cast<const llvm::ArrayType *>(&ao->value_type());
       JLM_ASSERT(at);
       auto & sizeNode =
           llvm::IntegerConstantOperation::Create(*region, 64, BaseHLS::JlmSize(at) / 8);
 
       // Does this IF make sense now when the void_ptr doesn't have a type?
-      if (addr->type() != *void_ptr)
+      if (*addr->Type() != *void_ptr)
       {
         addr = jlm::llvm::bitcast_op::create(addr, void_ptr);
       }
@@ -233,7 +232,7 @@ instrument_ref(
       auto & widthNode = llvm::IntegerConstantOperation::Create(*region, 64, log2Bytes);
 
       // Does this IF make sense now when the void_ptr doesn't have a type?
-      if (addr->type() != *void_ptr)
+      if (*addr->Type() != *void_ptr)
       {
         addr = jlm::llvm::bitcast_op::create(addr, void_ptr);
       }

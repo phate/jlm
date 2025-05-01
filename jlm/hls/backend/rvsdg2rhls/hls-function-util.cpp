@@ -110,7 +110,7 @@ trace_constant(const rvsdg::output * dst)
     for (size_t i = 0; i < so->node()->ninputs(); ++i)
     {
       // TODO: fix, this is a hack - only works because of distribute constants
-      if (so->node()->input(i)->type() == dst->type())
+      if (so->node()->input(i)->type() == *dst->Type())
       {
         return trace_constant(so->node()->input(i)->origin());
       }
@@ -239,7 +239,7 @@ trace_call_rhls(const rvsdg::output * output)
     for (size_t i = 0; i < so->node()->ninputs(); ++i)
     {
       auto ip = so->node()->input(i);
-      if (ip->type() == output->type())
+      if (ip->type() == *output->Type())
       {
         if (auto result = trace_call_rhls(ip))
         {
