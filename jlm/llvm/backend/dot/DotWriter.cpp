@@ -126,7 +126,7 @@ AttachNodeOutput(
   if (typeGraph)
     outputPort.SetAttributeGraphElement(
         "type",
-        GetOrCreateTypeGraphNode(rvsdgOutput.type(), *typeGraph));
+        GetOrCreateTypeGraphNode(*rvsdgOutput.Type(), *typeGraph));
 }
 
 /**

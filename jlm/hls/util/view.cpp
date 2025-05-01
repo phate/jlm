@@ -131,13 +131,13 @@ edge(jlm::rvsdg::output * output, jlm::rvsdg::input * input, bool back_edge = fa
          + " [style=\"\", arrowhead=\"normal\", color=" + color
          + ", headlabel=<>, fontsize=10, labelangle=45, labeldistance=2.0, labelfontcolor=black, "
            "tooltip=\""
-         + output->type().debug_string() + "\"];\n";
+         + output->Type()->debug_string() + "\"];\n";
   }
   return get_dot_name(input) + " -> " + get_dot_name(output)
        + " [style=\"\", arrowhead=\"normal\", color=" + color
        + ", headlabel=<>, fontsize=10, labelangle=45, labeldistance=2.0, labelfontcolor=black, "
          "constraint=false, tooltip=\""
-       + output->type().debug_string() + "\"];\n";
+       + output->Type()->debug_string() + "\"];\n";
 }
 
 std::string

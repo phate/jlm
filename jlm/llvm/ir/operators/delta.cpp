@@ -145,7 +145,7 @@ node::finalize(jlm::rvsdg::output * origin)
   }
 
   auto & expected = type();
-  auto & received = origin->type();
+  auto & received = *origin->Type();
   if (expected != received)
     throw util::error("Expected " + expected.debug_string() + ", got " + received.debug_string());
 
