@@ -2892,8 +2892,10 @@ RhlsToFirrtlConverter::MlirGen(const rvsdg::LambdaNode * lambdaNode)
   {
     std::string portName("data_");
     portName.append(std::to_string(i));
-    inputElements.push_back(
-        BundleElement(Builder_->getStringAttr(portName), false, GetIntType(reg_args[i]->Type().get())));
+    inputElements.push_back(BundleElement(
+        Builder_->getStringAttr(portName),
+        false,
+        GetIntType(reg_args[i]->Type().get())));
   }
   auto inputType = circt::firrtl::BundleType::get(Builder_->getContext(), inputElements);
   struct circt::firrtl::PortInfo iBundle = {

@@ -614,7 +614,7 @@ JlmToMlirConverter::ConvertSimpleNode(
     MlirOp = Builder_->create<::mlir::rvsdg::Match>(
         Builder_->getUnknownLoc(),
         ConvertType(*node.output(0)->Type()), // Control, ouput type
-        inputs[0],                           // input
+        inputs[0],                            // input
         ::mlir::ArrayAttr::get(Builder_->getContext(), ::llvm::ArrayRef(mappingVector)));
   }
   else if (auto callOp = dynamic_cast<const jlm::llvm::CallOperation *>(&operation))
