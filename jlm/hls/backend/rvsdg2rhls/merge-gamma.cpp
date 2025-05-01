@@ -264,7 +264,7 @@ merge_gamma(rvsdg::GammaNode * gamma)
 {
   for (auto user : *gamma->predicate()->origin())
   {
-    auto other_gamma = dynamic_cast<rvsdg::GammaNode *>(rvsdg::input::GetNode(*user));
+    auto other_gamma = rvsdg::TryGetOwnerNode<rvsdg::GammaNode>(*user);
     if (other_gamma && gamma != other_gamma)
     {
       // other gamma depending on same predicate

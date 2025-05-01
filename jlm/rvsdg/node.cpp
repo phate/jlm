@@ -67,15 +67,6 @@ input::divert_to(jlm::rvsdg::output * new_origin)
   on_input_change(this, old_origin, new_origin);
 }
 
-Node *
-input::GetNode(const rvsdg::input & input) noexcept
-{
-  auto nodeInput = dynamic_cast<const rvsdg::node_input *>(&input);
-  return nodeInput ? nodeInput->node() : nullptr;
-}
-
-/* output */
-
 output::~output() noexcept
 {
   JLM_ASSERT(nusers() == 0);

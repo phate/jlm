@@ -65,7 +65,7 @@ Graph::ExtractTailNodes(const Graph & rvsdg)
         return false;
       }
 
-      if (input::GetNode(*input))
+      if (TryGetOwnerNode<Node>(*input))
       {
         return false;
       }
