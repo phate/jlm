@@ -284,7 +284,8 @@ ValidateLoadTest1SteensgaardAgnostic(const jlm::tests::LoadTest1 & test)
       *test.lambda->GetFunctionResults()[1]->origin());
   assert(is<LambdaExitMemoryStateMergeOperation>(*lambdaExitMerge, 2, 1));
 
-  auto lambdaEntrySplit = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(**test.lambda->GetFunctionArguments()[1]->begin());
+  auto lambdaEntrySplit = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
+      **test.lambda->GetFunctionArguments()[1]->begin());
   assert(is<LambdaEntryMemoryStateSplitOperation>(*lambdaEntrySplit, 1, 2));
 
   auto loadA = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
@@ -312,7 +313,8 @@ ValidateLoadTest1SteensgaardRegionAware(const jlm::tests::LoadTest1 & test)
       *test.lambda->GetFunctionResults()[1]->origin());
   assert(is<LambdaExitMemoryStateMergeOperation>(*lambdaExitMerge, 2, 1));
 
-  auto lambdaEntrySplit = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(**test.lambda->GetFunctionArguments()[1]->begin());
+  auto lambdaEntrySplit = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
+      **test.lambda->GetFunctionArguments()[1]->begin());
   assert(is<LambdaEntryMemoryStateSplitOperation>(*lambdaEntrySplit, 1, 2));
 
   auto loadA = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
@@ -340,7 +342,8 @@ ValidateLoadTest1SteensgaardAgnosticTopDown(const jlm::tests::LoadTest1 & test)
       *test.lambda->GetFunctionResults()[1]->origin());
   assert(is<LambdaExitMemoryStateMergeOperation>(*lambdaExitMerge, 2, 1));
 
-  auto lambdaEntrySplit = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(**test.lambda->GetFunctionArguments()[1]->begin());
+  auto lambdaEntrySplit = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
+      **test.lambda->GetFunctionArguments()[1]->begin());
   assert(is<LambdaEntryMemoryStateSplitOperation>(*lambdaEntrySplit, 1, 2));
 
   auto loadA = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
@@ -494,7 +497,8 @@ ValidateLoadFromUndefSteensgaardAgnostic(const jlm::tests::LoadFromUndefTest & t
       *test.Lambda().GetFunctionResults()[0]->origin());
   assert(is<LoadNonVolatileOperation>(*load, 1, 1));
 
-  auto lambdaEntrySplit = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(**test.Lambda().GetFunctionArguments()[0]->begin());
+  auto lambdaEntrySplit = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
+      **test.Lambda().GetFunctionArguments()[0]->begin());
   assert(is<LambdaEntryMemoryStateSplitOperation>(*lambdaEntrySplit, 1, 2));
 }
 
@@ -529,7 +533,8 @@ ValidateLoadFromUndefSteensgaardAgnosticTopDown(const jlm::tests::LoadFromUndefT
       *test.Lambda().GetFunctionResults()[0]->origin());
   assert(is<LoadNonVolatileOperation>(*load, 1, 1));
 
-  auto lambdaEntrySplit = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(**test.Lambda().GetFunctionArguments()[0]->begin());
+  auto lambdaEntrySplit = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
+      **test.Lambda().GetFunctionArguments()[0]->begin());
   assert(is<LambdaEntryMemoryStateSplitOperation>(*lambdaEntrySplit, 1, 2));
 }
 
@@ -540,7 +545,8 @@ ValidateCallTest1SteensgaardAgnostic(const jlm::tests::CallTest1 & test)
 
   /* validate f */
   {
-    auto lambdaEntrySplit = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(**test.lambda_f->GetFunctionArguments()[3]->begin());
+    auto lambdaEntrySplit = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
+        **test.lambda_f->GetFunctionArguments()[3]->begin());
     auto lambdaExitMerge = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
         *test.lambda_f->GetFunctionResults()[2]->origin());
     auto loadX = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
@@ -563,7 +569,8 @@ ValidateCallTest1SteensgaardAgnostic(const jlm::tests::CallTest1 & test)
 
   /* validate g */
   {
-    auto lambdaEntrySplit = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(**test.lambda_g->GetFunctionArguments()[3]->begin());
+    auto lambdaEntrySplit = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
+        **test.lambda_g->GetFunctionArguments()[3]->begin());
     auto lambdaExitMerge = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
         *test.lambda_g->GetFunctionResults()[2]->origin());
     auto loadX = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
@@ -609,7 +616,8 @@ ValidateCallTest1SteensgaardRegionAware(const jlm::tests::CallTest1 & test)
 
   /* validate f */
   {
-    auto lambdaEntrySplit = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(**test.lambda_f->GetFunctionArguments()[3]->begin());
+    auto lambdaEntrySplit = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
+        **test.lambda_f->GetFunctionArguments()[3]->begin());
     auto lambdaExitMerge = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
         *test.lambda_f->GetFunctionResults()[2]->origin());
     auto loadX = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
@@ -1021,7 +1029,8 @@ ValidateIndirectCallTest2SteensgaardAgnostic(const jlm::tests::IndirectCallTest2
         *test.GetLambdaThree().GetFunctionResults()[2]->origin());
     assert(is<LambdaExitMemoryStateMergeOperation>(*lambdaExitMerge, 13, 1));
 
-    auto lambdaEntrySplit = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(**test.GetLambdaThree().GetFunctionArguments()[1]->begin());
+    auto lambdaEntrySplit = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
+        **test.GetLambdaThree().GetFunctionArguments()[1]->begin());
     assert(is<LambdaEntryMemoryStateSplitOperation>(*lambdaEntrySplit, 1, 13));
   }
 
@@ -1330,8 +1339,7 @@ ValidateIndirectCallTest2SteensgaardAgnosticTopDown(const jlm::tests::IndirectCa
     auto loadG2 = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(**test.GetLambdaTest().GetContextVars()[3].inner->begin());
     assert(is<LoadNonVolatileOperation>(*loadG2, 2, 2));
 
-    auto lambdaEntrySplit =
-        jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(**test.GetLambdaTest().GetFunctionArguments()[1]->begin());
+    auto lambdaEntrySplit = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(**test.GetLambdaTest().GetFunctionArguments()[1]->begin());
     assert(is<LambdaEntryMemoryStateSplitOperation>(*lambdaEntrySplit, 1, 10));
   }
 
@@ -1347,7 +1355,8 @@ ValidateIndirectCallTest2SteensgaardAgnosticTopDown(const jlm::tests::IndirectCa
         jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*test.GetTest2CallX().input(3)->origin());
     assert(is<CallEntryMemoryStateMergeOperation>(*callXEntryMerge, 13, 1));
 
-    auto callXExitSplit = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(**test.GetTest2CallX().output(2)->begin());
+    auto callXExitSplit =
+        jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(**test.GetTest2CallX().output(2)->begin());
     assert(is<CallExitMemoryStateSplitOperation>(*callXExitSplit, 1, 13));
 
     jlm::rvsdg::Node * undefNode = nullptr;
@@ -1366,8 +1375,7 @@ ValidateIndirectCallTest2SteensgaardAgnosticTopDown(const jlm::tests::IndirectCa
       assert(jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*user) == callXEntryMerge);
     }
 
-    auto lambdaEntrySplit =
-        jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(**test.GetLambdaTest2().GetFunctionArguments()[1]->begin());
+    auto lambdaEntrySplit = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(**test.GetLambdaTest2().GetFunctionArguments()[1]->begin());
     assert(is<LambdaEntryMemoryStateSplitOperation>(*lambdaEntrySplit, 1, 10));
   }
 }
@@ -1515,11 +1523,11 @@ ValidateDeltaTest1SteensgaardAgnostic(const jlm::tests::DeltaTest1 & test)
 
   assert(test.lambda_h->subregion()->nnodes() == 7);
 
-  auto lambdaEntrySplit =
-      jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(**test.lambda_h->GetFunctionArguments()[1]->begin());
+  auto lambdaEntrySplit = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(**test.lambda_h->GetFunctionArguments()[1]->begin());
   assert(is<LambdaEntryMemoryStateSplitOperation>(*lambdaEntrySplit, 1, 4));
 
-  auto storeF = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(**test.constantFive->output(0)->begin());
+  auto storeF =
+      jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(**test.constantFive->output(0)->begin());
   assert(is<StoreNonVolatileOperation>(*storeF, 3, 1));
   assert(
       jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*storeF->input(2)->origin())
@@ -1539,11 +1547,11 @@ ValidateDeltaTest1SteensgaardRegionAware(const jlm::tests::DeltaTest1 & test)
 
   assert(test.lambda_h->subregion()->nnodes() == 7);
 
-  auto lambdaEntrySplit =
-      jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(**test.lambda_h->GetFunctionArguments()[1]->begin());
+  auto lambdaEntrySplit = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(**test.lambda_h->GetFunctionArguments()[1]->begin());
   assert(is<LambdaEntryMemoryStateSplitOperation>(*lambdaEntrySplit, 1, 1));
 
-  auto storeF = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(**test.constantFive->output(0)->begin());
+  auto storeF =
+      jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(**test.constantFive->output(0)->begin());
   assert(is<StoreNonVolatileOperation>(*storeF, 3, 1));
   assert(
       jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*storeF->input(2)->origin())
@@ -1563,11 +1571,11 @@ ValidateDeltaTest1SteensgaardAgnosticTopDown(const jlm::tests::DeltaTest1 & test
 
   assert(test.lambda_h->subregion()->nnodes() == 7);
 
-  auto lambdaEntrySplit =
-      jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(**test.lambda_h->GetFunctionArguments()[1]->begin());
+  auto lambdaEntrySplit = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(**test.lambda_h->GetFunctionArguments()[1]->begin());
   assert(is<LambdaEntryMemoryStateSplitOperation>(*lambdaEntrySplit, 1, 4));
 
-  auto storeF = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(**test.constantFive->output(0)->begin());
+  auto storeF =
+      jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(**test.constantFive->output(0)->begin());
   assert(is<StoreNonVolatileOperation>(*storeF, 3, 1));
   assert(
       jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*storeF->input(2)->origin())
@@ -1584,12 +1592,10 @@ ValidateDeltaTest2SteensgaardAgnostic(const jlm::tests::DeltaTest2 & test)
 
   assert(test.lambda_f2->subregion()->nnodes() == 9);
 
-  auto lambdaEntrySplit =
-      jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(**test.lambda_f2->GetFunctionArguments()[1]->begin());
+  auto lambdaEntrySplit = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(**test.lambda_f2->GetFunctionArguments()[1]->begin());
   assert(is<LambdaEntryMemoryStateSplitOperation>(*lambdaEntrySplit, 1, 5));
 
-  auto storeD1InF2 =
-      jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(**test.lambda_f2->GetContextVars()[0].inner->begin());
+  auto storeD1InF2 = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(**test.lambda_f2->GetContextVars()[0].inner->begin());
   assert(is<StoreNonVolatileOperation>(*storeD1InF2, 3, 1));
   assert(
       jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*storeD1InF2->input(2)->origin())
@@ -1597,14 +1603,13 @@ ValidateDeltaTest2SteensgaardAgnostic(const jlm::tests::DeltaTest2 & test)
 
   auto d1StateIndex = storeD1InF2->input(2)->origin()->index();
 
-  auto storeD1InF1 =
-      jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(**test.lambda_f1->GetContextVars()[0].inner->begin());
+  auto storeD1InF1 = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
+      **test.lambda_f1->GetContextVars()[0].inner->begin());
   assert(is<StoreNonVolatileOperation>(*storeD1InF1, 3, 1));
 
   assert(d1StateIndex == storeD1InF1->input(2)->origin()->index());
 
-  auto storeD2InF2 =
-      jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(**test.lambda_f2->GetContextVars()[1].inner->begin());
+  auto storeD2InF2 = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(**test.lambda_f2->GetContextVars()[1].inner->begin());
   assert(is<StoreNonVolatileOperation>(*storeD1InF2, 3, 1));
 
   assert(d1StateIndex != storeD2InF2->input(2)->origin()->index());
@@ -1636,11 +1641,12 @@ ValidateDeltaTest2SteensgaardRegionAware(const jlm::tests::DeltaTest2 & test)
   {
     assert(test.lambda_f2->subregion()->nnodes() == 9);
 
-    auto lambdaEntrySplit =
-        jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(**test.lambda_f2->GetFunctionArguments()[1]->begin());
+    auto lambdaEntrySplit = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
+        **test.lambda_f2->GetFunctionArguments()[1]->begin());
     assert(is<LambdaEntryMemoryStateSplitOperation>(*lambdaEntrySplit, 1, 2));
 
-    auto storeD1 = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(**test.lambda_f2->GetContextVars()[0].inner->begin());
+    auto storeD1 = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
+        **test.lambda_f2->GetContextVars()[0].inner->begin());
     assert(is<StoreNonVolatileOperation>(*storeD1, 3, 1));
     assert(
         jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*storeD1->input(2)->origin())
@@ -1652,16 +1658,20 @@ ValidateDeltaTest2SteensgaardRegionAware(const jlm::tests::DeltaTest2 & test)
         jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*storeD2->input(2)->origin())
         == lambdaEntrySplit);
 
-    auto callEntryMerge = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(**storeD1->output(0)->begin());
+    auto callEntryMerge =
+        jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(**storeD1->output(0)->begin());
     assert(is<CallEntryMemoryStateMergeOperation>(*callEntryMerge, 1, 1));
 
-    auto callF1 = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(**callEntryMerge->output(0)->begin());
+    auto callF1 =
+        jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(**callEntryMerge->output(0)->begin());
     assert(is<CallOperation>(*callF1, 3, 2));
 
-    auto callExitSplit = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(**callF1->output(1)->begin());
+    auto callExitSplit =
+        jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(**callF1->output(1)->begin());
     assert(is<CallExitMemoryStateSplitOperation>(*callExitSplit, 1, 1));
 
-    auto lambdaExitMerge = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(**callExitSplit->output(0)->begin());
+    auto lambdaExitMerge =
+        jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(**callExitSplit->output(0)->begin());
     assert(is<LambdaExitMemoryStateMergeOperation>(*lambdaExitMerge, 2, 1));
   }
 }
@@ -1673,12 +1683,10 @@ ValidateDeltaTest2SteensgaardAgnosticTopDown(const jlm::tests::DeltaTest2 & test
 
   assert(test.lambda_f2->subregion()->nnodes() == 9);
 
-  auto lambdaEntrySplit =
-      jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(**test.lambda_f2->GetFunctionArguments()[1]->begin());
+  auto lambdaEntrySplit = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(**test.lambda_f2->GetFunctionArguments()[1]->begin());
   assert(is<LambdaEntryMemoryStateSplitOperation>(*lambdaEntrySplit, 1, 5));
 
-  auto storeD1InF2 =
-      jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(**test.lambda_f2->GetContextVars()[0].inner->begin());
+  auto storeD1InF2 = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(**test.lambda_f2->GetContextVars()[0].inner->begin());
   assert(is<StoreNonVolatileOperation>(*storeD1InF2, 3, 1));
   assert(
       jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*storeD1InF2->input(2)->origin())
@@ -1686,12 +1694,10 @@ ValidateDeltaTest2SteensgaardAgnosticTopDown(const jlm::tests::DeltaTest2 & test
 
   auto d1StateIndex = storeD1InF2->input(2)->origin()->index();
 
-  auto storeD1InF1 =
-      jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(**test.lambda_f1->GetContextVars()[0].inner->begin());
+  auto storeD1InF1 = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(**test.lambda_f1->GetContextVars()[0].inner->begin());
   assert(is<StoreNonVolatileOperation>(*storeD1InF1, 3, 1));
 
-  auto storeD2InF2 =
-      jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(**test.lambda_f2->GetContextVars()[1].inner->begin());
+  auto storeD2InF2 = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(**test.lambda_f2->GetContextVars()[1].inner->begin());
   assert(is<StoreNonVolatileOperation>(*storeD1InF2, 3, 1));
 
   assert(d1StateIndex != storeD2InF2->input(2)->origin()->index());
@@ -1842,12 +1848,10 @@ ValidateImportTestSteensgaardAgnostic(const jlm::tests::ImportTest & test)
 
   assert(test.lambda_f2->subregion()->nnodes() == 9);
 
-  auto lambdaEntrySplit =
-      jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(**test.lambda_f2->GetFunctionArguments()[1]->begin());
+  auto lambdaEntrySplit = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(**test.lambda_f2->GetFunctionArguments()[1]->begin());
   assert(is<LambdaEntryMemoryStateSplitOperation>(*lambdaEntrySplit, 1, 5));
 
-  auto storeD1InF2 =
-      jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(**test.lambda_f2->GetContextVars()[0].inner->begin());
+  auto storeD1InF2 = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(**test.lambda_f2->GetContextVars()[0].inner->begin());
   assert(is<StoreNonVolatileOperation>(*storeD1InF2, 3, 1));
   assert(
       jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*storeD1InF2->input(2)->origin())
@@ -1855,14 +1859,13 @@ ValidateImportTestSteensgaardAgnostic(const jlm::tests::ImportTest & test)
 
   auto d1StateIndex = storeD1InF2->input(2)->origin()->index();
 
-  auto storeD1InF1 =
-      jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(**test.lambda_f1->GetContextVars()[0].inner->begin());
+  auto storeD1InF1 = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(**test.lambda_f1->GetContextVars()[0].inner->begin());
   assert(is<StoreNonVolatileOperation>(*storeD1InF1, 3, 1));
 
   assert(d1StateIndex == storeD1InF1->input(2)->origin()->index());
 
-  auto storeD2InF2 =
-      jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(**test.lambda_f2->GetContextVars()[1].inner->begin());
+  auto storeD2InF2 = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
+      **test.lambda_f2->GetContextVars()[1].inner->begin());
   assert(is<StoreNonVolatileOperation>(*storeD1InF2, 3, 1));
 
   assert(d1StateIndex != storeD2InF2->input(2)->origin()->index());
@@ -1894,11 +1897,12 @@ ValidateImportTestSteensgaardRegionAware(const jlm::tests::ImportTest & test)
   {
     assert(test.lambda_f2->subregion()->nnodes() == 9);
 
-    auto lambdaEntrySplit =
-        jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(**test.lambda_f2->GetFunctionArguments()[1]->begin());
+    auto lambdaEntrySplit = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
+        **test.lambda_f2->GetFunctionArguments()[1]->begin());
     assert(is<LambdaEntryMemoryStateSplitOperation>(*lambdaEntrySplit, 1, 2));
 
-    auto storeD1 = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(**test.lambda_f2->GetContextVars()[0].inner->begin());
+    auto storeD1 = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
+        **test.lambda_f2->GetContextVars()[0].inner->begin());
     assert(is<StoreNonVolatileOperation>(*storeD1, 3, 1));
     assert(
         jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*storeD1->input(2)->origin())
@@ -1910,16 +1914,20 @@ ValidateImportTestSteensgaardRegionAware(const jlm::tests::ImportTest & test)
         jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*storeD2->input(2)->origin())
         == lambdaEntrySplit);
 
-    auto callEntryMerge = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(**storeD1->output(0)->begin());
+    auto callEntryMerge =
+        jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(**storeD1->output(0)->begin());
     assert(is<CallEntryMemoryStateMergeOperation>(*callEntryMerge, 1, 1));
 
-    auto callF1 = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(**callEntryMerge->output(0)->begin());
+    auto callF1 =
+        jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(**callEntryMerge->output(0)->begin());
     assert(is<CallOperation>(*callF1, 3, 2));
 
-    auto callExitSplit = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(**callF1->output(1)->begin());
+    auto callExitSplit =
+        jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(**callF1->output(1)->begin());
     assert(is<CallExitMemoryStateSplitOperation>(*callExitSplit, 1, 1));
 
-    auto lambdaExitMerge = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(**callExitSplit->output(0)->begin());
+    auto lambdaExitMerge =
+        jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(**callExitSplit->output(0)->begin());
     assert(is<LambdaExitMemoryStateMergeOperation>(*lambdaExitMerge, 2, 1));
   }
 }
@@ -1931,12 +1939,10 @@ ValidateImportTestSteensgaardAgnosticTopDown(const jlm::tests::ImportTest & test
 
   assert(test.lambda_f2->subregion()->nnodes() == 9);
 
-  auto lambdaEntrySplit =
-      jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(**test.lambda_f2->GetFunctionArguments()[1]->begin());
+  auto lambdaEntrySplit = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(**test.lambda_f2->GetFunctionArguments()[1]->begin());
   assert(is<LambdaEntryMemoryStateSplitOperation>(*lambdaEntrySplit, 1, 5));
 
-  auto storeD1InF2 =
-      jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(**test.lambda_f2->GetContextVars()[0].inner->begin());
+  auto storeD1InF2 = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(**test.lambda_f2->GetContextVars()[0].inner->begin());
   assert(is<StoreNonVolatileOperation>(*storeD1InF2, 3, 1));
   assert(
       jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*storeD1InF2->input(2)->origin())
@@ -1945,15 +1951,13 @@ ValidateImportTestSteensgaardAgnosticTopDown(const jlm::tests::ImportTest & test
   assert(storeD1InF2->output(0)->nusers() == 1);
   auto d1StateIndexEntry = (*storeD1InF2->output(0)->begin())->index();
 
-  auto storeD1InF1 =
-      jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(**test.lambda_f1->GetContextVars()[0].inner->begin());
+  auto storeD1InF1 = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(**test.lambda_f1->GetContextVars()[0].inner->begin());
   assert(is<StoreNonVolatileOperation>(*storeD1InF1, 3, 1));
   assert(d1StateIndexEntry == storeD1InF1->input(2)->origin()->index());
   assert(storeD1InF1->output(0)->nusers() == 1);
   auto d1StateIndexExit = (*storeD1InF1->output(0)->begin())->index();
 
-  auto storeD2InF2 =
-      jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(**test.lambda_f2->GetContextVars()[1].inner->begin());
+  auto storeD2InF2 = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(**test.lambda_f2->GetContextVars()[1].inner->begin());
   assert(is<StoreNonVolatileOperation>(*storeD1InF2, 3, 1));
 
   assert(d1StateIndexExit != storeD2InF2->input(2)->origin()->index());
@@ -2156,7 +2160,8 @@ ValidateMemcpySteensgaardRegionAware(const jlm::tests::MemcpyTest & test)
         jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*callNode->input(2)->origin());
     assert(is<CallEntryMemoryStateMergeOperation>(*callEntryMerge, 2, 1));
 
-    auto callExitSplit = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(**callNode->output(2)->begin());
+    auto callExitSplit =
+        jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(**callNode->output(2)->begin());
     assert(is<CallExitMemoryStateSplitOperation>(*callExitSplit, 1, 2));
 
     auto memcpyNode =
@@ -2170,7 +2175,8 @@ ValidateMemcpySteensgaardRegionAware(const jlm::tests::MemcpyTest & test)
         jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*memcpyNode->input(5)->origin())
         == lambdaEntrySplit);
 
-    auto lambdaExitMerge = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(**callExitSplit->output(0)->begin());
+    auto lambdaExitMerge =
+        jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(**callExitSplit->output(0)->begin());
     assert(is<LambdaExitMemoryStateMergeOperation>(*lambdaExitMerge, 2, 1));
   }
 }
