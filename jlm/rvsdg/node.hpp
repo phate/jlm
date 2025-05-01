@@ -584,13 +584,6 @@ public:
     return node_;
   }
 
-  static Node *
-  node(const jlm::rvsdg::output * output)
-  {
-    auto no = dynamic_cast<const node_output *>(output);
-    return no != nullptr ? no->node() : nullptr;
-  }
-
   [[nodiscard]] std::variant<Node *, Region *>
   GetOwner() const noexcept override;
 
