@@ -79,7 +79,7 @@ TestGamma()
 
   assert(gamma->noutputs() == 2);
   assert(gamma->subregion(1)->nnodes() == 0);
-  assert(gamma->subregion(1)->narguments() == 2);
+  assert(gamma->subregion(1)->narguments() == 3);
   assert(gamma->ninputs() == 3);
   assert(graph.GetRootRegion().narguments() == 2);
 }

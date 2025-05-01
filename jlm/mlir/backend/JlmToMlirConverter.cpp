@@ -83,10 +83,12 @@ JlmToMlirConverter::ConvertModule(const llvm::RvsdgModule & rvsdgModule)
 JlmToMlirConverter::ConvertRegion(rvsdg::Region & region, ::mlir::Block & block, bool isRoot)
 {
   std::unordered_map<rvsdg::output *, ::mlir::Value> valueMap;
+  size_t argIndex = 0;
   for (size_t i = 0; i < region.narguments(); ++i)
   {
     auto arg = region.argument(i);
-    // Ignore unit type.
+    // Ignore unit type -- this is the first argument in gamma subregions
+    // and does not have a representation in MLIR.
     if (*arg->Type() == *rvsdg::UnitType::Create())
     {
       continue;
@@ -105,7 +107,8 @@ JlmToMlirConverter::ConvertRegion(rvsdg::Region & region, ::mlir::Block & block,
     else
     {
       block.addArgument(ConvertType(arg->type()), Builder_->getUnknownLoc());
-      valueMap[arg] = block.getArgument(i);
+      valueMap[arg] = block.getArgument(argIndex);
+      ++argIndex;
     }
   }
 

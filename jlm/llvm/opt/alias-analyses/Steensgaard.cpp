@@ -201,7 +201,7 @@ public:
   [[nodiscard]] std::string
   DebugString() const noexcept override
   {
-    auto node = jlm::rvsdg::output::GetNode(*Output_);
+    auto node = rvsdg::TryGetOwnerNode<rvsdg::Node>(*Output_);
     auto index = Output_->index();
 
     if (jlm::rvsdg::is<rvsdg::SimpleOperation>(node))
@@ -244,9 +244,9 @@ public:
       return jlm::util::strfmt(dbgstr, ":arg", index);
     }
 
-    if (rvsdg::TryGetOwnerNode<rvsdg::ThetaNode>(*Output_))
+    if (const auto thetaNode = rvsdg::TryGetOwnerNode<rvsdg::ThetaNode>(*Output_))
     {
-      auto dbgstr = jlm::rvsdg::output::GetNode(*Output_)->GetOperation().debug_string();
+      auto dbgstr = thetaNode->GetOperation().debug_string();
       return jlm::util::strfmt(dbgstr, ":out", index);
     }
 
@@ -276,7 +276,7 @@ public:
     }
 
     return jlm::util::strfmt(
-        rvsdg::output::GetNode(*Output_)->GetOperation().debug_string(),
+        rvsdg::TryGetOwnerNode<rvsdg::Node>(*Output_)->GetOperation().debug_string(),
         ":",
         index);
   }

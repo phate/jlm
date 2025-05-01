@@ -225,7 +225,7 @@ InvariantValueRedirection::RedirectCallOutputs(rvsdg::SimpleNode & callNode)
       for (size_t i = 0; i < lambdaExitMerge->ninputs(); i++)
       {
         auto lambdaExitMergeInput = lambdaExitMerge->input(i);
-        auto node = rvsdg::output::GetNode(*lambdaExitMergeInput->origin());
+        auto node = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*lambdaExitMergeInput->origin());
         if (node == lambdaEntrySplit)
         {
           auto callExitSplitOutput = callExitSplit->output(lambdaExitMergeInput->index());

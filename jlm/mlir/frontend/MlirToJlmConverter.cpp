@@ -420,7 +420,8 @@ MlirToJlmConverter::ConvertOperation(
     if (!st)
       JLM_UNREACHABLE("Expected bitstring type for ExtUIOp operation.");
     ::mlir::Type type = castedOp.getType();
-    return rvsdg::output::GetNode(*&llvm::ZExtOperation::Create(*(inputs[0]), ConvertType(type)));
+    return rvsdg::TryGetOwnerNode<rvsdg::Node>(
+        *&llvm::ZExtOperation::Create(*(inputs[0]), ConvertType(type)));
   }
   else if (auto castedOp = ::mlir::dyn_cast<::mlir::arith::ExtSIOp>(&mlirOperation))
   {
@@ -428,8 +429,8 @@ MlirToJlmConverter::ConvertOperation(
     auto convertedOutputType = ConvertType(outputType);
     if (!::mlir::isa<::mlir::IntegerType>(castedOp.getType()))
       JLM_UNREACHABLE("Expected IntegerType for ExtSIOp operation output.");
-    return rvsdg::output::GetNode(*llvm::sext_op::create(
-        static_cast<size_t>(castedOp.getType().cast<::mlir::IntegerType>().getWidth()),
+    return rvsdg::TryGetOwnerNode<rvsdg::Node>(*llvm::sext_op::create(
+        castedOp.getType().cast<::mlir::IntegerType>().getWidth(),
         inputs[0]));
   }
   else if (auto sitofpOp = ::mlir::dyn_cast<::mlir::arith::SIToFPOp>(&mlirOperation))
@@ -533,8 +534,8 @@ MlirToJlmConverter::ConvertOperation(
   {
     auto type = truncOp.getResult().getType();
     auto intType = ::mlir::cast<::mlir::IntegerType>(type);
-    return rvsdg::output::GetNode(
-        *jlm::llvm::TruncOperation::create(intType.getIntOrFloatBitWidth(), inputs[0]));
+    return rvsdg::TryGetOwnerNode<rvsdg::Node>(
+        *llvm::TruncOperation::create(intType.getIntOrFloatBitWidth(), inputs[0]));
   }
 
   // Binary Integer Comparision operations
@@ -561,25 +562,25 @@ MlirToJlmConverter::ConvertOperation(
     auto type = UndefOp.getResult().getType();
     std::shared_ptr<jlm::rvsdg::Type> jlmType = ConvertType(type);
     auto jlmUndefOutput = jlm::llvm::UndefValueOperation::Create(rvsdgRegion, jlmType);
-    return rvsdg::output::GetNode(*jlmUndefOutput);
+    return rvsdg::TryGetOwnerNode<rvsdg::Node>(*jlmUndefOutput);
   }
 
   else if (auto ArrayOp = ::mlir::dyn_cast<::mlir::jlm::ConstantDataArray>(&mlirOperation))
   {
-    return rvsdg::output::GetNode(
+    return rvsdg::TryGetOwnerNode<rvsdg::Node>(
         *llvm::ConstantDataArray::Create(std::vector(inputs.begin(), inputs.end())));
   }
 
   else if (auto ZeroOp = ::mlir::dyn_cast<::mlir::LLVM::ZeroOp>(&mlirOperation))
   {
     auto type = ZeroOp.getType();
-    return rvsdg::output::GetNode(
+    return rvsdg::TryGetOwnerNode<rvsdg::Node>(
         *llvm::ConstantAggregateZeroOperation::Create(rvsdgRegion, ConvertType(type)));
   }
 
   else if (auto VarArgOp = ::mlir::dyn_cast<::mlir::jlm::CreateVarArgList>(&mlirOperation))
   {
-    return rvsdg::output::GetNode(
+    return rvsdg::TryGetOwnerNode<rvsdg::Node>(
         *llvm::valist_op::Create(rvsdgRegion, std::vector(inputs.begin(), inputs.end())));
   }
 
@@ -616,7 +617,7 @@ MlirToJlmConverter::ConvertOperation(
   {
     auto operands = std::vector(inputs.begin(), inputs.end());
     auto memoryStateMergeOutput = jlm::llvm::MemoryStateMergeOperation::Create(operands);
-    return rvsdg::output::GetNode(*memoryStateMergeOutput);
+    return rvsdg::TryGetOwnerNode<rvsdg::Node>(*memoryStateMergeOutput);
   }
   else if (auto IOBarrierOp = ::mlir::dyn_cast<::mlir::jlm::IOBarrier>(&mlirOperation))
   {
@@ -631,7 +632,7 @@ MlirToJlmConverter::ConvertOperation(
   else if (auto MallocOp = ::mlir::dyn_cast<::mlir::jlm::Malloc>(&mlirOperation))
   {
     auto mallocOutputs = jlm::llvm::malloc_op::create(inputs[0]);
-    return rvsdg::output::GetNode(*mallocOutputs[0]);
+    return rvsdg::TryGetOwnerNode<rvsdg::Node>(*mallocOutputs[0]);
   }
   else if (auto StoreOp = ::mlir::dyn_cast<::mlir::jlm::Store>(&mlirOperation))
   {
@@ -675,13 +676,13 @@ MlirToJlmConverter::ConvertOperation(
         std::vector(std::next(inputs.begin()), inputs.end()),
         pointeeValueType,
         llvm::PointerType::Create());
-    return rvsdg::output::GetNode(*jlmGepOp);
+    return rvsdg::TryGetOwnerNode<rvsdg::Node>(*jlmGepOp);
   }
   // * region Structural nodes **
   else if (auto MlirCtrlConst = ::mlir::dyn_cast<::mlir::rvsdg::ConstantCtrl>(&mlirOperation))
   {
     JLM_ASSERT(::mlir::isa<::mlir::rvsdg::RVSDG_CTRLType>(MlirCtrlConst.getType()));
-    return rvsdg::output::GetNode(*rvsdg::control_constant(
+    return rvsdg::TryGetOwnerNode<rvsdg::Node>(*rvsdg::control_constant(
         &rvsdgRegion,
         ::mlir::cast<::mlir::rvsdg::RVSDG_CTRLType>(MlirCtrlConst.getType()).getNumOptions(),
         MlirCtrlConst.getValue()));
@@ -781,7 +782,7 @@ MlirToJlmConverter::ConvertOperation(
       mapping[matchRuleAttr.getValues().front()] = matchRuleAttr.getIndex();
     }
 
-    return rvsdg::output::GetNode(*rvsdg::match_op::Create(
+    return rvsdg::TryGetOwnerNode<rvsdg::Node>(*rvsdg::match_op::Create(
         *(inputs[0]),                 // predicate
         mapping,                      // mapping
         defaultAlternative,           // defaultAlternative

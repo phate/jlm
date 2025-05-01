@@ -152,12 +152,12 @@ test_control_constant_reduction()
   view(&graph.GetRootRegion(), stdout);
 
   // Assert
-  auto match = output::GetNode(*ex1.origin());
+  auto match = TryGetOwnerNode<Node>(*ex1.origin());
   assert(match && is<match_op>(match->GetOperation()));
   auto & match_op = to_match_op(match->GetOperation());
   assert(match_op.default_alternative() == 0);
 
-  assert(output::GetNode(*ex2.origin()) == gamma);
+  assert(TryGetOwnerNode<Node>(*ex2.origin()) == gamma);
 }
 
 static void
@@ -191,7 +191,7 @@ test_control_constant_reduction2()
   jlm::rvsdg::view(&graph.GetRootRegion(), stdout);
 
   // Assert
-  auto match = output::GetNode(*ex.origin());
+  auto match = TryGetOwnerNode<Node>(*ex.origin());
   assert(is<match_op>(match));
 }
 
