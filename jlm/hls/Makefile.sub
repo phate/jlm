@@ -66,6 +66,7 @@ libhls_HEADERS = \
 	jlm/hls/backend/rvsdg2rhls/hls-function-util.hpp \
 	jlm/hls/backend/rvsdg2rhls/check-rhls.hpp \
 	jlm/hls/backend/rvsdg2rhls/DeadNodeElimination.hpp \
+        jlm/hls/backend/rvsdg2rhls/decouple-mem-state.hpp \
 	jlm/hls/backend/rvsdg2rhls/distribute-constants.hpp \
 	jlm/hls/backend/rvsdg2rhls/GammaConversion.hpp \
 	jlm/hls/backend/rvsdg2rhls/hls-function-util.hpp \
