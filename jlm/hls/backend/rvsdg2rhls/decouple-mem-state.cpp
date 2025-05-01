@@ -26,25 +26,13 @@
 namespace jlm::hls
 {
 
-bool
-is_store(rvsdg::SimpleNode * node)
-{
-  return dynamic_cast<const llvm::StoreNonVolatileOperation *>(&node->GetOperation());
-}
-
-bool
-is_load(rvsdg::SimpleNode * node)
-{
-  return dynamic_cast<const llvm::LoadNonVolatileOperation *>(&node->GetOperation());
-}
-
-rvsdg::output *
+static rvsdg::output *
 follow_state_edge(
     rvsdg::input * state_edge,
     std::vector<rvsdg::SimpleNode *> & mem_ops,
     bool modify);
 
-rvsdg::output *
+static rvsdg::output *
 trace_edge(
     rvsdg::input * state_edge,
     rvsdg::output * new_edge,
@@ -207,7 +195,7 @@ trace_edge(
   }
 }
 
-void
+static void
 handle_structural(
     std::vector<std::tuple<rvsdg::SimpleNode *, rvsdg::input *>> & outstanding_dec_reqs,
     std::vector<rvsdg::SimpleNode *> & mem_ops,
@@ -225,7 +213,7 @@ handle_structural(
   }
   for (auto op : mem_ops)
   {
-    if (is_store(op))
+    if (rvsdg::is<const llvm::StoreNonVolatileOperation>(op))
     {
       // can't handle things if there is a store on the edge in the same loop/gamma
       return;
@@ -259,7 +247,7 @@ handle_structural(
   }
 }
 
-void
+static void
 optimize_single_mem_op_loop(
     std::vector<rvsdg::SimpleNode *> & mem_ops,
     rvsdg::input * state_edge_before,
@@ -270,7 +258,9 @@ optimize_single_mem_op_loop(
   // edge like a loop constant, albeit with an output this will especially be important for stores
   // that have a response.
   // TODO: should this also be enabled for just memory state gates?
-  if (mem_ops.size() == 1 && (is_store(mem_ops[0]) || is_load(mem_ops[0])))
+  if (mem_ops.size() == 1
+      && (rvsdg::is<const llvm::StoreNonVolatileOperation>(mem_ops[0])
+          || rvsdg::is<const llvm::LoadNonVolatileOperation>(mem_ops[0])))
   {
     // before and after belong to same loop node
     JLM_ASSERT(rvsdg::TryGetOwnerNode<loop_node>(*state_edge_before));
@@ -281,36 +271,34 @@ optimize_single_mem_op_loop(
   }
 }
 
-rvsdg::output *
+static rvsdg::output *
 follow_state_edge(
     rvsdg::input * state_edge,
     std::vector<rvsdg::SimpleNode *> & mem_ops,
     bool modify)
 {
   // we use input so we can handle the scenario of a store having an extra user to deq from addrq
-  /*
-    things we can encounter:
-    * region result:
-        * return associated output
-    * loop-node:
-        * follow subregion
-        * check which subset of dec_req, dec_resp and store is contained using handle_structural
-    * converted gamma:
-        * need to follow all sub-paths
-        * begins with branch with !br->loop
-            * follow_state_edge
-        * ends with mux
-            * return mux output
-        * check which subset of dec_req, dec_resp and store is contained using handle_structural
-    * mem state split/merge:
-        * follow_state_edge/return merge output
-    * load/state-gate
-        * continue on state output
-    * store/call
-        * add to mem_ops
-        * continue on state output
-        * special case for store - can have multiple users because of addr_deq
-  */
+  // things we can encounter:
+  // * region result:
+  //     * return associated output
+  // * loop-node:
+  //     * follow subregion
+  //     * check which subset of dec_req, dec_resp and store is contained using handle_structural
+  // * converted gamma:
+  //     * need to follow all sub-paths
+  //     * begins with branch with !br->loop
+  //         * follow_state_edge
+  //     * ends with mux
+  //         * return mux output
+  //     * check which subset of dec_req, dec_resp and store is contained using handle_structural
+  // * mem state split/merge:
+  //     * follow_state_edge/return merge output
+  // * load/state-gate
+  //     * continue on state output
+  // * store/call
+  //     * add to mem_ops
+  //     * continue on state output
+  //     * special case for store - can have multiple users because of addr_deq
   // this tracks decouple requests that have not been handled yet
   std::vector<std::tuple<rvsdg::SimpleNode *, rvsdg::input *>> outstanding_dec_reqs;
   while (true)
@@ -457,6 +445,7 @@ convert_loop_state_to_lcb(rvsdg::input * loop_state_input)
 void
 decouple_mem_state(rvsdg::Region * region)
 {
+  JLM_ASSERT(region->nnodes() == 1);
   auto lambda = util::AssertedCast<const jlm::rvsdg::LambdaNode>(region->Nodes().begin().ptr());
   auto state_arg = GetMemoryStateArgument(*lambda);
   if (!state_arg)
