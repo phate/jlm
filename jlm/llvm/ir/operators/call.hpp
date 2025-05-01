@@ -303,7 +303,7 @@ public:
   {
     JLM_ASSERT(is<CallOperation>(&node));
     const auto ioState = node.output(node.noutputs() - 2);
-    JLM_ASSERT(is<IOStateType>(ioState->type()));
+    JLM_ASSERT(is<IOStateType>(ioState->Type()));
     return *ioState;
   }
 
@@ -327,7 +327,7 @@ public:
   {
     JLM_ASSERT(is<CallOperation>(&node));
     const auto memoryState = node.output(node.noutputs() - 1);
-    JLM_ASSERT(is<MemoryStateType>(memoryState->type()));
+    JLM_ASSERT(is<MemoryStateType>(memoryState->Type()));
     return *memoryState;
   }
 
@@ -447,7 +447,7 @@ public:
       std::shared_ptr<const rvsdg::FunctionType> functionType,
       const std::vector<rvsdg::output *> & arguments)
   {
-    CheckFunctionInputType(function->type());
+    CheckFunctionInputType(*function->Type());
 
     auto callOperation = std::make_unique<CallOperation>(std::move(functionType));
     std::vector operands({ function });

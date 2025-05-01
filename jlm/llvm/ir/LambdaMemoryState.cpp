@@ -13,7 +13,7 @@ rvsdg::output &
 GetMemoryStateRegionArgument(const rvsdg::LambdaNode & lambdaNode) noexcept
 {
   auto argument = lambdaNode.GetFunctionArguments().back();
-  JLM_ASSERT(is<MemoryStateType>(argument->type()));
+  JLM_ASSERT(is<MemoryStateType>(argument->Type()));
   return *argument;
 }
 

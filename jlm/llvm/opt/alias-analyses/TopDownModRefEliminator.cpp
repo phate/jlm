@@ -141,7 +141,7 @@ public:
   [[nodiscard]] util::HashSet<const PointsToGraph::MemoryNode *>
   GetOutputNodes(const rvsdg::output & output) const override
   {
-    JLM_ASSERT(is<PointerType>(output.type()));
+    JLM_ASSERT(is<PointerType>(output.Type()));
     auto & registerNode = PointsToGraph_.GetRegisterNode(output);
 
     util::HashSet<const PointsToGraph::MemoryNode *> memoryNodes;

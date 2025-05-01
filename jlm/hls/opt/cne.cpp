@@ -182,7 +182,7 @@ congruent(jlm::rvsdg::output * o1, jlm::rvsdg::output * o2, vset & vs, cnectx & 
   if (ctx.congruent(o1, o2) || vs.visited(o1, o2))
     return true;
 
-  if (o1->type() != o2->type())
+  if (*o1->Type() != *o2->Type())
     return false;
 
   if (auto theta1 = rvsdg::TryGetRegionParentNode<rvsdg::ThetaNode>(*o1))

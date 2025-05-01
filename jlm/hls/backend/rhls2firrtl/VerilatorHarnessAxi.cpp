@@ -68,7 +68,7 @@ extern "C" )"
   {
     if (rvsdg::is<llvm::PointerType>(*kernel.GetOperation().type().Arguments()[i].get()))
     {
-      const auto res_bundle = util::AssertedCast<const bundletype>(&mem_resps[m]->type());
+      const auto res_bundle = util::AssertedCast<const bundletype>(mem_resps[m]->Type().get());
       auto size = JlmSize(&*res_bundle->get_element_type("data")) / 8;
       cpp << "    memories[" << m << "] = std::make_unique<mm_magic_t>();" << std::endl;
       cpp << "    memories[" << m << "]->init((uint8_t *) a" << i << ", 1UL << 31, " << size
@@ -151,7 +151,7 @@ void tick() {
   for (size_t i = 0; i < mem_reqs.size(); i++)
   {
     const auto req_bundle = util::AssertedCast<const bundletype>(mem_reqs[i]->Type().get());
-    const auto res_bundle = util::AssertedCast<const bundletype>(&mem_resps[i]->type());
+    const auto res_bundle = util::AssertedCast<const bundletype>(mem_resps[i]->Type().get());
     auto size = JlmSize(&*res_bundle->get_element_type("data")) / 8;
     const auto has_write = req_bundle->get_element_type("write") != nullptr;
     if (has_write)

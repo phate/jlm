@@ -156,7 +156,7 @@ TracePointer(
     std::vector<rvsdg::SimpleNode *> & decoupleNodes,
     std::unordered_set<rvsdg::output *> & visited)
 {
-  if (!dynamic_cast<const llvm::PointerType *>(&output->type()))
+  if (!rvsdg::is<llvm::PointerType>(output->Type()))
   {
     // Only process pointer outputs
     return;
@@ -224,7 +224,7 @@ TracePointerArguments(const rvsdg::LambdaNode * lambda, port_load_store_decouple
 {
   for (auto arg : lambda->GetFunctionArguments())
   {
-    if (dynamic_cast<const llvm::PointerType *>(&arg->type()))
+    if (rvsdg::is<llvm::PointerType>(arg->Type()))
     {
       std::unordered_set<rvsdg::output *> visited;
       portNodes.emplace_back();
@@ -238,7 +238,7 @@ TracePointerArguments(const rvsdg::LambdaNode * lambda, port_load_store_decouple
   }
   for (auto cv : lambda->GetContextVars())
   {
-    if (dynamic_cast<const llvm::PointerType *>(&cv.inner->type()) && !is_function_argument(cv))
+    if (rvsdg::is<llvm::PointerType>(cv.inner->Type()) && !is_function_argument(cv))
     {
       std::unordered_set<rvsdg::output *> visited;
       portNodes.emplace_back();
@@ -287,7 +287,7 @@ CalcualtePortWidth(const std::tuple<
     auto channel = decoupleRequest->input(1)->origin();
     auto channelConstant = trace_constant(channel);
     auto reponse = find_decouple_response(lambda, channelConstant);
-    auto sz = JlmSize(&reponse->output(0)->type());
+    auto sz = JlmSize(reponse->output(0)->Type().get());
     max_width = sz > max_width ? sz : max_width;
   }
   JLM_ASSERT(max_width != 0);
@@ -637,7 +637,7 @@ ReplaceStore(rvsdg::SubstitutionMap & smap, const rvsdg::SimpleNode * originalSt
       static_cast<rvsdg::SimpleOutput *>(smap.lookup(originalStore->output(0)))->node();
 
   auto addr = replacedStore->input(0)->origin();
-  JLM_ASSERT(dynamic_cast<const llvm::PointerType *>(&addr->type()));
+  JLM_ASSERT(rvsdg::is<llvm::PointerType>(addr->Type()));
   auto data = replacedStore->input(1)->origin();
   std::vector<rvsdg::output *> states;
   for (size_t i = 2; i < replacedStore->ninputs(); ++i)

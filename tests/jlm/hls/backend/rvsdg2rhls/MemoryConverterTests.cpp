@@ -121,7 +121,7 @@ TestLoad()
   assert(lambdaRegion->nresults() == 3);
 
   // Memory state
-  assert(is<MemoryStateType>(lambdaRegion->result(1)->origin()->type()));
+  assert(is<MemoryStateType>(lambdaRegion->result(1)->origin()->Type()));
 
   // Load Address
   auto loadNode =
@@ -199,7 +199,7 @@ TestStore()
   assert(lambdaRegion->nresults() == 2);
 
   // Memory state
-  assert(is<MemoryStateType>(lambdaRegion->result(0)->origin()->type()));
+  assert(is<MemoryStateType>(lambdaRegion->result(0)->origin()->Type()));
 
   // Store
   auto storeNode =
@@ -272,8 +272,8 @@ TestLoadStore()
   assert(lambdaRegion->nresults() == 3);
 
   // Memory state
-  std::cout << lambdaRegion->result(0)->origin()->type().debug_string() << std::endl;
-  assert(is<MemoryStateType>(lambdaRegion->result(0)->origin()->type()));
+  std::cout << lambdaRegion->result(0)->origin()->Type()->debug_string() << std::endl;
+  assert(is<MemoryStateType>(lambdaRegion->result(0)->origin()->Type()));
 
   // Store Node
   auto storeNode =
