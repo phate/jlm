@@ -53,10 +53,9 @@ template<typename OpType>
 inline const OpType *
 TryGetOwnerOp(const rvsdg::input & input) noexcept
 {
-  auto owner = input.GetOwner();
-  if (const auto node = std::get_if<rvsdg::Node *>(&owner))
+  if (const auto node = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(input))
   {
-    return dynamic_cast<const OpType *>(&(*node)->GetOperation());
+    return dynamic_cast<const OpType *>(&node->GetOperation());
   }
   else
   {
@@ -68,10 +67,9 @@ template<typename OpType>
 inline const OpType *
 TryGetOwnerOp(const rvsdg::output & output) noexcept
 {
-  auto owner = output.GetOwner();
-  if (const auto node = std::get_if<rvsdg::Node *>(&owner))
+  if (const auto node = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(output))
   {
-    return dynamic_cast<const OpType *>(&(*node)->GetOperation());
+    return dynamic_cast<const OpType *>(&node->GetOperation());
   }
   else
   {
