@@ -162,7 +162,7 @@ RvsdgToIpGraphConverter::CreateInitialization(const delta::node & deltaNode)
       operands.push_back(Context_->GetVariable(node->input(n)->origin()));
 
     // convert node to tac
-    auto & op = *static_cast<const rvsdg::SimpleOperation *>(&node->GetOperation());
+    auto & op = util::AssertedCast<rvsdg::SimpleNode>(node)->GetOperation();
     tacs.push_back(tac::create(op, operands));
     Context_->InsertVariable(output, tacs.back()->result(0));
   }

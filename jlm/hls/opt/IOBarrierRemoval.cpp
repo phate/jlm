@@ -7,6 +7,7 @@
 #include <jlm/llvm/ir/operators/IOBarrier.hpp>
 #include <jlm/rvsdg/region.hpp>
 #include <jlm/rvsdg/RvsdgModule.hpp>
+#include <jlm/rvsdg/simple-node.hpp>
 #include <jlm/rvsdg/structural-node.hpp>
 
 namespace jlm::hls
@@ -33,11 +34,13 @@ IOBarrierRemoval::RemoveIOBarrierFromRegion(rvsdg::Region & region)
         RemoveIOBarrierFromRegion(*structuralNode->subregion(n));
       }
     }
-
-    // Render all IOBarrier nodes dead
-    if (rvsdg::is<llvm::IOBarrierOperation>(&node))
+    else if (auto simpleNode = dynamic_cast<const rvsdg::SimpleNode *>(&node))
     {
-      node.output(0)->divert_users(node.input(0)->origin());
+      // Render all IOBarrier nodes dead
+      if (rvsdg::is<llvm::IOBarrierOperation>(simpleNode))
+      {
+        node.output(0)->divert_users(node.input(0)->origin());
+      }
     }
   }
 

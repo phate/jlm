@@ -61,8 +61,9 @@ TestUndef()
       assert(region->nnodes() == 1);
 
       // Get the undef op
-      auto convertedUndef =
-          dynamic_cast<const UndefValueOperation *>(&region->Nodes().begin()->GetOperation());
+      auto convertedUndef = dynamic_cast<const UndefValueOperation *>(
+          &jlm::util::AssertedCast<jlm::rvsdg::SimpleNode>(&*region->Nodes().begin())
+               ->GetOperation());
 
       assert(convertedUndef != nullptr);
 
@@ -139,7 +140,9 @@ TestAlloca()
       bool foundAlloca = false;
       for (auto & node : region->Nodes())
       {
-        if (auto allocaOp = dynamic_cast<const alloca_op *>(&node.GetOperation()))
+        auto simpleNode = dynamic_cast<const jlm::rvsdg::SimpleNode *>(&node);
+        if (auto allocaOp =
+                dynamic_cast<const alloca_op *>(simpleNode ? &simpleNode->GetOperation() : nullptr))
         {
           assert(allocaOp->alignment() == 4);
 
@@ -241,14 +244,14 @@ TestLoad()
       assert(region->nnodes() == 1);
       auto convertedLambda =
           jlm::util::AssertedCast<jlm::rvsdg::LambdaNode>(region->Nodes().begin().ptr());
-      assert(is<jlm::rvsdg::LambdaOperation>(convertedLambda));
 
       assert(convertedLambda->subregion()->nnodes() == 1);
-      assert(is<LoadNonVolatileOperation>(
-          convertedLambda->subregion()->Nodes().begin()->GetOperation()));
+      assert(is<LoadNonVolatileOperation>(jlm::util::AssertedCast<jlm::rvsdg::SimpleNode>(
+                                              &*convertedLambda->subregion()->Nodes().begin())
+                                              ->GetOperation()));
       auto convertedLoad = convertedLambda->subregion()->Nodes().begin().ptr();
-      auto loadOperation =
-          dynamic_cast<const LoadNonVolatileOperation *>(&convertedLoad->GetOperation());
+      auto loadOperation = dynamic_cast<const LoadNonVolatileOperation *>(
+          &jlm::util::AssertedCast<jlm::rvsdg::SimpleNode>(convertedLoad)->GetOperation());
 
       assert(loadOperation->GetAlignment() == 4);
       assert(loadOperation->NumMemoryStates() == 1);
@@ -338,14 +341,14 @@ TestStore()
       assert(region->nnodes() == 1);
       auto convertedLambda =
           jlm::util::AssertedCast<jlm::rvsdg::LambdaNode>(region->Nodes().begin().ptr());
-      assert(is<jlm::rvsdg::LambdaOperation>(convertedLambda));
 
       assert(convertedLambda->subregion()->nnodes() == 1);
-      assert(is<StoreNonVolatileOperation>(
-          convertedLambda->subregion()->Nodes().begin()->GetOperation()));
+      assert(is<StoreNonVolatileOperation>(jlm::util::AssertedCast<jlm::rvsdg::SimpleNode>(
+                                               &*convertedLambda->subregion()->Nodes().begin())
+                                               ->GetOperation()));
       auto convertedStore = convertedLambda->subregion()->Nodes().begin().ptr();
-      auto convertedStoreOperation =
-          dynamic_cast<const StoreNonVolatileOperation *>(&convertedStore->GetOperation());
+      auto convertedStoreOperation = dynamic_cast<const StoreNonVolatileOperation *>(
+          &jlm::util::AssertedCast<jlm::rvsdg::SimpleNode>(convertedStore)->GetOperation());
 
       assert(convertedStoreOperation->GetAlignment() == 4);
       assert(convertedStoreOperation->NumMemoryStates() == 1);
@@ -425,12 +428,13 @@ TestSext()
       assert(region->nnodes() == 1);
       auto convertedLambda =
           jlm::util::AssertedCast<jlm::rvsdg::LambdaNode>(region->Nodes().begin().ptr());
-      assert(is<jlm::rvsdg::LambdaOperation>(convertedLambda));
 
       assert(convertedLambda->subregion()->nnodes() == 1);
-      assert(is<sext_op>(convertedLambda->subregion()->Nodes().begin()->GetOperation()));
-      auto convertedSext = dynamic_cast<const sext_op *>(
-          &convertedLambda->subregion()->Nodes().begin()->GetOperation());
+      auto convertedSext =
+          dynamic_cast<const sext_op *>(&jlm::util::AssertedCast<jlm::rvsdg::SimpleNode>(
+                                             &*convertedLambda->subregion()->Nodes().begin())
+                                             ->GetOperation());
+      assert(convertedSext);
 
       assert(convertedSext->ndstbits() == 64);
       assert(convertedSext->nsrcbits() == 32);
@@ -501,9 +505,11 @@ TestSitofp()
       auto convertedLambda =
           jlm::util::AssertedCast<jlm::rvsdg::LambdaNode>(region->Nodes().begin().ptr());
       assert(convertedLambda->subregion()->nnodes() == 1);
-      assert(is<SIToFPOperation>(convertedLambda->subregion()->Nodes().begin()->GetOperation()));
       auto convertedSitofp = dynamic_cast<const SIToFPOperation *>(
-          &convertedLambda->subregion()->Nodes().begin()->GetOperation());
+          &jlm::util::AssertedCast<jlm::rvsdg::SimpleNode>(
+               &*convertedLambda->subregion()->Nodes().begin())
+               ->GetOperation());
+      assert(convertedSitofp);
 
       assert(jlm::rvsdg::is<jlm::rvsdg::bittype>(*convertedSitofp->argument(0).get()));
       assert(jlm::rvsdg::is<jlm::llvm::FloatingPointType>(*convertedSitofp->result(0).get()));
@@ -560,9 +566,11 @@ TestConstantFP()
       auto convertedLambda =
           jlm::util::AssertedCast<jlm::rvsdg::LambdaNode>(region->Nodes().begin().ptr());
       assert(convertedLambda->subregion()->nnodes() == 1);
-      assert(is<ConstantFP>(convertedLambda->subregion()->Nodes().begin()->GetOperation()));
-      auto convertedConst = dynamic_cast<const ConstantFP *>(
-          &convertedLambda->subregion()->Nodes().begin()->GetOperation());
+      auto convertedConst =
+          dynamic_cast<const ConstantFP *>(&jlm::util::AssertedCast<jlm::rvsdg::SimpleNode>(
+                                                &*convertedLambda->subregion()->Nodes().begin())
+                                                ->GetOperation());
+      assert(convertedConst);
 
       assert(jlm::rvsdg::is<jlm::llvm::FloatingPointType>(*convertedConst->result(0).get()));
       assert(convertedConst->constant().isExactlyValue(2.0));
@@ -643,7 +651,8 @@ TestFpBinary()
         assert(convertedLambda->subregion()->nnodes() == 1);
 
         auto node = convertedLambda->subregion()->Nodes().begin().ptr();
-        auto convertedFpbin = jlm::util::AssertedCast<const fpbin_op>(&node->GetOperation());
+        auto convertedFpbin = jlm::util::AssertedCast<const fpbin_op>(
+            &jlm::util::AssertedCast<jlm::rvsdg::SimpleNode>(&*node)->GetOperation());
         assert(convertedFpbin->fpop() == binOp);
         assert(convertedFpbin->nresults() == 1);
         assert(convertedFpbin->narguments() == 2);
@@ -732,8 +741,9 @@ TestGetElementPtr()
       assert(convertedLambda->subregion()->nnodes() == 1);
 
       auto op = convertedLambda->subregion()->Nodes().begin();
-      assert(is<GetElementPtrOperation>(op->GetOperation()));
-      auto convertedGep = dynamic_cast<const GetElementPtrOperation *>(&op->GetOperation());
+      auto convertedGep = dynamic_cast<const GetElementPtrOperation *>(
+          &jlm::util::AssertedCast<jlm::rvsdg::SimpleNode>(&*op)->GetOperation());
+      assert(convertedGep);
 
       assert(is<ArrayType>(convertedGep->GetPointeeType()));
       assert(is<PointerType>(convertedGep->result(0)));
@@ -847,7 +857,8 @@ TestDelta()
         assert(convertedDelta->Section() == "section");
 
         auto op = convertedDelta->subregion()->Nodes().begin();
-        assert(is<jlm::llvm::IntegerConstantOperation>(op->GetOperation()));
+        assert(is<jlm::llvm::IntegerConstantOperation>(
+            jlm::util::AssertedCast<jlm::rvsdg::SimpleNode>(&*op)->GetOperation()));
       }
     }
   }
@@ -912,7 +923,9 @@ TestConstantDataArray()
       bool foundConstantDataArray = false;
       for (auto & node : region->Nodes())
       {
-        if (auto constantDataArray = dynamic_cast<const ConstantDataArray *>(&node.GetOperation()))
+        auto simpleNode = dynamic_cast<const jlm::rvsdg::SimpleNode *>(&node);
+        if (auto constantDataArray = dynamic_cast<const ConstantDataArray *>(
+                simpleNode ? &simpleNode->GetOperation() : nullptr))
         {
           foundConstantDataArray = true;
           assert(constantDataArray->nresults() == 1);
@@ -977,7 +990,8 @@ TestConstantAggregateZero()
       assert(region->nnodes() == 1);
       auto const convertedConstantAggregateZero =
           jlm::util::AssertedCast<const ConstantAggregateZeroOperation>(
-              &region->Nodes().begin().ptr()->GetOperation());
+              &jlm::util::AssertedCast<jlm::rvsdg::SimpleNode>(&*region->Nodes().begin().ptr())
+                   ->GetOperation());
       assert(convertedConstantAggregateZero->nresults() == 1);
       assert(convertedConstantAggregateZero->narguments() == 0);
       auto resultType = convertedConstantAggregateZero->result(0);
@@ -1044,7 +1058,9 @@ TestVarArgList()
       bool foundVarArgOp = false;
       for (auto & node : region->Nodes())
       {
-        auto convertedVarArgOp = dynamic_cast<const valist_op *>(&node.GetOperation());
+        auto simpleNode = dynamic_cast<const jlm::rvsdg::SimpleNode *>(&node);
+        auto convertedVarArgOp =
+            dynamic_cast<const valist_op *>(simpleNode ? &simpleNode->GetOperation() : nullptr);
         if (convertedVarArgOp)
         {
           assert(convertedVarArgOp->nresults() == 1);
@@ -1119,7 +1135,9 @@ TestFNeg()
       bool foundFNegOp = false;
       for (auto & node : region->Nodes())
       {
-        auto convertedFNegOp = dynamic_cast<const FNegOperation *>(&node.GetOperation());
+        auto simpleNode = dynamic_cast<const jlm::rvsdg::SimpleNode *>(&node);
+        auto convertedFNegOp =
+            dynamic_cast<const FNegOperation *>(simpleNode ? &simpleNode->GetOperation() : nullptr);
         if (convertedFNegOp)
         {
           assert(convertedFNegOp->nresults() == 1);
@@ -1197,7 +1215,9 @@ TestFPExt()
       bool foundFPExtOp = false;
       for (auto & node : region->Nodes())
       {
-        auto convertedFPExtOp = dynamic_cast<const FPExtOperation *>(&node.GetOperation());
+        auto simpleNode = dynamic_cast<const jlm::rvsdg::SimpleNode *>(&node);
+        auto convertedFPExtOp = dynamic_cast<const FPExtOperation *>(
+            simpleNode ? &simpleNode->GetOperation() : nullptr);
         if (convertedFPExtOp)
         {
           assert(convertedFPExtOp->nresults() == 1);
@@ -1274,7 +1294,9 @@ TestTrunc()
       bool foundTruncOp = false;
       for (auto & node : region->Nodes())
       {
-        auto convertedTruncOp = dynamic_cast<const TruncOperation *>(&node.GetOperation());
+        auto simpleNode = dynamic_cast<const jlm::rvsdg::SimpleNode *>(&node);
+        auto convertedTruncOp = dynamic_cast<const TruncOperation *>(
+            simpleNode ? &simpleNode->GetOperation() : nullptr);
         if (convertedTruncOp)
         {
           assert(convertedTruncOp->nresults() == 1);
@@ -1365,12 +1387,13 @@ TestFree()
       assert(region->nnodes() == 1);
       auto convertedLambda =
           jlm::util::AssertedCast<jlm::rvsdg::LambdaNode>(region->Nodes().begin().ptr());
-      assert(is<jlm::rvsdg::LambdaOperation>(convertedLambda));
 
       assert(convertedLambda->subregion()->nnodes() == 1);
-      assert(is<FreeOperation>(convertedLambda->subregion()->Nodes().begin()->GetOperation()));
-      auto convertedFree = dynamic_cast<const FreeOperation *>(
-          &convertedLambda->subregion()->Nodes().begin()->GetOperation());
+      auto convertedFree =
+          dynamic_cast<const FreeOperation *>(&jlm::util::AssertedCast<jlm::rvsdg::SimpleNode>(
+                                                   &*convertedLambda->subregion()->Nodes().begin())
+                                                   ->GetOperation());
+      assert(convertedFree);
 
       assert(convertedFree->narguments() == 3);
       assert(convertedFree->nresults() == 2);
@@ -1626,9 +1649,11 @@ TestIOBarrier()
 
       // Find the IOBarrier in the lambda subregion
       bool foundIOBarrier = false;
-      for (auto & lambdaNode : lambdaOperation->subregion()->Nodes())
+      for (auto & node : lambdaOperation->subregion()->Nodes())
       {
-        auto ioBarrierOp = dynamic_cast<const IOBarrierOperation *>(&lambdaNode.GetOperation());
+        auto simpleNode = dynamic_cast<const jlm::rvsdg::SimpleNode *>(&node);
+        auto ioBarrierOp = dynamic_cast<const IOBarrierOperation *>(
+            simpleNode ? &simpleNode->GetOperation() : nullptr);
         if (ioBarrierOp)
         {
           foundIOBarrier = true;
@@ -1712,7 +1737,9 @@ TestMalloc()
       bool foundMallocOp = false;
       for (auto & node : region->Nodes())
       {
-        auto convertedMallocOp = dynamic_cast<const malloc_op *>(&node.GetOperation());
+        auto simpleNode = dynamic_cast<const jlm::rvsdg::SimpleNode *>(&node);
+        auto convertedMallocOp =
+            dynamic_cast<const malloc_op *>(simpleNode ? &simpleNode->GetOperation() : nullptr);
         if (convertedMallocOp)
         {
           assert(convertedMallocOp->nresults() == 2);

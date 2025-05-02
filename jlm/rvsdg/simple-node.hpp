@@ -36,7 +36,7 @@ public:
   output(size_t index) const noexcept;
 
   [[nodiscard]] const SimpleOperation &
-  GetOperation() const noexcept override;
+  GetOperation() const noexcept;
 
   Node *
   copy(rvsdg::Region * region, const std::vector<jlm::rvsdg::output *> & operands) const override;
@@ -215,6 +215,17 @@ CreateOpNode(Region & region, OperatorArguments... operatorArguments)
       region,
       std::make_unique<OperatorType>(std::move(operatorArguments)...),
       {});
+}
+
+template<class T>
+static inline bool
+is(const Node * node) noexcept
+{
+  if (!node)
+    return false;
+
+  auto simple_node = dynamic_cast<const SimpleNode *>(node);
+  return simple_node && dynamic_cast<const T *>(&simple_node->GetOperation());
 }
 
 }

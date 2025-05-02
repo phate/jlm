@@ -51,8 +51,8 @@ public:
 
 private:
   inline unrollinfo(
-      rvsdg::Node * cmpnode,
-      rvsdg::Node * armnode,
+      rvsdg::SimpleNode * cmpnode,
+      rvsdg::SimpleNode * armnode,
       rvsdg::output * idv,
       rvsdg::output * step,
       rvsdg::output * end)
@@ -108,7 +108,7 @@ public:
   std::unique_ptr<jlm::rvsdg::bitvalue_repr>
   niterations() const noexcept;
 
-  rvsdg::Node *
+  rvsdg::SimpleNode *
   cmpnode() const noexcept
   {
     return cmpnode_;
@@ -117,10 +117,10 @@ public:
   [[nodiscard]] const rvsdg::SimpleOperation &
   cmpoperation() const noexcept
   {
-    return *static_cast<const rvsdg::SimpleOperation *>(&cmpnode()->GetOperation());
+    return cmpnode()->GetOperation();
   }
 
-  inline rvsdg::Node *
+  inline rvsdg::SimpleNode *
   armnode() const noexcept
   {
     return armnode_;
@@ -129,7 +129,7 @@ public:
   [[nodiscard]] const rvsdg::SimpleOperation &
   armoperation() const noexcept
   {
-    return *static_cast<const rvsdg::SimpleOperation *>(&armnode()->GetOperation());
+    return armnode()->GetOperation();
   }
 
   inline rvsdg::output *
@@ -206,10 +206,9 @@ private:
   inline bool
   is_known(jlm::rvsdg::output * output) const noexcept
   {
-    auto p = producer(output);
+    auto p = dynamic_cast<const rvsdg::SimpleNode *>(producer(output));
     if (!p)
       return false;
-
     auto op = dynamic_cast<const rvsdg::bitconstant_op *>(&p->GetOperation());
     return op && op->value().is_known();
   }
@@ -220,14 +219,14 @@ private:
     if (!is_known(output))
       return nullptr;
 
-    auto p = producer(output);
-    return &static_cast<const rvsdg::bitconstant_op *>(&p->GetOperation())->value();
+    auto p = util::AssertedCast<const rvsdg::SimpleNode>(producer(output));
+    return &util::AssertedCast<const rvsdg::bitconstant_op>(&p->GetOperation())->value();
   }
 
   rvsdg::output * end_;
   rvsdg::output * step_;
-  rvsdg::Node * cmpnode_;
-  rvsdg::Node * armnode_;
+  rvsdg::SimpleNode * cmpnode_;
+  rvsdg::SimpleNode * armnode_;
   rvsdg::output * idv_;
 };
 

@@ -84,9 +84,9 @@ NodeReduction::ReduceNodesInRegion(rvsdg::Region & region)
       {
         reductionPerformed |= ReduceStructuralNode(*structuralNode);
       }
-      else if (rvsdg::is<rvsdg::SimpleOperation>(node))
+      else if (const auto simpleNode = dynamic_cast<rvsdg::SimpleNode *>(node))
       {
-        reductionPerformed |= ReduceSimpleNode(*node);
+        reductionPerformed |= ReduceSimpleNode(*simpleNode);
       }
       else
       {
@@ -144,7 +144,7 @@ NodeReduction::ReduceGammaNode(rvsdg::StructuralNode & gammaNode)
 }
 
 bool
-NodeReduction::ReduceSimpleNode(rvsdg::Node & simpleNode)
+NodeReduction::ReduceSimpleNode(rvsdg::SimpleNode & simpleNode)
 {
   if (is<LoadNonVolatileOperation>(&simpleNode))
   {
@@ -169,7 +169,7 @@ NodeReduction::ReduceSimpleNode(rvsdg::Node & simpleNode)
 }
 
 bool
-NodeReduction::ReduceLoadNode(rvsdg::Node & simpleNode)
+NodeReduction::ReduceLoadNode(rvsdg::SimpleNode & simpleNode)
 {
   JLM_ASSERT(is<LoadNonVolatileOperation>(&simpleNode));
 
@@ -177,7 +177,7 @@ NodeReduction::ReduceLoadNode(rvsdg::Node & simpleNode)
 }
 
 bool
-NodeReduction::ReduceStoreNode(rvsdg::Node & simpleNode)
+NodeReduction::ReduceStoreNode(rvsdg::SimpleNode & simpleNode)
 {
   JLM_ASSERT(is<StoreNonVolatileOperation>(&simpleNode));
 
@@ -185,7 +185,7 @@ NodeReduction::ReduceStoreNode(rvsdg::Node & simpleNode)
 }
 
 bool
-NodeReduction::ReduceBinaryNode(rvsdg::Node & simpleNode)
+NodeReduction::ReduceBinaryNode(rvsdg::SimpleNode & simpleNode)
 {
   JLM_ASSERT(is<rvsdg::BinaryOperation>(&simpleNode));
 

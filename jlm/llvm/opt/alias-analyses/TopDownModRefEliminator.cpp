@@ -504,11 +504,18 @@ TopDownModRefEliminator::EliminateTopDownRootRegion(rvsdg::Region & region)
     {
       // Nothing needs to be done.
     }
-    else if (
-        is<FunctionToPointerOperation>(node->GetOperation())
-        || is<PointerToFunctionOperation>(node->GetOperation()))
+    else if (auto simpleNode = dynamic_cast<const rvsdg::SimpleNode *>(node))
     {
-      // Nothing needs to be done.
+      if (is<FunctionToPointerOperation>(simpleNode->GetOperation())
+          || is<PointerToFunctionOperation>(simpleNode->GetOperation()))
+
+      {
+        // Nothing needs to be done.
+      }
+      else
+      {
+        JLM_UNREACHABLE("Unhandled node type!");
+      }
     }
     else
     {

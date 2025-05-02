@@ -95,7 +95,7 @@ loop_node::AddLoopVar(jlm::rvsdg::output * origin, jlm::rvsdg::output ** buffer)
   return output;
 }
 
-[[nodiscard]] const rvsdg::Operation &
+[[nodiscard]] const rvsdg::StructuralOperation &
 loop_node::GetOperation() const noexcept
 {
   static const loop_op singleton;

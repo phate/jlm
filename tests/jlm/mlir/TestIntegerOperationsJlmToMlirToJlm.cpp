@@ -97,7 +97,9 @@ TestIntegerBinaryOperation()
       bool foundBinaryOp = false;
       for (auto & node : region->Nodes())
       {
-        auto convertedBinaryOp = dynamic_cast<const JlmOperation *>(&node.GetOperation());
+        auto simpleNode = dynamic_cast<const jlm::rvsdg::SimpleNode *>(&node);
+        auto convertedBinaryOp =
+            dynamic_cast<const JlmOperation *>(simpleNode ? &simpleNode->GetOperation() : nullptr);
         if (convertedBinaryOp)
         {
           assert(convertedBinaryOp->nresults() == 1);
@@ -225,7 +227,9 @@ TestIntegerComparisonOperation(const IntegerComparisonOpTest<JlmOperation> & tes
       bool foundCompOp = false;
       for (auto & node : region->Nodes())
       {
-        auto convertedCompOp = dynamic_cast<const JlmOperation *>(&node.GetOperation());
+        auto simpleNode = dynamic_cast<const jlm::rvsdg::SimpleNode *>(&node);
+        auto convertedCompOp =
+            dynamic_cast<const JlmOperation *>(simpleNode ? &simpleNode->GetOperation() : nullptr);
         if (convertedCompOp)
         {
           assert(convertedCompOp->nresults() == 1);

@@ -86,11 +86,17 @@ InvariantValueRedirection::RedirectInRootRegion(rvsdg::Graph & rvsdg)
       // Nothing needs to be done.
       // Delta nodes are irrelevant for invariant value redirection.
     }
-    else if (
-        is<FunctionToPointerOperation>(node->GetOperation())
-        || is<PointerToFunctionOperation>(node->GetOperation()))
+    else if (auto simpleNode = dynamic_cast<const rvsdg::SimpleNode *>(node))
     {
-      // Nothing needs to be done.
+      if (is<FunctionToPointerOperation>(simpleNode->GetOperation())
+          || is<PointerToFunctionOperation>(simpleNode->GetOperation()))
+      {
+        // Nothing needs to be done.
+      }
+      else
+      {
+        JLM_UNREACHABLE("Unhandled node type.");
+      }
     }
     else
     {
@@ -125,9 +131,12 @@ InvariantValueRedirection::RedirectInRegion(rvsdg::Region & region)
       RedirectInSubregions(*thetaNode);
       RedirectThetaOutputs(*thetaNode);
     }
-    else if (is<CallOperation>(&node))
+    else if (auto simpleNode = dynamic_cast<rvsdg::SimpleNode *>(&node))
     {
-      RedirectCallOutputs(*util::AssertedCast<rvsdg::SimpleNode>(&node));
+      if (is<CallOperation>(simpleNode))
+      {
+        RedirectCallOutputs(*util::AssertedCast<rvsdg::SimpleNode>(&node));
+      }
     }
   }
 }

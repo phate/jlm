@@ -127,10 +127,11 @@ EmptyGammaWithTwoSubregionsAndMatch()
   assert(selectNode->input(2)->origin() == falseValue);
 
   const auto eqNode =
-      jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*selectNode->input(0)->origin());
+      jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(*selectNode->input(0)->origin());
   assert(eqNode && is<IntegerEqOperation>(eqNode));
 
-  auto constantNode = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*eqNode->input(0)->origin());
+  auto constantNode =
+      jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(*eqNode->input(0)->origin());
   if (constantNode)
   {
     assert(eqNode->input(1)->origin() == conditionValue);
@@ -142,7 +143,7 @@ EmptyGammaWithTwoSubregionsAndMatch()
   else
   {
     assert(eqNode->input(0)->origin() == conditionValue);
-    constantNode = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*eqNode->input(1)->origin());
+    constantNode = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(*eqNode->input(1)->origin());
     auto constantOperation =
         dynamic_cast<const IntegerConstantOperation *>(&constantNode->GetOperation());
     assert(constantOperation);

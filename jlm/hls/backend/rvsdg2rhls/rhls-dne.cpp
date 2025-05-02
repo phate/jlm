@@ -126,7 +126,7 @@ remove_unused_loop_inputs(loop_node * ln)
 }
 
 bool
-dead_spec_gamma(rvsdg::Node * dmux_node)
+dead_spec_gamma(rvsdg::SimpleNode * dmux_node)
 {
   auto mux_op = dynamic_cast<const jlm::hls::mux_op *>(&dmux_node->GetOperation());
   JLM_ASSERT(mux_op);
@@ -152,7 +152,7 @@ dead_spec_gamma(rvsdg::Node * dmux_node)
 }
 
 bool
-dead_nonspec_gamma(rvsdg::Node * ndmux_node)
+dead_nonspec_gamma(rvsdg::SimpleNode * ndmux_node)
 {
   auto mux_op = dynamic_cast<const hls::mux_op *>(&ndmux_node->GetOperation());
   JLM_ASSERT(mux_op);
@@ -194,7 +194,7 @@ dead_nonspec_gamma(rvsdg::Node * ndmux_node)
 }
 
 bool
-dead_loop(rvsdg::Node * ndmux_node)
+dead_loop(rvsdg::SimpleNode * ndmux_node)
 {
   auto mux_op = dynamic_cast<const hls::mux_op *>(&ndmux_node->GetOperation());
   JLM_ASSERT(mux_op);
@@ -282,19 +282,23 @@ dne(rvsdg::Region * sr)
     {
       if (!node->has_users())
       {
-        if (dynamic_cast<const mem_req_op *>(&node->GetOperation()))
+        if (auto simpleNode = dynamic_cast<const rvsdg::SimpleNode *>(node))
         {
-          // TODO: fix this once memory connections are explicit
-          continue;
-        }
-        else if (dynamic_cast<const local_mem_req_op *>(&node->GetOperation()))
-        {
-          continue;
-        }
-        else if (dynamic_cast<const local_mem_resp_op *>(&node->GetOperation()))
-        {
-          // TODO: fix - this scenario has only stores and should just be optimized away completely
-          continue;
+          if (dynamic_cast<const mem_req_op *>(&simpleNode->GetOperation()))
+          {
+            // TODO: fix this once memory connections are explicit
+            continue;
+          }
+          else if (dynamic_cast<const local_mem_req_op *>(&simpleNode->GetOperation()))
+          {
+            continue;
+          }
+          else if (dynamic_cast<const local_mem_resp_op *>(&simpleNode->GetOperation()))
+          {
+            // TODO: fix - this scenario has only stores and should just be optimized away
+            // completely
+            continue;
+          }
         }
         remove(node);
         changed = true;
@@ -307,15 +311,18 @@ dne(rvsdg::Region * sr)
         changed |= remove_loop_passthrough(ln);
         changed |= dne(ln->subregion());
       }
-      else if (auto mux = dynamic_cast<const mux_op *>(&node->GetOperation()))
+      else if (auto simpleNode = dynamic_cast<rvsdg::SimpleNode *>(node))
       {
-        if (mux->discarding)
+        if (auto mux = dynamic_cast<const mux_op *>(&simpleNode->GetOperation()))
         {
-          changed |= dead_spec_gamma(node);
-        }
-        else
-        {
-          changed |= dead_nonspec_gamma(node) || dead_loop(node);
+          if (mux->discarding)
+          {
+            changed |= dead_spec_gamma(simpleNode);
+          }
+          else
+          {
+            changed |= dead_nonspec_gamma(simpleNode) || dead_loop(simpleNode);
+          }
         }
       }
     }

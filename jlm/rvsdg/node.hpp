@@ -588,9 +588,6 @@ public:
 
   explicit Node(Region * region);
 
-  [[nodiscard]] virtual const Operation &
-  GetOperation() const noexcept = 0;
-
   inline bool
   has_users() const noexcept
   {
@@ -1028,16 +1025,6 @@ divert_users(Node * node, const std::vector<output *> & outputs)
 
   for (size_t n = 0; n < outputs.size(); n++)
     node->output(n)->divert_users(outputs[n]);
-}
-
-template<class T>
-static inline bool
-is(const Node * node) noexcept
-{
-  if (!node)
-    return false;
-
-  return is<T>(node->GetOperation());
 }
 
 Node *

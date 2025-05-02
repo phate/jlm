@@ -152,7 +152,7 @@ test_control_constant_reduction()
   view(&graph.GetRootRegion(), stdout);
 
   // Assert
-  auto match = TryGetOwnerNode<Node>(*ex1.origin());
+  auto match = TryGetOwnerNode<SimpleNode>(*ex1.origin());
   assert(match && is<match_op>(match->GetOperation()));
   auto & match_op = to_match_op(match->GetOperation());
   assert(match_op.default_alternative() == 0);

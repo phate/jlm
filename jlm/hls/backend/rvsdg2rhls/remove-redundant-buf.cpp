@@ -58,9 +58,9 @@ remove_redundant_buf(rvsdg::Region * region)
         remove_redundant_buf(structnode->subregion(n));
       }
     }
-    else if (dynamic_cast<jlm::rvsdg::SimpleNode *>(node))
+    else if (auto simplenode = dynamic_cast<jlm::rvsdg::SimpleNode *>(node))
     {
-      if (auto buf = dynamic_cast<const buffer_op *>(&node->GetOperation()))
+      if (auto buf = dynamic_cast<const buffer_op *>(&simplenode->GetOperation()))
       {
         if (std::dynamic_pointer_cast<const jlm::llvm::MemoryStateType>(buf->argument(0)))
         {
