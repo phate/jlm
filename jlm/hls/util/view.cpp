@@ -19,7 +19,7 @@ namespace jlm::hls
 {
 
 std::string
-ViewcolorToString(const ViewColors & color)
+ViewColorToString(const ViewColors & color)
 {
   switch (color)
   {
@@ -143,7 +143,7 @@ PortToDot(const std::string & displayName, const std::string & dotName, const Vi
         "                </TR>\n"
         "            </TABLE>\n"
         "> tooltip=\""
-      + dotName + "\" color=" + ViewcolorToString(color) + " fontcolor=" + ViewcolorToString(color)
+      + dotName + "\" color=" + ViewColorToString(color) + " fontcolor=" + ViewColorToString(color)
       + "];\n";
   return dot;
 }

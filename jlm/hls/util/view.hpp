@@ -26,7 +26,7 @@ enum ViewColors
 };
 
 std::string
-ViewcolorToString(const ViewColors & color);
+ViewColorToString(const ViewColors & color);
 
 std::string
 RegionToDot(
