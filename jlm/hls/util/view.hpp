@@ -13,17 +13,66 @@
 namespace jlm::hls
 {
 
-std::string
-region_to_dot(rvsdg::Region * region);
+enum ViewColors
+{
+  BLACK,
+  RED,
+  GREEN,
+  BLUE,
+  CYAN,
+  PINK,
+  PURPLE,
+  YELLOW
+};
 
 std::string
-to_dot(rvsdg::Region * region);
+ViewColorToString(const ViewColors & color);
+
+std::string
+RegionToDot(
+    rvsdg::Region * region,
+    std::unordered_map<rvsdg::output *, ViewColors> & outputColor,
+    std::unordered_map<rvsdg::input *, ViewColors> & inputColor,
+    std::unordered_map<rvsdg::output *, std::string> & tailLabel);
+
+std::string
+ToDot(
+    rvsdg::Region * region,
+    std::unordered_map<rvsdg::output *, ViewColors> & outputColor,
+    std::unordered_map<rvsdg::input *, ViewColors> & inputColor,
+    std::unordered_map<rvsdg::output *, std::string> & tailLabel);
 
 void
-view_dot(rvsdg::Region * region, FILE * out);
+ViewDot(rvsdg::Region * region, FILE * out);
 
 void
-dump_dot(llvm::RvsdgModule & rvsdgModule, const std::string & file_name);
+ViewDot(
+    rvsdg::Region * region,
+    FILE * out,
+    std::unordered_map<rvsdg::output *, ViewColors> & outputColor,
+    std::unordered_map<rvsdg::input *, ViewColors> & inputColor,
+    std::unordered_map<rvsdg::output *, std::string> & tailLabel);
+
+void
+DumpDot(
+    llvm::RvsdgModule & rvsdgModule,
+    const std::string & fileName,
+    std::unordered_map<rvsdg::output *, ViewColors> outputColor,
+    std::unordered_map<rvsdg::input *, ViewColors> inputColor,
+    std::unordered_map<rvsdg::output *, std::string> tailLabel);
+void
+
+DumpDot(llvm::RvsdgModule & rvsdgModule, const std::string & fileName);
+
+void
+DumpDot(
+    rvsdg::Region * region,
+    const std::string & fileName,
+    std::unordered_map<rvsdg::output *, ViewColors> outputColor,
+    std::unordered_map<rvsdg::input *, ViewColors> inputColor,
+    std::unordered_map<rvsdg::output *, std::string> tailLabel);
+void
+DumpDot(rvsdg::Region * region, const std::string & fileName);
 
 } // namespace jlm::hls
 
