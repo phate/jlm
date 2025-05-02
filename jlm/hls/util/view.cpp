@@ -23,18 +23,30 @@ ViewcolorToString(const ViewColors & color)
 {
   switch (color)
   {
-  case NONE:
-    return "";
-    break;
-
   case BLACK:
     return "black";
     break;
-
   case RED:
     return "red";
     break;
-
+  case GREEN:
+    return "green";
+    break;
+  case BLUE:
+    return "blue";
+    break;
+  case CYAN:
+    return "cyan";
+    break;
+  case PINK:
+    return "pink";
+    break;
+  case PURPLE:
+    return "purple";
+    break;
+  case YELLOW:
+    return "yellow";
+    break;
   default:
     JLM_UNREACHABLE("HLS view color not defined");
     break;
@@ -87,8 +99,8 @@ GetDefaultColor(std::unordered_map<T *, ViewColors> & map, T * elem, ViewColors 
 }
 
 template<class T>
-ViewColors
-GetDefaultLabel(std::unordered_map<T *, ViewColors> & map, T * elem, ViewColors def = NONE)
+std::string
+GetDefaultLabel(std::unordered_map<T *, std::string> & map, T * elem, std::string def = "")
 {
   auto f = map.find(elem);
   if (f == map.end())
@@ -172,7 +184,7 @@ std::string
 Edge(
     rvsdg::output * output,
     rvsdg::input * input,
-    std::unordered_map<rvsdg::output *, ViewColors> & tailLabel,
+    std::unordered_map<rvsdg::output *, std::string> & tailLabel,
     bool backEdge = false)
 {
   auto color = "black";
@@ -183,15 +195,13 @@ Edge(
          + " [style=\"\", arrowhead=\"normal\", color=" + color
          + ", headlabel=<>, fontsize=15, labelangle=45, labeldistance=2.0, labelfontcolor=blue, "
            "tooltip=\""
-         + output->type().debug_string() + "\", taillabel=\"" + ViewcolorToString(tailLabelColor)
-         + "\"];\n";
+         + output->type().debug_string() + "\", taillabel=\"" + tailLabelColor + "\"];\n";
   }
   return GetDotName(input) + " -> " + GetDotName(output)
        + " [style=\"\", arrowhead=\"normal\", color=" + color
        + ", headlabel=<>, fontsize=15, labelangle=45, labeldistance=2.0, labelfontcolor=blue, "
          "constraint=false, tooltip=\""
-       + output->type().debug_string() + "\", taillabel=\"" + ViewcolorToString(tailLabelColor)
-       + "\"];\n";
+       + output->type().debug_string() + "\", taillabel=\"" + tailLabelColor + "\"];\n";
 }
 
 std::string
@@ -220,7 +230,7 @@ StructuralNodeToDot(
     rvsdg::StructuralNode * structuralNode,
     std::unordered_map<rvsdg::output *, ViewColors> & outputColor,
     std::unordered_map<rvsdg::input *, ViewColors> & inputColor,
-    std::unordered_map<rvsdg::output *, ViewColors> & tailLabel)
+    std::unordered_map<rvsdg::output *, std::string> & tailLabel)
 {
 
   std::ostringstream dot;
@@ -351,7 +361,7 @@ RegionToDot(
     rvsdg::Region * region,
     std::unordered_map<rvsdg::output *, ViewColors> & outputColor,
     std::unordered_map<rvsdg::input *, ViewColors> & inputColor,
-    std::unordered_map<rvsdg::output *, ViewColors> & tailLabel)
+    std::unordered_map<rvsdg::output *, std::string> & tailLabel)
 {
   std::ostringstream dot;
   dot << "subgraph cluster_reg" << hex((intptr_t)region) << " {\n";
@@ -425,7 +435,7 @@ ToDot(
     rvsdg::Region * region,
     std::unordered_map<rvsdg::output *, ViewColors> & outputColor,
     std::unordered_map<rvsdg::input *, ViewColors> & inputColor,
-    std::unordered_map<rvsdg::output *, ViewColors> & tailLabel)
+    std::unordered_map<rvsdg::output *, std::string> & tailLabel)
 {
   std::ostringstream dot;
   dot << "digraph G {\n";
@@ -440,7 +450,7 @@ ViewDot(
     FILE * out,
     std::unordered_map<rvsdg::output *, ViewColors> & outputColor,
     std::unordered_map<rvsdg::input *, ViewColors> & inputColor,
-    std::unordered_map<rvsdg::output *, ViewColors> & tailLabel)
+    std::unordered_map<rvsdg::output *, std::string> & tailLabel)
 {
   fputs(ToDot(region, outputColor, inputColor, tailLabel).c_str(), out);
   fflush(out);
@@ -451,7 +461,7 @@ ViewDot(rvsdg::Region * region, FILE * out)
 {
   std::unordered_map<rvsdg::output *, ViewColors> outputColor;
   std::unordered_map<rvsdg::input *, ViewColors> inputColor;
-  std::unordered_map<rvsdg::output *, ViewColors> tailLabel;
+  std::unordered_map<rvsdg::output *, std::string> tailLabel;
   ViewDot(region, out, outputColor, inputColor, tailLabel);
 }
 
@@ -467,7 +477,7 @@ DumpDot(
     const std::string & fileName,
     std::unordered_map<rvsdg::output *, ViewColors> outputColor,
     std::unordered_map<rvsdg::input *, ViewColors> inputColor,
-    std::unordered_map<rvsdg::output *, ViewColors> tailLabel)
+    std::unordered_map<rvsdg::output *, std::string> tailLabel)
 {
   DumpDot(&rvsdgModule.Rvsdg().GetRootRegion(), fileName, outputColor, inputColor, tailLabel);
 }
@@ -486,7 +496,7 @@ DumpDot(
     const std::string & fileName,
     std::unordered_map<rvsdg::output *, ViewColors> outputColor,
     std::unordered_map<rvsdg::input *, ViewColors> inputColor,
-    std::unordered_map<rvsdg::output *, ViewColors> tailLabel)
+    std::unordered_map<rvsdg::output *, std::string> tailLabel)
 {
   auto dotFile = fopen(fileName.c_str(), "w");
   ViewDot(region, dotFile, outputColor, inputColor, tailLabel);
