@@ -29,9 +29,9 @@ add_buffers(rvsdg::Region * region, bool pass_through)
       {
         auto out = node->output(0);
         JLM_ASSERT(out->nusers() == 1);
-        if (auto ni = dynamic_cast<jlm::rvsdg::node_input *>(*out->begin()))
+        if (auto simpleNode = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(**out->begin()))
         {
-          auto buf = dynamic_cast<const hls::buffer_op *>(&ni->node()->GetOperation());
+          auto buf = dynamic_cast<const hls::buffer_op *>(&simpleNode->GetOperation());
           if (buf && (buf->pass_through || !pass_through))
           {
             continue;
@@ -58,9 +58,9 @@ add_buffers(rvsdg::Region * region, bool pass_through)
         {
           auto out = node->output(i);
           JLM_ASSERT(out->nusers() == 1);
-          if (auto ni = dynamic_cast<jlm::rvsdg::node_input *>(*out->begin()))
+          if (auto simpleNode = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(**out->begin()))
           {
-            auto buf = dynamic_cast<const hls::buffer_op *>(&ni->node()->GetOperation());
+            auto buf = dynamic_cast<const hls::buffer_op *>(&simpleNode->GetOperation());
             if (buf && (buf->pass_through || !pass_through))
             {
               continue;

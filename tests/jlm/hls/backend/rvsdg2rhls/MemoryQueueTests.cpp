@@ -66,7 +66,7 @@ TestSingleLoad()
   jlm::util::AssertedCast<const LambdaEntryMemoryStateSplitOperation>(
       &entryMemoryStateSplitNode->GetOperation());
   auto exitMemoryStateMergeNode =
-      jlm::util::AssertedCast<jlm::rvsdg::node_output>(lambdaRegion->result(1)->origin())->node();
+      jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(*lambdaRegion->result(1)->origin());
   jlm::util::AssertedCast<const LambdaExitMemoryStateMergeOperation>(
       &exitMemoryStateMergeNode->GetOperation());
 
@@ -148,7 +148,7 @@ TestLoadStore()
   jlm::util::AssertedCast<const LambdaEntryMemoryStateSplitOperation>(
       &entryMemoryStateSplitNode->GetOperation());
   auto exitMemoryStateMergeNode =
-      jlm::util::AssertedCast<jlm::rvsdg::node_output>(lambdaRegion->result(1)->origin())->node();
+      jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(*lambdaRegion->result(1)->origin());
   jlm::util::AssertedCast<const LambdaExitMemoryStateMergeOperation>(
       &exitMemoryStateMergeNode->GetOperation());
 
@@ -224,7 +224,7 @@ TestAddrQueue()
   jlm::util::AssertedCast<const LambdaEntryMemoryStateSplitOperation>(
       &entryMemoryStateSplitNode->GetOperation());
   auto exitMemoryStateMergeNode =
-      jlm::util::AssertedCast<jlm::rvsdg::node_output>(lambdaRegion->result(1)->origin())->node();
+      jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(*lambdaRegion->result(1)->origin());
   jlm::util::AssertedCast<const LambdaExitMemoryStateMergeOperation>(
       &exitMemoryStateMergeNode->GetOperation());
 
@@ -250,15 +250,13 @@ TestAddrQueue()
         if (is<StoreNonVolatileOperation>(node))
         {
           auto loadNode =
-              jlm::util::AssertedCast<jlm::rvsdg::node_output>(node->input(1)->origin())->node();
+              jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(*node->input(1)->origin());
           jlm::util::AssertedCast<const LoadOperation>(&loadNode->GetOperation());
           auto stateGate =
-              jlm::util::AssertedCast<jlm::rvsdg::node_output>(loadNode->input(0)->origin())
-                  ->node();
+              jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(*loadNode->input(0)->origin());
           jlm::util::AssertedCast<const state_gate_op>(&stateGate->GetOperation());
           auto addrQueue =
-              jlm::util::AssertedCast<jlm::rvsdg::node_output>(stateGate->input(0)->origin())
-                  ->node();
+              jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(*stateGate->input(0)->origin());
           jlm::util::AssertedCast<const addr_queue_op>(&addrQueue->GetOperation());
           return 0;
         }
