@@ -13,7 +13,7 @@ rvsdg::output &
 GetMemoryStateRegionArgument(const rvsdg::LambdaNode & lambdaNode) noexcept
 {
   auto argument = lambdaNode.GetFunctionArguments().back();
-  JLM_ASSERT(is<MemoryStateType>(argument->type()));
+  JLM_ASSERT(is<MemoryStateType>(argument->Type()));
   return *argument;
 }
 
@@ -21,7 +21,7 @@ rvsdg::input &
 GetMemoryStateRegionResult(const rvsdg::LambdaNode & lambdaNode) noexcept
 {
   auto result = lambdaNode.GetFunctionResults().back();
-  JLM_ASSERT(is<MemoryStateType>(result->type()));
+  JLM_ASSERT(is<MemoryStateType>(result->Type()));
   return *result;
 }
 
@@ -44,7 +44,7 @@ GetMemoryStateEntrySplit(const rvsdg::LambdaNode & lambdaNode) noexcept
   if (argument.nusers() != 1)
     return nullptr;
 
-  auto node = rvsdg::node_input::GetNode(**argument.begin());
+  const auto node = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(**argument.begin());
   return is<LambdaEntryMemoryStateSplitOperation>(node) ? dynamic_cast<rvsdg::SimpleNode *>(node)
                                                         : nullptr;
 }

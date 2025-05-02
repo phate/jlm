@@ -37,7 +37,7 @@ private:
   void
   trace(jlm::rvsdg::output * op)
   {
-    if (!dynamic_cast<const jlm::llvm::PointerType *>(&op->type()))
+    if (!rvsdg::is<llvm::PointerType>(op->Type()))
     {
       // only process pointer outputs
       return;
@@ -201,7 +201,7 @@ alloca_conv(rvsdg::Region * region)
       // TODO: handle general case of other nodes getting state edge without a merge
       JLM_ASSERT(node->output(1)->nusers() == 1);
       auto merge_in = *node->output(1)->begin();
-      auto merge_node = rvsdg::input::GetNode(*merge_in);
+      auto merge_node = rvsdg::TryGetOwnerNode<rvsdg::Node>(*merge_in);
       if (dynamic_cast<const llvm::MemoryStateMergeOperation *>(&merge_node->GetOperation()))
       {
         // merge after alloca -> remove merge

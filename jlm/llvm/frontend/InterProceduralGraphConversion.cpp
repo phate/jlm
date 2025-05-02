@@ -44,7 +44,7 @@ public:
   void
   insert(const variable * v, rvsdg::output * o)
   {
-    JLM_ASSERT(v->type() == o->type());
+    JLM_ASSERT(v->type() == *o->Type());
     Map_[v] = o;
   }
 
@@ -698,9 +698,13 @@ Convert(
   {
     regionalizedVariableMap.PushRegion(*gamma->subregion(n));
     for (const auto & pair : gammaInputMap)
-      regionalizedVariableMap.GetTopVariableMap().insert(
-          pair.first,
-          gamma->MapInputEntryVar(*pair.second).branchArgument[n]);
+    {
+      auto rolevar = gamma->MapInput(*pair.second);
+      if (auto entryvar = std::get_if<rvsdg::GammaNode::EntryVar>(&rolevar))
+      {
+        regionalizedVariableMap.GetTopVariableMap().insert(pair.first, entryvar->branchArgument[n]);
+      }
+    }
 
     ConvertAggregationNode(
         *branchAggregationNode.child(n),

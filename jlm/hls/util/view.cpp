@@ -195,13 +195,13 @@ Edge(
          + " [style=\"\", arrowhead=\"normal\", color=" + color
          + ", headlabel=<>, fontsize=15, labelangle=45, labeldistance=2.0, labelfontcolor=blue, "
            "tooltip=\""
-         + output->type().debug_string() + "\", taillabel=\"" + tailLabelColor + "\"];\n";
+         + output->Type()->debug_string() + "\", taillabel=\"" + tailLabelColor + "\"];\n";
   }
   return GetDotName(input) + " -> " + GetDotName(output)
        + " [style=\"\", arrowhead=\"normal\", color=" + color
        + ", headlabel=<>, fontsize=15, labelangle=45, labeldistance=2.0, labelfontcolor=blue, "
          "constraint=false, tooltip=\""
-       + output->type().debug_string() + "\", taillabel=\"" + tailLabelColor + "\"];\n";
+       + output->Type()->debug_string() + "\", taillabel=\"" + tailLabelColor + "\"];\n";
 }
 
 std::string
@@ -212,7 +212,7 @@ SymbolicEdge(rvsdg::input * output, rvsdg::output * input)
        + " [style=\"\", arrowhead=\"normal\", color=" + color
        + ", headlabel=<>, fontsize=10, labelangle=45, labeldistance=2.0, labelfontcolor=black, "
          "tooltip=\""
-       + output->type().debug_string() + "\"];\n";
+       + output->Type()->debug_string() + "\"];\n";
 }
 
 static bool

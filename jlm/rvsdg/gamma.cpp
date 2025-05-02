@@ -1,5 +1,5 @@
 /*
- * Copyright 2010 2011 2012 2013 2014 2025 Helge Bahmann <hcb@chaoticmind.net>
+ * Copyright 2010 2011 2012 2013 2014 Helge Bahmann <hcb@chaoticmind.net>
  * Copyright 2013 2014 2015 2016 Nico Reißmann <nico.reissmann@gmail.com>
  * See COPYING for terms of redistribution.
  */
@@ -9,6 +9,7 @@
 #include <jlm/rvsdg/control.hpp>
 #include <jlm/rvsdg/gamma.hpp>
 #include <jlm/rvsdg/substitution.hpp>
+#include <jlm/rvsdg/UnitType.hpp>
 
 namespace jlm::rvsdg
 {
@@ -93,7 +94,7 @@ is_control_constant_reducible(GammaNode * gamma)
   std::unordered_set<jlm::rvsdg::output *> outputs;
   for (const auto & exitvar : gamma->GetExitVars())
   {
-    if (!is_ctltype(exitvar.output->type()))
+    if (!is_ctltype(*exitvar.output->Type()))
       continue;
 
     size_t n;
@@ -208,19 +209,33 @@ bool
 GammaOperation::operator==(const Operation & other) const noexcept
 {
   auto op = dynamic_cast<const GammaOperation *>(&other);
-  return op && op->nalternatives_ == nalternatives_;
+  return op && op->numAlternatives_ == numAlternatives_;
+}
+
+std::shared_ptr<const Type>
+GammaOperation::GetMatchContentType(std::size_t alternative) const
+{
+  return alternative < MatchContentTypes_.size() ? MatchContentTypes_[alternative]
+                                                 : UnitType::Create();
 }
 
 /* gamma node */
 
 GammaNode::~GammaNode() noexcept = default;
 
-GammaNode::GammaNode(rvsdg::output * predicate, size_t nalternatives)
+GammaNode::GammaNode(
+    rvsdg::output * predicate,
+    size_t nalternatives,
+    std::vector<std::shared_ptr<const Type>> match_content_types)
     : StructuralNode(predicate->region(), nalternatives),
-      Operation_(nalternatives)
+      Operation_(nalternatives, std::move(match_content_types))
 {
   add_input(std::unique_ptr<node_input>(
       new StructuralInput(this, predicate, ControlType::Create(nalternatives))));
+  for (std::size_t n = 0; n < nalternatives; ++n)
+  {
+    RegionArgument::Create(*subregion(n), nullptr, Operation_.GetMatchContentType(n));
+  }
 }
 
 [[nodiscard]] const GammaOperation &
@@ -255,9 +270,21 @@ GammaNode::GetEntryVar(std::size_t index) const
   ev.input = input(index + 1);
   for (size_t n = 0; n < nsubregions(); ++n)
   {
-    ev.branchArgument.push_back(subregion(n)->argument(index));
+    ev.branchArgument.push_back(subregion(n)->argument(index + 1));
   }
   return ev;
+}
+
+GammaNode::MatchVar
+GammaNode::GetMatchVar() const
+{
+  MatchVar mv;
+  mv.input = input(0);
+  for (size_t n = 0; n < nsubregions(); ++n)
+  {
+    mv.matchContent.push_back(subregion(n)->argument(0));
+  }
+  return mv;
 }
 
 std::vector<GammaNode::EntryVar>
@@ -271,19 +298,32 @@ GammaNode::GetEntryVars() const
   return vars;
 }
 
-GammaNode::EntryVar
-GammaNode::MapInputEntryVar(const rvsdg::input & input) const
+std::variant<GammaNode::MatchVar, GammaNode::EntryVar>
+GammaNode::MapInput(const rvsdg::input & input) const
 {
   JLM_ASSERT(rvsdg::TryGetOwnerNode<GammaNode>(input) == this);
-  JLM_ASSERT(input.index() != 0);
-  return GetEntryVar(input.index() - 1);
+  if (input.index() == 0)
+  {
+    return GetMatchVar();
+  }
+  else
+  {
+    return GetEntryVar(input.index() - 1);
+  }
 }
 
-GammaNode::EntryVar
-GammaNode::MapBranchArgumentEntryVar(const rvsdg::output & output) const
+std::variant<GammaNode::MatchVar, GammaNode::EntryVar>
+GammaNode::MapBranchArgument(const rvsdg::output & output) const
 {
   JLM_ASSERT(rvsdg::TryGetRegionParentNode<GammaNode>(output) == this);
-  return GetEntryVar(output.index());
+  if (output.index() == 0)
+  {
+    return GetMatchVar();
+  }
+  else
+  {
+    return GetEntryVar(output.index() - 1);
+  }
 }
 
 GammaNode::ExitVar
@@ -394,7 +434,7 @@ GammaNode::RemoveEntryVars(const std::vector<EntryVar> & entryvars)
   {
     for (std::size_t r = 0; r < nsubregions(); ++r)
     {
-      subregion(r)->RemoveArgument(index - 1);
+      subregion(r)->RemoveArgument(index);
     }
     RemoveInput(index);
   }
@@ -446,7 +486,15 @@ GetGammaInvariantOrigin(const GammaNode & gamma, const GammaNode::ExitVar & exit
     {
       return std::nullopt;
     }
-    return gamma.MapBranchArgumentEntryVar(*def).input->origin();
+    auto rolevar = gamma.MapBranchArgument(*def);
+    if (auto entryvar = std::get_if<GammaNode::EntryVar>(&rolevar))
+    {
+      return entryvar->input->origin();
+    }
+    else
+    {
+      return std::nullopt;
+    }
   };
 
   auto firstOrigin = GetExternalOriginOf(exitvar.branchResult[0]);

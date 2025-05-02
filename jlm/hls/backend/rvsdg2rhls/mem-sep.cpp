@@ -46,7 +46,7 @@ GetMemoryStateArgument(const rvsdg::LambdaNode & lambda)
   for (size_t n = 0; n < subregion->narguments(); n++)
   {
     auto argument = subregion->argument(n);
-    if (jlm::rvsdg::is<jlm::llvm::MemoryStateType>(argument->type()))
+    if (jlm::rvsdg::is<llvm::MemoryStateType>(argument->Type()))
       return argument;
   }
   return nullptr;
@@ -59,7 +59,7 @@ GetMemoryStateResult(const rvsdg::LambdaNode & lambda)
   for (size_t n = 0; n < subregion->nresults(); n++)
   {
     auto result = subregion->result(n);
-    if (jlm::rvsdg::is<jlm::llvm::MemoryStateType>(result->type()))
+    if (jlm::rvsdg::is<jlm::llvm::MemoryStateType>(result->Type()))
       return result;
   }
 
@@ -195,16 +195,20 @@ trace_edge(
       new_edge = gammaNode->AddExitVar(ip.branchArgument).output;
       new_next->divert_to(new_edge);
 
-      auto entryvar = gammaNode->MapInputEntryVar(*user);
-      for (size_t i = 0; i < gammaNode->nsubregions(); ++i)
+      auto rolevar = gammaNode->MapInput(*user);
+
+      if (auto entryvar = std::get_if<rvsdg::GammaNode::EntryVar>(&rolevar))
       {
-        auto subres = trace_edge(
-            entryvar.branchArgument[i],
-            ip.branchArgument[i],
-            load_nodes,
-            store_nodes,
-            decouple_nodes);
-        common_edge = subres->output();
+        for (size_t i = 0; i < gammaNode->nsubregions(); ++i)
+        {
+          auto subres = trace_edge(
+              entryvar->branchArgument[i],
+              ip.branchArgument[i],
+              load_nodes,
+              store_nodes,
+              decouple_nodes);
+          common_edge = subres->output();
+        }
       }
     }
     else if (auto theta = rvsdg::TryGetOwnerNode<rvsdg::ThetaNode>(*user))

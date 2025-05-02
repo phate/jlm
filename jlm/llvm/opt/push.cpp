@@ -87,7 +87,7 @@ has_side_effects(const rvsdg::Node * node)
 {
   for (size_t n = 0; n < node->noutputs(); n++)
   {
-    if (dynamic_cast<const rvsdg::StateType *>(&node->output(n)->type()))
+    if (rvsdg::is<const rvsdg::StateType>(node->output(n)->Type()))
       return true;
   }
 
@@ -179,7 +179,7 @@ push(rvsdg::GammaNode * gamma)
       auto argument = region->argument(n);
       for (const auto & user : *argument)
       {
-        auto tmp = jlm::rvsdg::input::GetNode(*user);
+        auto tmp = rvsdg::TryGetOwnerNode<rvsdg::Node>(*user);
         if (tmp && tmp->depth() == 0)
           wl.push_back(tmp);
       }
@@ -200,7 +200,7 @@ push(rvsdg::GammaNode * gamma)
       {
         for (const auto & user : *argument)
         {
-          auto tmp = jlm::rvsdg::input::GetNode(*user);
+          auto tmp = rvsdg::TryGetOwnerNode<rvsdg::Node>(*user);
           if (tmp && tmp->depth() == 0)
             wl.push_back(tmp);
         }
@@ -253,7 +253,7 @@ push_top(rvsdg::ThetaNode * theta)
     auto argument = lv.pre;
     for (const auto & user : *argument)
     {
-      auto tmp = jlm::rvsdg::input::GetNode(*user);
+      auto tmp = rvsdg::TryGetOwnerNode<rvsdg::Node>(*user);
       if (tmp && tmp->depth() == 0 && is_theta_invariant(tmp, invariants))
         wl.push_back(tmp);
     }
@@ -276,7 +276,7 @@ push_top(rvsdg::ThetaNode * theta)
     {
       for (const auto & user : *argument)
       {
-        auto tmp = jlm::rvsdg::input::GetNode(*user);
+        auto tmp = rvsdg::TryGetOwnerNode<rvsdg::Node>(*user);
         if (tmp && tmp->depth() == 0 && is_theta_invariant(tmp, invariants))
           wl.push_back(tmp);
       }
