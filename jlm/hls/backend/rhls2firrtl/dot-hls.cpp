@@ -68,7 +68,7 @@ DotHLS::node_to_dot(const rvsdg::Node * node)
 {
   auto SPACER = "                    <TD WIDTH=\"10\"></TD>\n";
   auto name = get_node_name(node);
-  auto opname = node->GetOperation().debug_string();
+  auto opname = node->DebugString();
   std::replace_if(opname.begin(), opname.end(), isForbiddenChar, '_');
 
   std::string inputs;
@@ -240,7 +240,7 @@ DotHLS::loop_to_dot(hls::loop_node * ln)
     else
     {
       throw jlm::util::error(
-          "Unimplemented op (unexpected structural node) : " + node->GetOperation().debug_string());
+          "Unimplemented op (unexpected structural node) : " + node->DebugString());
     }
   }
 
@@ -322,7 +322,7 @@ DotHLS::prepare_loop_out_port(hls::loop_node * ln)
     else
     {
       throw jlm::util::error(
-          "Unimplemented op (unexpected structural node) : " + node->GetOperation().debug_string());
+          "Unimplemented op (unexpected structural node) : " + node->DebugString());
     }
   }
   for (size_t i = 0; i < sr->narguments(); ++i)
@@ -414,7 +414,7 @@ DotHLS::subregion_to_dot(rvsdg::Region * sr)
     else
     {
       throw jlm::util::error(
-          "Unimplemented op (unexpected structural node) : " + node->GetOperation().debug_string());
+          "Unimplemented op (unexpected structural node) : " + node->DebugString());
     }
   }
   // process results

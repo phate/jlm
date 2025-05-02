@@ -21,7 +21,7 @@ RhlsToFirrtlConverter::MlirGenSimpleNode(const jlm::rvsdg::SimpleNode * node)
   // Only handles nodes with a single output
   if (node->noutputs() != 1)
   {
-    throw std::logic_error(node->GetOperation().debug_string() + " has more than 1 output");
+    throw std::logic_error(node->DebugString() + " has more than 1 output");
   }
 
   // Create the module and its input/output ports
@@ -399,8 +399,7 @@ RhlsToFirrtlConverter::MlirGenSimpleNode(const jlm::rvsdg::SimpleNode * node)
   }
   else
   {
-    throw std::logic_error(
-        "Simple node " + node->GetOperation().debug_string() + " not implemented!");
+    throw std::logic_error("Simple node " + node->DebugString() + " not implemented!");
   }
 
   // Generate the output valid signal
@@ -2478,7 +2477,7 @@ RhlsToFirrtlConverter::MlirGen(const jlm::rvsdg::SimpleNode * node)
   else if (dynamic_cast<const hls::merge_op *>(&(node->GetOperation())))
   {
     // return merge_to_firrtl(n);
-    throw std::logic_error(node->GetOperation().debug_string() + " not implemented!");
+    throw std::logic_error(node->DebugString() + " not implemented!");
   }
   else if (auto o = dynamic_cast<const hls::mux_op *>(&(node->GetOperation())))
   {
@@ -2808,8 +2807,7 @@ RhlsToFirrtlConverter::createInstances(
     }
     else
     {
-      throw util::error(
-          "Unimplemented op (unexpected structural node) : " + node->GetOperation().debug_string());
+      throw util::error("Unimplemented op (unexpected structural node) : " + node->DebugString());
     }
   }
   return instances;
@@ -2825,8 +2823,7 @@ RhlsToFirrtlConverter::TraceStructuralOutput(rvsdg::StructuralOutput * output)
   // We are only expecting hls::loop_node to have a structural output
   if (!dynamic_cast<hls::loop_node *>(node))
   {
-    throw std::logic_error(
-        "Expected a hls::loop_node but found: " + node->GetOperation().debug_string());
+    throw std::logic_error("Expected a hls::loop_node but found: " + node->DebugString());
   }
   JLM_ASSERT(output->results.size() == 1);
   auto origin = output->results.begin().ptr()->origin();
@@ -4065,7 +4062,7 @@ RhlsToFirrtlConverter::GetModuleName(const rvsdg::Node * node)
         / 2;
     append.append(std::to_string(stores));
   }
-  auto name = jlm::util::strfmt("op_", node->GetOperation().debug_string() + append);
+  auto name = jlm::util::strfmt("op_", node->DebugString() + append);
   // Remove characters that are not valid in firrtl module names
   std::replace_if(name.begin(), name.end(), isForbiddenChar, '_');
   return name;
