@@ -70,7 +70,7 @@ bit_type_to_ctl_type(rvsdg::GammaNode * old_gamma)
   for (size_t i = 0; i < old_gamma->noutputs(); ++i)
   {
     auto o = old_gamma->output(i);
-    if (!dynamic_cast<const jlm::rvsdg::bittype *>(&o->type()))
+    if (!std::dynamic_pointer_cast<const jlm::rvsdg::bittype>(o->Type()))
       continue;
     if (o->nusers() != 1)
       continue;
@@ -103,7 +103,7 @@ bit_type_to_ctl_type(rvsdg::GammaNode * old_gamma)
       new_outputs.push_back(no);
     }
     auto match_replacement = old_gamma->AddExitVar(new_outputs).output;
-    auto match_node = rvsdg::input::GetNode(*user);
+    auto match_node = rvsdg::TryGetOwnerNode<rvsdg::Node>(*user);
     match_node->output(0)->divert_users(match_replacement);
     // TODO: divert match users
     remove(match_node);
