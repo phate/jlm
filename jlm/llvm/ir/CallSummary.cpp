@@ -8,8 +8,8 @@
 
 #include <jlm/llvm/ir/operators/call.hpp>
 #include <jlm/llvm/ir/operators/delta.hpp>
-#include <jlm/llvm/ir/operators/Phi.hpp>
 #include <jlm/rvsdg/gamma.hpp>
+#include <jlm/rvsdg/Phi.hpp>
 #include <jlm/rvsdg/theta.hpp>
 
 #include <deque>
@@ -23,7 +23,7 @@ ComputeCallSummary(const rvsdg::LambdaNode & lambdaNode)
   std::deque<rvsdg::input *> worklist;
   worklist.insert(worklist.end(), lambdaNode.output()->begin(), lambdaNode.output()->end());
 
-  std::vector<CallNode *> directCalls;
+  std::vector<rvsdg::SimpleNode *> directCalls;
   GraphExport * rvsdgExport = nullptr;
   std::vector<rvsdg::input *> otherUsers;
 
@@ -31,8 +31,6 @@ ComputeCallSummary(const rvsdg::LambdaNode & lambdaNode)
   {
     auto input = worklist.front();
     worklist.pop_front();
-
-    auto inputNode = rvsdg::input::GetNode(*input);
 
     if (auto lambdaNode = rvsdg::TryGetOwnerNode<rvsdg::LambdaNode>(*input))
     {
@@ -47,11 +45,15 @@ ComputeCallSummary(const rvsdg::LambdaNode & lambdaNode)
       continue;
     }
 
-    if (auto gammaNode = dynamic_cast<rvsdg::GammaNode *>(inputNode))
+    if (auto gammaNode = rvsdg::TryGetOwnerNode<rvsdg::GammaNode>(*input))
     {
-      for (auto & argument : gammaNode->MapInputEntryVar(*input).branchArgument)
+      auto rolevar = gammaNode->MapInput(*input);
+      if (auto entryvar = std::get_if<rvsdg::GammaNode::EntryVar>(&rolevar))
       {
-        worklist.insert(worklist.end(), argument->begin(), argument->end());
+        for (auto & argument : entryvar->branchArgument)
+        {
+          worklist.insert(worklist.end(), argument->begin(), argument->end());
+        }
       }
       continue;
     }
@@ -77,19 +79,19 @@ ComputeCallSummary(const rvsdg::LambdaNode & lambdaNode)
       continue;
     }
 
-    if (auto cvinput = dynamic_cast<phi::cvinput *>(input))
+    if (auto phi = rvsdg::TryGetOwnerNode<rvsdg::PhiNode>(*input))
     {
-      auto argument = cvinput->argument();
-      worklist.insert(worklist.end(), argument->begin(), argument->end());
+      auto ctxvar = phi->MapInputContextVar(*input);
+      worklist.insert(worklist.end(), ctxvar.inner->begin(), ctxvar.inner->end());
       continue;
     }
 
-    if (auto rvresult = dynamic_cast<phi::rvresult *>(input))
+    if (auto phi = rvsdg::TryGetRegionParentNode<rvsdg::PhiNode>(*input))
     {
-      auto argument = rvresult->argument();
-      worklist.insert(worklist.end(), argument->begin(), argument->end());
+      auto fixvar = phi->MapResultFixVar(*input);
+      worklist.insert(worklist.end(), fixvar.recref->begin(), fixvar.recref->end());
 
-      auto output = rvresult->output();
+      auto output = fixvar.output;
       worklist.insert(worklist.end(), output->begin(), output->end());
       continue;
     }
@@ -107,9 +109,10 @@ ComputeCallSummary(const rvsdg::LambdaNode & lambdaNode)
       continue;
     }
 
+    auto inputNode = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*input);
     if (is<CallOperation>(inputNode) && input == inputNode->input(0))
     {
-      directCalls.emplace_back(util::AssertedCast<CallNode>(inputNode));
+      directCalls.emplace_back(inputNode);
       continue;
     }
 

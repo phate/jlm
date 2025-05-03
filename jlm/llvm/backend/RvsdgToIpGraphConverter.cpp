@@ -261,15 +261,18 @@ RvsdgToIpGraphConverter::ConvertGammaNode(const rvsdg::GammaNode & gammaNode)
   // convert gamma regions
   std::vector<cfg_node *> phi_nodes;
   entryBlock->append_last(BranchOperation::create(numSubregions, Context_->GetVariable(predicate)));
+  auto entryvars = gammaNode.GetEntryVars();
   for (size_t n = 0; n < gammaNode.nsubregions(); n++)
   {
     const auto subregion = gammaNode.subregion(n);
 
     // add arguments to context
-    for (size_t i = 0; i < subregion->narguments(); i++)
+    for (size_t i = 0; i < entryvars.size(); i++)
     {
-      const auto argument = subregion->argument(i);
-      Context_->InsertVariable(argument, Context_->GetVariable(argument->input()->origin()));
+      auto & entryvar = entryvars[i];
+      Context_->InsertVariable(
+          entryvar.branchArgument[n],
+          Context_->GetVariable(entryvar.input->origin()));
     }
 
     // convert subregion
@@ -409,7 +412,7 @@ RvsdgToIpGraphConverter::ConvertLambdaNode(const rvsdg::LambdaNode & lambdaNode)
 }
 
 void
-RvsdgToIpGraphConverter::ConvertPhiNode(const phi::node & phiNode)
+RvsdgToIpGraphConverter::ConvertPhiNode(const rvsdg::PhiNode & phiNode)
 {
   const auto subregion = phiNode.subregion();
   auto & ipGraphModule = Context_->GetIpGraphModule();
@@ -426,9 +429,9 @@ RvsdgToIpGraphConverter::ConvertPhiNode(const phi::node & phiNode)
   for (size_t n = 0; n < subregion->nresults(); n++)
   {
     JLM_ASSERT(subregion->argument(n)->input() == nullptr);
-    const auto node = rvsdg::output::GetNode(*subregion->result(n)->origin());
+    const auto & origin = *subregion->result(n)->origin();
 
-    if (const auto lambdaNode = dynamic_cast<const rvsdg::LambdaNode *>(node))
+    if (const auto lambdaNode = rvsdg::TryGetOwnerNode<rvsdg::LambdaNode>(origin))
     {
       const auto & lambdaOperation =
           dynamic_cast<LlvmLambdaOperation &>(lambdaNode->GetOperation());
@@ -440,7 +443,7 @@ RvsdgToIpGraphConverter::ConvertPhiNode(const phi::node & phiNode)
           lambdaOperation.attributes());
       Context_->InsertVariable(subregion->argument(n), ipGraphModule.create_variable(functionNode));
     }
-    else if (const auto deltaNode = dynamic_cast<const delta::node *>(node))
+    else if (const auto deltaNode = rvsdg::TryGetOwnerNode<delta::node>(origin))
     {
       const auto dataNode = data_node::Create(
           ipGraph,
@@ -454,7 +457,10 @@ RvsdgToIpGraphConverter::ConvertPhiNode(const phi::node & phiNode)
     else
     {
       JLM_UNREACHABLE(
-          util::strfmt("Unhandled node type: ", node->GetOperation().debug_string()).c_str());
+          util::strfmt(
+              "Unhandled node type: ",
+              rvsdg::TryGetOwnerNode<rvsdg::Node>(origin)->GetOperation().debug_string())
+              .c_str());
     }
   }
 
@@ -463,26 +469,29 @@ RvsdgToIpGraphConverter::ConvertPhiNode(const phi::node & phiNode)
   {
     JLM_ASSERT(subregion->argument(n)->input() == nullptr);
     const auto result = subregion->result(n);
-    const auto node = rvsdg::output::GetNode(*result->origin());
+    const auto & origin = *result->origin();
 
-    if (const auto lambdaNode = dynamic_cast<const rvsdg::LambdaNode *>(node))
+    if (const auto lambdaNode = rvsdg::TryGetOwnerNode<rvsdg::LambdaNode>(origin))
     {
       const auto variable =
           util::AssertedCast<const fctvariable>(Context_->GetVariable(subregion->argument(n)));
       variable->function()->add_cfg(CreateControlFlowGraph(*lambdaNode));
-      Context_->InsertVariable(node->output(0), variable);
+      Context_->InsertVariable(lambdaNode->output(), variable);
     }
-    else if (const auto deltaNode = dynamic_cast<const delta::node *>(node))
+    else if (const auto deltaNode = rvsdg::TryGetOwnerNode<delta::node>(origin))
     {
       const auto variable =
           util::AssertedCast<const gblvalue>(Context_->GetVariable(subregion->argument(n)));
       variable->node()->set_initialization(CreateInitialization(*deltaNode));
-      Context_->InsertVariable(node->output(0), variable);
+      Context_->InsertVariable(deltaNode->output(), variable);
     }
     else
     {
       JLM_UNREACHABLE(
-          util::strfmt("Unhandled node type: ", node->GetOperation().debug_string()).c_str());
+          util::strfmt(
+              "Unhandled node type: ",
+              rvsdg::TryGetOwnerNode<rvsdg::Node>(origin)->GetOperation().debug_string())
+              .c_str());
     }
   }
 
@@ -526,7 +535,7 @@ RvsdgToIpGraphConverter::ConvertNode(const rvsdg::Node & node)
   {
     ConvertThetaNode(*thetaNode);
   }
-  else if (const auto phiNode = dynamic_cast<const phi::node *>(&node))
+  else if (const auto phiNode = dynamic_cast<const rvsdg::PhiNode *>(&node))
   {
     ConvertPhiNode(*phiNode);
   }

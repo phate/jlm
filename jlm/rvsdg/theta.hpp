@@ -85,14 +85,14 @@ public:
   predicate() const noexcept
   {
     auto result = subregion()->result(0);
-    JLM_ASSERT(dynamic_cast<const ControlType *>(&result->type()));
+    JLM_ASSERT(is<const ControlType>(result->Type()));
     return result;
   }
 
   inline void
   set_predicate(jlm::rvsdg::output * p)
   {
-    auto node = output::GetNode(*predicate()->origin());
+    auto node = TryGetOwnerNode<Node>(*predicate()->origin());
 
     predicate()->divert_to(p);
     if (node && !node->has_users())

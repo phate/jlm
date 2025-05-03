@@ -205,7 +205,7 @@ TestCall()
 
     auto controlResult = jlm::rvsdg::control_constant(lambdaNode->subregion(), 2, 0);
 
-    auto & callNode = CallNode::CreateNode(
+    auto & callNode = CallOperation::CreateNode(
         lambdaArgumentTest1,
         functionTypeTest1,
         { controlResult, xArgument, yArgument, ioStateArgument, memoryStateArgument });
@@ -302,19 +302,19 @@ TestCallWithMemoryStateNodes()
 
     auto controlResult = jlm::rvsdg::control_constant(lambdaNode->subregion(), 2, 0);
 
-    auto & callNode = CallNode::CreateNode(
+    auto & callNode = CallOperation::CreateNode(
         lambdaArgumentTest1,
         functionTypeTest1,
         { controlResult, xArgument, ioStateArgument, &callEntryMergeResult });
 
     auto callExitSplitResults =
-        CallExitMemoryStateSplitOperation::Create(*callNode.GetMemoryStateOutput(), 2);
+        CallExitMemoryStateSplitOperation::Create(CallOperation::GetMemoryStateOutput(callNode), 2);
 
     auto & lambdaExitMergeResult =
         LambdaExitMemoryStateMergeOperation::Create(*lambdaNode->subregion(), callExitSplitResults);
 
     lambdaOutputTest2 = lambdaNode->finalize(
-        { callNode.output(0), callNode.GetIoStateOutput(), &lambdaExitMergeResult });
+        { callNode.output(0), &CallOperation::GetIOStateOutput(callNode), &lambdaExitMergeResult });
     GraphExport::Create(*lambdaOutputTest2, "test2");
   }
 
@@ -356,10 +356,10 @@ TestLambdaCallArgumentMismatch()
   auto & lambdaNode = test.GetLambdaMain();
 
   assert(lambdaNode.GetFunctionResults().size() == 3);
-  assert(lambdaNode.GetFunctionResults().size() == callNode.NumResults());
-  assert(lambdaNode.GetFunctionResults()[0]->origin() == callNode.Result(0));
-  assert(lambdaNode.GetFunctionResults()[1]->origin() == callNode.Result(1));
-  assert(lambdaNode.GetFunctionResults()[2]->origin() == callNode.Result(2));
+  assert(lambdaNode.GetFunctionResults().size() == callNode.noutputs());
+  assert(lambdaNode.GetFunctionResults()[0]->origin() == callNode.output(0));
+  assert(lambdaNode.GetFunctionResults()[1]->origin() == callNode.output(1));
+  assert(lambdaNode.GetFunctionResults()[2]->origin() == callNode.output(2));
 
   return 0;
 }

@@ -87,7 +87,7 @@ has_side_effects(const rvsdg::Node * node)
 {
   for (size_t n = 0; n < node->noutputs(); n++)
   {
-    if (dynamic_cast<const rvsdg::StateType *>(&node->output(n)->type()))
+    if (rvsdg::is<const rvsdg::StateType>(node->output(n)->Type()))
       return true;
   }
 
@@ -179,7 +179,7 @@ push(rvsdg::GammaNode * gamma)
       auto argument = region->argument(n);
       for (const auto & user : *argument)
       {
-        auto tmp = jlm::rvsdg::input::GetNode(*user);
+        auto tmp = rvsdg::TryGetOwnerNode<rvsdg::Node>(*user);
         if (tmp && tmp->depth() == 0)
           wl.push_back(tmp);
       }
@@ -200,7 +200,7 @@ push(rvsdg::GammaNode * gamma)
       {
         for (const auto & user : *argument)
         {
-          auto tmp = jlm::rvsdg::input::GetNode(*user);
+          auto tmp = rvsdg::TryGetOwnerNode<rvsdg::Node>(*user);
           if (tmp && tmp->depth() == 0)
             wl.push_back(tmp);
         }
@@ -253,7 +253,7 @@ push_top(rvsdg::ThetaNode * theta)
     auto argument = lv.pre;
     for (const auto & user : *argument)
     {
-      auto tmp = jlm::rvsdg::input::GetNode(*user);
+      auto tmp = rvsdg::TryGetOwnerNode<rvsdg::Node>(*user);
       if (tmp && tmp->depth() == 0 && is_theta_invariant(tmp, invariants))
         wl.push_back(tmp);
     }
@@ -276,7 +276,7 @@ push_top(rvsdg::ThetaNode * theta)
     {
       for (const auto & user : *argument)
       {
-        auto tmp = jlm::rvsdg::input::GetNode(*user);
+        auto tmp = rvsdg::TryGetOwnerNode<rvsdg::Node>(*user);
         if (tmp && tmp->depth() == 0 && is_theta_invariant(tmp, invariants))
           wl.push_back(tmp);
       }
@@ -354,7 +354,8 @@ pushout_store(rvsdg::Node * storenode)
     std::unordered_set<jlm::rvsdg::input *> users;
     for (const auto & user : *states[n])
     {
-      if (jlm::rvsdg::input::GetNode(*user) != jlm::rvsdg::output::GetNode(*nstates[0]))
+      if (rvsdg::TryGetOwnerNode<rvsdg::Node>(*user)
+          != rvsdg::TryGetOwnerNode<rvsdg::Node>(*nstates[0]))
         users.insert(user);
     }
 
@@ -370,10 +371,10 @@ push_bottom(rvsdg::ThetaNode * theta)
 {
   for (const auto & lv : theta->GetLoopVars())
   {
-    auto storenode = jlm::rvsdg::output::GetNode(*lv.post->origin());
-    if (jlm::rvsdg::is<StoreNonVolatileOperation>(storenode) && is_movable_store(storenode))
+    const auto storeNode = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*lv.post->origin());
+    if (jlm::rvsdg::is<StoreNonVolatileOperation>(storeNode) && is_movable_store(storeNode))
     {
-      pushout_store(storenode);
+      pushout_store(storeNode);
       break;
     }
   }

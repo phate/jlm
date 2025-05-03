@@ -12,9 +12,9 @@
 #include <jlm/rvsdg/theta.hpp>
 
 #include <jlm/llvm/ir/operators/lambda.hpp>
-#include <jlm/llvm/ir/operators/Phi.hpp>
 #include <jlm/llvm/ir/RvsdgModule.hpp>
 #include <jlm/llvm/opt/cne.hpp>
+#include <jlm/rvsdg/Phi.hpp>
 #include <jlm/util/Statistics.hpp>
 
 static jlm::util::StatisticsCollector statisticsCollector;
@@ -166,9 +166,9 @@ test_theta()
   cne.Run(rm, statisticsCollector);
   //	jlm::rvsdg::view(graph.GetRootRegion(), stdout);
 
-  auto un1 = jlm::rvsdg::output::GetNode(*u1);
-  auto un2 = jlm::rvsdg::output::GetNode(*u2);
-  auto bn1 = jlm::rvsdg::output::GetNode(*b1);
+  auto un1 = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*u1);
+  auto un2 = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*u2);
+  auto bn1 = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*b1);
   assert(un1->input(0)->origin() == un2->input(0)->origin());
   assert(bn1->input(0)->origin() == un1->input(0)->origin());
   assert(bn1->input(1)->origin() == region->argument(3));
@@ -402,7 +402,7 @@ test_lambda()
   cne.Run(rm, statisticsCollector);
   //	jlm::rvsdg::view(graph.GetRootRegion(), stdout);
 
-  auto bn1 = jlm::rvsdg::output::GetNode(*b1);
+  auto bn1 = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*b1);
   assert(bn1->input(0)->origin() == bn1->input(1)->origin());
 }
 
@@ -417,32 +417,32 @@ test_phi()
   RvsdgModule rm(jlm::util::filepath(""), "", "");
   auto & graph = rm.Rvsdg();
 
-  auto x = &jlm::tests::GraphImport::Create(graph, vt, "x");
+  auto & x = jlm::tests::GraphImport::Create(graph, vt, "x");
 
-  phi::builder pb;
+  jlm::rvsdg::PhiBuilder pb;
   pb.begin(&graph.GetRootRegion());
   auto region = pb.subregion();
 
-  auto d1 = pb.add_ctxvar(x);
-  auto d2 = pb.add_ctxvar(x);
+  auto d1 = pb.AddContextVar(x);
+  auto d2 = pb.AddContextVar(x);
 
-  auto r1 = pb.add_recvar(ft);
-  auto r2 = pb.add_recvar(ft);
+  auto r1 = pb.AddFixVar(ft);
+  auto r2 = pb.AddFixVar(ft);
 
   auto lambda1 = jlm::rvsdg::LambdaNode::Create(
       *region,
       LlvmLambdaOperation::Create(ft, "f", linkage::external_linkage));
-  auto cv1 = lambda1->AddContextVar(*d1).inner;
+  auto cv1 = lambda1->AddContextVar(*d1.inner).inner;
   auto f1 = lambda1->finalize({ cv1 });
 
   auto lambda2 = jlm::rvsdg::LambdaNode::Create(
       *region,
       LlvmLambdaOperation::Create(ft, "f", linkage::external_linkage));
-  auto cv2 = lambda2->AddContextVar(*d2).inner;
+  auto cv2 = lambda2->AddContextVar(*d2.inner).inner;
   auto f2 = lambda2->finalize({ cv2 });
 
-  r1->set_rvorigin(f1);
-  r2->set_rvorigin(f2);
+  r1.result->divert_to(f1);
+  r2.result->divert_to(f2);
 
   auto phi = pb.end();
 

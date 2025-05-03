@@ -7,6 +7,7 @@
 #define JLM_LLVM_OPT_DEADNODEELIMINATION_HPP
 
 #include <jlm/rvsdg/lambda.hpp>
+#include <jlm/rvsdg/Phi.hpp>
 #include <jlm/rvsdg/Transformation.hpp>
 
 namespace jlm::rvsdg
@@ -28,11 +29,6 @@ class node;
 }
 
 class LambdaNode;
-
-namespace phi
-{
-class node;
-}
 
 /** \brief Dead Node Elimination Optimization
  *
@@ -101,7 +97,7 @@ private:
   SweepLambda(rvsdg::LambdaNode & lambdaNode) const;
 
   void
-  SweepPhi(phi::node & phiNode) const;
+  SweepPhi(rvsdg::PhiNode & phiNode) const;
 
   static void
   SweepDelta(delta::node & deltaNode);
