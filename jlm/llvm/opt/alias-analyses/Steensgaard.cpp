@@ -26,7 +26,7 @@ namespace jlm::llvm::aa
 static bool
 HasOrContainsPointerType(const rvsdg::output & output)
 {
-  return IsOrContains<PointerType>(output.type()) || is<rvsdg::FunctionType>(output.type());
+  return IsOrContains<PointerType>(*output.Type()) || is<rvsdg::FunctionType>(output.Type());
 }
 
 /**
@@ -207,7 +207,7 @@ public:
     if (jlm::rvsdg::is<rvsdg::SimpleOperation>(node))
     {
       auto nodestr = node->GetOperation().debug_string();
-      auto outputstr = Output_->type().debug_string();
+      auto outputstr = Output_->Type()->debug_string();
       return jlm::util::strfmt(nodestr, ":", index, "[" + outputstr + "]");
     }
 
@@ -496,7 +496,7 @@ public:
   static std::unique_ptr<Location>
   Create(const GraphImport & graphImport)
   {
-    JLM_ASSERT(is<PointerType>(graphImport.type()) || is<rvsdg::FunctionType>(graphImport.type()));
+    JLM_ASSERT(is<PointerType>(graphImport.Type()) || is<rvsdg::FunctionType>(graphImport.Type()));
 
     // If the imported memory location is a pointer type or contains a pointer type, then these
     // pointers can point to values that escaped this module.
@@ -1186,7 +1186,7 @@ Steensgaard::AnalyzeDirectCall(
   JLM_ASSERT(is<CallOperation>(&callNode));
 
   auto & lambdaFunctionType = lambdaNode.GetOperation().type();
-  auto & callFunctionType = CallOperation::GetFunctionInput(callNode).type();
+  auto & callFunctionType = *CallOperation::GetFunctionInput(callNode).Type();
   if (callFunctionType != lambdaFunctionType)
   {
     // LLVM permits code where it can happen that the number and type of the arguments handed in to

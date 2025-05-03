@@ -249,7 +249,7 @@ is_load_store_reducible(
   // operations instead. For example, a store of a 32 bit integer followed by a load of a 8 bit
   // integer can be converted to a trunc operation.
   auto loadedValueType = loadOperation.GetLoadedType();
-  auto & storedValueType = StoreNonVolatileOperation::StoredValueInput(*storeNode).type();
+  auto & storedValueType = *StoreNonVolatileOperation::StoredValueInput(*storeNode).Type();
   if (*loadedValueType != storedValueType)
   {
     return false;
@@ -447,7 +447,7 @@ perform_load_load_state_reduction(
       rvsdg::output *(size_t, rvsdg::output *, std::vector<std::vector<rvsdg::output *>> &)>
       reduce_state = [&](size_t index, rvsdg::output * operand, auto & mxstates)
   {
-    JLM_ASSERT(rvsdg::is<rvsdg::StateType>(operand->type()));
+    JLM_ASSERT(rvsdg::is<rvsdg::StateType>(operand->Type()));
 
     if (!is<LoadNonVolatileOperation>(rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*operand)))
       return operand;

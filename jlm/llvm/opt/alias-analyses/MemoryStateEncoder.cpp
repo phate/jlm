@@ -76,7 +76,7 @@ public:
   util::HashSet<const PointsToGraph::MemoryNode *>
   GetMemoryNodes(const rvsdg::output & output)
   {
-    JLM_ASSERT(is<PointerType>(output.type()));
+    JLM_ASSERT(is<PointerType>(output.Type()));
 
     if (Contains(output))
       return MemoryNodeMap_[&output];
@@ -129,7 +129,7 @@ public:
         : MemoryNode_(&memoryNode),
           State_(&state)
     {
-      JLM_ASSERT(is<MemoryStateType>(state.type()));
+      JLM_ASSERT(is<MemoryStateType>(state.Type()));
     }
 
   public:
@@ -149,7 +149,7 @@ public:
     ReplaceState(rvsdg::output & state) noexcept
     {
       JLM_ASSERT(State_->region() == state.region());
-      JLM_ASSERT(is<MemoryStateType>(state.type()));
+      JLM_ASSERT(is<MemoryStateType>(state.Type()));
 
       State_ = &state;
     }
@@ -1063,7 +1063,7 @@ MemoryStateEncoder::ShouldHandle(const rvsdg::SimpleNode & simpleNode) noexcept
   for (size_t n = 0; n < simpleNode.ninputs(); n++)
   {
     auto input = simpleNode.input(n);
-    if (is<MemoryStateType>(input->type()))
+    if (is<MemoryStateType>(input->Type()))
     {
       return true;
     }
@@ -1072,7 +1072,7 @@ MemoryStateEncoder::ShouldHandle(const rvsdg::SimpleNode & simpleNode) noexcept
   for (size_t n = 0; n < simpleNode.noutputs(); n++)
   {
     auto output = simpleNode.output(n);
-    if (is<MemoryStateType>(output->type()))
+    if (is<MemoryStateType>(output->Type()))
     {
       return true;
     }

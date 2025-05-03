@@ -82,16 +82,16 @@ TestCallNodeAccessors()
   assert(CallOperation::Argument(callNode, 2)->origin() == m);
 
   assert(callNode.noutputs() == 3);
-  assert(callNode.output(0)->type() == *valueType);
-  assert(callNode.output(1)->type() == *iOStateType);
-  assert(callNode.output(2)->type() == *memoryStateType);
+  assert(*callNode.output(0)->Type() == *valueType);
+  assert(*callNode.output(1)->Type() == *iOStateType);
+  assert(*callNode.output(2)->Type() == *memoryStateType);
 
   assert(CallOperation::GetFunctionInput(callNode).origin() == f);
   assert(CallOperation::GetIOStateInput(callNode).origin() == i);
   assert(CallOperation::GetMemoryStateInput(callNode).origin() == m);
 
-  assert(CallOperation::GetIOStateOutput(callNode).type() == *iOStateType);
-  assert(CallOperation::GetMemoryStateOutput(callNode).type() == *memoryStateType);
+  assert(*CallOperation::GetIOStateOutput(callNode).Type() == *iOStateType);
+  assert(*CallOperation::GetMemoryStateOutput(callNode).Type() == *memoryStateType);
 }
 
 static void

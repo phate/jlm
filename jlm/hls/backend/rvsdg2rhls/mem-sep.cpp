@@ -48,7 +48,7 @@ GetMemoryStateArgument(const rvsdg::LambdaNode & lambda)
   for (size_t n = 0; n < subregion->narguments(); n++)
   {
     auto argument = subregion->argument(n);
-    if (jlm::rvsdg::is<jlm::llvm::MemoryStateType>(argument->type()))
+    if (jlm::rvsdg::is<llvm::MemoryStateType>(argument->Type()))
       return argument;
   }
   return nullptr;
@@ -74,7 +74,7 @@ GetMemoryStateResult(const rvsdg::LambdaNode & lambda)
   for (size_t n = 0; n < subregion->nresults(); n++)
   {
     auto result = subregion->result(n);
-    if (jlm::rvsdg::is<jlm::llvm::MemoryStateType>(result->type()))
+    if (jlm::rvsdg::is<jlm::llvm::MemoryStateType>(result->Type()))
       return result;
   }
 

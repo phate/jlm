@@ -286,8 +286,8 @@ TestDivOperation()
       assert(
           DivInput0 = dynamic_cast<jlm::rvsdg::RegionArgument *>(
               lambdaResultOriginNode->input(0)->origin()));
-      assert(dynamic_cast<const bittype *>(&DivInput0->type()));
-      assert(dynamic_cast<const bittype *>(&DivInput0->type())->nbits() == 32);
+      assert(jlm::rvsdg::is<bittype>(DivInput0->Type()));
+      assert(std::dynamic_pointer_cast<const bittype>(DivInput0->Type())->nbits() == 32);
 
       // Check second input
       jlm::rvsdg::node_output * DivInput1NodeOuput;
@@ -505,8 +505,8 @@ TestCompZeroExt()
       // Check add input0
       jlm::rvsdg::RegionArgument * AddInput0;
       assert(AddInput0 = dynamic_cast<jlm::rvsdg::RegionArgument *>(AddNode->input(0)->origin()));
-      assert(dynamic_cast<const bittype *>(&AddInput0->type()));
-      assert(dynamic_cast<const bittype *>(&AddInput0->type())->nbits() == 32);
+      assert(jlm::rvsdg::is<bittype>(AddInput0->Type()));
+      assert(std::dynamic_pointer_cast<const bittype>(AddInput0->Type())->nbits() == 32);
 
       // Check add input1
       jlm::rvsdg::node_output * Const1Output;
@@ -973,9 +973,9 @@ TestThetaOp()
       assert(thetaNode->GetLoopVars().size() == 2);
       assert(thetaNode->noutputs() == 2);
       assert(thetaNode->nsubregions() == 1);
-      assert(is<jlm::rvsdg::ControlType>(thetaNode->predicate()->type()));
+      assert(is<jlm::rvsdg::ControlType>(thetaNode->predicate()->Type()));
       auto predicateType =
-          dynamic_cast<const jlm::rvsdg::ControlType *>(&thetaNode->predicate()->type());
+          std::dynamic_pointer_cast<const ControlType>(thetaNode->predicate()->Type());
       assert(predicateType->nalternatives() == 2);
       std::cout << predicate.getValue() << std::endl;
     }

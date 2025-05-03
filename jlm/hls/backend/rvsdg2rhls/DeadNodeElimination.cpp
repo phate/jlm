@@ -63,7 +63,7 @@ RemoveUnusedInputs(hls::loop_node & loopNode)
     if (auto backedgeArgument = dynamic_cast<backedge_argument *>(argument))
     {
       auto result = backedgeArgument->result();
-      JLM_ASSERT(result->type() == argument->type());
+      JLM_ASSERT(*result->Type() == *argument->Type());
 
       if (argument->nusers() == 0 || (argument->nusers() == 1 && result->origin() == argument))
       {

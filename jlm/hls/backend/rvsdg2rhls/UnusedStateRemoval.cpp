@@ -43,7 +43,7 @@ RemoveUnusedStatesFromLambda(rvsdg::LambdaNode & lambdaNode)
   {
     auto argument = lambdaNode.subregion()->argument(i);
     auto argumentType = oldFunctionType.Arguments()[i];
-    JLM_ASSERT(*argumentType == argument->type());
+    JLM_ASSERT(*argumentType == *argument->Type());
 
     if (!IsPassthroughArgument(*argument))
     {
@@ -56,7 +56,7 @@ RemoveUnusedStatesFromLambda(rvsdg::LambdaNode & lambdaNode)
   {
     auto result = lambdaNode.subregion()->result(i);
     auto resultType = oldFunctionType.Results()[i];
-    JLM_ASSERT(*resultType == result->type());
+    JLM_ASSERT(*resultType == *result->Type());
 
     if (!IsPassthroughResult(*result))
     {

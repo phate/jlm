@@ -26,26 +26,26 @@ JsonHLS::GetText(llvm::RvsdgModule & rm)
   for (size_t i = 0; i < reg_args.size(); ++i)
   {
     // don't generate ports for state edges
-    if (rvsdg::is<rvsdg::StateType>(reg_args[i]->type()))
+    if (rvsdg::is<rvsdg::StateType>(reg_args[i]->Type()))
       continue;
     if (i != 0)
     {
       json << ", ";
     }
-    json << JlmSize(&reg_args[i]->type());
+    json << JlmSize(reg_args[i]->Type().get());
   }
   json << "],\n";
   json << "\"results\": [";
   for (size_t i = 0; i < reg_results.size(); ++i)
   {
     // don't generate ports for state edges
-    if (rvsdg::is<rvsdg::StateType>(reg_results[i]->type()))
+    if (rvsdg::is<rvsdg::StateType>(reg_results[i]->Type()))
       continue;
     if (i != 0)
     {
       json << ", ";
     }
-    json << JlmSize(&reg_results[i]->type());
+    json << JlmSize(reg_results[i]->Type().get());
   }
   json << "],\n";
   // TODO: memory ports
@@ -58,8 +58,8 @@ JsonHLS::GetText(llvm::RvsdgModule & rm)
     {
       json << ", ";
     }
-    auto req_bt = dynamic_cast<const bundletype *>(&mem_reqs[i]->type());
-    auto resp_bt = dynamic_cast<const bundletype *>(&mem_resps[i]->type());
+    auto req_bt = std::dynamic_pointer_cast<const bundletype>(mem_reqs[i]->Type());
+    auto resp_bt = std::dynamic_pointer_cast<const bundletype>(mem_resps[i]->Type());
     auto size = JlmSize(&*resp_bt->get_element_type("data"));
     auto has_write = req_bt->get_element_type("write") != nullptr;
     json << "{ \"size\": " << size << ", \"has_write\": " << has_write << "}";
