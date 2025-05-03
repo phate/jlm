@@ -1097,8 +1097,9 @@ public:
   virtual ~decoupled_load_op()
   {}
 
-  decoupled_load_op(const std::shared_ptr<const rvsdg::ValueType> & pointeeType)
-      : SimpleOperation(CreateInTypes(pointeeType), CreateOutTypes(pointeeType))
+  decoupled_load_op(const std::shared_ptr<const rvsdg::ValueType> & pointeeType, size_t capacity)
+      : SimpleOperation(CreateInTypes(pointeeType), CreateOutTypes(pointeeType)),
+        capacity(capacity)
   {}
 
   bool
@@ -1128,7 +1129,8 @@ public:
   std::string
   debug_string() const override
   {
-    return "HLS_DEC_LOAD_" + argument(narguments() - 1)->debug_string();
+    return "HLS_DEC_LOAD_" + std::to_string(capacity) + "_"
+         + argument(narguments() - 1)->debug_string();
   }
 
   [[nodiscard]] std::unique_ptr<Operation>
@@ -1138,14 +1140,16 @@ public:
   }
 
   static std::vector<jlm::rvsdg::output *>
-  create(jlm::rvsdg::output & addr, jlm::rvsdg::output & load_result)
+  create(jlm::rvsdg::output & addr, jlm::rvsdg::output & load_result, size_t capacity)
   {
     std::vector<jlm::rvsdg::output *> inputs;
     inputs.push_back(&addr);
     inputs.push_back(&load_result);
+    JLM_ASSERT(capacity >= 1);
     return outputs(&rvsdg::CreateOpNode<decoupled_load_op>(
         inputs,
-        std::dynamic_pointer_cast<const rvsdg::ValueType>(load_result.Type())));
+        std::dynamic_pointer_cast<const rvsdg::ValueType>(load_result.Type()),
+        capacity));
   }
 
   [[nodiscard]] const llvm::PointerType &
@@ -1159,6 +1163,8 @@ public:
   {
     return std::dynamic_pointer_cast<const rvsdg::ValueType>(result(0));
   }
+
+  size_t capacity;
 };
 
 class mem_resp_op final : public rvsdg::SimpleOperation
@@ -1168,7 +1174,7 @@ public:
   {}
 
   explicit mem_resp_op(
-      const std::vector<std::shared_ptr<const rvsdg::ValueType>> & output_types,
+      const std::vector<std::shared_ptr<const rvsdg::Type>> & output_types,
       int in_width)
       : SimpleOperation(CreateInTypes(in_width), CreateOutTypes(output_types))
   {}
@@ -1191,7 +1197,7 @@ public:
   }
 
   static std::vector<std::shared_ptr<const jlm::rvsdg::Type>>
-  CreateOutTypes(const std::vector<std::shared_ptr<const rvsdg::ValueType>> & output_types)
+  CreateOutTypes(const std::vector<std::shared_ptr<const rvsdg::Type>> & output_types)
   {
     std::vector<std::shared_ptr<const jlm::rvsdg::Type>> types;
     types.reserve(output_types.size());
@@ -1217,7 +1223,7 @@ public:
   static std::vector<jlm::rvsdg::output *>
   create(
       rvsdg::output & result,
-      const std::vector<std::shared_ptr<const rvsdg::ValueType>> & output_types,
+      const std::vector<std::shared_ptr<const rvsdg::Type>> & output_types,
       int in_width)
   {
     return outputs(&rvsdg::CreateOpNode<mem_resp_op>({ &result }, output_types, in_width));
@@ -1382,7 +1388,7 @@ public:
     std::vector<std::shared_ptr<const jlm::rvsdg::Type>> types(
         { llvm::PointerType::Create(), pointeeType });
     std::vector<std::shared_ptr<const jlm::rvsdg::Type>> states(
-        numStates,
+        numStates + 1,
         llvm::MemoryStateType::Create());
     types.insert(types.end(), states.begin(), states.end());
     return types;
@@ -1415,12 +1421,14 @@ public:
   create(
       jlm::rvsdg::output & addr,
       jlm::rvsdg::output & value,
-      const std::vector<jlm::rvsdg::output *> & states)
+      const std::vector<jlm::rvsdg::output *> & states,
+      jlm::rvsdg::output & resp)
   {
     std::vector<jlm::rvsdg::output *> inputs;
     inputs.push_back(&addr);
     inputs.push_back(&value);
     inputs.insert(inputs.end(), states.begin(), states.end());
+    inputs.push_back(&resp);
     return outputs(&rvsdg::CreateOpNode<store_op>(
         inputs,
         std::dynamic_pointer_cast<const rvsdg::ValueType>(value.Type()),

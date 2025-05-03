@@ -62,7 +62,10 @@ ReplaceLoad(
     jlm::rvsdg::output * response);
 
 jlm::rvsdg::SimpleNode *
-ReplaceStore(rvsdg::SubstitutionMap & smap, const jlm::rvsdg::SimpleNode * originalStore);
+ReplaceStore(
+    rvsdg::SubstitutionMap & smap,
+    const jlm::rvsdg::SimpleNode * originalStore,
+    rvsdg::output * response);
 
 } // namespace jlm::hls
 

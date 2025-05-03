@@ -46,6 +46,95 @@ find_decouple_response(
   JLM_UNREACHABLE("No response found");
 }
 
+std::pair<rvsdg::SimpleInput *, std::vector<rvsdg::SimpleInput *>>
+TraceEdgeToMerge(rvsdg::input * state_edge)
+{
+  std::vector<rvsdg::SimpleInput *> encountered_muxes;
+  // should encounter no new loops, or gammas, only exit them
+  rvsdg::input * previous_state_edge = nullptr;
+  while (true)
+  {
+    // make sure we make progress
+    JLM_ASSERT(previous_state_edge != state_edge);
+    if (dynamic_cast<jlm::rvsdg::RegionResult *>(state_edge))
+    {
+      JLM_UNREACHABLE("this should be handled by branch");
+    }
+    else if (rvsdg::TryGetOwnerNode<loop_node>(*state_edge))
+    {
+      JLM_UNREACHABLE("there should be no new loops");
+    }
+    auto si = util::AssertedCast<rvsdg::SimpleInput>(state_edge);
+    auto sn = si->node();
+    auto br = TryGetOwnerOp<branch_op>(*state_edge);
+    auto mux = TryGetOwnerOp<mux_op>(*state_edge);
+    if (br)
+    {
+      // end of loop
+      JLM_ASSERT(br->loop);
+      state_edge = get_mem_state_user(
+          util::AssertedCast<rvsdg::RegionResult>(get_mem_state_user(sn->output(0)))->output());
+    }
+    else if (mux && !mux->loop)
+    {
+      // end of gamma
+      encountered_muxes.push_back(si);
+      state_edge = get_mem_state_user(sn->output(0));
+    }
+    else if (
+        TryGetOwnerOp<llvm::MemoryStateMergeOperation>(*state_edge)
+        || TryGetOwnerOp<llvm::LambdaExitMemoryStateMergeOperation>(*state_edge))
+    {
+      return { util::AssertedCast<rvsdg::SimpleInput>(state_edge), encountered_muxes };
+    }
+    else
+    {
+      JLM_UNREACHABLE("whoops");
+    }
+  }
+}
+
+void
+OptimizeResMemState(rvsdg::output * res_mem_state)
+{
+  // replace other branches with undefs, so the stateedge before the res can be killed.
+  auto [merge_in, encountered_muxes] = TraceEdgeToMerge(get_mem_state_user(res_mem_state));
+  JLM_ASSERT(merge_in);
+  for (auto si : encountered_muxes)
+  {
+    auto sn = si->node();
+    for (size_t i = 1; i < sn->ninputs(); ++i)
+    {
+      if (i != si->index())
+      {
+        auto state_dummy = llvm::UndefValueOperation::Create(*si->region(), si->Type());
+        sn->input(i)->divert_to(state_dummy);
+      }
+    }
+  }
+}
+
+void
+OptimizeReqMemState(rvsdg::output * req_mem_state)
+{ // there is no reason to wait for requests, if we already wait for responses, so we kill the rest
+  // of this state edge
+  auto [merge_in, _] = TraceEdgeToMerge(get_mem_state_user(req_mem_state));
+  JLM_ASSERT(merge_in);
+  auto merge_node = merge_in->node();
+  std::vector<rvsdg::output *> merge_origins;
+  for (size_t i = 0; i < merge_in->node()->ninputs(); ++i)
+  {
+    if (i != merge_in->index())
+    {
+      merge_origins.push_back(merge_in->node()->input(i)->origin());
+    }
+  }
+  auto new_merge_output = llvm::MemoryStateMergeOperation::Create(merge_origins);
+  merge_node->output(0)->divert_users(new_merge_output);
+  JLM_ASSERT(merge_node->IsDead());
+  remove(merge_node);
+}
+
 rvsdg::SimpleNode *
 ReplaceDecouple(
     const rvsdg::LambdaNode * lambda,
@@ -69,32 +158,62 @@ ReplaceDecouple(
   decouple_request->output(decouple_request->noutputs() - 1)->divert_users(req_mem_state);
 
   // handle response
-  int buffer_capacity = 10;
+  int load_capacity = 10;
   if (rvsdg::is<const rvsdg::bittype>(decouple_response->input(2)->Type()))
   {
     auto constant = trace_constant(decouple_response->input(2)->origin());
-    buffer_capacity = constant->Representation().to_int();
-    assert(buffer_capacity >= 0);
+    load_capacity = constant->Representation().to_int();
+    assert(load_capacity >= 0);
   }
-  // create this outside loop - need to tunnel outward from request and inward to response
   auto routed_resp = route_response_rhls(decouple_request->region(), resp);
-  // response is not routed inward for this case
-  auto dload_out = decoupled_load_op::create(*addr, *routed_resp);
-  // use a buffer here to make ready logic for response easy and consistent
-  // TODO: should this buffer be non-passthrough?
-  auto buf = buffer_op::create(*dload_out[0], buffer_capacity, true)[0];
+  auto dload_out = decoupled_load_op::create(*addr, *routed_resp, load_capacity);
+  auto dload_node = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*dload_out[0]);
 
-  auto routed_data = route_to_region_rhls(decouple_response->region(), buf);
-  // TODO: use state edge once response is moved to its own
-  auto sg_resp = state_gate_op::create(
-      *routed_data,
-      { decouple_response->input(decouple_response->ninputs() - 1)->origin() });
+  auto routed_data = route_to_region_rhls(decouple_response->region(), dload_out[0]);
   decouple_response->output(0)->divert_users(routed_data);
-  decouple_response->output(decouple_response->noutputs() - 1)->divert_users(sg_resp[1]);
-  JLM_ASSERT(decouple_response->IsDead());
-  remove(decouple_response);
-  JLM_ASSERT(decouple_request->IsDead());
-  remove(decouple_request);
+  auto response_state_origin = decouple_response->input(decouple_response->ninputs() - 1)->origin();
+
+  if (decouple_request->region() != decouple_response->region())
+  {
+    // they are in different regions, so we handle state edge at response
+    auto state_dummy = llvm::UndefValueOperation::Create(
+        *response_state_origin->region(),
+        response_state_origin->Type());
+    auto sg_resp = state_gate_op::create(*routed_data, { state_dummy });
+    decouple_response->output(decouple_response->noutputs() - 1)->divert_users(sg_resp[1]);
+    JLM_ASSERT(decouple_response->IsDead());
+    remove(decouple_response);
+    JLM_ASSERT(decouple_request->IsDead());
+    remove(decouple_request);
+
+    OptimizeResMemState(sg_resp[1]);
+    OptimizeReqMemState(req_mem_state);
+  }
+  else
+  {
+    // they are in the same region, handle at request
+    // remove mem state from response call
+    decouple_response->output(decouple_response->noutputs() - 1)
+        ->divert_users(response_state_origin);
+
+    auto state_dummy = llvm::UndefValueOperation::Create(
+        *response_state_origin->region(),
+        response_state_origin->Type());
+    // put state gate on load response
+    auto sg_resp = state_gate_op::create(*dload_node->input(1)->origin(), { state_dummy });
+    dload_node->input(1)->divert_to(sg_resp[0]);
+    auto state_user = get_mem_state_user(req_mem_state);
+    state_user->divert_to(sg_resp[1]);
+
+    JLM_ASSERT(decouple_response->IsDead());
+    remove(decouple_response);
+    JLM_ASSERT(decouple_request->IsDead());
+    remove(decouple_request);
+
+    // these are swapped in this scenario, since we keep the one from request
+    OptimizeReqMemState(response_state_origin);
+    OptimizeResMemState(sg_resp[1]);
+  }
 
   auto nn = dynamic_cast<rvsdg::node_output *>(dload_out[0])->node();
   return dynamic_cast<rvsdg::SimpleNode *>(nn);
@@ -493,7 +612,7 @@ ConnectRequestResponseMemPorts(
   // nodes in the new lambda
   //
   std::vector<rvsdg::SimpleNode *> loadNodes;
-  std::vector<std::shared_ptr<const rvsdg::ValueType>> loadTypes;
+  std::vector<std::shared_ptr<const rvsdg::Type>> responseTypes;
   for (auto loadNode : originalLoadNodes)
   {
     JLM_ASSERT(smap.contains(*loadNode->output(0)));
@@ -501,14 +620,7 @@ ConnectRequestResponseMemPorts(
     loadNodes.push_back(loadOutput->node());
     auto loadOp = util::AssertedCast<const llvm::LoadNonVolatileOperation>(
         &loadOutput->node()->GetOperation());
-    loadTypes.push_back(loadOp->GetLoadedType());
-  }
-  std::vector<rvsdg::SimpleNode *> storeNodes;
-  for (auto storeNode : originalStoreNodes)
-  {
-    JLM_ASSERT(smap.contains(*storeNode->output(0)));
-    auto storeOutput = dynamic_cast<rvsdg::SimpleOutput *>(smap.lookup(storeNode->output(0)));
-    storeNodes.push_back(storeOutput->node());
+    responseTypes.push_back(loadOp->GetLoadedType());
   }
   std::vector<rvsdg::SimpleNode *> decoupledNodes;
   for (auto decoupleRequest : originalDecoupledNodes)
@@ -522,20 +634,30 @@ ConnectRequestResponseMemPorts(
     auto channelConstant = trace_constant(channel);
     auto reponse = find_decouple_response(lambda, channelConstant);
     auto vt = std::dynamic_pointer_cast<const rvsdg::ValueType>(reponse->output(0)->Type());
-    loadTypes.push_back(vt);
+    responseTypes.push_back(vt);
+  }
+  std::vector<rvsdg::SimpleNode *> storeNodes;
+  for (auto storeNode : originalStoreNodes)
+  {
+    JLM_ASSERT(smap.contains(*storeNode->output(0)));
+    auto storeOutput = dynamic_cast<rvsdg::SimpleOutput *>(smap.lookup(storeNode->output(0)));
+    storeNodes.push_back(storeOutput->node());
+    // use memory state type as response for stores
+    auto vt = std::make_shared<llvm::MemoryStateType>();
+    responseTypes.push_back(vt);
   }
 
   auto lambdaRegion = lambda->subregion();
   auto portWidth = CalcualtePortWidth(
       std::make_tuple(originalLoadNodes, originalStoreNodes, originalDecoupledNodes));
-  auto loadResponses =
-      mem_resp_op::create(*lambdaRegion->argument(argumentIndex), loadTypes, portWidth);
+  auto responses =
+      mem_resp_op::create(*lambdaRegion->argument(argumentIndex), responseTypes, portWidth);
   // The (decoupled) load nodes are replaced so the pointer to the types will become invalid
-  loadTypes.clear();
+  std::vector<std::shared_ptr<const rvsdg::ValueType>> loadTypes;
   std::vector<rvsdg::output *> loadAddresses;
   for (size_t i = 0; i < loadNodes.size(); ++i)
   {
-    auto routed = route_response_rhls(loadNodes[i]->region(), loadResponses[i]);
+    auto routed = route_response_rhls(loadNodes[i]->region(), responses[i]);
     // The smap contains the nodes from the original lambda so we need to use the original load node
     // when replacing the load since the smap must be updated
     auto replacement = ReplaceLoad(smap, originalLoadNodes[i], routed);
@@ -561,12 +683,12 @@ ConnectRequestResponseMemPorts(
   }
   for (size_t i = 0; i < decoupledNodes.size(); ++i)
   {
-    auto reponse = loadResponses[+loadNodes.size() + i];
+    auto response = responses[loadNodes.size() + i];
     auto node = decoupledNodes[i];
 
     // TODO: this beahvior is not completly correct - if a function returns a top-level result from
     // a decouple it fails and smap translation would be required
-    auto replacement = ReplaceDecouple(lambda, node, reponse);
+    auto replacement = ReplaceDecouple(lambda, node, response);
     auto addr = route_request_rhls(lambdaRegion, replacement->output(1));
     loadAddresses.push_back(addr);
     loadTypes.push_back(
@@ -575,9 +697,11 @@ ConnectRequestResponseMemPorts(
   std::vector<rvsdg::output *> storeOperands;
   for (size_t i = 0; i < storeNodes.size(); ++i)
   {
-    // The smap contains the nodes from the original lambda so we need to use the oringal store node
-    // when replacing the store since the smap must be updated
-    auto replacement = ReplaceStore(smap, originalStoreNodes[i]);
+    auto response = responses[loadNodes.size() + decoupledNodes.size() + i];
+    auto routed = route_response_rhls(storeNodes[i]->region(), response);
+    // The smap contains the nodes from the original lambda so we need to use the original store
+    // node when replacing the store since the smap must be updated
+    auto replacement = ReplaceStore(smap, originalStoreNodes[i], routed);
     auto addr = route_request_rhls(lambdaRegion, replacement->output(replacement->noutputs() - 2));
     auto data = route_request_rhls(lambdaRegion, replacement->output(replacement->noutputs() - 1));
     storeOperands.push_back(addr);
@@ -609,11 +733,13 @@ ReplaceLoad(
   rvsdg::Node * newLoad;
   if (states.empty())
   {
-    auto outputs = decoupled_load_op::create(*loadAddress, *response);
+    size_t load_capacity = 10;
+    auto outputs = decoupled_load_op::create(*loadAddress, *response, load_capacity);
     newLoad = dynamic_cast<rvsdg::node_output *>(outputs[0])->node();
   }
   else
   {
+    // TODO: switch this to a decoupled load?
     auto outputs = load_op::create(*loadAddress, states, *response);
     newLoad = dynamic_cast<rvsdg::node_output *>(outputs[0])->node();
   }
@@ -628,7 +754,10 @@ ReplaceLoad(
 }
 
 rvsdg::SimpleNode *
-ReplaceStore(rvsdg::SubstitutionMap & smap, const rvsdg::SimpleNode * originalStore)
+ReplaceStore(
+    rvsdg::SubstitutionMap & smap,
+    const rvsdg::SimpleNode * originalStore,
+    rvsdg::output * response)
 {
   // We have the store from the original lambda since it is needed to update the smap
   // We need the store in the new lambda such that we can replace it with a store node with explicit
@@ -644,12 +773,18 @@ ReplaceStore(rvsdg::SubstitutionMap & smap, const rvsdg::SimpleNode * originalSt
   {
     states.push_back(replacedStore->input(i)->origin());
   }
-  auto outputs = store_op::create(*addr, *data, states);
-  auto newStore = dynamic_cast<rvsdg::node_output *>(outputs[0])->node();
+  auto storeOuts = store_op::create(*addr, *data, states, *response);
+  auto newStore = dynamic_cast<rvsdg::node_output *>(storeOuts[0])->node();
+  // iterate over output states
   for (size_t i = 0; i < replacedStore->noutputs(); ++i)
   {
-    smap.insert(originalStore->output(i), newStore->output(i));
-    replacedStore->output(i)->divert_users(newStore->output(i));
+    // create a buffer to avoid a scenario where the reponse port is blocked because a merge waits
+    // for the store
+    // TODO: It might be better to have memstate merges consume individual tokens instead,, and fire
+    // the output once all inputs have consumed
+    auto bo = buffer_op::create(*storeOuts[i], 1, true)[0];
+    smap.insert(originalStore->output(i), bo);
+    replacedStore->output(i)->divert_users(bo);
   }
   remove(replacedStore);
   return dynamic_cast<rvsdg::SimpleNode *>(newStore);
