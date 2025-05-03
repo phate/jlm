@@ -3,8 +3,11 @@
  * See COPYING for terms of redistribution.
  */
 
+#include <jlm/hls/backend/rvsdg2rhls/hls-function-util.hpp>
 #include <jlm/hls/backend/rvsdg2rhls/merge-gamma.hpp>
 #include <jlm/hls/ir/hls.hpp>
+#include <jlm/llvm/ir/operators/IntegerOperations.hpp>
+#include <jlm/rvsdg/gamma.hpp>
 #include <jlm/rvsdg/region.hpp>
 #include <jlm/rvsdg/substitution.hpp>
 #include <jlm/rvsdg/theta.hpp>
@@ -58,6 +61,55 @@ eliminate_gamma_ctl(rvsdg::GammaNode * gamma)
     }
   }
   return changed;
+}
+
+bool
+bit_type_to_ctl_type(rvsdg::GammaNode * old_gamma)
+{
+  // for some reason some gamma nodes seem to have bittypes followed by a match instead of ctltypes
+  for (size_t i = 0; i < old_gamma->noutputs(); ++i)
+  {
+    auto o = old_gamma->output(i);
+    if (!std::dynamic_pointer_cast<const jlm::rvsdg::bittype>(o->Type()))
+      continue;
+    if (o->nusers() != 1)
+      continue;
+    auto user = *o->begin();
+    auto match = TryGetOwnerOp<rvsdg::match_op>(*user);
+    if (!match)
+      continue;
+    // output is only used by match
+    bool all_bittype = true;
+    for (size_t j = 0; j < old_gamma->nsubregions(); ++j)
+    {
+      auto origin = old_gamma->subregion(j)->result(i)->origin();
+      if (!TryGetOwnerOp<llvm::IntegerConstantOperation>(*origin))
+      {
+        all_bittype = false;
+        break;
+      }
+    }
+    if (!all_bittype)
+      continue;
+    // actual conversion - instead of copying we just add a new output
+    std::vector<rvsdg::output *> new_outputs;
+    for (size_t j = 0; j < old_gamma->nsubregions(); ++j)
+    {
+      auto origin = old_gamma->subregion(j)->result(i)->origin();
+      auto constant = TryGetOwnerOp<llvm::IntegerConstantOperation>(*origin);
+      auto ctl_value = match->alternative(constant->Representation().to_uint());
+      auto no =
+          rvsdg::ctlconstant_op::create(origin->region(), { ctl_value, match->nalternatives() });
+      new_outputs.push_back(no);
+    }
+    auto match_replacement = old_gamma->AddExitVar(new_outputs).output;
+    auto match_node = rvsdg::TryGetOwnerNode<rvsdg::Node>(*user);
+    match_node->output(0)->divert_users(match_replacement);
+    // TODO: divert match users
+    remove(match_node);
+    return true;
+  }
+  return false;
 }
 
 bool
@@ -188,6 +240,19 @@ eliminate_gamma_eol(rvsdg::GammaNode * gamma)
   return changed;
 }
 
+bool
+eliminate_dead_gamma(rvsdg::GammaNode * gamma)
+{
+  // eliminates gammas that have no used outputs - dne does not seem to do this and empty gammas
+  // make tginversion go mayham and duplicate loops
+  if (gamma->IsDead())
+  {
+    remove(gamma);
+    return true;
+  }
+  return false;
+}
+
 void
 merge_gamma(rvsdg::Region * region)
 {
@@ -204,7 +269,7 @@ merge_gamma(rvsdg::Region * region)
         if (auto gamma = dynamic_cast<rvsdg::GammaNode *>(node))
         {
           if (fix_match_inversion(gamma) || eliminate_gamma_ctl(gamma) || eliminate_gamma_eol(gamma)
-              || merge_gamma(gamma))
+              || merge_gamma(gamma) || bit_type_to_ctl_type(gamma) || eliminate_dead_gamma(gamma))
           {
             changed = true;
             break;
