@@ -164,7 +164,7 @@ StoreVolatileNodeCopy()
   assert(StoreOperation::AddressInput(*copiedNode).origin() == &address2);
   assert(StoreOperation::StoredValueInput(*copiedNode).origin() == &value2);
   assert(StoreVolatileOperation::IOStateInput(*copiedNode).origin() == &ioState2);
-  assert(StoreVolatileOperation::IOStateOutput(*copiedNode).type() == *ioStateType);
+  assert(*StoreVolatileOperation::IOStateOutput(*copiedNode).Type() == *ioStateType);
 
   return 0;
 }

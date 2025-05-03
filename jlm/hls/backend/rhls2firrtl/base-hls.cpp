@@ -40,14 +40,14 @@ BaseHLS::get_node_name(const jlm::rvsdg::Node * node)
     append.append("_IN");
     append.append(std::to_string(inPorts));
     append.append("_W");
-    append.append(std::to_string(JlmSize(&node->input(inPorts - 1)->type())));
+    append.append(std::to_string(JlmSize(node->input(inPorts - 1)->Type().get())));
   }
   if (outPorts)
   {
     append.append("_OUT");
     append.append(std::to_string(outPorts));
     append.append("_W");
-    append.append(std::to_string(JlmSize(&node->output(outPorts - 1)->type())));
+    append.append(std::to_string(JlmSize(node->output(outPorts - 1)->Type().get())));
   }
   auto name =
       util::strfmt("op_", node->GetOperation().debug_string(), append, "_", node_map.size());

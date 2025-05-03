@@ -65,7 +65,7 @@ public:
   static std::vector<jlm::rvsdg::output *>
   create(jlm::rvsdg::output & predicate, jlm::rvsdg::output & value, bool loop = false)
   {
-    auto ctl = dynamic_cast<const rvsdg::ControlType *>(&predicate.type());
+    auto ctl = std::dynamic_pointer_cast<const rvsdg::ControlType>(predicate.Type());
     if (!ctl)
       throw util::error("Predicate needs to be a control type.");
 
@@ -267,7 +267,7 @@ public:
   {
     if (alternatives.empty())
       throw util::error("Insufficient number of operands.");
-    auto ctl = dynamic_cast<const rvsdg::ControlType *>(&predicate.type());
+    auto ctl = std::dynamic_pointer_cast<const rvsdg::ControlType>(predicate.Type());
     if (!ctl)
       throw util::error("Predicate needs to be a control type.");
     if (alternatives.size() != ctl->nalternatives())
@@ -775,7 +775,7 @@ public:
   predicate() const noexcept
   {
     auto result = subregion()->result(0);
-    JLM_ASSERT(dynamic_cast<const rvsdg::ControlType *>(&result->type()));
+    JLM_ASSERT(rvsdg::is<const rvsdg::ControlType>(result->Type()));
     return result;
   }
 

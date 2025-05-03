@@ -1538,7 +1538,7 @@ SliceOfConcat()
   view(graph, stdout);
 
   // Assert
-  const auto bitType = dynamic_cast<const bittype *>(&ex.origin()->type());
+  const auto bitType = std::dynamic_pointer_cast<const bittype>(ex.origin()->Type());
   assert(bitType && bitType->nbits() == 8);
   assert(ex.origin() == x);
 

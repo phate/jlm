@@ -164,7 +164,7 @@ InvariantValueRedirection::RedirectThetaOutputs(rvsdg::ThetaNode & thetaNode)
   {
     // FIXME: In order to also redirect I/O state type variables, we need to know whether a loop
     // terminates.
-    if (rvsdg::is<IOStateType>(loopVar.input->type()))
+    if (rvsdg::is<IOStateType>(loopVar.input->Type()))
       continue;
 
     if (rvsdg::ThetaLoopVarIsInvariant(loopVar))

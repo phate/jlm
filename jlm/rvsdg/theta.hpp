@@ -85,7 +85,7 @@ public:
   predicate() const noexcept
   {
     auto result = subregion()->result(0);
-    JLM_ASSERT(dynamic_cast<const ControlType *>(&result->type()));
+    JLM_ASSERT(is<const ControlType>(result->Type()));
     return result;
   }
 

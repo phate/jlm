@@ -20,7 +20,7 @@ get_trigger(rvsdg::Region * region)
 {
   for (size_t i = 0; i < region->narguments(); ++i)
   {
-    if (region->argument(i)->type() == *hls::triggertype::Create())
+    if (*region->argument(i)->Type() == *hls::triggertype::Create())
     {
       return region->argument(i);
     }

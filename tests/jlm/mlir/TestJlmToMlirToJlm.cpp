@@ -253,14 +253,14 @@ TestLoad()
       assert(loadOperation->GetAlignment() == 4);
       assert(loadOperation->NumMemoryStates() == 1);
 
-      assert(is<jlm::llvm::PointerType>(convertedLoad->input(0)->type()));
-      assert(is<jlm::llvm::MemoryStateType>(convertedLoad->input(1)->type()));
+      assert(is<jlm::llvm::PointerType>(convertedLoad->input(0)->Type()));
+      assert(is<jlm::llvm::MemoryStateType>(convertedLoad->input(1)->Type()));
 
-      assert(is<jlm::rvsdg::bittype>(convertedLoad->output(0)->type()));
-      assert(is<jlm::llvm::MemoryStateType>(convertedLoad->output(1)->type()));
+      assert(is<jlm::rvsdg::bittype>(convertedLoad->output(0)->Type()));
+      assert(is<jlm::llvm::MemoryStateType>(convertedLoad->output(1)->Type()));
 
       auto outputBitType =
-          dynamic_cast<const jlm::rvsdg::bittype *>(&convertedLoad->output(0)->type());
+          std::dynamic_pointer_cast<const jlm::rvsdg::bittype>(convertedLoad->output(0)->Type());
       assert(outputBitType->nbits() == 32);
     }
   }
@@ -350,14 +350,14 @@ TestStore()
       assert(convertedStoreOperation->GetAlignment() == 4);
       assert(convertedStoreOperation->NumMemoryStates() == 1);
 
-      assert(is<jlm::llvm::PointerType>(convertedStore->input(0)->type()));
-      assert(is<jlm::rvsdg::bittype>(convertedStore->input(1)->type()));
-      assert(is<jlm::llvm::MemoryStateType>(convertedStore->input(2)->type()));
+      assert(is<jlm::llvm::PointerType>(convertedStore->input(0)->Type()));
+      assert(is<jlm::rvsdg::bittype>(convertedStore->input(1)->Type()));
+      assert(is<jlm::llvm::MemoryStateType>(convertedStore->input(2)->Type()));
 
-      assert(is<jlm::llvm::MemoryStateType>(convertedStore->output(0)->type()));
+      assert(is<jlm::llvm::MemoryStateType>(convertedStore->output(0)->Type()));
 
       auto inputBitType =
-          dynamic_cast<const jlm::rvsdg::bittype *>(&convertedStore->input(1)->type());
+          std::dynamic_pointer_cast<const jlm::rvsdg::bittype>(convertedStore->input(1)->Type());
       assert(inputBitType->nbits() == 32);
     }
   }

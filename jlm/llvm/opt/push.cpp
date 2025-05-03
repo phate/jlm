@@ -87,7 +87,7 @@ has_side_effects(const rvsdg::Node * node)
 {
   for (size_t n = 0; n < node->noutputs(); n++)
   {
-    if (dynamic_cast<const rvsdg::StateType *>(&node->output(n)->type()))
+    if (rvsdg::is<const rvsdg::StateType>(node->output(n)->Type()))
       return true;
   }
 
