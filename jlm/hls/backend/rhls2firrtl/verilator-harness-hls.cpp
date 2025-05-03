@@ -423,7 +423,7 @@ static void verilator_init(int argc, char **argv) {
   for (size_t i = 0; i < first_ctx_var; i++)
   {
     // don't generate ports for state edges
-    if (rvsdg::is<rvsdg::StateType>(reg_args[i]->type()))
+    if (rvsdg::is<rvsdg::StateType>(reg_args[i]->Type()))
       continue;
     cpp << "    top->i_data_" << i << " = 0;" << std::endl;
   }

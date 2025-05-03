@@ -103,7 +103,7 @@ public:
       std::shared_ptr<const rvsdg::ValueType> pointeeType,
       std::shared_ptr<const rvsdg::Type> resultType)
   {
-    CheckPointerType(baseAddress->type());
+    CheckPointerType(*baseAddress->Type());
     auto offsetTypes = CheckAndExtractOffsetTypes<rvsdg::output>(offsets);
     CheckPointerType(*resultType);
 

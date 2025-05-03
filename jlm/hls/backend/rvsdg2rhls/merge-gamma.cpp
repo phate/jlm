@@ -32,7 +32,7 @@ eliminate_gamma_ctl(rvsdg::GammaNode * gamma)
   for (size_t i = 0; i < gamma->noutputs(); ++i)
   {
     auto o = gamma->output(i);
-    if (dynamic_cast<const rvsdg::ControlType *>(&o->type()))
+    if (rvsdg::is<rvsdg::ControlType>(o->Type()))
     {
       bool eliminate = true;
       for (size_t j = 0; j < gamma->nsubregions(); ++j)
@@ -70,7 +70,7 @@ bit_type_to_ctl_type(rvsdg::GammaNode * old_gamma)
   for (size_t i = 0; i < old_gamma->noutputs(); ++i)
   {
     auto o = old_gamma->output(i);
-    if (!dynamic_cast<const jlm::rvsdg::bittype *>(&o->type()))
+    if (!std::dynamic_pointer_cast<const jlm::rvsdg::bittype>(o->Type()))
       continue;
     if (o->nusers() != 1)
       continue;
@@ -125,7 +125,7 @@ fix_match_inversion(rvsdg::GammaNode * old_gamma)
   for (size_t i = 0; i < old_gamma->noutputs(); ++i)
   {
     auto o = old_gamma->output(i);
-    if (dynamic_cast<const rvsdg::ControlType *>(&o->type()))
+    if (rvsdg::is<rvsdg::ControlType>(o->Type()))
     {
       ctl_cnt++;
       swapped = true;

@@ -48,7 +48,7 @@ GetMemoryStateArgument(const rvsdg::LambdaNode & lambda)
   for (size_t n = 0; n < subregion->narguments(); n++)
   {
     auto argument = subregion->argument(n);
-    if (jlm::rvsdg::is<jlm::llvm::MemoryStateType>(argument->type()))
+    if (jlm::rvsdg::is<llvm::MemoryStateType>(argument->Type()))
       return argument;
   }
   return nullptr;
@@ -61,7 +61,7 @@ GetIoStateArgument(const rvsdg::LambdaNode & lambda)
   for (size_t n = 0; n < subregion->narguments(); n++)
   {
     auto argument = subregion->argument(n);
-    if (jlm::rvsdg::is<jlm::llvm::IOStateType>(argument->type()))
+    if (jlm::rvsdg::is<jlm::llvm::IOStateType>(argument->Type()))
       return argument;
   }
   return nullptr;
@@ -349,7 +349,7 @@ eliminate_io_state(rvsdg::RegionArgument * iostate, rvsdg::Region * region)
     for (size_t i = 0; i < node->noutputs(); ++i)
     {
       auto out = node->output(i);
-      if (!jlm::rvsdg::is<jlm::llvm::IOStateType>(out->type()))
+      if (!jlm::rvsdg::is<jlm::llvm::IOStateType>(out->Type()))
         continue;
       auto routed = route_to_region_rvsdg(iostate, region);
       out->divert_users(routed);

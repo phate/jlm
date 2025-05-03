@@ -499,7 +499,7 @@ dump_ref(llvm::RvsdgModule & rhls, const util::filepath & path)
   {
     auto graphImport =
         util::AssertedCast<const llvm::GraphImport>(reference->Rvsdg().GetRootRegion().argument(i));
-    std::cout << "impport " << graphImport->Name() << ": " << graphImport->type().debug_string()
+    std::cout << "impport " << graphImport->Name() << ": " << graphImport->Type()->debug_string()
               << "\n";
   }
   ::llvm::LLVMContext ctx;
