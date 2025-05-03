@@ -269,6 +269,11 @@ dead_loop(rvsdg::Node * ndmux_node)
   return true;
 }
 
+/**
+ * Remove loop constant buffer if dead
+ *
+ * @param lcb_node The loop constat buffer to be removed if dead
+ */
 bool
 dead_loop_lcb(rvsdg::Node * lcb_node)
 {
@@ -320,106 +325,6 @@ dead_loop_lcb(rvsdg::Node * lcb_node)
   remove(branch_in->node());
   remove(lcb_node);
   return true;
-}
-
-bool
-fix_mem_split(rvsdg::Node * split_node)
-{
-  if (split_node->noutputs() == 1)
-  {
-    split_node->output(0)->divert_users(split_node->input(0)->origin());
-    JLM_ASSERT(split_node->IsDead());
-    remove(split_node);
-    return true;
-  }
-  // this merges downward and removes unused outputs (should only exist as a result of eliminating
-  // merges)
-  std::vector<rvsdg::output *> combined_outputs;
-  for (size_t i = 0; i < split_node->noutputs(); ++i)
-  {
-    if (split_node->output(i)->IsDead())
-      continue;
-    auto user = get_mem_state_user(split_node->output(i));
-    if (TryGetOwnerOp<llvm::MemoryStateSplitOperation>(*user))
-    {
-      auto sub_split = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*user);
-      for (size_t j = 0; j < sub_split->noutputs(); ++j)
-      {
-        combined_outputs.push_back(sub_split->output(j));
-      }
-    }
-    else
-    {
-      combined_outputs.push_back(split_node->output(i));
-    }
-  }
-  if (combined_outputs.size() != split_node->noutputs())
-  {
-    auto new_outputs = llvm::MemoryStateSplitOperation::Create(
-        *split_node->input(0)->origin(),
-        combined_outputs.size());
-    for (size_t i = 0; i < combined_outputs.size(); ++i)
-    {
-      combined_outputs[i]->divert_users(new_outputs[i]);
-    }
-    return true;
-  }
-  return false;
-}
-
-bool
-fix_mem_merge(rvsdg::Node * merge_node)
-{
-  // remove single merge
-  if (merge_node->ninputs() == 1)
-  {
-    merge_node->output(0)->divert_users(merge_node->input(0)->origin());
-    JLM_ASSERT(merge_node->IsDead());
-    remove(merge_node);
-    return true;
-  }
-  std::vector<rvsdg::output *> combined_origins;
-  std::unordered_set<rvsdg::SimpleNode *> splits;
-  for (size_t i = 0; i < merge_node->ninputs(); ++i)
-  {
-    auto origin = merge_node->input(i)->origin();
-    if (TryGetOwnerOp<llvm::MemoryStateMergeOperation>(*origin))
-    {
-      auto sub_merge = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*origin);
-      for (size_t j = 0; j < sub_merge->ninputs(); ++j)
-      {
-        combined_origins.push_back(sub_merge->input(j)->origin());
-      }
-    }
-    else if (TryGetOwnerOp<llvm::MemoryStateSplitOperation>(*origin))
-    {
-      // ensure that there is only one direct connection to a split.
-      // We need to keep one, so that the optimizations for decouple edges work
-      auto split = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*origin);
-      if (!splits.count(split))
-      {
-        splits.insert(split);
-        combined_origins.push_back(origin);
-      }
-    }
-    else
-    {
-      combined_origins.push_back(merge_node->input(i)->origin());
-    }
-  }
-  if (combined_origins.empty())
-  {
-    // if none of the inputs are real keep the first one
-    combined_origins.push_back(merge_node->input(0)->origin());
-  }
-  if (combined_origins.size() != merge_node->ninputs())
-  {
-    auto new_output = llvm::MemoryStateMergeOperation::Create(combined_origins);
-    merge_node->output(0)->divert_users(new_output);
-    JLM_ASSERT(merge_node->IsDead());
-    return true;
-  }
-  return false;
 }
 
 bool
@@ -477,24 +382,6 @@ dne(rvsdg::Region * sr)
       else if (dynamic_cast<const loop_constant_buffer_op *>(&node->GetOperation()))
       {
         changed |= dead_loop_lcb(node);
-      }
-      else if (dynamic_cast<const llvm::MemoryStateSplitOperation *>(&node->GetOperation()))
-      {
-        if (fix_mem_split(node))
-        {
-          changed = true;
-          // might break bottom up traversal
-          break;
-        }
-      }
-      else if (dynamic_cast<const llvm::MemoryStateMergeOperation *>(&node->GetOperation()))
-      {
-        if (fix_mem_merge(node))
-        {
-          changed = true;
-          // might break bottom up traversal
-          break;
-        }
       }
     }
     any_changed |= changed;
