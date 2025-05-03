@@ -18,6 +18,7 @@
 #include <jlm/hls/backend/rvsdg2rhls/mem-sep.hpp>
 #include <jlm/hls/backend/rvsdg2rhls/memstate-conv.hpp>
 #include <jlm/hls/backend/rvsdg2rhls/merge-gamma.hpp>
+#include <jlm/hls/backend/rvsdg2rhls/NodeReduction.hpp>
 #include <jlm/hls/backend/rvsdg2rhls/remove-redundant-buf.hpp>
 #include <jlm/hls/backend/rvsdg2rhls/rhls-dne.hpp>
 #include <jlm/hls/backend/rvsdg2rhls/rvsdg2rhls.hpp>
@@ -455,6 +456,7 @@ rvsdg2rhls(llvm::RvsdgModule & rhls, util::StatisticsCollector & collector)
   hlsCne.Run(rhls, collector);
   // rhls optimization
   dne(rhls);
+  NodeReduction(rhls);
   alloca_conv(rhls);
   mem_queue(rhls);
   MemoryConverter(rhls);
