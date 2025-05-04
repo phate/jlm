@@ -262,10 +262,10 @@ edge_tag(const std::string & srcid, const std::string & dstid)
 static inline std::string
 type(const Node * n)
 {
-  if (dynamic_cast<const GammaOperation *>(&n->GetOperation()))
+  if (dynamic_cast<const GammaNode *>(n))
     return "gamma";
 
-  if (dynamic_cast<const ThetaOperation *>(&n->GetOperation()))
+  if (dynamic_cast<const ThetaNode *>(n))
     return "theta";
 
   return "";
