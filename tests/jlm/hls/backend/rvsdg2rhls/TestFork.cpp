@@ -55,12 +55,12 @@ TestFork()
     auto omegaRegion = &rm.Rvsdg().GetRootRegion();
     assert(omegaRegion->nnodes() == 1);
     auto lambda = util::AssertedCast<jlm::rvsdg::LambdaNode>(omegaRegion->Nodes().begin().ptr());
-    assert(is<jlm::rvsdg::LambdaOperation>(lambda));
+    assert(dynamic_cast<const jlm::rvsdg::LambdaNode *>(lambda));
 
     auto lambdaRegion = lambda->subregion();
     assert(lambdaRegion->nnodes() == 1);
     auto loop = util::AssertedCast<hls::loop_node>(lambdaRegion->Nodes().begin().ptr());
-    assert(is<hls::loop_op>(loop));
+    assert(dynamic_cast<const hls::loop_node *>(loop));
 
     // Traverse the rvsgd graph upwards to check connections
     rvsdg::node_output * forkNodeOutput;
@@ -118,7 +118,7 @@ TestConstantFork()
     auto omegaRegion = &rm.Rvsdg().GetRootRegion();
     assert(omegaRegion->nnodes() == 1);
     auto lambda = util::AssertedCast<jlm::rvsdg::LambdaNode>(omegaRegion->Nodes().begin().ptr());
-    assert(is<jlm::rvsdg::LambdaOperation>(lambda));
+    assert(dynamic_cast<const jlm::rvsdg::LambdaNode *>(lambda));
 
     auto lambdaRegion = lambda->subregion();
     assert(lambdaRegion->nnodes() == 1);
@@ -126,7 +126,7 @@ TestConstantFork()
     rvsdg::node_output * loopOutput;
     assert(loopOutput = dynamic_cast<jlm::rvsdg::node_output *>(lambdaRegion->result(0)->origin()));
     auto loopNode = loopOutput->node();
-    assert(is<hls::loop_op>(loopNode));
+    assert(dynamic_cast<const hls::loop_node *>(loopNode));
     auto loop = util::AssertedCast<hls::loop_node>(loopNode);
 
     // Traverse the rvsgd graph upwards to check connections

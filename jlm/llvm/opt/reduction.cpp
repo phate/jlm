@@ -111,7 +111,7 @@ NodeReduction::ReduceStructuralNode(rvsdg::StructuralNode & structuralNode)
   bool reductionPerformed = false;
 
   // Reduce structural nodes
-  if (is<rvsdg::GammaOperation>(&structuralNode))
+  if (dynamic_cast<const rvsdg::GammaNode *>(&structuralNode))
   {
     reductionPerformed |= ReduceGammaNode(structuralNode);
   }
@@ -135,7 +135,7 @@ NodeReduction::ReduceStructuralNode(rvsdg::StructuralNode & structuralNode)
 bool
 NodeReduction::ReduceGammaNode(rvsdg::StructuralNode & gammaNode)
 {
-  JLM_ASSERT(is<rvsdg::GammaOperation>(&gammaNode));
+  JLM_ASSERT(dynamic_cast<const rvsdg::GammaNode *>(&gammaNode));
 
   // FIXME: We can not apply the reduction below due to a bug. See github issue #303
   // rvsdg::ReduceGammaControlConstant

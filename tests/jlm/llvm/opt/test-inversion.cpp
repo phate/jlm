@@ -70,12 +70,9 @@ test1()
   tginversion.Run(rm, statisticsCollector);
   //	jlm::rvsdg::view(graph.GetRootRegion(), stdout);
 
-  assert(jlm::rvsdg::is<jlm::rvsdg::GammaOperation>(
-      jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*ex1.origin())));
-  assert(jlm::rvsdg::is<jlm::rvsdg::GammaOperation>(
-      jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*ex2.origin())));
-  assert(jlm::rvsdg::is<jlm::rvsdg::GammaOperation>(
-      jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*ex3.origin())));
+  assert(jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::GammaNode>(*ex1.origin()));
+  assert(jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::GammaNode>(*ex2.origin()));
+  assert(jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::GammaNode>(*ex3.origin()));
 }
 
 static inline void
@@ -120,8 +117,7 @@ test2()
   tginversion.Run(rm, statisticsCollector);
   //	jlm::rvsdg::view(graph.GetRootRegion(), stdout);
 
-  assert(jlm::rvsdg::is<jlm::rvsdg::GammaOperation>(
-      jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*ex.origin())));
+  assert(jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::GammaNode>(*ex.origin()));
 }
 
 static int

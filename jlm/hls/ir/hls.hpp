@@ -724,11 +724,7 @@ public:
   ~ExitResult() noexcept override;
 
 private:
-  ExitResult(rvsdg::output & origin, rvsdg::StructuralOutput & output)
-      : rvsdg::RegionResult(origin.region(), &origin, &output, origin.Type())
-  {
-    JLM_ASSERT(rvsdg::is<loop_op>(origin.region()->node()));
-  }
+  ExitResult(rvsdg::output & origin, rvsdg::StructuralOutput & output);
 
 public:
   ExitResult &

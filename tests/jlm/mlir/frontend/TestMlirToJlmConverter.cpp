@@ -115,7 +115,7 @@ TestLambda()
       assert(region->nnodes() == 1);
       auto convertedLambda =
           jlm::util::AssertedCast<jlm::rvsdg::LambdaNode>(region->Nodes().begin().ptr());
-      assert(is<jlm::llvm::LlvmLambdaOperation>(convertedLambda));
+      assert(is<jlm::llvm::LlvmLambdaOperation>(convertedLambda->GetOperation()));
 
       assert(convertedLambda->subregion()->nnodes() == 1);
       assert(is<jlm::llvm::IntegerConstantOperation>(
@@ -825,18 +825,15 @@ TestGammaOp()
       // Get the lambda block
       auto convertedLambda =
           jlm::util::AssertedCast<jlm::rvsdg::LambdaNode>(region->Nodes().begin().ptr());
-      assert(is<jlm::llvm::LlvmLambdaOperation>(convertedLambda));
+      assert(is<jlm::llvm::LlvmLambdaOperation>(convertedLambda->GetOperation()));
 
       auto lambdaRegion = convertedLambda->subregion();
 
       // 2 constants + gamma
       assert(lambdaRegion->nnodes() == 3);
 
-      jlm::rvsdg::node_output * gammaOutput;
-      assert(
-          gammaOutput = dynamic_cast<jlm::rvsdg::node_output *>(lambdaRegion->result(0)->origin()));
-      Node * gammaNode = gammaOutput->node();
-      assert(is<GammaOperation>(gammaNode->GetOperation()));
+      auto gammaNode = &jlm::rvsdg::AssertGetOwnerNode<jlm::rvsdg::GammaNode>(
+          *lambdaRegion->result(0)->origin());
 
       std::cout << "Checking gamma operation" << std::endl;
       auto gammaOp = dynamic_cast<const GammaOperation *>(&gammaNode->GetOperation());
@@ -954,19 +951,15 @@ TestThetaOp()
       // Get the lambda block
       auto convertedLambda =
           jlm::util::AssertedCast<jlm::rvsdg::LambdaNode>(region->Nodes().begin().ptr());
-      assert(is<jlm::llvm::LlvmLambdaOperation>(convertedLambda));
+      assert(is<jlm::llvm::LlvmLambdaOperation>(convertedLambda->GetOperation()));
 
       auto lambdaRegion = convertedLambda->subregion();
 
       // Just the theta node
       assert(lambdaRegion->nnodes() == 1);
 
-      jlm::rvsdg::node_output * thetaOutput;
-      assert(
-          thetaOutput = dynamic_cast<jlm::rvsdg::node_output *>(lambdaRegion->result(0)->origin()));
-      Node * node = thetaOutput->node();
-      assert(is<ThetaOperation>(node->GetOperation()));
-      auto thetaNode = dynamic_cast<const jlm::rvsdg::ThetaNode *>(node);
+      auto thetaNode = &jlm::rvsdg::AssertGetOwnerNode<jlm::rvsdg::ThetaNode>(
+          *lambdaRegion->result(0)->origin());
 
       std::cout << "Checking theta node" << std::endl;
       assert(thetaNode->ninputs() == 2);

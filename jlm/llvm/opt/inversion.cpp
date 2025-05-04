@@ -111,8 +111,8 @@ pullin(rvsdg::GammaNode * gamma, rvsdg::ThetaNode * theta)
 static std::vector<std::vector<rvsdg::Node *>>
 collect_condition_nodes(rvsdg::StructuralNode * tnode, jlm::rvsdg::StructuralNode * gnode)
 {
-  JLM_ASSERT(is<rvsdg::ThetaOperation>(tnode));
-  JLM_ASSERT(rvsdg::is<rvsdg::GammaOperation>(gnode));
+  JLM_ASSERT(dynamic_cast<const rvsdg::ThetaNode *>(tnode));
+  JLM_ASSERT(dynamic_cast<const rvsdg::GammaNode *>(gnode));
   JLM_ASSERT(gnode->region()->node() == tnode);
 
   std::vector<std::vector<rvsdg::Node *>> nodes;
