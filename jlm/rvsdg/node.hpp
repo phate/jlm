@@ -680,6 +680,9 @@ public:
     return true;
   }
 
+  virtual std::string
+  DebugString() const = 0;
+
 protected:
   node_input *
   add_input(std::unique_ptr<node_input> input);

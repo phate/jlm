@@ -27,6 +27,9 @@ protected:
   StructuralNode(rvsdg::Region * region, size_t nsubregions);
 
 public:
+  std::string
+  DebugString() const override;
+
   inline size_t
   nsubregions() const noexcept
   {

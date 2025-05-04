@@ -456,11 +456,10 @@ RvsdgToIpGraphConverter::ConvertPhiNode(const rvsdg::PhiNode & phiNode)
     }
     else
     {
-      JLM_UNREACHABLE(
-          util::strfmt(
-              "Unhandled node type: ",
-              rvsdg::TryGetOwnerNode<rvsdg::Node>(origin)->GetOperation().debug_string())
-              .c_str());
+      JLM_UNREACHABLE(util::strfmt(
+                          "Unhandled node type: ",
+                          rvsdg::AssertGetOwnerNode<rvsdg::Node>(origin).DebugString())
+                          .c_str());
     }
   }
 
@@ -487,11 +486,10 @@ RvsdgToIpGraphConverter::ConvertPhiNode(const rvsdg::PhiNode & phiNode)
     }
     else
     {
-      JLM_UNREACHABLE(
-          util::strfmt(
-              "Unhandled node type: ",
-              rvsdg::TryGetOwnerNode<rvsdg::Node>(origin)->GetOperation().debug_string())
-              .c_str());
+      JLM_UNREACHABLE(util::strfmt(
+                          "Unhandled node type: ",
+                          rvsdg::AssertGetOwnerNode<rvsdg::Node>(origin).DebugString())
+                          .c_str());
     }
   }
 
@@ -549,8 +547,7 @@ RvsdgToIpGraphConverter::ConvertNode(const rvsdg::Node & node)
   }
   else
   {
-    JLM_UNREACHABLE(
-        util::strfmt("Unhandled node type: ", node.GetOperation().debug_string()).c_str());
+    JLM_UNREACHABLE(util::strfmt("Unhandled node type: ", node.DebugString()).c_str());
   }
 }
 
