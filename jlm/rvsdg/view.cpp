@@ -47,7 +47,7 @@ node_to_string(
     s = s + name + " ";
   }
 
-  s += ":= " + node->GetOperation().debug_string() + " ";
+  s += ":= " + node->DebugString() + " ";
 
   for (size_t n = 0; n < node->ninputs(); n++)
   {
@@ -279,7 +279,7 @@ convert_simple_node(const jlm::rvsdg::SimpleNode * node)
 {
   std::string s;
 
-  s += node_starttag(id(node), node->GetOperation().debug_string(), "");
+  s += node_starttag(id(node), node->DebugString(), "");
   for (size_t n = 0; n < node->ninputs(); n++)
     s += input_tag(id(node->input(n)));
   for (size_t n = 0; n < node->noutputs(); n++)

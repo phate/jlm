@@ -227,7 +227,7 @@ StructuralNodeToDot(
   dot << "subgraph cluster_sn" << hex((intptr_t)structuralNode) << " {\n";
   dot << "color=\"#ff8080\"\n";
   dot << "penwidth=6\n";
-  dot << "label=\"" << structuralNode->GetOperation().debug_string() << "\"\n";
+  dot << "label=\"" << structuralNode->DebugString() << "\"\n";
   dot << "labeljust=l\n";
 
   // input nodes
@@ -276,7 +276,7 @@ SimpleNodeToDot(
 {
   auto SPACER = "                    <TD WIDTH=\"10\"></TD>\n";
   auto name = GetDotName(simpleNode);
-  auto opname = simpleNode->GetOperation().debug_string();
+  auto opname = simpleNode->DebugString();
   std::replace_if(opname.begin(), opname.end(), isForbiddenChar, '_');
 
   std::ostringstream inputs;

@@ -992,7 +992,7 @@ RegionAwareModRefSummarizer::CallGraphSCCsToString(const RegionAwareModRefSummar
     }
     for (auto function : summarizer.Context_.SccFunctions[i].Items())
     {
-      ss << "  " << function->GetOperation().debug_string() << std::endl;
+      ss << "  " << function->DebugString() << std::endl;
     }
     ss << "]";
   }
@@ -1045,7 +1045,7 @@ RegionAwareModRefSummarizer::ToRegionTree(
     {
       if (auto structuralNode = dynamic_cast<const rvsdg::StructuralNode *>(&node))
       {
-        subtree += util::strfmt(indent(depth), structuralNode->GetOperation().debug_string(), "\n");
+        subtree += util::strfmt(indent(depth), structuralNode->DebugString(), "\n");
         for (size_t n = 0; n < structuralNode->nsubregions(); n++)
         {
           subtree += toRegionTree(structuralNode->subregion(n), depth + 1);
