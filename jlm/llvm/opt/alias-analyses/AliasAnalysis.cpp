@@ -1,0 +1,337 @@
+/*
+ * Copyright 2025 Håvard Krogstie <krogstie.havard@gmail.com>
+ * See COPYING for terms of redistribution.
+ */
+
+#include <jlm/llvm/ir/operators.hpp>
+#include <jlm/llvm/ir/operators/alloca.hpp>
+#include <jlm/llvm/ir/operators/delta.hpp>
+#include <jlm/llvm/ir/operators/IOBarrier.hpp>
+#include <jlm/llvm/opt/alias-analyses/AliasAnalysis.hpp>
+#include <jlm/rvsdg/gamma.hpp>
+#include <jlm/rvsdg/theta.hpp>
+#include <jlm/rvsdg/lambda.hpp>
+
+#include <numeric>
+
+namespace jlm::llvm::aa
+{
+
+AliasAnalysis::AliasAnalysis() = default;
+
+AliasAnalysis::~AliasAnalysis() = default;
+
+PointsToGraphAliasAnalysis::PointsToGraphAliasAnalysis(PointsToGraph & pointsToGraph)
+    : PointsToGraph_(pointsToGraph)
+{}
+
+PointsToGraphAliasAnalysis::~PointsToGraphAliasAnalysis() = default;
+
+AliasAnalysis::AliasQueryResponse
+PointsToGraphAliasAnalysis::Query(
+    const rvsdg::output & p1,
+    [[maybe_unused]] size_t s1,
+    const rvsdg::output & p2,
+    [[maybe_unused]] size_t s2)
+{
+  // If the two pointers are the same value, they must alias
+  // This is the only situation where this analysis gives MustAlias,
+  // as no offset information is stored in the PointsToGraph.
+  if (&p1 == &p2)
+    return MustAlias;
+
+  // Assume that all pointers actually exist in the PointsToGraph
+  auto & p1RegisterNode = PointsToGraph_.GetRegisterNode(p1);
+  auto & p2RegisterNode = PointsToGraph_.GetRegisterNode(p2);
+
+  // TODO: Check for MustAlias using the following
+  // - Both pointers have only one possible target
+  // - the target is a global or an import
+  // - both accesses have a size equal to the size of the target
+
+  // If the registers are represented by the same node, they may alias
+  if (&p1RegisterNode == &p2RegisterNode)
+    return MayAlias;
+
+  // Check if both pointers may target the external node, to avoid iterating over large sets
+  const auto & externalNode = PointsToGraph_.GetExternalMemoryNode();
+  if (p1RegisterNode.HasTarget(externalNode) && p2RegisterNode.HasTarget(externalNode))
+    return MayAlias;
+
+  // Check if p1 and p2 share any target memory nodes
+  for (auto & target : p1RegisterNode.Targets())
+  {
+    // TODO: Ignore targets that are smaller than the access size
+    if (p2RegisterNode.HasTarget(target))
+      return MayAlias;
+  }
+
+  return NoAlias;
+}
+
+std::string
+PointsToGraphAliasAnalysis::ToString() const
+{
+  return "PointsToGraphAA";
+}
+
+ChainedAliasAnalysis::ChainedAliasAnalysis(AliasAnalysis & first, AliasAnalysis & second)
+    : First_(first),
+      Second_(second)
+{}
+
+ChainedAliasAnalysis::~ChainedAliasAnalysis() = default;
+
+AliasAnalysis::AliasQueryResponse
+ChainedAliasAnalysis::Query(
+    const rvsdg::output & p1,
+    size_t s1,
+    const rvsdg::output & p2,
+    size_t s2)
+{
+  const auto firstResponse = First_.Query(p1, s1, p2, s2);
+
+  // Anything other than MayAlias is precise, and can be returned right away
+  if (firstResponse != MayAlias)
+    return firstResponse;
+
+  return Second_.Query(p1, s1, p2, s2);
+}
+
+std::string
+ChainedAliasAnalysis::ToString() const
+{
+  return util::strfmt("ChainedAA(", First_.ToString(), ",", Second_.ToString(), ")");
+}
+
+BasicAliasAnalysis::BasicAliasAnalysis()
+{}
+
+BasicAliasAnalysis::~BasicAliasAnalysis() = default;
+
+AliasAnalysis::AliasQueryResponse
+BasicAliasAnalysis::Query(
+    const rvsdg::output & p1,
+    [[maybe_unused]] size_t s1,
+    const rvsdg::output & p2,
+    [[maybe_unused]] size_t s2)
+{
+  const auto & p1Norm = NormalizePointerValue(p1);
+  const auto & p2Norm = NormalizePointerValue(p2);
+
+  // If the two pointers are the same value, they must alias
+  if (&p1Norm == &p2Norm)
+    return MustAlias;
+
+  // Check if p1 and p2 are the outputs of memory location creating operations
+  bool p1Original = IsOriginalMemoryLocation(p1Norm);
+  bool p2Original = IsOriginalMemoryLocation(p2Norm);
+
+  // If it is possible to track both p1 and p2 to memory location defining operations,
+  // and they have different origins, they must point to distinct memory locations.
+  if (p1Original && p2Original)
+  {
+    return NoAlias;
+  }
+
+  // TODO: Trace through GEP operations
+
+  return MayAlias;
+}
+
+std::string
+BasicAliasAnalysis::ToString() const
+{
+  return "BasicAA";
+}
+
+bool
+BasicAliasAnalysis::IsOriginalMemoryLocation(const rvsdg::output & pointer)
+{
+  // Each GraphImport represents a unique object
+  if (dynamic_cast<const GraphImport *>(&pointer))
+    return true;
+
+  if (rvsdg::TryGetOwnerNode<llvm::delta::node>(pointer))
+    return true;
+
+  // Is pointer the output of one of the nodes
+  if (const auto node = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(pointer))
+  {
+    if (is<alloca_op>(node))
+      return true;
+
+    if (is<malloc_op>(node))
+      return true;
+
+    if (is<LlvmLambdaOperation>(node))
+      return true;
+  }
+
+  return false;
+}
+
+bool
+IsPointerCompatible(const rvsdg::output & value)
+{
+  const auto & type = value.type();
+  return IsOrContains<PointerType>(type);
+}
+
+const rvsdg::output &
+NormalizePointerValue(const rvsdg::output & pointer)
+{
+  JLM_ASSERT(IsPointerCompatible(pointer));
+
+  if (const auto node = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(pointer))
+  {
+    if (is<IOBarrierOperation>(node))
+    {
+      return NormalizePointerValue(*node->input(0)->origin());
+    }
+  }
+  else if (rvsdg::TryGetOwnerNode<rvsdg::StructuralNode>(pointer))
+  {
+      // If the output is a phi recursion variable, continue tracing inside the phi
+      if (const auto phiResult = dynamic_cast<const llvm::phi::rvoutput *>(&pointer))
+      {
+        return NormalizePointerValue(*phiResult->result()->origin());
+      }
+
+      // TODO: We could also handle invariant theta loop variables
+      return pointer;
+  }
+  else if (const auto outerGamma = rvsdg::TryGetRegionParentNode<rvsdg::GammaNode>(pointer))
+  {
+    // Follow the gamma input
+    return NormalizePointerValue(*outerGamma->GetEntryVar(pointer.index()).input->origin());
+  }
+  else if (const auto outerTheta = rvsdg::TryGetRegionParentNode<rvsdg::ThetaNode>(pointer))
+  {
+    const auto loopVar = outerTheta->GetLoopVars()[pointer.index()];
+
+    // If the loop variable is invariant, continue normalizing
+    if (ThetaLoopVarIsInvariant(loopVar))
+      return NormalizePointerValue(*loopVar.input->origin());
+  }
+  else if (const auto outerLambda = rvsdg::TryGetRegionParentNode<rvsdg::LambdaNode>(pointer))
+  {
+    const auto ctxVar = outerLambda->MapBinderContextVar(pointer);
+
+    // If the argument is a contex variable, continue normalizing
+    if (ctxVar)
+      return NormalizePointerValue(*ctxVar->input->origin());
+  }
+  else if (rvsdg::TryGetRegionParentNode<llvm::phi::node>(pointer) != nullptr)
+  {
+    // The arguments inside a phi node are either context variables or recursion variables, both can be followed
+    if (const auto cvArg = dynamic_cast<const llvm::phi::cvargument*>(&pointer))
+    {
+      // Follow the context variable to outside the phi
+      return NormalizePointerValue(*cvArg->input()->origin());
+    }
+
+    if (const auto rvArg = dynamic_cast<const llvm::phi::rvargument*>(&pointer))
+    {
+      // Follow to the recursion variable's definition
+      return NormalizePointerValue(*rvArg->result()->origin());
+    }
+
+    JLM_UNREACHABLE("Unknown phi argument");
+  }
+
+  return pointer;
+}
+
+/**
+ * @return the given \p size, rounded up to be a multiple of the given \p alignment
+ */
+size_t
+RoundUpToMultipleOf(size_t size, size_t alignment)
+{
+  const auto miss = size % alignment;
+  if (miss == 0)
+    return size;
+  return size + alignment - miss;
+}
+
+size_t
+GetLlvmTypeSize(const rvsdg::ValueType & type)
+{
+  if (auto bits = dynamic_cast<const rvsdg::bittype *>(&type))
+  {
+    // Assume 8 bits per byte, rounding up to a whole byte
+    return (bits->nbits() + 7) / 8;
+  }
+  if (is<PointerType>(type))
+  {
+    // Assume 64-bit pointers
+    return 8;
+  }
+  if (auto arrayType = dynamic_cast<const ArrayType *>(&type))
+  {
+    return arrayType->nelements() * GetLlvmTypeSize(*arrayType->GetElementType());
+  }
+  if (auto floatType = dynamic_cast<const FloatingPointType *>(&type))
+  {
+    switch (floatType->size())
+    {
+    case fpsize::half:
+      return 2;
+    case fpsize::flt:
+      return 4;
+    case fpsize::dbl:
+      return 8;
+    case fpsize::fp128:
+      return 16;
+    case fpsize::x86fp80:
+      return 16; // Will never actually be written to memory, but we round up
+    default:
+      JLM_UNREACHABLE("Unknown float size");
+    }
+  }
+  if (auto structType = dynamic_cast<const StructType *>(&type))
+  {
+    // TODO: This function may over-estimate the size of a struct due to over-estimating field
+    // alignment. For the purposes of alias analysis, that is sound, but it could be improved.
+
+    size_t totalSize = 0;
+    size_t alignment = 1;
+
+    const auto & decl = structType->GetDeclaration();
+    // A packed struct has alignment 1, and all fields are tightly packed
+    const auto isPacked = structType->IsPacked();
+
+    for (size_t i = 0; i < decl.NumElements(); i++)
+    {
+      auto & field = decl.GetElement(i);
+      auto fieldSize = GetLlvmTypeSize(field);
+
+      // Since we do not have proper alignment information, we assume field size
+      auto fieldAlignment = isPacked ? 1 : fieldSize;
+
+      // Add the size of the field, including any needed padding
+      totalSize = RoundUpToMultipleOf(totalSize, fieldAlignment);
+      totalSize += fieldSize;
+
+      // The struct as a whole must be at least as aligned as each field
+      alignment = std::lcm(alignment, fieldSize);
+    }
+
+    // Round size up to a multiple of alignment
+    totalSize = RoundUpToMultipleOf(totalSize, alignment);
+
+    // TODO: In C++, but not C, the sizeof() an empty struct is 1
+
+    return totalSize;
+  }
+  if (auto vectorType = dynamic_cast<const VectorType *>(&type))
+  {
+    return vectorType->size() * GetLlvmTypeSize(*vectorType->Type());
+  }
+
+  std::cerr << "Unknown type: " << typeid(type).name() << std::endl;
+  JLM_UNREACHABLE("Unknown type");
+}
+
+}
