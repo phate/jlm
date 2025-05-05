@@ -107,10 +107,10 @@ Contains()
   binary_op::create(valueType, valueType, &regionArgument2, &regionArgument2);
 
   // Act & Assert
-  assert(jlm::rvsdg::Region::Contains<structural_op>(graph.GetRootRegion(), false));
-  assert(jlm::rvsdg::Region::Contains<unary_op>(graph.GetRootRegion(), true));
-  assert(jlm::rvsdg::Region::Contains<binary_op>(graph.GetRootRegion(), true));
-  assert(!jlm::rvsdg::Region::Contains<test_op>(graph.GetRootRegion(), true));
+  assert(jlm::rvsdg::Region::ContainsNodeType<structural_node>(graph.GetRootRegion(), false));
+  assert(jlm::rvsdg::Region::ContainsOperation<unary_op>(graph.GetRootRegion(), true));
+  assert(jlm::rvsdg::Region::ContainsOperation<binary_op>(graph.GetRootRegion(), true));
+  assert(!jlm::rvsdg::Region::ContainsOperation<test_op>(graph.GetRootRegion(), true));
 
   return 0;
 }

@@ -74,14 +74,14 @@ TestSingleLoad()
   ConvertThetaNodes(*rvsdgModule);
   // Simple assert as ConvertThetaNodes() is tested in separate unit tests
   jlm::rvsdg::view(rvsdgModule->Rvsdg(), stdout);
-  assert(jlm::rvsdg::Region::Contains<loop_op>(*lambdaRegion, true));
+  assert(jlm::rvsdg::Region::ContainsNodeType<loop_node>(*lambdaRegion, true));
 
   // Act
   mem_queue(*rvsdgModule);
   // Assert
   jlm::rvsdg::view(rvsdgModule->Rvsdg(), stdout);
-  assert(jlm::rvsdg::Region::Contains<state_gate_op>(*lambdaRegion, true));
-  assert(!jlm::rvsdg::Region::Contains<addr_queue_op>(*lambdaRegion, true));
+  assert(jlm::rvsdg::Region::ContainsOperation<state_gate_op>(*lambdaRegion, true));
+  assert(!jlm::rvsdg::Region::ContainsOperation<addr_queue_op>(*lambdaRegion, true));
 
   return 0;
 }
@@ -156,14 +156,14 @@ TestLoadStore()
   ConvertThetaNodes(*rvsdgModule);
   // Simple assert as ConvertThetaNodes() is tested in separate unit tests
   jlm::rvsdg::view(rvsdgModule->Rvsdg(), stdout);
-  assert(jlm::rvsdg::Region::Contains<loop_op>(*lambdaRegion, true));
+  assert(jlm::rvsdg::Region::ContainsNodeType<loop_node>(*lambdaRegion, true));
 
   // Act
   mem_queue(*rvsdgModule);
   // Assert
   jlm::rvsdg::view(rvsdgModule->Rvsdg(), stdout);
-  assert(jlm::rvsdg::Region::Contains<state_gate_op>(*lambdaRegion, true));
-  assert(!jlm::rvsdg::Region::Contains<addr_queue_op>(*lambdaRegion, true));
+  assert(jlm::rvsdg::Region::ContainsOperation<state_gate_op>(*lambdaRegion, true));
+  assert(!jlm::rvsdg::Region::ContainsOperation<addr_queue_op>(*lambdaRegion, true));
 
   return 0;
 }
@@ -232,14 +232,14 @@ TestAddrQueue()
   ConvertThetaNodes(*rvsdgModule);
   // Simple assert as ConvertThetaNodes() is tested in separate unit tests
   jlm::rvsdg::view(rvsdgModule->Rvsdg(), stdout);
-  assert(jlm::rvsdg::Region::Contains<loop_op>(*lambdaRegion, true));
+  assert(jlm::rvsdg::Region::ContainsNodeType<loop_node>(*lambdaRegion, true));
 
   // Act
   mem_queue(*rvsdgModule);
   // Assert
   jlm::rvsdg::view(rvsdgModule->Rvsdg(), stdout);
-  assert(jlm::rvsdg::Region::Contains<state_gate_op>(*lambdaRegion, true));
-  assert(jlm::rvsdg::Region::Contains<addr_queue_op>(*lambdaRegion, true));
+  assert(jlm::rvsdg::Region::ContainsOperation<state_gate_op>(*lambdaRegion, true));
+  assert(jlm::rvsdg::Region::ContainsOperation<addr_queue_op>(*lambdaRegion, true));
 
   for (auto & node : jlm::rvsdg::TopDownTraverser(lambdaRegion))
   {
