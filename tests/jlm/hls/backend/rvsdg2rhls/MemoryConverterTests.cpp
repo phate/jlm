@@ -380,15 +380,15 @@ TestThetaLoad()
   ConvertThetaNodes(*rvsdgModule);
   // Simple assert as ConvertThetaNodes() is tested in separate unit tests
   jlm::rvsdg::view(rvsdgModule->Rvsdg(), stdout);
-  assert(jlm::rvsdg::Region::Contains<loop_op>(*lambdaRegion, true));
+  assert(jlm::rvsdg::Region::ContainsNodeType<loop_node>(*lambdaRegion, true));
 
   // Act
   mem_queue(*rvsdgModule);
   // Simple assert as mem_queue() is tested in separate unit tests
   jlm::rvsdg::view(rvsdgModule->Rvsdg(), stdout);
-  assert(jlm::rvsdg::Region::Contains<state_gate_op>(*lambdaRegion, true));
-  assert(jlm::rvsdg::Region::Contains<MemoryStateSplitOperation>(*lambdaRegion, true));
-  assert(jlm::rvsdg::Region::Contains<MemoryStateMergeOperation>(*lambdaRegion, true));
+  assert(jlm::rvsdg::Region::ContainsOperation<state_gate_op>(*lambdaRegion, true));
+  assert(jlm::rvsdg::Region::ContainsOperation<MemoryStateSplitOperation>(*lambdaRegion, true));
+  assert(jlm::rvsdg::Region::ContainsOperation<MemoryStateMergeOperation>(*lambdaRegion, true));
 
   // Act
   MemoryConverter(*rvsdgModule);
@@ -402,8 +402,8 @@ TestThetaLoad()
   lambda = jlm::util::AssertedCast<jlm::rvsdg::LambdaNode>(region->Nodes().begin().ptr());
   lambdaRegion = lambda->subregion();
 
-  assert(jlm::rvsdg::Region::Contains<mem_resp_op>(*lambdaRegion, true));
-  assert(jlm::rvsdg::Region::Contains<mem_req_op>(*lambdaRegion, true));
+  assert(jlm::rvsdg::Region::ContainsOperation<mem_resp_op>(*lambdaRegion, true));
+  assert(jlm::rvsdg::Region::ContainsOperation<mem_req_op>(*lambdaRegion, true));
 
   // Request Node
   auto requestNode =
@@ -508,14 +508,14 @@ TestThetaStore()
   ConvertThetaNodes(*rvsdgModule);
   // Simple assert as ConvertThetaNodes() is tested in separate unit tests
   jlm::rvsdg::view(rvsdgModule->Rvsdg(), stdout);
-  assert(jlm::rvsdg::Region::Contains<loop_op>(*lambdaRegion, true));
+  assert(jlm::rvsdg::Region::ContainsNodeType<loop_node>(*lambdaRegion, true));
 
   // Act
   mem_queue(*rvsdgModule);
   // Simple assert as mem_queue() is tested in separate unit tests
   jlm::rvsdg::view(rvsdgModule->Rvsdg(), stdout);
-  assert(jlm::rvsdg::Region::Contains<MemoryStateSplitOperation>(*lambdaRegion, true));
-  assert(jlm::rvsdg::Region::Contains<MemoryStateMergeOperation>(*lambdaRegion, true));
+  assert(jlm::rvsdg::Region::ContainsOperation<MemoryStateSplitOperation>(*lambdaRegion, true));
+  assert(jlm::rvsdg::Region::ContainsOperation<MemoryStateMergeOperation>(*lambdaRegion, true));
 
   // Act
   MemoryConverter(*rvsdgModule);
@@ -529,7 +529,7 @@ TestThetaStore()
   lambda = jlm::util::AssertedCast<jlm::rvsdg::LambdaNode>(region->Nodes().begin().ptr());
   lambdaRegion = lambda->subregion();
 
-  assert(jlm::rvsdg::Region::Contains<mem_req_op>(*lambdaRegion, true));
+  assert(jlm::rvsdg::Region::ContainsOperation<mem_req_op>(*lambdaRegion, true));
 
   // Request Node
   auto requestNode =
