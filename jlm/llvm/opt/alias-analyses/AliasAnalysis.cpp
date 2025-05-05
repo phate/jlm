@@ -608,7 +608,7 @@ BasicAliasAnalysis::HasAnyTopOriginEscaped(TraceCollection & traces)
 bool
 IsPointerCompatible(const rvsdg::output & value)
 {
-  return IsOrContains<PointerType>(value.type());
+  return IsOrContains<PointerType>(*value.Type());
 }
 
 const rvsdg::output &
@@ -624,9 +624,10 @@ NormalizeOutput(const rvsdg::output & output)
   else if (rvsdg::TryGetOwnerNode<rvsdg::StructuralNode>(output))
   {
     // If the output is a phi recursion variable, continue tracing inside the phi
-    if (const auto phiResult = dynamic_cast<const llvm::phi::rvoutput *>(&output))
+    if (const auto phiNode = rvsdg::TryGetOwnerNode<rvsdg::PhiNode>(output))
     {
-      return NormalizeOutput(*phiResult->result()->origin());
+      const auto fixVar = phiNode->MapOutputFixVar(output);
+      return NormalizeOutput(*fixVar.result->origin());
     }
 
     // If the output is a theta output, check if it is invariant
@@ -640,7 +641,13 @@ NormalizeOutput(const rvsdg::output & output)
   else if (const auto outerGamma = rvsdg::TryGetRegionParentNode<rvsdg::GammaNode>(output))
   {
     // Follow the gamma input
-    return NormalizeOutput(*outerGamma->GetEntryVar(output.index()).input->origin());
+    auto input = outerGamma->MapBranchArgument(output);
+    std::get_if<rvsdg::GammaNode::EntryVar>(&input);
+
+    if (const auto entryVar = std::get_if<rvsdg::GammaNode::EntryVar>(&input))
+    {
+      return NormalizeOutput(*entryVar->input->origin());
+    }
   }
   else if (const auto outerTheta = rvsdg::TryGetRegionParentNode<rvsdg::ThetaNode>(output))
   {
@@ -658,20 +665,18 @@ NormalizeOutput(const rvsdg::output & output)
     if (ctxVar)
       return NormalizeOutput(*ctxVar->input->origin());
   }
-  else if (rvsdg::TryGetRegionParentNode<llvm::phi::node>(output) != nullptr)
+  else if (const auto phiNode = rvsdg::TryGetRegionParentNode<rvsdg::PhiNode>(output))
   {
-    // The arguments inside a phi node are either context variables or recursion variables, both can
-    // be followed
-    if (const auto cvArg = dynamic_cast<const llvm::phi::cvargument *>(&output))
+    const auto argument = phiNode->MapArgument(output);
+    if (const auto cvArg = std::get_if<rvsdg::PhiNode::ContextVar>(&argument))
     {
       // Follow the context variable to outside the phi
-      return NormalizeOutput(*cvArg->input()->origin());
+      return NormalizeOutput(*cvArg->input->origin());
     }
-
-    if (const auto rvArg = dynamic_cast<const llvm::phi::rvargument *>(&output))
+    if (const auto fixArg = std::get_if<rvsdg::PhiNode::FixVar>(&argument))
     {
       // Follow to the recursion variable's definition
-      return NormalizeOutput(*rvArg->result()->origin());
+      return NormalizeOutput(*fixArg->result->origin());
     }
 
     JLM_UNREACHABLE("Unknown phi argument type");
