@@ -24,6 +24,7 @@ template<class T>
 static constexpr int
 Log2Floor(T value)
 {
+  static_assert(std::is_integral_v<T>, "T must be integral type");
   if (value < 1)
     return -1;
 
@@ -31,7 +32,29 @@ Log2Floor(T value)
 }
 
 /**
- * The number of bits needed to hold the given value
+ * Finds the smallest power of two that is at least as large as the given \p value.
+ *
+ * Examples:
+ * RoundUpToPowerOf2(-10) == 1
+ * RoundUpToPowerOf2(0) == 1
+ * RoundUpToPowerOf2(1) == 2
+ * RoundUpToPowerOf2(2) == 2
+ * RoundUpToPowerOf2(7) == 8
+ * RoundUpToPowerOf2(8) == 8
+ * RoundUpToPowerOf2(9) == 16
+ */
+template<class T>
+static constexpr T RoundUpToPowerOf2(T value)
+{
+  // 2^0 == 1 is the lowest possible power of two
+  if (value <= 1)
+    return 1;
+
+  return T(1) << (Log2Floor(value - 1) + 1);
+}
+
+/**
+ * The number of bits needed to hold the given \p value.
  *
  * Examples:
  * BitsRequiredToRepresent(0)     = 0

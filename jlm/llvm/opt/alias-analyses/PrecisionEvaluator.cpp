@@ -13,6 +13,13 @@
 namespace jlm::llvm::aa
 {
 
+/**
+ * Controls if duplicated pointers should be removed before making alias queries.
+ * If true, behavior is closer to LLVM's alias evaluation,
+ * but arguably says less about the actual memory operations in the function.
+ */
+static constexpr bool RemoveDuplicatePointers = false;
+
 std::string_view
 PrecisionEvaluationModeToString(PrecisionEvaluator::Mode mode)
 {
@@ -32,6 +39,7 @@ class PrecisionEvaluator::PrecisionStatistics final : public util::Statistics
   // This statistic places additional information in a separate file. This is the path of the file.
   static constexpr auto PrecisionEvaluationMode_ = "PrecisionEvaluationMode";
   static constexpr auto PairwiseAliasAnalysisType_ = "PairwiseAliasAnalysisType";
+  static constexpr auto IsRemovingDuplicatePointers_ = "IsRemovingDuplicatePointers";
   static constexpr auto PrecisionDumpFile_ = "DumpFile";
   static constexpr auto ModuleNumUseOperations_ = "ModuleNumUseOperations";
   static constexpr auto ModuleAverageMayAliasRate_ = "ModuleAverageMayAliasRate";
@@ -54,6 +62,7 @@ public:
     AddTimer(PrecisionEvaluationTimer_).start();
     AddMeasurement(PrecisionEvaluationMode_, std::string(PrecisionEvaluationModeToString(mode)));
     AddMeasurement(PairwiseAliasAnalysisType_, aliasAnalysis.ToString());
+    AddMeasurement(IsRemovingDuplicatePointers_, RemoveDuplicatePointers ? "true" : "false");
   }
 
   void
@@ -145,11 +154,12 @@ PrecisionEvaluator::EvaluateFunction(
   // Collect all pointer uses and clobbers from this function
   CollectPointersFromRegion(*function.subregion());
 
-  // In order to get results more comparable with LLVM, duplicates are removed.
-  // First, pointers are normalized, to prevent pointers that trivially originate
+  // Pointers are normalized, to prevent pointers that trivially originate
   // from the same output to be regarded as different.
   NormalizePointerValues();
-  RemoveDuplicates();
+
+  if (RemoveDuplicatePointers)
+    RemoveDuplicates();
 
   // Create a PrecisionInfo instance for this function
   auto & precisionEvaluation = Context_.PerFunctionPrecision[&function];

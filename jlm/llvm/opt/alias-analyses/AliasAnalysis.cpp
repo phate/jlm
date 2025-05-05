@@ -3,19 +3,27 @@
  * See COPYING for terms of redistribution.
  */
 
+#include "MemoryStateEncoder.hpp"
 #include <jlm/llvm/ir/operators.hpp>
 #include <jlm/llvm/ir/operators/alloca.hpp>
 #include <jlm/llvm/ir/operators/delta.hpp>
 #include <jlm/llvm/ir/operators/IOBarrier.hpp>
 #include <jlm/llvm/opt/alias-analyses/AliasAnalysis.hpp>
 #include <jlm/rvsdg/gamma.hpp>
-#include <jlm/rvsdg/theta.hpp>
 #include <jlm/rvsdg/lambda.hpp>
+#include <jlm/rvsdg/theta.hpp>
+#include <jlm/util/Math.hpp>
 
+#include <jlm/llvm/ir/operators/IntegerOperations.hpp>
 #include <numeric>
 
 namespace jlm::llvm::aa
 {
+
+/**
+ * When doing origin tracing in BasicAliasAnalysis, when should we give up?
+ */
+constexpr size_t MaxTraceCollectionSize = 1000;
 
 AliasAnalysis::AliasAnalysis() = default;
 
@@ -27,27 +35,26 @@ PointsToGraphAliasAnalysis::PointsToGraphAliasAnalysis(PointsToGraph & pointsToG
 
 PointsToGraphAliasAnalysis::~PointsToGraphAliasAnalysis() = default;
 
+std::string
+PointsToGraphAliasAnalysis::ToString() const
+{
+  return "PointsToGraphAA";
+}
+
 AliasAnalysis::AliasQueryResponse
 PointsToGraphAliasAnalysis::Query(
     const rvsdg::output & p1,
-    [[maybe_unused]] size_t s1,
+    const size_t s1,
     const rvsdg::output & p2,
-    [[maybe_unused]] size_t s2)
+    const size_t s2)
 {
   // If the two pointers are the same value, they must alias
-  // This is the only situation where this analysis gives MustAlias,
-  // as no offset information is stored in the PointsToGraph.
   if (&p1 == &p2)
     return MustAlias;
 
   // Assume that all pointers actually exist in the PointsToGraph
   auto & p1RegisterNode = PointsToGraph_.GetRegisterNode(p1);
   auto & p2RegisterNode = PointsToGraph_.GetRegisterNode(p2);
-
-  // TODO: Check for MustAlias using the following
-  // - Both pointers have only one possible target
-  // - the target is a global or an import
-  // - both accesses have a size equal to the size of the target
 
   // If the registers are represented by the same node, they may alias
   if (&p1RegisterNode == &p2RegisterNode)
@@ -58,21 +65,84 @@ PointsToGraphAliasAnalysis::Query(
   if (p1RegisterNode.HasTarget(externalNode) && p2RegisterNode.HasTarget(externalNode))
     return MayAlias;
 
+  // A target memory location with size less than sizeNeeded can be ignored.
+  // We can assume that a load of size 8 is not targeting a 4-byte integer.
+  const auto sizeNeeded = std::max(s1, s2);
+
   // Check if p1 and p2 share any target memory nodes
+  std::optional<const PointsToGraph::MemoryNode *> overlapping;
+
   for (auto & target : p1RegisterNode.Targets())
   {
-    // TODO: Ignore targets that are smaller than the access size
-    if (p2RegisterNode.HasTarget(target))
+    // Skip memory locations that are too small to hold [p1, p1+s1) and/or [p2, p2+s2)
+    const auto targetSize = GetMemoryNodeSize(target);
+    if (targetSize.has_value() && *targetSize < sizeNeeded)
+      continue;
+
+    if (!p2RegisterNode.HasTarget(target))
+      continue;
+
+    // If multiple targets have been found, return MayAlias
+    if (overlapping.has_value())
       return MayAlias;
+
+    overlapping = &target;
+  }
+
+  // If there is a single overlapping abstract memory location between p1 and p2,
+  // check if it represents a single region in memory that is the same size as both s1 and s2
+  if (overlapping.has_value() && s1 == s2)
+  {
+    // A single memory node may represent multiple locations
+    if (!IsRepresentingSingleMemoryLocation(**overlapping))
+      return MayAlias;
+
+    const auto targetSize = GetMemoryNodeSize(**overlapping);
+    if (targetSize.has_value() && targetSize == s1)
+      return MustAlias;
+
+    return MayAlias;
   }
 
   return NoAlias;
 }
 
-std::string
-PointsToGraphAliasAnalysis::ToString() const
+std::optional<size_t>
+PointsToGraphAliasAnalysis::GetMemoryNodeSize(const PointsToGraph::MemoryNode & node)
 {
-  return "PointsToGraphAA";
+  if (auto delta = dynamic_cast<const PointsToGraph::DeltaNode *>(&node))
+    return GetLlvmTypeSize(*delta->GetDeltaNode().GetOperation().Type());
+  if (auto import = dynamic_cast<const PointsToGraph::ImportNode *>(&node))
+    return GetLlvmTypeSize(*import->GetArgument().ValueType());
+  if (auto alloca = dynamic_cast<const PointsToGraph::AllocaNode *>(&node))
+  {
+    const auto & allocaNode = alloca->GetAllocaNode();
+    const auto allocaOp = util::AssertedCast<const alloca_op>(&allocaNode.GetOperation());
+
+    // An alloca has a count parameter, which on rare occasions is not just the constant 1.
+    const auto elementCount = GetConstantIntegerValue(*allocaNode.input(0)->origin());
+    if (elementCount.has_value())
+      return *elementCount * GetLlvmTypeSize(*allocaOp->ValueType());
+  }
+  if (auto malloc = dynamic_cast<const PointsToGraph::MallocNode *>(&node))
+  {
+    const auto & mallocNode = malloc->GetMallocNode();
+
+    const auto mallocSize = GetConstantIntegerValue(*mallocNode.input(0)->origin());
+    if (mallocSize.has_value())
+      return *mallocSize;
+  }
+
+  return std::nullopt;
+}
+
+bool
+PointsToGraphAliasAnalysis::IsRepresentingSingleMemoryLocation(
+    const PointsToGraph::MemoryNode & node)
+{
+  return PointsToGraph::Node::Is<PointsToGraph::DeltaNode>(node)
+      || PointsToGraph::Node::Is<PointsToGraph::ImportNode>(node)
+      || PointsToGraph::Node::Is<PointsToGraph::LambdaNode>(node);
 }
 
 ChainedAliasAnalysis::ChainedAliasAnalysis(AliasAnalysis & first, AliasAnalysis & second)
@@ -109,6 +179,47 @@ BasicAliasAnalysis::BasicAliasAnalysis()
 
 BasicAliasAnalysis::~BasicAliasAnalysis() = default;
 
+std::string
+BasicAliasAnalysis::ToString() const
+{
+  return "BasicAA";
+}
+
+/**
+ * Represents the result of tracing a pointer p to some origin,
+ * as a traced base pointer value plus an optional byte offset.
+ *
+ * If the offset is present, that means
+ *  p = base pointer + offset
+ *
+ * If the offset is not present, that means
+ *  p = base pointer + <unknown>
+ */
+struct BasicAliasAnalysis::TracedPointerOrigin
+{
+  const rvsdg::output * BasePointer;
+  std::optional<int64_t> Offset;
+};
+
+/**
+ * Represents a collection of possible origins of a pointer value.
+ */
+struct BasicAliasAnalysis::TraceCollection
+{
+  /**
+   * Contains all outputs visited while tracing, to avoid re-visiting.
+   * If an output is visited first with a known offset, and later with a different offset,
+   * the offset is collapsed to an unknown offset, and tracing continues with that.
+   */
+  std::unordered_map<const rvsdg::output *, std::optional<int64_t>> AllTracedOutputs;
+
+  /**
+   * Contains the outputs that have been reached through tracing, which can not be traced further.
+   * For example the output of an ALLOCA, or the result of a load.
+   */
+  std::unordered_map<const rvsdg::output *, std::optional<int64_t>> TopOrigins;
+};
+
 AliasAnalysis::AliasQueryResponse
 BasicAliasAnalysis::Query(
     const rvsdg::output & p1,
@@ -123,36 +234,332 @@ BasicAliasAnalysis::Query(
   if (&p1Norm == &p2Norm)
     return MustAlias;
 
-  // Check if p1 and p2 are the outputs of memory location creating operations
-  bool p1Original = IsOriginalMemoryLocation(p1Norm);
-  bool p2Original = IsOriginalMemoryLocation(p2Norm);
+  // Trace through GEP operations to get closer to the origins of the pointers
+  // Only traces through GEPs where the offset is known at compile time,
+  // to avoid giving up on MustAlias prematurely
+  const auto p1Traced = TracePointerOriginPrecise(p1Norm);
+  const auto p2Traced = TracePointerOriginPrecise(p2Norm);
 
-  // If it is possible to track both p1 and p2 to memory location defining operations,
-  // and they have different origins, they must point to distinct memory locations.
-  if (p1Original && p2Original)
+  if (p1Traced.BasePointer == p2Traced.BasePointer)
   {
-    return NoAlias;
+    // The pointers share base, but may have different offsets
+    // p1 = base + p1Offset
+    // p2 = base + p2Offset
+
+    JLM_ASSERT(p1Traced.Offset.has_value() && p2Traced.Offset.has_value());
+    return QueryOffsets(p1Traced.Offset, s1, p2Traced.Offset, s2);
   }
 
-  // TODO: Trace through GEP operations
+  // Keep tracing back to all sources
+  TraceCollection p1TraceCollection;
+  TraceCollection p2TraceCollection;
+
+  // If tracing reaches too many possible outputs, it may give up
+  if (!TraceAllPointerOrigins(p1Traced, p1TraceCollection))
+    return MayAlias;
+
+  if (!TraceAllPointerOrigins(p2Traced, p2TraceCollection))
+    return MayAlias;
+
+  // If each trace collection has only one top origin, check if they have the same base pointer
+  if (p1TraceCollection.TopOrigins.size() == 1 && p2TraceCollection.TopOrigins.size() == 1)
+  {
+    const auto & [p1Base, p1Offset] = *p1TraceCollection.TopOrigins.begin();
+    const auto & [p2Base, p2Offset] = *p2TraceCollection.TopOrigins.begin();
+    if (p1Base == p2Base)
+      return QueryOffsets(p1Offset, s1, p2Offset, s2);
+  }
+
+  // Any overlap in the collections' top sets means there is a possibility of aliasing
+  if (DoTraceCollectionsOverlap(p1TraceCollection, s1, p2TraceCollection, s2))
+    return MayAlias;
+
+  // Even if there is no direct overlap in the trace collections, the pointers may still alias
+  // Take for example the top sets { ALLOCA[a]+40, ALLOCA[b] } and { ALLOCA[c], o4+20 }
+  // o4 is some output that can not be traced further, but it is also not original.
+  // It is possible for o4 to be a pointer to ALLOCA[a]+20, in which case there is aliasing.
+
+  // If both trace collections only contain original pointers, with no overlap, there is NoAlias.
+  const bool p1AllTopsOriginal = HasOnlyOriginalTopOrigins(p1TraceCollection);
+  const bool p2AllTopsOriginal = HasOnlyOriginalTopOrigins(p2TraceCollection);
+
+  if (p1AllTopsOriginal && p2AllTopsOriginal)
+    return NoAlias;
+
+  // If one of the pointers has a top origin set containing only fully traceable ALLOCAs,
+  // it is not possible for the other pointer to target any of them,
+  // as they would be explicitly included in its top origin set
+  const bool p1AnyEscaped = HasAnyTopOriginEscaped(p1TraceCollection);
+  const bool p2AnyEscaped = HasAnyTopOriginEscaped(p2TraceCollection);
+
+  if (!p1AnyEscaped || !p2AnyEscaped)
+    return NoAlias;
 
   return MayAlias;
 }
 
-std::string
-BasicAliasAnalysis::ToString() const
+/**
+ * Calculates the byte offset inside the given type, starting at the given offset of GEP inputs.
+ * Uses recursion to handle nested types.
+ * If any indexing input is not a compile time constant, nullopt is returned.
+ * @param gepNode the GEP node
+ * @param inputIndex the index of the input that applies inside the given type
+ * @param type the type the offset is inside
+ * @return the byte offset within the given type, or nullopt if not possible.
+ */
+static std::optional<int64_t>
+CalculateIntraTypeGepOffset(
+    const rvsdg::SimpleNode & gepNode,
+    size_t inputIndex,
+    const rvsdg::ValueType & type)
 {
-  return "BasicAA";
+  // If we have no more input index values, we are not offsetting into the type
+  if (inputIndex >= gepNode.ninputs())
+    return 0;
+
+  // The first GEP input is not an intra-type offset
+  JLM_ASSERT(inputIndex >= 2);
+
+  auto & gepInput = *gepNode.input(inputIndex)->origin();
+  auto indexingValue = GetConstantIntegerValue(gepInput);
+
+  // Any unknown indexing value means the GEP offset is unknown overall
+  if (!indexingValue.has_value())
+    return std::nullopt;
+
+  if (auto array = dynamic_cast<const ArrayType *>(&type))
+  {
+    const auto & elementType = array->GetElementType();
+    int64_t offset = *indexingValue * GetLlvmTypeSize(*elementType);
+
+    // Get the offset into the element type as well, if any
+    const auto subOffset = CalculateIntraTypeGepOffset(gepNode, inputIndex + 1, *elementType);
+    if (subOffset.has_value())
+      return offset + *subOffset;
+
+    return std::nullopt;
+  }
+  if (auto strct = dynamic_cast<const StructType *>(&type))
+  {
+    if (*indexingValue < 0
+        || static_cast<size_t>(*indexingValue) >= strct->GetDeclaration().NumElements())
+      throw std::logic_error("Struct type has fewer fields than requested by GEP");
+
+    const auto & fieldType = strct->GetDeclaration().GetElement(*indexingValue);
+    int64_t offset = GetStructFieldOffset(*strct, *indexingValue);
+
+    const auto subOffset = CalculateIntraTypeGepOffset(gepNode, inputIndex + 1, fieldType);
+    if (subOffset.has_value())
+      return offset + *subOffset;
+
+    return std::nullopt;
+  }
+
+  std::cerr << "GEP type: " << typeid(type).name() << std::endl;
+  JLM_UNREACHABLE("Unknown GEP type");
+}
+
+std::optional<int64_t>
+BasicAliasAnalysis::CalculateGepOffset(const rvsdg::SimpleNode & gepNode)
+{
+  const auto gep = util::AssertedCast<const GetElementPtrOperation>(&gepNode.GetOperation());
+
+  // The pointee type. Gets updated by the loop below if the GEP has multiple levels of offsets
+  const auto & pointeeType = gep->GetPointeeType();
+
+  const auto & wholeTypeIndexingOrigin = *gepNode.input(1)->origin();
+  const auto wholeTypeIndexing = GetConstantIntegerValue(wholeTypeIndexingOrigin);
+
+  if (!wholeTypeIndexing.has_value())
+    return std::nullopt;
+
+  int64_t offset = *wholeTypeIndexing * GetLlvmTypeSize(pointeeType);
+
+  // In addition to offsetting by whole types, a GEP can also offset within a type
+  const auto subOffset = CalculateIntraTypeGepOffset(gepNode, 2, pointeeType);
+  if (!subOffset.has_value())
+    return std::nullopt;
+
+  return offset + *subOffset;
+}
+
+BasicAliasAnalysis::TracedPointerOrigin
+BasicAliasAnalysis::TracePointerOriginPrecise(const rvsdg::output & p)
+{
+  // The original pointer p is always equal to base + byte offset
+  const rvsdg::output * base = &p;
+  int64_t offset = 0;
+
+  while (true)
+  {
+    // Use normalization function to get past all trivially invariant operations
+    base = &NormalizePointerValue(*base);
+
+    if (auto node = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*base))
+    {
+      if (is<GetElementPtrOperation>(node->GetOperation()))
+      {
+        auto calculatedOffset = CalculateGepOffset(*node);
+
+        // Only trace through GEPs with statically known offsets
+        if (!calculatedOffset.has_value())
+          break;
+
+        base = node->input(0)->origin();
+        offset += *calculatedOffset;
+      }
+    }
+
+    // We were not able to trace further
+    break;
+  }
+
+  return TracedPointerOrigin{ base, offset };
+}
+
+AliasAnalysis::AliasQueryResponse
+BasicAliasAnalysis::QueryOffsets(
+    std::optional<int64_t> offset1,
+    size_t s1,
+    std::optional<int64_t> offset2,
+    size_t s2)
+{
+  // If either offset is unknown, return MayAlias
+  if (!offset1.has_value() || !offset2.has_value())
+    return MayAlias;
+
+  auto difference = *offset2 - *offset1;
+  if (difference == 0)
+    return MustAlias;
+
+  // p2 starts at or after p1+s1
+  if (difference >= 0 && static_cast<size_t>(difference) >= s1)
+    return NoAlias;
+
+  // p1 starts at or after p2+s2
+  if (difference <= 0 && static_cast<size_t>(-difference) >= s2)
+    return NoAlias;
+
+  // We have a partial alias
+  return MayAlias;
 }
 
 bool
-BasicAliasAnalysis::IsOriginalMemoryLocation(const rvsdg::output & pointer)
+BasicAliasAnalysis::TraceAllPointerOrigins(TracedPointerOrigin p, TraceCollection & traceCollection)
+{
+  if (traceCollection.AllTracedOutputs.size() >= MaxTraceCollectionSize)
+    return false;
+
+  // Normalize the pointer first, to avoid tracing trivial temporary outputs
+  p.BasePointer = &NormalizePointerValue(*p.BasePointer);
+
+  auto it = traceCollection.AllTracedOutputs.find(p.BasePointer);
+  if (it != traceCollection.AllTracedOutputs.end())
+  {
+    // If the base pointer has already been traced with an unknown offset, we have nothing to add
+    if (!it->second.has_value())
+      return true;
+
+    // The offset used for the base pointer the last time it was traced
+    const auto prevOffset = *it->second;
+
+    // If we are visiting the same base pointer again with the same offset, we have nothing to add
+    if (p.Offset.has_value() && *p.Offset == prevOffset)
+      return true;
+
+    // We have different offsets to last time, collapse to unknown offset
+    p.Offset = std::nullopt;
+  }
+
+  traceCollection.AllTracedOutputs[p.BasePointer] = p.Offset;
+
+  // Try to trace through GEPs
+  if (auto node = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*p.BasePointer))
+  {
+    if (is<GetElementPtrOperation>(node))
+    {
+      // Update the base pointer and offset to represent the other side of the GEP
+      p.BasePointer = node->input(0)->origin();
+
+      // If we have precisely tracked the offset so far, try updating it with the GEPs offset
+      if (p.Offset.has_value())
+      {
+        const auto gepOffset = CalculateGepOffset(*node);
+        if (gepOffset.has_value())
+          p.Offset = *p.Offset + *gepOffset;
+        else
+          p.Offset = std::nullopt;
+      }
+
+      return TraceAllPointerOrigins(p, traceCollection);
+    }
+  }
+
+  // Trace into gamma nodes
+  if (auto gamma = rvsdg::TryGetOwnerNode<rvsdg::GammaNode>(*p.BasePointer))
+  {
+    auto exitVar = gamma->MapOutputExitVar(*p.BasePointer);
+    for (auto result : exitVar.branchResult)
+    {
+      TracedPointerOrigin inside = { result->origin(), p.Offset };
+
+      // If tracing gives up, we give up
+      if (!TraceAllPointerOrigins(inside, traceCollection))
+        return false;
+    }
+
+    return true;
+  }
+
+  // Trace into theta nodes
+  if (auto theta = rvsdg::TryGetOwnerNode<rvsdg::ThetaNode>(*p.BasePointer))
+  {
+    auto loopVar = theta->MapOutputLoopVar(*p.BasePointer);
+
+    // Invariant loop variables should already have been handled by normalization
+    JLM_ASSERT(!rvsdg::ThetaLoopVarIsInvariant(loopVar));
+
+    TracedPointerOrigin inside = { loopVar.post->origin(), p.Offset };
+    return TraceAllPointerOrigins(inside, traceCollection);
+  }
+
+  // We could not trace further, add p as a TopOrigin
+  traceCollection.TopOrigins[p.BasePointer] = p.Offset;
+  return true;
+}
+
+bool
+BasicAliasAnalysis::DoTraceCollectionsOverlap(
+    TraceCollection & tc1,
+    size_t s1,
+    TraceCollection & tc2,
+    size_t s2)
+{
+  for (auto [p1Origin, p1Offset] : tc1.TopOrigins)
+  {
+    auto p2Find = tc2.TopOrigins.find(p1Origin);
+    if (p2Find != tc2.TopOrigins.end())
+    {
+      auto p2Offset = p2Find->second;
+      if (QueryOffsets(p1Offset, s1, p2Offset, s2) != NoAlias)
+        return true;
+    }
+  }
+
+  return false;
+}
+
+bool
+BasicAliasAnalysis::IsOriginalOrigin(const rvsdg::output & pointer)
 {
   // Each GraphImport represents a unique object
   if (dynamic_cast<const GraphImport *>(&pointer))
     return true;
 
-  if (rvsdg::TryGetOwnerNode<llvm::delta::node>(pointer))
+  if (rvsdg::TryGetOwnerNode<delta::node>(pointer))
+    return true;
+
+  if (rvsdg::TryGetOwnerNode<rvsdg::LambdaNode>(pointer))
     return true;
 
   // Is pointer the output of one of the nodes
@@ -163,8 +570,35 @@ BasicAliasAnalysis::IsOriginalMemoryLocation(const rvsdg::output & pointer)
 
     if (is<malloc_op>(node))
       return true;
+  }
 
-    if (is<LlvmLambdaOperation>(node))
+  return false;
+}
+
+bool
+BasicAliasAnalysis::HasOnlyOriginalTopOrigins(TraceCollection & traces)
+{
+  for (auto [output, offset] : traces.TopOrigins)
+  {
+    if (!IsOriginalOrigin(*output))
+      return false;
+  }
+  return true;
+}
+
+bool
+BasicAliasAnalysis::HasOriginEscaped([[maybe_unused]] const rvsdg::output & pointer)
+{
+  // TODO: Implement
+  return true;
+}
+
+bool
+BasicAliasAnalysis::HasAnyTopOriginEscaped(TraceCollection & traces)
+{
+  for (auto [topOrigin, _] : traces.TopOrigins)
+  {
+    if (HasOriginEscaped(*topOrigin))
       return true;
   }
 
@@ -174,73 +608,98 @@ BasicAliasAnalysis::IsOriginalMemoryLocation(const rvsdg::output & pointer)
 bool
 IsPointerCompatible(const rvsdg::output & value)
 {
-  const auto & type = value.type();
-  return IsOrContains<PointerType>(type);
+  return IsOrContains<PointerType>(value.type());
+}
+
+const rvsdg::output &
+NormalizeOutput(const rvsdg::output & output)
+{
+  if (const auto node = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(output))
+  {
+    if (is<IOBarrierOperation>(node))
+    {
+      return NormalizeOutput(*node->input(0)->origin());
+    }
+  }
+  else if (rvsdg::TryGetOwnerNode<rvsdg::StructuralNode>(output))
+  {
+    // If the output is a phi recursion variable, continue tracing inside the phi
+    if (const auto phiResult = dynamic_cast<const llvm::phi::rvoutput *>(&output))
+    {
+      return NormalizeOutput(*phiResult->result()->origin());
+    }
+
+    // If the output is a theta output, check if it is invariant
+    if (const auto theta = rvsdg::TryGetOwnerNode<rvsdg::ThetaNode>(output))
+    {
+      const auto loopVar = theta->MapOutputLoopVar(output);
+      if (rvsdg::ThetaLoopVarIsInvariant(loopVar))
+        return NormalizeOutput(*loopVar.input->origin());
+    }
+  }
+  else if (const auto outerGamma = rvsdg::TryGetRegionParentNode<rvsdg::GammaNode>(output))
+  {
+    // Follow the gamma input
+    return NormalizeOutput(*outerGamma->GetEntryVar(output.index()).input->origin());
+  }
+  else if (const auto outerTheta = rvsdg::TryGetRegionParentNode<rvsdg::ThetaNode>(output))
+  {
+    const auto loopVar = outerTheta->GetLoopVars()[output.index()];
+
+    // If the loop variable is invariant, continue normalizing
+    if (ThetaLoopVarIsInvariant(loopVar))
+      return NormalizeOutput(*loopVar.input->origin());
+  }
+  else if (const auto outerLambda = rvsdg::TryGetRegionParentNode<rvsdg::LambdaNode>(output))
+  {
+    const auto ctxVar = outerLambda->MapBinderContextVar(output);
+
+    // If the argument is a contex variable, continue normalizing
+    if (ctxVar)
+      return NormalizeOutput(*ctxVar->input->origin());
+  }
+  else if (rvsdg::TryGetRegionParentNode<llvm::phi::node>(output) != nullptr)
+  {
+    // The arguments inside a phi node are either context variables or recursion variables, both can
+    // be followed
+    if (const auto cvArg = dynamic_cast<const llvm::phi::cvargument *>(&output))
+    {
+      // Follow the context variable to outside the phi
+      return NormalizeOutput(*cvArg->input()->origin());
+    }
+
+    if (const auto rvArg = dynamic_cast<const llvm::phi::rvargument *>(&output))
+    {
+      // Follow to the recursion variable's definition
+      return NormalizeOutput(*rvArg->result()->origin());
+    }
+
+    JLM_UNREACHABLE("Unknown phi argument type");
+  }
+
+  return output;
 }
 
 const rvsdg::output &
 NormalizePointerValue(const rvsdg::output & pointer)
 {
   JLM_ASSERT(IsPointerCompatible(pointer));
+  return NormalizeOutput(pointer);
+}
 
-  if (const auto node = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(pointer))
+std::optional<int64_t>
+GetConstantIntegerValue(const rvsdg::output & output)
+{
+  const auto & normalized = NormalizeOutput(output);
+  if (auto node = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(normalized))
   {
-    if (is<IOBarrierOperation>(node))
+    if (auto constant = dynamic_cast<const IntegerConstantOperation *>(&node->GetOperation()))
     {
-      return NormalizePointerValue(*node->input(0)->origin());
+      return constant->Representation().to_int();
     }
   }
-  else if (rvsdg::TryGetOwnerNode<rvsdg::StructuralNode>(pointer))
-  {
-      // If the output is a phi recursion variable, continue tracing inside the phi
-      if (const auto phiResult = dynamic_cast<const llvm::phi::rvoutput *>(&pointer))
-      {
-        return NormalizePointerValue(*phiResult->result()->origin());
-      }
 
-      // TODO: We could also handle invariant theta loop variables
-      return pointer;
-  }
-  else if (const auto outerGamma = rvsdg::TryGetRegionParentNode<rvsdg::GammaNode>(pointer))
-  {
-    // Follow the gamma input
-    return NormalizePointerValue(*outerGamma->GetEntryVar(pointer.index()).input->origin());
-  }
-  else if (const auto outerTheta = rvsdg::TryGetRegionParentNode<rvsdg::ThetaNode>(pointer))
-  {
-    const auto loopVar = outerTheta->GetLoopVars()[pointer.index()];
-
-    // If the loop variable is invariant, continue normalizing
-    if (ThetaLoopVarIsInvariant(loopVar))
-      return NormalizePointerValue(*loopVar.input->origin());
-  }
-  else if (const auto outerLambda = rvsdg::TryGetRegionParentNode<rvsdg::LambdaNode>(pointer))
-  {
-    const auto ctxVar = outerLambda->MapBinderContextVar(pointer);
-
-    // If the argument is a contex variable, continue normalizing
-    if (ctxVar)
-      return NormalizePointerValue(*ctxVar->input->origin());
-  }
-  else if (rvsdg::TryGetRegionParentNode<llvm::phi::node>(pointer) != nullptr)
-  {
-    // The arguments inside a phi node are either context variables or recursion variables, both can be followed
-    if (const auto cvArg = dynamic_cast<const llvm::phi::cvargument*>(&pointer))
-    {
-      // Follow the context variable to outside the phi
-      return NormalizePointerValue(*cvArg->input()->origin());
-    }
-
-    if (const auto rvArg = dynamic_cast<const llvm::phi::rvargument*>(&pointer))
-    {
-      // Follow to the recursion variable's definition
-      return NormalizePointerValue(*rvArg->result()->origin());
-    }
-
-    JLM_UNREACHABLE("Unknown phi argument");
-  }
-
-  return pointer;
+  return std::nullopt;
 }
 
 /**
@@ -258,21 +717,22 @@ RoundUpToMultipleOf(size_t size, size_t alignment)
 size_t
 GetLlvmTypeSize(const rvsdg::ValueType & type)
 {
-  if (auto bits = dynamic_cast<const rvsdg::bittype *>(&type))
+  if (const auto bits = dynamic_cast<const rvsdg::bittype *>(&type))
   {
-    // Assume 8 bits per byte, rounding up to a whole byte
-    return (bits->nbits() + 7) / 8;
+    // Assume 8 bits per byte, and round up to a power of 2 bytes
+    const auto bytes = (bits->nbits() + 7) / 8;
+    return util::RoundUpToPowerOf2(bytes);
   }
   if (is<PointerType>(type))
   {
     // Assume 64-bit pointers
     return 8;
   }
-  if (auto arrayType = dynamic_cast<const ArrayType *>(&type))
+  if (const auto arrayType = dynamic_cast<const ArrayType *>(&type))
   {
     return arrayType->nelements() * GetLlvmTypeSize(*arrayType->GetElementType());
   }
-  if (auto floatType = dynamic_cast<const FloatingPointType *>(&type))
+  if (const auto floatType = dynamic_cast<const FloatingPointType *>(&type))
   {
     switch (floatType->size())
     {
@@ -290,11 +750,8 @@ GetLlvmTypeSize(const rvsdg::ValueType & type)
       JLM_UNREACHABLE("Unknown float size");
     }
   }
-  if (auto structType = dynamic_cast<const StructType *>(&type))
+  if (const auto structType = dynamic_cast<const StructType *>(&type))
   {
-    // TODO: This function may over-estimate the size of a struct due to over-estimating field
-    // alignment. For the purposes of alias analysis, that is sound, but it could be improved.
-
     size_t totalSize = 0;
     size_t alignment = 1;
 
@@ -306,32 +763,104 @@ GetLlvmTypeSize(const rvsdg::ValueType & type)
     {
       auto & field = decl.GetElement(i);
       auto fieldSize = GetLlvmTypeSize(field);
-
-      // Since we do not have proper alignment information, we assume field size
-      auto fieldAlignment = isPacked ? 1 : fieldSize;
+      auto fieldAlignment = isPacked ? 1 : GetLlvmTypeAlignment(field);
 
       // Add the size of the field, including any needed padding
       totalSize = RoundUpToMultipleOf(totalSize, fieldAlignment);
       totalSize += fieldSize;
 
       // The struct as a whole must be at least as aligned as each field
-      alignment = std::lcm(alignment, fieldSize);
+      alignment = std::lcm(alignment, fieldAlignment);
     }
 
     // Round size up to a multiple of alignment
     totalSize = RoundUpToMultipleOf(totalSize, alignment);
 
-    // TODO: In C++, but not C, the sizeof() an empty struct is 1
+    // TODO: We assume C and allow empty structs. In C++, the size of an empty struct is 1 byte.
 
     return totalSize;
   }
-  if (auto vectorType = dynamic_cast<const VectorType *>(&type))
+  if (const auto vectorType = dynamic_cast<const VectorType *>(&type))
   {
     return vectorType->size() * GetLlvmTypeSize(*vectorType->Type());
   }
+  if (is<rvsdg::FunctionType>(type))
+  {
+    // We should never read from or write to functions, so give the size 0
+    return 0;
+  }
 
-  std::cerr << "Unknown type: " << typeid(type).name() << std::endl;
+  std::cerr << "unknown type: " << typeid(type).name() << std::endl;
   JLM_UNREACHABLE("Unknown type");
+}
+
+size_t
+GetLlvmTypeAlignment(const rvsdg::ValueType & type)
+{
+  if (is<rvsdg::bittype>(type))
+  {
+    return GetLlvmTypeSize(type);
+  }
+  if (is<PointerType>(type) || is<FloatingPointType>(type))
+  {
+    return GetLlvmTypeSize(type);
+  }
+  if (const auto arrayType = dynamic_cast<const ArrayType *>(&type))
+  {
+    return GetLlvmTypeAlignment(*arrayType->GetElementType());
+  }
+  if (const auto structType = dynamic_cast<const StructType *>(&type))
+  {
+    const auto & decl = structType->GetDeclaration();
+    // A packed struct has alignment 1, and all fields are tightly packed
+    if (structType->IsPacked())
+      return 1;
+
+    size_t alignment = 1;
+
+    for (size_t i = 0; i < decl.NumElements(); i++)
+    {
+      auto & field = decl.GetElement(i);
+      auto fieldAlignment = GetLlvmTypeAlignment(field);
+
+      // The struct as a whole must be at least as aligned as each field
+      alignment = std::lcm(alignment, fieldAlignment);
+    }
+
+    return alignment;
+  }
+  if (const auto vectorType = dynamic_cast<const VectorType *>(&type))
+  {
+    return GetLlvmTypeAlignment(*vectorType->Type());
+  }
+
+  JLM_UNREACHABLE("Unknown type");
+}
+
+size_t
+GetStructFieldOffset(const StructType & structType, size_t fieldIndex)
+{
+  const auto & decl = structType.GetDeclaration();
+  const auto isPacked = structType.IsPacked();
+
+  size_t offset = 0;
+
+  for (size_t i = 0; i < decl.NumElements(); i++)
+  {
+    auto & field = decl.GetElement(i);
+
+    // First round up to the alignment of the field
+    auto fieldAlignment = isPacked ? 1 : GetLlvmTypeAlignment(field);
+    offset = RoundUpToMultipleOf(offset, fieldAlignment);
+
+    if (i == fieldIndex)
+      return offset;
+
+    // Add the size of the field
+    offset += GetLlvmTypeSize(field);
+  }
+
+  JLM_UNREACHABLE("Invalid fieldIndex in GetStructFieldOffset");
 }
 
 }

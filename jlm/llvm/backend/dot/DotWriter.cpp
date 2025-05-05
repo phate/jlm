@@ -4,11 +4,12 @@
  */
 
 #include <jlm/llvm/backend/dot/DotWriter.hpp>
-
+#include <jlm/llvm/ir/operators/delta.hpp>
+#include <jlm/llvm/ir/RvsdgModule.hpp>
 #include <jlm/llvm/ir/types.hpp>
 #include <jlm/rvsdg/bitstring/type.hpp>
+#include <jlm/rvsdg/gamma.hpp>
 #include <jlm/rvsdg/region.hpp>
-#include <jlm/rvsdg/simple-node.hpp>
 #include <jlm/rvsdg/structural-node.hpp>
 #include <jlm/rvsdg/traverser.hpp>
 #include <jlm/rvsdg/type.hpp>
@@ -129,6 +130,59 @@ AttachNodeOutput(
 }
 
 /**
+ * Some types of RVSDG arguments have extra attributes.
+ * This function handles adding them to the output graph.
+ *
+ * @param rvsdgArgument the RVSDG argument being represented
+ * @param node the output graph node representing it
+ * @param typeGraph the optional type graph, used for dumping types
+ */
+static void
+SetAdditionalArgumentAttributes(
+    const rvsdg::RegionArgument & rvsdgArgument,
+    util::Node & node,
+    util::Graph * typeGraph)
+{
+  // If the argument is a GraphImport, include extra type and linkage data
+  if (const auto graphImport = dynamic_cast<GraphImport *>(&node))
+  {
+    node.SetAttribute("linkage", ToString(graphImport->Linkage()));
+    if (typeGraph)
+    {
+      auto & valueTypeNode = GetOrCreateTypeGraphNode(*graphImport->ValueType(), *typeGraph);
+      node.SetAttributeGraphElement("valueType", valueTypeNode);
+    }
+  }
+}
+
+/**
+ * Some types of RVSDG nodes have extra attributes.
+ * This function handles adding them to the output graph.
+ *
+ * @param rvsdgNode the RVSDG node being represented
+ * @param node the output graph node representing it
+ * @param typeGraph the optional type graph, used for dumping types
+ */
+static void
+SetAdditionalNodeAttributes(
+    const rvsdg::Node & rvsdgNode,
+    util::Node & node,
+    util::Graph * typeGraph)
+{
+  if (const auto delta = dynamic_cast<const delta::node *>(&rvsdgNode))
+  {
+    node.SetAttribute("linkage", ToString(delta->GetOperation().linkage()));
+    node.SetAttribute("constant", delta->GetOperation().constant() ? "true" : "false");
+
+    if (typeGraph)
+    {
+      auto & typeNode = GetOrCreateTypeGraphNode(*delta->GetOperation().Type(),  *typeGraph);
+      node.SetAttributeGraphElement("type", typeNode);
+    }
+  }
+}
+
+/**
  * Fill the given \p graph with nodes corresponding to the nodes of the given \p region.
  * If \p typeGraph is not nullptr, all rvsdg outputs get a type reference to the type graph.
  * If the type does not already exist in the type graph, it is created.
@@ -158,6 +212,8 @@ CreateGraphNodes(util::Graph & graph, rvsdg::Region & region, util::Graph * type
       // Include the local index of the node's input in the label
       node.AppendToLabel(util::strfmt("<- ", argument.input()->debug_string()), " ");
     }
+
+    SetAdditionalArgumentAttributes(argument, node, typeGraph);
   }
 
   // Create a node for each node in the region in topological order.
@@ -184,6 +240,8 @@ CreateGraphNodes(util::Graph & graph, rvsdg::Region & region, util::Graph * type
         CreateGraphNodes(subGraph, *structuralNode->subregion(i), typeGraph);
       }
     }
+
+    SetAdditionalNodeAttributes(*rvsdgNode, node, typeGraph);
   }
 
   // Create result nodes for the region's results, and attach them to their origins

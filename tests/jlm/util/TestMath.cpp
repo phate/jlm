@@ -12,7 +12,7 @@
 
 using namespace jlm::util;
 
-static void
+static int
 TestLog2Floor()
 {
   auto testByteRange = [](auto type)
@@ -44,9 +44,32 @@ TestLog2Floor()
   assert(Log2Floor<uint32_t>(0x7FFFFFFF) == 30);
   assert(Log2Floor<uint32_t>(0x80000000) == 31);
   assert(Log2Floor<uint32_t>(0xFFFFFFFF) == 31);
-}
 
-static void
+  return 0;
+}
+JLM_UNIT_TEST_REGISTER("jlm/util/TestMath-TestLog2Floor", TestLog2Floor)
+
+static int
+TestRoundUpToPowerOf2()
+{
+  assert(RoundUpToPowerOf2<int32_t>(-10) == 1);
+  assert(RoundUpToPowerOf2<int32_t>(0) == 1);
+  assert(RoundUpToPowerOf2<uint32_t>(0) == 1);
+  assert(RoundUpToPowerOf2<int32_t>(1) == 1);
+  assert(RoundUpToPowerOf2<uint32_t>(1) == 1);
+  assert(RoundUpToPowerOf2<uint32_t>(2) == 2);
+  assert(RoundUpToPowerOf2<uint32_t>(3) == 4);
+
+  assert(RoundUpToPowerOf2<uint32_t>(255) == 256);
+  assert(RoundUpToPowerOf2<uint32_t>(256) == 256);
+  assert(RoundUpToPowerOf2<uint32_t>(257) == 512);
+  assert(RoundUpToPowerOf2<uint64_t>(0xFFFFFFFF) == 0x100000000ul);
+
+  return 0;
+}
+JLM_UNIT_TEST_REGISTER("jlm/util/TestMath-TestRoundUpToPowerOf2", TestRoundUpToPowerOf2)
+
+static int
 TestBitsRequiredToRepresent()
 {
   assert(BitsRequiredToRepresent<int8_t>(-1) == 8);
@@ -66,9 +89,12 @@ TestBitsRequiredToRepresent()
   assert(BitsRequiredToRepresent(0xFFFF'FFFFu) == 32);
   assert(BitsRequiredToRepresent(0xFFFF'FFFF'FFFF'FFFFll) == 64);
   assert(BitsRequiredToRepresent(0xFFFF'FFFF'FFFF'FFFFull) == 64);
-}
 
-static void
+  return 0;
+}
+JLM_UNIT_TEST_REGISTER("jlm/util/TestMath-TestBitsRequiredToRepresent", TestBitsRequiredToRepresent)
+
+static int
 TestBitWidthOfEnum()
 {
   enum class TestEnum1
@@ -103,15 +129,7 @@ TestBitWidthOfEnum()
   assert(BitWidthOfEnum(TestEnum4::Three) == 2);
   assert(BitWidthOfEnum(TestEnum5::Four) == 3);
   assert(BitWidthOfEnum(TestEnum127::OneHundredAndTwentySeven) == 7);
-}
 
-static int
-TestMath()
-{
-  TestLog2Floor();
-  TestBitsRequiredToRepresent();
-  TestBitWidthOfEnum();
   return 0;
 }
-
-JLM_UNIT_TEST_REGISTER("jlm/util/TestMath", TestMath)
+JLM_UNIT_TEST_REGISTER("jlm/util/TestMath-TestBitWidthOfEnum", TestBitWidthOfEnum)
