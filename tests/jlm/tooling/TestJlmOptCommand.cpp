@@ -45,7 +45,8 @@ TestStatistics()
   // Assert
   std::string expectedCommandLine = jlm::util::strfmt(
       "jlm-opt ",
-      "--llvm ",
+      "--input-format=llvm ",
+      "--output-format=llvm ",
       "--DeadNodeElimination --LoopUnrolling ",
       "-s " + expectedStatisticsDir.to_str() + " ",
       "--print-steensgaard-analysis ",
