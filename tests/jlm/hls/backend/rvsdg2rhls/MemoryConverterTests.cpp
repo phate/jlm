@@ -372,15 +372,15 @@ TestThetaLoad()
   ConvertThetaNodes(*rvsdgModule);
   // Simple assert as ConvertThetaNodes() is tested in separate unit tests
   jlm::rvsdg::view(rvsdgModule->Rvsdg(), stdout);
-  assert(jlm::rvsdg::Region::Contains<loop_op>(*lambdaRegion, true));
+  assert(jlm::rvsdg::Region::ContainsNodeType<loop_node>(*lambdaRegion, true));
 
   // Act
   mem_queue(*rvsdgModule);
   // Simple assert as mem_queue() is tested in separate unit tests
   jlm::rvsdg::view(rvsdgModule->Rvsdg(), stdout);
-  assert(jlm::rvsdg::Region::Contains<state_gate_op>(*lambdaRegion, true));
-  assert(jlm::rvsdg::Region::Contains<MemoryStateSplitOperation>(*lambdaRegion, true));
-  assert(jlm::rvsdg::Region::Contains<MemoryStateMergeOperation>(*lambdaRegion, true));
+  assert(jlm::rvsdg::Region::ContainsOperation<state_gate_op>(*lambdaRegion, true));
+  assert(jlm::rvsdg::Region::ContainsOperation<MemoryStateSplitOperation>(*lambdaRegion, true));
+  assert(jlm::rvsdg::Region::ContainsOperation<MemoryStateMergeOperation>(*lambdaRegion, true));
 
   // Act
   MemoryConverter(*rvsdgModule);
@@ -394,8 +394,8 @@ TestThetaLoad()
   lambda = jlm::util::AssertedCast<jlm::rvsdg::LambdaNode>(region->Nodes().begin().ptr());
   lambdaRegion = lambda->subregion();
 
-  assert(jlm::rvsdg::Region::Contains<mem_resp_op>(*lambdaRegion, true));
-  assert(jlm::rvsdg::Region::Contains<mem_req_op>(*lambdaRegion, true));
+  assert(jlm::rvsdg::Region::ContainsOperation<mem_resp_op>(*lambdaRegion, true));
+  assert(jlm::rvsdg::Region::ContainsOperation<mem_req_op>(*lambdaRegion, true));
 
   // Request Node
   auto requestNode =
@@ -406,7 +406,7 @@ TestThetaLoad()
   auto loopOutput =
       jlm::util::AssertedCast<const jlm::rvsdg::StructuralOutput>(requestNode->input(0)->origin());
   auto loopNode = jlm::util::AssertedCast<const jlm::rvsdg::StructuralNode>(loopOutput->node());
-  assert(is<loop_op>(loopNode));
+  assert(dynamic_cast<const loop_node *>(loopNode));
   // Loop Result
   auto & thetaResult = loopOutput->results;
   assert(thetaResult.size() == 1);
@@ -500,14 +500,14 @@ TestThetaStore()
   ConvertThetaNodes(*rvsdgModule);
   // Simple assert as ConvertThetaNodes() is tested in separate unit tests
   jlm::rvsdg::view(rvsdgModule->Rvsdg(), stdout);
-  assert(jlm::rvsdg::Region::Contains<loop_op>(*lambdaRegion, true));
+  assert(jlm::rvsdg::Region::ContainsNodeType<loop_node>(*lambdaRegion, true));
 
   // Act
   mem_queue(*rvsdgModule);
   // Simple assert as mem_queue() is tested in separate unit tests
   jlm::rvsdg::view(rvsdgModule->Rvsdg(), stdout);
-  assert(jlm::rvsdg::Region::Contains<MemoryStateSplitOperation>(*lambdaRegion, true));
-  assert(jlm::rvsdg::Region::Contains<MemoryStateMergeOperation>(*lambdaRegion, true));
+  assert(jlm::rvsdg::Region::ContainsOperation<MemoryStateSplitOperation>(*lambdaRegion, true));
+  assert(jlm::rvsdg::Region::ContainsOperation<MemoryStateMergeOperation>(*lambdaRegion, true));
 
   // Act
   MemoryConverter(*rvsdgModule);
@@ -521,7 +521,7 @@ TestThetaStore()
   lambda = jlm::util::AssertedCast<jlm::rvsdg::LambdaNode>(region->Nodes().begin().ptr());
   lambdaRegion = lambda->subregion();
 
-  assert(jlm::rvsdg::Region::Contains<mem_req_op>(*lambdaRegion, true));
+  assert(jlm::rvsdg::Region::ContainsOperation<mem_req_op>(*lambdaRegion, true));
 
   // Request Node
   auto requestNode =
@@ -532,7 +532,7 @@ TestThetaStore()
   auto loopOutput =
       jlm::util::AssertedCast<const jlm::rvsdg::StructuralOutput>(requestNode->input(0)->origin());
   auto loopNode = jlm::util::AssertedCast<const jlm::rvsdg::StructuralNode>(loopOutput->node());
-  assert(is<loop_op>(loopNode));
+  assert(dynamic_cast<const loop_node *>(loopNode));
   // Loop Result
   auto & thetaResult = loopOutput->results;
   assert(thetaResult.size() == 1);

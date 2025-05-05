@@ -127,16 +127,16 @@ TestInvariantMemoryState()
   InvariantLambdaMemoryStateRemoval memStateRemoval;
   memStateRemoval.Run(*rvsdgModule, collector);
   // Assert
-  auto * node = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
+  auto * lambdaNode = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::LambdaNode>(
       *rvsdgModule->Rvsdg().GetRootRegion().result(0)->origin());
-  auto lambdaSubregion = jlm::util::AssertedCast<jlm::rvsdg::LambdaNode>(node)->subregion();
+  auto lambdaSubregion = lambdaNode->subregion();
   jlm::rvsdg::view(rvsdgModule->Rvsdg(), stdout);
   assert(lambdaSubregion->narguments() == 2);
   assert(lambdaSubregion->nresults() == 1);
   assert(is<MemoryStateType>(lambdaSubregion->result(0)->Type()));
   // Since there is more than one invariant memory state edge, the MemoryStateMerge node should
   // still exists
-  node = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*lambdaSubregion->result(0)->origin());
+  auto node = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*lambdaSubregion->result(0)->origin());
   assert(is<LambdaExitMemoryStateMergeOperation>(node->GetOperation()));
   assert(node->ninputs() == 2);
   // Need to pass a load node to reach the MemoryStateSplit node

@@ -483,7 +483,7 @@ TopDownModRefEliminator::EliminateTopDown(const rvsdg::RvsdgModule & rvsdgModule
 void
 TopDownModRefEliminator::EliminateTopDownRootRegion(rvsdg::Region & region)
 {
-  JLM_ASSERT(region.IsRootRegion() || rvsdg::is<rvsdg::PhiOperation>(region.node()));
+  JLM_ASSERT(region.IsRootRegion() || dynamic_cast<const rvsdg::PhiNode *>(region.node()));
 
   // Process the lambda, phi, and delta nodes bottom-up.
   // This ensures that we visit all the call nodes before we visit the respective lambda nodes.
@@ -520,9 +520,9 @@ TopDownModRefEliminator::EliminateTopDownRootRegion(rvsdg::Region & region)
 void
 TopDownModRefEliminator::EliminateTopDownRegion(rvsdg::Region & region)
 {
-  auto isLambdaSubregion = rvsdg::is<rvsdg::LambdaOperation>(region.node());
-  auto isThetaSubregion = rvsdg::is<rvsdg::ThetaOperation>(region.node());
-  auto isGammaSubregion = rvsdg::is<rvsdg::GammaOperation>(region.node());
+  auto isLambdaSubregion = dynamic_cast<const rvsdg::LambdaNode *>(region.node());
+  auto isThetaSubregion = dynamic_cast<const rvsdg::ThetaNode *>(region.node());
+  auto isGammaSubregion = dynamic_cast<const rvsdg::GammaNode *>(region.node());
   JLM_ASSERT(isLambdaSubregion || isThetaSubregion || isGammaSubregion);
 
   // Process the intra-procedural nodes top-down.
@@ -648,7 +648,7 @@ TopDownModRefEliminator::EliminateTopDownPhi(const rvsdg::PhiNode & phiNode)
         auto & lambdaLiveNodes = Context_->GetLiveNodes(lambdaSubregion);
         liveNodes.UnionWith(lambdaLiveNodes);
       }
-      else if (is<delta::operation>(&node))
+      else if (dynamic_cast<const delta::node *>(&node))
       {
         // Nothing needs to be done.
       }

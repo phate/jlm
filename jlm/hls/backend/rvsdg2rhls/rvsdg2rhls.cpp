@@ -395,7 +395,7 @@ split_hls_function(llvm::RvsdgModule & rm, const std::string & function_name)
         }
         else
         {
-          throw util::error("Unsupported node type: " + orig_node->GetOperation().debug_string());
+          throw util::error("Unsupported node type: " + orig_node->DebugString());
         }
       }
       // copy function into rhls
