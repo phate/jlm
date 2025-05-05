@@ -97,7 +97,7 @@ has_side_effects(const rvsdg::Node * node)
 static std::vector<rvsdg::RegionArgument *>
 copy_from_gamma(rvsdg::Node * node, size_t r)
 {
-  JLM_ASSERT(jlm::rvsdg::is<rvsdg::GammaOperation>(node->region()->node()));
+  JLM_ASSERT(dynamic_cast<rvsdg::GammaNode *>(node->region()->node()));
   JLM_ASSERT(node->depth() == 0);
 
   auto target = node->region()->node()->region();
@@ -126,7 +126,7 @@ copy_from_gamma(rvsdg::Node * node, size_t r)
 static std::vector<rvsdg::output *>
 copy_from_theta(rvsdg::Node * node)
 {
-  JLM_ASSERT(is<rvsdg::ThetaOperation>(node->region()->node()));
+  JLM_ASSERT(dynamic_cast<const rvsdg::ThetaNode *>(node->region()->node()));
   JLM_ASSERT(node->depth() == 0);
 
   auto target = node->region()->node()->region();
@@ -212,7 +212,7 @@ push(rvsdg::GammaNode * gamma)
 static bool
 is_theta_invariant(const rvsdg::Node * node, const std::unordered_set<rvsdg::output *> & invariants)
 {
-  JLM_ASSERT(is<rvsdg::ThetaOperation>(node->region()->node()));
+  JLM_ASSERT(dynamic_cast<const rvsdg::ThetaNode *>(node->region()->node()));
   JLM_ASSERT(node->depth() == 0);
 
   for (size_t n = 0; n < node->ninputs(); n++)
@@ -287,14 +287,14 @@ push_top(rvsdg::ThetaNode * theta)
 static bool
 is_invariant(const rvsdg::RegionArgument * argument)
 {
-  JLM_ASSERT(is<rvsdg::ThetaOperation>(argument->region()->node()));
+  JLM_ASSERT(dynamic_cast<const rvsdg::ThetaNode *>(argument->region()->node()));
   return argument->region()->result(argument->index() + 1)->origin() == argument;
 }
 
 static bool
 is_movable_store(rvsdg::Node * node)
 {
-  JLM_ASSERT(is<rvsdg::ThetaOperation>(node->region()->node()));
+  JLM_ASSERT(dynamic_cast<const rvsdg::ThetaNode *>(node->region()->node()));
   JLM_ASSERT(jlm::rvsdg::is<StoreNonVolatileOperation>(node));
 
   auto address = dynamic_cast<rvsdg::RegionArgument *>(node->input(0)->origin());
@@ -324,7 +324,7 @@ is_movable_store(rvsdg::Node * node)
 static void
 pushout_store(rvsdg::Node * storenode)
 {
-  JLM_ASSERT(is<rvsdg::ThetaOperation>(storenode->region()->node()));
+  JLM_ASSERT(dynamic_cast<const rvsdg::ThetaNode *>(storenode->region()->node()));
   JLM_ASSERT(jlm::rvsdg::is<StoreNonVolatileOperation>(storenode) && is_movable_store(storenode));
   auto theta = static_cast<rvsdg::ThetaNode *>(storenode->region()->node());
   auto storeop = static_cast<const StoreNonVolatileOperation *>(&storenode->GetOperation());

@@ -78,7 +78,7 @@ trace_edge(
         new_edge = new_out;
         convert_loop_state_to_lcb(new_in);
       }
-      JLM_ASSERT(TryGetOwnerOp<loop_op>(*out));
+      JLM_ASSERT(rvsdg::TryGetOwnerNode<loop_node>(*out));
       JLM_ASSERT(out->region() == state_edge->region());
       state_edge = get_mem_state_user(out);
       continue;

@@ -119,7 +119,7 @@ hls::distribute_constants(rvsdg::Region * region)
       }
       else
       {
-        throw util::error("Unexpected node type: " + node->GetOperation().debug_string());
+        throw util::error("Unexpected node type: " + node->DebugString());
       }
     }
     else if (auto sn = dynamic_cast<rvsdg::SimpleNode *>(node))
@@ -131,7 +131,7 @@ hls::distribute_constants(rvsdg::Region * region)
     }
     else
     {
-      throw util::error("Unexpected node type: " + node->GetOperation().debug_string());
+      throw util::error("Unexpected node type: " + node->DebugString());
     }
   }
 }

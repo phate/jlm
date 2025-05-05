@@ -8,6 +8,7 @@
 
 #include <jlm/rvsdg/node.hpp>
 #include <jlm/rvsdg/region.hpp>
+#include <jlm/rvsdg/simple-node.hpp>
 
 namespace jlm::rvsdg
 {
@@ -27,6 +28,9 @@ protected:
   StructuralNode(rvsdg::Region * region, size_t nsubregions);
 
 public:
+  std::string
+  DebugString() const override;
+
   inline size_t
   nsubregions() const noexcept
   {
@@ -142,11 +146,45 @@ StructuralNode::output(size_t index) const noexcept
 
 template<class Operation>
 bool
-Region::Contains(const rvsdg::Region & region, bool checkSubregions)
+Region::ContainsOperation(const rvsdg::Region & region, bool checkSubregions)
 {
   for (auto & node : region.Nodes())
   {
-    if (is<Operation>(&node))
+    if (auto simpleNode = dynamic_cast<const SimpleNode *>(&node))
+    {
+      if (is<Operation>(simpleNode->GetOperation()))
+      {
+        return true;
+      }
+    }
+
+    if (!checkSubregions)
+    {
+      continue;
+    }
+
+    if (auto structuralNode = dynamic_cast<const StructuralNode *>(&node))
+    {
+      for (size_t n = 0; n < structuralNode->nsubregions(); n++)
+      {
+        if (ContainsOperation<Operation>(*structuralNode->subregion(n), checkSubregions))
+        {
+          return true;
+        }
+      }
+    }
+  }
+
+  return false;
+}
+
+template<class NodeType>
+bool
+Region::ContainsNodeType(const rvsdg::Region & region, bool checkSubregions)
+{
+  for (auto & node : region.Nodes())
+  {
+    if (dynamic_cast<const NodeType *>(&node))
     {
       return true;
     }
@@ -160,7 +198,7 @@ Region::Contains(const rvsdg::Region & region, bool checkSubregions)
     {
       for (size_t n = 0; n < structuralNode->nsubregions(); n++)
       {
-        if (Contains<Operation>(*structuralNode->subregion(n), checkSubregions))
+        if (ContainsNodeType<NodeType>(*structuralNode->subregion(n), checkSubregions))
         {
           return true;
         }

@@ -40,7 +40,7 @@ test_gamma()
   auto gamma2 =
       static_cast<StructuralNode *>(gamma)->copy(&graph.GetRootRegion(), { pred, v0, v1, v2 });
   view(&graph.GetRootRegion(), stdout);
-  assert(is<GammaOperation>(gamma2));
+  assert(dynamic_cast<const GammaNode *>(gamma2));
 
   /* test entry and exit variable iterators */
 

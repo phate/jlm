@@ -65,6 +65,12 @@ StructuralNode::StructuralNode(rvsdg::Region * region, size_t nsubregions)
   on_node_create(this);
 }
 
+std::string
+StructuralNode::DebugString() const
+{
+  return GetOperation().debug_string();
+}
+
 StructuralInput *
 StructuralNode::append_input(std::unique_ptr<StructuralInput> input)
 {

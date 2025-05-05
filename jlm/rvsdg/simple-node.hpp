@@ -44,6 +44,9 @@ public:
   Node *
   copy(rvsdg::Region * region, SubstitutionMap & smap) const override;
 
+  std::string
+  DebugString() const override;
+
   static SimpleNode &
   Create(Region & region, const SimpleOperation & op, const std::vector<rvsdg::output *> & operands)
   {

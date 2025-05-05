@@ -60,6 +60,12 @@ backedge_result::Copy(rvsdg::output & origin, rvsdg::StructuralOutput * output)
 
 ExitResult::~ExitResult() noexcept = default;
 
+ExitResult::ExitResult(rvsdg::output & origin, rvsdg::StructuralOutput & output)
+    : rvsdg::RegionResult(origin.region(), &origin, &output, origin.Type())
+{
+  JLM_ASSERT(dynamic_cast<const loop_node *>(origin.region()->node()));
+}
+
 ExitResult &
 ExitResult::Copy(rvsdg::output & origin, rvsdg::StructuralOutput * output)
 {
