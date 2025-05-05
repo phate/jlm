@@ -137,10 +137,8 @@ test_push_theta_bottom()
   auto storenode = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*ex.origin());
   assert(jlm::rvsdg::is<StoreNonVolatileOperation>(storenode));
   assert(storenode->input(0)->origin() == a);
-  assert(jlm::rvsdg::is<jlm::rvsdg::ThetaOperation>(
-      jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*storenode->input(1)->origin())));
-  assert(jlm::rvsdg::is<jlm::rvsdg::ThetaOperation>(
-      jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*storenode->input(2)->origin())));
+  assert(jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::ThetaNode>(*storenode->input(1)->origin()));
+  assert(jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::ThetaNode>(*storenode->input(2)->origin()));
 }
 
 static int

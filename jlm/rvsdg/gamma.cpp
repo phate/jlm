@@ -27,8 +27,8 @@ static void
 perform_predicate_reduction(GammaNode * gamma)
 {
   auto origin = gamma->predicate()->origin();
-  auto constant = static_cast<node_output *>(origin)->node();
-  auto cop = static_cast<const ctlconstant_op *>(&constant->GetOperation());
+  auto & constant = AssertGetOwnerNode<SimpleNode>(*origin);
+  auto cop = static_cast<const ctlconstant_op *>(&constant.GetOperation());
   auto alternative = cop->value().alternative();
 
   rvsdg::SubstitutionMap smap;
@@ -119,9 +119,9 @@ static void
 perform_control_constant_reduction(std::unordered_set<jlm::rvsdg::output *> & outputs)
 {
   auto & gamma = rvsdg::AssertGetOwnerNode<GammaNode>(**outputs.begin());
-  auto origin = static_cast<node_output *>(gamma.predicate()->origin());
-  auto match = origin->node();
-  auto & match_op = to_match_op(match->GetOperation());
+  auto origin = gamma.predicate()->origin();
+  auto & match = AssertGetOwnerNode<SimpleNode>(*origin);
+  auto & match_op = to_match_op(match.GetOperation());
 
   std::unordered_map<uint64_t, uint64_t> map;
   for (const auto & pair : match_op)
@@ -137,8 +137,9 @@ perform_control_constant_reduction(std::unordered_set<jlm::rvsdg::output *> & ou
     std::unordered_map<uint64_t, uint64_t> new_mapping;
     for (size_t n = 0; n < xv.branchResult.size(); n++)
     {
-      auto origin = static_cast<node_output *>(xv.branchResult[n]->origin());
-      auto & value = to_ctlconstant_op(origin->node()->GetOperation()).value();
+      auto origin = xv.branchResult[n]->origin();
+      auto & value =
+          to_ctlconstant_op(AssertGetOwnerNode<SimpleNode>(*origin).GetOperation()).value();
       nalternatives = value.nalternatives();
       if (map.find(n) != map.end())
         new_mapping[map[n]] = value.alternative();
@@ -146,7 +147,7 @@ perform_control_constant_reduction(std::unordered_set<jlm::rvsdg::output *> & ou
         defalt = value.alternative();
     }
 
-    auto origin = match->input(0)->origin();
+    auto origin = match.input(0)->origin();
     auto m = jlm::rvsdg::match(match_op.nbits(), new_mapping, defalt, nalternatives, origin);
     xv.output->divert_users(m);
   }

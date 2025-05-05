@@ -150,19 +150,19 @@ fix_match_inversion(rvsdg::GammaNode * old_gamma)
   {
     return false;
   }
-  if (auto no = dynamic_cast<rvsdg::node_output *>(old_gamma->predicate()->origin()))
+  if (auto pred_node = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*old_gamma->predicate()->origin()))
   {
-    if (no->nusers() != 1)
+    if (old_gamma->predicate()->origin()->nusers() != 1)
     {
       return false;
     }
-    if (auto match = dynamic_cast<const rvsdg::match_op *>(&no->node()->GetOperation()))
+    if (auto match = dynamic_cast<const rvsdg::match_op *>(&pred_node->GetOperation()))
     {
       if (match->nalternatives() == 2)
       {
         uint64_t default_alternative = match->default_alternative() ? 0 : 1;
         auto new_match = rvsdg::match_op::Create(
-            *no->node()->input(0)->origin(),
+            *pred_node->input(0)->origin(),
             { { 0, match->alternative(1) }, { 1, match->alternative(0) } },
             default_alternative,
             match->nalternatives());
@@ -188,7 +188,7 @@ fix_match_inversion(rvsdg::GammaNode * old_gamma)
           oex.output->divert_users(nex);
         }
         remove(old_gamma);
-        remove(no->node());
+        remove(pred_node);
         return true;
       }
     }

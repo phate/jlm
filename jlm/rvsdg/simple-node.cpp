@@ -107,6 +107,12 @@ SimpleNode::copy(rvsdg::Region * region, SubstitutionMap & smap) const
   return node;
 }
 
+std::string
+SimpleNode::DebugString() const
+{
+  return GetOperation().debug_string();
+}
+
 std::optional<std::vector<rvsdg::output *>>
 NormalizeSimpleOperationCommonNodeElimination(
     Region & region,

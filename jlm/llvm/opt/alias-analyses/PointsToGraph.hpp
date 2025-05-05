@@ -655,9 +655,7 @@ private:
   DeltaNode(PointsToGraph & pointsToGraph, const delta::node & deltaNode)
       : MemoryNode(pointsToGraph),
         DeltaNode_(&deltaNode)
-  {
-    JLM_ASSERT(is<delta::operation>(&deltaNode));
-  }
+  {}
 
 public:
   const delta::node &
@@ -730,7 +728,7 @@ private:
       : MemoryNode(pointsToGraph),
         LambdaNode_(&lambdaNode)
   {
-    JLM_ASSERT(is<llvm::LlvmLambdaOperation>(&lambdaNode));
+    JLM_ASSERT(dynamic_cast<const llvm::LlvmLambdaOperation *>(&lambdaNode.GetOperation()));
   }
 
 public:

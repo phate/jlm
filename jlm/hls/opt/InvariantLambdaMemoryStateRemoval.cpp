@@ -101,7 +101,7 @@ InvariantLambdaMemoryStateRemoval::RemoveInvariantLambdaMemoryStateEdges(
   {
     if (auto lambda = dynamic_cast<const rvsdg::LambdaNode *>(node))
     {
-      if (rvsdg::is<const llvm::LlvmLambdaOperation>(node->GetOperation())
+      if (rvsdg::is<const llvm::LlvmLambdaOperation>(lambda->GetOperation())
           && lambda->output()->nusers() == 1
           && dynamic_cast<const jlm::rvsdg::GraphExport *>(*lambda->output()->begin()))
       {

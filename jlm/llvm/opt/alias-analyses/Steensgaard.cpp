@@ -206,14 +206,14 @@ public:
 
     if (jlm::rvsdg::is<rvsdg::SimpleOperation>(node))
     {
-      auto nodestr = node->GetOperation().debug_string();
+      auto nodestr = node->DebugString();
       auto outputstr = Output_->Type()->debug_string();
       return jlm::util::strfmt(nodestr, ":", index, "[" + outputstr + "]");
     }
 
     if (auto node = rvsdg::TryGetRegionParentNode<rvsdg::LambdaNode>(*Output_))
     {
-      auto dbgstr = node->GetOperation().debug_string();
+      auto dbgstr = node->DebugString();
       if (auto ctxvar = node->MapBinderContextVar(*Output_))
       {
         // Bound context variable.
@@ -228,31 +228,31 @@ public:
 
     if (is<delta::cvargument>(Output_))
     {
-      auto dbgstr = Output_->region()->node()->GetOperation().debug_string();
+      auto dbgstr = Output_->region()->node()->DebugString();
       return jlm::util::strfmt(dbgstr, ":cv:", index);
     }
 
     if (rvsdg::TryGetRegionParentNode<rvsdg::GammaNode>(*Output_))
     {
-      auto dbgstr = Output_->region()->node()->GetOperation().debug_string();
+      auto dbgstr = Output_->region()->node()->DebugString();
       return jlm::util::strfmt(dbgstr, ":arg", index);
     }
 
     if (rvsdg::TryGetRegionParentNode<rvsdg::ThetaNode>(*Output_))
     {
-      auto dbgstr = Output_->region()->node()->GetOperation().debug_string();
+      auto dbgstr = Output_->region()->node()->DebugString();
       return jlm::util::strfmt(dbgstr, ":arg", index);
     }
 
     if (const auto thetaNode = rvsdg::TryGetOwnerNode<rvsdg::ThetaNode>(*Output_))
     {
-      auto dbgstr = thetaNode->GetOperation().debug_string();
+      auto dbgstr = thetaNode->DebugString();
       return jlm::util::strfmt(dbgstr, ":out", index);
     }
 
     if (auto node = rvsdg::TryGetOwnerNode<rvsdg::GammaNode>(*Output_))
     {
-      auto dbgstr = node->GetOperation().debug_string();
+      auto dbgstr = node->DebugString();
       return jlm::util::strfmt(dbgstr, ":out", index);
     }
 
@@ -263,7 +263,7 @@ public:
 
     if (auto phi = rvsdg::TryGetRegionParentNode<rvsdg::PhiNode>(*Output_))
     {
-      auto dbgstr = phi->GetOperation().debug_string();
+      auto dbgstr = phi->DebugString();
       auto var = phi->MapArgument(*Output_);
       if (auto fix = std::get_if<rvsdg::PhiNode::FixVar>(&var))
       {
@@ -276,7 +276,7 @@ public:
     }
 
     return jlm::util::strfmt(
-        rvsdg::TryGetOwnerNode<rvsdg::Node>(*Output_)->GetOperation().debug_string(),
+        rvsdg::TryGetOwnerNode<rvsdg::Node>(*Output_)->DebugString(),
         ":",
         index);
   }
@@ -337,7 +337,7 @@ public:
   [[nodiscard]] std::string
   DebugString() const noexcept override
   {
-    return Node_.GetOperation().debug_string();
+    return Node_.DebugString();
   }
 
   static std::unique_ptr<Location>
@@ -375,7 +375,7 @@ public:
   [[nodiscard]] std::string
   DebugString() const noexcept override
   {
-    return Node_.GetOperation().debug_string();
+    return Node_.DebugString();
   }
 
   static std::unique_ptr<Location>
@@ -411,7 +411,7 @@ public:
   [[nodiscard]] std::string
   DebugString() const noexcept override
   {
-    return Lambda_.GetOperation().debug_string();
+    return Lambda_.DebugString();
   }
 
   static std::unique_ptr<Location>
@@ -448,7 +448,7 @@ public:
   [[nodiscard]] std::string
   DebugString() const noexcept override
   {
-    return Delta_.GetOperation().debug_string();
+    return Delta_.DebugString();
   }
 
   static std::unique_ptr<Location>
