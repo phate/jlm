@@ -227,7 +227,7 @@ convert_alloca(rvsdg::Region * region)
       // TODO: handle general case of other nodes getting state edge without a merge
       JLM_ASSERT(node->output(1)->nusers() == 1);
       auto mux_in = *node->output(1)->begin();
-      auto mux_node = rvsdg::input::GetNode(*mux_in);
+      auto mux_node = rvsdg::TryGetOwnerNode<rvsdg::Node>(*mux_in);
       if (dynamic_cast<const llvm::MemoryStateMergeOperation *>(&mux_node->GetOperation()))
       {
         // merge after alloca -> remove merge
@@ -284,7 +284,7 @@ rename_delta(llvm::delta::node * odn)
 
   odn->output()->divert_users(data);
   jlm::rvsdg::remove(odn);
-  return static_cast<llvm::delta::node *>(jlm::rvsdg::output::GetNode(*data));
+  return rvsdg::TryGetOwnerNode<llvm::delta::node>(*data);
 }
 
 rvsdg::LambdaNode *
@@ -395,7 +395,7 @@ split_hls_function(llvm::RvsdgModule & rm, const std::string & function_name)
         }
         else
         {
-          throw util::error("Unsupported node type: " + orig_node->GetOperation().debug_string());
+          throw util::error("Unsupported node type: " + orig_node->DebugString());
         }
       }
       // copy function into rhls
@@ -483,7 +483,7 @@ dump_ref(llvm::RvsdgModule & rhls, const util::filepath & path)
   {
     auto graphImport =
         util::AssertedCast<const llvm::GraphImport>(reference->Rvsdg().GetRootRegion().argument(i));
-    std::cout << "impport " << graphImport->Name() << ": " << graphImport->type().debug_string()
+    std::cout << "impport " << graphImport->Name() << ": " << graphImport->Type()->debug_string()
               << "\n";
   }
   ::llvm::LLVMContext ctx;

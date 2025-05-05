@@ -60,6 +60,12 @@ backedge_result::Copy(rvsdg::output & origin, rvsdg::StructuralOutput * output)
 
 ExitResult::~ExitResult() noexcept = default;
 
+ExitResult::ExitResult(rvsdg::output & origin, rvsdg::StructuralOutput & output)
+    : rvsdg::RegionResult(origin.region(), &origin, &output, origin.Type())
+{
+  JLM_ASSERT(dynamic_cast<const loop_node *>(origin.region()->node()));
+}
+
 ExitResult &
 ExitResult::Copy(rvsdg::output & origin, rvsdg::StructuralOutput * output)
 {
@@ -190,7 +196,7 @@ loop_node::create(rvsdg::Region * parent, bool init)
 void
 loop_node::set_predicate(jlm::rvsdg::output * p)
 {
-  auto node = jlm::rvsdg::output::GetNode(*predicate()->origin());
+  auto node = rvsdg::TryGetOwnerNode<Node>(*predicate()->origin());
   predicate()->origin()->divert_users(p);
   if (node && !node->has_users())
     remove(node);

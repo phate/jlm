@@ -79,7 +79,7 @@ test1()
     auto gammaInputIoState = gamma->AddEntryVar(iOStateArgument);
     auto gammaInputMemoryState = gamma->AddEntryVar(memoryStateArgument);
 
-    auto callResults = CallNode::Create(
+    auto callResults = CallOperation::Create(
         gammaInputF1.branchArgument[0],
         jlm::rvsdg::AssertGetOwnerNode<jlm::rvsdg::LambdaNode>(*f1).GetOperation().Type(),
         { gammaInputValue.branchArgument[0],
@@ -162,7 +162,7 @@ test2()
     auto memoryStateArgument = lambda->GetFunctionArguments()[1];
 
     auto callResults =
-        CallNode::Create(cvi, functionType2, { cvf1, iOStateArgument, memoryStateArgument });
+        CallOperation::Create(cvi, functionType2, { cvf1, iOStateArgument, memoryStateArgument });
 
     return lambda->finalize(callResults);
   };
@@ -182,10 +182,10 @@ test2()
 
   // Assert
   // Function f1 should not have been inlined.
-  assert(is<CallOperation>(
-      jlm::rvsdg::output::GetNode(*jlm::rvsdg::AssertGetOwnerNode<jlm::rvsdg::LambdaNode>(*f2)
-                                       .GetFunctionResults()[0]
-                                       ->origin())));
+  assert(is<CallOperation>(jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
+      *jlm::rvsdg::AssertGetOwnerNode<jlm::rvsdg::LambdaNode>(*f2)
+           .GetFunctionResults()[0]
+           ->origin())));
 }
 
 static int

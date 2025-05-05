@@ -11,12 +11,6 @@
 namespace jlm::llvm
 {
 
-const StoreOperation &
-StoreNode::GetOperation() const noexcept
-{
-  return *util::AssertedCast<const StoreOperation>(&SimpleNode::GetOperation());
-}
-
 StoreNonVolatileOperation::~StoreNonVolatileOperation() noexcept = default;
 
 bool
@@ -68,14 +62,13 @@ is_store_mux_reducible(const std::vector<jlm::rvsdg::output *> & operands)
 {
   JLM_ASSERT(operands.size() > 2);
 
-  auto memStateMergeNode = jlm::rvsdg::output::GetNode(*operands[2]);
+  const auto memStateMergeNode = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*operands[2]);
   if (!is<MemoryStateMergeOperation>(memStateMergeNode))
     return false;
 
   for (size_t n = 2; n < operands.size(); n++)
   {
-    auto node = jlm::rvsdg::output::GetNode(*operands[n]);
-    if (node != memStateMergeNode)
+    if (rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*operands[n]) != memStateMergeNode)
       return false;
   }
 
@@ -89,24 +82,25 @@ is_store_store_reducible(
 {
   JLM_ASSERT(operands.size() > 2);
 
-  auto storenode = jlm::rvsdg::output::GetNode(*operands[2]);
-  if (!is<StoreNonVolatileOperation>(storenode))
+  const auto storeNode = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*operands[2]);
+  if (!is<StoreNonVolatileOperation>(storeNode))
     return false;
 
-  if (op.NumMemoryStates() != storenode->noutputs())
+  if (op.NumMemoryStates() != storeNode->noutputs())
     return false;
 
   /* check for same address */
-  if (operands[0] != storenode->input(0)->origin())
+  if (operands[0] != storeNode->input(0)->origin())
     return false;
 
   for (size_t n = 2; n < operands.size(); n++)
   {
-    if (jlm::rvsdg::output::GetNode(*operands[n]) != storenode || operands[n]->nusers() != 1)
+    if (rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*operands[n]) != storeNode
+        || operands[n]->nusers() != 1)
       return false;
   }
 
-  auto other = static_cast<const StoreNonVolatileOperation *>(&storenode->GetOperation());
+  auto other = static_cast<const StoreNonVolatileOperation *>(&storeNode->GetOperation());
   JLM_ASSERT(op.GetAlignment() == other->GetAlignment());
   return true;
 }
@@ -117,17 +111,15 @@ is_store_alloca_reducible(const std::vector<jlm::rvsdg::output *> & operands)
   if (operands.size() == 3)
     return false;
 
-  auto alloca = jlm::rvsdg::output::GetNode(*operands[0]);
-  if (!alloca || !is<alloca_op>(alloca->GetOperation()))
+  const auto allocaNode = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*operands[0]);
+  if (!is<alloca_op>(allocaNode))
     return false;
 
-  std::unordered_set<jlm::rvsdg::output *> states(
-      std::next(std::next(operands.begin())),
-      operands.end());
-  if (states.find(alloca->output(1)) == states.end())
+  std::unordered_set states(std::next(std::next(operands.begin())), operands.end());
+  if (states.find(allocaNode->output(1)) == states.end())
     return false;
 
-  if (alloca->output(1)->nusers() != 1)
+  if (allocaNode->output(1)->nusers() != 1)
     return false;
 
   return true;
@@ -145,7 +137,7 @@ perform_store_mux_reduction(
     const StoreNonVolatileOperation & op,
     const std::vector<jlm::rvsdg::output *> & operands)
 {
-  auto memStateMergeNode = jlm::rvsdg::output::GetNode(*operands[2]);
+  const auto memStateMergeNode = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*operands[2]);
   auto memStateMergeOperands = jlm::rvsdg::operands(memStateMergeNode);
 
   auto states = StoreNonVolatileOperation::Create(
@@ -162,9 +154,9 @@ perform_store_store_reduction(
     const std::vector<jlm::rvsdg::output *> & operands)
 {
   JLM_ASSERT(is_store_store_reducible(op, operands));
-  auto storenode = jlm::rvsdg::output::GetNode(*operands[2]);
+  const auto storeNode = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*operands[2]);
 
-  auto storeops = jlm::rvsdg::operands(storenode);
+  auto storeops = jlm::rvsdg::operands(storeNode);
   std::vector<jlm::rvsdg::output *> states(std::next(std::next(storeops.begin())), storeops.end());
   return StoreNonVolatileOperation::Create(operands[0], operands[1], states, op.GetAlignment());
 }
@@ -176,7 +168,7 @@ perform_store_alloca_reduction(
 {
   auto value = operands[1];
   auto address = operands[0];
-  auto alloca_state = jlm::rvsdg::output::GetNode(*address)->output(1);
+  auto alloca_state = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*address)->output(1);
   std::unordered_set<jlm::rvsdg::output *> states(
       std::next(std::next(operands.begin())),
       operands.end());

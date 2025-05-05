@@ -26,7 +26,7 @@ nthetas(jlm::rvsdg::Region * region)
   size_t n = 0;
   for (const auto & node : region->Nodes())
   {
-    if (jlm::rvsdg::is<jlm::rvsdg::ThetaOperation>(&node))
+    if (dynamic_cast<const jlm::rvsdg::ThetaNode *>(&node))
       n++;
   }
 
@@ -251,10 +251,10 @@ test_unknown_boundaries()
   loopunroll.Run(rm, statisticsCollector);
   //	jlm::rvsdg::view(graph, stdout);
 
-  auto node = jlm::rvsdg::output::GetNode(*ex1.origin());
-  assert(jlm::rvsdg::is<jlm::rvsdg::GammaOperation>(node));
-  node = jlm::rvsdg::output::GetNode(*node->input(1)->origin());
-  assert(jlm::rvsdg::is<jlm::rvsdg::GammaOperation>(node));
+  auto node = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::GammaNode>(*ex1.origin());
+  assert(node);
+  node = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::GammaNode>(*node->input(1)->origin());
+  assert(node);
 
   /* Create cleaner output */
   DeadNodeElimination dne;

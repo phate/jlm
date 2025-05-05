@@ -33,7 +33,7 @@ add_prints(rvsdg::Region * region)
     //			node->input(1)->divert_to(po);
     //		}
     if (dynamic_cast<jlm::rvsdg::SimpleNode *>(node) && node->noutputs() == 1
-        && jlm::rvsdg::is<jlm::rvsdg::bittype>(node->output(0)->type())
+        && jlm::rvsdg::is<rvsdg::bittype>(node->output(0)->Type())
         && !jlm::rvsdg::is<llvm::UndefValueOperation>(node))
     {
       auto out = node->output(0);
@@ -120,13 +120,13 @@ convert_prints(
       auto printf_local = route_to_region_rvsdg(printf, region); // TODO: prevent repetition?
       auto & constantNode = llvm::IntegerConstantOperation::Create(*region, 64, po->id());
       jlm::rvsdg::output * val = node->input(0)->origin();
-      if (val->type() != *jlm::rvsdg::bittype::Create(64))
+      if (*val->Type() != *jlm::rvsdg::bittype::Create(64))
       {
-        auto bt = dynamic_cast<const jlm::rvsdg::bittype *>(&val->type());
+        auto bt = std::dynamic_pointer_cast<const rvsdg::bittype>(val->Type());
         JLM_ASSERT(bt);
         val = &llvm::ZExtOperation::Create(*val, rvsdg::bittype::Create(64));
       }
-      llvm::CallNode::Create(printf_local, functionType, { constantNode.output(0), val });
+      llvm::CallOperation::Create(printf_local, functionType, { constantNode.output(0), val });
       node->output(0)->divert_users(node->input(0)->origin());
       jlm::rvsdg::remove(node);
     }

@@ -4,15 +4,18 @@
 libmlir_SOURCES = \
 	jlm/mlir/backend/JlmToMlirConverter.cpp \
 	jlm/mlir/frontend/MlirToJlmConverter.cpp \
+	jlm/mlir/MLIRConverterCommon.cpp \
 
 libmlir_HEADERS = \
 	jlm/mlir/backend/JlmToMlirConverter.hpp \
 	jlm/mlir/frontend/MlirToJlmConverter.hpp \
+	jlm/mlir/MLIRConverterCommon.hpp \
 
 libmlir_TESTS += \
 	tests/jlm/mlir/backend/TestJlmToMlirConverter \
 	tests/jlm/mlir/frontend/TestMlirToJlmConverter \
 	tests/jlm/mlir/TestJlmToMlirToJlm \
+	tests/jlm/mlir/TestIntegerOperationsJlmToMlirToJlm \
 
 libmlir_TEST_LIBS += \
 	libmlir \

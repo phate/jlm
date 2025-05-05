@@ -64,7 +64,7 @@ TestLambda()
     std::cout << "Verify function signature" << std::endl;
 
     auto result = mlirLambda.getResult(0).getType();
-    assert(result.getTypeID() == mlir::LLVM::LLVMPointerType::getTypeID());
+    assert(result.getTypeID() == mlir::FunctionType::getTypeID());
 
     auto lambdaOp = ::mlir::dyn_cast<::mlir::rvsdg::LambdaNode>(&mlirLambda);
 

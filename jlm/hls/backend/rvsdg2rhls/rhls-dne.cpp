@@ -110,7 +110,7 @@ remove_unused_loop_inputs(loop_node * ln)
     if (auto ba = dynamic_cast<backedge_argument *>(arg))
     {
       auto result = ba->result();
-      JLM_ASSERT(result->type() == arg->type());
+      JLM_ASSERT(*result->Type() == *arg->Type());
       if (arg->nusers() == 0 || (arg->nusers() == 1 && result->origin() == arg))
       {
         sr->RemoveResult(result->index());

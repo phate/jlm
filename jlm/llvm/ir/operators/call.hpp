@@ -8,76 +8,13 @@
 
 #include <jlm/llvm/ir/operators/lambda.hpp>
 #include <jlm/llvm/ir/operators/MemoryStateOperations.hpp>
-#include <jlm/llvm/ir/operators/Phi.hpp>
 #include <jlm/llvm/ir/tac.hpp>
 #include <jlm/llvm/ir/types.hpp>
+#include <jlm/rvsdg/Phi.hpp>
 #include <jlm/rvsdg/simple-node.hpp>
 
 namespace jlm::llvm
 {
-
-/** \brief Call operation class
- *
- */
-class CallOperation final : public jlm::rvsdg::SimpleOperation
-{
-public:
-  ~CallOperation() override;
-
-  explicit CallOperation(std::shared_ptr<const rvsdg::FunctionType> functionType)
-      : SimpleOperation(create_srctypes(functionType), functionType->Results()),
-        FunctionType_(std::move(functionType))
-  {}
-
-  bool
-  operator==(const Operation & other) const noexcept override;
-
-  [[nodiscard]] std::string
-  debug_string() const override;
-
-  [[nodiscard]] const std::shared_ptr<const rvsdg::FunctionType> &
-  GetFunctionType() const noexcept
-  {
-    return FunctionType_;
-  }
-
-  [[nodiscard]] std::unique_ptr<Operation>
-  copy() const override;
-
-  static std::unique_ptr<tac>
-  create(
-      const variable * function,
-      std::shared_ptr<const rvsdg::FunctionType> functionType,
-      const std::vector<const variable *> & arguments)
-  {
-    CheckFunctionInputType(function->type());
-
-    CallOperation op(std::move(functionType));
-    std::vector<const variable *> operands({ function });
-    operands.insert(operands.end(), arguments.begin(), arguments.end());
-    return tac::create(op, operands);
-  }
-
-private:
-  static inline std::vector<std::shared_ptr<const rvsdg::Type>>
-  create_srctypes(const std::shared_ptr<const rvsdg::FunctionType> & functionType)
-  {
-    std::vector<std::shared_ptr<const rvsdg::Type>> types({ functionType });
-    for (auto & argumentType : functionType->Arguments())
-      types.emplace_back(argumentType);
-
-    return types;
-  }
-
-  static void
-  CheckFunctionInputType(const jlm::rvsdg::Type & type)
-  {
-    if (!is<rvsdg::FunctionType>(type))
-      throw jlm::util::error("Expected function type.");
-  }
-
-  std::shared_ptr<const rvsdg::FunctionType> FunctionType_;
-};
 
 /** \brief Call node classifier
  *
@@ -243,9 +180,8 @@ public:
       The given output must belong to a phi node.
   */
   static std::unique_ptr<CallTypeClassifier>
-  CreateRecursiveDirectCallClassifier(rvsdg::RegionArgument & output)
+  CreateRecursiveDirectCallClassifier(rvsdg::output & output)
   {
-    JLM_ASSERT(is<phi::rvargument>(&output));
     return std::make_unique<CallTypeClassifier>(CallType::RecursiveDirectCall, output);
   }
 
@@ -282,130 +218,117 @@ private:
   jlm::rvsdg::output * Output_;
 };
 
-/** \brief Call node
+/** \brief Call operation class
  *
  */
-class CallNode final : public jlm::rvsdg::SimpleNode
+class CallOperation final : public jlm::rvsdg::SimpleOperation
 {
-private:
-  CallNode(
-      rvsdg::Region & region,
-      std::unique_ptr<CallOperation> operation,
-      const std::vector<jlm::rvsdg::output *> & operands)
-      : SimpleNode(region, std::move(operation), operands)
+public:
+  ~CallOperation() override;
+
+  explicit CallOperation(std::shared_ptr<const rvsdg::FunctionType> functionType)
+      : SimpleOperation(create_srctypes(functionType), functionType->Results()),
+        FunctionType_(std::move(functionType))
   {}
 
-public:
-  [[nodiscard]] const CallOperation &
-  GetOperation() const noexcept override
+  bool
+  operator==(const Operation & other) const noexcept override;
+
+  [[nodiscard]] std::string
+  debug_string() const override;
+
+  [[nodiscard]] const std::shared_ptr<const rvsdg::FunctionType> &
+  GetFunctionType() const noexcept
   {
-    return *jlm::util::AssertedCast<const CallOperation>(&SimpleNode::GetOperation());
+    return FunctionType_;
   }
+
+  [[nodiscard]] std::unique_ptr<Operation>
+  copy() const override;
 
   /**
    * @return The number of arguments to the call.
    *
    * \note This is equivalent to ninputs() - 1 as NumArguments() ignores the function input.
    */
-  [[nodiscard]] size_t
-  NumArguments() const noexcept
+  [[nodiscard]] static size_t
+  NumArguments(const rvsdg::SimpleNode & node) noexcept
   {
-    return ninputs() - 1;
+    JLM_ASSERT(is<CallOperation>(&node));
+    return node.ninputs() - 1;
   }
 
   /**
+   * @param node The call node
    * @param n The index of the function argument.
    * @return The input for the given index \p n.
    */
-  [[nodiscard]] jlm::rvsdg::input *
-  Argument(size_t n) const
+  [[nodiscard]] static rvsdg::input *
+  Argument(const rvsdg::SimpleNode & node, const size_t n)
   {
-    JLM_ASSERT(n < NumArguments());
-    return input(n + 1);
-  }
-
-  /**
-   * @return The number of results from the call.
-   */
-  [[nodiscard]] size_t
-  NumResults() const noexcept
-  {
-    return noutputs();
-  }
-
-  /**
-   * @param n The index of the function result.
-   * @return The output for the given index \p n.
-   */
-  [[nodiscard]] jlm::rvsdg::output *
-  Result(size_t n) const noexcept
-  {
-    JLM_ASSERT(n < NumResults());
-    return output(n);
-  }
-
-  /**
-   * @return The outputs of the call node.
-   */
-  [[nodiscard]] std::vector<rvsdg::output *>
-  Results() const noexcept
-  {
-    return rvsdg::outputs(this);
+    JLM_ASSERT(is<CallOperation>(&node));
+    JLM_ASSERT(n < CallOperation::NumArguments(node));
+    return node.input(n + 1);
   }
 
   /**
    * @return The call node's function input.
    */
-  [[nodiscard]] jlm::rvsdg::input *
-  GetFunctionInput() const noexcept
+  [[nodiscard]] static rvsdg::input &
+  GetFunctionInput(const rvsdg::SimpleNode & node) noexcept
   {
-    auto functionInput = input(0);
-    JLM_ASSERT(is<rvsdg::FunctionType>(functionInput->type()));
-    return functionInput;
+    JLM_ASSERT(is<CallOperation>(&node));
+    const auto functionInput = node.input(0);
+    JLM_ASSERT(is<rvsdg::FunctionType>(functionInput->Type()));
+    return *functionInput;
   }
 
   /**
    * @return The call node's input/output state input.
    */
-  [[nodiscard]] jlm::rvsdg::input *
-  GetIoStateInput() const noexcept
+  [[nodiscard]] static rvsdg::input &
+  GetIOStateInput(const rvsdg::SimpleNode & node) noexcept
   {
-    auto iOState = input(ninputs() - 2);
-    JLM_ASSERT(is<IOStateType>(iOState->type()));
-    return iOState;
-  }
-
-  /**
-   * @return The call node's memory state input.
-   */
-  [[nodiscard]] jlm::rvsdg::input *
-  GetMemoryStateInput() const noexcept
-  {
-    auto memoryState = input(ninputs() - 1);
-    JLM_ASSERT(is<MemoryStateType>(memoryState->type()));
-    return memoryState;
+    JLM_ASSERT(is<CallOperation>(&node));
+    const auto ioState = node.input(node.ninputs() - 2);
+    JLM_ASSERT(is<IOStateType>(ioState->Type()));
+    return *ioState;
   }
 
   /**
    * @return The call node's input/output state output.
    */
-  [[nodiscard]] jlm::rvsdg::output *
-  GetIoStateOutput() const noexcept
+  [[nodiscard]] static rvsdg::output &
+  GetIOStateOutput(const rvsdg::SimpleNode & node) noexcept
   {
-    auto iOState = output(noutputs() - 2);
-    JLM_ASSERT(is<IOStateType>(iOState->type()));
-    return iOState;
+    JLM_ASSERT(is<CallOperation>(&node));
+    const auto ioState = node.output(node.noutputs() - 2);
+    JLM_ASSERT(is<IOStateType>(ioState->Type()));
+    return *ioState;
+  }
+
+  /**
+   * @return The call node's memory state input.
+   */
+  [[nodiscard]] static rvsdg::input &
+  GetMemoryStateInput(const rvsdg::SimpleNode & node) noexcept
+  {
+    JLM_ASSERT(is<CallOperation>(&node));
+    const auto memoryState = node.input(node.ninputs() - 1);
+    JLM_ASSERT(is<MemoryStateType>(memoryState->Type()));
+    return *memoryState;
   }
 
   /**
    * @return The call node's memory state output.
    */
-  [[nodiscard]] jlm::rvsdg::output *
-  GetMemoryStateOutput() const noexcept
+  [[nodiscard]] static rvsdg::output &
+  GetMemoryStateOutput(const rvsdg::SimpleNode & node) noexcept
   {
-    auto memoryState = output(noutputs() - 1);
-    JLM_ASSERT(is<MemoryStateType>(memoryState->type()));
-    return memoryState;
+    JLM_ASSERT(is<CallOperation>(&node));
+    const auto memoryState = node.output(node.noutputs() - 1);
+    JLM_ASSERT(is<MemoryStateType>(memoryState->Type()));
+    return *memoryState;
   }
 
   /**
@@ -419,11 +342,12 @@ public:
    * @see GetMemoryStateExitSplit()
    */
   [[nodiscard]] static rvsdg::SimpleNode *
-  GetMemoryStateEntryMerge(const CallNode & callNode) noexcept
+  GetMemoryStateEntryMerge(const rvsdg::SimpleNode & callNode) noexcept
   {
-    auto node = rvsdg::output::GetNode(*callNode.GetMemoryStateInput()->origin());
-    return is<CallEntryMemoryStateMergeOperation>(node) ? dynamic_cast<rvsdg::SimpleNode *>(node)
-                                                        : nullptr;
+    JLM_ASSERT(is<CallOperation>(&callNode));
+    const auto node =
+        rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*GetMemoryStateInput(callNode).origin());
+    return is<CallEntryMemoryStateMergeOperation>(node) ? node : nullptr;
   }
 
   /**
@@ -436,63 +360,18 @@ public:
    * @see GetMemoryStateEntryMerge()
    */
   [[nodiscard]] static rvsdg::SimpleNode *
-  GetMemoryStateExitSplit(const CallNode & callNode) noexcept
+  GetMemoryStateExitSplit(const rvsdg::SimpleNode & callNode) noexcept
   {
+    JLM_ASSERT(is<CallOperation>(&callNode));
+
     // If a memory state exit split node is present, then we would expect the node to be the only
     // user of the memory state output.
-    if (callNode.GetMemoryStateOutput()->nusers() != 1)
+    if (GetMemoryStateOutput(callNode).nusers() != 1)
       return nullptr;
 
-    auto node = rvsdg::node_input::GetNode(**callNode.GetMemoryStateOutput()->begin());
-    return is<CallExitMemoryStateSplitOperation>(node) ? dynamic_cast<rvsdg::SimpleNode *>(node)
-                                                       : nullptr;
-  }
-
-  Node *
-  copy(rvsdg::Region * region, const std::vector<rvsdg::output *> & operands) const override;
-
-  static std::vector<jlm::rvsdg::output *>
-  Create(
-      rvsdg::output * function,
-      std::shared_ptr<const rvsdg::FunctionType> functionType,
-      const std::vector<rvsdg::output *> & arguments)
-  {
-    return CreateNode(function, std::move(functionType), arguments).Results();
-  }
-
-  static std::vector<jlm::rvsdg::output *>
-  Create(
-      rvsdg::Region & region,
-      std::unique_ptr<CallOperation> callOperation,
-      const std::vector<rvsdg::output *> & operands)
-  {
-    return CreateNode(region, std::move(callOperation), operands).Results();
-  }
-
-  static CallNode &
-  CreateNode(
-      rvsdg::Region & region,
-      std::unique_ptr<CallOperation> callOperation,
-      const std::vector<rvsdg::output *> & operands)
-  {
-    CheckFunctionType(*callOperation->GetFunctionType());
-
-    return *(new CallNode(region, std::move(callOperation), operands));
-  }
-
-  static CallNode &
-  CreateNode(
-      rvsdg::output * function,
-      std::shared_ptr<const rvsdg::FunctionType> functionType,
-      const std::vector<rvsdg::output *> & arguments)
-  {
-    CheckFunctionInputType(function->type());
-
-    auto callOperation = std::make_unique<CallOperation>(std::move(functionType));
-    std::vector<rvsdg::output *> operands({ function });
-    operands.insert(operands.end(), arguments.begin(), arguments.end());
-
-    return CreateNode(*function->region(), std::move(callOperation), operands);
+    const auto node =
+        rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(**GetMemoryStateOutput(callNode).begin());
+    return is<CallExitMemoryStateSplitOperation>(node) ? node : nullptr;
   }
 
   /**
@@ -506,8 +385,8 @@ public:
    *
    * \return The traced output.
    */
-  static jlm::rvsdg::output *
-  TraceFunctionInput(const CallNode & callNode);
+  static rvsdg::output *
+  TraceFunctionInput(const rvsdg::SimpleNode & callNode);
 
   /** \brief Classifies a call node.
    *
@@ -517,9 +396,77 @@ public:
    * @return A CallTypeClassifier.
    */
   static std::unique_ptr<CallTypeClassifier>
-  ClassifyCall(const CallNode & callNode);
+  ClassifyCall(const rvsdg::SimpleNode & callNode);
+
+  static std::unique_ptr<tac>
+  create(
+      const variable * function,
+      std::shared_ptr<const rvsdg::FunctionType> functionType,
+      const std::vector<const variable *> & arguments)
+  {
+    CheckFunctionInputType(function->type());
+
+    CallOperation op(std::move(functionType));
+    std::vector<const variable *> operands({ function });
+    operands.insert(operands.end(), arguments.begin(), arguments.end());
+    return tac::create(op, operands);
+  }
+
+  static std::vector<rvsdg::output *>
+  Create(
+      rvsdg::output * function,
+      std::shared_ptr<const rvsdg::FunctionType> functionType,
+      const std::vector<rvsdg::output *> & arguments)
+  {
+    return outputs(&CreateNode(function, std::move(functionType), arguments));
+  }
+
+  static std::vector<rvsdg::output *>
+  Create(
+      rvsdg::Region & region,
+      std::unique_ptr<CallOperation> callOperation,
+      const std::vector<rvsdg::output *> & operands)
+  {
+    return outputs(&CreateNode(region, std::move(callOperation), operands));
+  }
+
+  static rvsdg::SimpleNode &
+  CreateNode(
+      rvsdg::Region & region,
+      std::unique_ptr<CallOperation> callOperation,
+      const std::vector<rvsdg::output *> & operands)
+  {
+    CheckFunctionType(*callOperation->GetFunctionType());
+
+    return rvsdg::SimpleNode::Create(region, std::move(callOperation), operands);
+  }
+
+  static rvsdg::SimpleNode &
+  CreateNode(
+      rvsdg::output * function,
+      std::shared_ptr<const rvsdg::FunctionType> functionType,
+      const std::vector<rvsdg::output *> & arguments)
+  {
+    CheckFunctionInputType(*function->Type());
+
+    auto callOperation = std::make_unique<CallOperation>(std::move(functionType));
+    std::vector operands({ function });
+    operands.insert(operands.end(), arguments.begin(), arguments.end());
+
+    return CreateNode(*function->region(), std::move(callOperation), operands);
+  }
 
 private:
+  static inline std::vector<std::shared_ptr<const rvsdg::Type>>
+  create_srctypes(const std::shared_ptr<const rvsdg::FunctionType> & functionType)
+  {
+    std::vector<std::shared_ptr<const rvsdg::Type>> types({ functionType });
+    for (auto & argumentType : functionType->Arguments())
+      types.emplace_back(argumentType);
+
+    return types;
+  }
+
   static void
   CheckFunctionInputType(const jlm::rvsdg::Type & type)
   {
@@ -563,6 +510,8 @@ private:
     CheckArgumentTypes(functionType);
     CheckResultTypes(functionType);
   }
+
+  std::shared_ptr<const rvsdg::FunctionType> FunctionType_;
 };
 
 }

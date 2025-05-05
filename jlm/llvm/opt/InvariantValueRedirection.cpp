@@ -73,15 +73,15 @@ InvariantValueRedirection::RedirectInRootRegion(rvsdg::Graph & rvsdg)
     {
       RedirectInRegion(*lambdaNode->subregion());
     }
-    else if (auto phiNode = dynamic_cast<phi::node *>(node))
+    else if (auto phiNode = dynamic_cast<rvsdg::PhiNode *>(node))
     {
-      auto phiLambdaNodes = phi::node::ExtractLambdaNodes(*phiNode);
+      auto phiLambdaNodes = rvsdg::PhiNode::ExtractLambdaNodes(*phiNode);
       for (auto phiLambdaNode : phiLambdaNodes)
       {
         RedirectInRegion(*phiLambdaNode->subregion());
       }
     }
-    else if (is<delta::operation>(node))
+    else if (dynamic_cast<const delta::node *>(node))
     {
       // Nothing needs to be done.
       // Delta nodes are irrelevant for invariant value redirection.
@@ -102,9 +102,9 @@ InvariantValueRedirection::RedirectInRootRegion(rvsdg::Graph & rvsdg)
 void
 InvariantValueRedirection::RedirectInRegion(rvsdg::Region & region)
 {
-  auto isGammaNode = is<rvsdg::GammaOperation>(region.node());
-  auto isThetaNode = is<rvsdg::ThetaOperation>(region.node());
-  auto isLambdaNode = is<rvsdg::LambdaOperation>(region.node());
+  auto isGammaNode = !!dynamic_cast<rvsdg::GammaNode *>(region.node());
+  auto isThetaNode = !!dynamic_cast<rvsdg::ThetaNode *>(region.node());
+  auto isLambdaNode = !!dynamic_cast<rvsdg::LambdaNode *>(region.node());
   JLM_ASSERT(isGammaNode || isThetaNode || isLambdaNode);
 
   // We do not need a traverser here and can just iterate through all the nodes of a region as
@@ -125,9 +125,9 @@ InvariantValueRedirection::RedirectInRegion(rvsdg::Region & region)
       RedirectInSubregions(*thetaNode);
       RedirectThetaOutputs(*thetaNode);
     }
-    else if (auto callNode = dynamic_cast<CallNode *>(&node))
+    else if (is<CallOperation>(&node))
     {
-      RedirectCallOutputs(*callNode);
+      RedirectCallOutputs(*util::AssertedCast<rvsdg::SimpleNode>(&node));
     }
   }
 }
@@ -135,8 +135,8 @@ InvariantValueRedirection::RedirectInRegion(rvsdg::Region & region)
 void
 InvariantValueRedirection::RedirectInSubregions(rvsdg::StructuralNode & structuralNode)
 {
-  auto isGammaNode = is<rvsdg::GammaOperation>(&structuralNode);
-  auto isThetaNode = is<rvsdg::ThetaOperation>(&structuralNode);
+  auto isGammaNode = !!dynamic_cast<rvsdg::GammaNode *>(&structuralNode);
+  auto isThetaNode = !!dynamic_cast<rvsdg::ThetaNode *>(&structuralNode);
   JLM_ASSERT(isGammaNode || isThetaNode);
 
   for (size_t n = 0; n < structuralNode.nsubregions(); n++)
@@ -164,7 +164,7 @@ InvariantValueRedirection::RedirectThetaOutputs(rvsdg::ThetaNode & thetaNode)
   {
     // FIXME: In order to also redirect I/O state type variables, we need to know whether a loop
     // terminates.
-    if (rvsdg::is<IOStateType>(loopVar.input->type()))
+    if (rvsdg::is<IOStateType>(loopVar.input->Type()))
       continue;
 
     if (rvsdg::ThetaLoopVarIsInvariant(loopVar))
@@ -173,9 +173,11 @@ InvariantValueRedirection::RedirectThetaOutputs(rvsdg::ThetaNode & thetaNode)
 }
 
 void
-InvariantValueRedirection::RedirectCallOutputs(CallNode & callNode)
+InvariantValueRedirection::RedirectCallOutputs(rvsdg::SimpleNode & callNode)
 {
-  auto callTypeClassifier = CallNode::ClassifyCall(callNode);
+  JLM_ASSERT(is<CallOperation>(&callNode));
+
+  auto callTypeClassifier = CallOperation::ClassifyCall(callNode);
   auto callType = callTypeClassifier->GetCallType();
 
   // FIXME: We currently only support non-recursive direct calls. We would also like to get this
@@ -192,11 +194,11 @@ InvariantValueRedirection::RedirectCallOutputs(CallNode & callNode)
   // direct call. See jlm::tests::LambdaCallArgumentMismatch for an example. In this case, we cannot
   // redirect the call outputs to the call operand as the types would not align, resulting in type
   // errors.
-  if (callNode.NumArguments() != lambdaNode.GetFunctionArguments().size())
+  if (CallOperation::NumArguments(callNode) != lambdaNode.GetFunctionArguments().size())
     return;
 
-  auto memoryStateOutput = callNode.GetMemoryStateOutput();
-  auto callExitSplit = CallNode::GetMemoryStateExitSplit(callNode);
+  auto memoryStateOutput = &CallOperation::GetMemoryStateOutput(callNode);
+  auto callExitSplit = CallOperation::GetMemoryStateExitSplit(callNode);
   auto hasCallExitSplit = callExitSplit != nullptr;
 
   auto results = lambdaNode.GetFunctionResults();
@@ -210,7 +212,7 @@ InvariantValueRedirection::RedirectCallOutputs(CallNode & callNode)
     {
       auto lambdaEntrySplit = GetMemoryStateEntrySplit(lambdaNode);
       auto lambdaExitMerge = GetMemoryStateExitMerge(lambdaNode);
-      auto callEntryMerge = CallNode::GetMemoryStateEntryMerge(callNode);
+      auto callEntryMerge = CallOperation::GetMemoryStateEntryMerge(callNode);
 
       // The callExitSplit is present. We therefore expect the other nodes to be present as well.
       JLM_ASSERT(lambdaEntrySplit && lambdaExitMerge && callEntryMerge);
@@ -223,7 +225,7 @@ InvariantValueRedirection::RedirectCallOutputs(CallNode & callNode)
       for (size_t i = 0; i < lambdaExitMerge->ninputs(); i++)
       {
         auto lambdaExitMergeInput = lambdaExitMerge->input(i);
-        auto node = rvsdg::output::GetNode(*lambdaExitMergeInput->origin());
+        auto node = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*lambdaExitMergeInput->origin());
         if (node == lambdaEntrySplit)
         {
           auto callExitSplitOutput = callExitSplit->output(lambdaExitMergeInput->index());
@@ -247,7 +249,7 @@ InvariantValueRedirection::RedirectCallOutputs(CallNode & callNode)
         }
         else
         {
-          auto callOperand = callNode.Argument(origin->index())->origin();
+          auto callOperand = CallOperation::Argument(callNode, origin->index())->origin();
           callOutput->divert_users(callOperand);
         }
       }

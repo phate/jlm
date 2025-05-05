@@ -68,7 +68,7 @@ DotHLS::node_to_dot(const rvsdg::Node * node)
 {
   auto SPACER = "                    <TD WIDTH=\"10\"></TD>\n";
   auto name = get_node_name(node);
-  auto opname = node->GetOperation().debug_string();
+  auto opname = node->DebugString();
   std::replace_if(opname.begin(), opname.end(), isForbiddenChar, '_');
 
   std::string inputs;
@@ -240,7 +240,7 @@ DotHLS::loop_to_dot(hls::loop_node * ln)
     else
     {
       throw jlm::util::error(
-          "Unimplemented op (unexpected structural node) : " + node->GetOperation().debug_string());
+          "Unimplemented op (unexpected structural node) : " + node->DebugString());
     }
   }
 
@@ -291,7 +291,7 @@ DotHLS::loop_to_dot(hls::loop_node * ln)
           //
           back = true;
         }
-        dot << edge(origin, in_name, node->input(i)->type(), back);
+        dot << edge(origin, in_name, *node->input(i)->Type(), back);
       }
     }
   }
@@ -322,7 +322,7 @@ DotHLS::prepare_loop_out_port(hls::loop_node * ln)
     else
     {
       throw jlm::util::error(
-          "Unimplemented op (unexpected structural node) : " + node->GetOperation().debug_string());
+          "Unimplemented op (unexpected structural node) : " + node->DebugString());
     }
   }
   for (size_t i = 0; i < sr->narguments(); ++i)
@@ -338,7 +338,7 @@ DotHLS::prepare_loop_out_port(hls::loop_node * ln)
     else
     {
       auto result = ba->result();
-      JLM_ASSERT(result->type() == arg->type());
+      JLM_ASSERT(*result->Type() == *arg->Type());
       // map to end of loop (origin of associated result)
       output_map[arg] = output_map[result->origin()];
     }
@@ -398,7 +398,7 @@ DotHLS::subregion_to_dot(rvsdg::Region * sr)
         auto in_name = node_name + ":" + get_port_name(node->input(i));
         JLM_ASSERT(output_map.count(node->input(i)->origin()));
         auto origin = output_map[node->input(i)->origin()];
-        dot << edge(origin, in_name, node->input(i)->type());
+        dot << edge(origin, in_name, *node->input(i)->Type());
       }
       for (size_t i = 0; i < node->noutputs(); ++i)
       {
@@ -414,7 +414,7 @@ DotHLS::subregion_to_dot(rvsdg::Region * sr)
     else
     {
       throw jlm::util::error(
-          "Unimplemented op (unexpected structural node) : " + node->GetOperation().debug_string());
+          "Unimplemented op (unexpected structural node) : " + node->DebugString());
     }
   }
   // process results
@@ -422,7 +422,7 @@ DotHLS::subregion_to_dot(rvsdg::Region * sr)
   {
     auto origin = output_map[sr->result(i)->origin()];
     auto result = get_port_name(sr->result(i));
-    dot << edge(origin, result, sr->result(i)->type());
+    dot << edge(origin, result, *sr->result(i)->Type());
   }
   dot << "}\n";
   dot << "}\n";

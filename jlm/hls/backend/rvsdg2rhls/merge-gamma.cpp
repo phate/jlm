@@ -29,7 +29,7 @@ eliminate_gamma_ctl(rvsdg::GammaNode * gamma)
   for (size_t i = 0; i < gamma->noutputs(); ++i)
   {
     auto o = gamma->output(i);
-    if (dynamic_cast<const rvsdg::ControlType *>(&o->type()))
+    if (rvsdg::is<rvsdg::ControlType>(o->Type()))
     {
       bool eliminate = true;
       for (size_t j = 0; j < gamma->nsubregions(); ++j)
@@ -73,7 +73,7 @@ fix_match_inversion(rvsdg::GammaNode * old_gamma)
   for (size_t i = 0; i < old_gamma->noutputs(); ++i)
   {
     auto o = old_gamma->output(i);
-    if (dynamic_cast<const rvsdg::ControlType *>(&o->type()))
+    if (rvsdg::is<rvsdg::ControlType>(o->Type()))
     {
       ctl_cnt++;
       swapped = true;
@@ -253,7 +253,11 @@ get_entryvar(jlm::rvsdg::output * origin, rvsdg::GammaNode * gamma)
   {
     if (rvsdg::TryGetOwnerNode<rvsdg::GammaNode>(*user) == gamma)
     {
-      return gamma->MapInputEntryVar(*user);
+      auto rolevar = gamma->MapInput(*user);
+      if (auto entryvar = std::get_if<rvsdg::GammaNode::EntryVar>(&rolevar))
+      {
+        return *entryvar;
+      }
     }
   }
   return gamma->AddEntryVar(origin);
@@ -264,7 +268,7 @@ merge_gamma(rvsdg::GammaNode * gamma)
 {
   for (auto user : *gamma->predicate()->origin())
   {
-    auto other_gamma = dynamic_cast<rvsdg::GammaNode *>(rvsdg::input::GetNode(*user));
+    auto other_gamma = rvsdg::TryGetOwnerNode<rvsdg::GammaNode>(*user);
     if (other_gamma && gamma != other_gamma)
     {
       // other gamma depending on same predicate

@@ -436,49 +436,6 @@ public:
   }
 };
 
-class SimpleNode final : public rvsdg::SimpleNode
-{
-private:
-  SimpleNode(
-      rvsdg::Region & region,
-      std::unique_ptr<test_op> operation,
-      const std::vector<rvsdg::output *> & operands)
-      : rvsdg::SimpleNode(region, std::move(operation), operands)
-  {}
-
-public:
-  using Node::RemoveInputsWhere;
-
-  using Node::RemoveOutputsWhere;
-
-  static SimpleNode &
-  Create(
-      rvsdg::Region & region,
-      const std::vector<rvsdg::output *> & operands,
-      std::vector<std::shared_ptr<const rvsdg::Type>> resultTypes)
-  {
-    auto operandTypes = ExtractTypes(operands);
-    auto operation = std::make_unique<test_op>(std::move(operandTypes), std::move(resultTypes));
-
-    auto node = new SimpleNode(region, std::move(operation), operands);
-    return *node;
-  }
-
-private:
-  static std::vector<std::shared_ptr<const rvsdg::Type>>
-  ExtractTypes(const std::vector<rvsdg::output *> & outputs)
-  {
-    std::vector<std::shared_ptr<const rvsdg::Type>> types;
-    types.reserve(outputs.size());
-    for (auto output : outputs)
-    {
-      types.emplace_back(output->Type());
-    }
-
-    return types;
-  }
-};
-
 static inline std::unique_ptr<llvm::tac>
 create_testop_tac(
     const std::vector<const llvm::variable *> & arguments,

@@ -7,6 +7,7 @@
 
 #include <algorithm>
 #include <cmath>
+#include <regex>
 
 namespace jlm::hls
 {
@@ -39,19 +40,20 @@ BaseHLS::get_node_name(const jlm::rvsdg::Node * node)
     append.append("_IN");
     append.append(std::to_string(inPorts));
     append.append("_W");
-    append.append(std::to_string(JlmSize(&node->input(inPorts - 1)->type())));
+    append.append(std::to_string(JlmSize(node->input(inPorts - 1)->Type().get())));
   }
   if (outPorts)
   {
     append.append("_OUT");
     append.append(std::to_string(outPorts));
     append.append("_W");
-    append.append(std::to_string(JlmSize(&node->output(outPorts - 1)->type())));
+    append.append(std::to_string(JlmSize(node->output(outPorts - 1)->Type().get())));
   }
-  auto name =
-      util::strfmt("op_", node->GetOperation().debug_string(), append, "_", node_map.size());
+  auto name = util::strfmt("op_", node->DebugString(), append, "_", node_map.size());
   // remove chars that are not valid in firrtl module names
   std::replace_if(name.begin(), name.end(), isForbiddenChar, '_');
+  // verilator seems to throw a fit if there are too many underscores in some scenarios
+  name = std::regex_replace(name, std::regex("_+"), "_");
   node_map[node] = name;
   return name;
 }
@@ -125,8 +127,7 @@ BaseHLS::create_node_names(rvsdg::Region * r)
     }
     else
     {
-      throw util::error(
-          "Unimplemented op (unexpected structural node) : " + node.GetOperation().debug_string());
+      throw util::error("Unimplemented op (unexpected structural node) : " + node.DebugString());
     }
   }
 }

@@ -110,7 +110,7 @@ trace_constant(const rvsdg::output * dst)
     for (size_t i = 0; i < so->node()->ninputs(); ++i)
     {
       // TODO: fix, this is a hack - only works because of distribute constants
-      if (so->node()->input(i)->type() == dst->type())
+      if (*so->node()->input(i)->Type() == *dst->Type())
       {
         return trace_constant(so->node()->input(i)->origin());
       }
@@ -239,7 +239,7 @@ trace_call_rhls(const rvsdg::output * output)
     for (size_t i = 0; i < so->node()->ninputs(); ++i)
     {
       auto ip = so->node()->input(i);
-      if (ip->type() == output->type())
+      if (*ip->Type() == *output->Type())
       {
         if (auto result = trace_call_rhls(ip))
         {
@@ -310,8 +310,37 @@ get_mem_state_user(rvsdg::output * state_edge)
 {
   JLM_ASSERT(state_edge);
   JLM_ASSERT(state_edge->nusers() == 1);
-  JLM_ASSERT(dynamic_cast<const llvm::MemoryStateType *>(&state_edge->type()));
+  JLM_ASSERT(rvsdg::is<llvm::MemoryStateType>(state_edge->Type()));
   auto user = *state_edge->begin();
   return user;
+}
+
+rvsdg::output *
+FindSourceNode(rvsdg::output * out)
+{
+  if (auto ba = dynamic_cast<backedge_argument *>(out))
+  {
+    return FindSourceNode(ba->result()->origin());
+  }
+  else if (auto ra = dynamic_cast<rvsdg::RegionArgument *>(out))
+  {
+    if (ra->input() && rvsdg::TryGetOwnerNode<loop_node>(*ra->input()))
+    {
+      return FindSourceNode(ra->input()->origin());
+    }
+    else
+    {
+      // lambda argument
+      return ra;
+    }
+  }
+  else if (auto so = dynamic_cast<rvsdg::StructuralOutput *>(out))
+  {
+    JLM_ASSERT(rvsdg::TryGetOwnerNode<loop_node>(*out));
+    return FindSourceNode(so->results.begin()->origin());
+  }
+  auto result = dynamic_cast<rvsdg::SimpleOutput *>(out);
+  JLM_ASSERT(result);
+  return result;
 }
 }
