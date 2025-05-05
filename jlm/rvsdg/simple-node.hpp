@@ -217,6 +217,82 @@ CreateOpNode(Region & region, OperatorArguments... operatorArguments)
       {});
 }
 
+/**
+ * \brief Checks if this is an input to a \ref SimpleNode and of specified operation type.
+ *
+ * \tparam TOperation
+ *   The operation type to be matched against.
+ *
+ * \param input
+ *   Input to be checked.
+ *
+ * \returns
+ *   A pair of the owning simple node and requested operation. If the owner of \p input is not a
+ *   \ref SimpleNode, then <nullptr, nullptr> is returned. If the owner of \p input is a \ref
+ * SimpleNode but not of the correct operation type, then <SimpleNode*, nullptr> are returned.
+ * Otherwise, <SimpleNode*, TOperation*> are returned.
+ *
+ * Checks if the specified input belongs to a \ref SimpleNode of requested operation type.
+ * If this is the case, returns a pair of pointers to the node and operation of matched type.
+ *
+ * See \ref def_use_inspection.
+ */
+template<typename TOperation>
+std::pair<SimpleNode *, const TOperation *>
+TryGetSimpleNodeAndOp(const rvsdg::input & input) noexcept
+{
+  const auto simpleNode = TryGetOwnerNode<SimpleNode>(input);
+  if (!simpleNode)
+  {
+    return std::make_pair(nullptr, nullptr);
+  }
+
+  if (auto operation = dynamic_cast<const TOperation *>(simpleNode->GetOperation()))
+  {
+    return std::make_pair(simpleNode, operation);
+  }
+
+  return std::make_pair(simpleNode, nullptr);
+}
+
+/**
+ * \brief Checks if this is an output to a \ref SimpleNode and of specified operation type.
+ *
+ * \tparam TOperation
+ *   The operation type to be matched against.
+ *
+ * \param output
+ *   Output to be checked.
+ *
+ * \returns
+ *   A pair of the owning simple node and requested operation. If the owner of \p output is not a
+ *   \ref SimpleNode, then <nullptr, nullptr> is returned. If the owner of \p output is a \ref
+ *   SimpleNode but not of the correct operation type, then <SimpleNode*, nullptr> are returned.
+ *   Otherwise, <SimpleNode*, TOperation*> are returned.
+ *
+ * Checks if the specified output belongs to a \ref SimpleNode of requested operation type.
+ * If this is the case, returns a pair of pointers to the node and operation of matched type.
+ *
+ * See \ref def_use_inspection.
+ */
+template<typename TOperation>
+std::pair<SimpleNode *, const TOperation *>
+TryGetSimpleNodeAndOp(const rvsdg::output & output) noexcept
+{
+  const auto simpleNode = TryGetOwnerNode<SimpleNode>(output);
+  if (!simpleNode)
+  {
+    return std::make_pair(nullptr, nullptr);
+  }
+
+  if (auto operation = dynamic_cast<const TOperation *>(&simpleNode->GetOperation()))
+  {
+    return std::make_pair(simpleNode, operation);
+  }
+
+  return std::make_pair(simpleNode, nullptr);
+}
+
 }
 
 #endif
