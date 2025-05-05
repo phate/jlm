@@ -107,14 +107,12 @@ jlm::rvsdg::output *
 gep_to_index(jlm::rvsdg::output * o)
 {
   // TODO: handle geps that are not direct predecessors
-  auto no = dynamic_cast<jlm::rvsdg::node_output *>(o);
-  JLM_ASSERT(no);
-  auto gep = dynamic_cast<const jlm::llvm::GetElementPtrOperation *>(&no->node()->GetOperation());
-  JLM_ASSERT(gep);
+  auto & node = rvsdg::AssertGetOwnerNode<rvsdg::SimpleNode>(*o);
+  util::AssertedCast<const jlm::llvm::GetElementPtrOperation>(&node.GetOperation());
   // pointer to array, i.e. first index is zero
   // TODO: check
-  JLM_ASSERT(no->node()->ninputs() == 3);
-  return no->node()->input(2)->origin();
+  JLM_ASSERT(node.ninputs() == 3);
+  return node.input(2)->origin();
 }
 
 void

@@ -110,7 +110,7 @@ test1()
   //	jlm::rvsdg::view(graph.GetRootRegion(), stdout);
 
   // Assert
-  assert(!jlm::rvsdg::Region::Contains<CallOperation>(graph.GetRootRegion(), true));
+  assert(!jlm::rvsdg::Region::ContainsOperation<CallOperation>(graph.GetRootRegion(), true));
 }
 
 static void

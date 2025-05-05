@@ -167,7 +167,7 @@ CreateGraphNodes(util::Graph & graph, rvsdg::Region & region, util::Graph * type
   for (const auto rvsdgNode : traverser)
   {
     auto & node = graph.CreateInOutNode(rvsdgNode->ninputs(), rvsdgNode->noutputs());
-    node.SetLabel(rvsdgNode->GetOperation().debug_string());
+    node.SetLabel(rvsdgNode->DebugString());
     node.SetProgramObject(*rvsdgNode);
 
     for (size_t i = 0; i < rvsdgNode->ninputs(); i++)

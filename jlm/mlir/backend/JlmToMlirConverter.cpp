@@ -174,7 +174,7 @@ JlmToMlirConverter::GetConvertedInputs(
           ": ",
           node.input(i)->origin()->Type()->debug_string(),
           " for node: ",
-          node.GetOperation().debug_string(),
+          node.DebugString(),
           " at index: ",
           i);
       JLM_UNREACHABLE(message.c_str());
@@ -211,8 +211,7 @@ JlmToMlirConverter::ConvertNode(
   }
   else
   {
-    auto message =
-        util::strfmt("Unimplemented structural node: ", node.GetOperation().debug_string());
+    auto message = util::strfmt("Unimplemented structural node: ", node.DebugString());
     JLM_UNREACHABLE(message.c_str());
   }
 }

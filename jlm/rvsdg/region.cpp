@@ -451,7 +451,7 @@ Region::ToTree(
   {
     if (auto structuralNode = dynamic_cast<const rvsdg::StructuralNode *>(&node))
     {
-      auto nodeString = structuralNode->GetOperation().debug_string();
+      auto nodeString = structuralNode->DebugString();
       auto annotationString = GetAnnotationString(
           structuralNode,
           annotationMap,

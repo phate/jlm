@@ -61,8 +61,8 @@ input::divert_to(jlm::rvsdg::output * new_origin)
   this->origin_ = new_origin;
   new_origin->add_user(this);
 
-  if (is<node_input>(*this))
-    static_cast<node_input *>(this)->node()->recompute_depth();
+  if (auto node = TryGetOwnerNode<Node>(*this))
+    node->recompute_depth();
 
   on_input_change(this, old_origin, new_origin);
 }
@@ -270,11 +270,10 @@ Node::recompute_depth() noexcept
   {
     for (auto user : *(output(n)))
     {
-      if (!is<node_input>(*user))
-        continue;
-
-      auto node = static_cast<node_input *>(user)->node();
-      node->recompute_depth();
+      if (auto node = TryGetOwnerNode<Node>(*user))
+      {
+        node->recompute_depth();
+      }
     }
   }
 }
