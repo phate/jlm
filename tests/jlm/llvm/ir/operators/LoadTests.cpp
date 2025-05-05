@@ -66,12 +66,14 @@ TestCopy()
   auto loadResults = LoadNonVolatileOperation::Create(address1, { memoryState1 }, valueType, 4);
 
   // Act
-  auto node = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*loadResults[0]);
+  auto node = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(*loadResults[0]);
   assert(is<LoadNonVolatileOperation>(node));
   auto copiedNode = node->copy(&graph.GetRootRegion(), { address2, memoryState2 });
 
   // Assert
-  assert(node->GetOperation() == copiedNode->GetOperation());
+  assert(
+      node->GetOperation()
+      == jlm::util::AssertedCast<jlm::rvsdg::SimpleNode>(copiedNode)->GetOperation());
 
   return 0;
 }
@@ -638,7 +640,8 @@ NodeCopy()
   auto copiedNode = loadNode.copy(&graph.GetRootRegion(), { &address2, &iOState2, &memoryState2 });
 
   // Assert
-  auto copiedOperation = dynamic_cast<const LoadVolatileOperation *>(&copiedNode->GetOperation());
+  auto copiedOperation = dynamic_cast<const LoadVolatileOperation *>(
+      &jlm::util::AssertedCast<SimpleNode>(copiedNode)->GetOperation());
   assert(copiedOperation != nullptr);
   assert(LoadOperation::AddressInput(*copiedNode).origin() == &address2);
   assert(LoadVolatileOperation::IOStateInput(*copiedNode).origin() == &iOState2);

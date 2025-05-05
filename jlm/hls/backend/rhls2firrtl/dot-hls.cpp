@@ -248,8 +248,10 @@ DotHLS::loop_to_dot(hls::loop_node * ln)
   dot << "{rank=same ";
   for (auto node : rvsdg::TopDownTraverser(sr))
   {
-    auto mx = dynamic_cast<const hls::mux_op *>(&node->GetOperation());
-    auto lc = dynamic_cast<const hls::loop_constant_buffer_op *>(&node->GetOperation());
+    auto simpleNode = dynamic_cast<const rvsdg::SimpleNode *>(node);
+    auto mx = dynamic_cast<const hls::mux_op *>(simpleNode ? &simpleNode->GetOperation() : nullptr);
+    auto lc = dynamic_cast<const hls::loop_constant_buffer_op *>(
+        simpleNode ? &simpleNode->GetOperation() : nullptr);
     if ((mx && !mx->discarding && mx->loop) || lc)
     {
       dot << get_node_name(node) << " ";
@@ -260,7 +262,9 @@ DotHLS::loop_to_dot(hls::loop_node * ln)
   dot << "{rank=same ";
   for (auto node : rvsdg::TopDownTraverser(sr))
   {
-    auto br = dynamic_cast<const hls::branch_op *>(&node->GetOperation());
+    auto simpleNode = dynamic_cast<const rvsdg::SimpleNode *>(node);
+    auto br =
+        dynamic_cast<const hls::branch_op *>(simpleNode ? &simpleNode->GetOperation() : nullptr);
     if (br && br->loop)
     {
       dot << get_node_name(node) << " ";
@@ -272,9 +276,9 @@ DotHLS::loop_to_dot(hls::loop_node * ln)
   // do edges outside in order not to pull other nodes into the cluster
   for (auto node : rvsdg::TopDownTraverser(sr))
   {
-    if (dynamic_cast<jlm::rvsdg::SimpleNode *>(node))
+    if (auto simpleNode = dynamic_cast<jlm::rvsdg::SimpleNode *>(node))
     {
-      auto mx = dynamic_cast<const hls::mux_op *>(&node->GetOperation());
+      auto mx = dynamic_cast<const hls::mux_op *>(&simpleNode->GetOperation());
       auto node_name = get_node_name(node);
       for (size_t i = 0; i < node->ninputs(); ++i)
       {

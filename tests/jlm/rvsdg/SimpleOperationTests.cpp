@@ -51,10 +51,18 @@ NormalizeSimpleOperationCne_NodesWithoutOperands()
   };
 
   // Act
-  ReduceNode<SimpleOperation>(NormalizeCne, *TryGetOwnerNode<Node>(*exNullaryValueNode1.origin()));
-  ReduceNode<SimpleOperation>(NormalizeCne, *TryGetOwnerNode<Node>(*exNullaryValueNode2.origin()));
-  ReduceNode<SimpleOperation>(NormalizeCne, *TryGetOwnerNode<Node>(*exNullaryStateNode1.origin()));
-  ReduceNode<SimpleOperation>(NormalizeCne, *TryGetOwnerNode<Node>(*exNullaryStateNode2.origin()));
+  ReduceNode<SimpleOperation>(
+      NormalizeCne,
+      *TryGetOwnerNode<SimpleNode>(*exNullaryValueNode1.origin()));
+  ReduceNode<SimpleOperation>(
+      NormalizeCne,
+      *TryGetOwnerNode<SimpleNode>(*exNullaryValueNode2.origin()));
+  ReduceNode<SimpleOperation>(
+      NormalizeCne,
+      *TryGetOwnerNode<SimpleNode>(*exNullaryStateNode1.origin()));
+  ReduceNode<SimpleOperation>(
+      NormalizeCne,
+      *TryGetOwnerNode<SimpleNode>(*exNullaryStateNode2.origin()));
   graph.PruneNodes();
 
   view(graph, stdout);
@@ -106,10 +114,10 @@ NormalizeSimpleOperationCne_NodesWithOperands()
   };
 
   // Act
-  ReduceNode<SimpleOperation>(NormalizeCne, *TryGetOwnerNode<Node>(*exValueNode1.origin()));
-  ReduceNode<SimpleOperation>(NormalizeCne, *TryGetOwnerNode<Node>(*exValueNode2.origin()));
-  ReduceNode<SimpleOperation>(NormalizeCne, *TryGetOwnerNode<Node>(*exStateNode1.origin()));
-  ReduceNode<SimpleOperation>(NormalizeCne, *TryGetOwnerNode<Node>(*exStateNode2.origin()));
+  ReduceNode<SimpleOperation>(NormalizeCne, *TryGetOwnerNode<SimpleNode>(*exValueNode1.origin()));
+  ReduceNode<SimpleOperation>(NormalizeCne, *TryGetOwnerNode<SimpleNode>(*exValueNode2.origin()));
+  ReduceNode<SimpleOperation>(NormalizeCne, *TryGetOwnerNode<SimpleNode>(*exStateNode1.origin()));
+  ReduceNode<SimpleOperation>(NormalizeCne, *TryGetOwnerNode<SimpleNode>(*exStateNode2.origin()));
   graph.PruneNodes();
 
   view(graph, stdout);
@@ -163,10 +171,18 @@ NormalizeSimpleOperationCne_Failure()
   };
 
   // Act
-  ReduceNode<SimpleOperation>(NormalizeCne, *TryGetOwnerNode<Node>(*exNullaryValueNode.origin()));
-  ReduceNode<SimpleOperation>(NormalizeCne, *TryGetOwnerNode<Node>(*exNullaryStateNode.origin()));
-  ReduceNode<SimpleOperation>(NormalizeCne, *TryGetOwnerNode<Node>(*exUnaryValueNode.origin()));
-  ReduceNode<SimpleOperation>(NormalizeCne, *TryGetOwnerNode<Node>(*exUnaryStateNode.origin()));
+  ReduceNode<SimpleOperation>(
+      NormalizeCne,
+      *TryGetOwnerNode<SimpleNode>(*exNullaryValueNode.origin()));
+  ReduceNode<SimpleOperation>(
+      NormalizeCne,
+      *TryGetOwnerNode<SimpleNode>(*exNullaryStateNode.origin()));
+  ReduceNode<SimpleOperation>(
+      NormalizeCne,
+      *TryGetOwnerNode<SimpleNode>(*exUnaryValueNode.origin()));
+  ReduceNode<SimpleOperation>(
+      NormalizeCne,
+      *TryGetOwnerNode<SimpleNode>(*exUnaryStateNode.origin()));
   graph.PruneNodes();
 
   view(graph, stdout);

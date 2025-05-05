@@ -322,7 +322,7 @@ is_movable_store(rvsdg::Node * node)
 }
 
 static void
-pushout_store(rvsdg::Node * storenode)
+pushout_store(rvsdg::SimpleNode * storenode)
 {
   JLM_ASSERT(dynamic_cast<const rvsdg::ThetaNode *>(storenode->region()->node()));
   JLM_ASSERT(jlm::rvsdg::is<StoreNonVolatileOperation>(storenode) && is_movable_store(storenode));

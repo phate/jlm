@@ -27,7 +27,7 @@ bitunary_op::reduce_operand(unop_reduction_path_t path, jlm::rvsdg::output * arg
 {
   if (path == unop_reduction_constant)
   {
-    auto p = producer(arg);
+    auto p = static_cast<const SimpleNode *>(producer(arg));
     auto & c = static_cast<const bitconstant_op &>(p->GetOperation());
     return create_bitconstant(p->region(), reduce_constant(c.value()));
   }
@@ -57,8 +57,10 @@ bitbinary_op::reduce_operand_pair(
 {
   if (path == binop_reduction_constants)
   {
-    auto & c1 = static_cast<const bitconstant_op &>(producer(arg1)->GetOperation());
-    auto & c2 = static_cast<const bitconstant_op &>(producer(arg2)->GetOperation());
+    auto & c1 = static_cast<const bitconstant_op &>(
+        static_cast<const SimpleNode *>(producer(arg1))->GetOperation());
+    auto & c2 = static_cast<const bitconstant_op &>(
+        static_cast<const SimpleNode *>(producer(arg2))->GetOperation());
     return create_bitconstant(arg1->region(), reduce_constants(c1.value(), c2.value()));
   }
 
@@ -73,12 +75,12 @@ bitcompare_op::can_reduce_operand_pair(
     const jlm::rvsdg::output * arg1,
     const jlm::rvsdg::output * arg2) const noexcept
 {
-  auto p = producer(arg1);
+  auto p = dynamic_cast<const SimpleNode *>(producer(arg1));
   const bitconstant_op * c1_op = nullptr;
   if (p)
     c1_op = dynamic_cast<const bitconstant_op *>(&p->GetOperation());
 
-  p = producer(arg2);
+  p = dynamic_cast<const SimpleNode *>(producer(arg2));
   const bitconstant_op * c2_op = nullptr;
   if (p)
     c2_op = dynamic_cast<const bitconstant_op *>(&p->GetOperation());

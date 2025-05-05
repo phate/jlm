@@ -6,6 +6,7 @@
 #ifndef JLM_LLVM_OPT_REDUCTION_HPP
 #define JLM_LLVM_OPT_REDUCTION_HPP
 
+#include <jlm/rvsdg/simple-node.hpp>
 #include <jlm/rvsdg/Transformation.hpp>
 #include <jlm/util/Statistics.hpp>
 
@@ -73,16 +74,16 @@ private:
   ReduceGammaNode(rvsdg::StructuralNode & gammaNode);
 
   [[nodiscard]] static bool
-  ReduceSimpleNode(rvsdg::Node & simpleNode);
+  ReduceSimpleNode(rvsdg::SimpleNode & simpleNode);
 
   [[nodiscard]] static bool
-  ReduceLoadNode(rvsdg::Node & simpleNode);
+  ReduceLoadNode(rvsdg::SimpleNode & simpleNode);
 
   [[nodiscard]] static bool
-  ReduceStoreNode(rvsdg::Node & simpleNode);
+  ReduceStoreNode(rvsdg::SimpleNode & simpleNode);
 
   [[nodiscard]] static bool
-  ReduceBinaryNode(rvsdg::Node & simpleNode);
+  ReduceBinaryNode(rvsdg::SimpleNode & simpleNode);
 
   static std::optional<std::vector<rvsdg::output *>>
   NormalizeLoadNode(

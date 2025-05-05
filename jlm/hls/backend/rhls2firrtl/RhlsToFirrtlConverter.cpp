@@ -1153,10 +1153,10 @@ RhlsToFirrtlConverter::MlirGenHlsLocalMem(const jlm::rvsdg::SimpleNode * node)
 {
   auto lmem_op = dynamic_cast<const local_mem_op *>(&(node->GetOperation()));
   JLM_ASSERT(lmem_op);
-  auto res_node = rvsdg::TryGetOwnerNode<rvsdg::Node>(**node->output(0)->begin());
+  auto res_node = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(**node->output(0)->begin());
   auto res_op = dynamic_cast<const local_mem_resp_op *>(&res_node->GetOperation());
   JLM_ASSERT(res_op);
-  auto req_node = rvsdg::TryGetOwnerNode<rvsdg::Node>(**node->output(1)->begin());
+  auto req_node = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(**node->output(1)->begin());
   auto req_op = dynamic_cast<const local_mem_req_op *>(&req_node->GetOperation());
   JLM_ASSERT(req_op);
   // Create the module and its input/output ports - we use a non-standard way here
@@ -2788,8 +2788,8 @@ RhlsToFirrtlConverter::createInstances(
   {
     if (auto sn = dynamic_cast<jlm::rvsdg::SimpleNode *>(node))
     {
-      if (dynamic_cast<const local_mem_req_op *>(&(node->GetOperation()))
-          || dynamic_cast<const local_mem_resp_op *>(&(node->GetOperation())))
+      if (dynamic_cast<const local_mem_req_op *>(&(sn->GetOperation()))
+          || dynamic_cast<const local_mem_resp_op *>(&(sn->GetOperation())))
       {
         // these are virtual - connections go to local_mem instead
         continue;
@@ -3993,7 +3993,7 @@ RhlsToFirrtlConverter::GetFirrtlType(const jlm::rvsdg::Type * type)
 }
 
 std::string
-RhlsToFirrtlConverter::GetModuleName(const rvsdg::Node * node)
+RhlsToFirrtlConverter::GetModuleName(const rvsdg::SimpleNode * node)
 {
 
   std::string append = "";
@@ -4085,7 +4085,7 @@ RhlsToFirrtlConverter::IsIdentityMapping(const jlm::rvsdg::match_op & op)
 void
 RhlsToFirrtlConverter::WriteModuleToFile(
     const circt::firrtl::FModuleOp fModuleOp,
-    const rvsdg::Node * node)
+    const rvsdg::SimpleNode * node)
 {
   if (!fModuleOp)
     return;

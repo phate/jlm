@@ -267,17 +267,15 @@ TestDivOperation()
       // Get the lambda block
       auto convertedLambda =
           jlm::util::AssertedCast<jlm::rvsdg::LambdaNode>(region->Nodes().begin().ptr());
-      assert(is<jlm::llvm::LlvmLambdaOperation>(convertedLambda));
+      assert(is<jlm::llvm::LlvmLambdaOperation>(convertedLambda->GetOperation()));
 
       // 2 Constants + 1 DivUIOp
       assert(convertedLambda->subregion()->nnodes() == 3);
 
       // Traverse the rvsgd graph upwards to check connections
-      jlm::rvsdg::node_output * lambdaResultOriginNodeOuput;
-      assert(
-          lambdaResultOriginNodeOuput = dynamic_cast<jlm::rvsdg::node_output *>(
-              convertedLambda->subregion()->result(0)->origin()));
-      Node * lambdaResultOriginNode = lambdaResultOriginNodeOuput->node();
+      auto lambdaResultOriginNode = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(
+          *convertedLambda->subregion()->result(0)->origin());
+      assert(lambdaResultOriginNode);
       assert(is<jlm::llvm::IntegerUDivOperation>(lambdaResultOriginNode->GetOperation()));
       assert(lambdaResultOriginNode->ninputs() == 2);
 
@@ -441,7 +439,7 @@ TestCompZeroExt()
       // Get the lambda block
       auto convertedLambda =
           jlm::util::AssertedCast<jlm::rvsdg::LambdaNode>(region->Nodes().begin().ptr());
-      assert(is<jlm::llvm::LlvmLambdaOperation>(convertedLambda));
+      assert(is<jlm::llvm::LlvmLambdaOperation>(convertedLambda->GetOperation()));
 
       // 2 Constants + AddOp + CompOp + ZeroExtOp
       assert(convertedLambda->subregion()->nnodes() == 5);
@@ -646,7 +644,7 @@ TestMatchOp()
       // Get the lambda block
       auto convertedLambda =
           jlm::util::AssertedCast<jlm::rvsdg::LambdaNode>(region->Nodes().begin().ptr());
-      assert(is<jlm::llvm::LlvmLambdaOperation>(convertedLambda));
+      assert(is<jlm::llvm::LlvmLambdaOperation>(convertedLambda->GetOperation()));
 
       auto lambdaRegion = convertedLambda->subregion();
 

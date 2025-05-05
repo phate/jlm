@@ -58,8 +58,8 @@ bitconcat_op::can_reduce_operand_pair(
     const jlm::rvsdg::output * arg1,
     const jlm::rvsdg::output * arg2) const noexcept
 {
-  auto node1 = TryGetOwnerNode<Node>(*arg1);
-  auto node2 = TryGetOwnerNode<Node>(*arg2);
+  auto node1 = TryGetOwnerNode<SimpleNode>(*arg1);
+  auto node2 = TryGetOwnerNode<SimpleNode>(*arg2);
 
   if (!node1 || !node2)
     return binop_reduction_none;
@@ -97,13 +97,13 @@ bitconcat_op::reduce_operand_pair(
     jlm::rvsdg::output * arg1,
     jlm::rvsdg::output * arg2) const
 {
-  auto node1 = static_cast<node_output *>(arg1)->node();
-  auto node2 = static_cast<node_output *>(arg2)->node();
+  auto & node1 = AssertGetOwnerNode<SimpleNode>(*arg1);
+  auto & node2 = AssertGetOwnerNode<SimpleNode>(*arg2);
 
   if (path == binop_reduction_constants)
   {
-    auto & arg1_constant = static_cast<const bitconstant_op &>(node1->GetOperation());
-    auto & arg2_constant = static_cast<const bitconstant_op &>(node2->GetOperation());
+    auto & arg1_constant = static_cast<const bitconstant_op &>(node1.GetOperation());
+    auto & arg2_constant = static_cast<const bitconstant_op &>(node2.GetOperation());
 
     bitvalue_repr bits(arg1_constant.value());
     bits.Append(arg2_constant.value());
@@ -112,9 +112,9 @@ bitconcat_op::reduce_operand_pair(
 
   if (path == binop_reduction_merge)
   {
-    auto arg1_slice = static_cast<const bitslice_op *>(&node1->GetOperation());
-    auto arg2_slice = static_cast<const bitslice_op *>(&node2->GetOperation());
-    return jlm::rvsdg::bitslice(node1->input(0)->origin(), arg1_slice->low(), arg2_slice->high());
+    auto arg1_slice = static_cast<const bitslice_op *>(&node1.GetOperation());
+    auto arg2_slice = static_cast<const bitslice_op *>(&node2.GetOperation());
+    return jlm::rvsdg::bitslice(node1.input(0)->origin(), arg1_slice->low(), arg2_slice->high());
 
     /* FIXME: support sign bit */
   }

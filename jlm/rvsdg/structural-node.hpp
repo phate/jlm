@@ -31,6 +31,9 @@ public:
   std::string
   DebugString() const override;
 
+  [[nodiscard]] virtual const StructuralOperation &
+  GetOperation() const noexcept = 0;
+
   inline size_t
   nsubregions() const noexcept
   {

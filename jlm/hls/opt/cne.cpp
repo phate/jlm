@@ -272,20 +272,24 @@ congruent(jlm::rvsdg::output * o1, jlm::rvsdg::output * o2, vset & vs, cnectx & 
     }
   }
 
-  if (jlm::rvsdg::is<SimpleOperation>(n1) && jlm::rvsdg::is<SimpleOperation>(n2)
-      && n1->GetOperation() == n2->GetOperation() && n1->ninputs() == n2->ninputs()
-      && o1->index() == o2->index())
+  if (auto s1 = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*o1))
   {
-    for (size_t n = 0; n < n1->ninputs(); n++)
+    if (auto s2 = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*o2))
     {
-      auto origin1 = n1->input(n)->origin();
-      auto origin2 = n2->input(n)->origin();
-      if (!congruent(origin1, origin2, vs, ctx))
-        return false;
+      if (s1->GetOperation() == s2->GetOperation() && s1->ninputs() == s2->ninputs()
+          && o1->index() == o2->index())
+      {
+        for (size_t n = 0; n < s1->ninputs(); n++)
+        {
+          auto origin1 = s1->input(n)->origin();
+          auto origin2 = s2->input(n)->origin();
+          if (!congruent(origin1, origin2, vs, ctx))
+            return false;
+        }
+        return true;
+      }
     }
-    return true;
   }
-
   return false;
 }
 
@@ -459,7 +463,9 @@ mark(const jlm::rvsdg::SimpleNode * node, cnectx & ctx)
   {
     for (const auto & other : node->region()->TopNodes())
     {
-      if (&other != node && node->GetOperation() == other.GetOperation())
+      auto otherSimpleNode = dynamic_cast<const rvsdg::SimpleNode *>(&other);
+      if (otherSimpleNode && &other != node
+          && node->GetOperation() == otherSimpleNode->GetOperation())
       {
         ctx.mark(node, &other);
         break;
@@ -473,8 +479,7 @@ mark(const jlm::rvsdg::SimpleNode * node, cnectx & ctx)
   {
     for (const auto & user : *origin)
     {
-      auto ni = dynamic_cast<const jlm::rvsdg::node_input *>(user);
-      auto other = ni ? ni->node() : nullptr;
+      auto other = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*user);
       if (!other || other == node || other->GetOperation() != node->GetOperation()
           || other->ninputs() != node->ninputs())
         continue;

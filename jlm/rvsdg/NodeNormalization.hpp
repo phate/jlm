@@ -43,7 +43,7 @@ NormalizeSequence(
 
 template<class TOperation>
 bool
-ReduceNode(const NodeNormalization<TOperation> & nodeNormalization, Node & node)
+ReduceNode(const NodeNormalization<TOperation> & nodeNormalization, SimpleNode & node)
 {
   auto operation = util::AssertedCast<const TOperation>(&node.GetOperation());
   auto operands = rvsdg::operands(&node);

@@ -150,30 +150,33 @@ inline_calls(rvsdg::Region * region)
         inline_calls(structnode->subregion(n));
       }
     }
-    else if (dynamic_cast<const llvm::CallOperation *>(&(node->GetOperation())))
+    else if (auto simpleNode = dynamic_cast<rvsdg::SimpleNode *>(node))
     {
-      auto traced = jlm::hls::trace_call(node->input(0));
-      auto so = dynamic_cast<const rvsdg::StructuralOutput *>(traced);
-      if (!so)
+      if (dynamic_cast<const llvm::CallOperation *>(&(simpleNode->GetOperation())))
       {
-        if (auto graphImport = dynamic_cast<const llvm::GraphImport *>(traced))
+        auto traced = jlm::hls::trace_call(node->input(0));
+        auto so = dynamic_cast<const rvsdg::StructuralOutput *>(traced);
+        if (!so)
         {
-          if (graphImport->Name().rfind("decouple_", 0) == 0)
+          if (auto graphImport = dynamic_cast<const llvm::GraphImport *>(traced))
           {
-            // can't inline pseudo functions used for decoupling
-            continue;
+            if (graphImport->Name().rfind("decouple_", 0) == 0)
+            {
+              // can't inline pseudo functions used for decoupling
+              continue;
+            }
+            throw jlm::util::error("can not inline external function " + graphImport->Name());
           }
-          throw jlm::util::error("can not inline external function " + graphImport->Name());
         }
+        JLM_ASSERT(dynamic_cast<const rvsdg::LambdaNode *>(so->node()));
+        auto ln = dynamic_cast<const rvsdg::StructuralOutput *>(traced)->node();
+        llvm::inlineCall(
+            dynamic_cast<jlm::rvsdg::SimpleNode *>(node),
+            dynamic_cast<const rvsdg::LambdaNode *>(ln));
+        // restart for this region
+        inline_calls(region);
+        return;
       }
-      JLM_ASSERT(rvsdg::is<rvsdg::LambdaOperation>(so->node()));
-      auto ln = dynamic_cast<const rvsdg::StructuralOutput *>(traced)->node();
-      llvm::inlineCall(
-          dynamic_cast<jlm::rvsdg::SimpleNode *>(node),
-          dynamic_cast<const rvsdg::LambdaNode *>(ln));
-      // restart for this region
-      inline_calls(region);
-      return;
     }
   }
 }
@@ -192,57 +195,60 @@ convert_alloca(rvsdg::Region * region)
         convert_alloca(structnode->subregion(n));
       }
     }
-    else if (auto po = dynamic_cast<const llvm::alloca_op *>(&(node->GetOperation())))
+    else if (auto simpleNode = dynamic_cast<rvsdg::SimpleNode *>(node))
     {
-      auto rr = &region->graph()->GetRootRegion();
-      auto delta_name = jlm::util::strfmt("hls_alloca_", alloca_cnt++);
-      auto delta_type = llvm::PointerType::Create();
-      std::cout << "alloca " << delta_name << ": " << po->value_type().debug_string() << "\n";
-      auto db = llvm::delta::node::Create(
-          rr,
-          std::static_pointer_cast<const rvsdg::ValueType>(po->ValueType()),
-          delta_name,
-          llvm::linkage::external_linkage,
-          "",
-          false);
-      // create zero constant of allocated type
-      jlm::rvsdg::output * cout;
-      if (auto bt = dynamic_cast<const llvm::IntegerConstantOperation *>(&po->value_type()))
+      if (auto po = dynamic_cast<const llvm::alloca_op *>(&(simpleNode->GetOperation())))
       {
-        cout = llvm::IntegerConstantOperation::Create(
-                   *db->subregion(),
-                   bt->Representation().nbits(),
-                   0)
-                   .output(0);
+        auto rr = &region->graph()->GetRootRegion();
+        auto delta_name = jlm::util::strfmt("hls_alloca_", alloca_cnt++);
+        auto delta_type = llvm::PointerType::Create();
+        std::cout << "alloca " << delta_name << ": " << po->value_type().debug_string() << "\n";
+        auto db = llvm::delta::node::Create(
+            rr,
+            std::static_pointer_cast<const rvsdg::ValueType>(po->ValueType()),
+            delta_name,
+            llvm::linkage::external_linkage,
+            "",
+            false);
+        // create zero constant of allocated type
+        jlm::rvsdg::output * cout;
+        if (auto bt = dynamic_cast<const llvm::IntegerConstantOperation *>(&po->value_type()))
+        {
+          cout = llvm::IntegerConstantOperation::Create(
+                     *db->subregion(),
+                     bt->Representation().nbits(),
+                     0)
+                     .output(0);
+        }
+        else
+        {
+          cout = llvm::ConstantAggregateZeroOperation::Create(*db->subregion(), po->ValueType());
+        }
+        auto delta = db->finalize(cout);
+        jlm::llvm::GraphExport::Create(*delta, delta_name);
+        auto delta_local = route_to_region_rvsdg(delta, region);
+        node->output(0)->divert_users(delta_local);
+        // TODO: check that the input to alloca is a bitconst 1
+        // TODO: handle general case of other nodes getting state edge without a merge
+        JLM_ASSERT(node->output(1)->nusers() == 1);
+        auto mux_in = *node->output(1)->begin();
+        auto mux_node = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*mux_in);
+        if (dynamic_cast<const llvm::MemoryStateMergeOperation *>(&mux_node->GetOperation()))
+        {
+          // merge after alloca -> remove merge
+          JLM_ASSERT(mux_node->ninputs() == 2);
+          auto other_index = mux_in->index() ? 0 : 1;
+          mux_node->output(0)->divert_users(mux_node->input(other_index)->origin());
+          jlm::rvsdg::remove(mux_node);
+        }
+        else
+        {
+          // TODO: fix this properly by adding a state edge to the LambdaEntryMemState and routing
+          // it to the region
+          JLM_ASSERT(false);
+        }
+        jlm::rvsdg::remove(node);
       }
-      else
-      {
-        cout = llvm::ConstantAggregateZeroOperation::Create(*db->subregion(), po->ValueType());
-      }
-      auto delta = db->finalize(cout);
-      jlm::llvm::GraphExport::Create(*delta, delta_name);
-      auto delta_local = route_to_region_rvsdg(delta, region);
-      node->output(0)->divert_users(delta_local);
-      // TODO: check that the input to alloca is a bitconst 1
-      // TODO: handle general case of other nodes getting state edge without a merge
-      JLM_ASSERT(node->output(1)->nusers() == 1);
-      auto mux_in = *node->output(1)->begin();
-      auto mux_node = rvsdg::TryGetOwnerNode<rvsdg::Node>(*mux_in);
-      if (dynamic_cast<const llvm::MemoryStateMergeOperation *>(&mux_node->GetOperation()))
-      {
-        // merge after alloca -> remove merge
-        JLM_ASSERT(mux_node->ninputs() == 2);
-        auto other_index = mux_in->index() ? 0 : 1;
-        mux_node->output(0)->divert_users(mux_node->input(other_index)->origin());
-        jlm::rvsdg::remove(mux_node);
-      }
-      else
-      {
-        // TODO: fix this properly by adding a state edge to the LambdaEntryMemState and routing it
-        // to the region
-        JLM_ASSERT(false);
-      }
-      jlm::rvsdg::remove(node);
     }
   }
 }

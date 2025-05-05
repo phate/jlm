@@ -68,7 +68,7 @@ public:
   MlirGen(const rvsdg::LambdaNode * lamdaNode);
 
   void
-  WriteModuleToFile(const circt::firrtl::FModuleOp fModuleOp, const rvsdg::Node * node);
+  WriteModuleToFile(const circt::firrtl::FModuleOp fModuleOp, const rvsdg::SimpleNode * node);
 
   void
   WriteCircuitToFile(const circt::firrtl::CircuitOp circuit, std::string name);
@@ -283,7 +283,7 @@ private:
   circt::firrtl::FIRRTLBaseType
   GetFirrtlType(const jlm::rvsdg::Type * type);
   std::string
-  GetModuleName(const rvsdg::Node * node);
+  GetModuleName(const rvsdg::SimpleNode * node);
   bool
   IsIdentityMapping(const jlm::rvsdg::match_op & op);
 

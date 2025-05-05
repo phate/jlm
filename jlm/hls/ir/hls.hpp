@@ -755,7 +755,7 @@ private:
   jlm::rvsdg::node_output * _predicate_buffer;
 
 public:
-  [[nodiscard]] const rvsdg::Operation &
+  [[nodiscard]] const rvsdg::StructuralOperation &
   GetOperation() const noexcept override;
 
   static loop_node *
