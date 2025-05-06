@@ -61,7 +61,7 @@ PointsToGraphAliasAnalysis::Query(
   if (p1RegisterNode.HasTarget(externalNode) && p2RegisterNode.HasTarget(externalNode))
     return MayAlias;
 
-  // Quickly checks if the given register has only one possible target
+  // Quickly checks if the given register node has only one possible target
   const auto GetSingleTarget = [&](const PointsToGraph::RegisterNode & node,
                                    size_t size) -> std::optional<const PointsToGraph::MemoryNode *>
   {
@@ -239,11 +239,7 @@ struct BasicAliasAnalysis::TraceCollection
 };
 
 AliasAnalysis::AliasQueryResponse
-BasicAliasAnalysis::Query(
-    const rvsdg::output & p1,
-    [[maybe_unused]] size_t s1,
-    const rvsdg::output & p2,
-    [[maybe_unused]] size_t s2)
+BasicAliasAnalysis::Query(const rvsdg::output & p1, size_t s1, const rvsdg::output & p2, size_t s2)
 {
   const auto & p1Norm = NormalizePointerValue(p1);
   const auto & p2Norm = NormalizePointerValue(p2);
@@ -279,14 +275,9 @@ BasicAliasAnalysis::Query(
   if (!TraceAllPointerOrigins(p2Traced, p2TraceCollection))
     return MayAlias;
 
-  // If one of the trace collections only contains memory locations that are too small
-  // to be the target of the other memory operation, return NoAlias
-  const auto largestP1Target = GetLargestPossibleOrigin(p1TraceCollection);
-  const auto largestP2Target = GetLargestPossibleOrigin(p2TraceCollection);
-  if (largestP1Target.has_value() && s2 > *largestP1Target)
-    return NoAlias;
-  if (largestP2Target.has_value() && s1 > *largestP2Target)
-    return NoAlias;
+  // Some of the traced top origins may be memory locations that are too small, so ignore them
+  RemoveUndersizedTopOrigins(p1TraceCollection, s1);
+  RemoveUndersizedTopOrigins(p2TraceCollection, s2);
 
   // If each trace collection has only one top origin, check if they have the same base pointer
   if (p1TraceCollection.TopOrigins.size() == 1 && p2TraceCollection.TopOrigins.size() == 1)
@@ -564,15 +555,23 @@ BasicAliasAnalysis::DoTraceCollectionsOverlap(
     TraceCollection & tc2,
     size_t s2)
 {
+  // For operations to alias due to possibly targeting the same original origin
+  // neither operation can be larger than the memory location defined at that original origin
+  const auto neededSize = std::max(s1, s2);
+
   for (auto [p1Origin, p1Offset] : tc1.TopOrigins)
   {
     auto p2Find = tc2.TopOrigins.find(p1Origin);
-    if (p2Find != tc2.TopOrigins.end())
-    {
-      auto p2Offset = p2Find->second;
-      if (QueryOffsets(p1Offset, s1, p2Offset, s2) != NoAlias)
-        return true;
-    }
+    if (p2Find == tc2.TopOrigins.end())
+      continue;
+
+    const auto targetSize = GetOriginalOriginSize(*p1Origin);
+    if (targetSize.has_value() && targetSize < neededSize)
+      continue;
+
+    auto p2Offset = p2Find->second;
+    if (QueryOffsets(p1Offset, s1, p2Offset, s2) != NoAlias)
+      return true;
   }
 
   return false;
@@ -658,22 +657,18 @@ BasicAliasAnalysis::GetRemainingSize(TracedPointerOrigin trace)
   return *totalSize - *trace.Offset;
 }
 
-std::optional<size_t>
-BasicAliasAnalysis::GetLargestPossibleOrigin(TraceCollection & traces)
+void
+BasicAliasAnalysis::RemoveUndersizedTopOrigins(TraceCollection & traces, size_t s)
 {
-  size_t largestSize = 0;
-  for (auto [basePointer, offset] : traces.TopOrigins)
+  auto it = traces.TopOrigins.begin();
+  while (it != traces.TopOrigins.end())
   {
-    auto remaining = GetOriginalOriginSize(*basePointer);
-
-    // If any top origin has unknown size, give up
-    if (!remaining.has_value())
-      return std::nullopt;
-
-    largestSize = std::max(largestSize, *remaining);
+    const auto remainingSize = GetRemainingSize({it->first, it->second});
+    if (remainingSize.has_value() && *remainingSize < s)
+      it = traces.TopOrigins.erase(it);
+    else
+      it++;
   }
-
-  return largestSize;
 }
 
 bool

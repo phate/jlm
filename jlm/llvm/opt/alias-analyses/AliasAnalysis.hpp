@@ -242,25 +242,34 @@ private:
   GetOriginalOriginSize(const rvsdg::output & pointer);
 
   /**
-   * If all top origins in the collection have a known size, the largest size is returned.
-   * @param traces the trace collection
-   * @return the largest possible memory location size, or nullopt if it is unbounded.
-   */
-  [[nodiscard]] static std::optional<size_t>
-  GetLargestPossibleOrigin(TraceCollection & traces);
-
-  /**
    * Given a traced pointer origin like p, where
    *  b = alloca[3 x i32]
    *  p = b + 8
    *
-   * we know that an operation starting at p must have a maximum size of 4 bytes.
+   * we know that an operation starting at p can have a maximum size of 4 bytes.
    * This function attempts to calculate the remaining size beyond a given traced pointer.
+   *
+   * If the offset is larger than the size of the target, the size 0 is returned.
+   * If the offset is unknown, the size of the target is returned.
+   *
    * @param trace the traced pointer
    * @return the number of bytes left after the given traced pointer, or nullopt if unknown.
    */
   [[nodiscard]] static std::optional<size_t>
   GetRemainingSize(TracedPointerOrigin trace);
+
+  /**
+   * For each top origin in the given trace collection, it is removed if it is deemed too small.
+   * If we know that a top origin b represents a sized area [b, b + S),
+   * and the trace collection contains the pointer p where
+   *  p = b + o
+   * then we can safely discard b from the set of possible top origins if o + s > S,
+   * where s is the size of the operation performed at pointer p.
+   * @param traces the trace collection
+   * @param s the size of the operation being performed at the traced pointer
+   */
+  static void
+  RemoveUndersizedTopOrigins(TraceCollection & traces, size_t s);
 
   /**
    * Checks if the given pointer may have escaped to somewhere it cannot be traced.
