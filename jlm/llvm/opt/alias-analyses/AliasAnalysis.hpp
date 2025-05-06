@@ -77,7 +77,6 @@ public:
   Query(const rvsdg::output & p1, size_t s1, const rvsdg::output & p2, size_t s2) override;
 
 private:
-
   /**
    * Determines the size of the memory region represented by the given memory node, if possible.
    * If the memory node represents multiple regions of the same size,
@@ -232,6 +231,36 @@ private:
    */
   [[nodiscard]] static bool
   HasOnlyOriginalTopOrigins(TraceCollection & traces);
+
+  /**
+   * Gets the size of the memory location(s) defined at the given output's operation.
+   * If the output is not an original origin, or the size is unknown, nullopt is returned.
+   * @param pointer a pointer output, should be from a memory location defining operation
+   * @return the size of the defined memory location, or nullopt if it is unknown
+   */
+  [[nodiscard]] static std::optional<size_t>
+  GetOriginalOriginSize(const rvsdg::output & pointer);
+
+  /**
+   * If all top origins in the collection have a known size, the largest size is returned.
+   * @param traces the trace collection
+   * @return the largest possible memory location size, or nullopt if it is unbounded.
+   */
+  [[nodiscard]] static std::optional<size_t>
+  GetLargestPossibleOrigin(TraceCollection & traces);
+
+  /**
+   * Given a traced pointer origin like p, where
+   *  b = alloca[3 x i32]
+   *  p = b + 8
+   *
+   * we know that an operation starting at p must have a maximum size of 4 bytes.
+   * This function attempts to calculate the remaining size beyond a given traced pointer.
+   * @param trace the traced pointer
+   * @return the number of bytes left after the given traced pointer, or nullopt if unknown.
+   */
+  [[nodiscard]] static std::optional<size_t>
+  GetRemainingSize(TracedPointerOrigin trace);
 
   /**
    * Checks if the given pointer may have escaped to somewhere it cannot be traced.

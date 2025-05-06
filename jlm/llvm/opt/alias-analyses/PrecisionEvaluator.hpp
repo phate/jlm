@@ -11,6 +11,11 @@
 
 #include <unordered_map>
 
+namespace jlm::util
+{
+class GraphWriter;
+}
+
 namespace jlm::llvm::aa
 {
 
@@ -79,15 +84,18 @@ private:
 
   /**
    * Updates the pointers collected in the current context by tracing their origin.
-   * This is only done for pointers that are trivially passed directly through nodes or into regions.
+   * This is only done for pointers that are trivially passed directly through nodes or into
+   * regions.
    * @see NormalizePointerValue() in AliasAnalysis.hpp
    */
-  void NormalizePointerValues();
+  void
+  NormalizePointerValues();
 
   /**
    * Removes repeated instances of the same (pointer, size) pair in the current context
    */
-  void RemoveDuplicates();
+  void
+  RemoveDuplicates();
 
   // Called once all functions have been evaluated, to calculate and print averages
   void
@@ -100,7 +108,7 @@ private:
   // Alias analysis precision info for a set of pointer usages
   struct PrecisionInfo
   {
-    struct UseInfo
+    struct ClobberInfo
     {
       uint64_t NumNoAlias = 0;
       uint64_t NumMayAlias = 0;
@@ -108,15 +116,15 @@ private:
     };
 
     /**
-     * For each pointer use, how it relates to all (other) clobbering operations in the function.
+     * For each pointer clobber, how it relates to all (other) use operations in the function.
      * The relationships are represented as alias query results.
      */
-    std::vector<UseInfo> UseOperations;
+    std::vector<ClobberInfo> ClobberOperations;
 
     /**
      * The number of operations classified as clobbers
      */
-    uint64_t NumClobberingOperations = 0;
+    uint64_t NumUseOperations = 0;
 
     /**
      * The number of operations that are either uses, clobbers, or both
@@ -138,7 +146,20 @@ private:
     std::vector<std::tuple<const rvsdg::output *, size_t, bool, bool>> PointerOperations;
   };
 
+  static void
+  AggregateClobberInfos(
+      std::vector<PrecisionInfo::ClobberInfo> & clobberInfos,
+      double & clobberAverageNoAlias,
+      double & clobberAverageMayAlias,
+      double & clobberAverageMustAlias,
+      uint64_t & totalNoAlias,
+      uint64_t & totalMayAlias,
+      uint64_t & totalMustAlias);
+
   Context Context_;
+
+  // Graph used for outputting aliasing pairs
+  util::Graph * AliasingGraph_;
 };
 
 }

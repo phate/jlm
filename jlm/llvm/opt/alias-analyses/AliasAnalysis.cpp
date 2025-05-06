@@ -56,52 +56,66 @@ PointsToGraphAliasAnalysis::Query(
   auto & p1RegisterNode = PointsToGraph_.GetRegisterNode(p1);
   auto & p2RegisterNode = PointsToGraph_.GetRegisterNode(p2);
 
-  // If the registers are represented by the same node, they may alias
-  if (&p1RegisterNode == &p2RegisterNode)
-    return MayAlias;
-
   // Check if both pointers may target the external node, to avoid iterating over large sets
   const auto & externalNode = PointsToGraph_.GetExternalMemoryNode();
   if (p1RegisterNode.HasTarget(externalNode) && p2RegisterNode.HasTarget(externalNode))
     return MayAlias;
 
-  // A target memory location with size less than sizeNeeded can be ignored.
-  // We can assume that a load of size 8 is not targeting a 4-byte integer.
-  const auto sizeNeeded = std::max(s1, s2);
+  // Quickly checks if the given register has only one possible target
+  const auto GetSingleTarget = [&](const PointsToGraph::RegisterNode & node,
+                                   size_t size) -> std::optional<const PointsToGraph::MemoryNode *>
+  {
+    std::optional<const PointsToGraph::MemoryNode *> singleTarget;
+    for (auto & target : node.Targets())
+    {
+      // Skip memory locations that are too small to hold size
+      const auto targetSize = GetMemoryNodeSize(target);
+      if (targetSize.has_value() && *targetSize < size)
+        continue;
 
-  // Check if p1 and p2 share any target memory nodes
-  std::optional<const PointsToGraph::MemoryNode *> overlapping;
+      if (singleTarget.has_value())
+        return std::nullopt;
+
+      singleTarget = &target;
+    }
+
+    return singleTarget;
+  };
+
+  // If both p1 and p2 have exactly one possible target, which is the same for both,
+  // and is the same size as the operations, and only represents one concrete memory location,
+  // we can respond with MustAlias
+  if (s1 == s2)
+  {
+    const auto p1SingleTarget = GetSingleTarget(p1RegisterNode, s1);
+    const auto p2SingleTarget = GetSingleTarget(p2RegisterNode, s2);
+    if (p1SingleTarget.has_value() && p2SingleTarget.has_value())
+    {
+      if (*p1SingleTarget == *p2SingleTarget)
+      {
+        if (IsRepresentingSingleMemoryLocation(**p1SingleTarget))
+        {
+          const auto targetSize = GetMemoryNodeSize(**p1SingleTarget);
+          if (targetSize.has_value() && *targetSize == s1)
+            return MustAlias;
+        }
+      }
+    }
+  }
+
+  // For a memory location to be the target of both p1 and p2, it needs to be large enough
+  // to represent both [p1, p1+s1) and [p2, p2+s2)
+  const auto neededSize = std::max(s1, s2);
 
   for (auto & target : p1RegisterNode.Targets())
   {
-    // Skip memory locations that are too small to hold [p1, p1+s1) and/or [p2, p2+s2)
+    // Skip memory locations that are too small
     const auto targetSize = GetMemoryNodeSize(target);
-    if (targetSize.has_value() && *targetSize < sizeNeeded)
+    if (targetSize.has_value() && *targetSize < neededSize)
       continue;
 
-    if (!p2RegisterNode.HasTarget(target))
-      continue;
-
-    // If multiple targets have been found, return MayAlias
-    if (overlapping.has_value())
+    if (p2RegisterNode.HasTarget(target))
       return MayAlias;
-
-    overlapping = &target;
-  }
-
-  // If there is a single overlapping abstract memory location between p1 and p2,
-  // check if it represents a single region in memory that is the same size as both s1 and s2
-  if (overlapping.has_value() && s1 == s2)
-  {
-    // A single memory node may represent multiple locations
-    if (!IsRepresentingSingleMemoryLocation(**overlapping))
-      return MayAlias;
-
-    const auto targetSize = GetMemoryNodeSize(**overlapping);
-    if (targetSize.has_value() && targetSize == s1)
-      return MustAlias;
-
-    return MayAlias;
   }
 
   return NoAlias;
@@ -163,7 +177,11 @@ ChainedAliasAnalysis::Query(
 
   // Anything other than MayAlias is precise, and can be returned right away
   if (firstResponse != MayAlias)
+  {
+    [[maybe_unused]] AliasQueryResponse opposite = firstResponse == MustAlias ? NoAlias : MustAlias;
+    JLM_ASSERT(Second_.Query(p1, s1, p2, s2) != opposite);
     return firstResponse;
+  }
 
   return Second_.Query(p1, s1, p2, s2);
 }
@@ -261,6 +279,15 @@ BasicAliasAnalysis::Query(
   if (!TraceAllPointerOrigins(p2Traced, p2TraceCollection))
     return MayAlias;
 
+  // If one of the trace collections only contains memory locations that are too small
+  // to be the target of the other memory operation, return NoAlias
+  const auto largestP1Target = GetLargestPossibleOrigin(p1TraceCollection);
+  const auto largestP2Target = GetLargestPossibleOrigin(p2TraceCollection);
+  if (largestP1Target.has_value() && s2 > *largestP1Target)
+    return NoAlias;
+  if (largestP2Target.has_value() && s1 > *largestP2Target)
+    return NoAlias;
+
   // If each trace collection has only one top origin, check if they have the same base pointer
   if (p1TraceCollection.TopOrigins.size() == 1 && p2TraceCollection.TopOrigins.size() == 1)
   {
@@ -317,7 +344,9 @@ CalculateIntraTypeGepOffset(
   if (inputIndex >= gepNode.ninputs())
     return 0;
 
-  // The first GEP input is not an intra-type offset
+  // GEP input 0 is the pointer being offset
+  // GEP input 1 is the number of whole types
+  // Intra-type offsets start at input 2 and beyond
   JLM_ASSERT(inputIndex >= 2);
 
   auto & gepInput = *gepNode.input(inputIndex)->origin();
@@ -584,6 +613,67 @@ BasicAliasAnalysis::HasOnlyOriginalTopOrigins(TraceCollection & traces)
       return false;
   }
   return true;
+}
+
+std::optional<size_t>
+BasicAliasAnalysis::GetOriginalOriginSize(const rvsdg::output & pointer)
+{
+  if (auto delta = rvsdg::TryGetOwnerNode<delta::node>(pointer))
+    return GetLlvmTypeSize(*delta->GetOperation().Type());
+  if (auto import = dynamic_cast<const GraphImport *>(&pointer))
+    return GetLlvmTypeSize(*import->ValueType());
+  if (auto node = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(pointer))
+  {
+    if (auto allocaOp = dynamic_cast<const alloca_op *>(&node->GetOperation()))
+    {
+      const auto elementCount = GetConstantIntegerValue(*node->input(0)->origin());
+      if (elementCount.has_value())
+        return *elementCount * GetLlvmTypeSize(*allocaOp->ValueType());
+    }
+    if (is<malloc_op>(node))
+    {
+      const auto mallocSize = GetConstantIntegerValue(*node->input(0)->origin());
+      if (mallocSize.has_value())
+        return *mallocSize;
+    }
+  }
+
+  return std::nullopt;
+}
+
+std::optional<size_t>
+BasicAliasAnalysis::GetRemainingSize(TracedPointerOrigin trace)
+{
+  const auto totalSize = GetOriginalOriginSize(*trace.BasePointer);
+  if (!totalSize.has_value())
+    return std::nullopt;
+
+  if (!trace.Offset.has_value())
+    return *totalSize;
+
+  // Avoid wrap-around by truncating remaining size to min 0
+  if (*trace.Offset > 0 && static_cast<size_t>(*trace.Offset) > *totalSize)
+    return 0;
+
+  return *totalSize - *trace.Offset;
+}
+
+std::optional<size_t>
+BasicAliasAnalysis::GetLargestPossibleOrigin(TraceCollection & traces)
+{
+  size_t largestSize = 0;
+  for (auto [basePointer, offset] : traces.TopOrigins)
+  {
+    auto remaining = GetOriginalOriginSize(*basePointer);
+
+    // If any top origin has unknown size, give up
+    if (!remaining.has_value())
+      return std::nullopt;
+
+    largestSize = std::max(largestSize, *remaining);
+  }
+
+  return largestSize;
 }
 
 bool

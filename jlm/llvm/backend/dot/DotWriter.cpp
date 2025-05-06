@@ -177,7 +177,7 @@ SetAdditionalNodeAttributes(
 
     if (typeGraph)
     {
-      auto & typeNode = GetOrCreateTypeGraphNode(*delta->GetOperation().Type(),  *typeGraph);
+      auto & typeNode = GetOrCreateTypeGraphNode(*delta->GetOperation().Type(), *typeGraph);
       node.SetAttributeGraphElement("type", typeNode);
     }
   }

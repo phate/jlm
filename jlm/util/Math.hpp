@@ -44,7 +44,8 @@ Log2Floor(T value)
  * RoundUpToPowerOf2(9) == 16
  */
 template<class T>
-static constexpr T RoundUpToPowerOf2(T value)
+static constexpr T
+RoundUpToPowerOf2(T value)
 {
   // 2^0 == 1 is the lowest possible power of two
   if (value <= 1)
