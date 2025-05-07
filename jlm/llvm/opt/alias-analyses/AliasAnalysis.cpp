@@ -275,9 +275,9 @@ BasicAliasAnalysis::Query(const rvsdg::output & p1, size_t s1, const rvsdg::outp
   if (!TraceAllPointerOrigins(p2Traced, p2TraceCollection))
     return MayAlias;
 
-  // Some of the traced top origins may be memory locations that are too small, so ignore them
-  RemoveUndersizedTopOrigins(p1TraceCollection, s1);
-  RemoveUndersizedTopOrigins(p2TraceCollection, s2);
+  // Removes origins that can not possibly be the targets of operations on [p1, p1 + s1)
+  RemoveTopOriginsWithRemainingSizeBelow(p1TraceCollection, s1);
+  RemoveTopOriginsWithRemainingSizeBelow(p2TraceCollection, s2);
 
   // If each trace collection has only one top origin, check if they have the same base pointer
   if (p1TraceCollection.TopOrigins.size() == 1 && p2TraceCollection.TopOrigins.size() == 1)
@@ -288,7 +288,21 @@ BasicAliasAnalysis::Query(const rvsdg::output & p1, size_t s1, const rvsdg::outp
       return QueryOffsets(p1Offset, s1, p2Offset, s2);
   }
 
-  // Any overlap in the collections' top sets means there is a possibility of aliasing
+  // If operation sizes differ, check if the smaller one only has targets too small for the larger
+  if (s1 < s2)
+  {
+    const auto largestP1Target = GetLargestTopOriginSize(p1TraceCollection);
+    if (largestP1Target.has_value() && *largestP1Target < s2)
+      return NoAlias;
+  }
+  else if (s2 < s1)
+  {
+    const auto largestP2Target = GetLargestTopOriginSize(p2TraceCollection);
+    if (largestP2Target.has_value() && *largestP2Target < s1)
+      return NoAlias;
+  }
+
+  // Any direct overlap in the collections' top sets means there is a possibility of aliasing
   if (DoTraceCollectionsOverlap(p1TraceCollection, s1, p2TraceCollection, s2))
     return MayAlias;
 
@@ -549,35 +563,6 @@ BasicAliasAnalysis::TraceAllPointerOrigins(TracedPointerOrigin p, TraceCollectio
 }
 
 bool
-BasicAliasAnalysis::DoTraceCollectionsOverlap(
-    TraceCollection & tc1,
-    size_t s1,
-    TraceCollection & tc2,
-    size_t s2)
-{
-  // For operations to alias due to possibly targeting the same original origin
-  // neither operation can be larger than the memory location defined at that original origin
-  const auto neededSize = std::max(s1, s2);
-
-  for (auto [p1Origin, p1Offset] : tc1.TopOrigins)
-  {
-    auto p2Find = tc2.TopOrigins.find(p1Origin);
-    if (p2Find == tc2.TopOrigins.end())
-      continue;
-
-    const auto targetSize = GetOriginalOriginSize(*p1Origin);
-    if (targetSize.has_value() && targetSize < neededSize)
-      continue;
-
-    auto p2Offset = p2Find->second;
-    if (QueryOffsets(p1Offset, s1, p2Offset, s2) != NoAlias)
-      return true;
-  }
-
-  return false;
-}
-
-bool
 BasicAliasAnalysis::IsOriginalOrigin(const rvsdg::output & pointer)
 {
   // Each GraphImport represents a unique object
@@ -641,6 +626,20 @@ BasicAliasAnalysis::GetOriginalOriginSize(const rvsdg::output & pointer)
 }
 
 std::optional<size_t>
+BasicAliasAnalysis::GetLargestTopOriginSize(TraceCollection & traces)
+{
+  size_t largest = 0;
+  for (auto [basePointer, offset] : traces.TopOrigins)
+  {
+    const auto targetSize = GetOriginalOriginSize(*basePointer);
+    if (!targetSize.has_value())
+      return std::nullopt;
+    largest = std::max(largest, *targetSize);
+  }
+  return largest;
+}
+
+std::optional<size_t>
 BasicAliasAnalysis::GetRemainingSize(TracedPointerOrigin trace)
 {
   const auto totalSize = GetOriginalOriginSize(*trace.BasePointer);
@@ -658,7 +657,7 @@ BasicAliasAnalysis::GetRemainingSize(TracedPointerOrigin trace)
 }
 
 void
-BasicAliasAnalysis::RemoveUndersizedTopOrigins(TraceCollection & traces, size_t s)
+BasicAliasAnalysis::RemoveTopOriginsWithRemainingSizeBelow(TraceCollection & traces, size_t s)
 {
   auto it = traces.TopOrigins.begin();
   while (it != traces.TopOrigins.end())
@@ -669,6 +668,27 @@ BasicAliasAnalysis::RemoveUndersizedTopOrigins(TraceCollection & traces, size_t 
     else
       it++;
   }
+}
+
+bool
+BasicAliasAnalysis::DoTraceCollectionsOverlap(
+    TraceCollection & tc1,
+    size_t s1,
+    TraceCollection & tc2,
+    size_t s2)
+{
+  for (auto [p1Origin, p1Offset] : tc1.TopOrigins)
+  {
+    auto p2Find = tc2.TopOrigins.find(p1Origin);
+    if (p2Find == tc2.TopOrigins.end())
+      continue;
+
+    auto p2Offset = p2Find->second;
+    if (QueryOffsets(p1Offset, s1, p2Offset, s2) != NoAlias)
+      return true;
+  }
+
+  return false;
 }
 
 bool

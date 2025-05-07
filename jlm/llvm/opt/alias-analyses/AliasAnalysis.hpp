@@ -196,21 +196,6 @@ private:
   TraceAllPointerOrigins(TracedPointerOrigin p, TraceCollection & traceCollection);
 
   /**
-   * Checks if any of the top origins in the two trace collections are the same,
-   * and have overlapping offsets.
-   * Only identical top origins are considered, so if two distinct top origins
-   * point to the same memory, that aliasing will not be detected by this method.
-   *
-   * @param tc1
-   * @param s1
-   * @param tc2
-   * @param s2
-   * @return
-   */
-  [[nodiscard]] static bool
-  DoTraceCollectionsOverlap(TraceCollection & tc1, size_t s1, TraceCollection & tc2, size_t s2);
-
-  /**
    * Checks if the given pointer is the direct result of a memory location defining operation.
    * These operations are guaranteed to output pointers that do not alias any pointer,
    * except for those that are based on the original pointer itself.
@@ -242,6 +227,15 @@ private:
   GetOriginalOriginSize(const rvsdg::output & pointer);
 
   /**
+   * Gets the size of the largest possible target in the given trace collection.
+   * Size includes the whole target region, regardless of what offset the trace has.
+   * @param traces the trace collection
+   * @return the size of the largest target, or nullopt if unknown
+   */
+  static std::optional<size_t>
+  GetLargestTopOriginSize(TraceCollection & traces);
+
+  /**
    * Given a traced pointer origin like p, where
    *  b = alloca[3 x i32]
    *  p = b + 8
@@ -269,7 +263,22 @@ private:
    * @param s the size of the operation being performed at the traced pointer
    */
   static void
-  RemoveUndersizedTopOrigins(TraceCollection & traces, size_t s);
+  RemoveTopOriginsWithRemainingSizeBelow(TraceCollection & traces, size_t s);
+
+  /**
+   * Checks if any of the top origins in the two trace collections are the same,
+   * and have overlapping offsets.
+   * Only identical top origins are considered, so if two distinct top origins
+   * point to the same memory, that aliasing will not be detected by this method.
+   *
+   * @param tc1
+   * @param s1
+   * @param tc2
+   * @param s2
+   * @return
+   */
+  [[nodiscard]] static bool
+  DoTraceCollectionsOverlap(TraceCollection & tc1, size_t s1, TraceCollection & tc2, size_t s2);
 
   /**
    * Checks if the given pointer may have escaped to somewhere it cannot be traced.
