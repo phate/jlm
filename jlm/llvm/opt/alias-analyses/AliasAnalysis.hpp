@@ -279,36 +279,6 @@ private:
    */
   [[nodiscard]] static bool
   DoTraceCollectionsOverlap(TraceCollection & tc1, size_t s1, TraceCollection & tc2, size_t s2);
-
-  /**
-   * Checks if the given pointer may have escaped to somewhere it cannot be traced.
-   * The analysis is simple, and considers the output of ALLOCAs.
-   * If the output ever reaches an operation that "takes the address" of the ALLOCA,
-   * it will be marked as having escaped.
-   *
-   * This function has the following property:
-   * For any original origin that has not escaped, any RVSDG output that holds a pointer to it,
-   * can also be traced back to the origin using TraceAllPointerOrigins.
-   *
-   * @param pointer the output to be analyzed
-   * @return false if no
-   */
-  [[nodiscard]] bool
-  HasOriginEscaped(const rvsdg::output & pointer);
-
-  /**
-   * Checks if any top origin in the trace collection is defined as escaping.
-   * @param traces the trace collection
-   * @return true if any top origin escaped
-   */
-  [[nodiscard]] bool
-  HasAnyTopOriginEscaped(TraceCollection & traces);
-
-  /**
-   * Memoization of escape analysis queries.
-   * It assumes that no changes are made to the underlying RVSDG between queries.
-   */
-  std::unordered_map<const rvsdg::output *, bool> EscapeAnalysisResults_;
 };
 
 /**

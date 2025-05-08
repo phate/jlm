@@ -21,7 +21,7 @@ namespace jlm::llvm::aa
  */
 static constexpr bool RemoveDuplicatePointers = true;
 
-static constexpr bool OutputAliasingGraph = true;
+static constexpr bool OutputAliasingGraph = false;
 
 std::string_view
 PrecisionEvaluationModeToString(PrecisionEvaluator::Mode mode)

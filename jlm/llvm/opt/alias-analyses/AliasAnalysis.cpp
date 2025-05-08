@@ -3,10 +3,10 @@
  * See COPYING for terms of redistribution.
  */
 
-#include "MemoryStateEncoder.hpp"
 #include <jlm/llvm/ir/operators.hpp>
 #include <jlm/llvm/ir/operators/alloca.hpp>
 #include <jlm/llvm/ir/operators/delta.hpp>
+#include <jlm/llvm/ir/operators/IntegerOperations.hpp>
 #include <jlm/llvm/ir/operators/IOBarrier.hpp>
 #include <jlm/llvm/opt/alias-analyses/AliasAnalysis.hpp>
 #include <jlm/rvsdg/gamma.hpp>
@@ -14,8 +14,8 @@
 #include <jlm/rvsdg/theta.hpp>
 #include <jlm/util/Math.hpp>
 
-#include <jlm/llvm/ir/operators/IntegerOperations.hpp>
 #include <numeric>
+#include <queue>
 
 namespace jlm::llvm::aa
 {
@@ -275,7 +275,8 @@ BasicAliasAnalysis::Query(const rvsdg::output & p1, size_t s1, const rvsdg::outp
   if (!TraceAllPointerOrigins(p2Traced, p2TraceCollection))
     return MayAlias;
 
-  // Removes origins that can not possibly be the targets of operations on [p1, p1 + s1)
+  // Removes top origins that can not possibly be valid targets due to being too small.
+  // If p1 + s1 is outside the range of a top origin, then p1 can not target it
   RemoveTopOriginsWithRemainingSizeBelow(p1TraceCollection, s1);
   RemoveTopOriginsWithRemainingSizeBelow(p2TraceCollection, s2);
 
@@ -311,22 +312,15 @@ BasicAliasAnalysis::Query(const rvsdg::output & p1, size_t s1, const rvsdg::outp
   // o4 is some output that can not be traced further, but it is also not original.
   // It is possible for o4 to be a pointer to ALLOCA[a]+20, in which case there is aliasing.
 
-  // If both trace collections only contain original pointers, with no overlap, there is NoAlias.
+  // We already know that there is no direct overlap in the top origin sets,
+  // so if both trace collections only contain original pointers, there is NoAlias.
   const bool p1AllTopsOriginal = HasOnlyOriginalTopOrigins(p1TraceCollection);
   const bool p2AllTopsOriginal = HasOnlyOriginalTopOrigins(p2TraceCollection);
 
   if (p1AllTopsOriginal && p2AllTopsOriginal)
     return NoAlias;
 
-  // If one of the pointers has a top origin set containing only fully traceable ALLOCAs,
-  // it is not possible for the other pointer to target any of them,
-  // as they would be explicitly included in its top origin set
-  const bool p1AnyEscaped = HasAnyTopOriginEscaped(p1TraceCollection);
-  const bool p2AnyEscaped = HasAnyTopOriginEscaped(p2TraceCollection);
-
-  if (!p1AnyEscaped || !p2AnyEscaped)
-    return NoAlias;
-
+  // At least one of the trace sets contained
   return MayAlias;
 }
 
@@ -389,7 +383,6 @@ CalculateIntraTypeGepOffset(
     return std::nullopt;
   }
 
-  std::cerr << "GEP type: " << typeid(type).name() << std::endl;
   JLM_UNREACHABLE("Unknown GEP type");
 }
 
@@ -662,7 +655,7 @@ BasicAliasAnalysis::RemoveTopOriginsWithRemainingSizeBelow(TraceCollection & tra
   auto it = traces.TopOrigins.begin();
   while (it != traces.TopOrigins.end())
   {
-    const auto remainingSize = GetRemainingSize({it->first, it->second});
+    const auto remainingSize = GetRemainingSize({ it->first, it->second });
     if (remainingSize.has_value() && *remainingSize < s)
       it = traces.TopOrigins.erase(it);
     else
@@ -685,25 +678,6 @@ BasicAliasAnalysis::DoTraceCollectionsOverlap(
 
     auto p2Offset = p2Find->second;
     if (QueryOffsets(p1Offset, s1, p2Offset, s2) != NoAlias)
-      return true;
-  }
-
-  return false;
-}
-
-bool
-BasicAliasAnalysis::HasOriginEscaped([[maybe_unused]] const rvsdg::output & pointer)
-{
-  // TODO: Implement
-  return true;
-}
-
-bool
-BasicAliasAnalysis::HasAnyTopOriginEscaped(TraceCollection & traces)
-{
-  for (auto [topOrigin, _] : traces.TopOrigins)
-  {
-    if (HasOriginEscaped(*topOrigin))
       return true;
   }
 
