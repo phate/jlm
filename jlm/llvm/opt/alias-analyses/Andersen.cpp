@@ -107,7 +107,7 @@ Andersen::Configuration::GetAllConfigurations()
     if (config.IsOfflineVariableSubstitutionEnabled())
     {
       config.EnableHybridCycleDetection(true);
-      // TODO: PickLazyCycleDetection(config);
+      PickLazyCycleDetection(config);
     }
   };
   auto PickOnlineCycleDetection = [&](Configuration config)
@@ -145,10 +145,12 @@ Andersen::Configuration::GetAllConfigurations()
     PickWorklistPolicy(config);
     config.SetSolver(Solver::Naive);
     PickOfflineNormalization(config);
-    config.SetSolver(Solver::WavePropagation);
-    configs.push_back(config);
-    config.SetSolver(Solver::DeepPropagation);
-    configs.push_back(config);
+    // TODO: For the PIP paper we do not include Wave and Deep
+    // They do not affect the results, and do not support PIP currently
+    // config.SetSolver(Solver::WavePropagation);
+    // configs.push_back(config);
+    // config.SetSolver(Solver::DeepPropagation);
+    // configs.push_back(config);
   };
   auto PickOfflineVariableSubstitution = [&](Configuration config)
   {
