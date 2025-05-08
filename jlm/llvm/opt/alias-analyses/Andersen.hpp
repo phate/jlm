@@ -65,7 +65,9 @@ public:
     enum class Solver
     {
       Naive,
-      Worklist
+      Worklist,
+      WavePropagation,
+      DeepPropagation
     };
 
     /**

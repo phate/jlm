@@ -989,8 +989,10 @@ TestStatistics()
   assert(statisticsCollector.NumCollectedStatistics() == 1);
   const auto & statistics = *statisticsCollector.CollectedStatistics().begin();
 
+#ifndef ANDERSEN_NO_FLAGS
   assert(statistics.GetMeasurementValue<uint64_t>("#StoreConstraints") == 0);
   assert(statistics.GetMeasurementValue<uint64_t>("#LoadConstraints") == 1);
+#endif
   assert(statistics.GetMeasurementValue<uint64_t>("#PointsToGraphNodes") == ptg->NumNodes());
   assert(statistics.GetTimerElapsedNanoseconds("AnalysisTimer") > 0);
 
@@ -1094,7 +1096,22 @@ TestConstructPointsToGraph()
   set.UnifyPointerObjects(lambdaR, malloc0);
 
   // Mark a register as pointing to external
+#ifdef ANDERSEN_NO_FLAGS
+  // Do this manually when no flags
+  set.AddToPointsToSet(mallocR, set.GetExternalObject());
+  set.AddToPointsToSet(mallocR, delta0);
+  set.AddToPointsToSet(mallocR, import0);
+
+  set.AddToPointsToSet(delta0, set.GetExternalObject());
+  set.AddToPointsToSet(delta0, delta0);
+  set.AddToPointsToSet(delta0, import0);
+
+  set.AddToPointsToSet(import0, set.GetExternalObject());
+  set.AddToPointsToSet(import0, delta0);
+  set.AddToPointsToSet(import0, import0);
+#else
   set.MarkAsPointingToExternal(mallocR);
+#endif
   // And a memory object as escaped
   set.MarkAsEscaped(delta0);
 

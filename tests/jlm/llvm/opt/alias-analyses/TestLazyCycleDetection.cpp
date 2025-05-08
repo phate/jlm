@@ -17,6 +17,10 @@
 static int
 TestUnifiesCycles()
 {
+#ifdef ANDERSEN_NO_FLAGS
+  return 0;
+#endif
+
   using namespace jlm;
   using namespace jlm::llvm::aa;
 

@@ -41,17 +41,13 @@ PointsToAnalysisStateEncoder<TPointsToAnalysis, TModRefSummarizer>::Run(
   precisionEvaluator.EvaluateAliasAnalysisClient(rvsdgModule, ptgAA, statisticsCollector);
   precisionEvaluator.EvaluateAliasAnalysisClient(rvsdgModule, ptgPlusBasicAA, statisticsCollector);
 
-  // Evaluate precision again with a different mode
-  precisionEvaluator.SetMode(PrecisionEvaluator::Mode::ClobberingStores);
-  precisionEvaluator.EvaluateAliasAnalysisClient(rvsdgModule, basicAA, statisticsCollector);
-  precisionEvaluator.EvaluateAliasAnalysisClient(rvsdgModule, ptgAA, statisticsCollector);
-  precisionEvaluator.EvaluateAliasAnalysisClient(rvsdgModule, ptgPlusBasicAA, statisticsCollector);
+  /*
+  TODO: Add encoding back in
+  auto modRefSummary = TModRefSummarizer::Create(rvsdgModule, *pointsToGraph, statisticsCollector);
 
-  // auto modRefSummary = TModRefSummarizer::Create(rvsdgModule, *pointsToGraph,
-  // statisticsCollector);
-
-  // MemoryStateEncoder encoder;
-  // encoder.Encode(rvsdgModule, *modRefSummary, statisticsCollector);
+  MemoryStateEncoder encoder;
+  encoder.Encode(rvsdgModule, *modRefSummary, statisticsCollector);
+  */
 }
 
 // Explicitly initialize all combinations

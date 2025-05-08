@@ -12,6 +12,7 @@
 
 #include <cassert>
 
+#ifndef ANDERSEN_NO_FLAGS
 static bool
 StringContains(std::string_view haystack, std::string_view needle)
 {
@@ -822,7 +823,7 @@ TestDrawSubsetGraph()
 }
 
 // Tests crating a ConstraintSet with multiple different constraints and calling Solve()
-template<bool useWorklist, typename... Args>
+template<jlm::llvm::aa::Andersen::Configuration::Solver solver, typename... Args>
 static void
 TestPointerObjectConstraintSetSolve(Args... args)
 {
@@ -890,14 +891,22 @@ TestPointerObjectConstraintSetSolve(Args... args)
   constraints.AddConstraint(LoadConstraint(reg[10], reg[8]));
 
   // Find a solution to all the constraints
-  if constexpr (useWorklist)
-  {
-    constraints.SolveUsingWorklist(args...);
-  }
-  else
+  if constexpr (solver == Andersen::Configuration::Solver::Naive)
   {
     static_assert(sizeof...(args) == 0, "The naive solver takes no arguments");
     constraints.SolveNaively();
+  }
+  else if constexpr (solver == Andersen::Configuration::Solver::Worklist)
+  {
+    constraints.SolveUsingWorklist(args...);
+  }
+  else if constexpr (solver == Andersen::Configuration::Solver::WavePropagation)
+  {
+    constraints.SolveUsingWavePropagation();
+  }
+  else if constexpr (solver == Andersen::Configuration::Solver::DeepPropagation)
+  {
+    constraints.SolveUsingDeepPropagation();
   }
 
   // alloca1 should point to alloca2, etc
@@ -1007,20 +1016,23 @@ TestPointerObjectSet()
   TestAddPointsToExternalConstraint();
   TestAddRegisterContentEscapedConstraint();
   TestDrawSubsetGraph();
-  TestPointerObjectConstraintSetSolve<false>();
 
-  auto allConfigs = jlm::llvm::aa::Andersen::Configuration::GetAllConfigurations();
+  using Configuration = jlm::llvm::aa::Andersen::Configuration;
+
+  TestPointerObjectConstraintSetSolve<Configuration::Solver::Naive>();
+
+  auto allConfigs = Configuration::GetAllConfigurations();
   for (const auto & config : allConfigs)
   {
     // Ignore all configs that enable features that do not affect SolveUsingWorklist()
-    if (config.GetSolver() != jlm::llvm::aa::Andersen::Configuration::Solver::Worklist)
+    if (config.GetSolver() != Configuration::Solver::Worklist)
       continue;
     if (config.IsOfflineVariableSubstitutionEnabled())
       continue;
     if (config.IsOfflineConstraintNormalizationEnabled())
       continue;
 
-    TestPointerObjectConstraintSetSolve<true>(
+    TestPointerObjectConstraintSetSolve<Configuration::Solver::Worklist>(
         config.GetWorklistSoliverPolicy(),
         config.IsOnlineCycleDetectionEnabled(),
         config.IsHybridCycleDetectionEnabled(),
@@ -1029,8 +1041,13 @@ TestPointerObjectSet()
         config.IsPreferImplicitPointeesEnabled());
   }
 
+  TestPointerObjectConstraintSetSolve<Configuration::Solver::WavePropagation>();
+
+  TestPointerObjectConstraintSetSolve<Configuration::Solver::DeepPropagation>();
+
   TestClonePointerObjectConstraintSet();
   return 0;
 }
 
 JLM_UNIT_TEST_REGISTER("jlm/llvm/opt/alias-analyses/TestPointerObjectSet", TestPointerObjectSet)
+#endif

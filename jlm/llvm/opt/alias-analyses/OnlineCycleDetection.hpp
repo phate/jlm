@@ -54,32 +54,44 @@ public:
     // At this point, all subsetEdges are between unification roots only
     // Use TarjanSCC to find our starting topological ordering
     std::vector<PointerObjectIndex> sccIndex;
-    std::vector<PointerObjectIndex> topologicalOrder;
+    std::vector<PointerObjectIndex> reverseTopologicalOrder;
+
+    // Used by Tarjan to avoid traversing non-roots
+    const auto GetUnificationRoot = [&](PointerObjectIndex node)
+    {
+      return Set_.GetUnificationRoot(node);
+    };
 
     util::FindStronglyConnectedComponents<PointerObjectIndex>(
         Set_.NumPointerObjects(),
+        GetUnificationRoot,
         GetSuccessors_,
         sccIndex,
-        topologicalOrder);
+        reverseTopologicalOrder);
+
+    // Helper for looking up topological order instead of reverse topological
+    const auto topologicalOrder = [&](const size_t i) -> PointerObjectIndex &
+    {
+      return reverseTopologicalOrder[reverseTopologicalOrder.size() - 1 - i];
+    };
 
     // Go through the topological ordering and add all unification roots to OCD_ObjectToTopoOrder
     // Also, if we find any new SCCs while doing this, perform unification right now
-    for (PointerObjectIndex i = 0; i < topologicalOrder.size(); i++)
+    for (PointerObjectIndex i = 0; i < reverseTopologicalOrder.size(); i++)
     {
-      PointerObjectIndex node = topologicalOrder[i];
-      if (!Set_.IsUnificationRoot(node))
-        continue; // We only care about unification roots
+      PointerObjectIndex node = topologicalOrder(i);
+      JLM_ASSERT(Set_.IsUnificationRoot(node));
 
+      // Check if we can unify node with the next node in the topological order
       const auto nextIndex = i + 1;
 
-      // If this root belongs to the same scc as the next root, they should be unified
-      if (nextIndex < topologicalOrder.size()
-          && sccIndex[node] == sccIndex[topologicalOrder[nextIndex]])
+      if (nextIndex < reverseTopologicalOrder.size()
+          && sccIndex[node] == sccIndex[topologicalOrder(nextIndex)])
       {
-        // We know that the SCC consists of only roots, since GetSuccessors_ returns only roots
-        JLM_ASSERT(Set_.IsUnificationRoot(topologicalOrder[nextIndex]));
+        // We know that the SCC consists of only roots
+        JLM_ASSERT(Set_.IsUnificationRoot(topologicalOrder(nextIndex)));
         // Make the next object the root, to keep the unification going
-        topologicalOrder[nextIndex] = UnifyPointerObjects_(node, topologicalOrder[nextIndex]);
+        topologicalOrder(nextIndex) = UnifyPointerObjects_(node, topologicalOrder(nextIndex));
       }
       else
       {
