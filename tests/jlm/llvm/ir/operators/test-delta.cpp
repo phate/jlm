@@ -65,10 +65,11 @@ static void
 TestRemoveDeltaInputsWhere()
 {
   using namespace jlm::llvm;
+  using namespace jlm::rvsdg;
 
   // Arrange
   auto valueType = jlm::tests::valuetype::Create();
-  RvsdgModule rvsdgModule(jlm::util::filepath(""), "", "");
+  jlm::llvm::RvsdgModule rvsdgModule(jlm::util::filepath(""), "", "");
 
   auto x = &jlm::tests::GraphImport::Create(rvsdgModule.Rvsdg(), valueType, "");
 
@@ -83,10 +84,10 @@ TestRemoveDeltaInputsWhere()
   auto deltaInput1 = deltaNode->add_ctxvar(x)->input();
   deltaNode->add_ctxvar(x)->input();
 
-  auto result = jlm::tests::SimpleNode::Create(
-                    *deltaNode->subregion(),
+  auto result = jlm::rvsdg::CreateOpNode<jlm::tests::test_op>(
                     { deltaInput1->argument() },
-                    { valueType })
+                    std::vector<std::shared_ptr<const Type>>{ valueType },
+                    std::vector<std::shared_ptr<const Type>>{ valueType })
                     .output(0);
 
   deltaNode->finalize(result);
@@ -132,10 +133,11 @@ static void
 TestPruneDeltaInputs()
 {
   using namespace jlm::llvm;
+  using namespace jlm::rvsdg;
 
   // Arrange
   auto valueType = jlm::tests::valuetype::Create();
-  RvsdgModule rvsdgModule(jlm::util::filepath(""), "", "");
+  jlm::llvm::RvsdgModule rvsdgModule(jlm::util::filepath(""), "", "");
 
   auto x = &jlm::tests::GraphImport::Create(rvsdgModule.Rvsdg(), valueType, "");
 
@@ -151,10 +153,10 @@ TestPruneDeltaInputs()
   auto deltaInput1 = deltaNode->add_ctxvar(x)->input();
   deltaNode->add_ctxvar(x);
 
-  auto result = jlm::tests::SimpleNode::Create(
-                    *deltaNode->subregion(),
+  auto result = jlm::rvsdg::CreateOpNode<jlm::tests::test_op>(
                     { deltaInput1->argument() },
-                    { valueType })
+                    std::vector<std::shared_ptr<const Type>>{ valueType },
+                    std::vector<std::shared_ptr<const Type>>{ valueType })
                     .output(0);
 
   deltaNode->finalize(result);

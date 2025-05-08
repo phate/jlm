@@ -19,7 +19,7 @@ GetStatisticsIdNames()
 {
   static util::BijectiveMap<Statistics::Id, std::string_view> mapping = {
     { Statistics::Id::Aggregation, "Aggregation" },
-    { Statistics::Id::AgnosticMemoryNodeProvisioning, "AgnosticMemoryNodeProvider" },
+    { Statistics::Id::AgnosticModRefSummarizer, "AgnosticModRefSummarizer" },
     { Statistics::Id::AndersenAnalysis, "AndersenAnalysis" },
     { Statistics::Id::Annotation, "Annotation" },
     { Statistics::Id::CommonNodeElimination, "CNE" },
@@ -27,6 +27,7 @@ GetStatisticsIdNames()
     { Statistics::Id::DataNodeToDelta, "DataNodeToDeltaStatistics" },
     { Statistics::Id::DeadNodeElimination, "DeadNodeElimination" },
     { Statistics::Id::FunctionInlining, "ILN" },
+    { Statistics::Id::IfConversion, "IfConversion" },
     { Statistics::Id::JlmToRvsdgConversion, "ControlFlowGraphToLambda" },
     { Statistics::Id::LoopUnrolling, "UNROLL" },
     { Statistics::Id::InvariantValueRedirection, "InvariantValueRedirection" },
@@ -34,7 +35,7 @@ GetStatisticsIdNames()
     { Statistics::Id::PullNodes, "PULL" },
     { Statistics::Id::PushNodes, "PUSH" },
     { Statistics::Id::ReduceNodes, "RED" },
-    { Statistics::Id::RegionAwareMemoryNodeProvisioning, "RegionAwareMemoryNodeProvision" },
+    { Statistics::Id::RegionAwareModRefSummarizer, "RegionAwareModRefSummarizer" },
     { Statistics::Id::RvsdgConstruction, "InterProceduralGraphToRvsdg" },
     { Statistics::Id::RvsdgDestruction, "RVSDGDESTRUCTION" },
     { Statistics::Id::RvsdgOptimization, "RVSDGOPTIMIZATION" },

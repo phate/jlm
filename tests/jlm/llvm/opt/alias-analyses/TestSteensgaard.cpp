@@ -38,6 +38,23 @@ assertTargets(
   assert(targets == node_targets);
 }
 
+/**
+ * @brief Checks that the set of Memory Nodes escaping the PointsToGraph is exactly equal
+ * to the given set of nodes. The external node is included implicitly if omitted.
+ * @param ptg the PointsToGraph
+ * @param nodes the complete set of nodes that should have escaped
+ * @return true if the \p ptg's escaped set is identical to \p nodes, false otherwise
+ */
+[[nodiscard]] static bool
+EscapedIsExactly(
+    const jlm::llvm::aa::PointsToGraph & ptg,
+    const std::unordered_set<const jlm::llvm::aa::PointsToGraph::MemoryNode *> & nodes)
+{
+  jlm::util::HashSet hashSet(nodes);
+  hashSet.Insert(&ptg.GetExternalMemoryNode());
+  return ptg.GetEscapedMemoryNodes() == hashSet;
+}
+
 static void
 TestStore1()
 {
@@ -74,9 +91,7 @@ TestStore1()
     assertTargets(lambda, {});
     assertTargets(plambda, { &lambda });
 
-    jlm::util::HashSet<const jlm::llvm::aa::PointsToGraph::MemoryNode *> expectedEscapedMemoryNodes(
-        { &lambda });
-    assert(ptg.GetEscapedMemoryNodes() == expectedEscapedMemoryNodes);
+    assert(EscapedIsExactly(ptg, { &lambda }));
   };
 
   jlm::tests::StoreTest1 test;
@@ -127,9 +142,7 @@ TestStore2()
     assertTargets(lambda, {});
     assertTargets(plambda, { &lambda });
 
-    jlm::util::HashSet<const jlm::llvm::aa::PointsToGraph::MemoryNode *> expectedEscapedMemoryNodes(
-        { &lambda });
-    assert(ptg.GetEscapedMemoryNodes() == expectedEscapedMemoryNodes);
+    assert(EscapedIsExactly(ptg, { &lambda }));
   };
 
   jlm::tests::StoreTest2 test;
@@ -160,9 +173,7 @@ TestLoad1()
     assertTargets(lambdaOutput, { &lambda });
     assertTargets(lambdaArgument0, { &lambda, &pointsToGraph.GetExternalMemoryNode() });
 
-    jlm::util::HashSet<const jlm::llvm::aa::PointsToGraph::MemoryNode *> expectedEscapedMemoryNodes(
-        { &lambda });
-    assert(pointsToGraph.GetEscapedMemoryNodes() == expectedEscapedMemoryNodes);
+    assert(EscapedIsExactly(pointsToGraph, { &lambda }));
   };
 
   jlm::tests::LoadTest1 test;
@@ -200,9 +211,7 @@ TestLoad2()
     assertTargets(pload_x, { &alloca_x, &alloca_y });
     assertTargets(pload_a, { &alloca_a, &alloca_b });
 
-    jlm::util::HashSet<const jlm::llvm::aa::PointsToGraph::MemoryNode *> expectedEscapedMemoryNodes(
-        { &lambdaMemoryNode });
-    assert(ptg.GetEscapedMemoryNodes() == expectedEscapedMemoryNodes);
+    assert(EscapedIsExactly(ptg, { &lambdaMemoryNode }));
   };
 
   jlm::tests::LoadTest2 test;
@@ -227,9 +236,7 @@ TestLoadFromUndef()
 
     assertTargets(undefValueNode, {});
 
-    jlm::util::HashSet<const jlm::llvm::aa::PointsToGraph::MemoryNode *> expectedEscapedMemoryNodes(
-        { &lambdaMemoryNode });
-    assert(pointsToGraph.GetEscapedMemoryNodes() == expectedEscapedMemoryNodes);
+    assert(EscapedIsExactly(pointsToGraph, { &lambdaMemoryNode }));
   };
 
   jlm::tests::LoadFromUndefTest test;
@@ -260,9 +267,7 @@ TestGetElementPtr()
     assertTargets(gepX, { &lambda, &pointsToGraph.GetExternalMemoryNode() });
     assertTargets(gepY, { &lambda, &pointsToGraph.GetExternalMemoryNode() });
 
-    jlm::util::HashSet<const jlm::llvm::aa::PointsToGraph::MemoryNode *> expectedEscapedMemoryNodes(
-        { &lambda });
-    assert(pointsToGraph.GetEscapedMemoryNodes() == expectedEscapedMemoryNodes);
+    assert(EscapedIsExactly(pointsToGraph, { &lambda }));
   };
 
   jlm::tests::GetElementPtrTest test;
@@ -292,9 +297,7 @@ TestBitCast()
     assertTargets(lambdaArg, { &lambda, &pointsToGraph.GetExternalMemoryNode() });
     assertTargets(bitCast, { &lambda, &pointsToGraph.GetExternalMemoryNode() });
 
-    jlm::util::HashSet<const jlm::llvm::aa::PointsToGraph::MemoryNode *> expectedEscapedMemoryNodes(
-        { &lambda });
-    assert(pointsToGraph.GetEscapedMemoryNodes() == expectedEscapedMemoryNodes);
+    assert(EscapedIsExactly(pointsToGraph, { &lambda }));
   };
 
   jlm::tests::BitCastTest test;
@@ -326,9 +329,7 @@ TestConstantPointerNull()
     assertTargets(lambdaArg, { &lambda, &externalMemoryNode });
     assertTargets(constantPointerNull, { &lambda, &externalMemoryNode });
 
-    jlm::util::HashSet<const jlm::llvm::aa::PointsToGraph::MemoryNode *> expectedEscapedMemoryNodes(
-        { &lambda });
-    assert(pointsToGraph.GetEscapedMemoryNodes() == expectedEscapedMemoryNodes);
+    assert(EscapedIsExactly(pointsToGraph, { &lambda }));
   };
 
   jlm::tests::ConstantPointerNullTest test;
@@ -363,9 +364,7 @@ TestBits2Ptr()
     auto & bits2ptr = pointsToGraph.GetRegisterNode(*test.GetBitsToPtrNode().output(0));
     assertTargets(bits2ptr, expectedMemoryNodes);
 
-    jlm::util::HashSet<const PointsToGraph::MemoryNode *> expectedEscapedMemoryNodes(
-        { &lambdaTestMemoryNode });
-    assert(pointsToGraph.GetEscapedMemoryNodes() == expectedEscapedMemoryNodes);
+    assert(EscapedIsExactly(pointsToGraph, { &lambdaTestMemoryNode }));
   };
 
   jlm::tests::Bits2PtrTest test;
@@ -428,9 +427,7 @@ TestCall1()
     assertTargets(lambda_h_cv0, { &lambda_f });
     assertTargets(lambda_h_cv1, { &lambda_g });
 
-    jlm::util::HashSet<const jlm::llvm::aa::PointsToGraph::MemoryNode *> expectedEscapedMemoryNodes(
-        { &lambda_h });
-    assert(ptg.GetEscapedMemoryNodes() == expectedEscapedMemoryNodes);
+    assert(EscapedIsExactly(ptg, { &lambda_h }));
   };
 
   jlm::tests::CallTest1 test;
@@ -485,9 +482,7 @@ TestCall2()
 
     assertTargets(malloc_out, { &malloc });
 
-    jlm::util::HashSet<const jlm::llvm::aa::PointsToGraph::MemoryNode *> expectedEscapedMemoryNodes(
-        { &lambda_test });
-    assert(ptg.GetEscapedMemoryNodes() == expectedEscapedMemoryNodes);
+    assert(EscapedIsExactly(ptg, { &lambda_test }));
   };
 
   jlm::tests::CallTest2 test;
@@ -537,9 +532,7 @@ TestIndirectCall()
     assertTargets(lambda_test_cv1, { &lambda_three, &lambda_four });
     assertTargets(lambda_test_cv2, { &lambda_three, &lambda_four });
 
-    jlm::util::HashSet<const jlm::llvm::aa::PointsToGraph::MemoryNode *> expectedEscapedMemoryNodes(
-        { &lambda_test });
-    assert(ptg.GetEscapedMemoryNodes() == expectedEscapedMemoryNodes);
+    assert(EscapedIsExactly(ptg, { &lambda_test }));
   };
 
   jlm::tests::IndirectCallTest1 test;
@@ -598,7 +591,7 @@ TestExternalCall1()
     auto & lambdaFArgument1 =
         pointsToGraph.GetRegisterNode(*test.LambdaF().GetFunctionArguments()[1]);
 
-    auto & callResult = pointsToGraph.GetRegisterNode(*test.CallG().Result(0));
+    auto & callResult = pointsToGraph.GetRegisterNode(*test.CallG().output(0));
 
     auto & externalMemory = pointsToGraph.GetExternalMemoryNode();
 
@@ -658,9 +651,10 @@ TestGamma()
       assertTargets(lambdaArgument, { &lambda, &pointsToGraph.GetExternalMemoryNode() });
     }
 
-    for (size_t n = 0; n < 4; n++)
+    auto entryvars = test.gamma->GetEntryVars();
+    assert(entryvars.size() == 4);
+    for (const auto & entryvar : entryvars)
     {
-      auto entryvar = test.gamma->GetEntryVar(n);
       auto & argument0 = pointsToGraph.GetRegisterNode(*entryvar.branchArgument[0]);
       auto & argument1 = pointsToGraph.GetRegisterNode(*entryvar.branchArgument[1]);
 
@@ -674,9 +668,7 @@ TestGamma()
       assertTargets(gammaOutput, { &lambda, &pointsToGraph.GetExternalMemoryNode() });
     }
 
-    jlm::util::HashSet<const jlm::llvm::aa::PointsToGraph::MemoryNode *> expectedEscapedMemoryNodes(
-        { &lambda });
-    assert(pointsToGraph.GetEscapedMemoryNodes() == expectedEscapedMemoryNodes);
+    assert(EscapedIsExactly(pointsToGraph, { &lambda }));
   };
 
   jlm::tests::GammaTest test;
@@ -713,9 +705,7 @@ TestTheta()
     assertTargets(thetaArgument2, { &lambda, &pointsToGraph.GetExternalMemoryNode() });
     assertTargets(thetaOutput2, { &lambda, &pointsToGraph.GetExternalMemoryNode() });
 
-    jlm::util::HashSet<const jlm::llvm::aa::PointsToGraph::MemoryNode *> expectedEscapedMemoryNodes(
-        { &lambda });
-    assert(pointsToGraph.GetEscapedMemoryNodes() == expectedEscapedMemoryNodes);
+    assert(EscapedIsExactly(pointsToGraph, { &lambda }));
   };
 
   jlm::tests::ThetaTest test;
@@ -758,9 +748,7 @@ TestDelta1()
     assertTargets(lambda_h_cv0, { &delta_f });
     assertTargets(lambda_h_cv1, { &lambda_g });
 
-    jlm::util::HashSet<const jlm::llvm::aa::PointsToGraph::MemoryNode *> expectedEscapedMemoryNodes(
-        { &lambda_h });
-    assert(ptg.GetEscapedMemoryNodes() == expectedEscapedMemoryNodes);
+    assert(EscapedIsExactly(ptg, { &lambda_h }));
   };
 
   jlm::tests::DeltaTest1 test;
@@ -808,9 +796,7 @@ TestDelta2()
     assertTargets(lambda_f2_cvd2, { &delta_d2 });
     assertTargets(lambda_f2_cvf1, { &lambda_f1 });
 
-    jlm::util::HashSet<const jlm::llvm::aa::PointsToGraph::MemoryNode *> expectedEscapedMemoryNodes(
-        { &lambda_f2 });
-    assert(ptg.GetEscapedMemoryNodes() == expectedEscapedMemoryNodes);
+    assert(EscapedIsExactly(ptg, { &lambda_f2 }));
   };
 
   jlm::tests::DeltaTest2 test;
@@ -858,9 +844,7 @@ TestImports()
     assertTargets(lambda_f2_cvd2, { &d2 });
     assertTargets(lambda_f2_cvf1, { &lambda_f1 });
 
-    jlm::util::HashSet<const jlm::llvm::aa::PointsToGraph::MemoryNode *> expectedEscapedMemoryNodes(
-        { &lambda_f2 });
-    assert(ptg.GetEscapedMemoryNodes() == expectedEscapedMemoryNodes);
+    assert(EscapedIsExactly(ptg, { &lambda_f2 }));
   };
 
   jlm::tests::ImportTest test;
@@ -888,11 +872,11 @@ TestPhi1()
     auto & lambda_test = ptg.GetLambdaNode(*test.lambda_test);
     auto & lambda_test_out = ptg.GetRegisterNode(*test.lambda_test->output());
 
-    auto & phi_rv = ptg.GetRegisterNode(*test.phi->begin_rv().output());
-    auto & phi_rv_arg = ptg.GetRegisterNode(*test.phi->begin_rv().output()->argument());
+    auto & phi_rv = ptg.GetRegisterNode(*test.phi->GetFixVars()[0].output);
+    auto & phi_rv_arg = ptg.GetRegisterNode(*test.phi->GetFixVars()[0].recref);
 
-    auto & gamma_result = ptg.GetRegisterNode(*test.gamma->subregion(0)->argument(1));
-    auto & gamma_fib = ptg.GetRegisterNode(*test.gamma->subregion(0)->argument(2));
+    auto & gamma_result = ptg.GetRegisterNode(*test.gamma->GetEntryVars()[1].branchArgument[0]);
+    auto & gamma_fib = ptg.GetRegisterNode(*test.gamma->GetEntryVars()[2].branchArgument[0]);
 
     auto & alloca = ptg.GetAllocaNode(*test.alloca);
     auto & alloca_out = ptg.GetRegisterNode(*test.alloca->output(0));
@@ -910,9 +894,7 @@ TestPhi1()
 
     assertTargets(alloca_out, { &alloca });
 
-    jlm::util::HashSet<const jlm::llvm::aa::PointsToGraph::MemoryNode *> expectedEscapedMemoryNodes(
-        { &lambda_test });
-    assert(ptg.GetEscapedMemoryNodes() == expectedEscapedMemoryNodes);
+    assert(EscapedIsExactly(ptg, { &lambda_test }));
   };
 
   jlm::tests::PhiTest1 test;
@@ -941,9 +923,7 @@ TestExternalMemory()
     assertTargets(lambdaFArgument0, { &lambdaF, &pointsToGraph.GetExternalMemoryNode() });
     assertTargets(lambdaFArgument1, { &lambdaF, &pointsToGraph.GetExternalMemoryNode() });
 
-    jlm::util::HashSet<const jlm::llvm::aa::PointsToGraph::MemoryNode *> expectedEscapedMemoryNodes(
-        { &lambdaF });
-    assert(pointsToGraph.GetEscapedMemoryNodes() == expectedEscapedMemoryNodes);
+    assert(EscapedIsExactly(pointsToGraph, { &lambdaF }));
   };
 
   jlm::tests::ExternalMemoryTest test;
@@ -981,10 +961,7 @@ TestEscapedMemory1()
     assertTargets(lambdaTestCv0, { deltaB });
     assertTargets(loadNode1Output, { deltaA, deltaX, deltaY, lambdaTest, externalMemory });
 
-    jlm::util::HashSet<const jlm::llvm::aa::PointsToGraph::MemoryNode *> expectedEscapedMemoryNodes(
-        { lambdaTest, deltaA, deltaX, deltaY });
-
-    assert(pointsToGraph.GetEscapedMemoryNodes() == expectedEscapedMemoryNodes);
+    assert(EscapedIsExactly(pointsToGraph, { lambdaTest, deltaA, deltaX, deltaY }));
   };
 
   jlm::tests::EscapedMemoryTest1 test;
@@ -1015,7 +992,7 @@ TestEscapedMemory2()
     auto externalMemory = &pointsToGraph.GetExternalMemoryNode();
 
     auto & externalFunction2CallResult =
-        pointsToGraph.GetRegisterNode(*test.ExternalFunction2Call->Result(0));
+        pointsToGraph.GetRegisterNode(*test.ExternalFunction2Call->output(0));
 
     assertTargets(
         externalFunction2CallResult,
@@ -1026,14 +1003,13 @@ TestEscapedMemory2()
           returnAddressMalloc,
           callExternalFunction1Malloc });
 
-    jlm::util::HashSet<const jlm::llvm::aa::PointsToGraph::MemoryNode *> expectedEscapedMemoryNodes(
+    assert(EscapedIsExactly(
+        pointsToGraph,
         { returnAddressFunction,
           callExternalFunction1,
           callExternalFunction2,
           returnAddressMalloc,
-          callExternalFunction1Malloc });
-
-    assert(pointsToGraph.GetEscapedMemoryNodes() == expectedEscapedMemoryNodes);
+          callExternalFunction1Malloc }));
   };
 
   jlm::tests::EscapedMemoryTest2 test;
@@ -1060,13 +1036,11 @@ TestEscapedMemory3()
     auto externalMemory = &pointsToGraph.GetExternalMemoryNode();
 
     auto & callExternalFunctionResult =
-        pointsToGraph.GetRegisterNode(*test.CallExternalFunction->Result(0));
+        pointsToGraph.GetRegisterNode(*test.CallExternalFunction->output(0));
 
     assertTargets(callExternalFunctionResult, { lambdaTest, deltaGlobal, externalMemory });
 
-    jlm::util::HashSet<const jlm::llvm::aa::PointsToGraph::MemoryNode *> expectedEscapedMemoryNodes(
-        { lambdaTest, deltaGlobal });
-    assert(pointsToGraph.GetEscapedMemoryNodes() == expectedEscapedMemoryNodes);
+    assert(EscapedIsExactly(pointsToGraph, { lambdaTest, deltaGlobal }));
   };
 
   jlm::tests::EscapedMemoryTest3 test;
@@ -1102,9 +1076,7 @@ TestMemcpy()
     assertTargets(memCpyDest, { globalArray, localArray });
     assertTargets(memCpySrc, { localArray, globalArray });
 
-    jlm::util::HashSet<const jlm::llvm::aa::PointsToGraph::MemoryNode *> expectedEscapedMemoryNodes(
-        { globalArray, localArray, lambdaF, lambdaG });
-    assert(pointsToGraph.GetEscapedMemoryNodes() == expectedEscapedMemoryNodes);
+    assert(EscapedIsExactly(pointsToGraph, { globalArray, localArray, lambdaF, lambdaG }));
   };
 
   jlm::tests::MemcpyTest test;
@@ -1263,9 +1235,7 @@ TestVariadicFunction1()
 
   auto & callOutput = pointsToGraph->GetRegisterNode(*test.GetCallH().output(0));
 
-  auto & escapedMemoryNodes = pointsToGraph->GetEscapedMemoryNodes();
-  assert(escapedMemoryNodes.Size() == 1);
-  assert(escapedMemoryNodes.Contains(&allocaMemoryNode));
+  assert(EscapedIsExactly(*pointsToGraph, { &allocaMemoryNode }));
 
   assertTargets(callOutput, { &allocaMemoryNode, &externalMemoryNode });
 }
@@ -1291,9 +1261,7 @@ TestVariadicFunction2()
 
   auto & allocaMemoryNode = pointsToGraph->GetAllocaNode(test.GetAllocaNode());
 
-  auto escapedMemoryNodes = pointsToGraph->GetEscapedMemoryNodes();
-  assert(escapedMemoryNodes.Size() == 1);
-  assert(escapedMemoryNodes.Contains(&allocaMemoryNode));
+  assert(EscapedIsExactly(*pointsToGraph, { &allocaMemoryNode }));
 }
 
 static void

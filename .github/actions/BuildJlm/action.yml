@@ -2,6 +2,11 @@ name: "Build jlm"
 description: "Configures and builds jlm along with the necessary dependencies."
 
 inputs:
+  build-mode:
+    description: "Sets build mode. Supported modes are 'release' and 'debug'"
+    default: "release"
+    required: false
+
   enable-hls:
     description: "Enables HLS dialect. Default is 'false'."
     default: "false"
@@ -27,18 +32,27 @@ inputs:
     default: "all"
     required: false
 
+  enable-asserts:
+    description: "Enables asserts."
+    default: "true"
+    required: false
+
 runs:
   using: "composite"
   steps:
     - name: "Validate input"
       if: ${{(inputs.enable-hls != 'true' && inputs.enable-hls != 'false')
         || (inputs.enable-mlir != 'true' && inputs.enable-mlir != 'false')
-        || (inputs.enable-coverage != 'true' && inputs.enable-coverage != 'false')}}
+        || (inputs.enable-coverage != 'true' && inputs.enable-coverage != 'false')
+        || (inputs.build-mode != 'release' && inputs.build-mode != 'debug')
+        || (inputs.enable-asserts != 'true' && inputs.enable-asserts != 'false')}}
       run: |
         echo "Invalid composite action inputs:"
         echo "enable-hls: ${{inputs.enable-hls}}"
         echo "enable-mlir: ${{inputs.enable-mlir}}"
         echo "enable-coverage: ${{inputs.enable-coverage}}"
+        echo "build-mode: ${{inputs.build-mode}}"
+        echo "enable-asserts ${{inputs.enable-asserts}}"
         exit 1
       shell: bash
 
@@ -60,15 +74,18 @@ runs:
     - name: "Collect command line arguments"
       id: collect
       run: |
-        export JLM_CONFIGURE_ARGUMENTS="--target release --enable-asserts"
+        export JLM_CONFIGURE_ARGUMENTS="--target ${{inputs.build-mode}}"
         if [[ "${{inputs.enable-hls}}" == "true" ]]; then
           JLM_CONFIGURE_ARGUMENTS="$JLM_CONFIGURE_ARGUMENTS --enable-hls=${{ github.workspace }}/build-circt/circt"
         fi
         if [[ "${{inputs.enable-mlir}}" == "true" ]]; then
-          JLM_CONFIGURE_ARGUMENTS="$JLM_CONFIGURE_ARGUMENTS --enable-mlir=${{ github.workspace }}/lib/mlir-rvsdg"
+          JLM_CONFIGURE_ARGUMENTS="$JLM_CONFIGURE_ARGUMENTS --enable-mlir=${{ github.workspace }}/build-mlir/usr"
         fi
         if [[ "${{inputs.enable-coverage}}" == "true" ]]; then
           JLM_CONFIGURE_ARGUMENTS="$JLM_CONFIGURE_ARGUMENTS --enable-coverage"
+        fi
+        if [[ "${{inputs.enable-asserts}}" == "true" ]]; then
+          JLM_CONFIGURE_ARGUMENTS="$JLM_CONFIGURE_ARGUMENTS --enable-asserts"
         fi
         JLM_CONFIGURE_ARGUMENTS="$JLM_CONFIGURE_ARGUMENTS CXX=${{inputs.cxx}}"
         echo "jlm_configure_arguments=$JLM_CONFIGURE_ARGUMENTS" >> $GITHUB_OUTPUT

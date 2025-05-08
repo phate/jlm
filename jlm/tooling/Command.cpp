@@ -4,21 +4,22 @@
  */
 
 #include <jlm/llvm/backend/dot/DotWriter.hpp>
-#include <jlm/llvm/backend/jlm2llvm/jlm2llvm.hpp>
-#include <jlm/llvm/backend/rvsdg2jlm/rvsdg2jlm.hpp>
+#include <jlm/llvm/backend/IpGraphToLlvmConverter.hpp>
+#include <jlm/llvm/backend/RvsdgToIpGraphConverter.hpp>
 #include <jlm/llvm/frontend/InterProceduralGraphConversion.hpp>
 #include <jlm/llvm/frontend/LlvmModuleConversion.hpp>
 #include <jlm/llvm/ir/ipgraph-module.hpp>
 #include <jlm/llvm/ir/RvsdgModule.hpp>
-#include <jlm/llvm/opt/alias-analyses/AgnosticMemoryNodeProvider.hpp>
+#include <jlm/llvm/opt/alias-analyses/AgnosticModRefSummarizer.hpp>
 #include <jlm/llvm/opt/alias-analyses/Andersen.hpp>
-#include <jlm/llvm/opt/alias-analyses/EliminatedMemoryNodeProvider.hpp>
+#include <jlm/llvm/opt/alias-analyses/EliminatedModRefSummarizer.hpp>
 #include <jlm/llvm/opt/alias-analyses/Optimization.hpp>
-#include <jlm/llvm/opt/alias-analyses/RegionAwareMemoryNodeProvider.hpp>
+#include <jlm/llvm/opt/alias-analyses/RegionAwareModRefSummarizer.hpp>
 #include <jlm/llvm/opt/alias-analyses/Steensgaard.hpp>
-#include <jlm/llvm/opt/alias-analyses/TopDownMemoryNodeEliminator.hpp>
+#include <jlm/llvm/opt/alias-analyses/TopDownModRefEliminator.hpp>
 #include <jlm/llvm/opt/cne.hpp>
 #include <jlm/llvm/opt/DeadNodeElimination.hpp>
+#include <jlm/llvm/opt/IfConversion.hpp>
 #include <jlm/llvm/opt/inlining.hpp>
 #include <jlm/llvm/opt/InvariantValueRedirection.hpp>
 #include <jlm/llvm/opt/inversion.hpp>
@@ -386,29 +387,31 @@ JlmOptCommand::CreateTransformation(
 {
   using Andersen = llvm::aa::Andersen;
   using Steensgaard = llvm::aa::Steensgaard;
-  using AgnosticMnp = llvm::aa::AgnosticMemoryNodeProvider;
-  using RegionAwareMnp = llvm::aa::RegionAwareMemoryNodeProvider;
-  using TopDownLifetimeMnp =
-      llvm::aa::EliminatedMemoryNodeProvider<AgnosticMnp, llvm::aa::TopDownMemoryNodeEliminator>;
+  using AgnosticMrs = llvm::aa::AgnosticModRefSummarizer;
+  using RegionAwareMrs = llvm::aa::RegionAwareModRefSummarizer;
+  using TopDownLifetimeMrs =
+      llvm::aa::EliminatedModRefSummarizer<AgnosticMrs, llvm::aa::TopDownModRefEliminator>;
 
   switch (optimizationId)
   {
   case JlmOptCommandLineOptions::OptimizationId::AAAndersenAgnostic:
-    return std::make_unique<llvm::aa::AliasAnalysisStateEncoder<Andersen, AgnosticMnp>>();
+    return std::make_unique<llvm::aa::PointsToAnalysisStateEncoder<Andersen, AgnosticMrs>>();
   case JlmOptCommandLineOptions::OptimizationId::AAAndersenRegionAware:
-    return std::make_unique<llvm::aa::AliasAnalysisStateEncoder<Andersen, RegionAwareMnp>>();
+    return std::make_unique<llvm::aa::PointsToAnalysisStateEncoder<Andersen, RegionAwareMrs>>();
   case JlmOptCommandLineOptions::OptimizationId::AAAndersenTopDownLifetimeAware:
-    return std::make_unique<llvm::aa::AliasAnalysisStateEncoder<Andersen, TopDownLifetimeMnp>>();
+    return std::make_unique<llvm::aa::PointsToAnalysisStateEncoder<Andersen, TopDownLifetimeMrs>>();
   case JlmOptCommandLineOptions::OptimizationId::AASteensgaardAgnostic:
-    return std::make_unique<llvm::aa::AliasAnalysisStateEncoder<Steensgaard, AgnosticMnp>>();
+    return std::make_unique<llvm::aa::PointsToAnalysisStateEncoder<Steensgaard, AgnosticMrs>>();
   case JlmOptCommandLineOptions::OptimizationId::AASteensgaardRegionAware:
-    return std::make_unique<llvm::aa::AliasAnalysisStateEncoder<Steensgaard, RegionAwareMnp>>();
+    return std::make_unique<llvm::aa::PointsToAnalysisStateEncoder<Steensgaard, RegionAwareMrs>>();
   case JlmOptCommandLineOptions::OptimizationId::CommonNodeElimination:
     return std::make_unique<llvm::cne>();
   case JlmOptCommandLineOptions::OptimizationId::DeadNodeElimination:
     return std::make_unique<llvm::DeadNodeElimination>();
   case JlmOptCommandLineOptions::OptimizationId::FunctionInlining:
     return std::make_unique<llvm::fctinline>();
+  case JlmOptCommandLineOptions::OptimizationId::IfConversion:
+    return std::make_unique<llvm::IfConversion>();
   case JlmOptCommandLineOptions::OptimizationId::InvariantValueRedirection:
     return std::make_unique<llvm::InvariantValueRedirection>();
   case JlmOptCommandLineOptions::OptimizationId::LoopUnrolling:
@@ -529,10 +532,11 @@ JlmOptCommand::PrintAsLlvm(
     const util::filepath & outputFile,
     util::StatisticsCollector & statisticsCollector)
 {
-  auto jlm_module = llvm::rvsdg2jlm::rvsdg2jlm(rvsdgModule, statisticsCollector);
+  auto jlm_module =
+      llvm::RvsdgToIpGraphConverter::CreateAndConvertModule(rvsdgModule, statisticsCollector);
 
   ::llvm::LLVMContext ctx;
-  auto llvm_module = jlm::llvm::jlm2llvm::convert(*jlm_module, ctx);
+  auto llvm_module = llvm::IpGraphToLlvmConverter::CreateAndConvertModule(*jlm_module, ctx);
 
   if (outputFile == "")
   {

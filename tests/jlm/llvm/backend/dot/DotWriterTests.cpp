@@ -37,7 +37,7 @@ TestWriteGraphs()
   auto & lambdaNode = *AssertedCast<InOutNode>(&rootGraph.GetNode(0));
 
   // The lambda only has one output, and a single subgraph
-  assert(lambdaNode.GetLabel() == gammaTest.lambda->GetOperation().debug_string());
+  assert(lambdaNode.GetLabel() == gammaTest.lambda->DebugString());
   assert(lambdaNode.NumInputPorts() == 0);
   assert(lambdaNode.NumOutputPorts() == 1);
   assert(lambdaNode.NumSubgraphs() == 1);
@@ -50,17 +50,17 @@ TestWriteGraphs()
   auto & connections = fctBody.GetArgumentNode(1).GetConnections();
   assert(connections.size() == 1);
   auto & gammaNode = *AssertedCast<InOutNode>(&connections[0]->GetTo().GetNode());
-  assert(gammaNode.GetLabel() == gammaTest.gamma->GetOperation().debug_string());
+  assert(gammaNode.GetLabel() == gammaTest.gamma->DebugString());
   assert(gammaNode.NumInputPorts() == 5);
   assert(gammaNode.NumOutputPorts() == 2);
   assert(gammaNode.NumSubgraphs() == 2);
 
-  // The first argument of the first region of the gamma references the second gamma input
-  auto & argument = gammaNode.GetSubgraph(0).GetArgumentNode(0);
+  // The second argument of the first region of the gamma references the second gamma input
+  auto & argument = gammaNode.GetSubgraph(0).GetArgumentNode(1);
   auto & input = gammaNode.GetInputPort(1);
   assert(argument.GetAttributeGraphElement("input") == &input);
   // The label also includes the attribute index and input index
-  assert(argument.GetLabel() == "a0 <- i1");
+  assert(argument.GetLabel() == "a1 <- i1");
   auto & result = argument.GetConnections().front()->GetOtherEnd(argument);
   assert(result.GetLabel() == "r0 -> o0");
 

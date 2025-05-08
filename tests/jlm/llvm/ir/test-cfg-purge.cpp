@@ -23,7 +23,7 @@ test()
 
   jlm::rvsdg::ctlconstant_op op(jlm::rvsdg::ctlvalue_repr(1, 2));
   bb0->append_last(tac::create(op, {}));
-  bb0->append_last(branch_op::create(2, bb0->last()->result(0)));
+  bb0->append_last(BranchOperation::create(2, bb0->last()->result(0)));
 
   cfg.exit()->divert_inedges(bb0);
   bb0->add_outedge(bb1);

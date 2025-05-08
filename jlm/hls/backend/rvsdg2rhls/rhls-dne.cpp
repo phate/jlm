@@ -110,7 +110,7 @@ remove_unused_loop_inputs(loop_node * ln)
     if (auto ba = dynamic_cast<backedge_argument *>(arg))
     {
       auto result = ba->result();
-      JLM_ASSERT(result->type() == arg->type());
+      JLM_ASSERT(*result->Type() == *arg->Type());
       if (arg->nusers() == 0 || (arg->nusers() == 1 && result->origin() == arg))
       {
         sr->RemoveResult(result->index());
@@ -162,16 +162,17 @@ dead_nonspec_gamma(rvsdg::Node * ndmux_node)
   rvsdg::Node * origin_branch = nullptr;
   for (size_t i = 1; i < ndmux_node->ninputs(); ++i)
   {
-    if (auto no = dynamic_cast<jlm::rvsdg::node_output *>(ndmux_node->input(i)->origin()))
+    if (auto node = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*ndmux_node->input(i)->origin()))
     {
-      if (dynamic_cast<const branch_op *>(&no->node()->GetOperation()) && no->nusers() == 1)
+      if (dynamic_cast<const branch_op *>(&node->GetOperation())
+          && ndmux_node->input(i)->origin()->nusers() == 1)
       {
         if (i == 1)
         {
-          origin_branch = no->node();
+          origin_branch = node;
           continue;
         }
-        else if (origin_branch == no->node())
+        else if (origin_branch == node)
         {
           continue;
         }
@@ -209,43 +210,45 @@ dead_loop(rvsdg::Node * ndmux_node)
   {
     return false;
   }
-  auto branch_in = dynamic_cast<jlm::rvsdg::node_input *>(*ndmux_node->output(0)->begin());
-  if (!branch_in || !dynamic_cast<const branch_op *>(&branch_in->node()->GetOperation()))
+  auto branch_in_node = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(**ndmux_node->output(0)->begin());
+  if (!branch_in_node || !dynamic_cast<const branch_op *>(&branch_in_node->GetOperation()))
   {
     return false;
   }
   // one buffer
-  if (branch_in->node()->output(1)->nusers() != 1)
+  if (branch_in_node->output(1)->nusers() != 1)
   {
     return false;
   }
-  auto buf_in = dynamic_cast<jlm::rvsdg::node_input *>(*branch_in->node()->output(1)->begin());
-  if (!buf_in || !dynamic_cast<const buffer_op *>(&buf_in->node()->GetOperation()))
+  auto buf_in_node =
+      rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(**branch_in_node->output(1)->begin());
+  if (!buf_in_node || !dynamic_cast<const buffer_op *>(&buf_in_node->GetOperation()))
   {
     return false;
   }
-  auto buf_out = buf_in->node()->output(0);
+  auto buf_out = buf_in_node->output(0);
   if (buf_out != backedge_arg->result()->origin())
   {
     // no connection back up
     return false;
   }
   // depend on same control
-  auto branch_cond_origin = branch_in->node()->input(0)->origin();
-  auto pred_buf_out = dynamic_cast<jlm::rvsdg::node_output *>(ndmux_node->input(0)->origin());
-  if (!pred_buf_out
-      || !dynamic_cast<const predicate_buffer_op *>(&pred_buf_out->node()->GetOperation()))
+  auto branch_cond_origin = branch_in_node->input(0)->origin();
+  auto pred_buf_out_node =
+      rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*ndmux_node->input(0)->origin());
+  if (!pred_buf_out_node
+      || !dynamic_cast<const predicate_buffer_op *>(&pred_buf_out_node->GetOperation()))
   {
     return false;
   }
-  auto pred_buf_cond_origin = pred_buf_out->node()->input(0)->origin();
+  auto pred_buf_cond_origin = pred_buf_out_node->input(0)->origin();
   // TODO: remove this once predicate buffers decouple combinatorial loops
-  auto extra_buf_out = dynamic_cast<jlm::rvsdg::node_output *>(pred_buf_cond_origin);
-  if (!extra_buf_out || !dynamic_cast<const buffer_op *>(&extra_buf_out->node()->GetOperation()))
+  auto extra_buf_out_node = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*pred_buf_cond_origin);
+  if (!extra_buf_out_node || !dynamic_cast<const buffer_op *>(&extra_buf_out_node->GetOperation()))
   {
     return false;
   }
-  auto extra_buf_cond_origin = extra_buf_out->node()->input(0)->origin();
+  auto extra_buf_cond_origin = extra_buf_out_node->input(0)->origin();
 
   if (auto pred_be = dynamic_cast<backedge_argument *>(extra_buf_cond_origin))
   {
@@ -256,10 +259,10 @@ dead_loop(rvsdg::Node * ndmux_node)
     return false;
   }
   // divert users
-  branch_in->node()->output(0)->divert_users(ndmux_node->input(1)->origin());
+  branch_in_node->output(0)->divert_users(ndmux_node->input(1)->origin());
   buf_out->divert_users(backedge_arg);
-  remove(buf_in->node());
-  remove(branch_in->node());
+  remove(buf_in_node);
+  remove(branch_in_node);
   auto region = ndmux_node->region();
   remove(ndmux_node);
   region->RemoveResult(backedge_arg->result()->index());

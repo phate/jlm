@@ -650,24 +650,25 @@ template<typename MarkAsPointeesEscaping, typename MarkAsPointsToExternal>
 void
 HandleCallingExternalFunction(
     PointerObjectSet & set,
-    const jlm::llvm::CallNode & callNode,
+    const rvsdg::SimpleNode & callNode,
     MarkAsPointeesEscaping & markAsPointeesEscaping,
     MarkAsPointsToExternal & markAsPointsToExternal)
 {
+  JLM_ASSERT(is<CallOperation>(&callNode));
 
   // Mark all the call's inputs as escaped, and all the outputs as pointing to external
-  for (size_t n = 0; n < callNode.NumArguments(); n++)
+  for (size_t n = 0; n < CallOperation::NumArguments(callNode); n++)
   {
-    const auto & inputRegister = *callNode.Argument(n)->origin();
+    const auto & inputRegister = *CallOperation::Argument(callNode, n)->origin();
     const auto inputRegisterPO = set.TryGetRegisterPointerObject(inputRegister);
 
     if (inputRegisterPO)
       markAsPointeesEscaping(inputRegisterPO.value());
   }
 
-  for (size_t n = 0; n < callNode.NumResults(); n++)
+  for (size_t n = 0; n < callNode.noutputs(); n++)
   {
-    const auto & outputRegister = *callNode.Result(n);
+    const auto & outputRegister = *callNode.output(n);
     const auto outputRegisterPO = set.TryGetRegisterPointerObject(outputRegister);
     if (outputRegisterPO)
       markAsPointsToExternal(outputRegisterPO.value());
@@ -687,11 +688,13 @@ template<typename MarkAsPointeesEscaping, typename MarkAsPointsToExternal>
 static void
 HandleCallingImportedFunction(
     PointerObjectSet & set,
-    const jlm::llvm::CallNode & callNode,
+    const rvsdg::SimpleNode & callNode,
     [[maybe_unused]] PointerObjectIndex imported,
     MarkAsPointeesEscaping & markAsPointeesEscaping,
     MarkAsPointsToExternal & markAsPointsToExternal)
 {
+  JLM_ASSERT(is<CallOperation>(&callNode));
+
   // FIXME: Add special handling of common library functions
   // Otherwise we don't know anything about the function
   return HandleCallingExternalFunction(
@@ -709,14 +712,16 @@ template<typename MakeSupersetFunctor>
 static void
 HandleLambdaCallParameters(
     PointerObjectSet & set,
-    const jlm::llvm::CallNode & callNode,
+    const rvsdg::SimpleNode & callNode,
     const rvsdg::LambdaNode & lambdaNode,
     MakeSupersetFunctor & makeSuperset)
 {
+  JLM_ASSERT(is<CallOperation>(&callNode));
+
   auto lambdaArgs = lambdaNode.GetFunctionArguments();
-  for (size_t n = 0; n < callNode.NumArguments() && n < lambdaArgs.size(); n++)
+  for (size_t n = 0; n < CallOperation::NumArguments(callNode) && n < lambdaArgs.size(); n++)
   {
-    const auto & inputRegister = *callNode.Argument(n)->origin();
+    const auto & inputRegister = *CallOperation::Argument(callNode, n)->origin();
     const auto & argumentRegister = *lambdaArgs[n];
 
     const auto inputRegisterPO = set.TryGetRegisterPointerObject(inputRegister);
@@ -736,14 +741,16 @@ template<typename MakeSupersetFunctor>
 static void
 HandleLambdaCallReturnValues(
     PointerObjectSet & set,
-    const jlm::llvm::CallNode & callNode,
+    const rvsdg::SimpleNode & callNode,
     const rvsdg::LambdaNode & lambdaNode,
     MakeSupersetFunctor & makeSuperset)
 {
+  JLM_ASSERT(is<CallOperation>(&callNode));
+
   auto lambdaResults = lambdaNode.GetFunctionResults();
-  for (size_t n = 0; n < callNode.NumResults() && n < lambdaResults.size(); n++)
+  for (size_t n = 0; n < callNode.noutputs() && n < lambdaResults.size(); n++)
   {
-    const auto & outputRegister = *callNode.Result(n);
+    const auto & outputRegister = *callNode.output(n);
     const auto & resultRegister = *lambdaResults[n]->origin();
 
     const auto outputRegisterPO = set.TryGetRegisterPointerObject(outputRegister);
@@ -770,10 +777,11 @@ template<typename MakeSupersetFunctor>
 static void
 HandleCallingLambdaFunction(
     PointerObjectSet & set,
-    const jlm::llvm::CallNode & callNode,
+    const rvsdg::SimpleNode & callNode,
     PointerObjectIndex lambda,
     MakeSupersetFunctor & makeSuperset)
 {
+  JLM_ASSERT(is<CallOperation>(&callNode));
   auto & lambdaNode = set.GetLambdaNodeFromFunctionMemoryObject(lambda);
 
   // LLVM allows calling functions even when the number of arguments don't match,
@@ -1252,17 +1260,18 @@ CreateSubsetGraphEdges(
 
       // Connect all registers that correspond to inputs and outputs of the call, to the call target
       auto & callNode = callConstraint->GetCallNode();
-      for (size_t i = 0; i < callNode.NumArguments(); i++)
+      for (size_t i = 0; i < CallOperation::NumArguments(callNode); i++)
       {
-        if (auto inputRegister = set.TryGetRegisterPointerObject(*callNode.Argument(i)->origin()))
+        if (auto inputRegister =
+                set.TryGetRegisterPointerObject(*CallOperation::Argument(callNode, i)->origin()))
         {
           const auto label = util::strfmt("call", callConstraintIndex, " input", i);
           graph.GetNode(*inputRegister).AppendToLabel(label);
         }
       }
-      for (size_t i = 0; i < callNode.NumResults(); i++)
+      for (size_t i = 0; i < callNode.noutputs(); i++)
       {
-        if (auto outputRegister = set.TryGetRegisterPointerObject(*callNode.Result(i)))
+        if (auto outputRegister = set.TryGetRegisterPointerObject(*callNode.output(i)))
         {
           const auto label = util::strfmt("call", callConstraintIndex, " output", i);
           graph.GetNode(*outputRegister).AppendToLabel(label);
@@ -1386,9 +1395,9 @@ PointerObjectConstraintSet::CreateOvsSubsetGraph()
     {
       auto & callNode = callConstraint->GetCallNode();
       // Mark all results of function calls as non-direct nodes
-      for (size_t n = 0; n < callNode.NumResults(); n++)
+      for (size_t n = 0; n < callNode.noutputs(); n++)
       {
-        if (auto resultPO = Set_.TryGetRegisterPointerObject(*callNode.Result(n)))
+        if (auto resultPO = Set_.TryGetRegisterPointerObject(*callNode.output(n)))
           isDirectNode[*resultPO] = false;
       }
     }
@@ -1581,7 +1590,7 @@ PointerObjectConstraintSet::NormalizeConstraints()
   util::HashSet<std::pair<PointerObjectIndex, PointerObjectIndex>> addedSupersetConstraints;
   util::HashSet<std::pair<PointerObjectIndex, PointerObjectIndex>> addedStoreConstraints;
   util::HashSet<std::pair<PointerObjectIndex, PointerObjectIndex>> addedLoadConstraints;
-  util::HashSet<std::pair<PointerObjectIndex, const CallNode *>> addedCallConstraints;
+  util::HashSet<std::pair<PointerObjectIndex, const rvsdg::SimpleNode *>> addedCallConstraints;
 
   for (auto constraint : Constraints_)
   {
@@ -1662,7 +1671,7 @@ PointerObjectConstraintSet::RunWorklistSolver(WorklistStatistics & statistics)
   // are allowed on the worklist. The sets are empty for all non-root nodes.
   std::vector<util::HashSet<PointerObjectIndex>> storeConstraints(Set_.NumPointerObjects());
   std::vector<util::HashSet<PointerObjectIndex>> loadConstraints(Set_.NumPointerObjects());
-  std::vector<util::HashSet<const jlm::llvm::CallNode *>> callConstraints(Set_.NumPointerObjects());
+  std::vector<util::HashSet<const rvsdg::SimpleNode *>> callConstraints(Set_.NumPointerObjects());
 
   for (const auto & constraint : Constraints_)
   {

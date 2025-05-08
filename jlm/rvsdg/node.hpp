@@ -67,12 +67,6 @@ public:
   void
   divert_to(jlm::rvsdg::output * new_origin);
 
-  [[nodiscard]] const rvsdg::Type &
-  type() const noexcept
-  {
-    return *Type();
-  }
-
   [[nodiscard]] const std::shared_ptr<const rvsdg::Type> &
   Type() const noexcept
   {
@@ -87,16 +81,6 @@ public:
 
   virtual std::string
   debug_string() const;
-
-  /**
-   * Retrieve the associated node from \p input if \p input is derived from jlm::rvsdg::node_input.
-   *
-   * @param input The input from which to retrieve the node.
-   * @return The node associated with \p input if input is derived from jlm::rvsdg::node_input,
-   * otherwise nullptr.
-   */
-  [[nodiscard]] static Node *
-  GetNode(const rvsdg::input & input) noexcept;
 
   [[nodiscard]] virtual std::variant<Node *, Region *>
   GetOwner() const noexcept = 0;
@@ -353,12 +337,6 @@ public:
     return users_.end();
   }
 
-  [[nodiscard]] const rvsdg::Type &
-  type() const noexcept
-  {
-    return *Type();
-  }
-
   [[nodiscard]] const std::shared_ptr<const rvsdg::Type> &
   Type() const noexcept
   {
@@ -376,17 +354,6 @@ public:
 
   [[nodiscard]] virtual std::variant<Node *, Region *>
   GetOwner() const noexcept = 0;
-
-  /**
-   * Retrieve the associated node from \p output if \p output is derived from
-   * jlm::rvsdg::node_output.
-   *
-   * @param output The output from which to retrieve the node.
-   * @return The node associated with \p output if output is derived from jlm::rvsdg::node_output,
-   * otherwise nullptr.
-   */
-  [[nodiscard]] static Node *
-  GetNode(const rvsdg::output & output) noexcept;
 
   template<class T>
   class iterator
@@ -605,13 +572,6 @@ public:
     return node_;
   }
 
-  static Node *
-  node(const jlm::rvsdg::output * output)
-  {
-    auto no = dynamic_cast<const node_output *>(output);
-    return no != nullptr ? no->node() : nullptr;
-  }
-
   [[nodiscard]] std::variant<Node *, Region *>
   GetOwner() const noexcept override;
 
@@ -720,6 +680,9 @@ public:
     return true;
   }
 
+  virtual std::string
+  DebugString() const = 0;
+
 protected:
   node_input *
   add_input(std::unique_ptr<node_input> input);
@@ -741,6 +704,8 @@ protected:
   void
   RemoveInput(size_t index);
 
+  // FIXME: I really would not like to be RemoveInputsWhere() to be public
+public:
   /**
    * Removes all inputs that match the condition specified by \p match.
    *
@@ -762,6 +727,7 @@ protected:
     }
   }
 
+protected:
   node_output *
   add_output(std::unique_ptr<node_output> output)
   {
@@ -788,6 +754,8 @@ protected:
   void
   RemoveOutput(size_t index);
 
+  // FIXME: I really would not like to be RemoveOutputsWhere() to be public
+public:
   /**
    * Removes all outputs that have no users and match the condition specified by \p match.
    *

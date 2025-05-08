@@ -4,9 +4,12 @@
  * See COPYING for terms of redistribution.
  */
 
+#include <algorithm>
+
 #include <jlm/rvsdg/control.hpp>
 #include <jlm/rvsdg/gamma.hpp>
 #include <jlm/rvsdg/substitution.hpp>
+#include <jlm/rvsdg/UnitType.hpp>
 
 namespace jlm::rvsdg
 {
@@ -16,7 +19,7 @@ namespace jlm::rvsdg
 static bool
 is_predicate_reducible(const GammaNode * gamma)
 {
-  auto constant = output::GetNode(*gamma->predicate()->origin());
+  auto constant = rvsdg::TryGetOwnerNode<SimpleNode>(*gamma->predicate()->origin());
   return constant && is_ctlconstant_op(constant->GetOperation());
 }
 
@@ -24,8 +27,8 @@ static void
 perform_predicate_reduction(GammaNode * gamma)
 {
   auto origin = gamma->predicate()->origin();
-  auto constant = static_cast<node_output *>(origin)->node();
-  auto cop = static_cast<const ctlconstant_op *>(&constant->GetOperation());
+  auto & constant = AssertGetOwnerNode<SimpleNode>(*origin);
+  auto cop = static_cast<const ctlconstant_op *>(&constant.GetOperation());
   auto alternative = cop->value().alternative();
 
   rvsdg::SubstitutionMap smap;
@@ -73,8 +76,8 @@ perform_invariant_reduction(GammaNode * gamma)
 static std::unordered_set<jlm::rvsdg::output *>
 is_control_constant_reducible(GammaNode * gamma)
 {
-  /* check gamma predicate */
-  auto match = output::GetNode(*gamma->predicate()->origin());
+  // check gamma predicate
+  auto match = rvsdg::TryGetOwnerNode<SimpleNode>(*gamma->predicate()->origin());
   if (!is<match_op>(match))
     return {};
 
@@ -91,13 +94,13 @@ is_control_constant_reducible(GammaNode * gamma)
   std::unordered_set<jlm::rvsdg::output *> outputs;
   for (const auto & exitvar : gamma->GetExitVars())
   {
-    if (!is_ctltype(exitvar.output->type()))
+    if (!is_ctltype(*exitvar.output->Type()))
       continue;
 
     size_t n;
     for (n = 0; n < exitvar.branchResult.size(); n++)
     {
-      auto node = output::GetNode(*exitvar.branchResult[n]->origin());
+      auto node = rvsdg::TryGetOwnerNode<SimpleNode>(*exitvar.branchResult[n]->origin());
       if (!is<ctlconstant_op>(node))
         break;
 
@@ -116,9 +119,9 @@ static void
 perform_control_constant_reduction(std::unordered_set<jlm::rvsdg::output *> & outputs)
 {
   auto & gamma = rvsdg::AssertGetOwnerNode<GammaNode>(**outputs.begin());
-  auto origin = static_cast<node_output *>(gamma.predicate()->origin());
-  auto match = origin->node();
-  auto & match_op = to_match_op(match->GetOperation());
+  auto origin = gamma.predicate()->origin();
+  auto & match = AssertGetOwnerNode<SimpleNode>(*origin);
+  auto & match_op = to_match_op(match.GetOperation());
 
   std::unordered_map<uint64_t, uint64_t> map;
   for (const auto & pair : match_op)
@@ -134,8 +137,9 @@ perform_control_constant_reduction(std::unordered_set<jlm::rvsdg::output *> & ou
     std::unordered_map<uint64_t, uint64_t> new_mapping;
     for (size_t n = 0; n < xv.branchResult.size(); n++)
     {
-      auto origin = static_cast<node_output *>(xv.branchResult[n]->origin());
-      auto & value = to_ctlconstant_op(origin->node()->GetOperation()).value();
+      auto origin = xv.branchResult[n]->origin();
+      auto & value =
+          to_ctlconstant_op(AssertGetOwnerNode<SimpleNode>(*origin).GetOperation()).value();
       nalternatives = value.nalternatives();
       if (map.find(n) != map.end())
         new_mapping[map[n]] = value.alternative();
@@ -143,7 +147,7 @@ perform_control_constant_reduction(std::unordered_set<jlm::rvsdg::output *> & ou
         defalt = value.alternative();
     }
 
-    auto origin = match->input(0)->origin();
+    auto origin = match.input(0)->origin();
     auto m = jlm::rvsdg::match(match_op.nbits(), new_mapping, defalt, nalternatives, origin);
     xv.output->divert_users(m);
   }
@@ -206,19 +210,33 @@ bool
 GammaOperation::operator==(const Operation & other) const noexcept
 {
   auto op = dynamic_cast<const GammaOperation *>(&other);
-  return op && op->nalternatives_ == nalternatives_;
+  return op && op->numAlternatives_ == numAlternatives_;
+}
+
+std::shared_ptr<const Type>
+GammaOperation::GetMatchContentType(std::size_t alternative) const
+{
+  return alternative < MatchContentTypes_.size() ? MatchContentTypes_[alternative]
+                                                 : UnitType::Create();
 }
 
 /* gamma node */
 
 GammaNode::~GammaNode() noexcept = default;
 
-GammaNode::GammaNode(rvsdg::output * predicate, size_t nalternatives)
+GammaNode::GammaNode(
+    rvsdg::output * predicate,
+    size_t nalternatives,
+    std::vector<std::shared_ptr<const Type>> match_content_types)
     : StructuralNode(predicate->region(), nalternatives),
-      Operation_(nalternatives)
+      Operation_(nalternatives, std::move(match_content_types))
 {
   add_input(std::unique_ptr<node_input>(
       new StructuralInput(this, predicate, ControlType::Create(nalternatives))));
+  for (std::size_t n = 0; n < nalternatives; ++n)
+  {
+    RegionArgument::Create(*subregion(n), nullptr, Operation_.GetMatchContentType(n));
+  }
 }
 
 [[nodiscard]] const GammaOperation &
@@ -253,9 +271,21 @@ GammaNode::GetEntryVar(std::size_t index) const
   ev.input = input(index + 1);
   for (size_t n = 0; n < nsubregions(); ++n)
   {
-    ev.branchArgument.push_back(subregion(n)->argument(index));
+    ev.branchArgument.push_back(subregion(n)->argument(index + 1));
   }
   return ev;
+}
+
+GammaNode::MatchVar
+GammaNode::GetMatchVar() const
+{
+  MatchVar mv;
+  mv.input = input(0);
+  for (size_t n = 0; n < nsubregions(); ++n)
+  {
+    mv.matchContent.push_back(subregion(n)->argument(0));
+  }
+  return mv;
 }
 
 std::vector<GammaNode::EntryVar>
@@ -269,19 +299,32 @@ GammaNode::GetEntryVars() const
   return vars;
 }
 
-GammaNode::EntryVar
-GammaNode::MapInputEntryVar(const rvsdg::input & input) const
+std::variant<GammaNode::MatchVar, GammaNode::EntryVar>
+GammaNode::MapInput(const rvsdg::input & input) const
 {
   JLM_ASSERT(rvsdg::TryGetOwnerNode<GammaNode>(input) == this);
-  JLM_ASSERT(input.index() != 0);
-  return GetEntryVar(input.index() - 1);
+  if (input.index() == 0)
+  {
+    return GetMatchVar();
+  }
+  else
+  {
+    return GetEntryVar(input.index() - 1);
+  }
 }
 
-GammaNode::EntryVar
-GammaNode::MapBranchArgumentEntryVar(const rvsdg::output & output) const
+std::variant<GammaNode::MatchVar, GammaNode::EntryVar>
+GammaNode::MapBranchArgument(const rvsdg::output & output) const
 {
   JLM_ASSERT(rvsdg::TryGetRegionParentNode<GammaNode>(output) == this);
-  return GetEntryVar(output.index());
+  if (output.index() == 0)
+  {
+    return GetMatchVar();
+  }
+  else
+  {
+    return GetEntryVar(output.index() - 1);
+  }
 }
 
 GammaNode::ExitVar
@@ -344,6 +387,60 @@ GammaNode::MapBranchResultExitVar(const rvsdg::input & input) const
   return ExitVar{ std::move(branchResults), Node::output(input.index()) };
 }
 
+void
+GammaNode::RemoveExitVars(const std::vector<ExitVar> & exitvars)
+{
+  std::vector<std::size_t> indices;
+  for (const auto & exitvar : exitvars)
+  {
+    JLM_ASSERT(TryGetOwnerNode<GammaNode>(*exitvar.output) == this);
+    indices.push_back(exitvar.output->index());
+  }
+  std::sort(
+      indices.begin(),
+      indices.end(),
+      [](std::size_t x, std::size_t y)
+      {
+        return x > y;
+      });
+  indices.erase(std::unique(indices.begin(), indices.end()), indices.end());
+  for (std::size_t index : indices)
+  {
+    for (std::size_t r = 0; r < nsubregions(); ++r)
+    {
+      subregion(r)->RemoveResult(index);
+    }
+    RemoveOutput(index);
+  }
+}
+
+void
+GammaNode::RemoveEntryVars(const std::vector<EntryVar> & entryvars)
+{
+  std::vector<std::size_t> indices;
+  for (const auto & entryvar : entryvars)
+  {
+    JLM_ASSERT(TryGetOwnerNode<GammaNode>(*entryvar.input) == this);
+    indices.push_back(entryvar.input->index());
+  }
+  std::sort(
+      indices.begin(),
+      indices.end(),
+      [](std::size_t x, std::size_t y)
+      {
+        return x > y;
+      });
+  indices.erase(std::unique(indices.begin(), indices.end()), indices.end());
+  for (auto index : indices)
+  {
+    for (std::size_t r = 0; r < nsubregions(); ++r)
+    {
+      subregion(r)->RemoveArgument(index);
+    }
+    RemoveInput(index);
+  }
+}
+
 GammaNode *
 GammaNode::copy(rvsdg::Region *, SubstitutionMap & smap) const
 {
@@ -390,7 +487,15 @@ GetGammaInvariantOrigin(const GammaNode & gamma, const GammaNode::ExitVar & exit
     {
       return std::nullopt;
     }
-    return gamma.MapBranchArgumentEntryVar(*def).input->origin();
+    auto rolevar = gamma.MapBranchArgument(*def);
+    if (auto entryvar = std::get_if<GammaNode::EntryVar>(&rolevar))
+    {
+      return entryvar->input->origin();
+    }
+    else
+    {
+      return std::nullopt;
+    }
   };
 
   auto firstOrigin = GetExternalOriginOf(exitvar.branchResult[0]);

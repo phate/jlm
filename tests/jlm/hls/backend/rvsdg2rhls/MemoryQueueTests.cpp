@@ -42,7 +42,7 @@ TestSingleLoad()
   auto functionArguments = lambda->GetFunctionArguments();
   auto loadAddress = theta->AddLoopVar(functionArguments[0]);
   auto memoryStateArgument = theta->AddLoopVar(functionArguments[1]);
-  auto loadOutput = LoadNonVolatileNode::Create(
+  auto loadOutput = LoadNonVolatileOperation::Create(
       loadAddress.pre,
       { memoryStateArgument.pre },
       PointerType::Create(),
@@ -61,11 +61,12 @@ TestSingleLoad()
   // Assert
   jlm::rvsdg::view(rvsdgModule->Rvsdg(), stdout);
   auto * const entryMemoryStateSplitInput = *lambdaRegion->argument(1)->begin();
-  auto * entryMemoryStateSplitNode = jlm::rvsdg::input::GetNode(*entryMemoryStateSplitInput);
+  auto * entryMemoryStateSplitNode =
+      jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(*entryMemoryStateSplitInput);
   jlm::util::AssertedCast<const LambdaEntryMemoryStateSplitOperation>(
       &entryMemoryStateSplitNode->GetOperation());
   auto exitMemoryStateMergeNode =
-      jlm::util::AssertedCast<jlm::rvsdg::node_output>(lambdaRegion->result(1)->origin())->node();
+      jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(*lambdaRegion->result(1)->origin());
   jlm::util::AssertedCast<const LambdaExitMemoryStateMergeOperation>(
       &exitMemoryStateMergeNode->GetOperation());
 
@@ -73,14 +74,14 @@ TestSingleLoad()
   ConvertThetaNodes(*rvsdgModule);
   // Simple assert as ConvertThetaNodes() is tested in separate unit tests
   jlm::rvsdg::view(rvsdgModule->Rvsdg(), stdout);
-  assert(jlm::rvsdg::Region::Contains<loop_op>(*lambdaRegion, true));
+  assert(jlm::rvsdg::Region::ContainsNodeType<loop_node>(*lambdaRegion, true));
 
   // Act
   mem_queue(*rvsdgModule);
   // Assert
   jlm::rvsdg::view(rvsdgModule->Rvsdg(), stdout);
-  assert(jlm::rvsdg::Region::Contains<state_gate_op>(*lambdaRegion, true));
-  assert(!jlm::rvsdg::Region::Contains<addr_queue_op>(*lambdaRegion, true));
+  assert(jlm::rvsdg::Region::ContainsOperation<state_gate_op>(*lambdaRegion, true));
+  assert(!jlm::rvsdg::Region::ContainsOperation<addr_queue_op>(*lambdaRegion, true));
 
   return 0;
 }
@@ -117,12 +118,12 @@ TestLoadStore()
   auto loadAddress = theta->AddLoopVar(functionArguments[0]);
   auto storeAddress = theta->AddLoopVar(functionArguments[1]);
   auto memoryStateArgument = theta->AddLoopVar(functionArguments[2]);
-  auto loadOutput = LoadNonVolatileNode::Create(
+  auto loadOutput = LoadNonVolatileOperation::Create(
       loadAddress.pre,
       { memoryStateArgument.pre },
       PointerType::Create(),
       32);
-  auto storeOutput = StoreNonVolatileNode::Create(
+  auto storeOutput = StoreNonVolatileOperation::Create(
       storeAddress.pre,
       jlm::rvsdg::create_bitconstant(theta->subregion(), 32, 1),
       { loadOutput[1] },
@@ -142,11 +143,12 @@ TestLoadStore()
   // Assert
   jlm::rvsdg::view(rvsdgModule->Rvsdg(), stdout);
   auto * const entryMemoryStateSplitInput = *lambdaRegion->argument(2)->begin();
-  auto * entryMemoryStateSplitNode = jlm::rvsdg::input::GetNode(*entryMemoryStateSplitInput);
+  auto * entryMemoryStateSplitNode =
+      jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(*entryMemoryStateSplitInput);
   jlm::util::AssertedCast<const LambdaEntryMemoryStateSplitOperation>(
       &entryMemoryStateSplitNode->GetOperation());
   auto exitMemoryStateMergeNode =
-      jlm::util::AssertedCast<jlm::rvsdg::node_output>(lambdaRegion->result(1)->origin())->node();
+      jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(*lambdaRegion->result(1)->origin());
   jlm::util::AssertedCast<const LambdaExitMemoryStateMergeOperation>(
       &exitMemoryStateMergeNode->GetOperation());
 
@@ -154,14 +156,14 @@ TestLoadStore()
   ConvertThetaNodes(*rvsdgModule);
   // Simple assert as ConvertThetaNodes() is tested in separate unit tests
   jlm::rvsdg::view(rvsdgModule->Rvsdg(), stdout);
-  assert(jlm::rvsdg::Region::Contains<loop_op>(*lambdaRegion, true));
+  assert(jlm::rvsdg::Region::ContainsNodeType<loop_node>(*lambdaRegion, true));
 
   // Act
   mem_queue(*rvsdgModule);
   // Assert
   jlm::rvsdg::view(rvsdgModule->Rvsdg(), stdout);
-  assert(jlm::rvsdg::Region::Contains<state_gate_op>(*lambdaRegion, true));
-  assert(!jlm::rvsdg::Region::Contains<addr_queue_op>(*lambdaRegion, true));
+  assert(jlm::rvsdg::Region::ContainsOperation<state_gate_op>(*lambdaRegion, true));
+  assert(!jlm::rvsdg::Region::ContainsOperation<addr_queue_op>(*lambdaRegion, true));
 
   return 0;
 }
@@ -195,13 +197,13 @@ TestAddrQueue()
   auto functionArguments = lambda->GetFunctionArguments();
   auto address = theta->AddLoopVar(functionArguments[0]);
   auto memoryStateArgument = theta->AddLoopVar(functionArguments[1]);
-  auto loadOutput = LoadNonVolatileNode::Create(
+  auto loadOutput = LoadNonVolatileOperation::Create(
       address.pre,
       { memoryStateArgument.pre },
       PointerType::Create(),
       32);
   auto storeOutput =
-      StoreNonVolatileNode::Create(address.pre, loadOutput[0], { loadOutput[1] }, 32);
+      StoreNonVolatileOperation::Create(address.pre, loadOutput[0], { loadOutput[1] }, 32);
 
   address.post->divert_to(loadOutput[0]);
   memoryStateArgument.post->divert_to(storeOutput[0]);
@@ -217,11 +219,12 @@ TestAddrQueue()
   // Assert
   jlm::rvsdg::view(rvsdgModule->Rvsdg(), stdout);
   auto * const entryMemoryStateSplitInput = *lambdaRegion->argument(1)->begin();
-  auto * entryMemoryStateSplitNode = jlm::rvsdg::input::GetNode(*entryMemoryStateSplitInput);
+  auto * entryMemoryStateSplitNode =
+      jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(*entryMemoryStateSplitInput);
   jlm::util::AssertedCast<const LambdaEntryMemoryStateSplitOperation>(
       &entryMemoryStateSplitNode->GetOperation());
   auto exitMemoryStateMergeNode =
-      jlm::util::AssertedCast<jlm::rvsdg::node_output>(lambdaRegion->result(1)->origin())->node();
+      jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(*lambdaRegion->result(1)->origin());
   jlm::util::AssertedCast<const LambdaExitMemoryStateMergeOperation>(
       &exitMemoryStateMergeNode->GetOperation());
 
@@ -229,14 +232,14 @@ TestAddrQueue()
   ConvertThetaNodes(*rvsdgModule);
   // Simple assert as ConvertThetaNodes() is tested in separate unit tests
   jlm::rvsdg::view(rvsdgModule->Rvsdg(), stdout);
-  assert(jlm::rvsdg::Region::Contains<loop_op>(*lambdaRegion, true));
+  assert(jlm::rvsdg::Region::ContainsNodeType<loop_node>(*lambdaRegion, true));
 
   // Act
   mem_queue(*rvsdgModule);
   // Assert
   jlm::rvsdg::view(rvsdgModule->Rvsdg(), stdout);
-  assert(jlm::rvsdg::Region::Contains<state_gate_op>(*lambdaRegion, true));
-  assert(jlm::rvsdg::Region::Contains<addr_queue_op>(*lambdaRegion, true));
+  assert(jlm::rvsdg::Region::ContainsOperation<state_gate_op>(*lambdaRegion, true));
+  assert(jlm::rvsdg::Region::ContainsOperation<addr_queue_op>(*lambdaRegion, true));
 
   for (auto & node : jlm::rvsdg::TopDownTraverser(lambdaRegion))
   {
@@ -244,19 +247,16 @@ TestAddrQueue()
     {
       for (auto & node : jlm::rvsdg::TopDownTraverser(loopNode->subregion()))
       {
-        if (auto storeNode = dynamic_cast<const jlm::llvm::StoreNode *>(node))
+        if (is<StoreNonVolatileOperation>(node))
         {
           auto loadNode =
-              jlm::util::AssertedCast<jlm::rvsdg::node_output>(storeNode->input(1)->origin())
-                  ->node();
-          jlm::util::AssertedCast<const jlm::llvm::LoadNode>(loadNode);
+              jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(*node->input(1)->origin());
+          jlm::util::AssertedCast<const LoadOperation>(&loadNode->GetOperation());
           auto stateGate =
-              jlm::util::AssertedCast<jlm::rvsdg::node_output>(loadNode->input(0)->origin())
-                  ->node();
+              jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(*loadNode->input(0)->origin());
           jlm::util::AssertedCast<const state_gate_op>(&stateGate->GetOperation());
           auto addrQueue =
-              jlm::util::AssertedCast<jlm::rvsdg::node_output>(stateGate->input(0)->origin())
-                  ->node();
+              jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(*stateGate->input(0)->origin());
           jlm::util::AssertedCast<const addr_queue_op>(&addrQueue->GetOperation());
           return 0;
         }

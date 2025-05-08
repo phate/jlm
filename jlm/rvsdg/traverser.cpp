@@ -29,14 +29,13 @@ TopDownTraverser::TopDownTraverser(Region * region)
     auto argument = region->argument(n);
     for (const auto & user : *argument)
     {
-      if (!is<node_input>(*user))
-        continue;
+      if (auto node = TryGetOwnerNode<Node>(*user))
+      {
+        if (!predecessors_visited(node))
+          continue;
 
-      auto node = static_cast<node_input *>(user)->node();
-      if (!predecessors_visited(node))
-        continue;
-
-      tracker_.set_nodestate(node, traversal_nodestate::frontier);
+        tracker_.set_nodestate(node, traversal_nodestate::frontier);
+      }
     }
   }
 
@@ -50,7 +49,7 @@ TopDownTraverser::predecessors_visited(const Node * node) noexcept
 {
   for (size_t n = 0; n < node->ninputs(); n++)
   {
-    auto predecessor = output::GetNode(*node->input(n)->origin());
+    auto predecessor = TryGetOwnerNode<Node>(*node->input(n)->origin());
     if (!predecessor)
       continue;
 
@@ -73,12 +72,11 @@ TopDownTraverser::next()
   {
     for (const auto & user : *node->output(n))
     {
-      if (!is<node_input>(*user))
-        continue;
-
-      auto node = static_cast<node_input *>(user)->node();
-      if (tracker_.get_nodestate(node) == traversal_nodestate::ahead)
-        tracker_.set_nodestate(node, traversal_nodestate::frontier);
+      if (auto node = TryGetOwnerNode<Node>(*user))
+      {
+        if (tracker_.get_nodestate(node) == traversal_nodestate::ahead)
+          tracker_.set_nodestate(node, traversal_nodestate::frontier);
+      }
     }
   }
 
@@ -100,10 +98,13 @@ TopDownTraverser::node_create(Node * node)
 void
 TopDownTraverser::input_change(input * in, output *, output *)
 {
-  if (in->region() != region() || !is<node_input>(*in))
+  if (in->region() != region())
     return;
 
-  auto node = static_cast<node_input *>(in)->node();
+  auto node = TryGetOwnerNode<Node>(*in);
+  if (!node)
+    return;
+
   auto state = tracker_.get_nodestate(node);
 
   /* ignore nodes that have been traversed already, or that are already
@@ -132,7 +133,7 @@ BottomUpTraverser::BottomUpTraverser(Region * region, bool revisit)
 
   for (size_t n = 0; n < region->nresults(); n++)
   {
-    auto node = output::GetNode(*region->result(n)->origin());
+    auto node = TryGetOwnerNode<Node>(*region->result(n)->origin());
     if (node && !node->has_successors())
       tracker_.set_nodestate(node, traversal_nodestate::frontier);
   }
@@ -155,7 +156,7 @@ BottomUpTraverser::next()
   tracker_.set_nodestate(node, traversal_nodestate::behind);
   for (size_t n = 0; n < node->ninputs(); n++)
   {
-    auto producer = output::GetNode(*node->input(n)->origin());
+    auto producer = TryGetOwnerNode<Node>(*node->input(n)->origin());
     if (producer && tracker_.get_nodestate(producer) == traversal_nodestate::ahead)
       tracker_.set_nodestate(producer, traversal_nodestate::frontier);
   }
@@ -179,7 +180,7 @@ BottomUpTraverser::node_destroy(Node * node)
 
   for (size_t n = 0; n < node->ninputs(); n++)
   {
-    auto producer = output::GetNode(*node->input(n)->origin());
+    auto producer = TryGetOwnerNode<Node>(*node->input(n)->origin());
     if (producer && tracker_.get_nodestate(producer) == traversal_nodestate::ahead)
       tracker_.set_nodestate(producer, traversal_nodestate::frontier);
   }
@@ -188,10 +189,16 @@ BottomUpTraverser::node_destroy(Node * node)
 void
 BottomUpTraverser::input_change(input * in, output * old_origin, output *)
 {
-  if (in->region() != region() || !is<node_input>(*in) || !is<node_output>(old_origin))
+  if (in->region() != region())
     return;
 
-  auto node = output::GetNode(*old_origin);
+  if (!TryGetOwnerNode<Node>(*in))
+    return;
+
+  auto node = TryGetOwnerNode<Node>(*old_origin);
+  if (!node)
+    return;
+
   traversal_nodestate state = tracker_.get_nodestate(node);
 
   /* ignore nodes that have been traversed already, or that are already

@@ -8,8 +8,8 @@
 
 #include <jlm/llvm/ir/operators.hpp>
 #include <jlm/llvm/ir/RvsdgModule.hpp>
-#include <jlm/llvm/opt/alias-analyses/AliasAnalysis.hpp>
 #include <jlm/llvm/opt/alias-analyses/PointerObjectSet.hpp>
+#include <jlm/llvm/opt/alias-analyses/PointsToAnalysis.hpp>
 #include <jlm/rvsdg/gamma.hpp>
 #include <jlm/rvsdg/theta.hpp>
 
@@ -22,7 +22,7 @@ namespace jlm::llvm::aa
  * The analysis is inter-procedural, field-insensitive, context-insensitive,
  * flow-insensitive, and uses a static heap model.
  */
-class Andersen final : public AliasAnalysis
+class Andersen final : public PointsToAnalysis
 {
   class Statistics;
 
@@ -360,13 +360,13 @@ private:
   AnalyzeMalloc(const rvsdg::SimpleNode & node);
 
   void
-  AnalyzeLoad(const LoadNode & loadNode);
+  AnalyzeLoad(const rvsdg::SimpleNode & node);
 
   void
-  AnalyzeStore(const StoreNode & storeNode);
+  AnalyzeStore(const rvsdg::SimpleNode & node);
 
   void
-  AnalyzeCall(const CallNode & callNode);
+  AnalyzeCall(const rvsdg::SimpleNode & callNode);
 
   void
   AnalyzeGep(const rvsdg::SimpleNode & node);
@@ -378,7 +378,7 @@ private:
   AnalyzeBits2ptr(const rvsdg::SimpleNode & node);
 
   void
-  AnalyzePtr2bits(const rvsdg::SimpleNode & node);
+  AnalyzePtrToInt(const rvsdg::SimpleNode & node);
 
   void
   AnalyzeConstantPointerNull(const rvsdg::SimpleNode & node);
@@ -411,6 +411,9 @@ private:
   AnalyzeFunctionToPointer(const rvsdg::SimpleNode & node);
 
   void
+  AnalyzeIOBarrier(const rvsdg::SimpleNode & node);
+
+  void
   AnalyzeStructuralNode(const rvsdg::StructuralNode & node);
 
   void
@@ -420,7 +423,7 @@ private:
   AnalyzeDelta(const delta::node & node);
 
   void
-  AnalyzePhi(const phi::node & node);
+  AnalyzePhi(const rvsdg::PhiNode & node);
 
   void
   AnalyzeGamma(const rvsdg::GammaNode & node);

@@ -7,6 +7,7 @@
 #include <jlm/hls/backend/rvsdg2rhls/add-prints.hpp>
 #include <jlm/hls/backend/rvsdg2rhls/instrument-ref.hpp>
 #include <jlm/llvm/ir/operators.hpp>
+#include <jlm/llvm/ir/operators/IntegerOperations.hpp>
 #include <jlm/rvsdg/gamma.hpp>
 #include <jlm/rvsdg/traverser.hpp>
 
@@ -84,7 +85,6 @@ instrument_ref(llvm::RvsdgModule & rm)
   auto ioStateArgumentIndex = numArguments - 2;
   JLM_ASSERT(rvsdg::is<llvm::IOStateType>(functionType.ArgumentType(ioStateArgumentIndex)));
 
-  // TODO: make this less hacky by using the correct state types
   //  addr, width, memstate
   auto loadFunctionType = jlm::rvsdg::FunctionType::Create(
       { jlm::llvm::PointerType::Create(),
@@ -98,18 +98,10 @@ instrument_ref(llvm::RvsdgModule & rm)
       loadFunctionType,
       "reference_load",
       llvm::linkage::external_linkage);
-  // addr, data, width, memstate
-  auto storeFunctionType = jlm::rvsdg::FunctionType::Create(
-      { jlm::llvm::PointerType::Create(),
-        jlm::rvsdg::bittype::Create(64),
-        jlm::rvsdg::bittype::Create(64),
-        llvm::IOStateType::Create(),
-        jlm::llvm::MemoryStateType::Create() },
-      { llvm::IOStateType::Create(), jlm::llvm::MemoryStateType::Create() });
   auto & reference_store = llvm::GraphImport::Create(
       graph,
-      storeFunctionType,
-      storeFunctionType,
+      loadFunctionType,
+      loadFunctionType,
       "reference_store",
       llvm::linkage::external_linkage);
   // addr, size, memstate
@@ -132,7 +124,7 @@ instrument_ref(llvm::RvsdgModule & rm)
       &reference_load,
       loadFunctionType,
       &reference_store,
-      storeFunctionType,
+      loadFunctionType,
       &reference_alloca,
       allocaFunctionType);
 }
@@ -148,9 +140,9 @@ instrument_ref(
     jlm::rvsdg::output * alloca_func,
     const std::shared_ptr<const jlm::rvsdg::FunctionType> & allocaFunctionType)
 {
-  load_func = route_to_region(load_func, region);
-  store_func = route_to_region(store_func, region);
-  alloca_func = route_to_region(alloca_func, region);
+  load_func = route_to_region_rvsdg(load_func, region);
+  store_func = route_to_region_rvsdg(store_func, region);
+  alloca_func = route_to_region_rvsdg(alloca_func, region);
   auto void_ptr = jlm::llvm::PointerType::Create();
   for (auto & node : rvsdg::TopDownTraverser(region))
   {
@@ -159,7 +151,7 @@ instrument_ref(
       for (size_t n = 0; n < structnode->nsubregions(); n++)
       {
         auto subregion = structnode->subregion(n);
-        auto ioStateRouted = route_to_region(ioState, subregion);
+        auto ioStateRouted = route_to_region_rvsdg(ioState, subregion);
         instrument_ref(
             subregion,
             ioStateRouted,
@@ -176,21 +168,21 @@ instrument_ref(
             dynamic_cast<const jlm::llvm::LoadNonVolatileOperation *>(&(node->GetOperation())))
     {
       auto addr = node->input(0)->origin();
-      JLM_ASSERT(dynamic_cast<const jlm::llvm::PointerType *>(&addr->type()));
+      JLM_ASSERT(rvsdg::is<jlm::llvm::PointerType>(addr->Type()));
       size_t bitWidth = BaseHLS::JlmSize(&*loadOp->GetLoadedType());
       int log2Bytes = log2(bitWidth / 8);
-      auto width = jlm::rvsdg::create_bitconstant(region, 64, log2Bytes);
+      auto & widthNode = llvm::IntegerConstantOperation::Create(*region, 64, log2Bytes);
 
       // Does this IF make sense now when the void_ptr doesn't have a type?
-      if (addr->type() != *void_ptr)
+      if (*addr->Type() != *void_ptr)
       {
         addr = jlm::llvm::bitcast_op::create(addr, void_ptr);
       }
       auto memstate = node->input(1)->origin();
-      auto callOp = jlm::llvm::CallNode::Create(
+      auto callOp = jlm::llvm::CallOperation::Create(
           load_func,
           loadFunctionType,
-          { addr, width, ioState, memstate });
+          { addr, widthNode.output(0), ioState, memstate });
       // Divert the memory state of the load to the new memstate from the call operation
       node->input(1)->divert_to(callOp[1]);
     }
@@ -200,29 +192,29 @@ instrument_ref(
       JLM_ASSERT(node->ninputs() == 1);
       auto constant_output = dynamic_cast<jlm::rvsdg::node_output *>(node->input(0)->origin());
       JLM_ASSERT(constant_output);
-      auto constant_operation = dynamic_cast<const jlm::rvsdg::bitconstant_op *>(
+      auto constant_operation = dynamic_cast<const llvm::IntegerConstantOperation *>(
           &constant_output->node()->GetOperation());
       JLM_ASSERT(constant_operation);
-      JLM_ASSERT(constant_operation->value().to_uint() == 1);
+      JLM_ASSERT(constant_operation->Representation().to_uint() == 1);
       jlm::rvsdg::output * addr = node->output(0);
       // ensure that the alloca is an array type
-      auto pt = dynamic_cast<const jlm::llvm::PointerType *>(&addr->type());
-      JLM_ASSERT(pt);
+      JLM_ASSERT(jlm::rvsdg::is<llvm::PointerType>(addr->Type()));
       auto at = dynamic_cast<const llvm::ArrayType *>(&ao->value_type());
       JLM_ASSERT(at);
-      auto size = jlm::rvsdg::create_bitconstant(region, 64, BaseHLS::JlmSize(at) / 8);
+      auto & sizeNode =
+          llvm::IntegerConstantOperation::Create(*region, 64, BaseHLS::JlmSize(at) / 8);
 
       // Does this IF make sense now when the void_ptr doesn't have a type?
-      if (addr->type() != *void_ptr)
+      if (*addr->Type() != *void_ptr)
       {
         addr = jlm::llvm::bitcast_op::create(addr, void_ptr);
       }
       std::vector<jlm::rvsdg::input *> old_users(node->output(1)->begin(), node->output(1)->end());
       auto memstate = node->output(1);
-      auto callOp = jlm::llvm::CallNode::Create(
+      auto callOp = jlm::llvm::CallOperation::Create(
           alloca_func,
           allocaFunctionType,
-          { addr, size, ioState, memstate });
+          { addr, sizeNode.output(0), ioState, memstate });
       for (auto ou : old_users)
       {
         // Divert the memory state of the load to the new memstate from the call operation
@@ -234,31 +226,27 @@ instrument_ref(
             dynamic_cast<const jlm::llvm::StoreNonVolatileOperation *>(&(node->GetOperation())))
     {
       auto addr = node->input(0)->origin();
-      JLM_ASSERT(dynamic_cast<const jlm::llvm::PointerType *>(&addr->type()));
-      auto bt = dynamic_cast<const jlm::rvsdg::bittype *>(&so->GetStoredType());
-      JLM_ASSERT(bt);
-      auto bitWidth = bt->nbits();
+      JLM_ASSERT(rvsdg::is<jlm::llvm::PointerType>(addr->Type()));
+      auto bitWidth = JlmSize(&so->GetStoredType());
       int log2Bytes = log2(bitWidth / 8);
-      auto width = jlm::rvsdg::create_bitconstant(region, 64, log2Bytes);
+      auto & widthNode = llvm::IntegerConstantOperation::Create(*region, 64, log2Bytes);
 
       // Does this IF make sense now when the void_ptr doesn't have a type?
-      if (addr->type() != *void_ptr)
+      if (*addr->Type() != *void_ptr)
       {
         addr = jlm::llvm::bitcast_op::create(addr, void_ptr);
       }
-      auto data = node->input(1)->origin();
-      auto dbt = dynamic_cast<const jlm::rvsdg::bittype *>(&data->type());
-      if (*dbt != *jlm::rvsdg::bittype::Create(64))
-      {
-        data = &llvm::zext_op::Create(*data, rvsdg::bittype::Create(64));
-      }
-      auto memstate = node->input(2)->origin();
-      auto callOp = jlm::llvm::CallNode::Create(
+      auto memstate = node->output(0);
+      std::vector<jlm::rvsdg::input *> oldUsers(memstate->begin(), memstate->end());
+      auto callOp = jlm::llvm::CallOperation::Create(
           store_func,
           storeFunctionType,
-          { addr, data, width, ioState, memstate });
-      // Divert the memory state of the load to the new memstate from the call operation
-      node->input(2)->divert_to(callOp[1]);
+          { addr, widthNode.output(0), ioState, memstate });
+      // Divert the memory state after the store to the new memstate from the call operation
+      for (auto user : oldUsers)
+      {
+        user->divert_to(callOp[1]);
+      }
     }
   }
 }

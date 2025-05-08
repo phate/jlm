@@ -34,9 +34,9 @@ RegionArgument::RegionArgument(
     if (input->node() != region->node())
       throw jlm::util::error("Argument cannot be added to input.");
 
-    if (input->type() != *Type())
+    if (*input->Type() != *Type())
     {
-      throw util::type_error(Type()->debug_string(), input->type().debug_string());
+      throw util::type_error(Type()->debug_string(), input->Type()->debug_string());
     }
 
     input->arguments.push_back(this);
@@ -178,6 +178,21 @@ Region::append_argument(RegionArgument * argument)
 
   argument->index_ = narguments();
   arguments_.push_back(argument);
+  on_output_create(argument);
+}
+
+void
+Region::insert_argument(size_t index, RegionArgument * argument)
+{
+  if (argument->region() != this)
+    throw jlm::util::error("Inserting argument to wrong region.");
+
+  JLM_ASSERT(argument->index() == 0);
+
+  argument->index_ = index;
+  arguments_.insert(arguments_.begin() + index, argument);
+  for (size_t n = index + 1; n < arguments_.size(); ++n)
+    arguments_[n]->index_ = n;
   on_output_create(argument);
 }
 
@@ -436,7 +451,7 @@ Region::ToTree(
   {
     if (auto structuralNode = dynamic_cast<const rvsdg::StructuralNode *>(&node))
     {
-      auto nodeString = structuralNode->GetOperation().debug_string();
+      auto nodeString = structuralNode->DebugString();
       auto annotationString = GetAnnotationString(
           structuralNode,
           annotationMap,

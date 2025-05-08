@@ -82,7 +82,7 @@ FlattenAssociativeBinaryOperation(
           return false;
 
         auto flattenedBinaryOperation =
-            dynamic_cast<const flattened_binary_op *>(&node->GetOperation());
+            dynamic_cast<const FlattenedBinaryOperation *>(&node->GetOperation());
         return node->GetOperation() == operation
             || (flattenedBinaryOperation && flattenedBinaryOperation->bin_operation() == operation);
       });
@@ -95,7 +95,7 @@ FlattenAssociativeBinaryOperation(
 
   JLM_ASSERT(newOperands.size() > 2);
   auto flattenedBinaryOperation =
-      std::make_unique<flattened_binary_op>(operation, newOperands.size());
+      std::make_unique<FlattenedBinaryOperation>(operation, newOperands.size());
   return outputs(&SimpleNode::Create(*region, *flattenedBinaryOperation, newOperands));
 }
 
@@ -125,29 +125,26 @@ NormalizeBinaryOperation(
   return outputs(&SimpleNode::Create(*region, operation, newOperands));
 }
 
-/* flattened binary operator */
-
-flattened_binary_op::~flattened_binary_op() noexcept
-{}
+FlattenedBinaryOperation::~FlattenedBinaryOperation() noexcept = default;
 
 bool
-flattened_binary_op::operator==(const Operation & other) const noexcept
+FlattenedBinaryOperation::operator==(const Operation & other) const noexcept
 {
-  auto op = dynamic_cast<const flattened_binary_op *>(&other);
+  const auto op = dynamic_cast<const FlattenedBinaryOperation *>(&other);
   return op && op->bin_operation() == bin_operation() && op->narguments() == narguments();
 }
 
 std::string
-flattened_binary_op::debug_string() const
+FlattenedBinaryOperation::debug_string() const
 {
   return jlm::util::strfmt("FLATTENED[", op_->debug_string(), "]");
 }
 
 std::unique_ptr<Operation>
-flattened_binary_op::copy() const
+FlattenedBinaryOperation::copy() const
 {
   std::unique_ptr<BinaryOperation> copied_op(static_cast<BinaryOperation *>(op_->copy().release()));
-  return std::make_unique<flattened_binary_op>(std::move(copied_op), narguments());
+  return std::make_unique<FlattenedBinaryOperation>(std::move(copied_op), narguments());
 }
 
 /*
@@ -200,14 +197,14 @@ reduce_linear(const BinaryOperation & op, const std::vector<jlm::rvsdg::output *
 }
 
 jlm::rvsdg::output *
-flattened_binary_op::reduce(
-    const flattened_binary_op::reduction & reduction,
+FlattenedBinaryOperation::reduce(
+    const FlattenedBinaryOperation::reduction & reduction,
     const std::vector<jlm::rvsdg::output *> & operands) const
 {
   JLM_ASSERT(operands.size() > 1);
 
   static std::unordered_map<
-      flattened_binary_op::reduction,
+      FlattenedBinaryOperation::reduction,
       std::function<
           jlm::rvsdg::output *(const BinaryOperation &, const std::vector<jlm::rvsdg::output *> &)>>
       map({ { reduction::linear, reduce_linear }, { reduction::parallel, reduce_parallel } });
@@ -217,15 +214,15 @@ flattened_binary_op::reduce(
 }
 
 void
-flattened_binary_op::reduce(
+FlattenedBinaryOperation::reduce(
     rvsdg::Region * region,
-    const flattened_binary_op::reduction & reduction)
+    const FlattenedBinaryOperation::reduction & reduction)
 {
   for (auto & node : TopDownTraverser(region))
   {
-    if (is<flattened_binary_op>(node))
+    if (is<FlattenedBinaryOperation>(node))
     {
-      auto op = static_cast<const flattened_binary_op *>(&node->GetOperation());
+      const auto op = static_cast<const FlattenedBinaryOperation *>(&node->GetOperation());
       auto output = op->reduce(reduction, operands(node));
       node->output(0)->divert_users(output);
       remove(node);
@@ -237,12 +234,12 @@ flattened_binary_op::reduce(
     }
   }
 
-  JLM_ASSERT(!Region::Contains<flattened_binary_op>(*region, true));
+  JLM_ASSERT(!Region::ContainsOperation<FlattenedBinaryOperation>(*region, true));
 }
 
 std::optional<std::vector<rvsdg::output *>>
 NormalizeFlattenedBinaryOperation(
-    const flattened_binary_op & operation,
+    const FlattenedBinaryOperation & operation,
     const std::vector<rvsdg::output *> & operands)
 {
   return NormalizeBinaryOperation(operation.bin_operation(), operands);

@@ -44,7 +44,7 @@ public:
   void
   insert(const variable * v, rvsdg::output * o)
   {
-    JLM_ASSERT(v->type() == o->type());
+    JLM_ASSERT(v->type() == *o->Type());
     Map_[v] = o;
   }
 
@@ -464,7 +464,7 @@ ConvertAssignment(
     rvsdg::Region &,
     llvm::VariableMap & variableMap)
 {
-  JLM_ASSERT(is<assignment_op>(threeAddressCode.operation()));
+  JLM_ASSERT(is<AssignmentOperation>(threeAddressCode.operation()));
 
   auto lhs = threeAddressCode.operand(0);
   auto rhs = threeAddressCode.operand(1);
@@ -474,7 +474,7 @@ ConvertAssignment(
 static void
 ConvertSelect(const llvm::tac & threeAddressCode, rvsdg::Region &, llvm::VariableMap & variableMap)
 {
-  JLM_ASSERT(is<select_op>(threeAddressCode.operation()));
+  JLM_ASSERT(is<SelectOperation>(threeAddressCode.operation()));
   JLM_ASSERT(threeAddressCode.noperands() == 3 && threeAddressCode.nresults() == 1);
 
   auto p = variableMap.lookup(threeAddressCode.operand(0));
@@ -490,7 +490,7 @@ ConvertSelect(const llvm::tac & threeAddressCode, rvsdg::Region &, llvm::Variabl
 static void
 ConvertBranch(const llvm::tac & threeAddressCode, rvsdg::Region &, llvm::VariableMap &)
 {
-  JLM_ASSERT(is<branch_op>(threeAddressCode.operation()));
+  JLM_ASSERT(is<BranchOperation>(threeAddressCode.operation()));
   /*
    * Nothing needs to be done. Branches are simply ignored.
    */
@@ -525,37 +525,17 @@ ConvertThreeAddressCode(
     rvsdg::Region & region,
     llvm::VariableMap & variableMap)
 {
-  if (is<assignment_op>(&threeAddressCode))
+  if (is<AssignmentOperation>(&threeAddressCode))
   {
     ConvertAssignment(threeAddressCode, region, variableMap);
   }
-  else if (is<select_op>(&threeAddressCode))
+  else if (is<SelectOperation>(&threeAddressCode))
   {
     ConvertSelect(threeAddressCode, region, variableMap);
   }
-  else if (is<branch_op>(&threeAddressCode))
+  else if (is<BranchOperation>(&threeAddressCode))
   {
     ConvertBranch(threeAddressCode, region, variableMap);
-  }
-  else if (is<CallOperation>(&threeAddressCode))
-  {
-    Convert<CallNode, CallOperation>(threeAddressCode, region, variableMap);
-  }
-  else if (is<LoadVolatileOperation>(&threeAddressCode))
-  {
-    Convert<LoadVolatileNode, LoadVolatileOperation>(threeAddressCode, region, variableMap);
-  }
-  else if (is<LoadNonVolatileOperation>(&threeAddressCode))
-  {
-    Convert<LoadNonVolatileNode, LoadNonVolatileOperation>(threeAddressCode, region, variableMap);
-  }
-  else if (is<StoreVolatileOperation>(&threeAddressCode))
-  {
-    Convert<StoreVolatileNode, StoreVolatileOperation>(threeAddressCode, region, variableMap);
-  }
-  else if (is<StoreNonVolatileOperation>(&threeAddressCode))
-  {
-    Convert<StoreNonVolatileNode, StoreNonVolatileOperation>(threeAddressCode, region, variableMap);
   }
   else
   {
@@ -695,7 +675,7 @@ Convert(
   while (!is<blockaggnode>(split))
     split = split->child(split->nchildren() - 1);
   auto & sb = dynamic_cast<const blockaggnode *>(split)->tacs();
-  JLM_ASSERT(is<branch_op>(sb.last()->operation()));
+  JLM_ASSERT(is<BranchOperation>(sb.last()->operation()));
   auto predicate = regionalizedVariableMap.GetTopVariableMap().lookup(sb.last()->operand(0));
 
   auto gamma = rvsdg::GammaNode::create(predicate, branchAggregationNode.nchildren());
@@ -718,9 +698,13 @@ Convert(
   {
     regionalizedVariableMap.PushRegion(*gamma->subregion(n));
     for (const auto & pair : gammaInputMap)
-      regionalizedVariableMap.GetTopVariableMap().insert(
-          pair.first,
-          gamma->MapInputEntryVar(*pair.second).branchArgument[n]);
+    {
+      auto rolevar = gamma->MapInput(*pair.second);
+      if (auto entryvar = std::get_if<rvsdg::GammaNode::EntryVar>(&rolevar))
+      {
+        regionalizedVariableMap.GetTopVariableMap().insert(pair.first, entryvar->branchArgument[n]);
+      }
+    }
 
     ConvertAggregationNode(
         *branchAggregationNode.child(n),
@@ -808,7 +792,7 @@ Convert(
     lblock = lblock->child(lblock->nchildren() - 1);
   JLM_ASSERT(is<blockaggnode>(lblock));
   auto & bb = static_cast<const blockaggnode *>(lblock)->tacs();
-  JLM_ASSERT(is<branch_op>(bb.last()->operation()));
+  JLM_ASSERT(is<BranchOperation>(bb.last()->operation()));
   auto predicate = bb.last()->operand(0);
 
   /*
@@ -1125,7 +1109,7 @@ ConvertStronglyConnectedComponent(
     return;
   }
 
-  phi::builder pb;
+  rvsdg::PhiBuilder pb;
   pb.begin(&graph.GetRootRegion());
   regionalizedVariableMap.PushRegion(*pb.subregion());
 
@@ -1136,12 +1120,12 @@ ConvertStronglyConnectedComponent(
   /*
    * Add recursion variables
    */
-  std::unordered_map<const variable *, phi::rvoutput *> recursionVariables;
+  std::unordered_map<const variable *, rvsdg::PhiNode::FixVar> recursionVariables;
   for (const auto & ipgNode : stronglyConnectedComponent)
   {
-    auto recursionVariable = pb.add_recvar(ipgNode->Type());
+    auto recursionVariable = pb.AddFixVar(ipgNode->Type());
     auto ipgNodeVariable = interProceduralGraphModule.variable(ipgNode);
-    phiVariableMap.insert(ipgNodeVariable, recursionVariable->argument());
+    phiVariableMap.insert(ipgNodeVariable, recursionVariable.recref);
     JLM_ASSERT(recursionVariables.find(ipgNodeVariable) == recursionVariables.end());
     recursionVariables[ipgNodeVariable] = recursionVariable;
   }
@@ -1157,7 +1141,7 @@ ConvertStronglyConnectedComponent(
       if (recursionVariables.find(dependencyVariable) == recursionVariables.end())
         phiVariableMap.insert(
             dependencyVariable,
-            pb.add_ctxvar(outerVariableMap.lookup(dependencyVariable)));
+            pb.AddContextVar(*outerVariableMap.lookup(dependencyVariable)).inner);
     }
   }
 
@@ -1168,7 +1152,7 @@ ConvertStronglyConnectedComponent(
   {
     auto output =
         ConvertInterProceduralGraphNode(*ipgNode, regionalizedVariableMap, statisticsCollector);
-    recursionVariables[interProceduralGraphModule.variable(ipgNode)]->set_rvorigin(output);
+    recursionVariables[interProceduralGraphModule.variable(ipgNode)].result->divert_to(output);
   }
 
   regionalizedVariableMap.PopRegion();
@@ -1181,9 +1165,9 @@ ConvertStronglyConnectedComponent(
   {
     auto ipgNodeVariable = interProceduralGraphModule.variable(ipgNode);
     auto recursionVariable = recursionVariables[ipgNodeVariable];
-    regionalizedVariableMap.GetTopVariableMap().insert(ipgNodeVariable, recursionVariable);
+    regionalizedVariableMap.GetTopVariableMap().insert(ipgNodeVariable, recursionVariable.output);
     if (requiresExport(*ipgNode))
-      GraphExport::Create(*recursionVariable, ipgNodeVariable->name());
+      GraphExport::Create(*recursionVariable.output, ipgNodeVariable->name());
   }
 }
 

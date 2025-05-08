@@ -51,23 +51,41 @@ public:
 static rvsdg::GammaNode *
 is_applicable(const rvsdg::ThetaNode * theta)
 {
-  auto matchnode = jlm::rvsdg::output::GetNode(*theta->predicate()->origin());
-  if (!jlm::rvsdg::is<jlm::rvsdg::match_op>(matchnode))
+  auto matchNode = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*theta->predicate()->origin());
+  if (!jlm::rvsdg::is<jlm::rvsdg::match_op>(matchNode))
     return nullptr;
 
-  if (matchnode->output(0)->nusers() != 2)
+  if (matchNode->output(0)->nusers() != 2)
     return nullptr;
 
   rvsdg::GammaNode * gnode = nullptr;
-  for (const auto & user : *matchnode->output(0))
+  for (const auto & user : *matchNode->output(0))
   {
     if (user == theta->predicate())
       continue;
 
-    if (!rvsdg::is<rvsdg::GammaOperation>(rvsdg::input::GetNode(*user)))
+    gnode = rvsdg::TryGetOwnerNode<rvsdg::GammaNode>(*user);
+    if (!gnode)
       return nullptr;
-
-    gnode = dynamic_cast<rvsdg::GammaNode *>(rvsdg::input::GetNode(*user));
+  }
+  // only apply tgi if theta is a converted for loop - i.e. everything but the predicate is
+  // contained in the gamma
+  for (auto & lv : theta->GetLoopVars())
+  {
+    auto origin = lv.post->origin();
+    if (dynamic_cast<rvsdg::RegionArgument *>(origin))
+    {
+      // origin is a theta argument
+    }
+    else if (rvsdg::TryGetOwnerNode<rvsdg::GammaNode>(*origin) == gnode)
+    {
+      // origin is gnode
+    }
+    else
+    {
+      // we don't want to invert this
+      return nullptr;
+    }
   }
 
   return gnode;
@@ -79,7 +97,7 @@ pullin(rvsdg::GammaNode * gamma, rvsdg::ThetaNode * theta)
   pullin_bottom(gamma);
   for (const auto & lv : theta->GetLoopVars())
   {
-    if (jlm::rvsdg::output::GetNode(*lv.post->origin()) != gamma)
+    if (rvsdg::TryGetOwnerNode<rvsdg::Node>(*lv.post->origin()) != gamma)
     {
       auto ev = gamma->AddEntryVar(lv.post->origin());
       JLM_ASSERT(ev.branchArgument.size() == 2);
@@ -93,8 +111,8 @@ pullin(rvsdg::GammaNode * gamma, rvsdg::ThetaNode * theta)
 static std::vector<std::vector<rvsdg::Node *>>
 collect_condition_nodes(rvsdg::StructuralNode * tnode, jlm::rvsdg::StructuralNode * gnode)
 {
-  JLM_ASSERT(is<rvsdg::ThetaOperation>(tnode));
-  JLM_ASSERT(rvsdg::is<rvsdg::GammaOperation>(gnode));
+  JLM_ASSERT(dynamic_cast<const rvsdg::ThetaNode *>(tnode));
+  JLM_ASSERT(dynamic_cast<const rvsdg::GammaNode *>(gnode));
   JLM_ASSERT(gnode->region()->node() == tnode);
 
   std::vector<std::vector<rvsdg::Node *>> nodes;

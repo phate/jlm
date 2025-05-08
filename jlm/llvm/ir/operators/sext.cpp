@@ -15,23 +15,23 @@ static const rvsdg::unop_reduction_path_t sext_reduction_bitbinary = 129;
 static bool
 is_bitunary_reducible(const rvsdg::output * operand)
 {
-  return rvsdg::is<rvsdg::bitunary_op>(rvsdg::output::GetNode(*operand));
+  return rvsdg::is<rvsdg::bitunary_op>(rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*operand));
 }
 
 static bool
 is_bitbinary_reducible(const rvsdg::output * operand)
 {
-  return rvsdg::is<rvsdg::bitbinary_op>(rvsdg::output::GetNode(*operand));
+  return rvsdg::is<rvsdg::bitbinary_op>(rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*operand));
 }
 
 static bool
 is_inverse_reducible(const sext_op & op, const rvsdg::output * operand)
 {
-  auto node = rvsdg::output::GetNode(*operand);
+  const auto node = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*operand);
   if (!node)
     return false;
 
-  auto top = dynamic_cast<const trunc_op *>(&node->GetOperation());
+  const auto top = dynamic_cast<const TruncOperation *>(&node->GetOperation());
   return top && top->nsrcbits() == op.ndstbits();
 }
 
@@ -39,11 +39,11 @@ static rvsdg::output *
 perform_bitunary_reduction(const sext_op & op, rvsdg::output * operand)
 {
   JLM_ASSERT(is_bitunary_reducible(operand));
-  auto unary = rvsdg::output::GetNode(*operand);
+  const auto unaryNode = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*operand);
   auto region = operand->region();
-  auto uop = static_cast<const rvsdg::bitunary_op *>(&unary->GetOperation());
+  auto uop = static_cast<const rvsdg::bitunary_op *>(&unaryNode->GetOperation());
 
-  auto output = sext_op::create(op.ndstbits(), unary->input(0)->origin());
+  auto output = sext_op::create(op.ndstbits(), unaryNode->input(0)->origin());
   std::unique_ptr<rvsdg::SimpleOperation> simpleOperation(
       util::AssertedCast<rvsdg::SimpleOperation>(uop->create(op.ndstbits()).release()));
   return rvsdg::SimpleNode::Create(*region, std::move(simpleOperation), { output }).output(0);
@@ -53,13 +53,13 @@ static rvsdg::output *
 perform_bitbinary_reduction(const sext_op & op, rvsdg::output * operand)
 {
   JLM_ASSERT(is_bitbinary_reducible(operand));
-  auto binary = rvsdg::output::GetNode(*operand);
+  const auto binaryNode = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*operand);
   auto region = operand->region();
-  auto bop = static_cast<const rvsdg::bitbinary_op *>(&binary->GetOperation());
+  auto bop = static_cast<const rvsdg::bitbinary_op *>(&binaryNode->GetOperation());
 
-  JLM_ASSERT(binary->ninputs() == 2);
-  auto op1 = sext_op::create(op.ndstbits(), binary->input(0)->origin());
-  auto op2 = sext_op::create(op.ndstbits(), binary->input(1)->origin());
+  JLM_ASSERT(binaryNode->ninputs() == 2);
+  auto op1 = sext_op::create(op.ndstbits(), binaryNode->input(0)->origin());
+  auto op2 = sext_op::create(op.ndstbits(), binaryNode->input(1)->origin());
 
   std::unique_ptr<rvsdg::SimpleOperation> simpleOperation(
       util::AssertedCast<rvsdg::SimpleOperation>(bop->create(op.ndstbits()).release()));
@@ -70,7 +70,7 @@ static rvsdg::output *
 perform_inverse_reduction(const sext_op & op, rvsdg::output * operand)
 {
   JLM_ASSERT(is_inverse_reducible(op, operand));
-  return rvsdg::output::GetNode(*operand)->input(0)->origin();
+  return rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*operand)->input(0)->origin();
 }
 
 sext_op::~sext_op()

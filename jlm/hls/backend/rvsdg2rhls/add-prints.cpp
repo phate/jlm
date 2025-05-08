@@ -6,6 +6,7 @@
 #include <jlm/hls/backend/rvsdg2rhls/add-prints.hpp>
 #include <jlm/hls/ir/hls.hpp>
 #include <jlm/llvm/ir/operators.hpp>
+#include <jlm/llvm/ir/operators/IntegerOperations.hpp>
 #include <jlm/rvsdg/gamma.hpp>
 #include <jlm/rvsdg/theta.hpp>
 #include <jlm/rvsdg/traverser.hpp>
@@ -32,7 +33,7 @@ add_prints(rvsdg::Region * region)
     //			node->input(1)->divert_to(po);
     //		}
     if (dynamic_cast<jlm::rvsdg::SimpleNode *>(node) && node->noutputs() == 1
-        && jlm::rvsdg::is<jlm::rvsdg::bittype>(node->output(0)->type())
+        && jlm::rvsdg::is<rvsdg::bittype>(node->output(0)->Type())
         && !jlm::rvsdg::is<llvm::UndefValueOperation>(node))
     {
       auto out = node->output(0);
@@ -67,15 +68,16 @@ convert_prints(llvm::RvsdgModule & rm)
   convert_prints(root, &printf, fct);
 }
 
+// TODO: get rid of this and use inlining version instead
 jlm::rvsdg::output *
-route_to_region(jlm::rvsdg::output * output, rvsdg::Region * region)
+route_to_region_rvsdg(jlm::rvsdg::output * output, rvsdg::Region * region)
 {
   JLM_ASSERT(region != nullptr);
 
   if (region == output->region())
     return output;
 
-  output = route_to_region(output, region->node()->region());
+  output = route_to_region_rvsdg(output, region->node()->region());
 
   if (auto gamma = dynamic_cast<rvsdg::GammaNode *>(region->node()))
   {
@@ -115,16 +117,16 @@ convert_prints(
     }
     else if (auto po = dynamic_cast<const print_op *>(&(node->GetOperation())))
     {
-      auto printf_local = route_to_region(printf, region); // TODO: prevent repetition?
-      auto bc = jlm::rvsdg::create_bitconstant(region, 64, po->id());
+      auto printf_local = route_to_region_rvsdg(printf, region); // TODO: prevent repetition?
+      auto & constantNode = llvm::IntegerConstantOperation::Create(*region, 64, po->id());
       jlm::rvsdg::output * val = node->input(0)->origin();
-      if (val->type() != *jlm::rvsdg::bittype::Create(64))
+      if (*val->Type() != *jlm::rvsdg::bittype::Create(64))
       {
-        auto bt = dynamic_cast<const jlm::rvsdg::bittype *>(&val->type());
+        auto bt = std::dynamic_pointer_cast<const rvsdg::bittype>(val->Type());
         JLM_ASSERT(bt);
-        val = &llvm::zext_op::Create(*val, rvsdg::bittype::Create(64));
+        val = &llvm::ZExtOperation::Create(*val, rvsdg::bittype::Create(64));
       }
-      llvm::CallNode::Create(printf_local, functionType, { bc, val });
+      llvm::CallOperation::Create(printf_local, functionType, { constantNode.output(0), val });
       node->output(0)->divert_users(node->input(0)->origin());
       jlm::rvsdg::remove(node);
     }

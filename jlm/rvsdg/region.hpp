@@ -380,6 +380,13 @@ public:
   void
   append_argument(RegionArgument * argument);
 
+  /* \brief Insert \p argument into argument list of the region
+   *
+   * Multiple invocations of append_argument for the same argument are undefined.
+   */
+  void
+  insert_argument(size_t index, RegionArgument * argument);
+
   /**
    * Removes an argument from the region given an arguments' index.
    *
@@ -641,7 +648,20 @@ public:
    */
   template<class Operation>
   static inline bool
-  Contains(const rvsdg::Region & region, bool checkSubregions);
+  ContainsOperation(const rvsdg::Region & region, bool checkSubregions);
+
+  /**
+   * Checks if a node type is contained within the given \p region. If \p checkSubregions is true,
+   * then the subregions of all contained structural nodes are recursively checked as well.
+   * @tparam Operation The operation to check for.
+   * @param region The region to check.
+   * @param checkSubregions If true, then the subregions of all contained structural nodes will be
+   * checked as well.
+   * @return True, if the operation is found. Otherwise, false.
+   */
+  template<class NodeType>
+  static inline bool
+  ContainsNodeType(const rvsdg::Region & region, bool checkSubregions);
 
   /**
    * Counts the number of (sub-)regions contained within \p region. The count includes \p region,

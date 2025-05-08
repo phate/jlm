@@ -2,10 +2,9 @@
 # See COPYING for terms of redistribution.
 
 libllvm_SOURCES = \
-    jlm/llvm/backend/jlm2llvm/instruction.cpp \
-    jlm/llvm/backend/jlm2llvm/jlm2llvm.cpp \
     jlm/llvm/backend/dot/DotWriter.cpp \
-    jlm/llvm/backend/rvsdg2jlm/rvsdg2jlm.cpp \
+    jlm/llvm/backend/IpGraphToLlvmConverter.cpp \
+    jlm/llvm/backend/RvsdgToIpGraphConverter.cpp \
     \
     jlm/llvm/frontend/ControlFlowRestructuring.cpp \
     jlm/llvm/frontend/InterProceduralGraphConversion.cpp \
@@ -31,12 +30,12 @@ libllvm_SOURCES = \
     jlm/llvm/ir/operators/FunctionPointer.cpp \
     jlm/llvm/ir/operators/GetElementPtr.cpp \
     jlm/llvm/ir/operators/IntegerOperations.cpp \
+    jlm/llvm/ir/operators/IOBarrier.cpp \
     jlm/llvm/ir/operators/lambda.cpp \
     jlm/llvm/ir/operators/Load.cpp \
     jlm/llvm/ir/operators/MemCpy.cpp \
     jlm/llvm/ir/operators/MemoryStateOperations.cpp \
     jlm/llvm/ir/operators/operators.cpp \
-    jlm/llvm/ir/operators/Phi.cpp \
     jlm/llvm/ir/operators/sext.cpp \
     jlm/llvm/ir/operators/Store.cpp \
     jlm/llvm/ir/print.cpp \
@@ -46,17 +45,18 @@ libllvm_SOURCES = \
     jlm/llvm/ir/types.cpp \
     jlm/llvm/ir/variable.cpp \
     \
-    jlm/llvm/opt/alias-analyses/AgnosticMemoryNodeProvider.cpp \
+    jlm/llvm/opt/alias-analyses/AgnosticModRefSummarizer.cpp \
     jlm/llvm/opt/alias-analyses/Andersen.cpp \
     jlm/llvm/opt/alias-analyses/MemoryStateEncoder.cpp \
     jlm/llvm/opt/alias-analyses/Optimization.cpp \
     jlm/llvm/opt/alias-analyses/PointerObjectSet.cpp \
     jlm/llvm/opt/alias-analyses/PointsToGraph.cpp \
-    jlm/llvm/opt/alias-analyses/RegionAwareMemoryNodeProvider.cpp \
+    jlm/llvm/opt/alias-analyses/RegionAwareModRefSummarizer.cpp \
     jlm/llvm/opt/alias-analyses/Steensgaard.cpp \
-    jlm/llvm/opt/alias-analyses/TopDownMemoryNodeEliminator.cpp \
+    jlm/llvm/opt/alias-analyses/TopDownModRefEliminator.cpp \
     jlm/llvm/opt/cne.cpp \
     jlm/llvm/opt/DeadNodeElimination.cpp \
+    jlm/llvm/opt/IfConversion.cpp \
     jlm/llvm/opt/inlining.cpp \
     jlm/llvm/opt/InvariantValueRedirection.cpp \
     jlm/llvm/opt/inversion.cpp \
@@ -72,25 +72,26 @@ libllvm_HEADERS = \
 	jlm/llvm/opt/inlining.hpp \
 	jlm/llvm/opt/cne.hpp \
 	jlm/llvm/opt/push.hpp \
+	jlm/llvm/opt/alias-analyses/AgnosticModRefSummarizer.hpp \
 	jlm/llvm/opt/alias-analyses/Andersen.hpp \
 	jlm/llvm/opt/alias-analyses/DifferencePropagation.hpp \
-	jlm/llvm/opt/alias-analyses/EliminatedMemoryNodeProvider.hpp \
+	jlm/llvm/opt/alias-analyses/EliminatedModRefSummarizer.hpp \
 	jlm/llvm/opt/alias-analyses/LazyCycleDetection.hpp \
-	jlm/llvm/opt/alias-analyses/MemoryNodeProvider.hpp \
 	jlm/llvm/opt/alias-analyses/OnlineCycleDetection.hpp \
 	jlm/llvm/opt/alias-analyses/Optimization.hpp \
-	jlm/llvm/opt/alias-analyses/MemoryNodeEliminator.hpp \
-	jlm/llvm/opt/alias-analyses/MemoryNodeProvisioning.hpp \
+	jlm/llvm/opt/alias-analyses/ModRefEliminator.hpp \
 	jlm/llvm/opt/alias-analyses/MemoryStateEncoder.hpp \
+	jlm/llvm/opt/alias-analyses/ModRefSummarizer.hpp \
+	jlm/llvm/opt/alias-analyses/ModRefSummary.hpp \
 	jlm/llvm/opt/alias-analyses/Steensgaard.hpp \
-	jlm/llvm/opt/alias-analyses/TopDownMemoryNodeEliminator.hpp \
+	jlm/llvm/opt/alias-analyses/TopDownModRefEliminator.hpp \
 	jlm/llvm/opt/alias-analyses/PointerObjectSet.hpp \
-	jlm/llvm/opt/alias-analyses/AgnosticMemoryNodeProvider.hpp \
-	jlm/llvm/opt/alias-analyses/RegionAwareMemoryNodeProvider.hpp \
+	jlm/llvm/opt/alias-analyses/RegionAwareModRefSummarizer.hpp \
+	jlm/llvm/opt/alias-analyses/PointsToAnalysis.hpp \
 	jlm/llvm/opt/alias-analyses/PointsToGraph.hpp \
-	jlm/llvm/opt/alias-analyses/AliasAnalysis.hpp \
 	jlm/llvm/opt/pull.hpp \
 	jlm/llvm/opt/reduction.hpp \
+	jlm/llvm/opt/IfConversion.hpp \
 	jlm/llvm/opt/InvariantValueRedirection.hpp \
 	jlm/llvm/opt/inversion.hpp \
 	jlm/llvm/opt/RvsdgTreePrinter.hpp \
@@ -120,13 +121,13 @@ libllvm_HEADERS = \
 	jlm/llvm/ir/types.hpp \
 	jlm/llvm/ir/cfg-structure.hpp \
 	jlm/llvm/ir/operators/operators.hpp \
-	jlm/llvm/ir/operators/Phi.hpp \
 	jlm/llvm/ir/operators/Load.hpp \
 	jlm/llvm/ir/operators/MemCpy.hpp \
 	jlm/llvm/ir/operators/MemoryStateOperations.hpp \
 	jlm/llvm/ir/operators/FunctionPointer.hpp \
 	jlm/llvm/ir/operators/GetElementPtr.hpp \
 	jlm/llvm/ir/operators/IntegerOperations.hpp \
+	jlm/llvm/ir/operators/IOBarrier.hpp \
 	jlm/llvm/ir/operators/delta.hpp \
 	jlm/llvm/ir/operators/Store.hpp \
 	jlm/llvm/ir/operators/alloca.hpp \
@@ -135,24 +136,13 @@ libllvm_HEADERS = \
 	jlm/llvm/ir/operators/lambda.hpp \
 	jlm/llvm/ir/aggregation.hpp \
 	jlm/llvm/backend/dot/DotWriter.hpp \
-	jlm/llvm/backend/rvsdg2jlm/rvsdg2jlm.hpp \
-	jlm/llvm/backend/rvsdg2jlm/context.hpp \
-	jlm/llvm/backend/jlm2llvm/jlm2llvm.hpp \
-	jlm/llvm/backend/jlm2llvm/instruction.hpp \
-	jlm/llvm/backend/jlm2llvm/context.hpp \
+	jlm/llvm/backend/IpGraphToLlvmConverter.hpp \
+	jlm/llvm/backend/RvsdgToIpGraphConverter.hpp \
 
 libllvm_TESTS += \
     tests/jlm/llvm/backend/dot/DotWriterTests \
-    tests/jlm/llvm/backend/llvm/r2j/GammaTests \
-    tests/jlm/llvm/backend/llvm/r2j/test-recursive-data \
-    tests/jlm/llvm/backend/llvm/jlm-llvm/LoadTests \
-    tests/jlm/llvm/backend/llvm/jlm-llvm/MemCpyTests \
-    tests/jlm/llvm/backend/llvm/jlm-llvm/StoreTests \
-    tests/jlm/llvm/backend/llvm/jlm-llvm/TestAttributeConversion \
-    tests/jlm/llvm/backend/llvm/jlm-llvm/test-bitconstant \
-    tests/jlm/llvm/backend/llvm/jlm-llvm/test-function-calls \
-    tests/jlm/llvm/backend/llvm/jlm-llvm/test-ignore-memory-state \
-    tests/jlm/llvm/backend/llvm/jlm-llvm/test-select-with-state \
+    tests/jlm/llvm/backend/IpGraphToLlvmConverterTests \
+    tests/jlm/llvm/backend/RvsdgToIpGraphConverterTests \
     tests/jlm/llvm/frontend/llvm/LoadTests \
     tests/jlm/llvm/frontend/llvm/MemCpyTests \
     tests/jlm/llvm/frontend/llvm/StoreTests \
@@ -194,21 +184,22 @@ libllvm_TESTS += \
     tests/jlm/llvm/ir/TestCallSummary \
     tests/jlm/llvm/ir/ThreeAddressCodeTests \
     tests/jlm/llvm/ir/TypeConverterTests \
-    tests/jlm/llvm/opt/alias-analyses/TestAgnosticMemoryNodeProvider \
+    tests/jlm/llvm/opt/alias-analyses/AgnosticModRefSummarizerTests \
     tests/jlm/llvm/opt/alias-analyses/TestAndersen \
     tests/jlm/llvm/opt/alias-analyses/TestDifferencePropagation \
     tests/jlm/llvm/opt/alias-analyses/TestLazyCycleDetection \
     tests/jlm/llvm/opt/alias-analyses/TestMemoryStateEncoder \
     tests/jlm/llvm/opt/alias-analyses/TestPointerObjectSet \
     tests/jlm/llvm/opt/alias-analyses/TestPointsToGraph \
-    tests/jlm/llvm/opt/alias-analyses/TestRegionAwareMemoryNodeProvider \
+    tests/jlm/llvm/opt/alias-analyses/RegionAwareModRefSummarizerTests \
     tests/jlm/llvm/opt/alias-analyses/TestSteensgaard \
-    tests/jlm/llvm/opt/alias-analyses/TestTopDownMemoryNodeEliminator \
+    tests/jlm/llvm/opt/alias-analyses/TopDownModRefEliminatorTests \
+    tests/jlm/llvm/opt/DeadNodeEliminationTests \
+    tests/jlm/llvm/opt/IfConversionTests \
     tests/jlm/llvm/opt/InvariantValueRedirectionTests \
     tests/jlm/llvm/opt/NodeReductionTests \
     tests/jlm/llvm/opt/RvsdgTreePrinterTests \
     tests/jlm/llvm/opt/test-cne \
-    tests/jlm/llvm/opt/TestDeadNodeElimination \
     tests/jlm/llvm/opt/test-inlining \
     tests/jlm/llvm/opt/test-inversion \
     tests/jlm/llvm/opt/test-pull \

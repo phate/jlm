@@ -3,10 +3,10 @@
  * See COPYING for terms of redistribution.
  */
 
-#include <jlm/llvm/opt/alias-analyses/AgnosticMemoryNodeProvider.hpp>
+#include <jlm/llvm/opt/alias-analyses/AgnosticModRefSummarizer.hpp>
 #include <jlm/llvm/opt/alias-analyses/Andersen.hpp>
 #include <jlm/llvm/opt/alias-analyses/Optimization.hpp>
-#include <jlm/llvm/opt/alias-analyses/RegionAwareMemoryNodeProvider.hpp>
+#include <jlm/llvm/opt/alias-analyses/RegionAwareModRefSummarizer.hpp>
 #include <jlm/llvm/opt/alias-analyses/Steensgaard.hpp>
 #include <jlm/llvm/opt/cne.hpp>
 #include <jlm/llvm/opt/DeadNodeElimination.hpp>
@@ -119,6 +119,7 @@ JlmOptCommandLineOptions::FromCommandLineArgumentToOptimizationId(
         { OptimizationCommandLineArgument::DeadNodeElimination_,
           OptimizationId::DeadNodeElimination },
         { OptimizationCommandLineArgument::FunctionInlining_, OptimizationId::FunctionInlining },
+        { OptimizationCommandLineArgument::IfConversion_, OptimizationId::IfConversion },
         { OptimizationCommandLineArgument::InvariantValueRedirection_,
           OptimizationId::InvariantValueRedirection },
         { OptimizationCommandLineArgument::NodePushOut_, OptimizationId::NodePushOut },
@@ -154,6 +155,7 @@ JlmOptCommandLineOptions::ToCommandLineArgument(OptimizationId optimizationId)
         { OptimizationId::DeadNodeElimination,
           OptimizationCommandLineArgument::DeadNodeElimination_ },
         { OptimizationId::FunctionInlining, OptimizationCommandLineArgument::FunctionInlining_ },
+        { OptimizationId::IfConversion, OptimizationCommandLineArgument::IfConversion_ },
         { OptimizationId::InvariantValueRedirection,
           OptimizationCommandLineArgument::InvariantValueRedirection_ },
         { OptimizationId::LoopUnrolling, OptimizationCommandLineArgument::LoopUnrolling_ },
@@ -221,8 +223,7 @@ JlmOptCommandLineOptions::GetStatisticsIdCommandLineArguments()
 {
   static util::BijectiveMap<util::Statistics::Id, std::string_view> mapping = {
     { util::Statistics::Id::Aggregation, "print-aggregation-time" },
-    { util::Statistics::Id::AgnosticMemoryNodeProvisioning,
-      "print-agnostic-memory-node-provisioning" },
+    { util::Statistics::Id::AgnosticModRefSummarizer, "print-agnostic-mod-ref-summarization" },
     { util::Statistics::Id::AndersenAnalysis, "print-andersen-analysis" },
     { util::Statistics::Id::Annotation, "print-annotation-time" },
     { util::Statistics::Id::CommonNodeElimination, "print-cne-stat" },
@@ -230,6 +231,7 @@ JlmOptCommandLineOptions::GetStatisticsIdCommandLineArguments()
     { util::Statistics::Id::DataNodeToDelta, "printDataNodeToDelta" },
     { util::Statistics::Id::DeadNodeElimination, "print-dne-stat" },
     { util::Statistics::Id::FunctionInlining, "print-iln-stat" },
+    { util::Statistics::Id::IfConversion, "print-if-conversion" },
     { util::Statistics::Id::InvariantValueRedirection, "printInvariantValueRedirection" },
     { util::Statistics::Id::JlmToRvsdgConversion, "print-jlm-rvsdg-conversion" },
     { util::Statistics::Id::LoopUnrolling, "print-unroll-stat" },
@@ -237,7 +239,7 @@ JlmOptCommandLineOptions::GetStatisticsIdCommandLineArguments()
     { util::Statistics::Id::PullNodes, "print-pull-stat" },
     { util::Statistics::Id::PushNodes, "print-push-stat" },
     { util::Statistics::Id::ReduceNodes, "print-reduction-stat" },
-    { util::Statistics::Id::RegionAwareMemoryNodeProvisioning, "print-memory-node-provisioning" },
+    { util::Statistics::Id::RegionAwareModRefSummarizer, "print-mod-ref-summarization" },
     { util::Statistics::Id::RvsdgConstruction, "print-rvsdg-construction" },
     { util::Statistics::Id::RvsdgDestruction, "print-rvsdg-destruction" },
     { util::Statistics::Id::RvsdgOptimization, "print-rvsdg-optimization" },
@@ -319,25 +321,29 @@ JlcCommandLineParser::ParseCommandLineArguments(int argc, const char * const * a
   {
     if (optimizations.empty() && optimizationLevel == JlcCommandLineOptions::OptimizationLevel::O3)
     {
-      return std::vector<JlmOptCommandLineOptions::OptimizationId>(
-          { JlmOptCommandLineOptions::OptimizationId::FunctionInlining,
-            JlmOptCommandLineOptions::OptimizationId::InvariantValueRedirection,
-            JlmOptCommandLineOptions::OptimizationId::NodeReduction,
-            JlmOptCommandLineOptions::OptimizationId::DeadNodeElimination,
-            JlmOptCommandLineOptions::OptimizationId::ThetaGammaInversion,
-            JlmOptCommandLineOptions::OptimizationId::InvariantValueRedirection,
-            JlmOptCommandLineOptions::OptimizationId::DeadNodeElimination,
-            JlmOptCommandLineOptions::OptimizationId::NodePushOut,
-            JlmOptCommandLineOptions::OptimizationId::InvariantValueRedirection,
-            JlmOptCommandLineOptions::OptimizationId::DeadNodeElimination,
-            JlmOptCommandLineOptions::OptimizationId::NodeReduction,
-            JlmOptCommandLineOptions::OptimizationId::CommonNodeElimination,
-            JlmOptCommandLineOptions::OptimizationId::DeadNodeElimination,
-            JlmOptCommandLineOptions::OptimizationId::NodePullIn,
-            JlmOptCommandLineOptions::OptimizationId::InvariantValueRedirection,
-            JlmOptCommandLineOptions::OptimizationId::DeadNodeElimination,
-            JlmOptCommandLineOptions::OptimizationId::LoopUnrolling,
-            JlmOptCommandLineOptions::OptimizationId::InvariantValueRedirection });
+      return std::vector({
+          JlmOptCommandLineOptions::OptimizationId::FunctionInlining,
+          JlmOptCommandLineOptions::OptimizationId::InvariantValueRedirection,
+          JlmOptCommandLineOptions::OptimizationId::NodeReduction,
+          JlmOptCommandLineOptions::OptimizationId::DeadNodeElimination,
+          JlmOptCommandLineOptions::OptimizationId::ThetaGammaInversion,
+          JlmOptCommandLineOptions::OptimizationId::InvariantValueRedirection,
+          JlmOptCommandLineOptions::OptimizationId::DeadNodeElimination,
+          JlmOptCommandLineOptions::OptimizationId::NodePushOut,
+          JlmOptCommandLineOptions::OptimizationId::InvariantValueRedirection,
+          JlmOptCommandLineOptions::OptimizationId::DeadNodeElimination,
+          JlmOptCommandLineOptions::OptimizationId::NodeReduction,
+          JlmOptCommandLineOptions::OptimizationId::CommonNodeElimination,
+          JlmOptCommandLineOptions::OptimizationId::DeadNodeElimination,
+          JlmOptCommandLineOptions::OptimizationId::NodePullIn,
+          JlmOptCommandLineOptions::OptimizationId::InvariantValueRedirection,
+          JlmOptCommandLineOptions::OptimizationId::DeadNodeElimination,
+          JlmOptCommandLineOptions::OptimizationId::LoopUnrolling,
+          JlmOptCommandLineOptions::OptimizationId::InvariantValueRedirection,
+          JlmOptCommandLineOptions::OptimizationId::IfConversion,
+          JlmOptCommandLineOptions::OptimizationId::CommonNodeElimination,
+          JlmOptCommandLineOptions::OptimizationId::DeadNodeElimination,
+      });
     }
 
     std::vector<JlmOptCommandLineOptions::OptimizationId> optimizationIds;
@@ -481,8 +487,8 @@ JlcCommandLineParser::ParseCommandLineArguments(int argc, const char * const * a
               util::Statistics::Id::Aggregation,
               "Collect control flow graph aggregation pass statistics."),
           CreateStatisticsOption(
-              util::Statistics::Id::AgnosticMemoryNodeProvisioning,
-              "Collect agnostic memory node provisioning pass statistics."),
+              util::Statistics::Id::AgnosticModRefSummarizer,
+              "Collect agnostic mod/ref summarizer pass statistics."),
           CreateStatisticsOption(
               util::Statistics::Id::AndersenAnalysis,
               "Collect Andersen alias analysis pass statistics."),
@@ -526,8 +532,8 @@ JlcCommandLineParser::ParseCommandLineArguments(int argc, const char * const * a
               util::Statistics::Id::ReduceNodes,
               "Collect node reduction pass statistics."),
           CreateStatisticsOption(
-              util::Statistics::Id::RegionAwareMemoryNodeProvisioning,
-              "Collect memory node provisioning pass statistics."),
+              util::Statistics::Id::RegionAwareModRefSummarizer,
+              "Collect region-aware mod/ref summarizer pass statistics."),
           CreateStatisticsOption(
               util::Statistics::Id::RvsdgConstruction,
               "Collect RVSDG construction pass statistics."),
@@ -704,8 +710,8 @@ JlmOptCommandLineParser::ParseCommandLineArguments(int argc, const char * const 
               util::Statistics::Id::Aggregation,
               "Write aggregation statistics to file."),
           CreateStatisticsOption(
-              util::Statistics::Id::AgnosticMemoryNodeProvisioning,
-              "Collect agnostic memory node provisioning pass statistics."),
+              util::Statistics::Id::AgnosticModRefSummarizer,
+              "Collect agnostic mod/ref summarization pass statistics."),
           CreateStatisticsOption(
               util::Statistics::Id::AndersenAnalysis,
               "Collect Andersen alias analysis pass statistics."),
@@ -731,6 +737,9 @@ JlmOptCommandLineParser::ParseCommandLineArguments(int argc, const char * const 
               util::Statistics::Id::FunctionInlining,
               "Write function inlining statistics to file."),
           CreateStatisticsOption(
+              util::Statistics::Id::IfConversion,
+              "Collect if-conversion transformation statistics"),
+          CreateStatisticsOption(
               util::Statistics::Id::InvariantValueRedirection,
               "Write invariant value redirection statistics to file."),
           CreateStatisticsOption(
@@ -749,8 +758,8 @@ JlmOptCommandLineParser::ParseCommandLineArguments(int argc, const char * const 
               util::Statistics::Id::ReduceNodes,
               "Write node reduction statistics to file."),
           CreateStatisticsOption(
-              util::Statistics::Id::RegionAwareMemoryNodeProvisioning,
-              "Write memory node provisioning statistics to file."),
+              util::Statistics::Id::RegionAwareModRefSummarizer,
+              "Collect region-aware mod/ref summarization statistics."),
           CreateStatisticsOption(
               util::Statistics::Id::RvsdgConstruction,
               "Write RVSDG construction statistics to file."),
@@ -820,6 +829,7 @@ JlmOptCommandLineParser::ParseCommandLineArguments(int argc, const char * const 
   auto commonNodeElimination = JlmOptCommandLineOptions::OptimizationId::CommonNodeElimination;
   auto deadNodeElimination = JlmOptCommandLineOptions::OptimizationId::DeadNodeElimination;
   auto functionInlining = JlmOptCommandLineOptions::OptimizationId::FunctionInlining;
+  auto ifConversion = JlmOptCommandLineOptions::OptimizationId::IfConversion;
   auto invariantValueRedirection =
       JlmOptCommandLineOptions::OptimizationId::InvariantValueRedirection;
   auto nodePushOut = JlmOptCommandLineOptions::OptimizationId::NodePushOut;
@@ -863,6 +873,10 @@ JlmOptCommandLineParser::ParseCommandLineArguments(int argc, const char * const 
               functionInlining,
               JlmOptCommandLineOptions::ToCommandLineArgument(functionInlining),
               "Function Inlining"),
+          ::clEnumValN(
+              ifConversion,
+              JlmOptCommandLineOptions::ToCommandLineArgument(ifConversion),
+              "Convert pass-through values of gamma nodes to select operations"),
           ::clEnumValN(
               invariantValueRedirection,
               JlmOptCommandLineOptions::ToCommandLineArgument(invariantValueRedirection),

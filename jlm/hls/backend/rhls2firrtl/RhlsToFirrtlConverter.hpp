@@ -13,8 +13,6 @@
 #include <jlm/llvm/ir/operators/operators.hpp>
 #include <jlm/llvm/ir/operators/sext.hpp>
 #include <jlm/llvm/ir/operators/Store.hpp>
-#include <jlm/rvsdg/bitstring/comparison.hpp>
-#include <jlm/rvsdg/bitstring/type.hpp>
 #include <jlm/rvsdg/traverser.hpp>
 
 #include <mlir/IR/Builders.h>
@@ -102,13 +100,13 @@ private:
   std::string
   toString(const circt::firrtl::CircuitOp circuit);
 
-  std::unordered_map<std::string, circt::firrtl::FModuleOp> modules;
+  std::unordered_map<std::string, circt::firrtl::FModuleLike> modules;
   // FIRRTL generating functions
   std::unordered_map<jlm::rvsdg::SimpleNode *, circt::firrtl::InstanceOp>
   MlirGen(hls::loop_node * loopNode, mlir::Block * body, mlir::Block * circuitBody);
-  circt::firrtl::FModuleOp
+  circt::firrtl::FModuleLike
   MlirGen(rvsdg::Region * subRegion, mlir::Block * circuitBody);
-  circt::firrtl::FModuleOp
+  circt::firrtl::FModuleLike
   MlirGen(const jlm::rvsdg::SimpleNode * node);
   // Operations
   circt::firrtl::FModuleOp
@@ -163,6 +161,8 @@ private:
   MlirGenBranch(const jlm::rvsdg::SimpleNode * node);
   circt::firrtl::FModuleOp
   MlirGenSimpleNode(const jlm::rvsdg::SimpleNode * node);
+  circt::firrtl::FExtModuleOp
+  MlirGenExtModule(const jlm::rvsdg::SimpleNode * node);
 
   // Helper functions
   void
@@ -260,7 +260,8 @@ private:
 
   jlm::rvsdg::output *
   TraceArgument(rvsdg::RegionArgument * arg);
-  jlm::rvsdg::simple_output *
+
+  rvsdg::SimpleOutput *
   TraceStructuralOutput(rvsdg::StructuralOutput * out);
 
   void

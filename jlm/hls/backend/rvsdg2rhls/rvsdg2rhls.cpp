@@ -10,7 +10,6 @@
 #include <jlm/hls/backend/rvsdg2rhls/add-triggers.hpp>
 #include <jlm/hls/backend/rvsdg2rhls/alloca-conv.hpp>
 #include <jlm/hls/backend/rvsdg2rhls/check-rhls.hpp>
-#include <jlm/hls/backend/rvsdg2rhls/dae-conv.hpp>
 #include <jlm/hls/backend/rvsdg2rhls/distribute-constants.hpp>
 #include <jlm/hls/backend/rvsdg2rhls/GammaConversion.hpp>
 #include <jlm/hls/backend/rvsdg2rhls/instrument-ref.hpp>
@@ -20,18 +19,21 @@
 #include <jlm/hls/backend/rvsdg2rhls/memstate-conv.hpp>
 #include <jlm/hls/backend/rvsdg2rhls/merge-gamma.hpp>
 #include <jlm/hls/backend/rvsdg2rhls/remove-redundant-buf.hpp>
-#include <jlm/hls/backend/rvsdg2rhls/remove-unused-state.hpp>
 #include <jlm/hls/backend/rvsdg2rhls/rhls-dne.hpp>
 #include <jlm/hls/backend/rvsdg2rhls/rvsdg2rhls.hpp>
 #include <jlm/hls/backend/rvsdg2rhls/ThetaConversion.hpp>
+#include <jlm/hls/backend/rvsdg2rhls/UnusedStateRemoval.hpp>
 #include <jlm/hls/opt/cne.hpp>
+#include <jlm/hls/opt/InvariantLambdaMemoryStateRemoval.hpp>
+#include <jlm/hls/opt/IOBarrierRemoval.hpp>
 #include <jlm/hls/util/view.hpp>
-#include <jlm/llvm/backend/jlm2llvm/jlm2llvm.hpp>
-#include <jlm/llvm/backend/rvsdg2jlm/rvsdg2jlm.hpp>
+#include <jlm/llvm/backend/IpGraphToLlvmConverter.hpp>
+#include <jlm/llvm/backend/RvsdgToIpGraphConverter.hpp>
 #include <jlm/llvm/ir/CallSummary.hpp>
 #include <jlm/llvm/ir/operators/alloca.hpp>
 #include <jlm/llvm/ir/operators/call.hpp>
 #include <jlm/llvm/ir/operators/delta.hpp>
+#include <jlm/llvm/ir/operators/IntegerOperations.hpp>
 #include <jlm/llvm/ir/RvsdgModule.hpp>
 #include <jlm/llvm/opt/alias-analyses/Optimization.hpp>
 #include <jlm/llvm/opt/DeadNodeElimination.hpp>
@@ -205,23 +207,27 @@ convert_alloca(rvsdg::Region * region)
           false);
       // create zero constant of allocated type
       jlm::rvsdg::output * cout;
-      if (auto bt = dynamic_cast<const jlm::rvsdg::bittype *>(&po->value_type()))
+      if (auto bt = dynamic_cast<const llvm::IntegerConstantOperation *>(&po->value_type()))
       {
-        cout = jlm::rvsdg::create_bitconstant(db->subregion(), bt->nbits(), 0);
+        cout = llvm::IntegerConstantOperation::Create(
+                   *db->subregion(),
+                   bt->Representation().nbits(),
+                   0)
+                   .output(0);
       }
       else
       {
-        cout = llvm::ConstantAggregateZero::Create(*db->subregion(), po->ValueType());
+        cout = llvm::ConstantAggregateZeroOperation::Create(*db->subregion(), po->ValueType());
       }
       auto delta = db->finalize(cout);
       jlm::llvm::GraphExport::Create(*delta, delta_name);
-      auto delta_local = route_to_region(delta, region);
+      auto delta_local = route_to_region_rvsdg(delta, region);
       node->output(0)->divert_users(delta_local);
       // TODO: check that the input to alloca is a bitconst 1
       // TODO: handle general case of other nodes getting state edge without a merge
       JLM_ASSERT(node->output(1)->nusers() == 1);
       auto mux_in = *node->output(1)->begin();
-      auto mux_node = rvsdg::input::GetNode(*mux_in);
+      auto mux_node = rvsdg::TryGetOwnerNode<rvsdg::Node>(*mux_in);
       if (dynamic_cast<const llvm::MemoryStateMergeOperation *>(&mux_node->GetOperation()))
       {
         // merge after alloca -> remove merge
@@ -278,7 +284,7 @@ rename_delta(llvm::delta::node * odn)
 
   odn->output()->divert_users(data);
   jlm::rvsdg::remove(odn);
-  return static_cast<llvm::delta::node *>(jlm::rvsdg::output::GetNode(*data));
+  return rvsdg::TryGetOwnerNode<llvm::delta::node>(*data);
 }
 
 rvsdg::LambdaNode *
@@ -389,7 +395,7 @@ split_hls_function(llvm::RvsdgModule & rm, const std::string & function_name)
         }
         else
         {
-          throw util::error("Unsupported node type: " + orig_node->GetOperation().debug_string());
+          throw util::error("Unsupported node type: " + orig_node->DebugString());
         }
       }
       // copy function into rhls
@@ -426,24 +432,34 @@ void
 rvsdg2rhls(llvm::RvsdgModule & rhls, util::StatisticsCollector & collector)
 {
   pre_opt(rhls);
+
+  IOBarrierRemoval ioBarrierRemoval;
+  ioBarrierRemoval.Run(rhls, collector);
+
   merge_gamma(rhls);
 
   llvm::DeadNodeElimination llvmDne;
   llvmDne.Run(rhls, collector);
 
   mem_sep_argument(rhls);
-  remove_unused_state(rhls);
+  llvm::InvariantValueRedirection llvmIvr;
+  llvmIvr.Run(rhls, collector);
+  llvmDne.Run(rhls, collector);
+  InvariantLambdaMemoryStateRemoval::CreateAndRun(rhls, collector);
+  RemoveInvariantLambdaStateEdges(rhls);
   // main conversion steps
   distribute_constants(rhls);
   ConvertGammaNodes(rhls);
   ConvertThetaNodes(rhls);
-  hls::cne hlsCne;
+  cne hlsCne;
   hlsCne.Run(rhls, collector);
   // rhls optimization
   dne(rhls);
   alloca_conv(rhls);
   mem_queue(rhls);
   MemoryConverter(rhls);
+  llvm::NodeReduction llvmRed;
+  llvmRed.Run(rhls, collector);
   memstate_conv(rhls);
   remove_redundant_buf(rhls);
   // enforce 1:1 input output relationship
@@ -467,13 +483,13 @@ dump_ref(llvm::RvsdgModule & rhls, const util::filepath & path)
   {
     auto graphImport =
         util::AssertedCast<const llvm::GraphImport>(reference->Rvsdg().GetRootRegion().argument(i));
-    std::cout << "impport " << graphImport->Name() << ": " << graphImport->type().debug_string()
+    std::cout << "impport " << graphImport->Name() << ": " << graphImport->Type()->debug_string()
               << "\n";
   }
   ::llvm::LLVMContext ctx;
   jlm::util::StatisticsCollector statisticsCollector;
-  auto jm2 = llvm::rvsdg2jlm::rvsdg2jlm(*reference, statisticsCollector);
-  auto lm2 = llvm::jlm2llvm::convert(*jm2, ctx);
+  auto jm2 = llvm::RvsdgToIpGraphConverter::CreateAndConvertModule(*reference, statisticsCollector);
+  auto lm2 = llvm::IpGraphToLlvmConverter::CreateAndConvertModule(*jm2, ctx);
   std::error_code EC;
   ::llvm::raw_fd_ostream os(path.to_str(), EC);
   lm2->print(os, nullptr);

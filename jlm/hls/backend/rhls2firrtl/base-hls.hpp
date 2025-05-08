@@ -36,15 +36,6 @@ public:
   static int
   JlmSize(const jlm::rvsdg::Type * type);
 
-  /**
-   * @return The size of a pointer in bits.
-   */
-  [[nodiscard]] static size_t
-  GetPointerSizeInBits()
-  {
-    return 64;
-  }
-
 private:
   virtual std::string
   extension() = 0;
@@ -86,7 +77,7 @@ protected:
     std::vector<rvsdg::RegionArgument *> mem_resps;
     for (auto arg : lambda.subregion()->Arguments())
     {
-      if (rvsdg::is<bundletype>(arg->type()))
+      if (rvsdg::is<bundletype>(arg->Type()))
         mem_resps.push_back(arg);
     }
     return mem_resps;
@@ -104,7 +95,7 @@ protected:
     std::vector<rvsdg::RegionResult *> mem_resps;
     for (auto result : lambda.subregion()->Results())
     {
-      if (rvsdg::is<bundletype>(result->type()))
+      if (rvsdg::is<bundletype>(result->Type()))
         mem_resps.push_back(result);
     }
     return mem_resps;
@@ -123,7 +114,7 @@ protected:
     std::vector<rvsdg::RegionArgument *> args;
     for (auto argument : lambda.subregion()->Arguments())
     {
-      if (!rvsdg::is<bundletype>(argument->type()))
+      if (!rvsdg::is<bundletype>(argument->Type()))
         args.push_back(argument);
     }
     return args;
@@ -141,7 +132,7 @@ protected:
     std::vector<rvsdg::RegionResult *> results;
     for (auto result : lambda.subregion()->Results())
     {
-      if (!rvsdg::is<bundletype>(result->type()))
+      if (!rvsdg::is<bundletype>(result->Type()))
         results.push_back(result);
     }
     return results;

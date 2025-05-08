@@ -13,7 +13,7 @@ namespace jlm::hls
 bool
 eliminate_buf(jlm::rvsdg::output * o)
 {
-  if (auto so = dynamic_cast<jlm::rvsdg::simple_output *>(o))
+  if (auto so = dynamic_cast<rvsdg::SimpleOutput *>(o))
   {
     auto node = so->node();
     if (jlm::rvsdg::is<const branch_op>(node->GetOperation()))

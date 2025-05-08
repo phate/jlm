@@ -12,6 +12,7 @@
 #include <jlm/rvsdg/structural-node.hpp>
 #include <jlm/rvsdg/traverser.hpp>
 #include <jlm/rvsdg/type.hpp>
+#include <jlm/rvsdg/UnitType.hpp>
 
 namespace jlm::llvm::dot
 {
@@ -38,7 +39,7 @@ GetOrCreateTypeGraphNode(const rvsdg::Type & type, util::Graph & typeGraph)
   // Some types get special handling, such as adding incoming edges from aggregate types
   if (rvsdg::is<rvsdg::StateType>(type) || rvsdg::is<rvsdg::bittype>(type)
       || rvsdg::is<PointerType>(type) || rvsdg::is<FloatingPointType>(type)
-      || rvsdg::is<VariableArgumentType>(type))
+      || rvsdg::is<VariableArgumentType>(type) || rvsdg::is<rvsdg::UnitType>(type))
   {
     // No need to provide any information beyond the debug string
   }
@@ -101,9 +102,9 @@ AttachNodeInput(util::Port & inputPort, const rvsdg::input & rvsdgInput)
           reinterpret_cast<util::Port *>(graph.GetElementFromProgramObject(*rvsdgInput.origin())))
   {
     auto & edge = graph.CreateDirectedEdge(*originPort, inputPort);
-    if (rvsdg::is<MemoryStateType>(rvsdgInput.type()))
+    if (rvsdg::is<MemoryStateType>(rvsdgInput.Type()))
       edge.SetAttribute("color", util::Colors::Red);
-    if (rvsdg::is<IOStateType>(rvsdgInput.type()))
+    if (rvsdg::is<IOStateType>(rvsdgInput.Type()))
       edge.SetAttribute("color", util::Colors::Green);
   }
 }
@@ -125,7 +126,7 @@ AttachNodeOutput(
   if (typeGraph)
     outputPort.SetAttributeGraphElement(
         "type",
-        GetOrCreateTypeGraphNode(rvsdgOutput.type(), *typeGraph));
+        GetOrCreateTypeGraphNode(*rvsdgOutput.Type(), *typeGraph));
 }
 
 /**
@@ -166,7 +167,7 @@ CreateGraphNodes(util::Graph & graph, rvsdg::Region & region, util::Graph * type
   for (const auto rvsdgNode : traverser)
   {
     auto & node = graph.CreateInOutNode(rvsdgNode->ninputs(), rvsdgNode->noutputs());
-    node.SetLabel(rvsdgNode->GetOperation().debug_string());
+    node.SetLabel(rvsdgNode->DebugString());
     node.SetProgramObject(*rvsdgNode);
 
     for (size_t i = 0; i < rvsdgNode->ninputs(); i++)

@@ -20,7 +20,7 @@ get_trigger(rvsdg::Region * region)
 {
   for (size_t i = 0; i < region->narguments(); ++i)
   {
-    if (region->argument(i)->type() == *hls::triggertype::Create())
+    if (*region->argument(i)->Type() == *hls::triggertype::Create())
     {
       return region->argument(i);
     }
@@ -120,7 +120,7 @@ add_triggers(rvsdg::Region * region)
       }
       else
       {
-        throw jlm::util::error("Unexpected node type: " + node->GetOperation().debug_string());
+        throw jlm::util::error("Unexpected node type: " + node->DebugString());
       }
     }
     else if (auto sn = dynamic_cast<jlm::rvsdg::SimpleNode *>(node))
@@ -139,7 +139,7 @@ add_triggers(rvsdg::Region * region)
     }
     else
     {
-      throw jlm::util::error("Unexpected node type: " + node->GetOperation().debug_string());
+      throw jlm::util::error("Unexpected node type: " + node->DebugString());
     }
   }
 }

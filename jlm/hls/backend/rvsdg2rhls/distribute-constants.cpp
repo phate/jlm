@@ -15,7 +15,7 @@ namespace jlm
 {
 
 void
-distribute_constant(const rvsdg::SimpleOperation & op, rvsdg::simple_output * out)
+distribute_constant(const rvsdg::SimpleOperation & op, rvsdg::SimpleOutput * out)
 {
   JLM_ASSERT(jlm::hls::is_constant(out->node()));
   bool changed = true;
@@ -42,25 +42,52 @@ distribute_constant(const rvsdg::SimpleOperation & op, rvsdg::simple_output * ou
           break;
         }
       }
+      // push constants that are returned by loops out of them
+      if (auto res = dynamic_cast<rvsdg::RegionResult *>(user))
+      {
+        auto out = res->output();
+        if (out && rvsdg::TryGetOwnerNode<rvsdg::ThetaNode>(*out))
+        {
+          if (out->nusers())
+          {
+            auto out_replacement =
+                rvsdg::SimpleNode::Create(*out->node()->region(), op, {}).output(0);
+            out->divert_users(out_replacement);
+            distribute_constant(op, out_replacement);
+            changed = true;
+            break;
+          }
+        }
+      }
       if (auto gammaNode = rvsdg::TryGetOwnerNode<rvsdg::GammaNode>(*user))
       {
-        if (gammaNode->predicate() == user)
+        auto rolevar = gammaNode->MapInput(*user);
+        if (std::get_if<rvsdg::GammaNode::MatchVar>(&rolevar))
         {
+          // ignore predicate
           continue;
         }
-        for (auto argument : gammaNode->MapInputEntryVar(*user).branchArgument)
+        else if (auto entryvar = std::get_if<rvsdg::GammaNode::EntryVar>(&rolevar))
         {
-          if (argument->nusers())
+          for (auto argument : entryvar->branchArgument)
           {
-            auto arg_replacement = rvsdg::SimpleNode::Create(*argument->region(), op, {}).output(0);
-            argument->divert_users(arg_replacement);
-            distribute_constant(op, arg_replacement);
+            if (argument->nusers())
+            {
+              auto arg_replacement =
+                  rvsdg::SimpleNode::Create(*argument->region(), op, {}).output(0);
+              argument->divert_users(arg_replacement);
+              distribute_constant(op, arg_replacement);
+            }
+            argument->region()->RemoveArgument(argument->index());
           }
-          argument->region()->RemoveArgument(argument->index());
+          gammaNode->RemoveInput(user->index());
+          changed = true;
+          break;
         }
-        gammaNode->RemoveInput(user->index());
-        changed = true;
-        break;
+        else
+        {
+          JLM_UNREACHABLE("Gamma input must either by MatchVar or EntryVar");
+        }
       }
     }
   }
@@ -92,7 +119,7 @@ hls::distribute_constants(rvsdg::Region * region)
       }
       else
       {
-        throw util::error("Unexpected node type: " + node->GetOperation().debug_string());
+        throw util::error("Unexpected node type: " + node->DebugString());
       }
     }
     else if (auto sn = dynamic_cast<rvsdg::SimpleNode *>(node))
@@ -104,7 +131,7 @@ hls::distribute_constants(rvsdg::Region * region)
     }
     else
     {
-      throw util::error("Unexpected node type: " + node->GetOperation().debug_string());
+      throw util::error("Unexpected node type: " + node->DebugString());
     }
   }
 }

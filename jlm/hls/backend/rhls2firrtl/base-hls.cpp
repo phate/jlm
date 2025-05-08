@@ -7,6 +7,7 @@
 
 #include <algorithm>
 #include <cmath>
+#include <regex>
 
 namespace jlm::hls
 {
@@ -39,19 +40,20 @@ BaseHLS::get_node_name(const jlm::rvsdg::Node * node)
     append.append("_IN");
     append.append(std::to_string(inPorts));
     append.append("_W");
-    append.append(std::to_string(JlmSize(&node->input(inPorts - 1)->type())));
+    append.append(std::to_string(JlmSize(node->input(inPorts - 1)->Type().get())));
   }
   if (outPorts)
   {
     append.append("_OUT");
     append.append(std::to_string(outPorts));
     append.append("_W");
-    append.append(std::to_string(JlmSize(&node->output(outPorts - 1)->type())));
+    append.append(std::to_string(JlmSize(node->output(outPorts - 1)->Type().get())));
   }
-  auto name =
-      util::strfmt("op_", node->GetOperation().debug_string(), append, "_", node_map.size());
+  auto name = util::strfmt("op_", node->DebugString(), append, "_", node_map.size());
   // remove chars that are not valid in firrtl module names
   std::replace_if(name.begin(), name.end(), isForbiddenChar, '_');
+  // verilator seems to throw a fit if there are too many underscores in some scenarios
+  name = std::regex_replace(name, std::regex("_+"), "_");
   node_map[node] = name;
   return name;
 }
@@ -60,11 +62,11 @@ std::string
 BaseHLS::get_port_name(jlm::rvsdg::input * port)
 {
   std::string result;
-  if (dynamic_cast<const jlm::rvsdg::node_input *>(port))
+  if (jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*port))
   {
     result += "i";
   }
-  else if (dynamic_cast<const rvsdg::RegionResult *>(port))
+  else if (jlm::rvsdg::TryGetOwnerRegion(*port))
   {
     result += "r";
   }
@@ -107,35 +109,7 @@ BaseHLS::get_port_name(jlm::rvsdg::output * port)
 int
 BaseHLS::JlmSize(const jlm::rvsdg::Type * type)
 {
-  if (auto bt = dynamic_cast<const jlm::rvsdg::bittype *>(type))
-  {
-    return bt->nbits();
-  }
-  else if (auto at = dynamic_cast<const llvm::ArrayType *>(type))
-  {
-    return JlmSize(&at->element_type()) * at->nelements();
-  }
-  else if (dynamic_cast<const llvm::PointerType *>(type))
-  {
-    return GetPointerSizeInBits();
-  }
-  else if (auto ct = dynamic_cast<const rvsdg::ControlType *>(type))
-  {
-    return ceil(log2(ct->nalternatives()));
-  }
-  else if (dynamic_cast<const rvsdg::StateType *>(type))
-  {
-    return 1;
-  }
-  else if (dynamic_cast<const bundletype *>(type))
-  {
-    // TODO: fix this ugly hack needed for get_node_name
-    return 0;
-  }
-  else
-  {
-    throw std::logic_error("Size of '" + type->debug_string() + "' is not implemented!");
-  }
+  return jlm::hls::JlmSize(type);
 }
 
 void
@@ -153,8 +127,7 @@ BaseHLS::create_node_names(rvsdg::Region * r)
     }
     else
     {
-      throw util::error(
-          "Unimplemented op (unexpected structural node) : " + node.GetOperation().debug_string());
+      throw util::error("Unimplemented op (unexpected structural node) : " + node.DebugString());
     }
   }
 }

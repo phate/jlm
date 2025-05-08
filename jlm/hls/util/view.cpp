@@ -40,7 +40,8 @@ get_dot_name(jlm::rvsdg::output * output)
   {
     return jlm::util::strfmt("a", hex((intptr_t)output), ":", "default");
   }
-  else if (auto no = dynamic_cast<jlm::rvsdg::simple_output *>(output))
+
+  if (auto no = dynamic_cast<rvsdg::SimpleOutput *>(output))
   {
     return jlm::util::strfmt(get_dot_name(no->node()), ":", "o", hex((intptr_t)output));
   }
@@ -58,7 +59,7 @@ get_dot_name(jlm::rvsdg::input * input)
   {
     return jlm::util::strfmt("r", hex((intptr_t)input), ":", "default");
   }
-  else if (auto ni = dynamic_cast<jlm::rvsdg::simple_input *>(input))
+  if (auto ni = dynamic_cast<rvsdg::SimpleInput *>(input))
   {
     return jlm::util::strfmt(get_dot_name(ni->node()), ":", "i", hex((intptr_t)input));
   }
@@ -130,13 +131,13 @@ edge(jlm::rvsdg::output * output, jlm::rvsdg::input * input, bool back_edge = fa
          + " [style=\"\", arrowhead=\"normal\", color=" + color
          + ", headlabel=<>, fontsize=10, labelangle=45, labeldistance=2.0, labelfontcolor=black, "
            "tooltip=\""
-         + output->type().debug_string() + "\"];\n";
+         + output->Type()->debug_string() + "\"];\n";
   }
   return get_dot_name(input) + " -> " + get_dot_name(output)
        + " [style=\"\", arrowhead=\"normal\", color=" + color
        + ", headlabel=<>, fontsize=10, labelangle=45, labeldistance=2.0, labelfontcolor=black, "
          "constraint=false, tooltip=\""
-       + output->type().debug_string() + "\"];\n";
+       + output->Type()->debug_string() + "\"];\n";
 }
 
 std::string
@@ -147,7 +148,7 @@ symbolic_edge(jlm::rvsdg::input * output, jlm::rvsdg::output * input)
        + " [style=\"\", arrowhead=\"normal\", color=" + color
        + ", headlabel=<>, fontsize=10, labelangle=45, labeldistance=2.0, labelfontcolor=black, "
          "tooltip=\""
-       + output->type().debug_string() + "\"];\n";
+       + output->Type()->debug_string() + "\"];\n";
 }
 
 static bool
@@ -168,7 +169,7 @@ structural_node_to_dot(rvsdg::StructuralNode * structuralNode)
   dot << "subgraph cluster_sn" << hex((intptr_t)structuralNode) << " {\n";
   dot << "color=\"#ff8080\"\n";
   dot << "penwidth=6\n";
-  dot << "label=\"" << structuralNode->GetOperation().debug_string() << "\"\n";
+  dot << "label=\"" << structuralNode->DebugString() << "\"\n";
   dot << "labeljust=l\n";
 
   // input nodes
@@ -240,7 +241,7 @@ simple_node_to_dot(jlm::rvsdg::SimpleNode * simpleNode)
 {
   auto SPACER = "                    <TD WIDTH=\"10\"></TD>\n";
   auto name = get_dot_name(simpleNode);
-  auto opname = simpleNode->GetOperation().debug_string();
+  auto opname = simpleNode->DebugString();
   std::replace_if(opname.begin(), opname.end(), isForbiddenChar, '_');
 
   std::ostringstream inputs;
