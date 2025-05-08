@@ -3,10 +3,10 @@
  * See COPYING for terms of redistribution.
  */
 
-#include "MemoryStateEncoder.hpp"
 #include <jlm/llvm/ir/operators.hpp>
 #include <jlm/llvm/ir/operators/alloca.hpp>
 #include <jlm/llvm/ir/operators/delta.hpp>
+#include <jlm/llvm/ir/operators/IntegerOperations.hpp>
 #include <jlm/llvm/ir/operators/IOBarrier.hpp>
 #include <jlm/llvm/opt/alias-analyses/AliasAnalysis.hpp>
 #include <jlm/rvsdg/gamma.hpp>
@@ -14,8 +14,8 @@
 #include <jlm/rvsdg/theta.hpp>
 #include <jlm/util/Math.hpp>
 
-#include <jlm/llvm/ir/operators/IntegerOperations.hpp>
 #include <numeric>
+#include <queue>
 
 namespace jlm::llvm::aa
 {
@@ -275,7 +275,8 @@ BasicAliasAnalysis::Query(const rvsdg::output & p1, size_t s1, const rvsdg::outp
   if (!TraceAllPointerOrigins(p2Traced, p2TraceCollection))
     return MayAlias;
 
-  // Removes origins that can not possibly be the targets of operations on [p1, p1 + s1)
+  // Removes top origins that can not possibly be valid targets due to being too small.
+  // If p1 + s1 is outside the range of a top origin, then p1 can not target it
   RemoveTopOriginsWithRemainingSizeBelow(p1TraceCollection, s1);
   RemoveTopOriginsWithRemainingSizeBelow(p2TraceCollection, s2);
 
@@ -311,7 +312,8 @@ BasicAliasAnalysis::Query(const rvsdg::output & p1, size_t s1, const rvsdg::outp
   // o4 is some output that can not be traced further, but it is also not original.
   // It is possible for o4 to be a pointer to ALLOCA[a]+20, in which case there is aliasing.
 
-  // If both trace collections only contain original pointers, with no overlap, there is NoAlias.
+  // We already know that there is no direct overlap in the top origin sets,
+  // so if both trace collections only contain original pointers, there is NoAlias.
   const bool p1AllTopsOriginal = HasOnlyOriginalTopOrigins(p1TraceCollection);
   const bool p2AllTopsOriginal = HasOnlyOriginalTopOrigins(p2TraceCollection);
 
@@ -320,11 +322,11 @@ BasicAliasAnalysis::Query(const rvsdg::output & p1, size_t s1, const rvsdg::outp
 
   // If one of the pointers has a top origin set containing only fully traceable ALLOCAs,
   // it is not possible for the other pointer to target any of them,
-  // as they would be explicitly included in its top origin set
-  const bool p1AnyEscaped = HasAnyTopOriginEscaped(p1TraceCollection);
-  const bool p2AnyEscaped = HasAnyTopOriginEscaped(p2TraceCollection);
+  // as they would already be explicitly included in its top origin set.
+  const bool p1OnlyTraceable = HasOnlyFullyTraceableTopOrigins(p1TraceCollection);
+  const bool p2OnlyTraceable = HasOnlyFullyTraceableTopOrigins(p2TraceCollection);
 
-  if (!p1AnyEscaped || !p2AnyEscaped)
+  if (p1OnlyTraceable || p2OnlyTraceable)
     return NoAlias;
 
   return MayAlias;
@@ -692,22 +694,124 @@ BasicAliasAnalysis::DoTraceCollectionsOverlap(
 }
 
 bool
-BasicAliasAnalysis::HasOriginEscaped([[maybe_unused]] const rvsdg::output & pointer)
+BasicAliasAnalysis::IsOriginalOriginFullyTraceable(const rvsdg::output & pointer)
 {
-  // TODO: Implement
+  // The only original origins that can be fully traced for escaping are ALLOCAs
+  const auto originalNode = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(pointer);
+  if (!is<alloca_op>(originalNode))
+    return false;
+
+  // Check if the result for this ALLOCA is already memoized
+  auto it = IsFullyTraceable_.find(&pointer);
+  if (it != IsFullyTraceable_.end())
+    return it->second;
+
+  // Use a queue to find all users of the ALLOCA's address
+  std::queue<const rvsdg::output *> qu;
+  std::unordered_set<const rvsdg::output *> added;
+
+  const auto Enqueue = [&](const rvsdg::output & p)
+  {
+    // Only enqueue new outputs
+    auto [_, inserted] = added.insert(&p);
+    if (inserted)
+      qu.push(&p);
+  };
+
+  Enqueue(pointer);
+  while (!qu.empty())
+  {
+    auto & p = *qu.front();
+    qu.pop();
+
+    // Handle all inputs that are users of p
+    for (auto user : p)
+    {
+      if (auto gamma = rvsdg::TryGetOwnerNode<rvsdg::GammaNode>(*user))
+      {
+        auto input = gamma->MapInput(*user);
+
+        // A pointer must always be an EntryVar, as the MatchVar has a ControlType
+        auto entry = std::get_if<rvsdg::GammaNode::EntryVar>(&input);
+        JLM_ASSERT(entry);
+
+        for (auto output : entry->branchArgument)
+          Enqueue(*output);
+
+        continue;
+      }
+      if (auto gamma = rvsdg::TryGetRegionParentNode<rvsdg::GammaNode>(*user))
+      {
+        // user is a gamma result, find the corresponding gamma output
+        auto exitVar = gamma->MapBranchResultExitVar(*user);
+        Enqueue(*exitVar.output);
+
+        continue;
+      }
+
+      if (auto theta = rvsdg::TryGetOwnerNode<rvsdg::ThetaNode>(*user))
+      {
+        auto loopVar = theta->MapInputLoopVar(*user);
+
+        // The loop always runs at least once, so map it to the inside
+        Enqueue(*loopVar.pre);
+
+        continue;
+      }
+      if (auto theta = rvsdg::TryGetRegionParentNode<rvsdg::ThetaNode>(*user))
+      {
+        // user is a theta result, find the corresponding loop variable
+        auto loopVar = theta->MapPostLoopVar(*user);
+        Enqueue(*loopVar.pre);
+        Enqueue(*loopVar.output);
+
+        continue;
+      }
+
+      if (auto node = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*user))
+      {
+        // Pointers go straight through IO barriers and GEPs
+        if (is<IOBarrierOperation>(node) || is<GetElementPtrOperation>(node))
+        {
+          // The pointer input must be the node's first input
+          JLM_ASSERT(user->index() == 0);
+          Enqueue(*node->output(0));
+          continue;
+        }
+
+        // Loads are always fine
+        if (is<LoadOperation>(node))
+          continue;
+
+        // Stores are only fine if the pointer itself is not being stored somewhere
+        if (is<StoreOperation>(node))
+        {
+          if (user == &StoreOperation::AddressInput(*node))
+            continue;
+        }
+      }
+
+      // We were unable to handle this user, so the original pointer escapes tracing
+      IsFullyTraceable_[&pointer] = false;
+      return false;
+    }
+  }
+
+  // The entire queue was processed without reaching a single untraceable user of the pointer
+  IsFullyTraceable_[&pointer] = true;
   return true;
 }
 
 bool
-BasicAliasAnalysis::HasAnyTopOriginEscaped(TraceCollection & traces)
+BasicAliasAnalysis::HasOnlyFullyTraceableTopOrigins(TraceCollection & traces)
 {
   for (auto [topOrigin, _] : traces.TopOrigins)
   {
-    if (HasOriginEscaped(*topOrigin))
-      return true;
+    if (!IsOriginalOriginFullyTraceable(*topOrigin))
+      return false;
   }
 
-  return false;
+  return true;
 }
 
 bool

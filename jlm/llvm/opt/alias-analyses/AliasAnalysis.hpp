@@ -281,34 +281,38 @@ private:
   DoTraceCollectionsOverlap(TraceCollection & tc1, size_t s1, TraceCollection & tc2, size_t s2);
 
   /**
-   * Checks if the given pointer may have escaped to somewhere it cannot be traced.
-   * The analysis is simple, and considers the output of ALLOCAs.
-   * If the output ever reaches an operation that "takes the address" of the ALLOCA,
-   * it will be marked as having escaped.
+   * Checks if the given pointer is the output of an original memory location,
+   * AND that the address of the memory location is never passed anywhere that is not
+   * traceable back to the original operation.
    *
-   * This function has the following property:
-   * For any original origin that has not escaped, any RVSDG output that holds a pointer to it,
-   * can also be traced back to the origin using TraceAllPointerOrigins.
+   * Only ALLOCAs are fully traceable, and only when the address can be traced to all uses,
+   * and all uses are loads and stores. If the address is passed to a function, or stored in
+   * a variable, the ALLOCA is not fully traceable.
+   * In other words, any output containing the pointer, can also be traced back to the ALLOCA
+   * using TraceAllPointerOrigins
    *
-   * @param pointer the output to be analyzed
-   * @return false if no
+   * In summary: this function performs a simple, local, escape analysis for ALLOCAs.
+   * Its result is cached for performance.
+   *
+   * @param pointer the pointer output to be analyzed
+   * @return true if the output is an original pointer, and it can be fully traced
    */
   [[nodiscard]] bool
-  HasOriginEscaped(const rvsdg::output & pointer);
+  IsOriginalOriginFullyTraceable(const rvsdg::output & pointer);
 
   /**
-   * Checks if any top origin in the trace collection is defined as escaping.
+   * Checks if the given trace collection only contains top origins that are fully traced.
    * @param traces the trace collection
-   * @return true if any top origin escaped
+   * @return true if all top origins are fully traceable
    */
   [[nodiscard]] bool
-  HasAnyTopOriginEscaped(TraceCollection & traces);
+  HasOnlyFullyTraceableTopOrigins(TraceCollection & traces);
 
   /**
-   * Memoization of escape analysis queries.
+   * Memoization of "fully traceable" (escape analysis) queries.
    * It assumes that no changes are made to the underlying RVSDG between queries.
    */
-  std::unordered_map<const rvsdg::output *, bool> EscapeAnalysisResults_;
+  std::unordered_map<const rvsdg::output *, bool> IsFullyTraceable_;
 };
 
 /**
