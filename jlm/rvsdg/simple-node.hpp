@@ -247,7 +247,7 @@ TryGetSimpleNodeAndOp(const rvsdg::input & input) noexcept
     return std::make_pair(nullptr, nullptr);
   }
 
-  if (auto operation = dynamic_cast<const TOperation *>(simpleNode->GetOperation()))
+  if (auto operation = dynamic_cast<const TOperation *>(&simpleNode->GetOperation()))
   {
     return std::make_pair(simpleNode, operation);
   }
