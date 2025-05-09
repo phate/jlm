@@ -279,6 +279,40 @@ private:
    */
   [[nodiscard]] static bool
   DoTraceCollectionsOverlap(TraceCollection & tc1, size_t s1, TraceCollection & tc2, size_t s2);
+
+  /**
+   * Checks if the given pointer is the output of an original memory location,
+   * AND that the address of the memory location is never passed anywhere that is not
+   * traceable back to the original operation.
+   *
+   * Only ALLOCAs are fully traceable, and only when the address can be traced to all uses,
+   * and all uses are loads and stores. If the address is passed to a function, or stored in
+   * a variable, the ALLOCA is not fully traceable.
+   * In other words, any output containing the pointer, can also be traced back to the ALLOCA
+   * using TraceAllPointerOrigins
+   *
+   * In summary: this function performs a simple, local, escape analysis for ALLOCAs.
+   * Its result is cached for performance.
+   *
+   * @param pointer the pointer output to be analyzed
+   * @return true if the output is an original pointer, and it can be fully traced
+   */
+  [[nodiscard]] bool
+  IsOriginalOriginFullyTraceable(const rvsdg::output & pointer);
+
+  /**
+   * Checks if the given trace collection only contains top origins that are fully traced.
+   * @param traces the trace collection
+   * @return true if all top origins are fully traceable
+   */
+  [[nodiscard]] bool
+  HasOnlyFullyTraceableTopOrigins(TraceCollection & traces);
+
+  /**
+   * Memoization of "fully traceable" (escape analysis) queries.
+   * It assumes that no changes are made to the underlying RVSDG between queries.
+   */
+  std::unordered_map<const rvsdg::output *, bool> IsFullyTraceable_;
 };
 
 /**

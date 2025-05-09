@@ -31,7 +31,7 @@ PointsToAnalysisStateEncoder<TPointsToAnalysis, TModRefSummarizer>::Run(
   auto pointsToGraph = ptaPass.Analyze(rvsdgModule, statisticsCollector);
 
   // Evaluate alias analysis precision if the statistic is demanded
-  PrecisionEvaluator precisionEvaluator(PrecisionEvaluator::Mode::AllLoadStorePairs);
+  PrecisionEvaluator precisionEvaluator(PrecisionEvaluator::Mode::ClobberingStores);
   PointsToGraphAliasAnalysis ptgAA(*pointsToGraph);
   BasicAliasAnalysis basicAA;
   ChainedAliasAnalysis ptgPlusBasicAA(ptgAA, basicAA);
@@ -40,6 +40,12 @@ PointsToAnalysisStateEncoder<TPointsToAnalysis, TModRefSummarizer>::Run(
   precisionEvaluator.EvaluateAliasAnalysisClient(rvsdgModule, basicAA, statisticsCollector);
   precisionEvaluator.EvaluateAliasAnalysisClient(rvsdgModule, ptgAA, statisticsCollector);
   precisionEvaluator.EvaluateAliasAnalysisClient(rvsdgModule, ptgPlusBasicAA, statisticsCollector);
+
+  // Evaluate precision again with a different mode
+  // precisionEvaluator.SetMode(PrecisionEvaluator::Mode::AllLoadStorePairs);
+  // precisionEvaluator.EvaluateAliasAnalysisClient(rvsdgModule, basicAA, statisticsCollector);
+  // precisionEvaluator.EvaluateAliasAnalysisClient(rvsdgModule, ptgAA, statisticsCollector);
+  // precisionEvaluator.EvaluateAliasAnalysisClient(rvsdgModule, ptgPlusBasicAA, statisticsCollector);
 
   /*
   TODO: Add encoding back in

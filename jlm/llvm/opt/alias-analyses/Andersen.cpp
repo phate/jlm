@@ -1528,9 +1528,7 @@ Andersen::Analyze(
     graph.AppendToLabel("After Solving with " + config.ToString());
   }
 
-  // TODO: Do not skip constructing the PointsToGraph
-  // auto result = ConstructPointsToGraphFromPointerObjectSet(*Set_, *statistics);
-  auto result = PointsToGraph::Create();
+  auto result = ConstructPointsToGraphFromPointerObjectSet(*Set_, *statistics);
 
   statistics->StopAndersenStatistics();
   statisticsCollector.CollectDemandedStatistics(std::move(statistics));
