@@ -3,7 +3,6 @@
  * See COPYING for terms of redistribution.
  */
 
-#include "../../../rvsdg/simple-node.hpp"
 #include <jlm/hls/backend/rvsdg2rhls/decouple-mem-state.hpp>
 #include <jlm/hls/backend/rvsdg2rhls/hls-function-util.hpp>
 #include <jlm/hls/backend/rvsdg2rhls/mem-conv.hpp>
