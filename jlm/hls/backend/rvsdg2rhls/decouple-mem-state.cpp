@@ -3,6 +3,7 @@
  * See COPYING for terms of redistribution.
  */
 
+#include "../../../rvsdg/simple-node.hpp"
 #include <jlm/hls/backend/rvsdg2rhls/decouple-mem-state.hpp>
 #include <jlm/hls/backend/rvsdg2rhls/hls-function-util.hpp>
 #include <jlm/hls/backend/rvsdg2rhls/mem-conv.hpp>
@@ -85,72 +86,75 @@ trace_edge(
       JLM_ASSERT(out->region() == state_edge->region());
       state_edge = get_mem_state_user(out);
     }
-    else if (auto simpleNode = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*state_edge))
+    else if (auto stateEdgeNode = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*state_edge))
     {
-      auto new_si = util::AssertedCast<rvsdg::SimpleInput>(new_edge_user);
-      auto new_sn = new_si->node();
+      auto newEdgeNode = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*new_edge_user);
 
-      if (auto br = dynamic_cast<const branch_op *>(&simpleNode->GetOperation()))
+      if (auto br = dynamic_cast<const branch_op *>(&stateEdgeNode->GetOperation()))
       {
         if (br->loop)
         {
           // end of loop
-          JLM_ASSERT(TryGetOwnerOp<branch_op>(*new_edge_user));
-          return util::AssertedCast<rvsdg::RegionResult>(get_mem_state_user(simpleNode->output(0)))
+          JLM_ASSERT(rvsdg::is<branch_op>(newEdgeNode));
+          return util::AssertedCast<rvsdg::RegionResult>(
+                     get_mem_state_user(stateEdgeNode->output(0)))
               ->output();
         }
 
         // start of gamma
-        auto nbr = branch_op::create(*simpleNode->input(0)->origin(), *new_edge);
-        auto nmux = mux_op::create(*simpleNode->input(0)->origin(), nbr, false)[0];
+        auto nbr = branch_op::create(*stateEdgeNode->input(0)->origin(), *new_edge);
+        auto nmux = mux_op::create(*stateEdgeNode->input(0)->origin(), nbr, false)[0];
         new_edge_user->divert_to(nmux);
         rvsdg::output * out = nullptr;
-        for (size_t i = 0; i < simpleNode->noutputs(); ++i)
+        for (size_t i = 0; i < stateEdgeNode->noutputs(); ++i)
         {
-          out = trace_edge(get_mem_state_user(simpleNode->output(i)), nbr[i], target_call, end);
+          out = trace_edge(get_mem_state_user(stateEdgeNode->output(i)), nbr[i], target_call, end);
         }
-        JLM_ASSERT(out);
-        JLM_ASSERT(TryGetOwnerOp<mux_op>(*out));
+        auto outNode = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*out);
+        JLM_ASSERT(rvsdg::is<mux_op>(outNode));
         state_edge = get_mem_state_user(out);
         new_edge = nmux;
       }
-      else if (auto mux = dynamic_cast<const mux_op *>(&simpleNode->GetOperation()))
+      else if (auto mux = dynamic_cast<const mux_op *>(&stateEdgeNode->GetOperation()))
       {
         if (!mux->loop)
         {
           // end of gamma
-          JLM_ASSERT(TryGetOwnerOp<mux_op>(*new_edge_user));
-          return simpleNode->output(0);
+          JLM_ASSERT(rvsdg::is<mux_op>(newEdgeNode));
+          return stateEdgeNode->output(0);
         }
 
         // start of theta
-        JLM_ASSERT(TryGetOwnerOp<mux_op>(*new_edge_user));
+        JLM_ASSERT(rvsdg::is<mux_op>(newEdgeNode));
         JLM_ASSERT(mux->loop);
-        state_edge = get_mem_state_user(simpleNode->output(0));
-        new_edge = new_sn->output(0);
+        state_edge = get_mem_state_user(stateEdgeNode->output(0));
+        new_edge = newEdgeNode->output(0);
       }
-      else if (rvsdg::is<loop_constant_buffer_op>(simpleNode))
+      else if (rvsdg::is<loop_constant_buffer_op>(stateEdgeNode))
       {
         // start of loop
-        JLM_ASSERT(TryGetOwnerOp<mux_op>(*new_edge_user));
-        state_edge = get_mem_state_user(simpleNode->output(0));
-        new_edge = new_sn->output(0);
+        JLM_ASSERT(rvsdg::is<mux_op>(newEdgeNode));
+        state_edge = get_mem_state_user(stateEdgeNode->output(0));
+        new_edge = newEdgeNode->output(0);
       }
-      else if (rvsdg::is<llvm::MemoryStateSplitOperation>(simpleNode))
+      else if (rvsdg::is<llvm::MemoryStateSplitOperation>(stateEdgeNode))
       {
         rvsdg::output * after_merge = nullptr;
-        for (size_t i = 0; i < simpleNode->noutputs(); ++i)
+        for (size_t i = 0; i < stateEdgeNode->noutputs(); ++i)
         {
           // pick right edge by searching for target
           std::vector<rvsdg::SimpleNode *> mem_ops;
           after_merge =
-              follow_state_edge(get_mem_state_user(simpleNode->output(i)), mem_ops, false);
-          JLM_ASSERT(after_merge);
-          JLM_ASSERT(TryGetOwnerOp<llvm::MemoryStateMergeOperation>(*after_merge));
+              follow_state_edge(get_mem_state_user(stateEdgeNode->output(i)), mem_ops, false);
+          auto afterMergeNode = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*after_merge);
+          JLM_ASSERT(rvsdg::is<llvm::MemoryStateMergeOperation>(afterMergeNode));
           if (std::count(mem_ops.begin(), mem_ops.end(), target_call))
           {
-            auto out =
-                trace_edge(get_mem_state_user(simpleNode->output(i)), new_edge, target_call, end);
+            auto out = trace_edge(
+                get_mem_state_user(stateEdgeNode->output(i)),
+                new_edge,
+                target_call,
+                end);
             JLM_ASSERT(out == after_merge);
           }
           else
@@ -162,36 +166,36 @@ trace_edge(
         new_edge = new_edge_user->origin();
       }
       else if (
-          rvsdg::is<llvm::MemoryStateMergeOperation>(simpleNode)
-          || rvsdg::is<llvm::LambdaExitMemoryStateMergeOperation>(simpleNode))
+          rvsdg::is<llvm::MemoryStateMergeOperation>(stateEdgeNode)
+          || rvsdg::is<llvm::LambdaExitMemoryStateMergeOperation>(stateEdgeNode))
       {
         // we did not split the new state
-        return simpleNode->output(0);
+        return stateEdgeNode->output(0);
       }
-      else if (rvsdg::is<state_gate_op>(simpleNode))
+      else if (rvsdg::is<state_gate_op>(stateEdgeNode))
       {
-        state_edge = get_mem_state_user(simpleNode->output(state_edge->index()));
+        state_edge = get_mem_state_user(stateEdgeNode->output(state_edge->index()));
       }
-      else if (rvsdg::is<llvm::LoadNonVolatileOperation>(simpleNode))
+      else if (rvsdg::is<llvm::LoadNonVolatileOperation>(stateEdgeNode))
       {
-        state_edge = get_mem_state_user(simpleNode->output(1));
+        state_edge = get_mem_state_user(stateEdgeNode->output(1));
       }
-      else if (rvsdg::is<llvm::CallOperation>(simpleNode))
+      else if (rvsdg::is<llvm::CallOperation>(stateEdgeNode))
       {
         auto state_origin = state_edge->origin();
-        if (simpleNode == target_call)
+        if (stateEdgeNode == target_call)
         {
           // move decouple call to new edge
-          auto tmp = get_mem_state_user(simpleNode->output(simpleNode->noutputs() - 1));
+          auto tmp = get_mem_state_user(stateEdgeNode->output(stateEdgeNode->noutputs() - 1));
           tmp->divert_to(state_origin);
           state_edge->divert_to(new_edge);
           state_edge = tmp;
-          new_edge_user->divert_to(simpleNode->output(simpleNode->noutputs() - 1));
+          new_edge_user->divert_to(stateEdgeNode->output(stateEdgeNode->noutputs() - 1));
           new_edge = new_edge_user->origin();
         }
         else
         {
-          state_edge = get_mem_state_user(simpleNode->output(simpleNode->noutputs() - 1));
+          state_edge = get_mem_state_user(stateEdgeNode->output(stateEdgeNode->noutputs() - 1));
         }
       }
       else
@@ -352,8 +356,8 @@ follow_state_edge(
         {
           out = follow_state_edge(get_mem_state_user(simpleNode->output(i)), gamma_mem_ops, modify);
         }
-        JLM_ASSERT(TryGetOwnerOp<mux_op>(*out));
-        JLM_ASSERT(out);
+        auto outNode = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*out);
+        JLM_ASSERT(rvsdg::is<mux_op>(outNode));
         // get this here before the graph is modified by handle_structural
         auto new_state_edge = get_mem_state_user(out);
         if (modify)
@@ -386,9 +390,10 @@ follow_state_edge(
           auto followed =
               follow_state_edge(get_mem_state_user(simpleNode->output(i)), mem_ops, modify);
           JLM_ASSERT(followed);
+          auto followedNode = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*followed);
           JLM_ASSERT(
-              TryGetOwnerOp<llvm::MemoryStateMergeOperation>(*followed)
-              || TryGetOwnerOp<llvm::LambdaExitMemoryStateMergeOperation>(*followed));
+              rvsdg::is<llvm::MemoryStateMergeOperation>(followedNode)
+              || rvsdg::is<llvm::LambdaExitMemoryStateMergeOperation>(followedNode));
           state_edge = get_mem_state_user(followed);
         }
       }
@@ -447,15 +452,14 @@ convert_loop_state_to_lcb(rvsdg::input * loop_state_input)
   auto si = util::AssertedCast<rvsdg::StructuralInput>(loop_state_input);
   auto arg = si->arguments.begin().ptr();
   auto user = get_mem_state_user(arg);
-  auto mux = TryGetOwnerOp<mux_op>(*user);
-  JLM_ASSERT(mux && mux->loop);
-  auto mux_node = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*user);
+  auto [muxNode, muxOperation] = rvsdg::TryGetSimpleNodeAndOp<mux_op>(*user);
+  JLM_ASSERT(muxOperation && muxOperation->loop);
   auto lcb_out = loop_constant_buffer_op::create(
-      *mux_node->input(0)->origin(),
-      *mux_node->input(1)->origin())[0];
-  mux_node->output(0)->divert_users(lcb_out);
-  JLM_ASSERT(mux_node->IsDead());
-  remove(mux_node);
+      *muxNode->input(0)->origin(),
+      *muxNode->input(1)->origin())[0];
+  muxNode->output(0)->divert_users(lcb_out);
+  JLM_ASSERT(muxNode->IsDead());
+  remove(muxNode);
 }
 
 void
@@ -482,28 +486,27 @@ decouple_mem_state(rvsdg::Region * region)
   //          * store not being at higher level doesn't work
   //  * apply recursively - i.e. the same way for inner loops as for outer
   auto state_user = get_mem_state_user(state_arg);
-  auto entry_op = TryGetOwnerOp<llvm::LambdaEntryMemoryStateSplitOperation>(*state_user);
-  JLM_ASSERT(entry_op);
-  auto entry_node = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*state_user);
-  JLM_ASSERT(entry_node);
+  auto [entryNode, entryOperation] =
+      rvsdg::TryGetSimpleNodeAndOp<llvm::LambdaEntryMemoryStateSplitOperation>(*state_user);
+  JLM_ASSERT(entryOperation);
+
   auto state_res = GetMemoryStateResult(*lambda);
-  auto exit_op = TryGetOwnerOp<llvm::LambdaExitMemoryStateMergeOperation>(*state_res->origin());
-  auto exit_node = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*state_res->origin());
-  JLM_ASSERT(exit_node);
-  JLM_ASSERT(exit_op);
-  JLM_ASSERT(entry_node->noutputs() == exit_node->ninputs());
+  auto [exitNode, exitOperation] =
+      rvsdg::TryGetSimpleNodeAndOp<llvm::LambdaExitMemoryStateMergeOperation>(*state_res->origin());
+  JLM_ASSERT(exitOperation);
+  JLM_ASSERT(entryNode->noutputs() == exitNode->ninputs());
   // process different pointer arg edges separately
-  for (size_t i = 0; i < entry_node->noutputs(); ++i)
+  for (size_t i = 0; i < entryNode->noutputs(); ++i)
   {
     std::vector<rvsdg::SimpleNode *> mem_ops;
     std::vector<std::tuple<rvsdg::SimpleNode *, rvsdg::input *>> dummy;
-    follow_state_edge(get_mem_state_user(entry_node->output(i)), mem_ops, true);
+    follow_state_edge(get_mem_state_user(entryNode->output(i)), mem_ops, true);
     // we need this one final time across the whole lambda - at least for this edge
     handle_structural(
         dummy,
         mem_ops,
-        get_mem_state_user(entry_node->output(i)),
-        exit_node->input(i)->origin());
+        get_mem_state_user(entryNode->output(i)),
+        exitNode->input(i)->origin());
   }
 
   dne(lambda->subregion());
