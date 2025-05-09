@@ -19,7 +19,7 @@ namespace jlm::llvm::aa
  * If true, behavior is closer to LLVM's alias evaluation,
  * but arguably says less about the actual memory operations in the function.
  */
-static constexpr bool RemoveDuplicatePointers = true;
+static constexpr bool RemoveDuplicatePointers = false;
 
 static constexpr bool OutputAliasingGraph = false;
 
