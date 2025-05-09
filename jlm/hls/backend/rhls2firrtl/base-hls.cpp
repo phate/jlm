@@ -62,11 +62,11 @@ std::string
 BaseHLS::get_port_name(jlm::rvsdg::input * port)
 {
   std::string result;
-  if (dynamic_cast<const jlm::rvsdg::node_input *>(port))
+  if (jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*port))
   {
     result += "i";
   }
-  else if (dynamic_cast<const rvsdg::RegionResult *>(port))
+  else if (jlm::rvsdg::TryGetOwnerRegion(*port))
   {
     result += "r";
   }

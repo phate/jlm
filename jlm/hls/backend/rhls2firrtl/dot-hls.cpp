@@ -284,9 +284,9 @@ DotHLS::loop_to_dot(hls::loop_node * ln)
         // implement edge as back edge when it produces a cycle
         bool back = mx && !mx->discarding && mx->loop
                  && (/*i==0||*/ i == 2); // back_outputs.count(node->input(i)->origin());
-        auto origin_out = dynamic_cast<jlm::rvsdg::node_output *>(node->input(i)->origin());
-        if (origin_out
-            && dynamic_cast<const predicate_buffer_op *>(&origin_out->node()->GetOperation()))
+        auto origin_out_node = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*node->input(i)->origin());
+        if (origin_out_node
+            && dynamic_cast<const predicate_buffer_op *>(&origin_out_node->GetOperation()))
         {
           //
           back = true;

@@ -1351,21 +1351,21 @@ SliceOfConcatReduction()
   view(&graph.GetRootRegion(), stdout);
 
   // Assert
-  const auto node = TryGetOwnerNode<Node>(*ex.origin());
-  const auto o0 = dynamic_cast<node_output *>(node->input(0)->origin());
-  const auto o1 = dynamic_cast<node_output *>(node->input(1)->origin());
+  const auto node = TryGetOwnerNode<SimpleNode>(*ex.origin());
+  const auto o0_node = TryGetOwnerNode<SimpleNode>(*node->input(0)->origin());
+  const auto o1_node = TryGetOwnerNode<SimpleNode>(*node->input(1)->origin());
   assert(dynamic_cast<const bitconcat_op *>(&node->GetOperation()));
   assert(node->ninputs() == 2);
-  assert(dynamic_cast<const bitslice_op *>(&o0->node()->GetOperation()));
-  assert(dynamic_cast<const bitslice_op *>(&o1->node()->GetOperation()));
+  assert(dynamic_cast<const bitslice_op *>(&o0_node->GetOperation()));
+  assert(dynamic_cast<const bitslice_op *>(&o1_node->GetOperation()));
 
-  auto attrs = dynamic_cast<const bitslice_op *>(&o0->node()->GetOperation());
+  auto attrs = dynamic_cast<const bitslice_op *>(&o0_node->GetOperation());
   assert((attrs->low() == 8) && (attrs->high() == 16));
-  attrs = dynamic_cast<const bitslice_op *>(&o1->node()->GetOperation());
+  attrs = dynamic_cast<const bitslice_op *>(&o1_node->GetOperation());
   assert((attrs->low() == 0) && (attrs->high() == 8));
 
-  assert(o0->node()->input(0)->origin() == x);
-  assert(o1->node()->input(0)->origin() == y);
+  assert(o0_node->input(0)->origin() == x);
+  assert(o1_node->input(0)->origin() == y);
 
   return 0;
 }
