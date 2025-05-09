@@ -45,7 +45,8 @@ PointsToAnalysisStateEncoder<TPointsToAnalysis, TModRefSummarizer>::Run(
   // precisionEvaluator.SetMode(PrecisionEvaluator::Mode::AllLoadStorePairs);
   // precisionEvaluator.EvaluateAliasAnalysisClient(rvsdgModule, basicAA, statisticsCollector);
   // precisionEvaluator.EvaluateAliasAnalysisClient(rvsdgModule, ptgAA, statisticsCollector);
-  // precisionEvaluator.EvaluateAliasAnalysisClient(rvsdgModule, ptgPlusBasicAA, statisticsCollector);
+  // precisionEvaluator.EvaluateAliasAnalysisClient(rvsdgModule, ptgPlusBasicAA,
+  // statisticsCollector);
 
   /*
   TODO: Add encoding back in
