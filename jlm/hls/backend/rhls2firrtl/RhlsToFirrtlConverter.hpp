@@ -102,8 +102,8 @@ private:
 
   std::unordered_map<std::string, circt::firrtl::FModuleLike> modules;
   // FIRRTL generating functions
-  std::unordered_map<jlm::rvsdg::SimpleNode *, circt::firrtl::InstanceOp>
-  MlirGen(hls::loop_node * loopNode, mlir::Block * body, mlir::Block * circuitBody);
+  circt::firrtl::FModuleOp
+  MlirGen(hls::loop_node * loopNode, mlir::Block * circuitBody);
   circt::firrtl::FModuleLike
   MlirGen(rvsdg::Region * subRegion, mlir::Block * circuitBody);
   circt::firrtl::FModuleLike
@@ -179,6 +179,8 @@ private:
       circt::firrtl::Direction direction,
       std::string name,
       circt::firrtl::FIRRTLBaseType type);
+  circt::firrtl::BundleType
+  GetBundleType(const circt::firrtl::FIRRTLBaseType & type);
   circt::firrtl::SubfieldOp
   GetSubfield(mlir::Block * body, mlir::Value value, int index);
   circt::firrtl::SubfieldOp
@@ -247,7 +249,7 @@ private:
   circt::firrtl::WhenOp
   AddWhenOp(mlir::Block * body, mlir::Value condition, bool elseStatment);
   circt::firrtl::InstanceOp
-  AddInstanceOp(mlir::Block * body, jlm::rvsdg::SimpleNode * node);
+  AddInstanceOp(mlir::Block * circuitBody, jlm::rvsdg::Node * node);
   circt::firrtl::ConstantOp
   GetConstant(mlir::Block * body, int size, int value);
   circt::firrtl::InvalidValueOp
@@ -275,7 +277,7 @@ private:
   mlir::BlockArgument
   GetResetSignal(circt::firrtl::FModuleOp module);
   circt::firrtl::FModuleOp
-  nodeToModule(const jlm::rvsdg::SimpleNode * node, bool mem = false);
+  nodeToModule(const jlm::rvsdg::Node * node, bool mem = false);
   circt::firrtl::IntType
   GetIntType(int size);
   circt::firrtl::IntType
@@ -286,9 +288,6 @@ private:
   GetModuleName(const rvsdg::Node * node);
   bool
   IsIdentityMapping(const jlm::rvsdg::match_op & op);
-
-  std::unordered_map<jlm::rvsdg::SimpleNode *, circt::firrtl::InstanceOp>
-  createInstances(rvsdg::Region * subRegion, mlir::Block * circuitBody, mlir::Block * body);
   void
   check_module(circt::firrtl::FModuleOp & module);
 

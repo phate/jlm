@@ -194,16 +194,20 @@ TestStore()
 
   // Assert
   auto lambdaRegion = lambda->subregion();
-  assert(lambdaRegion->nnodes() == 2);
+  assert(lambdaRegion->nnodes() == 4);
   assert(lambdaRegion->narguments() == 4);
   assert(lambdaRegion->nresults() == 2);
 
   // Memory state
   assert(is<MemoryStateType>(lambdaRegion->result(0)->origin()->Type()));
 
-  // Store
-  auto storeNode =
+  // Buffer
+  auto bufferNode =
       jlm::util::AssertedCast<jlm::rvsdg::node_output>(lambdaRegion->result(0)->origin())->node();
+
+  // Store Node
+  auto storeNode =
+      jlm::util::AssertedCast<jlm::rvsdg::node_output>(bufferNode->input(0)->origin())->node();
   assert(is<store_op>(storeNode));
 
   // Request Node
@@ -267,7 +271,7 @@ TestLoadStore()
 
   // Assert
   auto lambdaRegion = lambda->subregion();
-  assert(lambdaRegion->nnodes() == 5);
+  assert(lambdaRegion->nnodes() == 7);
   assert(lambdaRegion->narguments() == 5);
   assert(lambdaRegion->nresults() == 3);
 
@@ -275,9 +279,13 @@ TestLoadStore()
   std::cout << lambdaRegion->result(0)->origin()->Type()->debug_string() << std::endl;
   assert(is<MemoryStateType>(lambdaRegion->result(0)->origin()->Type()));
 
+  // Buffer
+  auto bufferNode =
+      jlm::util::AssertedCast<jlm::rvsdg::node_output>(lambdaRegion->result(0)->origin())->node();
+
   // Store Node
   auto storeNode =
-      jlm::util::AssertedCast<jlm::rvsdg::node_output>(lambdaRegion->result(0)->origin())->node();
+      jlm::util::AssertedCast<jlm::rvsdg::node_output>(bufferNode->input(0)->origin())->node();
   assert(is<store_op>(storeNode));
 
   // Request Node
