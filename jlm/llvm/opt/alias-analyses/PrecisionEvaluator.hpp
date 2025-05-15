@@ -40,9 +40,7 @@ public:
     AllLoadStorePairs
   };
 
-  explicit PrecisionEvaluator(Mode mode)
-      : Mode_(mode)
-  {}
+  PrecisionEvaluator();
 
   void
   SetMode(Mode mode)

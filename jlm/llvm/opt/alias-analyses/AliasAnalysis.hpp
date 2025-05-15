@@ -199,6 +199,7 @@ private:
    * Checks if the given pointer is the direct result of a memory location defining operation.
    * These operations are guaranteed to output pointers that do not alias any pointer,
    * except for those that are based on the original pointer itself.
+   * THe pointer is also guaranteed to be at the very beginning of the memory region.
    *
    * For example, the output of an ALLOCA, a DELTA, or a GraphImport, are such original origins.
    *
@@ -225,15 +226,6 @@ private:
    */
   [[nodiscard]] static std::optional<size_t>
   GetOriginalOriginSize(const rvsdg::output & pointer);
-
-  /**
-   * Gets the size of the largest possible target in the given trace collection.
-   * Size includes the whole target region, regardless of what offset the trace has.
-   * @param traces the trace collection
-   * @return the size of the largest target, or nullopt if unknown
-   */
-  static std::optional<size_t>
-  GetLargestTopOriginSize(TraceCollection & traces);
 
   /**
    * Given a traced pointer origin like p, where
@@ -264,6 +256,39 @@ private:
    */
   static void
   RemoveTopOriginsWithRemainingSizeBelow(TraceCollection & traces, size_t s);
+
+  /**
+   * Finds the minimum distance into some memory region the traced pointer is pointing.
+   * For example, if the trace collection only contains the trace
+   *  p = b + 12
+   * we know that any operation on p will not touch the first 12 bytes of a region.
+   * The affected region must also be at least 12 + s bytes large.
+   * @param traces
+   * @return the minimum offset among all traces in the collection, or 0 if some are unknown
+   */
+  [[nodiscard]] static size_t
+  GetMinimumOffsetFromStart(TraceCollection & traces);
+
+  /**
+   * For each top origin in the given trace collection, it is removed if it is too small.
+   * This function considers the total size of the target, and ignores the offset.
+   * @param traces the trace collection
+   * @param s the minimum size of remaining top origins
+   */
+  static void
+  RemoveTopOriginsSmallerThanSize(TraceCollection & traces, size_t s);
+
+  /**
+   * When a top origin represents an original memory location,
+   * its offset indicates how far into the memory region the operation is accessing memory.
+   * If this access only touches memory within the first N bytes, remove the top origin.
+   *
+   * @param traces the traces of some pointer p being accessed
+   * @param s the size of the memory access performed at the traced pointer
+   * @param N the number of bytes into its memory region an access must be to be kept.
+   */
+  static void
+  RemoveTopOriginsWithinTheFirstNBytes(TraceCollection & traces, size_t s, size_t N);
 
   /**
    * Checks if any of the top origins in the two trace collections are the same,

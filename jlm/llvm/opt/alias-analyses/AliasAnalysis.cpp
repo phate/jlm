@@ -254,6 +254,7 @@ BasicAliasAnalysis::Query(const rvsdg::output & p1, size_t s1, const rvsdg::outp
   // to avoid giving up on MustAlias prematurely
   const auto p1Traced = TracePointerOriginPrecise(p1Norm);
   const auto p2Traced = TracePointerOriginPrecise(p2Norm);
+  JLM_ASSERT(p1Traced.Offset.has_value() && p2Traced.Offset.has_value());
 
   if (p1Traced.BasePointer == p2Traced.BasePointer)
   {
@@ -261,7 +262,6 @@ BasicAliasAnalysis::Query(const rvsdg::output & p1, size_t s1, const rvsdg::outp
     // p1 = base + p1Offset
     // p2 = base + p2Offset
 
-    JLM_ASSERT(p1Traced.Offset.has_value() && p2Traced.Offset.has_value());
     return QueryOffsets(p1Traced.Offset, s1, p2Traced.Offset, s2);
   }
 
@@ -290,19 +290,33 @@ BasicAliasAnalysis::Query(const rvsdg::output & p1, size_t s1, const rvsdg::outp
       return QueryOffsets(p1Offset, s1, p2Offset, s2);
   }
 
-  // If operation sizes differ, check if the smaller one only has targets too small for the larger
-  if (s1 < s2)
-  {
-    const auto largestP1Target = GetLargestTopOriginSize(p1TraceCollection);
-    if (largestP1Target.has_value() && *largestP1Target < s2)
-      return NoAlias;
-  }
-  else if (s2 < s1)
-  {
-    const auto largestP2Target = GetLargestTopOriginSize(p2TraceCollection);
-    if (largestP2Target.has_value() && *largestP2Target < s1)
-      return NoAlias;
-  }
+  // From this point on we give up on MustAlias
+
+  // Since we only have inbound GEPs, a pointer p = b + 12 must point at least 12 bytes into
+  // the memory region it points to
+  auto minimumP1OffsetFromStart = GetMinimumOffsetFromStart(p1TraceCollection);
+  auto minimumP2OffsetFromStart = GetMinimumOffsetFromStart(p2TraceCollection);
+
+  // In case the trace collections contain unknown offsets, also try using the
+  // precise p1Traced and p2Traced, which always have a known offset
+  if (*p1Traced.Offset > 0)
+    minimumP1OffsetFromStart =
+        std::max(minimumP1OffsetFromStart, static_cast<size_t>(*p1Traced.Offset));
+  if (*p2Traced.Offset > 0)
+    minimumP2OffsetFromStart =
+        std::max(minimumP2OffsetFromStart, static_cast<size_t>(*p2Traced.Offset));
+
+  // Since we have given up on MustAlias, we can remove some targets even if they are valid.
+  // Even if p1 might point to an 4-byte int foo,
+  // if p2 is an 8-byte operation, or p2 is at least 4 bytes into its target,
+  // we can safely discard that p1 might target foo.
+  RemoveTopOriginsSmallerThanSize(p2TraceCollection, minimumP1OffsetFromStart + s1);
+  RemoveTopOriginsSmallerThanSize(p1TraceCollection, minimumP2OffsetFromStart + s2);
+
+  // If we know that p2 only touches memory after the first 12 bytes of its targets,
+  // then any use of p1 where p1 + s1 is within the first 12 bytes of its memory region can be ignored.
+  RemoveTopOriginsWithinTheFirstNBytes(p1TraceCollection, s1, minimumP2OffsetFromStart);
+  RemoveTopOriginsWithinTheFirstNBytes(p2TraceCollection, s2, minimumP1OffsetFromStart);
 
   // Any direct overlap in the collections' top sets means there is a possibility of aliasing
   if (DoTraceCollectionsOverlap(p1TraceCollection, s1, p2TraceCollection, s2))
@@ -628,20 +642,6 @@ BasicAliasAnalysis::GetOriginalOriginSize(const rvsdg::output & pointer)
 }
 
 std::optional<size_t>
-BasicAliasAnalysis::GetLargestTopOriginSize(TraceCollection & traces)
-{
-  size_t largest = 0;
-  for (auto [basePointer, offset] : traces.TopOrigins)
-  {
-    const auto targetSize = GetOriginalOriginSize(*basePointer);
-    if (!targetSize.has_value())
-      return std::nullopt;
-    largest = std::max(largest, *targetSize);
-  }
-  return largest;
-}
-
-std::optional<size_t>
 BasicAliasAnalysis::GetRemainingSize(TracedPointerOrigin trace)
 {
   const auto totalSize = GetOriginalOriginSize(*trace.BasePointer);
@@ -671,6 +671,68 @@ BasicAliasAnalysis::RemoveTopOriginsWithRemainingSizeBelow(TraceCollection & tra
       it++;
   }
 }
+
+size_t
+BasicAliasAnalysis::GetMinimumOffsetFromStart(TraceCollection & traces)
+{
+  std::optional<size_t> minimumOffset;
+  for (auto [output, offset] : traces.TopOrigins)
+  {
+    // If one of the possible targets has an unknown offset, just use the access size
+    if (!offset.has_value())
+      return 0;
+
+    if (*offset < 0)
+      return 0;
+
+    if (minimumOffset.has_value())
+      minimumOffset = std::min(*minimumOffset, static_cast<size_t>(*offset));
+    else
+      minimumOffset = offset;
+  }
+
+  if (minimumOffset.has_value())
+    return *minimumOffset;
+
+  // We only get here if the top origins is empty, in which case the return value
+  // does not matter, as the query will return NoAlias anyway.
+  return 0;
+}
+
+void
+BasicAliasAnalysis::RemoveTopOriginsSmallerThanSize(TraceCollection & traces, size_t s)
+{
+  auto it = traces.TopOrigins.begin();
+  while (it != traces.TopOrigins.end())
+  {
+    auto originSize = GetOriginalOriginSize(*it->first);
+    if (originSize.has_value() && *originSize < s)
+      it = traces.TopOrigins.erase(it);
+    else
+      it++;
+  }
+}
+
+void
+BasicAliasAnalysis::RemoveTopOriginsWithinTheFirstNBytes(
+    TraceCollection & traces,
+    size_t s,
+    size_t N)
+{
+  auto it = traces.TopOrigins.begin();
+  while (it != traces.TopOrigins.end())
+  {
+    const auto offset = it->second;
+
+    // If the pointer is original, it is also pointing to the beginning of the memory region.
+    // The offset thus tells us exactly which bytes within the memory region we touch.
+    if (IsOriginalOrigin(*it->first) && offset.has_value() && *offset + s <= N)
+      it = traces.TopOrigins.erase(it);
+    else
+      it++;
+  }
+}
+
 
 bool
 BasicAliasAnalysis::DoTraceCollectionsOverlap(

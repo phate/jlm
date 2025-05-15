@@ -1512,20 +1512,13 @@ Andersen::Analyze(
   if (dumpGraphs)
     Constraints_->DrawSubsetGraph(writer);
 
-  auto config = Config_;
-  if (useExactConfig.has_value())
-  {
-    auto allConfigs = Configuration::GetAllConfigurations();
-    config = allConfigs.at(*useExactConfig);
-  }
-
-  SolveConstraints(*Constraints_, config, *statistics);
+  SolveConstraints(*Constraints_, Config_, *statistics);
   statistics->AddStatisticsFromSolution(*Set_);
 
   if (dumpGraphs)
   {
     auto & graph = Constraints_->DrawSubsetGraph(writer);
-    graph.AppendToLabel("After Solving with " + config.ToString());
+    graph.AppendToLabel("After Solving with " + Config_.ToString());
   }
 
   auto result = ConstructPointsToGraphFromPointerObjectSet(*Set_, *statistics);
@@ -1534,14 +1527,19 @@ Andersen::Analyze(
   statisticsCollector.CollectDemandedStatistics(std::move(statistics));
 
   // Solve again if double-checking against naive is enabled
-  if (testAllConfigsIterations || doubleCheck)
+  if (testAllConfigsIterations || doubleCheck || useExactConfig)
   {
     if (doubleCheck)
       std::cout << "Double checking Andersen analysis using naive solving" << std::endl;
 
-    // If double-checking, only use the naive configuration. Otherwise, try all configurations
+    // If only double-checking, only use the naive configuration. Otherwise, try all configurations
     std::vector<Configuration> configs;
-    if (testAllConfigsIterations)
+    if (useExactConfig.has_value())
+    {
+      configs = Configuration::GetAllConfigurations();
+      configs = std::vector{configs.at(*useExactConfig)};
+    }
+    else if (testAllConfigsIterations)
       configs = Configuration::GetAllConfigurations();
     else
       configs.push_back(Configuration::NaiveSolverConfiguration());

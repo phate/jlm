@@ -21,7 +21,9 @@ namespace jlm::llvm::aa
  */
 static constexpr bool RemoveDuplicatePointers = false;
 
-static constexpr bool OutputAliasingGraph = false;
+static constexpr bool OutputAliasingGraph = true;
+
+static constexpr auto DefaultMode = PrecisionEvaluator::Mode::ClobberingStores;
 
 std::string_view
 PrecisionEvaluationModeToString(PrecisionEvaluator::Mode mode)
@@ -103,6 +105,8 @@ public:
     return std::make_unique<PrecisionStatistics>(sourceFile);
   }
 };
+
+PrecisionEvaluator::PrecisionEvaluator() : Mode_(DefaultMode) {}
 
 void
 PrecisionEvaluator::EvaluateAliasAnalysisClient(
