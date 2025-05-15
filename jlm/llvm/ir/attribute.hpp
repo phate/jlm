@@ -10,6 +10,7 @@
 #include <jlm/util/common.hpp>
 #include <jlm/util/HashSet.hpp>
 
+#include <cstdint>
 #include <memory>
 #include <string>
 #include <vector>

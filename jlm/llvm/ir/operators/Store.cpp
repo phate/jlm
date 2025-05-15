@@ -141,6 +141,7 @@ perform_store_mux_reduction(
   auto memStateMergeOperands = jlm::rvsdg::operands(memStateMergeNode);
 
   auto states = StoreNonVolatileOperation::Create(
+      op.GetLlvmStore(),
       operands[0],
       operands[1],
       memStateMergeOperands,
@@ -158,7 +159,12 @@ perform_store_store_reduction(
 
   auto storeops = jlm::rvsdg::operands(storeNode);
   std::vector<jlm::rvsdg::output *> states(std::next(std::next(storeops.begin())), storeops.end());
-  return StoreNonVolatileOperation::Create(operands[0], operands[1], states, op.GetAlignment());
+  return StoreNonVolatileOperation::Create(
+      op.GetLlvmStore(),
+      operands[0],
+      operands[1],
+      states,
+      op.GetAlignment());
 }
 
 static std::vector<jlm::rvsdg::output *>
@@ -173,8 +179,12 @@ perform_store_alloca_reduction(
       std::next(std::next(operands.begin())),
       operands.end());
 
-  auto outputs =
-      StoreNonVolatileOperation::Create(address, value, { alloca_state }, op.GetAlignment());
+  auto outputs = StoreNonVolatileOperation::Create(
+      op.GetLlvmStore(),
+      address,
+      value,
+      { alloca_state },
+      op.GetAlignment());
   states.erase(alloca_state);
   states.insert(outputs[0]);
   return { states.begin(), states.end() };
@@ -204,8 +214,12 @@ perform_multiple_origin_reduction(
     }
   }
 
-  const auto storeResults =
-      StoreNonVolatileOperation::Create(address, value, newInputStates, operation.GetAlignment());
+  const auto storeResults = StoreNonVolatileOperation::Create(
+      operation.GetLlvmStore(),
+      address,
+      value,
+      newInputStates,
+      operation.GetAlignment());
 
   std::vector<rvsdg::output *> results(operation.nresults(), nullptr);
   for (size_t n = 2; n < operands.size(); n++)

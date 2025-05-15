@@ -342,22 +342,23 @@ ConvertConstant(::llvm::Constant * c, std::vector<std::unique_ptr<llvm::tac>> & 
       const variable * (*)(::llvm::Constant *,
                            std::vector<std::unique_ptr<llvm::tac>> &,
                            context & ctx)>
-      constantMap({ { ::llvm::Value::BlockAddressVal, convert_blockAddress },
-                    { ::llvm::Value::ConstantAggregateZeroVal, convert_constantAggregateZero },
-                    { ::llvm::Value::ConstantArrayVal, convert_constantArray },
-                    { ::llvm::Value::ConstantDataArrayVal, convert_constantDataArray },
-                    { ::llvm::Value::ConstantDataVectorVal, convert_constantDataVector },
-                    { ::llvm::Value::ConstantExprVal, convert_constantExpr },
-                    { ::llvm::Value::ConstantFPVal, convert_constantFP },
-                    { ::llvm::Value::ConstantIntVal, convert_int_constant },
-                    { ::llvm::Value::ConstantPointerNullVal, convert_constantPointerNull },
-                    { ::llvm::Value::ConstantStructVal, ConvertConstantStruct },
-                    { ::llvm::Value::ConstantVectorVal, convert_constantVector },
-                    { ::llvm::Value::FunctionVal, convert_function },
-                    { ::llvm::Value::GlobalAliasVal, convert_globalAlias },
-                    { ::llvm::Value::GlobalVariableVal, convert_globalVariable },
-                    { ::llvm::Value::PoisonValueVal, ConvertConstant<::llvm::PoisonValue> },
-                    { ::llvm::Value::UndefValueVal, convert_undefvalue } });
+      constantMap(
+          { { ::llvm::Value::BlockAddressVal, convert_blockAddress },
+            { ::llvm::Value::ConstantAggregateZeroVal, convert_constantAggregateZero },
+            { ::llvm::Value::ConstantArrayVal, convert_constantArray },
+            { ::llvm::Value::ConstantDataArrayVal, convert_constantDataArray },
+            { ::llvm::Value::ConstantDataVectorVal, convert_constantDataVector },
+            { ::llvm::Value::ConstantExprVal, convert_constantExpr },
+            { ::llvm::Value::ConstantFPVal, convert_constantFP },
+            { ::llvm::Value::ConstantIntVal, convert_int_constant },
+            { ::llvm::Value::ConstantPointerNullVal, convert_constantPointerNull },
+            { ::llvm::Value::ConstantStructVal, ConvertConstantStruct },
+            { ::llvm::Value::ConstantVectorVal, convert_constantVector },
+            { ::llvm::Value::FunctionVal, convert_function },
+            { ::llvm::Value::GlobalAliasVal, convert_globalAlias },
+            { ::llvm::Value::GlobalVariableVal, convert_globalVariable },
+            { ::llvm::Value::PoisonValueVal, ConvertConstant<::llvm::PoisonValue> },
+            { ::llvm::Value::UndefValueVal, convert_undefvalue } });
 
   if (constantMap.find(c->getValueID()) != constantMap.end())
     return constantMap[c->getValueID()](c, tacs, ctx);
@@ -618,6 +619,7 @@ convert_load_instruction(::llvm::Instruction * i, tacsvector_t & tacs, context &
   if (instruction->isVolatile())
   {
     auto loadVolatileTac = LoadVolatileOperation::Create(
+        instruction,
         address,
         ctx.iostate(),
         ctx.memory_state(),
@@ -632,8 +634,12 @@ convert_load_instruction(::llvm::Instruction * i, tacsvector_t & tacs, context &
   else
   {
     address = AddIOBarrier(tacs, address, ctx);
-    auto loadTac =
-        LoadNonVolatileOperation::Create(address, ctx.memory_state(), loadedType, alignment);
+    auto loadTac = LoadNonVolatileOperation::Create(
+        instruction,
+        address,
+        ctx.memory_state(),
+        loadedType,
+        alignment);
     tacs.push_back(std::move(loadTac));
     loadedValue = tacs.back()->result(0);
     memoryState = tacs.back()->result(1);
@@ -663,6 +669,7 @@ convert_store_instruction(::llvm::Instruction * i, tacsvector_t & tacs, context 
   if (instruction->isVolatile())
   {
     auto storeVolatileTac = StoreVolatileOperation::Create(
+        instruction,
         address,
         value,
         ctx.iostate(),
@@ -675,8 +682,12 @@ convert_store_instruction(::llvm::Instruction * i, tacsvector_t & tacs, context 
   else
   {
     address = AddIOBarrier(tacs, address, ctx);
-    auto storeTac =
-        StoreNonVolatileOperation::Create(address, value, ctx.memory_state(), alignment);
+    auto storeTac = StoreNonVolatileOperation::Create(
+        instruction,
+        address,
+        value,
+        ctx.memory_state(),
+        alignment);
     tacs.push_back(std::move(storeTac));
     memoryState = tacs.back()->result(0);
   }
@@ -788,12 +799,13 @@ convert_memcpy_call(const ::llvm::CallInst * instruction, tacsvector_t & tacs, c
 
   if (IsVolatile(*instruction->getArgOperand(3)))
   {
-    tacs.push_back(MemCpyVolatileOperation::CreateThreeAddressCode(
-        *destination,
-        *source,
-        *length,
-        *ioState,
-        { memoryState }));
+    tacs.push_back(
+        MemCpyVolatileOperation::CreateThreeAddressCode(
+            *destination,
+            *source,
+            *length,
+            *ioState,
+            { memoryState }));
     auto & memCpyVolatileTac = *tacs.back();
     tacs.push_back(AssignmentOperation::create(memCpyVolatileTac.result(0), ioState));
     tacs.push_back(AssignmentOperation::create(memCpyVolatileTac.result(1), memoryState));
@@ -1136,10 +1148,11 @@ convert(::llvm::UnaryOperator * unaryOperator, tacsvector_t & threeAddressCodeVe
   if (type->isVectorTy())
   {
     auto vectorType = typeConverter.ConvertLlvmType(*type);
-    threeAddressCodeVector.push_back(vectorunary_op::create(
-        FNegOperation(std::static_pointer_cast<const FloatingPointType>(scalarType)),
-        operand,
-        vectorType));
+    threeAddressCodeVector.push_back(
+        vectorunary_op::create(
+            FNegOperation(std::static_pointer_cast<const FloatingPointType>(scalarType)),
+            operand,
+            vectorType));
   }
   else
   {

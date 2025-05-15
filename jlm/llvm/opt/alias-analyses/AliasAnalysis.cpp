@@ -18,6 +18,13 @@
 #include <numeric>
 #include <queue>
 
+#include <llvm/Analysis/TargetLibraryInfo.h>
+#include <llvm/Analysis/TargetTransformInfo.h>
+#include <llvm/Analysis/AssumptionCache.h>
+#include <llvm/IR/Dominators.h>
+#include <llvm/IR/PassInstrumentation.h>
+#include <llvm/Analysis/BasicAliasAnalysis.h>
+
 namespace jlm::llvm::aa
 {
 
@@ -44,8 +51,10 @@ PointsToGraphAliasAnalysis::ToString() const
 
 AliasAnalysis::AliasQueryResponse
 PointsToGraphAliasAnalysis::Query(
+    [[maybe_unused]] ::llvm::Instruction * llvmInst1,
     const rvsdg::output & p1,
     const size_t s1,
+    [[maybe_unused]] ::llvm::Instruction * llvmInst2,
     const rvsdg::output & p2,
     const size_t s2)
 {
@@ -160,6 +169,82 @@ PointsToGraphAliasAnalysis::IsRepresentingSingleMemoryLocation(
       || PointsToGraph::Node::Is<PointsToGraph::LambdaNode>(node);
 }
 
+LlvmAliasAnalysis::LlvmAliasAnalysis()
+{
+  FAM_.registerPass([] { return ::llvm::TargetIRAnalysis(); });
+  FAM_.registerPass([] { return ::llvm::TargetLibraryAnalysis(); });
+  FAM_.registerPass([] { return ::llvm::AssumptionAnalysis(); });
+  FAM_.registerPass([] { return ::llvm::DominatorTreeAnalysis(); });
+  FAM_.registerPass([] { return ::llvm::PassInstrumentationAnalysis(); });
+  FAM_.registerPass([] { return ::llvm::BasicAA(); });
+
+  ::llvm::AAManager AA;
+  AA.registerFunctionAnalysis<::llvm::BasicAA>();
+
+  FAM_.registerPass([&] { return std::move(AA); });
+}
+
+std::string
+LlvmAliasAnalysis::ToString() const
+{
+  return "LlvmAA";
+}
+
+AliasAnalysis::AliasQueryResponse
+LlvmAliasAnalysis::Query(
+    ::llvm::Instruction * llvmInst1,
+    [[maybe_unused]] const rvsdg::output & p1,
+    [[maybe_unused]] size_t s1,
+    ::llvm::Instruction * llvmInst2,
+    [[maybe_unused]] const rvsdg::output & p2,
+    [[maybe_unused]] size_t s2)
+{
+  auto func = llvmInst1->getFunction();
+  if (func != LastFunction_)
+  {
+    LastFunction_ = func;
+    LastFunctionAAResults_ = &FAM_.getResult<::llvm::AAManager>(*func);
+  }
+
+  ::llvm::MemoryLocation ml1, ml2;
+  if (::llvm::isa<::llvm::LoadInst>(llvmInst1))
+  {
+    ml1 = ::llvm::MemoryLocation::get(::llvm::cast<::llvm::LoadInst>(llvmInst1));
+  }
+  else if (::llvm::isa<::llvm::StoreInst>(llvmInst1))
+  {
+    ml1 = ::llvm::MemoryLocation::get(::llvm::cast<::llvm::StoreInst>(llvmInst1));
+  }
+  else
+    JLM_UNREACHABLE("Unknown LLVM instruction type");
+
+  if (::llvm::isa<::llvm::LoadInst>(llvmInst2))
+  {
+    ml2 = ::llvm::MemoryLocation::get(::llvm::cast<::llvm::LoadInst>(llvmInst2));
+  }
+  else if (::llvm::isa<::llvm::StoreInst>(llvmInst2))
+  {
+    ml2 = ::llvm::MemoryLocation::get(::llvm::cast<::llvm::StoreInst>(llvmInst2));
+  }
+  else
+    JLM_UNREACHABLE("Unknown LLVM instruction type");
+
+  auto AR = LastFunctionAAResults_->alias(ml1, ml2);
+
+  switch(AR) {
+  case ::llvm::AliasResult::NoAlias:
+    return AliasQueryResponse::NoAlias;
+  case ::llvm::AliasResult::MayAlias:
+    return AliasQueryResponse::MayAlias;
+  case ::llvm::AliasResult::PartialAlias:
+    return AliasQueryResponse::MayAlias;
+  case ::llvm::AliasResult::MustAlias:
+    return AliasQueryResponse::MustAlias;
+  default:
+    JLM_UNREACHABLE("Unknown Alias Analysis Result from LLVM");
+  }
+}
+
 ChainedAliasAnalysis::ChainedAliasAnalysis(AliasAnalysis & first, AliasAnalysis & second)
     : First_(first),
       Second_(second)
@@ -169,22 +254,24 @@ ChainedAliasAnalysis::~ChainedAliasAnalysis() = default;
 
 AliasAnalysis::AliasQueryResponse
 ChainedAliasAnalysis::Query(
+    ::llvm::Instruction * llvmInst1,
     const rvsdg::output & p1,
     size_t s1,
+    ::llvm::Instruction * llvmInst2,
     const rvsdg::output & p2,
     size_t s2)
 {
-  const auto firstResponse = First_.Query(p1, s1, p2, s2);
+  const auto firstResponse = First_.Query(llvmInst1, p1, s1, llvmInst2, p2, s2);
 
   // Anything other than MayAlias is precise, and can be returned right away
   if (firstResponse != MayAlias)
   {
     [[maybe_unused]] AliasQueryResponse opposite = firstResponse == MustAlias ? NoAlias : MustAlias;
-    JLM_ASSERT(Second_.Query(p1, s1, p2, s2) != opposite);
+    JLM_ASSERT(Second_.Query(llvmInst1, p1, s1, llvmInst2, p2, s2) != opposite);
     return firstResponse;
   }
 
-  return Second_.Query(p1, s1, p2, s2);
+  return Second_.Query(llvmInst1, p1, s1, llvmInst2, p2, s2);
 }
 
 std::string
@@ -240,7 +327,13 @@ struct BasicAliasAnalysis::TraceCollection
 };
 
 AliasAnalysis::AliasQueryResponse
-BasicAliasAnalysis::Query(const rvsdg::output & p1, size_t s1, const rvsdg::output & p2, size_t s2)
+BasicAliasAnalysis::Query(
+    [[maybe_unused]] ::llvm::Instruction * llvmInst1,
+    const rvsdg::output & p1,
+    size_t s1,
+    [[maybe_unused]] ::llvm::Instruction * llvmInst2,
+    const rvsdg::output & p2,
+    size_t s2)
 {
   const auto & p1Norm = NormalizePointerValue(p1);
   const auto & p2Norm = NormalizePointerValue(p2);
@@ -314,7 +407,8 @@ BasicAliasAnalysis::Query(const rvsdg::output & p1, size_t s1, const rvsdg::outp
   RemoveTopOriginsSmallerThanSize(p1TraceCollection, minimumP2OffsetFromStart + s2);
 
   // If we know that p2 only touches memory after the first 12 bytes of its targets,
-  // then any use of p1 where p1 + s1 is within the first 12 bytes of its memory region can be ignored.
+  // then any use of p1 where p1 + s1 is within the first 12 bytes of its memory region can be
+  // ignored.
   RemoveTopOriginsWithinTheFirstNBytes(p1TraceCollection, s1, minimumP2OffsetFromStart);
   RemoveTopOriginsWithinTheFirstNBytes(p2TraceCollection, s2, minimumP1OffsetFromStart);
 
@@ -523,9 +617,9 @@ BasicAliasAnalysis::TraceAllPointerOrigins(TracedPointerOrigin p, TraceCollectio
 
   traceCollection.AllTracedOutputs[p.BasePointer] = p.Offset;
 
-  // Try to trace through GEPs
   if (auto node = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*p.BasePointer))
   {
+    // If it is a GEP, we can trace through it, but possibly lose precise offset information
     if (is<GetElementPtrOperation>(node))
     {
       // Update the base pointer and offset to represent the other side of the GEP
@@ -542,6 +636,12 @@ BasicAliasAnalysis::TraceAllPointerOrigins(TracedPointerOrigin p, TraceCollectio
       }
 
       return TraceAllPointerOrigins(p, traceCollection);
+    }
+
+    // If we reach undef nodes, do not include them in the TopOrigins
+    if (is<UndefValueOperation>(node))
+    {
+      return true;
     }
   }
 
@@ -732,7 +832,6 @@ BasicAliasAnalysis::RemoveTopOriginsWithinTheFirstNBytes(
       it++;
   }
 }
-
 
 bool
 BasicAliasAnalysis::DoTraceCollectionsOverlap(

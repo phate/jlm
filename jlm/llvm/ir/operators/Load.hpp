@@ -11,6 +11,8 @@
 #include <jlm/rvsdg/graph.hpp>
 #include <jlm/rvsdg/simple-node.hpp>
 
+#include <llvm/IR/Instructions.h>
+
 #include <optional>
 
 namespace jlm::llvm
@@ -68,11 +70,13 @@ public:
 
 protected:
   LoadOperation(
+      ::llvm::LoadInst * llvmLoad,
       const std::vector<std::shared_ptr<const rvsdg::Type>> & operandTypes,
       const std::vector<std::shared_ptr<const rvsdg::Type>> & resultTypes,
       const size_t numMemoryStates,
       const size_t alignment)
       : SimpleOperation(operandTypes, resultTypes),
+        LlvmLoad_(llvmLoad),
         NumMemoryStates_(numMemoryStates),
         Alignment_(alignment)
   {
@@ -95,6 +99,12 @@ protected:
   }
 
 public:
+  [[nodiscard]] ::llvm::LoadInst *
+    GetLlvmLoad() const noexcept
+  {
+    return LlvmLoad_;
+  }
+
   [[nodiscard]] size_t
   GetAlignment() const noexcept
   {
@@ -150,6 +160,7 @@ public:
   }
 
 private:
+  ::llvm::LoadInst * LlvmLoad_;
   size_t NumMemoryStates_;
   size_t Alignment_;
 };
@@ -171,10 +182,12 @@ public:
   ~LoadVolatileOperation() noexcept override;
 
   LoadVolatileOperation(
+      ::llvm::LoadInst * llvmLoad,
       std::shared_ptr<const rvsdg::ValueType> loadedType,
       size_t numMemoryStates,
       size_t alignment)
       : LoadOperation(
+            llvmLoad,
             CreateOperandTypes(numMemoryStates),
             CreateResultTypes(std::move(loadedType), numMemoryStates),
             numMemoryStates,
@@ -210,13 +223,14 @@ public:
 
   static std::unique_ptr<llvm::tac>
   Create(
+      ::llvm::LoadInst * llvmLoad,
       const variable * address,
       const variable * iOState,
       const variable * memoryState,
       std::shared_ptr<const rvsdg::ValueType> loadedType,
       size_t alignment)
   {
-    LoadVolatileOperation operation(std::move(loadedType), 1, alignment);
+    LoadVolatileOperation operation(llvmLoad, std::move(loadedType), 1, alignment);
     return tac::create(operation, { address, iOState, memoryState });
   }
 
@@ -228,6 +242,7 @@ public:
 
   static rvsdg::SimpleNode &
   CreateNode(
+      ::llvm::LoadInst * llvmLoad,
       rvsdg::output & address,
       rvsdg::output & iOState,
       const std::vector<rvsdg::output *> & memoryStates,
@@ -238,6 +253,7 @@ public:
     operands.insert(operands.end(), memoryStates.begin(), memoryStates.end());
 
     auto operation = std::make_unique<LoadVolatileOperation>(
+        llvmLoad,
         std::move(loadedType),
         memoryStates.size(),
         alignment);
@@ -281,10 +297,12 @@ public:
   ~LoadNonVolatileOperation() noexcept override;
 
   LoadNonVolatileOperation(
+      ::llvm::LoadInst * llvmLoad,
       std::shared_ptr<const rvsdg::ValueType> loadedType,
       size_t numMemoryStates,
       size_t alignment)
       : LoadOperation(
+            llvmLoad,
             CreateOperandTypes(numMemoryStates),
             CreateResultTypes(std::move(loadedType), numMemoryStates),
             numMemoryStates,
@@ -302,23 +320,25 @@ public:
 
   static std::unique_ptr<llvm::tac>
   Create(
+      ::llvm::LoadInst * llvmLoad,
       const variable * address,
       const variable * state,
       std::shared_ptr<const rvsdg::ValueType> loadedType,
       size_t alignment)
   {
-    LoadNonVolatileOperation operation(std::move(loadedType), 1, alignment);
+    LoadNonVolatileOperation operation(llvmLoad, std::move(loadedType), 1, alignment);
     return tac::create(operation, { address, state });
   }
 
   static std::vector<rvsdg::output *>
   Create(
+      ::llvm::LoadInst * llvmLoad,
       rvsdg::output * address,
       const std::vector<rvsdg::output *> & memoryStates,
       std::shared_ptr<const rvsdg::ValueType> loadedType,
       const size_t alignment)
   {
-    return rvsdg::outputs(&CreateNode(*address, memoryStates, std::move(loadedType), alignment));
+    return rvsdg::outputs(&CreateNode(llvmLoad, *address, memoryStates, std::move(loadedType), alignment));
   }
 
   static rvsdg::SimpleNode &
@@ -341,6 +361,7 @@ public:
 
   static rvsdg::SimpleNode &
   CreateNode(
+      ::llvm::LoadInst * llvmLoad,
       rvsdg::output & address,
       const std::vector<rvsdg::output *> & memoryStates,
       std::shared_ptr<const rvsdg::ValueType> loadedType,
@@ -350,6 +371,7 @@ public:
     operands.insert(operands.end(), memoryStates.begin(), memoryStates.end());
 
     auto operation = std::make_unique<LoadNonVolatileOperation>(
+        llvmLoad,
         std::move(loadedType),
         memoryStates.size(),
         alignment);

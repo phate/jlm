@@ -34,12 +34,13 @@ PointsToAnalysisStateEncoder<TPointsToAnalysis, TModRefSummarizer>::Run(
   PrecisionEvaluator precisionEvaluator;
   PointsToGraphAliasAnalysis ptgAA(*pointsToGraph);
   BasicAliasAnalysis basicAA;
-  ChainedAliasAnalysis ptgPlusBasicAA(ptgAA, basicAA);
+  LlvmAliasAnalysis llvmAA;
+  ChainedAliasAnalysis ptgPlusLlvmAA(ptgAA, llvmAA);
 
-  // Run with just BasicAA, then PtG, the PtG + Basic
   precisionEvaluator.EvaluateAliasAnalysisClient(rvsdgModule, basicAA, statisticsCollector);
+  precisionEvaluator.EvaluateAliasAnalysisClient(rvsdgModule, llvmAA, statisticsCollector);
   precisionEvaluator.EvaluateAliasAnalysisClient(rvsdgModule, ptgAA, statisticsCollector);
-  precisionEvaluator.EvaluateAliasAnalysisClient(rvsdgModule, ptgPlusBasicAA, statisticsCollector);
+  precisionEvaluator.EvaluateAliasAnalysisClient(rvsdgModule, ptgPlusLlvmAA, statisticsCollector);
 
   /*
   TODO: Add encoding back in

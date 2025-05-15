@@ -959,6 +959,7 @@ MemoryStateEncoder::ReplaceLoadNode(
           dynamic_cast<const LoadVolatileOperation *>(&node.GetOperation()))
   {
     auto & newLoadNode = LoadVolatileOperation::CreateNode(
+        loadVolatileOperation->GetLlvmLoad(),
         *LoadOperation::AddressInput(node).origin(),
         *LoadVolatileOperation::IOStateInput(node).origin(),
         memoryStates,
@@ -977,6 +978,7 @@ MemoryStateEncoder::ReplaceLoadNode(
           dynamic_cast<const LoadNonVolatileOperation *>(&node.GetOperation()))
   {
     auto & newLoadNode = LoadNonVolatileOperation::CreateNode(
+        loadNonVolatileOperation->GetLlvmLoad(),
         *LoadOperation::AddressInput(node).origin(),
         memoryStates,
         loadNonVolatileOperation->GetLoadedType(),
@@ -999,6 +1001,7 @@ MemoryStateEncoder::ReplaceStoreNode(
           dynamic_cast<const StoreVolatileOperation *>(&node.GetOperation()))
   {
     auto & newStoreNode = StoreVolatileOperation::CreateNode(
+        oldStoreVolatileOperation->GetLlvmStore(),
         *StoreOperation::AddressInput(node).origin(),
         *StoreOperation::StoredValueInput(node).origin(),
         *StoreVolatileOperation::IOStateInput(node).origin(),
@@ -1014,6 +1017,7 @@ MemoryStateEncoder::ReplaceStoreNode(
           dynamic_cast<const StoreNonVolatileOperation *>(&node.GetOperation()))
   {
     return StoreNonVolatileOperation::CreateNode(
+        oldStoreNonVolatileOperation->GetLlvmStore(),
         *StoreOperation::AddressInput(node).origin(),
         *StoreOperation::StoredValueInput(node).origin(),
         memoryStates,

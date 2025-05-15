@@ -8,6 +8,9 @@
 
 #include <jlm/llvm/opt/alias-analyses/PointsToGraph.hpp>
 
+#include <llvm/IR/PassManager.h>
+#include <llvm/Analysis/AliasAnalysis.h>
+
 namespace jlm::llvm::aa
 {
 
@@ -58,7 +61,13 @@ public:
    * @return the result of the alias query
    */
   virtual AliasQueryResponse
-  Query(const rvsdg::output & p1, size_t s1, const rvsdg::output & p2, size_t s2) = 0;
+  Query(
+      ::llvm::Instruction * llvmInst1,
+      const rvsdg::output & p1,
+      size_t s1,
+      ::llvm::Instruction * llvmInst2,
+      const rvsdg::output & p2,
+      size_t s2) = 0;
 };
 
 /**
@@ -74,7 +83,13 @@ public:
   ToString() const override;
 
   AliasQueryResponse
-  Query(const rvsdg::output & p1, size_t s1, const rvsdg::output & p2, size_t s2) override;
+  Query(
+      ::llvm::Instruction * llvmInst1,
+      const rvsdg::output & p1,
+      size_t s1,
+      ::llvm::Instruction * llvmInst2,
+      const rvsdg::output & p2,
+      size_t s2) override;
 
 private:
   /**
@@ -102,6 +117,35 @@ private:
 };
 
 /**
+ * Uses alias analysis from LLVM to answer alias queries.
+ * This class is intended to be temporary to get comparisons against LLVM's own AA.
+ */
+class LlvmAliasAnalysis final : public AliasAnalysis
+{
+public:
+
+  LlvmAliasAnalysis();
+
+  std::string
+  ToString() const override;
+
+  AliasQueryResponse
+  Query(
+      ::llvm::Instruction * llvmInst1,
+      const rvsdg::output & p1,
+      size_t s1,
+      ::llvm::Instruction * llvmInst2,
+      const rvsdg::output & p2,
+      size_t s2) override;
+
+private:
+  ::llvm::FunctionAnalysisManager FAM_;
+
+  ::llvm::Function * LastFunction_ = {};
+  ::llvm::AAResults * LastFunctionAAResults_ = {};
+};
+
+/**
  * Class using two instances of AliasAnalysis to answer alias analysis queries.
  * If the first analysis responds "May Alias", the second analysis is queried.
  */
@@ -115,7 +159,13 @@ public:
   ToString() const override;
 
   AliasQueryResponse
-  Query(const rvsdg::output & p1, size_t s1, const rvsdg::output & p2, size_t s2) override;
+  Query(
+      ::llvm::Instruction * llvmInst1,
+      const rvsdg::output & p1,
+      size_t s1,
+      ::llvm::Instruction * llvmInst2,
+      const rvsdg::output & p2,
+      size_t s2) override;
 
 private:
   AliasAnalysis & First_;
@@ -135,7 +185,13 @@ public:
   ToString() const override;
 
   AliasQueryResponse
-  Query(const rvsdg::output & p1, size_t s1, const rvsdg::output & p2, size_t s2) override;
+  Query(
+      ::llvm::Instruction * llvmInst1,
+      const rvsdg::output & p1,
+      size_t s1,
+      ::llvm::Instruction * llvmInst2,
+      const rvsdg::output & p2,
+      size_t s2) override;
 
 private:
   struct TracedPointerOrigin;

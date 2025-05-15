@@ -8,6 +8,7 @@
 
 #include <jlm/util/common.hpp>
 
+#include <cstdint>
 #include <memory>
 #include <optional>
 #include <unordered_map>

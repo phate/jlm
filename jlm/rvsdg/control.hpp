@@ -13,8 +13,8 @@
 #include <jlm/rvsdg/unary.hpp>
 #include <jlm/util/strfmt.hpp>
 
+#include <cstdint>
 #include <unordered_map>
-
 namespace jlm::rvsdg
 {
 

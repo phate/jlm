@@ -13,6 +13,8 @@
 
 #include <optional>
 
+#include <llvm/IR/Instructions.h>
+
 namespace jlm::llvm
 {
 
@@ -47,11 +49,13 @@ public:
 
 protected:
   StoreOperation(
+      ::llvm::StoreInst * llvmStore,
       const std::vector<std::shared_ptr<const rvsdg::Type>> & operandTypes,
       const std::vector<std::shared_ptr<const rvsdg::Type>> & resultTypes,
       size_t numMemoryStates,
       size_t alignment)
       : SimpleOperation(operandTypes, resultTypes),
+        LlvmStore_(llvmStore),
         NumMemoryStates_(numMemoryStates),
         Alignment_(alignment)
   {
@@ -74,6 +78,12 @@ protected:
   }
 
 public:
+  [[nodiscard]] ::llvm::StoreInst *
+  GetLlvmStore() const noexcept
+  {
+    return LlvmStore_;
+  }
+
   [[nodiscard]] size_t
   GetAlignment() const noexcept
   {
@@ -127,6 +137,7 @@ public:
   }
 
 private:
+  ::llvm::StoreInst * LlvmStore_;
   size_t NumMemoryStates_;
   size_t Alignment_;
 };
@@ -142,10 +153,12 @@ public:
   ~StoreNonVolatileOperation() noexcept override;
 
   StoreNonVolatileOperation(
+      ::llvm::StoreInst * llvmStore,
       std::shared_ptr<const rvsdg::ValueType> storedType,
       const size_t numMemoryStates,
       const size_t alignment)
       : StoreOperation(
+            llvmStore,
             CreateOperandTypes(std::move(storedType), numMemoryStates),
             { numMemoryStates, MemoryStateType::Create() },
             numMemoryStates,
@@ -162,26 +175,28 @@ public:
   copy() const override;
 
   static std::unique_ptr<llvm::tac>
-  Create(const variable * address, const variable * value, const variable * state, size_t alignment)
+  Create(::llvm::StoreInst * llvmStore, const variable * address, const variable * value, const variable * state, size_t alignment)
   {
     auto storedType = CheckAndExtractStoredType(value->Type());
 
-    StoreNonVolatileOperation op(storedType, 1, alignment);
+    StoreNonVolatileOperation op(llvmStore, storedType, 1, alignment);
     return tac::create(op, { address, value, state });
   }
 
   static std::vector<rvsdg::output *>
   Create(
+      ::llvm::StoreInst * llvmStore,
       rvsdg::output * address,
       rvsdg::output * value,
       const std::vector<rvsdg::output *> & memoryStates,
       size_t alignment)
   {
-    return outputs(&CreateNode(*address, *value, memoryStates, alignment));
+    return outputs(&CreateNode(llvmStore, *address, *value, memoryStates, alignment));
   }
 
   static rvsdg::SimpleNode &
   CreateNode(
+      ::llvm::StoreInst * llvmStore,
       rvsdg::output & address,
       rvsdg::output & value,
       const std::vector<rvsdg::output *> & memoryStates,
@@ -193,6 +208,7 @@ public:
     operands.insert(operands.end(), memoryStates.begin(), memoryStates.end());
 
     auto operation = std::make_unique<StoreNonVolatileOperation>(
+        llvmStore,
         std::move(storedType),
         memoryStates.size(),
         alignment);
@@ -259,10 +275,12 @@ public:
   ~StoreVolatileOperation() noexcept override;
 
   StoreVolatileOperation(
+      ::llvm::StoreInst * llvmStore,
       std::shared_ptr<const rvsdg::ValueType> storedType,
       const size_t numMemoryStates,
       const size_t alignment)
       : StoreOperation(
+            llvmStore,
             CreateOperandTypes(std::move(storedType), numMemoryStates),
             CreateResultTypes(numMemoryStates),
             numMemoryStates,
@@ -298,6 +316,7 @@ public:
 
   static std::unique_ptr<llvm::tac>
   Create(
+      ::llvm::StoreInst * llvmStore,
       const variable * address,
       const variable * value,
       const variable * ioState,
@@ -306,7 +325,7 @@ public:
   {
     auto storedType = CheckAndExtractStoredType(value->Type());
 
-    StoreVolatileOperation op(storedType, 1, alignment);
+    StoreVolatileOperation op(llvmStore, storedType, 1, alignment);
     return tac::create(op, { address, value, ioState, memoryState });
   }
 
@@ -321,6 +340,7 @@ public:
 
   static rvsdg::SimpleNode &
   CreateNode(
+      ::llvm::StoreInst * llvmStore,
       rvsdg::output & address,
       rvsdg::output & value,
       rvsdg::output & ioState,
@@ -333,7 +353,7 @@ public:
     operands.insert(operands.end(), memoryStates.begin(), memoryStates.end());
 
     auto operation =
-        std::make_unique<StoreVolatileOperation>(storedType, memoryStates.size(), alignment);
+        std::make_unique<StoreVolatileOperation>(llvmStore, storedType, memoryStates.size(), alignment);
     return CreateNode(*address.region(), std::move(operation), operands);
   }
 

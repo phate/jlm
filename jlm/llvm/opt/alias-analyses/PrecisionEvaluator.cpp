@@ -21,7 +21,7 @@ namespace jlm::llvm::aa
  */
 static constexpr bool RemoveDuplicatePointers = false;
 
-static constexpr bool OutputAliasingGraph = true;
+static constexpr bool OutputAliasingGraph = false;
 
 static constexpr auto DefaultMode = PrecisionEvaluator::Mode::ClobberingStores;
 
@@ -106,7 +106,9 @@ public:
   }
 };
 
-PrecisionEvaluator::PrecisionEvaluator() : Mode_(DefaultMode) {}
+PrecisionEvaluator::PrecisionEvaluator()
+    : Mode_(DefaultMode)
+{}
 
 void
 PrecisionEvaluator::EvaluateAliasAnalysisClient(
@@ -194,7 +196,7 @@ PrecisionEvaluator::EvaluateFunction(
   // Go over all pointer usages, find the ratio of clobbering points that may alias with it
   for (size_t i = 0; i < Context_.PointerOperations.size(); i++)
   {
-    auto [p1, s1, p1IsUse, p1IsClobber] = Context_.PointerOperations[i];
+    auto [llvmInst1, p1, s1, p1IsUse, p1IsClobber] = Context_.PointerOperations[i];
 
     precisionEvaluation.NumOperations++;
     precisionEvaluation.NumUseOperations += p1IsUse;
@@ -209,14 +211,14 @@ PrecisionEvaluator::EvaluateFunction(
       if (i == j)
         continue;
 
-      auto [p2, s2, p2IsUse, p2IsClobber] = Context_.PointerOperations[j];
+      auto [llvmInst2, p2, s2, p2IsUse, p2IsClobber] = Context_.PointerOperations[j];
       if (!p2IsUse)
         continue;
 
-      auto response = aliasAnalysis.Query(*p1, s1, *p2, s2);
+      auto response = aliasAnalysis.Query(llvmInst1, *p1, s1, llvmInst2, *p2, s2);
 
       // queries should always be symmetric, so double check that in debug builds
-      JLM_ASSERT(response == aliasAnalysis.Query(*p2, s2, *p1, s1));
+      JLM_ASSERT(response == aliasAnalysis.Query(llvmInst2, *p2, s2, llvmInst1, *p1, s1));
 
       // Add edge to aliasing graph if requested
       if (OutputAliasingGraph && p1 < p2)
@@ -302,12 +304,22 @@ PrecisionEvaluator::CollectPointersFromSimpleNode(const rvsdg::SimpleNode & node
   if (const auto load = dynamic_cast<const LoadOperation *>(&node.GetOperation()))
   {
     const auto size = GetLlvmTypeSize(*load->GetLoadedType());
-    CollectPointer(LoadOperation::AddressInput(node).origin(), size, true, loadsClobber);
+    CollectPointer(
+        load->GetLlvmLoad(),
+        LoadOperation::AddressInput(node).origin(),
+        size,
+        true,
+        loadsClobber);
   }
   else if (auto store = dynamic_cast<const StoreOperation *>(&node.GetOperation()))
   {
     const auto size = GetLlvmTypeSize(store->GetStoredType());
-    CollectPointer(StoreOperation::AddressInput(node).origin(), size, true, true);
+    CollectPointer(
+        store->GetLlvmStore(),
+        StoreOperation::AddressInput(node).origin(),
+        size,
+        true,
+        true);
   }
 }
 
@@ -322,13 +334,14 @@ PrecisionEvaluator::CollectPointersFromStructuralNode(const rvsdg::StructuralNod
 
 void
 PrecisionEvaluator::CollectPointer(
+    ::llvm::Instruction * llvmInst,
     const rvsdg::output * value,
     size_t size,
     bool isUse,
     bool isClobber)
 {
   JLM_ASSERT(IsPointerCompatible(*value));
-  Context_.PointerOperations.push_back({ value, size, isUse, isClobber });
+  Context_.PointerOperations.push_back({ llvmInst, value, size, isUse, isClobber });
 }
 
 void
@@ -336,7 +349,7 @@ PrecisionEvaluator::NormalizePointerValues()
 {
   for (size_t i = 0; i < Context_.PointerOperations.size(); i++)
   {
-    auto & pointer = std::get<0>(Context_.PointerOperations[i]);
+    auto & pointer = std::get<1>(Context_.PointerOperations[i]);
     pointer = &NormalizePointerValue(*pointer);
   }
 }
@@ -346,20 +359,22 @@ PrecisionEvaluator::RemoveDuplicates()
 {
   // For each occurrence of a (pointer, size) pair, perform logical or to find the final isUse and
   // isClobber values
-  std::map<std::pair<const rvsdg::output *, size_t>, std::pair<bool, bool>> uniquePointerOps;
+  std::map<std::pair<const rvsdg::output *, size_t>, std::tuple<::llvm::Instruction *, bool, bool>>
+      uniquePointerOps;
 
-  for (const auto & [pointer, size, isUse, isClobber] : Context_.PointerOperations)
+  for (const auto & [llvmInst, pointer, size, isUse, isClobber] : Context_.PointerOperations)
   {
     auto & op = uniquePointerOps[{ pointer, size }];
-    op.first |= isUse;
-    op.second |= isClobber;
+    const auto [_, wasUse, wasClobber] = op;
+    op = { llvmInst, isUse | wasUse, isClobber | wasClobber };
   }
 
   Context_.PointerOperations.clear();
-  for (const auto & [pointerSize, isUseClobber] : uniquePointerOps)
+  for (const auto & [pointerSize, op] : uniquePointerOps)
   {
-    Context_.PointerOperations.push_back(
-        { pointerSize.first, pointerSize.second, isUseClobber.first, isUseClobber.second });
+    const auto [pointer, size] = pointerSize;
+    const auto [llvmInst, isUse, isClobber] = op;
+    Context_.PointerOperations.push_back({ llvmInst, pointer, size, isUse, isClobber });
   }
 }
 

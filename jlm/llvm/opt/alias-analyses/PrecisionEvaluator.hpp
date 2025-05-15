@@ -9,6 +9,8 @@
 #include <jlm/llvm/opt/alias-analyses/AliasAnalysis.hpp>
 #include <jlm/util/Statistics.hpp>
 
+#include <llvm/IR/Instruction.h>
+
 #include <unordered_map>
 
 namespace jlm::util
@@ -78,7 +80,12 @@ private:
 
   // Adds a value to the list of pointer operations in the function being evaluated
   void
-  CollectPointer(const rvsdg::output * value, size_t size, bool isUse, bool isClobber);
+  CollectPointer(
+      ::llvm::Instruction * llvmInst,
+      const rvsdg::output * value,
+      size_t size,
+      bool isUse,
+      bool isClobber);
 
   /**
    * Updates the pointers collected in the current context by tracing their origin.
@@ -141,7 +148,8 @@ private:
      * All operations should be either a use, a clobber or both.
      * @see PrecisionEvaluationMode for setting which operations are counted and how
      */
-    std::vector<std::tuple<const rvsdg::output *, size_t, bool, bool>> PointerOperations;
+    std::vector<std::tuple<::llvm::Instruction *, const rvsdg::output *, size_t, bool, bool>>
+        PointerOperations;
   };
 
   static void
