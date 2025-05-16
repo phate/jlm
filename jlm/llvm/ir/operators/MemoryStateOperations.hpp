@@ -71,17 +71,22 @@ public:
 };
 // FIXME: operations
 std::optional<std::vector<rvsdg::output *>>
-NormalizeSingleOperandMemoryStateMerge(
+NormalizeMemoryStateMergeSingleOperand(
     const MemoryStateMergeOperation & operation,
     const std::vector<rvsdg::output *> & operands);
 
 std::optional<std::vector<rvsdg::output *>>
-NormalizeNestedMemoryStateMerges(
+NormalizeMemoryStateMergeDuplicateState(
     const MemoryStateMergeOperation & operation,
     const std::vector<rvsdg::output *> & operands);
 
 std::optional<std::vector<rvsdg::output *>>
-NormalizeMemoryStateMergeAndSplit(
+NormalizeMemoryStateMergeNestedMerges(
+    const MemoryStateMergeOperation & operation,
+    const std::vector<rvsdg::output *> & operands);
+
+std::optional<std::vector<rvsdg::output *>>
+NormalizeMemoryStateMergeNestedSplit(
     const MemoryStateMergeOperation & operation,
     const std::vector<rvsdg::output *> & operands);
 
@@ -121,7 +126,12 @@ public:
 
 // FIXME: operations
 std::optional<std::vector<rvsdg::output *>>
-NormalizeSingleResultMemoryStateSplit(
+NormalizeMemoryStateSplitSingleResult(
+    const MemoryStateMergeOperation & operation,
+    const std::vector<rvsdg::output *> & operands);
+
+std::optional<std::vector<rvsdg::output *>>
+NormalizeMemoryStateSplitNestedSplit(
     const MemoryStateMergeOperation & operation,
     const std::vector<rvsdg::output *> & operands);
 
