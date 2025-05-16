@@ -134,4 +134,88 @@ CallExitMemoryStateSplitOperation::copy() const
   return std::make_unique<CallExitMemoryStateSplitOperation>(*this);
 }
 
+std::optional<std::vector<rvsdg::output *>>
+NormalizeNestedMemoryStateMerges(
+    const MemoryStateMergeOperation &,
+    const std::vector<rvsdg::output *> & operands)
+{
+  std::vector<rvsdg::output *> newOperands;
+  for (auto operand : operands)
+  {
+    auto [mergeNode, mergeOperation] = TryGetSimpleNodeAndOp<MemoryStateMergeOperation>(*operand);
+    if (mergeOperation)
+    {
+      auto mergeOperands = rvsdg::operands(mergeNode);
+      newOperands.insert(newOperands.end(), mergeOperands.begin(), mergeOperands.end());
+    }
+    else
+    {
+      newOperands.emplace_back(operand);
+    }
+  }
+
+  return operands != newOperands ? newOperands : std::nullopt;
+}
+
+template<class TNode>
+static std::optional<rvsdg::Node *>
+UsersHaveSingleConsumer(const rvsdg::output * output)
+{
+  // FIXME: static assert
+
+  if (output->IsDead())
+    return std::nullopt;
+
+  rvsdg::Node * singleConsumerNode = rvsdg::TryGetOwnerNode<TNode>(*output->begin());
+  for (auto user : *output)
+  {
+    auto node = TryGetOwnerNode<TNode>(*output);
+    if (node != singleConsumerNode)
+      return std::nullopt;
+  }
+
+  return singleConsumerNode;
+}
+
+std::optional<std::vector<rvsdg::output *>>
+NormalizeMemoryStateMergeAndSplit(
+    const MemoryStateMergeOperation &,
+    const std::vector<rvsdg::output *> & operands)
+{
+  std::vector<rvsdg::output *> newOperands;
+  for (auto operand : operands)
+  {
+    auto [splitNode, splitOperation] = TryGetSimpleNodeAndOp<MemoryStateSplitOperation>(*operand);
+    if (splitOperation)
+    {
+      if (!UsersHaveSingleConsumer<rvsdg::SimpleNode>(operand))
+        return std::nullopt;
+    }
+    else
+    {
+      newOperands.emplace_back(operand);
+    }
+  }
+}
+
+std::optional<std::vector<rvsdg::output *>>
+NormalizeSingleOperandMemoryStateMerge(
+    const MemoryStateMergeOperation &,
+    const std::vector<rvsdg::output *> & operands)
+{
+  if (operands.size() == 1)
+    return operands;
+}
+
+std::optional<std::vector<rvsdg::output *>>
+NormalizeSingleResultMemoryStateSplit(
+    const MemoryStateMergeOperation & operation,
+    const std::vector<rvsdg::output *> & operands)
+{
+  JLM_ASSERT(operands.size() == 1);
+
+  if (operation.nresults() == 1)
+    return operands;
+}
+
 }

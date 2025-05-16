@@ -69,6 +69,21 @@ public:
     return tac::create(operation, operands);
   }
 };
+// FIXME: operations
+std::optional<std::vector<rvsdg::output *>>
+NormalizeSingleOperandMemoryStateMerge(
+    const MemoryStateMergeOperation & operation,
+    const std::vector<rvsdg::output *> & operands);
+
+std::optional<std::vector<rvsdg::output *>>
+NormalizeNestedMemoryStateMerges(
+    const MemoryStateMergeOperation & operation,
+    const std::vector<rvsdg::output *> & operands);
+
+std::optional<std::vector<rvsdg::output *>>
+NormalizeMemoryStateMergeAndSplit(
+    const MemoryStateMergeOperation & operation,
+    const std::vector<rvsdg::output *> & operands);
 
 /**
  * A memory state split operation takes a single input state and splits it into multiple output
@@ -103,6 +118,12 @@ public:
     return outputs(&rvsdg::CreateOpNode<MemoryStateSplitOperation>({ &operand }, numResults));
   }
 };
+
+// FIXME: operations
+std::optional<std::vector<rvsdg::output *>>
+NormalizeSingleResultMemoryStateSplit(
+    const MemoryStateMergeOperation & operation,
+    const std::vector<rvsdg::output *> & operands);
 
 /**
  * A lambda entry memory state split operation takes a single input state and splits it into
