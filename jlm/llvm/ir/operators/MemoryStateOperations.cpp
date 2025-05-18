@@ -79,7 +79,7 @@ MemoryStateSplitOperation::NormalizeNestedSplits(
 
   const auto numResults = splitOperation->nresults() + operation.nresults();
   auto & newOperand = *splitNode->input(0)->origin();
-  auto results = MemoryStateSplitOperation::Create(newOperand, numResults);
+  auto results = Create(newOperand, numResults);
 
   for (size_t n = 0; n < splitNode->noutputs(); n++)
   {
@@ -88,6 +88,22 @@ MemoryStateSplitOperation::NormalizeNestedSplits(
   }
 
   return { { std::next(results.begin(), splitNode->noutputs()), results.end() } };
+}
+
+std::optional<std::vector<rvsdg::output *>>
+MemoryStateSplitOperation::NormalizeSplitMerge(
+    const MemoryStateSplitOperation & operation,
+    const std::vector<rvsdg::output *> & operands)
+{
+  JLM_ASSERT(operands.size() == 1);
+  const auto operand = operands[0];
+
+  auto [mergeNode, mergeOperation] =
+      rvsdg::TryGetSimpleNodeAndOp<MemoryStateMergeOperation>(*operand);
+  if (!mergeOperation || mergeOperation->narguments() != operation.nresults())
+    return std::nullopt;
+
+  return { rvsdg::operands(mergeNode) };
 }
 
 LambdaEntryMemoryStateSplitOperation::~LambdaEntryMemoryStateSplitOperation() noexcept = default;

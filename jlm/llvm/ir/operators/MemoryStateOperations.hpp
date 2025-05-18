@@ -126,6 +126,12 @@ public:
       const MemoryStateSplitOperation & operation,
       const std::vector<rvsdg::output *> & operands);
 
+  // FIXME: documentation
+  static std::optional<std::vector<rvsdg::output *>>
+  NormalizeSplitMerge(
+      const MemoryStateSplitOperation & operation,
+      const std::vector<rvsdg::output *> & operands);
+
   static rvsdg::SimpleNode &
   CreateNode(rvsdg::output & operand, const size_t numResults)
   {
