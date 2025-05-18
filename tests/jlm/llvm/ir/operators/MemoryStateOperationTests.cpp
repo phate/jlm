@@ -197,6 +197,80 @@ JLM_UNIT_TEST_REGISTER(
     MemoryStateMergeEquality)
 
 static int
+MemoryStateMergeNormalizeSingleOperand()
+{
+  using namespace jlm::llvm;
+  using namespace jlm::rvsdg;
+
+  // Arrange
+  const auto memoryStateType = MemoryStateType::Create();
+
+  Graph rvsdg;
+  auto & ix = jlm::tests::GraphImport::Create(rvsdg, memoryStateType, "x");
+
+  auto & mergeNode = MemoryStateMergeOperation::CreateNode({ &ix });
+
+  auto & ex = jlm::tests::GraphExport::Create(*mergeNode.output(0), "x");
+
+  view(&rvsdg.GetRootRegion(), stdout);
+
+  // Act
+  ReduceNode<MemoryStateMergeOperation>(
+      MemoryStateMergeOperation::NormalizeSingleOperand,
+      mergeNode);
+  rvsdg.PruneNodes();
+  view(&rvsdg.GetRootRegion(), stdout);
+
+  // Assert
+  assert(rvsdg.GetRootRegion().nnodes() == 0);
+  assert(ex.origin() == &ix);
+
+  return 0;
+}
+
+JLM_UNIT_TEST_REGISTER(
+    "jlm/llvm/ir/operators/MemoryStateOperationTests-MemoryStateMergeNormalizeSingleOperand",
+    MemoryStateMergeNormalizeSingleOperand)
+
+static int
+MemoryStateMergeNormalizeDuplicateStates()
+{
+  using namespace jlm::llvm;
+  using namespace jlm::rvsdg;
+
+  // Arrange
+  const auto memoryStateType = MemoryStateType::Create();
+
+  Graph rvsdg;
+  auto & ix0 = jlm::tests::GraphImport::Create(rvsdg, memoryStateType, "x0");
+  auto & ix1 = jlm::tests::GraphImport::Create(rvsdg, memoryStateType, "x1");
+
+  auto & node = MemoryStateMergeOperation::CreateNode({ &ix0, &ix0, &ix1, &ix1 });
+
+  auto & ex = jlm::tests::GraphExport::Create(*node.output(0), "x");
+
+  view(&rvsdg.GetRootRegion(), stdout);
+
+  // Act
+  ReduceNode<MemoryStateMergeOperation>(MemoryStateMergeOperation::NormalizeDuplicateStates, node);
+  rvsdg.PruneNodes();
+  view(&rvsdg.GetRootRegion(), stdout);
+
+  // Assert
+  assert(rvsdg.GetRootRegion().nnodes() == 1);
+  auto [mergeNode, mergeOperation] = TryGetSimpleNodeAndOp<MemoryStateMergeOperation>(*ex.origin());
+  assert(mergeNode && mergeOperation);
+
+  assert(mergeNode->ninputs() == 2);
+
+  return 0;
+}
+
+JLM_UNIT_TEST_REGISTER(
+    "jlm/llvm/ir/operators/MemoryStateOperationTests-MemoryStateMergeNormalizeDuplicateStates",
+    MemoryStateMergeNormalizeDuplicateStates)
+
+static int
 LambdaEntryMemStateOperatorEquality()
 {
   using namespace jlm::llvm;

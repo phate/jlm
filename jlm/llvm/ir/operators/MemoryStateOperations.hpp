@@ -39,7 +39,10 @@ public:
 
   explicit MemoryStateMergeOperation(size_t numOperands)
       : MemoryStateOperation(numOperands, 1)
-  {}
+  {
+    if (numOperands == 0)
+      throw util::error("Insufficient number of operands.");
+  }
 
   bool
   operator==(const Operation & other) const noexcept override;
@@ -50,13 +53,40 @@ public:
   [[nodiscard]] std::unique_ptr<Operation>
   copy() const override;
 
+  // FIXME: documentation
+  static std::optional<std::vector<rvsdg::output *>>
+  NormalizeSingleOperand(
+      const MemoryStateMergeOperation & operation,
+      const std::vector<rvsdg::output *> & operands);
+
+  // FIXME: documentation
+  static std::optional<std::vector<rvsdg::output *>>
+  NormalizeDuplicateStates(
+      const MemoryStateMergeOperation & operation,
+      const std::vector<rvsdg::output *> & operands);
+
+  // FIXME: documentation
+  static std::optional<std::vector<rvsdg::output *>>
+  NormalizeNestedMerges(
+      const MemoryStateMergeOperation & operation,
+      const std::vector<rvsdg::output *> & operands);
+
+  // FIXME: documentation
+  static std::optional<std::vector<rvsdg::output *>>
+  NormalizeNestedSplits(
+      const MemoryStateMergeOperation & operation,
+      const std::vector<rvsdg::output *> & operands);
+
+  static rvsdg::SimpleNode &
+  CreateNode(const std::vector<rvsdg::output *> & operands)
+  {
+    return rvsdg::CreateOpNode<MemoryStateMergeOperation>(operands, operands.size());
+  }
+
   static rvsdg::output *
   Create(const std::vector<rvsdg::output *> & operands)
   {
-    if (operands.empty())
-      throw util::error("Insufficient number of operands.");
-
-    return rvsdg::CreateOpNode<MemoryStateMergeOperation>(operands, operands.size()).output(0);
+    return CreateNode(operands).output(0);
   }
 
   static std::unique_ptr<tac>
@@ -69,26 +99,6 @@ public:
     return tac::create(operation, operands);
   }
 };
-// FIXME: operations
-std::optional<std::vector<rvsdg::output *>>
-NormalizeMemoryStateMergeSingleOperand(
-    const MemoryStateMergeOperation & operation,
-    const std::vector<rvsdg::output *> & operands);
-
-std::optional<std::vector<rvsdg::output *>>
-NormalizeMemoryStateMergeDuplicateState(
-    const MemoryStateMergeOperation & operation,
-    const std::vector<rvsdg::output *> & operands);
-
-std::optional<std::vector<rvsdg::output *>>
-NormalizeMemoryStateMergeNestedMerges(
-    const MemoryStateMergeOperation & operation,
-    const std::vector<rvsdg::output *> & operands);
-
-std::optional<std::vector<rvsdg::output *>>
-NormalizeMemoryStateMergeNestedSplit(
-    const MemoryStateMergeOperation & operation,
-    const std::vector<rvsdg::output *> & operands);
 
 /**
  * A memory state split operation takes a single input state and splits it into multiple output
@@ -103,7 +113,10 @@ public:
 
   explicit MemoryStateSplitOperation(const size_t numResults)
       : MemoryStateOperation(1, numResults)
-  {}
+  {
+    if (numResults == 0)
+      throw util::error("Insufficient number of results.");
+  }
 
   bool
   operator==(const Operation & other) const noexcept override;
@@ -135,9 +148,6 @@ public:
   static rvsdg::SimpleNode &
   CreateNode(rvsdg::output & operand, const size_t numResults)
   {
-    if (numResults == 0)
-      throw util::error("Insufficient number of results.");
-
     return rvsdg::CreateOpNode<MemoryStateSplitOperation>({ &operand }, numResults);
   }
 
