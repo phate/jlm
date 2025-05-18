@@ -271,6 +271,52 @@ JLM_UNIT_TEST_REGISTER(
     MemoryStateMergeNormalizeDuplicateStates)
 
 static int
+MemoryStateMergeNormalizeNestedMerges()
+{
+  using namespace jlm::llvm;
+  using namespace jlm::rvsdg;
+
+  // Arrange
+  const auto memoryStateType = MemoryStateType::Create();
+
+  Graph rvsdg;
+  auto & ix0 = jlm::tests::GraphImport::Create(rvsdg, memoryStateType, "x0");
+  auto & ix1 = jlm::tests::GraphImport::Create(rvsdg, memoryStateType, "x1");
+  auto & ix2 = jlm::tests::GraphImport::Create(rvsdg, memoryStateType, "x2");
+  auto & ix3 = jlm::tests::GraphImport::Create(rvsdg, memoryStateType, "x3");
+  auto & ix4 = jlm::tests::GraphImport::Create(rvsdg, memoryStateType, "x4");
+
+  auto & mergeNode0 = MemoryStateMergeOperation::CreateNode({ &ix0, &ix1 });
+  auto & mergeNode1 = MemoryStateMergeOperation::CreateNode({ &ix2, &ix3 });
+  auto & mergeNode2 =
+      MemoryStateMergeOperation::CreateNode({ mergeNode0.output(0), mergeNode1.output(0), &ix4 });
+
+  auto & ex = jlm::tests::GraphExport::Create(*mergeNode2.output(0), "x");
+
+  view(&rvsdg.GetRootRegion(), stdout);
+
+  // Act
+  ReduceNode<MemoryStateMergeOperation>(
+      MemoryStateMergeOperation::NormalizeNestedMerges,
+      mergeNode2);
+  rvsdg.PruneNodes();
+  view(&rvsdg.GetRootRegion(), stdout);
+
+  // Assert
+  assert(rvsdg.GetRootRegion().nnodes() == 1);
+  auto [mergeNode, mergeOperation] = TryGetSimpleNodeAndOp<MemoryStateMergeOperation>(*ex.origin());
+  assert(mergeNode && mergeOperation);
+
+  assert(mergeNode->ninputs() == 5);
+
+  return 0;
+}
+
+JLM_UNIT_TEST_REGISTER(
+    "jlm/llvm/ir/operators/MemoryStateOperationTests-MemoryStateMergeNormalizeNestedMerges",
+    MemoryStateMergeNormalizeNestedMerges)
+
+static int
 LambdaEntryMemStateOperatorEquality()
 {
   using namespace jlm::llvm;
