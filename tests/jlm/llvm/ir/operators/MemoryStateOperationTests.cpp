@@ -3,10 +3,13 @@
  * See COPYING for terms of redistribution.
  */
 
+#include "jlm/llvm/ir/RvsdgModule.hpp"
 #include <test-operation.hpp>
 #include <test-registry.hpp>
 
 #include <jlm/llvm/ir/operators/MemoryStateOperations.hpp>
+#include <jlm/rvsdg/NodeNormalization.hpp>
+#include <jlm/rvsdg/view.hpp>
 
 static int
 MemoryStateSplitEquality()
@@ -30,6 +33,42 @@ MemoryStateSplitEquality()
 JLM_UNIT_TEST_REGISTER(
     "jlm/llvm/ir/operators/MemoryStateOperationTests-MemoryStateSplitEquality",
     MemoryStateSplitEquality)
+
+static int
+NormalizeMemoryStateSplitSingleResultTest()
+{
+  using namespace jlm::llvm;
+  using namespace jlm::rvsdg;
+
+  // Arrange
+  const auto memoryStateType = MemoryStateType::Create();
+
+  Graph rvsdg;
+  auto & ix = jlm::tests::GraphImport::Create(rvsdg, memoryStateType, "x");
+
+  auto & splitNode = MemoryStateSplitOperation::CreateNode(ix, 1);
+
+  auto & ex = jlm::tests::GraphExport::Create(*splitNode.output(0), "x");
+
+  view(&rvsdg.GetRootRegion(), stdout);
+
+  // Act
+  jlm::rvsdg::ReduceNode<MemoryStateSplitOperation>(
+      MemoryStateSplitOperation::NormalizeSingleResult,
+      splitNode);
+  rvsdg.PruneNodes();
+  view(&rvsdg.GetRootRegion(), stdout);
+
+  // Assert
+  assert(rvsdg.GetRootRegion().nnodes() == 0);
+  assert(ex.origin() == &ix);
+
+  return 0;
+}
+
+JLM_UNIT_TEST_REGISTER(
+    "jlm/llvm/ir/operators/MemoryStateOperationTests-NormalizeMemoryStateSplitSingleResultTest",
+    NormalizeMemoryStateSplitSingleResultTest)
 
 static int
 MemoryStateMergeEquality()

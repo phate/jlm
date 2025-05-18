@@ -51,6 +51,45 @@ MemoryStateSplitOperation::copy() const
   return std::make_unique<MemoryStateSplitOperation>(*this);
 }
 
+std::optional<std::vector<rvsdg::output *>>
+MemoryStateSplitOperation::NormalizeSingleResult(
+    const MemoryStateSplitOperation & operation,
+    const std::vector<rvsdg::output *> & operands)
+{
+  JLM_ASSERT(operands.size() == 1);
+
+  if (operation.nresults() == 1)
+    return operands;
+
+  return std::nullopt;
+}
+
+std::optional<std::vector<rvsdg::output *>>
+MemoryStateSplitOperation::NormalizeNestedSplits(
+    const MemoryStateSplitOperation & operation,
+    const std::vector<rvsdg::output *> & operands)
+{
+  JLM_ASSERT(operands.size() == 1);
+  const auto operand = operands[0];
+
+  auto [splitNode, splitOperation] =
+      rvsdg::TryGetSimpleNodeAndOp<MemoryStateSplitOperation>(*operand);
+  if (!splitOperation)
+    return std::nullopt;
+
+  const auto numResults = splitOperation->nresults() + operation.nresults();
+  auto & newOperand = *splitNode->input(0)->origin();
+  auto results = MemoryStateSplitOperation::Create(newOperand, numResults);
+
+  for (size_t n = 0; n < splitNode->noutputs(); n++)
+  {
+    const auto output = splitNode->output(n);
+    output->divert_users(results[n]);
+  }
+
+  return { { std::next(results.begin(), splitNode->noutputs()), results.end() } };
+}
+
 LambdaEntryMemoryStateSplitOperation::~LambdaEntryMemoryStateSplitOperation() noexcept = default;
 
 bool
@@ -214,45 +253,6 @@ NormalizeMemoryStateMergeNestedSplit(
 
   auto result = MemoryStateMergeOperation::Create(std::move(newOperands));
   return { { result } };
-}
-
-std::optional<std::vector<rvsdg::output *>>
-NormalizeMemoryStateSplitSingleResult(
-    const MemoryStateMergeOperation & operation,
-    const std::vector<rvsdg::output *> & operands)
-{
-  JLM_ASSERT(operands.size() == 1);
-
-  if (operation.nresults() == 1)
-    return operands;
-
-  return std::nullopt;
-}
-
-std::optional<std::vector<rvsdg::output *>>
-NormalizeMemoryStateSplitNestedMerges(
-    const MemoryStateMergeOperation & operation,
-    const std::vector<rvsdg::output *> & operands)
-{
-  JLM_ASSERT(operands.size() == 1);
-  const auto operand = operands[0];
-
-  auto [splitNode, splitOperation] =
-      rvsdg::TryGetSimpleNodeAndOp<MemoryStateSplitOperation>(*operand);
-  if (!splitOperation)
-    return std::nullopt;
-
-  const auto numResults = splitOperation->nresults() + operation.nresults();
-  auto & newOperand = *splitNode->input(0)->origin();
-  auto results = MemoryStateSplitOperation::Create(newOperand, numResults);
-
-  for (size_t n = 0; n < splitNode->noutputs(); n++)
-  {
-    const auto output = splitNode->output(n);
-    output->divert_users(results[n]);
-  }
-
-  return { { std::next(results.begin(), splitNode->noutputs()), results.end() } };
 }
 
 }

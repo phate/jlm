@@ -101,7 +101,7 @@ class MemoryStateSplitOperation final : public MemoryStateOperation
 public:
   ~MemoryStateSplitOperation() noexcept override;
 
-  explicit MemoryStateSplitOperation(size_t numResults)
+  explicit MemoryStateSplitOperation(const size_t numResults)
       : MemoryStateOperation(1, numResults)
   {}
 
@@ -114,26 +114,34 @@ public:
   [[nodiscard]] std::unique_ptr<Operation>
   copy() const override;
 
-  static std::vector<rvsdg::output *>
-  Create(rvsdg::output & operand, size_t numResults)
+  // FIXME: documentation
+  static std::optional<std::vector<rvsdg::output *>>
+  NormalizeSingleResult(
+      const MemoryStateSplitOperation & operation,
+      const std::vector<rvsdg::output *> & operands);
+
+  // FIXME: documentation
+  static std::optional<std::vector<rvsdg::output *>>
+  NormalizeNestedSplits(
+      const MemoryStateSplitOperation & operation,
+      const std::vector<rvsdg::output *> & operands);
+
+  static rvsdg::SimpleNode &
+  CreateNode(rvsdg::output & operand, const size_t numResults)
   {
     if (numResults == 0)
       throw util::error("Insufficient number of results.");
 
-    return outputs(&rvsdg::CreateOpNode<MemoryStateSplitOperation>({ &operand }, numResults));
+    return rvsdg::CreateOpNode<MemoryStateSplitOperation>({ &operand }, numResults);
+  }
+
+  static std::vector<rvsdg::output *>
+  Create(rvsdg::output & operand, const size_t numResults)
+  {
+    return outputs(&CreateNode(operand, numResults));
   }
 };
 
-// FIXME: operations
-std::optional<std::vector<rvsdg::output *>>
-NormalizeMemoryStateSplitSingleResult(
-    const MemoryStateMergeOperation & operation,
-    const std::vector<rvsdg::output *> & operands);
-
-std::optional<std::vector<rvsdg::output *>>
-NormalizeMemoryStateSplitNestedSplit(
-    const MemoryStateMergeOperation & operation,
-    const std::vector<rvsdg::output *> & operands);
 
 /**
  * A lambda entry memory state split operation takes a single input state and splits it into
