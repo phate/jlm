@@ -53,15 +53,27 @@ public:
   [[nodiscard]] std::unique_ptr<Operation>
   copy() const override;
 
-  // FIXME: documentation
+  /** \brief Removes the MemoryStateMergeOperation as it has only a single operand, i.e., no
+   * merging is performed.
+   *
+   * so = MemoryStateMergeOperation si
+   * ... = AnyOperation so
+   * =>
+   * ... = AnyOperation si
+   */
   static std::optional<std::vector<rvsdg::output *>>
   NormalizeSingleOperand(
       const MemoryStateMergeOperation & operation,
       const std::vector<rvsdg::output *> & operands);
 
-  // FIXME: documentation
+  /** \brief Removes duplicated operands from the MemoryStateMergeOperation.
+   *
+   * so = MemoryStateMergeOperation si0 si0 si1 si1 si2
+   * =>
+   * so = MemoryStateMergeOperation si0 si1 si2
+   */
   static std::optional<std::vector<rvsdg::output *>>
-  NormalizeDuplicateStates(
+  NormalizeDuplicateOperands(
       const MemoryStateMergeOperation & operation,
       const std::vector<rvsdg::output *> & operands);
 
@@ -127,7 +139,14 @@ public:
   [[nodiscard]] std::unique_ptr<Operation>
   copy() const override;
 
-  // FIXME: documentation
+  /** \brief Removes the MemoryStateSplitOperation as it has only a single result, i.e., no
+   * splitting is performed.
+   *
+   * so = MemoryStateSplitOperation si
+   * ... = AnyOperation so
+   * =>
+   * ... = AnyOperation si
+   */
   static std::optional<std::vector<rvsdg::output *>>
   NormalizeSingleResult(
       const MemoryStateSplitOperation & operation,

@@ -233,7 +233,7 @@ JLM_UNIT_TEST_REGISTER(
     MemoryStateMergeNormalizeSingleOperand)
 
 static int
-MemoryStateMergeNormalizeDuplicateStates()
+MemoryStateMergeNormalizeDuplicateOperands()
 {
   using namespace jlm::llvm;
   using namespace jlm::rvsdg;
@@ -252,7 +252,9 @@ MemoryStateMergeNormalizeDuplicateStates()
   view(&rvsdg.GetRootRegion(), stdout);
 
   // Act
-  ReduceNode<MemoryStateMergeOperation>(MemoryStateMergeOperation::NormalizeDuplicateStates, node);
+  ReduceNode<MemoryStateMergeOperation>(
+      MemoryStateMergeOperation::NormalizeDuplicateOperands,
+      node);
   rvsdg.PruneNodes();
   view(&rvsdg.GetRootRegion(), stdout);
 
@@ -267,8 +269,8 @@ MemoryStateMergeNormalizeDuplicateStates()
 }
 
 JLM_UNIT_TEST_REGISTER(
-    "jlm/llvm/ir/operators/MemoryStateOperationTests-MemoryStateMergeNormalizeDuplicateStates",
-    MemoryStateMergeNormalizeDuplicateStates)
+    "jlm/llvm/ir/operators/MemoryStateOperationTests-MemoryStateMergeNormalizeDuplicateOperands",
+    MemoryStateMergeNormalizeDuplicateOperands)
 
 static int
 MemoryStateMergeNormalizeNestedMerges()

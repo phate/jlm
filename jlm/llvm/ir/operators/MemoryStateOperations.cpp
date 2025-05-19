@@ -42,7 +42,7 @@ MemoryStateMergeOperation::NormalizeSingleOperand(
 }
 
 std::optional<std::vector<rvsdg::output *>>
-MemoryStateMergeOperation::NormalizeDuplicateStates(
+MemoryStateMergeOperation::NormalizeDuplicateOperands(
     const MemoryStateMergeOperation &,
     const std::vector<rvsdg::output *> & operands)
 {
