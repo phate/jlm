@@ -175,7 +175,12 @@ public:
   copy() const override;
 
   static std::unique_ptr<llvm::tac>
-  Create(::llvm::StoreInst * llvmStore, const variable * address, const variable * value, const variable * state, size_t alignment)
+  Create(
+      ::llvm::StoreInst * llvmStore,
+      const variable * address,
+      const variable * value,
+      const variable * state,
+      size_t alignment)
   {
     auto storedType = CheckAndExtractStoredType(value->Type());
 
@@ -352,8 +357,11 @@ public:
     std::vector<rvsdg::output *> operands({ &address, &value, &ioState });
     operands.insert(operands.end(), memoryStates.begin(), memoryStates.end());
 
-    auto operation =
-        std::make_unique<StoreVolatileOperation>(llvmStore, storedType, memoryStates.size(), alignment);
+    auto operation = std::make_unique<StoreVolatileOperation>(
+        llvmStore,
+        storedType,
+        memoryStates.size(),
+        alignment);
     return CreateNode(*address.region(), std::move(operation), operands);
   }
 

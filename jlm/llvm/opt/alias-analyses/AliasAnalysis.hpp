@@ -8,8 +8,9 @@
 
 #include <jlm/llvm/opt/alias-analyses/PointsToGraph.hpp>
 
-#include <llvm/IR/PassManager.h>
 #include <llvm/Analysis/AliasAnalysis.h>
+#include <llvm/IR/PassManager.h>
+#include <llvm/Passes/PassBuilder.h>
 
 namespace jlm::llvm::aa
 {
@@ -123,8 +124,9 @@ private:
 class LlvmAliasAnalysis final : public AliasAnalysis
 {
 public:
-
   LlvmAliasAnalysis();
+
+  ~LlvmAliasAnalysis() override;
 
   std::string
   ToString() const override;
@@ -139,7 +141,11 @@ public:
       size_t s2) override;
 
 private:
+  ::llvm::ModuleAnalysisManager MAM_;
+  ::llvm::CGSCCAnalysisManager CGAM_;
   ::llvm::FunctionAnalysisManager FAM_;
+  ::llvm::LoopAnalysisManager LAM_;
+  ::llvm::PassBuilder PB_;
 
   ::llvm::Function * LastFunction_ = {};
   ::llvm::AAResults * LastFunctionAAResults_ = {};

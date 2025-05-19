@@ -100,7 +100,7 @@ protected:
 
 public:
   [[nodiscard]] ::llvm::LoadInst *
-    GetLlvmLoad() const noexcept
+  GetLlvmLoad() const noexcept
   {
     return LlvmLoad_;
   }
@@ -338,7 +338,8 @@ public:
       std::shared_ptr<const rvsdg::ValueType> loadedType,
       const size_t alignment)
   {
-    return rvsdg::outputs(&CreateNode(llvmLoad, *address, memoryStates, std::move(loadedType), alignment));
+    return rvsdg::outputs(
+        &CreateNode(llvmLoad, *address, memoryStates, std::move(loadedType), alignment));
   }
 
   static rvsdg::SimpleNode &

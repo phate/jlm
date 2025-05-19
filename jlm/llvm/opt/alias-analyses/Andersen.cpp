@@ -1537,7 +1537,7 @@ Andersen::Analyze(
     if (useExactConfig.has_value())
     {
       configs = Configuration::GetAllConfigurations();
-      configs = std::vector{configs.at(*useExactConfig)};
+      configs = std::vector{ configs.at(*useExactConfig) };
     }
     else if (testAllConfigsIterations)
       configs = Configuration::GetAllConfigurations();

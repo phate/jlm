@@ -18,12 +18,7 @@
 #include <numeric>
 #include <queue>
 
-#include <llvm/Analysis/TargetLibraryInfo.h>
-#include <llvm/Analysis/TargetTransformInfo.h>
-#include <llvm/Analysis/AssumptionCache.h>
-#include <llvm/IR/Dominators.h>
-#include <llvm/IR/PassInstrumentation.h>
-#include <llvm/Analysis/BasicAliasAnalysis.h>
+#include <llvm/Analysis/GlobalsModRef.h>
 
 namespace jlm::llvm::aa
 {
@@ -171,17 +166,41 @@ PointsToGraphAliasAnalysis::IsRepresentingSingleMemoryLocation(
 
 LlvmAliasAnalysis::LlvmAliasAnalysis()
 {
-  FAM_.registerPass([] { return ::llvm::TargetIRAnalysis(); });
-  FAM_.registerPass([] { return ::llvm::TargetLibraryAnalysis(); });
-  FAM_.registerPass([] { return ::llvm::AssumptionAnalysis(); });
-  FAM_.registerPass([] { return ::llvm::DominatorTreeAnalysis(); });
-  FAM_.registerPass([] { return ::llvm::PassInstrumentationAnalysis(); });
-  FAM_.registerPass([] { return ::llvm::BasicAA(); });
+  PB_.registerModuleAnalyses(MAM_);
+  PB_.registerFunctionAnalyses(FAM_);
+  PB_.registerCGSCCAnalyses(CGAM_);
+  PB_.registerLoopAnalyses(LAM_);
 
-  ::llvm::AAManager AA;
-  AA.registerFunctionAnalysis<::llvm::BasicAA>();
+  // The GlobalsAA pass is not included by the default PassBuilder
+  MAM_.registerPass(
+      []
+      {
+        return ::llvm::GlobalsAA();
+      });
 
-  FAM_.registerPass([&] { return std::move(AA); });
+  /*
+  The PassBuilder has already created the a AAManager containing all default AA passes
+  FAM_.registerPass(
+      [&]
+      {
+        ::llvm::AAManager AA;
+        AA.registerFunctionAnalysis<::llvm::BasicAA>();
+        AA.registerFunctionAnalysis<::llvm::ScopedNoAliasAA>();
+        AA.registerModuleAnalysis<::llvm::GlobalsAA>();
+        return AA;
+      });
+  */
+
+  PB_.crossRegisterProxies(LAM_, FAM_, CGAM_, MAM_);
+}
+
+LlvmAliasAnalysis::~LlvmAliasAnalysis()
+{
+  // To avoid a double-free, these must be cleared in the correct order
+  LAM_.clear();
+  FAM_.clear();
+  CGAM_.clear();
+  MAM_.clear();
 }
 
 std::string
@@ -202,6 +221,9 @@ LlvmAliasAnalysis::Query(
   auto func = llvmInst1->getFunction();
   if (func != LastFunction_)
   {
+    // Manually trigger GlobalsAA, as AAManager only uses it if it is cached
+    MAM_.getResult<::llvm::GlobalsAA>(*func->getParent());
+
     LastFunction_ = func;
     LastFunctionAAResults_ = &FAM_.getResult<::llvm::AAManager>(*func);
   }
@@ -231,7 +253,8 @@ LlvmAliasAnalysis::Query(
 
   auto AR = LastFunctionAAResults_->alias(ml1, ml2);
 
-  switch(AR) {
+  switch (AR)
+  {
   case ::llvm::AliasResult::NoAlias:
     return AliasQueryResponse::NoAlias;
   case ::llvm::AliasResult::MayAlias:

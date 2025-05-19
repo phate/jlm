@@ -15,6 +15,7 @@
 
 #include <cstdint>
 #include <unordered_map>
+
 namespace jlm::rvsdg
 {
 
