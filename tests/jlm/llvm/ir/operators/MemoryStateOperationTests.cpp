@@ -317,6 +317,58 @@ JLM_UNIT_TEST_REGISTER(
     MemoryStateMergeNormalizeNestedMerges)
 
 static int
+MemoryStateMergeNormalizeNestedSplits()
+{
+  using namespace jlm::llvm;
+  using namespace jlm::rvsdg;
+
+  // Arrange
+  const auto memoryStateType = MemoryStateType::Create();
+
+  Graph rvsdg;
+  auto & ix0 = jlm::tests::GraphImport::Create(rvsdg, memoryStateType, "x0");
+  auto & ix1 = jlm::tests::GraphImport::Create(rvsdg, memoryStateType, "x1");
+  auto & ix2 = jlm::tests::GraphImport::Create(rvsdg, memoryStateType, "x2");
+
+  auto & splitNode0 = MemoryStateSplitOperation::CreateNode(ix0, 2);
+  auto & splitNode1 = MemoryStateSplitOperation::CreateNode(ix1, 2);
+  auto & mergeNode = MemoryStateMergeOperation::CreateNode({ splitNode0.output(0),
+                                                             splitNode0.output(1),
+                                                             splitNode1.output(0),
+                                                             splitNode1.output(1),
+                                                             &ix2 });
+
+  auto & ex = jlm::tests::GraphExport::Create(*mergeNode.output(0), "x");
+
+  view(&rvsdg.GetRootRegion(), stdout);
+
+  // Act
+  ReduceNode<MemoryStateMergeOperation>(
+      MemoryStateMergeOperation::NormalizeNestedSplits,
+      mergeNode);
+  rvsdg.PruneNodes();
+  view(&rvsdg.GetRootRegion(), stdout);
+
+  // Assert
+  assert(rvsdg.GetRootRegion().nnodes() == 1);
+  auto [node, mergeOperation] = TryGetSimpleNodeAndOp<MemoryStateMergeOperation>(*ex.origin());
+  assert(node && mergeOperation);
+
+  assert(node->ninputs() == 5);
+  assert(node->input(0)->origin() == &ix0);
+  assert(node->input(1)->origin() == &ix0);
+  assert(node->input(2)->origin() == &ix1);
+  assert(node->input(3)->origin() == &ix1);
+  assert(node->input(4)->origin() == &ix2);
+
+  return 0;
+}
+
+JLM_UNIT_TEST_REGISTER(
+    "jlm/llvm/ir/operators/MemoryStateOperationTests-MemoryStateMergeNormalizeNestedSplits",
+    MemoryStateMergeNormalizeNestedSplits)
+
+static int
 LambdaEntryMemStateOperatorEquality()
 {
   using namespace jlm::llvm;
