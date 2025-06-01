@@ -70,20 +70,20 @@ public:
   tracker_depth_state &
   operator=(tracker_depth_state &&) = delete;
 
-  inline tracker_nodestate *
+  inline TrackerNodeState *
   peek_top() const noexcept
   {
     return count_ ? *nodestates_.at(top_depth_).begin() : nullptr;
   }
 
-  inline tracker_nodestate *
+  inline TrackerNodeState *
   peek_bottom() const noexcept
   {
     return count_ ? *nodestates_.at(bottom_depth_).begin() : nullptr;
   }
 
   inline void
-  add(tracker_nodestate * nodestate, size_t depth)
+  add(TrackerNodeState * nodestate, size_t depth)
   {
     auto it = nodestates_.find(depth);
     if (it != nodestates_.end())
@@ -107,7 +107,7 @@ public:
   }
 
   inline void
-  remove(tracker_nodestate * nodestate, size_t depth)
+  remove(TrackerNodeState * nodestate, size_t depth)
   {
     nodestates_[depth].erase(nodestate);
 
@@ -130,7 +130,7 @@ public:
     JLM_ASSERT(top_depth_ <= bottom_depth_);
   }
 
-  inline tracker_nodestate *
+  inline TrackerNodeState *
   pop_top()
   {
     auto nodestate = peek_top();
@@ -140,7 +140,7 @@ public:
     return nodestate;
   }
 
-  inline tracker_nodestate *
+  inline TrackerNodeState *
   pop_bottom()
   {
     auto nodestate = peek_bottom();
@@ -154,7 +154,7 @@ private:
   size_t count_;
   size_t top_depth_;
   size_t bottom_depth_;
-  std::unordered_map<size_t, std::unordered_set<tracker_nodestate *>> nodestates_;
+  std::unordered_map<size_t, std::unordered_set<TrackerNodeState *>> nodestates_;
 };
 
 /* tracker */
@@ -250,14 +250,14 @@ tracker::peek_bottom(size_t state) const
   return nullptr;
 }
 
-jlm::rvsdg::tracker_nodestate *
+jlm::rvsdg::TrackerNodeState *
 tracker::nodestate(Node * node)
 {
   auto it = nodestates_.find(node);
   if (it != nodestates_.end())
     return it->second.get();
 
-  nodestates_[node] = std::make_unique<jlm::rvsdg::tracker_nodestate>(node);
+  nodestates_[node] = std::make_unique<jlm::rvsdg::TrackerNodeState>(node);
   return nodestates_[node].get();
 }
 
