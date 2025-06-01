@@ -25,7 +25,7 @@ class cnestat final : public util::Statistics
 public:
   ~cnestat() override = default;
 
-  explicit cnestat(const util::filepath & sourceFile)
+  explicit cnestat(const util::FilePath & sourceFile)
       : Statistics(Statistics::Id::CommonNodeElimination, sourceFile)
   {}
 
@@ -58,7 +58,7 @@ public:
   }
 
   static std::unique_ptr<cnestat>
-  Create(const util::filepath & sourceFile)
+  Create(const util::FilePath & sourceFile)
   {
     return std::make_unique<cnestat>(sourceFile);
   }
