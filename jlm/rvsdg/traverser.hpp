@@ -176,7 +176,7 @@ private:
 
   rvsdg::Region * region_;
   TraversalTracker tracker_;
-  std::vector<jlm::util::callback> callbacks_;
+  std::vector<jlm::util::Callback> callbacks_;
 };
 
 class BottomUpTraverser final
@@ -222,7 +222,7 @@ private:
 
   rvsdg::Region * region_;
   TraversalTracker tracker_;
-  std::vector<jlm::util::callback> callbacks_;
+  std::vector<jlm::util::Callback> callbacks_;
   traversal_nodestate new_node_state_;
 };
 

@@ -13,7 +13,7 @@
 namespace jlm::util
 {
 
-class callback final
+class Callback final
 {
 public:
   class callback_impl
@@ -31,29 +31,29 @@ public:
     std::atomic<int> refcount;
   };
 
-  inline ~callback()
+  inline ~Callback()
   {
     disconnect();
   }
 
-  inline explicit callback(callback_impl * impl) noexcept
+  inline explicit Callback(callback_impl * impl) noexcept
       : impl_(impl)
   {
     impl->refcount.fetch_add(1, std::memory_order_relaxed);
   }
 
-  inline callback() noexcept
+  inline Callback() noexcept
       : impl_(nullptr)
   {}
 
-  inline callback(callback && other) noexcept
+  inline Callback(Callback && other) noexcept
       : impl_(nullptr)
   {
     std::swap(impl_, other.impl_);
   }
 
-  inline callback &
-  operator=(callback && other) noexcept
+  inline Callback &
+  operator=(Callback && other) noexcept
   {
     reset();
     std::swap(impl_, other.impl_);
@@ -93,7 +93,7 @@ class notifier_proxy final
 public:
   typedef std::function<void(Args...)> function_type;
 
-  inline callback
+  inline Callback
   connect(function_type fn)
   {
     return notifier_.connect(fn);
@@ -116,7 +116,7 @@ public:
   typedef std::function<void(Args...)> function_type;
 
 private:
-  class callback_impl final : public callback::callback_impl
+  class callback_impl final : public Callback::callback_impl
   {
   public:
     virtual ~callback_impl() noexcept
@@ -187,7 +187,7 @@ public:
     }
   }
 
-  inline callback
+  inline Callback
   connect(function_type fn)
   {
     callback_impl * c = new callback_impl(this, std::move(fn));
@@ -204,7 +204,7 @@ public:
     }
     last_ = c;
 
-    return callback(c);
+    return Callback(c);
   }
 
   inline notifier_proxy<Args...>
