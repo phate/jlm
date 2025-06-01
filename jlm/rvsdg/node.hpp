@@ -27,30 +27,28 @@ class Graph;
 class output;
 class SubstitutionMap;
 
-/* inputs */
-
-class input
+class Input
 {
   friend class Node;
   friend class rvsdg::Region;
 
 public:
-  virtual ~input() noexcept;
+  virtual ~Input() noexcept;
 
-  input(
+  Input(
       jlm::rvsdg::output * origin,
       rvsdg::Region * region,
       std::shared_ptr<const rvsdg::Type> type);
 
-  input(const input &) = delete;
+  Input(const Input &) = delete;
 
-  input(input &&) = delete;
+  Input(Input &&) = delete;
 
-  input &
-  operator=(const input &) = delete;
+  Input &
+  operator=(const Input &) = delete;
 
-  input &
-  operator=(input &&) = delete;
+  Input &
+  operator=(Input &&) = delete;
 
   inline size_t
   index() const noexcept
@@ -96,7 +94,7 @@ public:
     using reference = T *&;
 
     static_assert(
-        std::is_base_of<jlm::rvsdg::input, T>::value,
+        std::is_base_of<jlm::rvsdg::Input, T>::value,
         "Template parameter T must be derived from jlm::rvsdg::input.");
 
   protected:
@@ -176,7 +174,7 @@ public:
     using reference = const T *&;
 
     static_assert(
-        std::is_base_of<jlm::rvsdg::input, T>::value,
+        std::is_base_of<jlm::rvsdg::Input, T>::value,
         "Template parameter T must be derived from jlm::rvsdg::input.");
 
   protected:
@@ -254,10 +252,10 @@ private:
 
 template<class T>
 static inline bool
-is(const jlm::rvsdg::input & input) noexcept
+is(const jlm::rvsdg::Input & input) noexcept
 {
   static_assert(
-      std::is_base_of<jlm::rvsdg::input, T>::value,
+      std::is_base_of<jlm::rvsdg::Input, T>::value,
       "Template parameter T must be derived from jlm::rvsdg::input.");
 
   return dynamic_cast<const T *>(&input) != nullptr;
@@ -267,11 +265,11 @@ is(const jlm::rvsdg::input & input) noexcept
 
 class output
 {
-  friend input;
+  friend Input;
   friend class Node;
   friend class rvsdg::Region;
 
-  typedef std::unordered_set<jlm::rvsdg::input *>::const_iterator user_iterator;
+  typedef std::unordered_set<jlm::rvsdg::Input *>::const_iterator user_iterator;
 
 public:
   virtual ~output() noexcept;
@@ -517,15 +515,15 @@ public:
 
 private:
   void
-  remove_user(jlm::rvsdg::input * user);
+  remove_user(jlm::rvsdg::Input * user);
 
   void
-  add_user(jlm::rvsdg::input * user);
+  add_user(jlm::rvsdg::Input * user);
 
   size_t index_;
   rvsdg::Region * region_;
   std::shared_ptr<const rvsdg::Type> Type_;
-  std::unordered_set<jlm::rvsdg::input *> users_;
+  std::unordered_set<jlm::rvsdg::Input *> users_;
 };
 
 template<class T>
@@ -541,7 +539,7 @@ is(const jlm::rvsdg::output * output) noexcept
 
 /* node_input class */
 
-class node_input : public jlm::rvsdg::input
+class node_input : public jlm::rvsdg::Input
 {
 public:
   node_input(jlm::rvsdg::output * origin, Node * node, std::shared_ptr<const rvsdg::Type> type);
@@ -867,7 +865,7 @@ private:
  */
 template<typename NodeType>
 inline NodeType *
-TryGetOwnerNode(const rvsdg::input & input) noexcept
+TryGetOwnerNode(const rvsdg::Input & input) noexcept
 {
   auto owner = input.GetOwner();
   if (const auto node = std::get_if<Node *>(&owner))
@@ -935,7 +933,7 @@ TryGetOwnerNode(const rvsdg::output & output) noexcept
  */
 template<typename NodeType>
 inline NodeType &
-AssertGetOwnerNode(const rvsdg::input & input)
+AssertGetOwnerNode(const rvsdg::Input & input)
 {
   auto node = TryGetOwnerNode<NodeType>(input);
   if (!node)
@@ -976,7 +974,7 @@ AssertGetOwnerNode(const rvsdg::output & output)
 }
 
 inline Region *
-TryGetOwnerRegion(const rvsdg::input & input) noexcept
+TryGetOwnerRegion(const rvsdg::Input & input) noexcept
 {
   auto owner = input.GetOwner();
   if (auto region = std::get_if<Region *>(&owner))

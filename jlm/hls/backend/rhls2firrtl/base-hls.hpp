@@ -48,7 +48,7 @@ protected:
   get_node_name(const rvsdg::Node * node);
 
   static std::string
-  get_port_name(jlm::rvsdg::input * port);
+  get_port_name(jlm::rvsdg::Input * port);
 
   static std::string
   get_port_name(jlm::rvsdg::output * port);

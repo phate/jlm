@@ -129,7 +129,7 @@ add_triggers(rvsdg::Region * region)
       if (is_constant(node))
       {
         auto orig_out = sn->output(0);
-        std::vector<jlm::rvsdg::input *> previous_users(orig_out->begin(), orig_out->end());
+        std::vector<jlm::rvsdg::Input *> previous_users(orig_out->begin(), orig_out->end());
         auto gated = hls::trigger_op::create(*trigger, *orig_out)[0];
         for (auto user : previous_users)
         {

@@ -20,12 +20,12 @@ namespace jlm::llvm
 CallSummary
 ComputeCallSummary(const rvsdg::LambdaNode & lambdaNode)
 {
-  std::deque<rvsdg::input *> worklist;
+  std::deque<rvsdg::Input *> worklist;
   worklist.insert(worklist.end(), lambdaNode.output()->begin(), lambdaNode.output()->end());
 
   std::vector<rvsdg::SimpleNode *> directCalls;
   GraphExport * rvsdgExport = nullptr;
-  std::vector<rvsdg::input *> otherUsers;
+  std::vector<rvsdg::Input *> otherUsers;
 
   while (!worklist.empty())
   {

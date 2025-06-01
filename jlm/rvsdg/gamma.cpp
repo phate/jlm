@@ -300,7 +300,7 @@ GammaNode::GetEntryVars() const
 }
 
 std::variant<GammaNode::MatchVar, GammaNode::EntryVar>
-GammaNode::MapInput(const rvsdg::input & input) const
+GammaNode::MapInput(const rvsdg::Input & input) const
 {
   JLM_ASSERT(rvsdg::TryGetOwnerNode<GammaNode>(input) == this);
   if (input.index() == 0)
@@ -337,7 +337,7 @@ GammaNode::AddExitVar(std::vector<jlm::rvsdg::output *> values)
   auto output =
       static_cast<StructuralOutput *>(add_output(std::make_unique<StructuralOutput>(this, type)));
 
-  std::vector<rvsdg::input *> branchResults;
+  std::vector<rvsdg::Input *> branchResults;
   for (size_t n = 0; n < nsubregions(); n++)
   {
     branchResults.push_back(
@@ -353,7 +353,7 @@ GammaNode::GetExitVars() const
   std::vector<GammaNode::ExitVar> vars;
   for (size_t n = 0; n < noutputs(); ++n)
   {
-    std::vector<rvsdg::input *> branchResults;
+    std::vector<rvsdg::Input *> branchResults;
     for (size_t k = 0; k < nsubregions(); ++k)
     {
       branchResults.push_back(subregion(k)->result(n));
@@ -367,7 +367,7 @@ GammaNode::ExitVar
 GammaNode::MapOutputExitVar(const rvsdg::output & output) const
 {
   JLM_ASSERT(TryGetOwnerNode<GammaNode>(output) == this);
-  std::vector<rvsdg::input *> branchResults;
+  std::vector<rvsdg::Input *> branchResults;
   for (size_t k = 0; k < nsubregions(); ++k)
   {
     branchResults.push_back(subregion(k)->result(output.index()));
@@ -376,10 +376,10 @@ GammaNode::MapOutputExitVar(const rvsdg::output & output) const
 }
 
 GammaNode::ExitVar
-GammaNode::MapBranchResultExitVar(const rvsdg::input & input) const
+GammaNode::MapBranchResultExitVar(const rvsdg::Input & input) const
 {
   JLM_ASSERT(TryGetRegionParentNode<GammaNode>(input) == this);
-  std::vector<rvsdg::input *> branchResults;
+  std::vector<rvsdg::Input *> branchResults;
   for (size_t k = 0; k < nsubregions(); ++k)
   {
     branchResults.push_back(subregion(k)->result(input.index()));
@@ -478,7 +478,7 @@ GetGammaInvariantOrigin(const GammaNode & gamma, const GammaNode::ExitVar & exit
   // For any region result, check if it directly maps to a
   // gamma entry variable, and returns the origin of its
   // corresponding value (the def site preceding the gamma node).
-  auto GetExternalOriginOf = [&gamma](rvsdg::input * use) -> std::optional<rvsdg::output *>
+  auto GetExternalOriginOf = [&gamma](rvsdg::Input * use) -> std::optional<rvsdg::output *>
   {
     // Test whether origin of this is a region entry argument of
     // this gamma node.

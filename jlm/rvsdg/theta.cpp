@@ -115,10 +115,10 @@ ThetaNode::copy(rvsdg::Region * region, rvsdg::SubstitutionMap & smap) const
 }
 
 [[nodiscard]] ThetaNode::LoopVar
-ThetaNode::MapInputLoopVar(const rvsdg::input & input) const
+ThetaNode::MapInputLoopVar(const rvsdg::Input & input) const
 {
   JLM_ASSERT(rvsdg::TryGetOwnerNode<ThetaNode>(input) == this);
-  return LoopVar{ const_cast<rvsdg::input *>(&input),
+  return LoopVar{ const_cast<rvsdg::Input *>(&input),
                   subregion()->argument(input.index()),
                   subregion()->result(input.index() + 1),
                   output(input.index()) };
@@ -135,7 +135,7 @@ ThetaNode::MapPreLoopVar(const rvsdg::output & argument) const
 }
 
 [[nodiscard]] ThetaNode::LoopVar
-ThetaNode::MapPostLoopVar(const rvsdg::input & result) const
+ThetaNode::MapPostLoopVar(const rvsdg::Input & result) const
 {
   JLM_ASSERT(rvsdg::TryGetRegionParentNode<ThetaNode>(result) == this);
   if (result.index() == 0)
@@ -146,7 +146,7 @@ ThetaNode::MapPostLoopVar(const rvsdg::input & result) const
   }
   return LoopVar{ input(result.index() - 1),
                   subregion()->argument(result.index() - 1),
-                  const_cast<rvsdg::input *>(&result),
+                  const_cast<rvsdg::Input *>(&result),
                   output(result.index() - 1) };
 }
 

@@ -214,7 +214,7 @@ is_used_in_nsubregions(const rvsdg::GammaNode * gamma, const rvsdg::Node * node)
   JLM_ASSERT(single_successor(node));
 
   /* collect all gamma inputs */
-  std::unordered_set<const rvsdg::input *> inputs;
+  std::unordered_set<const rvsdg::Input *> inputs;
   for (size_t n = 0; n < node->noutputs(); n++)
   {
     for (const auto & user : *(node->output(n)))

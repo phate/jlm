@@ -51,7 +51,7 @@ public:
     /**
      * \brief Variable at loop entry (input to theta).
      */
-    rvsdg::input * input;
+    rvsdg::Input * input;
     /**
      * \brief Variable before iteration (input argument to subregion).
      */
@@ -59,7 +59,7 @@ public:
     /**
      * \brief Variable after iteration (output result from subregion).
      */
-    rvsdg::input * post;
+    rvsdg::Input * post;
     /**
      * \brief Variable at loop exit (output of theta).
      */
@@ -157,7 +157,7 @@ public:
    * to this entry into the theta node.
    */
   [[nodiscard]] LoopVar
-  MapInputLoopVar(const rvsdg::input & input) const;
+  MapInputLoopVar(const rvsdg::Input & input) const;
 
   /**
    * \brief Maps variable at start of loop iteration to full varibale description.
@@ -193,7 +193,7 @@ public:
    * to this variable at the end of each loop iteration.
    */
   [[nodiscard]] LoopVar
-  MapPostLoopVar(const rvsdg::input & result) const;
+  MapPostLoopVar(const rvsdg::Input & result) const;
 
   /**
    * \brief Maps variable at exit to full varibale description.

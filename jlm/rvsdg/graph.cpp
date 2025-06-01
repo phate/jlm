@@ -58,7 +58,7 @@ Graph::ExtractTailNodes(const Graph & rvsdg)
 {
   auto IsOnlyExported = [](const rvsdg::output & output)
   {
-    auto IsRootRegionExport = [](const rvsdg::input * input)
+    auto IsRootRegionExport = [](const rvsdg::Input * input)
     {
       if (!input->region()->IsRootRegion())
       {
