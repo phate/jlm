@@ -47,7 +47,7 @@ public:
 };
 
 jlm::rvsdg::output *
-find_producer(jlm::rvsdg::input * input)
+find_producer(jlm::rvsdg::Input * input)
 {
   auto graph = input->region()->graph();
 

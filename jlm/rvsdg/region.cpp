@@ -36,7 +36,7 @@ RegionArgument::RegionArgument(
 
     if (*input->Type() != *Type())
     {
-      throw util::type_error(Type()->debug_string(), input->Type()->debug_string());
+      throw util::TypeError(Type()->debug_string(), input->Type()->debug_string());
     }
 
     input->arguments.push_back(this);
@@ -85,7 +85,7 @@ RegionResult::RegionResult(
     jlm::rvsdg::output * origin,
     StructuralOutput * output,
     std::shared_ptr<const rvsdg::Type> type)
-    : input(origin, region, std::move(type)),
+    : Input(origin, region, std::move(type)),
       output_(output)
 {
   if (output)
@@ -95,7 +95,7 @@ RegionResult::RegionResult(
 
     if (*Type() != *output->Type())
     {
-      throw jlm::util::type_error(Type()->debug_string(), output->Type()->debug_string());
+      throw jlm::util::TypeError(Type()->debug_string(), output->Type()->debug_string());
     }
 
     output->results.push_back(this);

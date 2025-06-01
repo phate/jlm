@@ -139,7 +139,7 @@ TestRemoveLambdaInputsWhere()
   // Act & Assert
   // Try to remove lambdaInput1 even though it is used
   auto numRemovedInputs = lambdaNode->RemoveLambdaInputsWhere(
-      [&](const jlm::rvsdg::input & input)
+      [&](const jlm::rvsdg::Input & input)
       {
         return input.index() == lambdaBinder1.input->index();
       });
@@ -149,7 +149,7 @@ TestRemoveLambdaInputsWhere()
 
   // Remove lambdaInput2
   numRemovedInputs = lambdaNode->RemoveLambdaInputsWhere(
-      [&](const jlm::rvsdg::input & input)
+      [&](const jlm::rvsdg::Input & input)
       {
         return input.index() == 2;
       });
@@ -161,7 +161,7 @@ TestRemoveLambdaInputsWhere()
 
   // Remove lambdaInput0
   numRemovedInputs = lambdaNode->RemoveLambdaInputsWhere(
-      [&](const jlm::rvsdg::input & input)
+      [&](const jlm::rvsdg::Input & input)
       {
         return input.index() == 0;
       });

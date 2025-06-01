@@ -539,7 +539,7 @@ public:
   }
 };
 
-using DisjointLocationSet = util::disjointset<Location *>;
+using DisjointLocationSet = util::DisjointSet<Location *>;
 
 /** \brief Context class
  */
@@ -1962,7 +1962,7 @@ util::HashSet<PointsToGraph::MemoryNode *>
 Steensgaard::CollectEscapedMemoryNodes(
     const util::HashSet<RegisterLocation *> & escapingRegisterLocations,
     const std::unordered_map<
-        const util::disjointset<Location *>::set *,
+        const util::DisjointSet<Location *>::set *,
         std::vector<PointsToGraph::MemoryNode *>> & memoryNodesInSet) const
 {
   // Initialize working set

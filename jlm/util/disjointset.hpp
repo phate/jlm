@@ -17,7 +17,7 @@ namespace jlm::util
 {
 
 template<class T>
-class disjointset final
+class DisjointSet final
 {
 public:
   class set;
@@ -33,7 +33,7 @@ private:
     using reference = const T &;
 
   private:
-    friend class disjointset::set;
+    friend class DisjointSet::set;
 
     member_iterator(const set * node)
         : node_(node)
@@ -89,7 +89,7 @@ private:
 public:
   class set final
   {
-    friend class disjointset;
+    friend class DisjointSet;
 
   private:
     set(const T & value)
@@ -192,7 +192,7 @@ public:
     using reference = const set *&;
 
   private:
-    friend class disjointset;
+    friend class DisjointSet;
 
     set_iterator(const typename std::unordered_set<const set *>::const_iterator & it)
         : it_(it)
@@ -244,26 +244,25 @@ public:
   };
 
 public:
-  constexpr disjointset()
-  {}
+  constexpr DisjointSet() = default;
 
-  disjointset(const std::vector<T> & elements)
+  explicit DisjointSet(const std::vector<T> & elements)
   {
     insert(elements);
   }
 
-  disjointset(const disjointset & other)
+  DisjointSet(const DisjointSet & other)
   {
     operator=(other);
   }
 
-  disjointset(disjointset && other)
+  DisjointSet(DisjointSet && other)
   {
     operator=(other);
   }
 
-  disjointset &
-  operator=(const disjointset & other)
+  DisjointSet &
+  operator=(const DisjointSet & other)
   {
     if (this == &other)
       return *this;
@@ -274,8 +273,8 @@ public:
     return *this;
   }
 
-  disjointset &
-  operator=(disjointset && other)
+  DisjointSet &
+  operator=(DisjointSet && other)
   {
     if (this == &other)
       return *this;

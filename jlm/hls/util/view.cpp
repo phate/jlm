@@ -53,7 +53,7 @@ get_dot_name(jlm::rvsdg::output * output)
 }
 
 std::string
-get_dot_name(jlm::rvsdg::input * input)
+get_dot_name(jlm::rvsdg::Input * input)
 {
   if (dynamic_cast<rvsdg::RegionResult *>(input))
   {
@@ -122,7 +122,7 @@ structural_output_to_dot(rvsdg::StructuralOutput * structuralOutput)
 }
 
 std::string
-edge(jlm::rvsdg::output * output, jlm::rvsdg::input * input, bool back_edge = false)
+edge(jlm::rvsdg::output * output, jlm::rvsdg::Input * input, bool back_edge = false)
 {
   auto color = "black";
   if (!back_edge)
@@ -141,7 +141,7 @@ edge(jlm::rvsdg::output * output, jlm::rvsdg::input * input, bool back_edge = fa
 }
 
 std::string
-symbolic_edge(jlm::rvsdg::input * output, jlm::rvsdg::output * input)
+symbolic_edge(jlm::rvsdg::Input * output, jlm::rvsdg::output * input)
 {
   auto color = "black";
   return get_dot_name(output) + " -> " + get_dot_name(input)

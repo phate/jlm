@@ -77,7 +77,7 @@ public:
      * The input port into the phi node that supplies the value
      * of the context variable bound into the phi construct.
      */
-    rvsdg::input * input;
+    rvsdg::Input * input;
 
     /**
      * \brief Access to bound object in subregion.
@@ -115,7 +115,7 @@ public:
      * This is a result slot in the phi region and represents the finalized
      * definition of a variable with the phi region.
      */
-    rvsdg::input * result;
+    rvsdg::Input * result;
 
     /**
      * \brief Output of phi region representing externally available definition.
@@ -191,7 +191,7 @@ public:
    * argument.
    */
   [[nodiscard]] ContextVar
-  MapInputContextVar(const rvsdg::input & input) const noexcept;
+  MapInputContextVar(const rvsdg::Input & input) const noexcept;
 
   /**
    * \brief Attempts to map bound variable reference to context variable.
@@ -278,7 +278,7 @@ public:
    * Maps result of the region to a fixpoint variable.
    */
   [[nodiscard]] FixVar
-  MapResultFixVar(const rvsdg::input & result) const noexcept;
+  MapResultFixVar(const rvsdg::Input & result) const noexcept;
 
   /**
    * \brief Maps output to fixpoint variable.

@@ -26,7 +26,7 @@ IsPassthroughArgument(const rvsdg::output & argument)
 }
 
 static bool
-IsPassthroughResult(const rvsdg::input & result)
+IsPassthroughResult(const rvsdg::Input & result)
 {
   auto argument = dynamic_cast<rvsdg::RegionArgument *>(result.origin());
   return argument != nullptr;
@@ -136,7 +136,7 @@ TryGetSingleUserExitVar(rvsdg::GammaNode & gammaNode, rvsdg::output & argument)
 {
   if (argument.nusers() == 1)
   {
-    rvsdg::input * user = *argument.begin();
+    rvsdg::Input * user = *argument.begin();
     if (rvsdg::TryGetRegionParentNode<rvsdg::GammaNode>(*user) == &gammaNode)
     {
       return gammaNode.MapBranchResultExitVar(*user);

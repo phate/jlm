@@ -63,12 +63,12 @@ public:
   {}
 };
 
-class type_error : public error
+class TypeError : public error
 {
 public:
-  ~type_error() noexcept override;
+  ~TypeError() noexcept override;
 
-  type_error(const std::string & expected_type, const std::string & received_type)
+  TypeError(const std::string & expected_type, const std::string & received_type)
       : error("Type error - expected : " + expected_type + ", received : " + received_type)
   {}
 };

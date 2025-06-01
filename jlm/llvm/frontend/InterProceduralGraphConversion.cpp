@@ -684,7 +684,7 @@ Convert(
    * Add gamma inputs.
    */
   auto & demandSet = demandMap.Lookup<BranchAnnotationSet>(branchAggregationNode);
-  std::unordered_map<const variable *, rvsdg::input *> gammaInputMap;
+  std::unordered_map<const variable *, rvsdg::Input *> gammaInputMap;
   for (auto & v : demandSet.InputVariables().Variables())
     gammaInputMap[&v] =
         gamma->AddEntryVar(regionalizedVariableMap.GetTopVariableMap().lookup(&v)).input;

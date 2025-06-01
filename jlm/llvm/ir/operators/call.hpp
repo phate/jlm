@@ -263,7 +263,7 @@ public:
    * @param n The index of the function argument.
    * @return The input for the given index \p n.
    */
-  [[nodiscard]] static rvsdg::input *
+  [[nodiscard]] static rvsdg::Input *
   Argument(const rvsdg::SimpleNode & node, const size_t n)
   {
     JLM_ASSERT(is<CallOperation>(&node));
@@ -274,7 +274,7 @@ public:
   /**
    * @return The call node's function input.
    */
-  [[nodiscard]] static rvsdg::input &
+  [[nodiscard]] static rvsdg::Input &
   GetFunctionInput(const rvsdg::SimpleNode & node) noexcept
   {
     JLM_ASSERT(is<CallOperation>(&node));
@@ -286,7 +286,7 @@ public:
   /**
    * @return The call node's input/output state input.
    */
-  [[nodiscard]] static rvsdg::input &
+  [[nodiscard]] static rvsdg::Input &
   GetIOStateInput(const rvsdg::SimpleNode & node) noexcept
   {
     JLM_ASSERT(is<CallOperation>(&node));
@@ -310,7 +310,7 @@ public:
   /**
    * @return The call node's memory state input.
    */
-  [[nodiscard]] static rvsdg::input &
+  [[nodiscard]] static rvsdg::Input &
   GetMemoryStateInput(const rvsdg::SimpleNode & node) noexcept
   {
     JLM_ASSERT(is<CallOperation>(&node));

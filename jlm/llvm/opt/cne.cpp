@@ -114,7 +114,7 @@ public:
   }
 
   inline bool
-  congruent(const jlm::rvsdg::input * i1, const jlm::rvsdg::input * i2) const noexcept
+  congruent(const jlm::rvsdg::Input * i1, const jlm::rvsdg::Input * i2) const noexcept
   {
     return congruent(i1->origin(), i2->origin());
   }

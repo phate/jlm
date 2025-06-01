@@ -25,13 +25,13 @@ namespace jlm::llvm
 class LoadOperation : public rvsdg::SimpleOperation
 {
 public:
-  class MemoryStateInputIterator final : public rvsdg::input::iterator<rvsdg::SimpleInput>
+  class MemoryStateInputIterator final : public rvsdg::Input::iterator<rvsdg::SimpleInput>
   {
   public:
     virtual ~MemoryStateInputIterator() = default;
 
     constexpr explicit MemoryStateInputIterator(rvsdg::SimpleInput * input)
-        : rvsdg::input::iterator<rvsdg::SimpleInput>(input)
+        : rvsdg::Input::iterator<rvsdg::SimpleInput>(input)
     {}
 
     [[nodiscard]] rvsdg::SimpleInput *
@@ -115,7 +115,7 @@ public:
     return NumMemoryStates_;
   }
 
-  [[nodiscard]] static rvsdg::input &
+  [[nodiscard]] static rvsdg::Input &
   AddressInput(const rvsdg::Node & node) noexcept
   {
     JLM_ASSERT(is<LoadOperation>(&node));
@@ -190,7 +190,7 @@ public:
   [[nodiscard]] std::unique_ptr<Operation>
   copy() const override;
 
-  [[nodiscard]] static rvsdg::input &
+  [[nodiscard]] static rvsdg::Input &
   IOStateInput(const rvsdg::Node & node) noexcept
   {
     JLM_ASSERT(is<LoadVolatileOperation>(&node));

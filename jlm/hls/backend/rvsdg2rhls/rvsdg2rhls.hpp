@@ -33,7 +33,7 @@ void
 dump_ref(llvm::RvsdgModule & rhls, const util::FilePath & function_name);
 
 const jlm::rvsdg::output *
-trace_call(jlm::rvsdg::input * input);
+trace_call(jlm::rvsdg::Input * input);
 
 std::unique_ptr<llvm::RvsdgModule>
 split_hls_function(llvm::RvsdgModule & rm, const std::string & function_name);

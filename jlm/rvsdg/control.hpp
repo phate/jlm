@@ -238,7 +238,7 @@ private:
       return *bitType;
     }
 
-    throw util::type_error("bittype", type.debug_string());
+    throw util::TypeError("bittype", type.debug_string());
   }
 
   uint64_t default_alternative_;

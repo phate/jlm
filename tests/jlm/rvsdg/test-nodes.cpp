@@ -207,7 +207,7 @@ TestRemoveInputsWhere()
 
   // Act & Assert
   node.RemoveInputsWhere(
-      [](const jlm::rvsdg::input & input)
+      [](const jlm::rvsdg::Input & input)
       {
         return input.index() == 1;
       });
@@ -216,7 +216,7 @@ TestRemoveInputsWhere()
   assert(node.input(1) == input2);
 
   node.RemoveInputsWhere(
-      [](const jlm::rvsdg::input &)
+      [](const jlm::rvsdg::Input &)
       {
         return true;
       });
