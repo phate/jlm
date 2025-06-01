@@ -13,7 +13,7 @@ namespace jlm::rvsdg
 {
 
 class Graph;
-class input;
+class Input;
 class output;
 
 namespace detail
@@ -172,11 +172,11 @@ private:
   node_create(Node * node);
 
   void
-  input_change(input * in, output * old_origin, output * new_origin);
+  input_change(Input * in, output * old_origin, output * new_origin);
 
   rvsdg::Region * region_;
   TraversalTracker tracker_;
-  std::vector<jlm::util::callback> callbacks_;
+  std::vector<jlm::util::Callback> callbacks_;
 };
 
 class BottomUpTraverser final
@@ -218,11 +218,11 @@ private:
   node_destroy(Node * node);
 
   void
-  input_change(input * in, output * old_origin, output * new_origin);
+  input_change(Input * in, output * old_origin, output * new_origin);
 
   rvsdg::Region * region_;
   TraversalTracker tracker_;
-  std::vector<jlm::util::callback> callbacks_;
+  std::vector<jlm::util::Callback> callbacks_;
   traversal_nodestate new_node_state_;
 };
 

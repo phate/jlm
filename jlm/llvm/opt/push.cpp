@@ -351,7 +351,7 @@ pushout_store(rvsdg::Node * storenode)
       StoreNonVolatileOperation::Create(address, nvalue.output, states, storeop->GetAlignment());
   for (size_t n = 0; n < states.size(); n++)
   {
-    std::unordered_set<jlm::rvsdg::input *> users;
+    std::unordered_set<jlm::rvsdg::Input *> users;
     for (const auto & user : *states[n])
     {
       if (rvsdg::TryGetOwnerNode<rvsdg::Node>(*user)

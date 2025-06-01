@@ -343,12 +343,12 @@ public:
 
 /** \brief Delta context variable iterator
  */
-class node::cviterator final : public rvsdg::input::iterator<cvinput>
+class node::cviterator final : public rvsdg::Input::iterator<cvinput>
 {
   friend ::jlm::llvm::delta::node;
 
   constexpr cviterator(cvinput * input)
-      : rvsdg::input::iterator<cvinput>(input)
+      : rvsdg::Input::iterator<cvinput>(input)
   {}
 
   virtual cvinput *
@@ -363,12 +363,12 @@ class node::cviterator final : public rvsdg::input::iterator<cvinput>
 
 /** \brief Delta context variable const iterator
  */
-class node::cvconstiterator final : public rvsdg::input::constiterator<cvinput>
+class node::cvconstiterator final : public rvsdg::Input::constiterator<cvinput>
 {
   friend ::jlm::llvm::delta::node;
 
   constexpr cvconstiterator(const cvinput * input)
-      : rvsdg::input::constiterator<cvinput>(input)
+      : rvsdg::Input::constiterator<cvinput>(input)
   {}
 
   virtual const cvinput *

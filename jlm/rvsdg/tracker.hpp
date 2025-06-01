@@ -20,7 +20,7 @@ class Graph;
 class Node;
 class Region;
 class tracker_depth_state;
-class tracker_nodestate;
+class TrackerNodeState;
 
 bool
 has_active_trackers(const Graph * graph);
@@ -60,7 +60,7 @@ public:
   }
 
 private:
-  jlm::rvsdg::tracker_nodestate *
+  jlm::rvsdg::TrackerNodeState *
   nodestate(Node * node);
 
   void
@@ -74,30 +74,30 @@ private:
   /* FIXME: need RAII idiom for state reservation */
   std::vector<std::unique_ptr<tracker_depth_state>> states_;
 
-  jlm::util::callback depth_callback_, destroy_callback_;
+  jlm::util::Callback depth_callback_, destroy_callback_;
 
-  std::unordered_map<Node *, std::unique_ptr<tracker_nodestate>> nodestates_;
+  std::unordered_map<Node *, std::unique_ptr<TrackerNodeState>> nodestates_;
 };
 
-class tracker_nodestate
+class TrackerNodeState
 {
   friend Tracker;
 
 public:
-  inline tracker_nodestate(Node * node)
+  explicit TrackerNodeState(Node * node)
       : state_(tracker_nodestate_none),
         node_(node)
   {}
 
-  tracker_nodestate(const tracker_nodestate &) = delete;
+  TrackerNodeState(const TrackerNodeState &) = delete;
 
-  tracker_nodestate(tracker_nodestate &&) = delete;
+  TrackerNodeState(TrackerNodeState &&) = delete;
 
-  tracker_nodestate &
-  operator=(const tracker_nodestate &) = delete;
+  TrackerNodeState &
+  operator=(const TrackerNodeState &) = delete;
 
-  tracker_nodestate &
-  operator=(tracker_nodestate &&) = delete;
+  TrackerNodeState &
+  operator=(TrackerNodeState &&) = delete;
 
   [[nodiscard]] Node *
   node() const noexcept

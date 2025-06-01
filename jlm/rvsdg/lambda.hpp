@@ -103,7 +103,7 @@ public:
      * of the context variable bound into the lambda at the
      * time the lambda abstraction is built.
      */
-    rvsdg::input * input;
+    rvsdg::Input * input;
 
     /**
      * \brief Access to bound object in subregion.
@@ -118,7 +118,7 @@ public:
   [[nodiscard]] std::vector<rvsdg::output *>
   GetFunctionArguments() const;
 
-  [[nodiscard]] std::vector<rvsdg::input *>
+  [[nodiscard]] std::vector<rvsdg::Input *>
   GetFunctionResults() const;
 
   [[nodiscard]] rvsdg::Region *
@@ -163,7 +163,7 @@ public:
    * argument.
    */
   [[nodiscard]] ContextVar
-  MapInputContextVar(const rvsdg::input & input) const noexcept;
+  MapInputContextVar(const rvsdg::Input & input) const noexcept;
 
   /**
    * \brief Maps bound variable reference to context variable
@@ -219,7 +219,7 @@ public:
   size_t
   PruneLambdaInputs()
   {
-    auto match = [](const rvsdg::input &)
+    auto match = [](const rvsdg::Input &)
     {
       return true;
     };

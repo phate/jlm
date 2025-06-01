@@ -90,7 +90,7 @@ PhiNode::MapArgumentFixVar(const rvsdg::output & argument) const noexcept
 }
 
 [[nodiscard]] PhiNode::FixVar
-PhiNode::MapResultFixVar(const rvsdg::input & result) const noexcept
+PhiNode::MapResultFixVar(const rvsdg::Input & result) const noexcept
 {
   JLM_ASSERT(rvsdg::TryGetRegionParentNode<PhiNode>(result) == this);
   return FixVar{ subregion()->argument(result.index()),
@@ -108,7 +108,7 @@ PhiNode::MapOutputFixVar(const rvsdg::output & output) const noexcept
 }
 
 [[nodiscard]] PhiNode::ContextVar
-PhiNode::MapInputContextVar(const rvsdg::input & input) const noexcept
+PhiNode::MapInputContextVar(const rvsdg::Input & input) const noexcept
 {
   JLM_ASSERT(rvsdg::TryGetOwnerNode<PhiNode>(input) == this);
   return ContextVar{ PhiNode::input(input.index()),
