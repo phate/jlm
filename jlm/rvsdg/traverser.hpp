@@ -98,7 +98,7 @@ public:
   peek_bottom();
 
 private:
-  tracker tracker_;
+  Tracker tracker_;
 };
 
 /** \brief TopDown Traverser
