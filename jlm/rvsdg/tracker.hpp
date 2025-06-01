@@ -25,15 +25,17 @@ class tracker_nodestate;
 bool
 has_active_trackers(const Graph * graph);
 
-/* Track states of nodes within the graph. Each node can logically be in
+/**
+ * Track states of nodes within the graph. Each node can logically be in
  * one of the numbered states, plus another "initial" state. All nodes are
- * at the beginning assumed to be implicitly in this "initial" state. */
-struct tracker
+ * at the beginning assumed to be implicitly in this "initial" state.
+ */
+struct Tracker
 {
 public:
-  ~tracker() noexcept;
+  ~Tracker() noexcept;
 
-  tracker(Graph * graph, size_t nstates);
+  Tracker(Graph * graph, size_t nstates);
 
   /* get state of the node */
   ssize_t
@@ -79,7 +81,7 @@ private:
 
 class tracker_nodestate
 {
-  friend tracker;
+  friend Tracker;
 
 public:
   inline tracker_nodestate(Node * node)
