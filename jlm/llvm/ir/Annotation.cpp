@@ -478,9 +478,9 @@ AnnotateDemandSet(
       map({ { typeid(entryaggnode), AnnotateDemandSet<entryaggnode> },
             { typeid(exitaggnode), AnnotateDemandSet<exitaggnode> },
             { typeid(blockaggnode), AnnotateDemandSet<blockaggnode> },
-                { typeid(linearaggnode), AnnotateDemandSet<linearaggnode> },
-                { typeid(branchaggnode), AnnotateDemandSet<branchaggnode> },
-                { typeid(loopaggnode), AnnotateDemandSet<loopaggnode> } });
+            { typeid(linearaggnode), AnnotateDemandSet<linearaggnode> },
+            { typeid(branchaggnode), AnnotateDemandSet<branchaggnode> },
+            { typeid(loopaggnode), AnnotateDemandSet<loopaggnode> } });
 
   JLM_ASSERT(map.find(typeid(aggregationNode)) != map.end());
   return map[typeid(aggregationNode)](&aggregationNode, workingSet, demandMap);
