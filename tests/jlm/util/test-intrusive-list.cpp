@@ -35,7 +35,7 @@ struct my_item
   typedef jlm::util::intrusive_list_accessor<my_item, &my_item::anchor> accessor;
 };
 
-typedef jlm::util::intrusive_list<my_item, my_item::accessor> my_list;
+typedef jlm::util::IntrusiveList<my_item, my_item::accessor> my_list;
 typedef jlm::util::owner_intrusive_list<my_item, my_item::accessor> my_owner_list;
 
 static void
