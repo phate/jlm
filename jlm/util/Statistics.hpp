@@ -66,7 +66,7 @@ public:
   using Measurement = std::variant<std::string, int64_t, uint64_t, double>;
   // Lists are used instead of vectors to give stable references to members
   using MeasurementList = std::list<std::pair<std::string, Measurement>>;
-  using TimerList = std::list<std::pair<std::string, util::timer>>;
+  using TimerList = std::list<std::pair<std::string, util::Timer>>;
 
   virtual ~Statistics();
 
@@ -182,7 +182,7 @@ protected:
    * Requires that the timer does not already exist.
    * @return a reference to the timer
    */
-  util::timer &
+  util::Timer &
   AddTimer(std::string name);
 
   /**
@@ -190,10 +190,10 @@ protected:
    * Requires that the timer already exists.
    * @return a reference to the timer
    */
-  [[nodiscard]] util::timer &
+  [[nodiscard]] util::Timer &
   GetTimer(const std::string & name);
 
-  [[nodiscard]] const util::timer &
+  [[nodiscard]] const util::Timer &
   GetTimer(const std::string & name) const;
 
   /**
