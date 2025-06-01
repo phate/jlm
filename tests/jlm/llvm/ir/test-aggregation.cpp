@@ -96,7 +96,7 @@ test_linear_reduction()
     }
   };
 
-  jlm::llvm::ipgraph_module module(jlm::util::filepath(""), "", "");
+  jlm::llvm::ipgraph_module module(jlm::util::FilePath(""), "", "");
   auto cfg = setup_cfg(module);
 
   auto root = jlm::llvm::aggregate(*cfg);
@@ -147,7 +147,7 @@ test_loop_reduction()
     }
   };
 
-  jlm::llvm::ipgraph_module module(jlm::util::filepath(""), "", "");
+  jlm::llvm::ipgraph_module module(jlm::util::FilePath(""), "", "");
   auto cfg = setup_cfg(module);
 
   auto root = jlm::llvm::aggregate(*cfg);
@@ -215,7 +215,7 @@ test_branch_reduction()
     }
   };
 
-  jlm::llvm::ipgraph_module module(jlm::util::filepath(""), "", "");
+  jlm::llvm::ipgraph_module module(jlm::util::FilePath(""), "", "");
   auto cfg = setup_cfg(module);
 
   auto root = jlm::llvm::aggregate(*cfg);
@@ -292,7 +292,7 @@ test_branch_loop_reduction()
     }
   };
 
-  jlm::llvm::ipgraph_module module(jlm::util::filepath(""), "", "");
+  jlm::llvm::ipgraph_module module(jlm::util::FilePath(""), "", "");
   auto cfg = setup_cfg(module);
 
   auto root = jlm::llvm::aggregate(*cfg);
@@ -359,7 +359,7 @@ test_loop_branch_reduction()
     }
   };
 
-  jlm::llvm::ipgraph_module module(jlm::util::filepath(""), "", "");
+  jlm::llvm::ipgraph_module module(jlm::util::FilePath(""), "", "");
   auto cfg = setup_cfg(module);
 
   auto root = jlm::llvm::aggregate(*cfg);
@@ -420,7 +420,7 @@ test_ifthen_reduction()
     }
   };
 
-  jlm::llvm::ipgraph_module module(jlm::util::filepath(""), "", "");
+  jlm::llvm::ipgraph_module module(jlm::util::FilePath(""), "", "");
   auto cfg = setup_cfg(module);
 
   auto root = jlm::llvm::aggregate(*cfg);
@@ -479,7 +479,7 @@ test_branch_and_loop()
     }
   };
 
-  jlm::llvm::ipgraph_module module(jlm::util::filepath(""), "", "");
+  jlm::llvm::ipgraph_module module(jlm::util::FilePath(""), "", "");
   auto cfg = setup_cfg(module);
 
   auto root = jlm::llvm::aggregate(*cfg);

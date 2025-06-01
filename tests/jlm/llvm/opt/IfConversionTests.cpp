@@ -27,7 +27,7 @@ GammaWithoutMatch()
       { jlm::rvsdg::ControlType::Create(2), valueType, valueType },
       { valueType });
 
-  RvsdgModule rvsdgModule(filepath(""), "", "");
+  RvsdgModule rvsdgModule(FilePath(""), "", "");
 
   auto lambdaNode = jlm::rvsdg::LambdaNode::Create(
       rvsdgModule.Rvsdg().GetRootRegion(),
@@ -88,7 +88,7 @@ EmptyGammaWithTwoSubregionsAndMatch()
       { jlm::rvsdg::bittype::Create(32), valueType, valueType },
       { valueType });
 
-  RvsdgModule rvsdgModule(filepath(""), "", "");
+  RvsdgModule rvsdgModule(FilePath(""), "", "");
 
   const auto lambdaNode = jlm::rvsdg::LambdaNode::Create(
       rvsdgModule.Rvsdg().GetRootRegion(),
@@ -169,7 +169,7 @@ EmptyGammaWithTwoSubregions()
       { jlm::rvsdg::bittype::Create(32), valueType, valueType },
       { valueType });
 
-  RvsdgModule rvsdgModule(filepath(""), "", "");
+  RvsdgModule rvsdgModule(FilePath(""), "", "");
 
   const auto lambdaNode = jlm::rvsdg::LambdaNode::Create(
       rvsdgModule.Rvsdg().GetRootRegion(),
@@ -233,7 +233,7 @@ EmptyGammaWithThreeSubregions()
       { jlm::rvsdg::bittype::Create(32), valueType, valueType },
       { valueType });
 
-  RvsdgModule rvsdgModule(filepath(""), "", "");
+  RvsdgModule rvsdgModule(FilePath(""), "", "");
 
   auto lambdaNode = jlm::rvsdg::LambdaNode::Create(
       rvsdgModule.Rvsdg().GetRootRegion(),
@@ -288,7 +288,7 @@ PartialEmptyGamma()
       { jlm::rvsdg::bittype::Create(1), valueType },
       { valueType });
 
-  RvsdgModule rvsdgModule(filepath(""), "", "");
+  RvsdgModule rvsdgModule(FilePath(""), "", "");
 
   auto lambdaNode = jlm::rvsdg::LambdaNode::Create(
       rvsdgModule.Rvsdg().GetRootRegion(),

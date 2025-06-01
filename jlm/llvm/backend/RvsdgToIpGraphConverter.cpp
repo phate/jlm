@@ -103,7 +103,7 @@ class RvsdgToIpGraphConverter::Statistics final : public util::Statistics
 public:
   ~Statistics() override = default;
 
-  explicit Statistics(const util::filepath & filename)
+  explicit Statistics(const util::FilePath & filename)
       : util::Statistics(Id::RvsdgDestruction, filename)
   {}
 
@@ -122,7 +122,7 @@ public:
   }
 
   static std::unique_ptr<Statistics>
-  Create(const util::filepath & sourceFile)
+  Create(const util::FilePath & sourceFile)
   {
     return std::make_unique<Statistics>(sourceFile);
   }

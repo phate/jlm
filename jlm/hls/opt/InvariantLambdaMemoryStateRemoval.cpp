@@ -117,7 +117,7 @@ class InvariantLambdaMemoryStateRemoval::Statistics final : public util::Statist
 public:
   ~Statistics() noexcept override = default;
 
-  explicit Statistics(const util::filepath & sourceFile)
+  explicit Statistics(const util::FilePath & sourceFile)
       : util::Statistics(Statistics::Id::InvariantValueRedirection, sourceFile)
   {}
 
@@ -134,7 +134,7 @@ public:
   }
 
   static std::unique_ptr<Statistics>
-  Create(const util::filepath & sourceFile)
+  Create(const util::FilePath & sourceFile)
   {
     return std::make_unique<Statistics>(sourceFile);
   }

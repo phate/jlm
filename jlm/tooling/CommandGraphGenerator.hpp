@@ -60,11 +60,11 @@ public:
   }
 
 private:
-  static util::filepath
-  CreateJlmOptCommandOutputFile(const util::filepath & inputFile);
+  static util::FilePath
+  CreateJlmOptCommandOutputFile(const util::FilePath & inputFile);
 
-  static util::filepath
-  CreateParserCommandOutputFile(const util::filepath & inputFile);
+  static util::FilePath
+  CreateParserCommandOutputFile(const util::FilePath & inputFile);
 
   static ClangCommand::LanguageStandard
   ConvertLanguageStandard(const JlcCommandLineOptions::LanguageStandard & languageStandard);
@@ -75,7 +75,7 @@ private:
   static CommandGraph::Node &
   CreateParserCommand(
       CommandGraph & commandGraph,
-      const util::filepath & outputFile,
+      const util::FilePath & outputFile,
       const JlcCommandLineOptions::Compilation & compilation,
       const JlcCommandLineOptions & commandLineOptions);
 };
@@ -101,15 +101,15 @@ public:
   }
 
 private:
-  static util::filepath
+  static util::FilePath
   CreateParserCommandOutputFile(
-      const util::filepath & tmpDirectory,
-      const util::filepath & inputFile);
+      const util::FilePath & tmpDirectory,
+      const util::FilePath & inputFile);
 
-  static util::filepath
+  static util::FilePath
   CreateJlmOptCommandOutputFile(
-      const util::filepath & tmpDirectory,
-      const util::filepath & inputFile);
+      const util::FilePath & tmpDirectory,
+      const util::FilePath & inputFile);
 
   static ClangCommand::LanguageStandard
   ConvertLanguageStandard(const JhlsCommandLineOptions::LanguageStandard & languageStandard);

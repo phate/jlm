@@ -134,7 +134,7 @@ public:
   ~ControlFlowRestructuringStatistics() override = default;
 
   ControlFlowRestructuringStatistics(
-      const util::filepath & sourceFileName,
+      const util::FilePath & sourceFileName,
       const std::string & functionName)
       : Statistics(Statistics::Id::ControlFlowRecovery, sourceFileName)
   {
@@ -155,7 +155,7 @@ public:
   }
 
   static std::unique_ptr<ControlFlowRestructuringStatistics>
-  Create(const util::filepath & sourceFileName, const std::string & functionName)
+  Create(const util::FilePath & sourceFileName, const std::string & functionName)
   {
     return std::make_unique<ControlFlowRestructuringStatistics>(sourceFileName, functionName);
   }
@@ -166,7 +166,7 @@ class AggregationStatistics final : public util::Statistics
 public:
   ~AggregationStatistics() override = default;
 
-  AggregationStatistics(const util::filepath & sourceFileName, const std::string & functionName)
+  AggregationStatistics(const util::FilePath & sourceFileName, const std::string & functionName)
       : Statistics(util::Statistics::Id::Aggregation, sourceFileName)
   {
     AddMeasurement(Label::FunctionNameLabel_, functionName);
@@ -186,7 +186,7 @@ public:
   }
 
   static std::unique_ptr<AggregationStatistics>
-  Create(const util::filepath & sourceFileName, const std::string & functionName)
+  Create(const util::FilePath & sourceFileName, const std::string & functionName)
   {
     return std::make_unique<AggregationStatistics>(sourceFileName, functionName);
   }
@@ -197,7 +197,7 @@ class AnnotationStatistics final : public util::Statistics
 public:
   ~AnnotationStatistics() override = default;
 
-  AnnotationStatistics(const util::filepath & sourceFileName, const std::string & functionName)
+  AnnotationStatistics(const util::FilePath & sourceFileName, const std::string & functionName)
       : Statistics(util::Statistics::Id::Annotation, sourceFileName)
   {
     AddMeasurement(Label::FunctionNameLabel_, functionName);
@@ -217,7 +217,7 @@ public:
   }
 
   static std::unique_ptr<AnnotationStatistics>
-  Create(const util::filepath & sourceFileName, const std::string & functionName)
+  Create(const util::FilePath & sourceFileName, const std::string & functionName)
   {
     return std::make_unique<AnnotationStatistics>(sourceFileName, functionName);
   }
@@ -229,7 +229,7 @@ public:
   ~AggregationTreeToLambdaStatistics() override = default;
 
   AggregationTreeToLambdaStatistics(
-      const util::filepath & sourceFileName,
+      const util::FilePath & sourceFileName,
       const std::string & functionName)
       : Statistics(util::Statistics::Id::JlmToRvsdgConversion, sourceFileName)
   {
@@ -249,7 +249,7 @@ public:
   }
 
   static std::unique_ptr<AggregationTreeToLambdaStatistics>
-  Create(const util::filepath & sourceFileName, const std::string & functionName)
+  Create(const util::FilePath & sourceFileName, const std::string & functionName)
   {
     return std::make_unique<AggregationTreeToLambdaStatistics>(sourceFileName, functionName);
   }
@@ -260,7 +260,7 @@ class DataNodeToDeltaStatistics final : public util::Statistics
 public:
   ~DataNodeToDeltaStatistics() override = default;
 
-  DataNodeToDeltaStatistics(const util::filepath & sourceFileName, const std::string & dataNodeName)
+  DataNodeToDeltaStatistics(const util::FilePath & sourceFileName, const std::string & dataNodeName)
       : Statistics(util::Statistics::Id::DataNodeToDelta, sourceFileName)
   {
     AddMeasurement("DataNode", dataNodeName);
@@ -280,7 +280,7 @@ public:
   }
 
   static std::unique_ptr<DataNodeToDeltaStatistics>
-  Create(const util::filepath & sourceFileName, const std::string & dataNodeName)
+  Create(const util::FilePath & sourceFileName, const std::string & dataNodeName)
   {
     return std::make_unique<DataNodeToDeltaStatistics>(sourceFileName, dataNodeName);
   }
@@ -291,7 +291,7 @@ class InterProceduralGraphToRvsdgStatistics final : public util::Statistics
 public:
   ~InterProceduralGraphToRvsdgStatistics() override = default;
 
-  explicit InterProceduralGraphToRvsdgStatistics(const util::filepath & sourceFileName)
+  explicit InterProceduralGraphToRvsdgStatistics(const util::FilePath & sourceFileName)
       : Statistics(util::Statistics::Id::RvsdgConstruction, sourceFileName)
   {}
 
@@ -310,7 +310,7 @@ public:
   }
 
   static std::unique_ptr<InterProceduralGraphToRvsdgStatistics>
-  Create(const util::filepath & sourceFileName)
+  Create(const util::FilePath & sourceFileName)
   {
     return std::make_unique<InterProceduralGraphToRvsdgStatistics>(sourceFileName);
   }
@@ -321,7 +321,7 @@ class InterProceduralGraphToRvsdgStatisticsCollector final
 public:
   InterProceduralGraphToRvsdgStatisticsCollector(
       util::StatisticsCollector & statisticsCollector,
-      util::filepath sourceFileName)
+      util::FilePath sourceFileName)
       : SourceFileName_(std::move(sourceFileName)),
         StatisticsCollector_(statisticsCollector)
   {}
@@ -449,7 +449,7 @@ public:
   }
 
 private:
-  const util::filepath SourceFileName_;
+  const util::FilePath SourceFileName_;
   util::StatisticsCollector & StatisticsCollector_;
 };
 

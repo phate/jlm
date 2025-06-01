@@ -60,7 +60,7 @@ public:
    * \param filePath The path to the file to print the MLIR to.
    */
   static void
-  Print(::mlir::rvsdg::OmegaNode & omega, const util::filepath & filePath);
+  Print(::mlir::rvsdg::OmegaNode & omega, const util::FilePath & filePath);
 
   /**
    * Converts an RVSDG module to MLIR RVSDG.

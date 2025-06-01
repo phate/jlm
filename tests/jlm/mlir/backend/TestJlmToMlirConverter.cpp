@@ -18,7 +18,7 @@ TestLambda()
   using namespace jlm::llvm;
   using namespace mlir::rvsdg;
 
-  auto rvsdgModule = RvsdgModule::Create(jlm::util::filepath(""), "", "");
+  auto rvsdgModule = RvsdgModule::Create(jlm::util::FilePath(""), "", "");
   auto graph = &rvsdgModule->Rvsdg();
 
   {
@@ -143,7 +143,7 @@ TestAddOperation()
   using namespace jlm::llvm;
   using namespace mlir::rvsdg;
 
-  auto rvsdgModule = RvsdgModule::Create(jlm::util::filepath(""), "", "");
+  auto rvsdgModule = RvsdgModule::Create(jlm::util::FilePath(""), "", "");
   auto graph = &rvsdgModule->Rvsdg();
 
   {
@@ -242,7 +242,7 @@ TestComZeroExt()
   using namespace jlm::llvm;
   using namespace mlir::rvsdg;
 
-  auto rvsdgModule = RvsdgModule::Create(jlm::util::filepath(""), "", "");
+  auto rvsdgModule = RvsdgModule::Create(jlm::util::FilePath(""), "", "");
   auto graph = &rvsdgModule->Rvsdg();
 
   {
@@ -382,7 +382,7 @@ TestMatch()
   using namespace jlm::llvm;
   using namespace mlir::rvsdg;
 
-  auto rvsdgModule = RvsdgModule::Create(jlm::util::filepath(""), "", "");
+  auto rvsdgModule = RvsdgModule::Create(jlm::util::FilePath(""), "", "");
   auto graph = &rvsdgModule->Rvsdg();
 
   {
@@ -487,7 +487,7 @@ TestGamma()
   using namespace jlm::llvm;
   using namespace mlir::rvsdg;
 
-  auto rvsdgModule = RvsdgModule::Create(jlm::util::filepath(""), "", "");
+  auto rvsdgModule = RvsdgModule::Create(jlm::util::FilePath(""), "", "");
   auto graph = &rvsdgModule->Rvsdg();
 
   {
@@ -603,7 +603,7 @@ TestTheta()
   using namespace jlm::llvm;
   using namespace mlir::rvsdg;
 
-  auto rvsdgModule = RvsdgModule::Create(jlm::util::filepath(""), "", "");
+  auto rvsdgModule = RvsdgModule::Create(jlm::util::FilePath(""), "", "");
   auto graph = &rvsdgModule->Rvsdg();
 
   {
