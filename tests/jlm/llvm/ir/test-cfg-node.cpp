@@ -20,7 +20,7 @@ test_divert_inedges()
 
   jlm::llvm::cfg cfg(im);
 
-  auto bb0 = basic_block::create(cfg);
+  auto bb0 = BasicBlock::create(cfg);
 
   cfg.exit()->divert_inedges(bb0);
   bb0->add_outedge(bb0);

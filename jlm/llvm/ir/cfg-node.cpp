@@ -29,11 +29,11 @@ cfg_edge::divert(cfg_node * new_sink)
   new_sink->inedges_.insert(this);
 }
 
-basic_block *
+BasicBlock *
 cfg_edge::split()
 {
   auto sink = sink_;
-  auto bb = basic_block::create(source_->cfg());
+  auto bb = BasicBlock::create(source_->cfg());
   divert(bb);
   bb->add_outedge(sink);
   return bb;

@@ -18,8 +18,8 @@ test()
   ipgraph_module module(jlm::util::filepath(""), "", "");
 
   jlm::llvm::cfg cfg(module);
-  auto bb0 = basic_block::create(cfg);
-  auto bb1 = basic_block::create(cfg);
+  auto bb0 = BasicBlock::create(cfg);
+  auto bb1 = BasicBlock::create(cfg);
 
   jlm::rvsdg::ctlconstant_op op(jlm::rvsdg::ctlvalue_repr(1, 2));
   bb0->append_last(tac::create(op, {}));

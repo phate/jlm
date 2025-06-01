@@ -27,8 +27,8 @@ test()
 
   jlm::llvm::cfg cfg(im);
   auto arg = cfg.entry()->append_argument(argument::create("arg", vt));
-  auto bb0 = basic_block::create(cfg);
-  auto bb1 = basic_block::create(cfg);
+  auto bb0 = BasicBlock::create(cfg);
+  auto bb1 = BasicBlock::create(cfg);
 
   bb0->append_last(tac::create(op, {}));
   bb1->append_last(
