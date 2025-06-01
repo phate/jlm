@@ -17,7 +17,7 @@ GetMemoryStateRegionArgument(const rvsdg::LambdaNode & lambdaNode) noexcept
   return *argument;
 }
 
-rvsdg::input &
+rvsdg::Input &
 GetMemoryStateRegionResult(const rvsdg::LambdaNode & lambdaNode) noexcept
 {
   auto result = lambdaNode.GetFunctionResults().back();

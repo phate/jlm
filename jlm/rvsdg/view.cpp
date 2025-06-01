@@ -188,7 +188,7 @@ id(const jlm::rvsdg::output * port)
 }
 
 static inline std::string
-id(const jlm::rvsdg::input * port)
+id(const jlm::rvsdg::Input * port)
 {
   return jlm::util::strfmt("i", (intptr_t)port);
 }

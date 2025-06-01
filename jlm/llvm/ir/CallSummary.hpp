@@ -26,13 +26,13 @@ class CallSummary final
 {
   using DirectCallsConstRange =
       util::IteratorRange<std::vector<rvsdg::SimpleNode *>::const_iterator>;
-  using OtherUsersConstRange = util::IteratorRange<std::vector<rvsdg::input *>::const_iterator>;
+  using OtherUsersConstRange = util::IteratorRange<std::vector<rvsdg::Input *>::const_iterator>;
 
 public:
   CallSummary(
       GraphExport * rvsdgExport,
       std::vector<rvsdg::SimpleNode *> directCalls,
-      std::vector<rvsdg::input *> otherUsers)
+      std::vector<rvsdg::Input *> otherUsers)
       : RvsdgExport_(rvsdgExport),
         DirectCalls_(std::move(directCalls)),
         OtherUsers_(std::move(otherUsers))
@@ -175,7 +175,7 @@ public:
   Create(
       GraphExport * rvsdgExport,
       std::vector<rvsdg::SimpleNode *> directCalls,
-      std::vector<rvsdg::input *> otherUsers)
+      std::vector<rvsdg::Input *> otherUsers)
   {
     return std::make_unique<CallSummary>(
         rvsdgExport,
@@ -186,7 +186,7 @@ public:
 private:
   GraphExport * RvsdgExport_;
   std::vector<rvsdg::SimpleNode *> DirectCalls_;
-  std::vector<rvsdg::input *> OtherUsers_;
+  std::vector<rvsdg::Input *> OtherUsers_;
 };
 
 CallSummary

@@ -64,10 +64,10 @@ LambdaNode::GetFunctionArguments() const
   return arguments;
 }
 
-[[nodiscard]] std::vector<rvsdg::input *>
+[[nodiscard]] std::vector<rvsdg::Input *>
 LambdaNode::GetFunctionResults() const
 {
-  std::vector<rvsdg::input *> results;
+  std::vector<rvsdg::Input *> results;
   for (std::size_t n = 0; n < subregion()->nresults(); ++n)
   {
     results.push_back(subregion()->result(n));
@@ -76,10 +76,10 @@ LambdaNode::GetFunctionResults() const
 }
 
 [[nodiscard]] LambdaNode::ContextVar
-LambdaNode::MapInputContextVar(const rvsdg::input & input) const noexcept
+LambdaNode::MapInputContextVar(const rvsdg::Input & input) const noexcept
 {
   JLM_ASSERT(rvsdg::TryGetOwnerNode<LambdaNode>(input) == this);
-  return ContextVar{ const_cast<rvsdg::input *>(&input),
+  return ContextVar{ const_cast<rvsdg::Input *>(&input),
                      subregion()->argument(GetOperation().Type()->NumArguments() + input.index()) };
 }
 

@@ -93,7 +93,7 @@ push_from_theta(jlm::rvsdg::output * output)
 }
 
 static bool
-is_idv(jlm::rvsdg::input * input)
+is_idv(jlm::rvsdg::Input * input)
 {
   using namespace jlm::rvsdg;
 
