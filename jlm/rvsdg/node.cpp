@@ -323,19 +323,19 @@ producer(const jlm::rvsdg::output * output) noexcept
   - what is the origin of a value, what operation is computing it?
   - what are the users of a particular value, what operations depend on it?
 
-  This requires resolving the type of operation a specific \ref rvsdg::input
+  This requires resolving the type of operation a specific \ref rvsdg::Input
   or \ref rvsdg::output belong to. Every \ref rvsdg::output is one of the following:
 
   - the output of a node representing an operation
   - the entry argument into a region
 
-  Likewise, every \ref rvsdg::input is one of the following:
+  Likewise, every \ref rvsdg::Input is one of the following:
 
   - the input of a node representing an operation
   - the exit result of a region
 
   Analysis code can determine which of the two is the case using
-  \ref rvsdg::output::GetOwner and \ref rvsdg::input::GetOwner, respectively,
+  \ref rvsdg::output::GetOwner and \ref rvsdg::Input::GetOwner, respectively,
   and then branch deeper based on its results. For convenience, code
   can more directly match against the specific kinds of nodes using
   the following convenience functions:
