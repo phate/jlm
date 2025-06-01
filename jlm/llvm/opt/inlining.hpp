@@ -25,7 +25,7 @@ public:
 };
 
 jlm::rvsdg::output *
-find_producer(jlm::rvsdg::input * input);
+find_producer(jlm::rvsdg::Input * input);
 
 void
 inlineCall(jlm::rvsdg::SimpleNode * call, const rvsdg::LambdaNode * lambda);

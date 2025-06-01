@@ -190,7 +190,7 @@ RvsdgTreePrinter::AnnotateNumMemoryStateInputsOutputs(
 }
 
 bool
-RvsdgTreePrinter::IsMemoryStateInput(const rvsdg::input * input) noexcept
+RvsdgTreePrinter::IsMemoryStateInput(const rvsdg::Input * input) noexcept
 {
   return rvsdg::is<MemoryStateType>(input->Type());
 }

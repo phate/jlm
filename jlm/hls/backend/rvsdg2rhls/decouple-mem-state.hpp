@@ -18,7 +18,7 @@ void
 decouple_mem_state(llvm::RvsdgModule & rm);
 
 void
-convert_loop_state_to_lcb(rvsdg::input * loop_state_input);
+convert_loop_state_to_lcb(rvsdg::Input * loop_state_input);
 }
 
 #endif // JLM_HLS_BACKEND_RVSDG2RHLS_DECOUPLE_MEM_STATE_HPP

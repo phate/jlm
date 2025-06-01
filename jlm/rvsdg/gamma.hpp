@@ -115,7 +115,7 @@ public:
     /**
      * \brief The variable matched over (i.e. the "selector" of the gamma branch).
      */
-    rvsdg::input * input;
+    rvsdg::Input * input;
     /**
      * \brief The content of the match per branch.
      */
@@ -130,7 +130,7 @@ public:
     /**
      * \brief Variable at entry point (input to gamma node).
      */
-    rvsdg::input * input;
+    rvsdg::Input * input;
     /**
      * \brief Variable inside each of the branch regions (argument per subregion).
      */
@@ -145,7 +145,7 @@ public:
     /**
      * \brief Variable exit points (results per subregion).
      */
-    std::vector<rvsdg::input *> branchResult;
+    std::vector<rvsdg::Input *> branchResult;
     /**
      * \brief Output of gamma.
      */
@@ -170,7 +170,7 @@ public:
     return *new GammaNode(predicate, numAlternatives, std::move(matchContentTypes));
   }
 
-  inline rvsdg::input *
+  inline rvsdg::Input *
   predicate() const noexcept;
 
   /**
@@ -215,7 +215,7 @@ public:
    * the value through to users in the gamma subregions.
    */
   std::variant<MatchVar, EntryVar>
-  MapInput(const rvsdg::input & input) const;
+  MapInput(const rvsdg::Input & input) const;
 
   /**
    * \brief Maps branch subregion entry argument to its role (pattern match or  entry variable).
@@ -294,7 +294,7 @@ public:
    * corresponding to it.
    */
   ExitVar
-  MapBranchResultExitVar(const rvsdg::input & input) const;
+  MapBranchResultExitVar(const rvsdg::Input & input) const;
 
   /**
    * \brief Removes the given exit variables.
@@ -391,7 +391,7 @@ GetGammaInvariantOrigin(const GammaNode & gamma, const GammaNode::ExitVar & exit
 
 /* gamma node method definitions */
 
-inline rvsdg::input *
+inline rvsdg::Input *
 GammaNode::predicate() const noexcept
 {
   return StructuralNode::input(0);

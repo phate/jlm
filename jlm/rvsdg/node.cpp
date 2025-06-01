@@ -13,14 +13,12 @@
 namespace jlm::rvsdg
 {
 
-/* input */
-
-input::~input() noexcept
+Input::~Input() noexcept
 {
   origin()->remove_user(this);
 }
 
-input::input(
+Input::Input(
     jlm::rvsdg::output * origin,
     rvsdg::Region * region,
     std::shared_ptr<const rvsdg::Type> type)
@@ -39,13 +37,13 @@ input::input(
 }
 
 std::string
-input::debug_string() const
+Input::debug_string() const
 {
   return jlm::util::strfmt("i", index());
 }
 
 void
-input::divert_to(jlm::rvsdg::output * new_origin)
+Input::divert_to(jlm::rvsdg::output * new_origin)
 {
   if (origin() == new_origin)
     return;
@@ -85,7 +83,7 @@ output::debug_string() const
 }
 
 void
-output::remove_user(jlm::rvsdg::input * user)
+output::remove_user(jlm::rvsdg::Input * user)
 {
   JLM_ASSERT(users_.find(user) != users_.end());
 
@@ -102,7 +100,7 @@ output::remove_user(jlm::rvsdg::input * user)
 }
 
 void
-output::add_user(jlm::rvsdg::input * user)
+output::add_user(jlm::rvsdg::Input * user)
 {
   JLM_ASSERT(users_.find(user) == users_.end());
 
@@ -121,7 +119,7 @@ node_input::node_input(
     jlm::rvsdg::output * origin,
     Node * node,
     std::shared_ptr<const rvsdg::Type> type)
-    : jlm::rvsdg::input(origin, node->region(), std::move(type)),
+    : jlm::rvsdg::Input(origin, node->region(), std::move(type)),
       node_(node)
 {}
 
