@@ -25,7 +25,7 @@ TestUndef()
   using namespace jlm::llvm;
   using namespace mlir::rvsdg;
 
-  auto rvsdgModule = RvsdgModule::Create(jlm::util::filepath(""), "", "");
+  auto rvsdgModule = RvsdgModule::Create(jlm::util::FilePath(""), "", "");
   auto graph = &rvsdgModule->Rvsdg();
 
   {
@@ -81,7 +81,7 @@ TestAlloca()
   using namespace jlm::llvm;
   using namespace mlir::rvsdg;
 
-  auto rvsdgModule = RvsdgModule::Create(jlm::util::filepath(""), "", "");
+  auto rvsdgModule = RvsdgModule::Create(jlm::util::FilePath(""), "", "");
   auto graph = &rvsdgModule->Rvsdg();
 
   {
@@ -176,7 +176,7 @@ TestLoad()
   using namespace jlm::llvm;
   using namespace mlir::rvsdg;
 
-  auto rvsdgModule = RvsdgModule::Create(jlm::util::filepath(""), "", "");
+  auto rvsdgModule = RvsdgModule::Create(jlm::util::FilePath(""), "", "");
   auto graph = &rvsdgModule->Rvsdg();
 
   {
@@ -274,7 +274,7 @@ TestStore()
   using namespace jlm::llvm;
   using namespace mlir::rvsdg;
 
-  auto rvsdgModule = RvsdgModule::Create(jlm::util::filepath(""), "", "");
+  auto rvsdgModule = RvsdgModule::Create(jlm::util::FilePath(""), "", "");
   auto graph = &rvsdgModule->Rvsdg();
 
   {
@@ -371,7 +371,7 @@ TestSext()
   using namespace jlm::llvm;
   using namespace mlir::rvsdg;
 
-  auto rvsdgModule = RvsdgModule::Create(jlm::util::filepath(""), "", "");
+  auto rvsdgModule = RvsdgModule::Create(jlm::util::FilePath(""), "", "");
   auto graph = &rvsdgModule->Rvsdg();
   {
 
@@ -447,7 +447,7 @@ TestSitofp()
   using namespace jlm::llvm;
   using namespace mlir::rvsdg;
 
-  auto rvsdgModule = RvsdgModule::Create(jlm::util::filepath(""), "", "");
+  auto rvsdgModule = RvsdgModule::Create(jlm::util::FilePath(""), "", "");
   auto graph = &rvsdgModule->Rvsdg();
   {
 
@@ -519,7 +519,7 @@ TestConstantFP()
   using namespace jlm::llvm;
   using namespace mlir::rvsdg;
 
-  auto rvsdgModule = RvsdgModule::Create(jlm::util::filepath(""), "", "");
+  auto rvsdgModule = RvsdgModule::Create(jlm::util::FilePath(""), "", "");
   auto graph = &rvsdgModule->Rvsdg();
   {
     auto functionType = jlm::rvsdg::FunctionType::Create({}, {});
@@ -580,7 +580,7 @@ TestFpBinary()
   auto binOps = std::vector<fpop>{ fpop::add, fpop::sub, fpop::mul, fpop::div, fpop::mod };
   for (auto binOp : binOps)
   {
-    auto rvsdgModule = RvsdgModule::Create(jlm::util::filepath(""), "", "");
+    auto rvsdgModule = RvsdgModule::Create(jlm::util::FilePath(""), "", "");
     auto graph = &rvsdgModule->Rvsdg();
     {
       auto floatType = jlm::llvm::FloatingPointType::Create(jlm::llvm::fpsize::dbl);
@@ -660,7 +660,7 @@ TestGetElementPtr()
   using namespace jlm::llvm;
   using namespace mlir::rvsdg;
 
-  auto rvsdgModule = RvsdgModule::Create(jlm::util::filepath(""), "", "");
+  auto rvsdgModule = RvsdgModule::Create(jlm::util::FilePath(""), "", "");
   auto graph = &rvsdgModule->Rvsdg();
   {
     auto pointerType = PointerType::Create();
@@ -751,7 +751,7 @@ TestDelta()
   using namespace jlm::llvm;
   using namespace mlir::rvsdg;
 
-  auto rvsdgModule = RvsdgModule::Create(jlm::util::filepath(""), "", "");
+  auto rvsdgModule = RvsdgModule::Create(jlm::util::FilePath(""), "", "");
   auto graph = &rvsdgModule->Rvsdg();
   {
     auto bitType = jlm::rvsdg::bittype::Create(32);
@@ -861,7 +861,7 @@ TestConstantDataArray()
   using namespace jlm::llvm;
   using namespace mlir::rvsdg;
 
-  auto rvsdgModule = RvsdgModule::Create(jlm::util::filepath(""), "", "");
+  auto rvsdgModule = RvsdgModule::Create(jlm::util::FilePath(""), "", "");
   auto graph = &rvsdgModule->Rvsdg();
 
   {
@@ -939,7 +939,7 @@ TestConstantAggregateZero()
   using namespace jlm::llvm;
   using namespace mlir::rvsdg;
 
-  auto rvsdgModule = RvsdgModule::Create(jlm::util::filepath(""), "", "");
+  auto rvsdgModule = RvsdgModule::Create(jlm::util::FilePath(""), "", "");
   auto graph = &rvsdgModule->Rvsdg();
 
   {
@@ -997,7 +997,7 @@ TestVarArgList()
   using namespace jlm::llvm;
   using namespace mlir::rvsdg;
 
-  auto rvsdgModule = RvsdgModule::Create(jlm::util::filepath(""), "", "");
+  auto rvsdgModule = RvsdgModule::Create(jlm::util::FilePath(""), "", "");
   auto graph = &rvsdgModule->Rvsdg();
 
   {
@@ -1069,7 +1069,7 @@ TestFNeg()
   using namespace jlm::llvm;
   using namespace mlir::rvsdg;
 
-  auto rvsdgModule = RvsdgModule::Create(jlm::util::filepath(""), "", "");
+  auto rvsdgModule = RvsdgModule::Create(jlm::util::FilePath(""), "", "");
   auto graph = &rvsdgModule->Rvsdg();
 
   {
@@ -1146,7 +1146,7 @@ TestFPExt()
   using namespace jlm::llvm;
   using namespace mlir::rvsdg;
 
-  auto rvsdgModule = RvsdgModule::Create(jlm::util::filepath(""), "", "");
+  auto rvsdgModule = RvsdgModule::Create(jlm::util::FilePath(""), "", "");
   auto graph = &rvsdgModule->Rvsdg();
 
   {
@@ -1224,7 +1224,7 @@ TestTrunc()
   using namespace jlm::llvm;
   using namespace mlir::rvsdg;
 
-  auto rvsdgModule = RvsdgModule::Create(jlm::util::filepath(""), "", "");
+  auto rvsdgModule = RvsdgModule::Create(jlm::util::FilePath(""), "", "");
   auto graph = &rvsdgModule->Rvsdg();
 
   {
@@ -1301,7 +1301,7 @@ TestFree()
   using namespace jlm::llvm;
   using namespace mlir::rvsdg;
 
-  auto rvsdgModule = RvsdgModule::Create(jlm::util::filepath(""), "", "");
+  auto rvsdgModule = RvsdgModule::Create(jlm::util::FilePath(""), "", "");
   auto graph = &rvsdgModule->Rvsdg();
 
   {
@@ -1393,7 +1393,7 @@ TestFunctionGraphImport()
   using namespace jlm::llvm;
   using namespace mlir::rvsdg;
 
-  auto rvsdgModule = RvsdgModule::Create(jlm::util::filepath(""), "", "");
+  auto rvsdgModule = RvsdgModule::Create(jlm::util::FilePath(""), "", "");
   auto graph = &rvsdgModule->Rvsdg();
 
   {
@@ -1475,7 +1475,7 @@ TestPointerGraphImport()
   using namespace jlm::llvm;
   using namespace mlir::rvsdg;
 
-  auto rvsdgModule = RvsdgModule::Create(jlm::util::filepath(""), "", "");
+  auto rvsdgModule = RvsdgModule::Create(jlm::util::FilePath(""), "", "");
   auto graph = &rvsdgModule->Rvsdg();
 
   {
@@ -1547,7 +1547,7 @@ TestIOBarrier()
   using namespace jlm::llvm;
   using namespace mlir::rvsdg;
 
-  auto rvsdgModule = RvsdgModule::Create(jlm::util::filepath(""), "", "");
+  auto rvsdgModule = RvsdgModule::Create(jlm::util::FilePath(""), "", "");
   auto graph = &rvsdgModule->Rvsdg();
 
   {
@@ -1666,7 +1666,7 @@ TestMalloc()
   using namespace jlm::llvm;
   using namespace mlir::rvsdg;
 
-  auto rvsdgModule = RvsdgModule::Create(jlm::util::filepath(""), "", "");
+  auto rvsdgModule = RvsdgModule::Create(jlm::util::FilePath(""), "", "");
   auto graph = &rvsdgModule->Rvsdg();
 
   {

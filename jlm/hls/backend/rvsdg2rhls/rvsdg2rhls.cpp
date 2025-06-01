@@ -423,7 +423,7 @@ split_hls_function(llvm::RvsdgModule & rm, const std::string & function_name)
 }
 
 void
-rvsdg2ref(llvm::RvsdgModule & rhls, const util::filepath & path)
+rvsdg2ref(llvm::RvsdgModule & rhls, const util::FilePath & path)
 {
   dump_ref(rhls, path);
 }
@@ -471,7 +471,7 @@ rvsdg2rhls(llvm::RvsdgModule & rhls, util::StatisticsCollector & collector)
 }
 
 void
-dump_ref(llvm::RvsdgModule & rhls, const util::filepath & path)
+dump_ref(llvm::RvsdgModule & rhls, const util::FilePath & path)
 {
   auto reference =
       llvm::RvsdgModule::Create(rhls.SourceFileName(), rhls.TargetTriple(), rhls.DataLayout());

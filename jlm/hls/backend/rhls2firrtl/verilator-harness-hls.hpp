@@ -23,7 +23,7 @@ GetParameterListAsC(const rvsdg::LambdaNode & kernel);
 
 class VerilatorHarnessHLS : public BaseHLS
 {
-  const util::filepath VerilogFile_;
+  const util::FilePath VerilogFile_;
 
   std::string
   extension() override
@@ -41,7 +41,7 @@ public:
    * @param verilogFile The filename to the Verilog file that is to be used together with the
    * generated harness as input to Verilator.
    */
-  explicit VerilatorHarnessHLS(util::filepath verilogFile)
+  explicit VerilatorHarnessHLS(util::FilePath verilogFile)
       : VerilogFile_(std::move(verilogFile))
   {}
 };

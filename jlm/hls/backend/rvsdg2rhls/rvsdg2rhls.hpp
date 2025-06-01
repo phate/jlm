@@ -27,10 +27,10 @@ void
 rvsdg2rhls(llvm::RvsdgModule & rm, util::StatisticsCollector & collector);
 
 void
-rvsdg2ref(llvm::RvsdgModule & rm, const util::filepath & function_name);
+rvsdg2ref(llvm::RvsdgModule & rm, const util::FilePath & function_name);
 
 void
-dump_ref(llvm::RvsdgModule & rhls, const util::filepath & function_name);
+dump_ref(llvm::RvsdgModule & rhls, const util::FilePath & function_name);
 
 const jlm::rvsdg::output *
 trace_call(jlm::rvsdg::input * input);

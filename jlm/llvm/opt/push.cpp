@@ -22,7 +22,7 @@ class pushstat final : public util::Statistics
 public:
   ~pushstat() override = default;
 
-  explicit pushstat(const util::filepath & sourceFile)
+  explicit pushstat(const util::FilePath & sourceFile)
       : Statistics(Statistics::Id::PushNodes, sourceFile)
   {}
 
@@ -41,7 +41,7 @@ public:
   }
 
   static std::unique_ptr<pushstat>
-  Create(const util::filepath & sourceFile)
+  Create(const util::FilePath & sourceFile)
   {
     return std::make_unique<pushstat>(sourceFile);
   }

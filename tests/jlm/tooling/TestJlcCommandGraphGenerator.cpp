@@ -19,12 +19,13 @@ TestJlcCompiling()
 
   // Arrange
   JlcCommandLineOptions commandLineOptions;
-  commandLineOptions.Compilations_.push_back({ filepath("foo.c"),
-                                               filepath("foo.d"),
-                                               filepath("foo.o"),
-                                               "foo.o",
-                                               true,
-                                               true,
+  commandLineOptions.Compilations_.push_back(
+      { FilePath("foo.c"),
+        FilePath("foo.d"),
+        FilePath("foo.o"),
+        "foo.o",
+        true,
+        true,
                                                true,
                                                false });
 
@@ -53,8 +54,8 @@ TestJlcLinking()
   // Arrange
   JlcCommandLineOptions commandLineOptions;
   commandLineOptions.Compilations_.push_back(
-      { filepath("foo.o"), filepath(""), filepath("foo.o"), "foo.o", false, false, false, true });
-  commandLineOptions.OutputFile_ = filepath("foobar");
+      { FilePath("foo.o"), FilePath(""), FilePath("foo.o"), "foo.o", false, false, false, true });
+  commandLineOptions.OutputFile_ = FilePath("foobar");
 
   // Act
   auto commandGraph = JlcCommandGraphGenerator::Generate(commandLineOptions);
@@ -79,8 +80,8 @@ TestJlmOptOptimizations()
   // Arrange
   JlcCommandLineOptions commandLineOptions;
   commandLineOptions.Compilations_.push_back(
-      { filepath("foo.o"), filepath(""), filepath("foo.o"), "foo.o", true, true, true, true });
-  commandLineOptions.OutputFile_ = filepath("foobar");
+      { FilePath("foo.o"), FilePath(""), FilePath("foo.o"), "foo.o", true, true, true, true });
+  commandLineOptions.OutputFile_ = FilePath("foobar");
   commandLineOptions.JlmOptOptimizations_.push_back(
       JlmOptCommandLineOptions::OptimizationId::CommonNodeElimination);
   commandLineOptions.JlmOptOptimizations_.push_back(
@@ -117,8 +118,8 @@ TestJlmOptStatistics()
 
   jlm::tooling::JlcCommandLineOptions commandLineOptions;
   commandLineOptions.Compilations_.push_back(
-      { filepath("foo.o"), filepath(""), filepath("foo.o"), "foo.o", true, true, true, true });
-  commandLineOptions.OutputFile_ = filepath("foobar");
+      { FilePath("foo.o"), FilePath(""), FilePath("foo.o"), "foo.o", true, true, true, true });
+  commandLineOptions.OutputFile_ = FilePath("foobar");
   commandLineOptions.JlmOptPassStatistics_ = expectedStatistics;
 
   // Act

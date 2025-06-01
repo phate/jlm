@@ -19,7 +19,7 @@ class pullstat final : public util::Statistics
 public:
   ~pullstat() override = default;
 
-  explicit pullstat(const util::filepath & sourceFile)
+  explicit pullstat(const util::FilePath & sourceFile)
       : Statistics(Statistics::Id::PullNodes, sourceFile)
   {}
 
@@ -38,7 +38,7 @@ public:
   }
 
   static std::unique_ptr<pullstat>
-  Create(const util::filepath & sourceFile)
+  Create(const util::FilePath & sourceFile)
   {
     return std::make_unique<pullstat>(sourceFile);
   }
