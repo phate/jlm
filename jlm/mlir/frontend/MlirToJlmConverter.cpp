@@ -32,7 +32,7 @@ namespace jlm::mlir
 {
 
 std::unique_ptr<llvm::RvsdgModule>
-MlirToJlmConverter::ReadAndConvertMlir(const util::filepath & filePath)
+MlirToJlmConverter::ReadAndConvertMlir(const util::FilePath & filePath)
 {
   auto config = ::mlir::ParserConfig(Context_.get());
   std::unique_ptr<::mlir::Block> block = std::make_unique<::mlir::Block>();
@@ -55,7 +55,7 @@ MlirToJlmConverter::ConvertMlir(std::unique_ptr<::mlir::Block> & block)
 std::unique_ptr<llvm::RvsdgModule>
 MlirToJlmConverter::ConvertOmega(::mlir::rvsdg::OmegaNode & omegaNode)
 {
-  auto rvsdgModule = llvm::RvsdgModule::Create(util::filepath(""), std::string(), std::string());
+  auto rvsdgModule = llvm::RvsdgModule::Create(util::FilePath(""), std::string(), std::string());
   auto & graph = rvsdgModule->Rvsdg();
   auto & root = graph.GetRootRegion();
   ConvertRegion(omegaNode.getRegion(), root);

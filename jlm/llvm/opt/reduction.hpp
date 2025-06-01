@@ -105,7 +105,7 @@ class NodeReduction::Statistics final : public util::Statistics
 public:
   ~Statistics() noexcept override = default;
 
-  explicit Statistics(const util::filepath & sourceFile)
+  explicit Statistics(const util::FilePath & sourceFile)
       : util::Statistics(Id::ReduceNodes, sourceFile)
   {}
 
@@ -122,7 +122,7 @@ public:
   GetNumIterations(const rvsdg::Region & region) const noexcept;
 
   static std::unique_ptr<Statistics>
-  Create(const util::filepath & sourceFile)
+  Create(const util::FilePath & sourceFile)
   {
     return std::make_unique<Statistics>(sourceFile);
   }

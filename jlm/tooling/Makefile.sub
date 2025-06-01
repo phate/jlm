@@ -10,8 +10,8 @@ COMMANDPATHS = \
 \n \
 namespace jlm::tooling {\n \
 \n \
-  static inline jlm::util::filepath clangpath(\"$(shell $(LLVMCONFIG) --bindir)/clang\");\n \
-  static inline jlm::util::filepath llcpath(\"$(shell $(LLVMCONFIG) --bindir)/llc\");\n \
+  static inline jlm::util::FilePath clangpath(\"$(shell $(LLVMCONFIG) --bindir)/clang\");\n \
+  static inline jlm::util::FilePath llcpath(\"$(shell $(LLVMCONFIG) --bindir)/llc\");\n \
 \n \
 }\n \
 \n \

@@ -41,7 +41,7 @@ test()
 {
   using namespace jlm::llvm;
 
-  ipgraph_module im(jlm::util::filepath(""), "", "");
+  ipgraph_module im(jlm::util::FilePath(""), "", "");
 
   /* setup cfg */
 

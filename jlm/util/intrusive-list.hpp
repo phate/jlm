@@ -11,14 +11,14 @@
 #include <memory>
 
 /*
- * Implementation of intrusive_list data structure
+ * Implementation of intrusive list data structure
  *
- * An intrusive_list is a data structure linking multiple objects into a
+ * An intrusive list is a data structure linking multiple objects into a
  * list. The difference to std::list is that the linkage pointers are part
  * of the objects linked into the data structure itself. As a result, the
- * intrusive_list does not manage memory for the objects it contains, but
+ * intrusive list does not manage memory for the objects it contains, but
  * links objects allocated elsewhere. Any object can be member of an arbitrary
- * number of such intrusive_list collections.
+ * number of such intrusive list collections.
  *
  * Usage:
  *
@@ -35,9 +35,9 @@
  *   > num_list_accessor;
  * };
  *
- * an intrusive_list data structure can be declared in the following way:
+ * an intrusive list data structure can be declared in the following way:
  *
- * typedef jlm::util::intrusive_list<
+ * typedef jlm::util::IntrusiveList<
  *   X,
  *   X::num_list_accessor
  * > num_list;
@@ -86,7 +86,7 @@ namespace jlm::util
 {
 
 template<typename ElementType, typename Accessor>
-class intrusive_list
+class IntrusiveList
 {
 public:
   static_assert(noexcept(Accessor().get_prev(nullptr)), "require noexcept get_prev");
@@ -110,7 +110,7 @@ public:
           element_(nullptr)
     {}
 
-    constexpr iterator(const intrusive_list * list, ElementType * object)
+    constexpr iterator(const IntrusiveList * list, ElementType * object)
         : list_(list),
           element_(object)
     {}
@@ -183,7 +183,7 @@ public:
     }
 
   private:
-    const intrusive_list * list_;
+    const IntrusiveList * list_;
     ElementType * element_;
     friend class const_iterator;
   };
@@ -210,7 +210,7 @@ public:
           element_(nullptr)
     {}
 
-    constexpr const_iterator(const intrusive_list * list, const ElementType * object)
+    constexpr const_iterator(const IntrusiveList * list, const ElementType * object)
         : list_(list),
           element_(object)
     {}
@@ -283,25 +283,25 @@ public:
     }
 
   private:
-    const intrusive_list * list_;
+    const IntrusiveList * list_;
     const ElementType * element_;
   };
 
   typedef ElementType value_type;
   typedef size_t size_type;
 
-  inline constexpr intrusive_list() noexcept
+  inline constexpr IntrusiveList() noexcept
       : first_(nullptr),
         last_(nullptr)
   {}
 
-  intrusive_list(const intrusive_list & other) = delete;
+  IntrusiveList(const IntrusiveList & other) = delete;
 
   void
-  operator=(const intrusive_list & other) = delete;
+  operator=(const IntrusiveList & other) = delete;
 
-  intrusive_list(intrusive_list && other) noexcept
-      : intrusive_list()
+  IntrusiveList(IntrusiveList && other) noexcept
+      : IntrusiveList()
   {
     swap(other);
   }
@@ -314,7 +314,7 @@ public:
   }
 
   void
-  swap(intrusive_list & other) noexcept
+  swap(IntrusiveList & other) noexcept
   {
     std::swap(first_, other.first_);
     std::swap(last_, other.last_);
@@ -422,13 +422,13 @@ public:
   }
 
   inline void
-  splice(iterator position, intrusive_list & other) noexcept
+  splice(iterator position, IntrusiveList & other) noexcept
   {
     splice(position, other, other.begin(), other.end());
   }
 
   inline void
-  splice(iterator position, intrusive_list & other, iterator i) noexcept
+  splice(iterator position, IntrusiveList & other, iterator i) noexcept
   {
     iterator j = i;
     ++j;
@@ -436,7 +436,7 @@ public:
   }
 
   inline void
-  splice(iterator position, intrusive_list & other, iterator begin, iterator end) noexcept
+  splice(iterator position, IntrusiveList & other, iterator begin, iterator end) noexcept
   {
     if (begin == end)
     {
@@ -616,7 +616,7 @@ template<typename ElementType, typename Accessor>
 class owner_intrusive_list
 {
 private:
-  typedef intrusive_list<ElementType, Accessor> internal_list_type;
+  typedef IntrusiveList<ElementType, Accessor> internal_list_type;
 
 public:
   static_assert(

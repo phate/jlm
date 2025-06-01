@@ -59,7 +59,7 @@ Statistics::GetName() const
   return GetStatisticsIdNames().LookupKey(StatisticsId_);
 }
 
-const util::filepath &
+const util::FilePath &
 Statistics::GetSourceFile() const
 {
   return SourceFile_;

@@ -70,7 +70,7 @@ public:
 
   virtual ~Statistics();
 
-  Statistics(const Statistics::Id & statisticsId, util::filepath sourceFile)
+  Statistics(const Statistics::Id & statisticsId, util::FilePath sourceFile)
       : StatisticsId_(statisticsId),
         SourceFile_(std::move(sourceFile))
   {}
@@ -90,7 +90,7 @@ public:
   /**
    * @return the source file that was worked on while capturing these statistics
    */
-  [[nodiscard]] const util::filepath &
+  [[nodiscard]] const util::FilePath &
   GetSourceFile() const;
 
   /**
@@ -237,7 +237,7 @@ protected:
 
 private:
   Statistics::Id StatisticsId_;
-  util::filepath SourceFile_;
+  util::FilePath SourceFile_;
 
   MeasurementList Measurements_;
   TimerList Timers_;
@@ -281,7 +281,7 @@ public:
    */
   StatisticsCollectorSettings(
       HashSet<Statistics::Id> demandedStatistics,
-      std::optional<filepath> directory,
+      std::optional<FilePath> directory,
       std::string moduleName)
       : DemandedStatistics_(std::move(demandedStatistics)),
         Directory_(std::move(directory)),
@@ -341,7 +341,7 @@ public:
    * @return the directory used for outputting statistics and debug output files.
    * If no output directory is given, an assertion failure occurs.
    */
-  [[nodiscard]] const filepath &
+  [[nodiscard]] const FilePath &
   GetOutputDirectory() const noexcept
   {
     JLM_ASSERT(Directory_.has_value());
@@ -354,7 +354,7 @@ public:
    * @param directory the directory to place statistics and debug output files in
    */
   void
-  SetOutputDirectory(filepath directory)
+  SetOutputDirectory(FilePath directory)
   {
     Directory_ = std::move(directory);
   }
@@ -398,7 +398,7 @@ public:
 
 private:
   HashSet<Statistics::Id> DemandedStatistics_;
-  std::optional<filepath> Directory_;
+  std::optional<FilePath> Directory_;
   std::string ModuleName_;
   std::string UniqueString_ = CreateRandomAlphanumericString(6);
 };

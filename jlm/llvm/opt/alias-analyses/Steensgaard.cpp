@@ -539,7 +539,7 @@ public:
   }
 };
 
-using DisjointLocationSet = util::disjointset<Location *>;
+using DisjointLocationSet = util::DisjointSet<Location *>;
 
 /** \brief Context class
  */
@@ -916,7 +916,7 @@ class Steensgaard::Statistics final : public util::Statistics
 public:
   ~Statistics() override = default;
 
-  explicit Statistics(const util::filepath & sourceFile)
+  explicit Statistics(const util::FilePath & sourceFile)
       : util::Statistics(Statistics::Id::SteensgaardAnalysis, sourceFile)
   {}
 
@@ -983,7 +983,7 @@ public:
   }
 
   static std::unique_ptr<Statistics>
-  Create(const util::filepath & sourceFile)
+  Create(const util::FilePath & sourceFile)
   {
     return std::make_unique<Statistics>(sourceFile);
   }
@@ -1962,7 +1962,7 @@ util::HashSet<PointsToGraph::MemoryNode *>
 Steensgaard::CollectEscapedMemoryNodes(
     const util::HashSet<RegisterLocation *> & escapingRegisterLocations,
     const std::unordered_map<
-        const util::disjointset<Location *>::set *,
+        const util::DisjointSet<Location *>::set *,
         std::vector<PointsToGraph::MemoryNode *>> & memoryNodesInSet) const
 {
   // Initialize working set

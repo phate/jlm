@@ -217,12 +217,11 @@ private:
  */
 class Region
 {
-  typedef util::intrusive_list<Node, Node::region_node_list_accessor> region_nodes_list;
+  typedef util::IntrusiveList<Node, Node::region_node_list_accessor> region_nodes_list;
 
-  typedef util::intrusive_list<Node, Node::region_top_node_list_accessor> region_top_node_list;
+  typedef util::IntrusiveList<Node, Node::region_top_node_list_accessor> region_top_node_list;
 
-  typedef util::intrusive_list<Node, Node::region_bottom_node_list_accessor>
-      region_bottom_node_list;
+  typedef util::IntrusiveList<Node, Node::region_bottom_node_list_accessor> region_bottom_node_list;
 
   using RegionArgumentIterator = std::vector<RegionArgument *>::iterator;
   using RegionArgumentConstIterator = std::vector<RegionArgument *>::const_iterator;
