@@ -33,7 +33,7 @@ input::input(
     throw jlm::util::error("Invalid operand region.");
 
   if (*Type() != *origin->Type())
-    throw util::type_error(Type()->debug_string(), origin->Type()->debug_string());
+    throw util::TypeError(Type()->debug_string(), origin->Type()->debug_string());
 
   origin->add_user(this);
 }
@@ -51,7 +51,7 @@ input::divert_to(jlm::rvsdg::output * new_origin)
     return;
 
   if (*Type() != *new_origin->Type())
-    throw jlm::util::type_error(Type()->debug_string(), new_origin->Type()->debug_string());
+    throw jlm::util::TypeError(Type()->debug_string(), new_origin->Type()->debug_string());
 
   if (region() != new_origin->region())
     throw jlm::util::error("Invalid operand region.");

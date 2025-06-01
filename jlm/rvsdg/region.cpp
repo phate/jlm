@@ -36,7 +36,7 @@ RegionArgument::RegionArgument(
 
     if (*input->Type() != *Type())
     {
-      throw util::type_error(Type()->debug_string(), input->Type()->debug_string());
+      throw util::TypeError(Type()->debug_string(), input->Type()->debug_string());
     }
 
     input->arguments.push_back(this);
@@ -95,7 +95,7 @@ RegionResult::RegionResult(
 
     if (*Type() != *output->Type())
     {
-      throw jlm::util::type_error(Type()->debug_string(), output->Type()->debug_string());
+      throw jlm::util::TypeError(Type()->debug_string(), output->Type()->debug_string());
     }
 
     output->results.push_back(this);
