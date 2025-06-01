@@ -11,7 +11,7 @@
 namespace jlm::rvsdg
 {
 
-class input;
+class Input;
 class Node;
 class output;
 class Region;
@@ -23,14 +23,14 @@ extern util::notifier<Node *> on_node_create;
 extern util::notifier<Node *> on_node_destroy;
 extern util::notifier<Node *, size_t> on_node_depth_change;
 
-extern jlm::util::notifier<jlm::rvsdg::input *> on_input_create;
+extern jlm::util::notifier<jlm::rvsdg::Input *> on_input_create;
 extern jlm::util::notifier<
-    jlm::rvsdg::input *,
+    jlm::rvsdg::Input *,
     jlm::rvsdg::output *, /* old */
     jlm::rvsdg::output *  /* new */
     >
     on_input_change;
-extern jlm::util::notifier<jlm::rvsdg::input *> on_input_destroy;
+extern jlm::util::notifier<jlm::rvsdg::Input *> on_input_destroy;
 
 extern jlm::util::notifier<jlm::rvsdg::output *> on_output_create;
 extern jlm::util::notifier<jlm::rvsdg::output *> on_output_destroy;

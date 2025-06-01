@@ -28,18 +28,18 @@ namespace jlm::hls
 
 static rvsdg::output *
 follow_state_edge(
-    rvsdg::input * state_edge,
+    rvsdg::Input * state_edge,
     std::vector<rvsdg::SimpleNode *> & mem_ops,
     bool modify);
 
 static rvsdg::output *
 trace_edge(
-    rvsdg::input * state_edge,
+    rvsdg::Input * state_edge,
     rvsdg::output * new_edge,
     rvsdg::SimpleNode * target_call,
     rvsdg::output * end)
 {
-  rvsdg::input * previous_state_edge = nullptr;
+  rvsdg::Input * previous_state_edge = nullptr;
   while (true)
   {
     // make sure we make progress
@@ -211,9 +211,9 @@ trace_edge(
 
 static void
 handle_structural(
-    std::vector<std::tuple<rvsdg::SimpleNode *, rvsdg::input *>> & outstanding_dec_reqs,
+    std::vector<std::tuple<rvsdg::SimpleNode *, rvsdg::Input *>> & outstanding_dec_reqs,
     std::vector<rvsdg::SimpleNode *> & mem_ops,
-    rvsdg::input * state_edge_before,
+    rvsdg::Input * state_edge_before,
     rvsdg::output * state_edge_after)
 {
   JLM_ASSERT(state_edge_before->region() == state_edge_after->region());
@@ -264,7 +264,7 @@ handle_structural(
 static void
 optimize_single_mem_op_loop(
     std::vector<rvsdg::SimpleNode *> & mem_ops,
-    rvsdg::input * state_edge_before,
+    rvsdg::Input * state_edge_before,
     rvsdg::output * state_edge_after)
 {
   // the idea here is that if there is only one memory operation, and no other memory
@@ -287,7 +287,7 @@ optimize_single_mem_op_loop(
 
 static rvsdg::output *
 follow_state_edge(
-    rvsdg::input * state_edge,
+    rvsdg::Input * state_edge,
     std::vector<rvsdg::SimpleNode *> & mem_ops,
     bool modify)
 {
@@ -314,7 +314,7 @@ follow_state_edge(
   //     * continue on state output
   //     * special case for store - can have multiple users because of addr_deq
   // this tracks decouple requests that have not been handled yet
-  std::vector<std::tuple<rvsdg::SimpleNode *, rvsdg::input *>> outstanding_dec_reqs;
+  std::vector<std::tuple<rvsdg::SimpleNode *, rvsdg::Input *>> outstanding_dec_reqs;
   while (true)
   {
     if (auto rr = dynamic_cast<jlm::rvsdg::RegionResult *>(state_edge))
@@ -444,7 +444,7 @@ follow_state_edge(
 }
 
 void
-convert_loop_state_to_lcb(rvsdg::input * loop_state_input)
+convert_loop_state_to_lcb(rvsdg::Input * loop_state_input)
 {
   JLM_ASSERT(rvsdg::is<rvsdg::StateType>(loop_state_input->Type()));
   JLM_ASSERT(rvsdg::TryGetOwnerNode<loop_node>(*loop_state_input));
@@ -498,7 +498,7 @@ decouple_mem_state(rvsdg::Region * region)
   for (size_t i = 0; i < entryNode->noutputs(); ++i)
   {
     std::vector<rvsdg::SimpleNode *> mem_ops;
-    std::vector<std::tuple<rvsdg::SimpleNode *, rvsdg::input *>> dummy;
+    std::vector<std::tuple<rvsdg::SimpleNode *, rvsdg::Input *>> dummy;
     follow_state_edge(get_mem_state_user(entryNode->output(i)), mem_ops, true);
     // we need this one final time across the whole lambda - at least for this edge
     handle_structural(

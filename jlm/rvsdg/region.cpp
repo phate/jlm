@@ -85,7 +85,7 @@ RegionResult::RegionResult(
     jlm::rvsdg::output * origin,
     StructuralOutput * output,
     std::shared_ptr<const rvsdg::Type> type)
-    : input(origin, region, std::move(type)),
+    : Input(origin, region, std::move(type)),
       output_(output)
 {
   if (output)

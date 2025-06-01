@@ -256,7 +256,7 @@ trace_call_rhls(const rvsdg::output * output)
 }
 
 const rvsdg::output *
-trace_call_rhls(const rvsdg::input * input)
+trace_call_rhls(const rvsdg::Input * input)
 {
   // version of trace call for rhls
   return trace_call_rhls(input->origin());
@@ -273,7 +273,7 @@ is_function_argument(const rvsdg::LambdaNode::ContextVar & cv)
 }
 
 std::string
-get_function_name(jlm::rvsdg::input * input)
+get_function_name(jlm::rvsdg::Input * input)
 {
   auto traced = jlm::hls::trace_call_rhls(input);
   JLM_ASSERT(traced);
@@ -305,7 +305,7 @@ is_dec_res(rvsdg::SimpleNode * node)
   return false;
 }
 
-rvsdg::input *
+rvsdg::Input *
 get_mem_state_user(rvsdg::output * state_edge)
 {
   JLM_ASSERT(state_edge);

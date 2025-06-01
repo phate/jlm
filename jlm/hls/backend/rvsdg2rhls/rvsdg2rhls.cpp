@@ -112,7 +112,7 @@ function_match(rvsdg::LambdaNode * ln, const std::string & function_name)
 }
 
 const jlm::rvsdg::output *
-trace_call(jlm::rvsdg::input * input)
+trace_call(jlm::rvsdg::Input * input)
 {
   auto graph = input->region()->graph();
 
