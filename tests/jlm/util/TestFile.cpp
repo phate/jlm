@@ -14,7 +14,7 @@
 static int
 TestFilePathMethods()
 {
-  const jlm::util::filepath f("/tmp/archive.tar.gz");
+  const jlm::util::FilePath f("/tmp/archive.tar.gz");
 
   assert(f.to_str() == "/tmp/archive.tar.gz");
   assert(f.name() == "archive.tar.gz");
@@ -33,7 +33,7 @@ TestFilePathMethods()
                                                                  { "", "" } };
   for (const auto & [fullPath, path] : pathPairs)
   {
-    assert(jlm::util::filepath(fullPath).Dirname() == path);
+    assert(jlm::util::FilePath(fullPath).Dirname() == path);
   }
 
   return 0;
@@ -44,7 +44,7 @@ JLM_UNIT_TEST_REGISTER("jlm/util/TestFile-TestFilePathMethods", TestFilePathMeth
 static int
 TestCreateDirectory()
 {
-  const auto filePath = jlm::util::filepath::TempDirectoryPath().Join("jlm-test-create-dir");
+  const auto filePath = jlm::util::FilePath::TempDirectoryPath().Join("jlm-test-create-dir");
 
   // Remove the directory if it survived from a previous test
   if (filePath.Exists())
@@ -63,7 +63,7 @@ TestCreateDirectory()
   // Try creating a directory in a location that does not exist
   try
   {
-    jlm::util::filepath noSuchParent("/non-existant/test-dir");
+    jlm::util::FilePath noSuchParent("/non-existant/test-dir");
     noSuchParent.CreateDirectory();
     assert(false);
   }
@@ -81,9 +81,9 @@ JLM_UNIT_TEST_REGISTER("jlm/util/TestFile-TestCreateDirectory", TestCreateDirect
 static int
 TestFilepathJoin()
 {
-  const jlm::util::filepath path1("tmp");
-  const jlm::util::filepath path2("a/b/");
-  const jlm::util::filepath path3("/c/d");
+  const jlm::util::FilePath path1("tmp");
+  const jlm::util::FilePath path2("a/b/");
+  const jlm::util::FilePath path3("/c/d");
 
   assert(path1.Join(path2).to_str() == "tmp/a/b/");
   assert(path2.Join(path1).to_str() == "a/b/tmp");
@@ -101,10 +101,10 @@ TestCreateUniqueFileName()
 {
   // Arrange
   auto randomString = jlm::util::CreateRandomAlphanumericString(6);
-  auto tmpDirectory = jlm::util::filepath::TempDirectoryPath().Join(randomString);
+  auto tmpDirectory = jlm::util::FilePath::TempDirectoryPath().Join(randomString);
 
   // Act
-  auto filePath = jlm::util::filepath::CreateUniqueFileName(tmpDirectory, "myPrefix", "mySuffix");
+  auto filePath = jlm::util::FilePath::CreateUniqueFileName(tmpDirectory, "myPrefix", "mySuffix");
 
   // Assert
   assert(filePath.Dirname() == (tmpDirectory.to_str() + "/"));

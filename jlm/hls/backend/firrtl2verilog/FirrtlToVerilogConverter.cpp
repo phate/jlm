@@ -22,8 +22,8 @@ using namespace llvm;
 
 bool
 FirrtlToVerilogConverter::Convert(
-    const util::filepath inputFirrtlFile,
-    const util::filepath outputVerilogFile)
+    const util::FilePath inputFirrtlFile,
+    const util::FilePath outputVerilogFile)
 {
   mlir::MLIRContext context;
   mlir::TimingScope ts;

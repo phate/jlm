@@ -23,7 +23,7 @@ class EncodingStatistics final : public util::Statistics
 public:
   ~EncodingStatistics() override = default;
 
-  explicit EncodingStatistics(const util::filepath & sourceFile)
+  explicit EncodingStatistics(const util::FilePath & sourceFile)
       : Statistics(Statistics::Id::MemoryStateEncoder, sourceFile)
   {}
 
@@ -41,7 +41,7 @@ public:
   }
 
   static std::unique_ptr<EncodingStatistics>
-  Create(const util::filepath & sourceFile)
+  Create(const util::FilePath & sourceFile)
   {
     return std::make_unique<EncodingStatistics>(sourceFile);
   }

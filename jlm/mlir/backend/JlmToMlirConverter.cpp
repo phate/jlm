@@ -42,7 +42,7 @@ namespace jlm::mlir
 {
 
 void
-JlmToMlirConverter::Print(::mlir::rvsdg::OmegaNode & omega, const util::filepath & filePath)
+JlmToMlirConverter::Print(::mlir::rvsdg::OmegaNode & omega, const util::FilePath & filePath)
 {
   if (failed(::mlir::verify(omega)))
   {

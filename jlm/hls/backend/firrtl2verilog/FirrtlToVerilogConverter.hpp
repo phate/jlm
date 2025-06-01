@@ -26,7 +26,7 @@ public:
    * to. \return True if the conversion was successful, false otherwise.
    */
   static bool
-  Convert(const util::filepath inputFirrtlFile, const util::filepath outputVerilogFile);
+  Convert(const util::FilePath inputFirrtlFile, const util::FilePath outputVerilogFile);
 };
 
 } // namespace jlm::hls

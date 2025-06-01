@@ -26,7 +26,7 @@ test_simple()
 
   auto vt = jlm::tests::valuetype::Create();
 
-  RvsdgModule rm(jlm::util::filepath(""), "", "");
+  RvsdgModule rm(jlm::util::FilePath(""), "", "");
   auto & graph = rm.Rvsdg();
 
   auto x = &jlm::tests::GraphImport::Create(graph, vt, "x");
@@ -69,7 +69,7 @@ test_gamma()
   auto vt = jlm::tests::valuetype::Create();
   auto ct = jlm::rvsdg::ControlType::Create(2);
 
-  RvsdgModule rm(jlm::util::filepath(""), "", "");
+  RvsdgModule rm(jlm::util::FilePath(""), "", "");
   auto & graph = rm.Rvsdg();
 
   auto c = &jlm::tests::GraphImport::Create(graph, ct, "c");
@@ -133,7 +133,7 @@ test_theta()
   auto vt = jlm::tests::valuetype::Create();
   auto ct = jlm::rvsdg::ControlType::Create(2);
 
-  RvsdgModule rm(jlm::util::filepath(""), "", "");
+  RvsdgModule rm(jlm::util::FilePath(""), "", "");
   auto & graph = rm.Rvsdg();
 
   auto c = &jlm::tests::GraphImport::Create(graph, ct, "c");
@@ -184,7 +184,7 @@ test_theta2()
   auto vt = jlm::tests::valuetype::Create();
   auto ct = jlm::rvsdg::ControlType::Create(2);
 
-  RvsdgModule rm(jlm::util::filepath(""), "", "");
+  RvsdgModule rm(jlm::util::FilePath(""), "", "");
   auto & graph = rm.Rvsdg();
 
   auto c = &jlm::tests::GraphImport::Create(graph, ct, "c");
@@ -226,7 +226,7 @@ test_theta3()
   auto vt = jlm::tests::valuetype::Create();
   auto ct = jlm::rvsdg::ControlType::Create(2);
 
-  RvsdgModule rm(jlm::util::filepath(""), "", "");
+  RvsdgModule rm(jlm::util::FilePath(""), "", "");
   auto & graph = rm.Rvsdg();
 
   auto c = &jlm::tests::GraphImport::Create(graph, ct, "c");
@@ -283,7 +283,7 @@ test_theta4()
   auto vt = jlm::tests::valuetype::Create();
   auto ct = jlm::rvsdg::ControlType::Create(2);
 
-  RvsdgModule rm(jlm::util::filepath(""), "", "");
+  RvsdgModule rm(jlm::util::FilePath(""), "", "");
   auto & graph = rm.Rvsdg();
 
   auto c = &jlm::tests::GraphImport::Create(graph, ct, "c");
@@ -334,7 +334,7 @@ test_theta5()
   auto vt = jlm::tests::valuetype::Create();
   auto ct = jlm::rvsdg::ControlType::Create(2);
 
-  RvsdgModule rm(jlm::util::filepath(""), "", "");
+  RvsdgModule rm(jlm::util::FilePath(""), "", "");
   auto & graph = rm.Rvsdg();
 
   auto c = &jlm::tests::GraphImport::Create(graph, ct, "c");
@@ -379,7 +379,7 @@ test_lambda()
   auto vt = jlm::tests::valuetype::Create();
   auto ft = jlm::rvsdg::FunctionType::Create({ vt, vt }, { vt });
 
-  RvsdgModule rm(jlm::util::filepath(""), "", "");
+  RvsdgModule rm(jlm::util::FilePath(""), "", "");
   auto & graph = rm.Rvsdg();
 
   auto x = &jlm::tests::GraphImport::Create(graph, vt, "x");
@@ -414,7 +414,7 @@ test_phi()
   auto vt = jlm::tests::valuetype::Create();
   auto ft = jlm::rvsdg::FunctionType::Create({ vt, vt }, { vt });
 
-  RvsdgModule rm(jlm::util::filepath(""), "", "");
+  RvsdgModule rm(jlm::util::FilePath(""), "", "");
   auto & graph = rm.Rvsdg();
 
   auto & x = jlm::tests::GraphImport::Create(graph, vt, "x");
