@@ -213,7 +213,7 @@ private:
  * 2. The top nodes of the acyclic subgraph. These are all nodes of the region that have no inputs,
  * i.e., constants.
  * 3. The bottom nodes of the acyclic subgraph. These are all nodes of the region that have no
- * users, i.e. that are dead. See \ref output::IsDead() for more information.
+ * users, i.e. that are dead. See \ref Output::IsDead() for more information.
  */
 class Region
 {
