@@ -202,7 +202,6 @@ public:
   }
 };
 
-
 /**
  * A lambda entry memory state split operation takes a single input state and splits it into
  * multiple output states. In contrast to the MemoryStateSplitOperation, this operation is allowed
