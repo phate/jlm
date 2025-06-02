@@ -3,6 +3,8 @@
  * See COPYING for terms of redistribution.
  */
 
+#include "jlm/hls/backend/rhls2firrtl/dot-hls.hpp"
+#include "jlm/llvm/backend/dot/DotWriter.hpp"
 #include <jlm/hls/backend/rvsdg2rhls/add-buffers.hpp>
 #include <jlm/hls/backend/rvsdg2rhls/add-forks.hpp>
 #include <jlm/hls/backend/rvsdg2rhls/add-prints.hpp>
@@ -458,8 +460,28 @@ rvsdg2rhls(llvm::RvsdgModule & rhls, util::StatisticsCollector & collector)
   alloca_conv(rhls);
   mem_queue(rhls);
   MemoryConverter(rhls);
+
+  {
+    util::GraphWriter writer;
+    jlm::llvm::dot::WriteGraphs(writer, rhls.Rvsdg().GetRootRegion(), false);
+    std::ofstream beforeFile;
+    beforeFile.open(std::filesystem::temp_directory_path() / "before.dot");
+    writer.OutputAllGraphs(beforeFile, util::GraphOutputFormat::Dot);
+    beforeFile.close();
+  }
+
   llvm::NodeReduction llvmRed;
   llvmRed.Run(rhls, collector);
+
+  {
+    util::GraphWriter writer;
+    jlm::llvm::dot::WriteGraphs(writer, rhls.Rvsdg().GetRootRegion(), false);
+    std::ofstream afterFile;
+    afterFile.open(std::filesystem::temp_directory_path() / "after.dot");
+    writer.OutputAllGraphs(afterFile, util::GraphOutputFormat::Dot);
+    afterFile.close();
+  }
+
   memstate_conv(rhls);
   remove_redundant_buf(rhls);
   // enforce 1:1 input output relationship
