@@ -324,7 +324,7 @@ producer(const jlm::rvsdg::Output * output) noexcept
   - what are the users of a particular value, what operations depend on it?
 
   This requires resolving the type of operation a specific \ref rvsdg::Input
-  or \ref rvsdg::output belong to. Every \ref rvsdg::output is one of the following:
+  or \ref rvsdg::Output belong to. Every \ref rvsdg::Output is one of the following:
 
   - the output of a node representing an operation
   - the entry argument into a region
@@ -335,7 +335,7 @@ producer(const jlm::rvsdg::Output * output) noexcept
   - the exit result of a region
 
   Analysis code can determine which of the two is the case using
-  \ref rvsdg::output::GetOwner and \ref rvsdg::Input::GetOwner, respectively,
+  \ref rvsdg::Output::GetOwner and \ref rvsdg::Input::GetOwner, respectively,
   and then branch deeper based on its results. For convenience, code
   can more directly match against the specific kinds of nodes using
   the following convenience functions:
