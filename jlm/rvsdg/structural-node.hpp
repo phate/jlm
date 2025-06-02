@@ -9,6 +9,7 @@
 #include <jlm/rvsdg/node.hpp>
 #include <jlm/rvsdg/region.hpp>
 #include <jlm/rvsdg/simple-node.hpp>
+#include <jlm/util/IteratorWrapper.hpp>
 
 namespace jlm::rvsdg
 {
@@ -21,6 +22,14 @@ class StructuralOutput;
 
 class StructuralNode : public Node
 {
+  using SubregionIterator =
+      util::PtrIterator<Region, std::vector<std::unique_ptr<Region>>::iterator>;
+  using SubregionConstIterator =
+      util::PtrIterator<Region, std::vector<std::unique_ptr<Region>>::const_iterator>;
+
+  using SubregionIteratorRange = util::IteratorRange<SubregionIterator>;
+  using SubregionConstIteratorRange = util::IteratorRange<SubregionConstIterator>;
+
 public:
   ~StructuralNode() noexcept override;
 
@@ -42,6 +51,19 @@ public:
   {
     JLM_ASSERT(index < nsubregions());
     return subregions_[index].get();
+  }
+
+  SubregionIteratorRange
+  Subregions()
+  {
+    return { SubregionIterator(subregions_.begin()), SubregionIterator(subregions_.end()) };
+  }
+
+  SubregionConstIteratorRange
+  Subregions() const
+  {
+    return { SubregionConstIterator(subregions_.begin()),
+             SubregionConstIterator(subregions_.end()) };
   }
 
   [[nodiscard]] inline StructuralInput *
