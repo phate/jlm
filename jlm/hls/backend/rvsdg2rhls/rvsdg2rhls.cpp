@@ -490,6 +490,15 @@ rvsdg2rhls(llvm::RvsdgModule & rhls, util::StatisticsCollector & collector)
   add_buffers(rhls, true);
   // ensure that all rhls rules are met
   check_rhls(rhls);
+
+  {
+    util::GraphWriter writer;
+    jlm::llvm::dot::WriteGraphs(writer, rhls.Rvsdg().GetRootRegion(), false);
+    std::ofstream endFile;
+    endFile.open(std::filesystem::temp_directory_path() / "end.dot");
+    writer.OutputAllGraphs(endFile, util::GraphOutputFormat::Dot);
+    endFile.close();
+  }
 }
 
 void
