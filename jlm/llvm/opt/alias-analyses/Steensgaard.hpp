@@ -250,7 +250,7 @@ private:
   CollectEscapedMemoryNodes(
       const util::HashSet<RegisterLocation *> & escapingRegisterLocations,
       const std::unordered_map<
-          const util::disjointset<Location *>::set *,
+          const util::DisjointSet<Location *>::set *,
           std::vector<PointsToGraph::MemoryNode *>> & memoryNodesInSet) const;
 
   /**

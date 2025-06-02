@@ -72,7 +72,7 @@ ArgumentInputTypeMismatch()
     // The line below should not be executed as the line above is expected to throw an exception.
     assert(false);
   }
-  catch (type_error &)
+  catch (TypeError &)
   {
     exceptionWasCaught = true;
   }
@@ -85,7 +85,7 @@ ArgumentInputTypeMismatch()
     // The line below should not be executed as the line above is expected to throw an exception.
     assert(false);
   }
-  catch (type_error &)
+  catch (TypeError &)
   {
     exceptionWasCaught = true;
   }

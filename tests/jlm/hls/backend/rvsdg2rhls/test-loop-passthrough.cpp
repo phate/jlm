@@ -37,7 +37,7 @@ test()
       { rvsdg::bittype::Create(1), rvsdg::bittype::Create(8), rvsdg::bittype::Create(8) },
       { rvsdg::bittype::Create(8) });
 
-  jlm::llvm::RvsdgModule rm(util::filepath(""), "", "");
+  jlm::llvm::RvsdgModule rm(util::FilePath(""), "", "");
 
   /* setup graph */
 

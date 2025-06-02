@@ -13,14 +13,12 @@
 namespace jlm::rvsdg
 {
 
-/* input */
-
-input::~input() noexcept
+Input::~Input() noexcept
 {
   origin()->remove_user(this);
 }
 
-input::input(
+Input::Input(
     jlm::rvsdg::output * origin,
     rvsdg::Region * region,
     std::shared_ptr<const rvsdg::Type> type)
@@ -33,25 +31,25 @@ input::input(
     throw jlm::util::error("Invalid operand region.");
 
   if (*Type() != *origin->Type())
-    throw util::type_error(Type()->debug_string(), origin->Type()->debug_string());
+    throw util::TypeError(Type()->debug_string(), origin->Type()->debug_string());
 
   origin->add_user(this);
 }
 
 std::string
-input::debug_string() const
+Input::debug_string() const
 {
   return jlm::util::strfmt("i", index());
 }
 
 void
-input::divert_to(jlm::rvsdg::output * new_origin)
+Input::divert_to(jlm::rvsdg::output * new_origin)
 {
   if (origin() == new_origin)
     return;
 
   if (*Type() != *new_origin->Type())
-    throw jlm::util::type_error(Type()->debug_string(), new_origin->Type()->debug_string());
+    throw jlm::util::TypeError(Type()->debug_string(), new_origin->Type()->debug_string());
 
   if (region() != new_origin->region())
     throw jlm::util::error("Invalid operand region.");
@@ -85,7 +83,7 @@ output::debug_string() const
 }
 
 void
-output::remove_user(jlm::rvsdg::input * user)
+output::remove_user(jlm::rvsdg::Input * user)
 {
   JLM_ASSERT(users_.find(user) != users_.end());
 
@@ -102,7 +100,7 @@ output::remove_user(jlm::rvsdg::input * user)
 }
 
 void
-output::add_user(jlm::rvsdg::input * user)
+output::add_user(jlm::rvsdg::Input * user)
 {
   JLM_ASSERT(users_.find(user) == users_.end());
 
@@ -121,7 +119,7 @@ node_input::node_input(
     jlm::rvsdg::output * origin,
     Node * node,
     std::shared_ptr<const rvsdg::Type> type)
-    : jlm::rvsdg::input(origin, node->region(), std::move(type)),
+    : jlm::rvsdg::Input(origin, node->region(), std::move(type)),
       node_(node)
 {}
 
@@ -325,19 +323,19 @@ producer(const jlm::rvsdg::output * output) noexcept
   - what is the origin of a value, what operation is computing it?
   - what are the users of a particular value, what operations depend on it?
 
-  This requires resolving the type of operation a specific \ref rvsdg::input
+  This requires resolving the type of operation a specific \ref rvsdg::Input
   or \ref rvsdg::output belong to. Every \ref rvsdg::output is one of the following:
 
   - the output of a node representing an operation
   - the entry argument into a region
 
-  Likewise, every \ref rvsdg::input is one of the following:
+  Likewise, every \ref rvsdg::Input is one of the following:
 
   - the input of a node representing an operation
   - the exit result of a region
 
   Analysis code can determine which of the two is the case using
-  \ref rvsdg::output::GetOwner and \ref rvsdg::input::GetOwner, respectively,
+  \ref rvsdg::output::GetOwner and \ref rvsdg::Input::GetOwner, respectively,
   and then branch deeper based on its results. For convenience, code
   can more directly match against the specific kinds of nodes using
   the following convenience functions:

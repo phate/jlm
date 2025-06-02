@@ -37,7 +37,7 @@ add_prints(rvsdg::Region * region)
         && !jlm::rvsdg::is<llvm::UndefValueOperation>(node))
     {
       auto out = node->output(0);
-      std::vector<jlm::rvsdg::input *> old_users(out->begin(), out->end());
+      std::vector<jlm::rvsdg::Input *> old_users(out->begin(), out->end());
       auto new_out = hls::print_op::create(*out)[0];
       for (auto user : old_users)
       {

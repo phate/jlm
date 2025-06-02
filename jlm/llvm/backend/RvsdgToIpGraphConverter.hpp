@@ -19,7 +19,7 @@ namespace jlm::rvsdg
 {
 class Graph;
 class GammaNode;
-class input;
+class Input;
 class LambdaNode;
 class Node;
 class PhiNode;

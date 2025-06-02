@@ -14,7 +14,7 @@
 #include <fstream>
 
 static std::string
-ReadFile(const jlm::util::filepath & outputFilePath)
+ReadFile(const jlm::util::FilePath & outputFilePath)
 {
   std::ifstream file(outputFilePath.to_str());
   std::stringstream buffer;
@@ -31,7 +31,7 @@ RunAndExtractFile(jlm::llvm::RvsdgModule & module, jlm::llvm::RvsdgTreePrinter &
 {
   using namespace jlm::util;
 
-  const auto tmpDir = filepath::TempDirectoryPath();
+  const auto tmpDir = FilePath::TempDirectoryPath();
   StatisticsCollectorSettings settings({}, tmpDir, "TestTreePrinter");
   StatisticsCollector collector(settings);
 
@@ -53,7 +53,7 @@ PrintRvsdgTree()
   using namespace jlm::util;
 
   // Arrange
-  auto rvsdgModule = RvsdgModule::Create(filepath(""), "", "");
+  auto rvsdgModule = RvsdgModule::Create(FilePath(""), "", "");
 
   auto functionType = jlm::rvsdg::FunctionType::Create(
       { MemoryStateType::Create() },
@@ -90,7 +90,7 @@ PrintNumRvsdgNodesAnnotation()
   using namespace jlm::util;
 
   // Arrange
-  auto rvsdgModule = RvsdgModule::Create(filepath(""), "", "");
+  auto rvsdgModule = RvsdgModule::Create(FilePath(""), "", "");
   auto rootRegion = &rvsdgModule->Rvsdg().GetRootRegion();
 
   auto structuralNode = jlm::tests::structural_node::create(rootRegion, 2);
@@ -132,7 +132,7 @@ PrintNumMemoryStateInputsOutputsAnnotation()
   auto memoryStateType = MemoryStateType::Create();
   auto valueType = jlm::tests::valuetype::Create();
 
-  auto rvsdgModule = RvsdgModule::Create(filepath(""), "", "");
+  auto rvsdgModule = RvsdgModule::Create(FilePath(""), "", "");
   auto & rvsdg = rvsdgModule->Rvsdg();
 
   auto & x = jlm::tests::GraphImport::Create(rvsdg, memoryStateType, "x");

@@ -22,7 +22,7 @@
 #include <llvm/Support/SourceMgr.h>
 
 static void
-stringToFile(const std::string & output, const jlm::util::filepath & fileName)
+stringToFile(const std::string & output, const jlm::util::FilePath & fileName)
 {
   std::ofstream outputFile;
   outputFile.open(fileName.to_str());
@@ -31,7 +31,7 @@ stringToFile(const std::string & output, const jlm::util::filepath & fileName)
 }
 
 static void
-llvmToFile(jlm::llvm::RvsdgModule & module, const jlm::util::filepath & fileName)
+llvmToFile(jlm::llvm::RvsdgModule & module, const jlm::util::FilePath & fileName)
 {
   llvm::LLVMContext ctx;
   jlm::util::StatisticsCollector statisticsCollector;
@@ -61,7 +61,7 @@ main(int argc, char ** argv)
   auto moduleName = commandLineOptions.InputFile_.base();
   jlm::util::StatisticsCollectorSettings settings(
       {},
-      jlm::util::filepath::TempDirectoryPath(),
+      jlm::util::FilePath::TempDirectoryPath(),
       moduleName);
   jlm::util::StatisticsCollector collector(std::move(settings));
 

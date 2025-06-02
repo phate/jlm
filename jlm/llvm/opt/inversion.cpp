@@ -21,7 +21,7 @@ class ivtstat final : public util::Statistics
 public:
   ~ivtstat() override = default;
 
-  explicit ivtstat(const util::filepath & sourceFile)
+  explicit ivtstat(const util::FilePath & sourceFile)
       : Statistics(Statistics::Id::ThetaGammaInversion, sourceFile)
   {}
 
@@ -42,7 +42,7 @@ public:
   }
 
   static std::unique_ptr<ivtstat>
-  Create(const util::filepath & sourceFile)
+  Create(const util::FilePath & sourceFile)
   {
     return std::make_unique<ivtstat>(sourceFile);
   }
@@ -213,7 +213,7 @@ invert(rvsdg::ThetaNode * otheta)
     /* add loop variables to new theta node and setup substitution map */
     auto osubregion0 = ogamma->subregion(0);
     auto osubregion1 = ogamma->subregion(1);
-    std::unordered_map<jlm::rvsdg::input *, rvsdg::ThetaNode::LoopVar> nlvs;
+    std::unordered_map<jlm::rvsdg::Input *, rvsdg::ThetaNode::LoopVar> nlvs;
     for (const auto & olv : otheta->GetLoopVars())
     {
       auto ev = ngamma->AddEntryVar(olv.input->origin());

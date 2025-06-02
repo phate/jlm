@@ -21,7 +21,7 @@ TestCallSummaryComputationDead()
   auto vt = tests::valuetype::Create();
   auto functionType = jlm::rvsdg::FunctionType::Create({}, { vt });
 
-  auto rvsdgModule = jlm::llvm::RvsdgModule::Create(util::filepath(""), "", "");
+  auto rvsdgModule = jlm::llvm::RvsdgModule::Create(util::FilePath(""), "", "");
   auto & rvsdg = rvsdgModule->Rvsdg();
 
   auto lambdaNode = jlm::rvsdg::LambdaNode::Create(
@@ -56,7 +56,7 @@ TestCallSummaryComputationExport()
   auto vt = tests::valuetype::Create();
   auto functionType = jlm::rvsdg::FunctionType::Create({}, { vt });
 
-  auto rvsdgModule = jlm::llvm::RvsdgModule::Create(util::filepath(""), "", "");
+  auto rvsdgModule = jlm::llvm::RvsdgModule::Create(util::FilePath(""), "", "");
   auto & rvsdg = rvsdgModule->Rvsdg();
 
   auto lambdaNode = jlm::rvsdg::LambdaNode::Create(
@@ -94,7 +94,7 @@ TestCallSummaryComputationDirectCalls()
       { jlm::llvm::IOStateType::Create(), jlm::llvm::MemoryStateType::Create() },
       { vt, jlm::llvm::IOStateType::Create(), jlm::llvm::MemoryStateType::Create() });
 
-  auto rvsdgModule = jlm::llvm::RvsdgModule::Create(util::filepath(""), "", "");
+  auto rvsdgModule = jlm::llvm::RvsdgModule::Create(util::FilePath(""), "", "");
   auto & rvsdg = rvsdgModule->Rvsdg();
 
   auto SetupLambdaX = [&]()
@@ -250,7 +250,7 @@ TestCallSummaryComputationFunctionPointerInDelta()
   using namespace jlm::llvm;
 
   // Arrange
-  auto rvsdgModule = RvsdgModule::Create(jlm::util::filepath(""), "", "");
+  auto rvsdgModule = RvsdgModule::Create(jlm::util::FilePath(""), "", "");
   auto rvsdg = &rvsdgModule->Rvsdg();
 
   auto valueType = jlm::tests::valuetype::Create();

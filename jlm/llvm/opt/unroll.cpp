@@ -19,7 +19,7 @@ class unrollstat final : public util::Statistics
 public:
   ~unrollstat() override = default;
 
-  explicit unrollstat(const util::filepath & sourceFile)
+  explicit unrollstat(const util::FilePath & sourceFile)
       : Statistics(Statistics::Id::LoopUnrolling, sourceFile)
   {}
 
@@ -38,7 +38,7 @@ public:
   }
 
   static std::unique_ptr<unrollstat>
-  Create(const util::filepath & sourceFile)
+  Create(const util::FilePath & sourceFile)
   {
     return std::make_unique<unrollstat>(sourceFile);
   }
@@ -93,7 +93,7 @@ push_from_theta(jlm::rvsdg::output * output)
 }
 
 static bool
-is_idv(jlm::rvsdg::input * input)
+is_idv(jlm::rvsdg::Input * input)
 {
   using namespace jlm::rvsdg;
 
