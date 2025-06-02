@@ -77,13 +77,25 @@ public:
       const MemoryStateMergeOperation & operation,
       const std::vector<rvsdg::output *> & operands);
 
-  // FIXME: documentation
+  /** \brief Fuses nested merges into a single merge
+   *
+   * o1 = MemoryStateMergeOperation i1 i2
+   * o2 = MemoryStateMergeOperation o1 i3
+   * =>
+   * o2 = MemoryStateMergeOperation i1 i2 i3
+   */
   static std::optional<std::vector<rvsdg::output *>>
   NormalizeNestedMerges(
       const MemoryStateMergeOperation & operation,
       const std::vector<rvsdg::output *> & operands);
 
-  // FIXME: documentation
+  /** \brief Fuses nested splits into a single merge
+   *
+   * o1, o2, o3 = MemoryStateSplitOperation i1
+   * o4 = MemoryStateMergeOperation i2 o1 o2 o3 i3
+   * =>
+   * o4 = MemoryStateMergeOperation i2 i1 i1 i1 i3
+   */
   static std::optional<std::vector<rvsdg::output *>>
   NormalizeNestedSplits(
       const MemoryStateMergeOperation & operation,
@@ -152,13 +164,26 @@ public:
       const MemoryStateSplitOperation & operation,
       const std::vector<rvsdg::output *> & operands);
 
-  // FIXME: documentation
+  /** \brief Fuses nested splits into a single split
+   *
+   * o1 o2 o3 = MemoryStateSplitOperation i1
+   * o4 o5 = MemoryStateSplitOperation o2
+   * =>
+   * o1 o4 o5 o3 = MemoryStateSplitOperation i1
+   */
   static std::optional<std::vector<rvsdg::output *>>
   NormalizeNestedSplits(
       const MemoryStateSplitOperation & operation,
       const std::vector<rvsdg::output *> & operands);
 
-  // FIXME: documentation
+  /** \brief Removes an idempotent split-merge pair
+   *
+   * o1 = MemoryStateMergeOperation i1 i2 i3
+   * o2 o3 o4 = MemoryStateSplitOperation o1
+   * ... = AnyOperation o2 o3 o4
+   * =>
+   * ... = AnyOperation i1 i2 i3
+   */
   static std::optional<std::vector<rvsdg::output *>>
   NormalizeSplitMerge(
       const MemoryStateSplitOperation & operation,
