@@ -3,11 +3,11 @@
  * See COPYING for terms of redistribution.
  */
 
-#include "jlm/llvm/ir/RvsdgModule.hpp"
 #include <test-operation.hpp>
 #include <test-registry.hpp>
 
 #include <jlm/llvm/ir/operators/MemoryStateOperations.hpp>
+#include <jlm/llvm/ir/RvsdgModule.hpp>
 #include <jlm/rvsdg/NodeNormalization.hpp>
 #include <jlm/rvsdg/view.hpp>
 #include <llvm-18/llvm/ADT/StringExtras.h>
