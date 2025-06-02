@@ -612,7 +612,7 @@ types_bitstring_arithmetic_test_bitxor()
 }
 
 static inline void
-expect_static_true(jlm::rvsdg::output * port)
+expect_static_true(jlm::rvsdg::Output * port)
 {
   auto node = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*port);
   auto op = dynamic_cast<const jlm::rvsdg::bitconstant_op *>(&node->GetOperation());
@@ -620,7 +620,7 @@ expect_static_true(jlm::rvsdg::output * port)
 }
 
 static inline void
-expect_static_false(jlm::rvsdg::output * port)
+expect_static_false(jlm::rvsdg::Output * port)
 {
   auto node = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*port);
   auto op = dynamic_cast<const jlm::rvsdg::bitconstant_op *>(&node->GetOperation());
@@ -1155,7 +1155,7 @@ types_bitstring_test_constant()
   Graph graph;
 
   auto NormalizeCne =
-      [&](const SimpleOperation & operation, const std::vector<jlm::rvsdg::output *> & operands)
+      [&](const SimpleOperation & operation, const std::vector<jlm::rvsdg::Output *> & operands)
   {
     return NormalizeSimpleOperationCommonNodeElimination(
         graph.GetRootRegion(),
@@ -1258,7 +1258,7 @@ types_bitstring_test_normalize()
 }
 
 static void
-assert_constant(jlm::rvsdg::output * bitstr, size_t nbits, const char bits[])
+assert_constant(jlm::rvsdg::Output * bitstr, size_t nbits, const char bits[])
 {
   auto node = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*bitstr);
   auto op = dynamic_cast<const jlm::rvsdg::bitconstant_op &>(node->GetOperation());
@@ -1686,7 +1686,7 @@ ConcatCne()
   // Arrange & Act
   Graph graph;
   auto NormalizeCne =
-      [&](const SimpleOperation & operation, const std::vector<jlm::rvsdg::output *> & operands)
+      [&](const SimpleOperation & operation, const std::vector<jlm::rvsdg::Output *> & operands)
   {
     return NormalizeSimpleOperationCommonNodeElimination(
         graph.GetRootRegion(),
@@ -1731,7 +1731,7 @@ SliceCne()
   // Arrange
   Graph graph;
   auto NormalizeCne =
-      [&](const SimpleOperation & operation, const std::vector<jlm::rvsdg::output *> & operands)
+      [&](const SimpleOperation & operation, const std::vector<jlm::rvsdg::Output *> & operands)
   {
     return NormalizeSimpleOperationCommonNodeElimination(
         graph.GetRootRegion(),

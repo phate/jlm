@@ -143,13 +143,13 @@ copy_condition_nodes(
 }
 
 static jlm::rvsdg::StructuralOutput *
-to_structural_output(jlm::rvsdg::output * output)
+to_structural_output(jlm::rvsdg::Output * output)
 {
   return dynamic_cast<rvsdg::StructuralOutput *>(output);
 }
 
 static rvsdg::RegionArgument *
-to_argument(jlm::rvsdg::output * output)
+to_argument(jlm::rvsdg::Output * output)
 {
   return dynamic_cast<rvsdg::RegionArgument *>(output);
 }

@@ -55,7 +55,7 @@ public:
     /**
      * \brief Variable before iteration (input argument to subregion).
      */
-    rvsdg::output * pre;
+    rvsdg::Output * pre;
     /**
      * \brief Variable after iteration (output result from subregion).
      */
@@ -63,7 +63,7 @@ public:
     /**
      * \brief Variable at loop exit (output of theta).
      */
-    rvsdg::output * output;
+    rvsdg::Output * output;
   };
 
   [[nodiscard]] const ThetaOperation &
@@ -90,7 +90,7 @@ public:
   }
 
   inline void
-  set_predicate(jlm::rvsdg::output * p)
+  set_predicate(jlm::rvsdg::Output * p)
   {
     auto node = TryGetOwnerNode<Node>(*predicate()->origin());
 
@@ -115,7 +115,7 @@ public:
    * into a variable changed by the loop
    */
   LoopVar
-  AddLoopVar(rvsdg::output * origin);
+  AddLoopVar(rvsdg::Output * origin);
 
   /**
    * \brief Removes loop variables.
@@ -175,7 +175,7 @@ public:
    * to this variable at the start of each loop iteration.
    */
   [[nodiscard]] LoopVar
-  MapPreLoopVar(const rvsdg::output & argument) const;
+  MapPreLoopVar(const rvsdg::Output & argument) const;
 
   /**
    * \brief Maps variable at end of loop iteration to full varibale description.
@@ -211,7 +211,7 @@ public:
    * to this loop exit value.
    */
   [[nodiscard]] LoopVar
-  MapOutputLoopVar(const rvsdg::output & output) const;
+  MapOutputLoopVar(const rvsdg::Output & output) const;
 
   /**
    * \brief Returns all loop variables.

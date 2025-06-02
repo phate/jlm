@@ -13,7 +13,7 @@
 namespace jlm::rvsdg
 {
 
-class output;
+class Output;
 
 /**
   \brief Nullary operator (operator taking no formal arguments)
@@ -92,7 +92,7 @@ public:
     return std::make_unique<domain_const_op>(*this);
   }
 
-  static inline jlm::rvsdg::output *
+  static inline jlm::rvsdg::Output *
   create(rvsdg::Region * region, const value_repr & vr)
   {
     return CreateOpNode<domain_const_op>(*region, vr).output(0);

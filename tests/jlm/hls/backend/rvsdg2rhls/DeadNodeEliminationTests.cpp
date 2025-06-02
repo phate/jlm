@@ -67,7 +67,7 @@ TestDeadLoopNodeOutput()
 
   auto loopNode = loop_node::create(lambdaNode->subregion());
 
-  jlm::rvsdg::output * buffer;
+  jlm::rvsdg::Output * buffer;
   auto output0 = loopNode->AddLoopVar(p, &buffer);
   loopNode->AddLoopVar(x);
   loopNode->set_predicate(buffer);

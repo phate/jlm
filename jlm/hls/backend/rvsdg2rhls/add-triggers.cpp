@@ -15,7 +15,7 @@
 namespace jlm::hls
 {
 
-jlm::rvsdg::output *
+jlm::rvsdg::Output *
 get_trigger(rvsdg::Region * region)
 {
   for (size_t i = 0; i < region->narguments(); ++i)
@@ -65,7 +65,7 @@ add_lambda_argument(rvsdg::LambdaNode * ln, std::shared_ptr<const jlm::rvsdg::Ty
   //	jlm::rvsdg::view(new_lambda->subregion(), stdout);
   ln->subregion()->copy(new_lambda->subregion(), smap, false, false);
 
-  std::vector<jlm::rvsdg::output *> new_results;
+  std::vector<jlm::rvsdg::Output *> new_results;
   for (auto result : ln->GetFunctionResults())
   {
     new_results.push_back(smap.lookup(result->origin()));

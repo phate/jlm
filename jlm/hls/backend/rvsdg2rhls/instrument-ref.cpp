@@ -45,7 +45,7 @@ change_function_name(rvsdg::LambdaNode * ln, const std::string & name)
   ln->subregion()->copy(lambda->subregion(), subregionmap, false, false);
 
   /* collect function results */
-  std::vector<jlm::rvsdg::output *> results;
+  std::vector<jlm::rvsdg::Output *> results;
   for (auto result : ln->GetFunctionResults())
     results.push_back(subregionmap.lookup(result->origin()));
 
@@ -132,12 +132,12 @@ instrument_ref(llvm::RvsdgModule & rm)
 void
 instrument_ref(
     rvsdg::Region * region,
-    jlm::rvsdg::output * ioState,
-    jlm::rvsdg::output * load_func,
+    jlm::rvsdg::Output * ioState,
+    jlm::rvsdg::Output * load_func,
     const std::shared_ptr<const jlm::rvsdg::FunctionType> & loadFunctionType,
-    jlm::rvsdg::output * store_func,
+    jlm::rvsdg::Output * store_func,
     const std::shared_ptr<const jlm::rvsdg::FunctionType> & storeFunctionType,
-    jlm::rvsdg::output * alloca_func,
+    jlm::rvsdg::Output * alloca_func,
     const std::shared_ptr<const jlm::rvsdg::FunctionType> & allocaFunctionType)
 {
   load_func = route_to_region_rvsdg(load_func, region);
@@ -196,7 +196,7 @@ instrument_ref(
           &constant_output->node()->GetOperation());
       JLM_ASSERT(constant_operation);
       JLM_ASSERT(constant_operation->Representation().to_uint() == 1);
-      jlm::rvsdg::output * addr = node->output(0);
+      jlm::rvsdg::Output * addr = node->output(0);
       // ensure that the alloca is an array type
       JLM_ASSERT(jlm::rvsdg::is<llvm::PointerType>(addr->Type()));
       auto at = dynamic_cast<const llvm::ArrayType *>(&ao->value_type());

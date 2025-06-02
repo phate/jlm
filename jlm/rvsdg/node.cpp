@@ -19,7 +19,7 @@ Input::~Input() noexcept
 }
 
 Input::Input(
-    jlm::rvsdg::output * origin,
+    jlm::rvsdg::Output * origin,
     rvsdg::Region * region,
     std::shared_ptr<const rvsdg::Type> type)
     : index_(0),
@@ -43,7 +43,7 @@ Input::debug_string() const
 }
 
 void
-Input::divert_to(jlm::rvsdg::output * new_origin)
+Input::divert_to(jlm::rvsdg::Output * new_origin)
 {
   if (origin() == new_origin)
     return;
@@ -65,25 +65,25 @@ Input::divert_to(jlm::rvsdg::output * new_origin)
   on_input_change(this, old_origin, new_origin);
 }
 
-output::~output() noexcept
+Output::~Output() noexcept
 {
   JLM_ASSERT(nusers() == 0);
 }
 
-output::output(rvsdg::Region * region, std::shared_ptr<const rvsdg::Type> type)
+Output::Output(rvsdg::Region * region, std::shared_ptr<const rvsdg::Type> type)
     : index_(0),
       region_(region),
       Type_(std::move(type))
 {}
 
 std::string
-output::debug_string() const
+Output::debug_string() const
 {
   return jlm::util::strfmt("o", index());
 }
 
 void
-output::remove_user(jlm::rvsdg::Input * user)
+Output::remove_user(jlm::rvsdg::Input * user)
 {
   JLM_ASSERT(users_.find(user) != users_.end());
 
@@ -100,7 +100,7 @@ output::remove_user(jlm::rvsdg::Input * user)
 }
 
 void
-output::add_user(jlm::rvsdg::Input * user)
+Output::add_user(jlm::rvsdg::Input * user)
 {
   JLM_ASSERT(users_.find(user) == users_.end());
 
@@ -116,7 +116,7 @@ output::add_user(jlm::rvsdg::Input * user)
 }
 
 node_input::node_input(
-    jlm::rvsdg::output * origin,
+    jlm::rvsdg::Output * origin,
     Node * node,
     std::shared_ptr<const rvsdg::Type> type)
     : jlm::rvsdg::Input(origin, node->region(), std::move(type)),
@@ -132,7 +132,7 @@ node_input::GetOwner() const noexcept
 /* node_output class */
 
 node_output::node_output(Node * node, std::shared_ptr<const rvsdg::Type> type)
-    : jlm::rvsdg::output(node->region(), std::move(type)),
+    : jlm::rvsdg::Output(node->region(), std::move(type)),
       node_(node)
 {}
 
@@ -277,7 +277,7 @@ Node::recompute_depth() noexcept
 }
 
 Node *
-Node::copy(rvsdg::Region * region, const std::vector<jlm::rvsdg::output *> & operands) const
+Node::copy(rvsdg::Region * region, const std::vector<jlm::rvsdg::Output *> & operands) const
 {
   SubstitutionMap smap;
 
@@ -289,7 +289,7 @@ Node::copy(rvsdg::Region * region, const std::vector<jlm::rvsdg::output *> & ope
 }
 
 Node *
-producer(const jlm::rvsdg::output * output) noexcept
+producer(const jlm::rvsdg::Output * output) noexcept
 {
   if (auto node = TryGetOwnerNode<Node>(*output))
     return node;

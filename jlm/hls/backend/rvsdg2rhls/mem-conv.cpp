@@ -31,7 +31,7 @@ find_decouple_response(
   auto response_functions = find_function_arguments(lambda, "decouple_res");
   for (auto & func : response_functions)
   {
-    std::unordered_set<rvsdg::output *> visited;
+    std::unordered_set<rvsdg::Output *> visited;
     std::vector<rvsdg::SimpleNode *> reponse_calls;
     trace_function_calls(func.inner, reponse_calls, visited);
     for (auto & rc : reponse_calls)
@@ -50,7 +50,7 @@ rvsdg::SimpleNode *
 ReplaceDecouple(
     const rvsdg::LambdaNode * lambda,
     rvsdg::SimpleNode * decouple_request,
-    rvsdg::output * resp)
+    rvsdg::Output * resp)
 {
   JLM_ASSERT(dynamic_cast<const llvm::CallOperation *>(&decouple_request->GetOperation()));
   auto channel = decouple_request->input(1)->origin();
@@ -150,11 +150,11 @@ gather_mem_nodes(
  */
 void
 TracePointer(
-    rvsdg::output * output,
+    rvsdg::Output * output,
     std::vector<rvsdg::SimpleNode *> & loadNodes,
     std::vector<rvsdg::SimpleNode *> & storeNodes,
     std::vector<rvsdg::SimpleNode *> & decoupleNodes,
-    std::unordered_set<rvsdg::output *> & visited)
+    std::unordered_set<rvsdg::Output *> & visited)
 {
   if (!rvsdg::is<llvm::PointerType>(output->Type()))
   {
@@ -226,7 +226,7 @@ TracePointerArguments(const rvsdg::LambdaNode * lambda, port_load_store_decouple
   {
     if (rvsdg::is<llvm::PointerType>(arg->Type()))
     {
-      std::unordered_set<rvsdg::output *> visited;
+      std::unordered_set<rvsdg::Output *> visited;
       portNodes.emplace_back();
       TracePointer(
           arg,
@@ -240,7 +240,7 @@ TracePointerArguments(const rvsdg::LambdaNode * lambda, port_load_store_decouple
   {
     if (rvsdg::is<llvm::PointerType>(cv.inner->Type()) && !is_function_argument(cv))
     {
-      std::unordered_set<rvsdg::output *> visited;
+      std::unordered_set<rvsdg::Output *> visited;
       portNodes.emplace_back();
       TracePointer(
           cv.inner,
@@ -413,7 +413,7 @@ MemoryConverter(llvm::RvsdgModule & rm)
   // before we can use the original lambda results and look them up in the updated smap.
   //
 
-  std::vector<rvsdg::output *> newResults;
+  std::vector<rvsdg::Output *> newResults;
   // The new arguments are placed directly after the original arguments so we create an index that
   // points to the first new argument
   auto newArgumentsIndex = args.size();
@@ -441,7 +441,7 @@ MemoryConverter(llvm::RvsdgModule & rm)
         unknownDecoupledNodes));
   }
 
-  std::vector<rvsdg::output *> originalResults;
+  std::vector<rvsdg::Output *> originalResults;
   for (auto result : lambda->GetFunctionResults())
   {
     originalResults.push_back(smap.lookup(result->origin()));
@@ -479,7 +479,7 @@ MemoryConverter(llvm::RvsdgModule & rm)
   newLambda->PruneLambdaInputs();
 }
 
-rvsdg::output *
+rvsdg::Output *
 ConnectRequestResponseMemPorts(
     const rvsdg::LambdaNode * lambda,
     size_t argumentIndex,
@@ -532,7 +532,7 @@ ConnectRequestResponseMemPorts(
       mem_resp_op::create(*lambdaRegion->argument(argumentIndex), loadTypes, portWidth);
   // The (decoupled) load nodes are replaced so the pointer to the types will become invalid
   loadTypes.clear();
-  std::vector<rvsdg::output *> loadAddresses;
+  std::vector<rvsdg::Output *> loadAddresses;
   for (size_t i = 0; i < loadNodes.size(); ++i)
   {
     auto routed = route_response_rhls(loadNodes[i]->region(), loadResponses[i]);
@@ -572,7 +572,7 @@ ConnectRequestResponseMemPorts(
     loadTypes.push_back(
         dynamic_cast<const decoupled_load_op *>(&replacement->GetOperation())->GetLoadedType());
   }
-  std::vector<rvsdg::output *> storeOperands;
+  std::vector<rvsdg::Output *> storeOperands;
   for (size_t i = 0; i < storeNodes.size(); ++i)
   {
     // The smap contains the nodes from the original lambda so we need to use the oringal store node
@@ -591,7 +591,7 @@ rvsdg::SimpleNode *
 ReplaceLoad(
     rvsdg::SubstitutionMap & smap,
     const rvsdg::SimpleNode * originalLoad,
-    rvsdg::output * response)
+    rvsdg::Output * response)
 {
   // We have the load from the original lambda since it is needed to update the smap
   // We need the load in the new lambda such that we can replace it with a load node with explicit
@@ -600,7 +600,7 @@ ReplaceLoad(
       static_cast<rvsdg::SimpleOutput *>(smap.lookup(originalLoad->output(0)))->node();
 
   auto loadAddress = replacedLoad->input(0)->origin();
-  std::vector<rvsdg::output *> states;
+  std::vector<rvsdg::Output *> states;
   for (size_t i = 1; i < replacedLoad->ninputs(); ++i)
   {
     states.push_back(replacedLoad->input(i)->origin());
@@ -639,7 +639,7 @@ ReplaceStore(rvsdg::SubstitutionMap & smap, const rvsdg::SimpleNode * originalSt
   auto addr = replacedStore->input(0)->origin();
   JLM_ASSERT(rvsdg::is<llvm::PointerType>(addr->Type()));
   auto data = replacedStore->input(1)->origin();
-  std::vector<rvsdg::output *> states;
+  std::vector<rvsdg::Output *> states;
   for (size_t i = 2; i < replacedStore->ninputs(); ++i)
   {
     states.push_back(replacedStore->input(i)->origin());

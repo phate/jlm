@@ -26,7 +26,7 @@ private:
   SimpleNode(
       rvsdg::Region & region,
       std::unique_ptr<SimpleOperation> operation,
-      const std::vector<jlm::rvsdg::output *> & operands);
+      const std::vector<jlm::rvsdg::Output *> & operands);
 
 public:
   SimpleInput *
@@ -39,7 +39,7 @@ public:
   GetOperation() const noexcept override;
 
   Node *
-  copy(rvsdg::Region * region, const std::vector<jlm::rvsdg::output *> & operands) const override;
+  copy(rvsdg::Region * region, const std::vector<jlm::rvsdg::Output *> & operands) const override;
 
   Node *
   copy(rvsdg::Region * region, SubstitutionMap & smap) const override;
@@ -48,7 +48,7 @@ public:
   DebugString() const override;
 
   static SimpleNode &
-  Create(Region & region, const SimpleOperation & op, const std::vector<rvsdg::output *> & operands)
+  Create(Region & region, const SimpleOperation & op, const std::vector<rvsdg::Output *> & operands)
   {
     std::unique_ptr<SimpleOperation> newOp(
         util::AssertedCast<SimpleOperation>(op.copy().release()));
@@ -59,7 +59,7 @@ public:
   Create(
       Region & region,
       std::unique_ptr<SimpleOperation> operation,
-      const std::vector<rvsdg::output *> & operands)
+      const std::vector<rvsdg::Output *> & operands)
   {
     return *new SimpleNode(region, std::move(operation), operands);
   }
@@ -77,22 +77,22 @@ private:
  * @return If the normalization could be applied, then the results of the binary operation after
  * the transformation. Otherwise, std::nullopt.
  */
-std::optional<std::vector<rvsdg::output *>>
+std::optional<std::vector<rvsdg::Output *>>
 NormalizeSimpleOperationCommonNodeElimination(
     Region & region,
     const SimpleOperation & operation,
-    const std::vector<rvsdg::output *> & operands);
+    const std::vector<rvsdg::Output *> & operands);
 
 class SimpleInput final : public node_input
 {
-  friend class jlm::rvsdg::output;
+  friend class jlm::rvsdg::Output;
 
 public:
   ~SimpleInput() noexcept override;
 
   SimpleInput(
       SimpleNode * node,
-      jlm::rvsdg::output * origin,
+      jlm::rvsdg::Output * origin,
       std::shared_ptr<const rvsdg::Type> type);
 
 public:
@@ -167,7 +167,7 @@ SimpleNode::output(size_t index) const noexcept
  */
 template<typename OperatorType, typename... OperatorArguments>
 SimpleNode &
-CreateOpNode(const std::vector<output *> & operands, OperatorArguments... operatorArguments)
+CreateOpNode(const std::vector<Output *> & operands, OperatorArguments... operatorArguments)
 {
   JLM_ASSERT(!operands.empty());
   return SimpleNode::Create(
@@ -277,7 +277,7 @@ TryGetSimpleNodeAndOp(const rvsdg::Input & input) noexcept
  */
 template<typename TOperation>
 std::pair<SimpleNode *, const TOperation *>
-TryGetSimpleNodeAndOp(const rvsdg::output & output) noexcept
+TryGetSimpleNodeAndOp(const rvsdg::Output & output) noexcept
 {
   const auto simpleNode = TryGetOwnerNode<SimpleNode>(output);
   if (!simpleNode)

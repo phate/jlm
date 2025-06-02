@@ -37,8 +37,8 @@ public:
   std::unique_ptr<bitunary_op>
   create(size_t nbits) const override;
 
-  static output *
-  create(size_t nbits, output * op)
+  static Output *
+  create(size_t nbits, Output * op)
   {
     return CreateOpNode<MakeBitUnaryOperation>({ op }, nbits).output(0);
   }
@@ -72,8 +72,8 @@ public:
   std::unique_ptr<bitbinary_op>
   create(size_t nbits) const override;
 
-  static output *
-  create(size_t nbits, output * op1, output * op2)
+  static Output *
+  create(size_t nbits, Output * op1, Output * op2)
   {
     return CreateOpNode<MakeBitBinaryOperation>({ op1, op2 }, nbits).output(0);
   }

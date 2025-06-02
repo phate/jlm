@@ -32,10 +32,10 @@ jlm::hls::mem_queue(llvm::RvsdgModule & rm)
 
 void
 find_load_store(
-    jlm::rvsdg::output * op,
+    jlm::rvsdg::Output * op,
     std::vector<jlm::rvsdg::SimpleNode *> & load_nodes,
     std::vector<jlm::rvsdg::SimpleNode *> & store_nodes,
-    std::unordered_set<jlm::rvsdg::output *> & visited)
+    std::unordered_set<jlm::rvsdg::Output *> & visited)
 {
   if (!jlm::rvsdg::is<jlm::llvm::MemoryStateType>(op->Type()))
   {
@@ -129,14 +129,14 @@ find_loop_output(jlm::rvsdg::StructuralInput * sti)
   JLM_UNREACHABLE("This should never happen");
 }
 
-jlm::rvsdg::output *
+jlm::rvsdg::Output *
 separate_load_edge(
-    jlm::rvsdg::output * mem_edge,
-    jlm::rvsdg::output * addr_edge,
+    jlm::rvsdg::Output * mem_edge,
+    jlm::rvsdg::Output * addr_edge,
     jlm::rvsdg::SimpleNode ** load,
-    jlm::rvsdg::output ** new_mem_edge,
-    std::vector<jlm::rvsdg::output *> & store_addresses,
-    std::vector<jlm::rvsdg::output *> & store_dequeues,
+    jlm::rvsdg::Output ** new_mem_edge,
+    std::vector<jlm::rvsdg::Output *> & store_addresses,
+    std::vector<jlm::rvsdg::Output *> & store_dequeues,
     std::vector<bool> & store_precedes,
     bool * load_encountered)
 {
@@ -160,7 +160,7 @@ separate_load_edge(
     else if (auto sti = dynamic_cast<jlm::rvsdg::StructuralInput *>(user))
     {
       auto loop_node = jlm::util::AssertedCast<jlm::hls::loop_node>(sti->node());
-      jlm::rvsdg::output * buffer;
+      jlm::rvsdg::Output * buffer;
       auto addr_edge_before_loop = addr_edge;
       addr_edge = loop_node->AddLoopVar(addr_edge, &buffer);
       addr_edge_user->divert_to(addr_edge);
@@ -172,7 +172,7 @@ separate_load_edge(
       JLM_ASSERT(dynamic_cast<const jlm::hls::mux_op *>(&si->node()->GetOperation()));
       JLM_ASSERT(buffer->nusers() == 1);
       // use a separate vector to check if the loop contains stores
-      std::vector<jlm::rvsdg::output *> loop_store_addresses;
+      std::vector<jlm::rvsdg::Output *> loop_store_addresses;
       separate_load_edge(
           si->node()->output(0),
           buffer,
@@ -364,8 +364,8 @@ separate_load_edge(
   }
 }
 
-jlm::rvsdg::output *
-process_loops(jlm::rvsdg::output * state_edge)
+jlm::rvsdg::Output *
+process_loops(jlm::rvsdg::Output * state_edge)
 {
   while (true)
   {
@@ -428,7 +428,7 @@ process_loops(jlm::rvsdg::output * state_edge)
 
       std::vector<jlm::rvsdg::SimpleNode *> load_nodes;
       std::vector<jlm::rvsdg::SimpleNode *> store_nodes;
-      std::unordered_set<jlm::rvsdg::output *> visited;
+      std::unordered_set<jlm::rvsdg::Output *> visited;
       // this is a hack to keep search within the loop
       visited.insert(mem_edge_after_loop);
       find_load_store(&*sti->arguments.begin(), load_nodes, store_nodes, visited);
@@ -444,8 +444,8 @@ process_loops(jlm::rvsdg::output * state_edge)
       {
         auto load = load_nodes[i];
         auto addr_edge = split_states[1 + i];
-        std::vector<jlm::rvsdg::output *> store_addresses;
-        std::vector<jlm::rvsdg::output *> store_dequeues;
+        std::vector<jlm::rvsdg::Output *> store_addresses;
+        std::vector<jlm::rvsdg::Output *> store_dequeues;
         std::vector<bool> store_precedes;
         bool load_encountered = false;
         separate_load_edge(
@@ -514,7 +514,7 @@ jlm::hls::mem_queue(jlm::rvsdg::Region * region)
       for (size_t i = 0; i < entryNode->noutputs(); ++i)
       {
         // Process each state edge separately
-        jlm::rvsdg::output * stateEdge = entryNode->output(i);
+        jlm::rvsdg::Output * stateEdge = entryNode->output(i);
         process_loops(stateEdge);
       }
       return;

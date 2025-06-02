@@ -614,7 +614,7 @@ TestExternalCall2()
 {
   // Arrange
   jlm::tests::ExternalCallTest2 test;
-  std::unordered_map<const jlm::rvsdg::output *, std::string> outputMap;
+  std::unordered_map<const jlm::rvsdg::Output *, std::string> outputMap;
   std::cout << jlm::rvsdg::view(&test.graph().GetRootRegion(), outputMap) << std::flush;
 
   // Act
@@ -1080,7 +1080,7 @@ TestMemcpy()
   };
 
   jlm::tests::MemcpyTest test;
-  std::unordered_map<const jlm::rvsdg::output *, std::string> outputMap;
+  std::unordered_map<const jlm::rvsdg::Output *, std::string> outputMap;
   std::cout << jlm::rvsdg::view(&test.graph().GetRootRegion(), outputMap) << std::flush;
 
   /*
@@ -1141,7 +1141,7 @@ TestMemcpy3()
 {
   // Arrange
   jlm::tests::MemcpyTest3 test;
-  std::unordered_map<const jlm::rvsdg::output *, std::string> outputMap;
+  std::unordered_map<const jlm::rvsdg::Output *, std::string> outputMap;
   std::cout << jlm::rvsdg::view(&test.graph().GetRootRegion(), outputMap) << std::flush;
 
   // Act
@@ -1243,7 +1243,7 @@ TestVariadicFunction1()
 static void
 TestVariadicFunction2()
 {
-  std::unordered_map<const jlm::rvsdg::output *, std::string> outputMap;
+  std::unordered_map<const jlm::rvsdg::Output *, std::string> outputMap;
 
   // Arrange
   jlm::tests::VariadicFunctionTest2 test;

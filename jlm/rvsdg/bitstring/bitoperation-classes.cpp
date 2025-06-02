@@ -14,7 +14,7 @@ bitunary_op::~bitunary_op() noexcept
 {}
 
 unop_reduction_path_t
-bitunary_op::can_reduce_operand(const jlm::rvsdg::output * arg) const noexcept
+bitunary_op::can_reduce_operand(const jlm::rvsdg::Output * arg) const noexcept
 {
   if (is<bitconstant_op>(producer(arg)))
     return unop_reduction_constant;
@@ -22,8 +22,8 @@ bitunary_op::can_reduce_operand(const jlm::rvsdg::output * arg) const noexcept
   return unop_reduction_none;
 }
 
-jlm::rvsdg::output *
-bitunary_op::reduce_operand(unop_reduction_path_t path, jlm::rvsdg::output * arg) const
+jlm::rvsdg::Output *
+bitunary_op::reduce_operand(unop_reduction_path_t path, jlm::rvsdg::Output * arg) const
 {
   if (path == unop_reduction_constant)
   {
@@ -40,8 +40,8 @@ bitbinary_op::~bitbinary_op() noexcept
 
 binop_reduction_path_t
 bitbinary_op::can_reduce_operand_pair(
-    const jlm::rvsdg::output * arg1,
-    const jlm::rvsdg::output * arg2) const noexcept
+    const jlm::rvsdg::Output * arg1,
+    const jlm::rvsdg::Output * arg2) const noexcept
 {
   if (is<bitconstant_op>(producer(arg1)) && is<bitconstant_op>(producer(arg2)))
     return binop_reduction_constants;
@@ -49,11 +49,11 @@ bitbinary_op::can_reduce_operand_pair(
   return binop_reduction_none;
 }
 
-jlm::rvsdg::output *
+jlm::rvsdg::Output *
 bitbinary_op::reduce_operand_pair(
     binop_reduction_path_t path,
-    jlm::rvsdg::output * arg1,
-    jlm::rvsdg::output * arg2) const
+    jlm::rvsdg::Output * arg1,
+    jlm::rvsdg::Output * arg2) const
 {
   if (path == binop_reduction_constants)
   {
@@ -70,8 +70,8 @@ bitcompare_op::~bitcompare_op() noexcept
 
 binop_reduction_path_t
 bitcompare_op::can_reduce_operand_pair(
-    const jlm::rvsdg::output * arg1,
-    const jlm::rvsdg::output * arg2) const noexcept
+    const jlm::rvsdg::Output * arg1,
+    const jlm::rvsdg::Output * arg2) const noexcept
 {
   auto p = producer(arg1);
   const bitconstant_op * c1_op = nullptr;
@@ -99,11 +99,11 @@ bitcompare_op::can_reduce_operand_pair(
   return binop_reduction_none;
 }
 
-jlm::rvsdg::output *
+jlm::rvsdg::Output *
 bitcompare_op::reduce_operand_pair(
     binop_reduction_path_t path,
-    jlm::rvsdg::output * arg1,
-    jlm::rvsdg::output *) const
+    jlm::rvsdg::Output * arg1,
+    jlm::rvsdg::Output *) const
 {
   if (path == 1)
   {
