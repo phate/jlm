@@ -24,6 +24,8 @@ namespace jlm::llvm
 {
 
 class LoadNonVolatileOperation;
+class MemoryStateMergeOperation;
+class MemoryStateSplitOperation;
 class StoreNonVolatileOperation;
 
 /**
