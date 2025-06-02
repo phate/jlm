@@ -92,7 +92,7 @@ public:
     return NumMemoryStates_;
   }
 
-  [[nodiscard]] static rvsdg::input &
+  [[nodiscard]] static rvsdg::Input &
   AddressInput(const rvsdg::Node & node) noexcept
   {
     JLM_ASSERT(is<StoreOperation>(&node));
@@ -101,7 +101,7 @@ public:
     return input;
   }
 
-  [[nodiscard]] static rvsdg::input &
+  [[nodiscard]] static rvsdg::Input &
   StoredValueInput(const rvsdg::Node & node) noexcept
   {
     JLM_ASSERT(is<StoreOperation>(&node));
@@ -278,7 +278,7 @@ public:
   [[nodiscard]] std::unique_ptr<Operation>
   copy() const override;
 
-  [[nodiscard]] static rvsdg::input &
+  [[nodiscard]] static rvsdg::Input &
   IOStateInput(const rvsdg::Node & node) noexcept
   {
     JLM_ASSERT(is<StoreOperation>(&node));

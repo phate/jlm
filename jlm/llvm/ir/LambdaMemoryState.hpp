@@ -50,7 +50,7 @@ GetMemoryStateRegionArgument(const rvsdg::LambdaNode & lambdaNode) noexcept;
  *   The \p lambdaNode must conform to the modelling assumptions behind
  *   llvm function representation as lambdas and memory state encoding.
  */
-[[nodiscard]] rvsdg::input &
+[[nodiscard]] rvsdg::Input &
 GetMemoryStateRegionResult(const rvsdg::LambdaNode & lambdaNode) noexcept;
 
 /**

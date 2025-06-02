@@ -119,7 +119,7 @@ private:
  * depends on the structural node the region is part of. A region result is either linked
  * with a \ref StructuralOutput or is a standalone result.
  */
-class RegionResult : public input
+class RegionResult : public Input
 {
   util::intrusive_list_anchor<RegionResult> structural_output_anchor_;
 
@@ -217,12 +217,11 @@ private:
  */
 class Region
 {
-  typedef util::intrusive_list<Node, Node::region_node_list_accessor> region_nodes_list;
+  typedef util::IntrusiveList<Node, Node::region_node_list_accessor> region_nodes_list;
 
-  typedef util::intrusive_list<Node, Node::region_top_node_list_accessor> region_top_node_list;
+  typedef util::IntrusiveList<Node, Node::region_top_node_list_accessor> region_top_node_list;
 
-  typedef util::intrusive_list<Node, Node::region_bottom_node_list_accessor>
-      region_bottom_node_list;
+  typedef util::IntrusiveList<Node, Node::region_bottom_node_list_accessor> region_bottom_node_list;
 
   using RegionArgumentIterator = std::vector<RegionArgument *>::iterator;
   using RegionArgumentConstIterator = std::vector<RegionArgument *>::const_iterator;
@@ -799,7 +798,7 @@ ninputs(const rvsdg::Region * region) noexcept;
  */
 template<typename NodeType>
 inline NodeType *
-TryGetRegionParentNode(const rvsdg::input & input) noexcept
+TryGetRegionParentNode(const rvsdg::Input & input) noexcept
 {
   auto region = TryGetOwnerRegion(input);
   if (region)
@@ -869,7 +868,7 @@ TryGetRegionParentNode(const rvsdg::output & output) noexcept
  */
 template<typename NodeType>
 inline NodeType &
-AssertGetRegionParentNode(const rvsdg::input & input)
+AssertGetRegionParentNode(const rvsdg::Input & input)
 {
   auto node = TryGetRegionParentNode<NodeType>(input);
   if (!node)

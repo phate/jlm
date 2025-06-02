@@ -40,18 +40,18 @@ std::deque<rvsdg::Region *>
 get_parent_regions(rvsdg::Region * region);
 
 const rvsdg::output *
-trace_call_rhls(const rvsdg::input * input);
+trace_call_rhls(const rvsdg::Input * input);
 
 const rvsdg::output *
 trace_call_rhls(const rvsdg::output * output);
 
 std::string
-get_function_name(jlm::rvsdg::input * input);
+get_function_name(jlm::rvsdg::Input * input);
 
 // this might already exist somewhere
 template<typename OpType>
 inline const OpType *
-TryGetOwnerOp(const rvsdg::input & input) noexcept
+TryGetOwnerOp(const rvsdg::Input & input) noexcept
 {
   if (const auto node = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(input))
   {
@@ -83,7 +83,7 @@ is_dec_req(rvsdg::SimpleNode * node);
 bool
 is_dec_res(rvsdg::SimpleNode * node);
 
-rvsdg::input *
+rvsdg::Input *
 get_mem_state_user(rvsdg::output * state_edge);
 
 /**

@@ -39,7 +39,7 @@ TestDumpDot()
   rvsdg::view(graph, stdout);
 
   std::unordered_map<rvsdg::output *, ViewColors> outputColor;
-  std::unordered_map<rvsdg::input *, ViewColors> inputColor;
+  std::unordered_map<rvsdg::Input *, ViewColors> inputColor;
   std::unordered_map<rvsdg::output *, ViewColors> tailLabel;
 
   // Act
@@ -92,7 +92,7 @@ TestDumpDotTheta()
   rvsdg::view(graph, stdout);
 
   std::unordered_map<rvsdg::output *, ViewColors> outputColor;
-  std::unordered_map<rvsdg::input *, ViewColors> inputColor;
+  std::unordered_map<rvsdg::Input *, ViewColors> inputColor;
   std::unordered_map<rvsdg::output *, ViewColors> tailLabel;
   // Act
   auto dotOutput = ToDot(lambda->region(), outputColor, inputColor, tailLabel);

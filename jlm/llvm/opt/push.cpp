@@ -22,7 +22,7 @@ class pushstat final : public util::Statistics
 public:
   ~pushstat() override = default;
 
-  explicit pushstat(const util::filepath & sourceFile)
+  explicit pushstat(const util::FilePath & sourceFile)
       : Statistics(Statistics::Id::PushNodes, sourceFile)
   {}
 
@@ -41,7 +41,7 @@ public:
   }
 
   static std::unique_ptr<pushstat>
-  Create(const util::filepath & sourceFile)
+  Create(const util::FilePath & sourceFile)
   {
     return std::make_unique<pushstat>(sourceFile);
   }
@@ -351,7 +351,7 @@ pushout_store(rvsdg::Node * storenode)
       StoreNonVolatileOperation::Create(address, nvalue.output, states, storeop->GetAlignment());
   for (size_t n = 0; n < states.size(); n++)
   {
-    std::unordered_set<jlm::rvsdg::input *> users;
+    std::unordered_set<jlm::rvsdg::Input *> users;
     for (const auto & user : *states[n])
     {
       if (rvsdg::TryGetOwnerNode<rvsdg::Node>(*user)

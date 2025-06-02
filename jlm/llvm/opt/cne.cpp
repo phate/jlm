@@ -25,7 +25,7 @@ class cnestat final : public util::Statistics
 public:
   ~cnestat() override = default;
 
-  explicit cnestat(const util::filepath & sourceFile)
+  explicit cnestat(const util::FilePath & sourceFile)
       : Statistics(Statistics::Id::CommonNodeElimination, sourceFile)
   {}
 
@@ -58,7 +58,7 @@ public:
   }
 
   static std::unique_ptr<cnestat>
-  Create(const util::filepath & sourceFile)
+  Create(const util::FilePath & sourceFile)
   {
     return std::make_unique<cnestat>(sourceFile);
   }
@@ -114,7 +114,7 @@ public:
   }
 
   inline bool
-  congruent(const jlm::rvsdg::input * i1, const jlm::rvsdg::input * i2) const noexcept
+  congruent(const jlm::rvsdg::Input * i1, const jlm::rvsdg::Input * i2) const noexcept
   {
     return congruent(i1->origin(), i2->origin());
   }

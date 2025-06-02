@@ -27,7 +27,7 @@ test_pullin_top()
   jlm::tests::test_op bop({ vt, vt }, { vt });
   jlm::tests::test_op cop({ ct, vt }, { ct });
 
-  RvsdgModule rm(jlm::util::filepath(""), "", "");
+  RvsdgModule rm(jlm::util::FilePath(""), "", "");
   auto & graph = rm.Rvsdg();
 
   auto c = &jlm::tests::GraphImport::Create(graph, ct, "c");
@@ -90,7 +90,7 @@ test_pull()
 {
   using namespace jlm::llvm;
 
-  RvsdgModule rm(jlm::util::filepath(""), "", "");
+  RvsdgModule rm(jlm::util::FilePath(""), "", "");
   auto & graph = rm.Rvsdg();
 
   auto p = &jlm::tests::GraphImport::Create(graph, jlm::rvsdg::ControlType::Create(2), "");

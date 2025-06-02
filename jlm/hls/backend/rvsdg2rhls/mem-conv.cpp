@@ -47,11 +47,11 @@ find_decouple_response(
 }
 
 std::pair<rvsdg::SimpleInput *, std::vector<rvsdg::SimpleInput *>>
-TraceEdgeToMerge(rvsdg::input * state_edge)
+TraceEdgeToMerge(rvsdg::Input * state_edge)
 {
   std::vector<rvsdg::SimpleInput *> encountered_muxes;
   // should encounter no new loops, or gammas, only exit them
-  rvsdg::input * previous_state_edge = nullptr;
+  rvsdg::Input * previous_state_edge = nullptr;
   while (true)
   {
     // make sure we make progress

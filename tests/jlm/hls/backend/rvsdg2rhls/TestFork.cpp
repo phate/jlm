@@ -21,7 +21,7 @@ TestFork()
   auto b32 = rvsdg::bittype::Create(32);
   auto ft = jlm::rvsdg::FunctionType::Create({ b32, b32, b32 }, { b32, b32, b32 });
 
-  RvsdgModule rm(util::filepath(""), "", "");
+  RvsdgModule rm(util::FilePath(""), "", "");
 
   auto lambda = jlm::rvsdg::LambdaNode::Create(
       rm.Rvsdg().GetRootRegion(),
@@ -83,7 +83,7 @@ TestConstantFork()
   auto b32 = rvsdg::bittype::Create(32);
   auto ft = jlm::rvsdg::FunctionType::Create({ b32 }, { b32 });
 
-  RvsdgModule rm(util::filepath(""), "", "");
+  RvsdgModule rm(util::FilePath(""), "", "");
 
   auto lambda = jlm::rvsdg::LambdaNode::Create(
       rm.Rvsdg().GetRootRegion(),

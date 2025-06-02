@@ -847,7 +847,7 @@ private:
       return bitType;
     }
 
-    throw util::type_error("bittype", type->debug_string());
+    throw util::TypeError("bittype", type->debug_string());
   }
 };
 
@@ -1615,7 +1615,7 @@ private:
       return structType;
     }
 
-    throw util::type_error("StructType", type->debug_string());
+    throw util::TypeError("StructType", type->debug_string());
   }
 };
 

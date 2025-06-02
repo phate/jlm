@@ -14,7 +14,7 @@
 
 namespace jlm::hls
 {
-rvsdg::input *
+rvsdg::Input *
 GetUser(rvsdg::output * out)
 {
   // This works because at this point we have 1:1 relationships through forks
@@ -23,7 +23,7 @@ GetUser(rvsdg::output * out)
   return user;
 }
 
-rvsdg::input *
+rvsdg::Input *
 FindUserNode(rvsdg::output * out)
 {
 
@@ -474,7 +474,7 @@ void
 CreateLoopFrontier(
     const loop_node * loop,
     std::unordered_map<rvsdg::output *, size_t> & output_cycles,
-    std::unordered_set<rvsdg::input *> & frontier,
+    std::unordered_set<rvsdg::Input *> & frontier,
     std::unordered_set<backedge_result *> & stream_backedges,
     std::unordered_set<rvsdg::SimpleNode *> & top_muxes)
 {
@@ -543,7 +543,7 @@ CalculateLoopCycleDepth(
 void
 PushCycleFrontier(
     std::unordered_map<rvsdg::output *, size_t> & output_cycles,
-    std::unordered_set<rvsdg::input *> & frontier,
+    std::unordered_set<rvsdg::Input *> & frontier,
     std::unordered_set<backedge_result *> & stream_backedges,
     std::unordered_set<rvsdg::SimpleNode *> & top_muxes)
 {
@@ -669,7 +669,7 @@ PushCycleFrontier(
   if (!frontier.empty())
   {
     std::unordered_map<rvsdg::output *, std::string> o_color;
-    std::unordered_map<rvsdg::input *, std::string> i_color;
+    std::unordered_map<rvsdg::Input *, std::string> i_color;
     for (auto i : frontier)
     {
       i_color.insert({ i, "red" });
@@ -692,11 +692,11 @@ CalculateLoopCycleDepth(
       output_cycles[in->origin()] = 0;
     }
   }
-  std::unordered_set<rvsdg::input *> frontier;
+  std::unordered_set<rvsdg::Input *> frontier;
   std::unordered_set<backedge_result *> stream_backedges;
   std::unordered_set<rvsdg::SimpleNode *> top_muxes;
   CreateLoopFrontier(loop, output_cycles, frontier, stream_backedges, top_muxes);
-  std::unordered_set<rvsdg::input *> frontier2(frontier);
+  std::unordered_set<rvsdg::Input *> frontier2(frontier);
   std::cout << "CalculateLoopCycleDepth(" << loop << ", " << analyze_inner_loop << ")" << std::endl;
   /* the reason for having two iterations here is a loop value being updated at the end of the loop,
    * for example the nextRow in SPMV. In theory more iterations could be necessary, until things
@@ -707,7 +707,7 @@ CalculateLoopCycleDepth(
   PushCycleFrontier(output_cycles, frontier, stream_backedges, top_muxes);
 
   std::unordered_map<rvsdg::output *, std::string> o_color;
-  std::unordered_map<rvsdg::input *, std::string> i_color;
+  std::unordered_map<rvsdg::Input *, std::string> i_color;
   std::unordered_map<rvsdg::output *, std::string> tail_label;
   if (!analyze_inner_loop)
   {
@@ -813,7 +813,7 @@ AdjustLoopBuffers(
       buffer_capacity[in->origin()] = 0;
     }
   }
-  std::unordered_set<rvsdg::input *> frontier;
+  std::unordered_set<rvsdg::Input *> frontier;
   std::unordered_set<backedge_result *> stream_backedges;
   std::unordered_set<rvsdg::SimpleNode *> top_muxes;
   CreateLoopFrontier(loop, buffer_capacity, frontier, stream_backedges, top_muxes);
@@ -835,7 +835,7 @@ AdjustLoopBuffers(
   // this might also make the current special case handling of addrqs unnecessary
 
   std::unordered_map<rvsdg::output *, std::string> o_color;
-  std::unordered_map<rvsdg::input *, std::string> i_color;
+  std::unordered_map<rvsdg::Input *, std::string> i_color;
   std::unordered_map<rvsdg::output *, std::string> tail_label;
   if (!analyze_inner_loop)
   {

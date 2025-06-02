@@ -59,7 +59,7 @@ public:
    * \return The converted RVSDG graph.
    */
   std::unique_ptr<llvm::RvsdgModule>
-  ReadAndConvertMlir(const util::filepath & filePath);
+  ReadAndConvertMlir(const util::FilePath & filePath);
 
   /**
    * Converts the MLIR block and all operations in it, including their respective regions.

@@ -15,9 +15,9 @@ namespace jlm::llvm
  * Support functions
  */
 
-using InvariantOutputMap = std::unordered_map<const rvsdg::output *, rvsdg::input *>;
+using InvariantOutputMap = std::unordered_map<const rvsdg::output *, rvsdg::Input *>;
 
-static rvsdg::input *
+static rvsdg::Input *
 invariantInput(const rvsdg::output & output, InvariantOutputMap & invariantOutputs);
 
 static rvsdg::StructuralInput *
@@ -66,7 +66,7 @@ invariantInput(
   return nullptr;
 }
 
-static rvsdg::input *
+static rvsdg::Input *
 invariantInput(
     const rvsdg::ThetaNode & theta,
     const rvsdg::output & output,
@@ -97,7 +97,7 @@ invariantInput(
   return nullptr;
 }
 
-static rvsdg::input *
+static rvsdg::Input *
 invariantInput(const rvsdg::output & output, InvariantOutputMap & invariantOutputs)
 {
   /*
@@ -121,7 +121,7 @@ invariantInput(const rvsdg::output & output, InvariantOutputMap & invariantOutpu
   return nullptr;
 }
 
-static rvsdg::input *
+static rvsdg::Input *
 invariantInput(const rvsdg::output & output)
 {
   InvariantOutputMap invariantOutputs;

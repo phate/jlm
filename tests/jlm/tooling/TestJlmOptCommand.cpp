@@ -20,7 +20,7 @@ TestStatistics()
   using namespace jlm::util;
 
   // Arrange
-  filepath expectedStatisticsDir("/myStatisticsDir/");
+  FilePath expectedStatisticsDir("/myStatisticsDir/");
 
   jlm::util::StatisticsCollectorSettings statisticsCollectorSettings(
       { jlm::util::Statistics::Id::SteensgaardAnalysis },
@@ -28,9 +28,9 @@ TestStatistics()
       "inputFile");
 
   JlmOptCommandLineOptions commandLineOptions(
-      jlm::util::filepath("inputFile.ll"),
+      jlm::util::FilePath("inputFile.ll"),
       JlmOptCommandLineOptions::InputFormat::Llvm,
-      jlm::util::filepath("outputFile.ll"),
+      jlm::util::FilePath("outputFile.ll"),
       JlmOptCommandLineOptions::OutputFormat::Llvm,
       statisticsCollectorSettings,
       RvsdgTreePrinter::Configuration({}),
@@ -78,9 +78,9 @@ OptimizationIdToOptimizationTranslation()
   }
 
   JlmOptCommandLineOptions options(
-      filepath(""),
+      FilePath(""),
       JlmOptCommandLineOptions::InputFormat::Llvm,
-      filepath(""),
+      FilePath(""),
       JlmOptCommandLineOptions::OutputFormat::Llvm,
       StatisticsCollectorSettings(),
       RvsdgTreePrinter::Configuration({}),
@@ -103,9 +103,9 @@ PrintRvsdgTreeToFile()
   using namespace jlm;
 
   // Arrange
-  util::filepath outputFile("/tmp/RvsdgTree");
+  util::FilePath outputFile("/tmp/RvsdgTree");
 
-  jlm::llvm::RvsdgModule rvsdgModule(jlm::util::filepath(""), "", "");
+  jlm::llvm::RvsdgModule rvsdgModule(jlm::util::FilePath(""), "", "");
   util::StatisticsCollector statisticsCollector;
 
   // Act

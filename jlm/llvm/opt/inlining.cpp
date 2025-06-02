@@ -21,7 +21,7 @@ class ilnstat final : public util::Statistics
 public:
   ~ilnstat() override = default;
 
-  explicit ilnstat(const util::filepath & sourceFile)
+  explicit ilnstat(const util::FilePath & sourceFile)
       : Statistics(Statistics::Id::FunctionInlining, sourceFile)
   {}
 
@@ -40,14 +40,14 @@ public:
   }
 
   static std::unique_ptr<ilnstat>
-  Create(const util::filepath & sourceFile)
+  Create(const util::FilePath & sourceFile)
   {
     return std::make_unique<ilnstat>(sourceFile);
   }
 };
 
 jlm::rvsdg::output *
-find_producer(jlm::rvsdg::input * input)
+find_producer(jlm::rvsdg::Input * input)
 {
   auto graph = input->region()->graph();
 

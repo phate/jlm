@@ -19,7 +19,7 @@ class pullstat final : public util::Statistics
 public:
   ~pullstat() override = default;
 
-  explicit pullstat(const util::filepath & sourceFile)
+  explicit pullstat(const util::FilePath & sourceFile)
       : Statistics(Statistics::Id::PullNodes, sourceFile)
   {}
 
@@ -38,7 +38,7 @@ public:
   }
 
   static std::unique_ptr<pullstat>
-  Create(const util::filepath & sourceFile)
+  Create(const util::FilePath & sourceFile)
   {
     return std::make_unique<pullstat>(sourceFile);
   }
@@ -214,7 +214,7 @@ is_used_in_nsubregions(const rvsdg::GammaNode * gamma, const rvsdg::Node * node)
   JLM_ASSERT(single_successor(node));
 
   /* collect all gamma inputs */
-  std::unordered_set<const rvsdg::input *> inputs;
+  std::unordered_set<const rvsdg::Input *> inputs;
   for (size_t n = 0; n < node->noutputs(); n++)
   {
     for (const auto & user : *(node->output(n)))

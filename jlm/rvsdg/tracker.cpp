@@ -26,13 +26,13 @@ active_trackers()
 }
 
 void
-register_tracker(const jlm::rvsdg::tracker * tracker)
+register_tracker(const jlm::rvsdg::Tracker * tracker)
 {
   active_trackers()->insert(tracker->graph());
 }
 
 void
-unregister_tracker(const jlm::rvsdg::tracker * tracker)
+unregister_tracker(const jlm::rvsdg::Tracker * tracker)
 {
   active_trackers()->erase(tracker->graph());
 }
@@ -70,20 +70,20 @@ public:
   tracker_depth_state &
   operator=(tracker_depth_state &&) = delete;
 
-  inline tracker_nodestate *
+  inline TrackerNodeState *
   peek_top() const noexcept
   {
     return count_ ? *nodestates_.at(top_depth_).begin() : nullptr;
   }
 
-  inline tracker_nodestate *
+  inline TrackerNodeState *
   peek_bottom() const noexcept
   {
     return count_ ? *nodestates_.at(bottom_depth_).begin() : nullptr;
   }
 
   inline void
-  add(tracker_nodestate * nodestate, size_t depth)
+  add(TrackerNodeState * nodestate, size_t depth)
   {
     auto it = nodestates_.find(depth);
     if (it != nodestates_.end())
@@ -107,7 +107,7 @@ public:
   }
 
   inline void
-  remove(tracker_nodestate * nodestate, size_t depth)
+  remove(TrackerNodeState * nodestate, size_t depth)
   {
     nodestates_[depth].erase(nodestate);
 
@@ -130,7 +130,7 @@ public:
     JLM_ASSERT(top_depth_ <= bottom_depth_);
   }
 
-  inline tracker_nodestate *
+  inline TrackerNodeState *
   pop_top()
   {
     auto nodestate = peek_top();
@@ -140,7 +140,7 @@ public:
     return nodestate;
   }
 
-  inline tracker_nodestate *
+  inline TrackerNodeState *
   pop_bottom()
   {
     auto nodestate = peek_bottom();
@@ -154,17 +154,15 @@ private:
   size_t count_;
   size_t top_depth_;
   size_t bottom_depth_;
-  std::unordered_map<size_t, std::unordered_set<tracker_nodestate *>> nodestates_;
+  std::unordered_map<size_t, std::unordered_set<TrackerNodeState *>> nodestates_;
 };
 
-/* tracker */
-
-tracker::~tracker() noexcept
+Tracker::~Tracker() noexcept
 {
   unregister_tracker(this);
 }
 
-tracker::tracker(Graph * graph, size_t nstates)
+Tracker::Tracker(Graph * graph, size_t nstates)
     : graph_(graph),
       states_(nstates)
 {
@@ -172,14 +170,14 @@ tracker::tracker(Graph * graph, size_t nstates)
     states_[n] = std::make_unique<tracker_depth_state>();
 
   depth_callback_ =
-      on_node_depth_change.connect(std::bind(&tracker::node_depth_change, this, _1, _2));
-  destroy_callback_ = on_node_destroy.connect(std::bind(&tracker::node_destroy, this, _1));
+      on_node_depth_change.connect(std::bind(&Tracker::node_depth_change, this, _1, _2));
+  destroy_callback_ = on_node_destroy.connect(std::bind(&Tracker::node_destroy, this, _1));
 
   register_tracker(this);
 }
 
 void
-tracker::node_depth_change(Node * node, size_t old_depth)
+Tracker::node_depth_change(Node * node, size_t old_depth)
 {
   auto nstate = nodestate(node);
   if (nstate->state() < states_.size())
@@ -190,7 +188,7 @@ tracker::node_depth_change(Node * node, size_t old_depth)
 }
 
 void
-tracker::node_destroy(Node * node)
+Tracker::node_destroy(Node * node)
 {
   auto nstate = nodestate(node);
   if (nstate->state() < states_.size())
@@ -200,13 +198,13 @@ tracker::node_destroy(Node * node)
 }
 
 ssize_t
-tracker::get_nodestate(Node * node)
+Tracker::get_nodestate(Node * node)
 {
   return nodestate(node)->state();
 }
 
 void
-tracker::set_nodestate(Node * node, size_t state)
+Tracker::set_nodestate(Node * node, size_t state)
 {
   auto nstate = nodestate(node);
   if (nstate->state() != state)
@@ -221,7 +219,7 @@ tracker::set_nodestate(Node * node, size_t state)
 }
 
 Node *
-tracker::peek_top(size_t state) const
+Tracker::peek_top(size_t state) const
 {
   JLM_ASSERT(state < states_.size());
 
@@ -236,7 +234,7 @@ tracker::peek_top(size_t state) const
 }
 
 Node *
-tracker::peek_bottom(size_t state) const
+Tracker::peek_bottom(size_t state) const
 {
   JLM_ASSERT(state < states_.size());
 
@@ -250,14 +248,14 @@ tracker::peek_bottom(size_t state) const
   return nullptr;
 }
 
-jlm::rvsdg::tracker_nodestate *
-tracker::nodestate(Node * node)
+jlm::rvsdg::TrackerNodeState *
+Tracker::nodestate(Node * node)
 {
   auto it = nodestates_.find(node);
   if (it != nodestates_.end())
     return it->second.get();
 
-  nodestates_[node] = std::make_unique<jlm::rvsdg::tracker_nodestate>(node);
+  nodestates_[node] = std::make_unique<jlm::rvsdg::TrackerNodeState>(node);
   return nodestates_[node].get();
 }
 

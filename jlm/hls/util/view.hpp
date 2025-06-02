@@ -27,14 +27,14 @@ std::string
 RegionToDot(
     rvsdg::Region * region,
     std::unordered_map<rvsdg::output *, ViewColors> & outputColor,
-    std::unordered_map<rvsdg::input *, ViewColors> & inputColor,
+    std::unordered_map<rvsdg::Input *, ViewColors> & inputColor,
     std::unordered_map<rvsdg::output *, ViewColors> & tailLabel);
 
 std::string
 ToDot(
     rvsdg::Region * region,
     std::unordered_map<rvsdg::output *, ViewColors> & outputColor,
-    std::unordered_map<rvsdg::input *, ViewColors> & inputColor,
+    std::unordered_map<rvsdg::Input *, ViewColors> & inputColor,
     std::unordered_map<rvsdg::output *, ViewColors> & tailLabel);
 
 void
@@ -45,7 +45,7 @@ ViewDot(
     rvsdg::Region * region,
     FILE * out,
     std::unordered_map<rvsdg::output *, ViewColors> & outputColor,
-    std::unordered_map<rvsdg::input *, ViewColors> & inputColor,
+    std::unordered_map<rvsdg::Input *, ViewColors> & inputColor,
     std::unordered_map<rvsdg::output *, ViewColors> & tailLabel);
 
 void
@@ -53,7 +53,7 @@ DumpDot(
     llvm::RvsdgModule & rvsdgModule,
     const std::string & fileName,
     std::unordered_map<rvsdg::output *, ViewColors> outputColor,
-    std::unordered_map<rvsdg::input *, ViewColors> inputColor,
+    std::unordered_map<rvsdg::Input *, ViewColors> inputColor,
     std::unordered_map<rvsdg::output *, ViewColors> tailLabel);
 void
 
@@ -64,7 +64,7 @@ DumpDot(
     rvsdg::Region * region,
     const std::string & fileName,
     std::unordered_map<rvsdg::output *, ViewColors> outputColor,
-    std::unordered_map<rvsdg::input *, ViewColors> inputColor,
+    std::unordered_map<rvsdg::Input *, ViewColors> inputColor,
     std::unordered_map<rvsdg::output *, ViewColors> tailLabel);
 void
 DumpDot(rvsdg::Region * region, const std::string & fileName);
