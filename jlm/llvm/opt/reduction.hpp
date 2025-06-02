@@ -82,6 +82,12 @@ private:
   ReduceStoreNode(rvsdg::Node & simpleNode);
 
   [[nodiscard]] static bool
+  ReduceMemoryStateMergeNode(rvsdg::Node & simpleNode);
+
+  [[nodiscard]] static bool
+  ReduceMemoryStateSplitNode(rvsdg::Node & simpleNode);
+
+  [[nodiscard]] static bool
   ReduceBinaryNode(rvsdg::Node & simpleNode);
 
   static std::optional<std::vector<rvsdg::output *>>
@@ -92,6 +98,16 @@ private:
   static std::optional<std::vector<rvsdg::output *>>
   NormalizeStoreNode(
       const StoreNonVolatileOperation & operation,
+      const std::vector<rvsdg::output *> & operands);
+
+  static std::optional<std::vector<rvsdg::output *>>
+  NormalizeMemoryStateMergeNode(
+      const MemoryStateMergeOperation & operation,
+      const std::vector<rvsdg::output *> & operands);
+
+  static std::optional<std::vector<rvsdg::output *>>
+  NormalizeMemoryStateSplitNode(
+      const MemoryStateSplitOperation & operation,
       const std::vector<rvsdg::output *> & operands);
 
   std::unique_ptr<Statistics> Statistics_;
