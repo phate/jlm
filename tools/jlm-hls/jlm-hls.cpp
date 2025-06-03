@@ -8,6 +8,8 @@
 #include <jlm/hls/backend/rhls2firrtl/json-hls.hpp>
 #include <jlm/hls/backend/rhls2firrtl/RhlsToFirrtlConverter.hpp>
 #include <jlm/hls/backend/rhls2firrtl/verilator-harness-hls.hpp>
+#include <jlm/hls/backend/rhls2firrtl/VerilatorHarnessAxi.hpp>
+#include <jlm/hls/backend/rvsdg2rhls/add-buffers.hpp>
 #include <jlm/hls/backend/rvsdg2rhls/rvsdg2rhls.hpp>
 #include <jlm/llvm/backend/IpGraphToLlvmConverter.hpp>
 #include <jlm/llvm/backend/RvsdgToIpGraphConverter.hpp>
@@ -15,8 +17,6 @@
 #include <jlm/llvm/frontend/LlvmModuleConversion.hpp>
 #include <jlm/tooling/CommandLine.hpp>
 
-#include "jlm/hls/backend/rhls2firrtl/VerilatorHarnessAxi.hpp"
-#include "jlm/hls/backend/rvsdg2rhls/add-buffers.hpp"
 #include <llvm/IR/LLVMContext.h>
 #include <llvm/IR/Module.h>
 #include <llvm/IRReader/IRReader.h>
