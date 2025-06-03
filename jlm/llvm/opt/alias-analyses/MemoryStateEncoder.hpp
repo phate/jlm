@@ -13,7 +13,7 @@ namespace jlm::rvsdg
 {
 class GammaNode;
 class LambdaNode;
-class output;
+class Output;
 class PhiNode;
 class Region;
 class RvsdgModule;
@@ -149,13 +149,13 @@ private:
   void
   EncodeTheta(rvsdg::ThetaNode & thetaNode);
 
-  std::vector<rvsdg::output *>
+  std::vector<rvsdg::Output *>
   EncodeThetaEntry(rvsdg::ThetaNode & thetaNode);
 
   void
   EncodeThetaExit(
       rvsdg::ThetaNode & thetaNode,
-      const std::vector<rvsdg::output *> & thetaStateOutputs);
+      const std::vector<rvsdg::Output *> & thetaStateOutputs);
 
   /**
    * Replace \p loadNode with a new copy that takes the provided \p memoryStates. All users of the
@@ -169,7 +169,7 @@ private:
   [[nodiscard]] static rvsdg::SimpleNode &
   ReplaceLoadNode(
       const rvsdg::SimpleNode & node,
-      const std::vector<rvsdg::output *> & memoryStates);
+      const std::vector<rvsdg::Output *> & memoryStates);
 
   /**
    * Replace \p storeNode with a new copy that takes the provided \p memoryStates. All users of the
@@ -183,7 +183,7 @@ private:
   [[nodiscard]] static rvsdg::SimpleNode &
   ReplaceStoreNode(
       const rvsdg::SimpleNode & node,
-      const std::vector<rvsdg::output *> & memoryStates);
+      const std::vector<rvsdg::Output *> & memoryStates);
 
   /**
    * Replace \p memcpyNode with a new copy that takes the provided \p memoryStates. All users of
@@ -195,10 +195,10 @@ private:
    *
    * @return A vector with the memory states of the newly created copy.
    */
-  [[nodiscard]] static std::vector<rvsdg::output *>
+  [[nodiscard]] static std::vector<rvsdg::Output *>
   ReplaceMemcpyNode(
       const rvsdg::SimpleNode & memcpyNode,
-      const std::vector<rvsdg::output *> & memoryStates);
+      const std::vector<rvsdg::Output *> & memoryStates);
 
   /**
    * Determines whether \p simpleNode should be handled by the MemoryStateEncoder.

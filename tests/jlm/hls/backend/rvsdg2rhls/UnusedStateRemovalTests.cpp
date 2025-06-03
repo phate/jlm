@@ -328,7 +328,7 @@ TestInvariantMemoryState()
       32);
 
   // LambdaExitMemoryStateMerge node
-  std::vector<jlm::rvsdg::output *> outputs;
+  std::vector<jlm::rvsdg::Output *> outputs;
   auto & memoryStateMerge = LambdaExitMemoryStateMergeOperation::Create(
       *lambda->subregion(),
       { loadOutput[1], memoryStateSplit[1] });

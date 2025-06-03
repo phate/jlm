@@ -37,7 +37,7 @@ PhiNode::GetOperation() const noexcept
 }
 
 PhiNode::ContextVar
-PhiNode::AddContextVar(jlm::rvsdg::output & origin)
+PhiNode::AddContextVar(rvsdg::Output & origin)
 {
   Node::add_input(std::make_unique<jlm::rvsdg::StructuralInput>(this, &origin, origin.Type()));
   auto input = static_cast<jlm::rvsdg::StructuralInput *>(Node::input(ninputs() - 1));
@@ -75,7 +75,7 @@ PhiNode::GetFixVars() const noexcept
 }
 
 [[nodiscard]] std::optional<PhiNode::FixVar>
-PhiNode::MapArgumentFixVar(const rvsdg::output & argument) const noexcept
+PhiNode::MapArgumentFixVar(const rvsdg::Output & argument) const noexcept
 {
   JLM_ASSERT(rvsdg::TryGetRegionParentNode<PhiNode>(argument) == this);
   if (argument.index() < subregion()->nresults())
@@ -99,7 +99,7 @@ PhiNode::MapResultFixVar(const rvsdg::Input & result) const noexcept
 }
 
 [[nodiscard]] PhiNode::FixVar
-PhiNode::MapOutputFixVar(const rvsdg::output & output) const noexcept
+PhiNode::MapOutputFixVar(const rvsdg::Output & output) const noexcept
 {
   JLM_ASSERT(rvsdg::TryGetOwnerNode<PhiNode>(output) == this);
   return FixVar{ subregion()->argument(output.index()),
@@ -116,7 +116,7 @@ PhiNode::MapInputContextVar(const rvsdg::Input & input) const noexcept
 }
 
 [[nodiscard]] std::optional<PhiNode::ContextVar>
-PhiNode::MapArgumentContextVar(const rvsdg::output & argument) const noexcept
+PhiNode::MapArgumentContextVar(const rvsdg::Output & argument) const noexcept
 {
   JLM_ASSERT(rvsdg::TryGetRegionParentNode<PhiNode>(argument) == this);
   if (argument.index() >= subregion()->nresults())
@@ -131,7 +131,7 @@ PhiNode::MapArgumentContextVar(const rvsdg::output & argument) const noexcept
 }
 
 [[nodiscard]] std::variant<PhiNode::FixVar, PhiNode::ContextVar>
-PhiNode::MapArgument(const rvsdg::output & argument) const noexcept
+PhiNode::MapArgument(const rvsdg::Output & argument) const noexcept
 {
   JLM_ASSERT(rvsdg::TryGetRegionParentNode<PhiNode>(argument) == this);
   if (auto ctxvar = MapArgumentContextVar(argument))
@@ -251,7 +251,7 @@ PhiNode::ExtractLambdaNodes(const PhiNode & phiNode)
 }
 
 PhiNode::ContextVar
-PhiBuilder::AddContextVar(jlm::rvsdg::output & origin)
+PhiBuilder::AddContextVar(rvsdg::Output & origin)
 {
   return node_->AddContextVar(origin);
 }

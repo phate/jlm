@@ -14,7 +14,7 @@ namespace jlm::rvsdg
 {
 class Graph;
 class Input;
-class output;
+class Output;
 }
 
 namespace jlm::util
@@ -141,7 +141,7 @@ private:
   IsMemoryStateInput(const rvsdg::Input * input) noexcept;
 
   [[nodiscard]] static bool
-  IsMemoryStateOutput(const rvsdg::output * output) noexcept;
+  IsMemoryStateOutput(const rvsdg::Output * output) noexcept;
 
   Configuration Configuration_;
 };

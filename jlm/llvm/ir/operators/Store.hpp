@@ -25,11 +25,11 @@ namespace jlm::llvm
 class StoreOperation : public rvsdg::SimpleOperation
 {
 public:
-  class MemoryStateOutputIterator final : public rvsdg::output::iterator<rvsdg::SimpleOutput>
+  class MemoryStateOutputIterator final : public rvsdg::Output::iterator<rvsdg::SimpleOutput>
   {
   public:
     constexpr explicit MemoryStateOutputIterator(rvsdg::SimpleOutput * output)
-        : rvsdg::output::iterator<rvsdg::SimpleOutput>(output)
+        : rvsdg::Output::iterator<rvsdg::SimpleOutput>(output)
     {}
 
     [[nodiscard]] rvsdg::SimpleOutput *
@@ -170,11 +170,11 @@ public:
     return tac::create(op, { address, value, state });
   }
 
-  static std::vector<rvsdg::output *>
+  static std::vector<rvsdg::Output *>
   Create(
-      rvsdg::output * address,
-      rvsdg::output * value,
-      const std::vector<rvsdg::output *> & memoryStates,
+      rvsdg::Output * address,
+      rvsdg::Output * value,
+      const std::vector<rvsdg::Output *> & memoryStates,
       size_t alignment)
   {
     return outputs(&CreateNode(*address, *value, memoryStates, alignment));
@@ -182,9 +182,9 @@ public:
 
   static rvsdg::SimpleNode &
   CreateNode(
-      rvsdg::output & address,
-      rvsdg::output & value,
-      const std::vector<rvsdg::output *> & memoryStates,
+      rvsdg::Output & address,
+      rvsdg::Output & value,
+      const std::vector<rvsdg::Output *> & memoryStates,
       size_t alignment)
   {
     auto storedType = CheckAndExtractStoredType(value.Type());
@@ -199,11 +199,11 @@ public:
     return CreateNode(*address.region(), std::move(operation), operands);
   }
 
-  static std::vector<rvsdg::output *>
+  static std::vector<rvsdg::Output *>
   Create(
       rvsdg::Region & region,
       std::unique_ptr<StoreNonVolatileOperation> storeOperation,
-      const std::vector<rvsdg::output *> & operands)
+      const std::vector<rvsdg::Output *> & operands)
   {
     return outputs(&CreateNode(region, std::move(storeOperation), operands));
   }
@@ -212,7 +212,7 @@ public:
   CreateNode(
       rvsdg::Region & region,
       std::unique_ptr<StoreNonVolatileOperation> storeOperation,
-      const std::vector<rvsdg::output *> & operands)
+      const std::vector<rvsdg::Output *> & operands)
   {
     return rvsdg::SimpleNode::Create(region, std::move(storeOperation), operands);
   }
@@ -287,7 +287,7 @@ public:
     return input;
   }
 
-  [[nodiscard]] static rvsdg::output &
+  [[nodiscard]] static rvsdg::Output &
   IOStateOutput(const rvsdg::Node & node) noexcept
   {
     JLM_ASSERT(is<StoreOperation>(&node));
@@ -314,22 +314,22 @@ public:
   CreateNode(
       rvsdg::Region & region,
       std::unique_ptr<StoreVolatileOperation> storeOperation,
-      const std::vector<rvsdg::output *> & operands)
+      const std::vector<rvsdg::Output *> & operands)
   {
     return rvsdg::SimpleNode::Create(region, std::move(storeOperation), operands);
   }
 
   static rvsdg::SimpleNode &
   CreateNode(
-      rvsdg::output & address,
-      rvsdg::output & value,
-      rvsdg::output & ioState,
-      const std::vector<rvsdg::output *> & memoryStates,
+      rvsdg::Output & address,
+      rvsdg::Output & value,
+      rvsdg::Output & ioState,
+      const std::vector<rvsdg::Output *> & memoryStates,
       size_t alignment)
   {
     auto storedType = CheckAndExtractStoredType(value.Type());
 
-    std::vector<rvsdg::output *> operands({ &address, &value, &ioState });
+    std::vector<rvsdg::Output *> operands({ &address, &value, &ioState });
     operands.insert(operands.end(), memoryStates.begin(), memoryStates.end());
 
     auto operation =
@@ -337,11 +337,11 @@ public:
     return CreateNode(*address.region(), std::move(operation), operands);
   }
 
-  static std::vector<rvsdg::output *>
+  static std::vector<rvsdg::Output *>
   Create(
       rvsdg::Region & region,
       std::unique_ptr<StoreVolatileOperation> storeOperation,
-      const std::vector<rvsdg::output *> & operands)
+      const std::vector<rvsdg::Output *> & operands)
   {
     return rvsdg::outputs(&CreateNode(region, std::move(storeOperation), operands));
   }
@@ -398,10 +398,10 @@ private:
  * @return If the normalization could be applied, then the results of the store operation after
  * the transformation. Otherwise, std::nullopt.
  */
-std::optional<std::vector<rvsdg::output *>>
+std::optional<std::vector<rvsdg::Output *>>
 NormalizeStoreMux(
     const StoreNonVolatileOperation & operation,
-    const std::vector<rvsdg::output *> & operands);
+    const std::vector<rvsdg::Output *> & operands);
 
 /**
  * \brief Removes a duplicated store to the same address.
@@ -417,10 +417,10 @@ NormalizeStoreMux(
  * @return If the normalization could be applied, then the results of the store operation after
  * the transformation. Otherwise, std::nullopt.
  */
-std::optional<std::vector<rvsdg::output *>>
+std::optional<std::vector<rvsdg::Output *>>
 NormalizeStoreStore(
     const StoreNonVolatileOperation & operation,
-    const std::vector<rvsdg::output *> & operands);
+    const std::vector<rvsdg::Output *> & operands);
 
 /**
  * \brief Removes unnecessary state from a store node when its address originates directly from an
@@ -440,10 +440,10 @@ NormalizeStoreStore(
  * @return If the normalization could be applied, then the results of the store operation after
  * the transformation. Otherwise, std::nullopt.
  */
-std::optional<std::vector<rvsdg::output *>>
+std::optional<std::vector<rvsdg::Output *>>
 NormalizeStoreAlloca(
     const StoreNonVolatileOperation & operation,
-    const std::vector<rvsdg::output *> & operands);
+    const std::vector<rvsdg::Output *> & operands);
 
 /**
  * \brief Remove duplicated state operands
@@ -458,10 +458,10 @@ NormalizeStoreAlloca(
  * @return If the normalization could be applied, then the results of the load operation after
  * the transformation. Otherwise, std::nullopt.
  */
-std::optional<std::vector<rvsdg::output *>>
+std::optional<std::vector<rvsdg::Output *>>
 NormalizeStoreDuplicateState(
     const StoreNonVolatileOperation & operation,
-    const std::vector<rvsdg::output *> & operands);
+    const std::vector<rvsdg::Output *> & operands);
 
 }
 

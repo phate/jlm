@@ -18,12 +18,12 @@ instrument_ref(llvm::RvsdgModule & rm);
 void
 instrument_ref(
     rvsdg::Region * region,
-    jlm::rvsdg::output * ioState,
-    jlm::rvsdg::output * load_func,
+    jlm::rvsdg::Output * ioState,
+    jlm::rvsdg::Output * load_func,
     const std::shared_ptr<const rvsdg::FunctionType> & loadFunctionType,
-    jlm::rvsdg::output * store_func,
+    jlm::rvsdg::Output * store_func,
     const std::shared_ptr<const rvsdg::FunctionType> & storeFunctionType,
-    jlm::rvsdg::output * alloca_func,
+    jlm::rvsdg::Output * alloca_func,
     const std::shared_ptr<const rvsdg::FunctionType> & allocaFunctionType);
 
 } // namespace jlm::hls

@@ -92,7 +92,7 @@ private:
    * of the MLIR region.
    * \return The results of the region are returned as a std::vector
    */
-  ::llvm::SmallVector<jlm::rvsdg::output *>
+  ::llvm::SmallVector<jlm::rvsdg::Output *>
   ConvertRegion(::mlir::Region & region, rvsdg::Region & rvsdgRegion);
 
   /**
@@ -102,7 +102,7 @@ private:
    * of the MLIR region.
    * \return The results of the region are returned as a std::vector
    */
-  ::llvm::SmallVector<jlm::rvsdg::output *>
+  ::llvm::SmallVector<jlm::rvsdg::Output *>
   ConvertBlock(::mlir::Block & block, rvsdg::Region & rvsdgRegion);
 
   /**
@@ -112,10 +112,10 @@ private:
    * \param outputMap The map of operations that have been converted.
    * argument). \return The vector that is populated with the inputs.
    */
-  static ::llvm::SmallVector<jlm::rvsdg::output *>
+  static ::llvm::SmallVector<jlm::rvsdg::Output *>
   GetConvertedInputs(
       ::mlir::Operation & mlirOp,
-      const std::unordered_map<void *, rvsdg::output *> & outputMap);
+      const std::unordered_map<void *, rvsdg::Output *> & outputMap);
 
   /**
    * Converts an MLIR integer comparison operation into an RVSDG node.
@@ -129,7 +129,7 @@ private:
   ConvertCmpIOp(
       ::mlir::arith::CmpIOp & CompOp,
       rvsdg::Region & rvsdgRegion,
-      const ::llvm::SmallVector<rvsdg::output *> & inputs,
+      const ::llvm::SmallVector<rvsdg::Output *> & inputs,
       size_t nbits);
 
   /**
@@ -143,7 +143,7 @@ private:
   ConvertFPBinaryNode(
       const ::mlir::Operation & mlirOperation,
       rvsdg::Region & rvsdgRegion,
-      const ::llvm::SmallVector<rvsdg::output *> & inputs);
+      const ::llvm::SmallVector<rvsdg::Output *> & inputs);
 
   /**
    * Converts a floating point compare predicate to jlm::llvm::fpcmp.
@@ -164,7 +164,7 @@ private:
   ConvertBitBinaryNode(
       ::mlir::Operation & mlirOperation,
       rvsdg::Region & rvsdgRegion,
-      const ::llvm::SmallVector<rvsdg::output *> & inputs);
+      const ::llvm::SmallVector<rvsdg::Output *> & inputs);
 
   /**
    * Converts an MLIR operation into an RVSDG node.
@@ -177,7 +177,7 @@ private:
   ConvertOperation(
       ::mlir::Operation & mlirOperation,
       rvsdg::Region & rvsdgRegion,
-      const ::llvm::SmallVector<rvsdg::output *> & inputs);
+      const ::llvm::SmallVector<rvsdg::Output *> & inputs);
 
   /**
    * Converts a floating point size to jlm::llvm::fpsize.
@@ -206,7 +206,7 @@ private:
   ConvertLambda(
       ::mlir::Operation & mlirLambda,
       rvsdg::Region & rvsdgRegion,
-      const ::llvm::SmallVector<rvsdg::output *> & inputs);
+      const ::llvm::SmallVector<rvsdg::Output *> & inputs);
 
   /**
    * Converts an MLIR type into an RVSDG type.

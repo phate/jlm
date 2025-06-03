@@ -346,7 +346,7 @@ Phi()
   auto y = &jlm::tests::GraphImport::Create(rvsdg, valueType, "y");
   auto z = &jlm::tests::GraphImport::Create(rvsdg, valueType, "z");
 
-  auto setupF1 = [&](Region & region, output & rv2, output & dx)
+  auto setupF1 = [&](Region & region, Output & rv2, Output & dx)
   {
     auto lambda1 = jlm::rvsdg::LambdaNode::Create(
         region,
@@ -364,7 +364,7 @@ Phi()
     return lambda1->finalize({ result });
   };
 
-  auto setupF2 = [&](Region & region, output & rv1, output & dy)
+  auto setupF2 = [&](Region & region, Output & rv1, Output & dy)
   {
     auto lambda2 = jlm::rvsdg::LambdaNode::Create(
         region,
@@ -381,7 +381,7 @@ Phi()
     return lambda2->finalize({ result });
   };
 
-  auto setupF3 = [&](Region & region, output & dz)
+  auto setupF3 = [&](Region & region, Output & dz)
   {
     auto lambda3 = jlm::rvsdg::LambdaNode::Create(
         region,

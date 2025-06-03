@@ -34,10 +34,10 @@ public:
   {}
 
   virtual unop_reduction_path_t
-  can_reduce_operand(const jlm::rvsdg::output * arg) const noexcept = 0;
+  can_reduce_operand(const jlm::rvsdg::Output * arg) const noexcept = 0;
 
-  virtual jlm::rvsdg::output *
-  reduce_operand(unop_reduction_path_t path, jlm::rvsdg::output * arg) const = 0;
+  virtual jlm::rvsdg::Output *
+  reduce_operand(unop_reduction_path_t path, jlm::rvsdg::Output * arg) const = 0;
 };
 
 static const unop_reduction_path_t unop_reduction_none = 0;
@@ -64,10 +64,10 @@ static const unop_reduction_path_t unop_reduction_distribute = 6;
  * \see unary_op::can_reduce_operand()
  * \see unary_op::reduce_operand()
  */
-std::optional<std::vector<rvsdg::output *>>
+std::optional<std::vector<rvsdg::Output *>>
 NormalizeUnaryOperation(
     const UnaryOperation & operation,
-    const std::vector<rvsdg::output *> & operands);
+    const std::vector<rvsdg::Output *> & operands);
 
 }
 

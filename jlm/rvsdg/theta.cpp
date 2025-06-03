@@ -46,7 +46,7 @@ ThetaNode::ThetaNode(rvsdg::Region & parent)
 }
 
 ThetaNode::LoopVar
-ThetaNode::AddLoopVar(rvsdg::output * origin)
+ThetaNode::AddLoopVar(rvsdg::Output * origin)
 {
   Node::add_input(std::make_unique<StructuralInput>(this, origin, origin->Type()));
   Node::add_output(std::make_unique<StructuralOutput>(this, origin->Type()));
@@ -125,11 +125,11 @@ ThetaNode::MapInputLoopVar(const rvsdg::Input & input) const
 }
 
 [[nodiscard]] ThetaNode::LoopVar
-ThetaNode::MapPreLoopVar(const rvsdg::output & argument) const
+ThetaNode::MapPreLoopVar(const rvsdg::Output & argument) const
 {
   JLM_ASSERT(rvsdg::TryGetRegionParentNode<ThetaNode>(argument) == this);
   return LoopVar{ input(argument.index()),
-                  const_cast<rvsdg::output *>(&argument),
+                  const_cast<rvsdg::Output *>(&argument),
                   subregion()->result(argument.index() + 1),
                   output(argument.index()) };
 }
@@ -151,13 +151,13 @@ ThetaNode::MapPostLoopVar(const rvsdg::Input & result) const
 }
 
 [[nodiscard]] ThetaNode::LoopVar
-ThetaNode::MapOutputLoopVar(const rvsdg::output & output) const
+ThetaNode::MapOutputLoopVar(const rvsdg::Output & output) const
 {
   JLM_ASSERT(rvsdg::TryGetOwnerNode<ThetaNode>(output) == this);
   return LoopVar{ input(output.index()),
                   subregion()->argument(output.index()),
                   subregion()->result(output.index() + 1),
-                  const_cast<rvsdg::output *>(&output) };
+                  const_cast<rvsdg::Output *>(&output) };
 }
 
 [[nodiscard]] std::vector<ThetaNode::LoopVar>

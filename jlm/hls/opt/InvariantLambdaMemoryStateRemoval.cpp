@@ -30,7 +30,7 @@ InvariantLambdaMemoryStateRemoval::RemoveInvariantMemoryStateEdges(
 
   // Check if we have any invariant edge(s) between the two nodes
   std::vector<size_t> nonInvariantIndices;
-  std::vector<rvsdg::output *> nonInvariantOutputs;
+  std::vector<rvsdg::Output *> nonInvariantOutputs;
   rvsdg::Node * entryNode = nullptr;
   for (size_t i = 0; i < exitNode->ninputs(); i++)
   {

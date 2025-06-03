@@ -164,7 +164,7 @@ TestNodeIterators()
   }
 
   assert(pointsToGraph->NumRegisterNodes() == 5);
-  jlm::util::HashSet<const jlm::rvsdg::output *> expectedRegisters({ &test.GetImportOutput(),
+  jlm::util::HashSet<const jlm::rvsdg::Output *> expectedRegisters({ &test.GetImportOutput(),
                                                                      &test.GetLambdaOutput(),
                                                                      &test.GetDeltaOutput(),
                                                                      &test.GetAllocaOutput(),
@@ -196,7 +196,7 @@ TestRegisterNodeIteration()
 
   auto pointsToGraph = aa::PointsToGraph::Create();
 
-  jlm::util::HashSet<const jlm::rvsdg::output *> registers(
+  jlm::util::HashSet<const jlm::rvsdg::Output *> registers(
       { test.alloca_a->output(0), test.alloca_b->output(0) });
   aa::PointsToGraph::RegisterNode::Create(*pointsToGraph, registers);
 
