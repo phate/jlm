@@ -79,7 +79,7 @@ test_linear_reduction()
   {
     auto cfg = cfg::create(module);
 
-    auto bb = jlm::llvm::basic_block::create(*cfg);
+    auto bb = jlm::llvm::BasicBlock::create(*cfg);
     cfg->exit()->divert_inedges(bb);
     bb->add_outedge(cfg->exit());
 
@@ -115,8 +115,8 @@ test_loop_reduction()
   {
     auto cfg = cfg::create(module);
 
-    auto bb1 = jlm::llvm::basic_block::create(*cfg);
-    auto bb2 = jlm::llvm::basic_block::create(*cfg);
+    auto bb1 = jlm::llvm::BasicBlock::create(*cfg);
+    auto bb2 = jlm::llvm::BasicBlock::create(*cfg);
 
     cfg->exit()->divert_inedges(bb1);
     bb1->add_outedge(bb2);
@@ -166,12 +166,12 @@ test_branch_reduction()
   {
     auto cfg = cfg::create(module);
 
-    auto split = jlm::llvm::basic_block::create(*cfg);
-    auto bb1 = jlm::llvm::basic_block::create(*cfg);
-    auto bb2 = jlm::llvm::basic_block::create(*cfg);
-    auto bb3 = jlm::llvm::basic_block::create(*cfg);
-    auto bb4 = jlm::llvm::basic_block::create(*cfg);
-    auto join = jlm::llvm::basic_block::create(*cfg);
+    auto split = jlm::llvm::BasicBlock::create(*cfg);
+    auto bb1 = jlm::llvm::BasicBlock::create(*cfg);
+    auto bb2 = jlm::llvm::BasicBlock::create(*cfg);
+    auto bb3 = jlm::llvm::BasicBlock::create(*cfg);
+    auto bb4 = jlm::llvm::BasicBlock::create(*cfg);
+    auto join = jlm::llvm::BasicBlock::create(*cfg);
 
     cfg->exit()->divert_inedges(split);
     split->add_outedge(bb1);
@@ -233,12 +233,12 @@ test_branch_loop_reduction()
   auto setup_cfg = [](jlm::llvm::ipgraph_module & module)
   {
     auto cfg = cfg::create(module);
-    auto split = jlm::llvm::basic_block::create(*cfg);
-    auto bb1 = jlm::llvm::basic_block::create(*cfg);
-    auto bb2 = jlm::llvm::basic_block::create(*cfg);
-    auto bb3 = jlm::llvm::basic_block::create(*cfg);
-    auto bb4 = jlm::llvm::basic_block::create(*cfg);
-    auto join = jlm::llvm::basic_block::create(*cfg);
+    auto split = jlm::llvm::BasicBlock::create(*cfg);
+    auto bb1 = jlm::llvm::BasicBlock::create(*cfg);
+    auto bb2 = jlm::llvm::BasicBlock::create(*cfg);
+    auto bb3 = jlm::llvm::BasicBlock::create(*cfg);
+    auto bb4 = jlm::llvm::BasicBlock::create(*cfg);
+    auto join = jlm::llvm::BasicBlock::create(*cfg);
 
     cfg->exit()->divert_inedges(split);
     split->add_outedge(bb1);
@@ -311,11 +311,11 @@ test_loop_branch_reduction()
   {
     auto cfg = cfg::create(module);
 
-    auto split = jlm::llvm::basic_block::create(*cfg);
-    auto bb1 = jlm::llvm::basic_block::create(*cfg);
-    auto bb2 = jlm::llvm::basic_block::create(*cfg);
-    auto join = jlm::llvm::basic_block::create(*cfg);
-    auto bb3 = jlm::llvm::basic_block::create(*cfg);
+    auto split = jlm::llvm::BasicBlock::create(*cfg);
+    auto bb1 = jlm::llvm::BasicBlock::create(*cfg);
+    auto bb2 = jlm::llvm::BasicBlock::create(*cfg);
+    auto join = jlm::llvm::BasicBlock::create(*cfg);
+    auto bb3 = jlm::llvm::BasicBlock::create(*cfg);
 
     cfg->exit()->divert_inedges(split);
     split->add_outedge(bb1);
@@ -378,11 +378,11 @@ test_ifthen_reduction()
   {
     auto cfg = cfg::create(module);
 
-    auto split = jlm::llvm::basic_block::create(*cfg);
-    auto bb1 = jlm::llvm::basic_block::create(*cfg);
-    auto bb2 = jlm::llvm::basic_block::create(*cfg);
-    auto bb3 = jlm::llvm::basic_block::create(*cfg);
-    auto join = jlm::llvm::basic_block::create(*cfg);
+    auto split = jlm::llvm::BasicBlock::create(*cfg);
+    auto bb1 = jlm::llvm::BasicBlock::create(*cfg);
+    auto bb2 = jlm::llvm::BasicBlock::create(*cfg);
+    auto bb3 = jlm::llvm::BasicBlock::create(*cfg);
+    auto join = jlm::llvm::BasicBlock::create(*cfg);
 
     cfg->exit()->divert_inedges(split);
     split->add_outedge(bb3);
@@ -439,10 +439,10 @@ test_branch_and_loop()
   {
     auto cfg = cfg::create(module);
 
-    auto split = jlm::llvm::basic_block::create(*cfg);
-    auto bb1 = jlm::llvm::basic_block::create(*cfg);
-    auto bb2 = jlm::llvm::basic_block::create(*cfg);
-    auto loop = jlm::llvm::basic_block::create(*cfg);
+    auto split = jlm::llvm::BasicBlock::create(*cfg);
+    auto bb1 = jlm::llvm::BasicBlock::create(*cfg);
+    auto bb2 = jlm::llvm::BasicBlock::create(*cfg);
+    auto loop = jlm::llvm::BasicBlock::create(*cfg);
 
     cfg->exit()->divert_inedges(split);
     split->add_outedge(bb1);

@@ -20,7 +20,7 @@ test_remove_node()
 
   jlm::llvm::cfg cfg(im);
 
-  auto bb0 = basic_block::create(cfg);
+  auto bb0 = BasicBlock::create(cfg);
   bb0->add_outedge(bb0);
   bb0->add_outedge(cfg.exit());
 

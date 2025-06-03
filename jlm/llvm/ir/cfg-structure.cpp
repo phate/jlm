@@ -161,8 +161,8 @@ copy_structural(const jlm::llvm::cfg & in)
 
   for (const auto & node : in)
   {
-    JLM_ASSERT(jlm::llvm::is<jlm::llvm::basic_block>(&node));
-    node_map[&node] = jlm::llvm::basic_block::create(*out);
+    JLM_ASSERT(jlm::llvm::is<jlm::llvm::BasicBlock>(&node));
+    node_map[&node] = jlm::llvm::BasicBlock::create(*out);
   }
 
   /* establish control flow */
@@ -296,7 +296,7 @@ reduce_loop(jlm::llvm::cfg_node * node, std::unordered_set<jlm::llvm::cfg_node *
   JLM_ASSERT(is_loop(node));
   auto & cfg = node->cfg();
 
-  auto reduction = jlm::llvm::basic_block::create(cfg);
+  auto reduction = jlm::llvm::BasicBlock::create(cfg);
   for (auto & outedge : node->OutEdges())
   {
     if (outedge.is_selfloop())
@@ -321,7 +321,7 @@ reduce_linear(jlm::llvm::cfg_node * entry, std::unordered_set<jlm::llvm::cfg_nod
   auto exit = entry->OutEdge(0)->sink();
   auto & cfg = entry->cfg();
 
-  auto reduction = jlm::llvm::basic_block::create(cfg);
+  auto reduction = jlm::llvm::BasicBlock::create(cfg);
   entry->divert_inedges(reduction);
   for (auto & outedge : exit->OutEdges())
     reduction->add_outedge(outedge.sink());
@@ -339,7 +339,7 @@ reduce_branch(jlm::llvm::cfg_node * split, std::unordered_set<jlm::llvm::cfg_nod
   auto join = find_join(split);
   auto & cfg = split->cfg();
 
-  auto reduction = jlm::llvm::basic_block::create(cfg);
+  auto reduction = jlm::llvm::BasicBlock::create(cfg);
   split->divert_inedges(reduction);
   reduction->add_outedge(join);
   for (auto & outedge : split->OutEdges())
@@ -364,7 +364,7 @@ reduce_proper_branch(
   JLM_ASSERT(is_proper_branch(split));
   auto join = split->OutEdge(0)->sink()->OutEdge(0)->sink();
 
-  auto reduction = jlm::llvm::basic_block::create(split->cfg());
+  auto reduction = jlm::llvm::BasicBlock::create(split->cfg());
   split->divert_inedges(reduction);
   join->remove_inedges();
   reduction->add_outedge(join);
@@ -470,7 +470,7 @@ reduce_reducible(jlm::llvm::cfg_node * node, std::unordered_set<jlm::llvm::cfg_n
 }
 
 static bool
-has_valid_phis(const basic_block & bb)
+has_valid_phis(const BasicBlock & bb)
 {
   for (auto it = bb.begin(); it != bb.end(); it++)
   {
@@ -506,7 +506,7 @@ has_valid_phis(const basic_block & bb)
 }
 
 static bool
-is_valid_basic_block(const basic_block & bb)
+is_valid_basic_block(const BasicBlock & bb)
 {
   if (bb.no_successor())
     return false;
@@ -628,7 +628,7 @@ straighten(llvm::cfg & cfg)
   auto it = cfg.begin();
   while (it != cfg.end())
   {
-    basic_block * bb = it.node();
+    BasicBlock * bb = it.node();
 
     // Check if bb only has one successor, and that the successor only has one predecessor
     if (!is_linear_reduction(bb))
@@ -637,7 +637,7 @@ straighten(llvm::cfg & cfg)
       continue;
     }
 
-    auto successor = dynamic_cast<basic_block *>(it->OutEdge(0)->sink());
+    auto successor = dynamic_cast<BasicBlock *>(it->OutEdge(0)->sink());
     if (!successor || successor->HasSsaPhiOperation())
     {
       it++;
@@ -737,15 +737,15 @@ compute_deadnodes(llvm::cfg & cfg)
  * @brief Returns all basic blocks that are live and a sink
  *	of a dead node.
  */
-static std::unordered_set<basic_block *>
+static std::unordered_set<BasicBlock *>
 compute_live_sinks(const std::unordered_set<cfg_node *> & deadnodes)
 {
-  std::unordered_set<basic_block *> sinks;
+  std::unordered_set<BasicBlock *> sinks;
   for (auto & node : deadnodes)
   {
     for (size_t n = 0; n < node->NumOutEdges(); n++)
     {
-      auto sink = dynamic_cast<basic_block *>(node->OutEdge(n)->sink());
+      auto sink = dynamic_cast<BasicBlock *>(node->OutEdge(n)->sink());
       if (sink && deadnodes.find(sink) == deadnodes.end())
         sinks.insert(sink);
     }
@@ -775,7 +775,7 @@ update_phi_operands(llvm::tac & phitac, const std::unordered_set<cfg_node *> & d
 
 static void
 update_phi_operands(
-    const std::unordered_set<basic_block *> & sinks,
+    const std::unordered_set<BasicBlock *> & sinks,
     const std::unordered_set<cfg_node *> & deadnodes)
 {
   for (auto & sink : sinks)
@@ -796,8 +796,8 @@ remove_deadnodes(const std::unordered_set<cfg_node *> & deadnodes)
   for (auto & node : deadnodes)
   {
     node->remove_inedges();
-    JLM_ASSERT(is<basic_block>(node));
-    node->cfg().remove_node(static_cast<basic_block *>(node));
+    JLM_ASSERT(is<BasicBlock>(node));
+    node->cfg().remove_node(static_cast<BasicBlock *>(node));
   }
 }
 

@@ -21,9 +21,9 @@ test_straightening()
   ipgraph_module module(jlm::util::FilePath(""), "", "");
 
   jlm::llvm::cfg cfg(module);
-  auto bb1 = basic_block::create(cfg);
-  auto bb2 = basic_block::create(cfg);
-  auto bb3 = basic_block::create(cfg);
+  auto bb1 = BasicBlock::create(cfg);
+  auto bb2 = BasicBlock::create(cfg);
+  auto bb3 = BasicBlock::create(cfg);
 
   cfg.exit()->divert_inedges(bb1);
   bb1->add_outedge(bb2);
@@ -35,14 +35,14 @@ test_straightening()
   bb2->append_last(jlm::tests::create_testop_tac({ arg }, { vt }));
   bb3->append_last(jlm::tests::create_testop_tac({ arg }, { vt }));
 
-  auto bb3_last = static_cast<const basic_block *>(bb3)->tacs().last();
+  auto bb3_last = static_cast<const BasicBlock *>(bb3)->tacs().last();
   straighten(cfg);
 
   assert(cfg.nnodes() == 1);
   auto node = cfg.entry()->OutEdge(0)->sink();
 
-  assert(is<basic_block>(node));
-  auto & tacs = static_cast<const basic_block *>(node)->tacs();
+  assert(is<BasicBlock>(node));
+  auto & tacs = static_cast<const BasicBlock *>(node)->tacs();
   assert(tacs.ntacs() == 3);
   assert(tacs.last() == bb3_last);
 }
@@ -55,9 +55,9 @@ test_is_structured()
   ipgraph_module module(jlm::util::FilePath(""), "", "");
 
   jlm::llvm::cfg cfg(module);
-  auto split = basic_block::create(cfg);
-  auto bb = basic_block::create(cfg);
-  auto join = basic_block::create(cfg);
+  auto split = BasicBlock::create(cfg);
+  auto bb = BasicBlock::create(cfg);
+  auto join = BasicBlock::create(cfg);
 
   cfg.exit()->divert_inedges(split);
   split->add_outedge(join);

@@ -17,7 +17,7 @@
 namespace jlm::llvm
 {
 
-class basic_block;
+class BasicBlock;
 class cfg;
 class cfg_node;
 
@@ -40,7 +40,7 @@ public:
   void
   divert(cfg_node * new_sink);
 
-  basic_block *
+  BasicBlock *
   split();
 
   cfg_node *

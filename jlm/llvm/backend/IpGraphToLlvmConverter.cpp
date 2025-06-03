@@ -1513,7 +1513,7 @@ IpGraphToLlvmConverter::create_conditional_branch(const cfg_node * node)
   JLM_ASSERT(node->OutEdge(1)->sink() != node->cfg().exit());
   ::llvm::IRBuilder<> builder(Context_->basic_block(node));
 
-  auto branch = static_cast<const basic_block *>(node)->tacs().last();
+  auto branch = static_cast<const BasicBlock *>(node)->tacs().last();
   JLM_ASSERT(branch && is<BranchOperation>(branch));
   JLM_ASSERT(Context_->value(branch->operand(0))->getType()->isIntegerTy(1));
 
@@ -1529,7 +1529,7 @@ IpGraphToLlvmConverter::create_switch(const cfg_node * node)
   JLM_ASSERT(node->NumOutEdges() >= 2);
   ::llvm::LLVMContext & llvmContext = Context_->llvm_module().getContext();
   auto & typeConverter = Context_->GetTypeConverter();
-  auto bb = static_cast<const basic_block *>(node);
+  auto bb = static_cast<const BasicBlock *>(node);
   ::llvm::IRBuilder<> builder(Context_->basic_block(node));
 
   auto branch = bb->tacs().last();
@@ -1567,8 +1567,8 @@ IpGraphToLlvmConverter::create_switch(const cfg_node * node)
 void
 IpGraphToLlvmConverter::create_terminator_instruction(const llvm::cfg_node * node)
 {
-  JLM_ASSERT(is<basic_block>(node));
-  auto & tacs = static_cast<const basic_block *>(node)->tacs();
+  JLM_ASSERT(is<BasicBlock>(node));
+  auto & tacs = static_cast<const BasicBlock *>(node)->tacs();
   auto & cfg = node->cfg();
 
   // unconditional branch or return statement
@@ -1832,8 +1832,8 @@ IpGraphToLlvmConverter::convert_cfg(llvm::cfg & cfg, ::llvm::Function & f)
     if (node == cfg.entry() || node == cfg.exit())
       continue;
 
-    JLM_ASSERT(is<basic_block>(node));
-    auto & tacs = static_cast<const basic_block *>(node)->tacs();
+    JLM_ASSERT(is<BasicBlock>(node));
+    auto & tacs = static_cast<const BasicBlock *>(node)->tacs();
     for (const auto & tac : tacs)
       convert_instruction(*tac, node);
   }
@@ -1853,8 +1853,8 @@ IpGraphToLlvmConverter::convert_cfg(llvm::cfg & cfg, ::llvm::Function & f)
     if (node == cfg.entry() || node == cfg.exit())
       continue;
 
-    JLM_ASSERT(is<basic_block>(node));
-    auto & tacs = static_cast<const basic_block *>(node)->tacs();
+    JLM_ASSERT(is<BasicBlock>(node));
+    auto & tacs = static_cast<const BasicBlock *>(node)->tacs();
     for (const auto & tac : tacs)
     {
       if (!is<SsaPhiOperation>(tac->operation()))
