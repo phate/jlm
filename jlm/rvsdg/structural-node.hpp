@@ -25,7 +25,7 @@ class StructuralNode : public Node
   using SubregionIterator =
       util::PtrIterator<Region, std::vector<std::unique_ptr<Region>>::iterator>;
   using SubregionConstIterator =
-      util::PtrIterator<Region, std::vector<std::unique_ptr<Region>>::const_iterator>;
+      util::PtrIterator<const Region, std::vector<std::unique_ptr<Region>>::const_iterator>;
 
   using SubregionIteratorRange = util::IteratorRange<SubregionIterator>;
   using SubregionConstIteratorRange = util::IteratorRange<SubregionConstIterator>;
