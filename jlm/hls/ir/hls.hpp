@@ -62,8 +62,8 @@ public:
     return std::make_unique<branch_op>(*this);
   }
 
-  static std::vector<jlm::rvsdg::output *>
-  create(jlm::rvsdg::output & predicate, jlm::rvsdg::output & value, bool loop = false)
+  static std::vector<jlm::rvsdg::Output *>
+  create(jlm::rvsdg::Output & predicate, jlm::rvsdg::Output & value, bool loop = false)
   {
     auto ctl = std::dynamic_pointer_cast<const rvsdg::ControlType>(predicate.Type());
     if (!ctl)
@@ -156,8 +156,8 @@ public:
    *
    * /return A vector of outputs.
    */
-  static std::vector<jlm::rvsdg::output *>
-  create(size_t nalternatives, jlm::rvsdg::output & value, bool isConstant = false)
+  static std::vector<jlm::rvsdg::Output *>
+  create(size_t nalternatives, jlm::rvsdg::Output & value, bool isConstant = false)
   {
     return outputs(
         &rvsdg::CreateOpNode<fork_op>({ &value }, nalternatives, value.Type(), isConstant));
@@ -208,8 +208,8 @@ public:
     return std::make_unique<merge_op>(*this);
   }
 
-  static std::vector<jlm::rvsdg::output *>
-  create(const std::vector<jlm::rvsdg::output *> & alternatives)
+  static std::vector<jlm::rvsdg::Output *>
+  create(const std::vector<jlm::rvsdg::Output *> & alternatives)
   {
     if (alternatives.empty())
       throw util::error("Insufficient number of operands.");
@@ -258,10 +258,10 @@ public:
     return std::make_unique<mux_op>(*this);
   }
 
-  static std::vector<jlm::rvsdg::output *>
+  static std::vector<jlm::rvsdg::Output *>
   create(
-      jlm::rvsdg::output & predicate,
-      const std::vector<jlm::rvsdg::output *> & alternatives,
+      jlm::rvsdg::Output & predicate,
+      const std::vector<jlm::rvsdg::Output *> & alternatives,
       bool discarding,
       bool loop = false)
   {
@@ -273,7 +273,7 @@ public:
     if (alternatives.size() != ctl->nalternatives())
       throw util::error("Alternatives and predicate do not match.");
 
-    auto operands = std::vector<jlm::rvsdg::output *>();
+    auto operands = std::vector<jlm::rvsdg::Output *>();
     operands.push_back(&predicate);
     operands.insert(operands.end(), alternatives.begin(), alternatives.end());
     return outputs(&rvsdg::CreateOpNode<mux_op>(
@@ -326,8 +326,8 @@ public:
     return std::make_unique<sink_op>(*this);
   }
 
-  static std::vector<jlm::rvsdg::output *>
-  create(jlm::rvsdg::output & value)
+  static std::vector<jlm::rvsdg::Output *>
+  create(jlm::rvsdg::Output & value)
   {
     return outputs(&rvsdg::CreateOpNode<sink_op>({ &value }, value.Type()));
   }
@@ -362,8 +362,8 @@ public:
     return std::make_unique<predicate_buffer_op>(*this);
   }
 
-  static std::vector<jlm::rvsdg::output *>
-  create(jlm::rvsdg::output & predicate)
+  static std::vector<jlm::rvsdg::Output *>
+  create(jlm::rvsdg::Output & predicate)
   {
     auto ctl = std::dynamic_pointer_cast<const rvsdg::ControlType>(predicate.Type());
     if (!ctl)
@@ -404,8 +404,8 @@ public:
     return std::make_unique<loop_constant_buffer_op>(*this);
   }
 
-  static std::vector<jlm::rvsdg::output *>
-  create(jlm::rvsdg::output & predicate, jlm::rvsdg::output & value)
+  static std::vector<jlm::rvsdg::Output *>
+  create(jlm::rvsdg::Output & predicate, jlm::rvsdg::Output & value)
   {
     auto ctl = std::dynamic_pointer_cast<const rvsdg::ControlType>(predicate.Type());
     if (!ctl)
@@ -451,8 +451,8 @@ public:
     return std::make_unique<buffer_op>(*this);
   }
 
-  static std::vector<jlm::rvsdg::output *>
-  create(jlm::rvsdg::output & value, size_t capacity, bool pass_through = false)
+  static std::vector<jlm::rvsdg::Output *>
+  create(jlm::rvsdg::Output & value, size_t capacity, bool pass_through = false)
   {
     return outputs(
         &rvsdg::CreateOpNode<buffer_op>({ &value }, value.Type(), capacity, pass_through));
@@ -524,8 +524,8 @@ public:
     return std::make_unique<trigger_op>(*this);
   }
 
-  static std::vector<jlm::rvsdg::output *>
-  create(jlm::rvsdg::output & tg, jlm::rvsdg::output & value)
+  static std::vector<jlm::rvsdg::Output *>
+  create(jlm::rvsdg::Output & tg, jlm::rvsdg::Output & value)
   {
     if (!rvsdg::is<triggertype>(tg.Type()))
       throw util::error("Trigger needs to be a triggertype.");
@@ -579,8 +579,8 @@ public:
     return std::make_unique<print_op>(*this);
   }
 
-  static std::vector<jlm::rvsdg::output *>
-  create(jlm::rvsdg::output & value)
+  static std::vector<jlm::rvsdg::Output *>
+  create(jlm::rvsdg::Output & value)
   {
     return outputs(&rvsdg::CreateOpNode<print_op>({ &value }, value.Type()));
   }
@@ -694,16 +694,16 @@ public:
   }
 
   backedge_result &
-  Copy(rvsdg::output & origin, rvsdg::StructuralOutput * output) override;
+  Copy(rvsdg::Output & origin, rvsdg::StructuralOutput * output) override;
 
 private:
-  backedge_result(jlm::rvsdg::output * origin)
+  backedge_result(jlm::rvsdg::Output * origin)
       : rvsdg::RegionResult(origin->region(), origin, nullptr, origin->Type()),
         argument_(nullptr)
   {}
 
   static backedge_result *
-  create(jlm::rvsdg::output * origin)
+  create(jlm::rvsdg::Output * origin)
   {
     auto result = new backedge_result(origin);
     origin->region()->append_result(result);
@@ -724,16 +724,16 @@ public:
   ~ExitResult() noexcept override;
 
 private:
-  ExitResult(rvsdg::output & origin, rvsdg::StructuralOutput & output);
+  ExitResult(rvsdg::Output & origin, rvsdg::StructuralOutput & output);
 
 public:
   ExitResult &
-  Copy(rvsdg::output & origin, rvsdg::StructuralOutput * output) override;
+  Copy(rvsdg::Output & origin, rvsdg::StructuralOutput * output) override;
 
   // FIXME: This should not be public, but we currently still have some transformations that use
   // this one. Make it eventually private.
   static ExitResult &
-  Create(rvsdg::output & origin, rvsdg::StructuralOutput & output)
+  Create(rvsdg::Output & origin, rvsdg::StructuralOutput & output)
   {
     auto result = new ExitResult(origin, output);
     origin.region()->append_result(result);
@@ -782,16 +782,16 @@ public:
   }
 
   void
-  set_predicate(jlm::rvsdg::output * p);
+  set_predicate(jlm::rvsdg::Output * p);
 
   backedge_argument *
   add_backedge(std::shared_ptr<const jlm::rvsdg::Type> type);
 
   rvsdg::StructuralOutput *
-  AddLoopVar(jlm::rvsdg::output * origin, jlm::rvsdg::output ** buffer = nullptr);
+  AddLoopVar(jlm::rvsdg::Output * origin, jlm::rvsdg::Output ** buffer = nullptr);
 
-  jlm::rvsdg::output *
-  add_loopconst(jlm::rvsdg::output * origin);
+  jlm::rvsdg::Output *
+  add_loopconst(jlm::rvsdg::Output * origin);
 
   virtual loop_node *
   copy(rvsdg::Region * region, rvsdg::SubstitutionMap & smap) const override;
@@ -932,13 +932,13 @@ public:
     return std::make_unique<load_op>(*this);
   }
 
-  static std::vector<jlm::rvsdg::output *>
+  static std::vector<jlm::rvsdg::Output *>
   create(
-      jlm::rvsdg::output & addr,
-      const std::vector<jlm::rvsdg::output *> & states,
-      jlm::rvsdg::output & load_result)
+      jlm::rvsdg::Output & addr,
+      const std::vector<jlm::rvsdg::Output *> & states,
+      jlm::rvsdg::Output & load_result)
   {
-    std::vector<jlm::rvsdg::output *> inputs;
+    std::vector<jlm::rvsdg::Output *> inputs;
     inputs.push_back(&addr);
     inputs.insert(inputs.end(), states.begin(), states.end());
     inputs.push_back(&load_result);
@@ -1016,11 +1016,11 @@ public:
     return std::make_unique<addr_queue_op>(*this);
   }
 
-  static jlm::rvsdg::output *
+  static jlm::rvsdg::Output *
   create(
-      jlm::rvsdg::output & check,
-      jlm::rvsdg::output & enq,
-      jlm::rvsdg::output & deq,
+      jlm::rvsdg::Output & check,
+      jlm::rvsdg::Output & enq,
+      jlm::rvsdg::Output & deq,
       bool combinatorial,
       size_t capacity = 10)
   {
@@ -1077,10 +1077,10 @@ public:
     return std::make_unique<state_gate_op>(*this);
   }
 
-  static std::vector<jlm::rvsdg::output *>
-  create(jlm::rvsdg::output & addr, const std::vector<jlm::rvsdg::output *> & states)
+  static std::vector<jlm::rvsdg::Output *>
+  create(jlm::rvsdg::Output & addr, const std::vector<jlm::rvsdg::Output *> & states)
   {
-    std::vector<jlm::rvsdg::output *> inputs;
+    std::vector<jlm::rvsdg::Output *> inputs;
     inputs.push_back(&addr);
     inputs.insert(inputs.end(), states.begin(), states.end());
     return outputs(&rvsdg::CreateOpNode<state_gate_op>(inputs, addr.Type(), states.size()));
@@ -1135,10 +1135,10 @@ public:
     return std::make_unique<decoupled_load_op>(*this);
   }
 
-  static std::vector<jlm::rvsdg::output *>
-  create(jlm::rvsdg::output & addr, jlm::rvsdg::output & load_result, size_t capacity)
+  static std::vector<jlm::rvsdg::Output *>
+  create(jlm::rvsdg::Output & addr, jlm::rvsdg::Output & load_result, size_t capacity)
   {
-    std::vector<jlm::rvsdg::output *> inputs;
+    std::vector<jlm::rvsdg::Output *> inputs;
     inputs.push_back(&addr);
     inputs.push_back(&load_result);
     JLM_ASSERT(capacity >= 1);
@@ -1216,9 +1216,9 @@ public:
     return std::make_unique<mem_resp_op>(*this);
   }
 
-  static std::vector<jlm::rvsdg::output *>
+  static std::vector<jlm::rvsdg::Output *>
   create(
-      rvsdg::output & result,
+      rvsdg::Output & result,
       const std::vector<std::shared_ptr<const rvsdg::Type>> & output_types,
       int in_width)
   {
@@ -1313,11 +1313,11 @@ public:
     return std::make_unique<mem_req_op>(*this);
   }
 
-  static std::vector<jlm::rvsdg::output *>
+  static std::vector<jlm::rvsdg::Output *>
   create(
-      const std::vector<jlm::rvsdg::output *> & load_operands,
+      const std::vector<jlm::rvsdg::Output *> & load_operands,
       const std::vector<std::shared_ptr<const rvsdg::ValueType>> & loadTypes,
-      const std::vector<jlm::rvsdg::output *> & store_operands,
+      const std::vector<jlm::rvsdg::Output *> & store_operands,
       rvsdg::Region *)
   {
     // Stores have both addr and data operand
@@ -1413,14 +1413,14 @@ public:
     return std::make_unique<store_op>(*this);
   }
 
-  static std::vector<jlm::rvsdg::output *>
+  static std::vector<jlm::rvsdg::Output *>
   create(
-      jlm::rvsdg::output & addr,
-      jlm::rvsdg::output & value,
-      const std::vector<jlm::rvsdg::output *> & states,
-      jlm::rvsdg::output & resp)
+      jlm::rvsdg::Output & addr,
+      jlm::rvsdg::Output & value,
+      const std::vector<jlm::rvsdg::Output *> & states,
+      jlm::rvsdg::Output & resp)
   {
-    std::vector<jlm::rvsdg::output *> inputs;
+    std::vector<jlm::rvsdg::Output *> inputs;
     inputs.push_back(&addr);
     inputs.push_back(&value);
     inputs.insert(inputs.end(), states.begin(), states.end());
@@ -1482,7 +1482,7 @@ public:
     return std::make_unique<local_mem_op>(*this);
   }
 
-  static std::vector<jlm::rvsdg::output *>
+  static std::vector<jlm::rvsdg::Output *>
   create(std::shared_ptr<const llvm::ArrayType> at, rvsdg::Region * region)
   {
     return outputs(&rvsdg::CreateOpNode<local_mem_op>(*region, std::move(at)));
@@ -1527,8 +1527,8 @@ public:
     return std::make_unique<local_mem_resp_op>(*this);
   }
 
-  static std::vector<jlm::rvsdg::output *>
-  create(jlm::rvsdg::output & mem, size_t resp_count)
+  static std::vector<jlm::rvsdg::Output *>
+  create(jlm::rvsdg::Output & mem, size_t resp_count)
   {
     return outputs(&rvsdg::CreateOpNode<local_mem_resp_op>(
         { &mem },
@@ -1592,13 +1592,13 @@ public:
     return std::make_unique<local_load_op>(*this);
   }
 
-  static std::vector<jlm::rvsdg::output *>
+  static std::vector<jlm::rvsdg::Output *>
   create(
-      jlm::rvsdg::output & index,
-      const std::vector<jlm::rvsdg::output *> & states,
-      jlm::rvsdg::output & load_result)
+      jlm::rvsdg::Output & index,
+      const std::vector<jlm::rvsdg::Output *> & states,
+      jlm::rvsdg::Output & load_result)
   {
-    std::vector<jlm::rvsdg::output *> inputs;
+    std::vector<jlm::rvsdg::Output *> inputs;
     inputs.push_back(&index);
     inputs.insert(inputs.end(), states.begin(), states.end());
     inputs.push_back(&load_result);
@@ -1669,13 +1669,13 @@ public:
     return std::make_unique<local_store_op>(*this);
   }
 
-  static std::vector<jlm::rvsdg::output *>
+  static std::vector<jlm::rvsdg::Output *>
   create(
-      jlm::rvsdg::output & index,
-      jlm::rvsdg::output & value,
-      const std::vector<jlm::rvsdg::output *> & states)
+      jlm::rvsdg::Output & index,
+      jlm::rvsdg::Output & value,
+      const std::vector<jlm::rvsdg::Output *> & states)
   {
-    std::vector<jlm::rvsdg::output *> inputs;
+    std::vector<jlm::rvsdg::Output *> inputs;
     inputs.push_back(&index);
     inputs.push_back(&value);
     inputs.insert(inputs.end(), states.begin(), states.end());
@@ -1747,11 +1747,11 @@ public:
     return std::make_unique<local_mem_req_op>(*this);
   }
 
-  static std::vector<jlm::rvsdg::output *>
+  static std::vector<jlm::rvsdg::Output *>
   create(
-      jlm::rvsdg::output & mem,
-      const std::vector<jlm::rvsdg::output *> & load_operands,
-      const std::vector<jlm::rvsdg::output *> & store_operands)
+      jlm::rvsdg::Output & mem,
+      const std::vector<jlm::rvsdg::Output *> & load_operands,
+      const std::vector<jlm::rvsdg::Output *> & store_operands)
   {
     JLM_ASSERT(store_operands.size() % 2 == 0);
     std::vector operands(1, &mem);

@@ -15,7 +15,7 @@
 namespace jlm::hls
 {
 rvsdg::Input *
-GetUser(rvsdg::output * out)
+GetUser(rvsdg::Output * out)
 {
   // This works because at this point we have 1:1 relationships through forks
   auto user = *out->begin();
@@ -24,7 +24,7 @@ GetUser(rvsdg::output * out)
 }
 
 rvsdg::Input *
-FindUserNode(rvsdg::output * out)
+FindUserNode(rvsdg::Output * out)
 {
 
   auto user = GetUser(out);
@@ -59,7 +59,7 @@ FindUserNode(rvsdg::output * out)
 }
 
 void
-PlaceBuffer(rvsdg::output * out, size_t capacity, bool passThrough)
+PlaceBuffer(rvsdg::Output * out, size_t capacity, bool passThrough)
 {
   // places or re-places a buffer on an output
   auto user = FindUserNode(out);
@@ -473,7 +473,7 @@ NodeCapacity(rvsdg::SimpleNode * node, std::vector<size_t> & input_capacities)
 void
 CreateLoopFrontier(
     const loop_node * loop,
-    std::unordered_map<rvsdg::output *, size_t> & output_cycles,
+    std::unordered_map<rvsdg::Output *, size_t> & output_cycles,
     std::unordered_set<rvsdg::Input *> & frontier,
     std::unordered_set<backedge_result *> & stream_backedges,
     std::unordered_set<rvsdg::SimpleNode *> & top_muxes)
@@ -537,12 +537,12 @@ CreateLoopFrontier(
 void
 CalculateLoopCycleDepth(
     loop_node * loop,
-    std::unordered_map<rvsdg::output *, size_t> & output_cycles,
+    std::unordered_map<rvsdg::Output *, size_t> & output_cycles,
     bool analyze_inner_loop = false);
 
 void
 PushCycleFrontier(
-    std::unordered_map<rvsdg::output *, size_t> & output_cycles,
+    std::unordered_map<rvsdg::Output *, size_t> & output_cycles,
     std::unordered_set<rvsdg::Input *> & frontier,
     std::unordered_set<backedge_result *> & stream_backedges,
     std::unordered_set<rvsdg::SimpleNode *> & top_muxes)
@@ -668,7 +668,7 @@ PushCycleFrontier(
   // TODO: is "changed" even necessary or can we just wait for frontier to be empty?
   if (!frontier.empty())
   {
-    std::unordered_map<rvsdg::output *, std::string> o_color;
+    std::unordered_map<rvsdg::Output *, std::string> o_color;
     std::unordered_map<rvsdg::Input *, std::string> i_color;
     for (auto i : frontier)
     {
@@ -681,7 +681,7 @@ PushCycleFrontier(
 void
 CalculateLoopCycleDepth(
     loop_node * loop,
-    std::unordered_map<rvsdg::output *, size_t> & output_cycles,
+    std::unordered_map<rvsdg::Output *, size_t> & output_cycles,
     bool analyze_inner_loop)
 {
   if (!analyze_inner_loop)
@@ -706,9 +706,9 @@ CalculateLoopCycleDepth(
   // in the difference. This would also give us the II
   PushCycleFrontier(output_cycles, frontier, stream_backedges, top_muxes);
 
-  std::unordered_map<rvsdg::output *, std::string> o_color;
+  std::unordered_map<rvsdg::Output *, std::string> o_color;
   std::unordered_map<rvsdg::Input *, std::string> i_color;
-  std::unordered_map<rvsdg::output *, std::string> tail_label;
+  std::unordered_map<rvsdg::Output *, std::string> tail_label;
   if (!analyze_inner_loop)
   {
     for (auto i : frontier2)
@@ -740,7 +740,7 @@ setMemoryLatency(size_t memoryLatency)
 const size_t MaximumBufferSize = 512;
 
 size_t
-PlaceBufferLoop(rvsdg::output * out, size_t min_capacity, bool passThrough)
+PlaceBufferLoop(rvsdg::Output * out, size_t min_capacity, bool passThrough)
 {
   // places or re-places a buffer on an output
   // don't place buffers after constants
@@ -801,8 +801,8 @@ PlaceBufferLoop(rvsdg::output * out, size_t min_capacity, bool passThrough)
 void
 AdjustLoopBuffers(
     loop_node * loop,
-    std::unordered_map<rvsdg::output *, size_t> & output_cycles,
-    std::unordered_map<rvsdg::output *, size_t> & buffer_capacity,
+    std::unordered_map<rvsdg::Output *, size_t> & output_cycles,
+    std::unordered_map<rvsdg::Output *, size_t> & buffer_capacity,
     bool analyze_inner_loop = false)
 {
   if (!analyze_inner_loop)
@@ -834,9 +834,9 @@ AdjustLoopBuffers(
   // TODO: unlimited buffers for stream backedges, but loose that property if a fork is reached?
   // this might also make the current special case handling of addrqs unnecessary
 
-  std::unordered_map<rvsdg::output *, std::string> o_color;
+  std::unordered_map<rvsdg::Output *, std::string> o_color;
   std::unordered_map<rvsdg::Input *, std::string> i_color;
-  std::unordered_map<rvsdg::output *, std::string> tail_label;
+  std::unordered_map<rvsdg::Output *, std::string> tail_label;
   if (!analyze_inner_loop)
   {
     for (auto i : frontier)
@@ -1019,9 +1019,9 @@ CalculateLoopDepths(rvsdg::Region * region)
     {
       // process inner loops first
       CalculateLoopDepths(loop->subregion());
-      std::unordered_map<rvsdg::output *, size_t> output_cycles;
+      std::unordered_map<rvsdg::Output *, size_t> output_cycles;
       CalculateLoopCycleDepth(loop, output_cycles);
-      std::unordered_map<rvsdg::output *, size_t> buffer_capacity;
+      std::unordered_map<rvsdg::Output *, size_t> buffer_capacity;
       AdjustLoopBuffers(loop, output_cycles, buffer_capacity);
     }
   }

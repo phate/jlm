@@ -22,7 +22,7 @@ public:
   {}
 
   jlm::rvsdg::unop_reduction_path_t
-  can_reduce_operand(const jlm::rvsdg::output * operand) const noexcept override
+  can_reduce_operand(const jlm::rvsdg::Output * operand) const noexcept override
   {
 
     if (const auto node = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(*operand);
@@ -34,8 +34,8 @@ public:
     return jlm::rvsdg::unop_reduction_none;
   }
 
-  jlm::rvsdg::output *
-  reduce_operand(jlm::rvsdg::unop_reduction_path_t path, jlm::rvsdg::output * operand)
+  jlm::rvsdg::Output *
+  reduce_operand(jlm::rvsdg::unop_reduction_path_t path, jlm::rvsdg::Output * operand)
       const override
   {
     if (path == jlm::rvsdg::unop_reduction_constant)

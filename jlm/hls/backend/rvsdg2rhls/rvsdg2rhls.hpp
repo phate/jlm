@@ -32,7 +32,7 @@ rvsdg2ref(llvm::RvsdgModule & rm, const util::FilePath & function_name);
 void
 dump_ref(llvm::RvsdgModule & rhls, const util::FilePath & function_name);
 
-const jlm::rvsdg::output *
+const jlm::rvsdg::Output *
 trace_call(jlm::rvsdg::Input * input);
 
 std::unique_ptr<llvm::RvsdgModule>

@@ -13,19 +13,19 @@ static const rvsdg::unop_reduction_path_t sext_reduction_bitunary = 128;
 static const rvsdg::unop_reduction_path_t sext_reduction_bitbinary = 129;
 
 static bool
-is_bitunary_reducible(const rvsdg::output * operand)
+is_bitunary_reducible(const rvsdg::Output * operand)
 {
   return rvsdg::is<rvsdg::bitunary_op>(rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*operand));
 }
 
 static bool
-is_bitbinary_reducible(const rvsdg::output * operand)
+is_bitbinary_reducible(const rvsdg::Output * operand)
 {
   return rvsdg::is<rvsdg::bitbinary_op>(rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*operand));
 }
 
 static bool
-is_inverse_reducible(const sext_op & op, const rvsdg::output * operand)
+is_inverse_reducible(const sext_op & op, const rvsdg::Output * operand)
 {
   const auto node = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*operand);
   if (!node)
@@ -35,8 +35,8 @@ is_inverse_reducible(const sext_op & op, const rvsdg::output * operand)
   return top && top->nsrcbits() == op.ndstbits();
 }
 
-static rvsdg::output *
-perform_bitunary_reduction(const sext_op & op, rvsdg::output * operand)
+static rvsdg::Output *
+perform_bitunary_reduction(const sext_op & op, rvsdg::Output * operand)
 {
   JLM_ASSERT(is_bitunary_reducible(operand));
   const auto unaryNode = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*operand);
@@ -49,8 +49,8 @@ perform_bitunary_reduction(const sext_op & op, rvsdg::output * operand)
   return rvsdg::SimpleNode::Create(*region, std::move(simpleOperation), { output }).output(0);
 }
 
-static rvsdg::output *
-perform_bitbinary_reduction(const sext_op & op, rvsdg::output * operand)
+static rvsdg::Output *
+perform_bitbinary_reduction(const sext_op & op, rvsdg::Output * operand)
 {
   JLM_ASSERT(is_bitbinary_reducible(operand));
   const auto binaryNode = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*operand);
@@ -66,8 +66,8 @@ perform_bitbinary_reduction(const sext_op & op, rvsdg::output * operand)
   return rvsdg::SimpleNode::Create(*region, std::move(simpleOperation), { op1, op2 }).output(0);
 }
 
-static rvsdg::output *
-perform_inverse_reduction(const sext_op & op, rvsdg::output * operand)
+static rvsdg::Output *
+perform_inverse_reduction(const sext_op & op, rvsdg::Output * operand)
 {
   JLM_ASSERT(is_inverse_reducible(op, operand));
   return rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*operand)->input(0)->origin();
@@ -96,7 +96,7 @@ sext_op::copy() const
 }
 
 rvsdg::unop_reduction_path_t
-sext_op::can_reduce_operand(const rvsdg::output * operand) const noexcept
+sext_op::can_reduce_operand(const rvsdg::Output * operand) const noexcept
 {
   if (rvsdg::is<rvsdg::bitconstant_op>(producer(operand)))
     return rvsdg::unop_reduction_constant;
@@ -113,8 +113,8 @@ sext_op::can_reduce_operand(const rvsdg::output * operand) const noexcept
   return rvsdg::unop_reduction_none;
 }
 
-rvsdg::output *
-sext_op::reduce_operand(rvsdg::unop_reduction_path_t path, rvsdg::output * operand) const
+rvsdg::Output *
+sext_op::reduce_operand(rvsdg::unop_reduction_path_t path, rvsdg::Output * operand) const
 {
   if (path == rvsdg::unop_reduction_constant)
   {

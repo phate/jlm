@@ -337,7 +337,7 @@ fix_mem_split(rvsdg::Node * split_node)
   }
   // this merges downward and removes unused outputs (should only exist as a result of eliminating
   // merges)
-  std::vector<rvsdg::output *> combined_outputs;
+  std::vector<rvsdg::Output *> combined_outputs;
   for (size_t i = 0; i < split_node->noutputs(); ++i)
   {
     if (split_node->output(i)->IsDead())
@@ -381,7 +381,7 @@ fix_mem_merge(rvsdg::Node * merge_node)
     remove(merge_node);
     return true;
   }
-  std::vector<rvsdg::output *> combined_origins;
+  std::vector<rvsdg::Output *> combined_origins;
   std::unordered_set<rvsdg::SimpleNode *> splits;
   for (size_t i = 0; i < merge_node->ninputs(); ++i)
   {

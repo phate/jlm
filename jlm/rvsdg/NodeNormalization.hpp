@@ -17,18 +17,18 @@
 namespace jlm::rvsdg
 {
 
-class output;
+class Output;
 
 template<class TOperation>
 using NodeNormalization = std::function<
-    std::optional<std::vector<output *>>(const TOperation &, const std::vector<output *> &)>;
+    std::optional<std::vector<Output *>>(const TOperation &, const std::vector<Output *> &)>;
 
 template<class TOperation>
-std::optional<std::vector<output *>>
+std::optional<std::vector<Output *>>
 NormalizeSequence(
     const std::vector<NodeNormalization<TOperation>> & nodeNormalizations,
     const TOperation & operation,
-    const std::vector<output *> & operands)
+    const std::vector<Output *> & operands)
 {
   for (auto & nodeNormalization : nodeNormalizations)
   {

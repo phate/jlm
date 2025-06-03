@@ -37,9 +37,9 @@ static jlm::rvsdg::ThetaNode *
 create_theta(
     const jlm::rvsdg::bitcompare_op & cop,
     const jlm::rvsdg::bitbinary_op & aop,
-    jlm::rvsdg::output * init,
-    jlm::rvsdg::output * step,
-    jlm::rvsdg::output * end)
+    jlm::rvsdg::Output * init,
+    jlm::rvsdg::Output * step,
+    jlm::rvsdg::Output * end)
 {
   using namespace jlm::rvsdg;
 

@@ -78,13 +78,13 @@ public:
 
   StructuralInput(
       StructuralNode * node,
-      jlm::rvsdg::output * origin,
+      jlm::rvsdg::Output * origin,
       std::shared_ptr<const rvsdg::Type> type);
 
   static StructuralInput *
   create(
       StructuralNode * node,
-      jlm::rvsdg::output * origin,
+      jlm::rvsdg::Output * origin,
       std::shared_ptr<const jlm::rvsdg::Type> type)
   {
     auto input = std::make_unique<StructuralInput>(node, origin, std::move(type));

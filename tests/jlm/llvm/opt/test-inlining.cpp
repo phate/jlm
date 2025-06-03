@@ -51,7 +51,7 @@ test1()
         { t->output(0), lambda->GetFunctionArguments()[1], lambda->GetFunctionArguments()[2] });
   };
 
-  auto SetupF2 = [&](jlm::rvsdg::output * f1)
+  auto SetupF2 = [&](jlm::rvsdg::Output * f1)
   {
     auto vt = jlm::tests::valuetype::Create();
     auto iOStateType = IOStateType::Create();
@@ -145,7 +145,7 @@ test2()
         { lambda->GetFunctionArguments()[1], lambda->GetFunctionArguments()[2] });
   };
 
-  auto SetupF2 = [&](jlm::rvsdg::output * f1)
+  auto SetupF2 = [&](jlm::rvsdg::Output * f1)
   {
     auto iOStateType = IOStateType::Create();
     auto memoryStateType = MemoryStateType::Create();

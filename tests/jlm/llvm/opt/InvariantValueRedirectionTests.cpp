@@ -156,7 +156,7 @@ TestCall()
   auto rvsdgModule = RvsdgModule::Create(jlm::util::FilePath(""), "", "");
   auto & rvsdg = rvsdgModule->Rvsdg();
 
-  jlm::rvsdg::output * lambdaOutputTest1;
+  jlm::rvsdg::Output * lambdaOutputTest1;
   {
     auto lambdaNode = jlm::rvsdg::LambdaNode::Create(
         rvsdg.GetRootRegion(),
@@ -188,7 +188,7 @@ TestCall()
                                                gammaOutputMemoryState.output });
   }
 
-  jlm::rvsdg::output * lambdaOutputTest2;
+  jlm::rvsdg::Output * lambdaOutputTest2;
   {
     auto functionType = jlm::rvsdg::FunctionType::Create(
         { valueType, valueType, ioStateType, memoryStateType },
@@ -247,7 +247,7 @@ TestCallWithMemoryStateNodes()
   auto rvsdgModule = RvsdgModule::Create(jlm::util::FilePath(""), "", "");
   auto & rvsdg = rvsdgModule->Rvsdg();
 
-  jlm::rvsdg::output * lambdaOutputTest1;
+  jlm::rvsdg::Output * lambdaOutputTest1;
   {
     auto lambdaNode = jlm::rvsdg::LambdaNode::Create(
         rvsdg.GetRootRegion(),
@@ -279,7 +279,7 @@ TestCallWithMemoryStateNodes()
         lambdaNode->finalize({ gammaOutputX.output, ioStateArgument, &lambdaExitMergeResult });
   }
 
-  jlm::rvsdg::output * lambdaOutputTest2;
+  jlm::rvsdg::Output * lambdaOutputTest2;
   {
     auto functionType = jlm::rvsdg::FunctionType::Create(
         { valueType, ioStateType, memoryStateType },

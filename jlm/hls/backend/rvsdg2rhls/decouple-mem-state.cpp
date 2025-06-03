@@ -26,18 +26,18 @@
 namespace jlm::hls
 {
 
-static rvsdg::output *
+static rvsdg::Output *
 follow_state_edge(
     rvsdg::Input * state_edge,
     std::vector<rvsdg::SimpleNode *> & mem_ops,
     bool modify);
 
-static rvsdg::output *
+static rvsdg::Output *
 trace_edge(
     rvsdg::Input * state_edge,
-    rvsdg::output * new_edge,
+    rvsdg::Output * new_edge,
     rvsdg::SimpleNode * target_call,
-    rvsdg::output * end)
+    rvsdg::Output * end)
 {
   rvsdg::Input * previous_state_edge = nullptr;
   while (true)
@@ -95,7 +95,7 @@ trace_edge(
       auto nbr = branch_op::create(*sn->input(0)->origin(), *new_edge);
       auto nmux = mux_op::create(*sn->input(0)->origin(), nbr, false)[0];
       new_edge_user->divert_to(nmux);
-      rvsdg::output * out = nullptr;
+      rvsdg::Output * out = nullptr;
       for (size_t i = 0; i < sn->noutputs(); ++i)
       {
         out = trace_edge(get_mem_state_user(sn->output(i)), nbr[i], target_call, end);
@@ -135,7 +135,7 @@ trace_edge(
     }
     else if (TryGetOwnerOp<llvm::MemoryStateSplitOperation>(*state_edge))
     {
-      rvsdg::output * after_merge = nullptr;
+      rvsdg::Output * after_merge = nullptr;
       for (size_t i = 0; i < sn->noutputs(); ++i)
       {
         // pick right edge by searching for target
@@ -200,7 +200,7 @@ handle_structural(
     std::vector<std::tuple<rvsdg::SimpleNode *, rvsdg::Input *>> & outstanding_dec_reqs,
     std::vector<rvsdg::SimpleNode *> & mem_ops,
     rvsdg::Input * state_edge_before,
-    rvsdg::output * state_edge_after)
+    rvsdg::Output * state_edge_after)
 {
   JLM_ASSERT(state_edge_before->region() == state_edge_after->region());
   // the reqs we encountered
@@ -236,7 +236,7 @@ handle_structural(
         state_edge_req->divert_to(split_outputs[0]);
         JLM_ASSERT(state_edge_after->region() == split_outputs[1]->region());
         auto after_user = get_mem_state_user(state_edge_after);
-        std::vector<rvsdg::output *> operands(
+        std::vector<rvsdg::Output *> operands(
             { state_edge_after, split_outputs[1], split_outputs[2] });
         auto merge_out = llvm::MemoryStateMergeOperation::Create(operands);
         after_user->divert_to(merge_out);
@@ -251,7 +251,7 @@ static void
 optimize_single_mem_op_loop(
     std::vector<rvsdg::SimpleNode *> & mem_ops,
     rvsdg::Input * state_edge_before,
-    rvsdg::output * state_edge_after)
+    rvsdg::Output * state_edge_after)
 {
   // the idea here is that if there is only one memory operation, and no other memory
   // operations/staet gates on a state edge in a loop we can remove the backedge part and treat the
@@ -271,7 +271,7 @@ optimize_single_mem_op_loop(
   }
 }
 
-static rvsdg::output *
+static rvsdg::Output *
 follow_state_edge(
     rvsdg::Input * state_edge,
     std::vector<rvsdg::SimpleNode *> & mem_ops,
@@ -332,7 +332,7 @@ follow_state_edge(
     {
       std::vector<rvsdg::SimpleNode *> gamma_mem_ops;
       // start of gamma
-      rvsdg::output * out = nullptr;
+      rvsdg::Output * out = nullptr;
       for (size_t i = 0; i < sn->noutputs(); ++i)
       {
         out = follow_state_edge(get_mem_state_user(sn->output(i)), gamma_mem_ops, modify);

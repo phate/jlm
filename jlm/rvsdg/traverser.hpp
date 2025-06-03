@@ -14,7 +14,7 @@ namespace jlm::rvsdg
 
 class Graph;
 class Input;
-class output;
+class Output;
 
 namespace detail
 {
@@ -172,7 +172,7 @@ private:
   node_create(Node * node);
 
   void
-  input_change(Input * in, output * old_origin, output * new_origin);
+  input_change(Input * in, Output * old_origin, Output * new_origin);
 
   rvsdg::Region * region_;
   TraversalTracker tracker_;
@@ -218,7 +218,7 @@ private:
   node_destroy(Node * node);
 
   void
-  input_change(Input * in, output * old_origin, output * new_origin);
+  input_change(Input * in, Output * old_origin, Output * new_origin);
 
   rvsdg::Region * region_;
   TraversalTracker tracker_;

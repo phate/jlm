@@ -109,11 +109,11 @@ public:
   copy() const override;
 
   rvsdg::binop_reduction_path_t
-  can_reduce_operand_pair(const rvsdg::output * op1, const rvsdg::output * op2)
+  can_reduce_operand_pair(const rvsdg::Output * op1, const rvsdg::Output * op2)
       const noexcept override;
 
-  rvsdg::output *
-  reduce_operand_pair(rvsdg::binop_reduction_path_t path, rvsdg::output * op1, rvsdg::output * op2)
+  rvsdg::Output *
+  reduce_operand_pair(rvsdg::binop_reduction_path_t path, rvsdg::Output * op1, rvsdg::Output * op2)
       const override;
 
   enum flags
@@ -144,11 +144,11 @@ public:
   copy() const override;
 
   rvsdg::binop_reduction_path_t
-  can_reduce_operand_pair(const rvsdg::output * op1, const rvsdg::output * op2)
+  can_reduce_operand_pair(const rvsdg::Output * op1, const rvsdg::Output * op2)
       const noexcept override;
 
-  rvsdg::output *
-  reduce_operand_pair(rvsdg::binop_reduction_path_t path, rvsdg::output * op1, rvsdg::output * op2)
+  rvsdg::Output *
+  reduce_operand_pair(rvsdg::binop_reduction_path_t path, rvsdg::Output * op1, rvsdg::Output * op2)
       const override;
 
   enum flags
@@ -179,11 +179,11 @@ public:
   copy() const override;
 
   rvsdg::binop_reduction_path_t
-  can_reduce_operand_pair(const rvsdg::output * op1, const rvsdg::output * op2)
+  can_reduce_operand_pair(const rvsdg::Output * op1, const rvsdg::Output * op2)
       const noexcept override;
 
-  rvsdg::output *
-  reduce_operand_pair(rvsdg::binop_reduction_path_t path, rvsdg::output * op1, rvsdg::output * op2)
+  rvsdg::Output *
+  reduce_operand_pair(rvsdg::binop_reduction_path_t path, rvsdg::Output * op1, rvsdg::Output * op2)
       const override;
 
   enum flags
@@ -214,11 +214,11 @@ public:
   copy() const override;
 
   rvsdg::binop_reduction_path_t
-  can_reduce_operand_pair(const rvsdg::output * op1, const rvsdg::output * op2)
+  can_reduce_operand_pair(const rvsdg::Output * op1, const rvsdg::Output * op2)
       const noexcept override;
 
-  rvsdg::output *
-  reduce_operand_pair(rvsdg::binop_reduction_path_t path, rvsdg::output * op1, rvsdg::output * op2)
+  rvsdg::Output *
+  reduce_operand_pair(rvsdg::binop_reduction_path_t path, rvsdg::Output * op1, rvsdg::Output * op2)
       const override;
 
   enum flags
@@ -249,11 +249,11 @@ public:
   copy() const override;
 
   rvsdg::binop_reduction_path_t
-  can_reduce_operand_pair(const rvsdg::output * op1, const rvsdg::output * op2)
+  can_reduce_operand_pair(const rvsdg::Output * op1, const rvsdg::Output * op2)
       const noexcept override;
 
-  rvsdg::output *
-  reduce_operand_pair(rvsdg::binop_reduction_path_t path, rvsdg::output * op1, rvsdg::output * op2)
+  rvsdg::Output *
+  reduce_operand_pair(rvsdg::binop_reduction_path_t path, rvsdg::Output * op1, rvsdg::Output * op2)
       const override;
 
   enum flags
@@ -284,11 +284,11 @@ public:
   copy() const override;
 
   rvsdg::binop_reduction_path_t
-  can_reduce_operand_pair(const rvsdg::output * op1, const rvsdg::output * op2)
+  can_reduce_operand_pair(const rvsdg::Output * op1, const rvsdg::Output * op2)
       const noexcept override;
 
-  rvsdg::output *
-  reduce_operand_pair(rvsdg::binop_reduction_path_t path, rvsdg::output * op1, rvsdg::output * op2)
+  rvsdg::Output *
+  reduce_operand_pair(rvsdg::binop_reduction_path_t path, rvsdg::Output * op1, rvsdg::Output * op2)
       const override;
 
   enum flags
@@ -319,11 +319,11 @@ public:
   copy() const override;
 
   rvsdg::binop_reduction_path_t
-  can_reduce_operand_pair(const rvsdg::output * op1, const rvsdg::output * op2)
+  can_reduce_operand_pair(const rvsdg::Output * op1, const rvsdg::Output * op2)
       const noexcept override;
 
-  rvsdg::output *
-  reduce_operand_pair(rvsdg::binop_reduction_path_t path, rvsdg::output * op1, rvsdg::output * op2)
+  rvsdg::Output *
+  reduce_operand_pair(rvsdg::binop_reduction_path_t path, rvsdg::Output * op1, rvsdg::Output * op2)
       const override;
 
   enum flags
@@ -354,11 +354,11 @@ public:
   copy() const override;
 
   rvsdg::binop_reduction_path_t
-  can_reduce_operand_pair(const rvsdg::output * op1, const rvsdg::output * op2)
+  can_reduce_operand_pair(const rvsdg::Output * op1, const rvsdg::Output * op2)
       const noexcept override;
 
-  rvsdg::output *
-  reduce_operand_pair(rvsdg::binop_reduction_path_t path, rvsdg::output * op1, rvsdg::output * op2)
+  rvsdg::Output *
+  reduce_operand_pair(rvsdg::binop_reduction_path_t path, rvsdg::Output * op1, rvsdg::Output * op2)
       const override;
 
   enum flags
@@ -389,11 +389,11 @@ public:
   copy() const override;
 
   rvsdg::binop_reduction_path_t
-  can_reduce_operand_pair(const rvsdg::output * op1, const rvsdg::output * op2)
+  can_reduce_operand_pair(const rvsdg::Output * op1, const rvsdg::Output * op2)
       const noexcept override;
 
-  rvsdg::output *
-  reduce_operand_pair(rvsdg::binop_reduction_path_t path, rvsdg::output * op1, rvsdg::output * op2)
+  rvsdg::Output *
+  reduce_operand_pair(rvsdg::binop_reduction_path_t path, rvsdg::Output * op1, rvsdg::Output * op2)
       const override;
 
   enum flags
@@ -424,11 +424,11 @@ public:
   copy() const override;
 
   rvsdg::binop_reduction_path_t
-  can_reduce_operand_pair(const rvsdg::output * op1, const rvsdg::output * op2)
+  can_reduce_operand_pair(const rvsdg::Output * op1, const rvsdg::Output * op2)
       const noexcept override;
 
-  rvsdg::output *
-  reduce_operand_pair(rvsdg::binop_reduction_path_t path, rvsdg::output * op1, rvsdg::output * op2)
+  rvsdg::Output *
+  reduce_operand_pair(rvsdg::binop_reduction_path_t path, rvsdg::Output * op1, rvsdg::Output * op2)
       const override;
 
   enum flags
@@ -459,11 +459,11 @@ public:
   copy() const override;
 
   rvsdg::binop_reduction_path_t
-  can_reduce_operand_pair(const rvsdg::output * op1, const rvsdg::output * op2)
+  can_reduce_operand_pair(const rvsdg::Output * op1, const rvsdg::Output * op2)
       const noexcept override;
 
-  rvsdg::output *
-  reduce_operand_pair(rvsdg::binop_reduction_path_t path, rvsdg::output * op1, rvsdg::output * op2)
+  rvsdg::Output *
+  reduce_operand_pair(rvsdg::binop_reduction_path_t path, rvsdg::Output * op1, rvsdg::Output * op2)
       const override;
 
   enum flags
@@ -494,11 +494,11 @@ public:
   copy() const override;
 
   rvsdg::binop_reduction_path_t
-  can_reduce_operand_pair(const rvsdg::output * op1, const rvsdg::output * op2)
+  can_reduce_operand_pair(const rvsdg::Output * op1, const rvsdg::Output * op2)
       const noexcept override;
 
-  rvsdg::output *
-  reduce_operand_pair(rvsdg::binop_reduction_path_t path, rvsdg::output * op1, rvsdg::output * op2)
+  rvsdg::Output *
+  reduce_operand_pair(rvsdg::binop_reduction_path_t path, rvsdg::Output * op1, rvsdg::Output * op2)
       const override;
 
   enum flags
@@ -529,11 +529,11 @@ public:
   copy() const override;
 
   rvsdg::binop_reduction_path_t
-  can_reduce_operand_pair(const rvsdg::output * op1, const rvsdg::output * op2)
+  can_reduce_operand_pair(const rvsdg::Output * op1, const rvsdg::Output * op2)
       const noexcept override;
 
-  rvsdg::output *
-  reduce_operand_pair(rvsdg::binop_reduction_path_t path, rvsdg::output * op1, rvsdg::output * op2)
+  rvsdg::Output *
+  reduce_operand_pair(rvsdg::binop_reduction_path_t path, rvsdg::Output * op1, rvsdg::Output * op2)
       const override;
 
   enum flags
@@ -564,11 +564,11 @@ public:
   copy() const override;
 
   rvsdg::binop_reduction_path_t
-  can_reduce_operand_pair(const rvsdg::output * op1, const rvsdg::output * op2)
+  can_reduce_operand_pair(const rvsdg::Output * op1, const rvsdg::Output * op2)
       const noexcept override;
 
-  rvsdg::output *
-  reduce_operand_pair(rvsdg::binop_reduction_path_t path, rvsdg::output * op1, rvsdg::output * op2)
+  rvsdg::Output *
+  reduce_operand_pair(rvsdg::binop_reduction_path_t path, rvsdg::Output * op1, rvsdg::Output * op2)
       const override;
 
   enum flags
@@ -599,11 +599,11 @@ public:
   copy() const override;
 
   rvsdg::binop_reduction_path_t
-  can_reduce_operand_pair(const rvsdg::output * op1, const rvsdg::output * op2)
+  can_reduce_operand_pair(const rvsdg::Output * op1, const rvsdg::Output * op2)
       const noexcept override;
 
-  rvsdg::output *
-  reduce_operand_pair(rvsdg::binop_reduction_path_t path, rvsdg::output * op1, rvsdg::output * op2)
+  rvsdg::Output *
+  reduce_operand_pair(rvsdg::binop_reduction_path_t path, rvsdg::Output * op1, rvsdg::Output * op2)
       const override;
 
   enum flags
@@ -634,11 +634,11 @@ public:
   copy() const override;
 
   rvsdg::binop_reduction_path_t
-  can_reduce_operand_pair(const rvsdg::output * op1, const rvsdg::output * op2)
+  can_reduce_operand_pair(const rvsdg::Output * op1, const rvsdg::Output * op2)
       const noexcept override;
 
-  rvsdg::output *
-  reduce_operand_pair(rvsdg::binop_reduction_path_t path, rvsdg::output * op1, rvsdg::output * op2)
+  rvsdg::Output *
+  reduce_operand_pair(rvsdg::binop_reduction_path_t path, rvsdg::Output * op1, rvsdg::Output * op2)
       const override;
 
   enum flags
@@ -669,11 +669,11 @@ public:
   copy() const override;
 
   rvsdg::binop_reduction_path_t
-  can_reduce_operand_pair(const rvsdg::output * op1, const rvsdg::output * op2)
+  can_reduce_operand_pair(const rvsdg::Output * op1, const rvsdg::Output * op2)
       const noexcept override;
 
-  rvsdg::output *
-  reduce_operand_pair(rvsdg::binop_reduction_path_t path, rvsdg::output * op1, rvsdg::output * op2)
+  rvsdg::Output *
+  reduce_operand_pair(rvsdg::binop_reduction_path_t path, rvsdg::Output * op1, rvsdg::Output * op2)
       const override;
 
   enum flags
@@ -704,11 +704,11 @@ public:
   copy() const override;
 
   rvsdg::binop_reduction_path_t
-  can_reduce_operand_pair(const rvsdg::output * op1, const rvsdg::output * op2)
+  can_reduce_operand_pair(const rvsdg::Output * op1, const rvsdg::Output * op2)
       const noexcept override;
 
-  rvsdg::output *
-  reduce_operand_pair(rvsdg::binop_reduction_path_t path, rvsdg::output * op1, rvsdg::output * op2)
+  rvsdg::Output *
+  reduce_operand_pair(rvsdg::binop_reduction_path_t path, rvsdg::Output * op1, rvsdg::Output * op2)
       const override;
 
   enum flags
@@ -739,11 +739,11 @@ public:
   copy() const override;
 
   rvsdg::binop_reduction_path_t
-  can_reduce_operand_pair(const rvsdg::output * op1, const rvsdg::output * op2)
+  can_reduce_operand_pair(const rvsdg::Output * op1, const rvsdg::Output * op2)
       const noexcept override;
 
-  rvsdg::output *
-  reduce_operand_pair(rvsdg::binop_reduction_path_t path, rvsdg::output * op1, rvsdg::output * op2)
+  rvsdg::Output *
+  reduce_operand_pair(rvsdg::binop_reduction_path_t path, rvsdg::Output * op1, rvsdg::Output * op2)
       const override;
 
   enum flags
@@ -774,11 +774,11 @@ public:
   copy() const override;
 
   rvsdg::binop_reduction_path_t
-  can_reduce_operand_pair(const rvsdg::output * op1, const rvsdg::output * op2)
+  can_reduce_operand_pair(const rvsdg::Output * op1, const rvsdg::Output * op2)
       const noexcept override;
 
-  rvsdg::output *
-  reduce_operand_pair(rvsdg::binop_reduction_path_t path, rvsdg::output * op1, rvsdg::output * op2)
+  rvsdg::Output *
+  reduce_operand_pair(rvsdg::binop_reduction_path_t path, rvsdg::Output * op1, rvsdg::Output * op2)
       const override;
 
   enum flags
@@ -809,11 +809,11 @@ public:
   copy() const override;
 
   rvsdg::binop_reduction_path_t
-  can_reduce_operand_pair(const rvsdg::output * op1, const rvsdg::output * op2)
+  can_reduce_operand_pair(const rvsdg::Output * op1, const rvsdg::Output * op2)
       const noexcept override;
 
-  rvsdg::output *
-  reduce_operand_pair(rvsdg::binop_reduction_path_t path, rvsdg::output * op1, rvsdg::output * op2)
+  rvsdg::Output *
+  reduce_operand_pair(rvsdg::binop_reduction_path_t path, rvsdg::Output * op1, rvsdg::Output * op2)
       const override;
 
   enum flags
@@ -844,11 +844,11 @@ public:
   copy() const override;
 
   rvsdg::binop_reduction_path_t
-  can_reduce_operand_pair(const rvsdg::output * op1, const rvsdg::output * op2)
+  can_reduce_operand_pair(const rvsdg::Output * op1, const rvsdg::Output * op2)
       const noexcept override;
 
-  rvsdg::output *
-  reduce_operand_pair(rvsdg::binop_reduction_path_t path, rvsdg::output * op1, rvsdg::output * op2)
+  rvsdg::Output *
+  reduce_operand_pair(rvsdg::binop_reduction_path_t path, rvsdg::Output * op1, rvsdg::Output * op2)
       const override;
 
   enum flags
@@ -879,11 +879,11 @@ public:
   copy() const override;
 
   rvsdg::binop_reduction_path_t
-  can_reduce_operand_pair(const rvsdg::output * op1, const rvsdg::output * op2)
+  can_reduce_operand_pair(const rvsdg::Output * op1, const rvsdg::Output * op2)
       const noexcept override;
 
-  rvsdg::output *
-  reduce_operand_pair(rvsdg::binop_reduction_path_t path, rvsdg::output * op1, rvsdg::output * op2)
+  rvsdg::Output *
+  reduce_operand_pair(rvsdg::binop_reduction_path_t path, rvsdg::Output * op1, rvsdg::Output * op2)
       const override;
 
   enum flags

@@ -73,7 +73,7 @@ static void
 pullin_node(rvsdg::GammaNode * gamma, rvsdg::Node * node)
 {
   /* collect operands */
-  std::vector<std::vector<jlm::rvsdg::output *>> operands(gamma->nsubregions());
+  std::vector<std::vector<jlm::rvsdg::Output *>> operands(gamma->nsubregions());
   for (size_t i = 0; i < node->ninputs(); i++)
   {
     auto ev = gamma->AddEntryVar(node->input(i)->origin());
@@ -166,11 +166,11 @@ pullin_bottom(rvsdg::GammaNode * gamma)
     workset.erase(node);
 
     /* copy node into subregions */
-    std::vector<std::vector<jlm::rvsdg::output *>> outputs(node->noutputs());
+    std::vector<std::vector<jlm::rvsdg::Output *>> outputs(node->noutputs());
     for (size_t r = 0; r < gamma->nsubregions(); r++)
     {
       /* collect operands */
-      std::vector<jlm::rvsdg::output *> operands;
+      std::vector<jlm::rvsdg::Output *> operands;
       for (size_t i = 0; i < node->ninputs(); i++)
       {
         auto input = node->input(i);

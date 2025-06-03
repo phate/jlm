@@ -31,7 +31,7 @@ find_decouple_response(
   auto response_functions = find_function_arguments(lambda, "decouple_res");
   for (auto & func : response_functions)
   {
-    std::unordered_set<rvsdg::output *> visited;
+    std::unordered_set<rvsdg::Output *> visited;
     std::vector<rvsdg::SimpleNode *> reponse_calls;
     trace_function_calls(func.inner, reponse_calls, visited);
     for (auto & rc : reponse_calls)
@@ -95,7 +95,7 @@ TraceEdgeToMerge(rvsdg::Input * state_edge)
 }
 
 void
-OptimizeResMemState(rvsdg::output * res_mem_state)
+OptimizeResMemState(rvsdg::Output * res_mem_state)
 {
   // replace other branches with undefs, so the stateedge before the res can be killed.
   auto [merge_in, encountered_muxes] = TraceEdgeToMerge(get_mem_state_user(res_mem_state));
@@ -115,13 +115,13 @@ OptimizeResMemState(rvsdg::output * res_mem_state)
 }
 
 void
-OptimizeReqMemState(rvsdg::output * req_mem_state)
+OptimizeReqMemState(rvsdg::Output * req_mem_state)
 { // there is no reason to wait for requests, if we already wait for responses, so we kill the rest
   // of this state edge
   auto [merge_in, _] = TraceEdgeToMerge(get_mem_state_user(req_mem_state));
   JLM_ASSERT(merge_in);
   auto merge_node = merge_in->node();
-  std::vector<rvsdg::output *> merge_origins;
+  std::vector<rvsdg::Output *> merge_origins;
   for (size_t i = 0; i < merge_in->node()->ninputs(); ++i)
   {
     if (i != merge_in->index())
@@ -139,7 +139,7 @@ rvsdg::SimpleNode *
 ReplaceDecouple(
     const rvsdg::LambdaNode * lambda,
     rvsdg::SimpleNode * decouple_request,
-    rvsdg::output * resp)
+    rvsdg::Output * resp)
 {
   JLM_ASSERT(dynamic_cast<const llvm::CallOperation *>(&decouple_request->GetOperation()));
   auto channel = decouple_request->input(1)->origin();
@@ -269,11 +269,11 @@ gather_mem_nodes(
  */
 void
 TracePointer(
-    rvsdg::output * output,
+    rvsdg::Output * output,
     std::vector<rvsdg::SimpleNode *> & loadNodes,
     std::vector<rvsdg::SimpleNode *> & storeNodes,
     std::vector<rvsdg::SimpleNode *> & decoupleNodes,
-    std::unordered_set<rvsdg::output *> & visited)
+    std::unordered_set<rvsdg::Output *> & visited)
 {
   if (!rvsdg::is<llvm::PointerType>(output->Type()))
   {
@@ -345,7 +345,7 @@ TracePointerArguments(const rvsdg::LambdaNode * lambda, port_load_store_decouple
   {
     if (rvsdg::is<llvm::PointerType>(arg->Type()))
     {
-      std::unordered_set<rvsdg::output *> visited;
+      std::unordered_set<rvsdg::Output *> visited;
       portNodes.emplace_back();
       TracePointer(
           arg,
@@ -359,7 +359,7 @@ TracePointerArguments(const rvsdg::LambdaNode * lambda, port_load_store_decouple
   {
     if (rvsdg::is<llvm::PointerType>(cv.inner->Type()) && !is_function_argument(cv))
     {
-      std::unordered_set<rvsdg::output *> visited;
+      std::unordered_set<rvsdg::Output *> visited;
       portNodes.emplace_back();
       TracePointer(
           cv.inner,
@@ -532,7 +532,7 @@ MemoryConverter(llvm::RvsdgModule & rm)
   // before we can use the original lambda results and look them up in the updated smap.
   //
 
-  std::vector<rvsdg::output *> newResults;
+  std::vector<rvsdg::Output *> newResults;
   // The new arguments are placed directly after the original arguments so we create an index that
   // points to the first new argument
   auto newArgumentsIndex = args.size();
@@ -560,7 +560,7 @@ MemoryConverter(llvm::RvsdgModule & rm)
         unknownDecoupledNodes));
   }
 
-  std::vector<rvsdg::output *> originalResults;
+  std::vector<rvsdg::Output *> originalResults;
   for (auto result : lambda->GetFunctionResults())
   {
     originalResults.push_back(smap.lookup(result->origin()));
@@ -598,7 +598,7 @@ MemoryConverter(llvm::RvsdgModule & rm)
   newLambda->PruneLambdaInputs();
 }
 
-rvsdg::output *
+rvsdg::Output *
 ConnectRequestResponseMemPorts(
     const rvsdg::LambdaNode * lambda,
     size_t argumentIndex,
@@ -654,7 +654,7 @@ ConnectRequestResponseMemPorts(
       mem_resp_op::create(*lambdaRegion->argument(argumentIndex), responseTypes, portWidth);
   // The (decoupled) load nodes are replaced so the pointer to the types will become invalid
   std::vector<std::shared_ptr<const rvsdg::ValueType>> loadTypes;
-  std::vector<rvsdg::output *> loadAddresses;
+  std::vector<rvsdg::Output *> loadAddresses;
   for (size_t i = 0; i < loadNodes.size(); ++i)
   {
     auto routed = route_response_rhls(loadNodes[i]->region(), responses[i]);
@@ -694,7 +694,7 @@ ConnectRequestResponseMemPorts(
     loadTypes.push_back(
         dynamic_cast<const decoupled_load_op *>(&replacement->GetOperation())->GetLoadedType());
   }
-  std::vector<rvsdg::output *> storeOperands;
+  std::vector<rvsdg::Output *> storeOperands;
   for (size_t i = 0; i < storeNodes.size(); ++i)
   {
     auto response = responses[loadNodes.size() + decoupledNodes.size() + i];
@@ -715,7 +715,7 @@ rvsdg::SimpleNode *
 ReplaceLoad(
     rvsdg::SubstitutionMap & smap,
     const rvsdg::SimpleNode * originalLoad,
-    rvsdg::output * response)
+    rvsdg::Output * response)
 {
   // We have the load from the original lambda since it is needed to update the smap
   // We need the load in the new lambda such that we can replace it with a load node with explicit
@@ -724,7 +724,7 @@ ReplaceLoad(
       static_cast<rvsdg::SimpleOutput *>(smap.lookup(originalLoad->output(0)))->node();
 
   auto loadAddress = replacedLoad->input(0)->origin();
-  std::vector<rvsdg::output *> states;
+  std::vector<rvsdg::Output *> states;
   for (size_t i = 1; i < replacedLoad->ninputs(); ++i)
   {
     states.push_back(replacedLoad->input(i)->origin());
@@ -757,7 +757,7 @@ rvsdg::SimpleNode *
 ReplaceStore(
     rvsdg::SubstitutionMap & smap,
     const rvsdg::SimpleNode * originalStore,
-    rvsdg::output * response)
+    rvsdg::Output * response)
 {
   // We have the store from the original lambda since it is needed to update the smap
   // We need the store in the new lambda such that we can replace it with a store node with explicit
@@ -768,7 +768,7 @@ ReplaceStore(
   auto addr = replacedStore->input(0)->origin();
   JLM_ASSERT(rvsdg::is<llvm::PointerType>(addr->Type()));
   auto data = replacedStore->input(1)->origin();
-  std::vector<rvsdg::output *> states;
+  std::vector<rvsdg::Output *> states;
   for (size_t i = 2; i < replacedStore->ninputs(); ++i)
   {
     states.push_back(replacedStore->input(i)->origin());

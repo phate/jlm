@@ -13,10 +13,10 @@ namespace jlm::rvsdg
 UnaryOperation::~UnaryOperation() noexcept
 {}
 
-std::optional<std::vector<rvsdg::output *>>
+std::optional<std::vector<rvsdg::Output *>>
 NormalizeUnaryOperation(
     const UnaryOperation & operation,
-    const std::vector<rvsdg::output *> & operands)
+    const std::vector<rvsdg::Output *> & operands)
 {
   JLM_ASSERT(operands.size() == 1);
   auto & operand = *operands[0];

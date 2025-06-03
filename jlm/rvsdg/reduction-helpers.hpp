@@ -151,8 +151,8 @@ associative_test_flatten(const Container & args, const FlattenTester & flatten_t
 /* Replace each argument of "args" with the arguments of its defining node
  * for each where "flatten_tester" returns true. */
 template<typename FlattenTester>
-std::vector<jlm::rvsdg::output *>
-associative_flatten(std::vector<jlm::rvsdg::output *> args, const FlattenTester & flatten_tester)
+std::vector<jlm::rvsdg::Output *>
+associative_flatten(std::vector<jlm::rvsdg::Output *> args, const FlattenTester & flatten_tester)
 {
   size_t n = 0;
   while (n < args.size())
