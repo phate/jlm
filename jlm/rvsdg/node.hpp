@@ -10,6 +10,8 @@
 #include <jlm/rvsdg/operation.hpp>
 #include <jlm/util/common.hpp>
 #include <jlm/util/intrusive-list.hpp>
+#include <jlm/util/iterator_range.hpp>
+#include <jlm/util/IteratorWrapper.hpp>
 #include <jlm/util/strfmt.hpp>
 
 #include <unordered_set>
@@ -269,6 +271,13 @@ class Output
 
   typedef std::unordered_set<jlm::rvsdg::Input *>::const_iterator user_iterator;
 
+  using UserIterator = util::PtrIterator<Input, std::unordered_set<Input *>::iterator>;
+  using UserConstIterator =
+      util::PtrIterator<const Input, std::unordered_set<Input *>::const_iterator>;
+
+  using UserIteratorRange = util::IteratorRange<UserIterator>;
+  using UserConstIteratorRange = util::IteratorRange<UserConstIterator>;
+
 public:
   virtual ~Output() noexcept;
 
@@ -331,6 +340,18 @@ public:
   end() const noexcept
   {
     return users_.end();
+  }
+
+  UserIteratorRange
+  Users()
+  {
+    return { UserIterator(users_.begin()), UserIterator(users_.end()) };
+  }
+
+  UserConstIteratorRange
+  Users() const
+  {
+    return { UserConstIterator(users_.begin()), UserConstIterator(users_.end()) };
   }
 
   [[nodiscard]] const std::shared_ptr<const rvsdg::Type> &
