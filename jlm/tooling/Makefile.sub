@@ -50,22 +50,22 @@ libtooling_HEADERS = \
     jlm/tooling/CommandLine.hpp \
 
 libtooling_TESTS = \
-	tests/jlm/tooling/TestJlcCommandGraphGenerator \
-	tests/jlm/tooling/TestJlcCommandLineParser \
-	tests/jlm/tooling/TestJlmOptCommand \
-	tests/jlm/tooling/TestJlmOptCommandLineParser \
+    tests/jlm/tooling/TestJlcCommandGraphGenerator \
+    tests/jlm/tooling/TestJlcCommandLineParser \
+    tests/jlm/tooling/TestJlmOptCommand \
+    tests/jlm/tooling/TestJlmOptCommandLineParser \
 
 libtooling_TEST_LIBS = \
-	libtooling \
-	libhls \
-	libllvm \
-	libmlir \
-	librvsdg \
-	libutil \
-	libjlmtest \
+    libtooling \
+    libhls \
+    libllvm \
+    libmlir \
+    librvsdg \
+    libutil \
+    libjlmtest \
 
 libtooling_TEST_EXTRA_LDFLAGS = \
-	$(MLIR_LDFLAGS) \
-	$(shell $(LLVMCONFIG) --ldflags --libs --system-libs) \
+    $(MLIR_LDFLAGS) \
+    $(shell $(LLVMCONFIG) --ldflags --libs --system-libs) \
 
 $(eval $(call common_library,libtooling))
