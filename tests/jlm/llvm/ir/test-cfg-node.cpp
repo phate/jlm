@@ -16,7 +16,7 @@ test_divert_inedges()
 
   /* setup cfg */
 
-  ipgraph_module im(jlm::util::filepath(""), "", "");
+  ipgraph_module im(jlm::util::FilePath(""), "", "");
 
   jlm::llvm::cfg cfg(im);
 

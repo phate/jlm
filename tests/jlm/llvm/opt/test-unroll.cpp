@@ -37,9 +37,9 @@ static jlm::rvsdg::ThetaNode *
 create_theta(
     const jlm::rvsdg::bitcompare_op & cop,
     const jlm::rvsdg::bitbinary_op & aop,
-    jlm::rvsdg::output * init,
-    jlm::rvsdg::output * step,
-    jlm::rvsdg::output * end)
+    jlm::rvsdg::Output * init,
+    jlm::rvsdg::Output * step,
+    jlm::rvsdg::Output * end)
 {
   using namespace jlm::rvsdg;
 
@@ -225,7 +225,7 @@ test_unknown_boundaries()
   auto bt = jlm::rvsdg::bittype::Create(32);
   jlm::tests::test_op op({ bt }, { bt });
 
-  RvsdgModule rm(jlm::util::filepath(""), "", "");
+  RvsdgModule rm(jlm::util::FilePath(""), "", "");
   auto & graph = rm.Rvsdg();
 
   auto x = &jlm::tests::GraphImport::Create(graph, bt, "x");
@@ -278,7 +278,7 @@ find_thetas(jlm::rvsdg::Region * region)
 static inline void
 test_nested_theta()
 {
-  jlm::llvm::RvsdgModule rm(jlm::util::filepath(""), "", "");
+  jlm::llvm::RvsdgModule rm(jlm::util::FilePath(""), "", "");
   auto & graph = rm.Rvsdg();
 
   auto init = jlm::rvsdg::create_bitconstant(&graph.GetRootRegion(), 32, 0);

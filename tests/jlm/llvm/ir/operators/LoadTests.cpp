@@ -192,7 +192,7 @@ LoadMuxReduction_WrongNumberOfOperands()
   const auto s1 = &jlm::tests::GraphImport::Create(graph, mt, "s1");
   const auto s2 = &jlm::tests::GraphImport::Create(graph, mt, "s2");
 
-  auto merge = MemoryStateMergeOperation::Create(std::vector<jlm::rvsdg::output *>{ s1, s2 });
+  auto merge = MemoryStateMergeOperation::Create(std::vector<jlm::rvsdg::Output *>{ s1, s2 });
   auto & loadNode = LoadNonVolatileOperation::CreateNode(*a, { merge, merge }, vt, 4);
 
   auto & ex1 = GraphExport::Create(*loadNode.output(0), "v");

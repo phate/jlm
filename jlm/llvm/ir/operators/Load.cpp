@@ -62,7 +62,7 @@ rvsdg::SimpleNode &
 LoadVolatileOperation::CreateNode(
     rvsdg::Region & region,
     std::unique_ptr<LoadVolatileOperation> loadOperation,
-    const std::vector<rvsdg::output *> & operands)
+    const std::vector<rvsdg::Output *> & operands)
 {
   return rvsdg::SimpleNode::Create(region, std::move(loadOperation), operands);
 }
@@ -78,7 +78,7 @@ LoadVolatileOperation::CreateNode(
   merge nodes.
 */
 static bool
-is_load_mux_reducible(const std::vector<rvsdg::output *> & operands)
+is_load_mux_reducible(const std::vector<rvsdg::Output *> & operands)
 {
   // Ignore loads that have no state edge.
   // This can happen when the compiler can statically show that the address of a load is NULL.
@@ -109,7 +109,7 @@ is_load_mux_reducible(const std::vector<rvsdg::output *> & operands)
   v sl1 sl3 = load_op a1 s1 s3
 */
 static bool
-is_load_alloca_reducible(const std::vector<rvsdg::output *> & operands)
+is_load_alloca_reducible(const std::vector<rvsdg::Output *> & operands)
 {
   auto address = operands[0];
 
@@ -128,7 +128,7 @@ is_load_alloca_reducible(const std::vector<rvsdg::output *> & operands)
 }
 
 static bool
-is_reducible_state(const rvsdg::output * state, const rvsdg::Node * loadalloca)
+is_reducible_state(const rvsdg::Output * state, const rvsdg::Node * loadalloca)
 {
   auto [storeNode, storeOperation] =
       rvsdg::TryGetSimpleNodeAndOp<StoreNonVolatileOperation>(*state);
@@ -156,7 +156,7 @@ is_reducible_state(const rvsdg::output * state, const rvsdg::Node * loadalloca)
 static bool
 is_load_store_state_reducible(
     const LoadNonVolatileOperation & op,
-    const std::vector<rvsdg::output *> & operands)
+    const std::vector<rvsdg::Output *> & operands)
 {
   auto address = operands[0];
 
@@ -186,9 +186,9 @@ is_load_store_state_reducible(
   v so1 = load_op a si1
 */
 static bool
-is_multiple_origin_reducible(const std::vector<rvsdg::output *> & operands)
+is_multiple_origin_reducible(const std::vector<rvsdg::Output *> & operands)
 {
-  const util::HashSet<rvsdg::output *> states(std::next(operands.begin()), operands.end());
+  const util::HashSet<rvsdg::Output *> states(std::next(operands.begin()), operands.end());
   return states.Size() != operands.size() - 1;
 }
 
@@ -201,7 +201,7 @@ is_multiple_origin_reducible(const std::vector<rvsdg::output *> & operands)
 static bool
 is_load_store_reducible(
     const LoadNonVolatileOperation & loadOperation,
-    const std::vector<rvsdg::output *> & operands)
+    const std::vector<rvsdg::Output *> & operands)
 {
   // We do not need to check further if no state edge is provided to the load
   if (operands.size() < 2)
@@ -257,10 +257,10 @@ is_load_store_reducible(
   return true;
 }
 
-static std::vector<rvsdg::output *>
+static std::vector<rvsdg::Output *>
 perform_load_store_reduction(
     const LoadNonVolatileOperation &,
-    const std::vector<rvsdg::output *> & operands)
+    const std::vector<rvsdg::Output *> & operands)
 {
   const auto storeNode = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*operands[1]);
 
@@ -270,10 +270,10 @@ perform_load_store_reduction(
   return results;
 }
 
-static std::vector<rvsdg::output *>
+static std::vector<rvsdg::Output *>
 perform_load_mux_reduction(
     const LoadNonVolatileOperation & op,
-    const std::vector<rvsdg::output *> & operands)
+    const std::vector<rvsdg::Output *> & operands)
 {
   const auto memStateMergeNode = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*operands[1]);
 
@@ -283,21 +283,21 @@ perform_load_mux_reduction(
       op.GetLoadedType(),
       op.GetAlignment());
 
-  std::vector<rvsdg::output *> states = { std::next(ld.begin()), ld.end() };
+  std::vector<rvsdg::Output *> states = { std::next(ld.begin()), ld.end() };
   auto mx = MemoryStateMergeOperation::Create(states);
 
   return { ld[0], mx };
 }
 
-static std::vector<rvsdg::output *>
+static std::vector<rvsdg::Output *>
 perform_load_alloca_reduction(
     const LoadNonVolatileOperation & op,
-    const std::vector<rvsdg::output *> & operands)
+    const std::vector<rvsdg::Output *> & operands)
 {
   const auto allocaNode = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*operands[0]);
 
-  std::vector<rvsdg::output *> loadstates;
-  std::vector<rvsdg::output *> otherstates;
+  std::vector<rvsdg::Output *> loadstates;
+  std::vector<rvsdg::Output *> otherstates;
   for (size_t n = 1; n < operands.size(); n++)
   {
     const auto node = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*operands[n]);
@@ -313,22 +313,22 @@ perform_load_alloca_reduction(
       op.GetLoadedType(),
       op.GetAlignment());
 
-  std::vector<rvsdg::output *> results(1, ld[0]);
+  std::vector<rvsdg::Output *> results(1, ld[0]);
   results.insert(results.end(), std::next(ld.begin()), ld.end());
   results.insert(results.end(), otherstates.begin(), otherstates.end());
   return results;
 }
 
-static std::vector<rvsdg::output *>
+static std::vector<rvsdg::Output *>
 perform_load_store_state_reduction(
     const LoadNonVolatileOperation & op,
-    const std::vector<rvsdg::output *> & operands)
+    const std::vector<rvsdg::Output *> & operands)
 {
   auto address = operands[0];
   const auto allocaNode = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*address);
 
-  std::vector<rvsdg::output *> new_loadstates;
-  std::vector<rvsdg::output *> results(operands.size(), nullptr);
+  std::vector<rvsdg::Output *> new_loadstates;
+  std::vector<rvsdg::Output *> results(operands.size(), nullptr);
   for (size_t n = 1; n < operands.size(); n++)
   {
     auto state = operands[n];
@@ -354,16 +354,16 @@ perform_load_store_state_reduction(
   return results;
 }
 
-static std::vector<rvsdg::output *>
+static std::vector<rvsdg::Output *>
 perform_multiple_origin_reduction(
     const LoadNonVolatileOperation & op,
-    const std::vector<rvsdg::output *> & operands)
+    const std::vector<rvsdg::Output *> & operands)
 {
   JLM_ASSERT(operands.size() > 1);
   const auto address = operands[0];
 
-  std::vector<rvsdg::output *> newInputStates;
-  std::unordered_map<rvsdg::output *, size_t> stateIndexMap;
+  std::vector<rvsdg::Output *> newInputStates;
+  std::unordered_map<rvsdg::Output *, size_t> stateIndexMap;
   for (size_t n = 1; n < operands.size(); n++)
   {
     auto state = operands[n];
@@ -381,7 +381,7 @@ perform_multiple_origin_reduction(
       op.GetLoadedType(),
       op.GetAlignment());
 
-  std::vector<rvsdg::output *> results(operands.size(), nullptr);
+  std::vector<rvsdg::Output *> results(operands.size(), nullptr);
   results[0] = loadResults[0];
   for (size_t n = 1; n < operands.size(); n++)
   {
@@ -403,7 +403,7 @@ perform_multiple_origin_reduction(
   _ so3 = load_op _ si1
 */
 static bool
-is_load_load_state_reducible(const std::vector<rvsdg::output *> & operands)
+is_load_load_state_reducible(const std::vector<rvsdg::Output *> & operands)
 {
   JLM_ASSERT(operands.size() >= 2);
 
@@ -416,14 +416,14 @@ is_load_load_state_reducible(const std::vector<rvsdg::output *> & operands)
   return false;
 }
 
-static std::vector<rvsdg::output *>
+static std::vector<rvsdg::Output *>
 perform_load_load_state_reduction(
     const LoadNonVolatileOperation & op,
-    const std::vector<rvsdg::output *> & operands)
+    const std::vector<rvsdg::Output *> & operands)
 {
   size_t nstates = operands.size() - 1;
 
-  auto load_state_input = [](rvsdg::output * result)
+  auto load_state_input = [](rvsdg::Output * result)
   {
     const auto loadNode = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*result);
     JLM_ASSERT(is<LoadNonVolatileOperation>(loadNode));
@@ -442,8 +442,8 @@ perform_load_load_state_reduction(
   };
 
   std::function<
-      rvsdg::output *(size_t, rvsdg::output *, std::vector<std::vector<rvsdg::output *>> &)>
-      reduce_state = [&](size_t index, rvsdg::output * operand, auto & mxstates)
+      rvsdg::Output *(size_t, rvsdg::Output *, std::vector<std::vector<rvsdg::Output *>> &)>
+      reduce_state = [&](size_t index, rvsdg::Output * operand, auto & mxstates)
   {
     JLM_ASSERT(rvsdg::is<rvsdg::StateType>(operand->Type()));
 
@@ -454,8 +454,8 @@ perform_load_load_state_reduction(
     return reduce_state(index, load_state_input(operand)->origin(), mxstates);
   };
 
-  std::vector<rvsdg::output *> ldstates;
-  std::vector<std::vector<rvsdg::output *>> mxstates(nstates);
+  std::vector<rvsdg::Output *> ldstates;
+  std::vector<std::vector<rvsdg::Output *>> mxstates(nstates);
   for (size_t n = 1; n < operands.size(); n++)
     ldstates.push_back(reduce_state(n - 1, operands[n], mxstates));
 
@@ -477,10 +477,10 @@ perform_load_load_state_reduction(
   return ld;
 }
 
-std::optional<std::vector<rvsdg::output *>>
+std::optional<std::vector<rvsdg::Output *>>
 NormalizeLoadMux(
     const LoadNonVolatileOperation & operation,
-    const std::vector<rvsdg::output *> & operands)
+    const std::vector<rvsdg::Output *> & operands)
 {
   if (is_load_mux_reducible(operands))
     return perform_load_mux_reduction(operation, operands);
@@ -488,10 +488,10 @@ NormalizeLoadMux(
   return std::nullopt;
 }
 
-std::optional<std::vector<rvsdg::output *>>
+std::optional<std::vector<rvsdg::Output *>>
 NormalizeLoadStore(
     const LoadNonVolatileOperation & operation,
-    const std::vector<rvsdg::output *> & operands)
+    const std::vector<rvsdg::Output *> & operands)
 {
   if (is_load_store_reducible(operation, operands))
     return perform_load_store_reduction(operation, operands);
@@ -499,10 +499,10 @@ NormalizeLoadStore(
   return std::nullopt;
 }
 
-std::optional<std::vector<rvsdg::output *>>
+std::optional<std::vector<rvsdg::Output *>>
 NormalizeLoadAlloca(
     const LoadNonVolatileOperation & operation,
-    const std::vector<rvsdg::output *> & operands)
+    const std::vector<rvsdg::Output *> & operands)
 {
   if (is_load_alloca_reducible(operands))
     return perform_load_alloca_reduction(operation, operands);
@@ -510,10 +510,10 @@ NormalizeLoadAlloca(
   return std::nullopt;
 }
 
-std::optional<std::vector<rvsdg::output *>>
+std::optional<std::vector<rvsdg::Output *>>
 NormalizeLoadStoreState(
     const LoadNonVolatileOperation & operation,
-    const std::vector<rvsdg::output *> & operands)
+    const std::vector<rvsdg::Output *> & operands)
 {
   if (is_load_store_state_reducible(operation, operands))
     return perform_load_store_state_reduction(operation, operands);
@@ -521,10 +521,10 @@ NormalizeLoadStoreState(
   return std::nullopt;
 }
 
-std::optional<std::vector<rvsdg::output *>>
+std::optional<std::vector<rvsdg::Output *>>
 NormalizeLoadDuplicateState(
     const LoadNonVolatileOperation & operation,
-    const std::vector<rvsdg::output *> & operands)
+    const std::vector<rvsdg::Output *> & operands)
 {
   if (is_multiple_origin_reducible(operands))
     return perform_multiple_origin_reduction(operation, operands);
@@ -532,10 +532,10 @@ NormalizeLoadDuplicateState(
   return std::nullopt;
 }
 
-std::optional<std::vector<rvsdg::output *>>
+std::optional<std::vector<rvsdg::Output *>>
 NormalizeLoadLoadState(
     const LoadNonVolatileOperation & operation,
-    const std::vector<rvsdg::output *> & operands)
+    const std::vector<rvsdg::Output *> & operands)
 {
   if (is_load_load_state_reducible(operands))
     return perform_load_load_state_reduction(operation, operands);

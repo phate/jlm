@@ -64,7 +64,7 @@ public:
   {}
 
   inline ipgraph_module(
-      const jlm::util::filepath & source_filename,
+      const jlm::util::FilePath & source_filename,
       const std::string & target_triple,
       const std::string & data_layout,
       std::vector<std::unique_ptr<StructType::Declaration>> declarations) noexcept
@@ -75,7 +75,7 @@ public:
   {}
 
   ipgraph_module(
-      const jlm::util::filepath & source_filename,
+      const jlm::util::FilePath & source_filename,
       const std::string & target_triple,
       const std::string & data_layout) noexcept
       : ipgraph_module(source_filename, target_triple, data_layout, {})
@@ -154,7 +154,7 @@ public:
     return it != functions_.end() ? it->second : nullptr;
   }
 
-  const jlm::util::filepath &
+  const jlm::util::FilePath &
   source_filename() const noexcept
   {
     return source_filename_;
@@ -197,7 +197,7 @@ public:
 
   static std::unique_ptr<ipgraph_module>
   Create(
-      const jlm::util::filepath & sourceFilename,
+      const jlm::util::FilePath & sourceFilename,
       const std::string & targetTriple,
       const std::string & dataLayout,
       std::vector<std::unique_ptr<StructType::Declaration>> declarations)
@@ -211,7 +211,7 @@ public:
 
   static std::unique_ptr<ipgraph_module>
   create(
-      const jlm::util::filepath & source_filename,
+      const jlm::util::FilePath & source_filename,
       const std::string & target_triple,
       const std::string & data_layout)
   {
@@ -222,7 +222,7 @@ private:
   llvm::ipgraph clg_;
   std::string data_layout_;
   std::string target_triple_;
-  const jlm::util::filepath source_filename_;
+  const jlm::util::FilePath source_filename_;
   std::unordered_set<const llvm::gblvalue *> globals_;
   std::unordered_set<std::unique_ptr<llvm::variable>> variables_;
   std::unordered_map<const ipgraph_node *, const llvm::variable *> functions_;

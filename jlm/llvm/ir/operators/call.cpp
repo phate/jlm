@@ -15,15 +15,15 @@ namespace jlm::llvm
  * Support functions
  */
 
-using InvariantOutputMap = std::unordered_map<const rvsdg::output *, rvsdg::Input *>;
+using InvariantOutputMap = std::unordered_map<const rvsdg::Output *, rvsdg::Input *>;
 
 static rvsdg::Input *
-invariantInput(const rvsdg::output & output, InvariantOutputMap & invariantOutputs);
+invariantInput(const rvsdg::Output & output, InvariantOutputMap & invariantOutputs);
 
 static rvsdg::StructuralInput *
 invariantInput(
     const rvsdg::GammaNode & gamma,
-    const rvsdg::output & output,
+    const rvsdg::Output & output,
     InvariantOutputMap & invariantOutputs)
 {
   size_t n;
@@ -69,7 +69,7 @@ invariantInput(
 static rvsdg::Input *
 invariantInput(
     const rvsdg::ThetaNode & theta,
-    const rvsdg::output & output,
+    const rvsdg::Output & output,
     InvariantOutputMap & invariantOutputs)
 {
   auto loopvar = theta.MapOutputLoopVar(output);
@@ -98,7 +98,7 @@ invariantInput(
 }
 
 static rvsdg::Input *
-invariantInput(const rvsdg::output & output, InvariantOutputMap & invariantOutputs)
+invariantInput(const rvsdg::Output & output, InvariantOutputMap & invariantOutputs)
 {
   /*
     We already have seen the output, just return the corresponding input.
@@ -122,7 +122,7 @@ invariantInput(const rvsdg::output & output, InvariantOutputMap & invariantOutpu
 }
 
 static rvsdg::Input *
-invariantInput(const rvsdg::output & output)
+invariantInput(const rvsdg::Output & output)
 {
   InvariantOutputMap invariantOutputs;
   return invariantInput(output, invariantOutputs);
@@ -153,7 +153,7 @@ CallOperation::copy() const
   return std::make_unique<CallOperation>(*this);
 }
 
-rvsdg::output *
+rvsdg::Output *
 CallOperation::TraceFunctionInput(const rvsdg::SimpleNode & callNode)
 {
   JLM_ASSERT(is<CallOperation>(&callNode));
@@ -197,7 +197,7 @@ CallOperation::TraceFunctionInput(const rvsdg::SimpleNode & callNode)
     if (auto gamma = rvsdg::TryGetRegionParentNode<rvsdg::GammaNode>(*origin))
     {
       origin = std::visit(
-          [](const auto & rolevar) -> rvsdg::output *
+          [](const auto & rolevar) -> rvsdg::Output *
           {
             return rolevar.input->origin();
           },

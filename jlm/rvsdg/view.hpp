@@ -36,7 +36,7 @@ view(const rvsdg::Region * region);
  * @return the string describing the region.
  */
 std::string
-view(const rvsdg::Region * region, std::unordered_map<const output *, std::string> & map);
+view(const rvsdg::Region * region, std::unordered_map<const Output *, std::string> & map);
 
 /**
  * Recursively traverses and prints the given rvsdg region to the given file.

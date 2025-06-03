@@ -46,7 +46,7 @@ public:
   }
 
   void
-  InsertVariable(const rvsdg::output * output, const llvm::variable * variable)
+  InsertVariable(const rvsdg::Output * output, const llvm::variable * variable)
   {
     JLM_ASSERT(VariableMap_.find(output) == VariableMap_.end());
     JLM_ASSERT(*output->Type() == *variable->Type());
@@ -54,7 +54,7 @@ public:
   }
 
   const llvm::variable *
-  GetVariable(const rvsdg::output * output)
+  GetVariable(const rvsdg::Output * output)
   {
     const auto it = VariableMap_.find(output);
     JLM_ASSERT(it != VariableMap_.end());
@@ -95,7 +95,7 @@ private:
   llvm::cfg * ControlFlowGraph_;
   ipgraph_module & IPGraphModule_;
   BasicBlock * LastProcessedBasicBlock;
-  std::unordered_map<const rvsdg::output *, const llvm::variable *> VariableMap_;
+  std::unordered_map<const rvsdg::Output *, const llvm::variable *> VariableMap_;
 };
 
 class RvsdgToIpGraphConverter::Statistics final : public util::Statistics
@@ -103,7 +103,7 @@ class RvsdgToIpGraphConverter::Statistics final : public util::Statistics
 public:
   ~Statistics() override = default;
 
-  explicit Statistics(const util::filepath & filename)
+  explicit Statistics(const util::FilePath & filename)
       : util::Statistics(Id::RvsdgDestruction, filename)
   {}
 
@@ -122,7 +122,7 @@ public:
   }
 
   static std::unique_ptr<Statistics>
-  Create(const util::filepath & sourceFile)
+  Create(const util::FilePath & sourceFile)
   {
     return std::make_unique<Statistics>(sourceFile);
   }

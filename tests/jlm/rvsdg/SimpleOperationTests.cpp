@@ -42,7 +42,7 @@ NormalizeSimpleOperationCne_NodesWithoutOperands()
   view(graph, stdout);
 
   // Act
-  auto NormalizeCne = [&](const SimpleOperation & operation, const std::vector<output *> & operands)
+  auto NormalizeCne = [&](const SimpleOperation & operation, const std::vector<Output *> & operands)
   {
     return NormalizeSimpleOperationCommonNodeElimination(
         graph.GetRootRegion(),
@@ -97,7 +97,7 @@ NormalizeSimpleOperationCne_NodesWithOperands()
   view(graph, stdout);
 
   // Act
-  auto NormalizeCne = [&](const SimpleOperation & operation, const std::vector<output *> & operands)
+  auto NormalizeCne = [&](const SimpleOperation & operation, const std::vector<Output *> & operands)
   {
     return NormalizeSimpleOperationCommonNodeElimination(
         graph.GetRootRegion(),
@@ -154,7 +154,7 @@ NormalizeSimpleOperationCne_Failure()
   view(graph, stdout);
 
   // Act
-  auto NormalizeCne = [&](const SimpleOperation & operation, const std::vector<output *> & operands)
+  auto NormalizeCne = [&](const SimpleOperation & operation, const std::vector<Output *> & operands)
   {
     return NormalizeSimpleOperationCommonNodeElimination(
         graph.GetRootRegion(),

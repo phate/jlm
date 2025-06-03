@@ -81,10 +81,10 @@ public:
     return tac::create(op, { size });
   }
 
-  static std::vector<rvsdg::output *>
+  static std::vector<rvsdg::Output *>
   create(
       std::shared_ptr<const rvsdg::ValueType> allocatedType,
-      rvsdg::output * size,
+      rvsdg::Output * size,
       size_t alignment)
   {
     auto bt = std::dynamic_pointer_cast<const rvsdg::bittype>(size->Type());

@@ -20,7 +20,7 @@ TestDeadLoopNode()
       { jlm::rvsdg::ControlType::Create(2), valueType },
       { valueType });
 
-  jlm::llvm::RvsdgModule rvsdgModule(jlm::util::filepath(""), "", "");
+  jlm::llvm::RvsdgModule rvsdgModule(jlm::util::FilePath(""), "", "");
   auto & rvsdg = rvsdgModule.Rvsdg();
 
   auto lambdaNode = jlm::rvsdg::LambdaNode::Create(
@@ -52,7 +52,7 @@ TestDeadLoopNodeOutput()
       { jlm::rvsdg::ControlType::Create(2), valueType },
       { jlm::rvsdg::ControlType::Create(2) });
 
-  jlm::llvm::RvsdgModule rvsdgModule(jlm::util::filepath(""), "", "");
+  jlm::llvm::RvsdgModule rvsdgModule(jlm::util::FilePath(""), "", "");
   auto & rvsdg = rvsdgModule.Rvsdg();
 
   auto lambdaNode = jlm::rvsdg::LambdaNode::Create(
@@ -67,7 +67,7 @@ TestDeadLoopNodeOutput()
 
   auto loopNode = loop_node::create(lambdaNode->subregion());
 
-  jlm::rvsdg::output * buffer;
+  jlm::rvsdg::Output * buffer;
   auto output0 = loopNode->AddLoopVar(p, &buffer);
   loopNode->AddLoopVar(x);
   loopNode->set_predicate(buffer);

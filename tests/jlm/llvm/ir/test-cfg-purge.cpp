@@ -15,7 +15,7 @@ test()
 {
   using namespace jlm::llvm;
 
-  ipgraph_module module(jlm::util::filepath(""), "", "");
+  ipgraph_module module(jlm::util::FilePath(""), "", "");
 
   jlm::llvm::cfg cfg(module);
   auto bb0 = BasicBlock::create(cfg);

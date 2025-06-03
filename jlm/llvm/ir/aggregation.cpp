@@ -13,19 +13,17 @@
 namespace jlm::llvm
 {
 
-/* aggnode class */
-
-aggnode::~aggnode()
-{}
+AggregationNode::~AggregationNode() noexcept = default;
 
 void
-aggnode::normalize(aggnode & node)
+AggregationNode::normalize(AggregationNode & node)
 {
-  std::function<std::vector<std::unique_ptr<aggnode>>(aggnode &)> reduce = [&](aggnode & node)
+  std::function<std::vector<std::unique_ptr<AggregationNode>>(AggregationNode &)> reduce =
+      [&](AggregationNode & node)
   {
     JLM_ASSERT(is<linearaggnode>(&node));
 
-    std::vector<std::unique_ptr<aggnode>> children;
+    std::vector<std::unique_ptr<AggregationNode>> children;
     for (size_t n = 0; n < node.children_.size(); n++)
     {
       auto & child = node.children_[n];
@@ -148,7 +146,7 @@ public:
     return map_.find(node) != map_.end();
   }
 
-  std::unique_ptr<aggnode> &
+  std::unique_ptr<AggregationNode> &
   lookup(cfg_node * node)
   {
     JLM_ASSERT(contains(node));
@@ -157,7 +155,7 @@ public:
   }
 
   void
-  insert(cfg_node * node, std::unique_ptr<aggnode> anode)
+  insert(cfg_node * node, std::unique_ptr<AggregationNode> anode)
   {
     map_[node] = std::move(anode);
   }
@@ -187,7 +185,7 @@ public:
   }
 
 private:
-  std::unordered_map<cfg_node *, std::unique_ptr<aggnode>> map_;
+  std::unordered_map<cfg_node *, std::unique_ptr<AggregationNode>> map_;
 };
 
 static bool
@@ -497,7 +495,7 @@ aggregate(cfg_node * entry, cfg_node * exit, aggregation_map & map)
   return entry;
 }
 
-std::unique_ptr<aggnode>
+std::unique_ptr<AggregationNode>
 aggregate(llvm::cfg & cfg)
 {
   JLM_ASSERT(is_proper_structured(cfg));
@@ -509,7 +507,7 @@ aggregate(llvm::cfg & cfg)
 }
 
 size_t
-ntacs(const aggnode & root)
+ntacs(const AggregationNode & root)
 {
   size_t n = 0;
   for (auto & child : root)

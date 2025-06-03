@@ -66,7 +66,7 @@ private:
 
 /* structural input class */
 
-typedef jlm::util::intrusive_list<RegionArgument, RegionArgument::structural_input_accessor>
+typedef jlm::util::IntrusiveList<RegionArgument, RegionArgument::structural_input_accessor>
     argument_list;
 
 class StructuralInput : public node_input
@@ -78,13 +78,13 @@ public:
 
   StructuralInput(
       StructuralNode * node,
-      jlm::rvsdg::output * origin,
+      jlm::rvsdg::Output * origin,
       std::shared_ptr<const rvsdg::Type> type);
 
   static StructuralInput *
   create(
       StructuralNode * node,
-      jlm::rvsdg::output * origin,
+      jlm::rvsdg::Output * origin,
       std::shared_ptr<const jlm::rvsdg::Type> type)
   {
     auto input = std::make_unique<StructuralInput>(node, origin, std::move(type));
@@ -102,7 +102,7 @@ public:
 
 /* structural output class */
 
-typedef jlm::util::intrusive_list<RegionResult, RegionResult::structural_output_accessor>
+typedef jlm::util::IntrusiveList<RegionResult, RegionResult::structural_output_accessor>
     result_list;
 
 class StructuralOutput : public node_output

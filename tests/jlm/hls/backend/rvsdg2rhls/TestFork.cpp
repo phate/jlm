@@ -21,18 +21,18 @@ TestFork()
   auto b32 = rvsdg::bittype::Create(32);
   auto ft = jlm::rvsdg::FunctionType::Create({ b32, b32, b32 }, { b32, b32, b32 });
 
-  RvsdgModule rm(util::filepath(""), "", "");
+  RvsdgModule rm(util::FilePath(""), "", "");
 
   auto lambda = jlm::rvsdg::LambdaNode::Create(
       rm.Rvsdg().GetRootRegion(),
       LlvmLambdaOperation::Create(ft, "f", linkage::external_linkage));
 
   auto loop = hls::loop_node::create(lambda->subregion());
-  rvsdg::output * idvBuffer;
+  rvsdg::Output * idvBuffer;
   loop->AddLoopVar(lambda->GetFunctionArguments()[0], &idvBuffer);
-  rvsdg::output * lvsBuffer;
+  rvsdg::Output * lvsBuffer;
   loop->AddLoopVar(lambda->GetFunctionArguments()[1], &lvsBuffer);
-  rvsdg::output * lveBuffer;
+  rvsdg::Output * lveBuffer;
   loop->AddLoopVar(lambda->GetFunctionArguments()[2], &lveBuffer);
 
   auto arm = rvsdg::CreateOpNode<rvsdg::bitadd_op>({ idvBuffer, lvsBuffer }, 32).output(0);
@@ -83,7 +83,7 @@ TestConstantFork()
   auto b32 = rvsdg::bittype::Create(32);
   auto ft = jlm::rvsdg::FunctionType::Create({ b32 }, { b32 });
 
-  RvsdgModule rm(util::filepath(""), "", "");
+  RvsdgModule rm(util::FilePath(""), "", "");
 
   auto lambda = jlm::rvsdg::LambdaNode::Create(
       rm.Rvsdg().GetRootRegion(),
@@ -92,7 +92,7 @@ TestConstantFork()
 
   auto loop = hls::loop_node::create(lambdaRegion);
   auto subregion = loop->subregion();
-  rvsdg::output * idvBuffer;
+  rvsdg::Output * idvBuffer;
   loop->AddLoopVar(lambda->GetFunctionArguments()[0], &idvBuffer);
   auto bitConstant1 = rvsdg::create_bitconstant(subregion, 32, 1);
 

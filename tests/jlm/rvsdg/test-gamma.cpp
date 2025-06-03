@@ -230,7 +230,7 @@ TestRemoveGammaOutputsWhere()
 
   // Remove gammaOutput1
   gammaNode->RemoveGammaOutputsWhere(
-      [&](const jlm::rvsdg::output & output)
+      [&](const jlm::rvsdg::Output & output)
       {
         return output.index() == gammaOutput1.output->index();
       });
@@ -242,7 +242,7 @@ TestRemoveGammaOutputsWhere()
 
   // Try to remove gammaOutput2. This should result in no change as gammaOutput2 still has users.
   gammaNode->RemoveGammaOutputsWhere(
-      [&](const jlm::rvsdg::output & output)
+      [&](const jlm::rvsdg::Output & output)
       {
         return output.index() == gammaOutput2.output->index();
       });
@@ -324,7 +324,7 @@ TestIsInvariant()
       gammaNode->AddExitVar({ gammaInput0.branchArgument[0], gammaInput2.branchArgument[1] });
 
   // Act & Assert
-  std::optional<jlm::rvsdg::output *> invariantOrigin;
+  std::optional<jlm::rvsdg::Output *> invariantOrigin;
   invariantOrigin = jlm::rvsdg::GetGammaInvariantOrigin(*gammaNode, gammaOutput0);
   assert(invariantOrigin && *invariantOrigin == v0);
 

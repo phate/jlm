@@ -22,7 +22,7 @@ test1()
 {
   using namespace jlm::llvm;
 
-  RvsdgModule rm(jlm::util::filepath(""), "", "");
+  RvsdgModule rm(jlm::util::FilePath(""), "", "");
   auto & graph = rm.Rvsdg();
 
   auto x = &jlm::tests::GraphImport::Create(graph, vt, "x");
@@ -80,7 +80,7 @@ test2()
 {
   using namespace jlm::llvm;
 
-  RvsdgModule rm(jlm::util::filepath(""), "", "");
+  RvsdgModule rm(jlm::util::FilePath(""), "", "");
   auto & graph = rm.Rvsdg();
 
   auto x = &jlm::tests::GraphImport::Create(graph, vt, "x");

@@ -21,7 +21,7 @@ class IfConversionStatistics final : public util::Statistics
 public:
   ~IfConversionStatistics() override = default;
 
-  explicit IfConversionStatistics(const util::filepath & sourceFile)
+  explicit IfConversionStatistics(const util::FilePath & sourceFile)
       : Statistics(Id::IfConversion, sourceFile)
   {}
 
@@ -38,7 +38,7 @@ public:
   }
 
   static std::unique_ptr<IfConversionStatistics>
-  Create(const util::filepath & sourceFile)
+  Create(const util::FilePath & sourceFile)
   {
     return std::make_unique<IfConversionStatistics>(sourceFile);
   }

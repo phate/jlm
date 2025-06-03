@@ -34,10 +34,10 @@ public:
   copy() const override;
 
   rvsdg::unop_reduction_path_t
-  can_reduce_operand(const jlm::rvsdg::output * arg) const noexcept override;
+  can_reduce_operand(const jlm::rvsdg::Output * arg) const noexcept override;
 
-  jlm::rvsdg::output *
-  reduce_operand(rvsdg::unop_reduction_path_t path, jlm::rvsdg::output * arg) const override;
+  jlm::rvsdg::Output *
+  reduce_operand(rvsdg::unop_reduction_path_t path, jlm::rvsdg::Output * arg) const override;
 
   static std::unique_ptr<FunctionToPointerOperation>
   Create(std::shared_ptr<const rvsdg::FunctionType> fn);
@@ -72,10 +72,10 @@ public:
   copy() const override;
 
   rvsdg::unop_reduction_path_t
-  can_reduce_operand(const jlm::rvsdg::output * arg) const noexcept override;
+  can_reduce_operand(const jlm::rvsdg::Output * arg) const noexcept override;
 
-  jlm::rvsdg::output *
-  reduce_operand(rvsdg::unop_reduction_path_t path, jlm::rvsdg::output * arg) const override;
+  jlm::rvsdg::Output *
+  reduce_operand(rvsdg::unop_reduction_path_t path, jlm::rvsdg::Output * arg) const override;
 
   static std::unique_ptr<PointerToFunctionOperation>
   Create(std::shared_ptr<const rvsdg::FunctionType> fn);

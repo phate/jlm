@@ -202,7 +202,7 @@ DotHLS::loop_to_dot(hls::loop_node * ln)
   dot << "subgraph cluster_loop_" << loop_ctr++ << " {\n";
   dot << "color=\"#ff8080\"\n";
 
-  std::set<jlm::rvsdg::output *> back_outputs;
+  std::set<jlm::rvsdg::Output *> back_outputs;
   std::set<rvsdg::Node *> top_nodes; // no artificial top nodes for now
   for (size_t i = 0; i < sr->narguments(); ++i)
   {

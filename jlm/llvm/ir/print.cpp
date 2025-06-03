@@ -231,9 +231,10 @@ to_dot(const ipgraph & clg)
 /* aggregation node */
 
 std::string
-to_str(const aggnode & n, const AnnotationMap & dm)
+to_str(const AggregationNode & n, const AnnotationMap & dm)
 {
-  std::function<std::string(const aggnode &, size_t)> f = [&](const aggnode & n, size_t depth)
+  std::function<std::string(const AggregationNode &, size_t)> f =
+      [&](const AggregationNode & n, size_t depth)
   {
     std::string subtree(depth, '-');
     subtree += n.debug_string();
@@ -251,7 +252,7 @@ to_str(const aggnode & n, const AnnotationMap & dm)
 }
 
 void
-print(const aggnode & n, const AnnotationMap & dm, FILE * out)
+print(const AggregationNode & n, const AnnotationMap & dm, FILE * out)
 {
   fputs(to_str(n, dm).c_str(), out);
   fflush(out);
