@@ -659,7 +659,7 @@ JLM_UNIT_TEST_REGISTER(
 static int
 TestAttributeKindConversion()
 {
-  typedef jlm::llvm::attribute::kind ak;
+  typedef jlm::llvm::Attribute::kind ak;
 
   int begin = static_cast<int>(ak::None);
   int end = static_cast<int>(ak::EndAttrKinds);
