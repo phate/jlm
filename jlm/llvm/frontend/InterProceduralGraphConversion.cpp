@@ -204,7 +204,7 @@ public:
   }
 
   void
-  Start(const aggnode & node) noexcept
+  Start(const AggregationNode & node) noexcept
   {
     AddMeasurement(Label::NumThreeAddressCodes, llvm::ntacs(node));
     AddTimer(Label::Timer).start();
@@ -348,9 +348,10 @@ public:
     StatisticsCollector_.CollectDemandedStatistics(std::move(statistics));
   }
 
-  std::unique_ptr<aggnode>
+  std::unique_ptr<AggregationNode>
   CollectAggregationStatistics(
-      const std::function<std::unique_ptr<aggnode>(llvm::cfg &)> & aggregateControlFlowGraph,
+      const std::function<std::unique_ptr<AggregationNode>(llvm::cfg &)> &
+          aggregateControlFlowGraph,
       llvm::cfg & cfg,
       std::string functionName)
   {
@@ -370,9 +371,9 @@ public:
 
   std::unique_ptr<AnnotationMap>
   CollectAnnotationStatistics(
-      const std::function<std::unique_ptr<AnnotationMap>(const aggnode &)> &
+      const std::function<std::unique_ptr<AnnotationMap>(const AggregationNode &)> &
           annotateAggregationTree,
-      const aggnode & aggregationTreeRoot,
+      const AggregationNode & aggregationTreeRoot,
       std::string functionName)
   {
     auto statistics = AnnotationStatistics::Create(SourceFileName_, std::move(functionName));
@@ -565,7 +566,7 @@ ConvertBasicBlock(
 
 static void
 ConvertAggregationNode(
-    const aggnode & aggregationNode,
+    const AggregationNode & aggregationNode,
     const AnnotationMap & demandMap,
     rvsdg::LambdaNode & lambdaNode,
     RegionalizedVariableMap & regionalizedVariableMap);
@@ -809,7 +810,7 @@ Convert(
 
 static void
 ConvertAggregationNode(
-    const aggnode & aggregationNode,
+    const AggregationNode & aggregationNode,
     const AnnotationMap & demandMap,
     rvsdg::LambdaNode & lambdaNode,
     RegionalizedVariableMap & regionalizedVariableMap)
@@ -862,7 +863,7 @@ RestructureControlFlowGraph(
       functionName);
 }
 
-static std::unique_ptr<aggnode>
+static std::unique_ptr<AggregationNode>
 AggregateControlFlowGraph(
     llvm::cfg & controlFlowGraph,
     const std::string & functionName,
@@ -871,7 +872,7 @@ AggregateControlFlowGraph(
   auto aggregateControlFlowGraph = [](llvm::cfg & controlFlowGraph)
   {
     auto aggregationTreeRoot = aggregate(controlFlowGraph);
-    aggnode::normalize(*aggregationTreeRoot);
+    AggregationNode::normalize(*aggregationTreeRoot);
 
     return aggregationTreeRoot;
   };
@@ -886,7 +887,7 @@ AggregateControlFlowGraph(
 
 static std::unique_ptr<AnnotationMap>
 AnnotateAggregationTree(
-    const aggnode & aggregationTreeRoot,
+    const AggregationNode & aggregationTreeRoot,
     const std::string & functionName,
     InterProceduralGraphToRvsdgStatisticsCollector & statisticsCollector)
 {
@@ -898,7 +899,7 @@ AnnotateAggregationTree(
 
 static rvsdg::Output *
 ConvertAggregationTreeToLambda(
-    const aggnode & aggregationTreeRoot,
+    const AggregationNode & aggregationTreeRoot,
     const AnnotationMap & demandMap,
     RegionalizedVariableMap & scopedVariableMap,
     const std::string & functionName,
