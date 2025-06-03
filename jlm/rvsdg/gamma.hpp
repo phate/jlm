@@ -15,7 +15,7 @@
 namespace jlm::rvsdg
 {
 
-class output;
+class Output;
 class Type;
 
 class GammaOperation final : public StructuralOperation
@@ -102,7 +102,7 @@ public:
 
 private:
   GammaNode(
-      rvsdg::output * predicate,
+      rvsdg::Output * predicate,
       size_t nalternatives,
       std::vector<std::shared_ptr<const Type>> match_content_types);
 
@@ -119,7 +119,7 @@ public:
     /**
      * \brief The content of the match per branch.
      */
-    std::vector<rvsdg::output *> matchContent;
+    std::vector<rvsdg::Output *> matchContent;
   };
 
   /**
@@ -134,7 +134,7 @@ public:
     /**
      * \brief Variable inside each of the branch regions (argument per subregion).
      */
-    std::vector<rvsdg::output *> branchArgument;
+    std::vector<rvsdg::Output *> branchArgument;
   };
 
   /**
@@ -149,21 +149,21 @@ public:
     /**
      * \brief Output of gamma.
      */
-    rvsdg::output * output;
+    rvsdg::Output * output;
   };
 
   [[nodiscard]] const GammaOperation &
   GetOperation() const noexcept override;
 
   static GammaNode *
-  create(jlm::rvsdg::output * predicate, size_t nalternatives)
+  create(jlm::rvsdg::Output * predicate, size_t nalternatives)
   {
     return new GammaNode(predicate, nalternatives, {});
   }
 
   static GammaNode &
   Create(
-      jlm::rvsdg::output * predicate,
+      jlm::rvsdg::Output * predicate,
       size_t numAlternatives,
       std::vector<std::shared_ptr<const Type>> matchContentTypes)
   {
@@ -186,7 +186,7 @@ public:
    * variable in each branch use \ref EntryVar::branchArgument.
    */
   EntryVar
-  AddEntryVar(rvsdg::output * origin);
+  AddEntryVar(rvsdg::Output * origin);
 
   MatchVar
   GetMatchVar() const;
@@ -235,7 +235,7 @@ public:
    * branches as well as its def site preceding the gamma node:
    */
   std::variant<MatchVar, EntryVar>
-  MapBranchArgument(const rvsdg::output & output) const;
+  MapBranchArgument(const rvsdg::Output & output) const;
 
   /**
    * \brief Routes per-branch result of gamma to output
@@ -251,7 +251,7 @@ public:
    * output of the gamma node.
    */
   ExitVar
-  AddExitVar(std::vector<rvsdg::output *> values);
+  AddExitVar(std::vector<rvsdg::Output *> values);
 
   /**
    * \brief Gets all exit variables for this gamma.
@@ -276,7 +276,7 @@ public:
    * gamma subregions.
    */
   ExitVar
-  MapOutputExitVar(const rvsdg::output & output) const;
+  MapOutputExitVar(const rvsdg::Output & output) const;
 
   /**
    * \brief Maps gamma region exit result to exit variable description.
@@ -337,7 +337,7 @@ public:
   void
   PruneOutputs()
   {
-    auto match = [](const rvsdg::output &)
+    auto match = [](const rvsdg::Output &)
     {
       return true;
     };
@@ -386,7 +386,7 @@ private:
  * this exit variable on all paths of the gamma. If this is the case, it
  * returns the origin of the common input.
  */
-std::optional<rvsdg::output *>
+std::optional<rvsdg::Output *>
 GetGammaInvariantOrigin(const GammaNode & gamma, const GammaNode::ExitVar & exitvar);
 
 /* gamma node method definitions */

@@ -24,7 +24,7 @@ test_single_operand_phi()
   jlm::llvm::cfg cfg(im);
   auto arg = cfg.entry()->append_argument(argument::create("arg", vt));
 
-  auto bb0 = basic_block::create(cfg);
+  auto bb0 = BasicBlock::create(cfg);
   bb0->append_first(SsaPhiOperation::create({ { arg, cfg.entry() } }, vt));
 
   cfg.exit()->divert_inedges(bb0);

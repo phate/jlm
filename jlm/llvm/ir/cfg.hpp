@@ -17,7 +17,7 @@ namespace jlm::llvm
 {
 
 class clg_node;
-class basic_block;
+class BasicBlock;
 class ipgraph_module;
 class tac;
 
@@ -165,7 +165,7 @@ class cfg final
   class iterator final
   {
   public:
-    inline iterator(std::unordered_set<std::unique_ptr<basic_block>>::iterator it)
+    inline iterator(std::unordered_set<std::unique_ptr<BasicBlock>>::iterator it)
         : it_(it)
     {}
 
@@ -196,32 +196,32 @@ class cfg final
       return tmp;
     }
 
-    inline basic_block *
+    inline BasicBlock *
     node() const noexcept
     {
       return it_->get();
     }
 
-    inline basic_block &
+    inline BasicBlock &
     operator*() const noexcept
     {
       return *it_->get();
     }
 
-    inline basic_block *
+    inline BasicBlock *
     operator->() const noexcept
     {
       return node();
     }
 
   private:
-    std::unordered_set<std::unique_ptr<basic_block>>::iterator it_;
+    std::unordered_set<std::unique_ptr<BasicBlock>>::iterator it_;
   };
 
   class const_iterator final
   {
   public:
-    inline const_iterator(std::unordered_set<std::unique_ptr<basic_block>>::const_iterator it)
+    inline const_iterator(std::unordered_set<std::unique_ptr<BasicBlock>>::const_iterator it)
         : it_(it)
     {}
 
@@ -252,20 +252,20 @@ class cfg final
       return tmp;
     }
 
-    inline const basic_block &
+    inline const BasicBlock &
     operator*() noexcept
     {
       return *it_->get();
     }
 
-    inline const basic_block *
+    inline const BasicBlock *
     operator->() noexcept
     {
       return it_->get();
     }
 
   private:
-    std::unordered_set<std::unique_ptr<basic_block>>::const_iterator it_;
+    std::unordered_set<std::unique_ptr<BasicBlock>>::const_iterator it_;
   };
 
 public:
@@ -321,8 +321,8 @@ public:
     return exit_.get();
   }
 
-  inline basic_block *
-  add_node(std::unique_ptr<basic_block> bb)
+  inline BasicBlock *
+  add_node(std::unique_ptr<BasicBlock> bb)
   {
     auto tmp = bb.get();
     nodes_.insert(std::move(bb));
@@ -330,9 +330,9 @@ public:
   }
 
   inline cfg::iterator
-  find_node(basic_block * bb)
+  find_node(BasicBlock * bb)
   {
-    std::unique_ptr<basic_block> up(bb);
+    std::unique_ptr<BasicBlock> up(bb);
     auto it = nodes_.find(up);
     up.release();
     return iterator(it);
@@ -342,7 +342,7 @@ public:
   remove_node(cfg::iterator & it);
 
   static cfg::iterator
-  remove_node(basic_block * bb);
+  remove_node(BasicBlock * bb);
 
   inline size_t
   nnodes() const noexcept
@@ -388,7 +388,7 @@ private:
 
   static std::string
   ToAscii(
-      const basic_block & basicBlock,
+      const BasicBlock & basicBlock,
       const std::unordered_map<cfg_node *, std::string> & labels);
 
   static std::string
@@ -400,7 +400,7 @@ private:
   ipgraph_module & module_;
   std::unique_ptr<exit_node> exit_;
   std::unique_ptr<entry_node> entry_;
-  std::unordered_set<std::unique_ptr<basic_block>> nodes_;
+  std::unordered_set<std::unique_ptr<BasicBlock>> nodes_;
 };
 
 std::vector<cfg_node *>

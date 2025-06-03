@@ -56,17 +56,17 @@ IntegerAddOperation::copy() const
 }
 
 rvsdg::binop_reduction_path_t
-IntegerAddOperation::can_reduce_operand_pair(const rvsdg::output *, const rvsdg::output *)
+IntegerAddOperation::can_reduce_operand_pair(const rvsdg::Output *, const rvsdg::Output *)
     const noexcept
 {
   return rvsdg::binop_reduction_none;
 }
 
-rvsdg::output *
+rvsdg::Output *
 IntegerAddOperation::reduce_operand_pair(
     rvsdg::binop_reduction_path_t,
-    rvsdg::output *,
-    rvsdg::output *) const
+    rvsdg::Output *,
+    rvsdg::Output *) const
 {
   return nullptr;
 }
@@ -99,17 +99,17 @@ IntegerSubOperation::copy() const
 }
 
 rvsdg::binop_reduction_path_t
-IntegerSubOperation::can_reduce_operand_pair(const rvsdg::output *, const rvsdg::output *)
+IntegerSubOperation::can_reduce_operand_pair(const rvsdg::Output *, const rvsdg::Output *)
     const noexcept
 {
   return rvsdg::binop_reduction_none;
 }
 
-rvsdg::output *
+rvsdg::Output *
 IntegerSubOperation::reduce_operand_pair(
     rvsdg::binop_reduction_path_t,
-    rvsdg::output *,
-    rvsdg::output *) const
+    rvsdg::Output *,
+    rvsdg::Output *) const
 {
   return nullptr;
 }
@@ -142,17 +142,17 @@ IntegerMulOperation::copy() const
 }
 
 rvsdg::binop_reduction_path_t
-IntegerMulOperation::can_reduce_operand_pair(const rvsdg::output *, const rvsdg::output *)
+IntegerMulOperation::can_reduce_operand_pair(const rvsdg::Output *, const rvsdg::Output *)
     const noexcept
 {
   return rvsdg::binop_reduction_none;
 }
 
-rvsdg::output *
+rvsdg::Output *
 IntegerMulOperation::reduce_operand_pair(
     rvsdg::binop_reduction_path_t,
-    rvsdg::output *,
-    rvsdg::output *) const
+    rvsdg::Output *,
+    rvsdg::Output *) const
 {
   return nullptr;
 }
@@ -185,17 +185,17 @@ IntegerSDivOperation::copy() const
 }
 
 rvsdg::binop_reduction_path_t
-IntegerSDivOperation::can_reduce_operand_pair(const rvsdg::output *, const rvsdg::output *)
+IntegerSDivOperation::can_reduce_operand_pair(const rvsdg::Output *, const rvsdg::Output *)
     const noexcept
 {
   return rvsdg::binop_reduction_none;
 }
 
-rvsdg::output *
+rvsdg::Output *
 IntegerSDivOperation::reduce_operand_pair(
     rvsdg::binop_reduction_path_t,
-    rvsdg::output *,
-    rvsdg::output *) const
+    rvsdg::Output *,
+    rvsdg::Output *) const
 {
   return nullptr;
 }
@@ -228,17 +228,17 @@ IntegerUDivOperation::copy() const
 }
 
 rvsdg::binop_reduction_path_t
-IntegerUDivOperation::can_reduce_operand_pair(const rvsdg::output *, const rvsdg::output *)
+IntegerUDivOperation::can_reduce_operand_pair(const rvsdg::Output *, const rvsdg::Output *)
     const noexcept
 {
   return rvsdg::binop_reduction_none;
 }
 
-rvsdg::output *
+rvsdg::Output *
 IntegerUDivOperation::reduce_operand_pair(
     rvsdg::binop_reduction_path_t,
-    rvsdg::output *,
-    rvsdg::output *) const
+    rvsdg::Output *,
+    rvsdg::Output *) const
 {
   return nullptr;
 }
@@ -271,17 +271,17 @@ IntegerSRemOperation::copy() const
 }
 
 rvsdg::binop_reduction_path_t
-IntegerSRemOperation::can_reduce_operand_pair(const rvsdg::output *, const rvsdg::output *)
+IntegerSRemOperation::can_reduce_operand_pair(const rvsdg::Output *, const rvsdg::Output *)
     const noexcept
 {
   return rvsdg::binop_reduction_none;
 }
 
-rvsdg::output *
+rvsdg::Output *
 IntegerSRemOperation::reduce_operand_pair(
     rvsdg::binop_reduction_path_t,
-    rvsdg::output *,
-    rvsdg::output *) const
+    rvsdg::Output *,
+    rvsdg::Output *) const
 {
   return nullptr;
 }
@@ -314,17 +314,17 @@ IntegerURemOperation::copy() const
 }
 
 rvsdg::binop_reduction_path_t
-IntegerURemOperation::can_reduce_operand_pair(const rvsdg::output *, const rvsdg::output *)
+IntegerURemOperation::can_reduce_operand_pair(const rvsdg::Output *, const rvsdg::Output *)
     const noexcept
 {
   return rvsdg::binop_reduction_none;
 }
 
-rvsdg::output *
+rvsdg::Output *
 IntegerURemOperation::reduce_operand_pair(
     rvsdg::binop_reduction_path_t,
-    rvsdg::output *,
-    rvsdg::output *) const
+    rvsdg::Output *,
+    rvsdg::Output *) const
 {
   return nullptr;
 }
@@ -357,17 +357,17 @@ IntegerAShrOperation::copy() const
 }
 
 rvsdg::binop_reduction_path_t
-IntegerAShrOperation::can_reduce_operand_pair(const rvsdg::output *, const rvsdg::output *)
+IntegerAShrOperation::can_reduce_operand_pair(const rvsdg::Output *, const rvsdg::Output *)
     const noexcept
 {
   return rvsdg::binop_reduction_none;
 }
 
-rvsdg::output *
+rvsdg::Output *
 IntegerAShrOperation::reduce_operand_pair(
     rvsdg::binop_reduction_path_t,
-    rvsdg::output *,
-    rvsdg::output *) const
+    rvsdg::Output *,
+    rvsdg::Output *) const
 {
   return nullptr;
 }
@@ -400,17 +400,17 @@ IntegerShlOperation::copy() const
 }
 
 rvsdg::binop_reduction_path_t
-IntegerShlOperation::can_reduce_operand_pair(const rvsdg::output *, const rvsdg::output *)
+IntegerShlOperation::can_reduce_operand_pair(const rvsdg::Output *, const rvsdg::Output *)
     const noexcept
 {
   return rvsdg::binop_reduction_none;
 }
 
-rvsdg::output *
+rvsdg::Output *
 IntegerShlOperation::reduce_operand_pair(
     rvsdg::binop_reduction_path_t,
-    rvsdg::output *,
-    rvsdg::output *) const
+    rvsdg::Output *,
+    rvsdg::Output *) const
 {
   return nullptr;
 }
@@ -443,17 +443,17 @@ IntegerLShrOperation::copy() const
 }
 
 rvsdg::binop_reduction_path_t
-IntegerLShrOperation::can_reduce_operand_pair(const rvsdg::output *, const rvsdg::output *)
+IntegerLShrOperation::can_reduce_operand_pair(const rvsdg::Output *, const rvsdg::Output *)
     const noexcept
 {
   return rvsdg::binop_reduction_none;
 }
 
-rvsdg::output *
+rvsdg::Output *
 IntegerLShrOperation::reduce_operand_pair(
     rvsdg::binop_reduction_path_t,
-    rvsdg::output *,
-    rvsdg::output *) const
+    rvsdg::Output *,
+    rvsdg::Output *) const
 {
   return nullptr;
 }
@@ -486,17 +486,17 @@ IntegerAndOperation::copy() const
 }
 
 rvsdg::binop_reduction_path_t
-IntegerAndOperation::can_reduce_operand_pair(const rvsdg::output *, const rvsdg::output *)
+IntegerAndOperation::can_reduce_operand_pair(const rvsdg::Output *, const rvsdg::Output *)
     const noexcept
 {
   return rvsdg::binop_reduction_none;
 }
 
-rvsdg::output *
+rvsdg::Output *
 IntegerAndOperation::reduce_operand_pair(
     rvsdg::binop_reduction_path_t,
-    rvsdg::output *,
-    rvsdg::output *) const
+    rvsdg::Output *,
+    rvsdg::Output *) const
 {
   return nullptr;
 }
@@ -529,17 +529,17 @@ IntegerOrOperation::copy() const
 }
 
 rvsdg::binop_reduction_path_t
-IntegerOrOperation::can_reduce_operand_pair(const rvsdg::output *, const rvsdg::output *)
+IntegerOrOperation::can_reduce_operand_pair(const rvsdg::Output *, const rvsdg::Output *)
     const noexcept
 {
   return rvsdg::binop_reduction_none;
 }
 
-rvsdg::output *
+rvsdg::Output *
 IntegerOrOperation::reduce_operand_pair(
     rvsdg::binop_reduction_path_t,
-    rvsdg::output *,
-    rvsdg::output *) const
+    rvsdg::Output *,
+    rvsdg::Output *) const
 {
   return nullptr;
 }
@@ -572,17 +572,17 @@ IntegerXorOperation::copy() const
 }
 
 rvsdg::binop_reduction_path_t
-IntegerXorOperation::can_reduce_operand_pair(const rvsdg::output *, const rvsdg::output *)
+IntegerXorOperation::can_reduce_operand_pair(const rvsdg::Output *, const rvsdg::Output *)
     const noexcept
 {
   return rvsdg::binop_reduction_none;
 }
 
-rvsdg::output *
+rvsdg::Output *
 IntegerXorOperation::reduce_operand_pair(
     rvsdg::binop_reduction_path_t,
-    rvsdg::output *,
-    rvsdg::output *) const
+    rvsdg::Output *,
+    rvsdg::Output *) const
 {
   return nullptr;
 }
@@ -615,17 +615,17 @@ IntegerEqOperation::copy() const
 }
 
 rvsdg::binop_reduction_path_t
-IntegerEqOperation::can_reduce_operand_pair(const rvsdg::output *, const rvsdg::output *)
+IntegerEqOperation::can_reduce_operand_pair(const rvsdg::Output *, const rvsdg::Output *)
     const noexcept
 {
   return rvsdg::binop_reduction_none;
 }
 
-rvsdg::output *
+rvsdg::Output *
 IntegerEqOperation::reduce_operand_pair(
     rvsdg::binop_reduction_path_t,
-    rvsdg::output *,
-    rvsdg::output *) const
+    rvsdg::Output *,
+    rvsdg::Output *) const
 {
   return nullptr;
 }
@@ -658,17 +658,17 @@ IntegerNeOperation::copy() const
 }
 
 rvsdg::binop_reduction_path_t
-IntegerNeOperation::can_reduce_operand_pair(const rvsdg::output *, const rvsdg::output *)
+IntegerNeOperation::can_reduce_operand_pair(const rvsdg::Output *, const rvsdg::Output *)
     const noexcept
 {
   return rvsdg::binop_reduction_none;
 }
 
-rvsdg::output *
+rvsdg::Output *
 IntegerNeOperation::reduce_operand_pair(
     rvsdg::binop_reduction_path_t,
-    rvsdg::output *,
-    rvsdg::output *) const
+    rvsdg::Output *,
+    rvsdg::Output *) const
 {
   return nullptr;
 }
@@ -701,17 +701,17 @@ IntegerSgeOperation::copy() const
 }
 
 rvsdg::binop_reduction_path_t
-IntegerSgeOperation::can_reduce_operand_pair(const rvsdg::output *, const rvsdg::output *)
+IntegerSgeOperation::can_reduce_operand_pair(const rvsdg::Output *, const rvsdg::Output *)
     const noexcept
 {
   return rvsdg::binop_reduction_none;
 }
 
-rvsdg::output *
+rvsdg::Output *
 IntegerSgeOperation::reduce_operand_pair(
     rvsdg::binop_reduction_path_t,
-    rvsdg::output *,
-    rvsdg::output *) const
+    rvsdg::Output *,
+    rvsdg::Output *) const
 {
   return nullptr;
 }
@@ -744,17 +744,17 @@ IntegerSgtOperation::copy() const
 }
 
 rvsdg::binop_reduction_path_t
-IntegerSgtOperation::can_reduce_operand_pair(const rvsdg::output *, const rvsdg::output *)
+IntegerSgtOperation::can_reduce_operand_pair(const rvsdg::Output *, const rvsdg::Output *)
     const noexcept
 {
   return rvsdg::binop_reduction_none;
 }
 
-rvsdg::output *
+rvsdg::Output *
 IntegerSgtOperation::reduce_operand_pair(
     rvsdg::binop_reduction_path_t,
-    rvsdg::output *,
-    rvsdg::output *) const
+    rvsdg::Output *,
+    rvsdg::Output *) const
 {
   return nullptr;
 }
@@ -787,17 +787,17 @@ IntegerSleOperation::copy() const
 }
 
 rvsdg::binop_reduction_path_t
-IntegerSleOperation::can_reduce_operand_pair(const rvsdg::output *, const rvsdg::output *)
+IntegerSleOperation::can_reduce_operand_pair(const rvsdg::Output *, const rvsdg::Output *)
     const noexcept
 {
   return rvsdg::binop_reduction_none;
 }
 
-rvsdg::output *
+rvsdg::Output *
 IntegerSleOperation::reduce_operand_pair(
     rvsdg::binop_reduction_path_t,
-    rvsdg::output *,
-    rvsdg::output *) const
+    rvsdg::Output *,
+    rvsdg::Output *) const
 {
   return nullptr;
 }
@@ -830,17 +830,17 @@ IntegerSltOperation::copy() const
 }
 
 rvsdg::binop_reduction_path_t
-IntegerSltOperation::can_reduce_operand_pair(const rvsdg::output *, const rvsdg::output *)
+IntegerSltOperation::can_reduce_operand_pair(const rvsdg::Output *, const rvsdg::Output *)
     const noexcept
 {
   return rvsdg::binop_reduction_none;
 }
 
-rvsdg::output *
+rvsdg::Output *
 IntegerSltOperation::reduce_operand_pair(
     rvsdg::binop_reduction_path_t,
-    rvsdg::output *,
-    rvsdg::output *) const
+    rvsdg::Output *,
+    rvsdg::Output *) const
 {
   return nullptr;
 }
@@ -873,17 +873,17 @@ IntegerUgeOperation::copy() const
 }
 
 rvsdg::binop_reduction_path_t
-IntegerUgeOperation::can_reduce_operand_pair(const rvsdg::output *, const rvsdg::output *)
+IntegerUgeOperation::can_reduce_operand_pair(const rvsdg::Output *, const rvsdg::Output *)
     const noexcept
 {
   return rvsdg::binop_reduction_none;
 }
 
-rvsdg::output *
+rvsdg::Output *
 IntegerUgeOperation::reduce_operand_pair(
     rvsdg::binop_reduction_path_t,
-    rvsdg::output *,
-    rvsdg::output *) const
+    rvsdg::Output *,
+    rvsdg::Output *) const
 {
   return nullptr;
 }
@@ -916,17 +916,17 @@ IntegerUgtOperation::copy() const
 }
 
 rvsdg::binop_reduction_path_t
-IntegerUgtOperation::can_reduce_operand_pair(const rvsdg::output *, const rvsdg::output *)
+IntegerUgtOperation::can_reduce_operand_pair(const rvsdg::Output *, const rvsdg::Output *)
     const noexcept
 {
   return rvsdg::binop_reduction_none;
 }
 
-rvsdg::output *
+rvsdg::Output *
 IntegerUgtOperation::reduce_operand_pair(
     rvsdg::binop_reduction_path_t,
-    rvsdg::output *,
-    rvsdg::output *) const
+    rvsdg::Output *,
+    rvsdg::Output *) const
 {
   return nullptr;
 }
@@ -959,17 +959,17 @@ IntegerUleOperation::copy() const
 }
 
 rvsdg::binop_reduction_path_t
-IntegerUleOperation::can_reduce_operand_pair(const rvsdg::output *, const rvsdg::output *)
+IntegerUleOperation::can_reduce_operand_pair(const rvsdg::Output *, const rvsdg::Output *)
     const noexcept
 {
   return rvsdg::binop_reduction_none;
 }
 
-rvsdg::output *
+rvsdg::Output *
 IntegerUleOperation::reduce_operand_pair(
     rvsdg::binop_reduction_path_t,
-    rvsdg::output *,
-    rvsdg::output *) const
+    rvsdg::Output *,
+    rvsdg::Output *) const
 {
   return nullptr;
 }
@@ -1002,17 +1002,17 @@ IntegerUltOperation::copy() const
 }
 
 rvsdg::binop_reduction_path_t
-IntegerUltOperation::can_reduce_operand_pair(const rvsdg::output *, const rvsdg::output *)
+IntegerUltOperation::can_reduce_operand_pair(const rvsdg::Output *, const rvsdg::Output *)
     const noexcept
 {
   return rvsdg::binop_reduction_none;
 }
 
-rvsdg::output *
+rvsdg::Output *
 IntegerUltOperation::reduce_operand_pair(
     rvsdg::binop_reduction_path_t,
-    rvsdg::output *,
-    rvsdg::output *) const
+    rvsdg::Output *,
+    rvsdg::Output *) const
 {
   return nullptr;
 }

@@ -106,7 +106,7 @@ match_op::operator==(const Operation & other) const noexcept
 }
 
 unop_reduction_path_t
-match_op::can_reduce_operand(const jlm::rvsdg::output * arg) const noexcept
+match_op::can_reduce_operand(const jlm::rvsdg::Output * arg) const noexcept
 {
   if (is<bitconstant_op>(producer(arg)))
     return unop_reduction_constant;
@@ -114,8 +114,8 @@ match_op::can_reduce_operand(const jlm::rvsdg::output * arg) const noexcept
   return unop_reduction_none;
 }
 
-jlm::rvsdg::output *
-match_op::reduce_operand(unop_reduction_path_t path, jlm::rvsdg::output * arg) const
+jlm::rvsdg::Output *
+match_op::reduce_operand(unop_reduction_path_t path, jlm::rvsdg::Output * arg) const
 {
   if (path == unop_reduction_constant)
   {
@@ -146,19 +146,19 @@ match_op::copy() const
   return std::make_unique<match_op>(*this);
 }
 
-jlm::rvsdg::output *
+jlm::rvsdg::Output *
 match(
     size_t nbits,
     const std::unordered_map<uint64_t, uint64_t> & mapping,
     uint64_t default_alternative,
     size_t nalternatives,
-    jlm::rvsdg::output * operand)
+    jlm::rvsdg::Output * operand)
 {
   return CreateOpNode<match_op>({ operand }, nbits, mapping, default_alternative, nalternatives)
       .output(0);
 }
 
-jlm::rvsdg::output *
+jlm::rvsdg::Output *
 control_constant(rvsdg::Region * region, size_t nalternatives, size_t alternative)
 {
   return CreateOpNode<ctlconstant_op>(*region, ctlvalue_repr(alternative, nalternatives)).output(0);

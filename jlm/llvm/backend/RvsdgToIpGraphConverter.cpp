@@ -46,7 +46,7 @@ public:
   }
 
   void
-  InsertVariable(const rvsdg::output * output, const llvm::variable * variable)
+  InsertVariable(const rvsdg::Output * output, const llvm::variable * variable)
   {
     JLM_ASSERT(VariableMap_.find(output) == VariableMap_.end());
     JLM_ASSERT(*output->Type() == *variable->Type());
@@ -54,21 +54,21 @@ public:
   }
 
   const llvm::variable *
-  GetVariable(const rvsdg::output * output)
+  GetVariable(const rvsdg::Output * output)
   {
     const auto it = VariableMap_.find(output);
     JLM_ASSERT(it != VariableMap_.end());
     return it->second;
   }
 
-  basic_block *
+  BasicBlock *
   GetLastProcessedBasicBlock() const noexcept
   {
     return LastProcessedBasicBlock;
   }
 
   void
-  SetLastProcessedBasicBlock(basic_block * lastProcessedBasicBlock) noexcept
+  SetLastProcessedBasicBlock(BasicBlock * lastProcessedBasicBlock) noexcept
   {
     LastProcessedBasicBlock = lastProcessedBasicBlock;
   }
@@ -94,8 +94,8 @@ public:
 private:
   llvm::cfg * ControlFlowGraph_;
   ipgraph_module & IPGraphModule_;
-  basic_block * LastProcessedBasicBlock;
-  std::unordered_map<const rvsdg::output *, const llvm::variable *> VariableMap_;
+  BasicBlock * LastProcessedBasicBlock;
+  std::unordered_map<const rvsdg::Output *, const llvm::variable *> VariableMap_;
 };
 
 class RvsdgToIpGraphConverter::Statistics final : public util::Statistics
@@ -173,14 +173,14 @@ RvsdgToIpGraphConverter::CreateInitialization(const delta::node & deltaNode)
 void
 RvsdgToIpGraphConverter::ConvertRegion(rvsdg::Region & region)
 {
-  const auto entryBlock = basic_block::create(*Context_->GetControlFlowGraph());
+  const auto entryBlock = BasicBlock::create(*Context_->GetControlFlowGraph());
   Context_->GetLastProcessedBasicBlock()->add_outedge(entryBlock);
   Context_->SetLastProcessedBasicBlock(entryBlock);
 
   for (const auto & node : rvsdg::TopDownTraverser(&region))
     ConvertNode(*node);
 
-  const auto exitBlock = basic_block::create(*Context_->GetControlFlowGraph());
+  const auto exitBlock = BasicBlock::create(*Context_->GetControlFlowGraph());
   Context_->GetLastProcessedBasicBlock()->add_outedge(exitBlock);
   Context_->SetLastProcessedBasicBlock(exitBlock);
 }
@@ -192,7 +192,7 @@ RvsdgToIpGraphConverter::CreateControlFlowGraph(const rvsdg::LambdaNode & lambda
   const auto & lambdaOperation = *util::AssertedCast<LlvmLambdaOperation>(&lambda.GetOperation());
 
   auto controlFlowGraph = cfg::create(Context_->GetIpGraphModule());
-  const auto entryBlock = basic_block::create(*controlFlowGraph);
+  const auto entryBlock = BasicBlock::create(*controlFlowGraph);
   controlFlowGraph->exit()->divert_inedges(entryBlock);
   Context_->SetLastProcessedBasicBlock(entryBlock);
   Context_->SetControlFlowGraph(controlFlowGraph.get());
@@ -254,8 +254,8 @@ RvsdgToIpGraphConverter::ConvertGammaNode(const rvsdg::GammaNode & gammaNode)
   const auto predicate = gammaNode.predicate()->origin();
   const auto controlFlowGraph = Context_->GetControlFlowGraph();
 
-  const auto entryBlock = basic_block::create(*controlFlowGraph);
-  const auto exitBlock = basic_block::create(*controlFlowGraph);
+  const auto entryBlock = BasicBlock::create(*controlFlowGraph);
+  const auto exitBlock = BasicBlock::create(*controlFlowGraph);
   Context_->GetLastProcessedBasicBlock()->add_outedge(entryBlock);
 
   // convert gamma regions
@@ -276,7 +276,7 @@ RvsdgToIpGraphConverter::ConvertGammaNode(const rvsdg::GammaNode & gammaNode)
     }
 
     // convert subregion
-    const auto regionEntryBlock = basic_block::create(*controlFlowGraph);
+    const auto regionEntryBlock = BasicBlock::create(*controlFlowGraph);
     entryBlock->add_outedge(regionEntryBlock);
     Context_->SetLastProcessedBasicBlock(regionEntryBlock);
     ConvertRegion(*subregion);
@@ -341,7 +341,7 @@ RvsdgToIpGraphConverter::ConvertThetaNode(const rvsdg::ThetaNode & thetaNode)
   const auto predicate = subregion->result(0)->origin();
 
   auto preEntryBlock = Context_->GetLastProcessedBasicBlock();
-  const auto entryBlock = basic_block::create(*Context_->GetControlFlowGraph());
+  const auto entryBlock = BasicBlock::create(*Context_->GetControlFlowGraph());
   preEntryBlock->add_outedge(entryBlock);
   Context_->SetLastProcessedBasicBlock(entryBlock);
 
@@ -386,7 +386,7 @@ RvsdgToIpGraphConverter::ConvertThetaNode(const rvsdg::ThetaNode & thetaNode)
 
   Context_->GetLastProcessedBasicBlock()->append_last(
       BranchOperation::create(2, Context_->GetVariable(predicate)));
-  const auto exitBlock = basic_block::create(*Context_->GetControlFlowGraph());
+  const auto exitBlock = BasicBlock::create(*Context_->GetControlFlowGraph());
   Context_->GetLastProcessedBasicBlock()->add_outedge(exitBlock);
   Context_->GetLastProcessedBasicBlock()->add_outedge(entryBlock);
   Context_->SetLastProcessedBasicBlock(exitBlock);

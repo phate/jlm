@@ -53,7 +53,7 @@ cfg::remove_node(cfg::iterator & nodeit)
   }
 
   nodeit->remove_outedges();
-  std::unique_ptr<basic_block> tmp(nodeit.node());
+  std::unique_ptr<BasicBlock> tmp(nodeit.node());
   auto rit = iterator(std::next(cfg.nodes_.find(tmp)));
   cfg.nodes_.erase(tmp);
   tmp.release();
@@ -61,7 +61,7 @@ cfg::remove_node(cfg::iterator & nodeit)
 }
 
 cfg::iterator
-cfg::remove_node(basic_block * bb)
+cfg::remove_node(BasicBlock * bb)
 {
   auto & cfg = bb->cfg();
 
@@ -78,7 +78,7 @@ cfg::ToAscii(const cfg & controlFlowGraph)
   for (const auto & node : nodes)
   {
     str += labels.at(node) + ":";
-    str += (is<basic_block>(node) ? "\n" : " ");
+    str += (is<BasicBlock>(node) ? "\n" : " ");
 
     if (auto entryNode = dynamic_cast<const entry_node *>(node))
     {
@@ -88,7 +88,7 @@ cfg::ToAscii(const cfg & controlFlowGraph)
     {
       str += ToAscii(*exitNode);
     }
-    else if (auto basicBlock = dynamic_cast<const basic_block *>(node))
+    else if (auto basicBlock = dynamic_cast<const BasicBlock *>(node))
     {
       str += ToAscii(*basicBlock, labels);
     }
@@ -127,7 +127,7 @@ cfg::ToAscii(const exit_node & exitNode)
 
 std::string
 cfg::ToAscii(
-    const basic_block & basicBlock,
+    const BasicBlock & basicBlock,
     const std::unordered_map<cfg_node *, std::string> & labels)
 {
   auto & threeAddressCodes = basicBlock.tacs();
@@ -188,7 +188,7 @@ cfg::CreateLabels(const std::vector<cfg_node *> & nodes)
     {
       map[node] = "exit";
     }
-    else if (is<basic_block>(node))
+    else if (is<BasicBlock>(node))
     {
       map[node] = util::strfmt("bb", n);
     }
@@ -270,7 +270,7 @@ ntacs(const llvm::cfg & cfg)
   size_t ntacs = 0;
   for (auto & node : cfg)
   {
-    if (auto bb = dynamic_cast<const basic_block *>(&node))
+    if (auto bb = dynamic_cast<const BasicBlock *>(&node))
       ntacs += bb->ntacs();
   }
 

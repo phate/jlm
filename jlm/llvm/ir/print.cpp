@@ -131,8 +131,8 @@ emit_exit_dot(const cfg_node & node)
 static inline std::string
 emit_basic_block(const cfg_node & node)
 {
-  JLM_ASSERT(is<basic_block>(&node));
-  auto & tacs = static_cast<const basic_block *>(&node)->tacs();
+  JLM_ASSERT(is<BasicBlock>(&node));
+  auto & tacs = static_cast<const BasicBlock *>(&node)->tacs();
 
   std::string str;
   for (const auto & tac : tacs)
@@ -159,7 +159,7 @@ emit_node(const cfg_node & node)
   static std::unordered_map<std::type_index, std::string (*)(const cfg_node &)> map(
       { { typeid(entry_node), emit_entry_dot },
         { typeid(exit_node), emit_exit_dot },
-        { typeid(basic_block), emit_basic_block } });
+        { typeid(BasicBlock), emit_basic_block } });
 
   JLM_ASSERT(map.find(typeid(node)) != map.end());
   std::string body = map[typeid(node)](node);
@@ -231,9 +231,10 @@ to_dot(const ipgraph & clg)
 /* aggregation node */
 
 std::string
-to_str(const aggnode & n, const AnnotationMap & dm)
+to_str(const AggregationNode & n, const AnnotationMap & dm)
 {
-  std::function<std::string(const aggnode &, size_t)> f = [&](const aggnode & n, size_t depth)
+  std::function<std::string(const AggregationNode &, size_t)> f =
+      [&](const AggregationNode & n, size_t depth)
   {
     std::string subtree(depth, '-');
     subtree += n.debug_string();
@@ -251,7 +252,7 @@ to_str(const aggnode & n, const AnnotationMap & dm)
 }
 
 void
-print(const aggnode & n, const AnnotationMap & dm, FILE * out)
+print(const AggregationNode & n, const AnnotationMap & dm, FILE * out)
 {
   fputs(to_str(n, dm).c_str(), out);
   fflush(out);

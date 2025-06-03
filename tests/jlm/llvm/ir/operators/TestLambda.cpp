@@ -27,7 +27,7 @@ TestArgumentIterators()
         LlvmLambdaOperation::Create(functionType, "f", linkage::external_linkage));
     lambda->finalize({ lambda->GetFunctionArguments()[0] });
 
-    std::vector<const jlm::rvsdg::output *> functionArguments;
+    std::vector<const jlm::rvsdg::Output *> functionArguments;
     for (auto argument : lambda->GetFunctionArguments())
       functionArguments.push_back(argument);
 
@@ -62,7 +62,7 @@ TestArgumentIterators()
 
     lambda->finalize({ lambda->GetFunctionArguments()[0], cv });
 
-    std::vector<const jlm::rvsdg::output *> functionArguments;
+    std::vector<const jlm::rvsdg::Output *> functionArguments;
     for (auto argument : lambda->GetFunctionArguments())
       functionArguments.push_back(argument);
 

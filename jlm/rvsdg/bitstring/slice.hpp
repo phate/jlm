@@ -34,10 +34,10 @@ public:
   debug_string() const override;
 
   virtual unop_reduction_path_t
-  can_reduce_operand(const jlm::rvsdg::output * arg) const noexcept override;
+  can_reduce_operand(const jlm::rvsdg::Output * arg) const noexcept override;
 
-  virtual jlm::rvsdg::output *
-  reduce_operand(unop_reduction_path_t path, jlm::rvsdg::output * arg) const override;
+  virtual jlm::rvsdg::Output *
+  reduce_operand(unop_reduction_path_t path, jlm::rvsdg::Output * arg) const override;
 
   inline size_t
   low() const noexcept
@@ -74,8 +74,8 @@ private:
   Convenience function that either creates a new slice or
   returns the output handle of an existing slice.
 */
-jlm::rvsdg::output *
-bitslice(jlm::rvsdg::output * operand, size_t low, size_t high);
+jlm::rvsdg::Output *
+bitslice(jlm::rvsdg::Output * operand, size_t low, size_t high);
 
 }
 

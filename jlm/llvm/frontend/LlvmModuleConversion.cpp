@@ -98,113 +98,113 @@ convert_basic_blocks(::llvm::Function & f, llvm::cfg & cfg)
   basic_block_map bbmap;
   ::llvm::ReversePostOrderTraversal<::llvm::Function *> rpotraverser(&f);
   for (auto & bb : rpotraverser)
-    bbmap.insert(bb, basic_block::create(cfg));
+    bbmap.insert(bb, BasicBlock::create(cfg));
 
   return bbmap;
 }
 
-attribute::kind
+Attribute::kind
 ConvertAttributeKind(const ::llvm::Attribute::AttrKind & kind)
 {
   typedef ::llvm::Attribute::AttrKind ak;
 
-  static std::unordered_map<::llvm::Attribute::AttrKind, attribute::kind> map(
-      { { ak::None, attribute::kind::None },
-        { ak::FirstEnumAttr, attribute::kind::FirstEnumAttr },
-        { ak::AllocAlign, attribute::kind::AllocAlign },
-        { ak::AllocatedPointer, attribute::kind::AllocatedPointer },
-        { ak::AlwaysInline, attribute::kind::AlwaysInline },
-        { ak::Builtin, attribute::kind::Builtin },
-        { ak::Cold, attribute::kind::Cold },
-        { ak::Convergent, attribute::kind::Convergent },
-        { ak::CoroDestroyOnlyWhenComplete, attribute::kind::CoroDestroyOnlyWhenComplete },
-        { ak::DeadOnUnwind, attribute::kind::DeadOnUnwind },
-        { ak::DisableSanitizerInstrumentation, attribute::kind::DisableSanitizerInstrumentation },
-        { ak::FnRetThunkExtern, attribute::kind::FnRetThunkExtern },
-        { ak::Hot, attribute::kind::Hot },
-        { ak::ImmArg, attribute::kind::ImmArg },
-        { ak::InReg, attribute::kind::InReg },
-        { ak::InlineHint, attribute::kind::InlineHint },
-        { ak::JumpTable, attribute::kind::JumpTable },
-        { ak::Memory, attribute::kind::Memory },
-        { ak::MinSize, attribute::kind::MinSize },
-        { ak::MustProgress, attribute::kind::MustProgress },
-        { ak::Naked, attribute::kind::Naked },
-        { ak::Nest, attribute::kind::Nest },
-        { ak::NoAlias, attribute::kind::NoAlias },
-        { ak::NoBuiltin, attribute::kind::NoBuiltin },
-        { ak::NoCallback, attribute::kind::NoCallback },
-        { ak::NoCapture, attribute::kind::NoCapture },
-        { ak::NoCfCheck, attribute::kind::NoCfCheck },
-        { ak::NoDuplicate, attribute::kind::NoDuplicate },
-        { ak::NoFree, attribute::kind::NoFree },
-        { ak::NoImplicitFloat, attribute::kind::NoImplicitFloat },
-        { ak::NoInline, attribute::kind::NoInline },
-        { ak::NoMerge, attribute::kind::NoMerge },
-        { ak::NoProfile, attribute::kind::NoProfile },
-        { ak::NoRecurse, attribute::kind::NoRecurse },
-        { ak::NoRedZone, attribute::kind::NoRedZone },
-        { ak::NoReturn, attribute::kind::NoReturn },
-        { ak::NoSanitizeBounds, attribute::kind::NoSanitizeBounds },
-        { ak::NoSanitizeCoverage, attribute::kind::NoSanitizeCoverage },
-        { ak::NoSync, attribute::kind::NoSync },
-        { ak::NoUndef, attribute::kind::NoUndef },
-        { ak::NoUnwind, attribute::kind::NoUnwind },
-        { ak::NonLazyBind, attribute::kind::NonLazyBind },
-        { ak::NonNull, attribute::kind::NonNull },
-        { ak::NullPointerIsValid, attribute::kind::NullPointerIsValid },
-        { ak::OptForFuzzing, attribute::kind::OptForFuzzing },
-        { ak::OptimizeForDebugging, attribute::kind::OptimizeForDebugging },
-        { ak::OptimizeForSize, attribute::kind::OptimizeForSize },
-        { ak::OptimizeNone, attribute::kind::OptimizeNone },
-        { ak::PresplitCoroutine, attribute::kind::PresplitCoroutine },
-        { ak::ReadNone, attribute::kind::ReadNone },
-        { ak::ReadOnly, attribute::kind::ReadOnly },
-        { ak::Returned, attribute::kind::Returned },
-        { ak::ReturnsTwice, attribute::kind::ReturnsTwice },
-        { ak::SExt, attribute::kind::SExt },
-        { ak::SafeStack, attribute::kind::SafeStack },
-        { ak::SanitizeAddress, attribute::kind::SanitizeAddress },
-        { ak::SanitizeHWAddress, attribute::kind::SanitizeHWAddress },
-        { ak::SanitizeMemTag, attribute::kind::SanitizeMemTag },
-        { ak::SanitizeMemory, attribute::kind::SanitizeMemory },
-        { ak::SanitizeThread, attribute::kind::SanitizeThread },
-        { ak::ShadowCallStack, attribute::kind::ShadowCallStack },
-        { ak::SkipProfile, attribute::kind::SkipProfile },
-        { ak::Speculatable, attribute::kind::Speculatable },
-        { ak::SpeculativeLoadHardening, attribute::kind::SpeculativeLoadHardening },
-        { ak::StackProtect, attribute::kind::StackProtect },
-        { ak::StackProtectReq, attribute::kind::StackProtectReq },
-        { ak::StackProtectStrong, attribute::kind::StackProtectStrong },
-        { ak::StrictFP, attribute::kind::StrictFP },
-        { ak::SwiftAsync, attribute::kind::SwiftAsync },
-        { ak::SwiftError, attribute::kind::SwiftError },
-        { ak::SwiftSelf, attribute::kind::SwiftSelf },
-        { ak::WillReturn, attribute::kind::WillReturn },
-        { ak::Writable, attribute::kind::Writable },
-        { ak::WriteOnly, attribute::kind::WriteOnly },
-        { ak::ZExt, attribute::kind::ZExt },
-        { ak::LastEnumAttr, attribute::kind::LastEnumAttr },
-        { ak::FirstTypeAttr, attribute::kind::FirstTypeAttr },
-        { ak::ByRef, attribute::kind::ByRef },
-        { ak::ByVal, attribute::kind::ByVal },
-        { ak::ElementType, attribute::kind::ElementType },
-        { ak::InAlloca, attribute::kind::InAlloca },
-        { ak::Preallocated, attribute::kind::Preallocated },
-        { ak::StructRet, attribute::kind::StructRet },
-        { ak::LastTypeAttr, attribute::kind::LastTypeAttr },
-        { ak::FirstIntAttr, attribute::kind::FirstIntAttr },
-        { ak::Alignment, attribute::kind::Alignment },
-        { ak::AllocKind, attribute::kind::AllocKind },
-        { ak::AllocSize, attribute::kind::AllocSize },
-        { ak::Dereferenceable, attribute::kind::Dereferenceable },
-        { ak::DereferenceableOrNull, attribute::kind::DereferenceableOrNull },
-        { ak::NoFPClass, attribute::kind::NoFPClass },
-        { ak::StackAlignment, attribute::kind::StackAlignment },
-        { ak::UWTable, attribute::kind::UWTable },
-        { ak::VScaleRange, attribute::kind::VScaleRange },
-        { ak::LastIntAttr, attribute::kind::LastIntAttr },
-        { ak::EndAttrKinds, attribute::kind::EndAttrKinds } });
+  static std::unordered_map<::llvm::Attribute::AttrKind, Attribute::kind> map(
+      { { ak::None, Attribute::kind::None },
+        { ak::FirstEnumAttr, Attribute::kind::FirstEnumAttr },
+        { ak::AllocAlign, Attribute::kind::AllocAlign },
+        { ak::AllocatedPointer, Attribute::kind::AllocatedPointer },
+        { ak::AlwaysInline, Attribute::kind::AlwaysInline },
+        { ak::Builtin, Attribute::kind::Builtin },
+        { ak::Cold, Attribute::kind::Cold },
+        { ak::Convergent, Attribute::kind::Convergent },
+        { ak::CoroDestroyOnlyWhenComplete, Attribute::kind::CoroDestroyOnlyWhenComplete },
+        { ak::DeadOnUnwind, Attribute::kind::DeadOnUnwind },
+        { ak::DisableSanitizerInstrumentation, Attribute::kind::DisableSanitizerInstrumentation },
+        { ak::FnRetThunkExtern, Attribute::kind::FnRetThunkExtern },
+        { ak::Hot, Attribute::kind::Hot },
+        { ak::ImmArg, Attribute::kind::ImmArg },
+        { ak::InReg, Attribute::kind::InReg },
+        { ak::InlineHint, Attribute::kind::InlineHint },
+        { ak::JumpTable, Attribute::kind::JumpTable },
+        { ak::Memory, Attribute::kind::Memory },
+        { ak::MinSize, Attribute::kind::MinSize },
+        { ak::MustProgress, Attribute::kind::MustProgress },
+        { ak::Naked, Attribute::kind::Naked },
+        { ak::Nest, Attribute::kind::Nest },
+        { ak::NoAlias, Attribute::kind::NoAlias },
+        { ak::NoBuiltin, Attribute::kind::NoBuiltin },
+        { ak::NoCallback, Attribute::kind::NoCallback },
+        { ak::NoCapture, Attribute::kind::NoCapture },
+        { ak::NoCfCheck, Attribute::kind::NoCfCheck },
+        { ak::NoDuplicate, Attribute::kind::NoDuplicate },
+        { ak::NoFree, Attribute::kind::NoFree },
+        { ak::NoImplicitFloat, Attribute::kind::NoImplicitFloat },
+        { ak::NoInline, Attribute::kind::NoInline },
+        { ak::NoMerge, Attribute::kind::NoMerge },
+        { ak::NoProfile, Attribute::kind::NoProfile },
+        { ak::NoRecurse, Attribute::kind::NoRecurse },
+        { ak::NoRedZone, Attribute::kind::NoRedZone },
+        { ak::NoReturn, Attribute::kind::NoReturn },
+        { ak::NoSanitizeBounds, Attribute::kind::NoSanitizeBounds },
+        { ak::NoSanitizeCoverage, Attribute::kind::NoSanitizeCoverage },
+        { ak::NoSync, Attribute::kind::NoSync },
+        { ak::NoUndef, Attribute::kind::NoUndef },
+        { ak::NoUnwind, Attribute::kind::NoUnwind },
+        { ak::NonLazyBind, Attribute::kind::NonLazyBind },
+        { ak::NonNull, Attribute::kind::NonNull },
+        { ak::NullPointerIsValid, Attribute::kind::NullPointerIsValid },
+        { ak::OptForFuzzing, Attribute::kind::OptForFuzzing },
+        { ak::OptimizeForDebugging, Attribute::kind::OptimizeForDebugging },
+        { ak::OptimizeForSize, Attribute::kind::OptimizeForSize },
+        { ak::OptimizeNone, Attribute::kind::OptimizeNone },
+        { ak::PresplitCoroutine, Attribute::kind::PresplitCoroutine },
+        { ak::ReadNone, Attribute::kind::ReadNone },
+        { ak::ReadOnly, Attribute::kind::ReadOnly },
+        { ak::Returned, Attribute::kind::Returned },
+        { ak::ReturnsTwice, Attribute::kind::ReturnsTwice },
+        { ak::SExt, Attribute::kind::SExt },
+        { ak::SafeStack, Attribute::kind::SafeStack },
+        { ak::SanitizeAddress, Attribute::kind::SanitizeAddress },
+        { ak::SanitizeHWAddress, Attribute::kind::SanitizeHWAddress },
+        { ak::SanitizeMemTag, Attribute::kind::SanitizeMemTag },
+        { ak::SanitizeMemory, Attribute::kind::SanitizeMemory },
+        { ak::SanitizeThread, Attribute::kind::SanitizeThread },
+        { ak::ShadowCallStack, Attribute::kind::ShadowCallStack },
+        { ak::SkipProfile, Attribute::kind::SkipProfile },
+        { ak::Speculatable, Attribute::kind::Speculatable },
+        { ak::SpeculativeLoadHardening, Attribute::kind::SpeculativeLoadHardening },
+        { ak::StackProtect, Attribute::kind::StackProtect },
+        { ak::StackProtectReq, Attribute::kind::StackProtectReq },
+        { ak::StackProtectStrong, Attribute::kind::StackProtectStrong },
+        { ak::StrictFP, Attribute::kind::StrictFP },
+        { ak::SwiftAsync, Attribute::kind::SwiftAsync },
+        { ak::SwiftError, Attribute::kind::SwiftError },
+        { ak::SwiftSelf, Attribute::kind::SwiftSelf },
+        { ak::WillReturn, Attribute::kind::WillReturn },
+        { ak::Writable, Attribute::kind::Writable },
+        { ak::WriteOnly, Attribute::kind::WriteOnly },
+        { ak::ZExt, Attribute::kind::ZExt },
+        { ak::LastEnumAttr, Attribute::kind::LastEnumAttr },
+        { ak::FirstTypeAttr, Attribute::kind::FirstTypeAttr },
+        { ak::ByRef, Attribute::kind::ByRef },
+        { ak::ByVal, Attribute::kind::ByVal },
+        { ak::ElementType, Attribute::kind::ElementType },
+        { ak::InAlloca, Attribute::kind::InAlloca },
+        { ak::Preallocated, Attribute::kind::Preallocated },
+        { ak::StructRet, Attribute::kind::StructRet },
+        { ak::LastTypeAttr, Attribute::kind::LastTypeAttr },
+        { ak::FirstIntAttr, Attribute::kind::FirstIntAttr },
+        { ak::Alignment, Attribute::kind::Alignment },
+        { ak::AllocKind, Attribute::kind::AllocKind },
+        { ak::AllocSize, Attribute::kind::AllocSize },
+        { ak::Dereferenceable, Attribute::kind::Dereferenceable },
+        { ak::DereferenceableOrNull, Attribute::kind::DereferenceableOrNull },
+        { ak::NoFPClass, Attribute::kind::NoFPClass },
+        { ak::StackAlignment, Attribute::kind::StackAlignment },
+        { ak::UWTable, Attribute::kind::UWTable },
+        { ak::VScaleRange, Attribute::kind::VScaleRange },
+        { ak::LastIntAttr, Attribute::kind::LastIntAttr },
+        { ak::EndAttrKinds, Attribute::kind::EndAttrKinds } });
 
   JLM_ASSERT(map.find(kind) != map.end());
   return map[kind];
@@ -234,13 +234,13 @@ ConvertTypeAttribute(const ::llvm::Attribute & attribute, context & ctx)
   if (attribute.getKindAsEnum() == ::llvm::Attribute::AttrKind::ByVal)
   {
     auto type = ctx.GetTypeConverter().ConvertLlvmType(*attribute.getValueAsType());
-    return { attribute::kind::ByVal, std::move(type) };
+    return { Attribute::kind::ByVal, std::move(type) };
   }
 
   if (attribute.getKindAsEnum() == ::llvm::Attribute::AttrKind::StructRet)
   {
     auto type = ctx.GetTypeConverter().ConvertLlvmType(*attribute.getValueAsType());
-    return { attribute::kind::StructRet, std::move(type) };
+    return { Attribute::kind::StructRet, std::move(type) };
   }
 
   JLM_UNREACHABLE("Unhandled attribute");
@@ -332,7 +332,7 @@ EnsureSingleInEdgeToExitNode(llvm::cfg & cfg)
       {
         auto repetitionEdge = *structure->redges().begin();
 
-        auto basicBlock = basic_block::create(cfg);
+        auto basicBlock = BasicBlock::create(cfg);
 
         rvsdg::ctlconstant_op op(rvsdg::ctlvalue_repr(1, 2));
         auto operand = basicBlock->append_last(tac::create(op, {}))->result(0);
@@ -354,7 +354,7 @@ EnsureSingleInEdgeToExitNode(llvm::cfg & cfg)
     We have multiple incoming edges to the exit node. Insert an empty basic block, divert all
     incoming edges to this block, and add an outgoing edge from this block to the exit node.
   */
-  auto basicBlock = basic_block::create(cfg);
+  auto basicBlock = BasicBlock::create(cfg);
   exitNode->divert_inedges(basicBlock);
   basicBlock->add_outedge(exitNode);
 }
@@ -401,7 +401,7 @@ create_cfg(::llvm::Function & f, context & ctx)
   auto bbmap = convert_basic_blocks(f, *cfg);
 
   /* create entry block */
-  auto entry_block = basic_block::create(*cfg);
+  auto entry_block = BasicBlock::create(*cfg);
   cfg->exit()->divert_inedges(entry_block);
   entry_block->add_outedge(bbmap[&f.getEntryBlock()]);
 

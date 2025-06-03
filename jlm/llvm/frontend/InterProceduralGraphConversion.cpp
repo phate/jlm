@@ -34,7 +34,7 @@ public:
     return Map_.find(v) != Map_.end();
   }
 
-  rvsdg::output *
+  rvsdg::Output *
   lookup(const variable * v) const
   {
     JLM_ASSERT(contains(v));
@@ -42,14 +42,14 @@ public:
   }
 
   void
-  insert(const variable * v, rvsdg::output * o)
+  insert(const variable * v, rvsdg::Output * o)
   {
     JLM_ASSERT(v->type() == *o->Type());
     Map_[v] = o;
   }
 
 private:
-  std::unordered_map<const variable *, rvsdg::output *> Map_;
+  std::unordered_map<const variable *, rvsdg::Output *> Map_;
 };
 
 class RegionalizedVariableMap final
@@ -204,7 +204,7 @@ public:
   }
 
   void
-  Start(const aggnode & node) noexcept
+  Start(const AggregationNode & node) noexcept
   {
     AddMeasurement(Label::NumThreeAddressCodes, llvm::ntacs(node));
     AddTimer(Label::Timer).start();
@@ -348,9 +348,10 @@ public:
     StatisticsCollector_.CollectDemandedStatistics(std::move(statistics));
   }
 
-  std::unique_ptr<aggnode>
+  std::unique_ptr<AggregationNode>
   CollectAggregationStatistics(
-      const std::function<std::unique_ptr<aggnode>(llvm::cfg &)> & aggregateControlFlowGraph,
+      const std::function<std::unique_ptr<AggregationNode>(llvm::cfg &)> &
+          aggregateControlFlowGraph,
       llvm::cfg & cfg,
       std::string functionName)
   {
@@ -370,9 +371,9 @@ public:
 
   std::unique_ptr<AnnotationMap>
   CollectAnnotationStatistics(
-      const std::function<std::unique_ptr<AnnotationMap>(const aggnode &)> &
+      const std::function<std::unique_ptr<AnnotationMap>(const AggregationNode &)> &
           annotateAggregationTree,
-      const aggnode & aggregationTreeRoot,
+      const AggregationNode & aggregationTreeRoot,
       std::string functionName)
   {
     auto statistics = AnnotationStatistics::Create(SourceFileName_, std::move(functionName));
@@ -407,9 +408,9 @@ public:
     StatisticsCollector_.CollectDemandedStatistics(std::move(statistics));
   }
 
-  rvsdg::output *
+  rvsdg::Output *
   CollectDataNodeToDeltaStatistics(
-      const std::function<rvsdg::output *()> & convertDataNodeToDelta,
+      const std::function<rvsdg::Output *()> & convertDataNodeToDelta,
       std::string dataNodeName,
       size_t NumInitializationThreeAddressCodes)
   {
@@ -500,7 +501,7 @@ template<class TNode, class TOperation>
 static void
 Convert(const llvm::tac & threeAddressCode, rvsdg::Region & region, llvm::VariableMap & variableMap)
 {
-  std::vector<rvsdg::output *> operands;
+  std::vector<rvsdg::Output *> operands;
   for (size_t n = 0; n < threeAddressCode.noperands(); n++)
   {
     auto operand = threeAddressCode.operand(n);
@@ -539,7 +540,7 @@ ConvertThreeAddressCode(
   }
   else
   {
-    std::vector<rvsdg::output *> operands;
+    std::vector<rvsdg::Output *> operands;
     for (size_t n = 0; n < threeAddressCode.noperands(); n++)
       operands.push_back(variableMap.lookup(threeAddressCode.operand(n)));
 
@@ -565,7 +566,7 @@ ConvertBasicBlock(
 
 static void
 ConvertAggregationNode(
-    const aggnode & aggregationNode,
+    const AggregationNode & aggregationNode,
     const AnnotationMap & demandMap,
     rvsdg::LambdaNode & lambdaNode,
     RegionalizedVariableMap & regionalizedVariableMap);
@@ -624,7 +625,7 @@ Convert(
     rvsdg::LambdaNode & lambdaNode,
     RegionalizedVariableMap & regionalizedVariableMap)
 {
-  std::vector<rvsdg::output *> results;
+  std::vector<rvsdg::Output *> results;
   for (const auto & result : exitAggregationNode)
   {
     JLM_ASSERT(regionalizedVariableMap.GetTopVariableMap().contains(result));
@@ -692,7 +693,7 @@ Convert(
   /*
    * Convert subregions.
    */
-  std::unordered_map<const variable *, std::vector<rvsdg::output *>> xvmap;
+  std::unordered_map<const variable *, std::vector<rvsdg::Output *>> xvmap;
   JLM_ASSERT(gamma->nsubregions() == branchAggregationNode.nchildren());
   for (size_t n = 0; n < gamma->nsubregions(); n++)
   {
@@ -750,7 +751,7 @@ Convert(
   std::unordered_map<const variable *, rvsdg::ThetaNode::LoopVar> thetaLoopVarMap;
   for (auto & v : demandSet.LoopVariables().Variables())
   {
-    rvsdg::output * value = nullptr;
+    rvsdg::Output * value = nullptr;
     if (!outerVariableMap.contains(&v))
     {
       value = UndefValueOperation::Create(parentRegion, v.Type());
@@ -809,7 +810,7 @@ Convert(
 
 static void
 ConvertAggregationNode(
-    const aggnode & aggregationNode,
+    const AggregationNode & aggregationNode,
     const AnnotationMap & demandMap,
     rvsdg::LambdaNode & lambdaNode,
     RegionalizedVariableMap & regionalizedVariableMap)
@@ -862,7 +863,7 @@ RestructureControlFlowGraph(
       functionName);
 }
 
-static std::unique_ptr<aggnode>
+static std::unique_ptr<AggregationNode>
 AggregateControlFlowGraph(
     llvm::cfg & controlFlowGraph,
     const std::string & functionName,
@@ -871,7 +872,7 @@ AggregateControlFlowGraph(
   auto aggregateControlFlowGraph = [](llvm::cfg & controlFlowGraph)
   {
     auto aggregationTreeRoot = aggregate(controlFlowGraph);
-    aggnode::normalize(*aggregationTreeRoot);
+    AggregationNode::normalize(*aggregationTreeRoot);
 
     return aggregationTreeRoot;
   };
@@ -886,7 +887,7 @@ AggregateControlFlowGraph(
 
 static std::unique_ptr<AnnotationMap>
 AnnotateAggregationTree(
-    const aggnode & aggregationTreeRoot,
+    const AggregationNode & aggregationTreeRoot,
     const std::string & functionName,
     InterProceduralGraphToRvsdgStatisticsCollector & statisticsCollector)
 {
@@ -896,9 +897,9 @@ AnnotateAggregationTree(
   return demandMap;
 }
 
-static rvsdg::output *
+static rvsdg::Output *
 ConvertAggregationTreeToLambda(
-    const aggnode & aggregationTreeRoot,
+    const AggregationNode & aggregationTreeRoot,
     const AnnotationMap & demandMap,
     RegionalizedVariableMap & scopedVariableMap,
     const std::string & functionName,
@@ -927,7 +928,7 @@ ConvertAggregationTreeToLambda(
   return lambdaNode->output();
 }
 
-static rvsdg::output *
+static rvsdg::Output *
 ConvertControlFlowGraph(
     const function_node & functionNode,
     RegionalizedVariableMap & regionalizedVariableMap,
@@ -960,7 +961,7 @@ ConvertControlFlowGraph(
   return lambdaOutput;
 }
 
-static rvsdg::output *
+static rvsdg::Output *
 ConvertFunctionNode(
     const function_node & functionNode,
     RegionalizedVariableMap & regionalizedVariableMap,
@@ -985,7 +986,7 @@ ConvertFunctionNode(
   return ConvertControlFlowGraph(functionNode, regionalizedVariableMap, statisticsCollector);
 }
 
-static rvsdg::output *
+static rvsdg::Output *
 ConvertDataNodeInitialization(
     const data_node_init & init,
     rvsdg::Region & region,
@@ -998,7 +999,7 @@ ConvertDataNodeInitialization(
   return variableMap.lookup(init.value());
 }
 
-static rvsdg::output *
+static rvsdg::Output *
 ConvertDataNode(
     const data_node & dataNode,
     RegionalizedVariableMap & regionalizedVariableMap,
@@ -1006,7 +1007,7 @@ ConvertDataNode(
 {
   auto dataNodeInitialization = dataNode.initialization();
 
-  auto convertDataNodeToDeltaNode = [&]() -> rvsdg::output *
+  auto convertDataNodeToDeltaNode = [&]() -> rvsdg::Output *
   {
     auto & interProceduralGraphModule = regionalizedVariableMap.GetInterProceduralGraphModule();
     auto & region = regionalizedVariableMap.GetTopRegion();
@@ -1065,7 +1066,7 @@ ConvertDataNode(
   return deltaOutput;
 }
 
-static rvsdg::output *
+static rvsdg::Output *
 ConvertInterProceduralGraphNode(
     const ipgraph_node & ipgNode,
     RegionalizedVariableMap & regionalizedVariableMap,

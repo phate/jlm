@@ -161,10 +161,10 @@ public:
   operator==(const Operation & other) const noexcept override;
 
   virtual unop_reduction_path_t
-  can_reduce_operand(const jlm::rvsdg::output * arg) const noexcept override;
+  can_reduce_operand(const jlm::rvsdg::Output * arg) const noexcept override;
 
-  virtual jlm::rvsdg::output *
-  reduce_operand(unop_reduction_path_t path, jlm::rvsdg::output * arg) const override;
+  virtual jlm::rvsdg::Output *
+  reduce_operand(unop_reduction_path_t path, jlm::rvsdg::Output * arg) const override;
 
   virtual std::string
   debug_string() const override;
@@ -212,9 +212,9 @@ public:
     return mapping_.end();
   }
 
-  static output *
+  static Output *
   Create(
-      output & predicate,
+      Output & predicate,
       const std::unordered_map<uint64_t, uint64_t> & mapping,
       uint64_t defaultAlternative,
       size_t numAlternatives)
@@ -245,13 +245,13 @@ private:
   std::unordered_map<uint64_t, uint64_t> mapping_;
 };
 
-jlm::rvsdg::output *
+jlm::rvsdg::Output *
 match(
     size_t nbits,
     const std::unordered_map<uint64_t, uint64_t> & mapping,
     uint64_t default_alternative,
     size_t nalternatives,
-    jlm::rvsdg::output * operand);
+    jlm::rvsdg::Output * operand);
 
 // declare explicit instantiation
 extern template class domain_const_op<
@@ -267,16 +267,16 @@ to_match_op(const Operation & op) noexcept
   return *static_cast<const match_op *>(&op);
 }
 
-jlm::rvsdg::output *
+jlm::rvsdg::Output *
 control_constant(rvsdg::Region * region, size_t nalternatives, size_t alternative);
 
-static inline jlm::rvsdg::output *
+static inline jlm::rvsdg::Output *
 control_false(rvsdg::Region * region)
 {
   return control_constant(region, 2, 0);
 }
 
-static inline jlm::rvsdg::output *
+static inline jlm::rvsdg::Output *
 control_true(rvsdg::Region * region)
 {
   return control_constant(region, 2, 1);

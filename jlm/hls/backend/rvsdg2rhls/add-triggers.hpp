@@ -13,7 +13,7 @@
 namespace jlm::hls
 {
 
-rvsdg::output *
+rvsdg::Output *
 get_trigger(rvsdg::Region * region);
 
 rvsdg::LambdaNode *

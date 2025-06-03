@@ -41,14 +41,14 @@ public:
   {}
 
   virtual binop_reduction_path_t
-  can_reduce_operand_pair(const jlm::rvsdg::output * op1, const jlm::rvsdg::output * op2)
+  can_reduce_operand_pair(const jlm::rvsdg::Output * op1, const jlm::rvsdg::Output * op2)
       const noexcept = 0;
 
-  virtual jlm::rvsdg::output *
+  virtual jlm::rvsdg::Output *
   reduce_operand_pair(
       binop_reduction_path_t path,
-      jlm::rvsdg::output * op1,
-      jlm::rvsdg::output * op2) const = 0;
+      jlm::rvsdg::Output * op1,
+      jlm::rvsdg::Output * op2) const = 0;
 
   virtual BinaryOperation::flags
   flags() const noexcept;
@@ -75,10 +75,10 @@ public:
  * @return If the normalization could be applied, then the results of the binary operation after
  * the transformation. Otherwise, std::nullopt.
  */
-std::optional<std::vector<rvsdg::output *>>
+std::optional<std::vector<rvsdg::Output *>>
 FlattenAssociativeBinaryOperation(
     const BinaryOperation & operation,
-    const std::vector<rvsdg::output *> & operands);
+    const std::vector<rvsdg::Output *> & operands);
 
 /**
  * \brief Applies the reductions implemented in the binary operations reduction functions.
@@ -92,10 +92,10 @@ FlattenAssociativeBinaryOperation(
  * \see binary_op::can_reduce_operand_pair()
  * \see binary_op::reduce_operand_pair()
  */
-std::optional<std::vector<rvsdg::output *>>
+std::optional<std::vector<rvsdg::Output *>>
 NormalizeBinaryOperation(
     const BinaryOperation & operation,
-    const std::vector<rvsdg::output *> & operands);
+    const std::vector<rvsdg::Output *> & operands);
 
 class FlattenedBinaryOperation final : public SimpleOperation
 {
@@ -137,10 +137,10 @@ public:
     return *op_;
   }
 
-  jlm::rvsdg::output *
+  jlm::rvsdg::Output *
   reduce(
       const FlattenedBinaryOperation::reduction & reduction,
-      const std::vector<jlm::rvsdg::output *> & operands) const;
+      const std::vector<jlm::rvsdg::Output *> & operands) const;
 
   static void
   reduce(rvsdg::Region * region, const FlattenedBinaryOperation::reduction & reduction);
@@ -167,10 +167,10 @@ private:
  *
  * \see NormalizeBinaryOperation()
  */
-std::optional<std::vector<rvsdg::output *>>
+std::optional<std::vector<rvsdg::Output *>>
 NormalizeFlattenedBinaryOperation(
     const FlattenedBinaryOperation & operation,
-    const std::vector<rvsdg::output *> & operands);
+    const std::vector<rvsdg::Output *> & operands);
 
 /* binary flags operators */
 

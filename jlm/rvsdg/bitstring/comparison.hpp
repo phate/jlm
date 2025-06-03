@@ -41,8 +41,8 @@ public:
   std::unique_ptr<bitcompare_op>
   create(size_t nbits) const override;
 
-  static output *
-  create(size_t nbits, output * op1, output * op2)
+  static Output *
+  create(size_t nbits, Output * op1, Output * op2)
   {
     return CreateOpNode<MakeBitComparisonOperation>({ op1, op2 }, nbits).output(0);
   }
