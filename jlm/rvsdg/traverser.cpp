@@ -96,7 +96,7 @@ TopDownTraverser::node_create(Node * node)
 }
 
 void
-TopDownTraverser::input_change(Input * in, output *, output *)
+TopDownTraverser::input_change(Input * in, Output *, Output *)
 {
   if (in->region() != region())
     return;
@@ -187,7 +187,7 @@ BottomUpTraverser::node_destroy(Node * node)
 }
 
 void
-BottomUpTraverser::input_change(Input * in, output * old_origin, output *)
+BottomUpTraverser::input_change(Input * in, Output * old_origin, Output *)
 {
   if (in->region() != region())
     return;

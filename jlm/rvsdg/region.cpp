@@ -26,7 +26,7 @@ RegionArgument::RegionArgument(
     rvsdg::Region * region,
     StructuralInput * input,
     std::shared_ptr<const rvsdg::Type> type)
-    : output(region, std::move(type)),
+    : Output(region, std::move(type)),
       input_(input)
 {
   if (input)
@@ -82,7 +82,7 @@ RegionResult::~RegionResult() noexcept
 
 RegionResult::RegionResult(
     rvsdg::Region * region,
-    jlm::rvsdg::output * origin,
+    jlm::rvsdg::Output * origin,
     StructuralOutput * output,
     std::shared_ptr<const rvsdg::Type> type)
     : Input(origin, region, std::move(type)),
@@ -115,7 +115,7 @@ RegionResult::GetOwner() const noexcept
 }
 
 RegionResult &
-RegionResult::Copy(rvsdg::output & origin, StructuralOutput * output)
+RegionResult::Copy(rvsdg::Output & origin, StructuralOutput * output)
 {
   return RegionResult::Create(*origin.region(), origin, output, origin.Type());
 }
@@ -123,7 +123,7 @@ RegionResult::Copy(rvsdg::output & origin, StructuralOutput * output)
 RegionResult &
 RegionResult::Create(
     rvsdg::Region & region,
-    rvsdg::output & origin,
+    rvsdg::Output & origin,
     StructuralOutput * output,
     std::shared_ptr<const rvsdg::Type> type)
 {

@@ -505,8 +505,8 @@ TestGamma()
     rvsdgGammaNode->AddEntryVar(entryvar1);
     rvsdgGammaNode->AddEntryVar(entryvar2);
 
-    std::vector<jlm::rvsdg::output *> exitvars1;
-    std::vector<jlm::rvsdg::output *> exitvars2;
+    std::vector<jlm::rvsdg::Output *> exitvars1;
+    std::vector<jlm::rvsdg::Output *> exitvars2;
     for (int i = 0; i < 3; i++)
     {
       exitvars1.push_back(jlm::rvsdg::create_bitconstant(rvsdgGammaNode->subregion(i), 32, i + 1));

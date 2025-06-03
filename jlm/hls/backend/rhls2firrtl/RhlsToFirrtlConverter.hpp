@@ -258,7 +258,7 @@ private:
   circt::firrtl::BitsPrimOp
   DropMSBs(mlir::Block * body, mlir::Value value, int amount);
 
-  jlm::rvsdg::output *
+  jlm::rvsdg::Output *
   TraceArgument(rvsdg::RegionArgument * arg);
 
   rvsdg::SimpleOutput *

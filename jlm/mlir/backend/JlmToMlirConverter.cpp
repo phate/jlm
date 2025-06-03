@@ -82,7 +82,7 @@ JlmToMlirConverter::ConvertModule(const llvm::RvsdgModule & rvsdgModule)
 ::llvm::SmallVector<::mlir::Value>
 JlmToMlirConverter::ConvertRegion(rvsdg::Region & region, ::mlir::Block & block, bool isRoot)
 {
-  std::unordered_map<rvsdg::output *, ::mlir::Value> valueMap;
+  std::unordered_map<rvsdg::Output *, ::mlir::Value> valueMap;
   size_t argIndex = 0;
   for (size_t i = 0; i < region.narguments(); ++i)
   {
@@ -156,7 +156,7 @@ JlmToMlirConverter::ConvertRegion(rvsdg::Region & region, ::mlir::Block & block,
 ::llvm::SmallVector<::mlir::Value>
 JlmToMlirConverter::GetConvertedInputs(
     const rvsdg::Node & node,
-    const std::unordered_map<rvsdg::output *, ::mlir::Value> & valueMap)
+    const std::unordered_map<rvsdg::Output *, ::mlir::Value> & valueMap)
 {
   ::llvm::SmallVector<::mlir::Value> inputs;
   for (size_t i = 0; i < node.ninputs(); i++)

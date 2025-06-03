@@ -28,14 +28,14 @@ public:
   std::vector<jlm::rvsdg::SimpleNode *> load_nodes;
   std::vector<jlm::rvsdg::SimpleNode *> store_nodes;
 
-  TraceAllocaUses(jlm::rvsdg::output * op)
+  TraceAllocaUses(jlm::rvsdg::Output * op)
   {
     trace(op);
   }
 
 private:
   void
-  trace(jlm::rvsdg::output * op)
+  trace(jlm::rvsdg::Output * op)
   {
     if (!rvsdg::is<llvm::PointerType>(op->Type()))
     {
@@ -100,11 +100,11 @@ private:
     }
   }
 
-  std::unordered_set<jlm::rvsdg::output *> visited;
+  std::unordered_set<jlm::rvsdg::Output *> visited;
 };
 
-jlm::rvsdg::output *
-gep_to_index(jlm::rvsdg::output * o)
+jlm::rvsdg::Output *
+gep_to_index(jlm::rvsdg::Output * o)
 {
   // TODO: handle geps that are not direct predecessors
   auto & node = rvsdg::AssertGetOwnerNode<rvsdg::SimpleNode>(*o);
@@ -148,13 +148,13 @@ alloca_conv(rvsdg::Region * region)
       std::cout << "alloca converted " << at->debug_string() << std::endl;
       // replace gep outputs (convert pointer to index calculation)
       // replace loads and stores
-      std::vector<jlm::rvsdg::output *> load_addrs;
+      std::vector<jlm::rvsdg::Output *> load_addrs;
       for (auto l : ta.load_nodes)
       {
         auto index = gep_to_index(l->input(0)->origin());
         auto response = route_response_rhls(l->region(), resp_outs.front());
         resp_outs.erase(resp_outs.begin());
-        std::vector<jlm::rvsdg::output *> states;
+        std::vector<jlm::rvsdg::Output *> states;
         for (size_t i = 1; i < l->ninputs(); ++i)
         {
           states.push_back(l->input(i)->origin());
@@ -169,11 +169,11 @@ alloca_conv(rvsdg::Region * region)
         auto addr = route_request_rhls(node->region(), load_outs.back());
         load_addrs.push_back(addr);
       }
-      std::vector<jlm::rvsdg::output *> store_operands;
+      std::vector<jlm::rvsdg::Output *> store_operands;
       for (auto s : ta.store_nodes)
       {
         auto index = gep_to_index(s->input(0)->origin());
-        std::vector<jlm::rvsdg::output *> states;
+        std::vector<jlm::rvsdg::Output *> states;
         for (size_t i = 2; i < s->ninputs(); ++i)
         {
           states.push_back(s->input(i)->origin());

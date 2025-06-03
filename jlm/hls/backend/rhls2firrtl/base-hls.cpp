@@ -79,7 +79,7 @@ BaseHLS::get_port_name(jlm::rvsdg::Input * port)
 }
 
 std::string
-BaseHLS::get_port_name(jlm::rvsdg::output * port)
+BaseHLS::get_port_name(jlm::rvsdg::Output * port)
 {
   if (port == nullptr)
   {

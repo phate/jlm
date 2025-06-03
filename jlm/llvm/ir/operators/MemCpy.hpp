@@ -104,12 +104,12 @@ public:
     return tac::create(operation, operands);
   }
 
-  static std::vector<rvsdg::output *>
+  static std::vector<rvsdg::Output *>
   create(
-      rvsdg::output * destination,
-      rvsdg::output * source,
-      rvsdg::output * length,
-      const std::vector<rvsdg::output *> & memoryStates)
+      rvsdg::Output * destination,
+      rvsdg::Output * source,
+      rvsdg::Output * length,
+      const std::vector<rvsdg::Output *> & memoryStates)
   {
     std::vector operands = { destination, source, length };
     operands.insert(operands.end(), memoryStates.begin(), memoryStates.end());
@@ -188,13 +188,13 @@ public:
 
   static rvsdg::SimpleNode &
   CreateNode(
-      rvsdg::output & destination,
-      rvsdg::output & source,
-      rvsdg::output & length,
-      rvsdg::output & ioState,
-      const std::vector<rvsdg::output *> & memoryStates)
+      rvsdg::Output & destination,
+      rvsdg::Output & source,
+      rvsdg::Output & length,
+      rvsdg::Output & ioState,
+      const std::vector<rvsdg::Output *> & memoryStates)
   {
-    std::vector<rvsdg::output *> operands = { &destination, &source, &length, &ioState };
+    std::vector<rvsdg::Output *> operands = { &destination, &source, &length, &ioState };
     operands.insert(operands.end(), memoryStates.begin(), memoryStates.end());
 
     return rvsdg::CreateOpNode<MemCpyVolatileOperation>(

@@ -38,7 +38,7 @@ add_buffers(rvsdg::Region * region, bool pass_through)
           }
         }
         std::vector<jlm::rvsdg::Input *> old_users(out->begin(), out->end());
-        jlm::rvsdg::output * new_out;
+        jlm::rvsdg::Output * new_out;
         if (pass_through)
         {
           new_out = buffer_op::create(*out, 20, true)[0];
@@ -67,7 +67,7 @@ add_buffers(rvsdg::Region * region, bool pass_through)
             }
           }
           std::vector<jlm::rvsdg::Input *> old_users(out->begin(), out->end());
-          jlm::rvsdg::output * new_out;
+          jlm::rvsdg::Output * new_out;
           if (pass_through)
           {
             new_out = buffer_op::create(*out, 10, true)[0];

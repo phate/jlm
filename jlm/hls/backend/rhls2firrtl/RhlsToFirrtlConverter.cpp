@@ -2528,7 +2528,7 @@ RhlsToFirrtlConverter::DropMSBs(mlir::Block * body, mlir::Value value, int amoun
 // Trace the argument back to the "node" generating the value
 // Returns the output of a node or the argument of a region that has
 // been instantiated as a module
-jlm::rvsdg::output *
+jlm::rvsdg::Output *
 RhlsToFirrtlConverter::TraceArgument(rvsdg::RegionArgument * arg)
 {
   // Check if the argument is part of a hls::loop_node

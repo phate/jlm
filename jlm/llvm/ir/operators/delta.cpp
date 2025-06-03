@@ -49,7 +49,7 @@ node::GetOperation() const noexcept
 }
 
 delta::node *
-node::copy(rvsdg::Region * region, const std::vector<jlm::rvsdg::output *> & operands) const
+node::copy(rvsdg::Region * region, const std::vector<jlm::rvsdg::Output *> & operands) const
 {
   return static_cast<delta::node *>(rvsdg::Node::copy(region, operands));
 }
@@ -104,7 +104,7 @@ node::ctxvars() const
 }
 
 cvargument *
-node::add_ctxvar(jlm::rvsdg::output * origin)
+node::add_ctxvar(jlm::rvsdg::Output * origin)
 {
   auto input = cvinput::create(this, origin);
   return cvargument::create(subregion(), input);
@@ -135,7 +135,7 @@ node::result() const noexcept
 }
 
 delta::output *
-node::finalize(jlm::rvsdg::output * origin)
+node::finalize(jlm::rvsdg::Output * origin)
 {
   /* check if finalized was already called */
   if (noutputs() > 0)
@@ -191,7 +191,7 @@ result::~result()
 {}
 
 result &
-result::Copy(rvsdg::output & origin, rvsdg::StructuralOutput * output)
+result::Copy(rvsdg::Output & origin, rvsdg::StructuralOutput * output)
 {
   JLM_ASSERT(output == nullptr);
   return *result::create(&origin);

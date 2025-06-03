@@ -93,7 +93,7 @@ public:
   static ::llvm::SmallVector<::mlir::Value>
   GetConvertedInputs(
       const rvsdg::Node & node,
-      const std::unordered_map<rvsdg::output *, ::mlir::Value> & valueMap);
+      const std::unordered_map<rvsdg::Output *, ::mlir::Value> & valueMap);
 
   /**
    * Converts an RVSDG node to an MLIR RVSDG operation.

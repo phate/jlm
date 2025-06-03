@@ -1538,7 +1538,7 @@ Andersen::ConstructPointsToGraphFromPointerObjectSet(
   // First group RVSDG registers by the PointerObject they are mapped to.
   // If the PointerObject is part of a unification, all Register PointerObjects in the unification
   // share points-to set, so they can all become one RegisterNode in the PointsToGraph.
-  std::unordered_map<PointerObjectIndex, util::HashSet<const rvsdg::output *>> outputsInRegister;
+  std::unordered_map<PointerObjectIndex, util::HashSet<const rvsdg::Output *>> outputsInRegister;
   for (auto [outputNode, registerIdx] : set.GetRegisterMap())
   {
     auto root = set.GetUnificationRoot(registerIdx);

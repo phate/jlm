@@ -119,7 +119,7 @@ AttachNodeInput(util::Port & inputPort, const rvsdg::Input & rvsdgInput)
 static void
 AttachNodeOutput(
     util::Port & outputPort,
-    const rvsdg::output & rvsdgOutput,
+    const rvsdg::Output & rvsdgOutput,
     util::Graph * typeGraph)
 {
   outputPort.SetProgramObject(rvsdgOutput);

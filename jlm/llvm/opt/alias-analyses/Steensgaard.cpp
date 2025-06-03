@@ -24,7 +24,7 @@ namespace jlm::llvm::aa
  * @return True if \p output%s type is or contains a pointer type, otherwise false.
  */
 static bool
-HasOrContainsPointerType(const rvsdg::output & output)
+HasOrContainsPointerType(const rvsdg::Output & output)
 {
   return IsOrContains<PointerType>(*output.Type()) || is<rvsdg::FunctionType>(output.Type());
 }
@@ -169,14 +169,14 @@ class RegisterLocation final : public Location
 {
 public:
   constexpr explicit RegisterLocation(
-      const jlm::rvsdg::output & output,
+      const jlm::rvsdg::Output & output,
       PointsToFlags pointsToFlags)
       : Location(pointsToFlags),
         HasEscaped_(false),
         Output_(&output)
   {}
 
-  [[nodiscard]] const jlm::rvsdg::output &
+  [[nodiscard]] const jlm::rvsdg::Output &
   GetOutput() const noexcept
   {
     return *Output_;
@@ -289,14 +289,14 @@ public:
   }
 
   static std::unique_ptr<RegisterLocation>
-  Create(const jlm::rvsdg::output & output, PointsToFlags pointsToFlags)
+  Create(const jlm::rvsdg::Output & output, PointsToFlags pointsToFlags)
   {
     return std::make_unique<RegisterLocation>(output, pointsToFlags);
   }
 
 private:
   bool HasEscaped_;
-  const jlm::rvsdg::output * Output_;
+  const jlm::rvsdg::Output * Output_;
 };
 
 /** \brief MemoryLocation class
@@ -674,7 +674,7 @@ public:
    * problem automatically.
    */
   Location &
-  GetOrInsertRegisterLocation(const rvsdg::output & output)
+  GetOrInsertRegisterLocation(const rvsdg::Output & output)
   {
     if (auto it = LocationMap_.find(&output); it != LocationMap_.end())
       return GetRootLocation(*it->second);
@@ -725,7 +725,7 @@ public:
    * @return The root Location of the set.
    */
   Location &
-  GetLocation(const rvsdg::output & output)
+  GetLocation(const rvsdg::Output & output)
   {
     return GetRootLocation(GetRegisterLocation(output));
   }
@@ -737,7 +737,7 @@ public:
    * @return A RegisterLocation.
    */
   RegisterLocation &
-  GetRegisterLocation(const rvsdg::output & output)
+  GetRegisterLocation(const rvsdg::Output & output)
   {
     auto it = LocationMap_.find(&output);
     JLM_ASSERT(it != LocationMap_.end());
@@ -751,7 +751,7 @@ public:
    * @return True if the location exists, otherwise false.
    */
   bool
-  HasRegisterLocation(const rvsdg::output & output)
+  HasRegisterLocation(const rvsdg::Output & output)
   {
     auto it = LocationMap_.find(&output);
     return it != LocationMap_.end();
@@ -864,7 +864,7 @@ public:
 
 private:
   RegisterLocation &
-  InsertRegisterLocation(const jlm::rvsdg::output & output, PointsToFlags pointsToFlags)
+  InsertRegisterLocation(const jlm::rvsdg::Output & output, PointsToFlags pointsToFlags)
   {
     JLM_ASSERT(!HasRegisterLocation(output));
 
@@ -886,7 +886,7 @@ private:
 
   DisjointLocationSet DisjointLocationSet_;
   std::vector<std::unique_ptr<Location>> Locations_;
-  std::unordered_map<const jlm::rvsdg::output *, RegisterLocation *> LocationMap_;
+  std::unordered_map<const jlm::rvsdg::Output *, RegisterLocation *> LocationMap_;
 };
 
 /** \brief Collect statistics about Steensgaard alias analysis pass
@@ -1890,7 +1890,7 @@ Steensgaard::Analyze(
 }
 
 void
-Steensgaard::MarkAsEscaped(const rvsdg::output & output)
+Steensgaard::MarkAsEscaped(const rvsdg::Output & output)
 {
   auto & outputLocation = Context_->GetRegisterLocation(output);
   outputLocation.MarkAsEscaped();
@@ -2029,7 +2029,7 @@ Steensgaard::ConstructPointsToGraph() const
   {
     memoryNodesInSet[&locationSet] = {};
 
-    util::HashSet<const rvsdg::output *> registers;
+    util::HashSet<const rvsdg::Output *> registers;
     util::HashSet<RegisterLocation *> registerLocations;
     for (auto & location : locationSet)
     {

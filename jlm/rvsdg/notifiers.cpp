@@ -18,13 +18,13 @@ util::notifier<rvsdg::Node *, size_t> on_node_depth_change;
 jlm::util::notifier<jlm::rvsdg::Input *> on_input_create;
 jlm::util::notifier<
     jlm::rvsdg::Input *,
-    jlm::rvsdg::output *, /* old */
-    jlm::rvsdg::output *  /* new */
+    jlm::rvsdg::Output *, /* old */
+    jlm::rvsdg::Output *  /* new */
     >
     on_input_change;
 jlm::util::notifier<jlm::rvsdg::Input *> on_input_destroy;
 
-jlm::util::notifier<jlm::rvsdg::output *> on_output_create;
-jlm::util::notifier<jlm::rvsdg::output *> on_output_destroy;
+jlm::util::notifier<jlm::rvsdg::Output *> on_output_create;
+jlm::util::notifier<jlm::rvsdg::Output *> on_output_destroy;
 
 }
