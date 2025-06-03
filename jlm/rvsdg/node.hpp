@@ -330,12 +330,18 @@ public:
       (*users_.begin())->divert_to(new_origin);
   }
 
+  /**
+   * @deprecated Use Users() instead.
+   */
   inline user_iterator
   begin() const noexcept
   {
     return users_.begin();
   }
 
+  /**
+   * @deprecated Use Users() instead.
+   */
   inline user_iterator
   end() const noexcept
   {
