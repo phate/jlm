@@ -40,7 +40,7 @@ TestPhiCreation()
     return lambda->finalize({ iOStateArgument, memoryStateArgument });
   };
 
-  auto SetupF2 = [&](jlm::rvsdg::Region * region, jlm::rvsdg::output * f2)
+  auto SetupF2 = [&](jlm::rvsdg::Region * region, jlm::rvsdg::Output * f2)
   {
     auto lambda = jlm::rvsdg::LambdaNode::Create(
         *region,

@@ -27,7 +27,7 @@ test_gamma()
 
   auto ct = jlm::rvsdg::ControlType::Create(2);
 
-  RvsdgModule rm(jlm::util::filepath(""), "", "");
+  RvsdgModule rm(jlm::util::FilePath(""), "", "");
   auto & graph = rm.Rvsdg();
 
   auto c = &jlm::tests::GraphImport::Create(graph, ct, "c");
@@ -67,7 +67,7 @@ test_theta()
   jlm::tests::test_op bop({ vt, vt }, { vt });
   jlm::tests::test_op sop({ vt, st }, { st });
 
-  RvsdgModule rm(jlm::util::filepath(""), "", "");
+  RvsdgModule rm(jlm::util::FilePath(""), "", "");
   auto & graph = rm.Rvsdg();
 
   auto c = &jlm::tests::GraphImport::Create(graph, ct, "c");

@@ -17,7 +17,7 @@ TestArgumentIterators()
   using namespace jlm::llvm;
 
   auto vt = jlm::tests::valuetype::Create();
-  RvsdgModule rvsdgModule(jlm::util::filepath(""), "", "");
+  RvsdgModule rvsdgModule(jlm::util::FilePath(""), "", "");
 
   {
     auto functionType = jlm::rvsdg::FunctionType::Create({ vt }, { vt });
@@ -27,7 +27,7 @@ TestArgumentIterators()
         LlvmLambdaOperation::Create(functionType, "f", linkage::external_linkage));
     lambda->finalize({ lambda->GetFunctionArguments()[0] });
 
-    std::vector<const jlm::rvsdg::output *> functionArguments;
+    std::vector<const jlm::rvsdg::Output *> functionArguments;
     for (auto argument : lambda->GetFunctionArguments())
       functionArguments.push_back(argument);
 
@@ -62,7 +62,7 @@ TestArgumentIterators()
 
     lambda->finalize({ lambda->GetFunctionArguments()[0], cv });
 
-    std::vector<const jlm::rvsdg::output *> functionArguments;
+    std::vector<const jlm::rvsdg::Output *> functionArguments;
     for (auto argument : lambda->GetFunctionArguments())
       functionArguments.push_back(argument);
 
@@ -81,7 +81,7 @@ TestInvalidOperandRegion()
   auto vt = jlm::tests::valuetype::Create();
   auto functionType = jlm::rvsdg::FunctionType::Create({}, { vt });
 
-  auto rvsdgModule = RvsdgModule::Create(jlm::util::filepath(""), "", "");
+  auto rvsdgModule = RvsdgModule::Create(jlm::util::FilePath(""), "", "");
   auto rvsdg = &rvsdgModule->Rvsdg();
 
   auto lambdaNode = jlm::rvsdg::LambdaNode::Create(
@@ -115,7 +115,7 @@ TestRemoveLambdaInputsWhere()
   auto valueType = jlm::tests::valuetype::Create();
   auto functionType = jlm::rvsdg::FunctionType::Create({}, { valueType });
 
-  auto rvsdgModule = jlm::llvm::RvsdgModule::Create(jlm::util::filepath(""), "", "");
+  auto rvsdgModule = jlm::llvm::RvsdgModule::Create(jlm::util::FilePath(""), "", "");
   auto & rvsdg = rvsdgModule->Rvsdg();
 
   auto x = &jlm::tests::GraphImport::Create(rvsdg, valueType, "x");
@@ -186,7 +186,7 @@ TestPruneLambdaInputs()
   auto valueType = jlm::tests::valuetype::Create();
   auto functionType = jlm::rvsdg::FunctionType::Create({}, { valueType });
 
-  auto rvsdgModule = jlm::llvm::RvsdgModule::Create(jlm::util::filepath(""), "", "");
+  auto rvsdgModule = jlm::llvm::RvsdgModule::Create(jlm::util::FilePath(""), "", "");
   auto & rvsdg = rvsdgModule->Rvsdg();
 
   auto x = &jlm::tests::GraphImport::Create(rvsdg, valueType, "x");

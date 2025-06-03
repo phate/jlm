@@ -59,7 +59,7 @@ Statistics::GetName() const
   return GetStatisticsIdNames().LookupKey(StatisticsId_);
 }
 
-const util::filepath &
+const util::FilePath &
 Statistics::GetSourceFile() const
 {
   return SourceFile_;
@@ -130,16 +130,16 @@ Statistics::HasTimer(const std::string & name) const noexcept
   return false;
 }
 
-util::timer &
+util::Timer &
 Statistics::GetTimer(const std::string & name)
 {
   for (auto & [mName, timer] : Timers_)
     if (mName == name)
       return timer;
-  JLM_UNREACHABLE("Unknown timer");
+  JLM_UNREACHABLE("Unknown Timer");
 }
 
-const util::timer &
+const util::Timer &
 Statistics::GetTimer(const std::string & name) const
 {
   return const_cast<Statistics *>(this)->GetTimer(name);
@@ -151,11 +151,11 @@ Statistics::GetTimers() const
   return { Timers_.begin(), Timers_.end() };
 }
 
-util::timer &
+util::Timer &
 Statistics::AddTimer(std::string name)
 {
   JLM_ASSERT(!HasTimer(name));
-  Timers_.emplace_back(std::make_pair(std::move(name), util::timer()));
+  Timers_.emplace_back(std::make_pair(std::move(name), util::Timer()));
   auto & timer = Timers_.back().second;
   return timer;
 }

@@ -33,7 +33,7 @@ RootRegion()
   using namespace jlm::llvm;
 
   // Arrange
-  RvsdgModule rvsdgModule(jlm::util::filepath(""), "", "");
+  RvsdgModule rvsdgModule(jlm::util::FilePath(""), "", "");
   auto & graph = rvsdgModule.Rvsdg();
 
   jlm::tests::GraphImport::Create(graph, jlm::tests::valuetype::Create(), "x");
@@ -63,7 +63,7 @@ Gamma1()
   auto valueType = jlm::tests::valuetype::Create();
   auto controlType = jlm::rvsdg::ControlType::Create(2);
 
-  RvsdgModule rvsdgModule(jlm::util::filepath(""), "", "");
+  RvsdgModule rvsdgModule(jlm::util::FilePath(""), "", "");
   auto & graph = rvsdgModule.Rvsdg();
   auto c = &jlm::tests::GraphImport::Create(graph, controlType, "c");
   auto x = &jlm::tests::GraphImport::Create(graph, valueType, "x");
@@ -110,7 +110,7 @@ Gamma2()
   auto valueType = jlm::tests::valuetype::Create();
   auto controlType = jlm::rvsdg::ControlType::Create(2);
 
-  RvsdgModule rvsdgModule(jlm::util::filepath(""), "", "");
+  RvsdgModule rvsdgModule(jlm::util::FilePath(""), "", "");
   auto & graph = rvsdgModule.Rvsdg();
   auto c = &jlm::tests::GraphImport::Create(graph, controlType, "c");
   auto x = &jlm::tests::GraphImport::Create(graph, valueType, "x");
@@ -147,7 +147,7 @@ Theta()
   auto valueType = jlm::tests::valuetype::Create();
   auto controlType = jlm::rvsdg::ControlType::Create(2);
 
-  RvsdgModule rvsdgModule(jlm::util::filepath(""), "", "");
+  RvsdgModule rvsdgModule(jlm::util::FilePath(""), "", "");
   auto & graph = rvsdgModule.Rvsdg();
   auto x = &jlm::tests::GraphImport::Create(graph, valueType, "x");
   auto y = &jlm::tests::GraphImport::Create(graph, valueType, "y");
@@ -197,7 +197,7 @@ NestedTheta()
   auto valueType = jlm::tests::valuetype::Create();
   auto controlType = jlm::rvsdg::ControlType::Create(2);
 
-  RvsdgModule rvsdgModule(jlm::util::filepath(""), "", "");
+  RvsdgModule rvsdgModule(jlm::util::FilePath(""), "", "");
   auto & graph = rvsdgModule.Rvsdg();
   auto c = &jlm::tests::GraphImport::Create(graph, controlType, "c");
   auto x = &jlm::tests::GraphImport::Create(graph, valueType, "x");
@@ -248,7 +248,7 @@ EvolvingTheta()
   auto valueType = jlm::tests::valuetype::Create();
   auto controlType = jlm::rvsdg::ControlType::Create(2);
 
-  RvsdgModule rvsdgModule(jlm::util::filepath(""), "", "");
+  RvsdgModule rvsdgModule(jlm::util::FilePath(""), "", "");
   auto & graph = rvsdgModule.Rvsdg();
   auto c = &jlm::tests::GraphImport::Create(graph, controlType, "c");
   auto x1 = &jlm::tests::GraphImport::Create(graph, valueType, "x1");
@@ -293,7 +293,7 @@ Lambda()
   // Arrange
   auto valueType = jlm::tests::valuetype::Create();
 
-  RvsdgModule rvsdgModule(jlm::util::filepath(""), "", "");
+  RvsdgModule rvsdgModule(jlm::util::FilePath(""), "", "");
   auto & graph = rvsdgModule.Rvsdg();
   auto x = &jlm::tests::GraphImport::Create(graph, valueType, "x");
   auto y = &jlm::tests::GraphImport::Create(graph, valueType, "y");
@@ -340,13 +340,13 @@ Phi()
   auto valueType = jlm::tests::valuetype::Create();
   auto functionType = FunctionType::Create({ valueType }, { valueType });
 
-  jlm::llvm::RvsdgModule rvsdgModule(jlm::util::filepath(""), "", "");
+  jlm::llvm::RvsdgModule rvsdgModule(jlm::util::FilePath(""), "", "");
   auto & rvsdg = rvsdgModule.Rvsdg();
   auto x = &jlm::tests::GraphImport::Create(rvsdg, valueType, "x");
   auto y = &jlm::tests::GraphImport::Create(rvsdg, valueType, "y");
   auto z = &jlm::tests::GraphImport::Create(rvsdg, valueType, "z");
 
-  auto setupF1 = [&](Region & region, output & rv2, output & dx)
+  auto setupF1 = [&](Region & region, Output & rv2, Output & dx)
   {
     auto lambda1 = jlm::rvsdg::LambdaNode::Create(
         region,
@@ -364,7 +364,7 @@ Phi()
     return lambda1->finalize({ result });
   };
 
-  auto setupF2 = [&](Region & region, output & rv1, output & dy)
+  auto setupF2 = [&](Region & region, Output & rv1, Output & dy)
   {
     auto lambda2 = jlm::rvsdg::LambdaNode::Create(
         region,
@@ -381,7 +381,7 @@ Phi()
     return lambda2->finalize({ result });
   };
 
-  auto setupF3 = [&](Region & region, output & dz)
+  auto setupF3 = [&](Region & region, Output & dz)
   {
     auto lambda3 = jlm::rvsdg::LambdaNode::Create(
         region,
@@ -467,7 +467,7 @@ Delta()
   // Arrange
   auto valueType = jlm::tests::valuetype::Create();
 
-  jlm::llvm::RvsdgModule rvsdgModule(jlm::util::filepath(""), "", "");
+  jlm::llvm::RvsdgModule rvsdgModule(jlm::util::FilePath(""), "", "");
   auto & rvsdg = rvsdgModule.Rvsdg();
 
   auto x = &jlm::tests::GraphImport::Create(rvsdg, valueType, "x");

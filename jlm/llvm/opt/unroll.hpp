@@ -53,9 +53,9 @@ private:
   inline unrollinfo(
       rvsdg::Node * cmpnode,
       rvsdg::Node * armnode,
-      rvsdg::output * idv,
-      rvsdg::output * step,
-      rvsdg::output * end)
+      rvsdg::Output * idv,
+      rvsdg::Output * step,
+      rvsdg::Output * end)
       : end_(end),
         step_(step),
         cmpnode_(cmpnode),
@@ -132,13 +132,13 @@ public:
     return *static_cast<const rvsdg::SimpleOperation *>(&armnode()->GetOperation());
   }
 
-  inline rvsdg::output *
+  inline rvsdg::Output *
   idv() const noexcept
   {
     return idv_;
   }
 
-  inline jlm::rvsdg::output *
+  inline jlm::rvsdg::Output *
   init() const noexcept
   {
     return theta()->MapPreLoopVar(*idv()).input->origin();
@@ -150,7 +150,7 @@ public:
     return value(init());
   }
 
-  inline rvsdg::output *
+  inline rvsdg::Output *
   step() const noexcept
   {
     return step_;
@@ -162,7 +162,7 @@ public:
     return value(step());
   }
 
-  inline rvsdg::output *
+  inline rvsdg::Output *
   end() const noexcept
   {
     return end_;
@@ -204,7 +204,7 @@ public:
 
 private:
   inline bool
-  is_known(jlm::rvsdg::output * output) const noexcept
+  is_known(jlm::rvsdg::Output * output) const noexcept
   {
     auto p = producer(output);
     if (!p)
@@ -215,7 +215,7 @@ private:
   }
 
   inline const jlm::rvsdg::bitvalue_repr *
-  value(jlm::rvsdg::output * output) const noexcept
+  value(jlm::rvsdg::Output * output) const noexcept
   {
     if (!is_known(output))
       return nullptr;
@@ -224,11 +224,11 @@ private:
     return &static_cast<const rvsdg::bitconstant_op *>(&p->GetOperation())->value();
   }
 
-  rvsdg::output * end_;
-  rvsdg::output * step_;
+  rvsdg::Output * end_;
+  rvsdg::Output * step_;
   rvsdg::Node * cmpnode_;
   rvsdg::Node * armnode_;
-  rvsdg::output * idv_;
+  rvsdg::Output * idv_;
 };
 
 /**

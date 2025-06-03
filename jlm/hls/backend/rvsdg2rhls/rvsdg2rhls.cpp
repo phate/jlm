@@ -111,13 +111,13 @@ function_match(rvsdg::LambdaNode * ln, const std::string & function_name)
   return false;
 }
 
-const jlm::rvsdg::output *
+const jlm::rvsdg::Output *
 trace_call(jlm::rvsdg::Input * input)
 {
   auto graph = input->region()->graph();
 
   auto argument = dynamic_cast<const rvsdg::RegionArgument *>(input->origin());
-  const jlm::rvsdg::output * result;
+  const jlm::rvsdg::Output * result;
   if (auto theta = rvsdg::TryGetOwnerNode<rvsdg::ThetaNode>(*input->origin()))
   {
     result = trace_call(theta->MapOutputLoopVar(*input->origin()).input);
@@ -206,7 +206,7 @@ convert_alloca(rvsdg::Region * region)
           "",
           false);
       // create zero constant of allocated type
-      jlm::rvsdg::output * cout;
+      jlm::rvsdg::Output * cout;
       if (auto bt = dynamic_cast<const llvm::IntegerConstantOperation *>(&po->value_type()))
       {
         cout = llvm::IntegerConstantOperation::Create(
@@ -316,7 +316,7 @@ change_linkage(rvsdg::LambdaNode * ln, llvm::linkage link)
   ln->subregion()->copy(lambda->subregion(), subregionmap, false, false);
 
   /* collect function results */
-  std::vector<jlm::rvsdg::output *> results;
+  std::vector<jlm::rvsdg::Output *> results;
   for (auto result : ln->GetFunctionResults())
     results.push_back(subregionmap.lookup(result->origin()));
 
@@ -423,7 +423,7 @@ split_hls_function(llvm::RvsdgModule & rm, const std::string & function_name)
 }
 
 void
-rvsdg2ref(llvm::RvsdgModule & rhls, const util::filepath & path)
+rvsdg2ref(llvm::RvsdgModule & rhls, const util::FilePath & path)
 {
   dump_ref(rhls, path);
 }
@@ -471,7 +471,7 @@ rvsdg2rhls(llvm::RvsdgModule & rhls, util::StatisticsCollector & collector)
 }
 
 void
-dump_ref(llvm::RvsdgModule & rhls, const util::filepath & path)
+dump_ref(llvm::RvsdgModule & rhls, const util::FilePath & path)
 {
   auto reference =
       llvm::RvsdgModule::Create(rhls.SourceFileName(), rhls.TargetTriple(), rhls.DataLayout());

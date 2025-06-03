@@ -52,7 +52,7 @@ backedge_argument::Copy(rvsdg::Region & region, rvsdg::StructuralInput * input)
 }
 
 backedge_result &
-backedge_result::Copy(rvsdg::output & origin, rvsdg::StructuralOutput * output)
+backedge_result::Copy(rvsdg::Output & origin, rvsdg::StructuralOutput * output)
 {
   JLM_ASSERT(output == nullptr);
   return *backedge_result::create(&origin);
@@ -60,20 +60,20 @@ backedge_result::Copy(rvsdg::output & origin, rvsdg::StructuralOutput * output)
 
 ExitResult::~ExitResult() noexcept = default;
 
-ExitResult::ExitResult(rvsdg::output & origin, rvsdg::StructuralOutput & output)
+ExitResult::ExitResult(rvsdg::Output & origin, rvsdg::StructuralOutput & output)
     : rvsdg::RegionResult(origin.region(), &origin, &output, origin.Type())
 {
   JLM_ASSERT(dynamic_cast<const loop_node *>(origin.region()->node()));
 }
 
 ExitResult &
-ExitResult::Copy(rvsdg::output & origin, rvsdg::StructuralOutput * output)
+ExitResult::Copy(rvsdg::Output & origin, rvsdg::StructuralOutput * output)
 {
   return Create(origin, *output);
 }
 
 rvsdg::StructuralOutput *
-loop_node::AddLoopVar(jlm::rvsdg::output * origin, jlm::rvsdg::output ** buffer)
+loop_node::AddLoopVar(jlm::rvsdg::Output * origin, jlm::rvsdg::Output ** buffer)
 {
   auto input = rvsdg::StructuralInput::create(this, origin, origin->Type());
   auto output = rvsdg::StructuralOutput::create(this, origin->Type());
@@ -102,8 +102,8 @@ loop_node::GetOperation() const noexcept
   return singleton;
 }
 
-jlm::rvsdg::output *
-loop_node::add_loopconst(jlm::rvsdg::output * origin)
+jlm::rvsdg::Output *
+loop_node::add_loopconst(jlm::rvsdg::Output * origin)
 {
   auto input = rvsdg::StructuralInput::create(this, origin, origin->Type());
 
@@ -194,7 +194,7 @@ loop_node::create(rvsdg::Region * parent, bool init)
 }
 
 void
-loop_node::set_predicate(jlm::rvsdg::output * p)
+loop_node::set_predicate(jlm::rvsdg::Output * p)
 {
   auto node = rvsdg::TryGetOwnerNode<Node>(*predicate()->origin());
   predicate()->origin()->divert_users(p);

@@ -338,7 +338,7 @@ PointsToGraph::IsSupergraphOf(const jlm::llvm::aa::PointsToGraph & subgraph) con
 std::string
 PointsToGraph::ToDot(
     const PointsToGraph & pointsToGraph,
-    const std::unordered_map<const rvsdg::output *, std::string> & outputMap)
+    const std::unordered_map<const rvsdg::Output *, std::string> & outputMap)
 {
   auto nodeFill = [&](const PointsToGraph::Node & node)
   {
@@ -514,7 +514,7 @@ PointsToGraph::Node::RemoveEdge(PointsToGraph::MemoryNode & target)
 PointsToGraph::RegisterNode::~RegisterNode() noexcept = default;
 
 std::string
-PointsToGraph::RegisterNode::ToString(const rvsdg::output & output)
+PointsToGraph::RegisterNode::ToString(const rvsdg::Output & output)
 {
   auto node = rvsdg::TryGetOwnerNode<rvsdg::Node>(output);
 

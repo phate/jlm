@@ -21,7 +21,7 @@ class ivtstat final : public util::Statistics
 public:
   ~ivtstat() override = default;
 
-  explicit ivtstat(const util::filepath & sourceFile)
+  explicit ivtstat(const util::FilePath & sourceFile)
       : Statistics(Statistics::Id::ThetaGammaInversion, sourceFile)
   {}
 
@@ -42,7 +42,7 @@ public:
   }
 
   static std::unique_ptr<ivtstat>
-  Create(const util::filepath & sourceFile)
+  Create(const util::FilePath & sourceFile)
   {
     return std::make_unique<ivtstat>(sourceFile);
   }
@@ -143,13 +143,13 @@ copy_condition_nodes(
 }
 
 static jlm::rvsdg::StructuralOutput *
-to_structural_output(jlm::rvsdg::output * output)
+to_structural_output(jlm::rvsdg::Output * output)
 {
   return dynamic_cast<rvsdg::StructuralOutput *>(output);
 }
 
 static rvsdg::RegionArgument *
-to_argument(jlm::rvsdg::output * output)
+to_argument(jlm::rvsdg::Output * output)
 {
   return dynamic_cast<rvsdg::RegionArgument *>(output);
 }

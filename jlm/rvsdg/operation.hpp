@@ -18,7 +18,7 @@ namespace jlm::rvsdg
 
 class Graph;
 class Node;
-class output;
+class Output;
 class Region;
 
 class Operation

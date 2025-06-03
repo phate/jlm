@@ -90,8 +90,8 @@ gather_mem_nodes(rvsdg::Region * region, std::vector<jlm::rvsdg::SimpleNode *> &
   }
 }
 
-jlm::rvsdg::output *
-route_through(rvsdg::Region * target, jlm::rvsdg::output * response)
+jlm::rvsdg::Output *
+route_through(rvsdg::Region * target, jlm::rvsdg::Output * response)
 {
   if (response->region() == target)
   {
@@ -167,8 +167,8 @@ mem_sep_independent(rvsdg::Region * region)
 
 rvsdg::RegionResult *
 trace_edge(
-    jlm::rvsdg::output * common_edge,
-    jlm::rvsdg::output * new_edge,
+    jlm::rvsdg::Output * common_edge,
+    jlm::rvsdg::Output * new_edge,
     std::vector<jlm::rvsdg::SimpleNode *> & load_nodes,
     const std::vector<jlm::rvsdg::SimpleNode *> & store_nodes,
     std::vector<jlm::rvsdg::SimpleNode *> & decouple_nodes)
@@ -191,7 +191,7 @@ trace_edge(
     else if (auto gammaNode = rvsdg::TryGetOwnerNode<rvsdg::GammaNode>(*user))
     {
       auto ip = gammaNode->AddEntryVar(new_edge);
-      std::vector<jlm::rvsdg::output *> vec;
+      std::vector<jlm::rvsdg::Output *> vec;
       new_edge = gammaNode->AddExitVar(ip.branchArgument).output;
       new_next->divert_to(new_edge);
 

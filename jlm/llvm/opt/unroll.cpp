@@ -19,7 +19,7 @@ class unrollstat final : public util::Statistics
 public:
   ~unrollstat() override = default;
 
-  explicit unrollstat(const util::filepath & sourceFile)
+  explicit unrollstat(const util::FilePath & sourceFile)
       : Statistics(Statistics::Id::LoopUnrolling, sourceFile)
   {}
 
@@ -38,7 +38,7 @@ public:
   }
 
   static std::unique_ptr<unrollstat>
-  Create(const util::filepath & sourceFile)
+  Create(const util::FilePath & sourceFile)
   {
     return std::make_unique<unrollstat>(sourceFile);
   }
@@ -58,7 +58,7 @@ is_eqcmp(const rvsdg::Operation & op)
 /* unrollinfo methods */
 
 static bool
-is_theta_invariant(const jlm::rvsdg::output * output)
+is_theta_invariant(const jlm::rvsdg::Output * output)
 {
   JLM_ASSERT(dynamic_cast<const rvsdg::ThetaNode *>(output->region()->node()));
 
@@ -73,8 +73,8 @@ is_theta_invariant(const jlm::rvsdg::output * output)
   return ThetaLoopVarIsInvariant(loopVar);
 }
 
-static rvsdg::output *
-push_from_theta(jlm::rvsdg::output * output)
+static rvsdg::Output *
+push_from_theta(jlm::rvsdg::Output * output)
 {
   auto argument = dynamic_cast<rvsdg::RegionArgument *>(output);
   if (argument)
@@ -333,7 +333,7 @@ unroll_known_theta(const unrollinfo & ui, size_t factor)
   add_remainder(ui, smap, factor);
 }
 
-static jlm::rvsdg::output *
+static jlm::rvsdg::Output *
 create_unrolled_gamma_predicate(const unrollinfo & ui, size_t factor)
 {
   auto region = ui.theta()->region();
@@ -351,7 +351,7 @@ create_unrolled_gamma_predicate(const unrollinfo & ui, size_t factor)
   return pred;
 }
 
-static jlm::rvsdg::output *
+static jlm::rvsdg::Output *
 create_unrolled_theta_predicate(
     rvsdg::Region *,
     const rvsdg::SubstitutionMap & smap,
@@ -381,7 +381,7 @@ create_unrolled_theta_predicate(
   return pred;
 }
 
-static jlm::rvsdg::output *
+static jlm::rvsdg::Output *
 create_residual_gamma_predicate(const rvsdg::SubstitutionMap & smap, const unrollinfo & ui)
 {
   auto region = ui.theta()->region();

@@ -14,20 +14,20 @@
 namespace jlm::util
 {
 
-class timer final
+class Timer final
 {
 public:
-  constexpr timer()
+  constexpr Timer()
       : ElapsedTimeInNanoseconds_(0),
         IsRunning_(false)
   {}
 
-  timer(const timer & other) = delete;
-  timer(timer && other) = default;
-  timer &
-  operator=(const timer & other) = delete;
-  timer &
-  operator=(timer && other) = default;
+  Timer(const Timer & other) = delete;
+  Timer(Timer && other) = default;
+  Timer &
+  operator=(const Timer & other) = delete;
+  Timer &
+  operator=(Timer && other) = default;
 
   [[nodiscard]] bool
   IsRunning() const noexcept

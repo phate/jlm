@@ -41,7 +41,7 @@ private:
 class GraphExport : public RegionResult
 {
 protected:
-  GraphExport(rvsdg::output & origin, std::string name);
+  GraphExport(rvsdg::Output & origin, std::string name);
 
 public:
   [[nodiscard]] const std::string &

@@ -129,7 +129,7 @@ fix_match_inversion(rvsdg::GammaNode * old_gamma)
 
         for (auto oex : old_gamma->GetExitVars())
         {
-          std::vector<rvsdg::output *> operands;
+          std::vector<rvsdg::Output *> operands;
           operands.push_back(rmap0.lookup(oex.branchResult[1]->origin()));
           operands.push_back(rmap1.lookup(oex.branchResult[0]->origin()));
           auto nex = new_gamma->AddExitVar(operands).output;
@@ -216,14 +216,14 @@ merge_gamma(rvsdg::Region * region)
 }
 
 bool
-is_output_of(jlm::rvsdg::output * output, rvsdg::Node * node)
+is_output_of(jlm::rvsdg::Output * output, rvsdg::Node * node)
 {
   auto no = dynamic_cast<jlm::rvsdg::node_output *>(output);
   return no && no->node() == node;
 }
 
 bool
-depends_on(jlm::rvsdg::output * output, rvsdg::Node * node)
+depends_on(jlm::rvsdg::Output * output, rvsdg::Node * node)
 {
   auto arg = dynamic_cast<rvsdg::RegionArgument *>(output);
   if (arg)
@@ -247,7 +247,7 @@ depends_on(jlm::rvsdg::output * output, rvsdg::Node * node)
 }
 
 rvsdg::GammaNode::EntryVar
-get_entryvar(jlm::rvsdg::output * origin, rvsdg::GammaNode * gamma)
+get_entryvar(jlm::rvsdg::Output * origin, rvsdg::GammaNode * gamma)
 {
   for (auto user : *origin)
   {
@@ -317,7 +317,7 @@ merge_gamma(rvsdg::GammaNode * gamma)
         // handle exitvars
         for (const auto & ex : gamma->GetExitVars())
         {
-          std::vector<jlm::rvsdg::output *> operands;
+          std::vector<jlm::rvsdg::Output *> operands;
           for (size_t j = 0; j < ex.branchResult.size(); j++)
           {
             operands.push_back(rmap[j].lookup(ex.branchResult[j]->origin()));

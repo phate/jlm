@@ -16,7 +16,7 @@ test_remove_node()
 
   /* setup cfg */
 
-  ipgraph_module im(jlm::util::filepath(""), "", "");
+  ipgraph_module im(jlm::util::FilePath(""), "", "");
 
   jlm::llvm::cfg cfg(im);
 

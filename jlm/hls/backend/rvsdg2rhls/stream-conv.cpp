@@ -65,7 +65,7 @@ stream_conv(llvm::RvsdgModule & rm)
     return;
   }
   std::vector<rvsdg::SimpleNode *> enq_calls, deq_calls;
-  std::unordered_set<rvsdg::output *> visited;
+  std::unordered_set<rvsdg::Output *> visited;
   for (auto stream_enq : stream_enqs)
   {
     JLM_ASSERT(stream_enq.inner);

@@ -96,15 +96,15 @@ public:
    *
    * @return The output of the created GetElementPtr RVSDG node.
    */
-  static rvsdg::output *
+  static rvsdg::Output *
   Create(
-      rvsdg::output * baseAddress,
-      const std::vector<rvsdg::output *> & offsets,
+      rvsdg::Output * baseAddress,
+      const std::vector<rvsdg::Output *> & offsets,
       std::shared_ptr<const rvsdg::ValueType> pointeeType,
       std::shared_ptr<const rvsdg::Type> resultType)
   {
     CheckPointerType(*baseAddress->Type());
-    auto offsetTypes = CheckAndExtractOffsetTypes<rvsdg::output>(offsets);
+    auto offsetTypes = CheckAndExtractOffsetTypes<rvsdg::Output>(offsets);
     CheckPointerType(*resultType);
 
     std::vector operands(1, baseAddress);

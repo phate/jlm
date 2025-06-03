@@ -20,7 +20,7 @@ test()
   using namespace jlm::llvm;
 
   auto vt = jlm::tests::valuetype::Create();
-  ipgraph_module im(jlm::util::filepath(""), "", "");
+  ipgraph_module im(jlm::util::FilePath(""), "", "");
 
   auto d0 = data_node::Create(im.ipgraph(), "d0", vt, linkage::external_linkage, "", false);
 
