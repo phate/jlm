@@ -46,10 +46,10 @@ test()
   /* setup cfg */
 
   jlm::llvm::cfg cfg(im);
-  auto bb1 = basic_block::create(cfg);
-  auto bb2 = basic_block::create(cfg);
-  auto bb3 = basic_block::create(cfg);
-  auto bb4 = basic_block::create(cfg);
+  auto bb1 = BasicBlock::create(cfg);
+  auto bb2 = BasicBlock::create(cfg);
+  auto bb3 = BasicBlock::create(cfg);
+  auto bb4 = BasicBlock::create(cfg);
 
   cfg.exit()->divert_inedges(bb1);
   bb1->add_outedge(bb2);

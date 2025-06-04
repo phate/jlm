@@ -13,27 +13,25 @@
 namespace jlm::llvm
 {
 
-/* basic block */
-
-class basic_block final : public cfg_node
+class BasicBlock final : public cfg_node
 {
 public:
-  virtual ~basic_block();
+  ~BasicBlock() noexcept override;
 
 private:
-  basic_block(llvm::cfg & cfg)
+  explicit BasicBlock(llvm::cfg & cfg)
       : cfg_node(cfg)
   {}
 
-  basic_block(const basic_block &) = delete;
+  BasicBlock(const BasicBlock &) = delete;
 
-  basic_block(basic_block &&) = delete;
+  BasicBlock(BasicBlock &&) = delete;
 
-  basic_block &
-  operator=(const basic_block &) = delete;
+  BasicBlock &
+  operator=(const BasicBlock &) = delete;
 
-  basic_block &
-  operator=(basic_block &&) = delete;
+  BasicBlock &
+  operator=(BasicBlock &&) = delete;
 
 public:
   const taclist &
@@ -167,7 +165,7 @@ public:
   void
   insert_before_branch(tacsvector_t & tv);
 
-  static basic_block *
+  static BasicBlock *
   create(llvm::cfg & cfg);
 
 private:

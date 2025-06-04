@@ -131,8 +131,8 @@ emit_exit_dot(const cfg_node & node)
 static inline std::string
 emit_basic_block(const cfg_node & node)
 {
-  JLM_ASSERT(is<basic_block>(&node));
-  auto & tacs = static_cast<const basic_block *>(&node)->tacs();
+  JLM_ASSERT(is<BasicBlock>(&node));
+  auto & tacs = static_cast<const BasicBlock *>(&node)->tacs();
 
   std::string str;
   for (const auto & tac : tacs)
@@ -159,7 +159,7 @@ emit_node(const cfg_node & node)
   static std::unordered_map<std::type_index, std::string (*)(const cfg_node &)> map(
       { { typeid(entry_node), emit_entry_dot },
         { typeid(exit_node), emit_exit_dot },
-        { typeid(basic_block), emit_basic_block } });
+        { typeid(BasicBlock), emit_basic_block } });
 
   JLM_ASSERT(map.find(typeid(node)) != map.end());
   std::string body = map[typeid(node)](node);

@@ -177,7 +177,7 @@ public:
     map->map_[exit] = exitaggnode::create(exit->results());
     for (auto & node : cfg)
     {
-      auto bb = static_cast<basic_block *>(&node);
+      auto bb = static_cast<BasicBlock *>(&node);
       map->map_[&node] = blockaggnode::create(std::move(bb->tacs()));
     }
 
@@ -310,7 +310,7 @@ reduce_branch(cfg_node * split, cfg_node ** entry, aggregation_map & map)
   }
 
   /* perform reduction */
-  auto sese = basic_block::create(split->cfg());
+  auto sese = BasicBlock::create(split->cfg());
   split->divert_inedges(sese);
   sese->add_outedge(join);
 
@@ -358,7 +358,7 @@ reduce_linear(cfg_node * source, cfg_node ** entry, cfg_node ** exit, aggregatio
   JLM_ASSERT(is_linear(source));
   auto sink = source->OutEdge(0)->sink();
 
-  auto sese = basic_block::create(source->cfg());
+  auto sese = BasicBlock::create(source->cfg());
   source->divert_inedges(sese);
   for (auto & edge : sink->OutEdges())
     sese->add_outedge(edge.sink());

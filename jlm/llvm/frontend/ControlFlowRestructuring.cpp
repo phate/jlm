@@ -16,15 +16,15 @@ namespace jlm::llvm
 
 struct tcloop
 {
-  inline tcloop(cfg_node * entry, basic_block * i, basic_block * r)
+  inline tcloop(cfg_node * entry, BasicBlock * i, BasicBlock * r)
       : ne(entry),
         insert(i),
         replacement(r)
   {}
 
   cfg_node * ne;
-  basic_block * insert;
-  basic_block * replacement;
+  BasicBlock * insert;
+  BasicBlock * replacement;
 };
 
 static inline tcloop
@@ -42,8 +42,8 @@ extract_tcloop(cfg_node * ne, cfg_node * nx)
   }
   JLM_ASSERT(er->sink() == ne);
 
-  auto exsink = basic_block::create(cfg);
-  auto replacement = basic_block::create(cfg);
+  auto exsink = BasicBlock::create(cfg);
+  auto replacement = BasicBlock::create(cfg);
   ne->divert_inedges(replacement);
   replacement->add_outedge(ex->sink());
   ex->divert(exsink);
@@ -67,7 +67,7 @@ reinsert_tcloop(const tcloop & l)
 }
 
 static const tacvariable *
-create_pvariable(basic_block & bb, std::shared_ptr<const rvsdg::ControlType> type)
+create_pvariable(BasicBlock & bb, std::shared_ptr<const rvsdg::ControlType> type)
 {
   static size_t c = 0;
   auto name = util::strfmt("#p", c++, "#");
@@ -75,7 +75,7 @@ create_pvariable(basic_block & bb, std::shared_ptr<const rvsdg::ControlType> typ
 }
 
 static const tacvariable *
-create_qvariable(basic_block & bb, std::shared_ptr<const rvsdg::ControlType> type)
+create_qvariable(BasicBlock & bb, std::shared_ptr<const rvsdg::ControlType> type)
 {
   static size_t c = 0;
   auto name = util::strfmt("#q", c++, "#");
@@ -83,7 +83,7 @@ create_qvariable(basic_block & bb, std::shared_ptr<const rvsdg::ControlType> typ
 }
 
 static const tacvariable *
-create_tvariable(basic_block & bb, std::shared_ptr<const rvsdg::ControlType> type)
+create_tvariable(BasicBlock & bb, std::shared_ptr<const rvsdg::ControlType> type)
 {
   static size_t c = 0;
   auto name = util::strfmt("#q", c++, "#");
@@ -91,7 +91,7 @@ create_tvariable(basic_block & bb, std::shared_ptr<const rvsdg::ControlType> typ
 }
 
 static const tacvariable *
-create_rvariable(basic_block & bb)
+create_rvariable(BasicBlock & bb)
 {
   static size_t c = 0;
   auto name = util::strfmt("#r", c++, "#");
@@ -101,7 +101,7 @@ create_rvariable(basic_block & bb)
 }
 
 static inline void
-append_branch(basic_block * bb, const variable * operand)
+append_branch(BasicBlock * bb, const variable * operand)
 {
   JLM_ASSERT(dynamic_cast<const rvsdg::ControlType *>(&operand->type()));
   auto nalternatives = static_cast<const rvsdg::ControlType *>(&operand->type())->nalternatives();
@@ -109,7 +109,7 @@ append_branch(basic_block * bb, const variable * operand)
 }
 
 static inline void
-append_constant(basic_block * bb, const tacvariable * result, size_t value)
+append_constant(BasicBlock * bb, const tacvariable * result, size_t value)
 {
   JLM_ASSERT(dynamic_cast<const rvsdg::ControlType *>(&result->type()));
   auto nalternatives = static_cast<const rvsdg::ControlType *>(&result->type())->nalternatives();
@@ -120,7 +120,7 @@ append_constant(basic_block * bb, const tacvariable * result, size_t value)
 }
 
 static inline void
-restructure_loop_entry(const sccstructure & s, basic_block * new_ne, const tacvariable * ev)
+restructure_loop_entry(const sccstructure & s, BasicBlock * new_ne, const tacvariable * ev)
 {
   size_t n = 0;
   std::unordered_map<llvm::cfg_node *, size_t> indices;
@@ -145,8 +145,8 @@ restructure_loop_entry(const sccstructure & s, basic_block * new_ne, const tacva
 static inline void
 restructure_loop_exit(
     const sccstructure & s,
-    basic_block * new_nr,
-    basic_block * new_nx,
+    BasicBlock * new_nr,
+    BasicBlock * new_nx,
     cfg_node * exit,
     const tacvariable * rv,
     const tacvariable * xv)
@@ -214,16 +214,16 @@ restructure_loop_repetition(
   }
 }
 
-static basic_block *
+static BasicBlock *
 find_tvariable_bb(cfg_node * node)
 {
-  if (auto bb = dynamic_cast<basic_block *>(node))
+  if (auto bb = dynamic_cast<BasicBlock *>(node))
     return bb;
 
   auto sink = node->OutEdge(0)->sink();
-  JLM_ASSERT(is<basic_block>(sink));
+  JLM_ASSERT(is<BasicBlock>(sink));
 
-  return static_cast<basic_block *>(sink);
+  return static_cast<BasicBlock *>(sink);
 }
 
 static void
@@ -251,9 +251,9 @@ restructure_loops(cfg_node * entry, cfg_node * exit, std::vector<tcloop> & loops
       continue;
     }
 
-    auto new_ne = basic_block::create(cfg);
-    auto new_nr = basic_block::create(cfg);
-    auto new_nx = basic_block::create(cfg);
+    auto new_ne = BasicBlock::create(cfg);
+    auto new_nr = BasicBlock::create(cfg);
+    auto new_nx = BasicBlock::create(cfg);
     new_nr->add_outedge(new_nx);
     new_nr->add_outedge(new_ne);
 
@@ -384,8 +384,8 @@ restructure_branches(cfg_node * entry, cfg_node * exit)
   if (hb == exit)
     return;
 
-  JLM_ASSERT(is<basic_block>(hb));
-  auto & hbb = *static_cast<basic_block *>(hb);
+  JLM_ASSERT(is<BasicBlock>(hb));
+  auto & hbb = *static_cast<BasicBlock *>(hb);
 
   auto c = compute_continuation(hb);
   JLM_ASSERT(!c.points.empty());
@@ -414,7 +414,7 @@ restructure_branches(cfg_node * entry, cfg_node * exit)
       }
 
       /* more than one continuation edge */
-      auto null = basic_block::create(cfg);
+      auto null = BasicBlock::create(cfg);
       null->add_outedge(cpoint);
       for (const auto & e : cedges)
         e->divert(null);
@@ -428,7 +428,7 @@ restructure_branches(cfg_node * entry, cfg_node * exit)
 
   /* insert new continuation point */
   auto p = create_pvariable(hbb, rvsdg::ControlType::Create(c.points.size()));
-  auto cn = basic_block::create(cfg);
+  auto cn = BasicBlock::create(cfg);
   append_branch(cn, p);
   std::unordered_map<cfg_node *, size_t> indices;
   for (const auto & cp : c.points)
@@ -442,11 +442,11 @@ restructure_branches(cfg_node * entry, cfg_node * exit)
   {
     auto cedges = c.edges[&outedge];
 
-    auto null = basic_block::create(cfg);
+    auto null = BasicBlock::create(cfg);
     null->add_outedge(cn);
     for (const auto & e : cedges)
     {
-      auto bb = basic_block::create(cfg);
+      auto bb = BasicBlock::create(cfg);
       append_constant(bb, p, indices[e->sink()]);
       bb->add_outedge(null);
       e->divert(bb);

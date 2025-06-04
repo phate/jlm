@@ -98,7 +98,7 @@ convert_basic_blocks(::llvm::Function & f, llvm::cfg & cfg)
   basic_block_map bbmap;
   ::llvm::ReversePostOrderTraversal<::llvm::Function *> rpotraverser(&f);
   for (auto & bb : rpotraverser)
-    bbmap.insert(bb, basic_block::create(cfg));
+    bbmap.insert(bb, BasicBlock::create(cfg));
 
   return bbmap;
 }
@@ -332,7 +332,7 @@ EnsureSingleInEdgeToExitNode(llvm::cfg & cfg)
       {
         auto repetitionEdge = *structure->redges().begin();
 
-        auto basicBlock = basic_block::create(cfg);
+        auto basicBlock = BasicBlock::create(cfg);
 
         rvsdg::ctlconstant_op op(rvsdg::ctlvalue_repr(1, 2));
         auto operand = basicBlock->append_last(tac::create(op, {}))->result(0);
@@ -354,7 +354,7 @@ EnsureSingleInEdgeToExitNode(llvm::cfg & cfg)
     We have multiple incoming edges to the exit node. Insert an empty basic block, divert all
     incoming edges to this block, and add an outgoing edge from this block to the exit node.
   */
-  auto basicBlock = basic_block::create(cfg);
+  auto basicBlock = BasicBlock::create(cfg);
   exitNode->divert_inedges(basicBlock);
   basicBlock->add_outedge(exitNode);
 }
@@ -401,7 +401,7 @@ create_cfg(::llvm::Function & f, context & ctx)
   auto bbmap = convert_basic_blocks(f, *cfg);
 
   /* create entry block */
-  auto entry_block = basic_block::create(*cfg);
+  auto entry_block = BasicBlock::create(*cfg);
   cfg->exit()->divert_inedges(entry_block);
   entry_block->add_outedge(bbmap[&f.getEntryBlock()]);
 

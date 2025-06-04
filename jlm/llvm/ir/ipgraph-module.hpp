@@ -245,7 +245,7 @@ ntacs(const ipgraph_module & im)
 
     for (const auto & node : *f->cfg())
     {
-      if (auto bb = dynamic_cast<const basic_block *>(&node))
+      if (auto bb = dynamic_cast<const BasicBlock *>(&node))
         ntacs += bb->tacs().ntacs();
     }
   }
