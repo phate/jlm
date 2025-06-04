@@ -15,17 +15,17 @@
 namespace jlm::llvm
 {
 
-class cfg;
+class ControlFlowGraph;
 class ipgraph;
 class ipgraph_module;
 
 /* control flow graph */
 
 std::string
-to_dot(const llvm::cfg & cfg);
+to_dot(const ControlFlowGraph & cfg);
 
 static inline void
-print_dot(const llvm::cfg & cfg, FILE * out)
+print_dot(const ControlFlowGraph & cfg, FILE * out)
 {
   fputs(to_dot(cfg).c_str(), out);
   fflush(out);

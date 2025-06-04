@@ -31,9 +31,7 @@ entry_node::~entry_node()
 exit_node::~exit_node()
 {}
 
-/* cfg */
-
-cfg::cfg(ipgraph_module & im)
+ControlFlowGraph::ControlFlowGraph(ipgraph_module & im)
     : module_(im)
 {
   entry_ = std::unique_ptr<entry_node>(new entry_node(*this));
@@ -41,8 +39,8 @@ cfg::cfg(ipgraph_module & im)
   entry_->add_outedge(exit_.get());
 }
 
-cfg::iterator
-cfg::remove_node(cfg::iterator & nodeit)
+ControlFlowGraph::iterator
+ControlFlowGraph::remove_node(ControlFlowGraph::iterator & nodeit)
 {
   auto & cfg = nodeit->cfg();
 
@@ -60,8 +58,8 @@ cfg::remove_node(cfg::iterator & nodeit)
   return rit;
 }
 
-cfg::iterator
-cfg::remove_node(BasicBlock * bb)
+ControlFlowGraph::iterator
+ControlFlowGraph::remove_node(BasicBlock * bb)
 {
   auto & cfg = bb->cfg();
 
@@ -70,7 +68,7 @@ cfg::remove_node(BasicBlock * bb)
 }
 
 std::string
-cfg::ToAscii(const cfg & controlFlowGraph)
+ControlFlowGraph::ToAscii(const ControlFlowGraph & controlFlowGraph)
 {
   std::string str;
   auto nodes = breadth_first(controlFlowGraph);
@@ -102,7 +100,7 @@ cfg::ToAscii(const cfg & controlFlowGraph)
 }
 
 std::string
-cfg::ToAscii(const entry_node & entryNode)
+ControlFlowGraph::ToAscii(const entry_node & entryNode)
 {
   std::string str;
   for (size_t n = 0; n < entryNode.narguments(); n++)
@@ -114,7 +112,7 @@ cfg::ToAscii(const entry_node & entryNode)
 }
 
 std::string
-cfg::ToAscii(const exit_node & exitNode)
+ControlFlowGraph::ToAscii(const exit_node & exitNode)
 {
   std::string str;
   for (size_t n = 0; n < exitNode.nresults(); n++)
@@ -126,7 +124,7 @@ cfg::ToAscii(const exit_node & exitNode)
 }
 
 std::string
-cfg::ToAscii(
+ControlFlowGraph::ToAscii(
     const BasicBlock & basicBlock,
     const std::unordered_map<cfg_node *, std::string> & labels)
 {
@@ -156,7 +154,7 @@ cfg::ToAscii(
 }
 
 std::string
-cfg::CreateTargets(
+ControlFlowGraph::CreateTargets(
     const cfg_node & node,
     const std::unordered_map<cfg_node *, std::string> & labels)
 {
@@ -174,7 +172,7 @@ cfg::CreateTargets(
 }
 
 std::unordered_map<cfg_node *, std::string>
-cfg::CreateLabels(const std::vector<cfg_node *> & nodes)
+ControlFlowGraph::CreateLabels(const std::vector<cfg_node *> & nodes)
 {
   std::unordered_map<cfg_node *, std::string> map;
   for (size_t n = 0; n < nodes.size(); n++)
@@ -204,7 +202,7 @@ cfg::CreateLabels(const std::vector<cfg_node *> & nodes)
 /* supporting functions */
 
 std::vector<cfg_node *>
-postorder(const llvm::cfg & cfg)
+postorder(const ControlFlowGraph & cfg)
 {
   JLM_ASSERT(is_closed(cfg));
 
@@ -232,7 +230,7 @@ postorder(const llvm::cfg & cfg)
 }
 
 std::vector<cfg_node *>
-reverse_postorder(const llvm::cfg & cfg)
+reverse_postorder(const ControlFlowGraph & cfg)
 {
   auto nodes = postorder(cfg);
   std::reverse(nodes.begin(), nodes.end());
@@ -240,7 +238,7 @@ reverse_postorder(const llvm::cfg & cfg)
 }
 
 std::vector<cfg_node *>
-breadth_first(const llvm::cfg & cfg)
+breadth_first(const ControlFlowGraph & cfg)
 {
   std::deque<cfg_node *> next({ cfg.entry() });
   std::vector<cfg_node *> nodes({ cfg.entry() });
@@ -265,7 +263,7 @@ breadth_first(const llvm::cfg & cfg)
 }
 
 size_t
-ntacs(const llvm::cfg & cfg)
+ntacs(const ControlFlowGraph & cfg)
 {
   size_t ntacs = 0;
   for (auto & node : cfg)

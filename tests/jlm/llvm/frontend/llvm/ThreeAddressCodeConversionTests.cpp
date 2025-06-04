@@ -17,14 +17,14 @@
 
 #include <jlm/util/Statistics.hpp>
 
-static std::unique_ptr<jlm::llvm::cfg>
+static std::unique_ptr<jlm::llvm::ControlFlowGraph>
 SetupControlFlowGraph(
     jlm::llvm::ipgraph_module & ipgModule,
     const jlm::rvsdg::SimpleOperation & operation)
 {
   using namespace jlm::llvm;
 
-  auto cfg = jlm::llvm::cfg::create(ipgModule);
+  auto cfg = ControlFlowGraph::create(ipgModule);
 
   std::vector<const variable *> operands;
   for (size_t n = 0; n < operation.narguments(); n++)

@@ -14,7 +14,7 @@
 namespace jlm::llvm
 {
 
-class cfg;
+class ControlFlowGraph;
 class cfg_node;
 
 class domnode final
@@ -98,7 +98,7 @@ private:
 };
 
 std::unique_ptr<domnode>
-domtree(llvm::cfg & cfg);
+domtree(ControlFlowGraph & cfg);
 
 }
 

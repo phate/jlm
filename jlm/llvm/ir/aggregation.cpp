@@ -167,7 +167,7 @@ public:
   }
 
   static std::unique_ptr<aggregation_map>
-  create(llvm::cfg & cfg)
+  create(ControlFlowGraph & cfg)
   {
     auto exit = cfg.exit();
     auto entry = cfg.entry();
@@ -496,7 +496,7 @@ aggregate(cfg_node * entry, cfg_node * exit, aggregation_map & map)
 }
 
 std::unique_ptr<AggregationNode>
-aggregate(llvm::cfg & cfg)
+aggregate(ControlFlowGraph & cfg)
 {
   JLM_ASSERT(is_proper_structured(cfg));
 
