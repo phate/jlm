@@ -17,7 +17,7 @@ test()
 
   ipgraph_module im(jlm::util::FilePath(""), "", "");
 
-  jlm::llvm::cfg cfg(im);
+  ControlFlowGraph cfg(im);
   auto bb0 = BasicBlock::create(cfg);
   auto bb1 = BasicBlock::create(cfg);
   auto bb2 = BasicBlock::create(cfg);

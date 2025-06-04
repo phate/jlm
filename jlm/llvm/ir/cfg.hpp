@@ -80,7 +80,7 @@ class entry_node final : public cfg_node
 public:
   virtual ~entry_node();
 
-  entry_node(llvm::cfg & cfg)
+  entry_node(ControlFlowGraph & cfg)
       : cfg_node(cfg)
   {}
 
@@ -125,7 +125,7 @@ class exit_node final : public cfg_node
 public:
   virtual ~exit_node();
 
-  exit_node(llvm::cfg & cfg)
+  exit_node(ControlFlowGraph & cfg)
       : cfg_node(cfg)
   {}
 
@@ -158,9 +158,7 @@ private:
   std::vector<const variable *> results_;
 };
 
-/* control flow graph */
-
-class cfg final
+class ControlFlowGraph final
 {
   class iterator final
   {
@@ -269,22 +267,20 @@ class cfg final
   };
 
 public:
-  ~cfg()
-  {}
+  ~ControlFlowGraph() noexcept = default;
 
-  cfg(ipgraph_module & im);
+  explicit ControlFlowGraph(ipgraph_module & im);
 
-  cfg(const cfg &) = delete;
+  ControlFlowGraph(const ControlFlowGraph &) = delete;
 
-  cfg(cfg &&) = delete;
+  ControlFlowGraph(ControlFlowGraph &&) = delete;
 
-  cfg &
-  operator=(const cfg &) = delete;
+  ControlFlowGraph &
+  operator=(const ControlFlowGraph &) = delete;
 
-  cfg &
-  operator=(cfg &&) = delete;
+  ControlFlowGraph &
+  operator=(ControlFlowGraph &&) = delete;
 
-public:
   inline const_iterator
   begin() const
   {
@@ -329,7 +325,7 @@ public:
     return tmp;
   }
 
-  inline cfg::iterator
+  ControlFlowGraph::iterator
   find_node(BasicBlock * bb)
   {
     std::unique_ptr<BasicBlock> up(bb);
@@ -338,10 +334,10 @@ public:
     return iterator(it);
   }
 
-  static cfg::iterator
-  remove_node(cfg::iterator & it);
+  static ControlFlowGraph::iterator
+  remove_node(ControlFlowGraph::iterator & it);
 
-  static cfg::iterator
+  static ControlFlowGraph::iterator
   remove_node(BasicBlock * bb);
 
   inline size_t
@@ -370,14 +366,14 @@ public:
     return rvsdg::FunctionType(arguments, results);
   }
 
-  static std::unique_ptr<cfg>
+  static std::unique_ptr<ControlFlowGraph>
   create(ipgraph_module & im)
   {
-    return std::unique_ptr<cfg>(new cfg(im));
+    return std::make_unique<ControlFlowGraph>(im);
   }
 
   static std::string
-  ToAscii(const cfg & controlFlowGraph);
+  ToAscii(const ControlFlowGraph & controlFlowGraph);
 
 private:
   static std::string
@@ -404,10 +400,10 @@ private:
 };
 
 std::vector<cfg_node *>
-postorder(const llvm::cfg & cfg);
+postorder(const ControlFlowGraph & cfg);
 
 std::vector<cfg_node *>
-reverse_postorder(const llvm::cfg & cfg);
+reverse_postorder(const ControlFlowGraph & cfg);
 
 /** Order CFG nodes breadth-first
  *
@@ -418,10 +414,10 @@ reverse_postorder(const llvm::cfg & cfg);
  * return A vector with all CFG nodes ordered breadth-first
  */
 std::vector<cfg_node *>
-breadth_first(const llvm::cfg & cfg);
+breadth_first(const ControlFlowGraph & cfg);
 
 size_t
-ntacs(const llvm::cfg & cfg);
+ntacs(const ControlFlowGraph & cfg);
 
 }
 

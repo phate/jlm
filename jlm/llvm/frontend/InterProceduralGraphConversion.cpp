@@ -142,7 +142,7 @@ public:
   }
 
   void
-  Start(const llvm::cfg & cfg) noexcept
+  Start(const ControlFlowGraph & cfg) noexcept
   {
     AddMeasurement(Label::NumCfgNodes, cfg.nnodes());
     AddTimer(Label::Timer).start();
@@ -173,7 +173,7 @@ public:
   }
 
   void
-  Start(const llvm::cfg & cfg) noexcept
+  Start(const ControlFlowGraph & cfg) noexcept
   {
     AddMeasurement(Label::NumCfgNodes, cfg.nnodes());
     AddTimer(Label::Timer).start();
@@ -328,8 +328,8 @@ public:
 
   void
   CollectControlFlowRestructuringStatistics(
-      const std::function<void(llvm::cfg *)> & restructureControlFlowGraph,
-      llvm::cfg & cfg,
+      const std::function<void(ControlFlowGraph *)> & restructureControlFlowGraph,
+      ControlFlowGraph & cfg,
       std::string functionName)
   {
     auto statistics =
@@ -350,9 +350,9 @@ public:
 
   std::unique_ptr<AggregationNode>
   CollectAggregationStatistics(
-      const std::function<std::unique_ptr<AggregationNode>(llvm::cfg &)> &
+      const std::function<std::unique_ptr<AggregationNode>(ControlFlowGraph &)> &
           aggregateControlFlowGraph,
-      llvm::cfg & cfg,
+      ControlFlowGraph & cfg,
       std::string functionName)
   {
     auto statistics = AggregationStatistics::Create(SourceFileName_, std::move(functionName));
@@ -847,11 +847,11 @@ ConvertAggregationNode(
 
 static void
 RestructureControlFlowGraph(
-    llvm::cfg & controlFlowGraph,
+    ControlFlowGraph & controlFlowGraph,
     const std::string & functionName,
     InterProceduralGraphToRvsdgStatisticsCollector & statisticsCollector)
 {
-  auto restructureControlFlowGraph = [](llvm::cfg * controlFlowGraph)
+  auto restructureControlFlowGraph = [](ControlFlowGraph * controlFlowGraph)
   {
     RestructureControlFlow(controlFlowGraph);
     straighten(*controlFlowGraph);
@@ -865,11 +865,11 @@ RestructureControlFlowGraph(
 
 static std::unique_ptr<AggregationNode>
 AggregateControlFlowGraph(
-    llvm::cfg & controlFlowGraph,
+    ControlFlowGraph & controlFlowGraph,
     const std::string & functionName,
     InterProceduralGraphToRvsdgStatisticsCollector & statisticsCollector)
 {
-  auto aggregateControlFlowGraph = [](llvm::cfg & controlFlowGraph)
+  auto aggregateControlFlowGraph = [](ControlFlowGraph & controlFlowGraph)
   {
     auto aggregationTreeRoot = aggregate(controlFlowGraph);
     AggregationNode::normalize(*aggregationTreeRoot);

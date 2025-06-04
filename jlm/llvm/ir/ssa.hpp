@@ -9,10 +9,10 @@
 namespace jlm::llvm
 {
 
-class cfg;
+class ControlFlowGraph;
 
 void
-destruct_ssa(llvm::cfg & cfg);
+destruct_ssa(ControlFlowGraph & cfg);
 
 }
 

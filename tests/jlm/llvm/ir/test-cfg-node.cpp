@@ -18,7 +18,7 @@ test_divert_inedges()
 
   ipgraph_module im(jlm::util::FilePath(""), "", "");
 
-  jlm::llvm::cfg cfg(im);
+  ControlFlowGraph cfg(im);
 
   auto bb0 = BasicBlock::create(cfg);
 
@@ -26,7 +26,7 @@ test_divert_inedges()
   bb0->add_outedge(bb0);
   bb0->add_outedge(cfg.exit());
 
-  std::cout << cfg::ToAscii(cfg) << std::flush;
+  std::cout << ControlFlowGraph::ToAscii(cfg) << std::flush;
 
   /* verify inedge diversion */
 

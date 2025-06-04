@@ -15,11 +15,11 @@ namespace jlm::llvm
 {
 
 void
-destruct_ssa(llvm::cfg & cfg)
+destruct_ssa(ControlFlowGraph & cfg)
 {
   JLM_ASSERT(is_valid(cfg));
 
-  auto collect_phi_blocks = [](llvm::cfg & cfg)
+  auto collect_phi_blocks = [](ControlFlowGraph & cfg)
   {
     std::unordered_set<BasicBlock *> phi_blocks;
     for (auto & bb : cfg)
@@ -31,7 +31,8 @@ destruct_ssa(llvm::cfg & cfg)
     return phi_blocks;
   };
 
-  auto eliminate_phis = [](llvm::cfg & cfg, const std::unordered_set<BasicBlock *> & phi_blocks)
+  auto eliminate_phis =
+      [](ControlFlowGraph & cfg, const std::unordered_set<BasicBlock *> & phi_blocks)
   {
     if (phi_blocks.empty())
       return;

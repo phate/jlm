@@ -13,7 +13,7 @@
 namespace jlm::llvm
 {
 
-class cfg;
+class ControlFlowGraph;
 
 class AggregationNode
 {
@@ -555,7 +555,7 @@ public:
  * information.
  */
 std::unique_ptr<AggregationNode>
-aggregate(llvm::cfg & cfg);
+aggregate(ControlFlowGraph & cfg);
 
 size_t
 ntacs(const AggregationNode & root);

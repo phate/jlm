@@ -20,7 +20,7 @@ test_straightening()
   auto vt = jlm::tests::valuetype::Create();
   ipgraph_module module(jlm::util::FilePath(""), "", "");
 
-  jlm::llvm::cfg cfg(module);
+  ControlFlowGraph cfg(module);
   auto bb1 = BasicBlock::create(cfg);
   auto bb2 = BasicBlock::create(cfg);
   auto bb3 = BasicBlock::create(cfg);
@@ -54,7 +54,7 @@ test_is_structured()
 
   ipgraph_module module(jlm::util::FilePath(""), "", "");
 
-  jlm::llvm::cfg cfg(module);
+  ControlFlowGraph cfg(module);
   auto split = BasicBlock::create(cfg);
   auto bb = BasicBlock::create(cfg);
   auto join = BasicBlock::create(cfg);
@@ -65,7 +65,7 @@ test_is_structured()
   bb->add_outedge(join);
   join->add_outedge(cfg.exit());
 
-  std::cout << cfg::ToAscii(cfg) << std::flush;
+  std::cout << ControlFlowGraph::ToAscii(cfg) << std::flush;
   assert(is_structured(cfg));
 }
 

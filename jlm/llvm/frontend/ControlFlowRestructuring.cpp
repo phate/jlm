@@ -460,7 +460,7 @@ restructure_branches(cfg_node * entry, cfg_node * exit)
 }
 
 void
-RestructureLoops(llvm::cfg * cfg)
+RestructureLoops(ControlFlowGraph * cfg)
 {
   JLM_ASSERT(is_closed(*cfg));
 
@@ -472,7 +472,7 @@ RestructureLoops(llvm::cfg * cfg)
 }
 
 void
-RestructureBranches(llvm::cfg * cfg)
+RestructureBranches(ControlFlowGraph * cfg)
 {
   JLM_ASSERT(is_acyclic(*cfg));
   restructure_branches(cfg->entry(), cfg->exit());
@@ -487,7 +487,7 @@ restructure(cfg_node * entry, cfg_node * exit, std::vector<tcloop> & tcloops)
 }
 
 void
-RestructureControlFlow(llvm::cfg * cfg)
+RestructureControlFlow(ControlFlowGraph * cfg)
 {
   JLM_ASSERT(is_closed(*cfg));
 
