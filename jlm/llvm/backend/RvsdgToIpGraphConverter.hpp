@@ -34,7 +34,7 @@ namespace delta
 class node;
 }
 
-class cfg;
+class ControlFlowGraph;
 class data_node_init;
 class ipgraph_module;
 class RvsdgModule;
@@ -96,7 +96,7 @@ private:
   void
   ConvertSimpleNode(const rvsdg::SimpleNode & simpleNode);
 
-  std::unique_ptr<llvm::cfg>
+  std::unique_ptr<ControlFlowGraph>
   CreateControlFlowGraph(const rvsdg::LambdaNode & lambda);
 
   void

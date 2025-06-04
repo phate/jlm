@@ -17,7 +17,7 @@ test()
 
   ipgraph_module module(jlm::util::FilePath(""), "", "");
 
-  jlm::llvm::cfg cfg(module);
+  ControlFlowGraph cfg(module);
   auto bb0 = BasicBlock::create(cfg);
   auto bb1 = BasicBlock::create(cfg);
 
@@ -30,7 +30,7 @@ test()
   bb0->add_outedge(cfg.exit());
   bb1->add_outedge(bb1);
 
-  std::cout << cfg::ToAscii(cfg) << std::flush;
+  std::cout << ControlFlowGraph::ToAscii(cfg) << std::flush;
 
   purge(cfg);
 

@@ -12,7 +12,7 @@
 static bool
 is_entry(const jlm::llvm::AggregationNode * node)
 {
-  return jlm::llvm::is<jlm::llvm::entryaggnode>(node) && node->nchildren() == 0;
+  return jlm::llvm::is<jlm::llvm::EntryAggregationNode>(node) && node->nchildren() == 0;
 }
 
 static bool
@@ -77,7 +77,7 @@ test_linear_reduction()
 
   auto setup_cfg = [](jlm::llvm::ipgraph_module & module)
   {
-    auto cfg = cfg::create(module);
+    auto cfg = ControlFlowGraph::create(module);
 
     auto bb = jlm::llvm::BasicBlock::create(*cfg);
     cfg->exit()->divert_inedges(bb);
@@ -113,7 +113,7 @@ test_loop_reduction()
 
   auto setup_cfg = [](jlm::llvm::ipgraph_module & module)
   {
-    auto cfg = cfg::create(module);
+    auto cfg = ControlFlowGraph::create(module);
 
     auto bb1 = jlm::llvm::BasicBlock::create(*cfg);
     auto bb2 = jlm::llvm::BasicBlock::create(*cfg);
@@ -164,7 +164,7 @@ test_branch_reduction()
 
   auto setup_cfg = [](jlm::llvm::ipgraph_module & module)
   {
-    auto cfg = cfg::create(module);
+    auto cfg = ControlFlowGraph::create(module);
 
     auto split = jlm::llvm::BasicBlock::create(*cfg);
     auto bb1 = jlm::llvm::BasicBlock::create(*cfg);
@@ -232,7 +232,7 @@ test_branch_loop_reduction()
 
   auto setup_cfg = [](jlm::llvm::ipgraph_module & module)
   {
-    auto cfg = cfg::create(module);
+    auto cfg = ControlFlowGraph::create(module);
     auto split = jlm::llvm::BasicBlock::create(*cfg);
     auto bb1 = jlm::llvm::BasicBlock::create(*cfg);
     auto bb2 = jlm::llvm::BasicBlock::create(*cfg);
@@ -309,7 +309,7 @@ test_loop_branch_reduction()
 
   auto setup_cfg = [](jlm::llvm::ipgraph_module & module)
   {
-    auto cfg = cfg::create(module);
+    auto cfg = ControlFlowGraph::create(module);
 
     auto split = jlm::llvm::BasicBlock::create(*cfg);
     auto bb1 = jlm::llvm::BasicBlock::create(*cfg);
@@ -376,7 +376,7 @@ test_ifthen_reduction()
 
   auto setup_cfg = [](jlm::llvm::ipgraph_module & module)
   {
-    auto cfg = cfg::create(module);
+    auto cfg = ControlFlowGraph::create(module);
 
     auto split = jlm::llvm::BasicBlock::create(*cfg);
     auto bb1 = jlm::llvm::BasicBlock::create(*cfg);
@@ -437,7 +437,7 @@ test_branch_and_loop()
 
   auto setup_cfg = [](jlm::llvm::ipgraph_module & module)
   {
-    auto cfg = cfg::create(module);
+    auto cfg = ControlFlowGraph::create(module);
 
     auto split = jlm::llvm::BasicBlock::create(*cfg);
     auto bb1 = jlm::llvm::BasicBlock::create(*cfg);

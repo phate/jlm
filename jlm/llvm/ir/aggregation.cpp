@@ -55,25 +55,22 @@ AggregationNode::normalize(AggregationNode & node)
     normalize(child);
 }
 
-/* entryaggnode class */
+EntryAggregationNode::~EntryAggregationNode() noexcept = default;
 
-entryaggnode::~entryaggnode()
-{}
-
-entryaggnode::constiterator
-entryaggnode::begin() const
+EntryAggregationNode::constiterator
+EntryAggregationNode::begin() const
 {
   return constiterator(arguments_.begin());
 }
 
-entryaggnode::constiterator
-entryaggnode::end() const
+EntryAggregationNode::constiterator
+EntryAggregationNode::end() const
 {
   return constiterator(arguments_.end());
 }
 
 std::string
-entryaggnode::debug_string() const
+EntryAggregationNode::debug_string() const
 {
   return "entry";
 }
@@ -167,13 +164,13 @@ public:
   }
 
   static std::unique_ptr<aggregation_map>
-  create(llvm::cfg & cfg)
+  create(ControlFlowGraph & cfg)
   {
     auto exit = cfg.exit();
     auto entry = cfg.entry();
     auto map = std::make_unique<aggregation_map>();
 
-    map->map_[entry] = entryaggnode::create(entry->arguments());
+    map->map_[entry] = EntryAggregationNode::create(entry->arguments());
     map->map_[exit] = exitaggnode::create(exit->results());
     for (auto & node : cfg)
     {
@@ -496,7 +493,7 @@ aggregate(cfg_node * entry, cfg_node * exit, aggregation_map & map)
 }
 
 std::unique_ptr<AggregationNode>
-aggregate(llvm::cfg & cfg)
+aggregate(ControlFlowGraph & cfg)
 {
   JLM_ASSERT(is_proper_structured(cfg));
 

@@ -17,7 +17,7 @@ test_acyclic_structured()
 
   ipgraph_module module(jlm::util::FilePath(""), "", "");
 
-  jlm::llvm::cfg cfg(module);
+  ControlFlowGraph cfg(module);
   auto bb1 = BasicBlock::create(cfg);
   auto bb2 = BasicBlock::create(cfg);
   auto bb3 = BasicBlock::create(cfg);
@@ -47,7 +47,7 @@ test_acyclic_unstructured()
 
   ipgraph_module module(jlm::util::FilePath(""), "", "");
 
-  jlm::llvm::cfg cfg(module);
+  ControlFlowGraph cfg(module);
   auto bb1 = BasicBlock::create(cfg);
   auto bb2 = BasicBlock::create(cfg);
   auto bb3 = BasicBlock::create(cfg);
@@ -77,7 +77,7 @@ test_dowhile()
 
   ipgraph_module module(jlm::util::FilePath(""), "", "");
 
-  jlm::llvm::cfg cfg(module);
+  ControlFlowGraph cfg(module);
   auto bb1 = BasicBlock::create(cfg);
   auto bb2 = BasicBlock::create(cfg);
   auto bb3 = BasicBlock::create(cfg);
@@ -108,7 +108,7 @@ test_while()
 
   ipgraph_module module(jlm::util::FilePath(""), "", "");
 
-  jlm::llvm::cfg cfg(module);
+  ControlFlowGraph cfg(module);
   auto bb1 = BasicBlock::create(cfg);
   auto bb2 = BasicBlock::create(cfg);
 
@@ -134,7 +134,7 @@ test_irreducible()
 
   ipgraph_module module(jlm::util::FilePath(""), "", "");
 
-  jlm::llvm::cfg cfg(module);
+  ControlFlowGraph cfg(module);
   auto bb1 = BasicBlock::create(cfg);
   auto bb2 = BasicBlock::create(cfg);
   auto bb3 = BasicBlock::create(cfg);
@@ -166,7 +166,7 @@ test_acyclic_unstructured_in_dowhile()
 
   ipgraph_module module(jlm::util::FilePath(""), "", "");
 
-  jlm::llvm::cfg cfg(module);
+  ControlFlowGraph cfg(module);
   auto bb1 = BasicBlock::create(cfg);
   auto bb2 = BasicBlock::create(cfg);
   auto bb3 = BasicBlock::create(cfg);
@@ -196,7 +196,7 @@ test_lor_before_dowhile()
 
   ipgraph_module module(jlm::util::FilePath(""), "", "");
 
-  jlm::llvm::cfg cfg(module);
+  ControlFlowGraph cfg(module);
   auto bb1 = BasicBlock::create(cfg);
   auto bb2 = BasicBlock::create(cfg);
   auto bb3 = BasicBlock::create(cfg);
@@ -226,7 +226,7 @@ test_static_endless_loop()
 
   ipgraph_module im(jlm::util::FilePath(""), "", "");
 
-  jlm::llvm::cfg cfg(im);
+  ControlFlowGraph cfg(im);
   auto bb1 = BasicBlock::create(cfg);
   auto bb2 = BasicBlock::create(cfg);
 

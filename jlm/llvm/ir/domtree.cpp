@@ -85,7 +85,7 @@ intersect(
   Keith D. Cooper et. al. - A Simple, Fast Dominance Algorithm
 */
 std::unique_ptr<domnode>
-domtree(llvm::cfg & cfg)
+domtree(ControlFlowGraph & cfg)
 {
   JLM_ASSERT(is_closed(cfg));
 

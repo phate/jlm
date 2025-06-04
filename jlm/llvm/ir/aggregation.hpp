@@ -13,7 +13,7 @@
 namespace jlm::llvm
 {
 
-class cfg;
+class ControlFlowGraph;
 
 class AggregationNode
 {
@@ -263,16 +263,14 @@ is(const AggregationNode * node)
   return dynamic_cast<const T *>(node) != nullptr;
 }
 
-/* entry node class */
-
-class entryaggnode final : public AggregationNode
+class EntryAggregationNode final : public AggregationNode
 {
   class constiterator;
 
 public:
-  virtual ~entryaggnode();
+  ~EntryAggregationNode() noexcept override;
 
-  entryaggnode(const std::vector<llvm::argument *> & arguments)
+  explicit EntryAggregationNode(const std::vector<llvm::argument *> & arguments)
       : arguments_(arguments)
   {}
 
@@ -301,14 +299,14 @@ public:
   static std::unique_ptr<AggregationNode>
   create(const std::vector<llvm::argument *> & arguments)
   {
-    return std::make_unique<entryaggnode>(arguments);
+    return std::make_unique<EntryAggregationNode>(arguments);
   }
 
 private:
   std::vector<llvm::argument *> arguments_;
 };
 
-class entryaggnode::constiterator final
+class EntryAggregationNode::constiterator final
 {
 public:
   using iterator_category = std::forward_iterator_tag;
@@ -557,7 +555,7 @@ public:
  * information.
  */
 std::unique_ptr<AggregationNode>
-aggregate(llvm::cfg & cfg);
+aggregate(ControlFlowGraph & cfg);
 
 size_t
 ntacs(const AggregationNode & root);

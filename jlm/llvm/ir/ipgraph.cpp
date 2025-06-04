@@ -133,7 +133,7 @@ function_node::hasBody() const noexcept
 }
 
 void
-function_node::add_cfg(std::unique_ptr<llvm::cfg> cfg)
+function_node::add_cfg(std::unique_ptr<llvm::ControlFlowGraph> cfg)
 {
   if (cfg->fcttype() != fcttype())
     throw util::error("CFG does not match the function node's type.");

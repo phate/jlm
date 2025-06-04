@@ -45,7 +45,7 @@ test()
 
   /* setup cfg */
 
-  jlm::llvm::cfg cfg(im);
+  ControlFlowGraph cfg(im);
   auto bb1 = BasicBlock::create(cfg);
   auto bb2 = BasicBlock::create(cfg);
   auto bb3 = BasicBlock::create(cfg);

@@ -1462,7 +1462,7 @@ get_match(const llvm::tac * branch)
 }
 
 static bool
-has_return_value(const llvm::cfg & cfg)
+has_return_value(const ControlFlowGraph & cfg)
 {
   for (size_t n = 0; n < cfg.exit()->nresults(); n++)
   {
@@ -1784,7 +1784,7 @@ IpGraphToLlvmConverter::convert_attributes(const function_node & f)
 
 std::vector<cfg_node *>
 IpGraphToLlvmConverter::ConvertBasicBlocks(
-    const llvm::cfg & controlFlowGraph,
+    const ControlFlowGraph & controlFlowGraph,
     ::llvm::Function & function)
 {
   auto nodes = breadth_first(controlFlowGraph);
@@ -1806,11 +1806,11 @@ IpGraphToLlvmConverter::ConvertBasicBlocks(
 }
 
 void
-IpGraphToLlvmConverter::convert_cfg(llvm::cfg & cfg, ::llvm::Function & f)
+IpGraphToLlvmConverter::convert_cfg(ControlFlowGraph & cfg, ::llvm::Function & f)
 {
   JLM_ASSERT(is_closed(cfg));
 
-  auto add_arguments = [&](const llvm::cfg & cfg, ::llvm::Function & f)
+  auto add_arguments = [&](const ControlFlowGraph & cfg, ::llvm::Function & f)
   {
     size_t n = 0;
     for (auto & llvmarg : f.args())

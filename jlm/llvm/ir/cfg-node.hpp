@@ -18,7 +18,7 @@ namespace jlm::llvm
 {
 
 class BasicBlock;
-class cfg;
+class ControlFlowGraph;
 class cfg_node;
 
 class cfg_edge final
@@ -92,12 +92,12 @@ public:
   virtual ~cfg_node();
 
 protected:
-  inline cfg_node(llvm::cfg & cfg)
+  explicit cfg_node(ControlFlowGraph & cfg)
       : cfg_(cfg)
   {}
 
 public:
-  llvm::cfg &
+  ControlFlowGraph &
   cfg() const noexcept
   {
     return cfg_;
@@ -197,7 +197,7 @@ public:
   has_selfloop_edge() const noexcept;
 
 private:
-  llvm::cfg & cfg_;
+  ControlFlowGraph & cfg_;
   std::vector<std::unique_ptr<cfg_edge>> outedges_;
   std::unordered_set<cfg_edge *> inedges_;
 

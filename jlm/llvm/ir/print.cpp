@@ -58,7 +58,7 @@ emit_function_node(const ipgraph_node & clg_node)
   }
   operands += ">";
 
-  std::string cfg = node.cfg() ? cfg::ToAscii(*node.cfg()) : "";
+  std::string cfg = node.cfg() ? ControlFlowGraph::ToAscii(*node.cfg()) : "";
   std::string exported = !is_externally_visible(node.linkage()) ? "static" : "";
 
   return exported + results + " " + node.name() + " " + operands + "\n{\n" + cfg + "\n}\n";
@@ -168,7 +168,7 @@ emit_node(const cfg_node & node)
 }
 
 std::string
-to_dot(const llvm::cfg & cfg)
+to_dot(const ControlFlowGraph & cfg)
 {
   auto entry = cfg.entry();
   auto exit = cfg.exit();

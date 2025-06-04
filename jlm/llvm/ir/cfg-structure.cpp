@@ -128,7 +128,7 @@ strongconnect(
 }
 
 std::vector<llvm::scc>
-find_sccs(const llvm::cfg & cfg)
+find_sccs(const ControlFlowGraph & cfg)
 {
   JLM_ASSERT(is_closed(cfg));
 
@@ -147,12 +147,12 @@ find_sccs(cfg_node * entry, cfg_node * exit)
   return sccs;
 }
 
-static inline std::unique_ptr<jlm::llvm::cfg>
-copy_structural(const jlm::llvm::cfg & in)
+static std::unique_ptr<ControlFlowGraph>
+copy_structural(const ControlFlowGraph & in)
 {
   JLM_ASSERT(is_valid(in));
 
-  std::unique_ptr<jlm::llvm::cfg> out(new jlm::llvm::cfg(in.module()));
+  std::unique_ptr<ControlFlowGraph> out(new ControlFlowGraph(in.module()));
   out->entry()->remove_outedge(0);
 
   /* create all nodes */
@@ -518,7 +518,7 @@ is_valid_basic_block(const BasicBlock & bb)
 }
 
 static bool
-has_valid_entry(const llvm::cfg & cfg)
+has_valid_entry(const ControlFlowGraph & cfg)
 {
   if (!cfg.entry()->no_predecessor())
     return false;
@@ -530,13 +530,13 @@ has_valid_entry(const llvm::cfg & cfg)
 }
 
 static bool
-has_valid_exit(const llvm::cfg & cfg)
+has_valid_exit(const ControlFlowGraph & cfg)
 {
   return cfg.exit()->no_successor();
 }
 
 bool
-is_valid(const llvm::cfg & cfg)
+is_valid(const ControlFlowGraph & cfg)
 {
   if (!has_valid_entry(cfg))
     return false;
@@ -555,7 +555,7 @@ is_valid(const llvm::cfg & cfg)
 }
 
 bool
-is_closed(const llvm::cfg & cfg)
+is_closed(const ControlFlowGraph & cfg)
 {
   JLM_ASSERT(is_valid(cfg));
 
@@ -569,7 +569,7 @@ is_closed(const llvm::cfg & cfg)
 }
 
 bool
-is_linear(const llvm::cfg & cfg)
+is_linear(const ControlFlowGraph & cfg)
 {
   JLM_ASSERT(is_closed(cfg));
 
@@ -584,7 +584,7 @@ is_linear(const llvm::cfg & cfg)
 
 static inline bool
 reduce(
-    const llvm::cfg & cfg,
+    const ControlFlowGraph & cfg,
     const std::function<bool(llvm::cfg_node *, std::unordered_set<llvm::cfg_node *> &)> & f)
 {
   JLM_ASSERT(is_closed(cfg));
@@ -605,25 +605,25 @@ reduce(
 }
 
 bool
-is_structured(const llvm::cfg & cfg)
+is_structured(const ControlFlowGraph & cfg)
 {
   return reduce(cfg, reduce_structured);
 }
 
 bool
-is_proper_structured(const llvm::cfg & cfg)
+is_proper_structured(const ControlFlowGraph & cfg)
 {
   return reduce(cfg, reduce_proper_structured);
 }
 
 bool
-is_reducible(const llvm::cfg & cfg)
+is_reducible(const ControlFlowGraph & cfg)
 {
   return reduce(cfg, reduce_reducible);
 }
 
 void
-straighten(llvm::cfg & cfg)
+straighten(ControlFlowGraph & cfg)
 {
   auto it = cfg.begin();
   while (it != cfg.end())
@@ -652,7 +652,7 @@ straighten(llvm::cfg & cfg)
 }
 
 void
-purge(llvm::cfg & cfg)
+purge(ControlFlowGraph & cfg)
 {
   JLM_ASSERT(is_valid(cfg));
 
@@ -692,7 +692,7 @@ purge(llvm::cfg & cfg)
  * @brief Find all nodes dominated by the entry node.
  */
 static std::unordered_set<const cfg_node *>
-compute_livenodes(const llvm::cfg & cfg)
+compute_livenodes(const ControlFlowGraph & cfg)
 {
   std::unordered_set<const cfg_node *> visited;
   std::unordered_set<cfg_node *> to_visit({ cfg.entry() });
@@ -717,7 +717,7 @@ compute_livenodes(const llvm::cfg & cfg)
  * @brief Find all nodes that are NOT dominated by the entry node.
  */
 static std::unordered_set<cfg_node *>
-compute_deadnodes(llvm::cfg & cfg)
+compute_deadnodes(ControlFlowGraph & cfg)
 {
   auto livenodes = compute_livenodes(cfg);
 
@@ -802,7 +802,7 @@ remove_deadnodes(const std::unordered_set<cfg_node *> & deadnodes)
 }
 
 void
-prune(llvm::cfg & cfg)
+prune(ControlFlowGraph & cfg)
 {
   JLM_ASSERT(is_valid(cfg));
 

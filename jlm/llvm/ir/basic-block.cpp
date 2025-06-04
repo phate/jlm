@@ -34,7 +34,7 @@ BasicBlock::insert_before_branch(tacsvector_t & tv)
 }
 
 BasicBlock *
-BasicBlock::create(llvm::cfg & cfg)
+BasicBlock::create(ControlFlowGraph & cfg)
 {
   std::unique_ptr<BasicBlock> node(new BasicBlock(cfg));
   return static_cast<BasicBlock *>(cfg.add_node(std::move(node)));

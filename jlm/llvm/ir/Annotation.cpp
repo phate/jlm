@@ -197,7 +197,7 @@ static void
 AnnotateReadWrite(const AggregationNode &, AnnotationMap &);
 
 static void
-AnnotateReadWrite(const entryaggnode & entryAggregationNode, AnnotationMap & demandMap)
+AnnotateReadWrite(const EntryAggregationNode & entryAggregationNode, AnnotationMap & demandMap)
 {
   VariableSet allWriteSet;
   VariableSet fullWriteSet;
@@ -335,7 +335,7 @@ AnnotateReadWrite(const AggregationNode & aggregationNode, AnnotationMap & deman
   for (size_t n = 0; n < aggregationNode.nchildren(); n++)
     AnnotateReadWrite(*aggregationNode.child(n), demandMap);
 
-  if (auto entryNode = dynamic_cast<const entryaggnode *>(&aggregationNode))
+  if (auto entryNode = dynamic_cast<const EntryAggregationNode *>(&aggregationNode))
   {
     AnnotateReadWrite(*entryNode, demandMap);
   }
@@ -370,7 +370,7 @@ AnnotateDemandSet(const AggregationNode &, VariableSet &, AnnotationMap &);
 
 static void
 AnnotateDemandSet(
-    const entryaggnode & entryAggregationNode,
+    const EntryAggregationNode & entryAggregationNode,
     VariableSet & workingSet,
     AnnotationMap & demandMap)
 {
@@ -475,7 +475,7 @@ AnnotateDemandSet(
   static std::unordered_map<
       std::type_index,
       void (*)(const AggregationNode *, VariableSet &, AnnotationMap &)>
-      map({ { typeid(entryaggnode), AnnotateDemandSet<entryaggnode> },
+      map({ { typeid(EntryAggregationNode), AnnotateDemandSet<EntryAggregationNode> },
             { typeid(exitaggnode), AnnotateDemandSet<exitaggnode> },
             { typeid(blockaggnode), AnnotateDemandSet<blockaggnode> },
             { typeid(linearaggnode), AnnotateDemandSet<linearaggnode> },

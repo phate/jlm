@@ -31,7 +31,7 @@ LoadConversion()
 
   ipgraph_module ipgModule(jlm::util::FilePath(""), "", "");
 
-  auto cfg = cfg::create(ipgModule);
+  auto cfg = ControlFlowGraph::create(ipgModule);
   auto addressArgument =
       cfg->entry()->append_argument(argument::create("address", PointerType::Create()));
   auto memoryStateArgument =
@@ -95,7 +95,7 @@ LoadVolatileConversion()
 
   ipgraph_module ipgModule(jlm::util::FilePath(""), "", "");
 
-  auto cfg = cfg::create(ipgModule);
+  auto cfg = ControlFlowGraph::create(ipgModule);
   auto addressArgument = cfg->entry()->append_argument(argument::create("address", pointerType));
   auto ioStateArgument = cfg->entry()->append_argument(argument::create("ioState", ioStateType));
   auto memoryStateArgument =
@@ -163,7 +163,7 @@ MemCpyConversion()
 
   ipgraph_module ipgModule(jlm::util::FilePath(""), "", "");
 
-  auto cfg = cfg::create(ipgModule);
+  auto cfg = ControlFlowGraph::create(ipgModule);
   auto destinationArgument =
       cfg->entry()->append_argument(argument::create("destination", pointerType));
   auto sourceArgument = cfg->entry()->append_argument(argument::create("source", pointerType));
@@ -231,7 +231,7 @@ MemCpyVolatileConversion()
 
   ipgraph_module ipgModule(jlm::util::FilePath(""), "", "");
 
-  auto cfg = cfg::create(ipgModule);
+  auto cfg = ControlFlowGraph::create(ipgModule);
   auto & destinationArgument =
       *cfg->entry()->append_argument(argument::create("destination", pointerType));
   auto & sourceArgument = *cfg->entry()->append_argument(argument::create("source", pointerType));
@@ -297,7 +297,7 @@ StoreConversion()
 
   ipgraph_module ipgModule(jlm::util::FilePath(""), "", "");
 
-  auto cfg = cfg::create(ipgModule);
+  auto cfg = ControlFlowGraph::create(ipgModule);
   auto addressArgument = cfg->entry()->append_argument(argument::create("address", pointerType));
   auto valueArgument = cfg->entry()->append_argument(argument::create("value", bit64Type));
   auto memoryStateArgument =
@@ -363,7 +363,7 @@ StoreVolatileConversion()
 
   ipgraph_module ipgModule(jlm::util::FilePath(""), "", "");
 
-  auto cfg = cfg::create(ipgModule);
+  auto cfg = ControlFlowGraph::create(ipgModule);
   auto addressArgument = cfg->entry()->append_argument(argument::create("address", pointerType));
   auto valueArgument = cfg->entry()->append_argument(argument::create("value", bit64Type));
   auto ioStateArgument = cfg->entry()->append_argument(argument::create("ioState", ioStateType));
@@ -432,7 +432,7 @@ IntegerConstant()
 
   ipgraph_module im(jlm::util::FilePath(""), "", "");
 
-  auto cfg = cfg::create(im);
+  auto cfg = ControlFlowGraph::create(im);
   auto bb = BasicBlock::create(*cfg);
   bb->append_last(tac::create(IntegerConstantOperation(vr), {}));
   auto c = bb->last()->result(0);
@@ -469,7 +469,7 @@ Malloc()
     auto pt = PointerType::Create();
     auto im = ipgraph_module::create(jlm::util::FilePath(""), "", "");
 
-    auto cfg = cfg::create(*im);
+    auto cfg = ControlFlowGraph::create(*im);
     auto bb = BasicBlock::create(*cfg);
     cfg->exit()->divert_inedges(bb);
     bb->add_outedge(cfg->exit());
@@ -535,7 +535,7 @@ Free()
         { MemoryStateType::Create(), IOStateType::Create() });
     auto f = function_node::create(ipgmod->ipgraph(), "f", ft, linkage::external_linkage);
 
-    auto cfg = cfg::create(*ipgmod);
+    auto cfg = ControlFlowGraph::create(*ipgmod);
     auto arg0 = cfg->entry()->append_argument(argument::create("pointer", pt));
     auto arg1 = cfg->entry()->append_argument(argument::create("memstate", mt));
     auto arg2 = cfg->entry()->append_argument(argument::create("iostate", iot));
@@ -589,7 +589,7 @@ IgnoreMemoryState()
   auto mt = MemoryStateType::Create();
   ipgraph_module m(jlm::util::FilePath(""), "", "");
 
-  std::unique_ptr<jlm::llvm::cfg> cfg(new jlm::llvm::cfg(m));
+  std::unique_ptr<ControlFlowGraph> cfg(new ControlFlowGraph(m));
   auto bb = BasicBlock::create(*cfg);
   cfg->exit()->divert_inedges(bb);
   bb->add_outedge(cfg->exit());
@@ -623,7 +623,7 @@ SelectWithState()
   auto mt = MemoryStateType::Create();
   ipgraph_module m(jlm::util::FilePath(""), "", "");
 
-  std::unique_ptr<jlm::llvm::cfg> cfg(new jlm::llvm::cfg(m));
+  std::unique_ptr<ControlFlowGraph> cfg(new ControlFlowGraph(m));
   auto bb = BasicBlock::create(*cfg);
   cfg->exit()->divert_inedges(bb);
   bb->add_outedge(cfg->exit());

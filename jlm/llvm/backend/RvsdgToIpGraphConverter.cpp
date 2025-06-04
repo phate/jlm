@@ -73,14 +73,14 @@ public:
     LastProcessedBasicBlock = lastProcessedBasicBlock;
   }
 
-  llvm::cfg *
+  ControlFlowGraph *
   GetControlFlowGraph() const noexcept
   {
     return ControlFlowGraph_;
   }
 
   void
-  SetControlFlowGraph(llvm::cfg * cfg) noexcept
+  SetControlFlowGraph(ControlFlowGraph * cfg) noexcept
   {
     ControlFlowGraph_ = cfg;
   }
@@ -92,7 +92,7 @@ public:
   }
 
 private:
-  llvm::cfg * ControlFlowGraph_;
+  ControlFlowGraph * ControlFlowGraph_;
   ipgraph_module & IPGraphModule_;
   BasicBlock * LastProcessedBasicBlock;
   std::unordered_map<const rvsdg::Output *, const llvm::variable *> VariableMap_;
@@ -185,13 +185,13 @@ RvsdgToIpGraphConverter::ConvertRegion(rvsdg::Region & region)
   Context_->SetLastProcessedBasicBlock(exitBlock);
 }
 
-std::unique_ptr<llvm::cfg>
+std::unique_ptr<ControlFlowGraph>
 RvsdgToIpGraphConverter::CreateControlFlowGraph(const rvsdg::LambdaNode & lambda)
 {
   JLM_ASSERT(Context_->GetLastProcessedBasicBlock() == nullptr);
   const auto & lambdaOperation = *util::AssertedCast<LlvmLambdaOperation>(&lambda.GetOperation());
 
-  auto controlFlowGraph = cfg::create(Context_->GetIpGraphModule());
+  auto controlFlowGraph = ControlFlowGraph::create(Context_->GetIpGraphModule());
   const auto entryBlock = BasicBlock::create(*controlFlowGraph);
   controlFlowGraph->exit()->divert_inedges(entryBlock);
   Context_->SetLastProcessedBasicBlock(entryBlock);
