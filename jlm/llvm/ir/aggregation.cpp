@@ -75,13 +75,10 @@ EntryAggregationNode::debug_string() const
   return "entry";
 }
 
-/* exitaggnode class */
-
-exitaggnode::~exitaggnode()
-{}
+ExitAggregationNode::~ExitAggregationNode() noexcept = default;
 
 std::string
-exitaggnode::debug_string() const
+ExitAggregationNode::debug_string() const
 {
   return "exit";
 }
@@ -171,7 +168,7 @@ public:
     auto map = std::make_unique<aggregation_map>();
 
     map->map_[entry] = EntryAggregationNode::create(entry->arguments());
-    map->map_[exit] = exitaggnode::create(exit->results());
+    map->map_[exit] = ExitAggregationNode::create(exit->results());
     for (auto & node : cfg)
     {
       auto bb = static_cast<BasicBlock *>(&node);

@@ -362,16 +362,14 @@ private:
   std::vector<llvm::argument *>::const_iterator it_;
 };
 
-/* exit node class */
-
-class exitaggnode final : public AggregationNode
+class ExitAggregationNode final : public AggregationNode
 {
   typedef std::vector<const variable *>::const_iterator const_iterator;
 
 public:
-  virtual ~exitaggnode();
+  ~ExitAggregationNode() noexcept override;
 
-  inline exitaggnode(const std::vector<const variable *> & results)
+  explicit ExitAggregationNode(const std::vector<const variable *> & results)
       : results_(results)
   {}
 
@@ -406,7 +404,7 @@ public:
   static inline std::unique_ptr<AggregationNode>
   create(const std::vector<const variable *> & results)
   {
-    return std::make_unique<exitaggnode>(results);
+    return std::make_unique<ExitAggregationNode>(results);
   }
 
 private:
