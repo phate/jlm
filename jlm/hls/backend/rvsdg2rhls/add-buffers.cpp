@@ -360,12 +360,6 @@ MaximizeBuffers(rvsdg::Region * region)
   }
   for (auto node : nodes)
   {
-    //    if (auto buf = dynamic_cast<const buffer_op *>(&node->GetOperation()))
-    //    {
-    //      divert_users(node, buffer_op::create(*node->input(0)->origin(), capacity,
-    //      buf->pass_through)); remove(node);
-    //    }
-    //    else
     if (auto dl = dynamic_cast<const decoupled_load_op *>(&node->GetOperation()))
     {
       auto capacity = round_up_pow2(MemoryLatency);
@@ -701,7 +695,7 @@ CalculateLoopCycleDepth(
   /* the reason for having two iterations here is a loop value being updated at the end of the loop,
    * for example the nextRow in SPMV. In theory more iterations could be necessary, until things
    * only increase by the iterative intensity.
-   * */
+   */
   // TODO: should there be more iterations of this? We could iterate until there is no more change
   // in the difference. This would also give us the II
   PushCycleFrontier(output_cycles, frontier, stream_backedges, top_muxes);

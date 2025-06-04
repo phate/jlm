@@ -453,13 +453,11 @@ rvsdg2rhls(llvm::RvsdgModule & rhls, util::StatisticsCollector & collector)
   // simplify loops
   tgi.Run(rhls, collector);
   jlm::hls::cne cne;
-  // tginversion seems to duplicate state edge inputs to gammas
   cne.Run(rhls, collector);
   llvmDne.Run(rhls, collector);
   // merge gammas that were pulled out of loops
   merge_gamma(rhls);
   llvmDne.Run(rhls, collector);
-  //  hls::InvariantLambdaMemoryStateRemoval::CreateAndRun(rhls, collector);
   RemoveUnusedStates(rhls);
   // main conversion steps
   distribute_constants(rhls);

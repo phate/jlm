@@ -116,7 +116,8 @@ OptimizeResMemState(rvsdg::Output * res_mem_state)
 
 void
 OptimizeReqMemState(rvsdg::Output * req_mem_state)
-{ // there is no reason to wait for requests, if we already wait for responses, so we kill the rest
+{
+  // there is no reason to wait for requests, if we already wait for responses, so we kill the rest
   // of this state edge
   auto [merge_in, _] = TraceEdgeToMerge(get_mem_state_user(req_mem_state));
   JLM_ASSERT(merge_in);
