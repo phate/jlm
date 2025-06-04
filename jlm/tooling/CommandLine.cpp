@@ -1024,7 +1024,13 @@ JlmHlsCommandLineParser::ParseCommandLineArguments(int argc, const char * const 
   CommandLineOptions_.OutputFiles_ = util::FilePath(outputFolder);
   CommandLineOptions_.ExtractHlsFunction_ = extractHlsFunction;
   CommandLineOptions_.OutputFormat_ = format;
+
+  if (latency<1)
+  {
+    throw jlm::util::error("The --latency must be set to a number larger than zero.");
+  }
   CommandLineOptions_.MemoryLatency_ = latency;
+
 
   return CommandLineOptions_;
 }
