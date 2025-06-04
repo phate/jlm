@@ -31,7 +31,8 @@ destruct_ssa(ControlFlowGraph & cfg)
     return phi_blocks;
   };
 
-  auto eliminate_phis = [](ControlFlowGraph & cfg, const std::unordered_set<BasicBlock *> & phi_blocks)
+  auto eliminate_phis =
+      [](ControlFlowGraph & cfg, const std::unordered_set<BasicBlock *> & phi_blocks)
   {
     if (phi_blocks.empty())
       return;
