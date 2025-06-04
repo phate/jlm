@@ -573,7 +573,7 @@ ConvertAggregationNode(
 
 static void
 Convert(
-    const entryaggnode & entryAggregationNode,
+    const EntryAggregationNode & entryAggregationNode,
     const AnnotationMap & demandMap,
     rvsdg::LambdaNode & lambdaNode,
     RegionalizedVariableMap & regionalizedVariableMap)
@@ -815,7 +815,7 @@ ConvertAggregationNode(
     rvsdg::LambdaNode & lambdaNode,
     RegionalizedVariableMap & regionalizedVariableMap)
 {
-  if (auto entryNode = dynamic_cast<const entryaggnode *>(&aggregationNode))
+  if (auto entryNode = dynamic_cast<const EntryAggregationNode *>(&aggregationNode))
   {
     Convert(*entryNode, demandMap, lambdaNode, regionalizedVariableMap);
   }

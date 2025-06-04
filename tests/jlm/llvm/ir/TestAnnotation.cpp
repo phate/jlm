@@ -81,7 +81,7 @@ TestLinearSubgraphAnnotation()
     bb2.append_last(tac::create(op, { v1 }));
     auto v2 = bb2.last()->result(0);
 
-    auto entryNode = entryaggnode::create({ &argument });
+    auto entryNode = EntryAggregationNode::create({ &argument });
     auto basicBlockNode1 = blockaggnode::create(std::move(bb1));
     auto basicBlockNode2 = blockaggnode::create(std::move(bb2));
     auto exitNode = exitaggnode::create({ v2 });

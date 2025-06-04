@@ -12,7 +12,7 @@
 static bool
 is_entry(const jlm::llvm::AggregationNode * node)
 {
-  return jlm::llvm::is<jlm::llvm::entryaggnode>(node) && node->nchildren() == 0;
+  return jlm::llvm::is<jlm::llvm::EntryAggregationNode>(node) && node->nchildren() == 0;
 }
 
 static bool
