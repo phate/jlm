@@ -21,7 +21,7 @@ test_two_phis()
   auto vt = jlm::tests::valuetype::Create();
   ipgraph_module module(jlm::util::FilePath(""), "", "");
 
-  jlm::llvm::cfg cfg(module);
+  ControlFlowGraph cfg(module);
   auto bb1 = BasicBlock::create(cfg);
   auto bb2 = BasicBlock::create(cfg);
   auto bb3 = BasicBlock::create(cfg);
@@ -49,11 +49,11 @@ test_two_phis()
   bb4->append_last(SsaPhiOperation::create({ { v1, bb2 }, { v2, bb3 } }, vt));
   bb4->append_last(SsaPhiOperation::create({ { v3, bb2 }, { v4, bb3 } }, vt));
 
-  std::cout << cfg::ToAscii(cfg) << std::flush;
+  std::cout << ControlFlowGraph::ToAscii(cfg) << std::flush;
 
   destruct_ssa(cfg);
 
-  std::cout << cfg::ToAscii(cfg) << std::flush;
+  std::cout << ControlFlowGraph::ToAscii(cfg) << std::flush;
 }
 
 static int

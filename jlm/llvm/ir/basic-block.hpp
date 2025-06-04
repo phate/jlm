@@ -19,7 +19,7 @@ public:
   ~BasicBlock() noexcept override;
 
 private:
-  explicit BasicBlock(llvm::cfg & cfg)
+  explicit BasicBlock(ControlFlowGraph & cfg)
       : cfg_node(cfg)
   {}
 
@@ -166,7 +166,7 @@ public:
   insert_before_branch(tacsvector_t & tv);
 
   static BasicBlock *
-  create(llvm::cfg & cfg);
+  create(ControlFlowGraph & cfg);
 
 private:
   taclist tacs_;

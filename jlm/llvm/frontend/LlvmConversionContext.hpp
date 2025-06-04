@@ -25,7 +25,7 @@ class Value;
 namespace jlm::llvm
 {
 
-class cfg;
+class ControlFlowGraph;
 class cfg_node;
 class clg_node;
 class ipgraph_module;

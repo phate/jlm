@@ -217,7 +217,7 @@ private:
   {}
 
 public:
-  inline llvm::cfg *
+  inline llvm::ControlFlowGraph *
   cfg() const noexcept
   {
     return cfg_.get();
@@ -261,7 +261,7 @@ public:
     replaced with \p cfg.
   **/
   void
-  add_cfg(std::unique_ptr<llvm::cfg> cfg);
+  add_cfg(std::unique_ptr<ControlFlowGraph> cfg);
 
   static inline function_node *
   create(
@@ -293,7 +293,7 @@ private:
   std::string name_;
   llvm::linkage linkage_;
   attributeset attributes_;
-  std::unique_ptr<llvm::cfg> cfg_;
+  std::unique_ptr<ControlFlowGraph> cfg_;
 };
 
 class fctvariable final : public gblvariable

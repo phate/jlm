@@ -93,7 +93,7 @@ PatchPhiOperands(const std::vector<::llvm::PHINode *> & phis, context & ctx)
 }
 
 static basic_block_map
-convert_basic_blocks(::llvm::Function & f, llvm::cfg & cfg)
+convert_basic_blocks(::llvm::Function & f, ControlFlowGraph & cfg)
 {
   basic_block_map bbmap;
   ::llvm::ReversePostOrderTraversal<::llvm::Function *> rpotraverser(&f);
@@ -297,7 +297,7 @@ convert_argument(const ::llvm::Argument & argument, context & ctx)
 }
 
 static void
-EnsureSingleInEdgeToExitNode(llvm::cfg & cfg)
+EnsureSingleInEdgeToExitNode(ControlFlowGraph & cfg)
 {
   auto exitNode = cfg.exit();
 
@@ -359,12 +359,12 @@ EnsureSingleInEdgeToExitNode(llvm::cfg & cfg)
   basicBlock->add_outedge(exitNode);
 }
 
-static std::unique_ptr<llvm::cfg>
+static std::unique_ptr<ControlFlowGraph>
 create_cfg(::llvm::Function & f, context & ctx)
 {
   auto node = static_cast<const fctvariable *>(ctx.lookup_value(&f))->function();
 
-  auto add_arguments = [](const ::llvm::Function & f, llvm::cfg & cfg, context & ctx)
+  auto add_arguments = [](const ::llvm::Function & f, ControlFlowGraph & cfg, context & ctx)
   {
     auto node = static_cast<const fctvariable *>(ctx.lookup_value(&f))->function();
 
@@ -395,7 +395,7 @@ create_cfg(::llvm::Function & f, context & ctx)
     ctx.set_memory_state(memstate);
   };
 
-  auto cfg = cfg::create(ctx.module());
+  auto cfg = ControlFlowGraph::create(ctx.module());
 
   add_arguments(f, *cfg, ctx);
   auto bbmap = convert_basic_blocks(f, *cfg);

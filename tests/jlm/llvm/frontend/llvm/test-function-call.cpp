@@ -46,7 +46,7 @@ test_function_call()
   {
     using namespace jlm::llvm;
 
-    jlm::llvm::cfg * cfg = nullptr;
+    ControlFlowGraph * cfg = nullptr;
     for (auto & node : module.ipgraph())
     {
       if (node.name() == "caller")
@@ -103,7 +103,7 @@ test_malloc_call()
   {
     using namespace jlm::llvm;
 
-    jlm::llvm::cfg * cfg = nullptr;
+    ControlFlowGraph * cfg = nullptr;
     for (auto & node : module.ipgraph())
     {
       if (node.name() == "caller")
@@ -159,7 +159,7 @@ test_free_call()
   {
     using namespace jlm::llvm;
 
-    jlm::llvm::cfg * cfg = nullptr;
+    ControlFlowGraph * cfg = nullptr;
     for (auto & node : module.ipgraph())
     {
       if (node.name() == "caller")
