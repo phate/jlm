@@ -75,15 +75,15 @@ bit_type_to_ctl_type(rvsdg::GammaNode * old_gamma)
     if (o->nusers() != 1)
       continue;
     auto user = *o->begin();
-    auto match = TryGetOwnerOp<rvsdg::match_op>(*user);
-    if (!match)
+    auto [_, matchOperation] = rvsdg::TryGetSimpleNodeAndOp<rvsdg::match_op>(*user);
+    if (!matchOperation)
       continue;
     // output is only used by match
     bool all_bittype = true;
     for (size_t j = 0; j < old_gamma->nsubregions(); ++j)
     {
       auto origin = old_gamma->subregion(j)->result(i)->origin();
-      if (!TryGetOwnerOp<llvm::IntegerConstantOperation>(*origin))
+      if (auto [_, op] = rvsdg::TryGetSimpleNodeAndOp<llvm::IntegerConstantOperation>(*origin); !op)
       {
         all_bittype = false;
         break;
@@ -96,10 +96,12 @@ bit_type_to_ctl_type(rvsdg::GammaNode * old_gamma)
     for (size_t j = 0; j < old_gamma->nsubregions(); ++j)
     {
       auto origin = old_gamma->subregion(j)->result(i)->origin();
-      auto constant = TryGetOwnerOp<llvm::IntegerConstantOperation>(*origin);
-      auto ctl_value = match->alternative(constant->Representation().to_uint());
-      auto no =
-          rvsdg::ctlconstant_op::create(origin->region(), { ctl_value, match->nalternatives() });
+      auto [_, constantOperation] =
+          rvsdg::TryGetSimpleNodeAndOp<llvm::IntegerConstantOperation>(*origin);
+      auto ctl_value = matchOperation->alternative(constantOperation->Representation().to_uint());
+      auto no = rvsdg::ctlconstant_op::create(
+          origin->region(),
+          { ctl_value, matchOperation->nalternatives() });
       new_outputs.push_back(no);
     }
     auto match_replacement = old_gamma->AddExitVar(new_outputs).output;

@@ -634,7 +634,7 @@ public:
       const util::FilePath & outputFolder,
       const std::vector<std::string> & options)
   {
-    auto command = std::make_unique<JlmHlsCommand>(JlmHlsCommand(inputFile, outputFolder, options));
+    auto command = std::make_unique<JlmHlsCommand>(inputFile, outputFolder, options);
     return CommandGraph::Node::Create(commandGraph, std::move(command));
   }
 

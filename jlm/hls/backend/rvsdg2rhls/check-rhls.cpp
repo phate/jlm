@@ -15,15 +15,19 @@ namespace jlm::hls
 void
 CheckAddrQueue(rvsdg::Node * node)
 {
-  auto addrQ = TryGetOwnerOp<addr_queue_op>(*node->output(0));
+  auto [addrQueueNode, addrQueueOperation] =
+      rvsdg::TryGetSimpleNodeAndOp<addr_queue_op>(*node->output(0));
   JLM_ASSERT(rvsdg::is<addr_queue_op>(node));
   // Ensure that there is no buffer between state_gate and addr_queue enq.
   // This is SG1 in the paper. Otherwise, there might be a race condition in the disambiguation
-  JLM_ASSERT(TryGetOwnerOp<state_gate_op>(*FindSourceNode(node->input(1)->origin())));
+  auto [_, stateGateOperation] =
+      rvsdg::TryGetSimpleNodeAndOp<state_gate_op>(*FindSourceNode(node->input(1)->origin()));
+  JLM_ASSERT(stateGateOperation);
   // make sure there is enough buffer space on the output, so there can be no race condition with
   // SG3
-  auto buf = TryGetOwnerOp<buffer_op>(**node->output(0)->begin());
-  JLM_ASSERT(buf && buf->capacity >= addrQ->capacity);
+  auto [bufferNode, bufferOperation] =
+      rvsdg::TryGetSimpleNodeAndOp<buffer_op>(**node->output(0)->begin());
+  JLM_ASSERT(bufferOperation && bufferOperation->capacity >= addrQueueOperation->capacity);
 }
 
 void

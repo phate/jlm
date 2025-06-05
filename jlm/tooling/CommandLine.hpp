@@ -400,7 +400,9 @@ public:
         OutputFormat_(OutputFormat::Firrtl),
         ExtractHlsFunction_(false),
         MemoryLatency_(10)
-  {}
+  {
+    JLM_ASSERT(MemoryLatency_ > 0);
+  }
 
   void
   Reset() noexcept override;

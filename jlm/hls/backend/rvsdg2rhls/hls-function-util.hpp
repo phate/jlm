@@ -48,35 +48,6 @@ trace_call_rhls(const rvsdg::Output * output);
 std::string
 get_function_name(jlm::rvsdg::Input * input);
 
-// this might already exist somewhere
-template<typename OpType>
-inline const OpType *
-TryGetOwnerOp(const rvsdg::Input & input) noexcept
-{
-  if (const auto node = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(input))
-  {
-    return dynamic_cast<const OpType *>(&node->GetOperation());
-  }
-  else
-  {
-    return nullptr;
-  }
-}
-
-template<typename OpType>
-inline const OpType *
-TryGetOwnerOp(const rvsdg::Output & output) noexcept
-{
-  if (const auto node = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(output))
-  {
-    return dynamic_cast<const OpType *>(&node->GetOperation());
-  }
-  else
-  {
-    return nullptr;
-  }
-}
-
 bool
 is_dec_req(rvsdg::SimpleNode * node);
 

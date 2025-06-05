@@ -343,7 +343,7 @@ fix_mem_split(rvsdg::Node * split_node)
     if (split_node->output(i)->IsDead())
       continue;
     auto user = get_mem_state_user(split_node->output(i));
-    if (TryGetOwnerOp<llvm::MemoryStateSplitOperation>(*user))
+    if (auto [_, op] = rvsdg::TryGetSimpleNodeAndOp<llvm::MemoryStateSplitOperation>(*user); op)
     {
       auto sub_split = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*user);
       for (size_t j = 0; j < sub_split->noutputs(); ++j)
@@ -386,7 +386,7 @@ fix_mem_merge(rvsdg::Node * merge_node)
   for (size_t i = 0; i < merge_node->ninputs(); ++i)
   {
     auto origin = merge_node->input(i)->origin();
-    if (TryGetOwnerOp<llvm::MemoryStateMergeOperation>(*origin))
+    if (auto [_, op] = rvsdg::TryGetSimpleNodeAndOp<llvm::MemoryStateMergeOperation>(*origin); op)
     {
       auto sub_merge = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*origin);
       for (size_t j = 0; j < sub_merge->ninputs(); ++j)
@@ -394,7 +394,8 @@ fix_mem_merge(rvsdg::Node * merge_node)
         combined_origins.push_back(sub_merge->input(j)->origin());
       }
     }
-    else if (TryGetOwnerOp<llvm::MemoryStateSplitOperation>(*origin))
+    else if (auto [_, op] = rvsdg::TryGetSimpleNodeAndOp<llvm::MemoryStateSplitOperation>(*origin);
+             op)
     {
       // ensure that there is only one direct connection to a split.
       // We need to keep one, so that the optimizations for decouple edges work
