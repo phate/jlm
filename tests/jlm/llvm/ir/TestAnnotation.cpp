@@ -84,7 +84,7 @@ TestLinearSubgraphAnnotation()
     auto entryNode = EntryAggregationNode::create({ &argument });
     auto basicBlockNode1 = blockaggnode::create(std::move(bb1));
     auto basicBlockNode2 = blockaggnode::create(std::move(bb2));
-    auto exitNode = exitaggnode::create({ v2 });
+    auto exitNode = ExitAggregationNode::create({ v2 });
 
     auto linearNode1 = linearaggnode::create(std::move(entryNode), std::move(basicBlockNode1));
     auto linearNode2 = linearaggnode::create(std::move(basicBlockNode2), std::move(exitNode));
@@ -252,7 +252,7 @@ TestLoopAnnotation()
     bb.append_last(tac::create(op, { v2 }));
     auto v3 = bb.last()->result(0);
 
-    auto exitNode = exitaggnode::create({ v3, v4 });
+    auto exitNode = ExitAggregationNode::create({ v3, v4 });
     auto basicBlockNode = blockaggnode::create(std::move(bb));
 
     auto loopNode = loopaggnode::create(std::move(basicBlockNode));
@@ -321,7 +321,7 @@ TestBranchInLoopAnnotation()
     tl_cb2.append_last(AssignmentOperation::create(v1, v3));
     tl_cb2.append_last(AssignmentOperation::create(v4, v3));
 
-    auto exitNode = exitaggnode::create({ v2, v3 });
+    auto exitNode = ExitAggregationNode::create({ v2, v3 });
 
     auto basicBlock1 = blockaggnode::create(std::move(tl_cb1));
     auto basicBlock2 = blockaggnode::create(std::move(tl_cb2));
@@ -463,7 +463,7 @@ TestBranchPassByAnnotation()
 
     auto joinNode = blockaggnode::create();
 
-    auto exitNode = exitaggnode::create({ v1, v2, v3 });
+    auto exitNode = ExitAggregationNode::create({ v1, v2, v3 });
 
     auto root = linearaggnode::create(std::move(splitNode), std::move(branchNode));
     root->add_child(std::move(joinNode));

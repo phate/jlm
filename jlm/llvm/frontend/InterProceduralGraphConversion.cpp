@@ -620,7 +620,7 @@ Convert(
 
 static void
 Convert(
-    const exitaggnode & exitAggregationNode,
+    const ExitAggregationNode & exitAggregationNode,
     const AnnotationMap &,
     rvsdg::LambdaNode & lambdaNode,
     RegionalizedVariableMap & regionalizedVariableMap)
@@ -819,7 +819,7 @@ ConvertAggregationNode(
   {
     Convert(*entryNode, demandMap, lambdaNode, regionalizedVariableMap);
   }
-  else if (auto exitNode = dynamic_cast<const exitaggnode *>(&aggregationNode))
+  else if (auto exitNode = dynamic_cast<const ExitAggregationNode *>(&aggregationNode))
   {
     Convert(*exitNode, demandMap, lambdaNode, regionalizedVariableMap);
   }
