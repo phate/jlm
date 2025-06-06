@@ -81,13 +81,13 @@ public:
       : ipgraph_module(source_filename, target_triple, data_layout, {})
   {}
 
-  inline llvm::ipgraph &
+  InterProceduralGraph &
   ipgraph() noexcept
   {
     return clg_;
   }
 
-  inline const llvm::ipgraph &
+  const InterProceduralGraph &
   ipgraph() const noexcept
   {
     return clg_;
@@ -219,7 +219,7 @@ public:
   }
 
 private:
-  llvm::ipgraph clg_;
+  InterProceduralGraph clg_;
   std::string data_layout_;
   std::string target_triple_;
   const jlm::util::FilePath source_filename_;

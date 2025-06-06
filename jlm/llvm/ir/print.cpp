@@ -79,7 +79,7 @@ emit_data_node(const ipgraph_node & clg_node)
 }
 
 std::string
-to_str(const ipgraph & clg)
+to_str(const InterProceduralGraph & clg)
 {
   static std::unordered_map<std::type_index, std::function<std::string(const ipgraph_node &)>> map(
       { { typeid(function_node), emit_function_node }, { typeid(data_node), emit_data_node } });
@@ -212,7 +212,7 @@ to_dot(const ControlFlowGraph & cfg)
 }
 
 std::string
-to_dot(const ipgraph & clg)
+to_dot(const InterProceduralGraph & clg)
 {
   std::string dot("digraph clg {\n");
   for (const auto & node : clg)
