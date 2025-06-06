@@ -224,7 +224,9 @@ AnnotateReadWrite(const ExitAggregationNode & exitAggregationNode, AnnotationMap
 }
 
 static void
-AnnotateReadWrite(const blockaggnode & basicBlockAggregationNode, AnnotationMap & demandMap)
+AnnotateReadWrite(
+    const BasicBlockAggregationNode & basicBlockAggregationNode,
+    AnnotationMap & demandMap)
 {
   auto & threeAddressCodeList = basicBlockAggregationNode.tacs();
 
@@ -343,7 +345,7 @@ AnnotateReadWrite(const AggregationNode & aggregationNode, AnnotationMap & deman
   {
     AnnotateReadWrite(*exitNode, demandMap);
   }
-  else if (auto blockNode = dynamic_cast<const blockaggnode *>(&aggregationNode))
+  else if (auto blockNode = dynamic_cast<const BasicBlockAggregationNode *>(&aggregationNode))
   {
     AnnotateReadWrite(*blockNode, demandMap);
   }
@@ -393,7 +395,7 @@ AnnotateDemandSet(
 
 static void
 AnnotateDemandSet(
-    const blockaggnode & basicBlockAggregationNode,
+    const BasicBlockAggregationNode & basicBlockAggregationNode,
     VariableSet & workingSet,
     AnnotationMap & demandMap)
 {
@@ -477,7 +479,7 @@ AnnotateDemandSet(
       void (*)(const AggregationNode *, VariableSet &, AnnotationMap &)>
       map({ { typeid(EntryAggregationNode), AnnotateDemandSet<EntryAggregationNode> },
             { typeid(ExitAggregationNode), AnnotateDemandSet<ExitAggregationNode> },
-            { typeid(blockaggnode), AnnotateDemandSet<blockaggnode> },
+            { typeid(BasicBlockAggregationNode), AnnotateDemandSet<BasicBlockAggregationNode> },
             { typeid(linearaggnode), AnnotateDemandSet<linearaggnode> },
             { typeid(branchaggnode), AnnotateDemandSet<branchaggnode> },
             { typeid(loopaggnode), AnnotateDemandSet<loopaggnode> } });

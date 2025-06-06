@@ -24,7 +24,7 @@ is_exit(const jlm::llvm::AggregationNode * node)
 static bool
 is_block(const jlm::llvm::AggregationNode * node)
 {
-  return jlm::llvm::is<jlm::llvm::blockaggnode>(node) && node->nchildren() == 0;
+  return jlm::llvm::is<jlm::llvm::BasicBlockAggregationNode>(node) && node->nchildren() == 0;
 }
 
 static bool

@@ -411,24 +411,21 @@ private:
   std::vector<const variable *> results_;
 };
 
-/* basic block node class */
-
-class blockaggnode final : public AggregationNode
+class BasicBlockAggregationNode final : public AggregationNode
 {
 public:
-  virtual ~blockaggnode();
+  ~BasicBlockAggregationNode() noexcept override;
 
-  blockaggnode()
-  {}
+  BasicBlockAggregationNode() = default;
 
-  inline blockaggnode(taclist && bb)
+  explicit BasicBlockAggregationNode(taclist && bb)
       : bb_(std::move(bb))
   {}
 
-  virtual std::string
+  std::string
   debug_string() const override;
 
-  inline const taclist &
+  const taclist &
   tacs() const noexcept
   {
     return bb_;
@@ -437,13 +434,13 @@ public:
   static std::unique_ptr<AggregationNode>
   create()
   {
-    return std::make_unique<blockaggnode>();
+    return std::make_unique<BasicBlockAggregationNode>();
   }
 
-  static inline std::unique_ptr<AggregationNode>
+  static std::unique_ptr<AggregationNode>
   create(taclist && bb)
   {
-    return std::make_unique<blockaggnode>(std::move(bb));
+    return std::make_unique<BasicBlockAggregationNode>(std::move(bb));
   }
 
 private:
