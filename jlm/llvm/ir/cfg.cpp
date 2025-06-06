@@ -21,10 +21,7 @@ namespace jlm::llvm
 argument::~argument()
 {}
 
-/* cfg entry node */
-
-entry_node::~entry_node()
-{}
+EntryNode::~EntryNode() noexcept = default;
 
 /* cfg exit node */
 
@@ -34,7 +31,7 @@ exit_node::~exit_node()
 ControlFlowGraph::ControlFlowGraph(ipgraph_module & im)
     : module_(im)
 {
-  entry_ = std::unique_ptr<entry_node>(new entry_node(*this));
+  entry_ = std::make_unique<EntryNode>(*this);
   exit_ = std::unique_ptr<exit_node>(new exit_node(*this));
   entry_->add_outedge(exit_.get());
 }
@@ -78,7 +75,7 @@ ControlFlowGraph::ToAscii(const ControlFlowGraph & controlFlowGraph)
     str += labels.at(node) + ":";
     str += (is<BasicBlock>(node) ? "\n" : " ");
 
-    if (auto entryNode = dynamic_cast<const entry_node *>(node))
+    if (const auto entryNode = dynamic_cast<const EntryNode *>(node))
     {
       str += ToAscii(*entryNode);
     }
@@ -100,7 +97,7 @@ ControlFlowGraph::ToAscii(const ControlFlowGraph & controlFlowGraph)
 }
 
 std::string
-ControlFlowGraph::ToAscii(const entry_node & entryNode)
+ControlFlowGraph::ToAscii(const EntryNode & entryNode)
 {
   std::string str;
   for (size_t n = 0; n < entryNode.narguments(); n++)
@@ -178,7 +175,7 @@ ControlFlowGraph::CreateLabels(const std::vector<cfg_node *> & nodes)
   for (size_t n = 0; n < nodes.size(); n++)
   {
     auto node = nodes[n];
-    if (is<entry_node>(node))
+    if (is<EntryNode>(node))
     {
       map[node] = "entry";
     }

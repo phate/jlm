@@ -36,7 +36,7 @@ TestBasicBlockAnnotation()
     bb.append_last(tac::create(op, { v1 }));
     auto v2 = bb.last()->result(0);
 
-    auto root = blockaggnode::create(std::move(bb));
+    auto root = BasicBlockAggregationNode::create(std::move(bb));
 
     return std::make_tuple(std::move(root), v0, v1, v2);
   };
@@ -82,8 +82,8 @@ TestLinearSubgraphAnnotation()
     auto v2 = bb2.last()->result(0);
 
     auto entryNode = EntryAggregationNode::create({ &argument });
-    auto basicBlockNode1 = blockaggnode::create(std::move(bb1));
-    auto basicBlockNode2 = blockaggnode::create(std::move(bb2));
+    auto basicBlockNode1 = BasicBlockAggregationNode::create(std::move(bb1));
+    auto basicBlockNode2 = BasicBlockAggregationNode::create(std::move(bb2));
     auto exitNode = ExitAggregationNode::create({ v2 });
 
     auto linearNode1 = linearaggnode::create(std::move(entryNode), std::move(basicBlockNode1));
@@ -174,9 +174,9 @@ TestBranchAnnotation()
     bb2.append_last(tac::create(op, { v3 }));
     auto v4 = bb2.last()->result(0);
 
-    auto basicBlockSplit = blockaggnode::create(std::move(splitTacList));
-    auto basicBlock1 = blockaggnode::create(std::move(bb1));
-    auto basicBlock2 = blockaggnode::create(std::move(bb2));
+    auto basicBlockSplit = BasicBlockAggregationNode::create(std::move(splitTacList));
+    auto basicBlock1 = BasicBlockAggregationNode::create(std::move(bb1));
+    auto basicBlock2 = BasicBlockAggregationNode::create(std::move(bb2));
 
     auto branch = branchaggnode::create();
     branch->add_child(std::move(basicBlock1));
@@ -253,7 +253,7 @@ TestLoopAnnotation()
     auto v3 = bb.last()->result(0);
 
     auto exitNode = ExitAggregationNode::create({ v3, v4 });
-    auto basicBlockNode = blockaggnode::create(std::move(bb));
+    auto basicBlockNode = BasicBlockAggregationNode::create(std::move(bb));
 
     auto loopNode = loopaggnode::create(std::move(basicBlockNode));
     auto root = linearaggnode::create(std::move(loopNode), std::move(exitNode));
@@ -323,8 +323,8 @@ TestBranchInLoopAnnotation()
 
     auto exitNode = ExitAggregationNode::create({ v2, v3 });
 
-    auto basicBlock1 = blockaggnode::create(std::move(tl_cb1));
-    auto basicBlock2 = blockaggnode::create(std::move(tl_cb2));
+    auto basicBlock1 = BasicBlockAggregationNode::create(std::move(tl_cb1));
+    auto basicBlock2 = BasicBlockAggregationNode::create(std::move(tl_cb2));
 
     auto branchNode = branchaggnode::create();
     branchNode->add_child(std::move(basicBlock1));
@@ -404,7 +404,7 @@ TestAssignmentAnnotation()
     taclist bb;
     bb.append_last(AssignmentOperation::create(v1, v2));
 
-    auto root = blockaggnode::create(std::move(bb));
+    auto root = BasicBlockAggregationNode::create(std::move(bb));
 
     return std::make_tuple(std::move(root), v1, v2);
   };
@@ -452,16 +452,16 @@ TestBranchPassByAnnotation()
     tlb1.append_last(AssignmentOperation::create(v1, v3));
     tlb2.append_last(AssignmentOperation::create(v1, v3));
 
-    auto splitNode = blockaggnode::create(std::move(tlsplit));
+    auto splitNode = BasicBlockAggregationNode::create(std::move(tlsplit));
 
-    auto basicBlockNode1 = blockaggnode::create(std::move(tlb1));
-    auto basicBlockNode2 = blockaggnode::create(std::move(tlb2));
+    auto basicBlockNode1 = BasicBlockAggregationNode::create(std::move(tlb1));
+    auto basicBlockNode2 = BasicBlockAggregationNode::create(std::move(tlb2));
 
     auto branchNode = branchaggnode::create();
     branchNode->add_child(std::move(basicBlockNode1));
     branchNode->add_child(std::move(basicBlockNode2));
 
-    auto joinNode = blockaggnode::create();
+    auto joinNode = BasicBlockAggregationNode::create();
 
     auto exitNode = ExitAggregationNode::create({ v1, v2, v3 });
 
