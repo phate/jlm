@@ -21,17 +21,17 @@ test_single_operand_phi()
 
   ipgraph_module im(jlm::util::FilePath(""), "", "");
 
-  jlm::llvm::cfg cfg(im);
+  ControlFlowGraph cfg(im);
   auto arg = cfg.entry()->append_argument(argument::create("arg", vt));
 
-  auto bb0 = basic_block::create(cfg);
+  auto bb0 = BasicBlock::create(cfg);
   bb0->append_first(SsaPhiOperation::create({ { arg, cfg.entry() } }, vt));
 
   cfg.exit()->divert_inedges(bb0);
   bb0->add_outedge(cfg.exit());
   cfg.exit()->append_result(bb0->last()->result(0));
 
-  std::cout << cfg::ToAscii(cfg) << std::flush;
+  std::cout << ControlFlowGraph::ToAscii(cfg) << std::flush;
 
   assert(is_valid(cfg));
 }

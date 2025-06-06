@@ -136,20 +136,20 @@ TestRemoveOutputsWhere()
   auto output2 = node1.output(2);
 
   auto & node2 = CreateOpNode<jlm::tests::test_op>(
-      std::vector<output *>({ output0, output2 }),
+      std::vector<Output *>({ output0, output2 }),
       std::vector<std::shared_ptr<const Type>>{ valueType, valueType },
       std::vector<std::shared_ptr<const Type>>{ valueType, valueType });
 
   // Act & Assert
   node2.RemoveOutputsWhere(
-      [](const jlm::rvsdg::output &)
+      [](const jlm::rvsdg::Output &)
       {
         return false;
       });
   assert(node2.noutputs() == 2);
 
   node1.RemoveOutputsWhere(
-      [](const jlm::rvsdg::output &)
+      [](const jlm::rvsdg::Output &)
       {
         return true;
       });
@@ -160,7 +160,7 @@ TestRemoveOutputsWhere()
   assert(node1.output(1)->index() == 1);
 
   node2.RemoveOutputsWhere(
-      [](const jlm::rvsdg::output &)
+      [](const jlm::rvsdg::Output &)
       {
         return true;
       });
@@ -169,7 +169,7 @@ TestRemoveOutputsWhere()
   remove(&node2);
 
   node1.RemoveOutputsWhere(
-      [](const jlm::rvsdg::output & output)
+      [](const jlm::rvsdg::Output & output)
       {
         return output.index() == 0;
       });
@@ -178,7 +178,7 @@ TestRemoveOutputsWhere()
   assert(node1.output(0)->index() == 0);
 
   node1.RemoveOutputsWhere(
-      [](const jlm::rvsdg::output &)
+      [](const jlm::rvsdg::Output &)
       {
         return true;
       });

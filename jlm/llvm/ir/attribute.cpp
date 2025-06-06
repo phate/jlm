@@ -8,12 +8,12 @@
 namespace jlm::llvm
 {
 
-attribute::~attribute() noexcept = default;
+Attribute::~Attribute() noexcept = default;
 
 string_attribute::~string_attribute() noexcept = default;
 
 bool
-string_attribute::operator==(const attribute & other) const
+string_attribute::operator==(const Attribute & other) const
 {
   auto sa = dynamic_cast<const string_attribute *>(&other);
   return sa && sa->kind() == kind() && sa->value() == value();
@@ -22,7 +22,7 @@ string_attribute::operator==(const attribute & other) const
 enum_attribute::~enum_attribute() noexcept = default;
 
 bool
-enum_attribute::operator==(const attribute & other) const
+enum_attribute::operator==(const Attribute & other) const
 {
   auto ea = dynamic_cast<const enum_attribute *>(&other);
   return ea && ea->kind() == kind();
@@ -31,7 +31,7 @@ enum_attribute::operator==(const attribute & other) const
 int_attribute::~int_attribute() noexcept = default;
 
 bool
-int_attribute::operator==(const attribute & other) const
+int_attribute::operator==(const Attribute & other) const
 {
   auto ia = dynamic_cast<const int_attribute *>(&other);
   return ia && ia->kind() == kind() && ia->value() == value();
@@ -40,7 +40,7 @@ int_attribute::operator==(const attribute & other) const
 type_attribute::~type_attribute() noexcept = default;
 
 bool
-type_attribute::operator==(const attribute & other) const
+type_attribute::operator==(const Attribute & other) const
 {
   auto ta = dynamic_cast<const type_attribute *>(&other);
   return ta && ta->kind() == kind() && ta->type() == type();

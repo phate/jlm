@@ -16,8 +16,10 @@ void
 add_buffers(rvsdg::Region * region, bool pass_through);
 
 void
-add_buffers(llvm::RvsdgModule & rm, bool pass_through);
+add_buffers(llvm::RvsdgModule & rm);
 
+void
+setMemoryLatency(size_t memoryLatency);
 }
 
 #endif // JLM_HLS_BACKEND_RVSDG2RHLS_ADD_BUFFERS_HPP

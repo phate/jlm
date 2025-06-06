@@ -68,13 +68,13 @@ public:
   operator=(MemoryNodeCache &&) = delete;
 
   bool
-  Contains(const rvsdg::output & output) const noexcept
+  Contains(const rvsdg::Output & output) const noexcept
   {
     return MemoryNodeMap_.find(&output) != MemoryNodeMap_.end();
   }
 
   util::HashSet<const PointsToGraph::MemoryNode *>
-  GetMemoryNodes(const rvsdg::output & output)
+  GetMemoryNodes(const rvsdg::Output & output)
   {
     JLM_ASSERT(is<PointerType>(output.Type()));
 
@@ -93,7 +93,7 @@ public:
   }
 
   void
-  ReplaceAddress(const rvsdg::output & oldAddress, const rvsdg::output & newAddress)
+  ReplaceAddress(const rvsdg::Output & oldAddress, const rvsdg::Output & newAddress)
   {
     JLM_ASSERT(!Contains(oldAddress));
     JLM_ASSERT(!Contains(newAddress));
@@ -109,7 +109,7 @@ public:
 
 private:
   const ModRefSummary & ModRefSummary_;
-  std::unordered_map<const rvsdg::output *, util::HashSet<const PointsToGraph::MemoryNode *>>
+  std::unordered_map<const rvsdg::Output *, util::HashSet<const PointsToGraph::MemoryNode *>>
       MemoryNodeMap_;
 };
 
@@ -125,7 +125,7 @@ public:
   {
     friend StateMap;
 
-    MemoryNodeStatePair(const PointsToGraph::MemoryNode & memoryNode, rvsdg::output & state)
+    MemoryNodeStatePair(const PointsToGraph::MemoryNode & memoryNode, rvsdg::Output & state)
         : MemoryNode_(&memoryNode),
           State_(&state)
     {
@@ -139,14 +139,14 @@ public:
       return *MemoryNode_;
     }
 
-    [[nodiscard]] rvsdg::output &
+    [[nodiscard]] rvsdg::Output &
     State() const noexcept
     {
       return *State_;
     }
 
     void
-    ReplaceState(rvsdg::output & state) noexcept
+    ReplaceState(rvsdg::Output & state) noexcept
     {
       JLM_ASSERT(State_->region() == state.region());
       JLM_ASSERT(is<MemoryStateType>(state.Type()));
@@ -157,7 +157,7 @@ public:
     static void
     ReplaceStates(
         const std::vector<MemoryNodeStatePair *> & memoryNodeStatePairs,
-        const std::vector<rvsdg::output *> & states)
+        const std::vector<rvsdg::Output *> & states)
     {
       JLM_ASSERT(memoryNodeStatePairs.size() == states.size());
       for (size_t n = 0; n < memoryNodeStatePairs.size(); n++)
@@ -192,10 +192,10 @@ public:
       JLM_ASSERT(it.value() == nullptr);
     }
 
-    static std::vector<rvsdg::output *>
+    static std::vector<rvsdg::Output *>
     States(const std::vector<MemoryNodeStatePair *> & memoryNodeStatePairs)
     {
-      std::vector<rvsdg::output *> states;
+      std::vector<rvsdg::Output *> states;
       for (auto & memoryNodeStatePair : memoryNodeStatePairs)
         states.push_back(memoryNodeStatePair->State_);
 
@@ -204,7 +204,7 @@ public:
 
   private:
     const PointsToGraph::MemoryNode * MemoryNode_;
-    rvsdg::output * State_;
+    rvsdg::Output * State_;
   };
 
   StateMap() = default;
@@ -243,7 +243,7 @@ public:
   }
 
   MemoryNodeStatePair *
-  InsertState(const PointsToGraph::MemoryNode & memoryNode, rvsdg::output & state)
+  InsertState(const PointsToGraph::MemoryNode & memoryNode, rvsdg::Output & state)
   {
     JLM_ASSERT(!HasState(memoryNode));
 
@@ -291,7 +291,7 @@ public:
   operator=(RegionalizedStateMap &&) = delete;
 
   StateMap::MemoryNodeStatePair *
-  InsertState(const PointsToGraph::MemoryNode & memoryNode, rvsdg::output & state)
+  InsertState(const PointsToGraph::MemoryNode & memoryNode, rvsdg::Output & state)
   {
     return GetStateMap(*state.region()).InsertState(memoryNode, state);
   }
@@ -304,13 +304,13 @@ public:
   }
 
   void
-  ReplaceAddress(const rvsdg::output & oldAddress, const rvsdg::output & newAddress)
+  ReplaceAddress(const rvsdg::Output & oldAddress, const rvsdg::Output & newAddress)
   {
     GetMemoryNodeCache(*oldAddress.region()).ReplaceAddress(oldAddress, newAddress);
   }
 
   std::vector<StateMap::MemoryNodeStatePair *>
-  GetStates(const rvsdg::output & output) noexcept
+  GetStates(const rvsdg::Output & output) noexcept
   {
     auto memoryNodes = GetMemoryNodes(output);
     return memoryNodes.Size() == 0 ? std::vector<StateMap::MemoryNodeStatePair *>()
@@ -338,7 +338,7 @@ public:
   }
 
   util::HashSet<const PointsToGraph::MemoryNode *>
-  GetMemoryNodes(const rvsdg::output & output)
+  GetMemoryNodes(const rvsdg::Output & output)
   {
     auto & memoryNodeCache = GetMemoryNodeCache(*output.region());
     return memoryNodeCache.GetMemoryNodes(output);
@@ -365,7 +365,7 @@ public:
   }
 
 private:
-  rvsdg::output &
+  rvsdg::Output &
   GetOrInsertUndefinedMemoryState(rvsdg::Region & region)
   {
     return HasUndefinedMemoryState(region) ? GetUndefinedMemoryState(region)
@@ -378,14 +378,14 @@ private:
     return UndefinedMemoryStates_.find(&region) != UndefinedMemoryStates_.end();
   }
 
-  rvsdg::output &
+  rvsdg::Output &
   GetUndefinedMemoryState(const rvsdg::Region & region) const noexcept
   {
     JLM_ASSERT(HasUndefinedMemoryState(region));
     return *UndefinedMemoryStates_.find(&region)->second;
   }
 
-  rvsdg::output &
+  rvsdg::Output &
   InsertUndefinedMemoryState(rvsdg::Region & region) noexcept
   {
     auto undefinedMemoryState = UndefValueOperation::Create(region, MemoryStateType::Create());
@@ -409,7 +409,7 @@ private:
 
   std::unordered_map<const rvsdg::Region *, std::unique_ptr<StateMap>> StateMaps_;
   std::unordered_map<const rvsdg::Region *, std::unique_ptr<MemoryNodeCache>> MemoryNodeCacheMaps_;
-  std::unordered_map<const rvsdg::Region *, rvsdg::output *> UndefinedMemoryStates_;
+  std::unordered_map<const rvsdg::Region *, rvsdg::Output *> UndefinedMemoryStates_;
 
   const ModRefSummary & ModRefSummary_;
 };
@@ -878,7 +878,7 @@ MemoryStateEncoder::EncodeGammaExit(rvsdg::GammaNode & gammaNode)
 
   for (auto & memoryNodeStatePair : memoryNodeStatePairs)
   {
-    std::vector<rvsdg::output *> states;
+    std::vector<rvsdg::Output *> states;
     for (size_t n = 0; n < gammaNode.nsubregions(); n++)
     {
       auto subregion = gammaNode.subregion(n);
@@ -904,14 +904,14 @@ MemoryStateEncoder::EncodeTheta(rvsdg::ThetaNode & thetaNode)
   Context_->GetRegionalizedStateMap().PopRegion(*thetaNode.subregion());
 }
 
-std::vector<rvsdg::output *>
+std::vector<rvsdg::Output *>
 MemoryStateEncoder::EncodeThetaEntry(rvsdg::ThetaNode & thetaNode)
 {
   auto region = thetaNode.region();
   auto & stateMap = Context_->GetRegionalizedStateMap();
   auto & memoryNodes = Context_->GetModRefSummary().GetThetaEntryExitNodes(thetaNode);
 
-  std::vector<rvsdg::output *> thetaStateOutputs;
+  std::vector<rvsdg::Output *> thetaStateOutputs;
   auto memoryNodeStatePairs = stateMap.GetStates(*region, memoryNodes);
   for (auto & memoryNodeStatePair : memoryNodeStatePairs)
   {
@@ -926,7 +926,7 @@ MemoryStateEncoder::EncodeThetaEntry(rvsdg::ThetaNode & thetaNode)
 void
 MemoryStateEncoder::EncodeThetaExit(
     rvsdg::ThetaNode & thetaNode,
-    const std::vector<rvsdg::output *> & thetaStateOutputs)
+    const std::vector<rvsdg::Output *> & thetaStateOutputs)
 {
   auto subregion = thetaNode.subregion();
   auto & stateMap = Context_->GetRegionalizedStateMap();
@@ -951,7 +951,7 @@ MemoryStateEncoder::EncodeThetaExit(
 rvsdg::SimpleNode &
 MemoryStateEncoder::ReplaceLoadNode(
     const rvsdg::SimpleNode & node,
-    const std::vector<rvsdg::output *> & memoryStates)
+    const std::vector<rvsdg::Output *> & memoryStates)
 {
   JLM_ASSERT(is<LoadOperation>(&node));
 
@@ -993,7 +993,7 @@ MemoryStateEncoder::ReplaceLoadNode(
 rvsdg::SimpleNode &
 MemoryStateEncoder::ReplaceStoreNode(
     const rvsdg::SimpleNode & node,
-    const std::vector<rvsdg::output *> & memoryStates)
+    const std::vector<rvsdg::Output *> & memoryStates)
 {
   if (const auto oldStoreVolatileOperation =
           dynamic_cast<const StoreVolatileOperation *>(&node.GetOperation()))
@@ -1023,10 +1023,10 @@ MemoryStateEncoder::ReplaceStoreNode(
   JLM_UNREACHABLE("Unhandled store node type.");
 }
 
-std::vector<rvsdg::output *>
+std::vector<rvsdg::Output *>
 MemoryStateEncoder::ReplaceMemcpyNode(
     const rvsdg::SimpleNode & memcpyNode,
-    const std::vector<rvsdg::output *> & memoryStates)
+    const std::vector<rvsdg::Output *> & memoryStates)
 {
   JLM_ASSERT(is<MemCpyOperation>(&memcpyNode));
 

@@ -329,7 +329,7 @@ PartialEmptyGamma()
   assert(ipg.nnodes() == 1);
 
   auto cfg = dynamic_cast<const function_node &>(*ipg.begin()).cfg();
-  std::cout << cfg::ToAscii(*cfg) << std::flush;
+  std::cout << ControlFlowGraph::ToAscii(*cfg) << std::flush;
 
   assert(is_proper_structured(*cfg));
 
@@ -360,7 +360,7 @@ RecursiveData()
   auto r2 = pb.AddFixVar(pt);
   auto dep = pb.AddContextVar(*imp);
 
-  jlm::rvsdg::output *delta1, *delta2;
+  jlm::rvsdg::Output *delta1, *delta2;
   {
     auto delta =
         delta::node::Create(region, vt, "test-delta1", linkage::external_linkage, "", false);

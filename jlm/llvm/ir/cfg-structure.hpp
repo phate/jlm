@@ -15,7 +15,7 @@
 namespace jlm::llvm
 {
 
-class cfg;
+class ControlFlowGraph;
 class cfg_edge;
 class cfg_node;
 
@@ -218,19 +218,19 @@ private:
 };
 
 bool
-is_valid(const llvm::cfg & cfg);
+is_valid(const ControlFlowGraph & cfg);
 
 bool
-is_closed(const llvm::cfg & cfg);
+is_closed(const ControlFlowGraph & cfg);
 
 bool
-is_linear(const llvm::cfg & cfg);
+is_linear(const ControlFlowGraph & cfg);
 
 /**
  * Compute a Control Flow Graph's Strongly Connected Components.
  */
 std::vector<scc>
-find_sccs(const llvm::cfg & cfg);
+find_sccs(const ControlFlowGraph & cfg);
 
 /**
  * Compute all Strongly Connected Components of a single-entry/single-exit region.
@@ -240,20 +240,20 @@ std::vector<scc>
 find_sccs(cfg_node * entry, cfg_node * exit);
 
 static inline bool
-is_acyclic(const llvm::cfg & cfg)
+is_acyclic(const ControlFlowGraph & cfg)
 {
   auto sccs = find_sccs(cfg);
   return sccs.size() == 0;
 }
 
 bool
-is_structured(const llvm::cfg & cfg);
+is_structured(const ControlFlowGraph & cfg);
 
 bool
-is_proper_structured(const llvm::cfg & cfg);
+is_proper_structured(const ControlFlowGraph & cfg);
 
 bool
-is_reducible(const llvm::cfg & cfg);
+is_reducible(const ControlFlowGraph & cfg);
 
 /**
  * Finds all pairs of basic blocks A, B where the edge
@@ -267,19 +267,19 @@ is_reducible(const llvm::cfg & cfg);
  * @param cfg the control flow graph for a function
  */
 void
-straighten(llvm::cfg & cfg);
+straighten(ControlFlowGraph & cfg);
 
 /** \brief Remove all basic blocks without instructions
  */
 void
-purge(llvm::cfg & cfg);
+purge(ControlFlowGraph & cfg);
 
 /**
  * Removes unreachable nodes from the control flow graph.
  * @param cfg the control flow graph of a function
  */
 void
-prune(llvm::cfg & cfg);
+prune(ControlFlowGraph & cfg);
 
 }
 

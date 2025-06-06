@@ -107,8 +107,8 @@ public:
     return rvsdg::CreateOpNode<MemoryStateMergeOperation>(operands, operands.size());
   }
 
-  static rvsdg::output *
-  Create(const std::vector<rvsdg::output *> & operands)
+  static rvsdg::Output *
+  Create(const std::vector<rvsdg::Output *> & operands)
   {
     return CreateNode(operands).output(0);
   }
@@ -195,8 +195,8 @@ public:
     return rvsdg::CreateOpNode<MemoryStateSplitOperation>({ &operand }, numResults);
   }
 
-  static std::vector<rvsdg::output *>
-  Create(rvsdg::output & operand, const size_t numResults)
+  static std::vector<rvsdg::Output *>
+  Create(rvsdg::Output & operand, const size_t numResults)
   {
     return outputs(&CreateNode(operand, numResults));
   }
@@ -230,8 +230,8 @@ public:
   [[nodiscard]] std::unique_ptr<Operation>
   copy() const override;
 
-  static std::vector<jlm::rvsdg::output *>
-  Create(rvsdg::output & output, size_t numResults)
+  static std::vector<jlm::rvsdg::Output *>
+  Create(rvsdg::Output & output, size_t numResults)
   {
     return outputs(
         &rvsdg::CreateOpNode<LambdaEntryMemoryStateSplitOperation>({ &output }, numResults));
@@ -266,8 +266,8 @@ public:
   [[nodiscard]] std::unique_ptr<Operation>
   copy() const override;
 
-  static rvsdg::output &
-  Create(rvsdg::Region & region, const std::vector<jlm::rvsdg::output *> & operands)
+  static rvsdg::Output &
+  Create(rvsdg::Region & region, const std::vector<jlm::rvsdg::Output *> & operands)
   {
     return operands.empty()
              ? *rvsdg::CreateOpNode<LambdaExitMemoryStateMergeOperation>(region, operands.size())
@@ -305,8 +305,8 @@ public:
   [[nodiscard]] std::unique_ptr<Operation>
   copy() const override;
 
-  static rvsdg::output &
-  Create(rvsdg::Region & region, const std::vector<rvsdg::output *> & operands)
+  static rvsdg::Output &
+  Create(rvsdg::Region & region, const std::vector<rvsdg::Output *> & operands)
   {
     return operands.empty()
              ? *rvsdg::CreateOpNode<CallEntryMemoryStateMergeOperation>(region, operands.size())
@@ -344,8 +344,8 @@ public:
   [[nodiscard]] std::unique_ptr<Operation>
   copy() const override;
 
-  static std::vector<rvsdg::output *>
-  Create(rvsdg::output & output, size_t numResults)
+  static std::vector<rvsdg::Output *>
+  Create(rvsdg::Output & output, size_t numResults)
   {
     return outputs(
         &rvsdg::CreateOpNode<CallExitMemoryStateSplitOperation>({ &output }, numResults));

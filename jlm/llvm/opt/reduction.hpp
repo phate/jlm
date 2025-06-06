@@ -16,7 +16,7 @@ namespace jlm::rvsdg
 class Graph;
 class Node;
 class Region;
-class output;
+class Output;
 class StructuralNode;
 }
 
@@ -92,15 +92,15 @@ private:
   [[nodiscard]] static bool
   ReduceBinaryNode(rvsdg::Node & simpleNode);
 
-  static std::optional<std::vector<rvsdg::output *>>
+  static std::optional<std::vector<rvsdg::Output *>>
   NormalizeLoadNode(
       const LoadNonVolatileOperation & operation,
-      const std::vector<rvsdg::output *> & operands);
+      const std::vector<rvsdg::Output *> & operands);
 
-  static std::optional<std::vector<rvsdg::output *>>
+  static std::optional<std::vector<rvsdg::Output *>>
   NormalizeStoreNode(
       const StoreNonVolatileOperation & operation,
-      const std::vector<rvsdg::output *> & operands);
+      const std::vector<rvsdg::Output *> & operands);
 
   static std::optional<std::vector<rvsdg::output *>>
   NormalizeMemoryStateMergeNode(

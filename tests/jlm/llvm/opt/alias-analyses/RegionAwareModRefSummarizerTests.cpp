@@ -1169,7 +1169,7 @@ TestPhiWithDelta()
 {
   // Assert
   jlm::tests::PhiWithDeltaTest test;
-  std::unordered_map<const jlm::rvsdg::output *, std::string> outputMap;
+  std::unordered_map<const jlm::rvsdg::Output *, std::string> outputMap;
   std::cout << jlm::rvsdg::view(&test.graph().GetRootRegion(), outputMap) << std::flush;
 
   auto pointsToGraph = RunSteensgaard(test.module());

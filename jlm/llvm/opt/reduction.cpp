@@ -216,10 +216,10 @@ NodeReduction::ReduceMemoryStateSplitNode(rvsdg::Node & simpleNode)
   return rvsdg::ReduceNode<MemoryStateSplitOperation>(NormalizeMemoryStateSplitNode, simpleNode);
 }
 
-std::optional<std::vector<rvsdg::output *>>
+std::optional<std::vector<rvsdg::Output *>>
 NodeReduction::NormalizeLoadNode(
     const LoadNonVolatileOperation & operation,
-    const std::vector<rvsdg::output *> & operands)
+    const std::vector<rvsdg::Output *> & operands)
 {
   static std::vector<rvsdg::NodeNormalization<LoadNonVolatileOperation>> loadNodeNormalizations(
       { NormalizeLoadMux,
@@ -235,10 +235,10 @@ NodeReduction::NormalizeLoadNode(
       operands);
 }
 
-std::optional<std::vector<rvsdg::output *>>
+std::optional<std::vector<rvsdg::Output *>>
 NodeReduction::NormalizeStoreNode(
     const StoreNonVolatileOperation & operation,
-    const std::vector<rvsdg::output *> & operands)
+    const std::vector<rvsdg::Output *> & operands)
 {
   static std::vector<rvsdg::NodeNormalization<StoreNonVolatileOperation>> storeNodeNormalizations(
       { NormalizeStoreMux,

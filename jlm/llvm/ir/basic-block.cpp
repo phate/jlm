@@ -11,36 +11,33 @@
 namespace jlm::llvm
 {
 
-/* basic block */
-
-basic_block::~basic_block()
-{}
+BasicBlock::~BasicBlock() noexcept = default;
 
 bool
-basic_block::HasSsaPhiOperation() const
+BasicBlock::HasSsaPhiOperation() const
 {
   return is<SsaPhiOperation>(first());
 }
 
 llvm::tac *
-basic_block::insert_before_branch(std::unique_ptr<llvm::tac> tac)
+BasicBlock::insert_before_branch(std::unique_ptr<llvm::tac> tac)
 {
   auto it = is<BranchOperation>(last()) ? std::prev(end()) : end();
   return insert_before(it, std::move(tac));
 }
 
 void
-basic_block::insert_before_branch(tacsvector_t & tv)
+BasicBlock::insert_before_branch(tacsvector_t & tv)
 {
   auto it = is<BranchOperation>(last()) ? std::prev(end()) : end();
   insert_before(it, tv);
 }
 
-basic_block *
-basic_block::create(llvm::cfg & cfg)
+BasicBlock *
+BasicBlock::create(ControlFlowGraph & cfg)
 {
-  std::unique_ptr<basic_block> node(new basic_block(cfg));
-  return static_cast<basic_block *>(cfg.add_node(std::move(node)));
+  std::unique_ptr<BasicBlock> node(new BasicBlock(cfg));
+  return static_cast<BasicBlock *>(cfg.add_node(std::move(node)));
 }
 
 }

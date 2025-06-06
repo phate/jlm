@@ -14,7 +14,7 @@ namespace jlm::rvsdg
 {
 class GammaNode;
 class Graph;
-class output;
+class Output;
 class StructuralNode;
 class ThetaNode;
 class Region;
@@ -76,7 +76,7 @@ private:
   MarkRegion(const rvsdg::Region & region);
 
   void
-  MarkOutput(const jlm::rvsdg::output & output);
+  MarkOutput(const jlm::rvsdg::Output & output);
 
   void
   SweepRvsdg(rvsdg::Graph & rvsdg) const;

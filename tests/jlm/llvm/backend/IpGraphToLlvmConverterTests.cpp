@@ -31,13 +31,13 @@ LoadConversion()
 
   ipgraph_module ipgModule(jlm::util::FilePath(""), "", "");
 
-  auto cfg = cfg::create(ipgModule);
+  auto cfg = ControlFlowGraph::create(ipgModule);
   auto addressArgument =
       cfg->entry()->append_argument(argument::create("address", PointerType::Create()));
   auto memoryStateArgument =
       cfg->entry()->append_argument(argument::create("memoryState", MemoryStateType::Create()));
 
-  auto basicBlock = basic_block::create(*cfg);
+  auto basicBlock = BasicBlock::create(*cfg);
   size_t alignment = 4;
   auto loadTac = basicBlock->append_last(LoadNonVolatileOperation::Create(
       addressArgument,
@@ -95,13 +95,13 @@ LoadVolatileConversion()
 
   ipgraph_module ipgModule(jlm::util::FilePath(""), "", "");
 
-  auto cfg = cfg::create(ipgModule);
+  auto cfg = ControlFlowGraph::create(ipgModule);
   auto addressArgument = cfg->entry()->append_argument(argument::create("address", pointerType));
   auto ioStateArgument = cfg->entry()->append_argument(argument::create("ioState", ioStateType));
   auto memoryStateArgument =
       cfg->entry()->append_argument(argument::create("memoryState", memoryStateType));
 
-  auto basicBlock = basic_block::create(*cfg);
+  auto basicBlock = BasicBlock::create(*cfg);
   size_t alignment = 4;
   auto loadTac = basicBlock->append_last(LoadVolatileOperation::Create(
       addressArgument,
@@ -163,7 +163,7 @@ MemCpyConversion()
 
   ipgraph_module ipgModule(jlm::util::FilePath(""), "", "");
 
-  auto cfg = cfg::create(ipgModule);
+  auto cfg = ControlFlowGraph::create(ipgModule);
   auto destinationArgument =
       cfg->entry()->append_argument(argument::create("destination", pointerType));
   auto sourceArgument = cfg->entry()->append_argument(argument::create("source", pointerType));
@@ -171,7 +171,7 @@ MemCpyConversion()
   auto memoryStateArgument =
       cfg->entry()->append_argument(argument::create("memoryState", memoryStateType));
 
-  auto basicBlock = basic_block::create(*cfg);
+  auto basicBlock = BasicBlock::create(*cfg);
   auto memCpyTac = basicBlock->append_last(MemCpyNonVolatileOperation::create(
       destinationArgument,
       sourceArgument,
@@ -231,7 +231,7 @@ MemCpyVolatileConversion()
 
   ipgraph_module ipgModule(jlm::util::FilePath(""), "", "");
 
-  auto cfg = cfg::create(ipgModule);
+  auto cfg = ControlFlowGraph::create(ipgModule);
   auto & destinationArgument =
       *cfg->entry()->append_argument(argument::create("destination", pointerType));
   auto & sourceArgument = *cfg->entry()->append_argument(argument::create("source", pointerType));
@@ -240,7 +240,7 @@ MemCpyVolatileConversion()
   auto & memoryStateArgument =
       *cfg->entry()->append_argument(argument::create("memoryState", memoryStateType));
 
-  auto basicBlock = basic_block::create(*cfg);
+  auto basicBlock = BasicBlock::create(*cfg);
   auto memCpyTac = basicBlock->append_last(MemCpyVolatileOperation::CreateThreeAddressCode(
       destinationArgument,
       sourceArgument,
@@ -297,13 +297,13 @@ StoreConversion()
 
   ipgraph_module ipgModule(jlm::util::FilePath(""), "", "");
 
-  auto cfg = cfg::create(ipgModule);
+  auto cfg = ControlFlowGraph::create(ipgModule);
   auto addressArgument = cfg->entry()->append_argument(argument::create("address", pointerType));
   auto valueArgument = cfg->entry()->append_argument(argument::create("value", bit64Type));
   auto memoryStateArgument =
       cfg->entry()->append_argument(argument::create("memoryState", memoryStateType));
 
-  auto basicBlock = basic_block::create(*cfg);
+  auto basicBlock = BasicBlock::create(*cfg);
   size_t alignment = 4;
   auto storeTac = basicBlock->append_last(StoreNonVolatileOperation::Create(
       addressArgument,
@@ -363,14 +363,14 @@ StoreVolatileConversion()
 
   ipgraph_module ipgModule(jlm::util::FilePath(""), "", "");
 
-  auto cfg = cfg::create(ipgModule);
+  auto cfg = ControlFlowGraph::create(ipgModule);
   auto addressArgument = cfg->entry()->append_argument(argument::create("address", pointerType));
   auto valueArgument = cfg->entry()->append_argument(argument::create("value", bit64Type));
   auto ioStateArgument = cfg->entry()->append_argument(argument::create("ioState", ioStateType));
   auto memoryStateArgument =
       cfg->entry()->append_argument(argument::create("memoryState", memoryStateType));
 
-  auto basicBlock = basic_block::create(*cfg);
+  auto basicBlock = BasicBlock::create(*cfg);
   size_t alignment = 4;
   auto storeTac = basicBlock->append_last(StoreVolatileOperation::Create(
       addressArgument,
@@ -432,8 +432,8 @@ IntegerConstant()
 
   ipgraph_module im(jlm::util::FilePath(""), "", "");
 
-  auto cfg = cfg::create(im);
-  auto bb = basic_block::create(*cfg);
+  auto cfg = ControlFlowGraph::create(im);
+  auto bb = BasicBlock::create(*cfg);
   bb->append_last(tac::create(IntegerConstantOperation(vr), {}));
   auto c = bb->last()->result(0);
 
@@ -469,8 +469,8 @@ Malloc()
     auto pt = PointerType::Create();
     auto im = ipgraph_module::create(jlm::util::FilePath(""), "", "");
 
-    auto cfg = cfg::create(*im);
-    auto bb = basic_block::create(*cfg);
+    auto cfg = ControlFlowGraph::create(*im);
+    auto bb = BasicBlock::create(*cfg);
     cfg->exit()->divert_inedges(bb);
     bb->add_outedge(cfg->exit());
 
@@ -535,12 +535,12 @@ Free()
         { MemoryStateType::Create(), IOStateType::Create() });
     auto f = function_node::create(ipgmod->ipgraph(), "f", ft, linkage::external_linkage);
 
-    auto cfg = cfg::create(*ipgmod);
+    auto cfg = ControlFlowGraph::create(*ipgmod);
     auto arg0 = cfg->entry()->append_argument(argument::create("pointer", pt));
     auto arg1 = cfg->entry()->append_argument(argument::create("memstate", mt));
     auto arg2 = cfg->entry()->append_argument(argument::create("iostate", iot));
 
-    auto bb = basic_block::create(*cfg);
+    auto bb = BasicBlock::create(*cfg);
     cfg->exit()->divert_inedges(bb);
     bb->add_outedge(cfg->exit());
 
@@ -589,8 +589,8 @@ IgnoreMemoryState()
   auto mt = MemoryStateType::Create();
   ipgraph_module m(jlm::util::FilePath(""), "", "");
 
-  std::unique_ptr<jlm::llvm::cfg> cfg(new jlm::llvm::cfg(m));
-  auto bb = basic_block::create(*cfg);
+  std::unique_ptr<ControlFlowGraph> cfg(new ControlFlowGraph(m));
+  auto bb = BasicBlock::create(*cfg);
   cfg->exit()->divert_inedges(bb);
   bb->add_outedge(cfg->exit());
 
@@ -623,8 +623,8 @@ SelectWithState()
   auto mt = MemoryStateType::Create();
   ipgraph_module m(jlm::util::FilePath(""), "", "");
 
-  std::unique_ptr<jlm::llvm::cfg> cfg(new jlm::llvm::cfg(m));
-  auto bb = basic_block::create(*cfg);
+  std::unique_ptr<ControlFlowGraph> cfg(new ControlFlowGraph(m));
+  auto bb = BasicBlock::create(*cfg);
   cfg->exit()->divert_inedges(bb);
   bb->add_outedge(cfg->exit());
 
@@ -659,7 +659,7 @@ JLM_UNIT_TEST_REGISTER(
 static int
 TestAttributeKindConversion()
 {
-  typedef jlm::llvm::attribute::kind ak;
+  typedef jlm::llvm::Attribute::kind ak;
 
   int begin = static_cast<int>(ak::None);
   int end = static_cast<int>(ak::EndAttrKinds);

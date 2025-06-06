@@ -12,6 +12,7 @@
 #include <jlm/hls/backend/rvsdg2rhls/add-triggers.hpp>
 #include <jlm/hls/backend/rvsdg2rhls/alloca-conv.hpp>
 #include <jlm/hls/backend/rvsdg2rhls/check-rhls.hpp>
+#include <jlm/hls/backend/rvsdg2rhls/decouple-mem-state.hpp>
 #include <jlm/hls/backend/rvsdg2rhls/distribute-constants.hpp>
 #include <jlm/hls/backend/rvsdg2rhls/GammaConversion.hpp>
 #include <jlm/hls/backend/rvsdg2rhls/instrument-ref.hpp>
@@ -23,6 +24,7 @@
 #include <jlm/hls/backend/rvsdg2rhls/remove-redundant-buf.hpp>
 #include <jlm/hls/backend/rvsdg2rhls/rhls-dne.hpp>
 #include <jlm/hls/backend/rvsdg2rhls/rvsdg2rhls.hpp>
+#include <jlm/hls/backend/rvsdg2rhls/stream-conv.hpp>
 #include <jlm/hls/backend/rvsdg2rhls/ThetaConversion.hpp>
 #include <jlm/hls/backend/rvsdg2rhls/UnusedStateRemoval.hpp>
 #include <jlm/hls/opt/cne.hpp>
@@ -113,13 +115,13 @@ function_match(rvsdg::LambdaNode * ln, const std::string & function_name)
   return false;
 }
 
-const jlm::rvsdg::output *
+const jlm::rvsdg::Output *
 trace_call(jlm::rvsdg::Input * input)
 {
   auto graph = input->region()->graph();
 
   auto argument = dynamic_cast<const rvsdg::RegionArgument *>(input->origin());
-  const jlm::rvsdg::output * result;
+  const jlm::rvsdg::Output * result;
   if (auto theta = rvsdg::TryGetOwnerNode<rvsdg::ThetaNode>(*input->origin()))
   {
     result = trace_call(theta->MapOutputLoopVar(*input->origin()).input);
@@ -165,6 +167,11 @@ inline_calls(rvsdg::Region * region)
             // can't inline pseudo functions used for decoupling
             continue;
           }
+          if (graphImport->Name().rfind("hls_", 0) == 0)
+          {
+            // can't inline pseudo functions used for streaming
+            continue;
+          }
           throw jlm::util::error("can not inline external function " + graphImport->Name());
         }
       }
@@ -208,7 +215,7 @@ convert_alloca(rvsdg::Region * region)
           "",
           false);
       // create zero constant of allocated type
-      jlm::rvsdg::output * cout;
+      jlm::rvsdg::Output * cout;
       if (auto bt = dynamic_cast<const llvm::IntegerConstantOperation *>(&po->value_type()))
       {
         cout = llvm::IntegerConstantOperation::Create(
@@ -318,7 +325,7 @@ change_linkage(rvsdg::LambdaNode * ln, llvm::linkage link)
   ln->subregion()->copy(lambda->subregion(), subregionmap, false, false);
 
   /* collect function results */
-  std::vector<jlm::rvsdg::output *> results;
+  std::vector<jlm::rvsdg::Output *> results;
   for (auto result : ln->GetFunctionResults())
     results.push_back(subregionmap.lookup(result->origin()));
 
@@ -438,27 +445,34 @@ rvsdg2rhls(llvm::RvsdgModule & rhls, util::StatisticsCollector & collector)
   IOBarrierRemoval ioBarrierRemoval;
   ioBarrierRemoval.Run(rhls, collector);
 
+  // TODO: do mem state separation early, so there are no false dependencies between loops
+  mem_sep_argument(rhls);
   merge_gamma(rhls);
+  RemoveUnusedStates(rhls);
 
   llvm::DeadNodeElimination llvmDne;
+  jlm::llvm::tginversion tgi;
+  // simplify loops
+  tgi.Run(rhls, collector);
+  jlm::hls::cne cne;
+  cne.Run(rhls, collector);
   llvmDne.Run(rhls, collector);
-
-  mem_sep_argument(rhls);
-  llvm::InvariantValueRedirection llvmIvr;
-  llvmIvr.Run(rhls, collector);
+  // merge gammas that were pulled out of loops
+  merge_gamma(rhls);
   llvmDne.Run(rhls, collector);
-  InvariantLambdaMemoryStateRemoval::CreateAndRun(rhls, collector);
-  RemoveInvariantLambdaStateEdges(rhls);
+  RemoveUnusedStates(rhls);
   // main conversion steps
   distribute_constants(rhls);
   ConvertGammaNodes(rhls);
   ConvertThetaNodes(rhls);
-  cne hlsCne;
-  hlsCne.Run(rhls, collector);
+  cne.Run(rhls, collector);
   // rhls optimization
   dne(rhls);
   alloca_conv(rhls);
+  jlm::hls::stream_conv(rhls);
   mem_queue(rhls);
+  decouple_mem_state(rhls);
+  RemoveUnusedStates(rhls);
   MemoryConverter(rhls);
 
   {
@@ -487,7 +501,7 @@ rvsdg2rhls(llvm::RvsdgModule & rhls, util::StatisticsCollector & collector)
   // enforce 1:1 input output relationship
   add_sinks(rhls);
   add_forks(rhls);
-  add_buffers(rhls, true);
+  add_buffers(rhls);
   // ensure that all rhls rules are met
   check_rhls(rhls);
 

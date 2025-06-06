@@ -113,7 +113,7 @@ TestCallSummaryComputationDirectCalls()
     return lambdaNode->finalize({ result, iOStateArgument, memoryStateArgument });
   };
 
-  auto SetupLambdaY = [&](rvsdg::output & lambdaX)
+  auto SetupLambdaY = [&](rvsdg::Output & lambdaX)
   {
     auto lambdaNode = jlm::rvsdg::LambdaNode::Create(
         rvsdg.GetRootRegion(),
@@ -136,7 +136,7 @@ TestCallSummaryComputationDirectCalls()
     return lambdaOutput;
   };
 
-  auto SetupLambdaZ = [&](rvsdg::output & lambdaX, rvsdg::output & lambdaY)
+  auto SetupLambdaZ = [&](rvsdg::Output & lambdaX, rvsdg::Output & lambdaY)
   {
     auto lambdaNode = jlm::rvsdg::LambdaNode::Create(
         rvsdg.GetRootRegion(),

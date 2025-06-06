@@ -123,7 +123,7 @@ TestPhiConversion()
   auto bb1_node = entry_node->OutEdge(0)->sink();
   assert(bb1_node->single_successor());
   auto bb2_node = bb1_node->OutEdge(0)->sink();
-  auto bb2 = jlm::util::AssertedCast<jlm::llvm::basic_block>(bb2_node);
+  auto bb2 = jlm::util::AssertedCast<jlm::llvm::BasicBlock>(bb2_node);
 
   // The first two tac instructions should be the phi representing x and popcnt respectively
   auto tacs = bb2->begin();

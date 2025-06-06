@@ -32,7 +32,7 @@ namespace jlm::llvm
 {
 class FunctionToPointerOperation;
 
-class cfg;
+class ControlFlowGraph;
 class data_node;
 class ConstantFP;
 class PoisonValueOperation;
@@ -90,7 +90,7 @@ public:
   ConvertModule(ipgraph_module & ipGraphModule, ::llvm::LLVMContext & llvmContext);
 
   static ::llvm::Attribute::AttrKind
-  ConvertAttributeKind(const attribute::kind & kind);
+  ConvertAttributeKind(const Attribute::kind & kind);
 
   static std::unique_ptr<::llvm::Module>
   CreateAndConvertModule(ipgraph_module & ipGraphModule, ::llvm::LLVMContext & ctx);
@@ -109,10 +109,10 @@ private:
   convert_function(const function_node & node);
 
   void
-  convert_cfg(llvm::cfg & cfg, ::llvm::Function & f);
+  convert_cfg(ControlFlowGraph & cfg, ::llvm::Function & f);
 
   std::vector<cfg_node *>
-  ConvertBasicBlocks(const llvm::cfg & controlFlowGraph, ::llvm::Function & function);
+  ConvertBasicBlocks(const ControlFlowGraph & controlFlowGraph, ::llvm::Function & function);
 
   ::llvm::AttributeList
   convert_attributes(const function_node & f);
