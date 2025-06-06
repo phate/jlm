@@ -102,15 +102,15 @@ private:
       const StoreNonVolatileOperation & operation,
       const std::vector<rvsdg::Output *> & operands);
 
-  static std::optional<std::vector<rvsdg::output *>>
+  static std::optional<std::vector<rvsdg::Output *>>
   NormalizeMemoryStateMergeNode(
       const MemoryStateMergeOperation & operation,
-      const std::vector<rvsdg::output *> & operands);
+      const std::vector<rvsdg::Output *> & operands);
 
-  static std::optional<std::vector<rvsdg::output *>>
+  static std::optional<std::vector<rvsdg::Output *>>
   NormalizeMemoryStateSplitNode(
       const MemoryStateSplitOperation & operation,
-      const std::vector<rvsdg::output *> & operands);
+      const std::vector<rvsdg::Output *> & operands);
 
   std::unique_ptr<Statistics> Statistics_;
 };

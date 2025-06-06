@@ -61,10 +61,10 @@ public:
    * =>
    * ... = AnyOperation si
    */
-  static std::optional<std::vector<rvsdg::output *>>
+  static std::optional<std::vector<rvsdg::Output *>>
   NormalizeSingleOperand(
       const MemoryStateMergeOperation & operation,
-      const std::vector<rvsdg::output *> & operands);
+      const std::vector<rvsdg::Output *> & operands);
 
   /** \brief Removes duplicated operands from the MemoryStateMergeOperation.
    *
@@ -72,10 +72,10 @@ public:
    * =>
    * so = MemoryStateMergeOperation si0 si1 si2
    */
-  static std::optional<std::vector<rvsdg::output *>>
+  static std::optional<std::vector<rvsdg::Output *>>
   NormalizeDuplicateOperands(
       const MemoryStateMergeOperation & operation,
-      const std::vector<rvsdg::output *> & operands);
+      const std::vector<rvsdg::Output *> & operands);
 
   /** \brief Fuses nested merges into a single merge
    *
@@ -84,10 +84,10 @@ public:
    * =>
    * o2 = MemoryStateMergeOperation i1 i2 i3
    */
-  static std::optional<std::vector<rvsdg::output *>>
+  static std::optional<std::vector<rvsdg::Output *>>
   NormalizeNestedMerges(
       const MemoryStateMergeOperation & operation,
-      const std::vector<rvsdg::output *> & operands);
+      const std::vector<rvsdg::Output *> & operands);
 
   /** \brief Fuses nested splits into a single merge
    *
@@ -96,13 +96,13 @@ public:
    * =>
    * o4 = MemoryStateMergeOperation i2 i1 i1 i1 i3
    */
-  static std::optional<std::vector<rvsdg::output *>>
+  static std::optional<std::vector<rvsdg::Output *>>
   NormalizeNestedSplits(
       const MemoryStateMergeOperation & operation,
-      const std::vector<rvsdg::output *> & operands);
+      const std::vector<rvsdg::Output *> & operands);
 
   static rvsdg::SimpleNode &
-  CreateNode(const std::vector<rvsdg::output *> & operands)
+  CreateNode(const std::vector<rvsdg::Output *> & operands)
   {
     return rvsdg::CreateOpNode<MemoryStateMergeOperation>(operands, operands.size());
   }
@@ -159,10 +159,10 @@ public:
    * =>
    * ... = AnyOperation si
    */
-  static std::optional<std::vector<rvsdg::output *>>
+  static std::optional<std::vector<rvsdg::Output *>>
   NormalizeSingleResult(
       const MemoryStateSplitOperation & operation,
-      const std::vector<rvsdg::output *> & operands);
+      const std::vector<rvsdg::Output *> & operands);
 
   /** \brief Fuses nested splits into a single split
    *
@@ -171,10 +171,10 @@ public:
    * =>
    * o1 o4 o5 o3 = MemoryStateSplitOperation i1
    */
-  static std::optional<std::vector<rvsdg::output *>>
+  static std::optional<std::vector<rvsdg::Output *>>
   NormalizeNestedSplits(
       const MemoryStateSplitOperation & operation,
-      const std::vector<rvsdg::output *> & operands);
+      const std::vector<rvsdg::Output *> & operands);
 
   /** \brief Removes an idempotent split-merge pair
    *
@@ -184,13 +184,13 @@ public:
    * =>
    * ... = AnyOperation i1 i2 i3
    */
-  static std::optional<std::vector<rvsdg::output *>>
+  static std::optional<std::vector<rvsdg::Output *>>
   NormalizeSplitMerge(
       const MemoryStateSplitOperation & operation,
-      const std::vector<rvsdg::output *> & operands);
+      const std::vector<rvsdg::Output *> & operands);
 
   static rvsdg::SimpleNode &
-  CreateNode(rvsdg::output & operand, const size_t numResults)
+  CreateNode(rvsdg::Output & operand, const size_t numResults)
   {
     return rvsdg::CreateOpNode<MemoryStateSplitOperation>({ &operand }, numResults);
   }

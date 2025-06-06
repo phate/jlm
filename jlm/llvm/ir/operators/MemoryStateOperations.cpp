@@ -30,10 +30,10 @@ MemoryStateMergeOperation::copy() const
   return std::make_unique<MemoryStateMergeOperation>(*this);
 }
 
-std::optional<std::vector<rvsdg::output *>>
+std::optional<std::vector<rvsdg::Output *>>
 MemoryStateMergeOperation::NormalizeSingleOperand(
     const MemoryStateMergeOperation &,
-    const std::vector<rvsdg::output *> & operands)
+    const std::vector<rvsdg::Output *> & operands)
 {
   if (operands.size() == 1)
     return operands;
@@ -41,12 +41,12 @@ MemoryStateMergeOperation::NormalizeSingleOperand(
   return std::nullopt;
 }
 
-std::optional<std::vector<rvsdg::output *>>
+std::optional<std::vector<rvsdg::Output *>>
 MemoryStateMergeOperation::NormalizeDuplicateOperands(
     const MemoryStateMergeOperation &,
-    const std::vector<rvsdg::output *> & operands)
+    const std::vector<rvsdg::Output *> & operands)
 {
-  const util::HashSet<rvsdg::output *> uniqueOperands(operands.begin(), operands.end());
+  const util::HashSet<rvsdg::Output *> uniqueOperands(operands.begin(), operands.end());
 
   if (uniqueOperands.Size() == operands.size())
     return std::nullopt;
@@ -55,12 +55,12 @@ MemoryStateMergeOperation::NormalizeDuplicateOperands(
   return { { result } };
 }
 
-std::optional<std::vector<rvsdg::output *>>
+std::optional<std::vector<rvsdg::Output *>>
 MemoryStateMergeOperation::NormalizeNestedMerges(
     const MemoryStateMergeOperation &,
-    const std::vector<rvsdg::output *> & operands)
+    const std::vector<rvsdg::Output *> & operands)
 {
-  std::vector<rvsdg::output *> newOperands;
+  std::vector<rvsdg::Output *> newOperands;
   for (auto operand : operands)
   {
     auto [mergeNode, mergeOperation] =
@@ -83,12 +83,12 @@ MemoryStateMergeOperation::NormalizeNestedMerges(
   return { { result } };
 }
 
-std::optional<std::vector<rvsdg::output *>>
+std::optional<std::vector<rvsdg::Output *>>
 MemoryStateMergeOperation::NormalizeNestedSplits(
     const MemoryStateMergeOperation &,
-    const std::vector<rvsdg::output *> & operands)
+    const std::vector<rvsdg::Output *> & operands)
 {
-  std::vector<rvsdg::output *> newOperands;
+  std::vector<rvsdg::Output *> newOperands;
   for (const auto operand : operands)
   {
     auto [splitNode, splitOperation] =
@@ -131,10 +131,10 @@ MemoryStateSplitOperation::copy() const
   return std::make_unique<MemoryStateSplitOperation>(*this);
 }
 
-std::optional<std::vector<rvsdg::output *>>
+std::optional<std::vector<rvsdg::Output *>>
 MemoryStateSplitOperation::NormalizeSingleResult(
     const MemoryStateSplitOperation & operation,
-    const std::vector<rvsdg::output *> & operands)
+    const std::vector<rvsdg::Output *> & operands)
 {
   JLM_ASSERT(operands.size() == 1);
 
@@ -144,10 +144,10 @@ MemoryStateSplitOperation::NormalizeSingleResult(
   return std::nullopt;
 }
 
-std::optional<std::vector<rvsdg::output *>>
+std::optional<std::vector<rvsdg::Output *>>
 MemoryStateSplitOperation::NormalizeNestedSplits(
     const MemoryStateSplitOperation & operation,
-    const std::vector<rvsdg::output *> & operands)
+    const std::vector<rvsdg::Output *> & operands)
 {
   JLM_ASSERT(operands.size() == 1);
   const auto operand = operands[0];
@@ -170,10 +170,10 @@ MemoryStateSplitOperation::NormalizeNestedSplits(
   return { { std::next(results.begin(), splitNode->noutputs()), results.end() } };
 }
 
-std::optional<std::vector<rvsdg::output *>>
+std::optional<std::vector<rvsdg::Output *>>
 MemoryStateSplitOperation::NormalizeSplitMerge(
     const MemoryStateSplitOperation & operation,
-    const std::vector<rvsdg::output *> & operands)
+    const std::vector<rvsdg::Output *> & operands)
 {
   JLM_ASSERT(operands.size() == 1);
   const auto operand = operands[0];
