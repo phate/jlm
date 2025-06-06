@@ -73,14 +73,12 @@ private:
   attributeset attributes_;
 };
 
-/* cfg entry node */
-
-class entry_node final : public cfg_node
+class EntryNode final : public cfg_node
 {
 public:
-  virtual ~entry_node();
+  ~EntryNode() noexcept override;
 
-  entry_node(ControlFlowGraph & cfg)
+  explicit EntryNode(ControlFlowGraph & cfg)
       : cfg_node(cfg)
   {}
 
@@ -305,7 +303,7 @@ public:
     return iterator(nodes_.end());
   }
 
-  inline llvm::entry_node *
+  EntryNode *
   entry() const noexcept
   {
     return entry_.get();
@@ -377,7 +375,7 @@ public:
 
 private:
   static std::string
-  ToAscii(const entry_node & entryNode);
+  ToAscii(const EntryNode & entryNode);
 
   static std::string
   ToAscii(const exit_node & exitNode);
@@ -395,7 +393,7 @@ private:
 
   ipgraph_module & module_;
   std::unique_ptr<exit_node> exit_;
-  std::unique_ptr<entry_node> entry_;
+  std::unique_ptr<EntryNode> entry_;
   std::unordered_set<std::unique_ptr<BasicBlock>> nodes_;
 };
 
