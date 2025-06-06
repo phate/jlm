@@ -217,8 +217,9 @@ PrecisionEvaluator::EvaluateFunction(
 
       auto response = aliasAnalysis.Query(llvmInst1, *p1, s1, llvmInst2, *p2, s2);
 
-      // queries should always be symmetric, so double check that in debug builds
-      JLM_ASSERT(response == aliasAnalysis.Query(llvmInst2, *p2, s2, llvmInst1, *p1, s1));
+      // Queries should always be symmetric, so double check that in debug builds
+      // TODO: Disabled when using LLVM, as they are not always symmetric (see bugs/no-must-alias)
+      // JLM_ASSERT(response == aliasAnalysis.Query(llvmInst2, *p2, s2, llvmInst1, *p1, s1));
 
       // Add edge to aliasing graph if requested
       if (OutputAliasingGraph && p1 < p2)

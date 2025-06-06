@@ -132,7 +132,12 @@ PointsToGraphAliasAnalysis::GetMemoryNodeSize(const PointsToGraph::MemoryNode & 
   if (auto delta = dynamic_cast<const PointsToGraph::DeltaNode *>(&node))
     return GetLlvmTypeSize(*delta->GetDeltaNode().GetOperation().Type());
   if (auto import = dynamic_cast<const PointsToGraph::ImportNode *>(&node))
-    return GetLlvmTypeSize(*import->GetArgument().ValueType());
+  {
+    auto size = GetLlvmTypeSize(*import->GetArgument().ValueType());
+    // Workaround for imported incomplete types appearing to have size 0 in the LLVM IR
+    if (size == 0)
+      return std::nullopt;
+  }
   if (auto alloca = dynamic_cast<const PointsToGraph::AllocaNode *>(&node))
   {
     const auto & allocaNode = alloca->GetAllocaNode();
@@ -744,7 +749,12 @@ BasicAliasAnalysis::GetOriginalOriginSize(const rvsdg::output & pointer)
   if (auto delta = rvsdg::TryGetOwnerNode<delta::node>(pointer))
     return GetLlvmTypeSize(*delta->GetOperation().Type());
   if (auto import = dynamic_cast<const GraphImport *>(&pointer))
-    return GetLlvmTypeSize(*import->ValueType());
+  {
+    auto size = GetLlvmTypeSize(*import->ValueType());
+    // Workaround for imported incomplete types appearing to have size 0 in the LLVM IR
+    if (size == 0)
+      return std::nullopt;
+  }
   if (auto node = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(pointer))
   {
     if (auto allocaOp = dynamic_cast<const alloca_op *>(&node->GetOperation()))
