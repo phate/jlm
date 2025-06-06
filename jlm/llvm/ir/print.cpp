@@ -99,8 +99,8 @@ to_str(const ipgraph & clg)
 static inline std::string
 emit_entry_dot(const cfg_node & node)
 {
-  JLM_ASSERT(is<entry_node>(&node));
-  auto en = static_cast<const entry_node *>(&node);
+  JLM_ASSERT(is<EntryNode>(&node));
+  const auto en = static_cast<const EntryNode *>(&node);
 
   std::string str;
   for (size_t n = 0; n < en->narguments(); n++)
@@ -144,7 +144,7 @@ emit_basic_block(const cfg_node & node)
 static inline std::string
 emit_header(const cfg_node & node)
 {
-  if (is<entry_node>(&node))
+  if (is<EntryNode>(&node))
     return "ENTRY";
 
   if (is<exit_node>(&node))
@@ -157,7 +157,7 @@ static inline std::string
 emit_node(const cfg_node & node)
 {
   static std::unordered_map<std::type_index, std::string (*)(const cfg_node &)> map(
-      { { typeid(entry_node), emit_entry_dot },
+      { { typeid(EntryNode), emit_entry_dot },
         { typeid(exit_node), emit_exit_dot },
         { typeid(BasicBlock), emit_basic_block } });
 
