@@ -20,6 +20,8 @@ ConvertToCType(const rvsdg::Type * type)
 {
   if (auto t = dynamic_cast<const rvsdg::bittype *>(type))
   {
+    if (t->nbits() == 1)
+      return "bool";
     return "int" + util::strfmt(t->nbits()) + "_t";
   }
   if (jlm::rvsdg::is<llvm::PointerType>(*type))
@@ -283,6 +285,7 @@ public:
         if (req_write) {
             // Stores are performed immediately
             instrumented_store((void*) req_addr, req_data, req_size, port);
+            responses.push_back({main_time, req_data, req_size, req_id});
         } else {
             // Loads are performed immediately, but their response is placed in the queue
             void* data = instrumented_load((void*) req_addr, req_size, port);
@@ -419,6 +422,9 @@ static void verilator_init(int argc, char **argv) {
   size_t first_ctx_var = reg_args.size() - kernel.GetContextVars().size();
   for (size_t i = 0; i < first_ctx_var; i++)
   {
+    // don't generate ports for state edges
+    if (rvsdg::is<rvsdg::StateType>(reg_args[i]->Type()))
+      continue;
     cpp << "    top->i_data_" << i << " = 0;" << std::endl;
   }
   for (const auto & ctx : kernel.GetContextVars())
