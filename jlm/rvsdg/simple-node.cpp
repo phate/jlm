@@ -18,7 +18,7 @@ SimpleInput::~SimpleInput() noexcept
 
 SimpleInput::SimpleInput(
     jlm::rvsdg::SimpleNode * node,
-    jlm::rvsdg::output * origin,
+    jlm::rvsdg::Output * origin,
     std::shared_ptr<const rvsdg::Type> type)
     : node_input(origin, node, std::move(type))
 {}
@@ -40,7 +40,7 @@ SimpleNode::~SimpleNode()
 SimpleNode::SimpleNode(
     rvsdg::Region & region,
     std::unique_ptr<SimpleOperation> operation,
-    const std::vector<jlm::rvsdg::output *> & operands)
+    const std::vector<jlm::rvsdg::Output *> & operands)
     : Node(&region),
       Operation_(std::move(operation))
 {
@@ -71,7 +71,7 @@ SimpleNode::GetOperation() const noexcept
 }
 
 Node *
-SimpleNode::copy(rvsdg::Region * region, const std::vector<jlm::rvsdg::output *> & operands) const
+SimpleNode::copy(rvsdg::Region * region, const std::vector<jlm::rvsdg::Output *> & operands) const
 {
   std::unique_ptr<SimpleOperation> operation(
       util::AssertedCast<SimpleOperation>(GetOperation().copy().release()));
@@ -81,7 +81,7 @@ SimpleNode::copy(rvsdg::Region * region, const std::vector<jlm::rvsdg::output *>
 Node *
 SimpleNode::copy(rvsdg::Region * region, SubstitutionMap & smap) const
 {
-  std::vector<jlm::rvsdg::output *> operands;
+  std::vector<jlm::rvsdg::Output *> operands;
   for (size_t n = 0; n < ninputs(); n++)
   {
     auto origin = input(n)->origin();
@@ -107,11 +107,17 @@ SimpleNode::copy(rvsdg::Region * region, SubstitutionMap & smap) const
   return node;
 }
 
-std::optional<std::vector<rvsdg::output *>>
+std::string
+SimpleNode::DebugString() const
+{
+  return GetOperation().debug_string();
+}
+
+std::optional<std::vector<rvsdg::Output *>>
 NormalizeSimpleOperationCommonNodeElimination(
     Region & region,
     const SimpleOperation & operation,
-    const std::vector<rvsdg::output *> & operands)
+    const std::vector<rvsdg::Output *> & operands)
 {
   auto isCongruent = [&](const Node & node)
   {

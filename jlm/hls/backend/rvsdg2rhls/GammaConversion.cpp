@@ -36,7 +36,7 @@ ConvertGammaNodeWithoutSpeculation(rvsdg::GammaNode & gammaNode)
 
   for (const auto & ex : gammaNode.GetExitVars())
   {
-    std::vector<rvsdg::output *> alternatives;
+    std::vector<rvsdg::Output *> alternatives;
     for (size_t s = 0; s < gammaNode.nsubregions(); s++)
     {
       alternatives.push_back(substitutionMap.lookup(ex.branchResult[s]->origin()));
@@ -73,7 +73,7 @@ ConvertGammaNodeWithSpeculation(rvsdg::GammaNode & gammaNode)
 
   for (const auto & ex : gammaNode.GetExitVars())
   {
-    std::vector<rvsdg::output *> alternatives;
+    std::vector<rvsdg::Output *> alternatives;
     for (size_t s = 0; s < gammaNode.nsubregions(); s++)
     {
       alternatives.push_back(substitutionMap.lookup(ex.branchResult[s]->origin()));
@@ -105,7 +105,8 @@ CanGammaNodeBeSpeculative(const rvsdg::GammaNode & gammaNode)
   {
     for (auto & node : gammaNode.subregion(i)->Nodes())
     {
-      if (rvsdg::is<rvsdg::ThetaOperation>(&node) || rvsdg::is<hls::loop_op>(&node))
+      if (dynamic_cast<const rvsdg::ThetaNode *>(&node)
+          || dynamic_cast<const hls::loop_node *>(&node))
       {
         // don't allow thetas or loops since they could potentially block forever
         return false;
@@ -120,7 +121,7 @@ CanGammaNodeBeSpeculative(const rvsdg::GammaNode & gammaNode)
       }
       else if (rvsdg::is<rvsdg::StructuralOperation>(&node))
       {
-        throw util::error("Unexpected structural node: " + node.GetOperation().debug_string());
+        throw util::error("Unexpected structural node: " + node.DebugString());
       }
     }
   }

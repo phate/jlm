@@ -49,8 +49,7 @@ BaseHLS::get_node_name(const jlm::rvsdg::Node * node)
     append.append("_W");
     append.append(std::to_string(JlmSize(node->output(outPorts - 1)->Type().get())));
   }
-  auto name =
-      util::strfmt("op_", node->GetOperation().debug_string(), append, "_", node_map.size());
+  auto name = util::strfmt("op_", node->DebugString(), append, "_", node_map.size());
   // remove chars that are not valid in firrtl module names
   std::replace_if(name.begin(), name.end(), isForbiddenChar, '_');
   // verilator seems to throw a fit if there are too many underscores in some scenarios
@@ -60,14 +59,14 @@ BaseHLS::get_node_name(const jlm::rvsdg::Node * node)
 }
 
 std::string
-BaseHLS::get_port_name(jlm::rvsdg::input * port)
+BaseHLS::get_port_name(jlm::rvsdg::Input * port)
 {
   std::string result;
-  if (dynamic_cast<const jlm::rvsdg::node_input *>(port))
+  if (jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*port))
   {
     result += "i";
   }
-  else if (dynamic_cast<const rvsdg::RegionResult *>(port))
+  else if (jlm::rvsdg::TryGetOwnerRegion(*port))
   {
     result += "r";
   }
@@ -80,7 +79,7 @@ BaseHLS::get_port_name(jlm::rvsdg::input * port)
 }
 
 std::string
-BaseHLS::get_port_name(jlm::rvsdg::output * port)
+BaseHLS::get_port_name(jlm::rvsdg::Output * port)
 {
   if (port == nullptr)
   {
@@ -128,8 +127,7 @@ BaseHLS::create_node_names(rvsdg::Region * r)
     }
     else
     {
-      throw util::error(
-          "Unimplemented op (unexpected structural node) : " + node.GetOperation().debug_string());
+      throw util::error("Unimplemented op (unexpected structural node) : " + node.DebugString());
     }
   }
 }

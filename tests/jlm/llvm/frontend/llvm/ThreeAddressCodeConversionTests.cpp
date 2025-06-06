@@ -17,14 +17,14 @@
 
 #include <jlm/util/Statistics.hpp>
 
-static std::unique_ptr<jlm::llvm::cfg>
+static std::unique_ptr<jlm::llvm::ControlFlowGraph>
 SetupControlFlowGraph(
     jlm::llvm::ipgraph_module & ipgModule,
     const jlm::rvsdg::SimpleOperation & operation)
 {
   using namespace jlm::llvm;
 
-  auto cfg = jlm::llvm::cfg::create(ipgModule);
+  auto cfg = ControlFlowGraph::create(ipgModule);
 
   std::vector<const variable *> operands;
   for (size_t n = 0; n < operation.narguments(); n++)
@@ -34,7 +34,7 @@ SetupControlFlowGraph(
     operands.emplace_back(operand);
   }
 
-  auto basicBlock = basic_block::create(*cfg);
+  auto basicBlock = BasicBlock::create(*cfg);
   auto threeAddressCode = basicBlock->append_last(tac::create(operation, operands));
 
   for (size_t n = 0; n < threeAddressCode->nresults(); n++)
@@ -54,7 +54,7 @@ SetupFunctionWithThreeAddressCode(const jlm::rvsdg::SimpleOperation & operation)
 {
   using namespace jlm::llvm;
 
-  auto ipgModule = ipgraph_module::create(jlm::util::filepath(""), "", "");
+  auto ipgModule = ipgraph_module::create(jlm::util::FilePath(""), "", "");
   auto & ipgraph = ipgModule->ipgraph();
 
   std::vector<std::shared_ptr<const jlm::rvsdg::Type>> operandTypes;

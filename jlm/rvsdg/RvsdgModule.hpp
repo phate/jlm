@@ -23,7 +23,7 @@ public:
 
   RvsdgModule() = default;
 
-  explicit RvsdgModule(util::filepath sourceFilePath)
+  explicit RvsdgModule(util::FilePath sourceFilePath)
       : SourceFilePath_(std::move(sourceFilePath))
   {}
 
@@ -57,7 +57,7 @@ public:
     return Rvsdg_;
   }
 
-  [[nodiscard]] const std::optional<util::filepath> &
+  [[nodiscard]] const std::optional<util::FilePath> &
   SourceFilePath() const noexcept
   {
     return SourceFilePath_;
@@ -65,7 +65,7 @@ public:
 
 private:
   Graph Rvsdg_;
-  std::optional<util::filepath> SourceFilePath_{};
+  std::optional<util::FilePath> SourceFilePath_{};
 };
 
 }

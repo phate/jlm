@@ -15,13 +15,13 @@ test_acyclic_structured()
 {
   using namespace jlm::llvm;
 
-  ipgraph_module module(jlm::util::filepath(""), "", "");
+  ipgraph_module module(jlm::util::FilePath(""), "", "");
 
-  jlm::llvm::cfg cfg(module);
-  auto bb1 = basic_block::create(cfg);
-  auto bb2 = basic_block::create(cfg);
-  auto bb3 = basic_block::create(cfg);
-  auto bb4 = basic_block::create(cfg);
+  ControlFlowGraph cfg(module);
+  auto bb1 = BasicBlock::create(cfg);
+  auto bb2 = BasicBlock::create(cfg);
+  auto bb3 = BasicBlock::create(cfg);
+  auto bb4 = BasicBlock::create(cfg);
 
   cfg.exit()->divert_inedges(bb1);
   bb1->add_outedge(bb2);
@@ -45,13 +45,13 @@ test_acyclic_unstructured()
 {
   using namespace jlm::llvm;
 
-  ipgraph_module module(jlm::util::filepath(""), "", "");
+  ipgraph_module module(jlm::util::FilePath(""), "", "");
 
-  jlm::llvm::cfg cfg(module);
-  auto bb1 = basic_block::create(cfg);
-  auto bb2 = basic_block::create(cfg);
-  auto bb3 = basic_block::create(cfg);
-  auto bb4 = basic_block::create(cfg);
+  ControlFlowGraph cfg(module);
+  auto bb1 = BasicBlock::create(cfg);
+  auto bb2 = BasicBlock::create(cfg);
+  auto bb3 = BasicBlock::create(cfg);
+  auto bb4 = BasicBlock::create(cfg);
 
   cfg.exit()->divert_inedges(bb1);
   bb1->add_outedge(bb2);
@@ -75,12 +75,12 @@ test_dowhile()
 {
   using namespace jlm::llvm;
 
-  ipgraph_module module(jlm::util::filepath(""), "", "");
+  ipgraph_module module(jlm::util::FilePath(""), "", "");
 
-  jlm::llvm::cfg cfg(module);
-  auto bb1 = basic_block::create(cfg);
-  auto bb2 = basic_block::create(cfg);
-  auto bb3 = basic_block::create(cfg);
+  ControlFlowGraph cfg(module);
+  auto bb1 = BasicBlock::create(cfg);
+  auto bb2 = BasicBlock::create(cfg);
+  auto bb3 = BasicBlock::create(cfg);
 
   cfg.exit()->divert_inedges(bb1);
   bb1->add_outedge(bb2);
@@ -106,11 +106,11 @@ test_while()
 {
   using namespace jlm::llvm;
 
-  ipgraph_module module(jlm::util::filepath(""), "", "");
+  ipgraph_module module(jlm::util::FilePath(""), "", "");
 
-  jlm::llvm::cfg cfg(module);
-  auto bb1 = basic_block::create(cfg);
-  auto bb2 = basic_block::create(cfg);
+  ControlFlowGraph cfg(module);
+  auto bb1 = BasicBlock::create(cfg);
+  auto bb2 = BasicBlock::create(cfg);
 
   cfg.exit()->divert_inedges(bb1);
   bb1->add_outedge(cfg.exit());
@@ -132,14 +132,14 @@ test_irreducible()
 {
   using namespace jlm::llvm;
 
-  ipgraph_module module(jlm::util::filepath(""), "", "");
+  ipgraph_module module(jlm::util::FilePath(""), "", "");
 
-  jlm::llvm::cfg cfg(module);
-  auto bb1 = basic_block::create(cfg);
-  auto bb2 = basic_block::create(cfg);
-  auto bb3 = basic_block::create(cfg);
-  auto bb4 = basic_block::create(cfg);
-  auto bb5 = basic_block::create(cfg);
+  ControlFlowGraph cfg(module);
+  auto bb1 = BasicBlock::create(cfg);
+  auto bb2 = BasicBlock::create(cfg);
+  auto bb3 = BasicBlock::create(cfg);
+  auto bb4 = BasicBlock::create(cfg);
+  auto bb5 = BasicBlock::create(cfg);
 
   cfg.exit()->divert_inedges(bb1);
   bb1->add_outedge(bb2);
@@ -164,13 +164,13 @@ test_acyclic_unstructured_in_dowhile()
 {
   using namespace jlm::llvm;
 
-  ipgraph_module module(jlm::util::filepath(""), "", "");
+  ipgraph_module module(jlm::util::FilePath(""), "", "");
 
-  jlm::llvm::cfg cfg(module);
-  auto bb1 = basic_block::create(cfg);
-  auto bb2 = basic_block::create(cfg);
-  auto bb3 = basic_block::create(cfg);
-  auto bb4 = basic_block::create(cfg);
+  ControlFlowGraph cfg(module);
+  auto bb1 = BasicBlock::create(cfg);
+  auto bb2 = BasicBlock::create(cfg);
+  auto bb3 = BasicBlock::create(cfg);
+  auto bb4 = BasicBlock::create(cfg);
 
   cfg.exit()->divert_inedges(bb1);
   bb1->add_outedge(bb3);
@@ -194,13 +194,13 @@ test_lor_before_dowhile()
 {
   using namespace jlm::llvm;
 
-  ipgraph_module module(jlm::util::filepath(""), "", "");
+  ipgraph_module module(jlm::util::FilePath(""), "", "");
 
-  jlm::llvm::cfg cfg(module);
-  auto bb1 = basic_block::create(cfg);
-  auto bb2 = basic_block::create(cfg);
-  auto bb3 = basic_block::create(cfg);
-  auto bb4 = basic_block::create(cfg);
+  ControlFlowGraph cfg(module);
+  auto bb1 = BasicBlock::create(cfg);
+  auto bb2 = BasicBlock::create(cfg);
+  auto bb3 = BasicBlock::create(cfg);
+  auto bb4 = BasicBlock::create(cfg);
 
   cfg.exit()->divert_inedges(bb1);
   bb1->add_outedge(bb2);
@@ -224,11 +224,11 @@ test_static_endless_loop()
 {
   using namespace jlm::llvm;
 
-  ipgraph_module im(jlm::util::filepath(""), "", "");
+  ipgraph_module im(jlm::util::FilePath(""), "", "");
 
-  jlm::llvm::cfg cfg(im);
-  auto bb1 = basic_block::create(cfg);
-  auto bb2 = basic_block::create(cfg);
+  ControlFlowGraph cfg(im);
+  auto bb1 = BasicBlock::create(cfg);
+  auto bb2 = BasicBlock::create(cfg);
 
   cfg.exit()->divert_inedges(bb1);
   bb1->add_outedge(bb2);

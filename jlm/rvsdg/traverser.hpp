@@ -13,14 +13,14 @@ namespace jlm::rvsdg
 {
 
 class Graph;
-class input;
-class output;
+class Input;
+class Output;
 
 namespace detail
 {
 
 template<typename T>
-class traverser_iterator
+class TraverserIterator
 {
 public:
   typedef std::input_iterator_tag iterator_category;
@@ -29,12 +29,12 @@ public:
   typedef value_type * pointer;
   typedef value_type & reference;
 
-  constexpr traverser_iterator(T * traverser = nullptr, Node * node = nullptr) noexcept
+  constexpr explicit TraverserIterator(T * traverser = nullptr, Node * node = nullptr) noexcept
       : traverser_(traverser),
         node_(node)
   {}
 
-  inline const traverser_iterator &
+  inline const TraverserIterator &
   operator++() noexcept
   {
     node_ = traverser_->next();
@@ -42,13 +42,13 @@ public:
   }
 
   inline bool
-  operator==(const traverser_iterator & other) const noexcept
+  operator==(const TraverserIterator & other) const noexcept
   {
     return traverser_ == other.traverser_ && node_ == other.node_;
   }
 
   inline bool
-  operator!=(const traverser_iterator & other) const noexcept
+  operator!=(const TraverserIterator & other) const noexcept
   {
     return !(*this == other);
   }
@@ -98,7 +98,7 @@ public:
   peek_bottom();
 
 private:
-  tracker tracker_;
+  Tracker tracker_;
 };
 
 /** \brief TopDown Traverser
@@ -149,7 +149,7 @@ public:
     return region_;
   }
 
-  typedef detail::traverser_iterator<TopDownTraverser> iterator;
+  typedef detail::TraverserIterator<TopDownTraverser> iterator;
   typedef Node * value_type;
 
   inline iterator
@@ -172,11 +172,11 @@ private:
   node_create(Node * node);
 
   void
-  input_change(input * in, output * old_origin, output * new_origin);
+  input_change(Input * in, Output * old_origin, Output * new_origin);
 
   rvsdg::Region * region_;
   TraversalTracker tracker_;
-  std::vector<jlm::util::callback> callbacks_;
+  std::vector<jlm::util::Callback> callbacks_;
 };
 
 class BottomUpTraverser final
@@ -195,7 +195,7 @@ public:
     return region_;
   }
 
-  typedef detail::traverser_iterator<BottomUpTraverser> iterator;
+  typedef detail::TraverserIterator<BottomUpTraverser> iterator;
   typedef Node * value_type;
 
   inline iterator
@@ -218,11 +218,11 @@ private:
   node_destroy(Node * node);
 
   void
-  input_change(input * in, output * old_origin, output * new_origin);
+  input_change(Input * in, Output * old_origin, Output * new_origin);
 
   rvsdg::Region * region_;
   TraversalTracker tracker_;
-  std::vector<jlm::util::callback> callbacks_;
+  std::vector<jlm::util::Callback> callbacks_;
   traversal_nodestate new_node_state_;
 };
 

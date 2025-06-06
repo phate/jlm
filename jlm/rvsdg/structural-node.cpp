@@ -22,7 +22,7 @@ StructuralInput::~StructuralInput() noexcept
 
 StructuralInput::StructuralInput(
     rvsdg::StructuralNode * node,
-    jlm::rvsdg::output * origin,
+    jlm::rvsdg::Output * origin,
     std::shared_ptr<const rvsdg::Type> type)
     : node_input(origin, node, std::move(type))
 {
@@ -63,6 +63,12 @@ StructuralNode::StructuralNode(rvsdg::Region * region, size_t nsubregions)
     subregions_.emplace_back(std::unique_ptr<rvsdg::Region>(new jlm::rvsdg::Region(this, n)));
 
   on_node_create(this);
+}
+
+std::string
+StructuralNode::DebugString() const
+{
+  return GetOperation().debug_string();
 }
 
 StructuralInput *

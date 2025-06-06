@@ -25,7 +25,7 @@ class Value;
 namespace jlm::llvm
 {
 
-class cfg;
+class ControlFlowGraph;
 class cfg_node;
 class clg_node;
 class ipgraph_module;
@@ -41,12 +41,12 @@ public:
   }
 
   inline bool
-  has(const basic_block * bb) const noexcept
+  has(const BasicBlock * bb) const noexcept
   {
     return jlm2llvm_.find(bb) != jlm2llvm_.end();
   }
 
-  inline basic_block *
+  inline BasicBlock *
   get(const ::llvm::BasicBlock * bb) const noexcept
   {
     JLM_ASSERT(has(bb));
@@ -54,14 +54,14 @@ public:
   }
 
   inline const ::llvm::BasicBlock *
-  get(const basic_block * bb) const noexcept
+  get(const BasicBlock * bb) const noexcept
   {
     JLM_ASSERT(has(bb));
     return jlm2llvm_.find(bb)->second;
   }
 
   inline void
-  insert(const ::llvm::BasicBlock * bb1, basic_block * bb2)
+  insert(const ::llvm::BasicBlock * bb1, BasicBlock * bb2)
   {
     JLM_ASSERT(!has(bb1));
     JLM_ASSERT(!has(bb2));
@@ -69,21 +69,21 @@ public:
     jlm2llvm_[bb2] = bb1;
   }
 
-  basic_block *
+  BasicBlock *
   operator[](const ::llvm::BasicBlock * bb) const
   {
     return get(bb);
   }
 
   const ::llvm::BasicBlock *
-  operator[](const basic_block * bb) const
+  operator[](const BasicBlock * bb) const
   {
     return get(bb);
   }
 
 private:
-  std::unordered_map<const ::llvm::BasicBlock *, basic_block *> llvm2jlm_;
-  std::unordered_map<const basic_block *, const ::llvm::BasicBlock *> jlm2llvm_;
+  std::unordered_map<const ::llvm::BasicBlock *, BasicBlock *> llvm2jlm_;
+  std::unordered_map<const BasicBlock *, const ::llvm::BasicBlock *> jlm2llvm_;
 };
 
 class context final
@@ -139,19 +139,19 @@ public:
   }
 
   inline bool
-  has(const basic_block * bb) const noexcept
+  has(const BasicBlock * bb) const noexcept
   {
     return bbmap_.has(bb);
   }
 
-  inline basic_block *
+  inline BasicBlock *
   get(const ::llvm::BasicBlock * bb) const noexcept
   {
     return bbmap_.get(bb);
   }
 
   inline const ::llvm::BasicBlock *
-  get(const basic_block * bb) const noexcept
+  get(const BasicBlock * bb) const noexcept
   {
     return bbmap_.get(bb);
   }

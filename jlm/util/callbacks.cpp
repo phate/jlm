@@ -8,7 +8,7 @@
 namespace jlm::util
 {
 
-callback::callback_impl::~callback_impl() noexcept
+Callback::callback_impl::~callback_impl() noexcept
 {}
 
 }

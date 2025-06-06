@@ -52,10 +52,10 @@ LambdaNode::GetOperation() const noexcept
   return *Operation_;
 }
 
-[[nodiscard]] std::vector<rvsdg::output *>
+[[nodiscard]] std::vector<rvsdg::Output *>
 LambdaNode::GetFunctionArguments() const
 {
-  std::vector<rvsdg::output *> arguments;
+  std::vector<rvsdg::Output *> arguments;
   const auto & type = GetOperation().Type();
   for (std::size_t n = 0; n < type->Arguments().size(); ++n)
   {
@@ -64,10 +64,10 @@ LambdaNode::GetFunctionArguments() const
   return arguments;
 }
 
-[[nodiscard]] std::vector<rvsdg::input *>
+[[nodiscard]] std::vector<rvsdg::Input *>
 LambdaNode::GetFunctionResults() const
 {
-  std::vector<rvsdg::input *> results;
+  std::vector<rvsdg::Input *> results;
   for (std::size_t n = 0; n < subregion()->nresults(); ++n)
   {
     results.push_back(subregion()->result(n));
@@ -76,22 +76,22 @@ LambdaNode::GetFunctionResults() const
 }
 
 [[nodiscard]] LambdaNode::ContextVar
-LambdaNode::MapInputContextVar(const rvsdg::input & input) const noexcept
+LambdaNode::MapInputContextVar(const rvsdg::Input & input) const noexcept
 {
   JLM_ASSERT(rvsdg::TryGetOwnerNode<LambdaNode>(input) == this);
-  return ContextVar{ const_cast<rvsdg::input *>(&input),
+  return ContextVar{ const_cast<rvsdg::Input *>(&input),
                      subregion()->argument(GetOperation().Type()->NumArguments() + input.index()) };
 }
 
 [[nodiscard]] std::optional<LambdaNode::ContextVar>
-LambdaNode::MapBinderContextVar(const rvsdg::output & output) const noexcept
+LambdaNode::MapBinderContextVar(const rvsdg::Output & output) const noexcept
 {
   JLM_ASSERT(rvsdg::TryGetOwnerRegion(output) == subregion());
   auto numArguments = GetOperation().Type()->NumArguments();
   if (output.index() >= numArguments)
   {
     return ContextVar{ input(output.index() - GetOperation().Type()->NumArguments()),
-                       const_cast<rvsdg::output *>(&output) };
+                       const_cast<rvsdg::Output *>(&output) };
   }
   else
   {
@@ -112,7 +112,7 @@ LambdaNode::GetContextVars() const noexcept
 }
 
 LambdaNode::ContextVar
-LambdaNode::AddContextVar(jlm::rvsdg::output & origin)
+LambdaNode::AddContextVar(jlm::rvsdg::Output & origin)
 {
   auto input = rvsdg::StructuralInput::create(this, &origin, origin.Type());
   auto argument = &rvsdg::RegionArgument::Create(*subregion(), input, origin.Type());
@@ -125,8 +125,8 @@ LambdaNode::Create(rvsdg::Region & parent, std::unique_ptr<LambdaOperation> oper
   return new LambdaNode(parent, std::move(operation));
 }
 
-rvsdg::output *
-LambdaNode::finalize(const std::vector<jlm::rvsdg::output *> & results)
+rvsdg::Output *
+LambdaNode::finalize(const std::vector<jlm::rvsdg::Output *> & results)
 {
   /* check if finalized was already called */
   if (noutputs() > 0)
@@ -155,14 +155,14 @@ LambdaNode::finalize(const std::vector<jlm::rvsdg::output *> & results)
   return append_output(std::make_unique<rvsdg::StructuralOutput>(this, GetOperation().Type()));
 }
 
-rvsdg::output *
+rvsdg::Output *
 LambdaNode::output() const noexcept
 {
   return StructuralNode::output(0);
 }
 
 LambdaNode *
-LambdaNode::copy(rvsdg::Region * region, const std::vector<jlm::rvsdg::output *> & operands) const
+LambdaNode::copy(rvsdg::Region * region, const std::vector<jlm::rvsdg::Output *> & operands) const
 {
   return util::AssertedCast<LambdaNode>(rvsdg::Node::copy(region, operands));
 }
@@ -196,7 +196,7 @@ LambdaNode::copy(rvsdg::Region * region, rvsdg::SubstitutionMap & smap) const
   subregion()->copy(lambda->subregion(), subregionmap, false, false);
 
   /* collect function results */
-  std::vector<jlm::rvsdg::output *> results;
+  std::vector<jlm::rvsdg::Output *> results;
   for (auto result : GetFunctionResults())
     results.push_back(subregionmap.lookup(result->origin()));
 

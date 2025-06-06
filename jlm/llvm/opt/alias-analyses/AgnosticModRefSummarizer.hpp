@@ -88,7 +88,7 @@ class AgnosticModRefSummarizer::Statistics final : public util::Statistics
 {
 public:
   Statistics(
-      const util::filepath & sourceFile,
+      const util::FilePath & sourceFile,
       const util::StatisticsCollector & statisticsCollector,
       const PointsToGraph & pointsToGraph)
       : util::Statistics(Id::AgnosticModRefSummarizer, sourceFile),
@@ -132,7 +132,7 @@ public:
 
   static std::unique_ptr<Statistics>
   Create(
-      const util::filepath & sourceFile,
+      const util::FilePath & sourceFile,
       const util::StatisticsCollector & statisticsCollector,
       const PointsToGraph & pointsToGraph)
   {

@@ -15,7 +15,7 @@
 class MyTestStatistics final : public jlm::util::Statistics
 {
 public:
-  MyTestStatistics(jlm::util::Statistics::Id id, const jlm::util::filepath & sourceFile)
+  MyTestStatistics(jlm::util::Statistics::Id id, const jlm::util::FilePath & sourceFile)
       : jlm::util::Statistics(id, sourceFile)
   {}
 
@@ -42,7 +42,7 @@ TestStatisticsMeasurements()
   using namespace jlm::util;
 
   // Arrange
-  filepath path("file.ll");
+  FilePath path("file.ll");
   MyTestStatistics statistics(Statistics::Id::Aggregation, path);
 
   // Act
@@ -98,7 +98,7 @@ TestStatisticsCollection()
   StatisticsCollectorSettings settings({ Statistics::Id::Aggregation });
   StatisticsCollector collector(std::move(settings));
 
-  filepath path("file.ll");
+  FilePath path("file.ll");
   std::unique_ptr<Statistics> testStatistics1(
       new MyTestStatistics(Statistics::Id::Aggregation, path));
   std::unique_ptr<Statistics> testStatistics2(
@@ -129,7 +129,7 @@ TestStatisticsPrinting()
   using namespace jlm::util;
 
   // Arrange
-  auto testOutputDir = filepath::TempDirectoryPath().Join("jlm-test-statistics");
+  auto testOutputDir = FilePath::TempDirectoryPath().Join("jlm-test-statistics");
 
   // Remove the output dir if it was not properly cleaned up last time
   std::filesystem::remove(testOutputDir.to_str());
@@ -142,7 +142,7 @@ TestStatisticsPrinting()
 
   StatisticsCollector collector(settings);
 
-  filepath path("file.ll");
+  FilePath path("file.ll");
   std::unique_ptr<MyTestStatistics> statistics(
       new MyTestStatistics(Statistics::Id::Aggregation, path));
   statistics->Start(10, 6.0);
@@ -181,7 +181,7 @@ TestCreateOutputFile()
   // Arrange
   StatisticsCollectorSettings settings(
       { Statistics::Id::Aggregation },
-      filepath("."),
+      FilePath("."),
       "test-module");
   settings.SetUniqueString("ABC");
   StatisticsCollector collector(std::move(settings));

@@ -26,7 +26,7 @@ nthetas(jlm::rvsdg::Region * region)
   size_t n = 0;
   for (const auto & node : region->Nodes())
   {
-    if (jlm::rvsdg::is<jlm::rvsdg::ThetaOperation>(&node))
+    if (dynamic_cast<const jlm::rvsdg::ThetaNode *>(&node))
       n++;
   }
 
@@ -37,9 +37,9 @@ static jlm::rvsdg::ThetaNode *
 create_theta(
     const jlm::rvsdg::bitcompare_op & cop,
     const jlm::rvsdg::bitbinary_op & aop,
-    jlm::rvsdg::output * init,
-    jlm::rvsdg::output * step,
-    jlm::rvsdg::output * end)
+    jlm::rvsdg::Output * init,
+    jlm::rvsdg::Output * step,
+    jlm::rvsdg::Output * end)
 {
   using namespace jlm::rvsdg;
 
@@ -225,7 +225,7 @@ test_unknown_boundaries()
   auto bt = jlm::rvsdg::bittype::Create(32);
   jlm::tests::test_op op({ bt }, { bt });
 
-  RvsdgModule rm(jlm::util::filepath(""), "", "");
+  RvsdgModule rm(jlm::util::FilePath(""), "", "");
   auto & graph = rm.Rvsdg();
 
   auto x = &jlm::tests::GraphImport::Create(graph, bt, "x");
@@ -251,10 +251,10 @@ test_unknown_boundaries()
   loopunroll.Run(rm, statisticsCollector);
   //	jlm::rvsdg::view(graph, stdout);
 
-  auto node = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*ex1.origin());
-  assert(jlm::rvsdg::is<jlm::rvsdg::GammaOperation>(node));
-  node = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*node->input(1)->origin());
-  assert(jlm::rvsdg::is<jlm::rvsdg::GammaOperation>(node));
+  auto node = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::GammaNode>(*ex1.origin());
+  assert(node);
+  node = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::GammaNode>(*node->input(1)->origin());
+  assert(node);
 
   /* Create cleaner output */
   DeadNodeElimination dne;
@@ -278,7 +278,7 @@ find_thetas(jlm::rvsdg::Region * region)
 static inline void
 test_nested_theta()
 {
-  jlm::llvm::RvsdgModule rm(jlm::util::filepath(""), "", "");
+  jlm::llvm::RvsdgModule rm(jlm::util::FilePath(""), "", "");
   auto & graph = rm.Rvsdg();
 
   auto init = jlm::rvsdg::create_bitconstant(&graph.GetRootRegion(), 32, 0);

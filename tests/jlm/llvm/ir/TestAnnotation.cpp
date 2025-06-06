@@ -41,7 +41,7 @@ TestBasicBlockAnnotation()
     return std::make_tuple(std::move(root), v0, v1, v2);
   };
 
-  ipgraph_module module(jlm::util::filepath(""), "", "");
+  ipgraph_module module(jlm::util::FilePath(""), "", "");
   auto [aggregationTreeRoot, v0, v1, v2] = SetupAggregationTree(module);
 
   /*
@@ -81,10 +81,10 @@ TestLinearSubgraphAnnotation()
     bb2.append_last(tac::create(op, { v1 }));
     auto v2 = bb2.last()->result(0);
 
-    auto entryNode = entryaggnode::create({ &argument });
+    auto entryNode = EntryAggregationNode::create({ &argument });
     auto basicBlockNode1 = blockaggnode::create(std::move(bb1));
     auto basicBlockNode2 = blockaggnode::create(std::move(bb2));
-    auto exitNode = exitaggnode::create({ v2 });
+    auto exitNode = ExitAggregationNode::create({ v2 });
 
     auto linearNode1 = linearaggnode::create(std::move(entryNode), std::move(basicBlockNode1));
     auto linearNode2 = linearaggnode::create(std::move(basicBlockNode2), std::move(exitNode));
@@ -94,7 +94,7 @@ TestLinearSubgraphAnnotation()
     return std::make_tuple(std::move(root), v1, v2);
   };
 
-  ipgraph_module module(jlm::util::filepath(""), "", "");
+  ipgraph_module module(jlm::util::FilePath(""), "", "");
   jlm::llvm::argument argument("argument", jlm::tests::valuetype::Create());
   auto [aggregationTreeRoot, v1, v2] = SetupAggregationTree(module, argument);
 
@@ -190,7 +190,7 @@ TestBranchAnnotation()
   auto vt = jlm::tests::valuetype::Create();
   jlm::tests::test_op op({ vt }, { vt });
 
-  ipgraph_module module(jlm::util::filepath(""), "", "");
+  ipgraph_module module(jlm::util::FilePath(""), "", "");
   auto [aggregationTreeRoot, argument, v1, v2, v3, v4] = SetupAggregationTree(module);
 
   /*
@@ -252,7 +252,7 @@ TestLoopAnnotation()
     bb.append_last(tac::create(op, { v2 }));
     auto v3 = bb.last()->result(0);
 
-    auto exitNode = exitaggnode::create({ v3, v4 });
+    auto exitNode = ExitAggregationNode::create({ v3, v4 });
     auto basicBlockNode = blockaggnode::create(std::move(bb));
 
     auto loopNode = loopaggnode::create(std::move(basicBlockNode));
@@ -261,7 +261,7 @@ TestLoopAnnotation()
     return std::make_tuple(std::move(root), v1, v2, v3, v4);
   };
 
-  ipgraph_module module(jlm::util::filepath(""), "", "");
+  ipgraph_module module(jlm::util::FilePath(""), "", "");
   auto [aggregationTreeRoot, v1, v2, v3, v4] = SetupAggregationTree(module);
 
   /*
@@ -321,7 +321,7 @@ TestBranchInLoopAnnotation()
     tl_cb2.append_last(AssignmentOperation::create(v1, v3));
     tl_cb2.append_last(AssignmentOperation::create(v4, v3));
 
-    auto exitNode = exitaggnode::create({ v2, v3 });
+    auto exitNode = ExitAggregationNode::create({ v2, v3 });
 
     auto basicBlock1 = blockaggnode::create(std::move(tl_cb1));
     auto basicBlock2 = blockaggnode::create(std::move(tl_cb2));
@@ -337,7 +337,7 @@ TestBranchInLoopAnnotation()
     return std::make_tuple(std::move(root), v1, v2, v3, v4);
   };
 
-  ipgraph_module module(jlm::util::filepath(""), "", "");
+  ipgraph_module module(jlm::util::FilePath(""), "", "");
   auto [aggregationTreeRoot, v1, v2, v3, v4] = SetupAggregationTree(module);
 
   /*
@@ -409,7 +409,7 @@ TestAssignmentAnnotation()
     return std::make_tuple(std::move(root), v1, v2);
   };
 
-  ipgraph_module module(jlm::util::filepath(""), "", "");
+  ipgraph_module module(jlm::util::FilePath(""), "", "");
   auto [aggregationTreeRoot, v1, v2] = SetupAggregationTree(module);
 
   /*
@@ -463,7 +463,7 @@ TestBranchPassByAnnotation()
 
     auto joinNode = blockaggnode::create();
 
-    auto exitNode = exitaggnode::create({ v1, v2, v3 });
+    auto exitNode = ExitAggregationNode::create({ v1, v2, v3 });
 
     auto root = linearaggnode::create(std::move(splitNode), std::move(branchNode));
     root->add_child(std::move(joinNode));
@@ -472,7 +472,7 @@ TestBranchPassByAnnotation()
     return std::make_tuple(std::move(root), v1, v2, v3);
   };
 
-  ipgraph_module module(jlm::util::filepath(""), "", "");
+  ipgraph_module module(jlm::util::FilePath(""), "", "");
   auto [aggregationTreeRoot, v1, v2, v3] = SetupAggregationTree(module);
 
   /*

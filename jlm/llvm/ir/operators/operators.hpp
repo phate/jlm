@@ -273,10 +273,10 @@ public:
   copy() const override;
 
   jlm::rvsdg::unop_reduction_path_t
-  can_reduce_operand(const jlm::rvsdg::output * output) const noexcept override;
+  can_reduce_operand(const jlm::rvsdg::Output * output) const noexcept override;
 
-  jlm::rvsdg::output *
-  reduce_operand(jlm::rvsdg::unop_reduction_path_t path, jlm::rvsdg::output * output)
+  jlm::rvsdg::Output *
+  reduce_operand(jlm::rvsdg::unop_reduction_path_t path, jlm::rvsdg::Output * output)
       const override;
 
   static std::unique_ptr<llvm::tac>
@@ -336,10 +336,10 @@ public:
   copy() const override;
 
   jlm::rvsdg::unop_reduction_path_t
-  can_reduce_operand(const jlm::rvsdg::output * output) const noexcept override;
+  can_reduce_operand(const jlm::rvsdg::Output * output) const noexcept override;
 
-  jlm::rvsdg::output *
-  reduce_operand(jlm::rvsdg::unop_reduction_path_t path, jlm::rvsdg::output * output)
+  jlm::rvsdg::Output *
+  reduce_operand(jlm::rvsdg::unop_reduction_path_t path, jlm::rvsdg::Output * output)
       const override;
 
   static std::unique_ptr<llvm::tac>
@@ -463,7 +463,7 @@ public:
     return tac::create(operation, {});
   }
 
-  static jlm::rvsdg::output *
+  static jlm::rvsdg::Output *
   Create(rvsdg::Region * region, std::shared_ptr<const rvsdg::Type> type)
   {
     return rvsdg::CreateOpNode<ConstantPointerNullOperation>(*region, CheckAndExtractType(type))
@@ -516,10 +516,10 @@ public:
   copy() const override;
 
   jlm::rvsdg::unop_reduction_path_t
-  can_reduce_operand(const jlm::rvsdg::output * output) const noexcept override;
+  can_reduce_operand(const jlm::rvsdg::Output * output) const noexcept override;
 
-  jlm::rvsdg::output *
-  reduce_operand(jlm::rvsdg::unop_reduction_path_t path, jlm::rvsdg::output * output)
+  jlm::rvsdg::Output *
+  reduce_operand(jlm::rvsdg::unop_reduction_path_t path, jlm::rvsdg::Output * output)
       const override;
 
   inline size_t
@@ -543,8 +543,8 @@ public:
     return tac::create(op, { argument });
   }
 
-  static jlm::rvsdg::output *
-  create(jlm::rvsdg::output * operand, std::shared_ptr<const jlm::rvsdg::Type> type)
+  static jlm::rvsdg::Output *
+  create(jlm::rvsdg::Output * operand, std::shared_ptr<const jlm::rvsdg::Type> type)
   {
     auto ot = std::dynamic_pointer_cast<const jlm::rvsdg::bittype>(operand->Type());
     if (!ot)
@@ -593,10 +593,10 @@ public:
   copy() const override;
 
   jlm::rvsdg::unop_reduction_path_t
-  can_reduce_operand(const jlm::rvsdg::output * output) const noexcept override;
+  can_reduce_operand(const jlm::rvsdg::Output * output) const noexcept override;
 
-  jlm::rvsdg::output *
-  reduce_operand(jlm::rvsdg::unop_reduction_path_t path, jlm::rvsdg::output * output)
+  jlm::rvsdg::Output *
+  reduce_operand(jlm::rvsdg::unop_reduction_path_t path, jlm::rvsdg::Output * output)
       const override;
 
   inline size_t
@@ -670,8 +670,8 @@ public:
     return tac::create(op, elements);
   }
 
-  static jlm::rvsdg::output *
-  Create(const std::vector<jlm::rvsdg::output *> & elements)
+  static jlm::rvsdg::Output *
+  Create(const std::vector<jlm::rvsdg::Output *> & elements)
   {
     if (elements.empty())
       throw jlm::util::error("Expected at least one element.");
@@ -719,14 +719,14 @@ public:
   copy() const override;
 
   virtual jlm::rvsdg::binop_reduction_path_t
-  can_reduce_operand_pair(const jlm::rvsdg::output * op1, const jlm::rvsdg::output * op2)
+  can_reduce_operand_pair(const jlm::rvsdg::Output * op1, const jlm::rvsdg::Output * op2)
       const noexcept override;
 
-  virtual jlm::rvsdg::output *
+  virtual jlm::rvsdg::Output *
   reduce_operand_pair(
       jlm::rvsdg::binop_reduction_path_t path,
-      jlm::rvsdg::output * op1,
-      jlm::rvsdg::output * op2) const override;
+      jlm::rvsdg::Output * op1,
+      jlm::rvsdg::Output * op2) const override;
 
   inline llvm::cmp
   cmp() const noexcept
@@ -797,10 +797,10 @@ public:
   copy() const override;
 
   virtual jlm::rvsdg::unop_reduction_path_t
-  can_reduce_operand(const jlm::rvsdg::output * operand) const noexcept override;
+  can_reduce_operand(const jlm::rvsdg::Output * operand) const noexcept override;
 
-  virtual jlm::rvsdg::output *
-  reduce_operand(jlm::rvsdg::unop_reduction_path_t path, jlm::rvsdg::output * operand)
+  virtual jlm::rvsdg::Output *
+  reduce_operand(jlm::rvsdg::unop_reduction_path_t path, jlm::rvsdg::Output * operand)
       const override;
 
   inline size_t
@@ -825,8 +825,8 @@ public:
     return tac::create(operation, { operand });
   }
 
-  static rvsdg::output &
-  Create(rvsdg::output & operand, const std::shared_ptr<const rvsdg::Type> & resultType)
+  static rvsdg::Output &
+  Create(rvsdg::Output & operand, const std::shared_ptr<const rvsdg::Type> & resultType)
   {
     auto operandBitType = CheckAndExtractBitType(operand.Type());
     auto resultBitType = CheckAndExtractBitType(resultType);
@@ -847,7 +847,7 @@ private:
       return bitType;
     }
 
-    throw util::type_error("bittype", type->debug_string());
+    throw util::TypeError("bittype", type->debug_string());
   }
 };
 
@@ -955,14 +955,14 @@ public:
   copy() const override;
 
   jlm::rvsdg::binop_reduction_path_t
-  can_reduce_operand_pair(const jlm::rvsdg::output * op1, const jlm::rvsdg::output * op2)
+  can_reduce_operand_pair(const jlm::rvsdg::Output * op1, const jlm::rvsdg::Output * op2)
       const noexcept override;
 
-  jlm::rvsdg::output *
+  jlm::rvsdg::Output *
   reduce_operand_pair(
       jlm::rvsdg::binop_reduction_path_t path,
-      jlm::rvsdg::output * op1,
-      jlm::rvsdg::output * op2) const override;
+      jlm::rvsdg::Output * op1,
+      jlm::rvsdg::Output * op2) const override;
 
   inline const fpcmp &
   cmp() const noexcept
@@ -1027,7 +1027,7 @@ public:
     return *result(0);
   }
 
-  static jlm::rvsdg::output *
+  static jlm::rvsdg::Output *
   Create(rvsdg::Region & region, std::shared_ptr<const jlm::rvsdg::Type> type)
   {
     return rvsdg::CreateOpNode<UndefValueOperation>(region, std::move(type)).output(0);
@@ -1107,7 +1107,7 @@ public:
     return tac::create(operation, {});
   }
 
-  static jlm::rvsdg::output *
+  static jlm::rvsdg::Output *
   Create(rvsdg::Region * region, const std::shared_ptr<const jlm::rvsdg::Type> & type)
   {
     auto valueType = CheckAndConvertType(type);
@@ -1164,14 +1164,14 @@ public:
   copy() const override;
 
   jlm::rvsdg::binop_reduction_path_t
-  can_reduce_operand_pair(const jlm::rvsdg::output * op1, const jlm::rvsdg::output * op2)
+  can_reduce_operand_pair(const jlm::rvsdg::Output * op1, const jlm::rvsdg::Output * op2)
       const noexcept override;
 
-  jlm::rvsdg::output *
+  jlm::rvsdg::Output *
   reduce_operand_pair(
       jlm::rvsdg::binop_reduction_path_t path,
-      jlm::rvsdg::output * op1,
-      jlm::rvsdg::output * op2) const override;
+      jlm::rvsdg::Output * op1,
+      jlm::rvsdg::Output * op2) const override;
 
   inline const llvm::fpop &
   fpop() const noexcept
@@ -1248,10 +1248,10 @@ public:
   copy() const override;
 
   jlm::rvsdg::unop_reduction_path_t
-  can_reduce_operand(const jlm::rvsdg::output * output) const noexcept override;
+  can_reduce_operand(const jlm::rvsdg::Output * output) const noexcept override;
 
-  jlm::rvsdg::output *
-  reduce_operand(jlm::rvsdg::unop_reduction_path_t path, jlm::rvsdg::output * output)
+  jlm::rvsdg::Output *
+  reduce_operand(jlm::rvsdg::unop_reduction_path_t path, jlm::rvsdg::Output * output)
       const override;
 
   inline const fpsize &
@@ -1305,10 +1305,10 @@ public:
   copy() const override;
 
   jlm::rvsdg::unop_reduction_path_t
-  can_reduce_operand(const jlm::rvsdg::output * output) const noexcept override;
+  can_reduce_operand(const jlm::rvsdg::Output * output) const noexcept override;
 
-  jlm::rvsdg::output *
-  reduce_operand(jlm::rvsdg::unop_reduction_path_t path, jlm::rvsdg::output * output)
+  jlm::rvsdg::Output *
+  reduce_operand(jlm::rvsdg::unop_reduction_path_t path, jlm::rvsdg::Output * output)
       const override;
 
   const fpsize &
@@ -1379,10 +1379,10 @@ public:
   copy() const override;
 
   jlm::rvsdg::unop_reduction_path_t
-  can_reduce_operand(const jlm::rvsdg::output * output) const noexcept override;
+  can_reduce_operand(const jlm::rvsdg::Output * output) const noexcept override;
 
-  jlm::rvsdg::output *
-  reduce_operand(jlm::rvsdg::unop_reduction_path_t path, jlm::rvsdg::output * output)
+  jlm::rvsdg::Output *
+  reduce_operand(jlm::rvsdg::unop_reduction_path_t path, jlm::rvsdg::Output * output)
       const override;
 
   inline const fpsize &
@@ -1452,8 +1452,8 @@ public:
     return tac::create(op, arguments);
   }
 
-  static rvsdg::output *
-  Create(rvsdg::Region & region, const std::vector<rvsdg::output *> & operands)
+  static rvsdg::Output *
+  Create(rvsdg::Region & region, const std::vector<rvsdg::Output *> & operands)
   {
     std::vector<std::shared_ptr<const rvsdg::Type>> operandTypes;
     operandTypes.reserve(operands.size());
@@ -1507,10 +1507,10 @@ public:
   copy() const override;
 
   jlm::rvsdg::unop_reduction_path_t
-  can_reduce_operand(const jlm::rvsdg::output * output) const noexcept override;
+  can_reduce_operand(const jlm::rvsdg::Output * output) const noexcept override;
 
-  jlm::rvsdg::output *
-  reduce_operand(jlm::rvsdg::unop_reduction_path_t path, jlm::rvsdg::output * output)
+  jlm::rvsdg::Output *
+  reduce_operand(jlm::rvsdg::unop_reduction_path_t path, jlm::rvsdg::Output * output)
       const override;
 
   static std::unique_ptr<llvm::tac>
@@ -1522,8 +1522,8 @@ public:
     return tac::create(op, { operand });
   }
 
-  static jlm::rvsdg::output *
-  create(jlm::rvsdg::output * operand, std::shared_ptr<const jlm::rvsdg::Type> rtype)
+  static jlm::rvsdg::Output *
+  create(jlm::rvsdg::Output * operand, std::shared_ptr<const jlm::rvsdg::Type> rtype)
   {
     auto pair = check_types(operand->Type(), rtype);
     return rvsdg::CreateOpNode<bitcast_op>({ operand }, pair.first, pair.second).output(0);
@@ -1586,10 +1586,10 @@ public:
     return tac::create(op, elements);
   }
 
-  static rvsdg::output &
+  static rvsdg::Output &
   Create(
       rvsdg::Region &,
-      const std::vector<rvsdg::output *> & operands,
+      const std::vector<rvsdg::Output *> & operands,
       std::shared_ptr<const rvsdg::Type> resultType)
   {
     auto structType = CheckAndExtractStructType(std::move(resultType));
@@ -1615,7 +1615,7 @@ private:
       return structType;
     }
 
-    throw util::type_error("StructType", type->debug_string());
+    throw util::TypeError("StructType", type->debug_string());
   }
 };
 
@@ -1660,10 +1660,10 @@ public:
   copy() const override;
 
   virtual jlm::rvsdg::unop_reduction_path_t
-  can_reduce_operand(const jlm::rvsdg::output * operand) const noexcept override;
+  can_reduce_operand(const jlm::rvsdg::Output * operand) const noexcept override;
 
-  virtual jlm::rvsdg::output *
-  reduce_operand(jlm::rvsdg::unop_reduction_path_t path, jlm::rvsdg::output * operand)
+  virtual jlm::rvsdg::Output *
+  reduce_operand(jlm::rvsdg::unop_reduction_path_t path, jlm::rvsdg::Output * operand)
       const override;
 
   inline size_t
@@ -1693,8 +1693,8 @@ public:
     return tac::create(op, { operand });
   }
 
-  static jlm::rvsdg::output *
-  create(size_t ndstbits, jlm::rvsdg::output * operand)
+  static jlm::rvsdg::Output *
+  create(size_t ndstbits, jlm::rvsdg::Output * operand)
   {
     auto ot = std::dynamic_pointer_cast<const jlm::rvsdg::bittype>(operand->Type());
     if (!ot)
@@ -1743,10 +1743,10 @@ public:
   copy() const override;
 
   virtual jlm::rvsdg::unop_reduction_path_t
-  can_reduce_operand(const jlm::rvsdg::output * operand) const noexcept override;
+  can_reduce_operand(const jlm::rvsdg::Output * operand) const noexcept override;
 
-  virtual jlm::rvsdg::output *
-  reduce_operand(jlm::rvsdg::unop_reduction_path_t path, jlm::rvsdg::output * operand)
+  virtual jlm::rvsdg::Output *
+  reduce_operand(jlm::rvsdg::unop_reduction_path_t path, jlm::rvsdg::Output * operand)
       const override;
 
   static std::unique_ptr<llvm::tac>
@@ -1800,10 +1800,10 @@ public:
   copy() const override;
 
   jlm::rvsdg::unop_reduction_path_t
-  can_reduce_operand(const jlm::rvsdg::output * output) const noexcept override;
+  can_reduce_operand(const jlm::rvsdg::Output * output) const noexcept override;
 
-  jlm::rvsdg::output *
-  reduce_operand(jlm::rvsdg::unop_reduction_path_t path, jlm::rvsdg::output * output)
+  jlm::rvsdg::Output *
+  reduce_operand(jlm::rvsdg::unop_reduction_path_t path, jlm::rvsdg::Output * output)
       const override;
 
   static std::unique_ptr<llvm::tac>
@@ -1869,8 +1869,8 @@ public:
     return tac::create(op, elements);
   }
 
-  static rvsdg::output *
-  Create(const std::vector<rvsdg::output *> & operands)
+  static rvsdg::Output *
+  Create(const std::vector<rvsdg::Output *> & operands)
   {
     if (operands.empty())
       throw util::error("Expected at least one element.\n");
@@ -1917,7 +1917,7 @@ public:
     return tac::create(op, {});
   }
 
-  static jlm::rvsdg::output *
+  static jlm::rvsdg::Output *
   Create(rvsdg::Region & region, std::shared_ptr<const jlm::rvsdg::Type> type)
   {
     return rvsdg::CreateOpNode<ConstantAggregateZeroOperation>(region, std::move(type)).output(0);
@@ -2472,8 +2472,8 @@ public:
     return tac::create(op, { size });
   }
 
-  static std::vector<jlm::rvsdg::output *>
-  create(jlm::rvsdg::output * size)
+  static std::vector<jlm::rvsdg::Output *>
+  create(jlm::rvsdg::Output * size)
   {
     auto bt = std::dynamic_pointer_cast<const jlm::rvsdg::bittype>(size->Type());
     if (!bt)
@@ -2521,13 +2521,13 @@ public:
     return tac::create(operation, operands);
   }
 
-  static std::vector<jlm::rvsdg::output *>
+  static std::vector<jlm::rvsdg::Output *>
   Create(
-      jlm::rvsdg::output * pointer,
-      const std::vector<jlm::rvsdg::output *> & memoryStates,
-      jlm::rvsdg::output * iOState)
+      jlm::rvsdg::Output * pointer,
+      const std::vector<jlm::rvsdg::Output *> & memoryStates,
+      jlm::rvsdg::Output * iOState)
   {
-    std::vector<jlm::rvsdg::output *> operands;
+    std::vector<jlm::rvsdg::Output *> operands;
     operands.push_back(pointer);
     operands.insert(operands.end(), memoryStates.begin(), memoryStates.end());
     operands.push_back(iOState);

@@ -612,7 +612,7 @@ types_bitstring_arithmetic_test_bitxor()
 }
 
 static inline void
-expect_static_true(jlm::rvsdg::output * port)
+expect_static_true(jlm::rvsdg::Output * port)
 {
   auto node = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*port);
   auto op = dynamic_cast<const jlm::rvsdg::bitconstant_op *>(&node->GetOperation());
@@ -620,7 +620,7 @@ expect_static_true(jlm::rvsdg::output * port)
 }
 
 static inline void
-expect_static_false(jlm::rvsdg::output * port)
+expect_static_false(jlm::rvsdg::Output * port)
 {
   auto node = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*port);
   auto op = dynamic_cast<const jlm::rvsdg::bitconstant_op *>(&node->GetOperation());
@@ -1155,7 +1155,7 @@ types_bitstring_test_constant()
   Graph graph;
 
   auto NormalizeCne =
-      [&](const SimpleOperation & operation, const std::vector<jlm::rvsdg::output *> & operands)
+      [&](const SimpleOperation & operation, const std::vector<jlm::rvsdg::Output *> & operands)
   {
     return NormalizeSimpleOperationCommonNodeElimination(
         graph.GetRootRegion(),
@@ -1258,7 +1258,7 @@ types_bitstring_test_normalize()
 }
 
 static void
-assert_constant(jlm::rvsdg::output * bitstr, size_t nbits, const char bits[])
+assert_constant(jlm::rvsdg::Output * bitstr, size_t nbits, const char bits[])
 {
   auto node = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*bitstr);
   auto op = dynamic_cast<const jlm::rvsdg::bitconstant_op &>(node->GetOperation());
@@ -1351,21 +1351,21 @@ SliceOfConcatReduction()
   view(&graph.GetRootRegion(), stdout);
 
   // Assert
-  const auto node = TryGetOwnerNode<Node>(*ex.origin());
-  const auto o0 = dynamic_cast<node_output *>(node->input(0)->origin());
-  const auto o1 = dynamic_cast<node_output *>(node->input(1)->origin());
+  const auto node = TryGetOwnerNode<SimpleNode>(*ex.origin());
+  const auto o0_node = TryGetOwnerNode<SimpleNode>(*node->input(0)->origin());
+  const auto o1_node = TryGetOwnerNode<SimpleNode>(*node->input(1)->origin());
   assert(dynamic_cast<const bitconcat_op *>(&node->GetOperation()));
   assert(node->ninputs() == 2);
-  assert(dynamic_cast<const bitslice_op *>(&o0->node()->GetOperation()));
-  assert(dynamic_cast<const bitslice_op *>(&o1->node()->GetOperation()));
+  assert(dynamic_cast<const bitslice_op *>(&o0_node->GetOperation()));
+  assert(dynamic_cast<const bitslice_op *>(&o1_node->GetOperation()));
 
-  auto attrs = dynamic_cast<const bitslice_op *>(&o0->node()->GetOperation());
+  auto attrs = dynamic_cast<const bitslice_op *>(&o0_node->GetOperation());
   assert((attrs->low() == 8) && (attrs->high() == 16));
-  attrs = dynamic_cast<const bitslice_op *>(&o1->node()->GetOperation());
+  attrs = dynamic_cast<const bitslice_op *>(&o1_node->GetOperation());
   assert((attrs->low() == 0) && (attrs->high() == 8));
 
-  assert(o0->node()->input(0)->origin() == x);
-  assert(o1->node()->input(0)->origin() == y);
+  assert(o0_node->input(0)->origin() == x);
+  assert(o1_node->input(0)->origin() == y);
 
   return 0;
 }
@@ -1686,7 +1686,7 @@ ConcatCne()
   // Arrange & Act
   Graph graph;
   auto NormalizeCne =
-      [&](const SimpleOperation & operation, const std::vector<jlm::rvsdg::output *> & operands)
+      [&](const SimpleOperation & operation, const std::vector<jlm::rvsdg::Output *> & operands)
   {
     return NormalizeSimpleOperationCommonNodeElimination(
         graph.GetRootRegion(),
@@ -1731,7 +1731,7 @@ SliceCne()
   // Arrange
   Graph graph;
   auto NormalizeCne =
-      [&](const SimpleOperation & operation, const std::vector<jlm::rvsdg::output *> & operands)
+      [&](const SimpleOperation & operation, const std::vector<jlm::rvsdg::Output *> & operands)
   {
     return NormalizeSimpleOperationCommonNodeElimination(
         graph.GetRootRegion(),

@@ -24,11 +24,11 @@ convert_prints(llvm::RvsdgModule & rm);
 void
 convert_prints(
     rvsdg::Region * region,
-    rvsdg::output * printf,
+    rvsdg::Output * printf,
     const std::shared_ptr<const rvsdg::FunctionType> & functionType);
 
-rvsdg::output *
-route_to_region_rvsdg(jlm::rvsdg::output * output, rvsdg::Region * region);
+rvsdg::Output *
+route_to_region_rvsdg(jlm::rvsdg::Output * output, rvsdg::Region * region);
 
 }
 

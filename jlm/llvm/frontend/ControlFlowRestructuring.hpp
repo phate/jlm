@@ -9,16 +9,16 @@
 namespace jlm::llvm
 {
 
-class cfg;
+class ControlFlowGraph;
 
 void
-RestructureLoops(llvm::cfg * cfg);
+RestructureLoops(ControlFlowGraph * cfg);
 
 void
-RestructureBranches(llvm::cfg * cfg);
+RestructureBranches(ControlFlowGraph * cfg);
 
 void
-RestructureControlFlow(llvm::cfg * cfg);
+RestructureControlFlow(ControlFlowGraph * cfg);
 
 }
 

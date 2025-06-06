@@ -11,6 +11,6 @@ namespace jlm::util
 error::~error()
 {}
 
-type_error::~type_error() noexcept = default;
+TypeError::~TypeError() noexcept = default;
 
 }

@@ -24,8 +24,8 @@ public:
   Run(rvsdg::RvsdgModule & module, util::StatisticsCollector & statisticsCollector) override;
 };
 
-jlm::rvsdg::output *
-find_producer(jlm::rvsdg::input * input);
+jlm::rvsdg::Output *
+find_producer(jlm::rvsdg::Input * input);
 
 void
 inlineCall(jlm::rvsdg::SimpleNode * call, const rvsdg::LambdaNode * lambda);

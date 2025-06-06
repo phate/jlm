@@ -28,7 +28,7 @@ class cnestat final : public util::Statistics
 public:
   ~cnestat() override = default;
 
-  explicit cnestat(const util::filepath & sourceFile)
+  explicit cnestat(const util::FilePath & sourceFile)
       : Statistics(Statistics::Id::CommonNodeElimination, sourceFile)
   {}
 
@@ -61,19 +61,19 @@ public:
   }
 
   static std::unique_ptr<cnestat>
-  Create(const util::filepath & sourceFile)
+  Create(const util::FilePath & sourceFile)
   {
     return std::make_unique<cnestat>(sourceFile);
   }
 };
 
-typedef std::unordered_set<jlm::rvsdg::output *> congruence_set;
+typedef std::unordered_set<jlm::rvsdg::Output *> congruence_set;
 
 class cnectx
 {
 public:
   inline void
-  mark(jlm::rvsdg::output * o1, jlm::rvsdg::output * o2)
+  mark(jlm::rvsdg::Output * o1, jlm::rvsdg::Output * o2)
   {
     auto s1 = set(o1);
     auto s2 = set(o2);
@@ -104,7 +104,7 @@ public:
   }
 
   inline bool
-  congruent(jlm::rvsdg::output * o1, jlm::rvsdg::output * o2) const noexcept
+  congruent(jlm::rvsdg::Output * o1, jlm::rvsdg::Output * o2) const noexcept
   {
     if (o1 == o2)
       return true;
@@ -117,13 +117,13 @@ public:
   }
 
   inline bool
-  congruent(const jlm::rvsdg::input * i1, const jlm::rvsdg::input * i2) const noexcept
+  congruent(const jlm::rvsdg::Input * i1, const jlm::rvsdg::Input * i2) const noexcept
   {
     return congruent(i1->origin(), i2->origin());
   }
 
   congruence_set *
-  set(jlm::rvsdg::output * output) noexcept
+  set(jlm::rvsdg::Output * output) noexcept
   {
     if (outputs_.find(output) == outputs_.end())
     {
@@ -137,14 +137,14 @@ public:
 
 private:
   std::unordered_set<std::unique_ptr<congruence_set>> sets_;
-  std::unordered_map<const jlm::rvsdg::output *, congruence_set *> outputs_;
+  std::unordered_map<const jlm::rvsdg::Output *, congruence_set *> outputs_;
 };
 
 class vset
 {
 public:
   void
-  insert(const jlm::rvsdg::output * o1, const jlm::rvsdg::output * o2)
+  insert(const jlm::rvsdg::Output * o1, const jlm::rvsdg::Output * o2)
   {
     auto it = sets_.find(o1);
     if (it != sets_.end())
@@ -160,7 +160,7 @@ public:
   }
 
   bool
-  visited(const jlm::rvsdg::output * o1, const jlm::rvsdg::output * o2) const
+  visited(const jlm::rvsdg::Output * o1, const jlm::rvsdg::Output * o2) const
   {
     auto it = sets_.find(o1);
     if (it == sets_.end())
@@ -170,14 +170,14 @@ public:
   }
 
 private:
-  std::unordered_map<const jlm::rvsdg::output *, std::unordered_set<const jlm::rvsdg::output *>>
+  std::unordered_map<const jlm::rvsdg::Output *, std::unordered_set<const jlm::rvsdg::Output *>>
       sets_;
 };
 
 /* mark phase */
 
 static bool
-congruent(jlm::rvsdg::output * o1, jlm::rvsdg::output * o2, vset & vs, cnectx & ctx)
+congruent(jlm::rvsdg::Output * o1, jlm::rvsdg::Output * o2, vset & vs, cnectx & ctx)
 {
   if (ctx.congruent(o1, o2) || vs.visited(o1, o2))
     return true;
@@ -224,7 +224,8 @@ congruent(jlm::rvsdg::output * o1, jlm::rvsdg::output * o2, vset & vs, cnectx & 
 
   auto a1 = dynamic_cast<rvsdg::RegionArgument *>(o1);
   auto a2 = dynamic_cast<rvsdg::RegionArgument *>(o2);
-  if (a1 && is<hls::loop_op>(a1->region()->node()) && a2 && is<hls::loop_op>(a2->region()->node()))
+  if (a1 && dynamic_cast<const hls::loop_node *>(a1->region()->node()) && a2
+      && dynamic_cast<const hls::loop_node *>(a2->region()->node()))
   {
     JLM_ASSERT(o1->region()->node() == o2->region()->node());
     if (a1->input() && a2->input())
@@ -235,7 +236,7 @@ congruent(jlm::rvsdg::output * o1, jlm::rvsdg::output * o2, vset & vs, cnectx & 
     }
   }
 
-  if (rvsdg::is<rvsdg::GammaOperation>(n1) && n1 == n2)
+  if (dynamic_cast<const rvsdg::GammaNode *>(n1) && n1 == n2)
   {
     auto so1 = static_cast<StructuralOutput *>(o1);
     auto so2 = static_cast<StructuralOutput *>(o2);
@@ -256,13 +257,13 @@ congruent(jlm::rvsdg::output * o1, jlm::rvsdg::output * o2, vset & vs, cnectx & 
     {
       JLM_ASSERT(g1 == g2);
       auto origin1 = std::visit(
-          [](const auto & rolevar) -> rvsdg::output *
+          [](const auto & rolevar) -> rvsdg::Output *
           {
             return rolevar.input->origin();
           },
           g1->MapBranchArgument(*o1));
       auto origin2 = std::visit(
-          [](const auto & rolevar) -> rvsdg::output *
+          [](const auto & rolevar) -> rvsdg::Output *
           {
             return rolevar.input->origin();
           },
@@ -289,7 +290,7 @@ congruent(jlm::rvsdg::output * o1, jlm::rvsdg::output * o2, vset & vs, cnectx & 
 }
 
 static bool
-congruent(jlm::rvsdg::output * o1, jlm::rvsdg::output * o2, cnectx & ctx)
+congruent(jlm::rvsdg::Output * o1, jlm::rvsdg::Output * o2, cnectx & ctx)
 {
   vset vs;
   return congruent(o1, o2, vs, ctx);
@@ -317,7 +318,7 @@ mark(jlm::rvsdg::Region *, cnectx &);
 static void
 mark_gamma(const rvsdg::StructuralNode * node, cnectx & ctx)
 {
-  JLM_ASSERT(rvsdg::is<rvsdg::GammaOperation>(node->GetOperation()));
+  JLM_ASSERT(dynamic_cast<const rvsdg::GammaNode *>(node));
 
   /* mark entry variables */
   for (size_t i1 = 1; i1 < node->ninputs(); i1++)
@@ -343,7 +344,7 @@ mark_gamma(const rvsdg::StructuralNode * node, cnectx & ctx)
 static void
 mark_theta(const rvsdg::StructuralNode * node, cnectx & ctx)
 {
-  JLM_ASSERT(is<jlm::rvsdg::ThetaOperation>(node));
+  JLM_ASSERT(dynamic_cast<const jlm::rvsdg::ThetaNode *>(node));
   auto theta = static_cast<const rvsdg::ThetaNode *>(node);
 
   /* mark loop variables */
@@ -369,7 +370,7 @@ mark_theta(const rvsdg::StructuralNode * node, cnectx & ctx)
 static void
 mark_loop(const rvsdg::StructuralNode * node, cnectx & ctx)
 {
-  JLM_ASSERT(rvsdg::is<hls::loop_op>(node));
+  JLM_ASSERT(dynamic_cast<const hls::loop_node *>(node));
   auto loop = static_cast<const jlm::hls::loop_node *>(node);
 
   /* mark loop variables */
@@ -391,7 +392,7 @@ mark_loop(const rvsdg::StructuralNode * node, cnectx & ctx)
 static void
 mark_lambda(const rvsdg::StructuralNode * node, cnectx & ctx)
 {
-  JLM_ASSERT(jlm::rvsdg::is<rvsdg::LambdaOperation>(node));
+  JLM_ASSERT(dynamic_cast<const rvsdg::LambdaNode *>(node));
 
   /* mark dependencies */
   for (size_t i1 = 0; i1 < node->ninputs(); i1++)
@@ -505,7 +506,7 @@ mark(rvsdg::Region * region, cnectx & ctx)
 /* divert phase */
 
 static void
-divert_users(jlm::rvsdg::output * output, cnectx & ctx)
+divert_users(jlm::rvsdg::Output * output, cnectx & ctx)
 {
   auto set = ctx.set(output);
   for (auto & other : *set)
@@ -533,7 +534,7 @@ divert(rvsdg::Region *, cnectx &);
 static void
 divert_gamma(rvsdg::StructuralNode * node, cnectx & ctx)
 {
-  JLM_ASSERT(rvsdg::is<rvsdg::GammaOperation>(node));
+  JLM_ASSERT(dynamic_cast<const rvsdg::GammaNode *>(node));
   auto gamma = static_cast<GammaNode *>(node);
 
   for (const auto & ev : gamma->GetEntryVars())
@@ -551,7 +552,7 @@ divert_gamma(rvsdg::StructuralNode * node, cnectx & ctx)
 static void
 divert_theta(rvsdg::StructuralNode * node, cnectx & ctx)
 {
-  JLM_ASSERT(is<jlm::rvsdg::ThetaOperation>(node));
+  JLM_ASSERT(dynamic_cast<const rvsdg::ThetaNode *>(node));
   auto theta = static_cast<rvsdg::ThetaNode *>(node);
   auto subregion = node->subregion(0);
 
@@ -568,7 +569,7 @@ divert_theta(rvsdg::StructuralNode * node, cnectx & ctx)
 static void
 divert_loop(rvsdg::StructuralNode * node, cnectx & ctx)
 {
-  JLM_ASSERT(rvsdg::is<hls::loop_op>(node));
+  JLM_ASSERT(dynamic_cast<const hls::loop_node *>(node));
   auto subregion = node->subregion(0);
   divert(subregion, ctx);
 }
@@ -576,7 +577,7 @@ divert_loop(rvsdg::StructuralNode * node, cnectx & ctx)
 static void
 divert_lambda(rvsdg::StructuralNode * node, cnectx & ctx)
 {
-  JLM_ASSERT(jlm::rvsdg::is<rvsdg::LambdaOperation>(node));
+  JLM_ASSERT(dynamic_cast<const rvsdg::LambdaNode *>(node));
 
   divert_arguments(node->subregion(0), ctx);
   divert(node->subregion(0), ctx);

@@ -66,7 +66,7 @@ public:
   }
 
   [[nodiscard]] util::HashSet<const PointsToGraph::MemoryNode *>
-  GetOutputNodes(const rvsdg::output & output) const override
+  GetOutputNodes(const rvsdg::Output & output) const override
   {
     JLM_ASSERT(is<PointerType>(output.Type()));
 

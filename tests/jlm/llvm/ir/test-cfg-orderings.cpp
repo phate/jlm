@@ -15,13 +15,13 @@ test()
 
   /* setup cfg */
 
-  ipgraph_module im(jlm::util::filepath(""), "", "");
+  ipgraph_module im(jlm::util::FilePath(""), "", "");
 
-  jlm::llvm::cfg cfg(im);
-  auto bb0 = basic_block::create(cfg);
-  auto bb1 = basic_block::create(cfg);
-  auto bb2 = basic_block::create(cfg);
-  auto bb3 = basic_block::create(cfg);
+  ControlFlowGraph cfg(im);
+  auto bb0 = BasicBlock::create(cfg);
+  auto bb1 = BasicBlock::create(cfg);
+  auto bb2 = BasicBlock::create(cfg);
+  auto bb3 = BasicBlock::create(cfg);
 
   cfg.exit()->divert_inedges(bb0);
   bb0->add_outedge(bb1);

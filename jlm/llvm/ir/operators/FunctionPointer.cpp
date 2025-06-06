@@ -44,7 +44,7 @@ FunctionToPointerOperation::copy() const
 }
 
 rvsdg::unop_reduction_path_t
-FunctionToPointerOperation::can_reduce_operand(const jlm::rvsdg::output * arg) const noexcept
+FunctionToPointerOperation::can_reduce_operand(const jlm::rvsdg::Output * arg) const noexcept
 {
   if (auto node = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*arg))
   {
@@ -59,10 +59,10 @@ FunctionToPointerOperation::can_reduce_operand(const jlm::rvsdg::output * arg) c
   return rvsdg::unop_reduction_none;
 }
 
-jlm::rvsdg::output *
+jlm::rvsdg::Output *
 FunctionToPointerOperation::reduce_operand(
     rvsdg::unop_reduction_path_t path,
-    jlm::rvsdg::output * arg) const
+    jlm::rvsdg::Output * arg) const
 {
   if (auto node = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*arg))
   {
@@ -118,7 +118,7 @@ PointerToFunctionOperation::copy() const
 }
 
 rvsdg::unop_reduction_path_t
-PointerToFunctionOperation::can_reduce_operand(const jlm::rvsdg::output * arg) const noexcept
+PointerToFunctionOperation::can_reduce_operand(const jlm::rvsdg::Output * arg) const noexcept
 {
   if (auto node = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*arg))
   {
@@ -133,10 +133,10 @@ PointerToFunctionOperation::can_reduce_operand(const jlm::rvsdg::output * arg) c
   return rvsdg::unop_reduction_none;
 }
 
-jlm::rvsdg::output *
+jlm::rvsdg::Output *
 PointerToFunctionOperation::reduce_operand(
     rvsdg::unop_reduction_path_t path,
-    jlm::rvsdg::output * arg) const
+    jlm::rvsdg::Output * arg) const
 {
   if (auto node = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*arg))
   {

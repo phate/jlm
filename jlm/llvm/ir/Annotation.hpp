@@ -17,7 +17,7 @@
 namespace jlm::llvm
 {
 
-class aggnode;
+class AggregationNode;
 class variable;
 
 class VariableSet final
@@ -494,14 +494,14 @@ public:
   operator=(AnnotationMap &&) noexcept = delete;
 
   bool
-  Contains(const aggnode & aggregationNode) const noexcept
+  Contains(const AggregationNode & aggregationNode) const noexcept
   {
     return Map_.find(&aggregationNode) != Map_.end();
   }
 
   template<class T>
   T &
-  Lookup(const aggnode & aggregationNode) const noexcept
+  Lookup(const AggregationNode & aggregationNode) const noexcept
   {
     JLM_ASSERT(Contains(aggregationNode));
     auto & demandSet = Map_.find(&aggregationNode)->second;
@@ -509,7 +509,7 @@ public:
   }
 
   void
-  Insert(const aggnode & aggregationNode, std::unique_ptr<AnnotationSet> annotationSet)
+  Insert(const AggregationNode & aggregationNode, std::unique_ptr<AnnotationSet> annotationSet)
   {
     JLM_ASSERT(!Contains(aggregationNode));
     Map_[&aggregationNode] = std::move(annotationSet);
@@ -522,11 +522,11 @@ public:
   }
 
 private:
-  std::unordered_map<const aggnode *, std::unique_ptr<AnnotationSet>> Map_;
+  std::unordered_map<const AggregationNode *, std::unique_ptr<AnnotationSet>> Map_;
 };
 
 std::unique_ptr<AnnotationMap>
-Annotate(const aggnode & aggregationTreeRoot);
+Annotate(const AggregationNode & aggregationTreeRoot);
 
 }
 

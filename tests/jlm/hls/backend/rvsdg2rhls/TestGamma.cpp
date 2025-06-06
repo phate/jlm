@@ -20,7 +20,7 @@ TestWithMatch()
   auto vt = jlm::tests::valuetype::Create();
   auto ft = jlm::rvsdg::FunctionType::Create({ jlm::rvsdg::bittype::Create(1), vt, vt }, { vt });
 
-  RvsdgModule rm(jlm::util::filepath(""), "", "");
+  RvsdgModule rm(jlm::util::FilePath(""), "", "");
 
   /* Setup graph */
 
@@ -46,7 +46,7 @@ TestWithMatch()
 
   /* Verify output */
 
-  assert(jlm::rvsdg::Region::Contains<jlm::hls::mux_op>(*lambda->subregion(), true));
+  assert(jlm::rvsdg::Region::ContainsOperation<jlm::hls::mux_op>(*lambda->subregion(), true));
 }
 
 static void
@@ -58,7 +58,7 @@ TestWithoutMatch()
   auto ft =
       jlm::rvsdg::FunctionType::Create({ jlm::rvsdg::ControlType::Create(2), vt, vt }, { vt });
 
-  RvsdgModule rm(jlm::util::filepath(""), "", "");
+  RvsdgModule rm(jlm::util::FilePath(""), "", "");
 
   /* Setup graph */
 
@@ -83,7 +83,7 @@ TestWithoutMatch()
 
   /* Verify output */
 
-  assert(jlm::rvsdg::Region::Contains<jlm::hls::mux_op>(*lambda->subregion(), true));
+  assert(jlm::rvsdg::Region::ContainsOperation<jlm::hls::mux_op>(*lambda->subregion(), true));
 }
 
 static int

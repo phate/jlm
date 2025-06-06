@@ -20,7 +20,7 @@ TestUnknownBoundaries()
   auto b32 = jlm::rvsdg::bittype::Create(32);
   auto ft = jlm::rvsdg::FunctionType::Create({ b32, b32, b32 }, { b32, b32, b32 });
 
-  RvsdgModule rm(jlm::util::filepath(""), "", "");
+  RvsdgModule rm(jlm::util::FilePath(""), "", "");
 
   auto lambda = jlm::rvsdg::LambdaNode::Create(
       rm.Rvsdg().GetRootRegion(),
@@ -49,12 +49,12 @@ TestUnknownBoundaries()
 
   // Assert
   auto lambdaRegion = lambda->subregion();
-  assert(jlm::rvsdg::Region::Contains<loop_op>(*lambdaRegion, true));
-  assert(jlm::rvsdg::Region::Contains<predicate_buffer_op>(*lambdaRegion, true));
-  assert(jlm::rvsdg::Region::Contains<jlm::hls::branch_op>(*lambdaRegion, true));
-  assert(jlm::rvsdg::Region::Contains<mux_op>(*lambdaRegion, true));
+  assert(jlm::rvsdg::Region::ContainsNodeType<loop_node>(*lambdaRegion, true));
+  assert(jlm::rvsdg::Region::ContainsOperation<predicate_buffer_op>(*lambdaRegion, true));
+  assert(jlm::rvsdg::Region::ContainsOperation<jlm::hls::branch_op>(*lambdaRegion, true));
+  assert(jlm::rvsdg::Region::ContainsOperation<mux_op>(*lambdaRegion, true));
   // Check that two constant buffers are created for the loop invariant variables
-  assert(jlm::rvsdg::Region::Contains<loop_constant_buffer_op>(*lambdaRegion, true));
+  assert(jlm::rvsdg::Region::ContainsOperation<loop_constant_buffer_op>(*lambdaRegion, true));
   assert(lambdaRegion->argument(0)->nusers() == 1);
   auto loopInput =
       jlm::util::AssertedCast<jlm::rvsdg::StructuralInput>(*lambdaRegion->argument(0)->begin());

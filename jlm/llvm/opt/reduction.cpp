@@ -111,7 +111,7 @@ NodeReduction::ReduceStructuralNode(rvsdg::StructuralNode & structuralNode)
   bool reductionPerformed = false;
 
   // Reduce structural nodes
-  if (is<rvsdg::GammaOperation>(&structuralNode))
+  if (dynamic_cast<const rvsdg::GammaNode *>(&structuralNode))
   {
     reductionPerformed |= ReduceGammaNode(structuralNode);
   }
@@ -135,7 +135,7 @@ NodeReduction::ReduceStructuralNode(rvsdg::StructuralNode & structuralNode)
 bool
 NodeReduction::ReduceGammaNode(rvsdg::StructuralNode & gammaNode)
 {
-  JLM_ASSERT(is<rvsdg::GammaOperation>(&gammaNode));
+  JLM_ASSERT(dynamic_cast<const rvsdg::GammaNode *>(&gammaNode));
 
   // FIXME: We can not apply the reduction below due to a bug. See github issue #303
   // rvsdg::ReduceGammaControlConstant
@@ -192,10 +192,10 @@ NodeReduction::ReduceBinaryNode(rvsdg::Node & simpleNode)
   return rvsdg::ReduceNode<rvsdg::BinaryOperation>(rvsdg::NormalizeBinaryOperation, simpleNode);
 }
 
-std::optional<std::vector<rvsdg::output *>>
+std::optional<std::vector<rvsdg::Output *>>
 NodeReduction::NormalizeLoadNode(
     const LoadNonVolatileOperation & operation,
-    const std::vector<rvsdg::output *> & operands)
+    const std::vector<rvsdg::Output *> & operands)
 {
   static std::vector<rvsdg::NodeNormalization<LoadNonVolatileOperation>> loadNodeNormalizations(
       { NormalizeLoadMux,
@@ -211,10 +211,10 @@ NodeReduction::NormalizeLoadNode(
       operands);
 }
 
-std::optional<std::vector<rvsdg::output *>>
+std::optional<std::vector<rvsdg::Output *>>
 NodeReduction::NormalizeStoreNode(
     const StoreNonVolatileOperation & operation,
-    const std::vector<rvsdg::output *> & operands)
+    const std::vector<rvsdg::Output *> & operands)
 {
   static std::vector<rvsdg::NodeNormalization<StoreNonVolatileOperation>> storeNodeNormalizations(
       { NormalizeStoreMux,

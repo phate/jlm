@@ -56,10 +56,10 @@ public:
   copy() const override;
 
   virtual rvsdg::unop_reduction_path_t
-  can_reduce_operand(const rvsdg::output * operand) const noexcept override;
+  can_reduce_operand(const rvsdg::Output * operand) const noexcept override;
 
-  virtual rvsdg::output *
-  reduce_operand(rvsdg::unop_reduction_path_t path, rvsdg::output * operand) const override;
+  virtual rvsdg::Output *
+  reduce_operand(rvsdg::unop_reduction_path_t path, rvsdg::Output * operand) const override;
 
   inline size_t
   nsrcbits() const noexcept
@@ -88,8 +88,8 @@ public:
     return tac::create(op, { operand });
   }
 
-  static rvsdg::output *
-  create(size_t ndstbits, rvsdg::output * operand)
+  static rvsdg::Output *
+  create(size_t ndstbits, rvsdg::Output * operand)
   {
     auto ot = std::dynamic_pointer_cast<const rvsdg::bittype>(operand->Type());
     if (!ot)

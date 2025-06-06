@@ -20,64 +20,33 @@ find_function_arguments(const rvsdg::LambdaNode * lambda, std::string name_conta
 
 void
 trace_function_calls(
-    rvsdg::output * output,
+    rvsdg::Output * output,
     std::vector<rvsdg::SimpleNode *> & calls,
-    std::unordered_set<rvsdg::output *> & visited);
+    std::unordered_set<rvsdg::Output *> & visited);
 
 const llvm::IntegerConstantOperation *
-trace_constant(const rvsdg::output * dst);
+trace_constant(const rvsdg::Output * dst);
 
-rvsdg::output *
-route_to_region_rhls(rvsdg::Region * target, rvsdg::output * out);
+rvsdg::Output *
+route_to_region_rhls(rvsdg::Region * target, rvsdg::Output * out);
 
-rvsdg::output *
-route_response_rhls(rvsdg::Region * target, rvsdg::output * response);
+rvsdg::Output *
+route_response_rhls(rvsdg::Region * target, rvsdg::Output * response);
 
-rvsdg::output *
-route_request_rhls(rvsdg::Region * target, rvsdg::output * request);
+rvsdg::Output *
+route_request_rhls(rvsdg::Region * target, rvsdg::Output * request);
 
 std::deque<rvsdg::Region *>
 get_parent_regions(rvsdg::Region * region);
 
-const rvsdg::output *
-trace_call_rhls(const rvsdg::input * input);
+const rvsdg::Output *
+trace_call_rhls(const rvsdg::Input * input);
 
-const rvsdg::output *
-trace_call_rhls(const rvsdg::output * output);
+const rvsdg::Output *
+trace_call_rhls(const rvsdg::Output * output);
 
 std::string
-get_function_name(jlm::rvsdg::input * input);
-
-// this might already exist somewhere
-template<typename OpType>
-inline const OpType *
-TryGetOwnerOp(const rvsdg::input & input) noexcept
-{
-  auto owner = input.GetOwner();
-  if (const auto node = std::get_if<rvsdg::Node *>(&owner))
-  {
-    return dynamic_cast<const OpType *>(&(*node)->GetOperation());
-  }
-  else
-  {
-    return nullptr;
-  }
-}
-
-template<typename OpType>
-inline const OpType *
-TryGetOwnerOp(const rvsdg::output & output) noexcept
-{
-  auto owner = output.GetOwner();
-  if (const auto node = std::get_if<rvsdg::Node *>(&owner))
-  {
-    return dynamic_cast<const OpType *>(&(*node)->GetOperation());
-  }
-  else
-  {
-    return nullptr;
-  }
-}
+get_function_name(jlm::rvsdg::Input * input);
 
 bool
 is_dec_req(rvsdg::SimpleNode * node);
@@ -85,8 +54,8 @@ is_dec_req(rvsdg::SimpleNode * node);
 bool
 is_dec_res(rvsdg::SimpleNode * node);
 
-rvsdg::input *
-get_mem_state_user(rvsdg::output * state_edge);
+rvsdg::Input *
+get_mem_state_user(rvsdg::Output * state_edge);
 
 /**
  * Traces the origin of the given RVSDG output to find the original source of the value, which is
@@ -96,8 +65,8 @@ get_mem_state_user(rvsdg::output * state_edge);
  *
  * @param out The output to be traced to its source
  */
-rvsdg::output *
-FindSourceNode(rvsdg::output * out);
+rvsdg::Output *
+FindSourceNode(rvsdg::Output * out);
 }
 
 #endif // JLM_HLS_BACKEND_RVSDG2RHLS_HLS_FUNCTION_UTIL_HPP

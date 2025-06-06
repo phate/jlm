@@ -25,7 +25,7 @@ IOBarrierRemoval()
   const auto functionType =
       FunctionType::Create({ i32Type, i32Type, ioStateType }, { i32Type, ioStateType });
 
-  jlm::llvm::RvsdgModule rvsdgModule(jlm::util::filepath(""), "", "");
+  jlm::llvm::RvsdgModule rvsdgModule(jlm::util::FilePath(""), "", "");
   const auto & rvsdg = rvsdgModule.Rvsdg();
 
   const auto lambdaNode = LambdaNode::Create(
@@ -51,7 +51,7 @@ IOBarrierRemoval()
   ioBarrierRemoval.Run(rvsdgModule, statisticsCollector);
 
   // Assert
-  assert(!Region::Contains<IOBarrierOperation>(rvsdg.GetRootRegion(), true));
+  assert(!Region::ContainsOperation<IOBarrierOperation>(rvsdg.GetRootRegion(), true));
 
   return 0;
 }

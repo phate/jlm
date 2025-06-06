@@ -15,23 +15,23 @@
 namespace jlm::util
 {
 
-class filepath final
+class FilePath final
 {
 public:
-  explicit filepath(const std::string & path)
+  explicit FilePath(const std::string & path)
       : path_(path)
   {}
 
-  filepath(const filepath & other)
+  FilePath(const FilePath & other)
       : path_(other.path_)
   {}
 
-  filepath(filepath && other) noexcept
+  FilePath(FilePath && other) noexcept
       : path_(std::move(other.path_))
   {}
 
-  filepath &
-  operator=(const filepath & other)
+  FilePath &
+  operator=(const FilePath & other)
   {
     if (this == &other)
       return *this;
@@ -40,8 +40,8 @@ public:
     return *this;
   }
 
-  filepath &
-  operator=(filepath && other) noexcept
+  FilePath &
+  operator=(FilePath && other) noexcept
   {
     if (this == &other)
       return *this;
@@ -142,26 +142,26 @@ public:
    *    "." => ""
    *    "" => ""
    */
-  [[nodiscard]] filepath
+  [[nodiscard]] FilePath
   Dirname() const noexcept
   {
     if (path_.empty())
-      return filepath("");
+      return FilePath("");
     if (path_ == "/")
-      return filepath("/");
+      return FilePath("/");
 
     // Ignore a potential trailing '/'
     auto pos = path_.find_last_of("/", path_.size() - 2);
 
     // If no / was found, path_ is a file in the current working directory
     if (pos == std::string::npos)
-      return filepath("");
+      return FilePath("");
 
-    return filepath(path_.substr(0, pos + 1));
+    return FilePath(path_.substr(0, pos + 1));
   }
 
   /**
-   * Creates a new filepath "this / other".
+   * Creates a new file path "this / other".
    *
    * If other is an absolute path, the "this"-part is completely ignored.
    * What constitutes an absolute path is platform specific.
@@ -174,34 +174,34 @@ public:
    * @param other the second part of the path
    * @return the joined file path
    */
-  [[nodiscard]] filepath
+  [[nodiscard]] FilePath
   Join(const std::string & other) const
   {
     std::filesystem::path t(to_str());
     t.append(other);
-    return filepath(t.string());
+    return FilePath(t.string());
   }
 
-  [[nodiscard]] filepath
-  Join(const filepath & other) const
+  [[nodiscard]] FilePath
+  Join(const FilePath & other) const
   {
     return Join(other.to_str());
   }
 
   /**
-   * Creates a new filepath by adding the given suffix
-   * @return the new filepath
+   * Creates a new file path by adding the given suffix
+   * @return the new file path
    */
-  [[nodiscard]] filepath
+  [[nodiscard]] FilePath
   WithSuffix(const std::string & suffix) const
   {
-    return filepath(path_ + suffix);
+    return FilePath(path_ + suffix);
   }
 
   /**
-   * \brief Determines whether the filepath exists
+   * \brief Determines whether the file path exists
    *
-   * @return True if the filepath exists, otherwise false.
+   * @return True if the file path exists, otherwise false.
    */
   [[nodiscard]] bool
   Exists() const noexcept
@@ -210,9 +210,9 @@ public:
     return std::filesystem::exists(fileStatus);
   }
 
-  /** \brief Determines whether filepath is a directory.
+  /** \brief Determines whether file path is a directory.
    *
-   * @return True if the filepath is a directory, otherwise false.
+   * @return True if the file path is a directory, otherwise false.
    */
   [[nodiscard]] bool
   IsDirectory() const noexcept
@@ -221,9 +221,9 @@ public:
     return std::filesystem::is_directory(fileStatus);
   }
 
-  /** \brief Determines whether filepath is a file.
+  /** \brief Determines whether file path is a file.
    *
-   * @return True if the filepath is a file, otherwise false.
+   * @return True if the file path is a file, otherwise false.
    */
   [[nodiscard]] bool
   IsFile() const noexcept
@@ -233,7 +233,7 @@ public:
   }
 
   /**
-   * Creates the directory represented by this filepath object.
+   * Creates the directory represented by this file path object.
    * The parent directory must already exist.
    * The directory can also exist already, in which case this is a no-op.
    *
@@ -245,7 +245,7 @@ public:
     if (IsFile())
       throw error("file already exists: " + path_);
 
-    filepath baseDir(Dirname());
+    FilePath baseDir(Dirname());
     if (!baseDir.IsDirectory())
       throw error("parent directory is not a directory: " + baseDir.to_str());
 
@@ -263,7 +263,7 @@ public:
   }
 
   [[nodiscard]] bool
-  operator==(const filepath & other) const noexcept
+  operator==(const FilePath & other) const noexcept
   {
     return path_ == other.path_;
   }
@@ -282,14 +282,14 @@ public:
    *
    * @return A unique file
    */
-  static filepath
+  static FilePath
   CreateUniqueFileName(
-      const filepath & directory,
+      const FilePath & directory,
       const std::string & fileNamePrefix,
       const std::string & fileNameSuffix)
   {
     auto randomString = CreateRandomAlphanumericString(6);
-    filepath filePath(directory.to_str() + "/" + fileNamePrefix + randomString + fileNameSuffix);
+    FilePath filePath(directory.to_str() + "/" + fileNamePrefix + randomString + fileNameSuffix);
 
     JLM_ASSERT(!filePath.Exists());
     return filePath;
@@ -298,10 +298,10 @@ public:
   /**
    * @return a directory suitable for temporary files
    */
-  [[nodiscard]] static filepath
+  [[nodiscard]] static FilePath
   TempDirectoryPath()
   {
-    return filepath(std::filesystem::temp_directory_path().string());
+    return FilePath(std::filesystem::temp_directory_path().string());
   }
 
 private:
@@ -311,7 +311,7 @@ private:
 class file final
 {
 public:
-  file(const filepath & path)
+  file(const FilePath & path)
       : fd_(NULL),
         path_(path)
   {}
@@ -375,7 +375,7 @@ public:
     return fd_;
   }
 
-  const filepath &
+  const FilePath &
   path() const noexcept
   {
     return path_;
@@ -383,7 +383,7 @@ public:
 
 private:
   FILE * fd_;
-  filepath path_;
+  FilePath path_;
 };
 
 }
