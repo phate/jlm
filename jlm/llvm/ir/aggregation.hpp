@@ -447,26 +447,24 @@ private:
   taclist bb_;
 };
 
-/* linear node class */
-
-class linearaggnode final : public AggregationNode
+class LinearAggregationNode final : public AggregationNode
 {
 public:
-  virtual ~linearaggnode();
+  ~LinearAggregationNode() noexcept override;
 
-  inline linearaggnode(std::unique_ptr<AggregationNode> n1, std::unique_ptr<AggregationNode> n2)
+  LinearAggregationNode(std::unique_ptr<AggregationNode> n1, std::unique_ptr<AggregationNode> n2)
   {
     add_child(std::move(n1));
     add_child(std::move(n2));
   }
 
-  virtual std::string
+  std::string
   debug_string() const override;
 
-  static inline std::unique_ptr<AggregationNode>
+  static std::unique_ptr<AggregationNode>
   create(std::unique_ptr<AggregationNode> n1, std::unique_ptr<AggregationNode> n2)
   {
-    return std::make_unique<linearaggnode>(std::move(n1), std::move(n2));
+    return std::make_unique<LinearAggregationNode>(std::move(n1), std::move(n2));
   }
 };
 
