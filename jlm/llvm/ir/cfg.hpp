@@ -116,14 +116,12 @@ private:
   std::vector<std::unique_ptr<llvm::argument>> arguments_;
 };
 
-/* cfg exit node */
-
-class exit_node final : public cfg_node
+class ExitNode final : public cfg_node
 {
 public:
-  virtual ~exit_node();
+  ~ExitNode() noexcept override;
 
-  exit_node(ControlFlowGraph & cfg)
+  explicit ExitNode(ControlFlowGraph & cfg)
       : cfg_node(cfg)
   {}
 
@@ -309,7 +307,7 @@ public:
     return entry_.get();
   }
 
-  inline llvm::exit_node *
+  ExitNode *
   exit() const noexcept
   {
     return exit_.get();
@@ -378,7 +376,7 @@ private:
   ToAscii(const EntryNode & entryNode);
 
   static std::string
-  ToAscii(const exit_node & exitNode);
+  ToAscii(const ExitNode & exitNode);
 
   static std::string
   ToAscii(
@@ -392,7 +390,7 @@ private:
   CreateLabels(const std::vector<cfg_node *> & nodes);
 
   ipgraph_module & module_;
-  std::unique_ptr<exit_node> exit_;
+  std::unique_ptr<ExitNode> exit_;
   std::unique_ptr<EntryNode> entry_;
   std::unordered_set<std::unique_ptr<BasicBlock>> nodes_;
 };
