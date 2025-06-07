@@ -23,16 +23,13 @@ argument::~argument()
 
 EntryNode::~EntryNode() noexcept = default;
 
-/* cfg exit node */
-
-exit_node::~exit_node()
-{}
+ExitNode::~ExitNode() noexcept = default;
 
 ControlFlowGraph::ControlFlowGraph(ipgraph_module & im)
     : module_(im)
 {
   entry_ = std::make_unique<EntryNode>(*this);
-  exit_ = std::unique_ptr<exit_node>(new exit_node(*this));
+  exit_ = std::make_unique<ExitNode>(*this);
   entry_->add_outedge(exit_.get());
 }
 
@@ -79,7 +76,7 @@ ControlFlowGraph::ToAscii(const ControlFlowGraph & controlFlowGraph)
     {
       str += ToAscii(*entryNode);
     }
-    else if (auto exitNode = dynamic_cast<const exit_node *>(node))
+    else if (const auto exitNode = dynamic_cast<const ExitNode *>(node))
     {
       str += ToAscii(*exitNode);
     }
@@ -109,7 +106,7 @@ ControlFlowGraph::ToAscii(const EntryNode & entryNode)
 }
 
 std::string
-ControlFlowGraph::ToAscii(const exit_node & exitNode)
+ControlFlowGraph::ToAscii(const ExitNode & exitNode)
 {
   std::string str;
   for (size_t n = 0; n < exitNode.nresults(); n++)
@@ -179,7 +176,7 @@ ControlFlowGraph::CreateLabels(const std::vector<cfg_node *> & nodes)
     {
       map[node] = "entry";
     }
-    else if (is<exit_node>(node))
+    else if (is<ExitNode>(node))
     {
       map[node] = "exit";
     }
