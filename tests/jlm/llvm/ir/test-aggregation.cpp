@@ -30,7 +30,7 @@ is_block(const jlm::llvm::AggregationNode * node)
 static bool
 is_linear(const jlm::llvm::AggregationNode * node, size_t nchildren)
 {
-  if (!jlm::llvm::is<jlm::llvm::linearaggnode>(node))
+  if (!jlm::llvm::is<jlm::llvm::LinearAggregationNode>(node))
     return false;
 
   if (node->nchildren() != nchildren)
