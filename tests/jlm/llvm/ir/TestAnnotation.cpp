@@ -86,8 +86,10 @@ TestLinearSubgraphAnnotation()
     auto basicBlockNode2 = BasicBlockAggregationNode::create(std::move(bb2));
     auto exitNode = ExitAggregationNode::create({ v2 });
 
-    auto linearNode1 = LinearAggregationNode::create(std::move(entryNode), std::move(basicBlockNode1));
-    auto linearNode2 = LinearAggregationNode::create(std::move(basicBlockNode2), std::move(exitNode));
+    auto linearNode1 =
+        LinearAggregationNode::create(std::move(entryNode), std::move(basicBlockNode1));
+    auto linearNode2 =
+        LinearAggregationNode::create(std::move(basicBlockNode2), std::move(exitNode));
 
     auto root = LinearAggregationNode::create(std::move(linearNode1), std::move(linearNode2));
 
