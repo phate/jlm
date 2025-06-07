@@ -86,10 +86,12 @@ TestLinearSubgraphAnnotation()
     auto basicBlockNode2 = BasicBlockAggregationNode::create(std::move(bb2));
     auto exitNode = ExitAggregationNode::create({ v2 });
 
-    auto linearNode1 = linearaggnode::create(std::move(entryNode), std::move(basicBlockNode1));
-    auto linearNode2 = linearaggnode::create(std::move(basicBlockNode2), std::move(exitNode));
+    auto linearNode1 =
+        LinearAggregationNode::create(std::move(entryNode), std::move(basicBlockNode1));
+    auto linearNode2 =
+        LinearAggregationNode::create(std::move(basicBlockNode2), std::move(exitNode));
 
-    auto root = linearaggnode::create(std::move(linearNode1), std::move(linearNode2));
+    auto root = LinearAggregationNode::create(std::move(linearNode1), std::move(linearNode2));
 
     return std::make_tuple(std::move(root), v1, v2);
   };
@@ -182,7 +184,7 @@ TestBranchAnnotation()
     branch->add_child(std::move(basicBlock1));
     branch->add_child(std::move(basicBlock2));
 
-    auto root = linearaggnode::create(std::move(basicBlockSplit), std::move(branch));
+    auto root = LinearAggregationNode::create(std::move(basicBlockSplit), std::move(branch));
 
     return std::make_tuple(std::move(root), argument, v1, v2, v3, v4);
   };
@@ -256,7 +258,7 @@ TestLoopAnnotation()
     auto basicBlockNode = BasicBlockAggregationNode::create(std::move(bb));
 
     auto loopNode = loopaggnode::create(std::move(basicBlockNode));
-    auto root = linearaggnode::create(std::move(loopNode), std::move(exitNode));
+    auto root = LinearAggregationNode::create(std::move(loopNode), std::move(exitNode));
 
     return std::make_tuple(std::move(root), v1, v2, v3, v4);
   };
@@ -332,7 +334,7 @@ TestBranchInLoopAnnotation()
 
     auto loopNode = loopaggnode::create(std::move(branchNode));
 
-    auto root = linearaggnode::create(std::move(loopNode), std::move(exitNode));
+    auto root = LinearAggregationNode::create(std::move(loopNode), std::move(exitNode));
 
     return std::make_tuple(std::move(root), v1, v2, v3, v4);
   };
@@ -465,7 +467,7 @@ TestBranchPassByAnnotation()
 
     auto exitNode = ExitAggregationNode::create({ v1, v2, v3 });
 
-    auto root = linearaggnode::create(std::move(splitNode), std::move(branchNode));
+    auto root = LinearAggregationNode::create(std::move(splitNode), std::move(branchNode));
     root->add_child(std::move(joinNode));
     root->add_child(std::move(exitNode));
 

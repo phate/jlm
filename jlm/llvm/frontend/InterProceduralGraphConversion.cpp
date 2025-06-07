@@ -651,7 +651,7 @@ Convert(
 
 static void
 Convert(
-    const linearaggnode & linearAggregationNode,
+    const LinearAggregationNode & linearAggregationNode,
     const AnnotationMap & demandMap,
     rvsdg::LambdaNode & lambdaNode,
     RegionalizedVariableMap & regionalizedVariableMap)
@@ -667,7 +667,7 @@ Convert(
     rvsdg::LambdaNode & lambdaNode,
     RegionalizedVariableMap & regionalizedVariableMap)
 {
-  JLM_ASSERT(is<linearaggnode>(branchAggregationNode.parent()));
+  JLM_ASSERT(is<LinearAggregationNode>(branchAggregationNode.parent()));
 
   /*
    * Find predicate
@@ -827,7 +827,7 @@ ConvertAggregationNode(
   {
     Convert(*blockNode, demandMap, lambdaNode, regionalizedVariableMap);
   }
-  else if (auto linearNode = dynamic_cast<const linearaggnode *>(&aggregationNode))
+  else if (const auto linearNode = dynamic_cast<const LinearAggregationNode *>(&aggregationNode))
   {
     Convert(*linearNode, demandMap, lambdaNode, regionalizedVariableMap);
   }

@@ -21,14 +21,14 @@ AggregationNode::normalize(AggregationNode & node)
   std::function<std::vector<std::unique_ptr<AggregationNode>>(AggregationNode &)> reduce =
       [&](AggregationNode & node)
   {
-    JLM_ASSERT(is<linearaggnode>(&node));
+    JLM_ASSERT(is<LinearAggregationNode>(&node));
 
     std::vector<std::unique_ptr<AggregationNode>> children;
     for (size_t n = 0; n < node.children_.size(); n++)
     {
       auto & child = node.children_[n];
 
-      if (is<linearaggnode>(child.get()))
+      if (is<LinearAggregationNode>(child.get()))
       {
         auto tmp = reduce(*child);
         std::move(tmp.begin(), tmp.end(), std::back_inserter(children));
@@ -42,7 +42,7 @@ AggregationNode::normalize(AggregationNode & node)
     return children;
   };
 
-  if (is<linearaggnode>(&node))
+  if (is<LinearAggregationNode>(&node))
   {
     auto children = reduce(node);
 
@@ -91,13 +91,10 @@ BasicBlockAggregationNode::debug_string() const
   return "block";
 }
 
-/* linearaggnode class */
-
-linearaggnode::~linearaggnode()
-{}
+LinearAggregationNode::~LinearAggregationNode() noexcept = default;
 
 std::string
-linearaggnode::debug_string() const
+LinearAggregationNode::debug_string() const
 {
   return "linear";
 }
@@ -314,7 +311,7 @@ reduce_branch(cfg_node * split, cfg_node ** entry, aggregation_map & map)
   }
 
   auto & child = map.lookup(split);
-  map.insert(sese, linearaggnode::create(std::move(child), std::move(branch)));
+  map.insert(sese, LinearAggregationNode::create(std::move(child), std::move(branch)));
   map.remove(split);
 
   /*
@@ -357,7 +354,7 @@ reduce_linear(cfg_node * source, cfg_node ** entry, cfg_node ** exit, aggregatio
 
   auto child0 = std::move(map.lookup(source));
   auto child1 = std::move(map.lookup(sink));
-  map.insert(sese, linearaggnode::create(std::move(child0), std::move(child1)));
+  map.insert(sese, LinearAggregationNode::create(std::move(child0), std::move(child1)));
   map.remove(source);
   map.remove(sink);
 

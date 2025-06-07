@@ -269,7 +269,7 @@ AnnotateReadWrite(
 }
 
 static void
-AnnotateReadWrite(const linearaggnode & linearAggregationNode, AnnotationMap & demandMap)
+AnnotateReadWrite(const LinearAggregationNode & linearAggregationNode, AnnotationMap & demandMap)
 {
   VariableSet readSet;
   VariableSet allWriteSet;
@@ -349,7 +349,7 @@ AnnotateReadWrite(const AggregationNode & aggregationNode, AnnotationMap & deman
   {
     AnnotateReadWrite(*blockNode, demandMap);
   }
-  else if (auto linearNode = dynamic_cast<const linearaggnode *>(&aggregationNode))
+  else if (const auto linearNode = dynamic_cast<const LinearAggregationNode *>(&aggregationNode))
   {
     AnnotateReadWrite(*linearNode, demandMap);
   }
@@ -406,7 +406,7 @@ AnnotateDemandSet(
 
 static void
 AnnotateDemandSet(
-    const linearaggnode & linearAggregationNode,
+    const LinearAggregationNode & linearAggregationNode,
     VariableSet & workingSet,
     AnnotationMap & demandMap)
 {
@@ -480,7 +480,7 @@ AnnotateDemandSet(
       map({ { typeid(EntryAggregationNode), AnnotateDemandSet<EntryAggregationNode> },
             { typeid(ExitAggregationNode), AnnotateDemandSet<ExitAggregationNode> },
             { typeid(BasicBlockAggregationNode), AnnotateDemandSet<BasicBlockAggregationNode> },
-            { typeid(linearaggnode), AnnotateDemandSet<linearaggnode> },
+            { typeid(LinearAggregationNode), AnnotateDemandSet<LinearAggregationNode> },
             { typeid(branchaggnode), AnnotateDemandSet<branchaggnode> },
             { typeid(loopaggnode), AnnotateDemandSet<loopaggnode> } });
 
