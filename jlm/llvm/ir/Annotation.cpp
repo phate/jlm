@@ -213,7 +213,7 @@ AnnotateReadWrite(const EntryAggregationNode & entryAggregationNode, AnnotationM
 }
 
 static void
-AnnotateReadWrite(const exitaggnode & exitAggregationNode, AnnotationMap & demandMap)
+AnnotateReadWrite(const ExitAggregationNode & exitAggregationNode, AnnotationMap & demandMap)
 {
   VariableSet readSet;
   for (auto & result : exitAggregationNode)
@@ -224,7 +224,9 @@ AnnotateReadWrite(const exitaggnode & exitAggregationNode, AnnotationMap & deman
 }
 
 static void
-AnnotateReadWrite(const blockaggnode & basicBlockAggregationNode, AnnotationMap & demandMap)
+AnnotateReadWrite(
+    const BasicBlockAggregationNode & basicBlockAggregationNode,
+    AnnotationMap & demandMap)
 {
   auto & threeAddressCodeList = basicBlockAggregationNode.tacs();
 
@@ -339,11 +341,11 @@ AnnotateReadWrite(const AggregationNode & aggregationNode, AnnotationMap & deman
   {
     AnnotateReadWrite(*entryNode, demandMap);
   }
-  else if (auto exitNode = dynamic_cast<const exitaggnode *>(&aggregationNode))
+  else if (auto exitNode = dynamic_cast<const ExitAggregationNode *>(&aggregationNode))
   {
     AnnotateReadWrite(*exitNode, demandMap);
   }
-  else if (auto blockNode = dynamic_cast<const blockaggnode *>(&aggregationNode))
+  else if (auto blockNode = dynamic_cast<const BasicBlockAggregationNode *>(&aggregationNode))
   {
     AnnotateReadWrite(*blockNode, demandMap);
   }
@@ -383,7 +385,7 @@ AnnotateDemandSet(
 
 static void
 AnnotateDemandSet(
-    const exitaggnode & exitAggregationNode,
+    const ExitAggregationNode & exitAggregationNode,
     VariableSet & workingSet,
     AnnotationMap & demandMap)
 {
@@ -393,7 +395,7 @@ AnnotateDemandSet(
 
 static void
 AnnotateDemandSet(
-    const blockaggnode & basicBlockAggregationNode,
+    const BasicBlockAggregationNode & basicBlockAggregationNode,
     VariableSet & workingSet,
     AnnotationMap & demandMap)
 {
@@ -476,8 +478,8 @@ AnnotateDemandSet(
       std::type_index,
       void (*)(const AggregationNode *, VariableSet &, AnnotationMap &)>
       map({ { typeid(EntryAggregationNode), AnnotateDemandSet<EntryAggregationNode> },
-            { typeid(exitaggnode), AnnotateDemandSet<exitaggnode> },
-            { typeid(blockaggnode), AnnotateDemandSet<blockaggnode> },
+            { typeid(ExitAggregationNode), AnnotateDemandSet<ExitAggregationNode> },
+            { typeid(BasicBlockAggregationNode), AnnotateDemandSet<BasicBlockAggregationNode> },
             { typeid(linearaggnode), AnnotateDemandSet<linearaggnode> },
             { typeid(branchaggnode), AnnotateDemandSet<branchaggnode> },
             { typeid(loopaggnode), AnnotateDemandSet<loopaggnode> } });

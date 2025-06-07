@@ -79,7 +79,7 @@ emit_data_node(const ipgraph_node & clg_node)
 }
 
 std::string
-to_str(const ipgraph & clg)
+to_str(const InterProceduralGraph & clg)
 {
   static std::unordered_map<std::type_index, std::function<std::string(const ipgraph_node &)>> map(
       { { typeid(function_node), emit_function_node }, { typeid(data_node), emit_data_node } });
@@ -99,8 +99,8 @@ to_str(const ipgraph & clg)
 static inline std::string
 emit_entry_dot(const cfg_node & node)
 {
-  JLM_ASSERT(is<entry_node>(&node));
-  auto en = static_cast<const entry_node *>(&node);
+  JLM_ASSERT(is<EntryNode>(&node));
+  const auto en = static_cast<const EntryNode *>(&node);
 
   std::string str;
   for (size_t n = 0; n < en->narguments(); n++)
@@ -144,7 +144,7 @@ emit_basic_block(const cfg_node & node)
 static inline std::string
 emit_header(const cfg_node & node)
 {
-  if (is<entry_node>(&node))
+  if (is<EntryNode>(&node))
     return "ENTRY";
 
   if (is<exit_node>(&node))
@@ -157,7 +157,7 @@ static inline std::string
 emit_node(const cfg_node & node)
 {
   static std::unordered_map<std::type_index, std::string (*)(const cfg_node &)> map(
-      { { typeid(entry_node), emit_entry_dot },
+      { { typeid(EntryNode), emit_entry_dot },
         { typeid(exit_node), emit_exit_dot },
         { typeid(BasicBlock), emit_basic_block } });
 
@@ -212,7 +212,7 @@ to_dot(const ControlFlowGraph & cfg)
 }
 
 std::string
-to_dot(const ipgraph & clg)
+to_dot(const InterProceduralGraph & clg)
 {
   std::string dot("digraph clg {\n");
   for (const auto & node : clg)

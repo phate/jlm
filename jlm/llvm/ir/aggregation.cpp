@@ -75,24 +75,18 @@ EntryAggregationNode::debug_string() const
   return "entry";
 }
 
-/* exitaggnode class */
-
-exitaggnode::~exitaggnode()
-{}
+ExitAggregationNode::~ExitAggregationNode() noexcept = default;
 
 std::string
-exitaggnode::debug_string() const
+ExitAggregationNode::debug_string() const
 {
   return "exit";
 }
 
-/* blockaggnode class */
-
-blockaggnode::~blockaggnode()
-{}
+BasicBlockAggregationNode::~BasicBlockAggregationNode() noexcept = default;
 
 std::string
-blockaggnode::debug_string() const
+BasicBlockAggregationNode::debug_string() const
 {
   return "block";
 }
@@ -171,11 +165,11 @@ public:
     auto map = std::make_unique<aggregation_map>();
 
     map->map_[entry] = EntryAggregationNode::create(entry->arguments());
-    map->map_[exit] = exitaggnode::create(exit->results());
+    map->map_[exit] = ExitAggregationNode::create(exit->results());
     for (auto & node : cfg)
     {
       auto bb = static_cast<BasicBlock *>(&node);
-      map->map_[&node] = blockaggnode::create(std::move(bb->tacs()));
+      map->map_[&node] = BasicBlockAggregationNode::create(std::move(bb->tacs()));
     }
 
     return map;
@@ -510,7 +504,7 @@ ntacs(const AggregationNode & root)
   for (auto & child : root)
     n += ntacs(child);
 
-  if (auto bb = dynamic_cast<const blockaggnode *>(&root))
+  if (auto bb = dynamic_cast<const BasicBlockAggregationNode *>(&root))
     n += bb->tacs().ntacs();
 
   return n;

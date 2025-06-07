@@ -620,7 +620,7 @@ Convert(
 
 static void
 Convert(
-    const exitaggnode & exitAggregationNode,
+    const ExitAggregationNode & exitAggregationNode,
     const AnnotationMap &,
     rvsdg::LambdaNode & lambdaNode,
     RegionalizedVariableMap & regionalizedVariableMap)
@@ -638,7 +638,7 @@ Convert(
 
 static void
 Convert(
-    const blockaggnode & blockAggregationNode,
+    const BasicBlockAggregationNode & blockAggregationNode,
     const AnnotationMap &,
     rvsdg::LambdaNode &,
     RegionalizedVariableMap & regionalizedVariableMap)
@@ -673,9 +673,9 @@ Convert(
    * Find predicate
    */
   auto split = branchAggregationNode.parent()->child(branchAggregationNode.index() - 1);
-  while (!is<blockaggnode>(split))
+  while (!is<BasicBlockAggregationNode>(split))
     split = split->child(split->nchildren() - 1);
-  auto & sb = dynamic_cast<const blockaggnode *>(split)->tacs();
+  auto & sb = dynamic_cast<const BasicBlockAggregationNode *>(split)->tacs();
   JLM_ASSERT(is<BranchOperation>(sb.last()->operation()));
   auto predicate = regionalizedVariableMap.GetTopVariableMap().lookup(sb.last()->operand(0));
 
@@ -791,8 +791,8 @@ Convert(
   auto lblock = loopAggregationNode.child(0);
   while (lblock->nchildren() != 0)
     lblock = lblock->child(lblock->nchildren() - 1);
-  JLM_ASSERT(is<blockaggnode>(lblock));
-  auto & bb = static_cast<const blockaggnode *>(lblock)->tacs();
+  JLM_ASSERT(is<BasicBlockAggregationNode>(lblock));
+  auto & bb = static_cast<const BasicBlockAggregationNode *>(lblock)->tacs();
   JLM_ASSERT(is<BranchOperation>(bb.last()->operation()));
   auto predicate = bb.last()->operand(0);
 
@@ -819,11 +819,11 @@ ConvertAggregationNode(
   {
     Convert(*entryNode, demandMap, lambdaNode, regionalizedVariableMap);
   }
-  else if (auto exitNode = dynamic_cast<const exitaggnode *>(&aggregationNode))
+  else if (auto exitNode = dynamic_cast<const ExitAggregationNode *>(&aggregationNode))
   {
     Convert(*exitNode, demandMap, lambdaNode, regionalizedVariableMap);
   }
-  else if (auto blockNode = dynamic_cast<const blockaggnode *>(&aggregationNode))
+  else if (auto blockNode = dynamic_cast<const BasicBlockAggregationNode *>(&aggregationNode))
   {
     Convert(*blockNode, demandMap, lambdaNode, regionalizedVariableMap);
   }

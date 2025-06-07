@@ -278,6 +278,7 @@ JlmHlsCommandLineOptions::Reset() noexcept
   OutputFormat_ = OutputFormat::Firrtl;
   HlsFunction_ = "";
   ExtractHlsFunction_ = false;
+  MemoryLatency_ = 10;
 }
 
 void
@@ -989,6 +990,13 @@ JlmHlsCommandLineParser::ParseCommandLineArguments(int argc, const char * const 
       cl::desc("Function that should be accelerated"),
       cl::value_desc("hls-function"));
 
+  cl::opt<int> latency(
+      "latency",
+      cl::Prefix,
+      cl::init(CommandLineOptions_.MemoryLatency_),
+      cl::desc("Memory latency"),
+      cl::value_desc("latency"));
+
   cl::opt<bool> extractHlsFunction(
       "extract",
       cl::Prefix,
@@ -1017,6 +1025,12 @@ JlmHlsCommandLineParser::ParseCommandLineArguments(int argc, const char * const 
   CommandLineOptions_.OutputFiles_ = util::FilePath(outputFolder);
   CommandLineOptions_.ExtractHlsFunction_ = extractHlsFunction;
   CommandLineOptions_.OutputFormat_ = format;
+
+  if (latency < 1)
+  {
+    throw jlm::util::error("The --latency must be set to a number larger than zero.");
+  }
+  CommandLineOptions_.MemoryLatency_ = latency;
 
   return CommandLineOptions_;
 }

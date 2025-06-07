@@ -356,7 +356,8 @@ JhlsCommandGraphGenerator::GenerateCommandGraph(const JhlsCommandLineOptions & c
   auto & hls = JlmHlsCommand::Create(
       *commandGraph,
       dynamic_cast<LlvmOptCommand *>(&m2r2.GetCommand())->OutputFile(),
-      commandLineOptions.OutputFile_);
+      commandLineOptions.OutputFile_,
+      commandLineOptions.JlmHls_);
   m2r2.AddEdge(hls);
 
   auto linkerInputFiles = util::FilePath(commandLineOptions.OutputFile_.to_str() + ".re*.ll");

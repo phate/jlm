@@ -362,16 +362,14 @@ private:
   std::vector<llvm::argument *>::const_iterator it_;
 };
 
-/* exit node class */
-
-class exitaggnode final : public AggregationNode
+class ExitAggregationNode final : public AggregationNode
 {
   typedef std::vector<const variable *>::const_iterator const_iterator;
 
 public:
-  virtual ~exitaggnode();
+  ~ExitAggregationNode() noexcept override;
 
-  inline exitaggnode(const std::vector<const variable *> & results)
+  explicit ExitAggregationNode(const std::vector<const variable *> & results)
       : results_(results)
   {}
 
@@ -406,31 +404,28 @@ public:
   static inline std::unique_ptr<AggregationNode>
   create(const std::vector<const variable *> & results)
   {
-    return std::make_unique<exitaggnode>(results);
+    return std::make_unique<ExitAggregationNode>(results);
   }
 
 private:
   std::vector<const variable *> results_;
 };
 
-/* basic block node class */
-
-class blockaggnode final : public AggregationNode
+class BasicBlockAggregationNode final : public AggregationNode
 {
 public:
-  virtual ~blockaggnode();
+  ~BasicBlockAggregationNode() noexcept override;
 
-  blockaggnode()
-  {}
+  BasicBlockAggregationNode() = default;
 
-  inline blockaggnode(taclist && bb)
+  explicit BasicBlockAggregationNode(taclist && bb)
       : bb_(std::move(bb))
   {}
 
-  virtual std::string
+  std::string
   debug_string() const override;
 
-  inline const taclist &
+  const taclist &
   tacs() const noexcept
   {
     return bb_;
@@ -439,13 +434,13 @@ public:
   static std::unique_ptr<AggregationNode>
   create()
   {
-    return std::make_unique<blockaggnode>();
+    return std::make_unique<BasicBlockAggregationNode>();
   }
 
-  static inline std::unique_ptr<AggregationNode>
+  static std::unique_ptr<AggregationNode>
   create(taclist && bb)
   {
-    return std::make_unique<blockaggnode>(std::move(bb));
+    return std::make_unique<BasicBlockAggregationNode>(std::move(bb));
   }
 
 private:
