@@ -51,7 +51,7 @@ destruct_ssa(ControlFlowGraph & cfg)
       std::unordered_map<cfg_node *, BasicBlock *> intermediateBlocks;
 
       // Make a copy of the original inEdges to avoid iterator invalidation
-      std::vector<cfg_edge *> originalInEdges;
+      std::vector<ControlFlowGraphEdge *> originalInEdges;
       for (auto & inEdge : phi_block->InEdges())
         originalInEdges.push_back(&inEdge);
 
