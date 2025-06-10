@@ -85,7 +85,7 @@ MemoryStateMergeOperation::NormalizeNestedMerges(
 
 std::optional<std::vector<rvsdg::Output *>>
 MemoryStateMergeOperation::NormalizeMergeSplit(
-    const MemoryStateMergeOperation & operation,
+    const MemoryStateMergeOperation &,
     const std::vector<rvsdg::Output *> & operands)
 {
   std::vector<rvsdg::Output *> newOperands;
