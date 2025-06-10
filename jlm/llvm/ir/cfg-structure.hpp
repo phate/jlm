@@ -16,7 +16,7 @@ namespace jlm::llvm
 {
 
 class ControlFlowGraph;
-class cfg_edge;
+class ControlFlowGraphEdge;
 class cfg_node;
 
 /** \brief Strongly Connected Component
@@ -128,7 +128,7 @@ private:
  */
 class sccstructure final
 {
-  using cfg_edge_constiterator = std::unordered_set<cfg_edge *>::const_iterator;
+  using cfg_edge_constiterator = std::unordered_set<ControlFlowGraphEdge *>::const_iterator;
   using cfg_node_constiterator = std::unordered_set<cfg_node *>::const_iterator;
 
   using edge_iterator_range = util::IteratorRange<cfg_edge_constiterator>;
@@ -212,9 +212,9 @@ public:
 private:
   std::unordered_set<cfg_node *> enodes_;
   std::unordered_set<cfg_node *> xnodes_;
-  std::unordered_set<cfg_edge *> eedges_;
-  std::unordered_set<cfg_edge *> redges_;
-  std::unordered_set<cfg_edge *> xedges_;
+  std::unordered_set<ControlFlowGraphEdge *> eedges_;
+  std::unordered_set<ControlFlowGraphEdge *> redges_;
+  std::unordered_set<ControlFlowGraphEdge *> xedges_;
 };
 
 bool
