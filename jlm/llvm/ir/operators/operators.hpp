@@ -76,7 +76,7 @@ public:
     return IncomingNodes_[n];
   }
 
-  static std::unique_ptr<llvm::tac>
+  static std::unique_ptr<llvm::ThreeAddressCode>
   create(
       const std::vector<std::pair<const variable *, cfg_node *>> & arguments,
       std::shared_ptr<const jlm::rvsdg::Type> type)
@@ -90,7 +90,7 @@ public:
     }
 
     const SsaPhiOperation phi(std::move(basicBlocks), std::move(type));
-    return tac::create(phi, operands);
+    return ThreeAddressCode::create(phi, operands);
   }
 
 private:
@@ -119,13 +119,13 @@ public:
   [[nodiscard]] std::unique_ptr<Operation>
   copy() const override;
 
-  static std::unique_ptr<llvm::tac>
+  static std::unique_ptr<llvm::ThreeAddressCode>
   create(const variable * rhs, const variable * lhs)
   {
     if (rhs->type() != lhs->type())
       throw jlm::util::error("LHS and RHS of assignment must have same type.");
 
-    return tac::create(AssignmentOperation(rhs->Type()), { lhs, rhs });
+    return ThreeAddressCode::create(AssignmentOperation(rhs->Type()), { lhs, rhs });
   }
 };
 
@@ -159,11 +159,11 @@ public:
     return result(0);
   }
 
-  static std::unique_ptr<llvm::tac>
+  static std::unique_ptr<llvm::ThreeAddressCode>
   create(const llvm::variable * p, const llvm::variable * t, const llvm::variable * f)
   {
     const SelectOperation op(t->Type());
-    return tac::create(op, { p, t, f });
+    return ThreeAddressCode::create(op, { p, t, f });
   }
 };
 
@@ -207,7 +207,7 @@ public:
     return dynamic_cast<const VectorType *>(&type())->size();
   }
 
-  static std::unique_ptr<llvm::tac>
+  static std::unique_ptr<llvm::ThreeAddressCode>
   create(const variable * p, const variable * t, const variable * f)
   {
     if (is<FixedVectorType>(p->type()) && is<FixedVectorType>(t->type()))
@@ -221,14 +221,14 @@ public:
 
 private:
   template<typename T>
-  static std::unique_ptr<tac>
+  static std::unique_ptr<ThreeAddressCode>
   createVectorSelectTac(const variable * p, const variable * t, const variable * f)
   {
     auto fvt = static_cast<const T *>(&t->type());
     auto pt = T::Create(jlm::rvsdg::bittype::Create(1), fvt->size());
     auto vt = T::Create(fvt->Type(), fvt->size());
     const VectorSelectOperation op(pt, vt);
-    return tac::create(op, { p, t, f });
+    return ThreeAddressCode::create(op, { p, t, f });
   }
 };
 
@@ -279,7 +279,7 @@ public:
   reduce_operand(jlm::rvsdg::unop_reduction_path_t path, jlm::rvsdg::Output * output)
       const override;
 
-  static std::unique_ptr<llvm::tac>
+  static std::unique_ptr<llvm::ThreeAddressCode>
   create(const variable * operand, const std::shared_ptr<const jlm::rvsdg::Type> & type)
   {
     auto st = std::dynamic_pointer_cast<const FloatingPointType>(operand->Type());
@@ -291,7 +291,7 @@ public:
       throw jlm::util::error("expected bitstring type.");
 
     const FloatingPointToUnsignedIntegerOperation op(std::move(st), std::move(dt));
-    return tac::create(op, { operand });
+    return ThreeAddressCode::create(op, { operand });
   }
 };
 
@@ -342,7 +342,7 @@ public:
   reduce_operand(jlm::rvsdg::unop_reduction_path_t path, jlm::rvsdg::Output * output)
       const override;
 
-  static std::unique_ptr<llvm::tac>
+  static std::unique_ptr<llvm::ThreeAddressCode>
   create(const variable * operand, const std::shared_ptr<const jlm::rvsdg::Type> & type)
   {
     auto st = std::dynamic_pointer_cast<const FloatingPointType>(operand->Type());
@@ -354,7 +354,7 @@ public:
       throw jlm::util::error("expected bitstring type.");
 
     FloatingPointToSignedIntegerOperation op(std::move(st), std::move(dt));
-    return tac::create(op, { operand });
+    return ThreeAddressCode::create(op, { operand });
   }
 };
 
@@ -380,7 +380,7 @@ public:
   [[nodiscard]] std::unique_ptr<Operation>
   copy() const override;
 
-  static std::unique_ptr<llvm::tac>
+  static std::unique_ptr<llvm::ThreeAddressCode>
   create(const variable * operand, const std::shared_ptr<const jlm::rvsdg::Type> & type)
   {
     auto st = std::dynamic_pointer_cast<const rvsdg::ControlType>(operand->Type());
@@ -392,7 +392,7 @@ public:
       throw jlm::util::error("expected bitstring type.");
 
     ctl2bits_op op(std::move(st), std::move(dt));
-    return tac::create(op, { operand });
+    return ThreeAddressCode::create(op, { operand });
   }
 };
 
@@ -420,11 +420,11 @@ public:
     return std::static_pointer_cast<const rvsdg::ControlType>(argument(0))->nalternatives();
   }
 
-  static std::unique_ptr<llvm::tac>
+  static std::unique_ptr<llvm::ThreeAddressCode>
   create(size_t nalternatives, const variable * operand)
   {
     const BranchOperation op(rvsdg::ControlType::Create(nalternatives));
-    return tac::create(op, { operand });
+    return ThreeAddressCode::create(op, { operand });
   }
 };
 
@@ -456,11 +456,11 @@ public:
     return *util::AssertedCast<const PointerType>(result(0).get());
   }
 
-  static std::unique_ptr<llvm::tac>
+  static std::unique_ptr<llvm::ThreeAddressCode>
   Create(std::shared_ptr<const rvsdg::Type> type)
   {
     ConstantPointerNullOperation operation(CheckAndExtractType(type));
-    return tac::create(operation, {});
+    return ThreeAddressCode::create(operation, {});
   }
 
   static jlm::rvsdg::Output *
@@ -528,7 +528,7 @@ public:
     return std::static_pointer_cast<const jlm::rvsdg::bittype>(argument(0))->nbits();
   }
 
-  static std::unique_ptr<llvm::tac>
+  static std::unique_ptr<llvm::ThreeAddressCode>
   create(const variable * argument, std::shared_ptr<const jlm::rvsdg::Type> type)
   {
     auto at = std::dynamic_pointer_cast<const jlm::rvsdg::bittype>(argument->Type());
@@ -540,7 +540,7 @@ public:
       throw jlm::util::error("expected pointer type.");
 
     IntegerToPointerOperation op(at, pt);
-    return tac::create(op, { argument });
+    return ThreeAddressCode::create(op, { argument });
   }
 
   static jlm::rvsdg::Output *
@@ -605,7 +605,7 @@ public:
     return std::static_pointer_cast<const rvsdg::bittype>(result(0))->nbits();
   }
 
-  static std::unique_ptr<llvm::tac>
+  static std::unique_ptr<llvm::ThreeAddressCode>
   create(const variable * argument, const std::shared_ptr<const jlm::rvsdg::Type> & type)
   {
     auto pt = std::dynamic_pointer_cast<const PointerType>(argument->Type());
@@ -617,7 +617,7 @@ public:
       throw jlm::util::error("expected bitstring type.");
 
     PtrToIntOperation op(std::move(pt), std::move(bt));
-    return tac::create(op, { argument });
+    return ThreeAddressCode::create(op, { argument });
   }
 };
 
@@ -656,7 +656,7 @@ public:
     return std::static_pointer_cast<const ArrayType>(result(0))->element_type();
   }
 
-  static std::unique_ptr<llvm::tac>
+  static std::unique_ptr<llvm::ThreeAddressCode>
   create(const std::vector<const variable *> & elements)
   {
     if (elements.size() == 0)
@@ -667,7 +667,7 @@ public:
       throw jlm::util::error("expected value type.");
 
     ConstantDataArray op(std::move(vt), elements.size());
-    return tac::create(op, elements);
+    return ThreeAddressCode::create(op, elements);
   }
 
   static jlm::rvsdg::Output *
@@ -734,7 +734,7 @@ public:
     return cmp_;
   }
 
-  static std::unique_ptr<llvm::tac>
+  static std::unique_ptr<llvm::ThreeAddressCode>
   create(const llvm::cmp & cmp, const variable * op1, const variable * op2)
   {
     auto pt = std::dynamic_pointer_cast<const PointerType>(op1->Type());
@@ -742,7 +742,7 @@ public:
       throw jlm::util::error("expected pointer type.");
 
     ptrcmp_op op(std::move(pt), cmp);
-    return tac::create(op, { op1, op2 });
+    return ThreeAddressCode::create(op, { op1, op2 });
   }
 
 private:
@@ -815,14 +815,14 @@ public:
     return std::static_pointer_cast<const rvsdg::bittype>(result(0))->nbits();
   }
 
-  static std::unique_ptr<llvm::tac>
+  static std::unique_ptr<llvm::ThreeAddressCode>
   create(const variable * operand, const std::shared_ptr<const jlm::rvsdg::Type> & type)
   {
     auto operandBitType = CheckAndExtractBitType(operand->Type());
     auto resultBitType = CheckAndExtractBitType(type);
 
     const ZExtOperation operation(std::move(operandBitType), std::move(resultBitType));
-    return tac::create(operation, { operand });
+    return ThreeAddressCode::create(operation, { operand });
   }
 
   static rvsdg::Output &
@@ -889,7 +889,7 @@ public:
     return std::static_pointer_cast<const FloatingPointType>(result(0))->size();
   }
 
-  static std::unique_ptr<llvm::tac>
+  static std::unique_ptr<llvm::ThreeAddressCode>
   create(const ::llvm::APFloat & constant, const std::shared_ptr<const jlm::rvsdg::Type> & type)
   {
     auto ft = std::dynamic_pointer_cast<const FloatingPointType>(type);
@@ -897,7 +897,7 @@ public:
       throw jlm::util::error("expected floating point type.");
 
     ConstantFP op(std::move(ft), constant);
-    return tac::create(op, {});
+    return ThreeAddressCode::create(op, {});
   }
 
 private:
@@ -976,7 +976,7 @@ public:
     return std::static_pointer_cast<const FloatingPointType>(argument(0))->size();
   }
 
-  static std::unique_ptr<llvm::tac>
+  static std::unique_ptr<llvm::ThreeAddressCode>
   create(const fpcmp & cmp, const variable * op1, const variable * op2)
   {
     auto ft = std::dynamic_pointer_cast<const FloatingPointType>(op1->Type());
@@ -984,7 +984,7 @@ public:
       throw jlm::util::error("expected floating point type.");
 
     fpcmp_op op(cmp, std::move(ft));
-    return tac::create(op, { op1, op2 });
+    return ThreeAddressCode::create(op, { op1, op2 });
   }
 
 private:
@@ -1033,21 +1033,21 @@ public:
     return rvsdg::CreateOpNode<UndefValueOperation>(region, std::move(type)).output(0);
   }
 
-  static std::unique_ptr<llvm::tac>
+  static std::unique_ptr<llvm::ThreeAddressCode>
   Create(std::shared_ptr<const jlm::rvsdg::Type> type)
   {
     UndefValueOperation operation(std::move(type));
-    return tac::create(operation, {});
+    return ThreeAddressCode::create(operation, {});
   }
 
-  static std::unique_ptr<llvm::tac>
+  static std::unique_ptr<llvm::ThreeAddressCode>
   Create(std::shared_ptr<const jlm::rvsdg::Type> type, const std::string & name)
   {
     UndefValueOperation operation(std::move(type));
-    return tac::create(operation, {}, { name });
+    return ThreeAddressCode::create(operation, {}, { name });
   }
 
-  static std::unique_ptr<llvm::tac>
+  static std::unique_ptr<llvm::ThreeAddressCode>
   Create(std::unique_ptr<tacvariable> result)
   {
     auto & type = result->Type();
@@ -1056,7 +1056,7 @@ public:
     results.push_back(std::move(result));
 
     UndefValueOperation operation(type);
-    return tac::create(operation, {}, std::move(results));
+    return ThreeAddressCode::create(operation, {}, std::move(results));
   }
 };
 
@@ -1098,13 +1098,13 @@ public:
     return *util::AssertedCast<const rvsdg::ValueType>(result(0).get());
   }
 
-  static std::unique_ptr<llvm::tac>
+  static std::unique_ptr<llvm::ThreeAddressCode>
   Create(const std::shared_ptr<const jlm::rvsdg::Type> & type)
   {
     auto valueType = CheckAndConvertType(type);
 
     PoisonValueOperation operation(std::move(valueType));
-    return tac::create(operation, {});
+    return ThreeAddressCode::create(operation, {});
   }
 
   static jlm::rvsdg::Output *
@@ -1185,7 +1185,7 @@ public:
     return std::static_pointer_cast<const FloatingPointType>(result(0))->size();
   }
 
-  static std::unique_ptr<llvm::tac>
+  static std::unique_ptr<llvm::ThreeAddressCode>
   create(const llvm::fpop & fpop, const variable * op1, const variable * op2)
   {
     auto ft = std::dynamic_pointer_cast<const FloatingPointType>(op1->Type());
@@ -1193,7 +1193,7 @@ public:
       throw jlm::util::error("expected floating point type.");
 
     fpbin_op op(fpop, ft);
-    return tac::create(op, { op1, op2 });
+    return ThreeAddressCode::create(op, { op1, op2 });
   }
 
 private:
@@ -1266,7 +1266,7 @@ public:
     return std::static_pointer_cast<const FloatingPointType>(result(0))->size();
   }
 
-  static std::unique_ptr<llvm::tac>
+  static std::unique_ptr<llvm::ThreeAddressCode>
   create(const variable * operand, const std::shared_ptr<const jlm::rvsdg::Type> & type)
   {
     auto st = std::dynamic_pointer_cast<const FloatingPointType>(operand->Type());
@@ -1278,7 +1278,7 @@ public:
       throw jlm::util::error("expected floating point type.");
 
     const FPExtOperation op(std::move(st), std::move(dt));
-    return tac::create(op, { operand });
+    return ThreeAddressCode::create(op, { operand });
   }
 };
 
@@ -1317,7 +1317,7 @@ public:
     return std::static_pointer_cast<const FloatingPointType>(argument(0))->size();
   }
 
-  static std::unique_ptr<llvm::tac>
+  static std::unique_ptr<llvm::ThreeAddressCode>
   create(const variable * operand)
   {
     auto type = std::dynamic_pointer_cast<const FloatingPointType>(operand->Type());
@@ -1325,7 +1325,7 @@ public:
       throw jlm::util::error("expected floating point type.");
 
     const FNegOperation op(std::move(type));
-    return tac::create(op, { operand });
+    return ThreeAddressCode::create(op, { operand });
   }
 };
 
@@ -1397,7 +1397,7 @@ public:
     return std::static_pointer_cast<const FloatingPointType>(result(0))->size();
   }
 
-  static std::unique_ptr<llvm::tac>
+  static std::unique_ptr<llvm::ThreeAddressCode>
   create(const variable * operand, std::shared_ptr<const jlm::rvsdg::Type> type)
   {
     auto st = std::dynamic_pointer_cast<const FloatingPointType>(operand->Type());
@@ -1409,7 +1409,7 @@ public:
       throw jlm::util::error("expected floating point type.");
 
     const FPTruncOperation op(std::move(st), std::move(dt));
-    return tac::create(op, { operand });
+    return ThreeAddressCode::create(op, { operand });
   }
 };
 
@@ -1441,7 +1441,7 @@ public:
   [[nodiscard]] std::unique_ptr<Operation>
   copy() const override;
 
-  static std::unique_ptr<llvm::tac>
+  static std::unique_ptr<llvm::ThreeAddressCode>
   create(const std::vector<const variable *> & arguments)
   {
     std::vector<std::shared_ptr<const jlm::rvsdg::Type>> operands;
@@ -1449,7 +1449,7 @@ public:
       operands.push_back(argument->Type());
 
     valist_op op(std::move(operands));
-    return tac::create(op, arguments);
+    return ThreeAddressCode::create(op, arguments);
   }
 
   static rvsdg::Output *
@@ -1513,13 +1513,13 @@ public:
   reduce_operand(jlm::rvsdg::unop_reduction_path_t path, jlm::rvsdg::Output * output)
       const override;
 
-  static std::unique_ptr<llvm::tac>
+  static std::unique_ptr<llvm::ThreeAddressCode>
   create(const variable * operand, std::shared_ptr<const jlm::rvsdg::Type> type)
   {
     auto pair = check_types(operand->Type(), type);
 
     bitcast_op op(pair.first, pair.second);
-    return tac::create(op, { operand });
+    return ThreeAddressCode::create(op, { operand });
   }
 
   static jlm::rvsdg::Output *
@@ -1575,7 +1575,7 @@ public:
     return *std::static_pointer_cast<const StructType>(result(0));
   }
 
-  static std::unique_ptr<llvm::tac>
+  static std::unique_ptr<llvm::ThreeAddressCode>
   create(
       const std::vector<const variable *> & elements,
       const std::shared_ptr<const jlm::rvsdg::Type> & type)
@@ -1583,7 +1583,7 @@ public:
     auto structType = CheckAndExtractStructType(type);
 
     ConstantStruct op(std::move(structType));
-    return tac::create(op, elements);
+    return ThreeAddressCode::create(op, elements);
   }
 
   static rvsdg::Output &
@@ -1678,7 +1678,7 @@ public:
     return std::static_pointer_cast<const rvsdg::bittype>(result(0))->nbits();
   }
 
-  static std::unique_ptr<llvm::tac>
+  static std::unique_ptr<llvm::ThreeAddressCode>
   create(const variable * operand, const std::shared_ptr<const jlm::rvsdg::Type> & type)
   {
     auto ot = std::dynamic_pointer_cast<const jlm::rvsdg::bittype>(operand->Type());
@@ -1690,7 +1690,7 @@ public:
       throw jlm::util::error("expected bits type.");
 
     const TruncOperation op(std::move(ot), std::move(rt));
-    return tac::create(op, { operand });
+    return ThreeAddressCode::create(op, { operand });
   }
 
   static jlm::rvsdg::Output *
@@ -1749,7 +1749,7 @@ public:
   reduce_operand(jlm::rvsdg::unop_reduction_path_t path, jlm::rvsdg::Output * operand)
       const override;
 
-  static std::unique_ptr<llvm::tac>
+  static std::unique_ptr<llvm::ThreeAddressCode>
   create(const variable * operand, const std::shared_ptr<const jlm::rvsdg::Type> & type)
   {
     auto st = std::dynamic_pointer_cast<const jlm::rvsdg::bittype>(operand->Type());
@@ -1761,7 +1761,7 @@ public:
       throw jlm::util::error("expected floating point type.");
 
     const UIToFPOperation op(std::move(st), std::move(rt));
-    return tac::create(op, { operand });
+    return ThreeAddressCode::create(op, { operand });
   }
 };
 
@@ -1806,7 +1806,7 @@ public:
   reduce_operand(jlm::rvsdg::unop_reduction_path_t path, jlm::rvsdg::Output * output)
       const override;
 
-  static std::unique_ptr<llvm::tac>
+  static std::unique_ptr<llvm::ThreeAddressCode>
   create(const variable * operand, const std::shared_ptr<const jlm::rvsdg::Type> & type)
   {
     auto st = std::dynamic_pointer_cast<const jlm::rvsdg::bittype>(operand->Type());
@@ -1818,7 +1818,7 @@ public:
       throw jlm::util::error("expected floating point type.");
 
     SIToFPOperation op(std::move(st), std::move(rt));
-    return tac::create(op, { operand });
+    return ThreeAddressCode::create(op, { operand });
   }
 };
 
@@ -1855,7 +1855,7 @@ public:
     return std::static_pointer_cast<const ArrayType>(result(0))->element_type();
   }
 
-  static std::unique_ptr<llvm::tac>
+  static std::unique_ptr<llvm::ThreeAddressCode>
   create(const std::vector<const variable *> & elements)
   {
     if (elements.size() == 0)
@@ -1866,7 +1866,7 @@ public:
       throw jlm::util::error("expected value Type.\n");
 
     ConstantArrayOperation op(vt, elements.size());
-    return tac::create(op, elements);
+    return ThreeAddressCode::create(op, elements);
   }
 
   static rvsdg::Output *
@@ -1910,11 +1910,11 @@ public:
   [[nodiscard]] std::unique_ptr<Operation>
   copy() const override;
 
-  static std::unique_ptr<llvm::tac>
+  static std::unique_ptr<llvm::ThreeAddressCode>
   create(std::shared_ptr<const jlm::rvsdg::Type> type)
   {
     const ConstantAggregateZeroOperation op(std::move(type));
-    return tac::create(op, {});
+    return ThreeAddressCode::create(op, {});
   }
 
   static jlm::rvsdg::Output *
@@ -1946,7 +1946,7 @@ public:
   [[nodiscard]] std::unique_ptr<Operation>
   copy() const override;
 
-  static inline std::unique_ptr<llvm::tac>
+  static inline std::unique_ptr<llvm::ThreeAddressCode>
   create(const llvm::variable * vector, const llvm::variable * index)
   {
     auto vt = std::dynamic_pointer_cast<const VectorType>(vector->Type());
@@ -1958,7 +1958,7 @@ public:
       throw jlm::util::error("expected bit type.");
 
     extractelement_op op(vt, bt);
-    return tac::create(op, { vector, index });
+    return ThreeAddressCode::create(op, { vector, index });
   }
 };
 
@@ -1996,7 +1996,7 @@ public:
     return Mask_;
   }
 
-  static std::unique_ptr<llvm::tac>
+  static std::unique_ptr<llvm::ThreeAddressCode>
   create(const variable * v1, const variable * v2, const std::vector<int> & mask)
   {
     if (is<FixedVectorType>(v1->type()) && is<FixedVectorType>(v2->type()))
@@ -2010,12 +2010,12 @@ public:
 
 private:
   template<typename T>
-  static std::unique_ptr<tac>
+  static std::unique_ptr<ThreeAddressCode>
   CreateShuffleVectorTac(const variable * v1, const variable * v2, const std::vector<int> & mask)
   {
     auto vt = std::static_pointer_cast<const T>(v1->Type());
     shufflevector_op op(vt, mask);
-    return tac::create(op, { v1, v2 });
+    return ThreeAddressCode::create(op, { v1, v2 });
   }
 
   std::vector<int> Mask_;
@@ -2041,7 +2041,7 @@ public:
   [[nodiscard]] std::unique_ptr<Operation>
   copy() const override;
 
-  static inline std::unique_ptr<llvm::tac>
+  static inline std::unique_ptr<llvm::ThreeAddressCode>
   create(
       const std::vector<const variable *> & operands,
       const std::shared_ptr<const jlm::rvsdg::Type> & type)
@@ -2051,7 +2051,7 @@ public:
       throw jlm::util::error("expected vector type.");
 
     constantvector_op op(vt);
-    return tac::create(op, operands);
+    return ThreeAddressCode::create(op, operands);
   }
 };
 
@@ -2085,7 +2085,7 @@ public:
   [[nodiscard]] std::unique_ptr<Operation>
   copy() const override;
 
-  static inline std::unique_ptr<llvm::tac>
+  static inline std::unique_ptr<llvm::ThreeAddressCode>
   create(const llvm::variable * vector, const llvm::variable * value, const llvm::variable * index)
   {
     auto vct = std::dynamic_pointer_cast<const VectorType>(vector->Type());
@@ -2101,7 +2101,7 @@ public:
       throw jlm::util::error("expected bit type.");
 
     insertelement_op op(vct, vt, bt);
-    return tac::create(op, { vector, value, index });
+    return ThreeAddressCode::create(op, { vector, value, index });
   }
 };
 
@@ -2177,7 +2177,7 @@ public:
   [[nodiscard]] std::unique_ptr<Operation>
   copy() const override;
 
-  static inline std::unique_ptr<llvm::tac>
+  static inline std::unique_ptr<llvm::ThreeAddressCode>
   create(
       const rvsdg::UnaryOperation & unop,
       const llvm::variable * operand,
@@ -2189,7 +2189,7 @@ public:
       throw jlm::util::error("expected vector type.");
 
     vectorunary_op op(unop, vct1, vct2);
-    return tac::create(op, { operand });
+    return ThreeAddressCode::create(op, { operand });
   }
 
 private:
@@ -2272,7 +2272,7 @@ public:
   [[nodiscard]] std::unique_ptr<Operation>
   copy() const override;
 
-  static inline std::unique_ptr<llvm::tac>
+  static inline std::unique_ptr<llvm::ThreeAddressCode>
   create(
       const rvsdg::BinaryOperation & binop,
       const llvm::variable * op1,
@@ -2286,7 +2286,7 @@ public:
       throw jlm::util::error("expected vector type.");
 
     vectorbinary_op op(binop, vct1, vct2, vct3);
-    return tac::create(op, { op1, op2 });
+    return ThreeAddressCode::create(op, { op1, op2 });
   }
 
 private:
@@ -2327,7 +2327,7 @@ public:
     return std::static_pointer_cast<const VectorType>(result(0))->type();
   }
 
-  static std::unique_ptr<tac>
+  static std::unique_ptr<ThreeAddressCode>
   Create(const std::vector<const variable *> & elements)
   {
     if (elements.empty())
@@ -2338,7 +2338,7 @@ public:
       throw jlm::util::error("Expected value type.");
 
     constant_data_vector_op op(FixedVectorType::Create(vt, elements.size()));
-    return tac::create(op, elements);
+    return ThreeAddressCode::create(op, elements);
   }
 };
 
@@ -2388,11 +2388,11 @@ public:
     return *std::static_pointer_cast<const rvsdg::ValueType>(argument(0));
   }
 
-  static inline std::unique_ptr<llvm::tac>
+  static inline std::unique_ptr<llvm::ThreeAddressCode>
   create(const llvm::variable * aggregate, const std::vector<unsigned> & indices)
   {
     ExtractValue op(aggregate->Type(), indices);
-    return tac::create(op, { aggregate });
+    return ThreeAddressCode::create(op, { aggregate });
   }
 
 private:
@@ -2461,7 +2461,7 @@ public:
     return rvsdg::FunctionType({ argument(0) }, { result(0), result(1) });
   }
 
-  static std::unique_ptr<llvm::tac>
+  static std::unique_ptr<llvm::ThreeAddressCode>
   create(const variable * size)
   {
     auto bt = std::dynamic_pointer_cast<const jlm::rvsdg::bittype>(size->Type());
@@ -2469,7 +2469,7 @@ public:
       throw jlm::util::error("expected bits type.");
 
     malloc_op op(std::move(bt));
-    return tac::create(op, { size });
+    return ThreeAddressCode::create(op, { size });
   }
 
   static std::vector<jlm::rvsdg::Output *>
@@ -2506,7 +2506,7 @@ public:
   [[nodiscard]] std::unique_ptr<Operation>
   copy() const override;
 
-  static std::unique_ptr<llvm::tac>
+  static std::unique_ptr<llvm::ThreeAddressCode>
   Create(
       const variable * pointer,
       const std::vector<const variable *> & memoryStates,
@@ -2518,7 +2518,7 @@ public:
     operands.push_back(iOState);
 
     FreeOperation operation(memoryStates.size());
-    return tac::create(operation, operands);
+    return ThreeAddressCode::create(operation, operands);
   }
 
   static std::vector<jlm::rvsdg::Output *>

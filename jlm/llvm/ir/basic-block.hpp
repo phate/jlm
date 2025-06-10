@@ -76,13 +76,13 @@ public:
     return tacs_.ntacs();
   }
 
-  inline tac *
+  [[nodiscard]] ThreeAddressCode *
   first() const noexcept
   {
     return tacs_.first();
   }
 
-  inline tac *
+  [[nodiscard]] ThreeAddressCode *
   last() const noexcept
   {
     return tacs_.last();
@@ -100,8 +100,8 @@ public:
     tacs_.drop_last();
   }
 
-  llvm::tac *
-  append_first(std::unique_ptr<llvm::tac> tac)
+  llvm::ThreeAddressCode *
+  append_first(std::unique_ptr<llvm::ThreeAddressCode> tac)
   {
     tacs_.append_first(std::move(tac));
     return tacs_.first();
@@ -121,8 +121,8 @@ public:
     tacs_.append_first(tl);
   }
 
-  llvm::tac *
-  append_last(std::unique_ptr<llvm::tac> tac)
+  llvm::ThreeAddressCode *
+  append_last(std::unique_ptr<llvm::ThreeAddressCode> tac)
   {
     tacs_.append_last(std::move(tac));
     return tacs_.last();
@@ -136,8 +136,8 @@ public:
     tacs.clear();
   }
 
-  llvm::tac *
-  insert_before(const taclist::const_iterator & it, std::unique_ptr<llvm::tac> tac)
+  llvm::ThreeAddressCode *
+  insert_before(const taclist::const_iterator & it, std::unique_ptr<llvm::ThreeAddressCode> tac)
   {
     return tacs_.insert_before(it, std::move(tac));
   }
@@ -159,8 +159,8 @@ public:
   bool
   HasSsaPhiOperation() const;
 
-  llvm::tac *
-  insert_before_branch(std::unique_ptr<llvm::tac> tac);
+  llvm::ThreeAddressCode *
+  insert_before_branch(std::unique_ptr<llvm::ThreeAddressCode> tac);
 
   void
   insert_before_branch(tacsvector_t & tv);

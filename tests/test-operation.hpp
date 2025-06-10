@@ -436,7 +436,7 @@ public:
   }
 };
 
-static inline std::unique_ptr<llvm::tac>
+static inline std::unique_ptr<llvm::ThreeAddressCode>
 create_testop_tac(
     const std::vector<const llvm::variable *> & arguments,
     std::vector<std::shared_ptr<const rvsdg::Type>> result_types)
@@ -446,7 +446,7 @@ create_testop_tac(
     argument_types.push_back(arg->Type());
 
   test_op op(std::move(argument_types), std::move(result_types));
-  return llvm::tac::create(op, arguments);
+  return llvm::ThreeAddressCode::create(op, arguments);
 }
 
 static inline std::vector<rvsdg::Output *>

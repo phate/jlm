@@ -755,7 +755,9 @@ compute_live_sinks(const std::unordered_set<cfg_node *> & deadnodes)
 }
 
 static void
-update_phi_operands(llvm::tac & phitac, const std::unordered_set<cfg_node *> & deadnodes)
+update_phi_operands(
+    llvm::ThreeAddressCode & phitac,
+    const std::unordered_set<cfg_node *> & deadnodes)
 {
   const auto phi = util::AssertedCast<const SsaPhiOperation>(&phitac.operation());
 

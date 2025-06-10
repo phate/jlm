@@ -108,7 +108,7 @@ destruct_ssa(ControlFlowGraph & cfg)
         // In the assignment block, store the variable into the result of the undef operation
         ass_block->append_last(AssignmentOperation::create(variable, undef->result(0)));
 
-        // Remove the phi tac
+        // Remove the phi three address code
         tacs.drop_first();
       }
     }

@@ -67,7 +67,7 @@ public:
     return alignment_;
   }
 
-  static std::unique_ptr<llvm::tac>
+  static std::unique_ptr<llvm::ThreeAddressCode>
   create(
       std::shared_ptr<const rvsdg::ValueType> allocatedType,
       const variable * size,
@@ -78,7 +78,7 @@ public:
       throw jlm::util::error("expected bits type.");
 
     alloca_op op(std::move(allocatedType), std::move(bt), alignment);
-    return tac::create(op, { size });
+    return ThreeAddressCode::create(op, { size });
   }
 
   static std::vector<rvsdg::Output *>

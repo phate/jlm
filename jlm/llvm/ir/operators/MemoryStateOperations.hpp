@@ -113,14 +113,14 @@ public:
     return CreateNode(operands).output(0);
   }
 
-  static std::unique_ptr<tac>
+  static std::unique_ptr<ThreeAddressCode>
   Create(const std::vector<const variable *> & operands)
   {
     if (operands.empty())
       throw util::error("Insufficient number of operands.");
 
     MemoryStateMergeOperation operation(operands.size());
-    return tac::create(operation, operands);
+    return ThreeAddressCode::create(operation, operands);
   }
 };
 
