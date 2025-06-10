@@ -468,15 +468,12 @@ public:
   }
 };
 
-/* branch node class */
-
-class branchaggnode final : public AggregationNode
+class BranchAggregationNode final : public AggregationNode
 {
 public:
-  virtual ~branchaggnode();
+  ~BranchAggregationNode() noexcept override;
 
-  inline branchaggnode()
-  {}
+  BranchAggregationNode() = default;
 
   virtual std::string
   debug_string() const override;
@@ -484,7 +481,7 @@ public:
   static inline std::unique_ptr<AggregationNode>
   create()
   {
-    return std::make_unique<branchaggnode>();
+    return std::make_unique<BranchAggregationNode>();
   }
 };
 

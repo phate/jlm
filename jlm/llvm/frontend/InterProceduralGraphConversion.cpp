@@ -668,7 +668,7 @@ Convert(
 
 static void
 Convert(
-    const branchaggnode & branchAggregationNode,
+    const BranchAggregationNode & branchAggregationNode,
     const AnnotationMap & demandMap,
     rvsdg::LambdaNode & lambdaNode,
     RegionalizedVariableMap & regionalizedVariableMap)
@@ -837,7 +837,7 @@ ConvertAggregationNode(
   {
     Convert(*linearNode, demandMap, lambdaNode, regionalizedVariableMap);
   }
-  else if (auto branchNode = dynamic_cast<const branchaggnode *>(&aggregationNode))
+  else if (auto branchNode = dynamic_cast<const BranchAggregationNode *>(&aggregationNode))
   {
     Convert(*branchNode, demandMap, lambdaNode, regionalizedVariableMap);
   }
