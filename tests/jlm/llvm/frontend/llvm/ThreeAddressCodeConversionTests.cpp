@@ -19,7 +19,7 @@
 
 static std::unique_ptr<jlm::llvm::ControlFlowGraph>
 SetupControlFlowGraph(
-    jlm::llvm::ipgraph_module & ipgModule,
+    jlm::llvm::InterProceduralGraphModule & ipgModule,
     const jlm::rvsdg::SimpleOperation & operation)
 {
   using namespace jlm::llvm;
@@ -49,12 +49,12 @@ SetupControlFlowGraph(
   return cfg;
 }
 
-static std::unique_ptr<jlm::llvm::ipgraph_module>
+static std::unique_ptr<jlm::llvm::InterProceduralGraphModule>
 SetupFunctionWithThreeAddressCode(const jlm::rvsdg::SimpleOperation & operation)
 {
   using namespace jlm::llvm;
 
-  auto ipgModule = ipgraph_module::create(jlm::util::FilePath(""), "", "");
+  auto ipgModule = InterProceduralGraphModule::create(jlm::util::FilePath(""), "", "");
   auto & ipgraph = ipgModule->ipgraph();
 
   std::vector<std::shared_ptr<const jlm::rvsdg::Type>> operandTypes;

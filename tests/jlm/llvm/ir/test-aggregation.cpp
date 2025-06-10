@@ -75,7 +75,7 @@ test_linear_reduction()
 {
   using namespace jlm::llvm;
 
-  auto setup_cfg = [](jlm::llvm::ipgraph_module & module)
+  auto setup_cfg = [](jlm::llvm::InterProceduralGraphModule & module)
   {
     auto cfg = ControlFlowGraph::create(module);
 
@@ -96,7 +96,7 @@ test_linear_reduction()
     }
   };
 
-  jlm::llvm::ipgraph_module module(jlm::util::FilePath(""), "", "");
+  jlm::llvm::InterProceduralGraphModule module(jlm::util::FilePath(""), "", "");
   auto cfg = setup_cfg(module);
 
   auto root = jlm::llvm::aggregate(*cfg);
@@ -111,7 +111,7 @@ test_loop_reduction()
 {
   using namespace jlm::llvm;
 
-  auto setup_cfg = [](jlm::llvm::ipgraph_module & module)
+  auto setup_cfg = [](jlm::llvm::InterProceduralGraphModule & module)
   {
     auto cfg = ControlFlowGraph::create(module);
 
@@ -147,7 +147,7 @@ test_loop_reduction()
     }
   };
 
-  jlm::llvm::ipgraph_module module(jlm::util::FilePath(""), "", "");
+  jlm::llvm::InterProceduralGraphModule module(jlm::util::FilePath(""), "", "");
   auto cfg = setup_cfg(module);
 
   auto root = jlm::llvm::aggregate(*cfg);
@@ -162,7 +162,7 @@ test_branch_reduction()
 {
   using namespace jlm::llvm;
 
-  auto setup_cfg = [](jlm::llvm::ipgraph_module & module)
+  auto setup_cfg = [](jlm::llvm::InterProceduralGraphModule & module)
   {
     auto cfg = ControlFlowGraph::create(module);
 
@@ -215,7 +215,7 @@ test_branch_reduction()
     }
   };
 
-  jlm::llvm::ipgraph_module module(jlm::util::FilePath(""), "", "");
+  jlm::llvm::InterProceduralGraphModule module(jlm::util::FilePath(""), "", "");
   auto cfg = setup_cfg(module);
 
   auto root = jlm::llvm::aggregate(*cfg);
@@ -230,7 +230,7 @@ test_branch_loop_reduction()
 {
   using namespace jlm::llvm;
 
-  auto setup_cfg = [](jlm::llvm::ipgraph_module & module)
+  auto setup_cfg = [](jlm::llvm::InterProceduralGraphModule & module)
   {
     auto cfg = ControlFlowGraph::create(module);
     auto split = jlm::llvm::BasicBlock::create(*cfg);
@@ -292,7 +292,7 @@ test_branch_loop_reduction()
     }
   };
 
-  jlm::llvm::ipgraph_module module(jlm::util::FilePath(""), "", "");
+  jlm::llvm::InterProceduralGraphModule module(jlm::util::FilePath(""), "", "");
   auto cfg = setup_cfg(module);
 
   auto root = jlm::llvm::aggregate(*cfg);
@@ -307,7 +307,7 @@ test_loop_branch_reduction()
 {
   using namespace jlm::llvm;
 
-  auto setup_cfg = [](jlm::llvm::ipgraph_module & module)
+  auto setup_cfg = [](jlm::llvm::InterProceduralGraphModule & module)
   {
     auto cfg = ControlFlowGraph::create(module);
 
@@ -359,7 +359,7 @@ test_loop_branch_reduction()
     }
   };
 
-  jlm::llvm::ipgraph_module module(jlm::util::FilePath(""), "", "");
+  jlm::llvm::InterProceduralGraphModule module(jlm::util::FilePath(""), "", "");
   auto cfg = setup_cfg(module);
 
   auto root = jlm::llvm::aggregate(*cfg);
@@ -374,7 +374,7 @@ test_ifthen_reduction()
 {
   using namespace jlm::llvm;
 
-  auto setup_cfg = [](jlm::llvm::ipgraph_module & module)
+  auto setup_cfg = [](jlm::llvm::InterProceduralGraphModule & module)
   {
     auto cfg = ControlFlowGraph::create(module);
 
@@ -420,7 +420,7 @@ test_ifthen_reduction()
     }
   };
 
-  jlm::llvm::ipgraph_module module(jlm::util::FilePath(""), "", "");
+  jlm::llvm::InterProceduralGraphModule module(jlm::util::FilePath(""), "", "");
   auto cfg = setup_cfg(module);
 
   auto root = jlm::llvm::aggregate(*cfg);
@@ -435,7 +435,7 @@ test_branch_and_loop()
 {
   using namespace jlm::llvm;
 
-  auto setup_cfg = [](jlm::llvm::ipgraph_module & module)
+  auto setup_cfg = [](jlm::llvm::InterProceduralGraphModule & module)
   {
     auto cfg = ControlFlowGraph::create(module);
 
@@ -479,7 +479,7 @@ test_branch_and_loop()
     }
   };
 
-  jlm::llvm::ipgraph_module module(jlm::util::FilePath(""), "", "");
+  jlm::llvm::InterProceduralGraphModule module(jlm::util::FilePath(""), "", "");
   auto cfg = setup_cfg(module);
 
   auto root = jlm::llvm::aggregate(*cfg);

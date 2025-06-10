@@ -17,7 +17,7 @@ namespace jlm::llvm
 
 class ControlFlowGraph;
 class InterProceduralGraph;
-class ipgraph_module;
+class InterProceduralGraphModule;
 
 /* control flow graph */
 
@@ -56,13 +56,13 @@ print_dot(const InterProceduralGraph & ipg, FILE * out)
 /* ipgraph module */
 
 static inline std::string
-to_str(const ipgraph_module & im)
+to_str(const InterProceduralGraphModule & im)
 {
   return to_str(im.ipgraph());
 }
 
 static inline void
-print(const ipgraph_module & im, FILE * out)
+print(const InterProceduralGraphModule & im, FILE * out)
 {
   fputs(to_str(im).c_str(), out);
   fflush(out);
