@@ -99,13 +99,10 @@ LinearAggregationNode::debug_string() const
   return "linear";
 }
 
-/* branchaggnode class */
-
-branchaggnode::~branchaggnode()
-{}
+BranchAggregationNode::~BranchAggregationNode() noexcept = default;
 
 std::string
-branchaggnode::debug_string() const
+BranchAggregationNode::debug_string() const
 {
   return "branch";
 }
@@ -302,7 +299,7 @@ reduce_branch(cfg_node * split, cfg_node ** entry, aggregation_map & map)
   split->divert_inedges(sese);
   sese->add_outedge(join);
 
-  auto branch = branchaggnode::create();
+  auto branch = BranchAggregationNode::create();
   for (auto & edge : split->OutEdges())
   {
     edge.sink()->remove_outedge(0);

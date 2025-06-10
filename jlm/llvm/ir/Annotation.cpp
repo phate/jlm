@@ -292,7 +292,7 @@ AnnotateReadWrite(const LinearAggregationNode & linearAggregationNode, Annotatio
 }
 
 static void
-AnnotateReadWrite(const branchaggnode & branchAggregationNode, AnnotationMap & demandMap)
+AnnotateReadWrite(const BranchAggregationNode & branchAggregationNode, AnnotationMap & demandMap)
 {
   auto & case0DemandSet = demandMap.Lookup<AnnotationSet>(*branchAggregationNode.child(0));
   auto & case0ReadSet = case0DemandSet.ReadSet();
@@ -353,7 +353,7 @@ AnnotateReadWrite(const AggregationNode & aggregationNode, AnnotationMap & deman
   {
     AnnotateReadWrite(*linearNode, demandMap);
   }
-  else if (auto branchNode = dynamic_cast<const branchaggnode *>(&aggregationNode))
+  else if (auto branchNode = dynamic_cast<const BranchAggregationNode *>(&aggregationNode))
   {
     AnnotateReadWrite(*branchNode, demandMap);
   }
@@ -421,7 +421,7 @@ AnnotateDemandSet(
 
 static void
 AnnotateDemandSet(
-    const branchaggnode & branchAggregationNode,
+    const BranchAggregationNode & branchAggregationNode,
     VariableSet & workingSet,
     AnnotationMap & demandMap)
 {
@@ -481,7 +481,7 @@ AnnotateDemandSet(
             { typeid(ExitAggregationNode), AnnotateDemandSet<ExitAggregationNode> },
             { typeid(BasicBlockAggregationNode), AnnotateDemandSet<BasicBlockAggregationNode> },
             { typeid(LinearAggregationNode), AnnotateDemandSet<LinearAggregationNode> },
-            { typeid(branchaggnode), AnnotateDemandSet<branchaggnode> },
+            { typeid(BranchAggregationNode), AnnotateDemandSet<BranchAggregationNode> },
             { typeid(loopaggnode), AnnotateDemandSet<loopaggnode> } });
 
   JLM_ASSERT(map.find(typeid(aggregationNode)) != map.end());

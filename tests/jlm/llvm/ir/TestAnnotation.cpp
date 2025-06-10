@@ -180,7 +180,7 @@ TestBranchAnnotation()
     auto basicBlock1 = BasicBlockAggregationNode::create(std::move(bb1));
     auto basicBlock2 = BasicBlockAggregationNode::create(std::move(bb2));
 
-    auto branch = branchaggnode::create();
+    auto branch = BranchAggregationNode::create();
     branch->add_child(std::move(basicBlock1));
     branch->add_child(std::move(basicBlock2));
 
@@ -328,7 +328,7 @@ TestBranchInLoopAnnotation()
     auto basicBlock1 = BasicBlockAggregationNode::create(std::move(tl_cb1));
     auto basicBlock2 = BasicBlockAggregationNode::create(std::move(tl_cb2));
 
-    auto branchNode = branchaggnode::create();
+    auto branchNode = BranchAggregationNode::create();
     branchNode->add_child(std::move(basicBlock1));
     branchNode->add_child(std::move(basicBlock2));
 
@@ -459,7 +459,7 @@ TestBranchPassByAnnotation()
     auto basicBlockNode1 = BasicBlockAggregationNode::create(std::move(tlb1));
     auto basicBlockNode2 = BasicBlockAggregationNode::create(std::move(tlb2));
 
-    auto branchNode = branchaggnode::create();
+    auto branchNode = BranchAggregationNode::create();
     branchNode->add_child(std::move(basicBlockNode1));
     branchNode->add_child(std::move(basicBlockNode2));
 
