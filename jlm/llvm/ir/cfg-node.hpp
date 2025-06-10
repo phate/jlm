@@ -21,21 +21,22 @@ class BasicBlock;
 class ControlFlowGraph;
 class cfg_node;
 
-class cfg_edge final
+class ControlFlowGraphEdge final
 {
 public:
-  ~cfg_edge() noexcept
-  {}
+  ~ControlFlowGraphEdge() noexcept = default;
 
-  cfg_edge(cfg_node * source, cfg_node * sink, size_t index) noexcept;
+  ControlFlowGraphEdge(cfg_node * source, cfg_node * sink, size_t index) noexcept;
 
-  cfg_edge(const cfg_edge & other) = delete;
-  cfg_edge(cfg_edge && other) = default;
+  ControlFlowGraphEdge(const ControlFlowGraphEdge & other) = delete;
 
-  cfg_edge &
-  operator=(const cfg_edge & other) = delete;
-  cfg_edge &
-  operator=(cfg_edge && other) = default;
+  ControlFlowGraphEdge(ControlFlowGraphEdge && other) = default;
+
+  ControlFlowGraphEdge &
+  operator=(const ControlFlowGraphEdge & other) = delete;
+
+  ControlFlowGraphEdge &
+  operator=(ControlFlowGraphEdge && other) = default;
 
   void
   divert(cfg_node * new_sink);
@@ -80,12 +81,13 @@ private:
 
 class cfg_node
 {
-  using inedge_iterator =
-      util::PtrIterator<cfg_edge, std::unordered_set<cfg_edge *>::const_iterator>;
+  using inedge_iterator = util::
+      PtrIterator<ControlFlowGraphEdge, std::unordered_set<ControlFlowGraphEdge *>::const_iterator>;
   using inedge_iterator_range = util::IteratorRange<inedge_iterator>;
 
-  using outedge_iterator =
-      util::PtrIterator<cfg_edge, std::vector<std::unique_ptr<cfg_edge>>::const_iterator>;
+  using outedge_iterator = util::PtrIterator<
+      ControlFlowGraphEdge,
+      std::vector<std::unique_ptr<ControlFlowGraphEdge>>::const_iterator>;
   using outedge_iterator_range = util::IteratorRange<outedge_iterator>;
 
 public:
@@ -106,7 +108,7 @@ public:
   size_t
   NumOutEdges() const noexcept;
 
-  cfg_edge *
+  [[nodiscard]] ControlFlowGraphEdge *
   OutEdge(size_t n) const
   {
     JLM_ASSERT(n < NumOutEdges());
@@ -121,10 +123,10 @@ public:
         outedge_iterator(outedges_.end()));
   }
 
-  cfg_edge *
+  ControlFlowGraphEdge *
   add_outedge(cfg_node * sink)
   {
-    outedges_.push_back(std::make_unique<cfg_edge>(this, sink, NumOutEdges()));
+    outedges_.push_back(std::make_unique<ControlFlowGraphEdge>(this, sink, NumOutEdges()));
     sink->inedges_.insert(outedges_.back().get());
     return outedges_.back().get();
   }
@@ -198,10 +200,10 @@ public:
 
 private:
   ControlFlowGraph & cfg_;
-  std::vector<std::unique_ptr<cfg_edge>> outedges_;
-  std::unordered_set<cfg_edge *> inedges_;
+  std::vector<std::unique_ptr<ControlFlowGraphEdge>> outedges_;
+  std::unordered_set<ControlFlowGraphEdge *> inedges_;
 
-  friend cfg_edge;
+  friend ControlFlowGraphEdge;
 };
 
 template<class T>
