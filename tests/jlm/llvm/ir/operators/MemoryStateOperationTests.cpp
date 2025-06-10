@@ -345,9 +345,7 @@ MemoryStateMergeNormalizeNestedSplits()
   view(&rvsdg.GetRootRegion(), stdout);
 
   // Act
-  ReduceNode<MemoryStateMergeOperation>(
-      MemoryStateMergeOperation::NormalizeNestedSplits,
-      mergeNode);
+  ReduceNode<MemoryStateMergeOperation>(MemoryStateMergeOperation::NormalizeMergeSplit, mergeNode);
   rvsdg.PruneNodes();
   view(&rvsdg.GetRootRegion(), stdout);
 

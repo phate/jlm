@@ -261,7 +261,7 @@ NodeReduction::NormalizeMemoryStateMergeNode(
       { MemoryStateMergeOperation::NormalizeSingleOperand,
         MemoryStateMergeOperation::NormalizeDuplicateOperands,
         MemoryStateMergeOperation::NormalizeNestedMerges,
-        MemoryStateMergeOperation::NormalizeNestedSplits });
+        MemoryStateMergeOperation::NormalizeMergeSplit });
 
   return rvsdg::NormalizeSequence<MemoryStateMergeOperation>(normalizations, operation, operands);
 }

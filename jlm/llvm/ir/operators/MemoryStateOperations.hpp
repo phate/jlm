@@ -97,7 +97,7 @@ public:
    * o4 = MemoryStateMergeOperation i2 i1 i1 i1 i3
    */
   static std::optional<std::vector<rvsdg::Output *>>
-  NormalizeNestedSplits(
+  NormalizeMergeSplit(
       const MemoryStateMergeOperation & operation,
       const std::vector<rvsdg::Output *> & operands);
 
