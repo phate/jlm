@@ -65,7 +65,7 @@ public:
    *
    * @return A getElementPtr three address code.
    */
-  static std::unique_ptr<llvm::tac>
+  static std::unique_ptr<llvm::ThreeAddressCode>
   Create(
       const variable * baseAddress,
       const std::vector<const variable *> & offsets,
@@ -80,7 +80,7 @@ public:
     std::vector<const variable *> operands(1, baseAddress);
     operands.insert(operands.end(), offsets.begin(), offsets.end());
 
-    return tac::create(operation, operands);
+    return ThreeAddressCode::create(operation, operands);
   }
 
   /**

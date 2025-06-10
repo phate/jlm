@@ -208,7 +208,7 @@ public:
     return *output;
   }
 
-  static std::unique_ptr<llvm::tac>
+  static std::unique_ptr<llvm::ThreeAddressCode>
   Create(
       const variable * address,
       const variable * iOState,
@@ -217,7 +217,7 @@ public:
       size_t alignment)
   {
     LoadVolatileOperation operation(std::move(loadedType), 1, alignment);
-    return tac::create(operation, { address, iOState, memoryState });
+    return ThreeAddressCode::create(operation, { address, iOState, memoryState });
   }
 
   static rvsdg::SimpleNode &
@@ -300,7 +300,7 @@ public:
   [[nodiscard]] std::unique_ptr<Operation>
   copy() const override;
 
-  static std::unique_ptr<llvm::tac>
+  static std::unique_ptr<llvm::ThreeAddressCode>
   Create(
       const variable * address,
       const variable * state,
@@ -308,7 +308,7 @@ public:
       size_t alignment)
   {
     LoadNonVolatileOperation operation(std::move(loadedType), 1, alignment);
-    return tac::create(operation, { address, state });
+    return ThreeAddressCode::create(operation, { address, state });
   }
 
   static std::vector<rvsdg::Output *>

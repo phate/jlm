@@ -17,7 +17,7 @@
 namespace jlm::llvm
 {
 
-class tac;
+class ThreeAddressCode;
 
 /* tacvariable */
 
@@ -27,56 +27,60 @@ public:
   virtual ~tacvariable();
 
   tacvariable(
-      llvm::tac * tac,
+      llvm::ThreeAddressCode * tac,
       std::shared_ptr<const jlm::rvsdg::Type> type,
       const std::string & name)
       : variable(std::move(type), name),
         tac_(tac)
   {}
 
-  inline llvm::tac *
+  [[nodiscard]] llvm::ThreeAddressCode *
   tac() const noexcept
   {
     return tac_;
   }
 
   static std::unique_ptr<tacvariable>
-  create(llvm::tac * tac, std::shared_ptr<const jlm::rvsdg::Type> type, const std::string & name)
+  create(
+      llvm::ThreeAddressCode * tac,
+      std::shared_ptr<const jlm::rvsdg::Type> type,
+      const std::string & name)
   {
     return std::make_unique<tacvariable>(tac, std::move(type), name);
   }
 
 private:
-  llvm::tac * tac_;
+  llvm::ThreeAddressCode * tac_;
 };
 
-/* tac */
-
-class tac final
+class ThreeAddressCode final
 {
 public:
-  inline ~tac() noexcept
-  {}
+  ~ThreeAddressCode() noexcept = default;
 
-  tac(const rvsdg::SimpleOperation & operation, const std::vector<const variable *> & operands);
+  ThreeAddressCode(
+      const rvsdg::SimpleOperation & operation,
+      const std::vector<const variable *> & operands);
 
-  tac(const rvsdg::SimpleOperation & operation,
+  ThreeAddressCode(
+      const rvsdg::SimpleOperation & operation,
       const std::vector<const variable *> & operands,
       const std::vector<std::string> & names);
 
-  tac(const rvsdg::SimpleOperation & operation,
+  ThreeAddressCode(
+      const rvsdg::SimpleOperation & operation,
       const std::vector<const variable *> & operands,
       std::vector<std::unique_ptr<tacvariable>> results);
 
-  tac(const llvm::tac &) = delete;
+  ThreeAddressCode(const llvm::ThreeAddressCode &) = delete;
 
-  tac(llvm::tac &&) = delete;
+  ThreeAddressCode(llvm::ThreeAddressCode &&) = delete;
 
-  tac &
-  operator=(const llvm::tac &) = delete;
+  ThreeAddressCode &
+  operator=(const llvm::ThreeAddressCode &) = delete;
 
-  tac &
-  operator=(llvm::tac &&) = delete;
+  ThreeAddressCode &
+  operator=(llvm::ThreeAddressCode &&) = delete;
 
   inline const rvsdg::SimpleOperation &
   operation() const noexcept
@@ -127,30 +131,30 @@ public:
   convert(const rvsdg::SimpleOperation & operation, const std::vector<const variable *> & operands);
 
   static std::string
-  ToAscii(const tac & threeAddressCode);
+  ToAscii(const ThreeAddressCode & threeAddressCode);
 
-  static std::unique_ptr<llvm::tac>
+  static std::unique_ptr<llvm::ThreeAddressCode>
   create(const rvsdg::SimpleOperation & operation, const std::vector<const variable *> & operands)
   {
-    return std::make_unique<llvm::tac>(operation, operands);
+    return std::make_unique<llvm::ThreeAddressCode>(operation, operands);
   }
 
-  static std::unique_ptr<llvm::tac>
+  static std::unique_ptr<llvm::ThreeAddressCode>
   create(
       const rvsdg::SimpleOperation & operation,
       const std::vector<const variable *> & operands,
       const std::vector<std::string> & names)
   {
-    return std::make_unique<llvm::tac>(operation, operands, names);
+    return std::make_unique<llvm::ThreeAddressCode>(operation, operands, names);
   }
 
-  static std::unique_ptr<llvm::tac>
+  static std::unique_ptr<llvm::ThreeAddressCode>
   create(
       const rvsdg::SimpleOperation & operation,
       const std::vector<const variable *> & operands,
       std::vector<std::unique_ptr<tacvariable>> results)
   {
-    return std::make_unique<llvm::tac>(operation, operands, std::move(results));
+    return std::make_unique<llvm::ThreeAddressCode>(operation, operands, std::move(results));
   }
 
 private:
@@ -184,7 +188,7 @@ private:
 
 template<class T>
 static inline bool
-is(const llvm::tac * tac)
+is(const llvm::ThreeAddressCode * tac)
 {
   return tac && is<T>(tac->operation());
 }
@@ -192,15 +196,15 @@ is(const llvm::tac * tac)
 /* FIXME: Replace all occurences of tacsvector_t with taclist
   and then remove tacsvector_t.
 */
-typedef std::vector<std::unique_ptr<llvm::tac>> tacsvector_t;
+typedef std::vector<std::unique_ptr<llvm::ThreeAddressCode>> tacsvector_t;
 
 /* taclist */
 
 class taclist final
 {
 public:
-  typedef std::list<tac *>::const_iterator const_iterator;
-  typedef std::list<tac *>::const_reverse_iterator const_reverse_iterator;
+  typedef std::list<ThreeAddressCode *>::const_iterator const_iterator;
+  typedef std::list<ThreeAddressCode *>::const_reverse_iterator const_reverse_iterator;
 
   ~taclist();
 
@@ -255,8 +259,8 @@ public:
     return tacs_.rend();
   }
 
-  inline tac *
-  insert_before(const const_iterator & it, std::unique_ptr<llvm::tac> tac)
+  inline ThreeAddressCode *
+  insert_before(const const_iterator & it, std::unique_ptr<llvm::ThreeAddressCode> tac)
   {
     return *tacs_.insert(it, tac.release());
   }
@@ -268,13 +272,13 @@ public:
   }
 
   inline void
-  append_last(std::unique_ptr<llvm::tac> tac)
+  append_last(std::unique_ptr<llvm::ThreeAddressCode> tac)
   {
     tacs_.push_back(tac.release());
   }
 
   inline void
-  append_first(std::unique_ptr<llvm::tac> tac)
+  append_first(std::unique_ptr<llvm::ThreeAddressCode> tac)
   {
     tacs_.push_front(tac.release());
   }
@@ -292,30 +296,30 @@ public:
     return tacs_.size();
   }
 
-  inline tac *
+  inline ThreeAddressCode *
   first() const noexcept
   {
     return ntacs() != 0 ? tacs_.front() : nullptr;
   }
 
-  inline tac *
+  inline ThreeAddressCode *
   last() const noexcept
   {
     return ntacs() != 0 ? tacs_.back() : nullptr;
   }
 
-  std::unique_ptr<tac>
+  std::unique_ptr<ThreeAddressCode>
   pop_first() noexcept
   {
-    std::unique_ptr<tac> tac(tacs_.front());
+    std::unique_ptr<ThreeAddressCode> tac(tacs_.front());
     tacs_.pop_front();
     return tac;
   }
 
-  std::unique_ptr<tac>
+  std::unique_ptr<ThreeAddressCode>
   pop_last() noexcept
   {
-    std::unique_ptr<tac> tac(tacs_.back());
+    std::unique_ptr<ThreeAddressCode> tac(tacs_.back());
     tacs_.pop_back();
     return tac;
   }
@@ -335,7 +339,7 @@ public:
   }
 
 private:
-  std::list<tac *> tacs_;
+  std::list<ThreeAddressCode *> tacs_;
 };
 
 }

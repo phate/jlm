@@ -125,7 +125,7 @@ TestPhiConversion()
   auto bb2_node = bb1_node->OutEdge(0)->sink();
   auto bb2 = jlm::util::AssertedCast<jlm::llvm::BasicBlock>(bb2_node);
 
-  // The first two tac instructions should be the phi representing x and popcnt respectively
+  // The first two three address codes should be the phi representing x and popcnt respectively
   auto tacs = bb2->begin();
   auto & phiX = *tacs;
   auto & phiPopcnt = *std::next(tacs);
@@ -225,7 +225,7 @@ TestPhiOperandElision()
 
   // Traverse the cfg and save every phi node
   size_t numBasicBlocks = 0;
-  std::vector<jlm::llvm::tac *> phiTacs;
+  std::vector<jlm::llvm::ThreeAddressCode *> phiTacs;
   for (auto & bb : *phi_elide->cfg())
   {
     numBasicBlocks++;
@@ -238,7 +238,7 @@ TestPhiOperandElision()
 
   // There should be 3 basic blocks left (bb1, bb4, bb5)
   assert(numBasicBlocks == 3);
-  // There should be exactly one phi tac
+  // There should be exactly one phi three address code
   assert(phiTacs.size() == 1);
   auto phiTac = phiTacs[0];
   // The phi should have two operands

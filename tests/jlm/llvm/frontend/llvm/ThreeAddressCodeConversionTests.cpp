@@ -35,7 +35,7 @@ SetupControlFlowGraph(
   }
 
   auto basicBlock = BasicBlock::create(*cfg);
-  auto threeAddressCode = basicBlock->append_last(tac::create(operation, operands));
+  auto threeAddressCode = basicBlock->append_last(ThreeAddressCode::create(operation, operands));
 
   for (size_t n = 0; n < threeAddressCode->nresults(); n++)
   {

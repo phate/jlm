@@ -27,22 +27,22 @@ ToAscii()
   auto tac5 = create_testop_tac({ &v0, &v1 }, { valueType, valueType });
 
   // Act
-  auto tac0String = tac::ToAscii(*tac0);
+  auto tac0String = ThreeAddressCode::ToAscii(*tac0);
   std::cout << tac0String << "\n" << std::flush;
 
-  auto tac1String = tac::ToAscii(*tac1);
+  auto tac1String = ThreeAddressCode::ToAscii(*tac1);
   std::cout << tac1String << "\n" << std::flush;
 
-  auto tac2String = tac::ToAscii(*tac2);
+  auto tac2String = ThreeAddressCode::ToAscii(*tac2);
   std::cout << tac2String << "\n" << std::flush;
 
-  auto tac3String = tac::ToAscii(*tac3);
+  auto tac3String = ThreeAddressCode::ToAscii(*tac3);
   std::cout << tac3String << "\n" << std::flush;
 
-  auto tac4String = tac::ToAscii(*tac4);
+  auto tac4String = ThreeAddressCode::ToAscii(*tac4);
   std::cout << tac4String << "\n" << std::flush;
 
-  auto tac5String = tac::ToAscii(*tac5);
+  auto tac5String = ThreeAddressCode::ToAscii(*tac5);
   std::cout << tac5String << "\n" << std::flush;
 
   // Assert

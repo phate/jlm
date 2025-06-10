@@ -25,7 +25,7 @@ emit_tacs(const tacsvector_t & tacs)
 {
   std::string str;
   for (const auto & tac : tacs)
-    str += tac::ToAscii(*tac) + ", ";
+    str += ThreeAddressCode::ToAscii(*tac) + ", ";
 
   return "[" + str + "]";
 }
@@ -136,7 +136,7 @@ emit_basic_block(const cfg_node & node)
 
   std::string str;
   for (const auto & tac : tacs)
-    str += tac::ToAscii(*tac) + "\\n";
+    str += ThreeAddressCode::ToAscii(*tac) + "\\n";
 
   return str;
 }
