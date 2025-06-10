@@ -19,8 +19,8 @@ BasicBlock::HasSsaPhiOperation() const
   return is<SsaPhiOperation>(first());
 }
 
-llvm::tac *
-BasicBlock::insert_before_branch(std::unique_ptr<llvm::tac> tac)
+llvm::ThreeAddressCode *
+BasicBlock::insert_before_branch(std::unique_ptr<llvm::ThreeAddressCode> tac)
 {
   auto it = is<BranchOperation>(last()) ? std::prev(end()) : end();
   return insert_before(it, std::move(tac));

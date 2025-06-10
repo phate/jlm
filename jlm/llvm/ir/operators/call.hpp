@@ -398,7 +398,7 @@ public:
   static std::unique_ptr<CallTypeClassifier>
   ClassifyCall(const rvsdg::SimpleNode & callNode);
 
-  static std::unique_ptr<tac>
+  static std::unique_ptr<ThreeAddressCode>
   create(
       const variable * function,
       std::shared_ptr<const rvsdg::FunctionType> functionType,
@@ -409,7 +409,7 @@ public:
     CallOperation op(std::move(functionType));
     std::vector<const variable *> operands({ function });
     operands.insert(operands.end(), arguments.begin(), arguments.end());
-    return tac::create(op, operands);
+    return ThreeAddressCode::create(op, operands);
   }
 
   static std::vector<rvsdg::Output *>

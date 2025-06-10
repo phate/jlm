@@ -90,7 +90,7 @@ public:
   [[nodiscard]] size_t
   NumMemoryStates() const noexcept override;
 
-  static std::unique_ptr<llvm::tac>
+  static std::unique_ptr<llvm::ThreeAddressCode>
   create(
       const variable * destination,
       const variable * source,
@@ -101,7 +101,7 @@ public:
     operands.insert(operands.end(), memoryStates.begin(), memoryStates.end());
 
     MemCpyNonVolatileOperation operation(length->Type(), memoryStates.size());
-    return tac::create(operation, operands);
+    return ThreeAddressCode::create(operation, operands);
   }
 
   static std::vector<rvsdg::Output *>
@@ -171,7 +171,7 @@ public:
   [[nodiscard]] size_t
   NumMemoryStates() const noexcept override;
 
-  static std::unique_ptr<llvm::tac>
+  static std::unique_ptr<llvm::ThreeAddressCode>
   CreateThreeAddressCode(
       const variable & destination,
       const variable & source,
@@ -183,7 +183,7 @@ public:
     operands.insert(operands.end(), memoryStates.begin(), memoryStates.end());
 
     MemCpyVolatileOperation operation(length.Type(), memoryStates.size());
-    return tac::create(operation, operands);
+    return ThreeAddressCode::create(operation, operands);
   }
 
   static rvsdg::SimpleNode &

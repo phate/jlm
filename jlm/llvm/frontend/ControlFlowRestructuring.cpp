@@ -115,7 +115,7 @@ append_constant(BasicBlock * bb, const tacvariable * result, size_t value)
   auto nalternatives = static_cast<const rvsdg::ControlType *>(&result->type())->nalternatives();
 
   rvsdg::ctlconstant_op op(rvsdg::ctlvalue_repr(value, nalternatives));
-  bb->append_last(tac::create(op, {}));
+  bb->append_last(ThreeAddressCode::create(op, {}));
   bb->append_last(AssignmentOperation::create(bb->last()->result(0), result));
 }
 
