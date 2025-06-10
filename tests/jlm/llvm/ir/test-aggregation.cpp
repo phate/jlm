@@ -55,7 +55,7 @@ is_loop(const jlm::llvm::AggregationNode * node)
 static bool
 is_branch(const jlm::llvm::AggregationNode * node, size_t nchildren)
 {
-  if (!jlm::llvm::is<jlm::llvm::branchaggnode>(node))
+  if (!jlm::llvm::is<jlm::llvm::BranchAggregationNode>(node))
     return false;
 
   if (node->nchildren() != nchildren)

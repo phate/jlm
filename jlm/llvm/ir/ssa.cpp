@@ -51,7 +51,7 @@ destruct_ssa(ControlFlowGraph & cfg)
       std::unordered_map<cfg_node *, BasicBlock *> intermediateBlocks;
 
       // Make a copy of the original inEdges to avoid iterator invalidation
-      std::vector<cfg_edge *> originalInEdges;
+      std::vector<ControlFlowGraphEdge *> originalInEdges;
       for (auto & inEdge : phi_block->InEdges())
         originalInEdges.push_back(&inEdge);
 
@@ -108,7 +108,7 @@ destruct_ssa(ControlFlowGraph & cfg)
         // In the assignment block, store the variable into the result of the undef operation
         ass_block->append_last(AssignmentOperation::create(variable, undef->result(0)));
 
-        // Remove the phi tac
+        // Remove the phi three address code
         tacs.drop_first();
       }
     }

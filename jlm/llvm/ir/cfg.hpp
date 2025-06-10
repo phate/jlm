@@ -19,7 +19,7 @@ namespace jlm::llvm
 class clg_node;
 class BasicBlock;
 class InterProceduralGraphModule;
-class tac;
+class ThreeAddressCode;
 
 /** \brief Function argument
  */

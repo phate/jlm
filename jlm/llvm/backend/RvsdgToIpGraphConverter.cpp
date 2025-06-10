@@ -161,9 +161,9 @@ RvsdgToIpGraphConverter::CreateInitialization(const delta::node & deltaNode)
     for (size_t n = 0; n < node->ninputs(); n++)
       operands.push_back(Context_->GetVariable(node->input(n)->origin()));
 
-    // convert node to tac
+    // convert node to three address code
     auto & op = *static_cast<const rvsdg::SimpleOperation *>(&node->GetOperation());
-    tacs.push_back(tac::create(op, operands));
+    tacs.push_back(ThreeAddressCode::create(op, operands));
     Context_->InsertVariable(output, tacs.back()->result(0));
   }
 
@@ -239,7 +239,7 @@ RvsdgToIpGraphConverter::ConvertSimpleNode(const rvsdg::SimpleNode & simpleNode)
     operands.push_back(Context_->GetVariable(simpleNode.input(n)->origin()));
 
   Context_->GetLastProcessedBasicBlock()->append_last(
-      tac::create(simpleNode.GetOperation(), operands));
+      ThreeAddressCode::create(simpleNode.GetOperation(), operands));
 
   for (size_t n = 0; n < simpleNode.noutputs(); n++)
     Context_->InsertVariable(
@@ -346,7 +346,7 @@ RvsdgToIpGraphConverter::ConvertThetaNode(const rvsdg::ThetaNode & thetaNode)
   Context_->SetLastProcessedBasicBlock(entryBlock);
 
   // create SSA phi nodes in entry block and add arguments to context
-  std::vector<llvm::tac *> phis;
+  std::vector<llvm::ThreeAddressCode *> phis;
   for (const auto & loopVar : thetaNode.GetLoopVars())
   {
     auto variable = Context_->GetVariable(loopVar.input->origin());

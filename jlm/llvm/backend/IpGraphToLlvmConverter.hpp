@@ -62,7 +62,7 @@ class function_node;
 class InterProceduralGraphModule;
 class LambdaExitMemoryStateMergeOperation;
 class PointerToFunctionOperation;
-class tac;
+class ThreeAddressCode;
 class variable;
 
 class IpGraphToLlvmConverter final
@@ -151,7 +151,7 @@ private:
   convert_tacs(const tacsvector_t & tacs);
 
   void
-  convert_instruction(const llvm::tac & tac, const llvm::cfg_node * node);
+  convert_instruction(const llvm::ThreeAddressCode & tac, const llvm::cfg_node * node);
 
   ::llvm::Value *
   convert_operation(

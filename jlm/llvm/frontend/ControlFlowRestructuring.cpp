@@ -115,7 +115,7 @@ append_constant(BasicBlock * bb, const tacvariable * result, size_t value)
   auto nalternatives = static_cast<const rvsdg::ControlType *>(&result->type())->nalternatives();
 
   rvsdg::ctlconstant_op op(rvsdg::ctlvalue_repr(value, nalternatives));
-  bb->append_last(tac::create(op, {}));
+  bb->append_last(ThreeAddressCode::create(op, {}));
   bb->append_last(AssignmentOperation::create(bb->last()->result(0), result));
 }
 
@@ -296,10 +296,10 @@ find_head_branch(cfg_node * start, cfg_node * end)
 }
 
 static std::unordered_set<llvm::cfg_node *>
-find_dominator_graph(const cfg_edge * edge)
+find_dominator_graph(const ControlFlowGraphEdge * edge)
 {
   std::unordered_set<llvm::cfg_node *> nodes;
-  std::unordered_set<const cfg_edge *> edges({ edge });
+  std::unordered_set<const ControlFlowGraphEdge *> edges({ edge });
 
   std::deque<llvm::cfg_node *> to_visit(1, edge->sink());
   while (to_visit.size() != 0)
@@ -336,7 +336,7 @@ find_dominator_graph(const cfg_edge * edge)
 struct continuation
 {
   std::unordered_set<cfg_node *> points;
-  std::unordered_map<cfg_edge *, std::unordered_set<cfg_edge *>> edges;
+  std::unordered_map<ControlFlowGraphEdge *, std::unordered_set<ControlFlowGraphEdge *>> edges;
 };
 
 static inline continuation
@@ -344,7 +344,7 @@ compute_continuation(cfg_node * hb)
 {
   JLM_ASSERT(hb->NumOutEdges() > 1);
 
-  std::unordered_map<cfg_edge *, std::unordered_set<cfg_node *>> dgraphs;
+  std::unordered_map<ControlFlowGraphEdge *, std::unordered_set<cfg_node *>> dgraphs;
   for (auto & outedge : hb->OutEdges())
     dgraphs[&outedge] = find_dominator_graph(&outedge);
 

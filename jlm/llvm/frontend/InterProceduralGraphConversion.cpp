@@ -463,7 +463,7 @@ requiresExport(const ipgraph_node & ipgNode)
 
 static void
 ConvertAssignment(
-    const llvm::tac & threeAddressCode,
+    const llvm::ThreeAddressCode & threeAddressCode,
     rvsdg::Region &,
     llvm::VariableMap & variableMap)
 {
@@ -475,7 +475,10 @@ ConvertAssignment(
 }
 
 static void
-ConvertSelect(const llvm::tac & threeAddressCode, rvsdg::Region &, llvm::VariableMap & variableMap)
+ConvertSelect(
+    const llvm::ThreeAddressCode & threeAddressCode,
+    rvsdg::Region &,
+    llvm::VariableMap & variableMap)
 {
   JLM_ASSERT(is<SelectOperation>(threeAddressCode.operation()));
   JLM_ASSERT(threeAddressCode.noperands() == 3 && threeAddressCode.nresults() == 1);
@@ -491,7 +494,7 @@ ConvertSelect(const llvm::tac & threeAddressCode, rvsdg::Region &, llvm::Variabl
 }
 
 static void
-ConvertBranch(const llvm::tac & threeAddressCode, rvsdg::Region &, llvm::VariableMap &)
+ConvertBranch(const llvm::ThreeAddressCode & threeAddressCode, rvsdg::Region &, llvm::VariableMap &)
 {
   JLM_ASSERT(is<BranchOperation>(threeAddressCode.operation()));
   /*
@@ -501,7 +504,10 @@ ConvertBranch(const llvm::tac & threeAddressCode, rvsdg::Region &, llvm::Variabl
 
 template<class TNode, class TOperation>
 static void
-Convert(const llvm::tac & threeAddressCode, rvsdg::Region & region, llvm::VariableMap & variableMap)
+Convert(
+    const llvm::ThreeAddressCode & threeAddressCode,
+    rvsdg::Region & region,
+    llvm::VariableMap & variableMap)
 {
   std::vector<rvsdg::Output *> operands;
   for (size_t n = 0; n < threeAddressCode.noperands(); n++)
@@ -524,7 +530,7 @@ Convert(const llvm::tac & threeAddressCode, rvsdg::Region & region, llvm::Variab
 
 static void
 ConvertThreeAddressCode(
-    const llvm::tac & threeAddressCode,
+    const llvm::ThreeAddressCode & threeAddressCode,
     rvsdg::Region & region,
     llvm::VariableMap & variableMap)
 {
@@ -664,7 +670,7 @@ Convert(
 
 static void
 Convert(
-    const branchaggnode & branchAggregationNode,
+    const BranchAggregationNode & branchAggregationNode,
     const AnnotationMap & demandMap,
     rvsdg::LambdaNode & lambdaNode,
     RegionalizedVariableMap & regionalizedVariableMap)
@@ -833,7 +839,7 @@ ConvertAggregationNode(
   {
     Convert(*linearNode, demandMap, lambdaNode, regionalizedVariableMap);
   }
-  else if (auto branchNode = dynamic_cast<const branchaggnode *>(&aggregationNode))
+  else if (auto branchNode = dynamic_cast<const BranchAggregationNode *>(&aggregationNode))
   {
     Convert(*branchNode, demandMap, lambdaNode, regionalizedVariableMap);
   }
