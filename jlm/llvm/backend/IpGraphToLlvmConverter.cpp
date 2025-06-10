@@ -1425,7 +1425,9 @@ IpGraphToLlvmConverter::convert_operation(
 }
 
 void
-IpGraphToLlvmConverter::convert_instruction(const llvm::tac & tac, const llvm::cfg_node * node)
+IpGraphToLlvmConverter::convert_instruction(
+    const llvm::ThreeAddressCode & tac,
+    const llvm::cfg_node * node)
 {
   std::vector<const variable *> operands;
   for (size_t n = 0; n < tac.noperands(); n++)
@@ -1453,8 +1455,8 @@ IpGraphToLlvmConverter::convert_tacs(const tacsvector_t & tacs)
   }
 }
 
-static const llvm::tac *
-get_match(const llvm::tac * branch)
+static const llvm::ThreeAddressCode *
+get_match(const llvm::ThreeAddressCode * branch)
 {
   JLM_ASSERT(is<tacvariable>(branch->operand(0)));
   auto tv = static_cast<const tacvariable *>(branch->operand(0));

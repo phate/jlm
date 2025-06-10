@@ -127,7 +127,7 @@ ControlFlowGraph::ToAscii(
   std::string str;
   for (const auto & tac : threeAddressCodes)
   {
-    str += "\t" + tac::ToAscii(*tac);
+    str += "\t" + ThreeAddressCode::ToAscii(*tac);
     if (tac != threeAddressCodes.last())
       str += "\n";
   }

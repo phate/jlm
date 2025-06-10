@@ -240,7 +240,7 @@ AnnotateReadWrite(
     {
       /*
           We need special treatment for assignment operation, since the variable
-          they assign the value to is modeled as an argument of the tac.
+          they assign the value to is modeled as an argument of the three address code.
       */
       JLM_ASSERT(tac->noperands() == 2 && tac->nresults() == 0);
       readSet.Remove(*tac->operand(0));

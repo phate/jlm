@@ -23,8 +23,6 @@ taclist::~taclist()
     delete tac;
 }
 
-/* tac */
-
 static void
 check_operands(
     const rvsdg::SimpleOperation & operation,
@@ -57,7 +55,9 @@ check_results(
   }
 }
 
-tac::tac(const rvsdg::SimpleOperation & operation, const std::vector<const variable *> & operands)
+ThreeAddressCode::ThreeAddressCode(
+    const rvsdg::SimpleOperation & operation,
+    const std::vector<const variable *> & operands)
     : operands_(operands),
       operation_(operation.copy())
 {
@@ -67,7 +67,7 @@ tac::tac(const rvsdg::SimpleOperation & operation, const std::vector<const varia
   create_results(operation, names);
 }
 
-tac::tac(
+ThreeAddressCode::ThreeAddressCode(
     const rvsdg::SimpleOperation & operation,
     const std::vector<const variable *> & operands,
     const std::vector<std::string> & names)
@@ -82,7 +82,7 @@ tac::tac(
   create_results(operation, names);
 }
 
-tac::tac(
+ThreeAddressCode::ThreeAddressCode(
     const rvsdg::SimpleOperation & operation,
     const std::vector<const variable *> & operands,
     std::vector<std::unique_ptr<tacvariable>> results)
@@ -95,7 +95,7 @@ tac::tac(
 }
 
 void
-tac::convert(
+ThreeAddressCode::convert(
     const rvsdg::SimpleOperation & operation,
     const std::vector<const variable *> & operands)
 {
@@ -110,7 +110,7 @@ tac::convert(
 }
 
 void
-tac::replace(
+ThreeAddressCode::replace(
     const rvsdg::SimpleOperation & operation,
     const std::vector<const variable *> & operands)
 {
@@ -122,7 +122,7 @@ tac::replace(
 }
 
 std::string
-tac::ToAscii(const jlm::llvm::tac & threeAddressCode)
+ThreeAddressCode::ToAscii(const jlm::llvm::ThreeAddressCode & threeAddressCode)
 {
   std::string resultString;
   for (size_t n = 0; n < threeAddressCode.nresults(); n++)

@@ -73,7 +73,7 @@ public:
     return std::static_pointer_cast<const rvsdg::bittype>(result(0))->nbits();
   }
 
-  static std::unique_ptr<llvm::tac>
+  static std::unique_ptr<llvm::ThreeAddressCode>
   create(const variable * operand, const std::shared_ptr<const rvsdg::Type> & type)
   {
     auto ot = std::dynamic_pointer_cast<const rvsdg::bittype>(operand->Type());
@@ -85,7 +85,7 @@ public:
       throw jlm::util::error("expected bits type.");
 
     sext_op op(std::move(ot), std::move(rt));
-    return tac::create(op, { operand });
+    return ThreeAddressCode::create(op, { operand });
   }
 
   static rvsdg::Output *

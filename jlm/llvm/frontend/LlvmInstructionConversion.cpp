@@ -52,7 +52,8 @@ ConvertValue(::llvm::Value * v, tacsvector_t & tacs, context & ctx)
   const variable * var = ConvertValueOrFunction(v, tacs, ctx);
   if (auto fntype = std::dynamic_pointer_cast<const rvsdg::FunctionType>(var->Type()))
   {
-    std::unique_ptr<tac> ptr_cast = tac::create(FunctionToPointerOperation(fntype), { var });
+    std::unique_ptr<ThreeAddressCode> ptr_cast =
+        ThreeAddressCode::create(FunctionToPointerOperation(fntype), { var });
     var = ptr_cast->result(0);
     tacs.push_back(std::move(ptr_cast));
   }
@@ -62,7 +63,10 @@ ConvertValue(::llvm::Value * v, tacsvector_t & tacs, context & ctx)
 /* constant */
 
 const variable *
-ConvertConstant(::llvm::Constant *, std::vector<std::unique_ptr<llvm::tac>> &, context &);
+ConvertConstant(
+    ::llvm::Constant *,
+    std::vector<std::unique_ptr<llvm::ThreeAddressCode>> &,
+    context &);
 
 static rvsdg::bitvalue_repr
 convert_apint(const ::llvm::APInt & value)
@@ -84,13 +88,16 @@ convert_apint(const ::llvm::APInt & value)
 }
 
 static const variable *
-convert_int_constant(::llvm::Constant * c, std::vector<std::unique_ptr<tac>> & tacs, context &)
+convert_int_constant(
+    ::llvm::Constant * c,
+    std::vector<std::unique_ptr<ThreeAddressCode>> & tacs,
+    context &)
 {
   JLM_ASSERT(c->getValueID() == ::llvm::Value::ConstantIntVal);
   const auto constant = ::llvm::cast<const ::llvm::ConstantInt>(c);
 
   const auto v = convert_apint(constant->getValue());
-  tacs.push_back(tac::create(IntegerConstantOperation(std::move(v)), {}));
+  tacs.push_back(ThreeAddressCode::create(IntegerConstantOperation(std::move(v)), {}));
 
   return tacs.back()->result(0);
 }
@@ -98,7 +105,7 @@ convert_int_constant(::llvm::Constant * c, std::vector<std::unique_ptr<tac>> & t
 static inline const variable *
 convert_undefvalue(
     ::llvm::Constant * c,
-    std::vector<std::unique_ptr<llvm::tac>> & tacs,
+    std::vector<std::unique_ptr<llvm::ThreeAddressCode>> & tacs,
     context & ctx)
 {
   JLM_ASSERT(c->getValueID() == ::llvm::Value::UndefValueVal);
@@ -112,7 +119,7 @@ convert_undefvalue(
 static const variable *
 convert_constantExpr(
     ::llvm::Constant * constant,
-    std::vector<std::unique_ptr<llvm::tac>> & tacs,
+    std::vector<std::unique_ptr<llvm::ThreeAddressCode>> & tacs,
     context & ctx)
 {
   JLM_ASSERT(constant->getValueID() == ::llvm::Value::ConstantExprVal);
@@ -137,7 +144,7 @@ convert_constantExpr(
 static const variable *
 convert_constantFP(
     ::llvm::Constant * constant,
-    std::vector<std::unique_ptr<llvm::tac>> & tacs,
+    std::vector<std::unique_ptr<llvm::ThreeAddressCode>> & tacs,
     context & ctx)
 {
   JLM_ASSERT(constant->getValueID() == ::llvm::Value::ConstantFPVal);
@@ -152,7 +159,7 @@ convert_constantFP(
 static const variable *
 convert_globalVariable(
     ::llvm::Constant * c,
-    std::vector<std::unique_ptr<llvm::tac>> & tacs,
+    std::vector<std::unique_ptr<llvm::ThreeAddressCode>> & tacs,
     context & ctx)
 {
   JLM_ASSERT(c->getValueID() == ::llvm::Value::GlobalVariableVal);
@@ -162,7 +169,7 @@ convert_globalVariable(
 static const variable *
 convert_constantPointerNull(
     ::llvm::Constant * constant,
-    std::vector<std::unique_ptr<llvm::tac>> & tacs,
+    std::vector<std::unique_ptr<llvm::ThreeAddressCode>> & tacs,
     context & ctx)
 {
   JLM_ASSERT(::llvm::dyn_cast<const ::llvm::ConstantPointerNull>(constant));
@@ -177,7 +184,7 @@ convert_constantPointerNull(
 static const variable *
 convert_blockAddress(
     ::llvm::Constant * constant,
-    std::vector<std::unique_ptr<llvm::tac>> &,
+    std::vector<std::unique_ptr<llvm::ThreeAddressCode>> &,
     context &)
 {
   JLM_ASSERT(constant->getValueID() == ::llvm::Value::BlockAddressVal);
@@ -188,7 +195,7 @@ convert_blockAddress(
 static const variable *
 convert_constantAggregateZero(
     ::llvm::Constant * c,
-    std::vector<std::unique_ptr<llvm::tac>> & tacs,
+    std::vector<std::unique_ptr<llvm::ThreeAddressCode>> & tacs,
     context & ctx)
 {
   JLM_ASSERT(c->getValueID() == ::llvm::Value::ConstantAggregateZeroVal);
@@ -202,7 +209,7 @@ convert_constantAggregateZero(
 static const variable *
 convert_constantArray(
     ::llvm::Constant * c,
-    std::vector<std::unique_ptr<llvm::tac>> & tacs,
+    std::vector<std::unique_ptr<llvm::ThreeAddressCode>> & tacs,
     context & ctx)
 {
   JLM_ASSERT(c->getValueID() == ::llvm::Value::ConstantArrayVal);
@@ -224,7 +231,7 @@ convert_constantArray(
 static const variable *
 convert_constantDataArray(
     ::llvm::Constant * constant,
-    std::vector<std::unique_ptr<llvm::tac>> & tacs,
+    std::vector<std::unique_ptr<llvm::ThreeAddressCode>> & tacs,
     context & ctx)
 {
   JLM_ASSERT(constant->getValueID() == ::llvm::Value::ConstantDataArrayVal);
@@ -242,7 +249,7 @@ convert_constantDataArray(
 static const variable *
 convert_constantDataVector(
     ::llvm::Constant * constant,
-    std::vector<std::unique_ptr<llvm::tac>> & tacs,
+    std::vector<std::unique_ptr<llvm::ThreeAddressCode>> & tacs,
     context & ctx)
 {
   JLM_ASSERT(constant->getValueID() == ::llvm::Value::ConstantDataVectorVal);
@@ -260,7 +267,7 @@ convert_constantDataVector(
 static const variable *
 ConvertConstantStruct(
     ::llvm::Constant * c,
-    std::vector<std::unique_ptr<llvm::tac>> & tacs,
+    std::vector<std::unique_ptr<llvm::ThreeAddressCode>> & tacs,
     context & ctx)
 {
   JLM_ASSERT(c->getValueID() == ::llvm::Value::ConstantStructVal);
@@ -278,7 +285,7 @@ ConvertConstantStruct(
 static const variable *
 convert_constantVector(
     ::llvm::Constant * c,
-    std::vector<std::unique_ptr<llvm::tac>> & tacs,
+    std::vector<std::unique_ptr<llvm::ThreeAddressCode>> & tacs,
     context & ctx)
 {
   JLM_ASSERT(c->getValueID() == ::llvm::Value::ConstantVectorVal);
@@ -296,7 +303,7 @@ convert_constantVector(
 static inline const variable *
 convert_globalAlias(
     ::llvm::Constant * constant,
-    std::vector<std::unique_ptr<llvm::tac>> &,
+    std::vector<std::unique_ptr<llvm::ThreeAddressCode>> &,
     context &)
 {
   JLM_ASSERT(constant->getValueID() == ::llvm::Value::GlobalAliasVal);
@@ -335,12 +342,15 @@ ConvertConstant(
 }
 
 const variable *
-ConvertConstant(::llvm::Constant * c, std::vector<std::unique_ptr<llvm::tac>> & tacs, context & ctx)
+ConvertConstant(
+    ::llvm::Constant * c,
+    std::vector<std::unique_ptr<llvm::ThreeAddressCode>> & tacs,
+    context & ctx)
 {
   static std::unordered_map<
       unsigned,
       const variable * (*)(::llvm::Constant *,
-                           std::vector<std::unique_ptr<llvm::tac>> &,
+                           std::vector<std::unique_ptr<llvm::ThreeAddressCode>> &,
                            context & ctx)>
       constantMap({ { ::llvm::Value::BlockAddressVal, convert_blockAddress },
                     { ::llvm::Value::ConstantAggregateZeroVal, convert_constantAggregateZero },
@@ -365,10 +375,10 @@ ConvertConstant(::llvm::Constant * c, std::vector<std::unique_ptr<llvm::tac>> & 
   JLM_UNREACHABLE("Unsupported LLVM Constant.");
 }
 
-std::vector<std::unique_ptr<llvm::tac>>
+std::vector<std::unique_ptr<llvm::ThreeAddressCode>>
 ConvertConstant(::llvm::Constant * c, context & ctx)
 {
-  std::vector<std::unique_ptr<llvm::tac>> tacs;
+  std::vector<std::unique_ptr<llvm::ThreeAddressCode>> tacs;
   ConvertConstant(c, tacs, ctx);
   return tacs;
 }
@@ -413,7 +423,7 @@ ConvertBranchInstruction(::llvm::Instruction * instruction, tacsvector_t & tacs,
   auto c = ConvertValue(i->getCondition(), tacs, ctx);
   auto nbits = i->getCondition()->getType()->getIntegerBitWidth();
   auto op = rvsdg::match_op(nbits, { { 1, 1 } }, 0, 2);
-  tacs.push_back(tac::create(op, { c }));
+  tacs.push_back(ThreeAddressCode::create(op, { c }));
   tacs.push_back(BranchOperation::create(2, tacs.back()->result(0)));
 
   return nullptr;
@@ -440,7 +450,7 @@ ConvertSwitchInstruction(::llvm::Instruction * instruction, tacsvector_t & tacs,
   auto c = ConvertValue(i->getCondition(), tacs, ctx);
   auto nbits = i->getCondition()->getType()->getIntegerBitWidth();
   auto op = rvsdg::match_op(nbits, mapping, defaultEdge->index(), bb->NumOutEdges());
-  tacs.push_back(tac::create(op, { c }));
+  tacs.push_back(ThreeAddressCode::create(op, { c }));
   tacs.push_back(BranchOperation::create(bb->NumOutEdges(), tacs.back()->result(0)));
 
   return nullptr;
@@ -545,7 +555,7 @@ convert(const ::llvm::ICmpInst * instruction, tacsvector_t & tacs, context & ctx
   }
   else
   {
-    tacs.push_back(tac::create(*operation, { op1, op2 }));
+    tacs.push_back(ThreeAddressCode::create(*operation, { op1, op2 }));
   }
 
   return tacs.back()->result(0);
@@ -589,7 +599,7 @@ convert_fcmp_instruction(::llvm::Instruction * instruction, tacsvector_t & tacs,
   if (t->isVectorTy())
     tacs.push_back(vectorbinary_op::create(operation, op1, op2, type));
   else
-    tacs.push_back(tac::create(operation, { op1, op2 }));
+    tacs.push_back(ThreeAddressCode::create(operation, { op1, op2 }));
 
   return tacs.back()->result(0);
 }
@@ -598,7 +608,7 @@ static const variable *
 AddIOBarrier(tacsvector_t & tacs, const variable * operand, const context & ctx)
 {
   const auto ioBarrierOperation = std::make_unique<IOBarrierOperation>(operand->Type());
-  tacs.push_back(tac::create(*ioBarrierOperation, { operand, ctx.iostate() }));
+  tacs.push_back(ThreeAddressCode::create(*ioBarrierOperation, { operand, ctx.iostate() }));
   return tacs.back()->result(0);
 }
 
@@ -876,8 +886,8 @@ convert_call_instruction(::llvm::Instruction * instruction, tacsvector_t & tacs,
   // to cast it into a function object.
   if (is<PointerType>(*callee->Type()))
   {
-    std::unique_ptr<tac> callee_cast =
-        tac::create(PointerToFunctionOperation(convertedFType), { callee });
+    std::unique_ptr<ThreeAddressCode> callee_cast =
+        ThreeAddressCode::create(PointerToFunctionOperation(convertedFType), { callee });
     callee = callee_cast->result(0);
     tacs.push_back(std::move(callee_cast));
   }
@@ -890,9 +900,11 @@ convert_call_instruction(::llvm::Instruction * instruction, tacsvector_t & tacs,
     {
       // Since vararg passing is not modelled explicitly, simply hide the
       // argument mismtach via pointer casts.
-      std::unique_ptr<tac> ptrCast = tac::create(FunctionToPointerOperation(fntype), { callee });
-      std::unique_ptr<tac> fnCast =
-          tac::create(PointerToFunctionOperation(convertedFType), { ptrCast->result(0) });
+      std::unique_ptr<ThreeAddressCode> ptrCast =
+          ThreeAddressCode::create(FunctionToPointerOperation(fntype), { callee });
+      std::unique_ptr<ThreeAddressCode> fnCast = ThreeAddressCode::create(
+          PointerToFunctionOperation(convertedFType),
+          { ptrCast->result(0) });
       callee = fnCast->result(0);
       tacs.push_back(std::move(ptrCast));
       tacs.push_back(std::move(fnCast));
@@ -1044,7 +1056,7 @@ convert(const ::llvm::BinaryOperator * instruction, tacsvector_t & tacs, context
   }
   else
   {
-    tacs.push_back(tac::create(*operation, { operand1, operand2 }));
+    tacs.push_back(ThreeAddressCode::create(*operation, { operand1, operand2 }));
   }
 
   return tacs.back()->result(0);
@@ -1196,7 +1208,8 @@ convert_cast_instruction(::llvm::Instruction * i, tacsvector_t & tacs, context &
     tacs.push_back(
         vectorunary_op::create(*static_cast<rvsdg::UnaryOperation *>(unop.get()), op, type));
   else
-    tacs.push_back(tac::create(*static_cast<rvsdg::SimpleOperation *>(unop.get()), { op }));
+    tacs.push_back(
+        ThreeAddressCode::create(*static_cast<rvsdg::SimpleOperation *>(unop.get()), { op }));
 
   return tacs.back()->result(0);
 }
@@ -1212,7 +1225,7 @@ convert(::llvm::Instruction * instruction, tacsvector_t & tacs, context & ctx)
 const variable *
 ConvertInstruction(
     ::llvm::Instruction * i,
-    std::vector<std::unique_ptr<llvm::tac>> & tacs,
+    std::vector<std::unique_ptr<llvm::ThreeAddressCode>> & tacs,
     context & ctx)
 {
   if (i->isCast())
@@ -1221,7 +1234,7 @@ ConvertInstruction(
   static std::unordered_map<
       unsigned,
       const variable * (*)(::llvm::Instruction *,
-                           std::vector<std::unique_ptr<llvm::tac>> &,
+                           std::vector<std::unique_ptr<llvm::ThreeAddressCode>> &,
                            context &)>
       map({ { ::llvm::Instruction::Ret, convert_return_instruction },
             { ::llvm::Instruction::Br, ConvertBranchInstruction },
