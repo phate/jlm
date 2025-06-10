@@ -85,7 +85,7 @@ public:
   operator=(IpGraphToLlvmConverter &&) = delete;
 
   // FIXME: InterProceduralGraphModule should be const, but we still need to create variables to
-  // translate// expressions.
+  // translate expressions.
   std::unique_ptr<::llvm::Module>
   ConvertModule(InterProceduralGraphModule & ipGraphModule, ::llvm::LLVMContext & llvmContext);
 
