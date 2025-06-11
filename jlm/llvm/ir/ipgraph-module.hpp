@@ -116,38 +116,38 @@ public:
     return ptr;
   }
 
-  inline llvm::variable *
+  inline llvm::Variable *
   create_variable(std::shared_ptr<const jlm::rvsdg::Type> type, const std::string & name)
   {
-    auto v = std::make_unique<llvm::variable>(std::move(type), name);
+    auto v = std::make_unique<llvm::Variable>(std::move(type), name);
     auto pv = v.get();
     variables_.insert(std::move(v));
     return pv;
   }
 
-  inline llvm::variable *
+  inline llvm::Variable *
   create_variable(std::shared_ptr<const jlm::rvsdg::Type> type)
   {
     static uint64_t c = 0;
-    auto v = std::make_unique<llvm::variable>(std::move(type), jlm::util::strfmt("v", c++));
+    auto v = std::make_unique<llvm::Variable>(std::move(type), jlm::util::strfmt("v", c++));
     auto pv = v.get();
     variables_.insert(std::move(v));
     return pv;
   }
 
-  inline llvm::variable *
+  inline llvm::Variable *
   create_variable(function_node * node)
   {
     JLM_ASSERT(!variable(node));
 
-    auto v = std::unique_ptr<llvm::variable>(new fctvariable(node));
+    auto v = std::unique_ptr<llvm::Variable>(new fctvariable(node));
     auto pv = v.get();
     functions_[node] = pv;
     variables_.insert(std::move(v));
     return pv;
   }
 
-  const llvm::variable *
+  const llvm::Variable *
   variable(const ipgraph_node * node) const noexcept
   {
     auto it = functions_.find(node);
@@ -224,8 +224,8 @@ private:
   std::string target_triple_;
   const jlm::util::FilePath source_filename_;
   std::unordered_set<const llvm::gblvalue *> globals_;
-  std::unordered_set<std::unique_ptr<llvm::variable>> variables_;
-  std::unordered_map<const ipgraph_node *, const llvm::variable *> functions_;
+  std::unordered_set<std::unique_ptr<llvm::Variable>> variables_;
+  std::unordered_map<const ipgraph_node *, const llvm::Variable *> functions_;
   std::vector<std::unique_ptr<StructType::Declaration>> StructTypeDeclarations_;
 };
 

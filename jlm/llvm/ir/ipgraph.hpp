@@ -317,7 +317,7 @@ private:
 class data_node_init final
 {
 public:
-  data_node_init(const variable * value)
+  data_node_init(const Variable * value)
       : value_(value)
   {}
 
@@ -347,7 +347,7 @@ public:
   data_node_init &
   operator=(data_node_init &&) = delete;
 
-  const variable *
+  const Variable *
   value() const noexcept
   {
     return value_;
@@ -361,7 +361,7 @@ public:
 
 private:
   tacsvector_t tacs_;
-  const variable * value_;
+  const Variable * value_;
 };
 
 class data_node final : public ipgraph_node

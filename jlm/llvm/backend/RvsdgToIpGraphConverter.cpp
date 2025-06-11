@@ -46,14 +46,14 @@ public:
   }
 
   void
-  InsertVariable(const rvsdg::Output * output, const llvm::variable * variable)
+  InsertVariable(const rvsdg::Output * output, const llvm::Variable * variable)
   {
     JLM_ASSERT(VariableMap_.find(output) == VariableMap_.end());
     JLM_ASSERT(*output->Type() == *variable->Type());
     VariableMap_[output] = variable;
   }
 
-  const llvm::variable *
+  const llvm::Variable *
   GetVariable(const rvsdg::Output * output)
   {
     const auto it = VariableMap_.find(output);
@@ -95,7 +95,7 @@ private:
   ControlFlowGraph * ControlFlowGraph_;
   ipgraph_module & IPGraphModule_;
   BasicBlock * LastProcessedBasicBlock;
-  std::unordered_map<const rvsdg::Output *, const llvm::variable *> VariableMap_;
+  std::unordered_map<const rvsdg::Output *, const llvm::Variable *> VariableMap_;
 };
 
 class RvsdgToIpGraphConverter::Statistics final : public util::Statistics
@@ -157,7 +157,7 @@ RvsdgToIpGraphConverter::CreateInitialization(const delta::node & deltaNode)
     const auto output = node->output(0);
 
     // collect operand variables
-    std::vector<const variable *> operands;
+    std::vector<const Variable *> operands;
     for (size_t n = 0; n < node->ninputs(); n++)
       operands.push_back(Context_->GetVariable(node->input(n)->origin()));
 
@@ -234,7 +234,7 @@ RvsdgToIpGraphConverter::CreateControlFlowGraph(const rvsdg::LambdaNode & lambda
 void
 RvsdgToIpGraphConverter::ConvertSimpleNode(const rvsdg::SimpleNode & simpleNode)
 {
-  std::vector<const variable *> operands;
+  std::vector<const Variable *> operands;
   for (size_t n = 0; n < simpleNode.ninputs(); n++)
     operands.push_back(Context_->GetVariable(simpleNode.input(n)->origin()));
 
@@ -291,7 +291,7 @@ RvsdgToIpGraphConverter::ConvertGammaNode(const rvsdg::GammaNode & gammaNode)
     const auto output = gammaNode.output(n);
 
     bool invariant = true;
-    std::vector<std::pair<const variable *, cfg_node *>> arguments;
+    std::vector<std::pair<const Variable *, cfg_node *>> arguments;
     for (size_t r = 0; r < gammaNode.nsubregions(); r++)
     {
       const auto origin = gammaNode.subregion(r)->result(n)->origin();
@@ -319,7 +319,7 @@ RvsdgToIpGraphConverter::ConvertGammaNode(const rvsdg::GammaNode & gammaNode)
 bool
 RvsdgToIpGraphConverter::RequiresSsaPhiOperation(
     const rvsdg::ThetaNode::LoopVar & loopVar,
-    const variable & v)
+    const Variable & v)
 {
   // FIXME: solely decide on the input instead of using the variable
   if (is<gblvariable>(&v))

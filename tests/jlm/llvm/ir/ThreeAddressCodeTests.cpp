@@ -16,8 +16,8 @@ ToAscii()
   // Arrange
   auto valueType = valuetype::Create();
 
-  variable v0(valueType, "v0");
-  variable v1(valueType, "v1");
+  Variable v0(valueType, "v0");
+  Variable v1(valueType, "v1");
 
   auto tac0 = create_testop_tac({}, {});
   auto tac1 = create_testop_tac({ &v0 }, {});

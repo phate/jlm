@@ -19,12 +19,12 @@ namespace jlm::llvm
 {
 
 class context;
-class variable;
+class Variable;
 
-const variable *
+const Variable *
 ConvertValue(::llvm::Value * v, tacsvector_t & tacs, context & ctx);
 
-const variable *
+const Variable *
 ConvertInstruction(
     ::llvm::Instruction * i,
     std::vector<std::unique_ptr<llvm::ThreeAddressCode>> & tacs,
@@ -33,7 +33,7 @@ ConvertInstruction(
 std::vector<std::unique_ptr<llvm::ThreeAddressCode>>
 ConvertConstant(::llvm::Constant * constant, context & ctx);
 
-const variable *
+const Variable *
 ConvertConstant(
     ::llvm::Constant * constant,
     std::vector<std::unique_ptr<llvm::ThreeAddressCode>> & tacs,

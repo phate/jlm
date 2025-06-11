@@ -60,7 +60,7 @@ PatchPhiOperands(const std::vector<::llvm::PHINode *> & phis, context & ctx)
   for (const auto & phi : phis)
   {
     std::vector<cfg_node *> incomingNodes;
-    std::vector<const variable *> operands;
+    std::vector<const Variable *> operands;
     for (size_t n = 0; n < phi->getNumOperands(); n++)
     {
       // In LLVM, phi instructions may have incoming basic blocks that are unreachable.

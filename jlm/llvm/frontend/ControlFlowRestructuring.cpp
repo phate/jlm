@@ -101,7 +101,7 @@ create_rvariable(BasicBlock & bb)
 }
 
 static inline void
-append_branch(BasicBlock * bb, const variable * operand)
+append_branch(BasicBlock * bb, const Variable * operand)
 {
   JLM_ASSERT(dynamic_cast<const rvsdg::ControlType *>(&operand->type()));
   auto nalternatives = static_cast<const rvsdg::ControlType *>(&operand->type())->nalternatives();

@@ -438,7 +438,7 @@ public:
 
 static inline std::unique_ptr<llvm::ThreeAddressCode>
 create_testop_tac(
-    const std::vector<const llvm::variable *> & arguments,
+    const std::vector<const llvm::Variable *> & arguments,
     std::vector<std::shared_ptr<const rvsdg::Type>> result_types)
 {
   std::vector<std::shared_ptr<const rvsdg::Type>> argument_types;

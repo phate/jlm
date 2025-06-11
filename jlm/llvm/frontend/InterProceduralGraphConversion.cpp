@@ -29,27 +29,27 @@ class VariableMap final
 {
 public:
   bool
-  contains(const variable * v) const noexcept
+  contains(const Variable * v) const noexcept
   {
     return Map_.find(v) != Map_.end();
   }
 
   rvsdg::Output *
-  lookup(const variable * v) const
+  lookup(const Variable * v) const
   {
     JLM_ASSERT(contains(v));
     return Map_.at(v);
   }
 
   void
-  insert(const variable * v, rvsdg::Output * o)
+  insert(const Variable * v, rvsdg::Output * o)
   {
     JLM_ASSERT(v->type() == *o->Type());
     Map_[v] = o;
   }
 
 private:
-  std::unordered_map<const variable *, rvsdg::Output *> Map_;
+  std::unordered_map<const Variable *, rvsdg::Output *> Map_;
 };
 
 class RegionalizedVariableMap final
@@ -691,7 +691,7 @@ Convert(
    * Add gamma inputs.
    */
   auto & demandSet = demandMap.Lookup<BranchAnnotationSet>(branchAggregationNode);
-  std::unordered_map<const variable *, rvsdg::Input *> gammaInputMap;
+  std::unordered_map<const Variable *, rvsdg::Input *> gammaInputMap;
   for (auto & v : demandSet.InputVariables().Variables())
     gammaInputMap[&v] =
         gamma->AddEntryVar(regionalizedVariableMap.GetTopVariableMap().lookup(&v)).input;
@@ -699,7 +699,7 @@ Convert(
   /*
    * Convert subregions.
    */
-  std::unordered_map<const variable *, std::vector<rvsdg::Output *>> xvmap;
+  std::unordered_map<const Variable *, std::vector<rvsdg::Output *>> xvmap;
   JLM_ASSERT(gamma->nsubregions() == branchAggregationNode.nchildren());
   for (size_t n = 0; n < gamma->nsubregions(); n++)
   {
@@ -754,7 +754,7 @@ Convert(
    * Add loop variables
    */
   auto & demandSet = demandMap.Lookup<LoopAnnotationSet>(loopAggregationNode);
-  std::unordered_map<const variable *, rvsdg::ThetaNode::LoopVar> thetaLoopVarMap;
+  std::unordered_map<const Variable *, rvsdg::ThetaNode::LoopVar> thetaLoopVarMap;
   for (auto & v : demandSet.LoopVariables().Variables())
   {
     rvsdg::Output * value = nullptr;
@@ -1127,7 +1127,7 @@ ConvertStronglyConnectedComponent(
   /*
    * Add recursion variables
    */
-  std::unordered_map<const variable *, rvsdg::PhiNode::FixVar> recursionVariables;
+  std::unordered_map<const Variable *, rvsdg::PhiNode::FixVar> recursionVariables;
   for (const auto & ipgNode : stronglyConnectedComponent)
   {
     auto recursionVariable = pb.AddFixVar(ipgNode->Type());

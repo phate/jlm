@@ -26,7 +26,7 @@ taclist::~taclist()
 static void
 check_operands(
     const rvsdg::SimpleOperation & operation,
-    const std::vector<const variable *> & operands)
+    const std::vector<const Variable *> & operands)
 {
   if (operands.size() != operation.narguments())
     throw util::error("invalid number of operands.");
@@ -57,7 +57,7 @@ check_results(
 
 ThreeAddressCode::ThreeAddressCode(
     const rvsdg::SimpleOperation & operation,
-    const std::vector<const variable *> & operands)
+    const std::vector<const Variable *> & operands)
     : operands_(operands),
       operation_(operation.copy())
 {
@@ -69,7 +69,7 @@ ThreeAddressCode::ThreeAddressCode(
 
 ThreeAddressCode::ThreeAddressCode(
     const rvsdg::SimpleOperation & operation,
-    const std::vector<const variable *> & operands,
+    const std::vector<const Variable *> & operands,
     const std::vector<std::string> & names)
     : operands_(operands),
       operation_(operation.copy())
@@ -84,7 +84,7 @@ ThreeAddressCode::ThreeAddressCode(
 
 ThreeAddressCode::ThreeAddressCode(
     const rvsdg::SimpleOperation & operation,
-    const std::vector<const variable *> & operands,
+    const std::vector<const Variable *> & operands,
     std::vector<std::unique_ptr<tacvariable>> results)
     : operands_(operands),
       operation_(operation.copy()),
@@ -97,7 +97,7 @@ ThreeAddressCode::ThreeAddressCode(
 void
 ThreeAddressCode::convert(
     const rvsdg::SimpleOperation & operation,
-    const std::vector<const variable *> & operands)
+    const std::vector<const Variable *> & operands)
 {
   check_operands(operation, operands);
 
@@ -112,7 +112,7 @@ ThreeAddressCode::convert(
 void
 ThreeAddressCode::replace(
     const rvsdg::SimpleOperation & operation,
-    const std::vector<const variable *> & operands)
+    const std::vector<const Variable *> & operands)
 {
   check_operands(operation, operands);
   check_results(operation, results_);

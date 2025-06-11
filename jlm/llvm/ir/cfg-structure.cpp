@@ -762,7 +762,7 @@ update_phi_operands(
   const auto phi = util::AssertedCast<const SsaPhiOperation>(&phitac.operation());
 
   std::vector<cfg_node *> incomingNodes;
-  std::vector<const variable *> operands;
+  std::vector<const Variable *> operands;
   for (size_t n = 0; n < phitac.noperands(); n++)
   {
     if (deadnodes.find(phi->GetIncomingNode(n)) == deadnodes.end())

@@ -70,7 +70,7 @@ public:
   static std::unique_ptr<llvm::ThreeAddressCode>
   create(
       std::shared_ptr<const rvsdg::ValueType> allocatedType,
-      const variable * size,
+      const Variable * size,
       size_t alignment)
   {
     auto bt = std::dynamic_pointer_cast<const rvsdg::bittype>(size->Type());
