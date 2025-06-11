@@ -16,9 +16,6 @@ Variable::debug_string() const
   return name();
 }
 
-/* top level variable */
-
-gblvariable::~gblvariable()
-{}
+GlobalVariable::~GlobalVariable() noexcept = default;
 
 }
