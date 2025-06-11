@@ -608,7 +608,7 @@ MlirToJlmConverter::ConvertOperation(
       JLM_UNREACHABLE("Expected bittype for AllocaOp operation.");
 
     auto jlmBitType = std::dynamic_pointer_cast<const jlm::rvsdg::bittype>(inputs[0]->Type());
-    auto allocaOp = jlm::llvm::alloca_op(jlmValueType, jlmBitType, AllocaOp.getAlignment());
+    auto allocaOp = jlm::llvm::AllocaOperation(jlmValueType, jlmBitType, AllocaOp.getAlignment());
     auto operands = std::vector(inputs.begin(), inputs.end());
 
     return &rvsdg::SimpleNode::Create(rvsdgRegion, allocaOp, operands);

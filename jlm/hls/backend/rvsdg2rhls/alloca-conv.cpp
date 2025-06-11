@@ -127,7 +127,7 @@ alloca_conv(rvsdg::Region * region)
         alloca_conv(structnode->subregion(n));
       }
     }
-    else if (auto po = dynamic_cast<const jlm::llvm::alloca_op *>(&(node->GetOperation())))
+    else if (auto po = dynamic_cast<const jlm::llvm::AllocaOperation *>(&(node->GetOperation())))
     {
       // ensure that the size is one
       JLM_ASSERT(node->ninputs() == 1);

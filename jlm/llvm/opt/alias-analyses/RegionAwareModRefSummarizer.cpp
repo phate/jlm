@@ -776,7 +776,7 @@ RegionAwareModRefSummarizer::AnnotateSimpleNode(
   {
     AnnotateStore(simpleNode, regionSummary);
   }
-  else if (is<alloca_op>(&simpleNode))
+  else if (is<AllocaOperation>(&simpleNode))
   {
     AnnotateAlloca(simpleNode, regionSummary);
   }
@@ -823,7 +823,7 @@ RegionAwareModRefSummarizer::AnnotateAlloca(
     const rvsdg::SimpleNode & allocaNode,
     RegionSummary & regionSummary)
 {
-  JLM_ASSERT(is<alloca_op>(&allocaNode));
+  JLM_ASSERT(is<AllocaOperation>(&allocaNode));
 
   auto & memoryNode = ModRefSummary_->GetPointsToGraph().GetAllocaNode(allocaNode);
   regionSummary.AddMemoryNodes({ &memoryNode });

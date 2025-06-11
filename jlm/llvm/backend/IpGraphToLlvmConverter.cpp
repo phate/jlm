@@ -430,8 +430,8 @@ IpGraphToLlvmConverter::convert_alloca(
     const std::vector<const Variable *> & args,
     ::llvm::IRBuilder<> & builder)
 {
-  JLM_ASSERT(is<alloca_op>(op));
-  auto & aop = *static_cast<const llvm::alloca_op *>(&op);
+  JLM_ASSERT(is<AllocaOperation>(op));
+  auto & aop = *static_cast<const llvm::AllocaOperation *>(&op);
   auto & llvmContext = Context_->llvm_module().getContext();
   auto & typeConverter = Context_->GetTypeConverter();
 
@@ -1229,7 +1229,7 @@ IpGraphToLlvmConverter::convert_operation(
   {
     return convert<StoreVolatileOperation>(op, arguments, builder);
   }
-  if (is<alloca_op>(op))
+  if (is<AllocaOperation>(op))
   {
     return convert_alloca(op, arguments, builder);
   }

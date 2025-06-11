@@ -91,7 +91,8 @@ TestAlloca()
 
     // Create alloca node
     std::cout << "Alloca Operation" << std::endl;
-    auto allocaOp = alloca_op(jlm::rvsdg::bittype::Create(64), jlm::rvsdg::bittype::Create(32), 4);
+    auto allocaOp =
+        AllocaOperation(jlm::rvsdg::bittype::Create(64), jlm::rvsdg::bittype::Create(32), 4);
     jlm::rvsdg::SimpleNode::Create(graph->GetRootRegion(), allocaOp, { bits });
 
     // Convert the RVSDG to MLIR
@@ -139,7 +140,7 @@ TestAlloca()
       bool foundAlloca = false;
       for (auto & node : region->Nodes())
       {
-        if (auto allocaOp = dynamic_cast<const alloca_op *>(&node.GetOperation()))
+        if (auto allocaOp = dynamic_cast<const AllocaOperation *>(&node.GetOperation()))
         {
           assert(allocaOp->alignment() == 4);
 

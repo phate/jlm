@@ -521,7 +521,7 @@ JlmToMlirConverter::ConvertSimpleNode(
         ::mlir::ValueRange({ std::next(inputs.begin()), std::prev(inputs.end()) }),
         inputs[inputs.size() - 1]);
   }
-  else if (auto alloca_op = dynamic_cast<const jlm::llvm::alloca_op *>(&operation))
+  else if (auto alloca_op = dynamic_cast<const jlm::llvm::AllocaOperation *>(&operation))
   {
     MlirOp = Builder_->create<::mlir::jlm::Alloca>(
         Builder_->getUnknownLoc(),
