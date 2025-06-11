@@ -34,37 +34,37 @@ private:
   operator=(BasicBlock &&) = delete;
 
 public:
-  const taclist &
+  const ThreeAddressCodeList &
   tacs() const noexcept
   {
     return tacs_;
   }
 
-  taclist &
+  ThreeAddressCodeList &
   tacs() noexcept
   {
     return tacs_;
   }
 
-  inline taclist::const_iterator
+  inline ThreeAddressCodeList::const_iterator
   begin() const noexcept
   {
     return tacs_.begin();
   }
 
-  inline taclist::const_reverse_iterator
+  inline ThreeAddressCodeList::const_reverse_iterator
   rbegin() const noexcept
   {
     return tacs_.rbegin();
   }
 
-  inline taclist::const_iterator
+  inline ThreeAddressCodeList::const_iterator
   end() const noexcept
   {
     return tacs_.end();
   }
 
-  inline taclist::const_reverse_iterator
+  inline ThreeAddressCodeList::const_reverse_iterator
   rend() const noexcept
   {
     return tacs_.rend();
@@ -116,7 +116,7 @@ public:
   }
 
   void
-  append_first(taclist & tl)
+  append_first(ThreeAddressCodeList & tl)
   {
     tacs_.append_first(tl);
   }
@@ -137,13 +137,15 @@ public:
   }
 
   llvm::ThreeAddressCode *
-  insert_before(const taclist::const_iterator & it, std::unique_ptr<llvm::ThreeAddressCode> tac)
+  insert_before(
+      const ThreeAddressCodeList::const_iterator & it,
+      std::unique_ptr<llvm::ThreeAddressCode> tac)
   {
     return tacs_.insert_before(it, std::move(tac));
   }
 
   void
-  insert_before(const taclist::const_iterator & it, tacsvector_t & tv)
+  insert_before(const ThreeAddressCodeList::const_iterator & it, tacsvector_t & tv)
   {
     for (auto & tac : tv)
       tacs_.insert_before(it, std::move(tac));
@@ -169,7 +171,7 @@ public:
   create(ControlFlowGraph & cfg);
 
 private:
-  taclist tacs_;
+  ThreeAddressCodeList tacs_;
 };
 
 }

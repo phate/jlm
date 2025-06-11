@@ -12,9 +12,7 @@ namespace jlm::llvm
 
 ThreeAddressCodeVariable::~ThreeAddressCodeVariable() noexcept = default;
 
-/* taclist */
-
-taclist::~taclist()
+ThreeAddressCodeList::~ThreeAddressCodeList() noexcept
 {
   for (const auto & tac : tacs_)
     delete tac;

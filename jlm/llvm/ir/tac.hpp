@@ -191,35 +191,32 @@ is(const llvm::ThreeAddressCode * tac)
   return tac && is<T>(tac->operation());
 }
 
-/* FIXME: Replace all occurences of tacsvector_t with taclist
+/* FIXME: Replace all occurences of tacsvector_t with ThreeAddressCodeList
   and then remove tacsvector_t.
 */
 typedef std::vector<std::unique_ptr<llvm::ThreeAddressCode>> tacsvector_t;
 
-/* taclist */
-
-class taclist final
+class ThreeAddressCodeList final
 {
 public:
   typedef std::list<ThreeAddressCode *>::const_iterator const_iterator;
   typedef std::list<ThreeAddressCode *>::const_reverse_iterator const_reverse_iterator;
 
-  ~taclist();
+  ~ThreeAddressCodeList() noexcept;
 
-  inline taclist()
-  {}
+  ThreeAddressCodeList() = default;
 
-  taclist(const taclist &) = delete;
+  ThreeAddressCodeList(const ThreeAddressCodeList &) = delete;
 
-  taclist(taclist && other)
+  ThreeAddressCodeList(ThreeAddressCodeList && other) noexcept
       : tacs_(std::move(other.tacs_))
   {}
 
-  taclist &
-  operator=(const taclist &) = delete;
+  ThreeAddressCodeList &
+  operator=(const ThreeAddressCodeList &) = delete;
 
-  taclist &
-  operator=(taclist && other)
+  ThreeAddressCodeList &
+  operator=(ThreeAddressCodeList && other) noexcept
   {
     if (this == &other)
       return *this;
@@ -264,7 +261,7 @@ public:
   }
 
   inline void
-  insert_before(const const_iterator & it, taclist & tl)
+  insert_before(const const_iterator & it, ThreeAddressCodeList & tl)
   {
     tacs_.insert(it, tl.begin(), tl.end());
   }
@@ -282,7 +279,7 @@ public:
   }
 
   inline void
-  append_first(taclist & tl)
+  append_first(ThreeAddressCodeList & tl)
   {
     tacs_.insert(tacs_.begin(), tl.begin(), tl.end());
     tl.tacs_.clear();
