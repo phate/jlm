@@ -322,7 +322,7 @@ RvsdgToIpGraphConverter::RequiresSsaPhiOperation(
     const Variable & v)
 {
   // FIXME: solely decide on the input instead of using the variable
-  if (is<gblvariable>(&v))
+  if (is<GlobalVariable>(&v))
     return false;
 
   if (ThetaLoopVarIsInvariant(loopVar))
