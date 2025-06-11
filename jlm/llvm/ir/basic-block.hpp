@@ -13,14 +13,14 @@
 namespace jlm::llvm
 {
 
-class BasicBlock final : public cfg_node
+class BasicBlock final : public ControlFlowGraphNode
 {
 public:
   ~BasicBlock() noexcept override;
 
 private:
   explicit BasicBlock(ControlFlowGraph & cfg)
-      : cfg_node(cfg)
+      : ControlFlowGraphNode(cfg)
   {}
 
   BasicBlock(const BasicBlock &) = delete;

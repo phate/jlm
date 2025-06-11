@@ -26,7 +26,7 @@ namespace jlm::llvm
 {
 
 class ControlFlowGraph;
-class cfg_node;
+class ControlFlowGraphNode;
 class clg_node;
 class InterProceduralGraphModule;
 class Variable;

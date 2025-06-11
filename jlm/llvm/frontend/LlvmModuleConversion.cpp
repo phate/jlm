@@ -59,7 +59,7 @@ PatchPhiOperands(const std::vector<::llvm::PHINode *> & phis, context & ctx)
 {
   for (const auto & phi : phis)
   {
-    std::vector<cfg_node *> incomingNodes;
+    std::vector<ControlFlowGraphNode *> incomingNodes;
     std::vector<const Variable *> operands;
     for (size_t n = 0; n < phi->getNumOperands(); n++)
     {

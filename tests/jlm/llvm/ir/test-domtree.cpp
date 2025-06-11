@@ -15,8 +15,8 @@ template<size_t N>
 static void
 check(
     const jlm::llvm::domnode * dnode,
-    const jlm::llvm::cfg_node * node,
-    const std::unordered_set<const jlm::llvm::cfg_node *> & children)
+    const jlm::llvm::ControlFlowGraphNode * node,
+    const std::unordered_set<const jlm::llvm::ControlFlowGraphNode *> & children)
 {
   assert(dnode->node() == node);
   assert(dnode->nchildren() == N);
@@ -25,7 +25,7 @@ check(
 }
 
 static const jlm::llvm::domnode *
-get_child(const jlm::llvm::domnode * root, const jlm::llvm::cfg_node * node)
+get_child(const jlm::llvm::domnode * root, const jlm::llvm::ControlFlowGraphNode * node)
 {
   for (const auto & child : *root)
   {

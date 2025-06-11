@@ -19,14 +19,17 @@ namespace jlm::llvm
 
 class BasicBlock;
 class ControlFlowGraph;
-class cfg_node;
+class ControlFlowGraphNode;
 
 class ControlFlowGraphEdge final
 {
 public:
   ~ControlFlowGraphEdge() noexcept = default;
 
-  ControlFlowGraphEdge(cfg_node * source, cfg_node * sink, size_t index) noexcept;
+  ControlFlowGraphEdge(
+      ControlFlowGraphNode * source,
+      ControlFlowGraphNode * sink,
+      size_t index) noexcept;
 
   ControlFlowGraphEdge(const ControlFlowGraphEdge & other) = delete;
 
@@ -39,18 +42,18 @@ public:
   operator=(ControlFlowGraphEdge && other) = default;
 
   void
-  divert(cfg_node * new_sink);
+  divert(ControlFlowGraphNode * new_sink);
 
   BasicBlock *
   split();
 
-  cfg_node *
+  [[nodiscard]] ControlFlowGraphNode *
   source() const noexcept
   {
     return source_;
   }
 
-  cfg_node *
+  [[nodiscard]] ControlFlowGraphNode *
   sink() const noexcept
   {
     return sink_;
@@ -72,14 +75,14 @@ public:
   }
 
 private:
-  cfg_node * source_;
-  cfg_node * sink_;
+  ControlFlowGraphNode * source_;
+  ControlFlowGraphNode * sink_;
   size_t index_;
 
-  friend cfg_node;
+  friend ControlFlowGraphNode;
 };
 
-class cfg_node
+class ControlFlowGraphNode
 {
   using inedge_iterator = util::
       PtrIterator<ControlFlowGraphEdge, std::unordered_set<ControlFlowGraphEdge *>::const_iterator>;
@@ -91,10 +94,10 @@ class cfg_node
   using outedge_iterator_range = util::IteratorRange<outedge_iterator>;
 
 public:
-  virtual ~cfg_node();
+  virtual ~ControlFlowGraphNode() noexcept;
 
 protected:
-  explicit cfg_node(ControlFlowGraph & cfg)
+  explicit ControlFlowGraphNode(ControlFlowGraph & cfg)
       : cfg_(cfg)
   {}
 
@@ -124,7 +127,7 @@ public:
   }
 
   ControlFlowGraphEdge *
-  add_outedge(cfg_node * sink)
+  add_outedge(ControlFlowGraphNode * sink)
   {
     outedges_.push_back(std::make_unique<ControlFlowGraphEdge>(this, sink, NumOutEdges()));
     sink->inedges_.insert(outedges_.back().get());
@@ -165,7 +168,7 @@ public:
   }
 
   inline void
-  divert_inedges(llvm::cfg_node * new_successor)
+  divert_inedges(llvm::ControlFlowGraphNode * new_successor)
   {
     if (this == new_successor)
       return;
@@ -208,11 +211,11 @@ private:
 
 template<class T>
 static inline bool
-is(const cfg_node * node) noexcept
+is(const ControlFlowGraphNode * node) noexcept
 {
   static_assert(
-      std::is_base_of<cfg_node, T>::value,
-      "Template parameter T must be derived from jlm::cfg_node.");
+      std::is_base_of<ControlFlowGraphNode, T>::value,
+      "Template parameter T must be derived from jlm::ControlFlowGraphNode.");
 
   return dynamic_cast<const T *>(node) != nullptr;
 }
