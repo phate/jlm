@@ -622,9 +622,9 @@ convert_load_instruction(::llvm::Instruction * i, tacsvector_t & tacs, context &
   auto address = ConvertValue(instruction->getPointerOperand(), tacs, ctx);
   auto loadedType = ctx.GetTypeConverter().ConvertLlvmType(*instruction->getType());
 
-  const tacvariable * loadedValue;
-  const tacvariable * memoryState;
-  const tacvariable * ioState = nullptr;
+  const ThreeAddressCodeVariable * loadedValue;
+  const ThreeAddressCodeVariable * memoryState;
+  const ThreeAddressCodeVariable * ioState = nullptr;
   if (instruction->isVolatile())
   {
     auto loadVolatileTac = LoadVolatileOperation::Create(
@@ -668,8 +668,8 @@ convert_store_instruction(::llvm::Instruction * i, tacsvector_t & tacs, context 
   auto address = ConvertValue(instruction->getPointerOperand(), tacs, ctx);
   auto value = ConvertValue(instruction->getValueOperand(), tacs, ctx);
 
-  const tacvariable * memoryState;
-  const tacvariable * ioState = nullptr;
+  const ThreeAddressCodeVariable * memoryState;
+  const ThreeAddressCodeVariable * ioState = nullptr;
   if (instruction->isVolatile())
   {
     auto storeVolatileTac = StoreVolatileOperation::Create(

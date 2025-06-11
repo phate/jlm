@@ -85,7 +85,7 @@ PatchPhiOperands(const std::vector<::llvm::PHINode *> & phis, context & ctx)
 
     JLM_ASSERT(operands.size() >= 1);
 
-    auto phi_tac = util::AssertedCast<const tacvariable>(ctx.lookup_value(phi))->tac();
+    auto phi_tac = util::AssertedCast<const ThreeAddressCodeVariable>(ctx.lookup_value(phi))->tac();
     phi_tac->replace(
         SsaPhiOperation(std::move(incomingNodes), phi_tac->result(0)->Type()),
         operands);
@@ -406,7 +406,7 @@ create_cfg(::llvm::Function & f, context & ctx)
   entry_block->add_outedge(bbmap[&f.getEntryBlock()]);
 
   /* add results */
-  const tacvariable * result = nullptr;
+  const ThreeAddressCodeVariable * result = nullptr;
   if (!f.getReturnType()->isVoidTy())
   {
     auto type = ctx.GetTypeConverter().ConvertLlvmType(*f.getReturnType());
