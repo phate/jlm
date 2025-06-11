@@ -34,7 +34,7 @@ class IpGraphToLlvmConverter::Context final
   using const_iterator = std::unordered_map<const cfg_node *, ::llvm::BasicBlock *>::const_iterator;
 
 public:
-  Context(ipgraph_module & ipGraphModule, ::llvm::Module & llvmModule)
+  Context(InterProceduralGraphModule & ipGraphModule, ::llvm::Module & llvmModule)
       : LlvmModule_(llvmModule),
         IpGraphModule_(ipGraphModule)
   {}
@@ -51,7 +51,7 @@ public:
 
   // FIXME: It should be a const reference, but we still have to create variables to translate
   // expressions.
-  ipgraph_module &
+  [[nodiscard]] InterProceduralGraphModule &
   module() const noexcept
   {
     return IpGraphModule_;
@@ -110,14 +110,14 @@ public:
   }
 
   static std::unique_ptr<Context>
-  Create(ipgraph_module & ipGraphModule, ::llvm::Module & llvmModule)
+  Create(InterProceduralGraphModule & ipGraphModule, ::llvm::Module & llvmModule)
   {
     return std::make_unique<Context>(ipGraphModule, llvmModule);
   }
 
 private:
   ::llvm::Module & LlvmModule_;
-  ipgraph_module & IpGraphModule_;
+  InterProceduralGraphModule & IpGraphModule_;
   std::unordered_map<const llvm::variable *, ::llvm::Value *> variables_;
   std::unordered_map<const llvm::cfg_node *, ::llvm::BasicBlock *> nodes_;
   TypeConverter TypeConverter_;
@@ -1984,7 +1984,7 @@ IpGraphToLlvmConverter::convert_ipgraph()
 
 std::unique_ptr<::llvm::Module>
 IpGraphToLlvmConverter::ConvertModule(
-    ipgraph_module & ipGraphModule,
+    InterProceduralGraphModule & ipGraphModule,
     ::llvm::LLVMContext & llvmContext)
 {
   std::unique_ptr<::llvm::Module> llvmModule(new ::llvm::Module("module", llvmContext));
@@ -2000,7 +2000,7 @@ IpGraphToLlvmConverter::ConvertModule(
 
 std::unique_ptr<::llvm::Module>
 IpGraphToLlvmConverter::CreateAndConvertModule(
-    ipgraph_module & ipGraphModule,
+    InterProceduralGraphModule & ipGraphModule,
     ::llvm::LLVMContext & ctx)
 {
   IpGraphToLlvmConverter converter;

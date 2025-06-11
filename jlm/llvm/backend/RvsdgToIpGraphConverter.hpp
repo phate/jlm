@@ -36,7 +36,7 @@ class node;
 
 class ControlFlowGraph;
 class data_node_init;
-class ipgraph_module;
+class InterProceduralGraphModule;
 class RvsdgModule;
 class variable;
 
@@ -60,10 +60,10 @@ public:
   RvsdgToIpGraphConverter &
   operator=(RvsdgToIpGraphConverter &&) = delete;
 
-  std::unique_ptr<ipgraph_module>
+  std::unique_ptr<InterProceduralGraphModule>
   ConvertModule(RvsdgModule & rvsdgModule, util::StatisticsCollector & statisticsCollector);
 
-  static std::unique_ptr<ipgraph_module>
+  static std::unique_ptr<InterProceduralGraphModule>
   CreateAndConvertModule(
       RvsdgModule & rvsdgModule,
       util::StatisticsCollector & statisticsCollector);

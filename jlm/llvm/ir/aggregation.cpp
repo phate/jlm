@@ -107,13 +107,10 @@ BranchAggregationNode::debug_string() const
   return "branch";
 }
 
-/* loopaggnode class */
-
-loopaggnode::~loopaggnode()
-{}
+LoopAggregationNode::~LoopAggregationNode() noexcept = default;
 
 std::string
-loopaggnode::debug_string() const
+LoopAggregationNode::debug_string() const
 {
   return "loop";
 }
@@ -246,7 +243,7 @@ reduce_loop(const sccstructure & sccstruct, aggregation_map & map)
   redge->source()->remove_outedge(redge->index());
 
   auto sese = aggregate(entry, exit, map);
-  auto loop = loopaggnode::create(std::move(map.lookup(sese)));
+  auto loop = LoopAggregationNode::create(std::move(map.lookup(sese)));
   map.insert(sese, std::move(loop));
 }
 

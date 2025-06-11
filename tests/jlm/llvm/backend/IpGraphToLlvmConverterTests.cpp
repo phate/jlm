@@ -29,7 +29,7 @@ LoadConversion()
       { PointerType::Create(), MemoryStateType::Create() },
       { jlm::rvsdg::bittype::Create(64), MemoryStateType::Create() });
 
-  ipgraph_module ipgModule(jlm::util::FilePath(""), "", "");
+  InterProceduralGraphModule ipgModule(jlm::util::FilePath(""), "", "");
 
   auto cfg = ControlFlowGraph::create(ipgModule);
   auto addressArgument =
@@ -93,7 +93,7 @@ LoadVolatileConversion()
       { PointerType::Create(), IOStateType::Create(), MemoryStateType::Create() },
       { jlm::rvsdg::bittype::Create(64), IOStateType::Create(), MemoryStateType::Create() });
 
-  ipgraph_module ipgModule(jlm::util::FilePath(""), "", "");
+  InterProceduralGraphModule ipgModule(jlm::util::FilePath(""), "", "");
 
   auto cfg = ControlFlowGraph::create(ipgModule);
   auto addressArgument = cfg->entry()->append_argument(argument::create("address", pointerType));
@@ -161,7 +161,7 @@ MemCpyConversion()
         MemoryStateType::Create() },
       { MemoryStateType::Create() });
 
-  ipgraph_module ipgModule(jlm::util::FilePath(""), "", "");
+  InterProceduralGraphModule ipgModule(jlm::util::FilePath(""), "", "");
 
   auto cfg = ControlFlowGraph::create(ipgModule);
   auto destinationArgument =
@@ -229,7 +229,7 @@ MemCpyVolatileConversion()
         MemoryStateType::Create() },
       { IOStateType::Create(), MemoryStateType::Create() });
 
-  ipgraph_module ipgModule(jlm::util::FilePath(""), "", "");
+  InterProceduralGraphModule ipgModule(jlm::util::FilePath(""), "", "");
 
   auto cfg = ControlFlowGraph::create(ipgModule);
   auto & destinationArgument =
@@ -295,7 +295,7 @@ StoreConversion()
       { PointerType::Create(), jlm::rvsdg::bittype::Create(64), MemoryStateType::Create() },
       { MemoryStateType::Create() });
 
-  ipgraph_module ipgModule(jlm::util::FilePath(""), "", "");
+  InterProceduralGraphModule ipgModule(jlm::util::FilePath(""), "", "");
 
   auto cfg = ControlFlowGraph::create(ipgModule);
   auto addressArgument = cfg->entry()->append_argument(argument::create("address", pointerType));
@@ -361,7 +361,7 @@ StoreVolatileConversion()
         MemoryStateType::Create() },
       { IOStateType::Create(), MemoryStateType::Create() });
 
-  ipgraph_module ipgModule(jlm::util::FilePath(""), "", "");
+  InterProceduralGraphModule ipgModule(jlm::util::FilePath(""), "", "");
 
   auto cfg = ControlFlowGraph::create(ipgModule);
   auto addressArgument = cfg->entry()->append_argument(argument::create("address", pointerType));
@@ -430,7 +430,7 @@ IntegerConstant()
 
   jlm::rvsdg::bitvalue_repr vr(bs);
 
-  ipgraph_module im(jlm::util::FilePath(""), "", "");
+  InterProceduralGraphModule im(jlm::util::FilePath(""), "", "");
 
   auto cfg = ControlFlowGraph::create(im);
   auto bb = BasicBlock::create(*cfg);
@@ -467,7 +467,7 @@ Malloc()
 
     auto mt = MemoryStateType::Create();
     auto pt = PointerType::Create();
-    auto im = ipgraph_module::create(jlm::util::FilePath(""), "", "");
+    auto im = InterProceduralGraphModule::create(jlm::util::FilePath(""), "", "");
 
     auto cfg = ControlFlowGraph::create(*im);
     auto bb = BasicBlock::create(*cfg);
@@ -528,7 +528,7 @@ Free()
     auto mt = MemoryStateType::Create();
     auto pt = PointerType::Create();
 
-    auto ipgmod = ipgraph_module::create(jlm::util::FilePath(""), "", "");
+    auto ipgmod = InterProceduralGraphModule::create(jlm::util::FilePath(""), "", "");
 
     auto ft = jlm::rvsdg::FunctionType::Create(
         { PointerType::Create(), MemoryStateType::Create(), IOStateType::Create() },
@@ -587,7 +587,7 @@ IgnoreMemoryState()
   using namespace jlm::llvm;
 
   auto mt = MemoryStateType::Create();
-  ipgraph_module m(jlm::util::FilePath(""), "", "");
+  InterProceduralGraphModule m(jlm::util::FilePath(""), "", "");
 
   std::unique_ptr<ControlFlowGraph> cfg(new ControlFlowGraph(m));
   auto bb = BasicBlock::create(*cfg);
@@ -621,7 +621,7 @@ SelectWithState()
   auto vt = jlm::tests::valuetype::Create();
   auto pt = PointerType::Create();
   auto mt = MemoryStateType::Create();
-  ipgraph_module m(jlm::util::FilePath(""), "", "");
+  InterProceduralGraphModule m(jlm::util::FilePath(""), "", "");
 
   std::unique_ptr<ControlFlowGraph> cfg(new ControlFlowGraph(m));
   auto bb = BasicBlock::create(*cfg);

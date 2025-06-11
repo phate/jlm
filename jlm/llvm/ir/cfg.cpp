@@ -25,7 +25,7 @@ EntryNode::~EntryNode() noexcept = default;
 
 ExitNode::~ExitNode() noexcept = default;
 
-ControlFlowGraph::ControlFlowGraph(ipgraph_module & im)
+ControlFlowGraph::ControlFlowGraph(InterProceduralGraphModule & im)
     : module_(im)
 {
   entry_ = std::make_unique<EntryNode>(*this);

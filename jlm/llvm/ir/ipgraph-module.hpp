@@ -53,17 +53,14 @@ create_gblvalue(data_node * node)
   return std::make_unique<llvm::gblvalue>(node);
 }
 
-/* ipgraph module */
-
-class ipgraph_module final
+class InterProceduralGraphModule final
 {
   typedef std::unordered_set<const llvm::gblvalue *>::const_iterator const_iterator;
 
 public:
-  inline ~ipgraph_module()
-  {}
+  ~InterProceduralGraphModule() noexcept = default;
 
-  inline ipgraph_module(
+  InterProceduralGraphModule(
       const jlm::util::FilePath & source_filename,
       const std::string & target_triple,
       const std::string & data_layout,
@@ -74,11 +71,11 @@ public:
         StructTypeDeclarations_(std::move(declarations))
   {}
 
-  ipgraph_module(
+  InterProceduralGraphModule(
       const jlm::util::FilePath & source_filename,
       const std::string & target_triple,
       const std::string & data_layout) noexcept
-      : ipgraph_module(source_filename, target_triple, data_layout, {})
+      : InterProceduralGraphModule(source_filename, target_triple, data_layout, {})
   {}
 
   InterProceduralGraph &
@@ -195,21 +192,21 @@ public:
     return std::move(StructTypeDeclarations_);
   }
 
-  static std::unique_ptr<ipgraph_module>
+  static std::unique_ptr<InterProceduralGraphModule>
   Create(
       const jlm::util::FilePath & sourceFilename,
       const std::string & targetTriple,
       const std::string & dataLayout,
       std::vector<std::unique_ptr<StructType::Declaration>> declarations)
   {
-    return std::make_unique<ipgraph_module>(
+    return std::make_unique<InterProceduralGraphModule>(
         sourceFilename,
         targetTriple,
         dataLayout,
         std::move(declarations));
   }
 
-  static std::unique_ptr<ipgraph_module>
+  static std::unique_ptr<InterProceduralGraphModule>
   create(
       const jlm::util::FilePath & source_filename,
       const std::string & target_triple,
@@ -230,7 +227,7 @@ private:
 };
 
 static inline size_t
-ntacs(const ipgraph_module & im)
+ntacs(const InterProceduralGraphModule & im)
 {
   size_t ntacs = 0;
   for (const auto & n : im.ipgraph())

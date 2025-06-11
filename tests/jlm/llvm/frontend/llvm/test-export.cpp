@@ -21,7 +21,7 @@ test()
   auto vt = jlm::tests::valuetype::Create();
   auto ft = jlm::rvsdg::FunctionType::Create({ vt }, { vt });
 
-  ipgraph_module im(jlm::util::FilePath(""), "", "");
+  InterProceduralGraphModule im(jlm::util::FilePath(""), "", "");
 
   auto d = data_node::Create(im.ipgraph(), "d", vt, linkage::external_linkage, "", false);
   auto f = function_node::create(im.ipgraph(), "f", ft, linkage::external_linkage);

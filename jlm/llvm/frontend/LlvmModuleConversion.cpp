@@ -546,11 +546,11 @@ convert_globals(::llvm::Module & lm, context & ctx)
     convert_function(f, ctx);
 }
 
-std::unique_ptr<ipgraph_module>
+std::unique_ptr<InterProceduralGraphModule>
 ConvertLlvmModule(::llvm::Module & m)
 {
   util::FilePath fp(m.getSourceFileName());
-  auto im = ipgraph_module::create(fp, m.getTargetTriple(), m.getDataLayoutStr());
+  auto im = InterProceduralGraphModule::create(fp, m.getTargetTriple(), m.getDataLayoutStr());
 
   context ctx(*im);
   declare_globals(m, ctx);

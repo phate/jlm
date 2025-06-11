@@ -28,7 +28,7 @@ namespace jlm::llvm
 class ControlFlowGraph;
 class cfg_node;
 class clg_node;
-class ipgraph_module;
+class InterProceduralGraphModule;
 class variable;
 
 class basic_block_map final
@@ -89,7 +89,7 @@ private:
 class context final
 {
 public:
-  inline context(ipgraph_module & im)
+  inline context(InterProceduralGraphModule & im)
       : module_(im),
         node_(nullptr),
         iostate_(nullptr),
@@ -182,7 +182,7 @@ public:
     vmap_[value] = variable;
   }
 
-  inline ipgraph_module &
+  [[nodiscard]] InterProceduralGraphModule &
   module() const noexcept
   {
     return module_;
@@ -207,7 +207,7 @@ public:
   }
 
 private:
-  ipgraph_module & module_;
+  InterProceduralGraphModule & module_;
   basic_block_map bbmap_;
   ipgraph_node * node_;
   const llvm::variable * result_;
