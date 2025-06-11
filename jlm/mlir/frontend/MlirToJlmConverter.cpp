@@ -429,7 +429,7 @@ MlirToJlmConverter::ConvertOperation(
     auto convertedOutputType = ConvertType(outputType);
     if (!::mlir::isa<::mlir::IntegerType>(castedOp.getType()))
       JLM_UNREACHABLE("Expected IntegerType for ExtSIOp operation output.");
-    return rvsdg::TryGetOwnerNode<rvsdg::Node>(*llvm::sext_op::create(
+    return rvsdg::TryGetOwnerNode<rvsdg::Node>(*llvm::SExtOperation::create(
         castedOp.getType().cast<::mlir::IntegerType>().getWidth(),
         inputs[0]));
   }

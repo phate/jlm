@@ -384,7 +384,7 @@ TestSext()
     auto bitsArgument = lambda->GetFunctionArguments().at(0);
 
     // Create sext operation
-    auto sextOp = jlm::llvm::sext_op::create((size_t)64, bitsArgument);
+    auto sextOp = jlm::llvm::SExtOperation::create((size_t)64, bitsArgument);
     auto node = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*sextOp);
     assert(node);
 
@@ -429,8 +429,8 @@ TestSext()
       assert(is<jlm::rvsdg::LambdaOperation>(convertedLambda));
 
       assert(convertedLambda->subregion()->nnodes() == 1);
-      assert(is<sext_op>(convertedLambda->subregion()->Nodes().begin()->GetOperation()));
-      auto convertedSext = dynamic_cast<const sext_op *>(
+      assert(is<SExtOperation>(convertedLambda->subregion()->Nodes().begin()->GetOperation()));
+      auto convertedSext = dynamic_cast<const SExtOperation *>(
           &convertedLambda->subregion()->Nodes().begin()->GetOperation());
 
       assert(convertedSext->ndstbits() == 64);

@@ -255,7 +255,7 @@ RhlsToFirrtlConverter::MlirGenSimpleNode(const jlm::rvsdg::SimpleNode * node)
     auto inData = GetSubfield(body, inBundles[0], "data");
     Connect(body, outData, inData);
   }
-  else if (auto op = dynamic_cast<const llvm::sext_op *>(&(node->GetOperation())))
+  else if (auto op = dynamic_cast<const llvm::SExtOperation *>(&(node->GetOperation())))
   {
     auto input0 = GetSubfield(body, inBundles[0], "data");
     auto sintOp = AddAsSIntOp(body, input0);

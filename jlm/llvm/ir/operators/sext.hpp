@@ -13,14 +13,12 @@
 namespace jlm::llvm
 {
 
-/* sext operator */
-
-class sext_op final : public rvsdg::UnaryOperation
+class SExtOperation final : public rvsdg::UnaryOperation
 {
 public:
-  virtual ~sext_op();
+  ~SExtOperation() noexcept override;
 
-  inline sext_op(
+  SExtOperation(
       std::shared_ptr<const rvsdg::bittype> otype,
       std::shared_ptr<const rvsdg::bittype> rtype)
       : UnaryOperation(otype, rtype)
@@ -29,7 +27,7 @@ public:
       throw jlm::util::error("expected operand's #bits to be smaller than results's #bits.");
   }
 
-  inline sext_op(
+  inline SExtOperation(
       std::shared_ptr<const rvsdg::Type> srctype,
       std::shared_ptr<const rvsdg::Type> dsttype)
       : UnaryOperation(srctype, dsttype)
@@ -84,7 +82,7 @@ public:
     if (!rt)
       throw jlm::util::error("expected bits type.");
 
-    sext_op op(std::move(ot), std::move(rt));
+    SExtOperation op(std::move(ot), std::move(rt));
     return ThreeAddressCode::create(op, { operand });
   }
 
@@ -95,7 +93,7 @@ public:
     if (!ot)
       throw util::error("expected bits type.");
 
-    return rvsdg::CreateOpNode<sext_op>(
+    return rvsdg::CreateOpNode<SExtOperation>(
                { operand },
                std::move(ot),
                rvsdg::bittype::Create(ndstbits))

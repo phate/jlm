@@ -27,14 +27,14 @@ test_bitunary_reduction()
   auto x = &jlm::tests::GraphImport::Create(graph, bitType32, "x");
 
   auto y = bitnot_op::create(32, x);
-  auto z = jlm::llvm::sext_op::create(64, y);
+  auto z = jlm::llvm::SExtOperation::create(64, y);
 
   auto & ex = jlm::llvm::GraphExport::Create(*z, "x");
 
   view(graph, stdout);
 
   // Act
-  ReduceNode<sext_op>(
+  ReduceNode<SExtOperation>(
       NormalizeUnaryOperation,
       *jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*ex.origin()));
   graph.PruneNodes();
@@ -59,14 +59,14 @@ test_bitbinary_reduction()
   auto y = &jlm::tests::GraphImport::Create(graph, bt32, "y");
 
   auto z = bitadd_op::create(32, x, y);
-  auto w = sext_op::create(64, z);
+  auto w = SExtOperation::create(64, z);
 
   auto & ex = jlm::llvm::GraphExport::Create(*w, "x");
 
   view(graph, stdout);
 
   // Act
-  ReduceNode<sext_op>(
+  ReduceNode<SExtOperation>(
       NormalizeUnaryOperation,
       *jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*ex.origin()));
   graph.PruneNodes();
@@ -90,14 +90,16 @@ test_inverse_reduction()
   auto x = &jlm::tests::GraphImport::Create(graph, bt64, "x");
 
   auto y = TruncOperation::create(32, x);
-  auto z = sext_op::create(64, y);
+  auto z = SExtOperation::create(64, y);
 
   auto & ex = jlm::llvm::GraphExport::Create(*z, "x");
 
   view(graph, stdout);
 
   // Act
-  ReduceNode<sext_op>(NormalizeUnaryOperation, *jlm::rvsdg::TryGetOwnerNode<Node>(*ex.origin()));
+  ReduceNode<SExtOperation>(
+      NormalizeUnaryOperation,
+      *jlm::rvsdg::TryGetOwnerNode<Node>(*ex.origin()));
   graph.PruneNodes();
 
   view(graph, stdout);
