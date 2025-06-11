@@ -249,7 +249,7 @@ TestLoopAnnotation()
     auto exitNode = ExitAggregationNode::create({ v3, v4 });
     auto basicBlockNode = BasicBlockAggregationNode::create(std::move(bb));
 
-    auto loopNode = loopaggnode::create(std::move(basicBlockNode));
+    auto loopNode = LoopAggregationNode::create(std::move(basicBlockNode));
     auto root = LinearAggregationNode::create(std::move(loopNode), std::move(exitNode));
 
     return std::make_tuple(std::move(root), v1, v2, v3, v4);
@@ -322,7 +322,7 @@ TestBranchInLoopAnnotation()
     branchNode->add_child(std::move(basicBlock1));
     branchNode->add_child(std::move(basicBlock2));
 
-    auto loopNode = loopaggnode::create(std::move(branchNode));
+    auto loopNode = LoopAggregationNode::create(std::move(branchNode));
 
     auto root = LinearAggregationNode::create(std::move(loopNode), std::move(exitNode));
 
