@@ -25,7 +25,7 @@ is_bitbinary_reducible(const rvsdg::Output * operand)
 }
 
 static bool
-is_inverse_reducible(const sext_op & op, const rvsdg::Output * operand)
+is_inverse_reducible(const SExtOperation & op, const rvsdg::Output * operand)
 {
   const auto node = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*operand);
   if (!node)
@@ -36,21 +36,21 @@ is_inverse_reducible(const sext_op & op, const rvsdg::Output * operand)
 }
 
 static rvsdg::Output *
-perform_bitunary_reduction(const sext_op & op, rvsdg::Output * operand)
+perform_bitunary_reduction(const SExtOperation & op, rvsdg::Output * operand)
 {
   JLM_ASSERT(is_bitunary_reducible(operand));
   const auto unaryNode = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*operand);
   auto region = operand->region();
   auto uop = static_cast<const rvsdg::bitunary_op *>(&unaryNode->GetOperation());
 
-  auto output = sext_op::create(op.ndstbits(), unaryNode->input(0)->origin());
+  auto output = SExtOperation::create(op.ndstbits(), unaryNode->input(0)->origin());
   std::unique_ptr<rvsdg::SimpleOperation> simpleOperation(
       util::AssertedCast<rvsdg::SimpleOperation>(uop->create(op.ndstbits()).release()));
   return rvsdg::SimpleNode::Create(*region, std::move(simpleOperation), { output }).output(0);
 }
 
 static rvsdg::Output *
-perform_bitbinary_reduction(const sext_op & op, rvsdg::Output * operand)
+perform_bitbinary_reduction(const SExtOperation & op, rvsdg::Output * operand)
 {
   JLM_ASSERT(is_bitbinary_reducible(operand));
   const auto binaryNode = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*operand);
@@ -58,8 +58,8 @@ perform_bitbinary_reduction(const sext_op & op, rvsdg::Output * operand)
   auto bop = static_cast<const rvsdg::bitbinary_op *>(&binaryNode->GetOperation());
 
   JLM_ASSERT(binaryNode->ninputs() == 2);
-  auto op1 = sext_op::create(op.ndstbits(), binaryNode->input(0)->origin());
-  auto op2 = sext_op::create(op.ndstbits(), binaryNode->input(1)->origin());
+  auto op1 = SExtOperation::create(op.ndstbits(), binaryNode->input(0)->origin());
+  auto op2 = SExtOperation::create(op.ndstbits(), binaryNode->input(1)->origin());
 
   std::unique_ptr<rvsdg::SimpleOperation> simpleOperation(
       util::AssertedCast<rvsdg::SimpleOperation>(bop->create(op.ndstbits()).release()));
@@ -67,36 +67,35 @@ perform_bitbinary_reduction(const sext_op & op, rvsdg::Output * operand)
 }
 
 static rvsdg::Output *
-perform_inverse_reduction(const sext_op & op, rvsdg::Output * operand)
+perform_inverse_reduction(const SExtOperation & op, rvsdg::Output * operand)
 {
   JLM_ASSERT(is_inverse_reducible(op, operand));
   return rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*operand)->input(0)->origin();
 }
 
-sext_op::~sext_op()
-{}
+SExtOperation::~SExtOperation() noexcept = default;
 
 bool
-sext_op::operator==(const Operation & other) const noexcept
+SExtOperation::operator==(const Operation & other) const noexcept
 {
-  auto op = dynamic_cast<const sext_op *>(&other);
+  auto op = dynamic_cast<const SExtOperation *>(&other);
   return op && op->argument(0) == argument(0) && op->result(0) == result(0);
 }
 
 std::string
-sext_op::debug_string() const
+SExtOperation::debug_string() const
 {
   return util::strfmt("SEXT[", nsrcbits(), " -> ", ndstbits(), "]");
 }
 
 std::unique_ptr<rvsdg::Operation>
-sext_op::copy() const
+SExtOperation::copy() const
 {
-  return std::make_unique<sext_op>(*this);
+  return std::make_unique<SExtOperation>(*this);
 }
 
 rvsdg::unop_reduction_path_t
-sext_op::can_reduce_operand(const rvsdg::Output * operand) const noexcept
+SExtOperation::can_reduce_operand(const rvsdg::Output * operand) const noexcept
 {
   if (rvsdg::is<rvsdg::bitconstant_op>(producer(operand)))
     return rvsdg::unop_reduction_constant;
@@ -114,7 +113,7 @@ sext_op::can_reduce_operand(const rvsdg::Output * operand) const noexcept
 }
 
 rvsdg::Output *
-sext_op::reduce_operand(rvsdg::unop_reduction_path_t path, rvsdg::Output * operand) const
+SExtOperation::reduce_operand(rvsdg::unop_reduction_path_t path, rvsdg::Output * operand) const
 {
   if (path == rvsdg::unop_reduction_constant)
   {

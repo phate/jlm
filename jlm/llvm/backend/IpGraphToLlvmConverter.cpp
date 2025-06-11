@@ -1369,7 +1369,7 @@ IpGraphToLlvmConverter::convert_operation(
   {
     return convert_cast<::llvm::Instruction::PtrToInt>(op, arguments, builder);
   }
-  if (is<sext_op>(op))
+  if (is<SExtOperation>(op))
   {
     return convert_cast<::llvm::Instruction::SExt>(op, arguments, builder);
   }

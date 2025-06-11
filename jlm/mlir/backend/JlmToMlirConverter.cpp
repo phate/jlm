@@ -464,7 +464,7 @@ JlmToMlirConverter::ConvertSimpleNode(
         Builder_->getIntegerType(zextOperation->ndstbits()),
         inputs[0]);
   }
-  else if (auto sextOp = dynamic_cast<const jlm::llvm::sext_op *>(&operation))
+  else if (auto sextOp = dynamic_cast<const jlm::llvm::SExtOperation *>(&operation))
   {
     MlirOp = Builder_->create<::mlir::arith::ExtSIOp>(
         Builder_->getUnknownLoc(),
