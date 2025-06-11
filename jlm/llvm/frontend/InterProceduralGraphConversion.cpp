@@ -61,7 +61,9 @@ public:
     JLM_ASSERT(NumRegions() == 0);
   }
 
-  RegionalizedVariableMap(const ipgraph_module & interProceduralGraphModule, rvsdg::Region & region)
+  RegionalizedVariableMap(
+      const InterProceduralGraphModule & interProceduralGraphModule,
+      rvsdg::Region & region)
       : InterProceduralGraphModule_(interProceduralGraphModule)
   {
     PushRegion(region);
@@ -116,14 +118,14 @@ public:
     RegionStack_.pop_back();
   }
 
-  const ipgraph_module &
+  const InterProceduralGraphModule &
   GetInterProceduralGraphModule() const noexcept
   {
     return InterProceduralGraphModule_;
   }
 
 private:
-  const ipgraph_module & InterProceduralGraphModule_;
+  const InterProceduralGraphModule & InterProceduralGraphModule_;
   std::vector<std::unique_ptr<llvm::VariableMap>> VariableMapStack_;
   std::vector<rvsdg::Region *> RegionStack_;
 };
@@ -296,7 +298,7 @@ public:
   {}
 
   void
-  Start(const ipgraph_module & interProceduralGraphModule) noexcept
+  Start(const InterProceduralGraphModule & interProceduralGraphModule) noexcept
   {
     AddMeasurement(Label::NumThreeAddressCodes, llvm::ntacs(interProceduralGraphModule));
     AddTimer(Label::Timer).start();
@@ -430,9 +432,9 @@ public:
 
   std::unique_ptr<RvsdgModule>
   CollectInterProceduralGraphToRvsdgStatistics(
-      const std::function<std::unique_ptr<RvsdgModule>(ipgraph_module &)> &
+      const std::function<std::unique_ptr<RvsdgModule>(InterProceduralGraphModule &)> &
           convertInterProceduralGraphModule,
-      ipgraph_module & interProceduralGraphModule)
+      InterProceduralGraphModule & interProceduralGraphModule)
   {
     auto statistics = InterProceduralGraphToRvsdgStatistics::Create(SourceFileName_);
 
@@ -1180,7 +1182,7 @@ ConvertStronglyConnectedComponent(
 
 static std::unique_ptr<RvsdgModule>
 ConvertInterProceduralGraphModule(
-    ipgraph_module & interProceduralGraphModule,
+    InterProceduralGraphModule & interProceduralGraphModule,
     InterProceduralGraphToRvsdgStatisticsCollector & statisticsCollector)
 {
   auto rvsdgModule = RvsdgModule::Create(
@@ -1207,14 +1209,15 @@ ConvertInterProceduralGraphModule(
 
 std::unique_ptr<RvsdgModule>
 ConvertInterProceduralGraphModule(
-    ipgraph_module & interProceduralGraphModule,
+    InterProceduralGraphModule & interProceduralGraphModule,
     util::StatisticsCollector & statisticsCollector)
 {
   InterProceduralGraphToRvsdgStatisticsCollector interProceduralGraphToRvsdgStatisticsCollector(
       statisticsCollector,
       interProceduralGraphModule.source_filename());
 
-  auto convertInterProceduralGraphModule = [&](ipgraph_module & interProceduralGraphModule)
+  auto convertInterProceduralGraphModule =
+      [&](InterProceduralGraphModule & interProceduralGraphModule)
   {
     return ConvertInterProceduralGraphModule(
         interProceduralGraphModule,

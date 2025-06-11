@@ -15,7 +15,7 @@ test()
 {
   using namespace jlm::llvm;
 
-  ipgraph_module module(jlm::util::FilePath(""), "", "");
+  InterProceduralGraphModule module(jlm::util::FilePath(""), "", "");
 
   ControlFlowGraph cfg(module);
   auto bb0 = BasicBlock::create(cfg);

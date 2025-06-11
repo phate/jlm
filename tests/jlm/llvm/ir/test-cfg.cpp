@@ -14,9 +14,8 @@ test_remove_node()
 {
   using namespace jlm::llvm;
 
-  /* setup cfg */
-
-  ipgraph_module im(jlm::util::FilePath(""), "", "");
+  // Arrange
+  InterProceduralGraphModule im(jlm::util::FilePath(""), "", "");
 
   ControlFlowGraph cfg(im);
 

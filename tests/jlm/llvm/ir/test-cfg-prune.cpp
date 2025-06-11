@@ -21,9 +21,8 @@ test()
   auto vt = jlm::tests::valuetype::Create();
   jlm::tests::test_op op({}, { vt });
 
-  /* setup cfg */
-
-  ipgraph_module im(jlm::util::FilePath(""), "", "");
+  // Arrange
+  InterProceduralGraphModule im(jlm::util::FilePath(""), "", "");
 
   ControlFlowGraph cfg(im);
   auto arg = cfg.entry()->append_argument(argument::create("arg", vt));

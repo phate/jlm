@@ -59,7 +59,7 @@ class CallExitMemoryStateSplitOperation;
 class cfg_node;
 class ExtractValue;
 class function_node;
-class ipgraph_module;
+class InterProceduralGraphModule;
 class LambdaExitMemoryStateMergeOperation;
 class PointerToFunctionOperation;
 class ThreeAddressCode;
@@ -84,16 +84,16 @@ public:
   IpGraphToLlvmConverter &
   operator=(IpGraphToLlvmConverter &&) = delete;
 
-  // FIXME: ipgraph_module should be const, but we still need to create variables to translate
-  // expressions.
+  // FIXME: InterProceduralGraphModule should be const, but we still need to create variables to
+  // translate expressions.
   std::unique_ptr<::llvm::Module>
-  ConvertModule(ipgraph_module & ipGraphModule, ::llvm::LLVMContext & llvmContext);
+  ConvertModule(InterProceduralGraphModule & ipGraphModule, ::llvm::LLVMContext & llvmContext);
 
   static ::llvm::Attribute::AttrKind
   ConvertAttributeKind(const Attribute::kind & kind);
 
   static std::unique_ptr<::llvm::Module>
-  CreateAndConvertModule(ipgraph_module & ipGraphModule, ::llvm::LLVMContext & ctx);
+  CreateAndConvertModule(InterProceduralGraphModule & ipGraphModule, ::llvm::LLVMContext & ctx);
 
 private:
   void

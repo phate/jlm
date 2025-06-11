@@ -18,7 +18,7 @@ namespace jlm::llvm
 
 class clg_node;
 class BasicBlock;
-class ipgraph_module;
+class InterProceduralGraphModule;
 class ThreeAddressCode;
 
 /** \brief Function argument
@@ -265,7 +265,7 @@ class ControlFlowGraph final
 public:
   ~ControlFlowGraph() noexcept = default;
 
-  explicit ControlFlowGraph(ipgraph_module & im);
+  explicit ControlFlowGraph(InterProceduralGraphModule & im);
 
   ControlFlowGraph(const ControlFlowGraph &) = delete;
 
@@ -342,7 +342,7 @@ public:
     return nodes_.size();
   }
 
-  inline ipgraph_module &
+  [[nodiscard]] InterProceduralGraphModule &
   module() const noexcept
   {
     return module_;
@@ -363,7 +363,7 @@ public:
   }
 
   static std::unique_ptr<ControlFlowGraph>
-  create(ipgraph_module & im)
+  create(InterProceduralGraphModule & im)
   {
     return std::make_unique<ControlFlowGraph>(im);
   }
@@ -389,7 +389,7 @@ private:
   static std::unordered_map<cfg_node *, std::string>
   CreateLabels(const std::vector<cfg_node *> & nodes);
 
-  ipgraph_module & module_;
+  InterProceduralGraphModule & module_;
   std::unique_ptr<ExitNode> exit_;
   std::unique_ptr<EntryNode> entry_;
   std::unordered_set<std::unique_ptr<BasicBlock>> nodes_;

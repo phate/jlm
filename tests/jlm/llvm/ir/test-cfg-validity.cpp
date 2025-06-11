@@ -19,7 +19,7 @@ test_single_operand_phi()
 
   auto vt = jlm::tests::valuetype::Create();
 
-  ipgraph_module im(jlm::util::FilePath(""), "", "");
+  InterProceduralGraphModule im(jlm::util::FilePath(""), "", "");
 
   ControlFlowGraph cfg(im);
   auto arg = cfg.entry()->append_argument(argument::create("arg", vt));
