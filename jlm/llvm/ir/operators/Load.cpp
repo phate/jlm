@@ -100,8 +100,8 @@ is_load_mux_reducible(const std::vector<rvsdg::Output *> & operands)
   If the producer of a load's address is an alloca, then we can remove
   all state edges originating from other allocas.
 
-  a1 s1 = alloca_op ...
-  a2 s2 = alloca_op ...
+  a1 s1 = AllocaOperation ...
+  a2 s2 = AllocaOperation ...
   s3 = mux_op s1
   v sl1 sl2 sl3 = load_op a1 s1 s2 s3
   =>
@@ -113,14 +113,14 @@ is_load_alloca_reducible(const std::vector<rvsdg::Output *> & operands)
 {
   auto address = operands[0];
 
-  auto [allocaNode, allocaOperation] = rvsdg::TryGetSimpleNodeAndOp<alloca_op>(*address);
+  auto [allocaNode, allocaOperation] = rvsdg::TryGetSimpleNodeAndOp<AllocaOperation>(*address);
   if (!allocaOperation)
     return false;
 
   for (size_t n = 1; n < operands.size(); n++)
   {
     const auto node = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*operands[n]);
-    if (is<alloca_op>(node) && node != allocaNode)
+    if (is<AllocaOperation>(node) && node != allocaNode)
       return true;
   }
 
@@ -135,7 +135,8 @@ is_reducible_state(const rvsdg::Output * state, const rvsdg::Node * loadalloca)
   if (storeOperation)
   {
     auto address = StoreNonVolatileOperation::AddressInput(*storeNode).origin();
-    auto [allocaNode, allocaOperation] = jlm::rvsdg::TryGetSimpleNodeAndOp<alloca_op>(*address);
+    auto [allocaNode, allocaOperation] =
+        jlm::rvsdg::TryGetSimpleNodeAndOp<AllocaOperation>(*address);
     if (allocaOperation && allocaNode != loadalloca)
       return true;
   }
@@ -144,8 +145,8 @@ is_reducible_state(const rvsdg::Output * state, const rvsdg::Node * loadalloca)
 }
 
 /*
-  a1 sa1 = alloca_op ...
-  a2 sa2 = alloca_op ...
+  a1 sa1 = AllocaOperation ...
+  a2 sa2 = AllocaOperation ...
   ss1 = store_op a1 ... sa1
   ss2 = store_op a2 ... sa2
   ... = load_op a1 ss1 ss2
@@ -163,7 +164,7 @@ is_load_store_state_reducible(
   if (operands.size() == 2)
     return false;
 
-  auto [allocaNode, allocaOperation] = jlm::rvsdg::TryGetSimpleNodeAndOp<alloca_op>(*address);
+  auto [allocaNode, allocaOperation] = jlm::rvsdg::TryGetSimpleNodeAndOp<AllocaOperation>(*address);
   if (!allocaOperation)
   {
     return false;
@@ -301,7 +302,7 @@ perform_load_alloca_reduction(
   for (size_t n = 1; n < operands.size(); n++)
   {
     const auto node = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*operands[n]);
-    if (!is<alloca_op>(node) || node == allocaNode)
+    if (!is<AllocaOperation>(node) || node == allocaNode)
       loadstates.push_back(operands[n]);
     else
       otherstates.push_back(operands[n]);

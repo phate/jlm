@@ -619,7 +619,7 @@ private:
       : MemoryNode(pointsToGraph),
         AllocaNode_(&allocaNode)
   {
-    JLM_ASSERT(is<alloca_op>(&allocaNode));
+    JLM_ASSERT(is<AllocaOperation>(&allocaNode));
   }
 
 public:

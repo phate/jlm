@@ -90,8 +90,8 @@ TestLoadAllocaReduction()
   jlm::rvsdg::Graph graph;
   auto size = &jlm::tests::GraphImport::Create(graph, bt, "v");
 
-  auto alloca1 = alloca_op::create(bt, size, 4);
-  auto alloca2 = alloca_op::create(bt, size, 4);
+  auto alloca1 = AllocaOperation::create(bt, size, 4);
+  auto alloca2 = AllocaOperation::create(bt, size, 4);
   auto mux = MemoryStateMergeOperation::Create({ alloca1[1] });
   auto & loadNode =
       LoadNonVolatileOperation::CreateNode(*alloca1[0], { alloca1[1], alloca2[1], mux }, bt, 4);
@@ -326,8 +326,8 @@ TestLoadStoreStateReduction()
   jlm::rvsdg::Graph graph;
   auto size = &jlm::tests::GraphImport::Create(graph, bt, "v");
 
-  auto alloca1 = alloca_op::create(bt, size, 4);
-  auto alloca2 = alloca_op::create(bt, size, 4);
+  auto alloca1 = AllocaOperation::create(bt, size, 4);
+  auto alloca2 = AllocaOperation::create(bt, size, 4);
   auto store1 = StoreNonVolatileOperation::Create(alloca1[0], size, { alloca1[1] }, 4);
   auto store2 = StoreNonVolatileOperation::Create(alloca2[0], size, { alloca2[1] }, 4);
 

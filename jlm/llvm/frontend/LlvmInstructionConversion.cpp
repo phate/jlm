@@ -1073,7 +1073,7 @@ convert_alloca_instruction(::llvm::Instruction * instruction, tacsvector_t & tac
   auto vtype = ctx.GetTypeConverter().ConvertLlvmType(*i->getAllocatedType());
   auto alignment = i->getAlign().value();
 
-  tacs.push_back(alloca_op::create(vtype, size, alignment));
+  tacs.push_back(AllocaOperation::create(vtype, size, alignment));
   auto result = tacs.back()->result(0);
   auto astate = tacs.back()->result(1);
 
