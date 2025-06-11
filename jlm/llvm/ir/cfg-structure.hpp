@@ -17,7 +17,7 @@ namespace jlm::llvm
 
 class ControlFlowGraph;
 class ControlFlowGraphEdge;
-class cfg_node;
+class ControlFlowGraphNode;
 
 /** \brief Strongly Connected Component
  */
@@ -26,7 +26,7 @@ class scc final
   class constiterator;
 
 public:
-  scc(const std::unordered_set<cfg_node *> & nodes)
+  scc(const std::unordered_set<ControlFlowGraphNode *> & nodes)
       : nodes_(nodes)
   {}
 
@@ -37,7 +37,7 @@ public:
   end() const;
 
   bool
-  contains(cfg_node * node) const
+  contains(ControlFlowGraphNode * node) const
   {
     return nodes_.find(node) != nodes_.end();
   }
@@ -49,7 +49,7 @@ public:
   }
 
 private:
-  std::unordered_set<cfg_node *> nodes_;
+  std::unordered_set<ControlFlowGraphNode *> nodes_;
 };
 
 /** \brief Strongly Connected Component Iterator
@@ -58,27 +58,27 @@ class scc::constiterator final
 {
 public:
   using iterator_category = std::forward_iterator_tag;
-  using value_type = cfg_node *;
+  using value_type = ControlFlowGraphNode *;
   using difference_type = std::ptrdiff_t;
-  using pointer = cfg_node **;
-  using reference = cfg_node *&;
+  using pointer = ControlFlowGraphNode **;
+  using reference = ControlFlowGraphNode *&;
 
 private:
   friend ::jlm::llvm::scc;
 
 private:
-  constiterator(const std::unordered_set<cfg_node *>::const_iterator & it)
+  explicit constiterator(const std::unordered_set<ControlFlowGraphNode *>::const_iterator & it)
       : it_(it)
   {}
 
 public:
-  cfg_node *
+  ControlFlowGraphNode *
   operator->() const
   {
     return *it_;
   }
 
-  cfg_node &
+  ControlFlowGraphNode &
   operator*() const
   {
     return *operator->();
@@ -112,7 +112,7 @@ public:
   }
 
 private:
-  std::unordered_set<cfg_node *>::const_iterator it_;
+  std::unordered_set<ControlFlowGraphNode *>::const_iterator it_;
 };
 
 /** \brief Strongly Connected Component Structure
@@ -129,7 +129,7 @@ private:
 class sccstructure final
 {
   using cfg_edge_constiterator = std::unordered_set<ControlFlowGraphEdge *>::const_iterator;
-  using cfg_node_constiterator = std::unordered_set<cfg_node *>::const_iterator;
+  using cfg_node_constiterator = std::unordered_set<ControlFlowGraphNode *>::const_iterator;
 
   using edge_iterator_range = util::IteratorRange<cfg_edge_constiterator>;
   using node_iterator_range = util::IteratorRange<cfg_node_constiterator>;
@@ -210,8 +210,8 @@ public:
   is_tcloop() const;
 
 private:
-  std::unordered_set<cfg_node *> enodes_;
-  std::unordered_set<cfg_node *> xnodes_;
+  std::unordered_set<ControlFlowGraphNode *> enodes_;
+  std::unordered_set<ControlFlowGraphNode *> xnodes_;
   std::unordered_set<ControlFlowGraphEdge *> eedges_;
   std::unordered_set<ControlFlowGraphEdge *> redges_;
   std::unordered_set<ControlFlowGraphEdge *> xedges_;
@@ -237,7 +237,7 @@ find_sccs(const ControlFlowGraph & cfg);
  * The \p entry parameter must dominate the \p exit parameter.
  */
 std::vector<scc>
-find_sccs(cfg_node * entry, cfg_node * exit);
+find_sccs(ControlFlowGraphNode * entry, ControlFlowGraphNode * exit);
 
 static inline bool
 is_acyclic(const ControlFlowGraph & cfg)

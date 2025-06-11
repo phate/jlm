@@ -34,7 +34,7 @@ public:
   ~SsaPhiOperation() noexcept override;
 
   SsaPhiOperation(
-      std::vector<cfg_node *> incomingNodes,
+      std::vector<ControlFlowGraphNode *> incomingNodes,
       const std::shared_ptr<const jlm::rvsdg::Type> & type)
       : SimpleOperation({ incomingNodes.size(), type }, { type }),
         IncomingNodes_(std::move(incomingNodes))
@@ -69,7 +69,7 @@ public:
     return result(0);
   }
 
-  cfg_node *
+  ControlFlowGraphNode *
   GetIncomingNode(size_t n) const noexcept
   {
     JLM_ASSERT(n < narguments());
@@ -78,10 +78,10 @@ public:
 
   static std::unique_ptr<llvm::ThreeAddressCode>
   create(
-      const std::vector<std::pair<const Variable *, cfg_node *>> & arguments,
+      const std::vector<std::pair<const Variable *, ControlFlowGraphNode *>> & arguments,
       std::shared_ptr<const jlm::rvsdg::Type> type)
   {
-    std::vector<cfg_node *> basicBlocks;
+    std::vector<ControlFlowGraphNode *> basicBlocks;
     std::vector<const Variable *> operands;
     for (const auto & argument : arguments)
     {
@@ -94,7 +94,7 @@ public:
   }
 
 private:
-  std::vector<cfg_node *> IncomingNodes_;
+  std::vector<ControlFlowGraphNode *> IncomingNodes_;
 };
 
 class AssignmentOperation final : public rvsdg::SimpleOperation

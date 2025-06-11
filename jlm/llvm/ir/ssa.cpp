@@ -48,7 +48,7 @@ destruct_ssa(ControlFlowGraph & cfg)
       // All incoming edges get routed through the corresponding intermediate basic block
 
       // Mapping from original incoming block to intermediate block
-      std::unordered_map<cfg_node *, BasicBlock *> intermediateBlocks;
+      std::unordered_map<ControlFlowGraphNode *, BasicBlock *> intermediateBlocks;
 
       // Make a copy of the original inEdges to avoid iterator invalidation
       std::vector<ControlFlowGraphEdge *> originalInEdges;

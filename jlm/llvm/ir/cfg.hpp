@@ -73,13 +73,13 @@ private:
   attributeset attributes_;
 };
 
-class EntryNode final : public cfg_node
+class EntryNode final : public ControlFlowGraphNode
 {
 public:
   ~EntryNode() noexcept override;
 
   explicit EntryNode(ControlFlowGraph & cfg)
-      : cfg_node(cfg)
+      : ControlFlowGraphNode(cfg)
   {}
 
   size_t
@@ -116,13 +116,13 @@ private:
   std::vector<std::unique_ptr<llvm::argument>> arguments_;
 };
 
-class ExitNode final : public cfg_node
+class ExitNode final : public ControlFlowGraphNode
 {
 public:
   ~ExitNode() noexcept override;
 
   explicit ExitNode(ControlFlowGraph & cfg)
-      : cfg_node(cfg)
+      : ControlFlowGraphNode(cfg)
   {}
 
   size_t
@@ -381,13 +381,15 @@ private:
   static std::string
   ToAscii(
       const BasicBlock & basicBlock,
-      const std::unordered_map<cfg_node *, std::string> & labels);
+      const std::unordered_map<ControlFlowGraphNode *, std::string> & labels);
 
   static std::string
-  CreateTargets(const cfg_node & node, const std::unordered_map<cfg_node *, std::string> & labels);
+  CreateTargets(
+      const ControlFlowGraphNode & node,
+      const std::unordered_map<ControlFlowGraphNode *, std::string> & labels);
 
-  static std::unordered_map<cfg_node *, std::string>
-  CreateLabels(const std::vector<cfg_node *> & nodes);
+  static std::unordered_map<ControlFlowGraphNode *, std::string>
+  CreateLabels(const std::vector<ControlFlowGraphNode *> & nodes);
 
   InterProceduralGraphModule & module_;
   std::unique_ptr<ExitNode> exit_;
@@ -395,10 +397,10 @@ private:
   std::unordered_set<std::unique_ptr<BasicBlock>> nodes_;
 };
 
-std::vector<cfg_node *>
+std::vector<ControlFlowGraphNode *>
 postorder(const ControlFlowGraph & cfg);
 
-std::vector<cfg_node *>
+std::vector<ControlFlowGraphNode *>
 reverse_postorder(const ControlFlowGraph & cfg);
 
 /** Order CFG nodes breadth-first
@@ -409,7 +411,7 @@ reverse_postorder(const ControlFlowGraph & cfg);
  *
  * return A vector with all CFG nodes ordered breadth-first
  */
-std::vector<cfg_node *>
+std::vector<ControlFlowGraphNode *>
 breadth_first(const ControlFlowGraph & cfg);
 
 size_t

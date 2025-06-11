@@ -259,7 +259,7 @@ RvsdgToIpGraphConverter::ConvertGammaNode(const rvsdg::GammaNode & gammaNode)
   Context_->GetLastProcessedBasicBlock()->add_outedge(entryBlock);
 
   // convert gamma regions
-  std::vector<cfg_node *> phi_nodes;
+  std::vector<ControlFlowGraphNode *> phi_nodes;
   entryBlock->append_last(BranchOperation::create(numSubregions, Context_->GetVariable(predicate)));
   auto entryvars = gammaNode.GetEntryVars();
   for (size_t n = 0; n < gammaNode.nsubregions(); n++)
@@ -291,7 +291,7 @@ RvsdgToIpGraphConverter::ConvertGammaNode(const rvsdg::GammaNode & gammaNode)
     const auto output = gammaNode.output(n);
 
     bool invariant = true;
-    std::vector<std::pair<const Variable *, cfg_node *>> arguments;
+    std::vector<std::pair<const Variable *, ControlFlowGraphNode *>> arguments;
     for (size_t r = 0; r < gammaNode.nsubregions(); r++)
     {
       const auto origin = gammaNode.subregion(r)->result(n)->origin();
