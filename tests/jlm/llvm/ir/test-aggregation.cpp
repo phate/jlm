@@ -48,7 +48,7 @@ is_linear(const jlm::llvm::AggregationNode * node, size_t nchildren)
 static bool
 is_loop(const jlm::llvm::AggregationNode * node)
 {
-  return jlm::llvm::is<jlm::llvm::loopaggnode>(node) && node->nchildren() == 1
+  return jlm::llvm::is<jlm::llvm::LoopAggregationNode>(node) && node->nchildren() == 1
       && node->child(0)->parent() == node;
 }
 
