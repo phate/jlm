@@ -14,14 +14,12 @@
 namespace jlm::llvm
 {
 
-/* alloca operator */
-
-class alloca_op final : public rvsdg::SimpleOperation
+class AllocaOperation final : public rvsdg::SimpleOperation
 {
 public:
-  virtual ~alloca_op() noexcept;
+  ~AllocaOperation() noexcept override;
 
-  inline alloca_op(
+  AllocaOperation(
       std::shared_ptr<const rvsdg::ValueType> allocatedType,
       std::shared_ptr<const rvsdg::bittype> btype,
       size_t alignment)
@@ -30,9 +28,9 @@ public:
         AllocatedType_(std::move(allocatedType))
   {}
 
-  alloca_op(const alloca_op & other) = default;
+  AllocaOperation(const AllocaOperation & other) = default;
 
-  alloca_op(alloca_op && other) noexcept = default;
+  AllocaOperation(AllocaOperation && other) noexcept = default;
 
   virtual bool
   operator==(const Operation & other) const noexcept override;
@@ -77,7 +75,7 @@ public:
     if (!bt)
       throw jlm::util::error("expected bits type.");
 
-    alloca_op op(std::move(allocatedType), std::move(bt), alignment);
+    AllocaOperation op(std::move(allocatedType), std::move(bt), alignment);
     return ThreeAddressCode::create(op, { size });
   }
 
@@ -91,7 +89,7 @@ public:
     if (!bt)
       throw util::error("expected bits type.");
 
-    return outputs(&rvsdg::CreateOpNode<alloca_op>(
+    return outputs(&rvsdg::CreateOpNode<AllocaOperation>(
         { size },
         std::move(allocatedType),
         std::move(bt),

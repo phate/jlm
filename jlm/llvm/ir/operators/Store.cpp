@@ -112,7 +112,7 @@ is_store_alloca_reducible(const std::vector<jlm::rvsdg::Output *> & operands)
     return false;
 
   const auto allocaNode = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*operands[0]);
-  if (!is<alloca_op>(allocaNode))
+  if (!is<AllocaOperation>(allocaNode))
     return false;
 
   std::unordered_set states(std::next(std::next(operands.begin())), operands.end());
