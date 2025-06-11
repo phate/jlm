@@ -161,18 +161,6 @@ public:
   Create();
 };
 
-static inline bool
-is_varargtype(const jlm::rvsdg::Type & type)
-{
-  return dynamic_cast<const VariableArgumentType *>(&type) != nullptr;
-}
-
-static inline std::unique_ptr<jlm::rvsdg::Type>
-create_varargtype()
-{
-  return std::unique_ptr<rvsdg::Type>(new VariableArgumentType());
-}
-
 /** \brief StructType class
  *
  * This class is the equivalent of LLVM's StructType class.

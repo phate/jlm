@@ -81,7 +81,7 @@ TypeConverter::ConvertFunctionType(const ::llvm::FunctionType & functionType)
   for (size_t n = 0; n < functionType.getNumParams(); n++)
     argumentTypes.push_back(ConvertLlvmType(*functionType.getParamType(n)));
   if (functionType.isVarArg())
-    argumentTypes.push_back(create_varargtype());
+    argumentTypes.push_back(VariableArgumentType::Create());
   argumentTypes.push_back(IOStateType::Create());
   argumentTypes.push_back(MemoryStateType::Create());
 
