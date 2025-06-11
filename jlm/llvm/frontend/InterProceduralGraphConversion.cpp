@@ -456,7 +456,7 @@ private:
 };
 
 static bool
-requiresExport(const ipgraph_node & ipgNode)
+requiresExport(const InterProceduralGraphNode & ipgNode)
 {
   return ipgNode.hasBody() && is_externally_visible(ipgNode.linkage());
 }
@@ -1076,7 +1076,7 @@ ConvertDataNode(
 
 static rvsdg::Output *
 ConvertInterProceduralGraphNode(
-    const ipgraph_node & ipgNode,
+    const InterProceduralGraphNode & ipgNode,
     RegionalizedVariableMap & regionalizedVariableMap,
     InterProceduralGraphToRvsdgStatisticsCollector & statisticsCollector)
 {
@@ -1091,7 +1091,7 @@ ConvertInterProceduralGraphNode(
 
 static void
 ConvertStronglyConnectedComponent(
-    const std::unordered_set<const ipgraph_node *> & stronglyConnectedComponent,
+    const std::unordered_set<const InterProceduralGraphNode *> & stronglyConnectedComponent,
     rvsdg::Graph & graph,
     RegionalizedVariableMap & regionalizedVariableMap,
     InterProceduralGraphToRvsdgStatisticsCollector & statisticsCollector)

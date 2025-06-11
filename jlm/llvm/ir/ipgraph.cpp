@@ -11,11 +11,12 @@
 
 static void
 strongconnect(
-    const jlm::llvm::ipgraph_node * node,
-    std::unordered_map<const jlm::llvm::ipgraph_node *, std::pair<size_t, size_t>> & map,
-    std::vector<const jlm::llvm::ipgraph_node *> & node_stack,
+    const jlm::llvm::InterProceduralGraphNode * node,
+    std::unordered_map<const jlm::llvm::InterProceduralGraphNode *, std::pair<size_t, size_t>> &
+        map,
+    std::vector<const jlm::llvm::InterProceduralGraphNode *> & node_stack,
     size_t & index,
-    std::vector<std::unordered_set<const jlm::llvm::ipgraph_node *>> & sccs)
+    std::vector<std::unordered_set<const jlm::llvm::InterProceduralGraphNode *>> & sccs)
 {
   map.emplace(node, std::make_pair(index, index));
   node_stack.push_back(node);
@@ -38,8 +39,8 @@ strongconnect(
 
   if (map[node].second == map[node].first)
   {
-    std::unordered_set<const jlm::llvm::ipgraph_node *> scc;
-    const jlm::llvm::ipgraph_node * w;
+    std::unordered_set<const jlm::llvm::InterProceduralGraphNode *> scc;
+    const jlm::llvm::InterProceduralGraphNode * w;
     do
     {
       w = node_stack.back();
@@ -55,18 +56,18 @@ namespace jlm::llvm
 {
 
 void
-InterProceduralGraph::add_node(std::unique_ptr<ipgraph_node> node)
+InterProceduralGraph::add_node(std::unique_ptr<InterProceduralGraphNode> node)
 {
   nodes_.push_back(std::move(node));
 }
 
-std::vector<std::unordered_set<const ipgraph_node *>>
+std::vector<std::unordered_set<const InterProceduralGraphNode *>>
 InterProceduralGraph::find_sccs() const
 {
-  std::vector<std::unordered_set<const ipgraph_node *>> sccs;
+  std::vector<std::unordered_set<const InterProceduralGraphNode *>> sccs;
 
-  std::unordered_map<const ipgraph_node *, std::pair<size_t, size_t>> map;
-  std::vector<const ipgraph_node *> node_stack;
+  std::unordered_map<const InterProceduralGraphNode *, std::pair<size_t, size_t>> map;
+  std::vector<const InterProceduralGraphNode *> node_stack;
   size_t index = 0;
 
   for (auto & node : *this)
@@ -78,7 +79,7 @@ InterProceduralGraph::find_sccs() const
   return sccs;
 }
 
-const ipgraph_node *
+const InterProceduralGraphNode *
 InterProceduralGraph::find(const std::string & name) const noexcept
 {
   for (auto & node : nodes_)
@@ -90,10 +91,7 @@ InterProceduralGraph::find(const std::string & name) const noexcept
   return nullptr;
 }
 
-/* ipgraph node */
-
-ipgraph_node::~ipgraph_node()
-{}
+InterProceduralGraphNode::~InterProceduralGraphNode() noexcept = default;
 
 /* function node */
 
