@@ -17,13 +17,13 @@ namespace jlm::llvm
 
 /* global value */
 
-class gblvalue final : public gblvariable
+class gblvalue final : public GlobalVariable
 {
 public:
   virtual ~gblvalue();
 
   inline gblvalue(data_node * node)
-      : gblvariable(node->Type(), node->name()),
+      : GlobalVariable(node->Type(), node->name()),
         node_(node)
   {}
 

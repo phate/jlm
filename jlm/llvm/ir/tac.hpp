@@ -19,14 +19,12 @@ namespace jlm::llvm
 
 class ThreeAddressCode;
 
-/* tacvariable */
-
-class tacvariable final : public Variable
+class ThreeAddressCodeVariable final : public Variable
 {
 public:
-  virtual ~tacvariable();
+  ~ThreeAddressCodeVariable() noexcept override;
 
-  tacvariable(
+  ThreeAddressCodeVariable(
       llvm::ThreeAddressCode * tac,
       std::shared_ptr<const jlm::rvsdg::Type> type,
       const std::string & name)
@@ -40,13 +38,13 @@ public:
     return tac_;
   }
 
-  static std::unique_ptr<tacvariable>
+  static std::unique_ptr<ThreeAddressCodeVariable>
   create(
       llvm::ThreeAddressCode * tac,
       std::shared_ptr<const jlm::rvsdg::Type> type,
       const std::string & name)
   {
-    return std::make_unique<tacvariable>(tac, std::move(type), name);
+    return std::make_unique<ThreeAddressCodeVariable>(tac, std::move(type), name);
   }
 
 private:
@@ -70,7 +68,7 @@ public:
   ThreeAddressCode(
       const rvsdg::SimpleOperation & operation,
       const std::vector<const Variable *> & operands,
-      std::vector<std::unique_ptr<tacvariable>> results);
+      std::vector<std::unique_ptr<ThreeAddressCodeVariable>> results);
 
   ThreeAddressCode(const llvm::ThreeAddressCode &) = delete;
 
@@ -107,7 +105,7 @@ public:
     return results_.size();
   }
 
-  const tacvariable *
+  [[nodiscard]] const ThreeAddressCodeVariable *
   result(size_t index) const noexcept
   {
     JLM_ASSERT(index < results_.size());
@@ -118,7 +116,7 @@ public:
     FIXME: I am really not happy with this function exposing
     the results, but we need these results for the SSA destruction.
   */
-  std::vector<std::unique_ptr<tacvariable>>
+  std::vector<std::unique_ptr<ThreeAddressCodeVariable>>
   results()
   {
     return std::move(results_);
@@ -152,7 +150,7 @@ public:
   create(
       const rvsdg::SimpleOperation & operation,
       const std::vector<const Variable *> & operands,
-      std::vector<std::unique_ptr<tacvariable>> results)
+      std::vector<std::unique_ptr<ThreeAddressCodeVariable>> results)
   {
     return std::make_unique<llvm::ThreeAddressCode>(operation, operands, std::move(results));
   }
@@ -166,7 +164,7 @@ private:
     for (size_t n = 0; n < operation.nresults(); n++)
     {
       auto & type = operation.result(n);
-      results_.push_back(tacvariable::create(this, type, names[n]));
+      results_.push_back(ThreeAddressCodeVariable::create(this, type, names[n]));
     }
   }
 
@@ -183,7 +181,7 @@ private:
 
   std::vector<const Variable *> operands_;
   std::unique_ptr<rvsdg::Operation> operation_;
-  std::vector<std::unique_ptr<tacvariable>> results_;
+  std::vector<std::unique_ptr<ThreeAddressCodeVariable>> results_;
 };
 
 template<class T>

@@ -145,7 +145,7 @@ TestPhiConversion()
   assert(phiPopcnt->noperands() == 3);
   // The first operand of the phi node is the constant integer 0
   auto constant0variable =
-      jlm::util::AssertedCast<const jlm::llvm::tacvariable>(phiPopcnt->operand(0));
+      jlm::util::AssertedCast<const jlm::llvm::ThreeAddressCodeVariable>(phiPopcnt->operand(0));
   auto constant0op = jlm::util::AssertedCast<const jlm::llvm::IntegerConstantOperation>(
       &constant0variable->tac()->operation());
   assert(constant0op->Representation() == 0);
@@ -245,7 +245,7 @@ TestPhiOperandElision()
   assert(phiTac->noperands() == 2);
   // The first phi operand should be a constant 0
   auto constant0variable =
-      jlm::util::AssertedCast<const jlm::llvm::tacvariable>(phiTac->operand(0));
+      jlm::util::AssertedCast<const jlm::llvm::ThreeAddressCodeVariable>(phiTac->operand(0));
   auto constant0op = jlm::util::AssertedCast<const jlm::llvm::IntegerConstantOperation>(
       &constant0variable->tac()->operation());
   assert(constant0op->Representation() == 0);

@@ -291,13 +291,13 @@ private:
   std::unique_ptr<ControlFlowGraph> cfg_;
 };
 
-class fctvariable final : public gblvariable
+class fctvariable final : public GlobalVariable
 {
 public:
   virtual ~fctvariable();
 
   inline fctvariable(function_node * node)
-      : gblvariable(node->Type(), node->name()),
+      : GlobalVariable(node->Type(), node->name()),
         node_(node)
   {}
 
