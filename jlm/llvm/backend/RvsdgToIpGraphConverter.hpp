@@ -38,7 +38,7 @@ class ControlFlowGraph;
 class data_node_init;
 class InterProceduralGraphModule;
 class RvsdgModule;
-class variable;
+class Variable;
 
 class RvsdgToIpGraphConverter final
 {
@@ -106,7 +106,7 @@ private:
   CreateInitialization(const delta::node & deltaNode);
 
   static bool
-  RequiresSsaPhiOperation(const rvsdg::ThetaNode::LoopVar & loopVar, const variable & v);
+  RequiresSsaPhiOperation(const rvsdg::ThetaNode::LoopVar & loopVar, const Variable & v);
 
   std::unique_ptr<Context> Context_;
 };

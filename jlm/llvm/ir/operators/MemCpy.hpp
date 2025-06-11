@@ -92,12 +92,12 @@ public:
 
   static std::unique_ptr<llvm::ThreeAddressCode>
   create(
-      const variable * destination,
-      const variable * source,
-      const variable * length,
-      const std::vector<const variable *> & memoryStates)
+      const Variable * destination,
+      const Variable * source,
+      const Variable * length,
+      const std::vector<const Variable *> & memoryStates)
   {
-    std::vector<const variable *> operands = { destination, source, length };
+    std::vector<const Variable *> operands = { destination, source, length };
     operands.insert(operands.end(), memoryStates.begin(), memoryStates.end());
 
     MemCpyNonVolatileOperation operation(length->Type(), memoryStates.size());
@@ -173,13 +173,13 @@ public:
 
   static std::unique_ptr<llvm::ThreeAddressCode>
   CreateThreeAddressCode(
-      const variable & destination,
-      const variable & source,
-      const variable & length,
-      const variable & ioState,
-      const std::vector<const variable *> & memoryStates)
+      const Variable & destination,
+      const Variable & source,
+      const Variable & length,
+      const Variable & ioState,
+      const std::vector<const Variable *> & memoryStates)
   {
-    std::vector<const variable *> operands = { &destination, &source, &length, &ioState };
+    std::vector<const Variable *> operands = { &destination, &source, &length, &ioState };
     operands.insert(operands.end(), memoryStates.begin(), memoryStates.end());
 
     MemCpyVolatileOperation operation(length.Type(), memoryStates.size());

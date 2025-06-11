@@ -210,9 +210,9 @@ public:
 
   static std::unique_ptr<llvm::ThreeAddressCode>
   Create(
-      const variable * address,
-      const variable * iOState,
-      const variable * memoryState,
+      const Variable * address,
+      const Variable * iOState,
+      const Variable * memoryState,
       std::shared_ptr<const rvsdg::ValueType> loadedType,
       size_t alignment)
   {
@@ -302,8 +302,8 @@ public:
 
   static std::unique_ptr<llvm::ThreeAddressCode>
   Create(
-      const variable * address,
-      const variable * state,
+      const Variable * address,
+      const Variable * state,
       std::shared_ptr<const rvsdg::ValueType> loadedType,
       size_t alignment)
   {

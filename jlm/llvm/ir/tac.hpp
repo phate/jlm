@@ -21,7 +21,7 @@ class ThreeAddressCode;
 
 /* tacvariable */
 
-class tacvariable final : public variable
+class tacvariable final : public Variable
 {
 public:
   virtual ~tacvariable();
@@ -30,7 +30,7 @@ public:
       llvm::ThreeAddressCode * tac,
       std::shared_ptr<const jlm::rvsdg::Type> type,
       const std::string & name)
-      : variable(std::move(type), name),
+      : Variable(std::move(type), name),
         tac_(tac)
   {}
 
@@ -60,16 +60,16 @@ public:
 
   ThreeAddressCode(
       const rvsdg::SimpleOperation & operation,
-      const std::vector<const variable *> & operands);
+      const std::vector<const Variable *> & operands);
 
   ThreeAddressCode(
       const rvsdg::SimpleOperation & operation,
-      const std::vector<const variable *> & operands,
+      const std::vector<const Variable *> & operands,
       const std::vector<std::string> & names);
 
   ThreeAddressCode(
       const rvsdg::SimpleOperation & operation,
-      const std::vector<const variable *> & operands,
+      const std::vector<const Variable *> & operands,
       std::vector<std::unique_ptr<tacvariable>> results);
 
   ThreeAddressCode(const llvm::ThreeAddressCode &) = delete;
@@ -94,7 +94,7 @@ public:
     return operands_.size();
   }
 
-  inline const variable *
+  inline const Variable *
   operand(size_t index) const noexcept
   {
     JLM_ASSERT(index < operands_.size());
@@ -125,16 +125,16 @@ public:
   }
 
   void
-  replace(const rvsdg::SimpleOperation & operation, const std::vector<const variable *> & operands);
+  replace(const rvsdg::SimpleOperation & operation, const std::vector<const Variable *> & operands);
 
   void
-  convert(const rvsdg::SimpleOperation & operation, const std::vector<const variable *> & operands);
+  convert(const rvsdg::SimpleOperation & operation, const std::vector<const Variable *> & operands);
 
   static std::string
   ToAscii(const ThreeAddressCode & threeAddressCode);
 
   static std::unique_ptr<llvm::ThreeAddressCode>
-  create(const rvsdg::SimpleOperation & operation, const std::vector<const variable *> & operands)
+  create(const rvsdg::SimpleOperation & operation, const std::vector<const Variable *> & operands)
   {
     return std::make_unique<llvm::ThreeAddressCode>(operation, operands);
   }
@@ -142,7 +142,7 @@ public:
   static std::unique_ptr<llvm::ThreeAddressCode>
   create(
       const rvsdg::SimpleOperation & operation,
-      const std::vector<const variable *> & operands,
+      const std::vector<const Variable *> & operands,
       const std::vector<std::string> & names)
   {
     return std::make_unique<llvm::ThreeAddressCode>(operation, operands, names);
@@ -151,7 +151,7 @@ public:
   static std::unique_ptr<llvm::ThreeAddressCode>
   create(
       const rvsdg::SimpleOperation & operation,
-      const std::vector<const variable *> & operands,
+      const std::vector<const Variable *> & operands,
       std::vector<std::unique_ptr<tacvariable>> results)
   {
     return std::make_unique<llvm::ThreeAddressCode>(operation, operands, std::move(results));
@@ -181,7 +181,7 @@ private:
     return names;
   }
 
-  std::vector<const variable *> operands_;
+  std::vector<const Variable *> operands_;
   std::unique_ptr<rvsdg::Operation> operation_;
   std::vector<std::unique_ptr<tacvariable>> results_;
 };

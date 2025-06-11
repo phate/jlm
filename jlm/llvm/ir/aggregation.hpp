@@ -364,12 +364,12 @@ private:
 
 class ExitAggregationNode final : public AggregationNode
 {
-  typedef std::vector<const variable *>::const_iterator const_iterator;
+  typedef std::vector<const Variable *>::const_iterator const_iterator;
 
 public:
   ~ExitAggregationNode() noexcept override;
 
-  explicit ExitAggregationNode(const std::vector<const variable *> & results)
+  explicit ExitAggregationNode(const std::vector<const Variable *> & results)
       : results_(results)
   {}
 
@@ -385,7 +385,7 @@ public:
     return results_.end();
   }
 
-  const variable *
+  const Variable *
   result(size_t index) const noexcept
   {
     JLM_ASSERT(index < nresults());
@@ -402,13 +402,13 @@ public:
   debug_string() const override;
 
   static inline std::unique_ptr<AggregationNode>
-  create(const std::vector<const variable *> & results)
+  create(const std::vector<const Variable *> & results)
   {
     return std::make_unique<ExitAggregationNode>(results);
   }
 
 private:
-  std::vector<const variable *> results_;
+  std::vector<const Variable *> results_;
 };
 
 class BasicBlockAggregationNode final : public AggregationNode

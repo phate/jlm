@@ -29,7 +29,7 @@ class ControlFlowGraph;
 class cfg_node;
 class clg_node;
 class InterProceduralGraphModule;
-class variable;
+class Variable;
 
 class basic_block_map final
 {
@@ -96,38 +96,38 @@ public:
         memory_state_(nullptr)
   {}
 
-  const llvm::variable *
+  const llvm::Variable *
   result() const noexcept
   {
     return result_;
   }
 
   inline void
-  set_result(const llvm::variable * result)
+  set_result(const llvm::Variable * result)
   {
     result_ = result;
   }
 
-  llvm::variable *
+  llvm::Variable *
   iostate() const noexcept
   {
     return iostate_;
   }
 
   void
-  set_iostate(llvm::variable * state)
+  set_iostate(llvm::Variable * state)
   {
     iostate_ = state;
   }
 
-  inline llvm::variable *
+  inline llvm::Variable *
   memory_state() const noexcept
   {
     return memory_state_;
   }
 
   inline void
-  set_memory_state(llvm::variable * state)
+  set_memory_state(llvm::Variable * state)
   {
     memory_state_ = state;
   }
@@ -168,7 +168,7 @@ public:
     return vmap_.find(value) != vmap_.end();
   }
 
-  inline const llvm::variable *
+  inline const llvm::Variable *
   lookup_value(const ::llvm::Value * value) const noexcept
   {
     JLM_ASSERT(has_value(value));
@@ -176,7 +176,7 @@ public:
   }
 
   inline void
-  insert_value(const ::llvm::Value * value, const llvm::variable * variable)
+  insert_value(const ::llvm::Value * value, const llvm::Variable * variable)
   {
     JLM_ASSERT(!has_value(value));
     vmap_[value] = variable;
@@ -210,10 +210,10 @@ private:
   InterProceduralGraphModule & module_;
   basic_block_map bbmap_;
   ipgraph_node * node_;
-  const llvm::variable * result_;
-  llvm::variable * iostate_;
-  llvm::variable * memory_state_;
-  std::unordered_map<const ::llvm::Value *, const llvm::variable *> vmap_;
+  const llvm::Variable * result_;
+  llvm::Variable * iostate_;
+  llvm::Variable * memory_state_;
+  std::unordered_map<const ::llvm::Value *, const llvm::Variable *> vmap_;
   TypeConverter TypeConverter_;
 };
 

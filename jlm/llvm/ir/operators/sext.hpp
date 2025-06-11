@@ -74,7 +74,7 @@ public:
   }
 
   static std::unique_ptr<llvm::ThreeAddressCode>
-  create(const variable * operand, const std::shared_ptr<const rvsdg::Type> & type)
+  create(const Variable * operand, const std::shared_ptr<const rvsdg::Type> & type)
   {
     auto ot = std::dynamic_pointer_cast<const rvsdg::bittype>(operand->Type());
     if (!ot)

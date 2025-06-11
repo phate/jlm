@@ -162,7 +162,7 @@ public:
   copy() const override;
 
   static std::unique_ptr<llvm::ThreeAddressCode>
-  Create(const variable * address, const variable * value, const variable * state, size_t alignment)
+  Create(const Variable * address, const Variable * value, const Variable * state, size_t alignment)
   {
     auto storedType = CheckAndExtractStoredType(value->Type());
 
@@ -298,10 +298,10 @@ public:
 
   static std::unique_ptr<llvm::ThreeAddressCode>
   Create(
-      const variable * address,
-      const variable * value,
-      const variable * ioState,
-      const variable * memoryState,
+      const Variable * address,
+      const Variable * value,
+      const Variable * ioState,
+      const Variable * memoryState,
       size_t alignment)
   {
     auto storedType = CheckAndExtractStoredType(value->Type());

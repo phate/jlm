@@ -26,7 +26,7 @@ SetupControlFlowGraph(
 
   auto cfg = ControlFlowGraph::create(ipgModule);
 
-  std::vector<const variable *> operands;
+  std::vector<const Variable *> operands;
   for (size_t n = 0; n < operation.narguments(); n++)
   {
     auto & operandType = operation.argument(n);

@@ -67,17 +67,17 @@ public:
    */
   static std::unique_ptr<llvm::ThreeAddressCode>
   Create(
-      const variable * baseAddress,
-      const std::vector<const variable *> & offsets,
+      const Variable * baseAddress,
+      const std::vector<const Variable *> & offsets,
       std::shared_ptr<const rvsdg::ValueType> pointeeType,
       std::shared_ptr<const rvsdg::Type> resultType)
   {
     CheckPointerType(baseAddress->type());
-    auto offsetTypes = CheckAndExtractOffsetTypes<const variable>(offsets);
+    auto offsetTypes = CheckAndExtractOffsetTypes<const Variable>(offsets);
     CheckPointerType(*resultType);
 
     GetElementPtrOperation operation(offsetTypes, std::move(pointeeType));
-    std::vector<const variable *> operands(1, baseAddress);
+    std::vector<const Variable *> operands(1, baseAddress);
     operands.insert(operands.end(), offsets.begin(), offsets.end());
 
     return ThreeAddressCode::create(operation, operands);

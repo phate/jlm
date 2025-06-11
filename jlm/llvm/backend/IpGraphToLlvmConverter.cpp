@@ -82,7 +82,7 @@ public:
   }
 
   void
-  insert(const llvm::variable * variable, ::llvm::Value * value)
+  insert(const llvm::Variable * variable, ::llvm::Value * value)
   {
     variables_[variable] = value;
   }
@@ -96,7 +96,7 @@ public:
   }
 
   ::llvm::Value *
-  value(const llvm::variable * variable) const noexcept
+  value(const llvm::Variable * variable) const noexcept
   {
     auto it = variables_.find(variable);
     JLM_ASSERT(it != variables_.end());
@@ -118,7 +118,7 @@ public:
 private:
   ::llvm::Module & LlvmModule_;
   InterProceduralGraphModule & IpGraphModule_;
-  std::unordered_map<const llvm::variable *, ::llvm::Value *> variables_;
+  std::unordered_map<const llvm::Variable *, ::llvm::Value *> variables_;
   std::unordered_map<const llvm::cfg_node *, ::llvm::BasicBlock *> nodes_;
   TypeConverter TypeConverter_;
 };
@@ -130,7 +130,7 @@ IpGraphToLlvmConverter::IpGraphToLlvmConverter() = default;
 ::llvm::Value *
 IpGraphToLlvmConverter::convert_assignment(
     const rvsdg::SimpleOperation & op,
-    const std::vector<const variable *> & args,
+    const std::vector<const Variable *> & args,
     ::llvm::IRBuilder<> &)
 {
   JLM_ASSERT(is<AssignmentOperation>(op));
@@ -140,7 +140,7 @@ IpGraphToLlvmConverter::convert_assignment(
 ::llvm::Value *
 IpGraphToLlvmConverter::CreateBinOpInstruction(
     const ::llvm::Instruction::BinaryOps opcode,
-    const std::vector<const variable *> & args,
+    const std::vector<const Variable *> & args,
     ::llvm::IRBuilder<> & builder)
 {
   const auto operand1 = Context_->value(args[0]);
@@ -151,7 +151,7 @@ IpGraphToLlvmConverter::CreateBinOpInstruction(
 ::llvm::Value *
 IpGraphToLlvmConverter::CreateICmpInstruction(
     const ::llvm::CmpInst::Predicate predicate,
-    const std::vector<const variable *> & args,
+    const std::vector<const Variable *> & args,
     ::llvm::IRBuilder<> & builder)
 {
   const auto operand1 = Context_->value(args[0]);
@@ -173,7 +173,7 @@ convert_bitvalue_repr(const rvsdg::bitvalue_repr & vr)
 ::llvm::Value *
 IpGraphToLlvmConverter::ConverterIntegerConstant(
     const rvsdg::SimpleOperation & op,
-    const std::vector<const variable *> &,
+    const std::vector<const Variable *> &,
     ::llvm::IRBuilder<> & builder)
 {
   const auto & representation =
@@ -189,7 +189,7 @@ IpGraphToLlvmConverter::ConverterIntegerConstant(
 ::llvm::Value *
 IpGraphToLlvmConverter::convert_ctlconstant(
     const rvsdg::SimpleOperation & op,
-    const std::vector<const variable *> &,
+    const std::vector<const Variable *> &,
     ::llvm::IRBuilder<> & builder)
 {
   JLM_ASSERT(is_ctlconstant_op(op));
@@ -203,7 +203,7 @@ IpGraphToLlvmConverter::convert_ctlconstant(
 ::llvm::Value *
 IpGraphToLlvmConverter::convert(
     const ConstantFP & op,
-    const std::vector<const variable *> &,
+    const std::vector<const Variable *> &,
     ::llvm::IRBuilder<> & builder)
 {
   return ::llvm::ConstantFP::get(builder.getContext(), op.constant());
@@ -212,7 +212,7 @@ IpGraphToLlvmConverter::convert(
 ::llvm::Value *
 IpGraphToLlvmConverter::convert_undef(
     const rvsdg::SimpleOperation & op,
-    const std::vector<const variable *> &,
+    const std::vector<const Variable *> &,
     ::llvm::IRBuilder<> &)
 {
   JLM_ASSERT(is<UndefValueOperation>(op));
@@ -232,7 +232,7 @@ IpGraphToLlvmConverter::convert_undef(
 ::llvm::Value *
 IpGraphToLlvmConverter::convert(
     const PoisonValueOperation & operation,
-    const std::vector<const variable *> &,
+    const std::vector<const Variable *> &,
     ::llvm::IRBuilder<> &)
 {
   auto & llvmContext = Context_->llvm_module().getContext();
@@ -245,7 +245,7 @@ IpGraphToLlvmConverter::convert(
 ::llvm::Value *
 IpGraphToLlvmConverter::convert(
     const CallOperation & op,
-    const std::vector<const variable *> & args,
+    const std::vector<const Variable *> & args,
     ::llvm::IRBuilder<> & builder)
 {
   auto function = Context_->value(args[0]);
@@ -294,7 +294,7 @@ is_identity_mapping(const rvsdg::match_op & op)
 ::llvm::Value *
 IpGraphToLlvmConverter::convert_match(
     const rvsdg::SimpleOperation & op,
-    const std::vector<const variable *> & args,
+    const std::vector<const Variable *> & args,
     ::llvm::IRBuilder<> & builder)
 {
   JLM_ASSERT(is<rvsdg::match_op>(op));
@@ -318,7 +318,7 @@ IpGraphToLlvmConverter::convert_match(
 ::llvm::Value *
 IpGraphToLlvmConverter::convert_branch(
     const rvsdg::SimpleOperation & op,
-    const std::vector<const variable *> &,
+    const std::vector<const Variable *> &,
     ::llvm::IRBuilder<> &)
 {
   JLM_ASSERT(is<BranchOperation>(op));
@@ -328,7 +328,7 @@ IpGraphToLlvmConverter::convert_branch(
 ::llvm::Value *
 IpGraphToLlvmConverter::convert_phi(
     const rvsdg::SimpleOperation & op,
-    const std::vector<const variable *> &,
+    const std::vector<const Variable *> &,
     ::llvm::IRBuilder<> & builder)
 {
   auto & phi = *util::AssertedCast<const SsaPhiOperation>(&op);
@@ -347,7 +347,7 @@ IpGraphToLlvmConverter::convert_phi(
 ::llvm::Value *
 IpGraphToLlvmConverter::CreateLoadInstruction(
     const rvsdg::ValueType & loadedType,
-    const variable * address,
+    const Variable * address,
     bool isVolatile,
     size_t alignment,
     ::llvm::IRBuilder<> & builder)
@@ -364,7 +364,7 @@ IpGraphToLlvmConverter::CreateLoadInstruction(
 ::llvm::Value *
 IpGraphToLlvmConverter::convert(
     const LoadNonVolatileOperation & operation,
-    const std::vector<const variable *> & operands,
+    const std::vector<const Variable *> & operands,
     ::llvm::IRBuilder<> & builder)
 {
   return CreateLoadInstruction(
@@ -378,7 +378,7 @@ IpGraphToLlvmConverter::convert(
 ::llvm::Value *
 IpGraphToLlvmConverter::convert(
     const LoadVolatileOperation & operation,
-    const std::vector<const variable *> & operands,
+    const std::vector<const Variable *> & operands,
     ::llvm::IRBuilder<> & builder)
 {
   return CreateLoadInstruction(
@@ -391,8 +391,8 @@ IpGraphToLlvmConverter::convert(
 
 void
 IpGraphToLlvmConverter::CreateStoreInstruction(
-    const variable * address,
-    const variable * value,
+    const Variable * address,
+    const Variable * value,
     bool isVolatile,
     size_t alignment,
     ::llvm::IRBuilder<> & builder)
@@ -405,7 +405,7 @@ IpGraphToLlvmConverter::CreateStoreInstruction(
 ::llvm::Value *
 IpGraphToLlvmConverter::convert_store(
     const rvsdg::SimpleOperation & operation,
-    const std::vector<const variable *> & operands,
+    const std::vector<const Variable *> & operands,
     ::llvm::IRBuilder<> & builder)
 {
   auto storeOperation = util::AssertedCast<const StoreNonVolatileOperation>(&operation);
@@ -416,7 +416,7 @@ IpGraphToLlvmConverter::convert_store(
 ::llvm::Value *
 IpGraphToLlvmConverter::convert(
     const StoreVolatileOperation & operation,
-    const std::vector<const variable *> & operands,
+    const std::vector<const Variable *> & operands,
     ::llvm::IRBuilder<> & builder)
 {
   CreateStoreInstruction(operands[0], operands[1], true, operation.GetAlignment(), builder);
@@ -426,7 +426,7 @@ IpGraphToLlvmConverter::convert(
 ::llvm::Value *
 IpGraphToLlvmConverter::convert_alloca(
     const rvsdg::SimpleOperation & op,
-    const std::vector<const variable *> & args,
+    const std::vector<const Variable *> & args,
     ::llvm::IRBuilder<> & builder)
 {
   JLM_ASSERT(is<alloca_op>(op));
@@ -443,7 +443,7 @@ IpGraphToLlvmConverter::convert_alloca(
 ::llvm::Value *
 IpGraphToLlvmConverter::convert_getelementptr(
     const rvsdg::SimpleOperation & op,
-    const std::vector<const variable *> & args,
+    const std::vector<const Variable *> & args,
     ::llvm::IRBuilder<> & builder)
 {
   JLM_ASSERT(is<GetElementPtrOperation>(op) && args.size() >= 2);
@@ -461,7 +461,7 @@ IpGraphToLlvmConverter::convert_getelementptr(
 
 template<typename T>
 std::vector<T>
-IpGraphToLlvmConverter::get_bitdata(const std::vector<const variable *> & args)
+IpGraphToLlvmConverter::get_bitdata(const std::vector<const Variable *> & args)
 {
   std::vector<T> data;
   for (size_t n = 0; n < args.size(); n++)
@@ -476,7 +476,7 @@ IpGraphToLlvmConverter::get_bitdata(const std::vector<const variable *> & args)
 
 template<typename T>
 std::vector<T>
-IpGraphToLlvmConverter::get_fpdata(const std::vector<const variable *> & args)
+IpGraphToLlvmConverter::get_fpdata(const std::vector<const Variable *> & args)
 {
   std::vector<T> data;
   for (size_t n = 0; n < args.size(); n++)
@@ -492,7 +492,7 @@ IpGraphToLlvmConverter::get_fpdata(const std::vector<const variable *> & args)
 ::llvm::Value *
 IpGraphToLlvmConverter::convert(
     const ConstantDataArray & op,
-    const std::vector<const variable *> & operands,
+    const std::vector<const Variable *> & operands,
     ::llvm::IRBuilder<> & builder)
 {
   JLM_ASSERT(is<ConstantDataArray>(op));
@@ -549,7 +549,7 @@ IpGraphToLlvmConverter::convert(
 ::llvm::Value *
 IpGraphToLlvmConverter::convert(
     const ConstantArrayOperation & op,
-    const std::vector<const variable *> & operands,
+    const std::vector<const Variable *> & operands,
     ::llvm::IRBuilder<> &)
 {
   ::llvm::LLVMContext & llvmContext = Context_->llvm_module().getContext();
@@ -571,7 +571,7 @@ IpGraphToLlvmConverter::convert(
 ::llvm::Value *
 IpGraphToLlvmConverter::convert(
     const ConstantAggregateZeroOperation & op,
-    const std::vector<const variable *> &,
+    const std::vector<const Variable *> &,
     ::llvm::IRBuilder<> &)
 {
   ::llvm::LLVMContext & llvmContext = Context_->llvm_module().getContext();
@@ -584,7 +584,7 @@ IpGraphToLlvmConverter::convert(
 ::llvm::Value *
 IpGraphToLlvmConverter::convert_ptrcmp(
     const rvsdg::SimpleOperation & op,
-    const std::vector<const variable *> & args,
+    const std::vector<const Variable *> & args,
     ::llvm::IRBuilder<> & builder)
 {
   JLM_ASSERT(is<ptrcmp_op>(op));
@@ -607,7 +607,7 @@ IpGraphToLlvmConverter::convert_ptrcmp(
 ::llvm::Value *
 IpGraphToLlvmConverter::convert_fpcmp(
     const rvsdg::SimpleOperation & op,
-    const std::vector<const variable *> & args,
+    const std::vector<const Variable *> & args,
     ::llvm::IRBuilder<> & builder)
 {
   JLM_ASSERT(is<fpcmp_op>(op));
@@ -640,7 +640,7 @@ IpGraphToLlvmConverter::convert_fpcmp(
 ::llvm::Value *
 IpGraphToLlvmConverter::convert_fpbin(
     const rvsdg::SimpleOperation & op,
-    const std::vector<const variable *> & args,
+    const std::vector<const Variable *> & args,
     ::llvm::IRBuilder<> & builder)
 {
   JLM_ASSERT(is<fpbin_op>(op));
@@ -662,7 +662,7 @@ IpGraphToLlvmConverter::convert_fpbin(
 ::llvm::Value *
 IpGraphToLlvmConverter::convert_fpneg(
     const rvsdg::SimpleOperation & op,
-    const std::vector<const variable *> & args,
+    const std::vector<const Variable *> & args,
     ::llvm::IRBuilder<> & builder)
 {
   JLM_ASSERT(is<FNegOperation>(op));
@@ -673,7 +673,7 @@ IpGraphToLlvmConverter::convert_fpneg(
 ::llvm::Value *
 IpGraphToLlvmConverter::convert_valist(
     const rvsdg::SimpleOperation & op,
-    const std::vector<const variable *> &,
+    const std::vector<const Variable *> &,
     ::llvm::IRBuilder<> &)
 {
   JLM_ASSERT(is<valist_op>(op));
@@ -683,7 +683,7 @@ IpGraphToLlvmConverter::convert_valist(
 ::llvm::Value *
 IpGraphToLlvmConverter::convert(
     const ConstantStruct & op,
-    const std::vector<const variable *> & args,
+    const std::vector<const Variable *> & args,
     ::llvm::IRBuilder<> &)
 {
   ::llvm::LLVMContext & llvmContext = Context_->llvm_module().getContext();
@@ -700,7 +700,7 @@ IpGraphToLlvmConverter::convert(
 ::llvm::Value *
 IpGraphToLlvmConverter::convert(
     const ConstantPointerNullOperation & operation,
-    const std::vector<const variable *> &,
+    const std::vector<const Variable *> &,
     ::llvm::IRBuilder<> &)
 {
   ::llvm::LLVMContext & llvmContext = Context_->llvm_module().getContext();
@@ -713,7 +713,7 @@ IpGraphToLlvmConverter::convert(
 ::llvm::Value *
 IpGraphToLlvmConverter::convert_select(
     const rvsdg::SimpleOperation & op,
-    const std::vector<const variable *> & operands,
+    const std::vector<const Variable *> & operands,
     ::llvm::IRBuilder<> & builder)
 {
   auto & select = *util::AssertedCast<const SelectOperation>(&op);
@@ -730,7 +730,7 @@ IpGraphToLlvmConverter::convert_select(
 ::llvm::Value *
 IpGraphToLlvmConverter::convert_ctl2bits(
     const rvsdg::SimpleOperation & op,
-    const std::vector<const variable *> & args,
+    const std::vector<const Variable *> & args,
     ::llvm::IRBuilder<> &)
 {
   JLM_ASSERT(is<ctl2bits_op>(op));
@@ -740,7 +740,7 @@ IpGraphToLlvmConverter::convert_ctl2bits(
 ::llvm::Value *
 IpGraphToLlvmConverter::convert_constantvector(
     const rvsdg::SimpleOperation & op,
-    const std::vector<const variable *> & operands,
+    const std::vector<const Variable *> & operands,
     ::llvm::IRBuilder<> &)
 {
   JLM_ASSERT(is<constantvector_op>(op));
@@ -755,7 +755,7 @@ IpGraphToLlvmConverter::convert_constantvector(
 ::llvm::Value *
 IpGraphToLlvmConverter::convert_constantdatavector(
     const rvsdg::SimpleOperation & op,
-    const std::vector<const variable *> & operands,
+    const std::vector<const Variable *> & operands,
     ::llvm::IRBuilder<> & builder)
 {
   JLM_ASSERT(is<constant_data_vector_op>(op));
@@ -813,7 +813,7 @@ IpGraphToLlvmConverter::convert_constantdatavector(
 ::llvm::Value *
 IpGraphToLlvmConverter::convert_extractelement(
     const rvsdg::SimpleOperation & op,
-    const std::vector<const variable *> & args,
+    const std::vector<const Variable *> & args,
     ::llvm::IRBuilder<> & builder)
 {
   JLM_ASSERT(is<extractelement_op>(op));
@@ -823,7 +823,7 @@ IpGraphToLlvmConverter::convert_extractelement(
 ::llvm::Value *
 IpGraphToLlvmConverter::convert(
     const shufflevector_op & op,
-    const std::vector<const variable *> & operands,
+    const std::vector<const Variable *> & operands,
     ::llvm::IRBuilder<> & builder)
 {
   auto v1 = Context_->value(operands[0]);
@@ -834,7 +834,7 @@ IpGraphToLlvmConverter::convert(
 ::llvm::Value *
 IpGraphToLlvmConverter::convert_insertelement(
     const rvsdg::SimpleOperation & op,
-    const std::vector<const variable *> & operands,
+    const std::vector<const Variable *> & operands,
     ::llvm::IRBuilder<> & builder)
 {
   JLM_ASSERT(is<insertelement_op>(op));
@@ -848,7 +848,7 @@ IpGraphToLlvmConverter::convert_insertelement(
 ::llvm::Value *
 IpGraphToLlvmConverter::convert_vectorunary(
     const rvsdg::SimpleOperation & op,
-    const std::vector<const variable *> & operands,
+    const std::vector<const Variable *> & operands,
     ::llvm::IRBuilder<> & builder)
 {
   JLM_ASSERT(is<vectorunary_op>(op));
@@ -859,7 +859,7 @@ IpGraphToLlvmConverter::convert_vectorunary(
 ::llvm::Value *
 IpGraphToLlvmConverter::convert_vectorbinary(
     const rvsdg::SimpleOperation & op,
-    const std::vector<const variable *> & operands,
+    const std::vector<const Variable *> & operands,
     ::llvm::IRBuilder<> & builder)
 {
   JLM_ASSERT(is<vectorbinary_op>(op));
@@ -870,7 +870,7 @@ IpGraphToLlvmConverter::convert_vectorbinary(
 ::llvm::Value *
 IpGraphToLlvmConverter::convert(
     const VectorSelectOperation &,
-    const std::vector<const variable *> & operands,
+    const std::vector<const Variable *> & operands,
     ::llvm::IRBuilder<> & builder)
 {
   auto c = Context_->value(operands[0]);
@@ -883,7 +883,7 @@ template<::llvm::Instruction::CastOps OPCODE>
 ::llvm::Value *
 IpGraphToLlvmConverter::convert_cast(
     const rvsdg::SimpleOperation & op,
-    const std::vector<const variable *> & operands,
+    const std::vector<const Variable *> & operands,
     ::llvm::IRBuilder<> & builder)
 {
   JLM_ASSERT(::llvm::Instruction::isCast(OPCODE));
@@ -913,7 +913,7 @@ IpGraphToLlvmConverter::convert_cast(
 ::llvm::Value *
 IpGraphToLlvmConverter::convert(
     const ExtractValue & op,
-    const std::vector<const variable *> & operands,
+    const std::vector<const Variable *> & operands,
     ::llvm::IRBuilder<> & builder)
 {
   std::vector<unsigned> indices(op.begin(), op.end());
@@ -923,7 +923,7 @@ IpGraphToLlvmConverter::convert(
 ::llvm::Value *
 IpGraphToLlvmConverter::convert(
     const malloc_op & op,
-    const std::vector<const variable *> & args,
+    const std::vector<const Variable *> & args,
     ::llvm::IRBuilder<> & builder)
 {
   JLM_ASSERT(args.size() == 1);
@@ -939,7 +939,7 @@ IpGraphToLlvmConverter::convert(
 ::llvm::Value *
 IpGraphToLlvmConverter::convert(
     const FreeOperation & op,
-    const std::vector<const variable *> & args,
+    const std::vector<const Variable *> & args,
     ::llvm::IRBuilder<> & builder)
 {
   auto & typeConverter = Context_->GetTypeConverter();
@@ -956,7 +956,7 @@ IpGraphToLlvmConverter::convert(
 ::llvm::Value *
 IpGraphToLlvmConverter::convert(
     const MemCpyNonVolatileOperation &,
-    const std::vector<const variable *> & operands,
+    const std::vector<const Variable *> & operands,
     ::llvm::IRBuilder<> & builder)
 {
   auto & destination = *Context_->value(operands[0]);
@@ -975,7 +975,7 @@ IpGraphToLlvmConverter::convert(
 ::llvm::Value *
 IpGraphToLlvmConverter::convert(
     const MemCpyVolatileOperation &,
-    const std::vector<const variable *> & operands,
+    const std::vector<const Variable *> & operands,
     ::llvm::IRBuilder<> & builder)
 {
   auto & destination = *Context_->value(operands[0]);
@@ -994,7 +994,7 @@ IpGraphToLlvmConverter::convert(
 ::llvm::Value *
 IpGraphToLlvmConverter::convert(
     const MemoryStateMergeOperation &,
-    const std::vector<const variable *> &,
+    const std::vector<const Variable *> &,
     ::llvm::IRBuilder<> &)
 {
   return nullptr;
@@ -1003,7 +1003,7 @@ IpGraphToLlvmConverter::convert(
 ::llvm::Value *
 IpGraphToLlvmConverter::convert(
     const MemoryStateSplitOperation &,
-    const std::vector<const variable *> &,
+    const std::vector<const Variable *> &,
     ::llvm::IRBuilder<> &)
 {
   return nullptr;
@@ -1012,7 +1012,7 @@ IpGraphToLlvmConverter::convert(
 ::llvm::Value *
 IpGraphToLlvmConverter::convert(
     const LambdaEntryMemoryStateSplitOperation &,
-    const std::vector<const variable *> &,
+    const std::vector<const Variable *> &,
     ::llvm::IRBuilder<> &)
 {
   return nullptr;
@@ -1021,7 +1021,7 @@ IpGraphToLlvmConverter::convert(
 ::llvm::Value *
 IpGraphToLlvmConverter::convert(
     const LambdaExitMemoryStateMergeOperation &,
-    const std::vector<const variable *> &,
+    const std::vector<const Variable *> &,
     ::llvm::IRBuilder<> &)
 {
   return nullptr;
@@ -1030,7 +1030,7 @@ IpGraphToLlvmConverter::convert(
 ::llvm::Value *
 IpGraphToLlvmConverter::convert(
     const CallEntryMemoryStateMergeOperation &,
-    const std::vector<const variable *> &,
+    const std::vector<const Variable *> &,
     ::llvm::IRBuilder<> &)
 {
   return nullptr;
@@ -1039,7 +1039,7 @@ IpGraphToLlvmConverter::convert(
 ::llvm::Value *
 IpGraphToLlvmConverter::convert(
     const CallExitMemoryStateSplitOperation &,
-    const std::vector<const variable *> &,
+    const std::vector<const Variable *> &,
     ::llvm::IRBuilder<> &)
 {
   return nullptr;
@@ -1048,7 +1048,7 @@ IpGraphToLlvmConverter::convert(
 ::llvm::Value *
 IpGraphToLlvmConverter::convert(
     const PointerToFunctionOperation &,
-    const std::vector<const variable *> & operands,
+    const std::vector<const Variable *> & operands,
     ::llvm::IRBuilder<> &)
 {
   return Context_->value(operands[0]);
@@ -1057,7 +1057,7 @@ IpGraphToLlvmConverter::convert(
 ::llvm::Value *
 IpGraphToLlvmConverter::convert(
     const FunctionToPointerOperation &,
-    const std::vector<const variable *> & operands,
+    const std::vector<const Variable *> & operands,
     ::llvm::IRBuilder<> &)
 {
   return Context_->value(operands[0]);
@@ -1067,7 +1067,7 @@ template<class OP>
 ::llvm::Value *
 IpGraphToLlvmConverter::convert(
     const rvsdg::SimpleOperation & op,
-    const std::vector<const variable *> & operands,
+    const std::vector<const Variable *> & operands,
     ::llvm::IRBuilder<> & builder)
 {
   JLM_ASSERT(is<OP>(op));
@@ -1077,7 +1077,7 @@ IpGraphToLlvmConverter::convert(
 ::llvm::Value *
 IpGraphToLlvmConverter::convert_operation(
     const rvsdg::SimpleOperation & op,
-    const std::vector<const variable *> & arguments,
+    const std::vector<const Variable *> & arguments,
     ::llvm::IRBuilder<> & builder)
 {
   if (is<IntegerAddOperation>(op))
@@ -1429,7 +1429,7 @@ IpGraphToLlvmConverter::convert_instruction(
     const llvm::ThreeAddressCode & tac,
     const llvm::cfg_node * node)
 {
-  std::vector<const variable *> operands;
+  std::vector<const Variable *> operands;
   for (size_t n = 0; n < tac.noperands(); n++)
     operands.push_back(tac.operand(n));
 
@@ -1445,7 +1445,7 @@ IpGraphToLlvmConverter::convert_tacs(const tacsvector_t & tacs)
   ::llvm::IRBuilder<> builder(Context_->llvm_module().getContext());
   for (const auto & tac : tacs)
   {
-    std::vector<const variable *> operands;
+    std::vector<const Variable *> operands;
     for (size_t n = 0; n < tac->noperands(); n++)
       operands.push_back(tac->operand(n));
 

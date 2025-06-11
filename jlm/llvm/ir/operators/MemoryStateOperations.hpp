@@ -114,7 +114,7 @@ public:
   }
 
   static std::unique_ptr<ThreeAddressCode>
-  Create(const std::vector<const variable *> & operands)
+  Create(const std::vector<const Variable *> & operands)
   {
     if (operands.empty())
       throw util::error("Insufficient number of operands.");

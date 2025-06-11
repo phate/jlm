@@ -23,7 +23,7 @@ class ThreeAddressCode;
 
 /** \brief Function argument
  */
-class argument final : public variable
+class argument final : public Variable
 {
 public:
   ~argument() override;
@@ -32,19 +32,19 @@ public:
       const std::string & name,
       std::shared_ptr<const jlm::rvsdg::Type> type,
       const attributeset & attributes)
-      : variable(std::move(type), name),
+      : Variable(std::move(type), name),
         attributes_(attributes)
   {}
 
   argument(const std::string & name, std::shared_ptr<const jlm::rvsdg::Type> type)
-      : variable(std::move(type), name)
+      : Variable(std::move(type), name)
   {}
 
   argument(
       const std::string & name,
       std::unique_ptr<jlm::rvsdg::Type> type,
       const attributeset & attributes)
-      : variable(std::move(type), name),
+      : Variable(std::move(type), name),
         attributes_(attributes)
   {}
 
@@ -131,7 +131,7 @@ public:
     return results_.size();
   }
 
-  const variable *
+  const Variable *
   result(size_t index) const
   {
     JLM_ASSERT(index < nresults());
@@ -139,19 +139,19 @@ public:
   }
 
   inline void
-  append_result(const variable * v)
+  append_result(const Variable * v)
   {
     results_.push_back(v);
   }
 
-  const std::vector<const variable *>
+  const std::vector<const Variable *>
   results() const noexcept
   {
     return results_;
   }
 
 private:
-  std::vector<const variable *> results_;
+  std::vector<const Variable *> results_;
 };
 
 class ControlFlowGraph final

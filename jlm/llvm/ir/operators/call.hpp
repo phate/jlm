@@ -400,14 +400,14 @@ public:
 
   static std::unique_ptr<ThreeAddressCode>
   create(
-      const variable * function,
+      const Variable * function,
       std::shared_ptr<const rvsdg::FunctionType> functionType,
-      const std::vector<const variable *> & arguments)
+      const std::vector<const Variable *> & arguments)
   {
     CheckFunctionInputType(function->type());
 
     CallOperation op(std::move(functionType));
-    std::vector<const variable *> operands({ function });
+    std::vector<const Variable *> operands({ function });
     operands.insert(operands.end(), arguments.begin(), arguments.end());
     return ThreeAddressCode::create(op, operands);
   }
