@@ -80,14 +80,12 @@ is(const llvm::Variable * variable) noexcept
   return dynamic_cast<const T *>(variable) != nullptr;
 }
 
-/* top level variable */
-
-class gblvariable : public Variable
+class GlobalVariable : public Variable
 {
 public:
-  virtual ~gblvariable();
+  ~GlobalVariable() noexcept override;
 
-  inline gblvariable(std::shared_ptr<const jlm::rvsdg::Type> type, const std::string & name)
+  GlobalVariable(std::shared_ptr<const jlm::rvsdg::Type> type, const std::string & name)
       : Variable(std::move(type), name)
   {}
 };

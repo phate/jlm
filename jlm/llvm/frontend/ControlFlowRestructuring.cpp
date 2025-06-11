@@ -66,7 +66,7 @@ reinsert_tcloop(const tcloop & l)
   cfg.remove_node(l.replacement);
 }
 
-static const tacvariable *
+static const ThreeAddressCodeVariable *
 create_pvariable(BasicBlock & bb, std::shared_ptr<const rvsdg::ControlType> type)
 {
   static size_t c = 0;
@@ -74,7 +74,7 @@ create_pvariable(BasicBlock & bb, std::shared_ptr<const rvsdg::ControlType> type
   return bb.insert_before_branch(UndefValueOperation::Create(std::move(type), name))->result(0);
 }
 
-static const tacvariable *
+static const ThreeAddressCodeVariable *
 create_qvariable(BasicBlock & bb, std::shared_ptr<const rvsdg::ControlType> type)
 {
   static size_t c = 0;
@@ -82,7 +82,7 @@ create_qvariable(BasicBlock & bb, std::shared_ptr<const rvsdg::ControlType> type
   return bb.append_last(UndefValueOperation::Create(std::move(type), name))->result(0);
 }
 
-static const tacvariable *
+static const ThreeAddressCodeVariable *
 create_tvariable(BasicBlock & bb, std::shared_ptr<const rvsdg::ControlType> type)
 {
   static size_t c = 0;
@@ -90,7 +90,7 @@ create_tvariable(BasicBlock & bb, std::shared_ptr<const rvsdg::ControlType> type
   return bb.insert_before_branch(UndefValueOperation::Create(std::move(type), name))->result(0);
 }
 
-static const tacvariable *
+static const ThreeAddressCodeVariable *
 create_rvariable(BasicBlock & bb)
 {
   static size_t c = 0;
@@ -109,7 +109,7 @@ append_branch(BasicBlock * bb, const Variable * operand)
 }
 
 static inline void
-append_constant(BasicBlock * bb, const tacvariable * result, size_t value)
+append_constant(BasicBlock * bb, const ThreeAddressCodeVariable * result, size_t value)
 {
   JLM_ASSERT(dynamic_cast<const rvsdg::ControlType *>(&result->type()));
   auto nalternatives = static_cast<const rvsdg::ControlType *>(&result->type())->nalternatives();
@@ -120,7 +120,10 @@ append_constant(BasicBlock * bb, const tacvariable * result, size_t value)
 }
 
 static inline void
-restructure_loop_entry(const sccstructure & s, BasicBlock * new_ne, const tacvariable * ev)
+restructure_loop_entry(
+    const sccstructure & s,
+    BasicBlock * new_ne,
+    const ThreeAddressCodeVariable * ev)
 {
   size_t n = 0;
   std::unordered_map<llvm::ControlFlowGraphNode *, size_t> indices;
@@ -148,8 +151,8 @@ restructure_loop_exit(
     BasicBlock * new_nr,
     BasicBlock * new_nx,
     ControlFlowGraphNode * exit,
-    const tacvariable * rv,
-    const tacvariable * xv)
+    const ThreeAddressCodeVariable * rv,
+    const ThreeAddressCodeVariable * xv)
 {
   /*
     It could be that an SCC has no exit edge. This can arise when the input CFG contains a
@@ -195,8 +198,8 @@ static inline void
 restructure_loop_repetition(
     const sccstructure & s,
     ControlFlowGraphNode * new_nr,
-    const tacvariable * ev,
-    const tacvariable * rv)
+    const ThreeAddressCodeVariable * ev,
+    const ThreeAddressCodeVariable * rv)
 {
   size_t n = 0;
   std::unordered_map<llvm::ControlFlowGraphNode *, size_t> indices;
@@ -260,7 +263,7 @@ restructure_loops(
     new_nr->add_outedge(new_nx);
     new_nr->add_outedge(new_ne);
 
-    const tacvariable * ev = nullptr;
+    const ThreeAddressCodeVariable * ev = nullptr;
     if (sccstruct->nenodes() > 1)
     {
       auto bb = find_tvariable_bb(entry);
@@ -269,7 +272,7 @@ restructure_loops(
 
     auto rv = create_rvariable(*new_ne);
 
-    const tacvariable * xv = nullptr;
+    const ThreeAddressCodeVariable * xv = nullptr;
     if (sccstruct->nxnodes() > 1)
       xv = create_qvariable(*new_ne, rvsdg::ControlType::Create(sccstruct->nxnodes()));
 

@@ -265,8 +265,8 @@ IpGraphToLlvmConverter::convert(
 
     if (rvsdg::is<VariableArgumentType>(argument->type()))
     {
-      JLM_ASSERT(is<tacvariable>(argument));
-      auto valist = dynamic_cast<const llvm::tacvariable *>(argument)->tac();
+      JLM_ASSERT(is<ThreeAddressCodeVariable>(argument));
+      auto valist = dynamic_cast<const llvm::ThreeAddressCodeVariable *>(argument)->tac();
       JLM_ASSERT(is<valist_op>(valist->operation()));
       for (size_t n = 0; n < valist->noperands(); n++)
         operands.push_back(Context_->value(valist->operand(n)));
@@ -1459,8 +1459,8 @@ IpGraphToLlvmConverter::convert_tacs(const tacsvector_t & tacs)
 static const llvm::ThreeAddressCode *
 get_match(const llvm::ThreeAddressCode * branch)
 {
-  JLM_ASSERT(is<tacvariable>(branch->operand(0)));
-  auto tv = static_cast<const tacvariable *>(branch->operand(0));
+  JLM_ASSERT(is<ThreeAddressCodeVariable>(branch->operand(0)));
+  auto tv = static_cast<const ThreeAddressCodeVariable *>(branch->operand(0));
   return tv->tac();
 }
 

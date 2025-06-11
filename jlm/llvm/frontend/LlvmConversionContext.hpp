@@ -189,12 +189,12 @@ public:
   }
 
   inline void
-  set_node(ipgraph_node * node) noexcept
+  set_node(InterProceduralGraphNode * node) noexcept
   {
     node_ = node;
   }
 
-  inline ipgraph_node *
+  inline InterProceduralGraphNode *
   node() const noexcept
   {
     return node_;
@@ -209,7 +209,7 @@ public:
 private:
   InterProceduralGraphModule & module_;
   basic_block_map bbmap_;
-  ipgraph_node * node_;
+  InterProceduralGraphNode * node_;
   const llvm::Variable * result_;
   llvm::Variable * iostate_;
   llvm::Variable * memory_state_;

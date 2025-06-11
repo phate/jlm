@@ -31,7 +31,7 @@ emit_tacs(const tacsvector_t & tacs)
 }
 
 static std::string
-emit_function_node(const ipgraph_node & clg_node)
+emit_function_node(const InterProceduralGraphNode & clg_node)
 {
   JLM_ASSERT(dynamic_cast<const function_node *>(&clg_node));
   auto & node = *static_cast<const function_node *>(&clg_node);
@@ -65,7 +65,7 @@ emit_function_node(const ipgraph_node & clg_node)
 }
 
 static std::string
-emit_data_node(const ipgraph_node & clg_node)
+emit_data_node(const InterProceduralGraphNode & clg_node)
 {
   JLM_ASSERT(dynamic_cast<const data_node *>(&clg_node));
   auto & node = *static_cast<const data_node *>(&clg_node);
@@ -81,8 +81,10 @@ emit_data_node(const ipgraph_node & clg_node)
 std::string
 to_str(const InterProceduralGraph & clg)
 {
-  static std::unordered_map<std::type_index, std::function<std::string(const ipgraph_node &)>> map(
-      { { typeid(function_node), emit_function_node }, { typeid(data_node), emit_data_node } });
+  static std::
+      unordered_map<std::type_index, std::function<std::string(const InterProceduralGraphNode &)>>
+          map({ { typeid(function_node), emit_function_node },
+                { typeid(data_node), emit_data_node } });
 
   std::string str;
   for (const auto & node : clg)

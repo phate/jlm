@@ -1048,11 +1048,11 @@ public:
   }
 
   static std::unique_ptr<llvm::ThreeAddressCode>
-  Create(std::unique_ptr<tacvariable> result)
+  Create(std::unique_ptr<ThreeAddressCodeVariable> result)
   {
     auto & type = result->Type();
 
-    std::vector<std::unique_ptr<tacvariable>> results;
+    std::vector<std::unique_ptr<ThreeAddressCodeVariable>> results;
     results.push_back(std::move(result));
 
     UndefValueOperation operation(type);

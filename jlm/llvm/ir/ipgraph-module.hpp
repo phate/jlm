@@ -17,13 +17,13 @@ namespace jlm::llvm
 
 /* global value */
 
-class gblvalue final : public gblvariable
+class gblvalue final : public GlobalVariable
 {
 public:
   virtual ~gblvalue();
 
   inline gblvalue(data_node * node)
-      : gblvariable(node->Type(), node->name()),
+      : GlobalVariable(node->Type(), node->name()),
         node_(node)
   {}
 
@@ -145,7 +145,7 @@ public:
   }
 
   const llvm::Variable *
-  variable(const ipgraph_node * node) const noexcept
+  variable(const InterProceduralGraphNode * node) const noexcept
   {
     auto it = functions_.find(node);
     return it != functions_.end() ? it->second : nullptr;
@@ -222,7 +222,7 @@ private:
   const jlm::util::FilePath source_filename_;
   std::unordered_set<const llvm::gblvalue *> globals_;
   std::unordered_set<std::unique_ptr<llvm::Variable>> variables_;
-  std::unordered_map<const ipgraph_node *, const llvm::Variable *> functions_;
+  std::unordered_map<const InterProceduralGraphNode *, const llvm::Variable *> functions_;
   std::vector<std::unique_ptr<StructType::Declaration>> StructTypeDeclarations_;
 };
 
