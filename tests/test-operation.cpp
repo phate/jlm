@@ -15,7 +15,7 @@ GraphImport::Copy(rvsdg::Region & region, rvsdg::StructuralInput *)
 }
 
 GraphExport &
-GraphExport::Copy(rvsdg::output & origin, rvsdg::StructuralOutput * output)
+GraphExport::Copy(rvsdg::Output & origin, rvsdg::StructuralOutput * output)
 {
   JLM_ASSERT(output == nullptr);
   return GraphExport::Create(origin, Name());
@@ -32,13 +32,13 @@ unary_op::operator==(const Operation & other) const noexcept
 }
 
 rvsdg::unop_reduction_path_t
-unary_op::can_reduce_operand(const rvsdg::output *) const noexcept
+unary_op::can_reduce_operand(const rvsdg::Output *) const noexcept
 {
   return rvsdg::unop_reduction_none;
 }
 
-rvsdg::output *
-unary_op::reduce_operand(rvsdg::unop_reduction_path_t, rvsdg::output *) const
+rvsdg::Output *
+unary_op::reduce_operand(rvsdg::unop_reduction_path_t, rvsdg::Output *) const
 {
   return nullptr;
 }
@@ -66,13 +66,13 @@ binary_op::operator==(const Operation & other) const noexcept
 }
 
 rvsdg::binop_reduction_path_t
-binary_op::can_reduce_operand_pair(const rvsdg::output *, const rvsdg::output *) const noexcept
+binary_op::can_reduce_operand_pair(const rvsdg::Output *, const rvsdg::Output *) const noexcept
 {
   return rvsdg::binop_reduction_none;
 }
 
-rvsdg::output *
-binary_op::reduce_operand_pair(rvsdg::binop_reduction_path_t, rvsdg::output *, rvsdg::output *)
+rvsdg::Output *
+binary_op::reduce_operand_pair(rvsdg::binop_reduction_path_t, rvsdg::Output *, rvsdg::Output *)
     const
 {
   return nullptr;
@@ -190,7 +190,7 @@ structural_node::copy(rvsdg::Region * parent, rvsdg::SubstitutionMap & smap) con
 }
 
 StructuralNodeInput &
-structural_node::AddInput(rvsdg::output & origin)
+structural_node::AddInput(rvsdg::Output & origin)
 {
   auto input =
       std::unique_ptr<StructuralNodeInput>(new StructuralNodeInput(*this, origin, origin.Type()));
@@ -198,7 +198,7 @@ structural_node::AddInput(rvsdg::output & origin)
 }
 
 StructuralNodeInput &
-structural_node::AddInputWithArguments(rvsdg::output & origin)
+structural_node::AddInputWithArguments(rvsdg::Output & origin)
 {
   auto & input = AddInput(origin);
   for (size_t n = 0; n < nsubregions(); n++)
@@ -218,7 +218,7 @@ structural_node::AddOutput(std::shared_ptr<const rvsdg::Type> type)
 }
 
 StructuralNodeOutput &
-structural_node::AddOutputWithResults(const std::vector<rvsdg::output *> & origins)
+structural_node::AddOutputWithResults(const std::vector<rvsdg::Output *> & origins)
 {
   if (origins.size() != nsubregions())
     throw util::error("Insufficient number of origins.");
@@ -249,7 +249,7 @@ StructuralNodeArgument::Copy(rvsdg::Region & region, rvsdg::StructuralInput * in
 StructuralNodeResult::~StructuralNodeResult() noexcept = default;
 
 StructuralNodeResult &
-StructuralNodeResult::Copy(rvsdg::output & origin, rvsdg::StructuralOutput * output)
+StructuralNodeResult::Copy(rvsdg::Output & origin, rvsdg::StructuralOutput * output)
 {
   auto structuralNodeOutput = util::AssertedCast<StructuralNodeOutput>(output);
   return structuralNodeOutput != nullptr ? Create(origin, *structuralNodeOutput) : Create(origin);

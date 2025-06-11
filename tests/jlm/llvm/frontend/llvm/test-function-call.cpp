@@ -42,11 +42,11 @@ test_function_call()
     return module;
   };
 
-  auto verify = [](const jlm::llvm::ipgraph_module & module)
+  auto verify = [](const jlm::llvm::InterProceduralGraphModule & module)
   {
     using namespace jlm::llvm;
 
-    jlm::llvm::cfg * cfg = nullptr;
+    ControlFlowGraph * cfg = nullptr;
     for (auto & node : module.ipgraph())
     {
       if (node.name() == "caller")
@@ -56,7 +56,7 @@ test_function_call()
       }
     }
 
-    auto bb = dynamic_cast<const basic_block *>(cfg->entry()->OutEdge(0)->sink());
+    auto bb = dynamic_cast<const BasicBlock *>(cfg->entry()->OutEdge(0)->sink());
     assert(is<CallOperation>(*std::next(bb->rbegin(), 2)));
   };
 
@@ -99,11 +99,11 @@ test_malloc_call()
     return module;
   };
 
-  auto verify = [](const jlm::llvm::ipgraph_module & module)
+  auto verify = [](const jlm::llvm::InterProceduralGraphModule & module)
   {
     using namespace jlm::llvm;
 
-    jlm::llvm::cfg * cfg = nullptr;
+    ControlFlowGraph * cfg = nullptr;
     for (auto & node : module.ipgraph())
     {
       if (node.name() == "caller")
@@ -113,7 +113,7 @@ test_malloc_call()
       }
     }
 
-    auto bb = dynamic_cast<const basic_block *>(cfg->entry()->OutEdge(0)->sink());
+    auto bb = dynamic_cast<const BasicBlock *>(cfg->entry()->OutEdge(0)->sink());
     assert(is<MemoryStateMergeOperation>(*std::next(bb->rbegin())));
     assert(is<malloc_op>((*std::next(bb->rbegin(), 2))));
   };
@@ -155,11 +155,11 @@ test_free_call()
     return module;
   };
 
-  auto verify = [](const jlm::llvm::ipgraph_module & module)
+  auto verify = [](const jlm::llvm::InterProceduralGraphModule & module)
   {
     using namespace jlm::llvm;
 
-    jlm::llvm::cfg * cfg = nullptr;
+    ControlFlowGraph * cfg = nullptr;
     for (auto & node : module.ipgraph())
     {
       if (node.name() == "caller")
@@ -169,7 +169,7 @@ test_free_call()
       }
     }
 
-    auto bb = dynamic_cast<const basic_block *>(cfg->entry()->OutEdge(0)->sink());
+    auto bb = dynamic_cast<const BasicBlock *>(cfg->entry()->OutEdge(0)->sink());
     assert(is<AssignmentOperation>(*bb->rbegin()));
     assert(is<AssignmentOperation>(*std::next(bb->rbegin())));
     assert(is<FreeOperation>(*std::next(bb->rbegin(), 2)));

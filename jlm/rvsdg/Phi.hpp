@@ -77,7 +77,7 @@ public:
      * The input port into the phi node that supplies the value
      * of the context variable bound into the phi construct.
      */
-    rvsdg::input * input;
+    rvsdg::Input * input;
 
     /**
      * \brief Access to bound object in subregion.
@@ -86,7 +86,7 @@ public:
      * from inside the region contained in the phi node. This
      * evaluates to the value bound into the phi.
      */
-    rvsdg::output * inner;
+    rvsdg::Output * inner;
   };
 
   /**
@@ -107,7 +107,7 @@ public:
      * handle to refer to it (this can be either an object referring to itself
      * or referring to another mutually recursive object).
      */
-    rvsdg::output * recref;
+    rvsdg::Output * recref;
 
     /**
      * \brief Definition result of a variable within the phi region.
@@ -115,7 +115,7 @@ public:
      * This is a result slot in the phi region and represents the finalized
      * definition of a variable with the phi region.
      */
-    rvsdg::input * result;
+    rvsdg::Input * result;
 
     /**
      * \brief Output of phi region representing externally available definition.
@@ -123,7 +123,7 @@ public:
      * This output of the phi node allows to externally refer to the objects
      * defined in the phi.
      */
-    rvsdg::output * output;
+    rvsdg::Output * output;
   };
 
   [[nodiscard]] const PhiOperation &
@@ -144,7 +144,7 @@ public:
    * Its value can now be referenced from within the phi region.
    */
   ContextVar
-  AddContextVar(jlm::rvsdg::output & origin);
+  AddContextVar(jlm::rvsdg::Output & origin);
 
   /**
    * \brief Removes context variables from phi node
@@ -191,7 +191,7 @@ public:
    * argument.
    */
   [[nodiscard]] ContextVar
-  MapInputContextVar(const rvsdg::input & input) const noexcept;
+  MapInputContextVar(const rvsdg::Input & input) const noexcept;
 
   /**
    * \brief Attempts to map bound variable reference to context variable.
@@ -212,7 +212,7 @@ public:
    * variables, see \ref MapArgumentFixVar.
    */
   [[nodiscard]] std::optional<ContextVar>
-  MapArgumentContextVar(const rvsdg::output & argument) const noexcept;
+  MapArgumentContextVar(const rvsdg::Output & argument) const noexcept;
 
   /**
    * \brief Removes fixpoint variables from the phi node
@@ -260,7 +260,7 @@ public:
    * variables, see \ref MapArgumentContextVar.
    */
   [[nodiscard]] std::optional<FixVar>
-  MapArgumentFixVar(const rvsdg::output & argument) const noexcept;
+  MapArgumentFixVar(const rvsdg::Output & argument) const noexcept;
 
   /**
    * \brief Maps region result to fixpoint variable.
@@ -278,7 +278,7 @@ public:
    * Maps result of the region to a fixpoint variable.
    */
   [[nodiscard]] FixVar
-  MapResultFixVar(const rvsdg::input & result) const noexcept;
+  MapResultFixVar(const rvsdg::Input & result) const noexcept;
 
   /**
    * \brief Maps output to fixpoint variable.
@@ -295,7 +295,7 @@ public:
    * Maps output of the phi node to a fixpoint variable.
    */
   [[nodiscard]] FixVar
-  MapOutputFixVar(const rvsdg::output & output) const noexcept;
+  MapOutputFixVar(const rvsdg::Output & output) const noexcept;
 
   /**
    * \brief Maps region argument to its function.
@@ -314,7 +314,7 @@ public:
    * Maps output of the phi node to either a fixpoint or context variable.
    */
   [[nodiscard]] std::variant<FixVar, ContextVar>
-  MapArgument(const rvsdg::output & argument) const noexcept;
+  MapArgument(const rvsdg::Output & argument) const noexcept;
 
   rvsdg::Region *
   subregion() const noexcept
@@ -361,7 +361,7 @@ public:
   }
 
   PhiNode::ContextVar
-  AddContextVar(jlm::rvsdg::output & origin);
+  AddContextVar(jlm::rvsdg::Output & origin);
 
   PhiNode::FixVar
   AddFixVar(std::shared_ptr<const jlm::rvsdg::Type> type);

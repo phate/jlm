@@ -93,7 +93,7 @@ GetOrCreateTypeGraphNode(const rvsdg::Type & type, util::Graph & typeGraph)
  * @param rvsdgInput the RVSDG input
  */
 static void
-AttachNodeInput(util::Port & inputPort, const rvsdg::input & rvsdgInput)
+AttachNodeInput(util::Port & inputPort, const rvsdg::Input & rvsdgInput)
 {
   auto & graph = inputPort.GetGraph();
   inputPort.SetProgramObject(rvsdgInput);
@@ -120,7 +120,7 @@ AttachNodeInput(util::Port & inputPort, const rvsdg::input & rvsdgInput)
 static void
 AttachNodeOutput(
     util::Port & outputPort,
-    const rvsdg::output & rvsdgOutput,
+    const rvsdg::Output & rvsdgOutput,
     util::Graph * typeGraph)
 {
   outputPort.SetProgramObject(rvsdgOutput);

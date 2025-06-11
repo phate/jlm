@@ -13,27 +13,25 @@
 namespace jlm::llvm
 {
 
-/* basic block */
-
-class basic_block final : public cfg_node
+class BasicBlock final : public cfg_node
 {
 public:
-  virtual ~basic_block();
+  ~BasicBlock() noexcept override;
 
 private:
-  basic_block(llvm::cfg & cfg)
+  explicit BasicBlock(ControlFlowGraph & cfg)
       : cfg_node(cfg)
   {}
 
-  basic_block(const basic_block &) = delete;
+  BasicBlock(const BasicBlock &) = delete;
 
-  basic_block(basic_block &&) = delete;
+  BasicBlock(BasicBlock &&) = delete;
 
-  basic_block &
-  operator=(const basic_block &) = delete;
+  BasicBlock &
+  operator=(const BasicBlock &) = delete;
 
-  basic_block &
-  operator=(basic_block &&) = delete;
+  BasicBlock &
+  operator=(BasicBlock &&) = delete;
 
 public:
   const taclist &
@@ -78,13 +76,13 @@ public:
     return tacs_.ntacs();
   }
 
-  inline tac *
+  [[nodiscard]] ThreeAddressCode *
   first() const noexcept
   {
     return tacs_.first();
   }
 
-  inline tac *
+  [[nodiscard]] ThreeAddressCode *
   last() const noexcept
   {
     return tacs_.last();
@@ -102,8 +100,8 @@ public:
     tacs_.drop_last();
   }
 
-  llvm::tac *
-  append_first(std::unique_ptr<llvm::tac> tac)
+  llvm::ThreeAddressCode *
+  append_first(std::unique_ptr<llvm::ThreeAddressCode> tac)
   {
     tacs_.append_first(std::move(tac));
     return tacs_.first();
@@ -123,8 +121,8 @@ public:
     tacs_.append_first(tl);
   }
 
-  llvm::tac *
-  append_last(std::unique_ptr<llvm::tac> tac)
+  llvm::ThreeAddressCode *
+  append_last(std::unique_ptr<llvm::ThreeAddressCode> tac)
   {
     tacs_.append_last(std::move(tac));
     return tacs_.last();
@@ -138,8 +136,8 @@ public:
     tacs.clear();
   }
 
-  llvm::tac *
-  insert_before(const taclist::const_iterator & it, std::unique_ptr<llvm::tac> tac)
+  llvm::ThreeAddressCode *
+  insert_before(const taclist::const_iterator & it, std::unique_ptr<llvm::ThreeAddressCode> tac)
   {
     return tacs_.insert_before(it, std::move(tac));
   }
@@ -161,14 +159,14 @@ public:
   bool
   HasSsaPhiOperation() const;
 
-  llvm::tac *
-  insert_before_branch(std::unique_ptr<llvm::tac> tac);
+  llvm::ThreeAddressCode *
+  insert_before_branch(std::unique_ptr<llvm::ThreeAddressCode> tac);
 
   void
   insert_before_branch(tacsvector_t & tv);
 
-  static basic_block *
-  create(llvm::cfg & cfg);
+  static BasicBlock *
+  create(ControlFlowGraph & cfg);
 
 private:
   taclist tacs_;

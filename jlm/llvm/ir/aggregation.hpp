@@ -13,14 +13,14 @@
 namespace jlm::llvm
 {
 
-class cfg;
+class ControlFlowGraph;
 
-class aggnode
+class AggregationNode
 {
   class iterator final
   {
   public:
-    inline iterator(std::vector<std::unique_ptr<aggnode>>::iterator it)
+    inline iterator(std::vector<std::unique_ptr<AggregationNode>>::iterator it)
         : it_(std::move(it))
     {}
 
@@ -51,26 +51,26 @@ class aggnode
       return !(*this == other);
     }
 
-    inline aggnode &
+    inline AggregationNode &
     operator*() const noexcept
     {
       return *it_->get();
     }
 
-    inline aggnode *
+    inline AggregationNode *
     operator->() const noexcept
     {
       return it_->get();
     }
 
   private:
-    std::vector<std::unique_ptr<aggnode>>::iterator it_;
+    std::vector<std::unique_ptr<AggregationNode>>::iterator it_;
   };
 
   class const_iterator final
   {
   public:
-    inline const_iterator(std::vector<std::unique_ptr<aggnode>>::const_iterator it)
+    inline const_iterator(std::vector<std::unique_ptr<AggregationNode>>::const_iterator it)
         : it_(std::move(it))
     {}
 
@@ -101,39 +101,39 @@ class aggnode
       return !(*this == other);
     }
 
-    inline aggnode &
+    inline AggregationNode &
     operator*() const noexcept
     {
       return *it_->get();
     }
 
-    inline aggnode *
+    inline AggregationNode *
     operator->() const noexcept
     {
       return it_->get();
     }
 
   private:
-    std::vector<std::unique_ptr<aggnode>>::const_iterator it_;
+    std::vector<std::unique_ptr<AggregationNode>>::const_iterator it_;
   };
 
 public:
-  virtual ~aggnode();
+  virtual ~AggregationNode() noexcept;
 
-  aggnode()
+  AggregationNode()
       : index_(0),
         parent_(nullptr)
   {}
 
-  aggnode(const aggnode & other) = delete;
+  AggregationNode(const AggregationNode & other) = delete;
 
-  aggnode(aggnode && other) = delete;
+  AggregationNode(AggregationNode && other) = delete;
 
-  aggnode &
-  operator=(const aggnode & other) = delete;
+  AggregationNode &
+  operator=(const AggregationNode & other) = delete;
 
-  aggnode &
-  operator=(aggnode && other) = delete;
+  AggregationNode &
+  operator=(AggregationNode && other) = delete;
 
   inline iterator
   begin() noexcept
@@ -166,7 +166,7 @@ public:
   }
 
   inline void
-  add_child(std::unique_ptr<aggnode> child)
+  add_child(std::unique_ptr<AggregationNode> child)
   {
     size_t index = nchildren();
     children_.emplace_back(std::move(child));
@@ -174,21 +174,21 @@ public:
     children_[index]->index_ = index;
   }
 
-  inline aggnode *
+  inline AggregationNode *
   child(size_t n) const noexcept
   {
     JLM_ASSERT(n < nchildren());
     return children_[n].get();
   }
 
-  aggnode *
+  AggregationNode *
   parent() noexcept
   {
     JLM_ASSERT(parent_->child(index_) == this);
     return parent_;
   }
 
-  const aggnode *
+  const AggregationNode *
   parent() const noexcept
   {
     JLM_ASSERT(parent_->child(index_) == this);
@@ -238,7 +238,7 @@ public:
 
   */
   static void
-  normalize(aggnode & node);
+  normalize(AggregationNode & node);
 
 private:
   void
@@ -248,31 +248,29 @@ private:
   }
 
   size_t index_;
-  aggnode * parent_;
-  std::vector<std::unique_ptr<aggnode>> children_;
+  AggregationNode * parent_;
+  std::vector<std::unique_ptr<AggregationNode>> children_;
 };
 
 template<class T>
 static inline bool
-is(const aggnode * node)
+is(const AggregationNode * node)
 {
   static_assert(
-      std::is_base_of<aggnode, T>::value,
-      "Template parameter T must be derived from jlm::aggnode");
+      std::is_base_of<AggregationNode, T>::value,
+      "Template parameter T must be derived from jlm::AggregationNode");
 
   return dynamic_cast<const T *>(node) != nullptr;
 }
 
-/* entry node class */
-
-class entryaggnode final : public aggnode
+class EntryAggregationNode final : public AggregationNode
 {
   class constiterator;
 
 public:
-  virtual ~entryaggnode();
+  ~EntryAggregationNode() noexcept override;
 
-  entryaggnode(const std::vector<llvm::argument *> & arguments)
+  explicit EntryAggregationNode(const std::vector<llvm::argument *> & arguments)
       : arguments_(arguments)
   {}
 
@@ -298,17 +296,17 @@ public:
   virtual std::string
   debug_string() const override;
 
-  static std::unique_ptr<aggnode>
+  static std::unique_ptr<AggregationNode>
   create(const std::vector<llvm::argument *> & arguments)
   {
-    return std::make_unique<entryaggnode>(arguments);
+    return std::make_unique<EntryAggregationNode>(arguments);
   }
 
 private:
   std::vector<llvm::argument *> arguments_;
 };
 
-class entryaggnode::constiterator final
+class EntryAggregationNode::constiterator final
 {
 public:
   using iterator_category = std::forward_iterator_tag;
@@ -364,16 +362,14 @@ private:
   std::vector<llvm::argument *>::const_iterator it_;
 };
 
-/* exit node class */
-
-class exitaggnode final : public aggnode
+class ExitAggregationNode final : public AggregationNode
 {
-  typedef std::vector<const variable *>::const_iterator const_iterator;
+  typedef std::vector<const Variable *>::const_iterator const_iterator;
 
 public:
-  virtual ~exitaggnode();
+  ~ExitAggregationNode() noexcept override;
 
-  inline exitaggnode(const std::vector<const variable *> & results)
+  explicit ExitAggregationNode(const std::vector<const Variable *> & results)
       : results_(results)
   {}
 
@@ -389,7 +385,7 @@ public:
     return results_.end();
   }
 
-  const variable *
+  const Variable *
   result(size_t index) const noexcept
   {
     JLM_ASSERT(index < nresults());
@@ -405,106 +401,96 @@ public:
   virtual std::string
   debug_string() const override;
 
-  static inline std::unique_ptr<aggnode>
-  create(const std::vector<const variable *> & results)
+  static inline std::unique_ptr<AggregationNode>
+  create(const std::vector<const Variable *> & results)
   {
-    return std::make_unique<exitaggnode>(results);
+    return std::make_unique<ExitAggregationNode>(results);
   }
 
 private:
-  std::vector<const variable *> results_;
+  std::vector<const Variable *> results_;
 };
 
-/* basic block node class */
-
-class blockaggnode final : public aggnode
+class BasicBlockAggregationNode final : public AggregationNode
 {
 public:
-  virtual ~blockaggnode();
+  ~BasicBlockAggregationNode() noexcept override;
 
-  blockaggnode()
-  {}
+  BasicBlockAggregationNode() = default;
 
-  inline blockaggnode(taclist && bb)
+  explicit BasicBlockAggregationNode(taclist && bb)
       : bb_(std::move(bb))
   {}
 
-  virtual std::string
+  std::string
   debug_string() const override;
 
-  inline const taclist &
+  const taclist &
   tacs() const noexcept
   {
     return bb_;
   }
 
-  static std::unique_ptr<aggnode>
+  static std::unique_ptr<AggregationNode>
   create()
   {
-    return std::make_unique<blockaggnode>();
+    return std::make_unique<BasicBlockAggregationNode>();
   }
 
-  static inline std::unique_ptr<aggnode>
+  static std::unique_ptr<AggregationNode>
   create(taclist && bb)
   {
-    return std::make_unique<blockaggnode>(std::move(bb));
+    return std::make_unique<BasicBlockAggregationNode>(std::move(bb));
   }
 
 private:
   taclist bb_;
 };
 
-/* linear node class */
-
-class linearaggnode final : public aggnode
+class LinearAggregationNode final : public AggregationNode
 {
 public:
-  virtual ~linearaggnode();
+  ~LinearAggregationNode() noexcept override;
 
-  inline linearaggnode(std::unique_ptr<aggnode> n1, std::unique_ptr<aggnode> n2)
+  LinearAggregationNode(std::unique_ptr<AggregationNode> n1, std::unique_ptr<AggregationNode> n2)
   {
     add_child(std::move(n1));
     add_child(std::move(n2));
   }
 
-  virtual std::string
+  std::string
   debug_string() const override;
 
-  static inline std::unique_ptr<aggnode>
-  create(std::unique_ptr<aggnode> n1, std::unique_ptr<aggnode> n2)
+  static std::unique_ptr<AggregationNode>
+  create(std::unique_ptr<AggregationNode> n1, std::unique_ptr<AggregationNode> n2)
   {
-    return std::make_unique<linearaggnode>(std::move(n1), std::move(n2));
+    return std::make_unique<LinearAggregationNode>(std::move(n1), std::move(n2));
   }
 };
 
-/* branch node class */
-
-class branchaggnode final : public aggnode
+class BranchAggregationNode final : public AggregationNode
 {
 public:
-  virtual ~branchaggnode();
+  ~BranchAggregationNode() noexcept override;
 
-  inline branchaggnode()
-  {}
+  BranchAggregationNode() = default;
 
   virtual std::string
   debug_string() const override;
 
-  static inline std::unique_ptr<aggnode>
+  static inline std::unique_ptr<AggregationNode>
   create()
   {
-    return std::make_unique<branchaggnode>();
+    return std::make_unique<BranchAggregationNode>();
   }
 };
 
-/* loop node class */
-
-class loopaggnode final : public aggnode
+class LoopAggregationNode final : public AggregationNode
 {
 public:
-  virtual ~loopaggnode();
+  ~LoopAggregationNode() noexcept override;
 
-  inline loopaggnode(std::unique_ptr<aggnode> body)
+  explicit LoopAggregationNode(std::unique_ptr<AggregationNode> body)
   {
     add_child(std::move(body));
   }
@@ -512,10 +498,10 @@ public:
   virtual std::string
   debug_string() const override;
 
-  static inline std::unique_ptr<aggnode>
-  create(std::unique_ptr<aggnode> body)
+  static inline std::unique_ptr<AggregationNode>
+  create(std::unique_ptr<AggregationNode> body)
   {
-    return std::make_unique<loopaggnode>(std::move(body));
+    return std::make_unique<LoopAggregationNode>(std::move(body));
   }
 };
 
@@ -556,11 +542,11 @@ public:
  * Intermediate Representation for Optimizing Compilers [https://doi.org/10.1145/3391902] for more
  * information.
  */
-std::unique_ptr<aggnode>
-aggregate(llvm::cfg & cfg);
+std::unique_ptr<AggregationNode>
+aggregate(ControlFlowGraph & cfg);
 
 size_t
-ntacs(const aggnode & root);
+ntacs(const AggregationNode & root);
 
 }
 

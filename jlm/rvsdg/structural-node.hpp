@@ -9,6 +9,7 @@
 #include <jlm/rvsdg/node.hpp>
 #include <jlm/rvsdg/region.hpp>
 #include <jlm/rvsdg/simple-node.hpp>
+#include <jlm/util/IteratorWrapper.hpp>
 
 namespace jlm::rvsdg
 {
@@ -21,6 +22,14 @@ class StructuralOutput;
 
 class StructuralNode : public Node
 {
+  using SubregionIterator =
+      util::PtrIterator<Region, std::vector<std::unique_ptr<Region>>::iterator>;
+  using SubregionConstIterator =
+      util::PtrIterator<const Region, std::vector<std::unique_ptr<Region>>::const_iterator>;
+
+  using SubregionIteratorRange = util::IteratorRange<SubregionIterator>;
+  using SubregionConstIteratorRange = util::IteratorRange<SubregionConstIterator>;
+
 public:
   ~StructuralNode() noexcept override;
 
@@ -42,6 +51,19 @@ public:
   {
     JLM_ASSERT(index < nsubregions());
     return subregions_[index].get();
+  }
+
+  SubregionIteratorRange
+  Subregions()
+  {
+    return { SubregionIterator(subregions_.begin()), SubregionIterator(subregions_.end()) };
+  }
+
+  SubregionConstIteratorRange
+  Subregions() const
+  {
+    return { SubregionConstIterator(subregions_.begin()),
+             SubregionConstIterator(subregions_.end()) };
   }
 
   [[nodiscard]] inline StructuralInput *
@@ -66,7 +88,7 @@ private:
 
 /* structural input class */
 
-typedef jlm::util::intrusive_list<RegionArgument, RegionArgument::structural_input_accessor>
+typedef jlm::util::IntrusiveList<RegionArgument, RegionArgument::structural_input_accessor>
     argument_list;
 
 class StructuralInput : public node_input
@@ -78,13 +100,13 @@ public:
 
   StructuralInput(
       StructuralNode * node,
-      jlm::rvsdg::output * origin,
+      jlm::rvsdg::Output * origin,
       std::shared_ptr<const rvsdg::Type> type);
 
   static StructuralInput *
   create(
       StructuralNode * node,
-      jlm::rvsdg::output * origin,
+      jlm::rvsdg::Output * origin,
       std::shared_ptr<const jlm::rvsdg::Type> type)
   {
     auto input = std::make_unique<StructuralInput>(node, origin, std::move(type));
@@ -102,7 +124,7 @@ public:
 
 /* structural output class */
 
-typedef jlm::util::intrusive_list<RegionResult, RegionResult::structural_output_accessor>
+typedef jlm::util::IntrusiveList<RegionResult, RegionResult::structural_output_accessor>
     result_list;
 
 class StructuralOutput : public node_output

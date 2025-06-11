@@ -18,8 +18,6 @@
 #include <numeric>
 #include <queue>
 
-#include <llvm/Analysis/GlobalsModRef.h>
-
 namespace jlm::llvm::aa
 {
 
@@ -46,11 +44,9 @@ PointsToGraphAliasAnalysis::ToString() const
 
 AliasAnalysis::AliasQueryResponse
 PointsToGraphAliasAnalysis::Query(
-    [[maybe_unused]] ::llvm::Instruction * llvmInst1,
-    const rvsdg::output & p1,
+    const rvsdg::Output & p1,
     const size_t s1,
-    [[maybe_unused]] ::llvm::Instruction * llvmInst2,
-    const rvsdg::output & p2,
+    const rvsdg::Output & p2,
     const size_t s2)
 {
   // If the two pointers are the same value, they must alias
@@ -169,110 +165,6 @@ PointsToGraphAliasAnalysis::IsRepresentingSingleMemoryLocation(
       || PointsToGraph::Node::Is<PointsToGraph::LambdaNode>(node);
 }
 
-LlvmAliasAnalysis::LlvmAliasAnalysis()
-{
-  PB_.registerModuleAnalyses(MAM_);
-  PB_.registerFunctionAnalyses(FAM_);
-  PB_.registerCGSCCAnalyses(CGAM_);
-  PB_.registerLoopAnalyses(LAM_);
-
-  // The GlobalsAA pass is not included by the default PassBuilder
-  MAM_.registerPass(
-      []
-      {
-        return ::llvm::GlobalsAA();
-      });
-
-  /*
-  The PassBuilder has already created the a AAManager containing all default AA passes
-  FAM_.registerPass(
-      [&]
-      {
-        ::llvm::AAManager AA;
-        AA.registerFunctionAnalysis<::llvm::BasicAA>();
-        AA.registerFunctionAnalysis<::llvm::ScopedNoAliasAA>();
-        AA.registerModuleAnalysis<::llvm::GlobalsAA>();
-        return AA;
-      });
-  */
-
-  PB_.crossRegisterProxies(LAM_, FAM_, CGAM_, MAM_);
-}
-
-LlvmAliasAnalysis::~LlvmAliasAnalysis()
-{
-  // To avoid a double-free, these must be cleared in the correct order
-  LAM_.clear();
-  FAM_.clear();
-  CGAM_.clear();
-  MAM_.clear();
-}
-
-std::string
-LlvmAliasAnalysis::ToString() const
-{
-  return "LlvmAA";
-}
-
-AliasAnalysis::AliasQueryResponse
-LlvmAliasAnalysis::Query(
-    ::llvm::Instruction * llvmInst1,
-    [[maybe_unused]] const rvsdg::output & p1,
-    [[maybe_unused]] size_t s1,
-    ::llvm::Instruction * llvmInst2,
-    [[maybe_unused]] const rvsdg::output & p2,
-    [[maybe_unused]] size_t s2)
-{
-  auto func = llvmInst1->getFunction();
-  if (func != LastFunction_)
-  {
-    // Manually trigger GlobalsAA, as AAManager only uses it if it is cached
-    MAM_.getResult<::llvm::GlobalsAA>(*func->getParent());
-
-    LastFunction_ = func;
-    LastFunctionAAResults_ = &FAM_.getResult<::llvm::AAManager>(*func);
-  }
-
-  ::llvm::MemoryLocation ml1, ml2;
-  if (::llvm::isa<::llvm::LoadInst>(llvmInst1))
-  {
-    ml1 = ::llvm::MemoryLocation::get(::llvm::cast<::llvm::LoadInst>(llvmInst1));
-  }
-  else if (::llvm::isa<::llvm::StoreInst>(llvmInst1))
-  {
-    ml1 = ::llvm::MemoryLocation::get(::llvm::cast<::llvm::StoreInst>(llvmInst1));
-  }
-  else
-    JLM_UNREACHABLE("Unknown LLVM instruction type");
-
-  if (::llvm::isa<::llvm::LoadInst>(llvmInst2))
-  {
-    ml2 = ::llvm::MemoryLocation::get(::llvm::cast<::llvm::LoadInst>(llvmInst2));
-  }
-  else if (::llvm::isa<::llvm::StoreInst>(llvmInst2))
-  {
-    ml2 = ::llvm::MemoryLocation::get(::llvm::cast<::llvm::StoreInst>(llvmInst2));
-  }
-  else
-    JLM_UNREACHABLE("Unknown LLVM instruction type");
-
-  auto AR = LastFunctionAAResults_->alias(ml1, ml2);
-
-  switch (AR)
-  {
-  case ::llvm::AliasResult::NoAlias:
-    return AliasQueryResponse::NoAlias;
-  case ::llvm::AliasResult::MayAlias:
-    return AliasQueryResponse::MayAlias;
-  case ::llvm::AliasResult::PartialAlias:
-    return AliasQueryResponse::MayAlias;
-  case ::llvm::AliasResult::MustAlias:
-    return AliasQueryResponse::MustAlias;
-  default:
-    JLM_UNREACHABLE("Unknown Alias Analysis Result from LLVM");
-  }
-}
-
 ChainedAliasAnalysis::ChainedAliasAnalysis(AliasAnalysis & first, AliasAnalysis & second)
     : First_(first),
       Second_(second)
@@ -282,24 +174,22 @@ ChainedAliasAnalysis::~ChainedAliasAnalysis() = default;
 
 AliasAnalysis::AliasQueryResponse
 ChainedAliasAnalysis::Query(
-    ::llvm::Instruction * llvmInst1,
-    const rvsdg::output & p1,
+    const rvsdg::Output & p1,
     size_t s1,
-    ::llvm::Instruction * llvmInst2,
-    const rvsdg::output & p2,
+    const rvsdg::Output & p2,
     size_t s2)
 {
-  const auto firstResponse = First_.Query(llvmInst1, p1, s1, llvmInst2, p2, s2);
+  const auto firstResponse = First_.Query(p1, s1, p2, s2);
 
   // Anything other than MayAlias is precise, and can be returned right away
   if (firstResponse != MayAlias)
   {
     [[maybe_unused]] AliasQueryResponse opposite = firstResponse == MustAlias ? NoAlias : MustAlias;
-    JLM_ASSERT(Second_.Query(llvmInst1, p1, s1, llvmInst2, p2, s2) != opposite);
+    JLM_ASSERT(Second_.Query(p1, s1, p2, s2) != opposite);
     return firstResponse;
   }
 
-  return Second_.Query(llvmInst1, p1, s1, llvmInst2, p2, s2);
+  return Second_.Query(p1, s1, p2, s2);
 }
 
 std::string
@@ -331,7 +221,7 @@ BasicAliasAnalysis::ToString() const
  */
 struct BasicAliasAnalysis::TracedPointerOrigin
 {
-  const rvsdg::output * BasePointer;
+  const rvsdg::Output * BasePointer;
   std::optional<int64_t> Offset;
 };
 
@@ -345,22 +235,20 @@ struct BasicAliasAnalysis::TraceCollection
    * If an output is visited first with a known offset, and later with a different offset,
    * the offset is collapsed to an unknown offset, and tracing continues with that.
    */
-  std::unordered_map<const rvsdg::output *, std::optional<int64_t>> AllTracedOutputs;
+  std::unordered_map<const rvsdg::Output *, std::optional<int64_t>> AllTracedOutputs;
 
   /**
    * Contains the outputs that have been reached through tracing, which can not be traced further.
-   * For example the output of an ALLOCA, or the result of a load.
+   * For example the output of an ALLOCA, the result of a LOAD, or the return value of a function.
    */
-  std::unordered_map<const rvsdg::output *, std::optional<int64_t>> TopOrigins;
+  std::unordered_map<const rvsdg::Output *, std::optional<int64_t>> TopOrigins;
 };
 
 AliasAnalysis::AliasQueryResponse
 BasicAliasAnalysis::Query(
-    [[maybe_unused]] ::llvm::Instruction * llvmInst1,
-    const rvsdg::output & p1,
+    const rvsdg::Output & p1,
     size_t s1,
-    [[maybe_unused]] ::llvm::Instruction * llvmInst2,
-    const rvsdg::output & p2,
+    const rvsdg::Output & p2,
     size_t s2)
 {
   const auto & p1Norm = NormalizePointerValue(p1);
@@ -434,7 +322,7 @@ BasicAliasAnalysis::Query(
   RemoveTopOriginsSmallerThanSize(p2TraceCollection, minimumP1OffsetFromStart + s1);
   RemoveTopOriginsSmallerThanSize(p1TraceCollection, minimumP2OffsetFromStart + s2);
 
-  // If we know that p2 only touches memory after the first 12 bytes of its targets,
+  // If we know that p2 is at least 12 bytes into the memory region it targets,
   // then any use of p1 where p1 + s1 is within the first 12 bytes of its memory region can be
   // ignored.
   RemoveTopOriginsWithinTheFirstNBytes(p1TraceCollection, s1, minimumP2OffsetFromStart);
@@ -556,10 +444,10 @@ BasicAliasAnalysis::CalculateGepOffset(const rvsdg::SimpleNode & gepNode)
 }
 
 BasicAliasAnalysis::TracedPointerOrigin
-BasicAliasAnalysis::TracePointerOriginPrecise(const rvsdg::output & p)
+BasicAliasAnalysis::TracePointerOriginPrecise(const rvsdg::Output & p)
 {
   // The original pointer p is always equal to base + byte offset
-  const rvsdg::output * base = &p;
+  const rvsdg::Output * base = &p;
   int64_t offset = 0;
 
   while (true)
@@ -707,7 +595,7 @@ BasicAliasAnalysis::TraceAllPointerOrigins(TracedPointerOrigin p, TraceCollectio
 }
 
 bool
-BasicAliasAnalysis::IsOriginalOrigin(const rvsdg::output & pointer)
+BasicAliasAnalysis::IsOriginalOrigin(const rvsdg::Output & pointer)
 {
   // Each GraphImport represents a unique object
   if (dynamic_cast<const GraphImport *>(&pointer))
@@ -744,7 +632,7 @@ BasicAliasAnalysis::HasOnlyOriginalTopOrigins(TraceCollection & traces)
 }
 
 std::optional<size_t>
-BasicAliasAnalysis::GetOriginalOriginSize(const rvsdg::output & pointer)
+BasicAliasAnalysis::GetOriginalOriginSize(const rvsdg::Output & pointer)
 {
   if (auto delta = rvsdg::TryGetOwnerNode<delta::node>(pointer))
     return GetLlvmTypeSize(*delta->GetOperation().Type());
@@ -888,7 +776,7 @@ BasicAliasAnalysis::DoTraceCollectionsOverlap(
 }
 
 bool
-BasicAliasAnalysis::IsOriginalOriginFullyTraceable(const rvsdg::output & pointer)
+BasicAliasAnalysis::IsOriginalOriginFullyTraceable(const rvsdg::Output & pointer)
 {
   // The only original origins that can be fully traced for escaping are ALLOCAs
   const auto originalNode = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(pointer);
@@ -901,10 +789,10 @@ BasicAliasAnalysis::IsOriginalOriginFullyTraceable(const rvsdg::output & pointer
     return it->second;
 
   // Use a queue to find all users of the ALLOCA's address
-  std::queue<const rvsdg::output *> qu;
-  std::unordered_set<const rvsdg::output *> added;
+  std::queue<const rvsdg::Output *> qu;
+  std::unordered_set<const rvsdg::Output *> added;
 
-  const auto Enqueue = [&](const rvsdg::output & p)
+  const auto Enqueue = [&](const rvsdg::Output & p)
   {
     // Only enqueue new outputs
     auto [_, inserted] = added.insert(&p);
@@ -1009,13 +897,13 @@ BasicAliasAnalysis::HasOnlyFullyTraceableTopOrigins(TraceCollection & traces)
 }
 
 bool
-IsPointerCompatible(const rvsdg::output & value)
+IsPointerCompatible(const rvsdg::Output & value)
 {
   return IsOrContains<PointerType>(*value.Type());
 }
 
-const rvsdg::output &
-NormalizeOutput(const rvsdg::output & output)
+const rvsdg::Output &
+NormalizeOutput(const rvsdg::Output & output)
 {
   if (const auto node = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(output))
   {
@@ -1088,15 +976,15 @@ NormalizeOutput(const rvsdg::output & output)
   return output;
 }
 
-const rvsdg::output &
-NormalizePointerValue(const rvsdg::output & pointer)
+const rvsdg::Output &
+NormalizePointerValue(const rvsdg::Output & pointer)
 {
   JLM_ASSERT(IsPointerCompatible(pointer));
   return NormalizeOutput(pointer);
 }
 
 std::optional<int64_t>
-GetConstantIntegerValue(const rvsdg::output & output)
+GetConstantIntegerValue(const rvsdg::Output & output)
 {
   const auto & normalized = NormalizeOutput(output);
   if (auto node = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(normalized))

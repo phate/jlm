@@ -21,7 +21,7 @@ TestTraceArgument()
   using namespace jlm::llvm;
   using namespace jlm::hls;
 
-  auto rvsdgModule = RvsdgModule::Create(jlm::util::filepath(""), "", "");
+  auto rvsdgModule = RvsdgModule::Create(jlm::util::FilePath(""), "", "");
 
   // Setup the function
   std::cout << "Function Setup" << std::endl;
@@ -80,7 +80,7 @@ TestLoad()
   using namespace jlm::llvm;
   using namespace jlm::hls;
 
-  auto rvsdgModule = RvsdgModule::Create(jlm::util::filepath(""), "", "");
+  auto rvsdgModule = RvsdgModule::Create(jlm::util::FilePath(""), "", "");
 
   // Setup the function
   std::cout << "Function Setup" << std::endl;
@@ -158,7 +158,7 @@ TestStore()
   using namespace jlm::llvm;
   using namespace jlm::hls;
 
-  auto rvsdgModule = RvsdgModule::Create(jlm::util::filepath(""), "", "");
+  auto rvsdgModule = RvsdgModule::Create(jlm::util::FilePath(""), "", "");
 
   // Setup the function
   std::cout << "Function Setup" << std::endl;
@@ -194,19 +194,16 @@ TestStore()
 
   // Assert
   auto lambdaRegion = lambda->subregion();
-  assert(lambdaRegion->nnodes() == 2);
+  assert(lambdaRegion->nnodes() == 4);
   assert(lambdaRegion->narguments() == 4);
   assert(lambdaRegion->nresults() == 2);
 
-  // Memory state
   assert(is<MemoryStateType>(lambdaRegion->result(0)->origin()->Type()));
-
-  // Store
-  auto storeNode =
+  auto bufferNode =
       jlm::util::AssertedCast<jlm::rvsdg::node_output>(lambdaRegion->result(0)->origin())->node();
+  auto storeNode =
+      jlm::util::AssertedCast<jlm::rvsdg::node_output>(bufferNode->input(0)->origin())->node();
   assert(is<store_op>(storeNode));
-
-  // Request Node
   auto requestNode =
       jlm::util::AssertedCast<jlm::rvsdg::node_output>(lambdaRegion->result(1)->origin())->node();
   assert(is<mem_req_op>(requestNode));
@@ -226,7 +223,7 @@ TestLoadStore()
   using namespace jlm::llvm;
   using namespace jlm::hls;
 
-  auto rvsdgModule = RvsdgModule::Create(jlm::util::filepath(""), "", "");
+  auto rvsdgModule = RvsdgModule::Create(jlm::util::FilePath(""), "", "");
 
   // Setup the function
   std::cout << "Function Setup" << std::endl;
@@ -267,35 +264,26 @@ TestLoadStore()
 
   // Assert
   auto lambdaRegion = lambda->subregion();
-  assert(lambdaRegion->nnodes() == 5);
+  assert(lambdaRegion->nnodes() == 7);
   assert(lambdaRegion->narguments() == 5);
   assert(lambdaRegion->nresults() == 3);
 
-  // Memory state
   std::cout << lambdaRegion->result(0)->origin()->Type()->debug_string() << std::endl;
   assert(is<MemoryStateType>(lambdaRegion->result(0)->origin()->Type()));
-
-  // Store Node
-  auto storeNode =
+  auto bufferNode =
       jlm::util::AssertedCast<jlm::rvsdg::node_output>(lambdaRegion->result(0)->origin())->node();
+  auto storeNode =
+      jlm::util::AssertedCast<jlm::rvsdg::node_output>(bufferNode->input(0)->origin())->node();
   assert(is<store_op>(storeNode));
-
-  // Request Node
   auto firstRequestNode =
       jlm::util::AssertedCast<jlm::rvsdg::node_output>(lambdaRegion->result(1)->origin())->node();
   assert(is<mem_req_op>(firstRequestNode));
-
-  // Request Node
   auto secondRequestNode =
       jlm::util::AssertedCast<jlm::rvsdg::node_output>(lambdaRegion->result(2)->origin())->node();
   assert(is<mem_req_op>(secondRequestNode));
-
-  // Load node
   auto loadNode =
       jlm::util::AssertedCast<jlm::rvsdg::node_output>(storeNode->input(0)->origin())->node();
   assert(is<load_op>(loadNode));
-
-  // Response Node
   auto responseNode =
       jlm::util::AssertedCast<jlm::rvsdg::node_output>(loadNode->input(2)->origin())->node();
   assert(is<mem_resp_op>(responseNode));
@@ -310,7 +298,7 @@ TestThetaLoad()
   using namespace jlm::llvm;
   using namespace jlm::hls;
 
-  auto rvsdgModule = RvsdgModule::Create(jlm::util::filepath(""), "", "");
+  auto rvsdgModule = RvsdgModule::Create(jlm::util::FilePath(""), "", "");
 
   // Setup the function
   std::cout << "Function Setup" << std::endl;
@@ -437,7 +425,7 @@ TestThetaStore()
   using namespace jlm::llvm;
   using namespace jlm::hls;
 
-  auto rvsdgModule = RvsdgModule::Create(jlm::util::filepath(""), "", "");
+  auto rvsdgModule = RvsdgModule::Create(jlm::util::FilePath(""), "", "");
 
   // Setup the function
   std::cout << "Function Setup" << std::endl;

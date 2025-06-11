@@ -19,9 +19,7 @@ namespace jlm::llvm
 
 class ipgraph_node;
 
-/* inter-procedure graph */
-
-class ipgraph final
+class InterProceduralGraph final
 {
   class const_iterator
   {
@@ -80,21 +78,19 @@ class ipgraph final
   };
 
 public:
-  inline ~ipgraph()
-  {}
+  ~InterProceduralGraph() noexcept = default;
 
-  inline ipgraph() noexcept
-  {}
+  InterProceduralGraph() noexcept = default;
 
-  ipgraph(const ipgraph &) = delete;
+  InterProceduralGraph(const InterProceduralGraph &) = delete;
 
-  ipgraph(ipgraph &&) = delete;
+  InterProceduralGraph(InterProceduralGraph &&) = delete;
 
-  ipgraph &
-  operator=(const ipgraph &) = delete;
+  InterProceduralGraph &
+  operator=(const InterProceduralGraph &) = delete;
 
-  ipgraph &
-  operator=(ipgraph &&) = delete;
+  InterProceduralGraph &
+  operator=(InterProceduralGraph &&) = delete;
 
   inline const_iterator
   begin() const noexcept
@@ -139,12 +135,12 @@ public:
   virtual ~ipgraph_node();
 
 protected:
-  inline ipgraph_node(llvm::ipgraph & clg)
+  explicit ipgraph_node(InterProceduralGraph & clg)
       : clg_(clg)
   {}
 
 public:
-  inline llvm::ipgraph &
+  InterProceduralGraph &
   clg() const noexcept
   {
     return clg_;
@@ -193,7 +189,7 @@ public:
   hasBody() const noexcept = 0;
 
 private:
-  llvm::ipgraph & clg_;
+  InterProceduralGraph & clg_;
   std::unordered_set<const ipgraph_node *> dependencies_;
 };
 
@@ -204,7 +200,7 @@ public:
 
 private:
   inline function_node(
-      llvm::ipgraph & clg,
+      InterProceduralGraph & clg,
       const std::string & name,
       std::shared_ptr<const rvsdg::FunctionType> type,
       const llvm::linkage & linkage,
@@ -217,7 +213,7 @@ private:
   {}
 
 public:
-  inline llvm::cfg *
+  inline llvm::ControlFlowGraph *
   cfg() const noexcept
   {
     return cfg_.get();
@@ -261,11 +257,11 @@ public:
     replaced with \p cfg.
   **/
   void
-  add_cfg(std::unique_ptr<llvm::cfg> cfg);
+  add_cfg(std::unique_ptr<ControlFlowGraph> cfg);
 
   static inline function_node *
   create(
-      llvm::ipgraph & ipg,
+      InterProceduralGraph & ipg,
       const std::string & name,
       std::shared_ptr<const rvsdg::FunctionType> type,
       const llvm::linkage & linkage,
@@ -280,7 +276,7 @@ public:
 
   static function_node *
   create(
-      llvm::ipgraph & ipg,
+      InterProceduralGraph & ipg,
       const std::string & name,
       std::shared_ptr<const rvsdg::FunctionType> type,
       const llvm::linkage & linkage)
@@ -293,7 +289,7 @@ private:
   std::string name_;
   llvm::linkage linkage_;
   attributeset attributes_;
-  std::unique_ptr<llvm::cfg> cfg_;
+  std::unique_ptr<ControlFlowGraph> cfg_;
 };
 
 class fctvariable final : public gblvariable
@@ -321,7 +317,7 @@ private:
 class data_node_init final
 {
 public:
-  data_node_init(const variable * value)
+  data_node_init(const Variable * value)
       : value_(value)
   {}
 
@@ -351,7 +347,7 @@ public:
   data_node_init &
   operator=(data_node_init &&) = delete;
 
-  const variable *
+  const Variable *
   value() const noexcept
   {
     return value_;
@@ -365,7 +361,7 @@ public:
 
 private:
   tacsvector_t tacs_;
-  const variable * value_;
+  const Variable * value_;
 };
 
 class data_node final : public ipgraph_node
@@ -375,7 +371,7 @@ public:
 
 private:
   inline data_node(
-      llvm::ipgraph & clg,
+      InterProceduralGraph & clg,
       const std::string & name,
       std::shared_ptr<const jlm::rvsdg::ValueType> valueType,
       const llvm::linkage & linkage,
@@ -443,7 +439,7 @@ public:
 
   static data_node *
   Create(
-      llvm::ipgraph & clg,
+      InterProceduralGraph & clg,
       const std::string & name,
       std::shared_ptr<const jlm::rvsdg::ValueType> valueType,
       const llvm::linkage & linkage,

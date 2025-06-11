@@ -21,7 +21,7 @@ class ilnstat final : public util::Statistics
 public:
   ~ilnstat() override = default;
 
-  explicit ilnstat(const util::filepath & sourceFile)
+  explicit ilnstat(const util::FilePath & sourceFile)
       : Statistics(Statistics::Id::FunctionInlining, sourceFile)
   {}
 
@@ -40,14 +40,14 @@ public:
   }
 
   static std::unique_ptr<ilnstat>
-  Create(const util::filepath & sourceFile)
+  Create(const util::FilePath & sourceFile)
   {
     return std::make_unique<ilnstat>(sourceFile);
   }
 };
 
-jlm::rvsdg::output *
-find_producer(jlm::rvsdg::input * input)
+jlm::rvsdg::Output *
+find_producer(jlm::rvsdg::Input * input)
 {
   auto graph = input->region()->graph();
 
@@ -62,8 +62,8 @@ find_producer(jlm::rvsdg::input * input)
   return find_producer(argument->input());
 }
 
-static jlm::rvsdg::output *
-route_to_region(jlm::rvsdg::output * output, rvsdg::Region * region)
+static jlm::rvsdg::Output *
+route_to_region(jlm::rvsdg::Output * output, rvsdg::Region * region)
 {
   JLM_ASSERT(region != nullptr);
 
@@ -97,13 +97,13 @@ route_to_region(jlm::rvsdg::output * output, rvsdg::Region * region)
   return output;
 }
 
-static std::vector<jlm::rvsdg::output *>
+static std::vector<jlm::rvsdg::Output *>
 route_dependencies(const rvsdg::LambdaNode * lambda, const jlm::rvsdg::SimpleNode * apply)
 {
   JLM_ASSERT(is<CallOperation>(apply));
 
   /* collect origins of dependencies */
-  std::vector<jlm::rvsdg::output *> deps;
+  std::vector<jlm::rvsdg::Output *> deps;
   for (size_t n = 0; n < lambda->ninputs(); n++)
     deps.push_back(find_producer(lambda->input(n)));
 

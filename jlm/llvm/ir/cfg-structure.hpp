@@ -15,8 +15,8 @@
 namespace jlm::llvm
 {
 
-class cfg;
-class cfg_edge;
+class ControlFlowGraph;
+class ControlFlowGraphEdge;
 class cfg_node;
 
 /** \brief Strongly Connected Component
@@ -128,7 +128,7 @@ private:
  */
 class sccstructure final
 {
-  using cfg_edge_constiterator = std::unordered_set<cfg_edge *>::const_iterator;
+  using cfg_edge_constiterator = std::unordered_set<ControlFlowGraphEdge *>::const_iterator;
   using cfg_node_constiterator = std::unordered_set<cfg_node *>::const_iterator;
 
   using edge_iterator_range = util::IteratorRange<cfg_edge_constiterator>;
@@ -212,25 +212,25 @@ public:
 private:
   std::unordered_set<cfg_node *> enodes_;
   std::unordered_set<cfg_node *> xnodes_;
-  std::unordered_set<cfg_edge *> eedges_;
-  std::unordered_set<cfg_edge *> redges_;
-  std::unordered_set<cfg_edge *> xedges_;
+  std::unordered_set<ControlFlowGraphEdge *> eedges_;
+  std::unordered_set<ControlFlowGraphEdge *> redges_;
+  std::unordered_set<ControlFlowGraphEdge *> xedges_;
 };
 
 bool
-is_valid(const llvm::cfg & cfg);
+is_valid(const ControlFlowGraph & cfg);
 
 bool
-is_closed(const llvm::cfg & cfg);
+is_closed(const ControlFlowGraph & cfg);
 
 bool
-is_linear(const llvm::cfg & cfg);
+is_linear(const ControlFlowGraph & cfg);
 
 /**
  * Compute a Control Flow Graph's Strongly Connected Components.
  */
 std::vector<scc>
-find_sccs(const llvm::cfg & cfg);
+find_sccs(const ControlFlowGraph & cfg);
 
 /**
  * Compute all Strongly Connected Components of a single-entry/single-exit region.
@@ -240,20 +240,20 @@ std::vector<scc>
 find_sccs(cfg_node * entry, cfg_node * exit);
 
 static inline bool
-is_acyclic(const llvm::cfg & cfg)
+is_acyclic(const ControlFlowGraph & cfg)
 {
   auto sccs = find_sccs(cfg);
   return sccs.size() == 0;
 }
 
 bool
-is_structured(const llvm::cfg & cfg);
+is_structured(const ControlFlowGraph & cfg);
 
 bool
-is_proper_structured(const llvm::cfg & cfg);
+is_proper_structured(const ControlFlowGraph & cfg);
 
 bool
-is_reducible(const llvm::cfg & cfg);
+is_reducible(const ControlFlowGraph & cfg);
 
 /**
  * Finds all pairs of basic blocks A, B where the edge
@@ -267,19 +267,19 @@ is_reducible(const llvm::cfg & cfg);
  * @param cfg the control flow graph for a function
  */
 void
-straighten(llvm::cfg & cfg);
+straighten(ControlFlowGraph & cfg);
 
 /** \brief Remove all basic blocks without instructions
  */
 void
-purge(llvm::cfg & cfg);
+purge(ControlFlowGraph & cfg);
 
 /**
  * Removes unreachable nodes from the control flow graph.
  * @param cfg the control flow graph of a function
  */
 void
-prune(llvm::cfg & cfg);
+prune(ControlFlowGraph & cfg);
 
 }
 

@@ -34,7 +34,7 @@ class IpGraphToLlvmConverter::Context final
   using const_iterator = std::unordered_map<const cfg_node *, ::llvm::BasicBlock *>::const_iterator;
 
 public:
-  Context(ipgraph_module & ipGraphModule, ::llvm::Module & llvmModule)
+  Context(InterProceduralGraphModule & ipGraphModule, ::llvm::Module & llvmModule)
       : LlvmModule_(llvmModule),
         IpGraphModule_(ipGraphModule)
   {}
@@ -51,7 +51,7 @@ public:
 
   // FIXME: It should be a const reference, but we still have to create variables to translate
   // expressions.
-  ipgraph_module &
+  [[nodiscard]] InterProceduralGraphModule &
   module() const noexcept
   {
     return IpGraphModule_;
@@ -82,7 +82,7 @@ public:
   }
 
   void
-  insert(const llvm::variable * variable, ::llvm::Value * value)
+  insert(const llvm::Variable * variable, ::llvm::Value * value)
   {
     variables_[variable] = value;
   }
@@ -96,7 +96,7 @@ public:
   }
 
   ::llvm::Value *
-  value(const llvm::variable * variable) const noexcept
+  value(const llvm::Variable * variable) const noexcept
   {
     auto it = variables_.find(variable);
     JLM_ASSERT(it != variables_.end());
@@ -110,15 +110,15 @@ public:
   }
 
   static std::unique_ptr<Context>
-  Create(ipgraph_module & ipGraphModule, ::llvm::Module & llvmModule)
+  Create(InterProceduralGraphModule & ipGraphModule, ::llvm::Module & llvmModule)
   {
     return std::make_unique<Context>(ipGraphModule, llvmModule);
   }
 
 private:
   ::llvm::Module & LlvmModule_;
-  ipgraph_module & IpGraphModule_;
-  std::unordered_map<const llvm::variable *, ::llvm::Value *> variables_;
+  InterProceduralGraphModule & IpGraphModule_;
+  std::unordered_map<const llvm::Variable *, ::llvm::Value *> variables_;
   std::unordered_map<const llvm::cfg_node *, ::llvm::BasicBlock *> nodes_;
   TypeConverter TypeConverter_;
 };
@@ -130,7 +130,7 @@ IpGraphToLlvmConverter::IpGraphToLlvmConverter() = default;
 ::llvm::Value *
 IpGraphToLlvmConverter::convert_assignment(
     const rvsdg::SimpleOperation & op,
-    const std::vector<const variable *> & args,
+    const std::vector<const Variable *> & args,
     ::llvm::IRBuilder<> &)
 {
   JLM_ASSERT(is<AssignmentOperation>(op));
@@ -140,7 +140,7 @@ IpGraphToLlvmConverter::convert_assignment(
 ::llvm::Value *
 IpGraphToLlvmConverter::CreateBinOpInstruction(
     const ::llvm::Instruction::BinaryOps opcode,
-    const std::vector<const variable *> & args,
+    const std::vector<const Variable *> & args,
     ::llvm::IRBuilder<> & builder)
 {
   const auto operand1 = Context_->value(args[0]);
@@ -151,7 +151,7 @@ IpGraphToLlvmConverter::CreateBinOpInstruction(
 ::llvm::Value *
 IpGraphToLlvmConverter::CreateICmpInstruction(
     const ::llvm::CmpInst::Predicate predicate,
-    const std::vector<const variable *> & args,
+    const std::vector<const Variable *> & args,
     ::llvm::IRBuilder<> & builder)
 {
   const auto operand1 = Context_->value(args[0]);
@@ -173,7 +173,7 @@ convert_bitvalue_repr(const rvsdg::bitvalue_repr & vr)
 ::llvm::Value *
 IpGraphToLlvmConverter::ConverterIntegerConstant(
     const rvsdg::SimpleOperation & op,
-    const std::vector<const variable *> &,
+    const std::vector<const Variable *> &,
     ::llvm::IRBuilder<> & builder)
 {
   const auto & representation =
@@ -189,7 +189,7 @@ IpGraphToLlvmConverter::ConverterIntegerConstant(
 ::llvm::Value *
 IpGraphToLlvmConverter::convert_ctlconstant(
     const rvsdg::SimpleOperation & op,
-    const std::vector<const variable *> &,
+    const std::vector<const Variable *> &,
     ::llvm::IRBuilder<> & builder)
 {
   JLM_ASSERT(is_ctlconstant_op(op));
@@ -203,7 +203,7 @@ IpGraphToLlvmConverter::convert_ctlconstant(
 ::llvm::Value *
 IpGraphToLlvmConverter::convert(
     const ConstantFP & op,
-    const std::vector<const variable *> &,
+    const std::vector<const Variable *> &,
     ::llvm::IRBuilder<> & builder)
 {
   return ::llvm::ConstantFP::get(builder.getContext(), op.constant());
@@ -212,7 +212,7 @@ IpGraphToLlvmConverter::convert(
 ::llvm::Value *
 IpGraphToLlvmConverter::convert_undef(
     const rvsdg::SimpleOperation & op,
-    const std::vector<const variable *> &,
+    const std::vector<const Variable *> &,
     ::llvm::IRBuilder<> &)
 {
   JLM_ASSERT(is<UndefValueOperation>(op));
@@ -232,7 +232,7 @@ IpGraphToLlvmConverter::convert_undef(
 ::llvm::Value *
 IpGraphToLlvmConverter::convert(
     const PoisonValueOperation & operation,
-    const std::vector<const variable *> &,
+    const std::vector<const Variable *> &,
     ::llvm::IRBuilder<> &)
 {
   auto & llvmContext = Context_->llvm_module().getContext();
@@ -245,7 +245,7 @@ IpGraphToLlvmConverter::convert(
 ::llvm::Value *
 IpGraphToLlvmConverter::convert(
     const CallOperation & op,
-    const std::vector<const variable *> & args,
+    const std::vector<const Variable *> & args,
     ::llvm::IRBuilder<> & builder)
 {
   auto function = Context_->value(args[0]);
@@ -294,7 +294,7 @@ is_identity_mapping(const rvsdg::match_op & op)
 ::llvm::Value *
 IpGraphToLlvmConverter::convert_match(
     const rvsdg::SimpleOperation & op,
-    const std::vector<const variable *> & args,
+    const std::vector<const Variable *> & args,
     ::llvm::IRBuilder<> & builder)
 {
   JLM_ASSERT(is<rvsdg::match_op>(op));
@@ -318,7 +318,7 @@ IpGraphToLlvmConverter::convert_match(
 ::llvm::Value *
 IpGraphToLlvmConverter::convert_branch(
     const rvsdg::SimpleOperation & op,
-    const std::vector<const variable *> &,
+    const std::vector<const Variable *> &,
     ::llvm::IRBuilder<> &)
 {
   JLM_ASSERT(is<BranchOperation>(op));
@@ -328,7 +328,7 @@ IpGraphToLlvmConverter::convert_branch(
 ::llvm::Value *
 IpGraphToLlvmConverter::convert_phi(
     const rvsdg::SimpleOperation & op,
-    const std::vector<const variable *> &,
+    const std::vector<const Variable *> &,
     ::llvm::IRBuilder<> & builder)
 {
   auto & phi = *util::AssertedCast<const SsaPhiOperation>(&op);
@@ -347,7 +347,7 @@ IpGraphToLlvmConverter::convert_phi(
 ::llvm::Value *
 IpGraphToLlvmConverter::CreateLoadInstruction(
     const rvsdg::ValueType & loadedType,
-    const variable * address,
+    const Variable * address,
     bool isVolatile,
     size_t alignment,
     ::llvm::IRBuilder<> & builder)
@@ -364,7 +364,7 @@ IpGraphToLlvmConverter::CreateLoadInstruction(
 ::llvm::Value *
 IpGraphToLlvmConverter::convert(
     const LoadNonVolatileOperation & operation,
-    const std::vector<const variable *> & operands,
+    const std::vector<const Variable *> & operands,
     ::llvm::IRBuilder<> & builder)
 {
   return CreateLoadInstruction(
@@ -378,7 +378,7 @@ IpGraphToLlvmConverter::convert(
 ::llvm::Value *
 IpGraphToLlvmConverter::convert(
     const LoadVolatileOperation & operation,
-    const std::vector<const variable *> & operands,
+    const std::vector<const Variable *> & operands,
     ::llvm::IRBuilder<> & builder)
 {
   return CreateLoadInstruction(
@@ -391,8 +391,8 @@ IpGraphToLlvmConverter::convert(
 
 void
 IpGraphToLlvmConverter::CreateStoreInstruction(
-    const variable * address,
-    const variable * value,
+    const Variable * address,
+    const Variable * value,
     bool isVolatile,
     size_t alignment,
     ::llvm::IRBuilder<> & builder)
@@ -405,7 +405,7 @@ IpGraphToLlvmConverter::CreateStoreInstruction(
 ::llvm::Value *
 IpGraphToLlvmConverter::convert_store(
     const rvsdg::SimpleOperation & operation,
-    const std::vector<const variable *> & operands,
+    const std::vector<const Variable *> & operands,
     ::llvm::IRBuilder<> & builder)
 {
   auto storeOperation = util::AssertedCast<const StoreNonVolatileOperation>(&operation);
@@ -416,7 +416,7 @@ IpGraphToLlvmConverter::convert_store(
 ::llvm::Value *
 IpGraphToLlvmConverter::convert(
     const StoreVolatileOperation & operation,
-    const std::vector<const variable *> & operands,
+    const std::vector<const Variable *> & operands,
     ::llvm::IRBuilder<> & builder)
 {
   CreateStoreInstruction(operands[0], operands[1], true, operation.GetAlignment(), builder);
@@ -426,7 +426,7 @@ IpGraphToLlvmConverter::convert(
 ::llvm::Value *
 IpGraphToLlvmConverter::convert_alloca(
     const rvsdg::SimpleOperation & op,
-    const std::vector<const variable *> & args,
+    const std::vector<const Variable *> & args,
     ::llvm::IRBuilder<> & builder)
 {
   JLM_ASSERT(is<alloca_op>(op));
@@ -443,7 +443,7 @@ IpGraphToLlvmConverter::convert_alloca(
 ::llvm::Value *
 IpGraphToLlvmConverter::convert_getelementptr(
     const rvsdg::SimpleOperation & op,
-    const std::vector<const variable *> & args,
+    const std::vector<const Variable *> & args,
     ::llvm::IRBuilder<> & builder)
 {
   JLM_ASSERT(is<GetElementPtrOperation>(op) && args.size() >= 2);
@@ -461,7 +461,7 @@ IpGraphToLlvmConverter::convert_getelementptr(
 
 template<typename T>
 std::vector<T>
-IpGraphToLlvmConverter::get_bitdata(const std::vector<const variable *> & args)
+IpGraphToLlvmConverter::get_bitdata(const std::vector<const Variable *> & args)
 {
   std::vector<T> data;
   for (size_t n = 0; n < args.size(); n++)
@@ -476,7 +476,7 @@ IpGraphToLlvmConverter::get_bitdata(const std::vector<const variable *> & args)
 
 template<typename T>
 std::vector<T>
-IpGraphToLlvmConverter::get_fpdata(const std::vector<const variable *> & args)
+IpGraphToLlvmConverter::get_fpdata(const std::vector<const Variable *> & args)
 {
   std::vector<T> data;
   for (size_t n = 0; n < args.size(); n++)
@@ -492,7 +492,7 @@ IpGraphToLlvmConverter::get_fpdata(const std::vector<const variable *> & args)
 ::llvm::Value *
 IpGraphToLlvmConverter::convert(
     const ConstantDataArray & op,
-    const std::vector<const variable *> & operands,
+    const std::vector<const Variable *> & operands,
     ::llvm::IRBuilder<> & builder)
 {
   JLM_ASSERT(is<ConstantDataArray>(op));
@@ -549,7 +549,7 @@ IpGraphToLlvmConverter::convert(
 ::llvm::Value *
 IpGraphToLlvmConverter::convert(
     const ConstantArrayOperation & op,
-    const std::vector<const variable *> & operands,
+    const std::vector<const Variable *> & operands,
     ::llvm::IRBuilder<> &)
 {
   ::llvm::LLVMContext & llvmContext = Context_->llvm_module().getContext();
@@ -571,7 +571,7 @@ IpGraphToLlvmConverter::convert(
 ::llvm::Value *
 IpGraphToLlvmConverter::convert(
     const ConstantAggregateZeroOperation & op,
-    const std::vector<const variable *> &,
+    const std::vector<const Variable *> &,
     ::llvm::IRBuilder<> &)
 {
   ::llvm::LLVMContext & llvmContext = Context_->llvm_module().getContext();
@@ -584,7 +584,7 @@ IpGraphToLlvmConverter::convert(
 ::llvm::Value *
 IpGraphToLlvmConverter::convert_ptrcmp(
     const rvsdg::SimpleOperation & op,
-    const std::vector<const variable *> & args,
+    const std::vector<const Variable *> & args,
     ::llvm::IRBuilder<> & builder)
 {
   JLM_ASSERT(is<ptrcmp_op>(op));
@@ -607,7 +607,7 @@ IpGraphToLlvmConverter::convert_ptrcmp(
 ::llvm::Value *
 IpGraphToLlvmConverter::convert_fpcmp(
     const rvsdg::SimpleOperation & op,
-    const std::vector<const variable *> & args,
+    const std::vector<const Variable *> & args,
     ::llvm::IRBuilder<> & builder)
 {
   JLM_ASSERT(is<fpcmp_op>(op));
@@ -640,7 +640,7 @@ IpGraphToLlvmConverter::convert_fpcmp(
 ::llvm::Value *
 IpGraphToLlvmConverter::convert_fpbin(
     const rvsdg::SimpleOperation & op,
-    const std::vector<const variable *> & args,
+    const std::vector<const Variable *> & args,
     ::llvm::IRBuilder<> & builder)
 {
   JLM_ASSERT(is<fpbin_op>(op));
@@ -662,7 +662,7 @@ IpGraphToLlvmConverter::convert_fpbin(
 ::llvm::Value *
 IpGraphToLlvmConverter::convert_fpneg(
     const rvsdg::SimpleOperation & op,
-    const std::vector<const variable *> & args,
+    const std::vector<const Variable *> & args,
     ::llvm::IRBuilder<> & builder)
 {
   JLM_ASSERT(is<FNegOperation>(op));
@@ -673,7 +673,7 @@ IpGraphToLlvmConverter::convert_fpneg(
 ::llvm::Value *
 IpGraphToLlvmConverter::convert_valist(
     const rvsdg::SimpleOperation & op,
-    const std::vector<const variable *> &,
+    const std::vector<const Variable *> &,
     ::llvm::IRBuilder<> &)
 {
   JLM_ASSERT(is<valist_op>(op));
@@ -683,7 +683,7 @@ IpGraphToLlvmConverter::convert_valist(
 ::llvm::Value *
 IpGraphToLlvmConverter::convert(
     const ConstantStruct & op,
-    const std::vector<const variable *> & args,
+    const std::vector<const Variable *> & args,
     ::llvm::IRBuilder<> &)
 {
   ::llvm::LLVMContext & llvmContext = Context_->llvm_module().getContext();
@@ -700,7 +700,7 @@ IpGraphToLlvmConverter::convert(
 ::llvm::Value *
 IpGraphToLlvmConverter::convert(
     const ConstantPointerNullOperation & operation,
-    const std::vector<const variable *> &,
+    const std::vector<const Variable *> &,
     ::llvm::IRBuilder<> &)
 {
   ::llvm::LLVMContext & llvmContext = Context_->llvm_module().getContext();
@@ -713,7 +713,7 @@ IpGraphToLlvmConverter::convert(
 ::llvm::Value *
 IpGraphToLlvmConverter::convert_select(
     const rvsdg::SimpleOperation & op,
-    const std::vector<const variable *> & operands,
+    const std::vector<const Variable *> & operands,
     ::llvm::IRBuilder<> & builder)
 {
   auto & select = *util::AssertedCast<const SelectOperation>(&op);
@@ -730,7 +730,7 @@ IpGraphToLlvmConverter::convert_select(
 ::llvm::Value *
 IpGraphToLlvmConverter::convert_ctl2bits(
     const rvsdg::SimpleOperation & op,
-    const std::vector<const variable *> & args,
+    const std::vector<const Variable *> & args,
     ::llvm::IRBuilder<> &)
 {
   JLM_ASSERT(is<ctl2bits_op>(op));
@@ -740,7 +740,7 @@ IpGraphToLlvmConverter::convert_ctl2bits(
 ::llvm::Value *
 IpGraphToLlvmConverter::convert_constantvector(
     const rvsdg::SimpleOperation & op,
-    const std::vector<const variable *> & operands,
+    const std::vector<const Variable *> & operands,
     ::llvm::IRBuilder<> &)
 {
   JLM_ASSERT(is<constantvector_op>(op));
@@ -755,7 +755,7 @@ IpGraphToLlvmConverter::convert_constantvector(
 ::llvm::Value *
 IpGraphToLlvmConverter::convert_constantdatavector(
     const rvsdg::SimpleOperation & op,
-    const std::vector<const variable *> & operands,
+    const std::vector<const Variable *> & operands,
     ::llvm::IRBuilder<> & builder)
 {
   JLM_ASSERT(is<constant_data_vector_op>(op));
@@ -813,7 +813,7 @@ IpGraphToLlvmConverter::convert_constantdatavector(
 ::llvm::Value *
 IpGraphToLlvmConverter::convert_extractelement(
     const rvsdg::SimpleOperation & op,
-    const std::vector<const variable *> & args,
+    const std::vector<const Variable *> & args,
     ::llvm::IRBuilder<> & builder)
 {
   JLM_ASSERT(is<extractelement_op>(op));
@@ -823,7 +823,7 @@ IpGraphToLlvmConverter::convert_extractelement(
 ::llvm::Value *
 IpGraphToLlvmConverter::convert(
     const shufflevector_op & op,
-    const std::vector<const variable *> & operands,
+    const std::vector<const Variable *> & operands,
     ::llvm::IRBuilder<> & builder)
 {
   auto v1 = Context_->value(operands[0]);
@@ -834,7 +834,7 @@ IpGraphToLlvmConverter::convert(
 ::llvm::Value *
 IpGraphToLlvmConverter::convert_insertelement(
     const rvsdg::SimpleOperation & op,
-    const std::vector<const variable *> & operands,
+    const std::vector<const Variable *> & operands,
     ::llvm::IRBuilder<> & builder)
 {
   JLM_ASSERT(is<insertelement_op>(op));
@@ -848,7 +848,7 @@ IpGraphToLlvmConverter::convert_insertelement(
 ::llvm::Value *
 IpGraphToLlvmConverter::convert_vectorunary(
     const rvsdg::SimpleOperation & op,
-    const std::vector<const variable *> & operands,
+    const std::vector<const Variable *> & operands,
     ::llvm::IRBuilder<> & builder)
 {
   JLM_ASSERT(is<vectorunary_op>(op));
@@ -859,7 +859,7 @@ IpGraphToLlvmConverter::convert_vectorunary(
 ::llvm::Value *
 IpGraphToLlvmConverter::convert_vectorbinary(
     const rvsdg::SimpleOperation & op,
-    const std::vector<const variable *> & operands,
+    const std::vector<const Variable *> & operands,
     ::llvm::IRBuilder<> & builder)
 {
   JLM_ASSERT(is<vectorbinary_op>(op));
@@ -870,7 +870,7 @@ IpGraphToLlvmConverter::convert_vectorbinary(
 ::llvm::Value *
 IpGraphToLlvmConverter::convert(
     const VectorSelectOperation &,
-    const std::vector<const variable *> & operands,
+    const std::vector<const Variable *> & operands,
     ::llvm::IRBuilder<> & builder)
 {
   auto c = Context_->value(operands[0]);
@@ -883,7 +883,7 @@ template<::llvm::Instruction::CastOps OPCODE>
 ::llvm::Value *
 IpGraphToLlvmConverter::convert_cast(
     const rvsdg::SimpleOperation & op,
-    const std::vector<const variable *> & operands,
+    const std::vector<const Variable *> & operands,
     ::llvm::IRBuilder<> & builder)
 {
   JLM_ASSERT(::llvm::Instruction::isCast(OPCODE));
@@ -913,7 +913,7 @@ IpGraphToLlvmConverter::convert_cast(
 ::llvm::Value *
 IpGraphToLlvmConverter::convert(
     const ExtractValue & op,
-    const std::vector<const variable *> & operands,
+    const std::vector<const Variable *> & operands,
     ::llvm::IRBuilder<> & builder)
 {
   std::vector<unsigned> indices(op.begin(), op.end());
@@ -923,7 +923,7 @@ IpGraphToLlvmConverter::convert(
 ::llvm::Value *
 IpGraphToLlvmConverter::convert(
     const malloc_op & op,
-    const std::vector<const variable *> & args,
+    const std::vector<const Variable *> & args,
     ::llvm::IRBuilder<> & builder)
 {
   JLM_ASSERT(args.size() == 1);
@@ -939,7 +939,7 @@ IpGraphToLlvmConverter::convert(
 ::llvm::Value *
 IpGraphToLlvmConverter::convert(
     const FreeOperation & op,
-    const std::vector<const variable *> & args,
+    const std::vector<const Variable *> & args,
     ::llvm::IRBuilder<> & builder)
 {
   auto & typeConverter = Context_->GetTypeConverter();
@@ -956,7 +956,7 @@ IpGraphToLlvmConverter::convert(
 ::llvm::Value *
 IpGraphToLlvmConverter::convert(
     const MemCpyNonVolatileOperation &,
-    const std::vector<const variable *> & operands,
+    const std::vector<const Variable *> & operands,
     ::llvm::IRBuilder<> & builder)
 {
   auto & destination = *Context_->value(operands[0]);
@@ -975,7 +975,7 @@ IpGraphToLlvmConverter::convert(
 ::llvm::Value *
 IpGraphToLlvmConverter::convert(
     const MemCpyVolatileOperation &,
-    const std::vector<const variable *> & operands,
+    const std::vector<const Variable *> & operands,
     ::llvm::IRBuilder<> & builder)
 {
   auto & destination = *Context_->value(operands[0]);
@@ -994,7 +994,7 @@ IpGraphToLlvmConverter::convert(
 ::llvm::Value *
 IpGraphToLlvmConverter::convert(
     const MemoryStateMergeOperation &,
-    const std::vector<const variable *> &,
+    const std::vector<const Variable *> &,
     ::llvm::IRBuilder<> &)
 {
   return nullptr;
@@ -1003,7 +1003,7 @@ IpGraphToLlvmConverter::convert(
 ::llvm::Value *
 IpGraphToLlvmConverter::convert(
     const MemoryStateSplitOperation &,
-    const std::vector<const variable *> &,
+    const std::vector<const Variable *> &,
     ::llvm::IRBuilder<> &)
 {
   return nullptr;
@@ -1012,7 +1012,7 @@ IpGraphToLlvmConverter::convert(
 ::llvm::Value *
 IpGraphToLlvmConverter::convert(
     const LambdaEntryMemoryStateSplitOperation &,
-    const std::vector<const variable *> &,
+    const std::vector<const Variable *> &,
     ::llvm::IRBuilder<> &)
 {
   return nullptr;
@@ -1021,7 +1021,7 @@ IpGraphToLlvmConverter::convert(
 ::llvm::Value *
 IpGraphToLlvmConverter::convert(
     const LambdaExitMemoryStateMergeOperation &,
-    const std::vector<const variable *> &,
+    const std::vector<const Variable *> &,
     ::llvm::IRBuilder<> &)
 {
   return nullptr;
@@ -1030,7 +1030,7 @@ IpGraphToLlvmConverter::convert(
 ::llvm::Value *
 IpGraphToLlvmConverter::convert(
     const CallEntryMemoryStateMergeOperation &,
-    const std::vector<const variable *> &,
+    const std::vector<const Variable *> &,
     ::llvm::IRBuilder<> &)
 {
   return nullptr;
@@ -1039,7 +1039,7 @@ IpGraphToLlvmConverter::convert(
 ::llvm::Value *
 IpGraphToLlvmConverter::convert(
     const CallExitMemoryStateSplitOperation &,
-    const std::vector<const variable *> &,
+    const std::vector<const Variable *> &,
     ::llvm::IRBuilder<> &)
 {
   return nullptr;
@@ -1048,7 +1048,7 @@ IpGraphToLlvmConverter::convert(
 ::llvm::Value *
 IpGraphToLlvmConverter::convert(
     const PointerToFunctionOperation &,
-    const std::vector<const variable *> & operands,
+    const std::vector<const Variable *> & operands,
     ::llvm::IRBuilder<> &)
 {
   return Context_->value(operands[0]);
@@ -1057,7 +1057,7 @@ IpGraphToLlvmConverter::convert(
 ::llvm::Value *
 IpGraphToLlvmConverter::convert(
     const FunctionToPointerOperation &,
-    const std::vector<const variable *> & operands,
+    const std::vector<const Variable *> & operands,
     ::llvm::IRBuilder<> &)
 {
   return Context_->value(operands[0]);
@@ -1067,7 +1067,7 @@ template<class OP>
 ::llvm::Value *
 IpGraphToLlvmConverter::convert(
     const rvsdg::SimpleOperation & op,
-    const std::vector<const variable *> & operands,
+    const std::vector<const Variable *> & operands,
     ::llvm::IRBuilder<> & builder)
 {
   JLM_ASSERT(is<OP>(op));
@@ -1077,7 +1077,7 @@ IpGraphToLlvmConverter::convert(
 ::llvm::Value *
 IpGraphToLlvmConverter::convert_operation(
     const rvsdg::SimpleOperation & op,
-    const std::vector<const variable *> & arguments,
+    const std::vector<const Variable *> & arguments,
     ::llvm::IRBuilder<> & builder)
 {
   if (is<IntegerAddOperation>(op))
@@ -1425,9 +1425,11 @@ IpGraphToLlvmConverter::convert_operation(
 }
 
 void
-IpGraphToLlvmConverter::convert_instruction(const llvm::tac & tac, const llvm::cfg_node * node)
+IpGraphToLlvmConverter::convert_instruction(
+    const llvm::ThreeAddressCode & tac,
+    const llvm::cfg_node * node)
 {
-  std::vector<const variable *> operands;
+  std::vector<const Variable *> operands;
   for (size_t n = 0; n < tac.noperands(); n++)
     operands.push_back(tac.operand(n));
 
@@ -1443,7 +1445,7 @@ IpGraphToLlvmConverter::convert_tacs(const tacsvector_t & tacs)
   ::llvm::IRBuilder<> builder(Context_->llvm_module().getContext());
   for (const auto & tac : tacs)
   {
-    std::vector<const variable *> operands;
+    std::vector<const Variable *> operands;
     for (size_t n = 0; n < tac->noperands(); n++)
       operands.push_back(tac->operand(n));
 
@@ -1453,8 +1455,8 @@ IpGraphToLlvmConverter::convert_tacs(const tacsvector_t & tacs)
   }
 }
 
-static const llvm::tac *
-get_match(const llvm::tac * branch)
+static const llvm::ThreeAddressCode *
+get_match(const llvm::ThreeAddressCode * branch)
 {
   JLM_ASSERT(is<tacvariable>(branch->operand(0)));
   auto tv = static_cast<const tacvariable *>(branch->operand(0));
@@ -1462,7 +1464,7 @@ get_match(const llvm::tac * branch)
 }
 
 static bool
-has_return_value(const llvm::cfg & cfg)
+has_return_value(const ControlFlowGraph & cfg)
 {
   for (size_t n = 0; n < cfg.exit()->nresults(); n++)
   {
@@ -1513,7 +1515,7 @@ IpGraphToLlvmConverter::create_conditional_branch(const cfg_node * node)
   JLM_ASSERT(node->OutEdge(1)->sink() != node->cfg().exit());
   ::llvm::IRBuilder<> builder(Context_->basic_block(node));
 
-  auto branch = static_cast<const basic_block *>(node)->tacs().last();
+  auto branch = static_cast<const BasicBlock *>(node)->tacs().last();
   JLM_ASSERT(branch && is<BranchOperation>(branch));
   JLM_ASSERT(Context_->value(branch->operand(0))->getType()->isIntegerTy(1));
 
@@ -1529,7 +1531,7 @@ IpGraphToLlvmConverter::create_switch(const cfg_node * node)
   JLM_ASSERT(node->NumOutEdges() >= 2);
   ::llvm::LLVMContext & llvmContext = Context_->llvm_module().getContext();
   auto & typeConverter = Context_->GetTypeConverter();
-  auto bb = static_cast<const basic_block *>(node);
+  auto bb = static_cast<const BasicBlock *>(node);
   ::llvm::IRBuilder<> builder(Context_->basic_block(node));
 
   auto branch = bb->tacs().last();
@@ -1567,8 +1569,8 @@ IpGraphToLlvmConverter::create_switch(const cfg_node * node)
 void
 IpGraphToLlvmConverter::create_terminator_instruction(const llvm::cfg_node * node)
 {
-  JLM_ASSERT(is<basic_block>(node));
-  auto & tacs = static_cast<const basic_block *>(node)->tacs();
+  JLM_ASSERT(is<BasicBlock>(node));
+  auto & tacs = static_cast<const BasicBlock *>(node)->tacs();
   auto & cfg = node->cfg();
 
   // unconditional branch or return statement
@@ -1593,111 +1595,111 @@ IpGraphToLlvmConverter::create_terminator_instruction(const llvm::cfg_node * nod
 }
 
 ::llvm::Attribute::AttrKind
-IpGraphToLlvmConverter::ConvertAttributeKind(const attribute::kind & kind)
+IpGraphToLlvmConverter::ConvertAttributeKind(const Attribute::kind & kind)
 {
   typedef ::llvm::Attribute::AttrKind ak;
 
-  static std::unordered_map<attribute::kind, ::llvm::Attribute::AttrKind> map(
-      { { attribute::kind::None, ak::None },
+  static std::unordered_map<Attribute::kind, ::llvm::Attribute::AttrKind> map(
+      { { Attribute::kind::None, ak::None },
 
-        { attribute::kind::FirstEnumAttr, ak::FirstEnumAttr },
-        { attribute::kind::AllocAlign, ak::AllocAlign },
-        { attribute::kind::AllocatedPointer, ak::AllocatedPointer },
-        { attribute::kind::AlwaysInline, ak::AlwaysInline },
-        { attribute::kind::Builtin, ak::Builtin },
-        { attribute::kind::Cold, ak::Cold },
-        { attribute::kind::Convergent, ak::Convergent },
-        { attribute::kind::CoroDestroyOnlyWhenComplete, ak::CoroDestroyOnlyWhenComplete },
-        { attribute::kind::DeadOnUnwind, ak::DeadOnUnwind },
-        { attribute::kind::DisableSanitizerInstrumentation, ak::DisableSanitizerInstrumentation },
-        { attribute::kind::FnRetThunkExtern, ak::FnRetThunkExtern },
-        { attribute::kind::Hot, ak::Hot },
-        { attribute::kind::ImmArg, ak::ImmArg },
-        { attribute::kind::InReg, ak::InReg },
-        { attribute::kind::InlineHint, ak::InlineHint },
-        { attribute::kind::JumpTable, ak::JumpTable },
-        { attribute::kind::Memory, ak::Memory },
-        { attribute::kind::MinSize, ak::MinSize },
-        { attribute::kind::MustProgress, ak::MustProgress },
-        { attribute::kind::Naked, ak::Naked },
-        { attribute::kind::Nest, ak::Nest },
-        { attribute::kind::NoAlias, ak::NoAlias },
-        { attribute::kind::NoBuiltin, ak::NoBuiltin },
-        { attribute::kind::NoCallback, ak::NoCallback },
-        { attribute::kind::NoCapture, ak::NoCapture },
-        { attribute::kind::NoCfCheck, ak::NoCfCheck },
-        { attribute::kind::NoDuplicate, ak::NoDuplicate },
-        { attribute::kind::NoFree, ak::NoFree },
-        { attribute::kind::NoImplicitFloat, ak::NoImplicitFloat },
-        { attribute::kind::NoInline, ak::NoInline },
-        { attribute::kind::NoMerge, ak::NoMerge },
-        { attribute::kind::NoProfile, ak::NoProfile },
-        { attribute::kind::NoRecurse, ak::NoRecurse },
-        { attribute::kind::NoRedZone, ak::NoRedZone },
-        { attribute::kind::NoReturn, ak::NoReturn },
-        { attribute::kind::NoSanitizeBounds, ak::NoSanitizeBounds },
-        { attribute::kind::NoSanitizeCoverage, ak::NoSanitizeCoverage },
-        { attribute::kind::NoSync, ak::NoSync },
-        { attribute::kind::NoUndef, ak::NoUndef },
-        { attribute::kind::NoUnwind, ak::NoUnwind },
-        { attribute::kind::NonLazyBind, ak::NonLazyBind },
-        { attribute::kind::NonNull, ak::NonNull },
-        { attribute::kind::NullPointerIsValid, ak::NullPointerIsValid },
-        { attribute::kind::OptForFuzzing, ak::OptForFuzzing },
-        { attribute::kind::OptimizeForDebugging, ak::OptimizeForDebugging },
-        { attribute::kind::OptimizeForSize, ak::OptimizeForSize },
-        { attribute::kind::OptimizeNone, ak::OptimizeNone },
-        { attribute::kind::PresplitCoroutine, ak::PresplitCoroutine },
-        { attribute::kind::ReadNone, ak::ReadNone },
-        { attribute::kind::ReadOnly, ak::ReadOnly },
-        { attribute::kind::Returned, ak::Returned },
-        { attribute::kind::ReturnsTwice, ak::ReturnsTwice },
-        { attribute::kind::SExt, ak::SExt },
-        { attribute::kind::SafeStack, ak::SafeStack },
-        { attribute::kind::SanitizeAddress, ak::SanitizeAddress },
-        { attribute::kind::SanitizeHWAddress, ak::SanitizeHWAddress },
-        { attribute::kind::SanitizeMemTag, ak::SanitizeMemTag },
-        { attribute::kind::SanitizeMemory, ak::SanitizeMemory },
-        { attribute::kind::SanitizeThread, ak::SanitizeThread },
-        { attribute::kind::ShadowCallStack, ak::ShadowCallStack },
-        { attribute::kind::SkipProfile, ak::SkipProfile },
-        { attribute::kind::Speculatable, ak::Speculatable },
-        { attribute::kind::SpeculativeLoadHardening, ak::SpeculativeLoadHardening },
-        { attribute::kind::StackProtect, ak::StackProtect },
-        { attribute::kind::StackProtectReq, ak::StackProtectReq },
-        { attribute::kind::StackProtectStrong, ak::StackProtectStrong },
-        { attribute::kind::StrictFP, ak::StrictFP },
-        { attribute::kind::SwiftAsync, ak::SwiftAsync },
-        { attribute::kind::SwiftError, ak::SwiftError },
-        { attribute::kind::SwiftSelf, ak::SwiftSelf },
-        { attribute::kind::WillReturn, ak::WillReturn },
-        { attribute::kind::Writable, ak::Writable },
-        { attribute::kind::WriteOnly, ak::WriteOnly },
-        { attribute::kind::ZExt, ak::ZExt },
-        { attribute::kind::LastEnumAttr, ak::LastEnumAttr },
+        { Attribute::kind::FirstEnumAttr, ak::FirstEnumAttr },
+        { Attribute::kind::AllocAlign, ak::AllocAlign },
+        { Attribute::kind::AllocatedPointer, ak::AllocatedPointer },
+        { Attribute::kind::AlwaysInline, ak::AlwaysInline },
+        { Attribute::kind::Builtin, ak::Builtin },
+        { Attribute::kind::Cold, ak::Cold },
+        { Attribute::kind::Convergent, ak::Convergent },
+        { Attribute::kind::CoroDestroyOnlyWhenComplete, ak::CoroDestroyOnlyWhenComplete },
+        { Attribute::kind::DeadOnUnwind, ak::DeadOnUnwind },
+        { Attribute::kind::DisableSanitizerInstrumentation, ak::DisableSanitizerInstrumentation },
+        { Attribute::kind::FnRetThunkExtern, ak::FnRetThunkExtern },
+        { Attribute::kind::Hot, ak::Hot },
+        { Attribute::kind::ImmArg, ak::ImmArg },
+        { Attribute::kind::InReg, ak::InReg },
+        { Attribute::kind::InlineHint, ak::InlineHint },
+        { Attribute::kind::JumpTable, ak::JumpTable },
+        { Attribute::kind::Memory, ak::Memory },
+        { Attribute::kind::MinSize, ak::MinSize },
+        { Attribute::kind::MustProgress, ak::MustProgress },
+        { Attribute::kind::Naked, ak::Naked },
+        { Attribute::kind::Nest, ak::Nest },
+        { Attribute::kind::NoAlias, ak::NoAlias },
+        { Attribute::kind::NoBuiltin, ak::NoBuiltin },
+        { Attribute::kind::NoCallback, ak::NoCallback },
+        { Attribute::kind::NoCapture, ak::NoCapture },
+        { Attribute::kind::NoCfCheck, ak::NoCfCheck },
+        { Attribute::kind::NoDuplicate, ak::NoDuplicate },
+        { Attribute::kind::NoFree, ak::NoFree },
+        { Attribute::kind::NoImplicitFloat, ak::NoImplicitFloat },
+        { Attribute::kind::NoInline, ak::NoInline },
+        { Attribute::kind::NoMerge, ak::NoMerge },
+        { Attribute::kind::NoProfile, ak::NoProfile },
+        { Attribute::kind::NoRecurse, ak::NoRecurse },
+        { Attribute::kind::NoRedZone, ak::NoRedZone },
+        { Attribute::kind::NoReturn, ak::NoReturn },
+        { Attribute::kind::NoSanitizeBounds, ak::NoSanitizeBounds },
+        { Attribute::kind::NoSanitizeCoverage, ak::NoSanitizeCoverage },
+        { Attribute::kind::NoSync, ak::NoSync },
+        { Attribute::kind::NoUndef, ak::NoUndef },
+        { Attribute::kind::NoUnwind, ak::NoUnwind },
+        { Attribute::kind::NonLazyBind, ak::NonLazyBind },
+        { Attribute::kind::NonNull, ak::NonNull },
+        { Attribute::kind::NullPointerIsValid, ak::NullPointerIsValid },
+        { Attribute::kind::OptForFuzzing, ak::OptForFuzzing },
+        { Attribute::kind::OptimizeForDebugging, ak::OptimizeForDebugging },
+        { Attribute::kind::OptimizeForSize, ak::OptimizeForSize },
+        { Attribute::kind::OptimizeNone, ak::OptimizeNone },
+        { Attribute::kind::PresplitCoroutine, ak::PresplitCoroutine },
+        { Attribute::kind::ReadNone, ak::ReadNone },
+        { Attribute::kind::ReadOnly, ak::ReadOnly },
+        { Attribute::kind::Returned, ak::Returned },
+        { Attribute::kind::ReturnsTwice, ak::ReturnsTwice },
+        { Attribute::kind::SExt, ak::SExt },
+        { Attribute::kind::SafeStack, ak::SafeStack },
+        { Attribute::kind::SanitizeAddress, ak::SanitizeAddress },
+        { Attribute::kind::SanitizeHWAddress, ak::SanitizeHWAddress },
+        { Attribute::kind::SanitizeMemTag, ak::SanitizeMemTag },
+        { Attribute::kind::SanitizeMemory, ak::SanitizeMemory },
+        { Attribute::kind::SanitizeThread, ak::SanitizeThread },
+        { Attribute::kind::ShadowCallStack, ak::ShadowCallStack },
+        { Attribute::kind::SkipProfile, ak::SkipProfile },
+        { Attribute::kind::Speculatable, ak::Speculatable },
+        { Attribute::kind::SpeculativeLoadHardening, ak::SpeculativeLoadHardening },
+        { Attribute::kind::StackProtect, ak::StackProtect },
+        { Attribute::kind::StackProtectReq, ak::StackProtectReq },
+        { Attribute::kind::StackProtectStrong, ak::StackProtectStrong },
+        { Attribute::kind::StrictFP, ak::StrictFP },
+        { Attribute::kind::SwiftAsync, ak::SwiftAsync },
+        { Attribute::kind::SwiftError, ak::SwiftError },
+        { Attribute::kind::SwiftSelf, ak::SwiftSelf },
+        { Attribute::kind::WillReturn, ak::WillReturn },
+        { Attribute::kind::Writable, ak::Writable },
+        { Attribute::kind::WriteOnly, ak::WriteOnly },
+        { Attribute::kind::ZExt, ak::ZExt },
+        { Attribute::kind::LastEnumAttr, ak::LastEnumAttr },
 
-        { attribute::kind::FirstTypeAttr, ak::FirstTypeAttr },
-        { attribute::kind::ByRef, ak::ByRef },
-        { attribute::kind::ByVal, ak::ByVal },
-        { attribute::kind::ElementType, ak::ElementType },
-        { attribute::kind::InAlloca, ak::InAlloca },
-        { attribute::kind::Preallocated, ak::Preallocated },
-        { attribute::kind::StructRet, ak::StructRet },
-        { attribute::kind::LastTypeAttr, ak::LastTypeAttr },
+        { Attribute::kind::FirstTypeAttr, ak::FirstTypeAttr },
+        { Attribute::kind::ByRef, ak::ByRef },
+        { Attribute::kind::ByVal, ak::ByVal },
+        { Attribute::kind::ElementType, ak::ElementType },
+        { Attribute::kind::InAlloca, ak::InAlloca },
+        { Attribute::kind::Preallocated, ak::Preallocated },
+        { Attribute::kind::StructRet, ak::StructRet },
+        { Attribute::kind::LastTypeAttr, ak::LastTypeAttr },
 
-        { attribute::kind::FirstIntAttr, ak::FirstIntAttr },
-        { attribute::kind::Alignment, ak::Alignment },
-        { attribute::kind::AllocKind, ak::AllocKind },
-        { attribute::kind::AllocSize, ak::AllocSize },
-        { attribute::kind::Dereferenceable, ak::Dereferenceable },
-        { attribute::kind::DereferenceableOrNull, ak::DereferenceableOrNull },
-        { attribute::kind::NoFPClass, ak::NoFPClass },
-        { attribute::kind::StackAlignment, ak::StackAlignment },
-        { attribute::kind::UWTable, ak::UWTable },
-        { attribute::kind::VScaleRange, ak::VScaleRange },
-        { attribute::kind::LastIntAttr, ak::LastIntAttr },
+        { Attribute::kind::FirstIntAttr, ak::FirstIntAttr },
+        { Attribute::kind::Alignment, ak::Alignment },
+        { Attribute::kind::AllocKind, ak::AllocKind },
+        { Attribute::kind::AllocSize, ak::AllocSize },
+        { Attribute::kind::Dereferenceable, ak::Dereferenceable },
+        { Attribute::kind::DereferenceableOrNull, ak::DereferenceableOrNull },
+        { Attribute::kind::NoFPClass, ak::NoFPClass },
+        { Attribute::kind::StackAlignment, ak::StackAlignment },
+        { Attribute::kind::UWTable, ak::UWTable },
+        { Attribute::kind::VScaleRange, ak::VScaleRange },
+        { Attribute::kind::LastIntAttr, ak::LastIntAttr },
 
-        { attribute::kind::EndAttrKinds, ak::EndAttrKinds } });
+        { Attribute::kind::EndAttrKinds, ak::EndAttrKinds } });
 
   JLM_ASSERT(map.find(kind) != map.end());
   return map[kind];
@@ -1784,7 +1786,7 @@ IpGraphToLlvmConverter::convert_attributes(const function_node & f)
 
 std::vector<cfg_node *>
 IpGraphToLlvmConverter::ConvertBasicBlocks(
-    const llvm::cfg & controlFlowGraph,
+    const ControlFlowGraph & controlFlowGraph,
     ::llvm::Function & function)
 {
   auto nodes = breadth_first(controlFlowGraph);
@@ -1806,11 +1808,11 @@ IpGraphToLlvmConverter::ConvertBasicBlocks(
 }
 
 void
-IpGraphToLlvmConverter::convert_cfg(llvm::cfg & cfg, ::llvm::Function & f)
+IpGraphToLlvmConverter::convert_cfg(ControlFlowGraph & cfg, ::llvm::Function & f)
 {
   JLM_ASSERT(is_closed(cfg));
 
-  auto add_arguments = [&](const llvm::cfg & cfg, ::llvm::Function & f)
+  auto add_arguments = [&](const ControlFlowGraph & cfg, ::llvm::Function & f)
   {
     size_t n = 0;
     for (auto & llvmarg : f.args())
@@ -1832,8 +1834,8 @@ IpGraphToLlvmConverter::convert_cfg(llvm::cfg & cfg, ::llvm::Function & f)
     if (node == cfg.entry() || node == cfg.exit())
       continue;
 
-    JLM_ASSERT(is<basic_block>(node));
-    auto & tacs = static_cast<const basic_block *>(node)->tacs();
+    JLM_ASSERT(is<BasicBlock>(node));
+    auto & tacs = static_cast<const BasicBlock *>(node)->tacs();
     for (const auto & tac : tacs)
       convert_instruction(*tac, node);
   }
@@ -1853,8 +1855,8 @@ IpGraphToLlvmConverter::convert_cfg(llvm::cfg & cfg, ::llvm::Function & f)
     if (node == cfg.entry() || node == cfg.exit())
       continue;
 
-    JLM_ASSERT(is<basic_block>(node));
-    auto & tacs = static_cast<const basic_block *>(node)->tacs();
+    JLM_ASSERT(is<BasicBlock>(node));
+    auto & tacs = static_cast<const BasicBlock *>(node)->tacs();
     for (const auto & tac : tacs)
     {
       if (!is<SsaPhiOperation>(tac->operation()))
@@ -1982,7 +1984,7 @@ IpGraphToLlvmConverter::convert_ipgraph()
 
 std::unique_ptr<::llvm::Module>
 IpGraphToLlvmConverter::ConvertModule(
-    ipgraph_module & ipGraphModule,
+    InterProceduralGraphModule & ipGraphModule,
     ::llvm::LLVMContext & llvmContext)
 {
   std::unique_ptr<::llvm::Module> llvmModule(new ::llvm::Module("module", llvmContext));
@@ -1998,7 +2000,7 @@ IpGraphToLlvmConverter::ConvertModule(
 
 std::unique_ptr<::llvm::Module>
 IpGraphToLlvmConverter::CreateAndConvertModule(
-    ipgraph_module & ipGraphModule,
+    InterProceduralGraphModule & ipGraphModule,
     ::llvm::LLVMContext & ctx)
 {
   IpGraphToLlvmConverter converter;

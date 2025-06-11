@@ -54,16 +54,14 @@ strongconnect(
 namespace jlm::llvm
 {
 
-/* ipgraph */
-
 void
-ipgraph::add_node(std::unique_ptr<ipgraph_node> node)
+InterProceduralGraph::add_node(std::unique_ptr<ipgraph_node> node)
 {
   nodes_.push_back(std::move(node));
 }
 
 std::vector<std::unordered_set<const ipgraph_node *>>
-ipgraph::find_sccs() const
+InterProceduralGraph::find_sccs() const
 {
   std::vector<std::unordered_set<const ipgraph_node *>> sccs;
 
@@ -81,7 +79,7 @@ ipgraph::find_sccs() const
 }
 
 const ipgraph_node *
-ipgraph::find(const std::string & name) const noexcept
+InterProceduralGraph::find(const std::string & name) const noexcept
 {
   for (auto & node : nodes_)
   {
@@ -133,7 +131,7 @@ function_node::hasBody() const noexcept
 }
 
 void
-function_node::add_cfg(std::unique_ptr<llvm::cfg> cfg)
+function_node::add_cfg(std::unique_ptr<llvm::ControlFlowGraph> cfg)
 {
   if (cfg->fcttype() != fcttype())
     throw util::error("CFG does not match the function node's type.");

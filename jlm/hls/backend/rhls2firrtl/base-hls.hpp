@@ -42,16 +42,16 @@ private:
 
 protected:
   std::unordered_map<const rvsdg::Node *, std::string> node_map;
-  std::unordered_map<jlm::rvsdg::output *, std::string> output_map;
+  std::unordered_map<jlm::rvsdg::Output *, std::string> output_map;
 
   std::string
   get_node_name(const rvsdg::Node * node);
 
   static std::string
-  get_port_name(jlm::rvsdg::input * port);
+  get_port_name(jlm::rvsdg::Input * port);
 
   static std::string
-  get_port_name(jlm::rvsdg::output * port);
+  get_port_name(jlm::rvsdg::Output * port);
 
   const rvsdg::LambdaNode *
   get_hls_lambda(llvm::RvsdgModule & rm);

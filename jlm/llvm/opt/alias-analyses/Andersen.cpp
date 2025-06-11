@@ -297,7 +297,7 @@ class Andersen::Statistics final : public util::Statistics
 public:
   ~Statistics() override = default;
 
-  explicit Statistics(const util::filepath & sourceFile)
+  explicit Statistics(const util::FilePath & sourceFile)
       : util::Statistics(Statistics::Id::AndersenAnalysis, sourceFile)
   {}
 
@@ -700,7 +700,7 @@ public:
   }
 
   static std::unique_ptr<Statistics>
-  Create(const util::filepath & sourceFile)
+  Create(const util::FilePath & sourceFile)
   {
     return std::make_unique<Statistics>(sourceFile);
   }
@@ -1676,7 +1676,7 @@ Andersen::ConstructPointsToGraphFromPointerObjectSet(
   // First group RVSDG registers by the PointerObject they are mapped to.
   // If the PointerObject is part of a unification, all Register PointerObjects in the unification
   // share points-to set, so they can all become one RegisterNode in the PointsToGraph.
-  std::unordered_map<PointerObjectIndex, util::HashSet<const rvsdg::output *>> outputsInRegister;
+  std::unordered_map<PointerObjectIndex, util::HashSet<const rvsdg::Output *>> outputsInRegister;
   for (auto [outputNode, registerIdx] : set.GetRegisterMap())
   {
     auto root = set.GetUnificationRoot(registerIdx);
@@ -1744,7 +1744,7 @@ std::unique_ptr<PointsToGraph>
 Andersen::ConstructPointsToGraphFromPointerObjectSet(const PointerObjectSet & set)
 {
   // Create a throwaway instance of statistics
-  Statistics statistics(util::filepath(""));
+  Statistics statistics(util::FilePath(""));
   return ConstructPointsToGraphFromPointerObjectSet(set, statistics);
 }
 

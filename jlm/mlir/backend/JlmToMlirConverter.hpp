@@ -60,7 +60,7 @@ public:
    * \param filePath The path to the file to print the MLIR to.
    */
   static void
-  Print(::mlir::rvsdg::OmegaNode & omega, const util::filepath & filePath);
+  Print(::mlir::rvsdg::OmegaNode & omega, const util::FilePath & filePath);
 
   /**
    * Converts an RVSDG module to MLIR RVSDG.
@@ -93,7 +93,7 @@ public:
   static ::llvm::SmallVector<::mlir::Value>
   GetConvertedInputs(
       const rvsdg::Node & node,
-      const std::unordered_map<rvsdg::output *, ::mlir::Value> & valueMap);
+      const std::unordered_map<rvsdg::Output *, ::mlir::Value> & valueMap);
 
   /**
    * Converts an RVSDG node to an MLIR RVSDG operation.

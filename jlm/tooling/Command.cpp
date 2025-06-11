@@ -434,7 +434,7 @@ JlmOptCommand::CreateTransformation(
 
 std::unique_ptr<llvm::RvsdgModule>
 JlmOptCommand::ParseLlvmIrFile(
-    const util::filepath & llvmIrFile,
+    const util::FilePath & llvmIrFile,
     util::StatisticsCollector & statisticsCollector) const
 {
   static ::llvm::LLVMContext llvmContext;
@@ -463,7 +463,7 @@ JlmOptCommand::ParseLlvmIrFile(
 }
 
 std::unique_ptr<llvm::RvsdgModule>
-JlmOptCommand::ParseMlirIrFile(const util::filepath & mlirIrFile, util::StatisticsCollector &) const
+JlmOptCommand::ParseMlirIrFile(const util::FilePath & mlirIrFile, util::StatisticsCollector &) const
 {
 #ifdef ENABLE_MLIR
   jlm::mlir::MlirToJlmConverter rvsdggen;
@@ -476,7 +476,7 @@ JlmOptCommand::ParseMlirIrFile(const util::filepath & mlirIrFile, util::Statisti
 
 std::unique_ptr<llvm::RvsdgModule>
 JlmOptCommand::ParseInputFile(
-    const util::filepath & inputFile,
+    const util::FilePath & inputFile,
     const JlmOptCommandLineOptions::InputFormat & inputFormat,
     util::StatisticsCollector & statisticsCollector) const
 {
@@ -497,7 +497,7 @@ JlmOptCommand::ParseInputFile(
 void
 JlmOptCommand::PrintAsAscii(
     const llvm::RvsdgModule & rvsdgModule,
-    const util::filepath & outputFile,
+    const util::FilePath & outputFile,
     util::StatisticsCollector &)
 {
   auto ascii = view(&rvsdgModule.Rvsdg().GetRootRegion());
@@ -517,7 +517,7 @@ JlmOptCommand::PrintAsAscii(
 void
 JlmOptCommand::PrintAsXml(
     const llvm::RvsdgModule & rvsdgModule,
-    const util::filepath & outputFile,
+    const util::FilePath & outputFile,
     util::StatisticsCollector &)
 {
   auto fd = outputFile == "" ? stdout : fopen(outputFile.to_str().c_str(), "w");
@@ -531,7 +531,7 @@ JlmOptCommand::PrintAsXml(
 void
 JlmOptCommand::PrintAsLlvm(
     llvm::RvsdgModule & rvsdgModule,
-    const util::filepath & outputFile,
+    const util::FilePath & outputFile,
     util::StatisticsCollector & statisticsCollector)
 {
   auto jlm_module =
@@ -556,7 +556,7 @@ JlmOptCommand::PrintAsLlvm(
 void
 JlmOptCommand::PrintAsMlir(
     const llvm::RvsdgModule & rvsdgModule,
-    const util::filepath & outputFile,
+    const util::FilePath & outputFile,
     util::StatisticsCollector &)
 {
 #ifdef ENABLE_MLIR
@@ -572,7 +572,7 @@ JlmOptCommand::PrintAsMlir(
 void
 JlmOptCommand::PrintAsRvsdgTree(
     const llvm::RvsdgModule & rvsdgModule,
-    const util::filepath & outputFile,
+    const util::FilePath & outputFile,
     util::StatisticsCollector &)
 {
   auto & rootRegion = rvsdgModule.Rvsdg().GetRootRegion();
@@ -594,7 +594,7 @@ JlmOptCommand::PrintAsRvsdgTree(
 void
 JlmOptCommand::PrintAsDot(
     const llvm::RvsdgModule & rvsdgModule,
-    const util::filepath & outputFile,
+    const util::FilePath & outputFile,
     util::StatisticsCollector &)
 {
   auto & rootRegion = rvsdgModule.Rvsdg().GetRootRegion();
@@ -618,7 +618,7 @@ JlmOptCommand::PrintAsDot(
 void
 JlmOptCommand::PrintRvsdgModule(
     llvm::RvsdgModule & rvsdgModule,
-    const util::filepath & outputFile,
+    const util::FilePath & outputFile,
     const JlmOptCommandLineOptions::OutputFormat & outputFormat,
     util::StatisticsCollector & statisticsCollector)
 {
@@ -738,7 +738,12 @@ JlmHlsCommand::~JlmHlsCommand() noexcept = default;
 std::string
 JlmHlsCommand::ToString() const
 {
-  return util::strfmt("jlm-hls ", "-o ", OutputFolder_.to_str(), " ", InputFile_.to_str());
+  std::string options;
+  for (auto & o : Options)
+  {
+    options += o + " ";
+  }
+  return util::strfmt("jlm-hls ", options, "-o ", OutputFolder_.to_str(), " ", InputFile_.to_str());
 }
 
 JlmHlsExtractCommand::~JlmHlsExtractCommand() noexcept = default;

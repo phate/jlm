@@ -17,13 +17,13 @@ namespace jlm::llvm
 {
 
 class clg_node;
-class basic_block;
-class ipgraph_module;
-class tac;
+class BasicBlock;
+class InterProceduralGraphModule;
+class ThreeAddressCode;
 
 /** \brief Function argument
  */
-class argument final : public variable
+class argument final : public Variable
 {
 public:
   ~argument() override;
@@ -32,19 +32,19 @@ public:
       const std::string & name,
       std::shared_ptr<const jlm::rvsdg::Type> type,
       const attributeset & attributes)
-      : variable(std::move(type), name),
+      : Variable(std::move(type), name),
         attributes_(attributes)
   {}
 
   argument(const std::string & name, std::shared_ptr<const jlm::rvsdg::Type> type)
-      : variable(std::move(type), name)
+      : Variable(std::move(type), name)
   {}
 
   argument(
       const std::string & name,
       std::unique_ptr<jlm::rvsdg::Type> type,
       const attributeset & attributes)
-      : variable(std::move(type), name),
+      : Variable(std::move(type), name),
         attributes_(attributes)
   {}
 
@@ -73,14 +73,12 @@ private:
   attributeset attributes_;
 };
 
-/* cfg entry node */
-
-class entry_node final : public cfg_node
+class EntryNode final : public cfg_node
 {
 public:
-  virtual ~entry_node();
+  ~EntryNode() noexcept override;
 
-  entry_node(llvm::cfg & cfg)
+  explicit EntryNode(ControlFlowGraph & cfg)
       : cfg_node(cfg)
   {}
 
@@ -118,14 +116,12 @@ private:
   std::vector<std::unique_ptr<llvm::argument>> arguments_;
 };
 
-/* cfg exit node */
-
-class exit_node final : public cfg_node
+class ExitNode final : public cfg_node
 {
 public:
-  virtual ~exit_node();
+  ~ExitNode() noexcept override;
 
-  exit_node(llvm::cfg & cfg)
+  explicit ExitNode(ControlFlowGraph & cfg)
       : cfg_node(cfg)
   {}
 
@@ -135,7 +131,7 @@ public:
     return results_.size();
   }
 
-  const variable *
+  const Variable *
   result(size_t index) const
   {
     JLM_ASSERT(index < nresults());
@@ -143,29 +139,27 @@ public:
   }
 
   inline void
-  append_result(const variable * v)
+  append_result(const Variable * v)
   {
     results_.push_back(v);
   }
 
-  const std::vector<const variable *>
+  const std::vector<const Variable *>
   results() const noexcept
   {
     return results_;
   }
 
 private:
-  std::vector<const variable *> results_;
+  std::vector<const Variable *> results_;
 };
 
-/* control flow graph */
-
-class cfg final
+class ControlFlowGraph final
 {
   class iterator final
   {
   public:
-    inline iterator(std::unordered_set<std::unique_ptr<basic_block>>::iterator it)
+    inline iterator(std::unordered_set<std::unique_ptr<BasicBlock>>::iterator it)
         : it_(it)
     {}
 
@@ -196,32 +190,32 @@ class cfg final
       return tmp;
     }
 
-    inline basic_block *
+    inline BasicBlock *
     node() const noexcept
     {
       return it_->get();
     }
 
-    inline basic_block &
+    inline BasicBlock &
     operator*() const noexcept
     {
       return *it_->get();
     }
 
-    inline basic_block *
+    inline BasicBlock *
     operator->() const noexcept
     {
       return node();
     }
 
   private:
-    std::unordered_set<std::unique_ptr<basic_block>>::iterator it_;
+    std::unordered_set<std::unique_ptr<BasicBlock>>::iterator it_;
   };
 
   class const_iterator final
   {
   public:
-    inline const_iterator(std::unordered_set<std::unique_ptr<basic_block>>::const_iterator it)
+    inline const_iterator(std::unordered_set<std::unique_ptr<BasicBlock>>::const_iterator it)
         : it_(it)
     {}
 
@@ -252,39 +246,37 @@ class cfg final
       return tmp;
     }
 
-    inline const basic_block &
+    inline const BasicBlock &
     operator*() noexcept
     {
       return *it_->get();
     }
 
-    inline const basic_block *
+    inline const BasicBlock *
     operator->() noexcept
     {
       return it_->get();
     }
 
   private:
-    std::unordered_set<std::unique_ptr<basic_block>>::const_iterator it_;
+    std::unordered_set<std::unique_ptr<BasicBlock>>::const_iterator it_;
   };
 
 public:
-  ~cfg()
-  {}
+  ~ControlFlowGraph() noexcept = default;
 
-  cfg(ipgraph_module & im);
+  explicit ControlFlowGraph(InterProceduralGraphModule & im);
 
-  cfg(const cfg &) = delete;
+  ControlFlowGraph(const ControlFlowGraph &) = delete;
 
-  cfg(cfg &&) = delete;
+  ControlFlowGraph(ControlFlowGraph &&) = delete;
 
-  cfg &
-  operator=(const cfg &) = delete;
+  ControlFlowGraph &
+  operator=(const ControlFlowGraph &) = delete;
 
-  cfg &
-  operator=(cfg &&) = delete;
+  ControlFlowGraph &
+  operator=(ControlFlowGraph &&) = delete;
 
-public:
   inline const_iterator
   begin() const
   {
@@ -309,40 +301,40 @@ public:
     return iterator(nodes_.end());
   }
 
-  inline llvm::entry_node *
+  EntryNode *
   entry() const noexcept
   {
     return entry_.get();
   }
 
-  inline llvm::exit_node *
+  ExitNode *
   exit() const noexcept
   {
     return exit_.get();
   }
 
-  inline basic_block *
-  add_node(std::unique_ptr<basic_block> bb)
+  inline BasicBlock *
+  add_node(std::unique_ptr<BasicBlock> bb)
   {
     auto tmp = bb.get();
     nodes_.insert(std::move(bb));
     return tmp;
   }
 
-  inline cfg::iterator
-  find_node(basic_block * bb)
+  ControlFlowGraph::iterator
+  find_node(BasicBlock * bb)
   {
-    std::unique_ptr<basic_block> up(bb);
+    std::unique_ptr<BasicBlock> up(bb);
     auto it = nodes_.find(up);
     up.release();
     return iterator(it);
   }
 
-  static cfg::iterator
-  remove_node(cfg::iterator & it);
+  static ControlFlowGraph::iterator
+  remove_node(ControlFlowGraph::iterator & it);
 
-  static cfg::iterator
-  remove_node(basic_block * bb);
+  static ControlFlowGraph::iterator
+  remove_node(BasicBlock * bb);
 
   inline size_t
   nnodes() const noexcept
@@ -350,7 +342,7 @@ public:
     return nodes_.size();
   }
 
-  inline ipgraph_module &
+  [[nodiscard]] InterProceduralGraphModule &
   module() const noexcept
   {
     return module_;
@@ -370,25 +362,25 @@ public:
     return rvsdg::FunctionType(arguments, results);
   }
 
-  static std::unique_ptr<cfg>
-  create(ipgraph_module & im)
+  static std::unique_ptr<ControlFlowGraph>
+  create(InterProceduralGraphModule & im)
   {
-    return std::unique_ptr<cfg>(new cfg(im));
+    return std::make_unique<ControlFlowGraph>(im);
   }
 
   static std::string
-  ToAscii(const cfg & controlFlowGraph);
+  ToAscii(const ControlFlowGraph & controlFlowGraph);
 
 private:
   static std::string
-  ToAscii(const entry_node & entryNode);
+  ToAscii(const EntryNode & entryNode);
 
   static std::string
-  ToAscii(const exit_node & exitNode);
+  ToAscii(const ExitNode & exitNode);
 
   static std::string
   ToAscii(
-      const basic_block & basicBlock,
+      const BasicBlock & basicBlock,
       const std::unordered_map<cfg_node *, std::string> & labels);
 
   static std::string
@@ -397,17 +389,17 @@ private:
   static std::unordered_map<cfg_node *, std::string>
   CreateLabels(const std::vector<cfg_node *> & nodes);
 
-  ipgraph_module & module_;
-  std::unique_ptr<exit_node> exit_;
-  std::unique_ptr<entry_node> entry_;
-  std::unordered_set<std::unique_ptr<basic_block>> nodes_;
+  InterProceduralGraphModule & module_;
+  std::unique_ptr<ExitNode> exit_;
+  std::unique_ptr<EntryNode> entry_;
+  std::unordered_set<std::unique_ptr<BasicBlock>> nodes_;
 };
 
 std::vector<cfg_node *>
-postorder(const llvm::cfg & cfg);
+postorder(const ControlFlowGraph & cfg);
 
 std::vector<cfg_node *>
-reverse_postorder(const llvm::cfg & cfg);
+reverse_postorder(const ControlFlowGraph & cfg);
 
 /** Order CFG nodes breadth-first
  *
@@ -418,10 +410,10 @@ reverse_postorder(const llvm::cfg & cfg);
  * return A vector with all CFG nodes ordered breadth-first
  */
 std::vector<cfg_node *>
-breadth_first(const llvm::cfg & cfg);
+breadth_first(const ControlFlowGraph & cfg);
 
 size_t
-ntacs(const llvm::cfg & cfg);
+ntacs(const ControlFlowGraph & cfg);
 
 }
 

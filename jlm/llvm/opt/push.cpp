@@ -22,7 +22,7 @@ class pushstat final : public util::Statistics
 public:
   ~pushstat() override = default;
 
-  explicit pushstat(const util::filepath & sourceFile)
+  explicit pushstat(const util::FilePath & sourceFile)
       : Statistics(Statistics::Id::PushNodes, sourceFile)
   {}
 
@@ -41,7 +41,7 @@ public:
   }
 
   static std::unique_ptr<pushstat>
-  Create(const util::filepath & sourceFile)
+  Create(const util::FilePath & sourceFile)
   {
     return std::make_unique<pushstat>(sourceFile);
   }
@@ -103,7 +103,7 @@ copy_from_gamma(rvsdg::Node * node, size_t r)
   auto target = node->region()->node()->region();
   auto gamma = static_cast<rvsdg::GammaNode *>(node->region()->node());
 
-  std::vector<jlm::rvsdg::output *> operands;
+  std::vector<jlm::rvsdg::Output *> operands;
   for (size_t n = 0; n < node->ninputs(); n++)
   {
     JLM_ASSERT(dynamic_cast<const rvsdg::RegionArgument *>(node->input(n)->origin()));
@@ -123,7 +123,7 @@ copy_from_gamma(rvsdg::Node * node, size_t r)
   return arguments;
 }
 
-static std::vector<rvsdg::output *>
+static std::vector<rvsdg::Output *>
 copy_from_theta(rvsdg::Node * node)
 {
   JLM_ASSERT(dynamic_cast<const rvsdg::ThetaNode *>(node->region()->node()));
@@ -132,7 +132,7 @@ copy_from_theta(rvsdg::Node * node)
   auto target = node->region()->node()->region();
   auto theta = static_cast<rvsdg::ThetaNode *>(node->region()->node());
 
-  std::vector<jlm::rvsdg::output *> operands;
+  std::vector<jlm::rvsdg::Output *> operands;
   for (size_t n = 0; n < node->ninputs(); n++)
   {
     JLM_ASSERT(dynamic_cast<const rvsdg::RegionArgument *>(node->input(n)->origin()));
@@ -140,7 +140,7 @@ copy_from_theta(rvsdg::Node * node)
     operands.push_back(argument->input()->origin());
   }
 
-  std::vector<rvsdg::output *> arguments;
+  std::vector<rvsdg::Output *> arguments;
   auto copy = node->copy(target, operands);
   for (size_t n = 0; n < copy->noutputs(); n++)
   {
@@ -210,7 +210,7 @@ push(rvsdg::GammaNode * gamma)
 }
 
 static bool
-is_theta_invariant(const rvsdg::Node * node, const std::unordered_set<rvsdg::output *> & invariants)
+is_theta_invariant(const rvsdg::Node * node, const std::unordered_set<rvsdg::Output *> & invariants)
 {
   JLM_ASSERT(dynamic_cast<const rvsdg::ThetaNode *>(node->region()->node()));
   JLM_ASSERT(node->depth() == 0);
@@ -239,7 +239,7 @@ push_top(rvsdg::ThetaNode * theta)
   }
 
   /* collect loop invariant arguments */
-  std::unordered_set<rvsdg::output *> invariants;
+  std::unordered_set<rvsdg::Output *> invariants;
   for (const auto & lv : theta->GetLoopVars())
   {
     if (lv.post->origin() == lv.pre)
@@ -336,7 +336,7 @@ pushout_store(rvsdg::Node * storenode)
   nvalue.post->divert_to(ovalue);
 
   /* collect store operands */
-  std::vector<jlm::rvsdg::output *> states;
+  std::vector<jlm::rvsdg::Output *> states;
   auto address = oaddress->input()->origin();
   for (size_t n = 0; n < storenode->noutputs(); n++)
   {
@@ -355,7 +355,7 @@ pushout_store(rvsdg::Node * storenode)
       storeop->GetAlignment());
   for (size_t n = 0; n < states.size(); n++)
   {
-    std::unordered_set<jlm::rvsdg::input *> users;
+    std::unordered_set<jlm::rvsdg::Input *> users;
     for (const auto & user : *states[n])
     {
       if (rvsdg::TryGetOwnerNode<rvsdg::Node>(*user)

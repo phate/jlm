@@ -16,7 +16,7 @@ ConvertThetaNode(rvsdg::ThetaNode & theta)
   rvsdg::SubstitutionMap smap;
 
   auto loop = hls::loop_node::create(theta.region());
-  std::vector<jlm::rvsdg::input *> branches;
+  std::vector<jlm::rvsdg::Input *> branches;
 
   // Add loop variables, insert loop constant buffers for invariant variables, and populate the
   // smap.
@@ -36,7 +36,7 @@ ConvertThetaNode(rvsdg::ThetaNode & theta)
     }
     else
     {
-      jlm::rvsdg::output * buffer;
+      jlm::rvsdg::Output * buffer;
       loop->AddLoopVar(loopvar.input->origin(), &buffer);
       smap.insert(loopvar.pre, buffer);
       // buffer out is only used by branch

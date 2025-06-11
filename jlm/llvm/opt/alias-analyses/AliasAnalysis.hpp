@@ -8,10 +8,6 @@
 
 #include <jlm/llvm/opt/alias-analyses/PointsToGraph.hpp>
 
-#include <llvm/Analysis/AliasAnalysis.h>
-#include <llvm/IR/PassManager.h>
-#include <llvm/Passes/PassBuilder.h>
-
 namespace jlm::llvm::aa
 {
 
@@ -63,11 +59,9 @@ public:
    */
   virtual AliasQueryResponse
   Query(
-      ::llvm::Instruction * llvmInst1,
-      const rvsdg::output & p1,
+      const rvsdg::Output & p1,
       size_t s1,
-      ::llvm::Instruction * llvmInst2,
-      const rvsdg::output & p2,
+      const rvsdg::Output & p2,
       size_t s2) = 0;
 };
 
@@ -85,11 +79,9 @@ public:
 
   AliasQueryResponse
   Query(
-      ::llvm::Instruction * llvmInst1,
-      const rvsdg::output & p1,
+      const rvsdg::Output & p1,
       size_t s1,
-      ::llvm::Instruction * llvmInst2,
-      const rvsdg::output & p2,
+      const rvsdg::Output & p2,
       size_t s2) override;
 
 private:
@@ -118,40 +110,6 @@ private:
 };
 
 /**
- * Uses alias analysis from LLVM to answer alias queries.
- * This class is intended to be temporary to get comparisons against LLVM's own AA.
- */
-class LlvmAliasAnalysis final : public AliasAnalysis
-{
-public:
-  LlvmAliasAnalysis();
-
-  ~LlvmAliasAnalysis() override;
-
-  std::string
-  ToString() const override;
-
-  AliasQueryResponse
-  Query(
-      ::llvm::Instruction * llvmInst1,
-      const rvsdg::output & p1,
-      size_t s1,
-      ::llvm::Instruction * llvmInst2,
-      const rvsdg::output & p2,
-      size_t s2) override;
-
-private:
-  ::llvm::ModuleAnalysisManager MAM_;
-  ::llvm::CGSCCAnalysisManager CGAM_;
-  ::llvm::FunctionAnalysisManager FAM_;
-  ::llvm::LoopAnalysisManager LAM_;
-  ::llvm::PassBuilder PB_;
-
-  ::llvm::Function * LastFunction_ = {};
-  ::llvm::AAResults * LastFunctionAAResults_ = {};
-};
-
-/**
  * Class using two instances of AliasAnalysis to answer alias analysis queries.
  * If the first analysis responds "May Alias", the second analysis is queried.
  */
@@ -166,11 +124,9 @@ public:
 
   AliasQueryResponse
   Query(
-      ::llvm::Instruction * llvmInst1,
-      const rvsdg::output & p1,
+      const rvsdg::Output & p1,
       size_t s1,
-      ::llvm::Instruction * llvmInst2,
-      const rvsdg::output & p2,
+      const rvsdg::Output & p2,
       size_t s2) override;
 
 private:
@@ -179,7 +135,11 @@ private:
 };
 
 /**
- * Class for making alias analysis queries using stateless ad hoc IR traversal
+ * Class for making alias analysis queries using stateless ad hoc IR traversal.
+ * It is unable to trace via memory or across function calls.
+ * It tries to keep track of pointer offsets when possible,
+ * and can respond NoAlias when the queried pointers are based on distinct offsets
+ * into the same base pointer. If the offsets are identical, MustAlias is returned.
  */
 class BasicAliasAnalysis final : public AliasAnalysis
 {
@@ -192,11 +152,9 @@ public:
 
   AliasQueryResponse
   Query(
-      ::llvm::Instruction * llvmInst1,
-      const rvsdg::output & p1,
+      const rvsdg::Output & p1,
       size_t s1,
-      ::llvm::Instruction * llvmInst2,
-      const rvsdg::output & p2,
+      const rvsdg::Output & p2,
       size_t s2) override;
 
 private:
@@ -224,7 +182,7 @@ private:
    * @return the TracedPointer for p, which is guaranteed to have a defined offset
    */
   [[nodiscard]] static TracedPointerOrigin
-  TracePointerOriginPrecise(const rvsdg::output & p);
+  TracePointerOriginPrecise(const rvsdg::Output & p);
 
   /**
    * Given two pointers with the same base pointer
@@ -248,7 +206,7 @@ private:
    * Traces to find all possible origins of the given pointer.
    * Traces through GEP operations, including those with offsets that are not known at compile time.
    * Also traces through gamma and theta nodes, building a set of multiple possibilities.
-   * Tracing stops at top origins, for example an ALLOCA, or the return value of a CALL.
+   * Tracing stops at "top origins", for example an ALLOCA, a LOAD, or the return value of a CALL.
    *
    * @param p the pointer to trace from
    * @param traceCollection the collection of trace points being created
@@ -261,7 +219,7 @@ private:
    * Checks if the given pointer is the direct result of a memory location defining operation.
    * These operations are guaranteed to output pointers that do not alias any pointer,
    * except for those that are based on the original pointer itself.
-   * THe pointer is also guaranteed to be at the very beginning of the memory region.
+   * The pointer is also guaranteed to be at the very beginning of the memory region.
    *
    * For example, the output of an ALLOCA, a DELTA, or a GraphImport, are such original origins.
    *
@@ -269,7 +227,7 @@ private:
    * @return true if the pointer is the original pointer to a memory location
    */
   [[nodiscard]] static bool
-  IsOriginalOrigin(const rvsdg::output & pointer);
+  IsOriginalOrigin(const rvsdg::Output & pointer);
 
   /**
    * Checks if all top origins in the trace collection are original.
@@ -287,7 +245,7 @@ private:
    * @return the size of the defined memory location, or nullopt if it is unknown
    */
   [[nodiscard]] static std::optional<size_t>
-  GetOriginalOriginSize(const rvsdg::output & pointer);
+  GetOriginalOriginSize(const rvsdg::Output & pointer);
 
   /**
    * Given a traced pointer origin like p, where
@@ -295,7 +253,7 @@ private:
    *  p = b + 8
    *
    * we know that an operation starting at p can have a maximum size of 4 bytes.
-   * This function attempts to calculate the remaining size beyond a given traced pointer.
+   * This function attempts to calculate this size, known as the pointer's remaining size.
    *
    * If the offset is larger than the size of the target, the size 0 is returned.
    * If the offset is unknown, the size of the target is returned.
@@ -323,8 +281,8 @@ private:
    * Finds the minimum distance into some memory region the traced pointer is pointing.
    * For example, if the trace collection only contains the trace
    *  p = b + 12
-   * we know that any operation on p will not touch the first 12 bytes of a region.
-   * The affected region must also be at least 12 + s bytes large.
+   * we know that any operation on p will not touch the first 12 bytes of whatever region b is in.
+   * The region must also be at least 12 + s bytes large.
    * @param traces
    * @return the minimum offset among all traces in the collection, or 0 if some are unknown
    */
@@ -385,7 +343,7 @@ private:
    * @return true if the output is an original pointer, and it can be fully traced
    */
   [[nodiscard]] bool
-  IsOriginalOriginFullyTraceable(const rvsdg::output & pointer);
+  IsOriginalOriginFullyTraceable(const rvsdg::Output & pointer);
 
   /**
    * Checks if the given trace collection only contains top origins that are fully traced.
@@ -399,7 +357,7 @@ private:
    * Memoization of "fully traceable" (escape analysis) queries.
    * It assumes that no changes are made to the underlying RVSDG between queries.
    */
-  std::unordered_map<const rvsdg::output *, bool> IsFullyTraceable_;
+  std::unordered_map<const rvsdg::Output *, bool> IsFullyTraceable_;
 };
 
 /**
@@ -408,20 +366,11 @@ private:
  * @return true if value represents a pointer, false otherwise
  */
 [[nodiscard]] bool
-IsPointerCompatible(const rvsdg::output & value);
+IsPointerCompatible(const rvsdg::Output & value);
 
 /**
  * Follows the definition of the given \p output through operations that do not modify its value,
  * and out of / into regions when the value is guaranteed to be the same.
- * @param output the output to trace from
- * @return the most normalized source of the given output
- */
-[[nodiscard]] const rvsdg::output &
-NormalizeOutput(const rvsdg::output & output);
-
-/**
- * Follows the definition of the given pointer value when it is a trivial copy of another pointer,
- * resulting in a possibly different rvsdg::output that produces exactly the same value.
  * Take for example a program like:
  *
  * p1 = alloca
@@ -434,11 +383,22 @@ NormalizeOutput(const rvsdg::output & output);
  *
  * Normalizing p3 yields p1
  *
+ * @param output the output to trace from
+ * @return the most normalized source of the given output
+ */
+[[nodiscard]] const rvsdg::Output &
+NormalizeOutput(const rvsdg::Output & output);
+
+/**
+ * Follows the definition of the given pointer value when it is a trivial copy of another pointer,
+ * resulting in a possibly different rvsdg::output that produces exactly the same value.
+ *
  * @param pointer the pointer value to be normalized
  * @return a definition of pointer normalized as much as possible
+ * @see NormalizeOutput
  */
-[[nodiscard]] const rvsdg::output &
-NormalizePointerValue(const rvsdg::output & pointer);
+[[nodiscard]] const rvsdg::Output &
+NormalizePointerValue(const rvsdg::Output & pointer);
 
 /**
  * Gets the value of the given \p output as a compile time constant, if possible.
@@ -449,7 +409,7 @@ NormalizePointerValue(const rvsdg::output & pointer);
  * @return the value of the output, or nullopt if it could not be determined.
  */
 [[nodiscard]] std::optional<int64_t>
-GetConstantIntegerValue(const rvsdg::output & output);
+GetConstantIntegerValue(const rvsdg::Output & output);
 
 /**
  * Returns the size of the given type's in-memory representation, in bytes.

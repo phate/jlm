@@ -37,7 +37,7 @@ class DeadNodeElimination::Context final
 {
 public:
   void
-  MarkAlive(const jlm::rvsdg::output & output)
+  MarkAlive(const jlm::rvsdg::Output & output)
   {
     if (auto simpleOutput = dynamic_cast<const rvsdg::SimpleOutput *>(&output))
     {
@@ -49,7 +49,7 @@ public:
   }
 
   bool
-  IsAlive(const jlm::rvsdg::output & output) const noexcept
+  IsAlive(const jlm::rvsdg::Output & output) const noexcept
   {
     if (auto simpleOutput = dynamic_cast<const rvsdg::SimpleOutput *>(&output))
     {
@@ -86,7 +86,7 @@ public:
 
 private:
   util::HashSet<const jlm::rvsdg::SimpleNode *> SimpleNodes_;
-  util::HashSet<const jlm::rvsdg::output *> Outputs_;
+  util::HashSet<const jlm::rvsdg::Output *> Outputs_;
 };
 
 /** \brief Dead Node Elimination statistics class
@@ -100,7 +100,7 @@ class DeadNodeElimination::Statistics final : public util::Statistics
 public:
   ~Statistics() override = default;
 
-  explicit Statistics(const util::filepath & sourceFile)
+  explicit Statistics(const util::FilePath & sourceFile)
       : util::Statistics(Statistics::Id::DeadNodeElimination, sourceFile)
   {}
 
@@ -133,7 +133,7 @@ public:
   }
 
   static std::unique_ptr<Statistics>
-  Create(const util::filepath & sourceFile)
+  Create(const util::FilePath & sourceFile)
   {
     return std::make_unique<Statistics>(sourceFile);
   }
@@ -188,7 +188,7 @@ DeadNodeElimination::MarkRegion(const rvsdg::Region & region)
 }
 
 void
-DeadNodeElimination::MarkOutput(const jlm::rvsdg::output & output)
+DeadNodeElimination::MarkOutput(const jlm::rvsdg::Output & output)
 {
   if (Context_->IsAlive(output))
   {
@@ -215,7 +215,7 @@ DeadNodeElimination::MarkOutput(const jlm::rvsdg::output & output)
   if (auto gamma = rvsdg::TryGetRegionParentNode<rvsdg::GammaNode>(output))
   {
     auto external_origin = std::visit(
-        [](const auto & rolevar) -> rvsdg::output *
+        [](const auto & rolevar) -> rvsdg::Output *
         {
           return rolevar.input->origin();
         },
@@ -429,7 +429,7 @@ DeadNodeElimination::SweepGamma(rvsdg::GammaNode & gammaNode) const
     bool alive = std::any_of(
         entryvar.branchArgument.begin(),
         entryvar.branchArgument.end(),
-        [this](const rvsdg::output * arg)
+        [this](const rvsdg::Output * arg)
         {
           return Context_->IsAlive(*arg);
         });

@@ -36,7 +36,7 @@ ConvertGammaNodeWithoutSpeculation(rvsdg::GammaNode & gammaNode)
 
   for (const auto & ex : gammaNode.GetExitVars())
   {
-    std::vector<rvsdg::output *> alternatives;
+    std::vector<rvsdg::Output *> alternatives;
     for (size_t s = 0; s < gammaNode.nsubregions(); s++)
     {
       alternatives.push_back(substitutionMap.lookup(ex.branchResult[s]->origin()));
@@ -73,7 +73,7 @@ ConvertGammaNodeWithSpeculation(rvsdg::GammaNode & gammaNode)
 
   for (const auto & ex : gammaNode.GetExitVars())
   {
-    std::vector<rvsdg::output *> alternatives;
+    std::vector<rvsdg::Output *> alternatives;
     for (size_t s = 0; s < gammaNode.nsubregions(); s++)
     {
       alternatives.push_back(substitutionMap.lookup(ex.branchResult[s]->origin()));

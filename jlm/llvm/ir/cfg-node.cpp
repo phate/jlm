@@ -10,16 +10,17 @@
 namespace jlm::llvm
 {
 
-/* edge */
-
-cfg_edge::cfg_edge(cfg_node * source, cfg_node * sink, size_t index) noexcept
+ControlFlowGraphEdge::ControlFlowGraphEdge(
+    cfg_node * source,
+    cfg_node * sink,
+    size_t index) noexcept
     : source_(source),
       sink_(sink),
       index_(index)
 {}
 
 void
-cfg_edge::divert(cfg_node * new_sink)
+ControlFlowGraphEdge::divert(cfg_node * new_sink)
 {
   if (sink_ == new_sink)
     return;
@@ -29,11 +30,11 @@ cfg_edge::divert(cfg_node * new_sink)
   new_sink->inedges_.insert(this);
 }
 
-basic_block *
-cfg_edge::split()
+BasicBlock *
+ControlFlowGraphEdge::split()
 {
   auto sink = sink_;
-  auto bb = basic_block::create(source_->cfg());
+  auto bb = BasicBlock::create(source_->cfg());
   divert(bb);
   bb->add_outedge(sink);
   return bb;
@@ -55,7 +56,7 @@ cfg_node::remove_inedges()
 {
   while (inedges_.size() != 0)
   {
-    cfg_edge * edge = *inedges_.begin();
+    ControlFlowGraphEdge * edge = *inedges_.begin();
     JLM_ASSERT(edge->sink() == this);
     edge->source()->remove_outedge(edge->index());
   }

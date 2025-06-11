@@ -59,7 +59,7 @@ BaseHLS::get_node_name(const jlm::rvsdg::Node * node)
 }
 
 std::string
-BaseHLS::get_port_name(jlm::rvsdg::input * port)
+BaseHLS::get_port_name(jlm::rvsdg::Input * port)
 {
   std::string result;
   if (jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*port))
@@ -79,7 +79,7 @@ BaseHLS::get_port_name(jlm::rvsdg::input * port)
 }
 
 std::string
-BaseHLS::get_port_name(jlm::rvsdg::output * port)
+BaseHLS::get_port_name(jlm::rvsdg::Output * port)
 {
   if (port == nullptr)
   {

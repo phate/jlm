@@ -19,7 +19,7 @@ class TopDownModRefEliminator::Statistics final : public util::Statistics
 public:
   ~Statistics() override = default;
 
-  explicit Statistics(const util::filepath & sourceFile)
+  explicit Statistics(const util::FilePath & sourceFile)
       : util::Statistics(Statistics::Id::TopDownMemoryNodeEliminator, sourceFile)
   {}
 
@@ -37,7 +37,7 @@ public:
   }
 
   static std::unique_ptr<Statistics>
-  Create(const jlm::util::filepath & sourceFile)
+  Create(const jlm::util::FilePath & sourceFile)
   {
     return std::make_unique<Statistics>(sourceFile);
   }
@@ -139,7 +139,7 @@ public:
   }
 
   [[nodiscard]] util::HashSet<const PointsToGraph::MemoryNode *>
-  GetOutputNodes(const rvsdg::output & output) const override
+  GetOutputNodes(const rvsdg::Output & output) const override
   {
     JLM_ASSERT(is<PointerType>(output.Type()));
     auto & registerNode = PointsToGraph_.GetRegisterNode(output);

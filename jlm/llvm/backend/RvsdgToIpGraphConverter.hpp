@@ -19,7 +19,7 @@ namespace jlm::rvsdg
 {
 class Graph;
 class GammaNode;
-class input;
+class Input;
 class LambdaNode;
 class Node;
 class PhiNode;
@@ -34,11 +34,11 @@ namespace delta
 class node;
 }
 
-class cfg;
+class ControlFlowGraph;
 class data_node_init;
-class ipgraph_module;
+class InterProceduralGraphModule;
 class RvsdgModule;
-class variable;
+class Variable;
 
 class RvsdgToIpGraphConverter final
 {
@@ -60,10 +60,10 @@ public:
   RvsdgToIpGraphConverter &
   operator=(RvsdgToIpGraphConverter &&) = delete;
 
-  std::unique_ptr<ipgraph_module>
+  std::unique_ptr<InterProceduralGraphModule>
   ConvertModule(RvsdgModule & rvsdgModule, util::StatisticsCollector & statisticsCollector);
 
-  static std::unique_ptr<ipgraph_module>
+  static std::unique_ptr<InterProceduralGraphModule>
   CreateAndConvertModule(
       RvsdgModule & rvsdgModule,
       util::StatisticsCollector & statisticsCollector);
@@ -96,7 +96,7 @@ private:
   void
   ConvertSimpleNode(const rvsdg::SimpleNode & simpleNode);
 
-  std::unique_ptr<llvm::cfg>
+  std::unique_ptr<ControlFlowGraph>
   CreateControlFlowGraph(const rvsdg::LambdaNode & lambda);
 
   void
@@ -106,7 +106,7 @@ private:
   CreateInitialization(const delta::node & deltaNode);
 
   static bool
-  RequiresSsaPhiOperation(const rvsdg::ThetaNode::LoopVar & loopVar, const variable & v);
+  RequiresSsaPhiOperation(const rvsdg::ThetaNode::LoopVar & loopVar, const Variable & v);
 
   std::unique_ptr<Context> Context_;
 };

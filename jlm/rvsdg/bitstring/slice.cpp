@@ -29,7 +29,7 @@ bitslice_op::debug_string() const
 }
 
 unop_reduction_path_t
-bitslice_op::can_reduce_operand(const jlm::rvsdg::output * arg) const noexcept
+bitslice_op::can_reduce_operand(const jlm::rvsdg::Output * arg) const noexcept
 {
   auto node = TryGetOwnerNode<Node>(*arg);
   auto & arg_type = *std::dynamic_pointer_cast<const bittype>(arg->Type());
@@ -49,8 +49,8 @@ bitslice_op::can_reduce_operand(const jlm::rvsdg::output * arg) const noexcept
   return unop_reduction_none;
 }
 
-jlm::rvsdg::output *
-bitslice_op::reduce_operand(unop_reduction_path_t path, jlm::rvsdg::output * arg) const
+jlm::rvsdg::Output *
+bitslice_op::reduce_operand(unop_reduction_path_t path, jlm::rvsdg::Output * arg) const
 {
   if (path == unop_reduction_idempotent)
   {
@@ -75,7 +75,7 @@ bitslice_op::reduce_operand(unop_reduction_path_t path, jlm::rvsdg::output * arg
   if (path == unop_reduction_distribute)
   {
     size_t pos = 0, n;
-    std::vector<jlm::rvsdg::output *> arguments;
+    std::vector<jlm::rvsdg::Output *> arguments;
     for (n = 0; n < node->ninputs(); n++)
     {
       auto argument = node->input(n)->origin();
@@ -103,8 +103,8 @@ bitslice_op::copy() const
   return std::make_unique<bitslice_op>(*this);
 }
 
-jlm::rvsdg::output *
-bitslice(jlm::rvsdg::output * argument, size_t low, size_t high)
+jlm::rvsdg::Output *
+bitslice(jlm::rvsdg::Output * argument, size_t low, size_t high)
 {
   return CreateOpNode<bitslice_op>(
              { argument },

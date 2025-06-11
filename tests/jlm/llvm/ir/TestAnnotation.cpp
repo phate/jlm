@@ -19,10 +19,8 @@ TestBasicBlockAnnotation()
 {
   using namespace jlm::llvm;
 
-  /*
-   * Arrange
-   */
-  auto SetupAggregationTree = [](ipgraph_module & module)
+  // Arrange
+  auto SetupAggregationTree = [](InterProceduralGraphModule & module)
   {
     auto vt = jlm::tests::valuetype::Create();
     jlm::tests::test_op op({ vt }, { vt });
@@ -30,18 +28,18 @@ TestBasicBlockAnnotation()
     auto v0 = module.create_variable(vt, "v0");
 
     taclist bb;
-    bb.append_last(tac::create(op, { v0 }));
+    bb.append_last(ThreeAddressCode::create(op, { v0 }));
     auto v1 = bb.last()->result(0);
 
-    bb.append_last(tac::create(op, { v1 }));
+    bb.append_last(ThreeAddressCode::create(op, { v1 }));
     auto v2 = bb.last()->result(0);
 
-    auto root = blockaggnode::create(std::move(bb));
+    auto root = BasicBlockAggregationNode::create(std::move(bb));
 
     return std::make_tuple(std::move(root), v0, v1, v2);
   };
 
-  ipgraph_module module(jlm::util::filepath(""), "", "");
+  InterProceduralGraphModule module(jlm::util::FilePath(""), "", "");
   auto [aggregationTreeRoot, v0, v1, v2] = SetupAggregationTree(module);
 
   /*
@@ -63,10 +61,8 @@ TestLinearSubgraphAnnotation()
 {
   using namespace jlm::llvm;
 
-  /*
-   * Arrange
-   */
-  auto SetupAggregationTree = [](ipgraph_module &, jlm::llvm::argument & argument)
+  // Arrange
+  auto SetupAggregationTree = [](InterProceduralGraphModule &, jlm::llvm::argument & argument)
   {
     /*
      * Setup simple linear CFG: Entry -> B1 -> B2 -> Exit
@@ -75,26 +71,28 @@ TestLinearSubgraphAnnotation()
     jlm::tests::test_op op({ vt }, { vt });
 
     taclist bb1, bb2;
-    bb1.append_last(tac::create(op, { &argument }));
+    bb1.append_last(ThreeAddressCode::create(op, { &argument }));
     auto v1 = bb1.last()->result(0);
 
-    bb2.append_last(tac::create(op, { v1 }));
+    bb2.append_last(ThreeAddressCode::create(op, { v1 }));
     auto v2 = bb2.last()->result(0);
 
-    auto entryNode = entryaggnode::create({ &argument });
-    auto basicBlockNode1 = blockaggnode::create(std::move(bb1));
-    auto basicBlockNode2 = blockaggnode::create(std::move(bb2));
-    auto exitNode = exitaggnode::create({ v2 });
+    auto entryNode = EntryAggregationNode::create({ &argument });
+    auto basicBlockNode1 = BasicBlockAggregationNode::create(std::move(bb1));
+    auto basicBlockNode2 = BasicBlockAggregationNode::create(std::move(bb2));
+    auto exitNode = ExitAggregationNode::create({ v2 });
 
-    auto linearNode1 = linearaggnode::create(std::move(entryNode), std::move(basicBlockNode1));
-    auto linearNode2 = linearaggnode::create(std::move(basicBlockNode2), std::move(exitNode));
+    auto linearNode1 =
+        LinearAggregationNode::create(std::move(entryNode), std::move(basicBlockNode1));
+    auto linearNode2 =
+        LinearAggregationNode::create(std::move(basicBlockNode2), std::move(exitNode));
 
-    auto root = linearaggnode::create(std::move(linearNode1), std::move(linearNode2));
+    auto root = LinearAggregationNode::create(std::move(linearNode1), std::move(linearNode2));
 
     return std::make_tuple(std::move(root), v1, v2);
   };
 
-  ipgraph_module module(jlm::util::filepath(""), "", "");
+  InterProceduralGraphModule module(jlm::util::FilePath(""), "", "");
   jlm::llvm::argument argument("argument", jlm::tests::valuetype::Create());
   auto [aggregationTreeRoot, v1, v2] = SetupAggregationTree(module, argument);
 
@@ -148,10 +146,8 @@ TestBranchAnnotation()
 {
   using namespace jlm::llvm;
 
-  /*
-   * Arrange
-   */
-  auto SetupAggregationTree = [](ipgraph_module & module)
+  // Arrange
+  auto SetupAggregationTree = [](InterProceduralGraphModule & module)
   {
     /*
      * Setup conditional CFG with nodes bbs, b1, b2, and edges bbs -> b1 and bbs -> b2.
@@ -163,26 +159,26 @@ TestBranchAnnotation()
     auto v3 = module.create_variable(vt, "v3");
 
     taclist splitTacList, bb1, bb2;
-    splitTacList.append_last(tac::create(op, { argument }));
+    splitTacList.append_last(ThreeAddressCode::create(op, { argument }));
     auto v1 = splitTacList.last()->result(0);
 
-    bb2.append_last(tac::create(op, { v1 }));
+    bb2.append_last(ThreeAddressCode::create(op, { v1 }));
     auto v2 = bb2.last()->result(0);
 
     bb1.append_last(AssignmentOperation::create(v2, v3));
     bb2.append_last(AssignmentOperation::create(v1, v3));
-    bb2.append_last(tac::create(op, { v3 }));
+    bb2.append_last(ThreeAddressCode::create(op, { v3 }));
     auto v4 = bb2.last()->result(0);
 
-    auto basicBlockSplit = blockaggnode::create(std::move(splitTacList));
-    auto basicBlock1 = blockaggnode::create(std::move(bb1));
-    auto basicBlock2 = blockaggnode::create(std::move(bb2));
+    auto basicBlockSplit = BasicBlockAggregationNode::create(std::move(splitTacList));
+    auto basicBlock1 = BasicBlockAggregationNode::create(std::move(bb1));
+    auto basicBlock2 = BasicBlockAggregationNode::create(std::move(bb2));
 
-    auto branch = branchaggnode::create();
+    auto branch = BranchAggregationNode::create();
     branch->add_child(std::move(basicBlock1));
     branch->add_child(std::move(basicBlock2));
 
-    auto root = linearaggnode::create(std::move(basicBlockSplit), std::move(branch));
+    auto root = LinearAggregationNode::create(std::move(basicBlockSplit), std::move(branch));
 
     return std::make_tuple(std::move(root), argument, v1, v2, v3, v4);
   };
@@ -190,7 +186,7 @@ TestBranchAnnotation()
   auto vt = jlm::tests::valuetype::Create();
   jlm::tests::test_op op({ vt }, { vt });
 
-  ipgraph_module module(jlm::util::filepath(""), "", "");
+  InterProceduralGraphModule module(jlm::util::FilePath(""), "", "");
   auto [aggregationTreeRoot, argument, v1, v2, v3, v4] = SetupAggregationTree(module);
 
   /*
@@ -234,10 +230,8 @@ TestLoopAnnotation()
 {
   using namespace jlm::llvm;
 
-  /*
-   * Arrange
-   */
-  auto SetupAggregationTree = [](ipgraph_module & module)
+  // Arrange
+  auto SetupAggregationTree = [](InterProceduralGraphModule & module)
   {
     auto vt = jlm::tests::valuetype::Create();
     jlm::tests::test_op op({ vt }, { vt });
@@ -246,22 +240,22 @@ TestLoopAnnotation()
     auto v4 = module.create_variable(vt, "v4");
 
     taclist bb;
-    bb.append_last(tac::create(op, { v1 }));
+    bb.append_last(ThreeAddressCode::create(op, { v1 }));
     auto v2 = bb.last()->result(0);
 
-    bb.append_last(tac::create(op, { v2 }));
+    bb.append_last(ThreeAddressCode::create(op, { v2 }));
     auto v3 = bb.last()->result(0);
 
-    auto exitNode = exitaggnode::create({ v3, v4 });
-    auto basicBlockNode = blockaggnode::create(std::move(bb));
+    auto exitNode = ExitAggregationNode::create({ v3, v4 });
+    auto basicBlockNode = BasicBlockAggregationNode::create(std::move(bb));
 
-    auto loopNode = loopaggnode::create(std::move(basicBlockNode));
-    auto root = linearaggnode::create(std::move(loopNode), std::move(exitNode));
+    auto loopNode = LoopAggregationNode::create(std::move(basicBlockNode));
+    auto root = LinearAggregationNode::create(std::move(loopNode), std::move(exitNode));
 
     return std::make_tuple(std::move(root), v1, v2, v3, v4);
   };
 
-  ipgraph_module module(jlm::util::filepath(""), "", "");
+  InterProceduralGraphModule module(jlm::util::FilePath(""), "", "");
   auto [aggregationTreeRoot, v1, v2, v3, v4] = SetupAggregationTree(module);
 
   /*
@@ -299,10 +293,8 @@ TestBranchInLoopAnnotation()
 {
   using namespace jlm::llvm;
 
-  /*
-   * Arrange
-   */
-  auto SetupAggregationTree = [](ipgraph_module & module)
+  // Arrange
+  auto SetupAggregationTree = [](InterProceduralGraphModule & module)
   {
     auto vt = jlm::tests::valuetype::Create();
     jlm::tests::test_op op({ vt }, { vt });
@@ -311,33 +303,33 @@ TestBranchInLoopAnnotation()
     auto v3 = module.create_variable(vt, "v3");
 
     taclist tl_cb1, tl_cb2;
-    tl_cb1.append_last(tac::create(op, { v1 }));
+    tl_cb1.append_last(ThreeAddressCode::create(op, { v1 }));
     auto v2 = tl_cb1.last()->result(0);
 
     tl_cb1.append_last(AssignmentOperation::create(v1, v3));
-    tl_cb1.append_last(tac::create(op, { v1 }));
+    tl_cb1.append_last(ThreeAddressCode::create(op, { v1 }));
     auto v4 = tl_cb1.last()->result(0);
 
     tl_cb2.append_last(AssignmentOperation::create(v1, v3));
     tl_cb2.append_last(AssignmentOperation::create(v4, v3));
 
-    auto exitNode = exitaggnode::create({ v2, v3 });
+    auto exitNode = ExitAggregationNode::create({ v2, v3 });
 
-    auto basicBlock1 = blockaggnode::create(std::move(tl_cb1));
-    auto basicBlock2 = blockaggnode::create(std::move(tl_cb2));
+    auto basicBlock1 = BasicBlockAggregationNode::create(std::move(tl_cb1));
+    auto basicBlock2 = BasicBlockAggregationNode::create(std::move(tl_cb2));
 
-    auto branchNode = branchaggnode::create();
+    auto branchNode = BranchAggregationNode::create();
     branchNode->add_child(std::move(basicBlock1));
     branchNode->add_child(std::move(basicBlock2));
 
-    auto loopNode = loopaggnode::create(std::move(branchNode));
+    auto loopNode = LoopAggregationNode::create(std::move(branchNode));
 
-    auto root = linearaggnode::create(std::move(loopNode), std::move(exitNode));
+    auto root = LinearAggregationNode::create(std::move(loopNode), std::move(exitNode));
 
     return std::make_tuple(std::move(root), v1, v2, v3, v4);
   };
 
-  ipgraph_module module(jlm::util::filepath(""), "", "");
+  InterProceduralGraphModule module(jlm::util::FilePath(""), "", "");
   auto [aggregationTreeRoot, v1, v2, v3, v4] = SetupAggregationTree(module);
 
   /*
@@ -391,10 +383,8 @@ TestAssignmentAnnotation()
 {
   using namespace jlm::llvm;
 
-  /*
-   * Arrange
-   */
-  auto SetupAggregationTree = [](ipgraph_module & module)
+  // Arrange
+  auto SetupAggregationTree = [](InterProceduralGraphModule & module)
   {
     auto vt = jlm::tests::valuetype::Create();
 
@@ -404,12 +394,12 @@ TestAssignmentAnnotation()
     taclist bb;
     bb.append_last(AssignmentOperation::create(v1, v2));
 
-    auto root = blockaggnode::create(std::move(bb));
+    auto root = BasicBlockAggregationNode::create(std::move(bb));
 
     return std::make_tuple(std::move(root), v1, v2);
   };
 
-  ipgraph_module module(jlm::util::filepath(""), "", "");
+  InterProceduralGraphModule module(jlm::util::FilePath(""), "", "");
   auto [aggregationTreeRoot, v1, v2] = SetupAggregationTree(module);
 
   /*
@@ -431,10 +421,8 @@ TestBranchPassByAnnotation()
 {
   using namespace jlm::llvm;
 
-  /*
-   * Arrange
-   */
-  auto SetupAggregationTree = [](ipgraph_module & module)
+  // Arrange
+  auto SetupAggregationTree = [](InterProceduralGraphModule & module)
   {
     auto vt = jlm::tests::valuetype::Create();
     jlm::tests::test_op op({}, { vt });
@@ -442,37 +430,37 @@ TestBranchPassByAnnotation()
     auto v3 = module.create_variable(vt, "v3");
 
     taclist tlsplit, tlb1, tlb2;
-    tlsplit.append_last(tac::create(op, {}));
+    tlsplit.append_last(ThreeAddressCode::create(op, {}));
     auto v1 = tlsplit.last()->result(0);
 
-    tlsplit.append_last(tac::create(op, {}));
+    tlsplit.append_last(ThreeAddressCode::create(op, {}));
     auto v2 = tlsplit.last()->result(0);
 
     tlb1.append_last(AssignmentOperation::create(v1, v2));
     tlb1.append_last(AssignmentOperation::create(v1, v3));
     tlb2.append_last(AssignmentOperation::create(v1, v3));
 
-    auto splitNode = blockaggnode::create(std::move(tlsplit));
+    auto splitNode = BasicBlockAggregationNode::create(std::move(tlsplit));
 
-    auto basicBlockNode1 = blockaggnode::create(std::move(tlb1));
-    auto basicBlockNode2 = blockaggnode::create(std::move(tlb2));
+    auto basicBlockNode1 = BasicBlockAggregationNode::create(std::move(tlb1));
+    auto basicBlockNode2 = BasicBlockAggregationNode::create(std::move(tlb2));
 
-    auto branchNode = branchaggnode::create();
+    auto branchNode = BranchAggregationNode::create();
     branchNode->add_child(std::move(basicBlockNode1));
     branchNode->add_child(std::move(basicBlockNode2));
 
-    auto joinNode = blockaggnode::create();
+    auto joinNode = BasicBlockAggregationNode::create();
 
-    auto exitNode = exitaggnode::create({ v1, v2, v3 });
+    auto exitNode = ExitAggregationNode::create({ v1, v2, v3 });
 
-    auto root = linearaggnode::create(std::move(splitNode), std::move(branchNode));
+    auto root = LinearAggregationNode::create(std::move(splitNode), std::move(branchNode));
     root->add_child(std::move(joinNode));
     root->add_child(std::move(exitNode));
 
     return std::make_tuple(std::move(root), v1, v2, v3);
   };
 
-  ipgraph_module module(jlm::util::filepath(""), "", "");
+  InterProceduralGraphModule module(jlm::util::FilePath(""), "", "");
   auto [aggregationTreeRoot, v1, v2, v3] = SetupAggregationTree(module);
 
   /*

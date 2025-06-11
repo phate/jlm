@@ -20,7 +20,7 @@ namespace jlm::llvm
 
 /** \brief Attribute
  */
-class attribute
+class Attribute
 {
 public:
   enum class kind
@@ -127,13 +127,13 @@ public:
     EndAttrKinds ///< Sentinel value useful for loops
   };
 
-  virtual ~attribute() noexcept;
+  virtual ~Attribute() noexcept;
 
   virtual bool
-  operator==(const attribute &) const = 0;
+  operator==(const Attribute &) const = 0;
 
   virtual bool
-  operator!=(const attribute & other) const
+  operator!=(const Attribute & other) const
   {
     return !operator==(other);
   }
@@ -141,7 +141,7 @@ public:
 
 /** \brief String attribute
  */
-class string_attribute final : public attribute
+class string_attribute final : public Attribute
 {
 public:
   ~string_attribute() noexcept override;
@@ -164,7 +164,7 @@ public:
   }
 
   bool
-  operator==(const attribute &) const override;
+  operator==(const Attribute &) const override;
 
 private:
   std::string kind_;
@@ -173,26 +173,26 @@ private:
 
 /** \brief Enum attribute
  */
-class enum_attribute : public attribute
+class enum_attribute : public Attribute
 {
 public:
   ~enum_attribute() noexcept override;
 
-  explicit enum_attribute(const attribute::kind & kind)
+  explicit enum_attribute(const Attribute::kind & kind)
       : kind_(kind)
   {}
 
-  [[nodiscard]] const attribute::kind &
+  [[nodiscard]] const Attribute::kind &
   kind() const noexcept
   {
     return kind_;
   }
 
   bool
-  operator==(const attribute &) const override;
+  operator==(const Attribute &) const override;
 
 private:
-  attribute::kind kind_;
+  Attribute::kind kind_;
 };
 
 /** \brief Integer attribute
@@ -202,7 +202,7 @@ class int_attribute final : public enum_attribute
 public:
   ~int_attribute() noexcept override;
 
-  int_attribute(attribute::kind kind, uint64_t value)
+  int_attribute(Attribute::kind kind, uint64_t value)
       : enum_attribute(kind),
         value_(value)
   {}
@@ -214,7 +214,7 @@ public:
   }
 
   bool
-  operator==(const attribute &) const override;
+  operator==(const Attribute &) const override;
 
 private:
   uint64_t value_;
@@ -227,7 +227,7 @@ class type_attribute final : public enum_attribute
 public:
   ~type_attribute() noexcept override;
 
-  type_attribute(attribute::kind kind, std::shared_ptr<const jlm::rvsdg::ValueType> type)
+  type_attribute(Attribute::kind kind, std::shared_ptr<const jlm::rvsdg::ValueType> type)
       : enum_attribute(kind),
         type_(std::move(type))
   {}
@@ -239,7 +239,7 @@ public:
   }
 
   bool
-  operator==(const attribute &) const override;
+  operator==(const Attribute &) const override;
 
 private:
   std::shared_ptr<const jlm::rvsdg::ValueType> type_;
@@ -256,7 +256,7 @@ struct Hash<jlm::llvm::enum_attribute>
   std::size_t
   operator()(const jlm::llvm::enum_attribute & attribute) const noexcept
   {
-    return std::hash<jlm::llvm::attribute::kind>()(attribute.kind());
+    return std::hash<jlm::llvm::Attribute::kind>()(attribute.kind());
   }
 };
 
@@ -266,7 +266,7 @@ struct Hash<jlm::llvm::int_attribute>
   std::size_t
   operator()(const jlm::llvm::int_attribute & attribute) const noexcept
   {
-    auto kindHash = std::hash<jlm::llvm::attribute::kind>()(attribute.kind());
+    auto kindHash = std::hash<jlm::llvm::Attribute::kind>()(attribute.kind());
     auto valueHash = std::hash<uint64_t>()(attribute.value());
     return util::CombineHashes(kindHash, valueHash);
   }
@@ -290,7 +290,7 @@ struct Hash<jlm::llvm::type_attribute>
   std::size_t
   operator()(const jlm::llvm::type_attribute & attribute) const noexcept
   {
-    auto kindHash = std::hash<jlm::llvm::attribute::kind>()(attribute.kind());
+    auto kindHash = std::hash<jlm::llvm::Attribute::kind>()(attribute.kind());
     auto typeHash = attribute.type().ComputeHash();
     return util::CombineHashes(kindHash, typeHash);
   }

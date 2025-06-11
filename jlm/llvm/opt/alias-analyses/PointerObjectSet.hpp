@@ -182,7 +182,7 @@ class PointerObjectSet final
 
   // Mapping from register to PointerObject
   // Unlike the other maps, several rvsdg::output* can share register PointerObject
-  std::unordered_map<const rvsdg::output *, PointerObjectIndex> RegisterMap_;
+  std::unordered_map<const rvsdg::Output *, PointerObjectIndex> RegisterMap_;
 
   std::unordered_map<const rvsdg::Node *, PointerObjectIndex> AllocaMap_;
 
@@ -254,7 +254,7 @@ public:
    * @return the index of the new PointerObject in the PointerObjectSet
    */
   [[nodiscard]] PointerObjectIndex
-  CreateRegisterPointerObject(const rvsdg::output & rvsdgOutput);
+  CreateRegisterPointerObject(const rvsdg::Output & rvsdgOutput);
 
   /**
    * Retrieves a previously created PointerObject of Register kind.
@@ -262,7 +262,7 @@ public:
    * @return the index of the PointerObject associated with the rvsdg::output
    */
   [[nodiscard]] PointerObjectIndex
-  GetRegisterPointerObject(const rvsdg::output & rvsdgOutput) const;
+  GetRegisterPointerObject(const rvsdg::Output & rvsdgOutput) const;
 
   /**
    * Retrieves a previously created PointerObject of Register kind, associated with an rvsdg output.
@@ -271,7 +271,7 @@ public:
    * @return the index of the PointerObject associated with rvsdgOutput, if it exists
    */
   [[nodiscard]] std::optional<PointerObjectIndex>
-  TryGetRegisterPointerObject(const rvsdg::output & rvsdgOutput) const;
+  TryGetRegisterPointerObject(const rvsdg::Output & rvsdgOutput) const;
 
   /**
    * Reuses an existing PointerObject of register type for an additional rvsdg output.
@@ -281,7 +281,7 @@ public:
    */
   void
   MapRegisterToExistingPointerObject(
-      const rvsdg::output & rvsdgOutput,
+      const rvsdg::Output & rvsdgOutput,
       PointerObjectIndex pointerObject);
 
   /**
@@ -331,7 +331,7 @@ public:
   [[nodiscard]] PointerObjectIndex
   CreateImportMemoryObject(const GraphImport & importNode);
 
-  const std::unordered_map<const rvsdg::output *, PointerObjectIndex> &
+  const std::unordered_map<const rvsdg::Output *, PointerObjectIndex> &
   GetRegisterMap() const noexcept;
 
   const std::unordered_map<const rvsdg::Node *, PointerObjectIndex> &

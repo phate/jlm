@@ -102,14 +102,14 @@ PointerObjectSet::NumMemoryPointerObjectsCanPoint() const noexcept
 }
 
 PointerObjectIndex
-PointerObjectSet::CreateRegisterPointerObject(const rvsdg::output & rvsdgOutput)
+PointerObjectSet::CreateRegisterPointerObject(const rvsdg::Output & rvsdgOutput)
 {
   JLM_ASSERT(RegisterMap_.count(&rvsdgOutput) == 0);
   return RegisterMap_[&rvsdgOutput] = AddPointerObject(PointerObjectKind::Register, true);
 }
 
 PointerObjectIndex
-PointerObjectSet::GetRegisterPointerObject(const rvsdg::output & rvsdgOutput) const
+PointerObjectSet::GetRegisterPointerObject(const rvsdg::Output & rvsdgOutput) const
 {
   const auto it = RegisterMap_.find(&rvsdgOutput);
   JLM_ASSERT(it != RegisterMap_.end());
@@ -117,7 +117,7 @@ PointerObjectSet::GetRegisterPointerObject(const rvsdg::output & rvsdgOutput) co
 }
 
 std::optional<PointerObjectIndex>
-PointerObjectSet::TryGetRegisterPointerObject(const rvsdg::output & rvsdgOutput) const
+PointerObjectSet::TryGetRegisterPointerObject(const rvsdg::Output & rvsdgOutput) const
 {
   if (const auto it = RegisterMap_.find(&rvsdgOutput); it != RegisterMap_.end())
     return it->second;
@@ -126,7 +126,7 @@ PointerObjectSet::TryGetRegisterPointerObject(const rvsdg::output & rvsdgOutput)
 
 void
 PointerObjectSet::MapRegisterToExistingPointerObject(
-    const rvsdg::output & rvsdgOutput,
+    const rvsdg::Output & rvsdgOutput,
     PointerObjectIndex pointerObject)
 {
   JLM_ASSERT(RegisterMap_.count(&rvsdgOutput) == 0);
@@ -201,7 +201,7 @@ PointerObjectSet::CreateImportMemoryObject(const GraphImport & importNode)
   return importMemoryObject;
 }
 
-const std::unordered_map<const rvsdg::output *, PointerObjectIndex> &
+const std::unordered_map<const rvsdg::Output *, PointerObjectIndex> &
 PointerObjectSet::GetRegisterMap() const noexcept
 {
   return RegisterMap_;

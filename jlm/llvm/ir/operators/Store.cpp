@@ -58,7 +58,7 @@ StoreVolatileOperation::copy() const
 }
 
 static bool
-is_store_mux_reducible(const std::vector<jlm::rvsdg::output *> & operands)
+is_store_mux_reducible(const std::vector<jlm::rvsdg::Output *> & operands)
 {
   JLM_ASSERT(operands.size() > 2);
 
@@ -78,7 +78,7 @@ is_store_mux_reducible(const std::vector<jlm::rvsdg::output *> & operands)
 static bool
 is_store_store_reducible(
     const StoreNonVolatileOperation & op,
-    const std::vector<jlm::rvsdg::output *> & operands)
+    const std::vector<jlm::rvsdg::Output *> & operands)
 {
   JLM_ASSERT(operands.size() > 2);
 
@@ -106,7 +106,7 @@ is_store_store_reducible(
 }
 
 static bool
-is_store_alloca_reducible(const std::vector<jlm::rvsdg::output *> & operands)
+is_store_alloca_reducible(const std::vector<jlm::rvsdg::Output *> & operands)
 {
   if (operands.size() == 3)
     return false;
@@ -126,22 +126,21 @@ is_store_alloca_reducible(const std::vector<jlm::rvsdg::output *> & operands)
 }
 
 static bool
-is_multiple_origin_reducible(const std::vector<jlm::rvsdg::output *> & operands)
+is_multiple_origin_reducible(const std::vector<jlm::rvsdg::Output *> & operands)
 {
-  const util::HashSet<rvsdg::output *> states(std::next(operands.begin(), 2), operands.end());
+  const util::HashSet<rvsdg::Output *> states(std::next(operands.begin(), 2), operands.end());
   return states.Size() != operands.size() - 2;
 }
 
-static std::vector<jlm::rvsdg::output *>
+static std::vector<jlm::rvsdg::Output *>
 perform_store_mux_reduction(
     const StoreNonVolatileOperation & op,
-    const std::vector<jlm::rvsdg::output *> & operands)
+    const std::vector<jlm::rvsdg::Output *> & operands)
 {
   const auto memStateMergeNode = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*operands[2]);
   auto memStateMergeOperands = jlm::rvsdg::operands(memStateMergeNode);
 
   auto states = StoreNonVolatileOperation::Create(
-      op.GetLlvmStore(),
       operands[0],
       operands[1],
       memStateMergeOperands,
@@ -149,51 +148,42 @@ perform_store_mux_reduction(
   return { MemoryStateMergeOperation::Create(states) };
 }
 
-static std::vector<jlm::rvsdg::output *>
+static std::vector<jlm::rvsdg::Output *>
 perform_store_store_reduction(
     const StoreNonVolatileOperation & op,
-    const std::vector<jlm::rvsdg::output *> & operands)
+    const std::vector<jlm::rvsdg::Output *> & operands)
 {
   JLM_ASSERT(is_store_store_reducible(op, operands));
   const auto storeNode = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*operands[2]);
 
   auto storeops = jlm::rvsdg::operands(storeNode);
-  std::vector<jlm::rvsdg::output *> states(std::next(std::next(storeops.begin())), storeops.end());
-  return StoreNonVolatileOperation::Create(
-      op.GetLlvmStore(),
-      operands[0],
-      operands[1],
-      states,
-      op.GetAlignment());
+  std::vector<jlm::rvsdg::Output *> states(std::next(std::next(storeops.begin())), storeops.end());
+  return StoreNonVolatileOperation::Create(operands[0], operands[1], states, op.GetAlignment());
 }
 
-static std::vector<jlm::rvsdg::output *>
+static std::vector<jlm::rvsdg::Output *>
 perform_store_alloca_reduction(
     const StoreNonVolatileOperation & op,
-    const std::vector<jlm::rvsdg::output *> & operands)
+    const std::vector<jlm::rvsdg::Output *> & operands)
 {
   auto value = operands[1];
   auto address = operands[0];
   auto alloca_state = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*address)->output(1);
-  std::unordered_set<jlm::rvsdg::output *> states(
+  std::unordered_set<jlm::rvsdg::Output *> states(
       std::next(std::next(operands.begin())),
       operands.end());
 
-  auto outputs = StoreNonVolatileOperation::Create(
-      op.GetLlvmStore(),
-      address,
-      value,
-      { alloca_state },
-      op.GetAlignment());
+  auto outputs =
+      StoreNonVolatileOperation::Create(address, value, { alloca_state }, op.GetAlignment());
   states.erase(alloca_state);
   states.insert(outputs[0]);
   return { states.begin(), states.end() };
 }
 
-static std::vector<jlm::rvsdg::output *>
+static std::vector<jlm::rvsdg::Output *>
 perform_multiple_origin_reduction(
     const StoreNonVolatileOperation & operation,
-    const std::vector<jlm::rvsdg::output *> & operands)
+    const std::vector<jlm::rvsdg::Output *> & operands)
 {
   // FIXME: Unify with the duplicate state removal reduction of the LoadNonVolatile operation
 
@@ -201,8 +191,8 @@ perform_multiple_origin_reduction(
   const auto address = operands[0];
   const auto value = operands[1];
 
-  std::vector<rvsdg::output *> newInputStates;
-  std::unordered_map<rvsdg::output *, size_t> stateIndexMap;
+  std::vector<rvsdg::Output *> newInputStates;
+  std::unordered_map<rvsdg::Output *, size_t> stateIndexMap;
   for (size_t n = 2; n < operands.size(); n++)
   {
     auto state = operands[n];
@@ -214,14 +204,10 @@ perform_multiple_origin_reduction(
     }
   }
 
-  const auto storeResults = StoreNonVolatileOperation::Create(
-      operation.GetLlvmStore(),
-      address,
-      value,
-      newInputStates,
-      operation.GetAlignment());
+  const auto storeResults =
+      StoreNonVolatileOperation::Create(address, value, newInputStates, operation.GetAlignment());
 
-  std::vector<rvsdg::output *> results(operation.nresults(), nullptr);
+  std::vector<rvsdg::Output *> results(operation.nresults(), nullptr);
   for (size_t n = 2; n < operands.size(); n++)
   {
     auto state = operands[n];
@@ -232,10 +218,10 @@ perform_multiple_origin_reduction(
   return results;
 }
 
-std::optional<std::vector<rvsdg::output *>>
+std::optional<std::vector<rvsdg::Output *>>
 NormalizeStoreMux(
     const StoreNonVolatileOperation & operation,
-    const std::vector<rvsdg::output *> & operands)
+    const std::vector<rvsdg::Output *> & operands)
 {
   if (is_store_mux_reducible(operands))
     return perform_store_mux_reduction(operation, operands);
@@ -243,10 +229,10 @@ NormalizeStoreMux(
   return std::nullopt;
 }
 
-std::optional<std::vector<rvsdg::output *>>
+std::optional<std::vector<rvsdg::Output *>>
 NormalizeStoreStore(
     const StoreNonVolatileOperation & operation,
-    const std::vector<rvsdg::output *> & operands)
+    const std::vector<rvsdg::Output *> & operands)
 {
   if (is_store_store_reducible(operation, operands))
     return perform_store_store_reduction(operation, operands);
@@ -254,10 +240,10 @@ NormalizeStoreStore(
   return std::nullopt;
 }
 
-std::optional<std::vector<rvsdg::output *>>
+std::optional<std::vector<rvsdg::Output *>>
 NormalizeStoreAlloca(
     const StoreNonVolatileOperation & operation,
-    const std::vector<rvsdg::output *> & operands)
+    const std::vector<rvsdg::Output *> & operands)
 {
   if (is_store_alloca_reducible(operands))
     return perform_store_alloca_reduction(operation, operands);
@@ -265,10 +251,10 @@ NormalizeStoreAlloca(
   return std::nullopt;
 }
 
-std::optional<std::vector<rvsdg::output *>>
+std::optional<std::vector<rvsdg::Output *>>
 NormalizeStoreDuplicateState(
     const StoreNonVolatileOperation & operation,
-    const std::vector<rvsdg::output *> & operands)
+    const std::vector<rvsdg::Output *> & operands)
 {
   if (is_multiple_origin_reducible(operands))
     return perform_multiple_origin_reduction(operation, operands);

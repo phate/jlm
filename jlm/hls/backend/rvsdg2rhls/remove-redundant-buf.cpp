@@ -11,7 +11,7 @@ namespace jlm::hls
 {
 
 bool
-eliminate_buf(jlm::rvsdg::output * o)
+eliminate_buf(jlm::rvsdg::Output * o)
 {
   if (auto so = dynamic_cast<rvsdg::SimpleOutput *>(o))
   {

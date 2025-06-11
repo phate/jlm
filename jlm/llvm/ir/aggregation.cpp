@@ -13,24 +13,22 @@
 namespace jlm::llvm
 {
 
-/* aggnode class */
-
-aggnode::~aggnode()
-{}
+AggregationNode::~AggregationNode() noexcept = default;
 
 void
-aggnode::normalize(aggnode & node)
+AggregationNode::normalize(AggregationNode & node)
 {
-  std::function<std::vector<std::unique_ptr<aggnode>>(aggnode &)> reduce = [&](aggnode & node)
+  std::function<std::vector<std::unique_ptr<AggregationNode>>(AggregationNode &)> reduce =
+      [&](AggregationNode & node)
   {
-    JLM_ASSERT(is<linearaggnode>(&node));
+    JLM_ASSERT(is<LinearAggregationNode>(&node));
 
-    std::vector<std::unique_ptr<aggnode>> children;
+    std::vector<std::unique_ptr<AggregationNode>> children;
     for (size_t n = 0; n < node.children_.size(); n++)
     {
       auto & child = node.children_[n];
 
-      if (is<linearaggnode>(child.get()))
+      if (is<LinearAggregationNode>(child.get()))
       {
         auto tmp = reduce(*child);
         std::move(tmp.begin(), tmp.end(), std::back_inserter(children));
@@ -44,7 +42,7 @@ aggnode::normalize(aggnode & node)
     return children;
   };
 
-  if (is<linearaggnode>(&node))
+  if (is<LinearAggregationNode>(&node))
   {
     auto children = reduce(node);
 
@@ -57,80 +55,62 @@ aggnode::normalize(aggnode & node)
     normalize(child);
 }
 
-/* entryaggnode class */
+EntryAggregationNode::~EntryAggregationNode() noexcept = default;
 
-entryaggnode::~entryaggnode()
-{}
-
-entryaggnode::constiterator
-entryaggnode::begin() const
+EntryAggregationNode::constiterator
+EntryAggregationNode::begin() const
 {
   return constiterator(arguments_.begin());
 }
 
-entryaggnode::constiterator
-entryaggnode::end() const
+EntryAggregationNode::constiterator
+EntryAggregationNode::end() const
 {
   return constiterator(arguments_.end());
 }
 
 std::string
-entryaggnode::debug_string() const
+EntryAggregationNode::debug_string() const
 {
   return "entry";
 }
 
-/* exitaggnode class */
-
-exitaggnode::~exitaggnode()
-{}
+ExitAggregationNode::~ExitAggregationNode() noexcept = default;
 
 std::string
-exitaggnode::debug_string() const
+ExitAggregationNode::debug_string() const
 {
   return "exit";
 }
 
-/* blockaggnode class */
-
-blockaggnode::~blockaggnode()
-{}
+BasicBlockAggregationNode::~BasicBlockAggregationNode() noexcept = default;
 
 std::string
-blockaggnode::debug_string() const
+BasicBlockAggregationNode::debug_string() const
 {
   return "block";
 }
 
-/* linearaggnode class */
-
-linearaggnode::~linearaggnode()
-{}
+LinearAggregationNode::~LinearAggregationNode() noexcept = default;
 
 std::string
-linearaggnode::debug_string() const
+LinearAggregationNode::debug_string() const
 {
   return "linear";
 }
 
-/* branchaggnode class */
-
-branchaggnode::~branchaggnode()
-{}
+BranchAggregationNode::~BranchAggregationNode() noexcept = default;
 
 std::string
-branchaggnode::debug_string() const
+BranchAggregationNode::debug_string() const
 {
   return "branch";
 }
 
-/* loopaggnode class */
-
-loopaggnode::~loopaggnode()
-{}
+LoopAggregationNode::~LoopAggregationNode() noexcept = default;
 
 std::string
-loopaggnode::debug_string() const
+LoopAggregationNode::debug_string() const
 {
   return "loop";
 }
@@ -148,7 +128,7 @@ public:
     return map_.find(node) != map_.end();
   }
 
-  std::unique_ptr<aggnode> &
+  std::unique_ptr<AggregationNode> &
   lookup(cfg_node * node)
   {
     JLM_ASSERT(contains(node));
@@ -157,7 +137,7 @@ public:
   }
 
   void
-  insert(cfg_node * node, std::unique_ptr<aggnode> anode)
+  insert(cfg_node * node, std::unique_ptr<AggregationNode> anode)
   {
     map_[node] = std::move(anode);
   }
@@ -169,25 +149,25 @@ public:
   }
 
   static std::unique_ptr<aggregation_map>
-  create(llvm::cfg & cfg)
+  create(ControlFlowGraph & cfg)
   {
     auto exit = cfg.exit();
     auto entry = cfg.entry();
     auto map = std::make_unique<aggregation_map>();
 
-    map->map_[entry] = entryaggnode::create(entry->arguments());
-    map->map_[exit] = exitaggnode::create(exit->results());
+    map->map_[entry] = EntryAggregationNode::create(entry->arguments());
+    map->map_[exit] = ExitAggregationNode::create(exit->results());
     for (auto & node : cfg)
     {
-      auto bb = static_cast<basic_block *>(&node);
-      map->map_[&node] = blockaggnode::create(std::move(bb->tacs()));
+      auto bb = static_cast<BasicBlock *>(&node);
+      map->map_[&node] = BasicBlockAggregationNode::create(std::move(bb->tacs()));
     }
 
     return map;
   }
 
 private:
-  std::unordered_map<cfg_node *, std::unique_ptr<aggnode>> map_;
+  std::unordered_map<cfg_node *, std::unique_ptr<AggregationNode>> map_;
 };
 
 static bool
@@ -263,7 +243,7 @@ reduce_loop(const sccstructure & sccstruct, aggregation_map & map)
   redge->source()->remove_outedge(redge->index());
 
   auto sese = aggregate(entry, exit, map);
-  auto loop = loopaggnode::create(std::move(map.lookup(sese)));
+  auto loop = LoopAggregationNode::create(std::move(map.lookup(sese)));
   map.insert(sese, std::move(loop));
 }
 
@@ -312,11 +292,11 @@ reduce_branch(cfg_node * split, cfg_node ** entry, aggregation_map & map)
   }
 
   /* perform reduction */
-  auto sese = basic_block::create(split->cfg());
+  auto sese = BasicBlock::create(split->cfg());
   split->divert_inedges(sese);
   sese->add_outedge(join);
 
-  auto branch = branchaggnode::create();
+  auto branch = BranchAggregationNode::create();
   for (auto & edge : split->OutEdges())
   {
     edge.sink()->remove_outedge(0);
@@ -325,7 +305,7 @@ reduce_branch(cfg_node * split, cfg_node ** entry, aggregation_map & map)
   }
 
   auto & child = map.lookup(split);
-  map.insert(sese, linearaggnode::create(std::move(child), std::move(branch)));
+  map.insert(sese, LinearAggregationNode::create(std::move(child), std::move(branch)));
   map.remove(split);
 
   /*
@@ -360,7 +340,7 @@ reduce_linear(cfg_node * source, cfg_node ** entry, cfg_node ** exit, aggregatio
   JLM_ASSERT(is_linear(source));
   auto sink = source->OutEdge(0)->sink();
 
-  auto sese = basic_block::create(source->cfg());
+  auto sese = BasicBlock::create(source->cfg());
   source->divert_inedges(sese);
   for (auto & edge : sink->OutEdges())
     sese->add_outedge(edge.sink());
@@ -368,7 +348,7 @@ reduce_linear(cfg_node * source, cfg_node ** entry, cfg_node ** exit, aggregatio
 
   auto child0 = std::move(map.lookup(source));
   auto child1 = std::move(map.lookup(sink));
-  map.insert(sese, linearaggnode::create(std::move(child0), std::move(child1)));
+  map.insert(sese, LinearAggregationNode::create(std::move(child0), std::move(child1)));
   map.remove(source);
   map.remove(sink);
 
@@ -497,8 +477,8 @@ aggregate(cfg_node * entry, cfg_node * exit, aggregation_map & map)
   return entry;
 }
 
-std::unique_ptr<aggnode>
-aggregate(llvm::cfg & cfg)
+std::unique_ptr<AggregationNode>
+aggregate(ControlFlowGraph & cfg)
 {
   JLM_ASSERT(is_proper_structured(cfg));
 
@@ -509,13 +489,13 @@ aggregate(llvm::cfg & cfg)
 }
 
 size_t
-ntacs(const aggnode & root)
+ntacs(const AggregationNode & root)
 {
   size_t n = 0;
   for (auto & child : root)
     n += ntacs(child);
 
-  if (auto bb = dynamic_cast<const blockaggnode *>(&root))
+  if (auto bb = dynamic_cast<const BasicBlockAggregationNode *>(&root))
     n += bb->tacs().ntacs();
 
   return n;

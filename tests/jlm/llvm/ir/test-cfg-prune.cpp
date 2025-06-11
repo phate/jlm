@@ -21,16 +21,15 @@ test()
   auto vt = jlm::tests::valuetype::Create();
   jlm::tests::test_op op({}, { vt });
 
-  /* setup cfg */
+  // Arrange
+  InterProceduralGraphModule im(jlm::util::FilePath(""), "", "");
 
-  ipgraph_module im(jlm::util::filepath(""), "", "");
-
-  jlm::llvm::cfg cfg(im);
+  ControlFlowGraph cfg(im);
   auto arg = cfg.entry()->append_argument(argument::create("arg", vt));
-  auto bb0 = basic_block::create(cfg);
-  auto bb1 = basic_block::create(cfg);
+  auto bb0 = BasicBlock::create(cfg);
+  auto bb1 = BasicBlock::create(cfg);
 
-  bb0->append_last(tac::create(op, {}));
+  bb0->append_last(ThreeAddressCode::create(op, {}));
   bb1->append_last(
       SsaPhiOperation::create({ { bb0->last()->result(0), bb0 }, { arg, cfg.entry() } }, vt));
 
@@ -39,12 +38,12 @@ test()
   bb1->add_outedge(cfg.exit());
   cfg.exit()->append_result(bb1->last()->result(0));
 
-  std::cout << cfg::ToAscii(cfg) << std::flush;
+  std::cout << ControlFlowGraph::ToAscii(cfg) << std::flush;
 
   /* verify pruning */
 
   prune(cfg);
-  std::cout << cfg::ToAscii(cfg) << std::flush;
+  std::cout << ControlFlowGraph::ToAscii(cfg) << std::flush;
 
   assert(cfg.nnodes() == 1);
 

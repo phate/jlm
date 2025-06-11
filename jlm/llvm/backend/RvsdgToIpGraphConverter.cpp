@@ -23,7 +23,7 @@ namespace jlm::llvm
 class RvsdgToIpGraphConverter::Context final
 {
 public:
-  explicit Context(ipgraph_module & ipGraphModule)
+  explicit Context(InterProceduralGraphModule & ipGraphModule)
       : ControlFlowGraph_(nullptr),
         IPGraphModule_(ipGraphModule),
         LastProcessedBasicBlock(nullptr)
@@ -39,63 +39,63 @@ public:
   Context &
   operator=(Context &&) = delete;
 
-  ipgraph_module &
+  [[nodiscard]] InterProceduralGraphModule &
   GetIpGraphModule() const noexcept
   {
     return IPGraphModule_;
   }
 
   void
-  InsertVariable(const rvsdg::output * output, const llvm::variable * variable)
+  InsertVariable(const rvsdg::Output * output, const llvm::Variable * variable)
   {
     JLM_ASSERT(VariableMap_.find(output) == VariableMap_.end());
     JLM_ASSERT(*output->Type() == *variable->Type());
     VariableMap_[output] = variable;
   }
 
-  const llvm::variable *
-  GetVariable(const rvsdg::output * output)
+  const llvm::Variable *
+  GetVariable(const rvsdg::Output * output)
   {
     const auto it = VariableMap_.find(output);
     JLM_ASSERT(it != VariableMap_.end());
     return it->second;
   }
 
-  basic_block *
+  BasicBlock *
   GetLastProcessedBasicBlock() const noexcept
   {
     return LastProcessedBasicBlock;
   }
 
   void
-  SetLastProcessedBasicBlock(basic_block * lastProcessedBasicBlock) noexcept
+  SetLastProcessedBasicBlock(BasicBlock * lastProcessedBasicBlock) noexcept
   {
     LastProcessedBasicBlock = lastProcessedBasicBlock;
   }
 
-  llvm::cfg *
+  ControlFlowGraph *
   GetControlFlowGraph() const noexcept
   {
     return ControlFlowGraph_;
   }
 
   void
-  SetControlFlowGraph(llvm::cfg * cfg) noexcept
+  SetControlFlowGraph(ControlFlowGraph * cfg) noexcept
   {
     ControlFlowGraph_ = cfg;
   }
 
   static std::unique_ptr<Context>
-  Create(ipgraph_module & ipGraphModule)
+  Create(InterProceduralGraphModule & ipGraphModule)
   {
     return std::make_unique<Context>(ipGraphModule);
   }
 
 private:
-  llvm::cfg * ControlFlowGraph_;
-  ipgraph_module & IPGraphModule_;
-  basic_block * LastProcessedBasicBlock;
-  std::unordered_map<const rvsdg::output *, const llvm::variable *> VariableMap_;
+  ControlFlowGraph * ControlFlowGraph_;
+  InterProceduralGraphModule & IPGraphModule_;
+  BasicBlock * LastProcessedBasicBlock;
+  std::unordered_map<const rvsdg::Output *, const llvm::Variable *> VariableMap_;
 };
 
 class RvsdgToIpGraphConverter::Statistics final : public util::Statistics
@@ -103,7 +103,7 @@ class RvsdgToIpGraphConverter::Statistics final : public util::Statistics
 public:
   ~Statistics() override = default;
 
-  explicit Statistics(const util::filepath & filename)
+  explicit Statistics(const util::FilePath & filename)
       : util::Statistics(Id::RvsdgDestruction, filename)
   {}
 
@@ -115,14 +115,14 @@ public:
   }
 
   void
-  End(const ipgraph_module & im)
+  End(const InterProceduralGraphModule & im)
   {
     AddMeasurement(Label::NumThreeAddressCodes, llvm::ntacs(im));
     GetTimer(Label::Timer).stop();
   }
 
   static std::unique_ptr<Statistics>
-  Create(const util::filepath & sourceFile)
+  Create(const util::FilePath & sourceFile)
   {
     return std::make_unique<Statistics>(sourceFile);
   }
@@ -157,13 +157,13 @@ RvsdgToIpGraphConverter::CreateInitialization(const delta::node & deltaNode)
     const auto output = node->output(0);
 
     // collect operand variables
-    std::vector<const variable *> operands;
+    std::vector<const Variable *> operands;
     for (size_t n = 0; n < node->ninputs(); n++)
       operands.push_back(Context_->GetVariable(node->input(n)->origin()));
 
-    // convert node to tac
+    // convert node to three address code
     auto & op = *static_cast<const rvsdg::SimpleOperation *>(&node->GetOperation());
-    tacs.push_back(tac::create(op, operands));
+    tacs.push_back(ThreeAddressCode::create(op, operands));
     Context_->InsertVariable(output, tacs.back()->result(0));
   }
 
@@ -173,26 +173,26 @@ RvsdgToIpGraphConverter::CreateInitialization(const delta::node & deltaNode)
 void
 RvsdgToIpGraphConverter::ConvertRegion(rvsdg::Region & region)
 {
-  const auto entryBlock = basic_block::create(*Context_->GetControlFlowGraph());
+  const auto entryBlock = BasicBlock::create(*Context_->GetControlFlowGraph());
   Context_->GetLastProcessedBasicBlock()->add_outedge(entryBlock);
   Context_->SetLastProcessedBasicBlock(entryBlock);
 
   for (const auto & node : rvsdg::TopDownTraverser(&region))
     ConvertNode(*node);
 
-  const auto exitBlock = basic_block::create(*Context_->GetControlFlowGraph());
+  const auto exitBlock = BasicBlock::create(*Context_->GetControlFlowGraph());
   Context_->GetLastProcessedBasicBlock()->add_outedge(exitBlock);
   Context_->SetLastProcessedBasicBlock(exitBlock);
 }
 
-std::unique_ptr<llvm::cfg>
+std::unique_ptr<ControlFlowGraph>
 RvsdgToIpGraphConverter::CreateControlFlowGraph(const rvsdg::LambdaNode & lambda)
 {
   JLM_ASSERT(Context_->GetLastProcessedBasicBlock() == nullptr);
   const auto & lambdaOperation = *util::AssertedCast<LlvmLambdaOperation>(&lambda.GetOperation());
 
-  auto controlFlowGraph = cfg::create(Context_->GetIpGraphModule());
-  const auto entryBlock = basic_block::create(*controlFlowGraph);
+  auto controlFlowGraph = ControlFlowGraph::create(Context_->GetIpGraphModule());
+  const auto entryBlock = BasicBlock::create(*controlFlowGraph);
   controlFlowGraph->exit()->divert_inedges(entryBlock);
   Context_->SetLastProcessedBasicBlock(entryBlock);
   Context_->SetControlFlowGraph(controlFlowGraph.get());
@@ -234,12 +234,12 @@ RvsdgToIpGraphConverter::CreateControlFlowGraph(const rvsdg::LambdaNode & lambda
 void
 RvsdgToIpGraphConverter::ConvertSimpleNode(const rvsdg::SimpleNode & simpleNode)
 {
-  std::vector<const variable *> operands;
+  std::vector<const Variable *> operands;
   for (size_t n = 0; n < simpleNode.ninputs(); n++)
     operands.push_back(Context_->GetVariable(simpleNode.input(n)->origin()));
 
   Context_->GetLastProcessedBasicBlock()->append_last(
-      tac::create(simpleNode.GetOperation(), operands));
+      ThreeAddressCode::create(simpleNode.GetOperation(), operands));
 
   for (size_t n = 0; n < simpleNode.noutputs(); n++)
     Context_->InsertVariable(
@@ -254,8 +254,8 @@ RvsdgToIpGraphConverter::ConvertGammaNode(const rvsdg::GammaNode & gammaNode)
   const auto predicate = gammaNode.predicate()->origin();
   const auto controlFlowGraph = Context_->GetControlFlowGraph();
 
-  const auto entryBlock = basic_block::create(*controlFlowGraph);
-  const auto exitBlock = basic_block::create(*controlFlowGraph);
+  const auto entryBlock = BasicBlock::create(*controlFlowGraph);
+  const auto exitBlock = BasicBlock::create(*controlFlowGraph);
   Context_->GetLastProcessedBasicBlock()->add_outedge(entryBlock);
 
   // convert gamma regions
@@ -276,7 +276,7 @@ RvsdgToIpGraphConverter::ConvertGammaNode(const rvsdg::GammaNode & gammaNode)
     }
 
     // convert subregion
-    const auto regionEntryBlock = basic_block::create(*controlFlowGraph);
+    const auto regionEntryBlock = BasicBlock::create(*controlFlowGraph);
     entryBlock->add_outedge(regionEntryBlock);
     Context_->SetLastProcessedBasicBlock(regionEntryBlock);
     ConvertRegion(*subregion);
@@ -291,7 +291,7 @@ RvsdgToIpGraphConverter::ConvertGammaNode(const rvsdg::GammaNode & gammaNode)
     const auto output = gammaNode.output(n);
 
     bool invariant = true;
-    std::vector<std::pair<const variable *, cfg_node *>> arguments;
+    std::vector<std::pair<const Variable *, cfg_node *>> arguments;
     for (size_t r = 0; r < gammaNode.nsubregions(); r++)
     {
       const auto origin = gammaNode.subregion(r)->result(n)->origin();
@@ -319,7 +319,7 @@ RvsdgToIpGraphConverter::ConvertGammaNode(const rvsdg::GammaNode & gammaNode)
 bool
 RvsdgToIpGraphConverter::RequiresSsaPhiOperation(
     const rvsdg::ThetaNode::LoopVar & loopVar,
-    const variable & v)
+    const Variable & v)
 {
   // FIXME: solely decide on the input instead of using the variable
   if (is<gblvariable>(&v))
@@ -341,12 +341,12 @@ RvsdgToIpGraphConverter::ConvertThetaNode(const rvsdg::ThetaNode & thetaNode)
   const auto predicate = subregion->result(0)->origin();
 
   auto preEntryBlock = Context_->GetLastProcessedBasicBlock();
-  const auto entryBlock = basic_block::create(*Context_->GetControlFlowGraph());
+  const auto entryBlock = BasicBlock::create(*Context_->GetControlFlowGraph());
   preEntryBlock->add_outedge(entryBlock);
   Context_->SetLastProcessedBasicBlock(entryBlock);
 
   // create SSA phi nodes in entry block and add arguments to context
-  std::vector<llvm::tac *> phis;
+  std::vector<llvm::ThreeAddressCode *> phis;
   for (const auto & loopVar : thetaNode.GetLoopVars())
   {
     auto variable = Context_->GetVariable(loopVar.input->origin());
@@ -386,7 +386,7 @@ RvsdgToIpGraphConverter::ConvertThetaNode(const rvsdg::ThetaNode & thetaNode)
 
   Context_->GetLastProcessedBasicBlock()->append_last(
       BranchOperation::create(2, Context_->GetVariable(predicate)));
-  const auto exitBlock = basic_block::create(*Context_->GetControlFlowGraph());
+  const auto exitBlock = BasicBlock::create(*Context_->GetControlFlowGraph());
   Context_->GetLastProcessedBasicBlock()->add_outedge(exitBlock);
   Context_->GetLastProcessedBasicBlock()->add_outedge(entryBlock);
   Context_->SetLastProcessedBasicBlock(exitBlock);
@@ -592,7 +592,7 @@ RvsdgToIpGraphConverter::ConvertImports(const rvsdg::Graph & graph)
   }
 }
 
-std::unique_ptr<ipgraph_module>
+std::unique_ptr<InterProceduralGraphModule>
 RvsdgToIpGraphConverter::ConvertModule(
     RvsdgModule & rvsdgModule,
     util::StatisticsCollector & statisticsCollector)
@@ -600,7 +600,7 @@ RvsdgToIpGraphConverter::ConvertModule(
   auto statistics = Statistics::Create(rvsdgModule.SourceFileName());
   statistics->Start(rvsdgModule.Rvsdg());
 
-  auto ipGraphModule = ipgraph_module::Create(
+  auto ipGraphModule = InterProceduralGraphModule::Create(
       rvsdgModule.SourceFileName(),
       rvsdgModule.TargetTriple(),
       rvsdgModule.DataLayout(),
@@ -616,7 +616,7 @@ RvsdgToIpGraphConverter::ConvertModule(
   return ipGraphModule;
 }
 
-std::unique_ptr<ipgraph_module>
+std::unique_ptr<InterProceduralGraphModule>
 RvsdgToIpGraphConverter::CreateAndConvertModule(
     RvsdgModule & rvsdgModule,
     util::StatisticsCollector & statisticsCollector)

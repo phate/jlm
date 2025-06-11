@@ -2122,7 +2122,7 @@ public:
     return *Lambda_;
   }
 
-  [[nodiscard]] const rvsdg::output &
+  [[nodiscard]] const rvsdg::Output &
   GetLambdaOutput() const noexcept
   {
     JLM_ASSERT(Lambda_);
@@ -2136,7 +2136,7 @@ public:
     return *Alloca_;
   }
 
-  [[nodiscard]] const jlm::rvsdg::output &
+  [[nodiscard]] const jlm::rvsdg::Output &
   GetAllocaOutput() const noexcept
   {
     JLM_ASSERT(Alloca_);
@@ -2150,7 +2150,7 @@ public:
     return *Malloc_;
   }
 
-  [[nodiscard]] const jlm::rvsdg::output &
+  [[nodiscard]] const jlm::rvsdg::Output &
   GetMallocOutput() const noexcept
   {
     JLM_ASSERT(Malloc_);
@@ -2208,7 +2208,7 @@ public:
     return *AllocaNodes_[index];
   }
 
-  [[nodiscard]] const jlm::rvsdg::output &
+  [[nodiscard]] const jlm::rvsdg::Output &
   GetAllocaOutput(size_t index) const noexcept
   {
     JLM_ASSERT(index < AllocaNodes_.size());
@@ -2272,14 +2272,14 @@ public:
     return *LocalFunc_;
   }
 
-  [[nodiscard]] const jlm::rvsdg::output &
+  [[nodiscard]] const jlm::rvsdg::Output &
   GetLocalFunctionRegister() const noexcept
   {
     JLM_ASSERT(LocalFuncRegister_);
     return *LocalFuncRegister_;
   }
 
-  [[nodiscard]] const jlm::rvsdg::output &
+  [[nodiscard]] const jlm::rvsdg::Output &
   GetLocalFunctionParam() const noexcept
   {
     JLM_ASSERT(LocalFuncParam_);
@@ -2306,8 +2306,8 @@ private:
 
   jlm::llvm::delta::node * Global_ = {};
   jlm::rvsdg::LambdaNode * LocalFunc_ = {};
-  jlm::rvsdg::output * LocalFuncParam_ = {};
-  jlm::rvsdg::output * LocalFuncRegister_ = {};
+  jlm::rvsdg::Output * LocalFuncParam_ = {};
+  jlm::rvsdg::Output * LocalFuncRegister_ = {};
   rvsdg::Node * LocalFuncParamAllocaNode_ = {};
   jlm::rvsdg::LambdaNode * ExportedFunc_ = {};
 };

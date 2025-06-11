@@ -18,7 +18,7 @@ test_main()
   Graph graph;
 
   auto NormalizeCne =
-      [&](const SimpleOperation & operation, const std::vector<jlm::rvsdg::output *> & operands)
+      [&](const SimpleOperation & operation, const std::vector<jlm::rvsdg::Output *> & operands)
   {
     return NormalizeSimpleOperationCommonNodeElimination(
         graph.GetRootRegion(),

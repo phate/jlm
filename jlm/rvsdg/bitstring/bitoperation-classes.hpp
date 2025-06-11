@@ -34,10 +34,10 @@ public:
 
   /* reduction methods */
   virtual unop_reduction_path_t
-  can_reduce_operand(const jlm::rvsdg::output * arg) const noexcept override;
+  can_reduce_operand(const jlm::rvsdg::Output * arg) const noexcept override;
 
-  virtual jlm::rvsdg::output *
-  reduce_operand(unop_reduction_path_t path, jlm::rvsdg::output * arg) const override;
+  virtual jlm::rvsdg::Output *
+  reduce_operand(unop_reduction_path_t path, jlm::rvsdg::Output * arg) const override;
 
   virtual bitvalue_repr
   reduce_constant(const bitvalue_repr & arg) const = 0;
@@ -60,14 +60,14 @@ public:
 
   /* reduction methods */
   virtual binop_reduction_path_t
-  can_reduce_operand_pair(const jlm::rvsdg::output * arg1, const jlm::rvsdg::output * arg2)
+  can_reduce_operand_pair(const jlm::rvsdg::Output * arg1, const jlm::rvsdg::Output * arg2)
       const noexcept override;
 
-  virtual jlm::rvsdg::output *
+  virtual jlm::rvsdg::Output *
   reduce_operand_pair(
       binop_reduction_path_t path,
-      jlm::rvsdg::output * arg1,
-      jlm::rvsdg::output * arg2) const override;
+      jlm::rvsdg::Output * arg1,
+      jlm::rvsdg::Output * arg2) const override;
 
   virtual bitvalue_repr
   reduce_constants(const bitvalue_repr & arg1, const bitvalue_repr & arg2) const = 0;
@@ -99,14 +99,14 @@ public:
   {}
 
   virtual binop_reduction_path_t
-  can_reduce_operand_pair(const jlm::rvsdg::output * arg1, const jlm::rvsdg::output * arg2)
+  can_reduce_operand_pair(const jlm::rvsdg::Output * arg1, const jlm::rvsdg::Output * arg2)
       const noexcept override;
 
-  virtual jlm::rvsdg::output *
+  virtual jlm::rvsdg::Output *
   reduce_operand_pair(
       binop_reduction_path_t path,
-      jlm::rvsdg::output * arg1,
-      jlm::rvsdg::output * arg2) const override;
+      jlm::rvsdg::Output * arg1,
+      jlm::rvsdg::Output * arg2) const override;
 
   virtual compare_result
   reduce_constants(const bitvalue_repr & arg1, const bitvalue_repr & arg2) const = 0;

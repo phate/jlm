@@ -37,7 +37,7 @@ class SubstitutionMap;
  * depends on the structural node the region is part of. A region argument is either linked
  * with a \ref StructuralInput or is a standalone argument.
  */
-class RegionArgument : public output
+class RegionArgument : public Output
 {
   util::intrusive_list_anchor<RegionArgument> structural_input_anchor_;
 
@@ -119,7 +119,7 @@ private:
  * depends on the structural node the region is part of. A region result is either linked
  * with a \ref StructuralOutput or is a standalone result.
  */
-class RegionResult : public input
+class RegionResult : public Input
 {
   util::intrusive_list_anchor<RegionResult> structural_output_anchor_;
 
@@ -131,7 +131,7 @@ public:
 
   RegionResult(
       rvsdg::Region * region,
-      rvsdg::output * origin,
+      rvsdg::Output * origin,
       StructuralOutput * output,
       std::shared_ptr<const rvsdg::Type> type);
 
@@ -164,7 +164,7 @@ public:
    * @return A reference to the copied result.
    */
   virtual RegionResult &
-  Copy(rvsdg::output & origin, StructuralOutput * output);
+  Copy(rvsdg::Output & origin, StructuralOutput * output);
 
   [[nodiscard]] std::variant<Node *, Region *>
   GetOwner() const noexcept override;
@@ -193,7 +193,7 @@ public:
   static RegionResult &
   Create(
       rvsdg::Region & region,
-      rvsdg::output & origin,
+      rvsdg::Output & origin,
       StructuralOutput * output,
       std::shared_ptr<const rvsdg::Type> type);
 
@@ -213,16 +213,15 @@ private:
  * 2. The top nodes of the acyclic subgraph. These are all nodes of the region that have no inputs,
  * i.e., constants.
  * 3. The bottom nodes of the acyclic subgraph. These are all nodes of the region that have no
- * users, i.e. that are dead. See \ref output::IsDead() for more information.
+ * users, i.e. that are dead. See \ref Output::IsDead() for more information.
  */
 class Region
 {
-  typedef util::intrusive_list<Node, Node::region_node_list_accessor> region_nodes_list;
+  typedef util::IntrusiveList<Node, Node::region_node_list_accessor> region_nodes_list;
 
-  typedef util::intrusive_list<Node, Node::region_top_node_list_accessor> region_top_node_list;
+  typedef util::IntrusiveList<Node, Node::region_top_node_list_accessor> region_top_node_list;
 
-  typedef util::intrusive_list<Node, Node::region_bottom_node_list_accessor>
-      region_bottom_node_list;
+  typedef util::IntrusiveList<Node, Node::region_bottom_node_list_accessor> region_bottom_node_list;
 
   using RegionArgumentIterator = std::vector<RegionArgument *>::iterator;
   using RegionArgumentConstIterator = std::vector<RegionArgument *>::const_iterator;
@@ -799,7 +798,7 @@ ninputs(const rvsdg::Region * region) noexcept;
  */
 template<typename NodeType>
 inline NodeType *
-TryGetRegionParentNode(const rvsdg::input & input) noexcept
+TryGetRegionParentNode(const rvsdg::Input & input) noexcept
 {
   auto region = TryGetOwnerRegion(input);
   if (region)
@@ -835,7 +834,7 @@ TryGetRegionParentNode(const rvsdg::input & input) noexcept
  */
 template<typename NodeType>
 inline NodeType *
-TryGetRegionParentNode(const rvsdg::output & output) noexcept
+TryGetRegionParentNode(const rvsdg::Output & output) noexcept
 {
   auto region = TryGetOwnerRegion(output);
   if (region)
@@ -869,7 +868,7 @@ TryGetRegionParentNode(const rvsdg::output & output) noexcept
  */
 template<typename NodeType>
 inline NodeType &
-AssertGetRegionParentNode(const rvsdg::input & input)
+AssertGetRegionParentNode(const rvsdg::Input & input)
 {
   auto node = TryGetRegionParentNode<NodeType>(input);
   if (!node)
@@ -900,7 +899,7 @@ AssertGetRegionParentNode(const rvsdg::input & input)
  */
 template<typename NodeType>
 inline NodeType &
-AssertGetRegionParentNode(const rvsdg::output & output)
+AssertGetRegionParentNode(const rvsdg::Output & output)
 {
   auto node = TryGetRegionParentNode<NodeType>(output);
   if (!node)

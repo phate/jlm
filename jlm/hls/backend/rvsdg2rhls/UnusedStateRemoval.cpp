@@ -15,7 +15,7 @@ namespace jlm::hls
 {
 
 static bool
-IsPassthroughArgument(const rvsdg::output & argument)
+IsPassthroughArgument(const rvsdg::Output & argument)
 {
   if (argument.nusers() != 1)
   {
@@ -26,7 +26,7 @@ IsPassthroughArgument(const rvsdg::output & argument)
 }
 
 static bool
-IsPassthroughResult(const rvsdg::input & result)
+IsPassthroughResult(const rvsdg::Input & result)
 {
   auto argument = dynamic_cast<rvsdg::RegionArgument *>(result.origin());
   return argument != nullptr;
@@ -91,7 +91,7 @@ RemoveUnusedStatesFromLambda(rvsdg::LambdaNode & lambdaNode)
   }
   lambdaNode.subregion()->copy(newLambda->subregion(), substitutionMap, false, false);
 
-  std::vector<jlm::rvsdg::output *> newResults;
+  std::vector<jlm::rvsdg::Output *> newResults;
   for (auto result : lambdaNode.GetFunctionResults())
   {
     if (!IsPassthroughResult(*result))
@@ -132,11 +132,11 @@ RemovePassthroughArgument(const rvsdg::RegionArgument & argument)
 // If this output has a single user and that single user happens to be
 // the exit variable of this gamma node, then return it.
 static std::optional<rvsdg::GammaNode::ExitVar>
-TryGetSingleUserExitVar(rvsdg::GammaNode & gammaNode, rvsdg::output & argument)
+TryGetSingleUserExitVar(rvsdg::GammaNode & gammaNode, rvsdg::Output & argument)
 {
   if (argument.nusers() == 1)
   {
-    rvsdg::input * user = *argument.begin();
+    rvsdg::Input * user = *argument.begin();
     if (rvsdg::TryGetRegionParentNode<rvsdg::GammaNode>(*user) == &gammaNode)
     {
       return gammaNode.MapBranchResultExitVar(*user);
@@ -160,7 +160,7 @@ RemoveUnusedStatesFromGammaNode(rvsdg::GammaNode & gammaNode)
                      && std::all_of(
                             entryvar.branchArgument.begin(),
                             entryvar.branchArgument.end(),
-                            [&gammaNode, &exitvar0](rvsdg::output * argument) -> bool
+                            [&gammaNode, &exitvar0](rvsdg::Output * argument) -> bool
                             {
                               auto exitvar = TryGetSingleUserExitVar(gammaNode, *argument);
                               return exitvar && exitvar->output == exitvar0->output;

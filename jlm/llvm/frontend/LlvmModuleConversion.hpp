@@ -20,12 +20,12 @@ class Module;
 namespace jlm::llvm
 {
 
-class ipgraph_module;
+class InterProceduralGraphModule;
 
-attribute::kind
+Attribute::kind
 ConvertAttributeKind(const ::llvm::Attribute::AttrKind & kind);
 
-std::unique_ptr<ipgraph_module>
+std::unique_ptr<InterProceduralGraphModule>
 ConvertLlvmModule(::llvm::Module & module);
 
 }

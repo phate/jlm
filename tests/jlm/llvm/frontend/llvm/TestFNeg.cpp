@@ -17,7 +17,7 @@
 
 template<class OP>
 static bool
-Contains(const jlm::llvm::ipgraph_module & module, const std::string &)
+Contains(const jlm::llvm::InterProceduralGraphModule & module, const std::string &)
 {
   using namespace jlm;
 
@@ -25,7 +25,7 @@ Contains(const jlm::llvm::ipgraph_module & module, const std::string &)
   auto controlFlowGraph =
       dynamic_cast<const jlm::llvm::function_node *>(module.ipgraph().find("f"))->cfg();
   auto basicBlock =
-      dynamic_cast<const jlm::llvm::basic_block *>(controlFlowGraph->entry()->OutEdge(0)->sink());
+      dynamic_cast<const jlm::llvm::BasicBlock *>(controlFlowGraph->entry()->OutEdge(0)->sink());
   for (auto threeAddressCode : *basicBlock)
     hasInstruction = hasInstruction || jlm::llvm::is<OP>(threeAddressCode);
 
