@@ -27,7 +27,7 @@ TestBasicBlockAnnotation()
 
     auto v0 = module.create_variable(vt, "v0");
 
-    taclist bb;
+    ThreeAddressCodeList bb;
     bb.append_last(ThreeAddressCode::create(op, { v0 }));
     auto v1 = bb.last()->result(0);
 
@@ -70,7 +70,7 @@ TestLinearSubgraphAnnotation()
     auto vt = jlm::tests::valuetype::Create();
     jlm::tests::test_op op({ vt }, { vt });
 
-    taclist bb1, bb2;
+    ThreeAddressCodeList bb1, bb2;
     bb1.append_last(ThreeAddressCode::create(op, { &argument }));
     auto v1 = bb1.last()->result(0);
 
@@ -158,7 +158,7 @@ TestBranchAnnotation()
     auto argument = module.create_variable(vt, "arg");
     auto v3 = module.create_variable(vt, "v3");
 
-    taclist splitTacList, bb1, bb2;
+    ThreeAddressCodeList splitTacList, bb1, bb2;
     splitTacList.append_last(ThreeAddressCode::create(op, { argument }));
     auto v1 = splitTacList.last()->result(0);
 
@@ -239,7 +239,7 @@ TestLoopAnnotation()
     auto v1 = module.create_variable(vt, "v1");
     auto v4 = module.create_variable(vt, "v4");
 
-    taclist bb;
+    ThreeAddressCodeList bb;
     bb.append_last(ThreeAddressCode::create(op, { v1 }));
     auto v2 = bb.last()->result(0);
 
@@ -302,7 +302,7 @@ TestBranchInLoopAnnotation()
     auto v1 = module.create_variable(vt, "v1");
     auto v3 = module.create_variable(vt, "v3");
 
-    taclist tl_cb1, tl_cb2;
+    ThreeAddressCodeList tl_cb1, tl_cb2;
     tl_cb1.append_last(ThreeAddressCode::create(op, { v1 }));
     auto v2 = tl_cb1.last()->result(0);
 
@@ -391,7 +391,7 @@ TestAssignmentAnnotation()
     auto v1 = module.create_variable(vt, "v1");
     auto v2 = module.create_variable(vt, "v2");
 
-    taclist bb;
+    ThreeAddressCodeList bb;
     bb.append_last(AssignmentOperation::create(v1, v2));
 
     auto root = BasicBlockAggregationNode::create(std::move(bb));
@@ -429,7 +429,7 @@ TestBranchPassByAnnotation()
 
     auto v3 = module.create_variable(vt, "v3");
 
-    taclist tlsplit, tlb1, tlb2;
+    ThreeAddressCodeList tlsplit, tlb1, tlb2;
     tlsplit.append_last(ThreeAddressCode::create(op, {}));
     auto v1 = tlsplit.last()->result(0);
 

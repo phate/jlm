@@ -564,7 +564,7 @@ ConvertThreeAddressCode(
 
 static void
 ConvertBasicBlock(
-    const taclist & basicBlock,
+    const ThreeAddressCodeList & basicBlock,
     rvsdg::Region & region,
     llvm::VariableMap & variableMap)
 {
