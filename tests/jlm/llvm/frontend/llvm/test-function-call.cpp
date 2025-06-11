@@ -42,7 +42,7 @@ test_function_call()
     return module;
   };
 
-  auto verify = [](const jlm::llvm::ipgraph_module & module)
+  auto verify = [](const jlm::llvm::InterProceduralGraphModule & module)
   {
     using namespace jlm::llvm;
 
@@ -99,7 +99,7 @@ test_malloc_call()
     return module;
   };
 
-  auto verify = [](const jlm::llvm::ipgraph_module & module)
+  auto verify = [](const jlm::llvm::InterProceduralGraphModule & module)
   {
     using namespace jlm::llvm;
 
@@ -155,7 +155,7 @@ test_free_call()
     return module;
   };
 
-  auto verify = [](const jlm::llvm::ipgraph_module & module)
+  auto verify = [](const jlm::llvm::InterProceduralGraphModule & module)
   {
     using namespace jlm::llvm;
 

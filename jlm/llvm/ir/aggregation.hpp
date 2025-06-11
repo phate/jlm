@@ -485,14 +485,12 @@ public:
   }
 };
 
-/* loop node class */
-
-class loopaggnode final : public AggregationNode
+class LoopAggregationNode final : public AggregationNode
 {
 public:
-  virtual ~loopaggnode();
+  ~LoopAggregationNode() noexcept override;
 
-  inline loopaggnode(std::unique_ptr<AggregationNode> body)
+  explicit LoopAggregationNode(std::unique_ptr<AggregationNode> body)
   {
     add_child(std::move(body));
   }
@@ -503,7 +501,7 @@ public:
   static inline std::unique_ptr<AggregationNode>
   create(std::unique_ptr<AggregationNode> body)
   {
-    return std::make_unique<loopaggnode>(std::move(body));
+    return std::make_unique<LoopAggregationNode>(std::move(body));
   }
 };
 

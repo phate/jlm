@@ -47,7 +47,7 @@ TestThreeAddressCodeCreator()
   using namespace jlm::llvm;
 
   // Arrange
-  ipgraph_module ipgModule(jlm::util::FilePath(""), "", "");
+  InterProceduralGraphModule ipgModule(jlm::util::FilePath(""), "", "");
 
   auto address = ipgModule.create_variable(PointerType::Create(), "p");
   auto memoryState = ipgModule.create_variable(MemoryStateType::Create(), "m");

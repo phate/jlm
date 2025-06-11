@@ -23,7 +23,7 @@ namespace jlm::llvm
 class RvsdgToIpGraphConverter::Context final
 {
 public:
-  explicit Context(ipgraph_module & ipGraphModule)
+  explicit Context(InterProceduralGraphModule & ipGraphModule)
       : ControlFlowGraph_(nullptr),
         IPGraphModule_(ipGraphModule),
         LastProcessedBasicBlock(nullptr)
@@ -39,7 +39,7 @@ public:
   Context &
   operator=(Context &&) = delete;
 
-  ipgraph_module &
+  [[nodiscard]] InterProceduralGraphModule &
   GetIpGraphModule() const noexcept
   {
     return IPGraphModule_;
@@ -86,14 +86,14 @@ public:
   }
 
   static std::unique_ptr<Context>
-  Create(ipgraph_module & ipGraphModule)
+  Create(InterProceduralGraphModule & ipGraphModule)
   {
     return std::make_unique<Context>(ipGraphModule);
   }
 
 private:
   ControlFlowGraph * ControlFlowGraph_;
-  ipgraph_module & IPGraphModule_;
+  InterProceduralGraphModule & IPGraphModule_;
   BasicBlock * LastProcessedBasicBlock;
   std::unordered_map<const rvsdg::Output *, const llvm::Variable *> VariableMap_;
 };
@@ -115,7 +115,7 @@ public:
   }
 
   void
-  End(const ipgraph_module & im)
+  End(const InterProceduralGraphModule & im)
   {
     AddMeasurement(Label::NumThreeAddressCodes, llvm::ntacs(im));
     GetTimer(Label::Timer).stop();
@@ -592,7 +592,7 @@ RvsdgToIpGraphConverter::ConvertImports(const rvsdg::Graph & graph)
   }
 }
 
-std::unique_ptr<ipgraph_module>
+std::unique_ptr<InterProceduralGraphModule>
 RvsdgToIpGraphConverter::ConvertModule(
     RvsdgModule & rvsdgModule,
     util::StatisticsCollector & statisticsCollector)
@@ -600,7 +600,7 @@ RvsdgToIpGraphConverter::ConvertModule(
   auto statistics = Statistics::Create(rvsdgModule.SourceFileName());
   statistics->Start(rvsdgModule.Rvsdg());
 
-  auto ipGraphModule = ipgraph_module::Create(
+  auto ipGraphModule = InterProceduralGraphModule::Create(
       rvsdgModule.SourceFileName(),
       rvsdgModule.TargetTriple(),
       rvsdgModule.DataLayout(),
@@ -616,7 +616,7 @@ RvsdgToIpGraphConverter::ConvertModule(
   return ipGraphModule;
 }
 
-std::unique_ptr<ipgraph_module>
+std::unique_ptr<InterProceduralGraphModule>
 RvsdgToIpGraphConverter::CreateAndConvertModule(
     RvsdgModule & rvsdgModule,
     util::StatisticsCollector & statisticsCollector)
