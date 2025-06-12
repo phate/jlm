@@ -48,7 +48,21 @@ std::unique_ptr<llvm::RvsdgModule>
 MlirToJlmConverter::ConvertMlir(std::unique_ptr<::mlir::Block> & block)
 {
   auto & topNode = block->front();
+  if (auto module = ::mlir::dyn_cast<::mlir::ModuleOp>(topNode))
+  {
+    auto & newTopNode = module.getBodyRegion().front().front();
+    auto omegaNode = ::mlir::dyn_cast<::mlir::rvsdg::OmegaNode>(newTopNode);
+    if (!omegaNode)
+    {
+      JLM_UNREACHABLE("frontend : Top node in module op is not an OmegaNode.");
+    }
+    return ConvertOmega(omegaNode);
+  }
   auto omegaNode = ::mlir::dyn_cast<::mlir::rvsdg::OmegaNode>(topNode);
+  if (!omegaNode)
+  {
+    JLM_UNREACHABLE("frontend : Top node is not an OmegaNode.");
+  }
   return ConvertOmega(omegaNode);
 }
 
@@ -735,6 +749,12 @@ MlirToJlmConverter::ConvertOperation(
 
     rvsdgThetaNode->set_predicate(regionResults[0]);
 
+    auto loopvars = rvsdgThetaNode->GetLoopVars();
+    for (size_t i = 1; i < regionResults.size(); i++)
+    {
+      loopvars[i-1].post->divert_to(regionResults[i]);
+    }
+
     return rvsdgThetaNode;
   }
   else if (auto mlirDeltaNode = ::mlir::dyn_cast<::mlir::rvsdg::DeltaNode>(&mlirOperation))
@@ -788,11 +808,36 @@ MlirToJlmConverter::ConvertOperation(
         mlirMatch.getMapping().size() // numAlternatives
         ));
   }
+  else if (auto selectOp = ::mlir::dyn_cast<::mlir::arith::SelectOp>(&mlirOperation))
+  {
+    auto type = selectOp.getType();
+    std::shared_ptr<jlm::rvsdg::Type> jlmType = ConvertType(type);
+    auto selectOperation = jlm::llvm::SelectOperation(jlmType);
+    return &rvsdg::SimpleNode::Create(
+        rvsdgRegion,
+        selectOperation,
+        std::vector(inputs.begin(), inputs.end()));
+  }
+  else if (auto mlirOmegaResult = ::mlir::dyn_cast<::mlir::rvsdg::OmegaResult>(&mlirOperation))
+  {
+    for (auto input : inputs)
+    {
+      auto origin = rvsdg::output::GetNode(*input);
+      if (auto lambda = dynamic_cast<rvsdg::LambdaNode *>(origin))
+      {
+        auto op = dynamic_cast<llvm::LlvmLambdaOperation *>(&lambda->GetOperation());
+        jlm::llvm::GraphExport::Create(*input, op->name());
+      }
+      else if (auto delta = dynamic_cast<llvm::delta::node *>(origin))
+      {
+        jlm::llvm::GraphExport::Create(*input, delta->GetOperation().name());
+      }
+    }
+    return nullptr;
+  }
   // ** endregion Structural nodes **
-
   else if (
       ::mlir::isa<::mlir::rvsdg::LambdaResult>(&mlirOperation)
-      || ::mlir::isa<::mlir::rvsdg::OmegaResult>(&mlirOperation)
       || ::mlir::isa<::mlir::rvsdg::GammaResult>(&mlirOperation)
       || ::mlir::isa<::mlir::rvsdg::ThetaResult>(&mlirOperation)
       || ::mlir::isa<::mlir::rvsdg::DeltaResult>(&mlirOperation)
@@ -803,6 +848,7 @@ MlirToJlmConverter::ConvertOperation(
   }
   else
   {
+    mlirOperation.dump();
     auto message = util::strfmt(
         "Operation not implemented: ",
         mlirOperation.getName().getStringRef().str(),
@@ -956,6 +1002,7 @@ MlirToJlmConverter::ConvertType(::mlir::Type & type)
   }
   else
   {
+    type.dump();
     JLM_UNREACHABLE("Type conversion not implemented\n");
   }
 }

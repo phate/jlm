@@ -521,8 +521,8 @@ JlmToMlirConverter::ConvertSimpleNode(
         ConvertType(*alloca_op->result(1)),                               // memstate
         ConvertType(alloca_op->value_type()),                             // value type
         inputs[0],                                                        // size
-        alloca_op->alignment(),                                           // alignment
-        ::mlir::ValueRange({ std::next(inputs.begin()), inputs.end() })); // inputMemStates
+        alloca_op->alignment()                                           // alignment
+    );
   }
   else if (auto malloc_op = dynamic_cast<const jlm::llvm::malloc_op *>(&operation))
   {
@@ -538,7 +538,7 @@ JlmToMlirConverter::ConvertSimpleNode(
     MlirOp = Builder_->create<::mlir::jlm::Load>(
         Builder_->getUnknownLoc(),
         ConvertType(*load_op->result(0)),                               // ptr
-        ConvertType(*load_op->result(1)),                               // memstate
+        GetMemStateRange(load_op->nresults() - 1),                          // memstate
         inputs[0],                                                      // pointer
         Builder_->getUI32IntegerAttr(load_op->GetAlignment()),          // alignment
         ::mlir::ValueRange({ std::next(inputs.begin()), inputs.end() }) // inputMemStates
@@ -548,7 +548,7 @@ JlmToMlirConverter::ConvertSimpleNode(
   {
     MlirOp = Builder_->create<::mlir::jlm::Store>(
         Builder_->getUnknownLoc(),
-        ConvertType(*store_op->result(0)),                                         // memstate
+        GetMemStateRange(store_op->nresults()),             // memstate
         inputs[0],                                                                 // ptr
         inputs[1],                                                                 // value
         Builder_->getUI32IntegerAttr(store_op->GetAlignment()),                    // alignment
@@ -578,6 +578,17 @@ JlmToMlirConverter::ConvertSimpleNode(
         ConvertType(op->GetPointeeType()),                                // elementType
         inputs[0],                                                        // basePtr
         ::mlir::ValueRange({ std::next(inputs.begin()), inputs.end() })); // indices
+  }
+  else if (auto selectOp = dynamic_cast<const llvm::SelectOperation *>(&operation))
+  {
+    assert(selectOp->nresults() == 1);
+    assert(inputs.size() == 3);
+    MlirOp = Builder_->create<::mlir::arith::SelectOp>(
+        Builder_->getUnknownLoc(),
+        ConvertType(*selectOp->result(0)),
+        inputs[0],
+        inputs[1],
+        inputs[2]);
   }
   else if (auto matchOp = dynamic_cast<const rvsdg::match_op *>(&operation))
   {
@@ -640,6 +651,17 @@ JlmToMlirConverter::ConvertSimpleNode(
 
   block.push_back(MlirOp);
   return MlirOp;
+}
+
+::llvm::SmallVector<::mlir::Type>
+JlmToMlirConverter::GetMemStateRange(size_t nresults)
+{
+  ::llvm::SmallVector<::mlir::Type> typeRange;
+  for (size_t i = 0; i < nresults; ++i)
+  {
+    typeRange.push_back(Builder_->getType<::mlir::rvsdg::MemStateEdgeType>());
+  }
+  return typeRange;
 }
 
 ::mlir::Operation *

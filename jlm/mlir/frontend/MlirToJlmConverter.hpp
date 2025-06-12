@@ -23,6 +23,7 @@
 
 #include <mlir/Dialect/Arith/IR/Arith.h>
 #include <mlir/Dialect/LLVMIR/LLVMDialect.h>
+#include <mlir/Dialect/Math/IR/Math.h>
 
 namespace jlm::mlir
 {
@@ -41,6 +42,8 @@ public:
     Context_->getOrLoadDialect<::mlir::arith::ArithDialect>();
     // Load the LLVM dialect
     Context_->getOrLoadDialect<::mlir::LLVM::LLVMDialect>();
+    // Load the Math dialect
+    Context_->getOrLoadDialect<::mlir::math::MathDialect>();
   }
 
   MlirToJlmConverter(const MlirToJlmConverter &) = delete;
