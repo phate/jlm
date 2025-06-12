@@ -37,7 +37,7 @@ public:
   /**
    * Alternative to testing all configs, this environment variable specifies exactly which config to
    * use. It must be an index into the Configuration::GetAllConfigurations() vector.
-   * Can be combined with ENV_TEST_ALL_CONFIGS to set the number of invocations.
+   * Should likely not be combined with ENV_TEST_ALL_CONFIGS or ENV_DOUBLE_CHECK
    */
   static inline const char * const ENV_USE_EXACT_CONFIG = "JLM_ANDERSEN_USE_EXACT_CONFIG";
 
@@ -58,15 +58,14 @@ public:
    */
   class Configuration
   {
+  private:
     Configuration() = default;
 
   public:
     enum class Solver
     {
       Naive,
-      Worklist,
-      WavePropagation,
-      DeepPropagation
+      Worklist
     };
 
     /**

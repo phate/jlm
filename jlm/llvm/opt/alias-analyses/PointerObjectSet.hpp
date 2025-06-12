@@ -38,11 +38,6 @@ enum class PointerObjectKind : uint8_t
   // Represents functions and global variables imported from other modules.
   ImportMemoryObject,
 
-#ifdef ANDERSEN_NO_FLAGS
-  // A special object representing all external memory, of which only one exists
-  ExternalObject,
-#endif
-
   COUNT
 };
 
@@ -70,7 +65,6 @@ class PointerObjectSet final
     // The final PointsToGraph will not have any outgoing edges for this object.
     const uint8_t CanPointFlag : 1;
 
-#ifndef ANDERSEN_NO_FLAGS
     // This memory object's address is known outside the module.
     // Can only be true on memory objects.
     uint8_t HasEscaped : 1;
@@ -92,19 +86,15 @@ class PointerObjectSet final
     // If set, any pointee of this object should mark its pointees as escaping.
     // The unification root is the source of truth for this flag!
     uint8_t LoadedAsScalar : 1;
-#endif
 
     explicit PointerObject(PointerObjectKind kind, bool canPoint)
         : Kind(kind),
-          CanPointFlag(canPoint)
-#ifndef ANDERSEN_NO_FLAGS
-          ,
+          CanPointFlag(canPoint),
           HasEscaped(0),
           PointeesEscaping(0),
           PointsToExternal(0),
           StoredAsScalar(0),
           LoadedAsScalar(0)
-#endif
     {
       JLM_ASSERT(kind != PointerObjectKind::COUNT);
 
@@ -115,14 +105,12 @@ class PointerObjectSet final
       else if (kind == PointerObjectKind::Register)
         JLM_ASSERT(CanPoint());
 
-#ifndef ANDERSEN_NO_FLAGS
       if (!CanPoint())
       {
         // No attempt is made at tracking pointees, so use these flags to inform others
         PointeesEscaping = 1;
         PointsToExternal = 1;
       }
-#endif
     }
 
     /**
@@ -135,11 +123,7 @@ class PointerObjectSet final
     [[nodiscard]] bool
     CanTrackPointeesImplicitly() const noexcept
     {
-#ifdef ANDERSEN_NO_FLAGS
-      JLM_UNREACHABLE("ANDERSEN_NO_FLAGS");
-#else
       return PointsToExternal && PointeesEscaping;
-#endif
     }
 
     /**
@@ -194,11 +178,6 @@ class PointerObjectSet final
 
   std::unordered_map<const GraphImport *, PointerObjectIndex> ImportMap_;
 
-#ifdef ANDERSEN_NO_FLAGS
-  // The first pointer object index is reserved for the external object
-  static constexpr PointerObjectIndex ExternalPointerObject_ = 0;
-#endif
-
   // How many items have been attempted added to explicit points-to sets
   size_t NumSetInsertionAttempts_ = 0;
 
@@ -224,7 +203,7 @@ class PointerObjectSet final
       NewPointeeFunctor & onNewPointee);
 
 public:
-  PointerObjectSet();
+  PointerObjectSet() = default;
 
   [[nodiscard]] size_t
   NumPointerObjects() const noexcept;
@@ -349,14 +328,6 @@ public:
   const std::unordered_map<const GraphImport *, PointerObjectIndex> &
   GetImportMap() const noexcept;
 
-#ifdef ANDERSEN_NO_FLAGS
-  PointerObjectIndex
-  GetExternalObject() const noexcept
-  {
-    return ExternalPointerObject_;
-  }
-#endif
-
   /**
    * @return the kind of the PointerObject with the given \p index
    */
@@ -390,7 +361,6 @@ public:
   bool
   MarkAsEscaped(PointerObjectIndex index);
 
-#ifndef ANDERSEN_NO_FLAGS
   /**
    * @return true if the PointerObject with the given \p index makes all its pointees escape
    */
@@ -454,8 +424,6 @@ public:
    */
   [[nodiscard]] bool
   IsLoadedAsScalar(PointerObjectIndex index) const noexcept;
-
-#endif
 
   /**
    * @return the root in the unification the PointerObject with the given \p index belongs to.
@@ -829,7 +797,6 @@ public:
   ApplyDirectly(PointerObjectSet & set);
 };
 
-#ifndef ANDERSEN_NO_FLAGS
 /**
  * Helper class representing the global constraint:
  *   For all PointerObjects x marked as PointeesEscaping, all pointees in P(x) are escaping
@@ -847,7 +814,6 @@ public:
   static bool
   PropagateEscapedFlagsDirectly(PointerObjectSet & set);
 };
-#endif
 
 /**
  * Helper class representing the global constraint:
@@ -990,41 +956,11 @@ public:
     std::optional<size_t> NumPipExplicitPointeesRemoved;
   };
 
-  /**
-   * Struct holding statistics from solving using Wave Propagation
-   */
-  struct WavePropagationStatistics
-  {
-    size_t NumIterations{};
-
-    size_t NumUnifications{};
-  };
-
-  /**
-   * Struct holding statistics from solving using Deep Propagation
-   */
-  struct DeepPropagationStatistics
-  {
-    // How many times all complex constraints are visited
-    size_t NumIterations{};
-
-    // The number of unifications performed during the initial pass of wave propagation
-    size_t NumWaveUnifications{};
-
-    // The total number of unifications
-    size_t NumUnifications{};
-  };
-
   explicit PointerObjectConstraintSet(PointerObjectSet & set)
       : Set_(set),
         Constraints_(),
         ConstraintSetFrozen_(false)
-  {
-#ifdef ANDERSEN_NO_FLAGS
-    AddConstraint(StoreConstraint(set.GetExternalObject(), set.GetExternalObject()));
-    AddConstraint(LoadConstraint(set.GetExternalObject(), set.GetExternalObject()));
-#endif
-  }
+  {}
 
   PointerObjectConstraintSet(const PointerObjectConstraintSet & other) = delete;
 
@@ -1177,28 +1113,6 @@ public:
    */
   size_t
   SolveNaively();
-
-  /**
-   * Solves the constraint set using the Wave propagation technique described in
-   * Pereira and Berlin, 2009, "Wave Propagation and Deep Propagation for Pointer Analysis".
-   * The algorithm is an evolution on Pearce's topological worklist policy + difference propagation.
-   * It has three phases that loop until a fixed point is reached:
-   *  - collapse cycles (by finding SCCs)
-   *  - Propagate in topological order
-   *  - Add new edges
-   * @return statistics about the solving
-   */
-  WavePropagationStatistics
-  SolveUsingWavePropagation();
-
-  /**
-   * Solves the constraint set using the Deep propagation technique described in
-   * Pereira and Berlin, 2009, "Wave Propagation and Deep Propagation for Pointer Analysis".
-   * The algorithm maintains that P(a) is a superset of P(b) for all edges b -> a.
-   * @return statistics about the solving
-   */
-  DeepPropagationStatistics
-  SolveUsingDeepPropagation();
 
   /**
    * Creates a clone of this constraint set, and the underlying PointerObjectSet.

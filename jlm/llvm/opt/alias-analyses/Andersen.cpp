@@ -53,14 +53,6 @@ Andersen::Configuration::ToString() const
     if (EnablePreferImplicitPointees_)
       str << "PIP_";
   }
-  else if (Solver_ == Solver::WavePropagation)
-  {
-    str << "Solver=Wave_";
-  }
-  else if (Solver_ == Solver::DeepPropagation)
-  {
-    str << "Solver=Deep_";
-  }
   else
   {
     JLM_UNREACHABLE("Unknown solver type");
@@ -75,15 +67,12 @@ std::vector<Andersen::Configuration>
 Andersen::Configuration::GetAllConfigurations()
 {
   std::vector<Configuration> configs;
-
   auto PickPreferImplicitPointees = [&](Configuration config)
   {
     config.EnablePreferImplicitPointees(false);
     configs.push_back(config);
-#ifndef ANDERSEN_NO_FLAGS
     config.EnablePreferImplicitPointees(true);
     configs.push_back(config);
-#endif
   };
   auto PickDifferencePropagation = [&](Configuration config)
   {
@@ -136,8 +125,8 @@ Andersen::Configuration::GetAllConfigurations()
   {
     config.EnableOfflineConstraintNormalization(false);
     configs.push_back(config);
-    // config.EnableOfflineConstraintNormalization(true);
-    // configs.push_back(config);
+    config.EnableOfflineConstraintNormalization(true);
+    configs.push_back(config);
   };
   auto PickSolver = [&](Configuration config)
   {
@@ -145,12 +134,6 @@ Andersen::Configuration::GetAllConfigurations()
     PickWorklistPolicy(config);
     config.SetSolver(Solver::Naive);
     PickOfflineNormalization(config);
-    // TODO: For the PIP paper we do not include Wave and Deep
-    // They do not affect the results, and do not support PIP currently
-    // config.SetSolver(Solver::WavePropagation);
-    // configs.push_back(config);
-    // config.SetSolver(Solver::DeepPropagation);
-    // configs.push_back(config);
   };
   auto PickOfflineVariableSubstitution = [&](Configuration config)
   {
@@ -201,14 +184,6 @@ class Andersen::Statistics final : public util::Statistics
 
   // ====== Solver statistics ======
   static constexpr const char * NumNaiveSolverIterations_ = "#NaiveSolverIterations";
-
-  static constexpr const char * NumWavePropagationIterations_ = "#WavePropagationIterations";
-  static constexpr const char * NumWavePropagationUnifications_ = "#WavePropagationUnifications";
-
-  static constexpr const char * NumDeepPropagationIterations_ = "#DeepPropagationIterations";
-  static constexpr const char * NumDeepPropagationUnifications_ = "#DeepPropagationUnifications";
-  static constexpr const char * NumDeepPropagationWaveUnifications_ =
-      "#DeepPropagationWaveUnifications";
 
   static constexpr const char * WorklistPolicy_ = "WorklistPolicy";
   static constexpr const char * NumWorklistSolverWorkItemsPopped_ =
@@ -286,10 +261,6 @@ class Andersen::Statistics final : public util::Statistics
   static constexpr const char * OfflineConstraintNormalizationTimer_ = "OfflineNormTimer";
   static constexpr const char * ConstraintSolvingNaiveTimer_ = "ConstraintSolvingNaiveTimer";
   static constexpr const char * ConstraintSolvingWorklistTimer_ = "ConstraintSolvingWorklistTimer";
-  static constexpr const char * ConstraintSolvingWavePropagationTimer_ =
-      "ConstraintSolvingWavePropagationTimer";
-  static constexpr const char * ConstraintSolvingDeepPropagationTimer_ =
-      "ConstraintSolvingDeepPropagationTimer";
   static constexpr const char * PointsToGraphConstructionTimer_ = "PointsToGraphConstructionTimer";
   static constexpr const char * PointsToGraphConstructionExternalToEscapedTimer_ =
       "PointsToGraphConstructionExternalToEscapedTimer";
@@ -413,7 +384,7 @@ public:
 
   void
   StopConstraintSolvingWorklistStatistics(
-      const PointerObjectConstraintSet::WorklistStatistics & statistics) noexcept
+     const PointerObjectConstraintSet::WorklistStatistics & statistics) noexcept
   {
     GetTimer(ConstraintSolvingWorklistTimer_).stop();
 
@@ -452,37 +423,6 @@ public:
   }
 
   void
-  StartConstraintSolvingWavePropagationStatistics() noexcept
-  {
-    AddTimer(ConstraintSolvingWavePropagationTimer_).start();
-  }
-
-  void
-  StopConstraintSolvingWavePropagationStatistics(
-      const PointerObjectConstraintSet::WavePropagationStatistics & statistics) noexcept
-  {
-    GetTimer(ConstraintSolvingWavePropagationTimer_).stop();
-    AddMeasurement(NumWavePropagationIterations_, statistics.NumIterations);
-    AddMeasurement(NumWavePropagationUnifications_, statistics.NumUnifications);
-  }
-
-  void
-  StartConstraintSolvingDeepPropagationStatistics() noexcept
-  {
-    AddTimer(ConstraintSolvingDeepPropagationTimer_).start();
-  }
-
-  void
-  StopConstraintSolvingDeepPropagationStatistics(
-      const PointerObjectConstraintSet::DeepPropagationStatistics & statistics) noexcept
-  {
-    GetTimer(ConstraintSolvingDeepPropagationTimer_).stop();
-    AddMeasurement(NumDeepPropagationIterations_, statistics.NumIterations);
-    AddMeasurement(NumDeepPropagationUnifications_, statistics.NumUnifications);
-    AddMeasurement(NumDeepPropagationWaveUnifications_, statistics.NumWaveUnifications);
-  }
-
-  void
   AddStatisticFromConfiguration(const Configuration & config)
   {
     AddMeasurement(Configuration_, config.ToString());
@@ -501,31 +441,20 @@ public:
 
     size_t numExplicitPointees = 0;
     size_t numExplicitPointsToRelations = 0;
-#ifndef ANDERSEN_NO_FLAGS
     size_t numExplicitPointeeRelationsAmongPrecise = 0;
-#endif
 
     size_t numPointsToExternalFlags = 0;
     size_t numPointsToExternalRelations = 0;
-#ifndef ANDERSEN_NO_FLAGS
     size_t numPointeesEscapingFlags = 0;
     size_t numPointeesEscapingRelations = 0;
-#endif
 
-#ifndef ANDERSEN_NO_FLAGS
     size_t numDoubledUpPointees = 0;
     size_t numDoubledUpPointsToRelations = 0;
-#endif
 
     std::vector<bool> unificationHasCanPoint(set.NumPointerObjects(), false);
 
     for (PointerObjectIndex i = 0; i < set.NumPointerObjects(); i++)
     {
-#ifdef ANDERSEN_NO_FLAGS
-      // Do not count outgoing edges from the external object
-      if (set.GetExternalObject() == i)
-        continue;
-#endif
       if (set.HasEscaped(i))
       {
         if (set.CanPoint(i))
@@ -539,14 +468,6 @@ public:
       if (set.CanPoint(i))
       {
         numExplicitPointsToRelations += pointees.Size();
-#ifdef ANDERSEN_NO_FLAGS
-        // We do not want to count the explicit pointer to the external node
-        if (pointees.Contains(set.GetExternalObject()))
-        {
-          numExplicitPointsToRelations--;
-          numPointsToExternalRelations++;
-        }
-#else
         numPointeesEscapingRelations += set.HasPointeesEscaping(i);
 
         if (set.IsPointingToExternal(i))
@@ -564,7 +485,6 @@ public:
           // pointers that do not also point to external.
           numExplicitPointeeRelationsAmongPrecise += pointees.Size();
         }
-#endif
 
         // This unification has at least one CanPoint member
         unificationHasCanPoint[set.GetUnificationRoot(i)] = true;
@@ -576,28 +496,18 @@ public:
         continue;
 
       numUnificationRoots++;
-#ifndef ANDERSEN_NO_FLAGS
       if (set.IsPointingToExternal(i))
         numPointsToExternalFlags++;
       if (set.HasPointeesEscaping(i))
         numPointeesEscapingFlags++;
-#endif
 
       numExplicitPointees += pointees.Size();
-#ifdef ANDERSEN_NO_FLAGS
-      // We do not want to count the explicit pointer to the external node
-      if (pointees.Contains(set.GetExternalObject()))
-      {
-        numExplicitPointees--;
-        numPointsToExternalFlags++;
-      }
-#else
+
       // If the PointsToExternal flag is set, any explicit pointee that has escaped is doubled up
       if (set.IsPointingToExternal(i))
         for (auto pointee : pointees.Items())
           if (set.HasEscaped(pointee))
             numDoubledUpPointees++;
-#endif
     }
 
     // Now find unifications where no member is marked CanPoint, as any explicit pointee is a waste
@@ -619,15 +529,12 @@ public:
 
     AddMeasurement(NumExplicitPointees_, numExplicitPointees);
     AddMeasurement(NumExplicitPointsToRelations_, numExplicitPointsToRelations);
-#ifndef ANDERSEN_NO_FLAGS
     AddMeasurement(
         NumExplicitPointsToRelationsAmongPrecise_,
         numExplicitPointeeRelationsAmongPrecise);
-#endif
 
     AddMeasurement(NumPointsToExternalFlags_, numPointsToExternalFlags);
     AddMeasurement(NumPointsToExternalRelations_, numPointsToExternalRelations);
-#ifndef ANDERSEN_NO_FLAGS
     AddMeasurement(NumPointeesEscapingFlags_, numPointeesEscapingFlags);
     AddMeasurement(NumPointeesEscapingRelations_, numPointeesEscapingRelations);
 
@@ -636,16 +543,11 @@ public:
     size_t numPointsToRelations =
         numExplicitPointsToRelations - numDoubledUpPointsToRelations
         + numPointsToExternalRelations * (numCanPointEscaped + numCantPointEscaped);
-#else
-    size_t numPointsToRelations = numExplicitPointsToRelations;
-#endif
 
     AddMeasurement(NumPointsToRelations_, numPointsToRelations);
 
-#ifndef ANDERSEN_NO_FLAGS
     AddMeasurement(NumDoubledUpPointees_, numDoubledUpPointees);
     AddMeasurement(NumDoubledUpPointsToRelations_, numDoubledUpPointsToRelations);
-#endif
 
     AddMeasurement(NumCantPointUnifications_, numCantPointUnifications);
     AddMeasurement(NumCantPointExplicitPointees_, numCantPointExplicitPointees);
@@ -808,11 +710,7 @@ Andersen::AnalyzeLoad(const rvsdg::SimpleNode & node)
   }
   else
   {
-#ifdef ANDERSEN_NO_FLAGS
-    Constraints_->AddConstraint(LoadConstraint(Set_->GetExternalObject(), addressRegisterPO));
-#else
     Set_->MarkAsLoadingAsScalar(addressRegisterPO);
-#endif
   }
 }
 
@@ -832,11 +730,7 @@ Andersen::AnalyzeStore(const rvsdg::SimpleNode & node)
   }
   else
   {
-#ifdef ANDERSEN_NO_FLAGS
-    Constraints_->AddConstraint(StoreConstraint(addressRegisterPO, Set_->GetExternalObject()));
-#else
     Set_->MarkAsStoringAsScalar(addressRegisterPO);
-#endif
   }
 }
 
@@ -1465,18 +1359,6 @@ Andersen::SolveConstraints(
         config.IsPreferImplicitPointeesEnabled());
     statistics.StopConstraintSolvingWorklistStatistics(worklistStatistics);
   }
-  else if (config.GetSolver() == Configuration::Solver::WavePropagation)
-  {
-    statistics.StartConstraintSolvingWavePropagationStatistics();
-    auto waveStatistics = constraints.SolveUsingWavePropagation();
-    statistics.StopConstraintSolvingWavePropagationStatistics(waveStatistics);
-  }
-  else if (config.GetSolver() == Configuration::Solver::DeepPropagation)
-  {
-    statistics.StartConstraintSolvingDeepPropagationStatistics();
-    auto deepStatistics = constraints.SolveUsingDeepPropagation();
-    statistics.StopConstraintSolvingDeepPropagationStatistics(deepStatistics);
-  }
   else
     JLM_UNREACHABLE("Unknown solver");
 }
@@ -1530,22 +1412,23 @@ Andersen::Analyze(
   if (testAllConfigsIterations || doubleCheck || useExactConfig)
   {
     if (doubleCheck)
-      std::cout << "Double checking Andersen analysis using naive solving" << std::endl;
+      std::cerr << "Double checking Andersen analysis using naive solving" << std::endl;
 
-    // If only double-checking, only use the naive configuration. Otherwise, try all configurations
+    // If asked to only use one config, start using only that one from now on.
+    // If asked to test all configurations for N iterations, use all configurations.
+    // If only double-checking, only use the naive configuration.
     std::vector<Configuration> configs;
     if (useExactConfig.has_value())
     {
       configs = Configuration::GetAllConfigurations();
-      configs = std::vector{ configs.at(*useExactConfig) };
+      configs = { configs.at(*useExactConfig) };
     }
     else if (testAllConfigsIterations)
       configs = Configuration::GetAllConfigurations();
     else
-      configs.push_back(Configuration::NaiveSolverConfiguration());
+      configs = { Configuration::NaiveSolverConfiguration() };
 
-    // If testing all configurations, do it as many times as requested.
-    // Otherwise, do it at least once
+    // If the number of iterations is not specified, run at least once
     const auto iterations = std::max<size_t>(testAllConfigsIterations, 1);
 
     // for easy progress counting
@@ -1617,16 +1500,12 @@ Andersen::ConstructPointsToGraphFromPointerObjectSet(
   // This vector has the same indexing as the nodes themselves, register nodes become nullptr.
   std::vector<PointsToGraph::MemoryNode *> memoryNodes(set.NumPointerObjects());
 
-#ifdef ANDERSEN_NO_FLAGS
-  memoryNodes[set.GetExternalObject()] = &pointsToGraph->GetExternalMemoryNode();
-#else
   // Nodes that should point to external in the final graph.
   // They also get explicit edges connecting them to all escaped memory nodes.
   std::vector<PointsToGraph::Node *> pointsToExternal;
 
   // A list of all memory nodes that have been marked as escaped
   std::vector<PointsToGraph::MemoryNode *> escapedMemoryNodes;
-#endif
 
   // First all memory nodes are created
   for (auto [allocaNode, pointerObjectIndex] : set.GetAllocaMap())
@@ -1659,11 +1538,9 @@ Andersen::ConstructPointsToGraphFromPointerObjectSet(
   // PointerObject's points-to set.
   auto applyPointsToSet = [&](PointsToGraph::Node & node, PointerObjectIndex index)
   {
-#ifndef ANDERSEN_NO_FLAGS
     // Add all PointsToGraph nodes who should point to external to the list
     if (set.IsPointingToExternal(index))
       pointsToExternal.push_back(&node);
-#endif
 
     for (const auto targetIdx : set.GetPointsToSet(index).Items())
     {
@@ -1694,12 +1571,6 @@ Andersen::ConstructPointsToGraphFromPointerObjectSet(
   // Also checks and informs the PointsToGraph which memory nodes are marked as escaping the module
   for (PointerObjectIndex idx = 0; idx < set.NumPointerObjects(); idx++)
   {
-#ifdef ANDERSEN_NO_FLAGS
-    // Do not add out-edges from the external node, despite it being "CanPoint()"
-    // This is just due to the fact that escaped objects are marked
-    if (idx == set.GetExternalObject())
-      continue;
-#endif
     if (memoryNodes[idx] == nullptr)
       continue; // Skip all nodes that are not MemoryNodes
 
@@ -1710,13 +1581,10 @@ Andersen::ConstructPointsToGraphFromPointerObjectSet(
     if (set.HasEscaped(idx))
     {
       memoryNodes[idx]->MarkAsModuleEscaping();
-#ifndef ANDERSEN_NO_FLAGS
       escapedMemoryNodes.push_back(memoryNodes[idx]);
-#endif
     }
   }
 
-#ifndef ANDERSEN_NO_FLAGS
   // Finally make all nodes marked as pointing to external, point to all escaped memory nodes
   statistics.StartExternalToAllEscapedStatistics();
   for (const auto source : pointsToExternal)
@@ -1729,7 +1597,6 @@ Andersen::ConstructPointsToGraphFromPointerObjectSet(
     source->AddEdge(pointsToGraph->GetExternalMemoryNode());
   }
   statistics.StopExternalToAllEscapedStatistics();
-#endif
 
   // We do not use the unknown node, and do not give the external node any targets
   JLM_ASSERT(pointsToGraph->GetExternalMemoryNode().NumTargets() == 0);

@@ -103,10 +103,6 @@ if [ "${TARGET}" == "release" ] ; then
 	CXXFLAGS_TARGET="-O3"
 elif [ "${TARGET}" == "debug" ] ; then
 	CXXFLAGS_TARGET="-O0"
-elif [ "${TARGET}" == "release-anf" ] ; then
-	CXXFLAGS_TARGET="-O3 -DANDERSEN_NO_FLAGS"
-elif [ "${TARGET}" == "debug-anf" ] ; then
-	CXXFLAGS_TARGET="-O0 -DANDERSEN_NO_FLAGS"
 else
 	echo "No build type set. Please select either 'debug' or 'release'." >&2
 	exit 1
