@@ -10,6 +10,8 @@
 namespace jlm::hls
 {
 
+BufferOperation::~BufferOperation() noexcept = default;
+
 std::size_t
 triggertype::ComputeHash() const noexcept
 {
@@ -90,7 +92,7 @@ loop_node::AddLoopVar(jlm::rvsdg::Output * origin, jlm::rvsdg::Output ** buffer)
   }
   ExitResult::Create(*branch[0], *output);
   auto result_loop = argument_loop->result();
-  auto buf = hls::buffer_op::create(*branch[1], 2)[0];
+  auto buf = BufferOperation::create(*branch[1], 2)[0];
   result_loop->divert_to(buf);
   return output;
 }
@@ -186,7 +188,7 @@ loop_node::create(rvsdg::Region * parent, bool init)
     pred_arg->result()->divert_to(predicate);
     // we need a buffer without pass-through behavior to avoid a combinatorial cycle of ready
     // signals
-    auto pre_buffer = hls::buffer_op::create(*pred_arg, 2)[0];
+    auto pre_buffer = BufferOperation::create(*pred_arg, 2)[0];
     ln->_predicate_buffer =
         dynamic_cast<jlm::rvsdg::node_output *>(hls::predicate_buffer_op::create(*pre_buffer)[0]);
   }

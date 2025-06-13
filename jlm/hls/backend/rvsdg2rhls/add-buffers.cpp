@@ -75,7 +75,7 @@ PlaceBuffer(rvsdg::Output * out, size_t capacity, bool passThrough)
   }
 
   // TODO: handle out being a buf?
-  auto [bufferNode, bufferOperation] = rvsdg::TryGetSimpleNodeAndOp<buffer_op>(*user);
+  auto [bufferNode, bufferOperation] = rvsdg::TryGetSimpleNodeAndOp<BufferOperation>(*user);
   if (bufferOperation
       && (bufferOperation->pass_through != passThrough || bufferOperation->capacity != capacity))
   {
@@ -83,7 +83,7 @@ PlaceBuffer(rvsdg::Output * out, size_t capacity, bool passThrough)
     auto node = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*user);
     passThrough = passThrough && bufferOperation->pass_through;
     capacity = std::max(capacity, bufferOperation->capacity);
-    auto bufOut = buffer_op::create(*node->input(0)->origin(), capacity, passThrough)[0];
+    auto bufOut = BufferOperation::create(*node->input(0)->origin(), capacity, passThrough)[0];
     node->output(0)->divert_users(bufOut);
     JLM_ASSERT(node->IsDead());
     remove(node);
@@ -92,7 +92,7 @@ PlaceBuffer(rvsdg::Output * out, size_t capacity, bool passThrough)
   {
     // create new buffer
     auto directUser = *out->begin();
-    auto newOut = buffer_op::create(*out, capacity, passThrough)[0];
+    auto newOut = BufferOperation::create(*out, capacity, passThrough)[0];
     directUser->divert_to(newOut);
   }
 }
@@ -113,7 +113,7 @@ OptimizeFork(rvsdg::SimpleNode * node)
     for (size_t i = 0; i < node->noutputs(); ++i)
     {
       auto user = FindUserNode(node->output(0));
-      auto [bufferNode, bufferOperation] = rvsdg::TryGetSimpleNodeAndOp<buffer_op>(*user);
+      auto [bufferNode, bufferOperation] = rvsdg::TryGetSimpleNodeAndOp<BufferOperation>(*user);
       if (bufferOperation)
       {
         bufferNode->output(0)->divert_users(node->output(0));
@@ -183,17 +183,17 @@ OptimizeAddrQ(rvsdg::SimpleNode * node)
 void
 OptimizeBuffer(rvsdg::SimpleNode * node)
 {
-  auto buf = dynamic_cast<const buffer_op *>(&node->GetOperation());
+  auto buf = dynamic_cast<const BufferOperation *>(&node->GetOperation());
   JLM_ASSERT(buf);
   auto user = FindUserNode(node->output(0));
-  auto [bufferNode, bufferOperation] = rvsdg::TryGetSimpleNodeAndOp<buffer_op>(*user);
+  auto [bufferNode, bufferOperation] = rvsdg::TryGetSimpleNodeAndOp<BufferOperation>(*user);
   if (bufferOperation)
   {
     auto node2 = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*user);
     // merge buffers and keep larger size
     bool passThrough = buf->pass_through && bufferOperation->pass_through;
     auto capacity = std::max(buf->capacity, bufferOperation->capacity);
-    auto newOut = buffer_op::create(*node->input(0)->origin(), capacity, passThrough)[0];
+    auto newOut = BufferOperation::create(*node->input(0)->origin(), capacity, passThrough)[0];
     JLM_ASSERT(node2->region() == newOut->region());
     node2->output(0)->divert_users(newOut);
     JLM_ASSERT(node2->IsDead());
@@ -224,7 +224,7 @@ OptimizeLoop(loop_node * loopNode)
       JLM_ASSERT(branchOperation->loop);
       auto oldBufInput = GetUser(branchNode->output(1));
       auto [oldBufferNode, oldBufferOperation] =
-          rvsdg::TryGetSimpleNodeAndOp<buffer_op>(*oldBufInput);
+          rvsdg::TryGetSimpleNodeAndOp<BufferOperation>(*oldBufInput);
       if (std::get<1>(rvsdg::TryGetSimpleNodeAndOp<sink_op>(*oldBufInput)))
       {
         // no backedge
@@ -295,7 +295,7 @@ AddBuffers(rvsdg::Region * region)
     }
     else if (auto simple = dynamic_cast<jlm::rvsdg::SimpleNode *>(node))
     {
-      if (jlm::rvsdg::is<buffer_op>(node))
+      if (jlm::rvsdg::is<BufferOperation>(node))
       {
         OptimizeBuffer(simple);
       }
@@ -353,7 +353,7 @@ MaximizeBuffers(rvsdg::Region * region)
     }
     else if (auto sn = dynamic_cast<jlm::rvsdg::SimpleNode *>(node))
     {
-      if (dynamic_cast<const buffer_op *>(&node->GetOperation()))
+      if (rvsdg::is<BufferOperation>(node))
       {
         nodes.push_back(sn);
       }
@@ -393,7 +393,7 @@ NodeCycles(rvsdg::SimpleNode * node, std::vector<size_t> & input_cycles)
       return { max_cycles + 1 };
     }
   }
-  else if (auto op = dynamic_cast<const buffer_op *>(&node->GetOperation()))
+  else if (auto op = dynamic_cast<const BufferOperation *>(&node->GetOperation()))
   {
     if (op->pass_through)
     {
@@ -441,7 +441,7 @@ NodeCapacity(rvsdg::SimpleNode * node, std::vector<size_t> & input_capacities)
       return { min_capacity + 1 };
     }
   }
-  else if (auto op = dynamic_cast<const buffer_op *>(&node->GetOperation()))
+  else if (auto op = dynamic_cast<const BufferOperation *>(&node->GetOperation()))
   {
     return { min_capacity + op->capacity };
   }
@@ -520,7 +520,7 @@ CreateLoopFrontier(
     {
       continue;
     }
-    if (std::get<1>(rvsdg::TryGetSimpleNodeAndOp<buffer_op>(*user)))
+    if (std::get<1>(rvsdg::TryGetSimpleNodeAndOp<BufferOperation>(*user)))
     {
       auto bufNode = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*user);
       if (std::get<1>(
@@ -771,7 +771,8 @@ PlaceBufferLoop(rvsdg::Output * out, size_t min_capacity, bool passThrough)
         PlaceBufferLoop(loopConstantNode->input(1)->origin(), min_capacity, passThrough));
   }
 
-  if (auto [node, bufferOperation] = rvsdg::TryGetSimpleNodeAndOp<buffer_op>(*out); bufferOperation)
+  if (auto [node, bufferOperation] = rvsdg::TryGetSimpleNodeAndOp<BufferOperation>(*out);
+      bufferOperation)
   {
     // replace buffer and keep larger size
     passThrough = passThrough && bufferOperation->pass_through;
@@ -779,7 +780,8 @@ PlaceBufferLoop(rvsdg::Output * out, size_t min_capacity, bool passThrough)
     // if the maximum buffer size is exceeded place a smaller buffer, but pretend a large one was
     // placed, to prevent additional buffers further down
     auto actual_capacity = std::min(capacity, MaximumBufferSize);
-    auto bufOut = buffer_op::create(*node->input(0)->origin(), actual_capacity, passThrough)[0];
+    auto bufOut =
+        BufferOperation::create(*node->input(0)->origin(), actual_capacity, passThrough)[0];
     node->output(0)->divert_users(bufOut);
     JLM_ASSERT(node->IsDead());
     remove(node);
@@ -793,7 +795,7 @@ PlaceBufferLoop(rvsdg::Output * out, size_t min_capacity, bool passThrough)
     // if the maximum buffer size is exceeded place a smaller buffer, but pretend a large one was
     // placed, to prevent additional buffers further down
     auto actual_capacity = std::min(capacity, MaximumBufferSize);
-    auto newOut = buffer_op::create(*out, actual_capacity, passThrough)[0];
+    auto newOut = BufferOperation::create(*out, actual_capacity, passThrough)[0];
     directUser->divert_to(newOut);
     return capacity;
   }

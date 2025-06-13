@@ -784,7 +784,7 @@ ReplaceStore(
     // for the store
     // TODO: It might be better to have memstate merges consume individual tokens instead,, and fire
     // the output once all inputs have consumed
-    auto bo = buffer_op::create(*storeOuts[i], 1, true)[0];
+    const auto bo = BufferOperation::create(*storeOuts[i], 1, true)[0];
     smap.insert(originalStore->output(i), bo);
     replacedStore->output(i)->divert_users(bo);
   }

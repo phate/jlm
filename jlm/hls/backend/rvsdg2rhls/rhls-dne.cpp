@@ -224,7 +224,7 @@ dead_loop(rvsdg::Node * ndmux_node)
   }
   auto buf_in_node =
       rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(**branch_in_node->output(1)->begin());
-  if (!buf_in_node || !dynamic_cast<const buffer_op *>(&buf_in_node->GetOperation()))
+  if (!buf_in_node || !dynamic_cast<const BufferOperation *>(&buf_in_node->GetOperation()))
   {
     return false;
   }
@@ -246,7 +246,8 @@ dead_loop(rvsdg::Node * ndmux_node)
   auto pred_buf_cond_origin = pred_buf_out_node->input(0)->origin();
   // TODO: remove this once predicate buffers decouple combinatorial loops
   auto extra_buf_out_node = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*pred_buf_cond_origin);
-  if (!extra_buf_out_node || !dynamic_cast<const buffer_op *>(&extra_buf_out_node->GetOperation()))
+  if (!extra_buf_out_node
+      || !dynamic_cast<const BufferOperation *>(&extra_buf_out_node->GetOperation()))
   {
     return false;
   }
@@ -304,7 +305,8 @@ dead_loop_lcb(rvsdg::Node * lcb_node)
   auto pred_buf_cond_origin = pred_buf_out->node()->input(0)->origin();
   // TODO: remove this once predicate buffers decouple combinatorial loops
   auto extra_buf_out = dynamic_cast<jlm::rvsdg::node_output *>(pred_buf_cond_origin);
-  if (!extra_buf_out || !dynamic_cast<const buffer_op *>(&extra_buf_out->node()->GetOperation()))
+  if (!extra_buf_out
+      || !dynamic_cast<const BufferOperation *>(&extra_buf_out->node()->GetOperation()))
   {
     return false;
   }
