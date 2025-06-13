@@ -215,7 +215,8 @@ OptimizeLoop(loop_node * loopNode)
     {
       auto out = loopNode->output(i);
       auto res = out->results.begin().ptr();
-      auto [branchNode, branchOperation] = rvsdg::TryGetSimpleNodeAndOp<BranchOperation>(*res->origin());
+      auto [branchNode, branchOperation] =
+          rvsdg::TryGetSimpleNodeAndOp<BranchOperation>(*res->origin());
       if (!branchOperation)
       {
         // this is a memory operation or stream

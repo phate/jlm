@@ -112,7 +112,8 @@ find_loop_output(jlm::rvsdg::StructuralInput * sti)
       auto branch_out =
           dynamic_cast<jlm::rvsdg::SimpleOutput *>(buffer_out->node()->input(0)->origin());
       JLM_ASSERT(branch_out);
-      JLM_ASSERT(dynamic_cast<const jlm::hls::BranchOperation *>(&branch_out->node()->GetOperation()));
+      JLM_ASSERT(
+          dynamic_cast<const jlm::hls::BranchOperation *>(&branch_out->node()->GetOperation()));
       // branch
       for (size_t j = 0; j < 2; ++j)
       {
@@ -247,8 +248,8 @@ separate_load_edge(
         {
           // end of loop
           auto load_user_input = jlm::util::AssertedCast<jlm::rvsdg::SimpleInput>(addr_edge_user);
-          JLM_ASSERT(
-              dynamic_cast<const jlm::hls::BranchOperation *>(&load_user_input->node()->GetOperation()));
+          JLM_ASSERT(dynamic_cast<const jlm::hls::BranchOperation *>(
+              &load_user_input->node()->GetOperation()));
           return nullptr;
         }
       }
