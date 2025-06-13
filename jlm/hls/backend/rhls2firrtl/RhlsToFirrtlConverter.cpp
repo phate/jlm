@@ -397,7 +397,7 @@ RhlsToFirrtlConverter::MlirGenSimpleNode(const jlm::rvsdg::SimpleNode * node)
   {
     ConnectInvalid(body, outData);
   }
-  else if (auto op = dynamic_cast<const hls::mux_op *>(&(node->GetOperation())))
+  else if (auto op = dynamic_cast<const MuxOperation *>(&(node->GetOperation())))
   {
     JLM_ASSERT(op->discarding);
     auto select = GetSubfield(body, inBundles[0], "data");
@@ -526,7 +526,7 @@ RhlsToFirrtlConverter::MlirGenLoopConstBuffer(const jlm::rvsdg::SimpleNode * nod
 circt::firrtl::FModuleOp
 RhlsToFirrtlConverter::MlirGenFork(const jlm::rvsdg::SimpleNode * node)
 {
-  auto op = dynamic_cast<const jlm::hls::fork_op *>(&node->GetOperation());
+  auto op = dynamic_cast<const jlm::hls::ForkOperation *>(&node->GetOperation());
   bool isConstant = op->IsConstant();
   // Create the module and its input/output ports
   auto module = nodeToModule(node);
@@ -2377,7 +2377,7 @@ RhlsToFirrtlConverter::MlirGen(const jlm::rvsdg::SimpleNode * node)
   {
     return MlirGenSink(node);
   }
-  else if (dynamic_cast<const hls::fork_op *>(&(node->GetOperation())))
+  else if (dynamic_cast<const ForkOperation *>(&(node->GetOperation())))
   {
     return MlirGenFork(node);
   }
@@ -2432,7 +2432,7 @@ RhlsToFirrtlConverter::MlirGen(const jlm::rvsdg::SimpleNode * node)
     JLM_ASSERT(b->capacity);
     return MlirGenExtModule(node);
   }
-  else if (dynamic_cast<const hls::branch_op *>(&(node->GetOperation())))
+  else if (dynamic_cast<const hls::BranchOperation *>(&(node->GetOperation())))
   {
     return MlirGenBranch(node);
   }
@@ -2457,7 +2457,7 @@ RhlsToFirrtlConverter::MlirGen(const jlm::rvsdg::SimpleNode * node)
     // return merge_to_firrtl(n);
     throw std::logic_error(node->DebugString() + " not implemented!");
   }
-  else if (auto o = dynamic_cast<const hls::mux_op *>(&(node->GetOperation())))
+  else if (auto o = dynamic_cast<const MuxOperation *>(&(node->GetOperation())))
   {
     if (o->discarding)
     {

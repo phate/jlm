@@ -130,8 +130,7 @@ remove_unused_loop_inputs(loop_node * ln)
 bool
 dead_spec_gamma(rvsdg::Node * dmux_node)
 {
-  auto mux_op = dynamic_cast<const jlm::hls::mux_op *>(&dmux_node->GetOperation());
-  JLM_ASSERT(mux_op);
+  const auto mux_op = util::AssertedCast<const MuxOperation>(&dmux_node->GetOperation());
   JLM_ASSERT(mux_op->discarding);
   // check if all inputs have the same origin
   bool all_inputs_same = true;
@@ -156,8 +155,7 @@ dead_spec_gamma(rvsdg::Node * dmux_node)
 bool
 dead_nonspec_gamma(rvsdg::Node * ndmux_node)
 {
-  auto mux_op = dynamic_cast<const hls::mux_op *>(&ndmux_node->GetOperation());
-  JLM_ASSERT(mux_op);
+  auto mux_op = util::AssertedCast<const MuxOperation>(&ndmux_node->GetOperation());
   JLM_ASSERT(!mux_op->discarding);
   // check if all inputs go to outputs of same branch
   bool all_inputs_same_branch = true;
@@ -166,7 +164,7 @@ dead_nonspec_gamma(rvsdg::Node * ndmux_node)
   {
     if (auto node = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*ndmux_node->input(i)->origin()))
     {
-      if (dynamic_cast<const branch_op *>(&node->GetOperation())
+      if (dynamic_cast<const BranchOperation *>(&node->GetOperation())
           && ndmux_node->input(i)->origin()->nusers() == 1)
       {
         if (i == 1)
@@ -198,8 +196,7 @@ dead_nonspec_gamma(rvsdg::Node * ndmux_node)
 bool
 dead_loop(rvsdg::Node * ndmux_node)
 {
-  auto mux_op = dynamic_cast<const hls::mux_op *>(&ndmux_node->GetOperation());
-  JLM_ASSERT(mux_op);
+  const auto mux_op = util::AssertedCast<const MuxOperation>(&ndmux_node->GetOperation());
   JLM_ASSERT(!mux_op->discarding);
   // origin is a backedege argument
   auto backedge_arg = dynamic_cast<backedge_argument *>(ndmux_node->input(2)->origin());
@@ -213,7 +210,7 @@ dead_loop(rvsdg::Node * ndmux_node)
     return false;
   }
   auto branch_in_node = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(**ndmux_node->output(0)->begin());
-  if (!branch_in_node || !dynamic_cast<const branch_op *>(&branch_in_node->GetOperation()))
+  if (!branch_in_node || !dynamic_cast<const BranchOperation *>(&branch_in_node->GetOperation()))
   {
     return false;
   }
@@ -283,7 +280,7 @@ dead_loop_lcb(rvsdg::Node * lcb_node)
     return false;
   }
   auto branch_in = dynamic_cast<jlm::rvsdg::node_input *>(*lcb_node->output(0)->begin());
-  auto bo = dynamic_cast<const branch_op *>(&branch_in->node()->GetOperation());
+  auto bo = dynamic_cast<const BranchOperation *>(&branch_in->node()->GetOperation());
   if (!branch_in || !bo || !bo->loop)
   {
     return false;
@@ -467,7 +464,7 @@ dne(rvsdg::Region * sr)
         changed |= remove_loop_passthrough(ln);
         changed |= dne(ln->subregion());
       }
-      else if (auto mux = dynamic_cast<const mux_op *>(&node->GetOperation()))
+      else if (const auto mux = dynamic_cast<const MuxOperation *>(&node->GetOperation()))
       {
         if (mux->discarding)
         {

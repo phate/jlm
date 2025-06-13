@@ -16,11 +16,11 @@ eliminate_buf(jlm::rvsdg::Output * o)
   if (auto so = dynamic_cast<rvsdg::SimpleOutput *>(o))
   {
     auto node = so->node();
-    if (jlm::rvsdg::is<const branch_op>(node->GetOperation()))
+    if (jlm::rvsdg::is<const BranchOperation>(node->GetOperation()))
     {
       return eliminate_buf(node->input(1)->origin());
     }
-    else if (jlm::rvsdg::is<const jlm::hls::fork_op>(node->GetOperation()))
+    else if (jlm::rvsdg::is<const ForkOperation>(node->GetOperation()))
     {
       // part of memory disambiguation
       return eliminate_buf(node->input(0)->origin());
