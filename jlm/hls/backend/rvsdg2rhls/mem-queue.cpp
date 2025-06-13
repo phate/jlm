@@ -390,7 +390,7 @@ process_loops(jlm::rvsdg::Output * state_edge)
           state_edge = process_loops(sn->output(i));
         }
       }
-      else if (is<jlm::hls::MuxOperation>(*op))
+      else if (jlm::rvsdg::is<jlm::hls::MuxOperation>(*op))
       {
         // end of gamma
         JLM_ASSERT(sn->noutputs() == 1);
