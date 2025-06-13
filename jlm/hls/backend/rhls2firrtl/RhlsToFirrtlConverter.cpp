@@ -526,7 +526,7 @@ RhlsToFirrtlConverter::MlirGenLoopConstBuffer(const jlm::rvsdg::SimpleNode * nod
 circt::firrtl::FModuleOp
 RhlsToFirrtlConverter::MlirGenFork(const jlm::rvsdg::SimpleNode * node)
 {
-  auto op = dynamic_cast<const jlm::hls::fork_op *>(&node->GetOperation());
+  auto op = dynamic_cast<const jlm::hls::ForkOperation *>(&node->GetOperation());
   bool isConstant = op->IsConstant();
   // Create the module and its input/output ports
   auto module = nodeToModule(node);
@@ -2377,7 +2377,7 @@ RhlsToFirrtlConverter::MlirGen(const jlm::rvsdg::SimpleNode * node)
   {
     return MlirGenSink(node);
   }
-  else if (dynamic_cast<const hls::fork_op *>(&(node->GetOperation())))
+  else if (dynamic_cast<const ForkOperation *>(&(node->GetOperation())))
   {
     return MlirGenFork(node);
   }

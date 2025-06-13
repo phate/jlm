@@ -91,11 +91,10 @@ public:
  * single constant fork. Since the input of the fork is always the same value and is always valid.
  * No handshaking is necessary and the outputs of the fork is always valid.
  */
-class fork_op final : public rvsdg::SimpleOperation
+class ForkOperation final : public rvsdg::SimpleOperation
 {
 public:
-  virtual ~fork_op()
-  {}
+  ~ForkOperation() noexcept override;
 
   /**
    * Create a fork operation that is not a constant fork.
@@ -103,7 +102,7 @@ public:
    * /param nalternatives Number of outputs.
    * /param value The signal type, which is the same for the input and all outputs.
    */
-  fork_op(size_t nalternatives, const std::shared_ptr<const jlm::rvsdg::Type> & type)
+  ForkOperation(size_t nalternatives, const std::shared_ptr<const jlm::rvsdg::Type> & type)
       : SimpleOperation({ type }, { nalternatives, type })
   {}
 
@@ -114,7 +113,7 @@ public:
    * /param value The signal type, which is the same for the input and all outputs.
    * /param isConstant If true, the fork is a constant fork.
    */
-  fork_op(
+  ForkOperation(
       size_t nalternatives,
       const std::shared_ptr<const jlm::rvsdg::Type> & type,
       bool isConstant)
@@ -125,7 +124,7 @@ public:
   bool
   operator==(const Operation & other) const noexcept override
   {
-    auto forkOp = dynamic_cast<const fork_op *>(&other);
+    const auto forkOp = dynamic_cast<const ForkOperation *>(&other);
     // check predicate and value
     return forkOp && *forkOp->argument(0) == *argument(0) && forkOp->nresults() == nresults()
         && forkOp->IsConstant() == IsConstant_;
@@ -144,7 +143,7 @@ public:
   [[nodiscard]] std::unique_ptr<Operation>
   copy() const override
   {
-    return std::make_unique<fork_op>(*this);
+    return std::make_unique<ForkOperation>(*this);
   }
 
   /**
@@ -160,7 +159,7 @@ public:
   create(size_t nalternatives, jlm::rvsdg::Output & value, bool isConstant = false)
   {
     return outputs(
-        &rvsdg::CreateOpNode<fork_op>({ &value }, nalternatives, value.Type(), isConstant));
+        &rvsdg::CreateOpNode<ForkOperation>({ &value }, nalternatives, value.Type(), isConstant));
   }
 
   /**
