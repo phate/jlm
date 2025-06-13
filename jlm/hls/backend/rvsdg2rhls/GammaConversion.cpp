@@ -21,7 +21,7 @@ ConvertGammaNodeWithoutSpeculation(rvsdg::GammaNode & gammaNode)
   for (const auto & entryvar : gammaNode.GetEntryVars())
   {
     auto branchResults =
-        hls::branch_op::create(*gammaNode.predicate()->origin(), *entryvar.input->origin());
+        BranchOperation::create(*gammaNode.predicate()->origin(), *entryvar.input->origin());
 
     for (size_t s = 0; s < gammaNode.nsubregions(); s++)
     {

@@ -66,7 +66,7 @@ TraceEdgeToMerge(rvsdg::Input * state_edge)
     }
     auto si = util::AssertedCast<rvsdg::SimpleInput>(state_edge);
     auto sn = si->node();
-    auto [branchNode, branchOperation] = rvsdg::TryGetSimpleNodeAndOp<branch_op>(*state_edge);
+    auto [branchNode, branchOperation] = rvsdg::TryGetSimpleNodeAndOp<BranchOperation>(*state_edge);
     auto [muxNode, muxOperation] = rvsdg::TryGetSimpleNodeAndOp<MuxOperation>(*state_edge);
     if (branchOperation)
     {
