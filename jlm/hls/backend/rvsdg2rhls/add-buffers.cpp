@@ -146,7 +146,7 @@ const size_t BufferSizeBranchState = BufferSizeForkControl;
 void
 OptimizeBranch(rvsdg::SimpleNode * node)
 {
-  auto branch = dynamic_cast<const branch_op *>(&node->GetOperation());
+  auto branch = dynamic_cast<const BranchOperation *>(&node->GetOperation());
   JLM_ASSERT(branch);
   bool inLoop = rvsdg::is<loop_op>(node->region()->node());
   if (inLoop && !branch->loop)
@@ -215,7 +215,7 @@ OptimizeLoop(loop_node * loopNode)
     {
       auto out = loopNode->output(i);
       auto res = out->results.begin().ptr();
-      auto [branchNode, branchOperation] = rvsdg::TryGetSimpleNodeAndOp<branch_op>(*res->origin());
+      auto [branchNode, branchOperation] = rvsdg::TryGetSimpleNodeAndOp<BranchOperation>(*res->origin());
       if (!branchOperation)
       {
         // this is a memory operation or stream
@@ -303,7 +303,7 @@ AddBuffers(rvsdg::Region * region)
       {
         //        OptimizeFork(simple);
       }
-      else if (jlm::rvsdg::is<branch_op>(node))
+      else if (jlm::rvsdg::is<BranchOperation>(node))
       {
         //        OptimizeBranch(simple);
       }

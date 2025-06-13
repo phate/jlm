@@ -112,7 +112,7 @@ find_loop_output(jlm::rvsdg::StructuralInput * sti)
       auto branch_out =
           dynamic_cast<jlm::rvsdg::SimpleOutput *>(buffer_out->node()->input(0)->origin());
       JLM_ASSERT(branch_out);
-      JLM_ASSERT(dynamic_cast<const jlm::hls::branch_op *>(&branch_out->node()->GetOperation()));
+      JLM_ASSERT(dynamic_cast<const jlm::hls::BranchOperation *>(&branch_out->node()->GetOperation()));
       // branch
       for (size_t j = 0; j < 2; ++j)
       {
@@ -199,13 +199,13 @@ separate_load_edge(
       auto sn = si->node();
       auto op = &si->node()->GetOperation();
 
-      if (auto br = dynamic_cast<const jlm::hls::branch_op *>(op))
+      if (auto br = dynamic_cast<const jlm::hls::BranchOperation *>(op))
       {
         if (!br->loop)
         {
           // start of gamma
           auto load_branch_out =
-              jlm::hls::branch_op::create(*sn->input(0)->origin(), *addr_edge, false);
+              jlm::hls::BranchOperation::create(*sn->input(0)->origin(), *addr_edge, false);
           for (size_t i = 0; i < sn->noutputs(); ++i)
           {
             // dummy user for edge
@@ -248,7 +248,7 @@ separate_load_edge(
           // end of loop
           auto load_user_input = jlm::util::AssertedCast<jlm::rvsdg::SimpleInput>(addr_edge_user);
           JLM_ASSERT(
-              dynamic_cast<const jlm::hls::branch_op *>(&load_user_input->node()->GetOperation()));
+              dynamic_cast<const jlm::hls::BranchOperation *>(&load_user_input->node()->GetOperation()));
           return nullptr;
         }
       }
@@ -381,7 +381,7 @@ process_loops(jlm::rvsdg::Output * state_edge)
     {
       auto sn = si->node();
       auto op = &si->node()->GetOperation();
-      auto br = dynamic_cast<const jlm::hls::branch_op *>(op);
+      auto br = dynamic_cast<const jlm::hls::BranchOperation *>(op);
       if (br && !br->loop)
       {
         // start of gamma
