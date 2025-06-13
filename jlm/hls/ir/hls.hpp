@@ -464,15 +464,12 @@ public:
 private:
 };
 
-class triggertype final : public rvsdg::StateType
+class TriggerType final : public rvsdg::StateType
 {
 public:
-  virtual ~triggertype()
-  {}
+  ~TriggerType() noexcept override;
 
-  triggertype()
-      : rvsdg::StateType()
-  {}
+  TriggerType() = default;
 
   std::string
   debug_string() const override
@@ -481,16 +478,15 @@ public:
   };
 
   bool
-  operator==(const jlm::rvsdg::Type & other) const noexcept override
+  operator==(const Type & other) const noexcept override
   {
-    auto type = dynamic_cast<const triggertype *>(&other);
-    return type;
+    return jlm::rvsdg::is<TriggerType>(other);
   };
 
   [[nodiscard]] std::size_t
   ComputeHash() const noexcept override;
 
-  static std::shared_ptr<const triggertype>
+  static std::shared_ptr<const TriggerType>
   Create();
 };
 
@@ -501,7 +497,7 @@ public:
   {}
 
   explicit trigger_op(const std::shared_ptr<const jlm::rvsdg::Type> & type)
-      : SimpleOperation({ triggertype::Create(), type }, { type })
+      : SimpleOperation({ TriggerType::Create(), type }, { type })
   {}
 
   bool
@@ -527,8 +523,8 @@ public:
   static std::vector<jlm::rvsdg::Output *>
   create(jlm::rvsdg::Output & tg, jlm::rvsdg::Output & value)
   {
-    if (!rvsdg::is<triggertype>(tg.Type()))
-      throw util::error("Trigger needs to be a triggertype.");
+    if (!rvsdg::is<TriggerType>(tg.Type()))
+      throw util::error("Trigger needs to be a TriggerType.");
 
     return outputs(&rvsdg::CreateOpNode<trigger_op>({ &tg, &value }, value.Type()));
   }
