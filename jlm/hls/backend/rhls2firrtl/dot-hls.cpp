@@ -105,7 +105,7 @@ DotHLS::node_to_dot(const rvsdg::Node * node)
   {
     color = "grey";
   }
-  else if (jlm::rvsdg::is<hls::sink_op>(node))
+  else if (jlm::rvsdg::is<SinkOperation>(node))
   {
     color = "grey";
   }

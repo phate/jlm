@@ -16,6 +16,8 @@ ForkOperation::~ForkOperation() noexcept = default;
 
 MuxOperation::~MuxOperation() noexcept = default;
 
+SinkOperation::~SinkOperation() noexcept = default;
+
 std::size_t
 triggertype::ComputeHash() const noexcept
 {

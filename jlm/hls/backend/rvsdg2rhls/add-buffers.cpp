@@ -225,7 +225,7 @@ OptimizeLoop(loop_node * loopNode)
       auto oldBufInput = GetUser(branchNode->output(1));
       auto [oldBufferNode, oldBufferOperation] =
           rvsdg::TryGetSimpleNodeAndOp<buffer_op>(*oldBufInput);
-      if (std::get<1>(rvsdg::TryGetSimpleNodeAndOp<sink_op>(*oldBufInput)))
+      if (std::get<1>(rvsdg::TryGetSimpleNodeAndOp<SinkOperation>(*oldBufInput)))
       {
         // no backedge
         continue;

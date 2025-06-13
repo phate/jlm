@@ -297,20 +297,19 @@ private:
   }
 };
 
-class sink_op final : public rvsdg::SimpleOperation
+class SinkOperation final : public rvsdg::SimpleOperation
 {
 public:
-  virtual ~sink_op()
-  {}
+  ~SinkOperation() noexcept override;
 
-  explicit sink_op(const std::shared_ptr<const jlm::rvsdg::Type> & type)
+  explicit SinkOperation(const std::shared_ptr<const jlm::rvsdg::Type> & type)
       : SimpleOperation({ type }, {})
   {}
 
   bool
   operator==(const Operation & other) const noexcept override
   {
-    auto ot = dynamic_cast<const sink_op *>(&other);
+    const auto ot = dynamic_cast<const SinkOperation *>(&other);
     return ot && *ot->argument(0) == *argument(0);
   }
 
@@ -323,13 +322,13 @@ public:
   [[nodiscard]] std::unique_ptr<Operation>
   copy() const override
   {
-    return std::make_unique<sink_op>(*this);
+    return std::make_unique<SinkOperation>(*this);
   }
 
   static std::vector<jlm::rvsdg::Output *>
   create(jlm::rvsdg::Output & value)
   {
-    return outputs(&rvsdg::CreateOpNode<sink_op>({ &value }, value.Type()));
+    return outputs(&rvsdg::CreateOpNode<SinkOperation>({ &value }, value.Type()));
   }
 };
 

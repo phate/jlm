@@ -2373,7 +2373,7 @@ RhlsToFirrtlConverter::MlirGenBranch(const jlm::rvsdg::SimpleNode * node)
 circt::firrtl::FModuleLike
 RhlsToFirrtlConverter::MlirGen(const jlm::rvsdg::SimpleNode * node)
 {
-  if (dynamic_cast<const hls::sink_op *>(&(node->GetOperation())))
+  if (dynamic_cast<const hls::SinkOperation *>(&(node->GetOperation())))
   {
     return MlirGenSink(node);
   }
