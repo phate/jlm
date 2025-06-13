@@ -109,7 +109,7 @@ DotHLS::node_to_dot(const rvsdg::Node * node)
   {
     color = "grey";
   }
-  else if (jlm::rvsdg::is<hls::branch_op>(node))
+  else if (jlm::rvsdg::is<BranchOperation>(node))
   {
     color = "green";
   }
@@ -260,7 +260,7 @@ DotHLS::loop_to_dot(hls::loop_node * ln)
   dot << "{rank=same ";
   for (auto node : rvsdg::TopDownTraverser(sr))
   {
-    auto br = dynamic_cast<const hls::branch_op *>(&node->GetOperation());
+    auto br = dynamic_cast<const BranchOperation *>(&node->GetOperation());
     if (br && br->loop)
     {
       dot << get_node_name(node) << " ";

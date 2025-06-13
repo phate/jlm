@@ -87,14 +87,14 @@ trace_edge(
     auto sn = si->node();
     auto new_si = util::AssertedCast<rvsdg::SimpleInput>(new_edge_user);
     auto new_sn = new_si->node();
-    auto [branchNode, branchOperation] = rvsdg::TryGetSimpleNodeAndOp<branch_op>(*state_edge);
+    auto [branchNode, branchOperation] = rvsdg::TryGetSimpleNodeAndOp<BranchOperation>(*state_edge);
     auto [muxNode, muxOperation] = rvsdg::TryGetSimpleNodeAndOp<mux_op>(*state_edge);
     if (branchOperation
         && !branchOperation
                 ->loop) // this is an example of why preserving structural nodes would be nice
     {
       // start of gamma
-      auto nbr = branch_op::create(*sn->input(0)->origin(), *new_edge);
+      auto nbr = BranchOperation::create(*sn->input(0)->origin(), *new_edge);
       auto nmux = mux_op::create(*sn->input(0)->origin(), nbr, false)[0];
       new_edge_user->divert_to(nmux);
       rvsdg::Output * out = nullptr;
@@ -111,7 +111,7 @@ trace_edge(
     else if (branchOperation)
     {
       // end of loop
-      auto [_, operation] = rvsdg::TryGetSimpleNodeAndOp<branch_op>(*new_edge_user);
+      auto [_, operation] = rvsdg::TryGetSimpleNodeAndOp<BranchOperation>(*new_edge_user);
       JLM_ASSERT(operation);
       JLM_ASSERT(branchOperation->loop);
       return util::AssertedCast<rvsdg::RegionResult>(get_mem_state_user(sn->output(0)))->output();
@@ -341,7 +341,7 @@ follow_state_edge(
     }
     auto si = jlm::util::AssertedCast<rvsdg::SimpleInput>(state_edge);
     auto sn = si->node();
-    auto [branchNode, branchOperation] = rvsdg::TryGetSimpleNodeAndOp<branch_op>(*state_edge);
+    auto [branchNode, branchOperation] = rvsdg::TryGetSimpleNodeAndOp<BranchOperation>(*state_edge);
     auto [muxNode, muxOperation] = rvsdg::TryGetSimpleNodeAndOp<mux_op>(*state_edge);
     if (branchOperation
         && !branchOperation

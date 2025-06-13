@@ -15,17 +15,14 @@
 namespace jlm::llvm
 {
 
-namespace delta
-{
-
 /** \brief Delta operation
  */
-class operation final : public rvsdg::StructuralOperation
+class DeltaOperation final : public rvsdg::StructuralOperation
 {
 public:
-  ~operation() override;
+  ~DeltaOperation() noexcept override;
 
-  operation(
+  DeltaOperation(
       std::shared_ptr<const rvsdg::ValueType> type,
       const std::string & name,
       const llvm::linkage & linkage,
@@ -38,15 +35,15 @@ public:
         type_(std::move(type))
   {}
 
-  operation(const operation & other) = default;
+  DeltaOperation(const DeltaOperation & other) = default;
 
-  operation(operation && other) noexcept = default;
+  DeltaOperation(DeltaOperation && other) noexcept = default;
 
-  operation &
-  operator=(const operation &) = delete;
+  DeltaOperation &
+  operator=(const DeltaOperation &) = delete;
 
-  operation &
-  operator=(operation &&) = delete;
+  DeltaOperation &
+  operator=(DeltaOperation &&) = delete;
 
   virtual std::string
   debug_string() const override;
@@ -101,6 +98,9 @@ private:
   std::shared_ptr<const rvsdg::ValueType> type_;
 };
 
+namespace delta
+{
+
 class cvargument;
 class cvinput;
 class output;
@@ -139,7 +139,7 @@ public:
   ~node() override;
 
 private:
-  node(rvsdg::Region * parent, std::unique_ptr<delta::operation> op)
+  node(rvsdg::Region * parent, std::unique_ptr<DeltaOperation> op)
       : StructuralNode(parent, 1),
         Operation_(std::move(op))
   {}
@@ -157,7 +157,7 @@ public:
     return StructuralNode::subregion(0);
   }
 
-  [[nodiscard]] const delta::operation &
+  [[nodiscard]] const DeltaOperation &
   GetOperation() const noexcept override;
 
   [[nodiscard]] const rvsdg::ValueType &
@@ -286,7 +286,7 @@ public:
       std::string section,
       bool constant)
   {
-    auto op = std::make_unique<delta::operation>(
+    auto op = std::make_unique<DeltaOperation>(
         std::move(type),
         name,
         linkage,
@@ -306,7 +306,7 @@ public:
   finalize(rvsdg::Output * result);
 
 private:
-  std::unique_ptr<delta::operation> Operation_;
+  std::unique_ptr<DeltaOperation> Operation_;
 };
 
 /** \brief Delta context variable input

@@ -28,13 +28,15 @@ GetPointerSizeInBits();
 int
 JlmSize(const jlm::rvsdg::Type * type);
 
-class branch_op final : public rvsdg::SimpleOperation
+class BranchOperation final : public rvsdg::SimpleOperation
 {
 public:
-  virtual ~branch_op()
-  {}
+  ~BranchOperation() noexcept override;
 
-  branch_op(size_t nalternatives, const std::shared_ptr<const jlm::rvsdg::Type> & type, bool loop)
+  BranchOperation(
+      size_t nalternatives,
+      const std::shared_ptr<const jlm::rvsdg::Type> & type,
+      bool loop)
       : SimpleOperation(
             { rvsdg::ControlType::Create(nalternatives), type },
             { nalternatives, type }),
@@ -44,7 +46,7 @@ public:
   bool
   operator==(const Operation & other) const noexcept override
   {
-    auto ot = dynamic_cast<const branch_op *>(&other);
+    auto ot = dynamic_cast<const BranchOperation *>(&other);
     // check predicate and value
     return ot && ot->loop == loop && *ot->argument(0) == *argument(0)
         && *ot->result(0) == *result(0);
@@ -59,7 +61,7 @@ public:
   [[nodiscard]] std::unique_ptr<Operation>
   copy() const override
   {
-    return std::make_unique<branch_op>(*this);
+    return std::make_unique<BranchOperation>(*this);
   }
 
   static std::vector<jlm::rvsdg::Output *>
@@ -69,7 +71,7 @@ public:
     if (!ctl)
       throw util::error("Predicate needs to be a control type.");
 
-    return outputs(&rvsdg::CreateOpNode<branch_op>(
+    return outputs(&rvsdg::CreateOpNode<BranchOperation>(
         { &predicate, &value },
         ctl->nalternatives(),
         value.Type(),

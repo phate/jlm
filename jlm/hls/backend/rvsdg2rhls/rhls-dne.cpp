@@ -166,7 +166,7 @@ dead_nonspec_gamma(rvsdg::Node * ndmux_node)
   {
     if (auto node = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*ndmux_node->input(i)->origin()))
     {
-      if (dynamic_cast<const branch_op *>(&node->GetOperation())
+      if (dynamic_cast<const BranchOperation *>(&node->GetOperation())
           && ndmux_node->input(i)->origin()->nusers() == 1)
       {
         if (i == 1)
@@ -213,7 +213,7 @@ dead_loop(rvsdg::Node * ndmux_node)
     return false;
   }
   auto branch_in_node = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(**ndmux_node->output(0)->begin());
-  if (!branch_in_node || !dynamic_cast<const branch_op *>(&branch_in_node->GetOperation()))
+  if (!branch_in_node || !dynamic_cast<const BranchOperation *>(&branch_in_node->GetOperation()))
   {
     return false;
   }
@@ -283,7 +283,7 @@ dead_loop_lcb(rvsdg::Node * lcb_node)
     return false;
   }
   auto branch_in = dynamic_cast<jlm::rvsdg::node_input *>(*lcb_node->output(0)->begin());
-  auto bo = dynamic_cast<const branch_op *>(&branch_in->node()->GetOperation());
+  auto bo = dynamic_cast<const BranchOperation *>(&branch_in->node()->GetOperation());
   if (!branch_in || !bo || !bo->loop)
   {
     return false;
