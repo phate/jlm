@@ -333,20 +333,19 @@ public:
   }
 };
 
-class predicate_buffer_op final : public rvsdg::SimpleOperation
+class PredicateBufferOperation final : public rvsdg::SimpleOperation
 {
 public:
-  virtual ~predicate_buffer_op()
-  {}
+  ~PredicateBufferOperation() noexcept override;
 
-  explicit predicate_buffer_op(const std::shared_ptr<const rvsdg::ControlType> & type)
+  explicit PredicateBufferOperation(const std::shared_ptr<const rvsdg::ControlType> & type)
       : SimpleOperation({ type }, { type })
   {}
 
   bool
   operator==(const Operation & other) const noexcept override
   {
-    auto ot = dynamic_cast<const predicate_buffer_op *>(&other);
+    const auto ot = dynamic_cast<const PredicateBufferOperation *>(&other);
     return ot && *ot->result(0) == *result(0);
   }
 
@@ -359,7 +358,7 @@ public:
   [[nodiscard]] std::unique_ptr<Operation>
   copy() const override
   {
-    return std::make_unique<predicate_buffer_op>(*this);
+    return std::make_unique<PredicateBufferOperation>(*this);
   }
 
   static std::vector<jlm::rvsdg::Output *>
@@ -369,7 +368,7 @@ public:
     if (!ctl)
       throw util::error("Predicate needs to be a control type.");
 
-    return outputs(&rvsdg::CreateOpNode<predicate_buffer_op>({ &predicate }, ctl));
+    return outputs(&rvsdg::CreateOpNode<PredicateBufferOperation>({ &predicate }, ctl));
   }
 };
 

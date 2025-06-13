@@ -524,7 +524,7 @@ CreateLoopFrontier(
     {
       auto bufNode = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*user);
       if (std::get<1>(
-              rvsdg::TryGetSimpleNodeAndOp<predicate_buffer_op>(*GetUser(bufNode->output(0)))))
+              rvsdg::TryGetSimpleNodeAndOp<PredicateBufferOperation>(*GetUser(bufNode->output(0)))))
       {
         // skip predicate buffer
         continue;

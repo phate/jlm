@@ -286,7 +286,7 @@ DotHLS::loop_to_dot(hls::loop_node * ln)
                  && (/*i==0||*/ i == 2); // back_outputs.count(node->input(i)->origin());
         auto origin_out_node = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*node->input(i)->origin());
         if (origin_out_node
-            && dynamic_cast<const predicate_buffer_op *>(&origin_out_node->GetOperation()))
+            && dynamic_cast<const PredicateBufferOperation *>(&origin_out_node->GetOperation()))
         {
           //
           back = true;
