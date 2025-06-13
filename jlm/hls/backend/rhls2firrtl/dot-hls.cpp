@@ -101,7 +101,7 @@ DotHLS::node_to_dot(const rvsdg::Node * node)
   {
     color = "blue";
   }
-  else if (jlm::rvsdg::is<hls::fork_op>(node))
+  else if (jlm::rvsdg::is<ForkOperation>(node))
   {
     color = "grey";
   }

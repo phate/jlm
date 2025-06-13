@@ -68,7 +68,7 @@ PlaceBuffer(rvsdg::Output * out, size_t capacity, bool passThrough)
   {
     return;
   }
-  auto [forkNode, forkOperation] = rvsdg::TryGetSimpleNodeAndOp<fork_op>(*out);
+  auto [forkNode, forkOperation] = rvsdg::TryGetSimpleNodeAndOp<ForkOperation>(*out);
   if (forkOperation && forkOperation->IsConstant())
   {
     return;
@@ -104,8 +104,7 @@ const size_t BufferSizeForkOther = 4;
 void
 OptimizeFork(rvsdg::SimpleNode * node)
 {
-  auto fork = dynamic_cast<const fork_op *>(&node->GetOperation());
-  JLM_ASSERT(fork);
+  const auto fork = util::AssertedCast<const ForkOperation>(&node->GetOperation());
   bool inLoop = rvsdg::is<loop_op>(node->region()->node());
   if (fork->IsConstant() || !inLoop)
   {
@@ -300,7 +299,7 @@ AddBuffers(rvsdg::Region * region)
       {
         OptimizeBuffer(simple);
       }
-      else if (jlm::rvsdg::is<fork_op>(node))
+      else if (jlm::rvsdg::is<ForkOperation>(node))
       {
         //        OptimizeFork(simple);
       }
@@ -749,7 +748,7 @@ PlaceBufferLoop(rvsdg::Output * out, size_t min_capacity, bool passThrough)
   // places or re-places a buffer on an output
   // don't place buffers after constants
   JLM_ASSERT(!is_constant(rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*out)));
-  auto [forkNode, forkOperation] = rvsdg::TryGetSimpleNodeAndOp<fork_op>(*out);
+  auto [forkNode, forkOperation] = rvsdg::TryGetSimpleNodeAndOp<ForkOperation>(*out);
   JLM_ASSERT(!(forkOperation && forkOperation->IsConstant()));
 
   if (rvsdg::is<rvsdg::LambdaOperation>(out->region()->node()))
