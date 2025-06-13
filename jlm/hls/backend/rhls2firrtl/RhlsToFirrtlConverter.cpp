@@ -2432,7 +2432,7 @@ RhlsToFirrtlConverter::MlirGen(const jlm::rvsdg::SimpleNode * node)
     JLM_ASSERT(b->capacity);
     return MlirGenExtModule(node);
   }
-  else if (dynamic_cast<const hls::branch_op *>(&(node->GetOperation())))
+  else if (dynamic_cast<const hls::BranchOperation *>(&(node->GetOperation())))
   {
     return MlirGenBranch(node);
   }
