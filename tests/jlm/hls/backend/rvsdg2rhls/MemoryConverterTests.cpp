@@ -531,7 +531,7 @@ TestThetaStore()
   // NDMux Node
   auto ndMuxNode =
       jlm::util::AssertedCast<const jlm::rvsdg::node_output>(storeNode->input(2)->origin())->node();
-  assert(is<mux_op>(ndMuxNode));
+  assert(is<MuxOperation>(ndMuxNode));
   // Loop Argument
   assert(is<jlm::rvsdg::RegionArgument>(ndMuxNode->input(2)->origin()));
 

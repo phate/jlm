@@ -50,9 +50,9 @@ TestUnknownBoundaries()
   // Assert
   auto lambdaRegion = lambda->subregion();
   assert(jlm::rvsdg::Region::ContainsNodeType<loop_node>(*lambdaRegion, true));
-  assert(jlm::rvsdg::Region::ContainsOperation<predicate_buffer_op>(*lambdaRegion, true));
-  assert(jlm::rvsdg::Region::ContainsOperation<jlm::hls::branch_op>(*lambdaRegion, true));
-  assert(jlm::rvsdg::Region::ContainsOperation<mux_op>(*lambdaRegion, true));
+  assert(jlm::rvsdg::Region::ContainsOperation<PredicateBufferOperation>(*lambdaRegion, true));
+  assert(jlm::rvsdg::Region::ContainsOperation<jlm::hls::BranchOperation>(*lambdaRegion, true));
+  assert(jlm::rvsdg::Region::ContainsOperation<MuxOperation>(*lambdaRegion, true));
   // Check that two constant buffers are created for the loop invariant variables
   assert(jlm::rvsdg::Region::ContainsOperation<LoopConstantBufferOperation>(*lambdaRegion, true));
   assert(lambdaRegion->argument(0)->nusers() == 1);

@@ -10,6 +10,16 @@
 namespace jlm::hls
 {
 
+BranchOperation::~BranchOperation() noexcept = default;
+
+ForkOperation::~ForkOperation() noexcept = default;
+
+MuxOperation::~MuxOperation() noexcept = default;
+
+SinkOperation::~SinkOperation() noexcept = default;
+
+PredicateBufferOperation::~PredicateBufferOperation() noexcept = default;
+
 LoopConstantBufferOperation::~LoopConstantBufferOperation() noexcept = default;
 
 std::size_t
@@ -84,8 +94,8 @@ loop_node::AddLoopVar(jlm::rvsdg::Output * origin, jlm::rvsdg::Output ** buffer)
   auto argument_loop = add_backedge(origin->Type());
 
   auto mux =
-      hls::mux_op::create(*predicate_buffer(), { &argument_in, argument_loop }, false, true)[0];
-  auto branch = hls::branch_op::create(*predicate()->origin(), *mux, true);
+      MuxOperation::create(*predicate_buffer(), { &argument_in, argument_loop }, false, true)[0];
+  auto branch = BranchOperation::create(*predicate()->origin(), *mux, true);
   if (buffer != nullptr)
   {
     *buffer = mux;
@@ -190,7 +200,7 @@ loop_node::create(rvsdg::Region * parent, bool init)
     // signals
     auto pre_buffer = hls::buffer_op::create(*pred_arg, 2)[0];
     ln->_predicate_buffer =
-        dynamic_cast<jlm::rvsdg::node_output *>(hls::predicate_buffer_op::create(*pre_buffer)[0]);
+        dynamic_cast<jlm::rvsdg::node_output *>(PredicateBufferOperation::create(*pre_buffer)[0]);
   }
   return ln;
 }
