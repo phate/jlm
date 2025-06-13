@@ -222,13 +222,12 @@ public:
   }
 };
 
-class mux_op final : public rvsdg::SimpleOperation
+class MuxOperation final : public rvsdg::SimpleOperation
 {
 public:
-  virtual ~mux_op()
-  {}
+  ~MuxOperation() noexcept override;
 
-  mux_op(
+  MuxOperation(
       size_t nalternatives,
       const std::shared_ptr<const jlm::rvsdg::Type> & type,
       bool discarding,
@@ -241,7 +240,7 @@ public:
   bool
   operator==(const Operation & other) const noexcept override
   {
-    auto ot = dynamic_cast<const mux_op *>(&other);
+    const auto ot = dynamic_cast<const MuxOperation *>(&other);
     // check predicate and value
     return ot && *ot->argument(0) == *argument(0) && *ot->result(0) == *result(0)
         && ot->discarding == discarding;
@@ -256,7 +255,7 @@ public:
   [[nodiscard]] std::unique_ptr<Operation>
   copy() const override
   {
-    return std::make_unique<mux_op>(*this);
+    return std::make_unique<MuxOperation>(*this);
   }
 
   static std::vector<jlm::rvsdg::Output *>
@@ -277,7 +276,7 @@ public:
     auto operands = std::vector<jlm::rvsdg::Output *>();
     operands.push_back(&predicate);
     operands.insert(operands.end(), alternatives.begin(), alternatives.end());
-    return outputs(&rvsdg::CreateOpNode<mux_op>(
+    return outputs(&rvsdg::CreateOpNode<MuxOperation>(
         operands,
         alternatives.size(),
         alternatives.front()->Type(),

@@ -258,7 +258,8 @@ OptimizeLoop(loop_node * loopNode)
       auto arg = in->arguments.begin().ptr();
       auto user = GetUser(arg);
       // only do this for proper loop variables
-      if (auto [node, muxOperation] = rvsdg::TryGetSimpleNodeAndOp<mux_op>(*user); muxOperation)
+      if (auto [node, muxOperation] = rvsdg::TryGetSimpleNodeAndOp<MuxOperation>(*user);
+          muxOperation)
       {
         if (!muxOperation->loop)
         {
@@ -486,7 +487,7 @@ CreateLoopFrontier(
 
     auto user = GetUser(arg);
     auto userNode = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*user);
-    auto [muxNode, muxOperation] = rvsdg::TryGetSimpleNodeAndOp<mux_op>(*user);
+    auto [muxNode, muxOperation] = rvsdg::TryGetSimpleNodeAndOp<MuxOperation>(*user);
     if (std::get<1>(rvsdg::TryGetSimpleNodeAndOp<loop_constant_buffer_op>(*user))
         || (muxOperation && muxOperation->loop))
     {
@@ -515,7 +516,7 @@ CreateLoopFrontier(
       continue;
     }
     auto user = GetUser(arg);
-    auto [muxNode, muxOperation] = rvsdg::TryGetSimpleNodeAndOp<mux_op>(*user);
+    auto [muxNode, muxOperation] = rvsdg::TryGetSimpleNodeAndOp<MuxOperation>(*user);
     if ((muxOperation && muxOperation->loop))
     {
       continue;
@@ -580,7 +581,7 @@ PushCycleFrontier(
 
         if (top_muxes.find(simpleNode) != top_muxes.end())
         {
-          if (dynamic_cast<const mux_op *>(&simpleNode->GetOperation()))
+          if (dynamic_cast<const MuxOperation *>(&simpleNode->GetOperation()))
           {
             // TODO: do this in NodeCycles instead?
             // this works for most cases, but is not ideal if the backedge has an II > 1, and the
@@ -895,7 +896,7 @@ AdjustLoopBuffers(
         if (top_muxes.find(simpleNode) != top_muxes.end())
         {
           // we reached our starting point again
-          auto mux = dynamic_cast<const mux_op *>(&simpleNode->GetOperation());
+          auto mux = dynamic_cast<const MuxOperation *>(&simpleNode->GetOperation());
           if (mux)
           {
             std::cout << "top_mux " << simpleNode
@@ -969,7 +970,7 @@ AdjustLoopBuffers(
           if (!analyze_inner_loop && capacity < max_cycles)
           {
             auto user = GetUser(inner_loop->input(i)->arguments.begin().ptr());
-            auto [muxNode, muxOperation] = rvsdg::TryGetSimpleNodeAndOp<mux_op>(*user);
+            auto [muxNode, muxOperation] = rvsdg::TryGetSimpleNodeAndOp<MuxOperation>(*user);
             if (auto [node, op] = rvsdg::TryGetSimpleNodeAndOp<loop_constant_buffer_op>(*user);
                 (muxOperation && muxOperation->loop) || op)
             {
