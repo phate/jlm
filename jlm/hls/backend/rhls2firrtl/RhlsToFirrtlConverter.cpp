@@ -397,7 +397,7 @@ RhlsToFirrtlConverter::MlirGenSimpleNode(const jlm::rvsdg::SimpleNode * node)
   {
     ConnectInvalid(body, outData);
   }
-  else if (auto op = dynamic_cast<const hls::mux_op *>(&(node->GetOperation())))
+  else if (auto op = dynamic_cast<const MuxOperation *>(&(node->GetOperation())))
   {
     JLM_ASSERT(op->discarding);
     auto select = GetSubfield(body, inBundles[0], "data");
@@ -2457,7 +2457,7 @@ RhlsToFirrtlConverter::MlirGen(const jlm::rvsdg::SimpleNode * node)
     // return merge_to_firrtl(n);
     throw std::logic_error(node->DebugString() + " not implemented!");
   }
-  else if (auto o = dynamic_cast<const hls::mux_op *>(&(node->GetOperation())))
+  else if (auto o = dynamic_cast<const MuxOperation *>(&(node->GetOperation())))
   {
     if (o->discarding)
     {

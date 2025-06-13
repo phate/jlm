@@ -10,6 +10,8 @@
 namespace jlm::hls
 {
 
+MuxOperation::~MuxOperation() noexcept = default;
+
 std::size_t
 triggertype::ComputeHash() const noexcept
 {
@@ -82,7 +84,7 @@ loop_node::AddLoopVar(jlm::rvsdg::Output * origin, jlm::rvsdg::Output ** buffer)
   auto argument_loop = add_backedge(origin->Type());
 
   auto mux =
-      hls::mux_op::create(*predicate_buffer(), { &argument_in, argument_loop }, false, true)[0];
+      MuxOperation::create(*predicate_buffer(), { &argument_in, argument_loop }, false, true)[0];
   auto branch = hls::branch_op::create(*predicate()->origin(), *mux, true);
   if (buffer != nullptr)
   {
