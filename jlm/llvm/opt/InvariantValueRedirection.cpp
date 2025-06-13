@@ -3,6 +3,9 @@
  * See COPYING for terms of redistribution.
  */
 
+#include "jlm/llvm/backend/dot/DotWriter.hpp"
+#include "jlm/util/GraphWriter.hpp"
+#include <fstream>
 #include <jlm/llvm/ir/LambdaMemoryState.hpp>
 #include <jlm/llvm/ir/operators/call.hpp>
 #include <jlm/llvm/ir/operators/delta.hpp>
@@ -53,6 +56,14 @@ InvariantValueRedirection::Run(
     util::StatisticsCollector & statisticsCollector)
 {
   auto statistics = Statistics::Create(module.SourceFilePath().value());
+
+  util::GraphWriter writer;
+  dot::WriteGraphs(writer, module.Rvsdg().GetRootRegion(), false);
+
+  std::ofstream fs;
+  fs.open("/tmp/output.dot");
+  writer.OutputAllGraphs(fs, util::GraphOutputFormat::Dot);
+  fs.close();
 
   statistics->Start();
   RedirectInRootRegion(module.Rvsdg());

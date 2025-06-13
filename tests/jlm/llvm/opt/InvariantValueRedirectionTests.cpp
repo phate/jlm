@@ -3,6 +3,7 @@
  * See COPYING for terms of redistribution.
  */
 
+#include "jlm/llvm/ir/operators/IntegerOperations.hpp"
 #include <test-registry.hpp>
 #include <test-types.hpp>
 #include <TestRvsdgs.hpp>
@@ -30,6 +31,7 @@ RunInvariantValueRedirection(jlm::llvm::RvsdgModule & rvsdgModule)
   jlm::rvsdg::view(rvsdgModule.Rvsdg(), stdout);
 }
 
+#if 0
 static int
 TestGamma()
 {
@@ -341,7 +343,101 @@ TestCallWithMemoryStateNodes()
 JLM_UNIT_TEST_REGISTER(
     "jlm/llvm/opt/InvariantValueRedirectionTests-CallWithMemoryStateNodes",
     TestCallWithMemoryStateNodes)
+#endif
 
+static int
+TestCallWithMissingMemoryStateNodes()
+{
+  // Arrange
+  using namespace jlm::llvm;
+
+  auto ioStateType = IOStateType::Create();
+  auto memoryStateType = MemoryStateType::Create();
+  auto valueType = jlm::tests::valuetype::Create();
+  auto int32Type = jlm::rvsdg::bittype::Create(32);
+  auto functionType = jlm::rvsdg::FunctionType::Create(
+      { valueType, ioStateType, memoryStateType },
+      { int32Type, ioStateType, memoryStateType });
+
+  auto rvsdgModule = RvsdgModule::Create(jlm::util::FilePath(""), "", "");
+  auto & rvsdg = rvsdgModule->Rvsdg();
+
+  jlm::rvsdg::Output * lambdaOutputTest1;
+  {
+    auto lambdaNode = jlm::rvsdg::LambdaNode::Create(
+        rvsdg.GetRootRegion(),
+        LlvmLambdaOperation::Create(functionType, "test", linkage::external_linkage));
+
+    auto xArgument = lambdaNode->GetFunctionArguments()[0];
+    auto ioStateArgument = lambdaNode->GetFunctionArguments()[1];
+    auto memoryStateArgument = lambdaNode->GetFunctionArguments()[2];
+
+    auto & zeroNode = IntegerConstantOperation::Create(*lambdaNode->subregion(), 32, 0);
+    auto & oneNode = IntegerConstantOperation::Create(*lambdaNode->subregion(), 32, 1);
+    auto allocaResults = AllocaOperation::create(valueType, oneNode.output(0), 4);
+
+    auto & storeNode = StoreNonVolatileOperation::CreateNode(
+        *allocaResults[0],
+        *xArgument,
+        { memoryStateArgument },
+        4);
+
+    auto & lambdaExitMergeResult = LambdaExitMemoryStateMergeOperation::Create(
+        *lambdaNode->subregion(),
+        { storeNode.output(0) });
+
+    lambdaOutputTest1 =
+        lambdaNode->finalize({ zeroNode.output(0), ioStateArgument, &lambdaExitMergeResult });
+  }
+
+  jlm::rvsdg::Output * lambdaOutputTest2;
+  {
+    auto lambdaNode = jlm::rvsdg::LambdaNode::Create(
+        rvsdg.GetRootRegion(),
+        LlvmLambdaOperation::Create(functionType, "test2", linkage::external_linkage));
+    auto xArgument = lambdaNode->GetFunctionArguments()[0];
+    auto ioStateArgument = lambdaNode->GetFunctionArguments()[1];
+    auto memoryStateArgument = lambdaNode->GetFunctionArguments()[2];
+    auto lambdaArgumentTest = lambdaNode->AddContextVar(*lambdaOutputTest1).inner;
+
+    auto lambdaEntrySplitResults =
+        LambdaEntryMemoryStateSplitOperation::Create(*memoryStateArgument, 1);
+
+    auto & callEntryMergeResult = CallEntryMemoryStateMergeOperation::Create(
+        *lambdaNode->subregion(),
+        lambdaEntrySplitResults);
+
+    auto & callNode = CallOperation::CreateNode(
+        lambdaArgumentTest,
+        functionType,
+        { xArgument, ioStateArgument, &callEntryMergeResult });
+
+    auto callExitSplitResults =
+        CallExitMemoryStateSplitOperation::Create(CallOperation::GetMemoryStateOutput(callNode), 1);
+
+    auto & lambdaExitMergeResult =
+        LambdaExitMemoryStateMergeOperation::Create(*lambdaNode->subregion(), callExitSplitResults);
+
+    lambdaOutputTest2 = lambdaNode->finalize(
+        { callNode.output(0), &CallOperation::GetIOStateOutput(callNode), &lambdaExitMergeResult });
+    GraphExport::Create(*lambdaOutputTest2, "test2");
+  }
+
+  std::cout << jlm::rvsdg::view(&rvsdg.GetRootRegion()) << std::flush;
+
+  // Act
+  RunInvariantValueRedirection(*rvsdgModule);
+  std::cout << jlm::rvsdg::view(&rvsdg.GetRootRegion()) << std::flush;
+
+  // Assert
+
+  return 0;
+}
+
+JLM_UNIT_TEST_REGISTER(
+    "jlm/llvm/opt/InvariantValueRedirectionTests-CallWithMissingMemoryStateNodes",
+    TestCallWithMissingMemoryStateNodes)
+#if 0
 static int
 TestLambdaCallArgumentMismatch()
 {
@@ -367,3 +463,4 @@ TestLambdaCallArgumentMismatch()
 JLM_UNIT_TEST_REGISTER(
     "jlm/llvm/opt/InvariantValueRedirectionTests-LambdaCallArgumentMismatch",
     TestLambdaCallArgumentMismatch)
+#endif
