@@ -249,7 +249,7 @@ DotHLS::loop_to_dot(hls::loop_node * ln)
   for (auto node : rvsdg::TopDownTraverser(sr))
   {
     auto mx = dynamic_cast<const hls::mux_op *>(&node->GetOperation());
-    auto lc = dynamic_cast<const hls::loop_constant_buffer_op *>(&node->GetOperation());
+    auto lc = dynamic_cast<const LoopConstantBufferOperation *>(&node->GetOperation());
     if ((mx && !mx->discarding && mx->loop) || lc)
     {
       dot << get_node_name(node) << " ";

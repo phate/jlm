@@ -10,6 +10,8 @@
 namespace jlm::hls
 {
 
+LoopConstantBufferOperation::~LoopConstantBufferOperation() noexcept = default;
+
 std::size_t
 triggertype::ComputeHash() const noexcept
 {
@@ -108,7 +110,7 @@ loop_node::add_loopconst(jlm::rvsdg::Output * origin)
   auto input = rvsdg::StructuralInput::create(this, origin, origin->Type());
 
   auto & argument_in = EntryArgument::Create(*subregion(), *input, origin->Type());
-  auto buffer = hls::loop_constant_buffer_op::create(*predicate_buffer(), argument_in)[0];
+  auto buffer = LoopConstantBufferOperation::create(*predicate_buffer(), argument_in)[0];
   return buffer;
 }
 

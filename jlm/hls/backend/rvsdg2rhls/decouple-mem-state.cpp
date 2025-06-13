@@ -132,7 +132,8 @@ trace_edge(
       state_edge = get_mem_state_user(sn->output(0));
       new_edge = new_sn->output(0);
     }
-    else if (auto [node, op] = rvsdg::TryGetSimpleNodeAndOp<loop_constant_buffer_op>(*state_edge);
+    else if (auto [node, op] =
+                 rvsdg::TryGetSimpleNodeAndOp<LoopConstantBufferOperation>(*state_edge);
              op)
     {
       // start of loop
@@ -381,7 +382,8 @@ follow_state_edge(
       JLM_ASSERT(muxOperation->loop);
       state_edge = get_mem_state_user(sn->output(0));
     }
-    else if (auto [node, op] = rvsdg::TryGetSimpleNodeAndOp<loop_constant_buffer_op>(*state_edge);
+    else if (auto [node, op] =
+                 rvsdg::TryGetSimpleNodeAndOp<LoopConstantBufferOperation>(*state_edge);
              op)
     {
       // start of theta
@@ -457,7 +459,7 @@ convert_loop_state_to_lcb(rvsdg::Input * loop_state_input)
   auto [muxNode, muxOperation] = rvsdg::TryGetSimpleNodeAndOp<mux_op>(*user);
   JLM_ASSERT(muxOperation && muxOperation->loop);
   auto mux_node = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*user);
-  auto lcb_out = loop_constant_buffer_op::create(
+  auto lcb_out = LoopConstantBufferOperation::create(
       *mux_node->input(0)->origin(),
       *mux_node->input(1)->origin())[0];
   mux_node->output(0)->divert_users(lcb_out);

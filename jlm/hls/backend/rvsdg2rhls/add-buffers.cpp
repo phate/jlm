@@ -266,7 +266,7 @@ OptimizeLoop(loop_node * loopNode)
           continue;
         }
       }
-      else if (std::get<1>(rvsdg::TryGetSimpleNodeAndOp<loop_constant_buffer_op>(*user)))
+      else if (std::get<1>(rvsdg::TryGetSimpleNodeAndOp<LoopConstantBufferOperation>(*user)))
       {
       }
       else
@@ -487,7 +487,7 @@ CreateLoopFrontier(
     auto user = GetUser(arg);
     auto userNode = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*user);
     auto [muxNode, muxOperation] = rvsdg::TryGetSimpleNodeAndOp<mux_op>(*user);
-    if (std::get<1>(rvsdg::TryGetSimpleNodeAndOp<loop_constant_buffer_op>(*user))
+    if (std::get<1>(rvsdg::TryGetSimpleNodeAndOp<LoopConstantBufferOperation>(*user))
         || (muxOperation && muxOperation->loop))
     {
       top_muxes.insert(userNode);
@@ -597,7 +597,7 @@ PushCycleFrontier(
           }
           else
           {
-            JLM_ASSERT(dynamic_cast<const loop_constant_buffer_op *>(&simpleNode->GetOperation()));
+            JLM_ASSERT(rvsdg::is<LoopConstantBufferOperation>(simpleNode->GetOperation()));
             // don't update output cycles
           }
         }
@@ -764,7 +764,8 @@ PlaceBufferLoop(rvsdg::Output * out, size_t min_capacity, bool passThrough)
   }
 
   // push buf above loop_const_buf
-  if (auto [loopConstantNode, op] = rvsdg::TryGetSimpleNodeAndOp<loop_constant_buffer_op>(*out); op)
+  if (auto [loopConstantNode, op] = rvsdg::TryGetSimpleNodeAndOp<LoopConstantBufferOperation>(*out);
+      op)
   {
     return std::min(
         PlaceBufferLoop(loopConstantNode->input(0)->origin(), min_capacity, passThrough),
@@ -970,7 +971,7 @@ AdjustLoopBuffers(
           {
             auto user = GetUser(inner_loop->input(i)->arguments.begin().ptr());
             auto [muxNode, muxOperation] = rvsdg::TryGetSimpleNodeAndOp<mux_op>(*user);
-            if (auto [node, op] = rvsdg::TryGetSimpleNodeAndOp<loop_constant_buffer_op>(*user);
+            if (auto [node, op] = rvsdg::TryGetSimpleNodeAndOp<LoopConstantBufferOperation>(*user);
                 (muxOperation && muxOperation->loop) || op)
             {
               size_t capacity_diff = max_cycles - capacity;

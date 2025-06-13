@@ -2381,7 +2381,7 @@ RhlsToFirrtlConverter::MlirGen(const jlm::rvsdg::SimpleNode * node)
   {
     return MlirGenFork(node);
   }
-  else if (dynamic_cast<const hls::loop_constant_buffer_op *>(&(node->GetOperation())))
+  else if (rvsdg::is<LoopConstantBufferOperation>(node))
   {
     return MlirGenLoopConstBuffer(node);
     //	} else if (dynamic_cast<const jlm::LoadOperation *>(&(node->GetOperation()))) {
