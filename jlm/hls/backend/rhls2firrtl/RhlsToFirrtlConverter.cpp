@@ -2423,7 +2423,7 @@ RhlsToFirrtlConverter::MlirGen(const jlm::rvsdg::SimpleNode * node)
   {
     return MlirGenHlsMemReq(node);
   }
-  else if (dynamic_cast<const hls::predicate_buffer_op *>(&(node->GetOperation())))
+  else if (jlm::rvsdg::is<const PredicateBufferOperation>(node->GetOperation()))
   {
     return MlirGenPredicationBuffer(node);
   }

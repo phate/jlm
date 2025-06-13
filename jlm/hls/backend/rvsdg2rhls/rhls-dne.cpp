@@ -236,7 +236,7 @@ dead_loop(rvsdg::Node * ndmux_node)
   auto pred_buf_out_node =
       rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*ndmux_node->input(0)->origin());
   if (!pred_buf_out_node
-      || !dynamic_cast<const predicate_buffer_op *>(&pred_buf_out_node->GetOperation()))
+      || !dynamic_cast<const PredicateBufferOperation *>(&pred_buf_out_node->GetOperation()))
   {
     return false;
   }
@@ -294,7 +294,7 @@ dead_loop_lcb(rvsdg::Node * lcb_node)
   auto branch_cond_origin = branch_in->node()->input(0)->origin();
   auto pred_buf_out = dynamic_cast<jlm::rvsdg::node_output *>(lcb_node->input(0)->origin());
   if (!pred_buf_out
-      || !dynamic_cast<const predicate_buffer_op *>(&pred_buf_out->node()->GetOperation()))
+      || !dynamic_cast<const PredicateBufferOperation *>(&pred_buf_out->node()->GetOperation()))
   {
     return false;
   }

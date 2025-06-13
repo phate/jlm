@@ -18,6 +18,8 @@ MuxOperation::~MuxOperation() noexcept = default;
 
 SinkOperation::~SinkOperation() noexcept = default;
 
+PredicateBufferOperation::~PredicateBufferOperation() noexcept = default;
+
 std::size_t
 triggertype::ComputeHash() const noexcept
 {
@@ -196,7 +198,7 @@ loop_node::create(rvsdg::Region * parent, bool init)
     // signals
     auto pre_buffer = hls::buffer_op::create(*pred_arg, 2)[0];
     ln->_predicate_buffer =
-        dynamic_cast<jlm::rvsdg::node_output *>(hls::predicate_buffer_op::create(*pre_buffer)[0]);
+        dynamic_cast<jlm::rvsdg::node_output *>(PredicateBufferOperation::create(*pre_buffer)[0]);
   }
   return ln;
 }
