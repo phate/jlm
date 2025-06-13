@@ -2436,7 +2436,7 @@ RhlsToFirrtlConverter::MlirGen(const jlm::rvsdg::SimpleNode * node)
   {
     return MlirGenBranch(node);
   }
-  else if (dynamic_cast<const hls::trigger_op *>(&(node->GetOperation())))
+  else if (rvsdg::is<TriggerOperation>(node))
   {
     return MlirGenTrigger(node);
   }

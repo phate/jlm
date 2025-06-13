@@ -10,6 +10,8 @@
 namespace jlm::hls
 {
 
+TriggerOperation::~TriggerOperation() noexcept = default;
+
 std::size_t
 triggertype::ComputeHash() const noexcept
 {

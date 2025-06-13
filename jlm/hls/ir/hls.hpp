@@ -494,20 +494,19 @@ public:
   Create();
 };
 
-class trigger_op final : public rvsdg::SimpleOperation
+class TriggerOperation final : public rvsdg::SimpleOperation
 {
 public:
-  virtual ~trigger_op()
-  {}
+  ~TriggerOperation() noexcept override;
 
-  explicit trigger_op(const std::shared_ptr<const jlm::rvsdg::Type> & type)
+  explicit TriggerOperation(const std::shared_ptr<const rvsdg::Type> & type)
       : SimpleOperation({ triggertype::Create(), type }, { type })
   {}
 
   bool
   operator==(const Operation & other) const noexcept override
   {
-    auto ot = dynamic_cast<const trigger_op *>(&other);
+    const auto ot = dynamic_cast<const TriggerOperation *>(&other);
     // check predicate and value
     return ot && *ot->argument(1) == *argument(1) && *ot->result(0) == *result(0);
   }
@@ -521,7 +520,7 @@ public:
   [[nodiscard]] std::unique_ptr<Operation>
   copy() const override
   {
-    return std::make_unique<trigger_op>(*this);
+    return std::make_unique<TriggerOperation>(*this);
   }
 
   static std::vector<jlm::rvsdg::Output *>
@@ -530,7 +529,7 @@ public:
     if (!rvsdg::is<triggertype>(tg.Type()))
       throw util::error("Trigger needs to be a triggertype.");
 
-    return outputs(&rvsdg::CreateOpNode<trigger_op>({ &tg, &value }, value.Type()));
+    return outputs(&rvsdg::CreateOpNode<TriggerOperation>({ &tg, &value }, value.Type()));
   }
 };
 
