@@ -10,6 +10,14 @@
 namespace jlm::hls
 {
 
+BranchOperation::~BranchOperation() noexcept = default;
+
+ForkOperation::~ForkOperation() noexcept = default;
+
+MuxOperation::~MuxOperation() noexcept = default;
+
+SinkOperation::~SinkOperation() noexcept = default;
+
 PredicateBufferOperation::~PredicateBufferOperation() noexcept = default;
 
 std::size_t
@@ -84,8 +92,8 @@ loop_node::AddLoopVar(jlm::rvsdg::Output * origin, jlm::rvsdg::Output ** buffer)
   auto argument_loop = add_backedge(origin->Type());
 
   auto mux =
-      hls::mux_op::create(*predicate_buffer(), { &argument_in, argument_loop }, false, true)[0];
-  auto branch = hls::branch_op::create(*predicate()->origin(), *mux, true);
+      MuxOperation::create(*predicate_buffer(), { &argument_in, argument_loop }, false, true)[0];
+  auto branch = BranchOperation::create(*predicate()->origin(), *mux, true);
   if (buffer != nullptr)
   {
     *buffer = mux;

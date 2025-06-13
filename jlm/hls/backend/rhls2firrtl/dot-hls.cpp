@@ -101,19 +101,19 @@ DotHLS::node_to_dot(const rvsdg::Node * node)
   {
     color = "blue";
   }
-  else if (jlm::rvsdg::is<hls::fork_op>(node))
+  else if (jlm::rvsdg::is<ForkOperation>(node))
   {
     color = "grey";
   }
-  else if (jlm::rvsdg::is<hls::sink_op>(node))
+  else if (jlm::rvsdg::is<SinkOperation>(node))
   {
     color = "grey";
   }
-  else if (jlm::rvsdg::is<hls::branch_op>(node))
+  else if (jlm::rvsdg::is<BranchOperation>(node))
   {
     color = "green";
   }
-  else if (jlm::rvsdg::is<hls::mux_op>(node))
+  else if (jlm::rvsdg::is<MuxOperation>(node))
   {
     color = "darkred";
   }
@@ -248,7 +248,7 @@ DotHLS::loop_to_dot(hls::loop_node * ln)
   dot << "{rank=same ";
   for (auto node : rvsdg::TopDownTraverser(sr))
   {
-    auto mx = dynamic_cast<const hls::mux_op *>(&node->GetOperation());
+    auto mx = dynamic_cast<const MuxOperation *>(&node->GetOperation());
     auto lc = dynamic_cast<const hls::loop_constant_buffer_op *>(&node->GetOperation());
     if ((mx && !mx->discarding && mx->loop) || lc)
     {
@@ -260,7 +260,7 @@ DotHLS::loop_to_dot(hls::loop_node * ln)
   dot << "{rank=same ";
   for (auto node : rvsdg::TopDownTraverser(sr))
   {
-    auto br = dynamic_cast<const hls::branch_op *>(&node->GetOperation());
+    auto br = dynamic_cast<const BranchOperation *>(&node->GetOperation());
     if (br && br->loop)
     {
       dot << get_node_name(node) << " ";
@@ -274,7 +274,7 @@ DotHLS::loop_to_dot(hls::loop_node * ln)
   {
     if (dynamic_cast<jlm::rvsdg::SimpleNode *>(node))
     {
-      auto mx = dynamic_cast<const hls::mux_op *>(&node->GetOperation());
+      auto mx = dynamic_cast<const MuxOperation *>(&node->GetOperation());
       auto node_name = get_node_name(node);
       for (size_t i = 0; i < node->ninputs(); ++i)
       {

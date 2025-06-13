@@ -28,13 +28,15 @@ GetPointerSizeInBits();
 int
 JlmSize(const jlm::rvsdg::Type * type);
 
-class branch_op final : public rvsdg::SimpleOperation
+class BranchOperation final : public rvsdg::SimpleOperation
 {
 public:
-  virtual ~branch_op()
-  {}
+  ~BranchOperation() noexcept override;
 
-  branch_op(size_t nalternatives, const std::shared_ptr<const jlm::rvsdg::Type> & type, bool loop)
+  BranchOperation(
+      size_t nalternatives,
+      const std::shared_ptr<const jlm::rvsdg::Type> & type,
+      bool loop)
       : SimpleOperation(
             { rvsdg::ControlType::Create(nalternatives), type },
             { nalternatives, type }),
@@ -44,7 +46,7 @@ public:
   bool
   operator==(const Operation & other) const noexcept override
   {
-    auto ot = dynamic_cast<const branch_op *>(&other);
+    auto ot = dynamic_cast<const BranchOperation *>(&other);
     // check predicate and value
     return ot && ot->loop == loop && *ot->argument(0) == *argument(0)
         && *ot->result(0) == *result(0);
@@ -59,7 +61,7 @@ public:
   [[nodiscard]] std::unique_ptr<Operation>
   copy() const override
   {
-    return std::make_unique<branch_op>(*this);
+    return std::make_unique<BranchOperation>(*this);
   }
 
   static std::vector<jlm::rvsdg::Output *>
@@ -69,7 +71,7 @@ public:
     if (!ctl)
       throw util::error("Predicate needs to be a control type.");
 
-    return outputs(&rvsdg::CreateOpNode<branch_op>(
+    return outputs(&rvsdg::CreateOpNode<BranchOperation>(
         { &predicate, &value },
         ctl->nalternatives(),
         value.Type(),
@@ -91,11 +93,10 @@ public:
  * single constant fork. Since the input of the fork is always the same value and is always valid.
  * No handshaking is necessary and the outputs of the fork is always valid.
  */
-class fork_op final : public rvsdg::SimpleOperation
+class ForkOperation final : public rvsdg::SimpleOperation
 {
 public:
-  virtual ~fork_op()
-  {}
+  ~ForkOperation() noexcept override;
 
   /**
    * Create a fork operation that is not a constant fork.
@@ -103,7 +104,7 @@ public:
    * /param nalternatives Number of outputs.
    * /param value The signal type, which is the same for the input and all outputs.
    */
-  fork_op(size_t nalternatives, const std::shared_ptr<const jlm::rvsdg::Type> & type)
+  ForkOperation(size_t nalternatives, const std::shared_ptr<const jlm::rvsdg::Type> & type)
       : SimpleOperation({ type }, { nalternatives, type })
   {}
 
@@ -114,7 +115,7 @@ public:
    * /param value The signal type, which is the same for the input and all outputs.
    * /param isConstant If true, the fork is a constant fork.
    */
-  fork_op(
+  ForkOperation(
       size_t nalternatives,
       const std::shared_ptr<const jlm::rvsdg::Type> & type,
       bool isConstant)
@@ -125,7 +126,7 @@ public:
   bool
   operator==(const Operation & other) const noexcept override
   {
-    auto forkOp = dynamic_cast<const fork_op *>(&other);
+    const auto forkOp = dynamic_cast<const ForkOperation *>(&other);
     // check predicate and value
     return forkOp && *forkOp->argument(0) == *argument(0) && forkOp->nresults() == nresults()
         && forkOp->IsConstant() == IsConstant_;
@@ -144,7 +145,7 @@ public:
   [[nodiscard]] std::unique_ptr<Operation>
   copy() const override
   {
-    return std::make_unique<fork_op>(*this);
+    return std::make_unique<ForkOperation>(*this);
   }
 
   /**
@@ -160,7 +161,7 @@ public:
   create(size_t nalternatives, jlm::rvsdg::Output & value, bool isConstant = false)
   {
     return outputs(
-        &rvsdg::CreateOpNode<fork_op>({ &value }, nalternatives, value.Type(), isConstant));
+        &rvsdg::CreateOpNode<ForkOperation>({ &value }, nalternatives, value.Type(), isConstant));
   }
 
   /**
@@ -221,13 +222,12 @@ public:
   }
 };
 
-class mux_op final : public rvsdg::SimpleOperation
+class MuxOperation final : public rvsdg::SimpleOperation
 {
 public:
-  virtual ~mux_op()
-  {}
+  ~MuxOperation() noexcept override;
 
-  mux_op(
+  MuxOperation(
       size_t nalternatives,
       const std::shared_ptr<const jlm::rvsdg::Type> & type,
       bool discarding,
@@ -240,7 +240,7 @@ public:
   bool
   operator==(const Operation & other) const noexcept override
   {
-    auto ot = dynamic_cast<const mux_op *>(&other);
+    const auto ot = dynamic_cast<const MuxOperation *>(&other);
     // check predicate and value
     return ot && *ot->argument(0) == *argument(0) && *ot->result(0) == *result(0)
         && ot->discarding == discarding;
@@ -255,7 +255,7 @@ public:
   [[nodiscard]] std::unique_ptr<Operation>
   copy() const override
   {
-    return std::make_unique<mux_op>(*this);
+    return std::make_unique<MuxOperation>(*this);
   }
 
   static std::vector<jlm::rvsdg::Output *>
@@ -276,7 +276,7 @@ public:
     auto operands = std::vector<jlm::rvsdg::Output *>();
     operands.push_back(&predicate);
     operands.insert(operands.end(), alternatives.begin(), alternatives.end());
-    return outputs(&rvsdg::CreateOpNode<mux_op>(
+    return outputs(&rvsdg::CreateOpNode<MuxOperation>(
         operands,
         alternatives.size(),
         alternatives.front()->Type(),
@@ -297,20 +297,19 @@ private:
   }
 };
 
-class sink_op final : public rvsdg::SimpleOperation
+class SinkOperation final : public rvsdg::SimpleOperation
 {
 public:
-  virtual ~sink_op()
-  {}
+  ~SinkOperation() noexcept override;
 
-  explicit sink_op(const std::shared_ptr<const jlm::rvsdg::Type> & type)
+  explicit SinkOperation(const std::shared_ptr<const jlm::rvsdg::Type> & type)
       : SimpleOperation({ type }, {})
   {}
 
   bool
   operator==(const Operation & other) const noexcept override
   {
-    auto ot = dynamic_cast<const sink_op *>(&other);
+    const auto ot = dynamic_cast<const SinkOperation *>(&other);
     return ot && *ot->argument(0) == *argument(0);
   }
 
@@ -323,13 +322,13 @@ public:
   [[nodiscard]] std::unique_ptr<Operation>
   copy() const override
   {
-    return std::make_unique<sink_op>(*this);
+    return std::make_unique<SinkOperation>(*this);
   }
 
   static std::vector<jlm::rvsdg::Output *>
   create(jlm::rvsdg::Output & value)
   {
-    return outputs(&rvsdg::CreateOpNode<sink_op>({ &value }, value.Type()));
+    return outputs(&rvsdg::CreateOpNode<SinkOperation>({ &value }, value.Type()));
   }
 };
 

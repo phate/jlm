@@ -21,7 +21,7 @@ ConvertGammaNodeWithoutSpeculation(rvsdg::GammaNode & gammaNode)
   for (const auto & entryvar : gammaNode.GetEntryVars())
   {
     auto branchResults =
-        hls::branch_op::create(*gammaNode.predicate()->origin(), *entryvar.input->origin());
+        BranchOperation::create(*gammaNode.predicate()->origin(), *entryvar.input->origin());
 
     for (size_t s = 0; s < gammaNode.nsubregions(); s++)
     {
@@ -44,7 +44,7 @@ ConvertGammaNodeWithoutSpeculation(rvsdg::GammaNode & gammaNode)
     // create mux nodes for each gamma output
     // use mux instead of merge in case of paths with different delay - otherwise one could overtake
     // the other see https://ieeexplore.ieee.org/abstract/document/9515491
-    auto mux = hls::mux_op::create(*gammaNode.predicate()->origin(), alternatives, false);
+    auto mux = MuxOperation::create(*gammaNode.predicate()->origin(), alternatives, false);
 
     ex.output->divert_users(mux[0]);
   }
@@ -80,7 +80,7 @@ ConvertGammaNodeWithSpeculation(rvsdg::GammaNode & gammaNode)
     }
 
     // create discarding mux for each gamma output
-    auto merge = hls::mux_op::create(*gammaNode.predicate()->origin(), alternatives, true);
+    auto merge = MuxOperation::create(*gammaNode.predicate()->origin(), alternatives, true);
 
     ex.output->divert_users(merge[0]);
   }
