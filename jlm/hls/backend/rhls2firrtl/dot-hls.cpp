@@ -97,7 +97,7 @@ DotHLS::node_to_dot(const rvsdg::Node * node)
   }
 
   std::string color = "black";
-  if (jlm::rvsdg::is<hls::buffer_op>(node))
+  if (jlm::rvsdg::is<BufferOperation>(node))
   {
     color = "blue";
   }

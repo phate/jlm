@@ -415,13 +415,12 @@ public:
   }
 };
 
-class buffer_op final : public rvsdg::SimpleOperation
+class BufferOperation final : public rvsdg::SimpleOperation
 {
 public:
-  virtual ~buffer_op()
-  {}
+  ~BufferOperation() noexcept override;
 
-  buffer_op(
+  BufferOperation(
       const std::shared_ptr<const jlm::rvsdg::Type> & type,
       size_t capacity,
       bool pass_through)
@@ -433,7 +432,7 @@ public:
   bool
   operator==(const Operation & other) const noexcept override
   {
-    auto ot = dynamic_cast<const buffer_op *>(&other);
+    const auto ot = dynamic_cast<const BufferOperation *>(&other);
     return ot && ot->capacity == capacity && ot->pass_through == pass_through
         && *ot->result(0) == *result(0);
   }
@@ -447,20 +446,19 @@ public:
   [[nodiscard]] std::unique_ptr<Operation>
   copy() const override
   {
-    return std::make_unique<buffer_op>(*this);
+    return std::make_unique<BufferOperation>(*this);
   }
 
   static std::vector<jlm::rvsdg::Output *>
   create(jlm::rvsdg::Output & value, size_t capacity, bool pass_through = false)
   {
     return outputs(
-        &rvsdg::CreateOpNode<buffer_op>({ &value }, value.Type(), capacity, pass_through));
+        &rvsdg::CreateOpNode<BufferOperation>({ &value }, value.Type(), capacity, pass_through));
   }
 
+  // FIXME: privatize attributes
   size_t capacity;
   bool pass_through;
-
-private:
 };
 
 class triggertype final : public rvsdg::StateType
