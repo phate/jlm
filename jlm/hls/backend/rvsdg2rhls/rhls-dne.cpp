@@ -272,8 +272,8 @@ dead_loop(rvsdg::Node * ndmux_node)
 bool
 dead_loop_lcb(rvsdg::Node * lcb_node)
 {
-  auto lcb_op = dynamic_cast<const hls::loop_constant_buffer_op *>(&lcb_node->GetOperation());
-  JLM_ASSERT(lcb_op);
+  JLM_ASSERT(jlm::rvsdg::is<LoopConstantBufferOperation>(lcb_node));
+
   // one branch
   if (lcb_node->output(0)->nusers() != 1)
   {
@@ -475,7 +475,7 @@ dne(rvsdg::Region * sr)
           changed |= dead_nonspec_gamma(node) || dead_loop(node);
         }
       }
-      else if (dynamic_cast<const loop_constant_buffer_op *>(&node->GetOperation()))
+      else if (rvsdg::is<LoopConstantBufferOperation>(node))
       {
         changed |= dead_loop_lcb(node);
       }

@@ -371,13 +371,12 @@ public:
   }
 };
 
-class loop_constant_buffer_op final : public rvsdg::SimpleOperation
+class LoopConstantBufferOperation final : public rvsdg::SimpleOperation
 {
 public:
-  virtual ~loop_constant_buffer_op()
-  {}
+  ~LoopConstantBufferOperation() noexcept override;
 
-  loop_constant_buffer_op(
+  LoopConstantBufferOperation(
       const std::shared_ptr<const rvsdg::ControlType> & ctltype,
       const std::shared_ptr<const jlm::rvsdg::Type> & type)
       : SimpleOperation({ ctltype, type }, { type })
@@ -386,7 +385,7 @@ public:
   bool
   operator==(const Operation & other) const noexcept override
   {
-    auto ot = dynamic_cast<const loop_constant_buffer_op *>(&other);
+    const auto ot = dynamic_cast<const LoopConstantBufferOperation *>(&other);
     return ot && *ot->result(0) == *result(0) && *ot->argument(0) == *argument(0);
   }
 
@@ -399,7 +398,7 @@ public:
   [[nodiscard]] std::unique_ptr<Operation>
   copy() const override
   {
-    return std::make_unique<loop_constant_buffer_op>(*this);
+    return std::make_unique<LoopConstantBufferOperation>(*this);
   }
 
   static std::vector<jlm::rvsdg::Output *>
@@ -409,8 +408,10 @@ public:
     if (!ctl)
       throw util::error("Predicate needs to be a control type.");
 
-    return outputs(
-        &rvsdg::CreateOpNode<loop_constant_buffer_op>({ &predicate, &value }, ctl, value.Type()));
+    return outputs(&rvsdg::CreateOpNode<LoopConstantBufferOperation>(
+        { &predicate, &value },
+        ctl,
+        value.Type()));
   }
 };
 
