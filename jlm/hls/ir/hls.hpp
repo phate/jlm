@@ -782,32 +782,30 @@ public:
   copy(rvsdg::Region * region, rvsdg::SubstitutionMap & smap) const override;
 };
 
-class bundletype final : public jlm::rvsdg::ValueType
+class BundleType final : public rvsdg::ValueType
 {
 public:
-  ~bundletype()
+  ~BundleType() noexcept override;
+
+  explicit BundleType(
+      const std::vector<std::pair<std::string, std::shared_ptr<const Type>>> elements)
+      : elements_(std::move(elements))
   {}
 
-  bundletype(
-      const std::vector<std::pair<std::string, std::shared_ptr<const jlm::rvsdg::Type>>> elements)
-      : jlm::rvsdg::ValueType(),
-        elements_(std::move(elements))
-  {}
+  BundleType(const BundleType &) = default;
 
-  bundletype(const bundletype &) = default;
+  BundleType(BundleType &&) = delete;
 
-  bundletype(bundletype &&) = delete;
+  BundleType &
+  operator=(const BundleType &) = delete;
 
-  bundletype &
-  operator=(const bundletype &) = delete;
-
-  bundletype &
-  operator=(bundletype &&) = delete;
+  BundleType &
+  operator=(BundleType &&) = delete;
 
   virtual bool
   operator==(const jlm::rvsdg::Type & other) const noexcept override
   {
-    auto type = dynamic_cast<const bundletype *>(&other);
+    auto type = dynamic_cast<const BundleType *>(&other);
     // TODO: better comparison?
     if (!type || type->elements_.size() != elements_.size())
     {
@@ -852,10 +850,10 @@ public:
   const std::vector<std::pair<std::string, std::shared_ptr<const jlm::rvsdg::Type>>> elements_;
 };
 
-std::shared_ptr<const bundletype>
+std::shared_ptr<const BundleType>
 get_mem_req_type(std::shared_ptr<const rvsdg::ValueType> elementType, bool write);
 
-std::shared_ptr<const bundletype>
+std::shared_ptr<const BundleType>
 get_mem_res_type(std::shared_ptr<const jlm::rvsdg::ValueType> dataType);
 
 class LoadOperation final : public rvsdg::SimpleOperation
