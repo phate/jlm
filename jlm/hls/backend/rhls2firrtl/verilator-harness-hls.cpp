@@ -94,7 +94,7 @@ GetParameterListAsC(const rvsdg::LambdaNode & kernel)
   {
     if (rvsdg::is<rvsdg::StateType>(argType))
       continue;
-    if (rvsdg::is<bundletype>(argType))
+    if (rvsdg::is<BundleType>(argType))
       continue;
 
     if (argument_index != 0)
@@ -318,7 +318,7 @@ public:
   cpp << "MemoryQueue memory_queues[] = {";
   for (size_t i = 0; i < mem_reqs.size(); i++)
   {
-    auto bundle = dynamic_cast<const bundletype *>(mem_resps[i]->Type().get());
+    auto bundle = dynamic_cast<const BundleType *>(mem_resps[i]->Type().get());
     auto size = JlmSize(&*bundle->get_element_type("data")) / 8;
     //    int width =
     cpp << "{MEMORY_LATENCY, " << size << ", " << i << "}, ";
@@ -469,7 +469,7 @@ static void posedge() {
   // Emit calls to MemoryQueue::accept_request()
   for (size_t i = 0; i < mem_reqs.size(); i++)
   {
-    const auto req_bt = util::AssertedCast<const bundletype>(mem_reqs[i]->Type().get());
+    const auto req_bt = util::AssertedCast<const BundleType>(mem_reqs[i]->Type().get());
     const auto has_write = req_bt->get_element_type("write") != nullptr;
 
     cpp << "    memory_queues[" << i << "].accept_request(";
