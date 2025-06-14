@@ -1749,7 +1749,7 @@ RhlsToFirrtlConverter::MlirGenPrint(const jlm::rvsdg::SimpleNode * node)
   auto outBundle = GetOutPort(module, 0);
   Connect(body, outBundle, inBundle);
   auto trigger = AddAndOp(body, AddAndOp(body, inReady, inValid), AddNotOp(body, reset));
-  auto pn = dynamic_cast<const print_op *>(&node->GetOperation());
+  auto pn = dynamic_cast<const PrintOperation *>(&node->GetOperation());
   auto formatString = "print node " + std::to_string(pn->id()) + ": %x\n";
   auto name = "print_node_" + std::to_string(pn->id());
   auto printValue = AddPadOp(body, inData, 64);
@@ -2444,7 +2444,7 @@ RhlsToFirrtlConverter::MlirGen(const jlm::rvsdg::SimpleNode * node)
   {
     return MlirGenStateGate(node);
   }
-  else if (dynamic_cast<const hls::print_op *>(&(node->GetOperation())))
+  else if (dynamic_cast<const PrintOperation *>(&(node->GetOperation())))
   {
     return MlirGenPrint(node);
   }

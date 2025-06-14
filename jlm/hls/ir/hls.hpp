@@ -533,16 +533,14 @@ public:
   }
 };
 
-class print_op final : public rvsdg::SimpleOperation
+class PrintOperation final : public rvsdg::SimpleOperation
 {
-private:
   size_t _id;
 
 public:
-  virtual ~print_op()
-  {}
+  ~PrintOperation() noexcept override;
 
-  explicit print_op(const std::shared_ptr<const jlm::rvsdg::Type> & type)
+  explicit PrintOperation(const std::shared_ptr<const rvsdg::Type> & type)
       : SimpleOperation({ type }, { type })
   {
     static size_t common_id{ 0 };
@@ -552,12 +550,8 @@ public:
   bool
   operator==(const Operation &) const noexcept override
   {
-    //				auto ot = dynamic_cast<const print_op *>(&other);
-    // check predicate and value
-    //				return ot
-    //					   && ot->argument(0).type() == argument(0).type()
-    //					   && ot->result(0).type() == result(0).type();
-    return false; // print nodes are intentionally distinct
+    // print nodes are intentionally distinct
+    return false;
   }
 
   std::string
@@ -575,13 +569,13 @@ public:
   [[nodiscard]] std::unique_ptr<Operation>
   copy() const override
   {
-    return std::make_unique<print_op>(*this);
+    return std::make_unique<PrintOperation>(*this);
   }
 
   static std::vector<jlm::rvsdg::Output *>
   create(jlm::rvsdg::Output & value)
   {
-    return outputs(&rvsdg::CreateOpNode<print_op>({ &value }, value.Type()));
+    return outputs(&rvsdg::CreateOpNode<PrintOperation>({ &value }, value.Type()));
   }
 };
 
