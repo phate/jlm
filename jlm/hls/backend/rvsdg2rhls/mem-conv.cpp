@@ -153,7 +153,7 @@ ReplaceDecouple(
   auto addr = decouple_request->input(2)->origin();
   auto req_mem_state = decouple_request->input(decouple_request->ninputs() - 1)->origin();
   // state gate for req
-  auto sg_out = state_gate_op::create(*addr, { req_mem_state });
+  auto sg_out = StateGateOperation::create(*addr, { req_mem_state });
   addr = sg_out[0];
   req_mem_state = sg_out[1];
   // redirect memstate - iostate output has already been removed by mem-sep pass
@@ -181,7 +181,7 @@ ReplaceDecouple(
     auto state_dummy = llvm::UndefValueOperation::Create(
         *response_state_origin->region(),
         response_state_origin->Type());
-    auto sg_resp = state_gate_op::create(*routed_data, { state_dummy });
+    auto sg_resp = StateGateOperation::create(*routed_data, { state_dummy });
     decouple_response->output(decouple_response->noutputs() - 1)->divert_users(sg_resp[1]);
     JLM_ASSERT(decouple_response->IsDead());
     remove(decouple_response);
@@ -202,7 +202,7 @@ ReplaceDecouple(
         *response_state_origin->region(),
         response_state_origin->Type());
     // put state gate on load response
-    auto sg_resp = state_gate_op::create(*dload_node->input(1)->origin(), { state_dummy });
+    auto sg_resp = StateGateOperation::create(*dload_node->input(1)->origin(), { state_dummy });
     dload_node->input(1)->divert_to(sg_resp[0]);
     auto state_user = get_mem_state_user(req_mem_state);
     state_user->divert_to(sg_resp[1]);

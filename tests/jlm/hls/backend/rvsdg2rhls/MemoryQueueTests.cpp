@@ -80,7 +80,7 @@ TestSingleLoad()
   mem_queue(*rvsdgModule);
   // Assert
   jlm::rvsdg::view(rvsdgModule->Rvsdg(), stdout);
-  assert(jlm::rvsdg::Region::ContainsOperation<state_gate_op>(*lambdaRegion, true));
+  assert(jlm::rvsdg::Region::ContainsOperation<StateGateOperation>(*lambdaRegion, true));
   assert(!jlm::rvsdg::Region::ContainsOperation<addr_queue_op>(*lambdaRegion, true));
 
   return 0;
@@ -162,7 +162,7 @@ TestLoadStore()
   mem_queue(*rvsdgModule);
   // Assert
   jlm::rvsdg::view(rvsdgModule->Rvsdg(), stdout);
-  assert(jlm::rvsdg::Region::ContainsOperation<state_gate_op>(*lambdaRegion, true));
+  assert(jlm::rvsdg::Region::ContainsOperation<StateGateOperation>(*lambdaRegion, true));
   assert(!jlm::rvsdg::Region::ContainsOperation<addr_queue_op>(*lambdaRegion, true));
 
   return 0;
@@ -238,7 +238,7 @@ TestAddrQueue()
   mem_queue(*rvsdgModule);
   // Assert
   jlm::rvsdg::view(rvsdgModule->Rvsdg(), stdout);
-  assert(jlm::rvsdg::Region::ContainsOperation<state_gate_op>(*lambdaRegion, true));
+  assert(jlm::rvsdg::Region::ContainsOperation<StateGateOperation>(*lambdaRegion, true));
   assert(jlm::rvsdg::Region::ContainsOperation<addr_queue_op>(*lambdaRegion, true));
 
   for (auto & node : jlm::rvsdg::TopDownTraverser(lambdaRegion))
@@ -254,7 +254,7 @@ TestAddrQueue()
           jlm::util::AssertedCast<const LoadOperation>(&loadNode->GetOperation());
           auto stateGate =
               jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(*loadNode->input(0)->origin());
-          jlm::util::AssertedCast<const state_gate_op>(&stateGate->GetOperation());
+          jlm::util::AssertedCast<const StateGateOperation>(&stateGate->GetOperation());
           auto addrQueue =
               jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(*stateGate->input(0)->origin());
           jlm::util::AssertedCast<const addr_queue_op>(&addrQueue->GetOperation());

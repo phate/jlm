@@ -1021,20 +1021,19 @@ public:
   size_t capacity;
 };
 
-class state_gate_op final : public rvsdg::SimpleOperation
+class StateGateOperation final : public rvsdg::SimpleOperation
 {
 public:
-  virtual ~state_gate_op()
-  {}
+  ~StateGateOperation() noexcept override;
 
-  state_gate_op(const std::shared_ptr<const jlm::rvsdg::Type> & type, size_t numStates)
+  StateGateOperation(const std::shared_ptr<const rvsdg::Type> & type, const size_t numStates)
       : SimpleOperation(CreateInOutTypes(type, numStates), CreateInOutTypes(type, numStates))
   {}
 
   bool
   operator==(const Operation & other) const noexcept override
   {
-    auto ot = dynamic_cast<const state_gate_op *>(&other);
+    auto ot = dynamic_cast<const StateGateOperation *>(&other);
     // check predicate and value
     return ot && *ot->argument(1) == *argument(1) && ot->narguments() == narguments();
   }
@@ -1059,7 +1058,7 @@ public:
   [[nodiscard]] std::unique_ptr<Operation>
   copy() const override
   {
-    return std::make_unique<state_gate_op>(*this);
+    return std::make_unique<StateGateOperation>(*this);
   }
 
   static std::vector<jlm::rvsdg::Output *>
@@ -1068,7 +1067,7 @@ public:
     std::vector<jlm::rvsdg::Output *> inputs;
     inputs.push_back(&addr);
     inputs.insert(inputs.end(), states.begin(), states.end());
-    return outputs(&rvsdg::CreateOpNode<state_gate_op>(inputs, addr.Type(), states.size()));
+    return outputs(&rvsdg::CreateOpNode<StateGateOperation>(inputs, addr.Type(), states.size()));
   }
 };
 

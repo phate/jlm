@@ -2440,7 +2440,7 @@ RhlsToFirrtlConverter::MlirGen(const jlm::rvsdg::SimpleNode * node)
   {
     return MlirGenTrigger(node);
   }
-  else if (dynamic_cast<const hls::state_gate_op *>(&(node->GetOperation())))
+  else if (rvsdg::is<StateGateOperation>(node))
   {
     return MlirGenStateGate(node);
   }
