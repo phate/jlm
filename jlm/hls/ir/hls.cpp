@@ -24,6 +24,8 @@ LoopConstantBufferOperation::~LoopConstantBufferOperation() noexcept = default;
 
 BufferOperation::~BufferOperation() noexcept = default;
 
+TriggerOperation::~TriggerOperation() noexcept = default;
+
 TriggerType::~TriggerType() noexcept = default;
 
 std::size_t
