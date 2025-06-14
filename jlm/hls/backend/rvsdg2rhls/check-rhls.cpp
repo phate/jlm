@@ -26,7 +26,7 @@ CheckAddrQueue(rvsdg::Node * node)
   // make sure there is enough buffer space on the output, so there can be no race condition with
   // SG3
   auto [bufferNode, bufferOperation] =
-      rvsdg::TryGetSimpleNodeAndOp<buffer_op>(**node->output(0)->begin());
+      rvsdg::TryGetSimpleNodeAndOp<BufferOperation>(**node->output(0)->begin());
   JLM_ASSERT(bufferOperation && bufferOperation->capacity >= addrQueueOperation->capacity);
 }
 

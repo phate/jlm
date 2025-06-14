@@ -397,7 +397,7 @@ RhlsToFirrtlConverter::MlirGenSimpleNode(const jlm::rvsdg::SimpleNode * node)
   {
     ConnectInvalid(body, outData);
   }
-  else if (auto op = dynamic_cast<const hls::mux_op *>(&(node->GetOperation())))
+  else if (auto op = dynamic_cast<const MuxOperation *>(&(node->GetOperation())))
   {
     JLM_ASSERT(op->discarding);
     auto select = GetSubfield(body, inBundles[0], "data");
@@ -526,7 +526,7 @@ RhlsToFirrtlConverter::MlirGenLoopConstBuffer(const jlm::rvsdg::SimpleNode * nod
 circt::firrtl::FModuleOp
 RhlsToFirrtlConverter::MlirGenFork(const jlm::rvsdg::SimpleNode * node)
 {
-  auto op = dynamic_cast<const jlm::hls::fork_op *>(&node->GetOperation());
+  auto op = dynamic_cast<const jlm::hls::ForkOperation *>(&node->GetOperation());
   bool isConstant = op->IsConstant();
   // Create the module and its input/output ports
   auto module = nodeToModule(node);
@@ -1837,7 +1837,7 @@ RhlsToFirrtlConverter::MlirGenBuffer(const jlm::rvsdg::SimpleNode * node)
   auto module = nodeToModule(node);
   auto body = module.getBodyBlock();
 
-  auto op = dynamic_cast<const hls::buffer_op *>(&(node->GetOperation()));
+  auto op = dynamic_cast<const BufferOperation *>(&(node->GetOperation()));
   auto capacity = op->capacity;
 
   auto clock = GetClockSignal(module);
@@ -2373,15 +2373,15 @@ RhlsToFirrtlConverter::MlirGenBranch(const jlm::rvsdg::SimpleNode * node)
 circt::firrtl::FModuleLike
 RhlsToFirrtlConverter::MlirGen(const jlm::rvsdg::SimpleNode * node)
 {
-  if (dynamic_cast<const hls::sink_op *>(&(node->GetOperation())))
+  if (dynamic_cast<const hls::SinkOperation *>(&(node->GetOperation())))
   {
     return MlirGenSink(node);
   }
-  else if (dynamic_cast<const hls::fork_op *>(&(node->GetOperation())))
+  else if (dynamic_cast<const ForkOperation *>(&(node->GetOperation())))
   {
     return MlirGenFork(node);
   }
-  else if (dynamic_cast<const hls::loop_constant_buffer_op *>(&(node->GetOperation())))
+  else if (rvsdg::is<LoopConstantBufferOperation>(node))
   {
     return MlirGenLoopConstBuffer(node);
     //	} else if (dynamic_cast<const jlm::LoadOperation *>(&(node->GetOperation()))) {
@@ -2423,16 +2423,16 @@ RhlsToFirrtlConverter::MlirGen(const jlm::rvsdg::SimpleNode * node)
   {
     return MlirGenHlsMemReq(node);
   }
-  else if (dynamic_cast<const hls::predicate_buffer_op *>(&(node->GetOperation())))
+  else if (jlm::rvsdg::is<const PredicateBufferOperation>(node->GetOperation()))
   {
     return MlirGenPredicationBuffer(node);
   }
-  else if (auto b = dynamic_cast<const hls::buffer_op *>(&(node->GetOperation())))
+  else if (auto b = dynamic_cast<const BufferOperation *>(&node->GetOperation()))
   {
     JLM_ASSERT(b->capacity);
     return MlirGenExtModule(node);
   }
-  else if (dynamic_cast<const hls::branch_op *>(&(node->GetOperation())))
+  else if (dynamic_cast<const hls::BranchOperation *>(&(node->GetOperation())))
   {
     return MlirGenBranch(node);
   }
@@ -2457,7 +2457,7 @@ RhlsToFirrtlConverter::MlirGen(const jlm::rvsdg::SimpleNode * node)
     // return merge_to_firrtl(n);
     throw std::logic_error(node->DebugString() + " not implemented!");
   }
-  else if (auto o = dynamic_cast<const hls::mux_op *>(&(node->GetOperation())))
+  else if (auto o = dynamic_cast<const MuxOperation *>(&(node->GetOperation())))
   {
     if (o->discarding)
     {

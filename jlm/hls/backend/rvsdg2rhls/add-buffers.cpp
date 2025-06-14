@@ -68,14 +68,14 @@ PlaceBuffer(rvsdg::Output * out, size_t capacity, bool passThrough)
   {
     return;
   }
-  auto [forkNode, forkOperation] = rvsdg::TryGetSimpleNodeAndOp<fork_op>(*out);
+  auto [forkNode, forkOperation] = rvsdg::TryGetSimpleNodeAndOp<ForkOperation>(*out);
   if (forkOperation && forkOperation->IsConstant())
   {
     return;
   }
 
   // TODO: handle out being a buf?
-  auto [bufferNode, bufferOperation] = rvsdg::TryGetSimpleNodeAndOp<buffer_op>(*user);
+  auto [bufferNode, bufferOperation] = rvsdg::TryGetSimpleNodeAndOp<BufferOperation>(*user);
   if (bufferOperation
       && (bufferOperation->pass_through != passThrough || bufferOperation->capacity != capacity))
   {
@@ -83,7 +83,7 @@ PlaceBuffer(rvsdg::Output * out, size_t capacity, bool passThrough)
     auto node = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*user);
     passThrough = passThrough && bufferOperation->pass_through;
     capacity = std::max(capacity, bufferOperation->capacity);
-    auto bufOut = buffer_op::create(*node->input(0)->origin(), capacity, passThrough)[0];
+    auto bufOut = BufferOperation::create(*node->input(0)->origin(), capacity, passThrough)[0];
     node->output(0)->divert_users(bufOut);
     JLM_ASSERT(node->IsDead());
     remove(node);
@@ -92,7 +92,7 @@ PlaceBuffer(rvsdg::Output * out, size_t capacity, bool passThrough)
   {
     // create new buffer
     auto directUser = *out->begin();
-    auto newOut = buffer_op::create(*out, capacity, passThrough)[0];
+    auto newOut = BufferOperation::create(*out, capacity, passThrough)[0];
     directUser->divert_to(newOut);
   }
 }
@@ -104,8 +104,7 @@ const size_t BufferSizeForkOther = 4;
 void
 OptimizeFork(rvsdg::SimpleNode * node)
 {
-  auto fork = dynamic_cast<const fork_op *>(&node->GetOperation());
-  JLM_ASSERT(fork);
+  const auto fork = util::AssertedCast<const ForkOperation>(&node->GetOperation());
   bool inLoop = rvsdg::is<loop_op>(node->region()->node());
   if (fork->IsConstant() || !inLoop)
   {
@@ -113,7 +112,7 @@ OptimizeFork(rvsdg::SimpleNode * node)
     for (size_t i = 0; i < node->noutputs(); ++i)
     {
       auto user = FindUserNode(node->output(0));
-      auto [bufferNode, bufferOperation] = rvsdg::TryGetSimpleNodeAndOp<buffer_op>(*user);
+      auto [bufferNode, bufferOperation] = rvsdg::TryGetSimpleNodeAndOp<BufferOperation>(*user);
       if (bufferOperation)
       {
         bufferNode->output(0)->divert_users(node->output(0));
@@ -146,7 +145,7 @@ const size_t BufferSizeBranchState = BufferSizeForkControl;
 void
 OptimizeBranch(rvsdg::SimpleNode * node)
 {
-  auto branch = dynamic_cast<const branch_op *>(&node->GetOperation());
+  auto branch = dynamic_cast<const BranchOperation *>(&node->GetOperation());
   JLM_ASSERT(branch);
   bool inLoop = rvsdg::is<loop_op>(node->region()->node());
   if (inLoop && !branch->loop)
@@ -183,17 +182,17 @@ OptimizeAddrQ(rvsdg::SimpleNode * node)
 void
 OptimizeBuffer(rvsdg::SimpleNode * node)
 {
-  auto buf = dynamic_cast<const buffer_op *>(&node->GetOperation());
+  auto buf = dynamic_cast<const BufferOperation *>(&node->GetOperation());
   JLM_ASSERT(buf);
   auto user = FindUserNode(node->output(0));
-  auto [bufferNode, bufferOperation] = rvsdg::TryGetSimpleNodeAndOp<buffer_op>(*user);
+  auto [bufferNode, bufferOperation] = rvsdg::TryGetSimpleNodeAndOp<BufferOperation>(*user);
   if (bufferOperation)
   {
     auto node2 = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*user);
     // merge buffers and keep larger size
     bool passThrough = buf->pass_through && bufferOperation->pass_through;
     auto capacity = std::max(buf->capacity, bufferOperation->capacity);
-    auto newOut = buffer_op::create(*node->input(0)->origin(), capacity, passThrough)[0];
+    auto newOut = BufferOperation::create(*node->input(0)->origin(), capacity, passThrough)[0];
     JLM_ASSERT(node2->region() == newOut->region());
     node2->output(0)->divert_users(newOut);
     JLM_ASSERT(node2->IsDead());
@@ -215,7 +214,8 @@ OptimizeLoop(loop_node * loopNode)
     {
       auto out = loopNode->output(i);
       auto res = out->results.begin().ptr();
-      auto [branchNode, branchOperation] = rvsdg::TryGetSimpleNodeAndOp<branch_op>(*res->origin());
+      auto [branchNode, branchOperation] =
+          rvsdg::TryGetSimpleNodeAndOp<BranchOperation>(*res->origin());
       if (!branchOperation)
       {
         // this is a memory operation or stream
@@ -224,8 +224,8 @@ OptimizeLoop(loop_node * loopNode)
       JLM_ASSERT(branchOperation->loop);
       auto oldBufInput = GetUser(branchNode->output(1));
       auto [oldBufferNode, oldBufferOperation] =
-          rvsdg::TryGetSimpleNodeAndOp<buffer_op>(*oldBufInput);
-      if (std::get<1>(rvsdg::TryGetSimpleNodeAndOp<sink_op>(*oldBufInput)))
+          rvsdg::TryGetSimpleNodeAndOp<BufferOperation>(*oldBufInput);
+      if (std::get<1>(rvsdg::TryGetSimpleNodeAndOp<SinkOperation>(*oldBufInput)))
       {
         // no backedge
         continue;
@@ -258,7 +258,8 @@ OptimizeLoop(loop_node * loopNode)
       auto arg = in->arguments.begin().ptr();
       auto user = GetUser(arg);
       // only do this for proper loop variables
-      if (auto [node, muxOperation] = rvsdg::TryGetSimpleNodeAndOp<mux_op>(*user); muxOperation)
+      if (auto [node, muxOperation] = rvsdg::TryGetSimpleNodeAndOp<MuxOperation>(*user);
+          muxOperation)
       {
         if (!muxOperation->loop)
         {
@@ -266,7 +267,7 @@ OptimizeLoop(loop_node * loopNode)
           continue;
         }
       }
-      else if (std::get<1>(rvsdg::TryGetSimpleNodeAndOp<loop_constant_buffer_op>(*user)))
+      else if (std::get<1>(rvsdg::TryGetSimpleNodeAndOp<LoopConstantBufferOperation>(*user)))
       {
       }
       else
@@ -295,15 +296,15 @@ AddBuffers(rvsdg::Region * region)
     }
     else if (auto simple = dynamic_cast<jlm::rvsdg::SimpleNode *>(node))
     {
-      if (jlm::rvsdg::is<buffer_op>(node))
+      if (jlm::rvsdg::is<BufferOperation>(node))
       {
         OptimizeBuffer(simple);
       }
-      else if (jlm::rvsdg::is<fork_op>(node))
+      else if (jlm::rvsdg::is<ForkOperation>(node))
       {
         //        OptimizeFork(simple);
       }
-      else if (jlm::rvsdg::is<branch_op>(node))
+      else if (jlm::rvsdg::is<BranchOperation>(node))
       {
         //        OptimizeBranch(simple);
       }
@@ -353,7 +354,7 @@ MaximizeBuffers(rvsdg::Region * region)
     }
     else if (auto sn = dynamic_cast<jlm::rvsdg::SimpleNode *>(node))
     {
-      if (dynamic_cast<const buffer_op *>(&node->GetOperation()))
+      if (rvsdg::is<BufferOperation>(node))
       {
         nodes.push_back(sn);
       }
@@ -393,7 +394,7 @@ NodeCycles(rvsdg::SimpleNode * node, std::vector<size_t> & input_cycles)
       return { max_cycles + 1 };
     }
   }
-  else if (auto op = dynamic_cast<const buffer_op *>(&node->GetOperation()))
+  else if (auto op = dynamic_cast<const BufferOperation *>(&node->GetOperation()))
   {
     if (op->pass_through)
     {
@@ -441,7 +442,7 @@ NodeCapacity(rvsdg::SimpleNode * node, std::vector<size_t> & input_capacities)
       return { min_capacity + 1 };
     }
   }
-  else if (auto op = dynamic_cast<const buffer_op *>(&node->GetOperation()))
+  else if (auto op = dynamic_cast<const BufferOperation *>(&node->GetOperation()))
   {
     return { min_capacity + op->capacity };
   }
@@ -486,8 +487,8 @@ CreateLoopFrontier(
 
     auto user = GetUser(arg);
     auto userNode = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*user);
-    auto [muxNode, muxOperation] = rvsdg::TryGetSimpleNodeAndOp<mux_op>(*user);
-    if (std::get<1>(rvsdg::TryGetSimpleNodeAndOp<loop_constant_buffer_op>(*user))
+    auto [muxNode, muxOperation] = rvsdg::TryGetSimpleNodeAndOp<MuxOperation>(*user);
+    if (std::get<1>(rvsdg::TryGetSimpleNodeAndOp<LoopConstantBufferOperation>(*user))
         || (muxOperation && muxOperation->loop))
     {
       top_muxes.insert(userNode);
@@ -515,16 +516,16 @@ CreateLoopFrontier(
       continue;
     }
     auto user = GetUser(arg);
-    auto [muxNode, muxOperation] = rvsdg::TryGetSimpleNodeAndOp<mux_op>(*user);
+    auto [muxNode, muxOperation] = rvsdg::TryGetSimpleNodeAndOp<MuxOperation>(*user);
     if ((muxOperation && muxOperation->loop))
     {
       continue;
     }
-    if (std::get<1>(rvsdg::TryGetSimpleNodeAndOp<buffer_op>(*user)))
+    if (std::get<1>(rvsdg::TryGetSimpleNodeAndOp<BufferOperation>(*user)))
     {
       auto bufNode = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*user);
       if (std::get<1>(
-              rvsdg::TryGetSimpleNodeAndOp<predicate_buffer_op>(*GetUser(bufNode->output(0)))))
+              rvsdg::TryGetSimpleNodeAndOp<PredicateBufferOperation>(*GetUser(bufNode->output(0)))))
       {
         // skip predicate buffer
         continue;
@@ -580,7 +581,7 @@ PushCycleFrontier(
 
         if (top_muxes.find(simpleNode) != top_muxes.end())
         {
-          if (dynamic_cast<const mux_op *>(&simpleNode->GetOperation()))
+          if (dynamic_cast<const MuxOperation *>(&simpleNode->GetOperation()))
           {
             // TODO: do this in NodeCycles instead?
             // this works for most cases, but is not ideal if the backedge has an II > 1, and the
@@ -597,7 +598,7 @@ PushCycleFrontier(
           }
           else
           {
-            JLM_ASSERT(dynamic_cast<const loop_constant_buffer_op *>(&simpleNode->GetOperation()));
+            JLM_ASSERT(rvsdg::is<LoopConstantBufferOperation>(simpleNode->GetOperation()));
             // don't update output cycles
           }
         }
@@ -748,7 +749,7 @@ PlaceBufferLoop(rvsdg::Output * out, size_t min_capacity, bool passThrough)
   // places or re-places a buffer on an output
   // don't place buffers after constants
   JLM_ASSERT(!is_constant(rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*out)));
-  auto [forkNode, forkOperation] = rvsdg::TryGetSimpleNodeAndOp<fork_op>(*out);
+  auto [forkNode, forkOperation] = rvsdg::TryGetSimpleNodeAndOp<ForkOperation>(*out);
   JLM_ASSERT(!(forkOperation && forkOperation->IsConstant()));
 
   if (rvsdg::is<rvsdg::LambdaOperation>(out->region()->node()))
@@ -764,14 +765,16 @@ PlaceBufferLoop(rvsdg::Output * out, size_t min_capacity, bool passThrough)
   }
 
   // push buf above loop_const_buf
-  if (auto [loopConstantNode, op] = rvsdg::TryGetSimpleNodeAndOp<loop_constant_buffer_op>(*out); op)
+  if (auto [loopConstantNode, op] = rvsdg::TryGetSimpleNodeAndOp<LoopConstantBufferOperation>(*out);
+      op)
   {
     return std::min(
         PlaceBufferLoop(loopConstantNode->input(0)->origin(), min_capacity, passThrough),
         PlaceBufferLoop(loopConstantNode->input(1)->origin(), min_capacity, passThrough));
   }
 
-  if (auto [node, bufferOperation] = rvsdg::TryGetSimpleNodeAndOp<buffer_op>(*out); bufferOperation)
+  if (auto [node, bufferOperation] = rvsdg::TryGetSimpleNodeAndOp<BufferOperation>(*out);
+      bufferOperation)
   {
     // replace buffer and keep larger size
     passThrough = passThrough && bufferOperation->pass_through;
@@ -779,7 +782,8 @@ PlaceBufferLoop(rvsdg::Output * out, size_t min_capacity, bool passThrough)
     // if the maximum buffer size is exceeded place a smaller buffer, but pretend a large one was
     // placed, to prevent additional buffers further down
     auto actual_capacity = std::min(capacity, MaximumBufferSize);
-    auto bufOut = buffer_op::create(*node->input(0)->origin(), actual_capacity, passThrough)[0];
+    auto bufOut =
+        BufferOperation::create(*node->input(0)->origin(), actual_capacity, passThrough)[0];
     node->output(0)->divert_users(bufOut);
     JLM_ASSERT(node->IsDead());
     remove(node);
@@ -793,7 +797,7 @@ PlaceBufferLoop(rvsdg::Output * out, size_t min_capacity, bool passThrough)
     // if the maximum buffer size is exceeded place a smaller buffer, but pretend a large one was
     // placed, to prevent additional buffers further down
     auto actual_capacity = std::min(capacity, MaximumBufferSize);
-    auto newOut = buffer_op::create(*out, actual_capacity, passThrough)[0];
+    auto newOut = BufferOperation::create(*out, actual_capacity, passThrough)[0];
     directUser->divert_to(newOut);
     return capacity;
   }
@@ -895,7 +899,7 @@ AdjustLoopBuffers(
         if (top_muxes.find(simpleNode) != top_muxes.end())
         {
           // we reached our starting point again
-          auto mux = dynamic_cast<const mux_op *>(&simpleNode->GetOperation());
+          auto mux = dynamic_cast<const MuxOperation *>(&simpleNode->GetOperation());
           if (mux)
           {
             std::cout << "top_mux " << simpleNode
@@ -969,8 +973,8 @@ AdjustLoopBuffers(
           if (!analyze_inner_loop && capacity < max_cycles)
           {
             auto user = GetUser(inner_loop->input(i)->arguments.begin().ptr());
-            auto [muxNode, muxOperation] = rvsdg::TryGetSimpleNodeAndOp<mux_op>(*user);
-            if (auto [node, op] = rvsdg::TryGetSimpleNodeAndOp<loop_constant_buffer_op>(*user);
+            auto [muxNode, muxOperation] = rvsdg::TryGetSimpleNodeAndOp<MuxOperation>(*user);
+            if (auto [node, op] = rvsdg::TryGetSimpleNodeAndOp<LoopConstantBufferOperation>(*user);
                 (muxOperation && muxOperation->loop) || op)
             {
               size_t capacity_diff = max_cycles - capacity;
