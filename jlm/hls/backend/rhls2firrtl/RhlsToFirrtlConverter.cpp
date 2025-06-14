@@ -1837,7 +1837,7 @@ RhlsToFirrtlConverter::MlirGenBuffer(const jlm::rvsdg::SimpleNode * node)
   auto module = nodeToModule(node);
   auto body = module.getBodyBlock();
 
-  auto op = dynamic_cast<const hls::buffer_op *>(&(node->GetOperation()));
+  auto op = dynamic_cast<const BufferOperation *>(&(node->GetOperation()));
   auto capacity = op->capacity;
 
   auto clock = GetClockSignal(module);
@@ -2427,7 +2427,7 @@ RhlsToFirrtlConverter::MlirGen(const jlm::rvsdg::SimpleNode * node)
   {
     return MlirGenPredicationBuffer(node);
   }
-  else if (auto b = dynamic_cast<const hls::buffer_op *>(&(node->GetOperation())))
+  else if (auto b = dynamic_cast<const BufferOperation *>(&node->GetOperation()))
   {
     JLM_ASSERT(b->capacity);
     return MlirGenExtModule(node);
@@ -2436,7 +2436,7 @@ RhlsToFirrtlConverter::MlirGen(const jlm::rvsdg::SimpleNode * node)
   {
     return MlirGenBranch(node);
   }
-  else if (dynamic_cast<const hls::trigger_op *>(&(node->GetOperation())))
+  else if (rvsdg::is<TriggerOperation>(node))
   {
     return MlirGenTrigger(node);
   }
