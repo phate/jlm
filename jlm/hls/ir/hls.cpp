@@ -22,6 +22,8 @@ PredicateBufferOperation::~PredicateBufferOperation() noexcept = default;
 
 LoopConstantBufferOperation::~LoopConstantBufferOperation() noexcept = default;
 
+LoopOperation::~LoopOperation() noexcept = default;
+
 PrintOperation::~PrintOperation() noexcept = default;
 
 BufferOperation::~BufferOperation() noexcept = default;
@@ -118,7 +120,7 @@ loop_node::AddLoopVar(jlm::rvsdg::Output * origin, jlm::rvsdg::Output ** buffer)
 [[nodiscard]] const rvsdg::Operation &
 loop_node::GetOperation() const noexcept
 {
-  static const loop_op singleton;
+  static const LoopOperation singleton;
   return singleton;
 }
 

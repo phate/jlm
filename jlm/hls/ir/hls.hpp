@@ -572,11 +572,10 @@ public:
   }
 };
 
-class loop_op final : public rvsdg::StructuralOperation
+class LoopOperation final : public rvsdg::StructuralOperation
 {
 public:
-  virtual ~loop_op() noexcept
-  {}
+  ~LoopOperation() noexcept override;
 
   std::string
   debug_string() const override
@@ -587,7 +586,7 @@ public:
   [[nodiscard]] std::unique_ptr<Operation>
   copy() const override
   {
-    return std::make_unique<loop_op>(*this);
+    return std::make_unique<LoopOperation>(*this);
   }
 };
 
