@@ -320,7 +320,8 @@ separate_load_edge(
               lo->GetLoadedType(),
               lo->GetAlignment());
           // create state gate for mem edge and load data
-          auto mem_sg_out = jlm::hls::StateGateOperation::create(*new_load_outputs[0], { mem_edge });
+          auto mem_sg_out =
+              jlm::hls::StateGateOperation::create(*new_load_outputs[0], { mem_edge });
           mem_edge = mem_sg_out[1];
 
           sn->output(0)->divert_users(new_load_outputs[0]);
