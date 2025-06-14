@@ -946,13 +946,12 @@ public:
   }
 };
 
-class addr_queue_op final : public rvsdg::SimpleOperation
+class AddressQueueOperation final : public rvsdg::SimpleOperation
 {
 public:
-  virtual ~addr_queue_op()
-  {}
+  ~AddressQueueOperation() noexcept override;
 
-  addr_queue_op(
+  AddressQueueOperation(
       const std::shared_ptr<const llvm::PointerType> & pointerType,
       size_t capacity,
       bool combinatorial)
@@ -964,8 +963,7 @@ public:
   bool
   operator==(const Operation & other) const noexcept override
   {
-    // TODO:
-    auto ot = dynamic_cast<const addr_queue_op *>(&other);
+    auto ot = dynamic_cast<const AddressQueueOperation *>(&other);
     // check predicate and value
     return ot && *ot->argument(1) == *argument(1) && ot->narguments() == narguments();
   }
@@ -998,7 +996,7 @@ public:
   [[nodiscard]] std::unique_ptr<Operation>
   copy() const override
   {
-    return std::make_unique<addr_queue_op>(*this);
+    return std::make_unique<AddressQueueOperation>(*this);
   }
 
   static jlm::rvsdg::Output *
@@ -1009,7 +1007,7 @@ public:
       bool combinatorial,
       size_t capacity = 10)
   {
-    return rvsdg::CreateOpNode<addr_queue_op>(
+    return rvsdg::CreateOpNode<AddressQueueOperation>(
                { &check, &enq, &deq },
                std::dynamic_pointer_cast<const llvm::PointerType>(check.Type()),
                capacity,
