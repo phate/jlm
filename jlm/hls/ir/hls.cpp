@@ -22,6 +22,8 @@ PredicateBufferOperation::~PredicateBufferOperation() noexcept = default;
 
 LoopConstantBufferOperation::~LoopConstantBufferOperation() noexcept = default;
 
+PrintOperation::~PrintOperation() noexcept = default;
+
 BufferOperation::~BufferOperation() noexcept = default;
 
 TriggerOperation::~TriggerOperation() noexcept = default;
