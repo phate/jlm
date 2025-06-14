@@ -3985,7 +3985,7 @@ RhlsToFirrtlConverter::GetModuleName(const rvsdg::Node * node)
         / 2;
     append.append(std::to_string(stores));
   }
-  if (dynamic_cast<const loop_op *>(&node->GetOperation()))
+  if (dynamic_cast<const LoopOperation *>(&node->GetOperation()))
   {
     append.append("_");
     append.append(util::strfmt(node));

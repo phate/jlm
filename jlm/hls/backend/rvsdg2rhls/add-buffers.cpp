@@ -105,7 +105,7 @@ void
 OptimizeFork(rvsdg::SimpleNode * node)
 {
   const auto fork = util::AssertedCast<const ForkOperation>(&node->GetOperation());
-  bool inLoop = rvsdg::is<loop_op>(node->region()->node());
+  bool inLoop = rvsdg::is<LoopOperation>(node->region()->node());
   if (fork->IsConstant() || !inLoop)
   {
     // cForks and forks outside of loops should have no buffers after it
@@ -147,7 +147,7 @@ OptimizeBranch(rvsdg::SimpleNode * node)
 {
   auto branch = dynamic_cast<const BranchOperation *>(&node->GetOperation());
   JLM_ASSERT(branch);
-  bool inLoop = rvsdg::is<loop_op>(node->region()->node());
+  bool inLoop = rvsdg::is<LoopOperation>(node->region()->node());
   if (inLoop && !branch->loop)
   {
     // TODO: this optimization is for long stores with responses. It might be better to do it
@@ -206,7 +206,7 @@ void
 OptimizeLoop(loop_node * loopNode)
 {
   // TODO: should this be changed?
-  bool outerLoop = !rvsdg::is<loop_op>(loopNode->region()->node());
+  bool outerLoop = !rvsdg::is<LoopOperation>(loopNode->region()->node());
   if (outerLoop)
   {
     // push buffers above branches, so they also act as output buffers
