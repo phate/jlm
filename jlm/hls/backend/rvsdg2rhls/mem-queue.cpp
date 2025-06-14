@@ -108,7 +108,7 @@ find_loop_output(jlm::rvsdg::StructuralInput * sti)
       JLM_ASSERT(res);
       auto buffer_out = dynamic_cast<jlm::rvsdg::SimpleOutput *>(res->origin());
       JLM_ASSERT(buffer_out);
-      JLM_ASSERT(dynamic_cast<const jlm::hls::buffer_op *>(&buffer_out->node()->GetOperation()));
+      JLM_ASSERT(jlm::rvsdg::is<jlm::hls::BufferOperation>(buffer_out->node()));
       auto branch_out =
           dynamic_cast<jlm::rvsdg::SimpleOutput *>(buffer_out->node()->input(0)->origin());
       JLM_ASSERT(branch_out);

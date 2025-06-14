@@ -415,13 +415,12 @@ public:
   }
 };
 
-class buffer_op final : public rvsdg::SimpleOperation
+class BufferOperation final : public rvsdg::SimpleOperation
 {
 public:
-  virtual ~buffer_op()
-  {}
+  ~BufferOperation() noexcept override;
 
-  buffer_op(
+  BufferOperation(
       const std::shared_ptr<const jlm::rvsdg::Type> & type,
       size_t capacity,
       bool pass_through)
@@ -433,7 +432,7 @@ public:
   bool
   operator==(const Operation & other) const noexcept override
   {
-    auto ot = dynamic_cast<const buffer_op *>(&other);
+    const auto ot = dynamic_cast<const BufferOperation *>(&other);
     return ot && ot->capacity == capacity && ot->pass_through == pass_through
         && *ot->result(0) == *result(0);
   }
@@ -447,31 +446,27 @@ public:
   [[nodiscard]] std::unique_ptr<Operation>
   copy() const override
   {
-    return std::make_unique<buffer_op>(*this);
+    return std::make_unique<BufferOperation>(*this);
   }
 
   static std::vector<jlm::rvsdg::Output *>
   create(jlm::rvsdg::Output & value, size_t capacity, bool pass_through = false)
   {
     return outputs(
-        &rvsdg::CreateOpNode<buffer_op>({ &value }, value.Type(), capacity, pass_through));
+        &rvsdg::CreateOpNode<BufferOperation>({ &value }, value.Type(), capacity, pass_through));
   }
 
+  // FIXME: privatize attributes
   size_t capacity;
   bool pass_through;
-
-private:
 };
 
-class triggertype final : public rvsdg::StateType
+class TriggerType final : public rvsdg::StateType
 {
 public:
-  virtual ~triggertype()
-  {}
+  ~TriggerType() noexcept override;
 
-  triggertype()
-      : rvsdg::StateType()
-  {}
+  TriggerType() = default;
 
   std::string
   debug_string() const override
@@ -480,33 +475,31 @@ public:
   };
 
   bool
-  operator==(const jlm::rvsdg::Type & other) const noexcept override
+  operator==(const Type & other) const noexcept override
   {
-    auto type = dynamic_cast<const triggertype *>(&other);
-    return type;
+    return jlm::rvsdg::is<TriggerType>(other);
   };
 
   [[nodiscard]] std::size_t
   ComputeHash() const noexcept override;
 
-  static std::shared_ptr<const triggertype>
+  static std::shared_ptr<const TriggerType>
   Create();
 };
 
-class trigger_op final : public rvsdg::SimpleOperation
+class TriggerOperation final : public rvsdg::SimpleOperation
 {
 public:
-  virtual ~trigger_op()
-  {}
+  ~TriggerOperation() noexcept override;
 
-  explicit trigger_op(const std::shared_ptr<const jlm::rvsdg::Type> & type)
-      : SimpleOperation({ triggertype::Create(), type }, { type })
+  explicit TriggerOperation(const std::shared_ptr<const rvsdg::Type> & type)
+      : SimpleOperation({ TriggerType::Create(), type }, { type })
   {}
 
   bool
   operator==(const Operation & other) const noexcept override
   {
-    auto ot = dynamic_cast<const trigger_op *>(&other);
+    const auto ot = dynamic_cast<const TriggerOperation *>(&other);
     // check predicate and value
     return ot && *ot->argument(1) == *argument(1) && *ot->result(0) == *result(0);
   }
@@ -520,29 +513,27 @@ public:
   [[nodiscard]] std::unique_ptr<Operation>
   copy() const override
   {
-    return std::make_unique<trigger_op>(*this);
+    return std::make_unique<TriggerOperation>(*this);
   }
 
   static std::vector<jlm::rvsdg::Output *>
   create(jlm::rvsdg::Output & tg, jlm::rvsdg::Output & value)
   {
-    if (!rvsdg::is<triggertype>(tg.Type()))
-      throw util::error("Trigger needs to be a triggertype.");
+    if (!rvsdg::is<TriggerType>(tg.Type()))
+      throw util::error("Trigger needs to be a TriggerType.");
 
-    return outputs(&rvsdg::CreateOpNode<trigger_op>({ &tg, &value }, value.Type()));
+    return outputs(&rvsdg::CreateOpNode<TriggerOperation>({ &tg, &value }, value.Type()));
   }
 };
 
-class print_op final : public rvsdg::SimpleOperation
+class PrintOperation final : public rvsdg::SimpleOperation
 {
-private:
   size_t _id;
 
 public:
-  virtual ~print_op()
-  {}
+  ~PrintOperation() noexcept override;
 
-  explicit print_op(const std::shared_ptr<const jlm::rvsdg::Type> & type)
+  explicit PrintOperation(const std::shared_ptr<const rvsdg::Type> & type)
       : SimpleOperation({ type }, { type })
   {
     static size_t common_id{ 0 };
@@ -552,12 +543,8 @@ public:
   bool
   operator==(const Operation &) const noexcept override
   {
-    //				auto ot = dynamic_cast<const print_op *>(&other);
-    // check predicate and value
-    //				return ot
-    //					   && ot->argument(0).type() == argument(0).type()
-    //					   && ot->result(0).type() == result(0).type();
-    return false; // print nodes are intentionally distinct
+    // print nodes are intentionally distinct
+    return false;
   }
 
   std::string
@@ -575,13 +562,13 @@ public:
   [[nodiscard]] std::unique_ptr<Operation>
   copy() const override
   {
-    return std::make_unique<print_op>(*this);
+    return std::make_unique<PrintOperation>(*this);
   }
 
   static std::vector<jlm::rvsdg::Output *>
   create(jlm::rvsdg::Output & value)
   {
-    return outputs(&rvsdg::CreateOpNode<print_op>({ &value }, value.Type()));
+    return outputs(&rvsdg::CreateOpNode<PrintOperation>({ &value }, value.Type()));
   }
 };
 
