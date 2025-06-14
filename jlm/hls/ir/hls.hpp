@@ -856,13 +856,12 @@ get_mem_req_type(std::shared_ptr<const rvsdg::ValueType> elementType, bool write
 std::shared_ptr<const BundleType>
 get_mem_res_type(std::shared_ptr<const jlm::rvsdg::ValueType> dataType);
 
-class load_op final : public rvsdg::SimpleOperation
+class LoadOperation final : public rvsdg::SimpleOperation
 {
 public:
-  virtual ~load_op()
-  {}
+  ~LoadOperation() noexcept override;
 
-  load_op(const std::shared_ptr<const rvsdg::ValueType> & pointeeType, size_t numStates)
+  LoadOperation(const std::shared_ptr<const rvsdg::ValueType> & pointeeType, size_t numStates)
       : SimpleOperation(
             CreateInTypes(pointeeType, numStates),
             CreateOutTypes(pointeeType, numStates))
@@ -871,8 +870,7 @@ public:
   bool
   operator==(const Operation & other) const noexcept override
   {
-    // TODO:
-    auto ot = dynamic_cast<const load_op *>(&other);
+    auto ot = dynamic_cast<const LoadOperation *>(&other);
     // check predicate and value
     return ot && *ot->argument(1) == *argument(1) && ot->narguments() == narguments();
   }
@@ -912,7 +910,7 @@ public:
   [[nodiscard]] std::unique_ptr<Operation>
   copy() const override
   {
-    return std::make_unique<load_op>(*this);
+    return std::make_unique<LoadOperation>(*this);
   }
 
   static std::vector<jlm::rvsdg::Output *>
@@ -925,7 +923,7 @@ public:
     inputs.push_back(&addr);
     inputs.insert(inputs.end(), states.begin(), states.end());
     inputs.push_back(&load_result);
-    return outputs(&rvsdg::CreateOpNode<load_op>(
+    return outputs(&rvsdg::CreateOpNode<LoadOperation>(
         inputs,
         std::dynamic_pointer_cast<const rvsdg::ValueType>(load_result.Type()),
         states.size()));

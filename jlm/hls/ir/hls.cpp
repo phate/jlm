@@ -34,6 +34,8 @@ TriggerOperation::~TriggerOperation() noexcept = default;
 
 TriggerType::~TriggerType() noexcept = default;
 
+LoadOperation::~LoadOperation() noexcept = default;
+
 std::size_t
 TriggerType::ComputeHash() const noexcept
 {

@@ -953,7 +953,7 @@ RhlsToFirrtlConverter::MlirGenHlsLoad(const jlm::rvsdg::SimpleNode * node)
   auto module = nodeToModule(node, false);
   auto body = module.getBodyBlock();
 
-  auto load = dynamic_cast<const load_op *>(&(node->GetOperation()));
+  auto load = dynamic_cast<const LoadOperation *>(&(node->GetOperation()));
   auto local_load = dynamic_cast<const local_load_op *>(&(node->GetOperation()));
   JLM_ASSERT(load || local_load);
 
@@ -2389,7 +2389,7 @@ RhlsToFirrtlConverter::MlirGen(const jlm::rvsdg::SimpleNode * node)
     //	} else if (dynamic_cast<const jlm::StoreOperation *>(&(node->GetOperati()))) {
     //		return MlirGenMem(node);
   }
-  else if (dynamic_cast<const hls::load_op *>(&(node->GetOperation())))
+  else if (dynamic_cast<const LoadOperation *>(&(node->GetOperation())))
   {
     return MlirGenHlsLoad(node);
   }
