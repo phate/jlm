@@ -862,7 +862,7 @@ RhlsToFirrtlConverter::MlirGenHlsMemReq(const jlm::rvsdg::SimpleNode * node)
   ::llvm::SmallVector<mlir::Value> storeGranted(storeTypes->size(), zeroBitValue);
   for (size_t j = 0; j < node->noutputs(); ++j)
   {
-    auto reqType = util::AssertedCast<const bundletype>(node->output(j)->Type().get());
+    auto reqType = util::AssertedCast<const BundleType>(node->output(j)->Type().get());
     auto hasWrite = reqType->elements_.size() == 5;
     mlir::BlockArgument memReq = GetOutPort(module, j);
     mlir::Value memReqData;
@@ -3897,7 +3897,7 @@ RhlsToFirrtlConverter::GetIntType(const jlm::rvsdg::Type * type, int extend)
 circt::firrtl::FIRRTLBaseType
 RhlsToFirrtlConverter::GetFirrtlType(const jlm::rvsdg::Type * type)
 {
-  if (auto bt = dynamic_cast<const bundletype *>(type))
+  if (auto bt = dynamic_cast<const BundleType *>(type))
   {
     using BundleElement = circt::firrtl::BundleType::BundleElement;
     ::llvm::SmallVector<BundleElement> elements;
