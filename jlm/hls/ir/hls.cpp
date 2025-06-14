@@ -24,17 +24,19 @@ LoopConstantBufferOperation::~LoopConstantBufferOperation() noexcept = default;
 
 BufferOperation::~BufferOperation() noexcept = default;
 
+TriggerType::~TriggerType() noexcept = default;
+
 std::size_t
-triggertype::ComputeHash() const noexcept
+TriggerType::ComputeHash() const noexcept
 {
-  return typeid(triggertype).hash_code();
+  return typeid(TriggerType).hash_code();
 }
 
-std::shared_ptr<const triggertype>
-triggertype::Create()
+std::shared_ptr<const TriggerType>
+TriggerType::Create()
 {
-  static const triggertype instance;
-  return std::shared_ptr<const triggertype>(std::shared_ptr<void>(), &instance);
+  static const TriggerType instance;
+  return std::shared_ptr<const TriggerType>(std::shared_ptr<void>(), &instance);
 }
 
 std::size_t
