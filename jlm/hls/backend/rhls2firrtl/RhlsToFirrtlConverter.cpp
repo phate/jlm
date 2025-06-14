@@ -1749,7 +1749,7 @@ RhlsToFirrtlConverter::MlirGenPrint(const jlm::rvsdg::SimpleNode * node)
   auto outBundle = GetOutPort(module, 0);
   Connect(body, outBundle, inBundle);
   auto trigger = AddAndOp(body, AddAndOp(body, inReady, inValid), AddNotOp(body, reset));
-  auto pn = dynamic_cast<const print_op *>(&node->GetOperation());
+  auto pn = dynamic_cast<const PrintOperation *>(&node->GetOperation());
   auto formatString = "print node " + std::to_string(pn->id()) + ": %x\n";
   auto name = "print_node_" + std::to_string(pn->id());
   auto printValue = AddPadOp(body, inData, 64);
@@ -1837,7 +1837,7 @@ RhlsToFirrtlConverter::MlirGenBuffer(const jlm::rvsdg::SimpleNode * node)
   auto module = nodeToModule(node);
   auto body = module.getBodyBlock();
 
-  auto op = dynamic_cast<const hls::buffer_op *>(&(node->GetOperation()));
+  auto op = dynamic_cast<const BufferOperation *>(&(node->GetOperation()));
   auto capacity = op->capacity;
 
   auto clock = GetClockSignal(module);
@@ -2427,7 +2427,7 @@ RhlsToFirrtlConverter::MlirGen(const jlm::rvsdg::SimpleNode * node)
   {
     return MlirGenPredicationBuffer(node);
   }
-  else if (auto b = dynamic_cast<const hls::buffer_op *>(&(node->GetOperation())))
+  else if (auto b = dynamic_cast<const BufferOperation *>(&node->GetOperation()))
   {
     JLM_ASSERT(b->capacity);
     return MlirGenExtModule(node);
@@ -2436,7 +2436,7 @@ RhlsToFirrtlConverter::MlirGen(const jlm::rvsdg::SimpleNode * node)
   {
     return MlirGenBranch(node);
   }
-  else if (dynamic_cast<const hls::trigger_op *>(&(node->GetOperation())))
+  else if (rvsdg::is<TriggerOperation>(node))
   {
     return MlirGenTrigger(node);
   }
@@ -2444,7 +2444,7 @@ RhlsToFirrtlConverter::MlirGen(const jlm::rvsdg::SimpleNode * node)
   {
     return MlirGenStateGate(node);
   }
-  else if (dynamic_cast<const hls::print_op *>(&(node->GetOperation())))
+  else if (dynamic_cast<const PrintOperation *>(&(node->GetOperation())))
   {
     return MlirGenPrint(node);
   }
@@ -3985,7 +3985,7 @@ RhlsToFirrtlConverter::GetModuleName(const rvsdg::Node * node)
         / 2;
     append.append(std::to_string(stores));
   }
-  if (dynamic_cast<const loop_op *>(&node->GetOperation()))
+  if (dynamic_cast<const LoopOperation *>(&node->GetOperation()))
   {
     append.append("_");
     append.append(util::strfmt(node));
