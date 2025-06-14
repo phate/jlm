@@ -22,6 +22,8 @@ PredicateBufferOperation::~PredicateBufferOperation() noexcept = default;
 
 LoopConstantBufferOperation::~LoopConstantBufferOperation() noexcept = default;
 
+PrintOperation::~PrintOperation() noexcept = default;
+
 std::size_t
 triggertype::ComputeHash() const noexcept
 {
