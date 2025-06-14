@@ -66,8 +66,8 @@ TraceEdgeToMerge(rvsdg::Input * state_edge)
     }
     auto si = util::AssertedCast<rvsdg::SimpleInput>(state_edge);
     auto sn = si->node();
-    auto [branchNode, branchOperation] = rvsdg::TryGetSimpleNodeAndOp<branch_op>(*state_edge);
-    auto [muxNode, muxOperation] = rvsdg::TryGetSimpleNodeAndOp<mux_op>(*state_edge);
+    auto [branchNode, branchOperation] = rvsdg::TryGetSimpleNodeAndOp<BranchOperation>(*state_edge);
+    auto [muxNode, muxOperation] = rvsdg::TryGetSimpleNodeAndOp<MuxOperation>(*state_edge);
     if (branchOperation)
     {
       // end of loop
@@ -784,7 +784,7 @@ ReplaceStore(
     // for the store
     // TODO: It might be better to have memstate merges consume individual tokens instead,, and fire
     // the output once all inputs have consumed
-    auto bo = buffer_op::create(*storeOuts[i], 1, true)[0];
+    const auto bo = BufferOperation::create(*storeOuts[i], 1, true)[0];
     smap.insert(originalStore->output(i), bo);
     replacedStore->output(i)->divert_users(bo);
   }

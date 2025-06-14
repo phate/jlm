@@ -27,7 +27,7 @@ ConnectStreamBuffer(rvsdg::SimpleNode * enq_call, rvsdg::SimpleNode * deq_call)
     buffer_capacity = constant->Representation().to_int();
     JLM_ASSERT(buffer_capacity >= 0);
   }
-  auto buf = buffer_op::create(*enq_call->input(2)->origin(), buffer_capacity, false)[0];
+  auto buf = BufferOperation::create(*enq_call->input(2)->origin(), buffer_capacity, false)[0];
   auto routed = route_to_region_rhls(deq_call->region(), buf);
   // remove call nodes
   for (size_t i = 0; i < deq_call->ninputs(); ++i)
