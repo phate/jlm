@@ -437,7 +437,7 @@ dne(rvsdg::Region * sr)
     {
       if (!node->has_users())
       {
-        if (dynamic_cast<const mem_req_op *>(&node->GetOperation()))
+        if (rvsdg::is<MemoryRequestOperation>(node))
         {
           // TODO: fix this once memory connections are explicit
           continue;
