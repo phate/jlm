@@ -38,6 +38,8 @@ StateGateOperation::~StateGateOperation() noexcept = default;
 
 LoadOperation::~LoadOperation() noexcept = default;
 
+DecoupledLoadOperation::~DecoupledLoadOperation() noexcept = default;
+
 AddressQueueOperation::~AddressQueueOperation() noexcept = default;
 
 MemoryResponseOperation::~MemoryResponseOperation() noexcept = default;

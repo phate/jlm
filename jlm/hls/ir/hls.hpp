@@ -1065,13 +1065,14 @@ public:
   }
 };
 
-class decoupled_load_op final : public rvsdg::SimpleOperation
+class DecoupledLoadOperation final : public rvsdg::SimpleOperation
 {
 public:
-  virtual ~decoupled_load_op()
-  {}
+  ~DecoupledLoadOperation() noexcept override;
 
-  decoupled_load_op(const std::shared_ptr<const rvsdg::ValueType> & pointeeType, size_t capacity)
+  DecoupledLoadOperation(
+      const std::shared_ptr<const rvsdg::ValueType> & pointeeType,
+      size_t capacity)
       : SimpleOperation(CreateInTypes(pointeeType), CreateOutTypes(pointeeType)),
         capacity(capacity)
   {}
@@ -1079,7 +1080,7 @@ public:
   bool
   operator==(const Operation & other) const noexcept override
   {
-    auto ot = dynamic_cast<const decoupled_load_op *>(&other);
+    auto ot = dynamic_cast<const DecoupledLoadOperation *>(&other);
     // check predicate and value
     return ot && *ot->argument(1) == *argument(1) && ot->narguments() == narguments();
   }
@@ -1110,7 +1111,7 @@ public:
   [[nodiscard]] std::unique_ptr<Operation>
   copy() const override
   {
-    return std::make_unique<decoupled_load_op>(*this);
+    return std::make_unique<DecoupledLoadOperation>(*this);
   }
 
   static std::vector<jlm::rvsdg::Output *>
@@ -1120,7 +1121,7 @@ public:
     inputs.push_back(&addr);
     inputs.push_back(&load_result);
     JLM_ASSERT(capacity >= 1);
-    return outputs(&rvsdg::CreateOpNode<decoupled_load_op>(
+    return outputs(&rvsdg::CreateOpNode<DecoupledLoadOperation>(
         inputs,
         std::dynamic_pointer_cast<const rvsdg::ValueType>(load_result.Type()),
         capacity));

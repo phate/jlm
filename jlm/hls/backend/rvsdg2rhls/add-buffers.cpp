@@ -358,7 +358,7 @@ MaximizeBuffers(rvsdg::Region * region)
       {
         nodes.push_back(sn);
       }
-      else if (dynamic_cast<const decoupled_load_op *>(&node->GetOperation()))
+      else if (rvsdg::is<DecoupledLoadOperation>(node))
       {
         nodes.push_back(sn);
       }
@@ -366,14 +366,14 @@ MaximizeBuffers(rvsdg::Region * region)
   }
   for (auto node : nodes)
   {
-    if (auto dl = dynamic_cast<const decoupled_load_op *>(&node->GetOperation()))
+    if (auto dl = dynamic_cast<const DecoupledLoadOperation *>(&node->GetOperation()))
     {
       auto capacity = round_up_pow2(MemoryLatency);
       if (dl->capacity < capacity)
       {
         divert_users(
             node,
-            decoupled_load_op::create(
+            DecoupledLoadOperation::create(
                 *node->input(0)->origin(),
                 *node->input(1)->origin(),
                 capacity));
@@ -406,7 +406,7 @@ NodeCycles(rvsdg::SimpleNode * node, std::vector<size_t> & input_cycles)
   {
     return { input_cycles[0] };
   }
-  else if (dynamic_cast<const decoupled_load_op *>(&node->GetOperation()))
+  else if (rvsdg::is<DecoupledLoadOperation>(node))
   {
     return { max_cycles + MemoryLatency, 0 };
   }
@@ -414,7 +414,7 @@ NodeCycles(rvsdg::SimpleNode * node, std::vector<size_t> & input_cycles)
   {
     // handle special state gate that sits on dec_load response
     auto sg0_user = GetUser(node->output(0));
-    if (std::get<1>(rvsdg::TryGetSimpleNodeAndOp<decoupled_load_op>(*sg0_user))
+    if (std::get<1>(rvsdg::TryGetSimpleNodeAndOp<DecoupledLoadOperation>(*sg0_user))
         && sg0_user->index() == 1)
     {
       JLM_ASSERT(max_cycles == 0);
@@ -450,7 +450,7 @@ NodeCapacity(rvsdg::SimpleNode * node, std::vector<size_t> & input_capacities)
   {
     return { input_capacities[0] };
   }
-  else if (auto op = dynamic_cast<const decoupled_load_op *>(&node->GetOperation()))
+  else if (auto op = dynamic_cast<const DecoupledLoadOperation *>(&node->GetOperation()))
   {
     return { min_capacity + op->capacity, 0 };
   }
@@ -458,7 +458,7 @@ NodeCapacity(rvsdg::SimpleNode * node, std::vector<size_t> & input_capacities)
   {
     // handle special state gate that sits on dec_load response
     auto sg0_user = GetUser(node->output(0));
-    if (std::get<1>(rvsdg::TryGetSimpleNodeAndOp<decoupled_load_op>(*sg0_user))
+    if (std::get<1>(rvsdg::TryGetSimpleNodeAndOp<DecoupledLoadOperation>(*sg0_user))
         && sg0_user->index() == 1)
     {
       JLM_ASSERT(min_capacity == UnlimitedBufferCapacity);

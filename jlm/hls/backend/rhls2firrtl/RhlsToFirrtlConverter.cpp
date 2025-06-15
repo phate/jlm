@@ -1124,12 +1124,11 @@ RhlsToFirrtlConverter::MlirGenHlsLoad(const jlm::rvsdg::SimpleNode * node)
 circt::firrtl::FModuleOp
 RhlsToFirrtlConverter::MlirGenHlsDLoad(const jlm::rvsdg::SimpleNode * node)
 {
+  JLM_ASSERT(rvsdg::is<DecoupledLoadOperation>(node));
+
   // Create the module and its input/output ports
   auto module = nodeToModule(node, false);
   auto body = module.getBodyBlock();
-
-  auto load = dynamic_cast<const decoupled_load_op *>(&(node->GetOperation()));
-  JLM_ASSERT(load);
 
   // Input signals
   auto inBundleAddr = GetInPort(module, 0);
@@ -2393,7 +2392,7 @@ RhlsToFirrtlConverter::MlirGen(const jlm::rvsdg::SimpleNode * node)
   {
     return MlirGenHlsLoad(node);
   }
-  else if (dynamic_cast<const hls::decoupled_load_op *>(&(node->GetOperation())))
+  else if (dynamic_cast<const hls::DecoupledLoadOperation *>(&(node->GetOperation())))
   {
     return MlirGenExtModule(node);
   }
