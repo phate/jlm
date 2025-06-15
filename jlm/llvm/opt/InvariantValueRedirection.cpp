@@ -57,14 +57,6 @@ InvariantValueRedirection::Run(
 {
   auto statistics = Statistics::Create(module.SourceFilePath().value());
 
-  util::GraphWriter writer;
-  dot::WriteGraphs(writer, module.Rvsdg().GetRootRegion(), false);
-
-  std::ofstream fs;
-  fs.open("/tmp/output.dot");
-  writer.OutputAllGraphs(fs, util::GraphOutputFormat::Dot);
-  fs.close();
-
   statistics->Start();
   RedirectInRootRegion(module.Rvsdg());
   statistics->Stop();
@@ -208,26 +200,25 @@ InvariantValueRedirection::RedirectCallOutputs(rvsdg::SimpleNode & callNode)
   if (CallOperation::NumArguments(callNode) != lambdaNode.GetFunctionArguments().size())
     return;
 
-  auto memoryStateOutput = &CallOperation::GetMemoryStateOutput(callNode);
-  auto callExitSplit = CallOperation::GetMemoryStateExitSplit(callNode);
-  auto hasCallExitSplit = callExitSplit != nullptr;
+  const auto memoryStateOutput = &CallOperation::GetMemoryStateOutput(callNode);
+  const auto callExitSplit = CallOperation::GetMemoryStateExitSplit(callNode);
+  const auto callEntryMerge = CallOperation::GetMemoryStateEntryMerge(callNode);
+  const auto lambdaEntrySplit = GetMemoryStateEntrySplit(lambdaNode);
+  const auto lambdaExitMerge = GetMemoryStateExitMerge(lambdaNode);
 
-  auto results = lambdaNode.GetFunctionResults();
+  const auto hasAllMemoryStateNodes = callExitSplit != nullptr && callEntryMerge != nullptr
+                                   && lambdaEntrySplit != nullptr && lambdaExitMerge != nullptr;
+
+  const auto results = lambdaNode.GetFunctionResults();
   JLM_ASSERT(callNode.noutputs() == results.size());
   for (size_t n = 0; n < callNode.noutputs(); n++)
   {
-    auto callOutput = callNode.output(n);
-    auto shouldHandleMemoryStateOperations = (callOutput == memoryStateOutput) && hasCallExitSplit;
+    const auto callOutput = callNode.output(n);
+    const auto shouldHandleMemoryStateOperations =
+        (callOutput == memoryStateOutput) && hasAllMemoryStateNodes;
 
     if (shouldHandleMemoryStateOperations)
     {
-      auto lambdaEntrySplit = GetMemoryStateEntrySplit(lambdaNode);
-      auto lambdaExitMerge = GetMemoryStateExitMerge(lambdaNode);
-      auto callEntryMerge = CallOperation::GetMemoryStateEntryMerge(callNode);
-
-      // The callExitSplit is present. We therefore expect the other nodes to be present as well.
-      JLM_ASSERT(lambdaEntrySplit && lambdaExitMerge && callEntryMerge);
-
       // All the inputs and outputs of the memory state nodes need to be aligned.
       JLM_ASSERT(callExitSplit->noutputs() == lambdaExitMerge->ninputs());
       JLM_ASSERT(lambdaExitMerge->ninputs() == lambdaEntrySplit->noutputs());
