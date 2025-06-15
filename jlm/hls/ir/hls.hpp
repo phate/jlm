@@ -1205,12 +1205,12 @@ public:
   }
 };
 
-class mem_req_op final : public rvsdg::SimpleOperation
+class MemoryRequestOperation final : public rvsdg::SimpleOperation
 {
 public:
-  virtual ~mem_req_op() = default;
+  ~MemoryRequestOperation() noexcept override = default;
 
-  mem_req_op(
+  MemoryRequestOperation(
       const std::vector<std::shared_ptr<const rvsdg::ValueType>> & load_types,
       const std::vector<std::shared_ptr<const rvsdg::ValueType>> & store_types)
       : SimpleOperation(
@@ -1227,13 +1227,12 @@ public:
     }
   }
 
-  mem_req_op(const mem_req_op & other) = default;
+  MemoryRequestOperation(const MemoryRequestOperation & other) = default;
 
   bool
   operator==(const Operation & other) const noexcept override
   {
-    // TODO:
-    auto ot = dynamic_cast<const mem_req_op *>(&other);
+    auto ot = dynamic_cast<const MemoryRequestOperation *>(&other);
     // check predicate and value
     return ot && ot->narguments() == narguments()
         && (ot->narguments() == 0 || (*ot->argument(1) == *argument(1)))
@@ -1289,7 +1288,7 @@ public:
   [[nodiscard]] std::unique_ptr<Operation>
   copy() const override
   {
-    return std::make_unique<mem_req_op>(*this);
+    return std::make_unique<MemoryRequestOperation>(*this);
   }
 
   static std::vector<jlm::rvsdg::Output *>
@@ -1310,7 +1309,7 @@ public:
     }
     std::vector operands(load_operands);
     operands.insert(operands.end(), store_operands.begin(), store_operands.end());
-    return outputs(&rvsdg::CreateOpNode<mem_req_op>(operands, loadTypes, storeTypes));
+    return outputs(&rvsdg::CreateOpNode<MemoryRequestOperation>(operands, loadTypes, storeTypes));
   }
 
   size_t
