@@ -177,7 +177,7 @@ trace_edge(
       // we did not split the new state
       return sn->output(0);
     }
-    else if (auto [node, op] = rvsdg::TryGetSimpleNodeAndOp<state_gate_op>(*state_edge); op)
+    else if (auto [node, op] = rvsdg::TryGetSimpleNodeAndOp<StateGateOperation>(*state_edge); op)
     {
       state_edge = get_mem_state_user(sn->output(si->index()));
     }
@@ -412,7 +412,7 @@ follow_state_edge(
     {
       return sn->output(0);
     }
-    else if (std::get<1>(rvsdg::TryGetSimpleNodeAndOp<state_gate_op>(*state_edge)))
+    else if (std::get<1>(rvsdg::TryGetSimpleNodeAndOp<StateGateOperation>(*state_edge)))
     {
       mem_ops.push_back(sn);
       state_edge = get_mem_state_user(sn->output(si->index()));

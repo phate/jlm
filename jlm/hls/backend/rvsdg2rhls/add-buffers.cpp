@@ -308,7 +308,7 @@ AddBuffers(rvsdg::Region * region)
       {
         //        OptimizeBranch(simple);
       }
-      else if (jlm::rvsdg::is<state_gate_op>(node))
+      else if (jlm::rvsdg::is<StateGateOperation>(node))
       {
         //        OptimizeStateGate(simple);
       }
@@ -410,7 +410,7 @@ NodeCycles(rvsdg::SimpleNode * node, std::vector<size_t> & input_cycles)
   {
     return { max_cycles + MemoryLatency, 0 };
   }
-  else if (rvsdg::is<state_gate_op>(node))
+  else if (rvsdg::is<StateGateOperation>(node))
   {
     // handle special state gate that sits on dec_load response
     auto sg0_user = GetUser(node->output(0));
@@ -454,7 +454,7 @@ NodeCapacity(rvsdg::SimpleNode * node, std::vector<size_t> & input_capacities)
   {
     return { min_capacity + op->capacity, 0 };
   }
-  else if (rvsdg::is<state_gate_op>(node))
+  else if (rvsdg::is<StateGateOperation>(node))
   {
     // handle special state gate that sits on dec_load response
     auto sg0_user = GetUser(node->output(0));

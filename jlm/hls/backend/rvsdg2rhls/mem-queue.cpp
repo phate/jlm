@@ -263,7 +263,7 @@ separate_load_edge(
       }
       else if (dynamic_cast<const jlm::llvm::StoreNonVolatileOperation *>(op))
       {
-        auto sg_out = jlm::hls::state_gate_op::create(*sn->input(0)->origin(), { addr_edge });
+        auto sg_out = jlm::hls::StateGateOperation::create(*sn->input(0)->origin(), { addr_edge });
         addr_edge = sg_out[1];
         addr_edge_user->divert_to(addr_edge);
         store_addresses.push_back(jlm::hls::route_to_region_rhls((*load)->region(), sg_out[0]));
@@ -307,10 +307,10 @@ separate_load_edge(
         {
           // create state gate for addr edge
           auto addr_sg_out =
-              jlm::hls::state_gate_op::create(*sn->input(0)->origin(), { addr_edge });
+              jlm::hls::StateGateOperation::create(*sn->input(0)->origin(), { addr_edge });
           addr_edge = addr_sg_out[1];
           addr_edge_user->divert_to(addr_edge);
-          auto addr_sg_out2 = jlm::hls::state_gate_op::create(*addr_sg_out[0], { addr_edge });
+          auto addr_sg_out2 = jlm::hls::StateGateOperation::create(*addr_sg_out[0], { addr_edge });
           addr_edge = addr_sg_out2[1];
           addr_edge_user->divert_to(addr_edge);
           // remove state edges from load
@@ -320,7 +320,8 @@ separate_load_edge(
               lo->GetLoadedType(),
               lo->GetAlignment());
           // create state gate for mem edge and load data
-          auto mem_sg_out = jlm::hls::state_gate_op::create(*new_load_outputs[0], { mem_edge });
+          auto mem_sg_out =
+              jlm::hls::StateGateOperation::create(*new_load_outputs[0], { mem_edge });
           mem_edge = mem_sg_out[1];
 
           sn->output(0)->divert_users(new_load_outputs[0]);
@@ -335,7 +336,7 @@ separate_load_edge(
           mem_edge = sn->output(1);
         }
       }
-      else if (dynamic_cast<const jlm::hls::state_gate_op *>(op))
+      else if (dynamic_cast<const jlm::hls::StateGateOperation *>(op))
       {
         mem_edge = sn->output(1);
       }
