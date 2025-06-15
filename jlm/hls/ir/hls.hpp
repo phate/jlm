@@ -1144,13 +1144,12 @@ public:
   size_t capacity;
 };
 
-class mem_resp_op final : public rvsdg::SimpleOperation
+class MemoryResponseOperation final : public rvsdg::SimpleOperation
 {
 public:
-  virtual ~mem_resp_op()
-  {}
+  ~MemoryResponseOperation() noexcept override;
 
-  explicit mem_resp_op(
+  explicit MemoryResponseOperation(
       const std::vector<std::shared_ptr<const rvsdg::Type>> & output_types,
       int in_width)
       : SimpleOperation(CreateInTypes(in_width), CreateOutTypes(output_types))
@@ -1159,8 +1158,7 @@ public:
   bool
   operator==(const Operation & other) const noexcept override
   {
-    // TODO:
-    auto ot = dynamic_cast<const mem_resp_op *>(&other);
+    auto ot = dynamic_cast<const MemoryResponseOperation *>(&other);
     // check predicate and value
     return ot && *ot->argument(1) == *argument(1) && ot->narguments() == narguments();
   }
@@ -1194,7 +1192,7 @@ public:
   [[nodiscard]] std::unique_ptr<Operation>
   copy() const override
   {
-    return std::make_unique<mem_resp_op>(*this);
+    return std::make_unique<MemoryResponseOperation>(*this);
   }
 
   static std::vector<jlm::rvsdg::Output *>
@@ -1203,7 +1201,8 @@ public:
       const std::vector<std::shared_ptr<const rvsdg::Type>> & output_types,
       int in_width)
   {
-    return outputs(&rvsdg::CreateOpNode<mem_resp_op>({ &result }, output_types, in_width));
+    return outputs(
+        &rvsdg::CreateOpNode<MemoryResponseOperation>({ &result }, output_types, in_width));
   }
 };
 

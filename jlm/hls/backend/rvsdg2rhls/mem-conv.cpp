@@ -653,7 +653,7 @@ ConnectRequestResponseMemPorts(
   auto portWidth = CalcualtePortWidth(
       std::make_tuple(originalLoadNodes, originalStoreNodes, originalDecoupledNodes));
   auto responses =
-      mem_resp_op::create(*lambdaRegion->argument(argumentIndex), responseTypes, portWidth);
+      MemoryResponseOperation::create(*lambdaRegion->argument(argumentIndex), responseTypes, portWidth);
   // The (decoupled) load nodes are replaced so the pointer to the types will become invalid
   std::vector<std::shared_ptr<const rvsdg::ValueType>> loadTypes;
   std::vector<rvsdg::Output *> loadAddresses;
