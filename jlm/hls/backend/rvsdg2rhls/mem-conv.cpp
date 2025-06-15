@@ -168,7 +168,7 @@ ReplaceDecouple(
     assert(load_capacity >= 0);
   }
   auto routed_resp = route_response_rhls(decouple_request->region(), resp);
-  auto dload_out = decoupled_load_op::create(*addr, *routed_resp, load_capacity);
+  auto dload_out = DecoupledLoadOperation::create(*addr, *routed_resp, load_capacity);
   auto dload_node = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*dload_out[0]);
 
   auto routed_data = route_to_region_rhls(decouple_response->region(), dload_out[0]);
@@ -672,7 +672,7 @@ ConnectRequestResponseMemPorts(
       type = loadOperation->GetLoadedType();
     }
     else if (
-        auto loadOperation = dynamic_cast<const decoupled_load_op *>(&replacement->GetOperation()))
+        auto loadOperation = dynamic_cast<const DecoupledLoadOperation *>(&replacement->GetOperation()))
     {
       type = loadOperation->GetLoadedType();
     }
@@ -694,7 +694,7 @@ ConnectRequestResponseMemPorts(
     auto addr = route_request_rhls(lambdaRegion, replacement->output(1));
     loadAddresses.push_back(addr);
     loadTypes.push_back(
-        dynamic_cast<const decoupled_load_op *>(&replacement->GetOperation())->GetLoadedType());
+        dynamic_cast<const DecoupledLoadOperation *>(&replacement->GetOperation())->GetLoadedType());
   }
   std::vector<rvsdg::Output *> storeOperands;
   for (size_t i = 0; i < storeNodes.size(); ++i)
@@ -736,7 +736,7 @@ ReplaceLoad(
   if (states.empty())
   {
     size_t load_capacity = 10;
-    auto outputs = decoupled_load_op::create(*loadAddress, *response, load_capacity);
+    auto outputs = DecoupledLoadOperation::create(*loadAddress, *response, load_capacity);
     newLoad = dynamic_cast<rvsdg::node_output *>(outputs[0])->node();
   }
   else
