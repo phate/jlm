@@ -3,7 +3,6 @@
  * See COPYING for terms of redistribution.
  */
 
-#include "jlm/llvm/ir/operators/IntegerOperations.hpp"
 #include <test-registry.hpp>
 #include <test-types.hpp>
 #include <TestRvsdgs.hpp>
@@ -15,6 +14,7 @@
 
 #include <jlm/llvm/ir/LambdaMemoryState.hpp>
 #include <jlm/llvm/ir/operators/call.hpp>
+#include <jlm/llvm/ir/operators/IntegerOperations.hpp>
 #include <jlm/llvm/ir/RvsdgModule.hpp>
 #include <jlm/llvm/opt/InvariantValueRedirection.hpp>
 #include <jlm/util/Statistics.hpp>
