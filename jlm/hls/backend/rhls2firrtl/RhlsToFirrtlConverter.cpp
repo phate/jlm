@@ -812,7 +812,7 @@ RhlsToFirrtlConverter::MlirGenHlsMemReq(const jlm::rvsdg::SimpleNode * node)
   // Create the module and its input/output ports
   auto module = nodeToModule(node, false);
   auto body = module.getBodyBlock();
-  auto op = dynamic_cast<const mem_req_op *>(&node->GetOperation());
+  auto op = dynamic_cast<const MemoryRequestOperation *>(&node->GetOperation());
 
   auto loadTypes = op->GetLoadTypes();
   ::llvm::SmallVector<circt::firrtl::SubfieldOp> loadAddrReadys;
@@ -1976,7 +1976,7 @@ RhlsToFirrtlConverter::MlirGenAddrQueue(const jlm::rvsdg::SimpleNode * node)
   auto module = nodeToModule(node);
   auto body = module.getBodyBlock();
 
-  auto op = dynamic_cast<const hls::addr_queue_op *>(&(node->GetOperation()));
+  auto op = dynamic_cast<const hls::AddressQueueOperation *>(&(node->GetOperation()));
   auto capacity = op->capacity;
 
   auto clock = GetClockSignal(module);
@@ -2418,7 +2418,7 @@ RhlsToFirrtlConverter::MlirGen(const jlm::rvsdg::SimpleNode * node)
   {
     return MlirGenHlsMemResp(node);
   }
-  else if (dynamic_cast<const hls::mem_req_op *>(&(node->GetOperation())))
+  else if (rvsdg::is<MemoryRequestOperation>(node))
   {
     return MlirGenHlsMemReq(node);
   }
@@ -2439,7 +2439,7 @@ RhlsToFirrtlConverter::MlirGen(const jlm::rvsdg::SimpleNode * node)
   {
     return MlirGenTrigger(node);
   }
-  else if (dynamic_cast<const hls::state_gate_op *>(&(node->GetOperation())))
+  else if (rvsdg::is<StateGateOperation>(node))
   {
     return MlirGenStateGate(node);
   }
@@ -2447,7 +2447,7 @@ RhlsToFirrtlConverter::MlirGen(const jlm::rvsdg::SimpleNode * node)
   {
     return MlirGenPrint(node);
   }
-  else if (dynamic_cast<const hls::addr_queue_op *>(&(node->GetOperation())))
+  else if (dynamic_cast<const AddressQueueOperation *>(&(node->GetOperation())))
   {
     return MlirGenAddrQueue(node);
   }
@@ -3959,7 +3959,7 @@ RhlsToFirrtlConverter::GetModuleName(const rvsdg::Node * node)
       append.append(std::to_string(bytes));
     }
   }
-  if (auto op = dynamic_cast<const mem_req_op *>(&node->GetOperation()))
+  if (auto op = dynamic_cast<const MemoryRequestOperation *>(&node->GetOperation()))
   {
     auto loadTypes = op->GetLoadTypes();
     for (size_t i = 0; i < loadTypes->size(); i++)
