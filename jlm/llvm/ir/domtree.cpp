@@ -29,10 +29,14 @@ domnode::add_child(std::unique_ptr<domnode> child)
 /* dominator computations */
 
 static std::unique_ptr<domnode>
-build_domtree(std::unordered_map<cfg_node *, cfg_node *> & doms, cfg_node * root)
+build_domtree(
+    std::unordered_map<ControlFlowGraphNode *, ControlFlowGraphNode *> & doms,
+    ControlFlowGraphNode * root)
 {
-  std::function<domnode *(cfg_node *, std::unordered_map<cfg_node *, domnode *> &)> build =
-      [&](cfg_node * node, std::unordered_map<cfg_node *, domnode *> & map)
+  std::function<
+      domnode *(ControlFlowGraphNode *, std::unordered_map<ControlFlowGraphNode *, domnode *> &)>
+      build = [&](ControlFlowGraphNode * node,
+                  std::unordered_map<ControlFlowGraphNode *, domnode *> & map)
   {
     if (map.find(node) != map.end())
       return map[node];
@@ -47,14 +51,14 @@ build_domtree(std::unordered_map<cfg_node *, cfg_node *> & doms, cfg_node * root
 
   /* find leaves of tree */
   /* FIXME */
-  std::unordered_set<cfg_node *> nodes({ cfg.entry(), cfg.exit() });
+  std::unordered_set<ControlFlowGraphNode *> nodes({ cfg.entry(), cfg.exit() });
   for (auto & node : cfg)
     nodes.insert(&node);
   for (auto & node : cfg)
     nodes.erase(doms[&node]);
 
   /* build tree bottom-up */
-  std::unordered_map<cfg_node *, domnode *> map;
+  std::unordered_map<ControlFlowGraphNode *, domnode *> map;
   auto domroot = domnode::create(root);
   map[root] = domroot.get();
   for (auto node : nodes)
@@ -63,12 +67,12 @@ build_domtree(std::unordered_map<cfg_node *, cfg_node *> & doms, cfg_node * root
   return domroot;
 }
 
-static cfg_node *
+static ControlFlowGraphNode *
 intersect(
-    cfg_node * b1,
-    cfg_node * b2,
-    const std::unordered_map<cfg_node *, size_t> & indices,
-    const std::unordered_map<cfg_node *, cfg_node *> & doms)
+    ControlFlowGraphNode * b1,
+    ControlFlowGraphNode * b2,
+    const std::unordered_map<ControlFlowGraphNode *, size_t> & indices,
+    const std::unordered_map<ControlFlowGraphNode *, ControlFlowGraphNode *> & doms)
 {
   while (indices.at(b1) != indices.at(b2))
   {
@@ -85,18 +89,18 @@ intersect(
   Keith D. Cooper et. al. - A Simple, Fast Dominance Algorithm
 */
 std::unique_ptr<domnode>
-domtree(llvm::cfg & cfg)
+domtree(ControlFlowGraph & cfg)
 {
   JLM_ASSERT(is_closed(cfg));
 
-  std::unordered_map<cfg_node *, cfg_node *> doms(
+  std::unordered_map<ControlFlowGraphNode *, ControlFlowGraphNode *> doms(
       { { cfg.entry(), cfg.entry() }, { cfg.exit(), nullptr } });
   for (auto & node : cfg)
     doms[&node] = nullptr;
 
   size_t index = cfg.nnodes() + 2;
   auto rporder = reverse_postorder(cfg);
-  std::unordered_map<cfg_node *, size_t> indices;
+  std::unordered_map<ControlFlowGraphNode *, size_t> indices;
   for (auto & node : rporder)
     indices[node] = index--;
   JLM_ASSERT(index == 0);
@@ -111,7 +115,7 @@ domtree(llvm::cfg & cfg)
         continue;
 
       /* find first processed predecessor */
-      cfg_node * newidom = nullptr;
+      ControlFlowGraphNode * newidom = nullptr;
       for (auto & inedge : node->InEdges())
       {
         auto p = inedge.source();

@@ -14,7 +14,7 @@ namespace jlm::rvsdg
 {
 class GammaNode;
 class Graph;
-class output;
+class Output;
 class Region;
 class SimpleNode;
 class StructuralNode;
@@ -200,7 +200,7 @@ private:
    * @param output The register that is marked as escaping.
    */
   void
-  MarkAsEscaped(const rvsdg::output & output);
+  MarkAsEscaped(const rvsdg::Output & output);
 
   /**
    * Propagates the points-to flags throughout the disjoint set location graph.
@@ -250,7 +250,7 @@ private:
   CollectEscapedMemoryNodes(
       const util::HashSet<RegisterLocation *> & escapingRegisterLocations,
       const std::unordered_map<
-          const util::disjointset<Location *>::set *,
+          const util::DisjointSet<Location *>::set *,
           std::vector<PointsToGraph::MemoryNode *>> & memoryNodesInSet) const;
 
   /**

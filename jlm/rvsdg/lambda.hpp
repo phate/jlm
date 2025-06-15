@@ -103,7 +103,7 @@ public:
      * of the context variable bound into the lambda at the
      * time the lambda abstraction is built.
      */
-    rvsdg::input * input;
+    rvsdg::Input * input;
 
     /**
      * \brief Access to bound object in subregion.
@@ -112,13 +112,13 @@ public:
      * from inside the region contained in the lambda node. This
      * evaluates to the value bound into the lambda.
      */
-    rvsdg::output * inner;
+    rvsdg::Output * inner;
   };
 
-  [[nodiscard]] std::vector<rvsdg::output *>
+  [[nodiscard]] std::vector<rvsdg::Output *>
   GetFunctionArguments() const;
 
-  [[nodiscard]] std::vector<rvsdg::input *>
+  [[nodiscard]] std::vector<rvsdg::Input *>
   GetFunctionResults() const;
 
   [[nodiscard]] rvsdg::Region *
@@ -142,7 +142,7 @@ public:
    * \return The context variable argument of the lambda abstraction.
    */
   ContextVar
-  AddContextVar(jlm::rvsdg::output & origin);
+  AddContextVar(jlm::rvsdg::Output & origin);
 
   /**
    * \brief Maps input to context variable.
@@ -163,7 +163,7 @@ public:
    * argument.
    */
   [[nodiscard]] ContextVar
-  MapInputContextVar(const rvsdg::input & input) const noexcept;
+  MapInputContextVar(const rvsdg::Input & input) const noexcept;
 
   /**
    * \brief Maps bound variable reference to context variable
@@ -183,7 +183,7 @@ public:
    * and do not have an associated context variable description.
    */
   [[nodiscard]] std::optional<ContextVar>
-  MapBinderContextVar(const rvsdg::output & output) const noexcept;
+  MapBinderContextVar(const rvsdg::Output & output) const noexcept;
 
   /**
    * \brief Gets all bound context variables
@@ -219,7 +219,7 @@ public:
   size_t
   PruneLambdaInputs()
   {
-    auto match = [](const rvsdg::input &)
+    auto match = [](const rvsdg::Input &)
     {
       return true;
     };
@@ -227,11 +227,11 @@ public:
     return RemoveLambdaInputsWhere(match);
   }
 
-  [[nodiscard]] rvsdg::output *
+  [[nodiscard]] rvsdg::Output *
   output() const noexcept;
 
   LambdaNode *
-  copy(rvsdg::Region * region, const std::vector<jlm::rvsdg::output *> & operands) const override;
+  copy(rvsdg::Region * region, const std::vector<jlm::rvsdg::Output *> & operands) const override;
 
   LambdaNode *
   copy(rvsdg::Region * region, rvsdg::SubstitutionMap & smap) const override;
@@ -257,8 +257,8 @@ public:
    *
    * \return The output of the lambda node.
    */
-  rvsdg::output *
-  finalize(const std::vector<jlm::rvsdg::output *> & results);
+  rvsdg::Output *
+  finalize(const std::vector<jlm::rvsdg::Output *> & results);
 
 private:
   std::unique_ptr<LambdaOperation> Operation_;

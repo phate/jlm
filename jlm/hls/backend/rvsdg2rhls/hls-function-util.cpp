@@ -40,9 +40,9 @@ find_function_arguments(const rvsdg::LambdaNode * lambda, std::string name_conta
 
 void
 trace_function_calls(
-    rvsdg::output * output,
+    rvsdg::Output * output,
     std::vector<rvsdg::SimpleNode *> & calls,
-    std::unordered_set<rvsdg::output *> & visited)
+    std::unordered_set<rvsdg::Output *> & visited)
 {
   if (visited.count(output))
   {
@@ -94,7 +94,7 @@ trace_function_calls(
 }
 
 const llvm::IntegerConstantOperation *
-trace_constant(const rvsdg::output * dst)
+trace_constant(const rvsdg::Output * dst)
 {
   if (auto arg = dynamic_cast<const rvsdg::RegionArgument *>(dst))
   {
@@ -110,7 +110,7 @@ trace_constant(const rvsdg::output * dst)
     for (size_t i = 0; i < so->node()->ninputs(); ++i)
     {
       // TODO: fix, this is a hack - only works because of distribute constants
-      if (so->node()->input(i)->type() == dst->type())
+      if (*so->node()->input(i)->Type() == *dst->Type())
       {
         return trace_constant(so->node()->input(i)->origin());
       }
@@ -119,8 +119,8 @@ trace_constant(const rvsdg::output * dst)
   JLM_UNREACHABLE("Constant not found");
 }
 
-rvsdg::output *
-route_to_region_rhls(rvsdg::Region * target, rvsdg::output * out)
+rvsdg::Output *
+route_to_region_rhls(rvsdg::Region * target, rvsdg::Output * out)
 {
   // create lists of nested regions
   std::deque<rvsdg::Region *> target_regions = get_parent_regions(target);
@@ -136,7 +136,7 @@ route_to_region_rhls(rvsdg::Region * target, rvsdg::output * out)
     out_regions.pop_front();
   }
   // route out to convergence point from out
-  rvsdg::output * common_out = route_request_rhls(common_region, out);
+  rvsdg::Output * common_out = route_request_rhls(common_region, out);
   auto common_loop = dynamic_cast<loop_node *>(common_region->node());
   if (common_loop)
   {
@@ -157,8 +157,8 @@ route_to_region_rhls(rvsdg::Region * target, rvsdg::output * out)
   }
 }
 
-rvsdg::output *
-route_response_rhls(rvsdg::Region * target, rvsdg::output * response)
+rvsdg::Output *
+route_response_rhls(rvsdg::Region * target, rvsdg::Output * response)
 {
   if (response->region() == target)
   {
@@ -175,8 +175,8 @@ route_response_rhls(rvsdg::Region * target, rvsdg::output * response)
   }
 }
 
-rvsdg::output *
-route_request_rhls(rvsdg::Region * target, rvsdg::output * request)
+rvsdg::Output *
+route_request_rhls(rvsdg::Region * target, rvsdg::Output * request)
 {
   if (request->region() == target)
   {
@@ -206,8 +206,8 @@ get_parent_regions(rvsdg::Region * region)
   return regions;
 }
 
-const rvsdg::output *
-trace_call_rhls(const rvsdg::output * output)
+const rvsdg::Output *
+trace_call_rhls(const rvsdg::Output * output)
 {
   // version of trace call for rhls
   if (auto argument = dynamic_cast<const rvsdg::RegionArgument *>(output))
@@ -239,7 +239,7 @@ trace_call_rhls(const rvsdg::output * output)
     for (size_t i = 0; i < so->node()->ninputs(); ++i)
     {
       auto ip = so->node()->input(i);
-      if (ip->type() == output->type())
+      if (*ip->Type() == *output->Type())
       {
         if (auto result = trace_call_rhls(ip))
         {
@@ -255,8 +255,8 @@ trace_call_rhls(const rvsdg::output * output)
   return nullptr;
 }
 
-const rvsdg::output *
-trace_call_rhls(const rvsdg::input * input)
+const rvsdg::Output *
+trace_call_rhls(const rvsdg::Input * input)
 {
   // version of trace call for rhls
   return trace_call_rhls(input->origin());
@@ -273,7 +273,7 @@ is_function_argument(const rvsdg::LambdaNode::ContextVar & cv)
 }
 
 std::string
-get_function_name(jlm::rvsdg::input * input)
+get_function_name(jlm::rvsdg::Input * input)
 {
   auto traced = jlm::hls::trace_call_rhls(input);
   JLM_ASSERT(traced);
@@ -305,18 +305,18 @@ is_dec_res(rvsdg::SimpleNode * node)
   return false;
 }
 
-rvsdg::input *
-get_mem_state_user(rvsdg::output * state_edge)
+rvsdg::Input *
+get_mem_state_user(rvsdg::Output * state_edge)
 {
   JLM_ASSERT(state_edge);
   JLM_ASSERT(state_edge->nusers() == 1);
-  JLM_ASSERT(dynamic_cast<const llvm::MemoryStateType *>(&state_edge->type()));
+  JLM_ASSERT(rvsdg::is<llvm::MemoryStateType>(state_edge->Type()));
   auto user = *state_edge->begin();
   return user;
 }
 
-rvsdg::output *
-FindSourceNode(rvsdg::output * out)
+rvsdg::Output *
+FindSourceNode(rvsdg::Output * out)
 {
   if (auto ba = dynamic_cast<backedge_argument *>(out))
   {

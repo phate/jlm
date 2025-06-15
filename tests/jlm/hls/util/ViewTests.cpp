@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 Magnus Sjalander <work@sjalander.com>
+ * Copyright 2024 David Metz <david.c.metz@ntnu.no>
  * See COPYING for terms of redistribution.
  */
 
@@ -38,8 +38,12 @@ TestDumpDot()
 
   rvsdg::view(graph, stdout);
 
+  std::unordered_map<rvsdg::Output *, ViewColors> outputColor;
+  std::unordered_map<rvsdg::Input *, ViewColors> inputColor;
+  std::unordered_map<rvsdg::Output *, ViewColors> tailLabel;
+
   // Act
-  auto dotOutput = to_dot(lambda->region());
+  auto dotOutput = ToDot(lambda->region(), outputColor, inputColor, tailLabel);
 
   // Assert
   assert(dotOutput.size() > 0);
@@ -87,8 +91,11 @@ TestDumpDotTheta()
 
   rvsdg::view(graph, stdout);
 
+  std::unordered_map<rvsdg::Output *, ViewColors> outputColor;
+  std::unordered_map<rvsdg::Input *, ViewColors> inputColor;
+  std::unordered_map<rvsdg::Output *, ViewColors> tailLabel;
   // Act
-  auto dotOutput = to_dot(lambda->region());
+  auto dotOutput = ToDot(lambda->region(), outputColor, inputColor, tailLabel);
 
   // Assert
   assert(dotOutput.size() > 0);

@@ -15,7 +15,7 @@ namespace jlm::hls
 {
 
 static bool
-IsPassthroughArgument(const rvsdg::output & argument)
+IsPassthroughArgument(const rvsdg::Output & argument)
 {
   if (argument.nusers() != 1)
   {
@@ -26,7 +26,7 @@ IsPassthroughArgument(const rvsdg::output & argument)
 }
 
 static bool
-IsPassthroughResult(const rvsdg::input & result)
+IsPassthroughResult(const rvsdg::Input & result)
 {
   auto argument = dynamic_cast<rvsdg::RegionArgument *>(result.origin());
   return argument != nullptr;
@@ -43,7 +43,7 @@ RemoveUnusedStatesFromLambda(rvsdg::LambdaNode & lambdaNode)
   {
     auto argument = lambdaNode.subregion()->argument(i);
     auto argumentType = oldFunctionType.Arguments()[i];
-    JLM_ASSERT(*argumentType == argument->type());
+    JLM_ASSERT(*argumentType == *argument->Type());
 
     if (!IsPassthroughArgument(*argument))
     {
@@ -56,7 +56,7 @@ RemoveUnusedStatesFromLambda(rvsdg::LambdaNode & lambdaNode)
   {
     auto result = lambdaNode.subregion()->result(i);
     auto resultType = oldFunctionType.Results()[i];
-    JLM_ASSERT(*resultType == result->type());
+    JLM_ASSERT(*resultType == *result->Type());
 
     if (!IsPassthroughResult(*result))
     {
@@ -91,7 +91,7 @@ RemoveUnusedStatesFromLambda(rvsdg::LambdaNode & lambdaNode)
   }
   lambdaNode.subregion()->copy(newLambda->subregion(), substitutionMap, false, false);
 
-  std::vector<jlm::rvsdg::output *> newResults;
+  std::vector<jlm::rvsdg::Output *> newResults;
   for (auto result : lambdaNode.GetFunctionResults())
   {
     if (!IsPassthroughResult(*result))
@@ -129,48 +129,53 @@ RemovePassthroughArgument(const rvsdg::RegionArgument & argument)
   region->node()->RemoveOutput(outputIndex);
 }
 
+// If this output has a single user and that single user happens to be
+// the exit variable of this gamma node, then return it.
+static std::optional<rvsdg::GammaNode::ExitVar>
+TryGetSingleUserExitVar(rvsdg::GammaNode & gammaNode, rvsdg::Output & argument)
+{
+  if (argument.nusers() == 1)
+  {
+    rvsdg::Input * user = *argument.begin();
+    if (rvsdg::TryGetRegionParentNode<rvsdg::GammaNode>(*user) == &gammaNode)
+    {
+      return gammaNode.MapBranchResultExitVar(*user);
+    }
+  }
+  return std::nullopt;
+}
+
 static void
 RemoveUnusedStatesFromGammaNode(rvsdg::GammaNode & gammaNode)
 {
-  auto entryvars = gammaNode.GetEntryVars();
-  for (int i = entryvars.size() - 1; i >= 0; --i)
-  {
-    size_t resultIndex = 0;
-    auto argument = entryvars[i].branchArgument[0];
-    if (argument->nusers() == 1)
-    {
-      auto result = dynamic_cast<rvsdg::RegionResult *>(*argument->begin());
-      resultIndex = result ? result->index() : resultIndex;
-    }
+  std::vector<rvsdg::GammaNode::EntryVar> deadEntryVars;
+  std::vector<rvsdg::GammaNode::ExitVar> deadExitVars;
 
-    bool shouldRemove = true;
-    for (size_t n = 0; n < gammaNode.nsubregions(); n++)
-    {
-      auto subregion = gammaNode.subregion(n);
-      shouldRemove &=
-          IsPassthroughArgument(*subregion->argument(i))
-          && dynamic_cast<jlm::rvsdg::RegionResult *>(*subregion->argument(i)->begin())->index()
-                 == resultIndex;
-    }
+  for (const auto & entryvar : gammaNode.GetEntryVars())
+  {
+    std::optional<rvsdg::GammaNode::ExitVar> exitvar0 =
+        TryGetSingleUserExitVar(gammaNode, *entryvar.branchArgument[0]);
+
+    bool shouldRemove = exitvar0
+                     && std::all_of(
+                            entryvar.branchArgument.begin(),
+                            entryvar.branchArgument.end(),
+                            [&gammaNode, &exitvar0](rvsdg::Output * argument) -> bool
+                            {
+                              auto exitvar = TryGetSingleUserExitVar(gammaNode, *argument);
+                              return exitvar && exitvar->output == exitvar0->output;
+                            });
 
     if (shouldRemove)
     {
-      auto origin = entryvars[i].input->origin();
-      gammaNode.output(resultIndex)->divert_users(origin);
-
-      for (size_t r = 0; r < gammaNode.nsubregions(); r++)
-      {
-        gammaNode.subregion(r)->RemoveResult(resultIndex);
-      }
-      gammaNode.RemoveOutput(resultIndex);
-
-      for (size_t r = 0; r < gammaNode.nsubregions(); r++)
-      {
-        gammaNode.subregion(r)->RemoveArgument(i);
-      }
-      gammaNode.RemoveInput(i + 1);
+      exitvar0->output->divert_users(entryvar.input->origin());
+      deadEntryVars.push_back(entryvar);
+      deadExitVars.push_back(*exitvar0);
     }
   }
+
+  gammaNode.RemoveExitVars(deadExitVars);
+  gammaNode.RemoveEntryVars(deadEntryVars);
 }
 
 static void

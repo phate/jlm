@@ -65,22 +65,22 @@ public:
    *
    * @return A getElementPtr three address code.
    */
-  static std::unique_ptr<llvm::tac>
+  static std::unique_ptr<llvm::ThreeAddressCode>
   Create(
-      const variable * baseAddress,
-      const std::vector<const variable *> & offsets,
+      const Variable * baseAddress,
+      const std::vector<const Variable *> & offsets,
       std::shared_ptr<const rvsdg::ValueType> pointeeType,
       std::shared_ptr<const rvsdg::Type> resultType)
   {
     CheckPointerType(baseAddress->type());
-    auto offsetTypes = CheckAndExtractOffsetTypes<const variable>(offsets);
+    auto offsetTypes = CheckAndExtractOffsetTypes<const Variable>(offsets);
     CheckPointerType(*resultType);
 
     GetElementPtrOperation operation(offsetTypes, std::move(pointeeType));
-    std::vector<const variable *> operands(1, baseAddress);
+    std::vector<const Variable *> operands(1, baseAddress);
     operands.insert(operands.end(), offsets.begin(), offsets.end());
 
-    return tac::create(operation, operands);
+    return ThreeAddressCode::create(operation, operands);
   }
 
   /**
@@ -96,15 +96,15 @@ public:
    *
    * @return The output of the created GetElementPtr RVSDG node.
    */
-  static rvsdg::output *
+  static rvsdg::Output *
   Create(
-      rvsdg::output * baseAddress,
-      const std::vector<rvsdg::output *> & offsets,
+      rvsdg::Output * baseAddress,
+      const std::vector<rvsdg::Output *> & offsets,
       std::shared_ptr<const rvsdg::ValueType> pointeeType,
       std::shared_ptr<const rvsdg::Type> resultType)
   {
-    CheckPointerType(baseAddress->type());
-    auto offsetTypes = CheckAndExtractOffsetTypes<rvsdg::output>(offsets);
+    CheckPointerType(*baseAddress->Type());
+    auto offsetTypes = CheckAndExtractOffsetTypes<rvsdg::Output>(offsets);
     CheckPointerType(*resultType);
 
     std::vector operands(1, baseAddress);

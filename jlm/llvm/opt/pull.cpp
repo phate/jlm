@@ -19,7 +19,7 @@ class pullstat final : public util::Statistics
 public:
   ~pullstat() override = default;
 
-  explicit pullstat(const util::filepath & sourceFile)
+  explicit pullstat(const util::FilePath & sourceFile)
       : Statistics(Statistics::Id::PullNodes, sourceFile)
   {}
 
@@ -38,7 +38,7 @@ public:
   }
 
   static std::unique_ptr<pullstat>
-  Create(const util::filepath & sourceFile)
+  Create(const util::FilePath & sourceFile)
   {
     return std::make_unique<pullstat>(sourceFile);
   }
@@ -63,27 +63,17 @@ single_successor(const rvsdg::Node * node)
   for (size_t n = 0; n < node->noutputs(); n++)
   {
     for (const auto & user : *node->output(n))
-      successors.insert(rvsdg::input::GetNode(*user));
+      successors.insert(rvsdg::TryGetOwnerNode<rvsdg::Node>(*user));
   }
 
   return successors.size() == 1;
 }
 
 static void
-remove(rvsdg::input * input)
-{
-  auto gamma = jlm::util::AssertedCast<rvsdg::GammaNode>(rvsdg::input::GetNode(*input));
-
-  for (size_t n = 0; n < gamma->nsubregions(); n++)
-    gamma->subregion(n)->RemoveArgument(input->index() - 1);
-  gamma->RemoveInput(input->index());
-}
-
-static void
 pullin_node(rvsdg::GammaNode * gamma, rvsdg::Node * node)
 {
   /* collect operands */
-  std::vector<std::vector<jlm::rvsdg::output *>> operands(gamma->nsubregions());
+  std::vector<std::vector<jlm::rvsdg::Output *>> operands(gamma->nsubregions());
   for (size_t i = 0; i < node->ninputs(); i++)
   {
     auto ev = gamma->AddEntryVar(node->input(i)->origin());
@@ -102,26 +92,28 @@ pullin_node(rvsdg::GammaNode * gamma, rvsdg::Node * node)
     {
       for (const auto & user : *node->output(o))
       {
-        JLM_ASSERT(dynamic_cast<jlm::rvsdg::StructuralInput *>(user));
-        auto sinput = static_cast<rvsdg::StructuralInput *>(user);
-        auto argument = gamma->subregion(r)->argument(sinput->index() - 1);
-        argument->divert_users(copy->output(o));
+        auto entryvar = std::get<rvsdg::GammaNode::EntryVar>(gamma->MapInput(*user));
+        entryvar.branchArgument[r]->divert_users(copy->output(o));
       }
     }
   }
 }
 
 static void
-cleanup(rvsdg::GammaNode *, rvsdg::Node * node)
+cleanup(rvsdg::GammaNode * gamma, rvsdg::Node * node)
 {
   JLM_ASSERT(single_successor(node));
 
   /* remove entry variables and node */
+  std::vector<rvsdg::GammaNode::EntryVar> entryvars;
   for (size_t n = 0; n < node->noutputs(); n++)
   {
-    while (node->output(n)->nusers() != 0)
-      remove(*node->output(n)->begin());
+    for (auto user : *node->output(n))
+    {
+      entryvars.push_back(std::get<rvsdg::GammaNode::EntryVar>(gamma->MapInput(*user)));
+    }
   }
+  gamma->RemoveEntryVars(entryvars);
   remove(node);
 }
 
@@ -134,8 +126,8 @@ pullin_top(rvsdg::GammaNode * gamma)
   while (index < evs.size())
   {
     const auto & ev = evs[index];
-    auto node = jlm::rvsdg::output::GetNode(*ev.input->origin());
-    auto tmp = jlm::rvsdg::output::GetNode(*gamma->predicate()->origin());
+    auto node = rvsdg::TryGetOwnerNode<rvsdg::Node>(*ev.input->origin());
+    auto tmp = rvsdg::TryGetOwnerNode<rvsdg::Node>(*gamma->predicate()->origin());
     if (node && tmp != node && single_successor(node))
     {
       pullin_node(gamma, node);
@@ -162,7 +154,7 @@ pullin_bottom(rvsdg::GammaNode * gamma)
     auto output = gamma->output(n);
     for (const auto & user : *output)
     {
-      auto node = rvsdg::input::GetNode(*user);
+      auto node = rvsdg::TryGetOwnerNode<rvsdg::Node>(*user);
       if (node && node->depth() == gamma->depth() + 1)
         workset.insert(node);
     }
@@ -174,15 +166,15 @@ pullin_bottom(rvsdg::GammaNode * gamma)
     workset.erase(node);
 
     /* copy node into subregions */
-    std::vector<std::vector<jlm::rvsdg::output *>> outputs(node->noutputs());
+    std::vector<std::vector<jlm::rvsdg::Output *>> outputs(node->noutputs());
     for (size_t r = 0; r < gamma->nsubregions(); r++)
     {
       /* collect operands */
-      std::vector<jlm::rvsdg::output *> operands;
+      std::vector<jlm::rvsdg::Output *> operands;
       for (size_t i = 0; i < node->ninputs(); i++)
       {
         auto input = node->input(i);
-        if (jlm::rvsdg::output::GetNode(*input->origin()) == gamma)
+        if (rvsdg::TryGetOwnerNode<rvsdg::Node>(*input->origin()) == gamma)
         {
           auto output = static_cast<rvsdg::StructuralOutput *>(input->origin());
           operands.push_back(gamma->subregion(r)->result(output->index())->origin());
@@ -205,7 +197,7 @@ pullin_bottom(rvsdg::GammaNode * gamma)
       auto output = node->output(n);
       for (const auto & user : *output)
       {
-        auto tmp = rvsdg::input::GetNode(*user);
+        auto tmp = rvsdg::TryGetOwnerNode<rvsdg::Node>(*user);
         if (tmp && tmp->depth() == node->depth() + 1)
           workset.insert(tmp);
       }
@@ -222,7 +214,7 @@ is_used_in_nsubregions(const rvsdg::GammaNode * gamma, const rvsdg::Node * node)
   JLM_ASSERT(single_successor(node));
 
   /* collect all gamma inputs */
-  std::unordered_set<const rvsdg::input *> inputs;
+  std::unordered_set<const rvsdg::Input *> inputs;
   for (size_t n = 0; n < node->noutputs(); n++)
   {
     for (const auto & user : *(node->output(n)))
@@ -235,11 +227,33 @@ is_used_in_nsubregions(const rvsdg::GammaNode * gamma, const rvsdg::Node * node)
   std::unordered_set<rvsdg::Region *> subregions;
   for (const auto & input : inputs)
   {
-    for (const auto & argument : gamma->MapInputEntryVar(*input).branchArgument)
-    {
-      if (argument->nusers() != 0)
-        subregions.insert(argument->region());
-    }
+    std::visit(
+        [&subregions](const auto & rolevar)
+        {
+          if constexpr (std::is_same<std::decay_t<decltype(rolevar)>, rvsdg::GammaNode::EntryVar>())
+          {
+            for (const auto & argument : rolevar.branchArgument)
+            {
+              if (argument->nusers() != 0)
+                subregions.insert(argument->region());
+            }
+          }
+          else if constexpr (std::is_same<
+                                 std::decay_t<decltype(rolevar)>,
+                                 rvsdg::GammaNode::MatchVar>())
+          {
+            for (const auto & argument : rolevar.matchContent)
+            {
+              if (argument->nusers() != 0)
+                subregions.insert(argument->region());
+            }
+          }
+          else
+          {
+            JLM_UNREACHABLE("A gamma input must either be the match variable or an entry variable");
+          }
+        },
+        gamma->MapInput(*input));
   }
 
   return subregions.size();
@@ -255,7 +269,7 @@ pull(rvsdg::GammaNode * gamma)
   if (gamma->nsubregions() == 2 && empty(gamma))
     return;
 
-  auto prednode = jlm::rvsdg::output::GetNode(*gamma->predicate()->origin());
+  auto prednode = rvsdg::TryGetOwnerNode<rvsdg::Node>(*gamma->predicate()->origin());
 
   /* FIXME: This is inefficient. We can do better. */
   auto evs = gamma->GetEntryVars();
@@ -263,7 +277,7 @@ pull(rvsdg::GammaNode * gamma)
   while (index < evs.size())
   {
     const auto & ev = evs[index];
-    auto node = jlm::rvsdg::output::GetNode(*ev.input->origin());
+    auto node = rvsdg::TryGetOwnerNode<rvsdg::Node>(*ev.input->origin());
     if (!node || prednode == node || !single_successor(node))
     {
       index++;

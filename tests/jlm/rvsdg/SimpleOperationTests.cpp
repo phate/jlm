@@ -42,7 +42,7 @@ NormalizeSimpleOperationCne_NodesWithoutOperands()
   view(graph, stdout);
 
   // Act
-  auto NormalizeCne = [&](const SimpleOperation & operation, const std::vector<output *> & operands)
+  auto NormalizeCne = [&](const SimpleOperation & operation, const std::vector<Output *> & operands)
   {
     return NormalizeSimpleOperationCommonNodeElimination(
         graph.GetRootRegion(),
@@ -51,10 +51,10 @@ NormalizeSimpleOperationCne_NodesWithoutOperands()
   };
 
   // Act
-  ReduceNode<SimpleOperation>(NormalizeCne, *output::GetNode(*exNullaryValueNode1.origin()));
-  ReduceNode<SimpleOperation>(NormalizeCne, *output::GetNode(*exNullaryValueNode2.origin()));
-  ReduceNode<SimpleOperation>(NormalizeCne, *output::GetNode(*exNullaryStateNode1.origin()));
-  ReduceNode<SimpleOperation>(NormalizeCne, *output::GetNode(*exNullaryStateNode2.origin()));
+  ReduceNode<SimpleOperation>(NormalizeCne, *TryGetOwnerNode<Node>(*exNullaryValueNode1.origin()));
+  ReduceNode<SimpleOperation>(NormalizeCne, *TryGetOwnerNode<Node>(*exNullaryValueNode2.origin()));
+  ReduceNode<SimpleOperation>(NormalizeCne, *TryGetOwnerNode<Node>(*exNullaryStateNode1.origin()));
+  ReduceNode<SimpleOperation>(NormalizeCne, *TryGetOwnerNode<Node>(*exNullaryStateNode2.origin()));
   graph.PruneNodes();
 
   view(graph, stdout);
@@ -97,7 +97,7 @@ NormalizeSimpleOperationCne_NodesWithOperands()
   view(graph, stdout);
 
   // Act
-  auto NormalizeCne = [&](const SimpleOperation & operation, const std::vector<output *> & operands)
+  auto NormalizeCne = [&](const SimpleOperation & operation, const std::vector<Output *> & operands)
   {
     return NormalizeSimpleOperationCommonNodeElimination(
         graph.GetRootRegion(),
@@ -106,10 +106,10 @@ NormalizeSimpleOperationCne_NodesWithOperands()
   };
 
   // Act
-  ReduceNode<SimpleOperation>(NormalizeCne, *output::GetNode(*exValueNode1.origin()));
-  ReduceNode<SimpleOperation>(NormalizeCne, *output::GetNode(*exValueNode2.origin()));
-  ReduceNode<SimpleOperation>(NormalizeCne, *output::GetNode(*exStateNode1.origin()));
-  ReduceNode<SimpleOperation>(NormalizeCne, *output::GetNode(*exStateNode2.origin()));
+  ReduceNode<SimpleOperation>(NormalizeCne, *TryGetOwnerNode<Node>(*exValueNode1.origin()));
+  ReduceNode<SimpleOperation>(NormalizeCne, *TryGetOwnerNode<Node>(*exValueNode2.origin()));
+  ReduceNode<SimpleOperation>(NormalizeCne, *TryGetOwnerNode<Node>(*exStateNode1.origin()));
+  ReduceNode<SimpleOperation>(NormalizeCne, *TryGetOwnerNode<Node>(*exStateNode2.origin()));
   graph.PruneNodes();
 
   view(graph, stdout);
@@ -154,7 +154,7 @@ NormalizeSimpleOperationCne_Failure()
   view(graph, stdout);
 
   // Act
-  auto NormalizeCne = [&](const SimpleOperation & operation, const std::vector<output *> & operands)
+  auto NormalizeCne = [&](const SimpleOperation & operation, const std::vector<Output *> & operands)
   {
     return NormalizeSimpleOperationCommonNodeElimination(
         graph.GetRootRegion(),
@@ -163,19 +163,19 @@ NormalizeSimpleOperationCne_Failure()
   };
 
   // Act
-  ReduceNode<SimpleOperation>(NormalizeCne, *output::GetNode(*exNullaryValueNode.origin()));
-  ReduceNode<SimpleOperation>(NormalizeCne, *output::GetNode(*exNullaryStateNode.origin()));
-  ReduceNode<SimpleOperation>(NormalizeCne, *output::GetNode(*exUnaryValueNode.origin()));
-  ReduceNode<SimpleOperation>(NormalizeCne, *output::GetNode(*exUnaryStateNode.origin()));
+  ReduceNode<SimpleOperation>(NormalizeCne, *TryGetOwnerNode<Node>(*exNullaryValueNode.origin()));
+  ReduceNode<SimpleOperation>(NormalizeCne, *TryGetOwnerNode<Node>(*exNullaryStateNode.origin()));
+  ReduceNode<SimpleOperation>(NormalizeCne, *TryGetOwnerNode<Node>(*exUnaryValueNode.origin()));
+  ReduceNode<SimpleOperation>(NormalizeCne, *TryGetOwnerNode<Node>(*exUnaryStateNode.origin()));
   graph.PruneNodes();
 
   view(graph, stdout);
 
   // Assert
-  assert(output::GetNode(*exNullaryValueNode.origin()) == &nullaryValueNode);
-  assert(output::GetNode(*exNullaryStateNode.origin()) == &nullaryStateNode);
-  assert(output::GetNode(*exUnaryValueNode.origin()) == &unaryValueNode);
-  assert(output::GetNode(*exUnaryStateNode.origin()) == &unaryStateNode);
+  assert(TryGetOwnerNode<Node>(*exNullaryValueNode.origin()) == &nullaryValueNode);
+  assert(TryGetOwnerNode<Node>(*exNullaryStateNode.origin()) == &nullaryStateNode);
+  assert(TryGetOwnerNode<Node>(*exUnaryValueNode.origin()) == &unaryValueNode);
+  assert(TryGetOwnerNode<Node>(*exUnaryStateNode.origin()) == &unaryStateNode);
 
   return 0;
 }

@@ -10,25 +10,18 @@
 namespace jlm::llvm
 {
 
-/* tacvariable */
+ThreeAddressCodeVariable::~ThreeAddressCodeVariable() noexcept = default;
 
-tacvariable::~tacvariable()
-{}
-
-/* taclist */
-
-taclist::~taclist()
+ThreeAddressCodeList::~ThreeAddressCodeList() noexcept
 {
   for (const auto & tac : tacs_)
     delete tac;
 }
 
-/* tac */
-
 static void
 check_operands(
     const rvsdg::SimpleOperation & operation,
-    const std::vector<const variable *> & operands)
+    const std::vector<const Variable *> & operands)
 {
   if (operands.size() != operation.narguments())
     throw util::error("invalid number of operands.");
@@ -36,7 +29,7 @@ check_operands(
   for (size_t n = 0; n < operands.size(); n++)
   {
     if (operands[n]->type() != *operation.argument(n))
-      throw util::type_error(
+      throw util::TypeError(
           operands[n]->type().debug_string(),
           operation.argument(n)->debug_string());
   }
@@ -45,7 +38,7 @@ check_operands(
 static void
 check_results(
     const rvsdg::SimpleOperation & operation,
-    const std::vector<std::unique_ptr<tacvariable>> & results)
+    const std::vector<std::unique_ptr<ThreeAddressCodeVariable>> & results)
 {
   if (results.size() != operation.nresults())
     throw util::error("invalid number of variables.");
@@ -57,7 +50,9 @@ check_results(
   }
 }
 
-tac::tac(const rvsdg::SimpleOperation & operation, const std::vector<const variable *> & operands)
+ThreeAddressCode::ThreeAddressCode(
+    const rvsdg::SimpleOperation & operation,
+    const std::vector<const Variable *> & operands)
     : operands_(operands),
       operation_(operation.copy())
 {
@@ -67,9 +62,9 @@ tac::tac(const rvsdg::SimpleOperation & operation, const std::vector<const varia
   create_results(operation, names);
 }
 
-tac::tac(
+ThreeAddressCode::ThreeAddressCode(
     const rvsdg::SimpleOperation & operation,
-    const std::vector<const variable *> & operands,
+    const std::vector<const Variable *> & operands,
     const std::vector<std::string> & names)
     : operands_(operands),
       operation_(operation.copy())
@@ -82,10 +77,10 @@ tac::tac(
   create_results(operation, names);
 }
 
-tac::tac(
+ThreeAddressCode::ThreeAddressCode(
     const rvsdg::SimpleOperation & operation,
-    const std::vector<const variable *> & operands,
-    std::vector<std::unique_ptr<tacvariable>> results)
+    const std::vector<const Variable *> & operands,
+    std::vector<std::unique_ptr<ThreeAddressCodeVariable>> results)
     : operands_(operands),
       operation_(operation.copy()),
       results_(std::move(results))
@@ -95,9 +90,9 @@ tac::tac(
 }
 
 void
-tac::convert(
+ThreeAddressCode::convert(
     const rvsdg::SimpleOperation & operation,
-    const std::vector<const variable *> & operands)
+    const std::vector<const Variable *> & operands)
 {
   check_operands(operation, operands);
 
@@ -110,9 +105,9 @@ tac::convert(
 }
 
 void
-tac::replace(
+ThreeAddressCode::replace(
     const rvsdg::SimpleOperation & operation,
-    const std::vector<const variable *> & operands)
+    const std::vector<const Variable *> & operands)
 {
   check_operands(operation, operands);
   check_results(operation, results_);
@@ -122,7 +117,7 @@ tac::replace(
 }
 
 std::string
-tac::ToAscii(const jlm::llvm::tac & threeAddressCode)
+ThreeAddressCode::ToAscii(const jlm::llvm::ThreeAddressCode & threeAddressCode)
 {
   std::string resultString;
   for (size_t n = 0; n < threeAddressCode.nresults(); n++)

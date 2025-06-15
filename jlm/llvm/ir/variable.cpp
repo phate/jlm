@@ -8,20 +8,14 @@
 namespace jlm::llvm
 {
 
-/* variable */
-
-variable::~variable() noexcept
-{}
+Variable::~Variable() noexcept = default;
 
 std::string
-variable::debug_string() const
+Variable::debug_string() const
 {
   return name();
 }
 
-/* top level variable */
-
-gblvariable::~gblvariable()
-{}
+GlobalVariable::~GlobalVariable() noexcept = default;
 
 }

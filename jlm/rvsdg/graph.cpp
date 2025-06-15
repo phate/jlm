@@ -24,7 +24,7 @@ GraphImport::debug_string() const
   return util::strfmt("import[", Name_, "]");
 }
 
-GraphExport::GraphExport(rvsdg::output & origin, std::string name)
+GraphExport::GraphExport(rvsdg::Output & origin, std::string name)
     : RegionResult(&origin.region()->graph()->GetRootRegion(), &origin, nullptr, origin.Type()),
       Name_(std::move(name))
 {}
@@ -56,16 +56,16 @@ Graph::Copy() const
 std::vector<Node *>
 Graph::ExtractTailNodes(const Graph & rvsdg)
 {
-  auto IsOnlyExported = [](const rvsdg::output & output)
+  auto IsOnlyExported = [](const rvsdg::Output & output)
   {
-    auto IsRootRegionExport = [](const rvsdg::input * input)
+    auto IsRootRegionExport = [](const rvsdg::Input * input)
     {
       if (!input->region()->IsRootRegion())
       {
         return false;
       }
 
-      if (input::GetNode(*input))
+      if (TryGetOwnerNode<Node>(*input))
       {
         return false;
       }
@@ -89,7 +89,7 @@ Graph::ExtractTailNodes(const Graph & rvsdg)
     auto output = rootRegion.result(n)->origin();
     if (IsOnlyExported(*output))
     {
-      nodes.push_back(output::GetNode(*output));
+      nodes.push_back(rvsdg::TryGetOwnerNode<Node>(*output));
     }
   }
 

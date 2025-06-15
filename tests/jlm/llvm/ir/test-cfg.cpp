@@ -14,17 +14,16 @@ test_remove_node()
 {
   using namespace jlm::llvm;
 
-  /* setup cfg */
+  // Arrange
+  InterProceduralGraphModule im(jlm::util::FilePath(""), "", "");
 
-  ipgraph_module im(jlm::util::filepath(""), "", "");
+  ControlFlowGraph cfg(im);
 
-  jlm::llvm::cfg cfg(im);
-
-  auto bb0 = basic_block::create(cfg);
+  auto bb0 = BasicBlock::create(cfg);
   bb0->add_outedge(bb0);
   bb0->add_outedge(cfg.exit());
 
-  std::cout << cfg::ToAscii(cfg) << std::flush;
+  std::cout << ControlFlowGraph::ToAscii(cfg) << std::flush;
 
   /* verify inedge diversion */
 

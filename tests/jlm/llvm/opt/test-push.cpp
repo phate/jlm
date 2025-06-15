@@ -27,7 +27,7 @@ test_gamma()
 
   auto ct = jlm::rvsdg::ControlType::Create(2);
 
-  RvsdgModule rm(jlm::util::filepath(""), "", "");
+  RvsdgModule rm(jlm::util::FilePath(""), "", "");
   auto & graph = rm.Rvsdg();
 
   auto c = &jlm::tests::GraphImport::Create(graph, ct, "c");
@@ -67,7 +67,7 @@ test_theta()
   jlm::tests::test_op bop({ vt, vt }, { vt });
   jlm::tests::test_op sop({ vt, st }, { st });
 
-  RvsdgModule rm(jlm::util::filepath(""), "", "");
+  RvsdgModule rm(jlm::util::FilePath(""), "", "");
   auto & graph = rm.Rvsdg();
 
   auto c = &jlm::tests::GraphImport::Create(graph, ct, "c");
@@ -134,13 +134,11 @@ test_push_theta_bottom()
   jlm::llvm::push_bottom(theta);
   jlm::rvsdg::view(graph, stdout);
 
-  auto storenode = jlm::rvsdg::output::GetNode(*ex.origin());
+  auto storenode = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*ex.origin());
   assert(jlm::rvsdg::is<StoreNonVolatileOperation>(storenode));
   assert(storenode->input(0)->origin() == a);
-  assert(jlm::rvsdg::is<jlm::rvsdg::ThetaOperation>(
-      jlm::rvsdg::output::GetNode(*storenode->input(1)->origin())));
-  assert(jlm::rvsdg::is<jlm::rvsdg::ThetaOperation>(
-      jlm::rvsdg::output::GetNode(*storenode->input(2)->origin())));
+  assert(jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::ThetaNode>(*storenode->input(1)->origin()));
+  assert(jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::ThetaNode>(*storenode->input(2)->origin()));
 }
 
 static int

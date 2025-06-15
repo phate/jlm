@@ -2,30 +2,30 @@
 # See COPYING for terms of redistribution.
 
 libmlir_SOURCES = \
-	jlm/mlir/backend/JlmToMlirConverter.cpp \
-	jlm/mlir/frontend/MlirToJlmConverter.cpp \
-	jlm/mlir/MLIRConverterCommon.cpp \
+    jlm/mlir/backend/JlmToMlirConverter.cpp \
+    jlm/mlir/frontend/MlirToJlmConverter.cpp \
+    jlm/mlir/MLIRConverterCommon.cpp \
 
 libmlir_HEADERS = \
-	jlm/mlir/backend/JlmToMlirConverter.hpp \
-	jlm/mlir/frontend/MlirToJlmConverter.hpp \
-	jlm/mlir/MLIRConverterCommon.hpp \
+    jlm/mlir/backend/JlmToMlirConverter.hpp \
+    jlm/mlir/frontend/MlirToJlmConverter.hpp \
+    jlm/mlir/MLIRConverterCommon.hpp \
 
 libmlir_TESTS += \
-	tests/jlm/mlir/backend/TestJlmToMlirConverter \
-	tests/jlm/mlir/frontend/TestMlirToJlmConverter \
-	tests/jlm/mlir/TestJlmToMlirToJlm \
-	tests/jlm/mlir/TestIntegerOperationsJlmToMlirToJlm \
+    tests/jlm/mlir/backend/TestJlmToMlirConverter \
+    tests/jlm/mlir/frontend/TestMlirToJlmConverter \
+    tests/jlm/mlir/TestJlmToMlirToJlm \
+    tests/jlm/mlir/TestIntegerOperationsJlmToMlirToJlm \
 
 libmlir_TEST_LIBS += \
-	libmlir \
-	libllvm \
-	librvsdg \
-	libutil \
-	libjlmtest \
+    libmlir \
+    libllvm \
+    librvsdg \
+    libutil \
+    libjlmtest \
 
 libmlir_TEST_EXTRA_LDFLAGS = \
-	$(MLIR_LDFLAGS) \
-	$(shell $(LLVMCONFIG) --ldflags --libs --system-libs) \
+    $(MLIR_LDFLAGS) \
+    $(shell $(LLVMCONFIG) --ldflags --libs --system-libs) \
 
 $(eval $(call common_library,libmlir))

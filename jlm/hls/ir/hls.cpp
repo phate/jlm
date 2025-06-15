@@ -10,23 +10,57 @@
 namespace jlm::hls
 {
 
+BranchOperation::~BranchOperation() noexcept = default;
+
+ForkOperation::~ForkOperation() noexcept = default;
+
+MuxOperation::~MuxOperation() noexcept = default;
+
+SinkOperation::~SinkOperation() noexcept = default;
+
+PredicateBufferOperation::~PredicateBufferOperation() noexcept = default;
+
+LoopConstantBufferOperation::~LoopConstantBufferOperation() noexcept = default;
+
+BundleType::~BundleType() noexcept = default;
+
+LoopOperation::~LoopOperation() noexcept = default;
+
+PrintOperation::~PrintOperation() noexcept = default;
+
+BufferOperation::~BufferOperation() noexcept = default;
+
+TriggerOperation::~TriggerOperation() noexcept = default;
+
+TriggerType::~TriggerType() noexcept = default;
+
+StateGateOperation::~StateGateOperation() noexcept = default;
+
+LoadOperation::~LoadOperation() noexcept = default;
+
+DecoupledLoadOperation::~DecoupledLoadOperation() noexcept = default;
+
+AddressQueueOperation::~AddressQueueOperation() noexcept = default;
+
+MemoryResponseOperation::~MemoryResponseOperation() noexcept = default;
+
 std::size_t
-triggertype::ComputeHash() const noexcept
+TriggerType::ComputeHash() const noexcept
 {
-  return typeid(triggertype).hash_code();
+  return typeid(TriggerType).hash_code();
 }
 
-std::shared_ptr<const triggertype>
-triggertype::Create()
+std::shared_ptr<const TriggerType>
+TriggerType::Create()
 {
-  static const triggertype instance;
-  return std::shared_ptr<const triggertype>(std::shared_ptr<void>(), &instance);
+  static const TriggerType instance;
+  return std::shared_ptr<const TriggerType>(std::shared_ptr<void>(), &instance);
 }
 
 std::size_t
-bundletype::ComputeHash() const noexcept
+BundleType::ComputeHash() const noexcept
 {
-  std::size_t seed = typeid(bundletype).hash_code();
+  std::size_t seed = typeid(BundleType).hash_code();
   for (auto & element : elements_)
   {
     auto firstHash = std::hash<std::string>()(element.first);
@@ -52,7 +86,7 @@ backedge_argument::Copy(rvsdg::Region & region, rvsdg::StructuralInput * input)
 }
 
 backedge_result &
-backedge_result::Copy(rvsdg::output & origin, rvsdg::StructuralOutput * output)
+backedge_result::Copy(rvsdg::Output & origin, rvsdg::StructuralOutput * output)
 {
   JLM_ASSERT(output == nullptr);
   return *backedge_result::create(&origin);
@@ -60,14 +94,20 @@ backedge_result::Copy(rvsdg::output & origin, rvsdg::StructuralOutput * output)
 
 ExitResult::~ExitResult() noexcept = default;
 
+ExitResult::ExitResult(rvsdg::Output & origin, rvsdg::StructuralOutput & output)
+    : rvsdg::RegionResult(origin.region(), &origin, &output, origin.Type())
+{
+  JLM_ASSERT(dynamic_cast<const loop_node *>(origin.region()->node()));
+}
+
 ExitResult &
-ExitResult::Copy(rvsdg::output & origin, rvsdg::StructuralOutput * output)
+ExitResult::Copy(rvsdg::Output & origin, rvsdg::StructuralOutput * output)
 {
   return Create(origin, *output);
 }
 
 rvsdg::StructuralOutput *
-loop_node::AddLoopVar(jlm::rvsdg::output * origin, jlm::rvsdg::output ** buffer)
+loop_node::AddLoopVar(jlm::rvsdg::Output * origin, jlm::rvsdg::Output ** buffer)
 {
   auto input = rvsdg::StructuralInput::create(this, origin, origin->Type());
   auto output = rvsdg::StructuralOutput::create(this, origin->Type());
@@ -76,15 +116,15 @@ loop_node::AddLoopVar(jlm::rvsdg::output * origin, jlm::rvsdg::output ** buffer)
   auto argument_loop = add_backedge(origin->Type());
 
   auto mux =
-      hls::mux_op::create(*predicate_buffer(), { &argument_in, argument_loop }, false, true)[0];
-  auto branch = hls::branch_op::create(*predicate()->origin(), *mux, true);
+      MuxOperation::create(*predicate_buffer(), { &argument_in, argument_loop }, false, true)[0];
+  auto branch = BranchOperation::create(*predicate()->origin(), *mux, true);
   if (buffer != nullptr)
   {
     *buffer = mux;
   }
   ExitResult::Create(*branch[0], *output);
   auto result_loop = argument_loop->result();
-  auto buf = hls::buffer_op::create(*branch[1], 2)[0];
+  auto buf = BufferOperation::create(*branch[1], 2)[0];
   result_loop->divert_to(buf);
   return output;
 }
@@ -92,17 +132,17 @@ loop_node::AddLoopVar(jlm::rvsdg::output * origin, jlm::rvsdg::output ** buffer)
 [[nodiscard]] const rvsdg::Operation &
 loop_node::GetOperation() const noexcept
 {
-  static const loop_op singleton;
+  static const LoopOperation singleton;
   return singleton;
 }
 
-jlm::rvsdg::output *
-loop_node::add_loopconst(jlm::rvsdg::output * origin)
+jlm::rvsdg::Output *
+loop_node::add_loopconst(jlm::rvsdg::Output * origin)
 {
   auto input = rvsdg::StructuralInput::create(this, origin, origin->Type());
 
   auto & argument_in = EntryArgument::Create(*subregion(), *input, origin->Type());
-  auto buffer = hls::loop_constant_buffer_op::create(*predicate_buffer(), argument_in)[0];
+  auto buffer = LoopConstantBufferOperation::create(*predicate_buffer(), argument_in)[0];
   return buffer;
 }
 
@@ -180,23 +220,23 @@ loop_node::create(rvsdg::Region * parent, bool init)
     pred_arg->result()->divert_to(predicate);
     // we need a buffer without pass-through behavior to avoid a combinatorial cycle of ready
     // signals
-    auto pre_buffer = hls::buffer_op::create(*pred_arg, 2)[0];
+    auto pre_buffer = BufferOperation::create(*pred_arg, 2)[0];
     ln->_predicate_buffer =
-        dynamic_cast<jlm::rvsdg::node_output *>(hls::predicate_buffer_op::create(*pre_buffer)[0]);
+        dynamic_cast<jlm::rvsdg::node_output *>(PredicateBufferOperation::create(*pre_buffer)[0]);
   }
   return ln;
 }
 
 void
-loop_node::set_predicate(jlm::rvsdg::output * p)
+loop_node::set_predicate(jlm::rvsdg::Output * p)
 {
-  auto node = jlm::rvsdg::output::GetNode(*predicate()->origin());
+  auto node = rvsdg::TryGetOwnerNode<Node>(*predicate()->origin());
   predicate()->origin()->divert_users(p);
   if (node && !node->has_users())
     remove(node);
 }
 
-std::shared_ptr<const bundletype>
+std::shared_ptr<const BundleType>
 get_mem_req_type(std::shared_ptr<const rvsdg::ValueType> elementType, bool write)
 {
   std::vector<std::pair<std::string, std::shared_ptr<const jlm::rvsdg::Type>>> elements;
@@ -208,16 +248,16 @@ get_mem_req_type(std::shared_ptr<const rvsdg::ValueType> elementType, bool write
     elements.emplace_back("data", std::move(elementType));
     elements.emplace_back("write", jlm::rvsdg::bittype::Create(1));
   }
-  return std::make_shared<bundletype>(std::move(elements));
+  return std::make_shared<BundleType>(std::move(elements));
 }
 
-std::shared_ptr<const bundletype>
+std::shared_ptr<const BundleType>
 get_mem_res_type(std::shared_ptr<const jlm::rvsdg::ValueType> dataType)
 {
   std::vector<std::pair<std::string, std::shared_ptr<const jlm::rvsdg::Type>>> elements;
   elements.emplace_back("data", std::move(dataType));
   elements.emplace_back("id", jlm::rvsdg::bittype::Create(8));
-  return std::make_shared<bundletype>(std::move(elements));
+  return std::make_shared<BundleType>(std::move(elements));
 }
 
 int
@@ -247,7 +287,7 @@ JlmSize(const jlm::rvsdg::Type * type)
   {
     return 1;
   }
-  else if (dynamic_cast<const bundletype *>(type))
+  else if (rvsdg::is<BundleType>(*type))
   {
     // TODO: fix this ugly hack needed for get_node_name
     return 0;

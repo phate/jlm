@@ -22,7 +22,7 @@ sleepUs(int us)
 static void
 TestStartStop()
 {
-  timer t;
+  Timer t;
   assert(t.ns() == 0);
   assert(!t.IsRunning());
 
@@ -44,7 +44,7 @@ TestStartStop()
 static void
 TestReset()
 {
-  timer t;
+  Timer t;
   assert(t.ns() == 0);
   assert(!t.IsRunning());
 

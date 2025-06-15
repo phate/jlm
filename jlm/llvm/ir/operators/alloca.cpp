@@ -8,28 +8,25 @@
 namespace jlm::llvm
 {
 
-/* alloca operator */
-
-alloca_op::~alloca_op() noexcept
-{}
+AllocaOperation::~AllocaOperation() noexcept = default;
 
 bool
-alloca_op::operator==(const Operation & other) const noexcept
+AllocaOperation::operator==(const Operation & other) const noexcept
 {
-  /* Avoid CNE for alloca operators */
+  // Avoid CNE for alloca operators
   return this == &other;
 }
 
 std::string
-alloca_op::debug_string() const
+AllocaOperation::debug_string() const
 {
   return "ALLOCA[" + value_type().debug_string() + "]";
 }
 
 std::unique_ptr<rvsdg::Operation>
-alloca_op::copy() const
+AllocaOperation::copy() const
 {
-  return std::make_unique<alloca_op>(*this);
+  return std::make_unique<AllocaOperation>(*this);
 }
 
 }

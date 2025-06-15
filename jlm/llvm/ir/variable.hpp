@@ -16,25 +16,23 @@
 namespace jlm::llvm
 {
 
-/* variable */
-
-class variable
+class Variable
 {
 public:
-  virtual ~variable() noexcept;
+  virtual ~Variable() noexcept;
 
-  variable(std::shared_ptr<const jlm::rvsdg::Type> type, const std::string & name)
+  Variable(std::shared_ptr<const jlm::rvsdg::Type> type, const std::string & name)
       : name_(name),
         type_(std::move(type))
   {}
 
-  variable(variable && other)
+  Variable(Variable && other) noexcept
       : name_(std::move(other.name_)),
         type_(std::move(other.type_))
   {}
 
-  variable &
-  operator=(variable && other)
+  Variable &
+  operator=(Variable && other) noexcept
   {
     if (this == &other)
       return *this;
@@ -73,24 +71,22 @@ private:
 
 template<class T>
 static inline bool
-is(const llvm::variable * variable) noexcept
+is(const llvm::Variable * variable) noexcept
 {
   static_assert(
-      std::is_base_of<llvm::variable, T>::value,
-      "Template parameter T must be derived from jlm::variable.");
+      std::is_base_of<llvm::Variable, T>::value,
+      "Template parameter T must be derived from jlm::Variable.");
 
   return dynamic_cast<const T *>(variable) != nullptr;
 }
 
-/* top level variable */
-
-class gblvariable : public variable
+class GlobalVariable : public Variable
 {
 public:
-  virtual ~gblvariable();
+  ~GlobalVariable() noexcept override;
 
-  inline gblvariable(std::shared_ptr<const jlm::rvsdg::Type> type, const std::string & name)
-      : variable(std::move(type), name)
+  GlobalVariable(std::shared_ptr<const jlm::rvsdg::Type> type, const std::string & name)
+      : Variable(std::move(type), name)
   {}
 };
 

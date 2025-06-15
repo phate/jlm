@@ -40,7 +40,7 @@ test_gamma()
   auto gamma2 =
       static_cast<StructuralNode *>(gamma)->copy(&graph.GetRootRegion(), { pred, v0, v1, v2 });
   view(&graph.GetRootRegion(), stdout);
-  assert(is<GammaOperation>(gamma2));
+  assert(dynamic_cast<const GammaNode *>(gamma2));
 
   /* test entry and exit variable iterators */
 
@@ -152,12 +152,12 @@ test_control_constant_reduction()
   view(&graph.GetRootRegion(), stdout);
 
   // Assert
-  auto match = output::GetNode(*ex1.origin());
+  auto match = TryGetOwnerNode<Node>(*ex1.origin());
   assert(match && is<match_op>(match->GetOperation()));
   auto & match_op = to_match_op(match->GetOperation());
   assert(match_op.default_alternative() == 0);
 
-  assert(output::GetNode(*ex2.origin()) == gamma);
+  assert(TryGetOwnerNode<Node>(*ex2.origin()) == gamma);
 }
 
 static void
@@ -191,7 +191,7 @@ test_control_constant_reduction2()
   jlm::rvsdg::view(&graph.GetRootRegion(), stdout);
 
   // Assert
-  auto match = output::GetNode(*ex.origin());
+  auto match = TryGetOwnerNode<Node>(*ex.origin());
   assert(is<match_op>(match));
 }
 
@@ -230,7 +230,7 @@ TestRemoveGammaOutputsWhere()
 
   // Remove gammaOutput1
   gammaNode->RemoveGammaOutputsWhere(
-      [&](const jlm::rvsdg::output & output)
+      [&](const jlm::rvsdg::Output & output)
       {
         return output.index() == gammaOutput1.output->index();
       });
@@ -242,7 +242,7 @@ TestRemoveGammaOutputsWhere()
 
   // Try to remove gammaOutput2. This should result in no change as gammaOutput2 still has users.
   gammaNode->RemoveGammaOutputsWhere(
-      [&](const jlm::rvsdg::output & output)
+      [&](const jlm::rvsdg::Output & output)
       {
         return output.index() == gammaOutput2.output->index();
       });
@@ -324,7 +324,7 @@ TestIsInvariant()
       gammaNode->AddExitVar({ gammaInput0.branchArgument[0], gammaInput2.branchArgument[1] });
 
   // Act & Assert
-  std::optional<jlm::rvsdg::output *> invariantOrigin;
+  std::optional<jlm::rvsdg::Output *> invariantOrigin;
   invariantOrigin = jlm::rvsdg::GetGammaInvariantOrigin(*gammaNode, gammaOutput0);
   assert(invariantOrigin && *invariantOrigin == v0);
 

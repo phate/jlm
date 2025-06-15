@@ -23,11 +23,11 @@ MultipleReductionsPerRegion()
   const auto bitType = bittype::Create(32);
   const auto memoryStateType = MemoryStateType::Create();
 
-  jlm::llvm::RvsdgModule rvsdgModule(jlm::util::filepath(""), "", "");
+  jlm::llvm::RvsdgModule rvsdgModule(jlm::util::FilePath(""), "", "");
   auto & graph = rvsdgModule.Rvsdg();
 
   auto & sizeArgument = jlm::tests::GraphImport::Create(graph, bitType, "size");
-  auto allocaResults = alloca_op::create(bitType, &sizeArgument, 4);
+  auto allocaResults = AllocaOperation::create(bitType, &sizeArgument, 4);
 
   const auto c3 = bitconstant_op::create(&graph.GetRootRegion(), bitvalue_repr(32, 3));
   auto storeResults =

@@ -17,8 +17,8 @@
 namespace jlm::llvm
 {
 
-class aggnode;
-class variable;
+class AggregationNode;
+class Variable;
 
 class VariableSet final
 {
@@ -27,29 +27,29 @@ class VariableSet final
   {
   public:
     using iterator_category = std::forward_iterator_tag;
-    using value_type = const llvm::variable *;
+    using value_type = const llvm::Variable *;
     using difference_type = std::ptrdiff_t;
-    using pointer = const llvm::variable **;
-    using reference = const llvm::variable *&;
+    using pointer = const llvm::Variable **;
+    using reference = const llvm::Variable *&;
 
-    explicit ConstIterator(const std::unordered_set<const llvm::variable *>::const_iterator & it)
+    explicit ConstIterator(const std::unordered_set<const llvm::Variable *>::const_iterator & it)
         : It_(it)
     {}
 
   public:
-    const llvm::variable &
+    const llvm::Variable &
     GetVariable() const noexcept
     {
       return **It_;
     }
 
-    const llvm::variable &
+    const llvm::Variable &
     operator*() const
     {
       return GetVariable();
     }
 
-    const llvm::variable *
+    const llvm::Variable *
     operator->() const
     {
       return &GetVariable();
@@ -83,7 +83,7 @@ class VariableSet final
     }
 
   private:
-    std::unordered_set<const llvm::variable *>::const_iterator It_;
+    std::unordered_set<const llvm::Variable *>::const_iterator It_;
   };
 
   using ConstRange = util::IteratorRange<ConstIterator>;
@@ -91,7 +91,7 @@ class VariableSet final
 public:
   VariableSet() = default;
 
-  VariableSet(std::initializer_list<const variable *> init)
+  VariableSet(std::initializer_list<const Variable *> init)
       : Set_(init)
   {}
 
@@ -102,7 +102,7 @@ public:
   }
 
   bool
-  Contains(const variable & v) const
+  Contains(const Variable & v) const
   {
     return Set_.find(&v) != Set_.end();
   }
@@ -116,7 +116,7 @@ public:
     return std::all_of(
         variableSet.Set_.begin(),
         variableSet.Set_.end(),
-        [&](const variable * v)
+        [&](const Variable * v)
         {
           return Contains(*v);
         });
@@ -129,7 +129,7 @@ public:
   }
 
   void
-  Insert(const variable & v)
+  Insert(const Variable & v)
   {
     Set_.insert(&v);
   }
@@ -141,7 +141,7 @@ public:
   }
 
   void
-  Remove(const variable & v)
+  Remove(const Variable & v)
   {
     Set_.erase(&v);
   }
@@ -174,7 +174,7 @@ public:
     return std::all_of(
         Set_.begin(),
         Set_.end(),
-        [&](const variable * v)
+        [&](const Variable * v)
         {
           return Contains(*v);
         });
@@ -190,7 +190,7 @@ public:
   DebugString() const noexcept;
 
 private:
-  std::unordered_set<const variable *> Set_;
+  std::unordered_set<const Variable *> Set_;
 };
 
 class AnnotationSet
@@ -494,14 +494,14 @@ public:
   operator=(AnnotationMap &&) noexcept = delete;
 
   bool
-  Contains(const aggnode & aggregationNode) const noexcept
+  Contains(const AggregationNode & aggregationNode) const noexcept
   {
     return Map_.find(&aggregationNode) != Map_.end();
   }
 
   template<class T>
   T &
-  Lookup(const aggnode & aggregationNode) const noexcept
+  Lookup(const AggregationNode & aggregationNode) const noexcept
   {
     JLM_ASSERT(Contains(aggregationNode));
     auto & demandSet = Map_.find(&aggregationNode)->second;
@@ -509,7 +509,7 @@ public:
   }
 
   void
-  Insert(const aggnode & aggregationNode, std::unique_ptr<AnnotationSet> annotationSet)
+  Insert(const AggregationNode & aggregationNode, std::unique_ptr<AnnotationSet> annotationSet)
   {
     JLM_ASSERT(!Contains(aggregationNode));
     Map_[&aggregationNode] = std::move(annotationSet);
@@ -522,11 +522,11 @@ public:
   }
 
 private:
-  std::unordered_map<const aggnode *, std::unique_ptr<AnnotationSet>> Map_;
+  std::unordered_map<const AggregationNode *, std::unique_ptr<AnnotationSet>> Map_;
 };
 
 std::unique_ptr<AnnotationMap>
-Annotate(const aggnode & aggregationTreeRoot);
+Annotate(const AggregationNode & aggregationTreeRoot);
 
 }
 

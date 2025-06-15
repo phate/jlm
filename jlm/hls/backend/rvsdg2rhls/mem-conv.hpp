@@ -46,7 +46,7 @@ MemoryConverter(llvm::RvsdgModule & rm);
  * @param originalDecoupledNodes The decouple nodes to be connected to the reponse port
  * @result The request output to which the memory operations are connected
  */
-jlm::rvsdg::output *
+jlm::rvsdg::Output *
 ConnectRequestResponseMemPorts(
     const rvsdg::LambdaNode * lambda,
     size_t argumentIndex,
@@ -59,10 +59,13 @@ jlm::rvsdg::SimpleNode *
 ReplaceLoad(
     rvsdg::SubstitutionMap & smap,
     const jlm::rvsdg::SimpleNode * originalLoad,
-    jlm::rvsdg::output * response);
+    jlm::rvsdg::Output * response);
 
 jlm::rvsdg::SimpleNode *
-ReplaceStore(rvsdg::SubstitutionMap & smap, const jlm::rvsdg::SimpleNode * originalStore);
+ReplaceStore(
+    rvsdg::SubstitutionMap & smap,
+    const jlm::rvsdg::SimpleNode * originalStore,
+    rvsdg::Output * response);
 
 } // namespace jlm::hls
 

@@ -20,19 +20,17 @@ namespace jlm::llvm
 CallSummary
 ComputeCallSummary(const rvsdg::LambdaNode & lambdaNode)
 {
-  std::deque<rvsdg::input *> worklist;
+  std::deque<rvsdg::Input *> worklist;
   worklist.insert(worklist.end(), lambdaNode.output()->begin(), lambdaNode.output()->end());
 
   std::vector<rvsdg::SimpleNode *> directCalls;
   GraphExport * rvsdgExport = nullptr;
-  std::vector<rvsdg::input *> otherUsers;
+  std::vector<rvsdg::Input *> otherUsers;
 
   while (!worklist.empty())
   {
     auto input = worklist.front();
     worklist.pop_front();
-
-    auto inputNode = rvsdg::input::GetNode(*input);
 
     if (auto lambdaNode = rvsdg::TryGetOwnerNode<rvsdg::LambdaNode>(*input))
     {
@@ -47,11 +45,15 @@ ComputeCallSummary(const rvsdg::LambdaNode & lambdaNode)
       continue;
     }
 
-    if (auto gammaNode = dynamic_cast<rvsdg::GammaNode *>(inputNode))
+    if (auto gammaNode = rvsdg::TryGetOwnerNode<rvsdg::GammaNode>(*input))
     {
-      for (auto & argument : gammaNode->MapInputEntryVar(*input).branchArgument)
+      auto rolevar = gammaNode->MapInput(*input);
+      if (auto entryvar = std::get_if<rvsdg::GammaNode::EntryVar>(&rolevar))
       {
-        worklist.insert(worklist.end(), argument->begin(), argument->end());
+        for (auto & argument : entryvar->branchArgument)
+        {
+          worklist.insert(worklist.end(), argument->begin(), argument->end());
+        }
       }
       continue;
     }
@@ -107,9 +109,10 @@ ComputeCallSummary(const rvsdg::LambdaNode & lambdaNode)
       continue;
     }
 
+    auto inputNode = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*input);
     if (is<CallOperation>(inputNode) && input == inputNode->input(0))
     {
-      directCalls.emplace_back(util::AssertedCast<rvsdg::SimpleNode>(inputNode));
+      directCalls.emplace_back(inputNode);
       continue;
     }
 

@@ -37,7 +37,7 @@ class DeadNodeElimination::Context final
 {
 public:
   void
-  MarkAlive(const jlm::rvsdg::output & output)
+  MarkAlive(const jlm::rvsdg::Output & output)
   {
     if (auto simpleOutput = dynamic_cast<const rvsdg::SimpleOutput *>(&output))
     {
@@ -49,7 +49,7 @@ public:
   }
 
   bool
-  IsAlive(const jlm::rvsdg::output & output) const noexcept
+  IsAlive(const jlm::rvsdg::Output & output) const noexcept
   {
     if (auto simpleOutput = dynamic_cast<const rvsdg::SimpleOutput *>(&output))
     {
@@ -86,7 +86,7 @@ public:
 
 private:
   util::HashSet<const jlm::rvsdg::SimpleNode *> SimpleNodes_;
-  util::HashSet<const jlm::rvsdg::output *> Outputs_;
+  util::HashSet<const jlm::rvsdg::Output *> Outputs_;
 };
 
 /** \brief Dead Node Elimination statistics class
@@ -100,7 +100,7 @@ class DeadNodeElimination::Statistics final : public util::Statistics
 public:
   ~Statistics() override = default;
 
-  explicit Statistics(const util::filepath & sourceFile)
+  explicit Statistics(const util::FilePath & sourceFile)
       : util::Statistics(Statistics::Id::DeadNodeElimination, sourceFile)
   {}
 
@@ -133,7 +133,7 @@ public:
   }
 
   static std::unique_ptr<Statistics>
-  Create(const util::filepath & sourceFile)
+  Create(const util::FilePath & sourceFile)
   {
     return std::make_unique<Statistics>(sourceFile);
   }
@@ -188,7 +188,7 @@ DeadNodeElimination::MarkRegion(const rvsdg::Region & region)
 }
 
 void
-DeadNodeElimination::MarkOutput(const jlm::rvsdg::output & output)
+DeadNodeElimination::MarkOutput(const jlm::rvsdg::Output & output)
 {
   if (Context_->IsAlive(output))
   {
@@ -214,7 +214,13 @@ DeadNodeElimination::MarkOutput(const jlm::rvsdg::output & output)
 
   if (auto gamma = rvsdg::TryGetRegionParentNode<rvsdg::GammaNode>(output))
   {
-    MarkOutput(*gamma->MapBranchArgumentEntryVar(output).input->origin());
+    auto external_origin = std::visit(
+        [](const auto & rolevar) -> rvsdg::Output *
+        {
+          return rolevar.input->origin();
+        },
+        gamma->MapBranchArgument(output));
+    MarkOutput(*external_origin);
     return;
   }
 
@@ -389,7 +395,7 @@ DeadNodeElimination::SweepStructuralNode(rvsdg::StructuralNode & node) const
             { typeid(rvsdg::ThetaOperation), sweepTheta },
             { typeid(llvm::LlvmLambdaOperation), sweepLambda },
             { typeid(rvsdg::PhiOperation), sweepPhi },
-            { typeid(delta::operation), sweepDelta } });
+            { typeid(DeltaOperation), sweepDelta } });
 
   auto & op = node.GetOperation();
   JLM_ASSERT(map.find(typeid(op)) != map.end());
@@ -399,20 +405,16 @@ DeadNodeElimination::SweepStructuralNode(rvsdg::StructuralNode & node) const
 void
 DeadNodeElimination::SweepGamma(rvsdg::GammaNode & gammaNode) const
 {
-  // Remove dead outputs and results
-  for (size_t n = gammaNode.noutputs() - 1; n != static_cast<size_t>(-1); n--)
+  // Remove dead exit vars.
+  std::vector<rvsdg::GammaNode::ExitVar> deadExitVars;
+  for (const auto & exitvar : gammaNode.GetExitVars())
   {
-    if (Context_->IsAlive(*gammaNode.output(n)))
+    if (!Context_->IsAlive(*exitvar.output))
     {
-      continue;
+      deadExitVars.push_back(exitvar);
     }
-
-    for (size_t r = 0; r < gammaNode.nsubregions(); r++)
-    {
-      gammaNode.subregion(r)->RemoveResult(n);
-    }
-    gammaNode.RemoveOutput(n);
   }
+  gammaNode.RemoveExitVars(deadExitVars);
 
   // Sweep gamma subregions
   for (size_t r = 0; r < gammaNode.nsubregions(); r++)
@@ -420,29 +422,23 @@ DeadNodeElimination::SweepGamma(rvsdg::GammaNode & gammaNode) const
     SweepRegion(*gammaNode.subregion(r));
   }
 
-  // Remove dead arguments and inputs
-  for (size_t n = gammaNode.ninputs() - 1; n >= 1; n--)
+  // Remove dead entry vars.
+  std::vector<rvsdg::GammaNode::EntryVar> deadEntryVars;
+  for (const auto & entryvar : gammaNode.GetEntryVars())
   {
-    auto input = gammaNode.input(n);
-
-    bool alive = false;
-    for (auto & argument : input->arguments)
-    {
-      if (Context_->IsAlive(argument))
-      {
-        alive = true;
-        break;
-      }
-    }
+    bool alive = std::any_of(
+        entryvar.branchArgument.begin(),
+        entryvar.branchArgument.end(),
+        [this](const rvsdg::Output * arg)
+        {
+          return Context_->IsAlive(*arg);
+        });
     if (!alive)
     {
-      for (size_t r = 0; r < gammaNode.nsubregions(); r++)
-      {
-        gammaNode.subregion(r)->RemoveArgument(n - 1);
-      }
-      gammaNode.RemoveInput(n);
+      deadEntryVars.push_back(entryvar);
     }
   }
+  gammaNode.RemoveEntryVars(deadEntryVars);
 }
 
 void

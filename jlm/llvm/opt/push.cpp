@@ -22,7 +22,7 @@ class pushstat final : public util::Statistics
 public:
   ~pushstat() override = default;
 
-  explicit pushstat(const util::filepath & sourceFile)
+  explicit pushstat(const util::FilePath & sourceFile)
       : Statistics(Statistics::Id::PushNodes, sourceFile)
   {}
 
@@ -41,7 +41,7 @@ public:
   }
 
   static std::unique_ptr<pushstat>
-  Create(const util::filepath & sourceFile)
+  Create(const util::FilePath & sourceFile)
   {
     return std::make_unique<pushstat>(sourceFile);
   }
@@ -87,7 +87,7 @@ has_side_effects(const rvsdg::Node * node)
 {
   for (size_t n = 0; n < node->noutputs(); n++)
   {
-    if (dynamic_cast<const rvsdg::StateType *>(&node->output(n)->type()))
+    if (rvsdg::is<const rvsdg::StateType>(node->output(n)->Type()))
       return true;
   }
 
@@ -97,13 +97,13 @@ has_side_effects(const rvsdg::Node * node)
 static std::vector<rvsdg::RegionArgument *>
 copy_from_gamma(rvsdg::Node * node, size_t r)
 {
-  JLM_ASSERT(jlm::rvsdg::is<rvsdg::GammaOperation>(node->region()->node()));
+  JLM_ASSERT(dynamic_cast<rvsdg::GammaNode *>(node->region()->node()));
   JLM_ASSERT(node->depth() == 0);
 
   auto target = node->region()->node()->region();
   auto gamma = static_cast<rvsdg::GammaNode *>(node->region()->node());
 
-  std::vector<jlm::rvsdg::output *> operands;
+  std::vector<jlm::rvsdg::Output *> operands;
   for (size_t n = 0; n < node->ninputs(); n++)
   {
     JLM_ASSERT(dynamic_cast<const rvsdg::RegionArgument *>(node->input(n)->origin()));
@@ -123,16 +123,16 @@ copy_from_gamma(rvsdg::Node * node, size_t r)
   return arguments;
 }
 
-static std::vector<rvsdg::output *>
+static std::vector<rvsdg::Output *>
 copy_from_theta(rvsdg::Node * node)
 {
-  JLM_ASSERT(is<rvsdg::ThetaOperation>(node->region()->node()));
+  JLM_ASSERT(dynamic_cast<const rvsdg::ThetaNode *>(node->region()->node()));
   JLM_ASSERT(node->depth() == 0);
 
   auto target = node->region()->node()->region();
   auto theta = static_cast<rvsdg::ThetaNode *>(node->region()->node());
 
-  std::vector<jlm::rvsdg::output *> operands;
+  std::vector<jlm::rvsdg::Output *> operands;
   for (size_t n = 0; n < node->ninputs(); n++)
   {
     JLM_ASSERT(dynamic_cast<const rvsdg::RegionArgument *>(node->input(n)->origin()));
@@ -140,7 +140,7 @@ copy_from_theta(rvsdg::Node * node)
     operands.push_back(argument->input()->origin());
   }
 
-  std::vector<rvsdg::output *> arguments;
+  std::vector<rvsdg::Output *> arguments;
   auto copy = node->copy(target, operands);
   for (size_t n = 0; n < copy->noutputs(); n++)
   {
@@ -179,7 +179,7 @@ push(rvsdg::GammaNode * gamma)
       auto argument = region->argument(n);
       for (const auto & user : *argument)
       {
-        auto tmp = jlm::rvsdg::input::GetNode(*user);
+        auto tmp = rvsdg::TryGetOwnerNode<rvsdg::Node>(*user);
         if (tmp && tmp->depth() == 0)
           wl.push_back(tmp);
       }
@@ -200,7 +200,7 @@ push(rvsdg::GammaNode * gamma)
       {
         for (const auto & user : *argument)
         {
-          auto tmp = jlm::rvsdg::input::GetNode(*user);
+          auto tmp = rvsdg::TryGetOwnerNode<rvsdg::Node>(*user);
           if (tmp && tmp->depth() == 0)
             wl.push_back(tmp);
         }
@@ -210,9 +210,9 @@ push(rvsdg::GammaNode * gamma)
 }
 
 static bool
-is_theta_invariant(const rvsdg::Node * node, const std::unordered_set<rvsdg::output *> & invariants)
+is_theta_invariant(const rvsdg::Node * node, const std::unordered_set<rvsdg::Output *> & invariants)
 {
-  JLM_ASSERT(is<rvsdg::ThetaOperation>(node->region()->node()));
+  JLM_ASSERT(dynamic_cast<const rvsdg::ThetaNode *>(node->region()->node()));
   JLM_ASSERT(node->depth() == 0);
 
   for (size_t n = 0; n < node->ninputs(); n++)
@@ -239,7 +239,7 @@ push_top(rvsdg::ThetaNode * theta)
   }
 
   /* collect loop invariant arguments */
-  std::unordered_set<rvsdg::output *> invariants;
+  std::unordered_set<rvsdg::Output *> invariants;
   for (const auto & lv : theta->GetLoopVars())
   {
     if (lv.post->origin() == lv.pre)
@@ -253,7 +253,7 @@ push_top(rvsdg::ThetaNode * theta)
     auto argument = lv.pre;
     for (const auto & user : *argument)
     {
-      auto tmp = jlm::rvsdg::input::GetNode(*user);
+      auto tmp = rvsdg::TryGetOwnerNode<rvsdg::Node>(*user);
       if (tmp && tmp->depth() == 0 && is_theta_invariant(tmp, invariants))
         wl.push_back(tmp);
     }
@@ -276,7 +276,7 @@ push_top(rvsdg::ThetaNode * theta)
     {
       for (const auto & user : *argument)
       {
-        auto tmp = jlm::rvsdg::input::GetNode(*user);
+        auto tmp = rvsdg::TryGetOwnerNode<rvsdg::Node>(*user);
         if (tmp && tmp->depth() == 0 && is_theta_invariant(tmp, invariants))
           wl.push_back(tmp);
       }
@@ -287,14 +287,14 @@ push_top(rvsdg::ThetaNode * theta)
 static bool
 is_invariant(const rvsdg::RegionArgument * argument)
 {
-  JLM_ASSERT(is<rvsdg::ThetaOperation>(argument->region()->node()));
+  JLM_ASSERT(dynamic_cast<const rvsdg::ThetaNode *>(argument->region()->node()));
   return argument->region()->result(argument->index() + 1)->origin() == argument;
 }
 
 static bool
 is_movable_store(rvsdg::Node * node)
 {
-  JLM_ASSERT(is<rvsdg::ThetaOperation>(node->region()->node()));
+  JLM_ASSERT(dynamic_cast<const rvsdg::ThetaNode *>(node->region()->node()));
   JLM_ASSERT(jlm::rvsdg::is<StoreNonVolatileOperation>(node));
 
   auto address = dynamic_cast<rvsdg::RegionArgument *>(node->input(0)->origin());
@@ -324,7 +324,7 @@ is_movable_store(rvsdg::Node * node)
 static void
 pushout_store(rvsdg::Node * storenode)
 {
-  JLM_ASSERT(is<rvsdg::ThetaOperation>(storenode->region()->node()));
+  JLM_ASSERT(dynamic_cast<const rvsdg::ThetaNode *>(storenode->region()->node()));
   JLM_ASSERT(jlm::rvsdg::is<StoreNonVolatileOperation>(storenode) && is_movable_store(storenode));
   auto theta = static_cast<rvsdg::ThetaNode *>(storenode->region()->node());
   auto storeop = static_cast<const StoreNonVolatileOperation *>(&storenode->GetOperation());
@@ -336,7 +336,7 @@ pushout_store(rvsdg::Node * storenode)
   nvalue.post->divert_to(ovalue);
 
   /* collect store operands */
-  std::vector<jlm::rvsdg::output *> states;
+  std::vector<jlm::rvsdg::Output *> states;
   auto address = oaddress->input()->origin();
   for (size_t n = 0; n < storenode->noutputs(); n++)
   {
@@ -351,10 +351,11 @@ pushout_store(rvsdg::Node * storenode)
       StoreNonVolatileOperation::Create(address, nvalue.output, states, storeop->GetAlignment());
   for (size_t n = 0; n < states.size(); n++)
   {
-    std::unordered_set<jlm::rvsdg::input *> users;
+    std::unordered_set<jlm::rvsdg::Input *> users;
     for (const auto & user : *states[n])
     {
-      if (jlm::rvsdg::input::GetNode(*user) != jlm::rvsdg::output::GetNode(*nstates[0]))
+      if (rvsdg::TryGetOwnerNode<rvsdg::Node>(*user)
+          != rvsdg::TryGetOwnerNode<rvsdg::Node>(*nstates[0]))
         users.insert(user);
     }
 
@@ -370,10 +371,10 @@ push_bottom(rvsdg::ThetaNode * theta)
 {
   for (const auto & lv : theta->GetLoopVars())
   {
-    auto storenode = jlm::rvsdg::output::GetNode(*lv.post->origin());
-    if (jlm::rvsdg::is<StoreNonVolatileOperation>(storenode) && is_movable_store(storenode))
+    const auto storeNode = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*lv.post->origin());
+    if (jlm::rvsdg::is<StoreNonVolatileOperation>(storeNode) && is_movable_store(storeNode))
     {
-      pushout_store(storenode);
+      pushout_store(storeNode);
       break;
     }
   }

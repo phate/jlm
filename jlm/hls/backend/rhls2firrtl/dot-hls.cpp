@@ -68,7 +68,7 @@ DotHLS::node_to_dot(const rvsdg::Node * node)
 {
   auto SPACER = "                    <TD WIDTH=\"10\"></TD>\n";
   auto name = get_node_name(node);
-  auto opname = node->GetOperation().debug_string();
+  auto opname = node->DebugString();
   std::replace_if(opname.begin(), opname.end(), isForbiddenChar, '_');
 
   std::string inputs;
@@ -97,23 +97,23 @@ DotHLS::node_to_dot(const rvsdg::Node * node)
   }
 
   std::string color = "black";
-  if (jlm::rvsdg::is<hls::buffer_op>(node))
+  if (jlm::rvsdg::is<BufferOperation>(node))
   {
     color = "blue";
   }
-  else if (jlm::rvsdg::is<hls::fork_op>(node))
+  else if (jlm::rvsdg::is<ForkOperation>(node))
   {
     color = "grey";
   }
-  else if (jlm::rvsdg::is<hls::sink_op>(node))
+  else if (jlm::rvsdg::is<SinkOperation>(node))
   {
     color = "grey";
   }
-  else if (jlm::rvsdg::is<hls::branch_op>(node))
+  else if (jlm::rvsdg::is<BranchOperation>(node))
   {
     color = "green";
   }
-  else if (jlm::rvsdg::is<hls::mux_op>(node))
+  else if (jlm::rvsdg::is<MuxOperation>(node))
   {
     color = "darkred";
   }
@@ -121,7 +121,7 @@ DotHLS::node_to_dot(const rvsdg::Node * node)
   {
     color = "pink";
   }
-  else if (jlm::rvsdg::is<hls::trigger_op>(node) || hls::is_constant(node))
+  else if (jlm::rvsdg::is<TriggerOperation>(node) || is_constant(node))
   {
     color = "orange";
   }
@@ -202,7 +202,7 @@ DotHLS::loop_to_dot(hls::loop_node * ln)
   dot << "subgraph cluster_loop_" << loop_ctr++ << " {\n";
   dot << "color=\"#ff8080\"\n";
 
-  std::set<jlm::rvsdg::output *> back_outputs;
+  std::set<jlm::rvsdg::Output *> back_outputs;
   std::set<rvsdg::Node *> top_nodes; // no artificial top nodes for now
   for (size_t i = 0; i < sr->narguments(); ++i)
   {
@@ -240,7 +240,7 @@ DotHLS::loop_to_dot(hls::loop_node * ln)
     else
     {
       throw jlm::util::error(
-          "Unimplemented op (unexpected structural node) : " + node->GetOperation().debug_string());
+          "Unimplemented op (unexpected structural node) : " + node->DebugString());
     }
   }
 
@@ -248,8 +248,8 @@ DotHLS::loop_to_dot(hls::loop_node * ln)
   dot << "{rank=same ";
   for (auto node : rvsdg::TopDownTraverser(sr))
   {
-    auto mx = dynamic_cast<const hls::mux_op *>(&node->GetOperation());
-    auto lc = dynamic_cast<const hls::loop_constant_buffer_op *>(&node->GetOperation());
+    auto mx = dynamic_cast<const MuxOperation *>(&node->GetOperation());
+    auto lc = dynamic_cast<const LoopConstantBufferOperation *>(&node->GetOperation());
     if ((mx && !mx->discarding && mx->loop) || lc)
     {
       dot << get_node_name(node) << " ";
@@ -260,7 +260,7 @@ DotHLS::loop_to_dot(hls::loop_node * ln)
   dot << "{rank=same ";
   for (auto node : rvsdg::TopDownTraverser(sr))
   {
-    auto br = dynamic_cast<const hls::branch_op *>(&node->GetOperation());
+    auto br = dynamic_cast<const BranchOperation *>(&node->GetOperation());
     if (br && br->loop)
     {
       dot << get_node_name(node) << " ";
@@ -274,7 +274,7 @@ DotHLS::loop_to_dot(hls::loop_node * ln)
   {
     if (dynamic_cast<jlm::rvsdg::SimpleNode *>(node))
     {
-      auto mx = dynamic_cast<const hls::mux_op *>(&node->GetOperation());
+      auto mx = dynamic_cast<const MuxOperation *>(&node->GetOperation());
       auto node_name = get_node_name(node);
       for (size_t i = 0; i < node->ninputs(); ++i)
       {
@@ -284,14 +284,14 @@ DotHLS::loop_to_dot(hls::loop_node * ln)
         // implement edge as back edge when it produces a cycle
         bool back = mx && !mx->discarding && mx->loop
                  && (/*i==0||*/ i == 2); // back_outputs.count(node->input(i)->origin());
-        auto origin_out = dynamic_cast<jlm::rvsdg::node_output *>(node->input(i)->origin());
-        if (origin_out
-            && dynamic_cast<const predicate_buffer_op *>(&origin_out->node()->GetOperation()))
+        auto origin_out_node = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*node->input(i)->origin());
+        if (origin_out_node
+            && dynamic_cast<const PredicateBufferOperation *>(&origin_out_node->GetOperation()))
         {
           //
           back = true;
         }
-        dot << edge(origin, in_name, node->input(i)->type(), back);
+        dot << edge(origin, in_name, *node->input(i)->Type(), back);
       }
     }
   }
@@ -322,7 +322,7 @@ DotHLS::prepare_loop_out_port(hls::loop_node * ln)
     else
     {
       throw jlm::util::error(
-          "Unimplemented op (unexpected structural node) : " + node->GetOperation().debug_string());
+          "Unimplemented op (unexpected structural node) : " + node->DebugString());
     }
   }
   for (size_t i = 0; i < sr->narguments(); ++i)
@@ -338,7 +338,7 @@ DotHLS::prepare_loop_out_port(hls::loop_node * ln)
     else
     {
       auto result = ba->result();
-      JLM_ASSERT(result->type() == arg->type());
+      JLM_ASSERT(*result->Type() == *arg->Type());
       // map to end of loop (origin of associated result)
       output_map[arg] = output_map[result->origin()];
     }
@@ -398,7 +398,7 @@ DotHLS::subregion_to_dot(rvsdg::Region * sr)
         auto in_name = node_name + ":" + get_port_name(node->input(i));
         JLM_ASSERT(output_map.count(node->input(i)->origin()));
         auto origin = output_map[node->input(i)->origin()];
-        dot << edge(origin, in_name, node->input(i)->type());
+        dot << edge(origin, in_name, *node->input(i)->Type());
       }
       for (size_t i = 0; i < node->noutputs(); ++i)
       {
@@ -414,7 +414,7 @@ DotHLS::subregion_to_dot(rvsdg::Region * sr)
     else
     {
       throw jlm::util::error(
-          "Unimplemented op (unexpected structural node) : " + node->GetOperation().debug_string());
+          "Unimplemented op (unexpected structural node) : " + node->DebugString());
     }
   }
   // process results
@@ -422,7 +422,7 @@ DotHLS::subregion_to_dot(rvsdg::Region * sr)
   {
     auto origin = output_map[sr->result(i)->origin()];
     auto result = get_port_name(sr->result(i));
-    dot << edge(origin, result, sr->result(i)->type());
+    dot << edge(origin, result, *sr->result(i)->Type());
   }
   dot << "}\n";
   dot << "}\n";

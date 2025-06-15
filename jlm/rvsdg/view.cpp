@@ -15,7 +15,7 @@ static std::string
 region_to_string(
     const rvsdg::Region * region,
     size_t depth,
-    std::unordered_map<const output *, std::string> &);
+    std::unordered_map<const Output *, std::string> &);
 
 static std::string
 indent(size_t depth)
@@ -25,8 +25,8 @@ indent(size_t depth)
 
 static std::string
 create_port_name(
-    const jlm::rvsdg::output * port,
-    std::unordered_map<const output *, std::string> & map)
+    const jlm::rvsdg::Output * port,
+    std::unordered_map<const Output *, std::string> & map)
 {
   std::string name = dynamic_cast<const rvsdg::RegionArgument *>(port) ? "a" : "o";
   name += jlm::util::strfmt(map.size());
@@ -37,7 +37,7 @@ static std::string
 node_to_string(
     const Node * node,
     size_t depth,
-    std::unordered_map<const output *, std::string> & map)
+    std::unordered_map<const Output *, std::string> & map)
 {
   std::string s(indent(depth));
   for (size_t n = 0; n < node->noutputs(); n++)
@@ -47,7 +47,7 @@ node_to_string(
     s = s + name + " ";
   }
 
-  s += ":= " + node->GetOperation().debug_string() + " ";
+  s += ":= " + node->DebugString() + " ";
 
   for (size_t n = 0; n < node->ninputs(); n++)
   {
@@ -67,7 +67,7 @@ node_to_string(
 }
 
 static std::string
-region_header(const rvsdg::Region * region, std::unordered_map<const output *, std::string> & map)
+region_header(const rvsdg::Region * region, std::unordered_map<const Output *, std::string> & map)
 {
   std::string header("[");
   for (size_t n = 0; n < region->narguments(); n++)
@@ -92,7 +92,7 @@ static std::string
 region_body(
     const rvsdg::Region * region,
     size_t depth,
-    std::unordered_map<const output *, std::string> & map)
+    std::unordered_map<const Output *, std::string> & map)
 {
   std::vector<std::vector<const Node *>> context;
   for (const auto & node : region->Nodes())
@@ -113,7 +113,7 @@ region_body(
 }
 
 static std::string
-region_footer(const rvsdg::Region * region, std::unordered_map<const output *, std::string> & map)
+region_footer(const rvsdg::Region * region, std::unordered_map<const Output *, std::string> & map)
 {
   std::string footer("}[");
   for (size_t n = 0; n < region->nresults(); n++)
@@ -137,7 +137,7 @@ static std::string
 region_to_string(
     const rvsdg::Region * region,
     size_t depth,
-    std::unordered_map<const output *, std::string> & map)
+    std::unordered_map<const Output *, std::string> & map)
 {
   std::string s;
   s = indent(depth) + region_header(region, map) + "\n";
@@ -149,12 +149,12 @@ region_to_string(
 std::string
 view(const rvsdg::Region * region)
 {
-  std::unordered_map<const output *, std::string> map;
+  std::unordered_map<const Output *, std::string> map;
   return view(region, map);
 }
 
 std::string
-view(const rvsdg::Region * region, std::unordered_map<const output *, std::string> & map)
+view(const rvsdg::Region * region, std::unordered_map<const Output *, std::string> & map)
 {
   return region_to_string(region, 0, map);
 }
@@ -182,13 +182,13 @@ xml_footer()
 }
 
 static inline std::string
-id(const jlm::rvsdg::output * port)
+id(const jlm::rvsdg::Output * port)
 {
   return jlm::util::strfmt("o", (intptr_t)port);
 }
 
 static inline std::string
-id(const jlm::rvsdg::input * port)
+id(const jlm::rvsdg::Input * port)
 {
   return jlm::util::strfmt("i", (intptr_t)port);
 }
@@ -262,10 +262,10 @@ edge_tag(const std::string & srcid, const std::string & dstid)
 static inline std::string
 type(const Node * n)
 {
-  if (dynamic_cast<const GammaOperation *>(&n->GetOperation()))
+  if (dynamic_cast<const GammaNode *>(n))
     return "gamma";
 
-  if (dynamic_cast<const ThetaOperation *>(&n->GetOperation()))
+  if (dynamic_cast<const ThetaNode *>(n))
     return "theta";
 
   return "";
@@ -279,7 +279,7 @@ convert_simple_node(const jlm::rvsdg::SimpleNode * node)
 {
   std::string s;
 
-  s += node_starttag(id(node), node->GetOperation().debug_string(), "");
+  s += node_starttag(id(node), node->DebugString(), "");
   for (size_t n = 0; n < node->ninputs(); n++)
     s += input_tag(id(node->input(n)));
   for (size_t n = 0; n < node->noutputs(); n++)

@@ -26,19 +26,13 @@ add_prints(rvsdg::Region * region)
         add_prints(structnode->subregion(n));
       }
     }
-    //		if (auto lo = dynamic_cast<const jlm::load_op *>(&(node->operation()))) {
-    //
-    //		} else if (auto so = dynamic_cast<const jlm::store_op *>(&(node->operation()))) {
-    //			auto po = hls::print_op::create(*node->input(1)->origin())[0];
-    //			node->input(1)->divert_to(po);
-    //		}
     if (dynamic_cast<jlm::rvsdg::SimpleNode *>(node) && node->noutputs() == 1
-        && jlm::rvsdg::is<jlm::rvsdg::bittype>(node->output(0)->type())
+        && jlm::rvsdg::is<rvsdg::bittype>(node->output(0)->Type())
         && !jlm::rvsdg::is<llvm::UndefValueOperation>(node))
     {
       auto out = node->output(0);
-      std::vector<jlm::rvsdg::input *> old_users(out->begin(), out->end());
-      auto new_out = hls::print_op::create(*out)[0];
+      std::vector<jlm::rvsdg::Input *> old_users(out->begin(), out->end());
+      auto new_out = PrintOperation::create(*out)[0];
       for (auto user : old_users)
       {
         user->divert_to(new_out);
@@ -69,8 +63,8 @@ convert_prints(llvm::RvsdgModule & rm)
 }
 
 // TODO: get rid of this and use inlining version instead
-jlm::rvsdg::output *
-route_to_region_rvsdg(jlm::rvsdg::output * output, rvsdg::Region * region)
+jlm::rvsdg::Output *
+route_to_region_rvsdg(jlm::rvsdg::Output * output, rvsdg::Region * region)
 {
   JLM_ASSERT(region != nullptr);
 
@@ -103,7 +97,7 @@ route_to_region_rvsdg(jlm::rvsdg::output * output, rvsdg::Region * region)
 void
 convert_prints(
     rvsdg::Region * region,
-    jlm::rvsdg::output * printf,
+    jlm::rvsdg::Output * printf,
     const std::shared_ptr<const rvsdg::FunctionType> & functionType)
 {
   for (auto & node : rvsdg::TopDownTraverser(region))
@@ -115,14 +109,14 @@ convert_prints(
         convert_prints(structnode->subregion(n), printf, functionType);
       }
     }
-    else if (auto po = dynamic_cast<const print_op *>(&(node->GetOperation())))
+    else if (auto po = dynamic_cast<const PrintOperation *>(&(node->GetOperation())))
     {
       auto printf_local = route_to_region_rvsdg(printf, region); // TODO: prevent repetition?
       auto & constantNode = llvm::IntegerConstantOperation::Create(*region, 64, po->id());
-      jlm::rvsdg::output * val = node->input(0)->origin();
-      if (val->type() != *jlm::rvsdg::bittype::Create(64))
+      jlm::rvsdg::Output * val = node->input(0)->origin();
+      if (*val->Type() != *jlm::rvsdg::bittype::Create(64))
       {
-        auto bt = dynamic_cast<const jlm::rvsdg::bittype *>(&val->type());
+        auto bt = std::dynamic_pointer_cast<const rvsdg::bittype>(val->Type());
         JLM_ASSERT(bt);
         val = &llvm::ZExtOperation::Create(*val, rvsdg::bittype::Create(64));
       }

@@ -26,7 +26,7 @@ RegionArgument::RegionArgument(
     rvsdg::Region * region,
     StructuralInput * input,
     std::shared_ptr<const rvsdg::Type> type)
-    : output(region, std::move(type)),
+    : Output(region, std::move(type)),
       input_(input)
 {
   if (input)
@@ -34,9 +34,9 @@ RegionArgument::RegionArgument(
     if (input->node() != region->node())
       throw jlm::util::error("Argument cannot be added to input.");
 
-    if (input->type() != *Type())
+    if (*input->Type() != *Type())
     {
-      throw util::type_error(Type()->debug_string(), input->type().debug_string());
+      throw util::TypeError(Type()->debug_string(), input->Type()->debug_string());
     }
 
     input->arguments.push_back(this);
@@ -82,10 +82,10 @@ RegionResult::~RegionResult() noexcept
 
 RegionResult::RegionResult(
     rvsdg::Region * region,
-    jlm::rvsdg::output * origin,
+    jlm::rvsdg::Output * origin,
     StructuralOutput * output,
     std::shared_ptr<const rvsdg::Type> type)
-    : input(origin, region, std::move(type)),
+    : Input(origin, region, std::move(type)),
       output_(output)
 {
   if (output)
@@ -95,7 +95,7 @@ RegionResult::RegionResult(
 
     if (*Type() != *output->Type())
     {
-      throw jlm::util::type_error(Type()->debug_string(), output->Type()->debug_string());
+      throw jlm::util::TypeError(Type()->debug_string(), output->Type()->debug_string());
     }
 
     output->results.push_back(this);
@@ -115,7 +115,7 @@ RegionResult::GetOwner() const noexcept
 }
 
 RegionResult &
-RegionResult::Copy(rvsdg::output & origin, StructuralOutput * output)
+RegionResult::Copy(rvsdg::Output & origin, StructuralOutput * output)
 {
   return RegionResult::Create(*origin.region(), origin, output, origin.Type());
 }
@@ -123,7 +123,7 @@ RegionResult::Copy(rvsdg::output & origin, StructuralOutput * output)
 RegionResult &
 RegionResult::Create(
     rvsdg::Region & region,
-    rvsdg::output & origin,
+    rvsdg::Output & origin,
     StructuralOutput * output,
     std::shared_ptr<const rvsdg::Type> type)
 {
@@ -451,7 +451,7 @@ Region::ToTree(
   {
     if (auto structuralNode = dynamic_cast<const rvsdg::StructuralNode *>(&node))
     {
-      auto nodeString = structuralNode->GetOperation().debug_string();
+      auto nodeString = structuralNode->DebugString();
       auto annotationString = GetAnnotationString(
           structuralNode,
           annotationMap,

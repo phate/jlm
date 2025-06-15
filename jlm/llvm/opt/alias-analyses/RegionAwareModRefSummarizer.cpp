@@ -404,9 +404,9 @@ public:
   }
 
   [[nodiscard]] util::HashSet<const PointsToGraph::MemoryNode *>
-  GetOutputNodes(const rvsdg::output & output) const override
+  GetOutputNodes(const rvsdg::Output & output) const override
   {
-    JLM_ASSERT(is<PointerType>(output.type()));
+    JLM_ASSERT(is<PointerType>(output.Type()));
 
     util::HashSet<const PointsToGraph::MemoryNode *> memoryNodes;
     const auto registerNode = &PointsToGraph_.GetRegisterNode(output);
@@ -776,7 +776,7 @@ RegionAwareModRefSummarizer::AnnotateSimpleNode(
   {
     AnnotateStore(simpleNode, regionSummary);
   }
-  else if (is<alloca_op>(&simpleNode))
+  else if (is<AllocaOperation>(&simpleNode))
   {
     AnnotateAlloca(simpleNode, regionSummary);
   }
@@ -823,7 +823,7 @@ RegionAwareModRefSummarizer::AnnotateAlloca(
     const rvsdg::SimpleNode & allocaNode,
     RegionSummary & regionSummary)
 {
-  JLM_ASSERT(is<alloca_op>(&allocaNode));
+  JLM_ASSERT(is<AllocaOperation>(&allocaNode));
 
   auto & memoryNode = ModRefSummary_->GetPointsToGraph().GetAllocaNode(allocaNode);
   regionSummary.AddMemoryNodes({ &memoryNode });
@@ -992,7 +992,7 @@ RegionAwareModRefSummarizer::CallGraphSCCsToString(const RegionAwareModRefSummar
     }
     for (auto function : summarizer.Context_.SccFunctions[i].Items())
     {
-      ss << "  " << function->GetOperation().debug_string() << std::endl;
+      ss << "  " << function->DebugString() << std::endl;
     }
     ss << "]";
   }
@@ -1045,7 +1045,7 @@ RegionAwareModRefSummarizer::ToRegionTree(
     {
       if (auto structuralNode = dynamic_cast<const rvsdg::StructuralNode *>(&node))
       {
-        subtree += util::strfmt(indent(depth), structuralNode->GetOperation().debug_string(), "\n");
+        subtree += util::strfmt(indent(depth), structuralNode->DebugString(), "\n");
         for (size_t n = 0; n < structuralNode->nsubregions(); n++)
         {
           subtree += toRegionTree(structuralNode->subregion(n), depth + 1);

@@ -194,10 +194,10 @@ LoopAnnotationSet::operator==(const AnnotationSet & other)
 }
 
 static void
-AnnotateReadWrite(const aggnode &, AnnotationMap &);
+AnnotateReadWrite(const AggregationNode &, AnnotationMap &);
 
 static void
-AnnotateReadWrite(const entryaggnode & entryAggregationNode, AnnotationMap & demandMap)
+AnnotateReadWrite(const EntryAggregationNode & entryAggregationNode, AnnotationMap & demandMap)
 {
   VariableSet allWriteSet;
   VariableSet fullWriteSet;
@@ -213,7 +213,7 @@ AnnotateReadWrite(const entryaggnode & entryAggregationNode, AnnotationMap & dem
 }
 
 static void
-AnnotateReadWrite(const exitaggnode & exitAggregationNode, AnnotationMap & demandMap)
+AnnotateReadWrite(const ExitAggregationNode & exitAggregationNode, AnnotationMap & demandMap)
 {
   VariableSet readSet;
   for (auto & result : exitAggregationNode)
@@ -224,7 +224,9 @@ AnnotateReadWrite(const exitaggnode & exitAggregationNode, AnnotationMap & deman
 }
 
 static void
-AnnotateReadWrite(const blockaggnode & basicBlockAggregationNode, AnnotationMap & demandMap)
+AnnotateReadWrite(
+    const BasicBlockAggregationNode & basicBlockAggregationNode,
+    AnnotationMap & demandMap)
 {
   auto & threeAddressCodeList = basicBlockAggregationNode.tacs();
 
@@ -238,7 +240,7 @@ AnnotateReadWrite(const blockaggnode & basicBlockAggregationNode, AnnotationMap 
     {
       /*
           We need special treatment for assignment operation, since the variable
-          they assign the value to is modeled as an argument of the tac.
+          they assign the value to is modeled as an argument of the three address code.
       */
       JLM_ASSERT(tac->noperands() == 2 && tac->nresults() == 0);
       readSet.Remove(*tac->operand(0));
@@ -267,7 +269,7 @@ AnnotateReadWrite(const blockaggnode & basicBlockAggregationNode, AnnotationMap 
 }
 
 static void
-AnnotateReadWrite(const linearaggnode & linearAggregationNode, AnnotationMap & demandMap)
+AnnotateReadWrite(const LinearAggregationNode & linearAggregationNode, AnnotationMap & demandMap)
 {
   VariableSet readSet;
   VariableSet allWriteSet;
@@ -290,7 +292,7 @@ AnnotateReadWrite(const linearaggnode & linearAggregationNode, AnnotationMap & d
 }
 
 static void
-AnnotateReadWrite(const branchaggnode & branchAggregationNode, AnnotationMap & demandMap)
+AnnotateReadWrite(const BranchAggregationNode & branchAggregationNode, AnnotationMap & demandMap)
 {
   auto & case0DemandSet = demandMap.Lookup<AnnotationSet>(*branchAggregationNode.child(0));
   auto & case0ReadSet = case0DemandSet.ReadSet();
@@ -317,7 +319,7 @@ AnnotateReadWrite(const branchaggnode & branchAggregationNode, AnnotationMap & d
 }
 
 static void
-AnnotateReadWrite(const loopaggnode & loopAggregationNode, AnnotationMap & demandMap)
+AnnotateReadWrite(const LoopAggregationNode & loopAggregationNode, AnnotationMap & demandMap)
 {
   auto & loopBody = *loopAggregationNode.child(0);
   auto & bodyDemandSet = demandMap.Lookup<AnnotationSet>(loopBody);
@@ -330,32 +332,32 @@ AnnotateReadWrite(const loopaggnode & loopAggregationNode, AnnotationMap & deman
 }
 
 static void
-AnnotateReadWrite(const aggnode & aggregationNode, AnnotationMap & demandMap)
+AnnotateReadWrite(const AggregationNode & aggregationNode, AnnotationMap & demandMap)
 {
   for (size_t n = 0; n < aggregationNode.nchildren(); n++)
     AnnotateReadWrite(*aggregationNode.child(n), demandMap);
 
-  if (auto entryNode = dynamic_cast<const entryaggnode *>(&aggregationNode))
+  if (auto entryNode = dynamic_cast<const EntryAggregationNode *>(&aggregationNode))
   {
     AnnotateReadWrite(*entryNode, demandMap);
   }
-  else if (auto exitNode = dynamic_cast<const exitaggnode *>(&aggregationNode))
+  else if (auto exitNode = dynamic_cast<const ExitAggregationNode *>(&aggregationNode))
   {
     AnnotateReadWrite(*exitNode, demandMap);
   }
-  else if (auto blockNode = dynamic_cast<const blockaggnode *>(&aggregationNode))
+  else if (auto blockNode = dynamic_cast<const BasicBlockAggregationNode *>(&aggregationNode))
   {
     AnnotateReadWrite(*blockNode, demandMap);
   }
-  else if (auto linearNode = dynamic_cast<const linearaggnode *>(&aggregationNode))
+  else if (const auto linearNode = dynamic_cast<const LinearAggregationNode *>(&aggregationNode))
   {
     AnnotateReadWrite(*linearNode, demandMap);
   }
-  else if (auto branchNode = dynamic_cast<const branchaggnode *>(&aggregationNode))
+  else if (auto branchNode = dynamic_cast<const BranchAggregationNode *>(&aggregationNode))
   {
     AnnotateReadWrite(*branchNode, demandMap);
   }
-  else if (auto loopNode = dynamic_cast<const loopaggnode *>(&aggregationNode))
+  else if (auto loopNode = dynamic_cast<const LoopAggregationNode *>(&aggregationNode))
   {
     AnnotateReadWrite(*loopNode, demandMap);
   }
@@ -366,11 +368,11 @@ AnnotateReadWrite(const aggnode & aggregationNode, AnnotationMap & demandMap)
 }
 
 static void
-AnnotateDemandSet(const aggnode &, VariableSet &, AnnotationMap &);
+AnnotateDemandSet(const AggregationNode &, VariableSet &, AnnotationMap &);
 
 static void
 AnnotateDemandSet(
-    const entryaggnode & entryAggregationNode,
+    const EntryAggregationNode & entryAggregationNode,
     VariableSet & workingSet,
     AnnotationMap & demandMap)
 {
@@ -383,7 +385,7 @@ AnnotateDemandSet(
 
 static void
 AnnotateDemandSet(
-    const exitaggnode & exitAggregationNode,
+    const ExitAggregationNode & exitAggregationNode,
     VariableSet & workingSet,
     AnnotationMap & demandMap)
 {
@@ -393,7 +395,7 @@ AnnotateDemandSet(
 
 static void
 AnnotateDemandSet(
-    const blockaggnode & basicBlockAggregationNode,
+    const BasicBlockAggregationNode & basicBlockAggregationNode,
     VariableSet & workingSet,
     AnnotationMap & demandMap)
 {
@@ -404,7 +406,7 @@ AnnotateDemandSet(
 
 static void
 AnnotateDemandSet(
-    const linearaggnode & linearAggregationNode,
+    const LinearAggregationNode & linearAggregationNode,
     VariableSet & workingSet,
     AnnotationMap & demandMap)
 {
@@ -419,7 +421,7 @@ AnnotateDemandSet(
 
 static void
 AnnotateDemandSet(
-    const branchaggnode & branchAggregationNode,
+    const BranchAggregationNode & branchAggregationNode,
     VariableSet & workingSet,
     AnnotationMap & demandMap)
 {
@@ -444,7 +446,7 @@ AnnotateDemandSet(
 
 static void
 AnnotateDemandSet(
-    const loopaggnode & loopAggregationNode,
+    const LoopAggregationNode & loopAggregationNode,
     VariableSet & workingSet,
     AnnotationMap & demandMap)
 {
@@ -458,7 +460,7 @@ AnnotateDemandSet(
 template<class T>
 static void
 AnnotateDemandSet(
-    const aggnode * aggregationNode,
+    const AggregationNode * aggregationNode,
     VariableSet & workingSet,
     AnnotationMap & demandMap)
 {
@@ -468,25 +470,26 @@ AnnotateDemandSet(
 
 static void
 AnnotateDemandSet(
-    const aggnode & aggregationNode,
+    const AggregationNode & aggregationNode,
     VariableSet & workingSet,
     AnnotationMap & demandMap)
 {
-  static std::
-      unordered_map<std::type_index, void (*)(const aggnode *, VariableSet &, AnnotationMap &)>
-          map({ { typeid(entryaggnode), AnnotateDemandSet<entryaggnode> },
-                { typeid(exitaggnode), AnnotateDemandSet<exitaggnode> },
-                { typeid(blockaggnode), AnnotateDemandSet<blockaggnode> },
-                { typeid(linearaggnode), AnnotateDemandSet<linearaggnode> },
-                { typeid(branchaggnode), AnnotateDemandSet<branchaggnode> },
-                { typeid(loopaggnode), AnnotateDemandSet<loopaggnode> } });
+  static std::unordered_map<
+      std::type_index,
+      void (*)(const AggregationNode *, VariableSet &, AnnotationMap &)>
+      map({ { typeid(EntryAggregationNode), AnnotateDemandSet<EntryAggregationNode> },
+            { typeid(ExitAggregationNode), AnnotateDemandSet<ExitAggregationNode> },
+            { typeid(BasicBlockAggregationNode), AnnotateDemandSet<BasicBlockAggregationNode> },
+            { typeid(LinearAggregationNode), AnnotateDemandSet<LinearAggregationNode> },
+            { typeid(BranchAggregationNode), AnnotateDemandSet<BranchAggregationNode> },
+            { typeid(LoopAggregationNode), AnnotateDemandSet<LoopAggregationNode> } });
 
   JLM_ASSERT(map.find(typeid(aggregationNode)) != map.end());
   return map[typeid(aggregationNode)](&aggregationNode, workingSet, demandMap);
 }
 
 std::unique_ptr<AnnotationMap>
-Annotate(const aggnode & aggregationTreeRoot)
+Annotate(const AggregationNode & aggregationTreeRoot)
 {
   auto demandMap = AnnotationMap::Create();
   AnnotateReadWrite(aggregationTreeRoot, *demandMap);

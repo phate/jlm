@@ -22,7 +22,7 @@ class InvariantValueRedirection::Statistics final : public util::Statistics
 public:
   ~Statistics() override = default;
 
-  explicit Statistics(const util::filepath & sourceFile)
+  explicit Statistics(const util::FilePath & sourceFile)
       : util::Statistics(Statistics::Id::InvariantValueRedirection, sourceFile)
   {}
 
@@ -39,7 +39,7 @@ public:
   }
 
   static std::unique_ptr<Statistics>
-  Create(const util::filepath & sourceFile)
+  Create(const util::FilePath & sourceFile)
   {
     return std::make_unique<Statistics>(sourceFile);
   }
@@ -81,7 +81,7 @@ InvariantValueRedirection::RedirectInRootRegion(rvsdg::Graph & rvsdg)
         RedirectInRegion(*phiLambdaNode->subregion());
       }
     }
-    else if (is<delta::operation>(node))
+    else if (dynamic_cast<const delta::node *>(node))
     {
       // Nothing needs to be done.
       // Delta nodes are irrelevant for invariant value redirection.
@@ -102,9 +102,9 @@ InvariantValueRedirection::RedirectInRootRegion(rvsdg::Graph & rvsdg)
 void
 InvariantValueRedirection::RedirectInRegion(rvsdg::Region & region)
 {
-  auto isGammaNode = is<rvsdg::GammaOperation>(region.node());
-  auto isThetaNode = is<rvsdg::ThetaOperation>(region.node());
-  auto isLambdaNode = is<rvsdg::LambdaOperation>(region.node());
+  auto isGammaNode = !!dynamic_cast<rvsdg::GammaNode *>(region.node());
+  auto isThetaNode = !!dynamic_cast<rvsdg::ThetaNode *>(region.node());
+  auto isLambdaNode = !!dynamic_cast<rvsdg::LambdaNode *>(region.node());
   JLM_ASSERT(isGammaNode || isThetaNode || isLambdaNode);
 
   // We do not need a traverser here and can just iterate through all the nodes of a region as
@@ -135,8 +135,8 @@ InvariantValueRedirection::RedirectInRegion(rvsdg::Region & region)
 void
 InvariantValueRedirection::RedirectInSubregions(rvsdg::StructuralNode & structuralNode)
 {
-  auto isGammaNode = is<rvsdg::GammaOperation>(&structuralNode);
-  auto isThetaNode = is<rvsdg::ThetaOperation>(&structuralNode);
+  auto isGammaNode = !!dynamic_cast<rvsdg::GammaNode *>(&structuralNode);
+  auto isThetaNode = !!dynamic_cast<rvsdg::ThetaNode *>(&structuralNode);
   JLM_ASSERT(isGammaNode || isThetaNode);
 
   for (size_t n = 0; n < structuralNode.nsubregions(); n++)
@@ -164,7 +164,7 @@ InvariantValueRedirection::RedirectThetaOutputs(rvsdg::ThetaNode & thetaNode)
   {
     // FIXME: In order to also redirect I/O state type variables, we need to know whether a loop
     // terminates.
-    if (rvsdg::is<IOStateType>(loopVar.input->type()))
+    if (rvsdg::is<IOStateType>(loopVar.input->Type()))
       continue;
 
     if (rvsdg::ThetaLoopVarIsInvariant(loopVar))
@@ -225,7 +225,7 @@ InvariantValueRedirection::RedirectCallOutputs(rvsdg::SimpleNode & callNode)
       for (size_t i = 0; i < lambdaExitMerge->ninputs(); i++)
       {
         auto lambdaExitMergeInput = lambdaExitMerge->input(i);
-        auto node = rvsdg::output::GetNode(*lambdaExitMergeInput->origin());
+        auto node = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*lambdaExitMergeInput->origin());
         if (node == lambdaEntrySplit)
         {
           auto callExitSplitOutput = callExitSplit->output(lambdaExitMergeInput->index());

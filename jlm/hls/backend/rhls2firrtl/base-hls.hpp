@@ -42,16 +42,16 @@ private:
 
 protected:
   std::unordered_map<const rvsdg::Node *, std::string> node_map;
-  std::unordered_map<jlm::rvsdg::output *, std::string> output_map;
+  std::unordered_map<jlm::rvsdg::Output *, std::string> output_map;
 
   std::string
   get_node_name(const rvsdg::Node * node);
 
   static std::string
-  get_port_name(jlm::rvsdg::input * port);
+  get_port_name(jlm::rvsdg::Input * port);
 
   static std::string
-  get_port_name(jlm::rvsdg::output * port);
+  get_port_name(jlm::rvsdg::Output * port);
 
   const rvsdg::LambdaNode *
   get_hls_lambda(llvm::RvsdgModule & rm);
@@ -77,7 +77,7 @@ protected:
     std::vector<rvsdg::RegionArgument *> mem_resps;
     for (auto arg : lambda.subregion()->Arguments())
     {
-      if (rvsdg::is<bundletype>(arg->type()))
+      if (rvsdg::is<BundleType>(arg->Type()))
         mem_resps.push_back(arg);
     }
     return mem_resps;
@@ -95,7 +95,7 @@ protected:
     std::vector<rvsdg::RegionResult *> mem_resps;
     for (auto result : lambda.subregion()->Results())
     {
-      if (rvsdg::is<bundletype>(result->type()))
+      if (rvsdg::is<BundleType>(result->Type()))
         mem_resps.push_back(result);
     }
     return mem_resps;
@@ -114,7 +114,7 @@ protected:
     std::vector<rvsdg::RegionArgument *> args;
     for (auto argument : lambda.subregion()->Arguments())
     {
-      if (!rvsdg::is<bundletype>(argument->type()))
+      if (!rvsdg::is<BundleType>(argument->Type()))
         args.push_back(argument);
     }
     return args;
@@ -132,7 +132,7 @@ protected:
     std::vector<rvsdg::RegionResult *> results;
     for (auto result : lambda.subregion()->Results())
     {
-      if (!rvsdg::is<bundletype>(result->type()))
+      if (!rvsdg::is<BundleType>(result->Type()))
         results.push_back(result);
     }
     return results;

@@ -19,7 +19,7 @@ static inline bool
 is_constant(const rvsdg::Node * node)
 {
   return jlm::rvsdg::is<llvm::IntegerConstantOperation>(node)
-      || jlm::rvsdg::is<llvm::UndefValueOperation>(node)
+      || jlm::rvsdg::is<llvm::UndefValueOperation>(node) || jlm::rvsdg::is<llvm::ConstantFP>(node)
       || jlm::rvsdg::is<jlm::rvsdg::ctlconstant_op>(node);
 }
 
@@ -27,13 +27,13 @@ void
 rvsdg2rhls(llvm::RvsdgModule & rm, util::StatisticsCollector & collector);
 
 void
-rvsdg2ref(llvm::RvsdgModule & rm, const util::filepath & function_name);
+rvsdg2ref(llvm::RvsdgModule & rm, const util::FilePath & function_name);
 
 void
-dump_ref(llvm::RvsdgModule & rhls, const util::filepath & function_name);
+dump_ref(llvm::RvsdgModule & rhls, const util::FilePath & function_name);
 
-const jlm::rvsdg::output *
-trace_call(jlm::rvsdg::input * input);
+const jlm::rvsdg::Output *
+trace_call(jlm::rvsdg::Input * input);
 
 std::unique_ptr<llvm::RvsdgModule>
 split_hls_function(llvm::RvsdgModule & rm, const std::string & function_name);

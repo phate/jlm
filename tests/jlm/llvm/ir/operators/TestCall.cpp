@@ -41,7 +41,7 @@ TestCopy()
       CallOperation::Create(function1, functionType, { value1, iOState1, memoryState1 });
 
   // Act
-  auto node = jlm::rvsdg::output::GetNode(*callResults[0]);
+  auto node = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*callResults[0]);
   auto copiedNode =
       node->copy(&rvsdg.GetRootRegion(), { function2, value2, iOState2, memoryState2 });
 
@@ -71,7 +71,8 @@ TestCallNodeAccessors()
 
   // Act
   auto results = CallOperation::Create(f, functionType, { v, i, m });
-  auto & callNode = *jlm::util::AssertedCast<SimpleNode>(jlm::rvsdg::output::GetNode(*results[0]));
+  auto & callNode =
+      *jlm::util::AssertedCast<SimpleNode>(jlm::rvsdg::TryGetOwnerNode<Node>(*results[0]));
 
   // Assert
   assert(CallOperation::NumArguments(callNode) == 3);
@@ -81,16 +82,16 @@ TestCallNodeAccessors()
   assert(CallOperation::Argument(callNode, 2)->origin() == m);
 
   assert(callNode.noutputs() == 3);
-  assert(callNode.output(0)->type() == *valueType);
-  assert(callNode.output(1)->type() == *iOStateType);
-  assert(callNode.output(2)->type() == *memoryStateType);
+  assert(*callNode.output(0)->Type() == *valueType);
+  assert(*callNode.output(1)->Type() == *iOStateType);
+  assert(*callNode.output(2)->Type() == *memoryStateType);
 
   assert(CallOperation::GetFunctionInput(callNode).origin() == f);
   assert(CallOperation::GetIOStateInput(callNode).origin() == i);
   assert(CallOperation::GetMemoryStateInput(callNode).origin() == m);
 
-  assert(CallOperation::GetIOStateOutput(callNode).type() == *iOStateType);
-  assert(CallOperation::GetMemoryStateOutput(callNode).type() == *memoryStateType);
+  assert(*CallOperation::GetIOStateOutput(callNode).Type() == *iOStateType);
+  assert(*CallOperation::GetMemoryStateOutput(callNode).Type() == *memoryStateType);
 }
 
 static void
@@ -109,7 +110,7 @@ TestCallTypeClassifierIndirectCall()
       { PointerType::Create(), IOStateType::Create(), MemoryStateType::Create() },
       { vt, IOStateType::Create(), MemoryStateType::Create() });
 
-  auto module = RvsdgModule::Create(jlm::util::filepath(""), "", "");
+  auto module = RvsdgModule::Create(jlm::util::FilePath(""), "", "");
   auto graph = &module->Rvsdg();
 
   auto SetupFunction = [&]()
@@ -122,7 +123,7 @@ TestCallTypeClassifierIndirectCall()
 
     auto one = jlm::rvsdg::create_bitconstant(lambda->subregion(), 32, 1);
 
-    auto alloca = alloca_op::create(PointerType::Create(), one, 8);
+    auto alloca = AllocaOperation::create(PointerType::Create(), one, 8);
 
     auto store = StoreNonVolatileOperation::Create(
         alloca[0],
@@ -142,7 +143,7 @@ TestCallTypeClassifierIndirectCall()
 
     return std::make_tuple(
         jlm::util::AssertedCast<jlm::rvsdg::SimpleNode>(
-            jlm::rvsdg::output::GetNode(*callResults[0])),
+            jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*callResults[0])),
         fn);
   };
 
@@ -162,7 +163,7 @@ TestCallTypeClassifierNonRecursiveDirectCall()
   // Arrange
   using namespace jlm::llvm;
 
-  auto module = RvsdgModule::Create(jlm::util::filepath(""), "", "");
+  auto module = RvsdgModule::Create(jlm::util::FilePath(""), "", "");
   auto graph = &module->Rvsdg();
 
   auto vt = jlm::tests::valuetype::Create();
@@ -189,9 +190,9 @@ TestCallTypeClassifierNonRecursiveDirectCall()
     return lambdaOutput;
   };
 
-  auto SetupFunctionF = [&](jlm::rvsdg::output * g)
+  auto SetupFunctionF = [&](jlm::rvsdg::Output * g)
   {
-    auto SetupOuterTheta = [](jlm::rvsdg::Region * region, jlm::rvsdg::output * functionG)
+    auto SetupOuterTheta = [](jlm::rvsdg::Region * region, jlm::rvsdg::Output * functionG)
     {
       auto outerTheta = jlm::rvsdg::ThetaNode::create(region);
       auto otf = outerTheta->AddLoopVar(functionG);
@@ -237,7 +238,7 @@ TestCallTypeClassifierNonRecursiveDirectCall()
     return std::make_tuple(
         lambda,
         jlm::util::AssertedCast<jlm::rvsdg::SimpleNode>(
-            jlm::rvsdg::output::GetNode(*callResults[0])));
+            jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*callResults[0])));
   };
 
   auto g = SetupFunctionG();
@@ -261,7 +262,7 @@ TestCallTypeClassifierNonRecursiveDirectCallTheta()
   using namespace jlm::llvm;
 
   // Arrange
-  auto module = RvsdgModule::Create(jlm::util::filepath(""), "", "");
+  auto module = RvsdgModule::Create(jlm::util::FilePath(""), "", "");
   auto graph = &module->Rvsdg();
 
   auto vt = jlm::tests::valuetype::Create();
@@ -285,15 +286,15 @@ TestCallTypeClassifierNonRecursiveDirectCallTheta()
     return lambda->finalize({ c1->output(0), iOStateArgument, memoryStateArgument });
   };
 
-  auto SetupFunctionF = [&](jlm::rvsdg::output * g)
+  auto SetupFunctionF = [&](jlm::rvsdg::Output * g)
   {
     auto SetupOuterTheta = [&](jlm::rvsdg::Region * region,
-                               jlm::rvsdg::output * g,
-                               jlm::rvsdg::output * value,
-                               jlm::rvsdg::output * iOState,
-                               jlm::rvsdg::output * memoryState)
+                               jlm::rvsdg::Output * g,
+                               jlm::rvsdg::Output * value,
+                               jlm::rvsdg::Output * iOState,
+                               jlm::rvsdg::Output * memoryState)
     {
-      auto SetupInnerTheta = [&](jlm::rvsdg::Region * region, jlm::rvsdg::output * g)
+      auto SetupInnerTheta = [&](jlm::rvsdg::Region * region, jlm::rvsdg::Output * g)
       {
         auto innerTheta = jlm::rvsdg::ThetaNode::create(region);
         auto thetaOutputG = innerTheta->AddLoopVar(g);
@@ -324,7 +325,7 @@ TestCallTypeClassifierNonRecursiveDirectCallTheta()
           thetaOutputIoState,
           thetaOutputMemoryState,
           jlm::util::AssertedCast<jlm::rvsdg::SimpleNode>(
-              jlm::rvsdg::output::GetNode(*callResults[0])));
+              jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*callResults[0])));
     };
 
     auto vt = jlm::tests::valuetype::Create();
@@ -376,7 +377,7 @@ TestCallTypeClassifierRecursiveDirectCall()
   // Arrange
   using namespace jlm::llvm;
 
-  auto module = RvsdgModule::Create(jlm::util::filepath(""), "", "");
+  auto module = RvsdgModule::Create(jlm::util::FilePath(""), "", "");
   auto graph = &module->Rvsdg();
 
   auto SetupFib = [&]()
@@ -479,9 +480,9 @@ TestCallTypeClassifierRecursiveDirectCall()
     return std::make_tuple(
         lambdaOutput,
         jlm::util::AssertedCast<jlm::rvsdg::SimpleNode>(
-            jlm::rvsdg::output::GetNode(*callfibm1Results[0])),
+            jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*callfibm1Results[0])),
         jlm::util::AssertedCast<jlm::rvsdg::SimpleNode>(
-            jlm::rvsdg::output::GetNode(*callfibm2Results[0])));
+            jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*callfibm2Results[0])));
   };
 
   auto [fibfct, callFib1, callFib2] = SetupFib();

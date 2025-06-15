@@ -30,7 +30,7 @@ InvariantLambdaMemoryStateRemoval::RemoveInvariantMemoryStateEdges(
 
   // Check if we have any invariant edge(s) between the two nodes
   std::vector<size_t> nonInvariantIndices;
-  std::vector<rvsdg::output *> nonInvariantOutputs;
+  std::vector<rvsdg::Output *> nonInvariantOutputs;
   rvsdg::Node * entryNode = nullptr;
   for (size_t i = 0; i < exitNode->ninputs(); i++)
   {
@@ -101,7 +101,7 @@ InvariantLambdaMemoryStateRemoval::RemoveInvariantLambdaMemoryStateEdges(
   {
     if (auto lambda = dynamic_cast<const rvsdg::LambdaNode *>(node))
     {
-      if (rvsdg::is<const llvm::LlvmLambdaOperation>(node->GetOperation())
+      if (rvsdg::is<const llvm::LlvmLambdaOperation>(lambda->GetOperation())
           && lambda->output()->nusers() == 1
           && dynamic_cast<const jlm::rvsdg::GraphExport *>(*lambda->output()->begin()))
       {
@@ -117,7 +117,7 @@ class InvariantLambdaMemoryStateRemoval::Statistics final : public util::Statist
 public:
   ~Statistics() noexcept override = default;
 
-  explicit Statistics(const util::filepath & sourceFile)
+  explicit Statistics(const util::FilePath & sourceFile)
       : util::Statistics(Statistics::Id::InvariantValueRedirection, sourceFile)
   {}
 
@@ -134,7 +134,7 @@ public:
   }
 
   static std::unique_ptr<Statistics>
-  Create(const util::filepath & sourceFile)
+  Create(const util::FilePath & sourceFile)
   {
     return std::make_unique<Statistics>(sourceFile);
   }

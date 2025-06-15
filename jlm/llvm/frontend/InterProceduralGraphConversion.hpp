@@ -16,12 +16,12 @@ class StatisticsCollector;
 namespace jlm::llvm
 {
 
-class ipgraph_module;
+class InterProceduralGraphModule;
 class RvsdgModule;
 
 std::unique_ptr<RvsdgModule>
 ConvertInterProceduralGraphModule(
-    ipgraph_module & interProceduralGraphModule,
+    InterProceduralGraphModule & interProceduralGraphModule,
     jlm::util::StatisticsCollector & statisticsCollector);
 
 }

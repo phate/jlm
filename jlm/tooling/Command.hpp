@@ -108,8 +108,8 @@ public:
   ~ClangCommand() override;
 
   ClangCommand(
-      std::vector<util::filepath> inputFiles,
-      util::filepath outputFile,
+      std::vector<util::FilePath> inputFiles,
+      util::FilePath outputFile,
       std::vector<std::string> libraryPaths,
       std::vector<std::string> libraries,
       bool usePthreads)
@@ -128,9 +128,9 @@ public:
   {}
 
   ClangCommand(
-      const util::filepath & inputFile,
-      util::filepath outputFile,
-      util::filepath dependencyFile,
+      const util::FilePath & inputFile,
+      util::FilePath outputFile,
+      util::FilePath dependencyFile,
       std::vector<std::string> includePaths,
       std::vector<std::string> macroDefinitions,
       std::vector<std::string> warnings,
@@ -164,13 +164,13 @@ public:
   [[nodiscard]] std::string
   ToString() const override;
 
-  [[nodiscard]] const util::filepath &
+  [[nodiscard]] const util::FilePath &
   OutputFile() const noexcept
   {
     return OutputFile_;
   }
 
-  [[nodiscard]] const std::vector<util::filepath> &
+  [[nodiscard]] const std::vector<util::FilePath> &
   InputFiles() const noexcept
   {
     return InputFiles_;
@@ -179,8 +179,8 @@ public:
   static CommandGraph::Node &
   CreateLinkerCommand(
       CommandGraph & commandGraph,
-      const std::vector<util::filepath> & inputFiles,
-      const util::filepath & outputFile,
+      const std::vector<util::FilePath> & inputFiles,
+      const util::FilePath & outputFile,
       const std::vector<std::string> & libraryPaths,
       const std::vector<std::string> & libraries,
       bool usePthreads)
@@ -193,9 +193,9 @@ public:
   static CommandGraph::Node &
   CreateParsingCommand(
       CommandGraph & commandGraph,
-      const util::filepath & inputFile,
-      const util::filepath & outputFile,
-      const util::filepath & dependencyFile,
+      const util::FilePath & inputFile,
+      const util::FilePath & outputFile,
+      const util::FilePath & dependencyFile,
       const std::vector<std::string> & includePaths,
       const std::vector<std::string> & macroDefinitions,
       const std::vector<std::string> & warnings,
@@ -238,9 +238,9 @@ private:
   static std::string
   ReplaceAll(std::string str, const std::string & from, const std::string & to);
 
-  std::vector<util::filepath> InputFiles_;
-  util::filepath OutputFile_;
-  util::filepath DependencyFile_;
+  std::vector<util::FilePath> InputFiles_;
+  util::FilePath OutputFile_;
+  util::FilePath DependencyFile_;
 
   std::vector<std::string> IncludePaths_;
   std::vector<std::string> MacroDefinitions_;
@@ -285,8 +285,8 @@ public:
   ~LlcCommand() override;
 
   LlcCommand(
-      util::filepath inputFile,
-      util::filepath outputFile,
+      util::FilePath inputFile,
+      util::FilePath outputFile,
       const OptimizationLevel & optimizationLevel,
       const RelocationModel & relocationModel)
       : OptimizationLevel_(optimizationLevel),
@@ -298,7 +298,7 @@ public:
   [[nodiscard]] std::string
   ToString() const override;
 
-  [[nodiscard]] const util::filepath &
+  [[nodiscard]] const util::FilePath &
   OutputFile() const noexcept
   {
     return OutputFile_;
@@ -307,8 +307,8 @@ public:
   static CommandGraph::Node &
   Create(
       CommandGraph & commandGraph,
-      const util::filepath & inputFile,
-      const util::filepath & outputFile,
+      const util::FilePath & inputFile,
+      const util::FilePath & outputFile,
       const OptimizationLevel & optimizationLevel,
       const RelocationModel & relocationModel)
   {
@@ -326,8 +326,8 @@ private:
 
   OptimizationLevel OptimizationLevel_;
   RelocationModel RelocationModel_;
-  util::filepath InputFile_;
-  util::filepath OutputFile_;
+  util::FilePath InputFile_;
+  util::FilePath OutputFile_;
 };
 
 /**
@@ -366,59 +366,59 @@ public:
   static void
   PrintRvsdgModule(
       llvm::RvsdgModule & rvsdgModule,
-      const util::filepath & outputFile,
+      const util::FilePath & outputFile,
       const JlmOptCommandLineOptions::OutputFormat & outputFormat,
       util::StatisticsCollector & statisticsCollector);
 
 private:
   std::unique_ptr<llvm::RvsdgModule>
   ParseInputFile(
-      const util::filepath & inputFile,
+      const util::FilePath & inputFile,
       const JlmOptCommandLineOptions::InputFormat & inputFormat,
       util::StatisticsCollector & statisticsCollector) const;
 
   std::unique_ptr<llvm::RvsdgModule>
-  ParseLlvmIrFile(const util::filepath & inputFile, util::StatisticsCollector & statisticsCollector)
+  ParseLlvmIrFile(const util::FilePath & inputFile, util::StatisticsCollector & statisticsCollector)
       const;
 
   std::unique_ptr<llvm::RvsdgModule>
-  ParseMlirIrFile(const util::filepath & inputFile, util::StatisticsCollector & statisticsCollector)
+  ParseMlirIrFile(const util::FilePath & inputFile, util::StatisticsCollector & statisticsCollector)
       const;
 
   static void
   PrintAsAscii(
       const llvm::RvsdgModule & rvsdgModule,
-      const util::filepath & outputFile,
+      const util::FilePath & outputFile,
       util::StatisticsCollector & statisticsCollector);
 
   static void
   PrintAsXml(
       const llvm::RvsdgModule & rvsdgModule,
-      const util::filepath & outputFile,
+      const util::FilePath & outputFile,
       util::StatisticsCollector & statisticsCollector);
 
   static void
   PrintAsLlvm(
       llvm::RvsdgModule & rvsdgModule,
-      const util::filepath & outputFile,
+      const util::FilePath & outputFile,
       util::StatisticsCollector & statisticsCollector);
 
   static void
   PrintAsMlir(
       const llvm::RvsdgModule & rvsdgModule,
-      const util::filepath & outputFile,
+      const util::FilePath & outputFile,
       util::StatisticsCollector & statisticsCollector);
 
   static void
   PrintAsRvsdgTree(
       const llvm::RvsdgModule & rvsdgModule,
-      const util::filepath & outputFile,
+      const util::FilePath & outputFile,
       util::StatisticsCollector & statisticsCollector);
 
   static void
   PrintAsDot(
       const llvm::RvsdgModule & rvsdgModule,
-      const util::filepath & outputFile,
+      const util::FilePath & outputFile,
       util::StatisticsCollector & statisticsCollector);
 
   [[nodiscard]] std::vector<rvsdg::Transformation *>
@@ -443,7 +443,7 @@ class MkdirCommand final : public Command
 public:
   ~MkdirCommand() noexcept override;
 
-  explicit MkdirCommand(util::filepath path)
+  explicit MkdirCommand(util::FilePath path)
       : Path_(std::move(path))
   {}
 
@@ -454,14 +454,14 @@ public:
   Run() const override;
 
   static CommandGraph::Node &
-  Create(CommandGraph & commandGraph, const util::filepath & path)
+  Create(CommandGraph & commandGraph, const util::FilePath & path)
   {
     std::unique_ptr<MkdirCommand> command(new MkdirCommand(path));
     return CommandGraph::Node::Create(commandGraph, std::move(command));
   }
 
 private:
-  util::filepath Path_;
+  util::FilePath Path_;
 };
 
 /**
@@ -478,8 +478,8 @@ public:
   ~LlvmOptCommand() noexcept override;
 
   LlvmOptCommand(
-      util::filepath inputFile,
-      util::filepath outputFile,
+      util::FilePath inputFile,
+      util::FilePath outputFile,
       bool writeLlvmAssembly,
       std::vector<Optimization> optimizations)
       : InputFile_(std::move(inputFile)),
@@ -491,7 +491,7 @@ public:
   [[nodiscard]] std::string
   ToString() const override;
 
-  [[nodiscard]] const util::filepath &
+  [[nodiscard]] const util::FilePath &
   OutputFile() const noexcept
   {
     return OutputFile_;
@@ -500,8 +500,8 @@ public:
   static CommandGraph::Node &
   Create(
       CommandGraph & commandGraph,
-      const util::filepath & inputFile,
-      const util::filepath & outputFile,
+      const util::FilePath & inputFile,
+      const util::FilePath & outputFile,
       bool writeLlvmAssembly,
       const std::vector<Optimization> & optimizations)
   {
@@ -514,8 +514,8 @@ private:
   static std::string
   ToString(const Optimization & optimization);
 
-  util::filepath InputFile_;
-  util::filepath OutputFile_;
+  util::FilePath InputFile_;
+  util::FilePath OutputFile_;
 
   bool WriteLlvmAssembly_;
 
@@ -531,8 +531,8 @@ public:
   ~LlvmLinkCommand() noexcept override;
 
   LlvmLinkCommand(
-      std::vector<util::filepath> inputFiles,
-      util::filepath outputFile,
+      std::vector<util::FilePath> inputFiles,
+      util::FilePath outputFile,
       bool writeLlvmAssembly,
       bool verbose)
       : OutputFile_(std::move(outputFile)),
@@ -544,13 +544,13 @@ public:
   [[nodiscard]] std::string
   ToString() const override;
 
-  [[nodiscard]] const util::filepath &
+  [[nodiscard]] const util::FilePath &
   OutputFile() const noexcept
   {
     return OutputFile_;
   }
 
-  [[nodiscard]] const std::vector<util::filepath> &
+  [[nodiscard]] const std::vector<util::FilePath> &
   InputFiles() const noexcept
   {
     return InputFiles_;
@@ -559,8 +559,8 @@ public:
   static CommandGraph::Node &
   Create(
       CommandGraph & commandGraph,
-      const std::vector<util::filepath> & inputFiles,
-      const util::filepath & outputFile,
+      const std::vector<util::FilePath> & inputFiles,
+      const util::FilePath & outputFile,
       bool writeLlvmAssembly,
       bool verbose)
   {
@@ -570,8 +570,8 @@ public:
   }
 
 private:
-  util::filepath OutputFile_;
-  std::vector<util::filepath> InputFiles_;
+  util::FilePath OutputFile_;
+  std::vector<util::FilePath> InputFiles_;
 
   bool WriteLlvmAssembly_;
   bool Verbose_;
@@ -585,39 +585,43 @@ class JlmHlsCommand final : public Command
 public:
   ~JlmHlsCommand() noexcept override;
 
-  JlmHlsCommand(util::filepath inputFile, util::filepath outputFolder)
+  JlmHlsCommand(
+      util::FilePath inputFile,
+      util::FilePath outputFolder,
+      std::vector<std::string> options)
       : InputFile_(std::move(inputFile)),
-        OutputFolder_(std::move(outputFolder))
+        OutputFolder_(std::move(outputFolder)),
+        Options(std::move(options))
   {}
 
   [[nodiscard]] std::string
   ToString() const override;
 
-  [[nodiscard]] util::filepath
+  [[nodiscard]] util::FilePath
   FirrtlFile() const noexcept
   {
     return OutputFolder_.WithSuffix(".fir");
   }
 
-  [[nodiscard]] util::filepath
+  [[nodiscard]] util::FilePath
   LlvmFile() const noexcept
   {
     return OutputFolder_.WithSuffix(".rest.ll");
   }
 
-  [[nodiscard]] util::filepath
+  [[nodiscard]] util::FilePath
   RefFile() const noexcept
   {
     return OutputFolder_.WithSuffix(".ref.ll");
   }
 
-  [[nodiscard]] util::filepath
+  [[nodiscard]] util::FilePath
   HarnessFile() const noexcept
   {
     return OutputFolder_.WithSuffix(".harness.cpp");
   }
 
-  [[nodiscard]] const util::filepath &
+  [[nodiscard]] const util::FilePath &
   InputFile() const noexcept
   {
     return InputFile_;
@@ -626,16 +630,18 @@ public:
   static CommandGraph::Node &
   Create(
       CommandGraph & commandGraph,
-      const util::filepath & inputFile,
-      const util::filepath & outputFolder)
+      const util::FilePath & inputFile,
+      const util::FilePath & outputFolder,
+      const std::vector<std::string> & options)
   {
-    std::unique_ptr<JlmHlsCommand> command(new JlmHlsCommand(inputFile, outputFolder));
+    auto command = std::make_unique<JlmHlsCommand>(inputFile, outputFolder, options);
     return CommandGraph::Node::Create(commandGraph, std::move(command));
   }
 
 private:
-  util::filepath InputFile_;
-  util::filepath OutputFolder_;
+  util::FilePath InputFile_;
+  util::FilePath OutputFolder_;
+  std::vector<std::string> Options;
 };
 
 /**
@@ -648,8 +654,8 @@ public:
   ~JlmHlsExtractCommand() noexcept override;
 
   JlmHlsExtractCommand(
-      util::filepath inputFile,
-      util::filepath outputFolder,
+      util::FilePath inputFile,
+      util::FilePath outputFolder,
       std::string hlsFunctionName)
       : InputFile_(std::move(inputFile)),
         OutputFolder_(std::move(outputFolder)),
@@ -659,19 +665,19 @@ public:
   [[nodiscard]] std::string
   ToString() const override;
 
-  [[nodiscard]] util::filepath
+  [[nodiscard]] util::FilePath
   HlsFunctionFile() const noexcept
   {
     return OutputFolder_.WithSuffix(".function.ll");
   }
 
-  [[nodiscard]] util::filepath
+  [[nodiscard]] util::FilePath
   LlvmFile() const noexcept
   {
     return OutputFolder_.WithSuffix(".rest.ll");
   }
 
-  [[nodiscard]] const util::filepath &
+  [[nodiscard]] const util::FilePath &
   InputFile() const noexcept
   {
     return InputFile_;
@@ -686,9 +692,9 @@ public:
   static CommandGraph::Node &
   Create(
       CommandGraph & commandGraph,
-      const util::filepath & inputFile,
+      const util::FilePath & inputFile,
       const std::string & hlsFunctionName,
-      const util::filepath & outputFolder)
+      const util::FilePath & outputFolder)
   {
     std::unique_ptr<JlmHlsExtractCommand> command(
         new JlmHlsExtractCommand(inputFile, outputFolder, hlsFunctionName));
@@ -696,8 +702,8 @@ public:
   }
 
 private:
-  util::filepath InputFile_;
-  util::filepath OutputFolder_;
+  util::FilePath InputFile_;
+  util::FilePath OutputFolder_;
 
   std::string HlsFunctionName_;
 };

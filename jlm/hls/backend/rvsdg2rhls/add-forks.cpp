@@ -19,9 +19,9 @@ add_forks(rvsdg::Region * region)
     auto arg = region->argument(i);
     if (arg->nusers() > 1)
     {
-      std::vector<jlm::rvsdg::input *> users;
+      std::vector<jlm::rvsdg::Input *> users;
       users.insert(users.begin(), arg->begin(), arg->end());
-      auto fork = hls::fork_op::create(arg->nusers(), *arg);
+      auto fork = ForkOperation::create(arg->nusers(), *arg);
       for (size_t j = 0; j < users.size(); j++)
       {
         users[j]->divert_to(fork[j]);
@@ -44,8 +44,8 @@ add_forks(rvsdg::Region * region)
       auto out = node->output(i);
       if (out->nusers() > 1)
       {
-        std::vector<rvsdg::input *> users(out->begin(), out->end());
-        auto fork = hls::fork_op::create(out->nusers(), *out, isConstant);
+        std::vector<rvsdg::Input *> users(out->begin(), out->end());
+        auto fork = ForkOperation::create(out->nusers(), *out, isConstant);
         for (size_t j = 0; j < users.size(); j++)
         {
           users[j]->divert_to(fork[j]);

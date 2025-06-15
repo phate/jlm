@@ -15,12 +15,12 @@
 namespace jlm::hls
 {
 
-jlm::rvsdg::output *
+jlm::rvsdg::Output *
 get_trigger(rvsdg::Region * region)
 {
   for (size_t i = 0; i < region->narguments(); ++i)
   {
-    if (region->argument(i)->type() == *hls::triggertype::Create())
+    if (*region->argument(i)->Type() == *TriggerType::Create())
     {
       return region->argument(i);
     }
@@ -65,7 +65,7 @@ add_lambda_argument(rvsdg::LambdaNode * ln, std::shared_ptr<const jlm::rvsdg::Ty
   //	jlm::rvsdg::view(new_lambda->subregion(), stdout);
   ln->subregion()->copy(new_lambda->subregion(), smap, false, false);
 
-  std::vector<jlm::rvsdg::output *> new_results;
+  std::vector<jlm::rvsdg::Output *> new_results;
   for (auto result : ln->GetFunctionResults())
   {
     new_results.push_back(smap.lookup(result->origin()));
@@ -97,7 +97,7 @@ add_triggers(rvsdg::Region * region)
         // check here in order not to process removed and re-added node twice
         if (!get_trigger(ln->subregion()))
         {
-          auto new_lambda = add_lambda_argument(ln, hls::triggertype::Create());
+          auto new_lambda = add_lambda_argument(ln, TriggerType::Create());
           add_triggers(new_lambda->subregion());
         }
       }
@@ -120,7 +120,7 @@ add_triggers(rvsdg::Region * region)
       }
       else
       {
-        throw jlm::util::error("Unexpected node type: " + node->GetOperation().debug_string());
+        throw jlm::util::error("Unexpected node type: " + node->DebugString());
       }
     }
     else if (auto sn = dynamic_cast<jlm::rvsdg::SimpleNode *>(node))
@@ -129,8 +129,8 @@ add_triggers(rvsdg::Region * region)
       if (is_constant(node))
       {
         auto orig_out = sn->output(0);
-        std::vector<jlm::rvsdg::input *> previous_users(orig_out->begin(), orig_out->end());
-        auto gated = hls::trigger_op::create(*trigger, *orig_out)[0];
+        std::vector<jlm::rvsdg::Input *> previous_users(orig_out->begin(), orig_out->end());
+        auto gated = TriggerOperation::create(*trigger, *orig_out)[0];
         for (auto user : previous_users)
         {
           user->divert_to(gated);
@@ -139,7 +139,7 @@ add_triggers(rvsdg::Region * region)
     }
     else
     {
-      throw jlm::util::error("Unexpected node type: " + node->GetOperation().debug_string());
+      throw jlm::util::error("Unexpected node type: " + node->DebugString());
     }
   }
 }

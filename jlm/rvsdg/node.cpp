@@ -13,15 +13,13 @@
 namespace jlm::rvsdg
 {
 
-/* input */
-
-input::~input() noexcept
+Input::~Input() noexcept
 {
   origin()->remove_user(this);
 }
 
-input::input(
-    jlm::rvsdg::output * origin,
+Input::Input(
+    jlm::rvsdg::Output * origin,
     rvsdg::Region * region,
     std::shared_ptr<const rvsdg::Type> type)
     : index_(0),
@@ -32,26 +30,26 @@ input::input(
   if (region != origin->region())
     throw jlm::util::error("Invalid operand region.");
 
-  if (*Type() != origin->type())
-    throw jlm::util::type_error(Type()->debug_string(), origin->type().debug_string());
+  if (*Type() != *origin->Type())
+    throw util::TypeError(Type()->debug_string(), origin->Type()->debug_string());
 
   origin->add_user(this);
 }
 
 std::string
-input::debug_string() const
+Input::debug_string() const
 {
   return jlm::util::strfmt("i", index());
 }
 
 void
-input::divert_to(jlm::rvsdg::output * new_origin)
+Input::divert_to(jlm::rvsdg::Output * new_origin)
 {
   if (origin() == new_origin)
     return;
 
-  if (type() != new_origin->type())
-    throw jlm::util::type_error(type().debug_string(), new_origin->type().debug_string());
+  if (*Type() != *new_origin->Type())
+    throw jlm::util::TypeError(Type()->debug_string(), new_origin->Type()->debug_string());
 
   if (region() != new_origin->region())
     throw jlm::util::error("Invalid operand region.");
@@ -61,53 +59,37 @@ input::divert_to(jlm::rvsdg::output * new_origin)
   this->origin_ = new_origin;
   new_origin->add_user(this);
 
-  if (is<node_input>(*this))
-    static_cast<node_input *>(this)->node()->recompute_depth();
+  if (auto node = TryGetOwnerNode<Node>(*this))
+    node->recompute_depth();
 
   on_input_change(this, old_origin, new_origin);
 }
 
-Node *
-input::GetNode(const rvsdg::input & input) noexcept
-{
-  auto nodeInput = dynamic_cast<const rvsdg::node_input *>(&input);
-  return nodeInput ? nodeInput->node() : nullptr;
-}
-
-/* output */
-
-output::~output() noexcept
+Output::~Output() noexcept
 {
   JLM_ASSERT(nusers() == 0);
 }
 
-output::output(rvsdg::Region * region, std::shared_ptr<const rvsdg::Type> type)
+Output::Output(rvsdg::Region * region, std::shared_ptr<const rvsdg::Type> type)
     : index_(0),
       region_(region),
       Type_(std::move(type))
 {}
 
 std::string
-output::debug_string() const
+Output::debug_string() const
 {
   return jlm::util::strfmt("o", index());
 }
 
-Node *
-output::GetNode(const rvsdg::output & output) noexcept
-{
-  auto nodeOutput = dynamic_cast<const rvsdg::node_output *>(&output);
-  return nodeOutput ? nodeOutput->node() : nullptr;
-}
-
 void
-output::remove_user(jlm::rvsdg::input * user)
+Output::remove_user(jlm::rvsdg::Input * user)
 {
   JLM_ASSERT(users_.find(user) != users_.end());
 
   users_.erase(user);
 
-  if (auto node = output::GetNode(*this))
+  if (auto node = TryGetOwnerNode<Node>(*this))
   {
     if (!node->has_users())
     {
@@ -118,11 +100,11 @@ output::remove_user(jlm::rvsdg::input * user)
 }
 
 void
-output::add_user(jlm::rvsdg::input * user)
+Output::add_user(jlm::rvsdg::Input * user)
 {
   JLM_ASSERT(users_.find(user) == users_.end());
 
-  if (auto node = output::GetNode(*this))
+  if (auto node = TryGetOwnerNode<Node>(*this))
   {
     if (!node->has_users())
     {
@@ -134,10 +116,10 @@ output::add_user(jlm::rvsdg::input * user)
 }
 
 node_input::node_input(
-    jlm::rvsdg::output * origin,
+    jlm::rvsdg::Output * origin,
     Node * node,
     std::shared_ptr<const rvsdg::Type> type)
-    : jlm::rvsdg::input(origin, node->region(), std::move(type)),
+    : jlm::rvsdg::Input(origin, node->region(), std::move(type)),
       node_(node)
 {}
 
@@ -150,7 +132,7 @@ node_input::GetOwner() const noexcept
 /* node_output class */
 
 node_output::node_output(Node * node, std::shared_ptr<const rvsdg::Type> type)
-    : jlm::rvsdg::output(node->region(), std::move(type)),
+    : jlm::rvsdg::Output(node->region(), std::move(type)),
       node_(node)
 {}
 
@@ -195,7 +177,7 @@ Node::~Node()
 node_input *
 Node::add_input(std::unique_ptr<node_input> input)
 {
-  auto producer = output::GetNode(*input->origin());
+  auto producer = rvsdg::TryGetOwnerNode<Node>(*input->origin());
 
   if (ninputs() == 0)
   {
@@ -218,7 +200,7 @@ void
 Node::RemoveInput(size_t index)
 {
   JLM_ASSERT(index < ninputs());
-  auto producer = output::GetNode(*input(index)->origin());
+  auto producer = rvsdg::TryGetOwnerNode<Node>(*input(index)->origin());
 
   /* remove input */
   for (size_t n = index; n < ninputs() - 1; n++)
@@ -272,7 +254,7 @@ Node::recompute_depth() noexcept
   size_t new_depth = 0;
   for (size_t n = 0; n < ninputs(); n++)
   {
-    auto producer = output::GetNode(*input(n)->origin());
+    auto producer = rvsdg::TryGetOwnerNode<Node>(*input(n)->origin());
     new_depth = std::max(new_depth, producer ? producer->depth() + 1 : 0);
   }
   if (new_depth == depth())
@@ -286,17 +268,16 @@ Node::recompute_depth() noexcept
   {
     for (auto user : *(output(n)))
     {
-      if (!is<node_input>(*user))
-        continue;
-
-      auto node = static_cast<node_input *>(user)->node();
-      node->recompute_depth();
+      if (auto node = TryGetOwnerNode<Node>(*user))
+      {
+        node->recompute_depth();
+      }
     }
   }
 }
 
 Node *
-Node::copy(rvsdg::Region * region, const std::vector<jlm::rvsdg::output *> & operands) const
+Node::copy(rvsdg::Region * region, const std::vector<jlm::rvsdg::Output *> & operands) const
 {
   SubstitutionMap smap;
 
@@ -308,9 +289,9 @@ Node::copy(rvsdg::Region * region, const std::vector<jlm::rvsdg::output *> & ope
 }
 
 Node *
-producer(const jlm::rvsdg::output * output) noexcept
+producer(const jlm::rvsdg::Output * output) noexcept
 {
-  if (auto node = output::GetNode(*output))
+  if (auto node = TryGetOwnerNode<Node>(*output))
     return node;
 
   if (auto theta = TryGetRegionParentNode<ThetaNode>(*output))
@@ -342,19 +323,19 @@ producer(const jlm::rvsdg::output * output) noexcept
   - what is the origin of a value, what operation is computing it?
   - what are the users of a particular value, what operations depend on it?
 
-  This requires resolving the type of operation a specific \ref rvsdg::input
-  or \ref rvsdg::output belong to. Every \ref rvsdg::output is one of the following:
+  This requires resolving the type of operation a specific \ref rvsdg::Input
+  or \ref rvsdg::Output belong to. Every \ref rvsdg::Output is one of the following:
 
   - the output of a node representing an operation
   - the entry argument into a region
 
-  Likewise, every \ref rvsdg::input is one of the following:
+  Likewise, every \ref rvsdg::Input is one of the following:
 
   - the input of a node representing an operation
   - the exit result of a region
 
   Analysis code can determine which of the two is the case using
-  \ref rvsdg::output::GetOwner and \ref rvsdg::input::GetOwner, respectively,
+  \ref rvsdg::Output::GetOwner and \ref rvsdg::Input::GetOwner, respectively,
   and then branch deeper based on its results. For convenience, code
   can more directly match against the specific kinds of nodes using
   the following convenience functions:

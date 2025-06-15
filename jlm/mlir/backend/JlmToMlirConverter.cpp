@@ -42,7 +42,7 @@ namespace jlm::mlir
 {
 
 void
-JlmToMlirConverter::Print(::mlir::rvsdg::OmegaNode & omega, const util::filepath & filePath)
+JlmToMlirConverter::Print(::mlir::rvsdg::OmegaNode & omega, const util::FilePath & filePath)
 {
   if (failed(::mlir::verify(omega)))
   {
@@ -82,11 +82,13 @@ JlmToMlirConverter::ConvertModule(const llvm::RvsdgModule & rvsdgModule)
 ::llvm::SmallVector<::mlir::Value>
 JlmToMlirConverter::ConvertRegion(rvsdg::Region & region, ::mlir::Block & block, bool isRoot)
 {
-  std::unordered_map<rvsdg::output *, ::mlir::Value> valueMap;
+  std::unordered_map<rvsdg::Output *, ::mlir::Value> valueMap;
+  size_t argIndex = 0;
   for (size_t i = 0; i < region.narguments(); ++i)
   {
     auto arg = region.argument(i);
-    // Ignore unit type.
+    // Ignore unit type -- this is the first argument in gamma subregions
+    // and does not have a representation in MLIR.
     if (*arg->Type() == *rvsdg::UnitType::Create())
     {
       continue;
@@ -104,8 +106,9 @@ JlmToMlirConverter::ConvertRegion(rvsdg::Region & region, ::mlir::Block & block,
     }
     else
     {
-      block.addArgument(ConvertType(arg->type()), Builder_->getUnknownLoc());
-      valueMap[arg] = block.getArgument(i);
+      block.addArgument(ConvertType(*arg->Type()), Builder_->getUnknownLoc());
+      valueMap[arg] = block.getArgument(argIndex);
+      ++argIndex;
     }
   }
 
@@ -138,7 +141,7 @@ JlmToMlirConverter::ConvertRegion(rvsdg::Region & region, ::mlir::Block & block,
           "Unimplemented input type: ",
           region.result(i)->origin()->debug_string(),
           ": ",
-          region.result(i)->origin()->type().debug_string(),
+          region.result(i)->origin()->Type()->debug_string(),
           " for region result: ",
           region.result(i)->debug_string(),
           " at index: ",
@@ -153,7 +156,7 @@ JlmToMlirConverter::ConvertRegion(rvsdg::Region & region, ::mlir::Block & block,
 ::llvm::SmallVector<::mlir::Value>
 JlmToMlirConverter::GetConvertedInputs(
     const rvsdg::Node & node,
-    const std::unordered_map<rvsdg::output *, ::mlir::Value> & valueMap)
+    const std::unordered_map<rvsdg::Output *, ::mlir::Value> & valueMap)
 {
   ::llvm::SmallVector<::mlir::Value> inputs;
   for (size_t i = 0; i < node.ninputs(); i++)
@@ -169,9 +172,9 @@ JlmToMlirConverter::GetConvertedInputs(
           "Unimplemented input type: ",
           node.input(i)->origin()->debug_string(),
           ": ",
-          node.input(i)->origin()->type().debug_string(),
+          node.input(i)->origin()->Type()->debug_string(),
           " for node: ",
-          node.GetOperation().debug_string(),
+          node.DebugString(),
           " at index: ",
           i);
       JLM_UNREACHABLE(message.c_str());
@@ -208,8 +211,7 @@ JlmToMlirConverter::ConvertNode(
   }
   else
   {
-    auto message =
-        util::strfmt("Unimplemented structural node: ", node.GetOperation().debug_string());
+    auto message = util::strfmt("Unimplemented structural node: ", node.DebugString());
     JLM_UNREACHABLE(message.c_str());
   }
 }
@@ -462,7 +464,7 @@ JlmToMlirConverter::ConvertSimpleNode(
         Builder_->getIntegerType(zextOperation->ndstbits()),
         inputs[0]);
   }
-  else if (auto sextOp = dynamic_cast<const jlm::llvm::sext_op *>(&operation))
+  else if (auto sextOp = dynamic_cast<const jlm::llvm::SExtOperation *>(&operation))
   {
     MlirOp = Builder_->create<::mlir::arith::ExtSIOp>(
         Builder_->getUnknownLoc(),
@@ -488,7 +490,7 @@ JlmToMlirConverter::ConvertSimpleNode(
   {
     MlirOp = Builder_->create<::mlir::rvsdg::ConstantCtrl>(
         Builder_->getUnknownLoc(),
-        ConvertType(node.output(0)->type()), // Control, ouput type
+        ConvertType(*node.output(0)->Type()), // Control, ouput type
         ctlOp->value().alternative());
   }
   else if (auto vaOp = dynamic_cast<const llvm::valist_op *>(&operation))
@@ -519,7 +521,7 @@ JlmToMlirConverter::ConvertSimpleNode(
         ::mlir::ValueRange({ std::next(inputs.begin()), std::prev(inputs.end()) }),
         inputs[inputs.size() - 1]);
   }
-  else if (auto alloca_op = dynamic_cast<const jlm::llvm::alloca_op *>(&operation))
+  else if (auto alloca_op = dynamic_cast<const jlm::llvm::AllocaOperation *>(&operation))
   {
     MlirOp = Builder_->create<::mlir::jlm::Alloca>(
         Builder_->getUnknownLoc(),
@@ -565,14 +567,14 @@ JlmToMlirConverter::ConvertSimpleNode(
   {
     MlirOp = Builder_->create<::mlir::rvsdg::MemStateMerge>(
         Builder_->getUnknownLoc(),
-        ConvertType(node.output(0)->type()),
+        ConvertType(*node.output(0)->Type()),
         inputs);
   }
   else if (rvsdg::is<jlm::llvm::IOBarrierOperation>(operation))
   {
     MlirOp = Builder_->create<::mlir::jlm::IOBarrier>(
         Builder_->getUnknownLoc(),
-        ConvertType(node.output(0)->type()),
+        ConvertType(*node.output(0)->Type()),
         inputs[0],
         inputs[1]);
   }
@@ -610,8 +612,8 @@ JlmToMlirConverter::ConvertSimpleNode(
 
     MlirOp = Builder_->create<::mlir::rvsdg::Match>(
         Builder_->getUnknownLoc(),
-        ConvertType(node.output(0)->type()), // Control, ouput type
-        inputs[0],                           // input
+        ConvertType(*node.output(0)->Type()), // Control, ouput type
+        inputs[0],                            // input
         ::mlir::ArrayAttr::get(Builder_->getContext(), ::llvm::ArrayRef(mappingVector)));
   }
   else if (auto callOp = dynamic_cast<const jlm::llvm::CallOperation *>(&operation))
@@ -669,7 +671,7 @@ JlmToMlirConverter::ConvertLambda(
 
   auto lambda = Builder_->create<::mlir::rvsdg::LambdaNode>(
       Builder_->getUnknownLoc(),
-      ConvertType(lambdaNode.output()->type()),
+      ConvertType(*lambdaNode.output()->Type()),
       inputs,
       ::llvm::ArrayRef<::mlir::NamedAttribute>(attributes));
   block.push_back(lambda);
@@ -694,7 +696,7 @@ JlmToMlirConverter::ConvertGamma(
   ::llvm::SmallVector<::mlir::Type> typeRangeOuput;
   for (size_t i = 0; i < gammaNode.noutputs(); ++i)
   {
-    typeRangeOuput.push_back(ConvertType(gammaNode.output(i)->type()));
+    typeRangeOuput.push_back(ConvertType(*gammaNode.output(i)->Type()));
   }
 
   // The predicate is always the first input
@@ -731,7 +733,7 @@ JlmToMlirConverter::ConvertTheta(
   ::llvm::SmallVector<::mlir::Type> outputTypeRange;
   for (size_t i = 0; i < thetaNode.noutputs(); ++i)
   {
-    outputTypeRange.push_back(ConvertType(thetaNode.output(i)->type()));
+    outputTypeRange.push_back(ConvertType(*thetaNode.output(i)->Type()));
   }
 
   ::llvm::SmallVector<::mlir::NamedAttribute> attributes;

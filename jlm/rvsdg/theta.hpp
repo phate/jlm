@@ -51,19 +51,19 @@ public:
     /**
      * \brief Variable at loop entry (input to theta).
      */
-    rvsdg::input * input;
+    rvsdg::Input * input;
     /**
      * \brief Variable before iteration (input argument to subregion).
      */
-    rvsdg::output * pre;
+    rvsdg::Output * pre;
     /**
      * \brief Variable after iteration (output result from subregion).
      */
-    rvsdg::input * post;
+    rvsdg::Input * post;
     /**
      * \brief Variable at loop exit (output of theta).
      */
-    rvsdg::output * output;
+    rvsdg::Output * output;
   };
 
   [[nodiscard]] const ThetaOperation &
@@ -85,14 +85,14 @@ public:
   predicate() const noexcept
   {
     auto result = subregion()->result(0);
-    JLM_ASSERT(dynamic_cast<const ControlType *>(&result->type()));
+    JLM_ASSERT(is<const ControlType>(result->Type()));
     return result;
   }
 
   inline void
-  set_predicate(jlm::rvsdg::output * p)
+  set_predicate(jlm::rvsdg::Output * p)
   {
-    auto node = output::GetNode(*predicate()->origin());
+    auto node = TryGetOwnerNode<Node>(*predicate()->origin());
 
     predicate()->divert_to(p);
     if (node && !node->has_users())
@@ -115,7 +115,7 @@ public:
    * into a variable changed by the loop
    */
   LoopVar
-  AddLoopVar(rvsdg::output * origin);
+  AddLoopVar(rvsdg::Output * origin);
 
   /**
    * \brief Removes loop variables.
@@ -157,7 +157,7 @@ public:
    * to this entry into the theta node.
    */
   [[nodiscard]] LoopVar
-  MapInputLoopVar(const rvsdg::input & input) const;
+  MapInputLoopVar(const rvsdg::Input & input) const;
 
   /**
    * \brief Maps variable at start of loop iteration to full varibale description.
@@ -175,7 +175,7 @@ public:
    * to this variable at the start of each loop iteration.
    */
   [[nodiscard]] LoopVar
-  MapPreLoopVar(const rvsdg::output & argument) const;
+  MapPreLoopVar(const rvsdg::Output & argument) const;
 
   /**
    * \brief Maps variable at end of loop iteration to full varibale description.
@@ -193,7 +193,7 @@ public:
    * to this variable at the end of each loop iteration.
    */
   [[nodiscard]] LoopVar
-  MapPostLoopVar(const rvsdg::input & result) const;
+  MapPostLoopVar(const rvsdg::Input & result) const;
 
   /**
    * \brief Maps variable at exit to full varibale description.
@@ -211,7 +211,7 @@ public:
    * to this loop exit value.
    */
   [[nodiscard]] LoopVar
-  MapOutputLoopVar(const rvsdg::output & output) const;
+  MapOutputLoopVar(const rvsdg::Output & output) const;
 
   /**
    * \brief Returns all loop variables.

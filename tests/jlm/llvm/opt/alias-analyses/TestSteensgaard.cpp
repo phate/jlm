@@ -614,7 +614,7 @@ TestExternalCall2()
 {
   // Arrange
   jlm::tests::ExternalCallTest2 test;
-  std::unordered_map<const jlm::rvsdg::output *, std::string> outputMap;
+  std::unordered_map<const jlm::rvsdg::Output *, std::string> outputMap;
   std::cout << jlm::rvsdg::view(&test.graph().GetRootRegion(), outputMap) << std::flush;
 
   // Act
@@ -651,9 +651,10 @@ TestGamma()
       assertTargets(lambdaArgument, { &lambda, &pointsToGraph.GetExternalMemoryNode() });
     }
 
-    for (size_t n = 0; n < 4; n++)
+    auto entryvars = test.gamma->GetEntryVars();
+    assert(entryvars.size() == 4);
+    for (const auto & entryvar : entryvars)
     {
-      auto entryvar = test.gamma->GetEntryVar(n);
       auto & argument0 = pointsToGraph.GetRegisterNode(*entryvar.branchArgument[0]);
       auto & argument1 = pointsToGraph.GetRegisterNode(*entryvar.branchArgument[1]);
 
@@ -874,8 +875,8 @@ TestPhi1()
     auto & phi_rv = ptg.GetRegisterNode(*test.phi->GetFixVars()[0].output);
     auto & phi_rv_arg = ptg.GetRegisterNode(*test.phi->GetFixVars()[0].recref);
 
-    auto & gamma_result = ptg.GetRegisterNode(*test.gamma->subregion(0)->argument(1));
-    auto & gamma_fib = ptg.GetRegisterNode(*test.gamma->subregion(0)->argument(2));
+    auto & gamma_result = ptg.GetRegisterNode(*test.gamma->GetEntryVars()[1].branchArgument[0]);
+    auto & gamma_fib = ptg.GetRegisterNode(*test.gamma->GetEntryVars()[2].branchArgument[0]);
 
     auto & alloca = ptg.GetAllocaNode(*test.alloca);
     auto & alloca_out = ptg.GetRegisterNode(*test.alloca->output(0));
@@ -1079,7 +1080,7 @@ TestMemcpy()
   };
 
   jlm::tests::MemcpyTest test;
-  std::unordered_map<const jlm::rvsdg::output *, std::string> outputMap;
+  std::unordered_map<const jlm::rvsdg::Output *, std::string> outputMap;
   std::cout << jlm::rvsdg::view(&test.graph().GetRootRegion(), outputMap) << std::flush;
 
   /*
@@ -1140,7 +1141,7 @@ TestMemcpy3()
 {
   // Arrange
   jlm::tests::MemcpyTest3 test;
-  std::unordered_map<const jlm::rvsdg::output *, std::string> outputMap;
+  std::unordered_map<const jlm::rvsdg::Output *, std::string> outputMap;
   std::cout << jlm::rvsdg::view(&test.graph().GetRootRegion(), outputMap) << std::flush;
 
   // Act
@@ -1242,7 +1243,7 @@ TestVariadicFunction1()
 static void
 TestVariadicFunction2()
 {
-  std::unordered_map<const jlm::rvsdg::output *, std::string> outputMap;
+  std::unordered_map<const jlm::rvsdg::Output *, std::string> outputMap;
 
   // Arrange
   jlm::tests::VariadicFunctionTest2 test;

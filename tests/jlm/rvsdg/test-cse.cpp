@@ -18,7 +18,7 @@ test_main()
   Graph graph;
 
   auto NormalizeCne =
-      [&](const SimpleOperation & operation, const std::vector<jlm::rvsdg::output *> & operands)
+      [&](const SimpleOperation & operation, const std::vector<jlm::rvsdg::Output *> & operands)
   {
     return NormalizeSimpleOperationCommonNodeElimination(
         graph.GetRootRegion(),
@@ -41,29 +41,29 @@ test_main()
   auto & e4 = jlm::tests::GraphExport::Create(*o4, "o4");
 
   // Act & Assert
-  ReduceNode<jlm::tests::test_op>(NormalizeCne, *output::GetNode(*e1.origin()));
-  ReduceNode<jlm::tests::test_op>(NormalizeCne, *output::GetNode(*e2.origin()));
-  ReduceNode<jlm::tests::test_op>(NormalizeCne, *output::GetNode(*e3.origin()));
-  ReduceNode<jlm::tests::test_op>(NormalizeCne, *output::GetNode(*e4.origin()));
+  ReduceNode<jlm::tests::test_op>(NormalizeCne, *TryGetOwnerNode<Node>(*e1.origin()));
+  ReduceNode<jlm::tests::test_op>(NormalizeCne, *TryGetOwnerNode<Node>(*e2.origin()));
+  ReduceNode<jlm::tests::test_op>(NormalizeCne, *TryGetOwnerNode<Node>(*e3.origin()));
+  ReduceNode<jlm::tests::test_op>(NormalizeCne, *TryGetOwnerNode<Node>(*e4.origin()));
 
   assert(e1.origin() == e3.origin());
   assert(e2.origin() == e4.origin());
 
   auto o5 = jlm::tests::create_testop(&graph.GetRootRegion(), {}, { valueType })[0];
   auto & e5 = jlm::tests::GraphExport::Create(*o5, "o5");
-  ReduceNode<jlm::tests::test_op>(NormalizeCne, *output::GetNode(*e5.origin()));
+  ReduceNode<jlm::tests::test_op>(NormalizeCne, *TryGetOwnerNode<Node>(*e5.origin()));
   assert(e5.origin() == e1.origin());
 
   auto o6 = jlm::tests::create_testop(&graph.GetRootRegion(), { i }, { valueType })[0];
   auto & e6 = jlm::tests::GraphExport::Create(*o6, "o6");
-  ReduceNode<jlm::tests::test_op>(NormalizeCne, *output::GetNode(*e6.origin()));
+  ReduceNode<jlm::tests::test_op>(NormalizeCne, *TryGetOwnerNode<Node>(*e6.origin()));
   assert(e6.origin() == e2.origin());
 
   auto o7 = jlm::tests::create_testop(&graph.GetRootRegion(), {}, { valueType })[0];
   auto & e7 = jlm::tests::GraphExport::Create(*o7, "o7");
   assert(e7.origin() != e1.origin());
 
-  ReduceNode<jlm::tests::test_op>(NormalizeCne, *output::GetNode(*e7.origin()));
+  ReduceNode<jlm::tests::test_op>(NormalizeCne, *TryGetOwnerNode<Node>(*e7.origin()));
   assert(e7.origin() == e1.origin());
 
   return 0;

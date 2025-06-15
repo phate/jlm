@@ -22,15 +22,15 @@ namespace jlm::rvsdg
 namespace
 {
 
-std::vector<jlm::rvsdg::output *>
-reduce_operands(const BinaryOperation & op, std::vector<jlm::rvsdg::output *> args)
+std::vector<jlm::rvsdg::Output *>
+reduce_operands(const BinaryOperation & op, std::vector<jlm::rvsdg::Output *> args)
 {
   /* pair-wise reduce */
   if (op.is_commutative())
   {
     return base::detail::commutative_pairwise_reduce(
         std::move(args),
-        [&op](jlm::rvsdg::output * arg1, jlm::rvsdg::output * arg2)
+        [&op](jlm::rvsdg::Output * arg1, jlm::rvsdg::Output * arg2)
         {
           binop_reduction_path_t reduction = op.can_reduce_operand_pair(arg1, arg2);
           return reduction != binop_reduction_none ? op.reduce_operand_pair(reduction, arg1, arg2)
@@ -41,7 +41,7 @@ reduce_operands(const BinaryOperation & op, std::vector<jlm::rvsdg::output *> ar
   {
     return base::detail::pairwise_reduce(
         std::move(args),
-        [&op](jlm::rvsdg::output * arg1, jlm::rvsdg::output * arg2)
+        [&op](jlm::rvsdg::Output * arg1, jlm::rvsdg::Output * arg2)
         {
           binop_reduction_path_t reduction = op.can_reduce_operand_pair(arg1, arg2);
           return reduction != binop_reduction_none ? op.reduce_operand_pair(reduction, arg1, arg2)
@@ -60,10 +60,10 @@ BinaryOperation::flags() const noexcept
   return flags::none;
 }
 
-std::optional<std::vector<rvsdg::output *>>
+std::optional<std::vector<rvsdg::Output *>>
 FlattenAssociativeBinaryOperation(
     const BinaryOperation & operation,
-    const std::vector<rvsdg::output *> & operands)
+    const std::vector<rvsdg::Output *> & operands)
 {
   JLM_ASSERT(!operands.empty());
   auto region = operands[0]->region();
@@ -75,7 +75,7 @@ FlattenAssociativeBinaryOperation(
 
   auto newOperands = base::detail::associative_flatten(
       operands,
-      [&operation](rvsdg::output * operand)
+      [&operation](rvsdg::Output * operand)
       {
         auto node = TryGetOwnerNode<Node>(*operand);
         if (node == nullptr)
@@ -99,10 +99,10 @@ FlattenAssociativeBinaryOperation(
   return outputs(&SimpleNode::Create(*region, *flattenedBinaryOperation, newOperands));
 }
 
-std::optional<std::vector<rvsdg::output *>>
+std::optional<std::vector<rvsdg::Output *>>
 NormalizeBinaryOperation(
     const BinaryOperation & operation,
-    const std::vector<rvsdg::output *> & operands)
+    const std::vector<rvsdg::Output *> & operands)
 {
   JLM_ASSERT(!operands.empty());
   auto region = operands[0]->region();
@@ -152,13 +152,13 @@ FlattenedBinaryOperation::copy() const
   the new output to the working list. Unify both functions.
 */
 
-static jlm::rvsdg::output *
-reduce_parallel(const BinaryOperation & op, const std::vector<jlm::rvsdg::output *> & operands)
+static jlm::rvsdg::Output *
+reduce_parallel(const BinaryOperation & op, const std::vector<jlm::rvsdg::Output *> & operands)
 {
   JLM_ASSERT(operands.size() > 1);
   auto region = operands.front()->region();
 
-  std::deque<jlm::rvsdg::output *> worklist(operands.begin(), operands.end());
+  std::deque<jlm::rvsdg::Output *> worklist(operands.begin(), operands.end());
   while (worklist.size() > 1)
   {
     auto op1 = worklist.front();
@@ -174,13 +174,13 @@ reduce_parallel(const BinaryOperation & op, const std::vector<jlm::rvsdg::output
   return worklist.front();
 }
 
-static jlm::rvsdg::output *
-reduce_linear(const BinaryOperation & op, const std::vector<jlm::rvsdg::output *> & operands)
+static jlm::rvsdg::Output *
+reduce_linear(const BinaryOperation & op, const std::vector<jlm::rvsdg::Output *> & operands)
 {
   JLM_ASSERT(operands.size() > 1);
   auto region = operands.front()->region();
 
-  std::deque<jlm::rvsdg::output *> worklist(operands.begin(), operands.end());
+  std::deque<jlm::rvsdg::Output *> worklist(operands.begin(), operands.end());
   while (worklist.size() > 1)
   {
     auto op1 = worklist.front();
@@ -196,17 +196,17 @@ reduce_linear(const BinaryOperation & op, const std::vector<jlm::rvsdg::output *
   return worklist.front();
 }
 
-jlm::rvsdg::output *
+jlm::rvsdg::Output *
 FlattenedBinaryOperation::reduce(
     const FlattenedBinaryOperation::reduction & reduction,
-    const std::vector<jlm::rvsdg::output *> & operands) const
+    const std::vector<jlm::rvsdg::Output *> & operands) const
 {
   JLM_ASSERT(operands.size() > 1);
 
   static std::unordered_map<
       FlattenedBinaryOperation::reduction,
       std::function<
-          jlm::rvsdg::output *(const BinaryOperation &, const std::vector<jlm::rvsdg::output *> &)>>
+          jlm::rvsdg::Output *(const BinaryOperation &, const std::vector<jlm::rvsdg::Output *> &)>>
       map({ { reduction::linear, reduce_linear }, { reduction::parallel, reduce_parallel } });
 
   JLM_ASSERT(map.find(reduction) != map.end());
@@ -234,13 +234,13 @@ FlattenedBinaryOperation::reduce(
     }
   }
 
-  JLM_ASSERT(!Region::Contains<FlattenedBinaryOperation>(*region, true));
+  JLM_ASSERT(!Region::ContainsOperation<FlattenedBinaryOperation>(*region, true));
 }
 
-std::optional<std::vector<rvsdg::output *>>
+std::optional<std::vector<rvsdg::Output *>>
 NormalizeFlattenedBinaryOperation(
     const FlattenedBinaryOperation & operation,
-    const std::vector<rvsdg::output *> & operands)
+    const std::vector<rvsdg::Output *> & operands)
 {
   return NormalizeBinaryOperation(operation.bin_operation(), operands);
 }

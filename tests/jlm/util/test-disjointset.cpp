@@ -8,7 +8,7 @@
 #include <jlm/util/disjointset.hpp>
 
 static void
-print(const jlm::util::disjointset<int>::set & set)
+print(const jlm::util::DisjointSet<int>::set & set)
 {
   std::cout << "{";
   for (auto & member : set)
@@ -17,7 +17,7 @@ print(const jlm::util::disjointset<int>::set & set)
 }
 
 static void
-print(const jlm::util::disjointset<int> & djset)
+print(const jlm::util::DisjointSet<int> & djset)
 {
   for (auto & set : djset)
     print(set);
@@ -30,7 +30,7 @@ test()
 {
   using namespace jlm;
 
-  jlm::util::disjointset<int> djset({ 1, 2, 3, 4, 5 });
+  jlm::util::DisjointSet<int> djset({ 1, 2, 3, 4, 5 });
   print(djset);
   assert(djset.nvalues() == 5 && djset.nsets() == 5);
 

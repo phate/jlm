@@ -25,13 +25,13 @@ emit_tacs(const tacsvector_t & tacs)
 {
   std::string str;
   for (const auto & tac : tacs)
-    str += tac::ToAscii(*tac) + ", ";
+    str += ThreeAddressCode::ToAscii(*tac) + ", ";
 
   return "[" + str + "]";
 }
 
 static std::string
-emit_function_node(const ipgraph_node & clg_node)
+emit_function_node(const InterProceduralGraphNode & clg_node)
 {
   JLM_ASSERT(dynamic_cast<const function_node *>(&clg_node));
   auto & node = *static_cast<const function_node *>(&clg_node);
@@ -58,14 +58,14 @@ emit_function_node(const ipgraph_node & clg_node)
   }
   operands += ">";
 
-  std::string cfg = node.cfg() ? cfg::ToAscii(*node.cfg()) : "";
+  std::string cfg = node.cfg() ? ControlFlowGraph::ToAscii(*node.cfg()) : "";
   std::string exported = !is_externally_visible(node.linkage()) ? "static" : "";
 
   return exported + results + " " + node.name() + " " + operands + "\n{\n" + cfg + "\n}\n";
 }
 
 static std::string
-emit_data_node(const ipgraph_node & clg_node)
+emit_data_node(const InterProceduralGraphNode & clg_node)
 {
   JLM_ASSERT(dynamic_cast<const data_node *>(&clg_node));
   auto & node = *static_cast<const data_node *>(&clg_node);
@@ -79,10 +79,12 @@ emit_data_node(const ipgraph_node & clg_node)
 }
 
 std::string
-to_str(const ipgraph & clg)
+to_str(const InterProceduralGraph & clg)
 {
-  static std::unordered_map<std::type_index, std::function<std::string(const ipgraph_node &)>> map(
-      { { typeid(function_node), emit_function_node }, { typeid(data_node), emit_data_node } });
+  static std::
+      unordered_map<std::type_index, std::function<std::string(const InterProceduralGraphNode &)>>
+          map({ { typeid(function_node), emit_function_node },
+                { typeid(data_node), emit_data_node } });
 
   std::string str;
   for (const auto & node : clg)
@@ -97,10 +99,10 @@ to_str(const ipgraph & clg)
 /* dot converters */
 
 static inline std::string
-emit_entry_dot(const cfg_node & node)
+emit_entry_dot(const ControlFlowGraphNode & node)
 {
-  JLM_ASSERT(is<entry_node>(&node));
-  auto en = static_cast<const entry_node *>(&node);
+  JLM_ASSERT(is<EntryNode>(&node));
+  const auto en = static_cast<const EntryNode *>(&node);
 
   std::string str;
   for (size_t n = 0; n < en->narguments(); n++)
@@ -113,10 +115,10 @@ emit_entry_dot(const cfg_node & node)
 }
 
 static inline std::string
-emit_exit_dot(const cfg_node & node)
+emit_exit_dot(const ControlFlowGraphNode & node)
 {
-  JLM_ASSERT(is<exit_node>(&node));
-  auto xn = static_cast<const exit_node *>(&node);
+  JLM_ASSERT(is<ExitNode>(&node));
+  const auto xn = static_cast<const ExitNode *>(&node);
 
   std::string str;
   for (size_t n = 0; n < xn->nresults(); n++)
@@ -129,37 +131,37 @@ emit_exit_dot(const cfg_node & node)
 }
 
 static inline std::string
-emit_basic_block(const cfg_node & node)
+emit_basic_block(const ControlFlowGraphNode & node)
 {
-  JLM_ASSERT(is<basic_block>(&node));
-  auto & tacs = static_cast<const basic_block *>(&node)->tacs();
+  JLM_ASSERT(is<BasicBlock>(&node));
+  auto & tacs = static_cast<const BasicBlock *>(&node)->tacs();
 
   std::string str;
   for (const auto & tac : tacs)
-    str += tac::ToAscii(*tac) + "\\n";
+    str += ThreeAddressCode::ToAscii(*tac) + "\\n";
 
   return str;
 }
 
 static inline std::string
-emit_header(const cfg_node & node)
+emit_header(const ControlFlowGraphNode & node)
 {
-  if (is<entry_node>(&node))
+  if (is<EntryNode>(&node))
     return "ENTRY";
 
-  if (is<exit_node>(&node))
+  if (is<ExitNode>(&node))
     return "EXIT";
 
   return util::strfmt(&node);
 }
 
 static inline std::string
-emit_node(const cfg_node & node)
+emit_node(const ControlFlowGraphNode & node)
 {
-  static std::unordered_map<std::type_index, std::string (*)(const cfg_node &)> map(
-      { { typeid(entry_node), emit_entry_dot },
-        { typeid(exit_node), emit_exit_dot },
-        { typeid(basic_block), emit_basic_block } });
+  static std::unordered_map<std::type_index, std::string (*)(const ControlFlowGraphNode &)> map(
+      { { typeid(EntryNode), emit_entry_dot },
+        { typeid(ExitNode), emit_exit_dot },
+        { typeid(BasicBlock), emit_basic_block } });
 
   JLM_ASSERT(map.find(typeid(node)) != map.end());
   std::string body = map[typeid(node)](node);
@@ -168,7 +170,7 @@ emit_node(const cfg_node & node)
 }
 
 std::string
-to_dot(const llvm::cfg & cfg)
+to_dot(const ControlFlowGraph & cfg)
 {
   auto entry = cfg.entry();
   auto exit = cfg.exit();
@@ -212,7 +214,7 @@ to_dot(const llvm::cfg & cfg)
 }
 
 std::string
-to_dot(const ipgraph & clg)
+to_dot(const InterProceduralGraph & clg)
 {
   std::string dot("digraph clg {\n");
   for (const auto & node : clg)
@@ -231,9 +233,10 @@ to_dot(const ipgraph & clg)
 /* aggregation node */
 
 std::string
-to_str(const aggnode & n, const AnnotationMap & dm)
+to_str(const AggregationNode & n, const AnnotationMap & dm)
 {
-  std::function<std::string(const aggnode &, size_t)> f = [&](const aggnode & n, size_t depth)
+  std::function<std::string(const AggregationNode &, size_t)> f =
+      [&](const AggregationNode & n, size_t depth)
   {
     std::string subtree(depth, '-');
     subtree += n.debug_string();
@@ -251,7 +254,7 @@ to_str(const aggnode & n, const AnnotationMap & dm)
 }
 
 void
-print(const aggnode & n, const AnnotationMap & dm, FILE * out)
+print(const AggregationNode & n, const AnnotationMap & dm, FILE * out)
 {
   fputs(to_str(n, dm).c_str(), out);
   fflush(out);

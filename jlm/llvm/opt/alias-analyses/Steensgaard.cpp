@@ -24,9 +24,9 @@ namespace jlm::llvm::aa
  * @return True if \p output%s type is or contains a pointer type, otherwise false.
  */
 static bool
-HasOrContainsPointerType(const rvsdg::output & output)
+HasOrContainsPointerType(const rvsdg::Output & output)
 {
-  return IsOrContains<PointerType>(output.type()) || is<rvsdg::FunctionType>(output.type());
+  return IsOrContains<PointerType>(*output.Type()) || is<rvsdg::FunctionType>(output.Type());
 }
 
 /**
@@ -169,14 +169,14 @@ class RegisterLocation final : public Location
 {
 public:
   constexpr explicit RegisterLocation(
-      const jlm::rvsdg::output & output,
+      const jlm::rvsdg::Output & output,
       PointsToFlags pointsToFlags)
       : Location(pointsToFlags),
         HasEscaped_(false),
         Output_(&output)
   {}
 
-  [[nodiscard]] const jlm::rvsdg::output &
+  [[nodiscard]] const jlm::rvsdg::Output &
   GetOutput() const noexcept
   {
     return *Output_;
@@ -201,19 +201,19 @@ public:
   [[nodiscard]] std::string
   DebugString() const noexcept override
   {
-    auto node = jlm::rvsdg::output::GetNode(*Output_);
+    auto node = rvsdg::TryGetOwnerNode<rvsdg::Node>(*Output_);
     auto index = Output_->index();
 
     if (jlm::rvsdg::is<rvsdg::SimpleOperation>(node))
     {
-      auto nodestr = node->GetOperation().debug_string();
-      auto outputstr = Output_->type().debug_string();
+      auto nodestr = node->DebugString();
+      auto outputstr = Output_->Type()->debug_string();
       return jlm::util::strfmt(nodestr, ":", index, "[" + outputstr + "]");
     }
 
     if (auto node = rvsdg::TryGetRegionParentNode<rvsdg::LambdaNode>(*Output_))
     {
-      auto dbgstr = node->GetOperation().debug_string();
+      auto dbgstr = node->DebugString();
       if (auto ctxvar = node->MapBinderContextVar(*Output_))
       {
         // Bound context variable.
@@ -228,31 +228,31 @@ public:
 
     if (is<delta::cvargument>(Output_))
     {
-      auto dbgstr = Output_->region()->node()->GetOperation().debug_string();
+      auto dbgstr = Output_->region()->node()->DebugString();
       return jlm::util::strfmt(dbgstr, ":cv:", index);
     }
 
     if (rvsdg::TryGetRegionParentNode<rvsdg::GammaNode>(*Output_))
     {
-      auto dbgstr = Output_->region()->node()->GetOperation().debug_string();
+      auto dbgstr = Output_->region()->node()->DebugString();
       return jlm::util::strfmt(dbgstr, ":arg", index);
     }
 
     if (rvsdg::TryGetRegionParentNode<rvsdg::ThetaNode>(*Output_))
     {
-      auto dbgstr = Output_->region()->node()->GetOperation().debug_string();
+      auto dbgstr = Output_->region()->node()->DebugString();
       return jlm::util::strfmt(dbgstr, ":arg", index);
     }
 
-    if (rvsdg::TryGetOwnerNode<rvsdg::ThetaNode>(*Output_))
+    if (const auto thetaNode = rvsdg::TryGetOwnerNode<rvsdg::ThetaNode>(*Output_))
     {
-      auto dbgstr = jlm::rvsdg::output::GetNode(*Output_)->GetOperation().debug_string();
+      auto dbgstr = thetaNode->DebugString();
       return jlm::util::strfmt(dbgstr, ":out", index);
     }
 
     if (auto node = rvsdg::TryGetOwnerNode<rvsdg::GammaNode>(*Output_))
     {
-      auto dbgstr = node->GetOperation().debug_string();
+      auto dbgstr = node->DebugString();
       return jlm::util::strfmt(dbgstr, ":out", index);
     }
 
@@ -263,7 +263,7 @@ public:
 
     if (auto phi = rvsdg::TryGetRegionParentNode<rvsdg::PhiNode>(*Output_))
     {
-      auto dbgstr = phi->GetOperation().debug_string();
+      auto dbgstr = phi->DebugString();
       auto var = phi->MapArgument(*Output_);
       if (auto fix = std::get_if<rvsdg::PhiNode::FixVar>(&var))
       {
@@ -276,7 +276,7 @@ public:
     }
 
     return jlm::util::strfmt(
-        rvsdg::output::GetNode(*Output_)->GetOperation().debug_string(),
+        rvsdg::TryGetOwnerNode<rvsdg::Node>(*Output_)->DebugString(),
         ":",
         index);
   }
@@ -289,14 +289,14 @@ public:
   }
 
   static std::unique_ptr<RegisterLocation>
-  Create(const jlm::rvsdg::output & output, PointsToFlags pointsToFlags)
+  Create(const jlm::rvsdg::Output & output, PointsToFlags pointsToFlags)
   {
     return std::make_unique<RegisterLocation>(output, pointsToFlags);
   }
 
 private:
   bool HasEscaped_;
-  const jlm::rvsdg::output * Output_;
+  const jlm::rvsdg::Output * Output_;
 };
 
 /** \brief MemoryLocation class
@@ -324,7 +324,7 @@ class AllocaLocation final : public MemoryLocation
       : MemoryLocation(),
         Node_(node)
   {
-    JLM_ASSERT(is<alloca_op>(&node));
+    JLM_ASSERT(is<AllocaOperation>(&node));
   }
 
 public:
@@ -337,7 +337,7 @@ public:
   [[nodiscard]] std::string
   DebugString() const noexcept override
   {
-    return Node_.GetOperation().debug_string();
+    return Node_.DebugString();
   }
 
   static std::unique_ptr<Location>
@@ -375,7 +375,7 @@ public:
   [[nodiscard]] std::string
   DebugString() const noexcept override
   {
-    return Node_.GetOperation().debug_string();
+    return Node_.DebugString();
   }
 
   static std::unique_ptr<Location>
@@ -411,7 +411,7 @@ public:
   [[nodiscard]] std::string
   DebugString() const noexcept override
   {
-    return Lambda_.GetOperation().debug_string();
+    return Lambda_.DebugString();
   }
 
   static std::unique_ptr<Location>
@@ -448,7 +448,7 @@ public:
   [[nodiscard]] std::string
   DebugString() const noexcept override
   {
-    return Delta_.GetOperation().debug_string();
+    return Delta_.DebugString();
   }
 
   static std::unique_ptr<Location>
@@ -496,7 +496,7 @@ public:
   static std::unique_ptr<Location>
   Create(const GraphImport & graphImport)
   {
-    JLM_ASSERT(is<PointerType>(graphImport.type()) || is<rvsdg::FunctionType>(graphImport.type()));
+    JLM_ASSERT(is<PointerType>(graphImport.Type()) || is<rvsdg::FunctionType>(graphImport.Type()));
 
     // If the imported memory location is a pointer type or contains a pointer type, then these
     // pointers can point to values that escaped this module.
@@ -539,7 +539,7 @@ public:
   }
 };
 
-using DisjointLocationSet = util::disjointset<Location *>;
+using DisjointLocationSet = util::DisjointSet<Location *>;
 
 /** \brief Context class
  */
@@ -674,7 +674,7 @@ public:
    * problem automatically.
    */
   Location &
-  GetOrInsertRegisterLocation(const rvsdg::output & output)
+  GetOrInsertRegisterLocation(const rvsdg::Output & output)
   {
     if (auto it = LocationMap_.find(&output); it != LocationMap_.end())
       return GetRootLocation(*it->second);
@@ -725,7 +725,7 @@ public:
    * @return The root Location of the set.
    */
   Location &
-  GetLocation(const rvsdg::output & output)
+  GetLocation(const rvsdg::Output & output)
   {
     return GetRootLocation(GetRegisterLocation(output));
   }
@@ -737,7 +737,7 @@ public:
    * @return A RegisterLocation.
    */
   RegisterLocation &
-  GetRegisterLocation(const rvsdg::output & output)
+  GetRegisterLocation(const rvsdg::Output & output)
   {
     auto it = LocationMap_.find(&output);
     JLM_ASSERT(it != LocationMap_.end());
@@ -751,7 +751,7 @@ public:
    * @return True if the location exists, otherwise false.
    */
   bool
-  HasRegisterLocation(const rvsdg::output & output)
+  HasRegisterLocation(const rvsdg::Output & output)
   {
     auto it = LocationMap_.find(&output);
     return it != LocationMap_.end();
@@ -864,7 +864,7 @@ public:
 
 private:
   RegisterLocation &
-  InsertRegisterLocation(const jlm::rvsdg::output & output, PointsToFlags pointsToFlags)
+  InsertRegisterLocation(const jlm::rvsdg::Output & output, PointsToFlags pointsToFlags)
   {
     JLM_ASSERT(!HasRegisterLocation(output));
 
@@ -886,7 +886,7 @@ private:
 
   DisjointLocationSet DisjointLocationSet_;
   std::vector<std::unique_ptr<Location>> Locations_;
-  std::unordered_map<const jlm::rvsdg::output *, RegisterLocation *> LocationMap_;
+  std::unordered_map<const jlm::rvsdg::Output *, RegisterLocation *> LocationMap_;
 };
 
 /** \brief Collect statistics about Steensgaard alias analysis pass
@@ -916,7 +916,7 @@ class Steensgaard::Statistics final : public util::Statistics
 public:
   ~Statistics() override = default;
 
-  explicit Statistics(const util::filepath & sourceFile)
+  explicit Statistics(const util::FilePath & sourceFile)
       : util::Statistics(Statistics::Id::SteensgaardAnalysis, sourceFile)
   {}
 
@@ -983,7 +983,7 @@ public:
   }
 
   static std::unique_ptr<Statistics>
-  Create(const util::filepath & sourceFile)
+  Create(const util::FilePath & sourceFile)
   {
     return std::make_unique<Statistics>(sourceFile);
   }
@@ -996,7 +996,7 @@ Steensgaard::Steensgaard() = default;
 void
 Steensgaard::AnalyzeSimpleNode(const jlm::rvsdg::SimpleNode & node)
 {
-  if (is<alloca_op>(&node))
+  if (is<AllocaOperation>(&node))
   {
     AnalyzeAlloca(node);
   }
@@ -1090,7 +1090,7 @@ Steensgaard::AnalyzeSimpleNode(const jlm::rvsdg::SimpleNode & node)
 void
 Steensgaard::AnalyzeAlloca(const jlm::rvsdg::SimpleNode & node)
 {
-  JLM_ASSERT(is<alloca_op>(&node));
+  JLM_ASSERT(is<AllocaOperation>(&node));
 
   auto & allocaOutputLocation = Context_->GetOrInsertRegisterLocation(*node.output(0));
   auto & allocaLocation = Context_->InsertAllocaLocation(node);
@@ -1186,7 +1186,7 @@ Steensgaard::AnalyzeDirectCall(
   JLM_ASSERT(is<CallOperation>(&callNode));
 
   auto & lambdaFunctionType = lambdaNode.GetOperation().type();
-  auto & callFunctionType = CallOperation::GetFunctionInput(callNode).type();
+  auto & callFunctionType = *CallOperation::GetFunctionInput(callNode).Type();
   if (callFunctionType != lambdaFunctionType)
   {
     // LLVM permits code where it can happen that the number and type of the arguments handed in to
@@ -1890,7 +1890,7 @@ Steensgaard::Analyze(
 }
 
 void
-Steensgaard::MarkAsEscaped(const rvsdg::output & output)
+Steensgaard::MarkAsEscaped(const rvsdg::Output & output)
 {
   auto & outputLocation = Context_->GetRegisterLocation(output);
   outputLocation.MarkAsEscaped();
@@ -1962,7 +1962,7 @@ util::HashSet<PointsToGraph::MemoryNode *>
 Steensgaard::CollectEscapedMemoryNodes(
     const util::HashSet<RegisterLocation *> & escapingRegisterLocations,
     const std::unordered_map<
-        const util::disjointset<Location *>::set *,
+        const util::DisjointSet<Location *>::set *,
         std::vector<PointsToGraph::MemoryNode *>> & memoryNodesInSet) const
 {
   // Initialize working set
@@ -2029,7 +2029,7 @@ Steensgaard::ConstructPointsToGraph() const
   {
     memoryNodesInSet[&locationSet] = {};
 
-    util::HashSet<const rvsdg::output *> registers;
+    util::HashSet<const rvsdg::Output *> registers;
     util::HashSet<RegisterLocation *> registerLocations;
     for (auto & location : locationSet)
     {

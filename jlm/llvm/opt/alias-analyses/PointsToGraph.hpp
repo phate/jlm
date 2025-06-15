@@ -57,7 +57,7 @@ public:
   using LambdaNodeMap =
       std::unordered_map<const rvsdg::LambdaNode *, std::unique_ptr<PointsToGraph::LambdaNode>>;
   using MallocNodeMap = std::unordered_map<const rvsdg::Node *, std::unique_ptr<MallocNode>>;
-  using RegisterNodeMap = std::unordered_map<const rvsdg::output *, PointsToGraph::RegisterNode *>;
+  using RegisterNodeMap = std::unordered_map<const rvsdg::Output *, PointsToGraph::RegisterNode *>;
   using RegisterNodeVector = std::vector<std::unique_ptr<PointsToGraph::RegisterNode>>;
 
   template<class DataType, class IteratorType>
@@ -317,7 +317,7 @@ public:
   }
 
   const PointsToGraph::RegisterNode &
-  GetRegisterNode(const rvsdg::output & output) const
+  GetRegisterNode(const rvsdg::Output & output) const
   {
     auto it = RegisterNodeMap_.find(&output);
     if (it == RegisterNodeMap_.end())
@@ -391,7 +391,7 @@ public:
   static std::string
   ToDot(
       const PointsToGraph & pointsToGraph,
-      const std::unordered_map<const rvsdg::output *, std::string> & outputMap);
+      const std::unordered_map<const rvsdg::Output *, std::string> & outputMap);
 
   /**
    * @brief Creates a GraphViz description of the given \p pointsToGraph.
@@ -401,7 +401,7 @@ public:
   static std::string
   ToDot(const PointsToGraph & pointsToGraph)
   {
-    const std::unordered_map<const rvsdg::output *, std::string> outputMap;
+    const std::unordered_map<const rvsdg::Output *, std::string> outputMap;
     return ToDot(pointsToGraph, outputMap);
   }
 
@@ -544,13 +544,13 @@ public:
   ~RegisterNode() noexcept override;
 
 private:
-  RegisterNode(PointsToGraph & pointsToGraph, util::HashSet<const rvsdg::output *> outputs)
+  RegisterNode(PointsToGraph & pointsToGraph, util::HashSet<const rvsdg::Output *> outputs)
       : Node(pointsToGraph),
         Outputs_(std::move(outputs))
   {}
 
 public:
-  const util::HashSet<const rvsdg::output *> &
+  const util::HashSet<const rvsdg::Output *> &
   GetOutputs() const noexcept
   {
     return Outputs_;
@@ -560,10 +560,10 @@ public:
   DebugString() const override;
 
   static std::string
-  ToString(const rvsdg::output & output);
+  ToString(const rvsdg::Output & output);
 
   static PointsToGraph::RegisterNode &
-  Create(PointsToGraph & pointsToGraph, util::HashSet<const rvsdg::output *> outputs)
+  Create(PointsToGraph & pointsToGraph, util::HashSet<const rvsdg::Output *> outputs)
   {
     auto node = std::unique_ptr<PointsToGraph::RegisterNode>(
         new RegisterNode(pointsToGraph, std::move(outputs)));
@@ -571,7 +571,7 @@ public:
   }
 
 private:
-  const util::HashSet<const rvsdg::output *> Outputs_;
+  const util::HashSet<const rvsdg::Output *> Outputs_;
 };
 
 /** \brief PointsTo graph memory node
@@ -619,7 +619,7 @@ private:
       : MemoryNode(pointsToGraph),
         AllocaNode_(&allocaNode)
   {
-    JLM_ASSERT(is<alloca_op>(&allocaNode));
+    JLM_ASSERT(is<AllocaOperation>(&allocaNode));
   }
 
 public:
@@ -655,9 +655,7 @@ private:
   DeltaNode(PointsToGraph & pointsToGraph, const delta::node & deltaNode)
       : MemoryNode(pointsToGraph),
         DeltaNode_(&deltaNode)
-  {
-    JLM_ASSERT(is<delta::operation>(&deltaNode));
-  }
+  {}
 
 public:
   const delta::node &
@@ -730,7 +728,7 @@ private:
       : MemoryNode(pointsToGraph),
         LambdaNode_(&lambdaNode)
   {
-    JLM_ASSERT(is<llvm::LlvmLambdaOperation>(&lambdaNode));
+    JLM_ASSERT(dynamic_cast<const llvm::LlvmLambdaOperation *>(&lambdaNode.GetOperation()));
   }
 
 public:

@@ -8,6 +8,8 @@
 #include <jlm/hls/backend/rhls2firrtl/json-hls.hpp>
 #include <jlm/hls/backend/rhls2firrtl/RhlsToFirrtlConverter.hpp>
 #include <jlm/hls/backend/rhls2firrtl/verilator-harness-hls.hpp>
+#include <jlm/hls/backend/rhls2firrtl/VerilatorHarnessAxi.hpp>
+#include <jlm/hls/backend/rvsdg2rhls/add-buffers.hpp>
 #include <jlm/hls/backend/rvsdg2rhls/rvsdg2rhls.hpp>
 #include <jlm/llvm/backend/IpGraphToLlvmConverter.hpp>
 #include <jlm/llvm/backend/RvsdgToIpGraphConverter.hpp>
@@ -22,7 +24,7 @@
 #include <llvm/Support/SourceMgr.h>
 
 static void
-stringToFile(const std::string & output, const jlm::util::filepath & fileName)
+stringToFile(const std::string & output, const jlm::util::FilePath & fileName)
 {
   std::ofstream outputFile;
   outputFile.open(fileName.to_str());
@@ -31,7 +33,7 @@ stringToFile(const std::string & output, const jlm::util::filepath & fileName)
 }
 
 static void
-llvmToFile(jlm::llvm::RvsdgModule & module, const jlm::util::filepath & fileName)
+llvmToFile(jlm::llvm::RvsdgModule & module, const jlm::util::FilePath & fileName)
 {
   llvm::LLVMContext ctx;
   jlm::util::StatisticsCollector statisticsCollector;
@@ -61,7 +63,7 @@ main(int argc, char ** argv)
   auto moduleName = commandLineOptions.InputFile_.base();
   jlm::util::StatisticsCollectorSettings settings(
       {},
-      jlm::util::filepath::TempDirectoryPath(),
+      jlm::util::FilePath::TempDirectoryPath(),
       moduleName);
   jlm::util::StatisticsCollector collector(std::move(settings));
 
@@ -69,6 +71,8 @@ main(int argc, char ** argv)
   auto jlmModule = jlm::llvm::ConvertLlvmModule(*llvmModule);
 
   auto rvsdgModule = jlm::llvm::ConvertInterProceduralGraphModule(*jlmModule, collector);
+
+  jlm::hls::setMemoryLatency(commandLineOptions.MemoryLatency_);
 
   if (commandLineOptions.ExtractHlsFunction_)
   {
@@ -105,6 +109,11 @@ main(int argc, char ** argv)
     stringToFile(
         vhls.run(*rvsdgModule),
         commandLineOptions.OutputFiles_.WithSuffix(".harness.cpp"));
+
+    jlm::hls::VerilatorHarnessAxi ahls(outputVerilogFile);
+    stringToFile(
+        ahls.run(*rvsdgModule),
+        commandLineOptions.OutputFiles_.WithSuffix(".harness_axi.cpp"));
 
     // TODO: hide behind flag
     jlm::hls::JsonHLS jhls;

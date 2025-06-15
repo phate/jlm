@@ -15,7 +15,7 @@ TestEliminateSplitAndMergeNodes()
   using namespace jlm::llvm;
   using namespace jlm::hls;
 
-  auto rvsdgModule = RvsdgModule::Create(jlm::util::filepath(""), "", "");
+  auto rvsdgModule = RvsdgModule::Create(jlm::util::FilePath(""), "", "");
 
   // Setup the function
   std::cout << "Function Setup" << std::endl;
@@ -40,7 +40,7 @@ TestEliminateSplitAndMergeNodes()
       32);
 
   // LambdaExitMemoryStateMerge node
-  std::vector<jlm::rvsdg::output *> outputs;
+  std::vector<jlm::rvsdg::Output *> outputs;
   auto & memoryStateMerge = LambdaExitMemoryStateMergeOperation::Create(
       *lambda->subregion(),
       { loadOutput[1], memoryStateSplit[1] });
@@ -55,14 +55,15 @@ TestEliminateSplitAndMergeNodes()
   jlm::util::StatisticsCollector collector;
   InvariantLambdaMemoryStateRemoval::CreateAndRun(*rvsdgModule, collector);
   // Assert
-  auto * node =
-      jlm::rvsdg::output::GetNode(*rvsdgModule->Rvsdg().GetRootRegion().result(0)->origin());
+  auto * node = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
+      *rvsdgModule->Rvsdg().GetRootRegion().result(0)->origin());
   auto lambdaSubregion = jlm::util::AssertedCast<jlm::rvsdg::LambdaNode>(node)->subregion();
   jlm::rvsdg::view(rvsdgModule->Rvsdg(), stdout);
   assert(lambdaSubregion->narguments() == 2);
   assert(lambdaSubregion->nresults() == 1);
   assert(is<MemoryStateType>(lambdaSubregion->result(0)->Type()));
-  auto loadNode = jlm::rvsdg::output::GetNode(*lambdaSubregion->result(0)->origin());
+  auto loadNode =
+      jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*lambdaSubregion->result(0)->origin());
   assert(is<LoadNonVolatileOperation>(loadNode->GetOperation()));
   jlm::util::AssertedCast<jlm::rvsdg::RegionArgument>(loadNode->input(1)->origin());
 
@@ -78,7 +79,7 @@ TestInvariantMemoryState()
   using namespace jlm::llvm;
   using namespace jlm::hls;
 
-  auto rvsdgModule = RvsdgModule::Create(jlm::util::filepath(""), "", "");
+  auto rvsdgModule = RvsdgModule::Create(jlm::util::FilePath(""), "", "");
 
   // Setup the function
   std::cout << "Function Setup" << std::endl;
@@ -110,7 +111,7 @@ TestInvariantMemoryState()
       32);
 
   // LambdaExitMemoryStateMerge node
-  std::vector<jlm::rvsdg::output *> outputs;
+  std::vector<jlm::rvsdg::Output *> outputs;
   auto & memoryStateMerge = LambdaExitMemoryStateMergeOperation::Create(
       *lambda->subregion(),
       { loadOutput1[1], memoryStateSplit[1], loadOutput2[1] });
@@ -126,23 +127,23 @@ TestInvariantMemoryState()
   InvariantLambdaMemoryStateRemoval memStateRemoval;
   memStateRemoval.Run(*rvsdgModule, collector);
   // Assert
-  auto * node =
-      jlm::rvsdg::output::GetNode(*rvsdgModule->Rvsdg().GetRootRegion().result(0)->origin());
-  auto lambdaSubregion = jlm::util::AssertedCast<jlm::rvsdg::LambdaNode>(node)->subregion();
+  auto * lambdaNode = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::LambdaNode>(
+      *rvsdgModule->Rvsdg().GetRootRegion().result(0)->origin());
+  auto lambdaSubregion = lambdaNode->subregion();
   jlm::rvsdg::view(rvsdgModule->Rvsdg(), stdout);
   assert(lambdaSubregion->narguments() == 2);
   assert(lambdaSubregion->nresults() == 1);
   assert(is<MemoryStateType>(lambdaSubregion->result(0)->Type()));
   // Since there is more than one invariant memory state edge, the MemoryStateMerge node should
   // still exists
-  node = jlm::rvsdg::output::GetNode(*lambdaSubregion->result(0)->origin());
+  auto node = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*lambdaSubregion->result(0)->origin());
   assert(is<LambdaExitMemoryStateMergeOperation>(node->GetOperation()));
   assert(node->ninputs() == 2);
   // Need to pass a load node to reach the MemoryStateSplit node
-  node = jlm::rvsdg::output::GetNode(*node->input(1)->origin());
+  node = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*node->input(1)->origin());
   assert(is<LoadNonVolatileOperation>(node->GetOperation()));
   // Check that the MemoryStateSplit node is still present
-  node = jlm::rvsdg::output::GetNode(*node->input(1)->origin());
+  node = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*node->input(1)->origin());
   assert(is<LambdaEntryMemoryStateSplitOperation>(node->GetOperation()));
 
   return 0;

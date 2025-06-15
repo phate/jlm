@@ -86,16 +86,16 @@ private:
 class GraphExport final : public rvsdg::GraphExport
 {
 private:
-  GraphExport(rvsdg::output & origin, std::string name)
+  GraphExport(rvsdg::Output & origin, std::string name)
       : rvsdg::GraphExport(origin, std::move(name))
   {}
 
 public:
   GraphExport &
-  Copy(rvsdg::output & origin, rvsdg::StructuralOutput * output) override;
+  Copy(rvsdg::Output & origin, rvsdg::StructuralOutput * output) override;
 
   static GraphExport &
-  Create(rvsdg::output & origin, std::string name)
+  Create(rvsdg::Output & origin, std::string name)
   {
     auto graphExport = new GraphExport(origin, std::move(name));
     origin.region()->graph()->GetRootRegion().append_result(graphExport);
@@ -111,12 +111,12 @@ class RvsdgModule final : public rvsdg::RvsdgModule
 public:
   ~RvsdgModule() noexcept override = default;
 
-  RvsdgModule(jlm::util::filepath sourceFileName, std::string targetTriple, std::string dataLayout)
+  RvsdgModule(jlm::util::FilePath sourceFileName, std::string targetTriple, std::string dataLayout)
       : RvsdgModule(std::move(sourceFileName), std::move(targetTriple), std::move(dataLayout), {})
   {}
 
   RvsdgModule(
-      util::filepath sourceFileName,
+      util::FilePath sourceFileName,
       std::string targetTriple,
       std::string dataLayout,
       std::vector<std::unique_ptr<StructType::Declaration>> declarations)
@@ -136,7 +136,7 @@ public:
   RvsdgModule &
   operator=(RvsdgModule &&) = delete;
 
-  [[nodiscard]] const util::filepath &
+  [[nodiscard]] const util::FilePath &
   SourceFileName() const noexcept
   {
     return SourceFilePath().value();
@@ -181,7 +181,7 @@ public:
 
   static std::unique_ptr<RvsdgModule>
   Create(
-      const jlm::util::filepath & sourceFileName,
+      const jlm::util::FilePath & sourceFileName,
       const std::string & targetTriple,
       const std::string & dataLayout)
   {
@@ -190,7 +190,7 @@ public:
 
   static std::unique_ptr<RvsdgModule>
   Create(
-      const jlm::util::filepath & sourceFileName,
+      const jlm::util::FilePath & sourceFileName,
       const std::string & targetTriple,
       const std::string & dataLayout,
       std::vector<std::unique_ptr<StructType::Declaration>> declarations)

@@ -48,7 +48,7 @@ public:
     IndirectCall
   };
 
-  CallTypeClassifier(CallType callType, jlm::rvsdg::output & output)
+  CallTypeClassifier(CallType callType, jlm::rvsdg::Output & output)
       : CallType_(callType),
         Output_(&output)
   {}
@@ -109,7 +109,7 @@ public:
    *
    * @return The called function.
    */
-  [[nodiscard]] rvsdg::output &
+  [[nodiscard]] rvsdg::Output &
   GetLambdaOutput() const noexcept
   {
     if (GetCallType() == CallType::NonRecursiveDirectCall)
@@ -148,7 +148,7 @@ public:
    *
    * @see CallNode::TraceFunctionInput(), CallNode::GetFunctionInput()
    */
-  [[nodiscard]] jlm::rvsdg::output &
+  [[nodiscard]] jlm::rvsdg::Output &
   GetFunctionOrigin() const noexcept
   {
     return *Output_;
@@ -164,7 +164,7 @@ public:
       The given output must belong to a lambda node.
   */
   static std::unique_ptr<CallTypeClassifier>
-  CreateNonRecursiveDirectCallClassifier(rvsdg::output & output)
+  CreateNonRecursiveDirectCallClassifier(rvsdg::Output & output)
   {
     rvsdg::AssertGetOwnerNode<rvsdg::LambdaNode>(output);
     return std::make_unique<CallTypeClassifier>(CallType::NonRecursiveDirectCall, output);
@@ -180,7 +180,7 @@ public:
       The given output must belong to a phi node.
   */
   static std::unique_ptr<CallTypeClassifier>
-  CreateRecursiveDirectCallClassifier(rvsdg::output & output)
+  CreateRecursiveDirectCallClassifier(rvsdg::Output & output)
   {
     return std::make_unique<CallTypeClassifier>(CallType::RecursiveDirectCall, output);
   }
@@ -208,14 +208,14 @@ public:
       Output representing the function called (supposed to be pointer).
   */
   static std::unique_ptr<CallTypeClassifier>
-  CreateIndirectCallClassifier(jlm::rvsdg::output & output)
+  CreateIndirectCallClassifier(jlm::rvsdg::Output & output)
   {
     return std::make_unique<CallTypeClassifier>(CallType::IndirectCall, output);
   }
 
 private:
   CallType CallType_;
-  jlm::rvsdg::output * Output_;
+  jlm::rvsdg::Output * Output_;
 };
 
 /** \brief Call operation class
@@ -263,7 +263,7 @@ public:
    * @param n The index of the function argument.
    * @return The input for the given index \p n.
    */
-  [[nodiscard]] static rvsdg::input *
+  [[nodiscard]] static rvsdg::Input *
   Argument(const rvsdg::SimpleNode & node, const size_t n)
   {
     JLM_ASSERT(is<CallOperation>(&node));
@@ -274,60 +274,60 @@ public:
   /**
    * @return The call node's function input.
    */
-  [[nodiscard]] static rvsdg::input &
+  [[nodiscard]] static rvsdg::Input &
   GetFunctionInput(const rvsdg::SimpleNode & node) noexcept
   {
     JLM_ASSERT(is<CallOperation>(&node));
     const auto functionInput = node.input(0);
-    JLM_ASSERT(is<rvsdg::FunctionType>(functionInput->type()));
+    JLM_ASSERT(is<rvsdg::FunctionType>(functionInput->Type()));
     return *functionInput;
   }
 
   /**
    * @return The call node's input/output state input.
    */
-  [[nodiscard]] static rvsdg::input &
+  [[nodiscard]] static rvsdg::Input &
   GetIOStateInput(const rvsdg::SimpleNode & node) noexcept
   {
     JLM_ASSERT(is<CallOperation>(&node));
     const auto ioState = node.input(node.ninputs() - 2);
-    JLM_ASSERT(is<IOStateType>(ioState->type()));
+    JLM_ASSERT(is<IOStateType>(ioState->Type()));
     return *ioState;
   }
 
   /**
    * @return The call node's input/output state output.
    */
-  [[nodiscard]] static rvsdg::output &
+  [[nodiscard]] static rvsdg::Output &
   GetIOStateOutput(const rvsdg::SimpleNode & node) noexcept
   {
     JLM_ASSERT(is<CallOperation>(&node));
     const auto ioState = node.output(node.noutputs() - 2);
-    JLM_ASSERT(is<IOStateType>(ioState->type()));
+    JLM_ASSERT(is<IOStateType>(ioState->Type()));
     return *ioState;
   }
 
   /**
    * @return The call node's memory state input.
    */
-  [[nodiscard]] static rvsdg::input &
+  [[nodiscard]] static rvsdg::Input &
   GetMemoryStateInput(const rvsdg::SimpleNode & node) noexcept
   {
     JLM_ASSERT(is<CallOperation>(&node));
     const auto memoryState = node.input(node.ninputs() - 1);
-    JLM_ASSERT(is<MemoryStateType>(memoryState->type()));
+    JLM_ASSERT(is<MemoryStateType>(memoryState->Type()));
     return *memoryState;
   }
 
   /**
    * @return The call node's memory state output.
    */
-  [[nodiscard]] static rvsdg::output &
+  [[nodiscard]] static rvsdg::Output &
   GetMemoryStateOutput(const rvsdg::SimpleNode & node) noexcept
   {
     JLM_ASSERT(is<CallOperation>(&node));
     const auto memoryState = node.output(node.noutputs() - 1);
-    JLM_ASSERT(is<MemoryStateType>(memoryState->type()));
+    JLM_ASSERT(is<MemoryStateType>(memoryState->Type()));
     return *memoryState;
   }
 
@@ -345,9 +345,9 @@ public:
   GetMemoryStateEntryMerge(const rvsdg::SimpleNode & callNode) noexcept
   {
     JLM_ASSERT(is<CallOperation>(&callNode));
-    const auto node = rvsdg::output::GetNode(*GetMemoryStateInput(callNode).origin());
-    return is<CallEntryMemoryStateMergeOperation>(node) ? dynamic_cast<rvsdg::SimpleNode *>(node)
-                                                        : nullptr;
+    const auto node =
+        rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*GetMemoryStateInput(callNode).origin());
+    return is<CallEntryMemoryStateMergeOperation>(node) ? node : nullptr;
   }
 
   /**
@@ -369,9 +369,9 @@ public:
     if (GetMemoryStateOutput(callNode).nusers() != 1)
       return nullptr;
 
-    auto node = rvsdg::node_input::GetNode(**GetMemoryStateOutput(callNode).begin());
-    return is<CallExitMemoryStateSplitOperation>(node) ? dynamic_cast<rvsdg::SimpleNode *>(node)
-                                                       : nullptr;
+    const auto node =
+        rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(**GetMemoryStateOutput(callNode).begin());
+    return is<CallExitMemoryStateSplitOperation>(node) ? node : nullptr;
   }
 
   /**
@@ -385,7 +385,7 @@ public:
    *
    * \return The traced output.
    */
-  static rvsdg::output *
+  static rvsdg::Output *
   TraceFunctionInput(const rvsdg::SimpleNode & callNode);
 
   /** \brief Classifies a call node.
@@ -398,34 +398,34 @@ public:
   static std::unique_ptr<CallTypeClassifier>
   ClassifyCall(const rvsdg::SimpleNode & callNode);
 
-  static std::unique_ptr<tac>
+  static std::unique_ptr<ThreeAddressCode>
   create(
-      const variable * function,
+      const Variable * function,
       std::shared_ptr<const rvsdg::FunctionType> functionType,
-      const std::vector<const variable *> & arguments)
+      const std::vector<const Variable *> & arguments)
   {
     CheckFunctionInputType(function->type());
 
     CallOperation op(std::move(functionType));
-    std::vector<const variable *> operands({ function });
+    std::vector<const Variable *> operands({ function });
     operands.insert(operands.end(), arguments.begin(), arguments.end());
-    return tac::create(op, operands);
+    return ThreeAddressCode::create(op, operands);
   }
 
-  static std::vector<rvsdg::output *>
+  static std::vector<rvsdg::Output *>
   Create(
-      rvsdg::output * function,
+      rvsdg::Output * function,
       std::shared_ptr<const rvsdg::FunctionType> functionType,
-      const std::vector<rvsdg::output *> & arguments)
+      const std::vector<rvsdg::Output *> & arguments)
   {
     return outputs(&CreateNode(function, std::move(functionType), arguments));
   }
 
-  static std::vector<rvsdg::output *>
+  static std::vector<rvsdg::Output *>
   Create(
       rvsdg::Region & region,
       std::unique_ptr<CallOperation> callOperation,
-      const std::vector<rvsdg::output *> & operands)
+      const std::vector<rvsdg::Output *> & operands)
   {
     return outputs(&CreateNode(region, std::move(callOperation), operands));
   }
@@ -434,7 +434,7 @@ public:
   CreateNode(
       rvsdg::Region & region,
       std::unique_ptr<CallOperation> callOperation,
-      const std::vector<rvsdg::output *> & operands)
+      const std::vector<rvsdg::Output *> & operands)
   {
     CheckFunctionType(*callOperation->GetFunctionType());
 
@@ -443,11 +443,11 @@ public:
 
   static rvsdg::SimpleNode &
   CreateNode(
-      rvsdg::output * function,
+      rvsdg::Output * function,
       std::shared_ptr<const rvsdg::FunctionType> functionType,
-      const std::vector<rvsdg::output *> & arguments)
+      const std::vector<rvsdg::Output *> & arguments)
   {
-    CheckFunctionInputType(function->type());
+    CheckFunctionInputType(*function->Type());
 
     auto callOperation = std::make_unique<CallOperation>(std::move(functionType));
     std::vector operands({ function });

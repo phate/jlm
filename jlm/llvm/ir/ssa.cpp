@@ -15,13 +15,13 @@ namespace jlm::llvm
 {
 
 void
-destruct_ssa(llvm::cfg & cfg)
+destruct_ssa(ControlFlowGraph & cfg)
 {
   JLM_ASSERT(is_valid(cfg));
 
-  auto collect_phi_blocks = [](llvm::cfg & cfg)
+  auto collect_phi_blocks = [](ControlFlowGraph & cfg)
   {
-    std::unordered_set<basic_block *> phi_blocks;
+    std::unordered_set<BasicBlock *> phi_blocks;
     for (auto & bb : cfg)
     {
       if (is<SsaPhiOperation>(bb.first()))
@@ -31,26 +31,27 @@ destruct_ssa(llvm::cfg & cfg)
     return phi_blocks;
   };
 
-  auto eliminate_phis = [](llvm::cfg & cfg, const std::unordered_set<basic_block *> & phi_blocks)
+  auto eliminate_phis =
+      [](ControlFlowGraph & cfg, const std::unordered_set<BasicBlock *> & phi_blocks)
   {
     if (phi_blocks.empty())
       return;
 
-    auto firstbb = static_cast<basic_block *>(cfg.entry()->OutEdge(0)->sink());
+    auto firstbb = static_cast<BasicBlock *>(cfg.entry()->OutEdge(0)->sink());
 
     for (auto phi_block : phi_blocks)
     {
-      auto ass_block = basic_block::create(cfg);
+      auto ass_block = BasicBlock::create(cfg);
       auto & tacs = phi_block->tacs();
 
       // For each incoming basic block, create a new basic block where phi operands are stored
       // All incoming edges get routed through the corresponding intermediate basic block
 
       // Mapping from original incoming block to intermediate block
-      std::unordered_map<cfg_node *, basic_block *> intermediateBlocks;
+      std::unordered_map<ControlFlowGraphNode *, BasicBlock *> intermediateBlocks;
 
       // Make a copy of the original inEdges to avoid iterator invalidation
-      std::vector<cfg_edge *> originalInEdges;
+      std::vector<ControlFlowGraphEdge *> originalInEdges;
       for (auto & inEdge : phi_block->InEdges())
         originalInEdges.push_back(&inEdge);
 
@@ -58,11 +59,11 @@ destruct_ssa(llvm::cfg & cfg)
       for (auto inEdge : originalInEdges)
       {
         auto source = inEdge->source();
-        basic_block * intermediate;
+        BasicBlock * intermediate;
 
         if (intermediateBlocks.find(source) == intermediateBlocks.end())
         {
-          intermediate = basic_block::create(cfg);
+          intermediate = BasicBlock::create(cfg);
           intermediate->add_outedge(ass_block);
           intermediateBlocks[source] = intermediate;
         }
@@ -107,7 +108,7 @@ destruct_ssa(llvm::cfg & cfg)
         // In the assignment block, store the variable into the result of the undef operation
         ass_block->append_last(AssignmentOperation::create(variable, undef->result(0)));
 
-        // Remove the phi tac
+        // Remove the phi three address code
         tacs.drop_first();
       }
     }

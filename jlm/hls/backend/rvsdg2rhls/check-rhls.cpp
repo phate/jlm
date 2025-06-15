@@ -4,6 +4,7 @@
  */
 
 #include <jlm/hls/backend/rvsdg2rhls/check-rhls.hpp>
+#include <jlm/hls/backend/rvsdg2rhls/hls-function-util.hpp>
 #include <jlm/hls/backend/rvsdg2rhls/rvsdg2rhls.hpp>
 #include <jlm/hls/ir/hls.hpp>
 #include <jlm/llvm/ir/operators/lambda.hpp>
@@ -11,6 +12,23 @@
 
 namespace jlm::hls
 {
+void
+CheckAddrQueue(rvsdg::Node * node)
+{
+  auto [addrQueueNode, addrQueueOperation] =
+      rvsdg::TryGetSimpleNodeAndOp<AddressQueueOperation>(*node->output(0));
+  JLM_ASSERT(rvsdg::is<AddressQueueOperation>(node));
+  // Ensure that there is no buffer between state_gate and addr_queue enq.
+  // This is SG1 in the paper. Otherwise, there might be a race condition in the disambiguation
+  auto [_, stateGateOperation] =
+      rvsdg::TryGetSimpleNodeAndOp<StateGateOperation>(*FindSourceNode(node->input(1)->origin()));
+  JLM_ASSERT(stateGateOperation);
+  // make sure there is enough buffer space on the output, so there can be no race condition with
+  // SG3
+  auto [bufferNode, bufferOperation] =
+      rvsdg::TryGetSimpleNodeAndOp<BufferOperation>(**node->output(0)->begin());
+  JLM_ASSERT(bufferOperation && bufferOperation->capacity >= addrQueueOperation->capacity);
+}
 
 void
 check_rhls(rvsdg::Region * sr)
@@ -38,6 +56,10 @@ check_rhls(rvsdg::Region * sr)
       {
         throw jlm::util::error("Output has more than one user");
       }
+    }
+    if (rvsdg::is<AddressQueueOperation>(node))
+    {
+      CheckAddrQueue(node);
     }
   }
 }

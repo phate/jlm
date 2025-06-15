@@ -24,7 +24,7 @@ test1()
   using namespace jlm::llvm;
 
   // Arrange
-  RvsdgModule rm(jlm::util::filepath(""), "", "");
+  RvsdgModule rm(jlm::util::FilePath(""), "", "");
   auto & graph = rm.Rvsdg();
   auto i = &jlm::tests::GraphImport::Create(graph, jlm::tests::valuetype::Create(), "i");
 
@@ -51,7 +51,7 @@ test1()
         { t->output(0), lambda->GetFunctionArguments()[1], lambda->GetFunctionArguments()[2] });
   };
 
-  auto SetupF2 = [&](jlm::rvsdg::output * f1)
+  auto SetupF2 = [&](jlm::rvsdg::Output * f1)
   {
     auto vt = jlm::tests::valuetype::Create();
     auto iOStateType = IOStateType::Create();
@@ -110,7 +110,7 @@ test1()
   //	jlm::rvsdg::view(graph.GetRootRegion(), stdout);
 
   // Assert
-  assert(!jlm::rvsdg::Region::Contains<CallOperation>(graph.GetRootRegion(), true));
+  assert(!jlm::rvsdg::Region::ContainsOperation<CallOperation>(graph.GetRootRegion(), true));
 }
 
 static void
@@ -132,7 +132,7 @@ test2()
       { PointerType::Create(), IOStateType::Create(), MemoryStateType::Create() },
       { IOStateType::Create(), MemoryStateType::Create() });
 
-  RvsdgModule rm(jlm::util::filepath(""), "", "");
+  RvsdgModule rm(jlm::util::FilePath(""), "", "");
   auto & graph = rm.Rvsdg();
   auto i = &jlm::tests::GraphImport::Create(graph, functionType2, "i");
 
@@ -145,7 +145,7 @@ test2()
         { lambda->GetFunctionArguments()[1], lambda->GetFunctionArguments()[2] });
   };
 
-  auto SetupF2 = [&](jlm::rvsdg::output * f1)
+  auto SetupF2 = [&](jlm::rvsdg::Output * f1)
   {
     auto iOStateType = IOStateType::Create();
     auto memoryStateType = MemoryStateType::Create();
@@ -182,10 +182,10 @@ test2()
 
   // Assert
   // Function f1 should not have been inlined.
-  assert(is<CallOperation>(
-      jlm::rvsdg::output::GetNode(*jlm::rvsdg::AssertGetOwnerNode<jlm::rvsdg::LambdaNode>(*f2)
-                                       .GetFunctionResults()[0]
-                                       ->origin())));
+  assert(is<CallOperation>(jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
+      *jlm::rvsdg::AssertGetOwnerNode<jlm::rvsdg::LambdaNode>(*f2)
+           .GetFunctionResults()[0]
+           ->origin())));
 }
 
 static int

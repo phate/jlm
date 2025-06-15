@@ -54,7 +54,7 @@ LoadConversion()
     auto controlFlowGraph =
         dynamic_cast<const function_node *>(ipgModule->ipgraph().find("f"))->cfg();
     auto basicBlock =
-        dynamic_cast<const basic_block *>(controlFlowGraph->entry()->OutEdge(0)->sink());
+        dynamic_cast<const jlm::llvm::BasicBlock *>(controlFlowGraph->entry()->OutEdge(0)->sink());
 
     size_t numLoadThreeAddressCodes = 0;
     size_t numLoadVolatileThreeAddressCodes = 0;

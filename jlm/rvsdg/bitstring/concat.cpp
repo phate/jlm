@@ -12,8 +12,8 @@
 namespace jlm::rvsdg
 {
 
-jlm::rvsdg::output *
-bitconcat(const std::vector<jlm::rvsdg::output *> & operands)
+jlm::rvsdg::Output *
+bitconcat(const std::vector<jlm::rvsdg::Output *> & operands)
 {
   std::vector<std::shared_ptr<const jlm::rvsdg::bittype>> types;
   for (const auto operand : operands)
@@ -55,11 +55,11 @@ bitconcat_op::operator==(const Operation & other) const noexcept
 
 binop_reduction_path_t
 bitconcat_op::can_reduce_operand_pair(
-    const jlm::rvsdg::output * arg1,
-    const jlm::rvsdg::output * arg2) const noexcept
+    const jlm::rvsdg::Output * arg1,
+    const jlm::rvsdg::Output * arg2) const noexcept
 {
-  auto node1 = output::GetNode(*arg1);
-  auto node2 = output::GetNode(*arg2);
+  auto node1 = TryGetOwnerNode<Node>(*arg1);
+  auto node2 = TryGetOwnerNode<Node>(*arg2);
 
   if (!node1 || !node2)
     return binop_reduction_none;
@@ -91,11 +91,11 @@ bitconcat_op::can_reduce_operand_pair(
   return binop_reduction_none;
 }
 
-jlm::rvsdg::output *
+jlm::rvsdg::Output *
 bitconcat_op::reduce_operand_pair(
     binop_reduction_path_t path,
-    jlm::rvsdg::output * arg1,
-    jlm::rvsdg::output * arg2) const
+    jlm::rvsdg::Output * arg1,
+    jlm::rvsdg::Output * arg2) const
 {
   auto node1 = static_cast<node_output *>(arg1)->node();
   auto node2 = static_cast<node_output *>(arg2)->node();
@@ -141,7 +141,7 @@ bitconcat_op::copy() const
 }
 
 static std::vector<std::shared_ptr<const bittype>>
-GetTypesFromOperands(const std::vector<rvsdg::output *> & args)
+GetTypesFromOperands(const std::vector<rvsdg::Output *> & args)
 {
   std::vector<std::shared_ptr<const bittype>> types;
   for (const auto arg : args)
@@ -151,18 +151,18 @@ GetTypesFromOperands(const std::vector<rvsdg::output *> & args)
   return types;
 }
 
-std::optional<std::vector<rvsdg::output *>>
-FlattenBitConcatOperation(const bitconcat_op &, const std::vector<rvsdg::output *> & operands)
+std::optional<std::vector<rvsdg::Output *>>
+FlattenBitConcatOperation(const bitconcat_op &, const std::vector<rvsdg::Output *> & operands)
 {
   JLM_ASSERT(!operands.empty());
 
   const auto newOperands = base::detail::associative_flatten(
       operands,
-      [](jlm::rvsdg::output * arg)
+      [](jlm::rvsdg::Output * arg)
       {
         // FIXME: switch to comparing operator, not just typeid, after
         // converting "concat" to not be a binary operator anymore
-        return is<bitconcat_op>(output::GetNode(*arg));
+        return is<bitconcat_op>(TryGetOwnerNode<Node>(*arg));
       });
 
   if (operands == newOperands)

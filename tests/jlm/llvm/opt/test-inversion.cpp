@@ -22,7 +22,7 @@ test1()
 {
   using namespace jlm::llvm;
 
-  RvsdgModule rm(jlm::util::filepath(""), "", "");
+  RvsdgModule rm(jlm::util::FilePath(""), "", "");
   auto & graph = rm.Rvsdg();
 
   auto x = &jlm::tests::GraphImport::Create(graph, vt, "x");
@@ -70,9 +70,9 @@ test1()
   tginversion.Run(rm, statisticsCollector);
   //	jlm::rvsdg::view(graph.GetRootRegion(), stdout);
 
-  assert(jlm::rvsdg::is<jlm::rvsdg::GammaOperation>(jlm::rvsdg::output::GetNode(*ex1.origin())));
-  assert(jlm::rvsdg::is<jlm::rvsdg::GammaOperation>(jlm::rvsdg::output::GetNode(*ex2.origin())));
-  assert(jlm::rvsdg::is<jlm::rvsdg::GammaOperation>(jlm::rvsdg::output::GetNode(*ex3.origin())));
+  assert(jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::GammaNode>(*ex1.origin()));
+  assert(jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::GammaNode>(*ex2.origin()));
+  assert(jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::GammaNode>(*ex3.origin()));
 }
 
 static inline void
@@ -80,7 +80,7 @@ test2()
 {
   using namespace jlm::llvm;
 
-  RvsdgModule rm(jlm::util::filepath(""), "", "");
+  RvsdgModule rm(jlm::util::FilePath(""), "", "");
   auto & graph = rm.Rvsdg();
 
   auto x = &jlm::tests::GraphImport::Create(graph, vt, "x");
@@ -117,7 +117,7 @@ test2()
   tginversion.Run(rm, statisticsCollector);
   //	jlm::rvsdg::view(graph.GetRootRegion(), stdout);
 
-  assert(jlm::rvsdg::is<jlm::rvsdg::GammaOperation>(jlm::rvsdg::output::GetNode(*ex.origin())));
+  assert(jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::GammaNode>(*ex.origin()));
 }
 
 static int

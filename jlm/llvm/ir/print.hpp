@@ -15,17 +15,17 @@
 namespace jlm::llvm
 {
 
-class cfg;
-class ipgraph;
-class ipgraph_module;
+class ControlFlowGraph;
+class InterProceduralGraph;
+class InterProceduralGraphModule;
 
 /* control flow graph */
 
 std::string
-to_dot(const llvm::cfg & cfg);
+to_dot(const ControlFlowGraph & cfg);
 
 static inline void
-print_dot(const llvm::cfg & cfg, FILE * out)
+print_dot(const ControlFlowGraph & cfg, FILE * out)
 {
   fputs(to_dot(cfg).c_str(), out);
   fflush(out);
@@ -34,20 +34,20 @@ print_dot(const llvm::cfg & cfg, FILE * out)
 /* inter-procedural graph */
 
 std::string
-to_str(const llvm::ipgraph & ipg);
+to_str(const InterProceduralGraph & ipg);
 
 std::string
-to_dot(const llvm::ipgraph & ipg);
+to_dot(const InterProceduralGraph & ipg);
 
 static inline void
-print_ascii(const llvm::ipgraph & ipg, FILE * out)
+print_ascii(const InterProceduralGraph & ipg, FILE * out)
 {
   fputs(to_str(ipg).c_str(), out);
   fflush(out);
 }
 
 static inline void
-print_dot(const llvm::ipgraph & ipg, FILE * out)
+print_dot(const InterProceduralGraph & ipg, FILE * out)
 {
   fputs(to_dot(ipg).c_str(), out);
   fflush(out);
@@ -56,13 +56,13 @@ print_dot(const llvm::ipgraph & ipg, FILE * out)
 /* ipgraph module */
 
 static inline std::string
-to_str(const ipgraph_module & im)
+to_str(const InterProceduralGraphModule & im)
 {
   return to_str(im.ipgraph());
 }
 
 static inline void
-print(const ipgraph_module & im, FILE * out)
+print(const InterProceduralGraphModule & im, FILE * out)
 {
   fputs(to_str(im).c_str(), out);
   fflush(out);
@@ -71,19 +71,19 @@ print(const ipgraph_module & im, FILE * out)
 /* aggregation tree */
 
 std::string
-to_str(const aggnode & n, const AnnotationMap & dm);
+to_str(const AggregationNode & n, const AnnotationMap & dm);
 
 static inline std::string
-to_str(const aggnode & n)
+to_str(const AggregationNode & n)
 {
   return to_str(n, {});
 }
 
 void
-print(const aggnode & n, const AnnotationMap & dm, FILE * out);
+print(const AggregationNode & n, const AnnotationMap & dm, FILE * out);
 
 static inline void
-print(const aggnode & n, FILE * out)
+print(const AggregationNode & n, FILE * out)
 {
   print(n, {}, out);
 }

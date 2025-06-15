@@ -15,8 +15,8 @@ template<size_t N>
 static void
 check(
     const jlm::llvm::domnode * dnode,
-    const jlm::llvm::cfg_node * node,
-    const std::unordered_set<const jlm::llvm::cfg_node *> & children)
+    const jlm::llvm::ControlFlowGraphNode * node,
+    const std::unordered_set<const jlm::llvm::ControlFlowGraphNode *> & children)
 {
   assert(dnode->node() == node);
   assert(dnode->nchildren() == N);
@@ -25,7 +25,7 @@ check(
 }
 
 static const jlm::llvm::domnode *
-get_child(const jlm::llvm::domnode * root, const jlm::llvm::cfg_node * node)
+get_child(const jlm::llvm::domnode * root, const jlm::llvm::ControlFlowGraphNode * node)
 {
   for (const auto & child : *root)
   {
@@ -41,15 +41,15 @@ test()
 {
   using namespace jlm::llvm;
 
-  ipgraph_module im(jlm::util::filepath(""), "", "");
+  InterProceduralGraphModule im(jlm::util::FilePath(""), "", "");
 
   /* setup cfg */
 
-  jlm::llvm::cfg cfg(im);
-  auto bb1 = basic_block::create(cfg);
-  auto bb2 = basic_block::create(cfg);
-  auto bb3 = basic_block::create(cfg);
-  auto bb4 = basic_block::create(cfg);
+  ControlFlowGraph cfg(im);
+  auto bb1 = BasicBlock::create(cfg);
+  auto bb2 = BasicBlock::create(cfg);
+  auto bb3 = BasicBlock::create(cfg);
+  auto bb4 = BasicBlock::create(cfg);
 
   cfg.exit()->divert_inedges(bb1);
   bb1->add_outedge(bb2);

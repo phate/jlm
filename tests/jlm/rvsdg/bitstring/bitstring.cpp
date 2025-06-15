@@ -40,8 +40,8 @@ types_bitstring_arithmetic_test_bitand()
   view(&graph.GetRootRegion(), stdout);
 
   // Assert
-  assert(output::GetNode(*ex0.origin())->GetOperation() == bitand_op(32));
-  assert(output::GetNode(*ex1.origin())->GetOperation() == int_constant_op(32, +1));
+  assert(TryGetOwnerNode<Node>(*ex0.origin())->GetOperation() == bitand_op(32));
+  assert(TryGetOwnerNode<Node>(*ex1.origin())->GetOperation() == int_constant_op(32, +1));
 
   return 0;
 }
@@ -86,11 +86,11 @@ types_bitstring_arithmetic_test_bitashr()
   view(&graph.GetRootRegion(), stdout);
 
   // Assert
-  assert(output::GetNode(*ex0.origin())->GetOperation() == bitashr_op(32));
-  assert(output::GetNode(*ex1.origin())->GetOperation() == int_constant_op(32, 4));
-  assert(output::GetNode(*ex2.origin())->GetOperation() == int_constant_op(32, 0));
-  assert(output::GetNode(*ex3.origin())->GetOperation() == int_constant_op(32, -4));
-  assert(output::GetNode(*ex4.origin())->GetOperation() == int_constant_op(32, -1));
+  assert(TryGetOwnerNode<Node>(*ex0.origin())->GetOperation() == bitashr_op(32));
+  assert(TryGetOwnerNode<Node>(*ex1.origin())->GetOperation() == int_constant_op(32, 4));
+  assert(TryGetOwnerNode<Node>(*ex2.origin())->GetOperation() == int_constant_op(32, 0));
+  assert(TryGetOwnerNode<Node>(*ex3.origin())->GetOperation() == int_constant_op(32, -4));
+  assert(TryGetOwnerNode<Node>(*ex4.origin())->GetOperation() == int_constant_op(32, -1));
 
   return 0;
 }
@@ -118,7 +118,7 @@ types_bitstring_arithmetic_test_bitdifference()
   view(&graph.GetRootRegion(), stdout);
 
   // Act
-  assert(output::GetNode(*ex0.origin())->GetOperation() == bitsub_op(32));
+  assert(TryGetOwnerNode<Node>(*ex0.origin())->GetOperation() == bitsub_op(32));
 
   return 0;
 }
@@ -152,9 +152,9 @@ types_bitstring_arithmetic_test_bitnegate()
   view(&graph.GetRootRegion(), stdout);
 
   // Assert
-  assert(output::GetNode(*ex0.origin())->GetOperation() == bitneg_op(32));
-  assert(output::GetNode(*ex1.origin())->GetOperation() == int_constant_op(32, -3));
-  assert(output::GetNode(*ex2.origin())->GetOperation() == int_constant_op(32, 3));
+  assert(TryGetOwnerNode<Node>(*ex0.origin())->GetOperation() == bitneg_op(32));
+  assert(TryGetOwnerNode<Node>(*ex1.origin())->GetOperation() == int_constant_op(32, -3));
+  assert(TryGetOwnerNode<Node>(*ex2.origin())->GetOperation() == int_constant_op(32, 3));
 
   return 0;
 }
@@ -188,9 +188,9 @@ types_bitstring_arithmetic_test_bitnot()
   view(&graph.GetRootRegion(), stdout);
 
   // Assert
-  assert(output::GetNode(*ex0.origin())->GetOperation() == bitnot_op(32));
-  assert(output::GetNode(*ex1.origin())->GetOperation() == int_constant_op(32, -4));
-  assert(output::GetNode(*ex2.origin())->GetOperation() == int_constant_op(32, 3));
+  assert(TryGetOwnerNode<Node>(*ex0.origin())->GetOperation() == bitnot_op(32));
+  assert(TryGetOwnerNode<Node>(*ex1.origin())->GetOperation() == int_constant_op(32, -4));
+  assert(TryGetOwnerNode<Node>(*ex2.origin())->GetOperation() == int_constant_op(32, 3));
 
   return 0;
 }
@@ -224,8 +224,8 @@ types_bitstring_arithmetic_test_bitor()
   view(&graph.GetRootRegion(), stdout);
 
   // Assert
-  assert(output::GetNode(*ex0.origin())->GetOperation() == bitor_op(32));
-  assert(output::GetNode(*ex1.origin())->GetOperation() == uint_constant_op(32, 7));
+  assert(TryGetOwnerNode<Node>(*ex0.origin())->GetOperation() == bitor_op(32));
+  assert(TryGetOwnerNode<Node>(*ex1.origin())->GetOperation() == uint_constant_op(32, 7));
 
   return 0;
 }
@@ -259,8 +259,8 @@ types_bitstring_arithmetic_test_bitproduct()
   view(&graph.GetRootRegion(), stdout);
 
   // Assert
-  assert(output::GetNode(*ex0.origin())->GetOperation() == bitmul_op(32));
-  assert(output::GetNode(*ex1.origin())->GetOperation() == uint_constant_op(32, 15));
+  assert(TryGetOwnerNode<Node>(*ex0.origin())->GetOperation() == bitmul_op(32));
+  assert(TryGetOwnerNode<Node>(*ex1.origin())->GetOperation() == uint_constant_op(32, 15));
 
   return 0;
 }
@@ -288,7 +288,7 @@ types_bitstring_arithmetic_test_bitshiproduct()
   view(&graph.GetRootRegion(), stdout);
 
   // Assert
-  assert(output::GetNode(*ex0.origin())->GetOperation() == bitsmulh_op(32));
+  assert(TryGetOwnerNode<Node>(*ex0.origin())->GetOperation() == bitsmulh_op(32));
 
   return 0;
 }
@@ -326,9 +326,9 @@ types_bitstring_arithmetic_test_bitshl()
   view(&graph.GetRootRegion(), stdout);
 
   // Assert
-  assert(output::GetNode(*ex0.origin())->GetOperation() == bitshl_op(32));
-  assert(output::GetNode(*ex1.origin())->GetOperation() == uint_constant_op(32, 64));
-  assert(output::GetNode(*ex2.origin())->GetOperation() == uint_constant_op(32, 0));
+  assert(TryGetOwnerNode<Node>(*ex0.origin())->GetOperation() == bitshl_op(32));
+  assert(TryGetOwnerNode<Node>(*ex1.origin())->GetOperation() == uint_constant_op(32, 64));
+  assert(TryGetOwnerNode<Node>(*ex2.origin())->GetOperation() == uint_constant_op(32, 0));
 
   return 0;
 }
@@ -366,9 +366,9 @@ types_bitstring_arithmetic_test_bitshr()
   view(&graph.GetRootRegion(), stdout);
 
   // Assert
-  assert(output::GetNode(*ex0.origin())->GetOperation() == bitshr_op(32));
-  assert(output::GetNode(*ex1.origin())->GetOperation() == uint_constant_op(32, 4));
-  assert(output::GetNode(*ex2.origin())->GetOperation() == uint_constant_op(32, 0));
+  assert(TryGetOwnerNode<Node>(*ex0.origin())->GetOperation() == bitshr_op(32));
+  assert(TryGetOwnerNode<Node>(*ex1.origin())->GetOperation() == uint_constant_op(32, 4));
+  assert(TryGetOwnerNode<Node>(*ex2.origin())->GetOperation() == uint_constant_op(32, 0));
 
   return 0;
 }
@@ -402,8 +402,8 @@ types_bitstring_arithmetic_test_bitsmod()
   view(&graph.GetRootRegion(), stdout);
 
   // Assert
-  assert(output::GetNode(*ex0.origin())->GetOperation() == bitsmod_op(32));
-  assert(output::GetNode(*ex1.origin())->GetOperation() == int_constant_op(32, -1));
+  assert(TryGetOwnerNode<Node>(*ex0.origin())->GetOperation() == bitsmod_op(32));
+  assert(TryGetOwnerNode<Node>(*ex1.origin())->GetOperation() == int_constant_op(32, -1));
 
   return 0;
 }
@@ -437,8 +437,8 @@ types_bitstring_arithmetic_test_bitsquotient()
   view(&graph.GetRootRegion(), stdout);
 
   // Assert
-  assert(output::GetNode(*ex0.origin())->GetOperation() == bitsdiv_op(32));
-  assert(output::GetNode(*ex1.origin())->GetOperation() == int_constant_op(32, -2));
+  assert(TryGetOwnerNode<Node>(*ex0.origin())->GetOperation() == bitsdiv_op(32));
+  assert(TryGetOwnerNode<Node>(*ex1.origin())->GetOperation() == int_constant_op(32, -2));
 
   return 0;
 }
@@ -472,8 +472,8 @@ types_bitstring_arithmetic_test_bitsum()
   view(&graph.GetRootRegion(), stdout);
 
   // Assert
-  assert(output::GetNode(*ex0.origin())->GetOperation() == bitadd_op(32));
-  assert(output::GetNode(*ex1.origin())->GetOperation() == int_constant_op(32, 8));
+  assert(TryGetOwnerNode<Node>(*ex0.origin())->GetOperation() == bitadd_op(32));
+  assert(TryGetOwnerNode<Node>(*ex1.origin())->GetOperation() == int_constant_op(32, 8));
 
   return 0;
 }
@@ -501,7 +501,7 @@ types_bitstring_arithmetic_test_bituhiproduct()
   view(&graph.GetRootRegion(), stdout);
 
   // Assert
-  assert(output::GetNode(*ex0.origin())->GetOperation() == bitumulh_op(32));
+  assert(TryGetOwnerNode<Node>(*ex0.origin())->GetOperation() == bitumulh_op(32));
 
   return 0;
 }
@@ -535,8 +535,8 @@ types_bitstring_arithmetic_test_bitumod()
   view(&graph.GetRootRegion(), stdout);
 
   // Assert
-  assert(output::GetNode(*ex0.origin())->GetOperation() == bitumod_op(32));
-  assert(output::GetNode(*ex1.origin())->GetOperation() == int_constant_op(32, 1));
+  assert(TryGetOwnerNode<Node>(*ex0.origin())->GetOperation() == bitumod_op(32));
+  assert(TryGetOwnerNode<Node>(*ex1.origin())->GetOperation() == int_constant_op(32, 1));
 
   return 0;
 }
@@ -570,8 +570,8 @@ types_bitstring_arithmetic_test_bituquotient()
   view(&graph.GetRootRegion(), stdout);
 
   // Assert
-  assert(output::GetNode(*ex0.origin())->GetOperation() == bitudiv_op(32));
-  assert(output::GetNode(*ex1.origin())->GetOperation() == int_constant_op(32, 2));
+  assert(TryGetOwnerNode<Node>(*ex0.origin())->GetOperation() == bitudiv_op(32));
+  assert(TryGetOwnerNode<Node>(*ex1.origin())->GetOperation() == int_constant_op(32, 2));
 
   return 0;
 }
@@ -605,24 +605,24 @@ types_bitstring_arithmetic_test_bitxor()
   view(&graph.GetRootRegion(), stdout);
 
   // Arrange
-  assert(output::GetNode(*ex0.origin())->GetOperation() == bitxor_op(32));
-  assert(output::GetNode(*ex1.origin())->GetOperation() == int_constant_op(32, 6));
+  assert(TryGetOwnerNode<Node>(*ex0.origin())->GetOperation() == bitxor_op(32));
+  assert(TryGetOwnerNode<Node>(*ex1.origin())->GetOperation() == int_constant_op(32, 6));
 
   return 0;
 }
 
 static inline void
-expect_static_true(jlm::rvsdg::output * port)
+expect_static_true(jlm::rvsdg::Output * port)
 {
-  auto node = jlm::rvsdg::output::GetNode(*port);
+  auto node = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*port);
   auto op = dynamic_cast<const jlm::rvsdg::bitconstant_op *>(&node->GetOperation());
   assert(op && op->value().nbits() == 1 && op->value().str() == "1");
 }
 
 static inline void
-expect_static_false(jlm::rvsdg::output * port)
+expect_static_false(jlm::rvsdg::Output * port)
 {
-  auto node = jlm::rvsdg::output::GetNode(*port);
+  auto node = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*port);
   auto op = dynamic_cast<const jlm::rvsdg::bitconstant_op *>(&node->GetOperation());
   assert(op && op->value().nbits() == 1 && op->value().str() == "0");
 }
@@ -662,10 +662,10 @@ types_bitstring_comparison_test_bitequal()
   view(&graph.GetRootRegion(), stdout);
 
   // Assert
-  assert(output::GetNode(*ex0.origin())->GetOperation() == biteq_op(32));
+  assert(TryGetOwnerNode<Node>(*ex0.origin())->GetOperation() == biteq_op(32));
   expect_static_true(ex1.origin());
   expect_static_false(ex2.origin());
-  assert(output::GetNode(*ex3.origin())->GetOperation() == biteq_op(32));
+  assert(TryGetOwnerNode<Node>(*ex3.origin())->GetOperation() == biteq_op(32));
 
   return 0;
 }
@@ -705,10 +705,10 @@ types_bitstring_comparison_test_bitnotequal()
   view(&graph.GetRootRegion(), stdout);
 
   // Assert
-  assert(output::GetNode(*ex0.origin())->GetOperation() == bitne_op(32));
+  assert(TryGetOwnerNode<Node>(*ex0.origin())->GetOperation() == bitne_op(32));
   expect_static_false(ex1.origin());
   expect_static_true(ex2.origin());
-  assert(output::GetNode(*ex3.origin())->GetOperation() == bitne_op(32));
+  assert(TryGetOwnerNode<Node>(*ex3.origin())->GetOperation() == bitne_op(32));
 
   return 0;
 }
@@ -753,7 +753,7 @@ types_bitstring_comparison_test_bitsgreater()
   view(&graph.GetRootRegion(), stdout);
 
   // Assert
-  assert(output::GetNode(*ex0.origin())->GetOperation() == bitsgt_op(32));
+  assert(TryGetOwnerNode<Node>(*ex0.origin())->GetOperation() == bitsgt_op(32));
   expect_static_false(ex1.origin());
   expect_static_true(ex2.origin());
   expect_static_false(ex3.origin());
@@ -804,7 +804,7 @@ types_bitstring_comparison_test_bitsgreatereq()
   view(&graph.GetRootRegion(), stdout);
 
   // Arrange
-  assert(output::GetNode(*ex0.origin())->GetOperation() == bitsge_op(32));
+  assert(TryGetOwnerNode<Node>(*ex0.origin())->GetOperation() == bitsge_op(32));
   expect_static_false(ex1.origin());
   expect_static_true(ex2.origin());
   expect_static_true(ex3.origin());
@@ -854,7 +854,7 @@ types_bitstring_comparison_test_bitsless()
   view(&graph.GetRootRegion(), stdout);
 
   // Arrange
-  assert(output::GetNode(*ex0.origin())->GetOperation() == bitslt_op(32));
+  assert(TryGetOwnerNode<Node>(*ex0.origin())->GetOperation() == bitslt_op(32));
   expect_static_true(ex1.origin());
   expect_static_false(ex2.origin());
   expect_static_false(ex3.origin());
@@ -906,7 +906,7 @@ types_bitstring_comparison_test_bitslesseq()
   view(&graph.GetRootRegion(), stdout);
 
   // Assert
-  assert(output::GetNode(*ex0.origin())->GetOperation() == bitsle_op(32));
+  assert(TryGetOwnerNode<Node>(*ex0.origin())->GetOperation() == bitsle_op(32));
   expect_static_true(ex1.origin());
   expect_static_true(ex2.origin());
   expect_static_false(ex3.origin());
@@ -955,7 +955,7 @@ types_bitstring_comparison_test_bitugreater()
   view(&graph.GetRootRegion(), stdout);
 
   // Assert
-  assert(output::GetNode(*ex0.origin())->GetOperation() == bitugt_op(32));
+  assert(TryGetOwnerNode<Node>(*ex0.origin())->GetOperation() == bitugt_op(32));
   expect_static_false(ex1.origin());
   expect_static_true(ex2.origin());
   expect_static_false(ex3.origin());
@@ -1006,7 +1006,7 @@ types_bitstring_comparison_test_bitugreatereq()
   view(&graph.GetRootRegion(), stdout);
 
   // Assert
-  assert(output::GetNode(*ex0.origin())->GetOperation() == bituge_op(32));
+  assert(TryGetOwnerNode<Node>(*ex0.origin())->GetOperation() == bituge_op(32));
   expect_static_false(ex1.origin());
   expect_static_true(ex2.origin());
   expect_static_true(ex3.origin());
@@ -1056,7 +1056,7 @@ types_bitstring_comparison_test_bituless()
   view(&graph.GetRootRegion(), stdout);
 
   // Assert
-  assert(output::GetNode(*ex0.origin())->GetOperation() == bitult_op(32));
+  assert(TryGetOwnerNode<Node>(*ex0.origin())->GetOperation() == bitult_op(32));
   expect_static_true(ex1.origin());
   expect_static_false(ex2.origin());
   expect_static_false(ex3.origin());
@@ -1108,7 +1108,7 @@ types_bitstring_comparison_test_bitulesseq()
   view(&graph.GetRootRegion(), stdout);
 
   // Assert
-  assert(output::GetNode(*ex0.origin())->GetOperation() == bitule_op(32));
+  assert(TryGetOwnerNode<Node>(*ex0.origin())->GetOperation() == bitule_op(32));
   expect_static_true(ex1.origin());
   expect_static_true(ex2.origin());
   expect_static_false(ex3.origin());
@@ -1155,7 +1155,7 @@ types_bitstring_test_constant()
   Graph graph;
 
   auto NormalizeCne =
-      [&](const SimpleOperation & operation, const std::vector<jlm::rvsdg::output *> & operands)
+      [&](const SimpleOperation & operation, const std::vector<jlm::rvsdg::Output *> & operands)
   {
     return NormalizeSimpleOperationCommonNodeElimination(
         graph.GetRootRegion(),
@@ -1164,8 +1164,8 @@ types_bitstring_test_constant()
   };
 
   auto & b1 = CreateOpNode<bitconstant_op>(graph.GetRootRegion(), "00110011");
-  auto & b2 = *output::GetNode(*create_bitconstant(&graph.GetRootRegion(), 8, 204));
-  auto & b3 = *output::GetNode(*create_bitconstant(&graph.GetRootRegion(), 8, 204));
+  auto & b2 = *TryGetOwnerNode<Node>(*create_bitconstant(&graph.GetRootRegion(), 8, 204));
+  auto & b3 = *TryGetOwnerNode<Node>(*create_bitconstant(&graph.GetRootRegion(), 8, 204));
   auto & b4 = CreateOpNode<bitconstant_op>(graph.GetRootRegion(), "001100110");
 
   auto & ex1 = jlm::tests::GraphExport::Create(*b1.output(0), "b1");
@@ -1179,19 +1179,19 @@ types_bitstring_test_constant()
   assert(b1.GetOperation() == uint_constant_op(8, 204));
   assert(b1.GetOperation() == int_constant_op(8, -52));
 
-  ReduceNode<bitconstant_op>(NormalizeCne, *output::GetNode(*ex1.origin()));
-  ReduceNode<bitconstant_op>(NormalizeCne, *output::GetNode(*ex2.origin()));
-  ReduceNode<bitconstant_op>(NormalizeCne, *output::GetNode(*ex3.origin()));
-  ReduceNode<bitconstant_op>(NormalizeCne, *output::GetNode(*ex4.origin()));
+  ReduceNode<bitconstant_op>(NormalizeCne, *TryGetOwnerNode<Node>(*ex1.origin()));
+  ReduceNode<bitconstant_op>(NormalizeCne, *TryGetOwnerNode<Node>(*ex2.origin()));
+  ReduceNode<bitconstant_op>(NormalizeCne, *TryGetOwnerNode<Node>(*ex3.origin()));
+  ReduceNode<bitconstant_op>(NormalizeCne, *TryGetOwnerNode<Node>(*ex4.origin()));
 
   assert(ex1.origin() == ex2.origin());
   assert(ex1.origin() == ex3.origin());
 
-  const auto node1 = output::GetNode(*ex1.origin());
+  const auto node1 = TryGetOwnerNode<Node>(*ex1.origin());
   assert(node1->GetOperation() == uint_constant_op(8, 204));
   assert(node1->GetOperation() == int_constant_op(8, -52));
 
-  const auto node4 = output::GetNode(*ex4.origin());
+  const auto node4 = TryGetOwnerNode<Node>(*ex4.origin());
   assert(node4->GetOperation() == uint_constant_op(9, 204));
   assert(node4->GetOperation() == int_constant_op(9, 204));
 
@@ -1230,14 +1230,14 @@ types_bitstring_test_normalize()
 
   // Act
   ReduceNode<bitadd_op>(FlattenAssociativeBinaryOperation, sum1);
-  auto & flattenedBinaryNode = *output::GetNode(*ex.origin());
+  auto & flattenedBinaryNode = *TryGetOwnerNode<Node>(*ex.origin());
   ReduceNode<FlattenedBinaryOperation>(NormalizeFlattenedBinaryOperation, flattenedBinaryNode);
   graph.PruneNodes();
 
   view(&graph.GetRootRegion(), stdout);
 
   // Assert
-  auto node = output::GetNode(*ex.origin());
+  auto node = TryGetOwnerNode<Node>(*ex.origin());
   assert(node->GetOperation() == bitadd_op(32));
   assert(node->ninputs() == 2);
   auto op1 = node->input(0)->origin();
@@ -1249,7 +1249,7 @@ types_bitstring_test_normalize()
     op2 = tmp;
   }
   /* FIXME: the graph traversers are currently broken, that is why it won't normalize */
-  assert(output::GetNode(*op1)->GetOperation() == int_constant_op(32, 3 + 4));
+  assert(TryGetOwnerNode<Node>(*op1)->GetOperation() == int_constant_op(32, 3 + 4));
   assert(op2 == imp);
 
   view(&graph.GetRootRegion(), stdout);
@@ -1258,9 +1258,9 @@ types_bitstring_test_normalize()
 }
 
 static void
-assert_constant(jlm::rvsdg::output * bitstr, size_t nbits, const char bits[])
+assert_constant(jlm::rvsdg::Output * bitstr, size_t nbits, const char bits[])
 {
-  auto node = jlm::rvsdg::output::GetNode(*bitstr);
+  auto node = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*bitstr);
   auto op = dynamic_cast<const jlm::rvsdg::bitconstant_op &>(node->GetOperation());
   assert(op.value() == jlm::rvsdg::bitvalue_repr(std::string(bits, nbits).c_str()));
 }
@@ -1351,21 +1351,21 @@ SliceOfConcatReduction()
   view(&graph.GetRootRegion(), stdout);
 
   // Assert
-  const auto node = output::GetNode(*ex.origin());
-  const auto o0 = dynamic_cast<node_output *>(node->input(0)->origin());
-  const auto o1 = dynamic_cast<node_output *>(node->input(1)->origin());
+  const auto node = TryGetOwnerNode<SimpleNode>(*ex.origin());
+  const auto o0_node = TryGetOwnerNode<SimpleNode>(*node->input(0)->origin());
+  const auto o1_node = TryGetOwnerNode<SimpleNode>(*node->input(1)->origin());
   assert(dynamic_cast<const bitconcat_op *>(&node->GetOperation()));
   assert(node->ninputs() == 2);
-  assert(dynamic_cast<const bitslice_op *>(&o0->node()->GetOperation()));
-  assert(dynamic_cast<const bitslice_op *>(&o1->node()->GetOperation()));
+  assert(dynamic_cast<const bitslice_op *>(&o0_node->GetOperation()));
+  assert(dynamic_cast<const bitslice_op *>(&o1_node->GetOperation()));
 
-  auto attrs = dynamic_cast<const bitslice_op *>(&o0->node()->GetOperation());
+  auto attrs = dynamic_cast<const bitslice_op *>(&o0_node->GetOperation());
   assert((attrs->low() == 8) && (attrs->high() == 16));
-  attrs = dynamic_cast<const bitslice_op *>(&o1->node()->GetOperation());
+  attrs = dynamic_cast<const bitslice_op *>(&o1_node->GetOperation());
   assert((attrs->low() == 0) && (attrs->high() == 8));
 
-  assert(o0->node()->input(0)->origin() == x);
-  assert(o1->node()->input(0)->origin() == y);
+  assert(o0_node->input(0)->origin() == x);
+  assert(o1_node->input(0)->origin() == y);
 
   return 0;
 }
@@ -1402,7 +1402,7 @@ ConcatOfSliceReduction()
   view(&graph.GetRootRegion(), stdout);
 
   // Assert
-  const auto sliceNode = output::GetNode(*ex.origin());
+  const auto sliceNode = TryGetOwnerNode<Node>(*ex.origin());
   assert(sliceNode->GetOperation() == bitslice_op(bit16Type, 0, 16));
   assert(sliceNode->input(0)->origin() == x);
 
@@ -1435,7 +1435,7 @@ SliceOfConstant()
   view(graph, stdout);
 
   // Assert
-  const auto node = output::GetNode(*ex.origin());
+  const auto node = TryGetOwnerNode<Node>(*ex.origin());
   auto & operation = dynamic_cast<const bitconstant_op &>(node->GetOperation());
   assert(operation.value() == bitvalue_repr("1101"));
 
@@ -1468,7 +1468,7 @@ SliceOfSlice()
   view(graph, stdout);
 
   // Assert
-  const auto node = output::GetNode(*ex.origin());
+  const auto node = TryGetOwnerNode<Node>(*ex.origin());
   const auto operation = dynamic_cast<const bitslice_op *>(&node->GetOperation());
   assert(operation->low() == 3 && operation->high() == 5);
 
@@ -1527,18 +1527,18 @@ SliceOfConcat()
 
   // Act
   ReduceNode<bitslice_op>(NormalizeUnaryOperation, sliceNode);
-  auto concatNode = output::GetNode(*ex.origin());
+  auto concatNode = TryGetOwnerNode<Node>(*ex.origin());
   ReduceNode<bitslice_op>(
       NormalizeUnaryOperation,
-      *output::GetNode(*concatNode->input(0)->origin()));
-  concatNode = output::GetNode(*ex.origin());
+      *TryGetOwnerNode<Node>(*concatNode->input(0)->origin()));
+  concatNode = TryGetOwnerNode<Node>(*ex.origin());
   ReduceNode<bitconcat_op>(NormalizeBinaryOperation, *concatNode);
   graph.PruneNodes();
 
   view(graph, stdout);
 
   // Assert
-  const auto bitType = dynamic_cast<const bittype *>(&ex.origin()->type());
+  const auto bitType = std::dynamic_pointer_cast<const bittype>(ex.origin()->Type());
   assert(bitType && bitType->nbits() == 8);
   assert(ex.origin() == x);
 
@@ -1565,13 +1565,13 @@ ConcatFlattening()
   view(graph, stdout);
 
   // Act
-  const auto concatNode = output::GetNode(*ex.origin());
+  const auto concatNode = TryGetOwnerNode<Node>(*ex.origin());
   ReduceNode<bitconcat_op>(FlattenBitConcatOperation, *concatNode);
 
   view(graph, stdout);
 
   // Assert
-  auto node = output::GetNode(*ex.origin());
+  auto node = TryGetOwnerNode<Node>(*ex.origin());
   assert(dynamic_cast<const bitconcat_op *>(&node->GetOperation()));
   assert(node->ninputs() == 3);
   assert(node->input(0)->origin() == x);
@@ -1637,7 +1637,7 @@ ConcatOfSlices()
 
   // Act
   ReduceNode<bitconcat_op>(NormalizeBinaryOperation, concatNode);
-  ReduceNode<bitslice_op>(NormalizeUnaryOperation, *output::GetNode(*ex.origin()));
+  ReduceNode<bitslice_op>(NormalizeUnaryOperation, *TryGetOwnerNode<Node>(*ex.origin()));
   graph.PruneNodes();
 
   view(graph, stdout);
@@ -1666,10 +1666,10 @@ ConcatOfConstants()
   view(graph, stdout);
 
   // Act
-  ReduceNode<bitconcat_op>(NormalizeBinaryOperation, *output::GetNode(*ex.origin()));
+  ReduceNode<bitconcat_op>(NormalizeBinaryOperation, *TryGetOwnerNode<Node>(*ex.origin()));
 
   // Assert
-  auto node = output::GetNode(*ex.origin());
+  auto node = TryGetOwnerNode<Node>(*ex.origin());
   auto operation = dynamic_cast<const bitconstant_op &>(node->GetOperation());
   assert(operation.value() == bitvalue_repr("0011011111001000"));
 
@@ -1686,7 +1686,7 @@ ConcatCne()
   // Arrange & Act
   Graph graph;
   auto NormalizeCne =
-      [&](const SimpleOperation & operation, const std::vector<jlm::rvsdg::output *> & operands)
+      [&](const SimpleOperation & operation, const std::vector<jlm::rvsdg::Output *> & operands)
   {
     return NormalizeSimpleOperationCommonNodeElimination(
         graph.GetRootRegion(),
@@ -1709,8 +1709,8 @@ ConcatCne()
   view(graph, stdout);
 
   // Act
-  ReduceNode<bitconcat_op>(NormalizeCne, *output::GetNode(*ex1.origin()));
-  ReduceNode<bitconcat_op>(NormalizeCne, *output::GetNode(*ex2.origin()));
+  ReduceNode<bitconcat_op>(NormalizeCne, *TryGetOwnerNode<Node>(*ex1.origin()));
+  ReduceNode<bitconcat_op>(NormalizeCne, *TryGetOwnerNode<Node>(*ex2.origin()));
   graph.PruneNodes();
 
   view(graph, stdout);
@@ -1731,7 +1731,7 @@ SliceCne()
   // Arrange
   Graph graph;
   auto NormalizeCne =
-      [&](const SimpleOperation & operation, const std::vector<jlm::rvsdg::output *> & operands)
+      [&](const SimpleOperation & operation, const std::vector<jlm::rvsdg::Output *> & operands)
   {
     return NormalizeSimpleOperationCommonNodeElimination(
         graph.GetRootRegion(),
@@ -1752,8 +1752,8 @@ SliceCne()
   view(graph, stdout);
 
   // Act
-  ReduceNode<bitslice_op>(NormalizeCne, *output::GetNode(*ex1.origin()));
-  ReduceNode<bitslice_op>(NormalizeCne, *output::GetNode(*ex2.origin()));
+  ReduceNode<bitslice_op>(NormalizeCne, *TryGetOwnerNode<Node>(*ex1.origin()));
+  ReduceNode<bitslice_op>(NormalizeCne, *TryGetOwnerNode<Node>(*ex2.origin()));
   graph.PruneNodes();
   view(graph, stdout);
 

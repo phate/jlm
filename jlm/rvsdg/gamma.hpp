@@ -15,7 +15,7 @@
 namespace jlm::rvsdg
 {
 
-class output;
+class Output;
 class Type;
 
 class GammaOperation final : public StructuralOperation
@@ -23,15 +23,22 @@ class GammaOperation final : public StructuralOperation
 public:
   ~GammaOperation() noexcept override;
 
-  explicit constexpr GammaOperation(size_t nalternatives) noexcept
+  explicit GammaOperation(size_t numAlternatives) noexcept
+      : GammaOperation(numAlternatives, {})
+  {}
+
+  GammaOperation(
+      size_t numAlternatives,
+      std::vector<std::shared_ptr<const Type>> matchContentTypes) noexcept
       : StructuralOperation(),
-        nalternatives_(nalternatives)
+        numAlternatives_(numAlternatives),
+        MatchContentTypes_(std::move(matchContentTypes))
   {}
 
   inline size_t
   nalternatives() const noexcept
   {
-    return nalternatives_;
+    return numAlternatives_;
   }
 
   virtual std::string
@@ -43,21 +50,78 @@ public:
   virtual bool
   operator==(const Operation & other) const noexcept override;
 
+  /**
+   * \brief Returns the type of pattern matching content produced in a branch
+   */
+  std::shared_ptr<const Type>
+  GetMatchContentType(std::size_t alternative) const;
+
 private:
-  size_t nalternatives_;
+  size_t numAlternatives_;
+  std::vector<std::shared_ptr<const Type>> MatchContentTypes_;
 };
 
-/* gamma node */
-
+/**
+ * \brief Conditional operator / pattern matching
+ *
+ * Gamma nodes discriminate over a given value and conditionally
+ * select one of its subregions. In its simplest form, they
+ * correspond to an if/else statement:
+ *
+ * \code
+ *   if (pred) { branch1(); } else { branch0(); }
+ * \endcode
+ *
+ * More generically, they perform pattern-matching over a finitely-
+ * constructed type:
+ *
+ * \code
+ *   match shape with
+ *     | Circle x y r => ...
+ *     | Rect x1 y1 x2 y2 => ...
+ *     | Poly points => ...
+ *   end
+ * \endcode
+ *
+ * where the "contents" of the match is made available in its corresponding
+ * branch. Simple types such as booleans do not have any content and
+ * thus produce the content-less UnitType as placeholder for the
+ * destructured content -- so effectively Gamma then corresponds to:
+ *
+ * \code
+ *   match pred with
+ *     | false => branch1
+ *     | true => branch0
+ *   end
+ * \endcode
+ */
 class GammaNode : public StructuralNode
 {
 public:
   ~GammaNode() noexcept override;
 
 private:
-  GammaNode(rvsdg::output * predicate, size_t nalternatives);
+  GammaNode(
+      rvsdg::Output * predicate,
+      size_t nalternatives,
+      std::vector<std::shared_ptr<const Type>> match_content_types);
 
 public:
+  /**
+   * \brief The match/discriminator variable of this gamma node
+   */
+  struct MatchVar
+  {
+    /**
+     * \brief The variable matched over (i.e. the "selector" of the gamma branch).
+     */
+    rvsdg::Input * input;
+    /**
+     * \brief The content of the match per branch.
+     */
+    std::vector<rvsdg::Output *> matchContent;
+  };
+
   /**
    * \brief A variable routed into all gamma regions.
    */
@@ -66,11 +130,11 @@ public:
     /**
      * \brief Variable at entry point (input to gamma node).
      */
-    rvsdg::input * input;
+    rvsdg::Input * input;
     /**
      * \brief Variable inside each of the branch regions (argument per subregion).
      */
-    std::vector<rvsdg::output *> branchArgument;
+    std::vector<rvsdg::Output *> branchArgument;
   };
 
   /**
@@ -81,23 +145,32 @@ public:
     /**
      * \brief Variable exit points (results per subregion).
      */
-    std::vector<rvsdg::input *> branchResult;
+    std::vector<rvsdg::Input *> branchResult;
     /**
      * \brief Output of gamma.
      */
-    rvsdg::output * output;
+    rvsdg::Output * output;
   };
 
   [[nodiscard]] const GammaOperation &
   GetOperation() const noexcept override;
 
   static GammaNode *
-  create(jlm::rvsdg::output * predicate, size_t nalternatives)
+  create(jlm::rvsdg::Output * predicate, size_t nalternatives)
   {
-    return new GammaNode(predicate, nalternatives);
+    return new GammaNode(predicate, nalternatives, {});
   }
 
-  inline rvsdg::input *
+  static GammaNode &
+  Create(
+      jlm::rvsdg::Output * predicate,
+      size_t numAlternatives,
+      std::vector<std::shared_ptr<const Type>> matchContentTypes)
+  {
+    return *new GammaNode(predicate, numAlternatives, std::move(matchContentTypes));
+  }
+
+  inline rvsdg::Input *
   predicate() const noexcept;
 
   /**
@@ -113,22 +186,10 @@ public:
    * variable in each branch use \ref EntryVar::branchArgument.
    */
   EntryVar
-  AddEntryVar(rvsdg::output * origin);
+  AddEntryVar(rvsdg::Output * origin);
 
-  /**
-   * \brief Gets entry variable by index.
-   *
-   * \param index
-   *   Index of entry variable
-   *
-   * \returns
-   *   Description of entry variable.
-   *
-   * Looks up the \p index 'th entry variable into the gamma
-   * node and returns its description.
-   */
-  EntryVar
-  GetEntryVar(std::size_t index) const;
+  MatchVar
+  GetMatchVar() const;
 
   /**
    * \brief Gets all entry variables for this gamma.
@@ -137,26 +198,27 @@ public:
   GetEntryVars() const;
 
   /**
-   * \brief Maps gamma input to entry variable.
+   * \brief Maps gamma input to its role (match variable or entry variable).
    *
    * \param input
    *   Input to be mapped.
    *
    * \returns
-   *   The entry variable description corresponding to this input
+   *   The variable description corresponding to this input
    *
    * \pre
-   *   \p input must be an input of this node and must not be the predicate
+   *   \p input must be an input of this node
    *
-   * Maps the gamma input to the entry variable description corresponding
-   * to it. This allows to trace the value through to users in the
-   * gamma subregions.
+   * Maps the gamma input to the variable description corresponding
+   * to it. This is either the "match" or "predicate" of the gamma, or
+   * an entry variable for values used inside the region. This allows to trace
+   * the value through to users in the gamma subregions.
    */
-  EntryVar
-  MapInputEntryVar(const rvsdg::input & input) const;
+  std::variant<MatchVar, EntryVar>
+  MapInput(const rvsdg::Input & input) const;
 
   /**
-   * \brief Maps branch subregion entry argument to gamma entry variable.
+   * \brief Maps branch subregion entry argument to its role (pattern match or  entry variable).
    *
    * \param output
    *   The branch argument to be mapped.
@@ -167,12 +229,13 @@ public:
    * \pre
    *   \p output must be the entry argument to a subregion of this gamma nade.
    *
-   * Maps the subregion entry argument to the entry variable description
-   * corresponding to it. This allows to trace the value to users in other
+   * Maps the subregion entry argument to the variable description
+   * corresponding to it (the predicate + pattern matches, or an entry variable
+   * into this branch). This allows to trace the value to users in other
    * branches as well as its def site preceding the gamma node:
    */
-  EntryVar
-  MapBranchArgumentEntryVar(const rvsdg::output & output) const;
+  std::variant<MatchVar, EntryVar>
+  MapBranchArgument(const rvsdg::Output & output) const;
 
   /**
    * \brief Routes per-branch result of gamma to output
@@ -188,7 +251,7 @@ public:
    * output of the gamma node.
    */
   ExitVar
-  AddExitVar(std::vector<rvsdg::output *> values);
+  AddExitVar(std::vector<rvsdg::Output *> values);
 
   /**
    * \brief Gets all exit variables for this gamma.
@@ -213,7 +276,7 @@ public:
    * gamma subregions.
    */
   ExitVar
-  MapOutputExitVar(const rvsdg::output & output) const;
+  MapOutputExitVar(const rvsdg::Output & output) const;
 
   /**
    * \brief Maps gamma region exit result to exit variable description.
@@ -231,7 +294,31 @@ public:
    * corresponding to it.
    */
   ExitVar
-  MapBranchResultExitVar(const rvsdg::input & input) const;
+  MapBranchResultExitVar(const rvsdg::Input & input) const;
+
+  /**
+   * \brief Removes the given exit variables.
+   *
+   * \pre
+   *   All exit variables must be unused (= the corresponding gamma outputs
+   *   must not have any users).
+   *
+   * Removes the variables as exit variables from this gamma.
+   */
+  void
+  RemoveExitVars(const std::vector<ExitVar> & exitvars);
+
+  /**
+   * \brief Removes the given entry variables
+   *
+   * \pre
+   *   All entry variables must be unused in the gamma branch subregions
+   *   (= the corresponding region arguments must not have any users).
+   *
+   * Removes the variables as entry variables from this gamma.
+   */
+  void
+  RemoveEntryVars(const std::vector<EntryVar> & entryvars);
 
   /**
    * Removes all gamma outputs and their respective results. The outputs must have no users and
@@ -250,7 +337,7 @@ public:
   void
   PruneOutputs()
   {
-    auto match = [](const rvsdg::output &)
+    auto match = [](const rvsdg::Output &)
     {
       return true;
     };
@@ -262,6 +349,21 @@ public:
   copy(jlm::rvsdg::Region * region, SubstitutionMap & smap) const override;
 
 private:
+  /**
+   * \brief Gets entry variable by index.
+   *
+   * \param index
+   *   Index of entry variable
+   *
+   * \returns
+   *   Description of entry variable.
+   *
+   * Looks up the \p index 'th entry variable into the gamma
+   * node and returns its description.
+   */
+  EntryVar
+  GetEntryVar(std::size_t index) const;
+
   GammaOperation Operation_;
 };
 
@@ -284,12 +386,12 @@ private:
  * this exit variable on all paths of the gamma. If this is the case, it
  * returns the origin of the common input.
  */
-std::optional<rvsdg::output *>
+std::optional<rvsdg::Output *>
 GetGammaInvariantOrigin(const GammaNode & gamma, const GammaNode::ExitVar & exitvar);
 
 /* gamma node method definitions */
 
-inline rvsdg::input *
+inline rvsdg::Input *
 GammaNode::predicate() const noexcept
 {
   return StructuralNode::input(0);

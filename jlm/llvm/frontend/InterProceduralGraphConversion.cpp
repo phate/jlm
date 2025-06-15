@@ -29,27 +29,27 @@ class VariableMap final
 {
 public:
   bool
-  contains(const variable * v) const noexcept
+  contains(const Variable * v) const noexcept
   {
     return Map_.find(v) != Map_.end();
   }
 
-  rvsdg::output *
-  lookup(const variable * v) const
+  rvsdg::Output *
+  lookup(const Variable * v) const
   {
     JLM_ASSERT(contains(v));
     return Map_.at(v);
   }
 
   void
-  insert(const variable * v, rvsdg::output * o)
+  insert(const Variable * v, rvsdg::Output * o)
   {
-    JLM_ASSERT(v->type() == o->type());
+    JLM_ASSERT(v->type() == *o->Type());
     Map_[v] = o;
   }
 
 private:
-  std::unordered_map<const variable *, rvsdg::output *> Map_;
+  std::unordered_map<const Variable *, rvsdg::Output *> Map_;
 };
 
 class RegionalizedVariableMap final
@@ -61,7 +61,9 @@ public:
     JLM_ASSERT(NumRegions() == 0);
   }
 
-  RegionalizedVariableMap(const ipgraph_module & interProceduralGraphModule, rvsdg::Region & region)
+  RegionalizedVariableMap(
+      const InterProceduralGraphModule & interProceduralGraphModule,
+      rvsdg::Region & region)
       : InterProceduralGraphModule_(interProceduralGraphModule)
   {
     PushRegion(region);
@@ -116,14 +118,14 @@ public:
     RegionStack_.pop_back();
   }
 
-  const ipgraph_module &
+  const InterProceduralGraphModule &
   GetInterProceduralGraphModule() const noexcept
   {
     return InterProceduralGraphModule_;
   }
 
 private:
-  const ipgraph_module & InterProceduralGraphModule_;
+  const InterProceduralGraphModule & InterProceduralGraphModule_;
   std::vector<std::unique_ptr<llvm::VariableMap>> VariableMapStack_;
   std::vector<rvsdg::Region *> RegionStack_;
 };
@@ -134,7 +136,7 @@ public:
   ~ControlFlowRestructuringStatistics() override = default;
 
   ControlFlowRestructuringStatistics(
-      const util::filepath & sourceFileName,
+      const util::FilePath & sourceFileName,
       const std::string & functionName)
       : Statistics(Statistics::Id::ControlFlowRecovery, sourceFileName)
   {
@@ -142,7 +144,7 @@ public:
   }
 
   void
-  Start(const llvm::cfg & cfg) noexcept
+  Start(const ControlFlowGraph & cfg) noexcept
   {
     AddMeasurement(Label::NumCfgNodes, cfg.nnodes());
     AddTimer(Label::Timer).start();
@@ -155,7 +157,7 @@ public:
   }
 
   static std::unique_ptr<ControlFlowRestructuringStatistics>
-  Create(const util::filepath & sourceFileName, const std::string & functionName)
+  Create(const util::FilePath & sourceFileName, const std::string & functionName)
   {
     return std::make_unique<ControlFlowRestructuringStatistics>(sourceFileName, functionName);
   }
@@ -166,14 +168,14 @@ class AggregationStatistics final : public util::Statistics
 public:
   ~AggregationStatistics() override = default;
 
-  AggregationStatistics(const util::filepath & sourceFileName, const std::string & functionName)
+  AggregationStatistics(const util::FilePath & sourceFileName, const std::string & functionName)
       : Statistics(util::Statistics::Id::Aggregation, sourceFileName)
   {
     AddMeasurement(Label::FunctionNameLabel_, functionName);
   }
 
   void
-  Start(const llvm::cfg & cfg) noexcept
+  Start(const ControlFlowGraph & cfg) noexcept
   {
     AddMeasurement(Label::NumCfgNodes, cfg.nnodes());
     AddTimer(Label::Timer).start();
@@ -186,7 +188,7 @@ public:
   }
 
   static std::unique_ptr<AggregationStatistics>
-  Create(const util::filepath & sourceFileName, const std::string & functionName)
+  Create(const util::FilePath & sourceFileName, const std::string & functionName)
   {
     return std::make_unique<AggregationStatistics>(sourceFileName, functionName);
   }
@@ -197,14 +199,14 @@ class AnnotationStatistics final : public util::Statistics
 public:
   ~AnnotationStatistics() override = default;
 
-  AnnotationStatistics(const util::filepath & sourceFileName, const std::string & functionName)
+  AnnotationStatistics(const util::FilePath & sourceFileName, const std::string & functionName)
       : Statistics(util::Statistics::Id::Annotation, sourceFileName)
   {
     AddMeasurement(Label::FunctionNameLabel_, functionName);
   }
 
   void
-  Start(const aggnode & node) noexcept
+  Start(const AggregationNode & node) noexcept
   {
     AddMeasurement(Label::NumThreeAddressCodes, llvm::ntacs(node));
     AddTimer(Label::Timer).start();
@@ -217,7 +219,7 @@ public:
   }
 
   static std::unique_ptr<AnnotationStatistics>
-  Create(const util::filepath & sourceFileName, const std::string & functionName)
+  Create(const util::FilePath & sourceFileName, const std::string & functionName)
   {
     return std::make_unique<AnnotationStatistics>(sourceFileName, functionName);
   }
@@ -229,7 +231,7 @@ public:
   ~AggregationTreeToLambdaStatistics() override = default;
 
   AggregationTreeToLambdaStatistics(
-      const util::filepath & sourceFileName,
+      const util::FilePath & sourceFileName,
       const std::string & functionName)
       : Statistics(util::Statistics::Id::JlmToRvsdgConversion, sourceFileName)
   {
@@ -249,7 +251,7 @@ public:
   }
 
   static std::unique_ptr<AggregationTreeToLambdaStatistics>
-  Create(const util::filepath & sourceFileName, const std::string & functionName)
+  Create(const util::FilePath & sourceFileName, const std::string & functionName)
   {
     return std::make_unique<AggregationTreeToLambdaStatistics>(sourceFileName, functionName);
   }
@@ -260,7 +262,7 @@ class DataNodeToDeltaStatistics final : public util::Statistics
 public:
   ~DataNodeToDeltaStatistics() override = default;
 
-  DataNodeToDeltaStatistics(const util::filepath & sourceFileName, const std::string & dataNodeName)
+  DataNodeToDeltaStatistics(const util::FilePath & sourceFileName, const std::string & dataNodeName)
       : Statistics(util::Statistics::Id::DataNodeToDelta, sourceFileName)
   {
     AddMeasurement("DataNode", dataNodeName);
@@ -280,7 +282,7 @@ public:
   }
 
   static std::unique_ptr<DataNodeToDeltaStatistics>
-  Create(const util::filepath & sourceFileName, const std::string & dataNodeName)
+  Create(const util::FilePath & sourceFileName, const std::string & dataNodeName)
   {
     return std::make_unique<DataNodeToDeltaStatistics>(sourceFileName, dataNodeName);
   }
@@ -291,12 +293,12 @@ class InterProceduralGraphToRvsdgStatistics final : public util::Statistics
 public:
   ~InterProceduralGraphToRvsdgStatistics() override = default;
 
-  explicit InterProceduralGraphToRvsdgStatistics(const util::filepath & sourceFileName)
+  explicit InterProceduralGraphToRvsdgStatistics(const util::FilePath & sourceFileName)
       : Statistics(util::Statistics::Id::RvsdgConstruction, sourceFileName)
   {}
 
   void
-  Start(const ipgraph_module & interProceduralGraphModule) noexcept
+  Start(const InterProceduralGraphModule & interProceduralGraphModule) noexcept
   {
     AddMeasurement(Label::NumThreeAddressCodes, llvm::ntacs(interProceduralGraphModule));
     AddTimer(Label::Timer).start();
@@ -310,7 +312,7 @@ public:
   }
 
   static std::unique_ptr<InterProceduralGraphToRvsdgStatistics>
-  Create(const util::filepath & sourceFileName)
+  Create(const util::FilePath & sourceFileName)
   {
     return std::make_unique<InterProceduralGraphToRvsdgStatistics>(sourceFileName);
   }
@@ -321,15 +323,15 @@ class InterProceduralGraphToRvsdgStatisticsCollector final
 public:
   InterProceduralGraphToRvsdgStatisticsCollector(
       util::StatisticsCollector & statisticsCollector,
-      util::filepath sourceFileName)
+      util::FilePath sourceFileName)
       : SourceFileName_(std::move(sourceFileName)),
         StatisticsCollector_(statisticsCollector)
   {}
 
   void
   CollectControlFlowRestructuringStatistics(
-      const std::function<void(llvm::cfg *)> & restructureControlFlowGraph,
-      llvm::cfg & cfg,
+      const std::function<void(ControlFlowGraph *)> & restructureControlFlowGraph,
+      ControlFlowGraph & cfg,
       std::string functionName)
   {
     auto statistics =
@@ -348,10 +350,11 @@ public:
     StatisticsCollector_.CollectDemandedStatistics(std::move(statistics));
   }
 
-  std::unique_ptr<aggnode>
+  std::unique_ptr<AggregationNode>
   CollectAggregationStatistics(
-      const std::function<std::unique_ptr<aggnode>(llvm::cfg &)> & aggregateControlFlowGraph,
-      llvm::cfg & cfg,
+      const std::function<std::unique_ptr<AggregationNode>(ControlFlowGraph &)> &
+          aggregateControlFlowGraph,
+      ControlFlowGraph & cfg,
       std::string functionName)
   {
     auto statistics = AggregationStatistics::Create(SourceFileName_, std::move(functionName));
@@ -370,9 +373,9 @@ public:
 
   std::unique_ptr<AnnotationMap>
   CollectAnnotationStatistics(
-      const std::function<std::unique_ptr<AnnotationMap>(const aggnode &)> &
+      const std::function<std::unique_ptr<AnnotationMap>(const AggregationNode &)> &
           annotateAggregationTree,
-      const aggnode & aggregationTreeRoot,
+      const AggregationNode & aggregationTreeRoot,
       std::string functionName)
   {
     auto statistics = AnnotationStatistics::Create(SourceFileName_, std::move(functionName));
@@ -407,9 +410,9 @@ public:
     StatisticsCollector_.CollectDemandedStatistics(std::move(statistics));
   }
 
-  rvsdg::output *
+  rvsdg::Output *
   CollectDataNodeToDeltaStatistics(
-      const std::function<rvsdg::output *()> & convertDataNodeToDelta,
+      const std::function<rvsdg::Output *()> & convertDataNodeToDelta,
       std::string dataNodeName,
       size_t NumInitializationThreeAddressCodes)
   {
@@ -429,9 +432,9 @@ public:
 
   std::unique_ptr<RvsdgModule>
   CollectInterProceduralGraphToRvsdgStatistics(
-      const std::function<std::unique_ptr<RvsdgModule>(ipgraph_module &)> &
+      const std::function<std::unique_ptr<RvsdgModule>(InterProceduralGraphModule &)> &
           convertInterProceduralGraphModule,
-      ipgraph_module & interProceduralGraphModule)
+      InterProceduralGraphModule & interProceduralGraphModule)
   {
     auto statistics = InterProceduralGraphToRvsdgStatistics::Create(SourceFileName_);
 
@@ -448,19 +451,19 @@ public:
   }
 
 private:
-  const util::filepath SourceFileName_;
+  const util::FilePath SourceFileName_;
   util::StatisticsCollector & StatisticsCollector_;
 };
 
 static bool
-requiresExport(const ipgraph_node & ipgNode)
+requiresExport(const InterProceduralGraphNode & ipgNode)
 {
   return ipgNode.hasBody() && is_externally_visible(ipgNode.linkage());
 }
 
 static void
 ConvertAssignment(
-    const llvm::tac & threeAddressCode,
+    const llvm::ThreeAddressCode & threeAddressCode,
     rvsdg::Region &,
     llvm::VariableMap & variableMap)
 {
@@ -472,7 +475,10 @@ ConvertAssignment(
 }
 
 static void
-ConvertSelect(const llvm::tac & threeAddressCode, rvsdg::Region &, llvm::VariableMap & variableMap)
+ConvertSelect(
+    const llvm::ThreeAddressCode & threeAddressCode,
+    rvsdg::Region &,
+    llvm::VariableMap & variableMap)
 {
   JLM_ASSERT(is<SelectOperation>(threeAddressCode.operation()));
   JLM_ASSERT(threeAddressCode.noperands() == 3 && threeAddressCode.nresults() == 1);
@@ -488,7 +494,7 @@ ConvertSelect(const llvm::tac & threeAddressCode, rvsdg::Region &, llvm::Variabl
 }
 
 static void
-ConvertBranch(const llvm::tac & threeAddressCode, rvsdg::Region &, llvm::VariableMap &)
+ConvertBranch(const llvm::ThreeAddressCode & threeAddressCode, rvsdg::Region &, llvm::VariableMap &)
 {
   JLM_ASSERT(is<BranchOperation>(threeAddressCode.operation()));
   /*
@@ -498,9 +504,12 @@ ConvertBranch(const llvm::tac & threeAddressCode, rvsdg::Region &, llvm::Variabl
 
 template<class TNode, class TOperation>
 static void
-Convert(const llvm::tac & threeAddressCode, rvsdg::Region & region, llvm::VariableMap & variableMap)
+Convert(
+    const llvm::ThreeAddressCode & threeAddressCode,
+    rvsdg::Region & region,
+    llvm::VariableMap & variableMap)
 {
-  std::vector<rvsdg::output *> operands;
+  std::vector<rvsdg::Output *> operands;
   for (size_t n = 0; n < threeAddressCode.noperands(); n++)
   {
     auto operand = threeAddressCode.operand(n);
@@ -521,7 +530,7 @@ Convert(const llvm::tac & threeAddressCode, rvsdg::Region & region, llvm::Variab
 
 static void
 ConvertThreeAddressCode(
-    const llvm::tac & threeAddressCode,
+    const llvm::ThreeAddressCode & threeAddressCode,
     rvsdg::Region & region,
     llvm::VariableMap & variableMap)
 {
@@ -539,7 +548,7 @@ ConvertThreeAddressCode(
   }
   else
   {
-    std::vector<rvsdg::output *> operands;
+    std::vector<rvsdg::Output *> operands;
     for (size_t n = 0; n < threeAddressCode.noperands(); n++)
       operands.push_back(variableMap.lookup(threeAddressCode.operand(n)));
 
@@ -555,7 +564,7 @@ ConvertThreeAddressCode(
 
 static void
 ConvertBasicBlock(
-    const taclist & basicBlock,
+    const ThreeAddressCodeList & basicBlock,
     rvsdg::Region & region,
     llvm::VariableMap & variableMap)
 {
@@ -565,14 +574,14 @@ ConvertBasicBlock(
 
 static void
 ConvertAggregationNode(
-    const aggnode & aggregationNode,
+    const AggregationNode & aggregationNode,
     const AnnotationMap & demandMap,
     rvsdg::LambdaNode & lambdaNode,
     RegionalizedVariableMap & regionalizedVariableMap);
 
 static void
 Convert(
-    const entryaggnode & entryAggregationNode,
+    const EntryAggregationNode & entryAggregationNode,
     const AnnotationMap & demandMap,
     rvsdg::LambdaNode & lambdaNode,
     RegionalizedVariableMap & regionalizedVariableMap)
@@ -619,12 +628,12 @@ Convert(
 
 static void
 Convert(
-    const exitaggnode & exitAggregationNode,
+    const ExitAggregationNode & exitAggregationNode,
     const AnnotationMap &,
     rvsdg::LambdaNode & lambdaNode,
     RegionalizedVariableMap & regionalizedVariableMap)
 {
-  std::vector<rvsdg::output *> results;
+  std::vector<rvsdg::Output *> results;
   for (const auto & result : exitAggregationNode)
   {
     JLM_ASSERT(regionalizedVariableMap.GetTopVariableMap().contains(result));
@@ -637,7 +646,7 @@ Convert(
 
 static void
 Convert(
-    const blockaggnode & blockAggregationNode,
+    const BasicBlockAggregationNode & blockAggregationNode,
     const AnnotationMap &,
     rvsdg::LambdaNode &,
     RegionalizedVariableMap & regionalizedVariableMap)
@@ -650,7 +659,7 @@ Convert(
 
 static void
 Convert(
-    const linearaggnode & linearAggregationNode,
+    const LinearAggregationNode & linearAggregationNode,
     const AnnotationMap & demandMap,
     rvsdg::LambdaNode & lambdaNode,
     RegionalizedVariableMap & regionalizedVariableMap)
@@ -661,20 +670,20 @@ Convert(
 
 static void
 Convert(
-    const branchaggnode & branchAggregationNode,
+    const BranchAggregationNode & branchAggregationNode,
     const AnnotationMap & demandMap,
     rvsdg::LambdaNode & lambdaNode,
     RegionalizedVariableMap & regionalizedVariableMap)
 {
-  JLM_ASSERT(is<linearaggnode>(branchAggregationNode.parent()));
+  JLM_ASSERT(is<LinearAggregationNode>(branchAggregationNode.parent()));
 
   /*
    * Find predicate
    */
   auto split = branchAggregationNode.parent()->child(branchAggregationNode.index() - 1);
-  while (!is<blockaggnode>(split))
+  while (!is<BasicBlockAggregationNode>(split))
     split = split->child(split->nchildren() - 1);
-  auto & sb = dynamic_cast<const blockaggnode *>(split)->tacs();
+  auto & sb = dynamic_cast<const BasicBlockAggregationNode *>(split)->tacs();
   JLM_ASSERT(is<BranchOperation>(sb.last()->operation()));
   auto predicate = regionalizedVariableMap.GetTopVariableMap().lookup(sb.last()->operand(0));
 
@@ -684,7 +693,7 @@ Convert(
    * Add gamma inputs.
    */
   auto & demandSet = demandMap.Lookup<BranchAnnotationSet>(branchAggregationNode);
-  std::unordered_map<const variable *, rvsdg::input *> gammaInputMap;
+  std::unordered_map<const Variable *, rvsdg::Input *> gammaInputMap;
   for (auto & v : demandSet.InputVariables().Variables())
     gammaInputMap[&v] =
         gamma->AddEntryVar(regionalizedVariableMap.GetTopVariableMap().lookup(&v)).input;
@@ -692,15 +701,19 @@ Convert(
   /*
    * Convert subregions.
    */
-  std::unordered_map<const variable *, std::vector<rvsdg::output *>> xvmap;
+  std::unordered_map<const Variable *, std::vector<rvsdg::Output *>> xvmap;
   JLM_ASSERT(gamma->nsubregions() == branchAggregationNode.nchildren());
   for (size_t n = 0; n < gamma->nsubregions(); n++)
   {
     regionalizedVariableMap.PushRegion(*gamma->subregion(n));
     for (const auto & pair : gammaInputMap)
-      regionalizedVariableMap.GetTopVariableMap().insert(
-          pair.first,
-          gamma->MapInputEntryVar(*pair.second).branchArgument[n]);
+    {
+      auto rolevar = gamma->MapInput(*pair.second);
+      if (auto entryvar = std::get_if<rvsdg::GammaNode::EntryVar>(&rolevar))
+      {
+        regionalizedVariableMap.GetTopVariableMap().insert(pair.first, entryvar->branchArgument[n]);
+      }
+    }
 
     ConvertAggregationNode(
         *branchAggregationNode.child(n),
@@ -725,7 +738,7 @@ Convert(
 
 static void
 Convert(
-    const loopaggnode & loopAggregationNode,
+    const LoopAggregationNode & loopAggregationNode,
     const AnnotationMap & demandMap,
     rvsdg::LambdaNode & lambdaNode,
     RegionalizedVariableMap & regionalizedVariableMap)
@@ -743,10 +756,10 @@ Convert(
    * Add loop variables
    */
   auto & demandSet = demandMap.Lookup<LoopAnnotationSet>(loopAggregationNode);
-  std::unordered_map<const variable *, rvsdg::ThetaNode::LoopVar> thetaLoopVarMap;
+  std::unordered_map<const Variable *, rvsdg::ThetaNode::LoopVar> thetaLoopVarMap;
   for (auto & v : demandSet.LoopVariables().Variables())
   {
-    rvsdg::output * value = nullptr;
+    rvsdg::Output * value = nullptr;
     if (!outerVariableMap.contains(&v))
     {
       value = UndefValueOperation::Create(parentRegion, v.Type());
@@ -786,8 +799,8 @@ Convert(
   auto lblock = loopAggregationNode.child(0);
   while (lblock->nchildren() != 0)
     lblock = lblock->child(lblock->nchildren() - 1);
-  JLM_ASSERT(is<blockaggnode>(lblock));
-  auto & bb = static_cast<const blockaggnode *>(lblock)->tacs();
+  JLM_ASSERT(is<BasicBlockAggregationNode>(lblock));
+  auto & bb = static_cast<const BasicBlockAggregationNode *>(lblock)->tacs();
   JLM_ASSERT(is<BranchOperation>(bb.last()->operation()));
   auto predicate = bb.last()->operand(0);
 
@@ -805,32 +818,32 @@ Convert(
 
 static void
 ConvertAggregationNode(
-    const aggnode & aggregationNode,
+    const AggregationNode & aggregationNode,
     const AnnotationMap & demandMap,
     rvsdg::LambdaNode & lambdaNode,
     RegionalizedVariableMap & regionalizedVariableMap)
 {
-  if (auto entryNode = dynamic_cast<const entryaggnode *>(&aggregationNode))
+  if (auto entryNode = dynamic_cast<const EntryAggregationNode *>(&aggregationNode))
   {
     Convert(*entryNode, demandMap, lambdaNode, regionalizedVariableMap);
   }
-  else if (auto exitNode = dynamic_cast<const exitaggnode *>(&aggregationNode))
+  else if (auto exitNode = dynamic_cast<const ExitAggregationNode *>(&aggregationNode))
   {
     Convert(*exitNode, demandMap, lambdaNode, regionalizedVariableMap);
   }
-  else if (auto blockNode = dynamic_cast<const blockaggnode *>(&aggregationNode))
+  else if (auto blockNode = dynamic_cast<const BasicBlockAggregationNode *>(&aggregationNode))
   {
     Convert(*blockNode, demandMap, lambdaNode, regionalizedVariableMap);
   }
-  else if (auto linearNode = dynamic_cast<const linearaggnode *>(&aggregationNode))
+  else if (const auto linearNode = dynamic_cast<const LinearAggregationNode *>(&aggregationNode))
   {
     Convert(*linearNode, demandMap, lambdaNode, regionalizedVariableMap);
   }
-  else if (auto branchNode = dynamic_cast<const branchaggnode *>(&aggregationNode))
+  else if (auto branchNode = dynamic_cast<const BranchAggregationNode *>(&aggregationNode))
   {
     Convert(*branchNode, demandMap, lambdaNode, regionalizedVariableMap);
   }
-  else if (auto loopNode = dynamic_cast<const loopaggnode *>(&aggregationNode))
+  else if (auto loopNode = dynamic_cast<const LoopAggregationNode *>(&aggregationNode))
   {
     Convert(*loopNode, demandMap, lambdaNode, regionalizedVariableMap);
   }
@@ -842,11 +855,11 @@ ConvertAggregationNode(
 
 static void
 RestructureControlFlowGraph(
-    llvm::cfg & controlFlowGraph,
+    ControlFlowGraph & controlFlowGraph,
     const std::string & functionName,
     InterProceduralGraphToRvsdgStatisticsCollector & statisticsCollector)
 {
-  auto restructureControlFlowGraph = [](llvm::cfg * controlFlowGraph)
+  auto restructureControlFlowGraph = [](ControlFlowGraph * controlFlowGraph)
   {
     RestructureControlFlow(controlFlowGraph);
     straighten(*controlFlowGraph);
@@ -858,16 +871,16 @@ RestructureControlFlowGraph(
       functionName);
 }
 
-static std::unique_ptr<aggnode>
+static std::unique_ptr<AggregationNode>
 AggregateControlFlowGraph(
-    llvm::cfg & controlFlowGraph,
+    ControlFlowGraph & controlFlowGraph,
     const std::string & functionName,
     InterProceduralGraphToRvsdgStatisticsCollector & statisticsCollector)
 {
-  auto aggregateControlFlowGraph = [](llvm::cfg & controlFlowGraph)
+  auto aggregateControlFlowGraph = [](ControlFlowGraph & controlFlowGraph)
   {
     auto aggregationTreeRoot = aggregate(controlFlowGraph);
-    aggnode::normalize(*aggregationTreeRoot);
+    AggregationNode::normalize(*aggregationTreeRoot);
 
     return aggregationTreeRoot;
   };
@@ -882,7 +895,7 @@ AggregateControlFlowGraph(
 
 static std::unique_ptr<AnnotationMap>
 AnnotateAggregationTree(
-    const aggnode & aggregationTreeRoot,
+    const AggregationNode & aggregationTreeRoot,
     const std::string & functionName,
     InterProceduralGraphToRvsdgStatisticsCollector & statisticsCollector)
 {
@@ -892,9 +905,9 @@ AnnotateAggregationTree(
   return demandMap;
 }
 
-static rvsdg::output *
+static rvsdg::Output *
 ConvertAggregationTreeToLambda(
-    const aggnode & aggregationTreeRoot,
+    const AggregationNode & aggregationTreeRoot,
     const AnnotationMap & demandMap,
     RegionalizedVariableMap & scopedVariableMap,
     const std::string & functionName,
@@ -923,7 +936,7 @@ ConvertAggregationTreeToLambda(
   return lambdaNode->output();
 }
 
-static rvsdg::output *
+static rvsdg::Output *
 ConvertControlFlowGraph(
     const function_node & functionNode,
     RegionalizedVariableMap & regionalizedVariableMap,
@@ -956,7 +969,7 @@ ConvertControlFlowGraph(
   return lambdaOutput;
 }
 
-static rvsdg::output *
+static rvsdg::Output *
 ConvertFunctionNode(
     const function_node & functionNode,
     RegionalizedVariableMap & regionalizedVariableMap,
@@ -981,7 +994,7 @@ ConvertFunctionNode(
   return ConvertControlFlowGraph(functionNode, regionalizedVariableMap, statisticsCollector);
 }
 
-static rvsdg::output *
+static rvsdg::Output *
 ConvertDataNodeInitialization(
     const data_node_init & init,
     rvsdg::Region & region,
@@ -994,7 +1007,7 @@ ConvertDataNodeInitialization(
   return variableMap.lookup(init.value());
 }
 
-static rvsdg::output *
+static rvsdg::Output *
 ConvertDataNode(
     const data_node & dataNode,
     RegionalizedVariableMap & regionalizedVariableMap,
@@ -1002,7 +1015,7 @@ ConvertDataNode(
 {
   auto dataNodeInitialization = dataNode.initialization();
 
-  auto convertDataNodeToDeltaNode = [&]() -> rvsdg::output *
+  auto convertDataNodeToDeltaNode = [&]() -> rvsdg::Output *
   {
     auto & interProceduralGraphModule = regionalizedVariableMap.GetInterProceduralGraphModule();
     auto & region = regionalizedVariableMap.GetTopRegion();
@@ -1061,9 +1074,9 @@ ConvertDataNode(
   return deltaOutput;
 }
 
-static rvsdg::output *
+static rvsdg::Output *
 ConvertInterProceduralGraphNode(
-    const ipgraph_node & ipgNode,
+    const InterProceduralGraphNode & ipgNode,
     RegionalizedVariableMap & regionalizedVariableMap,
     InterProceduralGraphToRvsdgStatisticsCollector & statisticsCollector)
 {
@@ -1078,7 +1091,7 @@ ConvertInterProceduralGraphNode(
 
 static void
 ConvertStronglyConnectedComponent(
-    const std::unordered_set<const ipgraph_node *> & stronglyConnectedComponent,
+    const std::unordered_set<const InterProceduralGraphNode *> & stronglyConnectedComponent,
     rvsdg::Graph & graph,
     RegionalizedVariableMap & regionalizedVariableMap,
     InterProceduralGraphToRvsdgStatisticsCollector & statisticsCollector)
@@ -1116,7 +1129,7 @@ ConvertStronglyConnectedComponent(
   /*
    * Add recursion variables
    */
-  std::unordered_map<const variable *, rvsdg::PhiNode::FixVar> recursionVariables;
+  std::unordered_map<const Variable *, rvsdg::PhiNode::FixVar> recursionVariables;
   for (const auto & ipgNode : stronglyConnectedComponent)
   {
     auto recursionVariable = pb.AddFixVar(ipgNode->Type());
@@ -1169,7 +1182,7 @@ ConvertStronglyConnectedComponent(
 
 static std::unique_ptr<RvsdgModule>
 ConvertInterProceduralGraphModule(
-    ipgraph_module & interProceduralGraphModule,
+    InterProceduralGraphModule & interProceduralGraphModule,
     InterProceduralGraphToRvsdgStatisticsCollector & statisticsCollector)
 {
   auto rvsdgModule = RvsdgModule::Create(
@@ -1196,14 +1209,15 @@ ConvertInterProceduralGraphModule(
 
 std::unique_ptr<RvsdgModule>
 ConvertInterProceduralGraphModule(
-    ipgraph_module & interProceduralGraphModule,
+    InterProceduralGraphModule & interProceduralGraphModule,
     util::StatisticsCollector & statisticsCollector)
 {
   InterProceduralGraphToRvsdgStatisticsCollector interProceduralGraphToRvsdgStatisticsCollector(
       statisticsCollector,
       interProceduralGraphModule.source_filename());
 
-  auto convertInterProceduralGraphModule = [&](ipgraph_module & interProceduralGraphModule)
+  auto convertInterProceduralGraphModule =
+      [&](InterProceduralGraphModule & interProceduralGraphModule)
   {
     return ConvertInterProceduralGraphModule(
         interProceduralGraphModule,

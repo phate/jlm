@@ -45,7 +45,7 @@ public:
    * @return a conservative set of memory locations the pointer may target
    */
   [[nodiscard]] virtual jlm::util::HashSet<const PointsToGraph::MemoryNode *>
-  GetOutputNodes(const jlm::rvsdg::output & output) const = 0;
+  GetOutputNodes(const jlm::rvsdg::Output & output) const = 0;
 
   [[nodiscard]] virtual const jlm::util::HashSet<const PointsToGraph::MemoryNode *> &
   GetLambdaEntryNodes(const rvsdg::LambdaNode & lambdaNode) const

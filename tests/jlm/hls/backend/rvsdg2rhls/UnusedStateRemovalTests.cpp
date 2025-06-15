@@ -25,7 +25,7 @@ TestGamma()
   // Arrange
   auto valueType = jlm::tests::valuetype::Create();
 
-  auto rvsdgModule = RvsdgModule::Create(jlm::util::filepath(""), "", "");
+  auto rvsdgModule = RvsdgModule::Create(jlm::util::FilePath(""), "", "");
   auto & rvsdg = rvsdgModule->Rvsdg();
 
   auto p = &jlm::tests::GraphImport::Create(rvsdg, jlm::rvsdg::ControlType::Create(2), "p");
@@ -85,7 +85,7 @@ TestTheta()
       { jlm::rvsdg::ControlType::Create(2), valueType, valueType, valueType },
       { valueType });
 
-  auto rvsdgModule = jlm::llvm::RvsdgModule::Create(jlm::util::filepath(""), "", "");
+  auto rvsdgModule = jlm::llvm::RvsdgModule::Create(jlm::util::FilePath(""), "", "");
   auto & rvsdg = rvsdgModule->Rvsdg();
   auto p = &jlm::tests::GraphImport::Create(rvsdg, jlm::rvsdg::ControlType::Create(2), "p");
   auto x = &jlm::tests::GraphImport::Create(rvsdg, valueType, "x");
@@ -139,7 +139,7 @@ TestLambda()
       { valueType, valueType },
       { valueType, valueType, valueType, valueType });
 
-  auto rvsdgModule = jlm::llvm::RvsdgModule::Create(jlm::util::filepath(""), "", "");
+  auto rvsdgModule = jlm::llvm::RvsdgModule::Create(jlm::util::FilePath(""), "", "");
   auto & rvsdg = rvsdgModule->Rvsdg();
 
   auto x = &jlm::tests::GraphImport::Create(rvsdg, valueType, "x");
@@ -208,7 +208,7 @@ TestUsedMemoryState()
   using namespace jlm::llvm;
   using namespace jlm::hls;
 
-  auto rvsdgModule = RvsdgModule::Create(jlm::util::filepath(""), "", "");
+  auto rvsdgModule = RvsdgModule::Create(jlm::util::FilePath(""), "", "");
 
   // Setup the function
   std::cout << "Function Setup" << std::endl;
@@ -237,8 +237,8 @@ TestUsedMemoryState()
   RemoveInvariantLambdaStateEdges(*rvsdgModule);
   // Assert
   jlm::rvsdg::view(rvsdgModule->Rvsdg(), stdout);
-  auto * node =
-      jlm::rvsdg::output::GetNode(*rvsdgModule->Rvsdg().GetRootRegion().result(0)->origin());
+  auto * node = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
+      *rvsdgModule->Rvsdg().GetRootRegion().result(0)->origin());
   auto lambdaSubregion = jlm::util::AssertedCast<jlm::rvsdg::LambdaNode>(node)->subregion();
   assert(lambdaSubregion->nresults() == 1);
   assert(is<MemoryStateType>(lambdaSubregion->result(0)->Type()));
@@ -255,7 +255,7 @@ TestUnusedMemoryState()
   using namespace jlm::llvm;
   using namespace jlm::hls;
 
-  auto rvsdgModule = RvsdgModule::Create(jlm::util::filepath(""), "", "");
+  auto rvsdgModule = RvsdgModule::Create(jlm::util::FilePath(""), "", "");
 
   // Setup the function
   std::cout << "Function Setup" << std::endl;
@@ -283,8 +283,8 @@ TestUnusedMemoryState()
   // Act
   RemoveInvariantLambdaStateEdges(*rvsdgModule);
   // Assert
-  auto * node =
-      jlm::rvsdg::output::GetNode(*rvsdgModule->Rvsdg().GetRootRegion().result(0)->origin());
+  auto * node = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
+      *rvsdgModule->Rvsdg().GetRootRegion().result(0)->origin());
   auto lambdaSubregion = jlm::util::AssertedCast<jlm::rvsdg::LambdaNode>(node)->subregion();
   jlm::rvsdg::view(rvsdgModule->Rvsdg(), stdout);
   assert(lambdaSubregion->narguments() == 2);
@@ -303,7 +303,7 @@ TestInvariantMemoryState()
   using namespace jlm::llvm;
   using namespace jlm::hls;
 
-  auto rvsdgModule = RvsdgModule::Create(jlm::util::filepath(""), "", "");
+  auto rvsdgModule = RvsdgModule::Create(jlm::util::FilePath(""), "", "");
 
   // Setup the function
   std::cout << "Function Setup" << std::endl;
@@ -328,7 +328,7 @@ TestInvariantMemoryState()
       32);
 
   // LambdaExitMemoryStateMerge node
-  std::vector<jlm::rvsdg::output *> outputs;
+  std::vector<jlm::rvsdg::Output *> outputs;
   auto & memoryStateMerge = LambdaExitMemoryStateMergeOperation::Create(
       *lambda->subregion(),
       { loadOutput[1], memoryStateSplit[1] });
@@ -342,16 +342,19 @@ TestInvariantMemoryState()
   // This pass should have no effect on the graph
   RemoveInvariantLambdaStateEdges(*rvsdgModule);
   // Assert
-  auto * node =
-      jlm::rvsdg::output::GetNode(*rvsdgModule->Rvsdg().GetRootRegion().result(0)->origin());
+  auto * node = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
+      *rvsdgModule->Rvsdg().GetRootRegion().result(0)->origin());
   auto lambdaSubregion = jlm::util::AssertedCast<jlm::rvsdg::LambdaNode>(node)->subregion();
   jlm::rvsdg::view(rvsdgModule->Rvsdg(), stdout);
   assert(lambdaSubregion->narguments() == 2);
   assert(lambdaSubregion->nresults() == 1);
   assert(is<MemoryStateType>(lambdaSubregion->result(0)->Type()));
-  assert(
-      jlm::rvsdg::Region::Contains<LambdaEntryMemoryStateSplitOperation>(*lambdaSubregion, true));
-  assert(jlm::rvsdg::Region::Contains<LambdaExitMemoryStateMergeOperation>(*lambdaSubregion, true));
+  assert(jlm::rvsdg::Region::ContainsOperation<LambdaEntryMemoryStateSplitOperation>(
+      *lambdaSubregion,
+      true));
+  assert(jlm::rvsdg::Region::ContainsOperation<LambdaExitMemoryStateMergeOperation>(
+      *lambdaSubregion,
+      true));
 
   return 0;
 }

@@ -19,7 +19,7 @@ class RvsdgTreePrinter::Statistics final : public util::Statistics
 public:
   ~Statistics() override = default;
 
-  explicit Statistics(const util::filepath & sourceFile)
+  explicit Statistics(const util::FilePath & sourceFile)
       : util::Statistics(util::Statistics::Id::RvsdgTreePrinter, sourceFile)
   {}
 
@@ -36,7 +36,7 @@ public:
   }
 
   static std::unique_ptr<Statistics>
-  Create(const util::filepath & sourceFile)
+  Create(const util::FilePath & sourceFile)
   {
     return std::make_unique<Statistics>(sourceFile);
   }
@@ -155,7 +155,7 @@ RvsdgTreePrinter::AnnotateNumMemoryStateInputsOutputs(
         for (size_t n = 0; n < structuralNode->ninputs(); n++)
         {
           auto input = structuralNode->input(n);
-          if (rvsdg::is<MemoryStateType>(input->type()))
+          if (rvsdg::is<MemoryStateType>(input->Type()))
           {
             numMemoryStateInputs++;
           }
@@ -168,7 +168,7 @@ RvsdgTreePrinter::AnnotateNumMemoryStateInputsOutputs(
         for (size_t n = 0; n < structuralNode->noutputs(); n++)
         {
           auto output = structuralNode->output(n);
-          if (rvsdg::is<MemoryStateType>(output->type()))
+          if (rvsdg::is<MemoryStateType>(output->Type()))
           {
             numMemoryStateOutputs++;
           }
@@ -190,13 +190,13 @@ RvsdgTreePrinter::AnnotateNumMemoryStateInputsOutputs(
 }
 
 bool
-RvsdgTreePrinter::IsMemoryStateInput(const rvsdg::input * input) noexcept
+RvsdgTreePrinter::IsMemoryStateInput(const rvsdg::Input * input) noexcept
 {
   return rvsdg::is<MemoryStateType>(input->Type());
 }
 
 bool
-RvsdgTreePrinter::IsMemoryStateOutput(const rvsdg::output * output) noexcept
+RvsdgTreePrinter::IsMemoryStateOutput(const rvsdg::Output * output) noexcept
 {
   return rvsdg::is<MemoryStateType>(output->Type());
 }
