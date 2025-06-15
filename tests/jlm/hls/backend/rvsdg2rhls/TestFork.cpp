@@ -66,7 +66,7 @@ TestFork()
     auto forkNode =
         jlm::rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*loop->subregion()->result(0)->origin());
     assert(forkNode);
-    auto forkOp = util::AssertedCast<const hls::fork_op>(&forkNode->GetOperation());
+    auto forkOp = util::AssertedCast<const hls::ForkOperation>(&forkNode->GetOperation());
     assert(forkNode->ninputs() == 1);
     assert(forkNode->noutputs() == 4);
     assert(forkOp->IsConstant() == false);
@@ -131,14 +131,14 @@ TestConstantFork()
     auto forkNode =
         rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*loop->subregion()->result(0)->origin());
     assert(forkNode);
-    auto forkOp = util::AssertedCast<const hls::fork_op>(&forkNode->GetOperation());
+    auto forkOp = util::AssertedCast<const hls::ForkOperation>(&forkNode->GetOperation());
     assert(forkNode->ninputs() == 1);
     assert(forkNode->noutputs() == 2);
     assert(forkOp->IsConstant() == false);
     auto matchNode = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*forkNode->input(0)->origin());
     auto bitsUltNode = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*matchNode->input(0)->origin());
     auto cforkNode = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*bitsUltNode->input(1)->origin());
-    auto cforkOp = util::AssertedCast<const hls::fork_op>(&cforkNode->GetOperation());
+    auto cforkOp = util::AssertedCast<const hls::ForkOperation>(&cforkNode->GetOperation());
     assert(cforkNode->ninputs() == 1);
     assert(cforkNode->noutputs() == 2);
     assert(cforkOp->IsConstant() == true);

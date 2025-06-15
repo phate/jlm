@@ -20,7 +20,7 @@ get_trigger(rvsdg::Region * region)
 {
   for (size_t i = 0; i < region->narguments(); ++i)
   {
-    if (*region->argument(i)->Type() == *hls::triggertype::Create())
+    if (*region->argument(i)->Type() == *TriggerType::Create())
     {
       return region->argument(i);
     }
@@ -97,7 +97,7 @@ add_triggers(rvsdg::Region * region)
         // check here in order not to process removed and re-added node twice
         if (!get_trigger(ln->subregion()))
         {
-          auto new_lambda = add_lambda_argument(ln, hls::triggertype::Create());
+          auto new_lambda = add_lambda_argument(ln, TriggerType::Create());
           add_triggers(new_lambda->subregion());
         }
       }
@@ -130,7 +130,7 @@ add_triggers(rvsdg::Region * region)
       {
         auto orig_out = sn->output(0);
         std::vector<jlm::rvsdg::Input *> previous_users(orig_out->begin(), orig_out->end());
-        auto gated = hls::trigger_op::create(*trigger, *orig_out)[0];
+        auto gated = TriggerOperation::create(*trigger, *orig_out)[0];
         for (auto user : previous_users)
         {
           user->divert_to(gated);

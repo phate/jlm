@@ -98,7 +98,7 @@ find_loop_output(jlm::rvsdg::StructuralInput * sti)
   JLM_ASSERT(sti_arg->nusers() == 1);
   auto user = *sti_arg->begin();
   auto si = dynamic_cast<jlm::rvsdg::SimpleInput *>(user);
-  JLM_ASSERT(dynamic_cast<const jlm::hls::mux_op *>(&si->node()->GetOperation()));
+  JLM_ASSERT(dynamic_cast<const jlm::hls::MuxOperation *>(&si->node()->GetOperation()));
   for (size_t i = 1; i < 3; ++i)
   {
     auto arg = si->node()->input(i)->origin();
@@ -108,7 +108,7 @@ find_loop_output(jlm::rvsdg::StructuralInput * sti)
       JLM_ASSERT(res);
       auto buffer_out = dynamic_cast<jlm::rvsdg::SimpleOutput *>(res->origin());
       JLM_ASSERT(buffer_out);
-      JLM_ASSERT(dynamic_cast<const jlm::hls::buffer_op *>(&buffer_out->node()->GetOperation()));
+      JLM_ASSERT(jlm::rvsdg::is<jlm::hls::BufferOperation>(buffer_out->node()));
       auto branch_out =
           dynamic_cast<jlm::rvsdg::SimpleOutput *>(buffer_out->node()->input(0)->origin());
       JLM_ASSERT(branch_out);
@@ -170,7 +170,7 @@ separate_load_edge(
       JLM_ASSERT(sti_arg->nusers() == 1);
       auto user = *sti_arg->begin();
       auto si = dynamic_cast<jlm::rvsdg::SimpleInput *>(user);
-      JLM_ASSERT(dynamic_cast<const jlm::hls::mux_op *>(&si->node()->GetOperation()));
+      JLM_ASSERT(dynamic_cast<const jlm::hls::MuxOperation *>(&si->node()->GetOperation()));
       JLM_ASSERT(buffer->nusers() == 1);
       // use a separate vector to check if the loop contains stores
       std::vector<jlm::rvsdg::Output *> loop_store_addresses;
@@ -210,7 +210,7 @@ separate_load_edge(
           for (size_t i = 0; i < sn->noutputs(); ++i)
           {
             // dummy user for edge
-            auto dummy_user_tmp = jlm::hls::sink_op::create(*load_branch_out[i]);
+            auto dummy_user_tmp = jlm::hls::SinkOperation::create(*load_branch_out[i]);
             // Sink ops doesn't have any outputs so we get an empty vector back
             // But we are not allowed to discard the vector and can't have unused variables
             // So adding a meaningless assert to get it to compile
@@ -234,9 +234,9 @@ separate_load_edge(
           // create mux
           JLM_ASSERT(mem_edge->nusers() == 1);
           auto mux_user = jlm::util::AssertedCast<jlm::rvsdg::SimpleInput>(*mem_edge->begin());
-          auto mux_op =
-              jlm::util::AssertedCast<const jlm::hls::mux_op>(&mux_user->node()->GetOperation());
-          addr_edge = jlm::hls::mux_op::create(
+          auto mux_op = jlm::util::AssertedCast<const jlm::hls::MuxOperation>(
+              &mux_user->node()->GetOperation());
+          addr_edge = jlm::hls::MuxOperation::create(
               *mux_user->node()->input(0)->origin(),
               load_branch_out,
               mux_op->discarding,
@@ -253,7 +253,7 @@ separate_load_edge(
           return nullptr;
         }
       }
-      else if (auto mx = dynamic_cast<const jlm::hls::mux_op *>(op))
+      else if (auto mx = dynamic_cast<const jlm::hls::MuxOperation *>(op))
       {
         JLM_ASSERT(!mx->loop);
         // end of gamma
@@ -391,7 +391,7 @@ process_loops(jlm::rvsdg::Output * state_edge)
           state_edge = process_loops(sn->output(i));
         }
       }
-      else if (dynamic_cast<const jlm::hls::mux_op *>(op))
+      else if (jlm::rvsdg::is<jlm::hls::MuxOperation>(*op))
       {
         // end of gamma
         JLM_ASSERT(sn->noutputs() == 1);

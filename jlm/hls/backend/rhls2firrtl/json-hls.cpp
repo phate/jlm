@@ -58,8 +58,8 @@ JsonHLS::GetText(llvm::RvsdgModule & rm)
     {
       json << ", ";
     }
-    auto req_bt = std::dynamic_pointer_cast<const bundletype>(mem_reqs[i]->Type());
-    auto resp_bt = std::dynamic_pointer_cast<const bundletype>(mem_resps[i]->Type());
+    auto req_bt = std::dynamic_pointer_cast<const BundleType>(mem_reqs[i]->Type());
+    auto resp_bt = std::dynamic_pointer_cast<const BundleType>(mem_resps[i]->Type());
     auto size = JlmSize(&*resp_bt->get_element_type("data"));
     auto has_write = req_bt->get_element_type("write") != nullptr;
     json << "{ \"size\": " << size << ", \"has_write\": " << has_write << "}";

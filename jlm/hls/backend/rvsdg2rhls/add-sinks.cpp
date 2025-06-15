@@ -19,7 +19,7 @@ add_sinks(rvsdg::Region * region)
     auto arg = region->argument(i);
     if (!arg->nusers())
     {
-      hls::sink_op::create(*arg);
+      SinkOperation::create(*arg);
     }
   }
   for (auto & node : rvsdg::TopDownTraverser(region))
@@ -37,7 +37,7 @@ add_sinks(rvsdg::Region * region)
       auto out = node->output(i);
       if (!out->nusers())
       {
-        hls::sink_op::create(*out);
+        SinkOperation::create(*out);
       }
     }
   }

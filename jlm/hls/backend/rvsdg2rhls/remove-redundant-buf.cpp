@@ -20,7 +20,7 @@ eliminate_buf(jlm::rvsdg::Output * o)
     {
       return eliminate_buf(node->input(1)->origin());
     }
-    else if (jlm::rvsdg::is<const jlm::hls::fork_op>(node->GetOperation()))
+    else if (jlm::rvsdg::is<const ForkOperation>(node->GetOperation()))
     {
       // part of memory disambiguation
       return eliminate_buf(node->input(0)->origin());
@@ -33,7 +33,7 @@ eliminate_buf(jlm::rvsdg::Output * o)
     {
       return true;
     }
-    else if (jlm::rvsdg::is<const jlm::hls::load_op>(node->GetOperation()))
+    else if (jlm::rvsdg::is<const LoadOperation>(node->GetOperation()))
     {
       return true;
     }
@@ -60,13 +60,14 @@ remove_redundant_buf(rvsdg::Region * region)
     }
     else if (dynamic_cast<jlm::rvsdg::SimpleNode *>(node))
     {
-      if (auto buf = dynamic_cast<const buffer_op *>(&node->GetOperation()))
+      if (auto buf = dynamic_cast<const BufferOperation *>(&node->GetOperation()))
       {
         if (std::dynamic_pointer_cast<const jlm::llvm::MemoryStateType>(buf->argument(0)))
         {
           if (!buf->pass_through && eliminate_buf(node->input(0)->origin()))
           {
-            auto new_out = buffer_op::create(*node->input(0)->origin(), buf->capacity, true)[0];
+            auto new_out =
+                BufferOperation::create(*node->input(0)->origin(), buf->capacity, true)[0];
             node->output(0)->divert_users(new_out);
             remove(node);
           }

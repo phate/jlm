@@ -97,15 +97,15 @@ DotHLS::node_to_dot(const rvsdg::Node * node)
   }
 
   std::string color = "black";
-  if (jlm::rvsdg::is<hls::buffer_op>(node))
+  if (jlm::rvsdg::is<BufferOperation>(node))
   {
     color = "blue";
   }
-  else if (jlm::rvsdg::is<hls::fork_op>(node))
+  else if (jlm::rvsdg::is<ForkOperation>(node))
   {
     color = "grey";
   }
-  else if (jlm::rvsdg::is<hls::sink_op>(node))
+  else if (jlm::rvsdg::is<SinkOperation>(node))
   {
     color = "grey";
   }
@@ -113,7 +113,7 @@ DotHLS::node_to_dot(const rvsdg::Node * node)
   {
     color = "green";
   }
-  else if (jlm::rvsdg::is<hls::mux_op>(node))
+  else if (jlm::rvsdg::is<MuxOperation>(node))
   {
     color = "darkred";
   }
@@ -121,7 +121,7 @@ DotHLS::node_to_dot(const rvsdg::Node * node)
   {
     color = "pink";
   }
-  else if (jlm::rvsdg::is<hls::trigger_op>(node) || hls::is_constant(node))
+  else if (jlm::rvsdg::is<TriggerOperation>(node) || is_constant(node))
   {
     color = "orange";
   }
@@ -248,8 +248,8 @@ DotHLS::loop_to_dot(hls::loop_node * ln)
   dot << "{rank=same ";
   for (auto node : rvsdg::TopDownTraverser(sr))
   {
-    auto mx = dynamic_cast<const hls::mux_op *>(&node->GetOperation());
-    auto lc = dynamic_cast<const hls::loop_constant_buffer_op *>(&node->GetOperation());
+    auto mx = dynamic_cast<const MuxOperation *>(&node->GetOperation());
+    auto lc = dynamic_cast<const LoopConstantBufferOperation *>(&node->GetOperation());
     if ((mx && !mx->discarding && mx->loop) || lc)
     {
       dot << get_node_name(node) << " ";
@@ -274,7 +274,7 @@ DotHLS::loop_to_dot(hls::loop_node * ln)
   {
     if (dynamic_cast<jlm::rvsdg::SimpleNode *>(node))
     {
-      auto mx = dynamic_cast<const hls::mux_op *>(&node->GetOperation());
+      auto mx = dynamic_cast<const MuxOperation *>(&node->GetOperation());
       auto node_name = get_node_name(node);
       for (size_t i = 0; i < node->ninputs(); ++i)
       {
@@ -286,7 +286,7 @@ DotHLS::loop_to_dot(hls::loop_node * ln)
                  && (/*i==0||*/ i == 2); // back_outputs.count(node->input(i)->origin());
         auto origin_out_node = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*node->input(i)->origin());
         if (origin_out_node
-            && dynamic_cast<const predicate_buffer_op *>(&origin_out_node->GetOperation()))
+            && dynamic_cast<const PredicateBufferOperation *>(&origin_out_node->GetOperation()))
         {
           //
           back = true;

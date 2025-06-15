@@ -67,7 +67,7 @@ TraceEdgeToMerge(rvsdg::Input * state_edge)
     auto si = util::AssertedCast<rvsdg::SimpleInput>(state_edge);
     auto sn = si->node();
     auto [branchNode, branchOperation] = rvsdg::TryGetSimpleNodeAndOp<BranchOperation>(*state_edge);
-    auto [muxNode, muxOperation] = rvsdg::TryGetSimpleNodeAndOp<mux_op>(*state_edge);
+    auto [muxNode, muxOperation] = rvsdg::TryGetSimpleNodeAndOp<MuxOperation>(*state_edge);
     if (branchOperation)
     {
       // end of loop
@@ -667,7 +667,7 @@ ConnectRequestResponseMemPorts(
         route_request_rhls(lambdaRegion, replacement->output(replacement->noutputs() - 1));
     loadAddresses.push_back(address);
     std::shared_ptr<const rvsdg::ValueType> type;
-    if (auto loadOperation = dynamic_cast<const load_op *>(&replacement->GetOperation()))
+    if (auto loadOperation = dynamic_cast<const LoadOperation *>(&replacement->GetOperation()))
     {
       type = loadOperation->GetLoadedType();
     }
@@ -742,7 +742,7 @@ ReplaceLoad(
   else
   {
     // TODO: switch this to a decoupled load?
-    auto outputs = load_op::create(*loadAddress, states, *response);
+    auto outputs = LoadOperation::create(*loadAddress, states, *response);
     newLoad = dynamic_cast<rvsdg::node_output *>(outputs[0])->node();
   }
 
@@ -784,7 +784,7 @@ ReplaceStore(
     // for the store
     // TODO: It might be better to have memstate merges consume individual tokens instead,, and fire
     // the output once all inputs have consumed
-    auto bo = buffer_op::create(*storeOuts[i], 1, true)[0];
+    const auto bo = BufferOperation::create(*storeOuts[i], 1, true)[0];
     smap.insert(originalStore->output(i), bo);
     replacedStore->output(i)->divert_users(bo);
   }
