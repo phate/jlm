@@ -1977,7 +1977,7 @@ RhlsToFirrtlConverter::MlirGenAddrQueue(const jlm::rvsdg::SimpleNode * node)
   auto module = nodeToModule(node);
   auto body = module.getBodyBlock();
 
-  auto op = dynamic_cast<const hls::addr_queue_op *>(&(node->GetOperation()));
+  auto op = dynamic_cast<const hls::AddressQueueOperation *>(&(node->GetOperation()));
   auto capacity = op->capacity;
 
   auto clock = GetClockSignal(module);
@@ -2448,7 +2448,7 @@ RhlsToFirrtlConverter::MlirGen(const jlm::rvsdg::SimpleNode * node)
   {
     return MlirGenPrint(node);
   }
-  else if (dynamic_cast<const hls::addr_queue_op *>(&(node->GetOperation())))
+  else if (dynamic_cast<const AddressQueueOperation *>(&(node->GetOperation())))
   {
     return MlirGenAddrQueue(node);
   }
