@@ -173,7 +173,7 @@ OptimizeStateGate(rvsdg::SimpleNode * node)
 void
 OptimizeAddrQ(rvsdg::SimpleNode * node)
 {
-  auto addrq = dynamic_cast<const addr_queue_op *>(&node->GetOperation());
+  auto addrq = dynamic_cast<const AddressQueueOperation *>(&node->GetOperation());
   JLM_ASSERT(addrq);
   // place buffer on addr output
   PlaceBuffer(node->output(0), addrq->capacity, true);
@@ -308,11 +308,11 @@ AddBuffers(rvsdg::Region * region)
       {
         //        OptimizeBranch(simple);
       }
-      else if (jlm::rvsdg::is<state_gate_op>(node))
+      else if (jlm::rvsdg::is<StateGateOperation>(node))
       {
         //        OptimizeStateGate(simple);
       }
-      else if (jlm::rvsdg::is<addr_queue_op>(node))
+      else if (jlm::rvsdg::is<AddressQueueOperation>(node))
       {
         OptimizeAddrQ(simple);
       }
@@ -402,7 +402,7 @@ NodeCycles(rvsdg::SimpleNode * node, std::vector<size_t> & input_cycles)
     }
     return { max_cycles + 1 };
   }
-  else if (dynamic_cast<const addr_queue_op *>(&node->GetOperation()))
+  else if (dynamic_cast<const AddressQueueOperation *>(&node->GetOperation()))
   {
     return { input_cycles[0] };
   }
@@ -410,7 +410,7 @@ NodeCycles(rvsdg::SimpleNode * node, std::vector<size_t> & input_cycles)
   {
     return { max_cycles + MemoryLatency, 0 };
   }
-  else if (rvsdg::is<state_gate_op>(node))
+  else if (rvsdg::is<StateGateOperation>(node))
   {
     // handle special state gate that sits on dec_load response
     auto sg0_user = GetUser(node->output(0));
@@ -446,7 +446,7 @@ NodeCapacity(rvsdg::SimpleNode * node, std::vector<size_t> & input_capacities)
   {
     return { min_capacity + op->capacity };
   }
-  else if (dynamic_cast<const addr_queue_op *>(&node->GetOperation()))
+  else if (dynamic_cast<const AddressQueueOperation *>(&node->GetOperation()))
   {
     return { input_capacities[0] };
   }
@@ -454,7 +454,7 @@ NodeCapacity(rvsdg::SimpleNode * node, std::vector<size_t> & input_capacities)
   {
     return { min_capacity + op->capacity, 0 };
   }
-  else if (rvsdg::is<state_gate_op>(node))
+  else if (rvsdg::is<StateGateOperation>(node))
   {
     // handle special state gate that sits on dec_load response
     auto sg0_user = GetUser(node->output(0));
@@ -886,7 +886,7 @@ AdjustLoopBuffers(
         for (size_t i = 0; i < simpleNode->ninputs(); ++i)
         {
           auto capacity = buffer_capacity[simpleNode->input(i)->origin()];
-          if (!analyze_inner_loop && (!rvsdg::is<addr_queue_op>(simpleNode))
+          if (!analyze_inner_loop && (!rvsdg::is<AddressQueueOperation>(simpleNode))
               && capacity < max_cycles)
           {
             size_t capacity_diff = max_cycles - capacity;
