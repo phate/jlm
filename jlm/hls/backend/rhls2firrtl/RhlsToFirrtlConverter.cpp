@@ -2414,7 +2414,7 @@ RhlsToFirrtlConverter::MlirGen(const jlm::rvsdg::SimpleNode * node)
   {
     return MlirGenHlsLocalMem(node);
   }
-  else if (dynamic_cast<const hls::mem_resp_op *>(&(node->GetOperation())))
+  else if (rvsdg::is<MemoryResponseOperation>(node))
   {
     return MlirGenHlsMemResp(node);
   }

@@ -141,7 +141,7 @@ TestLoad()
   // Response Node
   auto responseNode =
       jlm::util::AssertedCast<jlm::rvsdg::node_output>(loadNode->input(2)->origin())->node();
-  assert(is<mem_resp_op>(responseNode));
+  assert(is<MemoryResponseOperation>(responseNode));
 
   // Response source
   auto responseSource = responseNode->input(0)->origin();
@@ -286,7 +286,7 @@ TestLoadStore()
   assert(is<jlm::hls::LoadOperation>(loadNode));
   auto responseNode =
       jlm::util::AssertedCast<jlm::rvsdg::node_output>(loadNode->input(2)->origin())->node();
-  assert(is<mem_resp_op>(responseNode));
+  assert(is<MemoryResponseOperation>(responseNode));
 
   return 0;
 }
@@ -382,7 +382,7 @@ TestThetaLoad()
   lambda = jlm::util::AssertedCast<jlm::rvsdg::LambdaNode>(region->Nodes().begin().ptr());
   lambdaRegion = lambda->subregion();
 
-  assert(jlm::rvsdg::Region::ContainsOperation<mem_resp_op>(*lambdaRegion, true));
+  assert(jlm::rvsdg::Region::ContainsOperation<MemoryResponseOperation>(*lambdaRegion, true));
   assert(jlm::rvsdg::Region::ContainsOperation<MemoryRequestOperation>(*lambdaRegion, true));
 
   // Request Node
@@ -410,7 +410,7 @@ TestThetaLoad()
   // Response Node
   auto responseNode =
       jlm::util::AssertedCast<const jlm::rvsdg::node_output>(thetaInput->origin())->node();
-  assert(is<mem_resp_op>(responseNode));
+  assert(is<MemoryResponseOperation>(responseNode));
 
   // Lambda argument
   assert(is<jlm::rvsdg::RegionArgument>(responseNode->input(0)->origin()));
