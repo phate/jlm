@@ -21,14 +21,14 @@ AggregationNode::normalize(AggregationNode & node)
   std::function<std::vector<std::unique_ptr<AggregationNode>>(AggregationNode &)> reduce =
       [&](AggregationNode & node)
   {
-    JLM_ASSERT(is<linearaggnode>(&node));
+    JLM_ASSERT(is<LinearAggregationNode>(&node));
 
     std::vector<std::unique_ptr<AggregationNode>> children;
     for (size_t n = 0; n < node.children_.size(); n++)
     {
       auto & child = node.children_[n];
 
-      if (is<linearaggnode>(child.get()))
+      if (is<LinearAggregationNode>(child.get()))
       {
         auto tmp = reduce(*child);
         std::move(tmp.begin(), tmp.end(), std::back_inserter(children));
@@ -42,7 +42,7 @@ AggregationNode::normalize(AggregationNode & node)
     return children;
   };
 
-  if (is<linearaggnode>(&node))
+  if (is<LinearAggregationNode>(&node))
   {
     auto children = reduce(node);
 
@@ -91,35 +91,26 @@ BasicBlockAggregationNode::debug_string() const
   return "block";
 }
 
-/* linearaggnode class */
-
-linearaggnode::~linearaggnode()
-{}
+LinearAggregationNode::~LinearAggregationNode() noexcept = default;
 
 std::string
-linearaggnode::debug_string() const
+LinearAggregationNode::debug_string() const
 {
   return "linear";
 }
 
-/* branchaggnode class */
-
-branchaggnode::~branchaggnode()
-{}
+BranchAggregationNode::~BranchAggregationNode() noexcept = default;
 
 std::string
-branchaggnode::debug_string() const
+BranchAggregationNode::debug_string() const
 {
   return "branch";
 }
 
-/* loopaggnode class */
-
-loopaggnode::~loopaggnode()
-{}
+LoopAggregationNode::~LoopAggregationNode() noexcept = default;
 
 std::string
-loopaggnode::debug_string() const
+LoopAggregationNode::debug_string() const
 {
   return "loop";
 }
@@ -132,13 +123,13 @@ class aggregation_map final
 {
 public:
   bool
-  contains(cfg_node * node) const
+  contains(ControlFlowGraphNode * node) const
   {
     return map_.find(node) != map_.end();
   }
 
   std::unique_ptr<AggregationNode> &
-  lookup(cfg_node * node)
+  lookup(ControlFlowGraphNode * node)
   {
     JLM_ASSERT(contains(node));
 
@@ -146,13 +137,13 @@ public:
   }
 
   void
-  insert(cfg_node * node, std::unique_ptr<AggregationNode> anode)
+  insert(ControlFlowGraphNode * node, std::unique_ptr<AggregationNode> anode)
   {
     map_[node] = std::move(anode);
   }
 
   void
-  remove(cfg_node * node)
+  remove(ControlFlowGraphNode * node)
   {
     map_.erase(node);
   }
@@ -176,29 +167,29 @@ public:
   }
 
 private:
-  std::unordered_map<cfg_node *, std::unique_ptr<AggregationNode>> map_;
+  std::unordered_map<ControlFlowGraphNode *, std::unique_ptr<AggregationNode>> map_;
 };
 
 static bool
-is_sese_basic_block(const cfg_node * node) noexcept
+is_sese_basic_block(const ControlFlowGraphNode * node) noexcept
 {
   return node->NumInEdges() == 1 && node->NumOutEdges() == 1;
 }
 
 static bool
-is_branch_split(const cfg_node * node) noexcept
+is_branch_split(const ControlFlowGraphNode * node) noexcept
 {
   return node->NumOutEdges() > 1;
 }
 
 static bool
-is_branch_join(const cfg_node * node) noexcept
+is_branch_join(const ControlFlowGraphNode * node) noexcept
 {
   return node->NumInEdges() > 1;
 }
 
 static bool
-is_branch(const cfg_node * split) noexcept
+is_branch(const ControlFlowGraphNode * split) noexcept
 {
   if (split->NumOutEdges() < 2)
     return false;
@@ -221,7 +212,7 @@ is_branch(const cfg_node * split) noexcept
 }
 
 static bool
-is_linear(const cfg_node * node) noexcept
+is_linear(const ControlFlowGraphNode * node) noexcept
 {
   if (node->NumOutEdges() != 1)
     return false;
@@ -233,8 +224,8 @@ is_linear(const cfg_node * node) noexcept
   return true;
 }
 
-static cfg_node *
-aggregate(cfg_node *, cfg_node *, aggregation_map &);
+static ControlFlowGraphNode *
+aggregate(ControlFlowGraphNode *, ControlFlowGraphNode *, aggregation_map &);
 
 /**
  * Reduces a tail-controlled loop subgraph to a single node and creates an aggregation subtree for
@@ -252,7 +243,7 @@ reduce_loop(const sccstructure & sccstruct, aggregation_map & map)
   redge->source()->remove_outedge(redge->index());
 
   auto sese = aggregate(entry, exit, map);
-  auto loop = loopaggnode::create(std::move(map.lookup(sese)));
+  auto loop = LoopAggregationNode::create(std::move(map.lookup(sese)));
   map.insert(sese, std::move(loop));
 }
 
@@ -283,8 +274,8 @@ reduce_loop(const sccstructure & sccstruct, aggregation_map & map)
  *
  * Only the split node and the individual branch nodes are reduced. The join node is not reduced.
  */
-static cfg_node *
-reduce_branch(cfg_node * split, cfg_node ** entry, aggregation_map & map)
+static ControlFlowGraphNode *
+reduce_branch(ControlFlowGraphNode * split, ControlFlowGraphNode ** entry, aggregation_map & map)
 {
   /* sanity checks */
   JLM_ASSERT(split->NumOutEdges() > 1);
@@ -305,7 +296,7 @@ reduce_branch(cfg_node * split, cfg_node ** entry, aggregation_map & map)
   split->divert_inedges(sese);
   sese->add_outedge(join);
 
-  auto branch = branchaggnode::create();
+  auto branch = BranchAggregationNode::create();
   for (auto & edge : split->OutEdges())
   {
     edge.sink()->remove_outedge(0);
@@ -314,7 +305,7 @@ reduce_branch(cfg_node * split, cfg_node ** entry, aggregation_map & map)
   }
 
   auto & child = map.lookup(split);
-  map.insert(sese, linearaggnode::create(std::move(child), std::move(branch)));
+  map.insert(sese, LinearAggregationNode::create(std::move(child), std::move(branch)));
   map.remove(split);
 
   /*
@@ -343,8 +334,12 @@ reduce_branch(cfg_node * split, cfg_node ** entry, aggregation_map & map)
  * 	}
  * \enddot
  */
-static cfg_node *
-reduce_linear(cfg_node * source, cfg_node ** entry, cfg_node ** exit, aggregation_map & map)
+static ControlFlowGraphNode *
+reduce_linear(
+    ControlFlowGraphNode * source,
+    ControlFlowGraphNode ** entry,
+    ControlFlowGraphNode ** exit,
+    aggregation_map & map)
 {
   JLM_ASSERT(is_linear(source));
   auto sink = source->OutEdge(0)->sink();
@@ -357,7 +352,7 @@ reduce_linear(cfg_node * source, cfg_node ** entry, cfg_node ** exit, aggregatio
 
   auto child0 = std::move(map.lookup(source));
   auto child1 = std::move(map.lookup(sink));
-  map.insert(sese, linearaggnode::create(std::move(child0), std::move(child1)));
+  map.insert(sese, LinearAggregationNode::create(std::move(child0), std::move(child1)));
   map.remove(source);
   map.remove(sink);
 
@@ -375,7 +370,7 @@ reduce_linear(cfg_node * source, cfg_node ** entry, cfg_node ** exit, aggregatio
  * Find all tail-controlled loops in an SESE subgraph and reduce each loop to a single node.
  */
 static void
-aggregate_loops(cfg_node * entry, cfg_node * exit, aggregation_map & map)
+aggregate_loops(ControlFlowGraphNode * entry, ControlFlowGraphNode * exit, aggregation_map & map)
 {
   auto sccs = find_sccs(entry, exit);
   for (auto scc : sccs)
@@ -393,7 +388,11 @@ aggregate_loops(cfg_node * entry, cfg_node * exit, aggregation_map & map)
 }
 
 static void
-aggregate_acyclic_sese(cfg_node * node, cfg_node ** entry, cfg_node ** exit, aggregation_map & map)
+aggregate_acyclic_sese(
+    ControlFlowGraphNode * node,
+    ControlFlowGraphNode ** entry,
+    ControlFlowGraphNode ** exit,
+    aggregation_map & map)
 {
   /*
     We reduced the entire subgraph to a single node. We are done here.
@@ -476,8 +475,8 @@ aggregate_acyclic_sese(cfg_node * node, cfg_node ** entry, cfg_node ** exit, agg
  * on a loops' body to reduce it to a single node. Once all loops in the subgraph have been
  * reduced, the Acyclic SESE aggregation reduces the rest of the acyclic graph into a tree.
  */
-static cfg_node *
-aggregate(cfg_node * entry, cfg_node * exit, aggregation_map & map)
+static ControlFlowGraphNode *
+aggregate(ControlFlowGraphNode * entry, ControlFlowGraphNode * exit, aggregation_map & map)
 {
   aggregate_loops(entry, exit, map);
   aggregate_acyclic_sese(entry, &entry, &exit, map);

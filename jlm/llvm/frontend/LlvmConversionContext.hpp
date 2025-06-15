@@ -26,10 +26,10 @@ namespace jlm::llvm
 {
 
 class ControlFlowGraph;
-class cfg_node;
+class ControlFlowGraphNode;
 class clg_node;
-class ipgraph_module;
-class variable;
+class InterProceduralGraphModule;
+class Variable;
 
 class basic_block_map final
 {
@@ -89,45 +89,45 @@ private:
 class context final
 {
 public:
-  inline context(ipgraph_module & im)
+  inline context(InterProceduralGraphModule & im)
       : module_(im),
         node_(nullptr),
         iostate_(nullptr),
         memory_state_(nullptr)
   {}
 
-  const llvm::variable *
+  const llvm::Variable *
   result() const noexcept
   {
     return result_;
   }
 
   inline void
-  set_result(const llvm::variable * result)
+  set_result(const llvm::Variable * result)
   {
     result_ = result;
   }
 
-  llvm::variable *
+  llvm::Variable *
   iostate() const noexcept
   {
     return iostate_;
   }
 
   void
-  set_iostate(llvm::variable * state)
+  set_iostate(llvm::Variable * state)
   {
     iostate_ = state;
   }
 
-  inline llvm::variable *
+  inline llvm::Variable *
   memory_state() const noexcept
   {
     return memory_state_;
   }
 
   inline void
-  set_memory_state(llvm::variable * state)
+  set_memory_state(llvm::Variable * state)
   {
     memory_state_ = state;
   }
@@ -168,7 +168,7 @@ public:
     return vmap_.find(value) != vmap_.end();
   }
 
-  inline const llvm::variable *
+  inline const llvm::Variable *
   lookup_value(const ::llvm::Value * value) const noexcept
   {
     JLM_ASSERT(has_value(value));
@@ -176,25 +176,25 @@ public:
   }
 
   inline void
-  insert_value(const ::llvm::Value * value, const llvm::variable * variable)
+  insert_value(const ::llvm::Value * value, const llvm::Variable * variable)
   {
     JLM_ASSERT(!has_value(value));
     vmap_[value] = variable;
   }
 
-  inline ipgraph_module &
+  [[nodiscard]] InterProceduralGraphModule &
   module() const noexcept
   {
     return module_;
   }
 
   inline void
-  set_node(ipgraph_node * node) noexcept
+  set_node(InterProceduralGraphNode * node) noexcept
   {
     node_ = node;
   }
 
-  inline ipgraph_node *
+  inline InterProceduralGraphNode *
   node() const noexcept
   {
     return node_;
@@ -207,13 +207,13 @@ public:
   }
 
 private:
-  ipgraph_module & module_;
+  InterProceduralGraphModule & module_;
   basic_block_map bbmap_;
-  ipgraph_node * node_;
-  const llvm::variable * result_;
-  llvm::variable * iostate_;
-  llvm::variable * memory_state_;
-  std::unordered_map<const ::llvm::Value *, const llvm::variable *> vmap_;
+  InterProceduralGraphNode * node_;
+  const llvm::Variable * result_;
+  llvm::Variable * iostate_;
+  llvm::Variable * memory_state_;
+  std::unordered_map<const ::llvm::Value *, const llvm::Variable *> vmap_;
   TypeConverter TypeConverter_;
 };
 

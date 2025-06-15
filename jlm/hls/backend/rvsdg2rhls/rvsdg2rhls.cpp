@@ -199,7 +199,7 @@ convert_alloca(rvsdg::Region * region)
         convert_alloca(structnode->subregion(n));
       }
     }
-    else if (auto po = dynamic_cast<const llvm::alloca_op *>(&(node->GetOperation())))
+    else if (auto po = dynamic_cast<const llvm::AllocaOperation *>(&(node->GetOperation())))
     {
       auto rr = &region->graph()->GetRootRegion();
       auto delta_name = jlm::util::strfmt("hls_alloca_", alloca_cnt++);

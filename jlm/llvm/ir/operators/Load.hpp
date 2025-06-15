@@ -208,16 +208,16 @@ public:
     return *output;
   }
 
-  static std::unique_ptr<llvm::tac>
+  static std::unique_ptr<llvm::ThreeAddressCode>
   Create(
-      const variable * address,
-      const variable * iOState,
-      const variable * memoryState,
+      const Variable * address,
+      const Variable * iOState,
+      const Variable * memoryState,
       std::shared_ptr<const rvsdg::ValueType> loadedType,
       size_t alignment)
   {
     LoadVolatileOperation operation(std::move(loadedType), 1, alignment);
-    return tac::create(operation, { address, iOState, memoryState });
+    return ThreeAddressCode::create(operation, { address, iOState, memoryState });
   }
 
   static rvsdg::SimpleNode &
@@ -300,15 +300,15 @@ public:
   [[nodiscard]] std::unique_ptr<Operation>
   copy() const override;
 
-  static std::unique_ptr<llvm::tac>
+  static std::unique_ptr<llvm::ThreeAddressCode>
   Create(
-      const variable * address,
-      const variable * state,
+      const Variable * address,
+      const Variable * state,
       std::shared_ptr<const rvsdg::ValueType> loadedType,
       size_t alignment)
   {
     LoadNonVolatileOperation operation(std::move(loadedType), 1, alignment);
-    return tac::create(operation, { address, state });
+    return ThreeAddressCode::create(operation, { address, state });
   }
 
   static std::vector<rvsdg::Output *>
@@ -404,8 +404,8 @@ NormalizeLoadMux(
  * \brief If the producer of a load's address is an alloca operation, then we can remove all
  * state edges originating from other alloca operations.
  *
- * a1 s1 = alloca_op ...
- * a2 s2 = alloca_op ...
+ * a1 s1 = AllocaOperation ...
+ * a2 s2 = AllocaOperation ...
  * s3 = mux_op s1
  * v sl1 sl2 sl3 = load_op a1 s1 s2 s3
  * =>
@@ -448,8 +448,8 @@ NormalizeLoadStore(
  * \brief If the producer of a load's address is an alloca operation, then we can remove all
  * state edges originating from other alloca operations coming through store operations.
  *
- * a1 sa1 = alloca_op ...
- * a2 sa2 = alloca_op ...
+ * a1 sa1 = AllocaOperation ...
+ * a2 sa2 = AllocaOperation ...
  * ss1 = store_op a1 ... sa1
  * ss2 = store_op a2 ... sa2
  * ... = load_op a1 ss1 ss2

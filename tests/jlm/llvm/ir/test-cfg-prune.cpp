@@ -21,16 +21,15 @@ test()
   auto vt = jlm::tests::valuetype::Create();
   jlm::tests::test_op op({}, { vt });
 
-  /* setup cfg */
-
-  ipgraph_module im(jlm::util::FilePath(""), "", "");
+  // Arrange
+  InterProceduralGraphModule im(jlm::util::FilePath(""), "", "");
 
   ControlFlowGraph cfg(im);
   auto arg = cfg.entry()->append_argument(argument::create("arg", vt));
   auto bb0 = BasicBlock::create(cfg);
   auto bb1 = BasicBlock::create(cfg);
 
-  bb0->append_last(tac::create(op, {}));
+  bb0->append_last(ThreeAddressCode::create(op, {}));
   bb1->append_last(
       SsaPhiOperation::create({ { bb0->last()->result(0), bb0 }, { arg, cfg.entry() } }, vt));
 

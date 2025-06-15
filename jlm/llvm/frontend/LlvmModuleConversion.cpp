@@ -59,8 +59,8 @@ PatchPhiOperands(const std::vector<::llvm::PHINode *> & phis, context & ctx)
 {
   for (const auto & phi : phis)
   {
-    std::vector<cfg_node *> incomingNodes;
-    std::vector<const variable *> operands;
+    std::vector<ControlFlowGraphNode *> incomingNodes;
+    std::vector<const Variable *> operands;
     for (size_t n = 0; n < phi->getNumOperands(); n++)
     {
       // In LLVM, phi instructions may have incoming basic blocks that are unreachable.
@@ -85,7 +85,7 @@ PatchPhiOperands(const std::vector<::llvm::PHINode *> & phis, context & ctx)
 
     JLM_ASSERT(operands.size() >= 1);
 
-    auto phi_tac = util::AssertedCast<const tacvariable>(ctx.lookup_value(phi))->tac();
+    auto phi_tac = util::AssertedCast<const ThreeAddressCodeVariable>(ctx.lookup_value(phi))->tac();
     phi_tac->replace(
         SsaPhiOperation(std::move(incomingNodes), phi_tac->result(0)->Type()),
         operands);
@@ -335,7 +335,7 @@ EnsureSingleInEdgeToExitNode(ControlFlowGraph & cfg)
         auto basicBlock = BasicBlock::create(cfg);
 
         rvsdg::ctlconstant_op op(rvsdg::ctlvalue_repr(1, 2));
-        auto operand = basicBlock->append_last(tac::create(op, {}))->result(0);
+        auto operand = basicBlock->append_last(ThreeAddressCode::create(op, {}))->result(0);
         basicBlock->append_last(BranchOperation::create(2, operand));
 
         basicBlock->add_outedge(exitNode);
@@ -406,7 +406,7 @@ create_cfg(::llvm::Function & f, context & ctx)
   entry_block->add_outedge(bbmap[&f.getEntryBlock()]);
 
   /* add results */
-  const tacvariable * result = nullptr;
+  const ThreeAddressCodeVariable * result = nullptr;
   if (!f.getReturnType()->isVoidTy())
   {
     auto type = ctx.GetTypeConverter().ConvertLlvmType(*f.getReturnType());
@@ -546,11 +546,11 @@ convert_globals(::llvm::Module & lm, context & ctx)
     convert_function(f, ctx);
 }
 
-std::unique_ptr<ipgraph_module>
+std::unique_ptr<InterProceduralGraphModule>
 ConvertLlvmModule(::llvm::Module & m)
 {
   util::FilePath fp(m.getSourceFileName());
-  auto im = ipgraph_module::create(fp, m.getTargetTriple(), m.getDataLayoutStr());
+  auto im = InterProceduralGraphModule::create(fp, m.getTargetTriple(), m.getDataLayoutStr());
 
   context ctx(*im);
   declare_globals(m, ctx);

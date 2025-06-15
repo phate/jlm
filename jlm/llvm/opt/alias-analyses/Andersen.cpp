@@ -613,7 +613,7 @@ Andersen::AnalyzeSimpleNode(const rvsdg::SimpleNode & node)
 {
   const auto & op = node.GetOperation();
 
-  if (is<alloca_op>(op))
+  if (is<AllocaOperation>(op))
     AnalyzeAlloca(node);
   else if (is<malloc_op>(op))
     AnalyzeMalloc(node);
@@ -670,7 +670,7 @@ Andersen::AnalyzeSimpleNode(const rvsdg::SimpleNode & node)
 void
 Andersen::AnalyzeAlloca(const rvsdg::SimpleNode & node)
 {
-  const auto allocaOp = util::AssertedCast<const alloca_op>(&node.GetOperation());
+  const auto allocaOp = util::AssertedCast<const AllocaOperation>(&node.GetOperation());
 
   const auto & outputRegister = *node.output(0);
   const auto outputRegisterPO = Set_->CreateRegisterPointerObject(outputRegister);

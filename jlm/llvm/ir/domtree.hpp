@@ -15,14 +15,14 @@ namespace jlm::llvm
 {
 
 class ControlFlowGraph;
-class cfg_node;
+class ControlFlowGraphNode;
 
 class domnode final
 {
   typedef std::vector<std::unique_ptr<domnode>>::const_iterator const_iterator;
 
 public:
-  domnode(cfg_node * node)
+  domnode(ControlFlowGraphNode * node)
       : depth_(0),
         node_(node),
         parent_(nullptr)
@@ -66,7 +66,7 @@ public:
     return children_[index].get();
   }
 
-  cfg_node *
+  ControlFlowGraphNode *
   node() const noexcept
   {
     return node_;
@@ -85,14 +85,14 @@ public:
   }
 
   static std::unique_ptr<domnode>
-  create(cfg_node * node)
+  create(ControlFlowGraphNode * node)
   {
     return std::unique_ptr<domnode>(new domnode(node));
   }
 
 private:
   size_t depth_;
-  cfg_node * node_;
+  ControlFlowGraphNode * node_;
   domnode * parent_;
   std::vector<std::unique_ptr<domnode>> children_;
 };

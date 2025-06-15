@@ -18,7 +18,7 @@ test_straightening()
   using namespace jlm::llvm;
 
   auto vt = jlm::tests::valuetype::Create();
-  ipgraph_module module(jlm::util::FilePath(""), "", "");
+  InterProceduralGraphModule module(jlm::util::FilePath(""), "", "");
 
   ControlFlowGraph cfg(module);
   auto bb1 = BasicBlock::create(cfg);
@@ -52,7 +52,7 @@ test_is_structured()
 {
   using namespace jlm::llvm;
 
-  ipgraph_module module(jlm::util::FilePath(""), "", "");
+  InterProceduralGraphModule module(jlm::util::FilePath(""), "", "");
 
   ControlFlowGraph cfg(module);
   auto split = BasicBlock::create(cfg);

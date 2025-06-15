@@ -364,12 +364,12 @@ private:
 
 class ExitAggregationNode final : public AggregationNode
 {
-  typedef std::vector<const variable *>::const_iterator const_iterator;
+  typedef std::vector<const Variable *>::const_iterator const_iterator;
 
 public:
   ~ExitAggregationNode() noexcept override;
 
-  explicit ExitAggregationNode(const std::vector<const variable *> & results)
+  explicit ExitAggregationNode(const std::vector<const Variable *> & results)
       : results_(results)
   {}
 
@@ -385,7 +385,7 @@ public:
     return results_.end();
   }
 
-  const variable *
+  const Variable *
   result(size_t index) const noexcept
   {
     JLM_ASSERT(index < nresults());
@@ -402,13 +402,13 @@ public:
   debug_string() const override;
 
   static inline std::unique_ptr<AggregationNode>
-  create(const std::vector<const variable *> & results)
+  create(const std::vector<const Variable *> & results)
   {
     return std::make_unique<ExitAggregationNode>(results);
   }
 
 private:
-  std::vector<const variable *> results_;
+  std::vector<const Variable *> results_;
 };
 
 class BasicBlockAggregationNode final : public AggregationNode
@@ -418,14 +418,14 @@ public:
 
   BasicBlockAggregationNode() = default;
 
-  explicit BasicBlockAggregationNode(taclist && bb)
+  explicit BasicBlockAggregationNode(ThreeAddressCodeList && bb)
       : bb_(std::move(bb))
   {}
 
   std::string
   debug_string() const override;
 
-  const taclist &
+  const ThreeAddressCodeList &
   tacs() const noexcept
   {
     return bb_;
@@ -438,47 +438,42 @@ public:
   }
 
   static std::unique_ptr<AggregationNode>
-  create(taclist && bb)
+  create(ThreeAddressCodeList && bb)
   {
     return std::make_unique<BasicBlockAggregationNode>(std::move(bb));
   }
 
 private:
-  taclist bb_;
+  ThreeAddressCodeList bb_;
 };
 
-/* linear node class */
-
-class linearaggnode final : public AggregationNode
+class LinearAggregationNode final : public AggregationNode
 {
 public:
-  virtual ~linearaggnode();
+  ~LinearAggregationNode() noexcept override;
 
-  inline linearaggnode(std::unique_ptr<AggregationNode> n1, std::unique_ptr<AggregationNode> n2)
+  LinearAggregationNode(std::unique_ptr<AggregationNode> n1, std::unique_ptr<AggregationNode> n2)
   {
     add_child(std::move(n1));
     add_child(std::move(n2));
   }
 
-  virtual std::string
+  std::string
   debug_string() const override;
 
-  static inline std::unique_ptr<AggregationNode>
+  static std::unique_ptr<AggregationNode>
   create(std::unique_ptr<AggregationNode> n1, std::unique_ptr<AggregationNode> n2)
   {
-    return std::make_unique<linearaggnode>(std::move(n1), std::move(n2));
+    return std::make_unique<LinearAggregationNode>(std::move(n1), std::move(n2));
   }
 };
 
-/* branch node class */
-
-class branchaggnode final : public AggregationNode
+class BranchAggregationNode final : public AggregationNode
 {
 public:
-  virtual ~branchaggnode();
+  ~BranchAggregationNode() noexcept override;
 
-  inline branchaggnode()
-  {}
+  BranchAggregationNode() = default;
 
   virtual std::string
   debug_string() const override;
@@ -486,18 +481,16 @@ public:
   static inline std::unique_ptr<AggregationNode>
   create()
   {
-    return std::make_unique<branchaggnode>();
+    return std::make_unique<BranchAggregationNode>();
   }
 };
 
-/* loop node class */
-
-class loopaggnode final : public AggregationNode
+class LoopAggregationNode final : public AggregationNode
 {
 public:
-  virtual ~loopaggnode();
+  ~LoopAggregationNode() noexcept override;
 
-  inline loopaggnode(std::unique_ptr<AggregationNode> body)
+  explicit LoopAggregationNode(std::unique_ptr<AggregationNode> body)
   {
     add_child(std::move(body));
   }
@@ -508,7 +501,7 @@ public:
   static inline std::unique_ptr<AggregationNode>
   create(std::unique_ptr<AggregationNode> body)
   {
-    return std::make_unique<loopaggnode>(std::move(body));
+    return std::make_unique<LoopAggregationNode>(std::move(body));
   }
 };
 

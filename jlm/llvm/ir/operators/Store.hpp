@@ -161,13 +161,13 @@ public:
   [[nodiscard]] std::unique_ptr<Operation>
   copy() const override;
 
-  static std::unique_ptr<llvm::tac>
-  Create(const variable * address, const variable * value, const variable * state, size_t alignment)
+  static std::unique_ptr<llvm::ThreeAddressCode>
+  Create(const Variable * address, const Variable * value, const Variable * state, size_t alignment)
   {
     auto storedType = CheckAndExtractStoredType(value->Type());
 
     StoreNonVolatileOperation op(storedType, 1, alignment);
-    return tac::create(op, { address, value, state });
+    return ThreeAddressCode::create(op, { address, value, state });
   }
 
   static std::vector<rvsdg::Output *>
@@ -296,18 +296,18 @@ public:
     return output;
   }
 
-  static std::unique_ptr<llvm::tac>
+  static std::unique_ptr<llvm::ThreeAddressCode>
   Create(
-      const variable * address,
-      const variable * value,
-      const variable * ioState,
-      const variable * memoryState,
+      const Variable * address,
+      const Variable * value,
+      const Variable * ioState,
+      const Variable * memoryState,
       size_t alignment)
   {
     auto storedType = CheckAndExtractStoredType(value->Type());
 
     StoreVolatileOperation op(storedType, 1, alignment);
-    return tac::create(op, { address, value, ioState, memoryState });
+    return ThreeAddressCode::create(op, { address, value, ioState, memoryState });
   }
 
   static rvsdg::SimpleNode &

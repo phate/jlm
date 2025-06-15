@@ -154,6 +154,14 @@ NodeReduction::ReduceSimpleNode(rvsdg::Node & simpleNode)
   {
     return ReduceStoreNode(simpleNode);
   }
+  if (is<MemoryStateMergeOperation>(&simpleNode))
+  {
+    return ReduceMemoryStateMergeNode(simpleNode);
+  }
+  if (is<MemoryStateSplitOperation>(&simpleNode))
+  {
+    return ReduceMemoryStateSplitNode(simpleNode);
+  }
   if (is<rvsdg::UnaryOperation>(&simpleNode))
   {
     // FIXME: handle the unary node
@@ -192,6 +200,22 @@ NodeReduction::ReduceBinaryNode(rvsdg::Node & simpleNode)
   return rvsdg::ReduceNode<rvsdg::BinaryOperation>(rvsdg::NormalizeBinaryOperation, simpleNode);
 }
 
+bool
+NodeReduction::ReduceMemoryStateMergeNode(rvsdg::Node & simpleNode)
+{
+  JLM_ASSERT(is<MemoryStateMergeOperation>(&simpleNode));
+
+  return rvsdg::ReduceNode<MemoryStateMergeOperation>(NormalizeMemoryStateMergeNode, simpleNode);
+}
+
+bool
+NodeReduction::ReduceMemoryStateSplitNode(rvsdg::Node & simpleNode)
+{
+  JLM_ASSERT(is<MemoryStateSplitOperation>(&simpleNode));
+
+  return rvsdg::ReduceNode<MemoryStateSplitOperation>(NormalizeMemoryStateSplitNode, simpleNode);
+}
+
 std::optional<std::vector<rvsdg::Output *>>
 NodeReduction::NormalizeLoadNode(
     const LoadNonVolatileOperation & operation,
@@ -226,6 +250,33 @@ NodeReduction::NormalizeStoreNode(
       storeNodeNormalizations,
       operation,
       operands);
+}
+
+std::optional<std::vector<rvsdg::Output *>>
+NodeReduction::NormalizeMemoryStateMergeNode(
+    const MemoryStateMergeOperation & operation,
+    const std::vector<rvsdg::Output *> & operands)
+{
+  static std::vector<rvsdg::NodeNormalization<MemoryStateMergeOperation>> normalizations(
+      { MemoryStateMergeOperation::NormalizeSingleOperand,
+        MemoryStateMergeOperation::NormalizeDuplicateOperands,
+        MemoryStateMergeOperation::NormalizeNestedMerges,
+        MemoryStateMergeOperation::NormalizeMergeSplit });
+
+  return rvsdg::NormalizeSequence<MemoryStateMergeOperation>(normalizations, operation, operands);
+}
+
+std::optional<std::vector<rvsdg::Output *>>
+NodeReduction::NormalizeMemoryStateSplitNode(
+    const MemoryStateSplitOperation & operation,
+    const std::vector<rvsdg::Output *> & operands)
+{
+  static std::vector<rvsdg::NodeNormalization<MemoryStateSplitOperation>> normalizations(
+      { MemoryStateSplitOperation::NormalizeSingleResult,
+        MemoryStateSplitOperation::NormalizeNestedSplits,
+        MemoryStateSplitOperation::NormalizeSplitMerge });
+
+  return rvsdg::NormalizeSequence<MemoryStateSplitOperation>(normalizations, operation, operands);
 }
 
 }

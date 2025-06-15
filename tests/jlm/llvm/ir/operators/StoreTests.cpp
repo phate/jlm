@@ -322,8 +322,8 @@ TestStoreAllocaReduction()
   auto value = &jlm::tests::GraphImport::Create(graph, vt, "value");
   auto s = &jlm::tests::GraphImport::Create(graph, mt, "s");
 
-  auto alloca1 = alloca_op::create(vt, size, 4);
-  auto alloca2 = alloca_op::create(vt, size, 4);
+  auto alloca1 = AllocaOperation::create(vt, size, 4);
+  auto alloca2 = AllocaOperation::create(vt, size, 4);
   auto & storeNode1 =
       StoreNonVolatileOperation::CreateNode(*alloca1[0], *value, { alloca1[1], alloca2[1], s }, 4);
   auto & storeNode2 =

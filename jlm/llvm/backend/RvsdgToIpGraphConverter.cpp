@@ -23,7 +23,7 @@ namespace jlm::llvm
 class RvsdgToIpGraphConverter::Context final
 {
 public:
-  explicit Context(ipgraph_module & ipGraphModule)
+  explicit Context(InterProceduralGraphModule & ipGraphModule)
       : ControlFlowGraph_(nullptr),
         IPGraphModule_(ipGraphModule),
         LastProcessedBasicBlock(nullptr)
@@ -39,21 +39,21 @@ public:
   Context &
   operator=(Context &&) = delete;
 
-  ipgraph_module &
+  [[nodiscard]] InterProceduralGraphModule &
   GetIpGraphModule() const noexcept
   {
     return IPGraphModule_;
   }
 
   void
-  InsertVariable(const rvsdg::Output * output, const llvm::variable * variable)
+  InsertVariable(const rvsdg::Output * output, const llvm::Variable * variable)
   {
     JLM_ASSERT(VariableMap_.find(output) == VariableMap_.end());
     JLM_ASSERT(*output->Type() == *variable->Type());
     VariableMap_[output] = variable;
   }
 
-  const llvm::variable *
+  const llvm::Variable *
   GetVariable(const rvsdg::Output * output)
   {
     const auto it = VariableMap_.find(output);
@@ -86,16 +86,16 @@ public:
   }
 
   static std::unique_ptr<Context>
-  Create(ipgraph_module & ipGraphModule)
+  Create(InterProceduralGraphModule & ipGraphModule)
   {
     return std::make_unique<Context>(ipGraphModule);
   }
 
 private:
   ControlFlowGraph * ControlFlowGraph_;
-  ipgraph_module & IPGraphModule_;
+  InterProceduralGraphModule & IPGraphModule_;
   BasicBlock * LastProcessedBasicBlock;
-  std::unordered_map<const rvsdg::Output *, const llvm::variable *> VariableMap_;
+  std::unordered_map<const rvsdg::Output *, const llvm::Variable *> VariableMap_;
 };
 
 class RvsdgToIpGraphConverter::Statistics final : public util::Statistics
@@ -115,7 +115,7 @@ public:
   }
 
   void
-  End(const ipgraph_module & im)
+  End(const InterProceduralGraphModule & im)
   {
     AddMeasurement(Label::NumThreeAddressCodes, llvm::ntacs(im));
     GetTimer(Label::Timer).stop();
@@ -157,13 +157,13 @@ RvsdgToIpGraphConverter::CreateInitialization(const delta::node & deltaNode)
     const auto output = node->output(0);
 
     // collect operand variables
-    std::vector<const variable *> operands;
+    std::vector<const Variable *> operands;
     for (size_t n = 0; n < node->ninputs(); n++)
       operands.push_back(Context_->GetVariable(node->input(n)->origin()));
 
-    // convert node to tac
+    // convert node to three address code
     auto & op = *static_cast<const rvsdg::SimpleOperation *>(&node->GetOperation());
-    tacs.push_back(tac::create(op, operands));
+    tacs.push_back(ThreeAddressCode::create(op, operands));
     Context_->InsertVariable(output, tacs.back()->result(0));
   }
 
@@ -234,12 +234,12 @@ RvsdgToIpGraphConverter::CreateControlFlowGraph(const rvsdg::LambdaNode & lambda
 void
 RvsdgToIpGraphConverter::ConvertSimpleNode(const rvsdg::SimpleNode & simpleNode)
 {
-  std::vector<const variable *> operands;
+  std::vector<const Variable *> operands;
   for (size_t n = 0; n < simpleNode.ninputs(); n++)
     operands.push_back(Context_->GetVariable(simpleNode.input(n)->origin()));
 
   Context_->GetLastProcessedBasicBlock()->append_last(
-      tac::create(simpleNode.GetOperation(), operands));
+      ThreeAddressCode::create(simpleNode.GetOperation(), operands));
 
   for (size_t n = 0; n < simpleNode.noutputs(); n++)
     Context_->InsertVariable(
@@ -259,7 +259,7 @@ RvsdgToIpGraphConverter::ConvertGammaNode(const rvsdg::GammaNode & gammaNode)
   Context_->GetLastProcessedBasicBlock()->add_outedge(entryBlock);
 
   // convert gamma regions
-  std::vector<cfg_node *> phi_nodes;
+  std::vector<ControlFlowGraphNode *> phi_nodes;
   entryBlock->append_last(BranchOperation::create(numSubregions, Context_->GetVariable(predicate)));
   auto entryvars = gammaNode.GetEntryVars();
   for (size_t n = 0; n < gammaNode.nsubregions(); n++)
@@ -291,7 +291,7 @@ RvsdgToIpGraphConverter::ConvertGammaNode(const rvsdg::GammaNode & gammaNode)
     const auto output = gammaNode.output(n);
 
     bool invariant = true;
-    std::vector<std::pair<const variable *, cfg_node *>> arguments;
+    std::vector<std::pair<const Variable *, ControlFlowGraphNode *>> arguments;
     for (size_t r = 0; r < gammaNode.nsubregions(); r++)
     {
       const auto origin = gammaNode.subregion(r)->result(n)->origin();
@@ -319,10 +319,10 @@ RvsdgToIpGraphConverter::ConvertGammaNode(const rvsdg::GammaNode & gammaNode)
 bool
 RvsdgToIpGraphConverter::RequiresSsaPhiOperation(
     const rvsdg::ThetaNode::LoopVar & loopVar,
-    const variable & v)
+    const Variable & v)
 {
   // FIXME: solely decide on the input instead of using the variable
-  if (is<gblvariable>(&v))
+  if (is<GlobalVariable>(&v))
     return false;
 
   if (ThetaLoopVarIsInvariant(loopVar))
@@ -346,7 +346,7 @@ RvsdgToIpGraphConverter::ConvertThetaNode(const rvsdg::ThetaNode & thetaNode)
   Context_->SetLastProcessedBasicBlock(entryBlock);
 
   // create SSA phi nodes in entry block and add arguments to context
-  std::vector<llvm::tac *> phis;
+  std::vector<llvm::ThreeAddressCode *> phis;
   for (const auto & loopVar : thetaNode.GetLoopVars())
   {
     auto variable = Context_->GetVariable(loopVar.input->origin());
@@ -592,7 +592,7 @@ RvsdgToIpGraphConverter::ConvertImports(const rvsdg::Graph & graph)
   }
 }
 
-std::unique_ptr<ipgraph_module>
+std::unique_ptr<InterProceduralGraphModule>
 RvsdgToIpGraphConverter::ConvertModule(
     RvsdgModule & rvsdgModule,
     util::StatisticsCollector & statisticsCollector)
@@ -600,7 +600,7 @@ RvsdgToIpGraphConverter::ConvertModule(
   auto statistics = Statistics::Create(rvsdgModule.SourceFileName());
   statistics->Start(rvsdgModule.Rvsdg());
 
-  auto ipGraphModule = ipgraph_module::Create(
+  auto ipGraphModule = InterProceduralGraphModule::Create(
       rvsdgModule.SourceFileName(),
       rvsdgModule.TargetTriple(),
       rvsdgModule.DataLayout(),
@@ -616,7 +616,7 @@ RvsdgToIpGraphConverter::ConvertModule(
   return ipGraphModule;
 }
 
-std::unique_ptr<ipgraph_module>
+std::unique_ptr<InterProceduralGraphModule>
 RvsdgToIpGraphConverter::CreateAndConvertModule(
     RvsdgModule & rvsdgModule,
     util::StatisticsCollector & statisticsCollector)

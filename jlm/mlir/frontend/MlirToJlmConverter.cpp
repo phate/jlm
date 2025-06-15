@@ -429,7 +429,7 @@ MlirToJlmConverter::ConvertOperation(
     auto convertedOutputType = ConvertType(outputType);
     if (!::mlir::isa<::mlir::IntegerType>(castedOp.getType()))
       JLM_UNREACHABLE("Expected IntegerType for ExtSIOp operation output.");
-    return rvsdg::TryGetOwnerNode<rvsdg::Node>(*llvm::sext_op::create(
+    return rvsdg::TryGetOwnerNode<rvsdg::Node>(*llvm::SExtOperation::create(
         castedOp.getType().cast<::mlir::IntegerType>().getWidth(),
         inputs[0]));
   }
@@ -608,7 +608,7 @@ MlirToJlmConverter::ConvertOperation(
       JLM_UNREACHABLE("Expected bittype for AllocaOp operation.");
 
     auto jlmBitType = std::dynamic_pointer_cast<const jlm::rvsdg::bittype>(inputs[0]->Type());
-    auto allocaOp = jlm::llvm::alloca_op(jlmValueType, jlmBitType, AllocaOp.getAlignment());
+    auto allocaOp = jlm::llvm::AllocaOperation(jlmValueType, jlmBitType, AllocaOp.getAlignment());
     auto operands = std::vector(inputs.begin(), inputs.end());
 
     return &rvsdg::SimpleNode::Create(rvsdgRegion, allocaOp, operands);

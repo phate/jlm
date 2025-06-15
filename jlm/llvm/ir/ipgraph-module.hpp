@@ -17,13 +17,13 @@ namespace jlm::llvm
 
 /* global value */
 
-class gblvalue final : public gblvariable
+class gblvalue final : public GlobalVariable
 {
 public:
   virtual ~gblvalue();
 
   inline gblvalue(data_node * node)
-      : gblvariable(node->Type(), node->name()),
+      : GlobalVariable(node->Type(), node->name()),
         node_(node)
   {}
 
@@ -53,17 +53,14 @@ create_gblvalue(data_node * node)
   return std::make_unique<llvm::gblvalue>(node);
 }
 
-/* ipgraph module */
-
-class ipgraph_module final
+class InterProceduralGraphModule final
 {
   typedef std::unordered_set<const llvm::gblvalue *>::const_iterator const_iterator;
 
 public:
-  inline ~ipgraph_module()
-  {}
+  ~InterProceduralGraphModule() noexcept = default;
 
-  inline ipgraph_module(
+  InterProceduralGraphModule(
       const jlm::util::FilePath & source_filename,
       const std::string & target_triple,
       const std::string & data_layout,
@@ -74,11 +71,11 @@ public:
         StructTypeDeclarations_(std::move(declarations))
   {}
 
-  ipgraph_module(
+  InterProceduralGraphModule(
       const jlm::util::FilePath & source_filename,
       const std::string & target_triple,
       const std::string & data_layout) noexcept
-      : ipgraph_module(source_filename, target_triple, data_layout, {})
+      : InterProceduralGraphModule(source_filename, target_triple, data_layout, {})
   {}
 
   InterProceduralGraph &
@@ -116,39 +113,39 @@ public:
     return ptr;
   }
 
-  inline llvm::variable *
+  inline llvm::Variable *
   create_variable(std::shared_ptr<const jlm::rvsdg::Type> type, const std::string & name)
   {
-    auto v = std::make_unique<llvm::variable>(std::move(type), name);
+    auto v = std::make_unique<llvm::Variable>(std::move(type), name);
     auto pv = v.get();
     variables_.insert(std::move(v));
     return pv;
   }
 
-  inline llvm::variable *
+  inline llvm::Variable *
   create_variable(std::shared_ptr<const jlm::rvsdg::Type> type)
   {
     static uint64_t c = 0;
-    auto v = std::make_unique<llvm::variable>(std::move(type), jlm::util::strfmt("v", c++));
+    auto v = std::make_unique<llvm::Variable>(std::move(type), jlm::util::strfmt("v", c++));
     auto pv = v.get();
     variables_.insert(std::move(v));
     return pv;
   }
 
-  inline llvm::variable *
+  inline llvm::Variable *
   create_variable(function_node * node)
   {
     JLM_ASSERT(!variable(node));
 
-    auto v = std::unique_ptr<llvm::variable>(new fctvariable(node));
+    auto v = std::unique_ptr<llvm::Variable>(new fctvariable(node));
     auto pv = v.get();
     functions_[node] = pv;
     variables_.insert(std::move(v));
     return pv;
   }
 
-  const llvm::variable *
-  variable(const ipgraph_node * node) const noexcept
+  const llvm::Variable *
+  variable(const InterProceduralGraphNode * node) const noexcept
   {
     auto it = functions_.find(node);
     return it != functions_.end() ? it->second : nullptr;
@@ -195,21 +192,21 @@ public:
     return std::move(StructTypeDeclarations_);
   }
 
-  static std::unique_ptr<ipgraph_module>
+  static std::unique_ptr<InterProceduralGraphModule>
   Create(
       const jlm::util::FilePath & sourceFilename,
       const std::string & targetTriple,
       const std::string & dataLayout,
       std::vector<std::unique_ptr<StructType::Declaration>> declarations)
   {
-    return std::make_unique<ipgraph_module>(
+    return std::make_unique<InterProceduralGraphModule>(
         sourceFilename,
         targetTriple,
         dataLayout,
         std::move(declarations));
   }
 
-  static std::unique_ptr<ipgraph_module>
+  static std::unique_ptr<InterProceduralGraphModule>
   create(
       const jlm::util::FilePath & source_filename,
       const std::string & target_triple,
@@ -224,13 +221,13 @@ private:
   std::string target_triple_;
   const jlm::util::FilePath source_filename_;
   std::unordered_set<const llvm::gblvalue *> globals_;
-  std::unordered_set<std::unique_ptr<llvm::variable>> variables_;
-  std::unordered_map<const ipgraph_node *, const llvm::variable *> functions_;
+  std::unordered_set<std::unique_ptr<llvm::Variable>> variables_;
+  std::unordered_map<const InterProceduralGraphNode *, const llvm::Variable *> functions_;
   std::vector<std::unique_ptr<StructType::Declaration>> StructTypeDeclarations_;
 };
 
 static inline size_t
-ntacs(const ipgraph_module & im)
+ntacs(const InterProceduralGraphModule & im)
 {
   size_t ntacs = 0;
   for (const auto & n : im.ipgraph())

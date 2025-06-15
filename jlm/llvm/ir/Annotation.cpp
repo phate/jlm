@@ -240,7 +240,7 @@ AnnotateReadWrite(
     {
       /*
           We need special treatment for assignment operation, since the variable
-          they assign the value to is modeled as an argument of the tac.
+          they assign the value to is modeled as an argument of the three address code.
       */
       JLM_ASSERT(tac->noperands() == 2 && tac->nresults() == 0);
       readSet.Remove(*tac->operand(0));
@@ -269,7 +269,7 @@ AnnotateReadWrite(
 }
 
 static void
-AnnotateReadWrite(const linearaggnode & linearAggregationNode, AnnotationMap & demandMap)
+AnnotateReadWrite(const LinearAggregationNode & linearAggregationNode, AnnotationMap & demandMap)
 {
   VariableSet readSet;
   VariableSet allWriteSet;
@@ -292,7 +292,7 @@ AnnotateReadWrite(const linearaggnode & linearAggregationNode, AnnotationMap & d
 }
 
 static void
-AnnotateReadWrite(const branchaggnode & branchAggregationNode, AnnotationMap & demandMap)
+AnnotateReadWrite(const BranchAggregationNode & branchAggregationNode, AnnotationMap & demandMap)
 {
   auto & case0DemandSet = demandMap.Lookup<AnnotationSet>(*branchAggregationNode.child(0));
   auto & case0ReadSet = case0DemandSet.ReadSet();
@@ -319,7 +319,7 @@ AnnotateReadWrite(const branchaggnode & branchAggregationNode, AnnotationMap & d
 }
 
 static void
-AnnotateReadWrite(const loopaggnode & loopAggregationNode, AnnotationMap & demandMap)
+AnnotateReadWrite(const LoopAggregationNode & loopAggregationNode, AnnotationMap & demandMap)
 {
   auto & loopBody = *loopAggregationNode.child(0);
   auto & bodyDemandSet = demandMap.Lookup<AnnotationSet>(loopBody);
@@ -349,15 +349,15 @@ AnnotateReadWrite(const AggregationNode & aggregationNode, AnnotationMap & deman
   {
     AnnotateReadWrite(*blockNode, demandMap);
   }
-  else if (auto linearNode = dynamic_cast<const linearaggnode *>(&aggregationNode))
+  else if (const auto linearNode = dynamic_cast<const LinearAggregationNode *>(&aggregationNode))
   {
     AnnotateReadWrite(*linearNode, demandMap);
   }
-  else if (auto branchNode = dynamic_cast<const branchaggnode *>(&aggregationNode))
+  else if (auto branchNode = dynamic_cast<const BranchAggregationNode *>(&aggregationNode))
   {
     AnnotateReadWrite(*branchNode, demandMap);
   }
-  else if (auto loopNode = dynamic_cast<const loopaggnode *>(&aggregationNode))
+  else if (auto loopNode = dynamic_cast<const LoopAggregationNode *>(&aggregationNode))
   {
     AnnotateReadWrite(*loopNode, demandMap);
   }
@@ -406,7 +406,7 @@ AnnotateDemandSet(
 
 static void
 AnnotateDemandSet(
-    const linearaggnode & linearAggregationNode,
+    const LinearAggregationNode & linearAggregationNode,
     VariableSet & workingSet,
     AnnotationMap & demandMap)
 {
@@ -421,7 +421,7 @@ AnnotateDemandSet(
 
 static void
 AnnotateDemandSet(
-    const branchaggnode & branchAggregationNode,
+    const BranchAggregationNode & branchAggregationNode,
     VariableSet & workingSet,
     AnnotationMap & demandMap)
 {
@@ -446,7 +446,7 @@ AnnotateDemandSet(
 
 static void
 AnnotateDemandSet(
-    const loopaggnode & loopAggregationNode,
+    const LoopAggregationNode & loopAggregationNode,
     VariableSet & workingSet,
     AnnotationMap & demandMap)
 {
@@ -480,9 +480,9 @@ AnnotateDemandSet(
       map({ { typeid(EntryAggregationNode), AnnotateDemandSet<EntryAggregationNode> },
             { typeid(ExitAggregationNode), AnnotateDemandSet<ExitAggregationNode> },
             { typeid(BasicBlockAggregationNode), AnnotateDemandSet<BasicBlockAggregationNode> },
-            { typeid(linearaggnode), AnnotateDemandSet<linearaggnode> },
-            { typeid(branchaggnode), AnnotateDemandSet<branchaggnode> },
-            { typeid(loopaggnode), AnnotateDemandSet<loopaggnode> } });
+            { typeid(LinearAggregationNode), AnnotateDemandSet<LinearAggregationNode> },
+            { typeid(BranchAggregationNode), AnnotateDemandSet<BranchAggregationNode> },
+            { typeid(LoopAggregationNode), AnnotateDemandSet<LoopAggregationNode> } });
 
   JLM_ASSERT(map.find(typeid(aggregationNode)) != map.end());
   return map[typeid(aggregationNode)](&aggregationNode, workingSet, demandMap);

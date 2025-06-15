@@ -17,7 +17,7 @@
 
 template<class OP>
 static bool
-contains(const jlm::llvm::ipgraph_module & module, const std::string & fctname)
+contains(const jlm::llvm::InterProceduralGraphModule & module, const std::string & fctname)
 {
   using namespace jlm::llvm;
 

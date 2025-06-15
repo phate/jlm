@@ -16,8 +16,8 @@ void
 CheckAddrQueue(rvsdg::Node * node)
 {
   auto [addrQueueNode, addrQueueOperation] =
-      rvsdg::TryGetSimpleNodeAndOp<addr_queue_op>(*node->output(0));
-  JLM_ASSERT(rvsdg::is<addr_queue_op>(node));
+      rvsdg::TryGetSimpleNodeAndOp<AddressQueueOperation>(*node->output(0));
+  JLM_ASSERT(rvsdg::is<AddressQueueOperation>(node));
   // Ensure that there is no buffer between state_gate and addr_queue enq.
   // This is SG1 in the paper. Otherwise, there might be a race condition in the disambiguation
   auto [_, stateGateOperation] =
@@ -26,7 +26,7 @@ CheckAddrQueue(rvsdg::Node * node)
   // make sure there is enough buffer space on the output, so there can be no race condition with
   // SG3
   auto [bufferNode, bufferOperation] =
-      rvsdg::TryGetSimpleNodeAndOp<buffer_op>(**node->output(0)->begin());
+      rvsdg::TryGetSimpleNodeAndOp<BufferOperation>(**node->output(0)->begin());
   JLM_ASSERT(bufferOperation && bufferOperation->capacity >= addrQueueOperation->capacity);
 }
 
@@ -57,7 +57,7 @@ check_rhls(rvsdg::Region * sr)
         throw jlm::util::error("Output has more than one user");
       }
     }
-    if (rvsdg::is<addr_queue_op>(node))
+    if (rvsdg::is<AddressQueueOperation>(node))
     {
       CheckAddrQueue(node);
     }

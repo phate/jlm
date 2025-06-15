@@ -10,16 +10,17 @@
 namespace jlm::llvm
 {
 
-/* edge */
-
-cfg_edge::cfg_edge(cfg_node * source, cfg_node * sink, size_t index) noexcept
+ControlFlowGraphEdge::ControlFlowGraphEdge(
+    ControlFlowGraphNode * source,
+    ControlFlowGraphNode * sink,
+    size_t index) noexcept
     : source_(source),
       sink_(sink),
       index_(index)
 {}
 
 void
-cfg_edge::divert(cfg_node * new_sink)
+ControlFlowGraphEdge::divert(ControlFlowGraphNode * new_sink)
 {
   if (sink_ == new_sink)
     return;
@@ -30,7 +31,7 @@ cfg_edge::divert(cfg_node * new_sink)
 }
 
 BasicBlock *
-cfg_edge::split()
+ControlFlowGraphEdge::split()
 {
   auto sink = sink_;
   auto bb = BasicBlock::create(source_->cfg());
@@ -39,42 +40,39 @@ cfg_edge::split()
   return bb;
 }
 
-/* node */
-
-cfg_node::~cfg_node()
-{}
+ControlFlowGraphNode::~ControlFlowGraphNode() noexcept = default;
 
 size_t
-cfg_node::NumOutEdges() const noexcept
+ControlFlowGraphNode::NumOutEdges() const noexcept
 {
   return outedges_.size();
 }
 
 void
-cfg_node::remove_inedges()
+ControlFlowGraphNode::remove_inedges()
 {
   while (inedges_.size() != 0)
   {
-    cfg_edge * edge = *inedges_.begin();
+    ControlFlowGraphEdge * edge = *inedges_.begin();
     JLM_ASSERT(edge->sink() == this);
     edge->source()->remove_outedge(edge->index());
   }
 }
 
 size_t
-cfg_node::NumInEdges() const noexcept
+ControlFlowGraphNode::NumInEdges() const noexcept
 {
   return inedges_.size();
 }
 
 bool
-cfg_node::no_predecessor() const noexcept
+ControlFlowGraphNode::no_predecessor() const noexcept
 {
   return NumInEdges() == 0;
 }
 
 bool
-cfg_node::single_predecessor() const noexcept
+ControlFlowGraphNode::single_predecessor() const noexcept
 {
   if (NumInEdges() == 0)
     return false;
@@ -90,13 +88,13 @@ cfg_node::single_predecessor() const noexcept
 }
 
 bool
-cfg_node::no_successor() const noexcept
+ControlFlowGraphNode::no_successor() const noexcept
 {
   return NumOutEdges() == 0;
 }
 
 bool
-cfg_node::single_successor() const noexcept
+ControlFlowGraphNode::single_successor() const noexcept
 {
   if (NumOutEdges() == 0)
     return false;
@@ -112,7 +110,7 @@ cfg_node::single_successor() const noexcept
 }
 
 bool
-cfg_node::has_selfloop_edge() const noexcept
+ControlFlowGraphNode::has_selfloop_edge() const noexcept
 {
   for (auto & edge : OutEdges())
   {

@@ -772,7 +772,7 @@ TopDownModRefEliminator::EliminateTopDownTheta(const rvsdg::ThetaNode & thetaNod
 void
 TopDownModRefEliminator::EliminateTopDownSimpleNode(const rvsdg::SimpleNode & simpleNode)
 {
-  if (is<alloca_op>(&simpleNode))
+  if (is<AllocaOperation>(&simpleNode))
   {
     EliminateTopDownAlloca(simpleNode);
   }
@@ -785,7 +785,7 @@ TopDownModRefEliminator::EliminateTopDownSimpleNode(const rvsdg::SimpleNode & si
 void
 TopDownModRefEliminator::EliminateTopDownAlloca(const rvsdg::SimpleNode & node)
 {
-  JLM_ASSERT(is<alloca_op>(&node));
+  JLM_ASSERT(is<AllocaOperation>(&node));
 
   // We found an alloca node. Add the respective points-to graph memory node to the live nodes.
   auto & allocaNode = Context_->GetPointsToGraph().GetAllocaNode(node);

@@ -19,37 +19,41 @@ namespace jlm::llvm
 
 class BasicBlock;
 class ControlFlowGraph;
-class cfg_node;
+class ControlFlowGraphNode;
 
-class cfg_edge final
+class ControlFlowGraphEdge final
 {
 public:
-  ~cfg_edge() noexcept
-  {}
+  ~ControlFlowGraphEdge() noexcept = default;
 
-  cfg_edge(cfg_node * source, cfg_node * sink, size_t index) noexcept;
+  ControlFlowGraphEdge(
+      ControlFlowGraphNode * source,
+      ControlFlowGraphNode * sink,
+      size_t index) noexcept;
 
-  cfg_edge(const cfg_edge & other) = delete;
-  cfg_edge(cfg_edge && other) = default;
+  ControlFlowGraphEdge(const ControlFlowGraphEdge & other) = delete;
 
-  cfg_edge &
-  operator=(const cfg_edge & other) = delete;
-  cfg_edge &
-  operator=(cfg_edge && other) = default;
+  ControlFlowGraphEdge(ControlFlowGraphEdge && other) = default;
+
+  ControlFlowGraphEdge &
+  operator=(const ControlFlowGraphEdge & other) = delete;
+
+  ControlFlowGraphEdge &
+  operator=(ControlFlowGraphEdge && other) = default;
 
   void
-  divert(cfg_node * new_sink);
+  divert(ControlFlowGraphNode * new_sink);
 
   BasicBlock *
   split();
 
-  cfg_node *
+  [[nodiscard]] ControlFlowGraphNode *
   source() const noexcept
   {
     return source_;
   }
 
-  cfg_node *
+  [[nodiscard]] ControlFlowGraphNode *
   sink() const noexcept
   {
     return sink_;
@@ -71,28 +75,29 @@ public:
   }
 
 private:
-  cfg_node * source_;
-  cfg_node * sink_;
+  ControlFlowGraphNode * source_;
+  ControlFlowGraphNode * sink_;
   size_t index_;
 
-  friend cfg_node;
+  friend ControlFlowGraphNode;
 };
 
-class cfg_node
+class ControlFlowGraphNode
 {
-  using inedge_iterator =
-      util::PtrIterator<cfg_edge, std::unordered_set<cfg_edge *>::const_iterator>;
+  using inedge_iterator = util::
+      PtrIterator<ControlFlowGraphEdge, std::unordered_set<ControlFlowGraphEdge *>::const_iterator>;
   using inedge_iterator_range = util::IteratorRange<inedge_iterator>;
 
-  using outedge_iterator =
-      util::PtrIterator<cfg_edge, std::vector<std::unique_ptr<cfg_edge>>::const_iterator>;
+  using outedge_iterator = util::PtrIterator<
+      ControlFlowGraphEdge,
+      std::vector<std::unique_ptr<ControlFlowGraphEdge>>::const_iterator>;
   using outedge_iterator_range = util::IteratorRange<outedge_iterator>;
 
 public:
-  virtual ~cfg_node();
+  virtual ~ControlFlowGraphNode() noexcept;
 
 protected:
-  explicit cfg_node(ControlFlowGraph & cfg)
+  explicit ControlFlowGraphNode(ControlFlowGraph & cfg)
       : cfg_(cfg)
   {}
 
@@ -106,7 +111,7 @@ public:
   size_t
   NumOutEdges() const noexcept;
 
-  cfg_edge *
+  [[nodiscard]] ControlFlowGraphEdge *
   OutEdge(size_t n) const
   {
     JLM_ASSERT(n < NumOutEdges());
@@ -121,10 +126,10 @@ public:
         outedge_iterator(outedges_.end()));
   }
 
-  cfg_edge *
-  add_outedge(cfg_node * sink)
+  ControlFlowGraphEdge *
+  add_outedge(ControlFlowGraphNode * sink)
   {
-    outedges_.push_back(std::make_unique<cfg_edge>(this, sink, NumOutEdges()));
+    outedges_.push_back(std::make_unique<ControlFlowGraphEdge>(this, sink, NumOutEdges()));
     sink->inedges_.insert(outedges_.back().get());
     return outedges_.back().get();
   }
@@ -163,7 +168,7 @@ public:
   }
 
   inline void
-  divert_inedges(llvm::cfg_node * new_successor)
+  divert_inedges(llvm::ControlFlowGraphNode * new_successor)
   {
     if (this == new_successor)
       return;
@@ -198,19 +203,19 @@ public:
 
 private:
   ControlFlowGraph & cfg_;
-  std::vector<std::unique_ptr<cfg_edge>> outedges_;
-  std::unordered_set<cfg_edge *> inedges_;
+  std::vector<std::unique_ptr<ControlFlowGraphEdge>> outedges_;
+  std::unordered_set<ControlFlowGraphEdge *> inedges_;
 
-  friend cfg_edge;
+  friend ControlFlowGraphEdge;
 };
 
 template<class T>
 static inline bool
-is(const cfg_node * node) noexcept
+is(const ControlFlowGraphNode * node) noexcept
 {
   static_assert(
-      std::is_base_of<cfg_node, T>::value,
-      "Template parameter T must be derived from jlm::cfg_node.");
+      std::is_base_of<ControlFlowGraphNode, T>::value,
+      "Template parameter T must be derived from jlm::ControlFlowGraphNode.");
 
   return dynamic_cast<const T *>(node) != nullptr;
 }

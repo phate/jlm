@@ -24,6 +24,8 @@ namespace jlm::llvm
 {
 
 class LoadNonVolatileOperation;
+class MemoryStateMergeOperation;
+class MemoryStateSplitOperation;
 class StoreNonVolatileOperation;
 
 /**
@@ -82,6 +84,12 @@ private:
   ReduceStoreNode(rvsdg::Node & simpleNode);
 
   [[nodiscard]] static bool
+  ReduceMemoryStateMergeNode(rvsdg::Node & simpleNode);
+
+  [[nodiscard]] static bool
+  ReduceMemoryStateSplitNode(rvsdg::Node & simpleNode);
+
+  [[nodiscard]] static bool
   ReduceBinaryNode(rvsdg::Node & simpleNode);
 
   static std::optional<std::vector<rvsdg::Output *>>
@@ -92,6 +100,16 @@ private:
   static std::optional<std::vector<rvsdg::Output *>>
   NormalizeStoreNode(
       const StoreNonVolatileOperation & operation,
+      const std::vector<rvsdg::Output *> & operands);
+
+  static std::optional<std::vector<rvsdg::Output *>>
+  NormalizeMemoryStateMergeNode(
+      const MemoryStateMergeOperation & operation,
+      const std::vector<rvsdg::Output *> & operands);
+
+  static std::optional<std::vector<rvsdg::Output *>>
+  NormalizeMemoryStateSplitNode(
+      const MemoryStateSplitOperation & operation,
       const std::vector<rvsdg::Output *> & operands);
 
   std::unique_ptr<Statistics> Statistics_;
