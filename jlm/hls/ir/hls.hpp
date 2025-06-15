@@ -782,32 +782,30 @@ public:
   copy(rvsdg::Region * region, rvsdg::SubstitutionMap & smap) const override;
 };
 
-class bundletype final : public jlm::rvsdg::ValueType
+class BundleType final : public rvsdg::ValueType
 {
 public:
-  ~bundletype()
+  ~BundleType() noexcept override;
+
+  explicit BundleType(
+      const std::vector<std::pair<std::string, std::shared_ptr<const Type>>> elements)
+      : elements_(std::move(elements))
   {}
 
-  bundletype(
-      const std::vector<std::pair<std::string, std::shared_ptr<const jlm::rvsdg::Type>>> elements)
-      : jlm::rvsdg::ValueType(),
-        elements_(std::move(elements))
-  {}
+  BundleType(const BundleType &) = default;
 
-  bundletype(const bundletype &) = default;
+  BundleType(BundleType &&) = delete;
 
-  bundletype(bundletype &&) = delete;
+  BundleType &
+  operator=(const BundleType &) = delete;
 
-  bundletype &
-  operator=(const bundletype &) = delete;
-
-  bundletype &
-  operator=(bundletype &&) = delete;
+  BundleType &
+  operator=(BundleType &&) = delete;
 
   virtual bool
   operator==(const jlm::rvsdg::Type & other) const noexcept override
   {
-    auto type = dynamic_cast<const bundletype *>(&other);
+    auto type = dynamic_cast<const BundleType *>(&other);
     // TODO: better comparison?
     if (!type || type->elements_.size() != elements_.size())
     {
@@ -852,19 +850,18 @@ public:
   const std::vector<std::pair<std::string, std::shared_ptr<const jlm::rvsdg::Type>>> elements_;
 };
 
-std::shared_ptr<const bundletype>
+std::shared_ptr<const BundleType>
 get_mem_req_type(std::shared_ptr<const rvsdg::ValueType> elementType, bool write);
 
-std::shared_ptr<const bundletype>
+std::shared_ptr<const BundleType>
 get_mem_res_type(std::shared_ptr<const jlm::rvsdg::ValueType> dataType);
 
-class load_op final : public rvsdg::SimpleOperation
+class LoadOperation final : public rvsdg::SimpleOperation
 {
 public:
-  virtual ~load_op()
-  {}
+  ~LoadOperation() noexcept override;
 
-  load_op(const std::shared_ptr<const rvsdg::ValueType> & pointeeType, size_t numStates)
+  LoadOperation(const std::shared_ptr<const rvsdg::ValueType> & pointeeType, size_t numStates)
       : SimpleOperation(
             CreateInTypes(pointeeType, numStates),
             CreateOutTypes(pointeeType, numStates))
@@ -873,8 +870,7 @@ public:
   bool
   operator==(const Operation & other) const noexcept override
   {
-    // TODO:
-    auto ot = dynamic_cast<const load_op *>(&other);
+    auto ot = dynamic_cast<const LoadOperation *>(&other);
     // check predicate and value
     return ot && *ot->argument(1) == *argument(1) && ot->narguments() == narguments();
   }
@@ -914,7 +910,7 @@ public:
   [[nodiscard]] std::unique_ptr<Operation>
   copy() const override
   {
-    return std::make_unique<load_op>(*this);
+    return std::make_unique<LoadOperation>(*this);
   }
 
   static std::vector<jlm::rvsdg::Output *>
@@ -927,7 +923,7 @@ public:
     inputs.push_back(&addr);
     inputs.insert(inputs.end(), states.begin(), states.end());
     inputs.push_back(&load_result);
-    return outputs(&rvsdg::CreateOpNode<load_op>(
+    return outputs(&rvsdg::CreateOpNode<LoadOperation>(
         inputs,
         std::dynamic_pointer_cast<const rvsdg::ValueType>(load_result.Type()),
         states.size()));
@@ -946,13 +942,12 @@ public:
   }
 };
 
-class addr_queue_op final : public rvsdg::SimpleOperation
+class AddressQueueOperation final : public rvsdg::SimpleOperation
 {
 public:
-  virtual ~addr_queue_op()
-  {}
+  ~AddressQueueOperation() noexcept override;
 
-  addr_queue_op(
+  AddressQueueOperation(
       const std::shared_ptr<const llvm::PointerType> & pointerType,
       size_t capacity,
       bool combinatorial)
@@ -964,8 +959,7 @@ public:
   bool
   operator==(const Operation & other) const noexcept override
   {
-    // TODO:
-    auto ot = dynamic_cast<const addr_queue_op *>(&other);
+    auto ot = dynamic_cast<const AddressQueueOperation *>(&other);
     // check predicate and value
     return ot && *ot->argument(1) == *argument(1) && ot->narguments() == narguments();
   }
@@ -998,7 +992,7 @@ public:
   [[nodiscard]] std::unique_ptr<Operation>
   copy() const override
   {
-    return std::make_unique<addr_queue_op>(*this);
+    return std::make_unique<AddressQueueOperation>(*this);
   }
 
   static jlm::rvsdg::Output *
@@ -1009,7 +1003,7 @@ public:
       bool combinatorial,
       size_t capacity = 10)
   {
-    return rvsdg::CreateOpNode<addr_queue_op>(
+    return rvsdg::CreateOpNode<AddressQueueOperation>(
                { &check, &enq, &deq },
                std::dynamic_pointer_cast<const llvm::PointerType>(check.Type()),
                capacity,
@@ -1210,12 +1204,12 @@ public:
   }
 };
 
-class mem_req_op final : public rvsdg::SimpleOperation
+class MemoryRequestOperation final : public rvsdg::SimpleOperation
 {
 public:
-  virtual ~mem_req_op() = default;
+  ~MemoryRequestOperation() noexcept override = default;
 
-  mem_req_op(
+  MemoryRequestOperation(
       const std::vector<std::shared_ptr<const rvsdg::ValueType>> & load_types,
       const std::vector<std::shared_ptr<const rvsdg::ValueType>> & store_types)
       : SimpleOperation(
@@ -1232,13 +1226,12 @@ public:
     }
   }
 
-  mem_req_op(const mem_req_op & other) = default;
+  MemoryRequestOperation(const MemoryRequestOperation & other) = default;
 
   bool
   operator==(const Operation & other) const noexcept override
   {
-    // TODO:
-    auto ot = dynamic_cast<const mem_req_op *>(&other);
+    auto ot = dynamic_cast<const MemoryRequestOperation *>(&other);
     // check predicate and value
     return ot && ot->narguments() == narguments()
         && (ot->narguments() == 0 || (*ot->argument(1) == *argument(1)))
@@ -1294,7 +1287,7 @@ public:
   [[nodiscard]] std::unique_ptr<Operation>
   copy() const override
   {
-    return std::make_unique<mem_req_op>(*this);
+    return std::make_unique<MemoryRequestOperation>(*this);
   }
 
   static std::vector<jlm::rvsdg::Output *>
@@ -1315,7 +1308,7 @@ public:
     }
     std::vector operands(load_operands);
     operands.insert(operands.end(), store_operands.begin(), store_operands.end());
-    return outputs(&rvsdg::CreateOpNode<mem_req_op>(operands, loadTypes, storeTypes));
+    return outputs(&rvsdg::CreateOpNode<MemoryRequestOperation>(operands, loadTypes, storeTypes));
   }
 
   size_t

@@ -667,7 +667,7 @@ ConnectRequestResponseMemPorts(
         route_request_rhls(lambdaRegion, replacement->output(replacement->noutputs() - 1));
     loadAddresses.push_back(address);
     std::shared_ptr<const rvsdg::ValueType> type;
-    if (auto loadOperation = dynamic_cast<const load_op *>(&replacement->GetOperation()))
+    if (auto loadOperation = dynamic_cast<const LoadOperation *>(&replacement->GetOperation()))
     {
       type = loadOperation->GetLoadedType();
     }
@@ -710,7 +710,7 @@ ConnectRequestResponseMemPorts(
     storeOperands.push_back(data);
   }
 
-  return mem_req_op::create(loadAddresses, loadTypes, storeOperands, lambdaRegion)[0];
+  return MemoryRequestOperation::create(loadAddresses, loadTypes, storeOperands, lambdaRegion)[0];
 }
 
 rvsdg::SimpleNode *
@@ -742,7 +742,7 @@ ReplaceLoad(
   else
   {
     // TODO: switch this to a decoupled load?
-    auto outputs = load_op::create(*loadAddress, states, *response);
+    auto outputs = LoadOperation::create(*loadAddress, states, *response);
     newLoad = dynamic_cast<rvsdg::node_output *>(outputs[0])->node();
   }
 

@@ -22,6 +22,8 @@ PredicateBufferOperation::~PredicateBufferOperation() noexcept = default;
 
 LoopConstantBufferOperation::~LoopConstantBufferOperation() noexcept = default;
 
+BundleType::~BundleType() noexcept = default;
+
 LoopOperation::~LoopOperation() noexcept = default;
 
 PrintOperation::~PrintOperation() noexcept = default;
@@ -33,6 +35,10 @@ TriggerOperation::~TriggerOperation() noexcept = default;
 TriggerType::~TriggerType() noexcept = default;
 
 StateGateOperation::~StateGateOperation() noexcept = default;
+
+LoadOperation::~LoadOperation() noexcept = default;
+
+AddressQueueOperation::~AddressQueueOperation() noexcept = default;
 
 std::size_t
 TriggerType::ComputeHash() const noexcept
@@ -48,9 +54,9 @@ TriggerType::Create()
 }
 
 std::size_t
-bundletype::ComputeHash() const noexcept
+BundleType::ComputeHash() const noexcept
 {
-  std::size_t seed = typeid(bundletype).hash_code();
+  std::size_t seed = typeid(BundleType).hash_code();
   for (auto & element : elements_)
   {
     auto firstHash = std::hash<std::string>()(element.first);
@@ -226,7 +232,7 @@ loop_node::set_predicate(jlm::rvsdg::Output * p)
     remove(node);
 }
 
-std::shared_ptr<const bundletype>
+std::shared_ptr<const BundleType>
 get_mem_req_type(std::shared_ptr<const rvsdg::ValueType> elementType, bool write)
 {
   std::vector<std::pair<std::string, std::shared_ptr<const jlm::rvsdg::Type>>> elements;
@@ -238,16 +244,16 @@ get_mem_req_type(std::shared_ptr<const rvsdg::ValueType> elementType, bool write
     elements.emplace_back("data", std::move(elementType));
     elements.emplace_back("write", jlm::rvsdg::bittype::Create(1));
   }
-  return std::make_shared<bundletype>(std::move(elements));
+  return std::make_shared<BundleType>(std::move(elements));
 }
 
-std::shared_ptr<const bundletype>
+std::shared_ptr<const BundleType>
 get_mem_res_type(std::shared_ptr<const jlm::rvsdg::ValueType> dataType)
 {
   std::vector<std::pair<std::string, std::shared_ptr<const jlm::rvsdg::Type>>> elements;
   elements.emplace_back("data", std::move(dataType));
   elements.emplace_back("id", jlm::rvsdg::bittype::Create(8));
-  return std::make_shared<bundletype>(std::move(elements));
+  return std::make_shared<BundleType>(std::move(elements));
 }
 
 int
@@ -277,7 +283,7 @@ JlmSize(const jlm::rvsdg::Type * type)
   {
     return 1;
   }
-  else if (dynamic_cast<const bundletype *>(type))
+  else if (rvsdg::is<BundleType>(*type))
   {
     // TODO: fix this ugly hack needed for get_node_name
     return 0;
