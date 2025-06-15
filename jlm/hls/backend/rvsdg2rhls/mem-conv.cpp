@@ -672,7 +672,8 @@ ConnectRequestResponseMemPorts(
       type = loadOperation->GetLoadedType();
     }
     else if (
-        auto loadOperation = dynamic_cast<const DecoupledLoadOperation *>(&replacement->GetOperation()))
+        auto loadOperation =
+            dynamic_cast<const DecoupledLoadOperation *>(&replacement->GetOperation()))
     {
       type = loadOperation->GetLoadedType();
     }
@@ -693,8 +694,8 @@ ConnectRequestResponseMemPorts(
     auto replacement = ReplaceDecouple(lambda, node, response);
     auto addr = route_request_rhls(lambdaRegion, replacement->output(1));
     loadAddresses.push_back(addr);
-    loadTypes.push_back(
-        dynamic_cast<const DecoupledLoadOperation *>(&replacement->GetOperation())->GetLoadedType());
+    loadTypes.push_back(dynamic_cast<const DecoupledLoadOperation *>(&replacement->GetOperation())
+                            ->GetLoadedType());
   }
   std::vector<rvsdg::Output *> storeOperands;
   for (size_t i = 0; i < storeNodes.size(); ++i)
