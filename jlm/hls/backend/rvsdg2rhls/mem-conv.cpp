@@ -710,7 +710,7 @@ ConnectRequestResponseMemPorts(
     storeOperands.push_back(data);
   }
 
-  return mem_req_op::create(loadAddresses, loadTypes, storeOperands, lambdaRegion)[0];
+  return MemoryRequestOperation::create(loadAddresses, loadTypes, storeOperands, lambdaRegion)[0];
 }
 
 rvsdg::SimpleNode *
