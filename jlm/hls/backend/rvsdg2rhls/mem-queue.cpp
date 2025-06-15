@@ -467,7 +467,7 @@ process_loops(jlm::rvsdg::Output * state_edge)
         {
           JLM_ASSERT(state_gate_addr_in->origin()->region() == store_addresses[j]->region());
           JLM_ASSERT(store_dequeues[j]->region() == store_addresses[j]->region());
-          state_gate_addr_in->divert_to(jlm::hls::addr_queue_op::create(
+          state_gate_addr_in->divert_to(jlm::hls::AddressQueueOperation::create(
               *state_gate_addr_in->origin(),
               *store_addresses[j],
               *store_dequeues[j],
