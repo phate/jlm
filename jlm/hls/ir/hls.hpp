@@ -782,32 +782,30 @@ public:
   copy(rvsdg::Region * region, rvsdg::SubstitutionMap & smap) const override;
 };
 
-class bundletype final : public jlm::rvsdg::ValueType
+class BundleType final : public rvsdg::ValueType
 {
 public:
-  ~bundletype()
+  ~BundleType() noexcept override;
+
+  explicit BundleType(
+      const std::vector<std::pair<std::string, std::shared_ptr<const Type>>> elements)
+      : elements_(std::move(elements))
   {}
 
-  bundletype(
-      const std::vector<std::pair<std::string, std::shared_ptr<const jlm::rvsdg::Type>>> elements)
-      : jlm::rvsdg::ValueType(),
-        elements_(std::move(elements))
-  {}
+  BundleType(const BundleType &) = default;
 
-  bundletype(const bundletype &) = default;
+  BundleType(BundleType &&) = delete;
 
-  bundletype(bundletype &&) = delete;
+  BundleType &
+  operator=(const BundleType &) = delete;
 
-  bundletype &
-  operator=(const bundletype &) = delete;
-
-  bundletype &
-  operator=(bundletype &&) = delete;
+  BundleType &
+  operator=(BundleType &&) = delete;
 
   virtual bool
   operator==(const jlm::rvsdg::Type & other) const noexcept override
   {
-    auto type = dynamic_cast<const bundletype *>(&other);
+    auto type = dynamic_cast<const BundleType *>(&other);
     // TODO: better comparison?
     if (!type || type->elements_.size() != elements_.size())
     {
@@ -852,19 +850,18 @@ public:
   const std::vector<std::pair<std::string, std::shared_ptr<const jlm::rvsdg::Type>>> elements_;
 };
 
-std::shared_ptr<const bundletype>
+std::shared_ptr<const BundleType>
 get_mem_req_type(std::shared_ptr<const rvsdg::ValueType> elementType, bool write);
 
-std::shared_ptr<const bundletype>
+std::shared_ptr<const BundleType>
 get_mem_res_type(std::shared_ptr<const jlm::rvsdg::ValueType> dataType);
 
-class load_op final : public rvsdg::SimpleOperation
+class LoadOperation final : public rvsdg::SimpleOperation
 {
 public:
-  virtual ~load_op()
-  {}
+  ~LoadOperation() noexcept override;
 
-  load_op(const std::shared_ptr<const rvsdg::ValueType> & pointeeType, size_t numStates)
+  LoadOperation(const std::shared_ptr<const rvsdg::ValueType> & pointeeType, size_t numStates)
       : SimpleOperation(
             CreateInTypes(pointeeType, numStates),
             CreateOutTypes(pointeeType, numStates))
@@ -873,8 +870,7 @@ public:
   bool
   operator==(const Operation & other) const noexcept override
   {
-    // TODO:
-    auto ot = dynamic_cast<const load_op *>(&other);
+    auto ot = dynamic_cast<const LoadOperation *>(&other);
     // check predicate and value
     return ot && *ot->argument(1) == *argument(1) && ot->narguments() == narguments();
   }
@@ -914,7 +910,7 @@ public:
   [[nodiscard]] std::unique_ptr<Operation>
   copy() const override
   {
-    return std::make_unique<load_op>(*this);
+    return std::make_unique<LoadOperation>(*this);
   }
 
   static std::vector<jlm::rvsdg::Output *>
@@ -927,7 +923,7 @@ public:
     inputs.push_back(&addr);
     inputs.insert(inputs.end(), states.begin(), states.end());
     inputs.push_back(&load_result);
-    return outputs(&rvsdg::CreateOpNode<load_op>(
+    return outputs(&rvsdg::CreateOpNode<LoadOperation>(
         inputs,
         std::dynamic_pointer_cast<const rvsdg::ValueType>(load_result.Type()),
         states.size()));

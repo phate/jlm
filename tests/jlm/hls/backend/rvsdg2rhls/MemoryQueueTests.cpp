@@ -252,7 +252,7 @@ TestAddrQueue()
         {
           auto loadNode =
               jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(*node->input(1)->origin());
-          jlm::util::AssertedCast<const LoadOperation>(&loadNode->GetOperation());
+          jlm::util::AssertedCast<const jlm::llvm::LoadOperation>(&loadNode->GetOperation());
           auto stateGate =
               jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(*loadNode->input(0)->origin());
           jlm::util::AssertedCast<const state_gate_op>(&stateGate->GetOperation());

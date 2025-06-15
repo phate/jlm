@@ -33,7 +33,7 @@ eliminate_buf(jlm::rvsdg::Output * o)
     {
       return true;
     }
-    else if (jlm::rvsdg::is<const jlm::hls::load_op>(node->GetOperation()))
+    else if (jlm::rvsdg::is<const LoadOperation>(node->GetOperation()))
     {
       return true;
     }

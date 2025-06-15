@@ -126,12 +126,12 @@ TestLoad()
   // Load Address
   auto loadNode =
       jlm::util::AssertedCast<jlm::rvsdg::node_output>(lambdaRegion->result(0)->origin())->node();
-  assert(is<load_op>(loadNode));
+  assert(is<jlm::hls::LoadOperation>(loadNode));
 
   // Load Data
   loadNode =
       jlm::util::AssertedCast<jlm::rvsdg::node_output>(lambdaRegion->result(1)->origin())->node();
-  assert(is<load_op>(loadNode));
+  assert(is<jlm::hls::LoadOperation>(loadNode));
 
   // Request Node
   auto requestNode =
@@ -283,7 +283,7 @@ TestLoadStore()
   assert(is<mem_req_op>(secondRequestNode));
   auto loadNode =
       jlm::util::AssertedCast<jlm::rvsdg::node_output>(storeNode->input(0)->origin())->node();
-  assert(is<load_op>(loadNode));
+  assert(is<jlm::hls::LoadOperation>(loadNode));
   auto responseNode =
       jlm::util::AssertedCast<jlm::rvsdg::node_output>(loadNode->input(2)->origin())->node();
   assert(is<mem_resp_op>(responseNode));

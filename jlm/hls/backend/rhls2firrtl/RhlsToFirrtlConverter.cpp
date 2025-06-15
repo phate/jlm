@@ -862,7 +862,7 @@ RhlsToFirrtlConverter::MlirGenHlsMemReq(const jlm::rvsdg::SimpleNode * node)
   ::llvm::SmallVector<mlir::Value> storeGranted(storeTypes->size(), zeroBitValue);
   for (size_t j = 0; j < node->noutputs(); ++j)
   {
-    auto reqType = util::AssertedCast<const bundletype>(node->output(j)->Type().get());
+    auto reqType = util::AssertedCast<const BundleType>(node->output(j)->Type().get());
     auto hasWrite = reqType->elements_.size() == 5;
     mlir::BlockArgument memReq = GetOutPort(module, j);
     mlir::Value memReqData;
@@ -953,7 +953,7 @@ RhlsToFirrtlConverter::MlirGenHlsLoad(const jlm::rvsdg::SimpleNode * node)
   auto module = nodeToModule(node, false);
   auto body = module.getBodyBlock();
 
-  auto load = dynamic_cast<const load_op *>(&(node->GetOperation()));
+  auto load = dynamic_cast<const LoadOperation *>(&(node->GetOperation()));
   auto local_load = dynamic_cast<const local_load_op *>(&(node->GetOperation()));
   JLM_ASSERT(load || local_load);
 
@@ -2389,7 +2389,7 @@ RhlsToFirrtlConverter::MlirGen(const jlm::rvsdg::SimpleNode * node)
     //	} else if (dynamic_cast<const jlm::StoreOperation *>(&(node->GetOperati()))) {
     //		return MlirGenMem(node);
   }
-  else if (dynamic_cast<const hls::load_op *>(&(node->GetOperation())))
+  else if (dynamic_cast<const LoadOperation *>(&(node->GetOperation())))
   {
     return MlirGenHlsLoad(node);
   }
@@ -3897,7 +3897,7 @@ RhlsToFirrtlConverter::GetIntType(const jlm::rvsdg::Type * type, int extend)
 circt::firrtl::FIRRTLBaseType
 RhlsToFirrtlConverter::GetFirrtlType(const jlm::rvsdg::Type * type)
 {
-  if (auto bt = dynamic_cast<const bundletype *>(type))
+  if (auto bt = dynamic_cast<const BundleType *>(type))
   {
     using BundleElement = circt::firrtl::BundleType::BundleElement;
     ::llvm::SmallVector<BundleElement> elements;
