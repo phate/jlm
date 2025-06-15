@@ -10,7 +10,6 @@
 #include <jlm/llvm/ir/operators/delta.hpp>
 #include <jlm/llvm/ir/operators/IntegerOperations.hpp>
 #include <jlm/llvm/ir/operators/lambda.hpp>
-#include <jlm/llvm/ir/operators/delta.hpp>
 #include <jlm/llvm/ir/operators/operators.hpp>
 #include <jlm/llvm/ir/RvsdgModule.hpp>
 #include <jlm/rvsdg/bitstring/arithmetic.hpp>

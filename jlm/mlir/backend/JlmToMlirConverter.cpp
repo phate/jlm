@@ -530,11 +530,11 @@ JlmToMlirConverter::ConvertSimpleNode(
   {
     MlirOp = Builder_->create<::mlir::jlm::Alloca>(
         Builder_->getUnknownLoc(),
-        ConvertType(*alloca_op->result(0)),                               // ptr
-        ConvertType(*alloca_op->result(1)),                               // memstate
-        ConvertType(alloca_op->value_type()),                             // value type
-        inputs[0],                                                        // size
-        alloca_op->alignment()                                           // alignment
+        ConvertType(*alloca_op->result(0)),   // ptr
+        ConvertType(*alloca_op->result(1)),   // memstate
+        ConvertType(alloca_op->value_type()), // value type
+        inputs[0],                            // size
+        alloca_op->alignment()                // alignment
     );
   }
   else if (auto malloc_op = dynamic_cast<const jlm::llvm::malloc_op *>(&operation))

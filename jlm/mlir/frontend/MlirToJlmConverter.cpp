@@ -542,10 +542,8 @@ MlirToJlmConverter::ConvertOperation(
     auto floatType = ::mlir::cast<::mlir::FloatType>(type);
 
     llvm::fpsize size = ConvertFPSize(floatType.getWidth());
-    auto & output = rvsdg::SimpleNode::Create(
-        rvsdgRegion,
-        llvm::ConstantFP(size, constant.value()),
-        {});
+    auto & output =
+        rvsdg::SimpleNode::Create(rvsdgRegion, llvm::ConstantFP(size, constant.value()), {});
     return &output;
   }
 
