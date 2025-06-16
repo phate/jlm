@@ -35,7 +35,7 @@ public:
   static inline const char * const ENV_TEST_ALL_CONFIGS = "JLM_ANDERSEN_TEST_ALL_CONFIGS";
 
   /**
-   * Alternative to testing all configs, this environment variable specifies exactly one config to
+   * Alternative to testing all configs, this environment variable specifies exactly which config to
    * use. It must be an index into the Configuration::GetAllConfigurations() vector.
    * If ENV_TEST_ALL_CONFIGS is also set, it specifies how many times the config is tested.
    */

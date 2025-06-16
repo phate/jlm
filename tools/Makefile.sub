@@ -30,6 +30,6 @@ jlm-opt_LIBS = \
 
 jlm-opt_EXTRA_LDFLAGS = \
 	${MLIR_LDFLAGS} \
-	$(shell $(LLVMCONFIG) --libs core irReader analysis passes --ldflags --system-libs) \
+	$(shell $(LLVMCONFIG) --libs core irReader --ldflags --system-libs) \
 
 $(eval $(call common_executable,jlm-opt))

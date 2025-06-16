@@ -240,11 +240,7 @@ struct LocalAliasAnalysis::TraceCollection
 };
 
 AliasAnalysis::AliasQueryResponse
-LocalAliasAnalysis::Query(
-    const rvsdg::Output & p1,
-    size_t s1,
-    const rvsdg::Output & p2,
-    size_t s2)
+LocalAliasAnalysis::Query(const rvsdg::Output & p1, size_t s1, const rvsdg::Output & p2, size_t s2)
 {
   const auto & p1Norm = NormalizePointerValue(p1);
   const auto & p2Norm = NormalizePointerValue(p2);

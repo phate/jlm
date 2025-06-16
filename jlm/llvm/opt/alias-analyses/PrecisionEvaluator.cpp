@@ -311,20 +311,12 @@ PrecisionEvaluator::CollectPointersFromSimpleNode(const rvsdg::SimpleNode & node
   if (const auto load = dynamic_cast<const LoadOperation *>(&node.GetOperation()))
   {
     const auto size = GetLlvmTypeSize(*load->GetLoadedType());
-    CollectPointer(
-        LoadOperation::AddressInput(node).origin(),
-        size,
-        true,
-        loadsClobber);
+    CollectPointer(LoadOperation::AddressInput(node).origin(), size, true, loadsClobber);
   }
   else if (auto store = dynamic_cast<const StoreOperation *>(&node.GetOperation()))
   {
     const auto size = GetLlvmTypeSize(store->GetStoredType());
-    CollectPointer(
-        StoreOperation::AddressInput(node).origin(),
-        size,
-        true,
-        true);
+    CollectPointer(StoreOperation::AddressInput(node).origin(), size, true, true);
   }
 }
 
@@ -363,8 +355,7 @@ PrecisionEvaluator::RemoveDuplicates()
 {
   // For each occurrence of a (pointer, size) pair, perform logical or to find the final isUse and
   // isClobber values
-  std::map<std::pair<const rvsdg::Output *, size_t>, std::tuple<bool, bool>>
-      uniquePointerOps;
+  std::map<std::pair<const rvsdg::Output *, size_t>, std::tuple<bool, bool>> uniquePointerOps;
 
   for (const auto & [pointer, size, isUse, isClobber] : Context_.PointerOperations)
   {

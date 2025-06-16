@@ -384,7 +384,7 @@ public:
 
   void
   StopConstraintSolvingWorklistStatistics(
-     const PointerObjectConstraintSet::WorklistStatistics & statistics) noexcept
+      const PointerObjectConstraintSet::WorklistStatistics & statistics) noexcept
   {
     GetTimer(ConstraintSolvingWorklistTimer_).stop();
 
@@ -1468,7 +1468,6 @@ Andersen::Analyze(
   // Cleanup
   Constraints_.reset();
   Set_.reset();
-
   return result;
 }
 

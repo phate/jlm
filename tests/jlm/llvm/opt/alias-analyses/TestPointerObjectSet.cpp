@@ -12,7 +12,6 @@
 
 #include <cassert>
 
-#ifndef ANDERSEN_NO_FLAGS
 static bool
 StringContains(std::string_view haystack, std::string_view needle)
 {
@@ -891,22 +890,18 @@ TestPointerObjectConstraintSetSolve(Args... args)
   constraints.AddConstraint(LoadConstraint(reg[10], reg[8]));
 
   // Find a solution to all the constraints
-  if constexpr (solver == Andersen::Configuration::Solver::Naive)
+  if constexpr (solver == Andersen::Configuration::Solver::Worklist)
+  {
+    constraints.SolveUsingWorklist(args...);
+  }
+  else if constexpr (solver == Andersen::Configuration::Solver::Naive)
   {
     static_assert(sizeof...(args) == 0, "The naive solver takes no arguments");
     constraints.SolveNaively();
   }
-  else if constexpr (solver == Andersen::Configuration::Solver::Worklist)
+  else
   {
-    constraints.SolveUsingWorklist(args...);
-  }
-  else if constexpr (solver == Andersen::Configuration::Solver::WavePropagation)
-  {
-    constraints.SolveUsingWavePropagation();
-  }
-  else if constexpr (solver == Andersen::Configuration::Solver::DeepPropagation)
-  {
-    constraints.SolveUsingDeepPropagation();
+    static_assert(false, "Unknown solver");
   }
 
   // alloca1 should point to alloca2, etc
@@ -1021,11 +1016,11 @@ TestPointerObjectSet()
 
   TestPointerObjectConstraintSetSolve<Configuration::Solver::Naive>();
 
-  auto allConfigs = Configuration::GetAllConfigurations();
+  auto allConfigs = jlm::llvm::aa::Andersen::Configuration::GetAllConfigurations();
   for (const auto & config : allConfigs)
   {
     // Ignore all configs that enable features that do not affect SolveUsingWorklist()
-    if (config.GetSolver() != Configuration::Solver::Worklist)
+    if (config.GetSolver() != jlm::llvm::aa::Andersen::Configuration::Solver::Worklist)
       continue;
     if (config.IsOfflineVariableSubstitutionEnabled())
       continue;
@@ -1041,13 +1036,8 @@ TestPointerObjectSet()
         config.IsPreferImplicitPointeesEnabled());
   }
 
-  TestPointerObjectConstraintSetSolve<Configuration::Solver::WavePropagation>();
-
-  TestPointerObjectConstraintSetSolve<Configuration::Solver::DeepPropagation>();
-
   TestClonePointerObjectConstraintSet();
   return 0;
 }
 
 JLM_UNIT_TEST_REGISTER("jlm/llvm/opt/alias-analyses/TestPointerObjectSet", TestPointerObjectSet)
-#endif

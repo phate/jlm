@@ -37,7 +37,7 @@ Log2Floor(T value)
  * Examples:
  * RoundUpToPowerOf2(-10) == 1
  * RoundUpToPowerOf2(0) == 1
- * RoundUpToPowerOf2(1) == 2
+ * RoundUpToPowerOf2(1) == 1
  * RoundUpToPowerOf2(2) == 2
  * RoundUpToPowerOf2(7) == 8
  * RoundUpToPowerOf2(8) == 8

@@ -628,7 +628,6 @@ convert_load_instruction(::llvm::Instruction * i, tacsvector_t & tacs, context &
   if (instruction->isVolatile())
   {
     auto loadVolatileTac = LoadVolatileOperation::Create(
-        instruction,
         address,
         ctx.iostate(),
         ctx.memory_state(),
@@ -643,12 +642,8 @@ convert_load_instruction(::llvm::Instruction * i, tacsvector_t & tacs, context &
   else
   {
     address = AddIOBarrier(tacs, address, ctx);
-    auto loadTac = LoadNonVolatileOperation::Create(
-        instruction,
-        address,
-        ctx.memory_state(),
-        loadedType,
-        alignment);
+    auto loadTac =
+        LoadNonVolatileOperation::Create(address, ctx.memory_state(), loadedType, alignment);
     tacs.push_back(std::move(loadTac));
     loadedValue = tacs.back()->result(0);
     memoryState = tacs.back()->result(1);
@@ -678,7 +673,6 @@ convert_store_instruction(::llvm::Instruction * i, tacsvector_t & tacs, context 
   if (instruction->isVolatile())
   {
     auto storeVolatileTac = StoreVolatileOperation::Create(
-        instruction,
         address,
         value,
         ctx.iostate(),
@@ -691,12 +685,8 @@ convert_store_instruction(::llvm::Instruction * i, tacsvector_t & tacs, context 
   else
   {
     address = AddIOBarrier(tacs, address, ctx);
-    auto storeTac = StoreNonVolatileOperation::Create(
-        instruction,
-        address,
-        value,
-        ctx.memory_state(),
-        alignment);
+    auto storeTac =
+        StoreNonVolatileOperation::Create(address, value, ctx.memory_state(), alignment);
     tacs.push_back(std::move(storeTac));
     memoryState = tacs.back()->result(0);
   }

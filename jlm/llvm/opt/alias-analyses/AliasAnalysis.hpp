@@ -58,11 +58,7 @@ public:
    * @return the result of the alias query
    */
   virtual AliasQueryResponse
-  Query(
-      const rvsdg::Output & p1,
-      size_t s1,
-      const rvsdg::Output & p2,
-      size_t s2) = 0;
+  Query(const rvsdg::Output & p1, size_t s1, const rvsdg::Output & p2, size_t s2) = 0;
 };
 
 /**
@@ -78,11 +74,7 @@ public:
   ToString() const override;
 
   AliasQueryResponse
-  Query(
-      const rvsdg::Output & p1,
-      size_t s1,
-      const rvsdg::Output & p2,
-      size_t s2) override;
+  Query(const rvsdg::Output & p1, size_t s1, const rvsdg::Output & p2, size_t s2) override;
 
 private:
   /**
@@ -123,11 +115,7 @@ public:
   ToString() const override;
 
   AliasQueryResponse
-  Query(
-      const rvsdg::Output & p1,
-      size_t s1,
-      const rvsdg::Output & p2,
-      size_t s2) override;
+  Query(const rvsdg::Output & p1, size_t s1, const rvsdg::Output & p2, size_t s2) override;
 
 private:
   AliasAnalysis & First_;
@@ -155,11 +143,7 @@ public:
   ToString() const override;
 
   AliasQueryResponse
-  Query(
-      const rvsdg::Output & p1,
-      size_t s1,
-      const rvsdg::Output & p2,
-      size_t s2) override;
+  Query(const rvsdg::Output & p1, size_t s1, const rvsdg::Output & p2, size_t s2) override;
 
 private:
   struct TracedPointerOrigin;

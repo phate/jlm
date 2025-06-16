@@ -437,7 +437,7 @@ JlmOptCommand::ParseLlvmIrFile(
     const util::FilePath & llvmIrFile,
     util::StatisticsCollector & statisticsCollector) const
 {
-  static ::llvm::LLVMContext llvmContext;
+  ::llvm::LLVMContext llvmContext;
   ::llvm::SMDiagnostic diagnostic;
   auto llvmModule = ::llvm::parseIRFile(llvmIrFile.to_str(), diagnostic, llvmContext);
 
@@ -452,9 +452,7 @@ JlmOptCommand::ParseLlvmIrFile(
   auto interProceduralGraphModule = llvm::ConvertLlvmModule(*llvmModule);
 
   // Dispose of Llvm module. It is no longer needed.
-  // TODO: llvmModule.reset();
-  // We leak the module instead, since we need it for LLVM's BasicAA
-  llvmModule.release();
+  llvmModule.reset();
 
   auto rvsdgModule =
       llvm::ConvertInterProceduralGraphModule(*interProceduralGraphModule, statisticsCollector);

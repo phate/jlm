@@ -278,7 +278,6 @@ perform_load_mux_reduction(
   const auto memStateMergeNode = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*operands[1]);
 
   auto ld = LoadNonVolatileOperation::Create(
-      op.GetLlvmLoad(),
       operands[0],
       rvsdg::operands(memStateMergeNode),
       op.GetLoadedType(),
@@ -309,7 +308,6 @@ perform_load_alloca_reduction(
   }
 
   auto ld = LoadNonVolatileOperation::Create(
-      op.GetLlvmLoad(),
       operands[0],
       loadstates,
       op.GetLoadedType(),
@@ -341,7 +339,6 @@ perform_load_store_state_reduction(
   }
 
   auto ld = LoadNonVolatileOperation::Create(
-      op.GetLlvmLoad(),
       operands[0],
       new_loadstates,
       op.GetLoadedType(),
@@ -379,7 +376,6 @@ perform_multiple_origin_reduction(
   }
 
   const auto loadResults = LoadNonVolatileOperation::Create(
-      op.GetLlvmLoad(),
       address,
       newInputStates,
       op.GetLoadedType(),
@@ -464,7 +460,6 @@ perform_load_load_state_reduction(
     ldstates.push_back(reduce_state(n - 1, operands[n], mxstates));
 
   auto ld = LoadNonVolatileOperation::Create(
-      op.GetLlvmLoad(),
       operands[0],
       ldstates,
       op.GetLoadedType(),
