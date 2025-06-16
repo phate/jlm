@@ -123,7 +123,7 @@ TestCallTypeClassifierIndirectCall()
 
     auto one = jlm::rvsdg::create_bitconstant(lambda->subregion(), 32, 1);
 
-    auto alloca = alloca_op::create(PointerType::Create(), one, 8);
+    auto alloca = AllocaOperation::create(PointerType::Create(), one, 8);
 
     auto store = StoreNonVolatileOperation::Create(
         alloca[0],

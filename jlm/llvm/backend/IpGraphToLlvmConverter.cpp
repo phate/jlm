@@ -31,7 +31,8 @@ namespace jlm::llvm
 
 class IpGraphToLlvmConverter::Context final
 {
-  using const_iterator = std::unordered_map<const cfg_node *, ::llvm::BasicBlock *>::const_iterator;
+  using const_iterator =
+      std::unordered_map<const ControlFlowGraphNode *, ::llvm::BasicBlock *>::const_iterator;
 
 public:
   Context(InterProceduralGraphModule & ipGraphModule, ::llvm::Module & llvmModule)
@@ -76,7 +77,7 @@ public:
   }
 
   void
-  insert(const llvm::cfg_node * node, ::llvm::BasicBlock * bb)
+  insert(const llvm::ControlFlowGraphNode * node, ::llvm::BasicBlock * bb)
   {
     nodes_[node] = bb;
   }
@@ -88,7 +89,7 @@ public:
   }
 
   ::llvm::BasicBlock *
-  basic_block(const llvm::cfg_node * node) const noexcept
+  basic_block(const llvm::ControlFlowGraphNode * node) const noexcept
   {
     auto it = nodes_.find(node);
     JLM_ASSERT(it != nodes_.end());
@@ -119,7 +120,7 @@ private:
   ::llvm::Module & LlvmModule_;
   InterProceduralGraphModule & IpGraphModule_;
   std::unordered_map<const llvm::Variable *, ::llvm::Value *> variables_;
-  std::unordered_map<const llvm::cfg_node *, ::llvm::BasicBlock *> nodes_;
+  std::unordered_map<const llvm::ControlFlowGraphNode *, ::llvm::BasicBlock *> nodes_;
   TypeConverter TypeConverter_;
 };
 
@@ -264,8 +265,8 @@ IpGraphToLlvmConverter::convert(
 
     if (rvsdg::is<VariableArgumentType>(argument->type()))
     {
-      JLM_ASSERT(is<tacvariable>(argument));
-      auto valist = dynamic_cast<const llvm::tacvariable *>(argument)->tac();
+      JLM_ASSERT(is<ThreeAddressCodeVariable>(argument));
+      auto valist = dynamic_cast<const llvm::ThreeAddressCodeVariable *>(argument)->tac();
       JLM_ASSERT(is<valist_op>(valist->operation()));
       for (size_t n = 0; n < valist->noperands(); n++)
         operands.push_back(Context_->value(valist->operand(n)));
@@ -429,8 +430,8 @@ IpGraphToLlvmConverter::convert_alloca(
     const std::vector<const Variable *> & args,
     ::llvm::IRBuilder<> & builder)
 {
-  JLM_ASSERT(is<alloca_op>(op));
-  auto & aop = *static_cast<const llvm::alloca_op *>(&op);
+  JLM_ASSERT(is<AllocaOperation>(op));
+  auto & aop = *static_cast<const llvm::AllocaOperation *>(&op);
   auto & llvmContext = Context_->llvm_module().getContext();
   auto & typeConverter = Context_->GetTypeConverter();
 
@@ -1228,7 +1229,7 @@ IpGraphToLlvmConverter::convert_operation(
   {
     return convert<StoreVolatileOperation>(op, arguments, builder);
   }
-  if (is<alloca_op>(op))
+  if (is<AllocaOperation>(op))
   {
     return convert_alloca(op, arguments, builder);
   }
@@ -1368,7 +1369,7 @@ IpGraphToLlvmConverter::convert_operation(
   {
     return convert_cast<::llvm::Instruction::PtrToInt>(op, arguments, builder);
   }
-  if (is<sext_op>(op))
+  if (is<SExtOperation>(op))
   {
     return convert_cast<::llvm::Instruction::SExt>(op, arguments, builder);
   }
@@ -1427,7 +1428,7 @@ IpGraphToLlvmConverter::convert_operation(
 void
 IpGraphToLlvmConverter::convert_instruction(
     const llvm::ThreeAddressCode & tac,
-    const llvm::cfg_node * node)
+    const llvm::ControlFlowGraphNode * node)
 {
   std::vector<const Variable *> operands;
   for (size_t n = 0; n < tac.noperands(); n++)
@@ -1458,8 +1459,8 @@ IpGraphToLlvmConverter::convert_tacs(const tacsvector_t & tacs)
 static const llvm::ThreeAddressCode *
 get_match(const llvm::ThreeAddressCode * branch)
 {
-  JLM_ASSERT(is<tacvariable>(branch->operand(0)));
-  auto tv = static_cast<const tacvariable *>(branch->operand(0));
+  JLM_ASSERT(is<ThreeAddressCodeVariable>(branch->operand(0)));
+  auto tv = static_cast<const ThreeAddressCodeVariable *>(branch->operand(0));
   return tv->tac();
 }
 
@@ -1477,7 +1478,7 @@ has_return_value(const ControlFlowGraph & cfg)
 }
 
 void
-IpGraphToLlvmConverter::create_return(const cfg_node * node)
+IpGraphToLlvmConverter::create_return(const ControlFlowGraphNode * node)
 {
   JLM_ASSERT(node->NumOutEdges() == 1);
   JLM_ASSERT(node->OutEdge(0)->sink() == node->cfg().exit());
@@ -1497,7 +1498,7 @@ IpGraphToLlvmConverter::create_return(const cfg_node * node)
 }
 
 void
-IpGraphToLlvmConverter::create_unconditional_branch(const cfg_node * node)
+IpGraphToLlvmConverter::create_unconditional_branch(const ControlFlowGraphNode * node)
 {
   JLM_ASSERT(node->NumOutEdges() == 1);
   JLM_ASSERT(node->OutEdge(0)->sink() != node->cfg().exit());
@@ -1508,7 +1509,7 @@ IpGraphToLlvmConverter::create_unconditional_branch(const cfg_node * node)
 }
 
 void
-IpGraphToLlvmConverter::create_conditional_branch(const cfg_node * node)
+IpGraphToLlvmConverter::create_conditional_branch(const ControlFlowGraphNode * node)
 {
   JLM_ASSERT(node->NumOutEdges() == 2);
   JLM_ASSERT(node->OutEdge(0)->sink() != node->cfg().exit());
@@ -1526,7 +1527,7 @@ IpGraphToLlvmConverter::create_conditional_branch(const cfg_node * node)
 }
 
 void
-IpGraphToLlvmConverter::create_switch(const cfg_node * node)
+IpGraphToLlvmConverter::create_switch(const ControlFlowGraphNode * node)
 {
   JLM_ASSERT(node->NumOutEdges() >= 2);
   ::llvm::LLVMContext & llvmContext = Context_->llvm_module().getContext();
@@ -1567,7 +1568,7 @@ IpGraphToLlvmConverter::create_switch(const cfg_node * node)
 }
 
 void
-IpGraphToLlvmConverter::create_terminator_instruction(const llvm::cfg_node * node)
+IpGraphToLlvmConverter::create_terminator_instruction(const llvm::ControlFlowGraphNode * node)
 {
   JLM_ASSERT(is<BasicBlock>(node));
   auto & tacs = static_cast<const BasicBlock *>(node)->tacs();
@@ -1784,7 +1785,7 @@ IpGraphToLlvmConverter::convert_attributes(const function_node & f)
   return ::llvm::AttributeList::get(llvmctx, fctset, retset, argsets);
 }
 
-std::vector<cfg_node *>
+std::vector<ControlFlowGraphNode *>
 IpGraphToLlvmConverter::ConvertBasicBlocks(
     const ControlFlowGraph & controlFlowGraph,
     ::llvm::Function & function)

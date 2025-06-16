@@ -324,7 +324,7 @@ class AllocaLocation final : public MemoryLocation
       : MemoryLocation(),
         Node_(node)
   {
-    JLM_ASSERT(is<alloca_op>(&node));
+    JLM_ASSERT(is<AllocaOperation>(&node));
   }
 
 public:
@@ -996,7 +996,7 @@ Steensgaard::Steensgaard() = default;
 void
 Steensgaard::AnalyzeSimpleNode(const jlm::rvsdg::SimpleNode & node)
 {
-  if (is<alloca_op>(&node))
+  if (is<AllocaOperation>(&node))
   {
     AnalyzeAlloca(node);
   }
@@ -1090,7 +1090,7 @@ Steensgaard::AnalyzeSimpleNode(const jlm::rvsdg::SimpleNode & node)
 void
 Steensgaard::AnalyzeAlloca(const jlm::rvsdg::SimpleNode & node)
 {
-  JLM_ASSERT(is<alloca_op>(&node));
+  JLM_ASSERT(is<AllocaOperation>(&node));
 
   auto & allocaOutputLocation = Context_->GetOrInsertRegisterLocation(*node.output(0));
   auto & allocaLocation = Context_->InsertAllocaLocation(node);

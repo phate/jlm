@@ -9,40 +9,35 @@
 namespace jlm::llvm
 {
 
-namespace delta
-{
-
-/* delta operator */
-
-operation::~operation()
-{}
+DeltaOperation::~DeltaOperation() noexcept = default;
 
 std::string
-operation::debug_string() const
+DeltaOperation::debug_string() const
 {
   return util::strfmt("DELTA[", name(), "]");
 }
 
 std::unique_ptr<rvsdg::Operation>
-operation::copy() const
+DeltaOperation::copy() const
 {
-  return std::make_unique<delta::operation>(*this);
+  return std::make_unique<DeltaOperation>(*this);
 }
 
 bool
-operation::operator==(const Operation & other) const noexcept
+DeltaOperation::operator==(const Operation & other) const noexcept
 {
-  auto op = dynamic_cast<const delta::operation *>(&other);
+  auto op = dynamic_cast<const DeltaOperation *>(&other);
   return op && op->name_ == name_ && op->linkage_ == linkage_ && op->constant_ == constant_
       && op->Section_ == Section_ && *op->type_ == *type_;
 }
 
-/* delta node */
+namespace delta
+{
 
 node::~node()
 {}
 
-const delta::operation &
+const DeltaOperation &
 node::GetOperation() const noexcept
 {
   return *Operation_;

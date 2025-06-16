@@ -31,7 +31,7 @@ emit_tacs(const tacsvector_t & tacs)
 }
 
 static std::string
-emit_function_node(const ipgraph_node & clg_node)
+emit_function_node(const InterProceduralGraphNode & clg_node)
 {
   JLM_ASSERT(dynamic_cast<const function_node *>(&clg_node));
   auto & node = *static_cast<const function_node *>(&clg_node);
@@ -65,7 +65,7 @@ emit_function_node(const ipgraph_node & clg_node)
 }
 
 static std::string
-emit_data_node(const ipgraph_node & clg_node)
+emit_data_node(const InterProceduralGraphNode & clg_node)
 {
   JLM_ASSERT(dynamic_cast<const data_node *>(&clg_node));
   auto & node = *static_cast<const data_node *>(&clg_node);
@@ -81,8 +81,10 @@ emit_data_node(const ipgraph_node & clg_node)
 std::string
 to_str(const InterProceduralGraph & clg)
 {
-  static std::unordered_map<std::type_index, std::function<std::string(const ipgraph_node &)>> map(
-      { { typeid(function_node), emit_function_node }, { typeid(data_node), emit_data_node } });
+  static std::
+      unordered_map<std::type_index, std::function<std::string(const InterProceduralGraphNode &)>>
+          map({ { typeid(function_node), emit_function_node },
+                { typeid(data_node), emit_data_node } });
 
   std::string str;
   for (const auto & node : clg)
@@ -97,7 +99,7 @@ to_str(const InterProceduralGraph & clg)
 /* dot converters */
 
 static inline std::string
-emit_entry_dot(const cfg_node & node)
+emit_entry_dot(const ControlFlowGraphNode & node)
 {
   JLM_ASSERT(is<EntryNode>(&node));
   const auto en = static_cast<const EntryNode *>(&node);
@@ -113,7 +115,7 @@ emit_entry_dot(const cfg_node & node)
 }
 
 static inline std::string
-emit_exit_dot(const cfg_node & node)
+emit_exit_dot(const ControlFlowGraphNode & node)
 {
   JLM_ASSERT(is<ExitNode>(&node));
   const auto xn = static_cast<const ExitNode *>(&node);
@@ -129,7 +131,7 @@ emit_exit_dot(const cfg_node & node)
 }
 
 static inline std::string
-emit_basic_block(const cfg_node & node)
+emit_basic_block(const ControlFlowGraphNode & node)
 {
   JLM_ASSERT(is<BasicBlock>(&node));
   auto & tacs = static_cast<const BasicBlock *>(&node)->tacs();
@@ -142,7 +144,7 @@ emit_basic_block(const cfg_node & node)
 }
 
 static inline std::string
-emit_header(const cfg_node & node)
+emit_header(const ControlFlowGraphNode & node)
 {
   if (is<EntryNode>(&node))
     return "ENTRY";
@@ -154,9 +156,9 @@ emit_header(const cfg_node & node)
 }
 
 static inline std::string
-emit_node(const cfg_node & node)
+emit_node(const ControlFlowGraphNode & node)
 {
-  static std::unordered_map<std::type_index, std::string (*)(const cfg_node &)> map(
+  static std::unordered_map<std::type_index, std::string (*)(const ControlFlowGraphNode &)> map(
       { { typeid(EntryNode), emit_entry_dot },
         { typeid(ExitNode), emit_exit_dot },
         { typeid(BasicBlock), emit_basic_block } });

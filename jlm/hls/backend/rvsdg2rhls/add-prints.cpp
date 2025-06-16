@@ -26,19 +26,13 @@ add_prints(rvsdg::Region * region)
         add_prints(structnode->subregion(n));
       }
     }
-    //		if (auto lo = dynamic_cast<const jlm::load_op *>(&(node->operation()))) {
-    //
-    //		} else if (auto so = dynamic_cast<const jlm::store_op *>(&(node->operation()))) {
-    //			auto po = hls::print_op::create(*node->input(1)->origin())[0];
-    //			node->input(1)->divert_to(po);
-    //		}
     if (dynamic_cast<jlm::rvsdg::SimpleNode *>(node) && node->noutputs() == 1
         && jlm::rvsdg::is<rvsdg::bittype>(node->output(0)->Type())
         && !jlm::rvsdg::is<llvm::UndefValueOperation>(node))
     {
       auto out = node->output(0);
       std::vector<jlm::rvsdg::Input *> old_users(out->begin(), out->end());
-      auto new_out = hls::print_op::create(*out)[0];
+      auto new_out = PrintOperation::create(*out)[0];
       for (auto user : old_users)
       {
         user->divert_to(new_out);
@@ -115,7 +109,7 @@ convert_prints(
         convert_prints(structnode->subregion(n), printf, functionType);
       }
     }
-    else if (auto po = dynamic_cast<const print_op *>(&(node->GetOperation())))
+    else if (auto po = dynamic_cast<const PrintOperation *>(&(node->GetOperation())))
     {
       auto printf_local = route_to_region_rvsdg(printf, region); // TODO: prevent repetition?
       auto & constantNode = llvm::IntegerConstantOperation::Create(*region, 64, po->id());

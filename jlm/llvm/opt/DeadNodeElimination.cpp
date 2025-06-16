@@ -395,7 +395,7 @@ DeadNodeElimination::SweepStructuralNode(rvsdg::StructuralNode & node) const
             { typeid(rvsdg::ThetaOperation), sweepTheta },
             { typeid(llvm::LlvmLambdaOperation), sweepLambda },
             { typeid(rvsdg::PhiOperation), sweepPhi },
-            { typeid(delta::operation), sweepDelta } });
+            { typeid(DeltaOperation), sweepDelta } });
 
   auto & op = node.GetOperation();
   JLM_ASSERT(map.find(typeid(op)) != map.end());

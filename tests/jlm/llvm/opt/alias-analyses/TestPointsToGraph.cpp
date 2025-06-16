@@ -49,7 +49,7 @@ private:
 
     for (auto & node : region.Nodes())
     {
-      if (jlm::rvsdg::is<alloca_op>(&node))
+      if (jlm::rvsdg::is<AllocaOperation>(&node))
       {
         auto & allocaNode = aa::PointsToGraph::AllocaNode::Create(*PointsToGraph_, node);
         auto & registerNode =

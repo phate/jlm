@@ -622,9 +622,9 @@ convert_load_instruction(::llvm::Instruction * i, tacsvector_t & tacs, context &
   auto address = ConvertValue(instruction->getPointerOperand(), tacs, ctx);
   auto loadedType = ctx.GetTypeConverter().ConvertLlvmType(*instruction->getType());
 
-  const tacvariable * loadedValue;
-  const tacvariable * memoryState;
-  const tacvariable * ioState = nullptr;
+  const ThreeAddressCodeVariable * loadedValue;
+  const ThreeAddressCodeVariable * memoryState;
+  const ThreeAddressCodeVariable * ioState = nullptr;
   if (instruction->isVolatile())
   {
     auto loadVolatileTac = LoadVolatileOperation::Create(
@@ -668,8 +668,8 @@ convert_store_instruction(::llvm::Instruction * i, tacsvector_t & tacs, context 
   auto address = ConvertValue(instruction->getPointerOperand(), tacs, ctx);
   auto value = ConvertValue(instruction->getValueOperand(), tacs, ctx);
 
-  const tacvariable * memoryState;
-  const tacvariable * ioState = nullptr;
+  const ThreeAddressCodeVariable * memoryState;
+  const ThreeAddressCodeVariable * ioState = nullptr;
   if (instruction->isVolatile())
   {
     auto storeVolatileTac = StoreVolatileOperation::Create(
@@ -1073,7 +1073,7 @@ convert_alloca_instruction(::llvm::Instruction * instruction, tacsvector_t & tac
   auto vtype = ctx.GetTypeConverter().ConvertLlvmType(*i->getAllocatedType());
   auto alignment = i->getAlign().value();
 
-  tacs.push_back(alloca_op::create(vtype, size, alignment));
+  tacs.push_back(AllocaOperation::create(vtype, size, alignment));
   auto result = tacs.back()->result(0);
   auto astate = tacs.back()->result(1);
 
@@ -1185,7 +1185,7 @@ convert_cast_instruction(::llvm::Instruction * i, tacsvector_t & tacs, context &
             { ::llvm::Instruction::ZExt, create_unop<ZExtOperation> },
             { ::llvm::Instruction::UIToFP, create_unop<UIToFPOperation> },
             { ::llvm::Instruction::SIToFP, create_unop<SIToFPOperation> },
-            { ::llvm::Instruction::SExt, create_unop<sext_op> },
+            { ::llvm::Instruction::SExt, create_unop<SExtOperation> },
             { ::llvm::Instruction::PtrToInt, create_unop<PtrToIntOperation> },
             { ::llvm::Instruction::IntToPtr, create_unop<IntegerToPointerOperation> },
             { ::llvm::Instruction::FPTrunc, create_unop<FPTruncOperation> },

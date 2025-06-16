@@ -56,7 +56,7 @@ class MemoryStateSplitOperation;
 class LambdaEntryMemoryStateSplitOperation;
 class CallEntryMemoryStateMergeOperation;
 class CallExitMemoryStateSplitOperation;
-class cfg_node;
+class ControlFlowGraphNode;
 class ExtractValue;
 class function_node;
 class InterProceduralGraphModule;
@@ -111,7 +111,7 @@ private:
   void
   convert_cfg(ControlFlowGraph & cfg, ::llvm::Function & f);
 
-  std::vector<cfg_node *>
+  std::vector<ControlFlowGraphNode *>
   ConvertBasicBlocks(const ControlFlowGraph & controlFlowGraph, ::llvm::Function & function);
 
   ::llvm::AttributeList
@@ -133,25 +133,25 @@ private:
   ConvertEnumAttribute(const llvm::enum_attribute & attribute);
 
   void
-  create_terminator_instruction(const llvm::cfg_node * node);
+  create_terminator_instruction(const llvm::ControlFlowGraphNode * node);
 
   void
-  create_switch(const cfg_node * node);
+  create_switch(const ControlFlowGraphNode * node);
 
   void
-  create_conditional_branch(const cfg_node * node);
+  create_conditional_branch(const ControlFlowGraphNode * node);
 
   void
-  create_unconditional_branch(const cfg_node * node);
+  create_unconditional_branch(const ControlFlowGraphNode * node);
 
   void
-  create_return(const cfg_node * node);
+  create_return(const ControlFlowGraphNode * node);
 
   void
   convert_tacs(const tacsvector_t & tacs);
 
   void
-  convert_instruction(const llvm::ThreeAddressCode & tac, const llvm::cfg_node * node);
+  convert_instruction(const llvm::ThreeAddressCode & tac, const llvm::ControlFlowGraphNode * node);
 
   ::llvm::Value *
   convert_operation(

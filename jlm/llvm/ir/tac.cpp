@@ -10,14 +10,9 @@
 namespace jlm::llvm
 {
 
-/* tacvariable */
+ThreeAddressCodeVariable::~ThreeAddressCodeVariable() noexcept = default;
 
-tacvariable::~tacvariable()
-{}
-
-/* taclist */
-
-taclist::~taclist()
+ThreeAddressCodeList::~ThreeAddressCodeList() noexcept
 {
   for (const auto & tac : tacs_)
     delete tac;
@@ -43,7 +38,7 @@ check_operands(
 static void
 check_results(
     const rvsdg::SimpleOperation & operation,
-    const std::vector<std::unique_ptr<tacvariable>> & results)
+    const std::vector<std::unique_ptr<ThreeAddressCodeVariable>> & results)
 {
   if (results.size() != operation.nresults())
     throw util::error("invalid number of variables.");
@@ -85,7 +80,7 @@ ThreeAddressCode::ThreeAddressCode(
 ThreeAddressCode::ThreeAddressCode(
     const rvsdg::SimpleOperation & operation,
     const std::vector<const Variable *> & operands,
-    std::vector<std::unique_ptr<tacvariable>> results)
+    std::vector<std::unique_ptr<ThreeAddressCodeVariable>> results)
     : operands_(operands),
       operation_(operation.copy()),
       results_(std::move(results))

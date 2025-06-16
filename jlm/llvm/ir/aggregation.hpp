@@ -418,14 +418,14 @@ public:
 
   BasicBlockAggregationNode() = default;
 
-  explicit BasicBlockAggregationNode(taclist && bb)
+  explicit BasicBlockAggregationNode(ThreeAddressCodeList && bb)
       : bb_(std::move(bb))
   {}
 
   std::string
   debug_string() const override;
 
-  const taclist &
+  const ThreeAddressCodeList &
   tacs() const noexcept
   {
     return bb_;
@@ -438,13 +438,13 @@ public:
   }
 
   static std::unique_ptr<AggregationNode>
-  create(taclist && bb)
+  create(ThreeAddressCodeList && bb)
   {
     return std::make_unique<BasicBlockAggregationNode>(std::move(bb));
   }
 
 private:
-  taclist bb_;
+  ThreeAddressCodeList bb_;
 };
 
 class LinearAggregationNode final : public AggregationNode

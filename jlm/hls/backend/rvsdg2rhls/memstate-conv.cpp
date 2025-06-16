@@ -42,7 +42,7 @@ memstate_conv(rvsdg::Region * region)
               &simplenode->GetOperation()))
       {
         auto new_outs =
-            hls::fork_op::create(simplenode->noutputs(), *simplenode->input(0)->origin());
+            ForkOperation::create(simplenode->noutputs(), *simplenode->input(0)->origin());
         for (size_t i = 0; i < simplenode->noutputs(); ++i)
         {
           simplenode->output(i)->divert_users(new_outs[i]);

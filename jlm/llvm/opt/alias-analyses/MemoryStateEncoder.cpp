@@ -539,7 +539,7 @@ MemoryStateEncoder::EncodeStructuralNode(rvsdg::StructuralNode & structuralNode)
 void
 MemoryStateEncoder::EncodeSimpleNode(const rvsdg::SimpleNode & simpleNode)
 {
-  if (is<alloca_op>(&simpleNode))
+  if (is<AllocaOperation>(&simpleNode))
   {
     EncodeAlloca(simpleNode);
   }
@@ -581,7 +581,7 @@ MemoryStateEncoder::EncodeSimpleNode(const rvsdg::SimpleNode & simpleNode)
 void
 MemoryStateEncoder::EncodeAlloca(const rvsdg::SimpleNode & allocaNode)
 {
-  JLM_ASSERT(is<alloca_op>(&allocaNode));
+  JLM_ASSERT(is<AllocaOperation>(&allocaNode));
 
   auto & stateMap = Context_->GetRegionalizedStateMap();
   auto & allocaMemoryNode =

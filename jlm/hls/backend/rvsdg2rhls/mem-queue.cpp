@@ -98,7 +98,7 @@ find_loop_output(jlm::rvsdg::StructuralInput * sti)
   JLM_ASSERT(sti_arg->nusers() == 1);
   auto user = *sti_arg->begin();
   auto si = dynamic_cast<jlm::rvsdg::SimpleInput *>(user);
-  JLM_ASSERT(dynamic_cast<const jlm::hls::mux_op *>(&si->node()->GetOperation()));
+  JLM_ASSERT(dynamic_cast<const jlm::hls::MuxOperation *>(&si->node()->GetOperation()));
   for (size_t i = 1; i < 3; ++i)
   {
     auto arg = si->node()->input(i)->origin();
@@ -108,11 +108,12 @@ find_loop_output(jlm::rvsdg::StructuralInput * sti)
       JLM_ASSERT(res);
       auto buffer_out = dynamic_cast<jlm::rvsdg::SimpleOutput *>(res->origin());
       JLM_ASSERT(buffer_out);
-      JLM_ASSERT(dynamic_cast<const jlm::hls::buffer_op *>(&buffer_out->node()->GetOperation()));
+      JLM_ASSERT(jlm::rvsdg::is<jlm::hls::BufferOperation>(buffer_out->node()));
       auto branch_out =
           dynamic_cast<jlm::rvsdg::SimpleOutput *>(buffer_out->node()->input(0)->origin());
       JLM_ASSERT(branch_out);
-      JLM_ASSERT(dynamic_cast<const jlm::hls::branch_op *>(&branch_out->node()->GetOperation()));
+      JLM_ASSERT(
+          dynamic_cast<const jlm::hls::BranchOperation *>(&branch_out->node()->GetOperation()));
       // branch
       for (size_t j = 0; j < 2; ++j)
       {
@@ -169,7 +170,7 @@ separate_load_edge(
       JLM_ASSERT(sti_arg->nusers() == 1);
       auto user = *sti_arg->begin();
       auto si = dynamic_cast<jlm::rvsdg::SimpleInput *>(user);
-      JLM_ASSERT(dynamic_cast<const jlm::hls::mux_op *>(&si->node()->GetOperation()));
+      JLM_ASSERT(dynamic_cast<const jlm::hls::MuxOperation *>(&si->node()->GetOperation()));
       JLM_ASSERT(buffer->nusers() == 1);
       // use a separate vector to check if the loop contains stores
       std::vector<jlm::rvsdg::Output *> loop_store_addresses;
@@ -199,17 +200,17 @@ separate_load_edge(
       auto sn = si->node();
       auto op = &si->node()->GetOperation();
 
-      if (auto br = dynamic_cast<const jlm::hls::branch_op *>(op))
+      if (auto br = dynamic_cast<const jlm::hls::BranchOperation *>(op))
       {
         if (!br->loop)
         {
           // start of gamma
           auto load_branch_out =
-              jlm::hls::branch_op::create(*sn->input(0)->origin(), *addr_edge, false);
+              jlm::hls::BranchOperation::create(*sn->input(0)->origin(), *addr_edge, false);
           for (size_t i = 0; i < sn->noutputs(); ++i)
           {
             // dummy user for edge
-            auto dummy_user_tmp = jlm::hls::sink_op::create(*load_branch_out[i]);
+            auto dummy_user_tmp = jlm::hls::SinkOperation::create(*load_branch_out[i]);
             // Sink ops doesn't have any outputs so we get an empty vector back
             // But we are not allowed to discard the vector and can't have unused variables
             // So adding a meaningless assert to get it to compile
@@ -233,9 +234,9 @@ separate_load_edge(
           // create mux
           JLM_ASSERT(mem_edge->nusers() == 1);
           auto mux_user = jlm::util::AssertedCast<jlm::rvsdg::SimpleInput>(*mem_edge->begin());
-          auto mux_op =
-              jlm::util::AssertedCast<const jlm::hls::mux_op>(&mux_user->node()->GetOperation());
-          addr_edge = jlm::hls::mux_op::create(
+          auto mux_op = jlm::util::AssertedCast<const jlm::hls::MuxOperation>(
+              &mux_user->node()->GetOperation());
+          addr_edge = jlm::hls::MuxOperation::create(
               *mux_user->node()->input(0)->origin(),
               load_branch_out,
               mux_op->discarding,
@@ -247,12 +248,12 @@ separate_load_edge(
         {
           // end of loop
           auto load_user_input = jlm::util::AssertedCast<jlm::rvsdg::SimpleInput>(addr_edge_user);
-          JLM_ASSERT(
-              dynamic_cast<const jlm::hls::branch_op *>(&load_user_input->node()->GetOperation()));
+          JLM_ASSERT(dynamic_cast<const jlm::hls::BranchOperation *>(
+              &load_user_input->node()->GetOperation()));
           return nullptr;
         }
       }
-      else if (auto mx = dynamic_cast<const jlm::hls::mux_op *>(op))
+      else if (auto mx = dynamic_cast<const jlm::hls::MuxOperation *>(op))
       {
         JLM_ASSERT(!mx->loop);
         // end of gamma
@@ -262,7 +263,7 @@ separate_load_edge(
       }
       else if (dynamic_cast<const jlm::llvm::StoreNonVolatileOperation *>(op))
       {
-        auto sg_out = jlm::hls::state_gate_op::create(*sn->input(0)->origin(), { addr_edge });
+        auto sg_out = jlm::hls::StateGateOperation::create(*sn->input(0)->origin(), { addr_edge });
         addr_edge = sg_out[1];
         addr_edge_user->divert_to(addr_edge);
         store_addresses.push_back(jlm::hls::route_to_region_rhls((*load)->region(), sg_out[0]));
@@ -306,10 +307,10 @@ separate_load_edge(
         {
           // create state gate for addr edge
           auto addr_sg_out =
-              jlm::hls::state_gate_op::create(*sn->input(0)->origin(), { addr_edge });
+              jlm::hls::StateGateOperation::create(*sn->input(0)->origin(), { addr_edge });
           addr_edge = addr_sg_out[1];
           addr_edge_user->divert_to(addr_edge);
-          auto addr_sg_out2 = jlm::hls::state_gate_op::create(*addr_sg_out[0], { addr_edge });
+          auto addr_sg_out2 = jlm::hls::StateGateOperation::create(*addr_sg_out[0], { addr_edge });
           addr_edge = addr_sg_out2[1];
           addr_edge_user->divert_to(addr_edge);
           // remove state edges from load
@@ -319,7 +320,8 @@ separate_load_edge(
               lo->GetLoadedType(),
               lo->GetAlignment());
           // create state gate for mem edge and load data
-          auto mem_sg_out = jlm::hls::state_gate_op::create(*new_load_outputs[0], { mem_edge });
+          auto mem_sg_out =
+              jlm::hls::StateGateOperation::create(*new_load_outputs[0], { mem_edge });
           mem_edge = mem_sg_out[1];
 
           sn->output(0)->divert_users(new_load_outputs[0]);
@@ -334,7 +336,7 @@ separate_load_edge(
           mem_edge = sn->output(1);
         }
       }
-      else if (dynamic_cast<const jlm::hls::state_gate_op *>(op))
+      else if (dynamic_cast<const jlm::hls::StateGateOperation *>(op))
       {
         mem_edge = sn->output(1);
       }
@@ -381,7 +383,7 @@ process_loops(jlm::rvsdg::Output * state_edge)
     {
       auto sn = si->node();
       auto op = &si->node()->GetOperation();
-      auto br = dynamic_cast<const jlm::hls::branch_op *>(op);
+      auto br = dynamic_cast<const jlm::hls::BranchOperation *>(op);
       if (br && !br->loop)
       {
         // start of gamma
@@ -390,7 +392,7 @@ process_loops(jlm::rvsdg::Output * state_edge)
           state_edge = process_loops(sn->output(i));
         }
       }
-      else if (dynamic_cast<const jlm::hls::mux_op *>(op))
+      else if (jlm::rvsdg::is<jlm::hls::MuxOperation>(*op))
       {
         // end of gamma
         JLM_ASSERT(sn->noutputs() == 1);
@@ -466,7 +468,7 @@ process_loops(jlm::rvsdg::Output * state_edge)
         {
           JLM_ASSERT(state_gate_addr_in->origin()->region() == store_addresses[j]->region());
           JLM_ASSERT(store_dequeues[j]->region() == store_addresses[j]->region());
-          state_gate_addr_in->divert_to(jlm::hls::addr_queue_op::create(
+          state_gate_addr_in->divert_to(jlm::hls::AddressQueueOperation::create(
               *state_gate_addr_in->origin(),
               *store_addresses[j],
               *store_dequeues[j],
