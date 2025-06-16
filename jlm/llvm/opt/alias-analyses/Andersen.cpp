@@ -1408,11 +1408,11 @@ Andersen::Analyze(
   statistics->StopAndersenStatistics();
   statisticsCollector.CollectDemandedStatistics(std::move(statistics));
 
-  // Solve again if double-checking against naive is enabled
-  if (testAllConfigsIterations || doubleCheck || useExactConfig)
+  // Solve again if double-checking, testing all configs, or testing a specific config
+  if (testAllConfigsIterations || doubleCheck || useExactConfig.has_value())
   {
     if (doubleCheck)
-      std::cerr << "Double checking Andersen analysis using naive solving" << std::endl;
+      std::cout << "Double checking Andersen analysis constraint solving" << std::endl;
 
     // If asked to only use one config, start using only that one from now on.
     // If asked to test all configurations for N iterations, use all configurations.
