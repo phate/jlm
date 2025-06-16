@@ -93,7 +93,7 @@ while [[ "$#" -ge 1 ]] ; do
 done
 
 
-CXXFLAGS_COMMON="--std=c++17 -Wall -Wpedantic -Wextra -Wno-unused-parameter -gdwarf-4 -g"
+CXXFLAGS_COMMON="--std=c++17 -Wall -Wpedantic -Wextra -Wno-unused-parameter -Werror -Wfatal-errors -gdwarf-4 -g"
 CPPFLAGS_COMMON="-I. -Itests"
 
 CPPFLAGS_LLVM=$(${LLVM_CONFIG_BIN} --cflags)
