@@ -5,8 +5,11 @@
 
 #include <jlm/llvm/ir/types.hpp>
 #include <jlm/util/Hash.hpp>
+#include <jlm/util/Math.hpp>
 #include <jlm/util/strfmt.hpp>
 
+#include <jlm/rvsdg/bitstring/type.hpp>
+#include <numeric>
 #include <unordered_map>
 
 namespace jlm::llvm
@@ -288,6 +291,156 @@ MemoryStateType::Create()
 {
   static const MemoryStateType instance;
   return std::shared_ptr<const MemoryStateType>(std::shared_ptr<void>(), &instance);
+}
+
+size_t
+GetLlvmTypeSize(const rvsdg::ValueType & type)
+{
+  if (const auto bits = dynamic_cast<const rvsdg::bittype *>(&type))
+  {
+    // Assume 8 bits per byte, and round up to a power of 2 bytes
+    const auto bytes = (bits->nbits() + 7) / 8;
+    return util::RoundUpToPowerOf2(bytes);
+  }
+  if (is<PointerType>(type))
+  {
+    // Assume 64-bit pointers
+    return 8;
+  }
+  if (const auto arrayType = dynamic_cast<const ArrayType *>(&type))
+  {
+    return arrayType->nelements() * GetLlvmTypeSize(*arrayType->GetElementType());
+  }
+  if (const auto floatType = dynamic_cast<const FloatingPointType *>(&type))
+  {
+    switch (floatType->size())
+    {
+    case fpsize::half:
+      return 2;
+    case fpsize::flt:
+      return 4;
+    case fpsize::dbl:
+      return 8;
+    case fpsize::fp128:
+      return 16;
+    case fpsize::x86fp80:
+      return 16; // Will never actually be written to memory, but we round up
+    default:
+      JLM_UNREACHABLE("Unknown float size");
+    }
+  }
+  if (const auto structType = dynamic_cast<const StructType *>(&type))
+  {
+    size_t totalSize = 0;
+    size_t alignment = 1;
+
+    const auto & decl = structType->GetDeclaration();
+    // A packed struct has alignment 1, and all fields are tightly packed
+    const auto isPacked = structType->IsPacked();
+
+    for (size_t i = 0; i < decl.NumElements(); i++)
+    {
+      auto & field = decl.GetElement(i);
+      auto fieldSize = GetLlvmTypeSize(field);
+      auto fieldAlignment = isPacked ? 1 : GetTypeAlignment(field);
+
+      // Add the size of the field, including any needed padding
+      totalSize = util::RoundUpToMultipleOf(totalSize, fieldAlignment);
+      totalSize += fieldSize;
+
+      // The struct as a whole must be at least as aligned as each field
+      alignment = std::lcm(alignment, fieldAlignment);
+    }
+
+    // Round size up to a multiple of alignment
+    totalSize = util::RoundUpToMultipleOf(totalSize, alignment);
+
+    // If the struct has 0 fields, its size becomes 0.
+    // In C++, where types of size 0 are forbidden, clang will have inserted a dummy i8 field.
+
+    return totalSize;
+  }
+  if (const auto vectorType = dynamic_cast<const VectorType *>(&type))
+  {
+    return vectorType->size() * GetLlvmTypeSize(*vectorType->Type());
+  }
+  if (is<rvsdg::FunctionType>(type))
+  {
+    // We should never read from or write to functions, so give the size 0
+    return 0;
+  }
+
+  std::cerr << "unknown type: " << typeid(type).name() << std::endl;
+  JLM_UNREACHABLE("Unknown type");
+}
+
+size_t
+GetLlvmTypeAlignment(const rvsdg::ValueType & type)
+{
+  if (is<rvsdg::bittype>(type))
+  {
+    return GetLlvmTypeSize(type);
+  }
+  if (is<PointerType>(type) || is<FloatingPointType>(type))
+  {
+    return GetLlvmTypeSize(type);
+  }
+  if (const auto arrayType = dynamic_cast<const ArrayType *>(&type))
+  {
+    return GetLlvmTypeAlignment(*arrayType->GetElementType());
+  }
+  if (const auto structType = dynamic_cast<const StructType *>(&type))
+  {
+    const auto & decl = structType->GetDeclaration();
+    // A packed struct has alignment 1, and all fields are tightly packed
+    if (structType->IsPacked())
+      return 1;
+
+    size_t alignment = 1;
+
+    for (size_t i = 0; i < decl.NumElements(); i++)
+    {
+      auto & field = decl.GetElement(i);
+      auto fieldAlignment = GetLlvmTypeAlignment(field);
+
+      // The struct as a whole must be at least as aligned as each field
+      alignment = std::lcm(alignment, fieldAlignment);
+    }
+
+    return alignment;
+  }
+  if (const auto vectorType = dynamic_cast<const VectorType *>(&type))
+  {
+    return GetLlvmTypeAlignment(*vectorType->Type());
+  }
+
+  JLM_UNREACHABLE("Unknown type");
+}
+
+size_t
+GetStructFieldOffset(const StructType & structType, size_t fieldIndex)
+{
+  const auto & decl = structType.GetDeclaration();
+  const auto isPacked = structType.IsPacked();
+
+  size_t offset = 0;
+
+  for (size_t i = 0; i < decl.NumElements(); i++)
+  {
+    auto & field = decl.GetElement(i);
+
+    // First round up to the alignment of the field
+    auto fieldAlignment = isPacked ? 1 : GetLlvmTypeAlignment(field);
+    offset = util::RoundUpToMultipleOf(offset, fieldAlignment);
+
+    if (i == fieldIndex)
+      return offset;
+
+    // Add the size of the field
+    offset += GetLlvmTypeSize(field);
+  }
+
+  JLM_UNREACHABLE("Invalid fieldIndex in GetStructFieldOffset");
 }
 
 }

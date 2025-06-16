@@ -9,6 +9,7 @@
 #include <jlm/llvm/ir/operators/delta.hpp>
 #include <jlm/llvm/ir/operators/IntegerOperations.hpp>
 #include <jlm/llvm/ir/operators/IOBarrier.hpp>
+#include <jlm/llvm/ir/types.hpp>
 #include <jlm/llvm/opt/alias-analyses/AliasAnalysis.hpp>
 #include <jlm/rvsdg/gamma.hpp>
 #include <jlm/rvsdg/lambda.hpp>
@@ -121,10 +122,10 @@ std::optional<size_t>
 PointsToGraphAliasAnalysis::GetMemoryNodeSize(const PointsToGraph::MemoryNode & node)
 {
   if (auto delta = dynamic_cast<const PointsToGraph::DeltaNode *>(&node))
-    return GetLlvmTypeSize(*delta->GetDeltaNode().GetOperation().Type());
+    return GetTypeSize(*delta->GetDeltaNode().GetOperation().Type());
   if (auto import = dynamic_cast<const PointsToGraph::ImportNode *>(&node))
   {
-    auto size = GetLlvmTypeSize(*import->GetArgument().ValueType());
+    auto size = GetTypeSize(*import->GetArgument().ValueType());
     // Workaround for imported incomplete types appearing to have size 0 in the LLVM IR
     if (size == 0)
       return std::nullopt;
@@ -132,12 +133,12 @@ PointsToGraphAliasAnalysis::GetMemoryNodeSize(const PointsToGraph::MemoryNode & 
   if (auto alloca = dynamic_cast<const PointsToGraph::AllocaNode *>(&node))
   {
     const auto & allocaNode = alloca->GetAllocaNode();
-    const auto allocaOp = util::AssertedCast<const alloca_op>(&allocaNode.GetOperation());
+    const auto allocaOp = util::AssertedCast<const AllocaOperation>(&allocaNode.GetOperation());
 
     // An alloca has a count parameter, which on rare occasions is not just the constant 1.
     const auto elementCount = GetConstantIntegerValue(*allocaNode.input(0)->origin());
     if (elementCount.has_value())
-      return *elementCount * GetLlvmTypeSize(*allocaOp->ValueType());
+      return *elementCount * GetTypeSize(*allocaOp->ValueType());
   }
   if (auto malloc = dynamic_cast<const PointsToGraph::MallocNode *>(&node))
   {
@@ -382,7 +383,7 @@ CalculateIntraTypeGepOffset(
   if (auto array = dynamic_cast<const ArrayType *>(&type))
   {
     const auto & elementType = array->GetElementType();
-    int64_t offset = *indexingValue * GetLlvmTypeSize(*elementType);
+    int64_t offset = *indexingValue * GetTypeSize(*elementType);
 
     // Get the offset into the element type as well, if any
     const auto subOffset = CalculateIntraTypeGepOffset(gepNode, inputIndex + 1, *elementType);
@@ -424,7 +425,7 @@ LocalAliasAnalysis::CalculateGepOffset(const rvsdg::SimpleNode & gepNode)
   if (!wholeTypeIndexing.has_value())
     return std::nullopt;
 
-  int64_t offset = *wholeTypeIndexing * GetLlvmTypeSize(pointeeType);
+  int64_t offset = *wholeTypeIndexing * GetTypeSize(pointeeType);
 
   // In addition to offsetting by whole types, a GEP can also offset within a type
   const auto subOffset = CalculateIntraTypeGepOffset(gepNode, 2, pointeeType);
@@ -601,7 +602,7 @@ LocalAliasAnalysis::IsOriginalOrigin(const rvsdg::Output & pointer)
   // Is pointer the output of one of the nodes
   if (const auto node = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(pointer))
   {
-    if (is<alloca_op>(node))
+    if (is<AllocaOperation>(node))
       return true;
 
     if (is<malloc_op>(node))
@@ -626,21 +627,21 @@ std::optional<size_t>
 LocalAliasAnalysis::GetOriginalOriginSize(const rvsdg::Output & pointer)
 {
   if (auto delta = rvsdg::TryGetOwnerNode<delta::node>(pointer))
-    return GetLlvmTypeSize(*delta->GetOperation().Type());
+    return GetTypeSize(*delta->GetOperation().Type());
   if (auto import = dynamic_cast<const GraphImport *>(&pointer))
   {
-    auto size = GetLlvmTypeSize(*import->ValueType());
+    auto size = GetTypeSize(*import->ValueType());
     // Workaround for imported incomplete types appearing to have size 0 in the LLVM IR
     if (size == 0)
       return std::nullopt;
   }
   if (auto node = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(pointer))
   {
-    if (auto allocaOp = dynamic_cast<const alloca_op *>(&node->GetOperation()))
+    if (auto allocaOp = dynamic_cast<const AllocaOperation *>(&node->GetOperation()))
     {
       const auto elementCount = GetConstantIntegerValue(*node->input(0)->origin());
       if (elementCount.has_value())
-        return *elementCount * GetLlvmTypeSize(*allocaOp->ValueType());
+        return *elementCount * GetTypeSize(*allocaOp->ValueType());
     }
     if (is<malloc_op>(node))
     {
@@ -771,7 +772,7 @@ LocalAliasAnalysis::IsOriginalOriginFullyTraceable(const rvsdg::Output & pointer
 {
   // The only original origins that can be fully traced for escaping are ALLOCAs
   const auto originalNode = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(pointer);
-  if (!is<alloca_op>(originalNode))
+  if (!is<AllocaOperation>(originalNode))
     return false;
 
   // Check if the result for this ALLOCA is already memoized
@@ -987,167 +988,6 @@ GetConstantIntegerValue(const rvsdg::Output & output)
   }
 
   return std::nullopt;
-}
-
-/**
- * @return the given \p size, rounded up to be a multiple of the given \p alignment
- */
-size_t
-RoundUpToMultipleOf(size_t size, size_t alignment)
-{
-  const auto miss = size % alignment;
-  if (miss == 0)
-    return size;
-  return size + alignment - miss;
-}
-
-size_t
-GetLlvmTypeSize(const rvsdg::ValueType & type)
-{
-  if (const auto bits = dynamic_cast<const rvsdg::bittype *>(&type))
-  {
-    // Assume 8 bits per byte, and round up to a power of 2 bytes
-    const auto bytes = (bits->nbits() + 7) / 8;
-    return util::RoundUpToPowerOf2(bytes);
-  }
-  if (is<PointerType>(type))
-  {
-    // Assume 64-bit pointers
-    return 8;
-  }
-  if (const auto arrayType = dynamic_cast<const ArrayType *>(&type))
-  {
-    return arrayType->nelements() * GetLlvmTypeSize(*arrayType->GetElementType());
-  }
-  if (const auto floatType = dynamic_cast<const FloatingPointType *>(&type))
-  {
-    switch (floatType->size())
-    {
-    case fpsize::half:
-      return 2;
-    case fpsize::flt:
-      return 4;
-    case fpsize::dbl:
-      return 8;
-    case fpsize::fp128:
-      return 16;
-    case fpsize::x86fp80:
-      return 16; // Will never actually be written to memory, but we round up
-    default:
-      JLM_UNREACHABLE("Unknown float size");
-    }
-  }
-  if (const auto structType = dynamic_cast<const StructType *>(&type))
-  {
-    size_t totalSize = 0;
-    size_t alignment = 1;
-
-    const auto & decl = structType->GetDeclaration();
-    // A packed struct has alignment 1, and all fields are tightly packed
-    const auto isPacked = structType->IsPacked();
-
-    for (size_t i = 0; i < decl.NumElements(); i++)
-    {
-      auto & field = decl.GetElement(i);
-      auto fieldSize = GetLlvmTypeSize(field);
-      auto fieldAlignment = isPacked ? 1 : GetLlvmTypeAlignment(field);
-
-      // Add the size of the field, including any needed padding
-      totalSize = RoundUpToMultipleOf(totalSize, fieldAlignment);
-      totalSize += fieldSize;
-
-      // The struct as a whole must be at least as aligned as each field
-      alignment = std::lcm(alignment, fieldAlignment);
-    }
-
-    // Round size up to a multiple of alignment
-    totalSize = RoundUpToMultipleOf(totalSize, alignment);
-
-    // TODO: We assume C and allow empty structs. In C++, the size of an empty struct is 1 byte.
-
-    return totalSize;
-  }
-  if (const auto vectorType = dynamic_cast<const VectorType *>(&type))
-  {
-    return vectorType->size() * GetLlvmTypeSize(*vectorType->Type());
-  }
-  if (is<rvsdg::FunctionType>(type))
-  {
-    // We should never read from or write to functions, so give the size 0
-    return 0;
-  }
-
-  std::cerr << "unknown type: " << typeid(type).name() << std::endl;
-  JLM_UNREACHABLE("Unknown type");
-}
-
-size_t
-GetLlvmTypeAlignment(const rvsdg::ValueType & type)
-{
-  if (is<rvsdg::bittype>(type))
-  {
-    return GetLlvmTypeSize(type);
-  }
-  if (is<PointerType>(type) || is<FloatingPointType>(type))
-  {
-    return GetLlvmTypeSize(type);
-  }
-  if (const auto arrayType = dynamic_cast<const ArrayType *>(&type))
-  {
-    return GetLlvmTypeAlignment(*arrayType->GetElementType());
-  }
-  if (const auto structType = dynamic_cast<const StructType *>(&type))
-  {
-    const auto & decl = structType->GetDeclaration();
-    // A packed struct has alignment 1, and all fields are tightly packed
-    if (structType->IsPacked())
-      return 1;
-
-    size_t alignment = 1;
-
-    for (size_t i = 0; i < decl.NumElements(); i++)
-    {
-      auto & field = decl.GetElement(i);
-      auto fieldAlignment = GetLlvmTypeAlignment(field);
-
-      // The struct as a whole must be at least as aligned as each field
-      alignment = std::lcm(alignment, fieldAlignment);
-    }
-
-    return alignment;
-  }
-  if (const auto vectorType = dynamic_cast<const VectorType *>(&type))
-  {
-    return GetLlvmTypeAlignment(*vectorType->Type());
-  }
-
-  JLM_UNREACHABLE("Unknown type");
-}
-
-size_t
-GetStructFieldOffset(const StructType & structType, size_t fieldIndex)
-{
-  const auto & decl = structType.GetDeclaration();
-  const auto isPacked = structType.IsPacked();
-
-  size_t offset = 0;
-
-  for (size_t i = 0; i < decl.NumElements(); i++)
-  {
-    auto & field = decl.GetElement(i);
-
-    // First round up to the alignment of the field
-    auto fieldAlignment = isPacked ? 1 : GetLlvmTypeAlignment(field);
-    offset = RoundUpToMultipleOf(offset, fieldAlignment);
-
-    if (i == fieldIndex)
-      return offset;
-
-    // Add the size of the field
-    offset += GetLlvmTypeSize(field);
-  }
-
-  JLM_UNREACHABLE("Invalid fieldIndex in GetStructFieldOffset");
 }
 
 }

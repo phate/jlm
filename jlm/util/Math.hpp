@@ -55,6 +55,31 @@ RoundUpToPowerOf2(T value)
 }
 
 /**
+ * Rounds the given \p value up to a multiple of \p multiple.
+ * The multiple must be a strictly positive integer.
+ *
+ * Examples:
+ * RoundUpToMultipleOf(3, 5) = 5
+ * RoundUpToMultipleOf(5, 5) = 5
+ * RoundUpToMultipleOf(6, 5) = 10
+ * RoundUpToMultipleOf(0, 5) = 0
+ * RoundUpToMultipleOf(-11, 5) = -10
+ *
+ * @return the result of rounding up, if value is not already a whole multiple
+ */
+template<class T>
+static constexpr T
+RoundUpToMultipleOf(T value, T multiple)
+{
+  const auto miss = value % multiple;
+  if (miss < 0)
+    return value - miss;
+  if (miss == 0)
+    return value;
+  return value + multiple - miss;
+}
+
+/**
  * The number of bits needed to hold the given \p value.
  *
  * Examples:
@@ -85,7 +110,7 @@ BitWidthOfEnum(T endValue)
 
   using UnderlyingT = std::underlying_type_t<T>;
 
-  // To appease gcc warnings, the returned bit width is large enough to hold the endValue as well,
+  // To appease gcc warings, the returned bit width is large enough to hold the endValue as well,
   // even if it is just a sentinel COUNT value
   return BitsRequiredToRepresent(static_cast<UnderlyingT>(endValue));
 }

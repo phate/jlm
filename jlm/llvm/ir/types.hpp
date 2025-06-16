@@ -487,6 +487,33 @@ IsAggregateType(const jlm::rvsdg::Type & type)
   return jlm::rvsdg::is<ArrayType>(type) || jlm::rvsdg::is<StructType>(type);
 }
 
+/**
+ * Returns the size of the given type's in-memory representation, in bytes.
+ * The size must be a multiple of the alignment, just like the C operator sizeof().
+ * @param type the ValueType
+ * @return the byte size of the type
+ */
+[[nodiscard]] size_t
+GetTypeSize(const rvsdg::ValueType & type);
+
+/**
+ * Returns the alignment of the given type's in-memory representation, in bytes.
+ * @param type the ValueType
+ * @return the byte alignment of the type
+ */
+[[nodiscard]] size_t
+GetTypeAlignment(const rvsdg::ValueType & type);
+
+/**
+ * Gets the offset at which the given field is located in memory.
+ * Respects alignment of each field, just like in C. Supports packed structs.
+ * @param structType the struct type
+ * @param fieldIndex the index of the field, must be a valid field
+ * @return the byte offset of the field, relative to the beginning of the struct.
+ */
+[[nodiscard]] size_t
+GetStructFieldOffset(const StructType & structType, size_t fieldIndex);
+
 }
 
 #endif
