@@ -136,16 +136,20 @@ private:
 
 /**
  * Class for making alias analysis queries using stateless ad hoc IR traversal.
+ * It roughly corresponds to BasicAA from LLVM.
  * It is unable to trace via memory or across function calls.
  * It tries to keep track of pointer offsets when possible,
  * and can respond NoAlias when the queried pointers are based on distinct offsets
  * into the same base pointer. If the offsets are identical, MustAlias is returned.
  */
-class BasicAliasAnalysis final : public AliasAnalysis
+class LocalAliasAnalysis final : public AliasAnalysis
 {
+  // When doing origin tracing, give up if the trace set grows larger than this
+  static constexpr size_t MaxTraceCollectionSize = 1000;
+
 public:
-  BasicAliasAnalysis();
-  ~BasicAliasAnalysis() override;
+  LocalAliasAnalysis();
+  ~LocalAliasAnalysis() override;
 
   std::string
   ToString() const override;

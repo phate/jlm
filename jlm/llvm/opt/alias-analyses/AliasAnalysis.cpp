@@ -21,11 +21,6 @@
 namespace jlm::llvm::aa
 {
 
-/**
- * When doing origin tracing in BasicAliasAnalysis, when should we give up?
- */
-constexpr size_t MaxTraceCollectionSize = 1000;
-
 AliasAnalysis::AliasAnalysis() = default;
 
 AliasAnalysis::~AliasAnalysis() = default;
@@ -198,15 +193,15 @@ ChainedAliasAnalysis::ToString() const
   return util::strfmt("ChainedAA(", First_.ToString(), ",", Second_.ToString(), ")");
 }
 
-BasicAliasAnalysis::BasicAliasAnalysis()
+LocalAliasAnalysis::LocalAliasAnalysis()
 {}
 
-BasicAliasAnalysis::~BasicAliasAnalysis() = default;
+LocalAliasAnalysis::~LocalAliasAnalysis() = default;
 
 std::string
-BasicAliasAnalysis::ToString() const
+LocalAliasAnalysis::ToString() const
 {
-  return "BasicAA";
+  return "LocalAA";
 }
 
 /**
@@ -219,7 +214,7 @@ BasicAliasAnalysis::ToString() const
  * If the offset is not present, that means
  *  p = base pointer + <unknown>
  */
-struct BasicAliasAnalysis::TracedPointerOrigin
+struct LocalAliasAnalysis::TracedPointerOrigin
 {
   const rvsdg::Output * BasePointer;
   std::optional<int64_t> Offset;
@@ -228,7 +223,7 @@ struct BasicAliasAnalysis::TracedPointerOrigin
 /**
  * Represents a collection of possible origins of a pointer value.
  */
-struct BasicAliasAnalysis::TraceCollection
+struct LocalAliasAnalysis::TraceCollection
 {
   /**
    * Contains all outputs visited while tracing, to avoid re-visiting.
@@ -245,7 +240,7 @@ struct BasicAliasAnalysis::TraceCollection
 };
 
 AliasAnalysis::AliasQueryResponse
-BasicAliasAnalysis::Query(
+LocalAliasAnalysis::Query(
     const rvsdg::Output & p1,
     size_t s1,
     const rvsdg::Output & p2,
@@ -420,7 +415,7 @@ CalculateIntraTypeGepOffset(
 }
 
 std::optional<int64_t>
-BasicAliasAnalysis::CalculateGepOffset(const rvsdg::SimpleNode & gepNode)
+LocalAliasAnalysis::CalculateGepOffset(const rvsdg::SimpleNode & gepNode)
 {
   const auto gep = util::AssertedCast<const GetElementPtrOperation>(&gepNode.GetOperation());
 
@@ -443,8 +438,8 @@ BasicAliasAnalysis::CalculateGepOffset(const rvsdg::SimpleNode & gepNode)
   return offset + *subOffset;
 }
 
-BasicAliasAnalysis::TracedPointerOrigin
-BasicAliasAnalysis::TracePointerOriginPrecise(const rvsdg::Output & p)
+LocalAliasAnalysis::TracedPointerOrigin
+LocalAliasAnalysis::TracePointerOriginPrecise(const rvsdg::Output & p)
 {
   // The original pointer p is always equal to base + byte offset
   const rvsdg::Output * base = &p;
@@ -478,7 +473,7 @@ BasicAliasAnalysis::TracePointerOriginPrecise(const rvsdg::Output & p)
 }
 
 AliasAnalysis::AliasQueryResponse
-BasicAliasAnalysis::QueryOffsets(
+LocalAliasAnalysis::QueryOffsets(
     std::optional<int64_t> offset1,
     size_t s1,
     std::optional<int64_t> offset2,
@@ -505,7 +500,7 @@ BasicAliasAnalysis::QueryOffsets(
 }
 
 bool
-BasicAliasAnalysis::TraceAllPointerOrigins(TracedPointerOrigin p, TraceCollection & traceCollection)
+LocalAliasAnalysis::TraceAllPointerOrigins(TracedPointerOrigin p, TraceCollection & traceCollection)
 {
   if (traceCollection.AllTracedOutputs.size() >= MaxTraceCollectionSize)
     return false;
@@ -595,7 +590,7 @@ BasicAliasAnalysis::TraceAllPointerOrigins(TracedPointerOrigin p, TraceCollectio
 }
 
 bool
-BasicAliasAnalysis::IsOriginalOrigin(const rvsdg::Output & pointer)
+LocalAliasAnalysis::IsOriginalOrigin(const rvsdg::Output & pointer)
 {
   // Each GraphImport represents a unique object
   if (dynamic_cast<const GraphImport *>(&pointer))
@@ -621,7 +616,7 @@ BasicAliasAnalysis::IsOriginalOrigin(const rvsdg::Output & pointer)
 }
 
 bool
-BasicAliasAnalysis::HasOnlyOriginalTopOrigins(TraceCollection & traces)
+LocalAliasAnalysis::HasOnlyOriginalTopOrigins(TraceCollection & traces)
 {
   for (auto [output, offset] : traces.TopOrigins)
   {
@@ -632,7 +627,7 @@ BasicAliasAnalysis::HasOnlyOriginalTopOrigins(TraceCollection & traces)
 }
 
 std::optional<size_t>
-BasicAliasAnalysis::GetOriginalOriginSize(const rvsdg::Output & pointer)
+LocalAliasAnalysis::GetOriginalOriginSize(const rvsdg::Output & pointer)
 {
   if (auto delta = rvsdg::TryGetOwnerNode<delta::node>(pointer))
     return GetLlvmTypeSize(*delta->GetOperation().Type());
@@ -663,7 +658,7 @@ BasicAliasAnalysis::GetOriginalOriginSize(const rvsdg::Output & pointer)
 }
 
 std::optional<size_t>
-BasicAliasAnalysis::GetRemainingSize(TracedPointerOrigin trace)
+LocalAliasAnalysis::GetRemainingSize(TracedPointerOrigin trace)
 {
   const auto totalSize = GetOriginalOriginSize(*trace.BasePointer);
   if (!totalSize.has_value())
@@ -680,7 +675,7 @@ BasicAliasAnalysis::GetRemainingSize(TracedPointerOrigin trace)
 }
 
 void
-BasicAliasAnalysis::RemoveTopOriginsWithRemainingSizeBelow(TraceCollection & traces, size_t s)
+LocalAliasAnalysis::RemoveTopOriginsWithRemainingSizeBelow(TraceCollection & traces, size_t s)
 {
   auto it = traces.TopOrigins.begin();
   while (it != traces.TopOrigins.end())
@@ -694,7 +689,7 @@ BasicAliasAnalysis::RemoveTopOriginsWithRemainingSizeBelow(TraceCollection & tra
 }
 
 size_t
-BasicAliasAnalysis::GetMinimumOffsetFromStart(TraceCollection & traces)
+LocalAliasAnalysis::GetMinimumOffsetFromStart(TraceCollection & traces)
 {
   std::optional<size_t> minimumOffset;
   for (auto [output, offset] : traces.TopOrigins)
@@ -721,7 +716,7 @@ BasicAliasAnalysis::GetMinimumOffsetFromStart(TraceCollection & traces)
 }
 
 void
-BasicAliasAnalysis::RemoveTopOriginsSmallerThanSize(TraceCollection & traces, size_t s)
+LocalAliasAnalysis::RemoveTopOriginsSmallerThanSize(TraceCollection & traces, size_t s)
 {
   auto it = traces.TopOrigins.begin();
   while (it != traces.TopOrigins.end())
@@ -735,7 +730,7 @@ BasicAliasAnalysis::RemoveTopOriginsSmallerThanSize(TraceCollection & traces, si
 }
 
 void
-BasicAliasAnalysis::RemoveTopOriginsWithinTheFirstNBytes(
+LocalAliasAnalysis::RemoveTopOriginsWithinTheFirstNBytes(
     TraceCollection & traces,
     size_t s,
     size_t N)
@@ -755,7 +750,7 @@ BasicAliasAnalysis::RemoveTopOriginsWithinTheFirstNBytes(
 }
 
 bool
-BasicAliasAnalysis::DoTraceCollectionsOverlap(
+LocalAliasAnalysis::DoTraceCollectionsOverlap(
     TraceCollection & tc1,
     size_t s1,
     TraceCollection & tc2,
@@ -776,7 +771,7 @@ BasicAliasAnalysis::DoTraceCollectionsOverlap(
 }
 
 bool
-BasicAliasAnalysis::IsOriginalOriginFullyTraceable(const rvsdg::Output & pointer)
+LocalAliasAnalysis::IsOriginalOriginFullyTraceable(const rvsdg::Output & pointer)
 {
   // The only original origins that can be fully traced for escaping are ALLOCAs
   const auto originalNode = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(pointer);
@@ -885,7 +880,7 @@ BasicAliasAnalysis::IsOriginalOriginFullyTraceable(const rvsdg::Output & pointer
 }
 
 bool
-BasicAliasAnalysis::HasOnlyFullyTraceableTopOrigins(TraceCollection & traces)
+LocalAliasAnalysis::HasOnlyFullyTraceableTopOrigins(TraceCollection & traces)
 {
   for (auto [topOrigin, _] : traces.TopOrigins)
   {

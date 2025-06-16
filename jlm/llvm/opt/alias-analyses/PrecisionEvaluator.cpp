@@ -21,6 +21,9 @@ namespace jlm::llvm::aa
  */
 static constexpr bool RemoveDuplicatePointers = false;
 
+/**
+ * Enables dumping a dot graph of the
+ */
 static constexpr bool OutputAliasingGraph = false;
 
 static constexpr auto DefaultMode = PrecisionEvaluator::Mode::ClobberingStores;
@@ -41,15 +44,18 @@ PrecisionEvaluationModeToString(PrecisionEvaluator::Mode mode)
 
 class PrecisionEvaluator::PrecisionStatistics final : public util::Statistics
 {
-  // This statistic places additional information in a separate file. This is the path of the file.
   static constexpr auto PrecisionEvaluationMode_ = "PrecisionEvaluationMode";
+  // The output from calling ToString on the AliasAnalysis
   static constexpr auto PairwiseAliasAnalysisType_ = "PairwiseAliasAnalysisType";
   static constexpr auto IsRemovingDuplicatePointers_ = "IsRemovingDuplicatePointers";
+  // This statistic places additional information in a separate file. This is the path of the file.
   static constexpr auto PrecisionDumpFile_ = "DumpFile";
   static constexpr auto ModuleNumClobbers_ = "ModuleNumClobbers";
+  // The rate of each response type, for the average clobbering operations. Should sum up to 1
   static constexpr auto ClobberAverageNoAlias = "ClobberAverageNoAlias";
   static constexpr auto ClobberAverageMayAlias = "ClobberAverageMayAlias";
   static constexpr auto ClobberAverageMustAlias = "ClobberAverageMustAlias";
+  // The total number of alias query responses given, of each kind
   static constexpr auto NumTotalNoAlias_ = "#TotalNoAlias";
   static constexpr auto NumTotalMayAlias_ = "#TotalMayAlias";
   static constexpr auto NumTotalMustAlias_ = "#TotalMustAlias";
@@ -59,12 +65,12 @@ class PrecisionEvaluator::PrecisionStatistics final : public util::Statistics
 public:
   ~PrecisionStatistics() override = default;
 
-  explicit PrecisionStatistics(const util::filepath & sourceFile)
+  explicit PrecisionStatistics(const util::FilePath & sourceFile)
       : Statistics(Id::AliasAnalysisPrecisionEvaluation, sourceFile)
   {}
 
   void
-  StartEvaluatingPrecision(PrecisionEvaluator::Mode mode, AliasAnalysis & aliasAnalysis)
+  StartEvaluatingPrecision(Mode mode, AliasAnalysis & aliasAnalysis)
   {
     AddTimer(PrecisionEvaluationTimer_).start();
     AddMeasurement(PrecisionEvaluationMode_, std::string(PrecisionEvaluationModeToString(mode)));
@@ -80,7 +86,7 @@ public:
 
   void
   AddPrecisionSummaryStatistics(
-      const util::filepath & outputFile,
+      const util::FilePath & outputFile,
       uint64_t moduleNumClobbers,
       double clobberAverageNoAlias,
       double clobberAverageMayAlias,
@@ -100,7 +106,7 @@ public:
   }
 
   static std::unique_ptr<PrecisionStatistics>
-  Create(const util::filepath & sourceFile)
+  Create(const util::FilePath & sourceFile)
   {
     return std::make_unique<PrecisionStatistics>(sourceFile);
   }
@@ -196,7 +202,7 @@ PrecisionEvaluator::EvaluateFunction(
   // Go over all pointer usages, find the ratio of clobbering points that may alias with it
   for (size_t i = 0; i < Context_.PointerOperations.size(); i++)
   {
-    auto [llvmInst1, p1, s1, p1IsUse, p1IsClobber] = Context_.PointerOperations[i];
+    auto [p1, s1, p1IsUse, p1IsClobber] = Context_.PointerOperations[i];
 
     precisionEvaluation.NumOperations++;
     precisionEvaluation.NumUseOperations += p1IsUse;
@@ -211,22 +217,22 @@ PrecisionEvaluator::EvaluateFunction(
       if (i == j)
         continue;
 
-      auto [llvmInst2, p2, s2, p2IsUse, p2IsClobber] = Context_.PointerOperations[j];
+      auto [p2, s2, p2IsUse, p2IsClobber] = Context_.PointerOperations[j];
       if (!p2IsUse)
         continue;
 
-      auto response = aliasAnalysis.Query(llvmInst1, *p1, s1, llvmInst2, *p2, s2);
+      auto response = aliasAnalysis.Query(*p1, s1, *p2, s2);
 
       // Queries should always be symmetric, so double check that in debug builds
-      // TODO: Disabled when using LLVM, as they are not always symmetric (see bugs/no-must-alias)
-      // JLM_ASSERT(response == aliasAnalysis.Query(llvmInst2, *p2, s2, llvmInst1, *p1, s1));
+      // Note: LLVM's own alias analyses are not always symmetric, but ours should be
+      JLM_ASSERT(response == aliasAnalysis.Query(*p2, s2, *p1, s1));
 
-      // Add edge to aliasing graph if requested
+      // Add edge to aliasing graph if dumping a graph of alias analysis response edges is requested
       if (OutputAliasingGraph && p1 < p2)
       {
         // Create a node associated with the given output
         // but also attach it to the GraphElement that already represents it
-        const auto GetAliasGraphNode = [&](const rvsdg::output & p) -> util::Node &
+        const auto GetOrCreateAliasGraphNode = [&](const rvsdg::Output & p) -> util::Node &
         {
           const auto element = AliasingGraph_->GetElementFromProgramObject(p);
           const auto node = dynamic_cast<util::Node *>(element);
@@ -240,8 +246,8 @@ PrecisionEvaluator::EvaluateFunction(
           return newNode;
         };
 
-        auto & p1Node = GetAliasGraphNode(*p1);
-        auto & p2Node = GetAliasGraphNode(*p2);
+        auto & p1Node = GetOrCreateAliasGraphNode(*p1);
+        auto & p2Node = GetOrCreateAliasGraphNode(*p2);
 
         std::optional<std::string> edgeColor;
         if (response == AliasAnalysis::MayAlias)
@@ -306,7 +312,6 @@ PrecisionEvaluator::CollectPointersFromSimpleNode(const rvsdg::SimpleNode & node
   {
     const auto size = GetLlvmTypeSize(*load->GetLoadedType());
     CollectPointer(
-        load->GetLlvmLoad(),
         LoadOperation::AddressInput(node).origin(),
         size,
         true,
@@ -316,7 +321,6 @@ PrecisionEvaluator::CollectPointersFromSimpleNode(const rvsdg::SimpleNode & node
   {
     const auto size = GetLlvmTypeSize(store->GetStoredType());
     CollectPointer(
-        store->GetLlvmStore(),
         StoreOperation::AddressInput(node).origin(),
         size,
         true,
@@ -335,14 +339,13 @@ PrecisionEvaluator::CollectPointersFromStructuralNode(const rvsdg::StructuralNod
 
 void
 PrecisionEvaluator::CollectPointer(
-    ::llvm::Instruction * llvmInst,
-    const rvsdg::output * value,
+    const rvsdg::Output * value,
     size_t size,
     bool isUse,
     bool isClobber)
 {
   JLM_ASSERT(IsPointerCompatible(*value));
-  Context_.PointerOperations.push_back({ llvmInst, value, size, isUse, isClobber });
+  Context_.PointerOperations.push_back({ value, size, isUse, isClobber });
 }
 
 void
@@ -350,7 +353,7 @@ PrecisionEvaluator::NormalizePointerValues()
 {
   for (size_t i = 0; i < Context_.PointerOperations.size(); i++)
   {
-    auto & pointer = std::get<1>(Context_.PointerOperations[i]);
+    auto & pointer = std::get<0>(Context_.PointerOperations[i]);
     pointer = &NormalizePointerValue(*pointer);
   }
 }
@@ -360,28 +363,28 @@ PrecisionEvaluator::RemoveDuplicates()
 {
   // For each occurrence of a (pointer, size) pair, perform logical or to find the final isUse and
   // isClobber values
-  std::map<std::pair<const rvsdg::output *, size_t>, std::tuple<::llvm::Instruction *, bool, bool>>
+  std::map<std::pair<const rvsdg::Output *, size_t>, std::tuple<bool, bool>>
       uniquePointerOps;
 
-  for (const auto & [llvmInst, pointer, size, isUse, isClobber] : Context_.PointerOperations)
+  for (const auto & [pointer, size, isUse, isClobber] : Context_.PointerOperations)
   {
     auto & op = uniquePointerOps[{ pointer, size }];
-    const auto [_, wasUse, wasClobber] = op;
-    op = { llvmInst, isUse | wasUse, isClobber | wasClobber };
+    const auto [wasUse, wasClobber] = op;
+    op = { isUse | wasUse, isClobber | wasClobber };
   }
 
   Context_.PointerOperations.clear();
   for (const auto & [pointerSize, op] : uniquePointerOps)
   {
     const auto [pointer, size] = pointerSize;
-    const auto [llvmInst, isUse, isClobber] = op;
-    Context_.PointerOperations.push_back({ llvmInst, pointer, size, isUse, isClobber });
+    const auto [isUse, isClobber] = op;
+    Context_.PointerOperations.push_back({ pointer, size, isUse, isClobber });
   }
 }
 
 void
 PrecisionEvaluator::AggregateClobberInfos(
-    std::vector<PrecisionInfo::ClobberInfo> & clobberInfos,
+    const std::vector<PrecisionInfo::ClobberInfo> & clobberInfos,
     double & clobberAverageNoAlias,
     double & clobberAverageMayAlias,
     double & clobberAverageMustAlias,

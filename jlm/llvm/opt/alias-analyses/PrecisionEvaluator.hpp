@@ -81,8 +81,7 @@ private:
   // Adds a value to the list of pointer operations in the function being evaluated
   void
   CollectPointer(
-      ::llvm::Instruction * llvmInst,
-      const rvsdg::output * value,
+      const rvsdg::Output * value,
       size_t size,
       bool isUse,
       bool isClobber);
@@ -148,13 +147,15 @@ private:
      * All operations should be either a use, a clobber or both.
      * @see PrecisionEvaluationMode for setting which operations are counted and how
      */
-    std::vector<std::tuple<::llvm::Instruction *, const rvsdg::output *, size_t, bool, bool>>
+    std::vector<std::tuple<const rvsdg::Output *, size_t, bool, bool>>
         PointerOperations;
   };
 
+  // Adds up a list of ClobberInfo structs, where each element represents one clobber operation
+  // Returns results for the average clobber, as well as total alias query response counts
   static void
   AggregateClobberInfos(
-      std::vector<PrecisionInfo::ClobberInfo> & clobberInfos,
+      const std::vector<PrecisionInfo::ClobberInfo> & clobberInfos,
       double & clobberAverageNoAlias,
       double & clobberAverageMayAlias,
       double & clobberAverageMustAlias,
@@ -164,8 +165,8 @@ private:
 
   Context Context_;
 
-  // Graph used for outputting aliasing pairs
-  util::Graph * AliasingGraph_;
+  // Output dot graph, only used if dumping a graph of alias analysis-response edges is enabled
+  util::Graph * AliasingGraph_{};
 };
 
 }

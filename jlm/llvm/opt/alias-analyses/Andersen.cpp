@@ -1387,7 +1387,7 @@ Andersen::Analyze(
 
   // If solving multiple times, make a copy of the original constraint set
   std::pair<std::unique_ptr<PointerObjectSet>, std::unique_ptr<PointerObjectConstraintSet>> copy;
-  if (testAllConfigsIterations || doubleCheck)
+  if (testAllConfigsIterations || doubleCheck || useExactConfig)
     copy = Constraints_->Clone();
 
   // Draw subset graph both before and after solving
@@ -1409,7 +1409,7 @@ Andersen::Analyze(
   statisticsCollector.CollectDemandedStatistics(std::move(statistics));
 
   // Solve again if double-checking, testing all configs, or testing a specific config
-  if (testAllConfigsIterations || doubleCheck || useExactConfig.has_value())
+  if (testAllConfigsIterations || doubleCheck || useExactConfig)
   {
     if (doubleCheck)
       std::cout << "Double checking Andersen analysis constraint solving" << std::endl;
@@ -1431,7 +1431,7 @@ Andersen::Analyze(
     // If the number of iterations is not specified, run at least once
     const auto iterations = std::max<size_t>(testAllConfigsIterations, 1);
 
-    // for easy progress counting
+    // Print a simple progress counter
     size_t progress = 0;
     const size_t totalConfigs = iterations * configs.size();
 
@@ -1456,14 +1456,6 @@ Andersen::Analyze(
         {
           if (workingCopy.first->HasIdenticalSolAs(*Set_))
             continue;
-
-          if (dumpGraphs)
-          {
-            auto & graph = workingCopy.second->DrawSubsetGraph(writer);
-            graph.AppendToLabel("After Solving with " + config.ToString());
-            writer.OutputAllGraphs(std::cout, util::GraphOutputFormat::Dot);
-          }
-
           std::cerr << "Solving with original config: " << Config_.ToString()
                     << " did not produce the same solution as the config " << config.ToString()
                     << std::endl;
