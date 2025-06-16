@@ -1015,20 +1015,19 @@ public:
   size_t capacity;
 };
 
-class state_gate_op final : public rvsdg::SimpleOperation
+class StateGateOperation final : public rvsdg::SimpleOperation
 {
 public:
-  virtual ~state_gate_op()
-  {}
+  ~StateGateOperation() noexcept override;
 
-  state_gate_op(const std::shared_ptr<const jlm::rvsdg::Type> & type, size_t numStates)
+  StateGateOperation(const std::shared_ptr<const rvsdg::Type> & type, const size_t numStates)
       : SimpleOperation(CreateInOutTypes(type, numStates), CreateInOutTypes(type, numStates))
   {}
 
   bool
   operator==(const Operation & other) const noexcept override
   {
-    auto ot = dynamic_cast<const state_gate_op *>(&other);
+    auto ot = dynamic_cast<const StateGateOperation *>(&other);
     // check predicate and value
     return ot && *ot->argument(1) == *argument(1) && ot->narguments() == narguments();
   }
@@ -1053,7 +1052,7 @@ public:
   [[nodiscard]] std::unique_ptr<Operation>
   copy() const override
   {
-    return std::make_unique<state_gate_op>(*this);
+    return std::make_unique<StateGateOperation>(*this);
   }
 
   static std::vector<jlm::rvsdg::Output *>
@@ -1062,17 +1061,18 @@ public:
     std::vector<jlm::rvsdg::Output *> inputs;
     inputs.push_back(&addr);
     inputs.insert(inputs.end(), states.begin(), states.end());
-    return outputs(&rvsdg::CreateOpNode<state_gate_op>(inputs, addr.Type(), states.size()));
+    return outputs(&rvsdg::CreateOpNode<StateGateOperation>(inputs, addr.Type(), states.size()));
   }
 };
 
-class decoupled_load_op final : public rvsdg::SimpleOperation
+class DecoupledLoadOperation final : public rvsdg::SimpleOperation
 {
 public:
-  virtual ~decoupled_load_op()
-  {}
+  ~DecoupledLoadOperation() noexcept override;
 
-  decoupled_load_op(const std::shared_ptr<const rvsdg::ValueType> & pointeeType, size_t capacity)
+  DecoupledLoadOperation(
+      const std::shared_ptr<const rvsdg::ValueType> & pointeeType,
+      size_t capacity)
       : SimpleOperation(CreateInTypes(pointeeType), CreateOutTypes(pointeeType)),
         capacity(capacity)
   {}
@@ -1080,7 +1080,7 @@ public:
   bool
   operator==(const Operation & other) const noexcept override
   {
-    auto ot = dynamic_cast<const decoupled_load_op *>(&other);
+    auto ot = dynamic_cast<const DecoupledLoadOperation *>(&other);
     // check predicate and value
     return ot && *ot->argument(1) == *argument(1) && ot->narguments() == narguments();
   }
@@ -1111,7 +1111,7 @@ public:
   [[nodiscard]] std::unique_ptr<Operation>
   copy() const override
   {
-    return std::make_unique<decoupled_load_op>(*this);
+    return std::make_unique<DecoupledLoadOperation>(*this);
   }
 
   static std::vector<jlm::rvsdg::Output *>
@@ -1121,7 +1121,7 @@ public:
     inputs.push_back(&addr);
     inputs.push_back(&load_result);
     JLM_ASSERT(capacity >= 1);
-    return outputs(&rvsdg::CreateOpNode<decoupled_load_op>(
+    return outputs(&rvsdg::CreateOpNode<DecoupledLoadOperation>(
         inputs,
         std::dynamic_pointer_cast<const rvsdg::ValueType>(load_result.Type()),
         capacity));
@@ -1142,13 +1142,12 @@ public:
   size_t capacity;
 };
 
-class mem_resp_op final : public rvsdg::SimpleOperation
+class MemoryResponseOperation final : public rvsdg::SimpleOperation
 {
 public:
-  virtual ~mem_resp_op()
-  {}
+  ~MemoryResponseOperation() noexcept override;
 
-  explicit mem_resp_op(
+  explicit MemoryResponseOperation(
       const std::vector<std::shared_ptr<const rvsdg::Type>> & output_types,
       int in_width)
       : SimpleOperation(CreateInTypes(in_width), CreateOutTypes(output_types))
@@ -1157,8 +1156,7 @@ public:
   bool
   operator==(const Operation & other) const noexcept override
   {
-    // TODO:
-    auto ot = dynamic_cast<const mem_resp_op *>(&other);
+    auto ot = dynamic_cast<const MemoryResponseOperation *>(&other);
     // check predicate and value
     return ot && *ot->argument(1) == *argument(1) && ot->narguments() == narguments();
   }
@@ -1192,7 +1190,7 @@ public:
   [[nodiscard]] std::unique_ptr<Operation>
   copy() const override
   {
-    return std::make_unique<mem_resp_op>(*this);
+    return std::make_unique<MemoryResponseOperation>(*this);
   }
 
   static std::vector<jlm::rvsdg::Output *>
@@ -1201,16 +1199,17 @@ public:
       const std::vector<std::shared_ptr<const rvsdg::Type>> & output_types,
       int in_width)
   {
-    return outputs(&rvsdg::CreateOpNode<mem_resp_op>({ &result }, output_types, in_width));
+    return outputs(
+        &rvsdg::CreateOpNode<MemoryResponseOperation>({ &result }, output_types, in_width));
   }
 };
 
-class mem_req_op final : public rvsdg::SimpleOperation
+class MemoryRequestOperation final : public rvsdg::SimpleOperation
 {
 public:
-  virtual ~mem_req_op() = default;
+  ~MemoryRequestOperation() noexcept override = default;
 
-  mem_req_op(
+  MemoryRequestOperation(
       const std::vector<std::shared_ptr<const rvsdg::ValueType>> & load_types,
       const std::vector<std::shared_ptr<const rvsdg::ValueType>> & store_types)
       : SimpleOperation(
@@ -1227,13 +1226,12 @@ public:
     }
   }
 
-  mem_req_op(const mem_req_op & other) = default;
+  MemoryRequestOperation(const MemoryRequestOperation & other) = default;
 
   bool
   operator==(const Operation & other) const noexcept override
   {
-    // TODO:
-    auto ot = dynamic_cast<const mem_req_op *>(&other);
+    auto ot = dynamic_cast<const MemoryRequestOperation *>(&other);
     // check predicate and value
     return ot && ot->narguments() == narguments()
         && (ot->narguments() == 0 || (*ot->argument(1) == *argument(1)))
@@ -1289,7 +1287,7 @@ public:
   [[nodiscard]] std::unique_ptr<Operation>
   copy() const override
   {
-    return std::make_unique<mem_req_op>(*this);
+    return std::make_unique<MemoryRequestOperation>(*this);
   }
 
   static std::vector<jlm::rvsdg::Output *>
@@ -1310,7 +1308,7 @@ public:
     }
     std::vector operands(load_operands);
     operands.insert(operands.end(), store_operands.begin(), store_operands.end());
-    return outputs(&rvsdg::CreateOpNode<mem_req_op>(operands, loadTypes, storeTypes));
+    return outputs(&rvsdg::CreateOpNode<MemoryRequestOperation>(operands, loadTypes, storeTypes));
   }
 
   size_t

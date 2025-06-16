@@ -34,9 +34,15 @@ TriggerOperation::~TriggerOperation() noexcept = default;
 
 TriggerType::~TriggerType() noexcept = default;
 
+StateGateOperation::~StateGateOperation() noexcept = default;
+
 LoadOperation::~LoadOperation() noexcept = default;
 
+DecoupledLoadOperation::~DecoupledLoadOperation() noexcept = default;
+
 AddressQueueOperation::~AddressQueueOperation() noexcept = default;
+
+MemoryResponseOperation::~MemoryResponseOperation() noexcept = default;
 
 std::size_t
 TriggerType::ComputeHash() const noexcept
