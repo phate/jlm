@@ -110,7 +110,7 @@ BitWidthOfEnum(T endValue)
 
   using UnderlyingT = std::underlying_type_t<T>;
 
-  // To appease gcc warings, the returned bit width is large enough to hold the endValue as well,
+  // To appease gcc warnings, the returned bit width is large enough to hold the endValue as well,
   // even if it is just a sentinel COUNT value
   return BitsRequiredToRepresent(static_cast<UnderlyingT>(endValue));
 }
