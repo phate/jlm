@@ -324,6 +324,7 @@ JlcCommandLineParser::ParseCommandLineArguments(int argc, const char * const * a
     if (optimizations.empty() && optimizationLevel == JlcCommandLineOptions::OptimizationLevel::O3)
     {
       return std::vector({
+          JlmOptCommandLineOptions::OptimizationId::AAAndersenRegionAware,
           JlmOptCommandLineOptions::OptimizationId::FunctionInlining,
           JlmOptCommandLineOptions::OptimizationId::InvariantValueRedirection,
           JlmOptCommandLineOptions::OptimizationId::NodeReduction,
