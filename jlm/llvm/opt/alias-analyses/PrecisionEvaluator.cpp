@@ -310,12 +310,12 @@ PrecisionEvaluator::CollectPointersFromSimpleNode(const rvsdg::SimpleNode & node
   // In this mode, only (volatile) load and store operations count as uses and clobbers
   if (const auto load = dynamic_cast<const LoadOperation *>(&node.GetOperation()))
   {
-    const auto size = GetLlvmTypeSize(*load->GetLoadedType());
+    const auto size = GetTypeSize(*load->GetLoadedType());
     CollectPointer(LoadOperation::AddressInput(node).origin(), size, true, loadsClobber);
   }
   else if (auto store = dynamic_cast<const StoreOperation *>(&node.GetOperation()))
   {
-    const auto size = GetLlvmTypeSize(store->GetStoredType());
+    const auto size = GetTypeSize(store->GetStoredType());
     CollectPointer(StoreOperation::AddressInput(node).origin(), size, true, true);
   }
 }

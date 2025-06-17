@@ -70,11 +70,12 @@ FloatingPointType::~FloatingPointType() noexcept = default;
 std::string
 FloatingPointType::debug_string() const
 {
-  static std::unordered_map<fpsize, std::string> map({ { fpsize::half, "half" },
-                                                       { fpsize::flt, "float" },
-                                                       { fpsize::dbl, "double" },
-                                                       { fpsize::x86fp80, "x86fp80" },
-                                                       { fpsize::fp128, "fp128" } });
+  static std::unordered_map<fpsize, std::string> map(
+      { { fpsize::half, "half" },
+        { fpsize::flt, "float" },
+        { fpsize::dbl, "double" },
+        { fpsize::x86fp80, "x86fp80" },
+        { fpsize::fp128, "fp128" } });
 
   JLM_ASSERT(map.find(size()) != map.end());
   return map[size()];
@@ -294,7 +295,7 @@ MemoryStateType::Create()
 }
 
 size_t
-GetLlvmTypeSize(const rvsdg::ValueType & type)
+GetTypeSize(const rvsdg::ValueType & type)
 {
   if (const auto bits = dynamic_cast<const rvsdg::bittype *>(&type))
   {
@@ -302,14 +303,14 @@ GetLlvmTypeSize(const rvsdg::ValueType & type)
     const auto bytes = (bits->nbits() + 7) / 8;
     return util::RoundUpToPowerOf2(bytes);
   }
-  if (is<PointerType>(type))
+  if (jlm::rvsdg::is<PointerType>(type))
   {
-    // Assume 64-bit pointers
+    // FIXME: Use the target information in the module to find the actual size of pointers
     return 8;
   }
   if (const auto arrayType = dynamic_cast<const ArrayType *>(&type))
   {
-    return arrayType->nelements() * GetLlvmTypeSize(*arrayType->GetElementType());
+    return arrayType->nelements() * GetTypeSize(*arrayType->GetElementType());
   }
   if (const auto floatType = dynamic_cast<const FloatingPointType *>(&type))
   {
@@ -341,7 +342,7 @@ GetLlvmTypeSize(const rvsdg::ValueType & type)
     for (size_t i = 0; i < decl.NumElements(); i++)
     {
       auto & field = decl.GetElement(i);
-      auto fieldSize = GetLlvmTypeSize(field);
+      auto fieldSize = GetTypeSize(field);
       auto fieldAlignment = isPacked ? 1 : GetTypeAlignment(field);
 
       // Add the size of the field, including any needed padding
@@ -362,11 +363,14 @@ GetLlvmTypeSize(const rvsdg::ValueType & type)
   }
   if (const auto vectorType = dynamic_cast<const VectorType *>(&type))
   {
-    return vectorType->size() * GetLlvmTypeSize(*vectorType->Type());
+    // In LLVM, vectors always have alignment >= the number of bytes of data stored in the vector
+    const auto bytesNeeded = vectorType->size() * GetTypeSize(*vectorType->Type());
+    return util::RoundUpToPowerOf2(bytesNeeded);
   }
-  if (is<rvsdg::FunctionType>(type))
+  if (jlm::rvsdg::is<rvsdg::FunctionType>(type))
   {
-    // We should never read from or write to functions, so give the size 0
+    // Functions should never read from or written to, so give them size 0
+    // Note: this is not the same as a function pointer, which is a PointerType
     return 0;
   }
 
@@ -375,19 +379,17 @@ GetLlvmTypeSize(const rvsdg::ValueType & type)
 }
 
 size_t
-GetLlvmTypeAlignment(const rvsdg::ValueType & type)
+GetTypeAlignment(const rvsdg::ValueType & type)
 {
-  if (is<rvsdg::bittype>(type))
+  if (jlm::rvsdg::is<rvsdg::bittype>(type) || jlm::rvsdg::is<PointerType>(type)
+      || jlm::rvsdg::is<FloatingPointType>(type) || jlm::rvsdg::is<VectorType>(type))
   {
-    return GetLlvmTypeSize(type);
-  }
-  if (is<PointerType>(type) || is<FloatingPointType>(type))
-  {
-    return GetLlvmTypeSize(type);
+    // These types all have alignment equal to their size
+    return GetTypeSize(type);
   }
   if (const auto arrayType = dynamic_cast<const ArrayType *>(&type))
   {
-    return GetLlvmTypeAlignment(*arrayType->GetElementType());
+    return GetTypeAlignment(*arrayType->GetElementType());
   }
   if (const auto structType = dynamic_cast<const StructType *>(&type))
   {
@@ -401,17 +403,13 @@ GetLlvmTypeAlignment(const rvsdg::ValueType & type)
     for (size_t i = 0; i < decl.NumElements(); i++)
     {
       auto & field = decl.GetElement(i);
-      auto fieldAlignment = GetLlvmTypeAlignment(field);
+      auto fieldAlignment = GetTypeAlignment(field);
 
       // The struct as a whole must be at least as aligned as each field
       alignment = std::lcm(alignment, fieldAlignment);
     }
 
     return alignment;
-  }
-  if (const auto vectorType = dynamic_cast<const VectorType *>(&type))
-  {
-    return GetLlvmTypeAlignment(*vectorType->Type());
   }
 
   JLM_UNREACHABLE("Unknown type");
@@ -430,14 +428,14 @@ GetStructFieldOffset(const StructType & structType, size_t fieldIndex)
     auto & field = decl.GetElement(i);
 
     // First round up to the alignment of the field
-    auto fieldAlignment = isPacked ? 1 : GetLlvmTypeAlignment(field);
+    auto fieldAlignment = isPacked ? 1 : GetTypeAlignment(field);
     offset = util::RoundUpToMultipleOf(offset, fieldAlignment);
 
     if (i == fieldIndex)
       return offset;
 
     // Add the size of the field
-    offset += GetLlvmTypeSize(field);
+    offset += GetTypeSize(field);
   }
 
   JLM_UNREACHABLE("Invalid fieldIndex in GetStructFieldOffset");

@@ -488,8 +488,9 @@ IsAggregateType(const jlm::rvsdg::Type & type)
 }
 
 /**
- * Returns the size of the given type's in-memory representation, in bytes.
- * The size must be a multiple of the alignment, just like the C operator sizeof().
+ * Returns the size of the given type's representation, in bytes.
+ * The size is always a multiple of the alignment, just like the C operator sizeof().
+ * This means the size includes any padding at the end.
  * @param type the ValueType
  * @return the byte size of the type
  */
@@ -497,7 +498,10 @@ IsAggregateType(const jlm::rvsdg::Type & type)
 GetTypeSize(const rvsdg::ValueType & type);
 
 /**
- * Returns the alignment of the given type's in-memory representation, in bytes.
+ * Returns the natural alignment of the given type, in bytes.
+ * Types are not guaranteed to be stored at their natural alignment,
+ * so instead check the alignment of the store and load operations.
+ * A non-packed struct will add padding to maintain alignment.
  * @param type the ValueType
  * @return the byte alignment of the type
  */
