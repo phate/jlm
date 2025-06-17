@@ -11,6 +11,8 @@
 #include <jlm/rvsdg/theta.hpp>
 #include <jlm/rvsdg/traverser.hpp>
 
+#include <algorithm>
+
 namespace jlm::hls
 {
 
