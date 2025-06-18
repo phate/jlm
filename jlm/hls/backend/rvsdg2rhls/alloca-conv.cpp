@@ -193,7 +193,7 @@ alloca_conv(rvsdg::Region * region)
       // TODO: ensure that loads/stores are either alloca or global, never both
       // TODO: ensure that loads/stores have same width and alignment and geps can be merged -
       // otherwise slice? create request
-      auto req_outs = local_mem_req_op::create(*mem_outs[1], load_addrs, store_operands);
+      auto req_outs = LocalMemoryRequestOperation::create(*mem_outs[1], load_addrs, store_operands);
 
       // remove alloca from memstate merge
       // TODO: handle general case of other nodes getting state edge without a merge

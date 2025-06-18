@@ -442,7 +442,7 @@ dne(rvsdg::Region * sr)
           // TODO: fix this once memory connections are explicit
           continue;
         }
-        else if (dynamic_cast<const local_mem_req_op *>(&node->GetOperation()))
+        if (rvsdg::is<LocalMemoryRequestOperation>(node))
         {
           continue;
         }
