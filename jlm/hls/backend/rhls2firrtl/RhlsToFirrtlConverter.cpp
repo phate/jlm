@@ -949,13 +949,11 @@ RhlsToFirrtlConverter::MlirGenHlsMemReq(const jlm::rvsdg::SimpleNode * node)
 circt::firrtl::FModuleOp
 RhlsToFirrtlConverter::MlirGenHlsLoad(const jlm::rvsdg::SimpleNode * node)
 {
+  JLM_ASSERT(rvsdg::is<LoadOperation>(node) || rvsdg::is<LocalLoadOperation>(node));
+
   // Create the module and its input/output ports
   auto module = nodeToModule(node, false);
   auto body = module.getBodyBlock();
-
-  auto load = dynamic_cast<const LoadOperation *>(&(node->GetOperation()));
-  auto local_load = dynamic_cast<const local_load_op *>(&(node->GetOperation()));
-  JLM_ASSERT(load || local_load);
 
   // Input signals
   auto inBundleAddr = GetInPort(module, 0);
@@ -1170,14 +1168,13 @@ RhlsToFirrtlConverter::MlirGenHlsDLoad(const jlm::rvsdg::SimpleNode * node)
 circt::firrtl::FModuleOp
 RhlsToFirrtlConverter::MlirGenHlsLocalMem(const jlm::rvsdg::SimpleNode * node)
 {
-  auto lmem_op = dynamic_cast<const local_mem_op *>(&(node->GetOperation()));
-  JLM_ASSERT(lmem_op);
+  auto lmem_op = util::AssertedCast<const LocalMemoryOperation>(&node->GetOperation());
   auto res_node = rvsdg::TryGetOwnerNode<rvsdg::Node>(**node->output(0)->begin());
   auto res_op = dynamic_cast<const local_mem_resp_op *>(&res_node->GetOperation());
   JLM_ASSERT(res_op);
   auto req_node = rvsdg::TryGetOwnerNode<rvsdg::Node>(**node->output(1)->begin());
-  auto req_op = dynamic_cast<const local_mem_req_op *>(&req_node->GetOperation());
-  JLM_ASSERT(req_op);
+  JLM_ASSERT(rvsdg::is<LocalMemoryRequestOperation>(req_node));
+
   // Create the module and its input/output ports - we use a non-standard way here
   // Generate a vector with all inputs and outputs of the module
   ::llvm::SmallVector<circt::firrtl::PortInfo> ports;
@@ -1379,7 +1376,7 @@ RhlsToFirrtlConverter::MlirGenHlsLocalMem(const jlm::rvsdg::SimpleNode * node)
 circt::firrtl::FModuleOp
 RhlsToFirrtlConverter::MlirGenHlsStore(const jlm::rvsdg::SimpleNode * node)
 {
-  JLM_ASSERT(rvsdg::is<store_op>(node) || rvsdg::is<LocalStoreOperation>(node));
+  JLM_ASSERT(rvsdg::is<StoreOperation>(node) || rvsdg::is<LocalStoreOperation>(node));
 
   // Create the module and its input/output ports
   auto module = nodeToModule(node, false);
@@ -2394,11 +2391,11 @@ RhlsToFirrtlConverter::MlirGen(const jlm::rvsdg::SimpleNode * node)
   {
     return MlirGenExtModule(node);
   }
-  else if (dynamic_cast<const hls::store_op *>(&(node->GetOperation())))
+  else if (dynamic_cast<const hls::StoreOperation *>(&(node->GetOperation())))
   {
     return MlirGenHlsStore(node);
   }
-  else if (dynamic_cast<const hls::local_load_op *>(&(node->GetOperation())))
+  else if (dynamic_cast<const hls::LocalLoadOperation *>(&(node->GetOperation())))
   {
     // same as normal load for now, but with index instead of address
     return MlirGenHlsLoad(node);
@@ -2408,7 +2405,7 @@ RhlsToFirrtlConverter::MlirGen(const jlm::rvsdg::SimpleNode * node)
     // same as normal store for now, but with index instead of address
     return MlirGenHlsStore(node);
   }
-  else if (dynamic_cast<const hls::local_mem_op *>(&(node->GetOperation())))
+  else if (dynamic_cast<const hls::LocalMemoryOperation *>(&(node->GetOperation())))
   {
     return MlirGenHlsLocalMem(node);
   }
@@ -3968,7 +3965,7 @@ RhlsToFirrtlConverter::GetModuleName(const rvsdg::Node * node)
       append.append(std::to_string(bitWidth));
     }
   }
-  if (auto op = dynamic_cast<const local_mem_op *>(&node->GetOperation()))
+  if (auto op = dynamic_cast<const LocalMemoryOperation *>(&node->GetOperation()))
   {
     append.append("_S");
     append.append(std::to_string(
