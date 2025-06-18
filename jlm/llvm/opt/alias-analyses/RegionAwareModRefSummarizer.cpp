@@ -695,12 +695,12 @@ RegionAwareModRefSummarizer::CreateCallGraph(const rvsdg::RvsdgModule & rvsdgMod
 
   // Find SCCs in the call graph
   std::vector<size_t> sccIndex;
-  std::vector<size_t> topologicalOrder;
+  std::vector<size_t> reverseTopologicalOrder;
   auto numSCCs = util::FindStronglyConnectedComponents<size_t>(
       numCallGraphNodes,
       GetSuccessor,
       sccIndex,
-      topologicalOrder);
+      reverseTopologicalOrder);
 
   // sccIndex are distributed in a reverse topological order, so the sccIndex is used
   // when creating the list of SCCs and the functions they contain
