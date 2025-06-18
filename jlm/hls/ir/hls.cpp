@@ -44,6 +44,8 @@ AddressQueueOperation::~AddressQueueOperation() noexcept = default;
 
 MemoryResponseOperation::~MemoryResponseOperation() noexcept = default;
 
+LocalLoadOperation::~LocalLoadOperation() noexcept = default;
+
 LocalMemoryOperation::~LocalMemoryOperation() noexcept = default;
 
 StoreOperation::~StoreOperation() noexcept = default;
