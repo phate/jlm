@@ -144,7 +144,7 @@ alloca_conv(rvsdg::Region * region)
       TraceAllocaUses ta(node->output(0));
       // create memory + response
       auto mem_outs = LocalMemoryOperation::create(at, node->region());
-      auto resp_outs = local_mem_resp_op::create(*mem_outs[0], ta.load_nodes.size());
+      auto resp_outs = LocalMemoryResponseOperation::create(*mem_outs[0], ta.load_nodes.size());
       std::cout << "alloca converted " << at->debug_string() << std::endl;
       // replace gep outputs (convert pointer to index calculation)
       // replace loads and stores
