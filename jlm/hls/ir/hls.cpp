@@ -52,6 +52,8 @@ LocalMemoryRequestOperation::~LocalMemoryRequestOperation() noexcept = default;
 
 StoreOperation::~StoreOperation() noexcept = default;
 
+LocalMemoryResponseOperation::~LocalMemoryResponseOperation() noexcept = default;
+
 std::size_t
 TriggerType::ComputeHash() const noexcept
 {

@@ -1460,21 +1460,19 @@ public:
   }
 };
 
-class local_mem_resp_op final : public rvsdg::SimpleOperation
+class LocalMemoryResponseOperation final : public rvsdg::SimpleOperation
 {
 public:
-  virtual ~local_mem_resp_op()
-  {}
+  ~LocalMemoryResponseOperation() noexcept override;
 
-  local_mem_resp_op(const std::shared_ptr<const llvm::ArrayType> & at, size_t resp_count)
+  LocalMemoryResponseOperation(const std::shared_ptr<const llvm::ArrayType> & at, size_t resp_count)
       : SimpleOperation({ at }, CreateOutTypes(at, resp_count))
   {}
 
   bool
   operator==(const Operation & other) const noexcept override
   {
-    // TODO:
-    auto ot = dynamic_cast<const local_mem_resp_op *>(&other);
+    auto ot = dynamic_cast<const LocalMemoryResponseOperation *>(&other);
     // check predicate and value
     return ot && *ot->argument(1) == *argument(1) && ot->narguments() == narguments();
   }
@@ -1495,13 +1493,13 @@ public:
   [[nodiscard]] std::unique_ptr<Operation>
   copy() const override
   {
-    return std::make_unique<local_mem_resp_op>(*this);
+    return std::make_unique<LocalMemoryResponseOperation>(*this);
   }
 
   static std::vector<jlm::rvsdg::Output *>
   create(jlm::rvsdg::Output & mem, size_t resp_count)
   {
-    return outputs(&rvsdg::CreateOpNode<local_mem_resp_op>(
+    return outputs(&rvsdg::CreateOpNode<LocalMemoryResponseOperation>(
         { &mem },
         std::dynamic_pointer_cast<const llvm::ArrayType>(mem.Type()),
         resp_count));
