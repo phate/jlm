@@ -195,6 +195,15 @@ public:
   StructType &
   operator=(StructType &&) = delete;
 
+  bool
+  operator==(const jlm::rvsdg::Type & other) const noexcept override;
+
+  [[nodiscard]] std::size_t
+  ComputeHash() const noexcept override;
+
+  [[nodiscard]] std::string
+  debug_string() const override;
+
   [[nodiscard]] bool
   HasName() const noexcept
   {
@@ -219,14 +228,15 @@ public:
     return Declaration_;
   }
 
-  bool
-  operator==(const jlm::rvsdg::Type & other) const noexcept override;
-
-  [[nodiscard]] std::size_t
-  ComputeHash() const noexcept override;
-
-  [[nodiscard]] std::string
-  debug_string() const override;
+  /**
+   * Gets the position of the given field, as a byte offset from the start of the struct.
+   * Non-packed structs use padding to respect the alignment of each field, just like in C.
+   * Packed structs have no padding, and no alignment.
+   * @param fieldIndex the index of the field, must be valid
+   * @return the byte offset of the given field
+   */
+  [[nodiscard]] size_t
+  GetFieldOffset(size_t fieldIndex) const;
 
   static std::shared_ptr<const StructType>
   Create(const std::string & name, bool isPacked, const Declaration & declaration)
@@ -486,6 +496,27 @@ IsAggregateType(const jlm::rvsdg::Type & type)
 {
   return jlm::rvsdg::is<ArrayType>(type) || jlm::rvsdg::is<StructType>(type);
 }
+
+/**
+ * Returns the size of the given type's representation, in bytes.
+ * The size is always a multiple of the alignment, just like the C operator sizeof().
+ * This means the size includes any padding at the end.
+ * @param type the ValueType
+ * @return the byte size of the type
+ */
+[[nodiscard]] size_t
+GetTypeSize(const rvsdg::ValueType & type);
+
+/**
+ * Returns the natural alignment of the given type, in bytes.
+ * Types are not guaranteed to be stored at their natural alignment,
+ * so instead check the alignment of the store and load operations.
+ * A non-packed struct will add padding to maintain alignment.
+ * @param type the ValueType
+ * @return the byte alignment of the type
+ */
+[[nodiscard]] size_t
+GetTypeAlignment(const rvsdg::ValueType & type);
 
 }
 
