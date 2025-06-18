@@ -1419,22 +1419,18 @@ public:
   }
 };
 
-class local_mem_op final : public rvsdg::SimpleOperation
+class LocalMemoryOperation final : public rvsdg::SimpleOperation
 {
 public:
-  virtual ~local_mem_op()
-  {}
+  ~LocalMemoryOperation() noexcept override;
 
-  explicit local_mem_op(std::shared_ptr<const llvm::ArrayType> at)
+  explicit LocalMemoryOperation(std::shared_ptr<const llvm::ArrayType> at)
       : SimpleOperation({}, CreateOutTypes(std::move(at)))
   {}
 
   bool
   operator==(const Operation &) const noexcept override
   {
-    // TODO:
-    // auto ot = dynamic_cast<const local_mem_op *>(&other);
-    // check predicate and value
     return false;
   }
 
@@ -1454,13 +1450,13 @@ public:
   [[nodiscard]] std::unique_ptr<Operation>
   copy() const override
   {
-    return std::make_unique<local_mem_op>(*this);
+    return std::make_unique<LocalMemoryOperation>(*this);
   }
 
   static std::vector<jlm::rvsdg::Output *>
   create(std::shared_ptr<const llvm::ArrayType> at, rvsdg::Region * region)
   {
-    return outputs(&rvsdg::CreateOpNode<local_mem_op>(*region, std::move(at)));
+    return outputs(&rvsdg::CreateOpNode<LocalMemoryOperation>(*region, std::move(at)));
   }
 };
 
