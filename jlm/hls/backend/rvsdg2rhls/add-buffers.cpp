@@ -421,7 +421,7 @@ NodeCycles(rvsdg::SimpleNode * node, std::vector<size_t> & input_cycles)
       return { 0, MemoryLatency };
     }
   }
-  else if (rvsdg::is<store_op>(node))
+  else if (rvsdg::is<StoreOperation>(node))
   {
     JLM_ASSERT(node->noutputs() == 3);
     return { max_cycles + MemoryLatency, 0, 0 };
@@ -465,7 +465,7 @@ NodeCapacity(rvsdg::SimpleNode * node, std::vector<size_t> & input_capacities)
       return { 0, MemoryLatency };
     }
   }
-  else if (dynamic_cast<const store_op *>(&node->GetOperation()))
+  else if (rvsdg::is<StoreOperation>(node))
   {
     return { min_capacity + MemoryLatency, 0, 0 };
   }

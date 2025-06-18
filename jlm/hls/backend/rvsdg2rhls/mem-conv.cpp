@@ -778,7 +778,7 @@ ReplaceStore(
   {
     states.push_back(replacedStore->input(i)->origin());
   }
-  auto storeOuts = store_op::create(*addr, *data, states, *response);
+  auto storeOuts = StoreOperation::create(*addr, *data, states, *response);
   auto newStore = dynamic_cast<rvsdg::node_output *>(storeOuts[0])->node();
   // iterate over output states
   for (size_t i = 0; i < replacedStore->noutputs(); ++i)
