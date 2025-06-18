@@ -25,14 +25,12 @@ namespace jlm::util
  * the original graph contains a path from A to B, and from B to A.
  *
  * In addition to assigning SCCs, a partial reverse topological ordering of nodes is returned.
- * The ordering is a list of all root nodes, sorted by ascending SCC index.
+ * The ordering is a list of all root nodes, ordered by non-descending SCC index.
  * Within a single SCC, the ordering of nodes is arbitrary.
  *
  * This function also supports graphs where nodes have been unified.
  * Within such a unification, one node is the root, while all other nodes are aliases for the root.
  * The given \p unificationRoot function should return the root for any node.
- * When unification is not used, the identity function makes all nodes roots.
- *
  * Only root nodes will be queried about their successors.
  * Nodes that are not roots will not be given an sccIndex, and not be included in topological order.
  *
@@ -156,6 +154,40 @@ FindStronglyConnectedComponents(
   JLM_ASSERT(sccStack.empty());
 
   return sccsFinished;
+}
+
+/**
+ * Implementation of Tarjan's algorithm for finding strongly connected components in linear time.
+ * This overload is for use cases where node unification is not used (every node is its own root).
+ * This means every node will be given an sccIndex,
+ * and all nodes will be included in the reverse topological order.
+ *
+ * @see FindStronglyConnectedComponents for details.
+ *
+ * @tparam NodeType the integer type used to index nodes
+ * @tparam SuccessorFunctor a functor with the signature (NodeType) -> iterable<NodeType>
+ * @param sccIndex output vector to be filled with the index of the SCC each node ends up in.
+ * @param reverseTopologicalOrder output vector filled with nodes in reverse topological order.
+ * @return the number of SCCs in the graph. One more than the largest SCC index
+ */
+template<typename NodeType, typename SuccessorFunctor>
+NodeType
+FindStronglyConnectedComponents(
+    NodeType numNodes,
+    SuccessorFunctor & successors,
+    std::vector<NodeType> & sccIndex,
+    std::vector<NodeType> & reverseTopologicalOrder)
+{
+  const auto identity = [](NodeType n)
+  {
+    return n;
+  };
+  return FindStronglyConnectedComponents(
+      numNodes,
+      identity,
+      successors,
+      sccIndex,
+      reverseTopologicalOrder);
 }
 
 }

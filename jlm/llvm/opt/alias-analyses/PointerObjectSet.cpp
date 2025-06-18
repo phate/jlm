@@ -1403,12 +1403,6 @@ PointerObjectConstraintSet::PerformOfflineVariableSubstitution(bool storeRefCycl
   auto & successors = std::get<1>(subsetGraph);
   auto & isDirectNode = std::get<2>(subsetGraph);
 
-  // The successors HashSets are already normalized, so let all nodes be their own root
-  auto GetUnificationRoot = [&](PointerObjectIndex node)
-  {
-    return node;
-  };
-
   auto GetSuccessors = [&](PointerObjectIndex node)
   {
     return successors[node].Items();
@@ -1419,7 +1413,6 @@ PointerObjectConstraintSet::PerformOfflineVariableSubstitution(bool storeRefCycl
   std::vector<size_t> reverseTopologicalOrder;
   auto numSccs = util::FindStronglyConnectedComponents<size_t>(
       totalNodeCount,
-      GetUnificationRoot,
       GetSuccessors,
       sccIndex,
       reverseTopologicalOrder);

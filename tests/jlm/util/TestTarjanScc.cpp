@@ -114,7 +114,6 @@ TestDag()
   std::vector<size_t> reverseTopologicalOrder;
   auto numSccs = jlm::util::FindStronglyConnectedComponents(
       numNodes,
-      Identity,
       GetSuccessors,
       sccIndex,
       reverseTopologicalOrder);
@@ -243,7 +242,6 @@ CreateDiamondChain(size_t knots, std::optional<std::pair<size_t, size_t>> extraE
   std::vector<size_t> reverseTopologicalOrder;
   auto numSccs = jlm::util::FindStronglyConnectedComponents(
       numNodes,
-      Identity,
       GetSuccessors,
       sccIndex,
       reverseTopologicalOrder);
@@ -346,7 +344,6 @@ TestVisitEachNodeTwice()
   std::vector<size_t> reverseTopologicalOrder;
   auto numSccs = jlm::util::FindStronglyConnectedComponents(
       numNodes,
-      Identity,
       GetSuccessors,
       sccIndex,
       reverseTopologicalOrder);

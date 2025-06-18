@@ -69,35 +69,26 @@ public:
         sccIndex,
         reverseTopologicalOrder);
 
-    // Helper for looking up topological order instead of reverse topological
-    const auto topologicalOrder = [&](const size_t i) -> PointerObjectIndex &
-    {
-      return reverseTopologicalOrder[reverseTopologicalOrder.size() - 1 - i];
-    };
-
     // Go through the topological ordering and add all unification roots to OCD_ObjectToTopoOrder
     // Also, if we find any new SCCs while doing this, perform unification right now
-    for (PointerObjectIndex i = 0; i < reverseTopologicalOrder.size(); i++)
+    for (auto it = reverseTopologicalOrder.rbegin(); it != reverseTopologicalOrder.rend(); ++it)
     {
-      PointerObjectIndex node = topologicalOrder(i);
-      JLM_ASSERT(Set_.IsUnificationRoot(node));
+      JLM_ASSERT(Set_.IsUnificationRoot(*it));
 
       // Check if we can unify node with the next node in the topological order
-      const auto nextIndex = i + 1;
-
-      if (nextIndex < reverseTopologicalOrder.size()
-          && sccIndex[node] == sccIndex[topologicalOrder(nextIndex)])
+      if (const auto nextIt = it + 1;
+          nextIt != reverseTopologicalOrder.rend() && sccIndex[*it] == sccIndex[*nextIt])
       {
         // We know that the SCC consists of only roots
-        JLM_ASSERT(Set_.IsUnificationRoot(topologicalOrder(nextIndex)));
+        JLM_ASSERT(Set_.IsUnificationRoot(*nextIt));
         // Make the next object the root, to keep the unification going
-        topologicalOrder(nextIndex) = UnifyPointerObjects_(node, topologicalOrder(nextIndex));
+        *nextIt = UnifyPointerObjects_(*it, *nextIt);
       }
       else
       {
         // Add this root to the next index in the topological order
-        ObjectToTopoOrder_[node] = TopoOrderToObject_.size();
-        TopoOrderToObject_.push_back(node);
+        ObjectToTopoOrder_[*it] = TopoOrderToObject_.size();
+        TopoOrderToObject_.push_back(*it);
       }
     }
 
