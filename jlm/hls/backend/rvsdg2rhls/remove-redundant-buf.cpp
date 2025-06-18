@@ -29,7 +29,7 @@ eliminate_buf(jlm::rvsdg::Output * o)
     {
       return true;
     }
-    else if (jlm::rvsdg::is<const local_store_op>(node->GetOperation()))
+    if (jlm::rvsdg::is<LocalStoreOperation>(node))
     {
       return true;
     }
