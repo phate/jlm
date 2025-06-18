@@ -166,6 +166,8 @@ FindStronglyConnectedComponents(
  *
  * @tparam NodeType the integer type used to index nodes
  * @tparam SuccessorFunctor a functor with the signature (NodeType) -> iterable<NodeType>
+ * @param numNodes the number of nodes, indexed from 0 to numNodes - 1.
+ * @param successors a function providing the targets of all outgoing edges from a given node.
  * @param sccIndex output vector to be filled with the index of the SCC each node ends up in.
  * @param reverseTopologicalOrder output vector filled with nodes in reverse topological order.
  * @return the number of SCCs in the graph. One more than the largest SCC index
