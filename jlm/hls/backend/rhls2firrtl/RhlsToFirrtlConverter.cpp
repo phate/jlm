@@ -1176,8 +1176,8 @@ RhlsToFirrtlConverter::MlirGenHlsLocalMem(const jlm::rvsdg::SimpleNode * node)
   auto res_op = dynamic_cast<const local_mem_resp_op *>(&res_node->GetOperation());
   JLM_ASSERT(res_op);
   auto req_node = rvsdg::TryGetOwnerNode<rvsdg::Node>(**node->output(1)->begin());
-  auto req_op = dynamic_cast<const local_mem_req_op *>(&req_node->GetOperation());
-  JLM_ASSERT(req_op);
+  JLM_ASSERT(rvsdg::is<LocalMemoryRequestOperation>(req_node));
+
   // Create the module and its input/output ports - we use a non-standard way here
   // Generate a vector with all inputs and outputs of the module
   ::llvm::SmallVector<circt::firrtl::PortInfo> ports;

@@ -1669,13 +1669,12 @@ public:
   }
 };
 
-class local_mem_req_op final : public rvsdg::SimpleOperation
+class LocalMemoryRequestOperation final : public rvsdg::SimpleOperation
 {
 public:
-  virtual ~local_mem_req_op()
-  {}
+  ~LocalMemoryRequestOperation() noexcept override;
 
-  local_mem_req_op(
+  LocalMemoryRequestOperation(
       const std::shared_ptr<const llvm::ArrayType> & at,
       size_t load_cnt,
       size_t store_cnt)
@@ -1685,8 +1684,7 @@ public:
   bool
   operator==(const Operation & other) const noexcept override
   {
-    // TODO:
-    auto ot = dynamic_cast<const local_mem_req_op *>(&other);
+    auto ot = dynamic_cast<const LocalMemoryRequestOperation *>(&other);
     // check predicate and value
     return ot && ot->narguments() == narguments()
         && (ot->narguments() == 0 || (*ot->argument(1) == *argument(1)))
@@ -1721,7 +1719,7 @@ public:
   [[nodiscard]] std::unique_ptr<Operation>
   copy() const override
   {
-    return std::make_unique<local_mem_req_op>(*this);
+    return std::make_unique<LocalMemoryRequestOperation>(*this);
   }
 
   static std::vector<jlm::rvsdg::Output *>
@@ -1734,7 +1732,7 @@ public:
     std::vector operands(1, &mem);
     operands.insert(operands.end(), load_operands.begin(), load_operands.end());
     operands.insert(operands.end(), store_operands.begin(), store_operands.end());
-    return outputs(&rvsdg::CreateOpNode<local_mem_req_op>(
+    return outputs(&rvsdg::CreateOpNode<LocalMemoryRequestOperation>(
         operands,
         std::dynamic_pointer_cast<const llvm::ArrayType>(mem.Type()),
         load_operands.size(),
