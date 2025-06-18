@@ -1170,8 +1170,7 @@ RhlsToFirrtlConverter::MlirGenHlsDLoad(const jlm::rvsdg::SimpleNode * node)
 circt::firrtl::FModuleOp
 RhlsToFirrtlConverter::MlirGenHlsLocalMem(const jlm::rvsdg::SimpleNode * node)
 {
-  auto lmem_op = dynamic_cast<const local_mem_op *>(&(node->GetOperation()));
-  JLM_ASSERT(lmem_op);
+  auto lmem_op = util::AssertedCast<const LocalMemoryOperation>(&node->GetOperation());
   auto res_node = rvsdg::TryGetOwnerNode<rvsdg::Node>(**node->output(0)->begin());
   auto res_op = dynamic_cast<const local_mem_resp_op *>(&res_node->GetOperation());
   JLM_ASSERT(res_op);
@@ -2410,7 +2409,7 @@ RhlsToFirrtlConverter::MlirGen(const jlm::rvsdg::SimpleNode * node)
     // same as normal store for now, but with index instead of address
     return MlirGenHlsStore(node);
   }
-  else if (dynamic_cast<const hls::local_mem_op *>(&(node->GetOperation())))
+  else if (dynamic_cast<const hls::LocalMemoryOperation *>(&(node->GetOperation())))
   {
     return MlirGenHlsLocalMem(node);
   }
@@ -3970,7 +3969,7 @@ RhlsToFirrtlConverter::GetModuleName(const rvsdg::Node * node)
       append.append(std::to_string(bitWidth));
     }
   }
-  if (auto op = dynamic_cast<const local_mem_op *>(&node->GetOperation()))
+  if (auto op = dynamic_cast<const LocalMemoryOperation *>(&node->GetOperation()))
   {
     append.append("_S");
     append.append(std::to_string(
