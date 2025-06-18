@@ -1334,13 +1334,12 @@ private:
   std::vector<std::shared_ptr<const rvsdg::Type>> StoreTypes_;
 };
 
-class store_op final : public rvsdg::SimpleOperation
+class StoreOperation final : public rvsdg::SimpleOperation
 {
 public:
-  virtual ~store_op()
-  {}
+  ~StoreOperation() noexcept override;
 
-  store_op(const std::shared_ptr<const rvsdg::ValueType> & pointeeType, size_t numStates)
+  StoreOperation(const std::shared_ptr<const rvsdg::ValueType> & pointeeType, size_t numStates)
       : SimpleOperation(
             CreateInTypes(pointeeType, numStates),
             CreateOutTypes(pointeeType, numStates))
@@ -1349,8 +1348,7 @@ public:
   bool
   operator==(const Operation & other) const noexcept override
   {
-    // TODO:
-    auto ot = dynamic_cast<const store_op *>(&other);
+    auto ot = dynamic_cast<const StoreOperation *>(&other);
     // check predicate and value
     return ot && *ot->argument(1) == *argument(1) && ot->narguments() == narguments();
   }
@@ -1387,7 +1385,7 @@ public:
   [[nodiscard]] std::unique_ptr<Operation>
   copy() const override
   {
-    return std::make_unique<store_op>(*this);
+    return std::make_unique<StoreOperation>(*this);
   }
 
   static std::vector<jlm::rvsdg::Output *>
@@ -1402,7 +1400,7 @@ public:
     inputs.push_back(&value);
     inputs.insert(inputs.end(), states.begin(), states.end());
     inputs.push_back(&resp);
-    return outputs(&rvsdg::CreateOpNode<store_op>(
+    return outputs(&rvsdg::CreateOpNode<StoreOperation>(
         inputs,
         std::dynamic_pointer_cast<const rvsdg::ValueType>(value.Type()),
         states.size()));
