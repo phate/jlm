@@ -10,7 +10,6 @@
 #include <jlm/llvm/ir/RvsdgModule.hpp>
 #include <jlm/rvsdg/NodeNormalization.hpp>
 #include <jlm/rvsdg/view.hpp>
-#include <llvm-18/llvm/ADT/StringExtras.h>
 
 static int
 MemoryStateSplitEquality()
