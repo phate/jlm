@@ -159,7 +159,7 @@ alloca_conv(rvsdg::Region * region)
         {
           states.push_back(l->input(i)->origin());
         }
-        auto load_outs = local_load_op::create(*index, states, *response);
+        auto load_outs = LocalLoadOperation::create(*index, states, *response);
         auto nn = dynamic_cast<jlm::rvsdg::node_output *>(load_outs[0])->node();
         for (size_t i = 0; i < l->noutputs(); ++i)
         {

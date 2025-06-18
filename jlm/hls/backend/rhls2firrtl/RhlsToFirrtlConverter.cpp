@@ -949,13 +949,11 @@ RhlsToFirrtlConverter::MlirGenHlsMemReq(const jlm::rvsdg::SimpleNode * node)
 circt::firrtl::FModuleOp
 RhlsToFirrtlConverter::MlirGenHlsLoad(const jlm::rvsdg::SimpleNode * node)
 {
+  JLM_ASSERT(rvsdg::is<LoadOperation>(node) || rvsdg::is<LocalLoadOperation>(node));
+
   // Create the module and its input/output ports
   auto module = nodeToModule(node, false);
   auto body = module.getBodyBlock();
-
-  auto load = dynamic_cast<const LoadOperation *>(&(node->GetOperation()));
-  auto local_load = dynamic_cast<const local_load_op *>(&(node->GetOperation()));
-  JLM_ASSERT(load || local_load);
 
   // Input signals
   auto inBundleAddr = GetInPort(module, 0);
@@ -2400,7 +2398,7 @@ RhlsToFirrtlConverter::MlirGen(const jlm::rvsdg::SimpleNode * node)
   {
     return MlirGenHlsStore(node);
   }
-  else if (dynamic_cast<const hls::local_load_op *>(&(node->GetOperation())))
+  else if (dynamic_cast<const hls::LocalLoadOperation *>(&(node->GetOperation())))
   {
     // same as normal load for now, but with index instead of address
     return MlirGenHlsLoad(node);

@@ -25,7 +25,7 @@ eliminate_buf(jlm::rvsdg::Output * o)
       // part of memory disambiguation
       return eliminate_buf(node->input(0)->origin());
     }
-    else if (jlm::rvsdg::is<const local_load_op>(node->GetOperation()))
+    if (jlm::rvsdg::is<LocalLoadOperation>(node))
     {
       return true;
     }
