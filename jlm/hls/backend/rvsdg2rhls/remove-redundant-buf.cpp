@@ -37,7 +37,7 @@ eliminate_buf(jlm::rvsdg::Output * o)
     {
       return true;
     }
-    else if (jlm::rvsdg::is<const jlm::hls::store_op>(node->GetOperation()))
+    if (jlm::rvsdg::is<StoreOperation>(node))
     {
       return true;
     }
