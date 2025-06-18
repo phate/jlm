@@ -4,11 +4,11 @@
  */
 
 #include <jlm/llvm/ir/types.hpp>
+#include <jlm/rvsdg/bitstring/type.hpp>
 #include <jlm/util/Hash.hpp>
 #include <jlm/util/Math.hpp>
 #include <jlm/util/strfmt.hpp>
 
-#include <jlm/rvsdg/bitstring/type.hpp>
 #include <numeric>
 #include <unordered_map>
 
@@ -183,6 +183,32 @@ std::string
 StructType::debug_string() const
 {
   return "struct";
+}
+
+size_t
+StructType::GetFieldOffset(size_t fieldIndex) const
+{
+  const auto & decl = GetDeclaration();
+  const auto isPacked = IsPacked();
+
+  size_t offset = 0;
+
+  for (size_t i = 0; i < decl.NumElements(); i++)
+  {
+    auto & field = decl.GetElement(i);
+
+    // First round up to the alignment of the field
+    auto fieldAlignment = isPacked ? 1 : GetTypeAlignment(field);
+    offset = util::RoundUpToMultipleOf(offset, fieldAlignment);
+
+    if (i == fieldIndex)
+      return offset;
+
+    // Add the size of the field
+    offset += GetTypeSize(field);
+  }
+
+  JLM_UNREACHABLE("Invalid fieldIndex in GetStructFieldOffset");
 }
 
 bool
@@ -373,8 +399,7 @@ GetTypeSize(const rvsdg::ValueType & type)
     return 0;
   }
 
-  std::cerr << "unknown type: " << typeid(type).name() << std::endl;
-  JLM_UNREACHABLE("Unknown type");
+  JLM_UNREACHABLE(util::strfmt("Unknown type: ", typeid(type).name()).c_str());
 }
 
 size_t
@@ -412,32 +437,6 @@ GetTypeAlignment(const rvsdg::ValueType & type)
   }
 
   JLM_UNREACHABLE("Unknown type");
-}
-
-size_t
-GetStructFieldOffset(const StructType & structType, size_t fieldIndex)
-{
-  const auto & decl = structType.GetDeclaration();
-  const auto isPacked = structType.IsPacked();
-
-  size_t offset = 0;
-
-  for (size_t i = 0; i < decl.NumElements(); i++)
-  {
-    auto & field = decl.GetElement(i);
-
-    // First round up to the alignment of the field
-    auto fieldAlignment = isPacked ? 1 : GetTypeAlignment(field);
-    offset = util::RoundUpToMultipleOf(offset, fieldAlignment);
-
-    if (i == fieldIndex)
-      return offset;
-
-    // Add the size of the field
-    offset += GetTypeSize(field);
-  }
-
-  JLM_UNREACHABLE("Invalid fieldIndex in GetStructFieldOffset");
 }
 
 }
