@@ -203,7 +203,7 @@ TestStore()
       jlm::util::AssertedCast<jlm::rvsdg::node_output>(lambdaRegion->result(0)->origin())->node();
   auto storeNode =
       jlm::util::AssertedCast<jlm::rvsdg::node_output>(bufferNode->input(0)->origin())->node();
-  assert(is<store_op>(storeNode));
+  assert(is<jlm::hls::StoreOperation>(storeNode));
   auto requestNode =
       jlm::util::AssertedCast<jlm::rvsdg::node_output>(lambdaRegion->result(1)->origin())->node();
   assert(is<MemoryRequestOperation>(requestNode));
@@ -211,7 +211,7 @@ TestStore()
   // Request source
   auto requestSource = requestNode->input(0)->origin();
   storeNode = jlm::util::AssertedCast<jlm::rvsdg::node_output>(requestSource)->node();
-  assert(is<store_op>(storeNode));
+  assert(is<jlm::hls::StoreOperation>(storeNode));
 
   return 0;
 }
@@ -274,7 +274,7 @@ TestLoadStore()
       jlm::util::AssertedCast<jlm::rvsdg::node_output>(lambdaRegion->result(0)->origin())->node();
   auto storeNode =
       jlm::util::AssertedCast<jlm::rvsdg::node_output>(bufferNode->input(0)->origin())->node();
-  assert(is<store_op>(storeNode));
+  assert(is<jlm::hls::StoreOperation>(storeNode));
   auto firstRequestNode =
       jlm::util::AssertedCast<jlm::rvsdg::node_output>(lambdaRegion->result(1)->origin())->node();
   assert(is<MemoryRequestOperation>(firstRequestNode));
@@ -527,7 +527,7 @@ TestThetaStore()
   // Load Node
   auto storeNode =
       jlm::util::AssertedCast<const jlm::rvsdg::node_output>(thetaResult.first()->origin())->node();
-  assert(is<store_op>(storeNode));
+  assert(is<jlm::hls::StoreOperation>(storeNode));
   // NDMux Node
   auto ndMuxNode =
       jlm::util::AssertedCast<const jlm::rvsdg::node_output>(storeNode->input(2)->origin())->node();
