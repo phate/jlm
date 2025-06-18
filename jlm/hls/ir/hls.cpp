@@ -44,7 +44,13 @@ AddressQueueOperation::~AddressQueueOperation() noexcept = default;
 
 MemoryResponseOperation::~MemoryResponseOperation() noexcept = default;
 
+LocalLoadOperation::~LocalLoadOperation() noexcept = default;
+
+LocalMemoryOperation::~LocalMemoryOperation() noexcept = default;
+
 LocalMemoryRequestOperation::~LocalMemoryRequestOperation() noexcept = default;
+
+StoreOperation::~StoreOperation() noexcept = default;
 
 std::size_t
 TriggerType::ComputeHash() const noexcept

@@ -143,7 +143,7 @@ alloca_conv(rvsdg::Region * region)
       // detect loads and stores attached to alloca
       TraceAllocaUses ta(node->output(0));
       // create memory + response
-      auto mem_outs = local_mem_op::create(at, node->region());
+      auto mem_outs = LocalMemoryOperation::create(at, node->region());
       auto resp_outs = local_mem_resp_op::create(*mem_outs[0], ta.load_nodes.size());
       std::cout << "alloca converted " << at->debug_string() << std::endl;
       // replace gep outputs (convert pointer to index calculation)
@@ -159,7 +159,7 @@ alloca_conv(rvsdg::Region * region)
         {
           states.push_back(l->input(i)->origin());
         }
-        auto load_outs = local_load_op::create(*index, states, *response);
+        auto load_outs = LocalLoadOperation::create(*index, states, *response);
         auto nn = dynamic_cast<jlm::rvsdg::node_output *>(load_outs[0])->node();
         for (size_t i = 0; i < l->noutputs(); ++i)
         {
