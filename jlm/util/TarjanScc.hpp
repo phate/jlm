@@ -182,6 +182,10 @@ FindStronglyConnectedComponents(
   {
     return n;
   };
+
+  // Because all nodes are roots, we know how long this vector needs to be
+  reverseTopologicalOrder.reserve(numNodes);
+
   return FindStronglyConnectedComponents(
       numNodes,
       identity,
