@@ -126,6 +126,9 @@ public:
              MemoryStateOutputIterator(nullptr) };
   }
 
+  /**
+   * Maps a memory state output to a store operation to its corresponding memory state input.
+   */
   [[nodiscard]] static rvsdg::Input &
   MapMemoryStateOutputToInput(const rvsdg::Output & output)
   {
