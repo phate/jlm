@@ -149,6 +149,21 @@ public:
              MemoryStateOutputIterator(nullptr) };
   }
 
+  /**
+   * Maps a memory state output of a load operation to its corresponding memory state input.
+   */
+  [[nodiscard]] static rvsdg::Input &
+  MapMemoryStateOutputToInput(const rvsdg::Output & output)
+  {
+    JLM_ASSERT(is<MemoryStateType>(output.Type()));
+    auto [loadNode, loadOperation] = rvsdg::TryGetSimpleNodeAndOp<LoadOperation>(output);
+    JLM_ASSERT(loadOperation);
+    JLM_ASSERT(loadNode->ninputs() == loadNode->noutputs());
+    const auto input = loadNode->input(output.index());
+    JLM_ASSERT(is<MemoryStateType>(input->Type()));
+    return *input;
+  }
+
 private:
   size_t NumMemoryStates_;
   size_t Alignment_;
