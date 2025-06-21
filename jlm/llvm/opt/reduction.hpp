@@ -23,6 +23,7 @@ class StructuralNode;
 namespace jlm::llvm
 {
 
+class LambdaExitMemoryStateMergeOperation;
 class LoadNonVolatileOperation;
 class MemoryStateMergeOperation;
 class MemoryStateSplitOperation;
