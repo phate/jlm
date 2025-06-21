@@ -453,7 +453,7 @@ LambdaExitMemoryStateMergeNormalizeLoad()
 
   // Act
   const auto success = jlm::rvsdg::ReduceNode<LambdaExitMemoryStateMergeOperation>(
-      LambdaExitMemoryStateMergeOperation::NormalizeLoad,
+      LambdaExitMemoryStateMergeOperation::NormalizeLoadFromAlloca,
       lambdaExitMergeNode1);
   graph.PruneNodes();
 
@@ -516,7 +516,7 @@ LambdaExitMemoryStateMergeNormalizeStore()
 
   // Act
   const auto success = jlm::rvsdg::ReduceNode<LambdaExitMemoryStateMergeOperation>(
-      LambdaExitMemoryStateMergeOperation::NormalizeStore,
+      LambdaExitMemoryStateMergeOperation::NormalizeStoreToAlloca,
       lambdaExitMergeNode1);
   graph.PruneNodes();
 

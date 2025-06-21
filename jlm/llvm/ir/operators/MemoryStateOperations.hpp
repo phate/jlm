@@ -266,19 +266,48 @@ public:
   [[nodiscard]] std::unique_ptr<Operation>
   copy() const override;
 
-  // FIXME: documentation
+  /**
+   * Performs the following transformation:
+   *
+   * a, s1 = AllocaOperation ...
+   * v, s2 = LoadOperation a s1
+   * ... = LambdaExitMemoryStateMergeOperation s2 ... sn
+   * =>
+   * a, s1 = AllocaOperation ...
+   * v, s2 = LoadOperation a s1
+   * ... = LambdaExitMemoryStateMergeOperation s1 ... sn
+   */
   static std::optional<std::vector<rvsdg::Output *>>
-  NormalizeLoad(
+  NormalizeLoadFromAlloca(
       const LambdaExitMemoryStateMergeOperation & operation,
       const std::vector<rvsdg::Output *> & operands);
 
-  // FIXME: documentation
+  /**
+   * Performs the following transformation:
+   *
+   * a, s1 = AllocaOperation ...
+   * s2 = StoreOperation a v s1
+   * ... = LambdaExitMemoryStateMergeOperation s2 ... sn
+   * =>
+   * a, s1 = AllocaOperation ...
+   * s2 = StoreOperation a v s1
+   * ... = LambdaExitMemoryStateMergeOperation s1 ... sn
+   */
   static std::optional<std::vector<rvsdg::Output *>>
-  NormalizeStore(
+  NormalizeStoreToAlloca(
       const LambdaExitMemoryStateMergeOperation & operation,
       const std::vector<rvsdg::Output *> & operands);
 
-  // FIXME: documentation
+  /**
+   * Performs the following transformation:
+   *
+   * a, s1 = AllocaOperation ...
+   * ... = LambdaExitMemoryStateMergeOperation s1 ... sn
+   * =>
+   * a, s1 = AllocaOperation ...
+   * s2 = UndefValueOperation
+   * ... = LambdaExitMemoryStateMergeOperation s2 ... sn
+   */
   static std::optional<std::vector<rvsdg::Output *>>
   NormalizeAlloca(
       const LambdaExitMemoryStateMergeOperation & operation,

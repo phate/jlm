@@ -233,7 +233,7 @@ LambdaExitMemoryStateMergeOperation::copy() const
 }
 
 std::optional<std::vector<rvsdg::Output *>>
-LambdaExitMemoryStateMergeOperation::NormalizeLoad(
+LambdaExitMemoryStateMergeOperation::NormalizeLoadFromAlloca(
     const LambdaExitMemoryStateMergeOperation &,
     const std::vector<rvsdg::Output *> & operands)
 {
@@ -270,7 +270,7 @@ LambdaExitMemoryStateMergeOperation::NormalizeLoad(
 }
 
 std::optional<std::vector<rvsdg::Output *>>
-LambdaExitMemoryStateMergeOperation::NormalizeStore(
+LambdaExitMemoryStateMergeOperation::NormalizeStoreToAlloca(
     const LambdaExitMemoryStateMergeOperation &,
     const std::vector<rvsdg::Output *> & operands)
 {
