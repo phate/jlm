@@ -90,6 +90,9 @@ private:
   ReduceMemoryStateSplitNode(rvsdg::Node & simpleNode);
 
   [[nodiscard]] static bool
+  ReduceLambdaExitMemoryStateMergeNode(rvsdg::Node & simpleNode);
+
+  [[nodiscard]] static bool
   ReduceBinaryNode(rvsdg::Node & simpleNode);
 
   static std::optional<std::vector<rvsdg::Output *>>
@@ -110,6 +113,11 @@ private:
   static std::optional<std::vector<rvsdg::Output *>>
   NormalizeMemoryStateSplitNode(
       const MemoryStateSplitOperation & operation,
+      const std::vector<rvsdg::Output *> & operands);
+
+  static std::optional<std::vector<rvsdg::Output *>>
+  NormalizeLambdaExitMemoryStateMergeNode(
+      const LambdaExitMemoryStateMergeOperation & operation,
       const std::vector<rvsdg::Output *> & operands);
 
   std::unique_ptr<Statistics> Statistics_;

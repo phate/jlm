@@ -237,7 +237,8 @@ LambdaExitMemoryStateMergeOperation::NormalizeLoadFromAlloca(
     const LambdaExitMemoryStateMergeOperation &,
     const std::vector<rvsdg::Output *> & operands)
 {
-  JLM_ASSERT(!operands.empty());
+  if (operands.empty())
+    return std::nullopt;
 
   bool replacedOperands = false;
   std::vector<rvsdg::Output *> newOperands;
@@ -274,7 +275,8 @@ LambdaExitMemoryStateMergeOperation::NormalizeStoreToAlloca(
     const LambdaExitMemoryStateMergeOperation &,
     const std::vector<rvsdg::Output *> & operands)
 {
-  JLM_ASSERT(!operands.empty());
+  if (operands.empty())
+    return std::nullopt;
 
   bool replacedOperands = false;
   std::vector<rvsdg::Output *> newOperands;
@@ -311,7 +313,8 @@ LambdaExitMemoryStateMergeOperation::NormalizeAlloca(
     const LambdaExitMemoryStateMergeOperation &,
     const std::vector<rvsdg::Output *> & operands)
 {
-  JLM_ASSERT(!operands.empty());
+  if (operands.empty())
+    return std::nullopt;
 
   bool replacedOperands = false;
   std::vector<rvsdg::Output *> newOperands;

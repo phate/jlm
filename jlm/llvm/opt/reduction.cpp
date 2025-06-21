@@ -162,6 +162,10 @@ NodeReduction::ReduceSimpleNode(rvsdg::Node & simpleNode)
   {
     return ReduceMemoryStateSplitNode(simpleNode);
   }
+  if (is<LambdaExitMemoryStateMergeOperation>(&simpleNode))
+  {
+    return ReduceLambdaExitMemoryStateMergeNode(simpleNode);
+  }
   if (is<rvsdg::UnaryOperation>(&simpleNode))
   {
     // FIXME: handle the unary node
@@ -214,6 +218,15 @@ NodeReduction::ReduceMemoryStateSplitNode(rvsdg::Node & simpleNode)
   JLM_ASSERT(is<MemoryStateSplitOperation>(&simpleNode));
 
   return rvsdg::ReduceNode<MemoryStateSplitOperation>(NormalizeMemoryStateSplitNode, simpleNode);
+}
+
+bool
+NodeReduction::ReduceLambdaExitMemoryStateMergeNode(rvsdg::Node & simpleNode)
+{
+  JLM_ASSERT(is<LambdaExitMemoryStateMergeOperation>(&simpleNode));
+  return rvsdg::ReduceNode<LambdaExitMemoryStateMergeOperation>(
+      NormalizeLambdaExitMemoryStateMergeNode,
+      simpleNode);
 }
 
 std::optional<std::vector<rvsdg::Output *>>
@@ -277,6 +290,22 @@ NodeReduction::NormalizeMemoryStateSplitNode(
         MemoryStateSplitOperation::NormalizeSplitMerge });
 
   return rvsdg::NormalizeSequence<MemoryStateSplitOperation>(normalizations, operation, operands);
+}
+
+std::optional<std::vector<rvsdg::Output *>>
+NodeReduction::NormalizeLambdaExitMemoryStateMergeNode(
+    const LambdaExitMemoryStateMergeOperation & operation,
+    const std::vector<rvsdg::Output *> & operands)
+{
+  static std::vector<rvsdg::NodeNormalization<LambdaExitMemoryStateMergeOperation>> normalizations(
+      { LambdaExitMemoryStateMergeOperation::NormalizeLoadFromAlloca,
+        LambdaExitMemoryStateMergeOperation::NormalizeStoreToAlloca,
+        LambdaExitMemoryStateMergeOperation::NormalizeAlloca });
+
+  return rvsdg::NormalizeSequence<LambdaExitMemoryStateMergeOperation>(
+      normalizations,
+      operation,
+      operands);
 }
 
 }
