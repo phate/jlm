@@ -266,14 +266,36 @@ public:
   [[nodiscard]] std::unique_ptr<Operation>
   copy() const override;
 
-  static rvsdg::Output &
-  Create(rvsdg::Region & region, const std::vector<jlm::rvsdg::Output *> & operands)
+  // FIXME: documentation
+  static std::optional<std::vector<rvsdg::Output *>>
+  NormalizeLoad(
+      const LambdaExitMemoryStateMergeOperation & operation,
+      const std::vector<rvsdg::Output *> & operands);
+
+  // FIXME: documentation
+  static std::optional<std::vector<rvsdg::Output *>>
+  NormalizeStore(
+      const LambdaExitMemoryStateMergeOperation & operation,
+      const std::vector<rvsdg::Output *> & operands);
+
+  // FIXME: documentation
+  static std::optional<std::vector<rvsdg::Output *>>
+  NormalizeAlloca(
+      const LambdaExitMemoryStateMergeOperation & operation,
+      const std::vector<rvsdg::Output *> & operands);
+
+  static rvsdg::Node &
+  CreateNode(rvsdg::Region & region, const std::vector<rvsdg::Output *> & operands)
   {
     return operands.empty()
-             ? *rvsdg::CreateOpNode<LambdaExitMemoryStateMergeOperation>(region, operands.size())
-                    .output(0)
-             : *rvsdg::CreateOpNode<LambdaExitMemoryStateMergeOperation>(operands, operands.size())
-                    .output(0);
+             ? rvsdg::CreateOpNode<LambdaExitMemoryStateMergeOperation>(region, operands.size())
+             : rvsdg::CreateOpNode<LambdaExitMemoryStateMergeOperation>(operands, operands.size());
+  }
+
+  static rvsdg::Output &
+  Create(rvsdg::Region & region, const std::vector<rvsdg::Output *> & operands)
+  {
+    return *CreateNode(region, operands).output(0);
   }
 };
 

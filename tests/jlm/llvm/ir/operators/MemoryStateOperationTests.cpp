@@ -3,10 +3,14 @@
  * See COPYING for terms of redistribution.
  */
 
+#include "test-types.hpp"
 #include <test-operation.hpp>
 #include <test-registry.hpp>
 
+#include <jlm/llvm/ir/operators/alloca.hpp>
+#include <jlm/llvm/ir/operators/Load.hpp>
 #include <jlm/llvm/ir/operators/MemoryStateOperations.hpp>
+#include <jlm/llvm/ir/operators/Store.hpp>
 #include <jlm/llvm/ir/RvsdgModule.hpp>
 #include <jlm/rvsdg/NodeNormalization.hpp>
 #include <jlm/rvsdg/view.hpp>
@@ -412,6 +416,195 @@ LambdaExitMemStateOperatorEquality()
 JLM_UNIT_TEST_REGISTER(
     "jlm/llvm/ir/operators/MemoryStateOperationTests-LambdaExitMemStateOperatorEquality",
     LambdaExitMemStateOperatorEquality)
+
+static int
+LambdaExitMemoryStateMergeNormalizeLoad()
+{
+  using namespace jlm::llvm;
+  using namespace jlm::rvsdg;
+
+  // Arrange
+  const auto bit32Type = bittype::Create(32);
+  const auto memoryStateType = jlm::llvm::MemoryStateType::Create();
+  const auto valueType = jlm::tests::valuetype::Create();
+
+  Graph graph;
+  auto & memState1 = jlm::tests::GraphImport::Create(graph, memoryStateType, "memState1");
+  auto & memState2 = jlm::tests::GraphImport::Create(graph, memoryStateType, "memState1");
+  auto & size = jlm::tests::GraphImport::Create(graph, bit32Type, "size");
+
+  auto allocaResults = AllocaOperation::create(valueType, &size, 4);
+  auto & loadNode =
+      LoadNonVolatileOperation::CreateNode(*allocaResults[0], { allocaResults[1] }, valueType, 4);
+
+  auto & lambdaExitMergeNode1 = LambdaExitMemoryStateMergeOperation::CreateNode(
+      graph.GetRootRegion(),
+      { loadNode.output(1), &memState1 });
+
+  auto & lambdaExitMergeNode2 = LambdaExitMemoryStateMergeOperation::CreateNode(
+      graph.GetRootRegion(),
+      { &memState2, &memState1 });
+
+  auto & x = jlm::tests::GraphExport::Create(*lambdaExitMergeNode1.output(0), "x");
+  auto & y = jlm::tests::GraphExport::Create(*lambdaExitMergeNode2.output(0), "y");
+  jlm::tests::GraphExport::Create(*loadNode.output(0), "z");
+
+  view(&graph.GetRootRegion(), stdout);
+
+  // Act
+  const auto success = jlm::rvsdg::ReduceNode<LambdaExitMemoryStateMergeOperation>(
+      LambdaExitMemoryStateMergeOperation::NormalizeLoad,
+      lambdaExitMergeNode1);
+  graph.PruneNodes();
+
+  view(&graph.GetRootRegion(), stdout);
+
+  // Assert
+  assert(success);
+  assert(graph.GetRootRegion().nnodes() == 4);
+
+  // The lambdaExitMergeNode1 should have been replaced
+  const auto memStateMerge1Node = TryGetOwnerNode<Node>(*x.origin());
+  assert(memStateMerge1Node != &lambdaExitMergeNode1);
+  assert(memStateMerge1Node->ninputs() == 2);
+  assert(memStateMerge1Node->input(0)->origin() == allocaResults[1]);
+  assert(memStateMerge1Node->input(1)->origin() == &memState1);
+
+  // The lambdaExitMergeNode2 should not have been replaced
+  const auto memStateMerge2Node = TryGetOwnerNode<Node>(*y.origin());
+  assert(memStateMerge2Node == &lambdaExitMergeNode2);
+
+  return 0;
+}
+
+JLM_UNIT_TEST_REGISTER(
+    "jlm/llvm/ir/operators/MemoryStateOperationTests-LambdaExitMemoryStateMergeNormalizeLoad",
+    LambdaExitMemoryStateMergeNormalizeLoad)
+
+static int
+LambdaExitMemoryStateMergeNormalizeStore()
+{
+  using namespace jlm::llvm;
+  using namespace jlm::rvsdg;
+
+  // Arrange
+  const auto bit32Type = bittype::Create(32);
+  const auto memoryStateType = jlm::llvm::MemoryStateType::Create();
+  const auto valueType = jlm::tests::valuetype::Create();
+
+  Graph graph;
+  auto & memState1 = jlm::tests::GraphImport::Create(graph, memoryStateType, "memState1");
+  auto & memState2 = jlm::tests::GraphImport::Create(graph, memoryStateType, "memState1");
+  auto & size = jlm::tests::GraphImport::Create(graph, bit32Type, "size");
+
+  auto allocaResults = AllocaOperation::create(valueType, &size, 4);
+  auto & storeNode =
+      StoreNonVolatileOperation::CreateNode(*allocaResults[0], size, { allocaResults[1] }, 4);
+
+  auto & lambdaExitMergeNode1 = LambdaExitMemoryStateMergeOperation::CreateNode(
+      graph.GetRootRegion(),
+      { storeNode.output(0), &memState1 });
+
+  auto & lambdaExitMergeNode2 = LambdaExitMemoryStateMergeOperation::CreateNode(
+      graph.GetRootRegion(),
+      { &memState2, &memState1 });
+
+  auto & x = jlm::tests::GraphExport::Create(*lambdaExitMergeNode1.output(0), "x");
+  auto & y = jlm::tests::GraphExport::Create(*lambdaExitMergeNode2.output(0), "y");
+
+  view(&graph.GetRootRegion(), stdout);
+
+  // Act
+  const auto success = jlm::rvsdg::ReduceNode<LambdaExitMemoryStateMergeOperation>(
+      LambdaExitMemoryStateMergeOperation::NormalizeStore,
+      lambdaExitMergeNode1);
+  graph.PruneNodes();
+
+  view(&graph.GetRootRegion(), stdout);
+
+  // Assert
+  assert(success);
+  assert(graph.GetRootRegion().nnodes() == 3);
+
+  // The lambdaExitMergeNode1 should have been replaced
+  const auto memStateMerge1Node = TryGetOwnerNode<Node>(*x.origin());
+  assert(memStateMerge1Node != &lambdaExitMergeNode1);
+  assert(memStateMerge1Node->ninputs() == 2);
+  assert(memStateMerge1Node->input(0)->origin() == allocaResults[1]);
+  assert(memStateMerge1Node->input(1)->origin() == &memState1);
+
+  // The lambdaExitMergeNode2 should not have been replaced
+  const auto memStateMerge2Node = TryGetOwnerNode<Node>(*y.origin());
+  assert(memStateMerge2Node == &lambdaExitMergeNode2);
+
+  return 0;
+}
+
+JLM_UNIT_TEST_REGISTER(
+    "jlm/llvm/ir/operators/MemoryStateOperationTests-LambdaExitMemoryStateMergeNormalizeStore",
+    LambdaExitMemoryStateMergeNormalizeStore)
+
+static int
+LambdaExitMemoryStateMergeNormalizeAlloca()
+{
+  using namespace jlm::llvm;
+  using namespace jlm::rvsdg;
+
+  // Arrange
+  const auto bit32Type = bittype::Create(32);
+  const auto memoryStateType = jlm::llvm::MemoryStateType::Create();
+  const auto valueType = jlm::tests::valuetype::Create();
+
+  Graph graph;
+  auto & memState1 = jlm::tests::GraphImport::Create(graph, memoryStateType, "memState1");
+  auto & memState2 = jlm::tests::GraphImport::Create(graph, memoryStateType, "memState1");
+  auto & size = jlm::tests::GraphImport::Create(graph, bit32Type, "size");
+
+  auto allocaResults = AllocaOperation::create(valueType, &size, 4);
+
+  auto & lambdaExitMergeNode1 = LambdaExitMemoryStateMergeOperation::CreateNode(
+      graph.GetRootRegion(),
+      { allocaResults[1], &memState1 });
+
+  auto & lambdaExitMergeNode2 = LambdaExitMemoryStateMergeOperation::CreateNode(
+      graph.GetRootRegion(),
+      { &memState2, &memState1 });
+
+  auto & x = jlm::tests::GraphExport::Create(*lambdaExitMergeNode1.output(0), "x");
+  auto & y = jlm::tests::GraphExport::Create(*lambdaExitMergeNode2.output(0), "y");
+
+  view(&graph.GetRootRegion(), stdout);
+
+  // Act
+  const auto success = jlm::rvsdg::ReduceNode<LambdaExitMemoryStateMergeOperation>(
+      LambdaExitMemoryStateMergeOperation::NormalizeAlloca,
+      lambdaExitMergeNode1);
+  graph.PruneNodes();
+
+  view(&graph.GetRootRegion(), stdout);
+
+  // Assert
+  assert(success);
+  assert(graph.GetRootRegion().nnodes() == 3);
+
+  // The lambdaExitMergeNode1 should have been replaced
+  const auto memStateMerge1Node = TryGetOwnerNode<Node>(*x.origin());
+  assert(memStateMerge1Node != &lambdaExitMergeNode1);
+  assert(memStateMerge1Node->ninputs() == 2);
+  const auto undefNode = TryGetOwnerNode<Node>(*memStateMerge1Node->input(0)->origin());
+  assert(undefNode);
+  assert(memStateMerge1Node->input(1)->origin() == &memState1);
+
+  // The lambdaExitMergeNode2 should not have been replaced
+  const auto memStateMerge2Node = TryGetOwnerNode<Node>(*y.origin());
+  assert(memStateMerge2Node == &lambdaExitMergeNode2);
+
+  return 0;
+}
+
+JLM_UNIT_TEST_REGISTER(
+    "jlm/llvm/ir/operators/MemoryStateOperationTests-LambdaExitMemoryStateMergeNormalizeAlloca",
+    LambdaExitMemoryStateMergeNormalizeAlloca)
 
 static int
 CallEntryMemStateOperatorEquality()

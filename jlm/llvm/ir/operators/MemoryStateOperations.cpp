@@ -3,7 +3,11 @@
  * See COPYING for terms of redistribution.
  */
 
+#include <jlm/llvm/ir/operators/alloca.hpp>
+#include <jlm/llvm/ir/operators/Load.hpp>
 #include <jlm/llvm/ir/operators/MemoryStateOperations.hpp>
+#include <jlm/llvm/ir/operators/operators.hpp>
+#include <jlm/llvm/ir/operators/Store.hpp>
 #include <jlm/util/HashSet.hpp>
 
 namespace jlm::llvm
@@ -226,6 +230,111 @@ std::unique_ptr<rvsdg::Operation>
 LambdaExitMemoryStateMergeOperation::copy() const
 {
   return std::make_unique<LambdaExitMemoryStateMergeOperation>(*this);
+}
+
+std::optional<std::vector<rvsdg::Output *>>
+LambdaExitMemoryStateMergeOperation::NormalizeLoad(
+    const LambdaExitMemoryStateMergeOperation &,
+    const std::vector<rvsdg::Output *> & operands)
+{
+  JLM_ASSERT(!operands.empty());
+
+  bool replacedOperands = false;
+  std::vector<rvsdg::Output *> newOperands;
+  for (auto operand : operands)
+  {
+    auto [loadNode, loadOperation] = rvsdg::TryGetSimpleNodeAndOp<LoadOperation>(*operand);
+    if (!loadOperation)
+    {
+      newOperands.push_back(operand);
+      continue;
+    }
+
+    auto loadAddress = LoadOperation::AddressInput(*loadNode).origin();
+    auto [_, allocaOperation] = rvsdg::TryGetSimpleNodeAndOp<AllocaOperation>(*loadAddress);
+    if (!allocaOperation)
+    {
+      newOperands.push_back(operand);
+      continue;
+    }
+
+    auto newOperand = LoadOperation::MapMemoryStateOutputToInput(*operand).origin();
+    newOperands.push_back(newOperand);
+    replacedOperands = true;
+  }
+
+  if (!replacedOperands)
+    return std::nullopt;
+
+  return { { &Create(*operands[0]->region(), newOperands) } };
+}
+
+std::optional<std::vector<rvsdg::Output *>>
+LambdaExitMemoryStateMergeOperation::NormalizeStore(
+    const LambdaExitMemoryStateMergeOperation &,
+    const std::vector<rvsdg::Output *> & operands)
+{
+  JLM_ASSERT(!operands.empty());
+
+  bool replacedOperands = false;
+  std::vector<rvsdg::Output *> newOperands;
+  for (auto operand : operands)
+  {
+    auto [storeNode, storeOperation] = rvsdg::TryGetSimpleNodeAndOp<StoreOperation>(*operand);
+    if (!storeOperation)
+    {
+      newOperands.push_back(operand);
+      continue;
+    }
+
+    auto storeAddress = StoreOperation::AddressInput(*storeNode).origin();
+    auto [_, allocaOperation] = rvsdg::TryGetSimpleNodeAndOp<AllocaOperation>(*storeAddress);
+    if (!allocaOperation)
+    {
+      newOperands.push_back(operand);
+      continue;
+    }
+
+    auto newOperand = StoreOperation::MapMemoryStateOutputToInput(*operand).origin();
+    newOperands.push_back(newOperand);
+    replacedOperands = true;
+  }
+
+  if (!replacedOperands)
+    return std::nullopt;
+
+  return { { &Create(*operands[0]->region(), newOperands) } };
+}
+
+std::optional<std::vector<rvsdg::Output *>>
+LambdaExitMemoryStateMergeOperation::NormalizeAlloca(
+    const LambdaExitMemoryStateMergeOperation &,
+    const std::vector<rvsdg::Output *> & operands)
+{
+  JLM_ASSERT(!operands.empty());
+
+  bool replacedOperands = false;
+  std::vector<rvsdg::Output *> newOperands;
+  for (auto operand : operands)
+  {
+    auto [allocaNode, allocaOperation] = rvsdg::TryGetSimpleNodeAndOp<AllocaOperation>(*operand);
+    if (allocaOperation)
+    {
+      auto newOperand =
+          UndefValueOperation::Create(*allocaNode->region(), MemoryStateType::Create());
+      newOperands.push_back(newOperand);
+      replacedOperands = true;
+    }
+    else
+    {
+      newOperands.push_back(operand);
+    }
+  }
+
+  if (!replacedOperands)
+    return std::nullopt;
+
+  return { { &Create(*operands[0]->region(), newOperands) } };
 }
 
 CallEntryMemoryStateMergeOperation::~CallEntryMemoryStateMergeOperation() noexcept = default;

@@ -126,6 +126,18 @@ public:
              MemoryStateOutputIterator(nullptr) };
   }
 
+  [[nodiscard]] static rvsdg::Input &
+  MapMemoryStateOutputToInput(const rvsdg::Output & output)
+  {
+    JLM_ASSERT(is<MemoryStateType>(output.Type()));
+    auto [storeNode, storeOperation] = rvsdg::TryGetSimpleNodeAndOp<StoreOperation>(output);
+    JLM_ASSERT(storeOperation);
+    JLM_ASSERT(storeNode->ninputs() - 2 == storeNode->noutputs());
+    const auto input = storeNode->input(output.index() + 2);
+    JLM_ASSERT(is<MemoryStateType>(input->Type()));
+    return *input;
+  }
+
 private:
   size_t NumMemoryStates_;
   size_t Alignment_;
