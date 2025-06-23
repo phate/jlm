@@ -40,7 +40,7 @@ strongconnect(
   if (map[node].second == map[node].first)
   {
     std::unordered_set<const jlm::llvm::InterProceduralGraphNode *> scc;
-    const jlm::llvm::InterProceduralGraphNode * w;
+    const jlm::llvm::InterProceduralGraphNode * w = nullptr;
     do
     {
       w = node_stack.back();

@@ -883,7 +883,7 @@ RegionAwareModRefSummarizer::AnnotateCall(
   // Go through all locations the called function pointer may target
   for (auto & callee : targetPtrNode.Targets())
   {
-    size_t targetSccIndex;
+    size_t targetSccIndex = 0;
     if (auto lambdaCallee = dynamic_cast<const PointsToGraph::LambdaNode *>(&callee))
     {
       const auto & lambdaNode = lambdaCallee->GetLambdaNode();

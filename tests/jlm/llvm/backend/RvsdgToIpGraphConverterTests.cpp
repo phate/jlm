@@ -360,7 +360,7 @@ RecursiveData()
   auto r2 = pb.AddFixVar(pt);
   auto dep = pb.AddContextVar(*imp);
 
-  jlm::rvsdg::Output *delta1, *delta2;
+  jlm::rvsdg::Output *delta1 = nullptr, *delta2 = nullptr;
   {
     auto delta =
         delta::node::Create(region, vt, "test-delta1", linkage::external_linkage, "", false);

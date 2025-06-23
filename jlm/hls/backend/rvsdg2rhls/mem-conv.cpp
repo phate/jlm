@@ -735,7 +735,7 @@ ReplaceLoad(
     states.push_back(replacedLoad->input(i)->origin());
   }
 
-  rvsdg::Node * newLoad;
+  rvsdg::Node * newLoad = nullptr;
   if (states.empty())
   {
     size_t load_capacity = 10;

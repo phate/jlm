@@ -429,7 +429,7 @@ bool
 dne(rvsdg::Region * sr)
 {
   bool any_changed = false;
-  bool changed;
+  bool changed = false;
   do
   {
     changed = false;

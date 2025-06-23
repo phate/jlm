@@ -26,7 +26,7 @@ invariantInput(
     const rvsdg::Output & output,
     InvariantOutputMap & invariantOutputs)
 {
-  size_t n;
+  size_t n = 0;
   rvsdg::StructuralInput * input = nullptr;
   auto exitvar = gamma.MapOutputExitVar(output);
   for (n = 0; n < exitvar.branchResult.size(); n++)

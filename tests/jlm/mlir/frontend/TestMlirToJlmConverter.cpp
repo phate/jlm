@@ -273,7 +273,7 @@ TestDivOperation()
       assert(convertedLambda->subregion()->nnodes() == 3);
 
       // Traverse the rvsgd graph upwards to check connections
-      jlm::rvsdg::node_output * lambdaResultOriginNodeOuput;
+      node_output * lambdaResultOriginNodeOuput = nullptr;
       assert(
           lambdaResultOriginNodeOuput = dynamic_cast<jlm::rvsdg::node_output *>(
               convertedLambda->subregion()->result(0)->origin()));
@@ -282,7 +282,7 @@ TestDivOperation()
       assert(lambdaResultOriginNode->ninputs() == 2);
 
       // Check first input
-      jlm::rvsdg::RegionArgument * DivInput0;
+      RegionArgument * DivInput0 = nullptr;
       assert(
           DivInput0 = dynamic_cast<jlm::rvsdg::RegionArgument *>(
               lambdaResultOriginNode->input(0)->origin()));
@@ -496,7 +496,7 @@ TestCompZeroExt()
       assert(AddOp->Type().nbits() == 32);
 
       // Check add input0
-      jlm::rvsdg::RegionArgument * AddInput0;
+      RegionArgument * AddInput0 = nullptr;
       assert(AddInput0 = dynamic_cast<jlm::rvsdg::RegionArgument *>(AddNode->input(0)->origin()));
       assert(jlm::rvsdg::is<bittype>(AddInput0->Type()));
       assert(std::dynamic_pointer_cast<const bittype>(AddInput0->Type())->nbits() == 32);

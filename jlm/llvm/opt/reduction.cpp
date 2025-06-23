@@ -71,7 +71,7 @@ NodeReduction::Run(
 void
 NodeReduction::ReduceNodesInRegion(rvsdg::Region & region)
 {
-  bool reductionPerformed;
+  bool reductionPerformed = false;
   size_t numIterations = 0;
   do
   {

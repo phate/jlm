@@ -1591,7 +1591,7 @@ RhlsToFirrtlConverter::MlirGenMem(const jlm::rvsdg::SimpleNode * node)
   Connect(body, memReqValid, canRequest);
   Connect(body, memReqAddr, inData0);
 
-  int bitWidth;
+  int bitWidth = 0;
   if (store)
   {
     Connect(body, memReqWrite, oneBitValue);

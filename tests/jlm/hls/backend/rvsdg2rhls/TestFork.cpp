@@ -28,11 +28,11 @@ TestFork()
       LlvmLambdaOperation::Create(ft, "f", linkage::external_linkage));
 
   auto loop = hls::loop_node::create(lambda->subregion());
-  rvsdg::Output * idvBuffer;
+  rvsdg::Output * idvBuffer = nullptr;
   loop->AddLoopVar(lambda->GetFunctionArguments()[0], &idvBuffer);
-  rvsdg::Output * lvsBuffer;
+  rvsdg::Output * lvsBuffer = nullptr;
   loop->AddLoopVar(lambda->GetFunctionArguments()[1], &lvsBuffer);
-  rvsdg::Output * lveBuffer;
+  rvsdg::Output * lveBuffer = nullptr;
   loop->AddLoopVar(lambda->GetFunctionArguments()[2], &lveBuffer);
 
   auto arm = rvsdg::CreateOpNode<rvsdg::bitadd_op>({ idvBuffer, lvsBuffer }, 32).output(0);
@@ -92,7 +92,7 @@ TestConstantFork()
 
   auto loop = hls::loop_node::create(lambdaRegion);
   auto subregion = loop->subregion();
-  rvsdg::Output * idvBuffer;
+  rvsdg::Output * idvBuffer = nullptr;
   loop->AddLoopVar(lambda->GetFunctionArguments()[0], &idvBuffer);
   auto bitConstant1 = rvsdg::create_bitconstant(subregion, 32, 1);
 
@@ -121,7 +121,7 @@ TestConstantFork()
     auto lambdaRegion = lambda->subregion();
     assert(lambdaRegion->nnodes() == 1);
 
-    rvsdg::node_output * loopOutput;
+    const rvsdg::node_output * loopOutput = nullptr;
     assert(loopOutput = dynamic_cast<jlm::rvsdg::node_output *>(lambdaRegion->result(0)->origin()));
     auto loopNode = loopOutput->node();
     assert(dynamic_cast<const hls::loop_node *>(loopNode));

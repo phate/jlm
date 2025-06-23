@@ -59,7 +59,7 @@ test_basic_traversal()
   jlm::tests::GraphExport::Create(*n2->output(0), "dummy");
 
   {
-    jlm::rvsdg::Node * tmp;
+    const jlm::rvsdg::Node * tmp = nullptr;
     jlm::rvsdg::TopDownTraverser trav(&graph.GetRootRegion());
 
     tmp = trav.next();
@@ -87,7 +87,7 @@ test_order_enforcement_traversal()
       { type });
 
   {
-    jlm::rvsdg::Node * tmp;
+    const jlm::rvsdg::Node * tmp = nullptr;
     jlm::rvsdg::TopDownTraverser trav(&graph.GetRootRegion());
 
     tmp = trav.next();
@@ -118,7 +118,7 @@ test_traversal_insertion()
   jlm::tests::GraphExport::Create(*n2->output(0), "dummy");
 
   {
-    jlm::rvsdg::Node * node;
+    const jlm::rvsdg::Node * node = nullptr;
     jlm::rvsdg::TopDownTraverser trav(&graph.GetRootRegion());
 
     node = trav.next();
