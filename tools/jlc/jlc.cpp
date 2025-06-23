@@ -11,10 +11,10 @@ main(int argc, char ** argv)
 {
   using namespace jlm::tooling;
 
+  JlcCommandLineParser commandLineParser;
   const JlcCommandLineOptions * commandLineOptions = nullptr;
   try
   {
-    JlcCommandLineParser commandLineParser;
     commandLineOptions = &commandLineParser.ParseCommandLineArguments(argc, argv);
   }
   catch (const CommandLineParser::Exception & e)
