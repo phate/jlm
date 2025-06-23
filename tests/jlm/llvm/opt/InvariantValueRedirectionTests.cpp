@@ -157,7 +157,7 @@ TestCall()
   auto rvsdgModule = RvsdgModule::Create(jlm::util::FilePath(""), "", "");
   auto & rvsdg = rvsdgModule->Rvsdg();
 
-  jlm::rvsdg::Output * lambdaOutputTest1;
+  jlm::rvsdg::Output * lambdaOutputTest1 = nullptr;
   {
     auto lambdaNode = jlm::rvsdg::LambdaNode::Create(
         rvsdg.GetRootRegion(),
@@ -189,7 +189,7 @@ TestCall()
                                                gammaOutputMemoryState.output });
   }
 
-  jlm::rvsdg::Output * lambdaOutputTest2;
+  jlm::rvsdg::Output * lambdaOutputTest2 = nullptr;
   {
     auto functionType = jlm::rvsdg::FunctionType::Create(
         { valueType, valueType, ioStateType, memoryStateType },
@@ -248,7 +248,7 @@ TestCallWithMemoryStateNodes()
   auto rvsdgModule = RvsdgModule::Create(jlm::util::FilePath(""), "", "");
   auto & rvsdg = rvsdgModule->Rvsdg();
 
-  jlm::rvsdg::Output * lambdaOutputTest1;
+  jlm::rvsdg::Output * lambdaOutputTest1 = nullptr;
   {
     auto lambdaNode = jlm::rvsdg::LambdaNode::Create(
         rvsdg.GetRootRegion(),
@@ -280,7 +280,7 @@ TestCallWithMemoryStateNodes()
         lambdaNode->finalize({ gammaOutputX.output, ioStateArgument, &lambdaExitMergeResult });
   }
 
-  jlm::rvsdg::Output * lambdaOutputTest2;
+  jlm::rvsdg::Output * lambdaOutputTest2 = nullptr;
   {
     auto functionType = jlm::rvsdg::FunctionType::Create(
         { valueType, ioStateType, memoryStateType },
@@ -361,7 +361,7 @@ TestCallWithMissingMemoryStateNodes()
   auto rvsdgModule = jlm::llvm::RvsdgModule::Create(jlm::util::FilePath(""), "", "");
   auto & rvsdg = rvsdgModule->Rvsdg();
 
-  Output * lambdaOutputTest1;
+  Output * lambdaOutputTest1 = nullptr;
   {
     auto lambdaNode = LambdaNode::Create(
         rvsdg.GetRootRegion(),
@@ -389,7 +389,7 @@ TestCallWithMissingMemoryStateNodes()
         lambdaNode->finalize({ zeroNode.output(0), ioStateArgument, &lambdaExitMergeResult });
   }
 
-  Output * lambdaOutputTest2;
+  Output * lambdaOutputTest2 = nullptr;
   {
     auto lambdaNode = LambdaNode::Create(
         rvsdg.GetRootRegion(),

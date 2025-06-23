@@ -235,8 +235,8 @@ MlirToJlmConverter::ConvertFPBinaryNode(
 {
   if (inputs.size() != 2)
     return nullptr;
-  llvm::fpop op;
-  llvm::fpsize size;
+  auto op = llvm::fpop::add;
+  auto size = llvm::fpsize::half;
   if (auto castedOp = ::mlir::dyn_cast<::mlir::arith::AddFOp>(&mlirOperation))
   {
     op = llvm::fpop::add;

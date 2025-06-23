@@ -47,7 +47,7 @@ test_basic_traversal()
   jlm::tests::GraphExport::Create(*n2->output(0), "dummy");
 
   {
-    jlm::rvsdg::Node * tmp;
+    const jlm::rvsdg::Node * tmp = nullptr;
     jlm::rvsdg::BottomUpTraverser trav(&graph.GetRootRegion());
     tmp = trav.next();
     assert(tmp == n2);
@@ -72,8 +72,8 @@ test_order_enforcement_traversal()
       { n2->output(0), n1->output(1) },
       { type });
 
-  jlm::rvsdg::Node * tmp;
   {
+    const jlm::rvsdg::Node * tmp = nullptr;
     jlm::rvsdg::BottomUpTraverser trav(&graph.GetRootRegion());
 
     tmp = trav.next();

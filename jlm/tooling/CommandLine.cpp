@@ -351,7 +351,7 @@ JlcCommandLineParser::ParseCommandLineArguments(int argc, const char * const * a
     std::vector<JlmOptCommandLineOptions::OptimizationId> optimizationIds;
     for (auto & optimization : optimizations)
     {
-      JlmOptCommandLineOptions::OptimizationId optimizationId;
+      auto optimizationId = JlmOptCommandLineOptions::OptimizationId::FirstEnumValue;
       try
       {
         optimizationId =

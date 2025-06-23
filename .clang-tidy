@@ -1,6 +1,7 @@
 ---
 Checks: '-*,
   bugprone-move-forwarding-reference,
+  cppcoreguidelines-init-variables,
   misc-unused-parameters,
   misc-unused-using-decls,
   modernize-deprecated-headers,
@@ -9,6 +10,7 @@ Checks: '-*,
 
 WarningsAsErrors: '
   bugprone-move-forwarding-reference,
+  cppcoreguidelines-init-variables,
   misc-unused-parameters,
   misc-unused-using-decls,
   modernize-deprecated-headers,
