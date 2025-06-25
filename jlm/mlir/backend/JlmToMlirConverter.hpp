@@ -159,7 +159,7 @@ public:
 
   /**
    * Converts an RVSDG bitcompare_op to an MLIR RVSDG operation.
-   * \param bitOp The RVSDG bitcompare_op to be converted
+   * \param pointerCompareOp The RVSDG bitcompare_op to be converted
    * \param inputs The inputs to the bitcompare_op.
    * \return The converted MLIR RVSDG operation.
    */
