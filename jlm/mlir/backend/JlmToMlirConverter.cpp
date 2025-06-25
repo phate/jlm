@@ -360,9 +360,44 @@ JlmToMlirConverter::BitCompareNode(
   else if (jlm::rvsdg::is<const rvsdg::bitult_op>(bitOp))
     compPredicate = ::mlir::arith::CmpIPredicate::ult;
   else
-    JLM_UNREACHABLE("Unknown bitcompare operation");
+  {
+    auto message = util::strfmt("Unknown compare operation: ", bitOp.debug_string());
+    JLM_UNREACHABLE(message.c_str());
+  }
 
   auto MlirOp = Builder_->create<::mlir::arith::CmpIOp>(
+      Builder_->getUnknownLoc(),
+      compPredicate,
+      inputs[0],
+      inputs[1]);
+  return MlirOp;
+}
+
+::mlir::Operation *
+JlmToMlirConverter::ConvertPointerCompareNode(
+    const llvm::ptrcmp_op & operation,
+    ::llvm::SmallVector<::mlir::Value> inputs)
+{
+  auto compPredicate = ::mlir::LLVM::ICmpPredicate::eq;
+  if (llvm::cmp::eq == operation.cmp())
+    compPredicate = ::mlir::LLVM::ICmpPredicate::eq;
+  else if (llvm::cmp::ne == operation.cmp())
+    compPredicate = ::mlir::LLVM::ICmpPredicate::ne;
+  else if (llvm::cmp::gt == operation.cmp())
+    compPredicate = ::mlir::LLVM::ICmpPredicate::sgt;
+  else if (llvm::cmp::ge == operation.cmp())
+    compPredicate = ::mlir::LLVM::ICmpPredicate::sge;
+  else if (llvm::cmp::lt == operation.cmp())
+    compPredicate = ::mlir::LLVM::ICmpPredicate::slt;
+  else if (llvm::cmp::le == operation.cmp())
+    compPredicate = ::mlir::LLVM::ICmpPredicate::sle;
+  else
+  {
+    auto message = util::strfmt("Unknown pointer compare operation: ", operation.debug_string());
+    JLM_UNREACHABLE(message.c_str());
+  }
+
+  auto MlirOp = Builder_->create<::mlir::LLVM::ICmpOp>(
       Builder_->getUnknownLoc(),
       compPredicate,
       inputs[0],
