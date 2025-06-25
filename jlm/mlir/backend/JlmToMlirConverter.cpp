@@ -87,12 +87,6 @@ JlmToMlirConverter::ConvertRegion(rvsdg::Region & region, ::mlir::Block & block,
   for (size_t i = 0; i < region.narguments(); ++i)
   {
     auto arg = region.argument(i);
-    // Ignore unit type -- this is the first argument in gamma subregions
-    // and does not have a representation in MLIR.
-    if (*arg->Type() == *rvsdg::UnitType::Create())
-    {
-      continue;
-    }
     if (isRoot) // Omega arguments are treated separately
     {
       auto imp = util::AssertedCast<llvm::GraphImport>(arg);
@@ -859,6 +853,10 @@ JlmToMlirConverter::ConvertType(const rvsdg::Type & type)
   else if (rvsdg::is<const llvm::VariableArgumentType>(type))
   {
     return Builder_->getType<::mlir::jlm::VarargListType>();
+  }
+  else if (rvsdg::is<const rvsdg::UnitType>(type))
+  {
+    return Builder_->getType<::mlir::NoneType>();
   }
   else
   {
