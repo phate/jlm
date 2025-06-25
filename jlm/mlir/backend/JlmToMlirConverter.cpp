@@ -87,12 +87,6 @@ JlmToMlirConverter::ConvertRegion(rvsdg::Region & region, ::mlir::Block & block,
   for (size_t i = 0; i < region.narguments(); ++i)
   {
     auto arg = region.argument(i);
-    // Ignore unit type -- this is the first argument in gamma subregions
-    // and does not have a representation in MLIR.
-    if (*arg->Type() == *rvsdg::UnitType::Create())
-    {
-      continue;
-    }
     if (isRoot) // Omega arguments are treated separately
     {
       auto imp = util::AssertedCast<llvm::GraphImport>(arg);
@@ -367,7 +361,6 @@ JlmToMlirConverter::BitCompareNode(
     compPredicate = ::mlir::arith::CmpIPredicate::ult;
   else
     JLM_UNREACHABLE("Unknown bitcompare operation");
-
   auto MlirOp = Builder_->create<::mlir::arith::CmpIOp>(
       Builder_->getUnknownLoc(),
       compPredicate,
@@ -546,7 +539,7 @@ JlmToMlirConverter::ConvertSimpleNode(
     MlirOp = Builder_->create<::mlir::jlm::Load>(
         Builder_->getUnknownLoc(),
         ConvertType(*load_op->result(0)),                               // ptr
-        ConvertType(*load_op->result(1)),                               // memstate
+        ConvertType(*load_op->result(1)),                               // memstate(s)
         inputs[0],                                                      // pointer
         Builder_->getUI32IntegerAttr(load_op->GetAlignment()),          // alignment
         ::mlir::ValueRange({ std::next(inputs.begin()), inputs.end() }) // inputMemStates
@@ -556,7 +549,7 @@ JlmToMlirConverter::ConvertSimpleNode(
   {
     MlirOp = Builder_->create<::mlir::jlm::Store>(
         Builder_->getUnknownLoc(),
-        ConvertType(*store_op->result(0)),                                         // memstate
+        ConvertType(*store_op->result(0)),                                         // memstate(s)
         inputs[0],                                                                 // ptr
         inputs[1],                                                                 // value
         Builder_->getUI32IntegerAttr(store_op->GetAlignment()),                    // alignment
@@ -859,6 +852,10 @@ JlmToMlirConverter::ConvertType(const rvsdg::Type & type)
   else if (rvsdg::is<const llvm::VariableArgumentType>(type))
   {
     return Builder_->getType<::mlir::jlm::VarargListType>();
+  }
+  else if (rvsdg::is<const rvsdg::UnitType>(type))
+  {
+    return Builder_->getType<::mlir::NoneType>();
   }
   else
   {
