@@ -3,6 +3,8 @@
 import subprocess
 import sys
 
+DEBUG = True
+
 # Run jlc with -### to get the individual commands to be executed
 jlcArguments = ['jlc'] + sys.argv[1:] + ['-###']
 jlcOutput = subprocess.run(jlcArguments, capture_output=True, text=True)
@@ -42,6 +44,8 @@ for command in jlcOutput.stdout.splitlines():
         # jlm-opt command with two commands that roundtrip through mlir
         if llvmInputFormat and llvmOutputFormat:
             # Generate the mlir output
+            if DEBUG:
+                print(" ".join(mlirArguments));
             output = subprocess.run(mlirArguments, capture_output=True, text=True)
             if output.stderr:
                 print(output.stderr)
@@ -49,12 +53,18 @@ for command in jlcOutput.stdout.splitlines():
             # All optimizations etc. have already been performed when jlm-opt was 
             # invoked to generat the mlir, so only convert the mlir file to llvm.
             llArguments = ['jlm-opt', '--input-format=mlir', '--output-format=llvm', '-o', outputFile, outputFile + '.mlir']
+            if DEBUG:
+                print(" ".join(llArguments))
             output = subprocess.run(llArguments, capture_output=True, text=True)
             if output.stderr:
                 print(output.stderr)
                 exit(1)
         else:
+            if DEBUG:
+                print(" ".join(commandArguments));
             output = subprocess.run(commandArguments, capture_output=True, text=True)
     else:
         # Else we run the command as is
+        if DEBUG:
+            print(" ".join(commandArguments));
         output = subprocess.run(commandArguments, capture_output=True, text=True)
