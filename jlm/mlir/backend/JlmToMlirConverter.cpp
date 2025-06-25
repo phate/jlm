@@ -361,6 +361,7 @@ JlmToMlirConverter::BitCompareNode(
     compPredicate = ::mlir::arith::CmpIPredicate::ult;
   else
     JLM_UNREACHABLE("Unknown bitcompare operation");
+
   auto MlirOp = Builder_->create<::mlir::arith::CmpIOp>(
       Builder_->getUnknownLoc(),
       compPredicate,
@@ -539,7 +540,7 @@ JlmToMlirConverter::ConvertSimpleNode(
     MlirOp = Builder_->create<::mlir::jlm::Load>(
         Builder_->getUnknownLoc(),
         ConvertType(*load_op->result(0)),                               // ptr
-        ConvertType(*load_op->result(1)),                               // memstate(s)
+        ConvertType(*load_op->result(1)),                               // memstate
         inputs[0],                                                      // pointer
         Builder_->getUI32IntegerAttr(load_op->GetAlignment()),          // alignment
         ::mlir::ValueRange({ std::next(inputs.begin()), inputs.end() }) // inputMemStates
@@ -549,7 +550,7 @@ JlmToMlirConverter::ConvertSimpleNode(
   {
     MlirOp = Builder_->create<::mlir::jlm::Store>(
         Builder_->getUnknownLoc(),
-        ConvertType(*store_op->result(0)),                                         // memstate(s)
+        ConvertType(*store_op->result(0)),                                         // memstate
         inputs[0],                                                                 // ptr
         inputs[1],                                                                 // value
         Builder_->getUI32IntegerAttr(store_op->GetAlignment()),                    // alignment
