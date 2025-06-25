@@ -574,6 +574,12 @@ MlirToJlmConverter::ConvertOperation(
   else if (auto ZeroOp = ::mlir::dyn_cast<::mlir::LLVM::ZeroOp>(&mlirOperation))
   {
     auto type = ZeroOp.getType();
+    // NULL pointers are a special case of ZeroOp
+    if (::mlir::isa<::mlir::LLVM::LLVMPointerType>(type))
+    {
+      return rvsdg::TryGetOwnerNode<rvsdg::Node>(
+          *llvm::ConstantPointerNullOperation::Create(&rvsdgRegion, ConvertType(type)));
+    }
     return rvsdg::TryGetOwnerNode<rvsdg::Node>(
         *llvm::ConstantAggregateZeroOperation::Create(rvsdgRegion, ConvertType(type)));
   }
@@ -618,6 +624,44 @@ MlirToJlmConverter::ConvertOperation(
     auto operands = std::vector(inputs.begin(), inputs.end());
     auto memoryStateMergeOutput = jlm::llvm::MemoryStateMergeOperation::Create(operands);
     return rvsdg::TryGetOwnerNode<rvsdg::Node>(*memoryStateMergeOutput);
+  }
+  else if (
+      auto LambdaEntryMemstateSplitOp =
+          ::mlir::dyn_cast<::mlir::rvsdg::LambdaEntryMemoryStateSplitOperation>(&mlirOperation))
+  {
+    auto operands = std::vector(inputs.begin(), inputs.end());
+    auto lambdaMemoryStateSplitOutput = jlm::llvm::LambdaEntryMemoryStateSplitOperation::Create(
+        *operands.front(),
+        LambdaEntryMemstateSplitOp.getNumResults());
+    return rvsdg::TryGetOwnerNode<rvsdg::Node>(*lambdaMemoryStateSplitOutput.front());
+  }
+  else if (
+      auto LambdaExitMemstateMergeOp =
+          ::mlir::dyn_cast<::mlir::rvsdg::LambdaExitMemoryStateMergeOperation>(&mlirOperation))
+  {
+    auto operands = std::vector(inputs.begin(), inputs.end());
+    auto & lambdaMemoryStateMergeOutput =
+        jlm::llvm::LambdaExitMemoryStateMergeOperation::Create(rvsdgRegion, operands);
+    return rvsdg::TryGetOwnerNode<rvsdg::Node>(lambdaMemoryStateMergeOutput);
+  }
+  else if (
+      auto CallEntryMemstateMergeOp =
+          ::mlir::dyn_cast<::mlir::rvsdg::CallEntryMemoryStateMerge>(&mlirOperation))
+  {
+    auto operands = std::vector(inputs.begin(), inputs.end());
+    auto & callMemoryStateMergeOutput =
+        jlm::llvm::CallEntryMemoryStateMergeOperation::Create(rvsdgRegion, operands);
+    return rvsdg::TryGetOwnerNode<rvsdg::Node>(callMemoryStateMergeOutput);
+  }
+  else if (
+      auto CallExitMemstateSplitOp =
+          ::mlir::dyn_cast<::mlir::rvsdg::CallExitMemoryStateSplit>(&mlirOperation))
+  {
+    auto operands = std::vector(inputs.begin(), inputs.end());
+    auto callMemoryStateSplitOutput = jlm::llvm::CallExitMemoryStateSplitOperation::Create(
+        *operands.front(),
+        CallExitMemstateSplitOp.getNumResults());
+    return rvsdg::TryGetOwnerNode<rvsdg::Node>(*callMemoryStateSplitOutput.front());
   }
   else if (auto IOBarrierOp = ::mlir::dyn_cast<::mlir::jlm::IOBarrier>(&mlirOperation))
   {
