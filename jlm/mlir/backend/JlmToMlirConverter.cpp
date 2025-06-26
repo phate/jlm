@@ -5,9 +5,12 @@
  */
 
 #include <jlm/llvm/ir/operators/alloca.hpp>
+#include <jlm/llvm/ir/operators/call.hpp>
+#include <jlm/llvm/ir/operators/GetElementPtr.hpp>
+#include <jlm/llvm/ir/operators/IntegerOperations.hpp>
+#include <jlm/llvm/ir/operators/IOBarrier.hpp>
 #include <jlm/llvm/ir/operators/Load.hpp>
 #include <jlm/llvm/ir/operators/MemoryStateOperations.hpp>
-#include <jlm/llvm/ir/operators/operators.hpp>
 #include <jlm/llvm/ir/operators/sext.hpp>
 #include <jlm/llvm/ir/operators/Store.hpp>
 #include <jlm/mlir/backend/JlmToMlirConverter.hpp>
@@ -24,19 +27,6 @@
 #include <mlir/Dialect/Arith/IR/Arith.h>
 #include <mlir/IR/Builders.h>
 #include <mlir/IR/Verifier.h>
-
-#include <mlir/IR/Builders.h>
-
-#include <jlm/llvm/ir/operators/alloca.hpp>
-#include <jlm/llvm/ir/operators/call.hpp>
-#include <jlm/llvm/ir/operators/GetElementPtr.hpp>
-#include <jlm/llvm/ir/operators/IntegerOperations.hpp>
-#include <jlm/llvm/ir/operators/IOBarrier.hpp>
-#include <jlm/llvm/ir/operators/Load.hpp>
-#include <jlm/llvm/ir/operators/MemoryStateOperations.hpp>
-#include <jlm/llvm/ir/operators/sext.hpp>
-#include <jlm/llvm/ir/operators/Store.hpp>
-#include <mlir/Dialect/Arith/IR/Arith.h>
 
 namespace jlm::mlir
 {
@@ -397,6 +387,11 @@ JlmToMlirConverter::ConvertSimpleNode(
         value,
         integerConstOp->Representation().nbits());
   }
+  else if (auto fpBinOp = dynamic_cast<const jlm::llvm::fpbin_op *>(&operation))
+  {
+    MlirOp = ConvertFpBinaryNode(*fpBinOp, inputs);
+  }
+
   else if (rvsdg::is<jlm::llvm::IntegerBinaryOperation>(operation))
   {
     MlirOp = ConvertIntegerBinaryOperation(
@@ -409,6 +404,11 @@ JlmToMlirConverter::ConvertSimpleNode(
     auto value = fpOp->constant();
     MlirOp =
         Builder_->create<::mlir::arith::ConstantFloatOp>(Builder_->getUnknownLoc(), value, size);
+  }
+  else if (auto zeroOp = dynamic_cast<const llvm::ConstantAggregateZeroOperation *>(&operation))
+  {
+    auto type = ConvertType(*zeroOp->result(0));
+    MlirOp = Builder_->create<::mlir::LLVM::ZeroOp>(Builder_->getUnknownLoc(), type);
   }
   else if (auto arrOp = dynamic_cast<const llvm::ConstantDataArray *>(&operation))
   {
@@ -519,12 +519,12 @@ JlmToMlirConverter::ConvertSimpleNode(
   {
     MlirOp = Builder_->create<::mlir::jlm::Alloca>(
         Builder_->getUnknownLoc(),
-        ConvertType(*alloca_op->result(0)),                               // ptr
-        ConvertType(*alloca_op->result(1)),                               // memstate
-        ConvertType(alloca_op->value_type()),                             // value type
-        inputs[0],                                                        // size
-        alloca_op->alignment(),                                           // alignment
-        ::mlir::ValueRange({ std::next(inputs.begin()), inputs.end() })); // inputMemStates
+        ConvertType(*alloca_op->result(0)),   // ptr
+        ConvertType(*alloca_op->result(1)),   // memstate
+        ConvertType(alloca_op->value_type()), // value type
+        inputs[0],                            // size
+        alloca_op->alignment()                // alignment
+    );
   }
   else if (auto malloc_op = dynamic_cast<const jlm::llvm::malloc_op *>(&operation))
   {
@@ -731,7 +731,6 @@ JlmToMlirConverter::ConvertTheta(
   }
 
   ::llvm::SmallVector<::mlir::NamedAttribute> attributes;
-
   auto theta = Builder_->create<::mlir::rvsdg::ThetaNode>(
       Builder_->getUnknownLoc(),
       ::mlir::TypeRange(::llvm::ArrayRef(outputTypeRange)),

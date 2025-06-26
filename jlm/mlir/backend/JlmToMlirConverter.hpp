@@ -17,11 +17,11 @@
 #include <jlm/rvsdg/theta.hpp>
 
 // MLIR RVSDG dialects
-#include <JLM/JLMDialect.h>
 #include <RVSDG/RVSDGDialect.h>
 #include <RVSDG/RVSDGPasses.h>
 
 // MLIR JLM dialects
+#include <JLM/JLMDialect.h>
 #include <JLM/JLMOps.h>
 
 // MLIR generic dialects
