@@ -34,29 +34,6 @@ StoreNonVolatileOperation::copy() const
   return std::make_unique<StoreNonVolatileOperation>(*this);
 }
 
-StoreVolatileOperation::~StoreVolatileOperation() noexcept = default;
-
-bool
-StoreVolatileOperation::operator==(const Operation & other) const noexcept
-{
-  auto operation = dynamic_cast<const StoreVolatileOperation *>(&other);
-  return operation && operation->NumMemoryStates() == NumMemoryStates()
-      && operation->GetStoredType() == GetStoredType()
-      && operation->GetAlignment() == GetAlignment();
-}
-
-std::string
-StoreVolatileOperation::debug_string() const
-{
-  return "StoreVolatile";
-}
-
-std::unique_ptr<rvsdg::Operation>
-StoreVolatileOperation::copy() const
-{
-  return std::make_unique<StoreVolatileOperation>(*this);
-}
-
 static bool
 is_store_mux_reducible(const std::vector<jlm::rvsdg::Output *> & operands)
 {
@@ -219,7 +196,7 @@ perform_multiple_origin_reduction(
 }
 
 std::optional<std::vector<rvsdg::Output *>>
-NormalizeStoreMux(
+StoreNonVolatileOperation::NormalizeStoreMux(
     const StoreNonVolatileOperation & operation,
     const std::vector<rvsdg::Output *> & operands)
 {
@@ -230,7 +207,7 @@ NormalizeStoreMux(
 }
 
 std::optional<std::vector<rvsdg::Output *>>
-NormalizeStoreStore(
+StoreNonVolatileOperation::NormalizeStoreStore(
     const StoreNonVolatileOperation & operation,
     const std::vector<rvsdg::Output *> & operands)
 {
@@ -241,7 +218,7 @@ NormalizeStoreStore(
 }
 
 std::optional<std::vector<rvsdg::Output *>>
-NormalizeStoreAlloca(
+StoreNonVolatileOperation::NormalizeStoreAlloca(
     const StoreNonVolatileOperation & operation,
     const std::vector<rvsdg::Output *> & operands)
 {
@@ -252,7 +229,7 @@ NormalizeStoreAlloca(
 }
 
 std::optional<std::vector<rvsdg::Output *>>
-NormalizeStoreDuplicateState(
+StoreNonVolatileOperation::NormalizeDuplicateStates(
     const StoreNonVolatileOperation & operation,
     const std::vector<rvsdg::Output *> & operands)
 {
@@ -260,6 +237,29 @@ NormalizeStoreDuplicateState(
     return perform_multiple_origin_reduction(operation, operands);
 
   return std::nullopt;
+}
+
+StoreVolatileOperation::~StoreVolatileOperation() noexcept = default;
+
+bool
+StoreVolatileOperation::operator==(const Operation & other) const noexcept
+{
+  auto operation = dynamic_cast<const StoreVolatileOperation *>(&other);
+  return operation && operation->NumMemoryStates() == NumMemoryStates()
+      && operation->GetStoredType() == GetStoredType()
+      && operation->GetAlignment() == GetAlignment();
+}
+
+std::string
+StoreVolatileOperation::debug_string() const
+{
+  return "StoreVolatile";
+}
+
+std::unique_ptr<rvsdg::Operation>
+StoreVolatileOperation::copy() const
+{
+  return std::make_unique<StoreVolatileOperation>(*this);
 }
 
 }
