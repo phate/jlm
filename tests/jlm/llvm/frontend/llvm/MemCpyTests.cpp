@@ -15,7 +15,7 @@
 #include <llvm/IR/IRBuilder.h>
 #include <llvm/IR/Module.h>
 
-static int
+static void
 MemCpyConversion()
 {
   using namespace llvm;
@@ -88,8 +88,6 @@ MemCpyConversion()
     assert(numMemCpyThreeAddressCodes == 1);
     assert(numMemCpyVolatileThreeAddressCodes == 2);
   }
-
-  return 0;
 }
 
 JLM_UNIT_TEST_REGISTER("jlm/llvm/frontend/llvm/MemCpyTests-MemCpyConversion", MemCpyConversion)

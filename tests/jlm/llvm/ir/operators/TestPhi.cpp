@@ -80,12 +80,10 @@ TestPhiCreation()
   view(&graph.GetRootRegion(), stderr);
 }
 
-static int
+static void
 TestPhi()
 {
   TestPhiCreation();
-
-  return 0;
 }
 
 JLM_UNIT_TEST_REGISTER("jlm/llvm/ir/operators/TestPhi", TestPhi)

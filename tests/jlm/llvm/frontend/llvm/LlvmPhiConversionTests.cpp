@@ -48,7 +48,7 @@
  *     return popcnt;
  * }
  */
-static int
+static void
 TestPhiConversion()
 {
   // Arrange
@@ -151,8 +151,6 @@ TestPhiConversion()
   assert(constant0op->Representation() == 0);
   // The last operand of the popcnt phi is the result of the phi itself
   assert(phiPopcnt->operand(2) == phiPopcnt->result(0));
-
-  return 0;
 }
 JLM_UNIT_TEST_REGISTER(
     "jlm/llvm/frontend/llvm/LlvmPhiConversionTests-TestPhiConversion",
@@ -163,7 +161,7 @@ JLM_UNIT_TEST_REGISTER(
  * A dead predecessor is a basic block that is not reachable from the function's entry.
  * This test has one phi node with 4 operands, where two of them are dead.
  */
-static int
+static void
 TestPhiOperandElision()
 {
   // Arrange
@@ -249,8 +247,6 @@ TestPhiOperandElision()
   auto constant0op = jlm::util::AssertedCast<const jlm::llvm::IntegerConstantOperation>(
       &constant0variable->tac()->operation());
   assert(constant0op->Representation() == 0);
-
-  return 0;
 }
 JLM_UNIT_TEST_REGISTER(
     "jlm/llvm/frontend/llvm/LlvmPhiConversionTests-TestPhiOperandElision",

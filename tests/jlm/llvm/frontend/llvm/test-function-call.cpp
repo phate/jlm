@@ -185,14 +185,12 @@ test_free_call()
   verify(*ipgmod);
 }
 
-static int
+static void
 test()
 {
   test_function_call();
   test_malloc_call();
   test_free_call();
-
-  return 0;
 }
 
 JLM_UNIT_TEST_REGISTER("jlm/llvm/frontend/llvm/test-function-call", test)

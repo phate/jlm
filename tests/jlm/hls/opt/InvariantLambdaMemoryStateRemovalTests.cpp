@@ -9,7 +9,7 @@
 #include <jlm/llvm/ir/operators.hpp>
 #include <jlm/rvsdg/view.hpp>
 
-static int
+static void
 TestEliminateSplitAndMergeNodes()
 {
   using namespace jlm::llvm;
@@ -66,14 +66,12 @@ TestEliminateSplitAndMergeNodes()
       jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*lambdaSubregion->result(0)->origin());
   assert(is<LoadNonVolatileOperation>(loadNode->GetOperation()));
   jlm::util::AssertedCast<jlm::rvsdg::RegionArgument>(loadNode->input(1)->origin());
-
-  return 0;
 }
 JLM_UNIT_TEST_REGISTER(
     "jlm/hls/opt/InvariantLambdaMemoryStateRemovalTests-EliminateSplitAndMergeNodes",
     TestEliminateSplitAndMergeNodes)
 
-static int
+static void
 TestInvariantMemoryState()
 {
   using namespace jlm::llvm;
@@ -145,8 +143,6 @@ TestInvariantMemoryState()
   // Check that the MemoryStateSplit node is still present
   node = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*node->input(1)->origin());
   assert(is<LambdaEntryMemoryStateSplitOperation>(node->GetOperation()));
-
-  return 0;
 }
 JLM_UNIT_TEST_REGISTER(
     "jlm/hls/opt/InvariantLambdaMemoryStateRemovalTests-InvariantMemoryState",

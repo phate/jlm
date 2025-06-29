@@ -36,7 +36,7 @@ get_child(const jlm::llvm::domnode * root, const jlm::llvm::ControlFlowGraphNode
   assert(0);
 }
 
-static int
+static void
 test()
 {
   using namespace jlm::llvm;
@@ -78,8 +78,6 @@ test()
 
   auto dtexit = dtbb4->child(0);
   check<0>(dtexit, cfg.exit(), {});
-
-  return 0;
 }
 
 JLM_UNIT_TEST_REGISTER("jlm/llvm/ir/test-domtree", test)

@@ -17,7 +17,7 @@
 #include <jlm/rvsdg/view.hpp>
 #include <jlm/util/Statistics.hpp>
 
-static int
+static void
 GammaWithMatch()
 {
   using namespace jlm::llvm;
@@ -59,15 +59,13 @@ GammaWithMatch()
 
   auto cfg = dynamic_cast<const function_node &>(*ipg.begin()).cfg();
   assert(cfg->nnodes() == 4);
-
-  return 0;
 }
 
 JLM_UNIT_TEST_REGISTER(
     "jlm/tests/jlm/llvm/backend/RvsdgToIpGraphConverterTests-GammaWithMatch",
     GammaWithMatch)
 
-static int
+static void
 GammaWithoutMatch()
 {
   using namespace jlm::llvm;
@@ -108,15 +106,13 @@ GammaWithoutMatch()
 
   auto cfg = dynamic_cast<const function_node &>(*ipg.begin()).cfg();
   assert(cfg->nnodes() == 4);
-
-  return 0;
 }
 
 JLM_UNIT_TEST_REGISTER(
     "jlm/tests/jlm/llvm/backend/RvsdgToIpGraphConverterTests-GammaWithoutMatch",
     GammaWithoutMatch)
 
-static int
+static void
 EmptyGammaWithTwoSubregionsAndMatch()
 {
   using namespace jlm::llvm;
@@ -163,15 +159,13 @@ EmptyGammaWithTwoSubregionsAndMatch()
 
   const auto controlFlowGraph = dynamic_cast<const function_node &>(*ipGraph.begin()).cfg();
   assert(is_closed(*controlFlowGraph));
-
-  return 0;
 }
 
 JLM_UNIT_TEST_REGISTER(
     "jlm/tests/jlm/llvm/backend/RvsdgToIpGraphConverterTests-EmptyGammaWithTwoSubregionsAndMatch",
     EmptyGammaWithTwoSubregionsAndMatch)
 
-static int
+static void
 EmptyGammaWithTwoSubregions()
 {
   using namespace jlm::llvm;
@@ -225,15 +219,13 @@ EmptyGammaWithTwoSubregions()
 
   const auto controlFlowGraph = dynamic_cast<const function_node &>(*ipGraph.begin()).cfg();
   assert(is_closed(*controlFlowGraph));
-
-  return 0;
 }
 
 JLM_UNIT_TEST_REGISTER(
     "jlm/tests/jlm/llvm/backend/RvsdgToIpGraphConverterTests-EmptyGammaWithTwoSubregions",
     EmptyGammaWithTwoSubregions)
 
-static int
+static void
 EmptyGammaWithThreeSubregions()
 {
   using namespace jlm::llvm;
@@ -278,15 +270,13 @@ EmptyGammaWithThreeSubregions()
 
   auto cfg = dynamic_cast<const function_node &>(*ipg.begin()).cfg();
   assert(is_closed(*cfg));
-
-  return 0;
 }
 
 JLM_UNIT_TEST_REGISTER(
     "jlm/tests/jlm/llvm/backend/RvsdgToIpGraphConverterTests-EmptyGammaWithThreeSubregions",
     EmptyGammaWithThreeSubregions)
 
-static int
+static void
 PartialEmptyGamma()
 {
   using namespace jlm::llvm;
@@ -332,15 +322,13 @@ PartialEmptyGamma()
   std::cout << ControlFlowGraph::ToAscii(*cfg) << std::flush;
 
   assert(is_proper_structured(*cfg));
-
-  return 0;
 }
 
 JLM_UNIT_TEST_REGISTER(
     "jlm/tests/jlm/llvm/backend/RvsdgToIpGraphConverterTests-PartialEmptyGamma",
     PartialEmptyGamma)
 
-static int
+static void
 RecursiveData()
 {
   using namespace jlm::llvm;
@@ -395,8 +383,6 @@ RecursiveData()
   // Assert
   auto & ipg = module->ipgraph();
   assert(ipg.nnodes() == 3);
-
-  return 0;
 }
 
 JLM_UNIT_TEST_REGISTER(

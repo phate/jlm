@@ -10,7 +10,7 @@
 #include <jlm/llvm/ir/operators.hpp>
 #include <jlm/rvsdg/view.hpp>
 
-static int
+static void
 TestUnknownBoundaries()
 {
   using namespace jlm::llvm;
@@ -67,8 +67,6 @@ TestUnknownBoundaries()
       *loopNode->subregion()->argument(4)->begin());
   jlm::util::AssertedCast<const LoopConstantBufferOperation>(
       &loopConstInput->node()->GetOperation());
-
-  return 0;
 }
 
 JLM_UNIT_TEST_REGISTER("jlm/hls/backend/rvsdg2rhls/TestTheta", TestUnknownBoundaries)

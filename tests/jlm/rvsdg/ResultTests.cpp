@@ -12,7 +12,7 @@
 /**
  * Test check for adding result to output of wrong structural node.
  */
-static int
+static void
 ResultNodeMismatch()
 {
   using namespace jlm::rvsdg;
@@ -47,13 +47,11 @@ ResultNodeMismatch()
 
   // Assert
   assert(outputErrorHandlerCalled);
-
-  return 0;
 }
 
 JLM_UNIT_TEST_REGISTER("jlm/rvsdg/ResultTests-ResultNodeMismatch", ResultNodeMismatch)
 
-static int
+static void
 ResultInputTypeMismatch()
 {
   using namespace jlm::tests;
@@ -84,8 +82,6 @@ ResultInputTypeMismatch()
     exceptionWasCaught = true;
   }
   assert(exceptionWasCaught);
-
-  return 0;
 }
 
 JLM_UNIT_TEST_REGISTER("jlm/rvsdg/ResultTests-ResultInputTypeMismatch", ResultInputTypeMismatch)

@@ -318,7 +318,7 @@ TestCallSummaryComputationLambdaResult()
   assert(callSummary.HasOnlyOtherUsages());
 }
 
-static int
+static void
 Test()
 {
   TestCallSummaryComputationDead();
@@ -327,8 +327,6 @@ Test()
   TestCallSummaryComputationIndirectCalls();
   TestCallSummaryComputationFunctionPointerInDelta();
   TestCallSummaryComputationLambdaResult();
-
-  return 0;
 }
 
 JLM_UNIT_TEST_REGISTER("jlm/llvm/ir/TestCallSummary", Test)

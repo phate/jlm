@@ -28,7 +28,7 @@ stringToFile(std::string output, std::string fileName)
   outputFile.close();
 }
 
-static int
+static void
 test()
 {
   using namespace jlm;
@@ -62,8 +62,6 @@ test()
 
   // The whole loop gets eliminated, leading to a direct connection
   assert(lambda->GetFunctionResults()[0]->origin() == lambda->GetFunctionArguments()[1]);
-
-  return 0;
 }
 
 JLM_UNIT_TEST_REGISTER("jlm/hls/backend/rvsdg2rhls/test-loop-passthrough", test)

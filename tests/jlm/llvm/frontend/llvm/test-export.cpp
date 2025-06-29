@@ -13,7 +13,7 @@
 #include <jlm/llvm/ir/RvsdgModule.hpp>
 #include <jlm/util/Statistics.hpp>
 
-static int
+static void
 test()
 {
   using namespace jlm::llvm;
@@ -40,8 +40,6 @@ test()
     a body, i.e., either a CFG or a initialization.
   */
   assert(rvsdgModule->Rvsdg().GetRootRegion().nresults() == 0);
-
-  return 0;
 }
 
 JLM_UNIT_TEST_REGISTER("jlm/llvm/frontend/llvm/test-export", test)
