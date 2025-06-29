@@ -318,11 +318,11 @@ public:
   /**
    * \brief Swaps a memory state merge operation and a load operation.
    *
-   * sx1 = MemStateMerge si1 ... siM
-   * v sl1 = load_op a sx1
+   * sx1 = MemStateMergeOperation si1 ... siM
+   * v sl1 = LoadNonVolatileOperation a sx1
    * =>
-   * v sl1 ... slM = load_op a si1 ... siM
-   * sx1 = MemStateMerge sl1 ... slM
+   * v sl1 ... slM = LoadNonVolatileOperation a si1 ... siM
+   * sx1 = MemStateMergeOperation sl1 ... slM
    *
    * FIXME: The reduction can be generalized: A load node can have multiple operands from different
    * merge nodes.
