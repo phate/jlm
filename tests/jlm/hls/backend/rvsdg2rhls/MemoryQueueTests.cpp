@@ -255,7 +255,6 @@ TestAddrQueue()
           auto addrQueue =
               jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(*stateGate->input(0)->origin());
           jlm::util::AssertedCast<const AddressQueueOperation>(&addrQueue->GetOperation());
-          return 0;
         }
       }
     }

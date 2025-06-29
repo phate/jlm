@@ -16,7 +16,7 @@
 
 #include <jlm/rvsdg/view.hpp>
 
-static int
+static void
 TestLambda()
 {
   {
@@ -122,7 +122,6 @@ TestLambda()
           convertedLambda->subregion()->Nodes().begin().ptr()));
     }
   }
-  return 0;
 }
 
 /** \brief TestDivOperation
@@ -131,7 +130,7 @@ TestLambda()
  * lambda block and do a graph traversal.
  * This function is similar to the TestAddOperation function in the backend tests.
  */
-static int
+static void
 TestDivOperation()
 {
   {
@@ -301,7 +300,6 @@ TestDivOperation()
       assert(std::dynamic_pointer_cast<const bittype>(DivInput1Constant->result(0))->nbits() == 32);
     }
   }
-  return 0;
 }
 
 /** \brief TestCompZeroExt
@@ -311,7 +309,7 @@ TestDivOperation()
  * similar to the TestComZeroExt function in the backend tests.
  *
  */
-static int
+static void
 TestCompZeroExt()
 {
   {
@@ -514,7 +512,6 @@ TestCompZeroExt()
       assert(std::dynamic_pointer_cast<const bittype>(Const1Op->result(0))->nbits() == 32);
     }
   }
-  return 0;
 }
 
 /** \brief TestMatchOp
@@ -522,7 +519,7 @@ TestCompZeroExt()
  * This function tests the Match operation. It creates a lambda block with a Match operation.
  *
  */
-static int
+static void
 TestMatchOp()
 {
   {
@@ -673,7 +670,6 @@ TestMatchOp()
       }
     }
   }
-  return 0;
 }
 
 /** \brief TestMatchOp
@@ -681,7 +677,7 @@ TestMatchOp()
  * This function tests the Gamma operation. It creates a lambda block with a Gamma operation.
  *
  */
-static int
+static void
 TestGammaOp()
 {
   {
@@ -832,7 +828,6 @@ TestGammaOp()
       assert(gammaNode->noutputs() == 2);
     }
   }
-  return 0;
 }
 
 /** \brief TestThetaOp
@@ -840,7 +835,7 @@ TestGammaOp()
  * This function tests the Theta operation. It creates a lambda block with a Theta operation.
  *
  */
-static int
+static void
 TestThetaOp()
 {
   {
@@ -963,8 +958,6 @@ TestThetaOp()
       std::cout << predicate.getValue() << std::endl;
     }
   }
-
-  return 0;
 }
 
 JLM_UNIT_TEST_REGISTER("jlm/mlir/frontend/TestRvsdgLambdaGen", TestLambda)
