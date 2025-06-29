@@ -11,7 +11,7 @@
 
 #include <cassert>
 
-static int
+static void
 TestJlcCompiling()
 {
   using namespace jlm::tooling;
@@ -36,15 +36,13 @@ TestJlcCompiling()
   auto & commandNode = commandGraph->GetExitNode().IncomingEdges().begin()->GetSource();
   auto command = dynamic_cast<const LlcCommand *>(&commandNode.GetCommand());
   assert(command && command->OutputFile() == "foo.o");
-
-  return 0;
 }
 
 JLM_UNIT_TEST_REGISTER(
     "jlm/tooling/TestJlcCommandGraphGenerator-TestJlcCompiling",
     TestJlcCompiling);
 
-static int
+static void
 TestJlcLinking()
 {
   using namespace jlm::tooling;
@@ -64,13 +62,11 @@ TestJlcLinking()
   auto & commandNode = commandGraph->GetExitNode().IncomingEdges().begin()->GetSource();
   auto command = dynamic_cast<const ClangCommand *>(&commandNode.GetCommand());
   assert(command->InputFiles()[0] == "foo.o" && command->OutputFile() == "foobar");
-
-  return 0;
 }
 
 JLM_UNIT_TEST_REGISTER("jlm/tooling/TestJlcCommandGraphGenerator-TestJlcLinking", TestJlcLinking);
 
-static int
+static void
 TestJlmOptOptimizations()
 {
   using namespace jlm::tooling;
@@ -98,15 +94,13 @@ TestJlmOptOptimizations()
   assert(optimizations.size() == 2);
   assert(optimizations[0] == JlmOptCommandLineOptions::OptimizationId::CommonNodeElimination);
   assert(optimizations[1] == JlmOptCommandLineOptions::OptimizationId::DeadNodeElimination);
-
-  return 0;
 }
 
 JLM_UNIT_TEST_REGISTER(
     "jlm/tooling/TestJlcCommandGraphGenerator-TestJlmOptOptimizations",
     TestJlmOptOptimizations);
 
-static int
+static void
 TestJlmOptStatistics()
 {
   using namespace jlm::util;
@@ -133,8 +127,6 @@ TestJlmOptStatistics()
       jlmOptCommand.GetCommandLineOptions().GetStatisticsCollectorSettings();
 
   assert(statisticsCollectorSettings.GetDemandedStatistics() == expectedStatistics);
-
-  return 0;
 }
 
 JLM_UNIT_TEST_REGISTER(

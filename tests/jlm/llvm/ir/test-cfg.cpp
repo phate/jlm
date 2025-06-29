@@ -31,12 +31,10 @@ test_remove_node()
   assert(cfg.nnodes() == 0);
 }
 
-static int
+static void
 test()
 {
   test_remove_node();
-
-  return 0;
 }
 
 JLM_UNIT_TEST_REGISTER("jlm/llvm/ir/test-cfg", test)

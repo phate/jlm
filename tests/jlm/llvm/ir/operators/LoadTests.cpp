@@ -16,7 +16,7 @@
 #include <jlm/llvm/ir/operators/Store.hpp>
 #include <jlm/llvm/ir/RvsdgModule.hpp>
 
-static int
+static void
 OperationEquality()
 {
   using namespace jlm::llvm;
@@ -38,15 +38,13 @@ OperationEquality()
   assert(operation1 != operation3); // number of memory states differs
   assert(operation1 != operation4); // alignment differs
   assert(operation1 != operation5); // operation differs
-
-  return 0;
 }
 
 JLM_UNIT_TEST_REGISTER(
     "jlm/llvm/ir/operators/LoadNonVolatileTests-OperationEquality",
     OperationEquality)
 
-static int
+static void
 TestCopy()
 {
   using namespace jlm::llvm;
@@ -72,13 +70,11 @@ TestCopy()
 
   // Assert
   assert(node->GetOperation() == copiedNode->GetOperation());
-
-  return 0;
 }
 
 JLM_UNIT_TEST_REGISTER("jlm/llvm/ir/operators/LoadNonVolatileTests-Copy", TestCopy)
 
-static int
+static void
 TestLoadAllocaReduction()
 {
   using namespace jlm::llvm;
@@ -112,15 +108,13 @@ TestLoadAllocaReduction()
   assert(node->ninputs() == 3);
   assert(node->input(1)->origin() == alloca1[1]);
   assert(node->input(2)->origin() == mux);
-
-  return 0;
 }
 
 JLM_UNIT_TEST_REGISTER(
     "jlm/llvm/ir/operators/LoadNonVolatileTests-LoadAllocaReduction",
     TestLoadAllocaReduction)
 
-static int
+static void
 LoadMuxReduction_Success()
 {
   using namespace jlm::llvm;
@@ -169,15 +163,13 @@ LoadMuxReduction_Success()
         jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*merge->input(n)->origin());
     assert(expectedLoadNode == reducedLoadNode);
   }
-
-  return 0;
 }
 
 JLM_UNIT_TEST_REGISTER(
     "jlm/llvm/ir/operators/LoadNonVolatileTests-LoadMuxReduction_Success",
     LoadMuxReduction_Success)
 
-static int
+static void
 LoadMuxReduction_WrongNumberOfOperands()
 {
   // Arrange
@@ -215,15 +207,13 @@ LoadMuxReduction_WrongNumberOfOperands()
   assert(ex1.origin() == loadNode.output(0));
   assert(ex2.origin() == loadNode.output(1));
   assert(ex3.origin() == loadNode.output(2));
-
-  return 0;
 }
 
 JLM_UNIT_TEST_REGISTER(
     "jlm/llvm/ir/operators/LoadNonVolatileTests-LoadMuxReduction_WrongNumberOfOperands",
     LoadMuxReduction_WrongNumberOfOperands)
 
-static int
+static void
 LoadMuxReduction_LoadWithoutStates()
 {
   using namespace jlm::llvm;
@@ -253,15 +243,13 @@ LoadMuxReduction_LoadWithoutStates()
   const auto expectedLoadNode = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*ex.origin());
   assert(expectedLoadNode == &loadNode);
   assert(expectedLoadNode->ninputs() == 1);
-
-  return 0;
 }
 
 JLM_UNIT_TEST_REGISTER(
     "jlm/llvm/ir/operators/LoadNonVolatileTests-LoadMuxReduction_LoadWithoutStates",
     LoadMuxReduction_LoadWithoutStates)
 
-static int
+static void
 TestDuplicateStateReduction()
 {
   using namespace jlm::llvm;
@@ -307,15 +295,13 @@ TestDuplicateStateReduction()
   assert(exS3.origin() == node->output(1));
   assert(exS4.origin() == node->output(2));
   assert(exS5.origin() == node->output(3));
-
-  return 0;
 }
 
 JLM_UNIT_TEST_REGISTER(
     "jlm/llvm/ir/operators/LoadNonVolatileTests-DuplicateStateReduction",
     TestDuplicateStateReduction)
 
-static int
+static void
 TestLoadStoreStateReduction()
 {
   using namespace jlm::llvm;
@@ -359,15 +345,13 @@ TestLoadStoreStateReduction()
   node = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*ex2.origin());
   assert(is<LoadNonVolatileOperation>(node));
   assert(node->ninputs() == 2);
-
-  return 0;
 }
 
 JLM_UNIT_TEST_REGISTER(
     "jlm/llvm/ir/operators/LoadNonVolatileTests-LoadStoreStateReduction",
     TestLoadStoreStateReduction)
 
-static int
+static void
 TestLoadStoreReduction_Success()
 {
   using namespace jlm::llvm;
@@ -400,8 +384,6 @@ TestLoadStoreReduction_Success()
   assert(graph.GetRootRegion().nnodes() == 1);
   assert(x1.origin() == v);
   assert(x2.origin() == s1);
-
-  return 0;
 }
 
 JLM_UNIT_TEST_REGISTER(
@@ -412,7 +394,7 @@ JLM_UNIT_TEST_REGISTER(
  * Tests the load-store reduction with the value type of the store being different from the
  * value type of the load.
  */
-static int
+static void
 LoadStoreReduction_DifferentValueOperandType()
 {
   using namespace jlm::llvm;
@@ -456,15 +438,13 @@ LoadStoreReduction_DifferentValueOperandType()
   const auto expectedStoreNode =
       jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*expectedLoadNode->input(1)->origin());
   assert(expectedStoreNode == &storeNode);
-
-  return 0;
 }
 
 JLM_UNIT_TEST_REGISTER(
     "jlm/llvm/ir/operators/LoadNonVolatileTests-LoadStoreReduction_DifferentValueOperandType",
     LoadStoreReduction_DifferentValueOperandType)
 
-static int
+static void
 TestLoadLoadReduction()
 {
   using namespace jlm::llvm;
@@ -517,15 +497,13 @@ TestLoadLoadReduction()
   assert(is<MemoryStateMergeOperation>(mx2) && mx2->ninputs() == 2);
   assert(mx2->input(0)->origin() == ld2[1] || mx2->input(0)->origin() == ld->output(3));
   assert(mx2->input(1)->origin() == ld2[1] || mx2->input(1)->origin() == ld->output(3));
-
-  return 0;
 }
 
 JLM_UNIT_TEST_REGISTER(
     "jlm/llvm/ir/operators/LoadNonVolatileTests-LoadLoadReduction",
     TestLoadLoadReduction)
 
-static int
+static void
 LoadVolatileOperationEquality()
 {
   using namespace jlm::llvm;
@@ -547,15 +525,13 @@ LoadVolatileOperationEquality()
   assert(operation1 != operation3); // number of memory states differs
   assert(operation1 != operation4); // alignment differs
   assert(operation1 != operation5); // operation differs
-
-  return 0;
 }
 
 JLM_UNIT_TEST_REGISTER(
     "jlm/llvm/ir/operators/LoadVolatileTests-OperationEquality",
     LoadVolatileOperationEquality)
 
-static int
+static void
 OperationCopy()
 {
   using namespace jlm::llvm;
@@ -572,13 +548,11 @@ OperationCopy()
 
   // Assert
   assert(*copiedOperation == operation);
-
-  return 0;
 }
 
 JLM_UNIT_TEST_REGISTER("jlm/llvm/ir/operators/LoadVolatileTests-OperationCopy", OperationCopy)
 
-static int
+static void
 OperationAccessors()
 {
   using namespace jlm::llvm;
@@ -598,15 +572,13 @@ OperationAccessors()
   assert(operation.GetAlignment() == alignment);
   assert(operation.narguments() == numMemoryStates + 2); // [address, ioState, memoryStates]
   assert(operation.nresults() == numMemoryStates + 2);   // [loadedValue, ioState, memoryStates]
-
-  return 0;
 }
 
 JLM_UNIT_TEST_REGISTER(
     "jlm/llvm/ir/operators/LoadVolatileTests-OperationAccessors",
     OperationAccessors)
 
-static int
+static void
 NodeCopy()
 {
   using namespace jlm::llvm;
@@ -643,8 +615,6 @@ NodeCopy()
   assert(LoadOperation::AddressInput(*copiedNode).origin() == &address2);
   assert(LoadVolatileOperation::IOStateInput(*copiedNode).origin() == &iOState2);
   assert(*copiedOperation->GetLoadedType() == *valueType);
-
-  return 0;
 }
 
 JLM_UNIT_TEST_REGISTER("jlm/llvm/ir/operators/LoadVolatileTests-NodeCopy", NodeCopy)

@@ -176,6 +176,89 @@ public:
   [[nodiscard]] std::unique_ptr<Operation>
   copy() const override;
 
+  /**
+   * \brief Swaps a memory state merge operation and a store operation.
+   *
+   * sx1 = MemStateMergeOperation si1 ... siM
+   * sl1 = StoreNonVolatileOperation a v sx1
+   * =>
+   * sl1 ... slM = StoreNonVolatileOperation a v si1 ... siM
+   * sx1 = MemStateMergeOperation sl1 ... slM
+   *
+   * FIXME: The reduction can be generalized: A store node can have multiple operands from different
+   * merge nodes.
+   *
+   * @param operation The operation of the StoreNonVolatile node.
+   * @param operands The operands of the StoreNonVolatile node.
+   *
+   * @return If the normalization could be applied, then the results of the store operation after
+   * the transformation. Otherwise, std::nullopt.
+   */
+  static std::optional<std::vector<rvsdg::Output *>>
+  NormalizeStoreMux(
+      const StoreNonVolatileOperation & operation,
+      const std::vector<rvsdg::Output *> & operands);
+
+  /**
+   * \brief Removes a duplicated store to the same address.
+   *
+   * so1 so2 = StoreNonVolatileOperation a v1 si1 si2
+   * sx1 sx2 = StoreNonVolatileOperation a v2 so1 so2
+   * =>
+   * sx1 sx2 = StoreNonVolatileOperation a v2 si1 si2
+   *
+   * @param operation The operation of the StoreNonVolatile node.
+   * @param operands The operands of the StoreNonVolatile node.
+   *
+   * @return If the normalization could be applied, then the results of the store operation after
+   * the transformation. Otherwise, std::nullopt.
+   */
+  static std::optional<std::vector<rvsdg::Output *>>
+  NormalizeStoreStore(
+      const StoreNonVolatileOperation & operation,
+      const std::vector<rvsdg::Output *> & operands);
+
+  /**
+   * \brief Removes unnecessary state from a store node when its address originates directly from an
+   * alloca node.
+   *
+   * a s = AllocaOperation b
+   * so1 so2 = StoreNonVolatileOperation a v s si1 si2
+   * ... = AnyOperation so1 so2
+   * =>
+   * a s = AllocaOperation b
+   * so1 = StoreNonVolatileOperation a v s
+   * ... = AnyOp so1 so1
+   *
+   * @param operation The operation of the StoreNonVolatile node.
+   * @param operands The operands of the StoreNonVolatile node.
+   *
+   * @return If the normalization could be applied, then the results of the store operation after
+   * the transformation. Otherwise, std::nullopt.
+   */
+  static std::optional<std::vector<rvsdg::Output *>>
+  NormalizeStoreAlloca(
+      const StoreNonVolatileOperation & operation,
+      const std::vector<rvsdg::Output *> & operands);
+
+  /**
+   * \brief Remove duplicated state operands
+   *
+   * so1 so2 so3 = StoreNonVolatileOperation a v si1 si1 si1
+   * =>
+   * so1 = StoreNonVolatileOperation a v si1
+   *
+   * @param operation The load operation on which the transformation is performed.
+   * @param operands The operands of the load node.
+   *
+   * @return If the normalization could be applied, then the results of the load operation after
+   * the transformation. Otherwise, std::nullopt.
+   */
+  static std::optional<std::vector<rvsdg::Output *>>
+  NormalizeDuplicateStates(
+      const StoreNonVolatileOperation & operation,
+      const std::vector<rvsdg::Output *> & operands);
+
   static std::unique_ptr<llvm::ThreeAddressCode>
   Create(const Variable * address, const Variable * value, const Variable * state, size_t alignment)
   {
@@ -394,89 +477,6 @@ private:
     return types;
   }
 };
-
-/**
- * \brief Swaps a memory state merge operation and a store operation.
- *
- * sx1 = MemStateMerge si1 ... siM
- * sl1 = StoreNonVolatile a v sx1
- * =>
- * sl1 ... slM = StoreNonVolatile a v si1 ... siM
- * sx1 = MemStateMerge sl1 ... slM
- *
- * FIXME: The reduction can be generalized: A store node can have multiple operands from different
- * merge nodes.
- *
- * @param operation The operation of the StoreNonVolatile node.
- * @param operands The operands of the StoreNonVolatile node.
- *
- * @return If the normalization could be applied, then the results of the store operation after
- * the transformation. Otherwise, std::nullopt.
- */
-std::optional<std::vector<rvsdg::Output *>>
-NormalizeStoreMux(
-    const StoreNonVolatileOperation & operation,
-    const std::vector<rvsdg::Output *> & operands);
-
-/**
- * \brief Removes a duplicated store to the same address.
- *
- * so1 so2 = StoreNonVolatile a v1 si1 si2
- * sx1 sx2 = StoreNonVolatile a v2 so1 so2
- * =>
- * sx1 sx2 = StoreNonVolatile a v2 si1 si2
- *
- * @param operation The operation of the StoreNonVolatile node.
- * @param operands The operands of the StoreNonVolatile node.
- *
- * @return If the normalization could be applied, then the results of the store operation after
- * the transformation. Otherwise, std::nullopt.
- */
-std::optional<std::vector<rvsdg::Output *>>
-NormalizeStoreStore(
-    const StoreNonVolatileOperation & operation,
-    const std::vector<rvsdg::Output *> & operands);
-
-/**
- * \brief Removes unnecessary state from a store node when its address originates directly from an
- * alloca node.
- *
- * a s = Alloca b
- * so1 so2 = StoreNonVolatile a v s si1 si2
- * ... = AnyOp so1 so2
- * =>
- * a s = Alloca b
- * so1 = StoreNonVolatile a v s
- * ... = AnyOp so1 so1
- *
- * @param operation The operation of the StoreNonVolatile node.
- * @param operands The operands of the StoreNonVolatile node.
- *
- * @return If the normalization could be applied, then the results of the store operation after
- * the transformation. Otherwise, std::nullopt.
- */
-std::optional<std::vector<rvsdg::Output *>>
-NormalizeStoreAlloca(
-    const StoreNonVolatileOperation & operation,
-    const std::vector<rvsdg::Output *> & operands);
-
-/**
- * \brief Remove duplicated state operands
- *
- * so1 so2 so3 = StoreNonVolatile a v si1 si1 si1
- * =>
- * so1 = StoreNonVolatile a v si1
- *
- * @param operation The load operation on which the transformation is performed.
- * @param operands The operands of the load node.
- *
- * @return If the normalization could be applied, then the results of the load operation after
- * the transformation. Otherwise, std::nullopt.
- */
-std::optional<std::vector<rvsdg::Output *>>
-NormalizeStoreDuplicateState(
-    const StoreNonVolatileOperation & operation,
-    const std::vector<rvsdg::Output *> & operands);
 
 }
 

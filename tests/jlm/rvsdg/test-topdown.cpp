@@ -199,7 +199,7 @@ test_mutable_traverse()
   test(&graph, n1, n2, n3);
 }
 
-static int
+static void
 test_main()
 {
   test_initialization();
@@ -207,8 +207,6 @@ test_main()
   test_order_enforcement_traversal();
   test_traversal_insertion();
   test_mutable_traverse();
-
-  return 0;
 }
 
 JLM_UNIT_TEST_REGISTER("jlm/rvsdg/test-topdown", test_main)

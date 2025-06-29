@@ -145,15 +145,13 @@ TestConstantFork()
   }
 }
 
-static int
+static void
 Test()
 {
   std::cout << std::endl << "### Test fork ###" << std::endl << std::endl;
   TestFork();
   std::cout << std::endl << "### Test constant ###" << std::endl << std::endl;
   TestConstantFork();
-
-  return 0;
 }
 
 JLM_UNIT_TEST_REGISTER("jlm/hls/backend/rvsdg2rhls/TestFork", Test)

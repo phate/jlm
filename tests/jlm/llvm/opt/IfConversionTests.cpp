@@ -14,7 +14,7 @@
 #include <jlm/rvsdg/view.hpp>
 #include <jlm/util/Statistics.hpp>
 
-static int
+static void
 GammaWithoutMatch()
 {
   using namespace jlm::llvm;
@@ -67,15 +67,13 @@ GammaWithoutMatch()
       jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*selectNode->input(0)->origin());
   assert(controlToBitsNode && is<ctl2bits_op>(controlToBitsNode));
   assert(controlToBitsNode->input(0)->origin() == conditionValue);
-
-  return 0;
 }
 
 JLM_UNIT_TEST_REGISTER(
     "jlm/tests/jlm/llvm/backend/IfConversionTests-GammaWithoutMatch",
     GammaWithoutMatch)
 
-static int
+static void
 EmptyGammaWithTwoSubregionsAndMatch()
 {
   using namespace jlm::llvm;
@@ -148,15 +146,13 @@ EmptyGammaWithTwoSubregionsAndMatch()
     assert(constantOperation);
     assert(constantOperation->Representation() == 24);
   }
-
-  return 0;
 }
 
 JLM_UNIT_TEST_REGISTER(
     "jlm/tests/jlm/llvm/backend/IfConversionTests-EmptyGammaWithTwoSubregionsAndMatch",
     EmptyGammaWithTwoSubregionsAndMatch)
 
-static int
+static void
 EmptyGammaWithTwoSubregions()
 {
   using namespace jlm::llvm;
@@ -212,15 +208,13 @@ EmptyGammaWithTwoSubregions()
   assert(selectNode && is<SelectOperation>(selectNode));
   assert(selectNode->input(1)->origin() == trueValue);
   assert(selectNode->input(2)->origin() == falseValue);
-
-  return 0;
 }
 
 JLM_UNIT_TEST_REGISTER(
     "jlm/tests/jlm/llvm/backend/IfConversionTests-EmptyGammaWithTwoSubregions",
     EmptyGammaWithTwoSubregions)
 
-static int
+static void
 EmptyGammaWithThreeSubregions()
 {
   using namespace jlm::llvm;
@@ -267,15 +261,13 @@ EmptyGammaWithThreeSubregions()
   // should have been created.
   assert(lambdaNode->subregion()->nnodes() == 2);
   assert(!gammaNode->IsDead());
-
-  return 0;
 }
 
 JLM_UNIT_TEST_REGISTER(
     "jlm/tests/jlm/llvm/backend/IfConversionTests-EmptyGammaWithThreeSubregions",
     EmptyGammaWithThreeSubregions)
 
-static int
+static void
 PartialEmptyGamma()
 {
   using namespace jlm::llvm;
@@ -320,8 +312,6 @@ PartialEmptyGamma()
   // should have been created.
   assert(lambdaNode->subregion()->nnodes() == 2);
   assert(!gammaNode->IsDead());
-
-  return 0;
 }
 
 JLM_UNIT_TEST_REGISTER(

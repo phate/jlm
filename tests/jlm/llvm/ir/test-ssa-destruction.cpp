@@ -56,12 +56,10 @@ test_two_phis()
   std::cout << ControlFlowGraph::ToAscii(cfg) << std::flush;
 }
 
-static int
+static void
 verify()
 {
   test_two_phis();
-
-  return 0;
 }
 
 JLM_UNIT_TEST_REGISTER("jlm/llvm/ir/test-ssa-destruction", verify)

@@ -9,7 +9,7 @@
 
 #include <jlm/llvm/ir/operators/MemCpy.hpp>
 
-static int
+static void
 OperationEquality()
 {
   using namespace jlm::llvm;
@@ -27,8 +27,6 @@ OperationEquality()
   assert(operation1 == operation1);
   assert(operation1 != operation2); // length type differs
   assert(operation1 != operation3); // number of memory states differs
-
-  return 0;
 }
 
 JLM_UNIT_TEST_REGISTER(

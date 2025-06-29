@@ -14,12 +14,12 @@ namespace jlm::tests
 class module;
 
 void
-register_unit_test(const std::string & name, int (*verify)());
+register_unit_test(const std::string & name, void (*verify)());
 
-int
+void
 run_unit_test(const std::string & name);
 
-int
+void
 RunAllUnitTests();
 
 }

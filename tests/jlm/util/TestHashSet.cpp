@@ -10,7 +10,7 @@
 #include <cassert>
 #include <memory>
 
-static int
+static void
 TestInt()
 {
   jlm::util::HashSet<int> hashSet({ 0, 1, 2, 3, 4, 5, 6, 7 });
@@ -45,13 +45,11 @@ TestInt()
 
   hashSet.Clear();
   assert(hashSet.Size() == 0);
-
-  return 0;
 }
 
 JLM_UNIT_TEST_REGISTER("jlm/util/TestHashSet-TestInt", TestInt)
 
-static int
+static void
 TestUniquePointer()
 {
   jlm::util::HashSet<std::unique_ptr<int>> hashSet;
@@ -64,13 +62,11 @@ TestUniquePointer()
 
   hashSet.Clear();
   assert(hashSet.Size() == 0);
-
-  return 0;
 }
 
 JLM_UNIT_TEST_REGISTER("jlm/util/TestHashSet-TestUniquePointer", TestUniquePointer)
 
-static int
+static void
 TestPair()
 {
   jlm::util::HashSet<std::pair<int, int>> hashSet{ { 1, 10 }, { 5, 50 } };
@@ -92,13 +88,11 @@ TestPair()
   assert(result && hashSet.Size() == 2);
   result = hashSet.Remove({ 5, 50 });
   assert(!result && hashSet.Size() == 2);
-
-  return 0;
 }
 
 JLM_UNIT_TEST_REGISTER("jlm/util/TestHashSet-TestPair", TestPair)
 
-static int
+static void
 TestIsSubsetOf()
 {
   jlm::util::HashSet<int> set12({ 1, 2 });
@@ -112,13 +106,11 @@ TestIsSubsetOf()
   assert(set123.IsSubsetOf(set1234));
   assert(!set1234.IsSubsetOf(set12));
   assert(!set1234.IsSubsetOf(set123));
-
-  return 0;
 }
 
 JLM_UNIT_TEST_REGISTER("jlm/util/TestHashSet-TestIsSubsetOf", TestIsSubsetOf)
 
-static int
+static void
 TestUnionWith()
 {
   using namespace jlm::util;
@@ -147,13 +139,11 @@ TestUnionWith()
   assert(result);
   assert(set45.Size() == 5);
   assert(set123.IsEmpty());
-
-  return 0;
 }
 
 JLM_UNIT_TEST_REGISTER("jlm/util/TestHashSet-TestUnionWith", TestUnionWith)
 
-static int
+static void
 TestIntersectWith()
 {
   using namespace jlm::util;
@@ -175,13 +165,11 @@ TestIntersectWith()
 
   assert(set123.Size() == 2);
   assert(set12.Size() == 0);
-
-  return 0;
 }
 
 JLM_UNIT_TEST_REGISTER("jlm/util/TestHashSet-TestIntersectWith", TestIntersectWith)
 
-static int
+static void
 TestDifferenceWith()
 {
   using namespace jlm::util;
@@ -215,8 +203,6 @@ TestDifferenceWith()
   // We handle the case where both sets are the same set without crashing
   set45.DifferenceWith(set45);
   assert(set45.IsEmpty());
-
-  return 0;
 }
 
 JLM_UNIT_TEST_REGISTER("jlm/util/TestHashSet-TestDifferenceWith", TestDifferenceWith)

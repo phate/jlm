@@ -499,7 +499,7 @@ TestCallTypeClassifierRecursiveDirectCall()
   assert(&callTypeClassifier2->GetLambdaOutput() == fibfct);
 }
 
-static int
+static void
 Test()
 {
   TestCopy();
@@ -509,8 +509,6 @@ Test()
   TestCallTypeClassifierNonRecursiveDirectCall();
   TestCallTypeClassifierNonRecursiveDirectCallTheta();
   TestCallTypeClassifierRecursiveDirectCall();
-
-  return 0;
 }
 
 JLM_UNIT_TEST_REGISTER("jlm/llvm/ir/operators/TestCall", Test)
