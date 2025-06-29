@@ -13,7 +13,7 @@
 #include <jlm/rvsdg/view.hpp>
 #include <jlm/util/Statistics.hpp>
 
-static int
+static void
 MultipleReductionsPerRegion()
 {
   using namespace jlm::llvm;
@@ -67,8 +67,6 @@ MultipleReductionsPerRegion()
   auto & nodeReductionStatistics = dynamic_cast<const NodeReduction::Statistics &>(statistics);
   auto numIterations = nodeReductionStatistics.GetNumIterations(graph.GetRootRegion()).value();
   assert(numIterations == 2);
-
-  return 0;
 }
 
 JLM_UNIT_TEST_REGISTER(

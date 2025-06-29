@@ -174,14 +174,12 @@ TestPruneDeltaInputs()
   assert(deltaInput1->argument()->index() == 0);
 }
 
-static int
+static void
 TestDelta()
 {
   TestDeltaCreation();
   TestRemoveDeltaInputsWhere();
   TestPruneDeltaInputs();
-
-  return 0;
 }
 
 JLM_UNIT_TEST_REGISTER("jlm/llvm/ir/operators/test-delta", TestDelta)

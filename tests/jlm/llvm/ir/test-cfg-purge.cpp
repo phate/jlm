@@ -10,7 +10,7 @@
 #include <jlm/llvm/ir/operators/operators.hpp>
 #include <jlm/llvm/ir/print.hpp>
 
-static int
+static void
 test()
 {
   using namespace jlm::llvm;
@@ -35,8 +35,6 @@ test()
   purge(cfg);
 
   assert(cfg.nnodes() == 2);
-
-  return 0;
 }
 
 JLM_UNIT_TEST_REGISTER("jlm/llvm/ir/test-cfg-purge", test)

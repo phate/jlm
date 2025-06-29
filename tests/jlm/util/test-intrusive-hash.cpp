@@ -153,13 +153,11 @@ test_str_hash()
   assert(seen_i2 == 1);
 }
 
-static int
+static void
 test_main()
 {
   test_int_hash();
   test_str_hash();
-
-  return 0;
 }
 
 JLM_UNIT_TEST_REGISTER("jlm/util/test-intrusive-hash", test_main)

@@ -89,14 +89,12 @@ test_order_enforcement_traversal()
   assert(!has_active_trackers(&graph));
 }
 
-static int
+static void
 test_main()
 {
   test_initialization();
   test_basic_traversal();
   test_order_enforcement_traversal();
-
-  return 0;
 }
 
 JLM_UNIT_TEST_REGISTER("jlm/rvsdg/test-bottomup", test_main)

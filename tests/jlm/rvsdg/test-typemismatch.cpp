@@ -8,7 +8,7 @@
 #include "test-registry.hpp"
 #include "test-types.hpp"
 
-static int
+static void
 test_main()
 {
   using namespace jlm::rvsdg;
@@ -31,8 +31,6 @@ test_main()
   }
 
   assert(error_handler_called);
-
-  return 0;
 }
 
 JLM_UNIT_TEST_REGISTER("jlm/rvsdg/test-typemismatch", test_main)

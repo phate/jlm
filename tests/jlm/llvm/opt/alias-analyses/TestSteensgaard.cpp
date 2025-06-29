@@ -1282,7 +1282,7 @@ TestStatistics()
   assert(statisticsCollector.NumCollectedStatistics() == 1);
 }
 
-static int
+static void
 TestSteensgaardAnalysis()
 {
   TestStore1();
@@ -1338,8 +1338,6 @@ TestSteensgaardAnalysis()
   TestVariadicFunction2();
 
   TestStatistics();
-
-  return 0;
 }
 
 JLM_UNIT_TEST_REGISTER("jlm/llvm/opt/alias-analyses/TestSteensgaard", TestSteensgaardAnalysis)

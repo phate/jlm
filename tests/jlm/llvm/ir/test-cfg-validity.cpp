@@ -36,12 +36,10 @@ test_single_operand_phi()
   assert(is_valid(cfg));
 }
 
-static int
+static void
 test()
 {
   test_single_operand_phi();
-
-  return 0;
 }
 
 JLM_UNIT_TEST_REGISTER("jlm/llvm/ir/test-cfg-validity", test)

@@ -27,7 +27,7 @@ RunDeadNodeElimination(jlm::llvm::RvsdgModule & rvsdgModule)
   deadNodeElimination.Run(rvsdgModule, statisticsCollector);
 }
 
-static int
+static void
 RootRegion()
 {
   using namespace jlm::llvm;
@@ -48,13 +48,11 @@ RootRegion()
 
   // Assert
   assert(graph.GetRootRegion().narguments() == 1);
-
-  return 0;
 }
 
 JLM_UNIT_TEST_REGISTER("jlm/llvm/opt/DeadNodeEliminationTests-RootRegion", RootRegion)
 
-static int
+static void
 Gamma1()
 {
   using namespace jlm::llvm;
@@ -95,13 +93,11 @@ Gamma1()
   assert(gamma->subregion(1)->narguments() == 3);
   assert(gamma->ninputs() == 3);
   assert(graph.GetRootRegion().narguments() == 2);
-
-  return 0;
 }
 
 JLM_UNIT_TEST_REGISTER("jlm/llvm/opt/DeadNodeEliminationTests-Gamma1", Gamma1)
 
-static int
+static void
 Gamma2()
 {
   using namespace jlm::llvm;
@@ -132,13 +128,11 @@ Gamma2()
 
   // Assert
   assert(graph.GetRootRegion().narguments() == 1);
-
-  return 0;
 }
 
 JLM_UNIT_TEST_REGISTER("jlm/llvm/opt/DeadNodeEliminationTests-Gamma2", Gamma2)
 
-static int
+static void
 Theta()
 {
   using namespace jlm::llvm;
@@ -182,13 +176,11 @@ Theta()
   assert(theta->noutputs() == 3);
   assert(theta->subregion()->nnodes() == 1);
   assert(graph.GetRootRegion().narguments() == 2);
-
-  return 0;
 }
 
 JLM_UNIT_TEST_REGISTER("jlm/llvm/opt/DeadNodeEliminationTests-Theta", Theta)
 
-static int
+static void
 NestedTheta()
 {
   using namespace jlm::llvm;
@@ -233,13 +225,11 @@ NestedTheta()
 
   // Assert
   assert(outerTheta->noutputs() == 3);
-
-  return 0;
 }
 
 JLM_UNIT_TEST_REGISTER("jlm/llvm/opt/DeadNodeEliminationTests-NestedTheta", NestedTheta)
 
-static int
+static void
 EvolvingTheta()
 {
   using namespace jlm::llvm;
@@ -279,13 +269,11 @@ EvolvingTheta()
 
   // Assert
   assert(theta->noutputs() == 5);
-
-  return 0;
 }
 
 JLM_UNIT_TEST_REGISTER("jlm/llvm/opt/DeadNodeEliminationTests-EvolvingTheta", EvolvingTheta)
 
-static int
+static void
 Lambda()
 {
   using namespace jlm::llvm;
@@ -324,13 +312,11 @@ Lambda()
   // Assert
   assert(lambda->subregion()->nnodes() == 0);
   assert(graph.GetRootRegion().narguments() == 1);
-
-  return 0;
 }
 
 JLM_UNIT_TEST_REGISTER("jlm/llvm/opt/DeadNodeEliminationTests-Lambda", Lambda)
 
-static int
+static void
 Phi()
 {
   using namespace jlm::llvm;
@@ -452,13 +438,11 @@ Phi()
   assert(phiSubregion.argument(3) == dx.inner);
   assert(phiNode->ninputs() == 1); // dx is alive
   assert(phiNode->input(0) == dx.input);
-
-  return 0;
 }
 
 JLM_UNIT_TEST_REGISTER("jlm/llvm/opt/DeadNodeEliminationTests-Phi", Phi)
 
-static int
+static void
 Delta()
 {
   using namespace jlm::llvm;
@@ -508,8 +492,6 @@ Delta()
   // Assert
   assert(deltaNode->subregion()->nnodes() == 1);
   assert(deltaNode->ninputs() == 1);
-
-  return 0;
 }
 
 JLM_UNIT_TEST_REGISTER("jlm/llvm/opt/DeadNodeEliminationTests-Delta", Delta)

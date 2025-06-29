@@ -65,7 +65,7 @@ public:
   }
 };
 
-static int
+static void
 NormalizeUnaryOperation_Success()
 {
   using namespace jlm::rvsdg;
@@ -97,15 +97,13 @@ NormalizeUnaryOperation_Success()
 
   const auto node = TryGetOwnerNode<SimpleNode>(*ex.origin());
   assert(node == nullaryNode);
-
-  return 0;
 }
 
 JLM_UNIT_TEST_REGISTER(
     "jlm/rvsdg/UnaryOperationTests-NormalizeUnaryOperation_Success",
     NormalizeUnaryOperation_Success)
 
-static int
+static void
 NormalizeUnaryOperation_Failure()
 {
   using namespace jlm::rvsdg;
@@ -135,8 +133,6 @@ NormalizeUnaryOperation_Failure()
 
   const auto node = TryGetOwnerNode<SimpleNode>(*ex.origin());
   assert(node == unaryNode);
-
-  return 0;
 }
 
 JLM_UNIT_TEST_REGISTER(

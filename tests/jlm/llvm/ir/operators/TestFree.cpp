@@ -83,7 +83,7 @@ TestRvsdgCreator()
   assert(freeResults1.size() == 2);
 }
 
-static int
+static void
 TestFree()
 {
   TestFreeConstructor();
@@ -91,8 +91,6 @@ TestFree()
 
   TestThreeAddressCodeCreator();
   TestRvsdgCreator();
-
-  return 0;
 }
 
 JLM_UNIT_TEST_REGISTER("jlm/llvm/ir/operators/TestFree", TestFree)

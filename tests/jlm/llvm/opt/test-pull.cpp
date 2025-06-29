@@ -124,15 +124,13 @@ test_pull()
   assert(graph.GetRootRegion().nnodes() == 1);
 }
 
-static int
+static void
 verify()
 {
   test_pullin_top();
   test_pullin_bottom();
 
   test_pull();
-
-  return 0;
 }
 
 JLM_UNIT_TEST_REGISTER("jlm/llvm/opt/test-pull", verify)

@@ -142,13 +142,11 @@ test_owner_list()
   assert(v3 == 0);
 }
 
-static int
+void
 test_main()
 {
   test_simple_list();
   test_owner_list();
-
-  return 0;
 }
 
 }

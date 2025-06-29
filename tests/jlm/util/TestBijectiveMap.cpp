@@ -255,7 +255,7 @@ TestBijectiveMapRemoveWhere()
   assert(biMap.Size() == 1 && biMap.HasValue("six"));
 }
 
-static int
+static void
 TestBijectiveMap()
 {
   TestBijectiveMapConstructors();
@@ -267,8 +267,6 @@ TestBijectiveMap()
   TestBijectiveMapErase();
   TestBijectiveMapRemoves();
   TestBijectiveMapRemoveWhere();
-
-  return 0;
 }
 
 JLM_UNIT_TEST_REGISTER("jlm/util/TestBijectiveMap", TestBijectiveMap)

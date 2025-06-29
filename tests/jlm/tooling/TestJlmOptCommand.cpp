@@ -12,7 +12,7 @@
 
 #include <fstream>
 
-static int
+static void
 TestStatistics()
 {
   using namespace jlm::llvm;
@@ -53,13 +53,11 @@ TestStatistics()
       "inputFile.ll");
 
   assert(receivedCommandLine == expectedCommandLine);
-
-  return 0;
 }
 
 JLM_UNIT_TEST_REGISTER("jlm/tooling/TestJlmOptCommand-TestStatistics", TestStatistics)
 
-static int
+static void
 OptimizationIdToOptimizationTranslation()
 {
   using namespace jlm::llvm;
@@ -89,15 +87,13 @@ OptimizationIdToOptimizationTranslation()
   // Act & Assert
   // terminates on unhandled optimization id
   JlmOptCommand command("jlm-opt", options);
-
-  return 0;
 }
 
 JLM_UNIT_TEST_REGISTER(
     "jlm/tooling/TestJlmOptCommand-OptimizationIdToOptimizationTranslation",
     OptimizationIdToOptimizationTranslation)
 
-static int
+static void
 PrintRvsdgTreeToFile()
 {
   using namespace jlm;
@@ -121,8 +117,6 @@ PrintRvsdgTreeToFile()
   buffer << istream.rdbuf();
 
   assert(buffer.str() == "RootRegion\n");
-
-  return 0;
 }
 
 JLM_UNIT_TEST_REGISTER("jlm/tooling/TestJlmOptCommand-PrintRvsdgTreeToFile", PrintRvsdgTreeToFile)

@@ -367,7 +367,7 @@ TestGraphWriterClass()
   assert(StringContains(string, "friend=node1"));
 }
 
-static int
+static void
 TestGraphWriter()
 {
   TestGraphElement();
@@ -378,8 +378,6 @@ TestGraphWriter()
   TestGraphCreateNodes();
   TestGraphAttributes();
   TestGraphWriterClass();
-
-  return 0;
 }
 
 JLM_UNIT_TEST_REGISTER("jlm/util/TestGraphWriter", TestGraphWriter)

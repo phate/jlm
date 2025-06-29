@@ -14,7 +14,7 @@
 #include <jlm/llvm/ir/RvsdgModule.hpp>
 #include <jlm/util/Statistics.hpp>
 
-static int
+static void
 test()
 {
   using namespace jlm::llvm;
@@ -47,8 +47,6 @@ test()
   auto rvsdgModule = ConvertInterProceduralGraphModule(im, statisticsCollector);
 
   jlm::rvsdg::view(rvsdgModule->Rvsdg(), stdout);
-
-  return 0;
 }
 
 JLM_UNIT_TEST_REGISTER("jlm/llvm/frontend/llvm/test-recursive-data", test)

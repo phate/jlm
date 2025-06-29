@@ -398,7 +398,7 @@ test_nested_theta()
   assert(thetas.size() == 3 && nthetas(thetas[0]->subregion()) == 8);
 }
 
-static int
+static void
 verify()
 {
   test_unrollinfo();
@@ -406,8 +406,6 @@ verify()
   test_nested_theta();
   test_known_boundaries();
   test_unknown_boundaries();
-
-  return 0;
 }
 
 JLM_UNIT_TEST_REGISTER("jlm/llvm/opt/test-unroll", verify)

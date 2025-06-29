@@ -62,7 +62,7 @@ TestStatisticsCommandLineArgumentConversion()
   }
 }
 
-static int
+static void
 TestOutputFormatToCommandLineArgument()
 {
   using namespace jlm::tooling;
@@ -79,25 +79,21 @@ TestOutputFormatToCommandLineArgument()
     // throws exception / asserts on failure
     JlmOptCommandLineOptions::ToCommandLineArgument(outputFormat);
   }
-
-  return 0;
 }
 JLM_UNIT_TEST_REGISTER(
     "jlm/tooling/TestJlmOptCommandLineParser-TestOutputFormatToCommandLineArgument",
     TestOutputFormatToCommandLineArgument)
 
-static int
+static void
 Test()
 {
   TestOptimizationCommandLineArgumentConversion();
   TestStatisticsCommandLineArgumentConversion();
-
-  return 0;
 }
 
 JLM_UNIT_TEST_REGISTER("jlm/tooling/TestJlmOptCommandLineParser", Test)
 
-static int
+static void
 OutputFormatParsing()
 {
   using namespace jlm::tooling;
@@ -131,8 +127,6 @@ OutputFormatParsing()
     auto outputFormatString = JlmOptCommandLineOptions::ToCommandLineArgument(outputFormat);
     testOutputFormatParsing(outputFormatString, outputFormat);
   }
-
-  return 0;
 }
 
 JLM_UNIT_TEST_REGISTER(

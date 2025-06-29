@@ -100,13 +100,11 @@ TestFNegVector()
   assert(Contains<jlm::llvm::vectorunary_op>(*ipgModule, "f"));
 }
 
-static int
+static void
 Test()
 {
   TestFNegScalar();
   TestFNegVector();
-
-  return 0;
 }
 
 JLM_UNIT_TEST_REGISTER("jlm/llvm/frontend/llvm/TestFNeg", Test)

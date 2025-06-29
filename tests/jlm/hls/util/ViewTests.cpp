@@ -12,7 +12,7 @@
 #include <jlm/llvm/ir/operators.hpp>
 #include <jlm/rvsdg/view.hpp>
 
-static int
+static void
 TestDumpDot()
 {
   std::cout << std::endl << "### Test dump_dot ###" << std::endl << std::endl;
@@ -51,13 +51,11 @@ TestDumpDot()
   assert(dotOutput.find("subgraph cluster_") != std::string::npos);
   assert(dotOutput.find("tooltip=\"bit32\"") != std::string::npos);
   assert(dotOutput.find("BITS32_0_") != std::string::npos);
-
-  return 0;
 }
 
 JLM_UNIT_TEST_REGISTER("jlm/hls/util/TestView", TestDumpDot)
 
-static int
+static void
 TestDumpDotTheta()
 {
   using namespace jlm;
@@ -103,8 +101,6 @@ TestDumpDotTheta()
   assert(dotOutput.find("subgraph cluster_") != std::string::npos);
   assert(dotOutput.find("tooltip=\"bit32\"") != std::string::npos);
   assert(dotOutput.find("tooltip=\"ctl(2)\"") != std::string::npos);
-
-  return 0;
 }
 
 JLM_UNIT_TEST_REGISTER("jlm/hls/util/TestViewTheta", TestDumpDotTheta)
