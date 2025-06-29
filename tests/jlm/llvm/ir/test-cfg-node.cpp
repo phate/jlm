@@ -32,12 +32,10 @@ test_divert_inedges()
   bb0->divert_inedges(bb0);
 }
 
-static int
+static void
 test()
 {
   test_divert_inedges();
-
-  return 0;
 }
 
 JLM_UNIT_TEST_REGISTER("jlm/llvm/ir/test-cfg-node", test)

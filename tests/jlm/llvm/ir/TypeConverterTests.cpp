@@ -13,7 +13,7 @@
 #include <llvm/IR/DerivedTypes.h>
 #include <llvm/IR/LLVMContext.h>
 
-static int
+static void
 LlvmIntegerTypeConversion()
 {
   using namespace jlm::llvm;
@@ -54,15 +54,13 @@ LlvmIntegerTypeConversion()
   assert(i16BitType && i16BitType->nbits() == 16);
   assert(i32BitType && i32BitType->nbits() == 32);
   assert(i64BitType && i64BitType->nbits() == 64);
-
-  return 0;
 }
 
 JLM_UNIT_TEST_REGISTER(
     "jlm/llvm/ir/TypeConverterTests-LlvmIntegerTypeConversion",
     LlvmIntegerTypeConversion);
 
-static int
+static void
 LlvmPointerTypeConversion()
 {
   using namespace jlm::llvm;
@@ -79,15 +77,13 @@ LlvmPointerTypeConversion()
 
   // Assert
   assert(pointerTypeJlm);
-
-  return 0;
 }
 
 JLM_UNIT_TEST_REGISTER(
     "jlm/llvm/ir/TypeConverterTests-LlvmPointerTypeConversion",
     LlvmPointerTypeConversion);
 
-static int
+static void
 LlvmFunctionTypeConversion()
 {
   using namespace jlm::llvm;
@@ -148,15 +144,13 @@ LlvmFunctionTypeConversion()
   assert(is<bittype>(results[0]));
   assert(is<IOStateType>(results[1]));
   assert(is<MemoryStateType>(results[2]));
-
-  return 0;
 }
 
 JLM_UNIT_TEST_REGISTER(
     "jlm/llvm/ir/TypeConverterTests-LlvmFunctionTypeConversion",
     LlvmFunctionTypeConversion);
 
-static int
+static void
 LlvmFloatingPointTypeConversion()
 {
   using namespace jlm::llvm;
@@ -189,15 +183,13 @@ LlvmFloatingPointTypeConversion()
   assert(doubleTypeJlm && doubleTypeJlm->size() == fpsize::dbl);
   assert(x86fp80TypeJlm && x86fp80TypeJlm->size() == fpsize::x86fp80);
   assert(fp128TypeJlm->size() == fpsize::fp128);
-
-  return 0;
 }
 
 JLM_UNIT_TEST_REGISTER(
     "jlm/llvm/ir/TypeConverterTests-LlvmFloatingPointTypeConversion",
     LlvmFloatingPointTypeConversion);
 
-static int
+static void
 LlvmStructTypeConversion()
 {
   using namespace jlm::llvm;
@@ -255,15 +247,13 @@ LlvmStructTypeConversion()
       std::dynamic_pointer_cast<const StructType>(typeConverter.ConvertLlvmType(*structType1Llvm));
 
   assert(&structType5Jlm->GetDeclaration() != &structType1Jlm->GetDeclaration());
-
-  return 0;
 }
 
 JLM_UNIT_TEST_REGISTER(
     "jlm/llvm/ir/TypeConverterTests-LlvmStructTypeConversion",
     LlvmStructTypeConversion);
 
-static int
+static void
 LlvmArrayTypeConversion()
 {
   using namespace jlm::llvm;
@@ -292,15 +282,13 @@ LlvmArrayTypeConversion()
   assert(arrayType2Jlm);
   assert(is<FloatingPointType>(arrayType2Jlm->element_type()));
   assert(arrayType2Jlm->nelements() == 9);
-
-  return 0;
 }
 
 JLM_UNIT_TEST_REGISTER(
     "jlm/llvm/ir/TypeConverterTests-LlvmArrayTypeConversion",
     LlvmArrayTypeConversion);
 
-static int
+static void
 LlvmVectorTypeConversion()
 {
   using namespace jlm::llvm;
@@ -329,15 +317,13 @@ LlvmVectorTypeConversion()
   assert(vectorType2Jlm);
   assert(is<FloatingPointType>(vectorType2Jlm->type()));
   assert(vectorType2Jlm->size() == 9);
-
-  return 0;
 }
 
 JLM_UNIT_TEST_REGISTER(
     "jlm/llvm/ir/TypeConverterTests-LlvmVectorTypeConversion",
     LlvmVectorTypeConversion);
 
-static int
+static void
 JLmBitTypeConversion()
 {
   using namespace jlm::llvm;
@@ -384,13 +370,11 @@ JLmBitTypeConversion()
 
   assert(i64Type->getTypeID() == llvm::Type::IntegerTyID);
   assert(i64Type->getIntegerBitWidth() == 64);
-
-  return 0;
 }
 
 JLM_UNIT_TEST_REGISTER("jlm/llvm/ir/TypeConverterTests-JLmBitTypeConversion", JLmBitTypeConversion);
 
-static int
+static void
 JlmFunctionTypeConversion()
 {
   using namespace jlm::llvm;
@@ -441,15 +425,13 @@ JlmFunctionTypeConversion()
   assert(functionType3Llvm->getParamType(1)->getTypeID() == llvm::Type::IntegerTyID);
   assert(functionType3Llvm->getReturnType()->getTypeID() == llvm::Type::IntegerTyID);
   assert(functionType3Llvm->isVarArg());
-
-  return 0;
 }
 
 JLM_UNIT_TEST_REGISTER(
     "jlm/llvm/ir/TypeConverterTests-JlmFunctionTypeConversion",
     JlmFunctionTypeConversion);
 
-static int
+static void
 JlmPointerTypeConversion()
 {
   using namespace jlm::llvm;
@@ -467,15 +449,13 @@ JlmPointerTypeConversion()
   // Assert
   assert(pointerTypeLlvm);
   assert(pointerTypeLlvm->getAddressSpace() == 0);
-
-  return 0;
 }
 
 JLM_UNIT_TEST_REGISTER(
     "jlm/llvm/ir/TypeConverterTests-JlmPointerTypeConversion",
     JlmPointerTypeConversion);
 
-static int
+static void
 JlmArrayTypeConversion()
 {
   using namespace jlm::llvm;
@@ -502,15 +482,13 @@ JlmArrayTypeConversion()
   assert(arrayType2Llvm->isArrayTy());
   assert(arrayType2Llvm->getArrayNumElements() == 9);
   assert(arrayType2Llvm->getArrayElementType()->getTypeID() == llvm::Type::HalfTyID);
-
-  return 0;
 }
 
 JLM_UNIT_TEST_REGISTER(
     "jlm/llvm/ir/TypeConverterTests-JlmArrayTypeConversion",
     JlmArrayTypeConversion);
 
-static int
+static void
 JlmControlTypeConversion()
 {
   using namespace jlm::llvm;
@@ -532,15 +510,13 @@ JlmControlTypeConversion()
 
   assert(integerType2Llvm->getTypeID() == llvm::Type::IntegerTyID);
   assert(integerType2Llvm->getIntegerBitWidth() == 32);
-
-  return 0;
 }
 
 JLM_UNIT_TEST_REGISTER(
     "jlm/llvm/ir/TypeConverterTests-JlmControlTypeConversion",
     JlmControlTypeConversion);
 
-static int
+static void
 JlmFloatingPointTypeConversion()
 {
   using namespace jlm::llvm;
@@ -568,15 +544,13 @@ JlmFloatingPointTypeConversion()
   assert(doubleTypeLlvm->getTypeID() == llvm::Type::DoubleTyID);
   assert(x86fp80TypeLlvm->getTypeID() == llvm::Type::X86_FP80TyID);
   assert(fp128TypeLlvm->getTypeID() == llvm::Type::FP128TyID);
-
-  return 0;
 }
 
 JLM_UNIT_TEST_REGISTER(
     "jlm/llvm/ir/TypeConverterTests-JlmFloatingPointTypeConversion",
     JlmFloatingPointTypeConversion);
 
-static int
+static void
 JlmStructTypeConversion()
 {
   using namespace jlm::llvm;
@@ -633,15 +607,13 @@ JlmStructTypeConversion()
   // Converting the same type again after the declaration release should give us a new Llvm type
   const auto structType5Llvm = typeConverter.ConvertJlmType(*structType1Jlm, context);
   assert(structType5Llvm != structType1Llvm);
-
-  return 0;
 }
 
 JLM_UNIT_TEST_REGISTER(
     "jlm/llvm/ir/TypeConverterTests-JlmStructTypeConversion",
     JlmStructTypeConversion);
 
-static int
+static void
 JlmFixedVectorTypeConversion()
 {
   using namespace jlm::llvm;
@@ -669,15 +641,13 @@ JlmFixedVectorTypeConversion()
   assert(vectorType2->getTypeID() == llvm::Type::FixedVectorTyID);
   assert(vectorType2->getElementType()->getTypeID() == llvm::Type::IntegerTyID);
   assert(vectorType2->getElementCount().getFixedValue() == 4);
-
-  return 0;
 }
 
 JLM_UNIT_TEST_REGISTER(
     "jlm/llvm/ir/TypeConverterTests-JlmFixedVectorTypeConversion",
     JlmFixedVectorTypeConversion);
 
-static int
+static void
 JlmScalableVectorTypeConversion()
 {
   using namespace jlm::llvm;
@@ -705,8 +675,6 @@ JlmScalableVectorTypeConversion()
   assert(vectorType2->getTypeID() == llvm::Type::ScalableVectorTyID);
   assert(vectorType2->getElementType()->getTypeID() == llvm::Type::IntegerTyID);
   assert(vectorType2->getElementCount().getKnownMinValue() == 4);
-
-  return 0;
 }
 
 JLM_UNIT_TEST_REGISTER(

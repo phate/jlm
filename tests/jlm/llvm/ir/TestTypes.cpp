@@ -12,7 +12,7 @@
 
 #include <cassert>
 
-static int
+static void
 TestIsOrContains()
 {
   using namespace jlm::llvm;
@@ -68,12 +68,10 @@ TestIsOrContains()
   assert(IsOrContains<StructType>(*vectorType));
   assert(IsOrContains<PointerType>(*vectorType));
   assert(!IsOrContains<jlm::rvsdg::StateType>(*vectorType));
-
-  return 0;
 }
 JLM_UNIT_TEST_REGISTER("jlm/llvm/ir/TestTypes-TestIsOrContains", TestIsOrContains)
 
-static int
+static void
 TestGetTypeSizeAndAlignment()
 {
   using namespace jlm::llvm;
@@ -131,8 +129,6 @@ TestGetTypeSizeAndAlignment()
   assert(packedStructType->GetFieldOffset(4) == 48); // vector is 16 bytes
   assert(GetTypeSize(*packedStructType) == 52);
   assert(GetTypeAlignment(*packedStructType) == 1);
-
-  return 0;
 }
 JLM_UNIT_TEST_REGISTER(
     "jlm/llvm/ir/TestTypes-TestGetTypeSizeAndAlignment",

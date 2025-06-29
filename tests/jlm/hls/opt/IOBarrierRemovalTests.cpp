@@ -12,7 +12,7 @@
 #include <jlm/rvsdg/bitstring/type.hpp>
 #include <jlm/rvsdg/simple-node.hpp>
 
-static int
+static void
 IOBarrierRemoval()
 {
   using namespace jlm::hls;
@@ -52,8 +52,6 @@ IOBarrierRemoval()
 
   // Assert
   assert(!Region::ContainsOperation<IOBarrierOperation>(rvsdg.GetRootRegion(), true));
-
-  return 0;
 }
 
 JLM_UNIT_TEST_REGISTER("jlm/hls/opt/IOBarrierRemoval", IOBarrierRemoval)

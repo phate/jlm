@@ -69,13 +69,11 @@ test_is_structured()
   assert(is_structured(cfg));
 }
 
-static int
+static void
 verify()
 {
   test_straightening();
   test_is_structured();
-
-  return 0;
 }
 
 JLM_UNIT_TEST_REGISTER("jlm/llvm/ir/test-cfg-structure", verify)

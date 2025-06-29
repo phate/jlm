@@ -244,7 +244,7 @@ test_static_endless_loop()
   assert(is_proper_structured(cfg));
 }
 
-static int
+static void
 verify()
 {
   test_acyclic_structured();
@@ -255,8 +255,6 @@ verify()
   test_acyclic_unstructured_in_dowhile();
   test_lor_before_dowhile();
   test_static_endless_loop();
-
-  return 0;
 }
 
 JLM_UNIT_TEST_REGISTER("jlm/llvm/frontend/llvm/test-restructuring", verify)

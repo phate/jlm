@@ -10,7 +10,7 @@
 
 #include <cassert>
 
-static int
+static void
 TestEquality()
 {
   using namespace jlm::llvm;
@@ -57,8 +57,6 @@ TestEquality()
   assert(set2 != set3);
 
   assert(set3 == set3);
-
-  return 0;
 }
 
 JLM_UNIT_TEST_REGISTER("jlm/llvm/ir/AttributeSetTests-TestEquality", TestEquality);

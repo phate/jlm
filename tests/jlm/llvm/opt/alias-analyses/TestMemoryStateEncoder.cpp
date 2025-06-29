@@ -2305,7 +2305,7 @@ ValidateFreeNullTestSteensgaardAgnostic(const jlm::tests::FreeNullTest & test)
   assert(is<LambdaEntryMemoryStateSplitOperation>(*lambdaEntrySplit, 1, 2));
 }
 
-static int
+static void
 TestMemoryStateEncoder()
 {
   using namespace jlm::llvm::aa;
@@ -2431,8 +2431,6 @@ TestMemoryStateEncoder()
 
   ValidateTest<jlm::tests::FreeNullTest, Steensgaard, AgnosticModRefSummarizer>(
       ValidateFreeNullTestSteensgaardAgnostic);
-
-  return 0;
 }
 
 JLM_UNIT_TEST_REGISTER("jlm/llvm/opt/alias-analyses/TestMemoryStateEncoder", TestMemoryStateEncoder)

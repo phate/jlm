@@ -12,7 +12,7 @@
 
 #include <cassert>
 
-static int
+static void
 TestTracksDifferences()
 {
   using namespace jlm;
@@ -105,8 +105,6 @@ TestTracksDifferences()
   // Neither flag has been seen by both nodes, so they are both new to the unification
   assert(differencePropagation.PointeesEscapeIsNew(root));
   assert(differencePropagation.PointsToExternalIsNew(root));
-
-  return 0;
 }
 
 JLM_UNIT_TEST_REGISTER(

@@ -335,7 +335,7 @@ TestIsInvariant()
   assert(!invariantOrigin);
 }
 
-static int
+static void
 test_main()
 {
   test_gamma();
@@ -347,8 +347,6 @@ test_main()
   test_invariant_reduction();
   test_control_constant_reduction();
   test_control_constant_reduction2();
-
-  return 0;
 }
 
 JLM_UNIT_TEST_REGISTER("jlm/rvsdg/test-gamma", test_main)

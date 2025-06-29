@@ -87,13 +87,11 @@ TestDeadLoopNodeOutput()
   // and results.
 }
 
-static int
+static void
 TestDeadNodeElimination()
 {
   TestDeadLoopNode();
   TestDeadLoopNodeOutput();
-
-  return 0;
 }
 
 JLM_UNIT_TEST_REGISTER(

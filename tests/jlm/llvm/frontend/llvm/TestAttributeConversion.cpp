@@ -20,12 +20,10 @@ TestAttributeKindConversion()
   }
 }
 
-static int
+static void
 test()
 {
   TestAttributeKindConversion();
-
-  return 0;
 }
 
 JLM_UNIT_TEST_REGISTER("jlm/llvm/frontend/llvm/TestAttributeConversion", test)

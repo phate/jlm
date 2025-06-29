@@ -220,15 +220,13 @@ TestPruneLambdaInputs()
   assert(lambdaInput1.inner->index() == 0);
 }
 
-static int
+static void
 Test()
 {
   TestArgumentIterators();
   TestInvalidOperandRegion();
   TestRemoveLambdaInputsWhere();
   TestPruneLambdaInputs();
-
-  return 0;
 }
 
 JLM_UNIT_TEST_REGISTER("jlm/llvm/ir/operators/TestLambda", Test)
