@@ -12,7 +12,7 @@
 /**
  * Test check for adding a region argument to input of wrong structural node.
  */
-static int
+static void
 ArgumentNodeMismatch()
 {
   using namespace jlm::rvsdg;
@@ -42,13 +42,11 @@ ArgumentNodeMismatch()
 
   // Assert
   assert(inputErrorHandlerCalled);
-
-  return 0;
 }
 
 JLM_UNIT_TEST_REGISTER("jlm/rvsdg/ArgumentTests-ArgumentNodeMismatch", ArgumentNodeMismatch)
 
-static int
+static void
 ArgumentInputTypeMismatch()
 {
   using namespace jlm::tests;
@@ -90,8 +88,6 @@ ArgumentInputTypeMismatch()
     exceptionWasCaught = true;
   }
   assert(exceptionWasCaught);
-
-  return 0;
 }
 
 JLM_UNIT_TEST_REGISTER(

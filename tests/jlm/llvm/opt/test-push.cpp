@@ -141,14 +141,12 @@ test_push_theta_bottom()
   assert(jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::ThetaNode>(*storenode->input(2)->origin()));
 }
 
-static int
+static void
 verify()
 {
   test_gamma();
   test_theta();
   test_push_theta_bottom();
-
-  return 0;
 }
 
 JLM_UNIT_TEST_REGISTER("jlm/llvm/opt/test-push", verify)

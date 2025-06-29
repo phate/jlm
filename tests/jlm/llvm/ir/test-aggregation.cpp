@@ -489,7 +489,7 @@ test_branch_and_loop()
   verify_aggtree(*root);
 }
 
-static int
+static void
 test()
 {
   test_linear_reduction();
@@ -499,8 +499,6 @@ test()
   test_loop_branch_reduction();
   test_ifthen_reduction();
   test_branch_and_loop();
-
-  return 0;
 }
 
 JLM_UNIT_TEST_REGISTER("jlm/llvm/ir/test-aggregation", test)

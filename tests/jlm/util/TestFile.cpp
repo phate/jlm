@@ -11,7 +11,7 @@
 #include <cassert>
 #include <vector>
 
-static int
+static void
 TestFilePathMethods()
 {
   const jlm::util::FilePath f("/tmp/archive.tar.gz");
@@ -35,13 +35,11 @@ TestFilePathMethods()
   {
     assert(jlm::util::FilePath(fullPath).Dirname() == path);
   }
-
-  return 0;
 }
 
 JLM_UNIT_TEST_REGISTER("jlm/util/TestFile-TestFilePathMethods", TestFilePathMethods)
 
-static int
+static void
 TestCreateDirectory()
 {
   const auto filePath = jlm::util::FilePath::TempDirectoryPath().Join("jlm-test-create-dir");
@@ -72,13 +70,11 @@ TestCreateDirectory()
 
   // Cleanup
   std::filesystem::remove(filePath.to_str());
-
-  return 0;
 }
 
 JLM_UNIT_TEST_REGISTER("jlm/util/TestFile-TestCreateDirectory", TestCreateDirectory)
 
-static int
+static void
 TestFilepathJoin()
 {
   const jlm::util::FilePath path1("tmp");
@@ -90,13 +86,11 @@ TestFilepathJoin()
 
   assert(path1.Join(path3).to_str() == "/c/d");
   assert(path3.Join(path1).to_str() == "/c/d/tmp");
-
-  return 0;
 }
 
 JLM_UNIT_TEST_REGISTER("jlm/util/TestFile-TestFilepathJoin", TestFilepathJoin)
 
-static int
+static void
 TestCreateUniqueFileName()
 {
   // Arrange
@@ -108,8 +102,6 @@ TestCreateUniqueFileName()
 
   // Assert
   assert(filePath.Dirname() == (tmpDirectory.to_str() + "/"));
-
-  return 0;
 }
 
 JLM_UNIT_TEST_REGISTER("jlm/util/TestFile-TestCreateUniqueFileName", TestCreateUniqueFileName)

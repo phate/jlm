@@ -509,7 +509,7 @@ TestBranchPassByAnnotation()
   }
 }
 
-static int
+static void
 TestAnnotation()
 {
   TestBasicBlockAnnotation();
@@ -519,8 +519,6 @@ TestAnnotation()
   TestBranchInLoopAnnotation();
   TestAssignmentAnnotation();
   TestBranchPassByAnnotation();
-
-  return 0;
 }
 
 JLM_UNIT_TEST_REGISTER("jlm/llvm/ir/TestAnnotation", TestAnnotation)

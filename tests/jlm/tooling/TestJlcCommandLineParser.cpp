@@ -184,7 +184,7 @@ TestJlmOptPassStatistics()
   assert(commandLineOptions.JlmOptPassStatistics_ == expectedStatistics);
 }
 
-static int
+static void
 Test()
 {
   Test1();
@@ -194,8 +194,6 @@ Test()
   TestJlmOptOptimizations();
   TestFalseJlmOptOptimization();
   TestJlmOptPassStatistics();
-
-  return 0;
 }
 
 JLM_UNIT_TEST_REGISTER("jlm/tooling/TestJlcCommandLineParser", Test)

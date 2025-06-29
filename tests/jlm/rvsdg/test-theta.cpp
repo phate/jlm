@@ -85,13 +85,11 @@ TestThetaLoopVarRemoval()
   assert(loopvars[1].output = lv2.output);
 }
 
-static int
+static void
 TestTheta()
 {
   TestThetaCreation();
   TestThetaLoopVarRemoval();
-
-  return 0;
 }
 
 JLM_UNIT_TEST_REGISTER("jlm/rvsdg/test-theta", TestTheta)

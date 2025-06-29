@@ -459,7 +459,7 @@ test_phi()
       == jlm::rvsdg::AssertGetOwnerNode<jlm::rvsdg::LambdaNode>(*f2).input(0)->origin());
 }
 
-static int
+static void
 verify()
 {
   test_simple();
@@ -471,8 +471,6 @@ verify()
   test_theta5();
   test_lambda();
   test_phi();
-
-  return 0;
 }
 
 JLM_UNIT_TEST_REGISTER("jlm/llvm/opt/test-cne", verify)

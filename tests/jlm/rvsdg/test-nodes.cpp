@@ -223,15 +223,13 @@ TestRemoveInputsWhere()
   assert(node.ninputs() == 0);
 }
 
-static int
+static void
 test_nodes()
 {
   test_node_copy();
   test_node_depth();
   TestRemoveOutputsWhere();
   TestRemoveInputsWhere();
-
-  return 0;
 }
 
 JLM_UNIT_TEST_REGISTER("jlm/rvsdg/test-nodes", test_nodes)

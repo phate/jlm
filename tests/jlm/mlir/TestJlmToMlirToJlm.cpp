@@ -19,7 +19,7 @@
 #include <jlm/rvsdg/simple-node.hpp>
 #include <jlm/rvsdg/traverser.hpp>
 
-static int
+static void
 TestUndef()
 {
   using namespace jlm::llvm;
@@ -71,11 +71,10 @@ TestUndef()
       assert(std::dynamic_pointer_cast<const jlm::rvsdg::bittype>(outputType)->nbits() == 32);
     }
   }
-  return 0;
 }
 JLM_UNIT_TEST_REGISTER("jlm/mlir/TestMlirUndefGen", TestUndef)
 
-static int
+static void
 TestAlloca()
 {
   using namespace jlm::llvm;
@@ -167,11 +166,10 @@ TestAlloca()
       assert(foundAlloca);
     }
   }
-  return 0;
 }
 JLM_UNIT_TEST_REGISTER("jlm/mlir/TestMlirAllocaGen", TestAlloca)
 
-static int
+static void
 TestLoad()
 {
   using namespace jlm::llvm;
@@ -265,11 +263,10 @@ TestLoad()
       assert(outputBitType->nbits() == 32);
     }
   }
-  return 0;
 }
 JLM_UNIT_TEST_REGISTER("jlm/mlir/TestMlirLoadGen", TestLoad)
 
-static int
+static void
 TestStore()
 {
   using namespace jlm::llvm;
@@ -362,11 +359,10 @@ TestStore()
       assert(inputBitType->nbits() == 32);
     }
   }
-  return 0;
 }
 JLM_UNIT_TEST_REGISTER("jlm/mlir/TestMlirStoreGen", TestStore)
 
-static int
+static void
 TestSext()
 {
   using namespace jlm::llvm;
@@ -438,11 +434,10 @@ TestSext()
       assert(convertedSext->nresults() == 1);
     }
   }
-  return 0;
 }
 JLM_UNIT_TEST_REGISTER("jlm/mlir/TestMlirSextGen", TestSext)
 
-static int
+static void
 TestSitofp()
 {
   using namespace jlm::llvm;
@@ -510,11 +505,10 @@ TestSitofp()
       assert(jlm::rvsdg::is<jlm::llvm::FloatingPointType>(*convertedSitofp->result(0).get()));
     }
   }
-  return 0;
 }
 JLM_UNIT_TEST_REGISTER("jlm/mlir/TestMlirSitofpGen", TestSitofp)
 
-static int
+static void
 TestConstantFP()
 {
   using namespace jlm::llvm;
@@ -569,11 +563,10 @@ TestConstantFP()
       assert(convertedConst->constant().isExactlyValue(2.0));
     }
   }
-  return 0;
 }
 JLM_UNIT_TEST_REGISTER("jlm/mlir/TestMlirConstantFPGen", TestConstantFP)
 
-static int
+static void
 TestFpBinary()
 {
   using namespace jlm::llvm;
@@ -651,11 +644,10 @@ TestFpBinary()
       }
     }
   }
-  return 0;
 }
 JLM_UNIT_TEST_REGISTER("jlm/mlir/TestMlirFpBinaryGen", TestFpBinary)
 
-static int
+static void
 TestGetElementPtr()
 {
   using namespace jlm::llvm;
@@ -742,11 +734,10 @@ TestGetElementPtr()
       assert(is<jlm::rvsdg::bittype>(convertedGep->argument(2)));
     }
   }
-  return 0;
 }
 JLM_UNIT_TEST_REGISTER("jlm/mlir/TestMlirGetElementPtrGen", TestGetElementPtr)
 
-static int
+static void
 TestDelta()
 {
   using namespace jlm::llvm;
@@ -852,11 +843,10 @@ TestDelta()
       }
     }
   }
-  return 0;
 }
 JLM_UNIT_TEST_REGISTER("jlm/mlir/TestMlirDeltaGen", TestDelta)
 
-static int
+static void
 TestConstantDataArray()
 {
   using namespace jlm::llvm;
@@ -930,11 +920,10 @@ TestConstantDataArray()
       assert(foundConstantDataArray);
     }
   }
-  return 0;
 }
 JLM_UNIT_TEST_REGISTER("jlm/mlir/TestMlirConstantDataArrayGen", TestConstantDataArray)
 
-static int
+static void
 TestConstantAggregateZero()
 {
   using namespace jlm::llvm;
@@ -988,11 +977,10 @@ TestConstantAggregateZero()
       assert(arrayType->nelements() == 2);
     }
   }
-  return 0;
 }
 JLM_UNIT_TEST_REGISTER("jlm/mlir/TestMlirConstantAggregateZeroGen", TestConstantAggregateZero)
 
-static int
+static void
 TestVarArgList()
 {
   using namespace jlm::llvm;
@@ -1060,11 +1048,10 @@ TestVarArgList()
       assert(foundVarArgOp);
     }
   }
-  return 0;
 }
 JLM_UNIT_TEST_REGISTER("jlm/mlir/TestMlirVarArgListGen", TestVarArgList)
 
-static int
+static void
 TestFNeg()
 {
   using namespace jlm::llvm;
@@ -1137,11 +1124,10 @@ TestFNeg()
       assert(foundFNegOp);
     }
   }
-  return 0;
 }
 JLM_UNIT_TEST_REGISTER("jlm/mlir/TestMlirFNegGen", TestFNeg)
 
-static int
+static void
 TestFPExt()
 {
   using namespace jlm::llvm;
@@ -1215,11 +1201,10 @@ TestFPExt()
       assert(foundFPExtOp);
     }
   }
-  return 0;
 }
 JLM_UNIT_TEST_REGISTER("jlm/mlir/TestMlirFPExtGen", TestFPExt)
 
-static int
+static void
 TestTrunc()
 {
   using namespace jlm::llvm;
@@ -1292,11 +1277,10 @@ TestTrunc()
       assert(foundTruncOp);
     }
   }
-  return 0;
 }
 JLM_UNIT_TEST_REGISTER("jlm/mlir/TestMlirTruncGen", TestTrunc)
 
-static int
+static void
 TestFree()
 {
   using namespace jlm::llvm;
@@ -1384,11 +1368,10 @@ TestFree()
       assert(is<jlm::llvm::IOStateType>(convertedFree->result(1)));
     }
   }
-  return 0;
 }
 JLM_UNIT_TEST_REGISTER("jlm/mlir/TestMlirFreeGen", TestFree)
 
-static int
+static void
 TestFunctionGraphImport()
 {
   using namespace jlm::llvm;
@@ -1466,11 +1449,10 @@ TestFunctionGraphImport()
       assert(*imp->ImportedType() == *functionType);
     }
   }
-  return 0;
 }
 JLM_UNIT_TEST_REGISTER("jlm/mlir/TestMlirFunctionGraphImportGen", TestFunctionGraphImport)
 
-static int
+static void
 TestPointerGraphImport()
 {
   using namespace jlm::llvm;
@@ -1537,12 +1519,11 @@ TestPointerGraphImport()
       assert(*imp->ImportedType() == *PointerType::Create());
     }
   }
-  return 0;
 }
 JLM_UNIT_TEST_REGISTER("jlm/mlir/TestMlirPointerGraphImportGen", TestPointerGraphImport)
 
 // Add IOBarrier test near the end of the file, before the last test registrations
-static int
+static void
 TestIOBarrier()
 {
   using namespace jlm::llvm;
@@ -1657,11 +1638,10 @@ TestIOBarrier()
       assert(foundIOBarrier);
     }
   }
-  return 0;
 }
 JLM_UNIT_TEST_REGISTER("jlm/mlir/TestMlirIOBarrierGen", TestIOBarrier)
 
-static int
+static void
 TestMalloc()
 {
   using namespace jlm::llvm;
@@ -1729,6 +1709,5 @@ TestMalloc()
       assert(foundMallocOp);
     }
   }
-  return 0;
 }
 JLM_UNIT_TEST_REGISTER("jlm/mlir/TestMlirMallocGen", TestMalloc)

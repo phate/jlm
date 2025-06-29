@@ -47,7 +47,7 @@ RunAndExtractFile(jlm::llvm::RvsdgModule & module, jlm::llvm::RvsdgTreePrinter &
   return result;
 }
 
-static int
+static void
 PrintRvsdgTree()
 {
   using namespace jlm::llvm;
@@ -78,13 +78,11 @@ PrintRvsdgTree()
                       "--Region[0]\n\n";
 
   assert(tree == expectedTree);
-
-  return 0;
 }
 
 JLM_UNIT_TEST_REGISTER("jlm/llvm/opt/RvsdgTreePrinterTests-PrintRvsdgTree", PrintRvsdgTree)
 
-static int
+static void
 PrintNumRvsdgNodesAnnotation()
 {
   using namespace jlm::llvm;
@@ -115,15 +113,13 @@ PrintNumRvsdgNodesAnnotation()
                       "--Region[1] NumRvsdgNodes:1\n\n";
 
   assert(tree == expectedTree);
-
-  return 0;
 }
 
 JLM_UNIT_TEST_REGISTER(
     "jlm/llvm/opt/RvsdgTreePrinterTests-PrintNumRvsdgNodesAnnotation",
     PrintNumRvsdgNodesAnnotation)
 
-static int
+static void
 PrintNumLoadNodesAnnotation()
 {
   using namespace jlm::llvm;
@@ -174,15 +170,13 @@ PrintNumLoadNodesAnnotation()
                       "--Region[2] NumLoadNodes:1\n\n";
 
   assert(tree == expectedTree);
-
-  return 0;
 }
 
 JLM_UNIT_TEST_REGISTER(
     "jlm/llvm/opt/RvsdgTreePrinterTests-PrintNumLoadNodesAnnotation",
     PrintNumLoadNodesAnnotation)
 
-static int
+static void
 PrintNumMemoryStateInputsOutputsAnnotation()
 {
   using namespace jlm::llvm;
@@ -224,8 +218,6 @@ PrintNumMemoryStateInputsOutputsAnnotation()
       "--Region[1] NumMemoryStateTypeArguments:1 NumMemoryStateTypeResults:1\n\n";
 
   assert(tree == expectedTree);
-
-  return 0;
 }
 
 JLM_UNIT_TEST_REGISTER(

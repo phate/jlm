@@ -12,7 +12,7 @@
 #include <jlm/llvm/ir/types.hpp>
 #include <jlm/mlir/backend/JlmToMlirConverter.hpp>
 
-static int
+static void
 TestLambda()
 {
   using namespace jlm::llvm;
@@ -98,7 +98,6 @@ TestLambda()
 
     omega->destroy();
   }
-  return 0;
 }
 
 /** \brief useChainsUpTraverse
@@ -137,7 +136,7 @@ useChainsUpTraverse(mlir::Operation * operation, std::vector<llvm::StringRef> de
  * constants. The users trace goes through the operation first operand user recursively to trace the
  * nodes.
  */
-static int
+static void
 TestAddOperation()
 {
   using namespace jlm::llvm;
@@ -227,7 +226,6 @@ TestAddOperation()
 
     omega->destroy();
   }
-  return 0;
 }
 
 /** \brief TestAddOperation
@@ -236,7 +234,7 @@ TestAddOperation()
  * and comparison operation, it tests operations types
  * and does the use chain traversal.
  */
-static int
+static void
 TestComZeroExt()
 {
   using namespace jlm::llvm;
@@ -369,14 +367,13 @@ TestComZeroExt()
 
     omega->destroy();
   }
-  return 0;
 }
 
 /** \brief TestMatch
  *
  * This test is similar to previous tests, but uses a match operation
  */
-static int
+static void
 TestMatch()
 {
   using namespace jlm::llvm;
@@ -474,14 +471,13 @@ TestMatch()
 
     omega->destroy();
   }
-  return 0;
 }
 
 /** \brief TestGamma
  *
  * This test is similar to previous tests, but uses a gamma operation
  */
-static int
+static void
 TestGamma()
 {
   using namespace jlm::llvm;
@@ -590,14 +586,13 @@ TestGamma()
     assert(gammaFound);
     omega->destroy();
   }
-  return 0;
 }
 
 /** \brief TestTheta
  *
  * This test is similar to previous tests, but uses a theta operation
  */
-static int
+static void
 TestTheta()
 {
   using namespace jlm::llvm;
@@ -689,7 +684,6 @@ TestTheta()
     assert(thetaFound);
     omega->destroy();
   }
-  return 0;
 }
 
 JLM_UNIT_TEST_REGISTER("jlm/mlir/backend/TestMlirLambdaGen", TestLambda)

@@ -108,14 +108,12 @@ test_inverse_reduction()
   assert(ex.origin() == x);
 }
 
-static int
+static void
 test()
 {
   test_bitunary_reduction();
   test_bitbinary_reduction();
   test_inverse_reduction();
-
-  return 0;
 }
 
 JLM_UNIT_TEST_REGISTER("jlm/llvm/ir/operators/test-sext", test)

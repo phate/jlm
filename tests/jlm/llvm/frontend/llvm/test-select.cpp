@@ -100,13 +100,11 @@ test_vector_select()
   assert(contains<jlm::llvm::VectorSelectOperation>(*ipgmod, "f"));
 }
 
-static int
+static void
 test()
 {
   test_scalar_select();
   test_vector_select();
-
-  return 0;
 }
 
 JLM_UNIT_TEST_REGISTER("jlm/llvm/frontend/llvm/test-select", test)

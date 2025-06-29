@@ -14,7 +14,7 @@
 #include <cassert>
 #include <vector>
 
-static int
+static void
 TestUnifiesCycles()
 {
   using namespace jlm;
@@ -101,8 +101,6 @@ TestUnifiesCycles()
   {
     assert(set.GetUnificationRoot(0) == set.GetUnificationRoot(i));
   }
-
-  return 0;
 }
 
 JLM_UNIT_TEST_REGISTER(

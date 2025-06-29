@@ -47,12 +47,10 @@ TestOutputRemoval()
   assert(output3->index() == 2);
 }
 
-static int
+static void
 TestStructuralNode()
 {
   TestOutputRemoval();
-
-  return 0;
 }
 
 JLM_UNIT_TEST_REGISTER("jlm/rvsdg/TestStructuralNode", TestStructuralNode)

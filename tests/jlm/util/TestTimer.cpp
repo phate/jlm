@@ -64,12 +64,11 @@ TestReset()
   assert(!t.IsRunning());
 }
 
-static int
+static void
 TestTimer()
 {
   TestStartStop();
   TestReset();
-  return 0;
 }
 
 JLM_UNIT_TEST_REGISTER("jlm/util/TestTimer", TestTimer)

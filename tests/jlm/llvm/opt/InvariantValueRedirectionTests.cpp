@@ -31,7 +31,7 @@ RunInvariantValueRedirection(jlm::llvm::RvsdgModule & rvsdgModule)
   jlm::rvsdg::view(rvsdgModule.Rvsdg(), stdout);
 }
 
-static int
+static void
 TestGamma()
 {
   using namespace jlm::llvm;
@@ -78,13 +78,11 @@ TestGamma()
   // Assert
   assert(lambdaNode->GetFunctionResults()[0]->origin() == x);
   assert(lambdaNode->GetFunctionResults()[1]->origin() == y);
-
-  return 0;
 }
 
 JLM_UNIT_TEST_REGISTER("jlm/llvm/opt/InvariantValueRedirectionTests-Gamma", TestGamma)
 
-static int
+static void
 TestTheta()
 {
   // Arrange
@@ -134,13 +132,11 @@ TestTheta()
   assert(lambdaNode->GetFunctionResults()[0]->origin() == c);
   assert(lambdaNode->GetFunctionResults()[1]->origin() == x);
   assert(lambdaNode->GetFunctionResults()[2]->origin() == thetaVar3.output);
-
-  return 0;
 }
 
 JLM_UNIT_TEST_REGISTER("jlm/llvm/opt/InvariantValueRedirectionTests-Theta", TestTheta)
 
-static int
+static void
 TestCall()
 {
   // Arrange
@@ -225,13 +221,11 @@ TestCall()
   assert(lambdaNode.GetFunctionResults()[1]->origin() == lambdaNode.GetFunctionArguments()[0]);
   assert(lambdaNode.GetFunctionResults()[2]->origin() == lambdaNode.GetFunctionArguments()[2]);
   assert(lambdaNode.GetFunctionResults()[3]->origin() == lambdaNode.GetFunctionArguments()[3]);
-
-  return 0;
 }
 
 JLM_UNIT_TEST_REGISTER("jlm/llvm/opt/InvariantValueRedirectionTests-Call", TestCall)
 
-static int
+static void
 TestCallWithMemoryStateNodes()
 {
   // Arrange
@@ -335,15 +329,13 @@ TestCallWithMemoryStateNodes()
   assert(lambdaExitMerge->ninputs() == 2);
   assert(lambdaExitMerge->input(0)->origin() == lambdaEntrySplit->output(1));
   assert(lambdaExitMerge->input(1)->origin() == lambdaEntrySplit->output(0));
-
-  return 0;
 }
 
 JLM_UNIT_TEST_REGISTER(
     "jlm/llvm/opt/InvariantValueRedirectionTests-CallWithMemoryStateNodes",
     TestCallWithMemoryStateNodes)
 
-static int
+static void
 TestCallWithMissingMemoryStateNodes()
 {
   // Arrange
@@ -453,15 +445,13 @@ TestCallWithMissingMemoryStateNodes()
       TryGetSimpleNodeAndOp<CallEntryMemoryStateMergeOperation>(*memoryStateInput.origin());
   assert(callEntryMergeNode->ninputs() == 1);
   assert(callEntryMergeNode->input(0)->origin() == lambdaEntrySplit2->output(0));
-
-  return 0;
 }
 
 JLM_UNIT_TEST_REGISTER(
     "jlm/llvm/opt/InvariantValueRedirectionTests-CallWithMissingMemoryStateNodes",
     TestCallWithMissingMemoryStateNodes)
 
-static int
+static void
 TestLambdaCallArgumentMismatch()
 {
   // Arrange
@@ -479,8 +469,6 @@ TestLambdaCallArgumentMismatch()
   assert(lambdaNode.GetFunctionResults()[0]->origin() == callNode.output(0));
   assert(lambdaNode.GetFunctionResults()[1]->origin() == callNode.output(1));
   assert(lambdaNode.GetFunctionResults()[2]->origin() == callNode.output(2));
-
-  return 0;
 }
 
 JLM_UNIT_TEST_REGISTER(

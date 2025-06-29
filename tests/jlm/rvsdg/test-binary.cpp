@@ -80,7 +80,7 @@ private:
   enum jlm::rvsdg::BinaryOperation::flags Flags_;
 };
 
-static int
+static void
 ReduceFlattenedBinaryReductionParallel()
 {
   using namespace jlm::rvsdg;
@@ -120,15 +120,13 @@ ReduceFlattenedBinaryReductionParallel()
 
   auto node2 = TryGetOwnerNode<Node>(*node0->input(1)->origin());
   assert(is<jlm::tests::binary_op>(node2));
-
-  return 0;
 }
 
 JLM_UNIT_TEST_REGISTER(
     "jlm/rvsdg/test-binary-ReduceFlattenedBinaryReductionParallel",
     ReduceFlattenedBinaryReductionParallel)
 
-static int
+static void
 ReduceFlattenedBinaryReductionLinear()
 {
   using namespace jlm::rvsdg;
@@ -169,15 +167,13 @@ ReduceFlattenedBinaryReductionLinear()
 
   auto node2 = TryGetOwnerNode<Node>(*node1->input(0)->origin());
   assert(is<jlm::tests::binary_op>(node2));
-
-  return 0;
 }
 
 JLM_UNIT_TEST_REGISTER(
     "jlm/rvsdg/test-binary-ReduceFlattenedBinaryReductionLinear",
     ReduceFlattenedBinaryReductionLinear)
 
-static int
+static void
 FlattenAssociativeBinaryOperation_NotAssociativeBinary()
 {
   using namespace jlm::rvsdg;
@@ -210,15 +206,13 @@ FlattenAssociativeBinaryOperation_NotAssociativeBinary()
   // Assert
   assert(success == false);
   assert(TryGetOwnerNode<SimpleNode>(*ex.origin()) == node);
-
-  return 0;
 }
 
 JLM_UNIT_TEST_REGISTER(
     "jlm/rvsdg/test-binary-FlattenAssociatedBinaryOperation_NotAssociativeBinary",
     FlattenAssociativeBinaryOperation_NotAssociativeBinary)
 
-static int
+static void
 FlattenAssociativeBinaryOperation_NoNewOperands()
 {
   using namespace jlm::rvsdg;
@@ -253,15 +247,13 @@ FlattenAssociativeBinaryOperation_NoNewOperands()
   // Assert
   assert(success == false);
   assert(TryGetOwnerNode<SimpleNode>(*ex.origin()) == node);
-
-  return 0;
 }
 
 JLM_UNIT_TEST_REGISTER(
     "jlm/rvsdg/test-binary-FlattenAssociatedBinaryOperation_NoNewOperands",
     FlattenAssociativeBinaryOperation_NoNewOperands)
 
-static int
+static void
 FlattenAssociativeBinaryOperation_Success()
 {
   using namespace jlm::rvsdg;
@@ -296,15 +288,13 @@ FlattenAssociativeBinaryOperation_Success()
   auto flattenedBinaryNode = TryGetOwnerNode<SimpleNode>(*ex.origin());
   assert(is<FlattenedBinaryOperation>(flattenedBinaryNode));
   assert(flattenedBinaryNode->ninputs() == 3);
-
-  return 0;
 }
 
 JLM_UNIT_TEST_REGISTER(
     "jlm/rvsdg/test-binary-FlattenAssociatedBinaryOperation_Success",
     FlattenAssociativeBinaryOperation_Success)
 
-static int
+static void
 NormalizeBinaryOperation_NoNewOperands()
 {
   using namespace jlm::rvsdg;
@@ -334,15 +324,13 @@ NormalizeBinaryOperation_NoNewOperands()
 
   // Assert
   assert(success == false);
-
-  return 0;
 }
 
 JLM_UNIT_TEST_REGISTER(
     "jlm/rvsdg/test-binary-NormalizeBinaryOperation_NoNewOperands",
     NormalizeBinaryOperation_NoNewOperands)
 
-static int
+static void
 NormalizeBinaryOperation_SingleOperand()
 {
   using namespace jlm::rvsdg;
@@ -376,8 +364,6 @@ NormalizeBinaryOperation_SingleOperand()
   // Assert
   assert(success == true);
   assert(ex.origin() == u2->output(0));
-
-  return 0;
 }
 
 JLM_UNIT_TEST_REGISTER(

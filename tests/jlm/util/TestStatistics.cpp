@@ -36,7 +36,7 @@ public:
   }
 };
 
-int
+void
 TestStatisticsMeasurements()
 {
   using namespace jlm::util;
@@ -81,15 +81,13 @@ TestStatisticsMeasurements()
 
   auto timers = statistics.GetTimers();
   assert(timers.begin()->first == "Timer");
-
-  return 0;
 }
 
 JLM_UNIT_TEST_REGISTER(
     "jlm/util/TestStatistics-TestStatisticsMeasurements",
     TestStatisticsMeasurements)
 
-int
+void
 TestStatisticsCollection()
 {
   using namespace jlm::util;
@@ -117,13 +115,11 @@ TestStatisticsCollection()
   {
     assert(statistic.GetId() == Statistics::Id::Aggregation);
   }
-
-  return 0;
 }
 
 JLM_UNIT_TEST_REGISTER("jlm/util/TestStatistics-TestStatisticsCollection", TestStatisticsCollection)
 
-int
+void
 TestStatisticsPrinting()
 {
   using namespace jlm::util;
@@ -167,13 +163,11 @@ TestStatisticsPrinting()
 
   // Cleanup
   std::filesystem::remove_all(testOutputDir.to_str());
-
-  return 0;
 }
 
 JLM_UNIT_TEST_REGISTER("jlm/util/TestStatistics-TestStatisticsPrinting", TestStatisticsPrinting)
 
-int
+void
 TestCreateOutputFile()
 {
   using namespace jlm::util;
@@ -203,8 +197,6 @@ TestCreateOutputFile()
 
   assert(nice0.path() == "./test-module-ABC-nice-0.txt");
   assert(nice1.path() == "./test-module-ABC-nice-1.txt");
-
-  return 0;
 }
 
 JLM_UNIT_TEST_REGISTER("jlm/util/TestStatistics-TestCreateOutputFile", TestCreateOutputFile)

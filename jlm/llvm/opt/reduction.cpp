@@ -254,10 +254,10 @@ NodeReduction::NormalizeStoreNode(
     const std::vector<rvsdg::Output *> & operands)
 {
   static std::vector<rvsdg::NodeNormalization<StoreNonVolatileOperation>> storeNodeNormalizations(
-      { NormalizeStoreMux,
-        NormalizeStoreStore,
-        NormalizeStoreAlloca,
-        NormalizeStoreDuplicateState });
+      { StoreNonVolatileOperation::NormalizeStoreMux,
+        StoreNonVolatileOperation::NormalizeStoreStore,
+        StoreNonVolatileOperation::NormalizeStoreAlloca,
+        StoreNonVolatileOperation::NormalizeDuplicateStates });
 
   return rvsdg::NormalizeSequence<StoreNonVolatileOperation>(
       storeNodeNormalizations,

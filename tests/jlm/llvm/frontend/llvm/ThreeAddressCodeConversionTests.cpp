@@ -80,7 +80,7 @@ SetupFunctionWithThreeAddressCode(const jlm::rvsdg::SimpleOperation & operation)
   return ipgModule;
 }
 
-static int
+static void
 LoadVolatileConversion()
 {
   using namespace jlm::llvm;
@@ -101,15 +101,13 @@ LoadVolatileConversion()
 
   auto loadVolatileNode = lambda->subregion()->Nodes().begin().ptr();
   assert(is<LoadVolatileOperation>(loadVolatileNode));
-
-  return 0;
 }
 
 JLM_UNIT_TEST_REGISTER(
     "jlm/llvm/frontend/llvm/ThreeAddressCodeConversionTests-LoadVolatileConversion",
     LoadVolatileConversion)
 
-static int
+static void
 StoreVolatileConversion()
 {
   using namespace jlm::llvm;
@@ -130,8 +128,6 @@ StoreVolatileConversion()
 
   auto storeVolatileNode = lambda->subregion()->Nodes().begin().ptr();
   assert(is<StoreVolatileOperation>(storeVolatileNode));
-
-  return 0;
 }
 
 JLM_UNIT_TEST_REGISTER(

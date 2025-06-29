@@ -188,13 +188,11 @@ test2()
            ->origin())));
 }
 
-static int
+static void
 verify()
 {
   test1();
   test2();
-
-  return 0;
 }
 
 JLM_UNIT_TEST_REGISTER("jlm/llvm/opt/test-inlining", verify)
