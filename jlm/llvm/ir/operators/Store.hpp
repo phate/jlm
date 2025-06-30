@@ -251,8 +251,8 @@ public:
    * @param operation The StoreNonVolatileOperation on which the transformation is performed.
    * @param operands The operands of the StoreNonVolatileOperation node.
    *
-   * @return If the normalization could be applied, then the results of the StoreNonVolatileOperation node after
-   * the transformation. Otherwise, std::nullopt.
+   * @return If the normalization could be applied, then the results of the
+   * StoreNonVolatileOperation node after the transformation. Otherwise, std::nullopt.
    */
   static std::optional<std::vector<rvsdg::Output *>>
   NormalizeDuplicateStates(
