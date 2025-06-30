@@ -15,7 +15,7 @@ test_node_copy()
   using namespace jlm::rvsdg;
   using namespace jlm::tests;
 
-  auto stype = jlm::tests::statetype::Create();
+  auto stype = jlm::tests::StateType::Create();
   auto vtype = jlm::tests::ValueType::Create();
 
   Graph graph;

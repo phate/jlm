@@ -15,7 +15,7 @@ test_main()
 
   Graph graph;
 
-  auto type = jlm::tests::statetype::Create();
+  auto type = jlm::tests::StateType::Create();
   auto value_type = jlm::tests::ValueType::Create();
 
   auto n1 = jlm::tests::test_op::create(&graph.GetRootRegion(), {}, { type });

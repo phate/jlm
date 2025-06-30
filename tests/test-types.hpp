@@ -31,14 +31,12 @@ public:
   Create();
 };
 
-class statetype final : public rvsdg::StateType
+class StateType final : public rvsdg::StateType
 {
 public:
-  virtual ~statetype();
+  ~StateType() noexcept override;
 
-  inline constexpr statetype() noexcept
-      : rvsdg::StateType()
-  {}
+  constexpr StateType() noexcept = default;
 
   virtual std::string
   debug_string() const override;
@@ -49,7 +47,7 @@ public:
   [[nodiscard]] std::size_t
   ComputeHash() const noexcept override;
 
-  static std::shared_ptr<const statetype>
+  static std::shared_ptr<const StateType>
   Create();
 };
 

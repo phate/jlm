@@ -37,34 +37,31 @@ ValueType::Create()
   return std::shared_ptr<const ValueType>(std::shared_ptr<void>(), &instance);
 }
 
-/* statetype */
-
-statetype::~statetype()
-{}
+StateType::~StateType() noexcept = default;
 
 std::string
-statetype::debug_string() const
+StateType::debug_string() const
 {
-  return "statetype";
+  return "StateType";
 }
 
 bool
-statetype::operator==(const rvsdg::Type & other) const noexcept
+StateType::operator==(const Type & other) const noexcept
 {
-  return dynamic_cast<const statetype *>(&other) != nullptr;
+  return dynamic_cast<const StateType *>(&other) != nullptr;
 }
 
 std::size_t
-statetype::ComputeHash() const noexcept
+StateType::ComputeHash() const noexcept
 {
-  return typeid(statetype).hash_code();
+  return typeid(StateType).hash_code();
 }
 
-std::shared_ptr<const statetype>
-statetype::Create()
+std::shared_ptr<const StateType>
+StateType::Create()
 {
-  static const statetype instance;
-  return std::shared_ptr<const statetype>(std::shared_ptr<void>(), &instance);
+  static const StateType instance;
+  return std::shared_ptr<const StateType>(std::shared_ptr<void>(), &instance);
 }
 
 }
