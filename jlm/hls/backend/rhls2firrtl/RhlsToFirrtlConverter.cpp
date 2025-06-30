@@ -1170,8 +1170,7 @@ RhlsToFirrtlConverter::MlirGenHlsLocalMem(const jlm::rvsdg::SimpleNode * node)
 {
   auto lmem_op = util::AssertedCast<const LocalMemoryOperation>(&node->GetOperation());
   auto res_node = rvsdg::TryGetOwnerNode<rvsdg::Node>(**node->output(0)->begin());
-  auto res_op = dynamic_cast<const local_mem_resp_op *>(&res_node->GetOperation());
-  JLM_ASSERT(res_op);
+  JLM_ASSERT(rvsdg::is<LocalMemoryResponseOperation>(res_node));
   auto req_node = rvsdg::TryGetOwnerNode<rvsdg::Node>(**node->output(1)->begin());
   JLM_ASSERT(rvsdg::is<LocalMemoryRequestOperation>(req_node));
 
@@ -1376,7 +1375,7 @@ RhlsToFirrtlConverter::MlirGenHlsLocalMem(const jlm::rvsdg::SimpleNode * node)
 circt::firrtl::FModuleOp
 RhlsToFirrtlConverter::MlirGenHlsStore(const jlm::rvsdg::SimpleNode * node)
 {
-  JLM_ASSERT(rvsdg::is<StoreOperation>(node) || rvsdg::is<local_store_op>(node));
+  JLM_ASSERT(rvsdg::is<StoreOperation>(node) || rvsdg::is<LocalStoreOperation>(node));
 
   // Create the module and its input/output ports
   auto module = nodeToModule(node, false);
@@ -1592,7 +1591,7 @@ RhlsToFirrtlConverter::MlirGenMem(const jlm::rvsdg::SimpleNode * node)
   Connect(body, memReqValid, canRequest);
   Connect(body, memReqAddr, inData0);
 
-  int bitWidth;
+  int bitWidth = 0;
   if (store)
   {
     Connect(body, memReqWrite, oneBitValue);
@@ -2400,7 +2399,7 @@ RhlsToFirrtlConverter::MlirGen(const jlm::rvsdg::SimpleNode * node)
     // same as normal load for now, but with index instead of address
     return MlirGenHlsLoad(node);
   }
-  else if (dynamic_cast<const hls::local_store_op *>(&(node->GetOperation())))
+  if (rvsdg::is<LocalStoreOperation>(node))
   {
     // same as normal store for now, but with index instead of address
     return MlirGenHlsStore(node);

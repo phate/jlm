@@ -59,7 +59,7 @@ destruct_ssa(ControlFlowGraph & cfg)
       for (auto inEdge : originalInEdges)
       {
         auto source = inEdge->source();
-        BasicBlock * intermediate;
+        BasicBlock * intermediate = nullptr;
 
         if (intermediateBlocks.find(source) == intermediateBlocks.end())
         {

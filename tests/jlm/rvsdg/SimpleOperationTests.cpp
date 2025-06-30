@@ -11,15 +11,15 @@
 #include <jlm/rvsdg/simple-node.hpp>
 #include <jlm/rvsdg/view.hpp>
 
-static int
+static void
 NormalizeSimpleOperationCne_NodesWithoutOperands()
 {
   using namespace jlm::rvsdg;
 
   // Arrange
   Graph graph;
-  const auto valueType = jlm::tests::valuetype::Create();
-  const auto stateType = jlm::tests::statetype::Create();
+  const auto valueType = jlm::tests::ValueType::Create();
+  const auto stateType = jlm::tests::StateType::Create();
 
   auto & nullaryValueNode1 =
       CreateOpNode<jlm::tests::NullaryOperation>(graph.GetRootRegion(), valueType);
@@ -63,23 +63,21 @@ NormalizeSimpleOperationCne_NodesWithoutOperands()
   assert(exNullaryValueNode1.origin() == exNullaryValueNode2.origin());
   assert(exNullaryStateNode1.origin() == exNullaryStateNode2.origin());
   assert(exNullaryValueNode1.origin() != exNullaryStateNode2.origin());
-
-  return 0;
 }
 
 JLM_UNIT_TEST_REGISTER(
     "jlm/rvsdg/NormalizeSimpleOperationCne_NodesWithoutOperands",
     NormalizeSimpleOperationCne_NodesWithoutOperands)
 
-static int
+static void
 NormalizeSimpleOperationCne_NodesWithOperands()
 {
   using namespace jlm::rvsdg;
 
   // Arrange
   Graph graph;
-  const auto valueType = jlm::tests::valuetype::Create();
-  const auto stateType = jlm::tests::statetype::Create();
+  const auto valueType = jlm::tests::ValueType::Create();
+  const auto stateType = jlm::tests::StateType::Create();
 
   auto v1 = &jlm::tests::GraphImport::Create(graph, valueType, "v1");
   auto s1 = &jlm::tests::GraphImport::Create(graph, stateType, "s1");
@@ -118,23 +116,21 @@ NormalizeSimpleOperationCne_NodesWithOperands()
   assert(exValueNode1.origin() == exValueNode2.origin());
   assert(exStateNode1.origin() == exStateNode2.origin());
   assert(exValueNode1.origin() != exStateNode2.origin());
-
-  return 0;
 }
 
 JLM_UNIT_TEST_REGISTER(
     "jlm/rvsdg/NormalizeSimpleOperationCne_NodesWithOperands",
     NormalizeSimpleOperationCne_NodesWithOperands)
 
-static int
+static void
 NormalizeSimpleOperationCne_Failure()
 {
   using namespace jlm::rvsdg;
 
   // Arrange
   Graph graph;
-  const auto valueType = jlm::tests::valuetype::Create();
-  const auto stateType = jlm::tests::statetype::Create();
+  const auto valueType = jlm::tests::ValueType::Create();
+  const auto stateType = jlm::tests::StateType::Create();
 
   auto v1 = &jlm::tests::GraphImport::Create(graph, valueType, "v1");
   auto s1 = &jlm::tests::GraphImport::Create(graph, stateType, "s1");
@@ -176,8 +172,6 @@ NormalizeSimpleOperationCne_Failure()
   assert(TryGetOwnerNode<Node>(*exNullaryStateNode.origin()) == &nullaryStateNode);
   assert(TryGetOwnerNode<Node>(*exUnaryValueNode.origin()) == &unaryValueNode);
   assert(TryGetOwnerNode<Node>(*exUnaryStateNode.origin()) == &unaryStateNode);
-
-  return 0;
 }
 
 JLM_UNIT_TEST_REGISTER(

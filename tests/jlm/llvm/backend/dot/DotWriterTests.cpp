@@ -12,7 +12,7 @@
 
 #include <cassert>
 
-static int
+static void
 TestWriteGraphs()
 {
   using namespace jlm::llvm;
@@ -74,12 +74,10 @@ TestWriteGraphs()
   assert(lambdaConnections.size() == 1);
   auto & graphExport = lambdaConnections.front()->GetTo().GetNode();
   assert(graphExport.GetLabel() == "export[f]");
-
-  return 0;
 }
 JLM_UNIT_TEST_REGISTER("jlm/llvm/backend/dot/DotWriterTests-TestWriteGraphs", TestWriteGraphs)
 
-static int
+static void
 TestTypeGraph()
 {
   using namespace jlm::llvm;
@@ -111,7 +109,5 @@ TestTypeGraph()
   auto & fGraph = writer.GetGraph(2);
   assert(writer.GetElementFromProgramObject(*gammaTest.lambda->subregion()) == &fGraph);
   assert(fGraph.GetArgumentNode(5).GetAttributeGraphElement("type") == &memNode);
-
-  return 0;
 }
 JLM_UNIT_TEST_REGISTER("jlm/llvm/backend/dot/DotWriterTests-TestTypeGraph", TestTypeGraph)

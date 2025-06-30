@@ -319,14 +319,12 @@ TestIsSupergraphOf()
   assert(graph1->IsSupergraphOf(*graph0));
 }
 
-static int
+static void
 TestPointsToGraph()
 {
   TestNodeIterators();
   TestRegisterNodeIteration();
   TestIsSupergraphOf();
-
-  return 0;
 }
 
 JLM_UNIT_TEST_REGISTER("jlm/llvm/opt/alias-analyses/TestPointsToGraph", TestPointsToGraph)

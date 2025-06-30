@@ -10,13 +10,13 @@
 
 #include <cassert>
 
-static int
+static void
 TestEquality()
 {
   using namespace jlm::llvm;
 
   // Arrange
-  auto valueType = jlm::tests::valuetype::Create();
+  auto valueType = jlm::tests::ValueType::Create();
 
   enum_attribute enumAttribute1(Attribute::kind::AllocAlign);
   enum_attribute enumAttribute2(Attribute::kind::AlwaysInline);
@@ -57,8 +57,6 @@ TestEquality()
   assert(set2 != set3);
 
   assert(set3 == set3);
-
-  return 0;
 }
 
 JLM_UNIT_TEST_REGISTER("jlm/llvm/ir/AttributeSetTests-TestEquality", TestEquality);

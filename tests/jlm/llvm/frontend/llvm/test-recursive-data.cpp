@@ -14,12 +14,12 @@
 #include <jlm/llvm/ir/RvsdgModule.hpp>
 #include <jlm/util/Statistics.hpp>
 
-static int
+static void
 test()
 {
   using namespace jlm::llvm;
 
-  auto vt = jlm::tests::valuetype::Create();
+  auto vt = jlm::tests::ValueType::Create();
   InterProceduralGraphModule im(jlm::util::FilePath(""), "", "");
 
   auto d0 = data_node::Create(im.ipgraph(), "d0", vt, linkage::external_linkage, "", false);
@@ -47,8 +47,6 @@ test()
   auto rvsdgModule = ConvertInterProceduralGraphModule(im, statisticsCollector);
 
   jlm::rvsdg::view(rvsdgModule->Rvsdg(), stdout);
-
-  return 0;
 }
 
 JLM_UNIT_TEST_REGISTER("jlm/llvm/frontend/llvm/test-recursive-data", test)

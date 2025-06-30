@@ -1460,21 +1460,19 @@ public:
   }
 };
 
-class local_mem_resp_op final : public rvsdg::SimpleOperation
+class LocalMemoryResponseOperation final : public rvsdg::SimpleOperation
 {
 public:
-  virtual ~local_mem_resp_op()
-  {}
+  ~LocalMemoryResponseOperation() noexcept override;
 
-  local_mem_resp_op(const std::shared_ptr<const llvm::ArrayType> & at, size_t resp_count)
+  LocalMemoryResponseOperation(const std::shared_ptr<const llvm::ArrayType> & at, size_t resp_count)
       : SimpleOperation({ at }, CreateOutTypes(at, resp_count))
   {}
 
   bool
   operator==(const Operation & other) const noexcept override
   {
-    // TODO:
-    auto ot = dynamic_cast<const local_mem_resp_op *>(&other);
+    auto ot = dynamic_cast<const LocalMemoryResponseOperation *>(&other);
     // check predicate and value
     return ot && *ot->argument(1) == *argument(1) && ot->narguments() == narguments();
   }
@@ -1495,13 +1493,13 @@ public:
   [[nodiscard]] std::unique_ptr<Operation>
   copy() const override
   {
-    return std::make_unique<local_mem_resp_op>(*this);
+    return std::make_unique<LocalMemoryResponseOperation>(*this);
   }
 
   static std::vector<jlm::rvsdg::Output *>
   create(jlm::rvsdg::Output & mem, size_t resp_count)
   {
-    return outputs(&rvsdg::CreateOpNode<local_mem_resp_op>(
+    return outputs(&rvsdg::CreateOpNode<LocalMemoryResponseOperation>(
         { &mem },
         std::dynamic_pointer_cast<const llvm::ArrayType>(mem.Type()),
         resp_count));
@@ -1586,21 +1584,21 @@ public:
   }
 };
 
-class local_store_op final : public rvsdg::SimpleOperation
+class LocalStoreOperation final : public rvsdg::SimpleOperation
 {
 public:
-  virtual ~local_store_op()
-  {}
+  ~LocalStoreOperation() noexcept override;
 
-  local_store_op(const std::shared_ptr<const jlm::rvsdg::ValueType> & valuetype, size_t numStates)
+  LocalStoreOperation(
+      const std::shared_ptr<const jlm::rvsdg::ValueType> & valuetype,
+      size_t numStates)
       : SimpleOperation(CreateInTypes(valuetype, numStates), CreateOutTypes(valuetype, numStates))
   {}
 
   bool
   operator==(const Operation & other) const noexcept override
   {
-    // TODO:
-    auto ot = dynamic_cast<const local_store_op *>(&other);
+    auto ot = dynamic_cast<const LocalStoreOperation *>(&other);
     // check predicate and value
     return ot && *ot->argument(1) == *argument(1) && ot->narguments() == narguments();
   }
@@ -1637,7 +1635,7 @@ public:
   [[nodiscard]] std::unique_ptr<Operation>
   copy() const override
   {
-    return std::make_unique<local_store_op>(*this);
+    return std::make_unique<LocalStoreOperation>(*this);
   }
 
   static std::vector<jlm::rvsdg::Output *>
@@ -1650,7 +1648,7 @@ public:
     inputs.push_back(&index);
     inputs.push_back(&value);
     inputs.insert(inputs.end(), states.begin(), states.end());
-    return outputs(&rvsdg::CreateOpNode<local_store_op>(
+    return outputs(&rvsdg::CreateOpNode<LocalStoreOperation>(
         inputs,
         std::dynamic_pointer_cast<const jlm::rvsdg::ValueType>(value.Type()),
         states.size()));

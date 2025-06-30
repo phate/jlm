@@ -1909,7 +1909,7 @@ Steensgaard::MarkAsEscaped(const rvsdg::Output & output)
 void
 Steensgaard::PropagatePointsToFlags()
 {
-  bool pointsToFlagsChanged;
+  bool pointsToFlagsChanged = false;
   do
   {
     pointsToFlagsChanged = false;

@@ -22,7 +22,7 @@ TestBasicBlockAnnotation()
   // Arrange
   auto SetupAggregationTree = [](InterProceduralGraphModule & module)
   {
-    auto vt = jlm::tests::valuetype::Create();
+    auto vt = jlm::tests::ValueType::Create();
     jlm::tests::test_op op({ vt }, { vt });
 
     auto v0 = module.create_variable(vt, "v0");
@@ -67,7 +67,7 @@ TestLinearSubgraphAnnotation()
     /*
      * Setup simple linear CFG: Entry -> B1 -> B2 -> Exit
      */
-    auto vt = jlm::tests::valuetype::Create();
+    auto vt = jlm::tests::ValueType::Create();
     jlm::tests::test_op op({ vt }, { vt });
 
     ThreeAddressCodeList bb1, bb2;
@@ -93,7 +93,7 @@ TestLinearSubgraphAnnotation()
   };
 
   InterProceduralGraphModule module(jlm::util::FilePath(""), "", "");
-  jlm::llvm::argument argument("argument", jlm::tests::valuetype::Create());
+  jlm::llvm::argument argument("argument", jlm::tests::ValueType::Create());
   auto [aggregationTreeRoot, v1, v2] = SetupAggregationTree(module, argument);
 
   /*
@@ -152,7 +152,7 @@ TestBranchAnnotation()
     /*
      * Setup conditional CFG with nodes bbs, b1, b2, and edges bbs -> b1 and bbs -> b2.
      */
-    auto vt = jlm::tests::valuetype::Create();
+    auto vt = jlm::tests::ValueType::Create();
     jlm::tests::test_op op({ vt }, { vt });
 
     auto argument = module.create_variable(vt, "arg");
@@ -183,7 +183,7 @@ TestBranchAnnotation()
     return std::make_tuple(std::move(root), argument, v1, v2, v3, v4);
   };
 
-  auto vt = jlm::tests::valuetype::Create();
+  auto vt = jlm::tests::ValueType::Create();
   jlm::tests::test_op op({ vt }, { vt });
 
   InterProceduralGraphModule module(jlm::util::FilePath(""), "", "");
@@ -233,7 +233,7 @@ TestLoopAnnotation()
   // Arrange
   auto SetupAggregationTree = [](InterProceduralGraphModule & module)
   {
-    auto vt = jlm::tests::valuetype::Create();
+    auto vt = jlm::tests::ValueType::Create();
     jlm::tests::test_op op({ vt }, { vt });
 
     auto v1 = module.create_variable(vt, "v1");
@@ -296,7 +296,7 @@ TestBranchInLoopAnnotation()
   // Arrange
   auto SetupAggregationTree = [](InterProceduralGraphModule & module)
   {
-    auto vt = jlm::tests::valuetype::Create();
+    auto vt = jlm::tests::ValueType::Create();
     jlm::tests::test_op op({ vt }, { vt });
 
     auto v1 = module.create_variable(vt, "v1");
@@ -386,7 +386,7 @@ TestAssignmentAnnotation()
   // Arrange
   auto SetupAggregationTree = [](InterProceduralGraphModule & module)
   {
-    auto vt = jlm::tests::valuetype::Create();
+    auto vt = jlm::tests::ValueType::Create();
 
     auto v1 = module.create_variable(vt, "v1");
     auto v2 = module.create_variable(vt, "v2");
@@ -424,7 +424,7 @@ TestBranchPassByAnnotation()
   // Arrange
   auto SetupAggregationTree = [](InterProceduralGraphModule & module)
   {
-    auto vt = jlm::tests::valuetype::Create();
+    auto vt = jlm::tests::ValueType::Create();
     jlm::tests::test_op op({}, { vt });
 
     auto v3 = module.create_variable(vt, "v3");
@@ -509,7 +509,7 @@ TestBranchPassByAnnotation()
   }
 }
 
-static int
+static void
 TestAnnotation()
 {
   TestBasicBlockAnnotation();
@@ -519,8 +519,6 @@ TestAnnotation()
   TestBranchInLoopAnnotation();
   TestAssignmentAnnotation();
   TestBranchPassByAnnotation();
-
-  return 0;
 }
 
 JLM_UNIT_TEST_REGISTER("jlm/llvm/ir/TestAnnotation", TestAnnotation)

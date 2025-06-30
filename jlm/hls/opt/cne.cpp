@@ -479,7 +479,7 @@ mark(const jlm::rvsdg::SimpleNode * node, cnectx & ctx)
           || other->ninputs() != node->ninputs())
         continue;
 
-      size_t n;
+      size_t n = 0;
       for (n = 0; n < node->ninputs(); n++)
       {
         if (!ctx.congruent(node->input(n), other->input(n)))

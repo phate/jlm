@@ -8,7 +8,7 @@
 
 #include <jlm/util/AnnotationMap.hpp>
 
-static int
+static void
 AnnotationKeyValueRetrieval()
 {
   using namespace jlm::util;
@@ -45,15 +45,13 @@ AnnotationKeyValueRetrieval()
   }
   catch (...)
   {}
-
-  return 0;
 }
 
 JLM_UNIT_TEST_REGISTER(
     "jlm/util/AnnotationMapTests-AnnotationKeyValueRetrieval",
     AnnotationKeyValueRetrieval)
 
-static int
+static void
 AnnotationEquality()
 {
   using namespace jlm::util;
@@ -74,13 +72,11 @@ AnnotationEquality()
 
   Annotation otherIntAnnotation("uint", (int64_t)1);
   assert(uintAnnotation != otherIntAnnotation);
-
-  return 0;
 }
 
 JLM_UNIT_TEST_REGISTER("jlm/util/AnnotationMapTests-AnnotationEquality", AnnotationEquality)
 
-static int
+static void
 AnnotationMap()
 {
   using namespace jlm::util;
@@ -106,8 +102,6 @@ AnnotationMap()
       assert(iteratedAnnotation == annotation);
     }
   }
-
-  return 0;
 }
 
 JLM_UNIT_TEST_REGISTER("jlm/util/AnnotationMapTests-AnnotationMap", AnnotationMap)

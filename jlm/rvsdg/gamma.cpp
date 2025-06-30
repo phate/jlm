@@ -53,7 +53,7 @@ perform_invariant_reduction(GammaNode * gamma)
     if (!argument)
       continue;
 
-    size_t n;
+    size_t n = 0;
     auto input = argument->input();
     for (n = 1; n < exitvar.branchResult.size(); n++)
     {
@@ -97,7 +97,7 @@ is_control_constant_reducible(GammaNode * gamma)
     if (!is_ctltype(*exitvar.output->Type()))
       continue;
 
-    size_t n;
+    size_t n = 0;
     for (n = 0; n < exitvar.branchResult.size(); n++)
     {
       auto node = rvsdg::TryGetOwnerNode<SimpleNode>(*exitvar.branchResult[n]->origin());

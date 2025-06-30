@@ -1265,7 +1265,7 @@ assert_constant(jlm::rvsdg::Output * bitstr, size_t nbits, const char bits[])
   assert(op.value() == jlm::rvsdg::bitvalue_repr(std::string(bits, nbits).c_str()));
 }
 
-static int
+static void
 types_bitstring_test_reduction()
 {
   using namespace jlm::rvsdg;
@@ -1319,11 +1319,9 @@ types_bitstring_test_reduction()
   assert_constant(exBitConcat.origin(), 8, "11001010");
   assert_constant(exBitNeg1.origin(), 4, "1011");
   assert_constant(exBitNeg2.origin(), 4, "1101");
-
-  return 0;
 }
 
-static int
+static void
 SliceOfConcatReduction()
 {
   using namespace jlm::rvsdg;
@@ -1366,15 +1364,13 @@ SliceOfConcatReduction()
 
   assert(o0_node->input(0)->origin() == x);
   assert(o1_node->input(0)->origin() == y);
-
-  return 0;
 }
 
 JLM_UNIT_TEST_REGISTER(
     "jlm/rvsdg/bitstring/bitstring-SliceOfConcatReduction",
     SliceOfConcatReduction);
 
-static int
+static void
 ConcatOfSliceReduction()
 {
   using namespace jlm::rvsdg;
@@ -1405,15 +1401,13 @@ ConcatOfSliceReduction()
   const auto sliceNode = TryGetOwnerNode<Node>(*ex.origin());
   assert(sliceNode->GetOperation() == bitslice_op(bit16Type, 0, 16));
   assert(sliceNode->input(0)->origin() == x);
-
-  return 0;
 }
 
 JLM_UNIT_TEST_REGISTER(
     "jlm/rvsdg/bitstring/bitstring-ConcatOfSliceReduction",
     ConcatOfSliceReduction);
 
-static int
+static void
 SliceOfConstant()
 {
   using namespace jlm::rvsdg;
@@ -1438,13 +1432,11 @@ SliceOfConstant()
   const auto node = TryGetOwnerNode<Node>(*ex.origin());
   auto & operation = dynamic_cast<const bitconstant_op &>(node->GetOperation());
   assert(operation.value() == bitvalue_repr("1101"));
-
-  return 0;
 }
 
 JLM_UNIT_TEST_REGISTER("jlm/rvsdg/bitstring/bitstring-SliceOfConstant", SliceOfConstant);
 
-static int
+static void
 SliceOfSlice()
 {
   using namespace jlm::rvsdg;
@@ -1471,13 +1463,11 @@ SliceOfSlice()
   const auto node = TryGetOwnerNode<Node>(*ex.origin());
   const auto operation = dynamic_cast<const bitslice_op *>(&node->GetOperation());
   assert(operation->low() == 3 && operation->high() == 5);
-
-  return 0;
 }
 
 JLM_UNIT_TEST_REGISTER("jlm/rvsdg/bitstring/bitstring-SliceOfSlice", SliceOfSlice);
 
-static int
+static void
 SliceOfFullNode()
 {
   using namespace jlm::rvsdg;
@@ -1501,13 +1491,11 @@ SliceOfFullNode()
 
   // Assert
   assert(ex.origin() == x);
-
-  return 0;
 }
 
 JLM_UNIT_TEST_REGISTER("jlm/rvsdg/bitstring/bitstring-SliceOfFullNode", SliceOfFullNode);
 
-static int
+static void
 SliceOfConcat()
 {
   using namespace jlm::rvsdg;
@@ -1541,13 +1529,11 @@ SliceOfConcat()
   const auto bitType = std::dynamic_pointer_cast<const bittype>(ex.origin()->Type());
   assert(bitType && bitType->nbits() == 8);
   assert(ex.origin() == x);
-
-  return 0;
 }
 
 JLM_UNIT_TEST_REGISTER("jlm/rvsdg/bitstring/bitstring-SliceOfConcat", SliceOfConcat);
 
-static int
+static void
 ConcatFlattening()
 {
   using namespace jlm::rvsdg;
@@ -1577,13 +1563,11 @@ ConcatFlattening()
   assert(node->input(0)->origin() == x);
   assert(node->input(1)->origin() == y);
   assert(node->input(2)->origin() == z);
-
-  return 0;
 }
 
 JLM_UNIT_TEST_REGISTER("jlm/rvsdg/bitstring/bitstring-ConcatFlattening", ConcatFlattening);
 
-static int
+static void
 ConcatWithSingleOperand()
 {
   using namespace jlm::rvsdg;
@@ -1608,15 +1592,13 @@ ConcatWithSingleOperand()
 
   // Assert
   assert(ex.origin() == x);
-
-  return 0;
 }
 
 JLM_UNIT_TEST_REGISTER(
     "jlm/rvsdg/bitstring/bitstring-ConcatWithSingleOperand",
     ConcatWithSingleOperand);
 
-static int
+static void
 ConcatOfSlices()
 {
   using namespace jlm::rvsdg;
@@ -1644,13 +1626,11 @@ ConcatOfSlices()
 
   // Assert
   assert(ex.origin() == x);
-
-  return 0;
 }
 
 JLM_UNIT_TEST_REGISTER("jlm/rvsdg/bitstring/bitstring-ConcatWithOfSlices", ConcatOfSlices);
 
-static int
+static void
 ConcatOfConstants()
 {
   using namespace jlm::rvsdg;
@@ -1672,13 +1652,11 @@ ConcatOfConstants()
   auto node = TryGetOwnerNode<Node>(*ex.origin());
   auto operation = dynamic_cast<const bitconstant_op &>(node->GetOperation());
   assert(operation.value() == bitvalue_repr("0011011111001000"));
-
-  return 0;
 }
 
 JLM_UNIT_TEST_REGISTER("jlm/rvsdg/bitstring/bitstring-ConcatOfConstants", ConcatOfConstants);
 
-static int
+static void
 ConcatCne()
 {
   using namespace jlm::rvsdg;
@@ -1717,13 +1695,11 @@ ConcatCne()
 
   // Assert
   assert(ex1.origin() == ex2.origin());
-
-  return 0;
 }
 
 JLM_UNIT_TEST_REGISTER("jlm/rvsdg/bitstring/bitstring-ConcatCne", ConcatCne);
 
-static int
+static void
 SliceCne()
 {
   using namespace jlm::rvsdg;
@@ -1759,8 +1735,6 @@ SliceCne()
 
   // Assert
   assert(ex1.origin() == ex2.origin());
-
-  return 0;
 }
 
 JLM_UNIT_TEST_REGISTER("jlm/rvsdg/bitstring/bitstring-SliceCne", SliceCne);
@@ -2259,7 +2233,7 @@ types_bitstring_test_value_representation()
   return 0;
 }
 
-static int
+static void
 RunTests()
 {
   types_bitstring_arithmetic_test_bitand();
@@ -2293,8 +2267,6 @@ RunTests()
   types_bitstring_test_normalize();
   types_bitstring_test_reduction();
   types_bitstring_test_value_representation();
-
-  return 0;
 }
 
 JLM_UNIT_TEST_REGISTER("jlm/rvsdg/bitstring/bitstring", RunTests);

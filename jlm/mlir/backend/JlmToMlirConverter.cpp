@@ -87,12 +87,6 @@ JlmToMlirConverter::ConvertRegion(rvsdg::Region & region, ::mlir::Block & block,
   for (size_t i = 0; i < region.narguments(); ++i)
   {
     auto arg = region.argument(i);
-    // Ignore unit type -- this is the first argument in gamma subregions
-    // and does not have a representation in MLIR.
-    if (*arg->Type() == *rvsdg::UnitType::Create())
-    {
-      continue;
-    }
     if (isRoot) // Omega arguments are treated separately
     {
       auto imp = util::AssertedCast<llvm::GraphImport>(arg);
@@ -257,7 +251,7 @@ JlmToMlirConverter::ConvertBitBinaryNode(
     const rvsdg::SimpleOperation & bitOp,
     ::llvm::SmallVector<::mlir::Value> inputs)
 {
-  ::mlir::Operation * MlirOp;
+  ::mlir::Operation * MlirOp = nullptr;
   if (jlm::rvsdg::is<const rvsdg::bitadd_op>(bitOp))
   {
     MlirOp =
@@ -344,7 +338,7 @@ JlmToMlirConverter::BitCompareNode(
     const rvsdg::SimpleOperation & bitOp,
     ::llvm::SmallVector<::mlir::Value> inputs)
 {
-  ::mlir::arith::CmpIPredicate compPredicate;
+  auto compPredicate = ::mlir::arith::CmpIPredicate::eq;
   if (jlm::rvsdg::is<const rvsdg::biteq_op>(bitOp))
     compPredicate = ::mlir::arith::CmpIPredicate::eq;
   else if (jlm::rvsdg::is<const rvsdg::bitne_op>(bitOp))
@@ -366,9 +360,44 @@ JlmToMlirConverter::BitCompareNode(
   else if (jlm::rvsdg::is<const rvsdg::bitult_op>(bitOp))
     compPredicate = ::mlir::arith::CmpIPredicate::ult;
   else
-    JLM_UNREACHABLE("Unknown bitcompare operation");
+  {
+    auto message = util::strfmt("Unknown compare operation: ", bitOp.debug_string());
+    JLM_UNREACHABLE(message.c_str());
+  }
 
   auto MlirOp = Builder_->create<::mlir::arith::CmpIOp>(
+      Builder_->getUnknownLoc(),
+      compPredicate,
+      inputs[0],
+      inputs[1]);
+  return MlirOp;
+}
+
+::mlir::Operation *
+JlmToMlirConverter::ConvertPointerCompareNode(
+    const llvm::ptrcmp_op & operation,
+    ::llvm::SmallVector<::mlir::Value> inputs)
+{
+  auto compPredicate = ::mlir::LLVM::ICmpPredicate::eq;
+  if (operation.cmp() == llvm::cmp::eq)
+    compPredicate = ::mlir::LLVM::ICmpPredicate::eq;
+  else if (operation.cmp() == llvm::cmp::ne)
+    compPredicate = ::mlir::LLVM::ICmpPredicate::ne;
+  else if (operation.cmp() == llvm::cmp::gt)
+    compPredicate = ::mlir::LLVM::ICmpPredicate::sgt;
+  else if (operation.cmp() == llvm::cmp::ge)
+    compPredicate = ::mlir::LLVM::ICmpPredicate::sge;
+  else if (operation.cmp() == llvm::cmp::lt)
+    compPredicate = ::mlir::LLVM::ICmpPredicate::slt;
+  else if (operation.cmp() == llvm::cmp::le)
+    compPredicate = ::mlir::LLVM::ICmpPredicate::sle;
+  else
+  {
+    auto message = util::strfmt("Unknown pointer compare operation: ", operation.debug_string());
+    JLM_UNREACHABLE(message.c_str());
+  }
+
+  auto MlirOp = Builder_->create<::mlir::LLVM::ICmpOp>(
       Builder_->getUnknownLoc(),
       compPredicate,
       inputs[0],
@@ -382,7 +411,7 @@ JlmToMlirConverter::ConvertSimpleNode(
     ::mlir::Block & block,
     const ::llvm::SmallVector<::mlir::Value> & inputs)
 {
-  ::mlir::Operation * MlirOp;
+  ::mlir::Operation * MlirOp = nullptr;
   auto & operation = node.GetOperation();
   if (auto bitOp = dynamic_cast<const rvsdg::bitconstant_op *>(&operation))
   {
@@ -429,6 +458,14 @@ JlmToMlirConverter::ConvertSimpleNode(
     auto type = ConvertType(*zeroOp->result(0));
     MlirOp = Builder_->create<::mlir::LLVM::ZeroOp>(Builder_->getUnknownLoc(), type);
   }
+  else if (
+      auto constantPointerNullOp =
+          dynamic_cast<const llvm::ConstantPointerNullOperation *>(&operation))
+  {
+    // NULL pointers are a special case of ZeroOp
+    auto type = ConvertType(*constantPointerNullOp->result(0));
+    MlirOp = Builder_->create<::mlir::LLVM::ZeroOp>(Builder_->getUnknownLoc(), type);
+  }
   else if (jlm::rvsdg::is<const rvsdg::bitbinary_op>(operation))
   {
     MlirOp = ConvertBitBinaryNode(operation, inputs);
@@ -456,6 +493,10 @@ JlmToMlirConverter::ConvertSimpleNode(
   else if (auto fpCmpOp = dynamic_cast<const llvm::fpcmp_op *>(&operation))
   {
     MlirOp = ConvertFpCompareNode(*fpCmpOp, inputs);
+  }
+  else if (auto pointerCompareOp = dynamic_cast<const llvm::ptrcmp_op *>(&operation))
+  {
+    MlirOp = ConvertPointerCompareNode(*pointerCompareOp, inputs);
   }
   else if (const auto zextOperation = dynamic_cast<const llvm::ZExtOperation *>(&operation))
   {
@@ -543,10 +584,16 @@ JlmToMlirConverter::ConvertSimpleNode(
   }
   else if (auto load_op = dynamic_cast<const jlm::llvm::LoadOperation *>(&operation))
   {
+    // Can have more than a single memory state
+    ::llvm::SmallVector<::mlir::Type> memStateTypes;
+    for (size_t i = 1; i < load_op->nresults(); i++)
+    {
+      memStateTypes.push_back(ConvertType(*load_op->result(i)));
+    }
     MlirOp = Builder_->create<::mlir::jlm::Load>(
         Builder_->getUnknownLoc(),
         ConvertType(*load_op->result(0)),                               // ptr
-        ConvertType(*load_op->result(1)),                               // memstate
+        memStateTypes,                                                  // memstate(s)
         inputs[0],                                                      // pointer
         Builder_->getUI32IntegerAttr(load_op->GetAlignment()),          // alignment
         ::mlir::ValueRange({ std::next(inputs.begin()), inputs.end() }) // inputMemStates
@@ -554,9 +601,14 @@ JlmToMlirConverter::ConvertSimpleNode(
   }
   else if (auto store_op = dynamic_cast<const jlm::llvm::StoreOperation *>(&operation))
   {
+    ::llvm::SmallVector<::mlir::Type> memStateTypes;
+    for (size_t i = 0; i < store_op->nresults(); i++)
+    {
+      memStateTypes.push_back(ConvertType(*store_op->result(i)));
+    }
     MlirOp = Builder_->create<::mlir::jlm::Store>(
         Builder_->getUnknownLoc(),
-        ConvertType(*store_op->result(0)),                                         // memstate
+        memStateTypes,                                                             // memstate(s)
         inputs[0],                                                                 // ptr
         inputs[1],                                                                 // value
         Builder_->getUI32IntegerAttr(store_op->GetAlignment()),                    // alignment
@@ -638,6 +690,70 @@ JlmToMlirConverter::ConvertSimpleNode(
         inputs[inputs.size() - 2],                                              // io
         inputs[inputs.size() - 1]                                               // mem
     );
+  }
+  else if (
+      auto lambdaStateSplit =
+          dynamic_cast<const jlm::llvm::LambdaEntryMemoryStateSplitOperation *>(&operation))
+  {
+    ::llvm::SmallVector<::mlir::Type> resultTypes;
+    for (size_t i = 0; i < lambdaStateSplit->nresults(); i++)
+    {
+      resultTypes.push_back(ConvertType(*lambdaStateSplit->result(i).get()));
+    }
+    ::llvm::SmallVector<::mlir::NamedAttribute> attributes;
+    MlirOp = Builder_->create<::mlir::rvsdg::LambdaEntryMemoryStateSplitOperation>(
+        Builder_->getUnknownLoc(),
+        ::llvm::ArrayRef(resultTypes), // output types
+        inputs[0],                     // input
+        ::llvm::ArrayRef(attributes));
+  }
+  else if (
+      auto lambdaStateMerge =
+          dynamic_cast<const jlm::llvm::LambdaExitMemoryStateMergeOperation *>(&operation))
+  {
+    ::llvm::SmallVector<::mlir::Type> resultTypes;
+    for (size_t i = 0; i < lambdaStateMerge->nresults(); i++)
+    {
+      resultTypes.push_back(ConvertType(*lambdaStateMerge->result(i).get()));
+    }
+    ::llvm::SmallVector<::mlir::NamedAttribute> attributes;
+    MlirOp = Builder_->create<::mlir::rvsdg::LambdaExitMemoryStateMergeOperation>(
+        Builder_->getUnknownLoc(),
+        ::llvm::ArrayRef(resultTypes), // output type
+        ::mlir::ValueRange(inputs),    // inputs
+        ::llvm::ArrayRef(attributes));
+  }
+  else if (
+      auto callStateSplit =
+          dynamic_cast<const jlm::llvm::CallExitMemoryStateSplitOperation *>(&operation))
+  {
+    ::llvm::SmallVector<::mlir::Type> resultTypes;
+    for (size_t i = 0; i < callStateSplit->nresults(); i++)
+    {
+      resultTypes.push_back(ConvertType(*callStateSplit->result(i).get()));
+    }
+    ::llvm::SmallVector<::mlir::NamedAttribute> attributes;
+    MlirOp = Builder_->create<::mlir::rvsdg::CallExitMemoryStateSplit>(
+        Builder_->getUnknownLoc(),
+        ::llvm::ArrayRef(resultTypes), // output types
+        inputs[0],                     // input
+        ::llvm::ArrayRef(attributes));
+  }
+  else if (
+      auto callStateMerge =
+          dynamic_cast<const jlm::llvm::CallEntryMemoryStateMergeOperation *>(&operation))
+  {
+    ::llvm::SmallVector<::mlir::Type> resultTypes;
+    for (size_t i = 0; i < callStateMerge->nresults(); i++)
+    {
+      resultTypes.push_back(ConvertType(*callStateMerge->result(i).get()));
+    }
+    ::llvm::SmallVector<::mlir::NamedAttribute> attributes;
+    MlirOp = Builder_->create<::mlir::rvsdg::CallEntryMemoryStateMerge>(
+        Builder_->getUnknownLoc(),
+        ::llvm::ArrayRef(resultTypes), // output type
+        ::mlir::ValueRange(inputs),    // inputs
+        ::llvm::ArrayRef(attributes));
   }
   // ** endregion structural nodes **
   else
@@ -859,6 +975,10 @@ JlmToMlirConverter::ConvertType(const rvsdg::Type & type)
   else if (rvsdg::is<const llvm::VariableArgumentType>(type))
   {
     return Builder_->getType<::mlir::jlm::VarargListType>();
+  }
+  else if (rvsdg::is<const rvsdg::UnitType>(type))
+  {
+    return Builder_->getType<::mlir::NoneType>();
   }
   else
   {

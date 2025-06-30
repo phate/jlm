@@ -26,11 +26,11 @@ test1()
   // Arrange
   RvsdgModule rm(jlm::util::FilePath(""), "", "");
   auto & graph = rm.Rvsdg();
-  auto i = &jlm::tests::GraphImport::Create(graph, jlm::tests::valuetype::Create(), "i");
+  auto i = &jlm::tests::GraphImport::Create(graph, jlm::tests::ValueType::Create(), "i");
 
   auto SetupF1 = [&]()
   {
-    auto vt = jlm::tests::valuetype::Create();
+    auto vt = jlm::tests::ValueType::Create();
     auto iOStateType = IOStateType::Create();
     auto memoryStateType = MemoryStateType::Create();
     auto functionType = jlm::rvsdg::FunctionType::Create(
@@ -53,7 +53,7 @@ test1()
 
   auto SetupF2 = [&](jlm::rvsdg::Output * f1)
   {
-    auto vt = jlm::tests::valuetype::Create();
+    auto vt = jlm::tests::ValueType::Create();
     auto iOStateType = IOStateType::Create();
     auto memoryStateType = MemoryStateType::Create();
     auto ct = jlm::rvsdg::ControlType::Create(2);
@@ -119,7 +119,7 @@ test2()
   using namespace jlm::llvm;
 
   // Arrange
-  auto vt = jlm::tests::valuetype::Create();
+  auto vt = jlm::tests::ValueType::Create();
   auto iOStateType = IOStateType::Create();
   auto memoryStateType = MemoryStateType::Create();
 
@@ -188,13 +188,11 @@ test2()
            ->origin())));
 }
 
-static int
+static void
 verify()
 {
   test1();
   test2();
-
-  return 0;
 }
 
 JLM_UNIT_TEST_REGISTER("jlm/llvm/opt/test-inlining", verify)

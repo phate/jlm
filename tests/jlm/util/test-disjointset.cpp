@@ -25,7 +25,7 @@ print(const jlm::util::DisjointSet<int> & djset)
   std::cout << "\n";
 }
 
-static int
+static void
 test()
 {
   using namespace jlm;
@@ -59,8 +59,6 @@ test()
   djset.clear();
   print(djset);
   assert(djset.nvalues() == 0 && djset.nsets() == 0);
-
-  return 0;
 }
 
 JLM_UNIT_TEST_REGISTER("jlm/util/test-disjointset", test)

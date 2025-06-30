@@ -17,7 +17,7 @@ test_straightening()
 {
   using namespace jlm::llvm;
 
-  auto vt = jlm::tests::valuetype::Create();
+  auto vt = jlm::tests::ValueType::Create();
   InterProceduralGraphModule module(jlm::util::FilePath(""), "", "");
 
   ControlFlowGraph cfg(module);
@@ -69,13 +69,11 @@ test_is_structured()
   assert(is_structured(cfg));
 }
 
-static int
+static void
 verify()
 {
   test_straightening();
   test_is_structured();
-
-  return 0;
 }
 
 JLM_UNIT_TEST_REGISTER("jlm/llvm/ir/test-cfg-structure", verify)

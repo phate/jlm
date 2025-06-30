@@ -429,7 +429,7 @@ bool
 dne(rvsdg::Region * sr)
 {
   bool any_changed = false;
-  bool changed;
+  bool changed = false;
   do
   {
     changed = false;
@@ -446,7 +446,7 @@ dne(rvsdg::Region * sr)
         {
           continue;
         }
-        else if (dynamic_cast<const local_mem_resp_op *>(&node->GetOperation()))
+        if (rvsdg::is<LocalMemoryResponseOperation>(node))
         {
           // TODO: fix - this scenario has only stores and should just be optimized away completely
           continue;
