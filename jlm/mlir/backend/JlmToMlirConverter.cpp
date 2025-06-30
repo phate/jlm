@@ -379,17 +379,17 @@ JlmToMlirConverter::ConvertPointerCompareNode(
     ::llvm::SmallVector<::mlir::Value> inputs)
 {
   auto compPredicate = ::mlir::LLVM::ICmpPredicate::eq;
-  if (llvm::cmp::eq == operation.cmp())
+  if (operation.cmp() == llvm::cmp::eq)
     compPredicate = ::mlir::LLVM::ICmpPredicate::eq;
-  else if (llvm::cmp::ne == operation.cmp())
+  else if (operation.cmp() == llvm::cmp::ne)
     compPredicate = ::mlir::LLVM::ICmpPredicate::ne;
-  else if (llvm::cmp::gt == operation.cmp())
+  else if (operation.cmp() == llvm::cmp::gt)
     compPredicate = ::mlir::LLVM::ICmpPredicate::sgt;
-  else if (llvm::cmp::ge == operation.cmp())
+  else if (operation.cmp() == llvm::cmp::ge)
     compPredicate = ::mlir::LLVM::ICmpPredicate::sge;
-  else if (llvm::cmp::lt == operation.cmp())
+  else if (operation.cmp() == llvm::cmp::lt)
     compPredicate = ::mlir::LLVM::ICmpPredicate::slt;
-  else if (llvm::cmp::le == operation.cmp())
+  else if (operation.cmp() == llvm::cmp::le)
     compPredicate = ::mlir::LLVM::ICmpPredicate::sle;
   else
   {
