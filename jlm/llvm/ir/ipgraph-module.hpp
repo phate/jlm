@@ -22,7 +22,7 @@ class gblvalue final : public GlobalVariable
 public:
   virtual ~gblvalue();
 
-  inline gblvalue(data_node * node)
+  gblvalue(DataNode * node)
       : GlobalVariable(node->Type(), node->name()),
         node_(node)
   {}
@@ -37,18 +37,18 @@ public:
   gblvalue &
   operator=(gblvalue &&) = delete;
 
-  inline data_node *
+  DataNode *
   node() const noexcept
   {
     return node_;
   }
 
 private:
-  data_node * node_;
+  DataNode * node_;
 };
 
 static inline std::unique_ptr<llvm::gblvalue>
-create_gblvalue(data_node * node)
+create_gblvalue(DataNode * node)
 {
   return std::make_unique<llvm::gblvalue>(node);
 }
@@ -103,7 +103,7 @@ public:
   }
 
   inline llvm::gblvalue *
-  create_global_value(data_node * node)
+  create_global_value(DataNode * node)
   {
     auto v = llvm::create_gblvalue(node);
     auto ptr = v.get();

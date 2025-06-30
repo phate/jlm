@@ -480,7 +480,7 @@ declare_globals(::llvm::Module & lm, context & ctx)
     auto linkage = convert_linkage(gv.getLinkage());
     auto section = gv.getSection().str();
 
-    return data_node::Create(
+    return DataNode::Create(
         ctx.module().ipgraph(),
         name,
         type,
