@@ -12,6 +12,77 @@ namespace jlm::hls
 {
 
 void
+ForkInsertion::Run(rvsdg::RvsdgModule & module, util::StatisticsCollector &)
+{
+  AddForksToRegion(module.Rvsdg().GetRootRegion());
+}
+
+void
+ForkInsertion::AddForksToRegion(rvsdg::Region & region)
+{
+  // Add forks to region arguments
+  for (const auto argument : region.Arguments())
+  {
+    if (argument->nusers() > 1)
+      AddForkToOutput(*argument);
+  }
+
+  for (auto & node : region.Nodes())
+  {
+    // Add forks to subregions of structural nodes
+    if (const auto structuralNode = dynamic_cast<rvsdg::StructuralNode *>(&node))
+    {
+      for (auto & subregion : structuralNode->Subregions())
+      {
+        AddForksToRegion(subregion);
+      }
+    }
+
+    // Add forks to outputs of nodes
+    for (size_t n = 0; n < node.noutputs(); n++)
+    {
+      const auto output = node.output(n);
+      if (output->nusers() > 1)
+      {
+        AddForkToOutput(*output);
+      }
+    }
+  }
+}
+
+void
+ForkInsertion::AddForkToOutput(rvsdg::Output & output)
+{
+  JLM_ASSERT(output.nusers() > 1 && output.nusers() != 0);
+
+  const auto isConstant = IsConstantFork(output);
+  const auto & forkNode = ForkOperation::CreateNode(output.nusers(), output, isConstant);
+
+  size_t currentForkOutput = 0;
+  for (auto & user : output.Users())
+  {
+    if (&user == forkNode.input(0))
+    {
+      // Ignore the just added fork node
+      continue;
+    }
+
+    JLM_ASSERT(currentForkOutput < forkNode.noutputs());
+    user.divert_to(forkNode.output(currentForkOutput));
+    currentForkOutput++;
+  }
+
+  JLM_ASSERT(currentForkOutput == forkNode.noutputs());
+}
+
+bool
+ForkInsertion::IsConstantFork(const rvsdg::Output & output)
+{
+  const auto node = rvsdg::TryGetOwnerNode<rvsdg::Node>(output);
+  return node != nullptr ? node->ninputs() == 0 : false;
+}
+
+void
 add_forks(rvsdg::Region * region)
 {
   for (size_t i = 0; i < region->narguments(); ++i)

@@ -165,6 +165,21 @@ public:
   }
 
   /**
+   * Create a ForkOperation node.
+   *
+   * @param numResults Number of outputs.
+   * @param operand The node's operand
+   * @param isConstant If true, the ForkOperation is a constant fork.
+   *
+   * @return A ForkOperation node.
+   */
+  static rvsdg::Node &
+  CreateNode(const size_t numResults, rvsdg::Output & operand, const bool isConstant = false)
+  {
+    return rvsdg::CreateOpNode<ForkOperation>({ &operand }, numResults, operand.Type(), isConstant);
+  }
+
+  /**
    * Check if a fork is a constant fork (CFORK).
    *
    * /return True if the fork is a constant fork, i.e., the input of the fork is a constant, else
