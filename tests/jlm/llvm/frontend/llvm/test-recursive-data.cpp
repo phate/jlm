@@ -19,7 +19,7 @@ test()
 {
   using namespace jlm::llvm;
 
-  auto vt = jlm::tests::valuetype::Create();
+  auto vt = jlm::tests::ValueType::Create();
   InterProceduralGraphModule im(jlm::util::FilePath(""), "", "");
 
   auto d0 = data_node::Create(im.ipgraph(), "d0", vt, linkage::external_linkage, "", false);

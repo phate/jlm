@@ -18,7 +18,7 @@ test()
 {
   using namespace jlm::llvm;
 
-  auto vt = jlm::tests::valuetype::Create();
+  auto vt = jlm::tests::ValueType::Create();
   jlm::tests::test_op op({}, { vt });
 
   // Arrange

@@ -128,7 +128,7 @@ PrintNumLoadNodesAnnotation()
   // Arrange
   const auto pointerType = PointerType::Create();
   const auto memoryStateType = MemoryStateType::Create();
-  const auto valueType = jlm::tests::valuetype::Create();
+  const auto valueType = jlm::tests::ValueType::Create();
 
   auto rvsdgModule = RvsdgModule::Create(FilePath(""), "", "");
   auto & rvsdg = rvsdgModule->Rvsdg();
@@ -184,7 +184,7 @@ PrintNumMemoryStateInputsOutputsAnnotation()
 
   // Arrange
   auto memoryStateType = MemoryStateType::Create();
-  auto valueType = jlm::tests::valuetype::Create();
+  auto valueType = jlm::tests::ValueType::Create();
 
   auto rvsdgModule = RvsdgModule::Create(FilePath(""), "", "");
   auto & rvsdg = rvsdgModule->Rvsdg();

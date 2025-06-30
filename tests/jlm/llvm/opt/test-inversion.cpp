@@ -14,7 +14,7 @@
 #include <jlm/llvm/opt/inversion.hpp>
 #include <jlm/util/Statistics.hpp>
 
-static const auto vt = jlm::tests::valuetype::Create();
+static const auto vt = jlm::tests::ValueType::Create();
 static jlm::util::StatisticsCollector statisticsCollector;
 
 static inline void

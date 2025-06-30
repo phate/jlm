@@ -17,7 +17,7 @@ TestIsOrContains()
 {
   using namespace jlm::llvm;
 
-  auto valueType = jlm::tests::valuetype::Create();
+  auto valueType = jlm::tests::ValueType::Create();
   auto pointerType = PointerType::Create();
   auto memoryStateType = MemoryStateType::Create();
   auto ioStateType = IOStateType::Create();

@@ -86,7 +86,7 @@ LoadVolatileConversion()
   using namespace jlm::llvm;
 
   // Arrange
-  auto valueType = jlm::tests::valuetype::Create();
+  auto valueType = jlm::tests::ValueType::Create();
   LoadVolatileOperation operation(valueType, 3, 4);
   auto ipgModule = SetupFunctionWithThreeAddressCode(operation);
 
@@ -113,7 +113,7 @@ StoreVolatileConversion()
   using namespace jlm::llvm;
 
   // Arrange
-  auto valueType = jlm::tests::valuetype::Create();
+  auto valueType = jlm::tests::ValueType::Create();
   StoreVolatileOperation operation(valueType, 3, 4);
   auto ipgModule = SetupFunctionWithThreeAddressCode(operation);
 

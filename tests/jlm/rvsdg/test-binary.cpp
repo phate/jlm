@@ -86,7 +86,7 @@ ReduceFlattenedBinaryReductionParallel()
   using namespace jlm::rvsdg;
 
   // Arrange
-  const auto valueType = jlm::tests::valuetype::Create();
+  const auto valueType = jlm::tests::ValueType::Create();
   const jlm::tests::binary_op binaryOperation(
       valueType,
       valueType,
@@ -132,7 +132,7 @@ ReduceFlattenedBinaryReductionLinear()
   using namespace jlm::rvsdg;
 
   // Arrange
-  const auto valueType = jlm::tests::valuetype::Create();
+  const auto valueType = jlm::tests::ValueType::Create();
   const jlm::tests::binary_op binaryOperation(
       valueType,
       valueType,
@@ -179,7 +179,7 @@ FlattenAssociativeBinaryOperation_NotAssociativeBinary()
   using namespace jlm::rvsdg;
 
   // Arrange
-  auto valueType = jlm::tests::valuetype::Create();
+  auto valueType = jlm::tests::ValueType::Create();
 
   Graph graph;
   auto i0 = &jlm::tests::GraphImport::Create(graph, valueType, "i0");
@@ -218,7 +218,7 @@ FlattenAssociativeBinaryOperation_NoNewOperands()
   using namespace jlm::rvsdg;
 
   // Arrange
-  auto valueType = jlm::tests::valuetype::Create();
+  auto valueType = jlm::tests::ValueType::Create();
 
   Graph graph;
   auto i0 = &jlm::tests::GraphImport::Create(graph, valueType, "i0");
@@ -259,7 +259,7 @@ FlattenAssociativeBinaryOperation_Success()
   using namespace jlm::rvsdg;
 
   // Arrange
-  auto valueType = jlm::tests::valuetype::Create();
+  auto valueType = jlm::tests::ValueType::Create();
 
   Graph graph;
   auto i0 = &jlm::tests::GraphImport::Create(graph, valueType, "i0");
@@ -300,7 +300,7 @@ NormalizeBinaryOperation_NoNewOperands()
   using namespace jlm::rvsdg;
 
   // Arrange
-  auto valueType = jlm::tests::valuetype::Create();
+  auto valueType = jlm::tests::ValueType::Create();
 
   Graph graph;
   auto i0 = &jlm::tests::GraphImport::Create(graph, valueType, "i0");
@@ -336,7 +336,7 @@ NormalizeBinaryOperation_SingleOperand()
   using namespace jlm::rvsdg;
 
   // Arrange
-  auto valueType = jlm::tests::valuetype::Create();
+  auto valueType = jlm::tests::ValueType::Create();
 
   jlm::tests::unary_op unaryOperation(valueType, valueType);
   ::BinaryOperation binaryOperation(valueType, valueType, jlm::rvsdg::BinaryOperation::flags::none);

@@ -10,34 +10,31 @@
 namespace jlm::tests
 {
 
-/* valuetype */
-
-valuetype::~valuetype()
-{}
+ValueType::~ValueType() noexcept = default;
 
 std::string
-valuetype::debug_string() const
+ValueType::debug_string() const
 {
-  return "valuetype";
+  return "ValueType";
 }
 
 bool
-valuetype::operator==(const rvsdg::Type & other) const noexcept
+ValueType::operator==(const Type & other) const noexcept
 {
-  return dynamic_cast<const valuetype *>(&other) != nullptr;
+  return dynamic_cast<const ValueType *>(&other) != nullptr;
 }
 
 std::size_t
-valuetype::ComputeHash() const noexcept
+ValueType::ComputeHash() const noexcept
 {
-  return typeid(valuetype).hash_code();
+  return typeid(ValueType).hash_code();
 }
 
-std::shared_ptr<const valuetype>
-valuetype::Create()
+std::shared_ptr<const ValueType>
+ValueType::Create()
 {
-  static const valuetype instance;
-  return std::shared_ptr<const valuetype>(std::shared_ptr<void>(), &instance);
+  static const ValueType instance;
+  return std::shared_ptr<const ValueType>(std::shared_ptr<void>(), &instance);
 }
 
 StateType::~StateType() noexcept = default;

@@ -19,7 +19,7 @@ TestPhiCreation()
 
   jlm::rvsdg::Graph graph;
 
-  auto vtype = jlm::tests::valuetype::Create();
+  auto vtype = jlm::tests::ValueType::Create();
   auto iOStateType = IOStateType::Create();
   auto memoryStateType = MemoryStateType::Create();
   auto f0type = jlm::rvsdg::FunctionType::Create(
