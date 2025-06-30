@@ -59,7 +59,7 @@ ResultInputTypeMismatch()
 
   // Arrange
   auto valueType = jlm::tests::valuetype::Create();
-  auto stateType = jlm::tests::statetype::Create();
+  auto stateType = StateType::Create();
 
   jlm::rvsdg::Graph rvsdg;
 

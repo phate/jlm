@@ -19,7 +19,7 @@ NormalizeSimpleOperationCne_NodesWithoutOperands()
   // Arrange
   Graph graph;
   const auto valueType = jlm::tests::valuetype::Create();
-  const auto stateType = jlm::tests::statetype::Create();
+  const auto stateType = jlm::tests::StateType::Create();
 
   auto & nullaryValueNode1 =
       CreateOpNode<jlm::tests::NullaryOperation>(graph.GetRootRegion(), valueType);
@@ -77,7 +77,7 @@ NormalizeSimpleOperationCne_NodesWithOperands()
   // Arrange
   Graph graph;
   const auto valueType = jlm::tests::valuetype::Create();
-  const auto stateType = jlm::tests::statetype::Create();
+  const auto stateType = jlm::tests::StateType::Create();
 
   auto v1 = &jlm::tests::GraphImport::Create(graph, valueType, "v1");
   auto s1 = &jlm::tests::GraphImport::Create(graph, stateType, "s1");
@@ -130,7 +130,7 @@ NormalizeSimpleOperationCne_Failure()
   // Arrange
   Graph graph;
   const auto valueType = jlm::tests::valuetype::Create();
-  const auto stateType = jlm::tests::statetype::Create();
+  const auto stateType = jlm::tests::StateType::Create();
 
   auto v1 = &jlm::tests::GraphImport::Create(graph, valueType, "v1");
   auto s1 = &jlm::tests::GraphImport::Create(graph, stateType, "s1");
