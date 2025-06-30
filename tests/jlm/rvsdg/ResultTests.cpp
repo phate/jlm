@@ -19,7 +19,7 @@ ResultNodeMismatch()
   using namespace jlm::tests;
 
   // Arrange
-  auto valueType = jlm::tests::valuetype::Create();
+  auto valueType = jlm::tests::ValueType::Create();
 
   Graph graph;
   auto import = &jlm::tests::GraphImport::Create(graph, valueType, "import");
@@ -58,7 +58,7 @@ ResultInputTypeMismatch()
   using namespace jlm::util;
 
   // Arrange
-  auto valueType = jlm::tests::valuetype::Create();
+  auto valueType = ValueType::Create();
   auto stateType = jlm::tests::statetype::Create();
 
   jlm::rvsdg::Graph rvsdg;

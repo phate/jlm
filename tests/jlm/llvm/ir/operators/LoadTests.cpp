@@ -23,7 +23,7 @@ OperationEquality()
 
   // Arrange
   MemoryStateType memoryType;
-  auto valueType = jlm::tests::valuetype::Create();
+  auto valueType = jlm::tests::ValueType::Create();
   auto pointerType = PointerType::Create();
 
   LoadNonVolatileOperation operation1(valueType, 2, 4);
@@ -51,7 +51,7 @@ TestCopy()
 
   // Arrange
   auto memoryType = MemoryStateType::Create();
-  auto valueType = jlm::tests::valuetype::Create();
+  auto valueType = jlm::tests::ValueType::Create();
   auto pointerType = PointerType::Create();
 
   jlm::rvsdg::Graph graph;
@@ -179,7 +179,7 @@ LoadMuxReduction_WrongNumberOfOperands()
   // Arrange
   using namespace jlm::llvm;
 
-  const auto vt = jlm::tests::valuetype::Create();
+  const auto vt = jlm::tests::ValueType::Create();
   const auto pt = PointerType::Create();
   const auto mt = MemoryStateType::Create();
 
@@ -225,7 +225,7 @@ LoadMuxReduction_LoadWithoutStates()
   using namespace jlm::llvm;
 
   // Arrange
-  const auto valueType = jlm::tests::valuetype::Create();
+  const auto valueType = jlm::tests::ValueType::Create();
   const auto pointerType = PointerType::Create();
 
   jlm::rvsdg::Graph graph;
@@ -264,7 +264,7 @@ TestDuplicateStateReduction()
 
   // Arrange
   const auto memoryType = MemoryStateType::Create();
-  const auto valueType = jlm::tests::valuetype::Create();
+  const auto valueType = jlm::tests::ValueType::Create();
   const auto pointerType = PointerType::Create();
 
   jlm::rvsdg::Graph graph;
@@ -368,7 +368,7 @@ TestLoadStoreReduction_Success()
   using namespace jlm::llvm;
 
   // Arrange
-  auto vt = jlm::tests::valuetype::Create();
+  auto vt = jlm::tests::ValueType::Create();
   auto pt = PointerType::Create();
   auto mt = MemoryStateType::Create();
 
@@ -464,7 +464,7 @@ TestLoadLoadReduction()
   using namespace jlm::llvm;
 
   // Arrange
-  auto vt = jlm::tests::valuetype::Create();
+  auto vt = jlm::tests::ValueType::Create();
   auto pt = PointerType::Create();
   auto mt = MemoryStateType::Create();
 
@@ -526,7 +526,7 @@ LoadVolatileOperationEquality()
 
   // Arrange
   MemoryStateType memoryType;
-  auto valueType = jlm::tests::valuetype::Create();
+  auto valueType = jlm::tests::ValueType::Create();
   auto pointerType = PointerType::Create();
 
   LoadVolatileOperation operation1(valueType, 2, 4);
@@ -554,7 +554,7 @@ OperationCopy()
 
   // Arrange
   MemoryStateType memoryType;
-  auto valueType = jlm::tests::valuetype::Create();
+  auto valueType = jlm::tests::ValueType::Create();
   PointerType pointerType;
 
   LoadVolatileOperation operation(valueType, 2, 4);
@@ -575,7 +575,7 @@ OperationAccessors()
 
   // Arrange
   MemoryStateType memoryType;
-  auto valueType = jlm::tests::valuetype::Create();
+  auto valueType = jlm::tests::ValueType::Create();
   PointerType pointerType;
 
   size_t alignment = 4;
@@ -605,7 +605,7 @@ NodeCopy()
   auto pointerType = PointerType::Create();
   auto iOStateType = IOStateType::Create();
   auto memoryType = MemoryStateType::Create();
-  auto valueType = jlm::tests::valuetype::Create();
+  auto valueType = jlm::tests::ValueType::Create();
 
   jlm::rvsdg::Graph graph;
   auto & address1 = jlm::tests::GraphImport::Create(graph, pointerType, "address1");

@@ -18,7 +18,7 @@ test()
 {
   using namespace jlm::llvm;
 
-  auto vt = jlm::tests::valuetype::Create();
+  auto vt = jlm::tests::ValueType::Create();
   auto ft = jlm::rvsdg::FunctionType::Create({ vt }, { vt });
 
   InterProceduralGraphModule im(jlm::util::FilePath(""), "", "");

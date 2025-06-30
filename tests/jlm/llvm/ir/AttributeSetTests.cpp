@@ -16,7 +16,7 @@ TestEquality()
   using namespace jlm::llvm;
 
   // Arrange
-  auto valueType = jlm::tests::valuetype::Create();
+  auto valueType = jlm::tests::ValueType::Create();
 
   enum_attribute enumAttribute1(Attribute::kind::AllocAlign);
   enum_attribute enumAttribute2(Attribute::kind::AlwaysInline);
