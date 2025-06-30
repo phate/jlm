@@ -133,7 +133,7 @@ public:
   }
 
   inline llvm::Variable *
-  create_variable(function_node * node)
+  create_variable(FunctionNode * node)
   {
     JLM_ASSERT(!variable(node));
 
@@ -232,7 +232,7 @@ ntacs(const InterProceduralGraphModule & im)
   size_t ntacs = 0;
   for (const auto & n : im.ipgraph())
   {
-    auto f = dynamic_cast<const function_node *>(&n);
+    auto f = dynamic_cast<const FunctionNode *>(&n);
     if (!f)
       continue;
 

@@ -496,7 +496,7 @@ declare_globals(::llvm::Module & lm, context & ctx)
     auto type = ctx.GetTypeConverter().ConvertFunctionType(*f.getFunctionType());
     auto attributes = convert_attributes(f.getAttributes().getFnAttrs(), ctx);
 
-    return function_node::create(ctx.module().ipgraph(), name, type, linkage, attributes);
+    return FunctionNode::create(ctx.module().ipgraph(), name, type, linkage, attributes);
   };
 
   for (auto & gv : lm.globals())

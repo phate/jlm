@@ -192,13 +192,13 @@ private:
   std::unordered_set<const InterProceduralGraphNode *> dependencies_;
 };
 
-class function_node final : public InterProceduralGraphNode
+class FunctionNode final : public InterProceduralGraphNode
 {
 public:
-  virtual ~function_node();
+  ~FunctionNode() noexcept override;
 
 private:
-  inline function_node(
+  FunctionNode(
       InterProceduralGraph & clg,
       const std::string & name,
       std::shared_ptr<const rvsdg::FunctionType> type,
@@ -258,7 +258,7 @@ public:
   void
   add_cfg(std::unique_ptr<ControlFlowGraph> cfg);
 
-  static inline function_node *
+  static FunctionNode *
   create(
       InterProceduralGraph & ipg,
       const std::string & name,
@@ -266,14 +266,14 @@ public:
       const llvm::linkage & linkage,
       const attributeset & attributes)
   {
-    std::unique_ptr<function_node> node(
-        new function_node(ipg, name, std::move(type), linkage, attributes));
+    std::unique_ptr<FunctionNode> node(
+        new FunctionNode(ipg, name, std::move(type), linkage, attributes));
     auto tmp = node.get();
     ipg.add_node(std::move(node));
     return tmp;
   }
 
-  static function_node *
+  static FunctionNode *
   create(
       InterProceduralGraph & ipg,
       const std::string & name,
@@ -296,19 +296,19 @@ class fctvariable final : public GlobalVariable
 public:
   virtual ~fctvariable();
 
-  inline fctvariable(function_node * node)
+  fctvariable(FunctionNode * node)
       : GlobalVariable(node->Type(), node->name()),
         node_(node)
   {}
 
-  inline function_node *
+  FunctionNode *
   function() const noexcept
   {
     return node_;
   }
 
 private:
-  function_node * node_;
+  FunctionNode * node_;
 };
 
 /* data node */

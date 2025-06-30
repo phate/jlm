@@ -51,7 +51,7 @@ test_function_call()
     {
       if (node.name() == "caller")
       {
-        cfg = dynamic_cast<const function_node &>(node).cfg();
+        cfg = dynamic_cast<const FunctionNode &>(node).cfg();
         break;
       }
     }
@@ -108,7 +108,7 @@ test_malloc_call()
     {
       if (node.name() == "caller")
       {
-        cfg = dynamic_cast<const jlm::llvm::function_node &>(node).cfg();
+        cfg = dynamic_cast<const FunctionNode &>(node).cfg();
         break;
       }
     }
@@ -164,7 +164,7 @@ test_free_call()
     {
       if (node.name() == "caller")
       {
-        cfg = dynamic_cast<const function_node &>(node).cfg();
+        cfg = dynamic_cast<const FunctionNode &>(node).cfg();
         break;
       }
     }

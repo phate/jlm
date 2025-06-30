@@ -938,7 +938,7 @@ ConvertAggregationTreeToLambda(
 
 static rvsdg::Output *
 ConvertControlFlowGraph(
-    const function_node & functionNode,
+    const FunctionNode & functionNode,
     RegionalizedVariableMap & regionalizedVariableMap,
     InterProceduralGraphToRvsdgStatisticsCollector & statisticsCollector)
 {
@@ -971,7 +971,7 @@ ConvertControlFlowGraph(
 
 static rvsdg::Output *
 ConvertFunctionNode(
-    const function_node & functionNode,
+    const FunctionNode & functionNode,
     RegionalizedVariableMap & regionalizedVariableMap,
     InterProceduralGraphToRvsdgStatisticsCollector & statisticsCollector)
 {
@@ -1080,7 +1080,7 @@ ConvertInterProceduralGraphNode(
     RegionalizedVariableMap & regionalizedVariableMap,
     InterProceduralGraphToRvsdgStatisticsCollector & statisticsCollector)
 {
-  if (auto functionNode = dynamic_cast<const function_node *>(&ipgNode))
+  if (auto functionNode = dynamic_cast<const FunctionNode *>(&ipgNode))
     return ConvertFunctionNode(*functionNode, regionalizedVariableMap, statisticsCollector);
 
   if (auto dataNode = dynamic_cast<const data_node *>(&ipgNode))

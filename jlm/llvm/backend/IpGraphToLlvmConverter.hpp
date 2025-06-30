@@ -58,7 +58,7 @@ class CallEntryMemoryStateMergeOperation;
 class CallExitMemoryStateSplitOperation;
 class ControlFlowGraphNode;
 class ExtractValue;
-class function_node;
+class FunctionNode;
 class InterProceduralGraphModule;
 class LambdaExitMemoryStateMergeOperation;
 class PointerToFunctionOperation;
@@ -106,7 +106,7 @@ private:
   convert_data_node(const data_node & node);
 
   void
-  convert_function(const function_node & node);
+  convert_function(const FunctionNode & node);
 
   void
   convert_cfg(ControlFlowGraph & cfg, ::llvm::Function & f);
@@ -115,7 +115,7 @@ private:
   ConvertBasicBlocks(const ControlFlowGraph & controlFlowGraph, ::llvm::Function & function);
 
   ::llvm::AttributeList
-  convert_attributes(const function_node & f);
+  convert_attributes(const FunctionNode & f);
 
   ::llvm::AttributeSet
   convert_attributes(const attributeset & attributeSet);
