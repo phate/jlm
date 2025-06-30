@@ -12,7 +12,7 @@
 static void
 test_initialization()
 {
-  auto vtype = jlm::tests::valuetype::Create();
+  auto vtype = jlm::tests::ValueType::Create();
 
   jlm::rvsdg::Graph graph;
   auto i = &jlm::tests::GraphImport::Create(graph, vtype, "i");
@@ -48,7 +48,7 @@ static void
 test_basic_traversal()
 {
   jlm::rvsdg::Graph graph;
-  auto type = jlm::tests::valuetype::Create();
+  auto type = jlm::tests::ValueType::Create();
 
   auto n1 = jlm::tests::test_op::create(&graph.GetRootRegion(), {}, { type, type });
   auto n2 = jlm::tests::test_op::create(
@@ -77,7 +77,7 @@ static void
 test_order_enforcement_traversal()
 {
   jlm::rvsdg::Graph graph;
-  auto type = jlm::tests::valuetype::Create();
+  auto type = jlm::tests::ValueType::Create();
 
   auto n1 = jlm::tests::test_op::create(&graph.GetRootRegion(), {}, { type, type });
   auto n2 = jlm::tests::test_op::create(&graph.GetRootRegion(), { n1->output(0) }, { type });
@@ -107,7 +107,7 @@ static void
 test_traversal_insertion()
 {
   jlm::rvsdg::Graph graph;
-  auto type = jlm::tests::valuetype::Create();
+  auto type = jlm::tests::ValueType::Create();
 
   auto n1 = jlm::tests::test_op::create(&graph.GetRootRegion(), {}, { type, type });
   auto n2 = jlm::tests::test_op::create(
@@ -190,7 +190,7 @@ test_mutable_traverse()
   };
 
   jlm::rvsdg::Graph graph;
-  auto type = jlm::tests::valuetype::Create();
+  auto type = jlm::tests::ValueType::Create();
   auto n1 = jlm::tests::test_op::create(&graph.GetRootRegion(), {}, { type });
   auto n2 = jlm::tests::test_op::create(&graph.GetRootRegion(), {}, { type });
   auto n3 = jlm::tests::test_op::create(&graph.GetRootRegion(), { n1->output(0) }, {});

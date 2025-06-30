@@ -15,8 +15,8 @@ test_node_copy()
   using namespace jlm::rvsdg;
   using namespace jlm::tests;
 
-  auto stype = jlm::tests::statetype::Create();
-  auto vtype = jlm::tests::valuetype::Create();
+  auto stype = jlm::tests::StateType::Create();
+  auto vtype = jlm::tests::ValueType::Create();
 
   Graph graph;
   auto s = &jlm::tests::GraphImport::Create(graph, stype, "");
@@ -94,7 +94,7 @@ test_node_copy()
 static inline void
 test_node_depth()
 {
-  auto vt = jlm::tests::valuetype::Create();
+  auto vt = jlm::tests::ValueType::Create();
 
   jlm::rvsdg::Graph graph;
   auto x = &jlm::tests::GraphImport::Create(graph, vt, "x");
@@ -127,7 +127,7 @@ TestRemoveOutputsWhere()
   // Arrange
   Graph rvsdg;
 
-  auto valueType = jlm::tests::valuetype::Create();
+  auto valueType = jlm::tests::ValueType::Create();
   auto & node1 = CreateOpNode<jlm::tests::test_op>(
       rvsdg.GetRootRegion(),
       std::vector<std::shared_ptr<const Type>>(),
@@ -195,7 +195,7 @@ TestRemoveInputsWhere()
 
   // Arrange
   jlm::rvsdg::Graph rvsdg;
-  auto valueType = jlm::tests::valuetype::Create();
+  auto valueType = jlm::tests::ValueType::Create();
   auto x = &jlm::tests::GraphImport::Create(rvsdg, valueType, "x");
 
   auto & node = CreateOpNode<jlm::tests::test_op>(

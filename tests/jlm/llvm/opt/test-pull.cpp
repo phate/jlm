@@ -14,7 +14,7 @@
 #include <jlm/llvm/opt/pull.hpp>
 #include <jlm/util/Statistics.hpp>
 
-static const auto vt = jlm::tests::valuetype::Create();
+static const auto vt = jlm::tests::ValueType::Create();
 static jlm::util::StatisticsCollector statisticsCollector;
 
 static inline void
@@ -59,7 +59,7 @@ test_pullin_top()
 static inline void
 test_pullin_bottom()
 {
-  auto vt = jlm::tests::valuetype::Create();
+  auto vt = jlm::tests::ValueType::Create();
   auto ct = jlm::rvsdg::ControlType::Create(2);
 
   jlm::rvsdg::Graph graph;

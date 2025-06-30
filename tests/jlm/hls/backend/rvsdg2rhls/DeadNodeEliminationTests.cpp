@@ -15,7 +15,7 @@ TestDeadLoopNode()
   using namespace jlm::hls;
 
   // Arrange
-  auto valueType = jlm::tests::valuetype::Create();
+  auto valueType = jlm::tests::ValueType::Create();
   auto functionType = jlm::rvsdg::FunctionType::Create(
       { jlm::rvsdg::ControlType::Create(2), valueType },
       { valueType });
@@ -47,7 +47,7 @@ TestDeadLoopNodeOutput()
   using namespace jlm::hls;
 
   // Arrange
-  auto valueType = jlm::tests::valuetype::Create();
+  auto valueType = jlm::tests::ValueType::Create();
   auto functionType = jlm::rvsdg::FunctionType::Create(
       { jlm::rvsdg::ControlType::Create(2), valueType },
       { jlm::rvsdg::ControlType::Create(2) });

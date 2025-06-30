@@ -17,7 +17,7 @@ test_single_operand_phi()
 {
   using namespace jlm::llvm;
 
-  auto vt = jlm::tests::valuetype::Create();
+  auto vt = jlm::tests::ValueType::Create();
 
   InterProceduralGraphModule im(jlm::util::FilePath(""), "", "");
 
