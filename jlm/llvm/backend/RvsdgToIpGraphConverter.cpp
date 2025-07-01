@@ -480,7 +480,7 @@ RvsdgToIpGraphConverter::ConvertPhiNode(const rvsdg::PhiNode & phiNode)
     else if (const auto deltaNode = rvsdg::TryGetOwnerNode<delta::node>(origin))
     {
       const auto variable =
-          util::AssertedCast<const gblvalue>(Context_->GetVariable(subregion->argument(n)));
+          util::AssertedCast<const GlobalValue>(Context_->GetVariable(subregion->argument(n)));
       variable->node()->set_initialization(CreateInitialization(*deltaNode));
       Context_->InsertVariable(deltaNode->output(), variable);
     }
