@@ -96,7 +96,7 @@ Contains()
   auto structuralInput1 = jlm::rvsdg::StructuralInput::create(structuralNode1, import, valueType);
   auto & regionArgument1 =
       TestGraphArgument::Create(*structuralNode1->subregion(0), structuralInput1, valueType);
-  unary_op::create(structuralNode1->subregion(0), valueType, &regionArgument1, valueType);
+  TestUnaryOperation::create(structuralNode1->subregion(0), valueType, &regionArgument1, valueType);
 
   auto structuralNode2 = structural_node::create(&graph.GetRootRegion(), 1);
   auto structuralInput2 = jlm::rvsdg::StructuralInput::create(structuralNode2, import, valueType);
@@ -106,7 +106,7 @@ Contains()
 
   // Act & Assert
   assert(jlm::rvsdg::Region::ContainsNodeType<structural_node>(graph.GetRootRegion(), false));
-  assert(jlm::rvsdg::Region::ContainsOperation<unary_op>(graph.GetRootRegion(), true));
+  assert(jlm::rvsdg::Region::ContainsOperation<TestUnaryOperation>(graph.GetRootRegion(), true));
   assert(jlm::rvsdg::Region::ContainsOperation<binary_op>(graph.GetRootRegion(), true));
   assert(!jlm::rvsdg::Region::ContainsOperation<test_op>(graph.GetRootRegion(), true));
 }

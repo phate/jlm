@@ -21,38 +21,37 @@ GraphExport::Copy(rvsdg::Output & origin, rvsdg::StructuralOutput * output)
   return GraphExport::Create(origin, Name());
 }
 
-unary_op::~unary_op() noexcept
-{}
+TestUnaryOperation::~TestUnaryOperation() noexcept = default;
 
 bool
-unary_op::operator==(const Operation & other) const noexcept
+TestUnaryOperation::operator==(const Operation & other) const noexcept
 {
-  auto op = dynamic_cast<const unary_op *>(&other);
+  auto op = dynamic_cast<const TestUnaryOperation *>(&other);
   return op && op->argument(0) == argument(0) && op->result(0) == result(0);
 }
 
 rvsdg::unop_reduction_path_t
-unary_op::can_reduce_operand(const rvsdg::Output *) const noexcept
+TestUnaryOperation::can_reduce_operand(const rvsdg::Output *) const noexcept
 {
   return rvsdg::unop_reduction_none;
 }
 
 rvsdg::Output *
-unary_op::reduce_operand(rvsdg::unop_reduction_path_t, rvsdg::Output *) const
+TestUnaryOperation::reduce_operand(rvsdg::unop_reduction_path_t, rvsdg::Output *) const
 {
   return nullptr;
 }
 
 std::string
-unary_op::debug_string() const
+TestUnaryOperation::debug_string() const
 {
-  return "UNARY_TEST_NODE";
+  return "TestUnaryOperation";
 }
 
 std::unique_ptr<rvsdg::Operation>
-unary_op::copy() const
+TestUnaryOperation::copy() const
 {
-  return std::make_unique<unary_op>(*this);
+  return std::make_unique<TestUnaryOperation>(*this);
 }
 
 binary_op::~binary_op() noexcept
