@@ -15,7 +15,7 @@
 #include <llvm/IR/IRBuilder.h>
 #include <llvm/IR/Module.h>
 
-static int
+static void
 LoadConversion()
 {
   using namespace llvm;
@@ -85,8 +85,6 @@ LoadConversion()
     assert(numLoadThreeAddressCodes == 1);
     assert(numLoadVolatileThreeAddressCodes == 2);
   }
-
-  return 0;
 }
 
 JLM_UNIT_TEST_REGISTER("jlm/llvm/frontend/llvm/LoadTests-LoadConversion", LoadConversion)

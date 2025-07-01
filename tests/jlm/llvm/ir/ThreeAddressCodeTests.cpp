@@ -7,14 +7,14 @@
 #include <test-registry.hpp>
 #include <test-types.hpp>
 
-static int
+static void
 ToAscii()
 {
   using namespace jlm::llvm;
   using namespace jlm::tests;
 
   // Arrange
-  auto valueType = valuetype::Create();
+  auto valueType = ValueType::Create();
 
   Variable v0(valueType, "v0");
   Variable v1(valueType, "v1");
@@ -52,8 +52,6 @@ ToAscii()
   assert(tac3String == "tv0 = test_op");
   assert(tac4String == "tv1, tv2 = test_op");
   assert(tac5String == "tv3, tv4 = test_op v0, v1");
-
-  return 0;
 }
 
 JLM_UNIT_TEST_REGISTER("jlm/llvm/ir/ThreeAddressCodeTests-ToAscii", ToAscii);

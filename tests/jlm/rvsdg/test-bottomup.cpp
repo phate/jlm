@@ -13,7 +13,7 @@ static void
 test_initialization()
 {
   jlm::rvsdg::Graph graph;
-  auto vtype = jlm::tests::valuetype::Create();
+  auto vtype = jlm::tests::ValueType::Create();
   auto n1 = jlm::tests::test_op::create(&graph.GetRootRegion(), {}, {});
   auto n2 = jlm::tests::test_op::create(&graph.GetRootRegion(), {}, { vtype });
 
@@ -37,7 +37,7 @@ static void
 test_basic_traversal()
 {
   jlm::rvsdg::Graph graph;
-  auto type = jlm::tests::valuetype::Create();
+  auto type = jlm::tests::ValueType::Create();
   auto n1 = jlm::tests::test_op::create(&graph.GetRootRegion(), {}, { type, type });
   auto n2 = jlm::tests::test_op::create(
       &graph.GetRootRegion(),
@@ -47,7 +47,7 @@ test_basic_traversal()
   jlm::tests::GraphExport::Create(*n2->output(0), "dummy");
 
   {
-    jlm::rvsdg::Node * tmp;
+    const jlm::rvsdg::Node * tmp = nullptr;
     jlm::rvsdg::BottomUpTraverser trav(&graph.GetRootRegion());
     tmp = trav.next();
     assert(tmp == n2);
@@ -64,7 +64,7 @@ static void
 test_order_enforcement_traversal()
 {
   jlm::rvsdg::Graph graph;
-  auto type = jlm::tests::valuetype::Create();
+  auto type = jlm::tests::ValueType::Create();
   auto n1 = jlm::tests::test_op::create(&graph.GetRootRegion(), {}, { type, type });
   auto n2 = jlm::tests::test_op::create(&graph.GetRootRegion(), { n1->output(0) }, { type });
   auto n3 = jlm::tests::test_op::create(
@@ -72,8 +72,8 @@ test_order_enforcement_traversal()
       { n2->output(0), n1->output(1) },
       { type });
 
-  jlm::rvsdg::Node * tmp;
   {
+    const jlm::rvsdg::Node * tmp = nullptr;
     jlm::rvsdg::BottomUpTraverser trav(&graph.GetRootRegion());
 
     tmp = trav.next();
@@ -89,14 +89,12 @@ test_order_enforcement_traversal()
   assert(!has_active_trackers(&graph));
 }
 
-static int
+static void
 test_main()
 {
   test_initialization();
   test_basic_traversal();
   test_order_enforcement_traversal();
-
-  return 0;
 }
 
 JLM_UNIT_TEST_REGISTER("jlm/rvsdg/test-bottomup", test_main)

@@ -13,6 +13,7 @@
 namespace jlm::rvsdg
 {
 class Graph;
+class Node;
 class Input;
 class Output;
 }
@@ -51,6 +52,21 @@ public:
        * Annotate regions and structural nodes with the number of RVSDG nodes.
        */
       NumRvsdgNodes,
+
+      /**
+       * Annotate regions and structural nodes with the number of AllocaOperation nodes.
+       */
+      NumAllocaNodes,
+
+      /**
+       * Annotate regions and structural nodes with the number of LoadOperation nodes.
+       */
+      NumLoadNodes,
+
+      /**
+       * Annotate regions and structural nodes with the number of StoreOperation nodes.
+       */
+      NumStoreNodes,
 
       /**
        * Annotate region and structural nodes with the number of inputs/outputs of type
@@ -116,12 +132,18 @@ private:
    * and structural nodes.
    *
    * @param rvsdg The RVSDG for which to compute the annotation.
+   * @param match Returns true if a node should be counted, otherwise false.
+   * @param label The label used for annotating the region tree.
    * @param annotationMap The annotation map in which the annotation is inserted.
    *
    * @see NumRvsdgNodes
    */
   static void
-  AnnotateNumRvsdgNodes(const rvsdg::Graph & rvsdg, util::AnnotationMap & annotationMap);
+  AnnotateNumNodes(
+      const rvsdg::Graph & rvsdg,
+      const std::function<bool(const rvsdg::Node &)> & match,
+      const std::string_view & label,
+      util::AnnotationMap & annotationMap);
 
   /**
    * Adds an annotation to \p annotationMap that indicates the number of inputs/outputs of type

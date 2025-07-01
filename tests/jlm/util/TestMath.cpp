@@ -45,6 +45,63 @@ TestLog2Floor()
   assert(Log2Floor<uint32_t>(0x80000000) == 31);
   assert(Log2Floor<uint32_t>(0xFFFFFFFF) == 31);
 }
+JLM_UNIT_TEST_REGISTER("jlm/util/TestMath-TestLog2Floor", TestLog2Floor)
+
+static void
+TestRoundUpToPowerOf2()
+{
+  assert(RoundUpToPowerOf2<int32_t>(-10) == 1);
+  assert(RoundUpToPowerOf2<int32_t>(0) == 1);
+  assert(RoundUpToPowerOf2<uint32_t>(0) == 1);
+  assert(RoundUpToPowerOf2<int32_t>(1) == 1);
+  assert(RoundUpToPowerOf2<uint32_t>(1) == 1);
+  assert(RoundUpToPowerOf2<uint32_t>(2) == 2);
+  assert(RoundUpToPowerOf2<uint32_t>(3) == 4);
+
+  assert(RoundUpToPowerOf2<uint32_t>(255) == 256);
+  assert(RoundUpToPowerOf2<uint32_t>(256) == 256);
+  assert(RoundUpToPowerOf2<uint32_t>(257) == 512);
+  assert(RoundUpToPowerOf2<uint64_t>(0xFFFFFFFF) == 0x100000000ul);
+}
+JLM_UNIT_TEST_REGISTER("jlm/util/TestMath-TestRoundUpToPowerOf2", TestRoundUpToPowerOf2)
+
+static void
+TestRoundUpToMultipleOf()
+{
+  for (int i = -20; i <= 20; i++)
+  {
+    assert(RoundUpToMultipleOf<int32_t>(i, 1) == i);
+  }
+
+  assert(RoundUpToMultipleOf<int32_t>(0, 5) == 0);
+  assert(RoundUpToMultipleOf<int32_t>(1, 5) == 5);
+  assert(RoundUpToMultipleOf<int32_t>(4, 5) == 5);
+  assert(RoundUpToMultipleOf<int32_t>(5, 5) == 5);
+  assert(RoundUpToMultipleOf<int32_t>(6, 5) == 10);
+  assert(RoundUpToMultipleOf<int32_t>(123, 5) == 125);
+  assert(RoundUpToMultipleOf<int32_t>(8567, 2000) == 10'000);
+  assert(RoundUpToMultipleOf<uint32_t>(8567, 2000) == 10'000);
+
+  assert(RoundUpToMultipleOf<int32_t>(-1, 7) == 0);
+  assert(RoundUpToMultipleOf<int32_t>(-6, 7) == 0);
+  assert(RoundUpToMultipleOf<int32_t>(-7, 7) == -7);
+  assert(RoundUpToMultipleOf<int32_t>(-8, 7) == -7);
+  assert(RoundUpToMultipleOf<int32_t>(-14, 7) == -14);
+  assert(RoundUpToMultipleOf<int32_t>(-15, 7) == -14);
+  assert(RoundUpToMultipleOf<int32_t>(-14'006, 7) == -14'000);
+
+  // Test different int sizes
+  assert(RoundUpToMultipleOf<uint8_t>(13, 7) == 14);
+  assert(RoundUpToMultipleOf<uint16_t>(13, 7) == 14);
+  assert(RoundUpToMultipleOf<uint32_t>(13, 7) == 14);
+  assert(RoundUpToMultipleOf<uint64_t>(13, 7) == 14);
+
+  assert(RoundUpToMultipleOf<int8_t>(-13, 7) == -7);
+  assert(RoundUpToMultipleOf<int16_t>(-13, 7) == -7);
+  assert(RoundUpToMultipleOf<int32_t>(-13, 7) == -7);
+  assert(RoundUpToMultipleOf<int64_t>(-13, 7) == -7);
+}
+JLM_UNIT_TEST_REGISTER("jlm/util/TestMath-TestRoundUpToMultipleOf", TestRoundUpToMultipleOf)
 
 static void
 TestBitsRequiredToRepresent()
@@ -67,6 +124,7 @@ TestBitsRequiredToRepresent()
   assert(BitsRequiredToRepresent(0xFFFF'FFFF'FFFF'FFFFll) == 64);
   assert(BitsRequiredToRepresent(0xFFFF'FFFF'FFFF'FFFFull) == 64);
 }
+JLM_UNIT_TEST_REGISTER("jlm/util/TestMath-TestBitsRequiredToRepresent", TestBitsRequiredToRepresent)
 
 static void
 TestBitWidthOfEnum()
@@ -104,14 +162,4 @@ TestBitWidthOfEnum()
   assert(BitWidthOfEnum(TestEnum5::Four) == 3);
   assert(BitWidthOfEnum(TestEnum127::OneHundredAndTwentySeven) == 7);
 }
-
-static int
-TestMath()
-{
-  TestLog2Floor();
-  TestBitsRequiredToRepresent();
-  TestBitWidthOfEnum();
-  return 0;
-}
-
-JLM_UNIT_TEST_REGISTER("jlm/util/TestMath", TestMath)
+JLM_UNIT_TEST_REGISTER("jlm/util/TestMath-TestBitWidthOfEnum", TestBitWidthOfEnum)

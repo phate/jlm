@@ -35,38 +35,6 @@ LoadNonVolatileOperation::copy() const
   return std::make_unique<LoadNonVolatileOperation>(*this);
 }
 
-LoadVolatileOperation::~LoadVolatileOperation() noexcept = default;
-
-bool
-LoadVolatileOperation::operator==(const Operation & other) const noexcept
-{
-  auto operation = dynamic_cast<const LoadVolatileOperation *>(&other);
-  return operation && operation->narguments() == narguments()
-      && operation->GetLoadedType() == GetLoadedType()
-      && operation->GetAlignment() == GetAlignment();
-}
-
-std::string
-LoadVolatileOperation::debug_string() const
-{
-  return "LoadVolatile";
-}
-
-std::unique_ptr<rvsdg::Operation>
-LoadVolatileOperation::copy() const
-{
-  return std::make_unique<LoadVolatileOperation>(*this);
-}
-
-rvsdg::SimpleNode &
-LoadVolatileOperation::CreateNode(
-    rvsdg::Region & region,
-    std::unique_ptr<LoadVolatileOperation> loadOperation,
-    const std::vector<rvsdg::Output *> & operands)
-{
-  return rvsdg::SimpleNode::Create(region, std::move(loadOperation), operands);
-}
-
 /*
   sx1 = MemStateMerge si1 ... siM
   v sl1 = load_op a sx1
@@ -479,7 +447,7 @@ perform_load_load_state_reduction(
 }
 
 std::optional<std::vector<rvsdg::Output *>>
-NormalizeLoadMux(
+LoadNonVolatileOperation::NormalizeLoadMux(
     const LoadNonVolatileOperation & operation,
     const std::vector<rvsdg::Output *> & operands)
 {
@@ -490,7 +458,7 @@ NormalizeLoadMux(
 }
 
 std::optional<std::vector<rvsdg::Output *>>
-NormalizeLoadStore(
+LoadNonVolatileOperation::NormalizeLoadStore(
     const LoadNonVolatileOperation & operation,
     const std::vector<rvsdg::Output *> & operands)
 {
@@ -501,7 +469,7 @@ NormalizeLoadStore(
 }
 
 std::optional<std::vector<rvsdg::Output *>>
-NormalizeLoadAlloca(
+LoadNonVolatileOperation::NormalizeLoadAlloca(
     const LoadNonVolatileOperation & operation,
     const std::vector<rvsdg::Output *> & operands)
 {
@@ -512,7 +480,7 @@ NormalizeLoadAlloca(
 }
 
 std::optional<std::vector<rvsdg::Output *>>
-NormalizeLoadStoreState(
+LoadNonVolatileOperation::NormalizeLoadStoreState(
     const LoadNonVolatileOperation & operation,
     const std::vector<rvsdg::Output *> & operands)
 {
@@ -523,7 +491,7 @@ NormalizeLoadStoreState(
 }
 
 std::optional<std::vector<rvsdg::Output *>>
-NormalizeLoadDuplicateState(
+LoadNonVolatileOperation::NormalizeDuplicateStates(
     const LoadNonVolatileOperation & operation,
     const std::vector<rvsdg::Output *> & operands)
 {
@@ -534,7 +502,7 @@ NormalizeLoadDuplicateState(
 }
 
 std::optional<std::vector<rvsdg::Output *>>
-NormalizeLoadLoadState(
+LoadNonVolatileOperation::NormalizeLoadLoadState(
     const LoadNonVolatileOperation & operation,
     const std::vector<rvsdg::Output *> & operands)
 {
@@ -542,6 +510,38 @@ NormalizeLoadLoadState(
     return perform_load_load_state_reduction(operation, operands);
 
   return std::nullopt;
+}
+
+LoadVolatileOperation::~LoadVolatileOperation() noexcept = default;
+
+bool
+LoadVolatileOperation::operator==(const Operation & other) const noexcept
+{
+  auto operation = dynamic_cast<const LoadVolatileOperation *>(&other);
+  return operation && operation->narguments() == narguments()
+      && operation->GetLoadedType() == GetLoadedType()
+      && operation->GetAlignment() == GetAlignment();
+}
+
+std::string
+LoadVolatileOperation::debug_string() const
+{
+  return "LoadVolatile";
+}
+
+std::unique_ptr<rvsdg::Operation>
+LoadVolatileOperation::copy() const
+{
+  return std::make_unique<LoadVolatileOperation>(*this);
+}
+
+rvsdg::SimpleNode &
+LoadVolatileOperation::CreateNode(
+    rvsdg::Region & region,
+    std::unique_ptr<LoadVolatileOperation> loadOperation,
+    const std::vector<rvsdg::Output *> & operands)
+{
+  return rvsdg::SimpleNode::Create(region, std::move(loadOperation), operands);
 }
 
 }

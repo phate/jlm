@@ -16,7 +16,7 @@ TestArgumentIterators()
 {
   using namespace jlm::llvm;
 
-  auto vt = jlm::tests::valuetype::Create();
+  auto vt = jlm::tests::ValueType::Create();
   RvsdgModule rvsdgModule(jlm::util::FilePath(""), "", "");
 
   {
@@ -78,7 +78,7 @@ TestInvalidOperandRegion()
 {
   using namespace jlm::llvm;
 
-  auto vt = jlm::tests::valuetype::Create();
+  auto vt = jlm::tests::ValueType::Create();
   auto functionType = jlm::rvsdg::FunctionType::Create({}, { vt });
 
   auto rvsdgModule = RvsdgModule::Create(jlm::util::FilePath(""), "", "");
@@ -112,7 +112,7 @@ TestRemoveLambdaInputsWhere()
   using namespace jlm::rvsdg;
 
   // Arrange
-  auto valueType = jlm::tests::valuetype::Create();
+  auto valueType = jlm::tests::ValueType::Create();
   auto functionType = jlm::rvsdg::FunctionType::Create({}, { valueType });
 
   auto rvsdgModule = jlm::llvm::RvsdgModule::Create(jlm::util::FilePath(""), "", "");
@@ -183,7 +183,7 @@ TestPruneLambdaInputs()
   using namespace jlm::rvsdg;
 
   // Arrange
-  auto valueType = jlm::tests::valuetype::Create();
+  auto valueType = jlm::tests::ValueType::Create();
   auto functionType = jlm::rvsdg::FunctionType::Create({}, { valueType });
 
   auto rvsdgModule = jlm::llvm::RvsdgModule::Create(jlm::util::FilePath(""), "", "");
@@ -220,15 +220,13 @@ TestPruneLambdaInputs()
   assert(lambdaInput1.inner->index() == 0);
 }
 
-static int
+static void
 Test()
 {
   TestArgumentIterators();
   TestInvalidOperandRegion();
   TestRemoveLambdaInputsWhere();
   TestPruneLambdaInputs();
-
-  return 0;
 }
 
 JLM_UNIT_TEST_REGISTER("jlm/llvm/ir/operators/TestLambda", Test)

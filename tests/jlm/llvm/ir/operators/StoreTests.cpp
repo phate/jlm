@@ -15,14 +15,14 @@
 #include <jlm/rvsdg/NodeNormalization.hpp>
 #include <jlm/rvsdg/view.hpp>
 
-static int
+static void
 StoreNonVolatileOperationEquality()
 {
   using namespace jlm::llvm;
 
   // Arrange
   MemoryStateType memoryType;
-  auto valueType = jlm::tests::valuetype::Create();
+  auto valueType = jlm::tests::ValueType::Create();
   auto pointerType = PointerType::Create();
 
   StoreNonVolatileOperation operation1(valueType, 2, 4);
@@ -37,22 +37,20 @@ StoreNonVolatileOperationEquality()
   assert(operation1 != operation3); // number of memory states differs
   assert(operation1 != operation4); // alignment differs
   assert(operation1 != operation5); // operation differs
-
-  return 0;
 }
 
 JLM_UNIT_TEST_REGISTER(
     "jlm/llvm/ir/operators/StoreTests-StoreNonVolatileOperationEquality",
     StoreNonVolatileOperationEquality)
 
-static int
+static void
 StoreVolatileOperationEquality()
 {
   using namespace jlm::llvm;
 
   // Arrange
   MemoryStateType memoryType;
-  auto valueType = jlm::tests::valuetype::Create();
+  auto valueType = jlm::tests::ValueType::Create();
   auto pointerType = PointerType::Create();
 
   StoreVolatileOperation operation1(valueType, 2, 4);
@@ -67,22 +65,20 @@ StoreVolatileOperationEquality()
   assert(operation1 != operation3); // number of memory states differs
   assert(operation1 != operation4); // alignment differs
   assert(operation1 != operation5); // operation differs
-
-  return 0;
 }
 
 JLM_UNIT_TEST_REGISTER(
     "jlm/llvm/ir/operators/StoreTests-StoreVolatileOperationEquality",
     StoreVolatileOperationEquality)
 
-static int
+static void
 StoreVolatileOperationCopy()
 {
   using namespace jlm::llvm;
 
   // Arrange
   MemoryStateType memoryType;
-  auto valueType = jlm::tests::valuetype::Create();
+  auto valueType = jlm::tests::ValueType::Create();
   PointerType pointerType;
 
   StoreVolatileOperation operation(valueType, 2, 4);
@@ -92,22 +88,20 @@ StoreVolatileOperationCopy()
 
   // Assert
   assert(*copiedOperation == operation);
-
-  return 0;
 }
 
 JLM_UNIT_TEST_REGISTER(
     "jlm/llvm/ir/operators/StoreTests-StoreVolatileOperationCopy",
     StoreVolatileOperationCopy)
 
-static int
+static void
 StoreVolatileOperationAccessors()
 {
   using namespace jlm::llvm;
 
   // Arrange
   MemoryStateType memoryType;
-  auto valueType = jlm::tests::valuetype::Create();
+  auto valueType = jlm::tests::ValueType::Create();
   PointerType pointerType;
 
   size_t alignment = 4;
@@ -122,15 +116,13 @@ StoreVolatileOperationAccessors()
       operation.narguments()
       == numMemoryStates + 3); // [address, storedValue, ioState, memoryStates]
   assert(operation.nresults() == numMemoryStates + 1); // [ioState, memoryStates]
-
-  return 0;
 }
 
 JLM_UNIT_TEST_REGISTER(
     "jlm/llvm/ir/operators/StoreTests-StoreVolatileOperationAccessors",
     StoreVolatileOperationAccessors)
 
-static int
+static void
 StoreVolatileNodeCopy()
 {
   using namespace jlm::llvm;
@@ -139,7 +131,7 @@ StoreVolatileNodeCopy()
   auto pointerType = PointerType::Create();
   auto ioStateType = IOStateType::Create();
   auto memoryType = MemoryStateType::Create();
-  auto valueType = jlm::tests::valuetype::Create();
+  auto valueType = jlm::tests::ValueType::Create();
 
   jlm::rvsdg::Graph graph;
   auto & address1 = jlm::tests::GraphImport::Create(graph, pointerType, "address1");
@@ -165,20 +157,18 @@ StoreVolatileNodeCopy()
   assert(StoreOperation::StoredValueInput(*copiedNode).origin() == &value2);
   assert(StoreVolatileOperation::IOStateInput(*copiedNode).origin() == &ioState2);
   assert(*StoreVolatileOperation::IOStateOutput(*copiedNode).Type() == *ioStateType);
-
-  return 0;
 }
 
 JLM_UNIT_TEST_REGISTER(
     "jlm/llvm/ir/operators/StoreTests-StoreVolatileNodeCopy",
     StoreVolatileNodeCopy)
 
-static int
+static void
 TestCopy()
 {
   using namespace jlm::llvm;
 
-  auto valueType = jlm::tests::valuetype::Create();
+  auto valueType = jlm::tests::ValueType::Create();
   auto pointerType = PointerType::Create();
   auto memoryStateType = MemoryStateType::Create();
 
@@ -199,19 +189,17 @@ TestCopy()
 
   // Assert
   assert(node->GetOperation() == copiedNode->GetOperation());
-
-  return 0;
 }
 
 JLM_UNIT_TEST_REGISTER("jlm/llvm/ir/operators/StoreTests-TestCopy", TestCopy)
 
-static int
+static void
 TestStoreMuxNormalization()
 {
   using namespace jlm::llvm;
 
   // Arrange
-  auto vt = jlm::tests::valuetype::Create();
+  auto vt = jlm::tests::ValueType::Create();
   auto pt = PointerType::Create();
   auto mt = MemoryStateType::Create();
 
@@ -230,7 +218,9 @@ TestStoreMuxNormalization()
   jlm::rvsdg::view(&graph.GetRootRegion(), stdout);
 
   // Act
-  auto success = jlm::rvsdg::ReduceNode<StoreNonVolatileOperation>(NormalizeStoreMux, storeNode);
+  auto success = jlm::rvsdg::ReduceNode<StoreNonVolatileOperation>(
+      StoreNonVolatileOperation::NormalizeStoreMux,
+      storeNode);
   graph.PruneNodes();
 
   jlm::rvsdg::view(&graph.GetRootRegion(), stdout);
@@ -246,21 +236,19 @@ TestStoreMuxNormalization()
   assert(jlm::rvsdg::is<StoreNonVolatileOperation>(n0->GetOperation()));
   assert(jlm::rvsdg::is<StoreNonVolatileOperation>(n1->GetOperation()));
   assert(jlm::rvsdg::is<StoreNonVolatileOperation>(n2->GetOperation()));
-
-  return 0;
 }
 
 JLM_UNIT_TEST_REGISTER(
     "jlm/llvm/ir/operators/StoreTests-TestStoreMuxNormalization",
     TestStoreMuxNormalization)
 
-static int
+static void
 TestDuplicateStateReduction()
 {
   using namespace jlm::llvm;
 
   // Arrange
-  auto valueType = jlm::tests::valuetype::Create();
+  auto valueType = jlm::tests::ValueType::Create();
   auto pointerType = PointerType::Create();
   auto memoryStateType = MemoryStateType::Create();
 
@@ -282,8 +270,9 @@ TestDuplicateStateReduction()
   view(&graph.GetRootRegion(), stdout);
 
   // Act
-  auto success =
-      jlm::rvsdg::ReduceNode<StoreNonVolatileOperation>(NormalizeStoreDuplicateState, storeNode);
+  auto success = jlm::rvsdg::ReduceNode<StoreNonVolatileOperation>(
+      StoreNonVolatileOperation::NormalizeDuplicateStates,
+      storeNode);
   graph.PruneNodes();
 
   view(&graph.GetRootRegion(), stdout);
@@ -299,21 +288,19 @@ TestDuplicateStateReduction()
   assert(exS3.origin() == node->output(0));
   assert(exS4.origin() == node->output(1));
   assert(exS5.origin() == node->output(2));
-
-  return 0;
 }
 
 JLM_UNIT_TEST_REGISTER(
     "jlm/llvm/ir/operators/StoreTests-TestDuplicateStateReduction",
     TestDuplicateStateReduction)
 
-static int
+static void
 TestStoreAllocaReduction()
 {
   using namespace jlm::llvm;
 
   // Arrange
-  auto vt = jlm::tests::valuetype::Create();
+  auto vt = jlm::tests::ValueType::Create();
   auto mt = MemoryStateType::Create();
   auto bt = jlm::rvsdg::bittype::Create(32);
 
@@ -336,10 +323,12 @@ TestStoreAllocaReduction()
   view(&graph.GetRootRegion(), stdout);
 
   // Act
-  auto success1 =
-      jlm::rvsdg::ReduceNode<StoreNonVolatileOperation>(NormalizeStoreAlloca, storeNode1);
-  auto success2 =
-      jlm::rvsdg::ReduceNode<StoreNonVolatileOperation>(NormalizeStoreAlloca, storeNode2);
+  auto success1 = jlm::rvsdg::ReduceNode<StoreNonVolatileOperation>(
+      StoreNonVolatileOperation::NormalizeStoreAlloca,
+      storeNode1);
+  auto success2 = jlm::rvsdg::ReduceNode<StoreNonVolatileOperation>(
+      StoreNonVolatileOperation::NormalizeStoreAlloca,
+      storeNode2);
   graph.PruneNodes();
 
   view(&graph.GetRootRegion(), stdout);
@@ -353,21 +342,19 @@ TestStoreAllocaReduction()
       has_add_import = true;
   }
   assert(has_add_import);
-
-  return 0;
 }
 
 JLM_UNIT_TEST_REGISTER(
     "jlm/llvm/ir/operators/StoreTests-TestStoreAllocaReduction",
     TestStoreAllocaReduction)
 
-static int
+static void
 TestStoreStoreReduction()
 {
   using namespace jlm::llvm;
 
   // Arrange
-  auto vt = jlm::tests::valuetype::Create();
+  auto vt = jlm::tests::ValueType::Create();
   auto pt = PointerType::Create();
   auto mt = MemoryStateType::Create();
 
@@ -385,7 +372,9 @@ TestStoreStoreReduction()
   jlm::rvsdg::view(&graph.GetRootRegion(), stdout);
 
   // Act
-  auto success = jlm::rvsdg::ReduceNode<StoreNonVolatileOperation>(NormalizeStoreStore, storeNode2);
+  auto success = jlm::rvsdg::ReduceNode<StoreNonVolatileOperation>(
+      StoreNonVolatileOperation::NormalizeStoreStore,
+      storeNode2);
   graph.PruneNodes();
 
   jlm::rvsdg::view(&graph.GetRootRegion(), stdout);
@@ -394,8 +383,6 @@ TestStoreStoreReduction()
   assert(success);
   assert(graph.GetRootRegion().nnodes() == 1);
   assert(jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*ex.origin())->input(1)->origin() == v2);
-
-  return 0;
 }
 
 JLM_UNIT_TEST_REGISTER(

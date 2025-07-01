@@ -9,7 +9,7 @@
 #include <jlm/rvsdg/NodeNormalization.hpp>
 #include <jlm/rvsdg/view.hpp>
 
-static int
+static void
 test_main()
 {
   using namespace jlm::rvsdg;
@@ -26,7 +26,7 @@ test_main()
         operands);
   };
 
-  auto valueType = jlm::tests::valuetype::Create();
+  auto valueType = jlm::tests::ValueType::Create();
 
   auto i = &jlm::tests::GraphImport::Create(graph, valueType, "i");
 
@@ -65,8 +65,6 @@ test_main()
 
   ReduceNode<jlm::tests::test_op>(NormalizeCne, *TryGetOwnerNode<Node>(*e7.origin()));
   assert(e7.origin() == e1.origin());
-
-  return 0;
 }
 
 JLM_UNIT_TEST_REGISTER("jlm/rvsdg/test-cse", test_main)

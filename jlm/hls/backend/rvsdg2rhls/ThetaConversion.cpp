@@ -36,7 +36,7 @@ ConvertThetaNode(rvsdg::ThetaNode & theta)
     }
     else
     {
-      jlm::rvsdg::Output * buffer;
+      rvsdg::Output * buffer = nullptr;
       loop->AddLoopVar(loopvar.input->origin(), &buffer);
       smap.insert(loopvar.pre, buffer);
       // buffer out is only used by branch

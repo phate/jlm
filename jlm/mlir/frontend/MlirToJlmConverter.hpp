@@ -120,7 +120,7 @@ private:
       const std::unordered_map<void *, rvsdg::Output *> & outputMap);
 
   /**
-   * Converts an MLIR integer comparison operation into an RVSDG node.
+   * Converts an MLIR arith integer comparison operation into an RVSDG node.
    * \param CompOp The MLIR comparison operation to be converted.
    * \param rvsdgRegion The RVSDG region that the generated RVSDG node is inserted into.
    * \param inputs The inputs for the RVSDG node.
@@ -133,6 +133,19 @@ private:
       rvsdg::Region & rvsdgRegion,
       const ::llvm::SmallVector<rvsdg::Output *> & inputs,
       size_t nbits);
+
+  /**
+   * Converts an MLIR LLVM integer comparison operation into an RVSDG node.
+   * \param operation The MLIR comparison operation to be converted.
+   * \param rvsdgRegion The RVSDG region that the generated RVSDG node is inserted into.
+   * \param inputs The inputs for the RVSDG node.
+   * \result The converted RVSDG node.
+   */
+  rvsdg::Node *
+  ConvertICmpOp(
+      ::mlir::LLVM::ICmpOp & operation,
+      rvsdg::Region & rvsdgRegion,
+      const ::llvm::SmallVector<rvsdg::Output *> & inputs);
 
   /**
    * Converts an MLIR floating point binary operation into an RVSDG node.
@@ -224,7 +237,7 @@ private:
    * \result The converted RVSDG type.
    */
   static std::unique_ptr<rvsdg::Type>
-  ConvertType(::mlir::Type & type);
+  ConvertType(const ::mlir::Type & type);
 
   std::unique_ptr<::mlir::MLIRContext> Context_;
 };

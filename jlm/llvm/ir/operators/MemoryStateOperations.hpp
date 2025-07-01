@@ -266,14 +266,65 @@ public:
   [[nodiscard]] std::unique_ptr<Operation>
   copy() const override;
 
-  static rvsdg::Output &
-  Create(rvsdg::Region & region, const std::vector<jlm::rvsdg::Output *> & operands)
+  /**
+   * Performs the following transformation:
+   *
+   * a, s1 = AllocaOperation ...
+   * v, s2 = LoadOperation a s1
+   * ... = LambdaExitMemoryStateMergeOperation s2 ... sn
+   * =>
+   * a, s1 = AllocaOperation ...
+   * v, s2 = LoadOperation a s1
+   * ... = LambdaExitMemoryStateMergeOperation s1 ... sn
+   */
+  static std::optional<std::vector<rvsdg::Output *>>
+  NormalizeLoadFromAlloca(
+      const LambdaExitMemoryStateMergeOperation & operation,
+      const std::vector<rvsdg::Output *> & operands);
+
+  /**
+   * Performs the following transformation:
+   *
+   * a, s1 = AllocaOperation ...
+   * s2 = StoreOperation a v s1
+   * ... = LambdaExitMemoryStateMergeOperation s2 ... sn
+   * =>
+   * a, s1 = AllocaOperation ...
+   * s2 = StoreOperation a v s1
+   * ... = LambdaExitMemoryStateMergeOperation s1 ... sn
+   */
+  static std::optional<std::vector<rvsdg::Output *>>
+  NormalizeStoreToAlloca(
+      const LambdaExitMemoryStateMergeOperation & operation,
+      const std::vector<rvsdg::Output *> & operands);
+
+  /**
+   * Performs the following transformation:
+   *
+   * a, s1 = AllocaOperation ...
+   * ... = LambdaExitMemoryStateMergeOperation s1 ... sn
+   * =>
+   * a, s1 = AllocaOperation ...
+   * s2 = UndefValueOperation
+   * ... = LambdaExitMemoryStateMergeOperation s2 ... sn
+   */
+  static std::optional<std::vector<rvsdg::Output *>>
+  NormalizeAlloca(
+      const LambdaExitMemoryStateMergeOperation & operation,
+      const std::vector<rvsdg::Output *> & operands);
+
+  static rvsdg::Node &
+  CreateNode(rvsdg::Region & region, const std::vector<rvsdg::Output *> & operands)
   {
     return operands.empty()
-             ? *rvsdg::CreateOpNode<LambdaExitMemoryStateMergeOperation>(region, operands.size())
-                    .output(0)
-             : *rvsdg::CreateOpNode<LambdaExitMemoryStateMergeOperation>(operands, operands.size())
-                    .output(0);
+             ? rvsdg::CreateOpNode<LambdaExitMemoryStateMergeOperation>(region, operands.size())
+             : rvsdg::CreateOpNode<LambdaExitMemoryStateMergeOperation>(operands, operands.size());
+  }
+
+  static rvsdg::Output &
+  Create(rvsdg::Region & region, const std::vector<rvsdg::Output *> & operands)
+  {
+    return *CreateNode(region, operands).output(0);
   }
 };
 

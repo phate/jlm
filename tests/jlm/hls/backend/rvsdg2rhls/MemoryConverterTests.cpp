@@ -15,7 +15,7 @@
 #include <jlm/rvsdg/view.hpp>
 #include <jlm/util/Statistics.hpp>
 
-static int
+static void
 TestTraceArgument()
 {
   using namespace jlm::llvm;
@@ -67,14 +67,12 @@ TestTraceArgument()
   assert(std::get<0>(portNodes[1]).size() == 0); // 0 load for the first pointer
   assert(std::get<1>(portNodes[1]).size() == 1); // 1 store for the second pointer
   assert(std::get<2>(portNodes[1]).size() == 0); // 0 load for the first pointer
-
-  return 0;
 }
 JLM_UNIT_TEST_REGISTER(
     "jlm/hls/backend/rvsdg2rhls/MemoryConverterTests-TraceArgument",
     TestTraceArgument)
 
-static int
+static void
 TestLoad()
 {
   using namespace jlm::llvm;
@@ -141,18 +139,16 @@ TestLoad()
   // Response Node
   auto responseNode =
       jlm::util::AssertedCast<jlm::rvsdg::node_output>(loadNode->input(2)->origin())->node();
-  assert(is<mem_resp_op>(responseNode));
+  assert(is<MemoryResponseOperation>(responseNode));
 
   // Response source
   auto responseSource = responseNode->input(0)->origin();
   auto regionArgument = jlm::util::AssertedCast<jlm::rvsdg::RegionArgument>(responseSource);
   assert(regionArgument->index() == 2);
-
-  return 0;
 }
 JLM_UNIT_TEST_REGISTER("jlm/hls/backend/rvsdg2rhls/MemoryConverterTests-Load", TestLoad)
 
-static int
+static void
 TestStore()
 {
   using namespace jlm::llvm;
@@ -203,7 +199,7 @@ TestStore()
       jlm::util::AssertedCast<jlm::rvsdg::node_output>(lambdaRegion->result(0)->origin())->node();
   auto storeNode =
       jlm::util::AssertedCast<jlm::rvsdg::node_output>(bufferNode->input(0)->origin())->node();
-  assert(is<store_op>(storeNode));
+  assert(is<jlm::hls::StoreOperation>(storeNode));
   auto requestNode =
       jlm::util::AssertedCast<jlm::rvsdg::node_output>(lambdaRegion->result(1)->origin())->node();
   assert(is<MemoryRequestOperation>(requestNode));
@@ -211,13 +207,11 @@ TestStore()
   // Request source
   auto requestSource = requestNode->input(0)->origin();
   storeNode = jlm::util::AssertedCast<jlm::rvsdg::node_output>(requestSource)->node();
-  assert(is<store_op>(storeNode));
-
-  return 0;
+  assert(is<jlm::hls::StoreOperation>(storeNode));
 }
 JLM_UNIT_TEST_REGISTER("jlm/hls/backend/rvsdg2rhls/MemoryConverterTests-Store", TestStore)
 
-static int
+static void
 TestLoadStore()
 {
   using namespace jlm::llvm;
@@ -274,7 +268,7 @@ TestLoadStore()
       jlm::util::AssertedCast<jlm::rvsdg::node_output>(lambdaRegion->result(0)->origin())->node();
   auto storeNode =
       jlm::util::AssertedCast<jlm::rvsdg::node_output>(bufferNode->input(0)->origin())->node();
-  assert(is<store_op>(storeNode));
+  assert(is<jlm::hls::StoreOperation>(storeNode));
   auto firstRequestNode =
       jlm::util::AssertedCast<jlm::rvsdg::node_output>(lambdaRegion->result(1)->origin())->node();
   assert(is<MemoryRequestOperation>(firstRequestNode));
@@ -286,13 +280,11 @@ TestLoadStore()
   assert(is<jlm::hls::LoadOperation>(loadNode));
   auto responseNode =
       jlm::util::AssertedCast<jlm::rvsdg::node_output>(loadNode->input(2)->origin())->node();
-  assert(is<mem_resp_op>(responseNode));
-
-  return 0;
+  assert(is<MemoryResponseOperation>(responseNode));
 }
 JLM_UNIT_TEST_REGISTER("jlm/hls/backend/rvsdg2rhls/MemoryConverterTests-LoadStore", TestLoadStore)
 
-static int
+static void
 TestThetaLoad()
 {
   using namespace jlm::llvm;
@@ -382,7 +374,7 @@ TestThetaLoad()
   lambda = jlm::util::AssertedCast<jlm::rvsdg::LambdaNode>(region->Nodes().begin().ptr());
   lambdaRegion = lambda->subregion();
 
-  assert(jlm::rvsdg::Region::ContainsOperation<mem_resp_op>(*lambdaRegion, true));
+  assert(jlm::rvsdg::Region::ContainsOperation<MemoryResponseOperation>(*lambdaRegion, true));
   assert(jlm::rvsdg::Region::ContainsOperation<MemoryRequestOperation>(*lambdaRegion, true));
 
   // Request Node
@@ -410,16 +402,14 @@ TestThetaLoad()
   // Response Node
   auto responseNode =
       jlm::util::AssertedCast<const jlm::rvsdg::node_output>(thetaInput->origin())->node();
-  assert(is<mem_resp_op>(responseNode));
+  assert(is<MemoryResponseOperation>(responseNode));
 
   // Lambda argument
   assert(is<jlm::rvsdg::RegionArgument>(responseNode->input(0)->origin()));
-
-  return 0;
 }
 JLM_UNIT_TEST_REGISTER("jlm/hls/backend/rvsdg2rhls/MemoryConverterTests-ThetaLoad", TestThetaLoad)
 
-static int
+static void
 TestThetaStore()
 {
   using namespace jlm::llvm;
@@ -527,14 +517,12 @@ TestThetaStore()
   // Load Node
   auto storeNode =
       jlm::util::AssertedCast<const jlm::rvsdg::node_output>(thetaResult.first()->origin())->node();
-  assert(is<store_op>(storeNode));
+  assert(is<jlm::hls::StoreOperation>(storeNode));
   // NDMux Node
   auto ndMuxNode =
       jlm::util::AssertedCast<const jlm::rvsdg::node_output>(storeNode->input(2)->origin())->node();
   assert(is<MuxOperation>(ndMuxNode));
   // Loop Argument
   assert(is<jlm::rvsdg::RegionArgument>(ndMuxNode->input(2)->origin()));
-
-  return 0;
 }
 JLM_UNIT_TEST_REGISTER("jlm/hls/backend/rvsdg2rhls/MemoryConverterTests-ThetaStore", TestThetaStore)

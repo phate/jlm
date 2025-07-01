@@ -13,12 +13,12 @@
 #include <jlm/llvm/ir/operators/operators.hpp>
 #include <jlm/llvm/ir/print.hpp>
 
-static int
+static void
 test()
 {
   using namespace jlm::llvm;
 
-  auto vt = jlm::tests::valuetype::Create();
+  auto vt = jlm::tests::ValueType::Create();
   jlm::tests::test_op op({}, { vt });
 
   // Arrange
@@ -46,8 +46,6 @@ test()
   std::cout << ControlFlowGraph::ToAscii(cfg) << std::flush;
 
   assert(cfg.nnodes() == 1);
-
-  return 0;
 }
 
 JLM_UNIT_TEST_REGISTER("jlm/llvm/ir/test-cfg-prune", test)

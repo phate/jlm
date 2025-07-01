@@ -32,7 +32,7 @@ struct IntegerBinaryOpTest
 
 // Template function to test an integer binary operation
 template<typename JlmOperation, typename MlirOperation>
-static int
+static void
 TestIntegerBinaryOperation()
 {
   using namespace jlm::llvm;
@@ -117,12 +117,11 @@ TestIntegerBinaryOperation()
       assert(foundBinaryOp);
     }
   }
-  return 0;
 }
 
 // Macro to define and register a test for an integer binary operation
 #define REGISTER_INT_BINARY_OP_TEST(JLM_OP, MLIR_NS, MLIR_OP, TEST_NAME) \
-  static int Test##TEST_NAME()                                           \
+  static void Test##TEST_NAME()                                          \
   {                                                                      \
     return TestIntegerBinaryOperation<                                   \
         jlm::llvm::Integer##JLM_OP##Operation,                           \
@@ -156,7 +155,7 @@ struct IntegerComparisonOpTest
 
 // Template function to test an integer comparison operation
 template<typename JlmOperation>
-static int
+static void
 TestIntegerComparisonOperation(const IntegerComparisonOpTest<JlmOperation> & test)
 {
   using namespace jlm::llvm;
@@ -248,12 +247,11 @@ TestIntegerComparisonOperation(const IntegerComparisonOpTest<JlmOperation> & tes
       assert(foundCompOp);
     }
   }
-  return 0;
 }
 
 // Macro to define and register a test for an integer comparison operation
 #define REGISTER_INT_COMP_OP_TEST(JLM_OP, PREDICATE, TEST_NAME)             \
-  static int TestCmp##TEST_NAME()                                           \
+  static void TestCmp##TEST_NAME()                                          \
   {                                                                         \
     IntegerComparisonOpTest<jlm::llvm::Integer##JLM_OP##Operation> test = { \
       ::mlir::arith::CmpIPredicate::PREDICATE,                              \

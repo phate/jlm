@@ -13,7 +13,7 @@
 #include <llvm/IR/IRBuilder.h>
 #include <llvm/IR/Module.h>
 
-static int
+static void
 test()
 {
   auto setup = [](llvm::LLVMContext & ctx)
@@ -44,8 +44,6 @@ test()
 
   auto ipgModule = jlm::llvm::ConvertLlvmModule(*llvmModule);
   print(*ipgModule, stdout);
-
-  return 0;
 }
 
 JLM_UNIT_TEST_REGISTER("jlm/llvm/frontend/llvm/test-endless-loop", test)

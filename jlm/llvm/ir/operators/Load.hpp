@@ -149,6 +149,21 @@ public:
              MemoryStateOutputIterator(nullptr) };
   }
 
+  /**
+   * Maps a memory state output of a load operation to its corresponding memory state input.
+   */
+  [[nodiscard]] static rvsdg::Input &
+  MapMemoryStateOutputToInput(const rvsdg::Output & output)
+  {
+    JLM_ASSERT(is<MemoryStateType>(output.Type()));
+    auto [loadNode, loadOperation] = rvsdg::TryGetSimpleNodeAndOp<LoadOperation>(output);
+    JLM_ASSERT(loadOperation);
+    JLM_ASSERT(loadNode->ninputs() == loadNode->noutputs());
+    const auto input = loadNode->input(output.index());
+    JLM_ASSERT(is<MemoryStateType>(input->Type()));
+    return *input;
+  }
+
 private:
   size_t NumMemoryStates_;
   size_t Alignment_;
@@ -300,6 +315,134 @@ public:
   [[nodiscard]] std::unique_ptr<Operation>
   copy() const override;
 
+  /**
+   * \brief Swaps a memory state merge operation and a load operation.
+   *
+   * sx1 = MemStateMergeOperation si1 ... siM
+   * v sl1 = LoadNonVolatileOperation a sx1
+   * =>
+   * v sl1 ... slM = LoadNonVolatileOperation a si1 ... siM
+   * sx1 = MemStateMergeOperation sl1 ... slM
+   *
+   * FIXME: The reduction can be generalized: A load node can have multiple operands from different
+   * merge nodes.
+   *
+   * @return If the normalization could be applied, then the results of the load operation after
+   * the transformation. Otherwise, std::nullopt.
+   */
+  static std::optional<std::vector<rvsdg::Output *>>
+  NormalizeLoadMux(
+      const LoadNonVolatileOperation & operation,
+      const std::vector<rvsdg::Output *> & operands);
+
+  /**
+   * \brief If the producer of a load's address is an alloca operation, then we can remove all
+   * state edges originating from other alloca operations.
+   *
+   * a1 s1 = AllocaOperation ...
+   * a2 s2 = AllocaOperation ...
+   * s3 = MuxOperation s1
+   * v sl1 sl2 sl3 = LoadNonVolatileOperation a1 s1 s2 s3
+   * =>
+   * ...
+   * v sl1 sl3 = LoadNonVolatileOperation a1 s1 s3
+   *
+   * @param operation The load operation on which the transformation is performed.
+   * @param operands The operands of the load node.
+   *
+   * @return If the normalization could be applied, then the results of the load operation after
+   * the transformation. Otherwise, std::nullopt.
+   */
+  static std::optional<std::vector<rvsdg::Output *>>
+  NormalizeLoadAlloca(
+      const LoadNonVolatileOperation & operation,
+      const std::vector<rvsdg::Output *> & operands);
+
+  /**
+   * \brief Forwards the value from a store operation.
+   *
+   * s2 = StoreNonVolatileOperation a v1 s1
+   * v2 s3 = LoadNonVolatileOperation a s2
+   * ... = AnyOperation v2
+   * =>
+   * s2 = StoreNonVolatileOperation a v1 s1
+   * ... = AnyOperation v1
+   *
+   * @param operation The load operation on which the transformation is performed.
+   * @param operands The operands of the load node.
+   *
+   * @return If the normalization could be applied, then the results of the load operation after
+   * the transformation. Otherwise, std::nullopt.
+   */
+  static std::optional<std::vector<rvsdg::Output *>>
+  NormalizeLoadStore(
+      const LoadNonVolatileOperation & operation,
+      const std::vector<rvsdg::Output *> & operands);
+
+  /**
+   * \brief If the producer of a load's address is an alloca operation, then we can remove all
+   * state edges originating from other alloca operations coming through store operations.
+   *
+   * a1 sa1 = AllocaOperation ...
+   * a2 sa2 = AllocaOperation ...
+   * ss1 = StoreNonVolatileOperation a1 ... sa1
+   * ss2 = StoreNonVolatileOperation a2 ... sa2
+   * ... = LoadNonVolatileOperation a1 ss1 ss2
+   * =>
+   * ...
+   * ... = LoadNonVolatileOperation a1 ss1
+   *
+   * @param operation The load operation on which the transformation is performed.
+   * @param operands The operands of the load node.
+   *
+   * @return If the normalization could be applied, then the results of the load operation after
+   * the transformation. Otherwise, std::nullopt.
+   */
+  static std::optional<std::vector<rvsdg::Output *>>
+  NormalizeLoadStoreState(
+      const LoadNonVolatileOperation & operation,
+      const std::vector<rvsdg::Output *> & operands);
+
+  /**
+   * \brief Remove duplicated state operands
+   *
+   * v so1 so2 so3 = LoadNonVolatileOperation a si1 si1 si1
+   * =>
+   * v so1 = LoadNonVolatileOperation a si1
+   *
+   * @param operation The load operation on which the transformation is performed.
+   * @param operands The operands of the load node.
+   *
+   * @return If the normalization could be applied, then the results of the load operation after
+   * the transformation. Otherwise, std::nullopt.
+   */
+  static std::optional<std::vector<rvsdg::Output *>>
+  NormalizeDuplicateStates(
+      const LoadNonVolatileOperation & operation,
+      const std::vector<rvsdg::Output *> & operands);
+
+  /**
+   * \brief Avoid sequentialization of load operations.
+   *
+   * _ so1 = LoadNonVolatileOperation _ si1
+   * _ so2 = LoadNonVolatileOperation _ so1
+   * _ so3 = LoadNonVolatileOperation _ so2
+   * =>
+   * _ so1 = LoadNonVolatileOperation _ si1
+   * _ so2 = LoadNonVolatileOperation _ si1
+   * _ so3 = LoadNonVolatileOperation _ si1
+   *
+   * @param operation The load operation on which the transformation is performed.
+   * @param operands The operands of the load node.
+   *
+   * @return If the normalization could be applied, then the results of the load operation after
+   * the transformation. Otherwise, std::nullopt.
+   */
+  static std::optional<std::vector<rvsdg::Output *>>
+  NormalizeLoadLoadState(
+      const LoadNonVolatileOperation & operation,
+      const std::vector<rvsdg::Output *> & operands);
+
   static std::unique_ptr<llvm::ThreeAddressCode>
   Create(
       const Variable * address,
@@ -379,134 +522,6 @@ private:
     return types;
   }
 };
-
-/**
- * \brief Swaps a memory state merge operation and a load operation.
- *
- * sx1 = MemStateMerge si1 ... siM
- * v sl1 = load_op a sx1
- * =>
- * v sl1 ... slM = load_op a si1 ... siM
- * sx1 = MemStateMerge sl1 ... slM
- *
- * FIXME: The reduction can be generalized: A load node can have multiple operands from different
- * merge nodes.
- *
- * @return If the normalization could be applied, then the results of the load operation after
- * the transformation. Otherwise, std::nullopt.
- */
-std::optional<std::vector<rvsdg::Output *>>
-NormalizeLoadMux(
-    const LoadNonVolatileOperation & operation,
-    const std::vector<rvsdg::Output *> & operands);
-
-/**
- * \brief If the producer of a load's address is an alloca operation, then we can remove all
- * state edges originating from other alloca operations.
- *
- * a1 s1 = AllocaOperation ...
- * a2 s2 = AllocaOperation ...
- * s3 = mux_op s1
- * v sl1 sl2 sl3 = load_op a1 s1 s2 s3
- * =>
- * ...
- * v sl1 sl3 = load_op a1 s1 s3
- *
- * @param operation The load operation on which the transformation is performed.
- * @param operands The operands of the load node.
- *
- * @return If the normalization could be applied, then the results of the load operation after
- * the transformation. Otherwise, std::nullopt.
- */
-std::optional<std::vector<rvsdg::Output *>>
-NormalizeLoadAlloca(
-    const LoadNonVolatileOperation & operation,
-    const std::vector<rvsdg::Output *> & operands);
-
-/**
- * \brief Forwards the value from a store operation.
- *
- * s2 = store_op a v1 s1
- * v2 s3 = load_op a s2
- * ... = any_op v2
- * =>
- * s2 = store_op a v1 s1
- * ... = any_op v1
- *
- * @param operation The load operation on which the transformation is performed.
- * @param operands The operands of the load node.
- *
- * @return If the normalization could be applied, then the results of the load operation after
- * the transformation. Otherwise, std::nullopt.
- */
-std::optional<std::vector<rvsdg::Output *>>
-NormalizeLoadStore(
-    const LoadNonVolatileOperation & operation,
-    const std::vector<rvsdg::Output *> & operands);
-
-/**
- * \brief If the producer of a load's address is an alloca operation, then we can remove all
- * state edges originating from other alloca operations coming through store operations.
- *
- * a1 sa1 = AllocaOperation ...
- * a2 sa2 = AllocaOperation ...
- * ss1 = store_op a1 ... sa1
- * ss2 = store_op a2 ... sa2
- * ... = load_op a1 ss1 ss2
- * =>
- * ...
- * ... = load_op a1 ss1
- *
- * @param operation The load operation on which the transformation is performed.
- * @param operands The operands of the load node.
- *
- * @return If the normalization could be applied, then the results of the load operation after
- * the transformation. Otherwise, std::nullopt.
- */
-std::optional<std::vector<rvsdg::Output *>>
-NormalizeLoadStoreState(
-    const LoadNonVolatileOperation & operation,
-    const std::vector<rvsdg::Output *> & operands);
-
-/**
- * \brief Remove duplicated state operands
- *
- * v so1 so2 so3 = load_op a si1 si1 si1
- * =>
- * v so1 = load_op a si1
- *
- * @param operation The load operation on which the transformation is performed.
- * @param operands The operands of the load node.
- *
- * @return If the normalization could be applied, then the results of the load operation after
- * the transformation. Otherwise, std::nullopt.
- */
-std::optional<std::vector<rvsdg::Output *>>
-NormalizeLoadDuplicateState(
-    const LoadNonVolatileOperation & operation,
-    const std::vector<rvsdg::Output *> & operands);
-
-/**
- * \brief Avoid sequentialization of load operations.
- *
- * _ so1 = load_op _ si1
- * _ so2 = load_op _ so1
- * _ so3 = load_op _ so2
- * =>
- * _ so1 = load_op _ si1
- * _ so2 = load_op _ si1
- * _ so3 = load_op _ si1
- *
- * @param operation The load operation on which the transformation is performed.
- * @param operands The operands of the load node.
- *
- * @return If the normalization could be applied, then the results of the load operation after
- * the transformation. Otherwise, std::nullopt.
- */
-std::optional<std::vector<rvsdg::Output *>>
-NormalizeLoadLoadState(
-    const LoadNonVolatileOperation & operation,
-    const std::vector<rvsdg::Output *> & operands);
 
 }
 

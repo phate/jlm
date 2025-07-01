@@ -8,7 +8,7 @@
 #include <jlm/llvm/ir/cfg.hpp>
 #include <jlm/llvm/ir/ipgraph-module.hpp>
 
-static int
+static void
 test()
 {
   using namespace jlm::llvm;
@@ -37,8 +37,6 @@ test()
   std::vector<ControlFlowGraphNode *> rpo1({ cfg.entry(), bb0, bb1, bb2, bb3, cfg.exit() });
   std::vector<ControlFlowGraphNode *> rpo2({ cfg.entry(), bb0, bb2, bb1, bb3, cfg.exit() });
   assert(reverse_postorder(cfg) == rpo1 || reverse_postorder(cfg) == rpo2);
-
-  return 0;
 }
 
 JLM_UNIT_TEST_REGISTER("jlm/llvm/ir/test-cfg-orderings", test)

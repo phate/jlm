@@ -1476,7 +1476,7 @@ TestStatistics()
   assert(statistics.HasTimer("PropagateTimer"));
 }
 
-static int
+static void
 TestRegionAwareMemoryNodeProvider()
 {
   TestStore1();
@@ -1512,8 +1512,6 @@ TestRegionAwareMemoryNodeProvider()
   TestMemcpy();
 
   TestStatistics();
-
-  return 0;
 }
 
 JLM_UNIT_TEST_REGISTER(

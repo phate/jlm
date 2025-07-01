@@ -14,7 +14,7 @@
 #include <jlm/llvm/opt/inversion.hpp>
 #include <jlm/util/Statistics.hpp>
 
-static const auto vt = jlm::tests::valuetype::Create();
+static const auto vt = jlm::tests::ValueType::Create();
 static jlm::util::StatisticsCollector statisticsCollector;
 
 static inline void
@@ -120,13 +120,11 @@ test2()
   assert(jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::GammaNode>(*ex.origin()));
 }
 
-static int
+static void
 verify()
 {
   test1();
   test2();
-
-  return 0;
 }
 
 JLM_UNIT_TEST_REGISTER("jlm/llvm/opt/test-inversion", verify)

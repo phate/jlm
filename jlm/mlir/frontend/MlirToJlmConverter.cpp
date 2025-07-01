@@ -242,6 +242,66 @@ MlirToJlmConverter::ConvertCmpIOp(
 }
 
 rvsdg::Node *
+MlirToJlmConverter::ConvertICmpOp(
+    ::mlir::LLVM::ICmpOp & operation,
+    rvsdg::Region & rvsdgRegion,
+    const ::llvm::SmallVector<rvsdg::Output *> & inputs)
+{
+  if (operation.getPredicate() == ::mlir::LLVM::ICmpPredicate::eq)
+  {
+    auto newOp = std::make_unique<llvm::ptrcmp_op>(llvm::PointerType::Create(), llvm::cmp::eq);
+    return &rvsdg::SimpleNode::Create(
+        rvsdgRegion,
+        std::move(newOp),
+        std::vector<jlm::rvsdg::Output *>(inputs.begin(), inputs.end()));
+  }
+  else if (operation.getPredicate() == ::mlir::LLVM::ICmpPredicate::ne)
+  {
+    auto newOp = std::make_unique<llvm::ptrcmp_op>(llvm::PointerType::Create(), llvm::cmp::ne);
+    return &rvsdg::SimpleNode::Create(
+        rvsdgRegion,
+        std::move(newOp),
+        std::vector<jlm::rvsdg::Output *>(inputs.begin(), inputs.end()));
+  }
+  else if (operation.getPredicate() == ::mlir::LLVM::ICmpPredicate::sge)
+  {
+    auto newOp = std::make_unique<llvm::ptrcmp_op>(llvm::PointerType::Create(), llvm::cmp::ge);
+    return &rvsdg::SimpleNode::Create(
+        rvsdgRegion,
+        std::move(newOp),
+        std::vector<jlm::rvsdg::Output *>(inputs.begin(), inputs.end()));
+  }
+  else if (operation.getPredicate() == ::mlir::LLVM::ICmpPredicate::sgt)
+  {
+    auto newOp = std::make_unique<llvm::ptrcmp_op>(llvm::PointerType::Create(), llvm::cmp::gt);
+    return &rvsdg::SimpleNode::Create(
+        rvsdgRegion,
+        std::move(newOp),
+        std::vector<jlm::rvsdg::Output *>(inputs.begin(), inputs.end()));
+  }
+  else if (operation.getPredicate() == ::mlir::LLVM::ICmpPredicate::sle)
+  {
+    auto newOp = std::make_unique<llvm::ptrcmp_op>(llvm::PointerType::Create(), llvm::cmp::le);
+    return &rvsdg::SimpleNode::Create(
+        rvsdgRegion,
+        std::move(newOp),
+        std::vector<jlm::rvsdg::Output *>(inputs.begin(), inputs.end()));
+  }
+  else if (operation.getPredicate() == ::mlir::LLVM::ICmpPredicate::slt)
+  {
+    auto newOp = std::make_unique<llvm::ptrcmp_op>(llvm::PointerType::Create(), llvm::cmp::lt);
+    return &rvsdg::SimpleNode::Create(
+        rvsdgRegion,
+        std::move(newOp),
+        std::vector<jlm::rvsdg::Output *>(inputs.begin(), inputs.end()));
+  }
+  else
+  {
+    JLM_UNREACHABLE("MLIR frontend: Unknown pointer compare operation");
+  }
+}
+
+rvsdg::Node *
 MlirToJlmConverter::ConvertFPBinaryNode(
     const ::mlir::Operation & mlirOperation,
     rvsdg::Region & rvsdgRegion,
@@ -249,8 +309,8 @@ MlirToJlmConverter::ConvertFPBinaryNode(
 {
   if (inputs.size() != 2)
     return nullptr;
-  llvm::fpop op;
-  llvm::fpsize size;
+  auto op = llvm::fpop::add;
+  auto size = llvm::fpsize::half;
   if (auto castedOp = ::mlir::dyn_cast<::mlir::arith::AddFOp>(&mlirOperation))
   {
     op = llvm::fpop::add;
@@ -580,6 +640,12 @@ MlirToJlmConverter::ConvertOperation(
     return &rvsdg::SimpleNode::Create(rvsdgRegion, op, std::vector(inputs.begin(), inputs.end()));
   }
 
+  // Pointer compare is mapped to LLVM::ICmpOp
+  else if (auto iComOp = ::mlir::dyn_cast<::mlir::LLVM::ICmpOp>(&mlirOperation))
+  {
+    return ConvertICmpOp(iComOp, rvsdgRegion, inputs);
+  }
+
   else if (auto UndefOp = ::mlir::dyn_cast<::mlir::jlm::Undef>(&mlirOperation))
   {
     auto type = UndefOp.getResult().getType();
@@ -597,6 +663,12 @@ MlirToJlmConverter::ConvertOperation(
   else if (auto ZeroOp = ::mlir::dyn_cast<::mlir::LLVM::ZeroOp>(&mlirOperation))
   {
     auto type = ZeroOp.getType();
+    // NULL pointers are a special case of ZeroOp
+    if (::mlir::isa<::mlir::LLVM::LLVMPointerType>(type))
+    {
+      return rvsdg::TryGetOwnerNode<rvsdg::Node>(
+          *llvm::ConstantPointerNullOperation::Create(&rvsdgRegion, ConvertType(type)));
+    }
     return rvsdg::TryGetOwnerNode<rvsdg::Node>(
         *llvm::ConstantAggregateZeroOperation::Create(rvsdgRegion, ConvertType(type)));
   }
@@ -641,6 +713,44 @@ MlirToJlmConverter::ConvertOperation(
     auto operands = std::vector(inputs.begin(), inputs.end());
     auto memoryStateMergeOutput = jlm::llvm::MemoryStateMergeOperation::Create(operands);
     return rvsdg::TryGetOwnerNode<rvsdg::Node>(*memoryStateMergeOutput);
+  }
+  else if (
+      auto LambdaEntryMemstateSplitOp =
+          ::mlir::dyn_cast<::mlir::rvsdg::LambdaEntryMemoryStateSplitOperation>(&mlirOperation))
+  {
+    auto operands = std::vector(inputs.begin(), inputs.end());
+    auto lambdaMemoryStateSplitOutput = jlm::llvm::LambdaEntryMemoryStateSplitOperation::Create(
+        *operands.front(),
+        LambdaEntryMemstateSplitOp.getNumResults());
+    return rvsdg::TryGetOwnerNode<rvsdg::Node>(*lambdaMemoryStateSplitOutput.front());
+  }
+  else if (
+      auto LambdaExitMemstateMergeOp =
+          ::mlir::dyn_cast<::mlir::rvsdg::LambdaExitMemoryStateMergeOperation>(&mlirOperation))
+  {
+    auto operands = std::vector(inputs.begin(), inputs.end());
+    auto & lambdaMemoryStateMergeOutput =
+        jlm::llvm::LambdaExitMemoryStateMergeOperation::Create(rvsdgRegion, operands);
+    return rvsdg::TryGetOwnerNode<rvsdg::Node>(lambdaMemoryStateMergeOutput);
+  }
+  else if (
+      auto CallEntryMemstateMergeOp =
+          ::mlir::dyn_cast<::mlir::rvsdg::CallEntryMemoryStateMerge>(&mlirOperation))
+  {
+    auto operands = std::vector(inputs.begin(), inputs.end());
+    auto & callMemoryStateMergeOutput =
+        jlm::llvm::CallEntryMemoryStateMergeOperation::Create(rvsdgRegion, operands);
+    return rvsdg::TryGetOwnerNode<rvsdg::Node>(callMemoryStateMergeOutput);
+  }
+  else if (
+      auto CallExitMemstateSplitOp =
+          ::mlir::dyn_cast<::mlir::rvsdg::CallExitMemoryStateSplit>(&mlirOperation))
+  {
+    auto operands = std::vector(inputs.begin(), inputs.end());
+    auto callMemoryStateSplitOutput = jlm::llvm::CallExitMemoryStateSplitOperation::Create(
+        *operands.front(),
+        CallExitMemstateSplitOp.getNumResults());
+    return rvsdg::TryGetOwnerNode<rvsdg::Node>(*callMemoryStateSplitOutput.front());
   }
   else if (auto IOBarrierOp = ::mlir::dyn_cast<::mlir::jlm::IOBarrier>(&mlirOperation))
   {
@@ -1009,7 +1119,7 @@ MlirToJlmConverter::ConvertLambda(
 }
 
 std::unique_ptr<rvsdg::Type>
-MlirToJlmConverter::ConvertType(::mlir::Type & type)
+MlirToJlmConverter::ConvertType(const ::mlir::Type & type)
 {
   if (auto ctrlType = ::mlir::dyn_cast<::mlir::rvsdg::RVSDG_CTRLType>(type))
   {

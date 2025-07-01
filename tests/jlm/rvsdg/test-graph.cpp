@@ -22,13 +22,13 @@ region_contains_node(const jlm::rvsdg::Region * region, const jlm::rvsdg::Node *
   return false;
 }
 
-static int
+static void
 test_recursive_prune()
 {
   using namespace jlm::rvsdg;
   using namespace jlm::tests;
 
-  auto t = jlm::tests::valuetype::Create();
+  auto t = jlm::tests::ValueType::Create();
 
   Graph graph;
   auto imp = &jlm::tests::GraphImport::Create(graph, t, "i");
@@ -59,13 +59,11 @@ test_recursive_prune()
   assert(region_contains_node(n3->subregion(0), n4));
   assert(!region_contains_node(n3->subregion(0), n5));
   assert(!region_contains_node(n3->subregion(0), n6));
-
-  return 0;
 }
 
 JLM_UNIT_TEST_REGISTER("rvsdg/test-graph_prune", test_recursive_prune)
 
-static int
+static void
 test_empty_graph_pruning()
 {
   jlm::rvsdg::Graph graph;
@@ -77,18 +75,16 @@ test_empty_graph_pruning()
   assert(graph.GetRootRegion().nnodes() == 0);
 
   jlm::rvsdg::view(&graph.GetRootRegion(), stdout);
-
-  return 0;
 }
 
 JLM_UNIT_TEST_REGISTER("rvsdg/test-empty_graph_pruning", test_empty_graph_pruning)
 
-static int
+static void
 test_prune_replace()
 {
   using namespace jlm::rvsdg;
 
-  auto type = jlm::tests::valuetype::Create();
+  auto type = jlm::tests::ValueType::Create();
 
   Graph graph;
   auto n1 = jlm::tests::test_op::create(&graph.GetRootRegion(), {}, { type });
@@ -106,18 +102,16 @@ test_prune_replace()
   graph.PruneNodes();
 
   assert(!region_contains_node(&graph.GetRootRegion(), n2));
-
-  return 0;
 }
 
 JLM_UNIT_TEST_REGISTER("rvsdg/test-prune-replace", test_prune_replace)
 
-static int
+static void
 test_graph()
 {
   using namespace jlm::rvsdg;
 
-  auto type = jlm::tests::valuetype::Create();
+  auto type = jlm::tests::ValueType::Create();
 
   Graph graph;
 
@@ -128,20 +122,18 @@ test_graph()
   auto n2 = jlm::tests::test_op::create(&graph.GetRootRegion(), { n1->output(0) }, {});
   assert(n2);
   assert(n2->depth() == 1);
-
-  return 0;
 }
 
 JLM_UNIT_TEST_REGISTER("jlm/rvsdg/test-graph", test_graph)
 
-static int
+static void
 Copy()
 {
   using namespace jlm::rvsdg;
   using namespace jlm::tests;
 
   // Arrange
-  auto valueType = jlm::tests::valuetype::Create();
+  auto valueType = jlm::tests::ValueType::Create();
 
   Graph graph;
   auto & argument = TestGraphArgument::Create(graph.GetRootRegion(), nullptr, valueType);
@@ -165,8 +157,6 @@ Copy()
   auto copiedResult = newGraph->GetRootRegion().result(0);
   assert(is<TestGraphResult>(*copiedResult));
   assert(copiedResult->origin() == copiedNode->output(0));
-
-  return 0;
 }
 
 JLM_UNIT_TEST_REGISTER("jlm/rvsdg/test-graph-Copy", Copy)

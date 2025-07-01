@@ -16,8 +16,8 @@
 #include <jlm/llvm/opt/push.hpp>
 #include <jlm/util/Statistics.hpp>
 
-static const auto st = jlm::tests::statetype::Create();
-static const auto vt = jlm::tests::valuetype::Create();
+static const auto st = jlm::tests::StateType::Create();
+static const auto vt = jlm::tests::ValueType::Create();
 static jlm::util::StatisticsCollector statisticsCollector;
 
 static inline void
@@ -141,14 +141,12 @@ test_push_theta_bottom()
   assert(jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::ThetaNode>(*storenode->input(2)->origin()));
 }
 
-static int
+static void
 verify()
 {
   test_gamma();
   test_theta();
   test_push_theta_bottom();
-
-  return 0;
 }
 
 JLM_UNIT_TEST_REGISTER("jlm/llvm/opt/test-push", verify)

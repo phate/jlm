@@ -32,12 +32,10 @@ TestOperationEquality()
   assert(operation1 != operation2);
 }
 
-static int
+static void
 Test()
 {
   TestOperationEquality();
-
-  return 0;
 }
 
 JLM_UNIT_TEST_REGISTER("jlm/llvm/ir/operators/TestGetElementPtr", Test)

@@ -848,7 +848,7 @@ TestStatistics()
   assert(statistics.GetTime() != 0);
 }
 
-static int
+static void
 test()
 {
   TestStore1();
@@ -875,8 +875,6 @@ test()
   TestMemcpy();
 
   TestStatistics();
-
-  return 0;
 }
 
 JLM_UNIT_TEST_REGISTER("jlm/llvm/opt/alias-analyses/AgnosticModRefSummarizerTests", test)

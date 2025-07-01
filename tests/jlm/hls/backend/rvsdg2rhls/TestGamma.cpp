@@ -17,7 +17,7 @@ TestWithMatch()
 {
   using namespace jlm::llvm;
 
-  auto vt = jlm::tests::valuetype::Create();
+  auto vt = jlm::tests::ValueType::Create();
   auto ft = jlm::rvsdg::FunctionType::Create({ jlm::rvsdg::bittype::Create(1), vt, vt }, { vt });
 
   RvsdgModule rm(jlm::util::FilePath(""), "", "");
@@ -54,7 +54,7 @@ TestWithoutMatch()
 {
   using namespace jlm::llvm;
 
-  auto vt = jlm::tests::valuetype::Create();
+  auto vt = jlm::tests::ValueType::Create();
   auto ft =
       jlm::rvsdg::FunctionType::Create({ jlm::rvsdg::ControlType::Create(2), vt, vt }, { vt });
 
@@ -86,13 +86,11 @@ TestWithoutMatch()
   assert(jlm::rvsdg::Region::ContainsOperation<jlm::hls::MuxOperation>(*lambda->subregion(), true));
 }
 
-static int
+static void
 Test()
 {
   TestWithMatch();
   TestWithoutMatch();
-
-  return 0;
 }
 
 JLM_UNIT_TEST_REGISTER("jlm/hls/backend/rvsdg2rhls/TestGamma", Test)

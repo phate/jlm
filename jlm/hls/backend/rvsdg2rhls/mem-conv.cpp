@@ -652,8 +652,10 @@ ConnectRequestResponseMemPorts(
   auto lambdaRegion = lambda->subregion();
   auto portWidth = CalcualtePortWidth(
       std::make_tuple(originalLoadNodes, originalStoreNodes, originalDecoupledNodes));
-  auto responses =
-      mem_resp_op::create(*lambdaRegion->argument(argumentIndex), responseTypes, portWidth);
+  auto responses = MemoryResponseOperation::create(
+      *lambdaRegion->argument(argumentIndex),
+      responseTypes,
+      portWidth);
   // The (decoupled) load nodes are replaced so the pointer to the types will become invalid
   std::vector<std::shared_ptr<const rvsdg::ValueType>> loadTypes;
   std::vector<rvsdg::Output *> loadAddresses;
@@ -733,7 +735,7 @@ ReplaceLoad(
     states.push_back(replacedLoad->input(i)->origin());
   }
 
-  rvsdg::Node * newLoad;
+  rvsdg::Node * newLoad = nullptr;
   if (states.empty())
   {
     size_t load_capacity = 10;
@@ -776,7 +778,7 @@ ReplaceStore(
   {
     states.push_back(replacedStore->input(i)->origin());
   }
-  auto storeOuts = store_op::create(*addr, *data, states, *response);
+  auto storeOuts = StoreOperation::create(*addr, *data, states, *response);
   auto newStore = dynamic_cast<rvsdg::node_output *>(storeOuts[0])->node();
   // iterate over output states
   for (size_t i = 0; i < replacedStore->noutputs(); ++i)

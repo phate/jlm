@@ -33,7 +33,7 @@ namespace jlm::llvm
 class FunctionToPointerOperation;
 
 class ControlFlowGraph;
-class data_node;
+class DataNode;
 class ConstantFP;
 class PoisonValueOperation;
 class CallOperation;
@@ -103,7 +103,7 @@ private:
   convert_linkage(const llvm::linkage & linkage);
 
   void
-  convert_data_node(const data_node & node);
+  convert_data_node(const DataNode & node);
 
   void
   convert_function(const function_node & node);

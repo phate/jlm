@@ -17,7 +17,7 @@
 #include <jlm/rvsdg/view.hpp>
 #include <jlm/util/Statistics.hpp>
 
-static int
+static void
 GammaWithMatch()
 {
   using namespace jlm::llvm;
@@ -25,7 +25,7 @@ GammaWithMatch()
   using namespace jlm::util;
 
   // Arrange
-  auto valueType = valuetype::Create();
+  auto valueType = ValueType::Create();
   auto functionType = jlm::rvsdg::FunctionType::Create(
       { jlm::rvsdg::bittype::Create(1), valueType, valueType },
       { valueType });
@@ -59,15 +59,13 @@ GammaWithMatch()
 
   auto cfg = dynamic_cast<const function_node &>(*ipg.begin()).cfg();
   assert(cfg->nnodes() == 4);
-
-  return 0;
 }
 
 JLM_UNIT_TEST_REGISTER(
     "jlm/tests/jlm/llvm/backend/RvsdgToIpGraphConverterTests-GammaWithMatch",
     GammaWithMatch)
 
-static int
+static void
 GammaWithoutMatch()
 {
   using namespace jlm::llvm;
@@ -75,7 +73,7 @@ GammaWithoutMatch()
   using namespace jlm::util;
 
   // Arrange
-  auto valueType = valuetype::Create();
+  auto valueType = ValueType::Create();
   auto functionType = jlm::rvsdg::FunctionType::Create(
       { jlm::rvsdg::ControlType::Create(2), valueType, valueType },
       { valueType });
@@ -108,15 +106,13 @@ GammaWithoutMatch()
 
   auto cfg = dynamic_cast<const function_node &>(*ipg.begin()).cfg();
   assert(cfg->nnodes() == 4);
-
-  return 0;
 }
 
 JLM_UNIT_TEST_REGISTER(
     "jlm/tests/jlm/llvm/backend/RvsdgToIpGraphConverterTests-GammaWithoutMatch",
     GammaWithoutMatch)
 
-static int
+static void
 EmptyGammaWithTwoSubregionsAndMatch()
 {
   using namespace jlm::llvm;
@@ -124,7 +120,7 @@ EmptyGammaWithTwoSubregionsAndMatch()
   using namespace jlm::util;
 
   // Arrange
-  auto valueType = valuetype::Create();
+  auto valueType = ValueType::Create();
   const auto functionType = jlm::rvsdg::FunctionType::Create(
       { jlm::rvsdg::bittype::Create(32), valueType, valueType },
       { valueType });
@@ -163,15 +159,13 @@ EmptyGammaWithTwoSubregionsAndMatch()
 
   const auto controlFlowGraph = dynamic_cast<const function_node &>(*ipGraph.begin()).cfg();
   assert(is_closed(*controlFlowGraph));
-
-  return 0;
 }
 
 JLM_UNIT_TEST_REGISTER(
     "jlm/tests/jlm/llvm/backend/RvsdgToIpGraphConverterTests-EmptyGammaWithTwoSubregionsAndMatch",
     EmptyGammaWithTwoSubregionsAndMatch)
 
-static int
+static void
 EmptyGammaWithTwoSubregions()
 {
   using namespace jlm::llvm;
@@ -179,7 +173,7 @@ EmptyGammaWithTwoSubregions()
   using namespace jlm::util;
 
   // Arrange
-  auto valueType = valuetype::Create();
+  auto valueType = ValueType::Create();
   auto functionType = jlm::rvsdg::FunctionType::Create(
       { jlm::rvsdg::bittype::Create(32), valueType, valueType },
       { valueType });
@@ -225,15 +219,13 @@ EmptyGammaWithTwoSubregions()
 
   const auto controlFlowGraph = dynamic_cast<const function_node &>(*ipGraph.begin()).cfg();
   assert(is_closed(*controlFlowGraph));
-
-  return 0;
 }
 
 JLM_UNIT_TEST_REGISTER(
     "jlm/tests/jlm/llvm/backend/RvsdgToIpGraphConverterTests-EmptyGammaWithTwoSubregions",
     EmptyGammaWithTwoSubregions)
 
-static int
+static void
 EmptyGammaWithThreeSubregions()
 {
   using namespace jlm::llvm;
@@ -241,7 +233,7 @@ EmptyGammaWithThreeSubregions()
   using namespace jlm::util;
 
   // Arrange
-  auto valueType = jlm::tests::valuetype::Create();
+  auto valueType = ValueType::Create();
   auto functionType = jlm::rvsdg::FunctionType::Create(
       { jlm::rvsdg::bittype::Create(32), valueType, valueType },
       { valueType });
@@ -278,15 +270,13 @@ EmptyGammaWithThreeSubregions()
 
   auto cfg = dynamic_cast<const function_node &>(*ipg.begin()).cfg();
   assert(is_closed(*cfg));
-
-  return 0;
 }
 
 JLM_UNIT_TEST_REGISTER(
     "jlm/tests/jlm/llvm/backend/RvsdgToIpGraphConverterTests-EmptyGammaWithThreeSubregions",
     EmptyGammaWithThreeSubregions)
 
-static int
+static void
 PartialEmptyGamma()
 {
   using namespace jlm::llvm;
@@ -294,7 +284,7 @@ PartialEmptyGamma()
   using namespace jlm::util;
 
   // Arrange
-  auto valueType = jlm::tests::valuetype::Create();
+  auto valueType = ValueType::Create();
   auto functionType = jlm::rvsdg::FunctionType::Create(
       { jlm::rvsdg::bittype::Create(1), valueType },
       { valueType });
@@ -332,21 +322,19 @@ PartialEmptyGamma()
   std::cout << ControlFlowGraph::ToAscii(*cfg) << std::flush;
 
   assert(is_proper_structured(*cfg));
-
-  return 0;
 }
 
 JLM_UNIT_TEST_REGISTER(
     "jlm/tests/jlm/llvm/backend/RvsdgToIpGraphConverterTests-PartialEmptyGamma",
     PartialEmptyGamma)
 
-static int
+static void
 RecursiveData()
 {
   using namespace jlm::llvm;
 
   // Arrange
-  auto vt = jlm::tests::valuetype::Create();
+  auto vt = jlm::tests::ValueType::Create();
   auto pt = PointerType::Create();
 
   RvsdgModule rm(jlm::util::FilePath(""), "", "");
@@ -360,7 +348,7 @@ RecursiveData()
   auto r2 = pb.AddFixVar(pt);
   auto dep = pb.AddContextVar(*imp);
 
-  jlm::rvsdg::Output *delta1, *delta2;
+  jlm::rvsdg::Output *delta1 = nullptr, *delta2 = nullptr;
   {
     auto delta =
         delta::node::Create(region, vt, "test-delta1", linkage::external_linkage, "", false);
@@ -395,8 +383,6 @@ RecursiveData()
   // Assert
   auto & ipg = module->ipgraph();
   assert(ipg.nnodes() == 3);
-
-  return 0;
 }
 
 JLM_UNIT_TEST_REGISTER(

@@ -65,14 +65,14 @@ public:
   }
 };
 
-static int
+static void
 NormalizeUnaryOperation_Success()
 {
   using namespace jlm::rvsdg;
 
   // Arrange
   Graph graph;
-  const auto valueType = jlm::tests::valuetype::Create();
+  const auto valueType = jlm::tests::ValueType::Create();
 
   const jlm::tests::NullaryOperation nullaryOperation(valueType);
   const auto nullaryNode = &SimpleNode::Create(graph.GetRootRegion(), nullaryOperation, {});
@@ -97,21 +97,19 @@ NormalizeUnaryOperation_Success()
 
   const auto node = TryGetOwnerNode<SimpleNode>(*ex.origin());
   assert(node == nullaryNode);
-
-  return 0;
 }
 
 JLM_UNIT_TEST_REGISTER(
     "jlm/rvsdg/UnaryOperationTests-NormalizeUnaryOperation_Success",
     NormalizeUnaryOperation_Success)
 
-static int
+static void
 NormalizeUnaryOperation_Failure()
 {
   using namespace jlm::rvsdg;
 
   // Arrange
-  const auto valueType = jlm::tests::valuetype::Create();
+  const auto valueType = jlm::tests::ValueType::Create();
 
   Graph graph;
   auto i0 = &jlm::tests::GraphImport::Create(graph, valueType, "i0");
@@ -135,8 +133,6 @@ NormalizeUnaryOperation_Failure()
 
   const auto node = TryGetOwnerNode<SimpleNode>(*ex.origin());
   assert(node == unaryNode);
-
-  return 0;
 }
 
 JLM_UNIT_TEST_REGISTER(

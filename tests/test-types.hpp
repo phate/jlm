@@ -11,14 +11,12 @@
 namespace jlm::tests
 {
 
-class valuetype final : public rvsdg::ValueType
+class ValueType final : public rvsdg::ValueType
 {
 public:
-  virtual ~valuetype();
+  ~ValueType() noexcept override;
 
-  inline constexpr valuetype() noexcept
-      : rvsdg::ValueType()
-  {}
+  constexpr ValueType() noexcept = default;
 
   virtual std::string
   debug_string() const override;
@@ -29,18 +27,16 @@ public:
   [[nodiscard]] std::size_t
   ComputeHash() const noexcept override;
 
-  static std::shared_ptr<const valuetype>
+  static std::shared_ptr<const ValueType>
   Create();
 };
 
-class statetype final : public rvsdg::StateType
+class StateType final : public rvsdg::StateType
 {
 public:
-  virtual ~statetype();
+  ~StateType() noexcept override;
 
-  inline constexpr statetype() noexcept
-      : rvsdg::StateType()
-  {}
+  constexpr StateType() noexcept = default;
 
   virtual std::string
   debug_string() const override;
@@ -51,7 +47,7 @@ public:
   [[nodiscard]] std::size_t
   ComputeHash() const noexcept override;
 
-  static std::shared_ptr<const statetype>
+  static std::shared_ptr<const StateType>
   Create();
 };
 

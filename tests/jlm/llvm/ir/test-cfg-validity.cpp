@@ -17,7 +17,7 @@ test_single_operand_phi()
 {
   using namespace jlm::llvm;
 
-  auto vt = jlm::tests::valuetype::Create();
+  auto vt = jlm::tests::ValueType::Create();
 
   InterProceduralGraphModule im(jlm::util::FilePath(""), "", "");
 
@@ -36,12 +36,10 @@ test_single_operand_phi()
   assert(is_valid(cfg));
 }
 
-static int
+static void
 test()
 {
   test_single_operand_phi();
-
-  return 0;
 }
 
 JLM_UNIT_TEST_REGISTER("jlm/llvm/ir/test-cfg-validity", test)

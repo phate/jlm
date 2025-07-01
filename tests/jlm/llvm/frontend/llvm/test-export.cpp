@@ -13,17 +13,17 @@
 #include <jlm/llvm/ir/RvsdgModule.hpp>
 #include <jlm/util/Statistics.hpp>
 
-static int
+static void
 test()
 {
   using namespace jlm::llvm;
 
-  auto vt = jlm::tests::valuetype::Create();
+  auto vt = jlm::tests::ValueType::Create();
   auto ft = jlm::rvsdg::FunctionType::Create({ vt }, { vt });
 
   InterProceduralGraphModule im(jlm::util::FilePath(""), "", "");
 
-  auto d = data_node::Create(im.ipgraph(), "d", vt, linkage::external_linkage, "", false);
+  auto d = DataNode::Create(im.ipgraph(), "d", vt, linkage::external_linkage, "", false);
   auto f = function_node::create(im.ipgraph(), "f", ft, linkage::external_linkage);
 
   im.create_global_value(d);
@@ -40,8 +40,6 @@ test()
     a body, i.e., either a CFG or a initialization.
   */
   assert(rvsdgModule->Rvsdg().GetRootRegion().nresults() == 0);
-
-  return 0;
 }
 
 JLM_UNIT_TEST_REGISTER("jlm/llvm/frontend/llvm/test-export", test)

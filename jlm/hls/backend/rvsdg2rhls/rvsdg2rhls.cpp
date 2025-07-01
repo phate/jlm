@@ -119,7 +119,7 @@ trace_call(jlm::rvsdg::Input * input)
   auto graph = input->region()->graph();
 
   auto argument = dynamic_cast<const rvsdg::RegionArgument *>(input->origin());
-  const jlm::rvsdg::Output * result;
+  const rvsdg::Output * result = nullptr;
   if (auto theta = rvsdg::TryGetOwnerNode<rvsdg::ThetaNode>(*input->origin()))
   {
     result = trace_call(theta->MapOutputLoopVar(*input->origin()).input);
@@ -213,7 +213,7 @@ convert_alloca(rvsdg::Region * region)
           "",
           false);
       // create zero constant of allocated type
-      jlm::rvsdg::Output * cout;
+      rvsdg::Output * cout = nullptr;
       if (auto bt = dynamic_cast<const llvm::IntegerConstantOperation *>(&po->value_type()))
       {
         cout = llvm::IntegerConstantOperation::Create(
