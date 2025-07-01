@@ -309,7 +309,12 @@ JlmOptCommand::ToString() const
     optimizationArguments +=
         "--" + std::string(JlmOptCommandLineOptions::ToCommandLineArgument(optimization)) + " ";
 
-  auto outputFormatArgument = "--"
+  auto inputFormatArgument = "--input-format="
+                           + std::string(JlmOptCommandLineOptions::ToCommandLineArgument(
+                               CommandLineOptions_.GetInputFormat()))
+                           + " ";
+
+  auto outputFormatArgument = "--output-format="
                             + std::string(JlmOptCommandLineOptions::ToCommandLineArgument(
                                 CommandLineOptions_.GetOutputFormat()))
                             + " ";
@@ -334,6 +339,7 @@ JlmOptCommand::ToString() const
   return util::strfmt(
       ProgramName_,
       " ",
+      inputFormatArgument,
       outputFormatArgument,
       optimizationArguments,
       statisticsDirArgument,

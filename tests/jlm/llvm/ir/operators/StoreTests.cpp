@@ -23,7 +23,7 @@ StoreNonVolatileOperationEquality()
 
   // Arrange
   MemoryStateType memoryType;
-  auto valueType = jlm::tests::valuetype::Create();
+  auto valueType = jlm::tests::ValueType::Create();
   auto pointerType = PointerType::Create();
 
   StoreNonVolatileOperation operation1(valueType, 2, 4);
@@ -51,7 +51,7 @@ StoreVolatileOperationEquality()
 
   // Arrange
   MemoryStateType memoryType;
-  auto valueType = jlm::tests::valuetype::Create();
+  auto valueType = jlm::tests::ValueType::Create();
   auto pointerType = PointerType::Create();
 
   StoreVolatileOperation operation1(valueType, 2, 4);
@@ -79,7 +79,7 @@ StoreVolatileOperationCopy()
 
   // Arrange
   MemoryStateType memoryType;
-  auto valueType = jlm::tests::valuetype::Create();
+  auto valueType = jlm::tests::ValueType::Create();
   PointerType pointerType;
 
   StoreVolatileOperation operation(valueType, 2, 4);
@@ -102,7 +102,7 @@ StoreVolatileOperationAccessors()
 
   // Arrange
   MemoryStateType memoryType;
-  auto valueType = jlm::tests::valuetype::Create();
+  auto valueType = jlm::tests::ValueType::Create();
   PointerType pointerType;
 
   size_t alignment = 4;
@@ -132,7 +132,7 @@ StoreVolatileNodeCopy()
   auto pointerType = PointerType::Create();
   auto ioStateType = IOStateType::Create();
   auto memoryType = MemoryStateType::Create();
-  auto valueType = jlm::tests::valuetype::Create();
+  auto valueType = jlm::tests::ValueType::Create();
 
   jlm::rvsdg::Graph graph;
   auto & address1 = jlm::tests::GraphImport::Create(graph, pointerType, "address1");
@@ -169,7 +169,7 @@ TestCopy()
 {
   using namespace jlm::llvm;
 
-  auto valueType = jlm::tests::valuetype::Create();
+  auto valueType = jlm::tests::ValueType::Create();
   auto pointerType = PointerType::Create();
   auto memoryStateType = MemoryStateType::Create();
 
@@ -200,7 +200,7 @@ TestStoreMuxNormalization()
   using namespace jlm::llvm;
 
   // Arrange
-  auto vt = jlm::tests::valuetype::Create();
+  auto vt = jlm::tests::ValueType::Create();
   auto pt = PointerType::Create();
   auto mt = MemoryStateType::Create();
 
@@ -249,7 +249,7 @@ TestDuplicateStateReduction()
   using namespace jlm::llvm;
 
   // Arrange
-  auto valueType = jlm::tests::valuetype::Create();
+  auto valueType = jlm::tests::ValueType::Create();
   auto pointerType = PointerType::Create();
   auto memoryStateType = MemoryStateType::Create();
 
@@ -301,7 +301,7 @@ TestStoreAllocaReduction()
   using namespace jlm::llvm;
 
   // Arrange
-  auto vt = jlm::tests::valuetype::Create();
+  auto vt = jlm::tests::ValueType::Create();
   auto mt = MemoryStateType::Create();
   auto bt = jlm::rvsdg::bittype::Create(32);
 
@@ -355,7 +355,7 @@ TestStoreStoreReduction()
   using namespace jlm::llvm;
 
   // Arrange
-  auto vt = jlm::tests::valuetype::Create();
+  auto vt = jlm::tests::ValueType::Create();
   auto pt = PointerType::Create();
   auto mt = MemoryStateType::Create();
 

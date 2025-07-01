@@ -404,7 +404,7 @@ LambdaExitMemoryStateMergeNormalizeLoad()
   // Arrange
   const auto bit32Type = bittype::Create(32);
   const auto memoryStateType = jlm::llvm::MemoryStateType::Create();
-  const auto valueType = jlm::tests::valuetype::Create();
+  const auto valueType = jlm::tests::ValueType::Create();
 
   Graph graph;
   auto & memState1 = jlm::tests::GraphImport::Create(graph, memoryStateType, "memState1");
@@ -466,7 +466,7 @@ LambdaExitMemoryStateMergeNormalizeStore()
   // Arrange
   const auto bit32Type = bittype::Create(32);
   const auto memoryStateType = jlm::llvm::MemoryStateType::Create();
-  const auto valueType = jlm::tests::valuetype::Create();
+  const auto valueType = jlm::tests::ValueType::Create();
 
   Graph graph;
   auto & memState1 = jlm::tests::GraphImport::Create(graph, memoryStateType, "memState1");
@@ -527,7 +527,7 @@ LambdaExitMemoryStateMergeNormalizeAlloca()
   // Arrange
   const auto bit32Type = bittype::Create(32);
   const auto memoryStateType = jlm::llvm::MemoryStateType::Create();
-  const auto valueType = jlm::tests::valuetype::Create();
+  const auto valueType = jlm::tests::ValueType::Create();
 
   Graph graph;
   auto & memState1 = jlm::tests::GraphImport::Create(graph, memoryStateType, "memState1");

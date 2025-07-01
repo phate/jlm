@@ -19,13 +19,13 @@ test()
 {
   using namespace jlm::llvm;
 
-  auto vt = jlm::tests::valuetype::Create();
+  auto vt = jlm::tests::ValueType::Create();
   InterProceduralGraphModule im(jlm::util::FilePath(""), "", "");
 
-  auto d0 = data_node::Create(im.ipgraph(), "d0", vt, linkage::external_linkage, "", false);
+  auto d0 = DataNode::Create(im.ipgraph(), "d0", vt, linkage::external_linkage, "", false);
 
-  auto d1 = data_node::Create(im.ipgraph(), "d1", vt, linkage::external_linkage, "", false);
-  auto d2 = data_node::Create(im.ipgraph(), "d2", vt, linkage::external_linkage, "", false);
+  auto d1 = DataNode::Create(im.ipgraph(), "d1", vt, linkage::external_linkage, "", false);
+  auto d2 = DataNode::Create(im.ipgraph(), "d2", vt, linkage::external_linkage, "", false);
 
   auto v0 = im.create_global_value(d0);
   auto v1 = im.create_global_value(d1);

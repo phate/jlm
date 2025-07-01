@@ -14,7 +14,7 @@ ToAscii()
   using namespace jlm::tests;
 
   // Arrange
-  auto valueType = valuetype::Create();
+  auto valueType = ValueType::Create();
 
   Variable v0(valueType, "v0");
   Variable v1(valueType, "v1");
