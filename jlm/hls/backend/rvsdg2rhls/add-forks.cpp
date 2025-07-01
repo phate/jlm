@@ -60,7 +60,7 @@ ForkInsertion::AddForksToRegion(rvsdg::Region & region)
 void
 ForkInsertion::AddForkToOutput(rvsdg::Output & output)
 {
-  JLM_ASSERT(output.nusers() > 1 && output.nusers() != 0);
+  JLM_ASSERT(output.nusers() > 1);
 
   const auto isConstant = IsConstantFork(output);
   const auto & forkNode = ForkOperation::CreateNode(output.nusers(), output, isConstant);
