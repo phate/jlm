@@ -251,9 +251,9 @@ public:
   ConvertType(const rvsdg::Type & type);
 
   /**
-   * Converts an RVSDG type range to an MLIR RVSDG type range.
-   * \param types The RVSDG type range to be converted.
-   * \result The corresponding MLIR RVSDG type range.
+   * Generate a vector with memory state types.
+   * \param nresults The number of memory state types to generate.
+   * \result The vector with memory state types.
    */
   ::llvm::SmallVector<::mlir::Type>
   GetMemStateRange(size_t nresults);
