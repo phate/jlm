@@ -139,8 +139,10 @@ NormalizeSimpleOperationCne_Failure()
       CreateOpNode<jlm::tests::NullaryOperation>(graph.GetRootRegion(), valueType);
   auto & nullaryStateNode =
       CreateOpNode<jlm::tests::NullaryOperation>(graph.GetRootRegion(), stateType);
-  auto & unaryValueNode = CreateOpNode<jlm::tests::TestUnaryOperation>({ v1 }, valueType, valueType);
-  auto & unaryStateNode = CreateOpNode<jlm::tests::TestUnaryOperation>({ s1 }, stateType, stateType);
+  auto & unaryValueNode =
+      CreateOpNode<jlm::tests::TestUnaryOperation>({ v1 }, valueType, valueType);
+  auto & unaryStateNode =
+      CreateOpNode<jlm::tests::TestUnaryOperation>({ s1 }, stateType, stateType);
 
   auto & exNullaryValueNode = jlm::tests::GraphExport::Create(*nullaryValueNode.output(0), "nvn1");
   auto & exNullaryStateNode = jlm::tests::GraphExport::Create(*nullaryStateNode.output(0), "nvn2");
