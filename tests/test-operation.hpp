@@ -129,7 +129,10 @@ public:
       rvsdg::Output * operand,
       std::shared_ptr<const rvsdg::Type> dsttype)
   {
-    return &rvsdg::CreateOpNode<TestUnaryOperation>({ operand }, std::move(srctype), std::move(dsttype));
+    return &rvsdg::CreateOpNode<TestUnaryOperation>(
+        { operand },
+        std::move(srctype),
+        std::move(dsttype));
   }
 
   static inline rvsdg::Output *
@@ -138,7 +141,10 @@ public:
       rvsdg::Output * operand,
       std::shared_ptr<const rvsdg::Type> dsttype)
   {
-    return rvsdg::CreateOpNode<TestUnaryOperation>({ operand }, std::move(srctype), std::move(dsttype))
+    return rvsdg::CreateOpNode<TestUnaryOperation>(
+               { operand },
+               std::move(srctype),
+               std::move(dsttype))
         .output(0);
   }
 };
