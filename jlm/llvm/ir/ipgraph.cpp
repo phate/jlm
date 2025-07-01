@@ -93,43 +93,40 @@ InterProceduralGraph::find(const std::string & name) const noexcept
 
 InterProceduralGraphNode::~InterProceduralGraphNode() noexcept = default;
 
-/* function node */
-
-function_node::~function_node()
-{}
+FunctionNode::~FunctionNode() noexcept = default;
 
 const std::string &
-function_node::name() const noexcept
+FunctionNode::name() const noexcept
 {
   return name_;
 }
 
 const jlm::rvsdg::Type &
-function_node::type() const noexcept
+FunctionNode::type() const noexcept
 {
   return *FunctionType_;
 }
 
 std::shared_ptr<const jlm::rvsdg::Type>
-function_node::Type() const
+FunctionNode::Type() const
 {
   return FunctionType_;
 }
 
 const llvm::linkage &
-function_node::linkage() const noexcept
+FunctionNode::linkage() const noexcept
 {
   return linkage_;
 }
 
 bool
-function_node::hasBody() const noexcept
+FunctionNode::hasBody() const noexcept
 {
   return cfg() != nullptr;
 }
 
 void
-function_node::add_cfg(std::unique_ptr<llvm::ControlFlowGraph> cfg)
+FunctionNode::add_cfg(std::unique_ptr<ControlFlowGraph> cfg)
 {
   if (cfg->fcttype() != fcttype())
     throw util::error("CFG does not match the function node's type.");

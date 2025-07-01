@@ -23,7 +23,7 @@ Contains(const jlm::llvm::InterProceduralGraphModule & module, const std::string
 
   bool hasInstruction = false;
   auto controlFlowGraph =
-      dynamic_cast<const jlm::llvm::function_node *>(module.ipgraph().find("f"))->cfg();
+      dynamic_cast<const jlm::llvm::FunctionNode *>(module.ipgraph().find("f"))->cfg();
   auto basicBlock =
       dynamic_cast<const jlm::llvm::BasicBlock *>(controlFlowGraph->entry()->OutEdge(0)->sink());
   for (auto threeAddressCode : *basicBlock)

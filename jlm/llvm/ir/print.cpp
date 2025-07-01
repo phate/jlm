@@ -33,8 +33,7 @@ emit_tacs(const tacsvector_t & tacs)
 static std::string
 emit_function_node(const InterProceduralGraphNode & clg_node)
 {
-  JLM_ASSERT(dynamic_cast<const function_node *>(&clg_node));
-  auto & node = *static_cast<const function_node *>(&clg_node);
+  const auto & node = *util::AssertedCast<const FunctionNode>(&clg_node);
 
   const auto & fcttype = node.fcttype();
 
@@ -82,7 +81,7 @@ to_str(const InterProceduralGraph & clg)
 {
   static std::
       unordered_map<std::type_index, std::function<std::string(const InterProceduralGraphNode &)>>
-          map({ { typeid(function_node), emit_function_node },
+          map({ { typeid(FunctionNode), emit_function_node },
                 { typeid(DataNode), emit_data_node } });
 
   std::string str;
