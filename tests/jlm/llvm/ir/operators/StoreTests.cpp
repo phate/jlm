@@ -396,7 +396,7 @@ IOBarrierAllocaAddressNormalization()
   using namespace jlm::llvm;
 
   // Arrange
-  const auto valueType = jlm::tests::valuetype::Create();
+  const auto valueType = jlm::tests::ValueType::Create();
   const auto pointerType = PointerType::Create();
   const auto memoryStateType = MemoryStateType::Create();
   const auto bit32Type = jlm::rvsdg::bittype::Create(32);
