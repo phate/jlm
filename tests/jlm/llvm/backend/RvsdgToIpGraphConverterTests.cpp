@@ -57,7 +57,7 @@ GammaWithMatch()
   auto & ipg = module->ipgraph();
   assert(ipg.nnodes() == 1);
 
-  auto cfg = dynamic_cast<const function_node &>(*ipg.begin()).cfg();
+  auto cfg = dynamic_cast<const FunctionNode &>(*ipg.begin()).cfg();
   assert(cfg->nnodes() == 4);
 }
 
@@ -104,7 +104,7 @@ GammaWithoutMatch()
   auto & ipg = module->ipgraph();
   assert(ipg.nnodes() == 1);
 
-  auto cfg = dynamic_cast<const function_node &>(*ipg.begin()).cfg();
+  auto cfg = dynamic_cast<const FunctionNode &>(*ipg.begin()).cfg();
   assert(cfg->nnodes() == 4);
 }
 
@@ -157,7 +157,7 @@ EmptyGammaWithTwoSubregionsAndMatch()
   const auto & ipGraph = module->ipgraph();
   assert(ipGraph.nnodes() == 1);
 
-  const auto controlFlowGraph = dynamic_cast<const function_node &>(*ipGraph.begin()).cfg();
+  const auto controlFlowGraph = dynamic_cast<const FunctionNode &>(*ipGraph.begin()).cfg();
   assert(is_closed(*controlFlowGraph));
 }
 
@@ -217,7 +217,7 @@ EmptyGammaWithTwoSubregions()
   const auto & ipGraph = module->ipgraph();
   assert(ipGraph.nnodes() == 1);
 
-  const auto controlFlowGraph = dynamic_cast<const function_node &>(*ipGraph.begin()).cfg();
+  const auto controlFlowGraph = dynamic_cast<const FunctionNode &>(*ipGraph.begin()).cfg();
   assert(is_closed(*controlFlowGraph));
 }
 
@@ -268,7 +268,7 @@ EmptyGammaWithThreeSubregions()
   auto & ipg = module->ipgraph();
   assert(ipg.nnodes() == 1);
 
-  auto cfg = dynamic_cast<const function_node &>(*ipg.begin()).cfg();
+  auto cfg = dynamic_cast<const FunctionNode &>(*ipg.begin()).cfg();
   assert(is_closed(*cfg));
 }
 
@@ -318,7 +318,7 @@ PartialEmptyGamma()
   auto & ipg = module->ipgraph();
   assert(ipg.nnodes() == 1);
 
-  auto cfg = dynamic_cast<const function_node &>(*ipg.begin()).cfg();
+  auto cfg = dynamic_cast<const FunctionNode &>(*ipg.begin()).cfg();
   std::cout << ControlFlowGraph::ToAscii(*cfg) << std::flush;
 
   assert(is_proper_structured(*cfg));
