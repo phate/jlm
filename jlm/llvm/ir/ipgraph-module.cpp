@@ -8,7 +8,6 @@
 namespace jlm::llvm
 {
 
-gblvalue::~gblvalue()
-{}
+GlobalValue::~GlobalValue() noexcept = default;
 
 }
