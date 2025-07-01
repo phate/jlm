@@ -480,7 +480,7 @@ declare_globals(::llvm::Module & lm, context & ctx)
     auto linkage = convert_linkage(gv.getLinkage());
     auto section = gv.getSection().str();
 
-    return data_node::Create(
+    return DataNode::Create(
         ctx.module().ipgraph(),
         name,
         type,
@@ -529,7 +529,7 @@ create_initialization(::llvm::GlobalVariable & gv, context & ctx)
 static void
 convert_global_value(::llvm::GlobalVariable & gv, context & ctx)
 {
-  auto v = static_cast<const gblvalue *>(ctx.lookup_value(&gv));
+  auto v = static_cast<const GlobalValue *>(ctx.lookup_value(&gv));
 
   ctx.set_node(v->node());
   v->node()->set_initialization(create_initialization(gv, ctx));

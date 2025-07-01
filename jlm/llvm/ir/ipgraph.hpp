@@ -363,13 +363,13 @@ private:
   const Variable * value_;
 };
 
-class data_node final : public InterProceduralGraphNode
+class DataNode final : public InterProceduralGraphNode
 {
 public:
-  virtual ~data_node();
+  ~DataNode() noexcept override;
 
 private:
-  inline data_node(
+  DataNode(
       InterProceduralGraph & clg,
       const std::string & name,
       std::shared_ptr<const jlm::rvsdg::ValueType> valueType,
@@ -436,7 +436,7 @@ public:
     init_ = std::move(init);
   }
 
-  static data_node *
+  static DataNode *
   Create(
       InterProceduralGraph & clg,
       const std::string & name,
@@ -445,8 +445,8 @@ public:
       std::string section,
       bool constant)
   {
-    std::unique_ptr<data_node> node(
-        new data_node(clg, name, std::move(valueType), linkage, std::move(section), constant));
+    std::unique_ptr<DataNode> node(
+        new DataNode(clg, name, std::move(valueType), linkage, std::move(section), constant));
     auto ptr = node.get();
     clg.add_node(std::move(node));
     return ptr;

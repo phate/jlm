@@ -66,8 +66,7 @@ emit_function_node(const InterProceduralGraphNode & clg_node)
 static std::string
 emit_data_node(const InterProceduralGraphNode & clg_node)
 {
-  JLM_ASSERT(dynamic_cast<const data_node *>(&clg_node));
-  auto & node = *static_cast<const data_node *>(&clg_node);
+  const auto & node = *util::AssertedCast<const DataNode>(&clg_node);
   auto init = node.initialization();
 
   std::string str = node.name();
@@ -83,7 +82,7 @@ to_str(const InterProceduralGraph & clg)
   static std::
       unordered_map<std::type_index, std::function<std::string(const InterProceduralGraphNode &)>>
           map({ { typeid(FunctionNode), emit_function_node },
-                { typeid(data_node), emit_data_node } });
+                { typeid(DataNode), emit_data_node } });
 
   std::string str;
   for (const auto & node : clg)

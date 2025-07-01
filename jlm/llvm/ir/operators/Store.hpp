@@ -248,14 +248,37 @@ public:
    * =>
    * so1 = StoreNonVolatileOperation a v si1
    *
-   * @param operation The load operation on which the transformation is performed.
-   * @param operands The operands of the load node.
+   * @param operation The StoreNonVolatileOperation on which the transformation is performed.
+   * @param operands The operands of the StoreNonVolatileOperation node.
    *
-   * @return If the normalization could be applied, then the results of the load operation after
-   * the transformation. Otherwise, std::nullopt.
+   * @return If the normalization could be applied, then the results of the
+   * StoreNonVolatileOperation node after the transformation. Otherwise, std::nullopt.
    */
   static std::optional<std::vector<rvsdg::Output *>>
   NormalizeDuplicateStates(
+      const StoreNonVolatileOperation & operation,
+      const std::vector<rvsdg::Output *> & operands);
+
+  /**
+   * \brief Redirect the address operand of the StoreNonVolatileOperation from an IOBarrierOperation
+   * when it can be determined that it originates from an AllocaOperation.
+   *
+   * a1 memState = AllocaOperation ...
+   * a2 = IOBarrierOperation a1 ioState
+   * ... = StoreNonVolatileOperation a2 ...
+   * =>
+   * a1 memState = AllocaOperation ...
+   * a2 = IOBarrierOperation a1 ioState
+   * ... = StoreNonVolatileOperation a1 ...
+   *
+   * @param operation The StoreNonVolatileOperation on which the transformation is performed.
+   * @param operands The operands of the StoreNonVolatileOperation node.
+   *
+   * @return If the normalization could be applied, then the results of the
+   * StoreNonVolatileOperation node after the transformation. Otherwise, std::nullopt.
+   */
+  static std::optional<std::vector<rvsdg::Output *>>
+  NormalizeIOBarrierAllocaAddress(
       const StoreNonVolatileOperation & operation,
       const std::vector<rvsdg::Output *> & operands);
 

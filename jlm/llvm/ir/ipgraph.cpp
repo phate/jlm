@@ -139,38 +139,35 @@ FunctionNode::add_cfg(std::unique_ptr<ControlFlowGraph> cfg)
 fctvariable::~fctvariable()
 {}
 
-/* data node */
-
-data_node::~data_node()
-{}
+DataNode::~DataNode() noexcept = default;
 
 const std::string &
-data_node::name() const noexcept
+DataNode::name() const noexcept
 {
   return name_;
 }
 
 const PointerType &
-data_node::type() const noexcept
+DataNode::type() const noexcept
 {
   static PointerType pointerType;
   return pointerType;
 }
 
 std::shared_ptr<const rvsdg::Type>
-data_node::Type() const
+DataNode::Type() const
 {
   return PointerType::Create();
 }
 
 const llvm::linkage &
-data_node::linkage() const noexcept
+DataNode::linkage() const noexcept
 {
   return linkage_;
 }
 
 bool
-data_node::hasBody() const noexcept
+DataNode::hasBody() const noexcept
 {
   return initialization() != nullptr;
 }

@@ -1895,7 +1895,7 @@ IpGraphToLlvmConverter::convert_function(const FunctionNode & node)
 }
 
 void
-IpGraphToLlvmConverter::convert_data_node(const data_node & node)
+IpGraphToLlvmConverter::convert_data_node(const DataNode & node)
 {
   if (!node.initialization())
     return;
@@ -1941,7 +1941,7 @@ IpGraphToLlvmConverter::convert_ipgraph()
   {
     auto v = jm.variable(&node);
 
-    if (auto dataNode = dynamic_cast<const data_node *>(&node))
+    if (auto dataNode = dynamic_cast<const DataNode *>(&node))
     {
       auto type = typeConverter.ConvertJlmType(*dataNode->GetValueType(), lm.getContext());
       auto linkage = convert_linkage(dataNode->linkage());
@@ -1970,7 +1970,7 @@ IpGraphToLlvmConverter::convert_ipgraph()
   // convert all nodes
   for (const auto & node : jm.ipgraph())
   {
-    if (auto n = dynamic_cast<const data_node *>(&node))
+    if (auto n = dynamic_cast<const DataNode *>(&node))
     {
       convert_data_node(*n);
     }

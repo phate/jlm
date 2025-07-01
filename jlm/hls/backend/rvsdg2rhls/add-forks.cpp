@@ -5,62 +5,89 @@
 
 #include <jlm/hls/backend/rvsdg2rhls/add-forks.hpp>
 #include <jlm/hls/ir/hls.hpp>
-#include <jlm/rvsdg/bitstring/constant.hpp>
-#include <jlm/rvsdg/traverser.hpp>
 
 namespace jlm::hls
 {
 
 void
-add_forks(rvsdg::Region * region)
+ForkInsertion::Run(rvsdg::RvsdgModule & module, util::StatisticsCollector &)
 {
-  for (size_t i = 0; i < region->narguments(); ++i)
+  AddForksToRegion(module.Rvsdg().GetRootRegion());
+}
+
+void
+ForkInsertion::CreateAndRun(
+    rvsdg::RvsdgModule & module,
+    util::StatisticsCollector & statisticsCollector)
+{
+  ForkInsertion forkInsertion;
+  forkInsertion.Run(module, statisticsCollector);
+}
+
+void
+ForkInsertion::AddForksToRegion(rvsdg::Region & region)
+{
+  // Add forks to region arguments
+  for (const auto argument : region.Arguments())
   {
-    auto arg = region->argument(i);
-    if (arg->nusers() > 1)
-    {
-      std::vector<jlm::rvsdg::Input *> users;
-      users.insert(users.begin(), arg->begin(), arg->end());
-      auto fork = ForkOperation::create(arg->nusers(), *arg);
-      for (size_t j = 0; j < users.size(); j++)
-      {
-        users[j]->divert_to(fork[j]);
-      }
-    }
+    if (argument->nusers() > 1)
+      AddForkToOutput(*argument);
   }
-  for (auto & node : rvsdg::TopDownTraverser(region))
+
+  for (auto & node : region.Nodes())
   {
-    if (auto structnode = dynamic_cast<rvsdg::StructuralNode *>(node))
+    // Add forks to subregions of structural nodes
+    if (const auto structuralNode = dynamic_cast<rvsdg::StructuralNode *>(&node))
     {
-      for (size_t n = 0; n < structnode->nsubregions(); n++)
+      for (auto & subregion : structuralNode->Subregions())
       {
-        add_forks(structnode->subregion(n));
+        AddForksToRegion(subregion);
       }
     }
-    // If a node has no inputs it is a constant
-    bool isConstant = node->ninputs() == 0;
-    for (size_t i = 0; i < node->noutputs(); ++i)
+
+    // Add forks to outputs of nodes
+    for (size_t n = 0; n < node.noutputs(); n++)
     {
-      auto out = node->output(i);
-      if (out->nusers() > 1)
+      const auto output = node.output(n);
+      if (output->nusers() > 1)
       {
-        std::vector<rvsdg::Input *> users(out->begin(), out->end());
-        auto fork = ForkOperation::create(out->nusers(), *out, isConstant);
-        for (size_t j = 0; j < users.size(); j++)
-        {
-          users[j]->divert_to(fork[j]);
-        }
+        AddForkToOutput(*output);
       }
     }
   }
 }
 
 void
-add_forks(llvm::RvsdgModule & rvsdgModule)
+ForkInsertion::AddForkToOutput(rvsdg::Output & output)
 {
-  auto & graph = rvsdgModule.Rvsdg();
-  auto root = &graph.GetRootRegion();
-  add_forks(root);
+  JLM_ASSERT(output.nusers() > 1);
+
+  const auto isConstant = IsConstantFork(output);
+  const auto & forkNode = ForkOperation::CreateNode(output.nusers(), output, isConstant);
+
+  size_t currentForkOutput = 0;
+  while (output.nusers() != 1) // The fork node should be the only user left in the end
+  {
+    auto userIt = output.Users().begin();
+    if (&*userIt == forkNode.input(0))
+    {
+      // Ignore the added fork node
+      userIt = std::next(userIt);
+    }
+
+    JLM_ASSERT(currentForkOutput < forkNode.noutputs());
+    userIt->divert_to(forkNode.output(currentForkOutput));
+    currentForkOutput++;
+  }
+
+  JLM_ASSERT(currentForkOutput == forkNode.noutputs());
+}
+
+bool
+ForkInsertion::IsConstantFork(const rvsdg::Output & output)
+{
+  const auto node = rvsdg::TryGetOwnerNode<rvsdg::Node>(output);
+  return node != nullptr ? node->ninputs() == 0 : false;
 }
 
 }
