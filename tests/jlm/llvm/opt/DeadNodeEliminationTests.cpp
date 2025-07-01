@@ -36,8 +36,8 @@ RootRegion()
   RvsdgModule rvsdgModule(jlm::util::FilePath(""), "", "");
   auto & graph = rvsdgModule.Rvsdg();
 
-  jlm::tests::GraphImport::Create(graph, jlm::tests::valuetype::Create(), "x");
-  auto y = &jlm::tests::GraphImport::Create(graph, jlm::tests::valuetype::Create(), "y");
+  jlm::tests::GraphImport::Create(graph, jlm::tests::ValueType::Create(), "x");
+  auto y = &jlm::tests::GraphImport::Create(graph, jlm::tests::ValueType::Create(), "y");
 
   GraphExport::Create(*y, "z");
   jlm::rvsdg::view(graph, stdout);
@@ -58,7 +58,7 @@ Gamma1()
   using namespace jlm::llvm;
 
   // Arrange
-  auto valueType = jlm::tests::valuetype::Create();
+  auto valueType = jlm::tests::ValueType::Create();
   auto controlType = jlm::rvsdg::ControlType::Create(2);
 
   RvsdgModule rvsdgModule(jlm::util::FilePath(""), "", "");
@@ -103,7 +103,7 @@ Gamma2()
   using namespace jlm::llvm;
 
   // Arrange
-  auto valueType = jlm::tests::valuetype::Create();
+  auto valueType = jlm::tests::ValueType::Create();
   auto controlType = jlm::rvsdg::ControlType::Create(2);
 
   RvsdgModule rvsdgModule(jlm::util::FilePath(""), "", "");
@@ -138,7 +138,7 @@ Theta()
   using namespace jlm::llvm;
 
   // Arrange
-  auto valueType = jlm::tests::valuetype::Create();
+  auto valueType = jlm::tests::ValueType::Create();
   auto controlType = jlm::rvsdg::ControlType::Create(2);
 
   RvsdgModule rvsdgModule(jlm::util::FilePath(""), "", "");
@@ -186,7 +186,7 @@ NestedTheta()
   using namespace jlm::llvm;
 
   // Arrange
-  auto valueType = jlm::tests::valuetype::Create();
+  auto valueType = jlm::tests::ValueType::Create();
   auto controlType = jlm::rvsdg::ControlType::Create(2);
 
   RvsdgModule rvsdgModule(jlm::util::FilePath(""), "", "");
@@ -235,7 +235,7 @@ EvolvingTheta()
   using namespace jlm::llvm;
 
   // Arrange
-  auto valueType = jlm::tests::valuetype::Create();
+  auto valueType = jlm::tests::ValueType::Create();
   auto controlType = jlm::rvsdg::ControlType::Create(2);
 
   RvsdgModule rvsdgModule(jlm::util::FilePath(""), "", "");
@@ -279,7 +279,7 @@ Lambda()
   using namespace jlm::llvm;
 
   // Arrange
-  auto valueType = jlm::tests::valuetype::Create();
+  auto valueType = jlm::tests::ValueType::Create();
 
   RvsdgModule rvsdgModule(jlm::util::FilePath(""), "", "");
   auto & graph = rvsdgModule.Rvsdg();
@@ -323,7 +323,7 @@ Phi()
   using namespace jlm::rvsdg;
 
   // Arrange
-  auto valueType = jlm::tests::valuetype::Create();
+  auto valueType = jlm::tests::ValueType::Create();
   auto functionType = FunctionType::Create({ valueType }, { valueType });
 
   jlm::llvm::RvsdgModule rvsdgModule(jlm::util::FilePath(""), "", "");
@@ -449,7 +449,7 @@ Delta()
   using namespace jlm::rvsdg;
 
   // Arrange
-  auto valueType = jlm::tests::valuetype::Create();
+  auto valueType = jlm::tests::ValueType::Create();
 
   jlm::llvm::RvsdgModule rvsdgModule(jlm::util::FilePath(""), "", "");
   auto & rvsdg = rvsdgModule.Rvsdg();

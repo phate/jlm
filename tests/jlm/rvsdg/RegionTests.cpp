@@ -18,7 +18,7 @@ IteratorRanges()
   using namespace jlm::tests;
 
   // Arrange
-  auto valueType = valuetype::Create();
+  auto valueType = ValueType::Create();
 
   jlm::rvsdg::Graph graph;
 
@@ -87,7 +87,7 @@ Contains()
   using namespace jlm::tests;
 
   // Arrange
-  auto valueType = valuetype::Create();
+  auto valueType = ValueType::Create();
 
   jlm::rvsdg::Graph graph;
   auto import = &jlm::tests::GraphImport::Create(graph, valueType, "import");
@@ -180,7 +180,7 @@ RemoveResultsWhere()
   jlm::rvsdg::Graph rvsdg;
   jlm::rvsdg::Region region(&rvsdg.GetRootRegion(), &rvsdg);
 
-  auto valueType = jlm::tests::valuetype::Create();
+  auto valueType = ValueType::Create();
   auto node = jlm::tests::test_op::Create(&region, {}, {}, { valueType });
 
   auto & result0 = TestGraphResult::Create(*node->output(0), nullptr);
@@ -233,7 +233,7 @@ RemoveArgumentsWhere()
   jlm::rvsdg::Graph rvsdg;
   jlm::rvsdg::Region region(&rvsdg.GetRootRegion(), &rvsdg);
 
-  auto valueType = jlm::tests::valuetype::Create();
+  auto valueType = ValueType::Create();
   auto & argument0 = TestGraphArgument::Create(region, nullptr, valueType);
   auto & argument1 = TestGraphArgument::Create(region, nullptr, valueType);
   auto & argument2 = TestGraphArgument::Create(region, nullptr, valueType);
@@ -285,7 +285,7 @@ PruneArguments()
   jlm::rvsdg::Graph rvsdg;
   jlm::rvsdg::Region region(&rvsdg.GetRootRegion(), &rvsdg);
 
-  auto valueType = jlm::tests::valuetype::Create();
+  auto valueType = ValueType::Create();
   auto & argument0 = TestGraphArgument::Create(region, nullptr, valueType);
   TestGraphArgument::Create(region, nullptr, valueType);
   auto & argument2 = TestGraphArgument::Create(region, nullptr, valueType);
@@ -430,7 +430,7 @@ BottomNodeTests()
   using namespace jlm::rvsdg;
   using namespace jlm::tests;
 
-  auto valueType = valuetype::Create();
+  auto valueType = jlm::tests::ValueType::Create();
 
   // Arrange
   Graph rvsdg;

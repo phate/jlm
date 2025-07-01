@@ -1,0 +1,21 @@
+name: MLIR
+
+on:
+  pull_request:
+    branches: [ master ]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  polybench:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: "Build jlm"
+        uses: ./.github/actions/BuildJlm
+        with:
+          enable-mlir: true
+      - name: "Run polybench"
+        run: ./scripts/run-polybench.sh --mlir

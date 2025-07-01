@@ -16,7 +16,7 @@ TestOutputRemoval()
 
   // Arrange
   rvsdg::Graph rvsdg;
-  auto valueType = tests::valuetype::Create();
+  auto valueType = tests::ValueType::Create();
 
   auto structuralNode = tests::structural_node::create(&rvsdg.GetRootRegion(), 1);
   auto output0 = rvsdg::StructuralOutput::create(structuralNode, valueType);

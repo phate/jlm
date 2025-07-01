@@ -26,7 +26,7 @@ test_main()
         operands);
   };
 
-  auto valueType = jlm::tests::valuetype::Create();
+  auto valueType = jlm::tests::ValueType::Create();
 
   auto i = &jlm::tests::GraphImport::Create(graph, valueType, "i");
 
