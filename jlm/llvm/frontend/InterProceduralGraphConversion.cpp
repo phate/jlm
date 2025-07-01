@@ -1009,7 +1009,7 @@ ConvertDataNodeInitialization(
 
 static rvsdg::Output *
 ConvertDataNode(
-    const data_node & dataNode,
+    const DataNode & dataNode,
     RegionalizedVariableMap & regionalizedVariableMap,
     InterProceduralGraphToRvsdgStatisticsCollector & statisticsCollector)
 {
@@ -1083,7 +1083,7 @@ ConvertInterProceduralGraphNode(
   if (auto functionNode = dynamic_cast<const function_node *>(&ipgNode))
     return ConvertFunctionNode(*functionNode, regionalizedVariableMap, statisticsCollector);
 
-  if (auto dataNode = dynamic_cast<const data_node *>(&ipgNode))
+  if (auto dataNode = dynamic_cast<const DataNode *>(&ipgNode))
     return ConvertDataNode(*dataNode, regionalizedVariableMap, statisticsCollector);
 
   JLM_UNREACHABLE("This should have never happened.");
