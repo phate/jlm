@@ -13,17 +13,17 @@
 namespace jlm::tests
 {
 
-class unit_test
+class UnitTest
 {
 public:
-  explicit unit_test(void (*v)())
+  explicit UnitTest(void (*v)())
       : verify(v)
   {}
 
   void (*verify)();
 };
 
-using unit_test_map_t = std::map<std::string, std::unique_ptr<unit_test>>;
+using unit_test_map_t = std::map<std::string, std::unique_ptr<UnitTest>>;
 
 static unit_test_map_t &
 GetUnitTestMap()
@@ -36,7 +36,7 @@ void
 register_unit_test(const std::string & name, void (*verify)())
 {
   assert(GetUnitTestMap().find(name) == GetUnitTestMap().end());
-  GetUnitTestMap().insert(std::make_pair(name, std::make_unique<unit_test>(verify)));
+  GetUnitTestMap().insert(std::make_pair(name, std::make_unique<UnitTest>(verify)));
 }
 
 void
