@@ -96,12 +96,12 @@ public:
 
 /* unary operation */
 
-class unary_op final : public rvsdg::UnaryOperation
+class TestUnaryOperation final : public rvsdg::UnaryOperation
 {
 public:
-  virtual ~unary_op() noexcept;
+  ~TestUnaryOperation() noexcept override;
 
-  inline unary_op(
+  TestUnaryOperation(
       std::shared_ptr<const rvsdg::Type> srctype,
       std::shared_ptr<const rvsdg::Type> dsttype) noexcept
       : rvsdg::UnaryOperation(std::move(srctype), std::move(dsttype))
@@ -129,7 +129,10 @@ public:
       rvsdg::Output * operand,
       std::shared_ptr<const rvsdg::Type> dsttype)
   {
-    return &rvsdg::CreateOpNode<unary_op>({ operand }, std::move(srctype), std::move(dsttype));
+    return &rvsdg::CreateOpNode<TestUnaryOperation>(
+        { operand },
+        std::move(srctype),
+        std::move(dsttype));
   }
 
   static inline rvsdg::Output *
@@ -138,7 +141,10 @@ public:
       rvsdg::Output * operand,
       std::shared_ptr<const rvsdg::Type> dsttype)
   {
-    return rvsdg::CreateOpNode<unary_op>({ operand }, std::move(srctype), std::move(dsttype))
+    return rvsdg::CreateOpNode<TestUnaryOperation>(
+               { operand },
+               std::move(srctype),
+               std::move(dsttype))
         .output(0);
   }
 };
@@ -146,13 +152,13 @@ public:
 static inline bool
 is_unary_op(const rvsdg::Operation & op) noexcept
 {
-  return dynamic_cast<const unary_op *>(&op);
+  return dynamic_cast<const TestUnaryOperation *>(&op);
 }
 
 static inline bool
 is_unary_node(const rvsdg::Node * node) noexcept
 {
-  return jlm::rvsdg::is<unary_op>(node);
+  return jlm::rvsdg::is<TestUnaryOperation>(node);
 }
 
 /* binary operation */

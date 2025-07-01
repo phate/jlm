@@ -224,7 +224,7 @@ FlattenAssociativeBinaryOperation_NoNewOperands()
   auto i0 = &jlm::tests::GraphImport::Create(graph, valueType, "i0");
   auto i1 = &jlm::tests::GraphImport::Create(graph, valueType, "i1");
 
-  jlm::tests::unary_op unaryOperation(valueType, valueType);
+  jlm::tests::TestUnaryOperation unaryOperation(valueType, valueType);
   jlm::tests::binary_op binaryOperation(
       valueType,
       valueType,
@@ -338,7 +338,7 @@ NormalizeBinaryOperation_SingleOperand()
   // Arrange
   auto valueType = jlm::tests::ValueType::Create();
 
-  jlm::tests::unary_op unaryOperation(valueType, valueType);
+  jlm::tests::TestUnaryOperation unaryOperation(valueType, valueType);
   ::BinaryOperation binaryOperation(valueType, valueType, jlm::rvsdg::BinaryOperation::flags::none);
 
   Graph graph;
