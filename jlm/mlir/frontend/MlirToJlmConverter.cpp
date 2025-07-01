@@ -48,7 +48,21 @@ std::unique_ptr<llvm::RvsdgModule>
 MlirToJlmConverter::ConvertMlir(std::unique_ptr<::mlir::Block> & block)
 {
   auto & topNode = block->front();
+  if (auto module = ::mlir::dyn_cast<::mlir::ModuleOp>(topNode))
+  {
+    auto & newTopNode = module.getBodyRegion().front().front();
+    auto omegaNode = ::mlir::dyn_cast<::mlir::rvsdg::OmegaNode>(newTopNode);
+    if (!omegaNode)
+    {
+      JLM_UNREACHABLE("frontend : Top node in module op is not an OmegaNode.");
+    }
+    return ConvertOmega(omegaNode);
+  }
   auto omegaNode = ::mlir::dyn_cast<::mlir::rvsdg::OmegaNode>(topNode);
+  if (!omegaNode)
+  {
+    JLM_UNREACHABLE("frontend : Top node is not an OmegaNode.");
+  }
   return ConvertOmega(omegaNode);
 }
 
@@ -508,7 +522,6 @@ MlirToJlmConverter::ConvertOperation(
         op,
         std::vector<jlm::rvsdg::Output *>(inputs.begin(), inputs.end()));
   }
-
   else if (::mlir::isa<::mlir::rvsdg::OmegaNode>(&mlirOperation))
   {
     // Omega doesn't have a corresponding RVSDG node so we return nullptr
@@ -596,6 +609,16 @@ MlirToJlmConverter::ConvertOperation(
     auto intType = ::mlir::cast<::mlir::IntegerType>(type);
     return rvsdg::TryGetOwnerNode<rvsdg::Node>(
         *llvm::TruncOperation::create(intType.getIntOrFloatBitWidth(), inputs[0]));
+  }
+  else if (auto constant = ::mlir::dyn_cast<::mlir::arith::ConstantFloatOp>(&mlirOperation))
+  {
+    auto type = constant.getType();
+    auto floatType = ::mlir::cast<::mlir::FloatType>(type);
+
+    llvm::fpsize size = ConvertFPSize(floatType.getWidth());
+    auto & output =
+        rvsdg::SimpleNode::Create(rvsdgRegion, llvm::ConstantFP(size, constant.value()), {});
+    return &output;
   }
 
   // Binary Integer Comparision operations
@@ -744,6 +767,21 @@ MlirToJlmConverter::ConvertOperation(
     auto mallocOutputs = jlm::llvm::malloc_op::create(inputs[0]);
     return rvsdg::TryGetOwnerNode<rvsdg::Node>(*mallocOutputs[0]);
   }
+  else if (auto IOBarrierOp = ::mlir::dyn_cast<::mlir::jlm::IOBarrier>(&mlirOperation))
+  {
+    // auto operands = std::vector(inputs.begin(), inputs.end());
+    auto type = IOBarrierOp.getResult().getType();
+    auto ioBarrierOp = jlm::llvm::IOBarrierOperation(ConvertType(type));
+    return &rvsdg::SimpleNode::Create(
+        rvsdgRegion,
+        ioBarrierOp,
+        std::vector(inputs.begin(), inputs.end()));
+  }
+  else if (auto MallocOp = ::mlir::dyn_cast<::mlir::jlm::Malloc>(&mlirOperation))
+  {
+    auto mallocOutputs = jlm::llvm::malloc_op::create(inputs[0]);
+    return rvsdg::TryGetOwnerNode<rvsdg::Node>(*mallocOutputs[0]);
+  }
   else if (auto StoreOp = ::mlir::dyn_cast<::mlir::jlm::Store>(&mlirOperation))
   {
     auto address = inputs[0];
@@ -846,6 +884,12 @@ MlirToJlmConverter::ConvertOperation(
 
     rvsdgThetaNode->set_predicate(regionResults[0]);
 
+    auto loopvars = rvsdgThetaNode->GetLoopVars();
+    for (size_t i = 1; i < regionResults.size(); i++)
+    {
+      loopvars[i - 1].post->divert_to(regionResults[i]);
+    }
+
     return rvsdgThetaNode;
   }
   else if (auto mlirDeltaNode = ::mlir::dyn_cast<::mlir::rvsdg::DeltaNode>(&mlirOperation))
@@ -862,7 +906,7 @@ MlirToJlmConverter::ConvertOperation(
         &rvsdgRegion,
         outputValueType,
         mlirDeltaNode.getName().str(),
-        jlm::llvm::FromString(linakgeString),
+        ConvertLinkage(linakgeString),
         mlirDeltaNode.getSection().str(),
         mlirDeltaNode.getConstant());
 
@@ -899,11 +943,36 @@ MlirToJlmConverter::ConvertOperation(
         mlirMatch.getMapping().size() // numAlternatives
         ));
   }
+  else if (auto selectOp = ::mlir::dyn_cast<::mlir::arith::SelectOp>(&mlirOperation))
+  {
+    auto type = selectOp.getType();
+    std::shared_ptr<jlm::rvsdg::Type> jlmType = ConvertType(type);
+    auto selectOperation = jlm::llvm::SelectOperation(jlmType);
+    return &rvsdg::SimpleNode::Create(
+        rvsdgRegion,
+        selectOperation,
+        std::vector(inputs.begin(), inputs.end()));
+  }
+  else if (auto mlirOmegaResult = ::mlir::dyn_cast<::mlir::rvsdg::OmegaResult>(&mlirOperation))
+  {
+    for (auto input : inputs)
+    {
+      auto origin = rvsdg::TryGetOwnerNode<rvsdg::Node>(*input);
+      if (auto lambda = dynamic_cast<rvsdg::LambdaNode *>(origin))
+      {
+        auto op = dynamic_cast<llvm::LlvmLambdaOperation *>(&lambda->GetOperation());
+        jlm::llvm::GraphExport::Create(*input, op->name());
+      }
+      else if (auto delta = dynamic_cast<llvm::delta::node *>(origin))
+      {
+        jlm::llvm::GraphExport::Create(*input, delta->GetOperation().name());
+      }
+    }
+    return nullptr;
+  }
   // ** endregion Structural nodes **
-
   else if (
       ::mlir::isa<::mlir::rvsdg::LambdaResult>(&mlirOperation)
-      || ::mlir::isa<::mlir::rvsdg::OmegaResult>(&mlirOperation)
       || ::mlir::isa<::mlir::rvsdg::GammaResult>(&mlirOperation)
       || ::mlir::isa<::mlir::rvsdg::ThetaResult>(&mlirOperation)
       || ::mlir::isa<::mlir::rvsdg::DeltaResult>(&mlirOperation)
@@ -914,6 +983,7 @@ MlirToJlmConverter::ConvertOperation(
   }
   else
   {
+    mlirOperation.dump();
     auto message = util::strfmt(
         "Operation not implemented: ",
         mlirOperation.getName().getStringRef().str(),
@@ -942,6 +1012,57 @@ MlirToJlmConverter::ConvertFPSize(unsigned int size)
     JLM_UNREACHABLE(message.c_str());
     break;
   }
+}
+
+llvm::linkage
+MlirToJlmConverter::ConvertLinkage(std::string stringValue)
+{
+  if (!stringValue.compare("external_linkage"))
+  {
+    return llvm::linkage::external_linkage;
+  }
+  else if (!stringValue.compare("available_externally_linkage"))
+  {
+    return llvm::linkage::available_externally_linkage;
+  }
+  else if (!stringValue.compare("link_once_any_linkage"))
+  {
+    return llvm::linkage::link_once_any_linkage;
+  }
+  else if (!stringValue.compare("link_once_odr_linkage"))
+  {
+    return llvm::linkage::link_once_odr_linkage;
+  }
+  else if (!stringValue.compare("weak_any_linkage"))
+  {
+    return llvm::linkage::weak_any_linkage;
+  }
+  else if (!stringValue.compare("weak_odr_linkage"))
+  {
+    return llvm::linkage::weak_odr_linkage;
+  }
+  else if (!stringValue.compare("appending_linkage"))
+  {
+    return llvm::linkage::appending_linkage;
+  }
+  else if (!stringValue.compare("internal_linkage"))
+  {
+    return llvm::linkage::internal_linkage;
+  }
+  else if (!stringValue.compare("private_linkage"))
+  {
+    return llvm::linkage::private_linkage;
+  }
+  else if (!stringValue.compare("external_weak_linkage"))
+  {
+    return llvm::linkage::external_weak_linkage;
+  }
+  else if (!stringValue.compare("common_linkage"))
+  {
+    return llvm::linkage::common_linkage;
+  }
+  auto message = util::strfmt("Unsupported linkage: ", stringValue, "\n");
+  JLM_UNREACHABLE(message.c_str());
 }
 
 jlm::rvsdg::Node *
@@ -1067,6 +1188,7 @@ MlirToJlmConverter::ConvertType(const ::mlir::Type & type)
   }
   else
   {
+    type.dump();
     JLM_UNREACHABLE("Type conversion not implemented\n");
   }
 }

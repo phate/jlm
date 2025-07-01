@@ -8,13 +8,12 @@
 
 #include <jlm/llvm/ir/operators/delta.hpp>
 #include <jlm/llvm/ir/operators/lambda.hpp>
+#include <jlm/llvm/ir/operators/operators.hpp>
 #include <jlm/llvm/ir/RvsdgModule.hpp>
 #include <jlm/rvsdg/bitstring/comparison.hpp>
 #include <jlm/rvsdg/bitstring/constant.hpp>
 #include <jlm/rvsdg/gamma.hpp>
 #include <jlm/rvsdg/theta.hpp>
-
-#include <jlm/llvm/ir/operators/operators.hpp>
 
 #include <JLM/JLMDialect.h>
 #include <JLM/JLMOps.h>
@@ -23,6 +22,7 @@
 
 #include <mlir/Dialect/Arith/IR/Arith.h>
 #include <mlir/Dialect/LLVMIR/LLVMDialect.h>
+#include <mlir/Dialect/Math/IR/Math.h>
 
 namespace jlm::mlir
 {
@@ -41,6 +41,8 @@ public:
     Context_->getOrLoadDialect<::mlir::arith::ArithDialect>();
     // Load the LLVM dialect
     Context_->getOrLoadDialect<::mlir::LLVM::LLVMDialect>();
+    // Load the Math dialect
+    Context_->getOrLoadDialect<::mlir::math::MathDialect>();
   }
 
   MlirToJlmConverter(const MlirToJlmConverter &) = delete;
@@ -199,6 +201,14 @@ private:
    */
   llvm::fpsize
   ConvertFPSize(unsigned int size);
+
+  /**
+   * Converts a string representing a linkage to jlm::llvm::linkage.
+   * \param stringValue The string to be converted.
+   * \result The linkage.
+   */
+  llvm::linkage
+  ConvertLinkage(std::string stringValue);
 
   /**
    * Converts an MLIR omega operation and insterst it into an RVSDG region.
