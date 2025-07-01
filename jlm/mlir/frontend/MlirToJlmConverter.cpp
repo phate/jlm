@@ -887,7 +887,7 @@ MlirToJlmConverter::ConvertOperation(
     auto loopvars = rvsdgThetaNode->GetLoopVars();
     for (size_t i = 1; i < regionResults.size(); i++)
     {
-      loopvars[i-1].post->divert_to(regionResults[i]);
+      loopvars[i - 1].post->divert_to(regionResults[i]);
     }
 
     return rvsdgThetaNode;

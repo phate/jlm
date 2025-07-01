@@ -255,7 +255,8 @@ public:
    * \param types The RVSDG type range to be converted.
    * \result The corresponding MLIR RVSDG type range.
    */
-  ::llvm::SmallVector<::mlir::Type> GetMemStateRange(size_t nresults);
+  ::llvm::SmallVector<::mlir::Type>
+  GetMemStateRange(size_t nresults);
 
   std::unique_ptr<::mlir::OpBuilder> Builder_;
   std::unique_ptr<::mlir::MLIRContext> Context_;
