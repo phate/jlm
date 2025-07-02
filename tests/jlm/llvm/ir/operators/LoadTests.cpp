@@ -7,14 +7,14 @@
 #include <test-registry.hpp>
 #include <test-types.hpp>
 
-#include <jlm/rvsdg/NodeNormalization.hpp>
-#include <jlm/rvsdg/view.hpp>
-
 #include <jlm/llvm/ir/operators/alloca.hpp>
+#include <jlm/llvm/ir/operators/IOBarrier.hpp>
 #include <jlm/llvm/ir/operators/Load.hpp>
 #include <jlm/llvm/ir/operators/MemoryStateOperations.hpp>
 #include <jlm/llvm/ir/operators/Store.hpp>
 #include <jlm/llvm/ir/RvsdgModule.hpp>
+#include <jlm/rvsdg/NodeNormalization.hpp>
+#include <jlm/rvsdg/view.hpp>
 
 static void
 OperationEquality()
@@ -518,6 +518,73 @@ TestLoadLoadReduction()
 JLM_UNIT_TEST_REGISTER(
     "jlm/llvm/ir/operators/LoadNonVolatileTests-LoadLoadReduction",
     TestLoadLoadReduction)
+
+static void
+IOBarrierAllocaAddressNormalization()
+{
+  using namespace jlm::llvm;
+
+  // Arrange
+  const auto valueType = jlm::tests::ValueType::Create();
+  const auto pointerType = PointerType::Create();
+  const auto memoryStateType = MemoryStateType::Create();
+  const auto bit32Type = jlm::rvsdg::bittype::Create(32);
+  const auto ioStateType = IOStateType::Create();
+
+  jlm::rvsdg::Graph graph;
+  const auto addressImport = &jlm::tests::GraphImport::Create(graph, pointerType, "address");
+  const auto sizeImport = &jlm::tests::GraphImport::Create(graph, bit32Type, "value");
+  auto memoryStateImport = &jlm::tests::GraphImport::Create(graph, memoryStateType, "memState");
+  auto ioStateImport = &jlm::tests::GraphImport::Create(graph, ioStateType, "ioState");
+
+  auto allocaResults = AllocaOperation::create(valueType, sizeImport, 4);
+  auto & ioBarrierNode = jlm::rvsdg::CreateOpNode<IOBarrierOperation>(
+      { allocaResults[0], ioStateImport },
+      pointerType);
+
+  auto & loadNode1 = LoadNonVolatileOperation::CreateNode(
+      *ioBarrierNode.output(0),
+      { allocaResults[1] },
+      valueType,
+      4);
+
+  auto & loadNode2 =
+      LoadNonVolatileOperation::CreateNode(*addressImport, { memoryStateImport }, valueType, 4);
+
+  auto & ex1 = GraphExport::Create(*loadNode1.output(0), "store1");
+  auto & ex2 = GraphExport::Create(*loadNode2.output(0), "store2");
+
+  jlm::rvsdg::view(&graph.GetRootRegion(), stdout);
+
+  // Act
+  const auto successLoadNode1 = jlm::rvsdg::ReduceNode<LoadNonVolatileOperation>(
+      LoadNonVolatileOperation::NormalizeIOBarrierAllocaAddress,
+      loadNode1);
+
+  const auto successLoadNode2 = jlm::rvsdg::ReduceNode<LoadNonVolatileOperation>(
+      LoadNonVolatileOperation::NormalizeIOBarrierAllocaAddress,
+      loadNode2);
+  graph.PruneNodes();
+
+  jlm::rvsdg::view(&graph.GetRootRegion(), stdout);
+
+  // Assert
+  assert(successLoadNode1);
+  assert(
+      jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*ex1.origin())->input(0)->origin()
+      == allocaResults[0]);
+
+  // There is no IOBarrierOperation node as producer for the load address. We expect the
+  // normalization not to trigger.
+  assert(!successLoadNode2);
+  assert(
+      jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*ex2.origin())->input(0)->origin()
+      == addressImport);
+}
+
+JLM_UNIT_TEST_REGISTER(
+    "jlm/llvm/ir/operators/LoadTests-IOBarrierAllocaAddressNormalization",
+    IOBarrierAllocaAddressNormalization)
 
 static void
 LoadVolatileOperationEquality()
