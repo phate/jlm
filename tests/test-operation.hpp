@@ -224,12 +224,10 @@ private:
   enum BinaryOperation::flags flags_;
 };
 
-/* structural operation */
-
-class structural_op final : public rvsdg::StructuralOperation
+class TestStructuralOperation final : public rvsdg::StructuralOperation
 {
 public:
-  virtual ~structural_op() noexcept;
+  ~TestStructuralOperation() noexcept override;
 
   virtual std::string
   debug_string() const override;
@@ -253,7 +251,7 @@ private:
   {}
 
 public:
-  [[nodiscard]] const structural_op &
+  [[nodiscard]] const TestStructuralOperation &
   GetOperation() const noexcept override;
 
   StructuralNodeInput &

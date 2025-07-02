@@ -137,28 +137,27 @@ test_op::copy() const
   return std::make_unique<test_op>(*this);
 }
 
-structural_op::~structural_op() noexcept
-{}
+TestStructuralOperation::~TestStructuralOperation() noexcept = default;
 
 std::string
-structural_op::debug_string() const
+TestStructuralOperation::debug_string() const
 {
-  return "STRUCTURAL_TEST_NODE";
+  return "TestStructuralOperation";
 }
 
 std::unique_ptr<rvsdg::Operation>
-structural_op::copy() const
+TestStructuralOperation::copy() const
 {
-  return std::make_unique<structural_op>(*this);
+  return std::make_unique<TestStructuralOperation>(*this);
 }
 
 structural_node::~structural_node()
 {}
 
-[[nodiscard]] const structural_op &
+[[nodiscard]] const TestStructuralOperation &
 structural_node::GetOperation() const noexcept
 {
-  static structural_op singleton;
+  static TestStructuralOperation singleton;
   return singleton;
 }
 
