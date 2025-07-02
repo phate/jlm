@@ -199,7 +199,8 @@ FlattenAssociativeBinaryOperation_NotAssociativeBinary()
 
   // Act
   auto node = TryGetOwnerNode<SimpleNode>(*ex.origin());
-  auto success = ReduceNode<jlm::tests::TestBinaryOperation>(FlattenAssociativeBinaryOperation, *node);
+  auto success =
+      ReduceNode<jlm::tests::TestBinaryOperation>(FlattenAssociativeBinaryOperation, *node);
 
   jlm::rvsdg::view(graph, stdout);
 
@@ -240,7 +241,8 @@ FlattenAssociativeBinaryOperation_NoNewOperands()
 
   // Act
   auto node = TryGetOwnerNode<SimpleNode>(*ex.origin());
-  auto success = ReduceNode<jlm::tests::TestBinaryOperation>(FlattenAssociativeBinaryOperation, *node);
+  auto success =
+      ReduceNode<jlm::tests::TestBinaryOperation>(FlattenAssociativeBinaryOperation, *node);
 
   jlm::rvsdg::view(graph, stdout);
 
@@ -279,7 +281,8 @@ FlattenAssociativeBinaryOperation_Success()
 
   // Act
   auto node = TryGetOwnerNode<SimpleNode>(*ex.origin());
-  auto success = ReduceNode<jlm::tests::TestBinaryOperation>(FlattenAssociativeBinaryOperation, *node);
+  auto success =
+      ReduceNode<jlm::tests::TestBinaryOperation>(FlattenAssociativeBinaryOperation, *node);
 
   jlm::rvsdg::view(graph, stdout);
 
