@@ -18,12 +18,12 @@ test_main()
   auto type = jlm::tests::StateType::Create();
   auto value_type = jlm::tests::ValueType::Create();
 
-  auto n1 = jlm::tests::test_op::create(&graph.GetRootRegion(), {}, { type });
+  auto n1 = jlm::tests::TestOperation::create(&graph.GetRootRegion(), {}, { type });
 
   bool error_handler_called = false;
   try
   {
-    jlm::tests::test_op::Create(&graph.GetRootRegion(), { value_type }, { n1->output(0) }, {});
+    jlm::tests::TestOperation::Create(&graph.GetRootRegion(), { value_type }, { n1->output(0) }, {});
   }
   catch (jlm::util::TypeError & e)
   {

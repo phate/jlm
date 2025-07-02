@@ -63,9 +63,9 @@ test_theta()
 
   auto ct = jlm::rvsdg::ControlType::Create(2);
 
-  jlm::tests::test_op nop({}, { vt });
-  jlm::tests::test_op bop({ vt, vt }, { vt });
-  jlm::tests::test_op sop({ vt, st }, { st });
+  jlm::tests::TestOperation nop({}, { vt });
+  jlm::tests::TestOperation bop({ vt, vt }, { vt });
+  jlm::tests::TestOperation sop({ vt, st }, { st });
 
   RvsdgModule rm(jlm::util::FilePath(""), "", "");
   auto & graph = rm.Rvsdg();

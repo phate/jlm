@@ -23,9 +23,9 @@ test_pullin_top()
   using namespace jlm::llvm;
 
   auto ct = jlm::rvsdg::ControlType::Create(2);
-  jlm::tests::test_op uop({ vt }, { vt });
-  jlm::tests::test_op bop({ vt, vt }, { vt });
-  jlm::tests::test_op cop({ ct, vt }, { ct });
+  jlm::tests::TestOperation uop({ vt }, { vt });
+  jlm::tests::TestOperation bop({ vt, vt }, { vt });
+  jlm::tests::TestOperation cop({ ct, vt }, { ct });
 
   RvsdgModule rm(jlm::util::FilePath(""), "", "");
   auto & graph = rm.Rvsdg();

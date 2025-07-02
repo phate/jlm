@@ -46,12 +46,12 @@ ToAscii()
   std::cout << tac5String << "\n" << std::flush;
 
   // Assert
-  assert(tac0String == "test_op");
-  assert(tac1String == "test_op v0");
-  assert(tac2String == "test_op v0, v1");
-  assert(tac3String == "tv0 = test_op");
-  assert(tac4String == "tv1, tv2 = test_op");
-  assert(tac5String == "tv3, tv4 = test_op v0, v1");
+  assert(tac0String == "TestOperation");
+  assert(tac1String == "TestOperation v0");
+  assert(tac2String == "TestOperation v0, v1");
+  assert(tac3String == "tv0 = TestOperation");
+  assert(tac4String == "tv1, tv2 = TestOperation");
+  assert(tac5String == "tv3, tv4 = TestOperation v0, v1");
 }
 
 JLM_UNIT_TEST_REGISTER("jlm/llvm/ir/ThreeAddressCodeTests-ToAscii", ToAscii);
