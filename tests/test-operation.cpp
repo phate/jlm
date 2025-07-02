@@ -54,45 +54,47 @@ TestUnaryOperation::copy() const
   return std::make_unique<TestUnaryOperation>(*this);
 }
 
-binary_op::~binary_op() noexcept
-{}
+TestBinaryOperation::~TestBinaryOperation() noexcept = default;
 
 bool
-binary_op::operator==(const Operation & other) const noexcept
+TestBinaryOperation::operator==(const Operation & other) const noexcept
 {
-  auto op = dynamic_cast<const binary_op *>(&other);
+  auto op = dynamic_cast<const TestBinaryOperation *>(&other);
   return op && op->argument(0) == argument(0) && op->result(0) == result(0);
 }
 
 rvsdg::binop_reduction_path_t
-binary_op::can_reduce_operand_pair(const rvsdg::Output *, const rvsdg::Output *) const noexcept
+TestBinaryOperation::can_reduce_operand_pair(const rvsdg::Output *, const rvsdg::Output *)
+    const noexcept
 {
   return rvsdg::binop_reduction_none;
 }
 
 rvsdg::Output *
-binary_op::reduce_operand_pair(rvsdg::binop_reduction_path_t, rvsdg::Output *, rvsdg::Output *)
-    const
+TestBinaryOperation::reduce_operand_pair(
+    rvsdg::binop_reduction_path_t,
+    rvsdg::Output *,
+    rvsdg::Output *) const
 {
   return nullptr;
 }
 
 enum rvsdg::BinaryOperation::flags
-binary_op::flags() const noexcept
+TestBinaryOperation::flags() const noexcept
 {
   return flags_;
 }
 
 std::string
-binary_op::debug_string() const
+TestBinaryOperation::debug_string() const
 {
-  return "BINARY_TEST_OP";
+  return "TestBinaryOperation";
 }
 
 std::unique_ptr<rvsdg::Operation>
-binary_op::copy() const
+TestBinaryOperation::copy() const
 {
-  return std::make_unique<binary_op>(*this);
+  return std::make_unique<TestBinaryOperation>(*this);
 }
 
 test_op::~test_op()
