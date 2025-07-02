@@ -161,14 +161,12 @@ is_unary_node(const rvsdg::Node * node) noexcept
   return jlm::rvsdg::is<TestUnaryOperation>(node);
 }
 
-/* binary operation */
-
-class binary_op final : public rvsdg::BinaryOperation
+class TestBinaryOperation final : public rvsdg::BinaryOperation
 {
 public:
-  virtual ~binary_op() noexcept;
+  ~TestBinaryOperation() noexcept override;
 
-  inline binary_op(
+  TestBinaryOperation(
       const std::shared_ptr<const rvsdg::Type> & srctype,
       std::shared_ptr<const rvsdg::Type> dsttype,
       const enum BinaryOperation::flags & flags) noexcept
@@ -203,7 +201,7 @@ public:
       rvsdg::Output * op1,
       rvsdg::Output * op2)
   {
-    binary_op op(srctype, std::move(dsttype), BinaryOperation::flags::none);
+    TestBinaryOperation op(srctype, std::move(dsttype), BinaryOperation::flags::none);
     return &rvsdg::SimpleNode::Create(*op1->region(), op, { op1, op2 });
   }
 
@@ -214,7 +212,11 @@ public:
       rvsdg::Output * op1,
       rvsdg::Output * op2)
   {
-    return rvsdg::CreateOpNode<binary_op>({ op1, op2 }, srctype, std::move(dsttype), flags::none)
+    return rvsdg::CreateOpNode<TestBinaryOperation>(
+               { op1, op2 },
+               srctype,
+               std::move(dsttype),
+               flags::none)
         .output(0);
   }
 
