@@ -31,7 +31,8 @@ test_main()
   auto i = &jlm::tests::GraphImport::Create(graph, valueType, "i");
 
   auto o1 = jlm::tests::TestOperation::create(&graph.GetRootRegion(), {}, { valueType })->output(0);
-  auto o2 = jlm::tests::TestOperation::create(&graph.GetRootRegion(), { i }, { valueType })->output(0);
+  auto o2 =
+      jlm::tests::TestOperation::create(&graph.GetRootRegion(), { i }, { valueType })->output(0);
   auto o3 = jlm::tests::create_testop(&graph.GetRootRegion(), {}, { valueType })[0];
   auto o4 = jlm::tests::create_testop(&graph.GetRootRegion(), { i }, { valueType })[0];
 

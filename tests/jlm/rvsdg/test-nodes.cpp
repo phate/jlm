@@ -100,7 +100,8 @@ test_node_depth()
   auto x = &jlm::tests::GraphImport::Create(graph, vt, "x");
 
   auto null = jlm::tests::TestOperation::create(&graph.GetRootRegion(), {}, { vt });
-  auto bin = jlm::tests::TestOperation::create(&graph.GetRootRegion(), { null->output(0), x }, { vt });
+  auto bin =
+      jlm::tests::TestOperation::create(&graph.GetRootRegion(), { null->output(0), x }, { vt });
   auto un = jlm::tests::TestOperation::create(&graph.GetRootRegion(), { bin->output(0) }, { vt });
 
   jlm::tests::GraphExport::Create(*un->output(0), "x");

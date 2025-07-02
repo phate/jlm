@@ -23,7 +23,11 @@ test_main()
   bool error_handler_called = false;
   try
   {
-    jlm::tests::TestOperation::Create(&graph.GetRootRegion(), { value_type }, { n1->output(0) }, {});
+    jlm::tests::TestOperation::Create(
+        &graph.GetRootRegion(),
+        { value_type },
+        { n1->output(0) },
+        {});
   }
   catch (jlm::util::TypeError & e)
   {
