@@ -212,7 +212,11 @@ public:
       rvsdg::Output * op1,
       rvsdg::Output * op2)
   {
-    return rvsdg::CreateOpNode<TestBinaryOperation>({ op1, op2 }, srctype, std::move(dsttype), flags::none)
+    return rvsdg::CreateOpNode<TestBinaryOperation>(
+               { op1, op2 },
+               srctype,
+               std::move(dsttype),
+               flags::none)
         .output(0);
   }
 
