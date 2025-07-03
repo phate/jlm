@@ -249,6 +249,7 @@ eliminate_dead_gamma(rvsdg::GammaNode * gamma)
   // make tginversion go mayham and duplicate loops
   if (gamma->IsDead())
   {
+    JLM_UNREACHABLE("Ah we reached this part here.");
     remove(gamma);
     return true;
   }
