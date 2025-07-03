@@ -30,7 +30,7 @@ OperationEquality()
   LoadNonVolatileOperation operation2(pointerType, 2, 4);
   LoadNonVolatileOperation operation3(valueType, 4, 4);
   LoadNonVolatileOperation operation4(valueType, 2, 8);
-  jlm::tests::test_op operation5({ PointerType::Create() }, { PointerType::Create() });
+  jlm::tests::TestOperation operation5({ PointerType::Create() }, { PointerType::Create() });
 
   // Assert
   assert(operation1 == operation1);
@@ -600,7 +600,7 @@ LoadVolatileOperationEquality()
   LoadVolatileOperation operation2(pointerType, 2, 4);
   LoadVolatileOperation operation3(valueType, 4, 4);
   LoadVolatileOperation operation4(valueType, 2, 8);
-  jlm::tests::test_op operation5({ PointerType::Create() }, { PointerType::Create() });
+  jlm::tests::TestOperation operation5({ PointerType::Create() }, { PointerType::Create() });
 
   // Assert
   assert(operation1 == operation1);

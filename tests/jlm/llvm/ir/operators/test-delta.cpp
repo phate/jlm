@@ -84,7 +84,7 @@ TestRemoveDeltaInputsWhere()
   auto deltaInput1 = deltaNode->add_ctxvar(x)->input();
   deltaNode->add_ctxvar(x)->input();
 
-  auto result = jlm::rvsdg::CreateOpNode<jlm::tests::test_op>(
+  auto result = jlm::rvsdg::CreateOpNode<jlm::tests::TestOperation>(
                     { deltaInput1->argument() },
                     std::vector<std::shared_ptr<const Type>>{ valueType },
                     std::vector<std::shared_ptr<const Type>>{ valueType })
@@ -153,7 +153,7 @@ TestPruneDeltaInputs()
   auto deltaInput1 = deltaNode->add_ctxvar(x)->input();
   deltaNode->add_ctxvar(x);
 
-  auto result = jlm::rvsdg::CreateOpNode<jlm::tests::test_op>(
+  auto result = jlm::rvsdg::CreateOpNode<jlm::tests::TestOperation>(
                     { deltaInput1->argument() },
                     std::vector<std::shared_ptr<const Type>>{ valueType },
                     std::vector<std::shared_ptr<const Type>>{ valueType })

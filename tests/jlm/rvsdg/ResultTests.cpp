@@ -70,7 +70,7 @@ ResultInputTypeMismatch()
   bool exceptionWasCaught = false;
   try
   {
-    auto simpleNode = test_op::create(structuralNode->subregion(0), {}, { stateType });
+    auto simpleNode = TestOperation::create(structuralNode->subregion(0), {}, { stateType });
 
     // Type mismatch between simple node output and structural output
     TestGraphResult::Create(*simpleNode->output(0), structuralOutput);

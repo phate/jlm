@@ -394,18 +394,18 @@ private:
   }
 };
 
-class test_op final : public rvsdg::SimpleOperation
+class TestOperation final : public rvsdg::SimpleOperation
 {
 public:
-  virtual ~test_op();
+  ~TestOperation() noexcept override;
 
-  inline test_op(
+  TestOperation(
       std::vector<std::shared_ptr<const rvsdg::Type>> arguments,
       std::vector<std::shared_ptr<const rvsdg::Type>> results)
       : SimpleOperation(std::move(arguments), std::move(results))
   {}
 
-  test_op(const test_op &) = default;
+  TestOperation(const TestOperation &) = default;
 
   virtual bool
   operator==(const Operation & other) const noexcept override;
@@ -426,7 +426,7 @@ public:
     for (const auto & operand : operands)
       operand_types.push_back(operand->Type());
 
-    test_op op(std::move(operand_types), std::move(result_types));
+    TestOperation op(std::move(operand_types), std::move(result_types));
     return &rvsdg::SimpleNode::Create(*region, op, { operands });
   }
 
@@ -437,7 +437,7 @@ public:
       const std::vector<rvsdg::Output *> & operands,
       std::vector<std::shared_ptr<const rvsdg::Type>> resultTypes)
   {
-    test_op op(std::move(operandTypes), std::move(resultTypes));
+    TestOperation op(std::move(operandTypes), std::move(resultTypes));
     return &rvsdg::SimpleNode::Create(*region, op, { operands });
   }
 };
@@ -451,7 +451,7 @@ create_testop_tac(
   for (const auto & arg : arguments)
     argument_types.push_back(arg->Type());
 
-  test_op op(std::move(argument_types), std::move(result_types));
+  TestOperation op(std::move(argument_types), std::move(result_types));
   return llvm::ThreeAddressCode::create(op, arguments);
 }
 
@@ -465,11 +465,11 @@ create_testop(
   for (const auto & operand : operands)
     operand_types.push_back(operand->Type());
 
-  return operands.empty() ? outputs(&rvsdg::CreateOpNode<test_op>(
+  return operands.empty() ? outputs(&rvsdg::CreateOpNode<TestOperation>(
                                 *region,
                                 std::move(operand_types),
                                 std::move(result_types)))
-                          : outputs(&rvsdg::CreateOpNode<test_op>(
+                          : outputs(&rvsdg::CreateOpNode<TestOperation>(
                                 operands,
                                 std::move(operand_types),
                                 std::move(result_types)));

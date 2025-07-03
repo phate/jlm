@@ -341,7 +341,7 @@ Phi()
     auto xArgument = lambda1->AddContextVar(dx).inner;
 
     auto result =
-        jlm::rvsdg::CreateOpNode<jlm::tests::test_op>(
+        jlm::rvsdg::CreateOpNode<jlm::tests::TestOperation>(
             { lambda1->GetFunctionArguments()[0], f2Argument, xArgument },
             std::vector<std::shared_ptr<const Type>>{ valueType, functionType, valueType },
             std::vector<std::shared_ptr<const Type>>{ valueType })
@@ -358,7 +358,7 @@ Phi()
     auto f1Argument = lambda2->AddContextVar(rv1).inner;
     lambda2->AddContextVar(dy);
 
-    auto result = jlm::rvsdg::CreateOpNode<jlm::tests::test_op>(
+    auto result = jlm::rvsdg::CreateOpNode<jlm::tests::TestOperation>(
                       { lambda2->GetFunctionArguments()[0], f1Argument },
                       std::vector<std::shared_ptr<const Type>>{ valueType, functionType },
                       std::vector<std::shared_ptr<const Type>>{ valueType })
@@ -374,7 +374,7 @@ Phi()
         LlvmLambdaOperation::Create(functionType, "f3", linkage::external_linkage));
     auto zArgument = lambda3->AddContextVar(dz).inner;
 
-    auto result = jlm::rvsdg::CreateOpNode<jlm::tests::test_op>(
+    auto result = jlm::rvsdg::CreateOpNode<jlm::tests::TestOperation>(
                       { lambda3->GetFunctionArguments()[0], zArgument },
                       std::vector<std::shared_ptr<const Type>>{ valueType, valueType },
                       std::vector<std::shared_ptr<const Type>>{ valueType })
@@ -470,13 +470,13 @@ Delta()
   deltaNode->add_ctxvar(y);
   auto zArgument = deltaNode->add_ctxvar(z);
 
-  auto result = jlm::rvsdg::CreateOpNode<jlm::tests::test_op>(
+  auto result = jlm::rvsdg::CreateOpNode<jlm::tests::TestOperation>(
                     { xArgument },
                     std::vector<std::shared_ptr<const Type>>{ valueType },
                     std::vector<std::shared_ptr<const Type>>{ valueType })
                     .output(0);
 
-  jlm::rvsdg::CreateOpNode<jlm::tests::test_op>(
+  jlm::rvsdg::CreateOpNode<jlm::tests::TestOperation>(
       { zArgument },
       std::vector<std::shared_ptr<const Type>>{ valueType },
       std::vector<std::shared_ptr<const Type>>{ valueType });

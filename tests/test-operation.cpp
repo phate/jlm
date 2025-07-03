@@ -97,13 +97,12 @@ TestBinaryOperation::copy() const
   return std::make_unique<TestBinaryOperation>(*this);
 }
 
-test_op::~test_op()
-{}
+TestOperation::~TestOperation() noexcept = default;
 
 bool
-test_op::operator==(const Operation & o) const noexcept
+TestOperation::operator==(const Operation & o) const noexcept
 {
-  auto other = dynamic_cast<const test_op *>(&o);
+  auto other = dynamic_cast<const TestOperation *>(&o);
   if (!other)
     return false;
 
@@ -126,15 +125,15 @@ test_op::operator==(const Operation & o) const noexcept
 }
 
 std::string
-test_op::debug_string() const
+TestOperation::debug_string() const
 {
-  return "test_op";
+  return "TestOperation";
 }
 
 std::unique_ptr<rvsdg::Operation>
-test_op::copy() const
+TestOperation::copy() const
 {
-  return std::make_unique<test_op>(*this);
+  return std::make_unique<TestOperation>(*this);
 }
 
 TestStructuralOperation::~TestStructuralOperation() noexcept = default;
