@@ -48,7 +48,8 @@ SinkInsertion()
   view(rvsdg, stdout);
 
   // Act
-  add_sinks(rvsdgModule);
+  StatisticsCollector statisticsCollector;
+  SinkInsertion::CreateAndRun(rvsdgModule, statisticsCollector);
   view(rvsdg, stdout);
 
   // Assert
