@@ -443,6 +443,29 @@ public:
       const LoadNonVolatileOperation & operation,
       const std::vector<rvsdg::Output *> & operands);
 
+  /**
+   * \brief Redirect the address operand of the LoadNonVolatileOperation from an IOBarrierOperation
+   * when it can be determined that it originates from an AllocaOperation.
+   *
+   * a1 memState = AllocaOperation ...
+   * a2 = IOBarrierOperation a1 ioState
+   * ... = LoadNonVolatileOperation a2 ...
+   * =>
+   * a1 memState = AllocaOperation ...
+   * a2 = IOBarrierOperation a1 ioState
+   * ... = LoadNonVolatileOperation a1 ...
+   *
+   * @param operation The LoadNonVolatileOperation on which the transformation is performed.
+   * @param operands The operands of the LoadNonVolatileOperation node.
+   *
+   * @return If the normalization could be applied, then the results of the
+   * LoadNonVolatileOperation node after the transformation. Otherwise, std::nullopt.
+   */
+  static std::optional<std::vector<rvsdg::Output *>>
+  NormalizeIOBarrierAllocaAddress(
+      const LoadNonVolatileOperation & operation,
+      const std::vector<rvsdg::Output *> & operands);
+
   static std::unique_ptr<llvm::ThreeAddressCode>
   Create(
       const Variable * address,

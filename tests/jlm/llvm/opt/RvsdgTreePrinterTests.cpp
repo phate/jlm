@@ -108,7 +108,7 @@ PrintNumRvsdgNodesAnnotation()
 
   // Assert
   auto expectedTree = "RootRegion NumRvsdgNodes:2\n"
-                      "-STRUCTURAL_TEST_NODE NumRvsdgNodes:2\n"
+                      "-TestStructuralOperation NumRvsdgNodes:2\n"
                       "--Region[0] NumRvsdgNodes:1\n"
                       "--Region[1] NumRvsdgNodes:1\n\n";
 
@@ -164,7 +164,7 @@ PrintNumLoadNodesAnnotation()
 
   // Assert
   auto expectedTree = "RootRegion NumLoadNodes:0\n"
-                      "-STRUCTURAL_TEST_NODE NumLoadNodes:2\n"
+                      "-TestStructuralOperation NumLoadNodes:2\n"
                       "--Region[0] NumLoadNodes:1\n"
                       "--Region[1] NumLoadNodes:0\n"
                       "--Region[2] NumLoadNodes:1\n\n";
@@ -213,7 +213,7 @@ PrintNumMemoryStateInputsOutputsAnnotation()
   // Assert
   auto expectedTree =
       "RootRegion NumMemoryStateTypeArguments:1 NumMemoryStateTypeResults:1\n"
-      "-STRUCTURAL_TEST_NODE NumMemoryStateTypeInputs:1 NumMemoryStateTypeOutputs:1\n"
+      "-TestStructuralOperation NumMemoryStateTypeInputs:1 NumMemoryStateTypeOutputs:1\n"
       "--Region[0] NumMemoryStateTypeArguments:1 NumMemoryStateTypeResults:1\n"
       "--Region[1] NumMemoryStateTypeArguments:1 NumMemoryStateTypeResults:1\n\n";
 
