@@ -29,10 +29,10 @@ IteratorRanges()
   auto & argument0 = TestGraphArgument::Create(subregion, nullptr, valueType);
   auto & argument1 = TestGraphArgument::Create(subregion, nullptr, valueType);
 
-  auto topNode0 = test_op::create(&subregion, {}, { valueType });
-  auto node0 = test_op::create(&subregion, { &argument0 }, { valueType });
-  auto node1 = test_op::create(&subregion, { &argument1 }, { valueType });
-  auto bottomNode0 = test_op::create(&subregion, { &argument0, &argument1 }, { valueType });
+  auto topNode0 = TestOperation::create(&subregion, {}, { valueType });
+  auto node0 = TestOperation::create(&subregion, { &argument0 }, { valueType });
+  auto node1 = TestOperation::create(&subregion, { &argument1 }, { valueType });
+  auto bottomNode0 = TestOperation::create(&subregion, { &argument0, &argument1 }, { valueType });
 
   auto & result0 = TestGraphResult::Create(*topNode0->output(0), nullptr);
   auto & result1 = TestGraphResult::Create(*node0->output(0), nullptr);
@@ -96,19 +96,19 @@ Contains()
   auto structuralInput1 = jlm::rvsdg::StructuralInput::create(structuralNode1, import, valueType);
   auto & regionArgument1 =
       TestGraphArgument::Create(*structuralNode1->subregion(0), structuralInput1, valueType);
-  unary_op::create(structuralNode1->subregion(0), valueType, &regionArgument1, valueType);
+  TestUnaryOperation::create(structuralNode1->subregion(0), valueType, &regionArgument1, valueType);
 
   auto structuralNode2 = structural_node::create(&graph.GetRootRegion(), 1);
   auto structuralInput2 = jlm::rvsdg::StructuralInput::create(structuralNode2, import, valueType);
   auto & regionArgument2 =
       TestGraphArgument::Create(*structuralNode2->subregion(0), structuralInput2, valueType);
-  binary_op::create(valueType, valueType, &regionArgument2, &regionArgument2);
+  TestBinaryOperation::create(valueType, valueType, &regionArgument2, &regionArgument2);
 
   // Act & Assert
   assert(jlm::rvsdg::Region::ContainsNodeType<structural_node>(graph.GetRootRegion(), false));
-  assert(jlm::rvsdg::Region::ContainsOperation<unary_op>(graph.GetRootRegion(), true));
-  assert(jlm::rvsdg::Region::ContainsOperation<binary_op>(graph.GetRootRegion(), true));
-  assert(!jlm::rvsdg::Region::ContainsOperation<test_op>(graph.GetRootRegion(), true));
+  assert(jlm::rvsdg::Region::ContainsOperation<TestUnaryOperation>(graph.GetRootRegion(), true));
+  assert(jlm::rvsdg::Region::ContainsOperation<TestBinaryOperation>(graph.GetRootRegion(), true));
+  assert(!jlm::rvsdg::Region::ContainsOperation<TestOperation>(graph.GetRootRegion(), true));
 }
 
 JLM_UNIT_TEST_REGISTER("jlm/rvsdg/RegionTests-Contains", Contains)
@@ -181,7 +181,7 @@ RemoveResultsWhere()
   jlm::rvsdg::Region region(&rvsdg.GetRootRegion(), &rvsdg);
 
   auto valueType = ValueType::Create();
-  auto node = jlm::tests::test_op::Create(&region, {}, {}, { valueType });
+  auto node = TestOperation::Create(&region, {}, {}, { valueType });
 
   auto & result0 = TestGraphResult::Create(*node->output(0), nullptr);
   auto & result1 = TestGraphResult::Create(*node->output(0), nullptr);
@@ -238,7 +238,7 @@ RemoveArgumentsWhere()
   auto & argument1 = TestGraphArgument::Create(region, nullptr, valueType);
   auto & argument2 = TestGraphArgument::Create(region, nullptr, valueType);
 
-  auto node = jlm::tests::test_op::Create(&region, { valueType }, { &argument1 }, { valueType });
+  auto node = TestOperation::Create(&region, { valueType }, { &argument1 }, { valueType });
 
   // Act & Arrange
   assert(region.narguments() == 3);
@@ -290,7 +290,7 @@ PruneArguments()
   TestGraphArgument::Create(region, nullptr, valueType);
   auto & argument2 = TestGraphArgument::Create(region, nullptr, valueType);
 
-  auto node = jlm::tests::test_op::Create(
+  auto node = TestOperation::Create(
       &region,
       { valueType, valueType },
       { &argument0, &argument2 },

@@ -4,6 +4,7 @@
  */
 
 #include <jlm/llvm/ir/operators/alloca.hpp>
+#include <jlm/llvm/ir/operators/IOBarrier.hpp>
 #include <jlm/llvm/ir/operators/Load.hpp>
 #include <jlm/llvm/ir/operators/MemoryStateOperations.hpp>
 #include <jlm/llvm/ir/operators/Store.hpp>
@@ -510,6 +511,34 @@ LoadNonVolatileOperation::NormalizeLoadLoadState(
     return perform_load_load_state_reduction(operation, operands);
 
   return std::nullopt;
+}
+
+std::optional<std::vector<rvsdg::Output *>>
+LoadNonVolatileOperation::NormalizeIOBarrierAllocaAddress(
+    const LoadNonVolatileOperation & operation,
+    const std::vector<rvsdg::Output *> & operands)
+{
+  JLM_ASSERT(operands.size() >= 1);
+  const auto address = operands[0];
+
+  auto [ioBarrierNode, ioBarrierOperation] =
+      rvsdg::TryGetSimpleNodeAndOp<IOBarrierOperation>(*address);
+  if (!ioBarrierOperation)
+    return std::nullopt;
+
+  const auto barredAddress = IOBarrierOperation::BarredInput(*ioBarrierNode).origin();
+  auto [allocaNode, allocaOperation] =
+      rvsdg::TryGetSimpleNodeAndOp<AllocaOperation>(*barredAddress);
+  if (!allocaOperation)
+    return std::nullopt;
+
+  auto & loadNode = CreateNode(
+      *barredAddress,
+      { std::next(operands.begin()), operands.end() },
+      operation.GetLoadedType(),
+      operation.GetAlignment());
+
+  return { outputs(&loadNode) };
 }
 
 LoadVolatileOperation::~LoadVolatileOperation() noexcept = default;

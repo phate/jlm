@@ -223,7 +223,7 @@ test_unknown_boundaries()
   using namespace jlm::llvm;
 
   auto bt = jlm::rvsdg::bittype::Create(32);
-  jlm::tests::test_op op({ bt }, { bt });
+  jlm::tests::TestOperation op({ bt }, { bt });
 
   RvsdgModule rm(jlm::util::FilePath(""), "", "");
   auto & graph = rm.Rvsdg();

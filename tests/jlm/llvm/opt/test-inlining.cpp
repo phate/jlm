@@ -42,7 +42,7 @@ test1()
         LlvmLambdaOperation::Create(functionType, "f1", linkage::external_linkage));
     lambda->AddContextVar(*i);
 
-    auto t = jlm::tests::test_op::create(
+    auto t = jlm::tests::TestOperation::create(
         lambda->subregion(),
         { lambda->GetFunctionArguments()[0] },
         { vt });

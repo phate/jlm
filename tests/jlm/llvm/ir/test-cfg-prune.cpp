@@ -19,7 +19,7 @@ test()
   using namespace jlm::llvm;
 
   auto vt = jlm::tests::ValueType::Create();
-  jlm::tests::test_op op({}, { vt });
+  jlm::tests::TestOperation op({}, { vt });
 
   // Arrange
   InterProceduralGraphModule im(jlm::util::FilePath(""), "", "");

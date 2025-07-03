@@ -128,7 +128,7 @@ TestRemoveLambdaInputsWhere()
   auto lambdaBinder1 = lambdaNode->AddContextVar(*x);
   lambdaNode->AddContextVar(*x);
 
-  auto result = jlm::rvsdg::CreateOpNode<jlm::tests::test_op>(
+  auto result = jlm::rvsdg::CreateOpNode<jlm::tests::TestOperation>(
                     { lambdaBinder1.inner },
                     std::vector<std::shared_ptr<const Type>>{ valueType },
                     std::vector<std::shared_ptr<const Type>>{ valueType })
@@ -199,7 +199,7 @@ TestPruneLambdaInputs()
   auto lambdaInput1 = lambdaNode->AddContextVar(*x);
   lambdaNode->AddContextVar(*x);
 
-  auto result = jlm::rvsdg::CreateOpNode<jlm::tests::test_op>(
+  auto result = jlm::rvsdg::CreateOpNode<jlm::tests::TestOperation>(
                     { lambdaInput1.inner },
                     std::vector<std::shared_ptr<const Type>>{ valueType },
                     std::vector<std::shared_ptr<const Type>>{ valueType })

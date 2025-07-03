@@ -96,12 +96,12 @@ public:
 
 /* unary operation */
 
-class unary_op final : public rvsdg::UnaryOperation
+class TestUnaryOperation final : public rvsdg::UnaryOperation
 {
 public:
-  virtual ~unary_op() noexcept;
+  ~TestUnaryOperation() noexcept override;
 
-  inline unary_op(
+  TestUnaryOperation(
       std::shared_ptr<const rvsdg::Type> srctype,
       std::shared_ptr<const rvsdg::Type> dsttype) noexcept
       : rvsdg::UnaryOperation(std::move(srctype), std::move(dsttype))
@@ -129,7 +129,10 @@ public:
       rvsdg::Output * operand,
       std::shared_ptr<const rvsdg::Type> dsttype)
   {
-    return &rvsdg::CreateOpNode<unary_op>({ operand }, std::move(srctype), std::move(dsttype));
+    return &rvsdg::CreateOpNode<TestUnaryOperation>(
+        { operand },
+        std::move(srctype),
+        std::move(dsttype));
   }
 
   static inline rvsdg::Output *
@@ -138,7 +141,10 @@ public:
       rvsdg::Output * operand,
       std::shared_ptr<const rvsdg::Type> dsttype)
   {
-    return rvsdg::CreateOpNode<unary_op>({ operand }, std::move(srctype), std::move(dsttype))
+    return rvsdg::CreateOpNode<TestUnaryOperation>(
+               { operand },
+               std::move(srctype),
+               std::move(dsttype))
         .output(0);
   }
 };
@@ -146,23 +152,21 @@ public:
 static inline bool
 is_unary_op(const rvsdg::Operation & op) noexcept
 {
-  return dynamic_cast<const unary_op *>(&op);
+  return dynamic_cast<const TestUnaryOperation *>(&op);
 }
 
 static inline bool
 is_unary_node(const rvsdg::Node * node) noexcept
 {
-  return jlm::rvsdg::is<unary_op>(node);
+  return jlm::rvsdg::is<TestUnaryOperation>(node);
 }
 
-/* binary operation */
-
-class binary_op final : public rvsdg::BinaryOperation
+class TestBinaryOperation final : public rvsdg::BinaryOperation
 {
 public:
-  virtual ~binary_op() noexcept;
+  ~TestBinaryOperation() noexcept override;
 
-  inline binary_op(
+  TestBinaryOperation(
       const std::shared_ptr<const rvsdg::Type> & srctype,
       std::shared_ptr<const rvsdg::Type> dsttype,
       const enum BinaryOperation::flags & flags) noexcept
@@ -197,7 +201,7 @@ public:
       rvsdg::Output * op1,
       rvsdg::Output * op2)
   {
-    binary_op op(srctype, std::move(dsttype), BinaryOperation::flags::none);
+    TestBinaryOperation op(srctype, std::move(dsttype), BinaryOperation::flags::none);
     return &rvsdg::SimpleNode::Create(*op1->region(), op, { op1, op2 });
   }
 
@@ -208,7 +212,11 @@ public:
       rvsdg::Output * op1,
       rvsdg::Output * op2)
   {
-    return rvsdg::CreateOpNode<binary_op>({ op1, op2 }, srctype, std::move(dsttype), flags::none)
+    return rvsdg::CreateOpNode<TestBinaryOperation>(
+               { op1, op2 },
+               srctype,
+               std::move(dsttype),
+               flags::none)
         .output(0);
   }
 
@@ -216,12 +224,10 @@ private:
   enum BinaryOperation::flags flags_;
 };
 
-/* structural operation */
-
-class structural_op final : public rvsdg::StructuralOperation
+class TestStructuralOperation final : public rvsdg::StructuralOperation
 {
 public:
-  virtual ~structural_op() noexcept;
+  ~TestStructuralOperation() noexcept override;
 
   virtual std::string
   debug_string() const override;
@@ -245,7 +251,7 @@ private:
   {}
 
 public:
-  [[nodiscard]] const structural_op &
+  [[nodiscard]] const TestStructuralOperation &
   GetOperation() const noexcept override;
 
   StructuralNodeInput &
@@ -388,18 +394,18 @@ private:
   }
 };
 
-class test_op final : public rvsdg::SimpleOperation
+class TestOperation final : public rvsdg::SimpleOperation
 {
 public:
-  virtual ~test_op();
+  ~TestOperation() noexcept override;
 
-  inline test_op(
+  TestOperation(
       std::vector<std::shared_ptr<const rvsdg::Type>> arguments,
       std::vector<std::shared_ptr<const rvsdg::Type>> results)
       : SimpleOperation(std::move(arguments), std::move(results))
   {}
 
-  test_op(const test_op &) = default;
+  TestOperation(const TestOperation &) = default;
 
   virtual bool
   operator==(const Operation & other) const noexcept override;
@@ -420,7 +426,7 @@ public:
     for (const auto & operand : operands)
       operand_types.push_back(operand->Type());
 
-    test_op op(std::move(operand_types), std::move(result_types));
+    TestOperation op(std::move(operand_types), std::move(result_types));
     return &rvsdg::SimpleNode::Create(*region, op, { operands });
   }
 
@@ -431,7 +437,7 @@ public:
       const std::vector<rvsdg::Output *> & operands,
       std::vector<std::shared_ptr<const rvsdg::Type>> resultTypes)
   {
-    test_op op(std::move(operandTypes), std::move(resultTypes));
+    TestOperation op(std::move(operandTypes), std::move(resultTypes));
     return &rvsdg::SimpleNode::Create(*region, op, { operands });
   }
 };
@@ -445,7 +451,7 @@ create_testop_tac(
   for (const auto & arg : arguments)
     argument_types.push_back(arg->Type());
 
-  test_op op(std::move(argument_types), std::move(result_types));
+  TestOperation op(std::move(argument_types), std::move(result_types));
   return llvm::ThreeAddressCode::create(op, arguments);
 }
 
@@ -459,11 +465,11 @@ create_testop(
   for (const auto & operand : operands)
     operand_types.push_back(operand->Type());
 
-  return operands.empty() ? outputs(&rvsdg::CreateOpNode<test_op>(
+  return operands.empty() ? outputs(&rvsdg::CreateOpNode<TestOperation>(
                                 *region,
                                 std::move(operand_types),
                                 std::move(result_types)))
-                          : outputs(&rvsdg::CreateOpNode<test_op>(
+                          : outputs(&rvsdg::CreateOpNode<TestOperation>(
                                 operands,
                                 std::move(operand_types),
                                 std::move(result_types)));

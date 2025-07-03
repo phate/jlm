@@ -15,27 +15,25 @@
 namespace jlm::llvm
 {
 
-/* global value */
-
-class gblvalue final : public GlobalVariable
+class GlobalValue final : public GlobalVariable
 {
 public:
-  virtual ~gblvalue();
+  ~GlobalValue() noexcept override;
 
-  gblvalue(DataNode * node)
+  explicit GlobalValue(DataNode * node)
       : GlobalVariable(node->Type(), node->name()),
         node_(node)
   {}
 
-  gblvalue(const gblvalue &) = delete;
+  GlobalValue(const GlobalValue &) = delete;
 
-  gblvalue(gblvalue &&) = delete;
+  GlobalValue(GlobalValue &&) = delete;
 
-  gblvalue &
-  operator=(const gblvalue &) = delete;
+  GlobalValue &
+  operator=(const GlobalValue &) = delete;
 
-  gblvalue &
-  operator=(gblvalue &&) = delete;
+  GlobalValue &
+  operator=(GlobalValue &&) = delete;
 
   DataNode *
   node() const noexcept
@@ -47,15 +45,15 @@ private:
   DataNode * node_;
 };
 
-static inline std::unique_ptr<llvm::gblvalue>
+static inline std::unique_ptr<GlobalValue>
 create_gblvalue(DataNode * node)
 {
-  return std::make_unique<llvm::gblvalue>(node);
+  return std::make_unique<GlobalValue>(node);
 }
 
 class InterProceduralGraphModule final
 {
-  typedef std::unordered_set<const llvm::gblvalue *>::const_iterator const_iterator;
+  typedef std::unordered_set<const GlobalValue *>::const_iterator const_iterator;
 
 public:
   ~InterProceduralGraphModule() noexcept = default;
@@ -102,7 +100,7 @@ public:
     return globals_.end();
   }
 
-  inline llvm::gblvalue *
+  GlobalValue *
   create_global_value(DataNode * node)
   {
     auto v = llvm::create_gblvalue(node);
@@ -133,7 +131,7 @@ public:
   }
 
   inline llvm::Variable *
-  create_variable(function_node * node)
+  create_variable(FunctionNode * node)
   {
     JLM_ASSERT(!variable(node));
 
@@ -220,7 +218,7 @@ private:
   std::string data_layout_;
   std::string target_triple_;
   const jlm::util::FilePath source_filename_;
-  std::unordered_set<const llvm::gblvalue *> globals_;
+  std::unordered_set<const GlobalValue *> globals_;
   std::unordered_set<std::unique_ptr<llvm::Variable>> variables_;
   std::unordered_map<const InterProceduralGraphNode *, const llvm::Variable *> functions_;
   std::vector<std::unique_ptr<StructType::Declaration>> StructTypeDeclarations_;
@@ -232,7 +230,7 @@ ntacs(const InterProceduralGraphModule & im)
   size_t ntacs = 0;
   for (const auto & n : im.ipgraph())
   {
-    auto f = dynamic_cast<const function_node *>(&n);
+    auto f = dynamic_cast<const FunctionNode *>(&n);
     if (!f)
       continue;
 

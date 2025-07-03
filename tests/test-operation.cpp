@@ -21,88 +21,88 @@ GraphExport::Copy(rvsdg::Output & origin, rvsdg::StructuralOutput * output)
   return GraphExport::Create(origin, Name());
 }
 
-unary_op::~unary_op() noexcept
-{}
+TestUnaryOperation::~TestUnaryOperation() noexcept = default;
 
 bool
-unary_op::operator==(const Operation & other) const noexcept
+TestUnaryOperation::operator==(const Operation & other) const noexcept
 {
-  auto op = dynamic_cast<const unary_op *>(&other);
+  auto op = dynamic_cast<const TestUnaryOperation *>(&other);
   return op && op->argument(0) == argument(0) && op->result(0) == result(0);
 }
 
 rvsdg::unop_reduction_path_t
-unary_op::can_reduce_operand(const rvsdg::Output *) const noexcept
+TestUnaryOperation::can_reduce_operand(const rvsdg::Output *) const noexcept
 {
   return rvsdg::unop_reduction_none;
 }
 
 rvsdg::Output *
-unary_op::reduce_operand(rvsdg::unop_reduction_path_t, rvsdg::Output *) const
+TestUnaryOperation::reduce_operand(rvsdg::unop_reduction_path_t, rvsdg::Output *) const
 {
   return nullptr;
 }
 
 std::string
-unary_op::debug_string() const
+TestUnaryOperation::debug_string() const
 {
-  return "UNARY_TEST_NODE";
+  return "TestUnaryOperation";
 }
 
 std::unique_ptr<rvsdg::Operation>
-unary_op::copy() const
+TestUnaryOperation::copy() const
 {
-  return std::make_unique<unary_op>(*this);
+  return std::make_unique<TestUnaryOperation>(*this);
 }
 
-binary_op::~binary_op() noexcept
-{}
+TestBinaryOperation::~TestBinaryOperation() noexcept = default;
 
 bool
-binary_op::operator==(const Operation & other) const noexcept
+TestBinaryOperation::operator==(const Operation & other) const noexcept
 {
-  auto op = dynamic_cast<const binary_op *>(&other);
+  auto op = dynamic_cast<const TestBinaryOperation *>(&other);
   return op && op->argument(0) == argument(0) && op->result(0) == result(0);
 }
 
 rvsdg::binop_reduction_path_t
-binary_op::can_reduce_operand_pair(const rvsdg::Output *, const rvsdg::Output *) const noexcept
+TestBinaryOperation::can_reduce_operand_pair(const rvsdg::Output *, const rvsdg::Output *)
+    const noexcept
 {
   return rvsdg::binop_reduction_none;
 }
 
 rvsdg::Output *
-binary_op::reduce_operand_pair(rvsdg::binop_reduction_path_t, rvsdg::Output *, rvsdg::Output *)
-    const
+TestBinaryOperation::reduce_operand_pair(
+    rvsdg::binop_reduction_path_t,
+    rvsdg::Output *,
+    rvsdg::Output *) const
 {
   return nullptr;
 }
 
 enum rvsdg::BinaryOperation::flags
-binary_op::flags() const noexcept
+TestBinaryOperation::flags() const noexcept
 {
   return flags_;
 }
 
 std::string
-binary_op::debug_string() const
+TestBinaryOperation::debug_string() const
 {
-  return "BINARY_TEST_OP";
+  return "TestBinaryOperation";
 }
 
 std::unique_ptr<rvsdg::Operation>
-binary_op::copy() const
+TestBinaryOperation::copy() const
 {
-  return std::make_unique<binary_op>(*this);
+  return std::make_unique<TestBinaryOperation>(*this);
 }
 
-test_op::~test_op()
-{}
+TestOperation::~TestOperation() noexcept = default;
 
 bool
-test_op::operator==(const Operation & o) const noexcept
+TestOperation::operator==(const Operation & o) const noexcept
 {
-  auto other = dynamic_cast<const test_op *>(&o);
+  auto other = dynamic_cast<const TestOperation *>(&o);
   if (!other)
     return false;
 
@@ -125,39 +125,38 @@ test_op::operator==(const Operation & o) const noexcept
 }
 
 std::string
-test_op::debug_string() const
+TestOperation::debug_string() const
 {
-  return "test_op";
+  return "TestOperation";
 }
 
 std::unique_ptr<rvsdg::Operation>
-test_op::copy() const
+TestOperation::copy() const
 {
-  return std::make_unique<test_op>(*this);
+  return std::make_unique<TestOperation>(*this);
 }
 
-structural_op::~structural_op() noexcept
-{}
+TestStructuralOperation::~TestStructuralOperation() noexcept = default;
 
 std::string
-structural_op::debug_string() const
+TestStructuralOperation::debug_string() const
 {
-  return "STRUCTURAL_TEST_NODE";
+  return "TestStructuralOperation";
 }
 
 std::unique_ptr<rvsdg::Operation>
-structural_op::copy() const
+TestStructuralOperation::copy() const
 {
-  return std::make_unique<structural_op>(*this);
+  return std::make_unique<TestStructuralOperation>(*this);
 }
 
 structural_node::~structural_node()
 {}
 
-[[nodiscard]] const structural_op &
+[[nodiscard]] const TestStructuralOperation &
 structural_node::GetOperation() const noexcept
 {
-  static structural_op singleton;
+  static TestStructuralOperation singleton;
   return singleton;
 }
 

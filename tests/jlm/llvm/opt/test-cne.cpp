@@ -248,9 +248,9 @@ test_theta3()
   auto p4 = theta2->AddLoopVar(lv4.pre);
   theta2->set_predicate(p.pre);
 
-  auto u1 = jlm::tests::test_op::create(r1, { p2.output }, { vt });
-  auto b1 = jlm::tests::test_op::create(r1, { p3.output, p3.output }, { vt });
-  auto u2 = jlm::tests::test_op::create(r1, { p4.output }, { vt });
+  auto u1 = jlm::tests::TestOperation::create(r1, { p2.output }, { vt });
+  auto b1 = jlm::tests::TestOperation::create(r1, { p3.output, p3.output }, { vt });
+  auto u2 = jlm::tests::TestOperation::create(r1, { p4.output }, { vt });
 
   lv2.post->divert_to(u1->output(0));
   lv3.post->divert_to(b1->output(0));
@@ -301,8 +301,8 @@ test_theta4()
   auto lv6 = theta->AddLoopVar(x);
   auto lv7 = theta->AddLoopVar(x);
 
-  auto u1 = jlm::tests::test_op::create(region, { lv2.pre }, { vt });
-  auto b1 = jlm::tests::test_op::create(region, { lv3.pre, lv3.pre }, { vt });
+  auto u1 = jlm::tests::TestOperation::create(region, { lv2.pre }, { vt });
+  auto b1 = jlm::tests::TestOperation::create(region, { lv3.pre, lv3.pre }, { vt });
 
   lv2.post->divert_to(lv4.pre);
   lv3.post->divert_to(lv5.pre);

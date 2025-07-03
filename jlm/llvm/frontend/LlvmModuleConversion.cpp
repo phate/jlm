@@ -496,7 +496,7 @@ declare_globals(::llvm::Module & lm, context & ctx)
     auto type = ctx.GetTypeConverter().ConvertFunctionType(*f.getFunctionType());
     auto attributes = convert_attributes(f.getAttributes().getFnAttrs(), ctx);
 
-    return function_node::create(ctx.module().ipgraph(), name, type, linkage, attributes);
+    return FunctionNode::create(ctx.module().ipgraph(), name, type, linkage, attributes);
   };
 
   for (auto & gv : lm.globals())
@@ -529,7 +529,7 @@ create_initialization(::llvm::GlobalVariable & gv, context & ctx)
 static void
 convert_global_value(::llvm::GlobalVariable & gv, context & ctx)
 {
-  auto v = static_cast<const gblvalue *>(ctx.lookup_value(&gv));
+  auto v = static_cast<const GlobalValue *>(ctx.lookup_value(&gv));
 
   ctx.set_node(v->node());
   v->node()->set_initialization(create_initialization(gv, ctx));

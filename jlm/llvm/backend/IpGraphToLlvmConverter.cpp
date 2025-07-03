@@ -1760,7 +1760,7 @@ IpGraphToLlvmConverter::convert_attributes(const attributeset & attributeSet)
 }
 
 ::llvm::AttributeList
-IpGraphToLlvmConverter::convert_attributes(const function_node & f)
+IpGraphToLlvmConverter::convert_attributes(const FunctionNode & f)
 {
   JLM_ASSERT(f.cfg());
 
@@ -1880,7 +1880,7 @@ IpGraphToLlvmConverter::convert_cfg(ControlFlowGraph & cfg, ::llvm::Function & f
 }
 
 void
-IpGraphToLlvmConverter::convert_function(const function_node & node)
+IpGraphToLlvmConverter::convert_function(const FunctionNode & node)
 {
   if (!node.cfg())
     return;
@@ -1956,7 +1956,7 @@ IpGraphToLlvmConverter::convert_ipgraph()
       gv->setSection(dataNode->Section());
       Context_->insert(v, gv);
     }
-    else if (auto n = dynamic_cast<const function_node *>(&node))
+    else if (auto n = dynamic_cast<const FunctionNode *>(&node))
     {
       auto type = typeConverter.ConvertFunctionType(n->fcttype(), lm.getContext());
       auto linkage = convert_linkage(n->linkage());
@@ -1974,7 +1974,7 @@ IpGraphToLlvmConverter::convert_ipgraph()
     {
       convert_data_node(*n);
     }
-    else if (auto n = dynamic_cast<const function_node *>(&node))
+    else if (auto n = dynamic_cast<const FunctionNode *>(&node))
     {
       convert_function(*n);
     }

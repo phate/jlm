@@ -104,7 +104,7 @@ TestTheta()
   thetaNode->set_predicate(thetaOutput0.pre);
 
   auto result =
-      jlm::rvsdg::CreateOpNode<jlm::tests::test_op>(
+      jlm::rvsdg::CreateOpNode<jlm::tests::TestOperation>(
           { thetaOutput0.output, thetaOutput1.output, thetaOutput2.output, thetaOutput3.output },
           std::vector<std::shared_ptr<const Type>>{ ControlType::Create(2),
                                                     valueType,
@@ -152,13 +152,13 @@ TestLambda()
   auto argument2 = lambdaNode->AddContextVar(*x).inner;
   auto argument3 = lambdaNode->AddContextVar(*x).inner;
 
-  auto result1 = jlm::rvsdg::CreateOpNode<jlm::tests::test_op>(
+  auto result1 = jlm::rvsdg::CreateOpNode<jlm::tests::TestOperation>(
                      { argument1 },
                      std::vector<std::shared_ptr<const Type>>{ valueType },
                      std::vector<std::shared_ptr<const Type>>{ valueType })
                      .output(0);
 
-  auto result3 = jlm::rvsdg::CreateOpNode<jlm::tests::test_op>(
+  auto result3 = jlm::rvsdg::CreateOpNode<jlm::tests::TestOperation>(
                      { argument3 },
                      std::vector<std::shared_ptr<const Type>>{ valueType },
                      std::vector<std::shared_ptr<const Type>>{ valueType })
