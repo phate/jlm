@@ -92,7 +92,7 @@ PrintNumRvsdgNodesAnnotation()
   auto rvsdgModule = RvsdgModule::Create(FilePath(""), "", "");
   auto rootRegion = &rvsdgModule->Rvsdg().GetRootRegion();
 
-  auto structuralNode = jlm::tests::structural_node::create(rootRegion, 2);
+  auto structuralNode = jlm::tests::TestStructuralNode::create(rootRegion, 2);
   jlm::tests::TestOperation::create(structuralNode->subregion(0), {}, {});
   jlm::tests::TestOperation::create(structuralNode->subregion(1), {}, {});
 
@@ -137,7 +137,7 @@ PrintNumLoadNodesAnnotation()
   auto & address = jlm::tests::GraphImport::Create(rvsdg, pointerType, "a");
   auto & memoryState = jlm::tests::GraphImport::Create(rvsdg, memoryStateType, "m");
 
-  auto structuralNode = jlm::tests::structural_node::create(rootRegion, 3);
+  auto structuralNode = jlm::tests::TestStructuralNode::create(rootRegion, 3);
   auto & addressInput = structuralNode->AddInputWithArguments(address);
   auto & memoryStateInput = structuralNode->AddInputWithArguments(memoryState);
   LoadNonVolatileOperation::Create(
@@ -192,7 +192,7 @@ PrintNumMemoryStateInputsOutputsAnnotation()
   auto & x = jlm::tests::GraphImport::Create(rvsdg, memoryStateType, "x");
   auto & y = jlm::tests::GraphImport::Create(rvsdg, valueType, "y");
 
-  auto structuralNode = jlm::tests::structural_node::create(&rvsdg.GetRootRegion(), 2);
+  auto structuralNode = jlm::tests::TestStructuralNode::create(&rvsdg.GetRootRegion(), 2);
   auto & ix = structuralNode->AddInputWithArguments(x);
   auto & iy = structuralNode->AddInputWithArguments(y);
 

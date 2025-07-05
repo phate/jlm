@@ -150,20 +150,19 @@ TestStructuralOperation::copy() const
   return std::make_unique<TestStructuralOperation>(*this);
 }
 
-structural_node::~structural_node()
-{}
+TestStructuralNode::~TestStructuralNode() noexcept = default;
 
 [[nodiscard]] const TestStructuralOperation &
-structural_node::GetOperation() const noexcept
+TestStructuralNode::GetOperation() const noexcept
 {
   static TestStructuralOperation singleton;
   return singleton;
 }
 
-structural_node *
-structural_node::copy(rvsdg::Region * parent, rvsdg::SubstitutionMap & smap) const
+TestStructuralNode *
+TestStructuralNode::copy(rvsdg::Region * parent, rvsdg::SubstitutionMap & smap) const
 {
-  auto node = structural_node::create(parent, nsubregions());
+  auto node = create(parent, nsubregions());
 
   /* copy inputs */
   for (size_t n = 0; n < ninputs(); n++)
@@ -189,7 +188,7 @@ structural_node::copy(rvsdg::Region * parent, rvsdg::SubstitutionMap & smap) con
 }
 
 StructuralNodeInput &
-structural_node::AddInput(rvsdg::Output & origin)
+TestStructuralNode::AddInput(rvsdg::Output & origin)
 {
   auto input =
       std::unique_ptr<StructuralNodeInput>(new StructuralNodeInput(*this, origin, origin.Type()));
@@ -197,7 +196,7 @@ structural_node::AddInput(rvsdg::Output & origin)
 }
 
 StructuralNodeInput &
-structural_node::AddInputWithArguments(rvsdg::Output & origin)
+TestStructuralNode::AddInputWithArguments(rvsdg::Output & origin)
 {
   auto & input = AddInput(origin);
   for (size_t n = 0; n < nsubregions(); n++)
@@ -209,7 +208,7 @@ structural_node::AddInputWithArguments(rvsdg::Output & origin)
 }
 
 StructuralNodeOutput &
-structural_node::AddOutput(std::shared_ptr<const rvsdg::Type> type)
+TestStructuralNode::AddOutput(std::shared_ptr<const rvsdg::Type> type)
 {
   auto output =
       std::unique_ptr<StructuralNodeOutput>(new StructuralNodeOutput(*this, std::move(type)));
@@ -217,7 +216,7 @@ structural_node::AddOutput(std::shared_ptr<const rvsdg::Type> type)
 }
 
 StructuralNodeOutput &
-structural_node::AddOutputWithResults(const std::vector<rvsdg::Output *> & origins)
+TestStructuralNode::AddOutputWithResults(const std::vector<rvsdg::Output *> & origins)
 {
   if (origins.size() != nsubregions())
     throw util::error("Insufficient number of origins.");
