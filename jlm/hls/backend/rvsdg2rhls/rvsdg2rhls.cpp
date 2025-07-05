@@ -477,8 +477,7 @@ rvsdg2rhls(llvm::RvsdgModule & rhls, util::StatisticsCollector & collector)
   llvmRed.Run(rhls, collector);
   memstate_conv(rhls);
   remove_redundant_buf(rhls);
-  // enforce 1:1 input output relationship
-  add_sinks(rhls);
+  SinkInsertion::CreateAndRun(rhls, collector);
   ForkInsertion::CreateAndRun(rhls, collector);
   add_buffers(rhls);
   // ensure that all rhls rules are met
