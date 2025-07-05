@@ -817,7 +817,7 @@ IpGraphToLlvmConverter::convert_extractelement(
     const std::vector<const Variable *> & args,
     ::llvm::IRBuilder<> & builder)
 {
-  JLM_ASSERT(is<extractelement_op>(op));
+  JLM_ASSERT(is<ExtractElementOperation>(op));
   return builder.CreateExtractElement(Context_->value(args[0]), Context_->value(args[1]));
 }
 
@@ -1289,7 +1289,7 @@ IpGraphToLlvmConverter::convert_operation(
   {
     return convert_constantdatavector(op, arguments, builder);
   }
-  if (is<extractelement_op>(op))
+  if (is<ExtractElementOperation>(op))
   {
     return convert_extractelement(op, arguments, builder);
   }

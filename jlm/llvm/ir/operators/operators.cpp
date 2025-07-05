@@ -924,28 +924,25 @@ ConstantAggregateZeroOperation::copy() const
   return std::make_unique<ConstantAggregateZeroOperation>(*this);
 }
 
-/* extractelement operator */
-
-extractelement_op::~extractelement_op()
-{}
+ExtractElementOperation::~ExtractElementOperation() noexcept = default;
 
 bool
-extractelement_op::operator==(const Operation & other) const noexcept
+ExtractElementOperation::operator==(const Operation & other) const noexcept
 {
-  auto op = dynamic_cast<const extractelement_op *>(&other);
+  auto op = dynamic_cast<const ExtractElementOperation *>(&other);
   return op && op->argument(0) == argument(0) && op->argument(1) == argument(1);
 }
 
 std::string
-extractelement_op::debug_string() const
+ExtractElementOperation::debug_string() const
 {
-  return "EXTRACTELEMENT";
+  return "ExtractElement";
 }
 
 std::unique_ptr<rvsdg::Operation>
-extractelement_op::copy() const
+ExtractElementOperation::copy() const
 {
-  return std::make_unique<extractelement_op>(*this);
+  return std::make_unique<ExtractElementOperation>(*this);
 }
 
 /* shufflevector operator */
