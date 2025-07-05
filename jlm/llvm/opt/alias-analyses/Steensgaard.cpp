@@ -688,7 +688,7 @@ public:
    * @param location A Location.
    * @return The disjoint set the location is part of.
    */
-  const DisjointLocationSet::set &
+  const DisjointLocationSet::Set &
   GetSet(Location & location) const
   {
     return *DisjointLocationSet_.find(&location);
@@ -760,7 +760,7 @@ public:
   std::string
   ToDot() const
   {
-    auto toDotNode = [](const DisjointLocationSet::set & set)
+    auto toDotNode = [](const DisjointLocationSet::Set & set)
     {
       auto rootLocation = set.value();
 
@@ -799,7 +799,7 @@ public:
     };
 
     auto toDotEdge =
-        [](const DisjointLocationSet::set & set, const DisjointLocationSet::set & pointsToSet)
+        [](const DisjointLocationSet::Set & set, const DisjointLocationSet::Set & pointsToSet)
     {
       return jlm::util::strfmt((intptr_t)&set, " -> ", (intptr_t)&pointsToSet);
     };
@@ -1962,7 +1962,7 @@ util::HashSet<PointsToGraph::MemoryNode *>
 Steensgaard::CollectEscapedMemoryNodes(
     const util::HashSet<RegisterLocation *> & escapingRegisterLocations,
     const std::unordered_map<
-        const util::DisjointSet<Location *>::set *,
+        const util::DisjointSet<Location *>::Set *,
         std::vector<PointsToGraph::MemoryNode *>> & memoryNodesInSet) const
 {
   // Initialize working set
@@ -1978,7 +1978,7 @@ Steensgaard::CollectEscapedMemoryNodes(
 
   // Collect escaped memory nodes
   util::HashSet<PointsToGraph::MemoryNode *> escapedMemoryNodes;
-  util::HashSet<const DisjointLocationSet::set *> visited;
+  util::HashSet<const DisjointLocationSet::Set *> visited;
   while (!toVisit.IsEmpty())
   {
     auto moduleEscapingLocation = *toVisit.Items().begin();
@@ -2015,7 +2015,7 @@ Steensgaard::ConstructPointsToGraph() const
   auto pointsToGraph = PointsToGraph::Create();
 
   // All the memory nodes within a set
-  std::unordered_map<const DisjointLocationSet::set *, std::vector<PointsToGraph::MemoryNode *>>
+  std::unordered_map<const DisjointLocationSet::Set *, std::vector<PointsToGraph::MemoryNode *>>
       memoryNodesInSet;
 
   // All register locations that are marked as RegisterLocation::HasEscaped()
