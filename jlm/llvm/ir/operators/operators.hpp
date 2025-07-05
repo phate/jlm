@@ -1924,14 +1924,12 @@ public:
   }
 };
 
-/* extractelement operator */
-
-class extractelement_op final : public rvsdg::SimpleOperation
+class ExtractElementOperation final : public rvsdg::SimpleOperation
 {
 public:
-  virtual ~extractelement_op();
+  ~ExtractElementOperation() noexcept override;
 
-  inline extractelement_op(
+  ExtractElementOperation(
       const std::shared_ptr<const VectorType> & vtype,
       const std::shared_ptr<const jlm::rvsdg::bittype> & btype)
       : SimpleOperation({ vtype, btype }, { vtype->Type() })
@@ -1957,7 +1955,7 @@ public:
     if (!bt)
       throw jlm::util::error("expected bit type.");
 
-    extractelement_op op(vt, bt);
+    ExtractElementOperation op(vt, bt);
     return ThreeAddressCode::create(op, { vector, index });
   }
 };

@@ -1102,7 +1102,7 @@ convert_extractelement_instruction(::llvm::Instruction * i, tacsvector_t & tacs,
 
   auto vector = ConvertValue(i->getOperand(0), tacs, ctx);
   auto index = ConvertValue(i->getOperand(1), tacs, ctx);
-  tacs.push_back(extractelement_op::create(vector, index));
+  tacs.push_back(ExtractElementOperation::create(vector, index));
 
   return tacs.back()->result(0);
 }
