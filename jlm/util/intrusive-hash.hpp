@@ -14,15 +14,15 @@
 #include <vector>
 
 /*
- * Implementation of intrusive_hash data structure
+ * Implementation of intrusive hash data structure
  *
- * An intrusive_hash is a data structure linking multiple objects such that
- * can be looked up efficiently by a specific key. The intrusive_hash is not
+ * An intrusive hash is a data structure linking multiple objects such that
+ * can be looked up efficiently by a specific key. The intrusive hash is not
  * a container: It does not "own" the objects referenced. Additionally it
  * also does not manage memory to represent the linkage: The anchor data
  * structure for forming the linkage are required to be members of the
  * objects themselves. Any object can be member of an arbitrary number of
- * such intrusive_hash collections.
+ * such intrusive hash collections.
  *
  * Usage:
  *
@@ -41,9 +41,9 @@
  *   > num_hash_accessor;
  * };
  *
- * an intrusive_hash data structure can be declared in the following way:
+ * an intrusive hash data structure can be declared in the following way:
  *
- * typedef jlm::util::intrusive_hash<
+ * typedef jlm::util::IntrusiveHash<
  *   int,
  *   X,
  *   X::num_hash_accessor
@@ -126,7 +126,7 @@ template<
     typename Accessor,
     typename KeyHash = std::hash<KeyType>,
     typename KeyEqual = safe_equal<KeyType>>
-class intrusive_hash
+class IntrusiveHash
 {
 private:
   struct bucket_type
@@ -167,7 +167,7 @@ public:
           element_(nullptr)
     {}
 
-    constexpr iterator(const intrusive_hash * map, ElementType * object)
+    constexpr iterator(const IntrusiveHash * map, ElementType * object)
         : map_(map),
           element_(object)
     {}
@@ -229,7 +229,7 @@ public:
     }
 
   private:
-    const intrusive_hash * map_;
+    const IntrusiveHash * map_;
     ElementType * element_;
     friend class const_iterator;
   };
@@ -256,7 +256,7 @@ public:
           element_(nullptr)
     {}
 
-    constexpr const_iterator(const intrusive_hash * map, const ElementType * object)
+    constexpr const_iterator(const IntrusiveHash * map, const ElementType * object)
         : map_(map),
           element_(object)
     {}
@@ -318,7 +318,7 @@ public:
     }
 
   private:
-    const intrusive_hash * map_;
+    const IntrusiveHash * map_;
     const ElementType * element_;
   };
 
@@ -327,24 +327,24 @@ public:
   typedef KeyType key_type;
   typedef size_t size_type;
 
-  inline constexpr intrusive_hash() noexcept
+  constexpr IntrusiveHash() noexcept
       : size_(0),
         mask_(0)
   {}
 
-  intrusive_hash(const intrusive_hash & other) = delete;
+  IntrusiveHash(const IntrusiveHash & other) = delete;
 
   void
-  operator=(const intrusive_hash & other) = delete;
+  operator=(const IntrusiveHash & other) = delete;
 
-  intrusive_hash(intrusive_hash && other) noexcept
-      : intrusive_hash()
+  IntrusiveHash(IntrusiveHash && other) noexcept
+      : IntrusiveHash()
   {
     swap(other);
   }
 
   void
-  swap(intrusive_hash & other) noexcept
+  swap(IntrusiveHash & other) noexcept
   {
     buckets_.swap(other.buckets_);
     std::swap(size_, other.size_);
@@ -627,8 +627,7 @@ template<
     typename KeyEqual = safe_equal<KeyType>>
 class owner_intrusive_hash
 {
-private:
-  typedef intrusive_hash<KeyType, ElementType, Accessor, KeyHash, KeyEqual> internal_hash_type;
+  typedef IntrusiveHash<KeyType, ElementType, Accessor, KeyHash, KeyEqual> internal_hash_type;
 
 public:
   static_assert(
