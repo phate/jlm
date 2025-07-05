@@ -1960,19 +1960,19 @@ public:
   }
 };
 
-/* shufflevector operator */
-
-class shufflevector_op final : public rvsdg::SimpleOperation
+class ShuffleVectorOperation final : public rvsdg::SimpleOperation
 {
 public:
-  ~shufflevector_op() override;
+  ~ShuffleVectorOperation() noexcept override;
 
-  shufflevector_op(const std::shared_ptr<const FixedVectorType> & v, const std::vector<int> & mask)
+  ShuffleVectorOperation(
+      const std::shared_ptr<const FixedVectorType> & v,
+      const std::vector<int> & mask)
       : SimpleOperation({ v, v }, { v }),
         Mask_(mask)
   {}
 
-  shufflevector_op(
+  ShuffleVectorOperation(
       const std::shared_ptr<const ScalableVectorType> & v,
       const std::vector<int> & mask)
       : SimpleOperation({ v, v }, { v }),
@@ -2012,7 +2012,7 @@ private:
   CreateShuffleVectorTac(const Variable * v1, const Variable * v2, const std::vector<int> & mask)
   {
     auto vt = std::static_pointer_cast<const T>(v1->Type());
-    shufflevector_op op(vt, mask);
+    ShuffleVectorOperation op(vt, mask);
     return ThreeAddressCode::create(op, { v1, v2 });
   }
 
