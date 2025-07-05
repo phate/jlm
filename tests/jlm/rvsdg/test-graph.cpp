@@ -36,7 +36,7 @@ test_recursive_prune()
   auto n1 = TestOperation::create(&graph.GetRootRegion(), { imp }, { t });
   auto n2 = TestOperation::create(&graph.GetRootRegion(), { imp }, { t });
 
-  auto n3 = jlm::tests::structural_node::create(&graph.GetRootRegion(), 1);
+  auto n3 = TestStructuralNode::create(&graph.GetRootRegion(), 1);
   StructuralInput::create(n3, imp, t);
   auto & a1 = TestGraphArgument::Create(*n3->subregion(0), nullptr, t);
   auto n4 = TestOperation::create(n3->subregion(0), { &a1 }, { t });
@@ -44,7 +44,7 @@ test_recursive_prune()
   TestGraphResult::Create(*n4->output(0), nullptr);
   auto o1 = StructuralOutput::create(n3, t);
 
-  auto n6 = jlm::tests::structural_node::create(n3->subregion(0), 1);
+  auto n6 = TestStructuralNode::create(n3->subregion(0), 1);
 
   jlm::tests::GraphExport::Create(*n2->output(0), "n2");
   jlm::tests::GraphExport::Create(*o1, "n3");

@@ -240,14 +240,14 @@ class StructuralNodeArgument;
 class StructuralNodeInput;
 class StructuralNodeOutput;
 
-class structural_node final : public rvsdg::StructuralNode
+class TestStructuralNode final : public rvsdg::StructuralNode
 {
 public:
-  ~structural_node() override;
+  ~TestStructuralNode() noexcept override;
 
 private:
-  structural_node(rvsdg::Region * parent, size_t nsubregions)
-      : rvsdg::StructuralNode(parent, nsubregions)
+  TestStructuralNode(rvsdg::Region * parent, size_t nsubregions)
+      : StructuralNode(parent, nsubregions)
   {}
 
 public:
@@ -266,26 +266,26 @@ public:
   StructuralNodeOutput &
   AddOutputWithResults(const std::vector<rvsdg::Output *> & origins);
 
-  static structural_node *
+  static TestStructuralNode *
   create(rvsdg::Region * parent, size_t nsubregions)
   {
-    return new structural_node(parent, nsubregions);
+    return new TestStructuralNode(parent, nsubregions);
   }
 
-  virtual structural_node *
+  TestStructuralNode *
   copy(rvsdg::Region * region, rvsdg::SubstitutionMap & smap) const override;
 };
 
 class StructuralNodeInput final : public rvsdg::StructuralInput
 {
-  friend structural_node;
+  friend TestStructuralNode;
 
 public:
   ~StructuralNodeInput() noexcept override;
 
 private:
   StructuralNodeInput(
-      structural_node & node,
+      TestStructuralNode & node,
       rvsdg::Output & origin,
       std::shared_ptr<const rvsdg::Type> type)
       : StructuralInput(&node, &origin, std::move(type))
@@ -316,20 +316,20 @@ public:
 
 class StructuralNodeOutput final : public rvsdg::StructuralOutput
 {
-  friend structural_node;
+  friend TestStructuralNode;
 
 public:
   ~StructuralNodeOutput() noexcept override;
 
 private:
-  StructuralNodeOutput(structural_node & node, std::shared_ptr<const rvsdg::Type> type)
+  StructuralNodeOutput(TestStructuralNode & node, std::shared_ptr<const rvsdg::Type> type)
       : StructuralOutput(&node, std::move(type))
   {}
 };
 
 class StructuralNodeArgument final : public rvsdg::RegionArgument
 {
-  friend structural_node;
+  friend TestStructuralNode;
 
 public:
   ~StructuralNodeArgument() noexcept override;
@@ -364,7 +364,7 @@ private:
 
 class StructuralNodeResult final : public rvsdg::RegionResult
 {
-  friend structural_node;
+  friend TestStructuralNode;
 
 public:
   ~StructuralNodeResult() noexcept override;
