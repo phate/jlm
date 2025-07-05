@@ -2053,14 +2053,12 @@ public:
   }
 };
 
-/* insertelement operator */
-
-class insertelement_op final : public rvsdg::SimpleOperation
+class InsertElementOperation final : public rvsdg::SimpleOperation
 {
 public:
-  virtual ~insertelement_op();
+  ~InsertElementOperation() noexcept override;
 
-  inline insertelement_op(
+  InsertElementOperation(
       const std::shared_ptr<const VectorType> & vectype,
       const std::shared_ptr<const jlm::rvsdg::ValueType> & vtype,
       const std::shared_ptr<const jlm::rvsdg::bittype> & btype)
@@ -2098,7 +2096,7 @@ public:
     if (!bt)
       throw jlm::util::error("expected bit type.");
 
-    insertelement_op op(vct, vt, bt);
+    InsertElementOperation op(vct, vt, bt);
     return ThreeAddressCode::create(op, { vector, value, index });
   }
 };
