@@ -449,6 +449,7 @@ rvsdg2rhls(llvm::RvsdgModule & rhls, util::StatisticsCollector & collector)
   RemoveUnusedStates(rhls);
 
   llvm::DeadNodeElimination llvmDne;
+  llvmDne.Run(rhls, collector);
   jlm::llvm::tginversion tgi;
   // simplify loops
   tgi.Run(rhls, collector);
