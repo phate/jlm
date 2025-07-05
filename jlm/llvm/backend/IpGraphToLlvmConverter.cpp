@@ -838,7 +838,7 @@ IpGraphToLlvmConverter::convert_insertelement(
     const std::vector<const Variable *> & operands,
     ::llvm::IRBuilder<> & builder)
 {
-  JLM_ASSERT(is<insertelement_op>(op));
+  JLM_ASSERT(is<InsertElementOperation>(op));
 
   auto vector = Context_->value(operands[0]);
   auto value = Context_->value(operands[1]);
@@ -1297,7 +1297,7 @@ IpGraphToLlvmConverter::convert_operation(
   {
     return convert<ShuffleVectorOperation>(op, arguments, builder);
   }
-  if (is<insertelement_op>(op))
+  if (is<InsertElementOperation>(op))
   {
     return convert_insertelement(op, arguments, builder);
   }

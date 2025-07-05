@@ -990,29 +990,26 @@ constantvector_op::copy() const
   return std::make_unique<constantvector_op>(*this);
 }
 
-/* insertelement operator */
-
-insertelement_op::~insertelement_op()
-{}
+InsertElementOperation::~InsertElementOperation() noexcept = default;
 
 bool
-insertelement_op::operator==(const Operation & other) const noexcept
+InsertElementOperation::operator==(const Operation & other) const noexcept
 {
-  auto op = dynamic_cast<const insertelement_op *>(&other);
+  auto op = dynamic_cast<const InsertElementOperation *>(&other);
   return op && op->argument(0) == argument(0) && op->argument(1) == argument(1)
       && op->argument(2) == argument(2);
 }
 
 std::string
-insertelement_op::debug_string() const
+InsertElementOperation::debug_string() const
 {
-  return "INSERTELEMENT";
+  return "InsertElement";
 }
 
 std::unique_ptr<rvsdg::Operation>
-insertelement_op::copy() const
+InsertElementOperation::copy() const
 {
-  return std::make_unique<insertelement_op>(*this);
+  return std::make_unique<InsertElementOperation>(*this);
 }
 
 /* vectorunary operator */

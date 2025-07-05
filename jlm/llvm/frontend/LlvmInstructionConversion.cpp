@@ -1130,7 +1130,7 @@ convert_insertelement_instruction(::llvm::Instruction * i, tacsvector_t & tacs, 
   auto vector = ConvertValue(i->getOperand(0), tacs, ctx);
   auto value = ConvertValue(i->getOperand(1), tacs, ctx);
   auto index = ConvertValue(i->getOperand(2), tacs, ctx);
-  tacs.push_back(insertelement_op::create(vector, value, index));
+  tacs.push_back(InsertElementOperation::create(vector, value, index));
 
   return tacs.back()->result(0);
 }
