@@ -47,7 +47,7 @@
  * set_next members must be implemented appropriately.
  *
  * An object h of num_list class then supports STL-style operations
- * - num_list::Iterator, num_list::const_iterator for iteration
+ * - num_list::Iterator, num_list::ConstIterator for iteration
  * - h.begin(), h.end() and const-qualified variants
  * - h.insert(element) h.push_front(element), h.push_back(element) links an
  *   object into the data structure
@@ -93,7 +93,7 @@ public:
   static_assert(noexcept(Accessor().get_next(nullptr)), "require noexcept get_next");
   static_assert(noexcept(Accessor().set_prev(nullptr, nullptr)), "require noexcept set_prev");
   static_assert(noexcept(Accessor().set_next(nullptr, nullptr)), "require noexcept set_next");
-  class const_iterator;
+  class ConstIterator;
 
   class Iterator
   {
@@ -185,10 +185,10 @@ public:
   private:
     const IntrusiveList * list_;
     ElementType * element_;
-    friend class const_iterator;
+    friend class ConstIterator;
   };
 
-  class const_iterator
+  class ConstIterator
   {
   public:
     typedef const ElementType value_type;
@@ -198,31 +198,31 @@ public:
     typedef size_t size_type;
     typedef ssize_t difference_type;
 
-    constexpr const_iterator(const const_iterator & other) noexcept = default;
+    constexpr ConstIterator(const ConstIterator & other) noexcept = default;
 
-    explicit constexpr const_iterator(const Iterator & other) noexcept
+    explicit constexpr ConstIterator(const Iterator & other) noexcept
         : list_(other.list_),
           element_(other.element_)
     {}
 
-    constexpr const_iterator() noexcept
+    constexpr ConstIterator() noexcept
         : list_(nullptr),
           element_(nullptr)
     {}
 
-    constexpr const_iterator(const IntrusiveList * list, const ElementType * object)
+    constexpr ConstIterator(const IntrusiveList * list, const ElementType * object)
         : list_(list),
           element_(object)
     {}
 
-    inline const const_iterator &
+    const ConstIterator &
     operator++() noexcept
     {
       element_ = list_->accessor_.get_next(element_);
       return *this;
     }
 
-    inline const_iterator
+    ConstIterator
     operator++(int) noexcept
     {
       Iterator i = *this;
@@ -230,7 +230,7 @@ public:
       return i;
     }
 
-    inline const const_iterator &
+    const ConstIterator &
     operator--() noexcept
     {
       if (element_)
@@ -244,7 +244,7 @@ public:
       return *this;
     }
 
-    inline const_iterator
+    ConstIterator
     operator--(int) noexcept
     {
       Iterator i = *this;
@@ -265,13 +265,13 @@ public:
     }
 
     inline bool
-    operator==(const const_iterator & other) const noexcept
+    operator==(const ConstIterator & other) const noexcept
     {
       return element_ == other.element_;
     }
 
     inline bool
-    operator!=(const const_iterator & other) const noexcept
+    operator!=(const ConstIterator & other) const noexcept
     {
       return element_ != other.element_;
     }
@@ -493,7 +493,7 @@ public:
   size() const noexcept
   {
     size_type count = 0;
-    for (const_iterator i = begin(); i != end(); ++i)
+    for (ConstIterator i = begin(); i != end(); ++i)
     {
       ++count;
     }
@@ -518,25 +518,25 @@ public:
     return Iterator(this, nullptr);
   }
 
-  const_iterator
+  ConstIterator
   cbegin() const noexcept
   {
-    return const_iterator(this, first_);
+    return ConstIterator(this, first_);
   }
 
-  const_iterator
+  ConstIterator
   cend() const noexcept
   {
-    return const_iterator(this, nullptr);
+    return ConstIterator(this, nullptr);
   }
 
-  const_iterator
+  ConstIterator
   begin() const noexcept
   {
     return cbegin();
   }
 
-  const_iterator
+  ConstIterator
   end() const noexcept
   {
     return cend();
@@ -550,7 +550,7 @@ public:
   }
 
   /* create iterator for element */
-  const_iterator
+  ConstIterator
   make_element_iterator(const ElementType * element) const noexcept
   {
     return const_iterator(this, element);
@@ -622,7 +622,7 @@ public:
   static_assert(
       noexcept(std::declval<ElementType &>().~ElementType()),
       "Require noexcept destructor for ElementType");
-  typedef typename internal_list_type::const_iterator const_iterator;
+  typedef typename internal_list_type::ConstIterator ConstIterator;
   typedef typename internal_list_type::Iterator Iterator;
   typedef typename internal_list_type::value_type value_type;
   typedef typename internal_list_type::size_type size_type;
@@ -755,25 +755,25 @@ public:
     return internal_list_.end();
   }
 
-  const_iterator
+  ConstIterator
   cbegin() const noexcept
   {
     return internal_list_.cbegin();
   }
 
-  const_iterator
+  ConstIterator
   cend() const noexcept
   {
     return internal_list_.cend();
   }
 
-  const_iterator
+  ConstIterator
   begin() const noexcept
   {
     return internal_list_.begin();
   }
 
-  const_iterator
+  ConstIterator
   end() const noexcept
   {
     return internal_list_.end();
@@ -783,14 +783,14 @@ public:
   Iterator
   make_element_iterator(ElementType * element) const noexcept
   {
-    return iterator(&internal_list_, element);
+    return Iterator(&internal_list_, element);
   }
 
   /* create iterator for element */
-  const_iterator
+  ConstIterator
   make_element_iterator(const ElementType * element) const noexcept
   {
-    return const_iterator(&internal_list_, element);
+    return ConstIterator(&internal_list_, element);
   }
 
 private:
