@@ -1117,7 +1117,7 @@ convert(::llvm::ShuffleVectorInst * i, tacsvector_t & tacs, context & ctx)
   for (auto & element : i->getShuffleMask())
     mask.push_back(element);
 
-  tacs.push_back(shufflevector_op::create(v1, v2, mask));
+  tacs.push_back(ShuffleVectorOperation::create(v1, v2, mask));
 
   return tacs.back()->result(0);
 }

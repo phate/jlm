@@ -823,7 +823,7 @@ IpGraphToLlvmConverter::convert_extractelement(
 
 ::llvm::Value *
 IpGraphToLlvmConverter::convert(
-    const shufflevector_op & op,
+    const ShuffleVectorOperation & op,
     const std::vector<const Variable *> & operands,
     ::llvm::IRBuilder<> & builder)
 {
@@ -1293,9 +1293,9 @@ IpGraphToLlvmConverter::convert_operation(
   {
     return convert_extractelement(op, arguments, builder);
   }
-  if (is<shufflevector_op>(op))
+  if (is<ShuffleVectorOperation>(op))
   {
-    return convert<shufflevector_op>(op, arguments, builder);
+    return convert<ShuffleVectorOperation>(op, arguments, builder);
   }
   if (is<InsertElementOperation>(op))
   {

@@ -45,7 +45,7 @@ class ConstantArrayOperation;
 class ConstantAggregateZeroOperation;
 class ConstantStruct;
 class ConstantPointerNullOperation;
-class shufflevector_op;
+class ShuffleVectorOperation;
 class VectorSelectOperation;
 class malloc_op;
 class FreeOperation;
@@ -277,7 +277,7 @@ private:
 
   ::llvm::Value *
   convert(
-      const shufflevector_op & op,
+      const ShuffleVectorOperation & op,
       const std::vector<const Variable *> & operands,
       ::llvm::IRBuilder<> & builder);
 

@@ -945,28 +945,25 @@ ExtractElementOperation::copy() const
   return std::make_unique<ExtractElementOperation>(*this);
 }
 
-/* shufflevector operator */
-
-shufflevector_op::~shufflevector_op()
-{}
+ShuffleVectorOperation::~ShuffleVectorOperation() noexcept = default;
 
 bool
-shufflevector_op::operator==(const Operation & other) const noexcept
+ShuffleVectorOperation::operator==(const Operation & other) const noexcept
 {
-  auto op = dynamic_cast<const shufflevector_op *>(&other);
+  auto op = dynamic_cast<const ShuffleVectorOperation *>(&other);
   return op && op->argument(0) == argument(0) && op->Mask() == Mask();
 }
 
 std::string
-shufflevector_op::debug_string() const
+ShuffleVectorOperation::debug_string() const
 {
-  return "SHUFFLEVECTOR";
+  return "ShuffleVector";
 }
 
 std::unique_ptr<rvsdg::Operation>
-shufflevector_op::copy() const
+ShuffleVectorOperation::copy() const
 {
-  return std::make_unique<shufflevector_op>(*this);
+  return std::make_unique<ShuffleVectorOperation>(*this);
 }
 
 /* constantvector operator */
