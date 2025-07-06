@@ -1030,76 +1030,67 @@ VectorUnaryOperation::copy() const
   return std::make_unique<VectorUnaryOperation>(*this);
 }
 
-/* vectorbinary operator */
-
-vectorbinary_op::~vectorbinary_op()
-{}
+VectorBinaryOperation::~VectorBinaryOperation() noexcept = default;
 
 bool
-vectorbinary_op::operator==(const Operation & other) const noexcept
+VectorBinaryOperation::operator==(const Operation & other) const noexcept
 {
-  auto op = dynamic_cast<const vectorbinary_op *>(&other);
+  auto op = dynamic_cast<const VectorBinaryOperation *>(&other);
   return op && op->operation() == operation();
 }
 
 std::string
-vectorbinary_op::debug_string() const
+VectorBinaryOperation::debug_string() const
 {
-  return util::strfmt("VEC", operation().debug_string());
+  return util::strfmt("Vector", operation().debug_string());
 }
 
 std::unique_ptr<rvsdg::Operation>
-vectorbinary_op::copy() const
+VectorBinaryOperation::copy() const
 {
-  return std::make_unique<vectorbinary_op>(*this);
+  return std::make_unique<VectorBinaryOperation>(*this);
 }
 
-/* const data vector operator */
-
-constant_data_vector_op::~constant_data_vector_op()
-{}
+ConstantDataVectorOperation::~ConstantDataVectorOperation() noexcept = default;
 
 bool
-constant_data_vector_op::operator==(const Operation & other) const noexcept
+ConstantDataVectorOperation::operator==(const Operation & other) const noexcept
 {
-  auto op = dynamic_cast<const constant_data_vector_op *>(&other);
+  auto op = dynamic_cast<const ConstantDataVectorOperation *>(&other);
   return op && op->result(0) == result(0);
 }
 
 std::string
-constant_data_vector_op::debug_string() const
+ConstantDataVectorOperation::debug_string() const
 {
-  return "CONSTANTDATAVECTOR";
+  return "ConstantDataVector";
 }
 
 std::unique_ptr<rvsdg::Operation>
-constant_data_vector_op::copy() const
+ConstantDataVectorOperation::copy() const
 {
-  return std::make_unique<constant_data_vector_op>(*this);
+  return std::make_unique<ConstantDataVectorOperation>(*this);
 }
 
-/* extractvalue operator */
-
-ExtractValue::~ExtractValue()
-{}
+ExtractValueOperation::~ExtractValueOperation() noexcept = default;
 
 bool
-ExtractValue::operator==(const Operation & other) const noexcept
+ExtractValueOperation::operator==(const Operation & other) const noexcept
 {
-  auto op = dynamic_cast<const ExtractValue *>(&other);
+  auto op = dynamic_cast<const ExtractValueOperation *>(&other);
   return op && op->indices_ == indices_ && op->type() == type();
 }
 
 std::string
-ExtractValue::debug_string() const
+ExtractValueOperation::debug_string() const
 {
   return "ExtractValue";
 }
 
 std::unique_ptr<rvsdg::Operation>
-ExtractValue::copy() const
+ExtractValueOperation::copy() const
 {
-  return std::make_unique<ExtractValue>(*this);
+  return std::make_unique<ExtractValueOperation>(*this);
 }
 
 MallocOperation::~MallocOperation() noexcept = default;

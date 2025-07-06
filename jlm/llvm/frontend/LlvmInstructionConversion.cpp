@@ -259,7 +259,7 @@ convert_constantDataVector(
   for (size_t n = 0; n < c->getNumElements(); n++)
     elements.push_back(ConvertConstant(c->getElementAsConstant(n), tacs, ctx));
 
-  tacs.push_back(constant_data_vector_op::Create(elements));
+  tacs.push_back(ConstantDataVectorOperation::Create(elements));
 
   return tacs.back()->result(0);
 }
@@ -551,7 +551,7 @@ convert(const ::llvm::ICmpInst * instruction, tacsvector_t & tacs, context & ctx
   if (operandType->isVectorTy())
   {
     const auto instructionType = ctx.GetTypeConverter().ConvertLlvmType(*instruction->getType());
-    tacs.push_back(vectorbinary_op::create(*operation, op1, op2, instructionType));
+    tacs.push_back(VectorBinaryOperation::create(*operation, op1, op2, instructionType));
   }
   else
   {
@@ -597,7 +597,7 @@ convert_fcmp_instruction(::llvm::Instruction * instruction, tacsvector_t & tacs,
   fpcmp_op operation(map[i->getPredicate()], typeConverter.ExtractFloatingPointSize(*fptype));
 
   if (t->isVectorTy())
-    tacs.push_back(vectorbinary_op::create(operation, op1, op2, type));
+    tacs.push_back(VectorBinaryOperation::create(operation, op1, op2, type));
   else
     tacs.push_back(ThreeAddressCode::create(operation, { op1, op2 }));
 
@@ -1052,7 +1052,7 @@ convert(const ::llvm::BinaryOperator * instruction, tacsvector_t & tacs, context
 
   if (llvmType->isVectorTy())
   {
-    tacs.push_back(vectorbinary_op::create(*operation, operand1, operand2, jlmType));
+    tacs.push_back(VectorBinaryOperation::create(*operation, operand1, operand2, jlmType));
   }
   else
   {
@@ -1090,7 +1090,7 @@ convert_extractvalue(::llvm::Instruction * i, tacsvector_t & tacs, context & ctx
   auto ev = ::llvm::dyn_cast<::llvm::ExtractValueInst>(i);
 
   auto aggregate = ConvertValue(ev->getOperand(0), tacs, ctx);
-  tacs.push_back(ExtractValue::create(aggregate, ev->getIndices()));
+  tacs.push_back(ExtractValueOperation::create(aggregate, ev->getIndices()));
 
   return tacs.back()->result(0);
 }

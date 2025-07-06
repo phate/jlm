@@ -759,8 +759,8 @@ IpGraphToLlvmConverter::convert_constantdatavector(
     const std::vector<const Variable *> & operands,
     ::llvm::IRBuilder<> & builder)
 {
-  JLM_ASSERT(is<constant_data_vector_op>(op));
-  auto & cop = *static_cast<const constant_data_vector_op *>(&op);
+  JLM_ASSERT(is<ConstantDataVectorOperation>(op));
+  auto & cop = *static_cast<const ConstantDataVectorOperation *>(&op);
 
   if (auto bt = dynamic_cast<const rvsdg::bittype *>(&cop.type()))
   {
@@ -863,8 +863,8 @@ IpGraphToLlvmConverter::convert_vectorbinary(
     const std::vector<const Variable *> & operands,
     ::llvm::IRBuilder<> & builder)
 {
-  JLM_ASSERT(is<vectorbinary_op>(op));
-  auto vop = static_cast<const vectorbinary_op *>(&op);
+  JLM_ASSERT(is<VectorBinaryOperation>(op));
+  auto vop = static_cast<const VectorBinaryOperation *>(&op);
   return convert_operation(vop->operation(), operands, builder);
 }
 
@@ -913,7 +913,7 @@ IpGraphToLlvmConverter::convert_cast(
 
 ::llvm::Value *
 IpGraphToLlvmConverter::convert(
-    const ExtractValue & op,
+    const ExtractValueOperation & op,
     const std::vector<const Variable *> & operands,
     ::llvm::IRBuilder<> & builder)
 {
@@ -1285,7 +1285,7 @@ IpGraphToLlvmConverter::convert_operation(
   {
     return convert_constantvector(op, arguments, builder);
   }
-  if (is<constant_data_vector_op>(op))
+  if (is<ConstantDataVectorOperation>(op))
   {
     return convert_constantdatavector(op, arguments, builder);
   }
@@ -1305,7 +1305,7 @@ IpGraphToLlvmConverter::convert_operation(
   {
     return convert_vectorunary(op, arguments, builder);
   }
-  if (is<vectorbinary_op>(op))
+  if (is<VectorBinaryOperation>(op))
   {
     return convert_vectorbinary(op, arguments, builder);
   }
@@ -1313,9 +1313,9 @@ IpGraphToLlvmConverter::convert_operation(
   {
     return convert<VectorSelectOperation>(op, arguments, builder);
   }
-  if (is<ExtractValue>(op))
+  if (is<ExtractValueOperation>(op))
   {
-    return convert<ExtractValue>(op, arguments, builder);
+    return convert<ExtractValueOperation>(op, arguments, builder);
   }
   if (is<CallOperation>(op))
   {
