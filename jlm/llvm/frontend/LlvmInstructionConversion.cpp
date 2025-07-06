@@ -295,7 +295,7 @@ convert_constantVector(
     elements.push_back(ConvertConstant(c->getAggregateElement(n), tacs, ctx));
 
   auto type = ctx.GetTypeConverter().ConvertLlvmType(*c->getType());
-  tacs.push_back(constantvector_op::create(elements, type));
+  tacs.push_back(ConstantVectorOperation::create(elements, type));
 
   return tacs.back()->result(0);
 }

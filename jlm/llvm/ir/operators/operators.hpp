@@ -2019,14 +2019,12 @@ private:
   std::vector<int> Mask_;
 };
 
-/* constantvector operator */
-
-class constantvector_op final : public rvsdg::SimpleOperation
+class ConstantVectorOperation final : public rvsdg::SimpleOperation
 {
 public:
-  virtual ~constantvector_op();
+  ~ConstantVectorOperation() noexcept override;
 
-  explicit inline constantvector_op(const std::shared_ptr<const VectorType> & vt)
+  explicit ConstantVectorOperation(const std::shared_ptr<const VectorType> & vt)
       : SimpleOperation({ vt->size(), vt->Type() }, { vt })
   {}
 
@@ -2048,7 +2046,7 @@ public:
     if (!vt)
       throw jlm::util::error("expected vector type.");
 
-    constantvector_op op(vt);
+    ConstantVectorOperation op(vt);
     return ThreeAddressCode::create(op, operands);
   }
 };
