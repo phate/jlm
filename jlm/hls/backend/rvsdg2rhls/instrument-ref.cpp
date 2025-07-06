@@ -176,7 +176,7 @@ instrument_ref(
       // Does this IF make sense now when the void_ptr doesn't have a type?
       if (*addr->Type() != *void_ptr)
       {
-        addr = jlm::llvm::bitcast_op::create(addr, void_ptr);
+        addr = llvm::BitCastOperation::create(addr, void_ptr);
       }
       auto memstate = node->input(1)->origin();
       auto callOp = jlm::llvm::CallOperation::Create(
@@ -207,7 +207,7 @@ instrument_ref(
       // Does this IF make sense now when the void_ptr doesn't have a type?
       if (*addr->Type() != *void_ptr)
       {
-        addr = jlm::llvm::bitcast_op::create(addr, void_ptr);
+        addr = llvm::BitCastOperation::create(addr, void_ptr);
       }
       std::vector<jlm::rvsdg::Input *> old_users(node->output(1)->begin(), node->output(1)->end());
       auto memstate = node->output(1);
@@ -234,7 +234,7 @@ instrument_ref(
       // Does this IF make sense now when the void_ptr doesn't have a type?
       if (*addr->Type() != *void_ptr)
       {
-        addr = jlm::llvm::bitcast_op::create(addr, void_ptr);
+        addr = llvm::BitCastOperation::create(addr, void_ptr);
       }
       auto memstate = node->output(0);
       std::vector<jlm::rvsdg::Input *> oldUsers(memstate->begin(), memstate->end());

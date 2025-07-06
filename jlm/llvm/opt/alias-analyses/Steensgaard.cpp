@@ -1020,7 +1020,7 @@ Steensgaard::AnalyzeSimpleNode(const jlm::rvsdg::SimpleNode & node)
   {
     AnalyzeGep(node);
   }
-  else if (is<bitcast_op>(&node))
+  else if (is<BitCastOperation>(&node))
   {
     AnalyzeBitcast(node);
   }
@@ -1306,7 +1306,7 @@ Steensgaard::AnalyzeGep(const jlm::rvsdg::SimpleNode & node)
 void
 Steensgaard::AnalyzeBitcast(const jlm::rvsdg::SimpleNode & node)
 {
-  JLM_ASSERT(is<bitcast_op>(&node));
+  JLM_ASSERT(is<BitCastOperation>(&node));
 
   auto & operand = *node.input(0)->origin();
   auto & result = *node.output(0);
