@@ -2101,14 +2101,12 @@ public:
   }
 };
 
-/* vectorunary operator */
-
-class vectorunary_op final : public rvsdg::SimpleOperation
+class VectorUnaryOperation final : public rvsdg::SimpleOperation
 {
 public:
-  virtual ~vectorunary_op();
+  ~VectorUnaryOperation() noexcept override;
 
-  inline vectorunary_op(
+  VectorUnaryOperation(
       const rvsdg::UnaryOperation & op,
       const std::shared_ptr<const VectorType> & operand,
       const std::shared_ptr<const VectorType> & result)
@@ -2130,18 +2128,18 @@ public:
     }
   }
 
-  inline vectorunary_op(const vectorunary_op & other)
+  VectorUnaryOperation(const VectorUnaryOperation & other)
       : SimpleOperation(other),
         op_(other.op_->copy())
   {}
 
-  inline vectorunary_op(vectorunary_op && other)
+  VectorUnaryOperation(VectorUnaryOperation && other) noexcept
       : SimpleOperation(other),
         op_(std::move(other.op_))
   {}
 
-  inline vectorunary_op &
-  operator=(const vectorunary_op & other)
+  VectorUnaryOperation &
+  operator=(const VectorUnaryOperation & other)
   {
     if (this != &other)
       op_ = other.op_->copy();
@@ -2149,8 +2147,8 @@ public:
     return *this;
   }
 
-  inline vectorunary_op &
-  operator=(vectorunary_op && other)
+  VectorUnaryOperation &
+  operator=(VectorUnaryOperation && other) noexcept
   {
     if (this != &other)
       op_ = std::move(other.op_);
@@ -2184,7 +2182,7 @@ public:
     if (!vct1 || !vct2)
       throw jlm::util::error("expected vector type.");
 
-    vectorunary_op op(unop, vct1, vct2);
+    VectorUnaryOperation op(unop, vct1, vct2);
     return ThreeAddressCode::create(op, { operand });
   }
 

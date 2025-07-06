@@ -1012,28 +1012,25 @@ InsertElementOperation::copy() const
   return std::make_unique<InsertElementOperation>(*this);
 }
 
-/* vectorunary operator */
-
-vectorunary_op::~vectorunary_op()
-{}
+VectorUnaryOperation::~VectorUnaryOperation() noexcept = default;
 
 bool
-vectorunary_op::operator==(const Operation & other) const noexcept
+VectorUnaryOperation::operator==(const Operation & other) const noexcept
 {
-  auto op = dynamic_cast<const vectorunary_op *>(&other);
+  auto op = dynamic_cast<const VectorUnaryOperation *>(&other);
   return op && op->operation() == operation();
 }
 
 std::string
-vectorunary_op::debug_string() const
+VectorUnaryOperation::debug_string() const
 {
-  return util::strfmt("VEC", operation().debug_string());
+  return util::strfmt("Vector", operation().debug_string());
 }
 
 std::unique_ptr<rvsdg::Operation>
-vectorunary_op::copy() const
+VectorUnaryOperation::copy() const
 {
-  return std::make_unique<vectorunary_op>(*this);
+  return std::make_unique<VectorUnaryOperation>(*this);
 }
 
 /* vectorbinary operator */
