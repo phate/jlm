@@ -57,7 +57,7 @@ class LambdaEntryMemoryStateSplitOperation;
 class CallEntryMemoryStateMergeOperation;
 class CallExitMemoryStateSplitOperation;
 class ControlFlowGraphNode;
-class ExtractValue;
+class ExtractValueOperation;
 class FunctionNode;
 class InterProceduralGraphModule;
 class LambdaExitMemoryStateMergeOperation;
@@ -240,7 +240,7 @@ private:
 
   ::llvm::Value *
   convert(
-      const ExtractValue & op,
+      const ExtractValueOperation & op,
       const std::vector<const Variable *> & operands,
       ::llvm::IRBuilder<> & builder);
 

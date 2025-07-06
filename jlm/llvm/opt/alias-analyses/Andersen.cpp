@@ -643,7 +643,7 @@ Andersen::AnalyzeSimpleNode(const rvsdg::SimpleNode & node)
     AnalyzeConstantStruct(node);
   else if (is<ConstantAggregateZeroOperation>(op))
     AnalyzeConstantAggregateZero(node);
-  else if (is<ExtractValue>(op))
+  else if (is<ExtractValueOperation>(op))
     AnalyzeExtractValue(node);
   else if (is<valist_op>(op))
     AnalyzeValist(node);
@@ -927,7 +927,7 @@ Andersen::AnalyzeConstantAggregateZero(const rvsdg::SimpleNode & node)
 void
 Andersen::AnalyzeExtractValue(const rvsdg::SimpleNode & node)
 {
-  JLM_ASSERT(is<ExtractValue>(&node));
+  JLM_ASSERT(is<ExtractValueOperation>(&node));
 
   const auto & result = *node.output(0);
   if (!IsOrContainsPointerType(*result.Type()))

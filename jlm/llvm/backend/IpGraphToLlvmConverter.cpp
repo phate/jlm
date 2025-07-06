@@ -913,7 +913,7 @@ IpGraphToLlvmConverter::convert_cast(
 
 ::llvm::Value *
 IpGraphToLlvmConverter::convert(
-    const ExtractValue & op,
+    const ExtractValueOperation & op,
     const std::vector<const Variable *> & operands,
     ::llvm::IRBuilder<> & builder)
 {
@@ -1313,9 +1313,9 @@ IpGraphToLlvmConverter::convert_operation(
   {
     return convert<VectorSelectOperation>(op, arguments, builder);
   }
-  if (is<ExtractValue>(op))
+  if (is<ExtractValueOperation>(op))
   {
-    return convert<ExtractValue>(op, arguments, builder);
+    return convert<ExtractValueOperation>(op, arguments, builder);
   }
   if (is<CallOperation>(op))
   {

@@ -1090,7 +1090,7 @@ convert_extractvalue(::llvm::Instruction * i, tacsvector_t & tacs, context & ctx
   auto ev = ::llvm::dyn_cast<::llvm::ExtractValueInst>(i);
 
   auto aggregate = ConvertValue(ev->getOperand(0), tacs, ctx);
-  tacs.push_back(ExtractValue::create(aggregate, ev->getIndices()));
+  tacs.push_back(ExtractValueOperation::create(aggregate, ev->getIndices()));
 
   return tacs.back()->result(0);
 }
