@@ -863,8 +863,8 @@ IpGraphToLlvmConverter::convert_vectorbinary(
     const std::vector<const Variable *> & operands,
     ::llvm::IRBuilder<> & builder)
 {
-  JLM_ASSERT(is<vectorbinary_op>(op));
-  auto vop = static_cast<const vectorbinary_op *>(&op);
+  JLM_ASSERT(is<VectorBinaryOperation>(op));
+  auto vop = static_cast<const VectorBinaryOperation *>(&op);
   return convert_operation(vop->operation(), operands, builder);
 }
 
@@ -1305,7 +1305,7 @@ IpGraphToLlvmConverter::convert_operation(
   {
     return convert_vectorunary(op, arguments, builder);
   }
-  if (is<vectorbinary_op>(op))
+  if (is<VectorBinaryOperation>(op))
   {
     return convert_vectorbinary(op, arguments, builder);
   }

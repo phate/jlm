@@ -551,7 +551,7 @@ convert(const ::llvm::ICmpInst * instruction, tacsvector_t & tacs, context & ctx
   if (operandType->isVectorTy())
   {
     const auto instructionType = ctx.GetTypeConverter().ConvertLlvmType(*instruction->getType());
-    tacs.push_back(vectorbinary_op::create(*operation, op1, op2, instructionType));
+    tacs.push_back(VectorBinaryOperation::create(*operation, op1, op2, instructionType));
   }
   else
   {
@@ -597,7 +597,7 @@ convert_fcmp_instruction(::llvm::Instruction * instruction, tacsvector_t & tacs,
   fpcmp_op operation(map[i->getPredicate()], typeConverter.ExtractFloatingPointSize(*fptype));
 
   if (t->isVectorTy())
-    tacs.push_back(vectorbinary_op::create(operation, op1, op2, type));
+    tacs.push_back(VectorBinaryOperation::create(operation, op1, op2, type));
   else
     tacs.push_back(ThreeAddressCode::create(operation, { op1, op2 }));
 
@@ -1052,7 +1052,7 @@ convert(const ::llvm::BinaryOperator * instruction, tacsvector_t & tacs, context
 
   if (llvmType->isVectorTy())
   {
-    tacs.push_back(vectorbinary_op::create(*operation, operand1, operand2, jlmType));
+    tacs.push_back(VectorBinaryOperation::create(*operation, operand1, operand2, jlmType));
   }
   else
   {
