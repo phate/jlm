@@ -615,7 +615,7 @@ Andersen::AnalyzeSimpleNode(const rvsdg::SimpleNode & node)
 
   if (is<AllocaOperation>(op))
     AnalyzeAlloca(node);
-  else if (is<malloc_op>(op))
+  else if (is<MallocOperation>(op))
     AnalyzeMalloc(node);
   else if (is<LoadOperation>(&node))
     AnalyzeLoad(node);
@@ -683,7 +683,7 @@ Andersen::AnalyzeAlloca(const rvsdg::SimpleNode & node)
 void
 Andersen::AnalyzeMalloc(const rvsdg::SimpleNode & node)
 {
-  JLM_ASSERT(is<malloc_op>(&node));
+  JLM_ASSERT(is<MallocOperation>(&node));
 
   const auto & outputRegister = *node.output(0);
   const auto outputRegisterPO = Set_->CreateRegisterPointerObject(outputRegister);

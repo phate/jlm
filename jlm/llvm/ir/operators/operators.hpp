@@ -2414,14 +2414,12 @@ private:
   std::vector<unsigned> indices_;
 };
 
-/* malloc operator */
-
-class malloc_op final : public rvsdg::SimpleOperation
+class MallocOperation final : public rvsdg::SimpleOperation
 {
 public:
-  virtual ~malloc_op();
+  ~MallocOperation() noexcept override;
 
-  explicit malloc_op(std::shared_ptr<const jlm::rvsdg::bittype> btype)
+  explicit MallocOperation(std::shared_ptr<const jlm::rvsdg::bittype> btype)
       : SimpleOperation({ std::move(btype) }, { PointerType::Create(), MemoryStateType::Create() })
   {}
 
@@ -2454,7 +2452,7 @@ public:
     if (!bt)
       throw jlm::util::error("expected bits type.");
 
-    malloc_op op(std::move(bt));
+    MallocOperation op(std::move(bt));
     return ThreeAddressCode::create(op, { size });
   }
 
@@ -2465,7 +2463,7 @@ public:
     if (!bt)
       throw jlm::util::error("expected bits type.");
 
-    return outputs(&rvsdg::CreateOpNode<malloc_op>({ size }, std::move(bt)));
+    return outputs(&rvsdg::CreateOpNode<MallocOperation>({ size }, std::move(bt)));
   }
 };
 

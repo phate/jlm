@@ -1093,30 +1093,25 @@ ExtractValueOperation::copy() const
   return std::make_unique<ExtractValueOperation>(*this);
 }
 
-/* malloc operator */
-
-malloc_op::~malloc_op()
-{}
+MallocOperation::~MallocOperation() noexcept = default;
 
 bool
-malloc_op::operator==(const Operation & other) const noexcept
+MallocOperation::operator==(const Operation & other) const noexcept
 {
-  /*
-    Avoid CNE for malloc operator
-  */
+  // Avoid CNE for malloc operator
   return this == &other;
 }
 
 std::string
-malloc_op::debug_string() const
+MallocOperation::debug_string() const
 {
-  return "MALLOC";
+  return "Malloc";
 }
 
 std::unique_ptr<rvsdg::Operation>
-malloc_op::copy() const
+MallocOperation::copy() const
 {
-  return std::make_unique<malloc_op>(*this);
+  return std::make_unique<MallocOperation>(*this);
 }
 
 /* free operator */

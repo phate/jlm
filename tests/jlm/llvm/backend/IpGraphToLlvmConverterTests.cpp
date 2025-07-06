@@ -463,7 +463,7 @@ Malloc()
     auto size =
         cfg->entry()->append_argument(argument::create("size", jlm::rvsdg::bittype::Create(64)));
 
-    bb->append_last(malloc_op::create(size));
+    bb->append_last(MallocOperation::create(size));
 
     cfg->exit()->append_result(bb->last()->result(0));
     cfg->exit()->append_result(bb->last()->result(1));

@@ -923,7 +923,7 @@ IpGraphToLlvmConverter::convert(
 
 ::llvm::Value *
 IpGraphToLlvmConverter::convert(
-    const malloc_op & op,
+    const MallocOperation & op,
     const std::vector<const Variable *> & args,
     ::llvm::IRBuilder<> & builder)
 {
@@ -1321,9 +1321,9 @@ IpGraphToLlvmConverter::convert_operation(
   {
     return convert<CallOperation>(op, arguments, builder);
   }
-  if (is<malloc_op>(op))
+  if (is<MallocOperation>(op))
   {
-    return convert<malloc_op>(op, arguments, builder);
+    return convert<MallocOperation>(op, arguments, builder);
   }
   if (is<FreeOperation>(op))
   {
