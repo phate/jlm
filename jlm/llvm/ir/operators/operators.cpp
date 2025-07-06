@@ -966,28 +966,25 @@ ShuffleVectorOperation::copy() const
   return std::make_unique<ShuffleVectorOperation>(*this);
 }
 
-/* constantvector operator */
-
-constantvector_op::~constantvector_op()
-{}
+ConstantVectorOperation::~ConstantVectorOperation() noexcept = default;
 
 bool
-constantvector_op::operator==(const Operation & other) const noexcept
+ConstantVectorOperation::operator==(const Operation & other) const noexcept
 {
-  auto op = dynamic_cast<const constantvector_op *>(&other);
+  auto op = dynamic_cast<const ConstantVectorOperation *>(&other);
   return op && op->result(0) == result(0);
 }
 
 std::string
-constantvector_op::debug_string() const
+ConstantVectorOperation::debug_string() const
 {
-  return "CONSTANTVECTOR";
+  return "ConstantVector";
 }
 
 std::unique_ptr<rvsdg::Operation>
-constantvector_op::copy() const
+ConstantVectorOperation::copy() const
 {
-  return std::make_unique<constantvector_op>(*this);
+  return std::make_unique<ConstantVectorOperation>(*this);
 }
 
 InsertElementOperation::~InsertElementOperation() noexcept = default;
