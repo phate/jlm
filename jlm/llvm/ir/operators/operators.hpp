@@ -2334,16 +2334,14 @@ public:
   }
 };
 
-/* ExtractValue operator */
-
-class ExtractValue final : public rvsdg::SimpleOperation
+class ExtractValueOperation final : public rvsdg::SimpleOperation
 {
   typedef std::vector<unsigned>::const_iterator const_iterator;
 
 public:
-  virtual ~ExtractValue();
+  ~ExtractValueOperation() noexcept override;
 
-  inline ExtractValue(
+  ExtractValueOperation(
       const std::shared_ptr<const jlm::rvsdg::Type> & aggtype,
       const std::vector<unsigned> & indices)
       : SimpleOperation({ aggtype }, { dsttype(aggtype, indices) }),
@@ -2383,7 +2381,7 @@ public:
   static inline std::unique_ptr<llvm::ThreeAddressCode>
   create(const llvm::Variable * aggregate, const std::vector<unsigned> & indices)
   {
-    ExtractValue op(aggregate->Type(), indices);
+    ExtractValueOperation op(aggregate->Type(), indices);
     return ThreeAddressCode::create(op, { aggregate });
   }
 

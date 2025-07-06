@@ -1078,28 +1078,25 @@ constant_data_vector_op::copy() const
   return std::make_unique<constant_data_vector_op>(*this);
 }
 
-/* extractvalue operator */
-
-ExtractValue::~ExtractValue()
-{}
+ExtractValueOperation::~ExtractValueOperation() noexcept = default;
 
 bool
-ExtractValue::operator==(const Operation & other) const noexcept
+ExtractValueOperation::operator==(const Operation & other) const noexcept
 {
-  auto op = dynamic_cast<const ExtractValue *>(&other);
+  auto op = dynamic_cast<const ExtractValueOperation *>(&other);
   return op && op->indices_ == indices_ && op->type() == type();
 }
 
 std::string
-ExtractValue::debug_string() const
+ExtractValueOperation::debug_string() const
 {
   return "ExtractValue";
 }
 
 std::unique_ptr<rvsdg::Operation>
-ExtractValue::copy() const
+ExtractValueOperation::copy() const
 {
-  return std::make_unique<ExtractValue>(*this);
+  return std::make_unique<ExtractValueOperation>(*this);
 }
 
 /* malloc operator */

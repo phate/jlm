@@ -1056,7 +1056,7 @@ Steensgaard::AnalyzeSimpleNode(const jlm::rvsdg::SimpleNode & node)
   {
     AnalyzeConstantAggregateZero(node);
   }
-  else if (is<ExtractValue>(&node))
+  else if (is<ExtractValueOperation>(&node))
   {
     AnalyzeExtractValue(node);
   }
@@ -1344,7 +1344,7 @@ Steensgaard::AnalyzePtrToInt(const rvsdg::SimpleNode & node)
 void
 Steensgaard::AnalyzeExtractValue(const jlm::rvsdg::SimpleNode & node)
 {
-  JLM_ASSERT(is<ExtractValue>(&node));
+  JLM_ASSERT(is<ExtractValueOperation>(&node));
 
   auto & result = *node.output(0);
 
