@@ -97,7 +97,7 @@ TestFNegVector()
   auto ipgModule = jlm::llvm::ConvertLlvmModule(*llvmModule);
   print(*ipgModule, stdout);
 
-  assert(Contains<jlm::llvm::vectorunary_op>(*ipgModule, "f"));
+  assert(Contains<jlm::llvm::VectorUnaryOperation>(*ipgModule, "f"));
 }
 
 static void

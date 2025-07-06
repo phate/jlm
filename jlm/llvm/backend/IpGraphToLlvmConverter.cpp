@@ -852,8 +852,8 @@ IpGraphToLlvmConverter::convert_vectorunary(
     const std::vector<const Variable *> & operands,
     ::llvm::IRBuilder<> & builder)
 {
-  JLM_ASSERT(is<vectorunary_op>(op));
-  auto vop = static_cast<const vectorunary_op *>(&op);
+  JLM_ASSERT(is<VectorUnaryOperation>(op));
+  auto vop = static_cast<const VectorUnaryOperation *>(&op);
   return convert_operation(vop->operation(), operands, builder);
 }
 
@@ -1301,7 +1301,7 @@ IpGraphToLlvmConverter::convert_operation(
   {
     return convert_insertelement(op, arguments, builder);
   }
-  if (is<vectorunary_op>(op))
+  if (is<VectorUnaryOperation>(op))
   {
     return convert_vectorunary(op, arguments, builder);
   }
