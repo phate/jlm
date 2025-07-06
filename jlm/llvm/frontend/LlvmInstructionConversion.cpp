@@ -259,7 +259,7 @@ convert_constantDataVector(
   for (size_t n = 0; n < c->getNumElements(); n++)
     elements.push_back(ConvertConstant(c->getElementAsConstant(n), tacs, ctx));
 
-  tacs.push_back(constant_data_vector_op::Create(elements));
+  tacs.push_back(ConstantDataVectorOperation::Create(elements));
 
   return tacs.back()->result(0);
 }

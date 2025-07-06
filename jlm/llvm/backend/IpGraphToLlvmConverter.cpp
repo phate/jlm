@@ -759,8 +759,8 @@ IpGraphToLlvmConverter::convert_constantdatavector(
     const std::vector<const Variable *> & operands,
     ::llvm::IRBuilder<> & builder)
 {
-  JLM_ASSERT(is<constant_data_vector_op>(op));
-  auto & cop = *static_cast<const constant_data_vector_op *>(&op);
+  JLM_ASSERT(is<ConstantDataVectorOperation>(op));
+  auto & cop = *static_cast<const ConstantDataVectorOperation *>(&op);
 
   if (auto bt = dynamic_cast<const rvsdg::bittype *>(&cop.type()))
   {
@@ -1285,7 +1285,7 @@ IpGraphToLlvmConverter::convert_operation(
   {
     return convert_constantvector(op, arguments, builder);
   }
-  if (is<constant_data_vector_op>(op))
+  if (is<ConstantDataVectorOperation>(op))
   {
     return convert_constantdatavector(op, arguments, builder);
   }

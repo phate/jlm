@@ -2285,15 +2285,13 @@ private:
   std::unique_ptr<Operation> op_;
 };
 
-/* constant data vector operator */
-
-class constant_data_vector_op final : public rvsdg::SimpleOperation
+class ConstantDataVectorOperation final : public rvsdg::SimpleOperation
 {
 public:
-  ~constant_data_vector_op() override;
+  ~ConstantDataVectorOperation() noexcept override;
 
 private:
-  explicit constant_data_vector_op(const std::shared_ptr<const VectorType> & vt)
+  explicit ConstantDataVectorOperation(const std::shared_ptr<const VectorType> & vt)
       : SimpleOperation({ vt->size(), vt->Type() }, { vt })
   {}
 
@@ -2329,7 +2327,7 @@ public:
     if (!vt)
       throw jlm::util::error("Expected value type.");
 
-    constant_data_vector_op op(FixedVectorType::Create(vt, elements.size()));
+    ConstantDataVectorOperation op(FixedVectorType::Create(vt, elements.size()));
     return ThreeAddressCode::create(op, elements);
   }
 };
