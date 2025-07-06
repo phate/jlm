@@ -2188,14 +2188,12 @@ private:
   std::unique_ptr<Operation> op_;
 };
 
-/* vectorbinary operator */
-
-class vectorbinary_op final : public rvsdg::SimpleOperation
+class VectorBinaryOperation final : public rvsdg::SimpleOperation
 {
 public:
-  virtual ~vectorbinary_op();
+  ~VectorBinaryOperation() noexcept override;
 
-  inline vectorbinary_op(
+  VectorBinaryOperation(
       const rvsdg::BinaryOperation & binop,
       const std::shared_ptr<const VectorType> & op1,
       const std::shared_ptr<const VectorType> & op2,
@@ -2221,18 +2219,18 @@ public:
     }
   }
 
-  inline vectorbinary_op(const vectorbinary_op & other)
+  VectorBinaryOperation(const VectorBinaryOperation & other)
       : SimpleOperation(other),
         op_(other.op_->copy())
   {}
 
-  inline vectorbinary_op(vectorbinary_op && other)
+  VectorBinaryOperation(VectorBinaryOperation && other) noexcept
       : SimpleOperation(other),
         op_(std::move(other.op_))
   {}
 
-  inline vectorbinary_op &
-  operator=(const vectorbinary_op & other)
+  VectorBinaryOperation &
+  operator=(const VectorBinaryOperation & other)
   {
     if (this != &other)
       op_ = other.op_->copy();
@@ -2240,8 +2238,8 @@ public:
     return *this;
   }
 
-  inline vectorbinary_op &
-  operator=(vectorbinary_op && other)
+  VectorBinaryOperation &
+  operator=(VectorBinaryOperation && other) noexcept
   {
     if (this != &other)
       op_ = std::move(other.op_);
@@ -2277,7 +2275,7 @@ public:
     if (!vct1 || !vct2 || !vct3)
       throw jlm::util::error("expected vector type.");
 
-    vectorbinary_op op(binop, vct1, vct2, vct3);
+    VectorBinaryOperation op(binop, vct1, vct2, vct3);
     return ThreeAddressCode::create(op, { op1, op2 });
   }
 

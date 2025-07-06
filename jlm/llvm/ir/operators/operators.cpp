@@ -1030,28 +1030,25 @@ VectorUnaryOperation::copy() const
   return std::make_unique<VectorUnaryOperation>(*this);
 }
 
-/* vectorbinary operator */
-
-vectorbinary_op::~vectorbinary_op()
-{}
+VectorBinaryOperation::~VectorBinaryOperation() noexcept = default;
 
 bool
-vectorbinary_op::operator==(const Operation & other) const noexcept
+VectorBinaryOperation::operator==(const Operation & other) const noexcept
 {
-  auto op = dynamic_cast<const vectorbinary_op *>(&other);
+  auto op = dynamic_cast<const VectorBinaryOperation *>(&other);
   return op && op->operation() == operation();
 }
 
 std::string
-vectorbinary_op::debug_string() const
+VectorBinaryOperation::debug_string() const
 {
-  return util::strfmt("VEC", operation().debug_string());
+  return util::strfmt("Vector", operation().debug_string());
 }
 
 std::unique_ptr<rvsdg::Operation>
-vectorbinary_op::copy() const
+VectorBinaryOperation::copy() const
 {
-  return std::make_unique<vectorbinary_op>(*this);
+  return std::make_unique<VectorBinaryOperation>(*this);
 }
 
 ConstantDataVectorOperation::~ConstantDataVectorOperation() noexcept = default;
