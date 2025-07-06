@@ -56,7 +56,7 @@ private:
             aa::PointsToGraph::RegisterNode::Create(*PointsToGraph_, { node.output(0) });
         registerNode.AddEdge(allocaNode);
       }
-      else if (jlm::rvsdg::is<malloc_op>(&node))
+      else if (jlm::rvsdg::is<MallocOperation>(&node))
       {
         auto & mallocNode = aa::PointsToGraph::MallocNode::Create(*PointsToGraph_, node);
         auto & registerNode =

@@ -47,7 +47,7 @@ class ConstantStruct;
 class ConstantPointerNullOperation;
 class ShuffleVectorOperation;
 class VectorSelectOperation;
-class malloc_op;
+class MallocOperation;
 class FreeOperation;
 class MemCpyNonVolatileOperation;
 class MemCpyVolatileOperation;
@@ -234,7 +234,7 @@ private:
 
   ::llvm::Value *
   convert(
-      const malloc_op & op,
+      const MallocOperation & op,
       const std::vector<const Variable *> & args,
       ::llvm::IRBuilder<> & builder);
 

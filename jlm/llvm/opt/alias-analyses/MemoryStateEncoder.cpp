@@ -543,7 +543,7 @@ MemoryStateEncoder::EncodeSimpleNode(const rvsdg::SimpleNode & simpleNode)
   {
     EncodeAlloca(simpleNode);
   }
-  else if (is<malloc_op>(&simpleNode))
+  else if (is<MallocOperation>(&simpleNode))
   {
     EncodeMalloc(simpleNode);
   }
@@ -604,7 +604,7 @@ MemoryStateEncoder::EncodeAlloca(const rvsdg::SimpleNode & allocaNode)
 void
 MemoryStateEncoder::EncodeMalloc(const rvsdg::SimpleNode & mallocNode)
 {
-  JLM_ASSERT(is<malloc_op>(&mallocNode));
+  JLM_ASSERT(is<MallocOperation>(&mallocNode));
   auto & stateMap = Context_->GetRegionalizedStateMap();
 
   auto & mallocMemoryNode =

@@ -362,7 +362,7 @@ class MallocLocation final : public MemoryLocation
       : MemoryLocation(),
         Node_(node)
   {
-    JLM_ASSERT(is<malloc_op>(&node));
+    JLM_ASSERT(is<MallocOperation>(&node));
   }
 
 public:
@@ -1000,7 +1000,7 @@ Steensgaard::AnalyzeSimpleNode(const jlm::rvsdg::SimpleNode & node)
   {
     AnalyzeAlloca(node);
   }
-  else if (is<malloc_op>(&node))
+  else if (is<MallocOperation>(&node))
   {
     AnalyzeMalloc(node);
   }
@@ -1100,7 +1100,7 @@ Steensgaard::AnalyzeAlloca(const jlm::rvsdg::SimpleNode & node)
 void
 Steensgaard::AnalyzeMalloc(const jlm::rvsdg::SimpleNode & node)
 {
-  JLM_ASSERT(is<malloc_op>(&node));
+  JLM_ASSERT(is<MallocOperation>(&node));
 
   auto & mallocOutputLocation = Context_->GetOrInsertRegisterLocation(*node.output(0));
   auto & mallocLocation = Context_->InsertMallocLocation(node);

@@ -658,7 +658,7 @@ CallTest2::SetupRvsdg()
     auto four = jlm::rvsdg::create_bitconstant(lambda->subregion(), 32, 4);
     auto prod = jlm::rvsdg::bitmul_op::create(32, valueArgument, four);
 
-    auto alloc = malloc_op::create(prod);
+    auto alloc = MallocOperation::create(prod);
     auto cast = bitcast_op::create(alloc[0], pt32);
     auto mx = MemoryStateMergeOperation::Create(
         std::vector<jlm::rvsdg::Output *>({ alloc[1], memoryStateArgument }));
@@ -2917,7 +2917,7 @@ EscapedMemoryTest2::SetupRvsdg()
 
     auto eight = jlm::rvsdg::create_bitconstant(lambda->subregion(), 32, 8);
 
-    auto mallocResults = malloc_op::create(eight);
+    auto mallocResults = MallocOperation::create(eight);
     auto mergeResults = MemoryStateMergeOperation::Create(
         std::vector<jlm::rvsdg::Output *>({ memoryStateArgument, mallocResults[1] }));
 
@@ -2949,7 +2949,7 @@ EscapedMemoryTest2::SetupRvsdg()
 
     auto eight = jlm::rvsdg::create_bitconstant(lambda->subregion(), 32, 8);
 
-    auto mallocResults = malloc_op::create(eight);
+    auto mallocResults = MallocOperation::create(eight);
     auto mergeResult = MemoryStateMergeOperation::Create(
         std::vector<jlm::rvsdg::Output *>({ memoryStateArgument, mallocResults[1] }));
 
@@ -3595,7 +3595,7 @@ AllMemoryNodesTest::SetupRvsdg()
 
   // Create malloc node
   auto mallocSize = jlm::rvsdg::create_bitconstant(Lambda_->subregion(), 32, 4);
-  auto mallocOutputs = malloc_op::create(mallocSize);
+  auto mallocOutputs = MallocOperation::create(mallocSize);
   Malloc_ = rvsdg::TryGetOwnerNode<rvsdg::Node>(*mallocOutputs[0]);
 
   auto afterMallocMemoryState = MemoryStateMergeOperation::Create(
