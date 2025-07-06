@@ -1192,7 +1192,7 @@ convert_cast_instruction(::llvm::Instruction * i, tacsvector_t & tacs, context &
             { ::llvm::Instruction::FPToSI, create_unop<FloatingPointToSignedIntegerOperation> },
             { ::llvm::Instruction::FPToUI, create_unop<FloatingPointToUnsignedIntegerOperation> },
             { ::llvm::Instruction::FPExt, create_unop<FPExtOperation> },
-            { ::llvm::Instruction::BitCast, create_unop<bitcast_op> } });
+            { ::llvm::Instruction::BitCast, create_unop<BitCastOperation> } });
 
   auto type = ctx.GetTypeConverter().ConvertLlvmType(*i->getType());
 

@@ -278,7 +278,7 @@ RhlsToFirrtlConverter::MlirGenSimpleNode(const jlm::rvsdg::SimpleNode * node)
     auto constant = GetConstant(body, size, value);
     Connect(body, outData, constant);
   }
-  else if (dynamic_cast<const llvm::bitcast_op *>(&(node->GetOperation())))
+  else if (dynamic_cast<const llvm::BitCastOperation *>(&(node->GetOperation())))
   {
     auto input0 = GetSubfield(body, inBundles[0], "data");
     Connect(body, outData, input0);

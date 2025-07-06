@@ -718,23 +718,20 @@ valist_op::copy() const
   return std::make_unique<valist_op>(*this);
 }
 
-/* bitcast operator */
-
-bitcast_op::~bitcast_op()
-{}
+BitCastOperation::~BitCastOperation() noexcept = default;
 
 bool
-bitcast_op::operator==(const Operation & other) const noexcept
+BitCastOperation::operator==(const Operation & other) const noexcept
 {
-  auto op = dynamic_cast<const bitcast_op *>(&other);
+  auto op = dynamic_cast<const BitCastOperation *>(&other);
   return op && op->argument(0) == argument(0) && op->result(0) == result(0);
 }
 
 std::string
-bitcast_op::debug_string() const
+BitCastOperation::debug_string() const
 {
   return util::strfmt(
-      "BITCAST[",
+      "BitCast[",
       argument(0)->debug_string(),
       " -> ",
       result(0)->debug_string(),
@@ -742,19 +739,19 @@ bitcast_op::debug_string() const
 }
 
 std::unique_ptr<rvsdg::Operation>
-bitcast_op::copy() const
+BitCastOperation::copy() const
 {
-  return std::make_unique<bitcast_op>(*this);
+  return std::make_unique<BitCastOperation>(*this);
 }
 
 rvsdg::unop_reduction_path_t
-bitcast_op::can_reduce_operand(const rvsdg::Output *) const noexcept
+BitCastOperation::can_reduce_operand(const rvsdg::Output *) const noexcept
 {
   return rvsdg::unop_reduction_none;
 }
 
 rvsdg::Output *
-bitcast_op::reduce_operand(rvsdg::unop_reduction_path_t, rvsdg::Output *) const
+BitCastOperation::reduce_operand(rvsdg::unop_reduction_path_t, rvsdg::Output *) const
 {
   JLM_UNREACHABLE("Not implemented!");
 }

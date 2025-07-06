@@ -1466,20 +1466,18 @@ public:
   }
 };
 
-/* bitcast operator */
-
-class bitcast_op final : public rvsdg::UnaryOperation
+class BitCastOperation final : public rvsdg::UnaryOperation
 {
 public:
-  virtual ~bitcast_op();
+  ~BitCastOperation() noexcept override;
 
-  inline bitcast_op(
+  BitCastOperation(
       std::shared_ptr<const jlm::rvsdg::ValueType> srctype,
       std::shared_ptr<const jlm::rvsdg::ValueType> dsttype)
       : UnaryOperation(std::move(srctype), std::move(dsttype))
   {}
 
-  inline bitcast_op(
+  BitCastOperation(
       std::shared_ptr<const jlm::rvsdg::Type> srctype,
       std::shared_ptr<const jlm::rvsdg::Type> dsttype)
       : UnaryOperation(srctype, dsttype)
@@ -1487,14 +1485,14 @@ public:
     check_types(srctype, dsttype);
   }
 
-  bitcast_op(const bitcast_op &) = default;
+  BitCastOperation(const BitCastOperation &) = default;
 
-  bitcast_op(Operation &&) = delete;
+  explicit BitCastOperation(Operation &&) = delete;
 
-  bitcast_op &
+  BitCastOperation &
   operator=(const Operation &) = delete;
 
-  bitcast_op &
+  BitCastOperation &
   operator=(Operation &&) = delete;
 
   virtual bool
@@ -1518,7 +1516,7 @@ public:
   {
     auto pair = check_types(operand->Type(), type);
 
-    bitcast_op op(pair.first, pair.second);
+    BitCastOperation op(pair.first, pair.second);
     return ThreeAddressCode::create(op, { operand });
   }
 
@@ -1526,7 +1524,7 @@ public:
   create(jlm::rvsdg::Output * operand, std::shared_ptr<const jlm::rvsdg::Type> rtype)
   {
     auto pair = check_types(operand->Type(), rtype);
-    return rvsdg::CreateOpNode<bitcast_op>({ operand }, pair.first, pair.second).output(0);
+    return rvsdg::CreateOpNode<BitCastOperation>({ operand }, pair.first, pair.second).output(0);
   }
 
 private:
@@ -1548,8 +1546,6 @@ private:
     return std::make_pair(ot, rt);
   }
 };
-
-/* ConstantStruct operator */
 
 class ConstantStruct final : public rvsdg::SimpleOperation
 {

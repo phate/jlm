@@ -625,7 +625,7 @@ Andersen::AnalyzeSimpleNode(const rvsdg::SimpleNode & node)
     AnalyzeCall(node);
   else if (is<GetElementPtrOperation>(op))
     AnalyzeGep(node);
-  else if (is<bitcast_op>(op))
+  else if (is<BitCastOperation>(op))
     AnalyzeBitcast(node);
   else if (is<IntegerToPointerOperation>(op))
     AnalyzeBits2ptr(node);
@@ -775,7 +775,7 @@ Andersen::AnalyzeGep(const rvsdg::SimpleNode & node)
 void
 Andersen::AnalyzeBitcast(const rvsdg::SimpleNode & node)
 {
-  JLM_ASSERT(is<bitcast_op>(&node));
+  JLM_ASSERT(is<BitCastOperation>(&node));
 
   const auto & inputRegister = *node.input(0)->origin();
   const auto & outputRegister = *node.output(0);

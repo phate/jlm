@@ -338,7 +338,7 @@ BitCastTest::SetupRvsdg()
       graph->GetRootRegion(),
       llvm::LlvmLambdaOperation::Create(fcttype, "f", linkage::external_linkage));
 
-  auto cast = bitcast_op::create(fct->GetFunctionArguments()[0], pointerType);
+  auto cast = BitCastOperation::create(fct->GetFunctionArguments()[0], pointerType);
 
   fct->finalize({ cast });
 
@@ -659,7 +659,7 @@ CallTest2::SetupRvsdg()
     auto prod = jlm::rvsdg::bitmul_op::create(32, valueArgument, four);
 
     auto alloc = MallocOperation::create(prod);
-    auto cast = bitcast_op::create(alloc[0], pt32);
+    auto cast = BitCastOperation::create(alloc[0], pt32);
     auto mx = MemoryStateMergeOperation::Create(
         std::vector<jlm::rvsdg::Output *>({ alloc[1], memoryStateArgument }));
 
@@ -685,7 +685,7 @@ CallTest2::SetupRvsdg()
     auto iOStateArgument = lambda->GetFunctionArguments()[1];
     auto memoryStateArgument = lambda->GetFunctionArguments()[2];
 
-    auto cast = bitcast_op::create(pointerArgument, pointerType);
+    auto cast = BitCastOperation::create(pointerArgument, pointerType);
     auto freeResults = FreeOperation::Create(cast, { memoryStateArgument }, iOStateArgument);
 
     lambda->finalize({ freeResults[1], freeResults[0] });
@@ -3254,8 +3254,8 @@ MemcpyTest::SetupRvsdg()
     auto globalArrayArgument = lambda->AddContextVar(globalArray).inner;
     auto functionFArgument = lambda->AddContextVar(lambdaF).inner;
 
-    auto bcLocalArray = bitcast_op::create(localArrayArgument, PointerType::Create());
-    auto bcGlobalArray = bitcast_op::create(globalArrayArgument, PointerType::Create());
+    auto bcLocalArray = BitCastOperation::create(localArrayArgument, PointerType::Create());
+    auto bcGlobalArray = BitCastOperation::create(globalArrayArgument, PointerType::Create());
 
     auto twenty = jlm::rvsdg::create_bitconstant(lambda->subregion(), 32, 20);
 
