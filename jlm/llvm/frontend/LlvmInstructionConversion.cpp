@@ -295,7 +295,7 @@ convert_constantVector(
     elements.push_back(ConvertConstant(c->getAggregateElement(n), tacs, ctx));
 
   auto type = ctx.GetTypeConverter().ConvertLlvmType(*c->getType());
-  tacs.push_back(constantvector_op::create(elements, type));
+  tacs.push_back(ConstantVectorOperation::create(elements, type));
 
   return tacs.back()->result(0);
 }
@@ -1148,7 +1148,7 @@ convert(::llvm::UnaryOperator * unaryOperator, tacsvector_t & threeAddressCodeVe
   if (type->isVectorTy())
   {
     auto vectorType = typeConverter.ConvertLlvmType(*type);
-    threeAddressCodeVector.push_back(vectorunary_op::create(
+    threeAddressCodeVector.push_back(VectorUnaryOperation::create(
         FNegOperation(std::static_pointer_cast<const FloatingPointType>(scalarType)),
         operand,
         vectorType));
@@ -1206,7 +1206,7 @@ convert_cast_instruction(::llvm::Instruction * i, tacsvector_t & tacs, context &
 
   if (dt->isVectorTy())
     tacs.push_back(
-        vectorunary_op::create(*static_cast<rvsdg::UnaryOperation *>(unop.get()), op, type));
+        VectorUnaryOperation::create(*static_cast<rvsdg::UnaryOperation *>(unop.get()), op, type));
   else
     tacs.push_back(
         ThreeAddressCode::create(*static_cast<rvsdg::SimpleOperation *>(unop.get()), { op }));
