@@ -54,11 +54,11 @@
  * set_prev and set_next members must be implemented appropriately.
  *
  * An object h of num_hash class then supports STL-style operations
- * - num_hash::iterator, num_hash::const_iterator for iteration
+ * - num_hash::Iterator, num_hash::const_iterator for iteration
  * - h.begin(), h.end() and const-qualified variants
- * - h.find(key) performs lookup and yields an iterator
+ * - h.find(key) performs lookup and yields an Iterator
  * - h.insert(element) links an object into the data structure
- * - h.erase(element) or h.erase(iterator) unlinks an object from the data
+ * - h.erase(element) or h.erase(Iterator) unlinks an object from the data
  *   structure
  * - h.size() and h.empty() testing
  *
@@ -152,7 +152,7 @@ public:
       "require noexcept key equality");
   class const_iterator;
 
-  class iterator
+  class Iterator
   {
   public:
     typedef ElementType value_type;
@@ -162,17 +162,17 @@ public:
     typedef size_t size_type;
     typedef ssize_t difference_type;
 
-    constexpr iterator() noexcept
+    constexpr Iterator() noexcept
         : map_(nullptr),
           element_(nullptr)
     {}
 
-    constexpr iterator(const IntrusiveHash * map, ElementType * object)
+    constexpr Iterator(const IntrusiveHash * map, ElementType * object)
         : map_(map),
           element_(object)
     {}
 
-    inline const iterator &
+    const Iterator &
     operator++() noexcept
     {
       ElementType * next = map_->accessor_.get_next(element_);
@@ -190,10 +190,10 @@ public:
       return *this;
     }
 
-    inline iterator
+    Iterator
     operator++(int) noexcept
     {
-      iterator i = *this;
+      Iterator i = *this;
       ++*this;
       return i;
     }
@@ -211,13 +211,13 @@ public:
     }
 
     inline bool
-    operator==(const iterator & other) const noexcept
+    operator==(const Iterator & other) const noexcept
     {
       return element_ == other.element_;
     }
 
     inline bool
-    operator!=(const iterator & other) const noexcept
+    operator!=(const Iterator & other) const noexcept
     {
       return element_ != other.element_;
     }
@@ -246,7 +246,7 @@ public:
 
     constexpr const_iterator(const const_iterator & other) noexcept = default;
 
-    constexpr const_iterator(const iterator & other) noexcept
+    constexpr const_iterator(const Iterator & other) noexcept
         : map_(other.map_),
           element_(other.element_)
     {}
@@ -362,7 +362,7 @@ public:
     }
   }
 
-  inline iterator
+  Iterator
   insert(ElementType * element)
   {
     ++size_;
@@ -372,7 +372,7 @@ public:
     }
     private_insert_into(buckets_, mask_, element);
 
-    return iterator(this, element);
+    return Iterator(this, element);
   }
 
   inline void
@@ -402,7 +402,7 @@ public:
   }
 
   inline void
-  erase(iterator i) noexcept
+  erase(Iterator i) noexcept
   {
     erase(i.ptr());
   }
@@ -410,7 +410,7 @@ public:
   inline void
   erase(const KeyType & key) noexcept
   {
-    iterator i = find(key);
+    Iterator i = find(key);
     if (i != end())
     {
       erase(i);
@@ -418,7 +418,7 @@ public:
   }
 
   inline void
-  erase(iterator begin, iterator end) noexcept
+  erase(Iterator begin, Iterator end) noexcept
   {
     while (begin != end)
     {
@@ -440,16 +440,16 @@ public:
     return size() == 0;
   }
 
-  iterator
+  Iterator
   begin() noexcept
   {
-    return iterator(this, first_object());
+    return Iterator(this, first_object());
   }
 
-  iterator
+  Iterator
   end() noexcept
   {
-    return iterator(this, nullptr);
+    return Iterator(this, nullptr);
   }
 
   const_iterator
@@ -476,10 +476,10 @@ public:
     return cend();
   }
 
-  inline iterator
+  Iterator
   find(const KeyType & key) noexcept
   {
-    return iterator(this, lookup(key));
+    return Iterator(this, lookup(key));
   }
 
   inline const_iterator
