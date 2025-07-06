@@ -744,7 +744,7 @@ IpGraphToLlvmConverter::convert_constantvector(
     const std::vector<const Variable *> & operands,
     ::llvm::IRBuilder<> &)
 {
-  JLM_ASSERT(is<constantvector_op>(op));
+  JLM_ASSERT(is<ConstantVectorOperation>(op));
 
   std::vector<::llvm::Constant *> ops;
   for (const auto & operand : operands)
@@ -1281,7 +1281,7 @@ IpGraphToLlvmConverter::convert_operation(
   {
     return convert_ctl2bits(op, arguments, builder);
   }
-  if (is<constantvector_op>(op))
+  if (is<ConstantVectorOperation>(op))
   {
     return convert_constantvector(op, arguments, builder);
   }
