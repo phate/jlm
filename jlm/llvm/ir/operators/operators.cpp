@@ -1051,28 +1051,25 @@ VectorBinaryOperation::copy() const
   return std::make_unique<VectorBinaryOperation>(*this);
 }
 
-/* const data vector operator */
-
-constant_data_vector_op::~constant_data_vector_op()
-{}
+ConstantDataVectorOperation::~ConstantDataVectorOperation() noexcept = default;
 
 bool
-constant_data_vector_op::operator==(const Operation & other) const noexcept
+ConstantDataVectorOperation::operator==(const Operation & other) const noexcept
 {
-  auto op = dynamic_cast<const constant_data_vector_op *>(&other);
+  auto op = dynamic_cast<const ConstantDataVectorOperation *>(&other);
   return op && op->result(0) == result(0);
 }
 
 std::string
-constant_data_vector_op::debug_string() const
+ConstantDataVectorOperation::debug_string() const
 {
-  return "CONSTANTDATAVECTOR";
+  return "ConstantDataVector";
 }
 
 std::unique_ptr<rvsdg::Operation>
-constant_data_vector_op::copy() const
+ConstantDataVectorOperation::copy() const
 {
-  return std::make_unique<constant_data_vector_op>(*this);
+  return std::make_unique<ConstantDataVectorOperation>(*this);
 }
 
 /* extractvalue operator */
