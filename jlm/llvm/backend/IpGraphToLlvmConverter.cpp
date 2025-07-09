@@ -744,7 +744,7 @@ IpGraphToLlvmConverter::convert_constantvector(
     const std::vector<const Variable *> & operands,
     ::llvm::IRBuilder<> &)
 {
-  JLM_ASSERT(is<constantvector_op>(op));
+  JLM_ASSERT(is<ConstantVectorOperation>(op));
 
   std::vector<::llvm::Constant *> ops;
   for (const auto & operand : operands)
@@ -759,8 +759,8 @@ IpGraphToLlvmConverter::convert_constantdatavector(
     const std::vector<const Variable *> & operands,
     ::llvm::IRBuilder<> & builder)
 {
-  JLM_ASSERT(is<constant_data_vector_op>(op));
-  auto & cop = *static_cast<const constant_data_vector_op *>(&op);
+  JLM_ASSERT(is<ConstantDataVectorOperation>(op));
+  auto & cop = *static_cast<const ConstantDataVectorOperation *>(&op);
 
   if (auto bt = dynamic_cast<const rvsdg::bittype *>(&cop.type()))
   {
@@ -817,13 +817,13 @@ IpGraphToLlvmConverter::convert_extractelement(
     const std::vector<const Variable *> & args,
     ::llvm::IRBuilder<> & builder)
 {
-  JLM_ASSERT(is<extractelement_op>(op));
+  JLM_ASSERT(is<ExtractElementOperation>(op));
   return builder.CreateExtractElement(Context_->value(args[0]), Context_->value(args[1]));
 }
 
 ::llvm::Value *
 IpGraphToLlvmConverter::convert(
-    const shufflevector_op & op,
+    const ShuffleVectorOperation & op,
     const std::vector<const Variable *> & operands,
     ::llvm::IRBuilder<> & builder)
 {
@@ -838,7 +838,7 @@ IpGraphToLlvmConverter::convert_insertelement(
     const std::vector<const Variable *> & operands,
     ::llvm::IRBuilder<> & builder)
 {
-  JLM_ASSERT(is<insertelement_op>(op));
+  JLM_ASSERT(is<InsertElementOperation>(op));
 
   auto vector = Context_->value(operands[0]);
   auto value = Context_->value(operands[1]);
@@ -852,8 +852,8 @@ IpGraphToLlvmConverter::convert_vectorunary(
     const std::vector<const Variable *> & operands,
     ::llvm::IRBuilder<> & builder)
 {
-  JLM_ASSERT(is<vectorunary_op>(op));
-  auto vop = static_cast<const vectorunary_op *>(&op);
+  JLM_ASSERT(is<VectorUnaryOperation>(op));
+  auto vop = static_cast<const VectorUnaryOperation *>(&op);
   return convert_operation(vop->operation(), operands, builder);
 }
 
@@ -863,8 +863,8 @@ IpGraphToLlvmConverter::convert_vectorbinary(
     const std::vector<const Variable *> & operands,
     ::llvm::IRBuilder<> & builder)
 {
-  JLM_ASSERT(is<vectorbinary_op>(op));
-  auto vop = static_cast<const vectorbinary_op *>(&op);
+  JLM_ASSERT(is<VectorBinaryOperation>(op));
+  auto vop = static_cast<const VectorBinaryOperation *>(&op);
   return convert_operation(vop->operation(), operands, builder);
 }
 
@@ -913,7 +913,7 @@ IpGraphToLlvmConverter::convert_cast(
 
 ::llvm::Value *
 IpGraphToLlvmConverter::convert(
-    const ExtractValue & op,
+    const ExtractValueOperation & op,
     const std::vector<const Variable *> & operands,
     ::llvm::IRBuilder<> & builder)
 {
@@ -923,7 +923,7 @@ IpGraphToLlvmConverter::convert(
 
 ::llvm::Value *
 IpGraphToLlvmConverter::convert(
-    const malloc_op & op,
+    const MallocOperation & op,
     const std::vector<const Variable *> & args,
     ::llvm::IRBuilder<> & builder)
 {
@@ -1281,31 +1281,31 @@ IpGraphToLlvmConverter::convert_operation(
   {
     return convert_ctl2bits(op, arguments, builder);
   }
-  if (is<constantvector_op>(op))
+  if (is<ConstantVectorOperation>(op))
   {
     return convert_constantvector(op, arguments, builder);
   }
-  if (is<constant_data_vector_op>(op))
+  if (is<ConstantDataVectorOperation>(op))
   {
     return convert_constantdatavector(op, arguments, builder);
   }
-  if (is<extractelement_op>(op))
+  if (is<ExtractElementOperation>(op))
   {
     return convert_extractelement(op, arguments, builder);
   }
-  if (is<shufflevector_op>(op))
+  if (is<ShuffleVectorOperation>(op))
   {
-    return convert<shufflevector_op>(op, arguments, builder);
+    return convert<ShuffleVectorOperation>(op, arguments, builder);
   }
-  if (is<insertelement_op>(op))
+  if (is<InsertElementOperation>(op))
   {
     return convert_insertelement(op, arguments, builder);
   }
-  if (is<vectorunary_op>(op))
+  if (is<VectorUnaryOperation>(op))
   {
     return convert_vectorunary(op, arguments, builder);
   }
-  if (is<vectorbinary_op>(op))
+  if (is<VectorBinaryOperation>(op))
   {
     return convert_vectorbinary(op, arguments, builder);
   }
@@ -1313,17 +1313,17 @@ IpGraphToLlvmConverter::convert_operation(
   {
     return convert<VectorSelectOperation>(op, arguments, builder);
   }
-  if (is<ExtractValue>(op))
+  if (is<ExtractValueOperation>(op))
   {
-    return convert<ExtractValue>(op, arguments, builder);
+    return convert<ExtractValueOperation>(op, arguments, builder);
   }
   if (is<CallOperation>(op))
   {
     return convert<CallOperation>(op, arguments, builder);
   }
-  if (is<malloc_op>(op))
+  if (is<MallocOperation>(op))
   {
-    return convert<malloc_op>(op, arguments, builder);
+    return convert<MallocOperation>(op, arguments, builder);
   }
   if (is<FreeOperation>(op))
   {
@@ -1341,7 +1341,7 @@ IpGraphToLlvmConverter::convert_operation(
   {
     return convert_fpneg(op, arguments, builder);
   }
-  if (is<bitcast_op>(op))
+  if (is<BitCastOperation>(op))
   {
     return convert_cast<::llvm::Instruction::BitCast>(op, arguments, builder);
   }
@@ -1760,7 +1760,7 @@ IpGraphToLlvmConverter::convert_attributes(const attributeset & attributeSet)
 }
 
 ::llvm::AttributeList
-IpGraphToLlvmConverter::convert_attributes(const function_node & f)
+IpGraphToLlvmConverter::convert_attributes(const FunctionNode & f)
 {
   JLM_ASSERT(f.cfg());
 
@@ -1880,7 +1880,7 @@ IpGraphToLlvmConverter::convert_cfg(ControlFlowGraph & cfg, ::llvm::Function & f
 }
 
 void
-IpGraphToLlvmConverter::convert_function(const function_node & node)
+IpGraphToLlvmConverter::convert_function(const FunctionNode & node)
 {
   if (!node.cfg())
     return;
@@ -1956,7 +1956,7 @@ IpGraphToLlvmConverter::convert_ipgraph()
       gv->setSection(dataNode->Section());
       Context_->insert(v, gv);
     }
-    else if (auto n = dynamic_cast<const function_node *>(&node))
+    else if (auto n = dynamic_cast<const FunctionNode *>(&node))
     {
       auto type = typeConverter.ConvertFunctionType(n->fcttype(), lm.getContext());
       auto linkage = convert_linkage(n->linkage());
@@ -1974,7 +1974,7 @@ IpGraphToLlvmConverter::convert_ipgraph()
     {
       convert_data_node(*n);
     }
-    else if (auto n = dynamic_cast<const function_node *>(&node))
+    else if (auto n = dynamic_cast<const FunctionNode *>(&node))
     {
       convert_function(*n);
     }

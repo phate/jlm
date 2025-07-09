@@ -780,7 +780,7 @@ RegionAwareModRefSummarizer::AnnotateSimpleNode(
   {
     AnnotateAlloca(simpleNode, regionSummary);
   }
-  else if (is<malloc_op>(&simpleNode))
+  else if (is<MallocOperation>(&simpleNode))
   {
     AnnotateMalloc(simpleNode, regionSummary);
   }
@@ -834,7 +834,7 @@ RegionAwareModRefSummarizer::AnnotateMalloc(
     const rvsdg::SimpleNode & mallocNode,
     RegionSummary & regionSummary)
 {
-  JLM_ASSERT(is<malloc_op>(&mallocNode));
+  JLM_ASSERT(is<MallocOperation>(&mallocNode));
 
   auto & memoryNode = ModRefSummary_->GetPointsToGraph().GetMallocNode(mallocNode);
   regionSummary.AddMemoryNodes({ &memoryNode });

@@ -573,7 +573,7 @@ JlmToMlirConverter::ConvertSimpleNode(
         alloca_op->alignment(),                                           // alignment
         ::mlir::ValueRange({ std::next(inputs.begin()), inputs.end() })); // inputMemStates
   }
-  else if (auto malloc_op = dynamic_cast<const jlm::llvm::malloc_op *>(&operation))
+  else if (auto malloc_op = dynamic_cast<const jlm::llvm::MallocOperation *>(&operation))
   {
     MlirOp = Builder_->create<::mlir::jlm::Malloc>(
         Builder_->getUnknownLoc(),

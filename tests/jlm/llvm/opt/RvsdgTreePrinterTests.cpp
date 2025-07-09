@@ -92,11 +92,11 @@ PrintNumRvsdgNodesAnnotation()
   auto rvsdgModule = RvsdgModule::Create(FilePath(""), "", "");
   auto rootRegion = &rvsdgModule->Rvsdg().GetRootRegion();
 
-  auto structuralNode = jlm::tests::structural_node::create(rootRegion, 2);
-  jlm::tests::test_op::create(structuralNode->subregion(0), {}, {});
-  jlm::tests::test_op::create(structuralNode->subregion(1), {}, {});
+  auto structuralNode = jlm::tests::TestStructuralNode::create(rootRegion, 2);
+  jlm::tests::TestOperation::create(structuralNode->subregion(0), {}, {});
+  jlm::tests::TestOperation::create(structuralNode->subregion(1), {}, {});
 
-  jlm::tests::test_op::create(rootRegion, {}, {});
+  jlm::tests::TestOperation::create(rootRegion, {}, {});
 
   RvsdgTreePrinter::Configuration configuration(
       { RvsdgTreePrinter::Configuration::Annotation::NumRvsdgNodes });
@@ -108,7 +108,7 @@ PrintNumRvsdgNodesAnnotation()
 
   // Assert
   auto expectedTree = "RootRegion NumRvsdgNodes:2\n"
-                      "-STRUCTURAL_TEST_NODE NumRvsdgNodes:2\n"
+                      "-TestStructuralOperation NumRvsdgNodes:2\n"
                       "--Region[0] NumRvsdgNodes:1\n"
                       "--Region[1] NumRvsdgNodes:1\n\n";
 
@@ -137,7 +137,7 @@ PrintNumLoadNodesAnnotation()
   auto & address = jlm::tests::GraphImport::Create(rvsdg, pointerType, "a");
   auto & memoryState = jlm::tests::GraphImport::Create(rvsdg, memoryStateType, "m");
 
-  auto structuralNode = jlm::tests::structural_node::create(rootRegion, 3);
+  auto structuralNode = jlm::tests::TestStructuralNode::create(rootRegion, 3);
   auto & addressInput = structuralNode->AddInputWithArguments(address);
   auto & memoryStateInput = structuralNode->AddInputWithArguments(memoryState);
   LoadNonVolatileOperation::Create(
@@ -145,14 +145,14 @@ PrintNumLoadNodesAnnotation()
       { &memoryStateInput.Argument(0) },
       valueType,
       4);
-  jlm::tests::test_op::create(structuralNode->subregion(1), {}, {});
+  jlm::tests::TestOperation::create(structuralNode->subregion(1), {}, {});
   LoadNonVolatileOperation::Create(
       &addressInput.Argument(2),
       { &memoryStateInput.Argument(2) },
       valueType,
       4);
 
-  jlm::tests::test_op::create(rootRegion, {}, {});
+  jlm::tests::TestOperation::create(rootRegion, {}, {});
 
   RvsdgTreePrinter::Configuration configuration(
       { RvsdgTreePrinter::Configuration::Annotation::NumLoadNodes });
@@ -164,7 +164,7 @@ PrintNumLoadNodesAnnotation()
 
   // Assert
   auto expectedTree = "RootRegion NumLoadNodes:0\n"
-                      "-STRUCTURAL_TEST_NODE NumLoadNodes:2\n"
+                      "-TestStructuralOperation NumLoadNodes:2\n"
                       "--Region[0] NumLoadNodes:1\n"
                       "--Region[1] NumLoadNodes:0\n"
                       "--Region[2] NumLoadNodes:1\n\n";
@@ -192,7 +192,7 @@ PrintNumMemoryStateInputsOutputsAnnotation()
   auto & x = jlm::tests::GraphImport::Create(rvsdg, memoryStateType, "x");
   auto & y = jlm::tests::GraphImport::Create(rvsdg, valueType, "y");
 
-  auto structuralNode = jlm::tests::structural_node::create(&rvsdg.GetRootRegion(), 2);
+  auto structuralNode = jlm::tests::TestStructuralNode::create(&rvsdg.GetRootRegion(), 2);
   auto & ix = structuralNode->AddInputWithArguments(x);
   auto & iy = structuralNode->AddInputWithArguments(y);
 
@@ -213,7 +213,7 @@ PrintNumMemoryStateInputsOutputsAnnotation()
   // Assert
   auto expectedTree =
       "RootRegion NumMemoryStateTypeArguments:1 NumMemoryStateTypeResults:1\n"
-      "-STRUCTURAL_TEST_NODE NumMemoryStateTypeInputs:1 NumMemoryStateTypeOutputs:1\n"
+      "-TestStructuralOperation NumMemoryStateTypeInputs:1 NumMemoryStateTypeOutputs:1\n"
       "--Region[0] NumMemoryStateTypeArguments:1 NumMemoryStateTypeResults:1\n"
       "--Region[1] NumMemoryStateTypeArguments:1 NumMemoryStateTypeResults:1\n\n";
 

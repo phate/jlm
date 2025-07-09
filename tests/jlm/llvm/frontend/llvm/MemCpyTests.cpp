@@ -55,7 +55,7 @@ MemCpyConversion()
     using namespace jlm::llvm;
 
     auto controlFlowGraph =
-        dynamic_cast<const function_node *>(ipgModule->ipgraph().find("f"))->cfg();
+        dynamic_cast<const FunctionNode *>(ipgModule->ipgraph().find("f"))->cfg();
     auto basicBlock =
         dynamic_cast<const jlm::llvm::BasicBlock *>(controlFlowGraph->entry()->OutEdge(0)->sink());
 

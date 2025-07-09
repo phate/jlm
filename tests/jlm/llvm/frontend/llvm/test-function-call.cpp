@@ -51,7 +51,7 @@ test_function_call()
     {
       if (node.name() == "caller")
       {
-        cfg = dynamic_cast<const function_node &>(node).cfg();
+        cfg = dynamic_cast<const FunctionNode &>(node).cfg();
         break;
       }
     }
@@ -108,14 +108,14 @@ test_malloc_call()
     {
       if (node.name() == "caller")
       {
-        cfg = dynamic_cast<const jlm::llvm::function_node &>(node).cfg();
+        cfg = dynamic_cast<const FunctionNode &>(node).cfg();
         break;
       }
     }
 
     auto bb = dynamic_cast<const BasicBlock *>(cfg->entry()->OutEdge(0)->sink());
     assert(is<MemoryStateMergeOperation>(*std::next(bb->rbegin())));
-    assert(is<malloc_op>((*std::next(bb->rbegin(), 2))));
+    assert(is<MallocOperation>((*std::next(bb->rbegin(), 2))));
   };
 
   llvm::LLVMContext ctx;
@@ -164,7 +164,7 @@ test_free_call()
     {
       if (node.name() == "caller")
       {
-        cfg = dynamic_cast<const function_node &>(node).cfg();
+        cfg = dynamic_cast<const FunctionNode &>(node).cfg();
         break;
       }
     }

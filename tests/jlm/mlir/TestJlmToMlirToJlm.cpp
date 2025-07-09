@@ -1647,7 +1647,7 @@ TestMalloc()
 
   {
     auto constOp = jlm::rvsdg::create_bitconstant(&graph->GetRootRegion(), 64, 2);
-    malloc_op::create(constOp);
+    MallocOperation::create(constOp);
 
     // Convert the RVSDG to MLIR
     std::cout << "Convert to MLIR" << std::endl;
@@ -1688,7 +1688,7 @@ TestMalloc()
       bool foundMallocOp = false;
       for (auto & node : region->Nodes())
       {
-        auto convertedMallocOp = dynamic_cast<const malloc_op *>(&node.GetOperation());
+        auto convertedMallocOp = dynamic_cast<const MallocOperation *>(&node.GetOperation());
         if (convertedMallocOp)
         {
           assert(convertedMallocOp->nresults() == 2);

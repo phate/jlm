@@ -338,7 +338,7 @@ BitCastTest::SetupRvsdg()
       graph->GetRootRegion(),
       llvm::LlvmLambdaOperation::Create(fcttype, "f", linkage::external_linkage));
 
-  auto cast = bitcast_op::create(fct->GetFunctionArguments()[0], pointerType);
+  auto cast = BitCastOperation::create(fct->GetFunctionArguments()[0], pointerType);
 
   fct->finalize({ cast });
 
@@ -658,8 +658,8 @@ CallTest2::SetupRvsdg()
     auto four = jlm::rvsdg::create_bitconstant(lambda->subregion(), 32, 4);
     auto prod = jlm::rvsdg::bitmul_op::create(32, valueArgument, four);
 
-    auto alloc = malloc_op::create(prod);
-    auto cast = bitcast_op::create(alloc[0], pt32);
+    auto alloc = MallocOperation::create(prod);
+    auto cast = BitCastOperation::create(alloc[0], pt32);
     auto mx = MemoryStateMergeOperation::Create(
         std::vector<jlm::rvsdg::Output *>({ alloc[1], memoryStateArgument }));
 
@@ -685,7 +685,7 @@ CallTest2::SetupRvsdg()
     auto iOStateArgument = lambda->GetFunctionArguments()[1];
     auto memoryStateArgument = lambda->GetFunctionArguments()[2];
 
-    auto cast = bitcast_op::create(pointerArgument, pointerType);
+    auto cast = BitCastOperation::create(pointerArgument, pointerType);
     auto freeResults = FreeOperation::Create(cast, { memoryStateArgument }, iOStateArgument);
 
     lambda->finalize({ freeResults[1], freeResults[0] });
@@ -2917,7 +2917,7 @@ EscapedMemoryTest2::SetupRvsdg()
 
     auto eight = jlm::rvsdg::create_bitconstant(lambda->subregion(), 32, 8);
 
-    auto mallocResults = malloc_op::create(eight);
+    auto mallocResults = MallocOperation::create(eight);
     auto mergeResults = MemoryStateMergeOperation::Create(
         std::vector<jlm::rvsdg::Output *>({ memoryStateArgument, mallocResults[1] }));
 
@@ -2949,7 +2949,7 @@ EscapedMemoryTest2::SetupRvsdg()
 
     auto eight = jlm::rvsdg::create_bitconstant(lambda->subregion(), 32, 8);
 
-    auto mallocResults = malloc_op::create(eight);
+    auto mallocResults = MallocOperation::create(eight);
     auto mergeResult = MemoryStateMergeOperation::Create(
         std::vector<jlm::rvsdg::Output *>({ memoryStateArgument, mallocResults[1] }));
 
@@ -3254,8 +3254,8 @@ MemcpyTest::SetupRvsdg()
     auto globalArrayArgument = lambda->AddContextVar(globalArray).inner;
     auto functionFArgument = lambda->AddContextVar(lambdaF).inner;
 
-    auto bcLocalArray = bitcast_op::create(localArrayArgument, PointerType::Create());
-    auto bcGlobalArray = bitcast_op::create(globalArrayArgument, PointerType::Create());
+    auto bcLocalArray = BitCastOperation::create(localArrayArgument, PointerType::Create());
+    auto bcGlobalArray = BitCastOperation::create(globalArrayArgument, PointerType::Create());
 
     auto twenty = jlm::rvsdg::create_bitconstant(lambda->subregion(), 32, 20);
 
@@ -3595,7 +3595,7 @@ AllMemoryNodesTest::SetupRvsdg()
 
   // Create malloc node
   auto mallocSize = jlm::rvsdg::create_bitconstant(Lambda_->subregion(), 32, 4);
-  auto mallocOutputs = malloc_op::create(mallocSize);
+  auto mallocOutputs = MallocOperation::create(mallocSize);
   Malloc_ = rvsdg::TryGetOwnerNode<rvsdg::Node>(*mallocOutputs[0]);
 
   auto afterMallocMemoryState = MemoryStateMergeOperation::Create(

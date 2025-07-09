@@ -691,7 +691,7 @@ private:
       : MemoryNode(pointsToGraph),
         MallocNode_(&mallocNode)
   {
-    JLM_ASSERT(is<malloc_op>(&mallocNode));
+    JLM_ASSERT(is<MallocOperation>(&mallocNode));
   }
 
 public:

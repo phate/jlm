@@ -257,7 +257,8 @@ NodeReduction::NormalizeStoreNode(
       { StoreNonVolatileOperation::NormalizeStoreMux,
         StoreNonVolatileOperation::NormalizeStoreStore,
         StoreNonVolatileOperation::NormalizeStoreAlloca,
-        StoreNonVolatileOperation::NormalizeDuplicateStates });
+        StoreNonVolatileOperation::NormalizeDuplicateStates,
+        StoreNonVolatileOperation::NormalizeIOBarrierAllocaAddress });
 
   return rvsdg::NormalizeSequence<StoreNonVolatileOperation>(
       storeNodeNormalizations,

@@ -22,17 +22,17 @@ IteratorRanges()
 
   jlm::rvsdg::Graph graph;
 
-  auto structuralNode = structural_node::create(&graph.GetRootRegion(), 1);
+  auto structuralNode = TestStructuralNode::create(&graph.GetRootRegion(), 1);
   auto & subregion = *structuralNode->subregion(0);
   auto & constSubregion = *static_cast<const jlm::rvsdg::Region *>(structuralNode->subregion(0));
 
   auto & argument0 = TestGraphArgument::Create(subregion, nullptr, valueType);
   auto & argument1 = TestGraphArgument::Create(subregion, nullptr, valueType);
 
-  auto topNode0 = test_op::create(&subregion, {}, { valueType });
-  auto node0 = test_op::create(&subregion, { &argument0 }, { valueType });
-  auto node1 = test_op::create(&subregion, { &argument1 }, { valueType });
-  auto bottomNode0 = test_op::create(&subregion, { &argument0, &argument1 }, { valueType });
+  auto topNode0 = TestOperation::create(&subregion, {}, { valueType });
+  auto node0 = TestOperation::create(&subregion, { &argument0 }, { valueType });
+  auto node1 = TestOperation::create(&subregion, { &argument1 }, { valueType });
+  auto bottomNode0 = TestOperation::create(&subregion, { &argument0, &argument1 }, { valueType });
 
   auto & result0 = TestGraphResult::Create(*topNode0->output(0), nullptr);
   auto & result1 = TestGraphResult::Create(*node0->output(0), nullptr);
@@ -92,23 +92,23 @@ Contains()
   jlm::rvsdg::Graph graph;
   auto import = &jlm::tests::GraphImport::Create(graph, valueType, "import");
 
-  auto structuralNode1 = structural_node::create(&graph.GetRootRegion(), 1);
+  auto structuralNode1 = TestStructuralNode::create(&graph.GetRootRegion(), 1);
   auto structuralInput1 = jlm::rvsdg::StructuralInput::create(structuralNode1, import, valueType);
   auto & regionArgument1 =
       TestGraphArgument::Create(*structuralNode1->subregion(0), structuralInput1, valueType);
-  unary_op::create(structuralNode1->subregion(0), valueType, &regionArgument1, valueType);
+  TestUnaryOperation::create(structuralNode1->subregion(0), valueType, &regionArgument1, valueType);
 
-  auto structuralNode2 = structural_node::create(&graph.GetRootRegion(), 1);
+  auto structuralNode2 = TestStructuralNode::create(&graph.GetRootRegion(), 1);
   auto structuralInput2 = jlm::rvsdg::StructuralInput::create(structuralNode2, import, valueType);
   auto & regionArgument2 =
       TestGraphArgument::Create(*structuralNode2->subregion(0), structuralInput2, valueType);
-  binary_op::create(valueType, valueType, &regionArgument2, &regionArgument2);
+  TestBinaryOperation::create(valueType, valueType, &regionArgument2, &regionArgument2);
 
   // Act & Assert
-  assert(jlm::rvsdg::Region::ContainsNodeType<structural_node>(graph.GetRootRegion(), false));
-  assert(jlm::rvsdg::Region::ContainsOperation<unary_op>(graph.GetRootRegion(), true));
-  assert(jlm::rvsdg::Region::ContainsOperation<binary_op>(graph.GetRootRegion(), true));
-  assert(!jlm::rvsdg::Region::ContainsOperation<test_op>(graph.GetRootRegion(), true));
+  assert(jlm::rvsdg::Region::ContainsNodeType<TestStructuralNode>(graph.GetRootRegion(), false));
+  assert(jlm::rvsdg::Region::ContainsOperation<TestUnaryOperation>(graph.GetRootRegion(), true));
+  assert(jlm::rvsdg::Region::ContainsOperation<TestBinaryOperation>(graph.GetRootRegion(), true));
+  assert(!jlm::rvsdg::Region::ContainsOperation<TestOperation>(graph.GetRootRegion(), true));
 }
 
 JLM_UNIT_TEST_REGISTER("jlm/rvsdg/RegionTests-Contains", Contains)
@@ -122,7 +122,7 @@ IsRootRegion()
   // Arrange
   jlm::rvsdg::Graph graph;
 
-  auto structuralNode = jlm::tests::structural_node::create(&graph.GetRootRegion(), 1);
+  auto structuralNode = jlm::tests::TestStructuralNode::create(&graph.GetRootRegion(), 1);
 
   // Act & Assert
   assert(graph.GetRootRegion().IsRootRegion());
@@ -155,12 +155,13 @@ static void
 NumRegions_NonEmptyRvsdg()
 {
   using namespace jlm::rvsdg;
+  using namespace jlm::tests;
 
   // Arrange
   const Graph graph;
-  auto structuralNode = jlm::tests::structural_node::create(&graph.GetRootRegion(), 4);
-  jlm::tests::structural_node::create(structuralNode->subregion(0), 2);
-  jlm::tests::structural_node::create(structuralNode->subregion(3), 5);
+  auto structuralNode = TestStructuralNode::create(&graph.GetRootRegion(), 4);
+  TestStructuralNode::create(structuralNode->subregion(0), 2);
+  TestStructuralNode::create(structuralNode->subregion(3), 5);
 
   // Act & Assert
   assert(Region::NumRegions(graph.GetRootRegion()) == 1 + 4 + 2 + 5);
@@ -181,7 +182,7 @@ RemoveResultsWhere()
   jlm::rvsdg::Region region(&rvsdg.GetRootRegion(), &rvsdg);
 
   auto valueType = ValueType::Create();
-  auto node = jlm::tests::test_op::Create(&region, {}, {}, { valueType });
+  auto node = TestOperation::Create(&region, {}, {}, { valueType });
 
   auto & result0 = TestGraphResult::Create(*node->output(0), nullptr);
   auto & result1 = TestGraphResult::Create(*node->output(0), nullptr);
@@ -238,7 +239,7 @@ RemoveArgumentsWhere()
   auto & argument1 = TestGraphArgument::Create(region, nullptr, valueType);
   auto & argument2 = TestGraphArgument::Create(region, nullptr, valueType);
 
-  auto node = jlm::tests::test_op::Create(&region, { valueType }, { &argument1 }, { valueType });
+  auto node = TestOperation::Create(&region, { valueType }, { &argument1 }, { valueType });
 
   // Act & Arrange
   assert(region.narguments() == 3);
@@ -290,7 +291,7 @@ PruneArguments()
   TestGraphArgument::Create(region, nullptr, valueType);
   auto & argument2 = TestGraphArgument::Create(region, nullptr, valueType);
 
-  auto node = jlm::tests::test_op::Create(
+  auto node = TestOperation::Create(
       &region,
       { valueType, valueType },
       { &argument0, &argument2 },
@@ -359,12 +360,13 @@ static void
 ToTree_RvsdgWithStructuralNodes()
 {
   using namespace jlm::rvsdg;
+  using namespace jlm::tests;
 
   // Arrange
   Graph rvsdg;
-  auto structuralNode = jlm::tests::structural_node::create(&rvsdg.GetRootRegion(), 2);
-  jlm::tests::structural_node::create(structuralNode->subregion(0), 1);
-  jlm::tests::structural_node::create(structuralNode->subregion(1), 3);
+  auto structuralNode = TestStructuralNode::create(&rvsdg.GetRootRegion(), 2);
+  TestStructuralNode::create(structuralNode->subregion(0), 1);
+  TestStructuralNode::create(structuralNode->subregion(1), 3);
 
   // Act
   auto tree = Region::ToTree(rvsdg.GetRootRegion());
@@ -390,11 +392,12 @@ ToTree_RvsdgWithStructuralNodesAndAnnotations()
 {
   using namespace jlm::rvsdg;
   using namespace jlm::util;
+  using namespace jlm::tests;
 
   // Arrange
   Graph rvsdg;
-  auto structuralNode1 = jlm::tests::structural_node::create(&rvsdg.GetRootRegion(), 2);
-  auto structuralNode2 = jlm::tests::structural_node::create(structuralNode1->subregion(1), 3);
+  auto structuralNode1 = TestStructuralNode::create(&rvsdg.GetRootRegion(), 2);
+  auto structuralNode2 = TestStructuralNode::create(structuralNode1->subregion(1), 3);
   auto subregion2 = structuralNode2->subregion(2);
 
   AnnotationMap annotationMap;
@@ -437,7 +440,7 @@ BottomNodeTests()
 
   // Act & Assert
   // A newly created node without any users should automatically be added to the bottom nodes
-  auto structuralNode = jlm::tests::structural_node::create(&rvsdg.GetRootRegion(), 1);
+  auto structuralNode = TestStructuralNode::create(&rvsdg.GetRootRegion(), 1);
   assert(structuralNode->IsDead());
   assert(rvsdg.GetRootRegion().NumBottomNodes() == 1);
   assert(&*(rvsdg.GetRootRegion().BottomNodes().begin()) == structuralNode);

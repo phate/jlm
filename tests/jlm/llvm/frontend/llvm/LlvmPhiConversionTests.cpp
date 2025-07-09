@@ -117,7 +117,7 @@ TestPhiConversion()
   // Assert
   // First traverse from the function's entry node to bb2
   auto popcount =
-      jlm::util::AssertedCast<const jlm::llvm::function_node>(ipgmod->ipgraph().find("popcount"));
+      jlm::util::AssertedCast<const jlm::llvm::FunctionNode>(ipgmod->ipgraph().find("popcount"));
   auto entry_node = popcount->cfg()->entry();
   assert(entry_node->single_successor());
   auto bb1_node = entry_node->OutEdge(0)->sink();
@@ -219,7 +219,7 @@ TestPhiOperandElision()
   // Assert
   // Get the CFG of the function
   auto phi_elide =
-      jlm::util::AssertedCast<const jlm::llvm::function_node>(ipgmod->ipgraph().find("phi_elide"));
+      jlm::util::AssertedCast<const jlm::llvm::FunctionNode>(ipgmod->ipgraph().find("phi_elide"));
 
   // Traverse the cfg and save every phi node
   size_t numBasicBlocks = 0;

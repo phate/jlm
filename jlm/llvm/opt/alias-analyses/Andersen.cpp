@@ -615,7 +615,7 @@ Andersen::AnalyzeSimpleNode(const rvsdg::SimpleNode & node)
 
   if (is<AllocaOperation>(op))
     AnalyzeAlloca(node);
-  else if (is<malloc_op>(op))
+  else if (is<MallocOperation>(op))
     AnalyzeMalloc(node);
   else if (is<LoadOperation>(&node))
     AnalyzeLoad(node);
@@ -625,7 +625,7 @@ Andersen::AnalyzeSimpleNode(const rvsdg::SimpleNode & node)
     AnalyzeCall(node);
   else if (is<GetElementPtrOperation>(op))
     AnalyzeGep(node);
-  else if (is<bitcast_op>(op))
+  else if (is<BitCastOperation>(op))
     AnalyzeBitcast(node);
   else if (is<IntegerToPointerOperation>(op))
     AnalyzeBits2ptr(node);
@@ -643,7 +643,7 @@ Andersen::AnalyzeSimpleNode(const rvsdg::SimpleNode & node)
     AnalyzeConstantStruct(node);
   else if (is<ConstantAggregateZeroOperation>(op))
     AnalyzeConstantAggregateZero(node);
-  else if (is<ExtractValue>(op))
+  else if (is<ExtractValueOperation>(op))
     AnalyzeExtractValue(node);
   else if (is<valist_op>(op))
     AnalyzeValist(node);
@@ -683,7 +683,7 @@ Andersen::AnalyzeAlloca(const rvsdg::SimpleNode & node)
 void
 Andersen::AnalyzeMalloc(const rvsdg::SimpleNode & node)
 {
-  JLM_ASSERT(is<malloc_op>(&node));
+  JLM_ASSERT(is<MallocOperation>(&node));
 
   const auto & outputRegister = *node.output(0);
   const auto outputRegisterPO = Set_->CreateRegisterPointerObject(outputRegister);
@@ -775,7 +775,7 @@ Andersen::AnalyzeGep(const rvsdg::SimpleNode & node)
 void
 Andersen::AnalyzeBitcast(const rvsdg::SimpleNode & node)
 {
-  JLM_ASSERT(is<bitcast_op>(&node));
+  JLM_ASSERT(is<BitCastOperation>(&node));
 
   const auto & inputRegister = *node.input(0)->origin();
   const auto & outputRegister = *node.output(0);
@@ -927,7 +927,7 @@ Andersen::AnalyzeConstantAggregateZero(const rvsdg::SimpleNode & node)
 void
 Andersen::AnalyzeExtractValue(const rvsdg::SimpleNode & node)
 {
-  JLM_ASSERT(is<ExtractValue>(&node));
+  JLM_ASSERT(is<ExtractValueOperation>(&node));
 
   const auto & result = *node.output(0);
   if (!IsOrContainsPointerType(*result.Type()))
