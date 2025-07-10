@@ -578,6 +578,16 @@ MlirToJlmConverter::ConvertOperation(
         rvsdg::SimpleNode::Create(rvsdgRegion, llvm::ConstantFP(size, constant.value()), {});
     return &output;
   }
+  else if (auto constant = ::mlir::dyn_cast<::mlir::arith::ConstantIndexOp>(&mlirOperation))
+  {
+    auto type = constant.getType();
+    JLM_ASSERT(type.getTypeID() == ::mlir::IndexType::getTypeID());
+
+    return &jlm::llvm::IntegerConstantOperation::Create(
+        rvsdgRegion,
+        64,
+        constant.value());
+  }
 
   else if (auto negOp = ::mlir::dyn_cast<::mlir::arith::NegFOp>(&mlirOperation))
   {
