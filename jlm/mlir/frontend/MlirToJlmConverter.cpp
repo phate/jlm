@@ -583,10 +583,7 @@ MlirToJlmConverter::ConvertOperation(
     auto type = constant.getType();
     JLM_ASSERT(type.getTypeID() == ::mlir::IndexType::getTypeID());
 
-    return &jlm::llvm::IntegerConstantOperation::Create(
-        rvsdgRegion,
-        64,
-        constant.value());
+    return &jlm::llvm::IntegerConstantOperation::Create(rvsdgRegion, 64, constant.value());
   }
 
   else if (auto negOp = ::mlir::dyn_cast<::mlir::arith::NegFOp>(&mlirOperation))
