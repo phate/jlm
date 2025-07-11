@@ -599,13 +599,12 @@ cne(rvsdg::RvsdgModule & rvsdgModule, util::StatisticsCollector & statisticsColl
   statisticsCollector.CollectDemandedStatistics(std::move(statistics));
 }
 
-/* cne class */
-
-cne::~cne()
-{}
+CommonNodeElimination::~CommonNodeElimination() noexcept = default;
 
 void
-cne::Run(rvsdg::RvsdgModule & module, util::StatisticsCollector & statisticsCollector)
+CommonNodeElimination::Run(
+    rvsdg::RvsdgModule & module,
+    util::StatisticsCollector & statisticsCollector)
 {
   llvm::cne(module, statisticsCollector);
 }
