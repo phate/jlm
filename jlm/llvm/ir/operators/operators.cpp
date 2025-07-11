@@ -685,15 +685,12 @@ FPTruncOperation::reduce_operand(rvsdg::unop_reduction_path_t, rvsdg::Output *) 
   JLM_UNREACHABLE("Not implemented!");
 }
 
-/* valist operator */
-
-valist_op::~valist_op()
-{}
+VariadicArgumentListOperation::~VariadicArgumentListOperation() noexcept = default;
 
 bool
-valist_op::operator==(const Operation & other) const noexcept
+VariadicArgumentListOperation::operator==(const Operation & other) const noexcept
 {
-  auto op = dynamic_cast<const valist_op *>(&other);
+  auto op = dynamic_cast<const VariadicArgumentListOperation *>(&other);
   if (!op || op->narguments() != narguments())
     return false;
 
@@ -707,15 +704,15 @@ valist_op::operator==(const Operation & other) const noexcept
 }
 
 std::string
-valist_op::debug_string() const
+VariadicArgumentListOperation::debug_string() const
 {
-  return "VALIST";
+  return "VariadicArguments";
 }
 
 std::unique_ptr<rvsdg::Operation>
-valist_op::copy() const
+VariadicArgumentListOperation::copy() const
 {
-  return std::make_unique<valist_op>(*this);
+  return std::make_unique<VariadicArgumentListOperation>(*this);
 }
 
 BitCastOperation::~BitCastOperation() noexcept = default;
