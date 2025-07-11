@@ -543,45 +543,47 @@ PoisonValueOperation::copy() const
   return std::make_unique<PoisonValueOperation>(*this);
 }
 
-/* floating point arithmetic operator */
-
-fpbin_op::~fpbin_op()
-{}
+FBinaryOperation::~FBinaryOperation() noexcept = default;
 
 bool
-fpbin_op::operator==(const Operation & other) const noexcept
+FBinaryOperation::operator==(const Operation & other) const noexcept
 {
-  auto op = dynamic_cast<const fpbin_op *>(&other);
+  auto op = dynamic_cast<const FBinaryOperation *>(&other);
   return op && op->fpop() == fpop() && op->size() == size();
 }
 
 std::string
-fpbin_op::debug_string() const
+FBinaryOperation::debug_string() const
 {
-  static std::unordered_map<llvm::fpop, std::string> map({ { fpop::add, "add" },
-                                                           { fpop::sub, "sub" },
-                                                           { fpop::mul, "mul" },
-                                                           { fpop::div, "div" },
-                                                           { fpop::mod, "mod" } });
+  static std::unordered_map<llvm::fpop, std::string> map(
+      { { fpop::add, "Add" },
+        { fpop::sub, "Sub" },
+        { fpop::mul, "Mul" },
+        { fpop::div, "Div" },
+        { fpop::mod, "Mod" } });
 
   JLM_ASSERT(map.find(fpop()) != map.end());
-  return "FPOP " + map[fpop()];
+  return "F" + map[fpop()];
 }
 
 std::unique_ptr<rvsdg::Operation>
-fpbin_op::copy() const
+FBinaryOperation::copy() const
 {
-  return std::make_unique<fpbin_op>(*this);
+  return std::make_unique<FBinaryOperation>(*this);
 }
 
 rvsdg::binop_reduction_path_t
-fpbin_op::can_reduce_operand_pair(const rvsdg::Output *, const rvsdg::Output *) const noexcept
+FBinaryOperation::can_reduce_operand_pair(const rvsdg::Output *, const rvsdg::Output *)
+    const noexcept
 {
   return rvsdg::binop_reduction_none;
 }
 
 rvsdg::Output *
-fpbin_op::reduce_operand_pair(rvsdg::binop_reduction_path_t, rvsdg::Output *, rvsdg::Output *) const
+FBinaryOperation::reduce_operand_pair(
+    rvsdg::binop_reduction_path_t,
+    rvsdg::Output *,
+    rvsdg::Output *) const
 {
   JLM_UNREACHABLE("Not implemented!");
 }

@@ -588,7 +588,7 @@ TestFpBinary()
 
       jlm::rvsdg::SimpleNode::Create(
           *lambda->subregion(),
-          fpbin_op(binOp, floatType),
+          FBinaryOperation(binOp, floatType),
           { floatArgument1, floatArgument2 });
 
       lambda->finalize({});
@@ -637,7 +637,8 @@ TestFpBinary()
         assert(convertedLambda->subregion()->nnodes() == 1);
 
         auto node = convertedLambda->subregion()->Nodes().begin().ptr();
-        auto convertedFpbin = jlm::util::AssertedCast<const fpbin_op>(&node->GetOperation());
+        auto convertedFpbin =
+            jlm::util::AssertedCast<const FBinaryOperation>(&node->GetOperation());
         assert(convertedFpbin->fpop() == binOp);
         assert(convertedFpbin->nresults() == 1);
         assert(convertedFpbin->narguments() == 2);

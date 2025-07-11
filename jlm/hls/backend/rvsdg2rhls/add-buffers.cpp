@@ -387,7 +387,7 @@ std::vector<size_t>
 NodeCycles(rvsdg::SimpleNode * node, std::vector<size_t> & input_cycles)
 {
   auto max_cycles = *std::max_element(input_cycles.begin(), input_cycles.end());
-  if (auto op = dynamic_cast<const llvm::fpbin_op *>(&node->GetOperation()))
+  if (auto op = dynamic_cast<const llvm::FBinaryOperation *>(&node->GetOperation()))
   {
     if (op->fpop() == llvm::fpop::add)
     {
@@ -435,7 +435,7 @@ std::vector<size_t>
 NodeCapacity(rvsdg::SimpleNode * node, std::vector<size_t> & input_capacities)
 {
   auto min_capacity = *std::min_element(input_capacities.begin(), input_capacities.end());
-  if (auto op = dynamic_cast<const llvm::fpbin_op *>(&node->GetOperation()))
+  if (auto op = dynamic_cast<const llvm::FBinaryOperation *>(&node->GetOperation()))
   {
     if (op->fpop() == llvm::fpop::add)
     {

@@ -328,7 +328,7 @@ MlirToJlmConverter::ConvertFPBinaryNode(
   }
   return &rvsdg::SimpleNode::Create(
       rvsdgRegion,
-      llvm::fpbin_op(op, size),
+      llvm::FBinaryOperation(op, size),
       { inputs[0], inputs[1] });
 }
 

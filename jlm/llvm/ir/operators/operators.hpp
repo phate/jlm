@@ -1137,19 +1137,19 @@ enum class fpop
   mod
 };
 
-class fpbin_op final : public rvsdg::BinaryOperation
+class FBinaryOperation final : public rvsdg::BinaryOperation
 {
 public:
-  virtual ~fpbin_op();
+  ~FBinaryOperation() noexcept override;
 
-  inline fpbin_op(const llvm::fpop & op, const fpsize & size)
+  FBinaryOperation(const llvm::fpop & op, const fpsize & size)
       : BinaryOperation(
             { FloatingPointType::Create(size), FloatingPointType::Create(size) },
             FloatingPointType::Create(size)),
         op_(op)
   {}
 
-  fpbin_op(const llvm::fpop & op, const std::shared_ptr<const FloatingPointType> & fpt)
+  FBinaryOperation(const llvm::fpop & op, const std::shared_ptr<const FloatingPointType> & fpt)
       : BinaryOperation({ fpt, fpt }, fpt),
         op_(op)
   {}
@@ -1192,7 +1192,7 @@ public:
     if (!ft)
       throw jlm::util::error("expected floating point type.");
 
-    fpbin_op op(fpop, ft);
+    FBinaryOperation op(fpop, ft);
     return ThreeAddressCode::create(op, { op1, op2 });
   }
 

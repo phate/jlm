@@ -992,15 +992,15 @@ ConvertFloatingPointBinaryOperation(
   switch (binaryOperation)
   {
   case ::llvm::Instruction::FAdd:
-    return std::make_unique<fpbin_op>(fpop::add, floatingPointSize);
+    return std::make_unique<FBinaryOperation>(fpop::add, floatingPointSize);
   case ::llvm::Instruction::FSub:
-    return std::make_unique<fpbin_op>(fpop::sub, floatingPointSize);
+    return std::make_unique<FBinaryOperation>(fpop::sub, floatingPointSize);
   case ::llvm::Instruction::FMul:
-    return std::make_unique<fpbin_op>(fpop::mul, floatingPointSize);
+    return std::make_unique<FBinaryOperation>(fpop::mul, floatingPointSize);
   case ::llvm::Instruction::FDiv:
-    return std::make_unique<fpbin_op>(fpop::div, floatingPointSize);
+    return std::make_unique<FBinaryOperation>(fpop::div, floatingPointSize);
   case ::llvm::Instruction::FRem:
-    return std::make_unique<fpbin_op>(fpop::mod, floatingPointSize);
+    return std::make_unique<FBinaryOperation>(fpop::mod, floatingPointSize);
   default:
     JLM_UNREACHABLE("ConvertFloatingPointBinaryOperation: Unsupported binary operation");
   }

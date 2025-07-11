@@ -644,8 +644,8 @@ IpGraphToLlvmConverter::convert_fpbin(
     const std::vector<const Variable *> & args,
     ::llvm::IRBuilder<> & builder)
 {
-  JLM_ASSERT(is<fpbin_op>(op));
-  auto & fpbin = *static_cast<const llvm::fpbin_op *>(&op);
+  JLM_ASSERT(is<FBinaryOperation>(op));
+  auto & fpbin = *static_cast<const llvm::FBinaryOperation *>(&op);
 
   static std::unordered_map<llvm::fpop, ::llvm::Instruction::BinaryOps> map(
       { { fpop::add, ::llvm::Instruction::FAdd },
@@ -1249,7 +1249,7 @@ IpGraphToLlvmConverter::convert_operation(
   {
     return convert_fpcmp(op, arguments, builder);
   }
-  if (is<fpbin_op>(op))
+  if (is<FBinaryOperation>(op))
   {
     return convert_fpbin(op, arguments, builder);
   }
