@@ -653,8 +653,9 @@ MlirToJlmConverter::ConvertOperation(
 
   else if (auto VarArgOp = ::mlir::dyn_cast<::mlir::jlm::CreateVarArgList>(&mlirOperation))
   {
-    return rvsdg::TryGetOwnerNode<rvsdg::Node>(
-        *llvm::valist_op::Create(rvsdgRegion, std::vector(inputs.begin(), inputs.end())));
+    return rvsdg::TryGetOwnerNode<rvsdg::Node>(*llvm::VariadicArgumentListOperation::Create(
+        rvsdgRegion,
+        std::vector(inputs.begin(), inputs.end())));
   }
 
   // Memory operations

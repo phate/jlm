@@ -3843,7 +3843,7 @@ LambdaCallArgumentMismatch::SetupRvsdg()
     auto one = rvsdg::create_bitconstant(lambda->subregion(), 32, 1);
     auto six = rvsdg::create_bitconstant(lambda->subregion(), 32, 6);
 
-    auto vaList = valist_op::Create(*lambda->subregion(), {});
+    auto vaList = VariadicArgumentListOperation::Create(*lambda->subregion(), {});
 
     auto allocaResults = AllocaOperation::create(rvsdg::bittype::Create(32), one, 4);
 
@@ -3929,7 +3929,7 @@ VariadicFunctionTest1::SetupRvsdg()
     auto one = jlm::rvsdg::create_bitconstant(LambdaF_->subregion(), 32, 1);
     auto three = jlm::rvsdg::create_bitconstant(LambdaF_->subregion(), 32, 3);
 
-    auto varArgList = valist_op::Create(*LambdaF_->subregion(), { iArgument });
+    auto varArgList = VariadicArgumentListOperation::Create(*LambdaF_->subregion(), { iArgument });
 
     CallH_ = &CallOperation::CreateNode(
         lambdaHArgument,
@@ -4179,7 +4179,8 @@ VariadicFunctionTest2::SetupRvsdg()
     auto two = jlm::rvsdg::create_bitconstant(LambdaG_->subregion(), 32, 2);
     auto three = jlm::rvsdg::create_bitconstant(LambdaG_->subregion(), 32, 3);
 
-    auto vaListResult = valist_op::Create(*LambdaG_->subregion(), { zero, one, two });
+    auto vaListResult =
+        VariadicArgumentListOperation::Create(*LambdaG_->subregion(), { zero, one, two });
 
     auto & callFst = CallOperation::CreateNode(
         lambdaFstArgument,

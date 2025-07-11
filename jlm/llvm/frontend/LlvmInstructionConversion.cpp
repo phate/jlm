@@ -841,7 +841,7 @@ convert_call_instruction(::llvm::Instruction * instruction, tacsvector_t & tacs,
     for (size_t n = functionType->getNumParams(); n < i->getNumOperands() - 1; n++)
       varargs.push_back(ConvertValue(i->getArgOperand(n), tacs, ctx));
 
-    tacs.push_back(valist_op::create(varargs));
+    tacs.push_back(VariadicArgumentListOperation::create(varargs));
     return tacs.back()->result(0);
   };
 

@@ -267,7 +267,7 @@ IpGraphToLlvmConverter::convert(
     {
       JLM_ASSERT(is<ThreeAddressCodeVariable>(argument));
       auto valist = dynamic_cast<const llvm::ThreeAddressCodeVariable *>(argument)->tac();
-      JLM_ASSERT(is<valist_op>(valist->operation()));
+      JLM_ASSERT(is<VariadicArgumentListOperation>(valist->operation()));
       for (size_t n = 0; n < valist->noperands(); n++)
         operands.push_back(Context_->value(valist->operand(n)));
       continue;
@@ -677,7 +677,7 @@ IpGraphToLlvmConverter::convert_valist(
     const std::vector<const Variable *> &,
     ::llvm::IRBuilder<> &)
 {
-  JLM_ASSERT(is<valist_op>(op));
+  JLM_ASSERT(is<VariadicArgumentListOperation>(op));
   return nullptr;
 }
 
@@ -1253,7 +1253,7 @@ IpGraphToLlvmConverter::convert_operation(
   {
     return convert_fpbin(op, arguments, builder);
   }
-  if (is<valist_op>(op))
+  if (is<VariadicArgumentListOperation>(op))
   {
     return convert_valist(op, arguments, builder);
   }
