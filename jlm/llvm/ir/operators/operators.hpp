@@ -1411,24 +1411,22 @@ public:
   }
 };
 
-/* valist operator */
-
-class valist_op final : public rvsdg::SimpleOperation
+class VariadicArgumentListOperation final : public rvsdg::SimpleOperation
 {
 public:
-  virtual ~valist_op();
+  ~VariadicArgumentListOperation() noexcept override;
 
-  explicit valist_op(std::vector<std::shared_ptr<const jlm::rvsdg::Type>> types)
+  explicit VariadicArgumentListOperation(std::vector<std::shared_ptr<const jlm::rvsdg::Type>> types)
       : SimpleOperation(std::move(types), { VariableArgumentType::Create() })
   {}
 
-  valist_op(const valist_op &) = default;
+  VariadicArgumentListOperation(const VariadicArgumentListOperation &) = default;
 
-  valist_op &
-  operator=(const valist_op &) = delete;
+  VariadicArgumentListOperation &
+  operator=(const VariadicArgumentListOperation &) = delete;
 
-  valist_op &
-  operator=(valist_op &&) = delete;
+  VariadicArgumentListOperation &
+  operator=(VariadicArgumentListOperation &&) = delete;
 
   virtual bool
   operator==(const Operation & other) const noexcept override;
@@ -1446,7 +1444,7 @@ public:
     for (const auto & argument : arguments)
       operands.push_back(argument->Type());
 
-    valist_op op(std::move(operands));
+    VariadicArgumentListOperation op(std::move(operands));
     return ThreeAddressCode::create(op, arguments);
   }
 
@@ -1459,8 +1457,10 @@ public:
       operandTypes.emplace_back(operand->Type());
 
     return operands.empty()
-             ? rvsdg::CreateOpNode<valist_op>(region, std::move(operandTypes)).output(0)
-             : rvsdg::CreateOpNode<valist_op>(operands, std::move(operandTypes)).output(0);
+             ? rvsdg::CreateOpNode<VariadicArgumentListOperation>(region, std::move(operandTypes))
+                   .output(0)
+             : rvsdg::CreateOpNode<VariadicArgumentListOperation>(operands, std::move(operandTypes))
+                   .output(0);
   }
 };
 

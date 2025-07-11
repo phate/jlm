@@ -534,7 +534,7 @@ JlmToMlirConverter::ConvertSimpleNode(
         ConvertType(*node.output(0)->Type()), // Control, ouput type
         ctlOp->value().alternative());
   }
-  else if (auto vaOp = dynamic_cast<const llvm::valist_op *>(&operation))
+  else if (auto vaOp = dynamic_cast<const llvm::VariadicArgumentListOperation *>(&operation))
   {
     MlirOp = Builder_->create<::mlir::jlm::CreateVarArgList>(
         Builder_->getUnknownLoc(),
