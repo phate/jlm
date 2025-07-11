@@ -555,12 +555,11 @@ FBinaryOperation::operator==(const Operation & other) const noexcept
 std::string
 FBinaryOperation::debug_string() const
 {
-  static std::unordered_map<llvm::fpop, std::string> map(
-      { { fpop::add, "Add" },
-        { fpop::sub, "Sub" },
-        { fpop::mul, "Mul" },
-        { fpop::div, "Div" },
-        { fpop::mod, "Mod" } });
+  static std::unordered_map<llvm::fpop, std::string> map({ { fpop::add, "Add" },
+                                                           { fpop::sub, "Sub" },
+                                                           { fpop::mul, "Mul" },
+                                                           { fpop::div, "Div" },
+                                                           { fpop::mod, "Mod" } });
 
   JLM_ASSERT(map.find(fpop()) != map.end());
   return "F" + map[fpop()];
