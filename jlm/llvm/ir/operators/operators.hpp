@@ -687,8 +687,6 @@ public:
   }
 };
 
-/* pointer compare operator */
-
 enum class cmp
 {
   eq,
@@ -699,12 +697,12 @@ enum class cmp
   le
 };
 
-class ptrcmp_op final : public rvsdg::BinaryOperation
+class PtrCmpOperation final : public rvsdg::BinaryOperation
 {
 public:
-  virtual ~ptrcmp_op();
+  ~PtrCmpOperation() noexcept override;
 
-  inline ptrcmp_op(const std::shared_ptr<const PointerType> & ptype, const llvm::cmp & cmp)
+  PtrCmpOperation(const std::shared_ptr<const PointerType> & ptype, const llvm::cmp & cmp)
       : BinaryOperation({ ptype, ptype }, jlm::rvsdg::bittype::Create(1)),
         cmp_(cmp)
   {}
@@ -741,7 +739,7 @@ public:
     if (!pt)
       throw jlm::util::error("expected pointer type.");
 
-    ptrcmp_op op(std::move(pt), cmp);
+    PtrCmpOperation op(std::move(pt), cmp);
     return ThreeAddressCode::create(op, { op1, op2 });
   }
 

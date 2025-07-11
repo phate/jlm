@@ -588,8 +588,8 @@ IpGraphToLlvmConverter::convert_ptrcmp(
     const std::vector<const Variable *> & args,
     ::llvm::IRBuilder<> & builder)
 {
-  JLM_ASSERT(is<ptrcmp_op>(op));
-  auto & pop = *static_cast<const ptrcmp_op *>(&op);
+  JLM_ASSERT(is<PtrCmpOperation>(op));
+  auto & pop = *static_cast<const PtrCmpOperation *>(&op);
 
   static std::unordered_map<llvm::cmp, ::llvm::CmpInst::Predicate> map(
       { { cmp::le, ::llvm::CmpInst::ICMP_ULE },
@@ -1241,7 +1241,7 @@ IpGraphToLlvmConverter::convert_operation(
   {
     return convert<ConstantDataArray>(op, arguments, builder);
   }
-  if (is<ptrcmp_op>(op))
+  if (is<PtrCmpOperation>(op))
   {
     return convert_ptrcmp(op, arguments, builder);
   }

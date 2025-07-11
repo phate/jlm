@@ -328,20 +328,17 @@ ConstantDataArray::copy() const
   return std::make_unique<ConstantDataArray>(*this);
 }
 
-/* pointer compare operator */
-
-ptrcmp_op::~ptrcmp_op()
-{}
+PtrCmpOperation::~PtrCmpOperation() noexcept = default;
 
 bool
-ptrcmp_op::operator==(const Operation & other) const noexcept
+PtrCmpOperation::operator==(const Operation & other) const noexcept
 {
-  auto op = dynamic_cast<const ptrcmp_op *>(&other);
+  auto op = dynamic_cast<const PtrCmpOperation *>(&other);
   return op && op->argument(0) == argument(0) && op->cmp_ == cmp_;
 }
 
 std::string
-ptrcmp_op::debug_string() const
+PtrCmpOperation::debug_string() const
 {
   static std::unordered_map<llvm::cmp, std::string> map({ { cmp::eq, "eq" },
                                                           { cmp::ne, "ne" },
@@ -351,24 +348,27 @@ ptrcmp_op::debug_string() const
                                                           { cmp::le, "le" } });
 
   JLM_ASSERT(map.find(cmp()) != map.end());
-  return "PTRCMP " + map[cmp()];
+  return "PtrCmp " + map[cmp()];
 }
 
 std::unique_ptr<rvsdg::Operation>
-ptrcmp_op::copy() const
+PtrCmpOperation::copy() const
 {
-  return std::make_unique<ptrcmp_op>(*this);
+  return std::make_unique<PtrCmpOperation>(*this);
 }
 
 rvsdg::binop_reduction_path_t
-ptrcmp_op::can_reduce_operand_pair(const rvsdg::Output *, const rvsdg::Output *) const noexcept
+PtrCmpOperation::can_reduce_operand_pair(const rvsdg::Output *, const rvsdg::Output *)
+    const noexcept
 {
   return rvsdg::binop_reduction_none;
 }
 
 rvsdg::Output *
-ptrcmp_op::reduce_operand_pair(rvsdg::binop_reduction_path_t, rvsdg::Output *, rvsdg::Output *)
-    const
+PtrCmpOperation::reduce_operand_pair(
+    rvsdg::binop_reduction_path_t,
+    rvsdg::Output *,
+    rvsdg::Output *) const
 {
   JLM_UNREACHABLE("Not implemented!");
 }

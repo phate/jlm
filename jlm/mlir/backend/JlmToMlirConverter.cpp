@@ -375,7 +375,7 @@ JlmToMlirConverter::BitCompareNode(
 
 ::mlir::Operation *
 JlmToMlirConverter::ConvertPointerCompareNode(
-    const llvm::ptrcmp_op & operation,
+    const llvm::PtrCmpOperation & operation,
     ::llvm::SmallVector<::mlir::Value> inputs)
 {
   auto compPredicate = ::mlir::LLVM::ICmpPredicate::eq;
@@ -494,7 +494,7 @@ JlmToMlirConverter::ConvertSimpleNode(
   {
     MlirOp = ConvertFpCompareNode(*fpCmpOp, inputs);
   }
-  else if (auto pointerCompareOp = dynamic_cast<const llvm::ptrcmp_op *>(&operation))
+  else if (auto pointerCompareOp = dynamic_cast<const llvm::PtrCmpOperation *>(&operation))
   {
     MlirOp = ConvertPointerCompareNode(*pointerCompareOp, inputs);
   }

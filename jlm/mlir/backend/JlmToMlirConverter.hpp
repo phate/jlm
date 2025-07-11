@@ -165,7 +165,7 @@ public:
    */
   ::mlir::Operation *
   ConvertPointerCompareNode(
-      const llvm::ptrcmp_op & pointerCompareOp,
+      const llvm::PtrCmpOperation & pointerCompareOp,
       ::llvm::SmallVector<::mlir::Value> inputs);
 
   /**

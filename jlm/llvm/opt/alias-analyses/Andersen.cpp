@@ -653,7 +653,7 @@ Andersen::AnalyzeSimpleNode(const rvsdg::SimpleNode & node)
     AnalyzeFunctionToPointer(node);
   else if (is<IOBarrierOperation>(op))
     AnalyzeIOBarrier(node);
-  else if (is<FreeOperation>(op) || is<ptrcmp_op>(op))
+  else if (is<FreeOperation>(op) || is<PtrCmpOperation>(op))
   {
     // These operations take pointers as input, but do not affect any points-to sets
   }
