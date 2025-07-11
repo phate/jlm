@@ -449,20 +449,17 @@ ConstantFP::copy() const
   return std::make_unique<ConstantFP>(*this);
 }
 
-/* floating point comparison operator */
-
-fpcmp_op::~fpcmp_op()
-{}
+FCmpOperation::~FCmpOperation() noexcept = default;
 
 bool
-fpcmp_op::operator==(const Operation & other) const noexcept
+FCmpOperation::operator==(const Operation & other) const noexcept
 {
-  auto op = dynamic_cast<const fpcmp_op *>(&other);
+  auto op = dynamic_cast<const FCmpOperation *>(&other);
   return op && op->argument(0) == argument(0) && op->cmp_ == cmp_;
 }
 
 std::string
-fpcmp_op::debug_string() const
+FCmpOperation::debug_string() const
 {
   static std::unordered_map<fpcmp, std::string> map({ { fpcmp::oeq, "oeq" },
                                                       { fpcmp::ogt, "ogt" },
@@ -480,23 +477,24 @@ fpcmp_op::debug_string() const
                                                       { fpcmp::uno, "uno" } });
 
   JLM_ASSERT(map.find(cmp()) != map.end());
-  return "FPCMP " + map[cmp()];
+  return "FCmp " + map[cmp()];
 }
 
 std::unique_ptr<rvsdg::Operation>
-fpcmp_op::copy() const
+FCmpOperation::copy() const
 {
-  return std::make_unique<fpcmp_op>(*this);
+  return std::make_unique<FCmpOperation>(*this);
 }
 
 rvsdg::binop_reduction_path_t
-fpcmp_op::can_reduce_operand_pair(const rvsdg::Output *, const rvsdg::Output *) const noexcept
+FCmpOperation::can_reduce_operand_pair(const rvsdg::Output *, const rvsdg::Output *) const noexcept
 {
   return rvsdg::binop_reduction_none;
 }
 
 rvsdg::Output *
-fpcmp_op::reduce_operand_pair(rvsdg::binop_reduction_path_t, rvsdg::Output *, rvsdg::Output *) const
+FCmpOperation::reduce_operand_pair(rvsdg::binop_reduction_path_t, rvsdg::Output *, rvsdg::Output *)
+    const
 {
   JLM_UNREACHABLE("Not implemented!");
 }
