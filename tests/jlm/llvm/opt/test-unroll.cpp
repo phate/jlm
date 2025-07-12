@@ -35,7 +35,7 @@ nthetas(jlm::rvsdg::Region * region)
 
 static jlm::rvsdg::ThetaNode *
 create_theta(
-    const jlm::rvsdg::bitcompare_op & cop,
+    const jlm::rvsdg::BitCompareOperation & cop,
     const jlm::rvsdg::bitbinary_op & aop,
     jlm::rvsdg::Output * init,
     jlm::rvsdg::Output * step,
