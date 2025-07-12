@@ -161,7 +161,7 @@ invert(rvsdg::ThetaNode * otheta)
   if (!ogamma)
     return;
 
-  NodeSinking(ogamma, otheta);
+  pullin(ogamma, otheta);
 
   /* copy condition nodes for new gamma node */
   rvsdg::SubstitutionMap smap;
