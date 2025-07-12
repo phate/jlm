@@ -63,7 +63,7 @@ split_opt(llvm::RvsdgModule & rm)
   jlm::llvm::DeadNodeElimination dne;
   jlm::hls::cne cne;
   jlm::llvm::InvariantValueRedirection ivr;
-  jlm::llvm::tginversion tgi;
+  jlm::llvm::LoopUnswitching tgi;
   jlm::llvm::NodeReduction red;
   jlm::util::StatisticsCollector statisticsCollector;
   tgi.Run(rm, statisticsCollector);
@@ -81,7 +81,7 @@ pre_opt(jlm::llvm::RvsdgModule & rm)
   jlm::llvm::DeadNodeElimination dne;
   jlm::hls::cne cne;
   jlm::llvm::InvariantValueRedirection ivr;
-  jlm::llvm::tginversion tgi;
+  jlm::llvm::LoopUnswitching tgi;
   jlm::util::StatisticsCollector statisticsCollector;
   tgi.Run(rm, statisticsCollector);
   dne.Run(rm, statisticsCollector);
@@ -450,7 +450,7 @@ rvsdg2rhls(llvm::RvsdgModule & rhls, util::StatisticsCollector & collector)
 
   llvm::DeadNodeElimination llvmDne;
   llvmDne.Run(rhls, collector);
-  jlm::llvm::tginversion tgi;
+  jlm::llvm::LoopUnswitching tgi;
   // simplify loops
   tgi.Run(rhls, collector);
   jlm::hls::cne cne;

@@ -411,11 +411,11 @@ JlmOptCommand::CreateTransformation(
   case JlmOptCommandLineOptions::OptimizationId::AASteensgaardRegionAware:
     return std::make_unique<llvm::aa::PointsToAnalysisStateEncoder<Steensgaard, RegionAwareMrs>>();
   case JlmOptCommandLineOptions::OptimizationId::CommonNodeElimination:
-    return std::make_unique<llvm::cne>();
+    return std::make_unique<llvm::CommonNodeElimination>();
   case JlmOptCommandLineOptions::OptimizationId::DeadNodeElimination:
     return std::make_unique<llvm::DeadNodeElimination>();
   case JlmOptCommandLineOptions::OptimizationId::FunctionInlining:
-    return std::make_unique<llvm::fctinline>();
+    return std::make_unique<llvm::FunctionInlining>();
   case JlmOptCommandLineOptions::OptimizationId::IfConversion:
     return std::make_unique<llvm::IfConversion>();
   case JlmOptCommandLineOptions::OptimizationId::InvariantValueRedirection:
@@ -423,7 +423,7 @@ JlmOptCommand::CreateTransformation(
   case JlmOptCommandLineOptions::OptimizationId::LoopUnrolling:
     return std::make_unique<llvm::loopunroll>(4);
   case JlmOptCommandLineOptions::OptimizationId::NodePullIn:
-    return std::make_unique<llvm::pullin>();
+    return std::make_unique<llvm::NodeSinking>();
   case JlmOptCommandLineOptions::OptimizationId::NodePushOut:
     return std::make_unique<llvm::NodeHoisting>();
   case JlmOptCommandLineOptions::OptimizationId::NodeReduction:
@@ -432,7 +432,7 @@ JlmOptCommand::CreateTransformation(
     return std::make_unique<llvm::RvsdgTreePrinter>(
         CommandLineOptions_.GetRvsdgTreePrinterConfiguration());
   case JlmOptCommandLineOptions::OptimizationId::ThetaGammaInversion:
-    return std::make_unique<llvm::tginversion>();
+    return std::make_unique<llvm::LoopUnswitching>();
   default:
     JLM_UNREACHABLE("Unhandled optimization id.");
   }
