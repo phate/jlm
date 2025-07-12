@@ -212,7 +212,7 @@ JlmToMlirConverter::ConvertNode(
 
 ::mlir::Operation *
 JlmToMlirConverter::ConvertFpBinaryNode(
-    const jlm::llvm::fpbin_op & op,
+    const jlm::llvm::FBinaryOperation & op,
     ::llvm::SmallVector<::mlir::Value> inputs)
 {
   switch (op.fpop())
@@ -470,7 +470,7 @@ JlmToMlirConverter::ConvertSimpleNode(
   {
     MlirOp = ConvertBitBinaryNode(operation, inputs);
   }
-  else if (auto fpBinOp = dynamic_cast<const jlm::llvm::fpbin_op *>(&operation))
+  else if (auto fpBinOp = dynamic_cast<const jlm::llvm::FBinaryOperation *>(&operation))
   {
     MlirOp = ConvertFpBinaryNode(*fpBinOp, inputs);
   }
