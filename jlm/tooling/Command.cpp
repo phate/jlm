@@ -425,7 +425,7 @@ JlmOptCommand::CreateTransformation(
   case JlmOptCommandLineOptions::OptimizationId::NodePullIn:
     return std::make_unique<llvm::pullin>();
   case JlmOptCommandLineOptions::OptimizationId::NodePushOut:
-    return std::make_unique<llvm::pushout>();
+    return std::make_unique<llvm::NodeHoisting>();
   case JlmOptCommandLineOptions::OptimizationId::NodeReduction:
     return std::make_unique<llvm::NodeReduction>();
   case JlmOptCommandLineOptions::OptimizationId::RvsdgTreePrinter:
