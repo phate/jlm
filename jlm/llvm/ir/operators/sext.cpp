@@ -21,7 +21,7 @@ is_bitunary_reducible(const rvsdg::Output * operand)
 static bool
 is_bitbinary_reducible(const rvsdg::Output * operand)
 {
-  return rvsdg::is<rvsdg::bitbinary_op>(rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*operand));
+  return rvsdg::is<rvsdg::BitBinaryOperation>(rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*operand));
 }
 
 static bool
@@ -55,7 +55,7 @@ perform_bitbinary_reduction(const SExtOperation & op, rvsdg::Output * operand)
   JLM_ASSERT(is_bitbinary_reducible(operand));
   const auto binaryNode = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*operand);
   auto region = operand->region();
-  auto bop = static_cast<const rvsdg::bitbinary_op *>(&binaryNode->GetOperation());
+  auto bop = static_cast<const rvsdg::BitBinaryOperation *>(&binaryNode->GetOperation());
 
   JLM_ASSERT(binaryNode->ninputs() == 2);
   auto op1 = SExtOperation::create(op.ndstbits(), binaryNode->input(0)->origin());
