@@ -64,11 +64,10 @@ bitbinary_op::reduce_operand_pair(
   return nullptr;
 }
 
-bitcompare_op::~bitcompare_op() noexcept
-{}
+BitCompareOperation::~BitCompareOperation() noexcept = default;
 
 binop_reduction_path_t
-bitcompare_op::can_reduce_operand_pair(
+BitCompareOperation::can_reduce_operand_pair(
     const jlm::rvsdg::Output * arg1,
     const jlm::rvsdg::Output * arg2) const noexcept
 {
@@ -99,7 +98,7 @@ bitcompare_op::can_reduce_operand_pair(
 }
 
 jlm::rvsdg::Output *
-bitcompare_op::reduce_operand_pair(
+BitCompareOperation::reduce_operand_pair(
     binop_reduction_path_t path,
     jlm::rvsdg::Output * arg1,
     jlm::rvsdg::Output *) const
