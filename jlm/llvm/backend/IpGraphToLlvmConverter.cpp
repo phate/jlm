@@ -734,7 +734,7 @@ IpGraphToLlvmConverter::convert_ctl2bits(
     const std::vector<const Variable *> & args,
     ::llvm::IRBuilder<> &)
 {
-  JLM_ASSERT(is<ctl2bits_op>(op));
+  JLM_ASSERT(is<ControlToIntOperation>(op));
   return Context_->value(args[0]);
 }
 
@@ -1277,7 +1277,7 @@ IpGraphToLlvmConverter::convert_operation(
   {
     return convert<ConstantAggregateZeroOperation>(op, arguments, builder);
   }
-  if (is<ctl2bits_op>(op))
+  if (is<ControlToIntOperation>(op))
   {
     return convert_ctl2bits(op, arguments, builder);
   }

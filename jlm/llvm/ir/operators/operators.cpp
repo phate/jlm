@@ -174,28 +174,25 @@ FloatingPointToSignedIntegerOperation::reduce_operand(rvsdg::unop_reduction_path
   JLM_UNREACHABLE("Not implemented!");
 }
 
-/* ctl2bits operator */
-
-ctl2bits_op::~ctl2bits_op() noexcept
-{}
+ControlToIntOperation::~ControlToIntOperation() noexcept = default;
 
 bool
-ctl2bits_op::operator==(const Operation & other) const noexcept
+ControlToIntOperation::operator==(const Operation & other) const noexcept
 {
-  auto op = dynamic_cast<const ctl2bits_op *>(&other);
+  auto op = dynamic_cast<const ControlToIntOperation *>(&other);
   return op && op->argument(0) == argument(0) && op->result(0) == result(0);
 }
 
 std::string
-ctl2bits_op::debug_string() const
+ControlToIntOperation::debug_string() const
 {
-  return "CTL2BITS";
+  return "ControlToInt";
 }
 
 std::unique_ptr<rvsdg::Operation>
-ctl2bits_op::copy() const
+ControlToIntOperation::copy() const
 {
-  return std::make_unique<ctl2bits_op>(*this);
+  return std::make_unique<ControlToIntOperation>(*this);
 }
 
 BranchOperation::~BranchOperation() noexcept = default;

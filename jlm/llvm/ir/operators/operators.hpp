@@ -358,14 +358,12 @@ public:
   }
 };
 
-/* ctl2bits operator */
-
-class ctl2bits_op final : public rvsdg::SimpleOperation
+class ControlToIntOperation final : public rvsdg::SimpleOperation
 {
 public:
-  virtual ~ctl2bits_op() noexcept;
+  ~ControlToIntOperation() noexcept override;
 
-  inline ctl2bits_op(
+  ControlToIntOperation(
       std::shared_ptr<const rvsdg::ControlType> srctype,
       std::shared_ptr<const jlm::rvsdg::bittype> dsttype)
       : SimpleOperation({ std::move(srctype) }, { std::move(dsttype) })
@@ -391,7 +389,7 @@ public:
     if (!dt)
       throw jlm::util::error("expected bitstring type.");
 
-    ctl2bits_op op(std::move(st), std::move(dt));
+    ControlToIntOperation op(std::move(st), std::move(dt));
     return ThreeAddressCode::create(op, { operand });
   }
 };
