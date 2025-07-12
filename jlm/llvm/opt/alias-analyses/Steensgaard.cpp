@@ -1060,7 +1060,7 @@ Steensgaard::AnalyzeSimpleNode(const jlm::rvsdg::SimpleNode & node)
   {
     AnalyzeExtractValue(node);
   }
-  else if (is<valist_op>(&node))
+  else if (is<VariadicArgumentListOperation>(&node))
   {
     AnalyzeVaList(node);
   }
@@ -1076,9 +1076,9 @@ Steensgaard::AnalyzeSimpleNode(const jlm::rvsdg::SimpleNode & node)
   {
     AnalyzeIOBarrier(node);
   }
-  else if (is<FreeOperation>(&node) || is<ptrcmp_op>(&node))
+  else if (is<FreeOperation>(&node) || is<PtrCmpOperation>(&node))
   {
-    // Nothing needs to be done as FreeOperation and ptrcmp_op do not affect points-to sets
+    // Nothing needs to be done as FreeOperation and PtrCmpOperation do not affect points-to sets
   }
   else
   {
@@ -1482,7 +1482,7 @@ Steensgaard::AnalyzeMemcpy(const jlm::rvsdg::SimpleNode & node)
 void
 Steensgaard::AnalyzeVaList(const rvsdg::SimpleNode & node)
 {
-  JLM_ASSERT(is<valist_op>(&node));
+  JLM_ASSERT(is<VariadicArgumentListOperation>(&node));
 
   // Members of the valist are extracted using the va_arg macro, which loads from the va_list struct
   // on the stack. This struct will be marked as escaped from the call to va_start, and thus point

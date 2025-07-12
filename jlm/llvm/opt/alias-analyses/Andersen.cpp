@@ -645,7 +645,7 @@ Andersen::AnalyzeSimpleNode(const rvsdg::SimpleNode & node)
     AnalyzeConstantAggregateZero(node);
   else if (is<ExtractValueOperation>(op))
     AnalyzeExtractValue(node);
-  else if (is<valist_op>(op))
+  else if (is<VariadicArgumentListOperation>(op))
     AnalyzeValist(node);
   else if (is<PointerToFunctionOperation>(op))
     AnalyzePointerToFunction(node);
@@ -653,7 +653,7 @@ Andersen::AnalyzeSimpleNode(const rvsdg::SimpleNode & node)
     AnalyzeFunctionToPointer(node);
   else if (is<IOBarrierOperation>(op))
     AnalyzeIOBarrier(node);
-  else if (is<FreeOperation>(op) || is<ptrcmp_op>(op))
+  else if (is<FreeOperation>(op) || is<PtrCmpOperation>(op))
   {
     // These operations take pointers as input, but do not affect any points-to sets
   }
@@ -942,7 +942,7 @@ Andersen::AnalyzeExtractValue(const rvsdg::SimpleNode & node)
 void
 Andersen::AnalyzeValist(const rvsdg::SimpleNode & node)
 {
-  JLM_ASSERT(is<valist_op>(&node));
+  JLM_ASSERT(is<VariadicArgumentListOperation>(&node));
 
   // Members of the valist are extracted using the va_arg macro, which loads from the va_list struct
   // on the stack. This struct will be marked as escaped from the call to va_start, and thus point

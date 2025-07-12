@@ -267,7 +267,7 @@ IpGraphToLlvmConverter::convert(
     {
       JLM_ASSERT(is<ThreeAddressCodeVariable>(argument));
       auto valist = dynamic_cast<const llvm::ThreeAddressCodeVariable *>(argument)->tac();
-      JLM_ASSERT(is<valist_op>(valist->operation()));
+      JLM_ASSERT(is<VariadicArgumentListOperation>(valist->operation()));
       for (size_t n = 0; n < valist->noperands(); n++)
         operands.push_back(Context_->value(valist->operand(n)));
       continue;
@@ -588,8 +588,8 @@ IpGraphToLlvmConverter::convert_ptrcmp(
     const std::vector<const Variable *> & args,
     ::llvm::IRBuilder<> & builder)
 {
-  JLM_ASSERT(is<ptrcmp_op>(op));
-  auto & pop = *static_cast<const ptrcmp_op *>(&op);
+  JLM_ASSERT(is<PtrCmpOperation>(op));
+  auto & pop = *static_cast<const PtrCmpOperation *>(&op);
 
   static std::unordered_map<llvm::cmp, ::llvm::CmpInst::Predicate> map(
       { { cmp::le, ::llvm::CmpInst::ICMP_ULE },
@@ -611,8 +611,8 @@ IpGraphToLlvmConverter::convert_fpcmp(
     const std::vector<const Variable *> & args,
     ::llvm::IRBuilder<> & builder)
 {
-  JLM_ASSERT(is<fpcmp_op>(op));
-  auto & fpcmp = *static_cast<const fpcmp_op *>(&op);
+  JLM_ASSERT(is<FCmpOperation>(op));
+  auto & fpcmp = *static_cast<const FCmpOperation *>(&op);
 
   static std::unordered_map<llvm::fpcmp, ::llvm::CmpInst::Predicate> map(
       { { fpcmp::oeq, ::llvm::CmpInst::FCMP_OEQ },
@@ -677,7 +677,7 @@ IpGraphToLlvmConverter::convert_valist(
     const std::vector<const Variable *> &,
     ::llvm::IRBuilder<> &)
 {
-  JLM_ASSERT(is<valist_op>(op));
+  JLM_ASSERT(is<VariadicArgumentListOperation>(op));
   return nullptr;
 }
 
@@ -734,7 +734,7 @@ IpGraphToLlvmConverter::convert_ctl2bits(
     const std::vector<const Variable *> & args,
     ::llvm::IRBuilder<> &)
 {
-  JLM_ASSERT(is<ctl2bits_op>(op));
+  JLM_ASSERT(is<ControlToIntOperation>(op));
   return Context_->value(args[0]);
 }
 
@@ -1241,11 +1241,11 @@ IpGraphToLlvmConverter::convert_operation(
   {
     return convert<ConstantDataArray>(op, arguments, builder);
   }
-  if (is<ptrcmp_op>(op))
+  if (is<PtrCmpOperation>(op))
   {
     return convert_ptrcmp(op, arguments, builder);
   }
-  if (is<fpcmp_op>(op))
+  if (is<FCmpOperation>(op))
   {
     return convert_fpcmp(op, arguments, builder);
   }
@@ -1253,7 +1253,7 @@ IpGraphToLlvmConverter::convert_operation(
   {
     return convert_fpbin(op, arguments, builder);
   }
-  if (is<valist_op>(op))
+  if (is<VariadicArgumentListOperation>(op))
   {
     return convert_valist(op, arguments, builder);
   }
@@ -1277,7 +1277,7 @@ IpGraphToLlvmConverter::convert_operation(
   {
     return convert<ConstantAggregateZeroOperation>(op, arguments, builder);
   }
-  if (is<ctl2bits_op>(op))
+  if (is<ControlToIntOperation>(op))
   {
     return convert_ctl2bits(op, arguments, builder);
   }

@@ -120,13 +120,15 @@ public:
       ::llvm::SmallVector<::mlir::Value> inputs);
 
   /**
-   * Converts an fpcmp_op to an MLIR operation.
-   * \param op The fpcmp_op to be converted.
-   * \param inputs The inputs to the fpcmp_op.
+   * Converts an FCmpOperation to an MLIR operation.
+   * \param op The FCmpOperation to be converted.
+   * \param inputs The inputs to the FCmpOperation.
    * \return The converted MLIR operation.
    */
   ::mlir::Operation *
-  ConvertFpCompareNode(const jlm::llvm::fpcmp_op & op, ::llvm::SmallVector<::mlir::Value> inputs);
+  ConvertFpCompareNode(
+      const jlm::llvm::FCmpOperation & op,
+      ::llvm::SmallVector<::mlir::Value> inputs);
 
   /**
    * Converts an RVSDG binary_op to an MLIR RVSDG operation.
@@ -167,7 +169,7 @@ public:
    */
   ::mlir::Operation *
   ConvertPointerCompareNode(
-      const llvm::ptrcmp_op & pointerCompareOp,
+      const llvm::PtrCmpOperation & pointerCompareOp,
       ::llvm::SmallVector<::mlir::Value> inputs);
 
   /**
