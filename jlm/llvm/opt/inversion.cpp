@@ -330,13 +330,12 @@ invert(rvsdg::RvsdgModule & rvsdgModule, util::StatisticsCollector & statisticsC
   statisticsCollector.CollectDemandedStatistics(std::move(statistics));
 }
 
-/* tginversion */
-
-tginversion::~tginversion()
-{}
+LoopUnswitching::~LoopUnswitching() noexcept = default;
 
 void
-tginversion::Run(rvsdg::RvsdgModule & module, jlm::util::StatisticsCollector & statisticsCollector)
+LoopUnswitching::Run(
+    rvsdg::RvsdgModule & module,
+    jlm::util::StatisticsCollector & statisticsCollector)
 {
   invert(module, statisticsCollector);
 }

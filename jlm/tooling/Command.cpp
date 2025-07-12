@@ -432,7 +432,7 @@ JlmOptCommand::CreateTransformation(
     return std::make_unique<llvm::RvsdgTreePrinter>(
         CommandLineOptions_.GetRvsdgTreePrinterConfiguration());
   case JlmOptCommandLineOptions::OptimizationId::ThetaGammaInversion:
-    return std::make_unique<llvm::tginversion>();
+    return std::make_unique<llvm::LoopUnswitching>();
   default:
     JLM_UNREACHABLE("Unhandled optimization id.");
   }
