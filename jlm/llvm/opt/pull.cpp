@@ -330,13 +330,10 @@ pull(rvsdg::RvsdgModule & module, util::StatisticsCollector & statisticsCollecto
   statisticsCollector.CollectDemandedStatistics(std::move(statistics));
 }
 
-/* pullin class */
-
-pullin::~pullin()
-{}
+NodeSinking::~NodeSinking() noexcept = default;
 
 void
-pullin::Run(rvsdg::RvsdgModule & module, util::StatisticsCollector & statisticsCollector)
+NodeSinking::Run(rvsdg::RvsdgModule & module, util::StatisticsCollector & statisticsCollector)
 {
   pull(module, statisticsCollector);
 }
