@@ -501,17 +501,17 @@ ConvertPointerIcmpPredicate(const ::llvm::CmpInst::Predicate predicate)
   switch (predicate)
   {
   case ::llvm::CmpInst::ICMP_ULT:
-    return std::make_unique<ptrcmp_op>(PointerType::Create(), cmp::lt);
+    return std::make_unique<PtrCmpOperation>(PointerType::Create(), cmp::lt);
   case ::llvm::CmpInst::ICMP_ULE:
-    return std::make_unique<ptrcmp_op>(PointerType::Create(), cmp::le);
+    return std::make_unique<PtrCmpOperation>(PointerType::Create(), cmp::le);
   case ::llvm::CmpInst::ICMP_EQ:
-    return std::make_unique<ptrcmp_op>(PointerType::Create(), cmp::eq);
+    return std::make_unique<PtrCmpOperation>(PointerType::Create(), cmp::eq);
   case ::llvm::CmpInst::ICMP_NE:
-    return std::make_unique<ptrcmp_op>(PointerType::Create(), cmp::ne);
+    return std::make_unique<PtrCmpOperation>(PointerType::Create(), cmp::ne);
   case ::llvm::CmpInst::ICMP_UGE:
-    return std::make_unique<ptrcmp_op>(PointerType::Create(), cmp::ge);
+    return std::make_unique<PtrCmpOperation>(PointerType::Create(), cmp::ge);
   case ::llvm::CmpInst::ICMP_UGT:
-    return std::make_unique<ptrcmp_op>(PointerType::Create(), cmp::gt);
+    return std::make_unique<PtrCmpOperation>(PointerType::Create(), cmp::gt);
   default:
     JLM_UNREACHABLE("ConvertPointerIcmpPredicate: Unsupported icmp predicate.");
   }

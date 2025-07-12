@@ -1076,9 +1076,9 @@ Steensgaard::AnalyzeSimpleNode(const jlm::rvsdg::SimpleNode & node)
   {
     AnalyzeIOBarrier(node);
   }
-  else if (is<FreeOperation>(&node) || is<ptrcmp_op>(&node))
+  else if (is<FreeOperation>(&node) || is<PtrCmpOperation>(&node))
   {
-    // Nothing needs to be done as FreeOperation and ptrcmp_op do not affect points-to sets
+    // Nothing needs to be done as FreeOperation and PtrCmpOperation do not affect points-to sets
   }
   else
   {
