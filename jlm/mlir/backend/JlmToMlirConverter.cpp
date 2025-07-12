@@ -199,7 +199,7 @@ JlmToMlirConverter::ConvertNode(
   {
     return ConvertTheta(*theta, block, inputs);
   }
-  else if (auto delta = dynamic_cast<const llvm::delta::node *>(&node))
+  else if (auto delta = dynamic_cast<const llvm::DeltaNode *>(&node))
   {
     return ConvertDelta(*delta, block, inputs);
   }
@@ -874,7 +874,7 @@ JlmToMlirConverter::ConvertTheta(
 
 ::mlir::Operation *
 JlmToMlirConverter::ConvertDelta(
-    const llvm::delta::node & deltaNode,
+    const llvm::DeltaNode & deltaNode,
     ::mlir::Block & block,
     const ::llvm::SmallVector<::mlir::Value> & inputs)
 {

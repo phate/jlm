@@ -221,12 +221,12 @@ public:
    * Converts an RVSDG delta node to an MLIR RVSDG DeltaNode.
    * \param node The RVSDG delta node to be converted
    * \param block The MLIR RVSDG block to insert the delta node.
-   * \param inputs The inputs to the delta::node.
+   * \param inputs The inputs to the DeltaNode.
    * \return The converted MLIR RVSDG DeltaNode.
    */
   ::mlir::Operation *
   ConvertDelta(
-      const llvm::delta::node & node,
+      const llvm::DeltaNode & node,
       ::mlir::Block & block,
       const ::llvm::SmallVector<::mlir::Value> & inputs);
 

@@ -749,7 +749,7 @@ TestDelta()
   {
     auto bitType = jlm::rvsdg::bittype::Create(32);
 
-    auto delta1 = delta::node::Create(
+    auto delta1 = jlm::llvm::DeltaNode::Create(
         &graph->GetRootRegion(),
         bitType,
         "non-constant-delta",
@@ -760,7 +760,7 @@ TestDelta()
     auto bitConstant = jlm::rvsdg::create_bitconstant(delta1->subregion(), 32, 1);
     delta1->finalize(bitConstant);
 
-    auto delta2 = delta::node::Create(
+    auto delta2 = jlm::llvm::DeltaNode::Create(
         &graph->GetRootRegion(),
         bitType,
         "constant-delta",
@@ -823,7 +823,7 @@ TestDelta()
       assert(region->nnodes() == 2);
       for (auto & node : region->Nodes())
       {
-        auto convertedDelta = jlm::util::AssertedCast<delta::node>(&node);
+        auto convertedDelta = jlm::util::AssertedCast<jlm::llvm::DeltaNode>(&node);
         assert(convertedDelta->subregion()->nnodes() == 1);
 
         if (convertedDelta->constant())

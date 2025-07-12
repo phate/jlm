@@ -433,13 +433,13 @@ class DeltaLocation final : public MemoryLocation
 {
   ~DeltaLocation() override = default;
 
-  constexpr explicit DeltaLocation(const delta::node & delta)
+  constexpr explicit DeltaLocation(const DeltaNode & delta)
       : MemoryLocation(),
         Delta_(delta)
   {}
 
 public:
-  [[nodiscard]] const delta::node &
+  [[nodiscard]] const DeltaNode &
   GetNode() const noexcept
   {
     return Delta_;
@@ -452,13 +452,13 @@ public:
   }
 
   static std::unique_ptr<Location>
-  Create(const delta::node & node)
+  Create(const DeltaNode & node)
   {
     return std::unique_ptr<Location>(new DeltaLocation(node));
   }
 
 private:
-  const delta::node & Delta_;
+  const DeltaNode & Delta_;
 };
 
 /**
@@ -600,7 +600,7 @@ public:
   }
 
   Location &
-  InsertDeltaLocation(const delta::node & delta)
+  InsertDeltaLocation(const DeltaNode & delta)
   {
     Locations_.push_back(DeltaLocation::Create(delta));
     auto location = Locations_.back().get();
@@ -1597,7 +1597,7 @@ Steensgaard::AnalyzeLambda(const rvsdg::LambdaNode & lambda)
 }
 
 void
-Steensgaard::AnalyzeDelta(const delta::node & delta)
+Steensgaard::AnalyzeDelta(const DeltaNode & delta)
 {
   // Handle context variables
   for (auto & input : delta.ctxvars())
@@ -1749,7 +1749,7 @@ Steensgaard::AnalyzeStructuralNode(const rvsdg::StructuralNode & node)
   {
     AnalyzeLambda(*lambdaNode);
   }
-  else if (auto deltaNode = dynamic_cast<const delta::node *>(&node))
+  else if (auto deltaNode = dynamic_cast<const DeltaNode *>(&node))
   {
     AnalyzeDelta(*deltaNode);
   }
