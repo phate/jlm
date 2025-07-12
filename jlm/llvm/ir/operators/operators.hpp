@@ -358,14 +358,12 @@ public:
   }
 };
 
-/* ctl2bits operator */
-
-class ctl2bits_op final : public rvsdg::SimpleOperation
+class ControlToIntOperation final : public rvsdg::SimpleOperation
 {
 public:
-  virtual ~ctl2bits_op() noexcept;
+  ~ControlToIntOperation() noexcept override;
 
-  inline ctl2bits_op(
+  ControlToIntOperation(
       std::shared_ptr<const rvsdg::ControlType> srctype,
       std::shared_ptr<const jlm::rvsdg::bittype> dsttype)
       : SimpleOperation({ std::move(srctype) }, { std::move(dsttype) })
@@ -391,7 +389,7 @@ public:
     if (!dt)
       throw jlm::util::error("expected bitstring type.");
 
-    ctl2bits_op op(std::move(st), std::move(dt));
+    ControlToIntOperation op(std::move(st), std::move(dt));
     return ThreeAddressCode::create(op, { operand });
   }
 };
@@ -687,8 +685,6 @@ public:
   }
 };
 
-/* pointer compare operator */
-
 enum class cmp
 {
   eq,
@@ -699,12 +695,12 @@ enum class cmp
   le
 };
 
-class ptrcmp_op final : public rvsdg::BinaryOperation
+class PtrCmpOperation final : public rvsdg::BinaryOperation
 {
 public:
-  virtual ~ptrcmp_op();
+  ~PtrCmpOperation() noexcept override;
 
-  inline ptrcmp_op(const std::shared_ptr<const PointerType> & ptype, const llvm::cmp & cmp)
+  PtrCmpOperation(const std::shared_ptr<const PointerType> & ptype, const llvm::cmp & cmp)
       : BinaryOperation({ ptype, ptype }, jlm::rvsdg::bittype::Create(1)),
         cmp_(cmp)
   {}
@@ -741,7 +737,7 @@ public:
     if (!pt)
       throw jlm::util::error("expected pointer type.");
 
-    ptrcmp_op op(std::move(pt), cmp);
+    PtrCmpOperation op(std::move(pt), cmp);
     return ThreeAddressCode::create(op, { op1, op2 });
   }
 
@@ -928,19 +924,19 @@ enum class fpcmp
   uno
 };
 
-class fpcmp_op final : public rvsdg::BinaryOperation
+class FCmpOperation final : public rvsdg::BinaryOperation
 {
 public:
-  virtual ~fpcmp_op();
+  ~FCmpOperation() noexcept override;
 
-  inline fpcmp_op(const fpcmp & cmp, const fpsize & size)
+  FCmpOperation(const fpcmp & cmp, const fpsize & size)
       : BinaryOperation(
             { FloatingPointType::Create(size), FloatingPointType::Create(size) },
             jlm::rvsdg::bittype::Create(1)),
         cmp_(cmp)
   {}
 
-  fpcmp_op(const fpcmp & cmp, const std::shared_ptr<const FloatingPointType> & fpt)
+  FCmpOperation(const fpcmp & cmp, const std::shared_ptr<const FloatingPointType> & fpt)
       : BinaryOperation({ fpt, fpt }, jlm::rvsdg::bittype::Create(1)),
         cmp_(cmp)
   {}
@@ -983,7 +979,7 @@ public:
     if (!ft)
       throw jlm::util::error("expected floating point type.");
 
-    fpcmp_op op(cmp, std::move(ft));
+    FCmpOperation op(cmp, std::move(ft));
     return ThreeAddressCode::create(op, { op1, op2 });
   }
 
