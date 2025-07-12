@@ -110,12 +110,14 @@ public:
 
   /**
    * Converts a floating point binary operation to an MLIR operation.
-   * \param op The jlm::llvm::fpbin_op to be converted
-   * \param inputs The inputs to the jlm::llvm::fpbin_op.
+   * \param op The jlm::llvm::FBinaryOperation to be converted
+   * \param inputs The inputs to the jlm::llvm::FBinaryOperation.
    * \return The converted MLIR operation.
    */
   ::mlir::Operation *
-  ConvertFpBinaryNode(const jlm::llvm::fpbin_op & op, ::llvm::SmallVector<::mlir::Value> inputs);
+  ConvertFpBinaryNode(
+      const jlm::llvm::FBinaryOperation & op,
+      ::llvm::SmallVector<::mlir::Value> inputs);
 
   /**
    * Converts an FCmpOperation to an MLIR operation.
