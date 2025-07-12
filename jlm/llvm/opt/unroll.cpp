@@ -55,8 +55,6 @@ is_eqcmp(const rvsdg::Operation & op)
       || dynamic_cast<const jlm::rvsdg::bitsle_op *>(&op);
 }
 
-/* unrollinfo methods */
-
 static bool
 is_theta_invariant(const jlm::rvsdg::Output * output)
 {
@@ -110,7 +108,7 @@ is_idv(jlm::rvsdg::Input * input)
 }
 
 std::unique_ptr<jlm::rvsdg::bitvalue_repr>
-unrollinfo::niterations() const noexcept
+LoopUnrollInfo::niterations() const noexcept
 {
   if (!is_known() || step_value() == 0)
     return nullptr;
@@ -132,8 +130,8 @@ unrollinfo::niterations() const noexcept
   return std::make_unique<jlm::rvsdg::bitvalue_repr>(range.udiv(step));
 }
 
-std::unique_ptr<unrollinfo>
-unrollinfo::create(rvsdg::ThetaNode * theta)
+std::unique_ptr<LoopUnrollInfo>
+LoopUnrollInfo::create(rvsdg::ThetaNode * theta)
 {
   using namespace jlm::rvsdg;
 
@@ -170,7 +168,8 @@ unrollinfo::create(rvsdg::ThetaNode * theta)
 
   auto endarg = push_from_theta(end);
   auto steparg = push_from_theta(step);
-  return std::unique_ptr<unrollinfo>(new unrollinfo(cmpnode, armnode, idv, steparg, endarg));
+  return std::unique_ptr<LoopUnrollInfo>(
+      new LoopUnrollInfo(cmpnode, armnode, idv, steparg, endarg));
 }
 
 /* loop unrolling */
@@ -215,7 +214,7 @@ copy_body_and_unroll(const rvsdg::ThetaNode * theta, size_t factor)
   Unroll theta node by given factor.
 */
 static void
-unroll_theta(const unrollinfo & ui, rvsdg::SubstitutionMap & smap, size_t factor)
+unroll_theta(const LoopUnrollInfo & ui, rvsdg::SubstitutionMap & smap, size_t factor)
 {
   auto theta = ui.theta();
   auto remainder = ui.remainder(factor);
@@ -265,7 +264,7 @@ unroll_theta(const unrollinfo & ui, rvsdg::SubstitutionMap & smap, size_t factor
   Adde the reminder for the lopp if any
 */
 static void
-add_remainder(const unrollinfo & ui, rvsdg::SubstitutionMap & smap, size_t factor)
+add_remainder(const LoopUnrollInfo & ui, rvsdg::SubstitutionMap & smap, size_t factor)
 {
   auto theta = ui.theta();
   auto remainder = ui.remainder(factor);
@@ -301,7 +300,7 @@ add_remainder(const unrollinfo & ui, rvsdg::SubstitutionMap & smap, size_t facto
 }
 
 static void
-unroll_known_theta(const unrollinfo & ui, size_t factor)
+unroll_known_theta(const LoopUnrollInfo & ui, size_t factor)
 {
   JLM_ASSERT(ui.is_known() && ui.niterations());
   auto niterations = ui.niterations();
@@ -334,7 +333,7 @@ unroll_known_theta(const unrollinfo & ui, size_t factor)
 }
 
 static jlm::rvsdg::Output *
-create_unrolled_gamma_predicate(const unrollinfo & ui, size_t factor)
+create_unrolled_gamma_predicate(const LoopUnrollInfo & ui, size_t factor)
 {
   auto region = ui.theta()->region();
   auto nbits = ui.nbits();
@@ -355,7 +354,7 @@ static jlm::rvsdg::Output *
 create_unrolled_theta_predicate(
     rvsdg::Region *,
     const rvsdg::SubstitutionMap & smap,
-    const unrollinfo & ui,
+    const LoopUnrollInfo & ui,
     size_t factor)
 {
   using namespace jlm::rvsdg;
@@ -382,7 +381,7 @@ create_unrolled_theta_predicate(
 }
 
 static jlm::rvsdg::Output *
-create_residual_gamma_predicate(const rvsdg::SubstitutionMap & smap, const unrollinfo & ui)
+create_residual_gamma_predicate(const rvsdg::SubstitutionMap & smap, const LoopUnrollInfo & ui)
 {
   auto region = ui.theta()->region();
   auto idv = smap.lookup(ui.theta()->MapPreLoopVar(*ui.idv()).output);
@@ -396,7 +395,7 @@ create_residual_gamma_predicate(const rvsdg::SubstitutionMap & smap, const unrol
 }
 
 static void
-unroll_unknown_theta(const unrollinfo & ui, size_t factor)
+unroll_unknown_theta(const LoopUnrollInfo & ui, size_t factor)
 {
   auto otheta = ui.theta();
 
@@ -481,7 +480,7 @@ unroll(rvsdg::ThetaNode * otheta, size_t factor)
   if (factor < 2)
     return;
 
-  auto ui = unrollinfo::create(otheta);
+  auto ui = LoopUnrollInfo::create(otheta);
   if (!ui)
     return;
 

@@ -43,14 +43,13 @@ private:
   size_t factor_;
 };
 
-class unrollinfo final
+class LoopUnrollInfo final
 {
 public:
-  inline ~unrollinfo()
-  {}
+  ~LoopUnrollInfo() noexcept = default;
 
 private:
-  inline unrollinfo(
+  LoopUnrollInfo(
       rvsdg::Node * cmpnode,
       rvsdg::Node * armnode,
       rvsdg::Output * idv,
@@ -64,15 +63,15 @@ private:
   {}
 
 public:
-  unrollinfo(const unrollinfo &) = delete;
+  LoopUnrollInfo(const LoopUnrollInfo &) = delete;
 
-  unrollinfo(unrollinfo &&) = delete;
+  LoopUnrollInfo(LoopUnrollInfo &&) = delete;
 
-  unrollinfo &
-  operator=(const unrollinfo &) = delete;
+  LoopUnrollInfo &
+  operator=(const LoopUnrollInfo &) = delete;
 
-  unrollinfo &
-  operator=(unrollinfo &&) = delete;
+  LoopUnrollInfo &
+  operator=(LoopUnrollInfo &&) = delete;
 
   inline rvsdg::ThetaNode *
   theta() const noexcept
@@ -199,7 +198,7 @@ public:
     return niterations()->umod({ nbits(), (int64_t)factor });
   }
 
-  static std::unique_ptr<unrollinfo>
+  static std::unique_ptr<LoopUnrollInfo>
   create(rvsdg::ThetaNode * theta);
 
 private:
