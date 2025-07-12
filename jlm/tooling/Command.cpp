@@ -421,7 +421,7 @@ JlmOptCommand::CreateTransformation(
   case JlmOptCommandLineOptions::OptimizationId::InvariantValueRedirection:
     return std::make_unique<llvm::InvariantValueRedirection>();
   case JlmOptCommandLineOptions::OptimizationId::LoopUnrolling:
-    return std::make_unique<llvm::loopunroll>(4);
+    return std::make_unique<llvm::LoopUnrolling>(4);
   case JlmOptCommandLineOptions::OptimizationId::NodePullIn:
     return std::make_unique<llvm::pullin>();
   case JlmOptCommandLineOptions::OptimizationId::NodePushOut:
