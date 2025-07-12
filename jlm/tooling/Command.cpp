@@ -421,11 +421,11 @@ JlmOptCommand::CreateTransformation(
   case JlmOptCommandLineOptions::OptimizationId::InvariantValueRedirection:
     return std::make_unique<llvm::InvariantValueRedirection>();
   case JlmOptCommandLineOptions::OptimizationId::LoopUnrolling:
-    return std::make_unique<llvm::loopunroll>(4);
+    return std::make_unique<llvm::LoopUnrolling>(4);
   case JlmOptCommandLineOptions::OptimizationId::NodePullIn:
     return std::make_unique<llvm::NodeSinking>();
   case JlmOptCommandLineOptions::OptimizationId::NodePushOut:
-    return std::make_unique<llvm::pushout>();
+    return std::make_unique<llvm::NodeHoisting>();
   case JlmOptCommandLineOptions::OptimizationId::NodeReduction:
     return std::make_unique<llvm::NodeReduction>();
   case JlmOptCommandLineOptions::OptimizationId::RvsdgTreePrinter:
