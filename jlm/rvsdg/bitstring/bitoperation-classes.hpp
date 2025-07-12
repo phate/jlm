@@ -89,12 +89,12 @@ enum class compare_result
   static_false
 };
 
-class bitcompare_op : public BinaryOperation
+class BitCompareOperation : public BinaryOperation
 {
 public:
-  virtual ~bitcompare_op() noexcept;
+  ~BitCompareOperation() noexcept override;
 
-  inline bitcompare_op(std::shared_ptr<const bittype> type) noexcept
+  explicit BitCompareOperation(std::shared_ptr<const bittype> type) noexcept
       : BinaryOperation({ type, type }, bittype::Create(1))
   {}
 
@@ -111,7 +111,7 @@ public:
   virtual compare_result
   reduce_constants(const bitvalue_repr & arg1, const bitvalue_repr & arg2) const = 0;
 
-  virtual std::unique_ptr<bitcompare_op>
+  virtual std::unique_ptr<BitCompareOperation>
   create(size_t nbits) const = 0;
 
   inline const bittype &

@@ -63,7 +63,7 @@ MakeBitComparisonOperation<reduction, name, opflags>::copy() const
 }
 
 template<typename reduction, const char * name, enum BinaryOperation::flags opflags>
-std::unique_ptr<bitcompare_op>
+std::unique_ptr<BitCompareOperation>
 MakeBitComparisonOperation<reduction, name, opflags>::create(size_t nbits) const
 {
   return std::make_unique<MakeBitComparisonOperation>(nbits);

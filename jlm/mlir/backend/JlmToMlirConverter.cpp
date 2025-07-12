@@ -486,7 +486,7 @@ JlmToMlirConverter::ConvertSimpleNode(
         inputs[0]);
   }
 
-  else if (jlm::rvsdg::is<const rvsdg::bitcompare_op>(operation))
+  else if (jlm::rvsdg::is<const rvsdg::BitCompareOperation>(operation))
   {
     MlirOp = BitCompareNode(operation, inputs);
   }

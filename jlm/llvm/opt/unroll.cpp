@@ -140,7 +140,7 @@ LoopUnrollInfo::create(rvsdg::ThetaNode * theta)
     return nullptr;
 
   auto cmpnode = rvsdg::TryGetOwnerNode<SimpleNode>(*matchNode->input(0)->origin());
-  if (!is<bitcompare_op>(cmpnode))
+  if (!is<BitCompareOperation>(cmpnode))
     return nullptr;
 
   auto o0 = cmpnode->input(0)->origin();

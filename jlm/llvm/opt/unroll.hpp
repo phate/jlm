@@ -188,8 +188,10 @@ public:
   inline size_t
   nbits() const noexcept
   {
-    JLM_ASSERT(dynamic_cast<const jlm::rvsdg::bitcompare_op *>(&cmpnode()->GetOperation()));
-    return static_cast<const rvsdg::bitcompare_op *>(&cmpnode()->GetOperation())->type().nbits();
+    JLM_ASSERT(dynamic_cast<const jlm::rvsdg::BitCompareOperation *>(&cmpnode()->GetOperation()));
+    return static_cast<const rvsdg::BitCompareOperation *>(&cmpnode()->GetOperation())
+        ->type()
+        .nbits();
   }
 
   inline jlm::rvsdg::bitvalue_repr
