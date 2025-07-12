@@ -46,7 +46,7 @@ MakeBitUnaryOperation<reduction, name>::copy() const
 }
 
 template<typename reduction, const char * name>
-std::unique_ptr<bitunary_op>
+std::unique_ptr<BitUnaryOperation>
 MakeBitUnaryOperation<reduction, name>::create(size_t nbits) const
 {
   return std::make_unique<MakeBitUnaryOperation>(nbits);

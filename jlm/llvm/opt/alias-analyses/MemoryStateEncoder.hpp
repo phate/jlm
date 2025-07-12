@@ -20,7 +20,6 @@ class RvsdgModule;
 class SimpleNode;
 class StructuralNode;
 class ThetaNode;
-class ThetaOutput;
 }
 
 namespace jlm::util
@@ -31,15 +30,7 @@ class StatisticsCollector;
 namespace jlm::llvm
 {
 
-class RvsdgModule;
-
-namespace delta
-{
-class node;
-}
-
-class LoadNode;
-class StoreNode;
+class DeltaNode;
 
 namespace aa
 {
@@ -135,7 +126,7 @@ private:
   EncodePhi(const rvsdg::PhiNode & phiNode);
 
   void
-  EncodeDelta(const delta::node & deltaNode);
+  EncodeDelta(const DeltaNode & deltaNode);
 
   void
   EncodeGamma(rvsdg::GammaNode & gammaNode);

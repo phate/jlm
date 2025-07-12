@@ -153,18 +153,18 @@ public:
       ::llvm::SmallVector<::mlir::Value> inputs);
 
   /**
-   * Converts an RVSDG bitcompare_op to an MLIR RVSDG operation.
-   * \param bitOp The RVSDG bitcompare_op to be converted
-   * \param inputs The inputs to the bitcompare_op.
+   * Converts an RVSDG BitCompareOperation to an MLIR RVSDG operation.
+   * \param bitOp The RVSDG BitCompareOperation to be converted
+   * \param inputs The inputs to the BitCompareOperation.
    * \return The converted MLIR RVSDG operation.
    */
   ::mlir::Operation *
   BitCompareNode(const rvsdg::SimpleOperation & bitOp, ::llvm::SmallVector<::mlir::Value> inputs);
 
   /**
-   * Converts an RVSDG bitcompare_op to an MLIR RVSDG operation.
-   * \param pointerCompareOp The RVSDG bitcompare_op to be converted
-   * \param inputs The inputs to the bitcompare_op.
+   * Converts an RVSDG BitCompareOperation to an MLIR RVSDG operation.
+   * \param pointerCompareOp The RVSDG BitCompareOperation to be converted
+   * \param inputs The inputs to the BitCompareOperation.
    * \return The converted MLIR RVSDG operation.
    */
   ::mlir::Operation *
@@ -221,12 +221,12 @@ public:
    * Converts an RVSDG delta node to an MLIR RVSDG DeltaNode.
    * \param node The RVSDG delta node to be converted
    * \param block The MLIR RVSDG block to insert the delta node.
-   * \param inputs The inputs to the delta::node.
+   * \param inputs The inputs to the DeltaNode.
    * \return The converted MLIR RVSDG DeltaNode.
    */
   ::mlir::Operation *
   ConvertDelta(
-      const llvm::delta::node & node,
+      const llvm::DeltaNode & node,
       ::mlir::Block & block,
       const ::llvm::SmallVector<::mlir::Value> & inputs);
 

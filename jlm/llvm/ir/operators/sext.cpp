@@ -15,7 +15,7 @@ static const rvsdg::unop_reduction_path_t sext_reduction_bitbinary = 129;
 static bool
 is_bitunary_reducible(const rvsdg::Output * operand)
 {
-  return rvsdg::is<rvsdg::bitunary_op>(rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*operand));
+  return rvsdg::is<rvsdg::BitUnaryOperation>(rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*operand));
 }
 
 static bool
@@ -41,7 +41,7 @@ perform_bitunary_reduction(const SExtOperation & op, rvsdg::Output * operand)
   JLM_ASSERT(is_bitunary_reducible(operand));
   const auto unaryNode = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*operand);
   auto region = operand->region();
-  auto uop = static_cast<const rvsdg::bitunary_op *>(&unaryNode->GetOperation());
+  auto uop = static_cast<const rvsdg::BitUnaryOperation *>(&unaryNode->GetOperation());
 
   auto output = SExtOperation::create(op.ndstbits(), unaryNode->input(0)->origin());
   std::unique_ptr<rvsdg::SimpleOperation> simpleOperation(

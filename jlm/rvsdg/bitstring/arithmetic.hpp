@@ -13,13 +13,13 @@ namespace jlm::rvsdg
 {
 
 template<typename reduction, const char * name>
-class MakeBitUnaryOperation final : public bitunary_op
+class MakeBitUnaryOperation final : public BitUnaryOperation
 {
 public:
   ~MakeBitUnaryOperation() noexcept override;
 
   explicit MakeBitUnaryOperation(std::size_t nbits) noexcept
-      : bitunary_op(bittype::Create(nbits))
+      : BitUnaryOperation(bittype::Create(nbits))
   {}
 
   bool
@@ -34,7 +34,7 @@ public:
   [[nodiscard]] std::unique_ptr<Operation>
   copy() const override;
 
-  std::unique_ptr<bitunary_op>
+  std::unique_ptr<BitUnaryOperation>
   create(size_t nbits) const override;
 
   static Output *
