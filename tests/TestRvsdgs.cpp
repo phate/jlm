@@ -2662,10 +2662,7 @@ PhiWithDeltaTest::SetupRvsdg()
   auto myArrayRecVar = pb.AddFixVar(pointerType);
 
   auto delta =
-      DeltaNode::Create(pb.subregion(), arrayType, "myArray",
-      linkage::external_linkage,
-      "",
-      false);
+      DeltaNode::Create(pb.subregion(), arrayType, "myArray", linkage::external_linkage, "", false);
   auto myArrayArgument = delta->add_ctxvar(myArrayRecVar.recref);
 
   auto aggregateZero = ConstantAggregateZeroOperation::Create(*delta->subregion(), structType);
