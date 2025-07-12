@@ -993,7 +993,7 @@ TestVarArgList()
     auto bitType = jlm::rvsdg::bittype::Create(32);
     auto bits1 = jlm::rvsdg::create_bitconstant(&graph->GetRootRegion(), 32, 1);
     auto bits2 = jlm::rvsdg::create_bitconstant(&graph->GetRootRegion(), 32, 2);
-    jlm::llvm::valist_op::Create(graph->GetRootRegion(), { bits1, bits2 });
+    jlm::llvm::VariadicArgumentListOperation::Create(graph->GetRootRegion(), { bits1, bits2 });
 
     // Convert the RVSDG to MLIR
     std::cout << "Convert to MLIR" << std::endl;
@@ -1033,7 +1033,8 @@ TestVarArgList()
       bool foundVarArgOp = false;
       for (auto & node : region->Nodes())
       {
-        auto convertedVarArgOp = dynamic_cast<const valist_op *>(&node.GetOperation());
+        auto convertedVarArgOp =
+            dynamic_cast<const VariadicArgumentListOperation *>(&node.GetOperation());
         if (convertedVarArgOp)
         {
           assert(convertedVarArgOp->nresults() == 1);

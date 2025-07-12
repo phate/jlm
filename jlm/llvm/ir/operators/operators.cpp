@@ -325,20 +325,17 @@ ConstantDataArray::copy() const
   return std::make_unique<ConstantDataArray>(*this);
 }
 
-/* pointer compare operator */
-
-ptrcmp_op::~ptrcmp_op()
-{}
+PtrCmpOperation::~PtrCmpOperation() noexcept = default;
 
 bool
-ptrcmp_op::operator==(const Operation & other) const noexcept
+PtrCmpOperation::operator==(const Operation & other) const noexcept
 {
-  auto op = dynamic_cast<const ptrcmp_op *>(&other);
+  auto op = dynamic_cast<const PtrCmpOperation *>(&other);
   return op && op->argument(0) == argument(0) && op->cmp_ == cmp_;
 }
 
 std::string
-ptrcmp_op::debug_string() const
+PtrCmpOperation::debug_string() const
 {
   static std::unordered_map<llvm::cmp, std::string> map({ { cmp::eq, "eq" },
                                                           { cmp::ne, "ne" },
@@ -348,24 +345,27 @@ ptrcmp_op::debug_string() const
                                                           { cmp::le, "le" } });
 
   JLM_ASSERT(map.find(cmp()) != map.end());
-  return "PTRCMP " + map[cmp()];
+  return "PtrCmp " + map[cmp()];
 }
 
 std::unique_ptr<rvsdg::Operation>
-ptrcmp_op::copy() const
+PtrCmpOperation::copy() const
 {
-  return std::make_unique<ptrcmp_op>(*this);
+  return std::make_unique<PtrCmpOperation>(*this);
 }
 
 rvsdg::binop_reduction_path_t
-ptrcmp_op::can_reduce_operand_pair(const rvsdg::Output *, const rvsdg::Output *) const noexcept
+PtrCmpOperation::can_reduce_operand_pair(const rvsdg::Output *, const rvsdg::Output *)
+    const noexcept
 {
   return rvsdg::binop_reduction_none;
 }
 
 rvsdg::Output *
-ptrcmp_op::reduce_operand_pair(rvsdg::binop_reduction_path_t, rvsdg::Output *, rvsdg::Output *)
-    const
+PtrCmpOperation::reduce_operand_pair(
+    rvsdg::binop_reduction_path_t,
+    rvsdg::Output *,
+    rvsdg::Output *) const
 {
   JLM_UNREACHABLE("Not implemented!");
 }
@@ -446,20 +446,17 @@ ConstantFP::copy() const
   return std::make_unique<ConstantFP>(*this);
 }
 
-/* floating point comparison operator */
-
-fpcmp_op::~fpcmp_op()
-{}
+FCmpOperation::~FCmpOperation() noexcept = default;
 
 bool
-fpcmp_op::operator==(const Operation & other) const noexcept
+FCmpOperation::operator==(const Operation & other) const noexcept
 {
-  auto op = dynamic_cast<const fpcmp_op *>(&other);
+  auto op = dynamic_cast<const FCmpOperation *>(&other);
   return op && op->argument(0) == argument(0) && op->cmp_ == cmp_;
 }
 
 std::string
-fpcmp_op::debug_string() const
+FCmpOperation::debug_string() const
 {
   static std::unordered_map<fpcmp, std::string> map({ { fpcmp::oeq, "oeq" },
                                                       { fpcmp::ogt, "ogt" },
@@ -477,23 +474,24 @@ fpcmp_op::debug_string() const
                                                       { fpcmp::uno, "uno" } });
 
   JLM_ASSERT(map.find(cmp()) != map.end());
-  return "FPCMP " + map[cmp()];
+  return "FCmp " + map[cmp()];
 }
 
 std::unique_ptr<rvsdg::Operation>
-fpcmp_op::copy() const
+FCmpOperation::copy() const
 {
-  return std::make_unique<fpcmp_op>(*this);
+  return std::make_unique<FCmpOperation>(*this);
 }
 
 rvsdg::binop_reduction_path_t
-fpcmp_op::can_reduce_operand_pair(const rvsdg::Output *, const rvsdg::Output *) const noexcept
+FCmpOperation::can_reduce_operand_pair(const rvsdg::Output *, const rvsdg::Output *) const noexcept
 {
   return rvsdg::binop_reduction_none;
 }
 
 rvsdg::Output *
-fpcmp_op::reduce_operand_pair(rvsdg::binop_reduction_path_t, rvsdg::Output *, rvsdg::Output *) const
+FCmpOperation::reduce_operand_pair(rvsdg::binop_reduction_path_t, rvsdg::Output *, rvsdg::Output *)
+    const
 {
   JLM_UNREACHABLE("Not implemented!");
 }
@@ -682,15 +680,12 @@ FPTruncOperation::reduce_operand(rvsdg::unop_reduction_path_t, rvsdg::Output *) 
   JLM_UNREACHABLE("Not implemented!");
 }
 
-/* valist operator */
-
-valist_op::~valist_op()
-{}
+VariadicArgumentListOperation::~VariadicArgumentListOperation() noexcept = default;
 
 bool
-valist_op::operator==(const Operation & other) const noexcept
+VariadicArgumentListOperation::operator==(const Operation & other) const noexcept
 {
-  auto op = dynamic_cast<const valist_op *>(&other);
+  auto op = dynamic_cast<const VariadicArgumentListOperation *>(&other);
   if (!op || op->narguments() != narguments())
     return false;
 
@@ -704,15 +699,15 @@ valist_op::operator==(const Operation & other) const noexcept
 }
 
 std::string
-valist_op::debug_string() const
+VariadicArgumentListOperation::debug_string() const
 {
-  return "VALIST";
+  return "VariadicArguments";
 }
 
 std::unique_ptr<rvsdg::Operation>
-valist_op::copy() const
+VariadicArgumentListOperation::copy() const
 {
-  return std::make_unique<valist_op>(*this);
+  return std::make_unique<VariadicArgumentListOperation>(*this);
 }
 
 BitCastOperation::~BitCastOperation() noexcept = default;
