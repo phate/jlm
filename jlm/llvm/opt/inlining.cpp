@@ -174,13 +174,10 @@ inlining(rvsdg::RvsdgModule & rvsdgModule, util::StatisticsCollector & statistic
   statisticsCollector.CollectDemandedStatistics(std::move(statistics));
 }
 
-/* fctinline class */
-
-fctinline::~fctinline()
-{}
+FunctionInlining::~FunctionInlining() noexcept = default;
 
 void
-fctinline::Run(rvsdg::RvsdgModule & module, util::StatisticsCollector & statisticsCollector)
+FunctionInlining::Run(rvsdg::RvsdgModule & module, util::StatisticsCollector & statisticsCollector)
 {
   inlining(module, statisticsCollector);
 }
