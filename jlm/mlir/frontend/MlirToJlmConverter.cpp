@@ -866,7 +866,7 @@ MlirToJlmConverter::ConvertOperation(
     std::shared_ptr<rvsdg::Type> outputType = ConvertType(mlirOutputType);
     auto outputValueType = std::dynamic_pointer_cast<const rvsdg::ValueType>(outputType);
     auto linakgeString = mlirDeltaNode.getLinkage().str();
-    auto rvsdgDeltaNode = llvm::delta::node::Create(
+    auto rvsdgDeltaNode = llvm::DeltaNode::Create(
         &rvsdgRegion,
         outputValueType,
         mlirDeltaNode.getName().str(),

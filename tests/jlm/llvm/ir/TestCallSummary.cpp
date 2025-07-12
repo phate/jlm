@@ -261,7 +261,7 @@ TestCallSummaryComputationFunctionPointerInDelta()
       LlvmLambdaOperation::Create(functionType, "f", linkage::external_linkage));
   lambdaNode->finalize({ lambdaNode->GetFunctionArguments()[0] });
 
-  auto deltaNode = delta::node::Create(
+  auto deltaNode = DeltaNode::Create(
       &rvsdg->GetRootRegion(),
       functionType,
       "fp",

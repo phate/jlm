@@ -500,7 +500,7 @@ TopDownModRefEliminator::EliminateTopDownRootRegion(rvsdg::Region & region)
     {
       EliminateTopDownPhi(*phiNode);
     }
-    else if (dynamic_cast<const delta::node *>(node))
+    else if (is<DeltaOperation>(node))
     {
       // Nothing needs to be done.
     }
@@ -648,7 +648,7 @@ TopDownModRefEliminator::EliminateTopDownPhi(const rvsdg::PhiNode & phiNode)
         auto & lambdaLiveNodes = Context_->GetLiveNodes(lambdaSubregion);
         liveNodes.UnionWith(lambdaLiveNodes);
       }
-      else if (dynamic_cast<const delta::node *>(&node))
+      else if (is<DeltaOperation>(&node))
       {
         // Nothing needs to be done.
       }
@@ -900,7 +900,7 @@ TopDownModRefEliminator::InitializeLiveNodesOfTailLambdas(const rvsdg::RvsdgModu
         InitializeLiveNodesOfTailLambda(*phiLambdaNode);
       }
     }
-    else if (dynamic_cast<const delta::node *>(node))
+    else if (is<DeltaOperation>(node))
     {
       // Nothing needs to be done for delta nodes.
     }

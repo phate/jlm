@@ -903,7 +903,7 @@ IndirectCallTest2::SetupRvsdg()
 
   auto SetupG1 = [&]()
   {
-    auto delta = delta::node::Create(
+    auto delta = DeltaNode::Create(
         &graph->GetRootRegion(),
         jlm::rvsdg::bittype::Create(32),
         "g1",
@@ -918,7 +918,7 @@ IndirectCallTest2::SetupRvsdg()
 
   auto SetupG2 = [&]()
   {
-    auto delta = delta::node::Create(
+    auto delta = DeltaNode::Create(
         &graph->GetRootRegion(),
         jlm::rvsdg::bittype::Create(32),
         "g2",
@@ -1685,7 +1685,7 @@ DeltaTest1::SetupRvsdg()
 
   auto SetupGlobalF = [&]()
   {
-    auto dfNode = delta::node::Create(
+    auto dfNode = DeltaNode::Create(
         &graph->GetRootRegion(),
         jlm::rvsdg::bittype::Create(32),
         "f",
@@ -1781,7 +1781,7 @@ DeltaTest2::SetupRvsdg()
 
   auto SetupD1 = [&]()
   {
-    auto delta = delta::node::Create(
+    auto delta = DeltaNode::Create(
         &graph->GetRootRegion(),
         jlm::rvsdg::bittype::Create(32),
         "d1",
@@ -1796,7 +1796,7 @@ DeltaTest2::SetupRvsdg()
 
   auto SetupD2 = [&]()
   {
-    auto delta = delta::node::Create(
+    auto delta = DeltaNode::Create(
         &graph->GetRootRegion(),
         jlm::rvsdg::bittype::Create(32),
         "d2",
@@ -1894,7 +1894,7 @@ DeltaTest3::SetupRvsdg()
 
   auto SetupG1 = [&]()
   {
-    auto delta = delta::node::Create(
+    auto delta = DeltaNode::Create(
         &graph->GetRootRegion(),
         jlm::rvsdg::bittype::Create(32),
         "g1",
@@ -1911,7 +1911,7 @@ DeltaTest3::SetupRvsdg()
   {
     auto pointerType = PointerType::Create();
 
-    auto delta = delta::node::Create(
+    auto delta = DeltaNode::Create(
         &graph->GetRootRegion(),
         pointerType,
         "g2",
@@ -2661,10 +2661,8 @@ PhiWithDeltaTest::SetupRvsdg()
   pb.begin(&rvsdg.GetRootRegion());
   auto myArrayRecVar = pb.AddFixVar(pointerType);
 
-  auto delta = delta::node::Create(
-      pb.subregion(),
-      arrayType,
-      "myArray",
+  auto delta =
+      DeltaNode::Create(pb.subregion(), arrayType, "myArray",
       linkage::external_linkage,
       "",
       false);
@@ -2731,7 +2729,7 @@ EscapedMemoryTest1::SetupRvsdg()
 
   auto SetupDeltaA = [&]()
   {
-    auto deltaNode = delta::node::Create(
+    auto deltaNode = DeltaNode::Create(
         &rvsdg->GetRootRegion(),
         jlm::rvsdg::bittype::Create(32),
         "a",
@@ -2746,7 +2744,7 @@ EscapedMemoryTest1::SetupRvsdg()
 
   auto SetupDeltaB = [&]()
   {
-    auto deltaNode = delta::node::Create(
+    auto deltaNode = DeltaNode::Create(
         &rvsdg->GetRootRegion(),
         jlm::rvsdg::bittype::Create(32),
         "b",
@@ -2763,7 +2761,7 @@ EscapedMemoryTest1::SetupRvsdg()
   {
     auto pointerType = PointerType::Create();
 
-    auto deltaNode = delta::node::Create(
+    auto deltaNode = DeltaNode::Create(
         &rvsdg->GetRootRegion(),
         pointerType,
         "x",
@@ -2780,7 +2778,7 @@ EscapedMemoryTest1::SetupRvsdg()
   {
     auto pointerType = PointerType::Create();
 
-    auto deltaNode = delta::node::Create(
+    auto deltaNode = DeltaNode::Create(
         &rvsdg->GetRootRegion(),
         pointerType,
         "y",
@@ -3069,7 +3067,7 @@ EscapedMemoryTest3::SetupRvsdg()
 
   auto SetupGlobal = [&]()
   {
-    auto delta = delta::node::Create(
+    auto delta = DeltaNode::Create(
         &rvsdg->GetRootRegion(),
         jlm::rvsdg::bittype::Create(32),
         "global",
@@ -3151,7 +3149,7 @@ MemcpyTest::SetupRvsdg()
 
   auto SetupLocalArray = [&]()
   {
-    auto delta = delta::node::Create(
+    auto delta = DeltaNode::Create(
         &rvsdg->GetRootRegion(),
         arrayType,
         "localArray",
@@ -3176,7 +3174,7 @@ MemcpyTest::SetupRvsdg()
 
   auto SetupGlobalArray = [&]()
   {
-    auto delta = delta::node::Create(
+    auto delta = DeltaNode::Create(
         &rvsdg->GetRootRegion(),
         arrayType,
         "globalArray",
@@ -3473,7 +3471,7 @@ LinkedListTest::SetupRvsdg()
 
   auto SetupDeltaMyList = [&]()
   {
-    auto delta = delta::node::Create(
+    auto delta = DeltaNode::Create(
         &rvsdg.GetRootRegion(),
         pointerType,
         "MyList",
@@ -3566,7 +3564,7 @@ AllMemoryNodesTest::SetupRvsdg()
       linkage::external_linkage);
 
   // Create global variable "global"
-  Delta_ = delta::node::Create(
+  Delta_ = DeltaNode::Create(
       &graph->GetRootRegion(),
       pointerType,
       "global",
@@ -3700,7 +3698,7 @@ EscapingLocalFunctionTest::SetupRvsdg()
   auto module = RvsdgModule::Create(util::FilePath(""), "", "");
   const auto graph = &module->Rvsdg();
 
-  Global_ = delta::node::Create(
+  Global_ = DeltaNode::Create(
       &graph->GetRootRegion(),
       uint32Type,
       "global",

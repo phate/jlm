@@ -205,7 +205,7 @@ convert_alloca(rvsdg::Region * region)
       auto delta_name = jlm::util::strfmt("hls_alloca_", alloca_cnt++);
       auto delta_type = llvm::PointerType::Create();
       std::cout << "alloca " << delta_name << ": " << po->value_type().debug_string() << "\n";
-      auto db = llvm::delta::node::Create(
+      auto db = llvm::DeltaNode::Create(
           rr,
           std::static_pointer_cast<const rvsdg::ValueType>(po->ValueType()),
           delta_name,
@@ -254,8 +254,8 @@ convert_alloca(rvsdg::Region * region)
   }
 }
 
-llvm::delta::node *
-rename_delta(llvm::delta::node * odn)
+llvm::DeltaNode *
+rename_delta(llvm::DeltaNode * odn)
 {
   auto name = odn->name();
   std::replace_if(
@@ -267,7 +267,7 @@ rename_delta(llvm::delta::node * odn)
       },
       '_');
   std::cout << "renaming delta node " << odn->name() << " to " << name << "\n";
-  auto db = llvm::delta::node::Create(
+  auto db = llvm::DeltaNode::Create(
       odn->region(),
       std::static_pointer_cast<const rvsdg::ValueType>(odn->Type()),
       name,
@@ -291,7 +291,7 @@ rename_delta(llvm::delta::node * odn)
 
   odn->output()->divert_users(data);
   jlm::rvsdg::remove(odn);
-  return rvsdg::TryGetOwnerNode<llvm::delta::node>(*data);
+  return rvsdg::TryGetOwnerNode<llvm::DeltaNode>(*data);
 }
 
 rvsdg::LambdaNode *
@@ -380,7 +380,7 @@ split_hls_function(llvm::RvsdgModule & rm, const std::string & function_name)
               + dynamic_cast<llvm::LlvmLambdaOperation &>(oln->GetOperation()).name()
               + " not supported");
         }
-        else if (auto odn = dynamic_cast<llvm::delta::node *>(orig_node))
+        else if (auto odn = dynamic_cast<llvm::DeltaNode *>(orig_node))
         {
           // modify name to not contain .
           if (odn->name().find('.') != std::string::npos)
