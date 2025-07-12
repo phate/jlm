@@ -501,17 +501,17 @@ ConvertPointerIcmpPredicate(const ::llvm::CmpInst::Predicate predicate)
   switch (predicate)
   {
   case ::llvm::CmpInst::ICMP_ULT:
-    return std::make_unique<ptrcmp_op>(PointerType::Create(), cmp::lt);
+    return std::make_unique<PtrCmpOperation>(PointerType::Create(), cmp::lt);
   case ::llvm::CmpInst::ICMP_ULE:
-    return std::make_unique<ptrcmp_op>(PointerType::Create(), cmp::le);
+    return std::make_unique<PtrCmpOperation>(PointerType::Create(), cmp::le);
   case ::llvm::CmpInst::ICMP_EQ:
-    return std::make_unique<ptrcmp_op>(PointerType::Create(), cmp::eq);
+    return std::make_unique<PtrCmpOperation>(PointerType::Create(), cmp::eq);
   case ::llvm::CmpInst::ICMP_NE:
-    return std::make_unique<ptrcmp_op>(PointerType::Create(), cmp::ne);
+    return std::make_unique<PtrCmpOperation>(PointerType::Create(), cmp::ne);
   case ::llvm::CmpInst::ICMP_UGE:
-    return std::make_unique<ptrcmp_op>(PointerType::Create(), cmp::ge);
+    return std::make_unique<PtrCmpOperation>(PointerType::Create(), cmp::ge);
   case ::llvm::CmpInst::ICMP_UGT:
-    return std::make_unique<ptrcmp_op>(PointerType::Create(), cmp::gt);
+    return std::make_unique<PtrCmpOperation>(PointerType::Create(), cmp::gt);
   default:
     JLM_UNREACHABLE("ConvertPointerIcmpPredicate: Unsupported icmp predicate.");
   }
@@ -594,7 +594,7 @@ convert_fcmp_instruction(::llvm::Instruction * instruction, tacsvector_t & tacs,
 
   JLM_ASSERT(map.find(i->getPredicate()) != map.end());
   auto fptype = t->isVectorTy() ? t->getScalarType() : t;
-  fpcmp_op operation(map[i->getPredicate()], typeConverter.ExtractFloatingPointSize(*fptype));
+  FCmpOperation operation(map[i->getPredicate()], typeConverter.ExtractFloatingPointSize(*fptype));
 
   if (t->isVectorTy())
     tacs.push_back(VectorBinaryOperation::create(operation, op1, op2, type));
@@ -992,15 +992,15 @@ ConvertFloatingPointBinaryOperation(
   switch (binaryOperation)
   {
   case ::llvm::Instruction::FAdd:
-    return std::make_unique<fpbin_op>(fpop::add, floatingPointSize);
+    return std::make_unique<FBinaryOperation>(fpop::add, floatingPointSize);
   case ::llvm::Instruction::FSub:
-    return std::make_unique<fpbin_op>(fpop::sub, floatingPointSize);
+    return std::make_unique<FBinaryOperation>(fpop::sub, floatingPointSize);
   case ::llvm::Instruction::FMul:
-    return std::make_unique<fpbin_op>(fpop::mul, floatingPointSize);
+    return std::make_unique<FBinaryOperation>(fpop::mul, floatingPointSize);
   case ::llvm::Instruction::FDiv:
-    return std::make_unique<fpbin_op>(fpop::div, floatingPointSize);
+    return std::make_unique<FBinaryOperation>(fpop::div, floatingPointSize);
   case ::llvm::Instruction::FRem:
-    return std::make_unique<fpbin_op>(fpop::mod, floatingPointSize);
+    return std::make_unique<FBinaryOperation>(fpop::mod, floatingPointSize);
   default:
     JLM_UNREACHABLE("ConvertFloatingPointBinaryOperation: Unsupported binary operation");
   }
