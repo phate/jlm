@@ -247,7 +247,7 @@ test_unknown_boundaries()
   auto & ex1 = GraphExport::Create(*lv1.output, "x");
 
   //	jlm::rvsdg::view(graph, stdout);
-  jlm::llvm::loopunroll loopunroll(2);
+  jlm::llvm::LoopUnrolling loopunroll(2);
   loopunroll.Run(rm, statisticsCollector);
   //	jlm::rvsdg::view(graph, stdout);
 
@@ -343,7 +343,7 @@ test_nested_theta()
   lvi2_init.post->divert_to(inner2_add);
 
   //	jlm::rvsdg::view(graph, stdout);
-  jlm::llvm::loopunroll loopunroll(4);
+  jlm::llvm::LoopUnrolling loopunroll(4);
   loopunroll.Run(rm, statisticsCollector);
   /*
     The outher theta should contain two inner thetas

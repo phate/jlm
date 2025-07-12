@@ -19,12 +19,12 @@ class RvsdgModule;
 /**
  * \brief Optimization that attempts to unroll loops (thetas).
  */
-class loopunroll final : public rvsdg::Transformation
+class LoopUnrolling final : public rvsdg::Transformation
 {
 public:
-  virtual ~loopunroll();
+  ~LoopUnrolling() noexcept override;
 
-  constexpr loopunroll(size_t factor)
+  constexpr LoopUnrolling(size_t factor)
       : factor_(factor)
   {}
 

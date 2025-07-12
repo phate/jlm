@@ -515,13 +515,10 @@ unroll(rvsdg::Region * region, size_t factor)
   return unrolled;
 }
 
-/* loopunroll class */
-
-loopunroll::~loopunroll()
-{}
+LoopUnrolling::~LoopUnrolling() noexcept = default;
 
 void
-loopunroll::Run(rvsdg::RvsdgModule & module, util::StatisticsCollector & statisticsCollector)
+LoopUnrolling::Run(rvsdg::RvsdgModule & module, util::StatisticsCollector & statisticsCollector)
 {
   if (factor_ < 2)
     return;
