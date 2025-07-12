@@ -234,7 +234,7 @@ JlmToMlirConverter::ConvertFpBinaryNode(
 
 ::mlir::Operation *
 JlmToMlirConverter::ConvertFpCompareNode(
-    const llvm::fpcmp_op & op,
+    const llvm::FCmpOperation & op,
     ::llvm::SmallVector<::mlir::Value> inputs)
 {
   const auto & map = GetFpCmpPredicateMap();
@@ -490,7 +490,7 @@ JlmToMlirConverter::ConvertSimpleNode(
   {
     MlirOp = BitCompareNode(operation, inputs);
   }
-  else if (auto fpCmpOp = dynamic_cast<const llvm::fpcmp_op *>(&operation))
+  else if (auto fpCmpOp = dynamic_cast<const llvm::FCmpOperation *>(&operation))
   {
     MlirOp = ConvertFpCompareNode(*fpCmpOp, inputs);
   }

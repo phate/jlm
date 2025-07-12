@@ -618,8 +618,9 @@ MlirToJlmConverter::ConvertOperation(
   {
     auto type = ComOp.getOperandTypes()[0];
     auto floatType = ::mlir::cast<::mlir::FloatType>(type);
-    auto op =
-        llvm::fpcmp_op(TryConvertFPCMP(ComOp.getPredicate()), ConvertFPSize(floatType.getWidth()));
+    auto op = llvm::FCmpOperation(
+        TryConvertFPCMP(ComOp.getPredicate()),
+        ConvertFPSize(floatType.getWidth()));
     return &rvsdg::SimpleNode::Create(rvsdgRegion, op, std::vector(inputs.begin(), inputs.end()));
   }
 

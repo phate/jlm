@@ -926,19 +926,19 @@ enum class fpcmp
   uno
 };
 
-class fpcmp_op final : public rvsdg::BinaryOperation
+class FCmpOperation final : public rvsdg::BinaryOperation
 {
 public:
-  virtual ~fpcmp_op();
+  ~FCmpOperation() noexcept override;
 
-  inline fpcmp_op(const fpcmp & cmp, const fpsize & size)
+  FCmpOperation(const fpcmp & cmp, const fpsize & size)
       : BinaryOperation(
             { FloatingPointType::Create(size), FloatingPointType::Create(size) },
             jlm::rvsdg::bittype::Create(1)),
         cmp_(cmp)
   {}
 
-  fpcmp_op(const fpcmp & cmp, const std::shared_ptr<const FloatingPointType> & fpt)
+  FCmpOperation(const fpcmp & cmp, const std::shared_ptr<const FloatingPointType> & fpt)
       : BinaryOperation({ fpt, fpt }, jlm::rvsdg::bittype::Create(1)),
         cmp_(cmp)
   {}
@@ -981,7 +981,7 @@ public:
     if (!ft)
       throw jlm::util::error("expected floating point type.");
 
-    fpcmp_op op(cmp, std::move(ft));
+    FCmpOperation op(cmp, std::move(ft));
     return ThreeAddressCode::create(op, { op1, op2 });
   }
 

@@ -611,8 +611,8 @@ IpGraphToLlvmConverter::convert_fpcmp(
     const std::vector<const Variable *> & args,
     ::llvm::IRBuilder<> & builder)
 {
-  JLM_ASSERT(is<fpcmp_op>(op));
-  auto & fpcmp = *static_cast<const fpcmp_op *>(&op);
+  JLM_ASSERT(is<FCmpOperation>(op));
+  auto & fpcmp = *static_cast<const FCmpOperation *>(&op);
 
   static std::unordered_map<llvm::fpcmp, ::llvm::CmpInst::Predicate> map(
       { { fpcmp::oeq, ::llvm::CmpInst::FCMP_OEQ },
@@ -1245,7 +1245,7 @@ IpGraphToLlvmConverter::convert_operation(
   {
     return convert_ptrcmp(op, arguments, builder);
   }
-  if (is<fpcmp_op>(op))
+  if (is<FCmpOperation>(op))
   {
     return convert_fpcmp(op, arguments, builder);
   }
