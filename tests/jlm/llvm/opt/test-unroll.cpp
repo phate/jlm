@@ -79,7 +79,7 @@ test_unrollinfo()
     jlm::rvsdg::Graph graph;
     auto x = &jlm::tests::GraphImport::Create(graph, bt32, "x");
     auto theta = create_theta(slt, add, x, x, x);
-    auto ui = jlm::llvm::unrollinfo::create(theta);
+    auto ui = jlm::llvm::LoopUnrollInfo::create(theta);
 
     assert(ui);
     assert(ui->is_additive());
@@ -105,31 +105,31 @@ test_unrollinfo()
     auto end100 = jlm::rvsdg::create_bitconstant(&graph.GetRootRegion(), 32, 100);
 
     auto theta = create_theta(ult, add, init0, step1, end100);
-    auto ui = jlm::llvm::unrollinfo::create(theta);
+    auto ui = jlm::llvm::LoopUnrollInfo::create(theta);
     assert(ui && *ui->niterations() == 100);
 
     theta = create_theta(ule, add, init0, step1, end100);
-    ui = jlm::llvm::unrollinfo::create(theta);
+    ui = jlm::llvm::LoopUnrollInfo::create(theta);
     assert(ui && *ui->niterations() == 101);
 
     theta = create_theta(ugt, sub, end100, stepm1, init0);
-    ui = jlm::llvm::unrollinfo::create(theta);
+    ui = jlm::llvm::LoopUnrollInfo::create(theta);
     assert(ui && *ui->niterations() == 100);
 
     theta = create_theta(sge, sub, end100, stepm1, init0);
-    ui = jlm::llvm::unrollinfo::create(theta);
+    ui = jlm::llvm::LoopUnrollInfo::create(theta);
     assert(ui && *ui->niterations() == 101);
 
     theta = create_theta(ult, add, init0, step0, end100);
-    ui = jlm::llvm::unrollinfo::create(theta);
+    ui = jlm::llvm::LoopUnrollInfo::create(theta);
     assert(ui && !ui->niterations());
 
     theta = create_theta(eq, add, initm1, step1, end100);
-    ui = jlm::llvm::unrollinfo::create(theta);
+    ui = jlm::llvm::LoopUnrollInfo::create(theta);
     assert(ui && *ui->niterations() == 101);
 
     theta = create_theta(eq, add, init1, step2, end100);
-    ui = jlm::llvm::unrollinfo::create(theta);
+    ui = jlm::llvm::LoopUnrollInfo::create(theta);
     assert(ui && !ui->niterations());
   }
 }
