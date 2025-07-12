@@ -466,7 +466,7 @@ JlmToMlirConverter::ConvertSimpleNode(
     auto type = ConvertType(*constantPointerNullOp->result(0));
     MlirOp = Builder_->create<::mlir::LLVM::ZeroOp>(Builder_->getUnknownLoc(), type);
   }
-  else if (jlm::rvsdg::is<const rvsdg::bitbinary_op>(operation))
+  else if (jlm::rvsdg::is<const rvsdg::BitBinaryOperation>(operation))
   {
     MlirOp = ConvertBitBinaryNode(operation, inputs);
   }
