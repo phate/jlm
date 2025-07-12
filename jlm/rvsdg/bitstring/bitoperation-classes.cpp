@@ -10,11 +10,10 @@
 namespace jlm::rvsdg
 {
 
-bitunary_op::~bitunary_op() noexcept
-{}
+BitUnaryOperation::~BitUnaryOperation() noexcept = default;
 
 unop_reduction_path_t
-bitunary_op::can_reduce_operand(const jlm::rvsdg::Output * arg) const noexcept
+BitUnaryOperation::can_reduce_operand(const jlm::rvsdg::Output * arg) const noexcept
 {
   if (is<bitconstant_op>(producer(arg)))
     return unop_reduction_constant;
@@ -23,7 +22,7 @@ bitunary_op::can_reduce_operand(const jlm::rvsdg::Output * arg) const noexcept
 }
 
 jlm::rvsdg::Output *
-bitunary_op::reduce_operand(unop_reduction_path_t path, jlm::rvsdg::Output * arg) const
+BitUnaryOperation::reduce_operand(unop_reduction_path_t path, jlm::rvsdg::Output * arg) const
 {
   if (path == unop_reduction_constant)
   {
