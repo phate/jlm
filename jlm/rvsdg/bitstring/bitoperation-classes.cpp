@@ -35,11 +35,10 @@ bitunary_op::reduce_operand(unop_reduction_path_t path, jlm::rvsdg::Output * arg
   return nullptr;
 }
 
-bitbinary_op::~bitbinary_op() noexcept
-{}
+BitBinaryOperation::~BitBinaryOperation() noexcept = default;
 
 binop_reduction_path_t
-bitbinary_op::can_reduce_operand_pair(
+BitBinaryOperation::can_reduce_operand_pair(
     const jlm::rvsdg::Output * arg1,
     const jlm::rvsdg::Output * arg2) const noexcept
 {
@@ -50,7 +49,7 @@ bitbinary_op::can_reduce_operand_pair(
 }
 
 jlm::rvsdg::Output *
-bitbinary_op::reduce_operand_pair(
+BitBinaryOperation::reduce_operand_pair(
     binop_reduction_path_t path,
     jlm::rvsdg::Output * arg1,
     jlm::rvsdg::Output * arg2) const

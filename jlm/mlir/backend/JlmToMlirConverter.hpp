@@ -132,8 +132,8 @@ public:
 
   /**
    * Converts an RVSDG binary_op to an MLIR RVSDG operation.
-   * \param bitOp The RVSDG bitbinary_op to be converted
-   * \param inputs The inputs to the bitbinary_op.
+   * \param bitOp The RVSDG BitBinaryOperation to be converted
+   * \param inputs The inputs to the BitBinaryOperation.
    * \return The converted MLIR RVSDG operation.
    */
   ::mlir::Operation *
