@@ -13,7 +13,7 @@ namespace jlm::hls
 void
 SinkInsertion::Run(rvsdg::RvsdgModule & module, util::StatisticsCollector &)
 {
-  AddSinksToRegion(module.Rvsdg().GetRootRegion());
+  HandleRootRegion(module.Rvsdg().GetRootRegion());
 }
 
 void
@@ -23,6 +23,21 @@ SinkInsertion::CreateAndRun(
 {
   SinkInsertion sinkInsertion;
   sinkInsertion.Run(module, statisticsCollector);
+}
+
+void
+SinkInsertion::HandleRootRegion(rvsdg::Region & region)
+{
+  for (auto & node : region.Nodes())
+  {
+    if (const auto structuralNode = dynamic_cast<rvsdg::StructuralNode *>(&node))
+    {
+      for (auto & subregion : structuralNode->Subregions())
+      {
+        AddSinksToRegion(subregion);
+      }
+    }
+  }
 }
 
 void

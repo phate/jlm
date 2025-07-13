@@ -30,6 +30,9 @@ public:
 
 private:
   static void
+  HandleRootRegion(rvsdg::Region & region);
+
+  static void
   AddSinksToRegion(rvsdg::Region & region);
 };
 
