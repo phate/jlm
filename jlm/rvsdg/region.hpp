@@ -234,17 +234,17 @@ class Region
   using RegionResultConstRange = util::IteratorRange<RegionResultConstIterator>;
 
   using TopNodeIterator = region_top_node_list::Iterator;
-  using TopNodeConstIterator = region_top_node_list::const_iterator;
+  using TopNodeConstIterator = region_top_node_list::ConstIterator;
   using TopNodeRange = util::IteratorRange<TopNodeIterator>;
   using TopNodeConstRange = util::IteratorRange<TopNodeConstIterator>;
 
   using NodeIterator = region_nodes_list::Iterator;
-  using NodeConstIterator = region_nodes_list::const_iterator;
+  using NodeConstIterator = region_nodes_list::ConstIterator;
   using NodeRange = util::IteratorRange<NodeIterator>;
   using NodeConstRange = util::IteratorRange<NodeConstIterator>;
 
   using BottomNodeIterator = region_bottom_node_list::Iterator;
-  using BottomNodeConstIterator = region_bottom_node_list::const_iterator;
+  using BottomNodeConstIterator = region_bottom_node_list::ConstIterator;
   using BottomNodeRange = util::IteratorRange<BottomNodeIterator>;
   using BottomNodeConstRange = util::IteratorRange<BottomNodeConstIterator>;
 

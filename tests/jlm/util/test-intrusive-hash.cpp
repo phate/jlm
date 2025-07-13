@@ -61,7 +61,7 @@ struct my_accessor
   }
 };
 
-typedef jlm::util::intrusive_hash<int, my_item, my_accessor> my_hash;
+typedef jlm::util::IntrusiveHash<int, my_item, my_accessor> my_hash;
 
 struct my_stritem
 {
@@ -79,7 +79,7 @@ struct my_stritem
           hash_accessor;
 };
 
-typedef jlm::util::intrusive_hash<std::string, my_stritem, my_stritem::hash_accessor> my_strhash;
+typedef jlm::util::IntrusiveHash<std::string, my_stritem, my_stritem::hash_accessor> my_strhash;
 
 static void
 test_int_hash()

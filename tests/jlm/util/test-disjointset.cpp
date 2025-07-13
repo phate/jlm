@@ -8,7 +8,7 @@
 #include <jlm/util/disjointset.hpp>
 
 static void
-print(const jlm::util::DisjointSet<int>::set & set)
+print(const jlm::util::DisjointSet<int>::Set & set)
 {
   std::cout << "{";
   for (auto & member : set)

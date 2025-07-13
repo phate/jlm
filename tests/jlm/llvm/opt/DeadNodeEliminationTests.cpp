@@ -458,7 +458,7 @@ Delta()
   auto y = &jlm::tests::GraphImport::Create(rvsdg, valueType, "y");
   auto z = &jlm::tests::GraphImport::Create(rvsdg, valueType, "z");
 
-  auto deltaNode = delta::node::Create(
+  auto deltaNode = DeltaNode::Create(
       &rvsdg.GetRootRegion(),
       valueType,
       "delta",

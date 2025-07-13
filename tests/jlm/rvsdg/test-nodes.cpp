@@ -22,7 +22,7 @@ test_node_copy()
   auto s = &jlm::tests::GraphImport::Create(graph, stype, "");
   auto v = &jlm::tests::GraphImport::Create(graph, vtype, "");
 
-  auto n1 = jlm::tests::structural_node::create(&graph.GetRootRegion(), 3);
+  auto n1 = TestStructuralNode::create(&graph.GetRootRegion(), 3);
   auto i1 = StructuralInput::create(n1, s, stype);
   auto i2 = StructuralInput::create(n1, v, vtype);
   auto o1 = StructuralOutput::create(n1, stype);

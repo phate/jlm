@@ -338,7 +338,7 @@ BitCastTest::SetupRvsdg()
       graph->GetRootRegion(),
       llvm::LlvmLambdaOperation::Create(fcttype, "f", linkage::external_linkage));
 
-  auto cast = bitcast_op::create(fct->GetFunctionArguments()[0], pointerType);
+  auto cast = BitCastOperation::create(fct->GetFunctionArguments()[0], pointerType);
 
   fct->finalize({ cast });
 
@@ -658,8 +658,8 @@ CallTest2::SetupRvsdg()
     auto four = jlm::rvsdg::create_bitconstant(lambda->subregion(), 32, 4);
     auto prod = jlm::rvsdg::bitmul_op::create(32, valueArgument, four);
 
-    auto alloc = malloc_op::create(prod);
-    auto cast = bitcast_op::create(alloc[0], pt32);
+    auto alloc = MallocOperation::create(prod);
+    auto cast = BitCastOperation::create(alloc[0], pt32);
     auto mx = MemoryStateMergeOperation::Create(
         std::vector<jlm::rvsdg::Output *>({ alloc[1], memoryStateArgument }));
 
@@ -685,7 +685,7 @@ CallTest2::SetupRvsdg()
     auto iOStateArgument = lambda->GetFunctionArguments()[1];
     auto memoryStateArgument = lambda->GetFunctionArguments()[2];
 
-    auto cast = bitcast_op::create(pointerArgument, pointerType);
+    auto cast = BitCastOperation::create(pointerArgument, pointerType);
     auto freeResults = FreeOperation::Create(cast, { memoryStateArgument }, iOStateArgument);
 
     lambda->finalize({ freeResults[1], freeResults[0] });
@@ -903,7 +903,7 @@ IndirectCallTest2::SetupRvsdg()
 
   auto SetupG1 = [&]()
   {
-    auto delta = delta::node::Create(
+    auto delta = DeltaNode::Create(
         &graph->GetRootRegion(),
         jlm::rvsdg::bittype::Create(32),
         "g1",
@@ -918,7 +918,7 @@ IndirectCallTest2::SetupRvsdg()
 
   auto SetupG2 = [&]()
   {
-    auto delta = delta::node::Create(
+    auto delta = DeltaNode::Create(
         &graph->GetRootRegion(),
         jlm::rvsdg::bittype::Create(32),
         "g2",
@@ -1685,7 +1685,7 @@ DeltaTest1::SetupRvsdg()
 
   auto SetupGlobalF = [&]()
   {
-    auto dfNode = delta::node::Create(
+    auto dfNode = DeltaNode::Create(
         &graph->GetRootRegion(),
         jlm::rvsdg::bittype::Create(32),
         "f",
@@ -1781,7 +1781,7 @@ DeltaTest2::SetupRvsdg()
 
   auto SetupD1 = [&]()
   {
-    auto delta = delta::node::Create(
+    auto delta = DeltaNode::Create(
         &graph->GetRootRegion(),
         jlm::rvsdg::bittype::Create(32),
         "d1",
@@ -1796,7 +1796,7 @@ DeltaTest2::SetupRvsdg()
 
   auto SetupD2 = [&]()
   {
-    auto delta = delta::node::Create(
+    auto delta = DeltaNode::Create(
         &graph->GetRootRegion(),
         jlm::rvsdg::bittype::Create(32),
         "d2",
@@ -1894,7 +1894,7 @@ DeltaTest3::SetupRvsdg()
 
   auto SetupG1 = [&]()
   {
-    auto delta = delta::node::Create(
+    auto delta = DeltaNode::Create(
         &graph->GetRootRegion(),
         jlm::rvsdg::bittype::Create(32),
         "g1",
@@ -1911,7 +1911,7 @@ DeltaTest3::SetupRvsdg()
   {
     auto pointerType = PointerType::Create();
 
-    auto delta = delta::node::Create(
+    auto delta = DeltaNode::Create(
         &graph->GetRootRegion(),
         pointerType,
         "g2",
@@ -2661,13 +2661,8 @@ PhiWithDeltaTest::SetupRvsdg()
   pb.begin(&rvsdg.GetRootRegion());
   auto myArrayRecVar = pb.AddFixVar(pointerType);
 
-  auto delta = delta::node::Create(
-      pb.subregion(),
-      arrayType,
-      "myArray",
-      linkage::external_linkage,
-      "",
-      false);
+  auto delta =
+      DeltaNode::Create(pb.subregion(), arrayType, "myArray", linkage::external_linkage, "", false);
   auto myArrayArgument = delta->add_ctxvar(myArrayRecVar.recref);
 
   auto aggregateZero = ConstantAggregateZeroOperation::Create(*delta->subregion(), structType);
@@ -2731,7 +2726,7 @@ EscapedMemoryTest1::SetupRvsdg()
 
   auto SetupDeltaA = [&]()
   {
-    auto deltaNode = delta::node::Create(
+    auto deltaNode = DeltaNode::Create(
         &rvsdg->GetRootRegion(),
         jlm::rvsdg::bittype::Create(32),
         "a",
@@ -2746,7 +2741,7 @@ EscapedMemoryTest1::SetupRvsdg()
 
   auto SetupDeltaB = [&]()
   {
-    auto deltaNode = delta::node::Create(
+    auto deltaNode = DeltaNode::Create(
         &rvsdg->GetRootRegion(),
         jlm::rvsdg::bittype::Create(32),
         "b",
@@ -2763,7 +2758,7 @@ EscapedMemoryTest1::SetupRvsdg()
   {
     auto pointerType = PointerType::Create();
 
-    auto deltaNode = delta::node::Create(
+    auto deltaNode = DeltaNode::Create(
         &rvsdg->GetRootRegion(),
         pointerType,
         "x",
@@ -2780,7 +2775,7 @@ EscapedMemoryTest1::SetupRvsdg()
   {
     auto pointerType = PointerType::Create();
 
-    auto deltaNode = delta::node::Create(
+    auto deltaNode = DeltaNode::Create(
         &rvsdg->GetRootRegion(),
         pointerType,
         "y",
@@ -2917,7 +2912,7 @@ EscapedMemoryTest2::SetupRvsdg()
 
     auto eight = jlm::rvsdg::create_bitconstant(lambda->subregion(), 32, 8);
 
-    auto mallocResults = malloc_op::create(eight);
+    auto mallocResults = MallocOperation::create(eight);
     auto mergeResults = MemoryStateMergeOperation::Create(
         std::vector<jlm::rvsdg::Output *>({ memoryStateArgument, mallocResults[1] }));
 
@@ -2949,7 +2944,7 @@ EscapedMemoryTest2::SetupRvsdg()
 
     auto eight = jlm::rvsdg::create_bitconstant(lambda->subregion(), 32, 8);
 
-    auto mallocResults = malloc_op::create(eight);
+    auto mallocResults = MallocOperation::create(eight);
     auto mergeResult = MemoryStateMergeOperation::Create(
         std::vector<jlm::rvsdg::Output *>({ memoryStateArgument, mallocResults[1] }));
 
@@ -3069,7 +3064,7 @@ EscapedMemoryTest3::SetupRvsdg()
 
   auto SetupGlobal = [&]()
   {
-    auto delta = delta::node::Create(
+    auto delta = DeltaNode::Create(
         &rvsdg->GetRootRegion(),
         jlm::rvsdg::bittype::Create(32),
         "global",
@@ -3151,7 +3146,7 @@ MemcpyTest::SetupRvsdg()
 
   auto SetupLocalArray = [&]()
   {
-    auto delta = delta::node::Create(
+    auto delta = DeltaNode::Create(
         &rvsdg->GetRootRegion(),
         arrayType,
         "localArray",
@@ -3176,7 +3171,7 @@ MemcpyTest::SetupRvsdg()
 
   auto SetupGlobalArray = [&]()
   {
-    auto delta = delta::node::Create(
+    auto delta = DeltaNode::Create(
         &rvsdg->GetRootRegion(),
         arrayType,
         "globalArray",
@@ -3254,8 +3249,8 @@ MemcpyTest::SetupRvsdg()
     auto globalArrayArgument = lambda->AddContextVar(globalArray).inner;
     auto functionFArgument = lambda->AddContextVar(lambdaF).inner;
 
-    auto bcLocalArray = bitcast_op::create(localArrayArgument, PointerType::Create());
-    auto bcGlobalArray = bitcast_op::create(globalArrayArgument, PointerType::Create());
+    auto bcLocalArray = BitCastOperation::create(localArrayArgument, PointerType::Create());
+    auto bcGlobalArray = BitCastOperation::create(globalArrayArgument, PointerType::Create());
 
     auto twenty = jlm::rvsdg::create_bitconstant(lambda->subregion(), 32, 20);
 
@@ -3473,7 +3468,7 @@ LinkedListTest::SetupRvsdg()
 
   auto SetupDeltaMyList = [&]()
   {
-    auto delta = delta::node::Create(
+    auto delta = DeltaNode::Create(
         &rvsdg.GetRootRegion(),
         pointerType,
         "MyList",
@@ -3566,7 +3561,7 @@ AllMemoryNodesTest::SetupRvsdg()
       linkage::external_linkage);
 
   // Create global variable "global"
-  Delta_ = delta::node::Create(
+  Delta_ = DeltaNode::Create(
       &graph->GetRootRegion(),
       pointerType,
       "global",
@@ -3595,7 +3590,7 @@ AllMemoryNodesTest::SetupRvsdg()
 
   // Create malloc node
   auto mallocSize = jlm::rvsdg::create_bitconstant(Lambda_->subregion(), 32, 4);
-  auto mallocOutputs = malloc_op::create(mallocSize);
+  auto mallocOutputs = MallocOperation::create(mallocSize);
   Malloc_ = rvsdg::TryGetOwnerNode<rvsdg::Node>(*mallocOutputs[0]);
 
   auto afterMallocMemoryState = MemoryStateMergeOperation::Create(
@@ -3700,7 +3695,7 @@ EscapingLocalFunctionTest::SetupRvsdg()
   auto module = RvsdgModule::Create(util::FilePath(""), "", "");
   const auto graph = &module->Rvsdg();
 
-  Global_ = delta::node::Create(
+  Global_ = DeltaNode::Create(
       &graph->GetRootRegion(),
       uint32Type,
       "global",
@@ -3843,7 +3838,7 @@ LambdaCallArgumentMismatch::SetupRvsdg()
     auto one = rvsdg::create_bitconstant(lambda->subregion(), 32, 1);
     auto six = rvsdg::create_bitconstant(lambda->subregion(), 32, 6);
 
-    auto vaList = valist_op::Create(*lambda->subregion(), {});
+    auto vaList = VariadicArgumentListOperation::Create(*lambda->subregion(), {});
 
     auto allocaResults = AllocaOperation::create(rvsdg::bittype::Create(32), one, 4);
 
@@ -3929,7 +3924,7 @@ VariadicFunctionTest1::SetupRvsdg()
     auto one = jlm::rvsdg::create_bitconstant(LambdaF_->subregion(), 32, 1);
     auto three = jlm::rvsdg::create_bitconstant(LambdaF_->subregion(), 32, 3);
 
-    auto varArgList = valist_op::Create(*LambdaF_->subregion(), { iArgument });
+    auto varArgList = VariadicArgumentListOperation::Create(*LambdaF_->subregion(), { iArgument });
 
     CallH_ = &CallOperation::CreateNode(
         lambdaHArgument,
@@ -4179,7 +4174,8 @@ VariadicFunctionTest2::SetupRvsdg()
     auto two = jlm::rvsdg::create_bitconstant(LambdaG_->subregion(), 32, 2);
     auto three = jlm::rvsdg::create_bitconstant(LambdaG_->subregion(), 32, 3);
 
-    auto vaListResult = valist_op::Create(*LambdaG_->subregion(), { zero, one, two });
+    auto vaListResult =
+        VariadicArgumentListOperation::Create(*LambdaG_->subregion(), { zero, one, two });
 
     auto & callFst = CallOperation::CreateNode(
         lambdaFstArgument,

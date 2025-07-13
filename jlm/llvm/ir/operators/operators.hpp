@@ -358,14 +358,12 @@ public:
   }
 };
 
-/* ctl2bits operator */
-
-class ctl2bits_op final : public rvsdg::SimpleOperation
+class ControlToIntOperation final : public rvsdg::SimpleOperation
 {
 public:
-  virtual ~ctl2bits_op() noexcept;
+  ~ControlToIntOperation() noexcept override;
 
-  inline ctl2bits_op(
+  ControlToIntOperation(
       std::shared_ptr<const rvsdg::ControlType> srctype,
       std::shared_ptr<const jlm::rvsdg::bittype> dsttype)
       : SimpleOperation({ std::move(srctype) }, { std::move(dsttype) })
@@ -391,7 +389,7 @@ public:
     if (!dt)
       throw jlm::util::error("expected bitstring type.");
 
-    ctl2bits_op op(std::move(st), std::move(dt));
+    ControlToIntOperation op(std::move(st), std::move(dt));
     return ThreeAddressCode::create(op, { operand });
   }
 };
@@ -687,8 +685,6 @@ public:
   }
 };
 
-/* pointer compare operator */
-
 enum class cmp
 {
   eq,
@@ -699,12 +695,12 @@ enum class cmp
   le
 };
 
-class ptrcmp_op final : public rvsdg::BinaryOperation
+class PtrCmpOperation final : public rvsdg::BinaryOperation
 {
 public:
-  virtual ~ptrcmp_op();
+  ~PtrCmpOperation() noexcept override;
 
-  inline ptrcmp_op(const std::shared_ptr<const PointerType> & ptype, const llvm::cmp & cmp)
+  PtrCmpOperation(const std::shared_ptr<const PointerType> & ptype, const llvm::cmp & cmp)
       : BinaryOperation({ ptype, ptype }, jlm::rvsdg::bittype::Create(1)),
         cmp_(cmp)
   {}
@@ -741,7 +737,7 @@ public:
     if (!pt)
       throw jlm::util::error("expected pointer type.");
 
-    ptrcmp_op op(std::move(pt), cmp);
+    PtrCmpOperation op(std::move(pt), cmp);
     return ThreeAddressCode::create(op, { op1, op2 });
   }
 
@@ -928,19 +924,19 @@ enum class fpcmp
   uno
 };
 
-class fpcmp_op final : public rvsdg::BinaryOperation
+class FCmpOperation final : public rvsdg::BinaryOperation
 {
 public:
-  virtual ~fpcmp_op();
+  ~FCmpOperation() noexcept override;
 
-  inline fpcmp_op(const fpcmp & cmp, const fpsize & size)
+  FCmpOperation(const fpcmp & cmp, const fpsize & size)
       : BinaryOperation(
             { FloatingPointType::Create(size), FloatingPointType::Create(size) },
             jlm::rvsdg::bittype::Create(1)),
         cmp_(cmp)
   {}
 
-  fpcmp_op(const fpcmp & cmp, const std::shared_ptr<const FloatingPointType> & fpt)
+  FCmpOperation(const fpcmp & cmp, const std::shared_ptr<const FloatingPointType> & fpt)
       : BinaryOperation({ fpt, fpt }, jlm::rvsdg::bittype::Create(1)),
         cmp_(cmp)
   {}
@@ -983,7 +979,7 @@ public:
     if (!ft)
       throw jlm::util::error("expected floating point type.");
 
-    fpcmp_op op(cmp, std::move(ft));
+    FCmpOperation op(cmp, std::move(ft));
     return ThreeAddressCode::create(op, { op1, op2 });
   }
 
@@ -1137,19 +1133,19 @@ enum class fpop
   mod
 };
 
-class fpbin_op final : public rvsdg::BinaryOperation
+class FBinaryOperation final : public rvsdg::BinaryOperation
 {
 public:
-  virtual ~fpbin_op();
+  ~FBinaryOperation() noexcept override;
 
-  inline fpbin_op(const llvm::fpop & op, const fpsize & size)
+  FBinaryOperation(const llvm::fpop & op, const fpsize & size)
       : BinaryOperation(
             { FloatingPointType::Create(size), FloatingPointType::Create(size) },
             FloatingPointType::Create(size)),
         op_(op)
   {}
 
-  fpbin_op(const llvm::fpop & op, const std::shared_ptr<const FloatingPointType> & fpt)
+  FBinaryOperation(const llvm::fpop & op, const std::shared_ptr<const FloatingPointType> & fpt)
       : BinaryOperation({ fpt, fpt }, fpt),
         op_(op)
   {}
@@ -1192,7 +1188,7 @@ public:
     if (!ft)
       throw jlm::util::error("expected floating point type.");
 
-    fpbin_op op(fpop, ft);
+    FBinaryOperation op(fpop, ft);
     return ThreeAddressCode::create(op, { op1, op2 });
   }
 
@@ -1413,24 +1409,22 @@ public:
   }
 };
 
-/* valist operator */
-
-class valist_op final : public rvsdg::SimpleOperation
+class VariadicArgumentListOperation final : public rvsdg::SimpleOperation
 {
 public:
-  virtual ~valist_op();
+  ~VariadicArgumentListOperation() noexcept override;
 
-  explicit valist_op(std::vector<std::shared_ptr<const jlm::rvsdg::Type>> types)
+  explicit VariadicArgumentListOperation(std::vector<std::shared_ptr<const jlm::rvsdg::Type>> types)
       : SimpleOperation(std::move(types), { VariableArgumentType::Create() })
   {}
 
-  valist_op(const valist_op &) = default;
+  VariadicArgumentListOperation(const VariadicArgumentListOperation &) = default;
 
-  valist_op &
-  operator=(const valist_op &) = delete;
+  VariadicArgumentListOperation &
+  operator=(const VariadicArgumentListOperation &) = delete;
 
-  valist_op &
-  operator=(valist_op &&) = delete;
+  VariadicArgumentListOperation &
+  operator=(VariadicArgumentListOperation &&) = delete;
 
   virtual bool
   operator==(const Operation & other) const noexcept override;
@@ -1448,7 +1442,7 @@ public:
     for (const auto & argument : arguments)
       operands.push_back(argument->Type());
 
-    valist_op op(std::move(operands));
+    VariadicArgumentListOperation op(std::move(operands));
     return ThreeAddressCode::create(op, arguments);
   }
 
@@ -1461,25 +1455,25 @@ public:
       operandTypes.emplace_back(operand->Type());
 
     return operands.empty()
-             ? rvsdg::CreateOpNode<valist_op>(region, std::move(operandTypes)).output(0)
-             : rvsdg::CreateOpNode<valist_op>(operands, std::move(operandTypes)).output(0);
+             ? rvsdg::CreateOpNode<VariadicArgumentListOperation>(region, std::move(operandTypes))
+                   .output(0)
+             : rvsdg::CreateOpNode<VariadicArgumentListOperation>(operands, std::move(operandTypes))
+                   .output(0);
   }
 };
 
-/* bitcast operator */
-
-class bitcast_op final : public rvsdg::UnaryOperation
+class BitCastOperation final : public rvsdg::UnaryOperation
 {
 public:
-  virtual ~bitcast_op();
+  ~BitCastOperation() noexcept override;
 
-  inline bitcast_op(
+  BitCastOperation(
       std::shared_ptr<const jlm::rvsdg::ValueType> srctype,
       std::shared_ptr<const jlm::rvsdg::ValueType> dsttype)
       : UnaryOperation(std::move(srctype), std::move(dsttype))
   {}
 
-  inline bitcast_op(
+  BitCastOperation(
       std::shared_ptr<const jlm::rvsdg::Type> srctype,
       std::shared_ptr<const jlm::rvsdg::Type> dsttype)
       : UnaryOperation(srctype, dsttype)
@@ -1487,14 +1481,14 @@ public:
     check_types(srctype, dsttype);
   }
 
-  bitcast_op(const bitcast_op &) = default;
+  BitCastOperation(const BitCastOperation &) = default;
 
-  bitcast_op(Operation &&) = delete;
+  explicit BitCastOperation(Operation &&) = delete;
 
-  bitcast_op &
+  BitCastOperation &
   operator=(const Operation &) = delete;
 
-  bitcast_op &
+  BitCastOperation &
   operator=(Operation &&) = delete;
 
   virtual bool
@@ -1518,7 +1512,7 @@ public:
   {
     auto pair = check_types(operand->Type(), type);
 
-    bitcast_op op(pair.first, pair.second);
+    BitCastOperation op(pair.first, pair.second);
     return ThreeAddressCode::create(op, { operand });
   }
 
@@ -1526,7 +1520,7 @@ public:
   create(jlm::rvsdg::Output * operand, std::shared_ptr<const jlm::rvsdg::Type> rtype)
   {
     auto pair = check_types(operand->Type(), rtype);
-    return rvsdg::CreateOpNode<bitcast_op>({ operand }, pair.first, pair.second).output(0);
+    return rvsdg::CreateOpNode<BitCastOperation>({ operand }, pair.first, pair.second).output(0);
   }
 
 private:
@@ -1548,8 +1542,6 @@ private:
     return std::make_pair(ot, rt);
   }
 };
-
-/* ConstantStruct operator */
 
 class ConstantStruct final : public rvsdg::SimpleOperation
 {
@@ -1924,14 +1916,12 @@ public:
   }
 };
 
-/* extractelement operator */
-
-class extractelement_op final : public rvsdg::SimpleOperation
+class ExtractElementOperation final : public rvsdg::SimpleOperation
 {
 public:
-  virtual ~extractelement_op();
+  ~ExtractElementOperation() noexcept override;
 
-  inline extractelement_op(
+  ExtractElementOperation(
       const std::shared_ptr<const VectorType> & vtype,
       const std::shared_ptr<const jlm::rvsdg::bittype> & btype)
       : SimpleOperation({ vtype, btype }, { vtype->Type() })
@@ -1957,24 +1947,24 @@ public:
     if (!bt)
       throw jlm::util::error("expected bit type.");
 
-    extractelement_op op(vt, bt);
+    ExtractElementOperation op(vt, bt);
     return ThreeAddressCode::create(op, { vector, index });
   }
 };
 
-/* shufflevector operator */
-
-class shufflevector_op final : public rvsdg::SimpleOperation
+class ShuffleVectorOperation final : public rvsdg::SimpleOperation
 {
 public:
-  ~shufflevector_op() override;
+  ~ShuffleVectorOperation() noexcept override;
 
-  shufflevector_op(const std::shared_ptr<const FixedVectorType> & v, const std::vector<int> & mask)
+  ShuffleVectorOperation(
+      const std::shared_ptr<const FixedVectorType> & v,
+      const std::vector<int> & mask)
       : SimpleOperation({ v, v }, { v }),
         Mask_(mask)
   {}
 
-  shufflevector_op(
+  ShuffleVectorOperation(
       const std::shared_ptr<const ScalableVectorType> & v,
       const std::vector<int> & mask)
       : SimpleOperation({ v, v }, { v }),
@@ -2014,21 +2004,19 @@ private:
   CreateShuffleVectorTac(const Variable * v1, const Variable * v2, const std::vector<int> & mask)
   {
     auto vt = std::static_pointer_cast<const T>(v1->Type());
-    shufflevector_op op(vt, mask);
+    ShuffleVectorOperation op(vt, mask);
     return ThreeAddressCode::create(op, { v1, v2 });
   }
 
   std::vector<int> Mask_;
 };
 
-/* constantvector operator */
-
-class constantvector_op final : public rvsdg::SimpleOperation
+class ConstantVectorOperation final : public rvsdg::SimpleOperation
 {
 public:
-  virtual ~constantvector_op();
+  ~ConstantVectorOperation() noexcept override;
 
-  explicit inline constantvector_op(const std::shared_ptr<const VectorType> & vt)
+  explicit ConstantVectorOperation(const std::shared_ptr<const VectorType> & vt)
       : SimpleOperation({ vt->size(), vt->Type() }, { vt })
   {}
 
@@ -2050,19 +2038,17 @@ public:
     if (!vt)
       throw jlm::util::error("expected vector type.");
 
-    constantvector_op op(vt);
+    ConstantVectorOperation op(vt);
     return ThreeAddressCode::create(op, operands);
   }
 };
 
-/* insertelement operator */
-
-class insertelement_op final : public rvsdg::SimpleOperation
+class InsertElementOperation final : public rvsdg::SimpleOperation
 {
 public:
-  virtual ~insertelement_op();
+  ~InsertElementOperation() noexcept override;
 
-  inline insertelement_op(
+  InsertElementOperation(
       const std::shared_ptr<const VectorType> & vectype,
       const std::shared_ptr<const jlm::rvsdg::ValueType> & vtype,
       const std::shared_ptr<const jlm::rvsdg::bittype> & btype)
@@ -2100,19 +2086,17 @@ public:
     if (!bt)
       throw jlm::util::error("expected bit type.");
 
-    insertelement_op op(vct, vt, bt);
+    InsertElementOperation op(vct, vt, bt);
     return ThreeAddressCode::create(op, { vector, value, index });
   }
 };
 
-/* vectorunary operator */
-
-class vectorunary_op final : public rvsdg::SimpleOperation
+class VectorUnaryOperation final : public rvsdg::SimpleOperation
 {
 public:
-  virtual ~vectorunary_op();
+  ~VectorUnaryOperation() noexcept override;
 
-  inline vectorunary_op(
+  VectorUnaryOperation(
       const rvsdg::UnaryOperation & op,
       const std::shared_ptr<const VectorType> & operand,
       const std::shared_ptr<const VectorType> & result)
@@ -2134,18 +2118,18 @@ public:
     }
   }
 
-  inline vectorunary_op(const vectorunary_op & other)
+  VectorUnaryOperation(const VectorUnaryOperation & other)
       : SimpleOperation(other),
         op_(other.op_->copy())
   {}
 
-  inline vectorunary_op(vectorunary_op && other)
+  VectorUnaryOperation(VectorUnaryOperation && other) noexcept
       : SimpleOperation(other),
         op_(std::move(other.op_))
   {}
 
-  inline vectorunary_op &
-  operator=(const vectorunary_op & other)
+  VectorUnaryOperation &
+  operator=(const VectorUnaryOperation & other)
   {
     if (this != &other)
       op_ = other.op_->copy();
@@ -2153,8 +2137,8 @@ public:
     return *this;
   }
 
-  inline vectorunary_op &
-  operator=(vectorunary_op && other)
+  VectorUnaryOperation &
+  operator=(VectorUnaryOperation && other) noexcept
   {
     if (this != &other)
       op_ = std::move(other.op_);
@@ -2188,7 +2172,7 @@ public:
     if (!vct1 || !vct2)
       throw jlm::util::error("expected vector type.");
 
-    vectorunary_op op(unop, vct1, vct2);
+    VectorUnaryOperation op(unop, vct1, vct2);
     return ThreeAddressCode::create(op, { operand });
   }
 
@@ -2196,14 +2180,12 @@ private:
   std::unique_ptr<Operation> op_;
 };
 
-/* vectorbinary operator */
-
-class vectorbinary_op final : public rvsdg::SimpleOperation
+class VectorBinaryOperation final : public rvsdg::SimpleOperation
 {
 public:
-  virtual ~vectorbinary_op();
+  ~VectorBinaryOperation() noexcept override;
 
-  inline vectorbinary_op(
+  VectorBinaryOperation(
       const rvsdg::BinaryOperation & binop,
       const std::shared_ptr<const VectorType> & op1,
       const std::shared_ptr<const VectorType> & op2,
@@ -2229,18 +2211,18 @@ public:
     }
   }
 
-  inline vectorbinary_op(const vectorbinary_op & other)
+  VectorBinaryOperation(const VectorBinaryOperation & other)
       : SimpleOperation(other),
         op_(other.op_->copy())
   {}
 
-  inline vectorbinary_op(vectorbinary_op && other)
+  VectorBinaryOperation(VectorBinaryOperation && other) noexcept
       : SimpleOperation(other),
         op_(std::move(other.op_))
   {}
 
-  inline vectorbinary_op &
-  operator=(const vectorbinary_op & other)
+  VectorBinaryOperation &
+  operator=(const VectorBinaryOperation & other)
   {
     if (this != &other)
       op_ = other.op_->copy();
@@ -2248,8 +2230,8 @@ public:
     return *this;
   }
 
-  inline vectorbinary_op &
-  operator=(vectorbinary_op && other)
+  VectorBinaryOperation &
+  operator=(VectorBinaryOperation && other) noexcept
   {
     if (this != &other)
       op_ = std::move(other.op_);
@@ -2285,7 +2267,7 @@ public:
     if (!vct1 || !vct2 || !vct3)
       throw jlm::util::error("expected vector type.");
 
-    vectorbinary_op op(binop, vct1, vct2, vct3);
+    VectorBinaryOperation op(binop, vct1, vct2, vct3);
     return ThreeAddressCode::create(op, { op1, op2 });
   }
 
@@ -2293,15 +2275,13 @@ private:
   std::unique_ptr<Operation> op_;
 };
 
-/* constant data vector operator */
-
-class constant_data_vector_op final : public rvsdg::SimpleOperation
+class ConstantDataVectorOperation final : public rvsdg::SimpleOperation
 {
 public:
-  ~constant_data_vector_op() override;
+  ~ConstantDataVectorOperation() noexcept override;
 
 private:
-  explicit constant_data_vector_op(const std::shared_ptr<const VectorType> & vt)
+  explicit ConstantDataVectorOperation(const std::shared_ptr<const VectorType> & vt)
       : SimpleOperation({ vt->size(), vt->Type() }, { vt })
   {}
 
@@ -2337,21 +2317,19 @@ public:
     if (!vt)
       throw jlm::util::error("Expected value type.");
 
-    constant_data_vector_op op(FixedVectorType::Create(vt, elements.size()));
+    ConstantDataVectorOperation op(FixedVectorType::Create(vt, elements.size()));
     return ThreeAddressCode::create(op, elements);
   }
 };
 
-/* ExtractValue operator */
-
-class ExtractValue final : public rvsdg::SimpleOperation
+class ExtractValueOperation final : public rvsdg::SimpleOperation
 {
   typedef std::vector<unsigned>::const_iterator const_iterator;
 
 public:
-  virtual ~ExtractValue();
+  ~ExtractValueOperation() noexcept override;
 
-  inline ExtractValue(
+  ExtractValueOperation(
       const std::shared_ptr<const jlm::rvsdg::Type> & aggtype,
       const std::vector<unsigned> & indices)
       : SimpleOperation({ aggtype }, { dsttype(aggtype, indices) }),
@@ -2391,7 +2369,7 @@ public:
   static inline std::unique_ptr<llvm::ThreeAddressCode>
   create(const llvm::Variable * aggregate, const std::vector<unsigned> & indices)
   {
-    ExtractValue op(aggregate->Type(), indices);
+    ExtractValueOperation op(aggregate->Type(), indices);
     return ThreeAddressCode::create(op, { aggregate });
   }
 
@@ -2428,14 +2406,12 @@ private:
   std::vector<unsigned> indices_;
 };
 
-/* malloc operator */
-
-class malloc_op final : public rvsdg::SimpleOperation
+class MallocOperation final : public rvsdg::SimpleOperation
 {
 public:
-  virtual ~malloc_op();
+  ~MallocOperation() noexcept override;
 
-  explicit malloc_op(std::shared_ptr<const jlm::rvsdg::bittype> btype)
+  explicit MallocOperation(std::shared_ptr<const jlm::rvsdg::bittype> btype)
       : SimpleOperation({ std::move(btype) }, { PointerType::Create(), MemoryStateType::Create() })
   {}
 
@@ -2468,7 +2444,7 @@ public:
     if (!bt)
       throw jlm::util::error("expected bits type.");
 
-    malloc_op op(std::move(bt));
+    MallocOperation op(std::move(bt));
     return ThreeAddressCode::create(op, { size });
   }
 
@@ -2479,7 +2455,7 @@ public:
     if (!bt)
       throw jlm::util::error("expected bits type.");
 
-    return outputs(&rvsdg::CreateOpNode<malloc_op>({ size }, std::move(bt)));
+    return outputs(&rvsdg::CreateOpNode<MallocOperation>({ size }, std::move(bt)));
   }
 };
 

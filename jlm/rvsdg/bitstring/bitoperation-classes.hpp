@@ -17,12 +17,12 @@ namespace jlm::rvsdg
 
 /* Represents a unary operation on a bitstring of a specific width,
  * produces another bitstring of the same width. */
-class bitunary_op : public UnaryOperation
+class BitUnaryOperation : public UnaryOperation
 {
 public:
-  virtual ~bitunary_op() noexcept;
+  ~BitUnaryOperation() noexcept override;
 
-  inline bitunary_op(const std::shared_ptr<const bittype> & type) noexcept
+  explicit BitUnaryOperation(const std::shared_ptr<const bittype> & type) noexcept
       : UnaryOperation(type, type)
   {}
 
@@ -42,19 +42,19 @@ public:
   virtual bitvalue_repr
   reduce_constant(const bitvalue_repr & arg) const = 0;
 
-  virtual std::unique_ptr<bitunary_op>
+  virtual std::unique_ptr<BitUnaryOperation>
   create(size_t nbits) const = 0;
 };
 
 /* Represents a binary operation (possibly normalized n-ary if associative)
  * on a bitstring of a specific width, produces another bitstring of the
  * same width. */
-class bitbinary_op : public BinaryOperation
+class BitBinaryOperation : public BinaryOperation
 {
 public:
-  virtual ~bitbinary_op() noexcept;
+  ~BitBinaryOperation() noexcept override;
 
-  inline bitbinary_op(const std::shared_ptr<const bittype> type, size_t arity = 2) noexcept
+  explicit BitBinaryOperation(const std::shared_ptr<const bittype> type, size_t arity = 2) noexcept
       : BinaryOperation({ arity, type }, type)
   {}
 
@@ -72,7 +72,7 @@ public:
   virtual bitvalue_repr
   reduce_constants(const bitvalue_repr & arg1, const bitvalue_repr & arg2) const = 0;
 
-  virtual std::unique_ptr<bitbinary_op>
+  virtual std::unique_ptr<BitBinaryOperation>
   create(size_t nbits) const = 0;
 
   inline const bittype &
@@ -89,12 +89,12 @@ enum class compare_result
   static_false
 };
 
-class bitcompare_op : public BinaryOperation
+class BitCompareOperation : public BinaryOperation
 {
 public:
-  virtual ~bitcompare_op() noexcept;
+  ~BitCompareOperation() noexcept override;
 
-  inline bitcompare_op(std::shared_ptr<const bittype> type) noexcept
+  explicit BitCompareOperation(std::shared_ptr<const bittype> type) noexcept
       : BinaryOperation({ type, type }, bittype::Create(1))
   {}
 
@@ -111,7 +111,7 @@ public:
   virtual compare_result
   reduce_constants(const bitvalue_repr & arg1, const bitvalue_repr & arg2) const = 0;
 
-  virtual std::unique_ptr<bitcompare_op>
+  virtual std::unique_ptr<BitCompareOperation>
   create(size_t nbits) const = 0;
 
   inline const bittype &

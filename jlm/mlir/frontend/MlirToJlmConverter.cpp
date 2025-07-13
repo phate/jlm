@@ -235,7 +235,8 @@ MlirToJlmConverter::ConvertICmpOp(
 {
   if (operation.getPredicate() == ::mlir::LLVM::ICmpPredicate::eq)
   {
-    auto newOp = std::make_unique<llvm::ptrcmp_op>(llvm::PointerType::Create(), llvm::cmp::eq);
+    auto newOp =
+        std::make_unique<llvm::PtrCmpOperation>(llvm::PointerType::Create(), llvm::cmp::eq);
     return &rvsdg::SimpleNode::Create(
         rvsdgRegion,
         std::move(newOp),
@@ -243,7 +244,8 @@ MlirToJlmConverter::ConvertICmpOp(
   }
   else if (operation.getPredicate() == ::mlir::LLVM::ICmpPredicate::ne)
   {
-    auto newOp = std::make_unique<llvm::ptrcmp_op>(llvm::PointerType::Create(), llvm::cmp::ne);
+    auto newOp =
+        std::make_unique<llvm::PtrCmpOperation>(llvm::PointerType::Create(), llvm::cmp::ne);
     return &rvsdg::SimpleNode::Create(
         rvsdgRegion,
         std::move(newOp),
@@ -251,7 +253,8 @@ MlirToJlmConverter::ConvertICmpOp(
   }
   else if (operation.getPredicate() == ::mlir::LLVM::ICmpPredicate::sge)
   {
-    auto newOp = std::make_unique<llvm::ptrcmp_op>(llvm::PointerType::Create(), llvm::cmp::ge);
+    auto newOp =
+        std::make_unique<llvm::PtrCmpOperation>(llvm::PointerType::Create(), llvm::cmp::ge);
     return &rvsdg::SimpleNode::Create(
         rvsdgRegion,
         std::move(newOp),
@@ -259,7 +262,8 @@ MlirToJlmConverter::ConvertICmpOp(
   }
   else if (operation.getPredicate() == ::mlir::LLVM::ICmpPredicate::sgt)
   {
-    auto newOp = std::make_unique<llvm::ptrcmp_op>(llvm::PointerType::Create(), llvm::cmp::gt);
+    auto newOp =
+        std::make_unique<llvm::PtrCmpOperation>(llvm::PointerType::Create(), llvm::cmp::gt);
     return &rvsdg::SimpleNode::Create(
         rvsdgRegion,
         std::move(newOp),
@@ -267,7 +271,8 @@ MlirToJlmConverter::ConvertICmpOp(
   }
   else if (operation.getPredicate() == ::mlir::LLVM::ICmpPredicate::sle)
   {
-    auto newOp = std::make_unique<llvm::ptrcmp_op>(llvm::PointerType::Create(), llvm::cmp::le);
+    auto newOp =
+        std::make_unique<llvm::PtrCmpOperation>(llvm::PointerType::Create(), llvm::cmp::le);
     return &rvsdg::SimpleNode::Create(
         rvsdgRegion,
         std::move(newOp),
@@ -275,7 +280,8 @@ MlirToJlmConverter::ConvertICmpOp(
   }
   else if (operation.getPredicate() == ::mlir::LLVM::ICmpPredicate::slt)
   {
-    auto newOp = std::make_unique<llvm::ptrcmp_op>(llvm::PointerType::Create(), llvm::cmp::lt);
+    auto newOp =
+        std::make_unique<llvm::PtrCmpOperation>(llvm::PointerType::Create(), llvm::cmp::lt);
     return &rvsdg::SimpleNode::Create(
         rvsdgRegion,
         std::move(newOp),
@@ -328,7 +334,7 @@ MlirToJlmConverter::ConvertFPBinaryNode(
   }
   return &rvsdg::SimpleNode::Create(
       rvsdgRegion,
-      llvm::fpbin_op(op, size),
+      llvm::FBinaryOperation(op, size),
       { inputs[0], inputs[1] });
 }
 
@@ -612,8 +618,9 @@ MlirToJlmConverter::ConvertOperation(
   {
     auto type = ComOp.getOperandTypes()[0];
     auto floatType = ::mlir::cast<::mlir::FloatType>(type);
-    auto op =
-        llvm::fpcmp_op(TryConvertFPCMP(ComOp.getPredicate()), ConvertFPSize(floatType.getWidth()));
+    auto op = llvm::FCmpOperation(
+        TryConvertFPCMP(ComOp.getPredicate()),
+        ConvertFPSize(floatType.getWidth()));
     return &rvsdg::SimpleNode::Create(rvsdgRegion, op, std::vector(inputs.begin(), inputs.end()));
   }
 
@@ -652,8 +659,9 @@ MlirToJlmConverter::ConvertOperation(
 
   else if (auto VarArgOp = ::mlir::dyn_cast<::mlir::jlm::CreateVarArgList>(&mlirOperation))
   {
-    return rvsdg::TryGetOwnerNode<rvsdg::Node>(
-        *llvm::valist_op::Create(rvsdgRegion, std::vector(inputs.begin(), inputs.end())));
+    return rvsdg::TryGetOwnerNode<rvsdg::Node>(*llvm::VariadicArgumentListOperation::Create(
+        rvsdgRegion,
+        std::vector(inputs.begin(), inputs.end())));
   }
 
   // Memory operations
@@ -741,7 +749,7 @@ MlirToJlmConverter::ConvertOperation(
   }
   else if (auto MallocOp = ::mlir::dyn_cast<::mlir::jlm::Malloc>(&mlirOperation))
   {
-    auto mallocOutputs = jlm::llvm::malloc_op::create(inputs[0]);
+    auto mallocOutputs = jlm::llvm::MallocOperation::create(inputs[0]);
     return rvsdg::TryGetOwnerNode<rvsdg::Node>(*mallocOutputs[0]);
   }
   else if (auto StoreOp = ::mlir::dyn_cast<::mlir::jlm::Store>(&mlirOperation))
@@ -858,7 +866,7 @@ MlirToJlmConverter::ConvertOperation(
     std::shared_ptr<rvsdg::Type> outputType = ConvertType(mlirOutputType);
     auto outputValueType = std::dynamic_pointer_cast<const rvsdg::ValueType>(outputType);
     auto linakgeString = mlirDeltaNode.getLinkage().str();
-    auto rvsdgDeltaNode = llvm::delta::node::Create(
+    auto rvsdgDeltaNode = llvm::DeltaNode::Create(
         &rvsdgRegion,
         outputValueType,
         mlirDeltaNode.getName().str(),

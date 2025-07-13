@@ -34,7 +34,7 @@ SinkInsertion()
       LlvmLambdaOperation::Create(functionType, "f", linkage::external_linkage));
   auto argument = lambdaNode->GetFunctionArguments()[0];
 
-  auto structuralNode = jlm::tests::structural_node::create(lambdaNode->subregion(), 1);
+  auto structuralNode = jlm::tests::TestStructuralNode::create(lambdaNode->subregion(), 1);
   auto & i0 = structuralNode->AddInputWithArguments(*argument);
   auto & i1 = structuralNode->AddInputWithArguments(*argument);
 

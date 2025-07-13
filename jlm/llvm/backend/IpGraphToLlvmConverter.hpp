@@ -45,9 +45,9 @@ class ConstantArrayOperation;
 class ConstantAggregateZeroOperation;
 class ConstantStruct;
 class ConstantPointerNullOperation;
-class shufflevector_op;
+class ShuffleVectorOperation;
 class VectorSelectOperation;
-class malloc_op;
+class MallocOperation;
 class FreeOperation;
 class MemCpyNonVolatileOperation;
 class MemCpyVolatileOperation;
@@ -57,7 +57,7 @@ class LambdaEntryMemoryStateSplitOperation;
 class CallEntryMemoryStateMergeOperation;
 class CallExitMemoryStateSplitOperation;
 class ControlFlowGraphNode;
-class ExtractValue;
+class ExtractValueOperation;
 class FunctionNode;
 class InterProceduralGraphModule;
 class LambdaExitMemoryStateMergeOperation;
@@ -234,13 +234,13 @@ private:
 
   ::llvm::Value *
   convert(
-      const malloc_op & op,
+      const MallocOperation & op,
       const std::vector<const Variable *> & args,
       ::llvm::IRBuilder<> & builder);
 
   ::llvm::Value *
   convert(
-      const ExtractValue & op,
+      const ExtractValueOperation & op,
       const std::vector<const Variable *> & operands,
       ::llvm::IRBuilder<> & builder);
 
@@ -277,7 +277,7 @@ private:
 
   ::llvm::Value *
   convert(
-      const shufflevector_op & op,
+      const ShuffleVectorOperation & op,
       const std::vector<const Variable *> & operands,
       ::llvm::IRBuilder<> & builder);
 

@@ -56,14 +56,14 @@ private:
             aa::PointsToGraph::RegisterNode::Create(*PointsToGraph_, { node.output(0) });
         registerNode.AddEdge(allocaNode);
       }
-      else if (jlm::rvsdg::is<malloc_op>(&node))
+      else if (jlm::rvsdg::is<MallocOperation>(&node))
       {
         auto & mallocNode = aa::PointsToGraph::MallocNode::Create(*PointsToGraph_, node);
         auto & registerNode =
             aa::PointsToGraph::RegisterNode::Create(*PointsToGraph_, { node.output(0) });
         registerNode.AddEdge(mallocNode);
       }
-      else if (auto deltaNode = dynamic_cast<const delta::node *>(&node))
+      else if (auto deltaNode = dynamic_cast<const DeltaNode *>(&node))
       {
         auto & deltaPtgNode = aa::PointsToGraph::DeltaNode::Create(*PointsToGraph_, *deltaNode);
         auto & registerNode =

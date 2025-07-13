@@ -362,7 +362,7 @@ class MallocLocation final : public MemoryLocation
       : MemoryLocation(),
         Node_(node)
   {
-    JLM_ASSERT(is<malloc_op>(&node));
+    JLM_ASSERT(is<MallocOperation>(&node));
   }
 
 public:
@@ -433,13 +433,13 @@ class DeltaLocation final : public MemoryLocation
 {
   ~DeltaLocation() override = default;
 
-  constexpr explicit DeltaLocation(const delta::node & delta)
+  constexpr explicit DeltaLocation(const DeltaNode & delta)
       : MemoryLocation(),
         Delta_(delta)
   {}
 
 public:
-  [[nodiscard]] const delta::node &
+  [[nodiscard]] const DeltaNode &
   GetNode() const noexcept
   {
     return Delta_;
@@ -452,13 +452,13 @@ public:
   }
 
   static std::unique_ptr<Location>
-  Create(const delta::node & node)
+  Create(const DeltaNode & node)
   {
     return std::unique_ptr<Location>(new DeltaLocation(node));
   }
 
 private:
-  const delta::node & Delta_;
+  const DeltaNode & Delta_;
 };
 
 /**
@@ -600,7 +600,7 @@ public:
   }
 
   Location &
-  InsertDeltaLocation(const delta::node & delta)
+  InsertDeltaLocation(const DeltaNode & delta)
   {
     Locations_.push_back(DeltaLocation::Create(delta));
     auto location = Locations_.back().get();
@@ -688,7 +688,7 @@ public:
    * @param location A Location.
    * @return The disjoint set the location is part of.
    */
-  const DisjointLocationSet::set &
+  const DisjointLocationSet::Set &
   GetSet(Location & location) const
   {
     return *DisjointLocationSet_.find(&location);
@@ -760,7 +760,7 @@ public:
   std::string
   ToDot() const
   {
-    auto toDotNode = [](const DisjointLocationSet::set & set)
+    auto toDotNode = [](const DisjointLocationSet::Set & set)
     {
       auto rootLocation = set.value();
 
@@ -799,7 +799,7 @@ public:
     };
 
     auto toDotEdge =
-        [](const DisjointLocationSet::set & set, const DisjointLocationSet::set & pointsToSet)
+        [](const DisjointLocationSet::Set & set, const DisjointLocationSet::Set & pointsToSet)
     {
       return jlm::util::strfmt((intptr_t)&set, " -> ", (intptr_t)&pointsToSet);
     };
@@ -1000,7 +1000,7 @@ Steensgaard::AnalyzeSimpleNode(const jlm::rvsdg::SimpleNode & node)
   {
     AnalyzeAlloca(node);
   }
-  else if (is<malloc_op>(&node))
+  else if (is<MallocOperation>(&node))
   {
     AnalyzeMalloc(node);
   }
@@ -1020,7 +1020,7 @@ Steensgaard::AnalyzeSimpleNode(const jlm::rvsdg::SimpleNode & node)
   {
     AnalyzeGep(node);
   }
-  else if (is<bitcast_op>(&node))
+  else if (is<BitCastOperation>(&node))
   {
     AnalyzeBitcast(node);
   }
@@ -1056,11 +1056,11 @@ Steensgaard::AnalyzeSimpleNode(const jlm::rvsdg::SimpleNode & node)
   {
     AnalyzeConstantAggregateZero(node);
   }
-  else if (is<ExtractValue>(&node))
+  else if (is<ExtractValueOperation>(&node))
   {
     AnalyzeExtractValue(node);
   }
-  else if (is<valist_op>(&node))
+  else if (is<VariadicArgumentListOperation>(&node))
   {
     AnalyzeVaList(node);
   }
@@ -1076,9 +1076,9 @@ Steensgaard::AnalyzeSimpleNode(const jlm::rvsdg::SimpleNode & node)
   {
     AnalyzeIOBarrier(node);
   }
-  else if (is<FreeOperation>(&node) || is<ptrcmp_op>(&node))
+  else if (is<FreeOperation>(&node) || is<PtrCmpOperation>(&node))
   {
-    // Nothing needs to be done as FreeOperation and ptrcmp_op do not affect points-to sets
+    // Nothing needs to be done as FreeOperation and PtrCmpOperation do not affect points-to sets
   }
   else
   {
@@ -1100,7 +1100,7 @@ Steensgaard::AnalyzeAlloca(const jlm::rvsdg::SimpleNode & node)
 void
 Steensgaard::AnalyzeMalloc(const jlm::rvsdg::SimpleNode & node)
 {
-  JLM_ASSERT(is<malloc_op>(&node));
+  JLM_ASSERT(is<MallocOperation>(&node));
 
   auto & mallocOutputLocation = Context_->GetOrInsertRegisterLocation(*node.output(0));
   auto & mallocLocation = Context_->InsertMallocLocation(node);
@@ -1306,7 +1306,7 @@ Steensgaard::AnalyzeGep(const jlm::rvsdg::SimpleNode & node)
 void
 Steensgaard::AnalyzeBitcast(const jlm::rvsdg::SimpleNode & node)
 {
-  JLM_ASSERT(is<bitcast_op>(&node));
+  JLM_ASSERT(is<BitCastOperation>(&node));
 
   auto & operand = *node.input(0)->origin();
   auto & result = *node.output(0);
@@ -1344,7 +1344,7 @@ Steensgaard::AnalyzePtrToInt(const rvsdg::SimpleNode & node)
 void
 Steensgaard::AnalyzeExtractValue(const jlm::rvsdg::SimpleNode & node)
 {
-  JLM_ASSERT(is<ExtractValue>(&node));
+  JLM_ASSERT(is<ExtractValueOperation>(&node));
 
   auto & result = *node.output(0);
 
@@ -1482,7 +1482,7 @@ Steensgaard::AnalyzeMemcpy(const jlm::rvsdg::SimpleNode & node)
 void
 Steensgaard::AnalyzeVaList(const rvsdg::SimpleNode & node)
 {
-  JLM_ASSERT(is<valist_op>(&node));
+  JLM_ASSERT(is<VariadicArgumentListOperation>(&node));
 
   // Members of the valist are extracted using the va_arg macro, which loads from the va_list struct
   // on the stack. This struct will be marked as escaped from the call to va_start, and thus point
@@ -1597,7 +1597,7 @@ Steensgaard::AnalyzeLambda(const rvsdg::LambdaNode & lambda)
 }
 
 void
-Steensgaard::AnalyzeDelta(const delta::node & delta)
+Steensgaard::AnalyzeDelta(const DeltaNode & delta)
 {
   // Handle context variables
   for (auto & input : delta.ctxvars())
@@ -1749,7 +1749,7 @@ Steensgaard::AnalyzeStructuralNode(const rvsdg::StructuralNode & node)
   {
     AnalyzeLambda(*lambdaNode);
   }
-  else if (auto deltaNode = dynamic_cast<const delta::node *>(&node))
+  else if (auto deltaNode = dynamic_cast<const DeltaNode *>(&node))
   {
     AnalyzeDelta(*deltaNode);
   }
@@ -1962,7 +1962,7 @@ util::HashSet<PointsToGraph::MemoryNode *>
 Steensgaard::CollectEscapedMemoryNodes(
     const util::HashSet<RegisterLocation *> & escapingRegisterLocations,
     const std::unordered_map<
-        const util::DisjointSet<Location *>::set *,
+        const util::DisjointSet<Location *>::Set *,
         std::vector<PointsToGraph::MemoryNode *>> & memoryNodesInSet) const
 {
   // Initialize working set
@@ -1978,7 +1978,7 @@ Steensgaard::CollectEscapedMemoryNodes(
 
   // Collect escaped memory nodes
   util::HashSet<PointsToGraph::MemoryNode *> escapedMemoryNodes;
-  util::HashSet<const DisjointLocationSet::set *> visited;
+  util::HashSet<const DisjointLocationSet::Set *> visited;
   while (!toVisit.IsEmpty())
   {
     auto moduleEscapingLocation = *toVisit.Items().begin();
@@ -2015,7 +2015,7 @@ Steensgaard::ConstructPointsToGraph() const
   auto pointsToGraph = PointsToGraph::Create();
 
   // All the memory nodes within a set
-  std::unordered_map<const DisjointLocationSet::set *, std::vector<PointsToGraph::MemoryNode *>>
+  std::unordered_map<const DisjointLocationSet::Set *, std::vector<PointsToGraph::MemoryNode *>>
       memoryNodesInSet;
 
   // All register locations that are marked as RegisterLocation::HasEscaped()

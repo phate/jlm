@@ -31,26 +31,22 @@ DeltaOperation::operator==(const Operation & other) const noexcept
       && op->Section_ == Section_ && *op->type_ == *type_;
 }
 
-namespace delta
-{
-
-node::~node()
-{}
+DeltaNode::~DeltaNode() noexcept = default;
 
 const DeltaOperation &
-node::GetOperation() const noexcept
+DeltaNode::GetOperation() const noexcept
 {
   return *Operation_;
 }
 
-delta::node *
-node::copy(rvsdg::Region * region, const std::vector<jlm::rvsdg::Output *> & operands) const
+DeltaNode *
+DeltaNode::copy(rvsdg::Region * region, const std::vector<jlm::rvsdg::Output *> & operands) const
 {
-  return static_cast<delta::node *>(rvsdg::Node::copy(region, operands));
+  return static_cast<DeltaNode *>(rvsdg::Node::copy(region, operands));
 }
 
-delta::node *
-node::copy(rvsdg::Region * region, rvsdg::SubstitutionMap & smap) const
+DeltaNode *
+DeltaNode::copy(rvsdg::Region * region, rvsdg::SubstitutionMap & smap) const
 {
   auto delta = Create(region, Type(), name(), linkage(), Section(), constant());
 
@@ -74,8 +70,8 @@ node::copy(rvsdg::Region * region, rvsdg::SubstitutionMap & smap) const
   return delta;
 }
 
-node::ctxvar_range
-node::ctxvars()
+DeltaNode::ctxvar_range
+DeltaNode::ctxvars()
 {
   cviterator end(nullptr);
 
@@ -86,8 +82,8 @@ node::ctxvars()
   return ctxvar_range(begin, end);
 }
 
-node::ctxvar_constrange
-node::ctxvars() const
+DeltaNode::ctxvar_constrange
+DeltaNode::ctxvars() const
 {
   cvconstiterator end(nullptr);
 
@@ -98,39 +94,39 @@ node::ctxvars() const
   return ctxvar_constrange(begin, end);
 }
 
-cvargument *
-node::add_ctxvar(jlm::rvsdg::Output * origin)
+delta::cvargument *
+DeltaNode::add_ctxvar(jlm::rvsdg::Output * origin)
 {
-  auto input = cvinput::create(this, origin);
-  return cvargument::create(subregion(), input);
+  auto input = delta::cvinput::create(this, origin);
+  return delta::cvargument::create(subregion(), input);
 }
 
-cvinput *
-node::input(size_t n) const noexcept
+delta::cvinput *
+DeltaNode::input(size_t n) const noexcept
 {
-  return static_cast<cvinput *>(StructuralNode::input(n));
+  return static_cast<delta::cvinput *>(StructuralNode::input(n));
 }
 
-cvargument *
-node::cvargument(size_t n) const noexcept
+delta::cvargument *
+DeltaNode::cvargument(size_t n) const noexcept
 {
   return util::AssertedCast<delta::cvargument>(subregion()->argument(n));
 }
 
 delta::output *
-node::output() const noexcept
+DeltaNode::output() const noexcept
 {
   return static_cast<delta::output *>(StructuralNode::output(0));
 }
 
 delta::result *
-node::result() const noexcept
+DeltaNode::result() const noexcept
 {
   return static_cast<delta::result *>(subregion()->result(0));
 }
 
 delta::output *
-node::finalize(jlm::rvsdg::Output * origin)
+DeltaNode::finalize(jlm::rvsdg::Output * origin)
 {
   /* check if finalized was already called */
   if (noutputs() > 0)
@@ -149,10 +145,11 @@ node::finalize(jlm::rvsdg::Output * origin)
 
   delta::result::create(origin);
 
-  return output::create(this, PointerType::Create());
+  return delta::output::create(this, PointerType::Create());
 }
 
-/* delta context variable input class */
+namespace delta
+{
 
 cvinput::~cvinput()
 {}
