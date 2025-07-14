@@ -102,7 +102,7 @@ private:
  *
  * A delta node represents a global variable in the RVSDG. Its creation requires the invocation
  * of two functions: \ref Create() and \ref finalize(). First, a delta node is create by invoking
- * \ref Create(). The delta's dependencies can then be added using the \ref add_ctxvar() method,
+ * \ref Create(). The delta's dependencies can then be added using the \ref AddContextVar() method,
  * and the body of the delta node can be created. Finally, the delta node can be finalized by
  * invoking \ref finalize().
  *
@@ -111,8 +111,8 @@ private:
  * \code{.cpp}
  *   auto delta = DeltaNode::create(...);
  *   ...
- *   auto cv1 = delta->add_ctxvar(...);
- *   auto cv2 = delta->add_ctxvar(...);
+ *   auto cv1 = delta->AddContextVar(...);
+ *   auto cv2 = delta->AddContextVar(...);
  *   ...
  *   // generate delta body
  *   ...
@@ -317,7 +317,7 @@ public:
   /**
    * Creates a delta node in the region \p parent with the pointer type \p type and name \p name.
    * After the invocation of \ref Create(), the delta node has no inputs or outputs.
-   * Free variables can be added to the delta node using \ref add_ctxvar(). The generation of the
+   * Free variables can be added to the delta node using \ref AddContextVar(). The generation of the
    * node can be finished using the \ref finalize() method.
    *
    * \param parent The region where the delta node is created.
