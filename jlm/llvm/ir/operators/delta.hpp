@@ -98,14 +98,6 @@ private:
   std::shared_ptr<const rvsdg::ValueType> type_;
 };
 
-namespace delta
-{
-
-class cvargument;
-class cvinput;
-
-}
-
 /** \brief Delta node
  *
  * A delta node represents a global variable in the RVSDG. Its creation requires the invocation
@@ -129,12 +121,6 @@ class cvinput;
  */
 class DeltaNode final : public rvsdg::StructuralNode
 {
-  class cviterator;
-  class cvconstiterator;
-
-  using ctxvar_range = util::IteratorRange<cviterator>;
-  using ctxvar_constrange = util::IteratorRange<cvconstiterator>;
-
 public:
   ~DeltaNode() noexcept override;
 
@@ -238,12 +224,6 @@ public:
   [[nodiscard]] std::vector<ContextVar>
   GetContextVars() const noexcept;
 
-  ctxvar_range
-  ctxvars();
-
-  ctxvar_constrange
-  ctxvars() const;
-
   rvsdg::Region *
   subregion() const noexcept
   {
@@ -289,12 +269,6 @@ public:
     return GetOperation().constant();
   }
 
-  size_t
-  ncvarguments() const noexcept
-  {
-    return ninputs();
-  }
-
   /**
    * Remove delta inputs and their respective arguments.
    *
@@ -320,19 +294,13 @@ public:
   size_t
   PruneDeltaInputs()
   {
-    auto match = [](const delta::cvinput &)
+    auto match = [](const rvsdg::Input &)
     {
       return true;
     };
 
     return RemoveDeltaInputsWhere(match);
   }
-
-  delta::cvinput *
-  input(size_t n) const noexcept;
-
-  delta::cvargument *
-  cvargument(size_t n) const noexcept;
 
   [[nodiscard]] rvsdg::Output &
   output() const noexcept;
@@ -393,121 +361,6 @@ private:
   std::unique_ptr<DeltaOperation> Operation_;
 };
 
-namespace delta
-{
-
-/** \brief Delta context variable input
- */
-class cvinput final : public rvsdg::StructuralInput
-{
-  friend ::jlm::llvm::DeltaNode;
-
-public:
-  ~cvinput() override;
-
-private:
-  cvinput(DeltaNode * node, rvsdg::Output * origin)
-      : StructuralInput(node, origin, origin->Type())
-  {}
-
-  static cvinput *
-  create(DeltaNode * node, rvsdg::Output * origin)
-  {
-    auto input = std::unique_ptr<cvinput>(new cvinput(node, origin));
-    return static_cast<cvinput *>(node->append_input(std::move(input)));
-  }
-
-public:
-  cvargument *
-  argument() const noexcept;
-
-  DeltaNode *
-  node() const noexcept
-  {
-    return static_cast<DeltaNode *>(StructuralInput::node());
-  }
-};
-
-}
-
-/** \brief Delta context variable iterator
- */
-class DeltaNode::cviterator final : public rvsdg::Input::iterator<delta::cvinput>
-{
-  friend ::jlm::llvm::DeltaNode;
-
-  constexpr cviterator(delta::cvinput * input)
-      : rvsdg::Input::iterator<delta::cvinput>(input)
-  {}
-
-  virtual delta::cvinput *
-  next() const override
-  {
-    auto node = value()->node();
-    auto index = value()->index();
-
-    return node->ninputs() > index + 1 ? node->input(index + 1) : nullptr;
-  }
-};
-
-/** \brief Delta context variable const iterator
- */
-class DeltaNode::cvconstiterator final : public rvsdg::Input::constiterator<delta::cvinput>
-{
-  friend ::jlm::llvm::DeltaNode;
-
-  constexpr cvconstiterator(const delta::cvinput * input)
-      : rvsdg::Input::constiterator<delta::cvinput>(input)
-  {}
-
-  virtual const delta::cvinput *
-  next() const override
-  {
-    auto node = value()->node();
-    auto index = value()->index();
-
-    return node->ninputs() > index + 1 ? node->input(index + 1) : nullptr;
-  }
-};
-
-namespace delta
-{
-
-/** \brief Delta context variable argument
- */
-class cvargument final : public rvsdg::RegionArgument
-{
-  friend ::jlm::llvm::DeltaNode;
-
-public:
-  ~cvargument() override;
-
-  cvargument &
-  Copy(rvsdg::Region & region, rvsdg::StructuralInput * input) override;
-
-private:
-  cvargument(rvsdg::Region * region, cvinput * input)
-      : rvsdg::RegionArgument(region, input, input->Type())
-  {}
-
-  static cvargument *
-  create(rvsdg::Region * region, delta::cvinput * input)
-  {
-    auto argument = new cvargument(region, input);
-    region->append_argument(argument);
-    return argument;
-  }
-
-public:
-  cvinput *
-  input() const noexcept
-  {
-    return static_cast<cvinput *>(rvsdg::RegionArgument::input());
-  }
-};
-
-}
-
 template<typename F>
 size_t
 DeltaNode::RemoveDeltaInputsWhere(const F & match)
@@ -518,7 +371,7 @@ DeltaNode::RemoveDeltaInputsWhere(const F & match)
   for (size_t n = ninputs() - 1; n != static_cast<size_t>(-1); n--)
   {
     auto & deltaInput = *input(n);
-    auto & argument = *deltaInput.argument();
+    auto & argument = *deltaInput.arguments.first();
 
     if (argument.IsDead() && match(deltaInput))
     {

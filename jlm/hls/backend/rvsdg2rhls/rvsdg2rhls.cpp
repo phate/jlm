@@ -276,11 +276,11 @@ rename_delta(llvm::DeltaNode * odn)
       odn->constant());
   /* add dependencies */
   rvsdg::SubstitutionMap rmap;
-  for (size_t i = 0; i < odn->ncvarguments(); i++)
+  for (auto ctxVar : odn->GetContextVars())
   {
-    auto input = odn->input(i);
+    auto input = ctxVar.input;
     auto nd = db->AddContextVar(*input->origin()).inner;
-    rmap.insert(input->argument(), nd);
+    rmap.insert(ctxVar.inner, nd);
   }
 
   /* copy subregion */

@@ -1059,13 +1059,13 @@ void
 Andersen::AnalyzeDelta(const DeltaNode & delta)
 {
   // Handle context variables
-  for (auto & cv : delta.ctxvars())
+  for (auto & cv : delta.GetContextVars())
   {
-    if (!IsOrContainsPointerType(*cv.Type()))
+    if (!IsOrContainsPointerType(*cv.input->Type()))
       continue;
 
-    auto & inputRegister = *cv.origin();
-    auto & argumentRegister = *cv.argument();
+    auto & inputRegister = *cv.input->origin();
+    auto & argumentRegister = *cv.inner;
     const auto inputRegisterPO = Set_->GetRegisterPointerObject(inputRegister);
     Set_->MapRegisterToExistingPointerObject(argumentRegister, inputRegisterPO);
   }

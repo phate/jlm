@@ -85,11 +85,11 @@ DeltaNode::copy(rvsdg::Region * region, rvsdg::SubstitutionMap & smap) const
 
   // add context variables
   rvsdg::SubstitutionMap subregionmap;
-  for (auto & cv : ctxvars())
+  for (auto & cv : GetContextVars())
   {
-    auto origin = smap.lookup(cv.origin());
+    auto origin = smap.lookup(cv.input->origin());
     auto newCtxVar = delta->AddContextVar(*origin);
-    subregionmap.insert(cv.argument(), newCtxVar.inner);
+    subregionmap.insert(cv.inner, newCtxVar.inner);
   }
 
   // copy subregion
@@ -101,42 +101,6 @@ DeltaNode::copy(rvsdg::Region * region, rvsdg::SubstitutionMap & smap) const
   smap.insert(&output(), o);
 
   return delta;
-}
-
-DeltaNode::ctxvar_range
-DeltaNode::ctxvars()
-{
-  cviterator end(nullptr);
-
-  if (ncvarguments() == 0)
-    return ctxvar_range(end, end);
-
-  cviterator begin(input(0));
-  return ctxvar_range(begin, end);
-}
-
-DeltaNode::ctxvar_constrange
-DeltaNode::ctxvars() const
-{
-  cvconstiterator end(nullptr);
-
-  if (ncvarguments() == 0)
-    return ctxvar_constrange(end, end);
-
-  cvconstiterator begin(input(0));
-  return ctxvar_constrange(begin, end);
-}
-
-delta::cvinput *
-DeltaNode::input(size_t n) const noexcept
-{
-  return static_cast<delta::cvinput *>(StructuralNode::input(n));
-}
-
-delta::cvargument *
-DeltaNode::cvargument(size_t n) const noexcept
-{
-  return util::AssertedCast<delta::cvargument>(subregion()->argument(n));
 }
 
 rvsdg::Output &
@@ -174,29 +138,4 @@ DeltaNode::finalize(jlm::rvsdg::Output * origin)
   return *append_output(std::make_unique<rvsdg::StructuralOutput>(this, PointerType::Create()));
 }
 
-namespace delta
-{
-
-cvinput::~cvinput()
-{}
-
-cvargument *
-cvinput::argument() const noexcept
-{
-  return static_cast<cvargument *>(arguments.first());
-}
-
-/* delta context variable argument class */
-
-cvargument::~cvargument()
-{}
-
-cvargument &
-cvargument::Copy(rvsdg::Region & region, rvsdg::StructuralInput * input)
-{
-  auto deltaInput = util::AssertedCast<delta::cvinput>(input);
-  return *cvargument::create(&region, deltaInput);
-}
-
-}
 }

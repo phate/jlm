@@ -95,35 +95,35 @@ TestRemoveDeltaInputsWhere()
   // Act & Assert
   // Try to remove deltaInput1 even though it is used
   auto numRemovedInputs = deltaNode->RemoveDeltaInputsWhere(
-      [&](const delta::cvinput & input)
+      [&](const jlm::rvsdg::Input & input)
       {
         return input.index() == deltaInput1->index();
       });
   assert(numRemovedInputs == 0);
   assert(deltaNode->ninputs() == 3);
-  assert(deltaNode->ncvarguments() == 3);
+  assert(deltaNode->GetContextVars().size() == 3);
 
   // Remove deltaInput2
   numRemovedInputs = deltaNode->RemoveDeltaInputsWhere(
-      [&](const delta::cvinput & input)
+      [&](const jlm::rvsdg::Input & input)
       {
         return input.index() == 2;
       });
   assert(numRemovedInputs == 1);
   assert(deltaNode->ninputs() == 2);
-  assert(deltaNode->ncvarguments() == 2);
+  assert(deltaNode->GetContextVars().size() == 2);
   assert(deltaNode->input(0) == deltaInput0);
   assert(deltaNode->input(1) == deltaInput1);
 
   // Remove deltaInput0
   numRemovedInputs = deltaNode->RemoveDeltaInputsWhere(
-      [&](const delta::cvinput & input)
+      [&](const jlm::rvsdg::Input & input)
       {
         return input.index() == 0;
       });
   assert(numRemovedInputs == 1);
   assert(deltaNode->ninputs() == 1);
-  assert(deltaNode->ncvarguments() == 1);
+  assert(deltaNode->GetContextVars().size() == 1);
   assert(deltaNode->input(0) == deltaInput1);
   assert(deltaInput1->index() == 0);
   assert(deltaNode->MapInputContextVar(*deltaInput1).inner->index() == 0);
@@ -167,7 +167,7 @@ TestPruneDeltaInputs()
   // Assert
   assert(numRemovedInputs == 2);
   assert(deltaNode->ninputs() == 1);
-  assert(deltaNode->ncvarguments() == 1);
+  assert(deltaNode->GetContextVars().size() == 1);
   assert(deltaNode->input(0) == deltaInput1);
   assert(deltaNode->subregion()->argument(0) == deltaNode->MapInputContextVar(*deltaInput1).inner);
   assert(deltaInput1->index() == 0);
