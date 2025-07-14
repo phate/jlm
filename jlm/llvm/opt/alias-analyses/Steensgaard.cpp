@@ -1614,7 +1614,7 @@ Steensgaard::AnalyzeDelta(const DeltaNode & delta)
 
   AnalyzeRegion(*delta.subregion());
 
-  auto & deltaOutputLocation = Context_->GetOrInsertRegisterLocation(*delta.output());
+  auto & deltaOutputLocation = Context_->GetOrInsertRegisterLocation(delta.output());
   auto & deltaLocation = Context_->InsertDeltaLocation(delta);
   deltaOutputLocation.SetPointsTo(deltaLocation);
 

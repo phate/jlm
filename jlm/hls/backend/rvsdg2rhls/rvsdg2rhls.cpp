@@ -226,7 +226,7 @@ convert_alloca(rvsdg::Region * region)
       {
         cout = llvm::ConstantAggregateZeroOperation::Create(*db->subregion(), po->ValueType());
       }
-      auto delta = db->finalize(cout);
+      auto delta = &db->finalize(cout);
       jlm::llvm::GraphExport::Create(*delta, delta_name);
       auto delta_local = route_to_region_rvsdg(delta, region);
       node->output(0)->divert_users(delta_local);
@@ -287,9 +287,9 @@ rename_delta(llvm::DeltaNode * odn)
   odn->subregion()->copy(db->subregion(), rmap, false, false);
 
   auto result = rmap.lookup(odn->subregion()->result(0)->origin());
-  auto data = db->finalize(result);
+  auto data = &db->finalize(result);
 
-  odn->output()->divert_users(data);
+  odn->output().divert_users(data);
   jlm::rvsdg::remove(odn);
   return rvsdg::TryGetOwnerNode<llvm::DeltaNode>(*data);
 }
@@ -398,7 +398,7 @@ split_hls_function(llvm::RvsdgModule & rm, const std::string & function_name)
           smap.insert(ln->input(i)->origin(), &graphImport);
           // add export for delta to rm
           // TODO: check if not already exported and maybe adjust linkage?
-          jlm::llvm::GraphExport::Create(*odn->output(), odn->name());
+          jlm::llvm::GraphExport::Create(odn->output(), odn->name());
         }
         else
         {

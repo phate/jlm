@@ -354,7 +354,7 @@ RecursiveData()
     auto dep1 = delta->add_ctxvar(r2.recref);
     auto dep2 = delta->add_ctxvar(dep.inner);
     delta1 =
-        delta->finalize(jlm::tests::create_testop(delta->subregion(), { dep1, dep2 }, { vt })[0]);
+        &delta->finalize(jlm::tests::create_testop(delta->subregion(), { dep1, dep2 }, { vt })[0]);
   }
 
   {
@@ -362,7 +362,7 @@ RecursiveData()
     auto dep1 = delta->add_ctxvar(r1.recref);
     auto dep2 = delta->add_ctxvar(dep.inner);
     delta2 =
-        delta->finalize(jlm::tests::create_testop(delta->subregion(), { dep1, dep2 }, { vt })[0]);
+        &delta->finalize(jlm::tests::create_testop(delta->subregion(), { dep1, dep2 }, { vt })[0]);
   }
 
   r1.result->divert_to(delta1);

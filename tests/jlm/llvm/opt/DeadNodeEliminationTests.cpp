@@ -481,7 +481,7 @@ Delta()
       std::vector<std::shared_ptr<const Type>>{ valueType },
       std::vector<std::shared_ptr<const Type>>{ valueType });
 
-  auto deltaOutput = deltaNode->finalize(result);
+  auto deltaOutput = &deltaNode->finalize(result);
   jlm::tests::GraphExport::Create(*deltaOutput, "");
   view(rvsdg, stdout);
 

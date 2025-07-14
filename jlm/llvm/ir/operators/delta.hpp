@@ -103,7 +103,6 @@ namespace delta
 
 class cvargument;
 class cvinput;
-class output;
 class result;
 
 }
@@ -252,7 +251,7 @@ public:
   delta::cvargument *
   cvargument(size_t n) const noexcept;
 
-  delta::output *
+  [[nodiscard]] rvsdg::Output &
   output() const noexcept;
 
   delta::result *
@@ -304,7 +303,7 @@ public:
    *
    * \return The output of the delta node.
    */
-  delta::output *
+  rvsdg::Output &
   finalize(rvsdg::Output * result);
 
 private:
@@ -391,35 +390,6 @@ class DeltaNode::cvconstiterator final : public rvsdg::Input::constiterator<delt
 namespace delta
 {
 
-/** \brief Delta output
- */
-class output final : public rvsdg::StructuralOutput
-{
-  friend ::jlm::llvm::DeltaNode;
-
-public:
-  ~output() override;
-
-  output(DeltaNode * node, std::shared_ptr<const rvsdg::Type> type)
-      : StructuralOutput(node, std::move(type))
-  {}
-
-private:
-  static output *
-  create(DeltaNode * node, std::shared_ptr<const rvsdg::Type> type)
-  {
-    auto output = std::make_unique<delta::output>(node, std::move(type));
-    return static_cast<delta::output *>(node->append_output(std::move(output)));
-  }
-
-public:
-  DeltaNode *
-  node() const noexcept
-  {
-    return static_cast<DeltaNode *>(StructuralOutput::node());
-  }
-};
-
 /** \brief Delta context variable argument
  */
 class cvargument final : public rvsdg::RegionArgument
@@ -479,10 +449,10 @@ private:
   }
 
 public:
-  delta::output *
+  rvsdg::Output *
   output() const noexcept
   {
-    return static_cast<delta::output *>(rvsdg::RegionResult::output());
+    return rvsdg::RegionResult::output();
   }
 };
 

@@ -1060,7 +1060,7 @@ ConvertDataNode(
         *dataNodeInitialization,
         *deltaNode->subregion(),
         regionalizedVariableMap);
-    auto deltaOutput = deltaNode->finalize(initOutput);
+    auto deltaOutput = &deltaNode->finalize(initOutput);
     regionalizedVariableMap.PopRegion();
 
     return deltaOutput;

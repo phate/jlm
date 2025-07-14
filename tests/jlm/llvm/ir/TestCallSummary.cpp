@@ -271,7 +271,7 @@ TestCallSummaryComputationFunctionPointerInDelta()
   auto argument = deltaNode->add_ctxvar(lambdaNode->output());
   deltaNode->finalize(argument);
 
-  GraphExport::Create(*deltaNode->output(), "fp");
+  GraphExport::Create(deltaNode->output(), "fp");
 
   // Act
   auto callSummary = jlm::llvm::ComputeCallSummary(*lambdaNode);

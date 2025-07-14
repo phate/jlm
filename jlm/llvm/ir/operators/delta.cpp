@@ -50,7 +50,7 @@ DeltaNode::copy(rvsdg::Region * region, rvsdg::SubstitutionMap & smap) const
 {
   auto delta = Create(region, Type(), name(), linkage(), Section(), constant());
 
-  /* add context variables */
+  // add context variables
   rvsdg::SubstitutionMap subregionmap;
   for (auto & cv : ctxvars())
   {
@@ -59,13 +59,13 @@ DeltaNode::copy(rvsdg::Region * region, rvsdg::SubstitutionMap & smap) const
     subregionmap.insert(cv.argument(), newcv);
   }
 
-  /* copy subregion */
+  // copy subregion
   subregion()->copy(delta->subregion(), subregionmap, false, false);
 
-  /* finalize delta */
+  // finalize delta
   auto result = subregionmap.lookup(delta->result()->origin());
-  auto o = delta->finalize(result);
-  smap.insert(output(), o);
+  auto o = &delta->finalize(result);
+  smap.insert(&output(), o);
 
   return delta;
 }
@@ -113,10 +113,10 @@ DeltaNode::cvargument(size_t n) const noexcept
   return util::AssertedCast<delta::cvargument>(subregion()->argument(n));
 }
 
-delta::output *
+rvsdg::Output &
 DeltaNode::output() const noexcept
 {
-  return static_cast<delta::output *>(StructuralNode::output(0));
+  return *StructuralNode::output(0);
 }
 
 delta::result *
@@ -125,10 +125,10 @@ DeltaNode::result() const noexcept
   return static_cast<delta::result *>(subregion()->result(0));
 }
 
-delta::output *
+rvsdg::Output &
 DeltaNode::finalize(jlm::rvsdg::Output * origin)
 {
-  /* check if finalized was already called */
+  // check if finalized was already called
   if (noutputs() > 0)
   {
     JLM_ASSERT(noutputs() == 1);
@@ -145,7 +145,7 @@ DeltaNode::finalize(jlm::rvsdg::Output * origin)
 
   delta::result::create(origin);
 
-  return delta::output::create(this, PointerType::Create());
+  return *append_output(std::make_unique<rvsdg::StructuralOutput>(this, PointerType::Create()));
 }
 
 namespace delta
@@ -159,11 +159,6 @@ cvinput::argument() const noexcept
 {
   return static_cast<cvargument *>(arguments.first());
 }
-
-/* delta output class */
-
-output::~output()
-{}
 
 /* delta context variable argument class */
 

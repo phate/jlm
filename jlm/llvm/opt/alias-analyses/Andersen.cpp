@@ -1089,7 +1089,7 @@ Andersen::AnalyzeDelta(const DeltaNode & delta)
   }
 
   // Finally create a Register PointerObject for the delta's output, pointing to the memory object
-  auto & outputRegister = *delta.output();
+  auto & outputRegister = delta.output();
   const auto outputRegisterPO = Set_->CreateRegisterPointerObject(outputRegister);
   Constraints_->AddPointerPointeeConstraint(outputRegisterPO, globalPO);
 }
