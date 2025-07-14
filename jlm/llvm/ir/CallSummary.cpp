@@ -103,9 +103,9 @@ ComputeCallSummary(const rvsdg::LambdaNode & lambdaNode)
       continue;
     }
 
-    if (auto deltaResult = dynamic_cast<delta::result *>(input))
+    if (rvsdg::TryGetRegionParentNode<DeltaNode>(*input))
     {
-      otherUsers.emplace_back(deltaResult);
+      otherUsers.emplace_back(input);
       continue;
     }
 

@@ -1618,7 +1618,7 @@ Steensgaard::AnalyzeDelta(const DeltaNode & delta)
   auto & deltaLocation = Context_->InsertDeltaLocation(delta);
   deltaOutputLocation.SetPointsTo(deltaLocation);
 
-  auto & origin = *delta.result()->origin();
+  auto & origin = *delta.result().origin();
   if (HasOrContainsPointerType(origin))
   {
     auto & originLocation = Context_->GetLocation(origin);

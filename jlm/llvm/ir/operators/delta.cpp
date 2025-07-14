@@ -63,7 +63,7 @@ DeltaNode::copy(rvsdg::Region * region, rvsdg::SubstitutionMap & smap) const
   subregion()->copy(delta->subregion(), subregionmap, false, false);
 
   // finalize delta
-  auto result = subregionmap.lookup(delta->result()->origin());
+  auto result = subregionmap.lookup(delta->result().origin());
   auto o = &delta->finalize(result);
   smap.insert(&output(), o);
 
@@ -119,10 +119,10 @@ DeltaNode::output() const noexcept
   return *StructuralNode::output(0);
 }
 
-delta::result *
+rvsdg::Input &
 DeltaNode::result() const noexcept
 {
-  return static_cast<delta::result *>(subregion()->result(0));
+  return *subregion()->result(0);
 }
 
 rvsdg::Output &
@@ -143,7 +143,7 @@ DeltaNode::finalize(jlm::rvsdg::Output * origin)
   if (origin->region() != subregion())
     throw util::error("Invalid operand region.");
 
-  delta::result::create(origin);
+  rvsdg::RegionResult::Create(*origin->region(), *origin, nullptr, origin->Type());
 
   return *append_output(std::make_unique<rvsdg::StructuralOutput>(this, PointerType::Create()));
 }
@@ -170,18 +170,6 @@ cvargument::Copy(rvsdg::Region & region, rvsdg::StructuralInput * input)
 {
   auto deltaInput = util::AssertedCast<delta::cvinput>(input);
   return *cvargument::create(&region, deltaInput);
-}
-
-/* delta result class */
-
-result::~result()
-{}
-
-result &
-result::Copy(rvsdg::Output & origin, rvsdg::StructuralOutput * output)
-{
-  JLM_ASSERT(output == nullptr);
-  return *result::create(&origin);
 }
 
 }

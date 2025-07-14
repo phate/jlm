@@ -103,7 +103,6 @@ namespace delta
 
 class cvargument;
 class cvinput;
-class result;
 
 }
 
@@ -254,7 +253,7 @@ public:
   [[nodiscard]] rvsdg::Output &
   output() const noexcept;
 
-  delta::result *
+  [[nodiscard]] rvsdg::Input &
   result() const noexcept;
 
   virtual DeltaNode *
@@ -420,39 +419,6 @@ public:
   input() const noexcept
   {
     return static_cast<cvinput *>(rvsdg::RegionArgument::input());
-  }
-};
-
-/** \brief Delta result
- */
-class result final : public rvsdg::RegionResult
-{
-  friend ::jlm::llvm::DeltaNode;
-
-public:
-  ~result() override;
-
-  result &
-  Copy(rvsdg::Output & origin, rvsdg::StructuralOutput * output) override;
-
-private:
-  explicit result(rvsdg::Output * origin)
-      : rvsdg::RegionResult(origin->region(), origin, nullptr, origin->Type())
-  {}
-
-  static result *
-  create(rvsdg::Output * origin)
-  {
-    auto result = new delta::result(origin);
-    origin->region()->append_result(result);
-    return result;
-  }
-
-public:
-  rvsdg::Output *
-  output() const noexcept
-  {
-    return rvsdg::RegionResult::output();
   }
 };
 

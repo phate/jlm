@@ -1073,7 +1073,7 @@ Andersen::AnalyzeDelta(const DeltaNode & delta)
   AnalyzeRegion(*delta.subregion());
 
   // Get the result register from the subregion
-  auto & resultRegister = *delta.result()->origin();
+  auto & resultRegister = *delta.result().origin();
 
   // If the type of the delta can point, the analysis should track its set of possible pointees
   bool canPoint = IsOrContainsPointerType(delta.type());
