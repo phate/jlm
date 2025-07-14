@@ -96,10 +96,10 @@ ComputeCallSummary(const rvsdg::LambdaNode & lambdaNode)
       continue;
     }
 
-    if (auto cvinput = dynamic_cast<delta::cvinput *>(input))
+    if (auto deltaNode = rvsdg::TryGetOwnerNode<DeltaNode>(*input))
     {
-      auto argument = cvinput->arguments.first();
-      worklist.insert(worklist.end(), argument->begin(), argument->end());
+      auto ctxVar = deltaNode->MapInputContextVar(*input);
+      worklist.insert(worklist.end(), ctxVar.inner->begin(), ctxVar.inner->end());
       continue;
     }
 

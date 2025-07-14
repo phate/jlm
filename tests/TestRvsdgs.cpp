@@ -1919,9 +1919,9 @@ DeltaTest3::SetupRvsdg()
         "",
         false);
 
-    auto g1Argument = delta->add_ctxvar(&g1);
+    auto ctxVar = delta->AddContextVar(g1);
 
-    return &delta->finalize(g1Argument);
+    return &delta->finalize(ctxVar.inner);
   };
 
   auto SetupF = [&](rvsdg::Output & g1, rvsdg::Output & g2)
@@ -2663,7 +2663,7 @@ PhiWithDeltaTest::SetupRvsdg()
 
   auto delta =
       DeltaNode::Create(pb.subregion(), arrayType, "myArray", linkage::external_linkage, "", false);
-  auto myArrayArgument = delta->add_ctxvar(myArrayRecVar.recref);
+  auto myArrayArgument = delta->AddContextVar(*myArrayRecVar.recref).inner;
 
   auto aggregateZero = ConstantAggregateZeroOperation::Create(*delta->subregion(), structType);
   auto & constantStruct =
@@ -2766,7 +2766,7 @@ EscapedMemoryTest1::SetupRvsdg()
         "",
         false);
 
-    auto contextVariableA = deltaNode->add_ctxvar(&deltaA);
+    auto contextVariableA = deltaNode->AddContextVar(deltaA).inner;
 
     return &deltaNode->finalize(contextVariableA);
   };
@@ -2783,7 +2783,7 @@ EscapedMemoryTest1::SetupRvsdg()
         "",
         false);
 
-    auto contextVariableX = deltaNode->add_ctxvar(&deltaX);
+    auto contextVariableX = deltaNode->AddContextVar(deltaX).inner;
 
     auto deltaOutput = &deltaNode->finalize(contextVariableX);
     GraphExport::Create(*deltaOutput, "y");

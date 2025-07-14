@@ -466,9 +466,9 @@ Delta()
       "",
       false);
 
-  auto xArgument = deltaNode->add_ctxvar(x);
-  deltaNode->add_ctxvar(y);
-  auto zArgument = deltaNode->add_ctxvar(z);
+  auto xArgument = deltaNode->AddContextVar(*x).inner;
+  deltaNode->AddContextVar(*y);
+  auto zArgument = deltaNode->AddContextVar(*z).inner;
 
   auto result = jlm::rvsdg::CreateOpNode<jlm::tests::TestOperation>(
                     { xArgument },

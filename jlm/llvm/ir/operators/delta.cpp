@@ -11,6 +11,39 @@ namespace jlm::llvm
 
 DeltaOperation::~DeltaOperation() noexcept = default;
 
+DeltaNode::ContextVar
+DeltaNode::AddContextVar(jlm::rvsdg::Output & origin)
+{
+  auto input = rvsdg::StructuralInput::create(this, &origin, origin.Type());
+  auto argument = &rvsdg::RegionArgument::Create(*subregion(), input, origin.Type());
+  return ContextVar{ input, argument };
+}
+
+[[nodiscard]] DeltaNode::ContextVar
+DeltaNode::MapInputContextVar(const rvsdg::Input & input) const noexcept
+{
+  JLM_ASSERT(rvsdg::TryGetOwnerNode<DeltaNode>(input) == this);
+  return ContextVar{ const_cast<rvsdg::Input *>(&input), subregion()->argument(input.index()) };
+}
+
+[[nodiscard]] std::optional<DeltaNode::ContextVar>
+DeltaNode::MapBinderContextVar(const rvsdg::Output & output) const noexcept
+{
+  JLM_ASSERT(rvsdg::TryGetOwnerRegion(output) == subregion());
+  return ContextVar{ input(output.index()), const_cast<rvsdg::Output *>(&output) };
+}
+
+std::vector<DeltaNode::ContextVar>
+DeltaNode::GetContextVars() const noexcept
+{
+  std::vector<ContextVar> vars;
+  for (size_t n = 0; n < ninputs(); ++n)
+  {
+    vars.push_back(ContextVar{ input(n), subregion()->argument(n) });
+  }
+  return vars;
+}
+
 std::string
 DeltaOperation::debug_string() const
 {
@@ -55,8 +88,8 @@ DeltaNode::copy(rvsdg::Region * region, rvsdg::SubstitutionMap & smap) const
   for (auto & cv : ctxvars())
   {
     auto origin = smap.lookup(cv.origin());
-    auto newcv = delta->add_ctxvar(origin);
-    subregionmap.insert(cv.argument(), newcv);
+    auto newCtxVar = delta->AddContextVar(*origin);
+    subregionmap.insert(cv.argument(), newCtxVar.inner);
   }
 
   // copy subregion
@@ -92,13 +125,6 @@ DeltaNode::ctxvars() const
 
   cvconstiterator begin(input(0));
   return ctxvar_constrange(begin, end);
-}
-
-delta::cvargument *
-DeltaNode::add_ctxvar(jlm::rvsdg::Output * origin)
-{
-  auto input = delta::cvinput::create(this, origin);
-  return delta::cvargument::create(subregion(), input);
 }
 
 delta::cvinput *

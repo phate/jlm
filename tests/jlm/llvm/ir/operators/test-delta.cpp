@@ -31,7 +31,7 @@ TestDeltaCreation()
       linkage::external_linkage,
       "",
       true);
-  auto dep = delta1->add_ctxvar(imp);
+  auto dep = delta1->AddContextVar(*imp).inner;
   auto d1 =
       &delta1->finalize(jlm::tests::create_testop(delta1->subregion(), { dep }, { valueType })[0]);
 
@@ -80,12 +80,12 @@ TestRemoveDeltaInputsWhere()
       linkage::external_linkage,
       "",
       true);
-  auto deltaInput0 = deltaNode->add_ctxvar(x)->input();
-  auto deltaInput1 = deltaNode->add_ctxvar(x)->input();
-  deltaNode->add_ctxvar(x)->input();
+  auto deltaInput0 = deltaNode->AddContextVar(*x).input;
+  auto deltaInput1 = deltaNode->AddContextVar(*x).input;
+  deltaNode->AddContextVar(*x);
 
   auto result = jlm::rvsdg::CreateOpNode<jlm::tests::TestOperation>(
-                    { deltaInput1->argument() },
+                    { deltaNode->MapInputContextVar(*deltaInput1).inner },
                     std::vector<std::shared_ptr<const Type>>{ valueType },
                     std::vector<std::shared_ptr<const Type>>{ valueType })
                     .output(0);
@@ -126,7 +126,7 @@ TestRemoveDeltaInputsWhere()
   assert(deltaNode->ncvarguments() == 1);
   assert(deltaNode->input(0) == deltaInput1);
   assert(deltaInput1->index() == 0);
-  assert(deltaInput1->argument()->index() == 0);
+  assert(deltaNode->MapInputContextVar(*deltaInput1).inner->index() == 0);
 }
 
 static void
@@ -149,12 +149,12 @@ TestPruneDeltaInputs()
       "",
       true);
 
-  deltaNode->add_ctxvar(x);
-  auto deltaInput1 = deltaNode->add_ctxvar(x)->input();
-  deltaNode->add_ctxvar(x);
+  deltaNode->AddContextVar(*x);
+  auto deltaInput1 = deltaNode->AddContextVar(*x).input;
+  deltaNode->AddContextVar(*x);
 
   auto result = jlm::rvsdg::CreateOpNode<jlm::tests::TestOperation>(
-                    { deltaInput1->argument() },
+                    { deltaNode->MapInputContextVar(*deltaInput1).inner },
                     std::vector<std::shared_ptr<const Type>>{ valueType },
                     std::vector<std::shared_ptr<const Type>>{ valueType })
                     .output(0);
@@ -169,9 +169,9 @@ TestPruneDeltaInputs()
   assert(deltaNode->ninputs() == 1);
   assert(deltaNode->ncvarguments() == 1);
   assert(deltaNode->input(0) == deltaInput1);
-  assert(deltaNode->cvargument(0) == deltaInput1->argument());
+  assert(deltaNode->subregion()->argument(0) == deltaNode->MapInputContextVar(*deltaInput1).inner);
   assert(deltaInput1->index() == 0);
-  assert(deltaInput1->argument()->index() == 0);
+  assert(deltaNode->MapInputContextVar(*deltaInput1).inner->index() == 0);
 }
 
 static void

@@ -1052,8 +1052,8 @@ ConvertDataNode(
     for (const auto & dependency : dataNode)
     {
       auto dependencyVariable = interProceduralGraphModule.variable(dependency);
-      auto argument = deltaNode->add_ctxvar(outerVariableMap.lookup(dependencyVariable));
-      regionalizedVariableMap.GetTopVariableMap().insert(dependencyVariable, argument);
+      auto ctxVar = deltaNode->AddContextVar(*outerVariableMap.lookup(dependencyVariable));
+      regionalizedVariableMap.GetTopVariableMap().insert(dependencyVariable, ctxVar.inner);
     }
 
     auto initOutput = ConvertDataNodeInitialization(

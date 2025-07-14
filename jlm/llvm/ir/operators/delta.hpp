@@ -145,6 +145,99 @@ private:
   {}
 
 public:
+  /**
+   * \brief Bound context variable
+   *
+   * Context variables may be bound at the point of creation of a
+   * delta abstraction. These are represented as inputs to the
+   * delta node itself, and made accessible to the body of the
+   * delta in the form of an initial argument to the subregion.
+   */
+  struct ContextVar
+  {
+    /**
+     * \brief Input variable bound into delta node
+     *
+     * The input port into the delta node that supplies the value
+     * of the context variable bound into the delta at the
+     * time the delta abstraction is built.
+     */
+    rvsdg::Input * input;
+
+    /**
+     * \brief Access to bound object in subregion.
+     *
+     * Supplies access to the value bound into the delta abstraction
+     * from inside the region contained in the delta node. This
+     * evaluates to the value bound into the delta.
+     */
+    rvsdg::Output * inner;
+  };
+
+  /**
+   * \brief Adds a context/free variable to the delta node.
+   *
+   * \param origin
+   *   The value to be bound into the delta node.
+   *
+   * \pre
+   *   \p origin must be from the same region as the delta node.
+   *
+   * \return The context variable argument of the delta abstraction.
+   */
+  ContextVar
+  AddContextVar(jlm::rvsdg::Output & origin);
+
+  /**
+   * \brief Maps input to context variable.
+   *
+   * \param input
+   *   Input to the delta node.
+   *
+   * \returns
+   *   The context variable description corresponding to the input.
+   *
+   * \pre
+   *   \p input must be input to this node.
+   *
+   * Returns the context variable description corresponding
+   * to this input of the delta node. All inputs to the delta
+   * node are by definition bound context variables that are
+   * accessible in the subregion through the corresponding
+   * argument.
+   */
+  [[nodiscard]] ContextVar
+  MapInputContextVar(const rvsdg::Input & input) const noexcept;
+
+  /**
+   * \brief Maps bound variable reference to context variable
+   *
+   * \param output
+   *   Region argument to delta subregion
+   *
+   * \returns
+   *   The context variable description corresponding to the argument
+   *
+   * \pre
+   *   \p output must be an argument to the subregion of this node
+   *
+   * Returns the context variable description corresponding
+   * to this bound variable reference in the delta node region.
+   */
+  [[nodiscard]] std::optional<ContextVar>
+  MapBinderContextVar(const rvsdg::Output & output) const noexcept;
+
+  /**
+   * \brief Gets all bound context variables
+   *
+   * \returns
+   *   The context variable descriptions.
+   *
+   * Returns all context variable descriptions.
+   */
+  [[nodiscard]] std::vector<ContextVar>
+  GetContextVars() const noexcept;
+
   ctxvar_range
   ctxvars();
 
@@ -201,15 +294,6 @@ public:
   {
     return ninputs();
   }
-
-  /**
-   * Adds a context/free variable to the delta node. The \p origin must be from the same region
-   * as the delta node.
-   *
-   * \return The context variable argument from the delta region.
-   */
-  delta::cvargument *
-  add_ctxvar(rvsdg::Output * origin);
 
   /**
    * Remove delta inputs and their respective arguments.

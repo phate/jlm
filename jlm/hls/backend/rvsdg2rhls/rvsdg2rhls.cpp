@@ -279,7 +279,7 @@ rename_delta(llvm::DeltaNode * odn)
   for (size_t i = 0; i < odn->ncvarguments(); i++)
   {
     auto input = odn->input(i);
-    auto nd = db->add_ctxvar(input->origin());
+    auto nd = db->AddContextVar(*input->origin()).inner;
     rmap.insert(input->argument(), nd);
   }
 
