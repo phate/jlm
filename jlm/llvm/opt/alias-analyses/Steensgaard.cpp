@@ -226,7 +226,7 @@ public:
       }
     }
 
-    if (is<delta::cvargument>(Output_))
+    if (rvsdg::TryGetRegionParentNode<DeltaNode>(*Output_))
     {
       auto dbgstr = Output_->region()->node()->DebugString();
       return jlm::util::strfmt(dbgstr, ":cv:", index);
@@ -1600,25 +1600,25 @@ void
 Steensgaard::AnalyzeDelta(const DeltaNode & delta)
 {
   // Handle context variables
-  for (auto & input : delta.ctxvars())
+  for (auto & ctxVar : delta.GetContextVars())
   {
-    auto & origin = *input.origin();
+    auto & origin = *ctxVar.input->origin();
 
     if (HasOrContainsPointerType(origin))
     {
       auto & originLocation = Context_->GetLocation(origin);
-      auto & argumentLocation = Context_->GetOrInsertRegisterLocation(*input.arguments.first());
+      auto & argumentLocation = Context_->GetOrInsertRegisterLocation(*ctxVar.inner);
       Context_->Join(originLocation, argumentLocation);
     }
   }
 
   AnalyzeRegion(*delta.subregion());
 
-  auto & deltaOutputLocation = Context_->GetOrInsertRegisterLocation(*delta.output());
+  auto & deltaOutputLocation = Context_->GetOrInsertRegisterLocation(delta.output());
   auto & deltaLocation = Context_->InsertDeltaLocation(delta);
   deltaOutputLocation.SetPointsTo(deltaLocation);
 
-  auto & origin = *delta.result()->origin();
+  auto & origin = *delta.result().origin();
   if (HasOrContainsPointerType(origin))
   {
     auto & originLocation = Context_->GetLocation(origin);

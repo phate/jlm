@@ -110,10 +110,10 @@ public:
 
   AssignmentOperation(AssignmentOperation &&) = default;
 
-  virtual bool
+  bool
   operator==(const Operation & other) const noexcept override;
 
-  virtual std::string
+  [[nodiscard]] std::string
   debug_string() const override;
 
   [[nodiscard]] std::unique_ptr<Operation>
@@ -180,10 +180,10 @@ private:
   {}
 
 public:
-  virtual bool
+  bool
   operator==(const Operation & other) const noexcept override;
 
-  virtual std::string
+  [[nodiscard]] std::string
   debug_string() const override;
 
   [[nodiscard]] std::unique_ptr<Operation>
@@ -263,10 +263,10 @@ public:
       throw jlm::util::error("expected bitstring type.");
   }
 
-  virtual bool
+  bool
   operator==(const Operation & other) const noexcept override;
 
-  virtual std::string
+  [[nodiscard]] std::string
   debug_string() const override;
 
   [[nodiscard]] std::unique_ptr<Operation>
@@ -326,10 +326,10 @@ public:
       throw jlm::util::error("expected bitstring type.");
   }
 
-  virtual bool
+  bool
   operator==(const Operation & other) const noexcept override;
 
-  virtual std::string
+  [[nodiscard]] std::string
   debug_string() const override;
 
   [[nodiscard]] std::unique_ptr<Operation>
@@ -369,10 +369,10 @@ public:
       : SimpleOperation({ std::move(srctype) }, { std::move(dsttype) })
   {}
 
-  virtual bool
+  bool
   operator==(const Operation & other) const noexcept override;
 
-  virtual std::string
+  [[nodiscard]] std::string
   debug_string() const override;
 
   [[nodiscard]] std::unique_ptr<Operation>
@@ -403,10 +403,10 @@ public:
       : SimpleOperation({ std::move(type) }, {})
   {}
 
-  virtual bool
+  bool
   operator==(const Operation & other) const noexcept override;
 
-  virtual std::string
+  [[nodiscard]] std::string
   debug_string() const override;
 
   [[nodiscard]] std::unique_ptr<Operation>
@@ -504,10 +504,10 @@ public:
       throw jlm::util::error("expected pointer type.");
   }
 
-  virtual bool
+  bool
   operator==(const Operation & other) const noexcept override;
 
-  virtual std::string
+  [[nodiscard]] std::string
   debug_string() const override;
 
   [[nodiscard]] std::unique_ptr<Operation>
@@ -581,10 +581,10 @@ public:
       throw jlm::util::error("expected bitstring type.");
   }
 
-  virtual bool
+  bool
   operator==(const Operation & other) const noexcept override;
 
-  virtual std::string
+  [[nodiscard]] std::string
   debug_string() const override;
 
   [[nodiscard]] std::unique_ptr<Operation>
@@ -624,7 +624,7 @@ public:
 class ConstantDataArray final : public rvsdg::SimpleOperation
 {
 public:
-  virtual ~ConstantDataArray();
+  ~ConstantDataArray() noexcept override;
 
   ConstantDataArray(const std::shared_ptr<const jlm::rvsdg::ValueType> & type, size_t size)
       : SimpleOperation({ size, type }, { ArrayType::Create(type, size) })
@@ -633,10 +633,10 @@ public:
       throw jlm::util::error("size equals zero.");
   }
 
-  virtual bool
+  bool
   operator==(const Operation & other) const noexcept override;
 
-  virtual std::string
+  [[nodiscard]] std::string
   debug_string() const override;
 
   [[nodiscard]] std::unique_ptr<Operation>
@@ -705,20 +705,20 @@ public:
         cmp_(cmp)
   {}
 
-  virtual bool
+  bool
   operator==(const Operation & other) const noexcept override;
 
-  virtual std::string
+  [[nodiscard]] std::string
   debug_string() const override;
 
   [[nodiscard]] std::unique_ptr<Operation>
   copy() const override;
 
-  virtual jlm::rvsdg::binop_reduction_path_t
+  jlm::rvsdg::binop_reduction_path_t
   can_reduce_operand_pair(const jlm::rvsdg::Output * op1, const jlm::rvsdg::Output * op2)
       const noexcept override;
 
-  virtual jlm::rvsdg::Output *
+  jlm::rvsdg::Output *
   reduce_operand_pair(
       jlm::rvsdg::binop_reduction_path_t path,
       jlm::rvsdg::Output * op1,
@@ -783,19 +783,19 @@ public:
       throw jlm::util::error("# destination bits must be greater than # source bits.");
   }
 
-  virtual bool
+  bool
   operator==(const Operation & other) const noexcept override;
 
-  virtual std::string
+  [[nodiscard]] std::string
   debug_string() const override;
 
   [[nodiscard]] std::unique_ptr<Operation>
   copy() const override;
 
-  virtual jlm::rvsdg::unop_reduction_path_t
+  jlm::rvsdg::unop_reduction_path_t
   can_reduce_operand(const jlm::rvsdg::Output * operand) const noexcept override;
 
-  virtual jlm::rvsdg::Output *
+  jlm::rvsdg::Output *
   reduce_operand(jlm::rvsdg::unop_reduction_path_t path, jlm::rvsdg::Output * operand)
       const override;
 
@@ -852,7 +852,7 @@ private:
 class ConstantFP final : public rvsdg::SimpleOperation
 {
 public:
-  virtual ~ConstantFP();
+  ~ConstantFP() noexcept override;
 
   inline ConstantFP(const fpsize & size, const ::llvm::APFloat & constant)
       : SimpleOperation({}, { FloatingPointType::Create(size) }),
@@ -864,10 +864,10 @@ public:
         constant_(constant)
   {}
 
-  virtual bool
+  bool
   operator==(const Operation & other) const noexcept override;
 
-  virtual std::string
+  [[nodiscard]] std::string
   debug_string() const override;
 
   [[nodiscard]] std::unique_ptr<Operation>
@@ -941,10 +941,10 @@ public:
         cmp_(cmp)
   {}
 
-  virtual bool
+  bool
   operator==(const Operation & other) const noexcept override;
 
-  virtual std::string
+  [[nodiscard]] std::string
   debug_string() const override;
 
   [[nodiscard]] std::unique_ptr<Operation>
@@ -1150,10 +1150,10 @@ public:
         op_(op)
   {}
 
-  virtual bool
+  bool
   operator==(const Operation & other) const noexcept override;
 
-  virtual std::string
+  [[nodiscard]] std::string
   debug_string() const override;
 
   [[nodiscard]] std::unique_ptr<Operation>
@@ -1234,10 +1234,10 @@ public:
       throw jlm::util::error("destination type size must be bigger than source type size.");
   }
 
-  virtual bool
+  bool
   operator==(const Operation & other) const noexcept override;
 
-  virtual std::string
+  [[nodiscard]] std::string
   debug_string() const override;
 
   [[nodiscard]] std::unique_ptr<Operation>
@@ -1291,10 +1291,10 @@ public:
       : UnaryOperation(fpt, fpt)
   {}
 
-  virtual bool
+  bool
   operator==(const Operation & other) const noexcept override;
 
-  virtual std::string
+  [[nodiscard]] std::string
   debug_string() const override;
 
   [[nodiscard]] std::unique_ptr<Operation>
@@ -1365,10 +1365,10 @@ public:
       throw jlm::util::error("destination type size must be smaller than source size type.");
   }
 
-  virtual bool
+  bool
   operator==(const Operation & other) const noexcept override;
 
-  virtual std::string
+  [[nodiscard]] std::string
   debug_string() const override;
 
   [[nodiscard]] std::unique_ptr<Operation>
@@ -1426,10 +1426,10 @@ public:
   VariadicArgumentListOperation &
   operator=(VariadicArgumentListOperation &&) = delete;
 
-  virtual bool
+  bool
   operator==(const Operation & other) const noexcept override;
 
-  virtual std::string
+  [[nodiscard]] std::string
   debug_string() const override;
 
   [[nodiscard]] std::unique_ptr<Operation>
@@ -1491,10 +1491,10 @@ public:
   BitCastOperation &
   operator=(Operation &&) = delete;
 
-  virtual bool
+  bool
   operator==(const Operation & other) const noexcept override;
 
-  virtual std::string
+  [[nodiscard]] std::string
   debug_string() const override;
 
   [[nodiscard]] std::unique_ptr<Operation>
@@ -1546,16 +1546,16 @@ private:
 class ConstantStruct final : public rvsdg::SimpleOperation
 {
 public:
-  virtual ~ConstantStruct();
+  ~ConstantStruct() override;
 
   inline ConstantStruct(std::shared_ptr<const StructType> type)
       : SimpleOperation(create_srctypes(*type), { type })
   {}
 
-  virtual bool
+  bool
   operator==(const Operation & other) const noexcept override;
 
-  virtual std::string
+  [[nodiscard]] std::string
   debug_string() const override;
 
   [[nodiscard]] std::unique_ptr<Operation>
@@ -1642,19 +1642,19 @@ public:
       throw jlm::util::error("expected operand's #bits to be larger than results' #bits.");
   }
 
-  virtual bool
+  bool
   operator==(const Operation & other) const noexcept override;
 
-  virtual std::string
+  [[nodiscard]] std::string
   debug_string() const override;
 
   [[nodiscard]] std::unique_ptr<Operation>
   copy() const override;
 
-  virtual jlm::rvsdg::unop_reduction_path_t
+  jlm::rvsdg::unop_reduction_path_t
   can_reduce_operand(const jlm::rvsdg::Output * operand) const noexcept override;
 
-  virtual jlm::rvsdg::Output *
+  jlm::rvsdg::Output *
   reduce_operand(jlm::rvsdg::unop_reduction_path_t path, jlm::rvsdg::Output * operand)
       const override;
 
@@ -1725,19 +1725,19 @@ public:
       throw jlm::util::error("expected floating point type.");
   }
 
-  virtual bool
+  bool
   operator==(const Operation & other) const noexcept override;
 
-  virtual std::string
+  [[nodiscard]] std::string
   debug_string() const override;
 
   [[nodiscard]] std::unique_ptr<Operation>
   copy() const override;
 
-  virtual jlm::rvsdg::unop_reduction_path_t
+  jlm::rvsdg::unop_reduction_path_t
   can_reduce_operand(const jlm::rvsdg::Output * operand) const noexcept override;
 
-  virtual jlm::rvsdg::Output *
+  jlm::rvsdg::Output *
   reduce_operand(jlm::rvsdg::unop_reduction_path_t path, jlm::rvsdg::Output * operand)
       const override;
 
@@ -1782,10 +1782,10 @@ public:
       throw jlm::util::error("expected floating point type.");
   }
 
-  virtual bool
+  bool
   operator==(const Operation & other) const noexcept override;
 
-  virtual std::string
+  [[nodiscard]] std::string
   debug_string() const override;
 
   [[nodiscard]] std::unique_ptr<Operation>
@@ -1826,10 +1826,10 @@ public:
       throw jlm::util::error("size equals zero.\n");
   }
 
-  virtual bool
+  bool
   operator==(const Operation & other) const noexcept override;
 
-  virtual std::string
+  [[nodiscard]] std::string
   debug_string() const override;
 
   [[nodiscard]] std::unique_ptr<Operation>
@@ -1893,10 +1893,10 @@ public:
       throw jlm::util::error("expected array, struct, or vector type.\n");
   }
 
-  virtual bool
+  bool
   operator==(const Operation & other) const noexcept override;
 
-  virtual std::string
+  [[nodiscard]] std::string
   debug_string() const override;
 
   [[nodiscard]] std::unique_ptr<Operation>
@@ -1927,10 +1927,10 @@ public:
       : SimpleOperation({ vtype, btype }, { vtype->Type() })
   {}
 
-  virtual bool
+  bool
   operator==(const Operation & other) const noexcept override;
 
-  virtual std::string
+  [[nodiscard]] std::string
   debug_string() const override;
 
   [[nodiscard]] std::unique_ptr<Operation>
@@ -1971,10 +1971,10 @@ public:
         Mask_(mask)
   {}
 
-  virtual bool
+  bool
   operator==(const Operation & other) const noexcept override;
 
-  virtual std::string
+  [[nodiscard]] std::string
   debug_string() const override;
 
   [[nodiscard]] std::unique_ptr<Operation>
@@ -2020,10 +2020,10 @@ public:
       : SimpleOperation({ vt->size(), vt->Type() }, { vt })
   {}
 
-  virtual bool
+  bool
   operator==(const Operation & other) const noexcept override;
 
-  virtual std::string
+  [[nodiscard]] std::string
   debug_string() const override;
 
   [[nodiscard]] std::unique_ptr<Operation>
@@ -2062,10 +2062,10 @@ public:
     }
   }
 
-  virtual bool
+  bool
   operator==(const Operation & other) const noexcept override;
 
-  virtual std::string
+  [[nodiscard]] std::string
   debug_string() const override;
 
   [[nodiscard]] std::unique_ptr<Operation>
@@ -2152,10 +2152,10 @@ public:
     return *static_cast<const rvsdg::UnaryOperation *>(op_.get());
   }
 
-  virtual bool
+  bool
   operator==(const Operation & other) const noexcept override;
 
-  virtual std::string
+  [[nodiscard]] std::string
   debug_string() const override;
 
   [[nodiscard]] std::unique_ptr<Operation>
@@ -2245,10 +2245,10 @@ public:
     return *static_cast<const rvsdg::BinaryOperation *>(op_.get());
   }
 
-  virtual bool
+  bool
   operator==(const Operation & other) const noexcept override;
 
-  virtual std::string
+  [[nodiscard]] std::string
   debug_string() const override;
 
   [[nodiscard]] std::unique_ptr<Operation>
@@ -2286,10 +2286,10 @@ private:
   {}
 
 public:
-  virtual bool
+  bool
   operator==(const Operation & other) const noexcept override;
 
-  virtual std::string
+  [[nodiscard]] std::string
   debug_string() const override;
 
   [[nodiscard]] std::unique_ptr<Operation>
@@ -2339,10 +2339,10 @@ public:
       throw jlm::util::error("expected at least one index.");
   }
 
-  virtual bool
+  bool
   operator==(const Operation & other) const noexcept override;
 
-  virtual std::string
+  [[nodiscard]] std::string
   debug_string() const override;
 
   [[nodiscard]] std::unique_ptr<Operation>
@@ -2415,10 +2415,10 @@ public:
       : SimpleOperation({ std::move(btype) }, { PointerType::Create(), MemoryStateType::Create() })
   {}
 
-  virtual bool
+  bool
   operator==(const Operation & other) const noexcept override;
 
-  virtual std::string
+  [[nodiscard]] std::string
   debug_string() const override;
 
   [[nodiscard]] std::unique_ptr<Operation>

@@ -41,19 +41,19 @@ public:
     return numAlternatives_;
   }
 
-  virtual std::string
+  [[nodiscard]] std::string
   debug_string() const override;
 
   [[nodiscard]] std::unique_ptr<Operation>
   copy() const override;
 
-  virtual bool
+  bool
   operator==(const Operation & other) const noexcept override;
 
   /**
    * \brief Returns the type of pattern matching content produced in a branch
    */
-  std::shared_ptr<const Type>
+  [[nodiscard]] std::shared_ptr<const Type>
   GetMatchContentType(std::size_t alternative) const;
 
 private:
@@ -345,7 +345,7 @@ public:
     RemoveGammaOutputsWhere(match);
   }
 
-  virtual GammaNode *
+  GammaNode *
   copy(jlm::rvsdg::Region * region, SubstitutionMap & smap) const override;
 
 private:

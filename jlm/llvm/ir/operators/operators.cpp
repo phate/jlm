@@ -303,8 +303,7 @@ PtrToIntOperation::reduce_operand(rvsdg::unop_reduction_path_t, rvsdg::Output *)
   JLM_UNREACHABLE("Not implemented!");
 }
 
-ConstantDataArray::~ConstantDataArray()
-{}
+ConstantDataArray::~ConstantDataArray() noexcept = default;
 
 bool
 ConstantDataArray::operator==(const Operation & other) const noexcept
@@ -414,10 +413,7 @@ ZExtOperation::reduce_operand(rvsdg::unop_reduction_path_t path, rvsdg::Output *
   return nullptr;
 }
 
-/* floating point constant operator */
-
-ConstantFP::~ConstantFP()
-{}
+ConstantFP::~ConstantFP() noexcept = default;
 
 bool
 ConstantFP::operator==(const Operation & other) const noexcept

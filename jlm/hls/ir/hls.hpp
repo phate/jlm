@@ -198,8 +198,7 @@ private:
 class merge_op final : public rvsdg::SimpleOperation
 {
 public:
-  virtual ~merge_op()
-  {}
+  ~merge_op() noexcept override = default;
 
   merge_op(size_t nalternatives, const std::shared_ptr<const jlm::rvsdg::Type> & type)
       : SimpleOperation({ nalternatives, type }, { type })
@@ -756,8 +755,7 @@ public:
 class loop_node final : public rvsdg::StructuralNode
 {
 public:
-  virtual ~loop_node()
-  {}
+  ~loop_node() noexcept override = default;
 
 private:
   inline loop_node(rvsdg::Region * parent)
@@ -805,7 +803,7 @@ public:
   jlm::rvsdg::Output *
   add_loopconst(jlm::rvsdg::Output * origin);
 
-  virtual loop_node *
+  loop_node *
   copy(rvsdg::Region * region, rvsdg::SubstitutionMap & smap) const override;
 };
 
@@ -829,7 +827,7 @@ public:
   BundleType &
   operator=(BundleType &&) = delete;
 
-  virtual bool
+  bool
   operator==(const jlm::rvsdg::Type & other) const noexcept override
   {
     auto type = dynamic_cast<const BundleType *>(&other);
@@ -866,7 +864,7 @@ public:
     return {};
   }
 
-  virtual std::string
+  [[nodiscard]] std::string
   debug_string() const override
   {
     return "bundle";

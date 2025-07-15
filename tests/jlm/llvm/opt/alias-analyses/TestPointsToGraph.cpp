@@ -67,7 +67,7 @@ private:
       {
         auto & deltaPtgNode = aa::PointsToGraph::DeltaNode::Create(*PointsToGraph_, *deltaNode);
         auto & registerNode =
-            aa::PointsToGraph::RegisterNode::Create(*PointsToGraph_, { deltaNode->output() });
+            aa::PointsToGraph::RegisterNode::Create(*PointsToGraph_, { &deltaNode->output() });
         registerNode.AddEdge(deltaPtgNode);
 
         AnalyzeRegion(*deltaNode->subregion());

@@ -18,10 +18,10 @@ public:
 
   constexpr ValueType() noexcept = default;
 
-  virtual std::string
+  [[nodiscard]] std::string
   debug_string() const override;
 
-  virtual bool
+  bool
   operator==(const rvsdg::Type & other) const noexcept override;
 
   [[nodiscard]] std::size_t
@@ -38,10 +38,10 @@ public:
 
   constexpr StateType() noexcept = default;
 
-  virtual std::string
+  [[nodiscard]] std::string
   debug_string() const override;
 
-  virtual bool
+  bool
   operator==(const rvsdg::Type & other) const noexcept override;
 
   [[nodiscard]] std::size_t

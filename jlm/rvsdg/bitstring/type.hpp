@@ -18,7 +18,7 @@ namespace jlm::rvsdg
 class bittype final : public jlm::rvsdg::ValueType
 {
 public:
-  virtual ~bittype() noexcept;
+  ~bittype() noexcept override;
 
   inline constexpr bittype(size_t nbits)
       : nbits_(nbits)
@@ -30,10 +30,10 @@ public:
     return nbits_;
   }
 
-  virtual std::string
+  [[nodiscard]] std::string
   debug_string() const override;
 
-  virtual bool
+  bool
   operator==(const jlm::rvsdg::Type & other) const noexcept override;
 
   [[nodiscard]] std::size_t

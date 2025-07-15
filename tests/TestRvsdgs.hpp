@@ -2101,11 +2101,11 @@ public:
     return *Delta_;
   }
 
-  [[nodiscard]] const jlm::llvm::delta::output &
+  [[nodiscard]] const rvsdg::Output &
   GetDeltaOutput() const noexcept
   {
     JLM_ASSERT(Delta_);
-    return *Delta_->output();
+    return Delta_->output();
   }
 
   [[nodiscard]] const llvm::GraphImport &
