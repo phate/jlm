@@ -54,11 +54,11 @@ TestDeltaCreation()
 
   assert(delta1->linkage() == linkage::external_linkage);
   assert(delta1->constant() == true);
-  assert(delta1->type() == *valueType);
+  assert(*delta1->Type() == *valueType);
 
   assert(delta2->linkage() == linkage::internal_linkage);
   assert(delta2->constant() == false);
-  assert(delta2->type() == *valueType);
+  assert(*delta2->Type() == *valueType);
 }
 
 static void
