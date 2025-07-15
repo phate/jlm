@@ -77,12 +77,13 @@ PlaceBuffer(rvsdg::Output * out, size_t capacity, bool passThrough)
   // TODO: handle out being a buf?
   auto [bufferNode, bufferOperation] = rvsdg::TryGetSimpleNodeAndOp<BufferOperation>(*user);
   if (bufferOperation
-      && (bufferOperation->pass_through != passThrough || bufferOperation->capacity != capacity))
+      && (bufferOperation->IsPassThrough() != passThrough
+          || bufferOperation->Capacity() != capacity))
   {
     // replace buffer and keep larger size
     auto node = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*user);
-    passThrough = passThrough && bufferOperation->pass_through;
-    capacity = std::max(capacity, bufferOperation->capacity);
+    passThrough = passThrough && bufferOperation->IsPassThrough();
+    capacity = std::max(capacity, bufferOperation->Capacity());
     auto bufOut = BufferOperation::create(*node->input(0)->origin(), capacity, passThrough)[0];
     node->output(0)->divert_users(bufOut);
     JLM_ASSERT(node->IsDead());
@@ -190,8 +191,8 @@ OptimizeBuffer(rvsdg::SimpleNode * node)
   {
     auto node2 = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*user);
     // merge buffers and keep larger size
-    bool passThrough = buf->pass_through && bufferOperation->pass_through;
-    auto capacity = std::max(buf->capacity, bufferOperation->capacity);
+    bool passThrough = buf->IsPassThrough() && bufferOperation->IsPassThrough();
+    auto capacity = std::max(buf->Capacity(), bufferOperation->Capacity());
     auto newOut = BufferOperation::create(*node->input(0)->origin(), capacity, passThrough)[0];
     JLM_ASSERT(node2->region() == newOut->region());
     node2->output(0)->divert_users(newOut);
@@ -235,14 +236,14 @@ OptimizeLoop(loop_node * loopNode)
       // place new buffers
       PlaceBuffer(
           branchNode->input(1)->origin(),
-          oldBufferOperation->capacity,
-          oldBufferOperation->pass_through);
+          oldBufferOperation->Capacity(),
+          oldBufferOperation->IsPassThrough());
       // this buffer should just make the fork buf non-passthrough - needed to avoid combinatorial
       // cycle
       PlaceBuffer(
           branchNode->input(0)->origin(),
-          oldBufferOperation->capacity,
-          oldBufferOperation->pass_through);
+          oldBufferOperation->Capacity(),
+          oldBufferOperation->IsPassThrough());
       // remove old buffer
       oldBufNode->output(0)->divert_users(oldBufInput->origin());
       JLM_ASSERT(oldBufNode->IsDead());
@@ -396,7 +397,7 @@ NodeCycles(rvsdg::SimpleNode * node, std::vector<size_t> & input_cycles)
   }
   else if (auto op = dynamic_cast<const BufferOperation *>(&node->GetOperation()))
   {
-    if (op->pass_through)
+    if (op->IsPassThrough())
     {
       return { max_cycles + 0 };
     }
@@ -444,7 +445,7 @@ NodeCapacity(rvsdg::SimpleNode * node, std::vector<size_t> & input_capacities)
   }
   else if (auto op = dynamic_cast<const BufferOperation *>(&node->GetOperation()))
   {
-    return { min_capacity + op->capacity };
+    return { min_capacity + op->Capacity() };
   }
   else if (dynamic_cast<const AddressQueueOperation *>(&node->GetOperation()))
   {
@@ -777,8 +778,8 @@ PlaceBufferLoop(rvsdg::Output * out, size_t min_capacity, bool passThrough)
       bufferOperation)
   {
     // replace buffer and keep larger size
-    passThrough = passThrough && bufferOperation->pass_through;
-    size_t capacity = round_up_pow2(bufferOperation->capacity + min_capacity);
+    passThrough = passThrough && bufferOperation->IsPassThrough();
+    size_t capacity = round_up_pow2(bufferOperation->Capacity() + min_capacity);
     // if the maximum buffer size is exceeded place a smaller buffer, but pretend a large one was
     // placed, to prevent additional buffers further down
     auto actual_capacity = std::min(capacity, MaximumBufferSize);
