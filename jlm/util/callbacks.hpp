@@ -119,16 +119,15 @@ private:
   class callback_impl final : public Callback::callback_impl
   {
   public:
-    virtual ~callback_impl() noexcept
-    {}
+    ~callback_impl() noexcept override = default;
 
     inline callback_impl(notifier * n, function_type fn)
         : notifier_(n),
           fn_(std::move(fn))
     {}
 
-    virtual void
-    disconnect() noexcept
+    void
+    disconnect() noexcept override
     {
       if (!notifier_)
       {

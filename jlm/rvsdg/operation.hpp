@@ -85,7 +85,7 @@ private:
 class StructuralOperation : public Operation
 {
 public:
-  virtual bool
+  bool
   operator==(const Operation & other) const noexcept override;
 };
 

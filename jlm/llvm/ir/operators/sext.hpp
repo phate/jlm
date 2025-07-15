@@ -44,10 +44,10 @@ public:
       throw jlm::util::error("expected operand's #bits to be smaller than results' #bits.");
   }
 
-  virtual bool
+  bool
   operator==(const Operation & other) const noexcept override;
 
-  virtual std::string
+  [[nodiscard]] std::string
   debug_string() const override;
 
   [[nodiscard]] std::unique_ptr<Operation>
