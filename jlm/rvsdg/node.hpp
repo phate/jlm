@@ -844,11 +844,11 @@ public:
   }
 
 private:
-  util::intrusive_list_anchor<Node> region_node_list_anchor_;
+  util::intrusive_list_anchor<Node> region_node_list_anchor_{};
 
-  util::intrusive_list_anchor<Node> region_top_node_list_anchor_;
+  util::intrusive_list_anchor<Node> region_top_node_list_anchor_{};
 
-  util::intrusive_list_anchor<Node> region_bottom_node_list_anchor_;
+  util::intrusive_list_anchor<Node> region_bottom_node_list_anchor_{};
 
 public:
   typedef util::intrusive_list_accessor<Node, &Node::region_node_list_anchor_>
