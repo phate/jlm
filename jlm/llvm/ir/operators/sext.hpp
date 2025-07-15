@@ -53,10 +53,10 @@ public:
   [[nodiscard]] std::unique_ptr<Operation>
   copy() const override;
 
-  virtual rvsdg::unop_reduction_path_t
+  rvsdg::unop_reduction_path_t
   can_reduce_operand(const rvsdg::Output * operand) const noexcept override;
 
-  virtual rvsdg::Output *
+  rvsdg::Output *
   reduce_operand(rvsdg::unop_reduction_path_t path, rvsdg::Output * operand) const override;
 
   inline size_t

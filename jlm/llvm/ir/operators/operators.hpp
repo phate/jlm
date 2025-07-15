@@ -624,7 +624,7 @@ public:
 class ConstantDataArray final : public rvsdg::SimpleOperation
 {
 public:
-  virtual ~ConstantDataArray();
+  ~ConstantDataArray() noexcept override;
 
   ConstantDataArray(const std::shared_ptr<const jlm::rvsdg::ValueType> & type, size_t size)
       : SimpleOperation({ size, type }, { ArrayType::Create(type, size) })
@@ -852,7 +852,7 @@ private:
 class ConstantFP final : public rvsdg::SimpleOperation
 {
 public:
-  virtual ~ConstantFP();
+  ~ConstantFP() noexcept override;
 
   inline ConstantFP(const fpsize & size, const ::llvm::APFloat & constant)
       : SimpleOperation({}, { FloatingPointType::Create(size) }),

@@ -345,7 +345,7 @@ public:
     RemoveGammaOutputsWhere(match);
   }
 
-  virtual GammaNode *
+  GammaNode *
   copy(jlm::rvsdg::Region * region, SubstitutionMap & smap) const override;
 
 private:

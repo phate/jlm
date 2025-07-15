@@ -45,13 +45,13 @@ public:
   DeltaOperation &
   operator=(DeltaOperation &&) = delete;
 
-  virtual std::string
+  [[nodiscard]] std::string
   debug_string() const override;
 
   [[nodiscard]] std::unique_ptr<Operation>
   copy() const override;
 
-  virtual bool
+  [[nodiscard]] bool
   operator==(const Operation & other) const noexcept override;
 
   const std::string &
@@ -258,10 +258,10 @@ public:
   delta::result *
   result() const noexcept;
 
-  virtual DeltaNode *
+  DeltaNode *
   copy(rvsdg::Region * region, const std::vector<jlm::rvsdg::Output *> & operands) const override;
 
-  virtual DeltaNode *
+  DeltaNode *
   copy(rvsdg::Region * region, rvsdg::SubstitutionMap & smap) const override;
 
   /**

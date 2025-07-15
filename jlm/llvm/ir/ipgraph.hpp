@@ -236,13 +236,13 @@ public:
     return FunctionType_;
   }
 
-  virtual const llvm::linkage &
+  [[nodiscard]] const llvm::linkage &
   linkage() const noexcept override;
 
-  virtual const std::string &
+  [[nodiscard]] const std::string &
   name() const noexcept override;
 
-  virtual bool
+  [[nodiscard]] bool
   hasBody() const noexcept override;
 
   const attributeset &
@@ -294,9 +294,9 @@ private:
 class fctvariable final : public GlobalVariable
 {
 public:
-  virtual ~fctvariable();
+  ~fctvariable() noexcept override;
 
-  fctvariable(FunctionNode * node)
+  explicit fctvariable(FunctionNode * node)
       : GlobalVariable(node->Type(), node->name()),
         node_(node)
   {}
@@ -385,7 +385,7 @@ private:
   {}
 
 public:
-  virtual const PointerType &
+  [[nodiscard]] const PointerType &
   type() const noexcept override;
 
   std::shared_ptr<const jlm::rvsdg::Type>
@@ -397,13 +397,13 @@ public:
     return ValueType_;
   }
 
-  const std::string &
+  [[nodiscard]] const std::string &
   name() const noexcept override;
 
-  virtual const llvm::linkage &
+  [[nodiscard]] const llvm::linkage &
   linkage() const noexcept override;
 
-  virtual bool
+  [[nodiscard]] bool
   hasBody() const noexcept override;
 
   inline bool
