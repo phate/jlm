@@ -351,18 +351,18 @@ RecursiveData()
   jlm::rvsdg::Output *delta1 = nullptr, *delta2 = nullptr;
   {
     auto delta = DeltaNode::Create(region, vt, "test-delta1", linkage::external_linkage, "", false);
-    auto dep1 = delta->add_ctxvar(r2.recref);
-    auto dep2 = delta->add_ctxvar(dep.inner);
+    auto dep1 = delta->AddContextVar(*r2.recref).inner;
+    auto dep2 = delta->AddContextVar(*dep.inner).inner;
     delta1 =
-        delta->finalize(jlm::tests::create_testop(delta->subregion(), { dep1, dep2 }, { vt })[0]);
+        &delta->finalize(jlm::tests::create_testop(delta->subregion(), { dep1, dep2 }, { vt })[0]);
   }
 
   {
     auto delta = DeltaNode::Create(region, vt, "test-delta2", linkage::external_linkage, "", false);
-    auto dep1 = delta->add_ctxvar(r1.recref);
-    auto dep2 = delta->add_ctxvar(dep.inner);
+    auto dep1 = delta->AddContextVar(*r1.recref).inner;
+    auto dep2 = delta->AddContextVar(*dep.inner).inner;
     delta2 =
-        delta->finalize(jlm::tests::create_testop(delta->subregion(), { dep1, dep2 }, { vt })[0]);
+        &delta->finalize(jlm::tests::create_testop(delta->subregion(), { dep1, dep2 }, { vt })[0]);
   }
 
   r1.result->divert_to(delta1);

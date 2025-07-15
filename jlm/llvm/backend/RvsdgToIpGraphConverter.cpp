@@ -482,7 +482,7 @@ RvsdgToIpGraphConverter::ConvertPhiNode(const rvsdg::PhiNode & phiNode)
       const auto variable =
           util::AssertedCast<const GlobalValue>(Context_->GetVariable(subregion->argument(n)));
       variable->node()->set_initialization(CreateInitialization(*deltaNode));
-      Context_->InsertVariable(deltaNode->output(), variable);
+      Context_->InsertVariable(&deltaNode->output(), variable);
     }
     else
     {
@@ -515,7 +515,7 @@ RvsdgToIpGraphConverter::ConvertDeltaNode(const DeltaNode & deltaNode)
       deltaNode.constant());
   dataNode->set_initialization(CreateInitialization(deltaNode));
   const auto variable = ipGraphModule.create_global_value(dataNode);
-  Context_->InsertVariable(deltaNode.output(), variable);
+  Context_->InsertVariable(&deltaNode.output(), variable);
 }
 
 void
