@@ -440,22 +440,34 @@ public:
       size_t capacity,
       bool pass_through)
       : SimpleOperation({ type }, { type }),
-        capacity(capacity),
-        pass_through(pass_through)
+        Capacity_(capacity),
+        IsPassThrough_(pass_through)
   {}
+
+  [[nodiscard]] std::size_t
+  Capacity() const noexcept
+  {
+    return Capacity_;
+  }
+
+  [[nodiscard]] bool
+  IsPassThrough() const noexcept
+  {
+    return IsPassThrough_;
+  }
 
   bool
   operator==(const Operation & other) const noexcept override
   {
     const auto ot = dynamic_cast<const BufferOperation *>(&other);
-    return ot && ot->capacity == capacity && ot->pass_through == pass_through
+    return ot && ot->Capacity() == Capacity() && ot->IsPassThrough() == IsPassThrough()
         && *ot->result(0) == *result(0);
   }
 
-  std::string
+  [[nodiscard]] std::string
   debug_string() const override
   {
-    return util::strfmt("HLS_BUF_", (pass_through ? "P_" : ""), capacity);
+    return util::strfmt("HLS_BUF_", (IsPassThrough() ? "P_" : ""), Capacity());
   }
 
   [[nodiscard]] std::unique_ptr<Operation>
@@ -471,9 +483,9 @@ public:
         &rvsdg::CreateOpNode<BufferOperation>({ &value }, value.Type(), capacity, pass_through));
   }
 
-  // FIXME: privatize attributes
-  size_t capacity;
-  bool pass_through;
+private:
+  std::size_t Capacity_;
+  bool IsPassThrough_;
 };
 
 class TriggerType final : public rvsdg::StateType
