@@ -387,7 +387,7 @@ split_hls_function(llvm::RvsdgModule & rm, const std::string & function_name)
           {
             odn = rename_delta(odn);
           }
-          std::cout << "delta node " << odn->name() << ": " << odn->type().debug_string() << "\n";
+          std::cout << "delta node " << odn->name() << ": " << odn->Type()->debug_string() << "\n";
           // add import for delta to rhls
           auto & graphImport = llvm::GraphImport::Create(
               rhls->Rvsdg(),

@@ -1076,7 +1076,7 @@ Andersen::AnalyzeDelta(const DeltaNode & delta)
   auto & resultRegister = *delta.result().origin();
 
   // If the type of the delta can point, the analysis should track its set of possible pointees
-  bool canPoint = IsOrContainsPointerType(delta.type());
+  bool canPoint = IsOrContainsPointerType(*delta.Type());
 
   // Create a global memory object representing the global variable
   const auto globalPO = Set_->CreateGlobalMemoryObject(delta, canPoint);
