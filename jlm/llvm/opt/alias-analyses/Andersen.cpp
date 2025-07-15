@@ -1059,13 +1059,13 @@ void
 Andersen::AnalyzeDelta(const DeltaNode & delta)
 {
   // Handle context variables
-  for (auto & cv : delta.ctxvars())
+  for (auto & cv : delta.GetContextVars())
   {
-    if (!IsOrContainsPointerType(*cv.Type()))
+    if (!IsOrContainsPointerType(*cv.input->Type()))
       continue;
 
-    auto & inputRegister = *cv.origin();
-    auto & argumentRegister = *cv.argument();
+    auto & inputRegister = *cv.input->origin();
+    auto & argumentRegister = *cv.inner;
     const auto inputRegisterPO = Set_->GetRegisterPointerObject(inputRegister);
     Set_->MapRegisterToExistingPointerObject(argumentRegister, inputRegisterPO);
   }
@@ -1073,7 +1073,7 @@ Andersen::AnalyzeDelta(const DeltaNode & delta)
   AnalyzeRegion(*delta.subregion());
 
   // Get the result register from the subregion
-  auto & resultRegister = *delta.result()->origin();
+  auto & resultRegister = *delta.result().origin();
 
   // If the type of the delta can point, the analysis should track its set of possible pointees
   bool canPoint = IsOrContainsPointerType(delta.type());
@@ -1089,7 +1089,7 @@ Andersen::AnalyzeDelta(const DeltaNode & delta)
   }
 
   // Finally create a Register PointerObject for the delta's output, pointing to the memory object
-  auto & outputRegister = *delta.output();
+  auto & outputRegister = delta.output();
   const auto outputRegisterPO = Set_->CreateRegisterPointerObject(outputRegister);
   Constraints_->AddPointerPointeeConstraint(outputRegisterPO, globalPO);
 }
