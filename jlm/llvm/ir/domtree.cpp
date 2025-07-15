@@ -13,8 +13,6 @@
 namespace jlm::llvm
 {
 
-/* DominatorTreeNode class */
-
 DominatorTreeNode *
 DominatorTreeNode::add_child(std::unique_ptr<DominatorTreeNode> child)
 {
