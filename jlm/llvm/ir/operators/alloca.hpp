@@ -32,10 +32,10 @@ public:
 
   AllocaOperation(AllocaOperation && other) noexcept = default;
 
-  virtual bool
+  bool
   operator==(const Operation & other) const noexcept override;
 
-  virtual std::string
+  [[nodiscard]] std::string
   debug_string() const override;
 
   [[nodiscard]] std::unique_ptr<Operation>

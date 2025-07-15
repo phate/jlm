@@ -6,6 +6,7 @@ Checks: '-*,
   misc-unused-using-decls,
   modernize-deprecated-headers,
   modernize-redundant-void-arg,
+  modernize-use-override,
   '
 
 WarningsAsErrors: '
@@ -15,4 +16,5 @@ WarningsAsErrors: '
   misc-unused-using-decls,
   modernize-deprecated-headers,
   modernize-redundant-void-arg,
+  modernize-use-override,
   '

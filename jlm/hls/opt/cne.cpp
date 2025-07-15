@@ -644,10 +644,7 @@ cne(rvsdg::RvsdgModule & rvsdgModule, util::StatisticsCollector & statisticsColl
   statisticsCollector.CollectDemandedStatistics(std::move(statistics));
 }
 
-/* cne class */
-
-cne::~cne()
-{}
+cne::~cne() noexcept = default;
 
 void
 cne::Run(rvsdg::RvsdgModule & module, util::StatisticsCollector & statisticsCollector)

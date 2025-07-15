@@ -22,7 +22,7 @@ class PhiOperation final : public rvsdg::StructuralOperation
 public:
   ~PhiOperation() override;
 
-  virtual std::string
+  [[nodiscard]] std::string
   debug_string() const override;
 
   [[nodiscard]] std::unique_ptr<Operation>
@@ -322,7 +322,7 @@ public:
     return StructuralNode::subregion(0);
   }
 
-  virtual PhiNode *
+  PhiNode *
   copy(rvsdg::Region * region, rvsdg::SubstitutionMap & smap) const override;
 
   /**
