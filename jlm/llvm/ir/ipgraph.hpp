@@ -218,7 +218,7 @@ public:
     return cfg_.get();
   }
 
-  virtual const jlm::rvsdg::Type &
+  [[nodiscard]] const jlm::rvsdg::Type &
   type() const noexcept override;
 
   std::shared_ptr<const jlm::rvsdg::Type>
