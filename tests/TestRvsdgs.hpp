@@ -2230,7 +2230,7 @@ private:
 
   std::vector<const rvsdg::Node *> AllocaNodes_ = {};
 
-  jlm::rvsdg::LambdaNode * Function_;
+  jlm::rvsdg::LambdaNode * Function_{};
 };
 
 /** \brief RVSDG module with a static function escaping through another function.

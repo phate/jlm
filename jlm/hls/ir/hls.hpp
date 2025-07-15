@@ -758,11 +758,11 @@ public:
   ~loop_node() noexcept override = default;
 
 private:
-  inline loop_node(rvsdg::Region * parent)
+  explicit loop_node(rvsdg::Region * parent)
       : StructuralNode(parent, 1)
   {}
 
-  jlm::rvsdg::node_output * _predicate_buffer;
+  jlm::rvsdg::node_output * _predicate_buffer{};
 
 public:
   [[nodiscard]] const rvsdg::Operation &
