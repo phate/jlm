@@ -13,10 +13,10 @@
 namespace jlm::llvm
 {
 
-/* domnode class */
+/* DominatorTreeNode class */
 
-domnode *
-domnode::add_child(std::unique_ptr<domnode> child)
+DominatorTreeNode *
+DominatorTreeNode::add_child(std::unique_ptr<DominatorTreeNode> child)
 {
   children_.push_back(std::move(child));
   auto c = children_.back().get();
@@ -28,21 +28,22 @@ domnode::add_child(std::unique_ptr<domnode> child)
 
 /* dominator computations */
 
-static std::unique_ptr<domnode>
+static std::unique_ptr<DominatorTreeNode>
 build_domtree(
     std::unordered_map<ControlFlowGraphNode *, ControlFlowGraphNode *> & doms,
     ControlFlowGraphNode * root)
 {
-  std::function<
-      domnode *(ControlFlowGraphNode *, std::unordered_map<ControlFlowGraphNode *, domnode *> &)>
+  std::function<DominatorTreeNode *(
+      ControlFlowGraphNode *,
+      std::unordered_map<ControlFlowGraphNode *, DominatorTreeNode *> &)>
       build = [&](ControlFlowGraphNode * node,
-                  std::unordered_map<ControlFlowGraphNode *, domnode *> & map)
+                  std::unordered_map<ControlFlowGraphNode *, DominatorTreeNode *> & map)
   {
     if (map.find(node) != map.end())
       return map[node];
 
     auto parent = build(doms[node], map);
-    auto child = parent->add_child(domnode::create(node));
+    auto child = parent->add_child(DominatorTreeNode::create(node));
     map[node] = child;
     return child;
   };
@@ -58,8 +59,8 @@ build_domtree(
     nodes.erase(doms[&node]);
 
   /* build tree bottom-up */
-  std::unordered_map<ControlFlowGraphNode *, domnode *> map;
-  auto domroot = domnode::create(root);
+  std::unordered_map<ControlFlowGraphNode *, DominatorTreeNode *> map;
+  auto domroot = DominatorTreeNode::create(root);
   map[root] = domroot.get();
   for (auto node : nodes)
     build(node, map);
@@ -88,7 +89,7 @@ intersect(
 /*
   Keith D. Cooper et. al. - A Simple, Fast Dominance Algorithm
 */
-std::unique_ptr<domnode>
+std::unique_ptr<DominatorTreeNode>
 domtree(ControlFlowGraph & cfg)
 {
   JLM_ASSERT(is_closed(cfg));
