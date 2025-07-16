@@ -9,6 +9,7 @@
 #include <jlm/hls/backend/rvsdg2rhls/memstate-conv.hpp>
 #include <jlm/hls/ir/hls.hpp>
 #include <jlm/llvm/ir/operators/MemoryStateOperations.hpp>
+#include <jlm/llvm/ir/RvsdgModule.hpp>
 #include <jlm/rvsdg/view.hpp>
 
 static void
@@ -49,7 +50,8 @@ SplitConversion()
   view(rvsdg, stdout);
 
   // Act
-  memstate_conv(rvsdgModule);
+  StatisticsCollector statisticsCollector;
+  MemoryStateSplitConversion::CreateAndRun(rvsdgModule, statisticsCollector);
   view(rvsdg, stdout);
 
   // Assert

@@ -475,7 +475,7 @@ rvsdg2rhls(llvm::RvsdgModule & rhls, util::StatisticsCollector & collector)
   MemoryConverter(rhls);
   llvm::NodeReduction llvmRed;
   llvmRed.Run(rhls, collector);
-  memstate_conv(rhls);
+  MemoryStateSplitConversion::CreateAndRun(rhls, collector);
   remove_redundant_buf(rhls);
   SinkInsertion::CreateAndRun(rhls, collector);
   ForkInsertion::CreateAndRun(rhls, collector);
