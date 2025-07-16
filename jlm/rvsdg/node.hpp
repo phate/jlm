@@ -348,6 +348,18 @@ public:
     return users_.end();
   }
 
+  /**
+   * @return The first and only user of the output.
+   *
+   * \pre The output has only a single user.
+   */
+  [[nodiscard]] rvsdg::Input &
+  SingleUser() const noexcept
+  {
+    JLM_ASSERT(nusers() == 1);
+    return **users_.begin();
+  }
+
   UserIteratorRange
   Users()
   {
