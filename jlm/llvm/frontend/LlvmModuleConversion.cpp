@@ -253,10 +253,10 @@ ConvertStringAttribute(const ::llvm::Attribute & attribute)
   return { attribute.getKindAsString().str(), attribute.getValueAsString().str() };
 }
 
-static attributeset
+static AttributeSet
 convert_attributes(const ::llvm::AttributeSet & as, context & ctx)
 {
-  attributeset attributeSet;
+  AttributeSet attributeSet;
   for (auto & attribute : as)
   {
     if (attribute.isEnumAttribute())

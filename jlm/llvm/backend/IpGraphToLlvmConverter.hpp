@@ -118,7 +118,7 @@ private:
   convert_attributes(const FunctionNode & f);
 
   ::llvm::AttributeSet
-  convert_attributes(const attributeset & attributeSet);
+  convert_attributes(const AttributeSet & attributeSet);
 
   ::llvm::Attribute
   ConvertStringAttribute(const llvm::string_attribute & attribute);
