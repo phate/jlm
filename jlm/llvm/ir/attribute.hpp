@@ -302,7 +302,7 @@ namespace jlm::llvm
 
 /** \brief Attribute set
  */
-class attributeset final
+class AttributeSet final
 {
   using EnumAttributeHashSet = util::HashSet<EnumAttribute>;
   using IntAttributeHashSet = util::HashSet<int_attribute>;
@@ -352,14 +352,14 @@ public:
   }
 
   bool
-  operator==(const attributeset & other) const noexcept
+  operator==(const AttributeSet & other) const noexcept
   {
     return IntAttributes_ == other.IntAttributes_ && EnumAttributes_ == other.EnumAttributes_
         && TypeAttributes_ == other.TypeAttributes_ && StringAttributes_ == other.StringAttributes_;
   }
 
   bool
-  operator!=(const attributeset & other) const noexcept
+  operator!=(const AttributeSet & other) const noexcept
   {
     return !(*this == other);
   }

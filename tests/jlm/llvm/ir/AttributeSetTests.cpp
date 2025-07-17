@@ -30,19 +30,19 @@ TestEquality()
   type_attribute typeAttribute1(Attribute::kind::ByRef, valueType);
   type_attribute typeAttribute2(Attribute::kind::ByVal, valueType);
 
-  attributeset set1;
+  AttributeSet set1;
   set1.InsertEnumAttribute(enumAttribute1);
   set1.InsertIntAttribute(intAttribute1);
   set1.InsertStringAttribute(stringAttribute1);
   set1.InsertTypeAttribute(typeAttribute1);
 
-  attributeset set2;
+  AttributeSet set2;
   set2.InsertEnumAttribute(enumAttribute2);
   set2.InsertIntAttribute(intAttribute2);
   set2.InsertStringAttribute(stringAttribute2);
   set2.InsertTypeAttribute(typeAttribute2);
 
-  attributeset set3;
+  AttributeSet set3;
   set3.InsertEnumAttribute(enumAttribute1);
   set3.InsertIntAttribute(intAttribute1);
   set3.InsertStringAttribute(stringAttribute1);

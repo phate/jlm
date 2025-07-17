@@ -1741,7 +1741,7 @@ IpGraphToLlvmConverter::ConvertStringAttribute(const llvm::StringAttribute & att
 }
 
 ::llvm::AttributeSet
-IpGraphToLlvmConverter::convert_attributes(const attributeset & attributeSet)
+IpGraphToLlvmConverter::convert_attributes(const AttributeSet & attributeSet)
 {
   ::llvm::AttrBuilder builder(Context_->llvm_module().getContext());
   for (auto & attribute : attributeSet.EnumAttributes())
