@@ -564,13 +564,13 @@ ValidateCallTest1SteensgaardAgnostic(const jlm::tests::CallTest1 & test)
   /* validate f */
   {
     auto lambdaEntrySplit = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
-        **test.lambda_f->GetFunctionArguments()[3]->begin());
+        *test.lambda_f->GetFunctionArguments()[3]->Users().begin());
     auto lambdaExitMerge = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
         *test.lambda_f->GetFunctionResults()[2]->origin());
     auto loadX = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
-        **test.lambda_f->GetFunctionArguments()[0]->begin());
+        *test.lambda_f->GetFunctionArguments()[0]->Users().begin());
     auto loadY = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
-        **test.lambda_f->GetFunctionArguments()[1]->begin());
+        *test.lambda_f->GetFunctionArguments()[1]->Users().begin());
 
     assert(is<LambdaExitMemoryStateMergeOperation>(*lambdaExitMerge, 7, 1));
     assert(is<LambdaEntryMemoryStateSplitOperation>(*lambdaEntrySplit, 1, 7));
@@ -589,13 +589,13 @@ ValidateCallTest1SteensgaardAgnostic(const jlm::tests::CallTest1 & test)
   /* validate g */
   {
     auto lambdaEntrySplit = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
-        **test.lambda_g->GetFunctionArguments()[3]->begin());
+        *test.lambda_g->GetFunctionArguments()[3]->Users().begin());
     auto lambdaExitMerge = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
         *test.lambda_g->GetFunctionResults()[2]->origin());
     auto loadX = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
-        **test.lambda_g->GetFunctionArguments()[0]->begin());
+        *test.lambda_g->GetFunctionArguments()[0]->Users().begin());
     auto loadY = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
-        **test.lambda_g->GetFunctionArguments()[1]->begin());
+        *test.lambda_g->GetFunctionArguments()[1]->Users().begin());
 
     assert(is<LambdaExitMemoryStateMergeOperation>(*lambdaExitMerge, 7, 1));
     assert(is<LambdaEntryMemoryStateSplitOperation>(*lambdaEntrySplit, 1, 7));
@@ -1413,9 +1413,9 @@ ValidateIndirectCallTest2SteensgaardAgnosticTopDown(const jlm::tests::IndirectCa
     }
     assert(undefNode != nullptr);
     assert(undefNode->output(0)->nusers() == 2);
-    for (auto & user : *undefNode->output(0))
+    for (auto & user : undefNode->output(0)->Users())
     {
-      assert(jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*user) == callXEntryMerge);
+      assert(jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(user) == callXEntryMerge);
     }
 
     auto lambdaEntrySplit = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(

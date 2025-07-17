@@ -40,7 +40,7 @@ ConvertThetaNode(rvsdg::ThetaNode & theta)
       loop->AddLoopVar(loopvar.input->origin(), &buffer);
       smap.insert(loopvar.pre, buffer);
       // buffer out is only used by branch
-      branches.push_back(*buffer->begin());
+      branches.push_back(&*buffer->Users().begin());
       // divert theta outputs
       loopvar.output->divert_users(loop->output(loop->noutputs() - 1));
     }
