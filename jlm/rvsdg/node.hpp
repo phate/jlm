@@ -271,6 +271,7 @@ class Output
 
   typedef std::unordered_set<jlm::rvsdg::Input *>::const_iterator user_iterator;
 
+public:
   using UserIterator = util::PtrIterator<Input, std::unordered_set<Input *>::iterator>;
   using UserConstIterator =
       util::PtrIterator<const Input, std::unordered_set<Input *>::const_iterator>;
@@ -278,7 +279,6 @@ class Output
   using UserIteratorRange = util::IteratorRange<UserIterator>;
   using UserConstIteratorRange = util::IteratorRange<UserConstIterator>;
 
-public:
   virtual ~Output() noexcept;
 
   Output(rvsdg::Region * region, std::shared_ptr<const rvsdg::Type> type);
