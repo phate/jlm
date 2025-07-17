@@ -165,9 +165,6 @@ public:
   virtual RegionResult &
   Copy(rvsdg::Output & origin, StructuralOutput * output);
 
-  [[nodiscard]] std::variant<Node *, Region *>
-  GetOwner() const noexcept override;
-
   /**
    * \brief Create region exit result.
    *

@@ -37,10 +37,9 @@ class Input
 public:
   virtual ~Input() noexcept;
 
-  Input(
-      jlm::rvsdg::Output * origin,
-      rvsdg::Region * region,
-      std::shared_ptr<const rvsdg::Type> type);
+  Input(rvsdg::Node & owner, rvsdg::Output & origin, std::shared_ptr<const rvsdg::Type> type);
+
+  Input(rvsdg::Region & owner, rvsdg::Output & origin, std::shared_ptr<const rvsdg::Type> type);
 
   Input(const Input &) = delete;
 
@@ -74,16 +73,16 @@ public:
   }
 
   [[nodiscard]] rvsdg::Region *
-  region() const noexcept
-  {
-    return region_;
-  }
+  region() const noexcept;
 
   virtual std::string
   debug_string() const;
 
-  [[nodiscard]] virtual std::variant<Node *, Region *>
-  GetOwner() const noexcept = 0;
+  [[nodiscard]] std::variant<Node *, Region *>
+  GetOwner() const noexcept
+  {
+    return Owner_;
+  }
 
   template<class T>
   class iterator
@@ -246,9 +245,15 @@ public:
   };
 
 private:
+  static void
+  CheckTypes(
+      const Region & region,
+      const Output & origin,
+      const std::shared_ptr<const rvsdg::Type> & type);
+
   size_t index_;
   jlm::rvsdg::Output * origin_;
-  rvsdg::Region * region_;
+  std::variant<Node *, Region *> Owner_;
   std::shared_ptr<const rvsdg::Type> Type_;
 };
 
@@ -572,14 +577,14 @@ public:
   Node *
   node() const noexcept
   {
-    return node_;
+    auto owner = GetOwner();
+    if (auto node = std::get_if<Node *>(&owner))
+    {
+      return *node;
+    }
+
+    JLM_UNREACHABLE("This should not have happened!");
   }
-
-  [[nodiscard]] std::variant<Node *, Region *>
-  GetOwner() const noexcept override;
-
-private:
-  Node * node_;
 };
 
 /* node_output class */
