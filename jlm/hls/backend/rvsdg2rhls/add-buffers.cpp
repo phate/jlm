@@ -19,7 +19,6 @@ GetUser(rvsdg::Output * out)
 {
   // This works because at this point we have 1:1 relationships through forks
   auto & user = *out->Users().begin();
-  JLM_ASSERT(&user);
   return &user;
 }
 
