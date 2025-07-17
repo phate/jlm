@@ -471,9 +471,9 @@ mark(const jlm::rvsdg::SimpleNode * node, cnectx & ctx)
   auto set = ctx.set(node->input(0)->origin());
   for (const auto & origin : *set)
   {
-    for (const auto & user : *origin)
+    for (const auto & user : origin->Users())
     {
-      auto ni = dynamic_cast<const jlm::rvsdg::node_input *>(user);
+      auto ni = dynamic_cast<const jlm::rvsdg::node_input *>(&user);
       auto other = ni ? ni->node() : nullptr;
       if (!other || other == node || other->GetOperation() != node->GetOperation()
           || other->ninputs() != node->ninputs())

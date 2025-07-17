@@ -288,9 +288,9 @@ TracePointer(
     return;
   }
   visited.insert(output);
-  for (auto user : *output)
+  for (auto & user : output->Users())
   {
-    if (auto si = dynamic_cast<rvsdg::SimpleInput *>(user))
+    if (auto si = dynamic_cast<rvsdg::SimpleInput *>(&user))
     {
       auto simplenode = si->node();
       if (dynamic_cast<const llvm::StoreNonVolatileOperation *>(&simplenode->GetOperation()))
@@ -315,14 +315,14 @@ TracePointer(
         }
       }
     }
-    else if (auto sti = dynamic_cast<rvsdg::StructuralInput *>(user))
+    else if (auto sti = dynamic_cast<rvsdg::StructuralInput *>(&user))
     {
       for (auto & arg : sti->arguments)
       {
         TracePointer(&arg, loadNodes, storeNodes, decoupleNodes, visited);
       }
     }
-    else if (auto r = dynamic_cast<rvsdg::RegionResult *>(user))
+    else if (auto r = dynamic_cast<rvsdg::RegionResult *>(&user))
     {
       if (auto ber = dynamic_cast<backedge_result *>(r))
       {
@@ -573,7 +573,7 @@ MemoryConverter(llvm::RvsdgModule & rm)
   llvm::GraphExport::Create(*newOut, oldExport ? oldExport->Name() : "");
 
   JLM_ASSERT(lambda->output()->nusers() == 1);
-  lambda->region()->RemoveResult((*lambda->output()->begin())->index());
+  lambda->region()->RemoveResult((*lambda->output()->Users().begin()).index());
   remove(lambda);
 
   // Remove imports for decouple_ function pointers
