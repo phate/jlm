@@ -18,8 +18,8 @@ TestEquality()
   // Arrange
   auto valueType = jlm::tests::ValueType::Create();
 
-  enum_attribute enumAttribute1(Attribute::kind::AllocAlign);
-  enum_attribute enumAttribute2(Attribute::kind::AlwaysInline);
+  EnumAttribute enumAttribute1(Attribute::kind::AllocAlign);
+  EnumAttribute enumAttribute2(Attribute::kind::AlwaysInline);
 
   int_attribute intAttribute1(Attribute::kind::Alignment, 4);
   int_attribute intAttribute2(Attribute::kind::AllocSize, 8);
