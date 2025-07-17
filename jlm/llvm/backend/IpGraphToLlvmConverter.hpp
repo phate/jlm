@@ -124,7 +124,7 @@ private:
   ConvertStringAttribute(const llvm::string_attribute & attribute);
 
   ::llvm::Attribute
-  ConvertTypeAttribute(const llvm::type_attribute & attribute);
+  ConvertTypeAttribute(const llvm::TypeAttribute & attribute);
 
   ::llvm::Attribute
   ConvertIntAttribute(const llvm::int_attribute & attribute);
