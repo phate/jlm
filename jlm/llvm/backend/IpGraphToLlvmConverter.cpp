@@ -1707,7 +1707,7 @@ IpGraphToLlvmConverter::ConvertAttributeKind(const Attribute::kind & kind)
 }
 
 ::llvm::Attribute
-IpGraphToLlvmConverter::ConvertEnumAttribute(const llvm::enum_attribute & attribute)
+IpGraphToLlvmConverter::ConvertEnumAttribute(const llvm::EnumAttribute & attribute)
 {
   auto & llvmContext = Context_->llvm_module().getContext();
   auto kind = ConvertAttributeKind(attribute.kind());
@@ -1734,7 +1734,7 @@ IpGraphToLlvmConverter::ConvertTypeAttribute(const llvm::type_attribute & attrib
 }
 
 ::llvm::Attribute
-IpGraphToLlvmConverter::ConvertStringAttribute(const llvm::string_attribute & attribute)
+IpGraphToLlvmConverter::ConvertStringAttribute(const llvm::StringAttribute & attribute)
 {
   auto & llvmContext = Context_->llvm_module().getContext();
   return ::llvm::Attribute::get(llvmContext, attribute.kind(), attribute.value());
