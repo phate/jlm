@@ -5,52 +5,74 @@
 
 #include <jlm/hls/backend/rvsdg2rhls/add-sinks.hpp>
 #include <jlm/hls/ir/hls.hpp>
-#include <jlm/rvsdg/lambda.hpp>
-#include <jlm/rvsdg/traverser.hpp>
+#include <jlm/rvsdg/RvsdgModule.hpp>
 
 namespace jlm::hls
 {
 
 void
-add_sinks(rvsdg::Region * region)
+SinkInsertion::Run(rvsdg::RvsdgModule & module, util::StatisticsCollector &)
 {
-  for (size_t i = 0; i < region->narguments(); ++i)
-  {
-    auto arg = region->argument(i);
-    if (!arg->nusers())
-    {
-      SinkOperation::create(*arg);
-    }
-  }
-  for (auto & node : rvsdg::TopDownTraverser(region))
-  {
-    if (auto structnode = dynamic_cast<rvsdg::StructuralNode *>(node))
-    {
-      for (size_t n = 0; n < structnode->nsubregions(); n++)
-      {
-        add_sinks(structnode->subregion(n));
-      }
-    }
+  HandleRootRegion(module.Rvsdg().GetRootRegion());
+}
 
-    for (size_t i = 0; i < node->noutputs(); ++i)
+void
+SinkInsertion::CreateAndRun(
+    rvsdg::RvsdgModule & module,
+    util::StatisticsCollector & statisticsCollector)
+{
+  SinkInsertion sinkInsertion;
+  sinkInsertion.Run(module, statisticsCollector);
+}
+
+void
+SinkInsertion::HandleRootRegion(rvsdg::Region & region)
+{
+  for (auto & node : region.Nodes())
+  {
+    if (const auto structuralNode = dynamic_cast<rvsdg::StructuralNode *>(&node))
     {
-      auto out = node->output(i);
-      if (!out->nusers())
+      for (auto & subregion : structuralNode->Subregions())
       {
-        SinkOperation::create(*out);
+        AddSinksToRegion(subregion);
       }
     }
   }
 }
 
 void
-add_sinks(llvm::RvsdgModule & rm)
+SinkInsertion::AddSinksToRegion(rvsdg::Region & region)
 {
-  auto & graph = rm.Rvsdg();
-  auto root = &graph.GetRootRegion();
-  JLM_ASSERT(root->nnodes() == 1);
-  auto lambda = util::AssertedCast<rvsdg::LambdaNode>(root->Nodes().begin().ptr());
-  add_sinks(lambda->subregion());
+  // Add sinks to region arguments
+  for (const auto argument : region.Arguments())
+  {
+    if (argument->IsDead())
+    {
+      SinkOperation::create(*argument);
+    }
+  }
+
+  for (auto & node : region.Nodes())
+  {
+    // Add sinks to subregions of structural nodes
+    if (const auto structuralNode = dynamic_cast<rvsdg::StructuralNode *>(&node))
+    {
+      for (auto & subregion : structuralNode->Subregions())
+      {
+        AddSinksToRegion(subregion);
+      }
+    }
+
+    // Add sinks to outputs of nodes
+    for (size_t n = 0; n < node.noutputs(); n++)
+    {
+      const auto output = node.output(n);
+      if (output->IsDead())
+      {
+        SinkOperation::create(*output);
+      }
+    }
+  }
 }
 
 }

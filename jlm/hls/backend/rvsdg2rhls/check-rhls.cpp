@@ -27,7 +27,7 @@ CheckAddrQueue(rvsdg::Node * node)
   // SG3
   auto [bufferNode, bufferOperation] =
       rvsdg::TryGetSimpleNodeAndOp<BufferOperation>(**node->output(0)->begin());
-  JLM_ASSERT(bufferOperation && bufferOperation->capacity >= addrQueueOperation->capacity);
+  JLM_ASSERT(bufferOperation && bufferOperation->Capacity() >= addrQueueOperation->capacity);
 }
 
 void

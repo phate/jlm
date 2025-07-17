@@ -18,12 +18,12 @@ namespace jlm::llvm
 {
 
 /**
- * \brief Node Pull-In Optimization
+ * \brief Node Sinking Optimization
  */
-class pullin final : public rvsdg::Transformation
+class NodeSinking final : public rvsdg::Transformation
 {
 public:
-  virtual ~pullin();
+  ~NodeSinking() noexcept override;
 
   void
   Run(rvsdg::RvsdgModule & module, util::StatisticsCollector & statisticsCollector) override;

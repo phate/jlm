@@ -226,7 +226,7 @@ public:
       }
     }
 
-    if (is<delta::cvargument>(Output_))
+    if (rvsdg::TryGetRegionParentNode<DeltaNode>(*Output_))
     {
       auto dbgstr = Output_->region()->node()->DebugString();
       return jlm::util::strfmt(dbgstr, ":cv:", index);
@@ -433,13 +433,13 @@ class DeltaLocation final : public MemoryLocation
 {
   ~DeltaLocation() override = default;
 
-  constexpr explicit DeltaLocation(const delta::node & delta)
+  constexpr explicit DeltaLocation(const DeltaNode & delta)
       : MemoryLocation(),
         Delta_(delta)
   {}
 
 public:
-  [[nodiscard]] const delta::node &
+  [[nodiscard]] const DeltaNode &
   GetNode() const noexcept
   {
     return Delta_;
@@ -452,13 +452,13 @@ public:
   }
 
   static std::unique_ptr<Location>
-  Create(const delta::node & node)
+  Create(const DeltaNode & node)
   {
     return std::unique_ptr<Location>(new DeltaLocation(node));
   }
 
 private:
-  const delta::node & Delta_;
+  const DeltaNode & Delta_;
 };
 
 /**
@@ -600,7 +600,7 @@ public:
   }
 
   Location &
-  InsertDeltaLocation(const delta::node & delta)
+  InsertDeltaLocation(const DeltaNode & delta)
   {
     Locations_.push_back(DeltaLocation::Create(delta));
     auto location = Locations_.back().get();
@@ -1060,7 +1060,7 @@ Steensgaard::AnalyzeSimpleNode(const jlm::rvsdg::SimpleNode & node)
   {
     AnalyzeExtractValue(node);
   }
-  else if (is<valist_op>(&node))
+  else if (is<VariadicArgumentListOperation>(&node))
   {
     AnalyzeVaList(node);
   }
@@ -1076,9 +1076,9 @@ Steensgaard::AnalyzeSimpleNode(const jlm::rvsdg::SimpleNode & node)
   {
     AnalyzeIOBarrier(node);
   }
-  else if (is<FreeOperation>(&node) || is<ptrcmp_op>(&node))
+  else if (is<FreeOperation>(&node) || is<PtrCmpOperation>(&node))
   {
-    // Nothing needs to be done as FreeOperation and ptrcmp_op do not affect points-to sets
+    // Nothing needs to be done as FreeOperation and PtrCmpOperation do not affect points-to sets
   }
   else
   {
@@ -1482,7 +1482,7 @@ Steensgaard::AnalyzeMemcpy(const jlm::rvsdg::SimpleNode & node)
 void
 Steensgaard::AnalyzeVaList(const rvsdg::SimpleNode & node)
 {
-  JLM_ASSERT(is<valist_op>(&node));
+  JLM_ASSERT(is<VariadicArgumentListOperation>(&node));
 
   // Members of the valist are extracted using the va_arg macro, which loads from the va_list struct
   // on the stack. This struct will be marked as escaped from the call to va_start, and thus point
@@ -1597,28 +1597,28 @@ Steensgaard::AnalyzeLambda(const rvsdg::LambdaNode & lambda)
 }
 
 void
-Steensgaard::AnalyzeDelta(const delta::node & delta)
+Steensgaard::AnalyzeDelta(const DeltaNode & delta)
 {
   // Handle context variables
-  for (auto & input : delta.ctxvars())
+  for (auto & ctxVar : delta.GetContextVars())
   {
-    auto & origin = *input.origin();
+    auto & origin = *ctxVar.input->origin();
 
     if (HasOrContainsPointerType(origin))
     {
       auto & originLocation = Context_->GetLocation(origin);
-      auto & argumentLocation = Context_->GetOrInsertRegisterLocation(*input.arguments.first());
+      auto & argumentLocation = Context_->GetOrInsertRegisterLocation(*ctxVar.inner);
       Context_->Join(originLocation, argumentLocation);
     }
   }
 
   AnalyzeRegion(*delta.subregion());
 
-  auto & deltaOutputLocation = Context_->GetOrInsertRegisterLocation(*delta.output());
+  auto & deltaOutputLocation = Context_->GetOrInsertRegisterLocation(delta.output());
   auto & deltaLocation = Context_->InsertDeltaLocation(delta);
   deltaOutputLocation.SetPointsTo(deltaLocation);
 
-  auto & origin = *delta.result()->origin();
+  auto & origin = *delta.result().origin();
   if (HasOrContainsPointerType(origin))
   {
     auto & originLocation = Context_->GetLocation(origin);
@@ -1749,7 +1749,7 @@ Steensgaard::AnalyzeStructuralNode(const rvsdg::StructuralNode & node)
   {
     AnalyzeLambda(*lambdaNode);
   }
-  else if (auto deltaNode = dynamic_cast<const delta::node *>(&node))
+  else if (auto deltaNode = dynamic_cast<const DeltaNode *>(&node))
   {
     AnalyzeDelta(*deltaNode);
   }

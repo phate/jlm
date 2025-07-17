@@ -105,7 +105,7 @@ test1()
   //	jlm::rvsdg::view(graph.GetRootRegion(), stdout);
 
   // Act
-  jlm::llvm::fctinline fctinline;
+  jlm::llvm::FunctionInlining fctinline;
   fctinline.Run(rm, statisticsCollector);
   //	jlm::rvsdg::view(graph.GetRootRegion(), stdout);
 
@@ -176,7 +176,7 @@ test2()
   jlm::rvsdg::view(&graph.GetRootRegion(), stdout);
 
   // Act
-  jlm::llvm::fctinline fctinline;
+  jlm::llvm::FunctionInlining fctinline;
   fctinline.Run(rm, statisticsCollector);
   jlm::rvsdg::view(&graph.GetRootRegion(), stdout);
 

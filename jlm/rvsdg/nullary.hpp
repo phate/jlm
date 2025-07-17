@@ -55,10 +55,9 @@ class domain_const_op final : public NullaryOperation
 public:
   typedef ValueRepr value_repr;
 
-  virtual ~domain_const_op() noexcept
-  {}
+  ~domain_const_op() noexcept override = default;
 
-  inline domain_const_op(const value_repr & value)
+  explicit domain_const_op(const value_repr & value)
       : NullaryOperation(TypeOfValue()(value)),
         value_(value)
   {}
@@ -67,14 +66,14 @@ public:
 
   inline domain_const_op(domain_const_op && other) = default;
 
-  virtual bool
+  bool
   operator==(const Operation & other) const noexcept override
   {
     auto op = dynamic_cast<const domain_const_op *>(&other);
     return op && op->value_ == value_;
   }
 
-  virtual std::string
+  [[nodiscard]] std::string
   debug_string() const override
   {
     return FormatValue()(value_);

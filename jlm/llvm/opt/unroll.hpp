@@ -19,12 +19,12 @@ class RvsdgModule;
 /**
  * \brief Optimization that attempts to unroll loops (thetas).
  */
-class loopunroll final : public rvsdg::Transformation
+class LoopUnrolling final : public rvsdg::Transformation
 {
 public:
-  virtual ~loopunroll();
+  ~LoopUnrolling() noexcept override;
 
-  constexpr loopunroll(size_t factor)
+  constexpr LoopUnrolling(size_t factor)
       : factor_(factor)
   {}
 
@@ -43,14 +43,13 @@ private:
   size_t factor_;
 };
 
-class unrollinfo final
+class LoopUnrollInfo final
 {
 public:
-  inline ~unrollinfo()
-  {}
+  ~LoopUnrollInfo() noexcept = default;
 
 private:
-  inline unrollinfo(
+  LoopUnrollInfo(
       rvsdg::Node * cmpnode,
       rvsdg::Node * armnode,
       rvsdg::Output * idv,
@@ -64,15 +63,15 @@ private:
   {}
 
 public:
-  unrollinfo(const unrollinfo &) = delete;
+  LoopUnrollInfo(const LoopUnrollInfo &) = delete;
 
-  unrollinfo(unrollinfo &&) = delete;
+  LoopUnrollInfo(LoopUnrollInfo &&) = delete;
 
-  unrollinfo &
-  operator=(const unrollinfo &) = delete;
+  LoopUnrollInfo &
+  operator=(const LoopUnrollInfo &) = delete;
 
-  unrollinfo &
-  operator=(unrollinfo &&) = delete;
+  LoopUnrollInfo &
+  operator=(LoopUnrollInfo &&) = delete;
 
   inline rvsdg::ThetaNode *
   theta() const noexcept
@@ -189,8 +188,10 @@ public:
   inline size_t
   nbits() const noexcept
   {
-    JLM_ASSERT(dynamic_cast<const jlm::rvsdg::bitcompare_op *>(&cmpnode()->GetOperation()));
-    return static_cast<const rvsdg::bitcompare_op *>(&cmpnode()->GetOperation())->type().nbits();
+    JLM_ASSERT(dynamic_cast<const jlm::rvsdg::BitCompareOperation *>(&cmpnode()->GetOperation()));
+    return static_cast<const rvsdg::BitCompareOperation *>(&cmpnode()->GetOperation())
+        ->type()
+        .nbits();
   }
 
   inline jlm::rvsdg::bitvalue_repr
@@ -199,7 +200,7 @@ public:
     return niterations()->umod({ nbits(), (int64_t)factor });
   }
 
-  static std::unique_ptr<unrollinfo>
+  static std::unique_ptr<LoopUnrollInfo>
   create(rvsdg::ThetaNode * theta);
 
 private:

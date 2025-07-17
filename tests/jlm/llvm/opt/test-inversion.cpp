@@ -66,7 +66,7 @@ test1()
   auto & ex3 = GraphExport::Create(*theta->output(2), "z");
 
   //	jlm::rvsdg::view(graph.GetRootRegion(), stdout);
-  jlm::llvm::tginversion tginversion;
+  jlm::llvm::LoopUnswitching tginversion;
   tginversion.Run(rm, statisticsCollector);
   //	jlm::rvsdg::view(graph.GetRootRegion(), stdout);
 
@@ -113,7 +113,7 @@ test2()
   auto & ex = GraphExport::Create(*theta->output(0), "x");
 
   //	jlm::rvsdg::view(graph.GetRootRegion(), stdout);
-  jlm::llvm::tginversion tginversion;
+  jlm::llvm::LoopUnswitching tginversion;
   tginversion.Run(rm, statisticsCollector);
   //	jlm::rvsdg::view(graph.GetRootRegion(), stdout);
 

@@ -14,13 +14,13 @@ namespace jlm::rvsdg
 {
 
 template<typename reduction, const char * name, enum BinaryOperation::flags opflags>
-class MakeBitComparisonOperation final : public bitcompare_op
+class MakeBitComparisonOperation final : public BitCompareOperation
 {
 public:
   ~MakeBitComparisonOperation() noexcept override;
 
   explicit MakeBitComparisonOperation(std::size_t nbits) noexcept
-      : bitcompare_op(bittype::Create(nbits))
+      : BitCompareOperation(bittype::Create(nbits))
   {}
 
   bool
@@ -38,7 +38,7 @@ public:
   [[nodiscard]] std::unique_ptr<Operation>
   copy() const override;
 
-  std::unique_ptr<bitcompare_op>
+  std::unique_ptr<BitCompareOperation>
   create(size_t nbits) const override;
 
   static Output *

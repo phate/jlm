@@ -25,7 +25,6 @@ class SimpleNode;
 class SimpleOperation;
 class StructuralInput;
 class StructuralNode;
-class structural_op;
 class StructuralOutput;
 class SubstitutionMap;
 
@@ -39,7 +38,7 @@ class SubstitutionMap;
  */
 class RegionArgument : public Output
 {
-  util::intrusive_list_anchor<RegionArgument> structural_input_anchor_;
+  util::intrusive_list_anchor<RegionArgument> structural_input_anchor_{};
 
 public:
   typedef util::intrusive_list_accessor<RegionArgument, &RegionArgument::structural_input_anchor_>
@@ -121,7 +120,7 @@ private:
  */
 class RegionResult : public Input
 {
-  util::intrusive_list_anchor<RegionResult> structural_output_anchor_;
+  util::intrusive_list_anchor<RegionResult> structural_output_anchor_{};
 
 public:
   typedef util::intrusive_list_accessor<RegionResult, &RegionResult::structural_output_anchor_>

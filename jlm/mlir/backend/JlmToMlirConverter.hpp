@@ -110,26 +110,30 @@ public:
 
   /**
    * Converts a floating point binary operation to an MLIR operation.
-   * \param op The jlm::llvm::fpbin_op to be converted
-   * \param inputs The inputs to the jlm::llvm::fpbin_op.
+   * \param op The jlm::llvm::FBinaryOperation to be converted
+   * \param inputs The inputs to the jlm::llvm::FBinaryOperation.
    * \return The converted MLIR operation.
    */
   ::mlir::Operation *
-  ConvertFpBinaryNode(const jlm::llvm::fpbin_op & op, ::llvm::SmallVector<::mlir::Value> inputs);
+  ConvertFpBinaryNode(
+      const jlm::llvm::FBinaryOperation & op,
+      ::llvm::SmallVector<::mlir::Value> inputs);
 
   /**
-   * Converts an fpcmp_op to an MLIR operation.
-   * \param op The fpcmp_op to be converted.
-   * \param inputs The inputs to the fpcmp_op.
+   * Converts an FCmpOperation to an MLIR operation.
+   * \param op The FCmpOperation to be converted.
+   * \param inputs The inputs to the FCmpOperation.
    * \return The converted MLIR operation.
    */
   ::mlir::Operation *
-  ConvertFpCompareNode(const jlm::llvm::fpcmp_op & op, ::llvm::SmallVector<::mlir::Value> inputs);
+  ConvertFpCompareNode(
+      const jlm::llvm::FCmpOperation & op,
+      ::llvm::SmallVector<::mlir::Value> inputs);
 
   /**
    * Converts an RVSDG binary_op to an MLIR RVSDG operation.
-   * \param bitOp The RVSDG bitbinary_op to be converted
-   * \param inputs The inputs to the bitbinary_op.
+   * \param bitOp The RVSDG BitBinaryOperation to be converted
+   * \param inputs The inputs to the BitBinaryOperation.
    * \return The converted MLIR RVSDG operation.
    */
   ::mlir::Operation *
@@ -149,23 +153,23 @@ public:
       ::llvm::SmallVector<::mlir::Value> inputs);
 
   /**
-   * Converts an RVSDG bitcompare_op to an MLIR RVSDG operation.
-   * \param bitOp The RVSDG bitcompare_op to be converted
-   * \param inputs The inputs to the bitcompare_op.
+   * Converts an RVSDG BitCompareOperation to an MLIR RVSDG operation.
+   * \param bitOp The RVSDG BitCompareOperation to be converted
+   * \param inputs The inputs to the BitCompareOperation.
    * \return The converted MLIR RVSDG operation.
    */
   ::mlir::Operation *
   BitCompareNode(const rvsdg::SimpleOperation & bitOp, ::llvm::SmallVector<::mlir::Value> inputs);
 
   /**
-   * Converts an RVSDG bitcompare_op to an MLIR RVSDG operation.
-   * \param pointerCompareOp The RVSDG bitcompare_op to be converted
-   * \param inputs The inputs to the bitcompare_op.
+   * Converts an RVSDG BitCompareOperation to an MLIR RVSDG operation.
+   * \param pointerCompareOp The RVSDG BitCompareOperation to be converted
+   * \param inputs The inputs to the BitCompareOperation.
    * \return The converted MLIR RVSDG operation.
    */
   ::mlir::Operation *
   ConvertPointerCompareNode(
-      const llvm::ptrcmp_op & pointerCompareOp,
+      const llvm::PtrCmpOperation & pointerCompareOp,
       ::llvm::SmallVector<::mlir::Value> inputs);
 
   /**
@@ -217,12 +221,12 @@ public:
    * Converts an RVSDG delta node to an MLIR RVSDG DeltaNode.
    * \param node The RVSDG delta node to be converted
    * \param block The MLIR RVSDG block to insert the delta node.
-   * \param inputs The inputs to the delta::node.
+   * \param inputs The inputs to the DeltaNode.
    * \return The converted MLIR RVSDG DeltaNode.
    */
   ::mlir::Operation *
   ConvertDelta(
-      const llvm::delta::node & node,
+      const llvm::DeltaNode & node,
       ::mlir::Block & block,
       const ::llvm::SmallVector<::mlir::Value> & inputs);
 

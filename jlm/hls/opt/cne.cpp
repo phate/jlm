@@ -446,7 +446,7 @@ mark(const rvsdg::StructuralNode * node, cnectx & ctx)
         { std::type_index(typeid(jlm::hls::loop_node)), mark_loop },
         { typeid(LambdaNode), mark_lambda },
         { typeid(PhiNode), mark_phi },
-        { typeid(llvm::delta::node), mark_delta } });
+        { typeid(llvm::DeltaNode), mark_delta } });
 
   JLM_ASSERT(map.find(typeid(*node)) != map.end());
   map[typeid(*node)](node, ctx);
@@ -607,7 +607,7 @@ divert(rvsdg::StructuralNode * node, cnectx & ctx)
         { std::type_index(typeid(jlm::hls::loop_node)), divert_loop },
         { typeid(rvsdg::LambdaNode), divert_lambda },
         { typeid(PhiNode), divert_phi },
-        { typeid(llvm::delta::node), divert_delta } });
+        { typeid(llvm::DeltaNode), divert_delta } });
 
   JLM_ASSERT(map.find(typeid(*node)) != map.end());
   map[typeid(*node)](node, ctx);
@@ -644,10 +644,7 @@ cne(rvsdg::RvsdgModule & rvsdgModule, util::StatisticsCollector & statisticsColl
   statisticsCollector.CollectDemandedStatistics(std::move(statistics));
 }
 
-/* cne class */
-
-cne::~cne()
-{}
+cne::~cne() noexcept = default;
 
 void
 cne::Run(rvsdg::RvsdgModule & module, util::StatisticsCollector & statisticsCollector)

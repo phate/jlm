@@ -14,9 +14,7 @@ struct my_item
   my_item(int k, int v)
       : key(k),
         value(v)
-  {
-    hash_chain.prev = hash_chain.next = nullptr;
-  }
+  {}
 
   int key;
   int value;
@@ -25,7 +23,7 @@ struct my_item
   {
     my_item * prev;
     my_item * next;
-  } hash_chain;
+  } hash_chain{ nullptr, nullptr };
 };
 
 struct my_accessor
@@ -70,9 +68,9 @@ struct my_stritem
         value(v)
   {}
 
-  std::string key;
-  std::string value;
-  jlm::util::intrusive_hash_anchor<my_stritem> hash_chain;
+  std::string key{};
+  std::string value{};
+  jlm::util::intrusive_hash_anchor<my_stritem> hash_chain{};
 
   typedef jlm::util::
       intrusive_hash_accessor<std::string, my_stritem, &my_stritem::key, &my_stritem::hash_chain>

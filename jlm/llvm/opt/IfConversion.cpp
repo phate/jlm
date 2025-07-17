@@ -168,12 +168,12 @@ IfConversion::HandleGammaNode(const rvsdg::GammaNode & gammaNode)
     {
       const auto falseAlternative = origin0;
       const auto trueAlternative = origin1;
-      auto & controlToBitsNode = rvsdg::CreateOpNode<ctl2bits_op>(
+      auto & controlToIntNode = rvsdg::CreateOpNode<ControlToIntOperation>(
           { gammaPredicate },
           rvsdg::ControlType::Create(2),
           rvsdg::bittype::Create(1));
       auto & selectNode = rvsdg::CreateOpNode<SelectOperation>(
-          { controlToBitsNode.output(0), trueAlternative, falseAlternative },
+          { controlToIntNode.output(0), trueAlternative, falseAlternative },
           gammaOutput->Type());
       gammaOutput->divert_users(selectNode.output(0));
     }

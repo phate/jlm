@@ -61,10 +61,10 @@ public:
   ArrayType &
   operator=(ArrayType &&) = delete;
 
-  virtual std::string
+  [[nodiscard]] std::string
   debug_string() const override;
 
-  virtual bool
+  bool
   operator==(const jlm::rvsdg::Type & other) const noexcept override;
 
   [[nodiscard]] std::size_t
@@ -119,10 +119,10 @@ public:
       : size_(size)
   {}
 
-  virtual std::string
+  [[nodiscard]] std::string
   debug_string() const override;
 
-  virtual bool
+  bool
   operator==(const jlm::rvsdg::Type & other) const noexcept override;
 
   [[nodiscard]] std::size_t
@@ -148,13 +148,13 @@ public:
 
   constexpr VariableArgumentType() = default;
 
-  virtual bool
+  bool
   operator==(const jlm::rvsdg::Type & other) const noexcept override;
 
   [[nodiscard]] std::size_t
   ComputeHash() const noexcept override;
 
-  virtual std::string
+  [[nodiscard]] std::string
   debug_string() const override;
 
   static std::shared_ptr<const VariableArgumentType>
@@ -261,7 +261,7 @@ class StructType::Declaration final
 public:
   ~Declaration() = default;
 
-  Declaration(std::vector<std::shared_ptr<const rvsdg::Type>> types)
+  explicit Declaration(std::vector<std::shared_ptr<const rvsdg::Type>> types)
       : Types_(std::move(types))
   {}
 
@@ -334,7 +334,7 @@ public:
   VectorType &
   operator=(VectorType && other) = default;
 
-  virtual bool
+  bool
   operator==(const jlm::rvsdg::Type & other) const noexcept override;
 
   size_t
@@ -369,13 +369,13 @@ public:
       : VectorType(std::move(type), size)
   {}
 
-  virtual bool
+  bool
   operator==(const jlm::rvsdg::Type & other) const noexcept override;
 
   [[nodiscard]] std::size_t
   ComputeHash() const noexcept override;
 
-  virtual std::string
+  [[nodiscard]] std::string
   debug_string() const override;
 
   static std::shared_ptr<const FixedVectorType>
@@ -394,13 +394,13 @@ public:
       : VectorType(std::move(type), size)
   {}
 
-  virtual bool
+  bool
   operator==(const jlm::rvsdg::Type & other) const noexcept override;
 
   [[nodiscard]] std::size_t
   ComputeHash() const noexcept override;
 
-  virtual std::string
+  [[nodiscard]] std::string
   debug_string() const override;
 
   static std::shared_ptr<const ScalableVectorType>
@@ -421,13 +421,13 @@ public:
 
   constexpr IOStateType() noexcept = default;
 
-  virtual bool
+  bool
   operator==(const jlm::rvsdg::Type & other) const noexcept override;
 
   [[nodiscard]] std::size_t
   ComputeHash() const noexcept override;
 
-  virtual std::string
+  [[nodiscard]] std::string
   debug_string() const override;
 
   static std::shared_ptr<const IOStateType>
@@ -446,7 +446,7 @@ public:
 
   constexpr MemoryStateType() noexcept = default;
 
-  std::string
+  [[nodiscard]] std::string
   debug_string() const override;
 
   bool

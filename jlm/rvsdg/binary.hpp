@@ -122,10 +122,10 @@ public:
     JLM_ASSERT(op_->is_associative());
   }
 
-  virtual bool
+  bool
   operator==(const Operation & other) const noexcept override;
 
-  virtual std::string
+  [[nodiscard]] std::string
   debug_string() const override;
 
   [[nodiscard]] std::unique_ptr<Operation>

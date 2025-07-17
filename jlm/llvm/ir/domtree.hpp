@@ -17,26 +17,26 @@ namespace jlm::llvm
 class ControlFlowGraph;
 class ControlFlowGraphNode;
 
-class domnode final
+class DominatorTreeNode final
 {
-  typedef std::vector<std::unique_ptr<domnode>>::const_iterator const_iterator;
+  typedef std::vector<std::unique_ptr<DominatorTreeNode>>::const_iterator const_iterator;
 
 public:
-  domnode(ControlFlowGraphNode * node)
+  explicit DominatorTreeNode(ControlFlowGraphNode * node)
       : depth_(0),
         node_(node),
         parent_(nullptr)
   {}
 
-  domnode(const domnode &) = delete;
+  DominatorTreeNode(const DominatorTreeNode &) = delete;
 
-  domnode(domnode &&) = delete;
+  DominatorTreeNode(DominatorTreeNode &&) = delete;
 
-  domnode &
-  operator=(const domnode &) = delete;
+  DominatorTreeNode &
+  operator=(const DominatorTreeNode &) = delete;
 
-  domnode &
-  operator=(domnode &&) = delete;
+  DominatorTreeNode &
+  operator=(DominatorTreeNode &&) = delete;
 
   const_iterator
   begin() const
@@ -50,8 +50,8 @@ public:
     return children_.end();
   }
 
-  domnode *
-  add_child(std::unique_ptr<domnode> child);
+  DominatorTreeNode *
+  add_child(std::unique_ptr<DominatorTreeNode> child);
 
   size_t
   nchildren() const noexcept
@@ -59,7 +59,7 @@ public:
     return children_.size();
   }
 
-  domnode *
+  [[nodiscard]] DominatorTreeNode *
   child(size_t index) const noexcept
   {
     JLM_ASSERT(index < nchildren());
@@ -72,7 +72,7 @@ public:
     return node_;
   }
 
-  domnode *
+  [[nodiscard]] DominatorTreeNode *
   parent() const noexcept
   {
     return parent_;
@@ -84,20 +84,20 @@ public:
     return depth_;
   }
 
-  static std::unique_ptr<domnode>
+  static std::unique_ptr<DominatorTreeNode>
   create(ControlFlowGraphNode * node)
   {
-    return std::unique_ptr<domnode>(new domnode(node));
+    return std::unique_ptr<DominatorTreeNode>(new DominatorTreeNode(node));
   }
 
 private:
   size_t depth_;
   ControlFlowGraphNode * node_;
-  domnode * parent_;
-  std::vector<std::unique_ptr<domnode>> children_;
+  DominatorTreeNode * parent_;
+  std::vector<std::unique_ptr<DominatorTreeNode>> children_;
 };
 
-std::unique_ptr<domnode>
+std::unique_ptr<DominatorTreeNode>
 domtree(ControlFlowGraph & cfg);
 
 }

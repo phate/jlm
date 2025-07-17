@@ -5,53 +5,55 @@
 
 #include <jlm/hls/backend/rvsdg2rhls/memstate-conv.hpp>
 #include <jlm/hls/ir/hls.hpp>
-#include <jlm/llvm/ir/operators/lambda.hpp>
-#include <jlm/llvm/ir/operators/Load.hpp>
 #include <jlm/llvm/ir/operators/MemoryStateOperations.hpp>
-#include <jlm/llvm/ir/operators/Store.hpp>
-#include <jlm/rvsdg/substitution.hpp>
-#include <jlm/rvsdg/theta.hpp>
-#include <jlm/rvsdg/traverser.hpp>
+#include <jlm/rvsdg/RvsdgModule.hpp>
 
 namespace jlm::hls
 {
 
+MemoryStateSplitConversion::~MemoryStateSplitConversion() noexcept = default;
+
 void
-memstate_conv(llvm::RvsdgModule & rm)
+MemoryStateSplitConversion::Run(rvsdg::RvsdgModule & module, util::StatisticsCollector &)
 {
-  auto & graph = rm.Rvsdg();
-  auto root = &graph.GetRootRegion();
-  memstate_conv(root);
+  ConvertMemoryStateSplitsInRegion(module.Rvsdg().GetRootRegion());
 }
 
 void
-memstate_conv(rvsdg::Region * region)
+MemoryStateSplitConversion::CreateAndRun(
+    rvsdg::RvsdgModule & module,
+    util::StatisticsCollector & statisticsCollector)
 {
-  for (auto & node : rvsdg::TopDownTraverser(region))
+  MemoryStateSplitConversion memoryStateSplitConversion;
+  memoryStateSplitConversion.Run(module, statisticsCollector);
+}
+
+void
+MemoryStateSplitConversion::ConvertMemoryStateSplitsInRegion(rvsdg::Region & region)
+{
+  for (auto & node : region.Nodes())
   {
-    if (auto structnode = dynamic_cast<rvsdg::StructuralNode *>(node))
+    // Handle innermost regions first
+    if (const auto structuralNode = dynamic_cast<rvsdg::StructuralNode *>(&node))
     {
-      for (size_t n = 0; n < structnode->nsubregions(); n++)
-        memstate_conv(structnode->subregion(n));
-    }
-    else if (auto simplenode = dynamic_cast<jlm::rvsdg::SimpleNode *>(node))
-    {
-      if (dynamic_cast<const llvm::LambdaEntryMemoryStateSplitOperation *>(
-              &simplenode->GetOperation())
-          || dynamic_cast<const jlm::llvm::MemoryStateSplitOperation *>(
-              &simplenode->GetOperation()))
+      for (auto & subregion : structuralNode->Subregions())
       {
-        auto new_outs =
-            ForkOperation::create(simplenode->noutputs(), *simplenode->input(0)->origin());
-        for (size_t i = 0; i < simplenode->noutputs(); ++i)
-        {
-          simplenode->output(i)->divert_users(new_outs[i]);
-        }
-        remove(simplenode);
+        ConvertMemoryStateSplitsInRegion(subregion);
       }
-      // exit is handled as normal SimpleOperation
+    }
+
+    // Replace split nodes with fork nodes
+    if (rvsdg::is<llvm::LambdaEntryMemoryStateSplitOperation>(&node)
+        || rvsdg::is<llvm::MemoryStateSplitOperation>(&node))
+    {
+      JLM_ASSERT(node.ninputs() == 1);
+      auto results = ForkOperation::create(node.noutputs(), *node.input(0)->origin());
+      divert_users(&node, results);
     }
   }
+
+  // Prune dead nodes
+  region.prune(false);
 }
 
 } // namespace jlm::hls

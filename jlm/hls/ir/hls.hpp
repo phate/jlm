@@ -195,48 +195,6 @@ private:
   bool IsConstant_ = false;
 };
 
-class merge_op final : public rvsdg::SimpleOperation
-{
-public:
-  virtual ~merge_op()
-  {}
-
-  merge_op(size_t nalternatives, const std::shared_ptr<const jlm::rvsdg::Type> & type)
-      : SimpleOperation({ nalternatives, type }, { type })
-  {}
-
-  bool
-  operator==(const Operation & other) const noexcept override
-  {
-    auto ot = dynamic_cast<const merge_op *>(&other);
-    return ot && ot->narguments() == narguments() && *ot->argument(0) == *argument(0);
-  }
-
-  std::string
-  debug_string() const override
-  {
-    return "HLS_MERGE";
-  }
-
-  [[nodiscard]] std::unique_ptr<Operation>
-  copy() const override
-  {
-    return std::make_unique<merge_op>(*this);
-  }
-
-  static std::vector<jlm::rvsdg::Output *>
-  create(const std::vector<jlm::rvsdg::Output *> & alternatives)
-  {
-    if (alternatives.empty())
-      throw util::error("Insufficient number of operands.");
-
-    return outputs(&rvsdg::CreateOpNode<merge_op>(
-        *alternatives.front()->region(),
-        alternatives.size(),
-        alternatives.front()->Type()));
-  }
-};
-
 class MuxOperation final : public rvsdg::SimpleOperation
 {
 public:
@@ -440,22 +398,34 @@ public:
       size_t capacity,
       bool pass_through)
       : SimpleOperation({ type }, { type }),
-        capacity(capacity),
-        pass_through(pass_through)
+        Capacity_(capacity),
+        IsPassThrough_(pass_through)
   {}
+
+  [[nodiscard]] std::size_t
+  Capacity() const noexcept
+  {
+    return Capacity_;
+  }
+
+  [[nodiscard]] bool
+  IsPassThrough() const noexcept
+  {
+    return IsPassThrough_;
+  }
 
   bool
   operator==(const Operation & other) const noexcept override
   {
     const auto ot = dynamic_cast<const BufferOperation *>(&other);
-    return ot && ot->capacity == capacity && ot->pass_through == pass_through
+    return ot && ot->Capacity() == Capacity() && ot->IsPassThrough() == IsPassThrough()
         && *ot->result(0) == *result(0);
   }
 
-  std::string
+  [[nodiscard]] std::string
   debug_string() const override
   {
-    return util::strfmt("HLS_BUF_", (pass_through ? "P_" : ""), capacity);
+    return util::strfmt("HLS_BUF_", (IsPassThrough() ? "P_" : ""), Capacity());
   }
 
   [[nodiscard]] std::unique_ptr<Operation>
@@ -471,9 +441,9 @@ public:
         &rvsdg::CreateOpNode<BufferOperation>({ &value }, value.Type(), capacity, pass_through));
   }
 
-  // FIXME: privatize attributes
-  size_t capacity;
-  bool pass_through;
+private:
+  std::size_t Capacity_;
+  bool IsPassThrough_;
 };
 
 class TriggerType final : public rvsdg::StateType
@@ -744,15 +714,14 @@ public:
 class loop_node final : public rvsdg::StructuralNode
 {
 public:
-  virtual ~loop_node()
-  {}
+  ~loop_node() noexcept override = default;
 
 private:
-  inline loop_node(rvsdg::Region * parent)
+  explicit loop_node(rvsdg::Region * parent)
       : StructuralNode(parent, 1)
   {}
 
-  jlm::rvsdg::node_output * _predicate_buffer;
+  jlm::rvsdg::node_output * _predicate_buffer{};
 
 public:
   [[nodiscard]] const rvsdg::Operation &
@@ -793,7 +762,7 @@ public:
   jlm::rvsdg::Output *
   add_loopconst(jlm::rvsdg::Output * origin);
 
-  virtual loop_node *
+  loop_node *
   copy(rvsdg::Region * region, rvsdg::SubstitutionMap & smap) const override;
 };
 
@@ -817,7 +786,7 @@ public:
   BundleType &
   operator=(BundleType &&) = delete;
 
-  virtual bool
+  bool
   operator==(const jlm::rvsdg::Type & other) const noexcept override
   {
     auto type = dynamic_cast<const BundleType *>(&other);
@@ -854,7 +823,7 @@ public:
     return {};
   }
 
-  virtual std::string
+  [[nodiscard]] std::string
   debug_string() const override
   {
     return "bundle";

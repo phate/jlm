@@ -30,7 +30,7 @@ class InvariantLambdaMemoryStateRemoval final : public rvsdg::Transformation
   class Statistics;
 
 public:
-  virtual ~InvariantLambdaMemoryStateRemoval() noexcept;
+  ~InvariantLambdaMemoryStateRemoval() noexcept override;
 
   /**
    * @brief Applies the transformation on the provided RVSDG module.

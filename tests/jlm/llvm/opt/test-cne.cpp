@@ -52,7 +52,7 @@ test_simple()
   GraphExport::Create(*b4, "b4");
 
   //	jlm::rvsdg::view(graph.GetRootRegion(), stdout);
-  jlm::llvm::cne cne;
+  jlm::llvm::CommonNodeElimination cne;
   cne.Run(rm, statisticsCollector);
   //	jlm::rvsdg::view(graph.GetRootRegion(), stdout);
 
@@ -105,7 +105,7 @@ test_gamma()
   GraphExport::Create(*gamma->output(2), "y");
 
   //	jlm::rvsdg::view(graph.GetRootRegion(), stdout);
-  jlm::llvm::cne cne;
+  jlm::llvm::CommonNodeElimination cne;
   cne.Run(rm, statisticsCollector);
   //	jlm::rvsdg::view(graph.GetRootRegion(), stdout);
 
@@ -162,7 +162,7 @@ test_theta()
   GraphExport::Create(*lv4.output, "lv4");
 
   //	jlm::rvsdg::view(graph.GetRootRegion(), stdout);
-  jlm::llvm::cne cne;
+  jlm::llvm::CommonNodeElimination cne;
   cne.Run(rm, statisticsCollector);
   //	jlm::rvsdg::view(graph.GetRootRegion(), stdout);
 
@@ -210,7 +210,7 @@ test_theta2()
   GraphExport::Create(*lv3.output, "lv3");
 
   //	jlm::rvsdg::view(graph, stdout);
-  jlm::llvm::cne cne;
+  jlm::llvm::CommonNodeElimination cne;
   cne.Run(rm, statisticsCollector);
   //	jlm::rvsdg::view(graph, stdout);
 
@@ -263,7 +263,7 @@ test_theta3()
   GraphExport::Create(*lv4.output, "lv4");
 
   //	jlm::rvsdg::view(graph, stdout);
-  jlm::llvm::cne cne;
+  jlm::llvm::CommonNodeElimination cne;
   cne.Run(rm, statisticsCollector);
   //	jlm::rvsdg::view(graph, stdout);
 
@@ -317,7 +317,7 @@ test_theta4()
   GraphExport::Create(*theta->output(4), "lv5");
 
   //	jlm::rvsdg::view(graph, stdout);
-  jlm::llvm::cne cne;
+  jlm::llvm::CommonNodeElimination cne;
   cne.Run(rm, statisticsCollector);
   //	jlm::rvsdg::view(graph, stdout);
 
@@ -361,7 +361,7 @@ test_theta5()
   auto & ex4 = GraphExport::Create(*theta->output(4), "lv4");
 
   //	jlm::rvsdg::view(graph, stdout);
-  jlm::llvm::cne cne;
+  jlm::llvm::CommonNodeElimination cne;
   cne.Run(rm, statisticsCollector);
   //	jlm::rvsdg::view(graph, stdout);
 
@@ -398,7 +398,7 @@ test_lambda()
   GraphExport::Create(*output, "f");
 
   //	jlm::rvsdg::view(graph.GetRootRegion(), stdout);
-  jlm::llvm::cne cne;
+  jlm::llvm::CommonNodeElimination cne;
   cne.Run(rm, statisticsCollector);
   //	jlm::rvsdg::view(graph.GetRootRegion(), stdout);
 
@@ -450,7 +450,7 @@ test_phi()
   GraphExport::Create(*phi->output(1), "f2");
 
   //	jlm::rvsdg::view(graph.GetRootRegion(), stdout);
-  jlm::llvm::cne cne;
+  jlm::llvm::CommonNodeElimination cne;
   cne.Run(rm, statisticsCollector);
   //	jlm::rvsdg::view(graph.GetRootRegion(), stdout);
 

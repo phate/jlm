@@ -293,7 +293,7 @@ public:
     return arguments_.size();
   }
 
-  virtual std::string
+  [[nodiscard]] std::string
   debug_string() const override;
 
   static std::unique_ptr<AggregationNode>
@@ -398,7 +398,7 @@ public:
     return results_.size();
   }
 
-  virtual std::string
+  [[nodiscard]] std::string
   debug_string() const override;
 
   static inline std::unique_ptr<AggregationNode>
@@ -422,7 +422,7 @@ public:
       : bb_(std::move(bb))
   {}
 
-  std::string
+  [[nodiscard]] std::string
   debug_string() const override;
 
   const ThreeAddressCodeList &
@@ -458,7 +458,7 @@ public:
     add_child(std::move(n2));
   }
 
-  std::string
+  [[nodiscard]] std::string
   debug_string() const override;
 
   static std::unique_ptr<AggregationNode>
@@ -475,7 +475,7 @@ public:
 
   BranchAggregationNode() = default;
 
-  virtual std::string
+  [[nodiscard]] std::string
   debug_string() const override;
 
   static inline std::unique_ptr<AggregationNode>
@@ -495,7 +495,7 @@ public:
     add_child(std::move(body));
   }
 
-  virtual std::string
+  [[nodiscard]] std::string
   debug_string() const override;
 
   static inline std::unique_ptr<AggregationNode>

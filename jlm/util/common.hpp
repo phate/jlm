@@ -56,9 +56,9 @@ AssertedCast(From * value)
 class error : public std::runtime_error
 {
 public:
-  virtual ~error();
+  ~error() noexcept override;
 
-  inline error(const std::string & msg)
+  explicit error(const std::string & msg)
       : std::runtime_error(msg)
   {}
 };

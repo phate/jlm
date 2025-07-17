@@ -24,23 +24,7 @@ class ThetaNode;
 namespace jlm::llvm
 {
 
-namespace delta
-{
-class node;
-}
-
-namespace lambda
-{
-class node;
-}
-
-namespace phi
-{
-class node;
-}
-
-class LoadNode;
-class StoreNode;
+class DeltaNode;
 
 namespace aa
 {
@@ -105,7 +89,7 @@ private:
   AnalyzeLambda(const rvsdg::LambdaNode & node);
 
   void
-  AnalyzeDelta(const delta::node & node);
+  AnalyzeDelta(const DeltaNode & node);
 
   void
   AnalyzePhi(const rvsdg::PhiNode & node);

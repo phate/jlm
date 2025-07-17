@@ -107,16 +107,16 @@ public:
       : rvsdg::UnaryOperation(std::move(srctype), std::move(dsttype))
   {}
 
-  virtual bool
+  bool
   operator==(const Operation & other) const noexcept override;
 
-  virtual rvsdg::unop_reduction_path_t
+  rvsdg::unop_reduction_path_t
   can_reduce_operand(const rvsdg::Output * operand) const noexcept override;
 
-  virtual rvsdg::Output *
+  rvsdg::Output *
   reduce_operand(rvsdg::unop_reduction_path_t path, rvsdg::Output * operand) const override;
 
-  virtual std::string
+  [[nodiscard]] std::string
   debug_string() const override;
 
   [[nodiscard]] std::unique_ptr<Operation>
@@ -174,21 +174,21 @@ public:
         flags_(flags)
   {}
 
-  virtual bool
+  bool
   operator==(const Operation & other) const noexcept override;
 
-  virtual rvsdg::binop_reduction_path_t
+  rvsdg::binop_reduction_path_t
   can_reduce_operand_pair(const rvsdg::Output * op1, const rvsdg::Output * op2)
       const noexcept override;
 
-  virtual rvsdg::Output *
+  rvsdg::Output *
   reduce_operand_pair(rvsdg::unop_reduction_path_t path, rvsdg::Output * op1, rvsdg::Output * op2)
       const override;
 
   enum BinaryOperation::flags
   flags() const noexcept override;
 
-  virtual std::string
+  [[nodiscard]] std::string
   debug_string() const override;
 
   [[nodiscard]] std::unique_ptr<Operation>
@@ -229,7 +229,7 @@ class TestStructuralOperation final : public rvsdg::StructuralOperation
 public:
   ~TestStructuralOperation() noexcept override;
 
-  virtual std::string
+  [[nodiscard]] std::string
   debug_string() const override;
 
   [[nodiscard]] std::unique_ptr<Operation>
@@ -407,10 +407,10 @@ public:
 
   TestOperation(const TestOperation &) = default;
 
-  virtual bool
+  bool
   operator==(const Operation & other) const noexcept override;
 
-  virtual std::string
+  [[nodiscard]] std::string
   debug_string() const override;
 
   [[nodiscard]] std::unique_ptr<Operation>

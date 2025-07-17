@@ -64,10 +64,10 @@ remove_redundant_buf(rvsdg::Region * region)
       {
         if (std::dynamic_pointer_cast<const jlm::llvm::MemoryStateType>(buf->argument(0)))
         {
-          if (!buf->pass_through && eliminate_buf(node->input(0)->origin()))
+          if (!buf->IsPassThrough() && eliminate_buf(node->input(0)->origin()))
           {
             auto new_out =
-                BufferOperation::create(*node->input(0)->origin(), buf->capacity, true)[0];
+                BufferOperation::create(*node->input(0)->origin(), buf->Capacity(), true)[0];
             node->output(0)->divert_users(new_out);
             remove(node);
           }

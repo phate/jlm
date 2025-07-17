@@ -418,7 +418,7 @@ private:
   AnalyzeLambda(const rvsdg::LambdaNode & node);
 
   void
-  AnalyzeDelta(const delta::node & node);
+  AnalyzeDelta(const DeltaNode & node);
 
   void
   AnalyzePhi(const rvsdg::PhiNode & node);

@@ -583,7 +583,7 @@ TestFpBinary()
 
       jlm::rvsdg::SimpleNode::Create(
           *lambda->subregion(),
-          fpbin_op(binOp, floatType),
+          FBinaryOperation(binOp, floatType),
           { floatArgument1, floatArgument2 });
 
       lambda->finalize({});
@@ -632,7 +632,8 @@ TestFpBinary()
         assert(convertedLambda->subregion()->nnodes() == 1);
 
         auto node = convertedLambda->subregion()->Nodes().begin().ptr();
-        auto convertedFpbin = jlm::util::AssertedCast<const fpbin_op>(&node->GetOperation());
+        auto convertedFpbin =
+            jlm::util::AssertedCast<const FBinaryOperation>(&node->GetOperation());
         assert(convertedFpbin->fpop() == binOp);
         assert(convertedFpbin->nresults() == 1);
         assert(convertedFpbin->narguments() == 2);
@@ -743,7 +744,7 @@ TestDelta()
   {
     auto bitType = jlm::rvsdg::bittype::Create(32);
 
-    auto delta1 = delta::node::Create(
+    auto delta1 = jlm::llvm::DeltaNode::Create(
         &graph->GetRootRegion(),
         bitType,
         "non-constant-delta",
@@ -754,7 +755,7 @@ TestDelta()
     auto bitConstant = jlm::rvsdg::create_bitconstant(delta1->subregion(), 32, 1);
     delta1->finalize(bitConstant);
 
-    auto delta2 = delta::node::Create(
+    auto delta2 = jlm::llvm::DeltaNode::Create(
         &graph->GetRootRegion(),
         bitType,
         "constant-delta",
@@ -817,7 +818,7 @@ TestDelta()
       assert(region->nnodes() == 2);
       for (auto & node : region->Nodes())
       {
-        auto convertedDelta = jlm::util::AssertedCast<delta::node>(&node);
+        auto convertedDelta = jlm::util::AssertedCast<jlm::llvm::DeltaNode>(&node);
         assert(convertedDelta->subregion()->nnodes() == 1);
 
         if (convertedDelta->constant())
@@ -829,7 +830,7 @@ TestDelta()
           assert(convertedDelta->name() == "non-constant-delta");
         }
 
-        assert(is<jlm::rvsdg::bittype>(convertedDelta->type()));
+        assert(is<jlm::rvsdg::bittype>(*convertedDelta->Type()));
         assert(convertedDelta->linkage() == linkage::external_linkage);
         assert(convertedDelta->Section() == "section");
 
@@ -988,7 +989,7 @@ TestVarArgList()
     auto bitType = jlm::rvsdg::bittype::Create(32);
     auto bits1 = jlm::rvsdg::create_bitconstant(&graph->GetRootRegion(), 32, 1);
     auto bits2 = jlm::rvsdg::create_bitconstant(&graph->GetRootRegion(), 32, 2);
-    jlm::llvm::valist_op::Create(graph->GetRootRegion(), { bits1, bits2 });
+    jlm::llvm::VariadicArgumentListOperation::Create(graph->GetRootRegion(), { bits1, bits2 });
 
     // Convert the RVSDG to MLIR
     std::cout << "Convert to MLIR" << std::endl;
@@ -1028,7 +1029,8 @@ TestVarArgList()
       bool foundVarArgOp = false;
       for (auto & node : region->Nodes())
       {
-        auto convertedVarArgOp = dynamic_cast<const valist_op *>(&node.GetOperation());
+        auto convertedVarArgOp =
+            dynamic_cast<const VariadicArgumentListOperation *>(&node.GetOperation());
         if (convertedVarArgOp)
         {
           assert(convertedVarArgOp->nresults() == 1);

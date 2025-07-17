@@ -594,7 +594,7 @@ TestDelta1()
   assert(ptg->NumMappedRegisters() == 6);
 
   auto & delta_f = ptg->GetDeltaNode(*test.delta_f);
-  auto & pdelta_f = ptg->GetRegisterNode(*test.delta_f->output());
+  auto & pdelta_f = ptg->GetRegisterNode(test.delta_f->output());
 
   auto & lambda_g = ptg->GetLambdaNode(*test.lambda_g);
   auto & plambda_g = ptg->GetRegisterNode(*test.lambda_g->output());
@@ -630,10 +630,10 @@ TestDelta2()
   assert(ptg->NumMappedRegisters() == 8);
 
   auto & delta_d1 = ptg->GetDeltaNode(*test.delta_d1);
-  auto & delta_d1_out = ptg->GetRegisterNode(*test.delta_d1->output());
+  auto & delta_d1_out = ptg->GetRegisterNode(test.delta_d1->output());
 
   auto & delta_d2 = ptg->GetDeltaNode(*test.delta_d2);
-  auto & delta_d2_out = ptg->GetRegisterNode(*test.delta_d2->output());
+  auto & delta_d2_out = ptg->GetRegisterNode(test.delta_d2->output());
 
   auto & lambda_f1 = ptg->GetLambdaNode(*test.lambda_f1);
   auto & lambda_f1_out = ptg->GetRegisterNode(*test.lambda_f1->output());

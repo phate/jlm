@@ -32,7 +32,7 @@ public:
     return !(*this == other);
   }
 
-  virtual std::string
+  [[nodiscard]] virtual std::string
   debug_string() const = 0;
 
   /**

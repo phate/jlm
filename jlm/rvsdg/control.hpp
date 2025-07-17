@@ -25,10 +25,10 @@ public:
 
   explicit ControlType(size_t nalternatives);
 
-  virtual std::string
+  [[nodiscard]] std::string
   debug_string() const override;
 
-  virtual bool
+  bool
   operator==(const jlm::rvsdg::Type & other) const noexcept override;
 
   std::size_t
@@ -149,7 +149,7 @@ class match_op final : public UnaryOperation
   typedef std::unordered_map<uint64_t, uint64_t>::const_iterator const_iterator;
 
 public:
-  virtual ~match_op() noexcept;
+  ~match_op() noexcept override;
 
   match_op(
       size_t nbits,
@@ -157,16 +157,16 @@ public:
       uint64_t default_alternative,
       size_t nalternatives);
 
-  virtual bool
+  bool
   operator==(const Operation & other) const noexcept override;
 
-  virtual unop_reduction_path_t
+  unop_reduction_path_t
   can_reduce_operand(const jlm::rvsdg::Output * arg) const noexcept override;
 
-  virtual jlm::rvsdg::Output *
+  jlm::rvsdg::Output *
   reduce_operand(unop_reduction_path_t path, jlm::rvsdg::Output * arg) const override;
 
-  virtual std::string
+  [[nodiscard]] std::string
   debug_string() const override;
 
   [[nodiscard]] std::unique_ptr<Operation>

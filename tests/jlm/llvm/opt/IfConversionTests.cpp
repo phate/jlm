@@ -65,7 +65,7 @@ GammaWithoutMatch()
 
   const auto controlToBitsNode =
       jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*selectNode->input(0)->origin());
-  assert(controlToBitsNode && is<ctl2bits_op>(controlToBitsNode));
+  assert(controlToBitsNode && is<ControlToIntOperation>(controlToBitsNode));
   assert(controlToBitsNode->input(0)->origin() == conditionValue);
 }
 

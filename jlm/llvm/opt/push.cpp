@@ -425,13 +425,10 @@ push(rvsdg::RvsdgModule & rvsdgModule, util::StatisticsCollector & statisticsCol
   statisticsCollector.CollectDemandedStatistics(std::move(statistics));
 }
 
-/* pushout class */
-
-pushout::~pushout()
-{}
+NodeHoisting::~NodeHoisting() noexcept = default;
 
 void
-pushout::Run(rvsdg::RvsdgModule & module, util::StatisticsCollector & statisticsCollector)
+NodeHoisting::Run(rvsdg::RvsdgModule & module, util::StatisticsCollector & statisticsCollector)
 {
   push(module, statisticsCollector);
 }

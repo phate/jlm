@@ -1036,7 +1036,7 @@ ConvertDataNode(
     /*
      * data node with initialization
      */
-    auto deltaNode = delta::node::Create(
+    auto deltaNode = DeltaNode::Create(
         &region,
         dataNode.GetValueType(),
         dataNode.name(),
@@ -1052,15 +1052,15 @@ ConvertDataNode(
     for (const auto & dependency : dataNode)
     {
       auto dependencyVariable = interProceduralGraphModule.variable(dependency);
-      auto argument = deltaNode->add_ctxvar(outerVariableMap.lookup(dependencyVariable));
-      regionalizedVariableMap.GetTopVariableMap().insert(dependencyVariable, argument);
+      auto ctxVar = deltaNode->AddContextVar(*outerVariableMap.lookup(dependencyVariable));
+      regionalizedVariableMap.GetTopVariableMap().insert(dependencyVariable, ctxVar.inner);
     }
 
     auto initOutput = ConvertDataNodeInitialization(
         *dataNodeInitialization,
         *deltaNode->subregion(),
         regionalizedVariableMap);
-    auto deltaOutput = deltaNode->finalize(initOutput);
+    auto deltaOutput = &deltaNode->finalize(initOutput);
     regionalizedVariableMap.PopRegion();
 
     return deltaOutput;

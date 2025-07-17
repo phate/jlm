@@ -19,20 +19,20 @@ namespace jlm::rvsdg
 class bitconcat_op final : public BinaryOperation
 {
 public:
-  virtual ~bitconcat_op() noexcept;
+  ~bitconcat_op() noexcept override;
 
   explicit inline bitconcat_op(const std::vector<std::shared_ptr<const bittype>> types)
       : BinaryOperation({ types.begin(), types.end() }, aggregate_arguments(types))
   {}
 
-  virtual bool
+  bool
   operator==(const Operation & other) const noexcept override;
 
-  virtual binop_reduction_path_t
+  binop_reduction_path_t
   can_reduce_operand_pair(const jlm::rvsdg::Output * arg1, const jlm::rvsdg::Output * arg2)
       const noexcept override;
 
-  virtual jlm::rvsdg::Output *
+  jlm::rvsdg::Output *
   reduce_operand_pair(
       binop_reduction_path_t path,
       jlm::rvsdg::Output * arg1,
@@ -41,7 +41,7 @@ public:
   enum BinaryOperation::flags
   flags() const noexcept override;
 
-  virtual std::string
+  [[nodiscard]] std::string
   debug_string() const override;
 
   [[nodiscard]] std::unique_ptr<Operation>

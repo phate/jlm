@@ -29,13 +29,9 @@ class Region;
 namespace jlm::llvm
 {
 
-namespace delta
-{
-class node;
-}
-
 class ControlFlowGraph;
 class data_node_init;
+class DeltaNode;
 class InterProceduralGraphModule;
 class RvsdgModule;
 class Variable;
@@ -79,7 +75,7 @@ private:
   ConvertNode(const rvsdg::Node & node);
 
   void
-  ConvertDeltaNode(const delta::node & deltaNode);
+  ConvertDeltaNode(const DeltaNode & deltaNode);
 
   void
   ConvertPhiNode(const rvsdg::PhiNode & phiNode);
@@ -103,7 +99,7 @@ private:
   ConvertRegion(rvsdg::Region & region);
 
   std::unique_ptr<data_node_init>
-  CreateInitialization(const delta::node & deltaNode);
+  CreateInitialization(const DeltaNode & deltaNode);
 
   static bool
   RequiresSsaPhiOperation(const rvsdg::ThetaNode::LoopVar & loopVar, const Variable & v);

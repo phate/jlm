@@ -89,7 +89,7 @@ private:
 class context final
 {
 public:
-  inline context(InterProceduralGraphModule & im)
+  explicit context(InterProceduralGraphModule & im)
       : module_(im),
         node_(nullptr),
         iostate_(nullptr),
@@ -210,7 +210,7 @@ private:
   InterProceduralGraphModule & module_;
   basic_block_map bbmap_;
   InterProceduralGraphNode * node_;
-  const llvm::Variable * result_;
+  const llvm::Variable * result_{};
   llvm::Variable * iostate_;
   llvm::Variable * memory_state_;
   std::unordered_map<const ::llvm::Value *, const llvm::Variable *> vmap_;

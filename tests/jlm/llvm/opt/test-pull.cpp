@@ -116,7 +116,7 @@ test_pull()
   GraphExport::Create(*g1xv.output, "");
 
   jlm::rvsdg::view(graph, stdout);
-  jlm::llvm::pullin pullin;
+  jlm::llvm::NodeSinking pullin;
   pullin.Run(rm, statisticsCollector);
   graph.PruneNodes();
   jlm::rvsdg::view(graph, stdout);

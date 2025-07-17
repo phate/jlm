@@ -22,7 +22,7 @@ class ThetaOperation final : public StructuralOperation
 public:
   ~ThetaOperation() noexcept override;
 
-  virtual std::string
+  [[nodiscard]] std::string
   debug_string() const override;
 
   [[nodiscard]] std::unique_ptr<Operation>
@@ -138,7 +138,7 @@ public:
   void
   RemoveLoopVars(std::vector<LoopVar> loopvars);
 
-  virtual ThetaNode *
+  ThetaNode *
   copy(rvsdg::Region * region, rvsdg::SubstitutionMap & smap) const override;
 
   /**

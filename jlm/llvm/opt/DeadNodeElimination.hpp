@@ -23,11 +23,7 @@ class Region;
 namespace jlm::llvm
 {
 
-namespace delta
-{
-class node;
-}
-
+class DeltaNode;
 class LambdaNode;
 
 /** \brief Dead Node Elimination Optimization
@@ -100,7 +96,7 @@ private:
   SweepPhi(rvsdg::PhiNode & phiNode) const;
 
   static void
-  SweepDelta(delta::node & deltaNode);
+  SweepDelta(DeltaNode & deltaNode);
 
   std::unique_ptr<Context> Context_;
 };
