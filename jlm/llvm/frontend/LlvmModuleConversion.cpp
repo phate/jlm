@@ -246,7 +246,7 @@ ConvertTypeAttribute(const ::llvm::Attribute & attribute, context & ctx)
   JLM_UNREACHABLE("Unhandled attribute");
 }
 
-static string_attribute
+static StringAttribute
 ConvertStringAttribute(const ::llvm::Attribute & attribute)
 {
   JLM_ASSERT(attribute.isStringAttribute());
