@@ -8,25 +8,16 @@
 #include <jlm/hls/backend/rvsdg2rhls/rvsdg2rhls.hpp>
 #include <jlm/hls/ir/hls.hpp>
 #include <jlm/hls/util/view.hpp>
-#include <jlm/llvm/ir/operators/operators.hpp>
-#include <jlm/rvsdg/lambda.hpp>
 #include <jlm/rvsdg/traverser.hpp>
 
 namespace jlm::hls
 {
-rvsdg::Input *
-GetUser(rvsdg::Output * out)
-{
-  // This works because at this point we have 1:1 relationships through forks
-  auto & user = *out->Users().begin();
-  return &user;
-}
 
 rvsdg::Input *
 FindUserNode(rvsdg::Output * out)
 {
 
-  auto user = GetUser(out);
+  auto user = &out->SingleUser();
   if (auto br = dynamic_cast<backedge_result *>(user))
   {
     return FindUserNode(br->argument());
@@ -222,7 +213,7 @@ OptimizeLoop(loop_node * loopNode)
         continue;
       }
       JLM_ASSERT(branchOperation->loop);
-      auto oldBufInput = GetUser(branchNode->output(1));
+      auto oldBufInput = &branchNode->output(1)->SingleUser();
       auto [oldBufferNode, oldBufferOperation] =
           rvsdg::TryGetSimpleNodeAndOp<BufferOperation>(*oldBufInput);
       if (std::get<1>(rvsdg::TryGetSimpleNodeAndOp<SinkOperation>(*oldBufInput)))
@@ -256,7 +247,7 @@ OptimizeLoop(loop_node * loopNode)
     {
       auto in = loopNode->input(i);
       auto arg = in->arguments.begin().ptr();
-      auto user = GetUser(arg);
+      auto user = &arg->SingleUser();
       // only do this for proper loop variables
       if (auto [node, muxOperation] = rvsdg::TryGetSimpleNodeAndOp<MuxOperation>(*user);
           muxOperation)
@@ -413,7 +404,7 @@ NodeCycles(rvsdg::SimpleNode * node, std::vector<size_t> & input_cycles)
   else if (rvsdg::is<StateGateOperation>(node))
   {
     // handle special state gate that sits on dec_load response
-    auto sg0_user = GetUser(node->output(0));
+    auto sg0_user = &node->output(0)->SingleUser();
     if (std::get<1>(rvsdg::TryGetSimpleNodeAndOp<DecoupledLoadOperation>(*sg0_user))
         && sg0_user->index() == 1)
     {
@@ -457,7 +448,7 @@ NodeCapacity(rvsdg::SimpleNode * node, std::vector<size_t> & input_capacities)
   else if (rvsdg::is<StateGateOperation>(node))
   {
     // handle special state gate that sits on dec_load response
-    auto sg0_user = GetUser(node->output(0));
+    auto sg0_user = &node->output(0)->SingleUser();
     if (std::get<1>(rvsdg::TryGetSimpleNodeAndOp<DecoupledLoadOperation>(*sg0_user))
         && sg0_user->index() == 1)
     {
@@ -485,7 +476,7 @@ CreateLoopFrontier(
     auto in = loop->input(i);
     auto arg = in->arguments.begin().ptr();
 
-    auto user = GetUser(arg);
+    auto user = &arg->SingleUser();
     auto userNode = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*user);
     auto [muxNode, muxOperation] = rvsdg::TryGetSimpleNodeAndOp<MuxOperation>(*user);
     if (std::get<1>(rvsdg::TryGetSimpleNodeAndOp<LoopConstantBufferOperation>(*user))
@@ -495,18 +486,18 @@ CreateLoopFrontier(
       // we start from these
       auto out = userNode->output(0);
       output_cycles[out] = output_cycles[in->origin()];
-      frontier.insert(GetUser(out));
+      frontier.insert(&out->SingleUser());
     }
     // these are needed so we can finish with an empty frontier
     output_cycles[arg] = output_cycles[in->origin()];
-    frontier.insert(GetUser(arg));
+    frontier.insert(&arg->SingleUser());
   }
   for (auto & tn : loop->subregion()->TopNodes())
   {
     JLM_ASSERT(is_constant(&tn));
     auto out = tn.output(0);
     output_cycles[out] = 0;
-    frontier.insert(GetUser(out));
+    frontier.insert(&out->SingleUser());
   }
   for (auto arg : loop->subregion()->Arguments())
   {
@@ -515,7 +506,7 @@ CreateLoopFrontier(
     {
       continue;
     }
-    auto user = GetUser(arg);
+    auto user = &arg->SingleUser();
     auto [muxNode, muxOperation] = rvsdg::TryGetSimpleNodeAndOp<MuxOperation>(*user);
     if ((muxOperation && muxOperation->loop))
     {
@@ -524,8 +515,8 @@ CreateLoopFrontier(
     if (std::get<1>(rvsdg::TryGetSimpleNodeAndOp<BufferOperation>(*user)))
     {
       auto bufNode = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*user);
-      if (std::get<1>(
-              rvsdg::TryGetSimpleNodeAndOp<PredicateBufferOperation>(*GetUser(bufNode->output(0)))))
+      if (std::get<1>(rvsdg::TryGetSimpleNodeAndOp<PredicateBufferOperation>(
+              bufNode->output(0)->SingleUser())))
       {
         // skip predicate buffer
         continue;
@@ -533,7 +524,7 @@ CreateLoopFrontier(
     }
     // this comes from somewhere inside the loop
     output_cycles[arg] = 0;
-    frontier.insert(GetUser(arg));
+    frontier.insert(&arg->SingleUser());
     stream_backedges.insert(backedge->result());
   }
 }
@@ -608,7 +599,7 @@ PushCycleFrontier(
           {
             auto out = simpleNode->output(i);
             output_cycles[out] = out_cycles[i];
-            frontier.insert(GetUser(out));
+            frontier.insert(&out->SingleUser());
           }
         }
         changed = true;
@@ -622,7 +613,7 @@ PushCycleFrontier(
         {
           // skip stream backedges
           output_cycles[out] = output_cycles[in->origin()];
-          frontier.insert(GetUser(out));
+          frontier.insert(&out->SingleUser());
         }
         changed = true;
         break;
@@ -662,7 +653,7 @@ PushCycleFrontier(
         {
           std::cout << "output latency " << i << " " << output_cycles[inner_loop->output(i)]
                     << std::endl;
-          frontier.insert(GetUser(inner_loop->output(i)));
+          frontier.insert(&inner_loop->output(i)->SingleUser());
         }
         changed = true;
         break;
@@ -916,7 +907,7 @@ AdjustLoopBuffers(
             auto out = simpleNode->output(i);
             buffer_capacity[out] = out_capacities[i];
             JLM_ASSERT(analyze_inner_loop || buffer_capacity[out] >= output_cycles[out]);
-            frontier.insert(GetUser(out));
+            frontier.insert(&out->SingleUser());
           }
         }
         changed = true;
@@ -929,7 +920,7 @@ AdjustLoopBuffers(
         buffer_capacity[out] = buffer_capacity[in->origin()];
         if (stream_backedges.find(be) == stream_backedges.end())
         {
-          frontier.insert(GetUser(out));
+          frontier.insert(&out->SingleUser());
         }
         changed = true;
         break;
@@ -972,7 +963,7 @@ AdjustLoopBuffers(
           auto capacity = buffer_capacity[inner_loop->input(i)->origin()];
           if (!analyze_inner_loop && capacity < max_cycles)
           {
-            auto user = GetUser(inner_loop->input(i)->arguments.begin().ptr());
+            auto user = &inner_loop->input(i)->arguments.begin().ptr()->SingleUser();
             auto [muxNode, muxOperation] = rvsdg::TryGetSimpleNodeAndOp<MuxOperation>(*user);
             if (auto [node, op] = rvsdg::TryGetSimpleNodeAndOp<LoopConstantBufferOperation>(*user);
                 (muxOperation && muxOperation->loop) || op)
@@ -991,7 +982,7 @@ AdjustLoopBuffers(
         AdjustLoopBuffers(inner_loop, output_cycles, buffer_capacity, true);
         for (size_t i = 0; i < inner_loop->noutputs(); ++i)
         {
-          frontier.insert(GetUser(inner_loop->output(i)));
+          frontier.insert(&inner_loop->output(i)->SingleUser());
         }
         changed = true;
         break;
