@@ -59,12 +59,12 @@ is_applicable(const rvsdg::ThetaNode * theta)
     return nullptr;
 
   rvsdg::GammaNode * gnode = nullptr;
-  for (const auto & user : *matchNode->output(0))
+  for (const auto & user : matchNode->output(0)->Users())
   {
-    if (user == theta->predicate())
+    if (&user == theta->predicate())
       continue;
 
-    gnode = rvsdg::TryGetOwnerNode<rvsdg::GammaNode>(*user);
+    gnode = rvsdg::TryGetOwnerNode<rvsdg::GammaNode>(user);
     if (!gnode)
       return nullptr;
   }
