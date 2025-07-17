@@ -74,10 +74,10 @@ add_lambda_argument(rvsdg::LambdaNode * ln, std::shared_ptr<const jlm::rvsdg::Ty
 
   // TODO handle functions at other levels?
   JLM_ASSERT(ln->region() == &ln->region()->graph()->GetRootRegion());
-  JLM_ASSERT((*ln->output()->begin())->region() == &ln->region()->graph()->GetRootRegion());
+  JLM_ASSERT((*ln->output()->Users().begin()).region() == &ln->region()->graph()->GetRootRegion());
 
   //            ln->output()->divert_users(new_out);
-  ln->region()->RemoveResult((*ln->output()->begin())->index());
+  ln->region()->RemoveResult((*ln->output()->Users().begin()).index());
   auto oldExport = jlm::llvm::ComputeCallSummary(*ln).GetRvsdgExport();
   jlm::llvm::GraphExport::Create(*new_out, oldExport ? oldExport->Name() : "");
   remove(ln);
@@ -129,7 +129,9 @@ add_triggers(rvsdg::Region * region)
       if (is_constant(node))
       {
         auto orig_out = sn->output(0);
-        std::vector<jlm::rvsdg::Input *> previous_users(orig_out->begin(), orig_out->end());
+        std::vector<jlm::rvsdg::Input *> previous_users;
+        for (auto & user : orig_out->Users())
+          previous_users.push_back(&user);
         auto gated = TriggerOperation::create(*trigger, *orig_out)[0];
         for (auto user : previous_users)
         {

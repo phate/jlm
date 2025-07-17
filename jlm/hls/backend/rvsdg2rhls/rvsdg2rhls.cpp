@@ -233,13 +233,13 @@ convert_alloca(rvsdg::Region * region)
       // TODO: check that the input to alloca is a bitconst 1
       // TODO: handle general case of other nodes getting state edge without a merge
       JLM_ASSERT(node->output(1)->nusers() == 1);
-      auto mux_in = *node->output(1)->begin();
-      auto mux_node = rvsdg::TryGetOwnerNode<rvsdg::Node>(*mux_in);
+      auto & mux_in = *node->output(1)->Users().begin();
+      auto mux_node = rvsdg::TryGetOwnerNode<rvsdg::Node>(mux_in);
       if (dynamic_cast<const llvm::MemoryStateMergeOperation *>(&mux_node->GetOperation()))
       {
         // merge after alloca -> remove merge
         JLM_ASSERT(mux_node->ninputs() == 2);
-        auto other_index = mux_in->index() ? 0 : 1;
+        auto other_index = mux_in.index() ? 0 : 1;
         mux_node->output(0)->divert_users(mux_node->input(other_index)->origin());
         jlm::rvsdg::remove(mux_node);
       }

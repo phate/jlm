@@ -62,8 +62,8 @@ single_successor(const rvsdg::Node * node)
   std::unordered_set<rvsdg::Node *> successors;
   for (size_t n = 0; n < node->noutputs(); n++)
   {
-    for (const auto & user : *node->output(n))
-      successors.insert(rvsdg::TryGetOwnerNode<rvsdg::Node>(*user));
+    for (const auto & user : node->output(n)->Users())
+      successors.insert(rvsdg::TryGetOwnerNode<rvsdg::Node>(user));
   }
 
   return successors.size() == 1;
@@ -90,9 +90,9 @@ pullin_node(rvsdg::GammaNode * gamma, rvsdg::Node * node)
     /* redirect outputs */
     for (size_t o = 0; o < node->noutputs(); o++)
     {
-      for (const auto & user : *node->output(o))
+      for (const auto & user : node->output(o)->Users())
       {
-        auto entryvar = std::get<rvsdg::GammaNode::EntryVar>(gamma->MapInput(*user));
+        auto entryvar = std::get<rvsdg::GammaNode::EntryVar>(gamma->MapInput(user));
         entryvar.branchArgument[r]->divert_users(copy->output(o));
       }
     }
@@ -108,9 +108,9 @@ cleanup(rvsdg::GammaNode * gamma, rvsdg::Node * node)
   std::vector<rvsdg::GammaNode::EntryVar> entryvars;
   for (size_t n = 0; n < node->noutputs(); n++)
   {
-    for (auto user : *node->output(n))
+    for (auto & user : node->output(n)->Users())
     {
-      entryvars.push_back(std::get<rvsdg::GammaNode::EntryVar>(gamma->MapInput(*user)));
+      entryvars.push_back(std::get<rvsdg::GammaNode::EntryVar>(gamma->MapInput(user)));
     }
   }
   gamma->RemoveEntryVars(entryvars);
@@ -152,9 +152,9 @@ pullin_bottom(rvsdg::GammaNode * gamma)
   for (size_t n = 0; n < gamma->noutputs(); n++)
   {
     auto output = gamma->output(n);
-    for (const auto & user : *output)
+    for (const auto & user : output->Users())
     {
-      auto node = rvsdg::TryGetOwnerNode<rvsdg::Node>(*user);
+      auto node = rvsdg::TryGetOwnerNode<rvsdg::Node>(user);
       if (node && node->depth() == gamma->depth() + 1)
         workset.insert(node);
     }
@@ -195,9 +195,9 @@ pullin_bottom(rvsdg::GammaNode * gamma)
     for (size_t n = 0; n < node->noutputs(); n++)
     {
       auto output = node->output(n);
-      for (const auto & user : *output)
+      for (const auto & user : output->Users())
       {
-        auto tmp = rvsdg::TryGetOwnerNode<rvsdg::Node>(*user);
+        auto tmp = rvsdg::TryGetOwnerNode<rvsdg::Node>(user);
         if (tmp && tmp->depth() == node->depth() + 1)
           workset.insert(tmp);
       }
@@ -217,9 +217,9 @@ is_used_in_nsubregions(const rvsdg::GammaNode * gamma, const rvsdg::Node * node)
   std::unordered_set<const rvsdg::Input *> inputs;
   for (size_t n = 0; n < node->noutputs(); n++)
   {
-    for (const auto & user : *(node->output(n)))
+    for (const auto & user : node->output(n)->Users())
     {
-      inputs.insert(user);
+      inputs.insert(&user);
     }
   }
 

@@ -60,9 +60,9 @@ TestSingleLoad()
   mem_sep_argument(*rvsdgModule);
   // Assert
   jlm::rvsdg::view(rvsdgModule->Rvsdg(), stdout);
-  auto * const entryMemoryStateSplitInput = *lambdaRegion->argument(1)->begin();
+  auto & entryMemoryStateSplitInput = lambdaRegion->argument(1)->SingleUser();
   auto * entryMemoryStateSplitNode =
-      jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(*entryMemoryStateSplitInput);
+      jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(entryMemoryStateSplitInput);
   jlm::util::AssertedCast<const LambdaEntryMemoryStateSplitOperation>(
       &entryMemoryStateSplitNode->GetOperation());
   auto exitMemoryStateMergeNode =
@@ -140,9 +140,9 @@ TestLoadStore()
   mem_sep_argument(*rvsdgModule);
   // Assert
   jlm::rvsdg::view(rvsdgModule->Rvsdg(), stdout);
-  auto * const entryMemoryStateSplitInput = *lambdaRegion->argument(2)->begin();
+  auto & entryMemoryStateSplitInput = lambdaRegion->argument(2)->SingleUser();
   auto * entryMemoryStateSplitNode =
-      jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(*entryMemoryStateSplitInput);
+      jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(entryMemoryStateSplitInput);
   jlm::util::AssertedCast<const LambdaEntryMemoryStateSplitOperation>(
       &entryMemoryStateSplitNode->GetOperation());
   auto exitMemoryStateMergeNode =
@@ -214,9 +214,9 @@ TestAddrQueue()
   mem_sep_argument(*rvsdgModule);
   // Assert
   jlm::rvsdg::view(rvsdgModule->Rvsdg(), stdout);
-  auto * const entryMemoryStateSplitInput = *lambdaRegion->argument(1)->begin();
+  auto & entryMemoryStateSplitInput = lambdaRegion->argument(1)->SingleUser();
   auto * entryMemoryStateSplitNode =
-      jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(*entryMemoryStateSplitInput);
+      jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(entryMemoryStateSplitInput);
   jlm::util::AssertedCast<const LambdaEntryMemoryStateSplitOperation>(
       &entryMemoryStateSplitNode->GetOperation());
   auto exitMemoryStateMergeNode =

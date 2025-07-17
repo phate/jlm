@@ -18,9 +18,8 @@ rvsdg::Input *
 GetUser(rvsdg::Output * out)
 {
   // This works because at this point we have 1:1 relationships through forks
-  auto user = *out->begin();
-  JLM_ASSERT(user);
-  return user;
+  auto & user = *out->Users().begin();
+  return &user;
 }
 
 rvsdg::Input *
@@ -92,9 +91,9 @@ PlaceBuffer(rvsdg::Output * out, size_t capacity, bool passThrough)
   else
   {
     // create new buffer
-    auto directUser = *out->begin();
+    auto & directUser = *out->Users().begin();
     auto newOut = BufferOperation::create(*out, capacity, passThrough)[0];
-    directUser->divert_to(newOut);
+    directUser.divert_to(newOut);
   }
 }
 
@@ -793,13 +792,13 @@ PlaceBufferLoop(rvsdg::Output * out, size_t min_capacity, bool passThrough)
   else
   {
     // create new buffer
-    auto directUser = *out->begin();
+    auto & directUser = *out->Users().begin();
     size_t capacity = round_up_pow2(min_capacity);
     // if the maximum buffer size is exceeded place a smaller buffer, but pretend a large one was
     // placed, to prevent additional buffers further down
     auto actual_capacity = std::min(capacity, MaximumBufferSize);
     auto newOut = BufferOperation::create(*out, actual_capacity, passThrough)[0];
-    directUser->divert_to(newOut);
+    directUser.divert_to(newOut);
     return capacity;
   }
 }
