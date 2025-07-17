@@ -196,12 +196,12 @@ private:
 
 /** \brief Integer attribute
  */
-class int_attribute final : public enum_attribute
+class IntAttribute final : public enum_attribute
 {
 public:
-  ~int_attribute() noexcept override;
+  ~IntAttribute() noexcept override;
 
-  int_attribute(Attribute::kind kind, uint64_t value)
+  IntAttribute(Attribute::kind kind, uint64_t value)
       : enum_attribute(kind),
         value_(value)
   {}
@@ -260,10 +260,10 @@ struct Hash<jlm::llvm::enum_attribute>
 };
 
 template<>
-struct Hash<jlm::llvm::int_attribute>
+struct Hash<jlm::llvm::IntAttribute>
 {
   std::size_t
-  operator()(const jlm::llvm::int_attribute & attribute) const noexcept
+  operator()(const jlm::llvm::IntAttribute & attribute) const noexcept
   {
     auto kindHash = std::hash<jlm::llvm::Attribute::kind>()(attribute.kind());
     auto valueHash = std::hash<uint64_t>()(attribute.value());
@@ -305,7 +305,7 @@ namespace jlm::llvm
 class attributeset final
 {
   using EnumAttributeHashSet = util::HashSet<enum_attribute>;
-  using IntAttributeHashSet = util::HashSet<int_attribute>;
+  using IntAttributeHashSet = util::HashSet<IntAttribute>;
   using TypeAttributeHashSet = util::HashSet<type_attribute>;
   using StringAttributeHashSet = util::HashSet<string_attribute>;
 
@@ -334,7 +334,7 @@ public:
   }
 
   void
-  InsertIntAttribute(const int_attribute & attribute)
+  InsertIntAttribute(const IntAttribute & attribute)
   {
     IntAttributes_.Insert(attribute);
   }

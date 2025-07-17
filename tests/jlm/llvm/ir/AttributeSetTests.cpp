@@ -21,8 +21,8 @@ TestEquality()
   enum_attribute enumAttribute1(Attribute::kind::AllocAlign);
   enum_attribute enumAttribute2(Attribute::kind::AlwaysInline);
 
-  int_attribute intAttribute1(Attribute::kind::Alignment, 4);
-  int_attribute intAttribute2(Attribute::kind::AllocSize, 8);
+  IntAttribute intAttribute1(Attribute::kind::Alignment, 4);
+  IntAttribute intAttribute2(Attribute::kind::AllocSize, 8);
 
   string_attribute stringAttribute1("myKind1", "myValue");
   string_attribute stringAttribute2("myKind2", "myValue");

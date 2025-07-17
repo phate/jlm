@@ -127,7 +127,7 @@ private:
   ConvertTypeAttribute(const llvm::type_attribute & attribute);
 
   ::llvm::Attribute
-  ConvertIntAttribute(const llvm::int_attribute & attribute);
+  ConvertIntAttribute(const llvm::IntAttribute & attribute);
 
   ::llvm::Attribute
   ConvertEnumAttribute(const llvm::enum_attribute & attribute);

@@ -218,7 +218,7 @@ ConvertEnumAttribute(const ::llvm::Attribute & attribute)
   return enum_attribute(kind);
 }
 
-static int_attribute
+static IntAttribute
 ConvertIntAttribute(const ::llvm::Attribute & attribute)
 {
   JLM_ASSERT(attribute.isIntAttribute());
