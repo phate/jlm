@@ -44,7 +44,7 @@ GetMemoryStateEntrySplit(const rvsdg::LambdaNode & lambdaNode) noexcept
   if (argument.nusers() != 1)
     return nullptr;
 
-  const auto node = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(**argument.begin());
+  const auto node = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(argument.SingleUser());
   return is<LambdaEntryMemoryStateSplitOperation>(node) ? dynamic_cast<rvsdg::SimpleNode *>(node)
                                                         : nullptr;
 }

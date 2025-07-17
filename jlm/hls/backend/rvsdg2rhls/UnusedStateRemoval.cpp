@@ -24,7 +24,7 @@ IsPassthroughArgument(const rvsdg::Output & argument)
     return false;
   }
 
-  return rvsdg::is<rvsdg::RegionResult>(**argument.begin());
+  return rvsdg::is<rvsdg::RegionResult>(*argument.Users().begin());
 }
 
 static bool
@@ -106,10 +106,11 @@ RemoveUnusedStatesFromLambda(rvsdg::LambdaNode & lambdaNode)
   // TODO handle functions at other levels?
   JLM_ASSERT(lambdaNode.region() == &lambdaNode.region()->graph()->GetRootRegion());
   JLM_ASSERT(
-      (*lambdaNode.output()->begin())->region() == &lambdaNode.region()->graph()->GetRootRegion());
+      (*lambdaNode.output()->Users().begin()).region()
+      == &lambdaNode.region()->graph()->GetRootRegion());
 
   JLM_ASSERT(lambdaNode.output()->nusers() == 1);
-  lambdaNode.region()->RemoveResult((*lambdaNode.output()->begin())->index());
+  lambdaNode.region()->RemoveResult((*lambdaNode.output()->Users().begin()).index());
   auto oldExport = jlm::llvm::ComputeCallSummary(lambdaNode).GetRvsdgExport();
   jlm::llvm::GraphExport::Create(*newLambdaOutput, oldExport ? oldExport->Name() : "");
   remove(&lambdaNode);
@@ -119,7 +120,7 @@ static void
 RemovePassthroughArgument(const rvsdg::RegionArgument & argument)
 {
   auto origin = argument.input()->origin();
-  auto result = dynamic_cast<rvsdg::RegionResult *>(*argument.begin());
+  auto result = dynamic_cast<const rvsdg::RegionResult *>(&*argument.Users().begin());
   argument.region()->node()->output(result->output()->index())->divert_users(origin);
 
   auto inputIndex = argument.input()->index();
@@ -138,7 +139,7 @@ TryGetSingleUserExitVar(rvsdg::GammaNode & gammaNode, rvsdg::Output & argument)
 {
   if (argument.nusers() == 1)
   {
-    rvsdg::Input * user = *argument.begin();
+    rvsdg::Input * user = &*argument.Users().begin();
     if (rvsdg::TryGetRegionParentNode<rvsdg::GammaNode>(*user) == &gammaNode)
     {
       return gammaNode.MapBranchResultExitVar(*user);
