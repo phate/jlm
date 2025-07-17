@@ -10,21 +10,21 @@ namespace jlm::llvm
 
 Attribute::~Attribute() noexcept = default;
 
-string_attribute::~string_attribute() noexcept = default;
+StringAttribute::~StringAttribute() noexcept = default;
 
 bool
-string_attribute::operator==(const Attribute & other) const
+StringAttribute::operator==(const Attribute & other) const
 {
-  auto sa = dynamic_cast<const string_attribute *>(&other);
+  auto sa = dynamic_cast<const StringAttribute *>(&other);
   return sa && sa->kind() == kind() && sa->value() == value();
 }
 
-enum_attribute::~enum_attribute() noexcept = default;
+EnumAttribute::~EnumAttribute() noexcept = default;
 
 bool
-enum_attribute::operator==(const Attribute & other) const
+EnumAttribute::operator==(const Attribute & other) const
 {
-  auto ea = dynamic_cast<const enum_attribute *>(&other);
+  auto ea = dynamic_cast<const EnumAttribute *>(&other);
   return ea && ea->kind() == kind();
 }
 

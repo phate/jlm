@@ -27,9 +27,9 @@ TopDownTraverser::TopDownTraverser(Region * region)
   for (size_t n = 0; n < region->narguments(); n++)
   {
     auto argument = region->argument(n);
-    for (const auto & user : *argument)
+    for (const auto & user : argument->Users())
     {
-      if (auto node = TryGetOwnerNode<Node>(*user))
+      if (auto node = TryGetOwnerNode<Node>(user))
       {
         if (!predecessors_visited(node))
           continue;
@@ -70,9 +70,9 @@ TopDownTraverser::next()
   tracker_.set_nodestate(node, traversal_nodestate::behind);
   for (size_t n = 0; n < node->noutputs(); n++)
   {
-    for (const auto & user : *node->output(n))
+    for (const auto & user : node->output(n)->Users())
     {
-      if (auto node = TryGetOwnerNode<Node>(*user))
+      if (auto node = TryGetOwnerNode<Node>(user))
       {
         if (tracker_.get_nodestate(node) == traversal_nodestate::ahead)
           tracker_.set_nodestate(node, traversal_nodestate::frontier);

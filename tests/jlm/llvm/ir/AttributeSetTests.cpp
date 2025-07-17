@@ -18,14 +18,14 @@ TestEquality()
   // Arrange
   auto valueType = jlm::tests::ValueType::Create();
 
-  enum_attribute enumAttribute1(Attribute::kind::AllocAlign);
-  enum_attribute enumAttribute2(Attribute::kind::AlwaysInline);
+  EnumAttribute enumAttribute1(Attribute::kind::AllocAlign);
+  EnumAttribute enumAttribute2(Attribute::kind::AlwaysInline);
 
   int_attribute intAttribute1(Attribute::kind::Alignment, 4);
   int_attribute intAttribute2(Attribute::kind::AllocSize, 8);
 
-  string_attribute stringAttribute1("myKind1", "myValue");
-  string_attribute stringAttribute2("myKind2", "myValue");
+  StringAttribute stringAttribute1("myKind1", "myValue");
+  StringAttribute stringAttribute2("myKind2", "myValue");
 
   TypeAttribute typeAttribute1(Attribute::kind::ByRef, valueType);
   TypeAttribute typeAttribute2(Attribute::kind::ByVal, valueType);
