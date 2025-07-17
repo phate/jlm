@@ -46,26 +46,26 @@ type_attribute::operator==(const Attribute & other) const
   return ta && ta->kind() == kind() && ta->type() == type();
 }
 
-attributeset::EnumAttributeRange
-attributeset::EnumAttributes() const
+AttributeSet::EnumAttributeRange
+AttributeSet::EnumAttributes() const
 {
   return EnumAttributes_.Items();
 }
 
-attributeset::IntAttributeRange
-attributeset::IntAttributes() const
+AttributeSet::IntAttributeRange
+AttributeSet::IntAttributes() const
 {
   return IntAttributes_.Items();
 }
 
-attributeset::TypeAttributeRange
-attributeset::TypeAttributes() const
+AttributeSet::TypeAttributeRange
+AttributeSet::TypeAttributes() const
 {
   return TypeAttributes_.Items();
 }
 
-attributeset::StringAttributeRange
-attributeset::StringAttributes() const
+AttributeSet::StringAttributeRange
+AttributeSet::StringAttributes() const
 {
   return StringAttributes_.Items();
 }
