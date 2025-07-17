@@ -1715,7 +1715,7 @@ IpGraphToLlvmConverter::ConvertEnumAttribute(const llvm::EnumAttribute & attribu
 }
 
 ::llvm::Attribute
-IpGraphToLlvmConverter::ConvertIntAttribute(const llvm::int_attribute & attribute)
+IpGraphToLlvmConverter::ConvertIntAttribute(const llvm::IntAttribute & attribute)
 {
   auto & llvmContext = Context_->llvm_module().getContext();
   auto kind = ConvertAttributeKind(attribute.kind());

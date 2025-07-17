@@ -28,12 +28,12 @@ EnumAttribute::operator==(const Attribute & other) const
   return ea && ea->kind() == kind();
 }
 
-int_attribute::~int_attribute() noexcept = default;
+IntAttribute::~IntAttribute() noexcept = default;
 
 bool
-int_attribute::operator==(const Attribute & other) const
+IntAttribute::operator==(const Attribute & other) const
 {
-  auto ia = dynamic_cast<const int_attribute *>(&other);
+  auto ia = dynamic_cast<const IntAttribute *>(&other);
   return ia && ia->kind() == kind() && ia->value() == value();
 }
 
