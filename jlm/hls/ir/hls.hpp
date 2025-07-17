@@ -195,47 +195,6 @@ private:
   bool IsConstant_ = false;
 };
 
-class merge_op final : public rvsdg::SimpleOperation
-{
-public:
-  ~merge_op() noexcept override = default;
-
-  merge_op(size_t nalternatives, const std::shared_ptr<const jlm::rvsdg::Type> & type)
-      : SimpleOperation({ nalternatives, type }, { type })
-  {}
-
-  bool
-  operator==(const Operation & other) const noexcept override
-  {
-    auto ot = dynamic_cast<const merge_op *>(&other);
-    return ot && ot->narguments() == narguments() && *ot->argument(0) == *argument(0);
-  }
-
-  std::string
-  debug_string() const override
-  {
-    return "HLS_MERGE";
-  }
-
-  [[nodiscard]] std::unique_ptr<Operation>
-  copy() const override
-  {
-    return std::make_unique<merge_op>(*this);
-  }
-
-  static std::vector<jlm::rvsdg::Output *>
-  create(const std::vector<jlm::rvsdg::Output *> & alternatives)
-  {
-    if (alternatives.empty())
-      throw util::error("Insufficient number of operands.");
-
-    return outputs(&rvsdg::CreateOpNode<merge_op>(
-        *alternatives.front()->region(),
-        alternatives.size(),
-        alternatives.front()->Type()));
-  }
-};
-
 class MuxOperation final : public rvsdg::SimpleOperation
 {
 public:

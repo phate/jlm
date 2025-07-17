@@ -2445,11 +2445,6 @@ RhlsToFirrtlConverter::MlirGen(const jlm::rvsdg::SimpleNode * node)
   {
     return MlirGenAddrQueue(node);
   }
-  else if (dynamic_cast<const hls::merge_op *>(&(node->GetOperation())))
-  {
-    // return merge_to_firrtl(n);
-    throw std::logic_error(node->DebugString() + " not implemented!");
-  }
   else if (auto o = dynamic_cast<const MuxOperation *>(&(node->GetOperation())))
   {
     if (o->discarding)
