@@ -121,7 +121,7 @@ private:
   convert_attributes(const attributeset & attributeSet);
 
   ::llvm::Attribute
-  ConvertStringAttribute(const llvm::string_attribute & attribute);
+  ConvertStringAttribute(const llvm::StringAttribute & attribute);
 
   ::llvm::Attribute
   ConvertTypeAttribute(const llvm::type_attribute & attribute);

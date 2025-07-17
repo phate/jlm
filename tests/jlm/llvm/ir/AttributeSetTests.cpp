@@ -24,8 +24,8 @@ TestEquality()
   int_attribute intAttribute1(Attribute::kind::Alignment, 4);
   int_attribute intAttribute2(Attribute::kind::AllocSize, 8);
 
-  string_attribute stringAttribute1("myKind1", "myValue");
-  string_attribute stringAttribute2("myKind2", "myValue");
+  StringAttribute stringAttribute1("myKind1", "myValue");
+  StringAttribute stringAttribute2("myKind2", "myValue");
 
   type_attribute typeAttribute1(Attribute::kind::ByRef, valueType);
   type_attribute typeAttribute2(Attribute::kind::ByVal, valueType);

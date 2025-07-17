@@ -140,12 +140,12 @@ public:
 
 /** \brief String attribute
  */
-class string_attribute final : public Attribute
+class StringAttribute final : public Attribute
 {
 public:
-  ~string_attribute() noexcept override;
+  ~StringAttribute() noexcept override;
 
-  string_attribute(const std::string & kind, const std::string & value)
+  StringAttribute(const std::string & kind, const std::string & value)
       : kind_(kind),
         value_(value)
   {}
@@ -272,10 +272,10 @@ struct Hash<jlm::llvm::int_attribute>
 };
 
 template<>
-struct Hash<jlm::llvm::string_attribute>
+struct Hash<jlm::llvm::StringAttribute>
 {
   std::size_t
-  operator()(const jlm::llvm::string_attribute & attribute) const noexcept
+  operator()(const jlm::llvm::StringAttribute & attribute) const noexcept
   {
     auto kindHash = std::hash<std::string>()(attribute.kind());
     auto valueHash = std::hash<std::string>()(attribute.value());
@@ -307,7 +307,7 @@ class attributeset final
   using EnumAttributeHashSet = util::HashSet<EnumAttribute>;
   using IntAttributeHashSet = util::HashSet<int_attribute>;
   using TypeAttributeHashSet = util::HashSet<type_attribute>;
-  using StringAttributeHashSet = util::HashSet<string_attribute>;
+  using StringAttributeHashSet = util::HashSet<StringAttribute>;
 
   using EnumAttributeRange = util::IteratorRange<EnumAttributeHashSet::ItemConstIterator>;
   using IntAttributeRange = util::IteratorRange<IntAttributeHashSet::ItemConstIterator>;
@@ -346,7 +346,7 @@ public:
   }
 
   void
-  InsertStringAttribute(const string_attribute & attribute)
+  InsertStringAttribute(const StringAttribute & attribute)
   {
     StringAttributes_.Insert(attribute);
   }
