@@ -226,7 +226,7 @@ ConvertIntAttribute(const ::llvm::Attribute & attribute)
   return { kind, attribute.getValueAsInt() };
 }
 
-static type_attribute
+static TypeAttribute
 ConvertTypeAttribute(const ::llvm::Attribute & attribute, context & ctx)
 {
   JLM_ASSERT(attribute.isTypeAttribute());

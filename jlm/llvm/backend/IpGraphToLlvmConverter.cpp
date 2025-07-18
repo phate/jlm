@@ -1723,7 +1723,7 @@ IpGraphToLlvmConverter::ConvertIntAttribute(const llvm::IntAttribute & attribute
 }
 
 ::llvm::Attribute
-IpGraphToLlvmConverter::ConvertTypeAttribute(const llvm::type_attribute & attribute)
+IpGraphToLlvmConverter::ConvertTypeAttribute(const llvm::TypeAttribute & attribute)
 {
   auto & typeConverter = Context_->GetTypeConverter();
   auto & llvmContext = Context_->llvm_module().getContext();
