@@ -221,12 +221,12 @@ private:
 
 /** \brief Type attribute
  */
-class type_attribute final : public EnumAttribute
+class TypeAttribute final : public EnumAttribute
 {
 public:
-  ~type_attribute() noexcept override;
+  ~TypeAttribute() noexcept override;
 
-  type_attribute(Attribute::kind kind, std::shared_ptr<const jlm::rvsdg::ValueType> type)
+  TypeAttribute(Attribute::kind kind, std::shared_ptr<const jlm::rvsdg::ValueType> type)
       : EnumAttribute(kind),
         type_(std::move(type))
   {}
@@ -284,10 +284,10 @@ struct Hash<jlm::llvm::StringAttribute>
 };
 
 template<>
-struct Hash<jlm::llvm::type_attribute>
+struct Hash<jlm::llvm::TypeAttribute>
 {
   std::size_t
-  operator()(const jlm::llvm::type_attribute & attribute) const noexcept
+  operator()(const jlm::llvm::TypeAttribute & attribute) const noexcept
   {
     auto kindHash = std::hash<jlm::llvm::Attribute::kind>()(attribute.kind());
     auto typeHash = attribute.type().ComputeHash();
@@ -306,7 +306,7 @@ class AttributeSet final
 {
   using EnumAttributeHashSet = util::HashSet<EnumAttribute>;
   using IntAttributeHashSet = util::HashSet<IntAttribute>;
-  using TypeAttributeHashSet = util::HashSet<type_attribute>;
+  using TypeAttributeHashSet = util::HashSet<TypeAttribute>;
   using StringAttributeHashSet = util::HashSet<StringAttribute>;
 
   using EnumAttributeRange = util::IteratorRange<EnumAttributeHashSet::ItemConstIterator>;
@@ -340,7 +340,7 @@ public:
   }
 
   void
-  InsertTypeAttribute(const type_attribute & attribute)
+  InsertTypeAttribute(const TypeAttribute & attribute)
   {
     TypeAttributes_.Insert(attribute);
   }

@@ -27,8 +27,8 @@ TestEquality()
   StringAttribute stringAttribute1("myKind1", "myValue");
   StringAttribute stringAttribute2("myKind2", "myValue");
 
-  type_attribute typeAttribute1(Attribute::kind::ByRef, valueType);
-  type_attribute typeAttribute2(Attribute::kind::ByVal, valueType);
+  TypeAttribute typeAttribute1(Attribute::kind::ByRef, valueType);
+  TypeAttribute typeAttribute2(Attribute::kind::ByVal, valueType);
 
   AttributeSet set1;
   set1.InsertEnumAttribute(enumAttribute1);

@@ -37,12 +37,12 @@ IntAttribute::operator==(const Attribute & other) const
   return ia && ia->kind() == kind() && ia->value() == value();
 }
 
-type_attribute::~type_attribute() noexcept = default;
+TypeAttribute::~TypeAttribute() noexcept = default;
 
 bool
-type_attribute::operator==(const Attribute & other) const
+TypeAttribute::operator==(const Attribute & other) const
 {
-  auto ta = dynamic_cast<const type_attribute *>(&other);
+  auto ta = dynamic_cast<const TypeAttribute *>(&other);
   return ta && ta->kind() == kind() && ta->type() == type();
 }
 
