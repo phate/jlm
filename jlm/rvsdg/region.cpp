@@ -85,7 +85,7 @@ RegionResult::RegionResult(
     jlm::rvsdg::Output * origin,
     StructuralOutput * output,
     std::shared_ptr<const rvsdg::Type> type)
-    : Input(origin, region, std::move(type)),
+    : Input(*region, *origin, std::move(type)),
       output_(output)
 {
   if (output)
@@ -106,12 +106,6 @@ std::string
 RegionResult::debug_string() const
 {
   return util::strfmt("r", index());
-}
-
-[[nodiscard]] std::variant<Node *, Region *>
-RegionResult::GetOwner() const noexcept
-{
-  return region();
 }
 
 RegionResult &
