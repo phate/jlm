@@ -370,7 +370,7 @@ public:
       return nullptr;
 
     const auto node =
-        rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(**GetMemoryStateOutput(callNode).begin());
+        rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(GetMemoryStateOutput(callNode).SingleUser());
     return is<CallExitMemoryStateSplitOperation>(node) ? node : nullptr;
   }
 

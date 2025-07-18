@@ -291,9 +291,9 @@ Node::recompute_depth() noexcept
 
   for (size_t n = 0; n < noutputs(); n++)
   {
-    for (auto user : *(output(n)))
+    for (auto & user : output(n)->Users())
     {
-      if (auto node = TryGetOwnerNode<Node>(*user))
+      if (auto node = TryGetOwnerNode<Node>(user))
       {
         node->recompute_depth();
       }

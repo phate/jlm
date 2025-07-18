@@ -118,19 +118,19 @@ private:
   convert_attributes(const FunctionNode & f);
 
   ::llvm::AttributeSet
-  convert_attributes(const attributeset & attributeSet);
+  convert_attributes(const AttributeSet & attributeSet);
 
   ::llvm::Attribute
-  ConvertStringAttribute(const llvm::string_attribute & attribute);
+  ConvertStringAttribute(const llvm::StringAttribute & attribute);
 
   ::llvm::Attribute
-  ConvertTypeAttribute(const llvm::type_attribute & attribute);
+  ConvertTypeAttribute(const llvm::TypeAttribute & attribute);
 
   ::llvm::Attribute
-  ConvertIntAttribute(const llvm::int_attribute & attribute);
+  ConvertIntAttribute(const llvm::IntAttribute & attribute);
 
   ::llvm::Attribute
-  ConvertEnumAttribute(const llvm::enum_attribute & attribute);
+  ConvertEnumAttribute(const llvm::EnumAttribute & attribute);
 
   void
   create_terminator_instruction(const llvm::ControlFlowGraphNode * node);

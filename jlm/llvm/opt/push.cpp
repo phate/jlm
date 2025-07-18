@@ -177,9 +177,9 @@ push(rvsdg::GammaNode * gamma)
     for (size_t n = 0; n < region->narguments(); n++)
     {
       auto argument = region->argument(n);
-      for (const auto & user : *argument)
+      for (const auto & user : argument->Users())
       {
-        auto tmp = rvsdg::TryGetOwnerNode<rvsdg::Node>(*user);
+        auto tmp = rvsdg::TryGetOwnerNode<rvsdg::Node>(user);
         if (tmp && tmp->depth() == 0)
           wl.push_back(tmp);
       }
@@ -198,9 +198,9 @@ push(rvsdg::GammaNode * gamma)
       /* add consumers to worklist */
       for (const auto & argument : arguments)
       {
-        for (const auto & user : *argument)
+        for (const auto & user : argument->Users())
         {
-          auto tmp = rvsdg::TryGetOwnerNode<rvsdg::Node>(*user);
+          auto tmp = rvsdg::TryGetOwnerNode<rvsdg::Node>(user);
           if (tmp && tmp->depth() == 0)
             wl.push_back(tmp);
         }
@@ -251,9 +251,9 @@ push_top(rvsdg::ThetaNode * theta)
   for (const auto & lv : theta->GetLoopVars())
   {
     auto argument = lv.pre;
-    for (const auto & user : *argument)
+    for (const auto & user : argument->Users())
     {
-      auto tmp = rvsdg::TryGetOwnerNode<rvsdg::Node>(*user);
+      auto tmp = rvsdg::TryGetOwnerNode<rvsdg::Node>(user);
       if (tmp && tmp->depth() == 0 && is_theta_invariant(tmp, invariants))
         wl.push_back(tmp);
     }
@@ -274,9 +274,9 @@ push_top(rvsdg::ThetaNode * theta)
     /* add consumers to worklist */
     for (const auto & argument : arguments)
     {
-      for (const auto & user : *argument)
+      for (const auto & user : argument->Users())
       {
-        auto tmp = rvsdg::TryGetOwnerNode<rvsdg::Node>(*user);
+        auto tmp = rvsdg::TryGetOwnerNode<rvsdg::Node>(user);
         if (tmp && tmp->depth() == 0 && is_theta_invariant(tmp, invariants))
           wl.push_back(tmp);
       }
@@ -314,7 +314,7 @@ is_movable_store(rvsdg::Node * node)
     if (output->nusers() != 1)
       return false;
 
-    if (!dynamic_cast<rvsdg::RegionResult *>(*output->begin()))
+    if (!dynamic_cast<rvsdg::RegionResult *>(&output->SingleUser()))
       return false;
   }
 
@@ -341,7 +341,7 @@ pushout_store(rvsdg::Node * storenode)
   for (size_t n = 0; n < storenode->noutputs(); n++)
   {
     JLM_ASSERT(storenode->output(n)->nusers() == 1);
-    auto result = static_cast<rvsdg::RegionResult *>(*storenode->output(n)->begin());
+    auto result = static_cast<rvsdg::RegionResult *>(&storenode->output(n)->SingleUser());
     result->divert_to(storenode->input(n + 2)->origin());
     states.push_back(result->output());
   }
@@ -352,11 +352,11 @@ pushout_store(rvsdg::Node * storenode)
   for (size_t n = 0; n < states.size(); n++)
   {
     std::unordered_set<jlm::rvsdg::Input *> users;
-    for (const auto & user : *states[n])
+    for (auto & user : states[n]->Users())
     {
-      if (rvsdg::TryGetOwnerNode<rvsdg::Node>(*user)
+      if (rvsdg::TryGetOwnerNode<rvsdg::Node>(user)
           != rvsdg::TryGetOwnerNode<rvsdg::Node>(*nstates[0]))
-        users.insert(user);
+        users.insert(&user);
     }
 
     for (const auto & user : users)

@@ -209,7 +209,9 @@ instrument_ref(
       {
         addr = llvm::BitCastOperation::create(addr, void_ptr);
       }
-      std::vector<jlm::rvsdg::Input *> old_users(node->output(1)->begin(), node->output(1)->end());
+      std::vector<jlm::rvsdg::Input *> old_users;
+      for (auto & user : node->output(1)->Users())
+        old_users.push_back(&user);
       auto memstate = node->output(1);
       auto callOp = jlm::llvm::CallOperation::Create(
           alloca_func,
@@ -237,7 +239,9 @@ instrument_ref(
         addr = llvm::BitCastOperation::create(addr, void_ptr);
       }
       auto memstate = node->output(0);
-      std::vector<jlm::rvsdg::Input *> oldUsers(memstate->begin(), memstate->end());
+      std::vector<jlm::rvsdg::Input *> oldUsers;
+      for (auto & user : memstate->Users())
+        oldUsers.push_back(&user);
       auto callOp = jlm::llvm::CallOperation::Create(
           store_func,
           storeFunctionType,

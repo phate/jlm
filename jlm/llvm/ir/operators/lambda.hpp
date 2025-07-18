@@ -35,7 +35,7 @@ public:
       std::shared_ptr<const jlm::rvsdg::FunctionType> type,
       std::string name,
       const jlm::llvm::linkage & linkage,
-      jlm::llvm::attributeset attributes);
+      jlm::llvm::AttributeSet attributes);
 
   [[nodiscard]] const std::string &
   name() const noexcept
@@ -49,7 +49,7 @@ public:
     return linkage_;
   }
 
-  [[nodiscard]] const jlm::llvm::attributeset &
+  [[nodiscard]] const jlm::llvm::AttributeSet &
   attributes() const noexcept
   {
     return attributes_;
@@ -64,18 +64,18 @@ public:
   [[nodiscard]] std::unique_ptr<Operation>
   copy() const override;
 
-  [[nodiscard]] const jlm::llvm::attributeset &
+  [[nodiscard]] const jlm::llvm::AttributeSet &
   GetArgumentAttributes(std::size_t index) const noexcept;
 
   void
-  SetArgumentAttributes(std::size_t index, const jlm::llvm::attributeset & attributes);
+  SetArgumentAttributes(std::size_t index, const jlm::llvm::AttributeSet & attributes);
 
   static std::unique_ptr<LlvmLambdaOperation>
   Create(
       std::shared_ptr<const jlm::rvsdg::FunctionType> type,
       std::string name,
       const jlm::llvm::linkage & linkage,
-      jlm::llvm::attributeset attributes)
+      jlm::llvm::AttributeSet attributes)
   {
     return std::make_unique<LlvmLambdaOperation>(
         std::move(type),
@@ -94,14 +94,14 @@ public:
         std::move(type),
         std::move(name),
         linkage,
-        jlm::llvm::attributeset{});
+        jlm::llvm::AttributeSet{});
   }
 
 private:
   std::string name_;
   jlm::llvm::linkage linkage_;
-  jlm::llvm::attributeset attributes_;
-  std::vector<jlm::llvm::attributeset> ArgumentAttributes_;
+  jlm::llvm::AttributeSet attributes_;
+  std::vector<jlm::llvm::AttributeSet> ArgumentAttributes_;
 };
 
 }

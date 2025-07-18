@@ -289,8 +289,8 @@ convert_simple_node(const jlm::rvsdg::SimpleNode * node)
   for (size_t n = 0; n < node->noutputs(); n++)
   {
     auto output = node->output(n);
-    for (const auto & user : *output)
-      s += edge_tag(id(output), id(user));
+    for (const auto & user : output->Users())
+      s += edge_tag(id(output), id(&user));
   }
 
   return s;
@@ -314,8 +314,8 @@ convert_structural_node(const rvsdg::StructuralNode * node)
   for (size_t n = 0; n < node->noutputs(); n++)
   {
     auto output = node->output(n);
-    for (const auto & user : *output)
-      s += edge_tag(id(output), id(user));
+    for (const auto & user : output->Users())
+      s += edge_tag(id(output), id(&user));
   }
 
   return s;
@@ -352,8 +352,8 @@ convert_region(const rvsdg::Region * region)
   for (size_t n = 0; n < region->narguments(); n++)
   {
     auto argument = region->argument(n);
-    for (const auto & user : *argument)
-      s += edge_tag(id(argument), id(user));
+    for (const auto & user : argument->Users())
+      s += edge_tag(id(argument), id(&user));
   }
 
   s += region_endtag(id(region));

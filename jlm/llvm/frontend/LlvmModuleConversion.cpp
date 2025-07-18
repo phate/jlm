@@ -210,15 +210,15 @@ ConvertAttributeKind(const ::llvm::Attribute::AttrKind & kind)
   return map[kind];
 }
 
-static enum_attribute
+static EnumAttribute
 ConvertEnumAttribute(const ::llvm::Attribute & attribute)
 {
   JLM_ASSERT(attribute.isEnumAttribute());
   auto kind = ConvertAttributeKind(attribute.getKindAsEnum());
-  return enum_attribute(kind);
+  return EnumAttribute(kind);
 }
 
-static int_attribute
+static IntAttribute
 ConvertIntAttribute(const ::llvm::Attribute & attribute)
 {
   JLM_ASSERT(attribute.isIntAttribute());
@@ -226,7 +226,7 @@ ConvertIntAttribute(const ::llvm::Attribute & attribute)
   return { kind, attribute.getValueAsInt() };
 }
 
-static type_attribute
+static TypeAttribute
 ConvertTypeAttribute(const ::llvm::Attribute & attribute, context & ctx)
 {
   JLM_ASSERT(attribute.isTypeAttribute());
@@ -246,17 +246,17 @@ ConvertTypeAttribute(const ::llvm::Attribute & attribute, context & ctx)
   JLM_UNREACHABLE("Unhandled attribute");
 }
 
-static string_attribute
+static StringAttribute
 ConvertStringAttribute(const ::llvm::Attribute & attribute)
 {
   JLM_ASSERT(attribute.isStringAttribute());
   return { attribute.getKindAsString().str(), attribute.getValueAsString().str() };
 }
 
-static attributeset
+static AttributeSet
 convert_attributes(const ::llvm::AttributeSet & as, context & ctx)
 {
-  attributeset attributeSet;
+  AttributeSet attributeSet;
   for (auto & attribute : as)
   {
     if (attribute.isEnumAttribute())

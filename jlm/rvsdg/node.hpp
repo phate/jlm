@@ -274,8 +274,7 @@ class Output
   friend class Node;
   friend class rvsdg::Region;
 
-  typedef std::unordered_set<jlm::rvsdg::Input *>::const_iterator user_iterator;
-
+public:
   using UserIterator = util::PtrIterator<Input, std::unordered_set<Input *>::iterator>;
   using UserConstIterator =
       util::PtrIterator<const Input, std::unordered_set<Input *>::const_iterator>;
@@ -283,7 +282,6 @@ class Output
   using UserIteratorRange = util::IteratorRange<UserIterator>;
   using UserConstIteratorRange = util::IteratorRange<UserConstIterator>;
 
-public:
   virtual ~Output() noexcept;
 
   Output(rvsdg::Region * region, std::shared_ptr<const rvsdg::Type> type);
@@ -336,21 +334,15 @@ public:
   }
 
   /**
-   * @deprecated Use Users() instead.
+   * @return The first and only user of the output.
+   *
+   * \pre The output has only a single user.
    */
-  inline user_iterator
-  begin() const noexcept
+  [[nodiscard]] rvsdg::Input &
+  SingleUser() const noexcept
   {
-    return users_.begin();
-  }
-
-  /**
-   * @deprecated Use Users() instead.
-   */
-  inline user_iterator
-  end() const noexcept
-  {
-    return users_.end();
+    JLM_ASSERT(nusers() == 1);
+    return **users_.begin();
   }
 
   UserIteratorRange
@@ -359,7 +351,7 @@ public:
     return { UserIterator(users_.begin()), UserIterator(users_.end()) };
   }
 
-  UserConstIteratorRange
+  [[nodiscard]] UserConstIteratorRange
   Users() const
   {
     return { UserConstIterator(users_.begin()), UserConstIterator(users_.end()) };
@@ -648,9 +640,9 @@ public:
   {
     for (const auto & output : outputs_)
     {
-      for (const auto & user : *output)
+      for (const auto & user : output->Users())
       {
-        if (is<node_input>(*user))
+        if (is<node_input>(user))
           return true;
       }
     }
