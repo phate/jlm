@@ -21,8 +21,8 @@ TestEquality()
   EnumAttribute enumAttribute1(Attribute::kind::AllocAlign);
   EnumAttribute enumAttribute2(Attribute::kind::AlwaysInline);
 
-  int_attribute intAttribute1(Attribute::kind::Alignment, 4);
-  int_attribute intAttribute2(Attribute::kind::AllocSize, 8);
+  IntAttribute intAttribute1(Attribute::kind::Alignment, 4);
+  IntAttribute intAttribute2(Attribute::kind::AllocSize, 8);
 
   StringAttribute stringAttribute1("myKind1", "myValue");
   StringAttribute stringAttribute2("myKind2", "myValue");
@@ -30,19 +30,19 @@ TestEquality()
   TypeAttribute typeAttribute1(Attribute::kind::ByRef, valueType);
   TypeAttribute typeAttribute2(Attribute::kind::ByVal, valueType);
 
-  attributeset set1;
+  AttributeSet set1;
   set1.InsertEnumAttribute(enumAttribute1);
   set1.InsertIntAttribute(intAttribute1);
   set1.InsertStringAttribute(stringAttribute1);
   set1.InsertTypeAttribute(typeAttribute1);
 
-  attributeset set2;
+  AttributeSet set2;
   set2.InsertEnumAttribute(enumAttribute2);
   set2.InsertIntAttribute(intAttribute2);
   set2.InsertStringAttribute(stringAttribute2);
   set2.InsertTypeAttribute(typeAttribute2);
 
-  attributeset set3;
+  AttributeSet set3;
   set3.InsertEnumAttribute(enumAttribute1);
   set3.InsertIntAttribute(intAttribute1);
   set3.InsertStringAttribute(stringAttribute1);

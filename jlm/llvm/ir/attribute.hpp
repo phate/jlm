@@ -196,12 +196,12 @@ private:
 
 /** \brief Integer attribute
  */
-class int_attribute final : public EnumAttribute
+class IntAttribute final : public EnumAttribute
 {
 public:
-  ~int_attribute() noexcept override;
+  ~IntAttribute() noexcept override;
 
-  int_attribute(Attribute::kind kind, uint64_t value)
+  IntAttribute(Attribute::kind kind, uint64_t value)
       : EnumAttribute(kind),
         value_(value)
   {}
@@ -260,10 +260,10 @@ struct Hash<jlm::llvm::EnumAttribute>
 };
 
 template<>
-struct Hash<jlm::llvm::int_attribute>
+struct Hash<jlm::llvm::IntAttribute>
 {
   std::size_t
-  operator()(const jlm::llvm::int_attribute & attribute) const noexcept
+  operator()(const jlm::llvm::IntAttribute & attribute) const noexcept
   {
     auto kindHash = std::hash<jlm::llvm::Attribute::kind>()(attribute.kind());
     auto valueHash = std::hash<uint64_t>()(attribute.value());
@@ -302,10 +302,10 @@ namespace jlm::llvm
 
 /** \brief Attribute set
  */
-class attributeset final
+class AttributeSet final
 {
   using EnumAttributeHashSet = util::HashSet<EnumAttribute>;
-  using IntAttributeHashSet = util::HashSet<int_attribute>;
+  using IntAttributeHashSet = util::HashSet<IntAttribute>;
   using TypeAttributeHashSet = util::HashSet<TypeAttribute>;
   using StringAttributeHashSet = util::HashSet<StringAttribute>;
 
@@ -334,7 +334,7 @@ public:
   }
 
   void
-  InsertIntAttribute(const int_attribute & attribute)
+  InsertIntAttribute(const IntAttribute & attribute)
   {
     IntAttributes_.Insert(attribute);
   }
@@ -352,14 +352,14 @@ public:
   }
 
   bool
-  operator==(const attributeset & other) const noexcept
+  operator==(const AttributeSet & other) const noexcept
   {
     return IntAttributes_ == other.IntAttributes_ && EnumAttributes_ == other.EnumAttributes_
         && TypeAttributes_ == other.TypeAttributes_ && StringAttributes_ == other.StringAttributes_;
   }
 
   bool
-  operator!=(const attributeset & other) const noexcept
+  operator!=(const AttributeSet & other) const noexcept
   {
     return !(*this == other);
   }

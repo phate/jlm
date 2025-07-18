@@ -118,7 +118,7 @@ private:
   convert_attributes(const FunctionNode & f);
 
   ::llvm::AttributeSet
-  convert_attributes(const attributeset & attributeSet);
+  convert_attributes(const AttributeSet & attributeSet);
 
   ::llvm::Attribute
   ConvertStringAttribute(const llvm::StringAttribute & attribute);
@@ -127,7 +127,7 @@ private:
   ConvertTypeAttribute(const llvm::TypeAttribute & attribute);
 
   ::llvm::Attribute
-  ConvertIntAttribute(const llvm::int_attribute & attribute);
+  ConvertIntAttribute(const llvm::IntAttribute & attribute);
 
   ::llvm::Attribute
   ConvertEnumAttribute(const llvm::EnumAttribute & attribute);

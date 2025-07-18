@@ -218,7 +218,7 @@ ConvertEnumAttribute(const ::llvm::Attribute & attribute)
   return EnumAttribute(kind);
 }
 
-static int_attribute
+static IntAttribute
 ConvertIntAttribute(const ::llvm::Attribute & attribute)
 {
   JLM_ASSERT(attribute.isIntAttribute());
@@ -253,10 +253,10 @@ ConvertStringAttribute(const ::llvm::Attribute & attribute)
   return { attribute.getKindAsString().str(), attribute.getValueAsString().str() };
 }
 
-static attributeset
+static AttributeSet
 convert_attributes(const ::llvm::AttributeSet & as, context & ctx)
 {
-  attributeset attributeSet;
+  AttributeSet attributeSet;
   for (auto & attribute : as)
   {
     if (attribute.isEnumAttribute())
