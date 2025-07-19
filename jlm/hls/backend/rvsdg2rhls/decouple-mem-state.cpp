@@ -343,7 +343,7 @@ follow_state_edge(
       continue;
     }
     auto si = state_edge;
-    auto sn = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*si);
+    auto sn = &rvsdg::AssertGetOwnerNode<rvsdg::SimpleNode>(*si);
     auto [branchNode, branchOperation] = rvsdg::TryGetSimpleNodeAndOp<BranchOperation>(*state_edge);
     auto [muxNode, muxOperation] = rvsdg::TryGetSimpleNodeAndOp<MuxOperation>(*state_edge);
     if (branchOperation
