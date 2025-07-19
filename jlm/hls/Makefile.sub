@@ -92,6 +92,7 @@ libhls_TESTS += \
     tests/jlm/hls/backend/rvsdg2rhls/MemoryConverterTests \
     tests/jlm/hls/backend/rvsdg2rhls/MemoryQueueTests \
     tests/jlm/hls/backend/rvsdg2rhls/MemoryStateSplitConversionTests \
+    tests/jlm/hls/backend/rvsdg2rhls/RedundantBufferEliminationTests \
     tests/jlm/hls/backend/rvsdg2rhls/SinkInsertionTests \
     tests/jlm/hls/backend/rvsdg2rhls/TestFork \
     tests/jlm/hls/backend/rvsdg2rhls/TestGamma \
