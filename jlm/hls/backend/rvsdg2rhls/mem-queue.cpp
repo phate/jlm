@@ -49,9 +49,8 @@ find_load_store(
   visited.insert(op);
   for (auto & user : op->Users())
   {
-    if (auto si = dynamic_cast<jlm::rvsdg::SimpleInput *>(&user))
+    if (auto simplenode = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(user))
     {
-      auto simplenode = si->node();
       if (dynamic_cast<const jlm::llvm::StoreNonVolatileOperation *>(&simplenode->GetOperation()))
       {
         store_nodes.push_back(simplenode);

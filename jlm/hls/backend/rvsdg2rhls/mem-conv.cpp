@@ -290,9 +290,8 @@ TracePointer(
   visited.insert(output);
   for (auto & user : output->Users())
   {
-    if (auto si = dynamic_cast<rvsdg::SimpleInput *>(&user))
+    if (auto simplenode = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(user))
     {
-      auto simplenode = si->node();
       if (dynamic_cast<const llvm::StoreNonVolatileOperation *>(&simplenode->GetOperation()))
       {
         storeNodes.push_back(simplenode);
