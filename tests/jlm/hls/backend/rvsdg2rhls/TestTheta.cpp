@@ -58,10 +58,18 @@ TestUnknownBoundaries()
   assert(lambdaRegion->argument(0)->nusers() == 1);
   auto & loopNode =
       jlm::rvsdg::AssertGetOwnerNode<loop_node>(lambdaRegion->argument(0)->SingleUser());
-  jlm::rvsdg::AssertGetOwnerNode<LoopConstantBufferOperation>(
-      loopNode.subregion()->argument(3)->SingleUser());
-  jlm::rvsdg::AssertGetOwnerNode<LoopConstantBufferOperation>(
-      loopNode.subregion()->argument(4)->SingleUser());
+  {
+    auto [bufferNode, bufferOperation] =
+        jlm::rvsdg::TryGetSimpleNodeAndOp<LoopConstantBufferOperation>(
+            loopNode.subregion()->argument(3)->SingleUser());
+    assert(bufferNode && bufferOperation);
+  }
+  {
+    auto [bufferNode, bufferOperation] =
+        jlm::rvsdg::TryGetSimpleNodeAndOp<LoopConstantBufferOperation>(
+            loopNode.subregion()->argument(4)->SingleUser());
+    assert(bufferNode && bufferOperation);
+  }
 }
 
 JLM_UNIT_TEST_REGISTER("jlm/hls/backend/rvsdg2rhls/TestTheta", TestUnknownBoundaries)
