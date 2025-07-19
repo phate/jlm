@@ -105,9 +105,9 @@ GetDotName(jlm::rvsdg::Input * input)
   {
     return util::strfmt("r", hex((intptr_t)input), ":", "default");
   }
-  if (auto ni = dynamic_cast<rvsdg::SimpleInput *>(input))
+  if (auto simpleNode = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*input))
   {
-    return util::strfmt(GetDotName(ni->node()), ":", "i", hex((intptr_t)input));
+    return util::strfmt(GetDotName(simpleNode), ":", "i", hex((intptr_t)input));
   }
   else if (dynamic_cast<rvsdg::StructuralInput *>(input))
   {

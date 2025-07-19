@@ -52,9 +52,8 @@ trace_function_calls(
   visited.insert(output);
   for (auto & user : output->Users())
   {
-    if (auto si = dynamic_cast<rvsdg::SimpleInput *>(&user))
+    if (auto simplenode = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(user))
     {
-      auto simplenode = si->node();
       if (dynamic_cast<const llvm::CallOperation *>(&simplenode->GetOperation()))
       {
         // TODO: verify this is the right type of function call

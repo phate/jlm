@@ -235,16 +235,15 @@ trace_edge(
       new_edge = lv.output;
       new_next.divert_to(new_edge);
     }
-    else if (auto si = dynamic_cast<rvsdg::SimpleInput *>(&user))
+    else if (auto sn = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(user))
     {
-      auto sn = si->node();
-      auto op = &si->node()->GetOperation();
+      auto op = &sn->GetOperation();
       if (dynamic_cast<const jlm::llvm::StoreNonVolatileOperation *>(op))
       {
         JLM_ASSERT(sn->noutputs() == 1);
         if (store_nodes.end() != std::find(store_nodes.begin(), store_nodes.end(), sn))
         {
-          si->divert_to(new_edge);
+          user.divert_to(new_edge);
           sn->output(0)->divert_users(common_edge);
           new_edge = sn->output(0);
           new_next.divert_to(new_edge);
@@ -260,7 +259,7 @@ trace_edge(
         if (load_nodes.end() != std::find(load_nodes.begin(), load_nodes.end(), sn))
         {
           auto & new_next = *new_edge->Users().begin();
-          si->divert_to(new_edge);
+          user.divert_to(new_edge);
           sn->output(1)->divert_users(common_edge);
           new_next.divert_to(sn->output(1));
           new_edge = sn->output(1);
@@ -273,12 +272,12 @@ trace_edge(
       }
       else if (dynamic_cast<const jlm::llvm::CallOperation *>(op))
       {
-        int oi = sn->noutputs() - sn->ninputs() + si->index();
+        int oi = sn->noutputs() - sn->ninputs() + user.index();
         // TODO: verify this is the right type of function call
         if (decouple_nodes.end() != std::find(decouple_nodes.begin(), decouple_nodes.end(), sn))
         {
           auto & new_next = *new_edge->Users().begin();
-          si->divert_to(new_edge);
+          user.divert_to(new_edge);
           sn->output(oi)->divert_users(common_edge);
           new_next.divert_to(sn->output(oi));
           new_edge = new_next.origin();

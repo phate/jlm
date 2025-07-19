@@ -131,9 +131,9 @@ ComputeCallSummary(const rvsdg::LambdaNode & lambdaNode)
       continue;
     }
 
-    if (auto simpleInput = dynamic_cast<rvsdg::SimpleInput *>(input))
+    if (rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*input))
     {
-      otherUsers.emplace_back(simpleInput);
+      otherUsers.emplace_back(input);
       continue;
     }
 
