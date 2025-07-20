@@ -773,7 +773,7 @@ MemoryStateEncoder::EncodeLambdaEntry(const rvsdg::LambdaNode & lambdaNode)
 {
   auto & memoryStateArgument = GetMemoryStateRegionArgument(lambdaNode);
   JLM_ASSERT(memoryStateArgument.nusers() == 1);
-  auto memoryStateArgumentUser = *memoryStateArgument.begin();
+  auto & memoryStateArgumentUser = memoryStateArgument.SingleUser();
 
   auto & memoryNodes = Context_->GetModRefSummary().GetLambdaEntryNodes(lambdaNode);
   auto & stateMap = Context_->GetRegionalizedStateMap();
@@ -804,7 +804,7 @@ MemoryStateEncoder::EncodeLambdaEntry(const rvsdg::LambdaNode & lambdaNode)
     // No other memory state consuming node aside from the LambdaEntryMemoryStateSplitOperation
     // should now consume a1.
     auto state = MemoryStateMergeOperation::Create(states);
-    memoryStateArgumentUser->divert_to(state);
+    memoryStateArgumentUser.divert_to(state);
   }
 }
 

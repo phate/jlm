@@ -835,7 +835,7 @@ TestDelta()
           assert(convertedDelta->name() == "non-constant-delta");
         }
 
-        assert(is<jlm::rvsdg::bittype>(convertedDelta->type()));
+        assert(is<jlm::rvsdg::bittype>(*convertedDelta->Type()));
         assert(convertedDelta->linkage() == linkage::external_linkage);
         assert(convertedDelta->Section() == "section");
 

@@ -203,7 +203,7 @@ private:
       const std::string & name,
       std::shared_ptr<const rvsdg::FunctionType> type,
       const llvm::linkage & linkage,
-      const attributeset & attributes)
+      const AttributeSet & attributes)
       : InterProceduralGraphNode(clg),
         FunctionType_(type),
         name_(name),
@@ -245,7 +245,7 @@ public:
   [[nodiscard]] bool
   hasBody() const noexcept override;
 
-  const attributeset &
+  const AttributeSet &
   attributes() const noexcept
   {
     return attributes_;
@@ -264,7 +264,7 @@ public:
       const std::string & name,
       std::shared_ptr<const rvsdg::FunctionType> type,
       const llvm::linkage & linkage,
-      const attributeset & attributes)
+      const AttributeSet & attributes)
   {
     std::unique_ptr<FunctionNode> node(
         new FunctionNode(ipg, name, std::move(type), linkage, attributes));
@@ -287,7 +287,7 @@ private:
   std::shared_ptr<const rvsdg::FunctionType> FunctionType_;
   std::string name_;
   llvm::linkage linkage_;
-  attributeset attributes_;
+  AttributeSet attributes_;
   std::unique_ptr<ControlFlowGraph> cfg_;
 };
 

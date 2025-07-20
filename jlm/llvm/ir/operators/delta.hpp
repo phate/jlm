@@ -233,12 +233,6 @@ public:
   [[nodiscard]] const DeltaOperation &
   GetOperation() const noexcept override;
 
-  [[nodiscard]] const rvsdg::ValueType &
-  type() const noexcept
-  {
-    return GetOperation().type();
-  }
-
   [[nodiscard]] const std::shared_ptr<const rvsdg::ValueType> &
   Type() const noexcept
   {

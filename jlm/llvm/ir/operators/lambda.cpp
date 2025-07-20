@@ -17,7 +17,7 @@ LlvmLambdaOperation::LlvmLambdaOperation(
     std::shared_ptr<const jlm::rvsdg::FunctionType> type,
     std::string name,
     const jlm::llvm::linkage & linkage,
-    jlm::llvm::attributeset attributes)
+    jlm::llvm::AttributeSet attributes)
     : rvsdg::LambdaOperation(std::move(type)),
       name_(std::move(name)),
       linkage_(linkage),
@@ -46,7 +46,7 @@ LlvmLambdaOperation::copy() const
   return std::make_unique<LlvmLambdaOperation>(*this);
 }
 
-[[nodiscard]] const jlm::llvm::attributeset &
+[[nodiscard]] const jlm::llvm::AttributeSet &
 LlvmLambdaOperation::GetArgumentAttributes(std::size_t index) const noexcept
 {
   JLM_ASSERT(index < ArgumentAttributes_.size());
@@ -56,7 +56,7 @@ LlvmLambdaOperation::GetArgumentAttributes(std::size_t index) const noexcept
 void
 LlvmLambdaOperation::SetArgumentAttributes(
     std::size_t index,
-    const jlm::llvm::attributeset & attributes)
+    const jlm::llvm::AttributeSet & attributes)
 {
   JLM_ASSERT(index < ArgumentAttributes_.size());
   ArgumentAttributes_[index] = attributes;

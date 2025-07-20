@@ -22,11 +22,11 @@ distribute_constant(const rvsdg::SimpleOperation & op, rvsdg::SimpleOutput * out
   while (changed)
   {
     changed = false;
-    for (auto user : *out)
+    for (auto & user : out->Users())
     {
-      if (auto theta = rvsdg::TryGetOwnerNode<rvsdg::ThetaNode>(*user))
+      if (auto theta = rvsdg::TryGetOwnerNode<rvsdg::ThetaNode>(user))
       {
-        auto loopvar = theta->MapInputLoopVar(*user);
+        auto loopvar = theta->MapInputLoopVar(user);
         if (loopvar.post->origin() == loopvar.pre)
         {
           // pass-through
@@ -43,7 +43,7 @@ distribute_constant(const rvsdg::SimpleOperation & op, rvsdg::SimpleOutput * out
         }
       }
       // push constants that are returned by loops out of them
-      if (auto res = dynamic_cast<rvsdg::RegionResult *>(user))
+      if (auto res = dynamic_cast<rvsdg::RegionResult *>(&user))
       {
         auto out = res->output();
         if (out && rvsdg::TryGetOwnerNode<rvsdg::ThetaNode>(*out))
@@ -59,9 +59,9 @@ distribute_constant(const rvsdg::SimpleOperation & op, rvsdg::SimpleOutput * out
           }
         }
       }
-      if (auto gammaNode = rvsdg::TryGetOwnerNode<rvsdg::GammaNode>(*user))
+      if (auto gammaNode = rvsdg::TryGetOwnerNode<rvsdg::GammaNode>(user))
       {
-        auto rolevar = gammaNode->MapInput(*user);
+        auto rolevar = gammaNode->MapInput(user);
         if (std::get_if<rvsdg::GammaNode::MatchVar>(&rolevar))
         {
           // ignore predicate
@@ -80,7 +80,7 @@ distribute_constant(const rvsdg::SimpleOperation & op, rvsdg::SimpleOutput * out
             }
             argument->region()->RemoveArgument(argument->index());
           }
-          gammaNode->RemoveInput(user->index());
+          gammaNode->RemoveInput(user.index());
           changed = true;
           break;
         }

@@ -913,7 +913,7 @@ ConvertAggregationTreeToLambda(
     const std::string & functionName,
     std::shared_ptr<const rvsdg::FunctionType> functionType,
     const linkage & functionLinkage,
-    const attributeset & functionAttributes,
+    const AttributeSet & functionAttributes,
     InterProceduralGraphToRvsdgStatisticsCollector & statisticsCollector)
 {
   auto lambdaNode = rvsdg::LambdaNode::Create(
