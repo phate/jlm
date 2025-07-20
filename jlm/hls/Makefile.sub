@@ -15,7 +15,6 @@ libhls_SOURCES = \
     jlm/hls/backend/rvsdg2rhls/add-forks.cpp \
     jlm/hls/backend/rvsdg2rhls/add-prints.cpp \
     jlm/hls/backend/rvsdg2rhls/add-sinks.cpp \
-    jlm/hls/backend/rvsdg2rhls/add-triggers.cpp \
     jlm/hls/backend/rvsdg2rhls/alloca-conv.cpp \
     jlm/hls/backend/rvsdg2rhls/check-rhls.cpp \
     jlm/hls/backend/rvsdg2rhls/DeadNodeElimination.cpp \
@@ -58,7 +57,6 @@ libhls_HEADERS = \
     jlm/hls/backend/rvsdg2rhls/add-forks.hpp \
     jlm/hls/backend/rvsdg2rhls/add-prints.hpp \
     jlm/hls/backend/rvsdg2rhls/add-sinks.hpp \
-    jlm/hls/backend/rvsdg2rhls/add-triggers.hpp \
     jlm/hls/backend/rvsdg2rhls/alloca-conv.hpp \
     jlm/hls/backend/rvsdg2rhls/check-rhls.hpp \
     jlm/hls/backend/rvsdg2rhls/DeadNodeElimination.hpp \
