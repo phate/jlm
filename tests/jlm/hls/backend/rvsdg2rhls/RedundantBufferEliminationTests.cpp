@@ -9,6 +9,7 @@
 
 #include <jlm/hls/backend/rvsdg2rhls/remove-redundant-buf.hpp>
 #include <jlm/hls/ir/hls.hpp>
+#include <jlm/llvm/ir/RvsdgModule.hpp>
 #include <jlm/rvsdg/view.hpp>
 
 static void
@@ -39,7 +40,8 @@ BufferWithLocalLoad()
   view(rvsdg, stdout);
 
   // Act
-  remove_redundant_buf(rvsdgModule);
+  StatisticsCollector statisticsCollector;
+  RedundantBufferElimination::CreateAndRun(rvsdgModule, statisticsCollector);
   view(rvsdg, stdout);
 
   // Assert
@@ -83,7 +85,8 @@ BufferWithLocalStore()
   view(rvsdg, stdout);
 
   // Act
-  remove_redundant_buf(rvsdgModule);
+  StatisticsCollector statisticsCollector;
+  RedundantBufferElimination::CreateAndRun(rvsdgModule, statisticsCollector);
   view(rvsdg, stdout);
 
   // Assert
@@ -127,7 +130,8 @@ BufferWithLoad()
   view(rvsdg, stdout);
 
   // Act
-  remove_redundant_buf(rvsdgModule);
+  StatisticsCollector statisticsCollector;
+  RedundantBufferElimination::CreateAndRun(rvsdgModule, statisticsCollector);
   view(rvsdg, stdout);
 
   // Assert
@@ -176,7 +180,8 @@ BufferWithStore()
   view(rvsdg, stdout);
 
   // Act
-  remove_redundant_buf(rvsdgModule);
+  StatisticsCollector statisticsCollector;
+  RedundantBufferElimination::CreateAndRun(rvsdgModule, statisticsCollector);
   view(rvsdg, stdout);
 
   // Assert
@@ -221,7 +226,8 @@ BufferWithForkAndLocalLoad()
   view(rvsdg, stdout);
 
   // Act
-  remove_redundant_buf(rvsdgModule);
+  StatisticsCollector statisticsCollector;
+  RedundantBufferElimination::CreateAndRun(rvsdgModule, statisticsCollector);
   view(rvsdg, stdout);
 
   // Assert
@@ -268,7 +274,8 @@ BufferWithBranchAndLocalLoad()
   view(rvsdg, stdout);
 
   // Act
-  remove_redundant_buf(rvsdgModule);
+  StatisticsCollector statisticsCollector;
+  RedundantBufferElimination::CreateAndRun(rvsdgModule, statisticsCollector);
   view(rvsdg, stdout);
 
   // Assert
@@ -312,7 +319,8 @@ BufferWithOtherNode()
   view(rvsdg, stdout);
 
   // Act
-  remove_redundant_buf(rvsdgModule);
+  StatisticsCollector statisticsCollector;
+  RedundantBufferElimination::CreateAndRun(rvsdgModule, statisticsCollector);
   view(rvsdg, stdout);
 
   // Assert
@@ -358,7 +366,8 @@ BufferWithNonMemoryStateOperand()
   view(rvsdg, stdout);
 
   // Act
-  remove_redundant_buf(rvsdgModule);
+  StatisticsCollector statisticsCollector;
+  RedundantBufferElimination::CreateAndRun(rvsdgModule, statisticsCollector);
   view(rvsdg, stdout);
 
   // Assert
@@ -404,7 +413,8 @@ PassthroughBuffer()
   view(rvsdg, stdout);
 
   // Act
-  remove_redundant_buf(rvsdgModule);
+  StatisticsCollector statisticsCollector;
+  RedundantBufferElimination::CreateAndRun(rvsdgModule, statisticsCollector);
   view(rvsdg, stdout);
 
   // Assert
