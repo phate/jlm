@@ -13,9 +13,7 @@ namespace jlm::hls
 RedundantBufferElimination::~RedundantBufferElimination() noexcept = default;
 
 void
-RedundantBufferElimination::Run(
-    rvsdg::RvsdgModule & module,
-    util::StatisticsCollector & statisticsCollector)
+RedundantBufferElimination::Run(rvsdg::RvsdgModule & module, util::StatisticsCollector &)
 {
   HandleRegion(module.Rvsdg().GetRootRegion());
 }
