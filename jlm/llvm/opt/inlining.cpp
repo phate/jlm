@@ -16,13 +16,13 @@
 namespace jlm::llvm
 {
 
-class ilnstat final : public util::Statistics
+class FunctionInlining::Statistics final : public util::Statistics
 {
 public:
-  ~ilnstat() override = default;
+  ~Statistics() override = default;
 
-  explicit ilnstat(const util::FilePath & sourceFile)
-      : Statistics(Statistics::Id::FunctionInlining, sourceFile)
+  explicit Statistics(const util::FilePath & sourceFile)
+      : util::Statistics(Statistics::Id::FunctionInlining, sourceFile)
   {}
 
   void
@@ -39,10 +39,10 @@ public:
     GetTimer(Label::Timer).stop();
   }
 
-  static std::unique_ptr<ilnstat>
+  static std::unique_ptr<Statistics>
   Create(const util::FilePath & sourceFile)
   {
-    return std::make_unique<ilnstat>(sourceFile);
+    return std::make_unique<Statistics>(sourceFile);
   }
 };
 
@@ -165,7 +165,7 @@ static void
 inlining(rvsdg::RvsdgModule & rvsdgModule, util::StatisticsCollector & statisticsCollector)
 {
   auto & graph = rvsdgModule.Rvsdg();
-  auto statistics = ilnstat::Create(rvsdgModule.SourceFilePath().value());
+  auto statistics = FunctionInlining::Statistics::Create(rvsdgModule.SourceFilePath().value());
 
   statistics->start(graph);
   inlining(graph);
