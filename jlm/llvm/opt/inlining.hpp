@@ -18,6 +18,8 @@ namespace jlm::llvm
 class FunctionInlining final : public rvsdg::Transformation
 {
 public:
+  class Statistics;
+  
   ~FunctionInlining() noexcept override;
 
   void
