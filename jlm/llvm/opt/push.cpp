@@ -17,13 +17,13 @@
 namespace jlm::llvm
 {
 
-class pushstat final : public util::Statistics
+class NodeHoisting::Statistics final : public util::Statistics
 {
 public:
-  ~pushstat() override = default;
+  ~Statistics() override = default;
 
-  explicit pushstat(const util::FilePath & sourceFile)
-      : Statistics(Statistics::Id::PushNodes, sourceFile)
+  explicit Statistics(const util::FilePath & sourceFile)
+      : util::Statistics(Statistics::Id::PushNodes, sourceFile)
   {}
 
   void
@@ -40,10 +40,10 @@ public:
     GetTimer(Label::Timer).stop();
   }
 
-  static std::unique_ptr<pushstat>
+  static std::unique_ptr<Statistics>
   Create(const util::FilePath & sourceFile)
   {
-    return std::make_unique<pushstat>(sourceFile);
+    return std::make_unique<Statistics>(sourceFile);
   }
 };
 
@@ -416,7 +416,7 @@ push(rvsdg::Region * region)
 static void
 push(rvsdg::RvsdgModule & rvsdgModule, util::StatisticsCollector & statisticsCollector)
 {
-  auto statistics = pushstat::Create(rvsdgModule.SourceFilePath().value());
+  auto statistics = NodeHoisting::Statistics::Create(rvsdgModule.SourceFilePath().value());
 
   statistics->start(rvsdgModule.Rvsdg());
   push(&rvsdgModule.Rvsdg().GetRootRegion());
