@@ -18,7 +18,7 @@ struct my_item
       : p(nullptr)
   {}
 
-  inline my_item(int * ptr)
+  explicit my_item(int * ptr)
       : p(ptr)
   {}
 
@@ -31,7 +31,7 @@ struct my_item
   }
 
   int * p;
-  jlm::util::intrusive_list_anchor<my_item> anchor;
+  jlm::util::intrusive_list_anchor<my_item> anchor{};
   typedef jlm::util::intrusive_list_accessor<my_item, &my_item::anchor> accessor;
 };
 
@@ -142,13 +142,11 @@ test_owner_list()
   assert(v3 == 0);
 }
 
-static int
+void
 test_main()
 {
   test_simple_list();
   test_owner_list();
-
-  return 0;
 }
 
 }

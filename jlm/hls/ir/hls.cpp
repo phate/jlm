@@ -50,6 +50,10 @@ LocalMemoryOperation::~LocalMemoryOperation() noexcept = default;
 
 LocalMemoryRequestOperation::~LocalMemoryRequestOperation() noexcept = default;
 
+LocalMemoryResponseOperation::~LocalMemoryResponseOperation() noexcept = default;
+
+LocalStoreOperation::~LocalStoreOperation() noexcept = default;
+
 StoreOperation::~StoreOperation() noexcept = default;
 
 std::size_t

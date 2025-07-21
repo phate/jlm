@@ -18,7 +18,7 @@ test_two_phis()
 {
   using namespace jlm::llvm;
 
-  auto vt = jlm::tests::valuetype::Create();
+  auto vt = jlm::tests::ValueType::Create();
   InterProceduralGraphModule module(jlm::util::FilePath(""), "", "");
 
   ControlFlowGraph cfg(module);
@@ -56,12 +56,10 @@ test_two_phis()
   std::cout << ControlFlowGraph::ToAscii(cfg) << std::flush;
 }
 
-static int
+static void
 verify()
 {
   test_two_phis();
-
-  return 0;
 }
 
 JLM_UNIT_TEST_REGISTER("jlm/llvm/ir/test-ssa-destruction", verify)

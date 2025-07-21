@@ -33,7 +33,7 @@ namespace jlm::llvm
 class FunctionToPointerOperation;
 
 class ControlFlowGraph;
-class data_node;
+class DataNode;
 class ConstantFP;
 class PoisonValueOperation;
 class CallOperation;
@@ -45,9 +45,9 @@ class ConstantArrayOperation;
 class ConstantAggregateZeroOperation;
 class ConstantStruct;
 class ConstantPointerNullOperation;
-class shufflevector_op;
+class ShuffleVectorOperation;
 class VectorSelectOperation;
-class malloc_op;
+class MallocOperation;
 class FreeOperation;
 class MemCpyNonVolatileOperation;
 class MemCpyVolatileOperation;
@@ -57,8 +57,8 @@ class LambdaEntryMemoryStateSplitOperation;
 class CallEntryMemoryStateMergeOperation;
 class CallExitMemoryStateSplitOperation;
 class ControlFlowGraphNode;
-class ExtractValue;
-class function_node;
+class ExtractValueOperation;
+class FunctionNode;
 class InterProceduralGraphModule;
 class LambdaExitMemoryStateMergeOperation;
 class PointerToFunctionOperation;
@@ -103,10 +103,10 @@ private:
   convert_linkage(const llvm::linkage & linkage);
 
   void
-  convert_data_node(const data_node & node);
+  convert_data_node(const DataNode & node);
 
   void
-  convert_function(const function_node & node);
+  convert_function(const FunctionNode & node);
 
   void
   convert_cfg(ControlFlowGraph & cfg, ::llvm::Function & f);
@@ -115,22 +115,22 @@ private:
   ConvertBasicBlocks(const ControlFlowGraph & controlFlowGraph, ::llvm::Function & function);
 
   ::llvm::AttributeList
-  convert_attributes(const function_node & f);
+  convert_attributes(const FunctionNode & f);
 
   ::llvm::AttributeSet
-  convert_attributes(const attributeset & attributeSet);
+  convert_attributes(const AttributeSet & attributeSet);
 
   ::llvm::Attribute
-  ConvertStringAttribute(const llvm::string_attribute & attribute);
+  ConvertStringAttribute(const llvm::StringAttribute & attribute);
 
   ::llvm::Attribute
-  ConvertTypeAttribute(const llvm::type_attribute & attribute);
+  ConvertTypeAttribute(const llvm::TypeAttribute & attribute);
 
   ::llvm::Attribute
-  ConvertIntAttribute(const llvm::int_attribute & attribute);
+  ConvertIntAttribute(const llvm::IntAttribute & attribute);
 
   ::llvm::Attribute
-  ConvertEnumAttribute(const llvm::enum_attribute & attribute);
+  ConvertEnumAttribute(const llvm::EnumAttribute & attribute);
 
   void
   create_terminator_instruction(const llvm::ControlFlowGraphNode * node);
@@ -234,13 +234,13 @@ private:
 
   ::llvm::Value *
   convert(
-      const malloc_op & op,
+      const MallocOperation & op,
       const std::vector<const Variable *> & args,
       ::llvm::IRBuilder<> & builder);
 
   ::llvm::Value *
   convert(
-      const ExtractValue & op,
+      const ExtractValueOperation & op,
       const std::vector<const Variable *> & operands,
       ::llvm::IRBuilder<> & builder);
 
@@ -277,7 +277,7 @@ private:
 
   ::llvm::Value *
   convert(
-      const shufflevector_op & op,
+      const ShuffleVectorOperation & op,
       const std::vector<const Variable *> & operands,
       ::llvm::IRBuilder<> & builder);
 

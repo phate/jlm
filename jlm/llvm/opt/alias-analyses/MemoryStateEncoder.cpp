@@ -514,7 +514,7 @@ MemoryStateEncoder::EncodeStructuralNode(rvsdg::StructuralNode & structuralNode)
   {
     EncodeLambda(*lambdaNode);
   }
-  else if (auto deltaNode = dynamic_cast<const delta::node *>(&structuralNode))
+  else if (auto deltaNode = dynamic_cast<const DeltaNode *>(&structuralNode))
   {
     EncodeDelta(*deltaNode);
   }
@@ -543,7 +543,7 @@ MemoryStateEncoder::EncodeSimpleNode(const rvsdg::SimpleNode & simpleNode)
   {
     EncodeAlloca(simpleNode);
   }
-  else if (is<malloc_op>(&simpleNode))
+  else if (is<MallocOperation>(&simpleNode))
   {
     EncodeMalloc(simpleNode);
   }
@@ -604,7 +604,7 @@ MemoryStateEncoder::EncodeAlloca(const rvsdg::SimpleNode & allocaNode)
 void
 MemoryStateEncoder::EncodeMalloc(const rvsdg::SimpleNode & mallocNode)
 {
-  JLM_ASSERT(is<malloc_op>(&mallocNode));
+  JLM_ASSERT(is<MallocOperation>(&mallocNode));
   auto & stateMap = Context_->GetRegionalizedStateMap();
 
   auto & mallocMemoryNode =
@@ -773,7 +773,7 @@ MemoryStateEncoder::EncodeLambdaEntry(const rvsdg::LambdaNode & lambdaNode)
 {
   auto & memoryStateArgument = GetMemoryStateRegionArgument(lambdaNode);
   JLM_ASSERT(memoryStateArgument.nusers() == 1);
-  auto memoryStateArgumentUser = *memoryStateArgument.begin();
+  auto & memoryStateArgumentUser = memoryStateArgument.SingleUser();
 
   auto & memoryNodes = Context_->GetModRefSummary().GetLambdaEntryNodes(lambdaNode);
   auto & stateMap = Context_->GetRegionalizedStateMap();
@@ -804,7 +804,7 @@ MemoryStateEncoder::EncodeLambdaEntry(const rvsdg::LambdaNode & lambdaNode)
     // No other memory state consuming node aside from the LambdaEntryMemoryStateSplitOperation
     // should now consume a1.
     auto state = MemoryStateMergeOperation::Create(states);
-    memoryStateArgumentUser->divert_to(state);
+    memoryStateArgumentUser.divert_to(state);
   }
 }
 
@@ -831,7 +831,7 @@ MemoryStateEncoder::EncodePhi(const rvsdg::PhiNode & phiNode)
 }
 
 void
-MemoryStateEncoder::EncodeDelta(const delta::node &)
+MemoryStateEncoder::EncodeDelta(const DeltaNode &)
 {
   // Nothing needs to be done
 }

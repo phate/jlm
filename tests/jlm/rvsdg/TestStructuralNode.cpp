@@ -16,9 +16,9 @@ TestOutputRemoval()
 
   // Arrange
   rvsdg::Graph rvsdg;
-  auto valueType = tests::valuetype::Create();
+  auto valueType = tests::ValueType::Create();
 
-  auto structuralNode = tests::structural_node::create(&rvsdg.GetRootRegion(), 1);
+  auto structuralNode = tests::TestStructuralNode::create(&rvsdg.GetRootRegion(), 1);
   auto output0 = rvsdg::StructuralOutput::create(structuralNode, valueType);
   auto output1 = rvsdg::StructuralOutput::create(structuralNode, valueType);
   auto output2 = rvsdg::StructuralOutput::create(structuralNode, valueType);
@@ -47,12 +47,10 @@ TestOutputRemoval()
   assert(output3->index() == 2);
 }
 
-static int
+static void
 TestStructuralNode()
 {
   TestOutputRemoval();
-
-  return 0;
 }
 
 JLM_UNIT_TEST_REGISTER("jlm/rvsdg/TestStructuralNode", TestStructuralNode)

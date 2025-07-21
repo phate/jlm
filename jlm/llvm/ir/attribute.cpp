@@ -10,62 +10,62 @@ namespace jlm::llvm
 
 Attribute::~Attribute() noexcept = default;
 
-string_attribute::~string_attribute() noexcept = default;
+StringAttribute::~StringAttribute() noexcept = default;
 
 bool
-string_attribute::operator==(const Attribute & other) const
+StringAttribute::operator==(const Attribute & other) const
 {
-  auto sa = dynamic_cast<const string_attribute *>(&other);
+  auto sa = dynamic_cast<const StringAttribute *>(&other);
   return sa && sa->kind() == kind() && sa->value() == value();
 }
 
-enum_attribute::~enum_attribute() noexcept = default;
+EnumAttribute::~EnumAttribute() noexcept = default;
 
 bool
-enum_attribute::operator==(const Attribute & other) const
+EnumAttribute::operator==(const Attribute & other) const
 {
-  auto ea = dynamic_cast<const enum_attribute *>(&other);
+  auto ea = dynamic_cast<const EnumAttribute *>(&other);
   return ea && ea->kind() == kind();
 }
 
-int_attribute::~int_attribute() noexcept = default;
+IntAttribute::~IntAttribute() noexcept = default;
 
 bool
-int_attribute::operator==(const Attribute & other) const
+IntAttribute::operator==(const Attribute & other) const
 {
-  auto ia = dynamic_cast<const int_attribute *>(&other);
+  auto ia = dynamic_cast<const IntAttribute *>(&other);
   return ia && ia->kind() == kind() && ia->value() == value();
 }
 
-type_attribute::~type_attribute() noexcept = default;
+TypeAttribute::~TypeAttribute() noexcept = default;
 
 bool
-type_attribute::operator==(const Attribute & other) const
+TypeAttribute::operator==(const Attribute & other) const
 {
-  auto ta = dynamic_cast<const type_attribute *>(&other);
+  auto ta = dynamic_cast<const TypeAttribute *>(&other);
   return ta && ta->kind() == kind() && ta->type() == type();
 }
 
-attributeset::EnumAttributeRange
-attributeset::EnumAttributes() const
+AttributeSet::EnumAttributeRange
+AttributeSet::EnumAttributes() const
 {
   return EnumAttributes_.Items();
 }
 
-attributeset::IntAttributeRange
-attributeset::IntAttributes() const
+AttributeSet::IntAttributeRange
+AttributeSet::IntAttributes() const
 {
   return IntAttributes_.Items();
 }
 
-attributeset::TypeAttributeRange
-attributeset::TypeAttributes() const
+AttributeSet::TypeAttributeRange
+AttributeSet::TypeAttributes() const
 {
   return TypeAttributes_.Items();
 }
 
-attributeset::StringAttributeRange
-attributeset::StringAttributes() const
+AttributeSet::StringAttributeRange
+AttributeSet::StringAttributes() const
 {
   return StringAttributes_.Items();
 }

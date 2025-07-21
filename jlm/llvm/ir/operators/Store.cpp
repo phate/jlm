@@ -4,6 +4,7 @@
  */
 
 #include <jlm/llvm/ir/operators/alloca.hpp>
+#include <jlm/llvm/ir/operators/IOBarrier.hpp>
 #include <jlm/llvm/ir/operators/MemoryStateOperations.hpp>
 #include <jlm/llvm/ir/operators/Store.hpp>
 #include <jlm/util/HashSet.hpp>
@@ -32,29 +33,6 @@ std::unique_ptr<rvsdg::Operation>
 StoreNonVolatileOperation::copy() const
 {
   return std::make_unique<StoreNonVolatileOperation>(*this);
-}
-
-StoreVolatileOperation::~StoreVolatileOperation() noexcept = default;
-
-bool
-StoreVolatileOperation::operator==(const Operation & other) const noexcept
-{
-  auto operation = dynamic_cast<const StoreVolatileOperation *>(&other);
-  return operation && operation->NumMemoryStates() == NumMemoryStates()
-      && operation->GetStoredType() == GetStoredType()
-      && operation->GetAlignment() == GetAlignment();
-}
-
-std::string
-StoreVolatileOperation::debug_string() const
-{
-  return "StoreVolatile";
-}
-
-std::unique_ptr<rvsdg::Operation>
-StoreVolatileOperation::copy() const
-{
-  return std::make_unique<StoreVolatileOperation>(*this);
 }
 
 static bool
@@ -219,7 +197,7 @@ perform_multiple_origin_reduction(
 }
 
 std::optional<std::vector<rvsdg::Output *>>
-NormalizeStoreMux(
+StoreNonVolatileOperation::NormalizeStoreMux(
     const StoreNonVolatileOperation & operation,
     const std::vector<rvsdg::Output *> & operands)
 {
@@ -230,7 +208,7 @@ NormalizeStoreMux(
 }
 
 std::optional<std::vector<rvsdg::Output *>>
-NormalizeStoreStore(
+StoreNonVolatileOperation::NormalizeStoreStore(
     const StoreNonVolatileOperation & operation,
     const std::vector<rvsdg::Output *> & operands)
 {
@@ -241,7 +219,7 @@ NormalizeStoreStore(
 }
 
 std::optional<std::vector<rvsdg::Output *>>
-NormalizeStoreAlloca(
+StoreNonVolatileOperation::NormalizeStoreAlloca(
     const StoreNonVolatileOperation & operation,
     const std::vector<rvsdg::Output *> & operands)
 {
@@ -252,7 +230,7 @@ NormalizeStoreAlloca(
 }
 
 std::optional<std::vector<rvsdg::Output *>>
-NormalizeStoreDuplicateState(
+StoreNonVolatileOperation::NormalizeDuplicateStates(
     const StoreNonVolatileOperation & operation,
     const std::vector<rvsdg::Output *> & operands)
 {
@@ -260,6 +238,58 @@ NormalizeStoreDuplicateState(
     return perform_multiple_origin_reduction(operation, operands);
 
   return std::nullopt;
+}
+
+std::optional<std::vector<rvsdg::Output *>>
+StoreNonVolatileOperation::NormalizeIOBarrierAllocaAddress(
+    const StoreNonVolatileOperation & operation,
+    const std::vector<rvsdg::Output *> & operands)
+{
+  JLM_ASSERT(operands.size() >= 2);
+  const auto address = operands[0];
+  const auto value = operands[1];
+
+  auto [ioBarrierNode, ioBarrierOperation] =
+      rvsdg::TryGetSimpleNodeAndOp<IOBarrierOperation>(*address);
+  if (!ioBarrierOperation)
+    return std::nullopt;
+
+  const auto barredAddress = IOBarrierOperation::BarredInput(*ioBarrierNode).origin();
+  auto [allocaNode, allocaOperation] =
+      rvsdg::TryGetSimpleNodeAndOp<AllocaOperation>(*barredAddress);
+  if (!allocaOperation)
+    return std::nullopt;
+
+  auto & storeNode = CreateNode(
+      *barredAddress,
+      *value,
+      { std::next(operands.begin(), 2), operands.end() },
+      operation.GetAlignment());
+
+  return { outputs(&storeNode) };
+}
+
+StoreVolatileOperation::~StoreVolatileOperation() noexcept = default;
+
+bool
+StoreVolatileOperation::operator==(const Operation & other) const noexcept
+{
+  auto operation = dynamic_cast<const StoreVolatileOperation *>(&other);
+  return operation && operation->NumMemoryStates() == NumMemoryStates()
+      && operation->GetStoredType() == GetStoredType()
+      && operation->GetAlignment() == GetAlignment();
+}
+
+std::string
+StoreVolatileOperation::debug_string() const
+{
+  return "StoreVolatile";
+}
+
+std::unique_ptr<rvsdg::Operation>
+StoreVolatileOperation::copy() const
+{
+  return std::make_unique<StoreVolatileOperation>(*this);
 }
 
 }

@@ -59,12 +59,12 @@ is_applicable(const rvsdg::ThetaNode * theta)
     return nullptr;
 
   rvsdg::GammaNode * gnode = nullptr;
-  for (const auto & user : *matchNode->output(0))
+  for (const auto & user : matchNode->output(0)->Users())
   {
-    if (user == theta->predicate())
+    if (&user == theta->predicate())
       continue;
 
-    gnode = rvsdg::TryGetOwnerNode<rvsdg::GammaNode>(*user);
+    gnode = rvsdg::TryGetOwnerNode<rvsdg::GammaNode>(user);
     if (!gnode)
       return nullptr;
   }
@@ -330,13 +330,12 @@ invert(rvsdg::RvsdgModule & rvsdgModule, util::StatisticsCollector & statisticsC
   statisticsCollector.CollectDemandedStatistics(std::move(statistics));
 }
 
-/* tginversion */
-
-tginversion::~tginversion()
-{}
+LoopUnswitching::~LoopUnswitching() noexcept = default;
 
 void
-tginversion::Run(rvsdg::RvsdgModule & module, jlm::util::StatisticsCollector & statisticsCollector)
+LoopUnswitching::Run(
+    rvsdg::RvsdgModule & module,
+    jlm::util::StatisticsCollector & statisticsCollector)
 {
   invert(module, statisticsCollector);
 }

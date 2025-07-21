@@ -913,7 +913,7 @@ ConvertAggregationTreeToLambda(
     const std::string & functionName,
     std::shared_ptr<const rvsdg::FunctionType> functionType,
     const linkage & functionLinkage,
-    const attributeset & functionAttributes,
+    const AttributeSet & functionAttributes,
     InterProceduralGraphToRvsdgStatisticsCollector & statisticsCollector)
 {
   auto lambdaNode = rvsdg::LambdaNode::Create(
@@ -938,7 +938,7 @@ ConvertAggregationTreeToLambda(
 
 static rvsdg::Output *
 ConvertControlFlowGraph(
-    const function_node & functionNode,
+    const FunctionNode & functionNode,
     RegionalizedVariableMap & regionalizedVariableMap,
     InterProceduralGraphToRvsdgStatisticsCollector & statisticsCollector)
 {
@@ -971,7 +971,7 @@ ConvertControlFlowGraph(
 
 static rvsdg::Output *
 ConvertFunctionNode(
-    const function_node & functionNode,
+    const FunctionNode & functionNode,
     RegionalizedVariableMap & regionalizedVariableMap,
     InterProceduralGraphToRvsdgStatisticsCollector & statisticsCollector)
 {
@@ -1009,7 +1009,7 @@ ConvertDataNodeInitialization(
 
 static rvsdg::Output *
 ConvertDataNode(
-    const data_node & dataNode,
+    const DataNode & dataNode,
     RegionalizedVariableMap & regionalizedVariableMap,
     InterProceduralGraphToRvsdgStatisticsCollector & statisticsCollector)
 {
@@ -1036,7 +1036,7 @@ ConvertDataNode(
     /*
      * data node with initialization
      */
-    auto deltaNode = delta::node::Create(
+    auto deltaNode = DeltaNode::Create(
         &region,
         dataNode.GetValueType(),
         dataNode.name(),
@@ -1052,15 +1052,15 @@ ConvertDataNode(
     for (const auto & dependency : dataNode)
     {
       auto dependencyVariable = interProceduralGraphModule.variable(dependency);
-      auto argument = deltaNode->add_ctxvar(outerVariableMap.lookup(dependencyVariable));
-      regionalizedVariableMap.GetTopVariableMap().insert(dependencyVariable, argument);
+      auto ctxVar = deltaNode->AddContextVar(*outerVariableMap.lookup(dependencyVariable));
+      regionalizedVariableMap.GetTopVariableMap().insert(dependencyVariable, ctxVar.inner);
     }
 
     auto initOutput = ConvertDataNodeInitialization(
         *dataNodeInitialization,
         *deltaNode->subregion(),
         regionalizedVariableMap);
-    auto deltaOutput = deltaNode->finalize(initOutput);
+    auto deltaOutput = &deltaNode->finalize(initOutput);
     regionalizedVariableMap.PopRegion();
 
     return deltaOutput;
@@ -1080,10 +1080,10 @@ ConvertInterProceduralGraphNode(
     RegionalizedVariableMap & regionalizedVariableMap,
     InterProceduralGraphToRvsdgStatisticsCollector & statisticsCollector)
 {
-  if (auto functionNode = dynamic_cast<const function_node *>(&ipgNode))
+  if (auto functionNode = dynamic_cast<const FunctionNode *>(&ipgNode))
     return ConvertFunctionNode(*functionNode, regionalizedVariableMap, statisticsCollector);
 
-  if (auto dataNode = dynamic_cast<const data_node *>(&ipgNode))
+  if (auto dataNode = dynamic_cast<const DataNode *>(&ipgNode))
     return ConvertDataNode(*dataNode, regionalizedVariableMap, statisticsCollector);
 
   JLM_UNREACHABLE("This should have never happened.");

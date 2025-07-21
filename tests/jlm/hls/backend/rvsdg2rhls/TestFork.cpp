@@ -11,28 +11,31 @@
 #include <jlm/llvm/ir/operators.hpp>
 #include <jlm/rvsdg/view.hpp>
 
-static inline void
-TestFork()
+static void
+ForkInsertion()
 {
   using namespace jlm;
   using namespace jlm::llvm;
 
   // Arrange
-  auto b32 = rvsdg::bittype::Create(32);
-  auto ft = jlm::rvsdg::FunctionType::Create({ b32, b32, b32 }, { b32, b32, b32 });
+  auto bit32Type = rvsdg::bittype::Create(32);
+  const auto functionType = jlm::rvsdg::FunctionType::Create(
+      { bit32Type, bit32Type, bit32Type },
+      { bit32Type, bit32Type, bit32Type });
 
-  RvsdgModule rm(util::FilePath(""), "", "");
+  RvsdgModule rvsdgModule(util::FilePath(""), "", "");
+  auto & rootRegion = rvsdgModule.Rvsdg().GetRootRegion();
 
   auto lambda = jlm::rvsdg::LambdaNode::Create(
-      rm.Rvsdg().GetRootRegion(),
-      LlvmLambdaOperation::Create(ft, "f", linkage::external_linkage));
+      rootRegion,
+      LlvmLambdaOperation::Create(functionType, "f", linkage::external_linkage));
 
   auto loop = hls::loop_node::create(lambda->subregion());
-  rvsdg::Output * idvBuffer;
+  rvsdg::Output * idvBuffer = nullptr;
   loop->AddLoopVar(lambda->GetFunctionArguments()[0], &idvBuffer);
-  rvsdg::Output * lvsBuffer;
+  rvsdg::Output * lvsBuffer = nullptr;
   loop->AddLoopVar(lambda->GetFunctionArguments()[1], &lvsBuffer);
-  rvsdg::Output * lveBuffer;
+  rvsdg::Output * lveBuffer = nullptr;
   loop->AddLoopVar(lambda->GetFunctionArguments()[2], &lveBuffer);
 
   auto arm = rvsdg::CreateOpNode<rvsdg::bitadd_op>({ idvBuffer, lvsBuffer }, 32).output(0);
@@ -41,58 +44,58 @@ TestFork()
 
   loop->set_predicate(match);
 
-  auto f = lambda->finalize({ loop->output(0), loop->output(1), loop->output(2) });
-  jlm::llvm::GraphExport::Create(*f, "");
+  auto lambdaOutput = lambda->finalize({ loop->output(0), loop->output(1), loop->output(2) });
+  GraphExport::Create(*lambdaOutput, "");
 
-  rvsdg::view(rm.Rvsdg(), stdout);
+  rvsdg::view(rvsdgModule.Rvsdg(), stdout);
 
   // Act
-  hls::add_forks(rm);
-  rvsdg::view(rm.Rvsdg(), stdout);
+  util::StatisticsCollector statisticsCollector;
+  hls::ForkInsertion::CreateAndRun(rvsdgModule, statisticsCollector);
+  rvsdg::view(rvsdgModule.Rvsdg(), stdout);
 
   // Assert
   {
-    auto omegaRegion = &rm.Rvsdg().GetRootRegion();
-    assert(omegaRegion->nnodes() == 1);
-    auto lambda = util::AssertedCast<jlm::rvsdg::LambdaNode>(omegaRegion->Nodes().begin().ptr());
+    assert(rootRegion.nnodes() == 1);
+    auto lambda = util::AssertedCast<jlm::rvsdg::LambdaNode>(rootRegion.Nodes().begin().ptr());
     assert(dynamic_cast<const jlm::rvsdg::LambdaNode *>(lambda));
 
-    auto lambdaRegion = lambda->subregion();
-    assert(lambdaRegion->nnodes() == 1);
-    auto loop = util::AssertedCast<hls::loop_node>(lambdaRegion->Nodes().begin().ptr());
+    auto lambdaSubregion = lambda->subregion();
+    assert(lambdaSubregion->nnodes() == 1);
+    auto loop = util::AssertedCast<hls::loop_node>(lambdaSubregion->Nodes().begin().ptr());
     assert(dynamic_cast<const hls::loop_node *>(loop));
 
-    // Traverse the rvsgd graph upwards to check connections
-    auto forkNode =
-        jlm::rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*loop->subregion()->result(0)->origin());
-    assert(forkNode);
-    auto forkOp = util::AssertedCast<const hls::ForkOperation>(&forkNode->GetOperation());
+    auto [forkNode, forkOperation] =
+        rvsdg::TryGetSimpleNodeAndOp<hls::ForkOperation>(*loop->subregion()->result(0)->origin());
+    assert(forkNode && forkOperation);
     assert(forkNode->ninputs() == 1);
     assert(forkNode->noutputs() == 4);
-    assert(forkOp->IsConstant() == false);
+    assert(forkOperation->IsConstant() == false);
   }
 }
 
-static inline void
-TestConstantFork()
+JLM_UNIT_TEST_REGISTER("jlm/hls/backend/rvsdg2rhls/TestFork-ForkInsertion", ForkInsertion)
+
+static void
+ConstantForkInsertion()
 {
   using namespace jlm;
   using namespace jlm::llvm;
 
   // Arrange
-  auto b32 = rvsdg::bittype::Create(32);
-  auto ft = jlm::rvsdg::FunctionType::Create({ b32 }, { b32 });
+  auto bit32Type = rvsdg::bittype::Create(32);
+  const auto functionType = rvsdg::FunctionType::Create({ bit32Type }, { bit32Type });
 
-  RvsdgModule rm(util::FilePath(""), "", "");
+  RvsdgModule rvsdgModule(util::FilePath(""), "", "");
+  auto & rootRegion = rvsdgModule.Rvsdg().GetRootRegion();
 
-  auto lambda = jlm::rvsdg::LambdaNode::Create(
-      rm.Rvsdg().GetRootRegion(),
-      LlvmLambdaOperation::Create(ft, "f", linkage::external_linkage));
-  auto lambdaRegion = lambda->subregion();
+  auto lambda = rvsdg::LambdaNode::Create(
+      rootRegion,
+      LlvmLambdaOperation::Create(functionType, "f", linkage::external_linkage));
 
-  auto loop = hls::loop_node::create(lambdaRegion);
+  auto loop = hls::loop_node::create(lambda->subregion());
   auto subregion = loop->subregion();
-  rvsdg::Output * idvBuffer;
+  rvsdg::Output * idvBuffer = nullptr;
   loop->AddLoopVar(lambda->GetFunctionArguments()[0], &idvBuffer);
   auto bitConstant1 = rvsdg::create_bitconstant(subregion, 32, 1);
 
@@ -102,58 +105,48 @@ TestConstantFork()
 
   loop->set_predicate(match);
 
-  auto f = lambda->finalize({ loop->output(0) });
-  jlm::llvm::GraphExport::Create(*f, "");
+  auto lambdaOutput = lambda->finalize({ loop->output(0) });
+  GraphExport::Create(*lambdaOutput, "");
 
-  rvsdg::view(rm.Rvsdg(), stdout);
+  rvsdg::view(rvsdgModule.Rvsdg(), stdout);
 
   // Act
-  hls::add_forks(rm);
-  rvsdg::view(rm.Rvsdg(), stdout);
+  util::StatisticsCollector statisticsCollector;
+  hls::ForkInsertion::CreateAndRun(rvsdgModule, statisticsCollector);
+  rvsdg::view(rvsdgModule.Rvsdg(), stdout);
 
   // Assert
   {
-    auto omegaRegion = &rm.Rvsdg().GetRootRegion();
-    assert(omegaRegion->nnodes() == 1);
-    auto lambda = util::AssertedCast<jlm::rvsdg::LambdaNode>(omegaRegion->Nodes().begin().ptr());
-    assert(dynamic_cast<const jlm::rvsdg::LambdaNode *>(lambda));
+    assert(rootRegion.nnodes() == 1);
+    auto lambda = util::AssertedCast<jlm::rvsdg::LambdaNode>(rootRegion.Nodes().begin().ptr());
+    assert(rvsdg::is<jlm::rvsdg::LambdaOperation>(lambda));
 
     auto lambdaRegion = lambda->subregion();
     assert(lambdaRegion->nnodes() == 1);
 
-    rvsdg::node_output * loopOutput;
+    const rvsdg::node_output * loopOutput = nullptr;
     assert(loopOutput = dynamic_cast<jlm::rvsdg::node_output *>(lambdaRegion->result(0)->origin()));
     auto loopNode = loopOutput->node();
-    assert(dynamic_cast<const hls::loop_node *>(loopNode));
+    assert(rvsdg::is<hls::LoopOperation>(loopNode));
     auto loop = util::AssertedCast<hls::loop_node>(loopNode);
 
-    // Traverse the rvsgd graph upwards to check connections
-    auto forkNode =
-        rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*loop->subregion()->result(0)->origin());
-    assert(forkNode);
-    auto forkOp = util::AssertedCast<const hls::ForkOperation>(&forkNode->GetOperation());
+    auto [forkNode, forkOperation] =
+        rvsdg::TryGetSimpleNodeAndOp<hls::ForkOperation>(*loop->subregion()->result(0)->origin());
+    assert(forkNode && forkOperation);
     assert(forkNode->ninputs() == 1);
     assert(forkNode->noutputs() == 2);
-    assert(forkOp->IsConstant() == false);
+    assert(forkOperation->IsConstant() == false);
+
     auto matchNode = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*forkNode->input(0)->origin());
     auto bitsUltNode = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*matchNode->input(0)->origin());
-    auto cforkNode = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*bitsUltNode->input(1)->origin());
-    auto cforkOp = util::AssertedCast<const hls::ForkOperation>(&cforkNode->GetOperation());
-    assert(cforkNode->ninputs() == 1);
-    assert(cforkNode->noutputs() == 2);
-    assert(cforkOp->IsConstant() == true);
+    auto [cForkNode, cForkOperation] =
+        rvsdg::TryGetSimpleNodeAndOp<hls::ForkOperation>(*bitsUltNode->input(1)->origin());
+    assert(cForkNode->ninputs() == 1);
+    assert(cForkNode->noutputs() == 2);
+    assert(cForkOperation->IsConstant() == true);
   }
 }
 
-static int
-Test()
-{
-  std::cout << std::endl << "### Test fork ###" << std::endl << std::endl;
-  TestFork();
-  std::cout << std::endl << "### Test constant ###" << std::endl << std::endl;
-  TestConstantFork();
-
-  return 0;
-}
-
-JLM_UNIT_TEST_REGISTER("jlm/hls/backend/rvsdg2rhls/TestFork", Test)
+JLM_UNIT_TEST_REGISTER(
+    "jlm/hls/backend/rvsdg2rhls/TestFork-ConstantForkInsertion",
+    ConstantForkInsertion)

@@ -7,7 +7,6 @@
 #include <jlm/hls/backend/rvsdg2rhls/add-forks.hpp>
 #include <jlm/hls/backend/rvsdg2rhls/add-prints.hpp>
 #include <jlm/hls/backend/rvsdg2rhls/add-sinks.hpp>
-#include <jlm/hls/backend/rvsdg2rhls/add-triggers.hpp>
 #include <jlm/hls/backend/rvsdg2rhls/alloca-conv.hpp>
 #include <jlm/hls/backend/rvsdg2rhls/check-rhls.hpp>
 #include <jlm/hls/backend/rvsdg2rhls/decouple-mem-state.hpp>
@@ -63,7 +62,7 @@ split_opt(llvm::RvsdgModule & rm)
   jlm::llvm::DeadNodeElimination dne;
   jlm::hls::cne cne;
   jlm::llvm::InvariantValueRedirection ivr;
-  jlm::llvm::tginversion tgi;
+  jlm::llvm::LoopUnswitching tgi;
   jlm::llvm::NodeReduction red;
   jlm::util::StatisticsCollector statisticsCollector;
   tgi.Run(rm, statisticsCollector);
@@ -81,7 +80,7 @@ pre_opt(jlm::llvm::RvsdgModule & rm)
   jlm::llvm::DeadNodeElimination dne;
   jlm::hls::cne cne;
   jlm::llvm::InvariantValueRedirection ivr;
-  jlm::llvm::tginversion tgi;
+  jlm::llvm::LoopUnswitching tgi;
   jlm::util::StatisticsCollector statisticsCollector;
   tgi.Run(rm, statisticsCollector);
   dne.Run(rm, statisticsCollector);
@@ -119,7 +118,7 @@ trace_call(jlm::rvsdg::Input * input)
   auto graph = input->region()->graph();
 
   auto argument = dynamic_cast<const rvsdg::RegionArgument *>(input->origin());
-  const jlm::rvsdg::Output * result;
+  const rvsdg::Output * result = nullptr;
   if (auto theta = rvsdg::TryGetOwnerNode<rvsdg::ThetaNode>(*input->origin()))
   {
     result = trace_call(theta->MapOutputLoopVar(*input->origin()).input);
@@ -205,7 +204,7 @@ convert_alloca(rvsdg::Region * region)
       auto delta_name = jlm::util::strfmt("hls_alloca_", alloca_cnt++);
       auto delta_type = llvm::PointerType::Create();
       std::cout << "alloca " << delta_name << ": " << po->value_type().debug_string() << "\n";
-      auto db = llvm::delta::node::Create(
+      auto db = llvm::DeltaNode::Create(
           rr,
           std::static_pointer_cast<const rvsdg::ValueType>(po->ValueType()),
           delta_name,
@@ -213,7 +212,7 @@ convert_alloca(rvsdg::Region * region)
           "",
           false);
       // create zero constant of allocated type
-      jlm::rvsdg::Output * cout;
+      rvsdg::Output * cout = nullptr;
       if (auto bt = dynamic_cast<const llvm::IntegerConstantOperation *>(&po->value_type()))
       {
         cout = llvm::IntegerConstantOperation::Create(
@@ -226,20 +225,20 @@ convert_alloca(rvsdg::Region * region)
       {
         cout = llvm::ConstantAggregateZeroOperation::Create(*db->subregion(), po->ValueType());
       }
-      auto delta = db->finalize(cout);
+      auto delta = &db->finalize(cout);
       jlm::llvm::GraphExport::Create(*delta, delta_name);
       auto delta_local = route_to_region_rvsdg(delta, region);
       node->output(0)->divert_users(delta_local);
       // TODO: check that the input to alloca is a bitconst 1
       // TODO: handle general case of other nodes getting state edge without a merge
       JLM_ASSERT(node->output(1)->nusers() == 1);
-      auto mux_in = *node->output(1)->begin();
-      auto mux_node = rvsdg::TryGetOwnerNode<rvsdg::Node>(*mux_in);
+      auto & mux_in = *node->output(1)->Users().begin();
+      auto mux_node = rvsdg::TryGetOwnerNode<rvsdg::Node>(mux_in);
       if (dynamic_cast<const llvm::MemoryStateMergeOperation *>(&mux_node->GetOperation()))
       {
         // merge after alloca -> remove merge
         JLM_ASSERT(mux_node->ninputs() == 2);
-        auto other_index = mux_in->index() ? 0 : 1;
+        auto other_index = mux_in.index() ? 0 : 1;
         mux_node->output(0)->divert_users(mux_node->input(other_index)->origin());
         jlm::rvsdg::remove(mux_node);
       }
@@ -254,8 +253,8 @@ convert_alloca(rvsdg::Region * region)
   }
 }
 
-llvm::delta::node *
-rename_delta(llvm::delta::node * odn)
+llvm::DeltaNode *
+rename_delta(llvm::DeltaNode * odn)
 {
   auto name = odn->name();
   std::replace_if(
@@ -267,7 +266,7 @@ rename_delta(llvm::delta::node * odn)
       },
       '_');
   std::cout << "renaming delta node " << odn->name() << " to " << name << "\n";
-  auto db = llvm::delta::node::Create(
+  auto db = llvm::DeltaNode::Create(
       odn->region(),
       std::static_pointer_cast<const rvsdg::ValueType>(odn->Type()),
       name,
@@ -276,22 +275,22 @@ rename_delta(llvm::delta::node * odn)
       odn->constant());
   /* add dependencies */
   rvsdg::SubstitutionMap rmap;
-  for (size_t i = 0; i < odn->ncvarguments(); i++)
+  for (auto ctxVar : odn->GetContextVars())
   {
-    auto input = odn->input(i);
-    auto nd = db->add_ctxvar(input->origin());
-    rmap.insert(input->argument(), nd);
+    auto input = ctxVar.input;
+    auto nd = db->AddContextVar(*input->origin()).inner;
+    rmap.insert(ctxVar.inner, nd);
   }
 
   /* copy subregion */
   odn->subregion()->copy(db->subregion(), rmap, false, false);
 
   auto result = rmap.lookup(odn->subregion()->result(0)->origin());
-  auto data = db->finalize(result);
+  auto data = &db->finalize(result);
 
-  odn->output()->divert_users(data);
+  odn->output().divert_users(data);
   jlm::rvsdg::remove(odn);
-  return rvsdg::TryGetOwnerNode<llvm::delta::node>(*data);
+  return rvsdg::TryGetOwnerNode<llvm::DeltaNode>(*data);
 }
 
 rvsdg::LambdaNode *
@@ -380,14 +379,14 @@ split_hls_function(llvm::RvsdgModule & rm, const std::string & function_name)
               + dynamic_cast<llvm::LlvmLambdaOperation &>(oln->GetOperation()).name()
               + " not supported");
         }
-        else if (auto odn = dynamic_cast<llvm::delta::node *>(orig_node))
+        else if (auto odn = dynamic_cast<llvm::DeltaNode *>(orig_node))
         {
           // modify name to not contain .
           if (odn->name().find('.') != std::string::npos)
           {
             odn = rename_delta(odn);
           }
-          std::cout << "delta node " << odn->name() << ": " << odn->type().debug_string() << "\n";
+          std::cout << "delta node " << odn->name() << ": " << odn->Type()->debug_string() << "\n";
           // add import for delta to rhls
           auto & graphImport = llvm::GraphImport::Create(
               rhls->Rvsdg(),
@@ -398,7 +397,7 @@ split_hls_function(llvm::RvsdgModule & rm, const std::string & function_name)
           smap.insert(ln->input(i)->origin(), &graphImport);
           // add export for delta to rm
           // TODO: check if not already exported and maybe adjust linkage?
-          jlm::llvm::GraphExport::Create(*odn->output(), odn->name());
+          jlm::llvm::GraphExport::Create(odn->output(), odn->name());
         }
         else
         {
@@ -449,7 +448,8 @@ rvsdg2rhls(llvm::RvsdgModule & rhls, util::StatisticsCollector & collector)
   RemoveUnusedStates(rhls);
 
   llvm::DeadNodeElimination llvmDne;
-  jlm::llvm::tginversion tgi;
+  llvmDne.Run(rhls, collector);
+  jlm::llvm::LoopUnswitching tgi;
   // simplify loops
   tgi.Run(rhls, collector);
   jlm::hls::cne cne;
@@ -474,11 +474,10 @@ rvsdg2rhls(llvm::RvsdgModule & rhls, util::StatisticsCollector & collector)
   MemoryConverter(rhls);
   llvm::NodeReduction llvmRed;
   llvmRed.Run(rhls, collector);
-  memstate_conv(rhls);
-  remove_redundant_buf(rhls);
-  // enforce 1:1 input output relationship
-  add_sinks(rhls);
-  add_forks(rhls);
+  MemoryStateSplitConversion::CreateAndRun(rhls, collector);
+  RedundantBufferElimination::CreateAndRun(rhls, collector);
+  SinkInsertion::CreateAndRun(rhls, collector);
+  ForkInsertion::CreateAndRun(rhls, collector);
   add_buffers(rhls);
   // ensure that all rhls rules are met
   check_rhls(rhls);

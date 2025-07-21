@@ -22,7 +22,7 @@ contains(const jlm::llvm::InterProceduralGraphModule & module, const std::string
   using namespace jlm::llvm;
 
   bool has_select = false;
-  auto cfg = dynamic_cast<const function_node *>(module.ipgraph().find(fctname))->cfg();
+  auto cfg = dynamic_cast<const FunctionNode *>(module.ipgraph().find(fctname))->cfg();
   auto bb = dynamic_cast<const BasicBlock *>(cfg->entry()->OutEdge(0)->sink());
   for (auto tac : *bb)
     has_select = has_select || is<OP>(tac);
@@ -100,13 +100,11 @@ test_vector_select()
   assert(contains<jlm::llvm::VectorSelectOperation>(*ipgmod, "f"));
 }
 
-static int
+static void
 test()
 {
   test_scalar_select();
   test_vector_select();
-
-  return 0;
 }
 
 JLM_UNIT_TEST_REGISTER("jlm/llvm/frontend/llvm/test-select", test)

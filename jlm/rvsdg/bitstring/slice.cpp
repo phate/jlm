@@ -74,7 +74,7 @@ bitslice_op::reduce_operand(unop_reduction_path_t path, jlm::rvsdg::Output * arg
 
   if (path == unop_reduction_distribute)
   {
-    size_t pos = 0, n;
+    size_t pos = 0, n = 0;
     std::vector<jlm::rvsdg::Output *> arguments;
     for (n = 0; n < node->ninputs(); n++)
     {

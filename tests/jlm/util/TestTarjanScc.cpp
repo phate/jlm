@@ -155,7 +155,6 @@ TestCycles()
   std::vector<size_t> reverseTopologicalOrder;
   auto numSccs = jlm::util::FindStronglyConnectedComponents(
       numNodes,
-      Identity,
       GetSuccessors,
       sccIndex,
       reverseTopologicalOrder);

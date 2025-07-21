@@ -338,7 +338,7 @@ BitCastTest::SetupRvsdg()
       graph->GetRootRegion(),
       llvm::LlvmLambdaOperation::Create(fcttype, "f", linkage::external_linkage));
 
-  auto cast = bitcast_op::create(fct->GetFunctionArguments()[0], pointerType);
+  auto cast = BitCastOperation::create(fct->GetFunctionArguments()[0], pointerType);
 
   fct->finalize({ cast });
 
@@ -658,8 +658,8 @@ CallTest2::SetupRvsdg()
     auto four = jlm::rvsdg::create_bitconstant(lambda->subregion(), 32, 4);
     auto prod = jlm::rvsdg::bitmul_op::create(32, valueArgument, four);
 
-    auto alloc = malloc_op::create(prod);
-    auto cast = bitcast_op::create(alloc[0], pt32);
+    auto alloc = MallocOperation::create(prod);
+    auto cast = BitCastOperation::create(alloc[0], pt32);
     auto mx = MemoryStateMergeOperation::Create(
         std::vector<jlm::rvsdg::Output *>({ alloc[1], memoryStateArgument }));
 
@@ -685,7 +685,7 @@ CallTest2::SetupRvsdg()
     auto iOStateArgument = lambda->GetFunctionArguments()[1];
     auto memoryStateArgument = lambda->GetFunctionArguments()[2];
 
-    auto cast = bitcast_op::create(pointerArgument, pointerType);
+    auto cast = BitCastOperation::create(pointerArgument, pointerType);
     auto freeResults = FreeOperation::Create(cast, { memoryStateArgument }, iOStateArgument);
 
     lambda->finalize({ freeResults[1], freeResults[0] });
@@ -903,7 +903,7 @@ IndirectCallTest2::SetupRvsdg()
 
   auto SetupG1 = [&]()
   {
-    auto delta = delta::node::Create(
+    auto delta = DeltaNode::Create(
         &graph->GetRootRegion(),
         jlm::rvsdg::bittype::Create(32),
         "g1",
@@ -913,12 +913,12 @@ IndirectCallTest2::SetupRvsdg()
 
     auto constant = jlm::rvsdg::create_bitconstant(delta->subregion(), 32, 1);
 
-    return delta->finalize(constant);
+    return &delta->finalize(constant);
   };
 
   auto SetupG2 = [&]()
   {
-    auto delta = delta::node::Create(
+    auto delta = DeltaNode::Create(
         &graph->GetRootRegion(),
         jlm::rvsdg::bittype::Create(32),
         "g2",
@@ -928,7 +928,7 @@ IndirectCallTest2::SetupRvsdg()
 
     auto constant = jlm::rvsdg::create_bitconstant(delta->subregion(), 32, 2);
 
-    return delta->finalize(constant);
+    return &delta->finalize(constant);
   };
 
   auto SetupConstantFunction = [&](ssize_t n, const std::string & name)
@@ -1012,8 +1012,8 @@ IndirectCallTest2::SetupRvsdg()
 
   auto SetupTestFunction = [&](rvsdg::Output & functionX,
                                rvsdg::Output & functionY,
-                               delta::output & globalG1,
-                               delta::output & globalG2)
+                               rvsdg::Output & globalG1,
+                               rvsdg::Output & globalG2)
   {
     auto functionType = rvsdg::FunctionType::Create(
         { IOStateType::Create(), MemoryStateType::Create() },
@@ -1131,8 +1131,8 @@ IndirectCallTest2::SetupRvsdg()
   /*
    * Assign
    */
-  this->DeltaG1_ = deltaG1->node();
-  this->DeltaG2_ = deltaG2->node();
+  this->DeltaG1_ = &rvsdg::AssertGetOwnerNode<llvm::DeltaNode>(*deltaG1);
+  this->DeltaG2_ = &rvsdg::AssertGetOwnerNode<llvm::DeltaNode>(*deltaG2);
   this->LambdaThree_ = &rvsdg::AssertGetOwnerNode<rvsdg::LambdaNode>(*lambdaThree);
   this->LambdaFour_ = &rvsdg::AssertGetOwnerNode<rvsdg::LambdaNode>(*lambdaFour);
   this->LambdaI_ = &rvsdg::AssertGetOwnerNode<rvsdg::LambdaNode>(*lambdaI);
@@ -1685,7 +1685,7 @@ DeltaTest1::SetupRvsdg()
 
   auto SetupGlobalF = [&]()
   {
-    auto dfNode = delta::node::Create(
+    auto dfNode = DeltaNode::Create(
         &graph->GetRootRegion(),
         jlm::rvsdg::bittype::Create(32),
         "f",
@@ -1695,7 +1695,7 @@ DeltaTest1::SetupRvsdg()
 
     auto constant = jlm::rvsdg::create_bitconstant(dfNode->subregion(), 32, 0);
 
-    return dfNode->finalize(constant);
+    return &dfNode->finalize(constant);
   };
 
   auto SetupFunctionG = [&]()
@@ -1723,7 +1723,7 @@ DeltaTest1::SetupRvsdg()
     return lambda->finalize({ ld[0], iOStateArgument, ld[1] });
   };
 
-  auto SetupFunctionH = [&](delta::output * f, rvsdg::Output * g)
+  auto SetupFunctionH = [&](rvsdg::Output * f, rvsdg::Output * g)
   {
     auto iOStateType = IOStateType::Create();
     auto memoryStateType = MemoryStateType::Create();
@@ -1763,7 +1763,7 @@ DeltaTest1::SetupRvsdg()
   this->lambda_g = &rvsdg::AssertGetOwnerNode<rvsdg::LambdaNode>(*g);
   this->lambda_h = &rvsdg::AssertGetOwnerNode<rvsdg::LambdaNode>(*h);
 
-  this->delta_f = f->node();
+  this->delta_f = &rvsdg::AssertGetOwnerNode<llvm::DeltaNode>(*f);
 
   this->CallG_ = callFunctionG;
   this->constantFive = constantFive;
@@ -1781,7 +1781,7 @@ DeltaTest2::SetupRvsdg()
 
   auto SetupD1 = [&]()
   {
-    auto delta = delta::node::Create(
+    auto delta = DeltaNode::Create(
         &graph->GetRootRegion(),
         jlm::rvsdg::bittype::Create(32),
         "d1",
@@ -1791,12 +1791,12 @@ DeltaTest2::SetupRvsdg()
 
     auto constant = jlm::rvsdg::create_bitconstant(delta->subregion(), 32, 0);
 
-    return delta->finalize(constant);
+    return &delta->finalize(constant);
   };
 
   auto SetupD2 = [&]()
   {
-    auto delta = delta::node::Create(
+    auto delta = DeltaNode::Create(
         &graph->GetRootRegion(),
         jlm::rvsdg::bittype::Create(32),
         "d2",
@@ -1806,10 +1806,10 @@ DeltaTest2::SetupRvsdg()
 
     auto constant = jlm::rvsdg::create_bitconstant(delta->subregion(), 32, 0);
 
-    return delta->finalize(constant);
+    return &delta->finalize(constant);
   };
 
-  auto SetupF1 = [&](delta::output * d1)
+  auto SetupF1 = [&](rvsdg::Output * d1)
   {
     auto iOStateType = IOStateType::Create();
     auto memoryStateType = MemoryStateType::Create();
@@ -1830,7 +1830,7 @@ DeltaTest2::SetupRvsdg()
     return lambda->finalize({ iOStateArgument, st[0] });
   };
 
-  auto SetupF2 = [&](rvsdg::Output * f1, delta::output * d1, delta::output * d2)
+  auto SetupF2 = [&](rvsdg::Output * f1, rvsdg::Output * d1, rvsdg::Output * d2)
   {
     auto iOStateType = IOStateType::Create();
     auto memoryStateType = MemoryStateType::Create();
@@ -1876,8 +1876,8 @@ DeltaTest2::SetupRvsdg()
   this->lambda_f1 = &rvsdg::AssertGetOwnerNode<rvsdg::LambdaNode>(*f1);
   this->lambda_f2 = &rvsdg::AssertGetOwnerNode<rvsdg::LambdaNode>(*f2);
 
-  this->delta_d1 = d1->node();
-  this->delta_d2 = d2->node();
+  this->delta_d1 = &rvsdg::AssertGetOwnerNode<llvm::DeltaNode>(*d1);
+  this->delta_d2 = &rvsdg::AssertGetOwnerNode<llvm::DeltaNode>(*d2);
 
   this->CallF1_ = callF1;
 
@@ -1894,7 +1894,7 @@ DeltaTest3::SetupRvsdg()
 
   auto SetupG1 = [&]()
   {
-    auto delta = delta::node::Create(
+    auto delta = DeltaNode::Create(
         &graph->GetRootRegion(),
         jlm::rvsdg::bittype::Create(32),
         "g1",
@@ -1904,14 +1904,14 @@ DeltaTest3::SetupRvsdg()
 
     auto constant = jlm::rvsdg::create_bitconstant(delta->subregion(), 32, 1);
 
-    return delta->finalize(constant);
+    return &delta->finalize(constant);
   };
 
-  auto SetupG2 = [&](delta::output & g1)
+  auto SetupG2 = [&](rvsdg::Output & g1)
   {
     auto pointerType = PointerType::Create();
 
-    auto delta = delta::node::Create(
+    auto delta = DeltaNode::Create(
         &graph->GetRootRegion(),
         pointerType,
         "g2",
@@ -1919,12 +1919,12 @@ DeltaTest3::SetupRvsdg()
         "",
         false);
 
-    auto g1Argument = delta->add_ctxvar(&g1);
+    auto ctxVar = delta->AddContextVar(g1);
 
-    return delta->finalize(g1Argument);
+    return &delta->finalize(ctxVar.inner);
   };
 
-  auto SetupF = [&](delta::output & g1, delta::output & g2)
+  auto SetupF = [&](rvsdg::Output & g1, rvsdg::Output & g2)
   {
     auto iOStateType = IOStateType::Create();
     auto memoryStateType = MemoryStateType::Create();
@@ -1997,8 +1997,8 @@ DeltaTest3::SetupRvsdg()
   this->LambdaF_ = &rvsdg::AssertGetOwnerNode<rvsdg::LambdaNode>(*f);
   this->LambdaTest_ = &rvsdg::AssertGetOwnerNode<rvsdg::LambdaNode>(*test);
 
-  this->DeltaG1_ = g1->node();
-  this->DeltaG2_ = g2->node();
+  this->DeltaG1_ = &rvsdg::AssertGetOwnerNode<llvm::DeltaNode>(*g1);
+  this->DeltaG2_ = &rvsdg::AssertGetOwnerNode<llvm::DeltaNode>(*g2);
 
   this->CallF_ = callF;
 
@@ -2661,22 +2661,17 @@ PhiWithDeltaTest::SetupRvsdg()
   pb.begin(&rvsdg.GetRootRegion());
   auto myArrayRecVar = pb.AddFixVar(pointerType);
 
-  auto delta = delta::node::Create(
-      pb.subregion(),
-      arrayType,
-      "myArray",
-      linkage::external_linkage,
-      "",
-      false);
-  auto myArrayArgument = delta->add_ctxvar(myArrayRecVar.recref);
+  auto delta =
+      DeltaNode::Create(pb.subregion(), arrayType, "myArray", linkage::external_linkage, "", false);
+  auto myArrayArgument = delta->AddContextVar(*myArrayRecVar.recref).inner;
 
   auto aggregateZero = ConstantAggregateZeroOperation::Create(*delta->subregion(), structType);
   auto & constantStruct =
       ConstantStruct::Create(*delta->subregion(), { myArrayArgument }, structType);
   auto constantArray = ConstantArrayOperation::Create({ aggregateZero, &constantStruct });
 
-  auto deltaOutput = delta->finalize(constantArray);
-  Delta_ = deltaOutput->node();
+  auto deltaOutput = &delta->finalize(constantArray);
+  Delta_ = &rvsdg::AssertGetOwnerNode<llvm::DeltaNode>(*deltaOutput);
   myArrayRecVar.result->divert_to(deltaOutput);
 
   auto phiNode = pb.end();
@@ -2731,7 +2726,7 @@ EscapedMemoryTest1::SetupRvsdg()
 
   auto SetupDeltaA = [&]()
   {
-    auto deltaNode = delta::node::Create(
+    auto deltaNode = DeltaNode::Create(
         &rvsdg->GetRootRegion(),
         jlm::rvsdg::bittype::Create(32),
         "a",
@@ -2741,12 +2736,12 @@ EscapedMemoryTest1::SetupRvsdg()
 
     auto constant = jlm::rvsdg::create_bitconstant(deltaNode->subregion(), 32, 1);
 
-    return deltaNode->finalize(constant);
+    return &deltaNode->finalize(constant);
   };
 
   auto SetupDeltaB = [&]()
   {
-    auto deltaNode = delta::node::Create(
+    auto deltaNode = DeltaNode::Create(
         &rvsdg->GetRootRegion(),
         jlm::rvsdg::bittype::Create(32),
         "b",
@@ -2756,14 +2751,14 @@ EscapedMemoryTest1::SetupRvsdg()
 
     auto constant = jlm::rvsdg::create_bitconstant(deltaNode->subregion(), 32, 2);
 
-    return deltaNode->finalize(constant);
+    return &deltaNode->finalize(constant);
   };
 
-  auto SetupDeltaX = [&](delta::output & deltaA)
+  auto SetupDeltaX = [&](rvsdg::Output & deltaA)
   {
     auto pointerType = PointerType::Create();
 
-    auto deltaNode = delta::node::Create(
+    auto deltaNode = DeltaNode::Create(
         &rvsdg->GetRootRegion(),
         pointerType,
         "x",
@@ -2771,16 +2766,16 @@ EscapedMemoryTest1::SetupRvsdg()
         "",
         false);
 
-    auto contextVariableA = deltaNode->add_ctxvar(&deltaA);
+    auto contextVariableA = deltaNode->AddContextVar(deltaA).inner;
 
-    return deltaNode->finalize(contextVariableA);
+    return &deltaNode->finalize(contextVariableA);
   };
 
-  auto SetupDeltaY = [&](delta::output & deltaX)
+  auto SetupDeltaY = [&](rvsdg::Output & deltaX)
   {
     auto pointerType = PointerType::Create();
 
-    auto deltaNode = delta::node::Create(
+    auto deltaNode = DeltaNode::Create(
         &rvsdg->GetRootRegion(),
         pointerType,
         "y",
@@ -2788,15 +2783,15 @@ EscapedMemoryTest1::SetupRvsdg()
         "",
         false);
 
-    auto contextVariableX = deltaNode->add_ctxvar(&deltaX);
+    auto contextVariableX = deltaNode->AddContextVar(deltaX).inner;
 
-    auto deltaOutput = deltaNode->finalize(contextVariableX);
+    auto deltaOutput = &deltaNode->finalize(contextVariableX);
     GraphExport::Create(*deltaOutput, "y");
 
     return deltaOutput;
   };
 
-  auto SetupLambdaTest = [&](delta::output & deltaB)
+  auto SetupLambdaTest = [&](rvsdg::Output & deltaB)
   {
     auto pointerType = PointerType::Create();
     auto iOStateType = IOStateType::Create();
@@ -2847,10 +2842,10 @@ EscapedMemoryTest1::SetupRvsdg()
    */
   this->LambdaTest = &rvsdg::AssertGetOwnerNode<rvsdg::LambdaNode>(*lambdaTest);
 
-  this->DeltaA = deltaA->node();
-  this->DeltaB = deltaB->node();
-  this->DeltaX = deltaX->node();
-  this->DeltaY = deltaY->node();
+  this->DeltaA = &rvsdg::AssertGetOwnerNode<llvm::DeltaNode>(*deltaA);
+  this->DeltaB = &rvsdg::AssertGetOwnerNode<llvm::DeltaNode>(*deltaB);
+  this->DeltaX = &rvsdg::AssertGetOwnerNode<llvm::DeltaNode>(*deltaX);
+  this->DeltaY = &rvsdg::AssertGetOwnerNode<llvm::DeltaNode>(*deltaY);
 
   this->LoadNode1 = loadNode1;
 
@@ -2917,7 +2912,7 @@ EscapedMemoryTest2::SetupRvsdg()
 
     auto eight = jlm::rvsdg::create_bitconstant(lambda->subregion(), 32, 8);
 
-    auto mallocResults = malloc_op::create(eight);
+    auto mallocResults = MallocOperation::create(eight);
     auto mergeResults = MemoryStateMergeOperation::Create(
         std::vector<jlm::rvsdg::Output *>({ memoryStateArgument, mallocResults[1] }));
 
@@ -2949,7 +2944,7 @@ EscapedMemoryTest2::SetupRvsdg()
 
     auto eight = jlm::rvsdg::create_bitconstant(lambda->subregion(), 32, 8);
 
-    auto mallocResults = malloc_op::create(eight);
+    auto mallocResults = MallocOperation::create(eight);
     auto mergeResult = MemoryStateMergeOperation::Create(
         std::vector<jlm::rvsdg::Output *>({ memoryStateArgument, mallocResults[1] }));
 
@@ -3069,7 +3064,7 @@ EscapedMemoryTest3::SetupRvsdg()
 
   auto SetupGlobal = [&]()
   {
-    auto delta = delta::node::Create(
+    auto delta = DeltaNode::Create(
         &rvsdg->GetRootRegion(),
         jlm::rvsdg::bittype::Create(32),
         "global",
@@ -3079,7 +3074,7 @@ EscapedMemoryTest3::SetupRvsdg()
 
     auto constant = jlm::rvsdg::create_bitconstant(delta->subregion(), 32, 4);
 
-    auto deltaOutput = delta->finalize(constant);
+    auto deltaOutput = &delta->finalize(constant);
 
     GraphExport::Create(*deltaOutput, "global");
 
@@ -3131,7 +3126,7 @@ EscapedMemoryTest3::SetupRvsdg()
 
   // Assign nodes
   this->LambdaTest = &rvsdg::AssertGetOwnerNode<rvsdg::LambdaNode>(*lambdaTest);
-  this->DeltaGlobal = deltaGlobal->node();
+  this->DeltaGlobal = &rvsdg::AssertGetOwnerNode<llvm::DeltaNode>(*deltaGlobal);
   this->ImportExternalFunction = importExternalFunction;
   this->CallExternalFunction = callExternalFunction;
   this->LoadNode = loadNode;
@@ -3151,7 +3146,7 @@ MemcpyTest::SetupRvsdg()
 
   auto SetupLocalArray = [&]()
   {
-    auto delta = delta::node::Create(
+    auto delta = DeltaNode::Create(
         &rvsdg->GetRootRegion(),
         arrayType,
         "localArray",
@@ -3167,7 +3162,7 @@ MemcpyTest::SetupRvsdg()
 
     auto constantDataArray = ConstantDataArray::Create({ zero, one, two, three, four });
 
-    auto deltaOutput = delta->finalize(constantDataArray);
+    auto deltaOutput = &delta->finalize(constantDataArray);
 
     GraphExport::Create(*deltaOutput, "localArray");
 
@@ -3176,7 +3171,7 @@ MemcpyTest::SetupRvsdg()
 
   auto SetupGlobalArray = [&]()
   {
-    auto delta = delta::node::Create(
+    auto delta = DeltaNode::Create(
         &rvsdg->GetRootRegion(),
         arrayType,
         "globalArray",
@@ -3187,14 +3182,14 @@ MemcpyTest::SetupRvsdg()
     auto constantAggregateZero =
         ConstantAggregateZeroOperation::Create(*delta->subregion(), arrayType);
 
-    auto deltaOutput = delta->finalize(constantAggregateZero);
+    auto deltaOutput = &delta->finalize(constantAggregateZero);
 
     GraphExport::Create(*deltaOutput, "globalArray");
 
     return deltaOutput;
   };
 
-  auto SetupFunctionF = [&](delta::output & globalArray)
+  auto SetupFunctionF = [&](rvsdg::Output & globalArray)
   {
     auto iOStateType = IOStateType::Create();
     auto memoryStateType = MemoryStateType::Create();
@@ -3236,7 +3231,7 @@ MemcpyTest::SetupRvsdg()
   };
 
   auto SetupFunctionG =
-      [&](delta::output & localArray, delta::output & globalArray, rvsdg::Output & lambdaF)
+      [&](rvsdg::Output & localArray, rvsdg::Output & globalArray, rvsdg::Output & lambdaF)
   {
     auto iOStateType = IOStateType::Create();
     auto memoryStateType = MemoryStateType::Create();
@@ -3254,8 +3249,8 @@ MemcpyTest::SetupRvsdg()
     auto globalArrayArgument = lambda->AddContextVar(globalArray).inner;
     auto functionFArgument = lambda->AddContextVar(lambdaF).inner;
 
-    auto bcLocalArray = bitcast_op::create(localArrayArgument, PointerType::Create());
-    auto bcGlobalArray = bitcast_op::create(globalArrayArgument, PointerType::Create());
+    auto bcLocalArray = BitCastOperation::create(localArrayArgument, PointerType::Create());
+    auto bcGlobalArray = BitCastOperation::create(globalArrayArgument, PointerType::Create());
 
     auto twenty = jlm::rvsdg::create_bitconstant(lambda->subregion(), 32, 20);
 
@@ -3290,8 +3285,8 @@ MemcpyTest::SetupRvsdg()
    */
   this->LambdaF_ = &rvsdg::AssertGetOwnerNode<rvsdg::LambdaNode>(*lambdaF);
   this->LambdaG_ = &rvsdg::AssertGetOwnerNode<rvsdg::LambdaNode>(*lambdaG);
-  this->LocalArray_ = localArray->node();
-  this->GlobalArray_ = globalArray->node();
+  this->LocalArray_ = &rvsdg::AssertGetOwnerNode<llvm::DeltaNode>(*localArray);
+  this->GlobalArray_ = &rvsdg::AssertGetOwnerNode<llvm::DeltaNode>(*globalArray);
   this->CallF_ = callF;
   this->Memcpy_ = memcpyNode;
 
@@ -3473,7 +3468,7 @@ LinkedListTest::SetupRvsdg()
 
   auto SetupDeltaMyList = [&]()
   {
-    auto delta = delta::node::Create(
+    auto delta = DeltaNode::Create(
         &rvsdg.GetRootRegion(),
         pointerType,
         "MyList",
@@ -3484,13 +3479,13 @@ LinkedListTest::SetupRvsdg()
     auto constantPointerNullResult =
         ConstantPointerNullOperation::Create(delta->subregion(), pointerType);
 
-    auto deltaOutput = delta->finalize(constantPointerNullResult);
+    auto deltaOutput = &delta->finalize(constantPointerNullResult);
     GraphExport::Create(*deltaOutput, "myList");
 
     return deltaOutput;
   };
 
-  auto SetupFunctionNext = [&](delta::output & myList)
+  auto SetupFunctionNext = [&](rvsdg::Output & myList)
   {
     auto iOStateType = IOStateType::Create();
     auto memoryStateType = MemoryStateType::Create();
@@ -3537,7 +3532,7 @@ LinkedListTest::SetupRvsdg()
   /*
    * Assign nodes
    */
-  this->DeltaMyList_ = deltaMyList->node();
+  this->DeltaMyList_ = &rvsdg::AssertGetOwnerNode<llvm::DeltaNode>(*deltaMyList);
   this->LambdaNext_ = &rvsdg::AssertGetOwnerNode<rvsdg::LambdaNode>(*lambdaNext);
   this->Alloca_ = alloca;
 
@@ -3566,7 +3561,7 @@ AllMemoryNodesTest::SetupRvsdg()
       linkage::external_linkage);
 
   // Create global variable "global"
-  Delta_ = delta::node::Create(
+  Delta_ = DeltaNode::Create(
       &graph->GetRootRegion(),
       pointerType,
       "global",
@@ -3582,7 +3577,7 @@ AllMemoryNodesTest::SetupRvsdg()
       graph->GetRootRegion(),
       llvm::LlvmLambdaOperation::Create(fcttype, "f", linkage::external_linkage));
   auto entryMemoryState = Lambda_->GetFunctionArguments()[0];
-  auto deltaContextVar = Lambda_->AddContextVar(*Delta_->output()).inner;
+  auto deltaContextVar = Lambda_->AddContextVar(Delta_->output()).inner;
   auto importContextVar = Lambda_->AddContextVar(*Import_).inner;
 
   // Create alloca node
@@ -3595,7 +3590,7 @@ AllMemoryNodesTest::SetupRvsdg()
 
   // Create malloc node
   auto mallocSize = jlm::rvsdg::create_bitconstant(Lambda_->subregion(), 32, 4);
-  auto mallocOutputs = malloc_op::create(mallocSize);
+  auto mallocOutputs = MallocOperation::create(mallocSize);
   Malloc_ = rvsdg::TryGetOwnerNode<rvsdg::Node>(*mallocOutputs[0]);
 
   auto afterMallocMemoryState = MemoryStateMergeOperation::Create(
@@ -3636,7 +3631,7 @@ AllMemoryNodesTest::SetupRvsdg()
 
   Lambda_->finalize({ storeOutputs[0] });
 
-  GraphExport::Create(*Delta_->output(), "global");
+  GraphExport::Create(Delta_->output(), "global");
   GraphExport::Create(*Lambda_->output(), "f");
 
   return module;
@@ -3700,7 +3695,7 @@ EscapingLocalFunctionTest::SetupRvsdg()
   auto module = RvsdgModule::Create(util::FilePath(""), "", "");
   const auto graph = &module->Rvsdg();
 
-  Global_ = delta::node::Create(
+  Global_ = DeltaNode::Create(
       &graph->GetRootRegion(),
       uint32Type,
       "global",
@@ -3708,7 +3703,7 @@ EscapingLocalFunctionTest::SetupRvsdg()
       "",
       false);
   const auto constantZero = rvsdg::create_bitconstant(Global_->subregion(), 32, 0);
-  const auto deltaOutput = Global_->finalize(constantZero);
+  const auto deltaOutput = &Global_->finalize(constantZero);
 
   LocalFunc_ = rvsdg::LambdaNode::Create(
       graph->GetRootRegion(),
@@ -3843,7 +3838,7 @@ LambdaCallArgumentMismatch::SetupRvsdg()
     auto one = rvsdg::create_bitconstant(lambda->subregion(), 32, 1);
     auto six = rvsdg::create_bitconstant(lambda->subregion(), 32, 6);
 
-    auto vaList = valist_op::Create(*lambda->subregion(), {});
+    auto vaList = VariadicArgumentListOperation::Create(*lambda->subregion(), {});
 
     auto allocaResults = AllocaOperation::create(rvsdg::bittype::Create(32), one, 4);
 
@@ -3929,7 +3924,7 @@ VariadicFunctionTest1::SetupRvsdg()
     auto one = jlm::rvsdg::create_bitconstant(LambdaF_->subregion(), 32, 1);
     auto three = jlm::rvsdg::create_bitconstant(LambdaF_->subregion(), 32, 3);
 
-    auto varArgList = valist_op::Create(*LambdaF_->subregion(), { iArgument });
+    auto varArgList = VariadicArgumentListOperation::Create(*LambdaF_->subregion(), { iArgument });
 
     CallH_ = &CallOperation::CreateNode(
         lambdaHArgument,
@@ -4179,7 +4174,8 @@ VariadicFunctionTest2::SetupRvsdg()
     auto two = jlm::rvsdg::create_bitconstant(LambdaG_->subregion(), 32, 2);
     auto three = jlm::rvsdg::create_bitconstant(LambdaG_->subregion(), 32, 3);
 
-    auto vaListResult = valist_op::Create(*LambdaG_->subregion(), { zero, one, two });
+    auto vaListResult =
+        VariadicArgumentListOperation::Create(*LambdaG_->subregion(), { zero, one, two });
 
     auto & callFst = CallOperation::CreateNode(
         lambdaFstArgument,

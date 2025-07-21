@@ -1172,7 +1172,7 @@ TestStatistics()
   assert(statisticsCollector.NumCollectedStatistics() == 1);
 }
 
-static int
+static void
 TestTopDownMemoryNodeEliminator()
 {
   using namespace jlm::llvm::aa;
@@ -1223,8 +1223,6 @@ TestTopDownMemoryNodeEliminator()
       ValidateMemcpyTestSteensgaardAgnostic);
 
   TestStatistics();
-
-  return 0;
 }
 
 JLM_UNIT_TEST_REGISTER(

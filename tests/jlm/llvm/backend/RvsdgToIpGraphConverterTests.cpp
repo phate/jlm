@@ -17,7 +17,7 @@
 #include <jlm/rvsdg/view.hpp>
 #include <jlm/util/Statistics.hpp>
 
-static int
+static void
 GammaWithMatch()
 {
   using namespace jlm::llvm;
@@ -25,7 +25,7 @@ GammaWithMatch()
   using namespace jlm::util;
 
   // Arrange
-  auto valueType = valuetype::Create();
+  auto valueType = ValueType::Create();
   auto functionType = jlm::rvsdg::FunctionType::Create(
       { jlm::rvsdg::bittype::Create(1), valueType, valueType },
       { valueType });
@@ -57,17 +57,15 @@ GammaWithMatch()
   auto & ipg = module->ipgraph();
   assert(ipg.nnodes() == 1);
 
-  auto cfg = dynamic_cast<const function_node &>(*ipg.begin()).cfg();
+  auto cfg = dynamic_cast<const FunctionNode &>(*ipg.begin()).cfg();
   assert(cfg->nnodes() == 4);
-
-  return 0;
 }
 
 JLM_UNIT_TEST_REGISTER(
     "jlm/tests/jlm/llvm/backend/RvsdgToIpGraphConverterTests-GammaWithMatch",
     GammaWithMatch)
 
-static int
+static void
 GammaWithoutMatch()
 {
   using namespace jlm::llvm;
@@ -75,7 +73,7 @@ GammaWithoutMatch()
   using namespace jlm::util;
 
   // Arrange
-  auto valueType = valuetype::Create();
+  auto valueType = ValueType::Create();
   auto functionType = jlm::rvsdg::FunctionType::Create(
       { jlm::rvsdg::ControlType::Create(2), valueType, valueType },
       { valueType });
@@ -106,17 +104,15 @@ GammaWithoutMatch()
   auto & ipg = module->ipgraph();
   assert(ipg.nnodes() == 1);
 
-  auto cfg = dynamic_cast<const function_node &>(*ipg.begin()).cfg();
+  auto cfg = dynamic_cast<const FunctionNode &>(*ipg.begin()).cfg();
   assert(cfg->nnodes() == 4);
-
-  return 0;
 }
 
 JLM_UNIT_TEST_REGISTER(
     "jlm/tests/jlm/llvm/backend/RvsdgToIpGraphConverterTests-GammaWithoutMatch",
     GammaWithoutMatch)
 
-static int
+static void
 EmptyGammaWithTwoSubregionsAndMatch()
 {
   using namespace jlm::llvm;
@@ -124,7 +120,7 @@ EmptyGammaWithTwoSubregionsAndMatch()
   using namespace jlm::util;
 
   // Arrange
-  auto valueType = valuetype::Create();
+  auto valueType = ValueType::Create();
   const auto functionType = jlm::rvsdg::FunctionType::Create(
       { jlm::rvsdg::bittype::Create(32), valueType, valueType },
       { valueType });
@@ -161,17 +157,15 @@ EmptyGammaWithTwoSubregionsAndMatch()
   const auto & ipGraph = module->ipgraph();
   assert(ipGraph.nnodes() == 1);
 
-  const auto controlFlowGraph = dynamic_cast<const function_node &>(*ipGraph.begin()).cfg();
+  const auto controlFlowGraph = dynamic_cast<const FunctionNode &>(*ipGraph.begin()).cfg();
   assert(is_closed(*controlFlowGraph));
-
-  return 0;
 }
 
 JLM_UNIT_TEST_REGISTER(
     "jlm/tests/jlm/llvm/backend/RvsdgToIpGraphConverterTests-EmptyGammaWithTwoSubregionsAndMatch",
     EmptyGammaWithTwoSubregionsAndMatch)
 
-static int
+static void
 EmptyGammaWithTwoSubregions()
 {
   using namespace jlm::llvm;
@@ -179,7 +173,7 @@ EmptyGammaWithTwoSubregions()
   using namespace jlm::util;
 
   // Arrange
-  auto valueType = valuetype::Create();
+  auto valueType = ValueType::Create();
   auto functionType = jlm::rvsdg::FunctionType::Create(
       { jlm::rvsdg::bittype::Create(32), valueType, valueType },
       { valueType });
@@ -223,17 +217,15 @@ EmptyGammaWithTwoSubregions()
   const auto & ipGraph = module->ipgraph();
   assert(ipGraph.nnodes() == 1);
 
-  const auto controlFlowGraph = dynamic_cast<const function_node &>(*ipGraph.begin()).cfg();
+  const auto controlFlowGraph = dynamic_cast<const FunctionNode &>(*ipGraph.begin()).cfg();
   assert(is_closed(*controlFlowGraph));
-
-  return 0;
 }
 
 JLM_UNIT_TEST_REGISTER(
     "jlm/tests/jlm/llvm/backend/RvsdgToIpGraphConverterTests-EmptyGammaWithTwoSubregions",
     EmptyGammaWithTwoSubregions)
 
-static int
+static void
 EmptyGammaWithThreeSubregions()
 {
   using namespace jlm::llvm;
@@ -241,7 +233,7 @@ EmptyGammaWithThreeSubregions()
   using namespace jlm::util;
 
   // Arrange
-  auto valueType = jlm::tests::valuetype::Create();
+  auto valueType = ValueType::Create();
   auto functionType = jlm::rvsdg::FunctionType::Create(
       { jlm::rvsdg::bittype::Create(32), valueType, valueType },
       { valueType });
@@ -276,17 +268,15 @@ EmptyGammaWithThreeSubregions()
   auto & ipg = module->ipgraph();
   assert(ipg.nnodes() == 1);
 
-  auto cfg = dynamic_cast<const function_node &>(*ipg.begin()).cfg();
+  auto cfg = dynamic_cast<const FunctionNode &>(*ipg.begin()).cfg();
   assert(is_closed(*cfg));
-
-  return 0;
 }
 
 JLM_UNIT_TEST_REGISTER(
     "jlm/tests/jlm/llvm/backend/RvsdgToIpGraphConverterTests-EmptyGammaWithThreeSubregions",
     EmptyGammaWithThreeSubregions)
 
-static int
+static void
 PartialEmptyGamma()
 {
   using namespace jlm::llvm;
@@ -294,7 +284,7 @@ PartialEmptyGamma()
   using namespace jlm::util;
 
   // Arrange
-  auto valueType = jlm::tests::valuetype::Create();
+  auto valueType = ValueType::Create();
   auto functionType = jlm::rvsdg::FunctionType::Create(
       { jlm::rvsdg::bittype::Create(1), valueType },
       { valueType });
@@ -328,25 +318,23 @@ PartialEmptyGamma()
   auto & ipg = module->ipgraph();
   assert(ipg.nnodes() == 1);
 
-  auto cfg = dynamic_cast<const function_node &>(*ipg.begin()).cfg();
+  auto cfg = dynamic_cast<const FunctionNode &>(*ipg.begin()).cfg();
   std::cout << ControlFlowGraph::ToAscii(*cfg) << std::flush;
 
   assert(is_proper_structured(*cfg));
-
-  return 0;
 }
 
 JLM_UNIT_TEST_REGISTER(
     "jlm/tests/jlm/llvm/backend/RvsdgToIpGraphConverterTests-PartialEmptyGamma",
     PartialEmptyGamma)
 
-static int
+static void
 RecursiveData()
 {
   using namespace jlm::llvm;
 
   // Arrange
-  auto vt = jlm::tests::valuetype::Create();
+  auto vt = jlm::tests::ValueType::Create();
   auto pt = PointerType::Create();
 
   RvsdgModule rm(jlm::util::FilePath(""), "", "");
@@ -360,23 +348,21 @@ RecursiveData()
   auto r2 = pb.AddFixVar(pt);
   auto dep = pb.AddContextVar(*imp);
 
-  jlm::rvsdg::Output *delta1, *delta2;
+  jlm::rvsdg::Output *delta1 = nullptr, *delta2 = nullptr;
   {
-    auto delta =
-        delta::node::Create(region, vt, "test-delta1", linkage::external_linkage, "", false);
-    auto dep1 = delta->add_ctxvar(r2.recref);
-    auto dep2 = delta->add_ctxvar(dep.inner);
+    auto delta = DeltaNode::Create(region, vt, "test-delta1", linkage::external_linkage, "", false);
+    auto dep1 = delta->AddContextVar(*r2.recref).inner;
+    auto dep2 = delta->AddContextVar(*dep.inner).inner;
     delta1 =
-        delta->finalize(jlm::tests::create_testop(delta->subregion(), { dep1, dep2 }, { vt })[0]);
+        &delta->finalize(jlm::tests::create_testop(delta->subregion(), { dep1, dep2 }, { vt })[0]);
   }
 
   {
-    auto delta =
-        delta::node::Create(region, vt, "test-delta2", linkage::external_linkage, "", false);
-    auto dep1 = delta->add_ctxvar(r1.recref);
-    auto dep2 = delta->add_ctxvar(dep.inner);
+    auto delta = DeltaNode::Create(region, vt, "test-delta2", linkage::external_linkage, "", false);
+    auto dep1 = delta->AddContextVar(*r1.recref).inner;
+    auto dep2 = delta->AddContextVar(*dep.inner).inner;
     delta2 =
-        delta->finalize(jlm::tests::create_testop(delta->subregion(), { dep1, dep2 }, { vt })[0]);
+        &delta->finalize(jlm::tests::create_testop(delta->subregion(), { dep1, dep2 }, { vt })[0]);
   }
 
   r1.result->divert_to(delta1);
@@ -395,8 +381,6 @@ RecursiveData()
   // Assert
   auto & ipg = module->ipgraph();
   assert(ipg.nnodes() == 3);
-
-  return 0;
 }
 
 JLM_UNIT_TEST_REGISTER(

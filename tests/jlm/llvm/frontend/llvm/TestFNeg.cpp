@@ -23,7 +23,7 @@ Contains(const jlm::llvm::InterProceduralGraphModule & module, const std::string
 
   bool hasInstruction = false;
   auto controlFlowGraph =
-      dynamic_cast<const jlm::llvm::function_node *>(module.ipgraph().find("f"))->cfg();
+      dynamic_cast<const jlm::llvm::FunctionNode *>(module.ipgraph().find("f"))->cfg();
   auto basicBlock =
       dynamic_cast<const jlm::llvm::BasicBlock *>(controlFlowGraph->entry()->OutEdge(0)->sink());
   for (auto threeAddressCode : *basicBlock)
@@ -97,16 +97,14 @@ TestFNegVector()
   auto ipgModule = jlm::llvm::ConvertLlvmModule(*llvmModule);
   print(*ipgModule, stdout);
 
-  assert(Contains<jlm::llvm::vectorunary_op>(*ipgModule, "f"));
+  assert(Contains<jlm::llvm::VectorUnaryOperation>(*ipgModule, "f"));
 }
 
-static int
+static void
 Test()
 {
   TestFNegScalar();
   TestFNegVector();
-
-  return 0;
 }
 
 JLM_UNIT_TEST_REGISTER("jlm/llvm/frontend/llvm/TestFNeg", Test)

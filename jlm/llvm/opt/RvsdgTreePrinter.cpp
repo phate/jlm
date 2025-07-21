@@ -3,6 +3,9 @@
  * See COPYING for terms of redistribution.
  */
 
+#include <jlm/llvm/ir/operators/alloca.hpp>
+#include <jlm/llvm/ir/operators/Load.hpp>
+#include <jlm/llvm/ir/operators/Store.hpp>
 #include <jlm/llvm/ir/RvsdgModule.hpp>
 #include <jlm/llvm/opt/RvsdgTreePrinter.hpp>
 #include <jlm/rvsdg/structural-node.hpp>
@@ -73,11 +76,46 @@ RvsdgTreePrinter::ComputeAnnotationMap(const rvsdg::Graph & rvsdg) const
     switch (annotation)
     {
     case Configuration::Annotation::NumRvsdgNodes:
-      AnnotateNumRvsdgNodes(rvsdg, annotationMap);
+    {
+      const auto matchNode = [](const rvsdg::Node &)
+      {
+        return true;
+      };
+      AnnotateNumNodes(rvsdg, matchNode, "NumRvsdgNodes", annotationMap);
       break;
+    }
+    case Configuration::Annotation::NumAllocaNodes:
+    {
+      const auto matchAlloca = [](const rvsdg::Node & node)
+      {
+        return rvsdg::is<AllocaOperation>(&node);
+      };
+      AnnotateNumNodes(rvsdg, matchAlloca, "NumAllocaNodes", annotationMap);
+      break;
+    }
+    case Configuration::Annotation::NumLoadNodes:
+    {
+      const auto matchLoad = [](const rvsdg::Node & node)
+      {
+        return rvsdg::is<LoadOperation>(&node);
+      };
+      AnnotateNumNodes(rvsdg, matchLoad, "NumLoadNodes", annotationMap);
+      break;
+    }
+    case Configuration::Annotation::NumStoreNodes:
+    {
+      const auto matchStore = [](const rvsdg::Node & node)
+      {
+        return rvsdg::is<StoreOperation>(&node);
+      };
+      AnnotateNumNodes(rvsdg, matchStore, "NumStoreNodes", annotationMap);
+      break;
+    }
     case Configuration::Annotation::NumMemoryStateInputsOutputs:
+    {
       AnnotateNumMemoryStateInputsOutputs(rvsdg, annotationMap);
       break;
+    }
     default:
       JLM_UNREACHABLE("Unhandled RVSDG tree annotation.");
     }
@@ -87,14 +125,15 @@ RvsdgTreePrinter::ComputeAnnotationMap(const rvsdg::Graph & rvsdg) const
 }
 
 void
-RvsdgTreePrinter::AnnotateNumRvsdgNodes(
+RvsdgTreePrinter::AnnotateNumNodes(
     const rvsdg::Graph & rvsdg,
+    const std::function<bool(const rvsdg::Node &)> & match,
+    const std::string_view & label,
     util::AnnotationMap & annotationMap)
 {
-  static std::string_view label("NumRvsdgNodes");
-
   std::function<size_t(const rvsdg::Region &)> annotateRegion = [&](const rvsdg::Region & region)
   {
+    size_t numNodes = 0;
     for (auto & node : region.Nodes())
     {
       if (auto structuralNode = dynamic_cast<const rvsdg::StructuralNode *>(&node))
@@ -106,14 +145,16 @@ RvsdgTreePrinter::AnnotateNumRvsdgNodes(
           numSubregionNodes += annotateRegion(*subregion);
         }
 
-        annotationMap.AddAnnotation(
-            structuralNode,
-            { label, static_cast<uint64_t>(numSubregionNodes) });
+        annotationMap.AddAnnotation(structuralNode, { label, numSubregionNodes });
+      }
+
+      if (match(node))
+      {
+        numNodes++;
       }
     }
 
-    auto numNodes = region.nnodes();
-    annotationMap.AddAnnotation(&region, { label, static_cast<uint64_t>(numNodes) });
+    annotationMap.AddAnnotation(&region, { label, numNodes });
 
     return numNodes;
   };

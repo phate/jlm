@@ -72,7 +72,7 @@ SetupFunctionWithThreeAddressCode(const jlm::rvsdg::SimpleOperation & operation)
   auto functionType = jlm::rvsdg::FunctionType::Create(operandTypes, resultTypes);
 
   auto functionNode =
-      function_node::create(ipgraph, "test", functionType, linkage::external_linkage);
+      FunctionNode::create(ipgraph, "test", functionType, linkage::external_linkage);
   auto cfg = SetupControlFlowGraph(*ipgModule, operation);
   functionNode->add_cfg(std::move(cfg));
   ipgModule->create_variable(functionNode);
@@ -80,13 +80,13 @@ SetupFunctionWithThreeAddressCode(const jlm::rvsdg::SimpleOperation & operation)
   return ipgModule;
 }
 
-static int
+static void
 LoadVolatileConversion()
 {
   using namespace jlm::llvm;
 
   // Arrange
-  auto valueType = jlm::tests::valuetype::Create();
+  auto valueType = jlm::tests::ValueType::Create();
   LoadVolatileOperation operation(valueType, 3, 4);
   auto ipgModule = SetupFunctionWithThreeAddressCode(operation);
 
@@ -101,21 +101,19 @@ LoadVolatileConversion()
 
   auto loadVolatileNode = lambda->subregion()->Nodes().begin().ptr();
   assert(is<LoadVolatileOperation>(loadVolatileNode));
-
-  return 0;
 }
 
 JLM_UNIT_TEST_REGISTER(
     "jlm/llvm/frontend/llvm/ThreeAddressCodeConversionTests-LoadVolatileConversion",
     LoadVolatileConversion)
 
-static int
+static void
 StoreVolatileConversion()
 {
   using namespace jlm::llvm;
 
   // Arrange
-  auto valueType = jlm::tests::valuetype::Create();
+  auto valueType = jlm::tests::ValueType::Create();
   StoreVolatileOperation operation(valueType, 3, 4);
   auto ipgModule = SetupFunctionWithThreeAddressCode(operation);
 
@@ -130,8 +128,6 @@ StoreVolatileConversion()
 
   auto storeVolatileNode = lambda->subregion()->Nodes().begin().ptr();
   assert(is<StoreVolatileOperation>(storeVolatileNode));
-
-  return 0;
 }
 
 JLM_UNIT_TEST_REGISTER(

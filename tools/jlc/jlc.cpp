@@ -12,7 +12,7 @@ main(int argc, char ** argv)
   using namespace jlm::tooling;
 
   JlcCommandLineParser commandLineParser;
-  const JlcCommandLineOptions * commandLineOptions;
+  const JlcCommandLineOptions * commandLineOptions = nullptr;
   try
   {
     commandLineOptions = &commandLineParser.ParseCommandLineArguments(argc, argv);

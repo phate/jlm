@@ -14,7 +14,7 @@
 #include <jlm/llvm/opt/inversion.hpp>
 #include <jlm/util/Statistics.hpp>
 
-static const auto vt = jlm::tests::valuetype::Create();
+static const auto vt = jlm::tests::ValueType::Create();
 static jlm::util::StatisticsCollector statisticsCollector;
 
 static inline void
@@ -66,7 +66,7 @@ test1()
   auto & ex3 = GraphExport::Create(*theta->output(2), "z");
 
   //	jlm::rvsdg::view(graph.GetRootRegion(), stdout);
-  jlm::llvm::tginversion tginversion;
+  jlm::llvm::LoopUnswitching tginversion;
   tginversion.Run(rm, statisticsCollector);
   //	jlm::rvsdg::view(graph.GetRootRegion(), stdout);
 
@@ -113,20 +113,18 @@ test2()
   auto & ex = GraphExport::Create(*theta->output(0), "x");
 
   //	jlm::rvsdg::view(graph.GetRootRegion(), stdout);
-  jlm::llvm::tginversion tginversion;
+  jlm::llvm::LoopUnswitching tginversion;
   tginversion.Run(rm, statisticsCollector);
   //	jlm::rvsdg::view(graph.GetRootRegion(), stdout);
 
   assert(jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::GammaNode>(*ex.origin()));
 }
 
-static int
+static void
 verify()
 {
   test1();
   test2();
-
-  return 0;
 }
 
 JLM_UNIT_TEST_REGISTER("jlm/llvm/opt/test-inversion", verify)

@@ -16,7 +16,7 @@ TestArgumentIterators()
 {
   using namespace jlm::llvm;
 
-  auto vt = jlm::tests::valuetype::Create();
+  auto vt = jlm::tests::ValueType::Create();
   RvsdgModule rvsdgModule(jlm::util::FilePath(""), "", "");
 
   {
@@ -78,7 +78,7 @@ TestInvalidOperandRegion()
 {
   using namespace jlm::llvm;
 
-  auto vt = jlm::tests::valuetype::Create();
+  auto vt = jlm::tests::ValueType::Create();
   auto functionType = jlm::rvsdg::FunctionType::Create({}, { vt });
 
   auto rvsdgModule = RvsdgModule::Create(jlm::util::FilePath(""), "", "");
@@ -112,7 +112,7 @@ TestRemoveLambdaInputsWhere()
   using namespace jlm::rvsdg;
 
   // Arrange
-  auto valueType = jlm::tests::valuetype::Create();
+  auto valueType = jlm::tests::ValueType::Create();
   auto functionType = jlm::rvsdg::FunctionType::Create({}, { valueType });
 
   auto rvsdgModule = jlm::llvm::RvsdgModule::Create(jlm::util::FilePath(""), "", "");
@@ -128,7 +128,7 @@ TestRemoveLambdaInputsWhere()
   auto lambdaBinder1 = lambdaNode->AddContextVar(*x);
   lambdaNode->AddContextVar(*x);
 
-  auto result = jlm::rvsdg::CreateOpNode<jlm::tests::test_op>(
+  auto result = jlm::rvsdg::CreateOpNode<jlm::tests::TestOperation>(
                     { lambdaBinder1.inner },
                     std::vector<std::shared_ptr<const Type>>{ valueType },
                     std::vector<std::shared_ptr<const Type>>{ valueType })
@@ -183,7 +183,7 @@ TestPruneLambdaInputs()
   using namespace jlm::rvsdg;
 
   // Arrange
-  auto valueType = jlm::tests::valuetype::Create();
+  auto valueType = jlm::tests::ValueType::Create();
   auto functionType = jlm::rvsdg::FunctionType::Create({}, { valueType });
 
   auto rvsdgModule = jlm::llvm::RvsdgModule::Create(jlm::util::FilePath(""), "", "");
@@ -199,7 +199,7 @@ TestPruneLambdaInputs()
   auto lambdaInput1 = lambdaNode->AddContextVar(*x);
   lambdaNode->AddContextVar(*x);
 
-  auto result = jlm::rvsdg::CreateOpNode<jlm::tests::test_op>(
+  auto result = jlm::rvsdg::CreateOpNode<jlm::tests::TestOperation>(
                     { lambdaInput1.inner },
                     std::vector<std::shared_ptr<const Type>>{ valueType },
                     std::vector<std::shared_ptr<const Type>>{ valueType })
@@ -220,15 +220,13 @@ TestPruneLambdaInputs()
   assert(lambdaInput1.inner->index() == 0);
 }
 
-static int
+static void
 Test()
 {
   TestArgumentIterators();
   TestInvalidOperandRegion();
   TestRemoveLambdaInputsWhere();
   TestPruneLambdaInputs();
-
-  return 0;
 }
 
 JLM_UNIT_TEST_REGISTER("jlm/llvm/ir/operators/TestLambda", Test)

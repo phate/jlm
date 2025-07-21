@@ -20,7 +20,7 @@ template<class T>
 class DisjointSet final
 {
 public:
-  class set;
+  class Set;
 
 private:
   class member_iterator final
@@ -33,9 +33,9 @@ private:
     using reference = const T &;
 
   private:
-    friend class DisjointSet::set;
+    friend class DisjointSet::Set;
 
-    member_iterator(const set * node)
+    member_iterator(const Set * node)
         : node_(node)
     {}
 
@@ -83,39 +83,39 @@ private:
     }
 
   private:
-    const set * node_;
+    const Set * node_;
   };
 
 public:
-  class set final
+  class Set final
   {
     friend class DisjointSet;
 
   private:
-    set(const T & value)
+    Set(const T & value)
         : value_(value),
           size_(1),
           next_(this),
           parent_(this)
     {}
 
-    set(const set &) = delete;
+    Set(const Set &) = delete;
 
-    set(set && other) = delete;
+    Set(Set && other) = delete;
 
-    set &
-    operator=(const set &) = delete;
+    Set &
+    operator=(const Set &) = delete;
 
-    set &
-    operator=(set && other) = delete;
+    Set &
+    operator=(Set && other) = delete;
 
-    static std::unique_ptr<set>
+    static std::unique_ptr<Set>
     create(const T & value)
     {
-      return std::unique_ptr<set>(new set(value));
+      return std::unique_ptr<Set>(new Set(value));
     }
 
-    const set *
+    const Set *
     root() const noexcept
     {
       auto child = this;
@@ -134,13 +134,13 @@ public:
 
   public:
     bool
-    operator==(const set & other) const noexcept
+    operator==(const Set & other) const noexcept
     {
       return value_ == other.value_;
     }
 
     bool
-    operator!=(const set & other) const noexcept
+    operator!=(const Set & other) const noexcept
     {
       return !operator==(other);
     }
@@ -178,35 +178,35 @@ public:
   private:
     T value_;
     mutable size_t size_;
-    mutable const set * next_;
-    mutable const set * parent_;
+    mutable const Set * next_;
+    mutable const Set * parent_;
   };
 
   class set_iterator final
   {
   public:
     using iterator_category = std::forward_iterator_tag;
-    using value_type = const set *;
+    using value_type = const Set *;
     using difference_type = ptrdiff_t;
-    using pointer = const set **;
-    using reference = const set *&;
+    using pointer = const Set **;
+    using reference = const Set *&;
 
   private:
     friend class DisjointSet;
 
-    set_iterator(const typename std::unordered_set<const set *>::const_iterator & it)
+    set_iterator(const typename std::unordered_set<const Set *>::const_iterator & it)
         : it_(it)
     {}
 
   public:
-    const set &
+    const Set &
     operator*() const
     {
       JLM_ASSERT(*it_ != nullptr);
       return **it_;
     }
 
-    const set *
+    const Set *
     operator->() const
     {
       return &operator*();
@@ -240,7 +240,7 @@ public:
     }
 
   private:
-    typename std::unordered_set<const set *>::const_iterator it_;
+    typename std::unordered_set<const Set *>::const_iterator it_;
   };
 
 public:
@@ -292,13 +292,13 @@ public:
       insert(element);
   }
 
-  const set *
+  const Set *
   insert(const T & element)
   {
     if (contains(element))
       return values_.find(element)->second.get();
 
-    values_[element] = set::create(element);
+    values_[element] = Set::create(element);
     auto s = values_.find(element)->second.get();
     roots_.insert(s);
     return s;
@@ -344,7 +344,7 @@ public:
   /*
     @brief Find the representative set for the set containing \p element.
   */
-  const set *
+  const Set *
   find(const T & element) const noexcept
   {
     JLM_ASSERT(contains(element));
@@ -357,7 +357,7 @@ public:
            if \p element is present. Otherwise, insert \p element and
            return the representative set.
   */
-  const set *
+  const Set *
   find_or_insert(const T & element) noexcept
   {
     if (!contains(element))
@@ -369,7 +369,7 @@ public:
   /*
     @brief Union the two sets containing elements \p e1 and \p e2.
   */
-  const set *
+  const Set *
   merge(const T & e1, const T & e2)
   {
     auto root1 = find(e1);
@@ -402,8 +402,8 @@ private:
     return values_.find(element) != values_.end();
   }
 
-  std::unordered_set<const set *> roots_;
-  std::unordered_map<T, std::unique_ptr<set>> values_;
+  std::unordered_set<const Set *> roots_;
+  std::unordered_map<T, std::unique_ptr<Set>> values_;
 };
 
 }

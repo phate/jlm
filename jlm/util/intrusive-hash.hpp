@@ -14,15 +14,15 @@
 #include <vector>
 
 /*
- * Implementation of intrusive_hash data structure
+ * Implementation of intrusive hash data structure
  *
- * An intrusive_hash is a data structure linking multiple objects such that
- * can be looked up efficiently by a specific key. The intrusive_hash is not
+ * An intrusive hash is a data structure linking multiple objects such that
+ * can be looked up efficiently by a specific key. The intrusive hash is not
  * a container: It does not "own" the objects referenced. Additionally it
  * also does not manage memory to represent the linkage: The anchor data
  * structure for forming the linkage are required to be members of the
  * objects themselves. Any object can be member of an arbitrary number of
- * such intrusive_hash collections.
+ * such intrusive hash collections.
  *
  * Usage:
  *
@@ -41,9 +41,9 @@
  *   > num_hash_accessor;
  * };
  *
- * an intrusive_hash data structure can be declared in the following way:
+ * an intrusive hash data structure can be declared in the following way:
  *
- * typedef jlm::util::intrusive_hash<
+ * typedef jlm::util::IntrusiveHash<
  *   int,
  *   X,
  *   X::num_hash_accessor
@@ -54,11 +54,11 @@
  * set_prev and set_next members must be implemented appropriately.
  *
  * An object h of num_hash class then supports STL-style operations
- * - num_hash::iterator, num_hash::const_iterator for iteration
+ * - num_hash::Iterator, num_hash::const_iterator for iteration
  * - h.begin(), h.end() and const-qualified variants
- * - h.find(key) performs lookup and yields an iterator
+ * - h.find(key) performs lookup and yields an Iterator
  * - h.insert(element) links an object into the data structure
- * - h.erase(element) or h.erase(iterator) unlinks an object from the data
+ * - h.erase(element) or h.erase(Iterator) unlinks an object from the data
  *   structure
  * - h.size() and h.empty() testing
  *
@@ -126,7 +126,7 @@ template<
     typename Accessor,
     typename KeyHash = std::hash<KeyType>,
     typename KeyEqual = safe_equal<KeyType>>
-class intrusive_hash
+class IntrusiveHash
 {
 private:
   struct bucket_type
@@ -152,7 +152,7 @@ public:
       "require noexcept key equality");
   class const_iterator;
 
-  class iterator
+  class Iterator
   {
   public:
     typedef ElementType value_type;
@@ -162,17 +162,17 @@ public:
     typedef size_t size_type;
     typedef ssize_t difference_type;
 
-    constexpr iterator() noexcept
+    constexpr Iterator() noexcept
         : map_(nullptr),
           element_(nullptr)
     {}
 
-    constexpr iterator(const intrusive_hash * map, ElementType * object)
+    constexpr Iterator(const IntrusiveHash * map, ElementType * object)
         : map_(map),
           element_(object)
     {}
 
-    inline const iterator &
+    const Iterator &
     operator++() noexcept
     {
       ElementType * next = map_->accessor_.get_next(element_);
@@ -190,10 +190,10 @@ public:
       return *this;
     }
 
-    inline iterator
+    Iterator
     operator++(int) noexcept
     {
-      iterator i = *this;
+      Iterator i = *this;
       ++*this;
       return i;
     }
@@ -211,13 +211,13 @@ public:
     }
 
     inline bool
-    operator==(const iterator & other) const noexcept
+    operator==(const Iterator & other) const noexcept
     {
       return element_ == other.element_;
     }
 
     inline bool
-    operator!=(const iterator & other) const noexcept
+    operator!=(const Iterator & other) const noexcept
     {
       return element_ != other.element_;
     }
@@ -229,7 +229,7 @@ public:
     }
 
   private:
-    const intrusive_hash * map_;
+    const IntrusiveHash * map_;
     ElementType * element_;
     friend class const_iterator;
   };
@@ -246,7 +246,7 @@ public:
 
     constexpr const_iterator(const const_iterator & other) noexcept = default;
 
-    constexpr const_iterator(const iterator & other) noexcept
+    constexpr const_iterator(const Iterator & other) noexcept
         : map_(other.map_),
           element_(other.element_)
     {}
@@ -256,7 +256,7 @@ public:
           element_(nullptr)
     {}
 
-    constexpr const_iterator(const intrusive_hash * map, const ElementType * object)
+    constexpr const_iterator(const IntrusiveHash * map, const ElementType * object)
         : map_(map),
           element_(object)
     {}
@@ -318,7 +318,7 @@ public:
     }
 
   private:
-    const intrusive_hash * map_;
+    const IntrusiveHash * map_;
     const ElementType * element_;
   };
 
@@ -327,24 +327,24 @@ public:
   typedef KeyType key_type;
   typedef size_t size_type;
 
-  inline constexpr intrusive_hash() noexcept
+  constexpr IntrusiveHash() noexcept
       : size_(0),
         mask_(0)
   {}
 
-  intrusive_hash(const intrusive_hash & other) = delete;
+  IntrusiveHash(const IntrusiveHash & other) = delete;
 
   void
-  operator=(const intrusive_hash & other) = delete;
+  operator=(const IntrusiveHash & other) = delete;
 
-  intrusive_hash(intrusive_hash && other) noexcept
-      : intrusive_hash()
+  IntrusiveHash(IntrusiveHash && other) noexcept
+      : IntrusiveHash()
   {
     swap(other);
   }
 
   void
-  swap(intrusive_hash & other) noexcept
+  swap(IntrusiveHash & other) noexcept
   {
     buckets_.swap(other.buckets_);
     std::swap(size_, other.size_);
@@ -362,7 +362,7 @@ public:
     }
   }
 
-  inline iterator
+  Iterator
   insert(ElementType * element)
   {
     ++size_;
@@ -372,7 +372,7 @@ public:
     }
     private_insert_into(buckets_, mask_, element);
 
-    return iterator(this, element);
+    return Iterator(this, element);
   }
 
   inline void
@@ -402,7 +402,7 @@ public:
   }
 
   inline void
-  erase(iterator i) noexcept
+  erase(Iterator i) noexcept
   {
     erase(i.ptr());
   }
@@ -410,7 +410,7 @@ public:
   inline void
   erase(const KeyType & key) noexcept
   {
-    iterator i = find(key);
+    Iterator i = find(key);
     if (i != end())
     {
       erase(i);
@@ -418,7 +418,7 @@ public:
   }
 
   inline void
-  erase(iterator begin, iterator end) noexcept
+  erase(Iterator begin, Iterator end) noexcept
   {
     while (begin != end)
     {
@@ -440,16 +440,16 @@ public:
     return size() == 0;
   }
 
-  iterator
+  Iterator
   begin() noexcept
   {
-    return iterator(this, first_object());
+    return Iterator(this, first_object());
   }
 
-  iterator
+  Iterator
   end() noexcept
   {
-    return iterator(this, nullptr);
+    return Iterator(this, nullptr);
   }
 
   const_iterator
@@ -476,10 +476,10 @@ public:
     return cend();
   }
 
-  inline iterator
+  Iterator
   find(const KeyType & key) noexcept
   {
-    return iterator(this, lookup(key));
+    return Iterator(this, lookup(key));
   }
 
   inline const_iterator
@@ -627,8 +627,7 @@ template<
     typename KeyEqual = safe_equal<KeyType>>
 class owner_intrusive_hash
 {
-private:
-  typedef intrusive_hash<KeyType, ElementType, Accessor, KeyHash, KeyEqual> internal_hash_type;
+  typedef IntrusiveHash<KeyType, ElementType, Accessor, KeyHash, KeyEqual> internal_hash_type;
 
 public:
   static_assert(

@@ -11,7 +11,7 @@
 
 #include <cassert>
 
-static int
+static void
 TestLifoWorklist()
 {
   jlm::util::LifoWorklist<size_t> wl;
@@ -31,15 +31,13 @@ TestLifoWorklist()
   item = wl.PopWorkItem();
   assert(item == 5);
   assert(!wl.HasMoreWorkItems());
-
-  return 0;
 }
 
 JLM_UNIT_TEST_REGISTER(
     "jlm/llvm/opt/alias-analyses/TestWorklist-TestLifoWorklist",
     TestLifoWorklist)
 
-static int
+static void
 TestFifoWorklist()
 {
   jlm::util::FifoWorklist<size_t> wl;
@@ -60,15 +58,13 @@ TestFifoWorklist()
   item = wl.PopWorkItem();
   assert(item == 7);
   assert(!wl.HasMoreWorkItems());
-
-  return 0;
 }
 
 JLM_UNIT_TEST_REGISTER(
     "jlm/llvm/opt/alias-analyses/TestWorklist-TestFifoWorklist",
     TestFifoWorklist)
 
-static int
+static void
 TestLrfWorklist()
 {
   jlm::util::LrfWorklist<size_t> wl;
@@ -92,13 +88,11 @@ TestLrfWorklist()
   item = wl.PopWorkItem();
   assert(item == 5);
   assert(!wl.HasMoreWorkItems());
-
-  return 0;
 }
 
 JLM_UNIT_TEST_REGISTER("jlm/llvm/opt/alias-analyses/TestWorklist-TestLrfWorklist", TestLrfWorklist)
 
-static int
+static void
 TestTwoPhaseLrfWorklist()
 {
   jlm::util::TwoPhaseLrfWorklist<size_t> wl;
@@ -126,15 +120,13 @@ TestTwoPhaseLrfWorklist()
   item = wl.PopWorkItem();
   assert(item == 2);
   assert(!wl.HasMoreWorkItems());
-
-  return 0;
 }
 
 JLM_UNIT_TEST_REGISTER(
     "jlm/llvm/opt/alias-analyses/TestWorklist-TestTwoPhaseLrfWorklist",
     TestTwoPhaseLrfWorklist)
 
-static int
+static void
 TestWorkset()
 {
   jlm::util::Workset<size_t> ws;
@@ -151,8 +143,6 @@ TestWorkset()
   assert(ws.HasWorkItem(5));
   ws.RemoveWorkItem(5);
   assert(!ws.HasMoreWorkItems());
-
-  return 0;
 }
 
 JLM_UNIT_TEST_REGISTER("jlm/llvm/opt/alias-analyses/TestWorklist-TestWorkset", TestWorkset)
