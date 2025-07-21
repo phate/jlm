@@ -24,7 +24,7 @@ class NodeSinking final : public rvsdg::Transformation
 {
 public:
   class Statistics;
-  
+
   ~NodeSinking() noexcept override;
 
   void
