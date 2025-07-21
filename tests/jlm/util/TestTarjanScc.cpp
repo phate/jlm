@@ -5,33 +5,38 @@
 
 #include <test-registry.hpp>
 
+#include <jlm/util/HashSet.hpp>
 #include <jlm/util/TarjanScc.hpp>
 
 #include <cassert>
-#include <cstdint>
+#include <iostream>
 #include <optional>
 #include <tuple>
-#include <unordered_map>
-#include <unordered_set>
 #include <vector>
 
-#include <iostream>
+// Used to represent graphs with no node unification
+static size_t
+Identity(size_t i)
+{
+  return i;
+}
 
 /**
  * Validation function checking that the found SCCs correspond to the \p successors:
  *  - All sccIndex are between 0 and numSccs-1
  *  - All SCCs contain at least one node
  *  - All edges in the graph point to an \p sccIndex which is equal or lower
- *  - The topologicalOrder contains all nodes, sorted by descending sccIndex
+ *  - The reverseTopologicalOrder contains all nodes, sorted by descending sccIndex
  */
-template<typename SuccessorFunctor>
+template<typename UnificationRootFunctor, typename SuccessorFunctor>
 static void
 ValidateTopologicalOrderAndSccIndices(
     size_t numNodes,
+    UnificationRootFunctor & unificationRoot,
     SuccessorFunctor & successors,
     size_t numSccs,
     const std::vector<size_t> & sccIndex,
-    const std::vector<size_t> & topologicalOrder)
+    const std::vector<size_t> & reverseTopologicalOrder)
 {
   assert(numNodes == sccIndex.size());
 
@@ -39,8 +44,9 @@ ValidateTopologicalOrderAndSccIndices(
   std::vector<size_t> numNodesInScc(numSccs, 0);
   for (size_t i = 0; i < numNodes; i++)
   {
-    assert(sccIndex[i] < numSccs);
-    numNodesInScc[sccIndex[i]]++;
+    auto node = unificationRoot(i);
+    assert(sccIndex[node] < numSccs);
+    numNodesInScc[sccIndex[node]]++;
   }
   for (size_t i = 0; i < numSccs; i++)
     assert(numNodesInScc[i] > 0);
@@ -48,31 +54,37 @@ ValidateTopologicalOrderAndSccIndices(
   // Check that no edge in the graph points to an earlier SCC
   for (size_t i = 0; i < numNodes; i++)
   {
+    // Only consider unification roots
+    if (unificationRoot(i) != i)
+      continue;
+
     for (auto next : successors(i))
     {
-      // Intra-scc edges are ignored
-      if (sccIndex[i] == sccIndex[next])
-        continue;
+      next = unificationRoot(next);
 
       // successor SCCs must have lower scc index
-      assert(sccIndex[next] < sccIndex[i]);
+      assert(sccIndex[next] <= sccIndex[i]);
     }
   }
 
-  // Check that all nodes appear once in the topological order
-  std::unordered_set<size_t> nodeInTopologicalOrder;
-  assert(numNodes == topologicalOrder.size());
+  // Check that all unification roots appear exactly once in the topological order
+  jlm::util::HashSet<size_t> nodeInTopologicalOrder(
+      reverseTopologicalOrder.begin(),
+      reverseTopologicalOrder.end());
+  assert(nodeInTopologicalOrder.Size() == reverseTopologicalOrder.size());
+
   for (size_t i = 0; i < numNodes; i++)
   {
-    assert(topologicalOrder[i] < numNodes);
-    nodeInTopologicalOrder.insert(topologicalOrder[i]);
+    if (unificationRoot(i) == i)
+      assert(nodeInTopologicalOrder.Contains(i));
+    else
+      assert(!nodeInTopologicalOrder.Contains(i));
   }
-  assert(numNodes == nodeInTopologicalOrder.size());
 
-  // Check that the topological order contains nodes sorted by descending sccIndex
-  for (size_t i = 1; i < numNodes; i++)
+  // Check that the reverse topological order contains nodes with ascending sccIndex
+  for (size_t i = 1; i < reverseTopologicalOrder.size(); i++)
   {
-    assert(sccIndex[topologicalOrder[i - 1]] >= sccIndex[topologicalOrder[i]]);
+    assert(sccIndex[reverseTopologicalOrder[i - 1]] <= sccIndex[reverseTopologicalOrder[i]]);
   }
 }
 
@@ -98,18 +110,19 @@ TestDag()
   };
 
   std::vector<size_t> sccIndex;
-  std::vector<size_t> topologicalOrder;
+  std::vector<size_t> reverseTopologicalOrder;
   auto numSccs = jlm::util::FindStronglyConnectedComponents(
       numNodes,
       GetSuccessors,
       sccIndex,
-      topologicalOrder);
+      reverseTopologicalOrder);
   ValidateTopologicalOrderAndSccIndices(
       numNodes,
+      Identity,
       GetSuccessors,
       numSccs,
       sccIndex,
-      topologicalOrder);
+      reverseTopologicalOrder);
 
   assert(numSccs == numNodes);
 }
@@ -137,26 +150,27 @@ TestCycles()
   };
 
   std::vector<size_t> sccIndex;
-  std::vector<size_t> topologicalOrder;
+  std::vector<size_t> reverseTopologicalOrder;
   auto numSccs = jlm::util::FindStronglyConnectedComponents(
       numNodes,
       GetSuccessors,
       sccIndex,
-      topologicalOrder);
+      reverseTopologicalOrder);
   ValidateTopologicalOrderAndSccIndices(
       numNodes,
+      Identity,
       GetSuccessors,
       numSccs,
       sccIndex,
-      topologicalOrder);
+      reverseTopologicalOrder);
 
   assert(numSccs == 3);
   // 5 has to be at the end
   assert(sccIndex[5] == 0);
-  assert(topologicalOrder[numNodes - 1] == 5);
+  assert(reverseTopologicalOrder[0] == 5);
   // 6 has to be at the beginning
   assert(sccIndex[6] == 2);
-  assert(topologicalOrder[0] == 6);
+  assert(reverseTopologicalOrder[numNodes - 1] == 6);
   // The rest belong to the middle SCC
   for (size_t i = 0; i < 5; i++)
     assert(sccIndex[i] == 1);
@@ -220,18 +234,19 @@ CreateDiamondChain(size_t knots, std::optional<std::pair<size_t, size_t>> extraE
   };
 
   std::vector<size_t> sccIndex;
-  std::vector<size_t> topologicalOrder;
+  std::vector<size_t> reverseTopologicalOrder;
   auto numSccs = jlm::util::FindStronglyConnectedComponents(
       numNodes,
       GetSuccessors,
       sccIndex,
-      topologicalOrder);
+      reverseTopologicalOrder);
   ValidateTopologicalOrderAndSccIndices(
       numNodes,
+      Identity,
       GetSuccessors,
       numSccs,
       sccIndex,
-      topologicalOrder);
+      reverseTopologicalOrder);
 
   std::vector<size_t> unshuffledNodeIndex(numNodes);
   for (size_t i = 0; i < numNodes; i++)
@@ -311,30 +326,81 @@ TestVisitEachNodeTwice()
   std::vector<size_t> successorsQueried(numNodes, 0);
   auto GetSuccessors = [&](size_t node)
   {
-    JLM_ASSERT(node < numNodes);
+    assert(node < numNodes);
     successorsQueried[node]++;
     return successors[node];
   };
 
   std::vector<size_t> sccIndex;
-  std::vector<size_t> topologicalOrder;
+  std::vector<size_t> reverseTopologicalOrder;
   auto numSccs = jlm::util::FindStronglyConnectedComponents(
       numNodes,
       GetSuccessors,
       sccIndex,
-      topologicalOrder);
+      reverseTopologicalOrder);
 
-  JLM_ASSERT(numSccs == 4);
+  assert(numSccs == 4);
   for (size_t timesQueried : successorsQueried)
-    JLM_ASSERT(timesQueried <= 2);
+    assert(timesQueried <= 2);
 
   // Validate the produced SCC DAG as well, but do it last, as this function calls GetSuccessors.
   ValidateTopologicalOrderAndSccIndices(
       numNodes,
+      Identity,
       GetSuccessors,
       numSccs,
       sccIndex,
-      topologicalOrder);
+      reverseTopologicalOrder);
 }
 
 JLM_UNIT_TEST_REGISTER("jlm/util/TestTarjanScc-TestVisitEachNodeTwice", TestVisitEachNodeTwice);
+
+static void
+TestUnifiedNodes()
+{
+  // Each node with index >= 5 has a unification root equal to index - 5
+  const size_t numNodes = 10;
+  std::vector<std::vector<size_t>> successors{
+    { 1, 1 + 5, 2 },  // 0's successors
+    { 2 + 5, 3 },     // 1's successors
+    { 1 + 5, 3 + 5 }, // 2's successors
+    {},               // 3's successors
+    { 4, 4 + 5 }      // 4's successors
+  };
+  // The graph looks like a 0->(12)->3 diamond with edges between 1 and 2, and a lone node 4
+
+  auto GetUnificationRoot = [&](size_t node)
+  {
+    if (node >= 5)
+      return node - 5;
+    return node;
+  };
+
+  auto GetSuccessors = [&](size_t node)
+  {
+    assert(node < 5);
+    return successors[node];
+  };
+
+  std::vector<size_t> sccIndex;
+  std::vector<size_t> reverseTopologicalOrder;
+  auto numSccs = jlm::util::FindStronglyConnectedComponents(
+      numNodes,
+      GetUnificationRoot,
+      GetSuccessors,
+      sccIndex,
+      reverseTopologicalOrder);
+
+  assert(numSccs == 4);
+
+  // Validate the produced SCC DAG as well, but do it last, as this function calls GetSuccessors.
+  ValidateTopologicalOrderAndSccIndices(
+      numNodes,
+      GetUnificationRoot,
+      GetSuccessors,
+      numSccs,
+      sccIndex,
+      reverseTopologicalOrder);
+}
+
+JLM_UNIT_TEST_REGISTER("jlm/util/TestTarjanScc-TestUnifiedNodes", TestUnifiedNodes);
