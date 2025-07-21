@@ -17,6 +17,8 @@ namespace jlm::llvm
 class LoopUnswitching final : public rvsdg::Transformation
 {
 public:
+  class Statistics;
+  
   ~LoopUnswitching() noexcept override;
 
   void
