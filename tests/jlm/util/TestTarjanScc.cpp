@@ -5,15 +5,14 @@
 
 #include <test-registry.hpp>
 
+#include <jlm/util/HashSet.hpp>
 #include <jlm/util/TarjanScc.hpp>
 
 #include <cassert>
+#include <iostream>
 #include <optional>
 #include <tuple>
 #include <vector>
-
-#include <iostream>
-#include <jlm/util/HashSet.hpp>
 
 // Used to represent graphs with no node unification
 static size_t
