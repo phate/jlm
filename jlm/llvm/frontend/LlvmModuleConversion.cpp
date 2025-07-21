@@ -92,13 +92,13 @@ PatchPhiOperands(const std::vector<::llvm::PHINode *> & phis, context & ctx)
   }
 }
 
-static basic_block_map
+static BasicBlockMap
 convert_basic_blocks(::llvm::Function & f, ControlFlowGraph & cfg)
 {
-  basic_block_map bbmap;
+  BasicBlockMap bbmap;
   ::llvm::ReversePostOrderTraversal<::llvm::Function *> rpotraverser(&f);
   for (auto & bb : rpotraverser)
-    bbmap.insert(bb, BasicBlock::create(cfg));
+    bbmap.Insert(bb, BasicBlock::create(cfg));
 
   return bbmap;
 }
@@ -403,7 +403,7 @@ create_cfg(::llvm::Function & f, context & ctx)
   /* create entry block */
   auto entry_block = BasicBlock::create(*cfg);
   cfg->exit()->divert_inedges(entry_block);
-  entry_block->add_outedge(bbmap[&f.getEntryBlock()]);
+  entry_block->add_outedge(bbmap.LookupKey(&f.getEntryBlock()));
 
   /* add results */
   const ThreeAddressCodeVariable * result = nullptr;
@@ -421,7 +421,7 @@ create_cfg(::llvm::Function & f, context & ctx)
   cfg->exit()->append_result(ctx.memory_state());
 
   /* convert instructions */
-  ctx.set_basic_block_map(bbmap);
+  ctx.set_basic_block_map(std::move(bbmap));
   ctx.set_result(result);
   auto phis = convert_instructions(f, ctx);
   PatchPhiOperands(phis, ctx);
