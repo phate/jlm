@@ -25,25 +25,6 @@ namespace jlm::llvm
 class LoadOperation : public rvsdg::SimpleOperation
 {
 public:
-  class MemoryStateInputIterator final : public rvsdg::Input::iterator<rvsdg::SimpleInput>
-  {
-  public:
-    virtual ~MemoryStateInputIterator() = default;
-
-    constexpr explicit MemoryStateInputIterator(rvsdg::SimpleInput * input)
-        : rvsdg::Input::iterator<rvsdg::SimpleInput>(input)
-    {}
-
-    [[nodiscard]] rvsdg::SimpleInput *
-    next() const override
-    {
-      const auto index = value()->index();
-      const auto node = value()->node();
-
-      return index + 1 < node->ninputs() ? node->input(index + 1) : nullptr;
-    }
-  };
-
   class MemoryStateOutputIterator final : public rvsdg::Output::iterator<rvsdg::SimpleOutput>
   {
   public:
@@ -63,7 +44,6 @@ public:
     }
   };
 
-  using MemoryStateInputRange = util::IteratorRange<MemoryStateInputIterator>;
   using MemoryStateOutputRange = util::IteratorRange<MemoryStateOutputIterator>;
 
 protected:

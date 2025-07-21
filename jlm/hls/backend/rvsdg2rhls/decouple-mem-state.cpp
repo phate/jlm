@@ -84,10 +84,11 @@ trace_edge(
       state_edge = get_mem_state_user(out);
       continue;
     }
-    auto si = util::AssertedCast<rvsdg::SimpleInput>(state_edge);
-    auto sn = si->node();
-    auto new_si = util::AssertedCast<rvsdg::SimpleInput>(new_edge_user);
-    auto new_sn = new_si->node();
+
+    auto si = state_edge;
+    auto sn = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*si);
+    auto new_si = new_edge_user;
+    auto new_sn = &rvsdg::AssertGetOwnerNode<rvsdg::SimpleNode>(*new_si);
     auto [branchNode, branchOperation] = rvsdg::TryGetSimpleNodeAndOp<BranchOperation>(*state_edge);
     auto [muxNode, muxOperation] = rvsdg::TryGetSimpleNodeAndOp<MuxOperation>(*state_edge);
     if (branchOperation
@@ -341,8 +342,8 @@ follow_state_edge(
       mem_ops.insert(mem_ops.cend(), loop_mem_ops.begin(), loop_mem_ops.end());
       continue;
     }
-    auto si = jlm::util::AssertedCast<rvsdg::SimpleInput>(state_edge);
-    auto sn = si->node();
+    auto si = state_edge;
+    auto sn = &rvsdg::AssertGetOwnerNode<rvsdg::SimpleNode>(*si);
     auto [branchNode, branchOperation] = rvsdg::TryGetSimpleNodeAndOp<BranchOperation>(*state_edge);
     auto [muxNode, muxOperation] = rvsdg::TryGetSimpleNodeAndOp<MuxOperation>(*state_edge);
     if (branchOperation
