@@ -17,16 +17,16 @@
 namespace jlm::llvm
 {
 
-class cnestat final : public util::Statistics
+class CommonNodeElimination::Statistics final : public util::Statistics
 {
   const char * MarkTimerLabel_ = "MarkTime";
   const char * DivertTimerLabel_ = "DivertTime";
 
 public:
-  ~cnestat() override = default;
+  ~Statistics() override = default;
 
-  explicit cnestat(const util::FilePath & sourceFile)
-      : Statistics(Statistics::Id::CommonNodeElimination, sourceFile)
+  explicit Statistics(const util::FilePath & sourceFile)
+      : util::Statistics(Statistics::Id::CommonNodeElimination, sourceFile)
   {}
 
   void
@@ -57,10 +57,10 @@ public:
     GetTimer(DivertTimerLabel_).stop();
   }
 
-  static std::unique_ptr<cnestat>
+  static std::unique_ptr<Statistics>
   Create(const util::FilePath & sourceFile)
   {
-    return std::make_unique<cnestat>(sourceFile);
+    return std::make_unique<Statistics>(sourceFile);
   }
 };
 
@@ -586,7 +586,7 @@ cne(rvsdg::RvsdgModule & rvsdgModule, util::StatisticsCollector & statisticsColl
   auto & graph = rvsdgModule.Rvsdg();
 
   cnectx ctx;
-  auto statistics = cnestat::Create(rvsdgModule.SourceFilePath().value());
+  auto statistics = CommonNodeElimination::Statistics::Create(rvsdgModule.SourceFilePath().value());
 
   statistics->start_mark_stat(graph);
   mark(&graph.GetRootRegion(), ctx);
