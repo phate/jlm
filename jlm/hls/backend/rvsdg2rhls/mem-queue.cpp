@@ -49,9 +49,8 @@ find_load_store(
   visited.insert(op);
   for (auto & user : op->Users())
   {
-    if (auto si = dynamic_cast<jlm::rvsdg::SimpleInput *>(&user))
+    if (auto simplenode = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(user))
     {
-      auto simplenode = si->node();
       if (dynamic_cast<const jlm::llvm::StoreNonVolatileOperation *>(&simplenode->GetOperation()))
       {
         store_nodes.push_back(simplenode);
@@ -97,11 +96,11 @@ find_loop_output(jlm::rvsdg::StructuralInput * sti)
   auto sti_arg = sti->arguments.first();
   JLM_ASSERT(sti_arg->nusers() == 1);
   auto & user = *sti_arg->Users().begin();
-  auto si = dynamic_cast<jlm::rvsdg::SimpleInput *>(&user);
-  JLM_ASSERT(dynamic_cast<const jlm::hls::MuxOperation *>(&si->node()->GetOperation()));
+  auto [muxNode, muxOperation] = jlm::rvsdg::TryGetSimpleNodeAndOp<jlm::hls::MuxOperation>(user);
+  JLM_ASSERT(muxNode && muxOperation);
   for (size_t i = 1; i < 3; ++i)
   {
-    auto arg = si->node()->input(i)->origin();
+    auto arg = muxNode->input(i)->origin();
     if (auto ba = dynamic_cast<jlm::hls::backedge_argument *>(arg))
     {
       auto res = ba->result();
@@ -169,13 +168,14 @@ separate_load_edge(
       auto sti_arg = sti->arguments.first();
       JLM_ASSERT(sti_arg->nusers() == 1);
       auto & user = *sti_arg->Users().begin();
-      auto si = dynamic_cast<jlm::rvsdg::SimpleInput *>(&user);
-      JLM_ASSERT(dynamic_cast<const jlm::hls::MuxOperation *>(&si->node()->GetOperation()));
+      auto [muxNode, muxOperation] =
+          jlm::rvsdg::TryGetSimpleNodeAndOp<jlm::hls::MuxOperation>(user);
+      JLM_ASSERT(muxNode && muxOperation);
       JLM_ASSERT(buffer->nusers() == 1);
       // use a separate vector to check if the loop contains stores
       std::vector<jlm::rvsdg::Output *> loop_store_addresses;
       separate_load_edge(
-          si->node()->output(0),
+          muxNode->output(0),
           buffer,
           load,
           nullptr,
@@ -195,10 +195,9 @@ separate_load_edge(
             loop_store_addresses.end());
       }
     }
-    else if (auto si = dynamic_cast<jlm::rvsdg::SimpleInput *>(user))
+    else if (auto sn = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(*user))
     {
-      auto sn = si->node();
-      auto op = &si->node()->GetOperation();
+      auto op = &sn->GetOperation();
 
       if (auto br = dynamic_cast<const jlm::hls::BranchOperation *>(op))
       {
@@ -215,9 +214,8 @@ separate_load_edge(
             // But we are not allowed to discard the vector and can't have unused variables
             // So adding a meaningless assert to get it to compile
             JLM_ASSERT(dummy_user_tmp.size() == 0);
-            auto dummy_user =
-                dynamic_cast<jlm::rvsdg::SimpleInput *>(&*load_branch_out[i]->Users().begin())
-                    ->node();
+            auto dummy_user = &jlm::rvsdg::AssertGetOwnerNode<jlm::rvsdg::SimpleNode>(
+                *load_branch_out[i]->Users().begin());
             // need both load and common edge here
             load_branch_out[i] = separate_load_edge(
                 sn->output(i),
@@ -234,24 +232,23 @@ separate_load_edge(
           }
           // create mux
           JLM_ASSERT(mem_edge->nusers() == 1);
-          auto mux_user =
-              jlm::util::AssertedCast<jlm::rvsdg::SimpleInput>(&*mem_edge->Users().begin());
-          auto mux_op = jlm::util::AssertedCast<const jlm::hls::MuxOperation>(
-              &mux_user->node()->GetOperation());
+          auto [muxNode, muxOperation] =
+              jlm::rvsdg::TryGetSimpleNodeAndOp<jlm::hls::MuxOperation>(*mem_edge->Users().begin());
+          JLM_ASSERT(muxNode && muxOperation);
           addr_edge = jlm::hls::MuxOperation::create(
-              *mux_user->node()->input(0)->origin(),
+              *muxNode->input(0)->origin(),
               load_branch_out,
-              mux_op->discarding,
+              muxOperation->discarding,
               false)[0];
           addr_edge_user.divert_to(addr_edge);
-          mem_edge = mux_user->node()->output(0);
+          mem_edge = muxNode->output(0);
         }
         else
         {
           // end of loop
-          auto load_user_input = jlm::util::AssertedCast<jlm::rvsdg::SimpleInput>(&addr_edge_user);
-          JLM_ASSERT(dynamic_cast<const jlm::hls::BranchOperation *>(
-              &load_user_input->node()->GetOperation()));
+          auto [branchNode, branchOperation] =
+              jlm::rvsdg::TryGetSimpleNodeAndOp<jlm::hls::BranchOperation>(addr_edge_user);
+          JLM_ASSERT(branchNode && branchOperation);
           return nullptr;
         }
       }
@@ -273,22 +270,19 @@ separate_load_edge(
         mem_edge = sn->output(0);
         JLM_ASSERT(mem_edge->nusers() == 1);
         user = &*mem_edge->Users().begin();
-        auto ui = dynamic_cast<jlm::rvsdg::SimpleInput *>(user);
-        if (ui
-            && dynamic_cast<const jlm::llvm::MemoryStateSplitOperation *>(
-                &ui->node()->GetOperation()))
+        auto [mssNode, msso] =
+            jlm::rvsdg::TryGetSimpleNodeAndOp<jlm::llvm::MemoryStateSplitOperation>(*user);
+        if (mssNode && msso)
         {
-          auto msso = dynamic_cast<const jlm::llvm::MemoryStateSplitOperation *>(
-              &ui->node()->GetOperation());
           // handle case where output of store is already connected to a MemStateSplit by adding an
           // output
           auto store_split =
               jlm::llvm::MemoryStateSplitOperation::Create(*mem_edge, msso->nresults() + 1);
           for (size_t i = 0; i < msso->nresults(); ++i)
           {
-            ui->node()->output(i)->divert_users(store_split[i]);
+            mssNode->output(i)->divert_users(store_split[i]);
           }
-          remove(ui->node());
+          remove(mssNode);
           mem_edge = store_split[0];
           store_dequeues.push_back(
               jlm::hls::route_to_region_rhls((*load)->region(), store_split.back()));
@@ -327,7 +321,7 @@ separate_load_edge(
           mem_edge = mem_sg_out[1];
 
           sn->output(0)->divert_users(new_load_outputs[0]);
-          si->divert_to(addr_edge);
+          user->divert_to(addr_edge);
           sn->output(1)->divert_users(mem_edge);
           remove(sn);
           *load = dynamic_cast<jlm::rvsdg::SimpleOutput *>(new_load_outputs[0])->node();
@@ -348,8 +342,9 @@ separate_load_edge(
       }
       else if (dynamic_cast<const jlm::llvm::MemoryStateMergeOperation *>(op))
       {
-        auto si_load_user = dynamic_cast<jlm::rvsdg::SimpleInput *>(&addr_edge_user);
-        if (si_load_user && si->node() == sn)
+        auto si_load_user = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(addr_edge_user);
+        auto & userNode = jlm::rvsdg::AssertGetOwnerNode<jlm::rvsdg::SimpleNode>(*user);
+        if (si_load_user && &userNode == sn)
         {
           return nullptr;
         }
@@ -381,10 +376,9 @@ process_loops(jlm::rvsdg::Output * state_edge)
       // End of region reached
       return user.origin();
     }
-    else if (auto si = dynamic_cast<jlm::rvsdg::SimpleInput *>(&user))
+    else if (auto sn = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(user))
     {
-      auto sn = si->node();
-      auto op = &si->node()->GetOperation();
+      auto op = &sn->GetOperation();
       auto br = dynamic_cast<const jlm::hls::BranchOperation *>(op);
       if (br && !br->loop)
       {
