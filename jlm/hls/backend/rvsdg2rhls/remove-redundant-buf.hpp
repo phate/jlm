@@ -18,7 +18,7 @@ namespace jlm::hls
 {
 
 /**
- * Replace \ref BufferOperation nodes with \ref MemoryStateType operands that can be
+ * Replace \ref BufferOperation nodes with \ref jlm::llvm::MemoryStateType operands that can be
  * traced to a \ref LoadOperation, \ref LocalLoadOperation, \ref StoreOperation, or \ref
  * LocalStoreOperation with a passthrough \ref BufferOperation node.
  *
