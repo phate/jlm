@@ -93,7 +93,7 @@ test_invariant_reduction()
 
   // Arrange
   Graph graph;
-  const auto valueType = jlm::tests::valuetype::Create();
+  const auto valueType = jlm::tests::ValueType::Create();
 
   const auto predicate = &jlm::tests::GraphImport::Create(graph, ControlType::Create(2), "");
   const auto value = &jlm::tests::GraphImport::Create(graph, valueType, "");
@@ -202,7 +202,7 @@ TestRemoveGammaOutputsWhere()
 
   // Arrange
   Graph rvsdg;
-  auto vt = jlm::tests::valuetype::Create();
+  auto vt = jlm::tests::ValueType::Create();
   ControlType ct(2);
 
   auto predicate = &jlm::tests::GraphImport::Create(rvsdg, ControlType::Create(2), "");
@@ -260,7 +260,7 @@ TestPruneOutputs()
 
   // Arrange
   Graph rvsdg;
-  auto vt = jlm::tests::valuetype::Create();
+  auto vt = jlm::tests::ValueType::Create();
   ControlType ct(2);
 
   auto predicate = &jlm::tests::GraphImport::Create(rvsdg, ControlType::Create(2), "");
@@ -305,7 +305,7 @@ TestIsInvariant()
 
   // Arrange
   Graph rvsdg;
-  auto vt = jlm::tests::valuetype::Create();
+  auto vt = jlm::tests::ValueType::Create();
   ControlType ct(2);
 
   auto predicate = &jlm::tests::GraphImport::Create(rvsdg, ControlType::Create(2), "");
@@ -335,7 +335,7 @@ TestIsInvariant()
   assert(!invariantOrigin);
 }
 
-static int
+static void
 test_main()
 {
   test_gamma();
@@ -347,8 +347,6 @@ test_main()
   test_invariant_reduction();
   test_control_constant_reduction();
   test_control_constant_reduction2();
-
-  return 0;
 }
 
 JLM_UNIT_TEST_REGISTER("jlm/rvsdg/test-gamma", test_main)

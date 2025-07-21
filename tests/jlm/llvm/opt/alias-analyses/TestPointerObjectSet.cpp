@@ -991,7 +991,7 @@ TestClonePointerObjectConstraintSet()
   assert(setClone->GetPointsToSet(dummy0).Contains(alloca0));
 }
 
-static int
+static void
 TestPointerObjectSet()
 {
   TestFlagFunctions();
@@ -1037,7 +1037,6 @@ TestPointerObjectSet()
   }
 
   TestClonePointerObjectConstraintSet();
-  return 0;
 }
 
 JLM_UNIT_TEST_REGISTER("jlm/llvm/opt/alias-analyses/TestPointerObjectSet", TestPointerObjectSet)

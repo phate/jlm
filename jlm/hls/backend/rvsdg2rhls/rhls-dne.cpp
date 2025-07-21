@@ -23,8 +23,8 @@ remove_unused_loop_backedges(loop_node * ln)
     auto arg = sr->argument(i);
     if ((dynamic_cast<backedge_argument *>(arg) && arg->nusers() == 1) || arg->IsDead())
     {
-      auto user = *arg->begin();
-      if (auto result = dynamic_cast<backedge_result *>(user))
+      auto & user = *arg->Users().begin();
+      if (auto result = dynamic_cast<backedge_result *>(&user))
       {
         sr->RemoveResult(result->index());
         sr->RemoveArgument(arg->index());
@@ -69,8 +69,8 @@ remove_loop_passthrough(loop_node * ln)
     auto arg = in->arguments.begin();
     if (arg->nusers() == 1)
     {
-      auto user = *arg->begin();
-      if (auto result = dynamic_cast<rvsdg::RegionResult *>(user))
+      auto & user = *arg->Users().begin();
+      if (auto result = dynamic_cast<rvsdg::RegionResult *>(&user))
       {
         auto out = result->output();
         out->divert_users(in->origin());
@@ -209,7 +209,8 @@ dead_loop(rvsdg::Node * ndmux_node)
   {
     return false;
   }
-  auto branch_in_node = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(**ndmux_node->output(0)->begin());
+  auto branch_in_node =
+      rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*ndmux_node->output(0)->Users().begin());
   if (!branch_in_node || !dynamic_cast<const BranchOperation *>(&branch_in_node->GetOperation()))
   {
     return false;
@@ -220,7 +221,7 @@ dead_loop(rvsdg::Node * ndmux_node)
     return false;
   }
   auto buf_in_node =
-      rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(**branch_in_node->output(1)->begin());
+      rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*branch_in_node->output(1)->Users().begin());
   if (!buf_in_node || !dynamic_cast<const BufferOperation *>(&buf_in_node->GetOperation()))
   {
     return false;
@@ -280,7 +281,7 @@ dead_loop_lcb(rvsdg::Node * lcb_node)
   {
     return false;
   }
-  auto branch_in = dynamic_cast<jlm::rvsdg::node_input *>(*lcb_node->output(0)->begin());
+  auto branch_in = dynamic_cast<jlm::rvsdg::node_input *>(&*lcb_node->output(0)->Users().begin());
   auto bo = dynamic_cast<const BranchOperation *>(&branch_in->node()->GetOperation());
   if (!branch_in || !bo || !bo->loop)
   {
@@ -429,7 +430,7 @@ bool
 dne(rvsdg::Region * sr)
 {
   bool any_changed = false;
-  bool changed;
+  bool changed = false;
   do
   {
     changed = false;
@@ -442,11 +443,11 @@ dne(rvsdg::Region * sr)
           // TODO: fix this once memory connections are explicit
           continue;
         }
-        else if (dynamic_cast<const local_mem_req_op *>(&node->GetOperation()))
+        if (rvsdg::is<LocalMemoryRequestOperation>(node))
         {
           continue;
         }
-        else if (dynamic_cast<const local_mem_resp_op *>(&node->GetOperation()))
+        if (rvsdg::is<LocalMemoryResponseOperation>(node))
         {
           // TODO: fix - this scenario has only stores and should just be optimized away completely
           continue;

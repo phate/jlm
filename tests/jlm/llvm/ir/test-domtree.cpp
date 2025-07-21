@@ -14,7 +14,7 @@
 template<size_t N>
 static void
 check(
-    const jlm::llvm::domnode * dnode,
+    const jlm::llvm::DominatorTreeNode * dnode,
     const jlm::llvm::ControlFlowGraphNode * node,
     const std::unordered_set<const jlm::llvm::ControlFlowGraphNode *> & children)
 {
@@ -24,8 +24,8 @@ check(
     assert(children.find(child->node()) != children.end());
 }
 
-static const jlm::llvm::domnode *
-get_child(const jlm::llvm::domnode * root, const jlm::llvm::ControlFlowGraphNode * node)
+static const jlm::llvm::DominatorTreeNode *
+get_child(const jlm::llvm::DominatorTreeNode * root, const jlm::llvm::ControlFlowGraphNode * node)
 {
   for (const auto & child : *root)
   {
@@ -36,7 +36,7 @@ get_child(const jlm::llvm::domnode * root, const jlm::llvm::ControlFlowGraphNode
   assert(0);
 }
 
-static int
+static void
 test()
 {
   using namespace jlm::llvm;
@@ -78,8 +78,6 @@ test()
 
   auto dtexit = dtbb4->child(0);
   check<0>(dtexit, cfg.exit(), {});
-
-  return 0;
 }
 
 JLM_UNIT_TEST_REGISTER("jlm/llvm/ir/test-domtree", test)

@@ -27,7 +27,7 @@ RunDeadNodeElimination(jlm::llvm::RvsdgModule & rvsdgModule)
   deadNodeElimination.Run(rvsdgModule, statisticsCollector);
 }
 
-static int
+static void
 RootRegion()
 {
   using namespace jlm::llvm;
@@ -36,8 +36,8 @@ RootRegion()
   RvsdgModule rvsdgModule(jlm::util::FilePath(""), "", "");
   auto & graph = rvsdgModule.Rvsdg();
 
-  jlm::tests::GraphImport::Create(graph, jlm::tests::valuetype::Create(), "x");
-  auto y = &jlm::tests::GraphImport::Create(graph, jlm::tests::valuetype::Create(), "y");
+  jlm::tests::GraphImport::Create(graph, jlm::tests::ValueType::Create(), "x");
+  auto y = &jlm::tests::GraphImport::Create(graph, jlm::tests::ValueType::Create(), "y");
 
   GraphExport::Create(*y, "z");
   jlm::rvsdg::view(graph, stdout);
@@ -48,19 +48,17 @@ RootRegion()
 
   // Assert
   assert(graph.GetRootRegion().narguments() == 1);
-
-  return 0;
 }
 
 JLM_UNIT_TEST_REGISTER("jlm/llvm/opt/DeadNodeEliminationTests-RootRegion", RootRegion)
 
-static int
+static void
 Gamma1()
 {
   using namespace jlm::llvm;
 
   // Arrange
-  auto valueType = jlm::tests::valuetype::Create();
+  auto valueType = jlm::tests::ValueType::Create();
   auto controlType = jlm::rvsdg::ControlType::Create(2);
 
   RvsdgModule rvsdgModule(jlm::util::FilePath(""), "", "");
@@ -95,19 +93,17 @@ Gamma1()
   assert(gamma->subregion(1)->narguments() == 3);
   assert(gamma->ninputs() == 3);
   assert(graph.GetRootRegion().narguments() == 2);
-
-  return 0;
 }
 
 JLM_UNIT_TEST_REGISTER("jlm/llvm/opt/DeadNodeEliminationTests-Gamma1", Gamma1)
 
-static int
+static void
 Gamma2()
 {
   using namespace jlm::llvm;
 
   // Arrange
-  auto valueType = jlm::tests::valuetype::Create();
+  auto valueType = jlm::tests::ValueType::Create();
   auto controlType = jlm::rvsdg::ControlType::Create(2);
 
   RvsdgModule rvsdgModule(jlm::util::FilePath(""), "", "");
@@ -132,19 +128,17 @@ Gamma2()
 
   // Assert
   assert(graph.GetRootRegion().narguments() == 1);
-
-  return 0;
 }
 
 JLM_UNIT_TEST_REGISTER("jlm/llvm/opt/DeadNodeEliminationTests-Gamma2", Gamma2)
 
-static int
+static void
 Theta()
 {
   using namespace jlm::llvm;
 
   // Arrange
-  auto valueType = jlm::tests::valuetype::Create();
+  auto valueType = jlm::tests::ValueType::Create();
   auto controlType = jlm::rvsdg::ControlType::Create(2);
 
   RvsdgModule rvsdgModule(jlm::util::FilePath(""), "", "");
@@ -182,19 +176,17 @@ Theta()
   assert(theta->noutputs() == 3);
   assert(theta->subregion()->nnodes() == 1);
   assert(graph.GetRootRegion().narguments() == 2);
-
-  return 0;
 }
 
 JLM_UNIT_TEST_REGISTER("jlm/llvm/opt/DeadNodeEliminationTests-Theta", Theta)
 
-static int
+static void
 NestedTheta()
 {
   using namespace jlm::llvm;
 
   // Arrange
-  auto valueType = jlm::tests::valuetype::Create();
+  auto valueType = jlm::tests::ValueType::Create();
   auto controlType = jlm::rvsdg::ControlType::Create(2);
 
   RvsdgModule rvsdgModule(jlm::util::FilePath(""), "", "");
@@ -233,19 +225,17 @@ NestedTheta()
 
   // Assert
   assert(outerTheta->noutputs() == 3);
-
-  return 0;
 }
 
 JLM_UNIT_TEST_REGISTER("jlm/llvm/opt/DeadNodeEliminationTests-NestedTheta", NestedTheta)
 
-static int
+static void
 EvolvingTheta()
 {
   using namespace jlm::llvm;
 
   // Arrange
-  auto valueType = jlm::tests::valuetype::Create();
+  auto valueType = jlm::tests::ValueType::Create();
   auto controlType = jlm::rvsdg::ControlType::Create(2);
 
   RvsdgModule rvsdgModule(jlm::util::FilePath(""), "", "");
@@ -279,19 +269,17 @@ EvolvingTheta()
 
   // Assert
   assert(theta->noutputs() == 5);
-
-  return 0;
 }
 
 JLM_UNIT_TEST_REGISTER("jlm/llvm/opt/DeadNodeEliminationTests-EvolvingTheta", EvolvingTheta)
 
-static int
+static void
 Lambda()
 {
   using namespace jlm::llvm;
 
   // Arrange
-  auto valueType = jlm::tests::valuetype::Create();
+  auto valueType = jlm::tests::ValueType::Create();
 
   RvsdgModule rvsdgModule(jlm::util::FilePath(""), "", "");
   auto & graph = rvsdgModule.Rvsdg();
@@ -324,20 +312,18 @@ Lambda()
   // Assert
   assert(lambda->subregion()->nnodes() == 0);
   assert(graph.GetRootRegion().narguments() == 1);
-
-  return 0;
 }
 
 JLM_UNIT_TEST_REGISTER("jlm/llvm/opt/DeadNodeEliminationTests-Lambda", Lambda)
 
-static int
+static void
 Phi()
 {
   using namespace jlm::llvm;
   using namespace jlm::rvsdg;
 
   // Arrange
-  auto valueType = jlm::tests::valuetype::Create();
+  auto valueType = jlm::tests::ValueType::Create();
   auto functionType = FunctionType::Create({ valueType }, { valueType });
 
   jlm::llvm::RvsdgModule rvsdgModule(jlm::util::FilePath(""), "", "");
@@ -355,7 +341,7 @@ Phi()
     auto xArgument = lambda1->AddContextVar(dx).inner;
 
     auto result =
-        jlm::rvsdg::CreateOpNode<jlm::tests::test_op>(
+        jlm::rvsdg::CreateOpNode<jlm::tests::TestOperation>(
             { lambda1->GetFunctionArguments()[0], f2Argument, xArgument },
             std::vector<std::shared_ptr<const Type>>{ valueType, functionType, valueType },
             std::vector<std::shared_ptr<const Type>>{ valueType })
@@ -372,7 +358,7 @@ Phi()
     auto f1Argument = lambda2->AddContextVar(rv1).inner;
     lambda2->AddContextVar(dy);
 
-    auto result = jlm::rvsdg::CreateOpNode<jlm::tests::test_op>(
+    auto result = jlm::rvsdg::CreateOpNode<jlm::tests::TestOperation>(
                       { lambda2->GetFunctionArguments()[0], f1Argument },
                       std::vector<std::shared_ptr<const Type>>{ valueType, functionType },
                       std::vector<std::shared_ptr<const Type>>{ valueType })
@@ -388,7 +374,7 @@ Phi()
         LlvmLambdaOperation::Create(functionType, "f3", linkage::external_linkage));
     auto zArgument = lambda3->AddContextVar(dz).inner;
 
-    auto result = jlm::rvsdg::CreateOpNode<jlm::tests::test_op>(
+    auto result = jlm::rvsdg::CreateOpNode<jlm::tests::TestOperation>(
                       { lambda3->GetFunctionArguments()[0], zArgument },
                       std::vector<std::shared_ptr<const Type>>{ valueType, valueType },
                       std::vector<std::shared_ptr<const Type>>{ valueType })
@@ -452,20 +438,18 @@ Phi()
   assert(phiSubregion.argument(3) == dx.inner);
   assert(phiNode->ninputs() == 1); // dx is alive
   assert(phiNode->input(0) == dx.input);
-
-  return 0;
 }
 
 JLM_UNIT_TEST_REGISTER("jlm/llvm/opt/DeadNodeEliminationTests-Phi", Phi)
 
-static int
+static void
 Delta()
 {
   using namespace jlm::llvm;
   using namespace jlm::rvsdg;
 
   // Arrange
-  auto valueType = jlm::tests::valuetype::Create();
+  auto valueType = jlm::tests::ValueType::Create();
 
   jlm::llvm::RvsdgModule rvsdgModule(jlm::util::FilePath(""), "", "");
   auto & rvsdg = rvsdgModule.Rvsdg();
@@ -474,7 +458,7 @@ Delta()
   auto y = &jlm::tests::GraphImport::Create(rvsdg, valueType, "y");
   auto z = &jlm::tests::GraphImport::Create(rvsdg, valueType, "z");
 
-  auto deltaNode = delta::node::Create(
+  auto deltaNode = DeltaNode::Create(
       &rvsdg.GetRootRegion(),
       valueType,
       "delta",
@@ -482,22 +466,22 @@ Delta()
       "",
       false);
 
-  auto xArgument = deltaNode->add_ctxvar(x);
-  deltaNode->add_ctxvar(y);
-  auto zArgument = deltaNode->add_ctxvar(z);
+  auto xArgument = deltaNode->AddContextVar(*x).inner;
+  deltaNode->AddContextVar(*y);
+  auto zArgument = deltaNode->AddContextVar(*z).inner;
 
-  auto result = jlm::rvsdg::CreateOpNode<jlm::tests::test_op>(
+  auto result = jlm::rvsdg::CreateOpNode<jlm::tests::TestOperation>(
                     { xArgument },
                     std::vector<std::shared_ptr<const Type>>{ valueType },
                     std::vector<std::shared_ptr<const Type>>{ valueType })
                     .output(0);
 
-  jlm::rvsdg::CreateOpNode<jlm::tests::test_op>(
+  jlm::rvsdg::CreateOpNode<jlm::tests::TestOperation>(
       { zArgument },
       std::vector<std::shared_ptr<const Type>>{ valueType },
       std::vector<std::shared_ptr<const Type>>{ valueType });
 
-  auto deltaOutput = deltaNode->finalize(result);
+  auto deltaOutput = &deltaNode->finalize(result);
   jlm::tests::GraphExport::Create(*deltaOutput, "");
   view(rvsdg, stdout);
 
@@ -508,8 +492,6 @@ Delta()
   // Assert
   assert(deltaNode->subregion()->nnodes() == 1);
   assert(deltaNode->ninputs() == 1);
-
-  return 0;
 }
 
 JLM_UNIT_TEST_REGISTER("jlm/llvm/opt/DeadNodeEliminationTests-Delta", Delta)

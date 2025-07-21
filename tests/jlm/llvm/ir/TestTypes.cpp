@@ -12,12 +12,12 @@
 
 #include <cassert>
 
-static int
+static void
 TestIsOrContains()
 {
   using namespace jlm::llvm;
 
-  auto valueType = jlm::tests::valuetype::Create();
+  auto valueType = jlm::tests::ValueType::Create();
   auto pointerType = PointerType::Create();
   auto memoryStateType = MemoryStateType::Create();
   auto ioStateType = IOStateType::Create();
@@ -68,12 +68,10 @@ TestIsOrContains()
   assert(IsOrContains<StructType>(*vectorType));
   assert(IsOrContains<PointerType>(*vectorType));
   assert(!IsOrContains<jlm::rvsdg::StateType>(*vectorType));
-
-  return 0;
 }
 JLM_UNIT_TEST_REGISTER("jlm/llvm/ir/TestTypes-TestIsOrContains", TestIsOrContains)
 
-static int
+static void
 TestGetTypeSizeAndAlignment()
 {
   using namespace jlm::llvm;
@@ -115,24 +113,22 @@ TestGetTypeSizeAndAlignment()
   structDeclaration->Append(bits32);
 
   auto structType = StructType::Create("myStruct", false, *structDeclaration);
-  assert(GetStructFieldOffset(*structType, 0) == 0);
-  assert(GetStructFieldOffset(*structType, 1) == 8); // Due to 4 bytes of padding after i32
-  assert(GetStructFieldOffset(*structType, 2) == 16);
-  assert(GetStructFieldOffset(*structType, 3) == 48); // 12 bytes of padding after array
-  assert(GetStructFieldOffset(*structType, 3) == 64);
+  assert(structType->GetFieldOffset(0) == 0);
+  assert(structType->GetFieldOffset(1) == 8); // Due to 4 bytes of padding after i32
+  assert(structType->GetFieldOffset(2) == 16);
+  assert(structType->GetFieldOffset(3) == 48); // 12 bytes of padding after array
+  assert(structType->GetFieldOffset(4) == 64);
   assert(GetTypeSize(*structType) == 80); // Struct ends with 12 bytes of padding
   assert(GetTypeAlignment(*structType) == 16);
 
   auto packedStructType = StructType::Create("myPackedStruct", true, *structDeclaration);
-  assert(GetStructFieldOffset(*packedStructType, 0) == 0);
-  assert(GetStructFieldOffset(*packedStructType, 1) == 4);
-  assert(GetStructFieldOffset(*packedStructType, 2) == 12);
-  assert(GetStructFieldOffset(*packedStructType, 3) == 32); // array is 20 bytes
-  assert(GetStructFieldOffset(*packedStructType, 3) == 48); // vector is 16 bytes
+  assert(packedStructType->GetFieldOffset(0) == 0);
+  assert(packedStructType->GetFieldOffset(1) == 4);
+  assert(packedStructType->GetFieldOffset(2) == 12);
+  assert(packedStructType->GetFieldOffset(3) == 32); // array is 20 bytes
+  assert(packedStructType->GetFieldOffset(4) == 48); // vector is 16 bytes
   assert(GetTypeSize(*packedStructType) == 52);
   assert(GetTypeAlignment(*packedStructType) == 1);
-
-  return 0;
 }
 JLM_UNIT_TEST_REGISTER(
     "jlm/llvm/ir/TestTypes-TestGetTypeSizeAndAlignment",

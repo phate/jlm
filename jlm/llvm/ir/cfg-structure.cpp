@@ -114,7 +114,7 @@ strongconnect(
   if (map[node].second == map[node].first)
   {
     std::unordered_set<ControlFlowGraphNode *> set;
-    ControlFlowGraphNode * w;
+    ControlFlowGraphNode * w = nullptr;
     do
     {
       w = node_stack.back();

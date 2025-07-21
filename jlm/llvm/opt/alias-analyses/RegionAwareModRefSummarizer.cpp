@@ -787,7 +787,7 @@ RegionAwareModRefSummarizer::AnnotateSimpleNode(
   {
     AnnotateAlloca(simpleNode, regionSummary);
   }
-  else if (is<malloc_op>(&simpleNode))
+  else if (is<MallocOperation>(&simpleNode))
   {
     AnnotateMalloc(simpleNode, regionSummary);
   }
@@ -841,7 +841,7 @@ RegionAwareModRefSummarizer::AnnotateMalloc(
     const rvsdg::SimpleNode & mallocNode,
     RegionSummary & regionSummary)
 {
-  JLM_ASSERT(is<malloc_op>(&mallocNode));
+  JLM_ASSERT(is<MallocOperation>(&mallocNode));
 
   auto & memoryNode = ModRefSummary_->GetPointsToGraph().GetMallocNode(mallocNode);
   regionSummary.AddMemoryNodes({ &memoryNode });
@@ -890,7 +890,7 @@ RegionAwareModRefSummarizer::AnnotateCall(
   // Go through all locations the called function pointer may target
   for (auto & callee : targetPtrNode.Targets())
   {
-    size_t targetSccIndex;
+    size_t targetSccIndex = 0;
     if (auto lambdaCallee = dynamic_cast<const PointsToGraph::LambdaNode *>(&callee))
     {
       const auto & lambdaNode = lambdaCallee->GetLambdaNode();

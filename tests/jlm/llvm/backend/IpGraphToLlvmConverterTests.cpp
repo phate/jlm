@@ -19,7 +19,7 @@
 #include <llvm/IR/LLVMContext.h>
 #include <llvm/IR/Module.h>
 
-static int
+static void
 LoadConversion()
 {
   using namespace jlm::llvm;
@@ -50,7 +50,7 @@ LoadConversion()
   cfg->exit()->append_result(loadTac->result(0));
   cfg->exit()->append_result(loadTac->result(1));
 
-  auto f = function_node::create(ipgModule.ipgraph(), "f", functionType, linkage::external_linkage);
+  auto f = FunctionNode::create(ipgModule.ipgraph(), "f", functionType, linkage::external_linkage);
   f->add_cfg(std::move(cfg));
 
   print(ipgModule, stdout);
@@ -71,15 +71,13 @@ LoadConversion()
     assert(loadInstruction->isVolatile() == false);
     assert(loadInstruction->getAlign().value() == alignment);
   }
-
-  return 0;
 }
 
 JLM_UNIT_TEST_REGISTER(
     "jlm/llvm/backend/IpGraphToLlvmConverterTests-LoadConversion",
     LoadConversion)
 
-static int
+static void
 LoadVolatileConversion()
 {
   using namespace jlm::llvm;
@@ -116,7 +114,7 @@ LoadVolatileConversion()
   cfg->exit()->append_result(loadTac->result(1));
   cfg->exit()->append_result(loadTac->result(2));
 
-  auto f = function_node::create(ipgModule.ipgraph(), "f", functionType, linkage::external_linkage);
+  auto f = FunctionNode::create(ipgModule.ipgraph(), "f", functionType, linkage::external_linkage);
   f->add_cfg(std::move(cfg));
 
   print(ipgModule, stdout);
@@ -137,15 +135,13 @@ LoadVolatileConversion()
     assert(loadInstruction->isVolatile() == true);
     assert(loadInstruction->getAlign().value() == alignment);
   }
-
-  return 0;
 }
 
 JLM_UNIT_TEST_REGISTER(
     "jlm/llvm/backend/IpGraphToLlvmConverterTests-LoadVolatileConversion",
     LoadVolatileConversion)
 
-static int
+static void
 MemCpyConversion()
 {
   using namespace jlm::llvm;
@@ -182,7 +178,7 @@ MemCpyConversion()
   basicBlock->add_outedge(cfg->exit());
   cfg->exit()->append_result(memCpyTac->result(0));
 
-  auto f = function_node::create(ipgModule.ipgraph(), "f", functionType, linkage::external_linkage);
+  auto f = FunctionNode::create(ipgModule.ipgraph(), "f", functionType, linkage::external_linkage);
   f->add_cfg(std::move(cfg));
 
   print(ipgModule, stdout);
@@ -203,15 +199,13 @@ MemCpyConversion()
     assert(memCpyInstruction->getIntrinsicID() == ::llvm::Intrinsic::memcpy);
     assert(memCpyInstruction->isVolatile() == false);
   }
-
-  return 0;
 }
 
 JLM_UNIT_TEST_REGISTER(
     "jlm/llvm/backend/IpGraphToLlvmConverterTests-MemCpyConversion",
     MemCpyConversion)
 
-static int
+static void
 MemCpyVolatileConversion()
 {
   using namespace jlm::llvm;
@@ -253,7 +247,7 @@ MemCpyVolatileConversion()
   cfg->exit()->append_result(memCpyTac->result(0));
   cfg->exit()->append_result(memCpyTac->result(1));
 
-  auto f = function_node::create(ipgModule.ipgraph(), "f", functionType, linkage::external_linkage);
+  auto f = FunctionNode::create(ipgModule.ipgraph(), "f", functionType, linkage::external_linkage);
   f->add_cfg(std::move(cfg));
 
   print(ipgModule, stdout);
@@ -274,15 +268,13 @@ MemCpyVolatileConversion()
     assert(memCpyInstruction->getIntrinsicID() == ::llvm::Intrinsic::memcpy);
     assert(memCpyInstruction->isVolatile() == true);
   }
-
-  return 0;
 }
 
 JLM_UNIT_TEST_REGISTER(
     "jlm/llvm/backend/IpGraphToLlvmConverterTests-MemCpyVolatileConversion",
     MemCpyVolatileConversion)
 
-static int
+static void
 StoreConversion()
 {
   using namespace jlm::llvm;
@@ -315,7 +307,7 @@ StoreConversion()
   basicBlock->add_outedge(cfg->exit());
   cfg->exit()->append_result(storeTac->result(0));
 
-  auto f = function_node::create(ipgModule.ipgraph(), "f", functionType, linkage::external_linkage);
+  auto f = FunctionNode::create(ipgModule.ipgraph(), "f", functionType, linkage::external_linkage);
   f->add_cfg(std::move(cfg));
 
   print(ipgModule, stdout);
@@ -336,15 +328,13 @@ StoreConversion()
     assert(storeInstruction->isVolatile() == false);
     assert(storeInstruction->getAlign().value() == alignment);
   }
-
-  return 0;
 }
 
 JLM_UNIT_TEST_REGISTER(
     "jlm/llvm/backend/IpGraphToLlvmConverterTests-StoreConversion",
     StoreConversion)
 
-static int
+static void
 StoreVolatileConversion()
 {
   using namespace jlm::llvm;
@@ -384,7 +374,7 @@ StoreVolatileConversion()
   cfg->exit()->append_result(storeTac->result(0));
   cfg->exit()->append_result(storeTac->result(1));
 
-  auto f = function_node::create(ipgModule.ipgraph(), "f", functionType, linkage::external_linkage);
+  auto f = FunctionNode::create(ipgModule.ipgraph(), "f", functionType, linkage::external_linkage);
   f->add_cfg(std::move(cfg));
 
   print(ipgModule, stdout);
@@ -405,15 +395,13 @@ StoreVolatileConversion()
     assert(storeInstruction->isVolatile() == true);
     assert(storeInstruction->getAlign().value() == alignment);
   }
-
-  return 0;
 }
 
 JLM_UNIT_TEST_REGISTER(
     "jlm/llvm/backend/IpGraphToLlvmConverterTests-StoreVolatileConversion",
     StoreVolatileConversion)
 
-static int
+static void
 IntegerConstant()
 {
   const char * bs = "0100000000"
@@ -441,7 +429,7 @@ IntegerConstant()
   bb->add_outedge(cfg->exit());
   cfg->exit()->append_result(c);
 
-  auto f = function_node::create(im.ipgraph(), "f", ft, linkage::external_linkage);
+  auto f = FunctionNode::create(im.ipgraph(), "f", ft, linkage::external_linkage);
   f->add_cfg(std::move(cfg));
 
   print(im, stdout);
@@ -450,15 +438,13 @@ IntegerConstant()
   auto lm = IpGraphToLlvmConverter::CreateAndConvertModule(im, ctx);
 
   jlm::tests::print(*lm);
-
-  return 0;
 }
 
 JLM_UNIT_TEST_REGISTER(
     "jlm/llvm/backend/IpGraphToLlvmConverterTests-IntegerConstant",
     IntegerConstant)
 
-static int
+static void
 Malloc()
 {
   auto setup = []()
@@ -477,7 +463,7 @@ Malloc()
     auto size =
         cfg->entry()->append_argument(argument::create("size", jlm::rvsdg::bittype::Create(64)));
 
-    bb->append_last(malloc_op::create(size));
+    bb->append_last(MallocOperation::create(size));
 
     cfg->exit()->append_result(bb->last()->result(0));
     cfg->exit()->append_result(bb->last()->result(1));
@@ -485,7 +471,7 @@ Malloc()
     auto ft = jlm::rvsdg::FunctionType::Create(
         { jlm::rvsdg::bittype::Create(64) },
         { PointerType::Create(), MemoryStateType::Create() });
-    auto f = function_node::create(im->ipgraph(), "f", ft, linkage::external_linkage);
+    auto f = FunctionNode::create(im->ipgraph(), "f", ft, linkage::external_linkage);
     f->add_cfg(std::move(cfg));
 
     return im;
@@ -511,13 +497,11 @@ Malloc()
   jlm::tests::print(*lm);
 
   verify(*lm);
-
-  return 0;
 }
 
 JLM_UNIT_TEST_REGISTER("jlm/llvm/backend/IpGraphToLlvmConverterTests-Malloc", Malloc)
 
-static int
+static void
 Free()
 {
   auto setup = []()
@@ -533,7 +517,7 @@ Free()
     auto ft = jlm::rvsdg::FunctionType::Create(
         { PointerType::Create(), MemoryStateType::Create(), IOStateType::Create() },
         { MemoryStateType::Create(), IOStateType::Create() });
-    auto f = function_node::create(ipgmod->ipgraph(), "f", ft, linkage::external_linkage);
+    auto f = FunctionNode::create(ipgmod->ipgraph(), "f", ft, linkage::external_linkage);
 
     auto cfg = ControlFlowGraph::create(*ipgmod);
     auto arg0 = cfg->entry()->append_argument(argument::create("pointer", pt));
@@ -574,13 +558,11 @@ Free()
   jlm::tests::print(*llvmmod);
 
   verify(*llvmmod);
-
-  return 0;
 }
 
 JLM_UNIT_TEST_REGISTER("jlm/llvm/backend/IpGraphToLlvmConverterTests-Free", Free)
 
-static int
+static void
 IgnoreMemoryState()
 {
   using namespace jlm::rvsdg;
@@ -600,25 +582,23 @@ IgnoreMemoryState()
   cfg->exit()->append_result(s1);
 
   auto ft = FunctionType::Create({}, { mt });
-  auto f = function_node::create(m.ipgraph(), "f", ft, linkage::external_linkage);
+  auto f = FunctionNode::create(m.ipgraph(), "f", ft, linkage::external_linkage);
   f->add_cfg(std::move(cfg));
 
   llvm::LLVMContext ctx;
   IpGraphToLlvmConverter::CreateAndConvertModule(m, ctx);
-
-  return 0;
 }
 
 JLM_UNIT_TEST_REGISTER(
     "jlm/llvm/backend/IpGraphToLlvmConverterTests-IgnoreMemoryState",
     IgnoreMemoryState)
 
-static int
+static void
 SelectWithState()
 {
   using namespace jlm::llvm;
 
-  auto vt = jlm::tests::valuetype::Create();
+  auto vt = jlm::tests::ValueType::Create();
   auto pt = PointerType::Create();
   auto mt = MemoryStateType::Create();
   InterProceduralGraphModule m(jlm::util::FilePath(""), "", "");
@@ -641,22 +621,20 @@ SelectWithState()
   auto ft = jlm::rvsdg::FunctionType::Create(
       { jlm::rvsdg::bittype::Create(1), MemoryStateType::Create(), MemoryStateType::Create() },
       { MemoryStateType::Create(), MemoryStateType::Create() });
-  auto f = function_node::create(m.ipgraph(), "f", ft, linkage::external_linkage);
+  auto f = FunctionNode::create(m.ipgraph(), "f", ft, linkage::external_linkage);
   f->add_cfg(std::move(cfg));
 
   print(m, stdout);
 
   llvm::LLVMContext ctx;
   IpGraphToLlvmConverter::CreateAndConvertModule(m, ctx);
-
-  return 0;
 }
 
 JLM_UNIT_TEST_REGISTER(
     "jlm/llvm/backend/IpGraphToLlvmConverterTests-SelectWithState",
     SelectWithState)
 
-static int
+static void
 TestAttributeKindConversion()
 {
   typedef jlm::llvm::Attribute::kind ak;
@@ -667,8 +645,6 @@ TestAttributeKindConversion()
   {
     jlm::llvm::IpGraphToLlvmConverter::ConvertAttributeKind(static_cast<ak>(attributeKind));
   }
-
-  return 0;
 }
 
 JLM_UNIT_TEST_REGISTER(

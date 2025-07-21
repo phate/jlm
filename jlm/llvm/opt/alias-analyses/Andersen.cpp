@@ -615,7 +615,7 @@ Andersen::AnalyzeSimpleNode(const rvsdg::SimpleNode & node)
 
   if (is<AllocaOperation>(op))
     AnalyzeAlloca(node);
-  else if (is<malloc_op>(op))
+  else if (is<MallocOperation>(op))
     AnalyzeMalloc(node);
   else if (is<LoadOperation>(&node))
     AnalyzeLoad(node);
@@ -625,7 +625,7 @@ Andersen::AnalyzeSimpleNode(const rvsdg::SimpleNode & node)
     AnalyzeCall(node);
   else if (is<GetElementPtrOperation>(op))
     AnalyzeGep(node);
-  else if (is<bitcast_op>(op))
+  else if (is<BitCastOperation>(op))
     AnalyzeBitcast(node);
   else if (is<IntegerToPointerOperation>(op))
     AnalyzeBits2ptr(node);
@@ -643,9 +643,9 @@ Andersen::AnalyzeSimpleNode(const rvsdg::SimpleNode & node)
     AnalyzeConstantStruct(node);
   else if (is<ConstantAggregateZeroOperation>(op))
     AnalyzeConstantAggregateZero(node);
-  else if (is<ExtractValue>(op))
+  else if (is<ExtractValueOperation>(op))
     AnalyzeExtractValue(node);
-  else if (is<valist_op>(op))
+  else if (is<VariadicArgumentListOperation>(op))
     AnalyzeValist(node);
   else if (is<PointerToFunctionOperation>(op))
     AnalyzePointerToFunction(node);
@@ -653,7 +653,7 @@ Andersen::AnalyzeSimpleNode(const rvsdg::SimpleNode & node)
     AnalyzeFunctionToPointer(node);
   else if (is<IOBarrierOperation>(op))
     AnalyzeIOBarrier(node);
-  else if (is<FreeOperation>(op) || is<ptrcmp_op>(op))
+  else if (is<FreeOperation>(op) || is<PtrCmpOperation>(op))
   {
     // These operations take pointers as input, but do not affect any points-to sets
   }
@@ -683,7 +683,7 @@ Andersen::AnalyzeAlloca(const rvsdg::SimpleNode & node)
 void
 Andersen::AnalyzeMalloc(const rvsdg::SimpleNode & node)
 {
-  JLM_ASSERT(is<malloc_op>(&node));
+  JLM_ASSERT(is<MallocOperation>(&node));
 
   const auto & outputRegister = *node.output(0);
   const auto outputRegisterPO = Set_->CreateRegisterPointerObject(outputRegister);
@@ -775,7 +775,7 @@ Andersen::AnalyzeGep(const rvsdg::SimpleNode & node)
 void
 Andersen::AnalyzeBitcast(const rvsdg::SimpleNode & node)
 {
-  JLM_ASSERT(is<bitcast_op>(&node));
+  JLM_ASSERT(is<BitCastOperation>(&node));
 
   const auto & inputRegister = *node.input(0)->origin();
   const auto & outputRegister = *node.output(0);
@@ -927,7 +927,7 @@ Andersen::AnalyzeConstantAggregateZero(const rvsdg::SimpleNode & node)
 void
 Andersen::AnalyzeExtractValue(const rvsdg::SimpleNode & node)
 {
-  JLM_ASSERT(is<ExtractValue>(&node));
+  JLM_ASSERT(is<ExtractValueOperation>(&node));
 
   const auto & result = *node.output(0);
   if (!IsOrContainsPointerType(*result.Type()))
@@ -942,7 +942,7 @@ Andersen::AnalyzeExtractValue(const rvsdg::SimpleNode & node)
 void
 Andersen::AnalyzeValist(const rvsdg::SimpleNode & node)
 {
-  JLM_ASSERT(is<valist_op>(&node));
+  JLM_ASSERT(is<VariadicArgumentListOperation>(&node));
 
   // Members of the valist are extracted using the va_arg macro, which loads from the va_list struct
   // on the stack. This struct will be marked as escaped from the call to va_start, and thus point
@@ -1010,7 +1010,7 @@ Andersen::AnalyzeStructuralNode(const rvsdg::StructuralNode & node)
 {
   if (const auto lambdaNode = dynamic_cast<const rvsdg::LambdaNode *>(&node))
     AnalyzeLambda(*lambdaNode);
-  else if (const auto deltaNode = dynamic_cast<const delta::node *>(&node))
+  else if (const auto deltaNode = dynamic_cast<const DeltaNode *>(&node))
     AnalyzeDelta(*deltaNode);
   else if (const auto phiNode = dynamic_cast<const rvsdg::PhiNode *>(&node))
     AnalyzePhi(*phiNode);
@@ -1056,16 +1056,16 @@ Andersen::AnalyzeLambda(const rvsdg::LambdaNode & lambda)
 }
 
 void
-Andersen::AnalyzeDelta(const delta::node & delta)
+Andersen::AnalyzeDelta(const DeltaNode & delta)
 {
   // Handle context variables
-  for (auto & cv : delta.ctxvars())
+  for (auto & cv : delta.GetContextVars())
   {
-    if (!IsOrContainsPointerType(*cv.Type()))
+    if (!IsOrContainsPointerType(*cv.input->Type()))
       continue;
 
-    auto & inputRegister = *cv.origin();
-    auto & argumentRegister = *cv.argument();
+    auto & inputRegister = *cv.input->origin();
+    auto & argumentRegister = *cv.inner;
     const auto inputRegisterPO = Set_->GetRegisterPointerObject(inputRegister);
     Set_->MapRegisterToExistingPointerObject(argumentRegister, inputRegisterPO);
   }
@@ -1073,10 +1073,10 @@ Andersen::AnalyzeDelta(const delta::node & delta)
   AnalyzeRegion(*delta.subregion());
 
   // Get the result register from the subregion
-  auto & resultRegister = *delta.result()->origin();
+  auto & resultRegister = *delta.result().origin();
 
   // If the type of the delta can point, the analysis should track its set of possible pointees
-  bool canPoint = IsOrContainsPointerType(delta.type());
+  bool canPoint = IsOrContainsPointerType(*delta.Type());
 
   // Create a global memory object representing the global variable
   const auto globalPO = Set_->CreateGlobalMemoryObject(delta, canPoint);
@@ -1089,7 +1089,7 @@ Andersen::AnalyzeDelta(const delta::node & delta)
   }
 
   // Finally create a Register PointerObject for the delta's output, pointing to the memory object
-  auto & outputRegister = *delta.output();
+  auto & outputRegister = delta.output();
   const auto outputRegisterPO = Set_->CreateRegisterPointerObject(outputRegister);
   Constraints_->AddPointerPointeeConstraint(outputRegisterPO, globalPO);
 }

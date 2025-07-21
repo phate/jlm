@@ -24,7 +24,7 @@ test_simple()
 {
   using namespace jlm::llvm;
 
-  auto vt = jlm::tests::valuetype::Create();
+  auto vt = jlm::tests::ValueType::Create();
 
   RvsdgModule rm(jlm::util::FilePath(""), "", "");
   auto & graph = rm.Rvsdg();
@@ -52,7 +52,7 @@ test_simple()
   GraphExport::Create(*b4, "b4");
 
   //	jlm::rvsdg::view(graph.GetRootRegion(), stdout);
-  jlm::llvm::cne cne;
+  jlm::llvm::CommonNodeElimination cne;
   cne.Run(rm, statisticsCollector);
   //	jlm::rvsdg::view(graph.GetRootRegion(), stdout);
 
@@ -66,7 +66,7 @@ test_gamma()
 {
   using namespace jlm::llvm;
 
-  auto vt = jlm::tests::valuetype::Create();
+  auto vt = jlm::tests::ValueType::Create();
   auto ct = jlm::rvsdg::ControlType::Create(2);
 
   RvsdgModule rm(jlm::util::FilePath(""), "", "");
@@ -105,7 +105,7 @@ test_gamma()
   GraphExport::Create(*gamma->output(2), "y");
 
   //	jlm::rvsdg::view(graph.GetRootRegion(), stdout);
-  jlm::llvm::cne cne;
+  jlm::llvm::CommonNodeElimination cne;
   cne.Run(rm, statisticsCollector);
   //	jlm::rvsdg::view(graph.GetRootRegion(), stdout);
 
@@ -130,7 +130,7 @@ test_theta()
 {
   using namespace jlm::llvm;
 
-  auto vt = jlm::tests::valuetype::Create();
+  auto vt = jlm::tests::ValueType::Create();
   auto ct = jlm::rvsdg::ControlType::Create(2);
 
   RvsdgModule rm(jlm::util::FilePath(""), "", "");
@@ -162,7 +162,7 @@ test_theta()
   GraphExport::Create(*lv4.output, "lv4");
 
   //	jlm::rvsdg::view(graph.GetRootRegion(), stdout);
-  jlm::llvm::cne cne;
+  jlm::llvm::CommonNodeElimination cne;
   cne.Run(rm, statisticsCollector);
   //	jlm::rvsdg::view(graph.GetRootRegion(), stdout);
 
@@ -181,7 +181,7 @@ test_theta2()
 {
   using namespace jlm::llvm;
 
-  auto vt = jlm::tests::valuetype::Create();
+  auto vt = jlm::tests::ValueType::Create();
   auto ct = jlm::rvsdg::ControlType::Create(2);
 
   RvsdgModule rm(jlm::util::FilePath(""), "", "");
@@ -210,7 +210,7 @@ test_theta2()
   GraphExport::Create(*lv3.output, "lv3");
 
   //	jlm::rvsdg::view(graph, stdout);
-  jlm::llvm::cne cne;
+  jlm::llvm::CommonNodeElimination cne;
   cne.Run(rm, statisticsCollector);
   //	jlm::rvsdg::view(graph, stdout);
 
@@ -223,7 +223,7 @@ test_theta3()
 {
   using namespace jlm::llvm;
 
-  auto vt = jlm::tests::valuetype::Create();
+  auto vt = jlm::tests::ValueType::Create();
   auto ct = jlm::rvsdg::ControlType::Create(2);
 
   RvsdgModule rm(jlm::util::FilePath(""), "", "");
@@ -248,9 +248,9 @@ test_theta3()
   auto p4 = theta2->AddLoopVar(lv4.pre);
   theta2->set_predicate(p.pre);
 
-  auto u1 = jlm::tests::test_op::create(r1, { p2.output }, { vt });
-  auto b1 = jlm::tests::test_op::create(r1, { p3.output, p3.output }, { vt });
-  auto u2 = jlm::tests::test_op::create(r1, { p4.output }, { vt });
+  auto u1 = jlm::tests::TestOperation::create(r1, { p2.output }, { vt });
+  auto b1 = jlm::tests::TestOperation::create(r1, { p3.output, p3.output }, { vt });
+  auto u2 = jlm::tests::TestOperation::create(r1, { p4.output }, { vt });
 
   lv2.post->divert_to(u1->output(0));
   lv3.post->divert_to(b1->output(0));
@@ -263,7 +263,7 @@ test_theta3()
   GraphExport::Create(*lv4.output, "lv4");
 
   //	jlm::rvsdg::view(graph, stdout);
-  jlm::llvm::cne cne;
+  jlm::llvm::CommonNodeElimination cne;
   cne.Run(rm, statisticsCollector);
   //	jlm::rvsdg::view(graph, stdout);
 
@@ -280,7 +280,7 @@ test_theta4()
 {
   using namespace jlm::llvm;
 
-  auto vt = jlm::tests::valuetype::Create();
+  auto vt = jlm::tests::ValueType::Create();
   auto ct = jlm::rvsdg::ControlType::Create(2);
 
   RvsdgModule rm(jlm::util::FilePath(""), "", "");
@@ -301,8 +301,8 @@ test_theta4()
   auto lv6 = theta->AddLoopVar(x);
   auto lv7 = theta->AddLoopVar(x);
 
-  auto u1 = jlm::tests::test_op::create(region, { lv2.pre }, { vt });
-  auto b1 = jlm::tests::test_op::create(region, { lv3.pre, lv3.pre }, { vt });
+  auto u1 = jlm::tests::TestOperation::create(region, { lv2.pre }, { vt });
+  auto b1 = jlm::tests::TestOperation::create(region, { lv3.pre, lv3.pre }, { vt });
 
   lv2.post->divert_to(lv4.pre);
   lv3.post->divert_to(lv5.pre);
@@ -317,7 +317,7 @@ test_theta4()
   GraphExport::Create(*theta->output(4), "lv5");
 
   //	jlm::rvsdg::view(graph, stdout);
-  jlm::llvm::cne cne;
+  jlm::llvm::CommonNodeElimination cne;
   cne.Run(rm, statisticsCollector);
   //	jlm::rvsdg::view(graph, stdout);
 
@@ -331,7 +331,7 @@ test_theta5()
 {
   using namespace jlm::llvm;
 
-  auto vt = jlm::tests::valuetype::Create();
+  auto vt = jlm::tests::ValueType::Create();
   auto ct = jlm::rvsdg::ControlType::Create(2);
 
   RvsdgModule rm(jlm::util::FilePath(""), "", "");
@@ -361,7 +361,7 @@ test_theta5()
   auto & ex4 = GraphExport::Create(*theta->output(4), "lv4");
 
   //	jlm::rvsdg::view(graph, stdout);
-  jlm::llvm::cne cne;
+  jlm::llvm::CommonNodeElimination cne;
   cne.Run(rm, statisticsCollector);
   //	jlm::rvsdg::view(graph, stdout);
 
@@ -376,7 +376,7 @@ test_lambda()
 {
   using namespace jlm::llvm;
 
-  auto vt = jlm::tests::valuetype::Create();
+  auto vt = jlm::tests::ValueType::Create();
   auto ft = jlm::rvsdg::FunctionType::Create({ vt, vt }, { vt });
 
   RvsdgModule rm(jlm::util::FilePath(""), "", "");
@@ -398,7 +398,7 @@ test_lambda()
   GraphExport::Create(*output, "f");
 
   //	jlm::rvsdg::view(graph.GetRootRegion(), stdout);
-  jlm::llvm::cne cne;
+  jlm::llvm::CommonNodeElimination cne;
   cne.Run(rm, statisticsCollector);
   //	jlm::rvsdg::view(graph.GetRootRegion(), stdout);
 
@@ -411,7 +411,7 @@ test_phi()
 {
   using namespace jlm::llvm;
 
-  auto vt = jlm::tests::valuetype::Create();
+  auto vt = jlm::tests::ValueType::Create();
   auto ft = jlm::rvsdg::FunctionType::Create({ vt, vt }, { vt });
 
   RvsdgModule rm(jlm::util::FilePath(""), "", "");
@@ -450,7 +450,7 @@ test_phi()
   GraphExport::Create(*phi->output(1), "f2");
 
   //	jlm::rvsdg::view(graph.GetRootRegion(), stdout);
-  jlm::llvm::cne cne;
+  jlm::llvm::CommonNodeElimination cne;
   cne.Run(rm, statisticsCollector);
   //	jlm::rvsdg::view(graph.GetRootRegion(), stdout);
 
@@ -459,7 +459,7 @@ test_phi()
       == jlm::rvsdg::AssertGetOwnerNode<jlm::rvsdg::LambdaNode>(*f2).input(0)->origin());
 }
 
-static int
+static void
 verify()
 {
   test_simple();
@@ -471,8 +471,6 @@ verify()
   test_theta5();
   test_lambda();
   test_phi();
-
-  return 0;
 }
 
 JLM_UNIT_TEST_REGISTER("jlm/llvm/opt/test-cne", verify)

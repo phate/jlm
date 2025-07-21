@@ -20,12 +20,10 @@ test_equality()
   assert(c2 != c3);
 }
 
-static int
+static void
 test()
 {
   test_equality();
-
-  return 0;
 }
 
 JLM_UNIT_TEST_REGISTER("jlm/llvm/ir/operators/test-ConstantFP", test)

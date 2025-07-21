@@ -15,10 +15,10 @@ namespace jlm::llvm
 /**
  * \brief Function Inlining
  */
-class fctinline final : public rvsdg::Transformation
+class FunctionInlining final : public rvsdg::Transformation
 {
 public:
-  virtual ~fctinline();
+  ~FunctionInlining() noexcept override;
 
   void
   Run(rvsdg::RvsdgModule & module, util::StatisticsCollector & statisticsCollector) override;

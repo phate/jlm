@@ -15,14 +15,14 @@ test_node_copy()
   using namespace jlm::rvsdg;
   using namespace jlm::tests;
 
-  auto stype = jlm::tests::statetype::Create();
-  auto vtype = jlm::tests::valuetype::Create();
+  auto stype = jlm::tests::StateType::Create();
+  auto vtype = jlm::tests::ValueType::Create();
 
   Graph graph;
   auto s = &jlm::tests::GraphImport::Create(graph, stype, "");
   auto v = &jlm::tests::GraphImport::Create(graph, vtype, "");
 
-  auto n1 = jlm::tests::structural_node::create(&graph.GetRootRegion(), 3);
+  auto n1 = TestStructuralNode::create(&graph.GetRootRegion(), 3);
   auto i1 = StructuralInput::create(n1, s, stype);
   auto i2 = StructuralInput::create(n1, v, vtype);
   auto o1 = StructuralOutput::create(n1, stype);
@@ -31,8 +31,8 @@ test_node_copy()
   auto & a1 = TestGraphArgument::Create(*n1->subregion(0), i1, stype);
   auto & a2 = TestGraphArgument::Create(*n1->subregion(0), i2, vtype);
 
-  auto n2 = jlm::tests::test_op::create(n1->subregion(0), { &a1 }, { stype });
-  auto n3 = jlm::tests::test_op::create(n1->subregion(0), { &a2 }, { vtype });
+  auto n2 = TestOperation::create(n1->subregion(0), { &a1 }, { stype });
+  auto n3 = TestOperation::create(n1->subregion(0), { &a2 }, { vtype });
 
   TestGraphResult::Create(*n2->output(0), o1);
   TestGraphResult::Create(*n3->output(0), o2);
@@ -94,14 +94,15 @@ test_node_copy()
 static inline void
 test_node_depth()
 {
-  auto vt = jlm::tests::valuetype::Create();
+  auto vt = jlm::tests::ValueType::Create();
 
   jlm::rvsdg::Graph graph;
   auto x = &jlm::tests::GraphImport::Create(graph, vt, "x");
 
-  auto null = jlm::tests::test_op::create(&graph.GetRootRegion(), {}, { vt });
-  auto bin = jlm::tests::test_op::create(&graph.GetRootRegion(), { null->output(0), x }, { vt });
-  auto un = jlm::tests::test_op::create(&graph.GetRootRegion(), { bin->output(0) }, { vt });
+  auto null = jlm::tests::TestOperation::create(&graph.GetRootRegion(), {}, { vt });
+  auto bin =
+      jlm::tests::TestOperation::create(&graph.GetRootRegion(), { null->output(0), x }, { vt });
+  auto un = jlm::tests::TestOperation::create(&graph.GetRootRegion(), { bin->output(0) }, { vt });
 
   jlm::tests::GraphExport::Create(*un->output(0), "x");
 
@@ -127,15 +128,15 @@ TestRemoveOutputsWhere()
   // Arrange
   Graph rvsdg;
 
-  auto valueType = jlm::tests::valuetype::Create();
-  auto & node1 = CreateOpNode<jlm::tests::test_op>(
+  auto valueType = jlm::tests::ValueType::Create();
+  auto & node1 = CreateOpNode<jlm::tests::TestOperation>(
       rvsdg.GetRootRegion(),
       std::vector<std::shared_ptr<const Type>>(),
       std::vector<std::shared_ptr<const Type>>{ valueType, valueType, valueType });
   auto output0 = node1.output(0);
   auto output2 = node1.output(2);
 
-  auto & node2 = CreateOpNode<jlm::tests::test_op>(
+  auto & node2 = CreateOpNode<jlm::tests::TestOperation>(
       std::vector<Output *>({ output0, output2 }),
       std::vector<std::shared_ptr<const Type>>{ valueType, valueType },
       std::vector<std::shared_ptr<const Type>>{ valueType, valueType });
@@ -195,10 +196,10 @@ TestRemoveInputsWhere()
 
   // Arrange
   jlm::rvsdg::Graph rvsdg;
-  auto valueType = jlm::tests::valuetype::Create();
+  auto valueType = jlm::tests::ValueType::Create();
   auto x = &jlm::tests::GraphImport::Create(rvsdg, valueType, "x");
 
-  auto & node = CreateOpNode<jlm::tests::test_op>(
+  auto & node = CreateOpNode<jlm::tests::TestOperation>(
       { x, x, x },
       std::vector<std::shared_ptr<const Type>>{ valueType, valueType, valueType },
       std::vector<std::shared_ptr<const Type>>{});
@@ -223,15 +224,13 @@ TestRemoveInputsWhere()
   assert(node.ninputs() == 0);
 }
 
-static int
+static void
 test_nodes()
 {
   test_node_copy();
   test_node_depth();
   TestRemoveOutputsWhere();
   TestRemoveInputsWhere();
-
-  return 0;
 }
 
 JLM_UNIT_TEST_REGISTER("jlm/rvsdg/test-nodes", test_nodes)

@@ -14,7 +14,7 @@
 #include <jlm/llvm/opt/pull.hpp>
 #include <jlm/util/Statistics.hpp>
 
-static const auto vt = jlm::tests::valuetype::Create();
+static const auto vt = jlm::tests::ValueType::Create();
 static jlm::util::StatisticsCollector statisticsCollector;
 
 static inline void
@@ -23,9 +23,9 @@ test_pullin_top()
   using namespace jlm::llvm;
 
   auto ct = jlm::rvsdg::ControlType::Create(2);
-  jlm::tests::test_op uop({ vt }, { vt });
-  jlm::tests::test_op bop({ vt, vt }, { vt });
-  jlm::tests::test_op cop({ ct, vt }, { ct });
+  jlm::tests::TestOperation uop({ vt }, { vt });
+  jlm::tests::TestOperation bop({ vt, vt }, { vt });
+  jlm::tests::TestOperation cop({ ct, vt }, { ct });
 
   RvsdgModule rm(jlm::util::FilePath(""), "", "");
   auto & graph = rm.Rvsdg();
@@ -59,7 +59,7 @@ test_pullin_top()
 static inline void
 test_pullin_bottom()
 {
-  auto vt = jlm::tests::valuetype::Create();
+  auto vt = jlm::tests::ValueType::Create();
   auto ct = jlm::rvsdg::ControlType::Create(2);
 
   jlm::rvsdg::Graph graph;
@@ -116,7 +116,7 @@ test_pull()
   GraphExport::Create(*g1xv.output, "");
 
   jlm::rvsdg::view(graph, stdout);
-  jlm::llvm::pullin pullin;
+  jlm::llvm::NodeSinking pullin;
   pullin.Run(rm, statisticsCollector);
   graph.PruneNodes();
   jlm::rvsdg::view(graph, stdout);
@@ -124,15 +124,13 @@ test_pull()
   assert(graph.GetRootRegion().nnodes() == 1);
 }
 
-static int
+static void
 verify()
 {
   test_pullin_top();
   test_pullin_bottom();
 
   test_pull();
-
-  return 0;
 }
 
 JLM_UNIT_TEST_REGISTER("jlm/llvm/opt/test-pull", verify)

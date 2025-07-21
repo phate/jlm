@@ -40,7 +40,7 @@ strongconnect(
   if (map[node].second == map[node].first)
   {
     std::unordered_set<const jlm::llvm::InterProceduralGraphNode *> scc;
-    const jlm::llvm::InterProceduralGraphNode * w;
+    const jlm::llvm::InterProceduralGraphNode * w = nullptr;
     do
     {
       w = node_stack.back();
@@ -93,43 +93,40 @@ InterProceduralGraph::find(const std::string & name) const noexcept
 
 InterProceduralGraphNode::~InterProceduralGraphNode() noexcept = default;
 
-/* function node */
-
-function_node::~function_node()
-{}
+FunctionNode::~FunctionNode() noexcept = default;
 
 const std::string &
-function_node::name() const noexcept
+FunctionNode::name() const noexcept
 {
   return name_;
 }
 
 const jlm::rvsdg::Type &
-function_node::type() const noexcept
+FunctionNode::type() const noexcept
 {
   return *FunctionType_;
 }
 
 std::shared_ptr<const jlm::rvsdg::Type>
-function_node::Type() const
+FunctionNode::Type() const
 {
   return FunctionType_;
 }
 
 const llvm::linkage &
-function_node::linkage() const noexcept
+FunctionNode::linkage() const noexcept
 {
   return linkage_;
 }
 
 bool
-function_node::hasBody() const noexcept
+FunctionNode::hasBody() const noexcept
 {
   return cfg() != nullptr;
 }
 
 void
-function_node::add_cfg(std::unique_ptr<llvm::ControlFlowGraph> cfg)
+FunctionNode::add_cfg(std::unique_ptr<ControlFlowGraph> cfg)
 {
   if (cfg->fcttype() != fcttype())
     throw util::error("CFG does not match the function node's type.");
@@ -137,43 +134,37 @@ function_node::add_cfg(std::unique_ptr<llvm::ControlFlowGraph> cfg)
   cfg_ = std::move(cfg);
 }
 
-/* function variable */
+fctvariable::~fctvariable() noexcept = default;
 
-fctvariable::~fctvariable()
-{}
-
-/* data node */
-
-data_node::~data_node()
-{}
+DataNode::~DataNode() noexcept = default;
 
 const std::string &
-data_node::name() const noexcept
+DataNode::name() const noexcept
 {
   return name_;
 }
 
 const PointerType &
-data_node::type() const noexcept
+DataNode::type() const noexcept
 {
   static PointerType pointerType;
   return pointerType;
 }
 
 std::shared_ptr<const rvsdg::Type>
-data_node::Type() const
+DataNode::Type() const
 {
   return PointerType::Create();
 }
 
 const llvm::linkage &
-data_node::linkage() const noexcept
+DataNode::linkage() const noexcept
 {
   return linkage_;
 }
 
 bool
-data_node::hasBody() const noexcept
+DataNode::hasBody() const noexcept
 {
   return initialization() != nullptr;
 }

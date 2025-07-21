@@ -48,9 +48,9 @@ private:
       return;
     }
     visited.insert(op);
-    for (auto user : *op)
+    for (auto & user : op->Users())
     {
-      if (auto si = dynamic_cast<rvsdg::SimpleInput *>(user))
+      if (auto si = dynamic_cast<rvsdg::SimpleInput *>(&user))
       {
         auto simplenode = si->node();
         if (dynamic_cast<const jlm::llvm::StoreNonVolatileOperation *>(&simplenode->GetOperation()))
@@ -75,14 +75,14 @@ private:
           }
         }
       }
-      else if (auto sti = dynamic_cast<rvsdg::StructuralInput *>(user))
+      else if (auto sti = dynamic_cast<rvsdg::StructuralInput *>(&user))
       {
         for (auto & arg : sti->arguments)
         {
           trace(&arg);
         }
       }
-      else if (auto r = dynamic_cast<rvsdg::RegionResult *>(user))
+      else if (auto r = dynamic_cast<rvsdg::RegionResult *>(&user))
       {
         if (auto ber = dynamic_cast<backedge_result *>(r))
         {
@@ -143,8 +143,8 @@ alloca_conv(rvsdg::Region * region)
       // detect loads and stores attached to alloca
       TraceAllocaUses ta(node->output(0));
       // create memory + response
-      auto mem_outs = local_mem_op::create(at, node->region());
-      auto resp_outs = local_mem_resp_op::create(*mem_outs[0], ta.load_nodes.size());
+      auto mem_outs = LocalMemoryOperation::create(at, node->region());
+      auto resp_outs = LocalMemoryResponseOperation::create(*mem_outs[0], ta.load_nodes.size());
       std::cout << "alloca converted " << at->debug_string() << std::endl;
       // replace gep outputs (convert pointer to index calculation)
       // replace loads and stores
@@ -159,7 +159,7 @@ alloca_conv(rvsdg::Region * region)
         {
           states.push_back(l->input(i)->origin());
         }
-        auto load_outs = local_load_op::create(*index, states, *response);
+        auto load_outs = LocalLoadOperation::create(*index, states, *response);
         auto nn = dynamic_cast<jlm::rvsdg::node_output *>(load_outs[0])->node();
         for (size_t i = 0; i < l->noutputs(); ++i)
         {
@@ -178,7 +178,7 @@ alloca_conv(rvsdg::Region * region)
         {
           states.push_back(s->input(i)->origin());
         }
-        auto store_outs = local_store_op::create(*index, *s->input(1)->origin(), states);
+        auto store_outs = LocalStoreOperation::create(*index, *s->input(1)->origin(), states);
         auto nn = dynamic_cast<jlm::rvsdg::node_output *>(store_outs[0])->node();
         for (size_t i = 0; i < s->noutputs(); ++i)
         {
@@ -193,18 +193,18 @@ alloca_conv(rvsdg::Region * region)
       // TODO: ensure that loads/stores are either alloca or global, never both
       // TODO: ensure that loads/stores have same width and alignment and geps can be merged -
       // otherwise slice? create request
-      auto req_outs = local_mem_req_op::create(*mem_outs[1], load_addrs, store_operands);
+      auto req_outs = LocalMemoryRequestOperation::create(*mem_outs[1], load_addrs, store_operands);
 
       // remove alloca from memstate merge
       // TODO: handle general case of other nodes getting state edge without a merge
       JLM_ASSERT(node->output(1)->nusers() == 1);
-      auto merge_in = *node->output(1)->begin();
-      auto merge_node = rvsdg::TryGetOwnerNode<rvsdg::Node>(*merge_in);
+      auto & merge_in = *node->output(1)->Users().begin();
+      auto merge_node = rvsdg::TryGetOwnerNode<rvsdg::Node>(merge_in);
       if (dynamic_cast<const llvm::MemoryStateMergeOperation *>(&merge_node->GetOperation()))
       {
         // merge after alloca -> remove merge
         JLM_ASSERT(merge_node->ninputs() == 2);
-        auto other_index = merge_in->index() ? 0 : 1;
+        auto other_index = merge_in.index() ? 0 : 1;
         merge_node->output(0)->divert_users(merge_node->input(other_index)->origin());
         jlm::rvsdg::remove(merge_node);
       }

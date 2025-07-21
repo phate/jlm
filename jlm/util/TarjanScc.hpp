@@ -25,24 +25,26 @@ namespace jlm::util
  * the original graph contains a path from A to B, and from B to A.
  *
  * In addition to assigning SCCs, a partial reverse topological ordering of nodes is returned.
- * The ordering is a list of all root nodes, sorted by ascending SCC index.
+ * The ordering is a list of all root nodes, ordered by non-descending SCC index.
  * Within a single SCC, the ordering of nodes is arbitrary.
  *
- * The given unificationRoot function is used to only visit nodes that are their own root.
- * If a node reports to have an outgoing edge -> A, and A's root is B, the edge is instead -> B.
+ * This function also supports graphs where nodes have been unified.
+ * Within such a unification, one node is the root, while all other nodes are aliases for the root.
+ * The given \p unificationRoot function should return the root for any node.
+ * Only root nodes will be queried about their successors.
  * Nodes that are not roots will not be given an sccIndex, and not be included in topological order.
  *
  * @tparam NodeType the integer type used to index nodes
  * @tparam UnificationRootFunctor a functor with the signature (NodeType) -> NodeType
  * @tparam SuccessorFunctor a functor with the signature (NodeType) -> iterable<NodeType>
- * @param numNodes the number of nodes, including nodes that are in unifications.
+ * @param numNodes the total number of nodes, including non-root nodes in unifications.
  *        Nodes are indexed from 0 to numNodes-1
  * @param unificationRoot an instance of the UnificationRootFunctor
- * @param successors an instance of the SuccessorFunctor
+ * @param successors an instance of the SuccessorFunctor, returning outgoing edges from a root node.
  * @param sccIndex output vector to be filled with the index of the SCC each node ends up in.
  *        Only nodes that are roots will be given an sccIndex.
  * @param reverseTopologicalOrder output vector filled with root nodes in reverse topological order.
- *        In other words, a list of root nodes sorted by ascending sccIndex.
+ *        In other words, a list of all root nodes, ordered with non-descending sccIndex.
  * @return the number of SCCs in the graph. One more than the largest SCC index
  */
 template<typename NodeType, typename UnificationRootFunctor, typename SuccessorFunctor>
@@ -152,6 +154,46 @@ FindStronglyConnectedComponents(
   JLM_ASSERT(sccStack.empty());
 
   return sccsFinished;
+}
+
+/**
+ * Implementation of Tarjan's algorithm for finding strongly connected components in linear time.
+ * This overload is for use cases where node unification is not used (every node is its own root).
+ * This means every node will be given an sccIndex,
+ * and all nodes will be included in the reverse topological order.
+ *
+ * @see FindStronglyConnectedComponents for details.
+ *
+ * @tparam NodeType the integer type used to index nodes
+ * @tparam SuccessorFunctor a functor with the signature (NodeType) -> iterable<NodeType>
+ * @param numNodes the number of nodes, indexed from 0 to numNodes - 1.
+ * @param successors a function providing the targets of all outgoing edges from a given node.
+ * @param sccIndex output vector to be filled with the index of the SCC each node ends up in.
+ * @param reverseTopologicalOrder output vector filled with nodes in reverse topological order.
+ * @return the number of SCCs in the graph. One more than the largest SCC index
+ */
+template<typename NodeType, typename SuccessorFunctor>
+NodeType
+FindStronglyConnectedComponents(
+    NodeType numNodes,
+    SuccessorFunctor & successors,
+    std::vector<NodeType> & sccIndex,
+    std::vector<NodeType> & reverseTopologicalOrder)
+{
+  const auto identity = [](NodeType n)
+  {
+    return n;
+  };
+
+  // Because all nodes are roots, we know how long this vector needs to be
+  reverseTopologicalOrder.reserve(numNodes);
+
+  return FindStronglyConnectedComponents(
+      numNodes,
+      identity,
+      successors,
+      sccIndex,
+      reverseTopologicalOrder);
 }
 
 }

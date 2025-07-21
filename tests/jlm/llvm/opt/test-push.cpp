@@ -16,8 +16,8 @@
 #include <jlm/llvm/opt/push.hpp>
 #include <jlm/util/Statistics.hpp>
 
-static const auto st = jlm::tests::statetype::Create();
-static const auto vt = jlm::tests::valuetype::Create();
+static const auto st = jlm::tests::StateType::Create();
+static const auto vt = jlm::tests::ValueType::Create();
 static jlm::util::StatisticsCollector statisticsCollector;
 
 static inline void
@@ -49,7 +49,7 @@ test_gamma()
   GraphExport::Create(*gamma->output(0), "x");
 
   //	jlm::rvsdg::view(graph.GetRootRegion(), stdout);
-  jlm::llvm::pushout pushout;
+  jlm::llvm::NodeHoisting pushout;
   pushout.Run(rm, statisticsCollector);
   //	jlm::rvsdg::view(graph.GetRootRegion(), stdout);
 
@@ -63,9 +63,9 @@ test_theta()
 
   auto ct = jlm::rvsdg::ControlType::Create(2);
 
-  jlm::tests::test_op nop({}, { vt });
-  jlm::tests::test_op bop({ vt, vt }, { vt });
-  jlm::tests::test_op sop({ vt, st }, { st });
+  jlm::tests::TestOperation nop({}, { vt });
+  jlm::tests::TestOperation bop({ vt, vt }, { vt });
+  jlm::tests::TestOperation sop({ vt, st }, { st });
 
   RvsdgModule rm(jlm::util::FilePath(""), "", "");
   auto & graph = rm.Rvsdg();
@@ -94,7 +94,7 @@ test_theta()
   GraphExport::Create(*theta->output(0), "c");
 
   //	jlm::rvsdg::view(graph.GetRootRegion(), stdout);
-  jlm::llvm::pushout pushout;
+  jlm::llvm::NodeHoisting pushout;
   pushout.Run(rm, statisticsCollector);
   //	jlm::rvsdg::view(graph.GetRootRegion(), stdout);
 
@@ -141,14 +141,12 @@ test_push_theta_bottom()
   assert(jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::ThetaNode>(*storenode->input(2)->origin()));
 }
 
-static int
+static void
 verify()
 {
   test_gamma();
   test_theta();
   test_push_theta_bottom();
-
-  return 0;
 }
 
 JLM_UNIT_TEST_REGISTER("jlm/llvm/opt/test-push", verify)

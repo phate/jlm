@@ -32,7 +32,7 @@ ConvertValueOrFunction(::llvm::Value * v, tacsvector_t & tacs, context & ctx)
     if (auto callee = dynamic_cast<const fctvariable *>(ctx.lookup_value(v)))
       node->add_dependency(callee->function());
 
-    if (auto data = dynamic_cast<const gblvalue *>(ctx.lookup_value(v)))
+    if (auto data = dynamic_cast<const GlobalValue *>(ctx.lookup_value(v)))
       node->add_dependency(data->node());
   }
 
@@ -259,7 +259,7 @@ convert_constantDataVector(
   for (size_t n = 0; n < c->getNumElements(); n++)
     elements.push_back(ConvertConstant(c->getElementAsConstant(n), tacs, ctx));
 
-  tacs.push_back(constant_data_vector_op::Create(elements));
+  tacs.push_back(ConstantDataVectorOperation::Create(elements));
 
   return tacs.back()->result(0);
 }
@@ -295,7 +295,7 @@ convert_constantVector(
     elements.push_back(ConvertConstant(c->getAggregateElement(n), tacs, ctx));
 
   auto type = ctx.GetTypeConverter().ConvertLlvmType(*c->getType());
-  tacs.push_back(constantvector_op::create(elements, type));
+  tacs.push_back(ConstantVectorOperation::create(elements, type));
 
   return tacs.back()->result(0);
 }
@@ -501,17 +501,17 @@ ConvertPointerIcmpPredicate(const ::llvm::CmpInst::Predicate predicate)
   switch (predicate)
   {
   case ::llvm::CmpInst::ICMP_ULT:
-    return std::make_unique<ptrcmp_op>(PointerType::Create(), cmp::lt);
+    return std::make_unique<PtrCmpOperation>(PointerType::Create(), cmp::lt);
   case ::llvm::CmpInst::ICMP_ULE:
-    return std::make_unique<ptrcmp_op>(PointerType::Create(), cmp::le);
+    return std::make_unique<PtrCmpOperation>(PointerType::Create(), cmp::le);
   case ::llvm::CmpInst::ICMP_EQ:
-    return std::make_unique<ptrcmp_op>(PointerType::Create(), cmp::eq);
+    return std::make_unique<PtrCmpOperation>(PointerType::Create(), cmp::eq);
   case ::llvm::CmpInst::ICMP_NE:
-    return std::make_unique<ptrcmp_op>(PointerType::Create(), cmp::ne);
+    return std::make_unique<PtrCmpOperation>(PointerType::Create(), cmp::ne);
   case ::llvm::CmpInst::ICMP_UGE:
-    return std::make_unique<ptrcmp_op>(PointerType::Create(), cmp::ge);
+    return std::make_unique<PtrCmpOperation>(PointerType::Create(), cmp::ge);
   case ::llvm::CmpInst::ICMP_UGT:
-    return std::make_unique<ptrcmp_op>(PointerType::Create(), cmp::gt);
+    return std::make_unique<PtrCmpOperation>(PointerType::Create(), cmp::gt);
   default:
     JLM_UNREACHABLE("ConvertPointerIcmpPredicate: Unsupported icmp predicate.");
   }
@@ -551,7 +551,7 @@ convert(const ::llvm::ICmpInst * instruction, tacsvector_t & tacs, context & ctx
   if (operandType->isVectorTy())
   {
     const auto instructionType = ctx.GetTypeConverter().ConvertLlvmType(*instruction->getType());
-    tacs.push_back(vectorbinary_op::create(*operation, op1, op2, instructionType));
+    tacs.push_back(VectorBinaryOperation::create(*operation, op1, op2, instructionType));
   }
   else
   {
@@ -594,10 +594,10 @@ convert_fcmp_instruction(::llvm::Instruction * instruction, tacsvector_t & tacs,
 
   JLM_ASSERT(map.find(i->getPredicate()) != map.end());
   auto fptype = t->isVectorTy() ? t->getScalarType() : t;
-  fpcmp_op operation(map[i->getPredicate()], typeConverter.ExtractFloatingPointSize(*fptype));
+  FCmpOperation operation(map[i->getPredicate()], typeConverter.ExtractFloatingPointSize(*fptype));
 
   if (t->isVectorTy())
-    tacs.push_back(vectorbinary_op::create(operation, op1, op2, type));
+    tacs.push_back(VectorBinaryOperation::create(operation, op1, op2, type));
   else
     tacs.push_back(ThreeAddressCode::create(operation, { op1, op2 }));
 
@@ -622,8 +622,8 @@ convert_load_instruction(::llvm::Instruction * i, tacsvector_t & tacs, context &
   auto address = ConvertValue(instruction->getPointerOperand(), tacs, ctx);
   auto loadedType = ctx.GetTypeConverter().ConvertLlvmType(*instruction->getType());
 
-  const ThreeAddressCodeVariable * loadedValue;
-  const ThreeAddressCodeVariable * memoryState;
+  const ThreeAddressCodeVariable * loadedValue = nullptr;
+  const ThreeAddressCodeVariable * memoryState = nullptr;
   const ThreeAddressCodeVariable * ioState = nullptr;
   if (instruction->isVolatile())
   {
@@ -668,7 +668,7 @@ convert_store_instruction(::llvm::Instruction * i, tacsvector_t & tacs, context 
   auto address = ConvertValue(instruction->getPointerOperand(), tacs, ctx);
   auto value = ConvertValue(instruction->getValueOperand(), tacs, ctx);
 
-  const ThreeAddressCodeVariable * memoryState;
+  const ThreeAddressCodeVariable * memoryState = nullptr;
   const ThreeAddressCodeVariable * ioState = nullptr;
   if (instruction->isVolatile())
   {
@@ -739,7 +739,7 @@ convert_malloc_call(const ::llvm::CallInst * i, tacsvector_t & tacs, context & c
 
   auto size = ConvertValue(i->getArgOperand(0), tacs, ctx);
 
-  tacs.push_back(malloc_op::create(size));
+  tacs.push_back(MallocOperation::create(size));
   auto result = tacs.back()->result(0);
   auto mstate = tacs.back()->result(1);
 
@@ -841,7 +841,7 @@ convert_call_instruction(::llvm::Instruction * instruction, tacsvector_t & tacs,
     for (size_t n = functionType->getNumParams(); n < i->getNumOperands() - 1; n++)
       varargs.push_back(ConvertValue(i->getArgOperand(n), tacs, ctx));
 
-    tacs.push_back(valist_op::create(varargs));
+    tacs.push_back(VariadicArgumentListOperation::create(varargs));
     return tacs.back()->result(0);
   };
 
@@ -992,15 +992,15 @@ ConvertFloatingPointBinaryOperation(
   switch (binaryOperation)
   {
   case ::llvm::Instruction::FAdd:
-    return std::make_unique<fpbin_op>(fpop::add, floatingPointSize);
+    return std::make_unique<FBinaryOperation>(fpop::add, floatingPointSize);
   case ::llvm::Instruction::FSub:
-    return std::make_unique<fpbin_op>(fpop::sub, floatingPointSize);
+    return std::make_unique<FBinaryOperation>(fpop::sub, floatingPointSize);
   case ::llvm::Instruction::FMul:
-    return std::make_unique<fpbin_op>(fpop::mul, floatingPointSize);
+    return std::make_unique<FBinaryOperation>(fpop::mul, floatingPointSize);
   case ::llvm::Instruction::FDiv:
-    return std::make_unique<fpbin_op>(fpop::div, floatingPointSize);
+    return std::make_unique<FBinaryOperation>(fpop::div, floatingPointSize);
   case ::llvm::Instruction::FRem:
-    return std::make_unique<fpbin_op>(fpop::mod, floatingPointSize);
+    return std::make_unique<FBinaryOperation>(fpop::mod, floatingPointSize);
   default:
     JLM_UNREACHABLE("ConvertFloatingPointBinaryOperation: Unsupported binary operation");
   }
@@ -1052,7 +1052,7 @@ convert(const ::llvm::BinaryOperator * instruction, tacsvector_t & tacs, context
 
   if (llvmType->isVectorTy())
   {
-    tacs.push_back(vectorbinary_op::create(*operation, operand1, operand2, jlmType));
+    tacs.push_back(VectorBinaryOperation::create(*operation, operand1, operand2, jlmType));
   }
   else
   {
@@ -1090,7 +1090,7 @@ convert_extractvalue(::llvm::Instruction * i, tacsvector_t & tacs, context & ctx
   auto ev = ::llvm::dyn_cast<::llvm::ExtractValueInst>(i);
 
   auto aggregate = ConvertValue(ev->getOperand(0), tacs, ctx);
-  tacs.push_back(ExtractValue::create(aggregate, ev->getIndices()));
+  tacs.push_back(ExtractValueOperation::create(aggregate, ev->getIndices()));
 
   return tacs.back()->result(0);
 }
@@ -1102,7 +1102,7 @@ convert_extractelement_instruction(::llvm::Instruction * i, tacsvector_t & tacs,
 
   auto vector = ConvertValue(i->getOperand(0), tacs, ctx);
   auto index = ConvertValue(i->getOperand(1), tacs, ctx);
-  tacs.push_back(extractelement_op::create(vector, index));
+  tacs.push_back(ExtractElementOperation::create(vector, index));
 
   return tacs.back()->result(0);
 }
@@ -1117,7 +1117,7 @@ convert(::llvm::ShuffleVectorInst * i, tacsvector_t & tacs, context & ctx)
   for (auto & element : i->getShuffleMask())
     mask.push_back(element);
 
-  tacs.push_back(shufflevector_op::create(v1, v2, mask));
+  tacs.push_back(ShuffleVectorOperation::create(v1, v2, mask));
 
   return tacs.back()->result(0);
 }
@@ -1130,7 +1130,7 @@ convert_insertelement_instruction(::llvm::Instruction * i, tacsvector_t & tacs, 
   auto vector = ConvertValue(i->getOperand(0), tacs, ctx);
   auto value = ConvertValue(i->getOperand(1), tacs, ctx);
   auto index = ConvertValue(i->getOperand(2), tacs, ctx);
-  tacs.push_back(insertelement_op::create(vector, value, index));
+  tacs.push_back(InsertElementOperation::create(vector, value, index));
 
   return tacs.back()->result(0);
 }
@@ -1148,7 +1148,7 @@ convert(::llvm::UnaryOperator * unaryOperator, tacsvector_t & threeAddressCodeVe
   if (type->isVectorTy())
   {
     auto vectorType = typeConverter.ConvertLlvmType(*type);
-    threeAddressCodeVector.push_back(vectorunary_op::create(
+    threeAddressCodeVector.push_back(VectorUnaryOperation::create(
         FNegOperation(std::static_pointer_cast<const FloatingPointType>(scalarType)),
         operand,
         vectorType));
@@ -1192,7 +1192,7 @@ convert_cast_instruction(::llvm::Instruction * i, tacsvector_t & tacs, context &
             { ::llvm::Instruction::FPToSI, create_unop<FloatingPointToSignedIntegerOperation> },
             { ::llvm::Instruction::FPToUI, create_unop<FloatingPointToUnsignedIntegerOperation> },
             { ::llvm::Instruction::FPExt, create_unop<FPExtOperation> },
-            { ::llvm::Instruction::BitCast, create_unop<bitcast_op> } });
+            { ::llvm::Instruction::BitCast, create_unop<BitCastOperation> } });
 
   auto type = ctx.GetTypeConverter().ConvertLlvmType(*i->getType());
 
@@ -1206,7 +1206,7 @@ convert_cast_instruction(::llvm::Instruction * i, tacsvector_t & tacs, context &
 
   if (dt->isVectorTy())
     tacs.push_back(
-        vectorunary_op::create(*static_cast<rvsdg::UnaryOperation *>(unop.get()), op, type));
+        VectorUnaryOperation::create(*static_cast<rvsdg::UnaryOperation *>(unop.get()), op, type));
   else
     tacs.push_back(
         ThreeAddressCode::create(*static_cast<rvsdg::SimpleOperation *>(unop.get()), { op }));

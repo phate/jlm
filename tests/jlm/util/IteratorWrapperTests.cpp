@@ -14,7 +14,7 @@
 #include <unordered_set>
 #include <vector>
 
-static int
+static void
 TestPtrVector()
 {
   int a = 10;
@@ -45,13 +45,11 @@ TestPtrVector()
   assert(a == 11);
   assert(b == 21);
   assert(c == 31);
-
-  return 0;
 }
 
 JLM_UNIT_TEST_REGISTER("jlm/util/TestIteratorWrapper-TestPtrVector", TestPtrVector);
 
-static int
+static void
 TestPtrUnorderedSet()
 {
   int a = 10;
@@ -72,13 +70,11 @@ TestPtrUnorderedSet()
   assert(a == 11);
   assert(b == 21);
   assert(c == 31);
-
-  return 0;
 }
 
 JLM_UNIT_TEST_REGISTER("jlm/util/TestIteratorWrapper-TestPtrUnorderedSet", TestPtrUnorderedSet);
 
-static int
+static void
 TestUniquePtrVector()
 {
   // Arrange
@@ -101,13 +97,11 @@ TestUniquePtrVector()
   assert(*vector[0] == 11);
   assert(*vector[1] == 21);
   assert(*vector[2] == 31);
-
-  return 0;
 }
 
 JLM_UNIT_TEST_REGISTER("jlm/util/TestIteratorWrapper-TestUniquePtrVector", TestUniquePtrVector);
 
-static int
+static void
 TestMapValuePtr()
 {
   // Arrange
@@ -130,8 +124,6 @@ TestMapValuePtr()
   assert(*map[1] == 11);
   assert(*map[2] == 21);
   assert(*map[3] == 31);
-
-  return 0;
 }
 
 JLM_UNIT_TEST_REGISTER("jlm/util/TestIteratorWrapper-TestMapValuePtr", TestMapValuePtr);

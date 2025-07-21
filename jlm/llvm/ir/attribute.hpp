@@ -141,12 +141,12 @@ public:
 
 /** \brief String attribute
  */
-class string_attribute final : public Attribute
+class StringAttribute final : public Attribute
 {
 public:
-  ~string_attribute() noexcept override;
+  ~StringAttribute() noexcept override;
 
-  string_attribute(const std::string & kind, const std::string & value)
+  StringAttribute(const std::string & kind, const std::string & value)
       : kind_(kind),
         value_(value)
   {}
@@ -173,12 +173,12 @@ private:
 
 /** \brief Enum attribute
  */
-class enum_attribute : public Attribute
+class EnumAttribute : public Attribute
 {
 public:
-  ~enum_attribute() noexcept override;
+  ~EnumAttribute() noexcept override;
 
-  explicit enum_attribute(const Attribute::kind & kind)
+  explicit EnumAttribute(const Attribute::kind & kind)
       : kind_(kind)
   {}
 
@@ -197,13 +197,13 @@ private:
 
 /** \brief Integer attribute
  */
-class int_attribute final : public enum_attribute
+class IntAttribute final : public EnumAttribute
 {
 public:
-  ~int_attribute() noexcept override;
+  ~IntAttribute() noexcept override;
 
-  int_attribute(Attribute::kind kind, uint64_t value)
-      : enum_attribute(kind),
+  IntAttribute(Attribute::kind kind, uint64_t value)
+      : EnumAttribute(kind),
         value_(value)
   {}
 
@@ -222,13 +222,13 @@ private:
 
 /** \brief Type attribute
  */
-class type_attribute final : public enum_attribute
+class TypeAttribute final : public EnumAttribute
 {
 public:
-  ~type_attribute() noexcept override;
+  ~TypeAttribute() noexcept override;
 
-  type_attribute(Attribute::kind kind, std::shared_ptr<const jlm::rvsdg::ValueType> type)
-      : enum_attribute(kind),
+  TypeAttribute(Attribute::kind kind, std::shared_ptr<const jlm::rvsdg::ValueType> type)
+      : EnumAttribute(kind),
         type_(std::move(type))
   {}
 
@@ -251,20 +251,20 @@ namespace jlm::util
 {
 
 template<>
-struct Hash<jlm::llvm::enum_attribute>
+struct Hash<jlm::llvm::EnumAttribute>
 {
   std::size_t
-  operator()(const jlm::llvm::enum_attribute & attribute) const noexcept
+  operator()(const jlm::llvm::EnumAttribute & attribute) const noexcept
   {
     return std::hash<jlm::llvm::Attribute::kind>()(attribute.kind());
   }
 };
 
 template<>
-struct Hash<jlm::llvm::int_attribute>
+struct Hash<jlm::llvm::IntAttribute>
 {
   std::size_t
-  operator()(const jlm::llvm::int_attribute & attribute) const noexcept
+  operator()(const jlm::llvm::IntAttribute & attribute) const noexcept
   {
     auto kindHash = std::hash<jlm::llvm::Attribute::kind>()(attribute.kind());
     auto valueHash = std::hash<uint64_t>()(attribute.value());
@@ -273,10 +273,10 @@ struct Hash<jlm::llvm::int_attribute>
 };
 
 template<>
-struct Hash<jlm::llvm::string_attribute>
+struct Hash<jlm::llvm::StringAttribute>
 {
   std::size_t
-  operator()(const jlm::llvm::string_attribute & attribute) const noexcept
+  operator()(const jlm::llvm::StringAttribute & attribute) const noexcept
   {
     auto kindHash = std::hash<std::string>()(attribute.kind());
     auto valueHash = std::hash<std::string>()(attribute.value());
@@ -285,10 +285,10 @@ struct Hash<jlm::llvm::string_attribute>
 };
 
 template<>
-struct Hash<jlm::llvm::type_attribute>
+struct Hash<jlm::llvm::TypeAttribute>
 {
   std::size_t
-  operator()(const jlm::llvm::type_attribute & attribute) const noexcept
+  operator()(const jlm::llvm::TypeAttribute & attribute) const noexcept
   {
     auto kindHash = std::hash<jlm::llvm::Attribute::kind>()(attribute.kind());
     auto typeHash = attribute.type().ComputeHash();
@@ -303,12 +303,12 @@ namespace jlm::llvm
 
 /** \brief Attribute set
  */
-class attributeset final
+class AttributeSet final
 {
-  using EnumAttributeHashSet = util::HashSet<enum_attribute>;
-  using IntAttributeHashSet = util::HashSet<int_attribute>;
-  using TypeAttributeHashSet = util::HashSet<type_attribute>;
-  using StringAttributeHashSet = util::HashSet<string_attribute>;
+  using EnumAttributeHashSet = util::HashSet<EnumAttribute>;
+  using IntAttributeHashSet = util::HashSet<IntAttribute>;
+  using TypeAttributeHashSet = util::HashSet<TypeAttribute>;
+  using StringAttributeHashSet = util::HashSet<StringAttribute>;
 
   using EnumAttributeRange = util::IteratorRange<EnumAttributeHashSet::ItemConstIterator>;
   using IntAttributeRange = util::IteratorRange<IntAttributeHashSet::ItemConstIterator>;
@@ -329,38 +329,38 @@ public:
   StringAttributes() const;
 
   void
-  InsertEnumAttribute(const enum_attribute & attribute)
+  InsertEnumAttribute(const EnumAttribute & attribute)
   {
     EnumAttributes_.Insert(attribute);
   }
 
   void
-  InsertIntAttribute(const int_attribute & attribute)
+  InsertIntAttribute(const IntAttribute & attribute)
   {
     IntAttributes_.Insert(attribute);
   }
 
   void
-  InsertTypeAttribute(const type_attribute & attribute)
+  InsertTypeAttribute(const TypeAttribute & attribute)
   {
     TypeAttributes_.Insert(attribute);
   }
 
   void
-  InsertStringAttribute(const string_attribute & attribute)
+  InsertStringAttribute(const StringAttribute & attribute)
   {
     StringAttributes_.Insert(attribute);
   }
 
   bool
-  operator==(const attributeset & other) const noexcept
+  operator==(const AttributeSet & other) const noexcept
   {
     return IntAttributes_ == other.IntAttributes_ && EnumAttributes_ == other.EnumAttributes_
         && TypeAttributes_ == other.TypeAttributes_ && StringAttributes_ == other.StringAttributes_;
   }
 
   bool
-  operator!=(const attributeset & other) const noexcept
+  operator!=(const AttributeSet & other) const noexcept
   {
     return !(*this == other);
   }

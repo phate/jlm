@@ -12,20 +12,20 @@
 /**
  * Test check for adding a region argument to input of wrong structural node.
  */
-static int
+static void
 ArgumentNodeMismatch()
 {
   using namespace jlm::rvsdg;
   using namespace jlm::tests;
 
   // Arrange
-  auto valueType = jlm::tests::valuetype::Create();
+  auto valueType = jlm::tests::ValueType::Create();
 
   Graph graph;
   auto import = &jlm::tests::GraphImport::Create(graph, valueType, "import");
 
-  auto structuralNode1 = jlm::tests::structural_node::create(&graph.GetRootRegion(), 1);
-  auto structuralNode2 = jlm::tests::structural_node::create(&graph.GetRootRegion(), 2);
+  auto structuralNode1 = TestStructuralNode::create(&graph.GetRootRegion(), 1);
+  auto structuralNode2 = TestStructuralNode::create(&graph.GetRootRegion(), 2);
 
   auto structuralInput = StructuralInput::create(structuralNode1, import, valueType);
 
@@ -42,26 +42,24 @@ ArgumentNodeMismatch()
 
   // Assert
   assert(inputErrorHandlerCalled);
-
-  return 0;
 }
 
 JLM_UNIT_TEST_REGISTER("jlm/rvsdg/ArgumentTests-ArgumentNodeMismatch", ArgumentNodeMismatch)
 
-static int
+static void
 ArgumentInputTypeMismatch()
 {
   using namespace jlm::tests;
   using namespace jlm::util;
 
   // Arrange
-  auto valueType = jlm::tests::valuetype::Create();
-  auto stateType = jlm::tests::statetype::Create();
+  auto valueType = ValueType::Create();
+  auto stateType = StateType::Create();
 
   jlm::rvsdg::Graph rvsdg;
   auto x = &jlm::tests::GraphImport::Create(rvsdg, valueType, "import");
 
-  auto structuralNode = structural_node::create(&rvsdg.GetRootRegion(), 1);
+  auto structuralNode = TestStructuralNode::create(&rvsdg.GetRootRegion(), 1);
   auto structuralInput = jlm::rvsdg::StructuralInput::create(structuralNode, x, valueType);
 
   // Act & Assert
@@ -90,8 +88,6 @@ ArgumentInputTypeMismatch()
     exceptionWasCaught = true;
   }
   assert(exceptionWasCaught);
-
-  return 0;
 }
 
 JLM_UNIT_TEST_REGISTER(

@@ -11,15 +11,15 @@
 #include <jlm/rvsdg/simple-node.hpp>
 #include <jlm/rvsdg/view.hpp>
 
-static int
+static void
 NormalizeSimpleOperationCne_NodesWithoutOperands()
 {
   using namespace jlm::rvsdg;
 
   // Arrange
   Graph graph;
-  const auto valueType = jlm::tests::valuetype::Create();
-  const auto stateType = jlm::tests::statetype::Create();
+  const auto valueType = jlm::tests::ValueType::Create();
+  const auto stateType = jlm::tests::StateType::Create();
 
   auto & nullaryValueNode1 =
       CreateOpNode<jlm::tests::NullaryOperation>(graph.GetRootRegion(), valueType);
@@ -63,31 +63,29 @@ NormalizeSimpleOperationCne_NodesWithoutOperands()
   assert(exNullaryValueNode1.origin() == exNullaryValueNode2.origin());
   assert(exNullaryStateNode1.origin() == exNullaryStateNode2.origin());
   assert(exNullaryValueNode1.origin() != exNullaryStateNode2.origin());
-
-  return 0;
 }
 
 JLM_UNIT_TEST_REGISTER(
     "jlm/rvsdg/NormalizeSimpleOperationCne_NodesWithoutOperands",
     NormalizeSimpleOperationCne_NodesWithoutOperands)
 
-static int
+static void
 NormalizeSimpleOperationCne_NodesWithOperands()
 {
   using namespace jlm::rvsdg;
 
   // Arrange
   Graph graph;
-  const auto valueType = jlm::tests::valuetype::Create();
-  const auto stateType = jlm::tests::statetype::Create();
+  const auto valueType = jlm::tests::ValueType::Create();
+  const auto stateType = jlm::tests::StateType::Create();
 
   auto v1 = &jlm::tests::GraphImport::Create(graph, valueType, "v1");
   auto s1 = &jlm::tests::GraphImport::Create(graph, stateType, "s1");
 
-  auto & valueNode1 = CreateOpNode<jlm::tests::unary_op>({ v1 }, valueType, valueType);
-  auto & valueNode2 = CreateOpNode<jlm::tests::unary_op>({ v1 }, valueType, valueType);
-  auto & stateNode1 = CreateOpNode<jlm::tests::unary_op>({ s1 }, stateType, stateType);
-  auto & stateNode2 = CreateOpNode<jlm::tests::unary_op>({ s1 }, stateType, stateType);
+  auto & valueNode1 = CreateOpNode<jlm::tests::TestUnaryOperation>({ v1 }, valueType, valueType);
+  auto & valueNode2 = CreateOpNode<jlm::tests::TestUnaryOperation>({ v1 }, valueType, valueType);
+  auto & stateNode1 = CreateOpNode<jlm::tests::TestUnaryOperation>({ s1 }, stateType, stateType);
+  auto & stateNode2 = CreateOpNode<jlm::tests::TestUnaryOperation>({ s1 }, stateType, stateType);
 
   auto & exValueNode1 = jlm::tests::GraphExport::Create(*valueNode1.output(0), "nvn1");
   auto & exValueNode2 = jlm::tests::GraphExport::Create(*valueNode2.output(0), "nvn2");
@@ -118,23 +116,21 @@ NormalizeSimpleOperationCne_NodesWithOperands()
   assert(exValueNode1.origin() == exValueNode2.origin());
   assert(exStateNode1.origin() == exStateNode2.origin());
   assert(exValueNode1.origin() != exStateNode2.origin());
-
-  return 0;
 }
 
 JLM_UNIT_TEST_REGISTER(
     "jlm/rvsdg/NormalizeSimpleOperationCne_NodesWithOperands",
     NormalizeSimpleOperationCne_NodesWithOperands)
 
-static int
+static void
 NormalizeSimpleOperationCne_Failure()
 {
   using namespace jlm::rvsdg;
 
   // Arrange
   Graph graph;
-  const auto valueType = jlm::tests::valuetype::Create();
-  const auto stateType = jlm::tests::statetype::Create();
+  const auto valueType = jlm::tests::ValueType::Create();
+  const auto stateType = jlm::tests::StateType::Create();
 
   auto v1 = &jlm::tests::GraphImport::Create(graph, valueType, "v1");
   auto s1 = &jlm::tests::GraphImport::Create(graph, stateType, "s1");
@@ -143,8 +139,10 @@ NormalizeSimpleOperationCne_Failure()
       CreateOpNode<jlm::tests::NullaryOperation>(graph.GetRootRegion(), valueType);
   auto & nullaryStateNode =
       CreateOpNode<jlm::tests::NullaryOperation>(graph.GetRootRegion(), stateType);
-  auto & unaryValueNode = CreateOpNode<jlm::tests::unary_op>({ v1 }, valueType, valueType);
-  auto & unaryStateNode = CreateOpNode<jlm::tests::unary_op>({ s1 }, stateType, stateType);
+  auto & unaryValueNode =
+      CreateOpNode<jlm::tests::TestUnaryOperation>({ v1 }, valueType, valueType);
+  auto & unaryStateNode =
+      CreateOpNode<jlm::tests::TestUnaryOperation>({ s1 }, stateType, stateType);
 
   auto & exNullaryValueNode = jlm::tests::GraphExport::Create(*nullaryValueNode.output(0), "nvn1");
   auto & exNullaryStateNode = jlm::tests::GraphExport::Create(*nullaryStateNode.output(0), "nvn2");
@@ -176,8 +174,6 @@ NormalizeSimpleOperationCne_Failure()
   assert(TryGetOwnerNode<Node>(*exNullaryStateNode.origin()) == &nullaryStateNode);
   assert(TryGetOwnerNode<Node>(*exUnaryValueNode.origin()) == &unaryValueNode);
   assert(TryGetOwnerNode<Node>(*exUnaryStateNode.origin()) == &unaryStateNode);
-
-  return 0;
 }
 
 JLM_UNIT_TEST_REGISTER(

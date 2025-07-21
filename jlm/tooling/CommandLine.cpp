@@ -352,7 +352,7 @@ JlcCommandLineParser::ParseCommandLineArguments(int argc, const char * const * a
     std::vector<JlmOptCommandLineOptions::OptimizationId> optimizationIds;
     for (auto & optimization : optimizations)
     {
-      JlmOptCommandLineOptions::OptimizationId optimizationId;
+      auto optimizationId = JlmOptCommandLineOptions::OptimizationId::FirstEnumValue;
       try
       {
         optimizationId =
@@ -916,13 +916,25 @@ JlmOptCommandLineParser::ParseCommandLineArguments(int argc, const char * const 
   cl::list<llvm::RvsdgTreePrinter::Configuration::Annotation> rvsdgTreePrinterAnnotations(
       "annotations",
       cl::values(::clEnumValN(
-          llvm::RvsdgTreePrinter::Configuration::Annotation::NumRvsdgNodes,
-          "NumRvsdgNodes",
-          "Annotate number of RVSDG nodes")),
+          llvm::RvsdgTreePrinter::Configuration::Annotation::NumAllocaNodes,
+          "NumAllocaNodes",
+          "Annotate number of AllocaOperation nodes")),
+      cl::values(::clEnumValN(
+          llvm::RvsdgTreePrinter::Configuration::Annotation::NumLoadNodes,
+          "NumLoadNodes",
+          "Annotate number of LoadOperation nodes")),
       cl::values(::clEnumValN(
           llvm::RvsdgTreePrinter::Configuration::Annotation::NumMemoryStateInputsOutputs,
           "NumMemoryStateInputsOutputs",
           "Annotate number of inputs/outputs with memory state type")),
+      cl::values(::clEnumValN(
+          llvm::RvsdgTreePrinter::Configuration::Annotation::NumRvsdgNodes,
+          "NumRvsdgNodes",
+          "Annotate number of RVSDG nodes")),
+      cl::values(::clEnumValN(
+          llvm::RvsdgTreePrinter::Configuration::Annotation::NumStoreNodes,
+          "NumStoreNodes",
+          "Annotate number of StoreOperation nodes")),
       cl::CommaSeparated,
       cl::desc("Comma separated list of RVSDG tree printer annotations"));
 

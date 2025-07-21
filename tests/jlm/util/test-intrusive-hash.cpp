@@ -14,9 +14,7 @@ struct my_item
   my_item(int k, int v)
       : key(k),
         value(v)
-  {
-    hash_chain.prev = hash_chain.next = nullptr;
-  }
+  {}
 
   int key;
   int value;
@@ -25,7 +23,7 @@ struct my_item
   {
     my_item * prev;
     my_item * next;
-  } hash_chain;
+  } hash_chain{ nullptr, nullptr };
 };
 
 struct my_accessor
@@ -61,7 +59,7 @@ struct my_accessor
   }
 };
 
-typedef jlm::util::intrusive_hash<int, my_item, my_accessor> my_hash;
+typedef jlm::util::IntrusiveHash<int, my_item, my_accessor> my_hash;
 
 struct my_stritem
 {
@@ -70,16 +68,16 @@ struct my_stritem
         value(v)
   {}
 
-  std::string key;
-  std::string value;
-  jlm::util::intrusive_hash_anchor<my_stritem> hash_chain;
+  std::string key{};
+  std::string value{};
+  jlm::util::intrusive_hash_anchor<my_stritem> hash_chain{};
 
   typedef jlm::util::
       intrusive_hash_accessor<std::string, my_stritem, &my_stritem::key, &my_stritem::hash_chain>
           hash_accessor;
 };
 
-typedef jlm::util::intrusive_hash<std::string, my_stritem, my_stritem::hash_accessor> my_strhash;
+typedef jlm::util::IntrusiveHash<std::string, my_stritem, my_stritem::hash_accessor> my_strhash;
 
 static void
 test_int_hash()
@@ -153,13 +151,11 @@ test_str_hash()
   assert(seen_i2 == 1);
 }
 
-static int
+static void
 test_main()
 {
   test_int_hash();
   test_str_hash();
-
-  return 0;
 }
 
 JLM_UNIT_TEST_REGISTER("jlm/util/test-intrusive-hash", test_main)

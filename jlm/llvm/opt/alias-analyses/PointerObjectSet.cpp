@@ -136,7 +136,7 @@ PointerObjectSet::CreateMallocMemoryObject(const rvsdg::Node & mallocNode, bool 
 }
 
 PointerObjectIndex
-PointerObjectSet::CreateGlobalMemoryObject(const delta::node & deltaNode, bool canPoint)
+PointerObjectSet::CreateGlobalMemoryObject(const DeltaNode & deltaNode, bool canPoint)
 {
   JLM_ASSERT(GlobalMap_.count(&deltaNode) == 0);
   return GlobalMap_[&deltaNode] = AddPointerObject(PointerObjectKind::GlobalMemoryObject, canPoint);
@@ -198,7 +198,7 @@ PointerObjectSet::GetMallocMap() const noexcept
   return MallocMap_;
 }
 
-const std::unordered_map<const delta::node *, PointerObjectIndex> &
+const std::unordered_map<const DeltaNode *, PointerObjectIndex> &
 PointerObjectSet::GetGlobalMap() const noexcept
 {
   return GlobalMap_;

@@ -17,7 +17,7 @@ namespace jlm::rvsdg
 class bitslice_op : public UnaryOperation
 {
 public:
-  virtual ~bitslice_op() noexcept;
+  ~bitslice_op() noexcept override;
 
   inline bitslice_op(
       const std::shared_ptr<const bittype> & argument,
@@ -27,16 +27,16 @@ public:
         low_(low)
   {}
 
-  virtual bool
+  bool
   operator==(const Operation & other) const noexcept override;
 
-  virtual std::string
+  [[nodiscard]] std::string
   debug_string() const override;
 
-  virtual unop_reduction_path_t
+  unop_reduction_path_t
   can_reduce_operand(const jlm::rvsdg::Output * arg) const noexcept override;
 
-  virtual jlm::rvsdg::Output *
+  jlm::rvsdg::Output *
   reduce_operand(unop_reduction_path_t path, jlm::rvsdg::Output * arg) const override;
 
   inline size_t

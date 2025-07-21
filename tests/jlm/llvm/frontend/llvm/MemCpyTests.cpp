@@ -15,7 +15,7 @@
 #include <llvm/IR/IRBuilder.h>
 #include <llvm/IR/Module.h>
 
-static int
+static void
 MemCpyConversion()
 {
   using namespace llvm;
@@ -55,7 +55,7 @@ MemCpyConversion()
     using namespace jlm::llvm;
 
     auto controlFlowGraph =
-        dynamic_cast<const function_node *>(ipgModule->ipgraph().find("f"))->cfg();
+        dynamic_cast<const FunctionNode *>(ipgModule->ipgraph().find("f"))->cfg();
     auto basicBlock =
         dynamic_cast<const jlm::llvm::BasicBlock *>(controlFlowGraph->entry()->OutEdge(0)->sink());
 
@@ -88,8 +88,6 @@ MemCpyConversion()
     assert(numMemCpyThreeAddressCodes == 1);
     assert(numMemCpyVolatileThreeAddressCodes == 2);
   }
-
-  return 0;
 }
 
 JLM_UNIT_TEST_REGISTER("jlm/llvm/frontend/llvm/MemCpyTests-MemCpyConversion", MemCpyConversion)

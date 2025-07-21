@@ -74,8 +74,8 @@ bit_type_to_ctl_type(rvsdg::GammaNode * old_gamma)
       continue;
     if (o->nusers() != 1)
       continue;
-    auto user = *o->begin();
-    auto [_, matchOperation] = rvsdg::TryGetSimpleNodeAndOp<rvsdg::match_op>(*user);
+    auto & user = *o->Users().begin();
+    auto [_, matchOperation] = rvsdg::TryGetSimpleNodeAndOp<rvsdg::match_op>(user);
     if (!matchOperation)
       continue;
     // output is only used by match
@@ -105,7 +105,7 @@ bit_type_to_ctl_type(rvsdg::GammaNode * old_gamma)
       new_outputs.push_back(no);
     }
     auto match_replacement = old_gamma->AddExitVar(new_outputs).output;
-    auto match_node = rvsdg::TryGetOwnerNode<rvsdg::Node>(*user);
+    auto match_node = rvsdg::TryGetOwnerNode<rvsdg::Node>(user);
     match_node->output(0)->divert_users(match_replacement);
     // TODO: divert match users
     remove(match_node);
@@ -220,8 +220,8 @@ eliminate_gamma_eol(rvsdg::GammaNode * gamma)
     {
       continue;
     }
-    auto user = *o->begin();
-    if (auto res = dynamic_cast<rvsdg::RegionResult *>(user))
+    auto & user = *o->Users().begin();
+    if (auto res = dynamic_cast<rvsdg::RegionResult *>(&user))
     {
       if (res->output() && res->output()->nusers() == 0)
       {
@@ -242,19 +242,6 @@ eliminate_gamma_eol(rvsdg::GammaNode * gamma)
   return changed;
 }
 
-bool
-eliminate_dead_gamma(rvsdg::GammaNode * gamma)
-{
-  // eliminates gammas that have no used outputs - dne does not seem to do this and empty gammas
-  // make tginversion go mayham and duplicate loops
-  if (gamma->IsDead())
-  {
-    remove(gamma);
-    return true;
-  }
-  return false;
-}
-
 void
 merge_gamma(rvsdg::Region * region)
 {
@@ -271,7 +258,7 @@ merge_gamma(rvsdg::Region * region)
         if (auto gamma = dynamic_cast<rvsdg::GammaNode *>(node))
         {
           if (fix_match_inversion(gamma) || eliminate_gamma_ctl(gamma) || eliminate_gamma_eol(gamma)
-              || merge_gamma(gamma) || bit_type_to_ctl_type(gamma) || eliminate_dead_gamma(gamma))
+              || merge_gamma(gamma) || bit_type_to_ctl_type(gamma))
           {
             changed = true;
             break;
@@ -316,11 +303,11 @@ depends_on(jlm::rvsdg::Output * output, rvsdg::Node * node)
 rvsdg::GammaNode::EntryVar
 get_entryvar(jlm::rvsdg::Output * origin, rvsdg::GammaNode * gamma)
 {
-  for (auto user : *origin)
+  for (auto & user : origin->Users())
   {
-    if (rvsdg::TryGetOwnerNode<rvsdg::GammaNode>(*user) == gamma)
+    if (rvsdg::TryGetOwnerNode<rvsdg::GammaNode>(user) == gamma)
     {
-      auto rolevar = gamma->MapInput(*user);
+      auto rolevar = gamma->MapInput(user);
       if (auto entryvar = std::get_if<rvsdg::GammaNode::EntryVar>(&rolevar))
       {
         return *entryvar;
@@ -333,9 +320,9 @@ get_entryvar(jlm::rvsdg::Output * origin, rvsdg::GammaNode * gamma)
 bool
 merge_gamma(rvsdg::GammaNode * gamma)
 {
-  for (auto user : *gamma->predicate()->origin())
+  for (auto & user : gamma->predicate()->origin()->Users())
   {
-    auto other_gamma = rvsdg::TryGetOwnerNode<rvsdg::GammaNode>(*user);
+    auto other_gamma = rvsdg::TryGetOwnerNode<rvsdg::GammaNode>(user);
     if (other_gamma && gamma != other_gamma)
     {
       // other gamma depending on same predicate

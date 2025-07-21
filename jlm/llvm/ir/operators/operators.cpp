@@ -174,28 +174,25 @@ FloatingPointToSignedIntegerOperation::reduce_operand(rvsdg::unop_reduction_path
   JLM_UNREACHABLE("Not implemented!");
 }
 
-/* ctl2bits operator */
-
-ctl2bits_op::~ctl2bits_op() noexcept
-{}
+ControlToIntOperation::~ControlToIntOperation() noexcept = default;
 
 bool
-ctl2bits_op::operator==(const Operation & other) const noexcept
+ControlToIntOperation::operator==(const Operation & other) const noexcept
 {
-  auto op = dynamic_cast<const ctl2bits_op *>(&other);
+  auto op = dynamic_cast<const ControlToIntOperation *>(&other);
   return op && op->argument(0) == argument(0) && op->result(0) == result(0);
 }
 
 std::string
-ctl2bits_op::debug_string() const
+ControlToIntOperation::debug_string() const
 {
-  return "CTL2BITS";
+  return "ControlToInt";
 }
 
 std::unique_ptr<rvsdg::Operation>
-ctl2bits_op::copy() const
+ControlToIntOperation::copy() const
 {
-  return std::make_unique<ctl2bits_op>(*this);
+  return std::make_unique<ControlToIntOperation>(*this);
 }
 
 BranchOperation::~BranchOperation() noexcept = default;
@@ -306,8 +303,7 @@ PtrToIntOperation::reduce_operand(rvsdg::unop_reduction_path_t, rvsdg::Output *)
   JLM_UNREACHABLE("Not implemented!");
 }
 
-ConstantDataArray::~ConstantDataArray()
-{}
+ConstantDataArray::~ConstantDataArray() noexcept = default;
 
 bool
 ConstantDataArray::operator==(const Operation & other) const noexcept
@@ -328,20 +324,17 @@ ConstantDataArray::copy() const
   return std::make_unique<ConstantDataArray>(*this);
 }
 
-/* pointer compare operator */
-
-ptrcmp_op::~ptrcmp_op()
-{}
+PtrCmpOperation::~PtrCmpOperation() noexcept = default;
 
 bool
-ptrcmp_op::operator==(const Operation & other) const noexcept
+PtrCmpOperation::operator==(const Operation & other) const noexcept
 {
-  auto op = dynamic_cast<const ptrcmp_op *>(&other);
+  auto op = dynamic_cast<const PtrCmpOperation *>(&other);
   return op && op->argument(0) == argument(0) && op->cmp_ == cmp_;
 }
 
 std::string
-ptrcmp_op::debug_string() const
+PtrCmpOperation::debug_string() const
 {
   static std::unordered_map<llvm::cmp, std::string> map({ { cmp::eq, "eq" },
                                                           { cmp::ne, "ne" },
@@ -351,24 +344,27 @@ ptrcmp_op::debug_string() const
                                                           { cmp::le, "le" } });
 
   JLM_ASSERT(map.find(cmp()) != map.end());
-  return "PTRCMP " + map[cmp()];
+  return "PtrCmp " + map[cmp()];
 }
 
 std::unique_ptr<rvsdg::Operation>
-ptrcmp_op::copy() const
+PtrCmpOperation::copy() const
 {
-  return std::make_unique<ptrcmp_op>(*this);
+  return std::make_unique<PtrCmpOperation>(*this);
 }
 
 rvsdg::binop_reduction_path_t
-ptrcmp_op::can_reduce_operand_pair(const rvsdg::Output *, const rvsdg::Output *) const noexcept
+PtrCmpOperation::can_reduce_operand_pair(const rvsdg::Output *, const rvsdg::Output *)
+    const noexcept
 {
   return rvsdg::binop_reduction_none;
 }
 
 rvsdg::Output *
-ptrcmp_op::reduce_operand_pair(rvsdg::binop_reduction_path_t, rvsdg::Output *, rvsdg::Output *)
-    const
+PtrCmpOperation::reduce_operand_pair(
+    rvsdg::binop_reduction_path_t,
+    rvsdg::Output *,
+    rvsdg::Output *) const
 {
   JLM_UNREACHABLE("Not implemented!");
 }
@@ -417,10 +413,7 @@ ZExtOperation::reduce_operand(rvsdg::unop_reduction_path_t path, rvsdg::Output *
   return nullptr;
 }
 
-/* floating point constant operator */
-
-ConstantFP::~ConstantFP()
-{}
+ConstantFP::~ConstantFP() noexcept = default;
 
 bool
 ConstantFP::operator==(const Operation & other) const noexcept
@@ -449,20 +442,17 @@ ConstantFP::copy() const
   return std::make_unique<ConstantFP>(*this);
 }
 
-/* floating point comparison operator */
-
-fpcmp_op::~fpcmp_op()
-{}
+FCmpOperation::~FCmpOperation() noexcept = default;
 
 bool
-fpcmp_op::operator==(const Operation & other) const noexcept
+FCmpOperation::operator==(const Operation & other) const noexcept
 {
-  auto op = dynamic_cast<const fpcmp_op *>(&other);
+  auto op = dynamic_cast<const FCmpOperation *>(&other);
   return op && op->argument(0) == argument(0) && op->cmp_ == cmp_;
 }
 
 std::string
-fpcmp_op::debug_string() const
+FCmpOperation::debug_string() const
 {
   static std::unordered_map<fpcmp, std::string> map({ { fpcmp::oeq, "oeq" },
                                                       { fpcmp::ogt, "ogt" },
@@ -480,23 +470,24 @@ fpcmp_op::debug_string() const
                                                       { fpcmp::uno, "uno" } });
 
   JLM_ASSERT(map.find(cmp()) != map.end());
-  return "FPCMP " + map[cmp()];
+  return "FCmp " + map[cmp()];
 }
 
 std::unique_ptr<rvsdg::Operation>
-fpcmp_op::copy() const
+FCmpOperation::copy() const
 {
-  return std::make_unique<fpcmp_op>(*this);
+  return std::make_unique<FCmpOperation>(*this);
 }
 
 rvsdg::binop_reduction_path_t
-fpcmp_op::can_reduce_operand_pair(const rvsdg::Output *, const rvsdg::Output *) const noexcept
+FCmpOperation::can_reduce_operand_pair(const rvsdg::Output *, const rvsdg::Output *) const noexcept
 {
   return rvsdg::binop_reduction_none;
 }
 
 rvsdg::Output *
-fpcmp_op::reduce_operand_pair(rvsdg::binop_reduction_path_t, rvsdg::Output *, rvsdg::Output *) const
+FCmpOperation::reduce_operand_pair(rvsdg::binop_reduction_path_t, rvsdg::Output *, rvsdg::Output *)
+    const
 {
   JLM_UNREACHABLE("Not implemented!");
 }
@@ -543,20 +534,17 @@ PoisonValueOperation::copy() const
   return std::make_unique<PoisonValueOperation>(*this);
 }
 
-/* floating point arithmetic operator */
-
-fpbin_op::~fpbin_op()
-{}
+FBinaryOperation::~FBinaryOperation() noexcept = default;
 
 bool
-fpbin_op::operator==(const Operation & other) const noexcept
+FBinaryOperation::operator==(const Operation & other) const noexcept
 {
-  auto op = dynamic_cast<const fpbin_op *>(&other);
+  auto op = dynamic_cast<const FBinaryOperation *>(&other);
   return op && op->fpop() == fpop() && op->size() == size();
 }
 
 std::string
-fpbin_op::debug_string() const
+FBinaryOperation::debug_string() const
 {
   static std::unordered_map<llvm::fpop, std::string> map({ { fpop::add, "add" },
                                                            { fpop::sub, "sub" },
@@ -569,19 +557,23 @@ fpbin_op::debug_string() const
 }
 
 std::unique_ptr<rvsdg::Operation>
-fpbin_op::copy() const
+FBinaryOperation::copy() const
 {
-  return std::make_unique<fpbin_op>(*this);
+  return std::make_unique<FBinaryOperation>(*this);
 }
 
 rvsdg::binop_reduction_path_t
-fpbin_op::can_reduce_operand_pair(const rvsdg::Output *, const rvsdg::Output *) const noexcept
+FBinaryOperation::can_reduce_operand_pair(const rvsdg::Output *, const rvsdg::Output *)
+    const noexcept
 {
   return rvsdg::binop_reduction_none;
 }
 
 rvsdg::Output *
-fpbin_op::reduce_operand_pair(rvsdg::binop_reduction_path_t, rvsdg::Output *, rvsdg::Output *) const
+FBinaryOperation::reduce_operand_pair(
+    rvsdg::binop_reduction_path_t,
+    rvsdg::Output *,
+    rvsdg::Output *) const
 {
   JLM_UNREACHABLE("Not implemented!");
 }
@@ -685,15 +677,12 @@ FPTruncOperation::reduce_operand(rvsdg::unop_reduction_path_t, rvsdg::Output *) 
   JLM_UNREACHABLE("Not implemented!");
 }
 
-/* valist operator */
-
-valist_op::~valist_op()
-{}
+VariadicArgumentListOperation::~VariadicArgumentListOperation() noexcept = default;
 
 bool
-valist_op::operator==(const Operation & other) const noexcept
+VariadicArgumentListOperation::operator==(const Operation & other) const noexcept
 {
-  auto op = dynamic_cast<const valist_op *>(&other);
+  auto op = dynamic_cast<const VariadicArgumentListOperation *>(&other);
   if (!op || op->narguments() != narguments())
     return false;
 
@@ -707,34 +696,31 @@ valist_op::operator==(const Operation & other) const noexcept
 }
 
 std::string
-valist_op::debug_string() const
+VariadicArgumentListOperation::debug_string() const
 {
-  return "VALIST";
+  return "VariadicArguments";
 }
 
 std::unique_ptr<rvsdg::Operation>
-valist_op::copy() const
+VariadicArgumentListOperation::copy() const
 {
-  return std::make_unique<valist_op>(*this);
+  return std::make_unique<VariadicArgumentListOperation>(*this);
 }
 
-/* bitcast operator */
-
-bitcast_op::~bitcast_op()
-{}
+BitCastOperation::~BitCastOperation() noexcept = default;
 
 bool
-bitcast_op::operator==(const Operation & other) const noexcept
+BitCastOperation::operator==(const Operation & other) const noexcept
 {
-  auto op = dynamic_cast<const bitcast_op *>(&other);
+  auto op = dynamic_cast<const BitCastOperation *>(&other);
   return op && op->argument(0) == argument(0) && op->result(0) == result(0);
 }
 
 std::string
-bitcast_op::debug_string() const
+BitCastOperation::debug_string() const
 {
   return util::strfmt(
-      "BITCAST[",
+      "BitCast[",
       argument(0)->debug_string(),
       " -> ",
       result(0)->debug_string(),
@@ -742,19 +728,19 @@ bitcast_op::debug_string() const
 }
 
 std::unique_ptr<rvsdg::Operation>
-bitcast_op::copy() const
+BitCastOperation::copy() const
 {
-  return std::make_unique<bitcast_op>(*this);
+  return std::make_unique<BitCastOperation>(*this);
 }
 
 rvsdg::unop_reduction_path_t
-bitcast_op::can_reduce_operand(const rvsdg::Output *) const noexcept
+BitCastOperation::can_reduce_operand(const rvsdg::Output *) const noexcept
 {
   return rvsdg::unop_reduction_none;
 }
 
 rvsdg::Output *
-bitcast_op::reduce_operand(rvsdg::unop_reduction_path_t, rvsdg::Output *) const
+BitCastOperation::reduce_operand(rvsdg::unop_reduction_path_t, rvsdg::Output *) const
 {
   JLM_UNREACHABLE("Not implemented!");
 }
@@ -924,223 +910,194 @@ ConstantAggregateZeroOperation::copy() const
   return std::make_unique<ConstantAggregateZeroOperation>(*this);
 }
 
-/* extractelement operator */
-
-extractelement_op::~extractelement_op()
-{}
+ExtractElementOperation::~ExtractElementOperation() noexcept = default;
 
 bool
-extractelement_op::operator==(const Operation & other) const noexcept
+ExtractElementOperation::operator==(const Operation & other) const noexcept
 {
-  auto op = dynamic_cast<const extractelement_op *>(&other);
+  auto op = dynamic_cast<const ExtractElementOperation *>(&other);
   return op && op->argument(0) == argument(0) && op->argument(1) == argument(1);
 }
 
 std::string
-extractelement_op::debug_string() const
+ExtractElementOperation::debug_string() const
 {
-  return "EXTRACTELEMENT";
+  return "ExtractElement";
 }
 
 std::unique_ptr<rvsdg::Operation>
-extractelement_op::copy() const
+ExtractElementOperation::copy() const
 {
-  return std::make_unique<extractelement_op>(*this);
+  return std::make_unique<ExtractElementOperation>(*this);
 }
 
-/* shufflevector operator */
-
-shufflevector_op::~shufflevector_op()
-{}
+ShuffleVectorOperation::~ShuffleVectorOperation() noexcept = default;
 
 bool
-shufflevector_op::operator==(const Operation & other) const noexcept
+ShuffleVectorOperation::operator==(const Operation & other) const noexcept
 {
-  auto op = dynamic_cast<const shufflevector_op *>(&other);
+  auto op = dynamic_cast<const ShuffleVectorOperation *>(&other);
   return op && op->argument(0) == argument(0) && op->Mask() == Mask();
 }
 
 std::string
-shufflevector_op::debug_string() const
+ShuffleVectorOperation::debug_string() const
 {
-  return "SHUFFLEVECTOR";
+  return "ShuffleVector";
 }
 
 std::unique_ptr<rvsdg::Operation>
-shufflevector_op::copy() const
+ShuffleVectorOperation::copy() const
 {
-  return std::make_unique<shufflevector_op>(*this);
+  return std::make_unique<ShuffleVectorOperation>(*this);
 }
 
-/* constantvector operator */
-
-constantvector_op::~constantvector_op()
-{}
+ConstantVectorOperation::~ConstantVectorOperation() noexcept = default;
 
 bool
-constantvector_op::operator==(const Operation & other) const noexcept
+ConstantVectorOperation::operator==(const Operation & other) const noexcept
 {
-  auto op = dynamic_cast<const constantvector_op *>(&other);
+  auto op = dynamic_cast<const ConstantVectorOperation *>(&other);
   return op && op->result(0) == result(0);
 }
 
 std::string
-constantvector_op::debug_string() const
+ConstantVectorOperation::debug_string() const
 {
-  return "CONSTANTVECTOR";
+  return "ConstantVector";
 }
 
 std::unique_ptr<rvsdg::Operation>
-constantvector_op::copy() const
+ConstantVectorOperation::copy() const
 {
-  return std::make_unique<constantvector_op>(*this);
+  return std::make_unique<ConstantVectorOperation>(*this);
 }
 
-/* insertelement operator */
-
-insertelement_op::~insertelement_op()
-{}
+InsertElementOperation::~InsertElementOperation() noexcept = default;
 
 bool
-insertelement_op::operator==(const Operation & other) const noexcept
+InsertElementOperation::operator==(const Operation & other) const noexcept
 {
-  auto op = dynamic_cast<const insertelement_op *>(&other);
+  auto op = dynamic_cast<const InsertElementOperation *>(&other);
   return op && op->argument(0) == argument(0) && op->argument(1) == argument(1)
       && op->argument(2) == argument(2);
 }
 
 std::string
-insertelement_op::debug_string() const
+InsertElementOperation::debug_string() const
 {
-  return "INSERTELEMENT";
+  return "InsertElement";
 }
 
 std::unique_ptr<rvsdg::Operation>
-insertelement_op::copy() const
+InsertElementOperation::copy() const
 {
-  return std::make_unique<insertelement_op>(*this);
+  return std::make_unique<InsertElementOperation>(*this);
 }
 
-/* vectorunary operator */
-
-vectorunary_op::~vectorunary_op()
-{}
+VectorUnaryOperation::~VectorUnaryOperation() noexcept = default;
 
 bool
-vectorunary_op::operator==(const Operation & other) const noexcept
+VectorUnaryOperation::operator==(const Operation & other) const noexcept
 {
-  auto op = dynamic_cast<const vectorunary_op *>(&other);
+  auto op = dynamic_cast<const VectorUnaryOperation *>(&other);
   return op && op->operation() == operation();
 }
 
 std::string
-vectorunary_op::debug_string() const
+VectorUnaryOperation::debug_string() const
 {
-  return util::strfmt("VEC", operation().debug_string());
+  return util::strfmt("Vector", operation().debug_string());
 }
 
 std::unique_ptr<rvsdg::Operation>
-vectorunary_op::copy() const
+VectorUnaryOperation::copy() const
 {
-  return std::make_unique<vectorunary_op>(*this);
+  return std::make_unique<VectorUnaryOperation>(*this);
 }
 
-/* vectorbinary operator */
-
-vectorbinary_op::~vectorbinary_op()
-{}
+VectorBinaryOperation::~VectorBinaryOperation() noexcept = default;
 
 bool
-vectorbinary_op::operator==(const Operation & other) const noexcept
+VectorBinaryOperation::operator==(const Operation & other) const noexcept
 {
-  auto op = dynamic_cast<const vectorbinary_op *>(&other);
+  auto op = dynamic_cast<const VectorBinaryOperation *>(&other);
   return op && op->operation() == operation();
 }
 
 std::string
-vectorbinary_op::debug_string() const
+VectorBinaryOperation::debug_string() const
 {
-  return util::strfmt("VEC", operation().debug_string());
+  return util::strfmt("Vector", operation().debug_string());
 }
 
 std::unique_ptr<rvsdg::Operation>
-vectorbinary_op::copy() const
+VectorBinaryOperation::copy() const
 {
-  return std::make_unique<vectorbinary_op>(*this);
+  return std::make_unique<VectorBinaryOperation>(*this);
 }
 
-/* const data vector operator */
-
-constant_data_vector_op::~constant_data_vector_op()
-{}
+ConstantDataVectorOperation::~ConstantDataVectorOperation() noexcept = default;
 
 bool
-constant_data_vector_op::operator==(const Operation & other) const noexcept
+ConstantDataVectorOperation::operator==(const Operation & other) const noexcept
 {
-  auto op = dynamic_cast<const constant_data_vector_op *>(&other);
+  auto op = dynamic_cast<const ConstantDataVectorOperation *>(&other);
   return op && op->result(0) == result(0);
 }
 
 std::string
-constant_data_vector_op::debug_string() const
+ConstantDataVectorOperation::debug_string() const
 {
-  return "CONSTANTDATAVECTOR";
+  return "ConstantDataVector";
 }
 
 std::unique_ptr<rvsdg::Operation>
-constant_data_vector_op::copy() const
+ConstantDataVectorOperation::copy() const
 {
-  return std::make_unique<constant_data_vector_op>(*this);
+  return std::make_unique<ConstantDataVectorOperation>(*this);
 }
 
-/* extractvalue operator */
-
-ExtractValue::~ExtractValue()
-{}
+ExtractValueOperation::~ExtractValueOperation() noexcept = default;
 
 bool
-ExtractValue::operator==(const Operation & other) const noexcept
+ExtractValueOperation::operator==(const Operation & other) const noexcept
 {
-  auto op = dynamic_cast<const ExtractValue *>(&other);
+  auto op = dynamic_cast<const ExtractValueOperation *>(&other);
   return op && op->indices_ == indices_ && op->type() == type();
 }
 
 std::string
-ExtractValue::debug_string() const
+ExtractValueOperation::debug_string() const
 {
   return "ExtractValue";
 }
 
 std::unique_ptr<rvsdg::Operation>
-ExtractValue::copy() const
+ExtractValueOperation::copy() const
 {
-  return std::make_unique<ExtractValue>(*this);
+  return std::make_unique<ExtractValueOperation>(*this);
 }
 
-/* malloc operator */
-
-malloc_op::~malloc_op()
-{}
+MallocOperation::~MallocOperation() noexcept = default;
 
 bool
-malloc_op::operator==(const Operation & other) const noexcept
+MallocOperation::operator==(const Operation & other) const noexcept
 {
-  /*
-    Avoid CNE for malloc operator
-  */
+  // Avoid CNE for malloc operator
   return this == &other;
 }
 
 std::string
-malloc_op::debug_string() const
+MallocOperation::debug_string() const
 {
-  return "MALLOC";
+  return "Malloc";
 }
 
 std::unique_ptr<rvsdg::Operation>
-malloc_op::copy() const
+MallocOperation::copy() const
 {
-  return std::make_unique<malloc_op>(*this);
+  return std::make_unique<MallocOperation>(*this);
 }
 
 /* free operator */

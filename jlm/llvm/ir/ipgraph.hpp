@@ -192,18 +192,18 @@ private:
   std::unordered_set<const InterProceduralGraphNode *> dependencies_;
 };
 
-class function_node final : public InterProceduralGraphNode
+class FunctionNode final : public InterProceduralGraphNode
 {
 public:
-  virtual ~function_node();
+  ~FunctionNode() noexcept override;
 
 private:
-  inline function_node(
+  FunctionNode(
       InterProceduralGraph & clg,
       const std::string & name,
       std::shared_ptr<const rvsdg::FunctionType> type,
       const llvm::linkage & linkage,
-      const attributeset & attributes)
+      const AttributeSet & attributes)
       : InterProceduralGraphNode(clg),
         FunctionType_(type),
         name_(name),
@@ -218,7 +218,7 @@ public:
     return cfg_.get();
   }
 
-  virtual const jlm::rvsdg::Type &
+  [[nodiscard]] const jlm::rvsdg::Type &
   type() const noexcept override;
 
   std::shared_ptr<const jlm::rvsdg::Type>
@@ -236,16 +236,16 @@ public:
     return FunctionType_;
   }
 
-  virtual const llvm::linkage &
+  [[nodiscard]] const llvm::linkage &
   linkage() const noexcept override;
 
-  virtual const std::string &
+  [[nodiscard]] const std::string &
   name() const noexcept override;
 
-  virtual bool
+  [[nodiscard]] bool
   hasBody() const noexcept override;
 
-  const attributeset &
+  const AttributeSet &
   attributes() const noexcept
   {
     return attributes_;
@@ -258,22 +258,22 @@ public:
   void
   add_cfg(std::unique_ptr<ControlFlowGraph> cfg);
 
-  static inline function_node *
+  static FunctionNode *
   create(
       InterProceduralGraph & ipg,
       const std::string & name,
       std::shared_ptr<const rvsdg::FunctionType> type,
       const llvm::linkage & linkage,
-      const attributeset & attributes)
+      const AttributeSet & attributes)
   {
-    std::unique_ptr<function_node> node(
-        new function_node(ipg, name, std::move(type), linkage, attributes));
+    std::unique_ptr<FunctionNode> node(
+        new FunctionNode(ipg, name, std::move(type), linkage, attributes));
     auto tmp = node.get();
     ipg.add_node(std::move(node));
     return tmp;
   }
 
-  static function_node *
+  static FunctionNode *
   create(
       InterProceduralGraph & ipg,
       const std::string & name,
@@ -287,28 +287,28 @@ private:
   std::shared_ptr<const rvsdg::FunctionType> FunctionType_;
   std::string name_;
   llvm::linkage linkage_;
-  attributeset attributes_;
+  AttributeSet attributes_;
   std::unique_ptr<ControlFlowGraph> cfg_;
 };
 
 class fctvariable final : public GlobalVariable
 {
 public:
-  virtual ~fctvariable();
+  ~fctvariable() noexcept override;
 
-  inline fctvariable(function_node * node)
+  explicit fctvariable(FunctionNode * node)
       : GlobalVariable(node->Type(), node->name()),
         node_(node)
   {}
 
-  inline function_node *
+  FunctionNode *
   function() const noexcept
   {
     return node_;
   }
 
 private:
-  function_node * node_;
+  FunctionNode * node_;
 };
 
 /* data node */
@@ -363,13 +363,13 @@ private:
   const Variable * value_;
 };
 
-class data_node final : public InterProceduralGraphNode
+class DataNode final : public InterProceduralGraphNode
 {
 public:
-  virtual ~data_node();
+  ~DataNode() noexcept override;
 
 private:
-  inline data_node(
+  DataNode(
       InterProceduralGraph & clg,
       const std::string & name,
       std::shared_ptr<const jlm::rvsdg::ValueType> valueType,
@@ -385,7 +385,7 @@ private:
   {}
 
 public:
-  virtual const PointerType &
+  [[nodiscard]] const PointerType &
   type() const noexcept override;
 
   std::shared_ptr<const jlm::rvsdg::Type>
@@ -397,13 +397,13 @@ public:
     return ValueType_;
   }
 
-  const std::string &
+  [[nodiscard]] const std::string &
   name() const noexcept override;
 
-  virtual const llvm::linkage &
+  [[nodiscard]] const llvm::linkage &
   linkage() const noexcept override;
 
-  virtual bool
+  [[nodiscard]] bool
   hasBody() const noexcept override;
 
   inline bool
@@ -436,7 +436,7 @@ public:
     init_ = std::move(init);
   }
 
-  static data_node *
+  static DataNode *
   Create(
       InterProceduralGraph & clg,
       const std::string & name,
@@ -445,8 +445,8 @@ public:
       std::string section,
       bool constant)
   {
-    std::unique_ptr<data_node> node(
-        new data_node(clg, name, std::move(valueType), linkage, std::move(section), constant));
+    std::unique_ptr<DataNode> node(
+        new DataNode(clg, name, std::move(valueType), linkage, std::move(section), constant));
     auto ptr = node.get();
     clg.add_node(std::move(node));
     return ptr;

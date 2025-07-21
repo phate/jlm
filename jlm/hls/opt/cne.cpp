@@ -446,7 +446,7 @@ mark(const rvsdg::StructuralNode * node, cnectx & ctx)
         { std::type_index(typeid(jlm::hls::loop_node)), mark_loop },
         { typeid(LambdaNode), mark_lambda },
         { typeid(PhiNode), mark_phi },
-        { typeid(llvm::delta::node), mark_delta } });
+        { typeid(llvm::DeltaNode), mark_delta } });
 
   JLM_ASSERT(map.find(typeid(*node)) != map.end());
   map[typeid(*node)](node, ctx);
@@ -471,15 +471,15 @@ mark(const jlm::rvsdg::SimpleNode * node, cnectx & ctx)
   auto set = ctx.set(node->input(0)->origin());
   for (const auto & origin : *set)
   {
-    for (const auto & user : *origin)
+    for (const auto & user : origin->Users())
     {
-      auto ni = dynamic_cast<const jlm::rvsdg::node_input *>(user);
+      auto ni = dynamic_cast<const jlm::rvsdg::node_input *>(&user);
       auto other = ni ? ni->node() : nullptr;
       if (!other || other == node || other->GetOperation() != node->GetOperation()
           || other->ninputs() != node->ninputs())
         continue;
 
-      size_t n;
+      size_t n = 0;
       for (n = 0; n < node->ninputs(); n++)
       {
         if (!ctx.congruent(node->input(n), other->input(n)))
@@ -607,7 +607,7 @@ divert(rvsdg::StructuralNode * node, cnectx & ctx)
         { std::type_index(typeid(jlm::hls::loop_node)), divert_loop },
         { typeid(rvsdg::LambdaNode), divert_lambda },
         { typeid(PhiNode), divert_phi },
-        { typeid(llvm::delta::node), divert_delta } });
+        { typeid(llvm::DeltaNode), divert_delta } });
 
   JLM_ASSERT(map.find(typeid(*node)) != map.end());
   map[typeid(*node)](node, ctx);
@@ -644,10 +644,7 @@ cne(rvsdg::RvsdgModule & rvsdgModule, util::StatisticsCollector & statisticsColl
   statisticsCollector.CollectDemandedStatistics(std::move(statistics));
 }
 
-/* cne class */
-
-cne::~cne()
-{}
+cne::~cne() noexcept = default;
 
 void
 cne::Run(rvsdg::RvsdgModule & module, util::StatisticsCollector & statisticsCollector)

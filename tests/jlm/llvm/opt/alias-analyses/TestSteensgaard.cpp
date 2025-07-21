@@ -727,7 +727,7 @@ TestDelta1()
     assert(ptg.NumRegisterNodes() == 3);
 
     auto & delta_f = ptg.GetDeltaNode(*test.delta_f);
-    auto & pdelta_f = ptg.GetRegisterNode(*test.delta_f->output());
+    auto & pdelta_f = ptg.GetRegisterNode(test.delta_f->output());
 
     auto & lambda_g = ptg.GetLambdaNode(*test.lambda_g);
     auto & plambda_g = ptg.GetRegisterNode(*test.lambda_g->output());
@@ -770,10 +770,10 @@ TestDelta2()
     assert(ptg.NumRegisterNodes() == 4);
 
     auto & delta_d1 = ptg.GetDeltaNode(*test.delta_d1);
-    auto & delta_d1_out = ptg.GetRegisterNode(*test.delta_d1->output());
+    auto & delta_d1_out = ptg.GetRegisterNode(test.delta_d1->output());
 
     auto & delta_d2 = ptg.GetDeltaNode(*test.delta_d2);
-    auto & delta_d2_out = ptg.GetRegisterNode(*test.delta_d2->output());
+    auto & delta_d2_out = ptg.GetRegisterNode(test.delta_d2->output());
 
     auto & lambda_f1 = ptg.GetLambdaNode(*test.lambda_f1);
     auto & lambda_f1_out = ptg.GetRegisterNode(*test.lambda_f1->output());
@@ -1282,7 +1282,7 @@ TestStatistics()
   assert(statisticsCollector.NumCollectedStatistics() == 1);
 }
 
-static int
+static void
 TestSteensgaardAnalysis()
 {
   TestStore1();
@@ -1338,8 +1338,6 @@ TestSteensgaardAnalysis()
   TestVariadicFunction2();
 
   TestStatistics();
-
-  return 0;
 }
 
 JLM_UNIT_TEST_REGISTER("jlm/llvm/opt/alias-analyses/TestSteensgaard", TestSteensgaardAnalysis)

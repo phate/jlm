@@ -13,17 +13,17 @@
 namespace jlm::tests
 {
 
-class unit_test
+class UnitTest
 {
 public:
-  unit_test(int (*v)())
+  explicit UnitTest(void (*v)())
       : verify(v)
   {}
 
-  int (*verify)();
+  void (*verify)();
 };
 
-using unit_test_map_t = std::map<std::string, std::unique_ptr<unit_test>>;
+using unit_test_map_t = std::map<std::string, std::unique_ptr<UnitTest>>;
 
 static unit_test_map_t &
 GetUnitTestMap()
@@ -33,32 +33,27 @@ GetUnitTestMap()
 }
 
 void
-register_unit_test(const std::string & name, int (*verify)())
+register_unit_test(const std::string & name, void (*verify)())
 {
   assert(GetUnitTestMap().find(name) == GetUnitTestMap().end());
-  GetUnitTestMap().insert(std::make_pair(name, std::make_unique<unit_test>(verify)));
+  GetUnitTestMap().insert(std::make_pair(name, std::make_unique<UnitTest>(verify)));
 }
 
-int
+void
 run_unit_test(const std::string & name)
 {
   assert(GetUnitTestMap().find(name) != GetUnitTestMap().end());
   return GetUnitTestMap()[name]->verify();
 }
 
-int
+void
 RunAllUnitTests()
 {
-  int fail = 0;
-  for (const auto & named_test : GetUnitTestMap())
+  for (const auto & [testName, unitTest] : GetUnitTestMap())
   {
-    std::cerr << named_test.first << std::endl;
-    if (named_test.second->verify())
-    {
-      fail = 1;
-    }
+    std::cerr << testName << std::endl;
+    unitTest->verify();
   }
-  return fail;
 }
 
 }

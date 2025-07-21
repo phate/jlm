@@ -14,7 +14,7 @@
 #include <jlm/rvsdg/view.hpp>
 #include <jlm/util/Statistics.hpp>
 
-static int
+static void
 TestSingleLoad()
 {
   using namespace jlm::llvm;
@@ -60,9 +60,9 @@ TestSingleLoad()
   mem_sep_argument(*rvsdgModule);
   // Assert
   jlm::rvsdg::view(rvsdgModule->Rvsdg(), stdout);
-  auto * const entryMemoryStateSplitInput = *lambdaRegion->argument(1)->begin();
+  auto & entryMemoryStateSplitInput = lambdaRegion->argument(1)->SingleUser();
   auto * entryMemoryStateSplitNode =
-      jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(*entryMemoryStateSplitInput);
+      jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(entryMemoryStateSplitInput);
   jlm::util::AssertedCast<const LambdaEntryMemoryStateSplitOperation>(
       &entryMemoryStateSplitNode->GetOperation());
   auto exitMemoryStateMergeNode =
@@ -82,12 +82,10 @@ TestSingleLoad()
   jlm::rvsdg::view(rvsdgModule->Rvsdg(), stdout);
   assert(jlm::rvsdg::Region::ContainsOperation<StateGateOperation>(*lambdaRegion, true));
   assert(!jlm::rvsdg::Region::ContainsOperation<AddressQueueOperation>(*lambdaRegion, true));
-
-  return 0;
 }
 JLM_UNIT_TEST_REGISTER("jlm/hls/backend/rvsdg2rhls/MemoryQueueTests-SingleLoad", TestSingleLoad)
 
-static int
+static void
 TestLoadStore()
 {
   using namespace jlm::llvm;
@@ -142,9 +140,9 @@ TestLoadStore()
   mem_sep_argument(*rvsdgModule);
   // Assert
   jlm::rvsdg::view(rvsdgModule->Rvsdg(), stdout);
-  auto * const entryMemoryStateSplitInput = *lambdaRegion->argument(2)->begin();
+  auto & entryMemoryStateSplitInput = lambdaRegion->argument(2)->SingleUser();
   auto * entryMemoryStateSplitNode =
-      jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(*entryMemoryStateSplitInput);
+      jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(entryMemoryStateSplitInput);
   jlm::util::AssertedCast<const LambdaEntryMemoryStateSplitOperation>(
       &entryMemoryStateSplitNode->GetOperation());
   auto exitMemoryStateMergeNode =
@@ -164,12 +162,10 @@ TestLoadStore()
   jlm::rvsdg::view(rvsdgModule->Rvsdg(), stdout);
   assert(jlm::rvsdg::Region::ContainsOperation<StateGateOperation>(*lambdaRegion, true));
   assert(!jlm::rvsdg::Region::ContainsOperation<AddressQueueOperation>(*lambdaRegion, true));
-
-  return 0;
 }
 JLM_UNIT_TEST_REGISTER("jlm/hls/backend/rvsdg2rhls/MemoryQueueTests-LoadStore", TestLoadStore)
 
-static int
+static void
 TestAddrQueue()
 {
   using namespace jlm::llvm;
@@ -218,9 +214,9 @@ TestAddrQueue()
   mem_sep_argument(*rvsdgModule);
   // Assert
   jlm::rvsdg::view(rvsdgModule->Rvsdg(), stdout);
-  auto * const entryMemoryStateSplitInput = *lambdaRegion->argument(1)->begin();
+  auto & entryMemoryStateSplitInput = lambdaRegion->argument(1)->SingleUser();
   auto * entryMemoryStateSplitNode =
-      jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(*entryMemoryStateSplitInput);
+      jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(entryMemoryStateSplitInput);
   jlm::util::AssertedCast<const LambdaEntryMemoryStateSplitOperation>(
       &entryMemoryStateSplitNode->GetOperation());
   auto exitMemoryStateMergeNode =
@@ -259,12 +255,9 @@ TestAddrQueue()
           auto addrQueue =
               jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(*stateGate->input(0)->origin());
           jlm::util::AssertedCast<const AddressQueueOperation>(&addrQueue->GetOperation());
-          return 0;
         }
       }
     }
   }
-
-  return 1;
 }
 JLM_UNIT_TEST_REGISTER("jlm/hls/backend/rvsdg2rhls/MemoryQueueTests-AddrQueue", TestAddrQueue)

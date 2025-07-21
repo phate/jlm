@@ -47,7 +47,7 @@
  * set_next members must be implemented appropriately.
  *
  * An object h of num_list class then supports STL-style operations
- * - num_list::iterator, num_list::const_iterator for iteration
+ * - num_list::Iterator, num_list::ConstIterator for iteration
  * - h.begin(), h.end() and const-qualified variants
  * - h.insert(element) h.push_front(element), h.push_back(element) links an
  *   object into the data structure
@@ -93,9 +93,9 @@ public:
   static_assert(noexcept(Accessor().get_next(nullptr)), "require noexcept get_next");
   static_assert(noexcept(Accessor().set_prev(nullptr, nullptr)), "require noexcept set_prev");
   static_assert(noexcept(Accessor().set_next(nullptr, nullptr)), "require noexcept set_next");
-  class const_iterator;
+  class ConstIterator;
 
-  class iterator
+  class Iterator
   {
   public:
     typedef ElementType value_type;
@@ -105,32 +105,32 @@ public:
     typedef size_t size_type;
     typedef ssize_t difference_type;
 
-    constexpr iterator() noexcept
+    constexpr Iterator() noexcept
         : list_(nullptr),
           element_(nullptr)
     {}
 
-    constexpr iterator(const IntrusiveList * list, ElementType * object)
+    constexpr Iterator(const IntrusiveList * list, ElementType * object)
         : list_(list),
           element_(object)
     {}
 
-    inline const iterator &
+    const Iterator &
     operator++() noexcept
     {
       element_ = list_->accessor_.get_next(element_);
       return *this;
     }
 
-    inline iterator
+    Iterator
     operator++(int) noexcept
     {
-      iterator i = *this;
+      Iterator i = *this;
       ++*this;
       return i;
     }
 
-    inline const iterator &
+    const Iterator &
     operator--() noexcept
     {
       if (element_)
@@ -144,10 +144,10 @@ public:
       return *this;
     }
 
-    inline iterator
+    Iterator
     operator--(int) noexcept
     {
-      iterator i = *this;
+      Iterator i = *this;
       --*this;
       return i;
     }
@@ -165,13 +165,13 @@ public:
     }
 
     inline bool
-    operator==(const iterator & other) const noexcept
+    operator==(const Iterator & other) const noexcept
     {
       return element_ == other.element_;
     }
 
     inline bool
-    operator!=(const iterator & other) const noexcept
+    operator!=(const Iterator & other) const noexcept
     {
       return element_ != other.element_;
     }
@@ -185,10 +185,10 @@ public:
   private:
     const IntrusiveList * list_;
     ElementType * element_;
-    friend class const_iterator;
+    friend class ConstIterator;
   };
 
-  class const_iterator
+  class ConstIterator
   {
   public:
     typedef const ElementType value_type;
@@ -198,39 +198,39 @@ public:
     typedef size_t size_type;
     typedef ssize_t difference_type;
 
-    constexpr const_iterator(const const_iterator & other) noexcept = default;
+    constexpr ConstIterator(const ConstIterator & other) noexcept = default;
 
-    constexpr const_iterator(const iterator & other) noexcept
+    explicit constexpr ConstIterator(const Iterator & other) noexcept
         : list_(other.list_),
           element_(other.element_)
     {}
 
-    constexpr const_iterator() noexcept
+    constexpr ConstIterator() noexcept
         : list_(nullptr),
           element_(nullptr)
     {}
 
-    constexpr const_iterator(const IntrusiveList * list, const ElementType * object)
+    constexpr ConstIterator(const IntrusiveList * list, const ElementType * object)
         : list_(list),
           element_(object)
     {}
 
-    inline const const_iterator &
+    const ConstIterator &
     operator++() noexcept
     {
       element_ = list_->accessor_.get_next(element_);
       return *this;
     }
 
-    inline const_iterator
+    ConstIterator
     operator++(int) noexcept
     {
-      iterator i = *this;
+      Iterator i = *this;
       ++*this;
       return i;
     }
 
-    inline const const_iterator &
+    const ConstIterator &
     operator--() noexcept
     {
       if (element_)
@@ -244,10 +244,10 @@ public:
       return *this;
     }
 
-    inline const_iterator
+    ConstIterator
     operator--(int) noexcept
     {
-      iterator i = *this;
+      Iterator i = *this;
       --*this;
       return i;
     }
@@ -265,13 +265,13 @@ public:
     }
 
     inline bool
-    operator==(const const_iterator & other) const noexcept
+    operator==(const ConstIterator & other) const noexcept
     {
       return element_ == other.element_;
     }
 
     inline bool
-    operator!=(const const_iterator & other) const noexcept
+    operator!=(const ConstIterator & other) const noexcept
     {
       return element_ != other.element_;
     }
@@ -352,8 +352,8 @@ public:
     first_ = element;
   }
 
-  inline iterator
-  insert(iterator i, ElementType * element) noexcept
+  Iterator
+  insert(Iterator i, ElementType * element) noexcept
   {
     ElementType * next = i.ptr();
     ElementType * prev = next ? accessor_.get_prev(next) : last_;
@@ -375,7 +375,7 @@ public:
     {
       last_ = element;
     }
-    return iterator(this, element);
+    return Iterator(this, element);
   }
 
   inline void
@@ -401,8 +401,8 @@ public:
     }
   }
 
-  inline iterator
-  erase(iterator i) noexcept
+  Iterator
+  erase(Iterator i) noexcept
   {
     auto element = i.ptr();
     ++i;
@@ -411,7 +411,7 @@ public:
   }
 
   inline void
-  erase(iterator begin, iterator end) noexcept
+  erase(Iterator begin, Iterator end) noexcept
   {
     while (begin != end)
     {
@@ -422,21 +422,21 @@ public:
   }
 
   inline void
-  splice(iterator position, IntrusiveList & other) noexcept
+  splice(Iterator position, IntrusiveList & other) noexcept
   {
     splice(position, other, other.begin(), other.end());
   }
 
   inline void
-  splice(iterator position, IntrusiveList & other, iterator i) noexcept
+  splice(Iterator position, IntrusiveList & other, Iterator i) noexcept
   {
-    iterator j = i;
+    Iterator j = i;
     ++j;
     splice(position, other, i, j);
   }
 
   inline void
-  splice(iterator position, IntrusiveList & other, iterator begin, iterator end) noexcept
+  splice(Iterator position, IntrusiveList & other, Iterator begin, Iterator end) noexcept
   {
     if (begin == end)
     {
@@ -493,7 +493,7 @@ public:
   size() const noexcept
   {
     size_type count = 0;
-    for (const_iterator i = begin(); i != end(); ++i)
+    for (ConstIterator i = begin(); i != end(); ++i)
     {
       ++count;
     }
@@ -506,51 +506,51 @@ public:
     return first_ == nullptr;
   }
 
-  iterator
+  Iterator
   begin() noexcept
   {
-    return iterator(this, first_);
+    return Iterator(this, first_);
   }
 
-  iterator
+  Iterator
   end() noexcept
   {
-    return iterator(this, nullptr);
+    return Iterator(this, nullptr);
   }
 
-  const_iterator
+  ConstIterator
   cbegin() const noexcept
   {
-    return const_iterator(this, first_);
+    return ConstIterator(this, first_);
   }
 
-  const_iterator
+  ConstIterator
   cend() const noexcept
   {
-    return const_iterator(this, nullptr);
+    return ConstIterator(this, nullptr);
   }
 
-  const_iterator
+  ConstIterator
   begin() const noexcept
   {
     return cbegin();
   }
 
-  const_iterator
+  ConstIterator
   end() const noexcept
   {
     return cend();
   }
 
   /* create iterator for element */
-  iterator
+  Iterator
   make_element_iterator(ElementType * element) const noexcept
   {
     return iterator(this, element);
   }
 
   /* create iterator for element */
-  const_iterator
+  ConstIterator
   make_element_iterator(const ElementType * element) const noexcept
   {
     return const_iterator(this, element);
@@ -622,8 +622,8 @@ public:
   static_assert(
       noexcept(std::declval<ElementType &>().~ElementType()),
       "Require noexcept destructor for ElementType");
-  typedef typename internal_list_type::const_iterator const_iterator;
-  typedef typename internal_list_type::iterator iterator;
+  typedef typename internal_list_type::ConstIterator ConstIterator;
+  typedef typename internal_list_type::Iterator Iterator;
   typedef typename internal_list_type::value_type value_type;
   typedef typename internal_list_type::size_type size_type;
 
@@ -674,14 +674,14 @@ public:
     internal_list_.push_front(element.release());
   }
 
-  inline iterator
-  insert(iterator i, std::unique_ptr<ElementType> element) noexcept
+  inline Iterator
+  insert(Iterator i, std::unique_ptr<ElementType> element) noexcept
   {
     return internal_list_.insert(i, element.release());
   }
 
   inline std::unique_ptr<ElementType>
-  unlink(iterator i) noexcept
+  unlink(Iterator i) noexcept
   {
     ElementType * element = i.ptr();
     internal_list_.erase(i);
@@ -695,13 +695,13 @@ public:
   }
 
   inline void
-  erase(iterator i) noexcept
+  erase(Iterator i) noexcept
   {
     unlink(i);
   }
 
   inline void
-  erase(iterator begin, iterator end) noexcept
+  erase(Iterator begin, Iterator end) noexcept
   {
     while (begin != end)
     {
@@ -712,21 +712,21 @@ public:
   }
 
   inline void
-  splice(iterator position, owner_intrusive_list & other) noexcept
+  splice(Iterator position, owner_intrusive_list & other) noexcept
   {
     splice(position, other, other.begin(), other.end());
   }
 
   inline void
-  splice(iterator position, owner_intrusive_list & other, iterator i) noexcept
+  splice(Iterator position, owner_intrusive_list & other, Iterator i) noexcept
   {
-    iterator j = i;
+    Iterator j = i;
     ++j;
     splice(position, other, i, j);
   }
 
   inline void
-  splice(iterator position, owner_intrusive_list & other, iterator begin, iterator end) noexcept
+  splice(Iterator position, owner_intrusive_list & other, Iterator begin, Iterator end) noexcept
   {
     internal_list_.splice(position, other.internal_list_, begin, end);
   }
@@ -743,54 +743,54 @@ public:
     return internal_list_.empty();
   }
 
-  iterator
+  Iterator
   begin() noexcept
   {
     return internal_list_.begin();
   }
 
-  iterator
+  Iterator
   end() noexcept
   {
     return internal_list_.end();
   }
 
-  const_iterator
+  ConstIterator
   cbegin() const noexcept
   {
     return internal_list_.cbegin();
   }
 
-  const_iterator
+  ConstIterator
   cend() const noexcept
   {
     return internal_list_.cend();
   }
 
-  const_iterator
+  ConstIterator
   begin() const noexcept
   {
     return internal_list_.begin();
   }
 
-  const_iterator
+  ConstIterator
   end() const noexcept
   {
     return internal_list_.end();
   }
 
   /* create iterator for element */
-  iterator
+  Iterator
   make_element_iterator(ElementType * element) const noexcept
   {
-    return iterator(&internal_list_, element);
+    return Iterator(&internal_list_, element);
   }
 
   /* create iterator for element */
-  const_iterator
+  ConstIterator
   make_element_iterator(const ElementType * element) const noexcept
   {
-    return const_iterator(&internal_list_, element);
+    return ConstIterator(&internal_list_, element);
   }
 
 private:

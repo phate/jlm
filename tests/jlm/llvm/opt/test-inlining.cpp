@@ -26,11 +26,11 @@ test1()
   // Arrange
   RvsdgModule rm(jlm::util::FilePath(""), "", "");
   auto & graph = rm.Rvsdg();
-  auto i = &jlm::tests::GraphImport::Create(graph, jlm::tests::valuetype::Create(), "i");
+  auto i = &jlm::tests::GraphImport::Create(graph, jlm::tests::ValueType::Create(), "i");
 
   auto SetupF1 = [&]()
   {
-    auto vt = jlm::tests::valuetype::Create();
+    auto vt = jlm::tests::ValueType::Create();
     auto iOStateType = IOStateType::Create();
     auto memoryStateType = MemoryStateType::Create();
     auto functionType = jlm::rvsdg::FunctionType::Create(
@@ -42,7 +42,7 @@ test1()
         LlvmLambdaOperation::Create(functionType, "f1", linkage::external_linkage));
     lambda->AddContextVar(*i);
 
-    auto t = jlm::tests::test_op::create(
+    auto t = jlm::tests::TestOperation::create(
         lambda->subregion(),
         { lambda->GetFunctionArguments()[0] },
         { vt });
@@ -53,7 +53,7 @@ test1()
 
   auto SetupF2 = [&](jlm::rvsdg::Output * f1)
   {
-    auto vt = jlm::tests::valuetype::Create();
+    auto vt = jlm::tests::ValueType::Create();
     auto iOStateType = IOStateType::Create();
     auto memoryStateType = MemoryStateType::Create();
     auto ct = jlm::rvsdg::ControlType::Create(2);
@@ -105,7 +105,7 @@ test1()
   //	jlm::rvsdg::view(graph.GetRootRegion(), stdout);
 
   // Act
-  jlm::llvm::fctinline fctinline;
+  jlm::llvm::FunctionInlining fctinline;
   fctinline.Run(rm, statisticsCollector);
   //	jlm::rvsdg::view(graph.GetRootRegion(), stdout);
 
@@ -119,7 +119,7 @@ test2()
   using namespace jlm::llvm;
 
   // Arrange
-  auto vt = jlm::tests::valuetype::Create();
+  auto vt = jlm::tests::ValueType::Create();
   auto iOStateType = IOStateType::Create();
   auto memoryStateType = MemoryStateType::Create();
 
@@ -176,7 +176,7 @@ test2()
   jlm::rvsdg::view(&graph.GetRootRegion(), stdout);
 
   // Act
-  jlm::llvm::fctinline fctinline;
+  jlm::llvm::FunctionInlining fctinline;
   fctinline.Run(rm, statisticsCollector);
   jlm::rvsdg::view(&graph.GetRootRegion(), stdout);
 
@@ -188,13 +188,11 @@ test2()
            ->origin())));
 }
 
-static int
+static void
 verify()
 {
   test1();
   test2();
-
-  return 0;
 }
 
 JLM_UNIT_TEST_REGISTER("jlm/llvm/opt/test-inlining", verify)

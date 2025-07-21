@@ -61,10 +61,10 @@ public:
   ArrayType &
   operator=(ArrayType &&) = delete;
 
-  virtual std::string
+  [[nodiscard]] std::string
   debug_string() const override;
 
-  virtual bool
+  bool
   operator==(const jlm::rvsdg::Type & other) const noexcept override;
 
   [[nodiscard]] std::size_t
@@ -119,10 +119,10 @@ public:
       : size_(size)
   {}
 
-  virtual std::string
+  [[nodiscard]] std::string
   debug_string() const override;
 
-  virtual bool
+  bool
   operator==(const jlm::rvsdg::Type & other) const noexcept override;
 
   [[nodiscard]] std::size_t
@@ -148,13 +148,13 @@ public:
 
   constexpr VariableArgumentType() = default;
 
-  virtual bool
+  bool
   operator==(const jlm::rvsdg::Type & other) const noexcept override;
 
   [[nodiscard]] std::size_t
   ComputeHash() const noexcept override;
 
-  virtual std::string
+  [[nodiscard]] std::string
   debug_string() const override;
 
   static std::shared_ptr<const VariableArgumentType>
@@ -195,6 +195,15 @@ public:
   StructType &
   operator=(StructType &&) = delete;
 
+  bool
+  operator==(const jlm::rvsdg::Type & other) const noexcept override;
+
+  [[nodiscard]] std::size_t
+  ComputeHash() const noexcept override;
+
+  [[nodiscard]] std::string
+  debug_string() const override;
+
   [[nodiscard]] bool
   HasName() const noexcept
   {
@@ -219,14 +228,15 @@ public:
     return Declaration_;
   }
 
-  bool
-  operator==(const jlm::rvsdg::Type & other) const noexcept override;
-
-  [[nodiscard]] std::size_t
-  ComputeHash() const noexcept override;
-
-  [[nodiscard]] std::string
-  debug_string() const override;
+  /**
+   * Gets the position of the given field, as a byte offset from the start of the struct.
+   * Non-packed structs use padding to respect the alignment of each field, just like in C.
+   * Packed structs have no padding, and no alignment.
+   * @param fieldIndex the index of the field, must be valid
+   * @return the byte offset of the given field
+   */
+  [[nodiscard]] size_t
+  GetFieldOffset(size_t fieldIndex) const;
 
   static std::shared_ptr<const StructType>
   Create(const std::string & name, bool isPacked, const Declaration & declaration)
@@ -251,7 +261,7 @@ class StructType::Declaration final
 public:
   ~Declaration() = default;
 
-  Declaration(std::vector<std::shared_ptr<const rvsdg::Type>> types)
+  explicit Declaration(std::vector<std::shared_ptr<const rvsdg::Type>> types)
       : Types_(std::move(types))
   {}
 
@@ -324,7 +334,7 @@ public:
   VectorType &
   operator=(VectorType && other) = default;
 
-  virtual bool
+  bool
   operator==(const jlm::rvsdg::Type & other) const noexcept override;
 
   size_t
@@ -359,13 +369,13 @@ public:
       : VectorType(std::move(type), size)
   {}
 
-  virtual bool
+  bool
   operator==(const jlm::rvsdg::Type & other) const noexcept override;
 
   [[nodiscard]] std::size_t
   ComputeHash() const noexcept override;
 
-  virtual std::string
+  [[nodiscard]] std::string
   debug_string() const override;
 
   static std::shared_ptr<const FixedVectorType>
@@ -384,13 +394,13 @@ public:
       : VectorType(std::move(type), size)
   {}
 
-  virtual bool
+  bool
   operator==(const jlm::rvsdg::Type & other) const noexcept override;
 
   [[nodiscard]] std::size_t
   ComputeHash() const noexcept override;
 
-  virtual std::string
+  [[nodiscard]] std::string
   debug_string() const override;
 
   static std::shared_ptr<const ScalableVectorType>
@@ -411,13 +421,13 @@ public:
 
   constexpr IOStateType() noexcept = default;
 
-  virtual bool
+  bool
   operator==(const jlm::rvsdg::Type & other) const noexcept override;
 
   [[nodiscard]] std::size_t
   ComputeHash() const noexcept override;
 
-  virtual std::string
+  [[nodiscard]] std::string
   debug_string() const override;
 
   static std::shared_ptr<const IOStateType>
@@ -436,7 +446,7 @@ public:
 
   constexpr MemoryStateType() noexcept = default;
 
-  std::string
+  [[nodiscard]] std::string
   debug_string() const override;
 
   bool
@@ -507,16 +517,6 @@ GetTypeSize(const rvsdg::ValueType & type);
  */
 [[nodiscard]] size_t
 GetTypeAlignment(const rvsdg::ValueType & type);
-
-/**
- * Gets the offset at which the given field is located in memory.
- * Respects alignment of each field, just like in C. Supports packed structs.
- * @param structType the struct type
- * @param fieldIndex the index of the field, must be a valid field
- * @return the byte offset of the field, relative to the beginning of the struct.
- */
-[[nodiscard]] size_t
-GetStructFieldOffset(const StructType & structType, size_t fieldIndex);
 
 }
 

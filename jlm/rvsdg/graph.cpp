@@ -73,7 +73,15 @@ Graph::ExtractTailNodes(const Graph & rvsdg)
       return true;
     };
 
-    return std::all_of(output.begin(), output.end(), IsRootRegionExport);
+    for (auto & user : output.Users())
+    {
+      if (!IsRootRegionExport(&user))
+      {
+        return false;
+      }
+    }
+
+    return true;
   };
 
   auto & rootRegion = rvsdg.GetRootRegion();

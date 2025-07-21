@@ -278,7 +278,7 @@ RhlsToFirrtlConverter::MlirGenSimpleNode(const jlm::rvsdg::SimpleNode * node)
     auto constant = GetConstant(body, size, value);
     Connect(body, outData, constant);
   }
-  else if (dynamic_cast<const llvm::bitcast_op *>(&(node->GetOperation())))
+  else if (dynamic_cast<const llvm::BitCastOperation *>(&(node->GetOperation())))
   {
     auto input0 = GetSubfield(body, inBundles[0], "data");
     Connect(body, outData, input0);
@@ -362,7 +362,7 @@ RhlsToFirrtlConverter::MlirGenSimpleNode(const jlm::rvsdg::SimpleNode * node)
     auto asUInt = AddAsUIntOp(body, result);
     Connect(body, outData, AddBitsOp(body, asUInt, GetPointerSizeInBits() - 1, 0));
   }
-  else if (auto op = dynamic_cast<const llvm::extractelement_op *>(&(node->GetOperation())))
+  else if (auto op = dynamic_cast<const llvm::ExtractElementOperation *>(&(node->GetOperation())))
   {
     // Start of with base pointer
     auto input0 = GetSubfield(body, inBundles[0], "data");
@@ -949,13 +949,11 @@ RhlsToFirrtlConverter::MlirGenHlsMemReq(const jlm::rvsdg::SimpleNode * node)
 circt::firrtl::FModuleOp
 RhlsToFirrtlConverter::MlirGenHlsLoad(const jlm::rvsdg::SimpleNode * node)
 {
+  JLM_ASSERT(rvsdg::is<LoadOperation>(node) || rvsdg::is<LocalLoadOperation>(node));
+
   // Create the module and its input/output ports
   auto module = nodeToModule(node, false);
   auto body = module.getBodyBlock();
-
-  auto load = dynamic_cast<const LoadOperation *>(&(node->GetOperation()));
-  auto local_load = dynamic_cast<const local_load_op *>(&(node->GetOperation()));
-  JLM_ASSERT(load || local_load);
 
   // Input signals
   auto inBundleAddr = GetInPort(module, 0);
@@ -1170,14 +1168,12 @@ RhlsToFirrtlConverter::MlirGenHlsDLoad(const jlm::rvsdg::SimpleNode * node)
 circt::firrtl::FModuleOp
 RhlsToFirrtlConverter::MlirGenHlsLocalMem(const jlm::rvsdg::SimpleNode * node)
 {
-  auto lmem_op = dynamic_cast<const local_mem_op *>(&(node->GetOperation()));
-  JLM_ASSERT(lmem_op);
-  auto res_node = rvsdg::TryGetOwnerNode<rvsdg::Node>(**node->output(0)->begin());
-  auto res_op = dynamic_cast<const local_mem_resp_op *>(&res_node->GetOperation());
-  JLM_ASSERT(res_op);
-  auto req_node = rvsdg::TryGetOwnerNode<rvsdg::Node>(**node->output(1)->begin());
-  auto req_op = dynamic_cast<const local_mem_req_op *>(&req_node->GetOperation());
-  JLM_ASSERT(req_op);
+  auto lmem_op = util::AssertedCast<const LocalMemoryOperation>(&node->GetOperation());
+  auto res_node = rvsdg::TryGetOwnerNode<rvsdg::Node>(*node->output(0)->Users().begin());
+  JLM_ASSERT(rvsdg::is<LocalMemoryResponseOperation>(res_node));
+  auto req_node = rvsdg::TryGetOwnerNode<rvsdg::Node>(*node->output(1)->Users().begin());
+  JLM_ASSERT(rvsdg::is<LocalMemoryRequestOperation>(req_node));
+
   // Create the module and its input/output ports - we use a non-standard way here
   // Generate a vector with all inputs and outputs of the module
   ::llvm::SmallVector<circt::firrtl::PortInfo> ports;
@@ -1221,7 +1217,7 @@ RhlsToFirrtlConverter::MlirGenHlsLocalMem(const jlm::rvsdg::SimpleNode * node)
 
   auto body = module.getBodyBlock();
 
-  size_t loads = rvsdg::TryGetOwnerNode<rvsdg::Node>(**node->output(0)->begin())->noutputs();
+  size_t loads = rvsdg::TryGetOwnerNode<rvsdg::Node>(*node->output(0)->Users().begin())->noutputs();
 
   // Input signals
   ::llvm::SmallVector<circt::firrtl::SubfieldOp> loadAddrReadys;
@@ -1379,13 +1375,11 @@ RhlsToFirrtlConverter::MlirGenHlsLocalMem(const jlm::rvsdg::SimpleNode * node)
 circt::firrtl::FModuleOp
 RhlsToFirrtlConverter::MlirGenHlsStore(const jlm::rvsdg::SimpleNode * node)
 {
+  JLM_ASSERT(rvsdg::is<StoreOperation>(node) || rvsdg::is<LocalStoreOperation>(node));
+
   // Create the module and its input/output ports
   auto module = nodeToModule(node, false);
   auto body = module.getBodyBlock();
-
-  auto store = dynamic_cast<const store_op *>(&(node->GetOperation()));
-  auto local_store = dynamic_cast<const local_store_op *>(&(node->GetOperation()));
-  JLM_ASSERT(store || local_store);
 
   // Input signals
   auto inBundleAddr = GetInPort(module, 0);
@@ -1597,7 +1591,7 @@ RhlsToFirrtlConverter::MlirGenMem(const jlm::rvsdg::SimpleNode * node)
   Connect(body, memReqValid, canRequest);
   Connect(body, memReqAddr, inData0);
 
-  int bitWidth;
+  int bitWidth = 0;
   if (store)
   {
     Connect(body, memReqWrite, oneBitValue);
@@ -1837,7 +1831,7 @@ RhlsToFirrtlConverter::MlirGenBuffer(const jlm::rvsdg::SimpleNode * node)
   auto body = module.getBodyBlock();
 
   auto op = dynamic_cast<const BufferOperation *>(&(node->GetOperation()));
-  auto capacity = op->capacity;
+  auto capacity = op->Capacity();
 
   auto clock = GetClockSignal(module);
   auto reset = GetResetSignal(module);
@@ -1911,7 +1905,7 @@ RhlsToFirrtlConverter::MlirGenBuffer(const jlm::rvsdg::SimpleNode * node)
   Connect(body, outData, dataRegs[0].getResult());
   auto andOp = AddAndOp(body, outReady, outValid);
   Connect(body, shiftWires[0].getResult(), andOp);
-  if (op->pass_through)
+  if (op->IsPassThrough())
   {
     auto notOp = AddNotOp(body, validRegs[0].getResult());
     andOp = AddAndOp(body, notOp, outReady);
@@ -2396,21 +2390,21 @@ RhlsToFirrtlConverter::MlirGen(const jlm::rvsdg::SimpleNode * node)
   {
     return MlirGenExtModule(node);
   }
-  else if (dynamic_cast<const hls::store_op *>(&(node->GetOperation())))
+  else if (dynamic_cast<const hls::StoreOperation *>(&(node->GetOperation())))
   {
     return MlirGenHlsStore(node);
   }
-  else if (dynamic_cast<const hls::local_load_op *>(&(node->GetOperation())))
+  else if (dynamic_cast<const hls::LocalLoadOperation *>(&(node->GetOperation())))
   {
     // same as normal load for now, but with index instead of address
     return MlirGenHlsLoad(node);
   }
-  else if (dynamic_cast<const hls::local_store_op *>(&(node->GetOperation())))
+  if (rvsdg::is<LocalStoreOperation>(node))
   {
     // same as normal store for now, but with index instead of address
     return MlirGenHlsStore(node);
   }
-  else if (dynamic_cast<const hls::local_mem_op *>(&(node->GetOperation())))
+  else if (dynamic_cast<const hls::LocalMemoryOperation *>(&(node->GetOperation())))
   {
     return MlirGenHlsLocalMem(node);
   }
@@ -2428,7 +2422,7 @@ RhlsToFirrtlConverter::MlirGen(const jlm::rvsdg::SimpleNode * node)
   }
   else if (auto b = dynamic_cast<const BufferOperation *>(&node->GetOperation()))
   {
-    JLM_ASSERT(b->capacity);
+    JLM_ASSERT(b->Capacity());
     return MlirGenExtModule(node);
   }
   else if (dynamic_cast<const hls::BranchOperation *>(&(node->GetOperation())))
@@ -2450,11 +2444,6 @@ RhlsToFirrtlConverter::MlirGen(const jlm::rvsdg::SimpleNode * node)
   else if (dynamic_cast<const AddressQueueOperation *>(&(node->GetOperation())))
   {
     return MlirGenAddrQueue(node);
-  }
-  else if (dynamic_cast<const hls::merge_op *>(&(node->GetOperation())))
-  {
-    // return merge_to_firrtl(n);
-    throw std::logic_error(node->DebugString() + " not implemented!");
   }
   else if (auto o = dynamic_cast<const MuxOperation *>(&(node->GetOperation())))
   {
@@ -3970,17 +3959,19 @@ RhlsToFirrtlConverter::GetModuleName(const rvsdg::Node * node)
       append.append(std::to_string(bitWidth));
     }
   }
-  if (auto op = dynamic_cast<const local_mem_op *>(&node->GetOperation()))
+  if (auto op = dynamic_cast<const LocalMemoryOperation *>(&node->GetOperation()))
   {
     append.append("_S");
     append.append(std::to_string(
         std::dynamic_pointer_cast<const llvm::ArrayType>(op->result(0))->nelements()));
     append.append("_L");
-    size_t loads = rvsdg::TryGetOwnerNode<rvsdg::Node>(**node->output(0)->begin())->noutputs();
+    size_t loads =
+        rvsdg::TryGetOwnerNode<rvsdg::Node>(*node->output(0)->Users().begin())->noutputs();
     append.append(std::to_string(loads));
     append.append("_S");
     size_t stores =
-        (rvsdg::TryGetOwnerNode<rvsdg::Node>(**node->output(1)->begin())->ninputs() - 1 - loads)
+        (rvsdg::TryGetOwnerNode<rvsdg::Node>(*node->output(1)->Users().begin())->ninputs() - 1
+         - loads)
         / 2;
     append.append(std::to_string(stores));
   }

@@ -23,7 +23,7 @@ TestGamma()
   using namespace jlm::llvm;
 
   // Arrange
-  auto valueType = jlm::tests::valuetype::Create();
+  auto valueType = jlm::tests::ValueType::Create();
 
   auto rvsdgModule = RvsdgModule::Create(jlm::util::FilePath(""), "", "");
   auto & rvsdg = rvsdgModule->Rvsdg();
@@ -80,7 +80,7 @@ TestTheta()
   using namespace jlm::rvsdg;
 
   // Arrange
-  auto valueType = jlm::tests::valuetype::Create();
+  auto valueType = jlm::tests::ValueType::Create();
   auto functionType = jlm::rvsdg::FunctionType::Create(
       { jlm::rvsdg::ControlType::Create(2), valueType, valueType, valueType },
       { valueType });
@@ -104,7 +104,7 @@ TestTheta()
   thetaNode->set_predicate(thetaOutput0.pre);
 
   auto result =
-      jlm::rvsdg::CreateOpNode<jlm::tests::test_op>(
+      jlm::rvsdg::CreateOpNode<jlm::tests::TestOperation>(
           { thetaOutput0.output, thetaOutput1.output, thetaOutput2.output, thetaOutput3.output },
           std::vector<std::shared_ptr<const Type>>{ ControlType::Create(2),
                                                     valueType,
@@ -134,7 +134,7 @@ TestLambda()
   using namespace jlm::rvsdg;
 
   // Arrange
-  auto valueType = jlm::tests::valuetype::Create();
+  auto valueType = jlm::tests::ValueType::Create();
   auto functionType = jlm::rvsdg::FunctionType::Create(
       { valueType, valueType },
       { valueType, valueType, valueType, valueType });
@@ -152,13 +152,13 @@ TestLambda()
   auto argument2 = lambdaNode->AddContextVar(*x).inner;
   auto argument3 = lambdaNode->AddContextVar(*x).inner;
 
-  auto result1 = jlm::rvsdg::CreateOpNode<jlm::tests::test_op>(
+  auto result1 = jlm::rvsdg::CreateOpNode<jlm::tests::TestOperation>(
                      { argument1 },
                      std::vector<std::shared_ptr<const Type>>{ valueType },
                      std::vector<std::shared_ptr<const Type>>{ valueType })
                      .output(0);
 
-  auto result3 = jlm::rvsdg::CreateOpNode<jlm::tests::test_op>(
+  auto result3 = jlm::rvsdg::CreateOpNode<jlm::tests::TestOperation>(
                      { argument3 },
                      std::vector<std::shared_ptr<const Type>>{ valueType },
                      std::vector<std::shared_ptr<const Type>>{ valueType })
@@ -190,19 +190,17 @@ TestLambda()
   // There might be more issues.
 }
 
-static int
+static void
 TestUnusedStateRemoval()
 {
   TestGamma();
   TestTheta();
   TestLambda();
-
-  return 0;
 }
 
 JLM_UNIT_TEST_REGISTER("jlm/hls/backend/rvsdg2rhls/UnusedStateRemovalTests", TestUnusedStateRemoval)
 
-static int
+static void
 TestUsedMemoryState()
 {
   using namespace jlm::llvm;
@@ -242,14 +240,12 @@ TestUsedMemoryState()
   auto lambdaSubregion = jlm::util::AssertedCast<jlm::rvsdg::LambdaNode>(node)->subregion();
   assert(lambdaSubregion->nresults() == 1);
   assert(is<MemoryStateType>(lambdaSubregion->result(0)->Type()));
-
-  return 0;
 }
 JLM_UNIT_TEST_REGISTER(
     "jlm/hls/backend/rvsdg2rhls/UnusedStateRemovalTests-UsedMemoryState",
     TestUsedMemoryState)
 
-static int
+static void
 TestUnusedMemoryState()
 {
   using namespace jlm::llvm;
@@ -290,14 +286,12 @@ TestUnusedMemoryState()
   assert(lambdaSubregion->narguments() == 2);
   assert(lambdaSubregion->nresults() == 1);
   assert(is<MemoryStateType>(lambdaSubregion->result(0)->Type()));
-
-  return 0;
 }
 JLM_UNIT_TEST_REGISTER(
     "jlm/hls/backend/rvsdg2rhls/UnusedStateRemovalTests-UnusedMemoryState",
     TestUnusedMemoryState)
 
-static int
+static void
 TestInvariantMemoryState()
 {
   using namespace jlm::llvm;
@@ -355,8 +349,6 @@ TestInvariantMemoryState()
   assert(jlm::rvsdg::Region::ContainsOperation<LambdaExitMemoryStateMergeOperation>(
       *lambdaSubregion,
       true));
-
-  return 0;
 }
 JLM_UNIT_TEST_REGISTER(
     "jlm/hls/backend/rvsdg2rhls/UnusedStateRemovalTests-InvariantMemoryState",

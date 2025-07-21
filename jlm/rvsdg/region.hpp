@@ -25,7 +25,6 @@ class SimpleNode;
 class SimpleOperation;
 class StructuralInput;
 class StructuralNode;
-class structural_op;
 class StructuralOutput;
 class SubstitutionMap;
 
@@ -39,7 +38,7 @@ class SubstitutionMap;
  */
 class RegionArgument : public Output
 {
-  util::intrusive_list_anchor<RegionArgument> structural_input_anchor_;
+  util::intrusive_list_anchor<RegionArgument> structural_input_anchor_{};
 
 public:
   typedef util::intrusive_list_accessor<RegionArgument, &RegionArgument::structural_input_anchor_>
@@ -121,7 +120,7 @@ private:
  */
 class RegionResult : public Input
 {
-  util::intrusive_list_anchor<RegionResult> structural_output_anchor_;
+  util::intrusive_list_anchor<RegionResult> structural_output_anchor_{};
 
 public:
   typedef util::intrusive_list_accessor<RegionResult, &RegionResult::structural_output_anchor_>
@@ -165,9 +164,6 @@ public:
    */
   virtual RegionResult &
   Copy(rvsdg::Output & origin, StructuralOutput * output);
-
-  [[nodiscard]] std::variant<Node *, Region *>
-  GetOwner() const noexcept override;
 
   /**
    * \brief Create region exit result.
@@ -233,18 +229,18 @@ class Region
   using RegionResultRange = util::IteratorRange<RegionResultIterator>;
   using RegionResultConstRange = util::IteratorRange<RegionResultConstIterator>;
 
-  using TopNodeIterator = region_top_node_list::iterator;
-  using TopNodeConstIterator = region_top_node_list::const_iterator;
+  using TopNodeIterator = region_top_node_list::Iterator;
+  using TopNodeConstIterator = region_top_node_list::ConstIterator;
   using TopNodeRange = util::IteratorRange<TopNodeIterator>;
   using TopNodeConstRange = util::IteratorRange<TopNodeConstIterator>;
 
-  using NodeIterator = region_nodes_list::iterator;
-  using NodeConstIterator = region_nodes_list::const_iterator;
+  using NodeIterator = region_nodes_list::Iterator;
+  using NodeConstIterator = region_nodes_list::ConstIterator;
   using NodeRange = util::IteratorRange<NodeIterator>;
   using NodeConstRange = util::IteratorRange<NodeConstIterator>;
 
-  using BottomNodeIterator = region_bottom_node_list::iterator;
-  using BottomNodeConstIterator = region_bottom_node_list::const_iterator;
+  using BottomNodeIterator = region_bottom_node_list::Iterator;
+  using BottomNodeConstIterator = region_bottom_node_list::ConstIterator;
   using BottomNodeRange = util::IteratorRange<BottomNodeIterator>;
   using BottomNodeConstRange = util::IteratorRange<BottomNodeConstIterator>;
 
