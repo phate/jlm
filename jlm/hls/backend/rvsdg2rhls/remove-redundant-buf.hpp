@@ -18,9 +18,9 @@ namespace jlm::hls
 {
 
 /**
- * Replace BufferOperation nodes whose operands can be traced to a LoadOperation,
- * LocalLoadOperation, StoreOperation, or LocalStoreOperation with a passthrough BufferOperation
- * node.
+ * Replace \ref BufferOperation nodes with \ref MemoryStateType operands that can be
+ * traced to a \ref LoadOperation, \ref LocalLoadOperation, \ref StoreOperation, or \ref
+ * LocalStoreOperation with a passthrough \ref BufferOperation node.
  *
  * FIXME: This pass should be renamed as it technically does not eliminate BufferOperations, but
  * just converts them to passthrough BufferOperations
