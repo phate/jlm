@@ -7,7 +7,6 @@
 #include <jlm/hls/backend/rvsdg2rhls/add-forks.hpp>
 #include <jlm/hls/backend/rvsdg2rhls/add-prints.hpp>
 #include <jlm/hls/backend/rvsdg2rhls/add-sinks.hpp>
-#include <jlm/hls/backend/rvsdg2rhls/add-triggers.hpp>
 #include <jlm/hls/backend/rvsdg2rhls/alloca-conv.hpp>
 #include <jlm/hls/backend/rvsdg2rhls/check-rhls.hpp>
 #include <jlm/hls/backend/rvsdg2rhls/decouple-mem-state.hpp>
@@ -476,7 +475,7 @@ rvsdg2rhls(llvm::RvsdgModule & rhls, util::StatisticsCollector & collector)
   llvm::NodeReduction llvmRed;
   llvmRed.Run(rhls, collector);
   MemoryStateSplitConversion::CreateAndRun(rhls, collector);
-  remove_redundant_buf(rhls);
+  RedundantBufferElimination::CreateAndRun(rhls, collector);
   SinkInsertion::CreateAndRun(rhls, collector);
   ForkInsertion::CreateAndRun(rhls, collector);
   add_buffers(rhls);

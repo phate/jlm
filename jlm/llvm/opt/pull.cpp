@@ -14,13 +14,13 @@
 namespace jlm::llvm
 {
 
-class pullstat final : public util::Statistics
+class NodeSinking::Statistics final : public util::Statistics
 {
 public:
-  ~pullstat() override = default;
+  ~Statistics() override = default;
 
-  explicit pullstat(const util::FilePath & sourceFile)
-      : Statistics(Statistics::Id::PullNodes, sourceFile)
+  explicit Statistics(const util::FilePath & sourceFile)
+      : util::Statistics(Statistics::Id::PullNodes, sourceFile)
   {}
 
   void
@@ -37,10 +37,10 @@ public:
     GetTimer(Label::Timer).stop();
   }
 
-  static std::unique_ptr<pullstat>
+  static std::unique_ptr<Statistics>
   Create(const util::FilePath & sourceFile)
   {
-    return std::make_unique<pullstat>(sourceFile);
+    return std::make_unique<Statistics>(sourceFile);
   }
 };
 
@@ -321,7 +321,7 @@ pull(rvsdg::Region * region)
 static void
 pull(rvsdg::RvsdgModule & module, util::StatisticsCollector & statisticsCollector)
 {
-  auto statistics = pullstat::Create(module.SourceFilePath().value());
+  auto statistics = NodeSinking::Statistics::Create(module.SourceFilePath().value());
 
   statistics->start(module.Rvsdg());
   pull(&module.Rvsdg().GetRootRegion());

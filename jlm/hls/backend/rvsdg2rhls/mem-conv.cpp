@@ -46,10 +46,10 @@ find_decouple_response(
   JLM_UNREACHABLE("No response found");
 }
 
-std::pair<rvsdg::SimpleInput *, std::vector<rvsdg::SimpleInput *>>
+static std::pair<rvsdg::Input *, std::vector<rvsdg::Input *>>
 TraceEdgeToMerge(rvsdg::Input * state_edge)
 {
-  std::vector<rvsdg::SimpleInput *> encountered_muxes;
+  std::vector<rvsdg::Input *> encountered_muxes;
   // should encounter no new loops, or gammas, only exit them
   rvsdg::Input * previous_state_edge = nullptr;
   while (true)
@@ -64,8 +64,8 @@ TraceEdgeToMerge(rvsdg::Input * state_edge)
     {
       JLM_UNREACHABLE("there should be no new loops");
     }
-    auto si = util::AssertedCast<rvsdg::SimpleInput>(state_edge);
-    auto sn = si->node();
+    auto si = state_edge;
+    auto sn = &rvsdg::AssertGetOwnerNode<rvsdg::SimpleNode>(*si);
     auto [branchNode, branchOperation] = rvsdg::TryGetSimpleNodeAndOp<BranchOperation>(*state_edge);
     auto [muxNode, muxOperation] = rvsdg::TryGetSimpleNodeAndOp<MuxOperation>(*state_edge);
     if (branchOperation)
@@ -86,7 +86,7 @@ TraceEdgeToMerge(rvsdg::Input * state_edge)
         || std::get<1>(
             rvsdg::TryGetSimpleNodeAndOp<llvm::LambdaExitMemoryStateMergeOperation>(*state_edge)))
     {
-      return { util::AssertedCast<rvsdg::SimpleInput>(state_edge), encountered_muxes };
+      return { state_edge, encountered_muxes };
     }
     else
     {
@@ -103,13 +103,13 @@ OptimizeResMemState(rvsdg::Output * res_mem_state)
   JLM_ASSERT(merge_in);
   for (auto si : encountered_muxes)
   {
-    auto sn = si->node();
-    for (size_t i = 1; i < sn->ninputs(); ++i)
+    auto & sn = rvsdg::AssertGetOwnerNode<rvsdg::SimpleNode>(*si);
+    for (size_t i = 1; i < sn.ninputs(); ++i)
     {
       if (i != si->index())
       {
         auto state_dummy = llvm::UndefValueOperation::Create(*si->region(), si->Type());
-        sn->input(i)->divert_to(state_dummy);
+        sn.input(i)->divert_to(state_dummy);
       }
     }
   }
@@ -122,19 +122,19 @@ OptimizeReqMemState(rvsdg::Output * req_mem_state)
   // of this state edge
   auto [merge_in, _] = TraceEdgeToMerge(get_mem_state_user(req_mem_state));
   JLM_ASSERT(merge_in);
-  auto merge_node = merge_in->node();
+  auto & merge_node = rvsdg::AssertGetOwnerNode<rvsdg::SimpleNode>(*merge_in);
   std::vector<rvsdg::Output *> merge_origins;
-  for (size_t i = 0; i < merge_in->node()->ninputs(); ++i)
+  for (size_t i = 0; i < merge_node.ninputs(); ++i)
   {
     if (i != merge_in->index())
     {
-      merge_origins.push_back(merge_in->node()->input(i)->origin());
+      merge_origins.push_back(merge_node.input(i)->origin());
     }
   }
   auto new_merge_output = llvm::MemoryStateMergeOperation::Create(merge_origins);
-  merge_node->output(0)->divert_users(new_merge_output);
-  JLM_ASSERT(merge_node->IsDead());
-  remove(merge_node);
+  merge_node.output(0)->divert_users(new_merge_output);
+  JLM_ASSERT(merge_node.IsDead());
+  remove(&merge_node);
 }
 
 rvsdg::SimpleNode *
@@ -290,9 +290,8 @@ TracePointer(
   visited.insert(output);
   for (auto & user : output->Users())
   {
-    if (auto si = dynamic_cast<rvsdg::SimpleInput *>(&user))
+    if (auto simplenode = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(user))
     {
-      auto simplenode = si->node();
       if (dynamic_cast<const llvm::StoreNonVolatileOperation *>(&simplenode->GetOperation()))
       {
         storeNodes.push_back(simplenode);
