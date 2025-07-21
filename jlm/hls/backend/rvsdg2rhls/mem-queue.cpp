@@ -214,7 +214,7 @@ separate_load_edge(
             // But we are not allowed to discard the vector and can't have unused variables
             // So adding a meaningless assert to get it to compile
             JLM_ASSERT(dummy_user_tmp.size() == 0);
-            auto dummy_user = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(
+            auto dummy_user = &jlm::rvsdg::AssertGetOwnerNode<jlm::rvsdg::SimpleNode>(
                 *load_branch_out[i]->Users().begin());
             // need both load and common edge here
             load_branch_out[i] = separate_load_edge(

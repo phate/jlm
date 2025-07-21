@@ -65,7 +65,7 @@ TraceEdgeToMerge(rvsdg::Input * state_edge)
       JLM_UNREACHABLE("there should be no new loops");
     }
     auto si = state_edge;
-    auto sn = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*si);
+    auto sn = &rvsdg::AssertGetOwnerNode<rvsdg::SimpleNode>(*si);
     auto [branchNode, branchOperation] = rvsdg::TryGetSimpleNodeAndOp<BranchOperation>(*state_edge);
     auto [muxNode, muxOperation] = rvsdg::TryGetSimpleNodeAndOp<MuxOperation>(*state_edge);
     if (branchOperation)
