@@ -23,6 +23,8 @@ namespace jlm::llvm
 class NodeHoisting final : public rvsdg::Transformation
 {
 public:
+  class Statistics;
+
   ~NodeHoisting() noexcept override;
 
   void
