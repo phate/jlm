@@ -88,7 +88,7 @@ ValidateTopologicalOrderAndSccIndices(
   }
 }
 
-static int
+static void
 TestDag()
 {
   // Create a DAG, where each node is its own SCC
@@ -125,7 +125,6 @@ TestDag()
       reverseTopologicalOrder);
 
   assert(numSccs == numNodes);
-  return 0;
 }
 
 JLM_UNIT_TEST_REGISTER("jlm/util/TestTarjanScc-TestDag", TestDag);
