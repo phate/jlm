@@ -131,7 +131,7 @@ TestDag()
 JLM_UNIT_TEST_REGISTER("jlm/util/TestTarjanScc-TestDag", TestDag);
 
 // Test a graph with some cycles, ensuring they become SCCs
-static int
+static void
 TestCycles()
 {
   const size_t numNodes = 7;
@@ -175,8 +175,6 @@ TestCycles()
   // The rest belong to the middle SCC
   for (size_t i = 0; i < 5; i++)
     assert(sccIndex[i] == 1);
-
-  return 0;
 }
 
 JLM_UNIT_TEST_REGISTER("jlm/util/TestTarjanScc-TestCycles", TestCycles);
@@ -260,31 +258,29 @@ CreateDiamondChain(size_t knots, std::optional<std::pair<size_t, size_t>> extraE
   return { numNodes, numSccs, std::move(unshuffledNodeIndex) };
 }
 
-static int
+static void
 TestSimpleDiamondChain()
 {
   auto [numNodes, numSccs, sccIndex] = CreateDiamondChain(100, std::nullopt);
   assert(numNodes == numSccs);
-  return 0;
 }
 
 JLM_UNIT_TEST_REGISTER("jlm/util/TestTarjanScc-TestSimpleDiamondChain", TestSimpleDiamondChain);
 
-static int
+static void
 TestDiamondChainWithForwardEdge()
 {
   // Forward edges do not create any cycles
   std::pair<size_t, size_t> forwardEdge{ 5, 200 };
   auto [numNodes, numSccs, sccIndex] = CreateDiamondChain(100, forwardEdge);
   assert(numNodes == numSccs);
-  return 0;
 }
 
 JLM_UNIT_TEST_REGISTER(
     "jlm/util/TestTarjanScc-TestDiamondChainWithForwardEdge",
     TestDiamondChainWithForwardEdge);
 
-static int
+static void
 TestDiamondChainWithBackEdge()
 {
   // Back edges create one big SCC, the rest are single node SCCs
@@ -308,8 +304,6 @@ TestDiamondChainWithBackEdge()
   // All nodes between the back edge tail and head have same SCC index
   for (size_t i = backEdge.second; i <= backEdge.first; i++)
     assert(sccIndex[i] == largeScc);
-
-  return 0;
 }
 
 JLM_UNIT_TEST_REGISTER(
@@ -317,7 +311,7 @@ JLM_UNIT_TEST_REGISTER(
     TestDiamondChainWithBackEdge);
 
 // During SCC creation, the function should query a node for its successors at most twice
-static int
+static void
 TestVisitEachNodeTwice()
 {
   const size_t numNodes = 5;
@@ -358,13 +352,11 @@ TestVisitEachNodeTwice()
       numSccs,
       sccIndex,
       reverseTopologicalOrder);
-
-  return 0;
 }
 
 JLM_UNIT_TEST_REGISTER("jlm/util/TestTarjanScc-TestVisitEachNodeTwice", TestVisitEachNodeTwice);
 
-static int
+static void
 TestUnifiedNodes()
 {
   // Each node with index >= 5 has a unification root equal to index - 5
@@ -410,8 +402,6 @@ TestUnifiedNodes()
       numSccs,
       sccIndex,
       reverseTopologicalOrder);
-
-  return 0;
 }
 
 JLM_UNIT_TEST_REGISTER("jlm/util/TestTarjanScc-TestUnifiedNodes", TestUnifiedNodes);
