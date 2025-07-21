@@ -22,6 +22,8 @@ class RvsdgModule;
 class LoopUnrolling final : public rvsdg::Transformation
 {
 public:
+  class Statistics;
+
   ~LoopUnrolling() noexcept override;
 
   constexpr LoopUnrolling(size_t factor)
