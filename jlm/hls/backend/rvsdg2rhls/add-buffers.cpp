@@ -40,12 +40,12 @@ FindUserNode(rvsdg::Output * out)
     JLM_ASSERT(rvsdg::TryGetOwnerNode<loop_node>(*user));
     return FindUserNode(si->arguments.begin().ptr());
   }
-  else
+  else if (rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*user))
   {
-    auto result = dynamic_cast<rvsdg::SimpleInput *>(user);
-    JLM_ASSERT(result);
-    return result;
+    return user;
   }
+
+  JLM_UNREACHABLE("This should not have happened!");
 }
 
 void
