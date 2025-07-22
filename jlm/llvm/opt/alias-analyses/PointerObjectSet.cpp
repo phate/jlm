@@ -1081,7 +1081,7 @@ CreateSubsetGraphNodeLabel(PointerObjectSet & set, PointerObjectIndex index)
  * Helper function used by DrawSubsetGraph.
  */
 static void
-CreateSubsetGraphNodes(PointerObjectSet & set, util::Graph & graph)
+CreateSubsetGraphNodes(PointerObjectSet & set, util::graph::Graph & graph)
 {
   // Ensure the index of nodes line up with the index of the corresponding PointerObject
   JLM_ASSERT(graph.NumNodes() == 0);
@@ -1093,9 +1093,9 @@ CreateSubsetGraphNodes(PointerObjectSet & set, util::Graph & graph)
     node.SetLabel(CreateSubsetGraphNodeLabel(set, i));
 
     if (set.IsPointerObjectRegister(i))
-      node.SetShape(util::Node::Shape::Oval);
+      node.SetShape(util::graph::Node::Shape::Oval);
     else
-      node.SetShape(util::Node::Shape::Rectangle);
+      node.SetShape(util::graph::Node::Shape::Rectangle);
 
     if (set.HasEscaped(i))
       node.SetFillColor("#FFFF99");
@@ -1137,7 +1137,7 @@ static void
 CreateSubsetGraphEdges(
     const PointerObjectSet & set,
     const std::vector<PointerObjectConstraintSet::ConstraintVariant> & constraints,
-    util::Graph & graph)
+    util::graph::Graph & graph)
 {
   // Draw edges for constraints
   size_t nextCallConstraintIndex = 0;
@@ -1154,7 +1154,7 @@ CreateSubsetGraphEdges(
       auto & edge = graph.CreateDirectedEdge(
           graph.GetNode(storeConstraint->GetValue()),
           graph.GetNode(storeConstraint->GetPointer()));
-      edge.SetStyle(util::Edge::Style::Dashed);
+      edge.SetStyle(util::graph::Edge::Style::Dashed);
       edge.SetArrowHead("normalodot");
     }
     else if (auto * loadConstraint = std::get_if<LoadConstraint>(&constraint))
@@ -1162,7 +1162,7 @@ CreateSubsetGraphEdges(
       auto & edge = graph.CreateDirectedEdge(
           graph.GetNode(loadConstraint->GetPointer()),
           graph.GetNode(loadConstraint->GetValue()));
-      edge.SetStyle(util::Edge::Style::Dashed);
+      edge.SetStyle(util::graph::Edge::Style::Dashed);
       edge.SetArrowTail("odot");
     }
     else if (auto * callConstraint = std::get_if<FunctionCallConstraint>(&constraint))
@@ -1206,7 +1206,7 @@ CreateSubsetGraphEdges(
  * Helper function used by DrawSubsetGraph.
  */
 static void
-LabelFunctionsArgumentsAndReturnValues(PointerObjectSet & set, util::Graph & graph)
+LabelFunctionsArgumentsAndReturnValues(PointerObjectSet & set, util::graph::Graph & graph)
 {
   size_t nextFunctionIndex = 0;
   for (auto [function, pointerObject] : set.GetFunctionMap())
@@ -1237,8 +1237,8 @@ LabelFunctionsArgumentsAndReturnValues(PointerObjectSet & set, util::Graph & gra
   }
 }
 
-util::Graph &
-PointerObjectConstraintSet::DrawSubsetGraph(util::GraphWriter & writer) const
+util::graph::Graph &
+PointerObjectConstraintSet::DrawSubsetGraph(util::graph::Writer & writer) const
 {
   auto & graph = writer.CreateGraph();
   graph.SetLabel("Andersen subset graph");
