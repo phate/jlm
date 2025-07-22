@@ -6,17 +6,9 @@
 #include <test-registry.hpp>
 #include <TestRvsdgs.hpp>
 
-#include <jlm/llvm/ir/operators/delta.hpp>
 #include <jlm/llvm/ir/operators/IOBarrier.hpp>
-#include <jlm/llvm/ir/operators/lambda.hpp>
-#include <jlm/llvm/ir/RvsdgModule.hpp>
-#include <jlm/llvm/ir/types.hpp>
 #include <jlm/mlir/backend/JlmToMlirConverter.hpp>
 #include <jlm/mlir/frontend/MlirToJlmConverter.hpp>
-#include <jlm/rvsdg/bitstring/constant.hpp>
-#include <jlm/rvsdg/FunctionType.hpp>
-#include <jlm/rvsdg/nullary.hpp>
-#include <jlm/rvsdg/simple-node.hpp>
 #include <jlm/rvsdg/traverser.hpp>
 
 static void
@@ -90,9 +82,11 @@ TestAlloca()
 
     // Create alloca node
     std::cout << "Alloca Operation" << std::endl;
-    auto allocaOp =
-        AllocaOperation(jlm::rvsdg::bittype::Create(64), jlm::rvsdg::bittype::Create(32), 4);
-    jlm::rvsdg::SimpleNode::Create(graph->GetRootRegion(), allocaOp, { bits });
+    jlm::rvsdg::CreateOpNode<AllocaOperation>(
+        { bits },
+        jlm::rvsdg::bittype::Create(64),
+        jlm::rvsdg::bittype::Create(32),
+        4);
 
     // Convert the RVSDG to MLIR
     std::cout << "Convert to MLIR" << std::endl;
@@ -456,8 +450,7 @@ TestSitofp()
     auto bitsArgument = lambda->GetFunctionArguments().at(0);
 
     // Create sitofp operation
-    auto sitofpOp = SIToFPOperation(bitsType, floatType);
-    jlm::rvsdg::SimpleNode::Create(*lambda->subregion(), sitofpOp, { bitsArgument });
+    jlm::rvsdg::CreateOpNode<SIToFPOperation>({ bitsArgument }, bitsType, floatType);
 
     lambda->finalize({});
 
@@ -523,8 +516,7 @@ TestConstantFP()
         LlvmLambdaOperation::Create(functionType, "test", linkage::external_linkage));
 
     // Create sitofp operation
-    auto constOp = ConstantFP(fpsize::dbl, ::llvm::APFloat(2.0));
-    jlm::rvsdg::SimpleNode::Create(*lambda->subregion(), constOp, {});
+    jlm::rvsdg::CreateOpNode<ConstantFP>(*lambda->subregion(), fpsize::dbl, ::llvm::APFloat(2.0));
 
     lambda->finalize({});
 
@@ -586,10 +578,10 @@ TestFpBinary()
       auto floatArgument1 = lambda->GetFunctionArguments().at(0);
       auto floatArgument2 = lambda->GetFunctionArguments().at(1);
 
-      jlm::rvsdg::SimpleNode::Create(
-          *lambda->subregion(),
-          FBinaryOperation(binOp, floatType),
-          { floatArgument1, floatArgument2 });
+      jlm::rvsdg::CreateOpNode<FBinaryOperation>(
+          { floatArgument1, floatArgument2 },
+          binOp,
+          floatType);
 
       lambda->finalize({});
 
@@ -1064,10 +1056,11 @@ TestFNeg()
 
   {
     auto floatType = jlm::llvm::FloatingPointType::Create(jlm::llvm::fpsize::flt);
-    auto constOp = ConstantFP(floatType, ::llvm::APFloat(2.0));
-    auto & constNode = jlm::rvsdg::SimpleNode::Create(graph->GetRootRegion(), constOp, {});
-    auto fnegOp = FNegOperation(jlm::llvm::fpsize::flt);
-    jlm::rvsdg::SimpleNode::Create(graph->GetRootRegion(), fnegOp, { constNode.output(0) });
+    auto & constNode = jlm::rvsdg::CreateOpNode<ConstantFP>(
+        graph->GetRootRegion(),
+        floatType,
+        ::llvm::APFloat(2.0));
+    jlm::rvsdg::CreateOpNode<FNegOperation>({ constNode.output(0) }, jlm::llvm::fpsize::flt);
 
     // Convert the RVSDG to MLIR
     std::cout << "Convert to MLIR" << std::endl;
@@ -1141,10 +1134,11 @@ TestFPExt()
   {
     auto floatType1 = jlm::llvm::FloatingPointType::Create(jlm::llvm::fpsize::flt);
     auto floatType2 = jlm::llvm::FloatingPointType::Create(jlm::llvm::fpsize::dbl);
-    auto constOp = ConstantFP(floatType1, ::llvm::APFloat(2.0));
-    auto & constNode = jlm::rvsdg::SimpleNode::Create(graph->GetRootRegion(), constOp, {});
-    auto fpextOp = FPExtOperation(floatType1, floatType2);
-    jlm::rvsdg::SimpleNode::Create(graph->GetRootRegion(), fpextOp, { constNode.output(0) });
+    auto & constNode = jlm::rvsdg::CreateOpNode<ConstantFP>(
+        graph->GetRootRegion(),
+        floatType1,
+        ::llvm::APFloat(2.0));
+    jlm::rvsdg::CreateOpNode<FPExtOperation>({ constNode.output(0) }, floatType1, floatType2);
 
     // Convert the RVSDG to MLIR
     std::cout << "Convert to MLIR" << std::endl;
@@ -1219,8 +1213,7 @@ TestTrunc()
     auto bitType1 = jlm::rvsdg::bittype::Create(64);
     auto bitType2 = jlm::rvsdg::bittype::Create(32);
     auto constOp = jlm::rvsdg::create_bitconstant(&graph->GetRootRegion(), 64, 2);
-    auto truncOp = TruncOperation(bitType1, bitType2);
-    jlm::rvsdg::SimpleNode::Create(graph->GetRootRegion(), truncOp, { constOp });
+    jlm::rvsdg::CreateOpNode<TruncOperation>({ constOp }, bitType1, bitType2);
 
     // Convert the RVSDG to MLIR
     std::cout << "Convert to MLIR" << std::endl;
@@ -1547,8 +1540,9 @@ TestIOBarrier()
     auto value = jlm::rvsdg::create_bitconstant(lambda->subregion(), 32, 42);
 
     // Create the IOBarrier operation
-    auto ioBarrierOp = jlm::llvm::IOBarrierOperation(std::make_shared<jlm::rvsdg::bittype>(32));
-    jlm::rvsdg::SimpleNode::Create(*lambda->subregion(), ioBarrierOp, { value, ioStateArgument });
+    jlm::rvsdg::CreateOpNode<jlm::llvm::IOBarrierOperation>(
+        { value, ioStateArgument },
+        jlm::rvsdg::bittype::Create(32));
 
     // Finalize the lambda
     lambda->finalize({});
