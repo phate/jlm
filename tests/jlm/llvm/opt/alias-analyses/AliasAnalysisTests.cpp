@@ -14,9 +14,9 @@
 static void
 Expect(
     jlm::llvm::aa::AliasAnalysis & aa,
-    const jlm::rvsdg::output & p1,
+    const jlm::rvsdg::Output & p1,
     size_t s1,
-    const jlm::rvsdg::output & p2,
+    const jlm::rvsdg::Output & p2,
     size_t s2,
     jlm::llvm::aa::AliasAnalysis::AliasQueryResponse expected)
 {
@@ -27,3 +27,13 @@ Expect(
   const auto mirror = aa.Query(p2, s2, p1, s1);
   assert(mirror == expected);
 }
+
+void
+TestLocalAliasAnalysis()
+{
+
+}
+
+JLM_UNIT_TEST_REGISTER(
+    "jlm/llvm/opt/alias-analyses/AliasAnalysisTests-TestLocalAliasAnalysis",
+    TestLocalAliasAnalysis);

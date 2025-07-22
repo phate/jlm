@@ -131,7 +131,7 @@ AttachNodeOutput(
 }
 
 /**
- * Some types of RVSDG arguments have extra attributes.
+ * Some RVSDG arguments can have extra attributes.
  * This function handles adding them to the output graph.
  *
  * @param rvsdgArgument the RVSDG argument being represented
@@ -145,11 +145,13 @@ SetAdditionalArgumentAttributes(
     util::Graph * typeGraph)
 {
   // If the argument is a GraphImport, include extra type and linkage data
-  if (const auto graphImport = dynamic_cast<GraphImport *>(&node))
+  if (const auto graphImport = dynamic_cast<const GraphImport *>(&rvsdgArgument))
   {
     node.SetAttribute("linkage", ToString(graphImport->Linkage()));
     if (typeGraph)
     {
+      // The output of a GraphImport is always a PointerType
+      // Expose the underlying type as a separate attribute
       auto & valueTypeNode = GetOrCreateTypeGraphNode(*graphImport->ValueType(), *typeGraph);
       node.SetAttributeGraphElement("valueType", valueTypeNode);
     }
@@ -157,7 +159,7 @@ SetAdditionalArgumentAttributes(
 }
 
 /**
- * Some types of RVSDG nodes have extra attributes.
+ * Some RVSDG nodes can have extra attributes.
  * This function handles adding them to the output graph.
  *
  * @param rvsdgNode the RVSDG node being represented
@@ -170,13 +172,15 @@ SetAdditionalNodeAttributes(
     util::Node & node,
     util::Graph * typeGraph)
 {
-  if (const auto delta = dynamic_cast<const delta::node *>(&rvsdgNode))
+  if (const auto delta = dynamic_cast<const llvm::DeltaNode *>(&rvsdgNode))
   {
     node.SetAttribute("linkage", ToString(delta->GetOperation().linkage()));
     node.SetAttribute("constant", delta->GetOperation().constant() ? "true" : "false");
 
     if (typeGraph)
     {
+      // The output of a delta node is always a PointerType
+      // Expose the underlying type as a separate attribute
       auto & typeNode = GetOrCreateTypeGraphNode(*delta->GetOperation().Type(), *typeGraph);
       node.SetAttributeGraphElement("type", typeNode);
     }

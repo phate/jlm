@@ -399,7 +399,7 @@ CalculateIntraTypeGepOffset(
       throw std::logic_error("Struct type has fewer fields than requested by GEP");
 
     const auto & fieldType = strct->GetDeclaration().GetElement(*indexingValue);
-    int64_t offset = GetStructFieldOffset(*strct, *indexingValue);
+    int64_t offset = strct->GetFieldOffset(*indexingValue);
 
     const auto subOffset = CalculateIntraTypeGepOffset(gepNode, inputIndex + 1, fieldType);
     if (subOffset.has_value())
@@ -593,7 +593,7 @@ LocalAliasAnalysis::IsOriginalOrigin(const rvsdg::Output & pointer)
   if (dynamic_cast<const GraphImport *>(&pointer))
     return true;
 
-  if (rvsdg::TryGetOwnerNode<delta::node>(pointer))
+  if (rvsdg::TryGetOwnerNode<DeltaNode>(pointer))
     return true;
 
   if (rvsdg::TryGetOwnerNode<rvsdg::LambdaNode>(pointer))
@@ -605,7 +605,7 @@ LocalAliasAnalysis::IsOriginalOrigin(const rvsdg::Output & pointer)
     if (is<AllocaOperation>(node))
       return true;
 
-    if (is<malloc_op>(node))
+    if (is<MallocOperation>(node))
       return true;
   }
 
@@ -626,7 +626,7 @@ LocalAliasAnalysis::HasOnlyOriginalTopOrigins(TraceCollection & traces)
 std::optional<size_t>
 LocalAliasAnalysis::GetOriginalOriginSize(const rvsdg::Output & pointer)
 {
-  if (auto delta = rvsdg::TryGetOwnerNode<delta::node>(pointer))
+  if (auto delta = rvsdg::TryGetOwnerNode<DeltaNode>(pointer))
     return GetTypeSize(*delta->GetOperation().Type());
   if (auto import = dynamic_cast<const GraphImport *>(&pointer))
   {
@@ -643,7 +643,7 @@ LocalAliasAnalysis::GetOriginalOriginSize(const rvsdg::Output & pointer)
       if (elementCount.has_value())
         return *elementCount * GetTypeSize(*allocaOp->ValueType());
     }
-    if (is<malloc_op>(node))
+    if (is<MallocOperation>(node))
     {
       const auto mallocSize = GetConstantIntegerValue(*node->input(0)->origin());
       if (mallocSize.has_value())
@@ -799,11 +799,11 @@ LocalAliasAnalysis::IsOriginalOriginFullyTraceable(const rvsdg::Output & pointer
     qu.pop();
 
     // Handle all inputs that are users of p
-    for (auto user : p)
+    for (auto & user : p.Users())
     {
-      if (auto gamma = rvsdg::TryGetOwnerNode<rvsdg::GammaNode>(*user))
+      if (auto gamma = rvsdg::TryGetOwnerNode<rvsdg::GammaNode>(user))
       {
-        auto input = gamma->MapInput(*user);
+        auto input = gamma->MapInput(user);
 
         // A pointer must always be an EntryVar, as the MatchVar has a ControlType
         auto entry = std::get_if<rvsdg::GammaNode::EntryVar>(&input);
@@ -814,41 +814,41 @@ LocalAliasAnalysis::IsOriginalOriginFullyTraceable(const rvsdg::Output & pointer
 
         continue;
       }
-      if (auto gamma = rvsdg::TryGetRegionParentNode<rvsdg::GammaNode>(*user))
+      if (auto gamma = rvsdg::TryGetRegionParentNode<rvsdg::GammaNode>(user))
       {
         // user is a gamma result, find the corresponding gamma output
-        auto exitVar = gamma->MapBranchResultExitVar(*user);
+        auto exitVar = gamma->MapBranchResultExitVar(user);
         Enqueue(*exitVar.output);
 
         continue;
       }
 
-      if (auto theta = rvsdg::TryGetOwnerNode<rvsdg::ThetaNode>(*user))
+      if (auto theta = rvsdg::TryGetOwnerNode<rvsdg::ThetaNode>(user))
       {
-        auto loopVar = theta->MapInputLoopVar(*user);
+        auto loopVar = theta->MapInputLoopVar(user);
 
         // The loop always runs at least once, so map it to the inside
         Enqueue(*loopVar.pre);
 
         continue;
       }
-      if (auto theta = rvsdg::TryGetRegionParentNode<rvsdg::ThetaNode>(*user))
+      if (auto theta = rvsdg::TryGetRegionParentNode<rvsdg::ThetaNode>(user))
       {
         // user is a theta result, find the corresponding loop variable
-        auto loopVar = theta->MapPostLoopVar(*user);
+        auto loopVar = theta->MapPostLoopVar(user);
         Enqueue(*loopVar.pre);
         Enqueue(*loopVar.output);
 
         continue;
       }
 
-      if (auto node = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*user))
+      if (auto node = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(user))
       {
         // Pointers go straight through IO barriers and GEPs
         if (is<IOBarrierOperation>(node) || is<GetElementPtrOperation>(node))
         {
           // The pointer input must be the node's first input
-          JLM_ASSERT(user->index() == 0);
+          JLM_ASSERT(user.index() == 0);
           Enqueue(*node->output(0));
           continue;
         }
@@ -860,7 +860,7 @@ LocalAliasAnalysis::IsOriginalOriginFullyTraceable(const rvsdg::Output & pointer
         // Stores are only fine if the pointer itself is not being stored somewhere
         if (is<StoreOperation>(node))
         {
-          if (user == &StoreOperation::AddressInput(*node))
+          if (&user == &StoreOperation::AddressInput(*node))
             continue;
         }
       }
