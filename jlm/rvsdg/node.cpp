@@ -171,7 +171,6 @@ node_output::GetOwner() const noexcept
 
 Node::Node(Region * region)
     : depth_(0),
-      graph_(region->graph()),
       region_(region)
 {
   bool wasAdded = region->AddBottomNode(*this);
@@ -197,6 +196,12 @@ Node::~Node()
 
   wasRemoved = region()->RemoveNode(*this);
   JLM_ASSERT(wasRemoved);
+}
+
+Graph *
+Node::graph() const noexcept
+{
+  return region_->graph();
 }
 
 node_input *
