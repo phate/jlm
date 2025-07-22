@@ -687,13 +687,6 @@ RegionAwareModRefSummarizer::CreateCallGraph(const rvsdg::RvsdgModule & rvsdgMod
     }
   }
 
-  // Used by the implementation of Tarjan's SCC algorithm
-  const auto GetUnificationRoot = [&](size_t nodeIndex)
-  {
-    // There is no unification in this graph, so every node is its own root
-    return nodeIndex;
-  };
-
   const auto GetSuccessor = [&](size_t nodeIndex)
   {
     return callGraphSuccessors[nodeIndex].Items();
@@ -704,7 +697,6 @@ RegionAwareModRefSummarizer::CreateCallGraph(const rvsdg::RvsdgModule & rvsdgMod
   std::vector<size_t> reverseTopologicalOrder;
   auto numSCCs = util::FindStronglyConnectedComponents<size_t>(
       numCallGraphNodes,
-      GetUnificationRoot,
       GetSuccessor,
       sccIndex,
       reverseTopologicalOrder);
