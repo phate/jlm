@@ -99,8 +99,8 @@ AttachNodeInput(util::graph::Port & inputPort, const rvsdg::Input & rvsdgInput)
   inputPort.SetProgramObject(rvsdgInput);
 
   // nodes are visited in topological order, so if the origin is an output, it will already exist
-  if (auto originPort =
-          reinterpret_cast<util::graph::Port *>(graph.GetElementFromProgramObject(*rvsdgInput.origin())))
+  if (auto originPort = reinterpret_cast<util::graph::Port *>(
+          graph.GetElementFromProgramObject(*rvsdgInput.origin())))
   {
     auto & edge = graph.CreateDirectedEdge(*originPort, inputPort);
     if (rvsdg::is<MemoryStateType>(rvsdgInput.Type()))
