@@ -18,10 +18,6 @@ void
 distribute_constant(const rvsdg::SimpleOperation & op, rvsdg::SimpleOutput * out)
 {
   JLM_ASSERT(jlm::hls::is_constant(out->node()));
-
-  std::unique_ptr<rvsdg::SimpleOperation> copiedOp(
-      util::AssertedCast<rvsdg::SimpleOperation>(op.copy().release()));
-
   bool changed = true;
   while (changed)
   {
@@ -35,7 +31,7 @@ distribute_constant(const rvsdg::SimpleOperation & op, rvsdg::SimpleOutput * out
         {
           // pass-through
           auto arg_replacement =
-              rvsdg::SimpleNode::Create(*theta->subregion(), std::move(copiedOp), {}).output(0);
+              rvsdg::SimpleNode::Create(*theta->subregion(), op.copy(), {}).output(0);
           loopvar.pre->divert_users(arg_replacement);
           loopvar.output->divert_users(out);
           distribute_constant(op, arg_replacement);
@@ -56,8 +52,7 @@ distribute_constant(const rvsdg::SimpleOperation & op, rvsdg::SimpleOutput * out
           if (out->nusers())
           {
             auto out_replacement =
-                rvsdg::SimpleNode::Create(*out->node()->region(), std::move(copiedOp), {})
-                    .output(0);
+                rvsdg::SimpleNode::Create(*out->node()->region(), op.copy(), {}).output(0);
             out->divert_users(out_replacement);
             distribute_constant(op, out_replacement);
             changed = true;
@@ -80,7 +75,7 @@ distribute_constant(const rvsdg::SimpleOperation & op, rvsdg::SimpleOutput * out
             if (argument->nusers())
             {
               auto arg_replacement =
-                  rvsdg::SimpleNode::Create(*argument->region(), std::move(copiedOp), {}).output(0);
+                  rvsdg::SimpleNode::Create(*argument->region(), op.copy(), {}).output(0);
               argument->divert_users(arg_replacement);
               distribute_constant(op, arg_replacement);
             }
