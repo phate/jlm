@@ -4,11 +4,12 @@
  */
 
 #include <jlm/llvm/backend/dot/DotWriter.hpp>
-
+#include <jlm/llvm/ir/operators/delta.hpp>
+#include <jlm/llvm/ir/RvsdgModule.hpp>
 #include <jlm/llvm/ir/types.hpp>
 #include <jlm/rvsdg/bitstring/type.hpp>
+#include <jlm/rvsdg/gamma.hpp>
 #include <jlm/rvsdg/region.hpp>
-#include <jlm/rvsdg/simple-node.hpp>
 #include <jlm/rvsdg/structural-node.hpp>
 #include <jlm/rvsdg/traverser.hpp>
 #include <jlm/rvsdg/type.hpp>
@@ -21,13 +22,13 @@ namespace jlm::llvm::dot
  * or returns such a node if it has already been created.
  * The function is recursive, and will create nodes for subtypes of aggregate types.
  */
-static util::Node &
-GetOrCreateTypeGraphNode(const rvsdg::Type & type, util::Graph & typeGraph)
+static util::graph::Node &
+GetOrCreateTypeGraphNode(const rvsdg::Type & type, util::graph::Graph & typeGraph)
 {
   // If the type already has a corresponding node, return it
   if (auto * graphElement = typeGraph.GetElementFromProgramObject(type))
   {
-    auto * node = reinterpret_cast<util::Node *>(graphElement);
+    auto * node = reinterpret_cast<util::graph::Node *>(graphElement);
     JLM_ASSERT(node);
     return *node;
   }
@@ -92,20 +93,20 @@ GetOrCreateTypeGraphNode(const rvsdg::Type & type, util::Graph & typeGraph)
  * @param rvsdgInput the RVSDG input
  */
 static void
-AttachNodeInput(util::Port & inputPort, const rvsdg::Input & rvsdgInput)
+AttachNodeInput(util::graph::Port & inputPort, const rvsdg::Input & rvsdgInput)
 {
   auto & graph = inputPort.GetGraph();
   inputPort.SetProgramObject(rvsdgInput);
 
   // nodes are visited in topological order, so if the origin is an output, it will already exist
   if (auto originPort =
-          reinterpret_cast<util::Port *>(graph.GetElementFromProgramObject(*rvsdgInput.origin())))
+          reinterpret_cast<util::graph::Port *>(graph.GetElementFromProgramObject(*rvsdgInput.origin())))
   {
     auto & edge = graph.CreateDirectedEdge(*originPort, inputPort);
     if (rvsdg::is<MemoryStateType>(rvsdgInput.Type()))
-      edge.SetAttribute("color", util::Colors::Red);
+      edge.SetAttribute("color", util::graph::Colors::Red);
     if (rvsdg::is<IOStateType>(rvsdgInput.Type()))
-      edge.SetAttribute("color", util::Colors::Green);
+      edge.SetAttribute("color", util::graph::Colors::Green);
   }
 }
 
@@ -118,9 +119,9 @@ AttachNodeInput(util::Port & inputPort, const rvsdg::Input & rvsdgInput)
  */
 static void
 AttachNodeOutput(
-    util::Port & outputPort,
+    util::graph::Port & outputPort,
     const rvsdg::Output & rvsdgOutput,
-    util::Graph * typeGraph)
+    util::graph::Graph * typeGraph)
 {
   outputPort.SetProgramObject(rvsdgOutput);
   if (typeGraph)
@@ -130,12 +131,69 @@ AttachNodeOutput(
 }
 
 /**
+ * Some RVSDG arguments can have extra attributes.
+ * This function handles adding them to the output graph.
+ *
+ * @param rvsdgArgument the RVSDG argument being represented
+ * @param node the output graph node representing it
+ * @param typeGraph the optional type graph, used for dumping types
+ */
+static void
+SetAdditionalArgumentAttributes(
+    const rvsdg::RegionArgument & rvsdgArgument,
+    util::graph::Node & node,
+    util::graph::Graph * typeGraph)
+{
+  // If the argument is a GraphImport, include extra type and linkage data
+  if (const auto graphImport = dynamic_cast<const GraphImport *>(&rvsdgArgument))
+  {
+    node.SetAttribute("linkage", ToString(graphImport->Linkage()));
+    if (typeGraph)
+    {
+      // The output of a GraphImport is always a PointerType
+      // Expose the underlying type as a separate attribute
+      auto & valueTypeNode = GetOrCreateTypeGraphNode(*graphImport->ValueType(), *typeGraph);
+      node.SetAttributeGraphElement("valueType", valueTypeNode);
+    }
+  }
+}
+
+/**
+ * Some RVSDG nodes can have extra attributes.
+ * This function handles adding them to the output graph.
+ *
+ * @param rvsdgNode the RVSDG node being represented
+ * @param node the output graph node representing it
+ * @param typeGraph the optional type graph, used for dumping types
+ */
+static void
+SetAdditionalNodeAttributes(
+    const rvsdg::Node & rvsdgNode,
+    util::graph::Node & node,
+    util::graph::Graph * typeGraph)
+{
+  if (const auto delta = dynamic_cast<const llvm::DeltaNode *>(&rvsdgNode))
+  {
+    node.SetAttribute("linkage", ToString(delta->GetOperation().linkage()));
+    node.SetAttribute("constant", delta->GetOperation().constant() ? "true" : "false");
+
+    if (typeGraph)
+    {
+      // The output of a delta node is always a PointerType
+      // Expose the underlying type as a separate attribute
+      auto & typeNode = GetOrCreateTypeGraphNode(*delta->GetOperation().Type(), *typeGraph);
+      node.SetAttributeGraphElement("type", typeNode);
+    }
+  }
+}
+
+/**
  * Fill the given \p graph with nodes corresponding to the nodes of the given \p region.
  * If \p typeGraph is not nullptr, all rvsdg outputs get a type reference to the type graph.
  * If the type does not already exist in the type graph, it is created.
  */
 static void
-CreateGraphNodes(util::Graph & graph, rvsdg::Region & region, util::Graph * typeGraph)
+CreateGraphNodes(util::graph::Graph & graph, rvsdg::Region & region, util::graph::Graph * typeGraph)
 {
   graph.SetProgramObject(region);
 
@@ -159,6 +217,8 @@ CreateGraphNodes(util::Graph & graph, rvsdg::Region & region, util::Graph * type
       // Include the local index of the node's input in the label
       node.AppendToLabel(util::strfmt("<- ", argument.input()->debug_string()), " ");
     }
+
+    SetAdditionalArgumentAttributes(argument, node, typeGraph);
   }
 
   // Create a node for each node in the region in topological order.
@@ -185,6 +245,8 @@ CreateGraphNodes(util::Graph & graph, rvsdg::Region & region, util::Graph * type
         CreateGraphNodes(subGraph, *structuralNode->subregion(i), typeGraph);
       }
     }
+
+    SetAdditionalNodeAttributes(*rvsdgNode, node, typeGraph);
   }
 
   // Create result nodes for the region's results, and attach them to their origins
@@ -210,16 +272,16 @@ CreateGraphNodes(util::Graph & graph, rvsdg::Region & region, util::Graph * type
   }
 }
 
-util::Graph &
-WriteGraphs(util::GraphWriter & writer, rvsdg::Region & region, bool emitTypeGraph)
+util::graph::Graph &
+WriteGraphs(util::graph::Writer & writer, rvsdg::Region & region, bool emitTypeGraph)
 {
-  util::Graph * typeGraph = nullptr;
+  util::graph::Graph * typeGraph = nullptr;
   if (emitTypeGraph)
   {
     typeGraph = &writer.CreateGraph();
     typeGraph->SetLabel("Type graph");
   }
-  util::Graph & rootGraph = writer.CreateGraph();
+  util::graph::Graph & rootGraph = writer.CreateGraph();
   rootGraph.SetLabel("RVSDG root graph");
   CreateGraphNodes(rootGraph, region, typeGraph);
 
