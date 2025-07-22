@@ -153,73 +153,43 @@ MlirToJlmConverter::ConvertCmpIOp(
 {
   if (CompOp.getPredicate() == ::mlir::arith::CmpIPredicate::eq)
   {
-    return &rvsdg::SimpleNode::Create(
-        rvsdgRegion,
-        jlm::llvm::IntegerEqOperation(nbits),
-        { inputs[0], inputs[1] });
+    return &rvsdg::CreateOpNode<jlm::llvm::IntegerEqOperation>({ inputs[0], inputs[1] }, nbits);
   }
   else if (CompOp.getPredicate() == ::mlir::arith::CmpIPredicate::ne)
   {
-    return &rvsdg::SimpleNode::Create(
-        rvsdgRegion,
-        jlm::llvm::IntegerNeOperation(nbits),
-        { inputs[0], inputs[1] });
+    return &rvsdg::CreateOpNode<jlm::llvm::IntegerNeOperation>({ inputs[0], inputs[1] }, nbits);
   }
   else if (CompOp.getPredicate() == ::mlir::arith::CmpIPredicate::sge)
   {
-    return &rvsdg::SimpleNode::Create(
-        rvsdgRegion,
-        jlm::llvm::IntegerSgeOperation(nbits),
-        { inputs[0], inputs[1] });
+    return &rvsdg::CreateOpNode<jlm::llvm::IntegerSgeOperation>({ inputs[0], inputs[1] }, nbits);
   }
   else if (CompOp.getPredicate() == ::mlir::arith::CmpIPredicate::sgt)
   {
-    return &rvsdg::SimpleNode::Create(
-        rvsdgRegion,
-        jlm::llvm::IntegerSgtOperation(nbits),
-        { inputs[0], inputs[1] });
+    return &rvsdg::CreateOpNode<jlm::llvm::IntegerSgtOperation>({ inputs[0], inputs[1] }, nbits);
   }
   else if (CompOp.getPredicate() == ::mlir::arith::CmpIPredicate::sle)
   {
-    return &rvsdg::SimpleNode::Create(
-        rvsdgRegion,
-        jlm::llvm::IntegerSleOperation(nbits),
-        { inputs[0], inputs[1] });
+    return &rvsdg::CreateOpNode<jlm::llvm::IntegerSleOperation>({ inputs[0], inputs[1] }, nbits);
   }
   else if (CompOp.getPredicate() == ::mlir::arith::CmpIPredicate::slt)
   {
-    return &rvsdg::SimpleNode::Create(
-        rvsdgRegion,
-        jlm::llvm::IntegerSltOperation(nbits),
-        { inputs[0], inputs[1] });
+    return &rvsdg::CreateOpNode<jlm::llvm::IntegerSltOperation>({ inputs[0], inputs[1] }, nbits);
   }
   else if (CompOp.getPredicate() == ::mlir::arith::CmpIPredicate::uge)
   {
-    return &rvsdg::SimpleNode::Create(
-        rvsdgRegion,
-        jlm::llvm::IntegerUgeOperation(nbits),
-        { inputs[0], inputs[1] });
+    return &rvsdg::CreateOpNode<jlm::llvm::IntegerUgeOperation>({ inputs[0], inputs[1] }, nbits);
   }
   else if (CompOp.getPredicate() == ::mlir::arith::CmpIPredicate::ugt)
   {
-    return &rvsdg::SimpleNode::Create(
-        rvsdgRegion,
-        jlm::llvm::IntegerUgtOperation(nbits),
-        { inputs[0], inputs[1] });
+    return &rvsdg::CreateOpNode<jlm::llvm::IntegerUgtOperation>({ inputs[0], inputs[1] }, nbits);
   }
   else if (CompOp.getPredicate() == ::mlir::arith::CmpIPredicate::ule)
   {
-    return &rvsdg::SimpleNode::Create(
-        rvsdgRegion,
-        jlm::llvm::IntegerUleOperation(nbits),
-        { inputs[0], inputs[1] });
+    return &rvsdg::CreateOpNode<jlm::llvm::IntegerUleOperation>({ inputs[0], inputs[1] }, nbits);
   }
   else if (CompOp.getPredicate() == ::mlir::arith::CmpIPredicate::ult)
   {
-    return &rvsdg::SimpleNode::Create(
-        rvsdgRegion,
-        jlm::llvm::IntegerUltOperation(nbits),
-        { inputs[0], inputs[1] });
+    return &rvsdg::CreateOpNode<jlm::llvm::IntegerUltOperation>({ inputs[0], inputs[1] }, nbits);
   }
   else
   {
@@ -332,10 +302,7 @@ MlirToJlmConverter::ConvertFPBinaryNode(
   {
     return nullptr;
   }
-  return &rvsdg::SimpleNode::Create(
-      rvsdgRegion,
-      llvm::FBinaryOperation(op, size),
-      { inputs[0], inputs[1] });
+  return &rvsdg::CreateOpNode<llvm::FBinaryOperation>({ inputs[0], inputs[1] }, op, size);
 }
 
 llvm::fpcmp

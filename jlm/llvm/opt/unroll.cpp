@@ -342,9 +342,14 @@ create_unrolled_gamma_predicate(const LoopUnrollInfo & ui, size_t factor)
 
   auto uf = jlm::rvsdg::create_bitconstant(region, nbits, factor);
   auto mul = jlm::rvsdg::bitmul_op::create(nbits, step, uf);
-  auto arm = rvsdg::SimpleNode::Create(*region, ui.armoperation(), { ui.init(), mul }).output(0);
+  std::unique_ptr<rvsdg::SimpleOperation> copiedArmOp(
+      util::AssertedCast<rvsdg::SimpleOperation>(ui.armoperation().copy().release()));
+  auto arm =
+      rvsdg::SimpleNode::Create(*region, std::move(copiedArmOp), { ui.init(), mul }).output(0);
   /* FIXME: order of operands */
-  auto cmp = rvsdg::SimpleNode::Create(*region, ui.cmpoperation(), { arm, end }).output(0);
+  std::unique_ptr<rvsdg::SimpleOperation> copiedCmpOp(
+      util::AssertedCast<rvsdg::SimpleOperation>(ui.cmpoperation().copy().release()));
+  auto cmp = rvsdg::SimpleNode::Create(*region, std::move(copiedCmpOp), { arm, end }).output(0);
   auto pred = jlm::rvsdg::match(1, { { 1, 1 } }, 0, 2, cmp);
 
   return pred;
@@ -372,9 +377,13 @@ create_unrolled_theta_predicate(
 
   auto uf = create_bitconstant(region, nbits, factor);
   auto mul = bitmul_op::create(nbits, step, uf);
-  auto arm = SimpleNode::Create(*region, ui.armoperation(), { idv->origin(), mul }).output(0);
+  std::unique_ptr<rvsdg::SimpleOperation> copiedArmOp(
+      util::AssertedCast<rvsdg::SimpleOperation>(ui.armoperation().copy().release()));
+  auto arm = SimpleNode::Create(*region, std::move(copiedArmOp), { idv->origin(), mul }).output(0);
   /* FIXME: order of operands */
-  auto cmp = SimpleNode::Create(*region, ui.cmpoperation(), { arm, iend->origin() }).output(0);
+  std::unique_ptr<rvsdg::SimpleOperation> copiedCmpOp(
+      util::AssertedCast<rvsdg::SimpleOperation>(ui.cmpoperation().copy().release()));
+  auto cmp = SimpleNode::Create(*region, std::move(copiedCmpOp), { arm, iend->origin() }).output(0);
   auto pred = match(1, { { 1, 1 } }, 0, 2, cmp);
 
   return pred;
@@ -388,7 +397,9 @@ create_residual_gamma_predicate(const rvsdg::SubstitutionMap & smap, const LoopU
   auto end = ui.theta()->MapPreLoopVar(*ui.end()).input->origin();
 
   /* FIXME: order of operands */
-  auto cmp = rvsdg::SimpleNode::Create(*region, ui.cmpoperation(), { idv, end }).output(0);
+  std::unique_ptr<rvsdg::SimpleOperation> copiedCmpOp(
+      util::AssertedCast<rvsdg::SimpleOperation>(ui.cmpoperation().copy().release()));
+  auto cmp = rvsdg::SimpleNode::Create(*region, std::move(copiedCmpOp), { idv, end }).output(0);
   auto pred = jlm::rvsdg::match(1, { { 1, 1 } }, 0, 2, cmp);
 
   return pred;
