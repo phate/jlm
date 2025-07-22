@@ -147,7 +147,6 @@ MlirToJlmConverter::ConvertBlock(::mlir::Block & block, rvsdg::Region & rvsdgReg
 rvsdg::Node *
 MlirToJlmConverter::ConvertCmpIOp(
     ::mlir::arith::CmpIOp & CompOp,
-    rvsdg::Region & rvsdgRegion,
     const ::llvm::SmallVector<rvsdg::Output *> & inputs,
     size_t nbits)
 {
@@ -266,7 +265,6 @@ MlirToJlmConverter::ConvertICmpOp(
 rvsdg::Node *
 MlirToJlmConverter::ConvertFPBinaryNode(
     const ::mlir::Operation & mlirOperation,
-    rvsdg::Region & rvsdgRegion,
     const ::llvm::SmallVector<rvsdg::Output *> & inputs)
 {
   if (inputs.size() != 2)
@@ -315,7 +313,6 @@ MlirToJlmConverter::TryConvertFPCMP(const ::mlir::arith::CmpFPredicate & op)
 rvsdg::Node *
 MlirToJlmConverter::ConvertBitBinaryNode(
     ::mlir::Operation & mlirOperation,
-    rvsdg::Region & rvsdgRegion,
     const ::llvm::SmallVector<rvsdg::Output *> & inputs)
 {
   if (inputs.size() != 2 || mlirOperation.getNumResults() != 1)
@@ -395,14 +392,14 @@ MlirToJlmConverter::ConvertOperation(
 {
 
   // ** region Arithmetic Integer Operation **
-  auto convertedBitBinaryNode = ConvertBitBinaryNode(mlirOperation, rvsdgRegion, inputs);
+  auto convertedBitBinaryNode = ConvertBitBinaryNode(mlirOperation, inputs);
   // If the operation was converted it means it has been casted to a bit binary operation
   if (convertedBitBinaryNode)
     return convertedBitBinaryNode;
   // ** endregion Arithmetic Integer Operation **
 
   // ** region Arithmetic Float Operation **
-  auto convertedFloatBinaryNode = ConvertFPBinaryNode(mlirOperation, rvsdgRegion, inputs);
+  auto convertedFloatBinaryNode = ConvertFPBinaryNode(mlirOperation, inputs);
   // If the operation was converted it means it has been casted to a fp binary operation
   if (convertedFloatBinaryNode)
     return convertedFloatBinaryNode;
@@ -530,7 +527,7 @@ MlirToJlmConverter::ConvertOperation(
     JLM_ASSERT(type.getTypeID() == ::mlir::IntegerType::getTypeID());
     auto integerType = ::mlir::cast<::mlir::IntegerType>(type);
 
-    return ConvertCmpIOp(ComOp, rvsdgRegion, inputs, integerType.getWidth());
+    return ConvertCmpIOp(ComOp, inputs, integerType.getWidth());
   }
 
   else if (auto ComOp = ::mlir::dyn_cast<::mlir::arith::CmpFOp>(&mlirOperation))
