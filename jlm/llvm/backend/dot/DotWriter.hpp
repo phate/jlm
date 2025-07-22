@@ -22,8 +22,8 @@ namespace jlm::llvm::dot
  * @param emitTypeGraph if true, an additional graph containing nodes for all types is emitted
  * @return a reference to the top-level graph corresponding to the region
  */
-util::Graph &
-WriteGraphs(util::GraphWriter & writer, rvsdg::Region & region, bool emitTypeGraph);
+util::graph::Graph &
+WriteGraphs(util::graph::Writer & writer, rvsdg::Region & region, bool emitTypeGraph);
 }
 
 #endif // JLM_LLVM_BACKEND_DOT_DOTWRITER_HPP

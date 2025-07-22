@@ -1381,7 +1381,7 @@ Andersen::Analyze(
   const bool doubleCheck = std::getenv(ENV_DOUBLE_CHECK);
 
   const bool dumpGraphs = std::getenv(ENV_DUMP_SUBSET_GRAPH);
-  util::GraphWriter writer;
+  util::graph::Writer writer;
 
   AnalyzeModule(module, *statistics);
 
@@ -1408,7 +1408,7 @@ Andersen::Analyze(
   {
     auto & graph = Constraints_->DrawSubsetGraph(writer);
     graph.AppendToLabel("After Solving with " + config.ToString());
-    writer.OutputAllGraphs(std::cout, util::GraphOutputFormat::Dot);
+    writer.OutputAllGraphs(std::cout, util::graph::OutputFormat::Dot);
   }
 
   auto result = ConstructPointsToGraphFromPointerObjectSet(*Set_, *statistics);
