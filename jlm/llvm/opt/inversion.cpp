@@ -16,13 +16,13 @@
 namespace jlm::llvm
 {
 
-class ivtstat final : public util::Statistics
+class LoopUnswitching::Statistics final : public util::Statistics
 {
 public:
-  ~ivtstat() override = default;
+  ~Statistics() override = default;
 
-  explicit ivtstat(const util::FilePath & sourceFile)
-      : Statistics(Statistics::Id::ThetaGammaInversion, sourceFile)
+  explicit Statistics(const util::FilePath & sourceFile)
+      : util::Statistics(Statistics::Id::ThetaGammaInversion, sourceFile)
   {}
 
   void
@@ -41,10 +41,10 @@ public:
     GetTimer(Label::Timer).stop();
   }
 
-  static std::unique_ptr<ivtstat>
+  static std::unique_ptr<Statistics>
   Create(const util::FilePath & sourceFile)
   {
-    return std::make_unique<ivtstat>(sourceFile);
+    return std::make_unique<Statistics>(sourceFile);
   }
 };
 
@@ -321,7 +321,7 @@ invert(rvsdg::Region * region)
 static void
 invert(rvsdg::RvsdgModule & rvsdgModule, util::StatisticsCollector & statisticsCollector)
 {
-  auto statistics = ivtstat::Create(rvsdgModule.SourceFilePath().value());
+  auto statistics = LoopUnswitching::Statistics::Create(rvsdgModule.SourceFilePath().value());
 
   statistics->start(rvsdgModule.Rvsdg());
   invert(&rvsdgModule.Rvsdg().GetRootRegion());

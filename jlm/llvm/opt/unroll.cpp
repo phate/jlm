@@ -14,13 +14,13 @@
 namespace jlm::llvm
 {
 
-class unrollstat final : public util::Statistics
+class LoopUnrolling::Statistics final : public util::Statistics
 {
 public:
-  ~unrollstat() override = default;
+  ~Statistics() override = default;
 
-  explicit unrollstat(const util::FilePath & sourceFile)
-      : Statistics(Statistics::Id::LoopUnrolling, sourceFile)
+  explicit Statistics(const util::FilePath & sourceFile)
+      : util::Statistics(Statistics::Id::LoopUnrolling, sourceFile)
   {}
 
   void
@@ -37,10 +37,10 @@ public:
     GetTimer(Label::Timer).stop();
   }
 
-  static std::unique_ptr<unrollstat>
+  static std::unique_ptr<Statistics>
   Create(const util::FilePath & sourceFile)
   {
-    return std::make_unique<unrollstat>(sourceFile);
+    return std::make_unique<Statistics>(sourceFile);
   }
 };
 
@@ -524,7 +524,7 @@ LoopUnrolling::Run(rvsdg::RvsdgModule & module, util::StatisticsCollector & stat
     return;
 
   auto & graph = module.Rvsdg();
-  auto statistics = unrollstat::Create(module.SourceFilePath().value());
+  auto statistics = Statistics::Create(module.SourceFilePath().value());
 
   statistics->start(module.Rvsdg());
   unroll(&graph.GetRootRegion(), factor_);
