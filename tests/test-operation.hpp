@@ -201,7 +201,7 @@ public:
       rvsdg::Output * op1,
       rvsdg::Output * op2)
   {
-    return &CreateOpNode<TestBinaryOperation>(
+    return &rvsdg::CreateOpNode<TestBinaryOperation>(
         { op1, op2 },
         srctype,
         std::move(dsttype),
@@ -439,11 +439,11 @@ public:
       const std::vector<rvsdg::Output *> & operands,
       std::vector<std::shared_ptr<const rvsdg::Type>> resultTypes)
   {
-    return operands.empty() ? &CreateOpNode<TestOperation>(
+    return operands.empty() ? &rvsdg::CreateOpNode<TestOperation>(
                                   *region,
                                   std::move(operandTypes),
                                   std::move(resultTypes))
-                            : &CreateOpNode<TestOperation>(
+                            : &rvsdg::CreateOpNode<TestOperation>(
                                   { operands },
                                   std::move(operandTypes),
                                   std::move(resultTypes));
