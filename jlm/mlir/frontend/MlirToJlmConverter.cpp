@@ -364,94 +364,55 @@ MlirToJlmConverter::ConvertBitBinaryNode(
 
   if (::mlir::isa<::mlir::arith::AddIOp>(mlirOperation))
   {
-    return &rvsdg::SimpleNode::Create(
-        rvsdgRegion,
-        jlm::llvm::IntegerAddOperation(width),
-        { inputs[0], inputs[1] });
+    return &rvsdg::CreateOpNode<jlm::llvm::IntegerAddOperation>({ inputs[0], inputs[1] }, width);
   }
   else if (::mlir::isa<::mlir::arith::SubIOp>(mlirOperation))
   {
-    return &rvsdg::SimpleNode::Create(
-        rvsdgRegion,
-        jlm::llvm::IntegerSubOperation(width),
-        { inputs[0], inputs[1] });
+    return &rvsdg::CreateOpNode<jlm::llvm::IntegerSubOperation>({ inputs[0], inputs[1] }, width);
   }
   else if (::mlir::isa<::mlir::arith::MulIOp>(mlirOperation))
   {
-    return &rvsdg::SimpleNode::Create(
-        rvsdgRegion,
-        jlm::llvm::IntegerMulOperation(width),
-        { inputs[0], inputs[1] });
+    return &rvsdg::CreateOpNode<jlm::llvm::IntegerMulOperation>({ inputs[0], inputs[1] }, width);
   }
   else if (::mlir::isa<::mlir::arith::DivSIOp>(mlirOperation))
   {
-    return &rvsdg::SimpleNode::Create(
-        rvsdgRegion,
-        jlm::llvm::IntegerSDivOperation(width),
-        { inputs[0], inputs[1] });
+    return &rvsdg::CreateOpNode<jlm::llvm::IntegerSDivOperation>({ inputs[0], inputs[1] }, width);
   }
   else if (::mlir::isa<::mlir::arith::DivUIOp>(mlirOperation))
   {
-    return &rvsdg::SimpleNode::Create(
-        rvsdgRegion,
-        jlm::llvm::IntegerUDivOperation(width),
-        { inputs[0], inputs[1] });
+    return &rvsdg::CreateOpNode<jlm::llvm::IntegerUDivOperation>({ inputs[0], inputs[1] }, width);
   }
   else if (::mlir::isa<::mlir::arith::RemSIOp>(mlirOperation))
   {
-    return &rvsdg::SimpleNode::Create(
-        rvsdgRegion,
-        jlm::llvm::IntegerSRemOperation(width),
-        { inputs[0], inputs[1] });
+    return &rvsdg::CreateOpNode<jlm::llvm::IntegerSRemOperation>({ inputs[0], inputs[1] }, width);
   }
   else if (::mlir::isa<::mlir::arith::RemUIOp>(mlirOperation))
   {
-    return &rvsdg::SimpleNode::Create(
-        rvsdgRegion,
-        jlm::llvm::IntegerURemOperation(width),
-        { inputs[0], inputs[1] });
+    return &rvsdg::CreateOpNode<jlm::llvm::IntegerURemOperation>({ inputs[0], inputs[1] }, width);
   }
   else if (::mlir::isa<::mlir::LLVM::ShlOp>(mlirOperation))
   {
-    return &rvsdg::SimpleNode::Create(
-        rvsdgRegion,
-        jlm::llvm::IntegerShlOperation(width),
-        { inputs[0], inputs[1] });
+    return &rvsdg::CreateOpNode<jlm::llvm::IntegerShlOperation>({ inputs[0], inputs[1] }, width);
   }
   else if (::mlir::isa<::mlir::LLVM::AShrOp>(mlirOperation))
   {
-    return &rvsdg::SimpleNode::Create(
-        rvsdgRegion,
-        jlm::llvm::IntegerAShrOperation(width),
-        { inputs[0], inputs[1] });
+    return &rvsdg::CreateOpNode<jlm::llvm::IntegerAShrOperation>({ inputs[0], inputs[1] }, width);
   }
   else if (::mlir::isa<::mlir::LLVM::LShrOp>(mlirOperation))
   {
-    return &rvsdg::SimpleNode::Create(
-        rvsdgRegion,
-        jlm::llvm::IntegerLShrOperation(width),
-        { inputs[0], inputs[1] });
+    return &rvsdg::CreateOpNode<jlm::llvm::IntegerLShrOperation>({ inputs[0], inputs[1] }, width);
   }
   else if (::mlir::isa<::mlir::arith::AndIOp>(mlirOperation))
   {
-    return &rvsdg::SimpleNode::Create(
-        rvsdgRegion,
-        jlm::llvm::IntegerAndOperation(width),
-        { inputs[0], inputs[1] });
+    return &rvsdg::CreateOpNode<jlm::llvm::IntegerAndOperation>({ inputs[0], inputs[1] }, width);
   }
   else if (::mlir::isa<::mlir::arith::OrIOp>(mlirOperation))
   {
-    return &rvsdg::SimpleNode::Create(
-        rvsdgRegion,
-        jlm::llvm::IntegerOrOperation(width),
-        { inputs[0], inputs[1] });
+    return &rvsdg::CreateOpNode<jlm::llvm::IntegerOrOperation>({ inputs[0], inputs[1] }, width);
   }
   else if (::mlir::isa<::mlir::arith::XOrIOp>(mlirOperation))
   {
-    return &rvsdg::SimpleNode::Create(
-        rvsdgRegion,
-        jlm::llvm::IntegerXorOperation(width),
-        { inputs[0], inputs[1] });
+    return &rvsdg::CreateOpNode<jlm::llvm::IntegerXorOperation>({ inputs[0], inputs[1] }, width);
   }
   else
   {
