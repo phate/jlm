@@ -624,18 +624,6 @@ public:
   }
 
   inline bool
-  has_predecessors() const noexcept
-  {
-    for (const auto & input : inputs_)
-    {
-      if (is<node_output>(input->origin()))
-        return true;
-    }
-
-    return false;
-  }
-
-  inline bool
   has_successors() const noexcept
   {
     for (const auto & output : outputs_)
