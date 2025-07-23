@@ -97,6 +97,28 @@ Input::region() const noexcept
   }
 }
 
+Input *
+Input::Iterator::ComputeNext() const
+{
+  if (Input_ == nullptr)
+    return nullptr;
+
+  const auto index = Input_->index();
+  auto owner = Input_->GetOwner();
+
+  if (auto node = std::get_if<Node *>(&owner))
+  {
+    return index + 1 < (*node)->ninputs() ? (*node)->input(index + 1) : nullptr;
+  }
+
+  if (auto region = std::get_if<Region *>(&owner))
+  {
+    return index + 1 < (*region)->nresults() ? (*region)->result(index + 1) : nullptr;
+  }
+
+  JLM_UNREACHABLE("Unhandled owner case.");
+}
+
 Output::~Output() noexcept
 {
   JLM_ASSERT(nusers() == 0);
@@ -146,7 +168,7 @@ Output::remove_user(jlm::rvsdg::Input * user)
 
   if (auto node = TryGetOwnerNode<Node>(*this))
   {
-    if (!node->has_users())
+    if (node->IsDead())
     {
       bool wasAdded = region()->AddBottomNode(*node);
       JLM_ASSERT(wasAdded);
@@ -161,7 +183,7 @@ Output::add_user(jlm::rvsdg::Input * user)
 
   if (auto node = TryGetOwnerNode<Node>(*this))
   {
-    if (!node->has_users())
+    if (node->IsDead())
     {
       bool wasRemoved = region()->RemoveBottomNode(*node);
       JLM_ASSERT(wasRemoved);

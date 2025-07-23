@@ -95,7 +95,7 @@ public:
     auto node = TryGetOwnerNode<Node>(*predicate()->origin());
 
     predicate()->divert_to(p);
-    if (node && !node->has_users())
+    if (node && node->IsDead())
       remove(node);
   }
 
