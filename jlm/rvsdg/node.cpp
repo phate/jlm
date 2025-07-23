@@ -97,6 +97,28 @@ Input::region() const noexcept
   }
 }
 
+Input *
+Input::Iterator::ComputeNext() const
+{
+  if (Input_ == nullptr)
+    return nullptr;
+  
+  const auto index = Input_->index();
+  auto owner = Input_->GetOwner();
+
+  if (auto node = std::get_if<Node *>(&owner))
+  {
+    return index + 1 < (*node)->ninputs() ? (*node)->input(index + 1) : nullptr;
+  }
+
+  if (auto region = std::get_if<Region *>(&owner))
+  {
+    return index + 1 < (*region)->nresults() ? (*region)->result(index + 1) : nullptr;
+  }
+
+  JLM_UNREACHABLE("Unhandled owner case.");
+}
+
 Output::~Output() noexcept
 {
   JLM_ASSERT(nusers() == 0);

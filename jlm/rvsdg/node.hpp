@@ -84,84 +84,70 @@ public:
     return Owner_;
   }
 
-  template<class T>
-  class iterator
+  class Iterator final
   {
   public:
     using iterator_category = std::forward_iterator_tag;
-    using value_type = T *;
+    using value_type = Input *;
     using difference_type = std::ptrdiff_t;
-    using pointer = T **;
-    using reference = T *&;
+    using pointer = Input **;
+    using reference = Input *&;
 
-    static_assert(
-        std::is_base_of<jlm::rvsdg::Input, T>::value,
-        "Template parameter T must be derived from jlm::rvsdg::input.");
-
-  protected:
-    constexpr iterator(T * value)
-        : value_(value)
+    constexpr explicit Iterator(Input * value)
+        : Input_(value)
     {}
 
-    virtual T *
-    next() const
+    [[nodiscard]] Input *
+    GetInput() const noexcept
     {
-      /*
-        I cannot make this method abstract due to the return value of operator++(int).
-        This is the best I could come up with as a workaround.
-      */
-      throw jlm::util::error("This method must be overloaded.");
+      return Input_;
     }
 
-  public:
-    T *
-    value() const noexcept
-    {
-      return value_;
-    }
-
-    T &
+    Input &
     operator*()
     {
-      JLM_ASSERT(value_ != nullptr);
-      return *value_;
+      JLM_ASSERT(Input_ != nullptr);
+      return *Input_;
     }
 
-    T *
+    Input *
     operator->() const
     {
-      return value_;
+      return Input_;
     }
 
-    iterator<T> &
+    Iterator &
     operator++()
     {
-      value_ = next();
+      Input_ = ComputeNext();
       return *this;
     }
 
-    iterator<T>
+    Iterator
     operator++(int)
     {
-      iterator<T> tmp = *this;
+      Iterator tmp = *this;
       ++*this;
       return tmp;
     }
 
     virtual bool
-    operator==(const iterator<T> & other) const
+    operator==(const Iterator & other) const
     {
-      return value_ == other.value_;
+      return Input_ == other.Input_;
     }
 
     bool
-    operator!=(const iterator<T> & other) const
+    operator!=(const Iterator & other) const
     {
       return !operator==(other);
     }
 
   private:
-    T * value_;
+    [[nodiscard]] Input *
+    ComputeNext() const;
+
+    Input * Input_;
   };
 
   template<class T>

@@ -73,6 +73,7 @@ librvsdg_HEADERS = \
 librvsdg_TESTS = \
     tests/jlm/rvsdg/bitstring/bitstring \
     tests/jlm/rvsdg/ArgumentTests \
+    tests/jlm/rvsdg/InputTests \
     tests/jlm/rvsdg/RegionTests \
     tests/jlm/rvsdg/ResultTests \
     tests/jlm/rvsdg/SimpleOperationTests \
