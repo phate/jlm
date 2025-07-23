@@ -545,10 +545,7 @@ MlirToJlmConverter::ConvertOperation(
     auto floatType = ::mlir::cast<::mlir::FloatType>(type);
 
     llvm::fpsize size = ConvertFPSize(floatType.getWidth());
-    return &rvsdg::CreateOpNode<jlm::llvm::ConstantFP>(
-        { },
-        size,
-        constant.value());
+    return &rvsdg::CreateOpNode<jlm::llvm::ConstantFP>({}, size, constant.value());
   }
 
   // Binary Integer Comparision operations
@@ -699,7 +696,9 @@ MlirToJlmConverter::ConvertOperation(
   else if (auto IOBarrierOp = ::mlir::dyn_cast<::mlir::jlm::IOBarrier>(&mlirOperation))
   {
     auto type = IOBarrierOp.getResult().getType();
-    return &rvsdg::CreateOpNode<llvm::IOBarrierOperation>(std::vector(inputs.begin(), inputs.end()), ConvertType(type));
+    return &rvsdg::CreateOpNode<llvm::IOBarrierOperation>(
+        std::vector(inputs.begin(), inputs.end()),
+        ConvertType(type));
   }
   else if (auto MallocOp = ::mlir::dyn_cast<::mlir::jlm::Malloc>(&mlirOperation))
   {
