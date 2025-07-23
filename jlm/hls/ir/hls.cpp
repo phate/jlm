@@ -244,7 +244,7 @@ loop_node::set_predicate(jlm::rvsdg::Output * p)
 {
   auto node = rvsdg::TryGetOwnerNode<Node>(*predicate()->origin());
   predicate()->origin()->divert_users(p);
-  if (node && !node->has_users())
+  if (node && node->IsDead())
     remove(node);
 }
 

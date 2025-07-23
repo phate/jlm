@@ -612,18 +612,6 @@ public:
   GetOperation() const noexcept = 0;
 
   inline bool
-  has_users() const noexcept
-  {
-    for (const auto & output : outputs_)
-    {
-      if (output->nusers() != 0)
-        return true;
-    }
-
-    return false;
-  }
-
-  inline bool
   has_successors() const noexcept
   {
     for (const auto & output : outputs_)

@@ -123,7 +123,7 @@ Output::remove_user(jlm::rvsdg::Input * user)
 
   if (auto node = TryGetOwnerNode<Node>(*this))
   {
-    if (!node->has_users())
+    if (node->IsDead())
     {
       bool wasAdded = region()->AddBottomNode(*node);
       JLM_ASSERT(wasAdded);
@@ -138,7 +138,7 @@ Output::add_user(jlm::rvsdg::Input * user)
 
   if (auto node = TryGetOwnerNode<Node>(*this))
   {
-    if (!node->has_users())
+    if (node->IsDead())
     {
       bool wasRemoved = region()->RemoveBottomNode(*node);
       JLM_ASSERT(wasRemoved);

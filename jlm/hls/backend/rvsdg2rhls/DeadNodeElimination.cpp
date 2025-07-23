@@ -91,7 +91,7 @@ EliminateDeadNodesInRegion(rvsdg::Region & region)
     changed = false;
     for (auto & node : rvsdg::BottomUpTraverser(&region))
     {
-      if (!node->has_users())
+      if (node->IsDead())
       {
         remove(node);
         changed = true;
