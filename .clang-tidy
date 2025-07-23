@@ -2,17 +2,21 @@
 Checks: '-*,
   bugprone-move-forwarding-reference,
   cppcoreguidelines-init-variables,
+  cppcoreguidelines-pro-type-member-init,
   misc-unused-parameters,
   misc-unused-using-decls,
   modernize-deprecated-headers,
   modernize-redundant-void-arg,
+  modernize-use-override,
   '
 
 WarningsAsErrors: '
   bugprone-move-forwarding-reference,
   cppcoreguidelines-init-variables,
+  cppcoreguidelines-pro-type-member-init,
   misc-unused-parameters,
   misc-unused-using-decls,
   modernize-deprecated-headers,
   modernize-redundant-void-arg,
+  modernize-use-override,
   '

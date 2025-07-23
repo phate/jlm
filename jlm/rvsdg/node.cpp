@@ -18,22 +18,37 @@ Input::~Input() noexcept
   origin()->remove_user(this);
 }
 
-Input::Input(
-    jlm::rvsdg::Output * origin,
-    rvsdg::Region * region,
-    std::shared_ptr<const rvsdg::Type> type)
-    : index_(0),
-      origin_(origin),
-      region_(region),
-      Type_(std::move(type))
+void
+Input::CheckTypes(
+    const Region & region,
+    const Output & origin,
+    const std::shared_ptr<const rvsdg::Type> & type)
 {
-  if (region != origin->region())
+  if (&region != origin.region())
     throw jlm::util::error("Invalid operand region.");
 
-  if (*Type() != *origin->Type())
-    throw util::TypeError(Type()->debug_string(), origin->Type()->debug_string());
+  if (*type != *origin.Type())
+    throw util::TypeError(type->debug_string(), origin.Type()->debug_string());
+}
 
-  origin->add_user(this);
+Input::Input(rvsdg::Node & owner, rvsdg::Output & origin, std::shared_ptr<const rvsdg::Type> type)
+    : index_(0),
+      origin_(&origin),
+      Owner_(&owner),
+      Type_(std::move(type))
+{
+  CheckTypes(*owner.region(), origin, Type_);
+  origin.add_user(this);
+}
+
+Input::Input(rvsdg::Region & owner, rvsdg::Output & origin, std::shared_ptr<const rvsdg::Type> type)
+    : index_(0),
+      origin_(&origin),
+      Owner_(&owner),
+      Type_(std::move(type))
+{
+  CheckTypes(owner, origin, Type_);
+  origin.add_user(this);
 }
 
 std::string
@@ -65,6 +80,23 @@ Input::divert_to(jlm::rvsdg::Output * new_origin)
   on_input_change(this, old_origin, new_origin);
 }
 
+[[nodiscard]] rvsdg::Region *
+Input::region() const noexcept
+{
+  if (auto node = std::get_if<Node *>(&Owner_))
+  {
+    return (*node)->region();
+  }
+  else if (auto region = std::get_if<Region *>(&Owner_))
+  {
+    return *region;
+  }
+  else
+  {
+    JLM_UNREACHABLE("Unhandled owner case.");
+  }
+}
+
 Output::~Output() noexcept
 {
   JLM_ASSERT(nusers() == 0);
@@ -91,7 +123,7 @@ Output::remove_user(jlm::rvsdg::Input * user)
 
   if (auto node = TryGetOwnerNode<Node>(*this))
   {
-    if (!node->has_users())
+    if (node->IsDead())
     {
       bool wasAdded = region()->AddBottomNode(*node);
       JLM_ASSERT(wasAdded);
@@ -106,7 +138,7 @@ Output::add_user(jlm::rvsdg::Input * user)
 
   if (auto node = TryGetOwnerNode<Node>(*this))
   {
-    if (!node->has_users())
+    if (node->IsDead())
     {
       bool wasRemoved = region()->RemoveBottomNode(*node);
       JLM_ASSERT(wasRemoved);
@@ -119,15 +151,8 @@ node_input::node_input(
     jlm::rvsdg::Output * origin,
     Node * node,
     std::shared_ptr<const rvsdg::Type> type)
-    : jlm::rvsdg::Input(origin, node->region(), std::move(type)),
-      node_(node)
+    : jlm::rvsdg::Input(*node, *origin, std::move(type))
 {}
-
-[[nodiscard]] std::variant<Node *, Region *>
-node_input::GetOwner() const noexcept
-{
-  return node_;
-}
 
 /* node_output class */
 
@@ -266,9 +291,9 @@ Node::recompute_depth() noexcept
 
   for (size_t n = 0; n < noutputs(); n++)
   {
-    for (auto user : *(output(n)))
+    for (auto & user : output(n)->Users())
     {
-      if (auto node = TryGetOwnerNode<Node>(*user))
+      if (auto node = TryGetOwnerNode<Node>(user))
       {
         node->recompute_depth();
       }

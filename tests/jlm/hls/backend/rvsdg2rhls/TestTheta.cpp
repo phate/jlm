@@ -56,17 +56,20 @@ TestUnknownBoundaries()
   // Check that two constant buffers are created for the loop invariant variables
   assert(jlm::rvsdg::Region::ContainsOperation<LoopConstantBufferOperation>(*lambdaRegion, true));
   assert(lambdaRegion->argument(0)->nusers() == 1);
-  auto loopInput =
-      jlm::util::AssertedCast<jlm::rvsdg::StructuralInput>(*lambdaRegion->argument(0)->begin());
-  auto loopNode = jlm::util::AssertedCast<loop_node>(loopInput->node());
-  auto loopConstInput = jlm::util::AssertedCast<jlm::rvsdg::SimpleInput>(
-      *loopNode->subregion()->argument(3)->begin());
-  jlm::util::AssertedCast<const LoopConstantBufferOperation>(
-      &loopConstInput->node()->GetOperation());
-  loopConstInput = jlm::util::AssertedCast<jlm::rvsdg::SimpleInput>(
-      *loopNode->subregion()->argument(4)->begin());
-  jlm::util::AssertedCast<const LoopConstantBufferOperation>(
-      &loopConstInput->node()->GetOperation());
+  auto & loopNode =
+      jlm::rvsdg::AssertGetOwnerNode<loop_node>(lambdaRegion->argument(0)->SingleUser());
+  {
+    auto [bufferNode, bufferOperation] =
+        jlm::rvsdg::TryGetSimpleNodeAndOp<LoopConstantBufferOperation>(
+            loopNode.subregion()->argument(3)->SingleUser());
+    assert(bufferNode && bufferOperation);
+  }
+  {
+    auto [bufferNode, bufferOperation] =
+        jlm::rvsdg::TryGetSimpleNodeAndOp<LoopConstantBufferOperation>(
+            loopNode.subregion()->argument(4)->SingleUser());
+    assert(bufferNode && bufferOperation);
+  }
 }
 
 JLM_UNIT_TEST_REGISTER("jlm/hls/backend/rvsdg2rhls/TestTheta", TestUnknownBoundaries)

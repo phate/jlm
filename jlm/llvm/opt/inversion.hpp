@@ -12,12 +12,14 @@ namespace jlm::llvm
 {
 
 /**
- * \brief Theta-Gamma Inversion
+ * \brief LoopUnswitching
  */
-class tginversion final : public rvsdg::Transformation
+class LoopUnswitching final : public rvsdg::Transformation
 {
 public:
-  virtual ~tginversion();
+  class Statistics;
+
+  ~LoopUnswitching() noexcept override;
 
   void
   Run(rvsdg::RvsdgModule & module, util::StatisticsCollector & statisticsCollector) override;

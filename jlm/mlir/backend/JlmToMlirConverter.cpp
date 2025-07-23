@@ -189,7 +189,7 @@ JlmToMlirConverter::ConvertNode(
   {
     return ConvertTheta(*theta, block, inputs);
   }
-  else if (auto delta = dynamic_cast<const llvm::delta::node *>(&node))
+  else if (auto delta = dynamic_cast<const llvm::DeltaNode *>(&node))
   {
     return ConvertDelta(*delta, block, inputs);
   }
@@ -202,7 +202,7 @@ JlmToMlirConverter::ConvertNode(
 
 ::mlir::Operation *
 JlmToMlirConverter::ConvertFpBinaryNode(
-    const jlm::llvm::fpbin_op & op,
+    const jlm::llvm::FBinaryOperation & op,
     ::llvm::SmallVector<::mlir::Value> inputs)
 {
   switch (op.fpop())
@@ -224,7 +224,7 @@ JlmToMlirConverter::ConvertFpBinaryNode(
 
 ::mlir::Operation *
 JlmToMlirConverter::ConvertFpCompareNode(
-    const llvm::fpcmp_op & op,
+    const llvm::FCmpOperation & op,
     ::llvm::SmallVector<::mlir::Value> inputs)
 {
   const auto & map = GetFpCmpPredicateMap();
@@ -365,7 +365,7 @@ JlmToMlirConverter::BitCompareNode(
 
 ::mlir::Operation *
 JlmToMlirConverter::ConvertPointerCompareNode(
-    const llvm::ptrcmp_op & operation,
+    const llvm::PtrCmpOperation & operation,
     ::llvm::SmallVector<::mlir::Value> inputs)
 {
   auto compPredicate = ::mlir::LLVM::ICmpPredicate::eq;
@@ -422,7 +422,7 @@ JlmToMlirConverter::ConvertSimpleNode(
         value,
         integerConstOp->Representation().nbits());
   }
-  else if (auto fpBinOp = dynamic_cast<const jlm::llvm::fpbin_op *>(&operation))
+  else if (auto fpBinOp = dynamic_cast<const jlm::llvm::FBinaryOperation *>(&operation))
   {
     MlirOp = ConvertFpBinaryNode(*fpBinOp, inputs);
   }
@@ -466,11 +466,11 @@ JlmToMlirConverter::ConvertSimpleNode(
     auto type = ConvertType(*constantPointerNullOp->result(0));
     MlirOp = Builder_->create<::mlir::LLVM::ZeroOp>(Builder_->getUnknownLoc(), type);
   }
-  else if (jlm::rvsdg::is<const rvsdg::bitbinary_op>(operation))
+  else if (jlm::rvsdg::is<const rvsdg::BitBinaryOperation>(operation))
   {
     MlirOp = ConvertBitBinaryNode(operation, inputs);
   }
-  else if (auto fpBinOp = dynamic_cast<const jlm::llvm::fpbin_op *>(&operation))
+  else if (auto fpBinOp = dynamic_cast<const jlm::llvm::FBinaryOperation *>(&operation))
   {
     MlirOp = ConvertFpBinaryNode(*fpBinOp, inputs);
   }
@@ -486,15 +486,15 @@ JlmToMlirConverter::ConvertSimpleNode(
         inputs[0]);
   }
 
-  else if (jlm::rvsdg::is<const rvsdg::bitcompare_op>(operation))
+  else if (jlm::rvsdg::is<const rvsdg::BitCompareOperation>(operation))
   {
     MlirOp = BitCompareNode(operation, inputs);
   }
-  else if (auto fpCmpOp = dynamic_cast<const llvm::fpcmp_op *>(&operation))
+  else if (auto fpCmpOp = dynamic_cast<const llvm::FCmpOperation *>(&operation))
   {
     MlirOp = ConvertFpCompareNode(*fpCmpOp, inputs);
   }
-  else if (auto pointerCompareOp = dynamic_cast<const llvm::ptrcmp_op *>(&operation))
+  else if (auto pointerCompareOp = dynamic_cast<const llvm::PtrCmpOperation *>(&operation))
   {
     MlirOp = ConvertPointerCompareNode(*pointerCompareOp, inputs);
   }
@@ -534,7 +534,7 @@ JlmToMlirConverter::ConvertSimpleNode(
         ConvertType(*node.output(0)->Type()), // Control, ouput type
         ctlOp->value().alternative());
   }
-  else if (auto vaOp = dynamic_cast<const llvm::valist_op *>(&operation))
+  else if (auto vaOp = dynamic_cast<const llvm::VariadicArgumentListOperation *>(&operation))
   {
     MlirOp = Builder_->create<::mlir::jlm::CreateVarArgList>(
         Builder_->getUnknownLoc(),
@@ -890,7 +890,7 @@ JlmToMlirConverter::ConvertTheta(
 
 ::mlir::Operation *
 JlmToMlirConverter::ConvertDelta(
-    const llvm::delta::node & deltaNode,
+    const llvm::DeltaNode & deltaNode,
     ::mlir::Block & block,
     const ::llvm::SmallVector<::mlir::Value> & inputs)
 {

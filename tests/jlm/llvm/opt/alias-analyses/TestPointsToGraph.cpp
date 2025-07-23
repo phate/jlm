@@ -63,11 +63,11 @@ private:
             aa::PointsToGraph::RegisterNode::Create(*PointsToGraph_, { node.output(0) });
         registerNode.AddEdge(mallocNode);
       }
-      else if (auto deltaNode = dynamic_cast<const delta::node *>(&node))
+      else if (auto deltaNode = dynamic_cast<const DeltaNode *>(&node))
       {
         auto & deltaPtgNode = aa::PointsToGraph::DeltaNode::Create(*PointsToGraph_, *deltaNode);
         auto & registerNode =
-            aa::PointsToGraph::RegisterNode::Create(*PointsToGraph_, { deltaNode->output() });
+            aa::PointsToGraph::RegisterNode::Create(*PointsToGraph_, { &deltaNode->output() });
         registerNode.AddEdge(deltaPtgNode);
 
         AnalyzeRegion(*deltaNode->subregion());

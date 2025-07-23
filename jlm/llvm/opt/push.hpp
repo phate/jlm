@@ -18,12 +18,14 @@ namespace jlm::llvm
 {
 
 /**
- * \brief Node Push-Out Optimization
+ * \brief Node Hoisting Optimization
  */
-class pushout final : public rvsdg::Transformation
+class NodeHoisting final : public rvsdg::Transformation
 {
 public:
-  virtual ~pushout();
+  class Statistics;
+
+  ~NodeHoisting() noexcept override;
 
   void
   Run(rvsdg::RvsdgModule & module, util::StatisticsCollector & statisticsCollector) override;

@@ -49,7 +49,7 @@ test_gamma()
   GraphExport::Create(*gamma->output(0), "x");
 
   //	jlm::rvsdg::view(graph.GetRootRegion(), stdout);
-  jlm::llvm::pushout pushout;
+  jlm::llvm::NodeHoisting pushout;
   pushout.Run(rm, statisticsCollector);
   //	jlm::rvsdg::view(graph.GetRootRegion(), stdout);
 
@@ -94,7 +94,7 @@ test_theta()
   GraphExport::Create(*theta->output(0), "c");
 
   //	jlm::rvsdg::view(graph.GetRootRegion(), stdout);
-  jlm::llvm::pushout pushout;
+  jlm::llvm::NodeHoisting pushout;
   pushout.Run(rm, statisticsCollector);
   //	jlm::rvsdg::view(graph.GetRootRegion(), stdout);
 

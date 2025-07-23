@@ -411,28 +411,28 @@ JlmOptCommand::CreateTransformation(
   case JlmOptCommandLineOptions::OptimizationId::AASteensgaardRegionAware:
     return std::make_unique<llvm::aa::PointsToAnalysisStateEncoder<Steensgaard, RegionAwareMrs>>();
   case JlmOptCommandLineOptions::OptimizationId::CommonNodeElimination:
-    return std::make_unique<llvm::cne>();
+    return std::make_unique<llvm::CommonNodeElimination>();
   case JlmOptCommandLineOptions::OptimizationId::DeadNodeElimination:
     return std::make_unique<llvm::DeadNodeElimination>();
   case JlmOptCommandLineOptions::OptimizationId::FunctionInlining:
-    return std::make_unique<llvm::fctinline>();
+    return std::make_unique<llvm::FunctionInlining>();
   case JlmOptCommandLineOptions::OptimizationId::IfConversion:
     return std::make_unique<llvm::IfConversion>();
   case JlmOptCommandLineOptions::OptimizationId::InvariantValueRedirection:
     return std::make_unique<llvm::InvariantValueRedirection>();
   case JlmOptCommandLineOptions::OptimizationId::LoopUnrolling:
-    return std::make_unique<llvm::loopunroll>(4);
+    return std::make_unique<llvm::LoopUnrolling>(4);
   case JlmOptCommandLineOptions::OptimizationId::NodePullIn:
-    return std::make_unique<llvm::pullin>();
+    return std::make_unique<llvm::NodeSinking>();
   case JlmOptCommandLineOptions::OptimizationId::NodePushOut:
-    return std::make_unique<llvm::pushout>();
+    return std::make_unique<llvm::NodeHoisting>();
   case JlmOptCommandLineOptions::OptimizationId::NodeReduction:
     return std::make_unique<llvm::NodeReduction>();
   case JlmOptCommandLineOptions::OptimizationId::RvsdgTreePrinter:
     return std::make_unique<llvm::RvsdgTreePrinter>(
         CommandLineOptions_.GetRvsdgTreePrinterConfiguration());
   case JlmOptCommandLineOptions::OptimizationId::ThetaGammaInversion:
-    return std::make_unique<llvm::tginversion>();
+    return std::make_unique<llvm::LoopUnswitching>();
   default:
     JLM_UNREACHABLE("Unhandled optimization id.");
   }
@@ -603,18 +603,18 @@ JlmOptCommand::PrintAsDot(
 {
   auto & rootRegion = rvsdgModule.Rvsdg().GetRootRegion();
 
-  util::GraphWriter writer;
-  jlm::llvm::dot::WriteGraphs(writer, rootRegion, true);
+  util::graph::Writer writer;
+  llvm::dot::WriteGraphs(writer, rootRegion, true);
 
   if (outputFile == "")
   {
-    writer.OutputAllGraphs(std::cout, util::GraphOutputFormat::Dot);
+    writer.OutputAllGraphs(std::cout, util::graph::OutputFormat::Dot);
   }
   else
   {
     std::ofstream fs;
     fs.open(outputFile.to_str());
-    writer.OutputAllGraphs(fs, util::GraphOutputFormat::Dot);
+    writer.OutputAllGraphs(fs, util::graph::OutputFormat::Dot);
     fs.close();
   }
 }

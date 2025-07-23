@@ -172,7 +172,7 @@ class PointerObjectSet final
 
   std::unordered_map<const rvsdg::Node *, PointerObjectIndex> MallocMap_;
 
-  std::unordered_map<const delta::node *, PointerObjectIndex> GlobalMap_;
+  std::unordered_map<const DeltaNode *, PointerObjectIndex> GlobalMap_;
 
   util::BijectiveMap<const rvsdg::LambdaNode *, PointerObjectIndex> FunctionMap_;
 
@@ -280,7 +280,7 @@ public:
   CreateMallocMemoryObject(const rvsdg::Node & mallocNode, bool canPoint);
 
   [[nodiscard]] PointerObjectIndex
-  CreateGlobalMemoryObject(const delta::node & deltaNode, bool canPoint);
+  CreateGlobalMemoryObject(const DeltaNode & deltaNode, bool canPoint);
 
   /**
    * Creates a PointerObject of Function kind associated with the given \p lambdaNode.
@@ -319,7 +319,7 @@ public:
   const std::unordered_map<const rvsdg::Node *, PointerObjectIndex> &
   GetMallocMap() const noexcept;
 
-  const std::unordered_map<const delta::node *, PointerObjectIndex> &
+  const std::unordered_map<const DeltaNode *, PointerObjectIndex> &
   GetGlobalMap() const noexcept;
 
   const util::BijectiveMap<const rvsdg::LambdaNode *, PointerObjectIndex> &
@@ -1036,8 +1036,8 @@ public:
    * Creates a subset graph containing all PointerObjects, their current points-to sets,
    * and edges representing the current set of constraints.
    */
-  util::Graph &
-  DrawSubsetGraph(util::GraphWriter & writer) const;
+  util::graph::Graph &
+  DrawSubsetGraph(util::graph::Writer & writer) const;
 
   /**
    * Performs off-line detection of PointerObjects that can be shown to always contain

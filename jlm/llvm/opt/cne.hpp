@@ -14,10 +14,12 @@ namespace jlm::llvm
 /**
  * \brief Common Node Elimination
  */
-class cne final : public rvsdg::Transformation
+class CommonNodeElimination final : public rvsdg::Transformation
 {
 public:
-  virtual ~cne();
+  class Statistics;
+
+  ~CommonNodeElimination() noexcept override;
 
   void
   Run(rvsdg::RvsdgModule & module, util::StatisticsCollector & statisticsCollector) override;

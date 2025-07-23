@@ -37,10 +37,9 @@ class Input
 public:
   virtual ~Input() noexcept;
 
-  Input(
-      jlm::rvsdg::Output * origin,
-      rvsdg::Region * region,
-      std::shared_ptr<const rvsdg::Type> type);
+  Input(rvsdg::Node & owner, rvsdg::Output & origin, std::shared_ptr<const rvsdg::Type> type);
+
+  Input(rvsdg::Region & owner, rvsdg::Output & origin, std::shared_ptr<const rvsdg::Type> type);
 
   Input(const Input &) = delete;
 
@@ -74,16 +73,16 @@ public:
   }
 
   [[nodiscard]] rvsdg::Region *
-  region() const noexcept
-  {
-    return region_;
-  }
+  region() const noexcept;
 
   virtual std::string
   debug_string() const;
 
-  [[nodiscard]] virtual std::variant<Node *, Region *>
-  GetOwner() const noexcept = 0;
+  [[nodiscard]] std::variant<Node *, Region *>
+  GetOwner() const noexcept
+  {
+    return Owner_;
+  }
 
   template<class T>
   class iterator
@@ -246,9 +245,15 @@ public:
   };
 
 private:
+  static void
+  CheckTypes(
+      const Region & region,
+      const Output & origin,
+      const std::shared_ptr<const rvsdg::Type> & type);
+
   size_t index_;
   jlm::rvsdg::Output * origin_;
-  rvsdg::Region * region_;
+  std::variant<Node *, Region *> Owner_;
   std::shared_ptr<const rvsdg::Type> Type_;
 };
 
@@ -269,8 +274,7 @@ class Output
   friend class Node;
   friend class rvsdg::Region;
 
-  typedef std::unordered_set<jlm::rvsdg::Input *>::const_iterator user_iterator;
-
+public:
   using UserIterator = util::PtrIterator<Input, std::unordered_set<Input *>::iterator>;
   using UserConstIterator =
       util::PtrIterator<const Input, std::unordered_set<Input *>::const_iterator>;
@@ -278,7 +282,6 @@ class Output
   using UserIteratorRange = util::IteratorRange<UserIterator>;
   using UserConstIteratorRange = util::IteratorRange<UserConstIterator>;
 
-public:
   virtual ~Output() noexcept;
 
   Output(rvsdg::Region * region, std::shared_ptr<const rvsdg::Type> type);
@@ -331,21 +334,15 @@ public:
   }
 
   /**
-   * @deprecated Use Users() instead.
+   * @return The first and only user of the output.
+   *
+   * \pre The output has only a single user.
    */
-  inline user_iterator
-  begin() const noexcept
+  [[nodiscard]] rvsdg::Input &
+  SingleUser() const noexcept
   {
-    return users_.begin();
-  }
-
-  /**
-   * @deprecated Use Users() instead.
-   */
-  inline user_iterator
-  end() const noexcept
-  {
-    return users_.end();
+    JLM_ASSERT(nusers() == 1);
+    return **users_.begin();
   }
 
   UserIteratorRange
@@ -354,7 +351,7 @@ public:
     return { UserIterator(users_.begin()), UserIterator(users_.end()) };
   }
 
-  UserConstIteratorRange
+  [[nodiscard]] UserConstIteratorRange
   Users() const
   {
     return { UserConstIterator(users_.begin()), UserConstIterator(users_.end()) };
@@ -572,14 +569,14 @@ public:
   Node *
   node() const noexcept
   {
-    return node_;
+    auto owner = GetOwner();
+    if (auto node = std::get_if<Node *>(&owner))
+    {
+      return *node;
+    }
+
+    JLM_UNREACHABLE("This should not have happened!");
   }
-
-  [[nodiscard]] std::variant<Node *, Region *>
-  GetOwner() const noexcept override;
-
-private:
-  Node * node_;
 };
 
 /* node_output class */
@@ -615,37 +612,13 @@ public:
   GetOperation() const noexcept = 0;
 
   inline bool
-  has_users() const noexcept
-  {
-    for (const auto & output : outputs_)
-    {
-      if (output->nusers() != 0)
-        return true;
-    }
-
-    return false;
-  }
-
-  inline bool
-  has_predecessors() const noexcept
-  {
-    for (const auto & input : inputs_)
-    {
-      if (is<node_output>(input->origin()))
-        return true;
-    }
-
-    return false;
-  }
-
-  inline bool
   has_successors() const noexcept
   {
     for (const auto & output : outputs_)
     {
-      for (const auto & user : *output)
+      for (const auto & user : output->Users())
       {
-        if (is<node_input>(*user))
+        if (is<node_input>(user))
           return true;
       }
     }
@@ -844,11 +817,11 @@ public:
   }
 
 private:
-  util::intrusive_list_anchor<Node> region_node_list_anchor_;
+  util::intrusive_list_anchor<Node> region_node_list_anchor_{};
 
-  util::intrusive_list_anchor<Node> region_top_node_list_anchor_;
+  util::intrusive_list_anchor<Node> region_top_node_list_anchor_{};
 
-  util::intrusive_list_anchor<Node> region_bottom_node_list_anchor_;
+  util::intrusive_list_anchor<Node> region_bottom_node_list_anchor_{};
 
 public:
   typedef util::intrusive_list_accessor<Node, &Node::region_node_list_anchor_>

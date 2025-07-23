@@ -136,7 +136,7 @@ PointerObjectSet::CreateMallocMemoryObject(const rvsdg::Node & mallocNode, bool 
 }
 
 PointerObjectIndex
-PointerObjectSet::CreateGlobalMemoryObject(const delta::node & deltaNode, bool canPoint)
+PointerObjectSet::CreateGlobalMemoryObject(const DeltaNode & deltaNode, bool canPoint)
 {
   JLM_ASSERT(GlobalMap_.count(&deltaNode) == 0);
   return GlobalMap_[&deltaNode] = AddPointerObject(PointerObjectKind::GlobalMemoryObject, canPoint);
@@ -198,7 +198,7 @@ PointerObjectSet::GetMallocMap() const noexcept
   return MallocMap_;
 }
 
-const std::unordered_map<const delta::node *, PointerObjectIndex> &
+const std::unordered_map<const DeltaNode *, PointerObjectIndex> &
 PointerObjectSet::GetGlobalMap() const noexcept
 {
   return GlobalMap_;
@@ -1081,7 +1081,7 @@ CreateSubsetGraphNodeLabel(PointerObjectSet & set, PointerObjectIndex index)
  * Helper function used by DrawSubsetGraph.
  */
 static void
-CreateSubsetGraphNodes(PointerObjectSet & set, util::Graph & graph)
+CreateSubsetGraphNodes(PointerObjectSet & set, util::graph::Graph & graph)
 {
   // Ensure the index of nodes line up with the index of the corresponding PointerObject
   JLM_ASSERT(graph.NumNodes() == 0);
@@ -1093,9 +1093,9 @@ CreateSubsetGraphNodes(PointerObjectSet & set, util::Graph & graph)
     node.SetLabel(CreateSubsetGraphNodeLabel(set, i));
 
     if (set.IsPointerObjectRegister(i))
-      node.SetShape(util::Node::Shape::Oval);
+      node.SetShape(util::graph::Node::Shape::Oval);
     else
-      node.SetShape(util::Node::Shape::Rectangle);
+      node.SetShape(util::graph::Node::Shape::Rectangle);
 
     if (set.HasEscaped(i))
       node.SetFillColor("#FFFF99");
@@ -1137,7 +1137,7 @@ static void
 CreateSubsetGraphEdges(
     const PointerObjectSet & set,
     const std::vector<PointerObjectConstraintSet::ConstraintVariant> & constraints,
-    util::Graph & graph)
+    util::graph::Graph & graph)
 {
   // Draw edges for constraints
   size_t nextCallConstraintIndex = 0;
@@ -1154,7 +1154,7 @@ CreateSubsetGraphEdges(
       auto & edge = graph.CreateDirectedEdge(
           graph.GetNode(storeConstraint->GetValue()),
           graph.GetNode(storeConstraint->GetPointer()));
-      edge.SetStyle(util::Edge::Style::Dashed);
+      edge.SetStyle(util::graph::Edge::Style::Dashed);
       edge.SetArrowHead("normalodot");
     }
     else if (auto * loadConstraint = std::get_if<LoadConstraint>(&constraint))
@@ -1162,7 +1162,7 @@ CreateSubsetGraphEdges(
       auto & edge = graph.CreateDirectedEdge(
           graph.GetNode(loadConstraint->GetPointer()),
           graph.GetNode(loadConstraint->GetValue()));
-      edge.SetStyle(util::Edge::Style::Dashed);
+      edge.SetStyle(util::graph::Edge::Style::Dashed);
       edge.SetArrowTail("odot");
     }
     else if (auto * callConstraint = std::get_if<FunctionCallConstraint>(&constraint))
@@ -1206,7 +1206,7 @@ CreateSubsetGraphEdges(
  * Helper function used by DrawSubsetGraph.
  */
 static void
-LabelFunctionsArgumentsAndReturnValues(PointerObjectSet & set, util::Graph & graph)
+LabelFunctionsArgumentsAndReturnValues(PointerObjectSet & set, util::graph::Graph & graph)
 {
   size_t nextFunctionIndex = 0;
   for (auto [function, pointerObject] : set.GetFunctionMap())
@@ -1237,8 +1237,8 @@ LabelFunctionsArgumentsAndReturnValues(PointerObjectSet & set, util::Graph & gra
   }
 }
 
-util::Graph &
-PointerObjectConstraintSet::DrawSubsetGraph(util::GraphWriter & writer) const
+util::graph::Graph &
+PointerObjectConstraintSet::DrawSubsetGraph(util::graph::Writer & writer) const
 {
   auto & graph = writer.CreateGraph();
   graph.SetLabel("Andersen subset graph");
@@ -1333,7 +1333,7 @@ AssignOvsEquivalenceSetLabels(
     std::vector<util::HashSet<PointerObjectIndex>> & successors,
     size_t numSccs,
     std::vector<size_t> & sccIndex,
-    std::vector<size_t> & topologicalOrder,
+    std::vector<size_t> & reverseTopologicalOrder,
     std::vector<bool> & sccHasDirectNodesOnly)
 {
   // Visit all SCCs in topological order and assign equivalence set labels
@@ -1348,8 +1348,9 @@ AssignOvsEquivalenceSetLabels(
 
   // Iterate over each SCC in topological order, and each node within the SCC.
   // This ensures all predecessor SCCs are known before visiting each SCC.
-  for (auto node : topologicalOrder)
+  for (auto it = reverseTopologicalOrder.rbegin(); it != reverseTopologicalOrder.rend(); ++it)
   {
+    const auto node = *it;
     const auto scc = sccIndex[node];
 
     // If this SCC has not been visited in the topological order traversal, give it a label
@@ -1409,12 +1410,12 @@ PointerObjectConstraintSet::PerformOfflineVariableSubstitution(bool storeRefCycl
 
   // Output vectors from Tarjan's SCC algorithm
   std::vector<size_t> sccIndex;
-  std::vector<size_t> topologicalOrder;
-  auto numSccs = util::FindStronglyConnectedComponents(
+  std::vector<size_t> reverseTopologicalOrder;
+  auto numSccs = util::FindStronglyConnectedComponents<size_t>(
       totalNodeCount,
       GetSuccessors,
       sccIndex,
-      topologicalOrder);
+      reverseTopologicalOrder);
 
   // Find out which SCCs contain only direct nodes, as described in CreateOvsSubsetGraph()
   std::vector<bool> sccHasDirectNodesOnly(numSccs, true);
@@ -1429,7 +1430,7 @@ PointerObjectConstraintSet::PerformOfflineVariableSubstitution(bool storeRefCycl
       successors,
       numSccs,
       sccIndex,
-      topologicalOrder,
+      reverseTopologicalOrder,
       sccHasDirectNodesOnly);
 
   // Finally unify all PointerObjects with equal equivalence label
@@ -1440,6 +1441,9 @@ PointerObjectConstraintSet::PerformOfflineVariableSubstitution(bool storeRefCycl
 
   for (PointerObjectIndex i = 0; i < Set_.NumPointerObjects(); i++)
   {
+    if (!Set_.IsUnificationRoot(i))
+      continue;
+
     const auto equivalenceSetLabel = equivalenceSetLabels[sccIndex[i]];
 
     // If other nodes with the same equivalence set label have been seen, unify it with i
@@ -1698,9 +1702,10 @@ PointerObjectConstraintSet::RunWorklistSolver(WorklistStatistics & statistics)
   };
 
   // Lambda for getting all superset edge successors of a given pointer object in the subset graph.
-  // If \p node is not a unification root, its set of successors will always be empty.
+  // The node must be a unification root
   const auto GetSupersetEdgeSuccessors = [&](PointerObjectIndex node)
   {
+    JLM_ASSERT(Set_.IsUnificationRoot(node));
     return supersetEdges[node].Items();
   };
 
@@ -2101,7 +2106,7 @@ PointerObjectConstraintSet::RunWorklistSolver(WorklistStatistics & statistics)
   if constexpr (useTopologicalTraversal)
   {
     std::vector<PointerObjectIndex> sccIndex;
-    std::vector<PointerObjectIndex> topologicalOrder;
+    std::vector<PointerObjectIndex> reverseTopologicalOrder;
 
     statistics.NumTopologicalWorklistSweeps = 0;
 
@@ -2109,29 +2114,43 @@ PointerObjectConstraintSet::RunWorklistSolver(WorklistStatistics & statistics)
     {
       (*statistics.NumTopologicalWorklistSweeps)++;
 
+      // Used during topological sorting to avoid traversing non-roots
+      const auto GetUnificationRoot = [&](PointerObjectIndex node)
+      {
+        return Set_.GetUnificationRoot(node);
+      };
+
       // First perform a topological sort of the entire subset graph, with respect to simple edges
       util::FindStronglyConnectedComponents<PointerObjectIndex>(
           Set_.NumPointerObjects(),
+          GetUnificationRoot,
           GetSupersetEdgeSuccessors,
           sccIndex,
-          topologicalOrder);
+          reverseTopologicalOrder);
 
       // Visit nodes in topological order, if they are in the workset.
-      // cycles will result in neighbouring nodes in the topologicalOrder sharing sccIndex
-      for (size_t i = 0; i < topologicalOrder.size(); i++)
+      // cycles will result in neighbouring nodes in the topological order sharing sccIndex
+      for (auto it = reverseTopologicalOrder.rbegin(); it != reverseTopologicalOrder.rend(); ++it)
       {
-        const auto node = topologicalOrder[i];
-        const auto nextNodeIndex = i + 1;
-        if (nextNodeIndex < topologicalOrder.size())
+        const auto node = *it;
+
+        // Check if node can be unified with the next node in the topological order
+        const auto nextIt = it + 1;
+        if (nextIt != reverseTopologicalOrder.rend())
         {
-          auto & nextNode = topologicalOrder[nextNodeIndex];
+          auto & nextNode = *nextIt;
           if (sccIndex[node] == sccIndex[nextNode])
           {
             // This node is in a cycle with the next node, unify them
-            nextNode = UnifyPointerObjects(node, nextNode);
+            auto unifiedNode = UnifyPointerObjects(node, nextNode);
+            auto oldNode = unifiedNode == node ? nextNode : node;
+            // Make sure only unification roots are in the worklist
+            worklist.RemoveWorkItem(oldNode);
             // Make sure the new root is visited
-            worklist.RemoveWorkItem(node);
-            worklist.PushWorkItem(nextNode);
+            worklist.PushWorkItem(unifiedNode);
+
+            // Update the nextNode to the unification root, to make sure it is visited
+            nextNode = unifiedNode;
             continue;
           }
         }
@@ -2226,15 +2245,15 @@ PointerObjectConstraintSet::SolveUsingWorklist(
       policyVariant;
 
   if (policy == WorklistSolverPolicy::LeastRecentlyFired)
-    policyVariant = (util::LrfWorklist<PointerObjectIndex> *)nullptr;
+    policyVariant = static_cast<util::LrfWorklist<PointerObjectIndex> *>(nullptr);
   else if (policy == WorklistSolverPolicy::TwoPhaseLeastRecentlyFired)
-    policyVariant = (util::TwoPhaseLrfWorklist<PointerObjectIndex> *)nullptr;
+    policyVariant = static_cast<util::TwoPhaseLrfWorklist<PointerObjectIndex> *>(nullptr);
   else if (policy == WorklistSolverPolicy::TopologicalSort)
-    policyVariant = (util::Workset<PointerObjectIndex> *)nullptr;
+    policyVariant = static_cast<util::Workset<PointerObjectIndex> *>(nullptr);
   else if (policy == WorklistSolverPolicy::LastInFirstOut)
-    policyVariant = (util::LifoWorklist<PointerObjectIndex> *)nullptr;
+    policyVariant = static_cast<util::LifoWorklist<PointerObjectIndex> *>(nullptr);
   else if (policy == WorklistSolverPolicy::FirstInFirstOut)
-    policyVariant = (util::FifoWorklist<PointerObjectIndex> *)nullptr;
+    policyVariant = static_cast<util::FifoWorklist<PointerObjectIndex> *>(nullptr);
   else
     JLM_UNREACHABLE("Unknown worklist policy");
 

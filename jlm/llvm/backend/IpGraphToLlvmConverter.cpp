@@ -267,7 +267,7 @@ IpGraphToLlvmConverter::convert(
     {
       JLM_ASSERT(is<ThreeAddressCodeVariable>(argument));
       auto valist = dynamic_cast<const llvm::ThreeAddressCodeVariable *>(argument)->tac();
-      JLM_ASSERT(is<valist_op>(valist->operation()));
+      JLM_ASSERT(is<VariadicArgumentListOperation>(valist->operation()));
       for (size_t n = 0; n < valist->noperands(); n++)
         operands.push_back(Context_->value(valist->operand(n)));
       continue;
@@ -588,8 +588,8 @@ IpGraphToLlvmConverter::convert_ptrcmp(
     const std::vector<const Variable *> & args,
     ::llvm::IRBuilder<> & builder)
 {
-  JLM_ASSERT(is<ptrcmp_op>(op));
-  auto & pop = *static_cast<const ptrcmp_op *>(&op);
+  JLM_ASSERT(is<PtrCmpOperation>(op));
+  auto & pop = *static_cast<const PtrCmpOperation *>(&op);
 
   static std::unordered_map<llvm::cmp, ::llvm::CmpInst::Predicate> map(
       { { cmp::le, ::llvm::CmpInst::ICMP_ULE },
@@ -611,8 +611,8 @@ IpGraphToLlvmConverter::convert_fpcmp(
     const std::vector<const Variable *> & args,
     ::llvm::IRBuilder<> & builder)
 {
-  JLM_ASSERT(is<fpcmp_op>(op));
-  auto & fpcmp = *static_cast<const fpcmp_op *>(&op);
+  JLM_ASSERT(is<FCmpOperation>(op));
+  auto & fpcmp = *static_cast<const FCmpOperation *>(&op);
 
   static std::unordered_map<llvm::fpcmp, ::llvm::CmpInst::Predicate> map(
       { { fpcmp::oeq, ::llvm::CmpInst::FCMP_OEQ },
@@ -644,8 +644,8 @@ IpGraphToLlvmConverter::convert_fpbin(
     const std::vector<const Variable *> & args,
     ::llvm::IRBuilder<> & builder)
 {
-  JLM_ASSERT(is<fpbin_op>(op));
-  auto & fpbin = *static_cast<const llvm::fpbin_op *>(&op);
+  JLM_ASSERT(is<FBinaryOperation>(op));
+  auto & fpbin = *static_cast<const llvm::FBinaryOperation *>(&op);
 
   static std::unordered_map<llvm::fpop, ::llvm::Instruction::BinaryOps> map(
       { { fpop::add, ::llvm::Instruction::FAdd },
@@ -677,7 +677,7 @@ IpGraphToLlvmConverter::convert_valist(
     const std::vector<const Variable *> &,
     ::llvm::IRBuilder<> &)
 {
-  JLM_ASSERT(is<valist_op>(op));
+  JLM_ASSERT(is<VariadicArgumentListOperation>(op));
   return nullptr;
 }
 
@@ -734,7 +734,7 @@ IpGraphToLlvmConverter::convert_ctl2bits(
     const std::vector<const Variable *> & args,
     ::llvm::IRBuilder<> &)
 {
-  JLM_ASSERT(is<ctl2bits_op>(op));
+  JLM_ASSERT(is<ControlToIntOperation>(op));
   return Context_->value(args[0]);
 }
 
@@ -1241,19 +1241,19 @@ IpGraphToLlvmConverter::convert_operation(
   {
     return convert<ConstantDataArray>(op, arguments, builder);
   }
-  if (is<ptrcmp_op>(op))
+  if (is<PtrCmpOperation>(op))
   {
     return convert_ptrcmp(op, arguments, builder);
   }
-  if (is<fpcmp_op>(op))
+  if (is<FCmpOperation>(op))
   {
     return convert_fpcmp(op, arguments, builder);
   }
-  if (is<fpbin_op>(op))
+  if (is<FBinaryOperation>(op))
   {
     return convert_fpbin(op, arguments, builder);
   }
-  if (is<valist_op>(op))
+  if (is<VariadicArgumentListOperation>(op))
   {
     return convert_valist(op, arguments, builder);
   }
@@ -1277,7 +1277,7 @@ IpGraphToLlvmConverter::convert_operation(
   {
     return convert<ConstantAggregateZeroOperation>(op, arguments, builder);
   }
-  if (is<ctl2bits_op>(op))
+  if (is<ControlToIntOperation>(op))
   {
     return convert_ctl2bits(op, arguments, builder);
   }
@@ -1707,7 +1707,7 @@ IpGraphToLlvmConverter::ConvertAttributeKind(const Attribute::kind & kind)
 }
 
 ::llvm::Attribute
-IpGraphToLlvmConverter::ConvertEnumAttribute(const llvm::enum_attribute & attribute)
+IpGraphToLlvmConverter::ConvertEnumAttribute(const llvm::EnumAttribute & attribute)
 {
   auto & llvmContext = Context_->llvm_module().getContext();
   auto kind = ConvertAttributeKind(attribute.kind());
@@ -1715,7 +1715,7 @@ IpGraphToLlvmConverter::ConvertEnumAttribute(const llvm::enum_attribute & attrib
 }
 
 ::llvm::Attribute
-IpGraphToLlvmConverter::ConvertIntAttribute(const llvm::int_attribute & attribute)
+IpGraphToLlvmConverter::ConvertIntAttribute(const llvm::IntAttribute & attribute)
 {
   auto & llvmContext = Context_->llvm_module().getContext();
   auto kind = ConvertAttributeKind(attribute.kind());
@@ -1723,7 +1723,7 @@ IpGraphToLlvmConverter::ConvertIntAttribute(const llvm::int_attribute & attribut
 }
 
 ::llvm::Attribute
-IpGraphToLlvmConverter::ConvertTypeAttribute(const llvm::type_attribute & attribute)
+IpGraphToLlvmConverter::ConvertTypeAttribute(const llvm::TypeAttribute & attribute)
 {
   auto & typeConverter = Context_->GetTypeConverter();
   auto & llvmContext = Context_->llvm_module().getContext();
@@ -1734,14 +1734,14 @@ IpGraphToLlvmConverter::ConvertTypeAttribute(const llvm::type_attribute & attrib
 }
 
 ::llvm::Attribute
-IpGraphToLlvmConverter::ConvertStringAttribute(const llvm::string_attribute & attribute)
+IpGraphToLlvmConverter::ConvertStringAttribute(const llvm::StringAttribute & attribute)
 {
   auto & llvmContext = Context_->llvm_module().getContext();
   return ::llvm::Attribute::get(llvmContext, attribute.kind(), attribute.value());
 }
 
 ::llvm::AttributeSet
-IpGraphToLlvmConverter::convert_attributes(const attributeset & attributeSet)
+IpGraphToLlvmConverter::convert_attributes(const AttributeSet & attributeSet)
 {
   ::llvm::AttrBuilder builder(Context_->llvm_module().getContext());
   for (auto & attribute : attributeSet.EnumAttributes())

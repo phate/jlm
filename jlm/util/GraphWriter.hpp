@@ -8,16 +8,17 @@
 
 #include <jlm/util/common.hpp>
 
+#include <cstdint>
 #include <memory>
 #include <optional>
 #include <unordered_map>
 #include <variant>
 #include <vector>
 
-namespace jlm::util
+namespace jlm::util::graph
 {
 
-enum class GraphOutputFormat
+enum class OutputFormat
 {
   Dot,   // prints
   ASCII, // output format that makes edges implicit when possible
@@ -29,7 +30,7 @@ enum class AttributeOutputFormat
   HTMLAttributes      // adds extra restrictions on attribute names
 };
 
-class GraphWriter;
+class Writer;
 class Node;
 class Edge;
 class Port;
@@ -414,7 +415,7 @@ public:
    * Depending on output format, this function may also recurse and print sub graphs.
    */
   void
-  Output(std::ostream & out, GraphOutputFormat format, size_t indent) const;
+  Output(std::ostream & out, OutputFormat format, size_t indent) const;
 
   /**
    * Prints all sub graphs of the node, to the given ostream \p out, in the given \p format.
@@ -422,7 +423,7 @@ public:
    * This function is recursive, as sub graphs may have nodes with sub graphs of their own.
    */
   virtual void
-  OutputSubgraphs(std::ostream & out, GraphOutputFormat format, size_t indent) const;
+  OutputSubgraphs(std::ostream & out, OutputFormat format, size_t indent) const;
 
 protected:
   /**
@@ -584,7 +585,7 @@ public:
   Finalize() override;
 
   void
-  OutputSubgraphs(std::ostream & out, GraphOutputFormat format, size_t indent) const override;
+  OutputSubgraphs(std::ostream & out, OutputFormat format, size_t indent) const override;
 
 protected:
   void
@@ -766,12 +767,12 @@ private:
 
 class Graph : public GraphElement
 {
-  friend GraphWriter;
+  friend Writer;
   friend GraphElement;
 
-  explicit Graph(GraphWriter & writer);
+  explicit Graph(Writer & writer);
 
-  Graph(GraphWriter & writer, Node & parentNode);
+  Graph(Writer & writer, Node & parentNode);
 
 public:
   ~Graph() override = default;
@@ -782,11 +783,11 @@ public:
   Graph &
   GetGraph() override;
 
-  [[nodiscard]] GraphWriter &
-  GetGraphWriter();
+  [[nodiscard]] Writer &
+  GetWriter();
 
-  [[nodiscard]] const GraphWriter &
-  GetGraphWriter() const;
+  [[nodiscard]] const Writer &
+  GetWriter() const;
 
   /**
    * @return true if this graph is a subgraph of another graph, false if it is top-level
@@ -972,7 +973,7 @@ public:
    * @param indent the amount of indentation levels the graph should be printed with
    */
   void
-  Output(std::ostream & out, GraphOutputFormat format, size_t indent = 0) const;
+  Output(std::ostream & out, OutputFormat format, size_t indent = 0) const;
 
 private:
   void
@@ -997,7 +998,7 @@ private:
   RemoveProgramObjectMapping(uintptr_t object);
 
   // The GraphWriter this graph was created by, and belongs to
-  GraphWriter & Writer_;
+  Writer & Writer_;
 
   // If this graph is a subgraph, this is its parent node in the parent graph.
   // For top level graphs, this field is nullptr
@@ -1020,22 +1021,22 @@ private:
  * Utility class for creating graphs in memory, and printing them to a human or machine readable
  * format.
  */
-class GraphWriter
+class Writer
 {
 public:
-  ~GraphWriter() = default;
+  ~Writer() = default;
 
-  GraphWriter() = default;
+  Writer() = default;
 
-  GraphWriter(const GraphWriter & other) = delete;
+  Writer(const Writer & other) = delete;
 
-  GraphWriter(GraphWriter && other) = delete;
+  Writer(Writer && other) = delete;
 
-  GraphWriter &
-  operator=(const GraphWriter & other) = delete;
+  Writer &
+  operator=(const Writer & other) = delete;
 
-  GraphWriter &
-  operator=(GraphWriter && other) = delete;
+  Writer &
+  operator=(Writer && other) = delete;
 
   /**
    * Creates a new graph and appends it to the GraphWriter's list of graphs.
@@ -1086,7 +1087,7 @@ public:
    * @param format the format to emit the graphs in
    */
   void
-  OutputAllGraphs(std::ostream & out, GraphOutputFormat format);
+  OutputAllGraphs(std::ostream & out, OutputFormat format);
 
 private:
   [[nodiscard]] Graph &

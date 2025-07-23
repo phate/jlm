@@ -11,18 +11,6 @@
 namespace jlm::rvsdg
 {
 
-SimpleInput::~SimpleInput() noexcept
-{
-  on_input_destroy(this);
-}
-
-SimpleInput::SimpleInput(
-    jlm::rvsdg::SimpleNode * node,
-    jlm::rvsdg::Output * origin,
-    std::shared_ptr<const rvsdg::Type> type)
-    : node_input(origin, node, std::move(type))
-{}
-
 SimpleOutput::SimpleOutput(SimpleNode * node, std::shared_ptr<const rvsdg::Type> type)
     : node_output(node, std::move(type))
 {}
@@ -55,7 +43,7 @@ SimpleNode::SimpleNode(
   for (size_t n = 0; n < SimpleNode::GetOperation().narguments(); n++)
   {
     add_input(
-        std::make_unique<SimpleInput>(this, operands[n], SimpleNode::GetOperation().argument(n)));
+        std::make_unique<node_input>(operands[n], this, SimpleNode::GetOperation().argument(n)));
   }
 
   for (size_t n = 0; n < SimpleNode::GetOperation().nresults(); n++)
@@ -138,9 +126,9 @@ NormalizeSimpleOperationCommonNodeElimination(
   }
   else
   {
-    for (const auto & user : *operands[0])
+    for (const auto & user : operands[0]->Users())
     {
-      if (const auto node = TryGetOwnerNode<SimpleNode>(*user))
+      if (const auto node = TryGetOwnerNode<SimpleNode>(user))
       {
         if (isCongruent(*node))
         {

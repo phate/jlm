@@ -23,7 +23,7 @@ namespace jlm::hls
 class cne final : public rvsdg::Transformation
 {
 public:
-  virtual ~cne();
+  ~cne() noexcept override;
 
   void
   Run(rvsdg::RvsdgModule & module, util::StatisticsCollector & statisticsCollector) override;

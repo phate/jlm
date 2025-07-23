@@ -203,7 +203,7 @@ private:
       const std::string & name,
       std::shared_ptr<const rvsdg::FunctionType> type,
       const llvm::linkage & linkage,
-      const attributeset & attributes)
+      const AttributeSet & attributes)
       : InterProceduralGraphNode(clg),
         FunctionType_(type),
         name_(name),
@@ -218,7 +218,7 @@ public:
     return cfg_.get();
   }
 
-  virtual const jlm::rvsdg::Type &
+  [[nodiscard]] const jlm::rvsdg::Type &
   type() const noexcept override;
 
   std::shared_ptr<const jlm::rvsdg::Type>
@@ -236,16 +236,16 @@ public:
     return FunctionType_;
   }
 
-  virtual const llvm::linkage &
+  [[nodiscard]] const llvm::linkage &
   linkage() const noexcept override;
 
-  virtual const std::string &
+  [[nodiscard]] const std::string &
   name() const noexcept override;
 
-  virtual bool
+  [[nodiscard]] bool
   hasBody() const noexcept override;
 
-  const attributeset &
+  const AttributeSet &
   attributes() const noexcept
   {
     return attributes_;
@@ -264,7 +264,7 @@ public:
       const std::string & name,
       std::shared_ptr<const rvsdg::FunctionType> type,
       const llvm::linkage & linkage,
-      const attributeset & attributes)
+      const AttributeSet & attributes)
   {
     std::unique_ptr<FunctionNode> node(
         new FunctionNode(ipg, name, std::move(type), linkage, attributes));
@@ -287,16 +287,16 @@ private:
   std::shared_ptr<const rvsdg::FunctionType> FunctionType_;
   std::string name_;
   llvm::linkage linkage_;
-  attributeset attributes_;
+  AttributeSet attributes_;
   std::unique_ptr<ControlFlowGraph> cfg_;
 };
 
 class fctvariable final : public GlobalVariable
 {
 public:
-  virtual ~fctvariable();
+  ~fctvariable() noexcept override;
 
-  fctvariable(FunctionNode * node)
+  explicit fctvariable(FunctionNode * node)
       : GlobalVariable(node->Type(), node->name()),
         node_(node)
   {}
@@ -385,7 +385,7 @@ private:
   {}
 
 public:
-  virtual const PointerType &
+  [[nodiscard]] const PointerType &
   type() const noexcept override;
 
   std::shared_ptr<const jlm::rvsdg::Type>
@@ -397,13 +397,13 @@ public:
     return ValueType_;
   }
 
-  const std::string &
+  [[nodiscard]] const std::string &
   name() const noexcept override;
 
-  virtual const llvm::linkage &
+  [[nodiscard]] const llvm::linkage &
   linkage() const noexcept override;
 
-  virtual bool
+  [[nodiscard]] bool
   hasBody() const noexcept override;
 
   inline bool

@@ -6,13 +6,10 @@
 #include <test-registry.hpp>
 #include <TestRvsdgs.hpp>
 
-#include <jlm/llvm/ir/operators/delta.hpp>
 #include <jlm/llvm/ir/operators/IOBarrier.hpp>
-#include <jlm/llvm/ir/operators/lambda.hpp>
-#include <jlm/llvm/ir/RvsdgModule.hpp>
-#include <jlm/llvm/ir/types.hpp>
 #include <jlm/mlir/backend/JlmToMlirConverter.hpp>
 #include <jlm/mlir/frontend/MlirToJlmConverter.hpp>
+#include <jlm/rvsdg/traverser.hpp>
 
 static void
 TestUndef()
@@ -85,9 +82,11 @@ TestAlloca()
 
     // Create alloca node
     std::cout << "Alloca Operation" << std::endl;
-    auto allocaOp =
-        AllocaOperation(jlm::rvsdg::bittype::Create(64), jlm::rvsdg::bittype::Create(32), 4);
-    jlm::rvsdg::SimpleNode::Create(graph->GetRootRegion(), allocaOp, { bits });
+    jlm::rvsdg::CreateOpNode<AllocaOperation>(
+        { bits },
+        jlm::rvsdg::bittype::Create(64),
+        jlm::rvsdg::bittype::Create(32),
+        4);
 
     // Convert the RVSDG to MLIR
     std::cout << "Convert to MLIR" << std::endl;
@@ -451,8 +450,7 @@ TestSitofp()
     auto bitsArgument = lambda->GetFunctionArguments().at(0);
 
     // Create sitofp operation
-    auto sitofpOp = SIToFPOperation(bitsType, floatType);
-    jlm::rvsdg::SimpleNode::Create(*lambda->subregion(), sitofpOp, { bitsArgument });
+    jlm::rvsdg::CreateOpNode<SIToFPOperation>({ bitsArgument }, bitsType, floatType);
 
     lambda->finalize({});
 
@@ -518,8 +516,7 @@ TestConstantFP()
         LlvmLambdaOperation::Create(functionType, "test", linkage::external_linkage));
 
     // Create sitofp operation
-    auto constOp = ConstantFP(fpsize::dbl, ::llvm::APFloat(2.0));
-    jlm::rvsdg::SimpleNode::Create(*lambda->subregion(), constOp, {});
+    jlm::rvsdg::CreateOpNode<ConstantFP>(*lambda->subregion(), fpsize::dbl, ::llvm::APFloat(2.0));
 
     lambda->finalize({});
 
@@ -581,10 +578,10 @@ TestFpBinary()
       auto floatArgument1 = lambda->GetFunctionArguments().at(0);
       auto floatArgument2 = lambda->GetFunctionArguments().at(1);
 
-      jlm::rvsdg::SimpleNode::Create(
-          *lambda->subregion(),
-          fpbin_op(binOp, floatType),
-          { floatArgument1, floatArgument2 });
+      jlm::rvsdg::CreateOpNode<FBinaryOperation>(
+          { floatArgument1, floatArgument2 },
+          binOp,
+          floatType);
 
       lambda->finalize({});
 
@@ -632,7 +629,8 @@ TestFpBinary()
         assert(convertedLambda->subregion()->nnodes() == 1);
 
         auto node = convertedLambda->subregion()->Nodes().begin().ptr();
-        auto convertedFpbin = jlm::util::AssertedCast<const fpbin_op>(&node->GetOperation());
+        auto convertedFpbin =
+            jlm::util::AssertedCast<const FBinaryOperation>(&node->GetOperation());
         assert(convertedFpbin->fpop() == binOp);
         assert(convertedFpbin->nresults() == 1);
         assert(convertedFpbin->narguments() == 2);
@@ -743,7 +741,7 @@ TestDelta()
   {
     auto bitType = jlm::rvsdg::bittype::Create(32);
 
-    auto delta1 = delta::node::Create(
+    auto delta1 = jlm::llvm::DeltaNode::Create(
         &graph->GetRootRegion(),
         bitType,
         "non-constant-delta",
@@ -754,7 +752,7 @@ TestDelta()
     auto bitConstant = jlm::rvsdg::create_bitconstant(delta1->subregion(), 32, 1);
     delta1->finalize(bitConstant);
 
-    auto delta2 = delta::node::Create(
+    auto delta2 = jlm::llvm::DeltaNode::Create(
         &graph->GetRootRegion(),
         bitType,
         "constant-delta",
@@ -817,7 +815,7 @@ TestDelta()
       assert(region->nnodes() == 2);
       for (auto & node : region->Nodes())
       {
-        auto convertedDelta = jlm::util::AssertedCast<delta::node>(&node);
+        auto convertedDelta = jlm::util::AssertedCast<jlm::llvm::DeltaNode>(&node);
         assert(convertedDelta->subregion()->nnodes() == 1);
 
         if (convertedDelta->constant())
@@ -829,7 +827,7 @@ TestDelta()
           assert(convertedDelta->name() == "non-constant-delta");
         }
 
-        assert(is<jlm::rvsdg::bittype>(convertedDelta->type()));
+        assert(is<jlm::rvsdg::bittype>(*convertedDelta->Type()));
         assert(convertedDelta->linkage() == linkage::external_linkage);
         assert(convertedDelta->Section() == "section");
 
@@ -988,7 +986,7 @@ TestVarArgList()
     auto bitType = jlm::rvsdg::bittype::Create(32);
     auto bits1 = jlm::rvsdg::create_bitconstant(&graph->GetRootRegion(), 32, 1);
     auto bits2 = jlm::rvsdg::create_bitconstant(&graph->GetRootRegion(), 32, 2);
-    jlm::llvm::valist_op::Create(graph->GetRootRegion(), { bits1, bits2 });
+    jlm::llvm::VariadicArgumentListOperation::Create(graph->GetRootRegion(), { bits1, bits2 });
 
     // Convert the RVSDG to MLIR
     std::cout << "Convert to MLIR" << std::endl;
@@ -1028,7 +1026,8 @@ TestVarArgList()
       bool foundVarArgOp = false;
       for (auto & node : region->Nodes())
       {
-        auto convertedVarArgOp = dynamic_cast<const valist_op *>(&node.GetOperation());
+        auto convertedVarArgOp =
+            dynamic_cast<const VariadicArgumentListOperation *>(&node.GetOperation());
         if (convertedVarArgOp)
         {
           assert(convertedVarArgOp->nresults() == 1);
@@ -1057,10 +1056,11 @@ TestFNeg()
 
   {
     auto floatType = jlm::llvm::FloatingPointType::Create(jlm::llvm::fpsize::flt);
-    auto constOp = ConstantFP(floatType, ::llvm::APFloat(2.0));
-    auto & constNode = jlm::rvsdg::SimpleNode::Create(graph->GetRootRegion(), constOp, {});
-    auto fnegOp = FNegOperation(jlm::llvm::fpsize::flt);
-    jlm::rvsdg::SimpleNode::Create(graph->GetRootRegion(), fnegOp, { constNode.output(0) });
+    auto & constNode = jlm::rvsdg::CreateOpNode<ConstantFP>(
+        graph->GetRootRegion(),
+        floatType,
+        ::llvm::APFloat(2.0));
+    jlm::rvsdg::CreateOpNode<FNegOperation>({ constNode.output(0) }, jlm::llvm::fpsize::flt);
 
     // Convert the RVSDG to MLIR
     std::cout << "Convert to MLIR" << std::endl;
@@ -1134,10 +1134,11 @@ TestFPExt()
   {
     auto floatType1 = jlm::llvm::FloatingPointType::Create(jlm::llvm::fpsize::flt);
     auto floatType2 = jlm::llvm::FloatingPointType::Create(jlm::llvm::fpsize::dbl);
-    auto constOp = ConstantFP(floatType1, ::llvm::APFloat(2.0));
-    auto & constNode = jlm::rvsdg::SimpleNode::Create(graph->GetRootRegion(), constOp, {});
-    auto fpextOp = FPExtOperation(floatType1, floatType2);
-    jlm::rvsdg::SimpleNode::Create(graph->GetRootRegion(), fpextOp, { constNode.output(0) });
+    auto & constNode = jlm::rvsdg::CreateOpNode<ConstantFP>(
+        graph->GetRootRegion(),
+        floatType1,
+        ::llvm::APFloat(2.0));
+    jlm::rvsdg::CreateOpNode<FPExtOperation>({ constNode.output(0) }, floatType1, floatType2);
 
     // Convert the RVSDG to MLIR
     std::cout << "Convert to MLIR" << std::endl;
@@ -1212,8 +1213,7 @@ TestTrunc()
     auto bitType1 = jlm::rvsdg::bittype::Create(64);
     auto bitType2 = jlm::rvsdg::bittype::Create(32);
     auto constOp = jlm::rvsdg::create_bitconstant(&graph->GetRootRegion(), 64, 2);
-    auto truncOp = TruncOperation(bitType1, bitType2);
-    jlm::rvsdg::SimpleNode::Create(graph->GetRootRegion(), truncOp, { constOp });
+    jlm::rvsdg::CreateOpNode<TruncOperation>({ constOp }, bitType1, bitType2);
 
     // Convert the RVSDG to MLIR
     std::cout << "Convert to MLIR" << std::endl;
@@ -1540,8 +1540,9 @@ TestIOBarrier()
     auto value = jlm::rvsdg::create_bitconstant(lambda->subregion(), 32, 42);
 
     // Create the IOBarrier operation
-    auto ioBarrierOp = jlm::llvm::IOBarrierOperation(std::make_shared<jlm::rvsdg::bittype>(32));
-    jlm::rvsdg::SimpleNode::Create(*lambda->subregion(), ioBarrierOp, { value, ioStateArgument });
+    jlm::rvsdg::CreateOpNode<jlm::llvm::IOBarrierOperation>(
+        { value, ioStateArgument },
+        jlm::rvsdg::bittype::Create(32));
 
     // Finalize the lambda
     lambda->finalize({});

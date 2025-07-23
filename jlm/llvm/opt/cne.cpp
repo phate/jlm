@@ -17,16 +17,16 @@
 namespace jlm::llvm
 {
 
-class cnestat final : public util::Statistics
+class CommonNodeElimination::Statistics final : public util::Statistics
 {
   const char * MarkTimerLabel_ = "MarkTime";
   const char * DivertTimerLabel_ = "DivertTime";
 
 public:
-  ~cnestat() override = default;
+  ~Statistics() override = default;
 
-  explicit cnestat(const util::FilePath & sourceFile)
-      : Statistics(Statistics::Id::CommonNodeElimination, sourceFile)
+  explicit Statistics(const util::FilePath & sourceFile)
+      : util::Statistics(Statistics::Id::CommonNodeElimination, sourceFile)
   {}
 
   void
@@ -57,10 +57,10 @@ public:
     GetTimer(DivertTimerLabel_).stop();
   }
 
-  static std::unique_ptr<cnestat>
+  static std::unique_ptr<Statistics>
   Create(const util::FilePath & sourceFile)
   {
-    return std::make_unique<cnestat>(sourceFile);
+    return std::make_unique<Statistics>(sourceFile);
   }
 };
 
@@ -399,7 +399,7 @@ mark_phi(const rvsdg::StructuralNode * node, cnectx & ctx)
 static void
 mark_delta(const rvsdg::StructuralNode * node, cnectx &)
 {
-  JLM_ASSERT(dynamic_cast<const delta::node *>(node));
+  JLM_ASSERT(rvsdg::is<DeltaOperation>(node));
 }
 
 static void
@@ -410,7 +410,7 @@ mark(const rvsdg::StructuralNode * node, cnectx & ctx)
         { std::type_index(typeid(rvsdg::ThetaNode)), mark_theta },
         { typeid(rvsdg::LambdaNode), mark_lambda },
         { typeid(rvsdg::PhiNode), mark_phi },
-        { typeid(delta::node), mark_delta } });
+        { typeid(DeltaNode), mark_delta } });
 
   JLM_ASSERT(map.find(typeid(*node)) != map.end());
   map[typeid(*node)](node, ctx);
@@ -435,9 +435,9 @@ mark(const jlm::rvsdg::SimpleNode * node, cnectx & ctx)
   auto set = ctx.set(node->input(0)->origin());
   for (const auto & origin : *set)
   {
-    for (const auto & user : *origin)
+    for (const auto & user : origin->Users())
     {
-      auto ni = dynamic_cast<const jlm::rvsdg::node_input *>(user);
+      auto ni = dynamic_cast<const jlm::rvsdg::node_input *>(&user);
       auto other = ni ? ni->node() : nullptr;
       if (!other || other == node || other->GetOperation() != node->GetOperation()
           || other->ninputs() != node->ninputs())
@@ -551,7 +551,7 @@ divert_phi(rvsdg::StructuralNode * node, cnectx & ctx)
 static void
 divert_delta(rvsdg::StructuralNode * node, cnectx &)
 {
-  JLM_ASSERT(dynamic_cast<const delta::node *>(node));
+  JLM_ASSERT(is<DeltaOperation>(node));
 }
 
 static void
@@ -562,7 +562,7 @@ divert(rvsdg::StructuralNode * node, cnectx & ctx)
         { std::type_index(typeid(rvsdg::ThetaNode)), divert_theta },
         { typeid(rvsdg::LambdaNode), divert_lambda },
         { typeid(rvsdg::PhiNode), divert_phi },
-        { typeid(delta::node), divert_delta } });
+        { typeid(DeltaNode), divert_delta } });
 
   JLM_ASSERT(map.find(typeid(*node)) != map.end());
   map[typeid(*node)](node, ctx);
@@ -586,7 +586,7 @@ cne(rvsdg::RvsdgModule & rvsdgModule, util::StatisticsCollector & statisticsColl
   auto & graph = rvsdgModule.Rvsdg();
 
   cnectx ctx;
-  auto statistics = cnestat::Create(rvsdgModule.SourceFilePath().value());
+  auto statistics = CommonNodeElimination::Statistics::Create(rvsdgModule.SourceFilePath().value());
 
   statistics->start_mark_stat(graph);
   mark(&graph.GetRootRegion(), ctx);
@@ -599,13 +599,12 @@ cne(rvsdg::RvsdgModule & rvsdgModule, util::StatisticsCollector & statisticsColl
   statisticsCollector.CollectDemandedStatistics(std::move(statistics));
 }
 
-/* cne class */
-
-cne::~cne()
-{}
+CommonNodeElimination::~CommonNodeElimination() noexcept = default;
 
 void
-cne::Run(rvsdg::RvsdgModule & module, util::StatisticsCollector & statisticsCollector)
+CommonNodeElimination::Run(
+    rvsdg::RvsdgModule & module,
+    util::StatisticsCollector & statisticsCollector)
 {
   llvm::cne(module, statisticsCollector);
 }

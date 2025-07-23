@@ -14,13 +14,13 @@
 namespace jlm::llvm
 {
 
-class unrollstat final : public util::Statistics
+class LoopUnrolling::Statistics final : public util::Statistics
 {
 public:
-  ~unrollstat() override = default;
+  ~Statistics() override = default;
 
-  explicit unrollstat(const util::FilePath & sourceFile)
-      : Statistics(Statistics::Id::LoopUnrolling, sourceFile)
+  explicit Statistics(const util::FilePath & sourceFile)
+      : util::Statistics(Statistics::Id::LoopUnrolling, sourceFile)
   {}
 
   void
@@ -37,10 +37,10 @@ public:
     GetTimer(Label::Timer).stop();
   }
 
-  static std::unique_ptr<unrollstat>
+  static std::unique_ptr<Statistics>
   Create(const util::FilePath & sourceFile)
   {
-    return std::make_unique<unrollstat>(sourceFile);
+    return std::make_unique<Statistics>(sourceFile);
   }
 };
 
@@ -54,8 +54,6 @@ is_eqcmp(const rvsdg::Operation & op)
       || dynamic_cast<const jlm::rvsdg::bitule_op *>(&op)
       || dynamic_cast<const jlm::rvsdg::bitsle_op *>(&op);
 }
-
-/* unrollinfo methods */
 
 static bool
 is_theta_invariant(const jlm::rvsdg::Output * output)
@@ -110,7 +108,7 @@ is_idv(jlm::rvsdg::Input * input)
 }
 
 std::unique_ptr<jlm::rvsdg::bitvalue_repr>
-unrollinfo::niterations() const noexcept
+LoopUnrollInfo::niterations() const noexcept
 {
   if (!is_known() || step_value() == 0)
     return nullptr;
@@ -132,8 +130,8 @@ unrollinfo::niterations() const noexcept
   return std::make_unique<jlm::rvsdg::bitvalue_repr>(range.udiv(step));
 }
 
-std::unique_ptr<unrollinfo>
-unrollinfo::create(rvsdg::ThetaNode * theta)
+std::unique_ptr<LoopUnrollInfo>
+LoopUnrollInfo::create(rvsdg::ThetaNode * theta)
 {
   using namespace jlm::rvsdg;
 
@@ -142,7 +140,7 @@ unrollinfo::create(rvsdg::ThetaNode * theta)
     return nullptr;
 
   auto cmpnode = rvsdg::TryGetOwnerNode<SimpleNode>(*matchNode->input(0)->origin());
-  if (!is<bitcompare_op>(cmpnode))
+  if (!is<BitCompareOperation>(cmpnode))
     return nullptr;
 
   auto o0 = cmpnode->input(0)->origin();
@@ -170,7 +168,8 @@ unrollinfo::create(rvsdg::ThetaNode * theta)
 
   auto endarg = push_from_theta(end);
   auto steparg = push_from_theta(step);
-  return std::unique_ptr<unrollinfo>(new unrollinfo(cmpnode, armnode, idv, steparg, endarg));
+  return std::unique_ptr<LoopUnrollInfo>(
+      new LoopUnrollInfo(cmpnode, armnode, idv, steparg, endarg));
 }
 
 /* loop unrolling */
@@ -215,7 +214,7 @@ copy_body_and_unroll(const rvsdg::ThetaNode * theta, size_t factor)
   Unroll theta node by given factor.
 */
 static void
-unroll_theta(const unrollinfo & ui, rvsdg::SubstitutionMap & smap, size_t factor)
+unroll_theta(const LoopUnrollInfo & ui, rvsdg::SubstitutionMap & smap, size_t factor)
 {
   auto theta = ui.theta();
   auto remainder = ui.remainder(factor);
@@ -265,7 +264,7 @@ unroll_theta(const unrollinfo & ui, rvsdg::SubstitutionMap & smap, size_t factor
   Adde the reminder for the lopp if any
 */
 static void
-add_remainder(const unrollinfo & ui, rvsdg::SubstitutionMap & smap, size_t factor)
+add_remainder(const LoopUnrollInfo & ui, rvsdg::SubstitutionMap & smap, size_t factor)
 {
   auto theta = ui.theta();
   auto remainder = ui.remainder(factor);
@@ -301,7 +300,7 @@ add_remainder(const unrollinfo & ui, rvsdg::SubstitutionMap & smap, size_t facto
 }
 
 static void
-unroll_known_theta(const unrollinfo & ui, size_t factor)
+unroll_known_theta(const LoopUnrollInfo & ui, size_t factor)
 {
   JLM_ASSERT(ui.is_known() && ui.niterations());
   auto niterations = ui.niterations();
@@ -334,7 +333,7 @@ unroll_known_theta(const unrollinfo & ui, size_t factor)
 }
 
 static jlm::rvsdg::Output *
-create_unrolled_gamma_predicate(const unrollinfo & ui, size_t factor)
+create_unrolled_gamma_predicate(const LoopUnrollInfo & ui, size_t factor)
 {
   auto region = ui.theta()->region();
   auto nbits = ui.nbits();
@@ -343,9 +342,10 @@ create_unrolled_gamma_predicate(const unrollinfo & ui, size_t factor)
 
   auto uf = jlm::rvsdg::create_bitconstant(region, nbits, factor);
   auto mul = jlm::rvsdg::bitmul_op::create(nbits, step, uf);
-  auto arm = rvsdg::SimpleNode::Create(*region, ui.armoperation(), { ui.init(), mul }).output(0);
+  auto arm =
+      rvsdg::SimpleNode::Create(*region, ui.armoperation().copy(), { ui.init(), mul }).output(0);
   /* FIXME: order of operands */
-  auto cmp = rvsdg::SimpleNode::Create(*region, ui.cmpoperation(), { arm, end }).output(0);
+  auto cmp = rvsdg::SimpleNode::Create(*region, ui.cmpoperation().copy(), { arm, end }).output(0);
   auto pred = jlm::rvsdg::match(1, { { 1, 1 } }, 0, 2, cmp);
 
   return pred;
@@ -355,7 +355,7 @@ static jlm::rvsdg::Output *
 create_unrolled_theta_predicate(
     rvsdg::Region *,
     const rvsdg::SubstitutionMap & smap,
-    const unrollinfo & ui,
+    const LoopUnrollInfo & ui,
     size_t factor)
 {
   using namespace jlm::rvsdg;
@@ -373,30 +373,32 @@ create_unrolled_theta_predicate(
 
   auto uf = create_bitconstant(region, nbits, factor);
   auto mul = bitmul_op::create(nbits, step, uf);
-  auto arm = SimpleNode::Create(*region, ui.armoperation(), { idv->origin(), mul }).output(0);
+  auto arm =
+      SimpleNode::Create(*region, ui.armoperation().copy(), { idv->origin(), mul }).output(0);
   /* FIXME: order of operands */
-  auto cmp = SimpleNode::Create(*region, ui.cmpoperation(), { arm, iend->origin() }).output(0);
+  auto cmp =
+      SimpleNode::Create(*region, ui.cmpoperation().copy(), { arm, iend->origin() }).output(0);
   auto pred = match(1, { { 1, 1 } }, 0, 2, cmp);
 
   return pred;
 }
 
 static jlm::rvsdg::Output *
-create_residual_gamma_predicate(const rvsdg::SubstitutionMap & smap, const unrollinfo & ui)
+create_residual_gamma_predicate(const rvsdg::SubstitutionMap & smap, const LoopUnrollInfo & ui)
 {
   auto region = ui.theta()->region();
   auto idv = smap.lookup(ui.theta()->MapPreLoopVar(*ui.idv()).output);
   auto end = ui.theta()->MapPreLoopVar(*ui.end()).input->origin();
 
   /* FIXME: order of operands */
-  auto cmp = rvsdg::SimpleNode::Create(*region, ui.cmpoperation(), { idv, end }).output(0);
+  auto cmp = rvsdg::SimpleNode::Create(*region, ui.cmpoperation().copy(), { idv, end }).output(0);
   auto pred = jlm::rvsdg::match(1, { { 1, 1 } }, 0, 2, cmp);
 
   return pred;
 }
 
 static void
-unroll_unknown_theta(const unrollinfo & ui, size_t factor)
+unroll_unknown_theta(const LoopUnrollInfo & ui, size_t factor)
 {
   auto otheta = ui.theta();
 
@@ -481,7 +483,7 @@ unroll(rvsdg::ThetaNode * otheta, size_t factor)
   if (factor < 2)
     return;
 
-  auto ui = unrollinfo::create(otheta);
+  auto ui = LoopUnrollInfo::create(otheta);
   if (!ui)
     return;
 
@@ -516,19 +518,16 @@ unroll(rvsdg::Region * region, size_t factor)
   return unrolled;
 }
 
-/* loopunroll class */
-
-loopunroll::~loopunroll()
-{}
+LoopUnrolling::~LoopUnrolling() noexcept = default;
 
 void
-loopunroll::Run(rvsdg::RvsdgModule & module, util::StatisticsCollector & statisticsCollector)
+LoopUnrolling::Run(rvsdg::RvsdgModule & module, util::StatisticsCollector & statisticsCollector)
 {
   if (factor_ < 2)
     return;
 
   auto & graph = module.Rvsdg();
-  auto statistics = unrollstat::Create(module.SourceFilePath().value());
+  auto statistics = Statistics::Create(module.SourceFilePath().value());
 
   statistics->start(module.Rvsdg());
   unroll(&graph.GetRootRegion(), factor_);

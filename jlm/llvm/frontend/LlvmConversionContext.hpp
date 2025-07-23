@@ -27,69 +27,15 @@ namespace jlm::llvm
 
 class ControlFlowGraph;
 class ControlFlowGraphNode;
-class clg_node;
 class InterProceduralGraphModule;
 class Variable;
 
-class basic_block_map final
-{
-public:
-  inline bool
-  has(const ::llvm::BasicBlock * bb) const noexcept
-  {
-    return llvm2jlm_.find(bb) != llvm2jlm_.end();
-  }
-
-  inline bool
-  has(const BasicBlock * bb) const noexcept
-  {
-    return jlm2llvm_.find(bb) != jlm2llvm_.end();
-  }
-
-  inline BasicBlock *
-  get(const ::llvm::BasicBlock * bb) const noexcept
-  {
-    JLM_ASSERT(has(bb));
-    return llvm2jlm_.find(bb)->second;
-  }
-
-  inline const ::llvm::BasicBlock *
-  get(const BasicBlock * bb) const noexcept
-  {
-    JLM_ASSERT(has(bb));
-    return jlm2llvm_.find(bb)->second;
-  }
-
-  inline void
-  insert(const ::llvm::BasicBlock * bb1, BasicBlock * bb2)
-  {
-    JLM_ASSERT(!has(bb1));
-    JLM_ASSERT(!has(bb2));
-    llvm2jlm_[bb1] = bb2;
-    jlm2llvm_[bb2] = bb1;
-  }
-
-  BasicBlock *
-  operator[](const ::llvm::BasicBlock * bb) const
-  {
-    return get(bb);
-  }
-
-  const ::llvm::BasicBlock *
-  operator[](const BasicBlock * bb) const
-  {
-    return get(bb);
-  }
-
-private:
-  std::unordered_map<const ::llvm::BasicBlock *, BasicBlock *> llvm2jlm_;
-  std::unordered_map<const BasicBlock *, const ::llvm::BasicBlock *> jlm2llvm_;
-};
+using BasicBlockMap = util::BijectiveMap<const ::llvm::BasicBlock *, BasicBlock *>;
 
 class context final
 {
 public:
-  inline context(InterProceduralGraphModule & im)
+  explicit context(InterProceduralGraphModule & im)
       : module_(im),
         node_(nullptr),
         iostate_(nullptr),
@@ -135,31 +81,31 @@ public:
   inline bool
   has(const ::llvm::BasicBlock * bb) const noexcept
   {
-    return bbmap_.has(bb);
+    return bbmap_.HasKey(bb);
   }
 
   inline bool
-  has(const BasicBlock * bb) const noexcept
+  has(BasicBlock * bb) const noexcept
   {
-    return bbmap_.has(bb);
+    return bbmap_.HasValue(bb);
   }
 
   inline BasicBlock *
   get(const ::llvm::BasicBlock * bb) const noexcept
   {
-    return bbmap_.get(bb);
+    return bbmap_.LookupKey(bb);
   }
 
   inline const ::llvm::BasicBlock *
-  get(const BasicBlock * bb) const noexcept
+  get(BasicBlock * bb) const noexcept
   {
-    return bbmap_.get(bb);
+    return bbmap_.LookupValue(bb);
   }
 
   inline void
-  set_basic_block_map(const basic_block_map & bbmap)
+  set_basic_block_map(BasicBlockMap bbmap)
   {
-    bbmap_ = bbmap;
+    bbmap_ = std::move(bbmap);
   }
 
   inline bool
@@ -208,9 +154,9 @@ public:
 
 private:
   InterProceduralGraphModule & module_;
-  basic_block_map bbmap_;
+  BasicBlockMap bbmap_;
   InterProceduralGraphNode * node_;
-  const llvm::Variable * result_;
+  const llvm::Variable * result_{};
   llvm::Variable * iostate_;
   llvm::Variable * memory_state_;
   std::unordered_map<const ::llvm::Value *, const llvm::Variable *> vmap_;

@@ -107,16 +107,16 @@ public:
       : rvsdg::UnaryOperation(std::move(srctype), std::move(dsttype))
   {}
 
-  virtual bool
+  bool
   operator==(const Operation & other) const noexcept override;
 
-  virtual rvsdg::unop_reduction_path_t
+  rvsdg::unop_reduction_path_t
   can_reduce_operand(const rvsdg::Output * operand) const noexcept override;
 
-  virtual rvsdg::Output *
+  rvsdg::Output *
   reduce_operand(rvsdg::unop_reduction_path_t path, rvsdg::Output * operand) const override;
 
-  virtual std::string
+  [[nodiscard]] std::string
   debug_string() const override;
 
   [[nodiscard]] std::unique_ptr<Operation>
@@ -174,21 +174,21 @@ public:
         flags_(flags)
   {}
 
-  virtual bool
+  bool
   operator==(const Operation & other) const noexcept override;
 
-  virtual rvsdg::binop_reduction_path_t
+  rvsdg::binop_reduction_path_t
   can_reduce_operand_pair(const rvsdg::Output * op1, const rvsdg::Output * op2)
       const noexcept override;
 
-  virtual rvsdg::Output *
+  rvsdg::Output *
   reduce_operand_pair(rvsdg::unop_reduction_path_t path, rvsdg::Output * op1, rvsdg::Output * op2)
       const override;
 
   enum BinaryOperation::flags
   flags() const noexcept override;
 
-  virtual std::string
+  [[nodiscard]] std::string
   debug_string() const override;
 
   [[nodiscard]] std::unique_ptr<Operation>
@@ -201,8 +201,11 @@ public:
       rvsdg::Output * op1,
       rvsdg::Output * op2)
   {
-    TestBinaryOperation op(srctype, std::move(dsttype), BinaryOperation::flags::none);
-    return &rvsdg::SimpleNode::Create(*op1->region(), op, { op1, op2 });
+    return &rvsdg::CreateOpNode<TestBinaryOperation>(
+        { op1, op2 },
+        srctype,
+        std::move(dsttype),
+        BinaryOperation::flags::none);
   }
 
   static inline rvsdg::Output *
@@ -229,7 +232,7 @@ class TestStructuralOperation final : public rvsdg::StructuralOperation
 public:
   ~TestStructuralOperation() noexcept override;
 
-  virtual std::string
+  [[nodiscard]] std::string
   debug_string() const override;
 
   [[nodiscard]] std::unique_ptr<Operation>
@@ -407,10 +410,10 @@ public:
 
   TestOperation(const TestOperation &) = default;
 
-  virtual bool
+  bool
   operator==(const Operation & other) const noexcept override;
 
-  virtual std::string
+  [[nodiscard]] std::string
   debug_string() const override;
 
   [[nodiscard]] std::unique_ptr<Operation>
@@ -426,8 +429,7 @@ public:
     for (const auto & operand : operands)
       operand_types.push_back(operand->Type());
 
-    TestOperation op(std::move(operand_types), std::move(result_types));
-    return &rvsdg::SimpleNode::Create(*region, op, { operands });
+    return Create(region, operand_types, operands, result_types);
   }
 
   static rvsdg::SimpleNode *
@@ -437,8 +439,14 @@ public:
       const std::vector<rvsdg::Output *> & operands,
       std::vector<std::shared_ptr<const rvsdg::Type>> resultTypes)
   {
-    TestOperation op(std::move(operandTypes), std::move(resultTypes));
-    return &rvsdg::SimpleNode::Create(*region, op, { operands });
+    return operands.empty() ? &rvsdg::CreateOpNode<TestOperation>(
+                                  *region,
+                                  std::move(operandTypes),
+                                  std::move(resultTypes))
+                            : &rvsdg::CreateOpNode<TestOperation>(
+                                  { operands },
+                                  std::move(operandTypes),
+                                  std::move(resultTypes));
   }
 };
 

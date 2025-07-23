@@ -50,11 +50,10 @@ trace_function_calls(
     return;
   }
   visited.insert(output);
-  for (auto user : *output)
+  for (auto & user : output->Users())
   {
-    if (auto si = dynamic_cast<rvsdg::SimpleInput *>(user))
+    if (auto simplenode = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(user))
     {
-      auto simplenode = si->node();
       if (dynamic_cast<const llvm::CallOperation *>(&simplenode->GetOperation()))
       {
         // TODO: verify this is the right type of function call
@@ -68,14 +67,14 @@ trace_function_calls(
         }
       }
     }
-    else if (auto sti = dynamic_cast<rvsdg::StructuralInput *>(user))
+    else if (auto sti = dynamic_cast<rvsdg::StructuralInput *>(&user))
     {
       for (auto & arg : sti->arguments)
       {
         trace_function_calls(&arg, calls, visited);
       }
     }
-    else if (auto r = dynamic_cast<rvsdg::RegionResult *>(user))
+    else if (auto r = dynamic_cast<rvsdg::RegionResult *>(&user))
     {
       if (auto ber = dynamic_cast<backedge_result *>(r))
       {
@@ -311,8 +310,7 @@ get_mem_state_user(rvsdg::Output * state_edge)
   JLM_ASSERT(state_edge);
   JLM_ASSERT(state_edge->nusers() == 1);
   JLM_ASSERT(rvsdg::is<llvm::MemoryStateType>(state_edge->Type()));
-  auto user = *state_edge->begin();
-  return user;
+  return &state_edge->SingleUser();
 }
 
 rvsdg::Output *

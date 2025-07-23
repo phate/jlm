@@ -6,17 +6,35 @@
 #ifndef JLM_HLS_BACKEND_RVSDG2RHLS_ADD_SINKS_HPP
 #define JLM_HLS_BACKEND_RVSDG2RHLS_ADD_SINKS_HPP
 
-#include <jlm/llvm/ir/RvsdgModule.hpp>
-#include <jlm/rvsdg/region.hpp>
+#include <jlm/rvsdg/Transformation.hpp>
+
+namespace jlm::rvsdg
+{
+class Region;
+}
 
 namespace jlm::hls
 {
 
-void
-add_sinks(rvsdg::Region * region);
+/**
+ * Adds sink nodes to every output that has no users.
+ */
+class SinkInsertion final : public rvsdg::Transformation
+{
+public:
+  void
+  Run(rvsdg::RvsdgModule & module, util::StatisticsCollector & statisticsCollector) override;
 
-void
-add_sinks(jlm::llvm::RvsdgModule & rm);
+  static void
+  CreateAndRun(rvsdg::RvsdgModule & module, util::StatisticsCollector & statisticsCollector);
+
+private:
+  static void
+  HandleRootRegion(rvsdg::Region & region);
+
+  static void
+  AddSinksToRegion(rvsdg::Region & region);
+};
 
 }
 

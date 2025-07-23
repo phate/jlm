@@ -17,15 +17,16 @@ TestWriteGraphs()
 {
   using namespace jlm::llvm;
   using namespace jlm::util;
+  using namespace jlm::util::graph;
 
   // Arrange
   jlm::tests::GammaTest gammaTest;
 
   // Act
-  GraphWriter writer;
+  Writer writer;
   dot::WriteGraphs(writer, gammaTest.graph().GetRootRegion(), false);
 
-  writer.OutputAllGraphs(std::cout, GraphOutputFormat::Dot);
+  writer.OutputAllGraphs(std::cout, OutputFormat::Dot);
 
   // Assert
   auto & rootGraph = writer.GetGraph(0);
@@ -82,6 +83,7 @@ TestTypeGraph()
 {
   using namespace jlm::llvm;
   using namespace jlm::util;
+  using namespace jlm::util::graph;
 
   // Arrange
   jlm::tests::GammaTest gammaTest;
@@ -90,11 +92,11 @@ TestTypeGraph()
   auto memType = MemoryStateType::Create();
 
   // Act
-  GraphWriter writer;
+  Writer writer;
   dot::WriteGraphs(writer, gammaTest.graph().GetRootRegion(), true);
 
   writer.Finalize();
-  writer.OutputAllGraphs(std::cout, GraphOutputFormat::Dot);
+  writer.OutputAllGraphs(std::cout, OutputFormat::Dot);
 
   // Assert
   auto & typeGraph = writer.GetGraph(0);

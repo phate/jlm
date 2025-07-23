@@ -645,7 +645,7 @@ Andersen::AnalyzeSimpleNode(const rvsdg::SimpleNode & node)
     AnalyzeConstantAggregateZero(node);
   else if (is<ExtractValueOperation>(op))
     AnalyzeExtractValue(node);
-  else if (is<valist_op>(op))
+  else if (is<VariadicArgumentListOperation>(op))
     AnalyzeValist(node);
   else if (is<PointerToFunctionOperation>(op))
     AnalyzePointerToFunction(node);
@@ -653,7 +653,7 @@ Andersen::AnalyzeSimpleNode(const rvsdg::SimpleNode & node)
     AnalyzeFunctionToPointer(node);
   else if (is<IOBarrierOperation>(op))
     AnalyzeIOBarrier(node);
-  else if (is<FreeOperation>(op) || is<ptrcmp_op>(op))
+  else if (is<FreeOperation>(op) || is<PtrCmpOperation>(op))
   {
     // These operations take pointers as input, but do not affect any points-to sets
   }
@@ -942,7 +942,7 @@ Andersen::AnalyzeExtractValue(const rvsdg::SimpleNode & node)
 void
 Andersen::AnalyzeValist(const rvsdg::SimpleNode & node)
 {
-  JLM_ASSERT(is<valist_op>(&node));
+  JLM_ASSERT(is<VariadicArgumentListOperation>(&node));
 
   // Members of the valist are extracted using the va_arg macro, which loads from the va_list struct
   // on the stack. This struct will be marked as escaped from the call to va_start, and thus point
@@ -1010,7 +1010,7 @@ Andersen::AnalyzeStructuralNode(const rvsdg::StructuralNode & node)
 {
   if (const auto lambdaNode = dynamic_cast<const rvsdg::LambdaNode *>(&node))
     AnalyzeLambda(*lambdaNode);
-  else if (const auto deltaNode = dynamic_cast<const delta::node *>(&node))
+  else if (const auto deltaNode = dynamic_cast<const DeltaNode *>(&node))
     AnalyzeDelta(*deltaNode);
   else if (const auto phiNode = dynamic_cast<const rvsdg::PhiNode *>(&node))
     AnalyzePhi(*phiNode);
@@ -1056,16 +1056,16 @@ Andersen::AnalyzeLambda(const rvsdg::LambdaNode & lambda)
 }
 
 void
-Andersen::AnalyzeDelta(const delta::node & delta)
+Andersen::AnalyzeDelta(const DeltaNode & delta)
 {
   // Handle context variables
-  for (auto & cv : delta.ctxvars())
+  for (auto & cv : delta.GetContextVars())
   {
-    if (!IsOrContainsPointerType(*cv.Type()))
+    if (!IsOrContainsPointerType(*cv.input->Type()))
       continue;
 
-    auto & inputRegister = *cv.origin();
-    auto & argumentRegister = *cv.argument();
+    auto & inputRegister = *cv.input->origin();
+    auto & argumentRegister = *cv.inner;
     const auto inputRegisterPO = Set_->GetRegisterPointerObject(inputRegister);
     Set_->MapRegisterToExistingPointerObject(argumentRegister, inputRegisterPO);
   }
@@ -1073,10 +1073,10 @@ Andersen::AnalyzeDelta(const delta::node & delta)
   AnalyzeRegion(*delta.subregion());
 
   // Get the result register from the subregion
-  auto & resultRegister = *delta.result()->origin();
+  auto & resultRegister = *delta.result().origin();
 
   // If the type of the delta can point, the analysis should track its set of possible pointees
-  bool canPoint = IsOrContainsPointerType(delta.type());
+  bool canPoint = IsOrContainsPointerType(*delta.Type());
 
   // Create a global memory object representing the global variable
   const auto globalPO = Set_->CreateGlobalMemoryObject(delta, canPoint);
@@ -1089,7 +1089,7 @@ Andersen::AnalyzeDelta(const delta::node & delta)
   }
 
   // Finally create a Register PointerObject for the delta's output, pointing to the memory object
-  auto & outputRegister = *delta.output();
+  auto & outputRegister = delta.output();
   const auto outputRegisterPO = Set_->CreateRegisterPointerObject(outputRegister);
   Constraints_->AddPointerPointeeConstraint(outputRegisterPO, globalPO);
 }
@@ -1381,7 +1381,7 @@ Andersen::Analyze(
   const bool doubleCheck = std::getenv(ENV_DOUBLE_CHECK);
 
   const bool dumpGraphs = std::getenv(ENV_DUMP_SUBSET_GRAPH);
-  util::GraphWriter writer;
+  util::graph::Writer writer;
 
   AnalyzeModule(module, *statistics);
 
@@ -1408,7 +1408,7 @@ Andersen::Analyze(
   {
     auto & graph = Constraints_->DrawSubsetGraph(writer);
     graph.AppendToLabel("After Solving with " + config.ToString());
-    writer.OutputAllGraphs(std::cout, util::GraphOutputFormat::Dot);
+    writer.OutputAllGraphs(std::cout, util::graph::OutputFormat::Dot);
   }
 
   auto result = ConstructPointsToGraphFromPointerObjectSet(*Set_, *statistics);

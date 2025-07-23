@@ -92,13 +92,13 @@ PatchPhiOperands(const std::vector<::llvm::PHINode *> & phis, context & ctx)
   }
 }
 
-static basic_block_map
+static BasicBlockMap
 convert_basic_blocks(::llvm::Function & f, ControlFlowGraph & cfg)
 {
-  basic_block_map bbmap;
+  BasicBlockMap bbmap;
   ::llvm::ReversePostOrderTraversal<::llvm::Function *> rpotraverser(&f);
   for (auto & bb : rpotraverser)
-    bbmap.insert(bb, BasicBlock::create(cfg));
+    bbmap.Insert(bb, BasicBlock::create(cfg));
 
   return bbmap;
 }
@@ -210,15 +210,15 @@ ConvertAttributeKind(const ::llvm::Attribute::AttrKind & kind)
   return map[kind];
 }
 
-static enum_attribute
+static EnumAttribute
 ConvertEnumAttribute(const ::llvm::Attribute & attribute)
 {
   JLM_ASSERT(attribute.isEnumAttribute());
   auto kind = ConvertAttributeKind(attribute.getKindAsEnum());
-  return enum_attribute(kind);
+  return EnumAttribute(kind);
 }
 
-static int_attribute
+static IntAttribute
 ConvertIntAttribute(const ::llvm::Attribute & attribute)
 {
   JLM_ASSERT(attribute.isIntAttribute());
@@ -226,7 +226,7 @@ ConvertIntAttribute(const ::llvm::Attribute & attribute)
   return { kind, attribute.getValueAsInt() };
 }
 
-static type_attribute
+static TypeAttribute
 ConvertTypeAttribute(const ::llvm::Attribute & attribute, context & ctx)
 {
   JLM_ASSERT(attribute.isTypeAttribute());
@@ -246,17 +246,17 @@ ConvertTypeAttribute(const ::llvm::Attribute & attribute, context & ctx)
   JLM_UNREACHABLE("Unhandled attribute");
 }
 
-static string_attribute
+static StringAttribute
 ConvertStringAttribute(const ::llvm::Attribute & attribute)
 {
   JLM_ASSERT(attribute.isStringAttribute());
   return { attribute.getKindAsString().str(), attribute.getValueAsString().str() };
 }
 
-static attributeset
+static AttributeSet
 convert_attributes(const ::llvm::AttributeSet & as, context & ctx)
 {
-  attributeset attributeSet;
+  AttributeSet attributeSet;
   for (auto & attribute : as)
   {
     if (attribute.isEnumAttribute())
@@ -403,7 +403,7 @@ create_cfg(::llvm::Function & f, context & ctx)
   /* create entry block */
   auto entry_block = BasicBlock::create(*cfg);
   cfg->exit()->divert_inedges(entry_block);
-  entry_block->add_outedge(bbmap[&f.getEntryBlock()]);
+  entry_block->add_outedge(bbmap.LookupKey(&f.getEntryBlock()));
 
   /* add results */
   const ThreeAddressCodeVariable * result = nullptr;
@@ -421,7 +421,7 @@ create_cfg(::llvm::Function & f, context & ctx)
   cfg->exit()->append_result(ctx.memory_state());
 
   /* convert instructions */
-  ctx.set_basic_block_map(bbmap);
+  ctx.set_basic_block_map(std::move(bbmap));
   ctx.set_result(result);
   auto phis = convert_instructions(f, ctx);
   PatchPhiOperands(phis, ctx);

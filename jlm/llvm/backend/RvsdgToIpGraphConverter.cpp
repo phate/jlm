@@ -133,7 +133,7 @@ RvsdgToIpGraphConverter::~RvsdgToIpGraphConverter() = default;
 RvsdgToIpGraphConverter::RvsdgToIpGraphConverter() = default;
 
 std::unique_ptr<data_node_init>
-RvsdgToIpGraphConverter::CreateInitialization(const delta::node & deltaNode)
+RvsdgToIpGraphConverter::CreateInitialization(const DeltaNode & deltaNode)
 {
   const auto subregion = deltaNode.subregion();
 
@@ -443,7 +443,7 @@ RvsdgToIpGraphConverter::ConvertPhiNode(const rvsdg::PhiNode & phiNode)
           lambdaOperation.attributes());
       Context_->InsertVariable(subregion->argument(n), ipGraphModule.create_variable(functionNode));
     }
-    else if (const auto deltaNode = rvsdg::TryGetOwnerNode<delta::node>(origin))
+    else if (const auto deltaNode = rvsdg::TryGetOwnerNode<DeltaNode>(origin))
     {
       const auto dataNode = DataNode::Create(
           ipGraph,
@@ -477,12 +477,12 @@ RvsdgToIpGraphConverter::ConvertPhiNode(const rvsdg::PhiNode & phiNode)
       variable->function()->add_cfg(CreateControlFlowGraph(*lambdaNode));
       Context_->InsertVariable(lambdaNode->output(), variable);
     }
-    else if (const auto deltaNode = rvsdg::TryGetOwnerNode<delta::node>(origin))
+    else if (const auto deltaNode = rvsdg::TryGetOwnerNode<DeltaNode>(origin))
     {
       const auto variable =
           util::AssertedCast<const GlobalValue>(Context_->GetVariable(subregion->argument(n)));
       variable->node()->set_initialization(CreateInitialization(*deltaNode));
-      Context_->InsertVariable(deltaNode->output(), variable);
+      Context_->InsertVariable(&deltaNode->output(), variable);
     }
     else
     {
@@ -502,7 +502,7 @@ RvsdgToIpGraphConverter::ConvertPhiNode(const rvsdg::PhiNode & phiNode)
 }
 
 void
-RvsdgToIpGraphConverter::ConvertDeltaNode(const delta::node & deltaNode)
+RvsdgToIpGraphConverter::ConvertDeltaNode(const DeltaNode & deltaNode)
 {
   auto & ipGraphModule = Context_->GetIpGraphModule();
 
@@ -515,7 +515,7 @@ RvsdgToIpGraphConverter::ConvertDeltaNode(const delta::node & deltaNode)
       deltaNode.constant());
   dataNode->set_initialization(CreateInitialization(deltaNode));
   const auto variable = ipGraphModule.create_global_value(dataNode);
-  Context_->InsertVariable(deltaNode.output(), variable);
+  Context_->InsertVariable(&deltaNode.output(), variable);
 }
 
 void
@@ -537,7 +537,7 @@ RvsdgToIpGraphConverter::ConvertNode(const rvsdg::Node & node)
   {
     ConvertPhiNode(*phiNode);
   }
-  else if (const auto deltaNode = dynamic_cast<const delta::node *>(&node))
+  else if (const auto deltaNode = dynamic_cast<const DeltaNode *>(&node))
   {
     ConvertDeltaNode(*deltaNode);
   }

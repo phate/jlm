@@ -552,9 +552,8 @@ ConvertThreeAddressCode(
     for (size_t n = 0; n < threeAddressCode.noperands(); n++)
       operands.push_back(variableMap.lookup(threeAddressCode.operand(n)));
 
-    auto & simpleOperation =
-        static_cast<const rvsdg::SimpleOperation &>(threeAddressCode.operation());
-    auto results = outputs(&rvsdg::SimpleNode::Create(region, simpleOperation, operands));
+    auto results =
+        outputs(&rvsdg::SimpleNode::Create(region, threeAddressCode.operation().copy(), operands));
 
     JLM_ASSERT(results.size() == threeAddressCode.nresults());
     for (size_t n = 0; n < threeAddressCode.nresults(); n++)
@@ -913,7 +912,7 @@ ConvertAggregationTreeToLambda(
     const std::string & functionName,
     std::shared_ptr<const rvsdg::FunctionType> functionType,
     const linkage & functionLinkage,
-    const attributeset & functionAttributes,
+    const AttributeSet & functionAttributes,
     InterProceduralGraphToRvsdgStatisticsCollector & statisticsCollector)
 {
   auto lambdaNode = rvsdg::LambdaNode::Create(
@@ -1036,7 +1035,7 @@ ConvertDataNode(
     /*
      * data node with initialization
      */
-    auto deltaNode = delta::node::Create(
+    auto deltaNode = DeltaNode::Create(
         &region,
         dataNode.GetValueType(),
         dataNode.name(),
@@ -1052,15 +1051,15 @@ ConvertDataNode(
     for (const auto & dependency : dataNode)
     {
       auto dependencyVariable = interProceduralGraphModule.variable(dependency);
-      auto argument = deltaNode->add_ctxvar(outerVariableMap.lookup(dependencyVariable));
-      regionalizedVariableMap.GetTopVariableMap().insert(dependencyVariable, argument);
+      auto ctxVar = deltaNode->AddContextVar(*outerVariableMap.lookup(dependencyVariable));
+      regionalizedVariableMap.GetTopVariableMap().insert(dependencyVariable, ctxVar.inner);
     }
 
     auto initOutput = ConvertDataNodeInitialization(
         *dataNodeInitialization,
         *deltaNode->subregion(),
         regionalizedVariableMap);
-    auto deltaOutput = deltaNode->finalize(initOutput);
+    auto deltaOutput = &deltaNode->finalize(initOutput);
     regionalizedVariableMap.PopRegion();
 
     return deltaOutput;

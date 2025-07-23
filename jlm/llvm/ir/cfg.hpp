@@ -31,7 +31,7 @@ public:
   argument(
       const std::string & name,
       std::shared_ptr<const jlm::rvsdg::Type> type,
-      const attributeset & attributes)
+      const AttributeSet & attributes)
       : Variable(std::move(type), name),
         attributes_(attributes)
   {}
@@ -43,12 +43,12 @@ public:
   argument(
       const std::string & name,
       std::unique_ptr<jlm::rvsdg::Type> type,
-      const attributeset & attributes)
+      const AttributeSet & attributes)
       : Variable(std::move(type), name),
         attributes_(attributes)
   {}
 
-  const attributeset &
+  const AttributeSet &
   attributes() const noexcept
   {
     return attributes_;
@@ -58,7 +58,7 @@ public:
   create(
       const std::string & name,
       std::shared_ptr<const jlm::rvsdg::Type> type,
-      const attributeset & attributes)
+      const AttributeSet & attributes)
   {
     return std::make_unique<argument>(name, std::move(type), attributes);
   }
@@ -70,7 +70,7 @@ public:
   }
 
 private:
-  attributeset attributes_;
+  AttributeSet attributes_;
 };
 
 class EntryNode final : public ControlFlowGraphNode

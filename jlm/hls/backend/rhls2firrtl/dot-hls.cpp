@@ -117,10 +117,6 @@ DotHLS::node_to_dot(const rvsdg::Node * node)
   {
     color = "darkred";
   }
-  else if (jlm::rvsdg::is<hls::merge_op>(node))
-  {
-    color = "pink";
-  }
   else if (jlm::rvsdg::is<TriggerOperation>(node) || is_constant(node))
   {
     color = "orange";
