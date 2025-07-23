@@ -270,7 +270,9 @@ public:
 
   virtual ~Output() noexcept;
 
-  Output(rvsdg::Region * region, std::shared_ptr<const rvsdg::Type> type);
+  Output(rvsdg::Node & owner, std::shared_ptr<const rvsdg::Type> type);
+
+  Output(rvsdg::Region * owner, std::shared_ptr<const rvsdg::Type> type);
 
   Output(const Output &) = delete;
 
@@ -350,16 +352,16 @@ public:
   }
 
   [[nodiscard]] rvsdg::Region *
-  region() const noexcept
-  {
-    return region_;
-  }
+  region() const noexcept;
 
   virtual std::string
   debug_string() const;
 
-  [[nodiscard]] virtual std::variant<Node *, Region *>
-  GetOwner() const noexcept = 0;
+  [[nodiscard]] std::variant<Node *, Region *>
+  GetOwner() const noexcept
+  {
+    return Owner_;
+  }
 
   template<class T>
   class iterator
@@ -529,7 +531,7 @@ private:
   add_user(jlm::rvsdg::Input * user);
 
   size_t index_;
-  rvsdg::Region * region_;
+  std::variant<Node *, Region *> Owner_;
   std::shared_ptr<const rvsdg::Type> Type_;
   std::unordered_set<jlm::rvsdg::Input *> users_;
 };
@@ -577,9 +579,6 @@ public:
   {
     return node_;
   }
-
-  [[nodiscard]] std::variant<Node *, Region *>
-  GetOwner() const noexcept override;
 
 private:
   Node * node_;

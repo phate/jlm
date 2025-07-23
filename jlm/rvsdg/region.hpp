@@ -81,9 +81,6 @@ public:
   virtual RegionArgument &
   Copy(Region & region, StructuralInput * input);
 
-  [[nodiscard]] std::variant<Node *, Region *>
-  GetOwner() const noexcept override;
-
   /**
    * \brief Creates region entry argument.
    *
