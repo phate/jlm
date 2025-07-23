@@ -102,7 +102,7 @@ Input::Iterator::ComputeNext() const
 {
   if (Input_ == nullptr)
     return nullptr;
-  
+
   const auto index = Input_->index();
   auto owner = Input_->GetOwner();
 
