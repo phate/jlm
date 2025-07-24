@@ -97,14 +97,14 @@ Input::region() const noexcept
   }
 }
 
-Input *
-Input::Iterator::ComputeNext() const
+static Input *
+ComputeNextInput(const Input * input)
 {
-  if (Input_ == nullptr)
+  if (input == nullptr)
     return nullptr;
 
-  const auto index = Input_->index();
-  auto owner = Input_->GetOwner();
+  const auto index = input->index();
+  auto owner = input->GetOwner();
 
   if (auto node = std::get_if<Node *>(&owner))
   {
@@ -117,6 +117,18 @@ Input::Iterator::ComputeNext() const
   }
 
   JLM_UNREACHABLE("Unhandled owner case.");
+}
+
+Input *
+Input::Iterator::ComputeNext() const
+{
+  return ComputeNextInput(Input_);
+}
+
+Input *
+Input::ConstIterator::ComputeNext() const
+{
+  return ComputeNextInput(Input_);
 }
 
 Output::~Output() noexcept
