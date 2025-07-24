@@ -1403,6 +1403,7 @@ Andersen::Analyze(
   {
     auto & graph = Constraints_->DrawSubsetGraph(writer);
     graph.AppendToLabel("After Solving with " + Config_.ToString());
+    writer.OutputAllGraphs(std::cout, util::graph::OutputFormat::Dot);
   }
 
   auto result = ConstructPointsToGraphFromPointerObjectSet(*Set_, *statistics);

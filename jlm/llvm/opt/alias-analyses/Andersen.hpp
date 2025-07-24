@@ -58,7 +58,6 @@ public:
    */
   class Configuration
   {
-  private:
     Configuration() = default;
 
   public:
@@ -455,8 +454,8 @@ private:
 
   Configuration Config_ = Configuration::DefaultConfiguration();
 
-  std::unique_ptr<PointerObjectSet> Set_;
-  std::unique_ptr<PointerObjectConstraintSet> Constraints_;
+  std::unique_ptr<PointerObjectSet> Set_ = {};
+  std::unique_ptr<PointerObjectConstraintSet> Constraints_ = {};
 };
 
 }
