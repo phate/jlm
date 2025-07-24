@@ -3,13 +3,10 @@
  * See COPYING for terms of redistribution.
  */
 
-#include "TestRvsdgs.hpp"
-
 #include <test-registry.hpp>
+#include <TestRvsdgs.hpp>
 
 #include <jlm/llvm/opt/alias-analyses/AliasAnalysis.hpp>
-
-#include <cassert>
 
 static void
 Expect(
@@ -31,7 +28,57 @@ Expect(
 void
 TestLocalAliasAnalysis()
 {
+  using namespace jlm::llvm::aa;
 
+  // Arrange
+  jlm::tests::LocalAliasAnalysisTest1 rvsdg;
+  rvsdg.InitializeTest();
+  const auto & outputs = rvsdg.GetOutputs();
+
+  LocalAliasAnalysis aa;
+
+  // Assert
+
+  // Distinct global variables do not alias
+  Expect(aa, *outputs.Global, 4, *outputs.GlobalShort, 2, AliasAnalysis::NoAlias);
+  Expect(aa, *outputs.Global, 4, *outputs.Arr1, 4, AliasAnalysis::NoAlias);
+
+  // An alloca never aliases any other memory allocating operation
+  Expect(aa, *outputs.Alloca2, 4, *outputs.Alloca1, 4, AliasAnalysis::NoAlias);
+  Expect(aa, *outputs.Alloca2, 4, *outputs.Global, 4, AliasAnalysis::NoAlias);
+  Expect(aa, *outputs.Alloca2, 4, *outputs.Array, 4, AliasAnalysis::NoAlias);
+  Expect(aa, *outputs.Alloca2, 4, *outputs.Arr1, 4, AliasAnalysis::NoAlias);
+
+  // An alloca that has not "escaped" can not alias external pointers
+  Expect(aa, *outputs.Alloca1, 4, *outputs.BytePtr, 4, AliasAnalysis::NoAlias);
+
+  // An alloca that has "escaped" may alias external pointers
+  Expect(aa, *outputs.Alloca2, 4, *outputs.BytePtr, 4, AliasAnalysis::MayAlias);
+
+  // Distinct offsets can not alias, unless the access regions overlap
+  Expect(aa, *outputs.Q, 8, *outputs.QPlus2, 8, AliasAnalysis::NoAlias);
+  Expect(aa, *outputs.Q, 16, *outputs.QPlus2, 8, AliasAnalysis::MayAlias);
+  Expect(aa, *outputs.Q, 8, *outputs.QPlus2, 16, AliasAnalysis::NoAlias);
+
+  // Identical offsets are MustAlias
+  Expect(aa, *outputs.Q, 4, *outputs.QAgain, 4, AliasAnalysis::MustAlias);
+
+  // We know that arr1, arr2 and arr3 are close to the beginning of its storage instance
+  // Meanwhile q is at least 16 bytes into the storage instance of *p
+  Expect(aa, *outputs.Arr1, 4, *outputs.Q, 4, AliasAnalysis::NoAlias);
+  Expect(aa, *outputs.Arr2, 4, *outputs.Q, 4, AliasAnalysis::NoAlias);
+  Expect(aa, *outputs.Arr2, 8, *outputs.Q, 4, AliasAnalysis::NoAlias);
+  Expect(aa, *outputs.Arr2, 9, *outputs.Q, 4, AliasAnalysis::MayAlias);
+  Expect(aa, *outputs.Arr3, 4, *outputs.Q, 4, AliasAnalysis::NoAlias);
+  Expect(aa, *outputs.Arr3, 5, *outputs.Q, 4, AliasAnalysis::MayAlias);
+
+  // We know that q is at least 16 bytes into its storage instance,
+  // so it may not alias with storage instances that are 16 bytes or less
+  Expect(aa, *outputs.Q, 4, *outputs.Global, 4, AliasAnalysis::NoAlias);
+
+  // BytePtrPlus2 has an offset of at least 2, so can not alias with the first 2 bytes of alloca2
+  Expect(aa, *outputs.Alloca2, 2, *outputs.BytePtrPlus2, 2, AliasAnalysis::NoAlias);
+  Expect(aa, *outputs.Alloca2, 3, *outputs.BytePtrPlus2, 3, AliasAnalysis::MayAlias);
 }
 
 JLM_UNIT_TEST_REGISTER(

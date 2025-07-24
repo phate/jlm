@@ -271,8 +271,9 @@ GetElementPtrTest::SetupRvsdg()
   auto module = RvsdgModule::Create(jlm::util::FilePath(""), "", "");
   auto graph = &module->Rvsdg();
 
-  auto & declaration = module->AddStructTypeDeclaration(StructType::Declaration::Create(
-      { jlm::rvsdg::bittype::Create(32), jlm::rvsdg::bittype::Create(32) }));
+  auto & declaration = module->AddStructTypeDeclaration(
+      StructType::Declaration::Create(
+          { jlm::rvsdg::bittype::Create(32), jlm::rvsdg::bittype::Create(32) }));
   auto structType = StructType::Create(false, declaration);
 
   auto mt = MemoryStateType::Create();
@@ -598,9 +599,10 @@ CallTest1::SetupRvsdg()
 
     auto sum = jlm::rvsdg::bitadd_op::create(32, callF.output(0), callG.output(0));
 
-    lambda->finalize({ sum,
-                       &CallOperation::GetIOStateOutput(callG),
-                       &CallOperation::GetMemoryStateOutput(callG) });
+    lambda->finalize(
+        { sum,
+          &CallOperation::GetIOStateOutput(callG),
+          &CallOperation::GetMemoryStateOutput(callG) });
     GraphExport::Create(*lambda->output(), "h");
 
     auto allocaX = rvsdg::TryGetOwnerNode<rvsdg::Node>(*x[0]);
@@ -738,8 +740,9 @@ CallTest2::SetupRvsdg()
           &CallOperation::GetIOStateOutput(destroy1),
           &CallOperation::GetMemoryStateOutput(destroy1) });
 
-    lambda->finalize({ &CallOperation::GetIOStateOutput(destroy2),
-                       &CallOperation::GetMemoryStateOutput(destroy2) });
+    lambda->finalize(
+        { &CallOperation::GetIOStateOutput(destroy2),
+          &CallOperation::GetMemoryStateOutput(destroy2) });
     GraphExport::Create(*lambda->output(), "test");
 
     return std::make_tuple(lambda, &create1, &create2, &destroy1, &destroy2);
@@ -855,9 +858,10 @@ IndirectCallTest1::SetupRvsdg()
 
     auto add = jlm::rvsdg::bitadd_op::create(32, call_four.output(0), call_three.output(0));
 
-    auto lambdaOutput = lambda->finalize({ add,
-                                           &CallOperation::GetIOStateOutput(call_three),
-                                           &CallOperation::GetMemoryStateOutput(call_three) });
+    auto lambdaOutput = lambda->finalize(
+        { add,
+          &CallOperation::GetIOStateOutput(call_three),
+          &CallOperation::GetMemoryStateOutput(call_three) });
     GraphExport::Create(*lambda->output(), "test");
 
     return std::make_tuple(lambdaOutput, &call_three, &call_four);
@@ -1067,9 +1071,10 @@ IndirectCallTest2::SetupRvsdg()
     sum = jlm::rvsdg::bitadd_op::create(32, sum, loadG1[0]);
     sum = jlm::rvsdg::bitadd_op::create(32, sum, loadG2[0]);
 
-    auto lambdaOutput = lambda->finalize({ sum,
-                                           &CallOperation::GetIOStateOutput(callY),
-                                           &CallOperation::GetMemoryStateOutput(callY) });
+    auto lambdaOutput = lambda->finalize(
+        { sum,
+          &CallOperation::GetIOStateOutput(callY),
+          &CallOperation::GetMemoryStateOutput(callY) });
     GraphExport::Create(*lambdaOutput, "test");
 
     return std::make_tuple(
@@ -1253,8 +1258,9 @@ ExternalCallTest2::SetupRvsdg()
   auto & rvsdg = rvsdgModule->Rvsdg();
 
   auto pointerType = PointerType::Create();
-  auto & structDeclaration = rvsdgModule->AddStructTypeDeclaration(StructType::Declaration::Create(
-      { rvsdg::bittype::Create(32), PointerType::Create(), PointerType::Create() }));
+  auto & structDeclaration = rvsdgModule->AddStructTypeDeclaration(
+      StructType::Declaration::Create(
+          { rvsdg::bittype::Create(32), PointerType::Create(), PointerType::Create() }));
   auto structType = StructType::Create("myStruct", false, structDeclaration);
   auto iOStateType = IOStateType::Create();
   auto memoryStateType = MemoryStateType::Create();
@@ -2371,9 +2377,10 @@ PhiTest2::SetupRvsdg()
 
     auto sum = jlm::rvsdg::bitadd_op::create(32, callB.output(0), callD.output(0));
 
-    auto lambdaOutput = lambda->finalize({ sum,
-                                           &CallOperation::GetIOStateOutput(callD),
-                                           &CallOperation::GetMemoryStateOutput(callD) });
+    auto lambdaOutput = lambda->finalize(
+        { sum,
+          &CallOperation::GetIOStateOutput(callD),
+          &CallOperation::GetMemoryStateOutput(callD) });
 
     return std::make_tuple(
         lambdaOutput,
@@ -2425,9 +2432,10 @@ PhiTest2::SetupRvsdg()
 
     auto sum = jlm::rvsdg::bitadd_op::create(32, callI.output(0), callC.output(0));
 
-    auto lambdaOutput = lambda->finalize({ sum,
-                                           &CallOperation::GetIOStateOutput(callC),
-                                           &CallOperation::GetMemoryStateOutput(callC) });
+    auto lambdaOutput = lambda->finalize(
+        { sum,
+          &CallOperation::GetIOStateOutput(callC),
+          &CallOperation::GetMemoryStateOutput(callC) });
 
     return std::make_tuple(
         lambdaOutput,
@@ -3980,10 +3988,11 @@ VariadicFunctionTest2::SetupRvsdg()
 
   auto pointerType = PointerType::Create();
   auto & structDeclaration = rvsdgModule->AddStructTypeDeclaration(
-      StructType::Declaration::Create({ rvsdg::bittype::Create(32),
-                                        rvsdg::bittype::Create(32),
-                                        PointerType::Create(),
-                                        PointerType::Create() }));
+      StructType::Declaration::Create(
+          { rvsdg::bittype::Create(32),
+            rvsdg::bittype::Create(32),
+            PointerType::Create(),
+            PointerType::Create() }));
   auto structType = StructType::Create("struct.__va_list_tag", false, structDeclaration);
   auto arrayType = ArrayType::Create(structType, 1);
   auto iOStateType = IOStateType::Create();
@@ -4155,9 +4164,10 @@ VariadicFunctionTest2::SetupRvsdg()
           &CallOperation::GetIOStateOutput(callVaEnd),
           &CallOperation::GetMemoryStateOutput(callVaEnd) });
 
-    LambdaFst_->finalize({ loadResults[0],
-                           &CallOperation::GetIOStateOutput(callLLvmLifetimeEnd),
-                           &CallOperation::GetMemoryStateOutput(callLLvmLifetimeEnd) });
+    LambdaFst_->finalize(
+        { loadResults[0],
+          &CallOperation::GetIOStateOutput(callLLvmLifetimeEnd),
+          &CallOperation::GetMemoryStateOutput(callLLvmLifetimeEnd) });
   }
 
   // Setup function g()
@@ -4183,6 +4193,112 @@ VariadicFunctionTest2::SetupRvsdg()
         { three, vaListResult, iOStateArgument, memoryStateArgument });
 
     LambdaG_->finalize(outputs(&callFst));
+  }
+
+  return rvsdgModule;
+}
+
+std::unique_ptr<llvm::RvsdgModule>
+LocalAliasAnalysisTest1::SetupRvsdg()
+{
+  using namespace jlm::llvm;
+
+  auto rvsdgModule = RvsdgModule::Create(jlm::util::FilePath(""), "", "");
+  auto & rvsdg = rvsdgModule->Rvsdg();
+
+  const auto pointerType = PointerType::Create();
+  const auto intType = rvsdg::bittype::Create(32);
+  const auto shortType = rvsdg::bittype::Create(16);
+  const auto byteType = rvsdg::bittype::Create(8);
+  const auto intArrayType = ArrayType::Create(intType, 10);
+  const auto ioStateType = IOStateType::Create();
+  const auto memoryStateType = MemoryStateType::Create();
+
+  const auto funcType = rvsdg::FunctionType::Create(
+      { pointerType, ioStateType, memoryStateType },
+      { ioStateType, memoryStateType });
+
+  const auto getPtrFuncType = rvsdg::FunctionType::Create(
+      { ioStateType, memoryStateType },
+      { pointerType, ioStateType, memoryStateType });
+
+  Outputs_.GetPtr = &GraphImport::Create(
+      rvsdg,
+      getPtrFuncType,
+      getPtrFuncType,
+      "getPtr",
+      linkage::external_linkage);
+
+  Outputs_.Global =
+      &GraphImport::Create(rvsdg, intType, pointerType, "global", linkage::external_linkage);
+  Outputs_.GlobalShort =
+      &GraphImport::Create(rvsdg, shortType, pointerType, "globalShort", linkage::external_linkage);
+  Outputs_.Array =
+      &GraphImport::Create(rvsdg, intArrayType, pointerType, "array", linkage::external_linkage);
+
+  // Setup the function "func"
+  {
+    auto & lambdaNode = *rvsdg::LambdaNode::Create(
+        rvsdg.GetRootRegion(),
+        LlvmLambdaOperation::Create(funcType, "func", linkage::internal_linkage));
+
+    Outputs_.P = lambdaNode.GetFunctionArguments()[0];
+    auto ioState = lambdaNode.GetFunctionArguments()[1];
+    auto memoryState = lambdaNode.GetFunctionArguments()[2];
+
+    const auto getPtrCtxVar = lambdaNode.AddContextVar(*Outputs_.GetPtr).inner;
+    const auto arrayCtxVar = lambdaNode.AddContextVar(*Outputs_.Array).inner;
+
+    const auto constantOne = rvsdg::create_bitconstant(lambdaNode.subregion(), 32, 1);
+    const auto constantTwo = rvsdg::create_bitconstant(lambdaNode.subregion(), 32, 2);
+    const auto constantThree = rvsdg::create_bitconstant(lambdaNode.subregion(), 32, 3);
+    const auto constantFour = rvsdg::create_bitconstant(lambdaNode.subregion(), 32, 4);
+    const auto constantMinusTwo = rvsdg::create_bitconstant(lambdaNode.subregion(), 32, -2);
+
+    const auto alloca1Outputs = AllocaOperation::create(intType, constantOne, 4);
+    const auto alloca2Outputs = AllocaOperation::create(intType, constantOne, 4);
+
+    Outputs_.Alloca1 = alloca1Outputs[0];
+    Outputs_.Alloca2 = alloca2Outputs[0];
+
+    memoryState =
+        MemoryStateMergeOperation::Create({ memoryState, alloca1Outputs[1], alloca2Outputs[1] });
+
+    const auto loadP =
+        LoadNonVolatileOperation::Create(Outputs_.P, { memoryState }, pointerType, 8);
+    memoryState = loadP[1];
+
+    Outputs_.Q = GetElementPtrOperation::Create(loadP[0], { constantTwo }, intType, pointerType);
+    Outputs_.QPlus2 =
+        GetElementPtrOperation::Create(loadP[0], { constantFour }, intType, pointerType);
+    Outputs_.QAgain =
+        GetElementPtrOperation::Create(loadP[0], { constantMinusTwo }, intType, pointerType);
+
+    // Create offsets into array
+    Outputs_.Arr1 =
+        GetElementPtrOperation::Create(arrayCtxVar, { constantOne }, intType, pointerType);
+    Outputs_.Arr2 =
+        GetElementPtrOperation::Create(arrayCtxVar, { constantTwo }, intType, pointerType);
+    Outputs_.Arr3 =
+        GetElementPtrOperation::Create(arrayCtxVar, { constantThree }, intType, pointerType);
+
+    // Make alloca2 escape
+    const auto storeOutputs =
+        StoreNonVolatileOperation::Create(Outputs_.P, Outputs_.Alloca2, { memoryState }, 4);
+    memoryState = storeOutputs[0];
+
+    // Get bytePtr by calling getPtr()
+    const auto callOutputs =
+        CallOperation::Create(getPtrCtxVar, getPtrFuncType, { ioState, memoryState });
+    Outputs_.BytePtr = callOutputs[0];
+    ioState = callOutputs[1];
+    memoryState = callOutputs[2];
+
+    Outputs_.BytePtrPlus2 =
+        GetElementPtrOperation::Create(Outputs_.BytePtr, { constantTwo }, byteType, pointerType);
+
+    lambdaNode.finalize({ ioState, memoryState });
+    Outputs_.Func = lambdaNode.output();
   }
 
   return rvsdgModule;

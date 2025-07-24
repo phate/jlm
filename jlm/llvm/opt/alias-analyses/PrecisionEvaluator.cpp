@@ -130,7 +130,7 @@ PrecisionEvaluator::EvaluateAliasAnalysisClient(
 
   Context_ = Context{};
 
-  util::GraphWriter gw;
+  util::graph::Writer gw;
   if (OutputAliasingGraph)
   {
     AliasingGraph_ = &gw.CreateGraph();
@@ -153,7 +153,7 @@ PrecisionEvaluator::EvaluateAliasAnalysisClient(
   {
     auto out = statisticsCollector.CreateOutputFile("AAGraph.dot", true);
     std::ofstream fd(out.path().to_str());
-    gw.OutputAllGraphs(fd, util::GraphOutputFormat::Dot);
+    gw.OutputAllGraphs(fd, util::graph::OutputFormat::Dot);
   }
 }
 
@@ -232,15 +232,15 @@ PrecisionEvaluator::EvaluateFunction(
       {
         // Create a node associated with the given output
         // but also attach it to the GraphElement that already represents it
-        const auto GetOrCreateAliasGraphNode = [&](const rvsdg::Output & p) -> util::Node &
+        const auto GetOrCreateAliasGraphNode = [&](const rvsdg::Output & p) -> util::graph::Node &
         {
           const auto element = AliasingGraph_->GetElementFromProgramObject(p);
-          const auto node = dynamic_cast<util::Node *>(element);
+          const auto node = dynamic_cast<util::graph::Node *>(element);
           if (node)
             return *node;
 
           auto & newNode = AliasingGraph_->CreateNode();
-          auto existingElement = AliasingGraph_->GetGraphWriter().GetElementFromProgramObject(p);
+          auto existingElement = AliasingGraph_->GetWriter().GetElementFromProgramObject(p);
           newNode.SetAttributeGraphElement("output", *existingElement);
           newNode.SetProgramObject(p);
           return newNode;
@@ -251,9 +251,9 @@ PrecisionEvaluator::EvaluateFunction(
 
         std::optional<std::string> edgeColor;
         if (response == AliasAnalysis::MayAlias)
-          edgeColor = util::Colors::Purple;
+          edgeColor = util::graph::Colors::Purple;
         else if (response == AliasAnalysis::MustAlias)
-          edgeColor = util::Colors::Orange;
+          edgeColor = util::graph::Colors::Orange;
 
         if (edgeColor)
         {

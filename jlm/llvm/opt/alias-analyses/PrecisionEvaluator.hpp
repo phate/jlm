@@ -161,7 +161,7 @@ private:
   Context Context_;
 
   // Output dot graph, only used if dumping a graph of alias analysis-response edges is enabled
-  util::Graph * AliasingGraph_{};
+  util::graph::Graph * AliasingGraph_{};
 };
 
 }
