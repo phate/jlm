@@ -24,28 +24,6 @@ namespace jlm::llvm
  */
 class LoadOperation : public rvsdg::SimpleOperation
 {
-public:
-  class MemoryStateOutputIterator final : public rvsdg::Output::iterator<rvsdg::SimpleOutput>
-  {
-  public:
-    virtual ~MemoryStateOutputIterator() = default;
-
-    constexpr explicit MemoryStateOutputIterator(rvsdg::SimpleOutput * output)
-        : rvsdg::Output::iterator<rvsdg::SimpleOutput>(output)
-    {}
-
-    [[nodiscard]] rvsdg::SimpleOutput *
-    next() const override
-    {
-      const auto index = value()->index();
-      const auto node = value()->node();
-
-      return index + 1 < node->noutputs() ? node->output(index + 1) : nullptr;
-    }
-  };
-
-  using MemoryStateOutputRange = util::IteratorRange<MemoryStateOutputIterator>;
-
 protected:
   LoadOperation(
       const std::vector<std::shared_ptr<const rvsdg::Type>> & operandTypes,
@@ -113,20 +91,19 @@ public:
     return *output;
   }
 
-  [[nodiscard]] static MemoryStateOutputRange
+  [[nodiscard]] static rvsdg::Node::OutputIteratorRange
   MemoryStateOutputs(const rvsdg::SimpleNode & node) noexcept
   {
     const auto loadOperation = util::AssertedCast<const LoadOperation>(&node.GetOperation());
     if (loadOperation->NumMemoryStates_ == 0)
     {
-      return { MemoryStateOutputIterator(nullptr), MemoryStateOutputIterator(nullptr) };
+      return { rvsdg::Output::Iterator(nullptr), rvsdg::Output::Iterator(nullptr) };
     }
 
     const auto firstMemoryStateOutput =
         node.output(loadOperation->nresults() - loadOperation->NumMemoryStates_);
     JLM_ASSERT(is<MemoryStateType>(firstMemoryStateOutput->Type()));
-    return { MemoryStateOutputIterator(firstMemoryStateOutput),
-             MemoryStateOutputIterator(nullptr) };
+    return { rvsdg::Output::Iterator(firstMemoryStateOutput), rvsdg::Output::Iterator(nullptr) };
   }
 
   /**
