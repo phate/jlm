@@ -97,16 +97,61 @@ Input::region() const noexcept
   }
 }
 
+Input *
+Input::Iterator::ComputeNext() const
+{
+  if (Input_ == nullptr)
+    return nullptr;
+
+  const auto index = Input_->index();
+  auto owner = Input_->GetOwner();
+
+  if (auto node = std::get_if<Node *>(&owner))
+  {
+    return index + 1 < (*node)->ninputs() ? (*node)->input(index + 1) : nullptr;
+  }
+
+  if (auto region = std::get_if<Region *>(&owner))
+  {
+    return index + 1 < (*region)->nresults() ? (*region)->result(index + 1) : nullptr;
+  }
+
+  JLM_UNREACHABLE("Unhandled owner case.");
+}
+
 Output::~Output() noexcept
 {
   JLM_ASSERT(nusers() == 0);
 }
 
-Output::Output(rvsdg::Region * region, std::shared_ptr<const rvsdg::Type> type)
+Output::Output(Node & owner, std::shared_ptr<const rvsdg::Type> type)
     : index_(0),
-      region_(region),
+      Owner_(&owner),
       Type_(std::move(type))
 {}
+
+Output::Output(rvsdg::Region * owner, std::shared_ptr<const rvsdg::Type> type)
+    : index_(0),
+      Owner_(owner),
+      Type_(std::move(type))
+{}
+
+[[nodiscard]] rvsdg::Region *
+Output::region() const noexcept
+{
+  if (auto node = std::get_if<Node *>(&Owner_))
+  {
+    return (*node)->region();
+  }
+  else if (auto region = std::get_if<Region *>(&Owner_))
+  {
+    return *region;
+  }
+  else
+  {
+    JLM_UNREACHABLE("Unhandled owner case.");
+  }
+}
 
 std::string
 Output::debug_string() const
@@ -123,7 +168,7 @@ Output::remove_user(jlm::rvsdg::Input * user)
 
   if (auto node = TryGetOwnerNode<Node>(*this))
   {
-    if (!node->has_users())
+    if (node->IsDead())
     {
       bool wasAdded = region()->AddBottomNode(*node);
       JLM_ASSERT(wasAdded);
@@ -138,7 +183,7 @@ Output::add_user(jlm::rvsdg::Input * user)
 
   if (auto node = TryGetOwnerNode<Node>(*this))
   {
-    if (!node->has_users())
+    if (node->IsDead())
     {
       bool wasRemoved = region()->RemoveBottomNode(*node);
       JLM_ASSERT(wasRemoved);
@@ -157,17 +202,9 @@ node_input::node_input(
 /* node_output class */
 
 node_output::node_output(Node * node, std::shared_ptr<const rvsdg::Type> type)
-    : jlm::rvsdg::Output(node->region(), std::move(type)),
+    : Output(*node, std::move(type)),
       node_(node)
 {}
-
-[[nodiscard]] std::variant<Node *, Region *>
-node_output::GetOwner() const noexcept
-{
-  return node_;
-}
-
-/* node class */
 
 Node::Node(Region * region)
     : depth_(0),
