@@ -22,13 +22,13 @@ namespace jlm::llvm::dot
  * or returns such a node if it has already been created.
  * The function is recursive, and will create nodes for subtypes of aggregate types.
  */
-static util::Node &
-GetOrCreateTypeGraphNode(const rvsdg::Type & type, util::Graph & typeGraph)
+static util::graph::Node &
+GetOrCreateTypeGraphNode(const rvsdg::Type & type, util::graph::Graph & typeGraph)
 {
   // If the type already has a corresponding node, return it
   if (auto * graphElement = typeGraph.GetElementFromProgramObject(type))
   {
-    auto * node = reinterpret_cast<util::Node *>(graphElement);
+    auto * node = reinterpret_cast<util::graph::Node *>(graphElement);
     JLM_ASSERT(node);
     return *node;
   }
@@ -93,20 +93,20 @@ GetOrCreateTypeGraphNode(const rvsdg::Type & type, util::Graph & typeGraph)
  * @param rvsdgInput the RVSDG input
  */
 static void
-AttachNodeInput(util::Port & inputPort, const rvsdg::Input & rvsdgInput)
+AttachNodeInput(util::graph::Port & inputPort, const rvsdg::Input & rvsdgInput)
 {
   auto & graph = inputPort.GetGraph();
   inputPort.SetProgramObject(rvsdgInput);
 
   // nodes are visited in topological order, so if the origin is an output, it will already exist
-  if (auto originPort =
-          reinterpret_cast<util::Port *>(graph.GetElementFromProgramObject(*rvsdgInput.origin())))
+  if (auto originPort = reinterpret_cast<util::graph::Port *>(
+          graph.GetElementFromProgramObject(*rvsdgInput.origin())))
   {
     auto & edge = graph.CreateDirectedEdge(*originPort, inputPort);
     if (rvsdg::is<MemoryStateType>(rvsdgInput.Type()))
-      edge.SetAttribute("color", util::Colors::Red);
+      edge.SetAttribute("color", util::graph::Colors::Red);
     if (rvsdg::is<IOStateType>(rvsdgInput.Type()))
-      edge.SetAttribute("color", util::Colors::Green);
+      edge.SetAttribute("color", util::graph::Colors::Green);
   }
 }
 
@@ -119,9 +119,9 @@ AttachNodeInput(util::Port & inputPort, const rvsdg::Input & rvsdgInput)
  */
 static void
 AttachNodeOutput(
-    util::Port & outputPort,
+    util::graph::Port & outputPort,
     const rvsdg::Output & rvsdgOutput,
-    util::Graph * typeGraph)
+    util::graph::Graph * typeGraph)
 {
   outputPort.SetProgramObject(rvsdgOutput);
   if (typeGraph)
@@ -141,8 +141,8 @@ AttachNodeOutput(
 static void
 SetAdditionalArgumentAttributes(
     const rvsdg::RegionArgument & rvsdgArgument,
-    util::Node & node,
-    util::Graph * typeGraph)
+    util::graph::Node & node,
+    util::graph::Graph * typeGraph)
 {
   // If the argument is a GraphImport, include extra type and linkage data
   if (const auto graphImport = dynamic_cast<const GraphImport *>(&rvsdgArgument))
@@ -169,8 +169,8 @@ SetAdditionalArgumentAttributes(
 static void
 SetAdditionalNodeAttributes(
     const rvsdg::Node & rvsdgNode,
-    util::Node & node,
-    util::Graph * typeGraph)
+    util::graph::Node & node,
+    util::graph::Graph * typeGraph)
 {
   if (const auto delta = dynamic_cast<const llvm::DeltaNode *>(&rvsdgNode))
   {
@@ -193,7 +193,7 @@ SetAdditionalNodeAttributes(
  * If the type does not already exist in the type graph, it is created.
  */
 static void
-CreateGraphNodes(util::Graph & graph, rvsdg::Region & region, util::Graph * typeGraph)
+CreateGraphNodes(util::graph::Graph & graph, rvsdg::Region & region, util::graph::Graph * typeGraph)
 {
   graph.SetProgramObject(region);
 
@@ -272,16 +272,16 @@ CreateGraphNodes(util::Graph & graph, rvsdg::Region & region, util::Graph * type
   }
 }
 
-util::Graph &
-WriteGraphs(util::GraphWriter & writer, rvsdg::Region & region, bool emitTypeGraph)
+util::graph::Graph &
+WriteGraphs(util::graph::Writer & writer, rvsdg::Region & region, bool emitTypeGraph)
 {
-  util::Graph * typeGraph = nullptr;
+  util::graph::Graph * typeGraph = nullptr;
   if (emitTypeGraph)
   {
     typeGraph = &writer.CreateGraph();
     typeGraph->SetLabel("Type graph");
   }
-  util::Graph & rootGraph = writer.CreateGraph();
+  util::graph::Graph & rootGraph = writer.CreateGraph();
   rootGraph.SetLabel("RVSDG root graph");
   CreateGraphNodes(rootGraph, region, typeGraph);
 

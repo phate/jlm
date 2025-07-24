@@ -1036,8 +1036,8 @@ public:
    * Creates a subset graph containing all PointerObjects, their current points-to sets,
    * and edges representing the current set of constraints.
    */
-  util::Graph &
-  DrawSubsetGraph(util::GraphWriter & writer) const;
+  util::graph::Graph &
+  DrawSubsetGraph(util::graph::Writer & writer) const;
 
   /**
    * Performs off-line detection of PointerObjects that can be shown to always contain

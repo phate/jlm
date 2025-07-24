@@ -1381,13 +1381,15 @@ Andersen::Analyze(
   const bool doubleCheck = std::getenv(ENV_DOUBLE_CHECK);
 
   const bool dumpGraphs = std::getenv(ENV_DUMP_SUBSET_GRAPH);
-  util::GraphWriter writer;
+  util::graph::Writer writer;
 
   AnalyzeModule(module, *statistics);
 
+  // Any one of the specified settings triggers solving the constraint set multiple times
+  const bool multipleSolving = testAllConfigsIterations || doubleCheck || useExactConfig;
   // If solving multiple times, make a copy of the original constraint set
   std::pair<std::unique_ptr<PointerObjectSet>, std::unique_ptr<PointerObjectConstraintSet>> copy;
-  if (testAllConfigsIterations || doubleCheck || useExactConfig)
+  if (multipleSolving)
     copy = Constraints_->Clone();
 
   // Draw subset graph both before and after solving
@@ -1409,13 +1411,13 @@ Andersen::Analyze(
   statisticsCollector.CollectDemandedStatistics(std::move(statistics));
 
   // Solve again if double-checking, testing all configs, or testing a specific config
-  if (testAllConfigsIterations || doubleCheck || useExactConfig)
+  if (multipleSolving)
   {
     if (doubleCheck)
       std::cout << "Double checking Andersen analysis constraint solving" << std::endl;
 
-    // If asked to only use one config, start using only that one from now on.
-    // If asked to test all configurations for N iterations, use all configurations.
+    // If asked to only use one config, using only that one.
+    // Otherwise, if asked to test all configurations for N iterations, use all configurations.
     // If only double-checking, only use the naive configuration.
     std::vector<Configuration> configs;
     if (useExactConfig.has_value())

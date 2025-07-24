@@ -603,18 +603,18 @@ JlmOptCommand::PrintAsDot(
 {
   auto & rootRegion = rvsdgModule.Rvsdg().GetRootRegion();
 
-  util::GraphWriter writer;
-  jlm::llvm::dot::WriteGraphs(writer, rootRegion, true);
+  util::graph::Writer writer;
+  llvm::dot::WriteGraphs(writer, rootRegion, true);
 
   if (outputFile == "")
   {
-    writer.OutputAllGraphs(std::cout, util::GraphOutputFormat::Dot);
+    writer.OutputAllGraphs(std::cout, util::graph::OutputFormat::Dot);
   }
   else
   {
     std::ofstream fs;
     fs.open(outputFile.to_str());
-    writer.OutputAllGraphs(fs, util::GraphOutputFormat::Dot);
+    writer.OutputAllGraphs(fs, util::graph::OutputFormat::Dot);
     fs.close();
   }
 }

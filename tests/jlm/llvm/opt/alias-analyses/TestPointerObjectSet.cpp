@@ -772,7 +772,7 @@ TestDrawSubsetGraph()
   constraints.AddConstraint(LoadConstraint(loadValue, loadPointer));
 
   // Act
-  GraphWriter writer;
+  graph::Writer writer;
   auto & graph = constraints.DrawSubsetGraph(writer);
 
   // Assert
@@ -798,14 +798,14 @@ TestDrawSubsetGraph()
   auto * storeEdge = graph.GetEdgeBetween(graph.GetNode(storeValue), graph.GetNode(storePointer));
   assert(storeEdge);
   assert(storeEdge->IsDirected());
-  assert(storeEdge->GetAttributeString("style") == Edge::Style::Dashed);
+  assert(storeEdge->GetAttributeString("style") == graph::Edge::Style::Dashed);
   assert(StringContains(storeEdge->GetAttributeString("arrowhead").value(), "dot"));
 
   // Check that a load edge connects loadPointer to loadValue
   auto * loadEdge = graph.GetEdgeBetween(graph.GetNode(loadPointer), graph.GetNode(loadValue));
   assert(loadEdge);
   assert(loadEdge->IsDirected());
-  assert(loadEdge->GetAttributeString("style") == Edge::Style::Dashed);
+  assert(loadEdge->GetAttributeString("style") == graph::Edge::Style::Dashed);
   assert(StringContains(loadEdge->GetAttributeString("arrowtail").value(), "dot"));
 
   // Check that the function contains the word "function0"
