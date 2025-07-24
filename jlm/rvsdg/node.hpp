@@ -353,10 +353,10 @@ public:
   {
   public:
     using iterator_category = std::forward_iterator_tag;
-    using value_type = Output *;
+    using value_type = Output;
     using difference_type = std::ptrdiff_t;
-    using pointer = Output **;
-    using rerefence = Output *&;
+    using pointer = Output *;
+    using reference = Output &;
 
     constexpr explicit Iterator(Output * output)
         : Output_(output)
