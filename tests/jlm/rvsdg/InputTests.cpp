@@ -69,7 +69,7 @@ TestInputIterator()
   assert(it.GetInput() == nullptr);
 }
 
-JLM_UNIT_TEST_REGISTER("jlm/rvsdg/InputTests", TestInputIterator)
+JLM_UNIT_TEST_REGISTER("jlm/rvsdg/InputTests-TestInputIterator", TestInputIterator)
 
 static void
 TestInputConstIterator()
@@ -133,4 +133,4 @@ TestInputConstIterator()
   assert(it.GetInput() == nullptr);
 }
 
-JLM_UNIT_TEST_REGISTER("jlm/rvsdg/InputTests", TestInputConstIterator)
+JLM_UNIT_TEST_REGISTER("jlm/rvsdg/InputTests-TestInputConstIterator", TestInputConstIterator)
