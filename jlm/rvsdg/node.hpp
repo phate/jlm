@@ -589,6 +589,8 @@ private:
 class Node
 {
 public:
+  using InputIteratorRange = util::IteratorRange<Input::Iterator>;
+
   virtual ~Node();
 
   explicit Node(Region * region);
@@ -622,6 +624,12 @@ public:
   {
     JLM_ASSERT(index < ninputs());
     return inputs_[index].get();
+  }
+
+  [[nodiscard]] InputIteratorRange
+  Inputs() const noexcept
+  {
+    return { Input::Iterator(input(0)), Input::Iterator(nullptr) };
   }
 
   inline size_t
