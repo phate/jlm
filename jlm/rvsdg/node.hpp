@@ -349,84 +349,70 @@ public:
     return Owner_;
   }
 
-  template<class T>
-  class iterator
+  class Iterator final
   {
   public:
     using iterator_category = std::forward_iterator_tag;
-    using value_type = T *;
+    using value_type = Output;
     using difference_type = std::ptrdiff_t;
-    using pointer = T **;
-    using rerefence = T *&;
+    using pointer = Output *;
+    using reference = Output &;
 
-    static_assert(
-        std::is_base_of<jlm::rvsdg::Output, T>::value,
-        "Template parameter T must be derived from jlm::rvsdg::output.");
-
-  protected:
-    constexpr iterator(T * value)
-        : value_(value)
+    constexpr explicit Iterator(Output * output)
+        : Output_(output)
     {}
 
-    virtual T *
-    next() const
+    [[nodiscard]] Output *
+    GetOutput() const noexcept
     {
-      /*
-        I cannot make this method abstract due to the return value of operator++(int).
-        This is the best I could come up with as a workaround.
-      */
-      throw jlm::util::error("This method must be overloaded.");
+      return Output_;
     }
 
-  public:
-    T *
-    value() const noexcept
-    {
-      return value_;
-    }
-
-    T &
+    Output &
     operator*()
     {
-      JLM_ASSERT(value_ != nullptr);
-      return *value_;
+      JLM_ASSERT(Output_ != nullptr);
+      return *Output_;
     }
 
-    T *
+    Output *
     operator->() const
     {
-      return value_;
+      return Output_;
     }
 
-    iterator<T> &
+    Iterator &
     operator++()
     {
-      value_ = next();
+      Output_ = ComputeNext();
       return *this;
     }
 
-    iterator<T>
+    Iterator
     operator++(int)
     {
-      iterator<T> tmp = *this;
+      Iterator tmp = *this;
       ++*this;
       return tmp;
     }
 
-    virtual bool
-    operator==(const iterator<T> & other) const
+    bool
+    operator==(const Iterator & other) const
     {
-      return value_ == other.value_;
+      return Output_ == other.Output_;
     }
 
     bool
-    operator!=(const iterator<T> & other) const
+    operator!=(const Iterator & other) const
     {
       return !operator==(other);
     }
 
   private:
-    T * value_;
+    [[nodiscard]] Output *
+    ComputeNext() const;
+
+    Output * Output_;
   };
 
   template<class T>
@@ -577,6 +563,7 @@ class Node
 public:
   using InputIteratorRange = util::IteratorRange<Input::Iterator>;
   using InputConstIteratorRange = util::IteratorRange<Input::ConstIterator>;
+  using OutputIteratorRange = util::IteratorRange<Output::Iterator>;
 
   virtual ~Node();
 
