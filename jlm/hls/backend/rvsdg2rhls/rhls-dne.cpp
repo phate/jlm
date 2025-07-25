@@ -436,7 +436,7 @@ dne(rvsdg::Region * sr)
     changed = false;
     for (auto & node : rvsdg::BottomUpTraverser(sr))
     {
-      if (!node->has_users())
+      if (node->IsDead())
       {
         if (rvsdg::is<MemoryRequestOperation>(node))
         {

@@ -21,7 +21,8 @@ static void
 TestGraphElement()
 {
   using namespace jlm::util;
-  GraphWriter writer;
+  using namespace jlm::util::graph;
+  Writer writer;
   auto & graph = writer.CreateGraph();
 
   // Test labels
@@ -91,7 +92,8 @@ static void
 TestNode()
 {
   using namespace jlm::util;
-  GraphWriter writer;
+  using namespace jlm::util::graph;
+  Writer writer;
   auto & graph = writer.CreateGraph();
 
   auto & node = graph.CreateNode();
@@ -106,12 +108,12 @@ TestNode()
   node.Finalize();
 
   std::ostringstream out;
-  node.Output(out, GraphOutputFormat::ASCII, 0);
+  node.Output(out, OutputFormat::ASCII, 0);
   auto string = out.str();
   assert(StringContains(string, "MyNode"));
 
   std::ostringstream out2;
-  node.Output(out2, GraphOutputFormat::Dot, 0);
+  node.Output(out2, OutputFormat::Dot, 0);
   auto string2 = out2.str();
   assert(StringContains(string2, "label=MyNode"));
   assert(StringContains(string2, "shape=rect"));
@@ -121,7 +123,8 @@ static void
 TestASCIIEdges()
 {
   using namespace jlm::util;
-  GraphWriter writer;
+  using namespace jlm::util::graph;
+  Writer writer;
   auto & graph = writer.CreateGraph();
 
   auto & node0 = graph.CreateNode();
@@ -139,9 +142,9 @@ TestASCIIEdges()
   graph.Finalize();
 
   std::ostringstream out;
-  node0.Output(out, GraphOutputFormat::ASCII, 0);
-  node1.Output(out, GraphOutputFormat::ASCII, 0);
-  node2.Output(out, GraphOutputFormat::ASCII, 0);
+  node0.Output(out, OutputFormat::ASCII, 0);
+  node1.Output(out, OutputFormat::ASCII, 0);
+  node2.Output(out, OutputFormat::ASCII, 0);
 
   auto string = out.str();
   assert(StringContains(string, "node0:NODE0"));
@@ -153,7 +156,8 @@ static void
 TestInOutNode()
 {
   using namespace jlm::util;
-  GraphWriter writer;
+  using namespace jlm::util::graph;
+  Writer writer;
   auto & graph = writer.CreateGraph();
 
   auto & node = graph.CreateInOutNode(2, 3);
@@ -182,7 +186,7 @@ TestInOutNode()
   assert(subgraph.IsFinalized());
 
   std::ostringstream out;
-  node.Output(out, GraphOutputFormat::ASCII, 0);
+  node.Output(out, OutputFormat::ASCII, 0);
   auto string = out.str();
   assert(StringContains(string, "out0, out1, out2 := \"My\\nInOutNode\" out2, []"));
 
@@ -192,7 +196,7 @@ TestInOutNode()
 
   // Check that HTML labels with newlines turn into <BR/>
   std::ostringstream out2;
-  node.Output(out2, GraphOutputFormat::Dot, 0);
+  node.Output(out2, OutputFormat::Dot, 0);
   auto string0 = out2.str();
   assert(StringContains(string0, "My<BR/>InOutNode"));
 }
@@ -201,7 +205,8 @@ static void
 TestEdge()
 {
   using namespace jlm::util;
-  GraphWriter writer;
+  using namespace jlm::util::graph;
+  Writer writer;
   auto & graph = writer.CreateGraph();
 
   auto & node0 = graph.CreateNode();
@@ -263,7 +268,8 @@ static void
 TestGraphCreateNodes()
 {
   using namespace jlm::util;
-  GraphWriter writer;
+  using namespace jlm::util::graph;
+  Writer writer;
   auto & graph = writer.CreateGraph();
 
   // Test node creation and count
@@ -301,11 +307,12 @@ static void
 TestGraphAttributes()
 {
   using namespace jlm::util;
-  GraphWriter writer;
+  using namespace jlm::util::graph;
+  Writer writer;
   auto & graph = writer.CreateGraph();
   graph.SetLabel("My Graph");
 
-  assert(&graph.GetGraphWriter() == &writer);
+  assert(&graph.GetWriter() == &writer);
   auto & node = graph.CreateNode();
 
   // Test associating a GraphElement with a pointer, and retrieving it
@@ -321,7 +328,7 @@ TestGraphAttributes()
 
   // Test that the Dot output of the graph contains everything specified
   std::ostringstream out;
-  graph.Output(out, jlm::util::GraphOutputFormat::Dot, 0);
+  graph.Output(out, OutputFormat::Dot, 0);
   auto string = out.str();
 
   assert(StringContains(string, "label=\"My Graph\""));
@@ -335,7 +342,8 @@ static void
 TestGraphWriterClass()
 {
   using namespace jlm::util;
-  GraphWriter writer;
+  using namespace jlm::util::graph;
+  Writer writer;
 
   auto & graph0 = writer.CreateGraph();
   auto & graph1 = writer.CreateGraph();
@@ -355,7 +363,7 @@ TestGraphWriterClass()
 
   // Render all the graphs to dot, which first finalizes the graphs to assign unique IDs
   std::ostringstream out;
-  writer.OutputAllGraphs(out, GraphOutputFormat::Dot);
+  writer.OutputAllGraphs(out, OutputFormat::Dot);
   auto string = out.str();
 
   assert(graph0.IsFinalized());

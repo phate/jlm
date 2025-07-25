@@ -49,7 +49,7 @@ TestIntegerBinaryOperation()
     auto constOp1 = jlm::rvsdg::create_bitconstant(&graph->GetRootRegion(), nbits, val1);
     auto constOp2 = jlm::rvsdg::create_bitconstant(&graph->GetRootRegion(), nbits, val2);
     auto binaryOp = JlmOperation(nbits);
-    jlm::rvsdg::SimpleNode::Create(graph->GetRootRegion(), binaryOp, { constOp1, constOp2 });
+    jlm::rvsdg::SimpleNode::Create(graph->GetRootRegion(), binaryOp.copy(), { constOp1, constOp2 });
 
     // Convert the RVSDG to MLIR
     std::cout << "Convert to MLIR" << std::endl;
@@ -172,7 +172,7 @@ TestIntegerComparisonOperation(const IntegerComparisonOpTest<JlmOperation> & tes
     auto constOp1 = jlm::rvsdg::create_bitconstant(&graph->GetRootRegion(), nbits, val1);
     auto constOp2 = jlm::rvsdg::create_bitconstant(&graph->GetRootRegion(), nbits, val2);
     auto compOp = JlmOperation(nbits);
-    jlm::rvsdg::SimpleNode::Create(graph->GetRootRegion(), compOp, { constOp1, constOp2 });
+    jlm::rvsdg::SimpleNode::Create(graph->GetRootRegion(), compOp.copy(), { constOp1, constOp2 });
 
     // Convert the RVSDG to MLIR
     std::cout << "Convert to MLIR" << std::endl;

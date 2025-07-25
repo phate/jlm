@@ -186,12 +186,16 @@ FlattenAssociativeBinaryOperation_NotAssociativeBinary()
   auto i1 = &jlm::tests::GraphImport::Create(graph, valueType, "i1");
   auto i2 = &jlm::tests::GraphImport::Create(graph, valueType, "i2");
 
-  jlm::tests::TestBinaryOperation binaryOperation(
+  auto o1 = &CreateOpNode<jlm::tests::TestBinaryOperation>(
+      { i0, i1 },
       valueType,
       valueType,
       jlm::rvsdg::BinaryOperation::flags::none);
-  auto o1 = &SimpleNode::Create(graph.GetRootRegion(), binaryOperation, { i0, i1 });
-  auto o2 = &SimpleNode::Create(graph.GetRootRegion(), binaryOperation, { o1->output(0), i2 });
+  auto o2 = &CreateOpNode<jlm::tests::TestBinaryOperation>(
+      { o1->output(0), i2 },
+      valueType,
+      valueType,
+      jlm::rvsdg::BinaryOperation::flags::none);
 
   auto & ex = jlm::tests::GraphExport::Create(*o2->output(0), "o2");
 
@@ -225,15 +229,13 @@ FlattenAssociativeBinaryOperation_NoNewOperands()
   auto i0 = &jlm::tests::GraphImport::Create(graph, valueType, "i0");
   auto i1 = &jlm::tests::GraphImport::Create(graph, valueType, "i1");
 
-  jlm::tests::TestUnaryOperation unaryOperation(valueType, valueType);
-  jlm::tests::TestBinaryOperation binaryOperation(
+  auto u1 = &CreateOpNode<jlm::tests::TestUnaryOperation>({ i0 }, valueType, valueType);
+  auto u2 = &CreateOpNode<jlm::tests::TestUnaryOperation>({ i1 }, valueType, valueType);
+  auto b2 = &CreateOpNode<jlm::tests::TestBinaryOperation>(
+      { u1->output(0), u2->output(0) },
       valueType,
       valueType,
       jlm::rvsdg::BinaryOperation::flags::associative);
-  auto u1 = &SimpleNode::Create(graph.GetRootRegion(), unaryOperation, { i0 });
-  auto u2 = &SimpleNode::Create(graph.GetRootRegion(), unaryOperation, { i1 });
-  auto b2 =
-      &SimpleNode::Create(graph.GetRootRegion(), binaryOperation, { u1->output(0), u2->output(0) });
 
   auto & ex = jlm::tests::GraphExport::Create(*b2->output(0), "o2");
 
@@ -268,12 +270,16 @@ FlattenAssociativeBinaryOperation_Success()
   auto i1 = &jlm::tests::GraphImport::Create(graph, valueType, "i1");
   auto i2 = &jlm::tests::GraphImport::Create(graph, valueType, "i2");
 
-  jlm::tests::TestBinaryOperation binaryOperation(
+  auto o1 = &CreateOpNode<jlm::tests::TestBinaryOperation>(
+      { i0, i1 },
       valueType,
       valueType,
       jlm::rvsdg::BinaryOperation::flags::associative);
-  auto o1 = &SimpleNode::Create(graph.GetRootRegion(), binaryOperation, { i0, i1 });
-  auto o2 = &SimpleNode::Create(graph.GetRootRegion(), binaryOperation, { o1->output(0), i2 });
+  auto o2 = &CreateOpNode<jlm::tests::TestBinaryOperation>(
+      { o1->output(0), i2 },
+      valueType,
+      valueType,
+      jlm::rvsdg::BinaryOperation::flags::associative);
 
   auto & ex = jlm::tests::GraphExport::Create(*o2->output(0), "o2");
 
@@ -309,11 +315,11 @@ NormalizeBinaryOperation_NoNewOperands()
   auto i0 = &jlm::tests::GraphImport::Create(graph, valueType, "i0");
   auto i1 = &jlm::tests::GraphImport::Create(graph, valueType, "i1");
 
-  jlm::tests::TestBinaryOperation binaryOperation(
+  auto o1 = &CreateOpNode<jlm::tests::TestBinaryOperation>(
+      { i0, i1 },
       valueType,
       valueType,
       jlm::rvsdg::BinaryOperation::flags::associative);
-  auto o1 = &SimpleNode::Create(graph.GetRootRegion(), binaryOperation, { i0, i1 });
 
   auto & ex = jlm::tests::GraphExport::Create(*o1->output(0), "o2");
 
@@ -341,18 +347,18 @@ NormalizeBinaryOperation_SingleOperand()
   // Arrange
   auto valueType = jlm::tests::ValueType::Create();
 
-  jlm::tests::TestUnaryOperation unaryOperation(valueType, valueType);
-  ::BinaryOperation binaryOperation(valueType, valueType, jlm::rvsdg::BinaryOperation::flags::none);
-
   Graph graph;
   auto s0 = &jlm::tests::GraphImport::Create(graph, valueType, "s0");
   auto s1 = &jlm::tests::GraphImport::Create(graph, valueType, "s1");
 
-  auto u1 = &SimpleNode::Create(graph.GetRootRegion(), unaryOperation, { s0 });
-  auto u2 = &SimpleNode::Create(graph.GetRootRegion(), unaryOperation, { s1 });
+  auto u1 = &CreateOpNode<jlm::tests::TestUnaryOperation>({ s0 }, valueType, valueType);
+  auto u2 = &CreateOpNode<jlm::tests::TestUnaryOperation>({ s1 }, valueType, valueType);
 
-  auto o1 =
-      &SimpleNode::Create(graph.GetRootRegion(), binaryOperation, { u1->output(0), u2->output(0) });
+  auto o1 = &CreateOpNode<::BinaryOperation>(
+      { u1->output(0), u2->output(0) },
+      valueType,
+      valueType,
+      jlm::rvsdg::BinaryOperation::flags::none);
 
   auto & ex = jlm::tests::GraphExport::Create(*o1->output(0), "ex");
 

@@ -552,9 +552,8 @@ ConvertThreeAddressCode(
     for (size_t n = 0; n < threeAddressCode.noperands(); n++)
       operands.push_back(variableMap.lookup(threeAddressCode.operand(n)));
 
-    auto & simpleOperation =
-        static_cast<const rvsdg::SimpleOperation &>(threeAddressCode.operation());
-    auto results = outputs(&rvsdg::SimpleNode::Create(region, simpleOperation, operands));
+    auto results =
+        outputs(&rvsdg::SimpleNode::Create(region, threeAddressCode.operation().copy(), operands));
 
     JLM_ASSERT(results.size() == threeAddressCode.nresults());
     for (size_t n = 0; n < threeAddressCode.nresults(); n++)

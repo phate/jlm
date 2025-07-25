@@ -31,7 +31,8 @@ distribute_constant(const rvsdg::SimpleOperation & op, rvsdg::Output * out)
         if (loopvar.post->origin() == loopvar.pre)
         {
           // pass-through
-          auto arg_replacement = rvsdg::SimpleNode::Create(*theta->subregion(), op, {}).output(0);
+          auto arg_replacement =
+              rvsdg::SimpleNode::Create(*theta->subregion(), op.copy(), {}).output(0);
           loopvar.pre->divert_users(arg_replacement);
           loopvar.output->divert_users(out);
           distribute_constant(op, arg_replacement);
@@ -52,7 +53,7 @@ distribute_constant(const rvsdg::SimpleOperation & op, rvsdg::Output * out)
           if (out->nusers())
           {
             auto out_replacement =
-                rvsdg::SimpleNode::Create(*out->node()->region(), op, {}).output(0);
+                rvsdg::SimpleNode::Create(*out->node()->region(), op.copy(), {}).output(0);
             out->divert_users(out_replacement);
             distribute_constant(op, out_replacement);
             changed = true;
@@ -75,7 +76,7 @@ distribute_constant(const rvsdg::SimpleOperation & op, rvsdg::Output * out)
             if (argument->nusers())
             {
               auto arg_replacement =
-                  rvsdg::SimpleNode::Create(*argument->region(), op, {}).output(0);
+                  rvsdg::SimpleNode::Create(*argument->region(), op.copy(), {}).output(0);
               argument->divert_users(arg_replacement);
               distribute_constant(op, arg_replacement);
             }
