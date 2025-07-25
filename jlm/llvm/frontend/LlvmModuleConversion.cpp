@@ -20,7 +20,7 @@ namespace jlm::llvm
 {
 
 static std::vector<::llvm::PHINode *>
-convert_instructions(::llvm::Function & function, context & ctx)
+convert_instructions(::llvm::Function & function, Context & ctx)
 {
   std::vector<::llvm::PHINode *> phis;
   ::llvm::ReversePostOrderTraversal<::llvm::Function *> rpotraverser(&function);
@@ -55,7 +55,7 @@ convert_instructions(::llvm::Function & function, context & ctx)
  * and assigns proper operands.
  */
 static void
-PatchPhiOperands(const std::vector<::llvm::PHINode *> & phis, context & ctx)
+PatchPhiOperands(const std::vector<::llvm::PHINode *> & phis, Context & ctx)
 {
   for (const auto & phi : phis)
   {
@@ -227,7 +227,7 @@ ConvertIntAttribute(const ::llvm::Attribute & attribute)
 }
 
 static TypeAttribute
-ConvertTypeAttribute(const ::llvm::Attribute & attribute, context & ctx)
+ConvertTypeAttribute(const ::llvm::Attribute & attribute, Context & ctx)
 {
   JLM_ASSERT(attribute.isTypeAttribute());
 
@@ -254,7 +254,7 @@ ConvertStringAttribute(const ::llvm::Attribute & attribute)
 }
 
 static AttributeSet
-convert_attributes(const ::llvm::AttributeSet & as, context & ctx)
+convert_attributes(const ::llvm::AttributeSet & as, Context & ctx)
 {
   AttributeSet attributeSet;
   for (auto & attribute : as)
@@ -285,7 +285,7 @@ convert_attributes(const ::llvm::AttributeSet & as, context & ctx)
 }
 
 static std::unique_ptr<llvm::argument>
-convert_argument(const ::llvm::Argument & argument, context & ctx)
+convert_argument(const ::llvm::Argument & argument, Context & ctx)
 {
   auto function = argument.getParent();
   auto name = argument.getName().str();
@@ -360,11 +360,11 @@ EnsureSingleInEdgeToExitNode(ControlFlowGraph & cfg)
 }
 
 static std::unique_ptr<ControlFlowGraph>
-create_cfg(::llvm::Function & f, context & ctx)
+create_cfg(::llvm::Function & f, Context & ctx)
 {
   auto node = static_cast<const fctvariable *>(ctx.lookup_value(&f))->function();
 
-  auto add_arguments = [](const ::llvm::Function & f, ControlFlowGraph & cfg, context & ctx)
+  auto add_arguments = [](const ::llvm::Function & f, ControlFlowGraph & cfg, Context & ctx)
   {
     auto node = static_cast<const fctvariable *>(ctx.lookup_value(&f))->function();
 
@@ -436,7 +436,7 @@ create_cfg(::llvm::Function & f, context & ctx)
 }
 
 static void
-convert_function(::llvm::Function & function, context & ctx)
+convert_function(::llvm::Function & function, Context & ctx)
 {
   if (function.isDeclaration())
     return;
@@ -470,9 +470,9 @@ convert_linkage(const ::llvm::GlobalValue::LinkageTypes & linkage)
 }
 
 static void
-declare_globals(::llvm::Module & lm, context & ctx)
+declare_globals(::llvm::Module & lm, Context & ctx)
 {
-  auto create_data_node = [](const ::llvm::GlobalVariable & gv, context & ctx)
+  auto create_data_node = [](const ::llvm::GlobalVariable & gv, Context & ctx)
   {
     auto name = gv.getName().str();
     auto constant = gv.isConstant();
@@ -489,7 +489,7 @@ declare_globals(::llvm::Module & lm, context & ctx)
         constant);
   };
 
-  auto create_function_node = [](const ::llvm::Function & f, context & ctx)
+  auto create_function_node = [](const ::llvm::Function & f, Context & ctx)
   {
     auto name = f.getName().str();
     auto linkage = convert_linkage(f.getLinkage());
@@ -513,7 +513,7 @@ declare_globals(::llvm::Module & lm, context & ctx)
 }
 
 static std::unique_ptr<data_node_init>
-create_initialization(::llvm::GlobalVariable & gv, context & ctx)
+create_initialization(::llvm::GlobalVariable & gv, Context & ctx)
 {
   if (!gv.hasInitializer())
     return nullptr;
@@ -527,7 +527,7 @@ create_initialization(::llvm::GlobalVariable & gv, context & ctx)
 }
 
 static void
-convert_global_value(::llvm::GlobalVariable & gv, context & ctx)
+convert_global_value(::llvm::GlobalVariable & gv, Context & ctx)
 {
   auto v = static_cast<const GlobalValue *>(ctx.lookup_value(&gv));
 
@@ -537,7 +537,7 @@ convert_global_value(::llvm::GlobalVariable & gv, context & ctx)
 }
 
 static void
-convert_globals(::llvm::Module & lm, context & ctx)
+convert_globals(::llvm::Module & lm, Context & ctx)
 {
   for (auto & gv : lm.globals())
     convert_global_value(gv, ctx);
@@ -552,7 +552,7 @@ ConvertLlvmModule(::llvm::Module & m)
   util::FilePath fp(m.getSourceFileName());
   auto im = InterProceduralGraphModule::create(fp, m.getTargetTriple(), m.getDataLayoutStr());
 
-  context ctx(*im);
+  Context ctx(*im);
   declare_globals(m, ctx);
   convert_globals(m, ctx);
 
