@@ -7,6 +7,7 @@
 #include <TestRvsdgs.hpp>
 
 #include <jlm/llvm/opt/alias-analyses/AliasAnalysis.hpp>
+#include <jlm/rvsdg/view.hpp>
 
 static void
 Expect(
@@ -35,6 +36,8 @@ TestLocalAliasAnalysis()
   rvsdg.InitializeTest();
   const auto & outputs = rvsdg.GetOutputs();
 
+  jlm::rvsdg::view(&rvsdg.graph().GetRootRegion(), stdout);
+
   LocalAliasAnalysis aa;
 
   // Assert
@@ -57,7 +60,7 @@ TestLocalAliasAnalysis()
 
   // Distinct offsets can not alias, unless the access regions overlap
   Expect(aa, *outputs.Q, 8, *outputs.QPlus2, 8, AliasAnalysis::NoAlias);
-  Expect(aa, *outputs.Q, 16, *outputs.QPlus2, 8, AliasAnalysis::MayAlias);
+  Expect(aa, *outputs.Q, 9, *outputs.QPlus2, 8, AliasAnalysis::MayAlias);
   Expect(aa, *outputs.Q, 8, *outputs.QPlus2, 16, AliasAnalysis::NoAlias);
 
   // Identical offsets are MustAlias
@@ -76,9 +79,16 @@ TestLocalAliasAnalysis()
   // so it may not alias with storage instances that are 16 bytes or less
   Expect(aa, *outputs.Q, 4, *outputs.Global, 4, AliasAnalysis::NoAlias);
 
+  // A five byte operation can never target the 4 byte global variable
+  Expect(aa, *outputs.BytePtr, 5, *outputs.Global, 4, AliasAnalysis::NoAlias);
+  // A four byte operation can, however
+  Expect(aa, *outputs.BytePtr, 4, *outputs.Global, 4, AliasAnalysis::MayAlias);
+  // A five byte operation can target the 40 byte global array
+  Expect(aa, *outputs.BytePtr, 5, *outputs.Array, 4, AliasAnalysis::MayAlias);
+
   // BytePtrPlus2 has an offset of at least 2, so can not alias with the first 2 bytes of alloca2
   Expect(aa, *outputs.Alloca2, 2, *outputs.BytePtrPlus2, 2, AliasAnalysis::NoAlias);
-  Expect(aa, *outputs.Alloca2, 3, *outputs.BytePtrPlus2, 3, AliasAnalysis::MayAlias);
+  Expect(aa, *outputs.Alloca2, 3, *outputs.BytePtrPlus2, 2, AliasAnalysis::MayAlias);
 }
 
 JLM_UNIT_TEST_REGISTER(

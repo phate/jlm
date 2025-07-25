@@ -4,6 +4,7 @@
  */
 
 #include "TestRvsdgs.hpp"
+#include <jlm/llvm/ir/operators/IntegerOperations.hpp>
 
 namespace jlm::tests
 {
@@ -4239,11 +4240,11 @@ LocalAliasAnalysisTest1::SetupRvsdg()
     const auto getPtrCtxVar = lambdaNode.AddContextVar(*Outputs_.GetPtr).inner;
     const auto arrayCtxVar = lambdaNode.AddContextVar(*Outputs_.Array).inner;
 
-    const auto constantOne = rvsdg::create_bitconstant(lambdaNode.subregion(), 32, 1);
-    const auto constantTwo = rvsdg::create_bitconstant(lambdaNode.subregion(), 32, 2);
-    const auto constantThree = rvsdg::create_bitconstant(lambdaNode.subregion(), 32, 3);
-    const auto constantFour = rvsdg::create_bitconstant(lambdaNode.subregion(), 32, 4);
-    const auto constantMinusTwo = rvsdg::create_bitconstant(lambdaNode.subregion(), 32, -2);
+    const auto constantOne = llvm::IntegerConstantOperation::Create(*lambdaNode.subregion(), 32, 1).output(0);
+    const auto constantTwo = llvm::IntegerConstantOperation::Create(*lambdaNode.subregion(), 32, 2).output(0);
+    const auto constantThree = llvm::IntegerConstantOperation::Create(*lambdaNode.subregion(), 32, 3).output(0);
+    const auto constantFour = llvm::IntegerConstantOperation::Create(*lambdaNode.subregion(), 32, 4).output(0);
+    const auto constantMinusTwo = llvm::IntegerConstantOperation::Create(*lambdaNode.subregion(), 32, -2).output(0);
 
     const auto alloca1Outputs = AllocaOperation::create(intType, constantOne, 4);
     const auto alloca2Outputs = AllocaOperation::create(intType, constantOne, 4);
