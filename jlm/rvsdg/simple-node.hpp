@@ -47,20 +47,17 @@ public:
   DebugString() const override;
 
   static SimpleNode &
-  Create(Region & region, const SimpleOperation & op, const std::vector<rvsdg::Output *> & operands)
-  {
-    std::unique_ptr<SimpleOperation> newOp(
-        util::AssertedCast<SimpleOperation>(op.copy().release()));
-    return *(new SimpleNode(region, std::move(newOp), operands));
-  }
-
-  static SimpleNode &
   Create(
       Region & region,
-      std::unique_ptr<SimpleOperation> operation,
+      std::unique_ptr<Operation> operation,
       const std::vector<rvsdg::Output *> & operands)
   {
-    return *new SimpleNode(region, std::move(operation), operands);
+    if (!is<SimpleOperation>(*operation))
+      throw util::error("Expected operation derived from SimpleOperation");
+
+    std::unique_ptr<SimpleOperation> simpleOperation(
+        util::AssertedCast<SimpleOperation>(operation.release()));
+    return *new SimpleNode(region, std::move(simpleOperation), operands);
   }
 
 private:

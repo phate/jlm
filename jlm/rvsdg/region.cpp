@@ -49,12 +49,6 @@ RegionArgument::debug_string() const
   return util::strfmt("a", index());
 }
 
-[[nodiscard]] std::variant<Node *, Region *>
-RegionArgument::GetOwner() const noexcept
-{
-  return region();
-}
-
 RegionArgument &
 RegionArgument::Copy(Region & region, StructuralInput * input)
 {

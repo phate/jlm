@@ -7,7 +7,7 @@
 
 #include <jlm/util/strfmt.hpp>
 
-namespace jlm::util
+namespace jlm::util::graph
 {
 // All GraphElements with an associated ProgramObject get this attribute added
 static const char * const TOOLTIP_ATTRIBUTE = "tooltip";
@@ -259,7 +259,7 @@ GraphElement::SetAttributeObject(const std::string & attribute, uintptr_t object
 void
 GraphElement::SetAttributeGraphElement(const std::string & attribute, const GraphElement & element)
 {
-  JLM_ASSERT(&GetGraph().GetGraphWriter() == &element.GetGraph().GetGraphWriter());
+  JLM_ASSERT(&GetGraph().GetWriter() == &element.GetGraph().GetWriter());
   AttributeMap_[attribute] = &element;
 }
 
@@ -313,7 +313,7 @@ GraphElement::GetAttributeGraphElement(const std::string & attribute) const
       {
         return gElement;
       }
-      if (auto gwElement = GetGraph().GetGraphWriter().GetElementFromProgramObject(*ptr))
+      if (auto gwElement = GetGraph().GetWriter().GetElementFromProgramObject(*ptr))
       {
         return gwElement;
       }
@@ -334,7 +334,7 @@ GraphElement::Finalize()
   if (IsFinalized())
     return;
 
-  auto & writer = GetGraph().GetGraphWriter();
+  auto & writer = GetGraph().GetWriter();
   UniqueIdSuffix_ = writer.GetNextUniqueIdStubSuffix(GetIdPrefix());
 }
 
@@ -429,7 +429,7 @@ Port::GetConnections() const
 }
 
 void
-Port::OnEdgeAdded(jlm::util::Edge & edge)
+Port::OnEdgeAdded(Edge & edge)
 {
   if (this == &edge.GetFrom())
     JLM_ASSERT(CanBeEdgeTail() || !edge.IsDirected());
@@ -532,18 +532,18 @@ Node::OutputDotPortId(std::ostream & out) const
 }
 
 void
-Node::Output(std::ostream & out, GraphOutputFormat format, size_t indent) const
+Node::Output(std::ostream & out, OutputFormat format, size_t indent) const
 {
   switch (format)
   {
-  case GraphOutputFormat::ASCII:
+  case OutputFormat::ASCII:
     OutputASCII(out, indent);
     break;
-  case GraphOutputFormat::Dot:
+  case OutputFormat::Dot:
     OutputDot(out, indent);
     break;
   default:
-    JLM_UNREACHABLE("Unknown GraphOutputFormat");
+    JLM_UNREACHABLE("Unknown graph::OutputFormat");
   }
 }
 
@@ -583,12 +583,12 @@ Node::OutputDot(std::ostream & out, size_t indent) const
 }
 
 void
-Node::OutputSubgraphs(std::ostream & out, GraphOutputFormat format, size_t indent) const
+Node::OutputSubgraphs(std::ostream & out, OutputFormat format, size_t indent) const
 {
   // Regular nodes do not have sub graphs
 }
 
-InputPort::InputPort(jlm::util::InOutNode & node)
+InputPort::InputPort(InOutNode & node)
     : Node_(node)
 {
   SetFillColor(Colors::White);
@@ -625,7 +625,7 @@ InputPort::OutputDotPortId(std::ostream & out) const
   out << Node_.GetFullId() << ":" << GetFullId() << ":n";
 }
 
-OutputPort::OutputPort(jlm::util::InOutNode & node)
+OutputPort::OutputPort(InOutNode & node)
     : Node_(node)
 {
   SetFillColor(Colors::White);
@@ -725,7 +725,7 @@ InOutNode::GetOutputPort(size_t index)
 Graph &
 InOutNode::CreateSubgraph()
 {
-  auto & graph = GetGraph().GetGraphWriter().CreateSubGraph(*this);
+  auto & graph = GetGraph().GetWriter().CreateSubGraph(*this);
   SubGraphs_.push_back(&graph);
   return graph;
 }
@@ -769,7 +769,7 @@ InOutNode::Finalize()
 }
 
 void
-InOutNode::OutputSubgraphs(std::ostream & out, GraphOutputFormat format, size_t indent) const
+InOutNode::OutputSubgraphs(std::ostream & out, OutputFormat format, size_t indent) const
 {
   for (auto & graph : SubGraphs_)
     graph->Output(out, format, indent);
@@ -813,7 +813,7 @@ InOutNode::OutputASCII(std::ostream & out, size_t indent) const
   out << std::endl;
 
   // Output all sub graphs, if we have any
-  OutputSubgraphs(out, GraphOutputFormat::ASCII, indent + 1);
+  OutputSubgraphs(out, OutputFormat::ASCII, indent + 1);
 }
 
 void
@@ -909,7 +909,7 @@ InOutNode::OutputDot(std::ostream & out, size_t indent) const
   out << "];" << std::endl;
 }
 
-ArgumentNode::ArgumentNode(jlm::util::Graph & graph)
+ArgumentNode::ArgumentNode(Graph & graph)
     : Node(graph),
       OutsideSource_(nullptr)
 {}
@@ -950,7 +950,7 @@ ArgumentNode::OutputASCII(std::ostream & out, size_t) const
   }
 }
 
-ResultNode::ResultNode(jlm::util::Graph & graph)
+ResultNode::ResultNode(Graph & graph)
     : Node(graph),
       OutsideDestination_(nullptr)
 {}
@@ -1099,13 +1099,13 @@ Edge::OutputDot(std::ostream & out, size_t indent) const
   out << "];" << std::endl;
 }
 
-Graph::Graph(GraphWriter & writer)
+Graph::Graph(Writer & writer)
     : GraphElement(),
       Writer_(writer),
       ParentNode_(nullptr)
 {}
 
-Graph::Graph(GraphWriter & writer, Node & parentNode)
+Graph::Graph(Writer & writer, Node & parentNode)
     : GraphElement(),
       Writer_(writer),
       ParentNode_(&parentNode)
@@ -1123,14 +1123,14 @@ Graph::GetGraph()
   return *this;
 }
 
-GraphWriter &
-Graph::GetGraphWriter()
+Writer &
+Graph::GetWriter()
 {
   return Writer_;
 }
 
-const GraphWriter &
-Graph::GetGraphWriter() const
+const Writer &
+Graph::GetWriter() const
 {
   return Writer_;
 }
@@ -1400,21 +1400,21 @@ Graph::OutputDot(std::ostream & out, size_t indent) const
   // After fully printing this graph, print any sub graphs it may have
   for (auto & node : Nodes_)
   {
-    node->OutputSubgraphs(out, GraphOutputFormat::Dot, indent);
+    node->OutputSubgraphs(out, OutputFormat::Dot, indent);
   }
 }
 
 void
-Graph::Output(std::ostream & out, jlm::util::GraphOutputFormat format, size_t indent) const
+Graph::Output(std::ostream & out, OutputFormat format, size_t indent) const
 {
   JLM_ASSERT(IsFinalized());
 
   switch (format)
   {
-  case GraphOutputFormat::ASCII:
+  case OutputFormat::ASCII:
     OutputASCII(out, indent);
     break;
-  case GraphOutputFormat::Dot:
+  case OutputFormat::Dot:
     OutputDot(out, indent);
     break;
   default:
@@ -1423,7 +1423,7 @@ Graph::Output(std::ostream & out, jlm::util::GraphOutputFormat format, size_t in
 }
 
 Graph &
-GraphWriter::CreateGraph()
+Writer::CreateGraph()
 {
   auto graph = new Graph(*this);
   Graphs_.emplace_back(graph);
@@ -1431,20 +1431,20 @@ GraphWriter::CreateGraph()
 }
 
 size_t
-GraphWriter::NumGraphs() const noexcept
+Writer::NumGraphs() const noexcept
 {
   return Graphs_.size();
 }
 
 Graph &
-GraphWriter::GetGraph(size_t index)
+Writer::GetGraph(size_t index)
 {
   JLM_ASSERT(index < NumGraphs());
   return *Graphs_[index];
 }
 
 Graph &
-GraphWriter::CreateSubGraph(Node & parentNode)
+Writer::CreateSubGraph(Node & parentNode)
 {
   auto graph = new Graph(*this, parentNode);
   Graphs_.emplace_back(graph);
@@ -1452,7 +1452,7 @@ GraphWriter::CreateSubGraph(Node & parentNode)
 }
 
 GraphElement *
-GraphWriter::GetElementFromProgramObject(uintptr_t object) const
+Writer::GetElementFromProgramObject(uintptr_t object) const
 {
   for (auto & graph : Graphs_)
     if (auto found = graph->GetElementFromProgramObject(object))
@@ -1462,14 +1462,14 @@ GraphWriter::GetElementFromProgramObject(uintptr_t object) const
 }
 
 size_t
-GraphWriter::GetNextUniqueIdStubSuffix(const char * idStub)
+Writer::GetNextUniqueIdStubSuffix(const char * idStub)
 {
   size_t & nextValue = NextUniqueIdStubSuffix_[idStub];
   return nextValue++;
 }
 
 void
-GraphWriter::Finalize()
+Writer::Finalize()
 {
   for (auto & graph : Graphs_)
     if (!graph->IsSubgraph())
@@ -1477,7 +1477,7 @@ GraphWriter::Finalize()
 }
 
 void
-GraphWriter::OutputAllGraphs(std::ostream & out, GraphOutputFormat format)
+Writer::OutputAllGraphs(std::ostream & out, OutputFormat format)
 {
   Finalize();
 
