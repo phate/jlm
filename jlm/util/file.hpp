@@ -308,33 +308,33 @@ private:
   std::string path_;
 };
 
-class file final
+class File final
 {
 public:
-  file(const FilePath & path)
+  explicit File(const FilePath & path)
       : fd_(NULL),
         path_(path)
   {}
 
-  ~file()
+  ~File()
   {
     close();
   }
 
-  file(const file &) = delete;
+  File(const File &) = delete;
 
-  file(file && other)
+  File(File && other) noexcept
       : fd_(other.fd_),
         path_(std::move(other.path_))
   {
     other.fd_ = NULL;
   }
 
-  file &
-  operator=(const file &) = delete;
+  File &
+  operator=(const File &) = delete;
 
-  file &
-  operator=(file && other)
+  File &
+  operator=(File && other) noexcept
   {
     if (this == &other)
       return *this;
