@@ -15,9 +15,10 @@ namespace jlm
 {
 
 void
-distribute_constant(const rvsdg::SimpleOperation & op, rvsdg::SimpleOutput * out)
+distribute_constant(const rvsdg::SimpleOperation & op, rvsdg::Output * out)
 {
-  JLM_ASSERT(jlm::hls::is_constant(out->node()));
+  JLM_ASSERT(hls::is_constant(rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*out)));
+
   bool changed = true;
   while (changed)
   {

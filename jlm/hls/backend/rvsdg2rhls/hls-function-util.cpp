@@ -100,21 +100,23 @@ trace_constant(const rvsdg::Output * dst)
     return trace_constant(arg->input()->origin());
   }
 
-  if (auto so = dynamic_cast<const rvsdg::SimpleOutput *>(dst))
+  auto [constantNode, constantOperation] =
+      rvsdg::TryGetSimpleNodeAndOp<llvm::IntegerConstantOperation>(*dst);
+  if (constantNode)
   {
-    if (auto co = dynamic_cast<const llvm::IntegerConstantOperation *>(&so->node()->GetOperation()))
-    {
-      return co;
-    }
-    for (size_t i = 0; i < so->node()->ninputs(); ++i)
+    if (constantOperation)
+      return constantOperation;
+
+    for (size_t i = 0; i < constantNode->ninputs(); ++i)
     {
       // TODO: fix, this is a hack - only works because of distribute constants
-      if (*so->node()->input(i)->Type() == *dst->Type())
+      if (*constantNode->input(i)->Type() == *dst->Type())
       {
-        return trace_constant(so->node()->input(i)->origin());
+        return trace_constant(constantNode->input(i)->origin());
       }
     }
   }
+
   JLM_UNREACHABLE("Constant not found");
 }
 
@@ -233,11 +235,11 @@ trace_call_rhls(const rvsdg::Output * output)
       }
     }
   }
-  else if (auto so = dynamic_cast<const rvsdg::SimpleOutput *>(output))
+  else if (auto simpleNode = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*output))
   {
-    for (size_t i = 0; i < so->node()->ninputs(); ++i)
+    for (size_t i = 0; i < simpleNode->ninputs(); ++i)
     {
-      auto ip = so->node()->input(i);
+      auto ip = simpleNode->input(i);
       if (*ip->Type() == *output->Type())
       {
         if (auto result = trace_call_rhls(ip))
@@ -337,8 +339,8 @@ FindSourceNode(rvsdg::Output * out)
     JLM_ASSERT(rvsdg::TryGetOwnerNode<loop_node>(*out));
     return FindSourceNode(so->results.begin()->origin());
   }
-  auto result = dynamic_cast<rvsdg::SimpleOutput *>(out);
-  JLM_ASSERT(result);
-  return result;
+
+  JLM_ASSERT(rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*out));
+  return out;
 }
 }

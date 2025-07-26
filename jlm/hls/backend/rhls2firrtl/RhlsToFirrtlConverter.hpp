@@ -263,7 +263,7 @@ private:
   jlm::rvsdg::Output *
   TraceArgument(rvsdg::RegionArgument * arg);
 
-  rvsdg::SimpleOutput *
+  rvsdg::Output *
   TraceStructuralOutput(rvsdg::StructuralOutput * out);
 
   void

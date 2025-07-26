@@ -2693,7 +2693,7 @@ RhlsToFirrtlConverter::MlirGen(rvsdg::Region * subRegion, mlir::Block * circuitB
 
 // Trace a structural output back to the "node" generating the value
 // Returns the output of the node
-rvsdg::SimpleOutput *
+rvsdg::Output *
 RhlsToFirrtlConverter::TraceStructuralOutput(rvsdg::StructuralOutput * output)
 {
   auto node = output->node();
@@ -2711,10 +2711,10 @@ RhlsToFirrtlConverter::TraceStructuralOutput(rvsdg::StructuralOutput * output)
     return TraceStructuralOutput(o);
   }
 
-  if (auto o = dynamic_cast<rvsdg::SimpleOutput *>(origin))
+  if (rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*origin))
   {
     // Found the source node
-    return o;
+    return origin;
   }
   else if (dynamic_cast<rvsdg::RegionArgument *>(origin))
   {
