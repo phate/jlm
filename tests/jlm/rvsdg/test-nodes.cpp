@@ -263,3 +263,32 @@ NodeInputIteration()
 }
 
 JLM_UNIT_TEST_REGISTER("jlm/rvsdg/test-nodes-NodeInputIteration", NodeInputIteration)
+
+static void
+NodeInputConstIteration()
+{
+  using namespace jlm::rvsdg;
+
+  // Arrange
+  auto valueType = jlm::tests::ValueType::Create();
+
+  Graph rvsdg;
+  auto i = &jlm::tests::GraphImport::Create(rvsdg, valueType, "i");
+
+  const auto & node = CreateOpNode<jlm::tests::TestOperation>(
+      { i, i, i, i, i },
+      std::vector<std::shared_ptr<const Type>>(5, valueType),
+      std::vector<std::shared_ptr<const Type>>{ valueType });
+
+  jlm::tests::GraphExport::Create(*node.output(0), "x0");
+
+  // Act & Assert
+  size_t n = 0;
+  for (auto & input : node.Inputs())
+  {
+    assert(&input == node.input(n++));
+  }
+  assert(n == node.ninputs());
+}
+
+JLM_UNIT_TEST_REGISTER("jlm/rvsdg/test-nodes-NodeInputConstIteration", NodeInputConstIteration)
