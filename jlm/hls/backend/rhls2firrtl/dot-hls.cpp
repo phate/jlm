@@ -235,7 +235,7 @@ DotHLS::loop_to_dot(hls::loop_node * ln)
     }
     else
     {
-      throw jlm::util::error(
+      throw util::Error(
           "Unimplemented op (unexpected structural node) : " + node->DebugString());
     }
   }
@@ -317,7 +317,7 @@ DotHLS::prepare_loop_out_port(hls::loop_node * ln)
     }
     else
     {
-      throw jlm::util::error(
+      throw util::Error(
           "Unimplemented op (unexpected structural node) : " + node->DebugString());
     }
   }
@@ -409,7 +409,7 @@ DotHLS::subregion_to_dot(rvsdg::Region * sr)
     }
     else
     {
-      throw jlm::util::error(
+      throw util::Error(
           "Unimplemented op (unexpected structural node) : " + node->DebugString());
     }
   }

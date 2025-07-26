@@ -33,7 +33,7 @@ SimpleNode::SimpleNode(
       Operation_(std::move(operation))
 {
   if (GetOperation().narguments() != operands.size())
-    throw jlm::util::error(jlm::util::strfmt(
+    throw util::Error(jlm::util::strfmt(
         "Argument error - expected ",
         SimpleNode::GetOperation().narguments(),
         ", received ",
@@ -78,7 +78,7 @@ SimpleNode::copy(rvsdg::Region * region, SubstitutionMap & smap) const
     if (operand == nullptr)
     {
       if (region != this->region())
-        throw jlm::util::error("Node operand not in substitution map.");
+        throw util::Error("Node operand not in substitution map.");
 
       operand = origin;
     }

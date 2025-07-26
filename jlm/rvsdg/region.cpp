@@ -32,7 +32,7 @@ RegionArgument::RegionArgument(
   if (input)
   {
     if (input->node() != region->node())
-      throw jlm::util::error("Argument cannot be added to input.");
+      throw util::Error("Argument cannot be added to input.");
 
     if (*input->Type() != *Type())
     {
@@ -85,7 +85,7 @@ RegionResult::RegionResult(
   if (output)
   {
     if (output->node() != region->node())
-      throw jlm::util::error("Result cannot be added to output.");
+      throw util::Error("Result cannot be added to output.");
 
     if (*Type() != *output->Type())
     {
@@ -157,7 +157,7 @@ void
 Region::append_argument(RegionArgument * argument)
 {
   if (argument->region() != this)
-    throw jlm::util::error("Appending argument to wrong region.");
+    throw util::Error("Appending argument to wrong region.");
 
   auto index = argument->index();
   JLM_ASSERT(index == 0);
@@ -173,7 +173,7 @@ void
 Region::insert_argument(size_t index, RegionArgument * argument)
 {
   if (argument->region() != this)
-    throw jlm::util::error("Inserting argument to wrong region.");
+    throw util::Error("Inserting argument to wrong region.");
 
   JLM_ASSERT(argument->index() == 0);
 
@@ -203,7 +203,7 @@ void
 Region::append_result(RegionResult * result)
 {
   if (result->region() != this)
-    throw jlm::util::error("Appending result to wrong region.");
+    throw util::Error("Appending result to wrong region.");
 
   /*
     Check if result was already appended to this region. This check

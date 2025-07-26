@@ -441,7 +441,7 @@ public:
         I cannot make this method abstract due to the return value of operator++(int).
         This is the best I could come up with as a workaround.
       */
-      throw jlm::util::error("This method must be overloaded.");
+      throw util::Error("This method must be overloaded.");
     }
 
   public:

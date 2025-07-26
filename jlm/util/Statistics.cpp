@@ -183,7 +183,7 @@ StatisticsCollector::CreateOutputFile(std::string fileNameSuffix, bool includeCo
   // Ensure the output folder exists, or create it
   auto directory = Settings_.GetOutputDirectory();
   if (directory.IsFile())
-    throw error("The specified statistics output directory is a file: " + directory.to_str());
+    throw Error("The specified statistics output directory is a file: " + directory.to_str());
   if (!directory.Exists())
     directory.CreateDirectory();
 
@@ -204,7 +204,7 @@ StatisticsCollector::CreateOutputFile(std::string fileNameSuffix, bool includeCo
 
   auto fullPath = directory.Join(fileName);
   if (fullPath.Exists())
-    throw error("The generated output file name already exists: " + fullPath.to_str());
+    throw Error("The generated output file name already exists: " + fullPath.to_str());
 
   return fullPath;
 }

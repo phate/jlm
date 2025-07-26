@@ -53,7 +53,7 @@ public:
       const std::vector<rvsdg::Output *> & operands)
   {
     if (!is<SimpleOperation>(*operation))
-      throw util::error("Expected operation derived from SimpleOperation");
+      throw util::Error("Expected operation derived from SimpleOperation");
 
     std::unique_ptr<SimpleOperation> simpleOperation(
         util::AssertedCast<SimpleOperation>(operation.release()));
