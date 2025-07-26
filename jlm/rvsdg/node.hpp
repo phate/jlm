@@ -415,84 +415,70 @@ public:
     Output * Output_;
   };
 
-  template<class T>
-  class constiterator
+  class ConstIterator final
   {
   public:
     using iterator_category = std::forward_iterator_tag;
-    using value_type = const T *;
+    using value_type = const Output;
     using difference_type = std::ptrdiff_t;
-    using pointer = const T **;
-    using reference = const T *&;
+    using pointer = const Output *;
+    using reference = const Output &;
 
-    static_assert(
-        std::is_base_of<jlm::rvsdg::Output, T>::value,
-        "Template parameter T must be derived from jlm::rvsdg::output.");
-
-  protected:
-    constexpr constiterator(const T * value)
-        : value_(value)
+    constexpr explicit ConstIterator(const Output * output)
+        : Output_(output)
     {}
 
-    virtual const T *
-    next() const
+    const Output *
+    GetOutput() const noexcept
     {
-      /*
-        I cannot make this method abstract due to the return value of operator++(int).
-        This is the best I could come up with as a workaround.
-      */
-      throw jlm::util::error("This method must be overloaded.");
+      return Output_;
     }
 
-  public:
-    const T *
-    value() const noexcept
+    const Output &
+    operator*() const
     {
-      return value_;
+      JLM_ASSERT(Output_ != nullptr);
+      return *Output_;
     }
 
-    const T &
-    operator*()
-    {
-      JLM_ASSERT(value_ != nullptr);
-      return *value_;
-    }
-
-    const T *
+    const Output *
     operator->() const
     {
-      return value_;
+      return Output_;
     }
 
-    constiterator<T> &
+    ConstIterator &
     operator++()
     {
-      value_ = next();
+      Output_ = ComputeNext();
       return *this;
     }
 
-    constiterator<T>
+    ConstIterator
     operator++(int)
     {
-      constiterator<T> tmp = *this;
+      const ConstIterator tmp = *this;
       ++*this;
       return tmp;
     }
 
-    virtual bool
-    operator==(const constiterator<T> & other) const
+    bool
+    operator==(const ConstIterator & other) const
     {
-      return value_ == other.value_;
+      return Output_ == other.Output_;
     }
 
     bool
-    operator!=(const constiterator<T> & other) const
+    operator!=(const ConstIterator & other) const
     {
       return !operator==(other);
     }
 
   private:
-    const T * value_;
+    [[nodiscard]] Output *
+    ComputeNext() const;
+
+    const Output * Output_;
   };
 
 private:
