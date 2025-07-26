@@ -167,9 +167,8 @@ NestedGammas()
 
   {
     // check gammaNodeOuter subregion 1
-    // FIXME: The constantNode was copied in this region even though there is no user for this
-    // node in this region after(!) the pass is finished. DNE should later take care of this, but it
-    // is unnecessary.
+    // The constantNode was copied into this region (even though it does not have a user), so we
+    // expect one more node than before the transformation.
     assert(gammaNodeOuter->subregion(1)->nnodes() == 3);
 
     {
