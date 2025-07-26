@@ -196,8 +196,10 @@ PrintNumMemoryStateInputsOutputsAnnotation()
   const auto inputVarX = structuralNode->AddInputWithArguments(x);
   const auto inputVarY = structuralNode->AddInputWithArguments(y);
 
-  auto outputVarX = structuralNode->AddOutputWithResults({ inputVarX.argument[0], inputVarX.argument[1] });
-  auto outputVarY = structuralNode->AddOutputWithResults({ inputVarY.argument[0], inputVarY.argument[1] });
+  auto outputVarX =
+      structuralNode->AddOutputWithResults({ inputVarX.argument[0], inputVarX.argument[1] });
+  auto outputVarY =
+      structuralNode->AddOutputWithResults({ inputVarY.argument[0], inputVarY.argument[1] });
 
   jlm::tests::GraphExport::Create(*outputVarX.output, "x");
   jlm::tests::GraphExport::Create(*outputVarY.output, "y");
