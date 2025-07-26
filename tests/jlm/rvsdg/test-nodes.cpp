@@ -275,7 +275,7 @@ NodeInputConstIteration()
   Graph rvsdg;
   auto i = &jlm::tests::GraphImport::Create(rvsdg, valueType, "i");
 
-  const auto & node = CreateOpNode<jlm::tests::TestOperation>(
+  auto & node = CreateOpNode<jlm::tests::TestOperation>(
       { i, i, i, i, i },
       std::vector<std::shared_ptr<const Type>>(5, valueType),
       std::vector<std::shared_ptr<const Type>>{ valueType });
