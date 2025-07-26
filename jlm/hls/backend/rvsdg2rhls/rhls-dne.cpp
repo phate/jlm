@@ -513,12 +513,12 @@ dne(llvm::RvsdgModule & rm)
   auto root = &graph.GetRootRegion();
   if (root->nnodes() != 1)
   {
-    throw util::error("Root should have only one node now");
+    throw util::Error("Root should have only one node now");
   }
   auto ln = dynamic_cast<const rvsdg::LambdaNode *>(root->Nodes().begin().ptr());
   if (!ln)
   {
-    throw util::error("Node needs to be a lambda");
+    throw util::Error("Node needs to be a lambda");
   }
   dne(ln->subregion());
 }

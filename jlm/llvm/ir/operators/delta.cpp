@@ -128,10 +128,10 @@ DeltaNode::finalize(jlm::rvsdg::Output * origin)
   auto & expected = Type();
   auto & received = *origin->Type();
   if (*expected != received)
-    throw util::error("Expected " + expected->debug_string() + ", got " + received.debug_string());
+    throw util::Error("Expected " + expected->debug_string() + ", got " + received.debug_string());
 
   if (origin->region() != subregion())
-    throw util::error("Invalid operand region.");
+    throw util::Error("Invalid operand region.");
 
   rvsdg::RegionResult::Create(*origin->region(), *origin, nullptr, origin->Type());
 

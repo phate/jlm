@@ -127,7 +127,7 @@ BaseHLS::create_node_names(rvsdg::Region * r)
     }
     else
     {
-      throw util::error("Unimplemented op (unexpected structural node) : " + node.DebugString());
+      throw util::Error("Unimplemented op (unexpected structural node) : " + node.DebugString());
     }
   }
 }
@@ -143,7 +143,7 @@ BaseHLS::get_hls_lambda(llvm::RvsdgModule & rm)
   }
   else
   {
-    throw util::error("Root should have only one lambda node now");
+    throw util::Error("Root should have only one lambda node now");
   }
 }
 
