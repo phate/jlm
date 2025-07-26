@@ -562,6 +562,7 @@ class Node
 {
 public:
   using InputIteratorRange = util::IteratorRange<Input::Iterator>;
+  using InputConstIteratorRange = util::IteratorRange<Input::ConstIterator>;
   using OutputIteratorRange = util::IteratorRange<Output::Iterator>;
 
   virtual ~Node();
@@ -600,9 +601,15 @@ public:
   }
 
   [[nodiscard]] InputIteratorRange
-  Inputs() const noexcept
+  Inputs() noexcept
   {
     return { Input::Iterator(input(0)), Input::Iterator(nullptr) };
+  }
+
+  [[nodiscard]] InputConstIteratorRange
+  Inputs() const noexcept
+  {
+    return { Input::ConstIterator(input(0)), Input::ConstIterator(nullptr) };
   }
 
   inline size_t
