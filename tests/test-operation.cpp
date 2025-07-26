@@ -255,7 +255,7 @@ TestStructuralNode::OutputVar
 TestStructuralNode::AddResults(const std::vector<rvsdg::Output *> & origins)
 {
   if (origins.size() != nsubregions())
-    throw util::error("Insufficient number of origins.");
+    throw util::Error("Insufficient number of origins.");
 
   size_t n = 0;
   std::vector<rvsdg::Input *> results;
