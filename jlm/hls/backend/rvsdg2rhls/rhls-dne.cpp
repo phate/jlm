@@ -13,7 +13,7 @@ namespace jlm::hls
 {
 
 bool
-remove_unused_loop_backedges(loop_node * ln)
+remove_unused_loop_backedges(LoopNode * ln)
 {
   bool any_changed = false;
   auto sr = ln->subregion();
@@ -36,7 +36,7 @@ remove_unused_loop_backedges(loop_node * ln)
 }
 
 bool
-remove_unused_loop_outputs(loop_node * ln)
+remove_unused_loop_outputs(LoopNode * ln)
 {
   bool any_changed = false;
   auto sr = ln->subregion();
@@ -57,7 +57,7 @@ remove_unused_loop_outputs(loop_node * ln)
 }
 
 bool
-remove_loop_passthrough(loop_node * ln)
+remove_loop_passthrough(LoopNode * ln)
 {
   bool any_changed = false;
   auto sr = ln->subregion();
@@ -87,7 +87,7 @@ remove_loop_passthrough(loop_node * ln)
 }
 
 bool
-remove_unused_loop_inputs(loop_node * ln)
+remove_unused_loop_inputs(LoopNode * ln)
 {
   bool any_changed = false;
   auto sr = ln->subregion();
@@ -459,7 +459,7 @@ dne(rvsdg::Region * sr)
       {
         JLM_UNREACHABLE("This function works on lambda subregions");
       }
-      else if (auto ln = dynamic_cast<loop_node *>(node))
+      else if (auto ln = dynamic_cast<LoopNode *>(node))
       {
         changed |= remove_unused_loop_outputs(ln);
         changed |= remove_unused_loop_inputs(ln);

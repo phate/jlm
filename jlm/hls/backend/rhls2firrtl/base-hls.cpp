@@ -121,7 +121,7 @@ BaseHLS::create_node_names(rvsdg::Region * r)
     {
       get_node_name(&node);
     }
-    else if (auto oln = dynamic_cast<loop_node *>(&node))
+    else if (auto oln = dynamic_cast<LoopNode *>(&node))
     {
       create_node_names(oln->subregion());
     }

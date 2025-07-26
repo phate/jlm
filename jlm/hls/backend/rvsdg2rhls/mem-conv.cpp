@@ -60,7 +60,7 @@ TraceEdgeToMerge(rvsdg::Input * state_edge)
     {
       JLM_UNREACHABLE("this should be handled by branch");
     }
-    else if (rvsdg::TryGetOwnerNode<loop_node>(*state_edge))
+    else if (rvsdg::TryGetOwnerNode<LoopNode>(*state_edge))
     {
       JLM_UNREACHABLE("there should be no new loops");
     }
