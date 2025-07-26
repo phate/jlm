@@ -32,10 +32,10 @@ class Variable;
 
 using BasicBlockMap = util::BijectiveMap<const ::llvm::BasicBlock *, BasicBlock *>;
 
-class context final
+class Context final
 {
 public:
-  explicit context(InterProceduralGraphModule & im)
+  explicit Context(InterProceduralGraphModule & im)
       : module_(im),
         node_(nullptr),
         iostate_(nullptr),

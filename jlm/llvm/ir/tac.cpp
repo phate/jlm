@@ -24,7 +24,7 @@ check_operands(
     const std::vector<const Variable *> & operands)
 {
   if (operands.size() != operation.narguments())
-    throw util::error("invalid number of operands.");
+    throw util::Error("invalid number of operands.");
 
   for (size_t n = 0; n < operands.size(); n++)
   {
@@ -41,12 +41,12 @@ check_results(
     const std::vector<std::unique_ptr<ThreeAddressCodeVariable>> & results)
 {
   if (results.size() != operation.nresults())
-    throw util::error("invalid number of variables.");
+    throw util::Error("invalid number of variables.");
 
   for (size_t n = 0; n < results.size(); n++)
   {
     if (results[n]->type() != *operation.result(n))
-      throw util::error("invalid type.");
+      throw util::Error("invalid type.");
   }
 }
 
@@ -72,7 +72,7 @@ ThreeAddressCode::ThreeAddressCode(
   check_operands(operation, operands);
 
   if (names.size() != operation.nresults())
-    throw util::error("Invalid number of result names.");
+    throw util::Error("Invalid number of result names.");
 
   create_results(operation, names);
 }

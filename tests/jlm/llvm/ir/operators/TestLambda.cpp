@@ -94,7 +94,7 @@ TestInvalidOperandRegion()
   {
     lambdaNode->finalize({ result });
   }
-  catch (jlm::util::error &)
+  catch (jlm::util::Error &)
   {
     invalidRegionErrorCaught = true;
   }

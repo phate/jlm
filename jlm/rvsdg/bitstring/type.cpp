@@ -57,7 +57,7 @@ bittype::Create(std::size_t nbits)
   {
     if (nbits == 0)
     {
-      throw jlm::util::error("Number of bits must be greater than zero.");
+      throw util::Error("Number of bits must be greater than zero.");
     }
 
     return std::shared_ptr<const bittype>(std::shared_ptr<void>(), &static_instances[nbits]);
