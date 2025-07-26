@@ -243,17 +243,17 @@ public:
   CreateDirectory() const
   {
     if (IsFile())
-      throw error("file already exists: " + path_);
+      throw Error("file already exists: " + path_);
 
     FilePath baseDir(Dirname());
     if (!baseDir.IsDirectory())
-      throw error("parent directory is not a directory: " + baseDir.to_str());
+      throw Error("parent directory is not a directory: " + baseDir.to_str());
 
     std::error_code ec;
     std::filesystem::create_directory(path_, ec);
 
     if (ec.value() != 0)
-      throw error("could not create directory '" + path_ + "': " + ec.message());
+      throw Error("could not create directory '" + path_ + "': " + ec.message());
   }
 
   [[nodiscard]] const std::string &
@@ -360,7 +360,7 @@ public:
   {
     fd_ = fopen(path_.to_str().c_str(), mode);
     if (!fd_)
-      throw error("Cannot open file " + path_.to_str());
+      throw Error("Cannot open file " + path_.to_str());
   }
 
   bool

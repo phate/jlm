@@ -1613,7 +1613,7 @@ RhlsToFirrtlConverter::MlirGenMem(const jlm::rvsdg::SimpleNode * node)
     }
     else
     {
-      throw jlm::util::error("unknown width for mem request");
+      throw util::Error("unknown width for mem request");
     }
   }
 
@@ -3479,7 +3479,7 @@ check_may_not_depend_on(
   visited.insert(value);
   if (forbiddenDependencies.contains(value))
   {
-    throw jlm::util::error("forbidden dependency detected");
+    throw util::Error("forbidden dependency detected");
   }
   auto op = value.getDefiningOp();
   // don't check anything for registers - connects don't count since they don't form combinatorial
@@ -4045,7 +4045,7 @@ RhlsToFirrtlConverter::WriteCircuitToFile(const circt::firrtl::CircuitOp circuit
 
   if (status.failed())
   {
-    throw jlm::util::error("Exporting of FIRRTL failed");
+    throw util::Error("Exporting of FIRRTL failed");
   }
 
   output.close();

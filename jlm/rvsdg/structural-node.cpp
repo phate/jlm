@@ -57,7 +57,7 @@ StructuralNode::StructuralNode(rvsdg::Region * region, size_t nsubregions)
     : Node(region)
 {
   if (nsubregions == 0)
-    throw jlm::util::error("Number of subregions must be greater than zero.");
+    throw util::Error("Number of subregions must be greater than zero.");
 
   for (size_t n = 0; n < nsubregions; n++)
     subregions_.emplace_back(std::unique_ptr<rvsdg::Region>(new jlm::rvsdg::Region(this, n)));
@@ -75,7 +75,7 @@ StructuralInput *
 StructuralNode::append_input(std::unique_ptr<StructuralInput> input)
 {
   if (input->node() != this)
-    throw jlm::util::error("Appending input to wrong node.");
+    throw util::Error("Appending input to wrong node.");
 
   auto index = input->index();
   JLM_ASSERT(index == 0);
@@ -90,7 +90,7 @@ StructuralOutput *
 StructuralNode::append_output(std::unique_ptr<StructuralOutput> output)
 {
   if (output->node() != this)
-    throw jlm::util::error("Appending output to wrong node.");
+    throw util::Error("Appending output to wrong node.");
 
   auto index = output->index();
   JLM_ASSERT(index == 0);
