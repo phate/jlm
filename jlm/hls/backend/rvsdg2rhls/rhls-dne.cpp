@@ -281,19 +281,19 @@ dead_loop_lcb(rvsdg::Node * lcb_node)
   {
     return false;
   }
-  auto branch_in = dynamic_cast<jlm::rvsdg::node_input *>(&*lcb_node->output(0)->Users().begin());
-  auto bo = dynamic_cast<const BranchOperation *>(&branch_in->node()->GetOperation());
-  if (!branch_in || !bo || !bo->loop)
+  auto [branchNode, branchOperation] =
+      rvsdg::TryGetSimpleNodeAndOp<BranchOperation>(*lcb_node->output(0)->Users().begin());
+  if (!branchNode || !branchOperation || !branchOperation->loop)
   {
     return false;
   }
   // no user
-  if (branch_in->node()->output(1)->nusers())
+  if (branchNode->output(1)->nusers())
   {
     return false;
   }
   // depend on same control
-  auto branch_cond_origin = branch_in->node()->input(0)->origin();
+  auto branch_cond_origin = branchNode->input(0)->origin();
   auto pred_buf_out = dynamic_cast<jlm::rvsdg::node_output *>(lcb_node->input(0)->origin());
   if (!pred_buf_out
       || !dynamic_cast<const PredicateBufferOperation *>(&pred_buf_out->node()->GetOperation()))
@@ -319,8 +319,8 @@ dead_loop_lcb(rvsdg::Node * lcb_node)
     return false;
   }
   // divert users
-  branch_in->node()->output(0)->divert_users(lcb_node->input(1)->origin());
-  remove(branch_in->node());
+  branchNode->output(0)->divert_users(lcb_node->input(1)->origin());
+  remove(branchNode);
   remove(lcb_node);
   return true;
 }
