@@ -39,9 +39,9 @@ public:
   void
   MarkAlive(const jlm::rvsdg::Output & output)
   {
-    if (auto simpleOutput = dynamic_cast<const rvsdg::SimpleOutput *>(&output))
+    if (auto simpleNode = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(output))
     {
-      SimpleNodes_.Insert(simpleOutput->node());
+      SimpleNodes_.Insert(simpleNode);
       return;
     }
 
@@ -51,9 +51,9 @@ public:
   bool
   IsAlive(const jlm::rvsdg::Output & output) const noexcept
   {
-    if (auto simpleOutput = dynamic_cast<const rvsdg::SimpleOutput *>(&output))
+    if (auto simpleNode = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(output))
     {
-      return SimpleNodes_.Contains(simpleOutput->node());
+      return SimpleNodes_.Contains(simpleNode);
     }
 
     return Outputs_.Contains(&output);
