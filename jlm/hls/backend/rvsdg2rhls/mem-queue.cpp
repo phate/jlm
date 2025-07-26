@@ -157,7 +157,7 @@ separate_load_edge(
     }
     else if (auto sti = dynamic_cast<jlm::rvsdg::StructuralInput *>(user))
     {
-      auto loop_node = jlm::util::AssertedCast<jlm::hls::loop_node>(sti->node());
+      auto loop_node = jlm::util::AssertedCast<jlm::hls::LoopNode>(sti->node());
       jlm::rvsdg::Output * buffer = nullptr;
       auto addr_edge_before_loop = addr_edge;
       addr_edge = loop_node->AddLoopVar(addr_edge, &buffer);
@@ -416,7 +416,7 @@ process_loops(jlm::rvsdg::Output * state_edge)
     }
     else if (auto sti = dynamic_cast<jlm::rvsdg::StructuralInput *>(&user))
     {
-      JLM_ASSERT(dynamic_cast<const jlm::hls::loop_node *>(sti->node()));
+      JLM_ASSERT(dynamic_cast<const jlm::hls::LoopNode *>(sti->node()));
       // update to output of loop
       auto mem_edge_after_loop = find_loop_output(sti);
       JLM_ASSERT(mem_edge_after_loop->nusers() == 1);
