@@ -43,18 +43,18 @@ check_rhls(rvsdg::Region * sr)
       }
       else
       {
-        throw jlm::util::error("There should be only simple nodes and loop nodes");
+        throw util::Error("There should be only simple nodes and loop nodes");
       }
     }
     for (size_t i = 0; i < node->noutputs(); i++)
     {
       if (node->output(i)->nusers() == 0)
       {
-        throw jlm::util::error("Output has no users");
+        throw util::Error("Output has no users");
       }
       else if (node->output(i)->nusers() > 1)
       {
-        throw jlm::util::error("Output has more than one user");
+        throw util::Error("Output has more than one user");
       }
     }
     if (rvsdg::is<AddressQueueOperation>(node))
@@ -71,12 +71,12 @@ check_rhls(llvm::RvsdgModule & rm)
   auto root = &graph.GetRootRegion();
   if (root->nnodes() != 1)
   {
-    throw jlm::util::error("Root should have only one node now");
+    throw util::Error("Root should have only one node now");
   }
   auto ln = dynamic_cast<const rvsdg::LambdaNode *>(root->Nodes().begin().ptr());
   if (!ln)
   {
-    throw jlm::util::error("Node needs to be a lambda");
+    throw util::Error("Node needs to be a lambda");
   }
   check_rhls(ln->subregion());
 }

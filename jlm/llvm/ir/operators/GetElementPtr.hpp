@@ -123,7 +123,7 @@ private:
   {
     if (!is<PointerType>(type))
     {
-      throw jlm::util::error("Expected pointer type.");
+      throw util::Error("Expected pointer type.");
     }
   }
 
@@ -140,7 +140,7 @@ private:
         continue;
       }
 
-      throw jlm::util::error("Expected bitstring type.");
+      throw util::Error("Expected bitstring type.");
     }
 
     return offsetTypes;
