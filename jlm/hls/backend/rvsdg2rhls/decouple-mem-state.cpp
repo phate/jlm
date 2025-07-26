@@ -57,7 +57,7 @@ trace_edge(
     {
       return rr->output();
     }
-    else if (auto ln = rvsdg::TryGetOwnerNode<loop_node>(*state_edge))
+    else if (auto ln = rvsdg::TryGetOwnerNode<LoopNode>(*state_edge))
     {
       auto si = util::AssertedCast<rvsdg::StructuralInput>(state_edge);
       auto arg = si->arguments.begin().ptr();
@@ -79,7 +79,7 @@ trace_edge(
         new_edge = new_out;
         convert_loop_state_to_lcb(new_in);
       }
-      JLM_ASSERT(rvsdg::TryGetOwnerNode<loop_node>(*out));
+      JLM_ASSERT(rvsdg::TryGetOwnerNode<LoopNode>(*out));
       JLM_ASSERT(out->region() == state_edge->region());
       state_edge = get_mem_state_user(out);
       continue;
@@ -281,10 +281,10 @@ optimize_single_mem_op_loop(
           || rvsdg::is<const llvm::LoadNonVolatileOperation>(mem_ops[0])))
   {
     // before and after belong to same loop node
-    JLM_ASSERT(rvsdg::TryGetOwnerNode<loop_node>(*state_edge_before));
+    JLM_ASSERT(rvsdg::TryGetOwnerNode<LoopNode>(*state_edge_before));
     JLM_ASSERT(
-        rvsdg::TryGetOwnerNode<loop_node>(*state_edge_before)
-        == rvsdg::TryGetOwnerNode<loop_node>(*state_edge_after));
+        rvsdg::TryGetOwnerNode<LoopNode>(*state_edge_before)
+        == rvsdg::TryGetOwnerNode<LoopNode>(*state_edge_after));
     convert_loop_state_to_lcb(state_edge_before);
   }
 }
@@ -325,7 +325,7 @@ follow_state_edge(
     {
       return rr->output();
     }
-    else if (rvsdg::TryGetOwnerNode<loop_node>(*state_edge))
+    else if (rvsdg::TryGetOwnerNode<LoopNode>(*state_edge))
     {
       std::vector<rvsdg::SimpleNode *> loop_mem_ops;
       auto si = jlm::util::AssertedCast<rvsdg::StructuralInput>(state_edge);
@@ -454,7 +454,7 @@ void
 convert_loop_state_to_lcb(rvsdg::Input * loop_state_input)
 {
   JLM_ASSERT(rvsdg::is<rvsdg::StateType>(loop_state_input->Type()));
-  JLM_ASSERT(rvsdg::TryGetOwnerNode<loop_node>(*loop_state_input));
+  JLM_ASSERT(rvsdg::TryGetOwnerNode<LoopNode>(*loop_state_input));
   auto si = util::AssertedCast<rvsdg::StructuralInput>(loop_state_input);
   auto arg = si->arguments.begin().ptr();
   auto user = get_mem_state_user(arg);

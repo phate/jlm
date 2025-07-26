@@ -136,7 +136,7 @@ route_to_region_rhls(rvsdg::Region * target, rvsdg::Output * out)
   }
   // route out to convergence point from out
   rvsdg::Output * common_out = route_request_rhls(common_region, out);
-  auto common_loop = dynamic_cast<loop_node *>(common_region->node());
+  auto common_loop = dynamic_cast<LoopNode *>(common_region->node());
   if (common_loop)
   {
     // add a backedge to prevent cycles
@@ -166,7 +166,7 @@ route_response_rhls(rvsdg::Region * target, rvsdg::Output * response)
   else
   {
     auto parent_response = route_response_rhls(target->node()->region(), response);
-    auto ln = dynamic_cast<loop_node *>(target->node());
+    auto ln = dynamic_cast<LoopNode *>(target->node());
     JLM_ASSERT(ln);
     auto input = rvsdg::StructuralInput::create(ln, parent_response, parent_response->Type());
     auto & argument = EntryArgument::Create(*target, *input, response->Type());
@@ -183,7 +183,7 @@ route_request_rhls(rvsdg::Region * target, rvsdg::Output * request)
   }
   else
   {
-    auto ln = dynamic_cast<loop_node *>(request->region()->node());
+    auto ln = dynamic_cast<LoopNode *>(request->region()->node());
     JLM_ASSERT(ln);
     auto output = rvsdg::StructuralOutput::create(ln, request->Type());
     ExitResult::Create(*request, *output);
@@ -322,7 +322,7 @@ FindSourceNode(rvsdg::Output * out)
   }
   else if (auto ra = dynamic_cast<rvsdg::RegionArgument *>(out))
   {
-    if (ra->input() && rvsdg::TryGetOwnerNode<loop_node>(*ra->input()))
+    if (ra->input() && rvsdg::TryGetOwnerNode<LoopNode>(*ra->input()))
     {
       return FindSourceNode(ra->input()->origin());
     }
@@ -334,7 +334,7 @@ FindSourceNode(rvsdg::Output * out)
   }
   else if (auto so = dynamic_cast<rvsdg::StructuralOutput *>(out))
   {
-    JLM_ASSERT(rvsdg::TryGetOwnerNode<loop_node>(*out));
+    JLM_ASSERT(rvsdg::TryGetOwnerNode<LoopNode>(*out));
     return FindSourceNode(so->results.begin()->origin());
   }
   auto result = dynamic_cast<rvsdg::SimpleOutput *>(out);

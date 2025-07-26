@@ -37,7 +37,7 @@ check_rhls(rvsdg::Region * sr)
   {
     if (rvsdg::is<rvsdg::StructuralOperation>(node))
     {
-      if (auto ln = dynamic_cast<hls::loop_node *>(node))
+      if (auto ln = dynamic_cast<LoopNode *>(node))
       {
         check_rhls(ln->subregion());
       }

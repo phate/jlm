@@ -25,7 +25,7 @@ FindUserNode(rvsdg::Output * out)
   else if (auto rr = dynamic_cast<rvsdg::RegionResult *>(user))
   {
 
-    if (rr->output() && rvsdg::TryGetOwnerNode<loop_node>(*rr->output()))
+    if (rr->output() && rvsdg::TryGetOwnerNode<LoopNode>(*rr->output()))
     {
       return FindUserNode(rr->output());
     }
@@ -37,7 +37,7 @@ FindUserNode(rvsdg::Output * out)
   }
   else if (auto si = dynamic_cast<rvsdg::StructuralInput *>(user))
   {
-    JLM_ASSERT(rvsdg::TryGetOwnerNode<loop_node>(*user));
+    JLM_ASSERT(rvsdg::TryGetOwnerNode<LoopNode>(*user));
     return FindUserNode(si->arguments.begin().ptr());
   }
   else if (rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*user))
@@ -194,7 +194,7 @@ OptimizeBuffer(rvsdg::SimpleNode * node)
 }
 
 void
-OptimizeLoop(loop_node * loopNode)
+OptimizeLoop(LoopNode * loopNode)
 {
   // TODO: should this be changed?
   bool outerLoop = !rvsdg::is<LoopOperation>(loopNode->region()->node());
@@ -277,7 +277,7 @@ AddBuffers(rvsdg::Region * region)
   {
     if (auto structnode = dynamic_cast<rvsdg::StructuralNode *>(node))
     {
-      auto loop = dynamic_cast<loop_node *>(node);
+      auto loop = dynamic_cast<LoopNode *>(node);
       JLM_ASSERT(loop);
       OptimizeLoop(loop);
       for (size_t n = 0; n < structnode->nsubregions(); n++)
@@ -336,7 +336,7 @@ MaximizeBuffers(rvsdg::Region * region)
   {
     if (auto structnode = dynamic_cast<rvsdg::StructuralNode *>(node))
     {
-      auto loop = dynamic_cast<loop_node *>(node);
+      auto loop = dynamic_cast<LoopNode *>(node);
       JLM_ASSERT(loop);
       for (size_t n = 0; n < structnode->nsubregions(); n++)
       {
@@ -465,7 +465,7 @@ NodeCapacity(rvsdg::SimpleNode * node, std::vector<size_t> & input_capacities)
 
 void
 CreateLoopFrontier(
-    const loop_node * loop,
+    const LoopNode * loop,
     std::unordered_map<rvsdg::Output *, size_t> & output_cycles,
     std::unordered_set<rvsdg::Input *> & frontier,
     std::unordered_set<backedge_result *> & stream_backedges,
@@ -531,7 +531,7 @@ CreateLoopFrontier(
 
 void
 CalculateLoopCycleDepth(
-    loop_node * loop,
+    LoopNode * loop,
     std::unordered_map<rvsdg::Output *, size_t> & output_cycles,
     bool analyze_inner_loop = false);
 
@@ -630,7 +630,7 @@ PushCycleFrontier(
       }
       else
       {
-        auto inner_loop = rvsdg::TryGetOwnerNode<loop_node>(*in);
+        auto inner_loop = rvsdg::TryGetOwnerNode<LoopNode>(*in);
         JLM_ASSERT(inner_loop);
         bool all_contained = true;
         for (size_t i = 0; i < inner_loop->ninputs(); ++i)
@@ -675,7 +675,7 @@ PushCycleFrontier(
 
 void
 CalculateLoopCycleDepth(
-    loop_node * loop,
+    LoopNode * loop,
     std::unordered_map<rvsdg::Output *, size_t> & output_cycles,
     bool analyze_inner_loop)
 {
@@ -796,7 +796,7 @@ PlaceBufferLoop(rvsdg::Output * out, size_t min_capacity, bool passThrough)
 
 void
 AdjustLoopBuffers(
-    loop_node * loop,
+    LoopNode * loop,
     std::unordered_map<rvsdg::Output *, size_t> & output_cycles,
     std::unordered_map<rvsdg::Output *, size_t> & buffer_capacity,
     bool analyze_inner_loop = false)
@@ -937,7 +937,7 @@ AdjustLoopBuffers(
       }
       else
       {
-        auto inner_loop = rvsdg::TryGetOwnerNode<loop_node>(*in);
+        auto inner_loop = rvsdg::TryGetOwnerNode<LoopNode>(*in);
         JLM_ASSERT(inner_loop);
         bool all_contained = true;
         for (size_t i = 0; i < inner_loop->ninputs(); ++i)
@@ -1012,7 +1012,7 @@ CalculateLoopDepths(rvsdg::Region * region)
 {
   for (auto node : rvsdg::TopDownTraverser(region))
   {
-    if (auto loop = dynamic_cast<loop_node *>(node))
+    if (auto loop = dynamic_cast<LoopNode *>(node))
     {
       // process inner loops first
       CalculateLoopDepths(loop->subregion());

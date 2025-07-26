@@ -2473,7 +2473,7 @@ RhlsToFirrtlConverter::MlirGen(const jlm::rvsdg::SimpleNode * node)
 }
 
 circt::firrtl::FModuleOp
-RhlsToFirrtlConverter::MlirGen(hls::loop_node * loopNode, mlir::Block * circuitBody)
+RhlsToFirrtlConverter::MlirGen(hls::LoopNode * loopNode, mlir::Block * circuitBody)
 {
   // Create the module and its input/output ports
   auto module = nodeToModule(loopNode);
@@ -2523,10 +2523,10 @@ RhlsToFirrtlConverter::DropMSBs(mlir::Block * body, mlir::Value value, int amoun
 jlm::rvsdg::Output *
 RhlsToFirrtlConverter::TraceArgument(rvsdg::RegionArgument * arg)
 {
-  // Check if the argument is part of a hls::loop_node
+  // Check if the argument is part of a LoopNode
   auto region = arg->region();
   auto node = region->node();
-  if (dynamic_cast<hls::loop_node *>(node))
+  if (dynamic_cast<LoopNode *>(node))
   {
     if (auto ba = dynamic_cast<backedge_argument *>(arg))
     {
@@ -2547,15 +2547,15 @@ RhlsToFirrtlConverter::TraceArgument(rvsdg::RegionArgument * arg)
       }
       else if (auto o = dynamic_cast<rvsdg::StructuralOutput *>(origin))
       {
-        // Check if we the input of one loop_node is connected to the output of another
-        // StructuralNode, i.e., if the input is connected to the output of another loop_node
+        // Check if we the input of one LoopNode is connected to the output of another
+        // StructuralNode, i.e., if the input is connected to the output of another LoopNode
         return TraceStructuralOutput(o);
       }
       // Else we have reached the source
       return origin;
     }
   }
-  // Reached the argument of a structural node that is not a hls::loop_node
+  // Reached the argument of a structural node that is not a LoopNode
   return arg;
 }
 
@@ -2698,10 +2698,10 @@ RhlsToFirrtlConverter::TraceStructuralOutput(rvsdg::StructuralOutput * output)
 {
   auto node = output->node();
 
-  // We are only expecting hls::loop_node to have a structural output
-  if (!dynamic_cast<hls::loop_node *>(node))
+  // We are only expecting LoopNode to have a structural output
+  if (!dynamic_cast<LoopNode *>(node))
   {
-    throw std::logic_error("Expected a hls::loop_node but found: " + node->DebugString());
+    throw std::logic_error("Expected a hls::LoopNode but found: " + node->DebugString());
   }
   JLM_ASSERT(output->results.size() == 1);
   auto origin = output->results.begin().ptr()->origin();
@@ -3687,7 +3687,7 @@ RhlsToFirrtlConverter::AddInstanceOp(mlir::Block * circuitBody, jlm::rvsdg::Node
   }
   else
   {
-    auto ln = dynamic_cast<loop_node *>(node);
+    auto ln = dynamic_cast<LoopNode *>(node);
     JLM_ASSERT(ln);
     auto module = MlirGen(ln, circuitBody);
     modules[name] = module;

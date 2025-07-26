@@ -352,7 +352,7 @@ TestThetaLoad()
   ConvertThetaNodes(*rvsdgModule);
   // Simple assert as ConvertThetaNodes() is tested in separate unit tests
   jlm::rvsdg::view(rvsdgModule->Rvsdg(), stdout);
-  assert(jlm::rvsdg::Region::ContainsNodeType<loop_node>(*lambdaRegion, true));
+  assert(jlm::rvsdg::Region::ContainsNodeType<LoopNode>(*lambdaRegion, true));
 
   // Act
   mem_queue(*rvsdgModule);
@@ -386,7 +386,7 @@ TestThetaLoad()
   auto loopOutput =
       jlm::util::AssertedCast<const jlm::rvsdg::StructuralOutput>(requestNode->input(0)->origin());
   auto loopNode = jlm::util::AssertedCast<const jlm::rvsdg::StructuralNode>(loopOutput->node());
-  assert(dynamic_cast<const loop_node *>(loopNode));
+  assert(dynamic_cast<const LoopNode *>(loopNode));
   // Loop Result
   auto & thetaResult = loopOutput->results;
   assert(thetaResult.size() == 1);
@@ -478,7 +478,7 @@ TestThetaStore()
   ConvertThetaNodes(*rvsdgModule);
   // Simple assert as ConvertThetaNodes() is tested in separate unit tests
   jlm::rvsdg::view(rvsdgModule->Rvsdg(), stdout);
-  assert(jlm::rvsdg::Region::ContainsNodeType<loop_node>(*lambdaRegion, true));
+  assert(jlm::rvsdg::Region::ContainsNodeType<LoopNode>(*lambdaRegion, true));
 
   // Act
   mem_queue(*rvsdgModule);
@@ -510,7 +510,7 @@ TestThetaStore()
   auto loopOutput =
       jlm::util::AssertedCast<const jlm::rvsdg::StructuralOutput>(requestNode->input(0)->origin());
   auto loopNode = jlm::util::AssertedCast<const jlm::rvsdg::StructuralNode>(loopOutput->node());
-  assert(dynamic_cast<const loop_node *>(loopNode));
+  assert(dynamic_cast<const LoopNode *>(loopNode));
   // Loop Result
   auto & thetaResult = loopOutput->results;
   assert(thetaResult.size() == 1);

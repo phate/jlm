@@ -34,10 +34,10 @@ private:
   edge(std::string src, std::string snk, const jlm::rvsdg::Type & type, bool back = false);
 
   std::string
-  loop_to_dot(hls::loop_node * ln);
+  loop_to_dot(LoopNode * ln);
 
   void
-  prepare_loop_out_port(hls::loop_node * ln);
+  prepare_loop_out_port(LoopNode * ln);
 
   std::string
   subregion_to_dot(rvsdg::Region * sr);
