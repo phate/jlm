@@ -175,7 +175,7 @@ StatisticsCollector::PrintStatistics()
   }
 }
 
-util::file
+File
 StatisticsCollector::CreateOutputFile(std::string fileNameSuffix, bool includeCount)
 {
   JLM_ASSERT(Settings_.HasOutputDirectory());
@@ -206,7 +206,7 @@ StatisticsCollector::CreateOutputFile(std::string fileNameSuffix, bool includeCo
   if (fullPath.Exists())
     throw Error("The generated output file name already exists: " + fullPath.to_str());
 
-  return fullPath;
+  return File(fullPath);
 }
 
 }
