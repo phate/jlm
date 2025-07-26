@@ -117,13 +117,13 @@ EliminateDeadNodes(llvm::RvsdgModule & rvsdgModule)
 
   if (rootRegion.nnodes() != 1)
   {
-    throw util::error("Root should have only one node now");
+    throw util::Error("Root should have only one node now");
   }
 
   auto lambdaNode = dynamic_cast<const rvsdg::LambdaNode *>(rootRegion.Nodes().begin().ptr());
   if (!lambdaNode)
   {
-    throw util::error("Node needs to be a lambda");
+    throw util::Error("Node needs to be a lambda");
   }
 
   EliminateDeadNodesInRegion(*lambdaNode->subregion());

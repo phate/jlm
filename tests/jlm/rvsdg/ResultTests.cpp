@@ -40,7 +40,7 @@ ResultNodeMismatch()
     // Region mismatch
     TestGraphResult::Create(*structuralNode2->subregion(0), argument, structuralOutput);
   }
-  catch (jlm::util::error & e)
+  catch (jlm::util::Error &)
   {
     outputErrorHandlerCalled = true;
   }

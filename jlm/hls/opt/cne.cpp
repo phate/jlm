@@ -473,8 +473,7 @@ mark(const jlm::rvsdg::SimpleNode * node, cnectx & ctx)
   {
     for (const auto & user : origin->Users())
     {
-      auto ni = dynamic_cast<const jlm::rvsdg::node_input *>(&user);
-      auto other = ni ? ni->node() : nullptr;
+      const auto other = TryGetOwnerNode<rvsdg::Node>(user);
       if (!other || other == node || other->GetOperation() != node->GetOperation()
           || other->ninputs() != node->ninputs())
         continue;
