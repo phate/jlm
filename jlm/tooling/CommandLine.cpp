@@ -133,7 +133,7 @@ JlmOptCommandLineOptions::FromCommandLineArgumentToOptimizationId(
   if (map.find(commandLineArgument) != map.end())
     return map[commandLineArgument];
 
-  throw util::error("Unknown command line argument: " + commandLineArgument);
+  throw util::Error("Unknown command line argument: " + commandLineArgument);
 }
 
 const char *
@@ -169,7 +169,7 @@ JlmOptCommandLineOptions::ToCommandLineArgument(OptimizationId optimizationId)
   if (map.find(optimizationId) != map.end())
     return map[optimizationId];
 
-  throw util::error("Unknown optimization identifier");
+  throw util::Error("Unknown optimization identifier");
 }
 
 util::Statistics::Id
@@ -182,7 +182,7 @@ JlmOptCommandLineOptions::FromCommandLineArgumentToStatisticsId(
   }
   catch (...)
   {
-    throw util::error("Unknown command line argument: " + commandLineArgument);
+    throw util::Error("Unknown command line argument: " + commandLineArgument);
   }
 }
 
@@ -195,7 +195,7 @@ JlmOptCommandLineOptions::ToCommandLineArgument(util::Statistics::Id statisticsI
   }
   catch (...)
   {
-    throw util::error("Unknown statistics identifier");
+    throw util::Error("Unknown statistics identifier");
   }
 }
 
@@ -208,7 +208,7 @@ JlmOptCommandLineOptions::ToCommandLineArgument(InputFormat inputFormat)
   if (map.find(inputFormat) != map.end())
     return map[inputFormat];
 
-  throw util::error("Unknown input format");
+  throw util::Error("Unknown input format");
 }
 
 const char *
@@ -358,7 +358,7 @@ JlcCommandLineParser::ParseCommandLineArguments(int argc, const char * const * a
         optimizationId =
             JlmOptCommandLineOptions::FromCommandLineArgumentToOptimizationId(optimization);
       }
-      catch (util::error &)
+      catch (util::Error &)
       {
         throw CommandLineParser::Exception("Unknown jlm-opt optimization: " + optimization);
       }
@@ -1030,10 +1030,10 @@ JlmHlsCommandLineParser::ParseCommandLineArguments(int argc, const char * const 
   cl::ParseCommandLineOptions(argc, argv);
 
   if (outputFolder.empty())
-    throw jlm::util::error("jlm-hls no output directory provided, i.e, -o.\n");
+    throw util::Error("jlm-hls no output directory provided, i.e, -o.\n");
 
   if (extractHlsFunction && hlsFunction.empty())
-    throw jlm::util::error(
+    throw util::Error(
         "jlm-hls: --hls-function is not specified.\n         which is required for --extract\n");
 
   CommandLineOptions_.InputFile_ = util::FilePath(inputFile);
@@ -1044,7 +1044,7 @@ JlmHlsCommandLineParser::ParseCommandLineArguments(int argc, const char * const 
 
   if (latency < 1)
   {
-    throw jlm::util::error("The --latency must be set to a number larger than zero.");
+    throw util::Error("The --latency must be set to a number larger than zero.");
   }
   CommandLineOptions_.MemoryLatency_ = latency;
 

@@ -64,7 +64,7 @@ private:
         else if (dynamic_cast<const jlm::llvm::CallOperation *>(&simplenode->GetOperation()))
         {
           // TODO: verify this is the right type of function call
-          throw jlm::util::error("encountered a call for an alloca");
+          throw util::Error("encountered a call for an alloca");
         }
         else
         {

@@ -553,7 +553,7 @@ public:
    *  - any issues occur with creating the output directory
    *  - the resulting output file already exists
    */
-  [[nodiscard]] util::file
+  [[nodiscard]] File
   CreateOutputFile(std::string fileNameSuffix, bool includeCount = false);
 
 private:

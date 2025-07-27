@@ -49,7 +49,7 @@ TestUnknownBoundaries()
 
   // Assert
   auto lambdaRegion = lambda->subregion();
-  assert(jlm::rvsdg::Region::ContainsNodeType<loop_node>(*lambdaRegion, true));
+  assert(jlm::rvsdg::Region::ContainsNodeType<LoopNode>(*lambdaRegion, true));
   assert(jlm::rvsdg::Region::ContainsOperation<PredicateBufferOperation>(*lambdaRegion, true));
   assert(jlm::rvsdg::Region::ContainsOperation<jlm::hls::BranchOperation>(*lambdaRegion, true));
   assert(jlm::rvsdg::Region::ContainsOperation<MuxOperation>(*lambdaRegion, true));
@@ -57,7 +57,7 @@ TestUnknownBoundaries()
   assert(jlm::rvsdg::Region::ContainsOperation<LoopConstantBufferOperation>(*lambdaRegion, true));
   assert(lambdaRegion->argument(0)->nusers() == 1);
   auto & loopNode =
-      jlm::rvsdg::AssertGetOwnerNode<loop_node>(lambdaRegion->argument(0)->SingleUser());
+      jlm::rvsdg::AssertGetOwnerNode<LoopNode>(lambdaRegion->argument(0)->SingleUser());
   {
     auto [bufferNode, bufferOperation] =
         jlm::rvsdg::TryGetSimpleNodeAndOp<LoopConstantBufferOperation>(
