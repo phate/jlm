@@ -53,23 +53,23 @@ AssertedCast(From * value)
   return static_cast<To *>(value);
 }
 
-class error : public std::runtime_error
+class Error : public std::runtime_error
 {
 public:
-  ~error() noexcept override;
+  ~Error() noexcept override;
 
-  explicit error(const std::string & msg)
+  explicit Error(const std::string & msg)
       : std::runtime_error(msg)
   {}
 };
 
-class TypeError : public error
+class TypeError : public Error
 {
 public:
   ~TypeError() noexcept override;
 
   TypeError(const std::string & expected_type, const std::string & received_type)
-      : error("Type error - expected : " + expected_type + ", received : " + received_type)
+      : Error("Type error - expected : " + expected_type + ", received : " + received_type)
   {}
 };
 

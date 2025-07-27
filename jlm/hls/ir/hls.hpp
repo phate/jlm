@@ -69,7 +69,7 @@ public:
   {
     auto ctl = std::dynamic_pointer_cast<const rvsdg::ControlType>(predicate.Type());
     if (!ctl)
-      throw util::error("Predicate needs to be a control type.");
+      throw util::Error("Predicate needs to be a control type.");
 
     return outputs(&rvsdg::CreateOpNode<BranchOperation>(
         { &predicate, &value },
@@ -239,12 +239,12 @@ public:
       bool loop = false)
   {
     if (alternatives.empty())
-      throw util::error("Insufficient number of operands.");
+      throw util::Error("Insufficient number of operands.");
     auto ctl = std::dynamic_pointer_cast<const rvsdg::ControlType>(predicate.Type());
     if (!ctl)
-      throw util::error("Predicate needs to be a control type.");
+      throw util::Error("Predicate needs to be a control type.");
     if (alternatives.size() != ctl->nalternatives())
-      throw util::error("Alternatives and predicate do not match.");
+      throw util::Error("Alternatives and predicate do not match.");
 
     auto operands = std::vector<jlm::rvsdg::Output *>();
     operands.push_back(&predicate);
@@ -338,7 +338,7 @@ public:
   {
     auto ctl = std::dynamic_pointer_cast<const rvsdg::ControlType>(predicate.Type());
     if (!ctl)
-      throw util::error("Predicate needs to be a control type.");
+      throw util::Error("Predicate needs to be a control type.");
 
     return outputs(&rvsdg::CreateOpNode<PredicateBufferOperation>({ &predicate }, ctl));
   }
@@ -379,7 +379,7 @@ public:
   {
     auto ctl = std::dynamic_pointer_cast<const rvsdg::ControlType>(predicate.Type());
     if (!ctl)
-      throw util::error("Predicate needs to be a control type.");
+      throw util::Error("Predicate needs to be a control type.");
 
     return outputs(&rvsdg::CreateOpNode<LoopConstantBufferOperation>(
         { &predicate, &value },
@@ -505,7 +505,7 @@ public:
   create(jlm::rvsdg::Output & tg, jlm::rvsdg::Output & value)
   {
     if (!rvsdg::is<TriggerType>(tg.Type()))
-      throw util::error("Trigger needs to be a TriggerType.");
+      throw util::Error("Trigger needs to be a TriggerType.");
 
     return outputs(&rvsdg::CreateOpNode<TriggerOperation>({ &tg, &value }, value.Type()));
   }
@@ -577,14 +577,14 @@ public:
 
 class backedge_argument;
 class backedge_result;
-class loop_node;
+class LoopNode;
 
 /**
  * Represents the entry argument for the HLS loop.
  */
 class EntryArgument : public rvsdg::RegionArgument
 {
-  friend loop_node;
+  friend LoopNode;
 
 public:
   ~EntryArgument() noexcept override;
@@ -617,7 +617,7 @@ public:
 
 class backedge_argument : public rvsdg::RegionArgument
 {
-  friend loop_node;
+  friend LoopNode;
   friend backedge_result;
 
 public:
@@ -651,7 +651,7 @@ private:
 
 class backedge_result : public rvsdg::RegionResult
 {
-  friend loop_node;
+  friend LoopNode;
   friend backedge_argument;
 
 public:
@@ -688,7 +688,7 @@ private:
  */
 class ExitResult final : public rvsdg::RegionResult
 {
-  friend loop_node;
+  friend LoopNode;
 
 public:
   ~ExitResult() noexcept override;
@@ -711,13 +711,13 @@ public:
   }
 };
 
-class loop_node final : public rvsdg::StructuralNode
+class LoopNode final : public rvsdg::StructuralNode
 {
 public:
-  ~loop_node() noexcept override = default;
+  ~LoopNode() noexcept override = default;
 
 private:
-  explicit loop_node(rvsdg::Region * parent)
+  explicit LoopNode(rvsdg::Region * parent)
       : StructuralNode(parent, 1)
   {}
 
@@ -727,7 +727,7 @@ public:
   [[nodiscard]] const rvsdg::Operation &
   GetOperation() const noexcept override;
 
-  static loop_node *
+  static LoopNode *
   create(rvsdg::Region * parent, bool init = true);
 
   rvsdg::Region *
@@ -762,7 +762,7 @@ public:
   jlm::rvsdg::Output *
   add_loopconst(jlm::rvsdg::Output * origin);
 
-  loop_node *
+  LoopNode *
   copy(rvsdg::Region * region, rvsdg::SubstitutionMap & smap) const override;
 };
 

@@ -324,11 +324,11 @@ public:
       : tacs_(std::move(tacs))
   {
     if (tacs_.empty())
-      throw jlm::util::error("Initialization cannot be empty.");
+      throw util::Error("Initialization cannot be empty.");
 
     auto & tac = tacs_.back();
     if (tac->nresults() != 1)
-      throw jlm::util::error("Last TAC of initialization needs exactly one result.");
+      throw util::Error("Last TAC of initialization needs exactly one result.");
 
     value_ = tac->result(0);
   }
@@ -431,7 +431,7 @@ public:
       return;
 
     if (init->value()->type() != *GetValueType())
-      throw jlm::util::error("Invalid type.");
+      throw util::Error("Invalid type.");
 
     init_ = std::move(init);
   }
