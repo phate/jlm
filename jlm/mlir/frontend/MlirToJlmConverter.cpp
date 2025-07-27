@@ -742,14 +742,17 @@ MlirToJlmConverter::ConvertOperation(
 
     auto pointeeValueType = std::dynamic_pointer_cast<const rvsdg::ValueType>(pointeeType);
 
-    // Raw constant indices are not part of the inputs to a GEPOp,
+    // Constant indices are not part of the inputs to a GEPOp,
     // but they are required as explicit nodes in RVSDG
     std::vector<rvsdg::Output *> inputsWithConstants(std::next(inputs.begin()), inputs.end());
-    for (size_t constant : GepOp.getRawConstantIndices())
+    // TODO: There should exist a better way to check if there are constants
+    if (GepOp.getNumOperands() == 1 && GepOp.getRawConstantIndices().size() != 0)
     {
-      std::cout << constant << std::endl;
-      inputsWithConstants.push_back(
-          jlm::llvm::IntegerConstantOperation::Create(rvsdgRegion, 32, constant).output(0));
+      for (size_t constant : GepOp.getRawConstantIndices())
+      {
+        inputsWithConstants.push_back(
+            jlm::llvm::IntegerConstantOperation::Create(rvsdgRegion, 32, constant).output(0));
+      }
     }
 
     auto jlmGepOp = jlm::llvm::GetElementPtrOperation::Create(
