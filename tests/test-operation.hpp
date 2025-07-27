@@ -296,7 +296,7 @@ public:
    * @return Description of input variable
    */
   InputVar
-  AddArguments(std::shared_ptr<const rvsdg::Type> type);
+  AddArguments(const std::shared_ptr<const rvsdg::Type> & type);
 
   /**
    * Add an output WITHOUT subregion results to a \ref TestStructuralNode.
