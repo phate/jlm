@@ -3,6 +3,7 @@
  * See COPYING for terms of redistribution.
  */
 
+#include "jlm/rvsdg/theta.hpp"
 #include "test-operation.hpp"
 #include "test-registry.hpp"
 #include "test-types.hpp"
@@ -60,7 +61,6 @@ GammaSubregionUsage()
   view(rvsdg, stdout);
 
   // Act
-  StatisticsCollector statisticsCollector;
   distribute_constants(rvsdgModule);
   view(rvsdg, stdout);
 
@@ -150,7 +150,6 @@ NestedGammas()
   view(rvsdg, stdout);
 
   // Act
-  StatisticsCollector statisticsCollector;
   distribute_constants(rvsdgModule);
   view(rvsdg, stdout);
 
@@ -194,3 +193,79 @@ NestedGammas()
 JLM_UNIT_TEST_REGISTER(
     "jlm/hls/backend/rvsdg2rhls/DistributeConstantsTests-NestedGammas",
     NestedGammas)
+
+static void
+ThetaSubregionUsage()
+{
+  using namespace jlm::hls;
+  using namespace jlm::llvm;
+  using namespace jlm::rvsdg;
+  using namespace jlm::tests;
+  using namespace jlm::util;
+
+  // Arrange
+  auto controlType = ControlType::Create(3);
+  auto bit32Type = bittype::Create(32);
+  auto functionType = FunctionType::Create({}, { bit32Type, bit32Type });
+
+  jlm::llvm::RvsdgModule rvsdgModule(FilePath(""), "", "");
+  auto & rvsdg = rvsdgModule.Rvsdg();
+
+  auto lambdaNode = LambdaNode::Create(
+      rvsdg.GetRootRegion(),
+      LlvmLambdaOperation::Create(functionType, "f", linkage::external_linkage));
+
+  auto & constantNode0 = IntegerConstantOperation::Create(*lambdaNode->subregion(), 32, 0);
+
+  auto thetaNode = ThetaNode::create(lambdaNode->subregion());
+
+  auto loopVar0 = thetaNode->AddLoopVar(constantNode0.output(0));
+  auto loopVar1 = thetaNode->AddLoopVar(constantNode0.output(0));
+
+  auto testNode0 = TestOperation::create(thetaNode->subregion(), { loopVar0.pre }, { bit32Type });
+  auto & constantNode1 = IntegerConstantOperation::Create(*thetaNode->subregion(), 32, 1);
+
+  loopVar0.post->divert_to(testNode0->output(0));
+  loopVar1.post->divert_to(constantNode1.output(0));
+
+  auto testNode1 =
+      TestOperation::create(thetaNode->subregion(), { loopVar0.output }, { bit32Type });
+
+  auto lambdaOutput = lambdaNode->finalize({ testNode1->output(0), loopVar1.output });
+
+  jlm::tests::GraphExport::Create(*lambdaOutput, "");
+
+  view(rvsdg, stdout);
+
+  // Act
+  distribute_constants(rvsdgModule);
+  view(rvsdg, stdout);
+
+  // Arrange
+  // We expect constantNode1 to be distributed from theta subregion to the lambda subregion
+  assert(lambdaNode->subregion()->nnodes() == 4);
+
+  {
+    auto loopVar = thetaNode->MapOutputLoopVar(*thetaNode->output(0));
+    assert(lambdaNode->subregion()->result(0)->origin() == testNode1->output(0));
+    assert(loopVar.output == testNode1->input(0)->origin());
+    assert(loopVar.post->origin() == testNode0->output(0));
+    assert(testNode0->input(0)->origin() == loopVar.pre);
+    assert(loopVar.input->origin() == constantNode0.output(0));
+  }
+
+  {
+    auto loopVar = thetaNode->MapOutputLoopVar(*thetaNode->output(1));
+    assert(loopVar.output->IsDead());
+    assert(loopVar.pre->IsDead());
+
+    auto [constantNode, constantOperation] = TryGetSimpleNodeAndOp<IntegerConstantOperation>(
+        *lambdaNode->subregion()->result(1)->origin());
+    assert(constantNode && constantOperation);
+    assert(constantOperation->Representation() == 1);
+  }
+}
+
+JLM_UNIT_TEST_REGISTER(
+    "jlm/hls/backend/rvsdg2rhls/DistributeConstantsTests-ThetaSubregionUsage",
+    ThetaSubregionUsage)
