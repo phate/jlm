@@ -195,7 +195,7 @@ JLM_UNIT_TEST_REGISTER(
     NestedGammas)
 
 static void
-ThetaSubregionUsage()
+Theta()
 {
   using namespace jlm::hls;
   using namespace jlm::llvm;
@@ -206,7 +206,7 @@ ThetaSubregionUsage()
   // Arrange
   auto controlType = ControlType::Create(3);
   auto bit32Type = bittype::Create(32);
-  auto functionType = FunctionType::Create({}, { bit32Type, bit32Type });
+  auto functionType = FunctionType::Create({}, { bit32Type, bit32Type, bit32Type });
 
   jlm::llvm::RvsdgModule rvsdgModule(FilePath(""), "", "");
   auto & rvsdg = rvsdgModule.Rvsdg();
@@ -216,14 +216,17 @@ ThetaSubregionUsage()
       LlvmLambdaOperation::Create(functionType, "f", linkage::external_linkage));
 
   auto & constantNode0 = IntegerConstantOperation::Create(*lambdaNode->subregion(), 32, 0);
+  auto & constantNode2 = IntegerConstantOperation::Create(*lambdaNode->subregion(), 32, 2);
 
   auto thetaNode = ThetaNode::create(lambdaNode->subregion());
 
   auto loopVar0 = thetaNode->AddLoopVar(constantNode0.output(0));
   auto loopVar1 = thetaNode->AddLoopVar(constantNode0.output(0));
+  auto loopVar2 = thetaNode->AddLoopVar(constantNode2.output(0));
 
   auto testNode0 = TestOperation::create(thetaNode->subregion(), { loopVar0.pre }, { bit32Type });
   auto & constantNode1 = IntegerConstantOperation::Create(*thetaNode->subregion(), 32, 1);
+  auto testNode2 = TestOperation::create(thetaNode->subregion(), { loopVar2.pre }, { bit32Type });
 
   loopVar0.post->divert_to(testNode0->output(0));
   loopVar1.post->divert_to(constantNode1.output(0));
@@ -231,7 +234,8 @@ ThetaSubregionUsage()
   auto testNode1 =
       TestOperation::create(thetaNode->subregion(), { loopVar0.output }, { bit32Type });
 
-  auto lambdaOutput = lambdaNode->finalize({ testNode1->output(0), loopVar1.output });
+  auto lambdaOutput =
+      lambdaNode->finalize({ testNode1->output(0), loopVar1.output, loopVar2.output });
 
   jlm::tests::GraphExport::Create(*lambdaOutput, "");
 
@@ -242,10 +246,14 @@ ThetaSubregionUsage()
   view(rvsdg, stdout);
 
   // Arrange
-  // We expect constantNode1 to be distributed from theta subregion to the lambda subregion
-  assert(lambdaNode->subregion()->nnodes() == 4);
+  // We expect constantNode1 to be distributed from the theta subregion to the lambda subregion
+  assert(lambdaNode->subregion()->nnodes() == 5);
+
+  // We expect constantNode2 to be distributed from the lambda subregion to the theta subregion
+  assert(thetaNode->subregion()->nnodes() == 5);
 
   {
+    // We expect no changes with loopVar0
     auto loopVar = thetaNode->MapOutputLoopVar(*thetaNode->output(0));
     assert(lambdaNode->subregion()->result(0)->origin() == testNode1->output(0));
     assert(loopVar.output == testNode1->input(0)->origin());
@@ -255,6 +263,8 @@ ThetaSubregionUsage()
   }
 
   {
+    // We expect constantNode1 to be distributed from the theta subregion to the lambda subregion,
+    // rendering loopVar1 to be dead
     auto loopVar = thetaNode->MapOutputLoopVar(*thetaNode->output(1));
     assert(loopVar.output->IsDead());
     assert(loopVar.pre->IsDead());
@@ -264,8 +274,22 @@ ThetaSubregionUsage()
     assert(constantNode && constantOperation);
     assert(constantOperation->Representation() == 1);
   }
+
+  {
+    // LoopVar2 was a passthrough so we expect it to be redirected to constantNode2
+    auto [constantNode, constantOperation] = TryGetSimpleNodeAndOp<IntegerConstantOperation>(
+        *lambdaNode->subregion()->result(2)->origin());
+    assert(constantNode && constantOperation);
+    assert(constantNode == &constantNode2);
+  }
+
+  {
+    // We expect constantNode2 to be distributed t o the theta subregion for testNode2
+    auto [constantNode, constantOperation] =
+        TryGetSimpleNodeAndOp<IntegerConstantOperation>(*testNode2->input(0)->origin());
+    assert(constantNode && constantOperation);
+    assert(constantOperation->Representation() == 2);
+  }
 }
 
-JLM_UNIT_TEST_REGISTER(
-    "jlm/hls/backend/rvsdg2rhls/DistributeConstantsTests-ThetaSubregionUsage",
-    ThetaSubregionUsage)
+JLM_UNIT_TEST_REGISTER("jlm/hls/backend/rvsdg2rhls/DistributeConstantsTests-Theta", Theta)
