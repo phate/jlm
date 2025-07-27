@@ -45,6 +45,7 @@ libllvm_SOURCES = \
     jlm/llvm/ir/types.cpp \
     jlm/llvm/ir/variable.cpp \
     \
+    jlm/llvm/opt/alias-analyses/AliasAnalysis.cpp \
     jlm/llvm/opt/alias-analyses/AgnosticModRefSummarizer.cpp \
     jlm/llvm/opt/alias-analyses/Andersen.cpp \
     jlm/llvm/opt/alias-analyses/MemoryStateEncoder.cpp \
@@ -72,6 +73,7 @@ libllvm_HEADERS = \
     jlm/llvm/opt/inlining.hpp \
     jlm/llvm/opt/cne.hpp \
     jlm/llvm/opt/push.hpp \
+    jlm/llvm/opt/alias-analyses/AliasAnalysis.hpp \
     jlm/llvm/opt/alias-analyses/AgnosticModRefSummarizer.hpp \
     jlm/llvm/opt/alias-analyses/Andersen.hpp \
     jlm/llvm/opt/alias-analyses/DifferencePropagation.hpp \
@@ -184,6 +186,7 @@ libllvm_TESTS += \
     tests/jlm/llvm/ir/TestCallSummary \
     tests/jlm/llvm/ir/ThreeAddressCodeTests \
     tests/jlm/llvm/ir/TypeConverterTests \
+    tests/jlm/llvm/opt/alias-analyses/AliasAnalysisTests \
     tests/jlm/llvm/opt/alias-analyses/AgnosticModRefSummarizerTests \
     tests/jlm/llvm/opt/alias-analyses/TestAndersen \
     tests/jlm/llvm/opt/alias-analyses/TestDifferencePropagation \

@@ -1,0 +1,343 @@
+/*
+ * Copyright 2025 Håvard Krogstie <krogstie.havard@gmail.com>
+ * See COPYING for terms of redistribution.
+ */
+
+#ifndef JLM_LLVM_OPT_ALIAS_ANALYSES_ALIASANALYSIS_HPP
+#define JLM_LLVM_OPT_ALIAS_ANALYSES_ALIASANALYSIS_HPP
+
+#include <jlm/llvm/opt/alias-analyses/PointsToGraph.hpp>
+
+namespace jlm::llvm::aa
+{
+
+/**
+ * Interface for making alias analysis queries about pairs of pointers p1 and p2.
+ * Each pointer must also have an associated compile time byte size, s1 and s2.
+ * The analysis response gives guarantees about the possibility of [p1, p1+s1) and [p2, p2+s2)
+ * overlapping.
+ *
+ * If p1 and p2 are local, they must both be defined in the same function.
+ * When both pointers are defined within a region, the alias query is made relative to an
+ * execution of that region. Thus, a NoAlias response does not make any guarantees about aliasing
+ * between different executions of the region.
+ */
+class AliasAnalysis
+{
+public:
+  /**
+   * The possible responses of an alias query about two memory regions (p1, s1) and (p2, s2)
+   */
+  enum AliasQueryResponse
+  {
+    // The analysis guarantees that [p1, p1+s1) and [p2, p2+s2) never overlap
+    NoAlias,
+
+    // The analysis is unable to determine any facts about p1 and p2
+    MayAlias,
+
+    // p1 and p2 always have identical values (s1 and s2 are ignored)
+    MustAlias
+  };
+
+  AliasAnalysis();
+  virtual ~AliasAnalysis();
+
+  /**
+   * @return a string description of the alias analysis
+   */
+  [[nodiscard]] virtual std::string
+  ToString() const = 0;
+
+  /**
+   * Queries the alias analysis about two memory regions represented as pointer + size pairs.
+   * @param p1 the first pointer value
+   * @param s1 the byte size of the first pointer access
+   * @param p2 the second pointer value
+   * @param s2 the byte size of the second pointer access
+   * @return the result of the alias query
+   */
+  virtual AliasQueryResponse
+  Query(const rvsdg::Output & p1, size_t s1, const rvsdg::Output & p2, size_t s2) = 0;
+};
+
+/**
+ * Class for making alias analysis queries using stateless ad hoc IR traversal.
+ * It roughly corresponds to BasicAA from LLVM.
+ * It is unable to trace via memory or across function calls.
+ * It tries to keep track of pointer offsets when possible,
+ * and can respond NoAlias when the queried pointers are based on distinct offsets
+ * into the same base pointer. If the offsets are identical, MustAlias is returned.
+ */
+class LocalAliasAnalysis final : public AliasAnalysis
+{
+  // When doing origin tracing, give up if the trace set grows larger than this
+  static constexpr size_t MaxTraceCollectionSize = 1000;
+
+public:
+  LocalAliasAnalysis();
+  ~LocalAliasAnalysis() override;
+
+  std::string
+  ToString() const override;
+
+  AliasQueryResponse
+  Query(const rvsdg::Output & p1, size_t s1, const rvsdg::Output & p2, size_t s2) override;
+
+private:
+  struct TracedPointerOrigin;
+  struct TraceCollection;
+
+  /**
+   * Calculates the byte offset applied by the GEP, if the offset is static.
+   * The offset is the number of bytes needed to satisfy
+   *   output ptr = input ptr + offset in bytes
+   *
+   * @param gepNode the node representing the GEP operation
+   * @return the offset applied by the GEP, if it is possible to determine at compile time
+   */
+  [[nodiscard]] static std::optional<int64_t>
+  CalculateGepOffset(const rvsdg::SimpleNode & gepNode);
+
+  /**
+   * Returns the result of tracing the origin of p as far as possible, without introducing any
+   * uncertainty. By not introducing uncertainty, the result may be used to determine MustAlias
+   * relations. p is normalized, and traced through GEPs with compile time known offsets, as far as
+   * possible.
+   *
+   * @param p the pointer value to trace
+   * @return the TracedPointer for p, which is guaranteed to have a defined offset
+   */
+  [[nodiscard]] static TracedPointerOrigin
+  TracePointerOriginPrecise(const rvsdg::Output & p);
+
+  /**
+   * Given two pointers with the same base pointer
+   *  p1 = base + offset1
+   *  p2 = base + offset2
+   * Answers if the regions [p1, p1 + s1) and [p2, p2 + s2) may alias.
+   * If p1 == p2, MustAlias is returned.
+   * @param offset1 the offset of the first pointer. If it is nullopt, the offset is unknown.
+   * @param s1 the size of the first memory region
+   * @param offset2 the offset of the second pointer. If it is nullopt, the offset is unknown.
+   * @param s2 the size of the second memory region
+   */
+  [[nodiscard]] static AliasQueryResponse
+  QueryOffsets(
+      std::optional<int64_t> offset1,
+      size_t s1,
+      std::optional<int64_t> offset2,
+      size_t s2);
+
+  /**
+   * Traces to find all possible origins of the given pointer.
+   * Traces through GEP operations, including those with offsets that are not known at compile time.
+   * Also traces through gamma and theta nodes, building a set of multiple possibilities.
+   * Tracing stops at "top origins", for example an ALLOCA, a LOAD, or the return value of a CALL.
+   *
+   * @param p the pointer to trace from
+   * @param traceCollection the collection of trace points being created
+   * @return false if the trace collection reached its maximum allowed size, and tracing aborted
+   */
+  [[nodiscard]] static bool
+  TraceAllPointerOrigins(TracedPointerOrigin p, TraceCollection & traceCollection);
+
+  /**
+   * Checks if the given pointer is the direct result of a memory location defining operation.
+   * These operations are guaranteed to output pointers that do not alias any pointer,
+   * except for those that are based on the original pointer itself.
+   * The pointer is also guaranteed to be at the very beginning of the memory region.
+   *
+   * For example, the output of an ALLOCA, a DELTA, or a GraphImport, are such original origins.
+   *
+   * @param pointer the pointer value to check
+   * @return true if the pointer is the original pointer to a memory location
+   */
+  [[nodiscard]] static bool
+  IsOriginalOrigin(const rvsdg::Output & pointer);
+
+  /**
+   * Checks if all top origins in the trace collection are original.
+   *
+   * @param traces the trace collection
+   * @return true if all top origins are original, false otherwise
+   */
+  [[nodiscard]] static bool
+  HasOnlyOriginalTopOrigins(TraceCollection & traces);
+
+  /**
+   * Gets the size of the memory location(s) defined at the given output's operation.
+   * If the output is not an original origin, or the size is unknown, nullopt is returned.
+   * @param pointer a pointer output, should be from a memory location defining operation
+   * @return the size of the defined memory location, or nullopt if it is unknown
+   */
+  [[nodiscard]] static std::optional<size_t>
+  GetOriginalOriginSize(const rvsdg::Output & pointer);
+
+  /**
+   * Given a traced pointer origin like p, where
+   *  b = alloca[3 x i32]
+   *  p = b + 8
+   *
+   * we know that an operation starting at p can have a maximum size of 4 bytes.
+   * This function attempts to calculate this size, known as the pointer's remaining size.
+   *
+   * If the offset is larger than the size of the target, the size 0 is returned.
+   * If the offset is unknown, the size of the target is returned.
+   *
+   * @param trace the traced pointer
+   * @return the number of bytes left after the given traced pointer, or nullopt if unknown.
+   */
+  [[nodiscard]] static std::optional<size_t>
+  GetRemainingSize(TracedPointerOrigin trace);
+
+  /**
+   * For each top origin in the given trace collection, it is removed if it is deemed too small.
+   * If we know that a top origin b represents a sized area [b, b + S),
+   * and the trace collection contains the pointer p where
+   *  p = b + o
+   * then we can safely discard b from the set of possible top origins if o + s > S,
+   * where s is the size of the operation performed at pointer p.
+   * @param traces the trace collection
+   * @param s the size of the operation being performed at the traced pointer
+   */
+  static void
+  RemoveTopOriginsWithRemainingSizeBelow(TraceCollection & traces, size_t s);
+
+  /**
+   * Finds the minimum distance into some memory region the traced pointer is pointing.
+   * For example, if the trace collection only contains the trace
+   *  p = b + 12
+   * we know that any operation on p will not touch the first 12 bytes of whatever region b is in.
+   * The region must also be at least 12 + s bytes large.
+   * @param traces
+   * @return the minimum offset among all traces in the collection, or 0 if some are unknown
+   */
+  [[nodiscard]] static size_t
+  GetMinimumOffsetFromStart(TraceCollection & traces);
+
+  /**
+   * For each top origin in the given trace collection, it is removed if it is too small.
+   * This function considers the total size of the target, and ignores the offset.
+   * @param traces the trace collection
+   * @param s the minimum size of remaining top origins
+   */
+  static void
+  RemoveTopOriginsSmallerThanSize(TraceCollection & traces, size_t s);
+
+  /**
+   * When a top origin represents an original memory location,
+   * its offset indicates how far into the memory region the operation is accessing memory.
+   * If this access only touches memory within the first N bytes, remove the top origin.
+   *
+   * @param traces the traces of some pointer p being accessed
+   * @param s the size of the memory access performed at the traced pointer
+   * @param N the number of bytes into its memory region an access must be to be kept.
+   */
+  static void
+  RemoveTopOriginsWithinTheFirstNBytes(TraceCollection & traces, size_t s, size_t N);
+
+  /**
+   * Checks if any of the top origins in the two trace collections are the same,
+   * and have overlapping offsets.
+   * Only identical top origins are considered, so if two distinct top origins
+   * point to the same memory, that aliasing will not be detected by this method.
+   *
+   * @param tc1
+   * @param s1
+   * @param tc2
+   * @param s2
+   * @return
+   */
+  [[nodiscard]] static bool
+  DoTraceCollectionsOverlap(TraceCollection & tc1, size_t s1, TraceCollection & tc2, size_t s2);
+
+  /**
+   * Checks if the given pointer is the output of an original memory location,
+   * AND that the address of the memory location is never passed anywhere that is not
+   * traceable back to the original operation.
+   *
+   * Only ALLOCAs are fully traceable, and only when the address can be traced to all uses,
+   * and all uses are loads and stores. If the address is passed to a function, or stored in
+   * a variable, the ALLOCA is not fully traceable.
+   * In other words, any output containing the pointer, can also be traced back to the ALLOCA
+   * using TraceAllPointerOrigins
+   *
+   * In summary: this function performs a simple, local, escape analysis for ALLOCAs.
+   * Its result is cached for performance.
+   *
+   * @param pointer the pointer output to be analyzed
+   * @return true if the output is an original pointer, and it can be fully traced
+   */
+  [[nodiscard]] bool
+  IsOriginalOriginFullyTraceable(const rvsdg::Output & pointer);
+
+  /**
+   * Checks if the given trace collection only contains top origins that are fully traced.
+   * @param traces the trace collection
+   * @return true if all top origins are fully traceable
+   */
+  [[nodiscard]] bool
+  HasOnlyFullyTraceableTopOrigins(TraceCollection & traces);
+
+  /**
+   * Memoization of "fully traceable" (escape analysis) queries.
+   * It assumes that no changes are made to the underlying RVSDG between queries.
+   */
+  std::unordered_map<const rvsdg::Output *, bool> IsFullyTraceable_;
+};
+
+/**
+ * Determines if the given value is regarded as representing a pointer
+ * @param value the value
+ * @return true if value represents a pointer, false otherwise
+ */
+[[nodiscard]] bool
+IsPointerCompatible(const rvsdg::Output & value);
+
+/**
+ * Follows the definition of the given \p output through operations that do not modify its value,
+ * and out of / into regions when the value is guaranteed to be the same.
+ * Take for example a program like:
+ *
+ * p1 = alloca
+ * p2, _ = IOBarrier(p1, _)
+ * _ = Gamma(_, p2)
+ *   [p3]{
+ *     x = load p3
+ *   }[x]
+ *   ...
+ *
+ * Normalizing p3 yields p1
+ *
+ * @param output the output to trace from
+ * @return the most normalized source of the given output
+ */
+[[nodiscard]] const rvsdg::Output &
+NormalizeOutput(const rvsdg::Output & output);
+
+/**
+ * Follows the definition of the given pointer value when it is a trivial copy of another pointer,
+ * resulting in a possibly different rvsdg::output that produces exactly the same value.
+ *
+ * @param pointer the pointer value to be normalized
+ * @return a definition of pointer normalized as much as possible
+ * @see NormalizeOutput
+ */
+[[nodiscard]] const rvsdg::Output &
+NormalizePointerValue(const rvsdg::Output & pointer);
+
+/**
+ * Gets the value of the given \p output as a compile time constant, if possible.
+ * The constant is interpreted as a signed value, and sign extended to int64 if needed.
+ * This function does not perform any constant folding.
+ *
+ * @param output the output whose constant value is requested
+ * @return the value of the output, or nullopt if it could not be determined.
+ */
+[[nodiscard]] std::optional<int64_t>
+GetConstantIntegerValue(const rvsdg::Output & output);
+
+}
+
+#endif // JLM_LLVM_OPT_ALIAS_ANALYSES_ALIASANALYSIS_HPP
