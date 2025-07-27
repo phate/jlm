@@ -441,7 +441,7 @@ public:
         I cannot make this method abstract due to the return value of operator++(int).
         This is the best I could come up with as a workaround.
       */
-      throw jlm::util::error("This method must be overloaded.");
+      throw util::Error("This method must be overloaded.");
     }
 
   public:
@@ -562,6 +562,7 @@ class Node
 {
 public:
   using InputIteratorRange = util::IteratorRange<Input::Iterator>;
+  using InputConstIteratorRange = util::IteratorRange<Input::ConstIterator>;
   using OutputIteratorRange = util::IteratorRange<Output::Iterator>;
 
   virtual ~Node();
@@ -570,21 +571,6 @@ public:
 
   [[nodiscard]] virtual const Operation &
   GetOperation() const noexcept = 0;
-
-  inline bool
-  has_successors() const noexcept
-  {
-    for (const auto & output : outputs_)
-    {
-      for (const auto & user : output->Users())
-      {
-        if (is<node_input>(user))
-          return true;
-      }
-    }
-
-    return false;
-  }
 
   inline size_t
   ninputs() const noexcept
@@ -600,9 +586,15 @@ public:
   }
 
   [[nodiscard]] InputIteratorRange
-  Inputs() const noexcept
+  Inputs() noexcept
   {
     return { Input::Iterator(input(0)), Input::Iterator(nullptr) };
+  }
+
+  [[nodiscard]] InputConstIteratorRange
+  Inputs() const noexcept
+  {
+    return { Input::ConstIterator(input(0)), Input::ConstIterator(nullptr) };
   }
 
   inline size_t

@@ -585,13 +585,13 @@ public:
   /**
    * Exception thrown in case of command line parsing errors.
    */
-  class Exception : public util::error
+  class Exception : public util::Error
   {
   public:
     ~Exception() noexcept override;
 
     explicit Exception(const std::string & message)
-        : util::error(message)
+        : Error(message)
     {}
   };
 

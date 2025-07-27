@@ -13,7 +13,7 @@ namespace jlm::hls
 {
 
 bool
-remove_unused_loop_backedges(loop_node * ln)
+remove_unused_loop_backedges(LoopNode * ln)
 {
   bool any_changed = false;
   auto sr = ln->subregion();
@@ -36,7 +36,7 @@ remove_unused_loop_backedges(loop_node * ln)
 }
 
 bool
-remove_unused_loop_outputs(loop_node * ln)
+remove_unused_loop_outputs(LoopNode * ln)
 {
   bool any_changed = false;
   auto sr = ln->subregion();
@@ -57,7 +57,7 @@ remove_unused_loop_outputs(loop_node * ln)
 }
 
 bool
-remove_loop_passthrough(loop_node * ln)
+remove_loop_passthrough(LoopNode * ln)
 {
   bool any_changed = false;
   auto sr = ln->subregion();
@@ -87,7 +87,7 @@ remove_loop_passthrough(loop_node * ln)
 }
 
 bool
-remove_unused_loop_inputs(loop_node * ln)
+remove_unused_loop_inputs(LoopNode * ln)
 {
   bool any_changed = false;
   auto sr = ln->subregion();
@@ -281,19 +281,19 @@ dead_loop_lcb(rvsdg::Node * lcb_node)
   {
     return false;
   }
-  auto branch_in = dynamic_cast<jlm::rvsdg::node_input *>(&*lcb_node->output(0)->Users().begin());
-  auto bo = dynamic_cast<const BranchOperation *>(&branch_in->node()->GetOperation());
-  if (!branch_in || !bo || !bo->loop)
+  auto [branchNode, branchOperation] =
+      rvsdg::TryGetSimpleNodeAndOp<BranchOperation>(*lcb_node->output(0)->Users().begin());
+  if (!branchNode || !branchOperation || !branchOperation->loop)
   {
     return false;
   }
   // no user
-  if (branch_in->node()->output(1)->nusers())
+  if (branchNode->output(1)->nusers())
   {
     return false;
   }
   // depend on same control
-  auto branch_cond_origin = branch_in->node()->input(0)->origin();
+  auto branch_cond_origin = branchNode->input(0)->origin();
   auto pred_buf_out = dynamic_cast<jlm::rvsdg::node_output *>(lcb_node->input(0)->origin());
   if (!pred_buf_out
       || !dynamic_cast<const PredicateBufferOperation *>(&pred_buf_out->node()->GetOperation()))
@@ -319,8 +319,8 @@ dead_loop_lcb(rvsdg::Node * lcb_node)
     return false;
   }
   // divert users
-  branch_in->node()->output(0)->divert_users(lcb_node->input(1)->origin());
-  remove(branch_in->node());
+  branchNode->output(0)->divert_users(lcb_node->input(1)->origin());
+  remove(branchNode);
   remove(lcb_node);
   return true;
 }
@@ -459,7 +459,7 @@ dne(rvsdg::Region * sr)
       {
         JLM_UNREACHABLE("This function works on lambda subregions");
       }
-      else if (auto ln = dynamic_cast<loop_node *>(node))
+      else if (auto ln = dynamic_cast<LoopNode *>(node))
       {
         changed |= remove_unused_loop_outputs(ln);
         changed |= remove_unused_loop_inputs(ln);
@@ -513,12 +513,12 @@ dne(llvm::RvsdgModule & rm)
   auto root = &graph.GetRootRegion();
   if (root->nnodes() != 1)
   {
-    throw util::error("Root should have only one node now");
+    throw util::Error("Root should have only one node now");
   }
   auto ln = dynamic_cast<const rvsdg::LambdaNode *>(root->Nodes().begin().ptr());
   if (!ln)
   {
-    throw util::error("Node needs to be a lambda");
+    throw util::Error("Node needs to be a lambda");
   }
   dne(ln->subregion());
 }

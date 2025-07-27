@@ -129,7 +129,7 @@ void
 FunctionNode::add_cfg(std::unique_ptr<ControlFlowGraph> cfg)
 {
   if (cfg->fcttype() != fcttype())
-    throw util::error("CFG does not match the function node's type.");
+    throw util::Error("CFG does not match the function node's type.");
 
   cfg_ = std::move(cfg);
 }

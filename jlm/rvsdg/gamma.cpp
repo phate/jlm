@@ -331,7 +331,7 @@ GammaNode::ExitVar
 GammaNode::AddExitVar(std::vector<jlm::rvsdg::Output *> values)
 {
   if (values.size() != nsubregions())
-    throw jlm::util::error("Incorrect number of values.");
+    throw util::Error("Incorrect number of values.");
 
   const auto & type = values[0]->Type();
   auto output =
