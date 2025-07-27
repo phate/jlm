@@ -169,7 +169,7 @@ inline_calls(rvsdg::Region * region)
             // can't inline pseudo functions used for streaming
             continue;
           }
-          throw jlm::util::error("can not inline external function " + graphImport->Name());
+          throw util::Error("can not inline external function " + graphImport->Name());
         }
       }
       JLM_ASSERT(rvsdg::is<rvsdg::LambdaOperation>(so->node()));
@@ -374,7 +374,7 @@ split_hls_function(llvm::RvsdgModule & rm, const std::string & function_name)
         auto orig_node = orig_node_output->node();
         if (auto oln = dynamic_cast<rvsdg::LambdaNode *>(orig_node))
         {
-          throw jlm::util::error(
+          throw util::Error(
               "Inlining of function "
               + dynamic_cast<llvm::LlvmLambdaOperation &>(oln->GetOperation()).name()
               + " not supported");
@@ -401,7 +401,7 @@ split_hls_function(llvm::RvsdgModule & rm, const std::string & function_name)
         }
         else
         {
-          throw util::error("Unsupported node type: " + orig_node->DebugString());
+          throw util::Error("Unsupported node type: " + orig_node->DebugString());
         }
       }
       // copy function into rhls
@@ -425,7 +425,7 @@ split_hls_function(llvm::RvsdgModule & rm, const std::string & function_name)
       return rhls;
     }
   }
-  throw jlm::util::error("HLS function " + function_name + " not found");
+  throw util::Error("HLS function " + function_name + " not found");
 }
 
 void

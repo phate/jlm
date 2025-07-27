@@ -167,7 +167,7 @@ public:
     static void
     ReplaceStates(
         const std::vector<MemoryNodeStatePair *> & memoryNodeStatePairs,
-        const LoadOperation::MemoryStateOutputRange & states)
+        const rvsdg::Node::OutputIteratorRange & states)
     {
       auto it = states.begin();
       for (auto memoryNodeStatePair : memoryNodeStatePairs)
@@ -175,21 +175,7 @@ public:
         memoryNodeStatePair->ReplaceState(*it);
         it++;
       }
-      JLM_ASSERT(it.value() == nullptr);
-    }
-
-    static void
-    ReplaceStates(
-        const std::vector<MemoryNodeStatePair *> & memoryNodeStatePairs,
-        const StoreOperation::MemoryStateOutputRange & states)
-    {
-      auto it = states.begin();
-      for (auto memoryNodeStatePair : memoryNodeStatePairs)
-      {
-        memoryNodeStatePair->ReplaceState(*it);
-        it++;
-      }
-      JLM_ASSERT(it.value() == nullptr);
+      JLM_ASSERT(it.GetOutput() == nullptr);
     }
 
     static std::vector<rvsdg::Output *>

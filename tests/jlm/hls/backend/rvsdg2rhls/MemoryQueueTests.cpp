@@ -74,7 +74,7 @@ TestSingleLoad()
   ConvertThetaNodes(*rvsdgModule);
   // Simple assert as ConvertThetaNodes() is tested in separate unit tests
   jlm::rvsdg::view(rvsdgModule->Rvsdg(), stdout);
-  assert(jlm::rvsdg::Region::ContainsNodeType<loop_node>(*lambdaRegion, true));
+  assert(jlm::rvsdg::Region::ContainsNodeType<LoopNode>(*lambdaRegion, true));
 
   // Act
   mem_queue(*rvsdgModule);
@@ -154,7 +154,7 @@ TestLoadStore()
   ConvertThetaNodes(*rvsdgModule);
   // Simple assert as ConvertThetaNodes() is tested in separate unit tests
   jlm::rvsdg::view(rvsdgModule->Rvsdg(), stdout);
-  assert(jlm::rvsdg::Region::ContainsNodeType<loop_node>(*lambdaRegion, true));
+  assert(jlm::rvsdg::Region::ContainsNodeType<LoopNode>(*lambdaRegion, true));
 
   // Act
   mem_queue(*rvsdgModule);
@@ -228,7 +228,7 @@ TestAddrQueue()
   ConvertThetaNodes(*rvsdgModule);
   // Simple assert as ConvertThetaNodes() is tested in separate unit tests
   jlm::rvsdg::view(rvsdgModule->Rvsdg(), stdout);
-  assert(jlm::rvsdg::Region::ContainsNodeType<loop_node>(*lambdaRegion, true));
+  assert(jlm::rvsdg::Region::ContainsNodeType<LoopNode>(*lambdaRegion, true));
 
   // Act
   mem_queue(*rvsdgModule);
@@ -240,7 +240,7 @@ TestAddrQueue()
 
   for (auto & node : jlm::rvsdg::TopDownTraverser(lambdaRegion))
   {
-    if (auto loopNode = dynamic_cast<jlm::hls::loop_node *>(node))
+    if (auto loopNode = dynamic_cast<jlm::hls::LoopNode *>(node))
     {
       for (auto & node : jlm::rvsdg::TopDownTraverser(loopNode->subregion()))
       {

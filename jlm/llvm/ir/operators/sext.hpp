@@ -24,7 +24,7 @@ public:
       : UnaryOperation(otype, rtype)
   {
     if (otype->nbits() >= rtype->nbits())
-      throw jlm::util::error("expected operand's #bits to be smaller than results's #bits.");
+      throw util::Error("expected operand's #bits to be smaller than results's #bits.");
   }
 
   inline SExtOperation(
@@ -34,14 +34,14 @@ public:
   {
     auto ot = std::dynamic_pointer_cast<const rvsdg::bittype>(srctype);
     if (!ot)
-      throw jlm::util::error("expected bits type.");
+      throw util::Error("expected bits type.");
 
     auto rt = std::dynamic_pointer_cast<const rvsdg::bittype>(dsttype);
     if (!rt)
-      throw jlm::util::error("expected bits type.");
+      throw util::Error("expected bits type.");
 
     if (ot->nbits() >= rt->nbits())
-      throw jlm::util::error("expected operand's #bits to be smaller than results' #bits.");
+      throw util::Error("expected operand's #bits to be smaller than results' #bits.");
   }
 
   bool
@@ -76,11 +76,11 @@ public:
   {
     auto ot = std::dynamic_pointer_cast<const rvsdg::bittype>(operand->Type());
     if (!ot)
-      throw jlm::util::error("expected bits type.");
+      throw util::Error("expected bits type.");
 
     auto rt = std::dynamic_pointer_cast<const rvsdg::bittype>(type);
     if (!rt)
-      throw jlm::util::error("expected bits type.");
+      throw util::Error("expected bits type.");
 
     SExtOperation op(std::move(ot), std::move(rt));
     return ThreeAddressCode::create(op, { operand });
@@ -91,7 +91,7 @@ public:
   {
     auto ot = std::dynamic_pointer_cast<const rvsdg::bittype>(operand->Type());
     if (!ot)
-      throw util::error("expected bits type.");
+      throw util::Error("expected bits type.");
 
     return rvsdg::CreateOpNode<SExtOperation>(
                { operand },

@@ -243,17 +243,17 @@ public:
   CreateDirectory() const
   {
     if (IsFile())
-      throw error("file already exists: " + path_);
+      throw Error("file already exists: " + path_);
 
     FilePath baseDir(Dirname());
     if (!baseDir.IsDirectory())
-      throw error("parent directory is not a directory: " + baseDir.to_str());
+      throw Error("parent directory is not a directory: " + baseDir.to_str());
 
     std::error_code ec;
     std::filesystem::create_directory(path_, ec);
 
     if (ec.value() != 0)
-      throw error("could not create directory '" + path_ + "': " + ec.message());
+      throw Error("could not create directory '" + path_ + "': " + ec.message());
   }
 
   [[nodiscard]] const std::string &
@@ -308,33 +308,33 @@ private:
   std::string path_;
 };
 
-class file final
+class File final
 {
 public:
-  file(const FilePath & path)
+  explicit File(const FilePath & path)
       : fd_(NULL),
         path_(path)
   {}
 
-  ~file()
+  ~File()
   {
     close();
   }
 
-  file(const file &) = delete;
+  File(const File &) = delete;
 
-  file(file && other)
+  File(File && other) noexcept
       : fd_(other.fd_),
         path_(std::move(other.path_))
   {
     other.fd_ = NULL;
   }
 
-  file &
-  operator=(const file &) = delete;
+  File &
+  operator=(const File &) = delete;
 
-  file &
-  operator=(file && other)
+  File &
+  operator=(File && other) noexcept
   {
     if (this == &other)
       return *this;
@@ -360,7 +360,7 @@ public:
   {
     fd_ = fopen(path_.to_str().c_str(), mode);
     if (!fd_)
-      throw error("Cannot open file " + path_.to_str());
+      throw Error("Cannot open file " + path_.to_str());
   }
 
   bool

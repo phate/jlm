@@ -37,7 +37,7 @@ JlmToMlirConverter::Print(::mlir::rvsdg::OmegaNode & omega, const util::FilePath
   if (failed(::mlir::verify(omega)))
   {
     omega.emitError("module verification error");
-    throw util::error("Verification of RVSDG-MLIR failed");
+    throw util::Error("Verification of RVSDG-MLIR failed");
   }
   if (filePath == "")
   {
