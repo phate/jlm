@@ -634,6 +634,8 @@ LocalAliasAnalysis::GetOriginalOriginSize(const rvsdg::Output & pointer)
     // Workaround for imported incomplete types appearing to have size 0 in the LLVM IR
     if (size == 0)
       return std::nullopt;
+
+    return size;
   }
   if (auto node = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(pointer))
   {

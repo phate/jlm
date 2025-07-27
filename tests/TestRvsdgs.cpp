@@ -4239,12 +4239,18 @@ LocalAliasAnalysisTest1::SetupRvsdg()
 
     const auto getPtrCtxVar = lambdaNode.AddContextVar(*Outputs_.GetPtr).inner;
     const auto arrayCtxVar = lambdaNode.AddContextVar(*Outputs_.Array).inner;
+    const auto globalCtxVar = lambdaNode.AddContextVar(*Outputs_.Global).inner;
 
-    const auto constantOne = llvm::IntegerConstantOperation::Create(*lambdaNode.subregion(), 32, 1).output(0);
-    const auto constantTwo = llvm::IntegerConstantOperation::Create(*lambdaNode.subregion(), 32, 2).output(0);
-    const auto constantThree = llvm::IntegerConstantOperation::Create(*lambdaNode.subregion(), 32, 3).output(0);
-    const auto constantFour = llvm::IntegerConstantOperation::Create(*lambdaNode.subregion(), 32, 4).output(0);
-    const auto constantMinusTwo = llvm::IntegerConstantOperation::Create(*lambdaNode.subregion(), 32, -2).output(0);
+    const auto constantOne =
+        llvm::IntegerConstantOperation::Create(*lambdaNode.subregion(), 32, 1).output(0);
+    const auto constantTwo =
+        llvm::IntegerConstantOperation::Create(*lambdaNode.subregion(), 32, 2).output(0);
+    const auto constantThree =
+        llvm::IntegerConstantOperation::Create(*lambdaNode.subregion(), 32, 3).output(0);
+    const auto constantFour =
+        llvm::IntegerConstantOperation::Create(*lambdaNode.subregion(), 32, 4).output(0);
+    const auto constantMinusTwo =
+        llvm::IntegerConstantOperation::Create(*lambdaNode.subregion(), 32, -2).output(0);
 
     const auto alloca1Outputs = AllocaOperation::create(intType, constantOne, 4);
     const auto alloca2Outputs = AllocaOperation::create(intType, constantOne, 4);
@@ -4255,6 +4261,7 @@ LocalAliasAnalysisTest1::SetupRvsdg()
     memoryState =
         MemoryStateMergeOperation::Create({ memoryState, alloca1Outputs[1], alloca2Outputs[1] });
 
+    // Load from the pointer p
     const auto loadP =
         LoadNonVolatileOperation::Create(Outputs_.P, { memoryState }, pointerType, 8);
     memoryState = loadP[1];
@@ -4263,7 +4270,7 @@ LocalAliasAnalysisTest1::SetupRvsdg()
     Outputs_.QPlus2 =
         GetElementPtrOperation::Create(loadP[0], { constantFour }, intType, pointerType);
     Outputs_.QAgain =
-        GetElementPtrOperation::Create(loadP[0], { constantMinusTwo }, intType, pointerType);
+        GetElementPtrOperation::Create(Outputs_.QPlus2, { constantMinusTwo }, intType, pointerType);
 
     // Create offsets into array
     Outputs_.Arr1 =
@@ -4272,6 +4279,13 @@ LocalAliasAnalysisTest1::SetupRvsdg()
         GetElementPtrOperation::Create(arrayCtxVar, { constantTwo }, intType, pointerType);
     Outputs_.Arr3 =
         GetElementPtrOperation::Create(arrayCtxVar, { constantThree }, intType, pointerType);
+
+    // Create a load of the global integer variable "global"
+    const auto loadGlobal =
+        LoadNonVolatileOperation::Create(globalCtxVar, { memoryState }, intType, 4);
+    memoryState = loadGlobal[1];
+    Outputs_.ArrUnknown =
+        GetElementPtrOperation::Create(arrayCtxVar, { loadGlobal[0] }, byteType, pointerType);
 
     // Make alloca2 escape
     const auto storeOutputs =

@@ -2559,6 +2559,7 @@ private:
  *     int* arr1 = array + 1;
  *     int* arr2 = array + 2;
  *     int* arr3 = array + 3;
+ *     int* arrUnknown = array + global;
  *
  *     // Make alloca2 "escape" the function
  *     *p = &alloca2;
@@ -2588,6 +2589,7 @@ class LocalAliasAnalysisTest1 final : public RvsdgTest
     rvsdg::Output * Arr1 = {};
     rvsdg::Output * Arr2 = {};
     rvsdg::Output * Arr3 = {};
+    rvsdg::Output * ArrUnknown = {};
     rvsdg::Output * BytePtr = {};
     rvsdg::Output * BytePtrPlus2 = {};
   };
