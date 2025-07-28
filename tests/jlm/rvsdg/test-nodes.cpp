@@ -241,7 +241,7 @@ NodeInputIteration()
   using namespace jlm::rvsdg;
 
   // Arrange
-  auto valueType = jlm::tests::ValueType::Create();
+  const auto valueType = jlm::tests::ValueType::Create();
 
   Graph rvsdg;
   auto i = &jlm::tests::GraphImport::Create(rvsdg, valueType, "i");
@@ -256,6 +256,14 @@ NodeInputIteration()
   // Act & Assert
   size_t n = 0;
   for (auto & input : node.Inputs())
+  {
+    assert(&input == node.input(n++));
+  }
+  assert(n == node.ninputs());
+
+  n = 0;
+  const Node * constNode = &node;
+  for (auto & input : constNode->Inputs())
   {
     assert(&input == node.input(n++));
   }
@@ -265,30 +273,38 @@ NodeInputIteration()
 JLM_UNIT_TEST_REGISTER("jlm/rvsdg/test-nodes-NodeInputIteration", NodeInputIteration)
 
 static void
-NodeInputConstIteration()
+NodeOutputIteration()
 {
   using namespace jlm::rvsdg;
 
   // Arrange
-  auto valueType = jlm::tests::ValueType::Create();
+  const auto valueType = jlm::tests::ValueType::Create();
 
   Graph rvsdg;
   auto i = &jlm::tests::GraphImport::Create(rvsdg, valueType, "i");
 
   auto & node = CreateOpNode<jlm::tests::TestOperation>(
-      { i, i, i, i, i },
-      std::vector<std::shared_ptr<const Type>>(5, valueType),
-      std::vector<std::shared_ptr<const Type>>{ valueType });
+      { i },
+      std::vector<std::shared_ptr<const Type>>{ valueType },
+      std::vector<std::shared_ptr<const Type>>(5, valueType));
 
   jlm::tests::GraphExport::Create(*node.output(0), "x0");
 
   // Act & Assert
   size_t n = 0;
-  for (auto & input : node.Inputs())
+  for (auto & output : node.Outputs())
   {
-    assert(&input == node.input(n++));
+    assert(&output == node.output(n++));
   }
-  assert(n == node.ninputs());
+  assert(n == node.noutputs());
+
+  n = 0;
+  const Node * constNode = &node;
+  for (auto & output : constNode->Outputs())
+  {
+    assert(&output == constNode->output(n++));
+  }
+  assert(n == constNode->noutputs());
 }
 
-JLM_UNIT_TEST_REGISTER("jlm/rvsdg/test-nodes-NodeInputConstIteration", NodeInputConstIteration)
+JLM_UNIT_TEST_REGISTER("jlm/rvsdg/test-nodes-NodeOutputIteration", NodeOutputIteration)
