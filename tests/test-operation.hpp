@@ -239,7 +239,6 @@ public:
   copy() const override;
 };
 
-class StructuralNodeArgument;
 class StructuralNodeInput;
 class StructuralNodeOutput;
 
