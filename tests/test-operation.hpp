@@ -254,20 +254,79 @@ private:
   {}
 
 public:
-  [[nodiscard]] const TestStructuralOperation &
-  GetOperation() const noexcept override;
+  /**
+   * \brief A variable routed in a \ref TestStructuralNode
+   */
+  struct InputVar
+  {
+    rvsdg::Input * input{};
+    std::vector<rvsdg::Output *> argument{};
+  };
 
-  StructuralNodeInput &
+  /**
+   * \brief A variable routed out of a \ref TestStructuralNode
+   */
+  struct OutputVar
+  {
+    rvsdg::Output * output{};
+    std::vector<rvsdg::Input *> result{};
+  };
+
+  /**
+   * Add an input WITHOUT subregion arguments to a \ref TestStructuralNode.
+   *
+   * @param origin Value to be routed in.
+   * @return Description of input variable.
+   */
+  InputVar
   AddInput(rvsdg::Output & origin);
 
-  StructuralNodeInput &
+  /**
+   * Add an input WITH subregion arguments to a \ref TestStructuralNode.
+   *
+   * @param origin Value to be routed in.
+   * @return Description of input variable.
+   */
+  InputVar
   AddInputWithArguments(rvsdg::Output & origin);
 
-  StructuralNodeOutput &
+  /**
+   * Add subregion arguments WITHOUT an input to a \ref TestStructuralNode.
+   * @param type The argument type
+   * @return Description of input variable
+   */
+  InputVar
+  AddArguments(const std::shared_ptr<const rvsdg::Type> & type);
+
+  /**
+   * Add an output WITHOUT subregion results to a \ref TestStructuralNode.
+   *
+   * @param type The output type
+   * @return Description of output variable.
+   */
+  OutputVar
   AddOutput(std::shared_ptr<const rvsdg::Type> type);
 
-  StructuralNodeOutput &
+  /**
+   * Add an output WITH subregion results to a \ref TestStructuralNode.
+   *
+   * @param origins The values to be routed out.
+   * @return Description of output variable.
+   */
+  OutputVar
   AddOutputWithResults(const std::vector<rvsdg::Output *> & origins);
+
+  /**
+   * Add subregion results WITHOUT output to a \ref TestStructuralNode.
+   *
+   * @param origins The values to be routed out.
+   * @return Description of output variable.
+   */
+  OutputVar
+  AddResults(const std::vector<rvsdg::Output *> & origins);
+
+  [[nodiscard]] const TestStructuralOperation &
+  GetOperation() const noexcept override;
 
   static TestStructuralNode *
   create(rvsdg::Region * parent, size_t nsubregions)
@@ -362,38 +421,6 @@ private:
     auto argument = new StructuralNodeArgument(region, nullptr, std::move(type));
     region.append_argument(argument);
     return *argument;
-  }
-};
-
-class StructuralNodeResult final : public rvsdg::RegionResult
-{
-  friend TestStructuralNode;
-
-public:
-  ~StructuralNodeResult() noexcept override;
-
-  StructuralNodeResult &
-  Copy(rvsdg::Output & origin, rvsdg::StructuralOutput * output) override;
-
-private:
-  StructuralNodeResult(rvsdg::Output & origin, StructuralNodeOutput * output)
-      : rvsdg::RegionResult(origin.region(), &origin, output, origin.Type())
-  {}
-
-  static StructuralNodeResult &
-  Create(rvsdg::Output & origin)
-  {
-    auto result = new StructuralNodeResult(origin, nullptr);
-    origin.region()->append_result(result);
-    return *result;
-  }
-
-  static StructuralNodeResult &
-  Create(rvsdg::Output & origin, StructuralNodeOutput & output)
-  {
-    auto result = new StructuralNodeResult(origin, &output);
-    origin.region()->append_result(result);
-    return *result;
   }
 };
 
