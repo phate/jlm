@@ -715,7 +715,7 @@ MlirToJlmConverter::ConvertOperation(
         // Constant indices are not part of the inputs to a GEPOp,
         // but they are required as explicit nodes in RVSDG
         indices.push_back(
-          jlm::llvm::IntegerConstantOperation::Create(rvsdgRegion, 32, constant).output(0));
+            jlm::llvm::IntegerConstantOperation::Create(rvsdgRegion, 32, constant).output(0));
       }
     }
 
