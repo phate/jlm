@@ -42,7 +42,7 @@ BitSliceOperation::can_reduce_operand(const jlm::rvsdg::Output * arg) const noex
   if (is<bitconstant_op>(node))
     return unop_reduction_constant;
 
-  if (is<bitconcat_op>(node))
+  if (is<BitConcatOperation>(node))
     return unop_reduction_distribute;
 
   return unop_reduction_none;

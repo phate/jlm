@@ -1283,7 +1283,7 @@ types_bitstring_test_reduction()
   auto & bitXorNode = CreateOpNode<bitxor_op>({ a, b }, 4);
   auto & bitAddNode = CreateOpNode<bitadd_op>({ a, b }, 4);
   auto & bitMulNode = CreateOpNode<bitmul_op>({ a, b }, 4);
-  auto & bitConcatNode = CreateOpNode<bitconcat_op>({ a, b }, types);
+  auto & bitConcatNode = CreateOpNode<BitConcatOperation>({ a, b }, types);
   auto & bitNegNode1 = CreateOpNode<bitneg_op>({ a }, 4);
   auto & bitNegNode2 = CreateOpNode<bitneg_op>({ b }, 4);
 
@@ -1304,7 +1304,7 @@ types_bitstring_test_reduction()
   ReduceNode<bitxor_op>(NormalizeBinaryOperation, bitXorNode);
   ReduceNode<bitadd_op>(NormalizeBinaryOperation, bitAddNode);
   ReduceNode<bitmul_op>(NormalizeBinaryOperation, bitMulNode);
-  ReduceNode<bitconcat_op>(NormalizeBinaryOperation, bitConcatNode);
+  ReduceNode<BitConcatOperation>(NormalizeBinaryOperation, bitConcatNode);
   ReduceNode<bitneg_op>(NormalizeUnaryOperation, bitNegNode1);
   ReduceNode<bitneg_op>(NormalizeUnaryOperation, bitNegNode2);
 
@@ -1335,7 +1335,7 @@ SliceOfConcatReduction()
   auto x = &jlm::tests::GraphImport::Create(graph, bit16Type, "x");
   auto y = &jlm::tests::GraphImport::Create(graph, bit16Type, "y");
 
-  auto & concatNode = CreateOpNode<bitconcat_op>({ x, y }, types);
+  auto & concatNode = CreateOpNode<BitConcatOperation>({ x, y }, types);
   auto & sliceNode = CreateOpNode<BitSliceOperation>({ concatNode.output(0) }, bit32Type, 8, 24);
 
   auto & ex = jlm::tests::GraphExport::Create(*sliceNode.output(0), "bitAnd");
@@ -1352,7 +1352,7 @@ SliceOfConcatReduction()
   const auto node = TryGetOwnerNode<SimpleNode>(*ex.origin());
   const auto o0_node = TryGetOwnerNode<SimpleNode>(*node->input(0)->origin());
   const auto o1_node = TryGetOwnerNode<SimpleNode>(*node->input(1)->origin());
-  assert(dynamic_cast<const bitconcat_op *>(&node->GetOperation()));
+  assert(is<BitConcatOperation>(node->GetOperation()));
   assert(node->ninputs() == 2);
   assert(is<BitSliceOperation>(o0_node->GetOperation()));
   assert(is<BitSliceOperation>(o1_node->GetOperation()));
@@ -1385,14 +1385,14 @@ ConcatOfSliceReduction()
 
   auto slice1 = bitslice(x, 0, 8);
   auto slice2 = bitslice(x, 8, 16);
-  auto & concatNode = CreateOpNode<bitconcat_op>({ slice1, slice2 }, types);
+  auto & concatNode = CreateOpNode<BitConcatOperation>({ slice1, slice2 }, types);
 
   auto & ex = jlm::tests::GraphExport::Create(*concatNode.output(0), "bitAnd");
 
   view(&graph.GetRootRegion(), stdout);
 
   // Act
-  ReduceNode<bitconcat_op>(NormalizeBinaryOperation, concatNode);
+  ReduceNode<BitConcatOperation>(NormalizeBinaryOperation, concatNode);
   graph.PruneNodes();
 
   view(&graph.GetRootRegion(), stdout);
@@ -1520,7 +1520,7 @@ SliceOfConcat()
       NormalizeUnaryOperation,
       *TryGetOwnerNode<Node>(*concatNode->input(0)->origin()));
   concatNode = TryGetOwnerNode<Node>(*ex.origin());
-  ReduceNode<bitconcat_op>(NormalizeBinaryOperation, *concatNode);
+  ReduceNode<BitConcatOperation>(NormalizeBinaryOperation, *concatNode);
   graph.PruneNodes();
 
   view(graph, stdout);
@@ -1552,13 +1552,13 @@ ConcatFlattening()
 
   // Act
   const auto concatNode = TryGetOwnerNode<Node>(*ex.origin());
-  ReduceNode<bitconcat_op>(FlattenBitConcatOperation, *concatNode);
+  ReduceNode<BitConcatOperation>(FlattenBitConcatOperation, *concatNode);
 
   view(graph, stdout);
 
   // Assert
   auto node = TryGetOwnerNode<Node>(*ex.origin());
-  assert(dynamic_cast<const bitconcat_op *>(&node->GetOperation()));
+  assert(is<BitConcatOperation>(node->GetOperation()));
   assert(node->ninputs() == 3);
   assert(node->input(0)->origin() == x);
   assert(node->input(1)->origin() == y);
@@ -1579,13 +1579,13 @@ ConcatWithSingleOperand()
 
   auto x = &jlm::tests::GraphImport::Create(graph, bit8Type, "x");
 
-  auto & concatNode = CreateOpNode<bitconcat_op>({ x }, bit8Types);
+  auto & concatNode = CreateOpNode<BitConcatOperation>({ x }, bit8Types);
 
   auto & ex = jlm::tests::GraphExport::Create(*concatNode.output(0), "dummy");
   view(graph, stdout);
 
   // Act
-  ReduceNode<bitconcat_op>(NormalizeBinaryOperation, concatNode);
+  ReduceNode<BitConcatOperation>(NormalizeBinaryOperation, concatNode);
   graph.PruneNodes();
 
   view(graph, stdout);
@@ -1612,13 +1612,13 @@ ConcatOfSlices()
 
   auto sliceResult1 = bitslice(x, 0, 4);
   auto sliceResult2 = bitslice(x, 4, 8);
-  auto & concatNode = CreateOpNode<bitconcat_op>({ sliceResult1, sliceResult2 }, bit4Types);
+  auto & concatNode = CreateOpNode<BitConcatOperation>({ sliceResult1, sliceResult2 }, bit4Types);
 
   auto & ex = jlm::tests::GraphExport::Create(*concatNode.output(0), "dummy");
   view(graph, stdout);
 
   // Act
-  ReduceNode<bitconcat_op>(NormalizeBinaryOperation, concatNode);
+  ReduceNode<BitConcatOperation>(NormalizeBinaryOperation, concatNode);
   ReduceNode<BitSliceOperation>(NormalizeUnaryOperation, *TryGetOwnerNode<Node>(*ex.origin()));
   graph.PruneNodes();
 
@@ -1646,7 +1646,7 @@ ConcatOfConstants()
   view(graph, stdout);
 
   // Act
-  ReduceNode<bitconcat_op>(NormalizeBinaryOperation, *TryGetOwnerNode<Node>(*ex.origin()));
+  ReduceNode<BitConcatOperation>(NormalizeBinaryOperation, *TryGetOwnerNode<Node>(*ex.origin()));
 
   // Assert
   auto node = TryGetOwnerNode<Node>(*ex.origin());
@@ -1678,8 +1678,8 @@ ConcatCne()
   auto x = &jlm::tests::GraphImport::Create(graph, bitType8, "x");
   auto y = &jlm::tests::GraphImport::Create(graph, bitType8, "y");
 
-  auto & concatNode1 = CreateOpNode<bitconcat_op>({ x, y }, bitTypes);
-  auto & concatNode2 = CreateOpNode<bitconcat_op>({ x, y }, bitTypes);
+  auto & concatNode1 = CreateOpNode<BitConcatOperation>({ x, y }, bitTypes);
+  auto & concatNode2 = CreateOpNode<BitConcatOperation>({ x, y }, bitTypes);
 
   auto & ex1 = jlm::tests::GraphExport::Create(*concatNode1.output(0), "dummy");
   auto & ex2 = jlm::tests::GraphExport::Create(*concatNode2.output(0), "dummy");
@@ -1687,8 +1687,8 @@ ConcatCne()
   view(graph, stdout);
 
   // Act
-  ReduceNode<bitconcat_op>(NormalizeCne, *TryGetOwnerNode<Node>(*ex1.origin()));
-  ReduceNode<bitconcat_op>(NormalizeCne, *TryGetOwnerNode<Node>(*ex2.origin()));
+  ReduceNode<BitConcatOperation>(NormalizeCne, *TryGetOwnerNode<Node>(*ex1.origin()));
+  ReduceNode<BitConcatOperation>(NormalizeCne, *TryGetOwnerNode<Node>(*ex2.origin()));
   graph.PruneNodes();
 
   view(graph, stdout);
