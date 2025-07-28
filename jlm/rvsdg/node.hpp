@@ -550,6 +550,7 @@ public:
   using InputIteratorRange = util::IteratorRange<Input::Iterator>;
   using InputConstIteratorRange = util::IteratorRange<Input::ConstIterator>;
   using OutputIteratorRange = util::IteratorRange<Output::Iterator>;
+  using OutputConstIteratorRange = util::IteratorRange<Output::ConstIterator>;
 
   virtual ~Node();
 
@@ -594,6 +595,18 @@ public:
   {
     JLM_ASSERT(index < noutputs());
     return outputs_[index].get();
+  }
+
+  [[nodiscard]] OutputIteratorRange
+  Outputs() noexcept
+  {
+    return { Output::Iterator(output(0)), Output::Iterator(nullptr) };
+  }
+
+  [[nodiscard]] OutputConstIteratorRange
+  Outputs() const noexcept
+  {
+    return { Output::ConstIterator(output(0)), Output::ConstIterator(nullptr) };
   }
 
   inline void
