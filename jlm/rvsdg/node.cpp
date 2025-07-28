@@ -204,26 +204,38 @@ Output::add_user(jlm::rvsdg::Input * user)
   users_.insert(user);
 }
 
-Output *
-Output::Iterator::ComputeNext() const
+static Output *
+ComputeNextOutput(const Output * output)
 {
-  if (Output_ == nullptr)
+  if (output == nullptr)
     return nullptr;
 
-  const auto index = Output_->index();
-  auto owner = Output_->GetOwner();
+  const auto index = output->index();
+  const auto owner = output->GetOwner();
 
-  if (auto node = std::get_if<Node *>(&owner))
+  if (const auto node = std::get_if<Node *>(&owner))
   {
     return index + 1 < (*node)->noutputs() ? (*node)->output(index + 1) : nullptr;
   }
 
-  if (auto region = std::get_if<Region *>(&owner))
+  if (const auto region = std::get_if<Region *>(&owner))
   {
     return index + 1 < (*region)->narguments() ? (*region)->argument(index + 1) : nullptr;
   }
 
   JLM_UNREACHABLE("Unhandled owner case.");
+}
+
+Output *
+Output::Iterator::ComputeNext() const
+{
+  return ComputeNextOutput(Output_);
+}
+
+Output *
+Output::ConstIterator::ComputeNext() const
+{
+  return ComputeNextOutput(Output_);
 }
 
 node_input::node_input(
