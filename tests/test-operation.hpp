@@ -366,38 +366,6 @@ private:
   {}
 };
 
-class StructuralNodeResult final : public rvsdg::RegionResult
-{
-  friend TestStructuralNode;
-
-public:
-  ~StructuralNodeResult() noexcept override;
-
-  StructuralNodeResult &
-  Copy(rvsdg::Output & origin, rvsdg::StructuralOutput * output) override;
-
-private:
-  StructuralNodeResult(rvsdg::Output & origin, StructuralNodeOutput * output)
-      : rvsdg::RegionResult(origin.region(), &origin, output, origin.Type())
-  {}
-
-  static StructuralNodeResult &
-  Create(rvsdg::Output & origin)
-  {
-    auto result = new StructuralNodeResult(origin, nullptr);
-    origin.region()->append_result(result);
-    return *result;
-  }
-
-  static StructuralNodeResult &
-  Create(rvsdg::Output & origin, StructuralNodeOutput & output)
-  {
-    auto result = new StructuralNodeResult(origin, &output);
-    origin.region()->append_result(result);
-    return *result;
-  }
-};
-
 class TestOperation final : public rvsdg::SimpleOperation
 {
 public:
