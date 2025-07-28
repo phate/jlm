@@ -744,20 +744,26 @@ MlirToJlmConverter::ConvertOperation(
 
     // Constant indices are not part of the inputs to a GEPOp,
     // but they are required as explicit nodes in RVSDG
-    std::vector<rvsdg::Output *> inputsWithConstants(std::next(inputs.begin()), inputs.end());
+    std::vector<rvsdg::Output *> indices;
     // TODO: There should exist a better way to check if there are constants
     if (GepOp.getNumOperands() == 1 && GepOp.getRawConstantIndices().size() != 0)
     {
       for (size_t constant : GepOp.getRawConstantIndices())
       {
-        inputsWithConstants.push_back(
+        indices.push_back(
             jlm::llvm::IntegerConstantOperation::Create(rvsdgRegion, 32, constant).output(0));
       }
+    }
+    else
+    {
+      JLM_ASSERT(GepOp.getOperands().size() == 1 + GepOp.getIndices().size());
+      // The first input is the base pointer and therefore skipped
+      indices = { std::next(inputs.begin()), inputs.end() };
     }
 
     auto jlmGepOp = jlm::llvm::GetElementPtrOperation::Create(
         inputs[0],
-        inputsWithConstants,
+        indices,
         pointeeValueType,
         llvm::PointerType::Create());
     return rvsdg::TryGetOwnerNode<rvsdg::Node>(*jlmGepOp);
