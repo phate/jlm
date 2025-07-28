@@ -48,6 +48,7 @@ libllvm_SOURCES = \
     jlm/llvm/opt/alias-analyses/AliasAnalysis.cpp \
     jlm/llvm/opt/alias-analyses/AgnosticModRefSummarizer.cpp \
     jlm/llvm/opt/alias-analyses/Andersen.cpp \
+    jlm/llvm/opt/alias-analyses/LocalAliasAnalysis.cpp \
     jlm/llvm/opt/alias-analyses/MemoryStateEncoder.cpp \
     jlm/llvm/opt/alias-analyses/Optimization.cpp \
     jlm/llvm/opt/alias-analyses/PointerObjectSet.cpp \
@@ -79,6 +80,7 @@ libllvm_HEADERS = \
     jlm/llvm/opt/alias-analyses/DifferencePropagation.hpp \
     jlm/llvm/opt/alias-analyses/EliminatedModRefSummarizer.hpp \
     jlm/llvm/opt/alias-analyses/LazyCycleDetection.hpp \
+    jlm/llvm/opt/alias-analyses/LocalAliasAnalysis.hpp \
     jlm/llvm/opt/alias-analyses/OnlineCycleDetection.hpp \
     jlm/llvm/opt/alias-analyses/Optimization.hpp \
     jlm/llvm/opt/alias-analyses/ModRefEliminator.hpp \
@@ -186,8 +188,8 @@ libllvm_TESTS += \
     tests/jlm/llvm/ir/TestCallSummary \
     tests/jlm/llvm/ir/ThreeAddressCodeTests \
     tests/jlm/llvm/ir/TypeConverterTests \
-    tests/jlm/llvm/opt/alias-analyses/AliasAnalysisTests \
     tests/jlm/llvm/opt/alias-analyses/AgnosticModRefSummarizerTests \
+    tests/jlm/llvm/opt/alias-analyses/LocalAliasAnalysisTests \
     tests/jlm/llvm/opt/alias-analyses/TestAndersen \
     tests/jlm/llvm/opt/alias-analyses/TestDifferencePropagation \
     tests/jlm/llvm/opt/alias-analyses/TestLazyCycleDetection \

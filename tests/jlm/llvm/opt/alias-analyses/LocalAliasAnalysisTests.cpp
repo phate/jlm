@@ -6,7 +6,7 @@
 #include <test-registry.hpp>
 #include <TestRvsdgs.hpp>
 
-#include <jlm/llvm/opt/alias-analyses/AliasAnalysis.hpp>
+#include <jlm/llvm/opt/alias-analyses/LocalAliasAnalysis.hpp>
 #include <jlm/rvsdg/view.hpp>
 
 static void
