@@ -352,28 +352,6 @@ private:
       std::shared_ptr<const rvsdg::Type> type)
       : StructuralInput(&node, &origin, std::move(type))
   {}
-
-public:
-  [[nodiscard]] size_t
-  NumArguments() const noexcept
-  {
-    return arguments.size();
-  }
-
-  [[nodiscard]] StructuralNodeArgument &
-  Argument(size_t n) noexcept
-  {
-    JLM_ASSERT(n < NumArguments());
-    // FIXME: I did not find a better way of doing it. The arguments attribute should be replaced
-    // by a std::vector<> to enable efficient access.
-    for (auto & argument : arguments)
-    {
-      if (argument.region()->index() == n)
-        return *util::AssertedCast<StructuralNodeArgument>(&argument);
-    }
-
-    JLM_UNREACHABLE("Unknown argument");
-  }
 };
 
 class StructuralNodeOutput final : public rvsdg::StructuralOutput
@@ -387,41 +365,6 @@ private:
   StructuralNodeOutput(TestStructuralNode & node, std::shared_ptr<const rvsdg::Type> type)
       : StructuralOutput(&node, std::move(type))
   {}
-};
-
-class StructuralNodeArgument final : public rvsdg::RegionArgument
-{
-  friend TestStructuralNode;
-
-public:
-  ~StructuralNodeArgument() noexcept override;
-
-  StructuralNodeArgument &
-  Copy(rvsdg::Region & region, rvsdg::StructuralInput * input) override;
-
-private:
-  StructuralNodeArgument(
-      rvsdg::Region & region,
-      StructuralNodeInput * input,
-      std::shared_ptr<const rvsdg::Type> type)
-      : rvsdg::RegionArgument(&region, input, std::move(type))
-  {}
-
-  static StructuralNodeArgument &
-  Create(rvsdg::Region & region, StructuralNodeInput & input)
-  {
-    auto argument = new StructuralNodeArgument(region, &input, input.Type());
-    region.append_argument(argument);
-    return *argument;
-  }
-
-  static StructuralNodeArgument &
-  Create(rvsdg::Region & region, std::shared_ptr<const rvsdg::Type> type)
-  {
-    auto argument = new StructuralNodeArgument(region, nullptr, std::move(type));
-    region.append_argument(argument);
-    return *argument;
-  }
 };
 
 class StructuralNodeResult final : public rvsdg::RegionResult

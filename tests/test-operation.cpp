@@ -202,9 +202,10 @@ TestStructuralNode::AddInputWithArguments(rvsdg::Output & origin)
 
   for (auto & subregion : Subregions())
   {
-    const auto argument = &StructuralNodeArgument::Create(
+    const auto argument = &rvsdg::RegionArgument::Create(
         subregion,
-        *util::AssertedCast<StructuralNodeInput>(inputVar.input));
+        util::AssertedCast<StructuralNodeInput>(inputVar.input),
+        inputVar.input->Type());
     inputVar.argument.push_back(argument);
   }
 
@@ -217,7 +218,7 @@ TestStructuralNode::AddArguments(const std::shared_ptr<const rvsdg::Type> & type
   std::vector<rvsdg::Output *> arguments;
   for (auto & subregion : Subregions())
   {
-    const auto argument = &StructuralNodeArgument::Create(subregion, type);
+    const auto argument = &rvsdg::RegionArgument::Create(subregion, nullptr, type);
     arguments.push_back(argument);
   }
 
@@ -275,16 +276,6 @@ TestStructuralNode::AddResults(const std::vector<rvsdg::Output *> & origins)
 StructuralNodeInput::~StructuralNodeInput() noexcept = default;
 
 StructuralNodeOutput::~StructuralNodeOutput() noexcept = default;
-
-StructuralNodeArgument::~StructuralNodeArgument() noexcept = default;
-
-StructuralNodeArgument &
-StructuralNodeArgument::Copy(rvsdg::Region & region, rvsdg::StructuralInput * input)
-{
-  auto structuralNodeInput = util::AssertedCast<StructuralNodeInput>(input);
-  return structuralNodeInput != nullptr ? Create(region, *structuralNodeInput)
-                                        : Create(region, Type());
-}
 
 StructuralNodeResult::~StructuralNodeResult() noexcept = default;
 
