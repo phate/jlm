@@ -700,26 +700,26 @@ MlirToJlmConverter::ConvertOperation(
     if (!rvsdg::is<const rvsdg::ValueType>(pointeeType))
       JLM_UNREACHABLE("Expected ValueType for GepOp operation pointee.");
 
-    auto pointeeValueType = std::dynamic_pointer_cast<const rvsdg::ValueType>(pointeeType);
-
-    // Constant indices are not part of the inputs to a GEPOp,
-    // but they are required as explicit nodes in RVSDG
     std::vector<rvsdg::Output *> indices;
-    // TODO: There should exist a better way to check if there are constants
-    if (GepOp.getNumOperands() == 1 && GepOp.getRawConstantIndices().size() != 0)
+    // The first input is the base pointer
+    size_t dynamicInput = 1;
+    for (int32_t constant : GepOp.getRawConstantIndices())
     {
-      for (size_t constant : GepOp.getRawConstantIndices())
+      // If magic number then its a dynamic index
+      if (constant == ::mlir::LLVM::GEPOp::kDynamicIndex)
       {
+        indices.push_back(inputs[dynamicInput++]);
+      }
+      else
+      {
+        // Constant indices are not part of the inputs to a GEPOp,
+        // but they are required as explicit nodes in RVSDG
         indices.push_back(
-            jlm::llvm::IntegerConstantOperation::Create(rvsdgRegion, 32, constant).output(0));
+          jlm::llvm::IntegerConstantOperation::Create(rvsdgRegion, 32, constant).output(0));
       }
     }
-    else
-    {
-      JLM_ASSERT(GepOp.getOperands().size() == 1 + GepOp.getIndices().size());
-      // The first input is the base pointer and therefore skipped
-      indices = { std::next(inputs.begin()), inputs.end() };
-    }
+
+    auto pointeeValueType = std::dynamic_pointer_cast<const rvsdg::ValueType>(pointeeType);
 
     auto jlmGepOp = jlm::llvm::GetElementPtrOperation::Create(
         inputs[0],
