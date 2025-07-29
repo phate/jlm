@@ -190,8 +190,8 @@ TestStructuralNode::copy(rvsdg::Region * parent, rvsdg::SubstitutionMap & smap) 
 TestStructuralNode::InputVar
 TestStructuralNode::AddInput(rvsdg::Output & origin)
 {
-  const auto input = add_input(
-      std::unique_ptr<StructuralNodeInput>(new StructuralNodeInput(*this, origin, origin.Type())));
+  const auto input =
+      add_input(std::make_unique<rvsdg::StructuralInput>(this, &origin, origin.Type()));
   return { input, {} };
 }
 
@@ -204,7 +204,7 @@ TestStructuralNode::AddInputWithArguments(rvsdg::Output & origin)
   {
     const auto argument = &rvsdg::RegionArgument::Create(
         subregion,
-        util::AssertedCast<StructuralNodeInput>(inputVar.input),
+        util::AssertedCast<rvsdg::StructuralInput>(inputVar.input),
         inputVar.input->Type());
     inputVar.argument.push_back(argument);
   }
@@ -271,7 +271,5 @@ TestStructuralNode::AddResults(const std::vector<rvsdg::Output *> & origins)
 
   return { nullptr, std::move(results) };
 }
-
-StructuralNodeInput::~StructuralNodeInput() noexcept = default;
 
 }
