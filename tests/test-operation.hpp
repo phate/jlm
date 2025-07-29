@@ -241,7 +241,6 @@ public:
 
 class StructuralNodeArgument;
 class StructuralNodeInput;
-class StructuralNodeOutput;
 
 class TestStructuralNode final : public rvsdg::StructuralNode
 {
@@ -374,19 +373,6 @@ public:
 
     JLM_UNREACHABLE("Unknown argument");
   }
-};
-
-class StructuralNodeOutput final : public rvsdg::StructuralOutput
-{
-  friend TestStructuralNode;
-
-public:
-  ~StructuralNodeOutput() noexcept override;
-
-private:
-  StructuralNodeOutput(TestStructuralNode & node, std::shared_ptr<const rvsdg::Type> type)
-      : StructuralOutput(&node, std::move(type))
-  {}
 };
 
 class StructuralNodeArgument final : public rvsdg::RegionArgument
