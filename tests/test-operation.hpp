@@ -467,42 +467,6 @@ public:
   }
 };
 
-class TestGraphResult final : public jlm::rvsdg::RegionResult
-{
-private:
-  TestGraphResult(
-      rvsdg::Region & region,
-      jlm::rvsdg::Output & origin,
-      rvsdg::StructuralOutput * output)
-      : jlm::rvsdg::RegionResult(&region, &origin, output, origin.Type())
-  {}
-
-  TestGraphResult(rvsdg::Output & origin, rvsdg::StructuralOutput * output)
-      : TestGraphResult(*origin.region(), origin, output)
-  {}
-
-public:
-  TestGraphResult &
-  Copy(rvsdg::Output & origin, rvsdg::StructuralOutput * output) override
-  {
-    return Create(origin, output);
-  }
-
-  static TestGraphResult &
-  Create(rvsdg::Region & region, jlm::rvsdg::Output & origin, rvsdg::StructuralOutput * output)
-  {
-    auto graphResult = new TestGraphResult(region, origin, output);
-    origin.region()->append_result(graphResult);
-    return *graphResult;
-  }
-
-  static TestGraphResult &
-  Create(rvsdg::Output & origin, rvsdg::StructuralOutput * output)
-  {
-    return Create(*origin.region(), origin, output);
-  }
-};
-
 }
 
 #endif
