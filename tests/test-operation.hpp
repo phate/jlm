@@ -403,6 +403,19 @@ public:
                                   std::move(operandTypes),
                                   std::move(resultTypes));
   }
+
+  static rvsdg::SimpleNode &
+  CreateNode(
+      rvsdg::Region & region,
+      const std::vector<rvsdg::Output *> & operands,
+      std::vector<std::shared_ptr<const rvsdg::Type>> resultTypes)
+  {
+    std::vector<std::shared_ptr<const rvsdg::Type>> operandTypes;
+    for (const auto & operand : operands)
+      operandTypes.push_back(operand->Type());
+
+    return *Create(&region, operandTypes, std::move(operands), std::move(resultTypes));
+  }
 };
 
 static inline std::unique_ptr<llvm::ThreeAddressCode>
