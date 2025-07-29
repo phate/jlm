@@ -138,17 +138,17 @@ PrintNumLoadNodesAnnotation()
   auto & memoryState = jlm::tests::GraphImport::Create(rvsdg, memoryStateType, "m");
 
   auto structuralNode = jlm::tests::TestStructuralNode::create(rootRegion, 3);
-  auto & addressInput = structuralNode->AddInputWithArguments(address);
-  auto & memoryStateInput = structuralNode->AddInputWithArguments(memoryState);
+  const auto addressInput = structuralNode->AddInputWithArguments(address);
+  const auto memoryStateInput = structuralNode->AddInputWithArguments(memoryState);
   LoadNonVolatileOperation::Create(
-      &addressInput.Argument(0),
-      { &memoryStateInput.Argument(0) },
+      addressInput.argument[0],
+      { memoryStateInput.argument[0] },
       valueType,
       4);
   jlm::tests::TestOperation::create(structuralNode->subregion(1), {}, {});
   LoadNonVolatileOperation::Create(
-      &addressInput.Argument(2),
-      { &memoryStateInput.Argument(2) },
+      addressInput.argument[2],
+      { memoryStateInput.argument[2] },
       valueType,
       4);
 
@@ -193,14 +193,16 @@ PrintNumMemoryStateInputsOutputsAnnotation()
   auto & y = jlm::tests::GraphImport::Create(rvsdg, valueType, "y");
 
   auto structuralNode = jlm::tests::TestStructuralNode::create(&rvsdg.GetRootRegion(), 2);
-  auto & ix = structuralNode->AddInputWithArguments(x);
-  auto & iy = structuralNode->AddInputWithArguments(y);
+  const auto inputVarX = structuralNode->AddInputWithArguments(x);
+  const auto inputVarY = structuralNode->AddInputWithArguments(y);
 
-  auto & ox = structuralNode->AddOutputWithResults({ &ix.Argument(0), &ix.Argument(1) });
-  auto & oy = structuralNode->AddOutputWithResults({ &iy.Argument(0), &iy.Argument(1) });
+  auto outputVarX =
+      structuralNode->AddOutputWithResults({ inputVarX.argument[0], inputVarX.argument[1] });
+  auto outputVarY =
+      structuralNode->AddOutputWithResults({ inputVarY.argument[0], inputVarY.argument[1] });
 
-  jlm::tests::GraphExport::Create(ox, "x");
-  jlm::tests::GraphExport::Create(oy, "y");
+  jlm::tests::GraphExport::Create(*outputVarX.output, "x");
+  jlm::tests::GraphExport::Create(*outputVarY.output, "y");
 
   RvsdgTreePrinter::Configuration configuration(
       { RvsdgTreePrinter::Configuration::Annotation::NumMemoryStateInputsOutputs });

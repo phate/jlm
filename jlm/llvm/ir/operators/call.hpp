@@ -471,7 +471,7 @@ private:
   CheckFunctionInputType(const jlm::rvsdg::Type & type)
   {
     if (!is<rvsdg::FunctionType>(type))
-      throw jlm::util::error("Expected function type.");
+      throw util::Error("Expected function type.");
   }
 
   static void
@@ -480,31 +480,31 @@ private:
     auto CheckArgumentTypes = [](const rvsdg::FunctionType & functionType)
     {
       if (functionType.NumArguments() < 2)
-        throw jlm::util::error("Expected at least three argument types.");
+        throw util::Error("Expected at least three argument types.");
 
       auto memoryStateArgumentIndex = functionType.NumArguments() - 1;
       auto iOStateArgumentIndex = functionType.NumArguments() - 2;
 
       if (!is<MemoryStateType>(functionType.ArgumentType(memoryStateArgumentIndex)))
-        throw jlm::util::error("Expected memory state type.");
+        throw util::Error("Expected memory state type.");
 
       if (!is<IOStateType>(functionType.ArgumentType(iOStateArgumentIndex)))
-        throw jlm::util::error("Expected IO state type.");
+        throw util::Error("Expected IO state type.");
     };
 
     auto CheckResultTypes = [](const rvsdg::FunctionType & functionType)
     {
       if (functionType.NumResults() < 2)
-        throw jlm::util::error("Expected at least three result types.");
+        throw util::Error("Expected at least three result types.");
 
       auto memoryStateResultIndex = functionType.NumResults() - 1;
       auto iOStateResultIndex = functionType.NumResults() - 2;
 
       if (!is<MemoryStateType>(functionType.ResultType(memoryStateResultIndex)))
-        throw jlm::util::error("Expected memory state type.");
+        throw util::Error("Expected memory state type.");
 
       if (!is<IOStateType>(functionType.ResultType(iOStateResultIndex)))
-        throw jlm::util::error("Expected IO state type.");
+        throw util::Error("Expected IO state type.");
     };
 
     CheckArgumentTypes(functionType);

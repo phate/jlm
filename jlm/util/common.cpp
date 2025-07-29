@@ -8,7 +8,7 @@
 namespace jlm::util
 {
 
-error::~error() noexcept = default;
+Error::~Error() noexcept = default;
 
 TypeError::~TypeError() noexcept = default;
 

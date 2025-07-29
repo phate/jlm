@@ -200,7 +200,7 @@ public:
   InsertOrThrow(const K & key, const V & value)
   {
     if (!Insert(key, value))
-      throw util::error("Key or value were already present in the BijectiveMap");
+      throw Error("Key or value were already present in the BijectiveMap");
   }
 
   /**
@@ -235,7 +235,7 @@ public:
   {
     auto it = ForwardMap_.find(key);
     if (it == ForwardMap_.end())
-      throw jlm::util::error("Key not found in BijectiveMap");
+      throw Error("Key not found in BijectiveMap");
     return it->second;
   }
 
@@ -249,7 +249,7 @@ public:
   {
     auto it = ReverseMap_.find(value);
     if (it == ReverseMap_.end())
-      throw jlm::util::error("Value not found in BijectiveMap");
+      throw Error("Value not found in BijectiveMap");
     return it->second;
   }
 

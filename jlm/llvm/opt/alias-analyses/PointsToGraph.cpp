@@ -495,7 +495,7 @@ void
 PointsToGraph::Node::AddEdge(PointsToGraph::MemoryNode & target)
 {
   if (&Graph() != &target.Graph())
-    throw util::error("Points-to graph nodes are not in the same graph.");
+    throw util::Error("Points-to graph nodes are not in the same graph.");
 
   Targets_.insert(&target);
   target.Sources_.insert(this);
@@ -505,7 +505,7 @@ void
 PointsToGraph::Node::RemoveEdge(PointsToGraph::MemoryNode & target)
 {
   if (&Graph() != &target.Graph())
-    throw util::error("Points-to graph nodes are not in the same graph.");
+    throw util::Error("Points-to graph nodes are not in the same graph.");
 
   target.Sources_.erase(this);
   Targets_.erase(&target);

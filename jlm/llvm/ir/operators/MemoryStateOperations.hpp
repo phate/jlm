@@ -41,7 +41,7 @@ public:
       : MemoryStateOperation(numOperands, 1)
   {
     if (numOperands == 0)
-      throw util::error("Insufficient number of operands.");
+      throw util::Error("Insufficient number of operands.");
   }
 
   bool
@@ -117,7 +117,7 @@ public:
   Create(const std::vector<const Variable *> & operands)
   {
     if (operands.empty())
-      throw util::error("Insufficient number of operands.");
+      throw util::Error("Insufficient number of operands.");
 
     MemoryStateMergeOperation operation(operands.size());
     return ThreeAddressCode::create(operation, operands);
@@ -139,7 +139,7 @@ public:
       : MemoryStateOperation(1, numResults)
   {
     if (numResults == 0)
-      throw util::error("Insufficient number of results.");
+      throw util::Error("Insufficient number of results.");
   }
 
   bool

@@ -63,9 +63,9 @@ GetDotName(rvsdg::Output * output)
     return util::strfmt("a", hex((intptr_t)output), ":", "default");
   }
 
-  if (auto no = dynamic_cast<rvsdg::SimpleOutput *>(output))
+  if (auto simpleNode = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*output))
   {
-    return util::strfmt(GetDotName(no->node()), ":", "o", hex((intptr_t)output));
+    return util::strfmt(GetDotName(simpleNode), ":", "o", hex((intptr_t)output));
   }
   else if (dynamic_cast<rvsdg::StructuralOutput *>(output))
   {

@@ -224,8 +224,8 @@ congruent(jlm::rvsdg::Output * o1, jlm::rvsdg::Output * o2, vset & vs, cnectx & 
 
   auto a1 = dynamic_cast<rvsdg::RegionArgument *>(o1);
   auto a2 = dynamic_cast<rvsdg::RegionArgument *>(o2);
-  if (a1 && dynamic_cast<const hls::loop_node *>(a1->region()->node()) && a2
-      && dynamic_cast<const hls::loop_node *>(a2->region()->node()))
+  if (a1 && dynamic_cast<const LoopNode *>(a1->region()->node()) && a2
+      && dynamic_cast<const LoopNode *>(a2->region()->node()))
   {
     JLM_ASSERT(o1->region()->node() == o2->region()->node());
     if (a1->input() && a2->input())
@@ -370,8 +370,8 @@ mark_theta(const rvsdg::StructuralNode * node, cnectx & ctx)
 static void
 mark_loop(const rvsdg::StructuralNode * node, cnectx & ctx)
 {
-  JLM_ASSERT(dynamic_cast<const hls::loop_node *>(node));
-  auto loop = static_cast<const jlm::hls::loop_node *>(node);
+  JLM_ASSERT(dynamic_cast<const LoopNode *>(node));
+  auto loop = static_cast<const LoopNode *>(node);
 
   /* mark loop variables */
   for (size_t i1 = 0; i1 < loop->ninputs(); i1++)
@@ -443,7 +443,7 @@ mark(const rvsdg::StructuralNode * node, cnectx & ctx)
   static std::unordered_map<std::type_index, void (*)(const rvsdg::StructuralNode *, cnectx &)> map(
       { { std::type_index(typeid(GammaNode)), mark_gamma },
         { std::type_index(typeid(ThetaNode)), mark_theta },
-        { std::type_index(typeid(jlm::hls::loop_node)), mark_loop },
+        { std::type_index(typeid(LoopNode)), mark_loop },
         { typeid(LambdaNode), mark_lambda },
         { typeid(PhiNode), mark_phi },
         { typeid(llvm::DeltaNode), mark_delta } });
@@ -473,8 +473,7 @@ mark(const jlm::rvsdg::SimpleNode * node, cnectx & ctx)
   {
     for (const auto & user : origin->Users())
     {
-      auto ni = dynamic_cast<const jlm::rvsdg::node_input *>(&user);
-      auto other = ni ? ni->node() : nullptr;
+      const auto other = TryGetOwnerNode<rvsdg::Node>(user);
       if (!other || other == node || other->GetOperation() != node->GetOperation()
           || other->ninputs() != node->ninputs())
         continue;
@@ -569,7 +568,7 @@ divert_theta(rvsdg::StructuralNode * node, cnectx & ctx)
 static void
 divert_loop(rvsdg::StructuralNode * node, cnectx & ctx)
 {
-  JLM_ASSERT(dynamic_cast<const hls::loop_node *>(node));
+  JLM_ASSERT(dynamic_cast<const LoopNode *>(node));
   auto subregion = node->subregion(0);
   divert(subregion, ctx);
 }
@@ -604,7 +603,7 @@ divert(rvsdg::StructuralNode * node, cnectx & ctx)
   static std::unordered_map<std::type_index, void (*)(rvsdg::StructuralNode *, cnectx &)> map(
       { { std::type_index(typeid(rvsdg::GammaNode)), divert_gamma },
         { std::type_index(typeid(ThetaNode)), divert_theta },
-        { std::type_index(typeid(jlm::hls::loop_node)), divert_loop },
+        { std::type_index(typeid(LoopNode)), divert_loop },
         { typeid(rvsdg::LambdaNode), divert_lambda },
         { typeid(PhiNode), divert_phi },
         { typeid(llvm::DeltaNode), divert_delta } });

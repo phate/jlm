@@ -14,12 +14,12 @@
 namespace jlm::rvsdg
 {
 
-class bitslice_op : public UnaryOperation
+class BitSliceOperation final : public UnaryOperation
 {
 public:
-  ~bitslice_op() noexcept override;
+  ~BitSliceOperation() noexcept override;
 
-  inline bitslice_op(
+  BitSliceOperation(
       const std::shared_ptr<const bittype> & argument,
       size_t low,
       size_t high) noexcept

@@ -446,8 +446,8 @@ BottomNodeTests()
   assert(&*(rvsdg.GetRootRegion().BottomNodes().begin()) == structuralNode);
 
   // The node cedes to be dead
-  auto & output = structuralNode->AddOutput(valueType);
-  jlm::tests::GraphExport::Create(output, "x");
+  auto [output, _] = structuralNode->AddOutput(valueType);
+  jlm::tests::GraphExport::Create(*output, "x");
   assert(structuralNode->IsDead() == false);
   assert(rvsdg.GetRootRegion().NumBottomNodes() == 0);
   assert(rvsdg.GetRootRegion().BottomNodes().begin() == rvsdg.GetRootRegion().BottomNodes().end());

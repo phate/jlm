@@ -117,7 +117,21 @@ TopDownTraverser::input_change(Input * in, Output *, Output *)
   tracker_.set_nodestate(node, traversal_nodestate::frontier);
 }
 
-/* bottom up traverser */
+static bool
+HasSuccessors(const Node & node)
+{
+  for (size_t n = 0; n < node.noutputs(); n++)
+  {
+    const auto output = node.output(n);
+    for (const auto & user : output->Users())
+    {
+      if (TryGetOwnerNode<Node>(user))
+        return true;
+    }
+  }
+
+  return false;
+}
 
 BottomUpTraverser::~BottomUpTraverser() noexcept = default;
 
@@ -133,8 +147,8 @@ BottomUpTraverser::BottomUpTraverser(Region * region, bool revisit)
 
   for (size_t n = 0; n < region->nresults(); n++)
   {
-    auto node = TryGetOwnerNode<Node>(*region->result(n)->origin());
-    if (node && !node->has_successors())
+    const auto node = TryGetOwnerNode<Node>(*region->result(n)->origin());
+    if (node && !HasSuccessors(*node))
       tracker_.set_nodestate(node, traversal_nodestate::frontier);
   }
 

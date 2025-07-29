@@ -73,7 +73,7 @@ public:
   {
     auto bt = std::dynamic_pointer_cast<const rvsdg::bittype>(size->Type());
     if (!bt)
-      throw jlm::util::error("expected bits type.");
+      throw util::Error("expected bits type.");
 
     AllocaOperation op(std::move(allocatedType), std::move(bt), alignment);
     return ThreeAddressCode::create(op, { size });
@@ -87,7 +87,7 @@ public:
   {
     auto bt = std::dynamic_pointer_cast<const rvsdg::bittype>(size->Type());
     if (!bt)
-      throw util::error("expected bits type.");
+      throw util::Error("expected bits type.");
 
     return outputs(&rvsdg::CreateOpNode<AllocaOperation>(
         { size },

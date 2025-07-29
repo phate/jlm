@@ -11,7 +11,7 @@ namespace jlm::hls
 {
 
 static bool
-RemoveUnusedLoopOutputs(hls::loop_node & loopNode)
+RemoveUnusedLoopOutputs(LoopNode & loopNode)
 {
   bool anyChanged = false;
   auto loopSubregion = loopNode.subregion();
@@ -34,7 +34,7 @@ RemoveUnusedLoopOutputs(hls::loop_node & loopNode)
 }
 
 static bool
-RemoveUnusedInputs(hls::loop_node & loopNode)
+RemoveUnusedInputs(LoopNode & loopNode)
 {
   bool anyChanged = false;
   auto loopSubregion = loopNode.subregion();
@@ -96,7 +96,7 @@ EliminateDeadNodesInRegion(rvsdg::Region & region)
         remove(node);
         changed = true;
       }
-      else if (auto loopNode = dynamic_cast<hls::loop_node *>(node))
+      else if (auto loopNode = dynamic_cast<LoopNode *>(node))
       {
         changed |= RemoveUnusedLoopOutputs(*loopNode);
         changed |= RemoveUnusedInputs(*loopNode);
@@ -117,13 +117,13 @@ EliminateDeadNodes(llvm::RvsdgModule & rvsdgModule)
 
   if (rootRegion.nnodes() != 1)
   {
-    throw util::error("Root should have only one node now");
+    throw util::Error("Root should have only one node now");
   }
 
   auto lambdaNode = dynamic_cast<const rvsdg::LambdaNode *>(rootRegion.Nodes().begin().ptr());
   if (!lambdaNode)
   {
-    throw util::error("Node needs to be a lambda");
+    throw util::Error("Node needs to be a lambda");
   }
 
   EliminateDeadNodesInRegion(*lambdaNode->subregion());

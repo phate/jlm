@@ -39,13 +39,13 @@ protected:
     auto & lengthType = *operandTypes[2];
     if (lengthType != *rvsdg::bittype::Create(32) && lengthType != *rvsdg::bittype::Create(64))
     {
-      throw util::error("Expected 32 bit or 64 bit integer type.");
+      throw util::Error("Expected 32 bit or 64 bit integer type.");
     }
 
     auto & memoryStateType = *operandTypes.back();
     if (!is<MemoryStateType>(memoryStateType))
     {
-      throw util::error("Number of memory states cannot be zero.");
+      throw util::Error("Number of memory states cannot be zero.");
     }
   }
 

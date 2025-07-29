@@ -325,7 +325,7 @@ private:
       return storedType;
     }
 
-    throw util::error("Expected value type");
+    throw util::Error("Expected value type");
   }
 
   static std::vector<std::shared_ptr<const rvsdg::Type>>
@@ -452,7 +452,7 @@ private:
     if (auto storedType = std::dynamic_pointer_cast<const rvsdg::ValueType>(type))
       return storedType;
 
-    throw jlm::util::error("Expected value type");
+    throw util::Error("Expected value type");
   }
 
   static std::vector<std::shared_ptr<const rvsdg::Type>>

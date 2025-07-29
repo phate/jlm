@@ -16,12 +16,12 @@
 namespace jlm::rvsdg
 {
 
-class bitconcat_op final : public BinaryOperation
+class BitConcatOperation final : public BinaryOperation
 {
 public:
-  ~bitconcat_op() noexcept override;
+  ~BitConcatOperation() noexcept override;
 
-  explicit inline bitconcat_op(const std::vector<std::shared_ptr<const bittype>> types)
+  explicit BitConcatOperation(const std::vector<std::shared_ptr<const bittype>> types)
       : BinaryOperation({ types.begin(), types.end() }, aggregate_arguments(types))
   {}
 
@@ -57,7 +57,7 @@ bitconcat(const std::vector<jlm::rvsdg::Output *> & operands);
 
 std::optional<std::vector<rvsdg::Output *>>
 FlattenBitConcatOperation(
-    const bitconcat_op & operation,
+    const BitConcatOperation & operation,
     const std::vector<rvsdg::Output *> & operands);
 
 }

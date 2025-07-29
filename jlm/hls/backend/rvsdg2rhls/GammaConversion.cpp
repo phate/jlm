@@ -105,8 +105,7 @@ CanGammaNodeBeSpeculative(const rvsdg::GammaNode & gammaNode)
   {
     for (auto & node : gammaNode.subregion(i)->Nodes())
     {
-      if (dynamic_cast<const rvsdg::ThetaNode *>(&node)
-          || dynamic_cast<const hls::loop_node *>(&node))
+      if (dynamic_cast<const rvsdg::ThetaNode *>(&node) || dynamic_cast<const LoopNode *>(&node))
       {
         // don't allow thetas or loops since they could potentially block forever
         return false;
@@ -121,7 +120,7 @@ CanGammaNodeBeSpeculative(const rvsdg::GammaNode & gammaNode)
       }
       else if (rvsdg::is<rvsdg::StructuralOperation>(&node))
       {
-        throw util::error("Unexpected structural node: " + node.DebugString());
+        throw util::Error("Unexpected structural node: " + node.DebugString());
       }
     }
   }

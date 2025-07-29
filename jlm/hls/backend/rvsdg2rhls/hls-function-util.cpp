@@ -100,21 +100,23 @@ trace_constant(const rvsdg::Output * dst)
     return trace_constant(arg->input()->origin());
   }
 
-  if (auto so = dynamic_cast<const rvsdg::SimpleOutput *>(dst))
+  auto [constantNode, constantOperation] =
+      rvsdg::TryGetSimpleNodeAndOp<llvm::IntegerConstantOperation>(*dst);
+  if (constantNode)
   {
-    if (auto co = dynamic_cast<const llvm::IntegerConstantOperation *>(&so->node()->GetOperation()))
-    {
-      return co;
-    }
-    for (size_t i = 0; i < so->node()->ninputs(); ++i)
+    if (constantOperation)
+      return constantOperation;
+
+    for (size_t i = 0; i < constantNode->ninputs(); ++i)
     {
       // TODO: fix, this is a hack - only works because of distribute constants
-      if (*so->node()->input(i)->Type() == *dst->Type())
+      if (*constantNode->input(i)->Type() == *dst->Type())
       {
-        return trace_constant(so->node()->input(i)->origin());
+        return trace_constant(constantNode->input(i)->origin());
       }
     }
   }
+
   JLM_UNREACHABLE("Constant not found");
 }
 
@@ -136,7 +138,7 @@ route_to_region_rhls(rvsdg::Region * target, rvsdg::Output * out)
   }
   // route out to convergence point from out
   rvsdg::Output * common_out = route_request_rhls(common_region, out);
-  auto common_loop = dynamic_cast<loop_node *>(common_region->node());
+  auto common_loop = dynamic_cast<LoopNode *>(common_region->node());
   if (common_loop)
   {
     // add a backedge to prevent cycles
@@ -166,7 +168,7 @@ route_response_rhls(rvsdg::Region * target, rvsdg::Output * response)
   else
   {
     auto parent_response = route_response_rhls(target->node()->region(), response);
-    auto ln = dynamic_cast<loop_node *>(target->node());
+    auto ln = dynamic_cast<LoopNode *>(target->node());
     JLM_ASSERT(ln);
     auto input = rvsdg::StructuralInput::create(ln, parent_response, parent_response->Type());
     auto & argument = EntryArgument::Create(*target, *input, response->Type());
@@ -183,7 +185,7 @@ route_request_rhls(rvsdg::Region * target, rvsdg::Output * request)
   }
   else
   {
-    auto ln = dynamic_cast<loop_node *>(request->region()->node());
+    auto ln = dynamic_cast<LoopNode *>(request->region()->node());
     JLM_ASSERT(ln);
     auto output = rvsdg::StructuralOutput::create(ln, request->Type());
     ExitResult::Create(*request, *output);
@@ -233,11 +235,11 @@ trace_call_rhls(const rvsdg::Output * output)
       }
     }
   }
-  else if (auto so = dynamic_cast<const rvsdg::SimpleOutput *>(output))
+  else if (auto simpleNode = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*output))
   {
-    for (size_t i = 0; i < so->node()->ninputs(); ++i)
+    for (size_t i = 0; i < simpleNode->ninputs(); ++i)
     {
-      auto ip = so->node()->input(i);
+      auto ip = simpleNode->input(i);
       if (*ip->Type() == *output->Type())
       {
         if (auto result = trace_call_rhls(ip))
@@ -322,7 +324,7 @@ FindSourceNode(rvsdg::Output * out)
   }
   else if (auto ra = dynamic_cast<rvsdg::RegionArgument *>(out))
   {
-    if (ra->input() && rvsdg::TryGetOwnerNode<loop_node>(*ra->input()))
+    if (ra->input() && rvsdg::TryGetOwnerNode<LoopNode>(*ra->input()))
     {
       return FindSourceNode(ra->input()->origin());
     }
@@ -334,11 +336,11 @@ FindSourceNode(rvsdg::Output * out)
   }
   else if (auto so = dynamic_cast<rvsdg::StructuralOutput *>(out))
   {
-    JLM_ASSERT(rvsdg::TryGetOwnerNode<loop_node>(*out));
+    JLM_ASSERT(rvsdg::TryGetOwnerNode<LoopNode>(*out));
     return FindSourceNode(so->results.begin()->origin());
   }
-  auto result = dynamic_cast<rvsdg::SimpleOutput *>(out);
-  JLM_ASSERT(result);
-  return result;
+
+  JLM_ASSERT(rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*out));
+  return out;
 }
 }

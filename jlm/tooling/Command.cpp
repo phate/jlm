@@ -61,7 +61,7 @@ Command::Run() const
   const auto returnCode = system(command.c_str());
   if (returnCode != EXIT_SUCCESS)
   {
-    throw util::error(
+    throw util::Error(
         util::strfmt("Subcommand failed with status code ", returnCode, ": ", command));
   }
 }
@@ -452,7 +452,7 @@ JlmOptCommand::ParseLlvmIrFile(
     std::string errors;
     ::llvm::raw_string_ostream os(errors);
     diagnostic.print(ProgramName_.c_str(), os);
-    throw util::error(errors);
+    throw util::Error(errors);
   }
 
   auto interProceduralGraphModule = llvm::ConvertLlvmModule(*llvmModule);
@@ -568,7 +568,7 @@ JlmOptCommand::PrintAsMlir(
   auto omega = mlirgen.ConvertModule(rvsdgModule);
   mlirgen.Print(omega, outputFile);
 #else
-  throw util::error(
+  throw util::Error(
       "This version of jlm-opt has not been compiled with support for the MLIR backend\n");
 #endif
 }
@@ -668,7 +668,7 @@ void
 MkdirCommand::Run() const
 {
   if (mkdir(Path_.to_str().c_str(), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH) != 0)
-    throw util::error("mkdir failed: " + Path_.to_str());
+    throw util::Error("mkdir failed: " + Path_.to_str());
 }
 
 LlvmOptCommand::~LlvmOptCommand() noexcept = default;

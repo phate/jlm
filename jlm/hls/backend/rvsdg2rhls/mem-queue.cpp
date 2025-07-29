@@ -105,20 +105,18 @@ find_loop_output(jlm::rvsdg::StructuralInput * sti)
     {
       auto res = ba->result();
       JLM_ASSERT(res);
-      auto buffer_out = dynamic_cast<jlm::rvsdg::SimpleOutput *>(res->origin());
-      JLM_ASSERT(buffer_out);
-      JLM_ASSERT(jlm::rvsdg::is<jlm::hls::BufferOperation>(buffer_out->node()));
-      auto branch_out =
-          dynamic_cast<jlm::rvsdg::SimpleOutput *>(buffer_out->node()->input(0)->origin());
-      JLM_ASSERT(branch_out);
-      JLM_ASSERT(
-          dynamic_cast<const jlm::hls::BranchOperation *>(&branch_out->node()->GetOperation()));
-      // branch
+      auto [bufferNode, bufferOperation] =
+          jlm::rvsdg::TryGetSimpleNodeAndOp<jlm::hls::BufferOperation>(*res->origin());
+      JLM_ASSERT(bufferNode && bufferOperation);
+      auto [branchNode, branchOperation] =
+          jlm::rvsdg::TryGetSimpleNodeAndOp<jlm::hls::BranchOperation>(
+              *bufferNode->input(0)->origin());
+      JLM_ASSERT(branchNode && branchOperation);
       for (size_t j = 0; j < 2; ++j)
       {
-        JLM_ASSERT(branch_out->node()->output(j)->nusers() == 1);
-        auto result = dynamic_cast<jlm::rvsdg::RegionResult *>(
-            &*branch_out->node()->output(j)->Users().begin());
+        JLM_ASSERT(branchNode->output(j)->nusers() == 1);
+        auto result =
+            dynamic_cast<jlm::rvsdg::RegionResult *>(&*branchNode->output(j)->Users().begin());
         if (result)
         {
           return result->output();
@@ -159,7 +157,7 @@ separate_load_edge(
     }
     else if (auto sti = dynamic_cast<jlm::rvsdg::StructuralInput *>(user))
     {
-      auto loop_node = jlm::util::AssertedCast<jlm::hls::loop_node>(sti->node());
+      auto loop_node = jlm::util::AssertedCast<jlm::hls::LoopNode>(sti->node());
       jlm::rvsdg::Output * buffer = nullptr;
       auto addr_edge_before_loop = addr_edge;
       addr_edge = loop_node->AddLoopVar(addr_edge, &buffer);
@@ -324,7 +322,7 @@ separate_load_edge(
           user->divert_to(addr_edge);
           sn->output(1)->divert_users(mem_edge);
           remove(sn);
-          *load = dynamic_cast<jlm::rvsdg::SimpleOutput *>(new_load_outputs[0])->node();
+          *load = &jlm::rvsdg::AssertGetOwnerNode<jlm::rvsdg::SimpleNode>(*new_load_outputs[0]);
           *load_encountered = true;
         }
         else
@@ -418,7 +416,7 @@ process_loops(jlm::rvsdg::Output * state_edge)
     }
     else if (auto sti = dynamic_cast<jlm::rvsdg::StructuralInput *>(&user))
     {
-      JLM_ASSERT(dynamic_cast<const jlm::hls::loop_node *>(sti->node()));
+      JLM_ASSERT(dynamic_cast<const jlm::hls::LoopNode *>(sti->node()));
       // update to output of loop
       auto mem_edge_after_loop = find_loop_output(sti);
       JLM_ASSERT(mem_edge_after_loop->nusers() == 1);
@@ -459,7 +457,8 @@ process_loops(jlm::rvsdg::Output * state_edge)
         JLM_ASSERT(store_nodes.size() == store_addresses.size());
         JLM_ASSERT(store_nodes.size() == store_dequeues.size());
         auto state_gate_addr_in =
-            dynamic_cast<jlm::rvsdg::SimpleOutput *>(load->input(0)->origin())->node()->input(0);
+            jlm::rvsdg::AssertGetOwnerNode<jlm::rvsdg::SimpleNode>(*load->input(0)->origin())
+                .input(0);
         for (size_t j = 0; j < store_nodes.size(); ++j)
         {
           JLM_ASSERT(state_gate_addr_in->origin()->region() == store_addresses[j]->region());

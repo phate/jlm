@@ -136,17 +136,17 @@ LambdaNode::finalize(const std::vector<jlm::rvsdg::Output *> & results)
   }
 
   if (GetOperation().type().NumResults() != results.size())
-    throw util::error("Incorrect number of results.");
+    throw util::Error("Incorrect number of results.");
 
   for (size_t n = 0; n < results.size(); n++)
   {
     auto & expected = GetOperation().type().ResultType(n);
     auto & received = *results[n]->Type();
     if (*results[n]->Type() != GetOperation().type().ResultType(n))
-      throw util::error("Expected " + expected.debug_string() + ", got " + received.debug_string());
+      throw util::Error("Expected " + expected.debug_string() + ", got " + received.debug_string());
 
     if (results[n]->region() != subregion())
-      throw util::error("Invalid operand region.");
+      throw util::Error("Invalid operand region.");
   }
 
   for (const auto & origin : results)

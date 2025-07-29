@@ -271,7 +271,7 @@ public:
   {
     auto it = AllocaNodes_.find(&node);
     if (it == AllocaNodes_.end())
-      throw jlm::util::error("Cannot find alloca node in points-to graph.");
+      throw util::Error("Cannot find alloca node in points-to graph.");
 
     return *it->second;
   }
@@ -281,7 +281,7 @@ public:
   {
     auto it = DeltaNodes_.find(&node);
     if (it == DeltaNodes_.end())
-      throw jlm::util::error("Cannot find delta node in points-to graph.");
+      throw util::Error("Cannot find delta node in points-to graph.");
 
     return *it->second;
   }
@@ -291,7 +291,7 @@ public:
   {
     auto it = ImportNodes_.find(&argument);
     if (it == ImportNodes_.end())
-      throw jlm::util::error("Cannot find import node in points-to graph.");
+      throw util::Error("Cannot find import node in points-to graph.");
 
     return *it->second;
   }
@@ -301,7 +301,7 @@ public:
   {
     auto it = LambdaNodes_.find(&node);
     if (it == LambdaNodes_.end())
-      throw jlm::util::error("Cannot find lambda node in points-to graph.");
+      throw util::Error("Cannot find lambda node in points-to graph.");
 
     return *it->second;
   }
@@ -311,7 +311,7 @@ public:
   {
     auto it = MallocNodes_.find(&node);
     if (it == MallocNodes_.end())
-      throw jlm::util::error("Cannot find malloc node in points-to graph.");
+      throw util::Error("Cannot find malloc node in points-to graph.");
 
     return *it->second;
   }
@@ -321,7 +321,7 @@ public:
   {
     auto it = RegisterNodeMap_.find(&output);
     if (it == RegisterNodeMap_.end())
-      throw util::error("Cannot find register set node in points-to graph.");
+      throw util::Error("Cannot find register set node in points-to graph.");
 
     return *it->second;
   }

@@ -60,7 +60,7 @@ ControlType::Create(std::size_t nalternatives)
   {
     if (nalternatives == 0)
     {
-      throw jlm::util::error("Alternatives of a control type must be non-zero.");
+      throw util::Error("Alternatives of a control type must be non-zero.");
     }
     return std::shared_ptr<const ControlType>(
         std::shared_ptr<void>(),
@@ -79,7 +79,7 @@ ctlvalue_repr::ctlvalue_repr(size_t alternative, size_t nalternatives)
       nalternatives_(nalternatives)
 {
   if (alternative >= nalternatives)
-    throw jlm::util::error("Alternative is bigger than the number of possible alternatives.");
+    throw util::Error("Alternative is bigger than the number of possible alternatives.");
 }
 
 /* match operator */

@@ -41,7 +41,7 @@ ControlFlowGraph::remove_node(ControlFlowGraph::iterator & nodeit)
   for (auto & inedge : nodeit->InEdges())
   {
     if (inedge.source() != nodeit.node())
-      throw util::error("cannot remove node. It has still incoming edges.");
+      throw util::Error("cannot remove node. It has still incoming edges.");
   }
 
   nodeit->remove_outedges();

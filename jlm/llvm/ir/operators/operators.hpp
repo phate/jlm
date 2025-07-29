@@ -123,7 +123,7 @@ public:
   create(const Variable * rhs, const Variable * lhs)
   {
     if (rhs->type() != lhs->type())
-      throw jlm::util::error("LHS and RHS of assignment must have same type.");
+      throw util::Error("LHS and RHS of assignment must have same type.");
 
     return ThreeAddressCode::create(AssignmentOperation(rhs->Type()), { lhs, rhs });
   }
@@ -216,7 +216,7 @@ public:
     if (is<ScalableVectorType>(p->type()) && is<ScalableVectorType>(t->type()))
       return createVectorSelectTac<ScalableVectorType>(p, t, f);
 
-    throw jlm::util::error("Expected vector types as operands.");
+    throw util::Error("Expected vector types as operands.");
   }
 
 private:
@@ -256,11 +256,11 @@ public:
   {
     auto st = dynamic_cast<const FloatingPointType *>(srctype.get());
     if (!st)
-      throw jlm::util::error("expected floating point type.");
+      throw util::Error("expected floating point type.");
 
     auto dt = dynamic_cast<const jlm::rvsdg::bittype *>(dsttype.get());
     if (!dt)
-      throw jlm::util::error("expected bitstring type.");
+      throw util::Error("expected bitstring type.");
   }
 
   bool
@@ -284,11 +284,11 @@ public:
   {
     auto st = std::dynamic_pointer_cast<const FloatingPointType>(operand->Type());
     if (!st)
-      throw jlm::util::error("expected floating point type.");
+      throw util::Error("expected floating point type.");
 
     auto dt = std::dynamic_pointer_cast<const jlm::rvsdg::bittype>(type);
     if (!dt)
-      throw jlm::util::error("expected bitstring type.");
+      throw util::Error("expected bitstring type.");
 
     const FloatingPointToUnsignedIntegerOperation op(std::move(st), std::move(dt));
     return ThreeAddressCode::create(op, { operand });
@@ -319,11 +319,11 @@ public:
   {
     auto st = dynamic_cast<const FloatingPointType *>(srctype.get());
     if (!st)
-      throw jlm::util::error("expected floating point type.");
+      throw util::Error("expected floating point type.");
 
     auto dt = dynamic_cast<const jlm::rvsdg::bittype *>(dsttype.get());
     if (!dt)
-      throw jlm::util::error("expected bitstring type.");
+      throw util::Error("expected bitstring type.");
   }
 
   bool
@@ -347,11 +347,11 @@ public:
   {
     auto st = std::dynamic_pointer_cast<const FloatingPointType>(operand->Type());
     if (!st)
-      throw jlm::util::error("expected floating point type.");
+      throw util::Error("expected floating point type.");
 
     auto dt = std::dynamic_pointer_cast<const jlm::rvsdg::bittype>(type);
     if (!dt)
-      throw jlm::util::error("expected bitstring type.");
+      throw util::Error("expected bitstring type.");
 
     FloatingPointToSignedIntegerOperation op(std::move(st), std::move(dt));
     return ThreeAddressCode::create(op, { operand });
@@ -383,11 +383,11 @@ public:
   {
     auto st = std::dynamic_pointer_cast<const rvsdg::ControlType>(operand->Type());
     if (!st)
-      throw jlm::util::error("expected control type.");
+      throw util::Error("expected control type.");
 
     auto dt = std::dynamic_pointer_cast<const jlm::rvsdg::bittype>(type);
     if (!dt)
-      throw jlm::util::error("expected bitstring type.");
+      throw util::Error("expected bitstring type.");
 
     ControlToIntOperation op(std::move(st), std::move(dt));
     return ThreeAddressCode::create(op, { operand });
@@ -475,7 +475,7 @@ private:
     if (auto pointerType = std::dynamic_pointer_cast<const PointerType>(type))
       return pointerType;
 
-    throw jlm::util::error("expected pointer type.");
+    throw util::Error("expected pointer type.");
   }
 };
 
@@ -497,11 +497,11 @@ public:
   {
     auto at = dynamic_cast<const jlm::rvsdg::bittype *>(srctype.get());
     if (!at)
-      throw jlm::util::error("expected bitstring type.");
+      throw util::Error("expected bitstring type.");
 
     auto pt = dynamic_cast<const PointerType *>(dsttype.get());
     if (!pt)
-      throw jlm::util::error("expected pointer type.");
+      throw util::Error("expected pointer type.");
   }
 
   bool
@@ -531,11 +531,11 @@ public:
   {
     auto at = std::dynamic_pointer_cast<const jlm::rvsdg::bittype>(argument->Type());
     if (!at)
-      throw jlm::util::error("expected bitstring type.");
+      throw util::Error("expected bitstring type.");
 
     auto pt = std::dynamic_pointer_cast<const PointerType>(type);
     if (!pt)
-      throw jlm::util::error("expected pointer type.");
+      throw util::Error("expected pointer type.");
 
     IntegerToPointerOperation op(at, pt);
     return ThreeAddressCode::create(op, { argument });
@@ -546,11 +546,11 @@ public:
   {
     auto ot = std::dynamic_pointer_cast<const jlm::rvsdg::bittype>(operand->Type());
     if (!ot)
-      throw jlm::util::error("expected bitstring type.");
+      throw util::Error("expected bitstring type.");
 
     auto pt = std::dynamic_pointer_cast<const PointerType>(type);
     if (!pt)
-      throw jlm::util::error("expected pointer type.");
+      throw util::Error("expected pointer type.");
 
     return rvsdg::CreateOpNode<IntegerToPointerOperation>({ operand }, ot, pt).output(0);
   }
@@ -574,11 +574,11 @@ public:
   {
     auto pt = dynamic_cast<const PointerType *>(srctype.get());
     if (!pt)
-      throw jlm::util::error("expected pointer type.");
+      throw util::Error("expected pointer type.");
 
     auto bt = dynamic_cast<const jlm::rvsdg::bittype *>(dsttype.get());
     if (!bt)
-      throw jlm::util::error("expected bitstring type.");
+      throw util::Error("expected bitstring type.");
   }
 
   bool
@@ -608,11 +608,11 @@ public:
   {
     auto pt = std::dynamic_pointer_cast<const PointerType>(argument->Type());
     if (!pt)
-      throw jlm::util::error("expected pointer type.");
+      throw util::Error("expected pointer type.");
 
     auto bt = std::dynamic_pointer_cast<const jlm::rvsdg::bittype>(type);
     if (!bt)
-      throw jlm::util::error("expected bitstring type.");
+      throw util::Error("expected bitstring type.");
 
     PtrToIntOperation op(std::move(pt), std::move(bt));
     return ThreeAddressCode::create(op, { argument });
@@ -630,7 +630,7 @@ public:
       : SimpleOperation({ size, type }, { ArrayType::Create(type, size) })
   {
     if (size == 0)
-      throw jlm::util::error("size equals zero.");
+      throw util::Error("size equals zero.");
   }
 
   bool
@@ -658,11 +658,11 @@ public:
   create(const std::vector<const Variable *> & elements)
   {
     if (elements.size() == 0)
-      throw jlm::util::error("expected at least one element.");
+      throw util::Error("expected at least one element.");
 
     auto vt = std::dynamic_pointer_cast<const jlm::rvsdg::ValueType>(elements[0]->Type());
     if (!vt)
-      throw jlm::util::error("expected value type.");
+      throw util::Error("expected value type.");
 
     ConstantDataArray op(std::move(vt), elements.size());
     return ThreeAddressCode::create(op, elements);
@@ -672,12 +672,12 @@ public:
   Create(const std::vector<jlm::rvsdg::Output *> & elements)
   {
     if (elements.empty())
-      throw jlm::util::error("Expected at least one element.");
+      throw util::Error("Expected at least one element.");
 
     auto valueType = std::dynamic_pointer_cast<const jlm::rvsdg::ValueType>(elements[0]->Type());
     if (!valueType)
     {
-      throw jlm::util::error("Expected value type.");
+      throw util::Error("Expected value type.");
     }
 
     return rvsdg::CreateOpNode<ConstantDataArray>(elements, std::move(valueType), elements.size())
@@ -735,7 +735,7 @@ public:
   {
     auto pt = std::dynamic_pointer_cast<const PointerType>(op1->Type());
     if (!pt)
-      throw jlm::util::error("expected pointer type.");
+      throw util::Error("expected pointer type.");
 
     PtrCmpOperation op(std::move(pt), cmp);
     return ThreeAddressCode::create(op, { op1, op2 });
@@ -754,7 +754,7 @@ public:
       : UnaryOperation(rvsdg::bittype::Create(nsrcbits), rvsdg::bittype::Create(ndstbits))
   {
     if (ndstbits < nsrcbits)
-      throw jlm::util::error("# destination bits must be greater than # source bits.");
+      throw util::Error("# destination bits must be greater than # source bits.");
   }
 
   ZExtOperation(
@@ -763,7 +763,7 @@ public:
       : UnaryOperation(srctype, dsttype)
   {
     if (dsttype->nbits() < srctype->nbits())
-      throw jlm::util::error("# destination bits must be greater than # source bits.");
+      throw util::Error("# destination bits must be greater than # source bits.");
   }
 
   ZExtOperation(
@@ -773,14 +773,14 @@ public:
   {
     auto st = dynamic_cast<const jlm::rvsdg::bittype *>(srctype.get());
     if (!st)
-      throw jlm::util::error("expected bitstring type.");
+      throw util::Error("expected bitstring type.");
 
     auto dt = dynamic_cast<const jlm::rvsdg::bittype *>(dsttype.get());
     if (!dt)
-      throw jlm::util::error("expected bitstring type.");
+      throw util::Error("expected bitstring type.");
 
     if (dt->nbits() < st->nbits())
-      throw jlm::util::error("# destination bits must be greater than # source bits.");
+      throw util::Error("# destination bits must be greater than # source bits.");
   }
 
   bool
@@ -890,7 +890,7 @@ public:
   {
     auto ft = std::dynamic_pointer_cast<const FloatingPointType>(type);
     if (!ft)
-      throw jlm::util::error("expected floating point type.");
+      throw util::Error("expected floating point type.");
 
     ConstantFP op(std::move(ft), constant);
     return ThreeAddressCode::create(op, {});
@@ -977,7 +977,7 @@ public:
   {
     auto ft = std::dynamic_pointer_cast<const FloatingPointType>(op1->Type());
     if (!ft)
-      throw jlm::util::error("expected floating point type.");
+      throw util::Error("expected floating point type.");
 
     FCmpOperation op(cmp, std::move(ft));
     return ThreeAddressCode::create(op, { op1, op2 });
@@ -1118,7 +1118,7 @@ private:
     if (auto valueType = std::dynamic_pointer_cast<const jlm::rvsdg::ValueType>(type))
       return valueType;
 
-    throw jlm::util::error("Expected value type.");
+    throw util::Error("Expected value type.");
   }
 };
 
@@ -1186,7 +1186,7 @@ public:
   {
     auto ft = std::dynamic_pointer_cast<const FloatingPointType>(op1->Type());
     if (!ft)
-      throw jlm::util::error("expected floating point type.");
+      throw util::Error("expected floating point type.");
 
     FBinaryOperation op(fpop, ft);
     return ThreeAddressCode::create(op, { op1, op2 });
@@ -1205,7 +1205,7 @@ public:
       : UnaryOperation(FloatingPointType::Create(srcsize), FloatingPointType::Create(dstsize))
   {
     if (srcsize == fpsize::flt && dstsize == fpsize::half)
-      throw jlm::util::error("destination type size must be bigger than source type size.");
+      throw util::Error("destination type size must be bigger than source type size.");
   }
 
   FPExtOperation(
@@ -1214,7 +1214,7 @@ public:
       : UnaryOperation(srctype, dsttype)
   {
     if (srctype->size() == fpsize::flt && dsttype->size() == fpsize::half)
-      throw jlm::util::error("destination type size must be bigger than source type size.");
+      throw util::Error("destination type size must be bigger than source type size.");
   }
 
   FPExtOperation(
@@ -1224,14 +1224,14 @@ public:
   {
     auto st = dynamic_cast<const FloatingPointType *>(srctype.get());
     if (!st)
-      throw jlm::util::error("expected floating point type.");
+      throw util::Error("expected floating point type.");
 
     auto dt = dynamic_cast<const FloatingPointType *>(dsttype.get());
     if (!dt)
-      throw jlm::util::error("expected floating point type.");
+      throw util::Error("expected floating point type.");
 
     if (st->size() == fpsize::flt && dt->size() == fpsize::half)
-      throw jlm::util::error("destination type size must be bigger than source type size.");
+      throw util::Error("destination type size must be bigger than source type size.");
   }
 
   bool
@@ -1267,11 +1267,11 @@ public:
   {
     auto st = std::dynamic_pointer_cast<const FloatingPointType>(operand->Type());
     if (!st)
-      throw jlm::util::error("expected floating point type.");
+      throw util::Error("expected floating point type.");
 
     auto dt = std::dynamic_pointer_cast<const FloatingPointType>(type);
     if (!dt)
-      throw jlm::util::error("expected floating point type.");
+      throw util::Error("expected floating point type.");
 
     const FPExtOperation op(std::move(st), std::move(dt));
     return ThreeAddressCode::create(op, { operand });
@@ -1318,7 +1318,7 @@ public:
   {
     auto type = std::dynamic_pointer_cast<const FloatingPointType>(operand->Type());
     if (!type)
-      throw jlm::util::error("expected floating point type.");
+      throw util::Error("expected floating point type.");
 
     const FNegOperation op(std::move(type));
     return ThreeAddressCode::create(op, { operand });
@@ -1335,7 +1335,7 @@ public:
   {
     if (srcsize == fpsize::half || (srcsize == fpsize::flt && dstsize != fpsize::half)
         || (srcsize == fpsize::dbl && dstsize == fpsize::dbl))
-      throw jlm::util::error("destination tpye size must be smaller than source size type.");
+      throw util::Error("destination tpye size must be smaller than source size type.");
   }
 
   FPTruncOperation(
@@ -1344,7 +1344,7 @@ public:
       : UnaryOperation(srctype, dsttype)
   {
     if (srctype->size() == fpsize::flt && dsttype->size() == fpsize::half)
-      throw jlm::util::error("destination type size must be bigger than source type size.");
+      throw util::Error("destination type size must be bigger than source type size.");
   }
 
   FPTruncOperation(
@@ -1354,15 +1354,15 @@ public:
   {
     auto st = dynamic_cast<const FloatingPointType *>(srctype.get());
     if (!st)
-      throw jlm::util::error("expected floating point type.");
+      throw util::Error("expected floating point type.");
 
     auto dt = dynamic_cast<const FloatingPointType *>(dsttype.get());
     if (!dt)
-      throw jlm::util::error("expected floating point type.");
+      throw util::Error("expected floating point type.");
 
     if (st->size() == fpsize::half || (st->size() == fpsize::flt && dt->size() != fpsize::half)
         || (st->size() == fpsize::dbl && dt->size() == fpsize::dbl))
-      throw jlm::util::error("destination type size must be smaller than source size type.");
+      throw util::Error("destination type size must be smaller than source size type.");
   }
 
   bool
@@ -1398,11 +1398,11 @@ public:
   {
     auto st = std::dynamic_pointer_cast<const FloatingPointType>(operand->Type());
     if (!st)
-      throw jlm::util::error("expected floating point type.");
+      throw util::Error("expected floating point type.");
 
     auto dt = std::dynamic_pointer_cast<const FloatingPointType>(type);
     if (!dt)
-      throw jlm::util::error("expected floating point type.");
+      throw util::Error("expected floating point type.");
 
     const FPTruncOperation op(std::move(st), std::move(dt));
     return ThreeAddressCode::create(op, { operand });
@@ -1533,11 +1533,11 @@ private:
   {
     auto ot = std::dynamic_pointer_cast<const jlm::rvsdg::ValueType>(otype);
     if (!ot)
-      throw jlm::util::error("expected value type.");
+      throw util::Error("expected value type.");
 
     auto rt = std::dynamic_pointer_cast<const jlm::rvsdg::ValueType>(rtype);
     if (!rt)
-      throw jlm::util::error("expected value type.");
+      throw util::Error("expected value type.");
 
     return std::make_pair(ot, rt);
   }
@@ -1622,7 +1622,7 @@ public:
       : UnaryOperation(otype, rtype)
   {
     if (otype->nbits() < rtype->nbits())
-      throw jlm::util::error("expected operand's #bits to be larger than results' #bits.");
+      throw util::Error("expected operand's #bits to be larger than results' #bits.");
   }
 
   TruncOperation(
@@ -1632,14 +1632,14 @@ public:
   {
     auto ot = dynamic_cast<const jlm::rvsdg::bittype *>(optype.get());
     if (!ot)
-      throw jlm::util::error("expected bits type.");
+      throw util::Error("expected bits type.");
 
     auto rt = dynamic_cast<const jlm::rvsdg::bittype *>(restype.get());
     if (!rt)
-      throw jlm::util::error("expected bits type.");
+      throw util::Error("expected bits type.");
 
     if (ot->nbits() < rt->nbits())
-      throw jlm::util::error("expected operand's #bits to be larger than results' #bits.");
+      throw util::Error("expected operand's #bits to be larger than results' #bits.");
   }
 
   bool
@@ -1675,11 +1675,11 @@ public:
   {
     auto ot = std::dynamic_pointer_cast<const jlm::rvsdg::bittype>(operand->Type());
     if (!ot)
-      throw jlm::util::error("expected bits type.");
+      throw util::Error("expected bits type.");
 
     auto rt = std::dynamic_pointer_cast<const jlm::rvsdg::bittype>(type);
     if (!rt)
-      throw jlm::util::error("expected bits type.");
+      throw util::Error("expected bits type.");
 
     const TruncOperation op(std::move(ot), std::move(rt));
     return ThreeAddressCode::create(op, { operand });
@@ -1690,7 +1690,7 @@ public:
   {
     auto ot = std::dynamic_pointer_cast<const jlm::rvsdg::bittype>(operand->Type());
     if (!ot)
-      throw jlm::util::error("expected bits type.");
+      throw util::Error("expected bits type.");
 
     return rvsdg::CreateOpNode<TruncOperation>(
                { operand },
@@ -1718,11 +1718,11 @@ public:
   {
     auto st = dynamic_cast<const jlm::rvsdg::bittype *>(optype.get());
     if (!st)
-      throw jlm::util::error("expected bits type.");
+      throw util::Error("expected bits type.");
 
     auto rt = dynamic_cast<const FloatingPointType *>(restype.get());
     if (!rt)
-      throw jlm::util::error("expected floating point type.");
+      throw util::Error("expected floating point type.");
   }
 
   bool
@@ -1746,11 +1746,11 @@ public:
   {
     auto st = std::dynamic_pointer_cast<const jlm::rvsdg::bittype>(operand->Type());
     if (!st)
-      throw jlm::util::error("expected bits type.");
+      throw util::Error("expected bits type.");
 
     auto rt = std::dynamic_pointer_cast<const FloatingPointType>(type);
     if (!rt)
-      throw jlm::util::error("expected floating point type.");
+      throw util::Error("expected floating point type.");
 
     const UIToFPOperation op(std::move(st), std::move(rt));
     return ThreeAddressCode::create(op, { operand });
@@ -1775,11 +1775,11 @@ public:
   {
     auto st = dynamic_cast<const jlm::rvsdg::bittype *>(srctype.get());
     if (!st)
-      throw jlm::util::error("expected bits type.");
+      throw util::Error("expected bits type.");
 
     auto rt = dynamic_cast<const FloatingPointType *>(dsttype.get());
     if (!rt)
-      throw jlm::util::error("expected floating point type.");
+      throw util::Error("expected floating point type.");
   }
 
   bool
@@ -1803,11 +1803,11 @@ public:
   {
     auto st = std::dynamic_pointer_cast<const jlm::rvsdg::bittype>(operand->Type());
     if (!st)
-      throw jlm::util::error("expected bits type.");
+      throw util::Error("expected bits type.");
 
     auto rt = std::dynamic_pointer_cast<const FloatingPointType>(type);
     if (!rt)
-      throw jlm::util::error("expected floating point type.");
+      throw util::Error("expected floating point type.");
 
     SIToFPOperation op(std::move(st), std::move(rt));
     return ThreeAddressCode::create(op, { operand });
@@ -1823,7 +1823,7 @@ public:
       : SimpleOperation({ size, type }, { ArrayType::Create(type, size) })
   {
     if (size == 0)
-      throw jlm::util::error("size equals zero.\n");
+      throw util::Error("size equals zero.\n");
   }
 
   bool
@@ -1851,11 +1851,11 @@ public:
   create(const std::vector<const Variable *> & elements)
   {
     if (elements.size() == 0)
-      throw jlm::util::error("expected at least one element.\n");
+      throw util::Error("expected at least one element.\n");
 
     auto vt = std::dynamic_pointer_cast<const jlm::rvsdg::ValueType>(elements[0]->Type());
     if (!vt)
-      throw jlm::util::error("expected value Type.\n");
+      throw util::Error("expected value Type.\n");
 
     ConstantArrayOperation op(vt, elements.size());
     return ThreeAddressCode::create(op, elements);
@@ -1865,12 +1865,12 @@ public:
   Create(const std::vector<rvsdg::Output *> & operands)
   {
     if (operands.empty())
-      throw util::error("Expected at least one element.\n");
+      throw util::Error("Expected at least one element.\n");
 
     auto valueType = std::dynamic_pointer_cast<const rvsdg::ValueType>(operands[0]->Type());
     if (!valueType)
     {
-      throw util::error("Expected value type.\n");
+      throw util::Error("Expected value type.\n");
     }
 
     return rvsdg::CreateOpNode<ConstantArrayOperation>(operands, valueType, operands.size())
@@ -1890,7 +1890,7 @@ public:
     auto at = dynamic_cast<const ArrayType *>(type.get());
     auto vt = dynamic_cast<const VectorType *>(type.get());
     if (!st && !at && !vt)
-      throw jlm::util::error("expected array, struct, or vector type.\n");
+      throw util::Error("expected array, struct, or vector type.\n");
   }
 
   bool
@@ -1941,11 +1941,11 @@ public:
   {
     auto vt = std::dynamic_pointer_cast<const VectorType>(vector->Type());
     if (!vt)
-      throw jlm::util::error("expected vector type.");
+      throw util::Error("expected vector type.");
 
     auto bt = std::dynamic_pointer_cast<const jlm::rvsdg::bittype>(index->Type());
     if (!bt)
-      throw jlm::util::error("expected bit type.");
+      throw util::Error("expected bit type.");
 
     ExtractElementOperation op(vt, bt);
     return ThreeAddressCode::create(op, { vector, index });
@@ -1995,7 +1995,7 @@ public:
     if (is<ScalableVectorType>(v1->type()) && is<ScalableVectorType>(v2->type()))
       return CreateShuffleVectorTac<ScalableVectorType>(v1, v2, mask);
 
-    throw jlm::util::error("Expected vector types as operands.");
+    throw util::Error("Expected vector types as operands.");
   }
 
 private:
@@ -2036,7 +2036,7 @@ public:
   {
     auto vt = std::dynamic_pointer_cast<const VectorType>(type);
     if (!vt)
-      throw jlm::util::error("expected vector type.");
+      throw util::Error("expected vector type.");
 
     ConstantVectorOperation op(vt);
     return ThreeAddressCode::create(op, operands);
@@ -2058,7 +2058,7 @@ public:
     {
       auto received = vtype->debug_string();
       auto expected = vectype->type().debug_string();
-      throw jlm::util::error(jlm::util::strfmt("expected ", expected, ", got ", received));
+      throw util::Error(jlm::util::strfmt("expected ", expected, ", got ", received));
     }
   }
 
@@ -2076,15 +2076,15 @@ public:
   {
     auto vct = std::dynamic_pointer_cast<const VectorType>(vector->Type());
     if (!vct)
-      throw jlm::util::error("expected vector type.");
+      throw util::Error("expected vector type.");
 
     auto vt = std::dynamic_pointer_cast<const jlm::rvsdg::ValueType>(value->Type());
     if (!vt)
-      throw jlm::util::error("expected value type.");
+      throw util::Error("expected value type.");
 
     auto bt = std::dynamic_pointer_cast<const jlm::rvsdg::bittype>(index->Type());
     if (!bt)
-      throw jlm::util::error("expected bit type.");
+      throw util::Error("expected bit type.");
 
     InsertElementOperation op(vct, vt, bt);
     return ThreeAddressCode::create(op, { vector, value, index });
@@ -2107,14 +2107,14 @@ public:
     {
       auto received = operand->type().debug_string();
       auto expected = op.argument(0)->debug_string();
-      throw jlm::util::error(jlm::util::strfmt("expected ", expected, ", got ", received));
+      throw util::Error(jlm::util::strfmt("expected ", expected, ", got ", received));
     }
 
     if (result->type() != *op.result(0))
     {
       auto received = result->type().debug_string();
       auto expected = op.result(0)->debug_string();
-      throw jlm::util::error(jlm::util::strfmt("expected ", expected, ", got ", received));
+      throw util::Error(jlm::util::strfmt("expected ", expected, ", got ", received));
     }
   }
 
@@ -2170,7 +2170,7 @@ public:
     auto vct1 = std::dynamic_pointer_cast<const VectorType>(operand->Type());
     auto vct2 = std::dynamic_pointer_cast<const VectorType>(type);
     if (!vct1 || !vct2)
-      throw jlm::util::error("expected vector type.");
+      throw util::Error("expected vector type.");
 
     VectorUnaryOperation op(unop, vct1, vct2);
     return ThreeAddressCode::create(op, { operand });
@@ -2194,20 +2194,20 @@ public:
         op_(binop.copy())
   {
     if (*op1 != *op2)
-      throw jlm::util::error("expected the same vector types.");
+      throw util::Error("expected the same vector types.");
 
     if (op1->type() != *binop.argument(0))
     {
       auto received = op1->type().debug_string();
       auto expected = binop.argument(0)->debug_string();
-      throw jlm::util::error(jlm::util::strfmt("expected ", expected, ", got ", received));
+      throw util::Error(jlm::util::strfmt("expected ", expected, ", got ", received));
     }
 
     if (result->type() != *binop.result(0))
     {
       auto received = result->type().debug_string();
       auto expected = binop.result(0)->debug_string();
-      throw jlm::util::error(jlm::util::strfmt("expected ", expected, ", got ", received));
+      throw util::Error(jlm::util::strfmt("expected ", expected, ", got ", received));
     }
   }
 
@@ -2265,7 +2265,7 @@ public:
     auto vct2 = std::dynamic_pointer_cast<const VectorType>(op2->Type());
     auto vct3 = std::dynamic_pointer_cast<const VectorType>(type);
     if (!vct1 || !vct2 || !vct3)
-      throw jlm::util::error("expected vector type.");
+      throw util::Error("expected vector type.");
 
     VectorBinaryOperation op(binop, vct1, vct2, vct3);
     return ThreeAddressCode::create(op, { op1, op2 });
@@ -2311,11 +2311,11 @@ public:
   Create(const std::vector<const Variable *> & elements)
   {
     if (elements.empty())
-      throw jlm::util::error("Expected at least one element.");
+      throw util::Error("Expected at least one element.");
 
     auto vt = std::dynamic_pointer_cast<const jlm::rvsdg::ValueType>(elements[0]->Type());
     if (!vt)
-      throw jlm::util::error("Expected value type.");
+      throw util::Error("Expected value type.");
 
     ConstantDataVectorOperation op(FixedVectorType::Create(vt, elements.size()));
     return ThreeAddressCode::create(op, elements);
@@ -2336,7 +2336,7 @@ public:
         indices_(indices)
   {
     if (indices.empty())
-      throw jlm::util::error("expected at least one index.");
+      throw util::Error("expected at least one index.");
   }
 
   bool
@@ -2385,19 +2385,19 @@ private:
       if (auto st = std::dynamic_pointer_cast<const StructType>(type))
       {
         if (index >= st->GetDeclaration().NumElements())
-          throw jlm::util::error("extractvalue index out of bound.");
+          throw util::Error("extractvalue index out of bound.");
 
         type = st->GetDeclaration().GetElementType(index);
       }
       else if (auto at = std::dynamic_pointer_cast<const ArrayType>(type))
       {
         if (index >= at->nelements())
-          throw jlm::util::error("extractvalue index out of bound.");
+          throw util::Error("extractvalue index out of bound.");
 
         type = at->GetElementType();
       }
       else
-        throw jlm::util::error("expected struct or array type.");
+        throw util::Error("expected struct or array type.");
     }
 
     return { type };
@@ -2442,7 +2442,7 @@ public:
   {
     auto bt = std::dynamic_pointer_cast<const jlm::rvsdg::bittype>(size->Type());
     if (!bt)
-      throw jlm::util::error("expected bits type.");
+      throw util::Error("expected bits type.");
 
     MallocOperation op(std::move(bt));
     return ThreeAddressCode::create(op, { size });
@@ -2453,7 +2453,7 @@ public:
   {
     auto bt = std::dynamic_pointer_cast<const jlm::rvsdg::bittype>(size->Type());
     if (!bt)
-      throw jlm::util::error("expected bits type.");
+      throw util::Error("expected bits type.");
 
     return outputs(&rvsdg::CreateOpNode<MallocOperation>({ size }, std::move(bt)));
   }

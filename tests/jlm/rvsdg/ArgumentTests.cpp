@@ -35,7 +35,7 @@ ArgumentNodeMismatch()
   {
     TestGraphArgument::Create(*structuralNode2->subregion(0), structuralInput, valueType);
   }
-  catch (jlm::util::error & e)
+  catch (jlm::util::Error &)
   {
     inputErrorHandlerCalled = true;
   }

@@ -69,7 +69,7 @@
  *   to the object removed and does not change order of previously inserted
  *   objects
  *
- * An additional template "owner_intrusive_list" implements the same
+ * An additional template OwnerIntrusiveList implements the same
  * interface, but in addition assumes "ownership" of the objects it contains.
  * This means that upon destruction of the container, the elements will
  * be deleted as well. This variant differs in the following ways:
@@ -79,7 +79,7 @@
  * - a new method "unlink" removes an object from the list and returns
  *   a std::unique_ptr to the element
  * - "erase" will actually cause an element to be deleted; likewise,
- *   all elements will be deleted on destruction of the owner_intrusive_list
+ *   all elements will be deleted on destruction of the OwnerIntrusiveList
  */
 
 namespace jlm::util
@@ -613,9 +613,8 @@ public:
 };
 
 template<typename ElementType, typename Accessor>
-class owner_intrusive_list
+class OwnerIntrusiveList
 {
-private:
   typedef IntrusiveList<ElementType, Accessor> internal_list_type;
 
 public:
@@ -627,20 +626,20 @@ public:
   typedef typename internal_list_type::value_type value_type;
   typedef typename internal_list_type::size_type size_type;
 
-  ~owner_intrusive_list() noexcept
+  ~OwnerIntrusiveList() noexcept
   {
     clear();
   }
 
-  owner_intrusive_list()
+  OwnerIntrusiveList()
   {}
 
-  owner_intrusive_list(const owner_intrusive_list & other) = delete;
+  OwnerIntrusiveList(const OwnerIntrusiveList & other) = delete;
 
   void
-  operator=(const owner_intrusive_list & other) = delete;
+  operator=(const OwnerIntrusiveList & other) = delete;
 
-  owner_intrusive_list(owner_intrusive_list && other) noexcept
+  OwnerIntrusiveList(OwnerIntrusiveList && other) noexcept
   {
     swap(other);
   }
@@ -657,7 +656,7 @@ public:
   }
 
   void
-  swap(owner_intrusive_list & other) noexcept
+  swap(OwnerIntrusiveList & other) noexcept
   {
     internal_list_.swap(other.internal_list_);
   }
@@ -712,13 +711,13 @@ public:
   }
 
   inline void
-  splice(Iterator position, owner_intrusive_list & other) noexcept
+  splice(Iterator position, OwnerIntrusiveList & other) noexcept
   {
     splice(position, other, other.begin(), other.end());
   }
 
   inline void
-  splice(Iterator position, owner_intrusive_list & other, Iterator i) noexcept
+  splice(Iterator position, OwnerIntrusiveList & other, Iterator i) noexcept
   {
     Iterator j = i;
     ++j;
@@ -726,7 +725,7 @@ public:
   }
 
   inline void
-  splice(Iterator position, owner_intrusive_list & other, Iterator begin, Iterator end) noexcept
+  splice(Iterator position, OwnerIntrusiveList & other, Iterator begin, Iterator end) noexcept
   {
     internal_list_.splice(position, other.internal_list_, begin, end);
   }

@@ -677,7 +677,7 @@ InOutNode::InOutNode(Graph & graph, size_t inputPorts, size_t outputPorts)
 void
 InOutNode::SetShape(std::string)
 {
-  throw jlm::util::error("InOutNodes can not have custom shapes set");
+  throw Error("InOutNodes can not have custom shapes set");
 }
 
 InputPort &

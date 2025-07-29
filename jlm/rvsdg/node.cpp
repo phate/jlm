@@ -25,7 +25,7 @@ Input::CheckTypes(
     const std::shared_ptr<const rvsdg::Type> & type)
 {
   if (&region != origin.region())
-    throw jlm::util::error("Invalid operand region.");
+    throw util::Error("Invalid operand region.");
 
   if (*type != *origin.Type())
     throw util::TypeError(type->debug_string(), origin.Type()->debug_string());
@@ -67,7 +67,7 @@ Input::divert_to(jlm::rvsdg::Output * new_origin)
     throw jlm::util::TypeError(Type()->debug_string(), new_origin->Type()->debug_string());
 
   if (region() != new_origin->region())
-    throw jlm::util::error("Invalid operand region.");
+    throw util::Error("Invalid operand region.");
 
   auto old_origin = origin();
   old_origin->remove_user(this);
@@ -204,26 +204,38 @@ Output::add_user(jlm::rvsdg::Input * user)
   users_.insert(user);
 }
 
-Output *
-Output::Iterator::ComputeNext() const
+static Output *
+ComputeNextOutput(const Output * output)
 {
-  if (Output_ == nullptr)
+  if (output == nullptr)
     return nullptr;
 
-  const auto index = Output_->index();
-  auto owner = Output_->GetOwner();
+  const auto index = output->index();
+  const auto owner = output->GetOwner();
 
-  if (auto node = std::get_if<Node *>(&owner))
+  if (const auto node = std::get_if<Node *>(&owner))
   {
     return index + 1 < (*node)->noutputs() ? (*node)->output(index + 1) : nullptr;
   }
 
-  if (auto region = std::get_if<Region *>(&owner))
+  if (const auto region = std::get_if<Region *>(&owner))
   {
     return index + 1 < (*region)->narguments() ? (*region)->argument(index + 1) : nullptr;
   }
 
   JLM_UNREACHABLE("Unhandled owner case.");
+}
+
+Output *
+Output::Iterator::ComputeNext() const
+{
+  return ComputeNextOutput(Output_);
+}
+
+Output *
+Output::ConstIterator::ComputeNext() const
+{
+  return ComputeNextOutput(Output_);
 }
 
 node_input::node_input(

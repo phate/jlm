@@ -109,7 +109,7 @@ ExitResult::~ExitResult() noexcept = default;
 ExitResult::ExitResult(rvsdg::Output & origin, rvsdg::StructuralOutput & output)
     : rvsdg::RegionResult(origin.region(), &origin, &output, origin.Type())
 {
-  JLM_ASSERT(dynamic_cast<const loop_node *>(origin.region()->node()));
+  JLM_ASSERT(dynamic_cast<const LoopNode *>(origin.region()->node()));
 }
 
 ExitResult &
@@ -119,7 +119,7 @@ ExitResult::Copy(rvsdg::Output & origin, rvsdg::StructuralOutput * output)
 }
 
 rvsdg::StructuralOutput *
-loop_node::AddLoopVar(jlm::rvsdg::Output * origin, jlm::rvsdg::Output ** buffer)
+LoopNode::AddLoopVar(jlm::rvsdg::Output * origin, jlm::rvsdg::Output ** buffer)
 {
   auto input = rvsdg::StructuralInput::create(this, origin, origin->Type());
   auto output = rvsdg::StructuralOutput::create(this, origin->Type());
@@ -142,14 +142,14 @@ loop_node::AddLoopVar(jlm::rvsdg::Output * origin, jlm::rvsdg::Output ** buffer)
 }
 
 [[nodiscard]] const rvsdg::Operation &
-loop_node::GetOperation() const noexcept
+LoopNode::GetOperation() const noexcept
 {
   static const LoopOperation singleton;
   return singleton;
 }
 
 jlm::rvsdg::Output *
-loop_node::add_loopconst(jlm::rvsdg::Output * origin)
+LoopNode::add_loopconst(jlm::rvsdg::Output * origin)
 {
   auto input = rvsdg::StructuralInput::create(this, origin, origin->Type());
 
@@ -158,8 +158,8 @@ loop_node::add_loopconst(jlm::rvsdg::Output * origin)
   return buffer;
 }
 
-loop_node *
-loop_node::copy(rvsdg::Region * region, rvsdg::SubstitutionMap & smap) const
+LoopNode *
+LoopNode::copy(rvsdg::Region * region, rvsdg::SubstitutionMap & smap) const
 {
   auto loop = create(region, false);
 
@@ -212,7 +212,7 @@ loop_node::copy(rvsdg::Region * region, rvsdg::SubstitutionMap & smap) const
 }
 
 backedge_argument *
-loop_node::add_backedge(std::shared_ptr<const jlm::rvsdg::Type> type)
+LoopNode::add_backedge(std::shared_ptr<const jlm::rvsdg::Type> type)
 {
   auto argument_loop = backedge_argument::create(subregion(), std::move(type));
   auto result_loop = backedge_result::create(argument_loop);
@@ -221,10 +221,10 @@ loop_node::add_backedge(std::shared_ptr<const jlm::rvsdg::Type> type)
   return argument_loop;
 }
 
-loop_node *
-loop_node::create(rvsdg::Region * parent, bool init)
+LoopNode *
+LoopNode::create(rvsdg::Region * parent, bool init)
 {
-  auto ln = new loop_node(parent);
+  auto ln = new LoopNode(parent);
   if (init)
   {
     auto predicate = jlm::rvsdg::control_false(ln->subregion());
@@ -240,7 +240,7 @@ loop_node::create(rvsdg::Region * parent, bool init)
 }
 
 void
-loop_node::set_predicate(jlm::rvsdg::Output * p)
+LoopNode::set_predicate(jlm::rvsdg::Output * p)
 {
   auto node = rvsdg::TryGetOwnerNode<Node>(*predicate()->origin());
   predicate()->origin()->divert_users(p);

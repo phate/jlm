@@ -191,7 +191,7 @@ DotHLS::edge(std::string src, std::string snk, const jlm::rvsdg::Type & type, bo
 }
 
 std::string
-DotHLS::loop_to_dot(hls::loop_node * ln)
+DotHLS::loop_to_dot(LoopNode * ln)
 {
   auto sr = ln->subregion();
   std::ostringstream dot;
@@ -226,7 +226,7 @@ DotHLS::loop_to_dot(hls::loop_node * ln)
         dot << node_dot;
       }
     }
-    else if (auto ln = dynamic_cast<hls::loop_node *>(node))
+    else if (auto ln = dynamic_cast<LoopNode *>(node))
     {
       // need to prepare output here again, because inputs might not have been resolved yet, because
       // nodes in outer loop were not yet processed.
@@ -235,8 +235,7 @@ DotHLS::loop_to_dot(hls::loop_node * ln)
     }
     else
     {
-      throw jlm::util::error(
-          "Unimplemented op (unexpected structural node) : " + node->DebugString());
+      throw util::Error("Unimplemented op (unexpected structural node) : " + node->DebugString());
     }
   }
 
@@ -295,7 +294,7 @@ DotHLS::loop_to_dot(hls::loop_node * ln)
 }
 
 void
-DotHLS::prepare_loop_out_port(hls::loop_node * ln)
+DotHLS::prepare_loop_out_port(LoopNode * ln)
 {
   // make sure all outputs are translated and available (necessary for argument/result cycles)
 
@@ -311,14 +310,13 @@ DotHLS::prepare_loop_out_port(hls::loop_node * ln)
         output_map[node->output(i)] = node_name + ":" + get_port_name(node->output(i));
       }
     }
-    else if (auto oln = dynamic_cast<hls::loop_node *>(node))
+    else if (auto oln = dynamic_cast<LoopNode *>(node))
     {
       prepare_loop_out_port(oln);
     }
     else
     {
-      throw jlm::util::error(
-          "Unimplemented op (unexpected structural node) : " + node->DebugString());
+      throw util::Error("Unimplemented op (unexpected structural node) : " + node->DebugString());
     }
   }
   for (size_t i = 0; i < sr->narguments(); ++i)
@@ -401,7 +399,7 @@ DotHLS::subregion_to_dot(rvsdg::Region * sr)
         output_map[node->output(i)] = node_name + ":" + get_port_name(node->output(i));
       }
     }
-    else if (auto ln = dynamic_cast<hls::loop_node *>(node))
+    else if (auto ln = dynamic_cast<LoopNode *>(node))
     {
       // the only structural nodes left are loop nodes
       prepare_loop_out_port(ln);
@@ -409,8 +407,7 @@ DotHLS::subregion_to_dot(rvsdg::Region * sr)
     }
     else
     {
-      throw jlm::util::error(
-          "Unimplemented op (unexpected structural node) : " + node->DebugString());
+      throw util::Error("Unimplemented op (unexpected structural node) : " + node->DebugString());
     }
   }
   // process results

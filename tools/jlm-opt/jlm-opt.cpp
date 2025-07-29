@@ -15,7 +15,7 @@ main(int argc, char ** argv)
     jlm::tooling::JlmOptCommand command(argv[0], commandLineOptions);
     command.Run();
   }
-  catch (jlm::util::error & e)
+  catch (jlm::util::Error & e)
   {
     std::cerr << e.what();
     exit(EXIT_FAILURE);

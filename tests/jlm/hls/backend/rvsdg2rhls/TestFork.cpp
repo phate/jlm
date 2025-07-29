@@ -30,7 +30,7 @@ ForkInsertion()
       rootRegion,
       LlvmLambdaOperation::Create(functionType, "f", linkage::external_linkage));
 
-  auto loop = hls::loop_node::create(lambda->subregion());
+  auto loop = hls::LoopNode::create(lambda->subregion());
   rvsdg::Output * idvBuffer = nullptr;
   loop->AddLoopVar(lambda->GetFunctionArguments()[0], &idvBuffer);
   rvsdg::Output * lvsBuffer = nullptr;
@@ -62,8 +62,8 @@ ForkInsertion()
 
     auto lambdaSubregion = lambda->subregion();
     assert(lambdaSubregion->nnodes() == 1);
-    auto loop = util::AssertedCast<hls::loop_node>(lambdaSubregion->Nodes().begin().ptr());
-    assert(dynamic_cast<const hls::loop_node *>(loop));
+    auto loop = util::AssertedCast<hls::LoopNode>(lambdaSubregion->Nodes().begin().ptr());
+    assert(dynamic_cast<const hls::LoopNode *>(loop));
 
     auto [forkNode, forkOperation] =
         rvsdg::TryGetSimpleNodeAndOp<hls::ForkOperation>(*loop->subregion()->result(0)->origin());
@@ -93,7 +93,7 @@ ConstantForkInsertion()
       rootRegion,
       LlvmLambdaOperation::Create(functionType, "f", linkage::external_linkage));
 
-  auto loop = hls::loop_node::create(lambda->subregion());
+  auto loop = hls::LoopNode::create(lambda->subregion());
   auto subregion = loop->subregion();
   rvsdg::Output * idvBuffer = nullptr;
   loop->AddLoopVar(lambda->GetFunctionArguments()[0], &idvBuffer);
@@ -128,7 +128,7 @@ ConstantForkInsertion()
     assert(loopOutput = dynamic_cast<jlm::rvsdg::node_output *>(lambdaRegion->result(0)->origin()));
     auto loopNode = loopOutput->node();
     assert(rvsdg::is<hls::LoopOperation>(loopNode));
-    auto loop = util::AssertedCast<hls::loop_node>(loopNode);
+    auto loop = util::AssertedCast<hls::LoopNode>(loopNode);
 
     auto [forkNode, forkOperation] =
         rvsdg::TryGetSimpleNodeAndOp<hls::ForkOperation>(*loop->subregion()->result(0)->origin());

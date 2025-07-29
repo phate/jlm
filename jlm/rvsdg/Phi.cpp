@@ -199,7 +199,7 @@ PhiNode::copy(rvsdg::Region * region, rvsdg::SubstitutionMap & smap) const
   {
     auto origin = smap.lookup(var.input->origin());
     if (!origin)
-      throw util::error("Operand not provided by susbtitution map.");
+      throw util::Error("Operand not provided by susbtitution map.");
 
     auto newcv = pb.AddContextVar(*origin);
     subregionmap.insert(var.inner, newcv.inner);
@@ -279,7 +279,7 @@ PhiBuilder::end()
   for (auto var : node_->GetFixVars())
   {
     if (var.result->origin() == var.recref)
-      throw util::error("Recursion variable not properly set.");
+      throw util::Error("Recursion variable not properly set.");
   }
 
   auto node = node_;
