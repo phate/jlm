@@ -240,7 +240,6 @@ public:
 };
 
 class StructuralNodeInput;
-class StructuralNodeOutput;
 
 class TestStructuralNode final : public rvsdg::StructuralNode
 {
@@ -350,19 +349,6 @@ private:
       rvsdg::Output & origin,
       std::shared_ptr<const rvsdg::Type> type)
       : StructuralInput(&node, &origin, std::move(type))
-  {}
-};
-
-class StructuralNodeOutput final : public rvsdg::StructuralOutput
-{
-  friend TestStructuralNode;
-
-public:
-  ~StructuralNodeOutput() noexcept override;
-
-private:
-  StructuralNodeOutput(TestStructuralNode & node, std::shared_ptr<const rvsdg::Type> type)
-      : StructuralOutput(&node, std::move(type))
   {}
 };
 
