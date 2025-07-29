@@ -41,7 +41,7 @@ test_recursive_prune()
   auto & a1 = TestGraphArgument::Create(*n3->subregion(0), nullptr, t);
   auto n4 = TestOperation::create(n3->subregion(0), { &a1 }, { t });
   auto n5 = TestOperation::create(n3->subregion(0), { &a1 }, { t });
-  TestGraphResult::Create(*n4->output(0), nullptr);
+  n3->AddResults({ n4->output(0) });
   auto o1 = StructuralOutput::create(n3, t);
 
   auto n6 = TestStructuralNode::create(n3->subregion(0), 1);
@@ -136,9 +136,9 @@ Copy()
   auto valueType = jlm::tests::ValueType::Create();
 
   Graph graph;
-  auto & argument = TestGraphArgument::Create(graph.GetRootRegion(), nullptr, valueType);
+  auto & argument = jlm::tests::GraphImport::Create(graph, valueType, "import");
   auto node = TestOperation::create(&graph.GetRootRegion(), { &argument }, { valueType });
-  TestGraphResult::Create(*node->output(0), nullptr);
+  jlm::tests::GraphExport::Create(*node->output(0), "export");
 
   // Act
   auto newGraph = graph.Copy();
@@ -146,7 +146,7 @@ Copy()
   // Assert
   assert(newGraph->GetRootRegion().narguments() == 1);
   auto copiedArgument = newGraph->GetRootRegion().argument(0);
-  assert(is<TestGraphArgument>(copiedArgument));
+  assert(is<jlm::tests::GraphImport>(copiedArgument));
 
   assert(newGraph->GetRootRegion().nnodes() == 1);
   auto copiedNode = newGraph->GetRootRegion().Nodes().begin().ptr();
@@ -155,7 +155,7 @@ Copy()
 
   assert(newGraph->GetRootRegion().nresults() == 1);
   auto copiedResult = newGraph->GetRootRegion().result(0);
-  assert(is<TestGraphResult>(*copiedResult));
+  assert(is<jlm::tests::GraphExport>(*copiedResult));
   assert(copiedResult->origin() == copiedNode->output(0));
 }
 
