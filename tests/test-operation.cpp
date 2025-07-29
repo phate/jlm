@@ -227,8 +227,7 @@ TestStructuralNode::AddArguments(const std::shared_ptr<const rvsdg::Type> & type
 TestStructuralNode::OutputVar
 TestStructuralNode::AddOutput(std::shared_ptr<const rvsdg::Type> type)
 {
-  const auto output = add_output(
-      std::unique_ptr<StructuralNodeOutput>(new StructuralNodeOutput(*this, std::move(type))));
+  const auto output = add_output(std::make_unique<rvsdg::StructuralOutput>(this, std::move(type)));
   return { output, {} };
 }
 
@@ -246,7 +245,7 @@ TestStructuralNode::AddOutputWithResults(const std::vector<rvsdg::Output *> & or
     const auto result = &rvsdg::RegionResult::Create(
         subregion,
         *origin,
-        util::AssertedCast<StructuralNodeOutput>(outputVar.output),
+        util::AssertedCast<rvsdg::StructuralOutput>(outputVar.output),
         origin->Type());
     outputVar.result.push_back(result);
   }
@@ -273,8 +272,6 @@ TestStructuralNode::AddResults(const std::vector<rvsdg::Output *> & origins)
 }
 
 StructuralNodeInput::~StructuralNodeInput() noexcept = default;
-
-StructuralNodeOutput::~StructuralNodeOutput() noexcept = default;
 
 StructuralNodeArgument::~StructuralNodeArgument() noexcept = default;
 
