@@ -230,11 +230,33 @@ public:
   [[nodiscard]] std::unique_ptr<Operation>
   copy() const override;
 
-  static std::vector<jlm::rvsdg::Output *>
-  Create(rvsdg::Output & output, size_t numResults)
+  /**
+   * Perform the following transformation:
+   *
+   * oN = CallEntryMemoryStateMergeOperation o0 ... oK
+   * oX ... oZ = LambdaEntryMemoryStateSplitOperation oN
+   * ... = AnyOp oX ... oZ
+   * =>
+   * ... = AnyOp o0 ... oK
+   *
+   * This transformation can occur after function inlining, i.e., a \ref CallOperation has been
+   * replaced with the body of its respective \ref rvsdg::LambdaNode.
+   */
+  static std::optional<std::vector<rvsdg::Output *>>
+  NormalizeCallEntryMemoryStateMerge(
+      const LambdaEntryMemoryStateSplitOperation & operation,
+      const std::vector<rvsdg::Output *> & operands);
+
+  static rvsdg::Node &
+  CreateNode(rvsdg::Output & operand, const size_t numResults)
   {
-    return outputs(
-        &rvsdg::CreateOpNode<LambdaEntryMemoryStateSplitOperation>({ &output }, numResults));
+    return rvsdg::CreateOpNode<LambdaEntryMemoryStateSplitOperation>({ &operand }, numResults);
+  }
+
+  static std::vector<rvsdg::Output *>
+  Create(rvsdg::Output & output, const size_t numResults)
+  {
+    return outputs(&CreateNode(output, numResults));
   }
 };
 
@@ -356,14 +378,18 @@ public:
   [[nodiscard]] std::unique_ptr<Operation>
   copy() const override;
 
+  static rvsdg::Node &
+  CreateNode(rvsdg::Region & region, const std::vector<rvsdg::Output *> & operands)
+  {
+    return operands.empty()
+             ? rvsdg::CreateOpNode<CallEntryMemoryStateMergeOperation>(region, operands.size())
+             : rvsdg::CreateOpNode<CallEntryMemoryStateMergeOperation>(operands, operands.size());
+  }
+
   static rvsdg::Output &
   Create(rvsdg::Region & region, const std::vector<rvsdg::Output *> & operands)
   {
-    return operands.empty()
-             ? *rvsdg::CreateOpNode<CallEntryMemoryStateMergeOperation>(region, operands.size())
-                    .output(0)
-             : *rvsdg::CreateOpNode<CallEntryMemoryStateMergeOperation>(operands, operands.size())
-                    .output(0);
+    return *CreateNode(region, operands).output(0);
   }
 };
 

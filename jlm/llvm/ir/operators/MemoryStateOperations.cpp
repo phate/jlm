@@ -211,6 +211,22 @@ LambdaEntryMemoryStateSplitOperation::copy() const
   return std::make_unique<LambdaEntryMemoryStateSplitOperation>(*this);
 }
 
+std::optional<std::vector<rvsdg::Output *>>
+LambdaEntryMemoryStateSplitOperation::NormalizeCallEntryMemoryStateMerge(
+    const LambdaEntryMemoryStateSplitOperation & operation,
+    const std::vector<rvsdg::Output *> & operands)
+{
+  JLM_ASSERT(operands.size() == 1);
+
+  auto [callEntryMergeNode, callEntryMergeOperation] =
+      rvsdg::TryGetSimpleNodeAndOp<CallEntryMemoryStateMergeOperation>(*operands[0]);
+  if (!callEntryMergeOperation)
+    return std::nullopt;
+
+  JLM_ASSERT(callEntryMergeNode->ninputs() == operation.nresults());
+  return rvsdg::operands(callEntryMergeNode);
+}
+
 LambdaExitMemoryStateMergeOperation::~LambdaExitMemoryStateMergeOperation() noexcept = default;
 
 bool
