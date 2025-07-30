@@ -239,8 +239,6 @@ public:
   copy() const override;
 };
 
-class StructuralNodeInput;
-
 class TestStructuralNode final : public rvsdg::StructuralNode
 {
 public:
@@ -334,22 +332,6 @@ public:
 
   TestStructuralNode *
   copy(rvsdg::Region * region, rvsdg::SubstitutionMap & smap) const override;
-};
-
-class StructuralNodeInput final : public rvsdg::StructuralInput
-{
-  friend TestStructuralNode;
-
-public:
-  ~StructuralNodeInput() noexcept override;
-
-private:
-  StructuralNodeInput(
-      TestStructuralNode & node,
-      rvsdg::Output & origin,
-      std::shared_ptr<const rvsdg::Type> type)
-      : StructuralInput(&node, &origin, std::move(type))
-  {}
 };
 
 class TestOperation final : public rvsdg::SimpleOperation
