@@ -231,6 +231,23 @@ public:
   [[nodiscard]] std::unique_ptr<Operation>
   copy() const override;
 
+  /**
+ * Perform the following transformation:
+ *
+ * oN = CallEntryMemoryStateMergeOperation o0 ... oK
+ * oX ... oZ = LambdaEntryMemoryStateSplitOperation oN
+ * ... = AnyOp oX ... oZ
+ * =>
+ * ... = AnyOp o0 ... oK
+ *
+ * This transformation can occur after function inlining, i.e., a \ref CallOperation has been
+ * replaced with the body of its respective \ref rvsdg::LambdaNode.
+ */
+  static std::optional<std::vector<rvsdg::Output *>>
+  NormalizeCallEntryMemoryStateMerge(
+      const LambdaEntryMemoryStateSplitOperation & operation,
+      const std::vector<rvsdg::Output *> & operands);
+
   // FIXME: Deprecated, needs to be removed
   static std::vector<jlm::rvsdg::Output *>
   Create(rvsdg::Output & output, const size_t numResults)
@@ -415,6 +432,14 @@ public:
   copy() const override;
 
   // FIXME: Deprecated, will be removed
+  static rvsdg::Node &
+  CreateNode(rvsdg::Region & region, const std::vector<rvsdg::Output *> & operands)
+  {
+    return operands.empty()
+             ? rvsdg::CreateOpNode<CallEntryMemoryStateMergeOperation>(region, operands.size())
+             : rvsdg::CreateOpNode<CallEntryMemoryStateMergeOperation>(operands, operands.size());
+  }
+
   static rvsdg::Output &
   Create(rvsdg::Region & region, const std::vector<rvsdg::Output *> & operands)
   {

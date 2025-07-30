@@ -382,6 +382,54 @@ JLM_UNIT_TEST_REGISTER(
     LambdaEntryMemStateOperatorEquality)
 
 static void
+LambdaEntryMemoryStateSplit_NormalizeCallEntryMerge()
+{
+  using namespace jlm::llvm;
+  using namespace jlm::rvsdg;
+
+  // Arrange
+  const auto memoryStateType = MemoryStateType::Create();
+
+  Graph rvsdg;
+  auto & i0 = jlm::tests::GraphImport::Create(rvsdg, memoryStateType, "i0");
+  auto & i1 = jlm::tests::GraphImport::Create(rvsdg, memoryStateType, "i1");
+  auto & i2 = jlm::tests::GraphImport::Create(rvsdg, memoryStateType, "i2");
+
+  auto & callEntryMergeNode =
+      CallEntryMemoryStateMergeOperation::CreateNode(rvsdg.GetRootRegion(), { &i0, &i1, &i2 });
+
+  auto & lambdaEntrySplitNode =
+      LambdaEntryMemoryStateSplitOperation::CreateNode(*callEntryMergeNode.output(0), 3);
+
+  auto & x0 = jlm::tests::GraphExport::Create(*lambdaEntrySplitNode.output(0), "x0");
+  auto & x1 = jlm::tests::GraphExport::Create(*lambdaEntrySplitNode.output(1), "x1");
+  auto & x2 = jlm::tests::GraphExport::Create(*lambdaEntrySplitNode.output(2), "x2");
+
+  view(&rvsdg.GetRootRegion(), stdout);
+
+  // Act
+  const auto success = jlm::rvsdg::ReduceNode<LambdaEntryMemoryStateSplitOperation>(
+      LambdaEntryMemoryStateSplitOperation::NormalizeCallEntryMemoryStateMerge,
+      lambdaEntrySplitNode);
+  rvsdg.PruneNodes();
+
+  view(&rvsdg.GetRootRegion(), stdout);
+
+  // Assert
+  assert(success);
+  assert(rvsdg.GetRootRegion().nnodes() == 0);
+
+  assert(x0.origin() == &i0);
+  assert(x1.origin() == &i1);
+  assert(x2.origin() == &i2);
+}
+
+JLM_UNIT_TEST_REGISTER(
+    "jlm/llvm/opt/alias-analyses/"
+    "MemoryStateOperationTests-LambdaEntryMemoryStateSplit_NormalizeCallEntryMerge",
+    LambdaEntryMemoryStateSplit_NormalizeCallEntryMerge)
+
+static void
 LambdaExitMemStateOperatorEquality()
 {
   using namespace jlm::llvm;
