@@ -144,14 +144,14 @@ to_ctlconstant_op(const Operation & op) noexcept
  * These alternatives represent the different outgoing edges from a basic block,
  * or the different regions of a gamma node.
  */
-class match_op final : public UnaryOperation
+class MatchOperation final : public UnaryOperation
 {
   typedef std::unordered_map<uint64_t, uint64_t>::const_iterator const_iterator;
 
 public:
-  ~match_op() noexcept override;
+  ~MatchOperation() noexcept override;
 
-  match_op(
+  MatchOperation(
       size_t nbits,
       const std::unordered_map<uint64_t, uint64_t> & mapping,
       uint64_t default_alternative,
@@ -220,7 +220,7 @@ public:
       size_t numAlternatives)
   {
     auto bitType = CheckAndExtractBitType(*predicate.Type());
-    return CreateOpNode<match_op>(
+    return CreateOpNode<MatchOperation>(
                { &predicate },
                bitType.nbits(),
                mapping,
@@ -260,11 +260,11 @@ extern template class domain_const_op<
     ctlformat_value,
     ctltype_of_value>;
 
-static inline const match_op &
+static const MatchOperation &
 to_match_op(const Operation & op) noexcept
 {
-  JLM_ASSERT(is<match_op>(op));
-  return *static_cast<const match_op *>(&op);
+  JLM_ASSERT(is<MatchOperation>(op));
+  return *static_cast<const MatchOperation *>(&op);
 }
 
 jlm::rvsdg::Output *

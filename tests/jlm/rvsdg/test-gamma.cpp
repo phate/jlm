@@ -153,7 +153,7 @@ test_control_constant_reduction()
 
   // Assert
   auto match = TryGetOwnerNode<Node>(*ex1.origin());
-  assert(match && is<match_op>(match->GetOperation()));
+  assert(match && is<MatchOperation>(match->GetOperation()));
   auto & match_op = to_match_op(match->GetOperation());
   assert(match_op.default_alternative() == 0);
 
@@ -192,7 +192,7 @@ test_control_constant_reduction2()
 
   // Assert
   auto match = TryGetOwnerNode<Node>(*ex.origin());
-  assert(is<match_op>(match));
+  assert(is<MatchOperation>(match));
 }
 
 static void
