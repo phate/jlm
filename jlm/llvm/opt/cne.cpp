@@ -557,7 +557,7 @@ divert_phi(rvsdg::StructuralNode * node, CommonNodeElimination::Context & ctx)
 }
 
 static void
-divert_delta(rvsdg::StructuralNode * node, CommonNodeElimination::Context & ctx)
+divert_delta(rvsdg::StructuralNode * node, CommonNodeElimination::Context &)
 {
   JLM_ASSERT(is<DeltaOperation>(node));
 }
