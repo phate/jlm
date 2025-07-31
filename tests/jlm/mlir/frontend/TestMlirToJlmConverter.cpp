@@ -649,9 +649,9 @@ TestMatchOp()
 
       auto matchNode =
           jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(*lambdaRegion->result(0)->origin());
-      assert(is<match_op>(matchNode->GetOperation()));
+      assert(is<MatchOperation>(matchNode->GetOperation()));
 
-      auto matchOp = dynamic_cast<const match_op *>(&matchNode->GetOperation());
+      auto matchOp = dynamic_cast<const MatchOperation *>(&matchNode->GetOperation());
       assert(matchOp->narguments() == 1);
       assert(is<const bittype>(matchOp->argument(0)));
       assert(std::dynamic_pointer_cast<const bittype>(matchOp->argument(0))->nbits() == 32);
