@@ -260,7 +260,7 @@ extern template class domain_const_op<
     ctlformat_value,
     ctltype_of_value>;
 
-static const MatchOperation &
+static inline const MatchOperation &
 to_match_op(const Operation & op) noexcept
 {
   JLM_ASSERT(is<MatchOperation>(op));
