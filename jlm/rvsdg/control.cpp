@@ -82,12 +82,9 @@ ctlvalue_repr::ctlvalue_repr(size_t alternative, size_t nalternatives)
     throw util::Error("Alternative is bigger than the number of possible alternatives.");
 }
 
-/* match operator */
+MatchOperation::~MatchOperation() noexcept = default;
 
-match_op::~match_op() noexcept
-{}
-
-match_op::match_op(
+MatchOperation::MatchOperation(
     size_t nbits,
     const std::unordered_map<uint64_t, uint64_t> & mapping,
     uint64_t default_alternative,
@@ -98,15 +95,15 @@ match_op::match_op(
 {}
 
 bool
-match_op::operator==(const Operation & other) const noexcept
+MatchOperation::operator==(const Operation & other) const noexcept
 {
-  auto op = dynamic_cast<const match_op *>(&other);
+  auto op = dynamic_cast<const MatchOperation *>(&other);
   return op && op->default_alternative_ == default_alternative_ && op->mapping_ == mapping_
       && op->nbits() == nbits() && op->nalternatives() == nalternatives();
 }
 
 unop_reduction_path_t
-match_op::can_reduce_operand(const jlm::rvsdg::Output * arg) const noexcept
+MatchOperation::can_reduce_operand(const jlm::rvsdg::Output * arg) const noexcept
 {
   if (is<bitconstant_op>(producer(arg)))
     return unop_reduction_constant;
@@ -115,7 +112,7 @@ match_op::can_reduce_operand(const jlm::rvsdg::Output * arg) const noexcept
 }
 
 jlm::rvsdg::Output *
-match_op::reduce_operand(unop_reduction_path_t path, jlm::rvsdg::Output * arg) const
+MatchOperation::reduce_operand(unop_reduction_path_t path, jlm::rvsdg::Output * arg) const
 {
   if (path == unop_reduction_constant)
   {
@@ -130,7 +127,7 @@ match_op::reduce_operand(unop_reduction_path_t path, jlm::rvsdg::Output * arg) c
 }
 
 std::string
-match_op::debug_string() const
+MatchOperation::debug_string() const
 {
   std::string str("[");
   for (const auto & pair : mapping_)
@@ -141,9 +138,9 @@ match_op::debug_string() const
 }
 
 std::unique_ptr<Operation>
-match_op::copy() const
+MatchOperation::copy() const
 {
-  return std::make_unique<match_op>(*this);
+  return std::make_unique<MatchOperation>(*this);
 }
 
 jlm::rvsdg::Output *
@@ -154,7 +151,12 @@ match(
     size_t nalternatives,
     jlm::rvsdg::Output * operand)
 {
-  return CreateOpNode<match_op>({ operand }, nbits, mapping, default_alternative, nalternatives)
+  return CreateOpNode<MatchOperation>(
+             { operand },
+             nbits,
+             mapping,
+             default_alternative,
+             nalternatives)
       .output(0);
 }
 

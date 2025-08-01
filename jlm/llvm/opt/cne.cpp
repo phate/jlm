@@ -66,7 +66,7 @@ public:
 
 typedef std::unordered_set<jlm::rvsdg::Output *> congruence_set;
 
-class cnectx
+class CommonNodeElimination::Context final
 {
 public:
   inline void
@@ -174,7 +174,11 @@ private:
 /* mark phase */
 
 static bool
-congruent(jlm::rvsdg::Output * o1, jlm::rvsdg::Output * o2, vset & vs, cnectx & ctx)
+congruent(
+    jlm::rvsdg::Output * o1,
+    jlm::rvsdg::Output * o2,
+    vset & vs,
+    CommonNodeElimination::Context & ctx)
 {
   if (ctx.congruent(o1, o2) || vs.visited(o1, o2))
     return true;
@@ -279,14 +283,17 @@ congruent(jlm::rvsdg::Output * o1, jlm::rvsdg::Output * o2, vset & vs, cnectx & 
 }
 
 static bool
-congruent(jlm::rvsdg::Output * o1, jlm::rvsdg::Output * o2, cnectx & ctx)
+congruent(jlm::rvsdg::Output * o1, jlm::rvsdg::Output * o2, CommonNodeElimination::Context & ctx)
 {
   vset vs;
   return congruent(o1, o2, vs, ctx);
 }
 
 static void
-mark_arguments(rvsdg::StructuralInput * i1, rvsdg::StructuralInput * i2, cnectx & ctx)
+mark_arguments(
+    rvsdg::StructuralInput * i1,
+    rvsdg::StructuralInput * i2,
+    CommonNodeElimination::Context & ctx)
 {
   JLM_ASSERT(i1->node() && i1->node() == i2->node());
   JLM_ASSERT(i1->arguments.size() == i2->arguments.size());
@@ -302,10 +309,10 @@ mark_arguments(rvsdg::StructuralInput * i1, rvsdg::StructuralInput * i2, cnectx 
 }
 
 static void
-mark(rvsdg::Region *, cnectx &);
+mark(rvsdg::Region *, CommonNodeElimination::Context & ctx);
 
 static void
-mark_gamma(const rvsdg::StructuralNode * node, cnectx & ctx)
+mark_gamma(const rvsdg::StructuralNode * node, CommonNodeElimination::Context & ctx)
 {
   JLM_ASSERT(dynamic_cast<const rvsdg::GammaNode *>(node));
 
@@ -331,7 +338,7 @@ mark_gamma(const rvsdg::StructuralNode * node, cnectx & ctx)
 }
 
 static void
-mark_theta(const rvsdg::StructuralNode * node, cnectx & ctx)
+mark_theta(const rvsdg::StructuralNode * node, CommonNodeElimination::Context & ctx)
 {
   JLM_ASSERT(dynamic_cast<const rvsdg::ThetaNode *>(node));
   auto theta = static_cast<const rvsdg::ThetaNode *>(node);
@@ -357,7 +364,7 @@ mark_theta(const rvsdg::StructuralNode * node, cnectx & ctx)
 }
 
 static void
-mark_lambda(const rvsdg::StructuralNode * node, cnectx & ctx)
+mark_lambda(const rvsdg::StructuralNode * node, CommonNodeElimination::Context & ctx)
 {
   JLM_ASSERT(dynamic_cast<const rvsdg::LambdaNode *>(node));
 
@@ -377,7 +384,7 @@ mark_lambda(const rvsdg::StructuralNode * node, cnectx & ctx)
 }
 
 static void
-mark_phi(const rvsdg::StructuralNode * node, cnectx & ctx)
+mark_phi(const rvsdg::StructuralNode * node, CommonNodeElimination::Context & ctx)
 {
   auto & phi = *util::AssertedCast<const rvsdg::PhiNode>(node);
 
@@ -397,27 +404,29 @@ mark_phi(const rvsdg::StructuralNode * node, cnectx & ctx)
 }
 
 static void
-mark_delta(const rvsdg::StructuralNode * node, cnectx &)
+mark_delta(const rvsdg::StructuralNode * node, CommonNodeElimination::Context &)
 {
   JLM_ASSERT(rvsdg::is<DeltaOperation>(node));
 }
 
 static void
-mark(const rvsdg::StructuralNode * node, cnectx & ctx)
+mark(const rvsdg::StructuralNode * node, CommonNodeElimination::Context & ctx)
 {
-  static std::unordered_map<std::type_index, void (*)(const rvsdg::StructuralNode *, cnectx &)> map(
-      { { std::type_index(typeid(rvsdg::GammaNode)), mark_gamma },
-        { std::type_index(typeid(rvsdg::ThetaNode)), mark_theta },
-        { typeid(rvsdg::LambdaNode), mark_lambda },
-        { typeid(rvsdg::PhiNode), mark_phi },
-        { typeid(DeltaNode), mark_delta } });
+  static std::unordered_map<
+      std::type_index,
+      void (*)(const rvsdg::StructuralNode *, CommonNodeElimination::Context &)>
+      map({ { std::type_index(typeid(rvsdg::GammaNode)), mark_gamma },
+            { std::type_index(typeid(rvsdg::ThetaNode)), mark_theta },
+            { typeid(rvsdg::LambdaNode), mark_lambda },
+            { typeid(rvsdg::PhiNode), mark_phi },
+            { typeid(DeltaNode), mark_delta } });
 
   JLM_ASSERT(map.find(typeid(*node)) != map.end());
   map[typeid(*node)](node, ctx);
 }
 
 static void
-mark(const jlm::rvsdg::SimpleNode * node, cnectx & ctx)
+mark(const jlm::rvsdg::SimpleNode * node, CommonNodeElimination::Context & ctx)
 {
   if (node->ninputs() == 0)
   {
@@ -455,7 +464,7 @@ mark(const jlm::rvsdg::SimpleNode * node, cnectx & ctx)
 }
 
 static void
-mark(rvsdg::Region * region, cnectx & ctx)
+mark(rvsdg::Region * region, CommonNodeElimination::Context & ctx)
 {
   for (const auto & node : rvsdg::TopDownTraverser(region))
   {
@@ -469,7 +478,7 @@ mark(rvsdg::Region * region, cnectx & ctx)
 /* divert phase */
 
 static void
-divert_users(jlm::rvsdg::Output * output, cnectx & ctx)
+divert_users(jlm::rvsdg::Output * output, CommonNodeElimination::Context & ctx)
 {
   auto set = ctx.set(output);
   for (auto & other : *set)
@@ -478,24 +487,24 @@ divert_users(jlm::rvsdg::Output * output, cnectx & ctx)
 }
 
 static void
-divert_outputs(rvsdg::Node * node, cnectx & ctx)
+divert_outputs(rvsdg::Node * node, CommonNodeElimination::Context & ctx)
 {
   for (size_t n = 0; n < node->noutputs(); n++)
     divert_users(node->output(n), ctx);
 }
 
 static void
-divert_arguments(rvsdg::Region * region, cnectx & ctx)
+divert_arguments(rvsdg::Region * region, CommonNodeElimination::Context & ctx)
 {
   for (size_t n = 0; n < region->narguments(); n++)
     divert_users(region->argument(n), ctx);
 }
 
 static void
-divert(rvsdg::Region *, cnectx &);
+divert(rvsdg::Region *, CommonNodeElimination::Context &);
 
 static void
-divert_gamma(rvsdg::StructuralNode * node, cnectx & ctx)
+divert_gamma(rvsdg::StructuralNode * node, CommonNodeElimination::Context & ctx)
 {
   JLM_ASSERT(dynamic_cast<const rvsdg::GammaNode *>(node));
   auto gamma = static_cast<rvsdg::GammaNode *>(node);
@@ -513,7 +522,7 @@ divert_gamma(rvsdg::StructuralNode * node, cnectx & ctx)
 }
 
 static void
-divert_theta(rvsdg::StructuralNode * node, cnectx & ctx)
+divert_theta(rvsdg::StructuralNode * node, CommonNodeElimination::Context & ctx)
 {
   JLM_ASSERT(dynamic_cast<const rvsdg::ThetaNode *>(node));
   auto theta = static_cast<rvsdg::ThetaNode *>(node);
@@ -530,7 +539,7 @@ divert_theta(rvsdg::StructuralNode * node, cnectx & ctx)
 }
 
 static void
-divert_lambda(rvsdg::StructuralNode * node, cnectx & ctx)
+divert_lambda(rvsdg::StructuralNode * node, CommonNodeElimination::Context & ctx)
 {
   JLM_ASSERT(dynamic_cast<const rvsdg::LambdaNode *>(node));
 
@@ -539,7 +548,7 @@ divert_lambda(rvsdg::StructuralNode * node, cnectx & ctx)
 }
 
 static void
-divert_phi(rvsdg::StructuralNode * node, cnectx & ctx)
+divert_phi(rvsdg::StructuralNode * node, CommonNodeElimination::Context & ctx)
 {
   auto & phi = *util::AssertedCast<const rvsdg::PhiNode>(node);
 
@@ -548,27 +557,29 @@ divert_phi(rvsdg::StructuralNode * node, cnectx & ctx)
 }
 
 static void
-divert_delta(rvsdg::StructuralNode * node, cnectx &)
+divert_delta(rvsdg::StructuralNode * node, CommonNodeElimination::Context &)
 {
   JLM_ASSERT(is<DeltaOperation>(node));
 }
 
 static void
-divert(rvsdg::StructuralNode * node, cnectx & ctx)
+divert(rvsdg::StructuralNode * node, CommonNodeElimination::Context & ctx)
 {
-  static std::unordered_map<std::type_index, void (*)(rvsdg::StructuralNode *, cnectx &)> map(
-      { { std::type_index(typeid(rvsdg::GammaNode)), divert_gamma },
-        { std::type_index(typeid(rvsdg::ThetaNode)), divert_theta },
-        { typeid(rvsdg::LambdaNode), divert_lambda },
-        { typeid(rvsdg::PhiNode), divert_phi },
-        { typeid(DeltaNode), divert_delta } });
+  static std::unordered_map<
+      std::type_index,
+      void (*)(rvsdg::StructuralNode *, CommonNodeElimination::Context &)>
+      map({ { std::type_index(typeid(rvsdg::GammaNode)), divert_gamma },
+            { std::type_index(typeid(rvsdg::ThetaNode)), divert_theta },
+            { typeid(rvsdg::LambdaNode), divert_lambda },
+            { typeid(rvsdg::PhiNode), divert_phi },
+            { typeid(DeltaNode), divert_delta } });
 
   JLM_ASSERT(map.find(typeid(*node)) != map.end());
   map[typeid(*node)](node, ctx);
 }
 
 static void
-divert(rvsdg::Region * region, cnectx & ctx)
+divert(rvsdg::Region * region, CommonNodeElimination::Context & ctx)
 {
   for (const auto & node : rvsdg::TopDownTraverser(region))
   {
@@ -579,25 +590,6 @@ divert(rvsdg::Region * region, cnectx & ctx)
   }
 }
 
-static void
-cne(rvsdg::RvsdgModule & rvsdgModule, util::StatisticsCollector & statisticsCollector)
-{
-  auto & graph = rvsdgModule.Rvsdg();
-
-  cnectx ctx;
-  auto statistics = CommonNodeElimination::Statistics::Create(rvsdgModule.SourceFilePath().value());
-
-  statistics->start_mark_stat(graph);
-  mark(&graph.GetRootRegion(), ctx);
-  statistics->end_mark_stat();
-
-  statistics->start_divert_stat();
-  divert(&graph.GetRootRegion(), ctx);
-  statistics->end_divert_stat(graph);
-
-  statisticsCollector.CollectDemandedStatistics(std::move(statistics));
-}
-
 CommonNodeElimination::~CommonNodeElimination() noexcept = default;
 
 void
@@ -605,7 +597,20 @@ CommonNodeElimination::Run(
     rvsdg::RvsdgModule & module,
     util::StatisticsCollector & statisticsCollector)
 {
-  llvm::cne(module, statisticsCollector);
+  const auto & rvsdg = module.Rvsdg();
+
+  Context context;
+  auto statistics = Statistics::Create(module.SourceFilePath().value());
+
+  statistics->start_mark_stat(rvsdg);
+  mark(&rvsdg.GetRootRegion(), context);
+  statistics->end_mark_stat();
+
+  statistics->start_divert_stat();
+  divert(&rvsdg.GetRootRegion(), context);
+  statistics->end_divert_stat(rvsdg);
+
+  statisticsCollector.CollectDemandedStatistics(std::move(statistics));
 }
 
 }

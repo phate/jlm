@@ -484,7 +484,7 @@ ConvertSelect(
   JLM_ASSERT(threeAddressCode.noperands() == 3 && threeAddressCode.nresults() == 1);
 
   auto p = variableMap.lookup(threeAddressCode.operand(0));
-  auto predicate = rvsdg::match_op::Create(*p, { { 1, 1 } }, 0, 2);
+  auto predicate = rvsdg::MatchOperation::Create(*p, { { 1, 1 } }, 0, 2);
 
   auto gamma = rvsdg::GammaNode::create(predicate, 2);
   auto ev1 = gamma->AddEntryVar(variableMap.lookup(threeAddressCode.operand(2)));

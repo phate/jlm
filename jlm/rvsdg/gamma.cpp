@@ -78,11 +78,11 @@ is_control_constant_reducible(GammaNode * gamma)
 {
   // check gamma predicate
   auto match = rvsdg::TryGetOwnerNode<SimpleNode>(*gamma->predicate()->origin());
-  if (!is<match_op>(match))
+  if (!is<MatchOperation>(match))
     return {};
 
   /* check number of alternatives */
-  auto match_op = static_cast<const jlm::rvsdg::match_op *>(&match->GetOperation());
+  auto match_op = static_cast<const MatchOperation *>(&match->GetOperation());
   std::unordered_set<uint64_t> set({ match_op->default_alternative() });
   for (const auto & pair : *match_op)
     set.insert(pair.second);
