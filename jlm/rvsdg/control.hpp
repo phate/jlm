@@ -260,13 +260,6 @@ extern template class domain_const_op<
     ctlformat_value,
     ctltype_of_value>;
 
-static inline const MatchOperation &
-to_match_op(const Operation & op) noexcept
-{
-  JLM_ASSERT(is<MatchOperation>(op));
-  return *static_cast<const MatchOperation *>(&op);
-}
-
 jlm::rvsdg::Output *
 control_constant(rvsdg::Region * region, size_t nalternatives, size_t alternative);
 
