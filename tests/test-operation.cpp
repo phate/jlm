@@ -190,8 +190,8 @@ TestStructuralNode::copy(rvsdg::Region * parent, rvsdg::SubstitutionMap & smap) 
 TestStructuralNode::InputVar
 TestStructuralNode::AddInput(rvsdg::Output & origin)
 {
-  const auto input = add_input(
-      std::unique_ptr<StructuralNodeInput>(new StructuralNodeInput(*this, origin, origin.Type())));
+  const auto input =
+      add_input(std::make_unique<rvsdg::StructuralInput>(this, &origin, origin.Type()));
   return { input, {} };
 }
 
@@ -202,9 +202,10 @@ TestStructuralNode::AddInputWithArguments(rvsdg::Output & origin)
 
   for (auto & subregion : Subregions())
   {
-    const auto argument = &StructuralNodeArgument::Create(
+    const auto argument = &rvsdg::RegionArgument::Create(
         subregion,
-        *util::AssertedCast<StructuralNodeInput>(inputVar.input));
+        util::AssertedCast<rvsdg::StructuralInput>(inputVar.input),
+        inputVar.input->Type());
     inputVar.argument.push_back(argument);
   }
 
@@ -217,7 +218,7 @@ TestStructuralNode::AddArguments(const std::shared_ptr<const rvsdg::Type> & type
   std::vector<rvsdg::Output *> arguments;
   for (auto & subregion : Subregions())
   {
-    const auto argument = &StructuralNodeArgument::Create(subregion, type);
+    const auto argument = &rvsdg::RegionArgument::Create(subregion, nullptr, type);
     arguments.push_back(argument);
   }
 
@@ -227,8 +228,7 @@ TestStructuralNode::AddArguments(const std::shared_ptr<const rvsdg::Type> & type
 TestStructuralNode::OutputVar
 TestStructuralNode::AddOutput(std::shared_ptr<const rvsdg::Type> type)
 {
-  const auto output = add_output(
-      std::unique_ptr<StructuralNodeOutput>(new StructuralNodeOutput(*this, std::move(type))));
+  const auto output = add_output(std::make_unique<rvsdg::StructuralOutput>(this, std::move(type)));
   return { output, {} };
 }
 
@@ -240,13 +240,14 @@ TestStructuralNode::AddOutputWithResults(const std::vector<rvsdg::Output *> & or
 
   size_t n = 0;
   auto outputVar = AddOutput(origins[0]->Type());
-  for ([[maybe_unused]] auto & subregion : Subregions())
+  for (auto & subregion : Subregions())
   {
     const auto origin = origins[n++];
-    JLM_ASSERT(origin->region() == &subregion);
-    const auto & result = &StructuralNodeResult::Create(
+    const auto result = &rvsdg::RegionResult::Create(
+        subregion,
         *origin,
-        *util::AssertedCast<StructuralNodeOutput>(outputVar.output));
+        util::AssertedCast<rvsdg::StructuralOutput>(outputVar.output),
+        origin->Type());
     outputVar.result.push_back(result);
   }
 
@@ -261,38 +262,14 @@ TestStructuralNode::AddResults(const std::vector<rvsdg::Output *> & origins)
 
   size_t n = 0;
   std::vector<rvsdg::Input *> results;
-  for ([[maybe_unused]] auto & subregion : Subregions())
+  for (auto & subregion : Subregions())
   {
     const auto origin = origins[n++];
-    JLM_ASSERT(origin->region() == &subregion);
-    const auto result = &StructuralNodeResult::Create(*origin);
+    const auto result = &rvsdg::RegionResult::Create(subregion, *origin, nullptr, origin->Type());
     results.push_back(result);
   }
 
   return { nullptr, std::move(results) };
-}
-
-StructuralNodeInput::~StructuralNodeInput() noexcept = default;
-
-StructuralNodeOutput::~StructuralNodeOutput() noexcept = default;
-
-StructuralNodeArgument::~StructuralNodeArgument() noexcept = default;
-
-StructuralNodeArgument &
-StructuralNodeArgument::Copy(rvsdg::Region & region, rvsdg::StructuralInput * input)
-{
-  auto structuralNodeInput = util::AssertedCast<StructuralNodeInput>(input);
-  return structuralNodeInput != nullptr ? Create(region, *structuralNodeInput)
-                                        : Create(region, Type());
-}
-
-StructuralNodeResult::~StructuralNodeResult() noexcept = default;
-
-StructuralNodeResult &
-StructuralNodeResult::Copy(rvsdg::Output & origin, rvsdg::StructuralOutput * output)
-{
-  auto structuralNodeOutput = util::AssertedCast<StructuralNodeOutput>(output);
-  return structuralNodeOutput != nullptr ? Create(origin, *structuralNodeOutput) : Create(origin);
 }
 
 }

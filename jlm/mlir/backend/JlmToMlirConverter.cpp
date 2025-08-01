@@ -639,7 +639,7 @@ JlmToMlirConverter::ConvertSimpleNode(
         inputs[0],                                                        // basePtr
         ::mlir::ValueRange({ std::next(inputs.begin()), inputs.end() })); // indices
   }
-  else if (auto matchOp = dynamic_cast<const rvsdg::match_op *>(&operation))
+  else if (auto matchOp = dynamic_cast<const rvsdg::MatchOperation *>(&operation))
   {
     // ** region Create the MLIR mapping vector **
     //! MLIR match operation can match multiple values to one index

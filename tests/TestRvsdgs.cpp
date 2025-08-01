@@ -4078,7 +4078,7 @@ VariadicFunctionTest2::SetupRvsdg()
         rvsdg::bittype::Create(32),
         16);
     auto icmpResult = rvsdg::bitult_op::create(32, loadResults[0], fortyOne);
-    auto matchResult = rvsdg::match_op::Create(*icmpResult, { { 1, 1 } }, 0, 2);
+    auto matchResult = rvsdg::MatchOperation::Create(*icmpResult, { { 1, 1 } }, 0, 2);
 
     auto gammaNode = rvsdg::GammaNode::create(matchResult, 2);
     auto gammaVaAddress = gammaNode->AddEntryVar(allocaResults[0]);
