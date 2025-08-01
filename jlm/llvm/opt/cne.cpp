@@ -171,22 +171,20 @@ private:
       sets_;
 };
 
-/* mark phase */
-
 static bool
 congruent(
-    jlm::rvsdg::Output * o1,
-    jlm::rvsdg::Output * o2,
+    rvsdg::Output * o1,
+    rvsdg::Output * o2,
     vset & vs,
-    CommonNodeElimination::Context & ctx)
+    CommonNodeElimination::Context & context)
 {
-  if (ctx.congruent(o1, o2) || vs.visited(o1, o2))
+  if (context.congruent(o1, o2) || vs.visited(o1, o2))
     return true;
 
   if (*o1->Type() != *o2->Type())
     return false;
 
-  // Handle theta subregion arguments
+  // Handle theta entry
   {
     const auto thetaNode1 = rvsdg::TryGetRegionParentNode<rvsdg::ThetaNode>(*o1);
     const auto thetaNode2 = rvsdg::TryGetRegionParentNode<rvsdg::ThetaNode>(*o2);
@@ -196,14 +194,14 @@ congruent(
       const auto loopVariable1 = thetaNode1->MapPreLoopVar(*o1);
       const auto loopVariable2 = thetaNode2->MapPreLoopVar(*o2);
 
-      if (!congruent(loopVariable1.input->origin(), loopVariable2.input->origin(), vs, ctx))
+      if (!congruent(loopVariable1.input->origin(), loopVariable2.input->origin(), vs, context))
         return false;
 
-      return congruent(loopVariable1.output, loopVariable2.output, vs, ctx);
+      return congruent(loopVariable1.output, loopVariable2.output, vs, context);
     }
   }
 
-  // Handle theta outputs
+  // Handle theta exit
   {
     const auto thetaNode1 = rvsdg::TryGetOwnerNode<rvsdg::ThetaNode>(*o1);
     const auto thetaNode2 = rvsdg::TryGetOwnerNode<rvsdg::ThetaNode>(*o2);
@@ -220,7 +218,7 @@ congruent(
         // are from different theta nodes with different iteration counts. In other words, it is
         // just a value that is passed through both thetas. Let's see whether both values are
         // congruent before they enter the loops.
-        return congruent(loopVariable1.input->origin(), loopVariable2.input->origin(), vs, ctx);
+        return congruent(loopVariable1.input->origin(), loopVariable2.input->origin(), vs, context);
       }
 
       if (thetaNode1 != thetaNode2)
@@ -231,70 +229,69 @@ congruent(
         return false;
       }
 
-      return congruent(loopVariable1.post->origin(), loopVariable2.post->origin(), vs, ctx);
+      return congruent(loopVariable1.post->origin(), loopVariable2.post->origin(), vs, context);
     }
   }
 
-  auto n1 = rvsdg::TryGetOwnerNode<rvsdg::Node>(*o1);
-  auto n2 = rvsdg::TryGetOwnerNode<rvsdg::Node>(*o2);
-
-  if (auto gamma1 = rvsdg::TryGetOwnerNode<rvsdg::GammaNode>(*o1))
+  // Handle gamma entry
   {
-    if (auto gamma2 = rvsdg::TryGetOwnerNode<rvsdg::GammaNode>(*o2))
+    const auto gammaNode1 = rvsdg::TryGetRegionParentNode<rvsdg::GammaNode>(*o1);
+    const auto gammaNode2 = rvsdg::TryGetRegionParentNode<rvsdg::GammaNode>(*o2);
+    if (gammaNode1 && gammaNode2)
     {
-      if (gamma1 == gamma2)
+      JLM_ASSERT(gammaNode1 == gammaNode2);
+      const auto origin1 = std::visit(
+          [](const auto & roleVariable) -> rvsdg::Output *
+          {
+            return roleVariable.input->origin();
+          },
+          gammaNode1->MapBranchArgument(*o1));
+      const auto origin2 = std::visit(
+          [](const auto & roleVariable) -> rvsdg::Output *
+          {
+            return roleVariable.input->origin();
+          },
+          gammaNode2->MapBranchArgument(*o2));
+      return congruent(origin1, origin2, vs, context);
+    }
+  }
+
+  // Handle gamma exit
+  {
+    auto gammaNode1 = rvsdg::TryGetOwnerNode<rvsdg::GammaNode>(*o1);
+    auto gammaNode2 = rvsdg::TryGetOwnerNode<rvsdg::GammaNode>(*o2);
+    if (gammaNode1 && gammaNode2 && gammaNode1 == gammaNode2)
+    {
+      const auto [branchResults1, output1] = gammaNode1->MapOutputExitVar(*o1);
+      const auto [branchResults2, output2] = gammaNode2->MapOutputExitVar(*o2);
+
+      JLM_ASSERT(branchResults1.size() == branchResults2.size());
+      for (size_t n = 0; n < branchResults1.size(); ++n)
       {
-        auto exitvar1 = gamma1->MapOutputExitVar(*o1);
-        auto exitvar2 = gamma2->MapOutputExitVar(*o2);
-        JLM_ASSERT(exitvar1.branchResult.size() == exitvar2.branchResult.size());
-        for (size_t n = 0; n < exitvar1.branchResult.size(); ++n)
-        {
-          JLM_ASSERT(exitvar1.branchResult[n]->region() == exitvar2.branchResult[n]->region());
-          if (!congruent(
-                  exitvar1.branchResult[n]->origin(),
-                  exitvar2.branchResult[n]->origin(),
-                  vs,
-                  ctx))
-            return false;
-        }
-        return true;
+        JLM_ASSERT(branchResults1[n]->region() == branchResults2[n]->region());
+        if (!congruent(branchResults1[n]->origin(), branchResults2[n]->origin(), vs, context))
+          return false;
       }
+      return true;
     }
   }
 
-  if (auto g1 = rvsdg::TryGetRegionParentNode<rvsdg::GammaNode>(*o1))
+  // Handle simple nodes
   {
-    if (auto g2 = rvsdg::TryGetRegionParentNode<rvsdg::GammaNode>(*o2))
+    const auto simpleNode1 = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*o1);
+    const auto simpleNode2 = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*o2);
+    if (simpleNode1 && simpleNode2 && simpleNode1->GetOperation() == simpleNode2->GetOperation()
+        && simpleNode1->ninputs() == simpleNode2->ninputs() && o1->index() == o2->index())
     {
-      JLM_ASSERT(g1 == g2);
-      auto origin1 = std::visit(
-          [](const auto & rolevar) -> rvsdg::Output *
-          {
-            return rolevar.input->origin();
-          },
-          g1->MapBranchArgument(*o1));
-      auto origin2 = std::visit(
-          [](const auto & rolevar) -> rvsdg::Output *
-          {
-            return rolevar.input->origin();
-          },
-          g2->MapBranchArgument(*o2));
-      return congruent(origin1, origin2, vs, ctx);
+      for (auto & input : simpleNode1->Inputs())
+      {
+        const auto origin1 = input.origin();
+        const auto origin2 = simpleNode2->input(input.index())->origin();
+        if (!congruent(origin1, origin2, vs, context))
+          return false;
+      }
+      return true;
     }
-  }
-
-  if (jlm::rvsdg::is<rvsdg::SimpleOperation>(n1) && jlm::rvsdg::is<rvsdg::SimpleOperation>(n2)
-      && n1->GetOperation() == n2->GetOperation() && n1->ninputs() == n2->ninputs()
-      && o1->index() == o2->index())
-  {
-    for (size_t n = 0; n < n1->ninputs(); n++)
-    {
-      auto origin1 = n1->input(n)->origin();
-      auto origin2 = n2->input(n)->origin();
-      if (!congruent(origin1, origin2, vs, ctx))
-        return false;
-    }
-    return true;
   }
 
   return false;
