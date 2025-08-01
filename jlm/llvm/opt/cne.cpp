@@ -186,34 +186,52 @@ congruent(
   if (*o1->Type() != *o2->Type())
     return false;
 
-  if (auto theta1 = rvsdg::TryGetRegionParentNode<rvsdg::ThetaNode>(*o1))
+  // Handle theta subregion arguments
   {
-    if (auto theta2 = rvsdg::TryGetRegionParentNode<rvsdg::ThetaNode>(*o2))
+    const auto thetaNode1 = rvsdg::TryGetRegionParentNode<rvsdg::ThetaNode>(*o1);
+    const auto thetaNode2 = rvsdg::TryGetRegionParentNode<rvsdg::ThetaNode>(*o2);
+    if (thetaNode1 && thetaNode2)
     {
-      JLM_ASSERT(o1->region()->node() == o2->region()->node());
-      auto loopvar1 = theta1->MapPreLoopVar(*o1);
-      auto loopvar2 = theta2->MapPreLoopVar(*o2);
       vs.insert(o1, o2);
-      auto i1 = loopvar1.input, i2 = loopvar2.input;
-      if (!congruent(loopvar1.input->origin(), loopvar2.input->origin(), vs, ctx))
+      const auto loopVariable1 = thetaNode1->MapPreLoopVar(*o1);
+      const auto loopVariable2 = thetaNode2->MapPreLoopVar(*o2);
+
+      if (!congruent(loopVariable1.input->origin(), loopVariable2.input->origin(), vs, ctx))
         return false;
 
-      auto output1 = o1->region()->node()->output(i1->index());
-      auto output2 = o2->region()->node()->output(i2->index());
-      return congruent(output1, output2, vs, ctx);
+      return congruent(loopVariable1.output, loopVariable2.output, vs, ctx);
     }
   }
 
-  if (auto theta1 = rvsdg::TryGetOwnerNode<rvsdg::ThetaNode>(*o1))
+  // Handle theta outputs
   {
-    if (auto theta2 = rvsdg::TryGetOwnerNode<rvsdg::ThetaNode>(*o2))
+    const auto thetaNode1 = rvsdg::TryGetOwnerNode<rvsdg::ThetaNode>(*o1);
+    const auto thetaNode2 = rvsdg::TryGetOwnerNode<rvsdg::ThetaNode>(*o2);
+    if (thetaNode1 && thetaNode2)
     {
       vs.insert(o1, o2);
-      auto loopvar1 = theta1->MapOutputLoopVar(*o1);
-      auto loopvar2 = theta2->MapOutputLoopVar(*o2);
-      auto r1 = loopvar1.post;
-      auto r2 = loopvar2.post;
-      return congruent(r1->origin(), r2->origin(), vs, ctx);
+      const auto loopVariable1 = thetaNode1->MapOutputLoopVar(*o1);
+      const auto loopVariable2 = thetaNode2->MapOutputLoopVar(*o2);
+
+      if (rvsdg::ThetaLoopVarIsInvariant(loopVariable1)
+          && rvsdg::ThetaLoopVarIsInvariant(loopVariable2))
+      {
+        // Both loop variables are invariant. This means both are always congruent even if they
+        // are from different theta nodes with different iteration counts. In other words, it is
+        // just a value that is passed through both thetas. Let's see whether both values are
+        // congruent before they enter the loops.
+        return congruent(loopVariable1.input->origin(), loopVariable2.input->origin(), vs, ctx);
+      }
+
+      if (thetaNode1 != thetaNode2)
+      {
+        // The loop variables are from different theta nodes. They would only be congruent if we can
+        // ensure that both theta nodes have the same iteration count, but we do not want to invest
+        // into this. Let's just bail out.
+        return false;
+      }
+
+      return congruent(loopVariable1.post->origin(), loopVariable2.post->origin(), vs, ctx);
     }
   }
 
