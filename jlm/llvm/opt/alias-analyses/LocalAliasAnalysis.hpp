@@ -250,7 +250,7 @@ private:
  * @return the value of the output, or nullopt if it could not be determined.
  */
 [[nodiscard]] std::optional<int64_t>
-GetConstantIntegerValue(const rvsdg::Output & output);
+GetConstantSignedIntegerValue(const rvsdg::Output & output);
 
 }
 

@@ -201,7 +201,7 @@ CalculateIntraTypeGepOffset(
   JLM_ASSERT(inputIndex >= 2);
 
   auto & gepInput = *gepNode.input(inputIndex)->origin();
-  auto indexingValue = GetConstantIntegerValue(gepInput);
+  auto indexingValue = GetConstantSignedIntegerValue(gepInput);
 
   // Any unknown indexing value means the GEP offset is unknown overall
   if (!indexingValue.has_value())
@@ -247,7 +247,7 @@ LocalAliasAnalysis::CalculateGepOffset(const rvsdg::SimpleNode & gepNode)
   const auto & pointeeType = gep->GetPointeeType();
 
   const auto & wholeTypeIndexingOrigin = *gepNode.input(1)->origin();
-  const auto wholeTypeIndexing = GetConstantIntegerValue(wholeTypeIndexingOrigin);
+  const auto wholeTypeIndexing = GetConstantSignedIntegerValue(wholeTypeIndexingOrigin);
 
   if (!wholeTypeIndexing.has_value())
     return std::nullopt;
@@ -476,14 +476,14 @@ LocalAliasAnalysis::GetOriginalOriginSize(const rvsdg::Output & pointer)
   if (const auto [node, allocaOp] = rvsdg::TryGetSimpleNodeAndOp<AllocaOperation>(pointer);
       allocaOp)
   {
-    const auto elementCount = GetConstantIntegerValue(*node->input(0)->origin());
+    const auto elementCount = GetConstantSignedIntegerValue(*node->input(0)->origin());
     if (elementCount.has_value())
       return *elementCount * GetTypeSize(*allocaOp->ValueType());
   }
   if (const auto [node, mallocOp] = rvsdg::TryGetSimpleNodeAndOp<MallocOperation>(pointer);
       mallocOp)
   {
-    const auto mallocSize = GetConstantIntegerValue(*node->input(0)->origin());
+    const auto mallocSize = GetConstantSignedIntegerValue(*node->input(0)->origin());
     if (mallocSize.has_value())
       return *mallocSize;
   }
@@ -742,13 +742,18 @@ LocalAliasAnalysis::HasOnlyFullyTraceableTopOrigins(TraceCollection & traces)
 }
 
 std::optional<int64_t>
-GetConstantIntegerValue(const rvsdg::Output & output)
+GetConstantSignedIntegerValue(const rvsdg::Output & output)
 {
   const auto & normalized = NormalizeOutput(output);
   if (const auto [_, constant] = rvsdg::TryGetSimpleNodeAndOp<IntegerConstantOperation>(normalized);
       constant)
   {
     return constant->Representation().to_int();
+  }
+  if (const auto [_, constant] = rvsdg::TryGetSimpleNodeAndOp<rvsdg::bitconstant_op>(normalized);
+      constant)
+  {
+    return constant->value().to_int();
   }
 
   return std::nullopt;
