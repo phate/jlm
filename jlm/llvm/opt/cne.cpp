@@ -171,112 +171,127 @@ private:
       sets_;
 };
 
-/* mark phase */
-
 static bool
 congruent(
-    jlm::rvsdg::Output * o1,
-    jlm::rvsdg::Output * o2,
+    rvsdg::Output * o1,
+    rvsdg::Output * o2,
     vset & vs,
-    CommonNodeElimination::Context & ctx)
+    CommonNodeElimination::Context & context)
 {
-  if (ctx.congruent(o1, o2) || vs.visited(o1, o2))
+  if (context.congruent(o1, o2) || vs.visited(o1, o2))
     return true;
 
   if (*o1->Type() != *o2->Type())
     return false;
 
-  if (auto theta1 = rvsdg::TryGetRegionParentNode<rvsdg::ThetaNode>(*o1))
+  // Handle theta entry
   {
-    if (auto theta2 = rvsdg::TryGetRegionParentNode<rvsdg::ThetaNode>(*o2))
+    const auto thetaNode1 = rvsdg::TryGetRegionParentNode<rvsdg::ThetaNode>(*o1);
+    const auto thetaNode2 = rvsdg::TryGetRegionParentNode<rvsdg::ThetaNode>(*o2);
+    if (thetaNode1 && thetaNode2)
     {
-      JLM_ASSERT(o1->region()->node() == o2->region()->node());
-      auto loopvar1 = theta1->MapPreLoopVar(*o1);
-      auto loopvar2 = theta2->MapPreLoopVar(*o2);
       vs.insert(o1, o2);
-      auto i1 = loopvar1.input, i2 = loopvar2.input;
-      if (!congruent(loopvar1.input->origin(), loopvar2.input->origin(), vs, ctx))
+      const auto loopVariable1 = thetaNode1->MapPreLoopVar(*o1);
+      const auto loopVariable2 = thetaNode2->MapPreLoopVar(*o2);
+
+      if (!congruent(loopVariable1.input->origin(), loopVariable2.input->origin(), vs, context))
         return false;
 
-      auto output1 = o1->region()->node()->output(i1->index());
-      auto output2 = o2->region()->node()->output(i2->index());
-      return congruent(output1, output2, vs, ctx);
+      return congruent(loopVariable1.output, loopVariable2.output, vs, context);
     }
   }
 
-  if (auto theta1 = rvsdg::TryGetOwnerNode<rvsdg::ThetaNode>(*o1))
+  // Handle theta exit
   {
-    if (auto theta2 = rvsdg::TryGetOwnerNode<rvsdg::ThetaNode>(*o2))
+    const auto thetaNode1 = rvsdg::TryGetOwnerNode<rvsdg::ThetaNode>(*o1);
+    const auto thetaNode2 = rvsdg::TryGetOwnerNode<rvsdg::ThetaNode>(*o2);
+    if (thetaNode1 && thetaNode2)
     {
       vs.insert(o1, o2);
-      auto loopvar1 = theta1->MapOutputLoopVar(*o1);
-      auto loopvar2 = theta2->MapOutputLoopVar(*o2);
-      auto r1 = loopvar1.post;
-      auto r2 = loopvar2.post;
-      return congruent(r1->origin(), r2->origin(), vs, ctx);
-    }
-  }
+      const auto loopVariable1 = thetaNode1->MapOutputLoopVar(*o1);
+      const auto loopVariable2 = thetaNode2->MapOutputLoopVar(*o2);
 
-  auto n1 = rvsdg::TryGetOwnerNode<rvsdg::Node>(*o1);
-  auto n2 = rvsdg::TryGetOwnerNode<rvsdg::Node>(*o2);
-
-  if (auto gamma1 = rvsdg::TryGetOwnerNode<rvsdg::GammaNode>(*o1))
-  {
-    if (auto gamma2 = rvsdg::TryGetOwnerNode<rvsdg::GammaNode>(*o2))
-    {
-      if (gamma1 == gamma2)
+      if (rvsdg::ThetaLoopVarIsInvariant(loopVariable1)
+          && rvsdg::ThetaLoopVarIsInvariant(loopVariable2))
       {
-        auto exitvar1 = gamma1->MapOutputExitVar(*o1);
-        auto exitvar2 = gamma2->MapOutputExitVar(*o2);
-        JLM_ASSERT(exitvar1.branchResult.size() == exitvar2.branchResult.size());
-        for (size_t n = 0; n < exitvar1.branchResult.size(); ++n)
-        {
-          JLM_ASSERT(exitvar1.branchResult[n]->region() == exitvar2.branchResult[n]->region());
-          if (!congruent(
-                  exitvar1.branchResult[n]->origin(),
-                  exitvar2.branchResult[n]->origin(),
-                  vs,
-                  ctx))
-            return false;
-        }
-        return true;
+        // Both loop variables are invariant. This means both are always congruent even if they
+        // are from different theta nodes with different iteration counts. In other words, it is
+        // just a value that is passed through both thetas. Let's see whether both values are
+        // congruent before they enter the loops.
+        return congruent(loopVariable1.input->origin(), loopVariable2.input->origin(), vs, context);
       }
-    }
-  }
 
-  if (auto g1 = rvsdg::TryGetRegionParentNode<rvsdg::GammaNode>(*o1))
-  {
-    if (auto g2 = rvsdg::TryGetRegionParentNode<rvsdg::GammaNode>(*o2))
-    {
-      JLM_ASSERT(g1 == g2);
-      auto origin1 = std::visit(
-          [](const auto & rolevar) -> rvsdg::Output *
-          {
-            return rolevar.input->origin();
-          },
-          g1->MapBranchArgument(*o1));
-      auto origin2 = std::visit(
-          [](const auto & rolevar) -> rvsdg::Output *
-          {
-            return rolevar.input->origin();
-          },
-          g2->MapBranchArgument(*o2));
-      return congruent(origin1, origin2, vs, ctx);
-    }
-  }
-
-  if (jlm::rvsdg::is<rvsdg::SimpleOperation>(n1) && jlm::rvsdg::is<rvsdg::SimpleOperation>(n2)
-      && n1->GetOperation() == n2->GetOperation() && n1->ninputs() == n2->ninputs()
-      && o1->index() == o2->index())
-  {
-    for (size_t n = 0; n < n1->ninputs(); n++)
-    {
-      auto origin1 = n1->input(n)->origin();
-      auto origin2 = n2->input(n)->origin();
-      if (!congruent(origin1, origin2, vs, ctx))
+      if (thetaNode1 != thetaNode2)
+      {
+        // The loop variables are from different theta nodes. They would only be congruent if we can
+        // ensure that both theta nodes have the same iteration count, but we do not want to invest
+        // into this. Let's just bail out.
         return false;
+      }
+
+      return congruent(loopVariable1.post->origin(), loopVariable2.post->origin(), vs, context);
     }
-    return true;
+  }
+
+  // Handle gamma entry
+  {
+    const auto gammaNode1 = rvsdg::TryGetRegionParentNode<rvsdg::GammaNode>(*o1);
+    const auto gammaNode2 = rvsdg::TryGetRegionParentNode<rvsdg::GammaNode>(*o2);
+    if (gammaNode1 && gammaNode2)
+    {
+      JLM_ASSERT(gammaNode1 == gammaNode2);
+      const auto origin1 = std::visit(
+          [](const auto & roleVariable) -> rvsdg::Output *
+          {
+            return roleVariable.input->origin();
+          },
+          gammaNode1->MapBranchArgument(*o1));
+      const auto origin2 = std::visit(
+          [](const auto & roleVariable) -> rvsdg::Output *
+          {
+            return roleVariable.input->origin();
+          },
+          gammaNode2->MapBranchArgument(*o2));
+      return congruent(origin1, origin2, vs, context);
+    }
+  }
+
+  // Handle gamma exit
+  {
+    auto gammaNode1 = rvsdg::TryGetOwnerNode<rvsdg::GammaNode>(*o1);
+    auto gammaNode2 = rvsdg::TryGetOwnerNode<rvsdg::GammaNode>(*o2);
+    if (gammaNode1 && gammaNode2 && gammaNode1 == gammaNode2)
+    {
+      const auto [branchResults1, output1] = gammaNode1->MapOutputExitVar(*o1);
+      const auto [branchResults2, output2] = gammaNode2->MapOutputExitVar(*o2);
+
+      JLM_ASSERT(branchResults1.size() == branchResults2.size());
+      for (size_t n = 0; n < branchResults1.size(); ++n)
+      {
+        JLM_ASSERT(branchResults1[n]->region() == branchResults2[n]->region());
+        if (!congruent(branchResults1[n]->origin(), branchResults2[n]->origin(), vs, context))
+          return false;
+      }
+      return true;
+    }
+  }
+
+  // Handle simple nodes
+  {
+    const auto simpleNode1 = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*o1);
+    const auto simpleNode2 = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*o2);
+    if (simpleNode1 && simpleNode2 && simpleNode1->GetOperation() == simpleNode2->GetOperation()
+        && simpleNode1->ninputs() == simpleNode2->ninputs() && o1->index() == o2->index())
+    {
+      for (auto & input : simpleNode1->Inputs())
+      {
+        const auto origin1 = input.origin();
+        const auto origin2 = simpleNode2->input(input.index())->origin();
+        if (!congruent(origin1, origin2, vs, context))
+          return false;
+      }
+      return true;
+    }
   }
 
   return false;

@@ -15,6 +15,7 @@
 #include <jlm/llvm/ir/RvsdgModule.hpp>
 #include <jlm/llvm/opt/cne.hpp>
 #include <jlm/rvsdg/Phi.hpp>
+#include <jlm/rvsdg/view.hpp>
 #include <jlm/util/Statistics.hpp>
 
 static jlm::util::StatisticsCollector statisticsCollector;
@@ -370,6 +371,109 @@ test_theta5()
   assert(region->result(4)->origin() == region->result(5)->origin());
   assert(region->result(2)->origin() == region->result(3)->origin());
 }
+
+static void
+MultipleThetas()
+{
+  using namespace jlm::llvm;
+  using namespace jlm::rvsdg;
+  using namespace jlm::tests;
+
+  // Arrange
+  const auto valueType = jlm::tests::ValueType::Create();
+
+  jlm::llvm::RvsdgModule rvsdgModule(jlm::util::FilePath(""), "", "");
+  auto & rvsdg = rvsdgModule.Rvsdg();
+
+  auto & i0 = jlm::tests::GraphImport::Create(rvsdg, valueType, "i0");
+
+  // Loop 1
+  auto thetaNode1 = ThetaNode::create(&rvsdg.GetRootRegion());
+  auto loopVariable1 = thetaNode1->AddLoopVar(&i0);
+  auto node1 = TestOperation::create(thetaNode1->subregion(), { loopVariable1.pre }, { valueType });
+  loopVariable1.post->divert_to(node1->output(0));
+
+  // Loop 2
+  auto thetaNode2 = ThetaNode::create(&rvsdg.GetRootRegion());
+  auto predicate = control_constant(thetaNode2->subregion(), 2, 1);
+  thetaNode2->set_predicate(predicate);
+  auto loopVariable2 = thetaNode2->AddLoopVar(&i0);
+  auto node2 = TestOperation::create(thetaNode1->subregion(), { loopVariable2.pre }, { valueType });
+  loopVariable2.post->divert_to(node2->output(0));
+
+  // Loop 3
+  auto thetaNode3 = ThetaNode::create(&rvsdg.GetRootRegion());
+  auto loopVariable3 = thetaNode3->AddLoopVar(loopVariable1.output);
+  auto loopVariable4 = thetaNode3->AddLoopVar(loopVariable2.output);
+
+  auto & x1 = jlm::tests::GraphExport::Create(*loopVariable3.output, "x1");
+  auto & x2 = jlm::tests::GraphExport::Create(*loopVariable4.output, "x2");
+
+  view(rvsdg, stdout);
+
+  // Act
+  CommonNodeElimination commonNodeElimination;
+  commonNodeElimination.Run(rvsdgModule, statisticsCollector);
+
+  view(rvsdg, stdout);
+
+  // Assert
+  // The origins from x1 and x2 are ultimately from two different loops with different iteration
+  // counts. They are NOT congruent.
+  assert(x1.origin() != x2.origin());
+}
+
+JLM_UNIT_TEST_REGISTER("jlm/llvm/opt/test-cne-MultipleThetas", MultipleThetas)
+
+static void
+MultipleThetasPassthrough()
+{
+  using namespace jlm::llvm;
+  using namespace jlm::rvsdg;
+  using namespace jlm::tests;
+
+  // Arrange
+  const auto valueType = jlm::tests::ValueType::Create();
+
+  jlm::llvm::RvsdgModule rvsdgModule(jlm::util::FilePath(""), "", "");
+  auto & rvsdg = rvsdgModule.Rvsdg();
+
+  auto & i0 = jlm::tests::GraphImport::Create(rvsdg, valueType, "i0");
+
+  // Loop 1
+  auto thetaNode1 = ThetaNode::create(&rvsdg.GetRootRegion());
+  auto loopVariable1 = thetaNode1->AddLoopVar(&i0);
+
+  // Loop 2
+  auto thetaNode2 = ThetaNode::create(&rvsdg.GetRootRegion());
+  auto predicate = control_constant(thetaNode2->subregion(), 2, 1);
+  thetaNode2->set_predicate(predicate);
+  auto loopVariable2 = thetaNode2->AddLoopVar(&i0);
+
+  // Loop 3
+  auto thetaNode3 = ThetaNode::create(&rvsdg.GetRootRegion());
+  auto loopVariable3 = thetaNode3->AddLoopVar(loopVariable1.output);
+  auto loopVariable4 = thetaNode3->AddLoopVar(loopVariable2.output);
+
+  auto & x1 = jlm::tests::GraphExport::Create(*loopVariable3.output, "x1");
+  auto & x2 = jlm::tests::GraphExport::Create(*loopVariable4.output, "x2");
+
+  view(rvsdg, stdout);
+
+  // Act
+  CommonNodeElimination commonNodeElimination;
+  commonNodeElimination.Run(rvsdgModule, statisticsCollector);
+
+  view(rvsdg, stdout);
+
+  // Assert
+  // The origins from x1 and x2 are ultimately from two different loops with different iteration
+  // counts, BUT the values in these loops are only passthrough values. Thus, we would expect them
+  // to be congruent.
+  assert(x1.origin() == x2.origin());
+}
+
+JLM_UNIT_TEST_REGISTER("jlm/llvm/opt/test-cne-MultipleThetasPassthrough", MultipleThetasPassthrough)
 
 static inline void
 test_lambda()
