@@ -6,7 +6,7 @@
 #ifndef JLM_LLVM_OPT_ALIAS_ANALYSES_ALIASANALYSIS_HPP
 #define JLM_LLVM_OPT_ALIAS_ANALYSES_ALIASANALYSIS_HPP
 
-#include <jlm/llvm/opt/alias-analyses/PointsToGraph.hpp>
+#include <jlm/rvsdg/node.hpp>
 
 namespace jlm::llvm::aa
 {
@@ -17,7 +17,7 @@ namespace jlm::llvm::aa
  * The analysis response gives guarantees about the possibility of [p1, p1+s1) and [p2, p2+s2)
  * overlapping.
  *
- * If p1 and p2 are local, they must both be defined in the same function.
+ * If p1 and p2 are both defined within a lambda region, it must be the same lambda region.
  * When both pointers are defined within a region, the alias query is made relative to an
  * execution of that region. Thus, a NoAlias response does not make any guarantees about aliasing
  * between different executions of the region.
@@ -62,9 +62,8 @@ public:
 };
 
 /**
- * Determines if the given value is regarded as representing a pointer
- * @param value the value
- * @return true if value represents a pointer, false otherwise
+ * @param value the value in question
+ * @return true if value is or contains a pointer, false otherwise
  */
 [[nodiscard]] bool
 IsPointerCompatible(const rvsdg::Output & value);

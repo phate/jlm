@@ -42,17 +42,18 @@ private:
    * The offset is the number of bytes needed to satisfy
    *   output ptr = input ptr + offset in bytes
    *
-   * @param gepNode the node representing the GEP operation
+   * @param gepNode the node representing the \ref GetElementPointerOperation
    * @return the offset applied by the GEP, if it is possible to determine at compile time
    */
   [[nodiscard]] static std::optional<int64_t>
   CalculateGepOffset(const rvsdg::SimpleNode & gepNode);
 
   /**
-   * Returns the result of tracing the origin of p as far as possible, without introducing any
-   * uncertainty. By not introducing uncertainty, the result may be used to determine MustAlias
-   * relations. p is normalized, and traced through GEPs with compile time known offsets, as far as
-   * possible.
+   * Returns the result of tracing the origin of p as far as possible, without tracing through
+   * operations that add an unknown offsets, or add multiple possible origins.
+   * Since the pointer has exactly one possible origin with a statically known offset,
+   * it may be possible to give MustAlias responses.
+   * If not, more extensive tracing can be performed using \ref TraceAllPointerOrigins.
    *
    * @param p the pointer value to trace
    * @return the TracedPointer for p, which is guaranteed to have a defined offset
@@ -80,10 +81,10 @@ private:
 
   /**
    * Traces to find all possible origins of the given pointer.
-   * Traces through GEP operations, including those with offsets that are not known at compile time.
-   * Also traces through gamma and theta nodes, building a set of multiple possibilities.
-   * Tracing stops at "top origins", for example an AllocaOperation, a LoadNonVolatileOperation,
-   * the return value of a CallOperation etc.
+   * Traces through \ref GetElementPointerOperation, including those with offsets that are not known
+   * at compile time. Also traces through gamma and theta nodes, building a set of multiple
+   * possibilities. Tracing stops at "top origins", for example an \ref AllocaOperation, a \ref
+   * LoadNonVolatileOperation, the return value of a \ref CallOperation etc.
    *
    * @param p the pointer to trace from
    * @param traceCollection the collection of trace points being created
@@ -98,8 +99,8 @@ private:
    * except for those that are based on the original pointer itself.
    * The pointer is also guaranteed to be at the very beginning of the memory region.
    *
-   * For example, the output of an AllocaOperation, a DeltaOperation, or a GraphImport,
-   * are such original origins.
+   * For example, the output of an \ref AllocaOperation, a \ref DeltaOperation,
+   * or a \ref GraphImport, are such original origins.
    *
    * @param pointer the pointer value to check
    * @return true if the pointer is the original pointer to a memory location
@@ -196,11 +197,11 @@ private:
    * Only identical top origins are considered, so if two distinct top origins
    * point to the same memory, that aliasing will not be detected by this method.
    *
-   * @param tc1
-   * @param s1
-   * @param tc2
-   * @param s2
-   * @return
+   * @param tc1 the collection of traces of p1
+   * @param s1 the size of the operation performed at p1
+   * @param tc2 the collection of traces of p2
+   * @param s2 the size of the operation performed at p2
+   * @return true if any top origins are shared, and possibly overlap
    */
   [[nodiscard]] static bool
   DoTraceCollectionsOverlap(TraceCollection & tc1, size_t s1, TraceCollection & tc2, size_t s2);
@@ -210,11 +211,11 @@ private:
    * AND that the address of the memory location is never passed anywhere that is not
    * traceable back to the original operation.
    *
-   * Only AllocaOperations are fully traceable, and only when the address can be traced to all uses,
-   * and all uses are loads and stores. If the address is passed to a function, or stored in
-   * a variable, the AllocaOperation is not fully traceable.
-   * For a fully traceable AllocaOperation, any use of its address can therefore be traced back
-   * to the AllocaOperation using the TraceAllPointerOrigins function
+   * Only \ref AllocaOperations are fully traceable, and only when the address can be traced to all
+   * uses, and all uses are loads and stores. If the address is passed to a function, or stored in
+   * a variable, the \ref AllocaOperation is not fully traceable.
+   * For a fully traceable \ref AllocaOperation, any use of its address can therefore be traced back
+   * to the \ref AllocaOperation using the \ref TraceAllPointerOrigins function
    *
    * In summary: this function performs a simple, local, escape analysis for ALLOCAs.
    * Its result is cached for performance.

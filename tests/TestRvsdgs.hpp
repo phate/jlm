@@ -2568,7 +2568,7 @@ private:
  *     char* bytePtrPlus2 = bytePtr + 2;
  *
  *     // All alias queries happen here
- * }
+ *   }
  * \endcode
  */
 class LocalAliasAnalysisTest1 final : public RvsdgTest
@@ -2592,6 +2592,67 @@ class LocalAliasAnalysisTest1 final : public RvsdgTest
     rvsdg::Output * ArrUnknown = {};
     rvsdg::Output * BytePtr = {};
     rvsdg::Output * BytePtrPlus2 = {};
+  };
+
+public:
+  const Outputs &
+  GetOutputs() const noexcept
+  {
+    return Outputs_;
+  }
+
+private:
+  std::unique_ptr<llvm::RvsdgModule>
+  SetupRvsdg() override;
+
+  Outputs Outputs_ = {};
+};
+
+/**
+ * This class sets up an RVSDG representing the following code:
+ *
+ * \code{.c}
+ *
+ *   void func(int1_t x, int32_t* ptr) {
+ *     int32_t alloca1
+ *     int64_t alloca2;
+ *     int32_t alloca3[2];
+ *
+ *     // Using a gamma node
+ *     int32_t* allocaUnknown;
+ *     if (x)
+ *       allocaUnknown = &alloca1;
+ *     else
+ *       allocaUnknown = (int32_t*) &alloca2;
+ *
+ *     int32_t* allocaUnknownPlus1 = allocaUnknown + 1;
+ *     int32_t* alloca3Plus1 = alloca3 + 1;
+ *
+ *     // Using a select operation
+ *     int32_t* alloca3UnknownOffset = x ? alloca3 : alloca3Plus1;
+ *
+ *     // Using a select operation that is actually a nop
+ *     int32_t* alloca3KnownOffset = x ? alloca3Plus1 : alloca3Plus1;
+ *
+ *     // All alias queries happen here
+ *   }
+ * \endcode
+ */
+class LocalAliasAnalysisTest2 final : public RvsdgTest
+{
+  struct Outputs
+  {
+    rvsdg::Output * Func = {};
+    rvsdg::Output * X = {};
+    rvsdg::Output * Ptr = {};
+    rvsdg::Output * Alloca1 = {};
+    rvsdg::Output * Alloca2 = {};
+    rvsdg::Output * Alloca3 = {};
+    rvsdg::Output * AllocaUnknown = {};
+    rvsdg::Output * AllocaUnknownPlus1 = {};
+    rvsdg::Output * Alloca3Plus1 = {};
+    rvsdg::Output * Alloca3UnknownOffset = {};
+    rvsdg::Output * Alloca3KnownOffset = {};
   };
 
 public:

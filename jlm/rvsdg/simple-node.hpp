@@ -9,7 +9,6 @@
 #include <jlm/rvsdg/node.hpp>
 
 #include <optional>
-#include <type_traits>
 
 namespace jlm::rvsdg
 {

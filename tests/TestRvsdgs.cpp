@@ -4309,4 +4309,88 @@ LocalAliasAnalysisTest1::SetupRvsdg()
   return rvsdgModule;
 }
 
+std::unique_ptr<llvm::RvsdgModule>
+LocalAliasAnalysisTest2::SetupRvsdg()
+{
+  using namespace jlm::llvm;
+
+  auto rvsdgModule = RvsdgModule::Create(jlm::util::FilePath(""), "", "");
+  auto & rvsdg = rvsdgModule->Rvsdg();
+
+  const auto pointerType = PointerType::Create();
+  const auto int1Type = rvsdg::bittype::Create(1);
+  const auto int32Type = rvsdg::bittype::Create(32);
+  const auto int64Type = rvsdg::bittype::Create(64);
+  const auto intArrayType = ArrayType::Create(int32Type, 2);
+  const auto ioStateType = IOStateType::Create();
+  const auto memoryStateType = MemoryStateType::Create();
+
+  const auto funcType = rvsdg::FunctionType::Create(
+      { int1Type, pointerType, ioStateType, memoryStateType },
+      { ioStateType, memoryStateType });
+
+  // Setup the function "func"
+  {
+    auto & lambdaNode = *rvsdg::LambdaNode::Create(
+        rvsdg.GetRootRegion(),
+        LlvmLambdaOperation::Create(funcType, "func", linkage::internal_linkage));
+
+    Outputs_.X = lambdaNode.GetFunctionArguments()[0];
+    Outputs_.Ptr = lambdaNode.GetFunctionArguments()[1];
+    auto ioState = lambdaNode.GetFunctionArguments()[2];
+    auto memoryState = lambdaNode.GetFunctionArguments()[3];
+
+    const auto constantZero =
+        llvm::IntegerConstantOperation::Create(*lambdaNode.subregion(), 32, 0).output(0);
+    const auto constantOne =
+        llvm::IntegerConstantOperation::Create(*lambdaNode.subregion(), 32, 1).output(0);
+
+    const auto alloca1Outputs = AllocaOperation::create(int32Type, constantOne, 4);
+    const auto alloca2Outputs = AllocaOperation::create(int64Type, constantOne, 4);
+    const auto alloca3Outputs = AllocaOperation::create(intArrayType, constantOne, 4);
+
+    Outputs_.Alloca1 = alloca1Outputs[0];
+    Outputs_.Alloca2 = alloca2Outputs[0];
+    Outputs_.Alloca3 = alloca3Outputs[0];
+
+    memoryState = MemoryStateMergeOperation::Create(
+        { memoryState, alloca1Outputs[1], alloca2Outputs[1], alloca3Outputs[1] });
+
+    const auto matchResult = rvsdg::match_op::Create(*Outputs_.X, { { 1, 1 } }, 0, 2);
+    const auto gamma = rvsdg::GammaNode::create(matchResult, 2);
+    const auto entryVarA1 = gamma->AddEntryVar(Outputs_.Alloca1);
+    const auto entryVarA2 = gamma->AddEntryVar(Outputs_.Alloca2);
+    const auto exitVar =
+        gamma->AddExitVar({ entryVarA1.branchArgument[0], entryVarA2.branchArgument[1] });
+    Outputs_.AllocaUnknown = exitVar.output;
+
+    Outputs_.AllocaUnknownPlus1 = GetElementPtrOperation::Create(
+        Outputs_.AllocaUnknown,
+        { constantOne },
+        int32Type,
+        pointerType);
+
+    Outputs_.Alloca3Plus1 = GetElementPtrOperation::Create(
+        Outputs_.Alloca3,
+        { constantZero, constantOne },
+        intArrayType,
+        pointerType);
+
+    Outputs_.Alloca3UnknownOffset = rvsdg::CreateOpNode<SelectOperation>(
+                                        { Outputs_.X, Outputs_.Alloca3, Outputs_.Alloca3Plus1 },
+                                        pointerType)
+                                        .output(0);
+
+    Outputs_.Alloca3KnownOffset = rvsdg::CreateOpNode<SelectOperation>(
+                                      { Outputs_.X, Outputs_.Alloca3Plus1, Outputs_.Alloca3Plus1 },
+                                      pointerType)
+                                      .output(0);
+
+    lambdaNode.finalize({ ioState, memoryState });
+    Outputs_.Func = lambdaNode.output();
+  }
+
+  return rvsdgModule;
+}
+
 }

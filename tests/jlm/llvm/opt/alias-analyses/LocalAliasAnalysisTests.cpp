@@ -110,3 +110,74 @@ TestLocalAliasAnalysis()
 JLM_UNIT_TEST_REGISTER(
     "jlm/llvm/opt/alias-analyses/AliasAnalysisTests-TestLocalAliasAnalysis",
     TestLocalAliasAnalysis);
+
+void
+TestLocalAliasAnalysisMultipleOrigins()
+{
+  using namespace jlm::llvm::aa;
+
+  // Arrange
+  jlm::tests::LocalAliasAnalysisTest2 rvsdg;
+  rvsdg.InitializeTest();
+  const auto & outputs = rvsdg.GetOutputs();
+
+  jlm::rvsdg::view(&rvsdg.graph().GetRootRegion(), stdout);
+
+  LocalAliasAnalysis aa;
+
+  // Assert
+
+  // First check that none of the allocas have been mixed up with unknown pointers
+  Expect(aa, *outputs.Alloca1, 4, *outputs.Ptr, 4, AliasAnalysis::NoAlias);
+  Expect(aa, *outputs.Alloca2, 4, *outputs.Ptr, 4, AliasAnalysis::NoAlias);
+  Expect(aa, *outputs.Alloca3, 4, *outputs.Ptr, 4, AliasAnalysis::NoAlias);
+  Expect(aa, *outputs.Alloca3Plus1, 4, *outputs.Ptr, 4, AliasAnalysis::NoAlias);
+
+  // Check that allocaUnknown may alias only alloca1 or alloca2
+  Expect(aa, *outputs.AllocaUnknown, 4, *outputs.Alloca1, 4, AliasAnalysis::MayAlias);
+  Expect(aa, *outputs.AllocaUnknown, 4, *outputs.Alloca2, 4, AliasAnalysis::MayAlias);
+  Expect(aa, *outputs.AllocaUnknown, 4, *outputs.Alloca3, 4, AliasAnalysis::NoAlias);
+  Expect(aa, *outputs.AllocaUnknown, 4, *outputs.Alloca3Plus1, 4, AliasAnalysis::NoAlias);
+  Expect(aa, *outputs.AllocaUnknown, 4, *outputs.Ptr, 4, AliasAnalysis::NoAlias);
+
+  // If performing an 8 byte operation, it may only alias alloca2, becoming a must alias
+  Expect(aa, *outputs.AllocaUnknown, 8, *outputs.Alloca1, 4, AliasAnalysis::NoAlias);
+  Expect(aa, *outputs.AllocaUnknown, 8, *outputs.Alloca2, 4, AliasAnalysis::MustAlias);
+  // Performing a 9 byte operation is neither legal for alloca1 nor alloca2
+  Expect(aa, *outputs.AllocaUnknown, 9, *outputs.Alloca2, 4, AliasAnalysis::NoAlias);
+
+  // Adding a 4 byte offset forces all operations to be on alloca2
+  Expect(aa, *outputs.AllocaUnknownPlus1, 1, *outputs.Alloca1, 1, AliasAnalysis::NoAlias);
+  // We also know that we are 4 bytes into alloca2
+  Expect(aa, *outputs.AllocaUnknownPlus1, 4, *outputs.Alloca2, 4, AliasAnalysis::NoAlias);
+  Expect(aa, *outputs.AllocaUnknownPlus1, 4, *outputs.Alloca2, 5, AliasAnalysis::MayAlias);
+  // Performing a 5 byte operation is neither legal for alloca1 nor alloca2
+  Expect(aa, *outputs.AllocaUnknownPlus1, 5, *outputs.Alloca2, 8, AliasAnalysis::NoAlias);
+
+  // Check that the offset of allocaUnknown is correctly calculated (4 bytes)
+  Expect(aa, *outputs.AllocaUnknown, 4, *outputs.AllocaUnknownPlus1, 4, AliasAnalysis::NoAlias);
+  Expect(aa, *outputs.AllocaUnknown, 5, *outputs.AllocaUnknownPlus1, 4, AliasAnalysis::MayAlias);
+
+  // Check that the pointer with an unknown offset into alloca3 does not alias anything else
+  Expect(aa, *outputs.Alloca3UnknownOffset, 4, *outputs.Alloca1, 4, AliasAnalysis::NoAlias);
+  Expect(aa, *outputs.Alloca3UnknownOffset, 4, *outputs.Alloca2, 4, AliasAnalysis::NoAlias);
+  Expect(aa, *outputs.Alloca3UnknownOffset, 4, *outputs.AllocaUnknown, 4, AliasAnalysis::NoAlias);
+  Expect(aa, *outputs.Alloca3UnknownOffset, 4, *outputs.Ptr, 4, AliasAnalysis::NoAlias);
+
+  // It may alias alloca3 and alloca3 + 1
+  Expect(aa, *outputs.Alloca3UnknownOffset, 4, *outputs.Alloca3, 4, AliasAnalysis::MayAlias);
+  Expect(aa, *outputs.Alloca3UnknownOffset, 4, *outputs.Alloca3Plus1, 4, AliasAnalysis::MayAlias);
+
+  // If performing an 8 byte operation, we know that we are at the start of alloca3
+  Expect(aa, *outputs.Alloca3UnknownOffset, 8, *outputs.Alloca3, 4, AliasAnalysis::MustAlias);
+  // We still overlap with the second half of alloca3
+  Expect(aa, *outputs.Alloca3UnknownOffset, 8, *outputs.Alloca3Plus1, 4, AliasAnalysis::MayAlias);
+
+  // The select with duplicate operands should be a single origin: alloca3
+  Expect(aa, *outputs.Alloca3KnownOffset, 4, *outputs.Alloca3, 4, AliasAnalysis::NoAlias);
+  Expect(aa, *outputs.Alloca3KnownOffset, 4, *outputs.Alloca3Plus1, 4, AliasAnalysis::MustAlias);
+}
+
+JLM_UNIT_TEST_REGISTER(
+    "jlm/llvm/opt/alias-analyses/AliasAnalysisTests-TestLocalAliasAnalysisMultipleOrigins",
+    TestLocalAliasAnalysisMultipleOrigins);

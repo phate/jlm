@@ -14,6 +14,7 @@
 #include <jlm/rvsdg/lambda.hpp>
 #include <jlm/rvsdg/theta.hpp>
 
+#include <llvm/IR/Instruction.h>
 #include <numeric>
 #include <queue>
 
@@ -368,6 +369,19 @@ LocalAliasAnalysis::TraceAllPointerOrigins(TracedPointerOrigin p, TraceCollectio
     return TraceAllPointerOrigins(p, traceCollection);
   }
 
+  // If the node is a \ref SelectOperation, trace through both possible inputs
+  if (const auto [node, select] = rvsdg::TryGetSimpleNodeAndOp<SelectOperation>(*p.BasePointer);
+      select)
+  {
+    auto leftTrace = p;
+    leftTrace.BasePointer = node->input(1)->origin();
+    auto rightTrace = p;
+    rightTrace.BasePointer = node->input(2)->origin();
+
+    return TraceAllPointerOrigins(leftTrace, traceCollection)
+        && TraceAllPointerOrigins(rightTrace, traceCollection);
+  }
+
   // If we reach undef nodes, do not include them in the TopOrigins
   if (const auto [node, undef] = rvsdg::TryGetSimpleNodeAndOp<UndefValueOperation>(*p.BasePointer);
       undef)
@@ -501,10 +515,20 @@ LocalAliasAnalysis::RemoveTopOriginsWithRemainingSizeBelow(TraceCollection & tra
   while (it != traces.TopOrigins.end())
   {
     const auto remainingSize = GetRemainingSize({ it->first, it->second });
-    if (remainingSize.has_value() && *remainingSize < s)
-      it = traces.TopOrigins.erase(it);
-    else
-      it++;
+    if (remainingSize.has_value())
+    {
+      // This top origin leaves too little room, and can be fully removed
+      if (*remainingSize < s)
+      {
+        it = traces.TopOrigins.erase(it);
+        continue;
+      }
+
+      // If a top origin is exactly large enough for s, any unknown offset must be 0
+      if (*remainingSize == s && !it->second.has_value())
+        it->second = 0;
+    }
+    it++;
   }
 }
 
@@ -671,6 +695,13 @@ LocalAliasAnalysis::IsOriginalOriginFullyTraceable(const rvsdg::Output & pointer
         {
           // The pointer input must be the node's first input
           JLM_ASSERT(user.index() == 0);
+          Enqueue(*node->output(0));
+          continue;
+        }
+
+        if (is<SelectOperation>(node))
+        {
+          // Select operations are fine, if the output is still fully traceable
           Enqueue(*node->output(0));
           continue;
         }
