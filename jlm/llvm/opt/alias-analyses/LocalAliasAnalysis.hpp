@@ -152,6 +152,11 @@ private:
    * If o + s > S, the operation would exceed the bounds of b.
    * The traced origin p = b + o can therefore be removed as an impossibility.
    *
+   * Further, if we have a trace p = c + unknown offset,
+   * where c is an original origin whose size is exactly equal to s,
+   * then we replace the unknown offset with a 0, as that is the only possible offset
+   * that leaves s bytes remaining in the trace.
+   *
    * @param traces the trace collection
    * @param s the size of the operation being performed at the traced pointer
    */
