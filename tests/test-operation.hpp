@@ -385,20 +385,20 @@ public:
                                   std::move(operandTypes),
                                   std::move(resultTypes));
   }
+
+  static std::unique_ptr<llvm::ThreeAddressCode>
+  CreateTac(
+      const std::vector<const llvm::Variable *> & operands,
+      std::vector<std::shared_ptr<const rvsdg::Type>> resultTypes)
+  {
+    std::vector<std::shared_ptr<const rvsdg::Type>> operandTypes;
+    for (const auto & operand : operands)
+      operandTypes.push_back(operand->Type());
+
+    const TestOperation operation(std::move(operandTypes), std::move(resultTypes));
+    return llvm::ThreeAddressCode::create(operation, operands);
+  }
 };
-
-static inline std::unique_ptr<llvm::ThreeAddressCode>
-create_testop_tac(
-    const std::vector<const llvm::Variable *> & arguments,
-    std::vector<std::shared_ptr<const rvsdg::Type>> result_types)
-{
-  std::vector<std::shared_ptr<const rvsdg::Type>> argument_types;
-  for (const auto & arg : arguments)
-    argument_types.push_back(arg->Type());
-
-  TestOperation op(std::move(argument_types), std::move(result_types));
-  return llvm::ThreeAddressCode::create(op, arguments);
-}
 
 static inline std::vector<rvsdg::Output *>
 create_testop(
