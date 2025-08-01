@@ -42,7 +42,7 @@ private:
    * The offset is the number of bytes needed to satisfy
    *   output ptr = input ptr + offset in bytes
    *
-   * @param gepNode the node representing the \ref GetElementPointerOperation
+   * @param gepNode the node representing the \ref GetElementPtrOperation
    * @return the offset applied by the GEP, if it is possible to determine at compile time
    */
   [[nodiscard]] static std::optional<int64_t>
@@ -81,7 +81,7 @@ private:
 
   /**
    * Traces to find all possible origins of the given pointer.
-   * Traces through \ref GetElementPointerOperation, including those with offsets that are not known
+   * Traces through \ref GetElementPtrOperation, including those with offsets that are not known
    * at compile time. Also traces through gamma and theta nodes, building a set of multiple
    * possibilities. Tracing stops at "top origins", for example an \ref AllocaOperation, a \ref
    * LoadNonVolatileOperation, the return value of a \ref CallOperation etc.
@@ -211,7 +211,7 @@ private:
    * AND that the address of the memory location is never passed anywhere that is not
    * traceable back to the original operation.
    *
-   * Only \ref AllocaOperations are fully traceable, and only when the address can be traced to all
+   * Only \ref AllocaOperation is fully traceable, and only when the address can be traced to all
    * uses, and all uses are loads and stores. If the address is passed to a function, or stored in
    * a variable, the \ref AllocaOperation is not fully traceable.
    * For a fully traceable \ref AllocaOperation, any use of its address can therefore be traced back
