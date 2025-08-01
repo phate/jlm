@@ -137,7 +137,7 @@ private:
   std::unordered_map<const jlm::rvsdg::Output *, congruence_set *> outputs_;
 };
 
-class vset
+class VisitorSet final
 {
 public:
   void
@@ -175,7 +175,7 @@ static bool
 congruent(
     rvsdg::Output * o1,
     rvsdg::Output * o2,
-    vset & vs,
+    VisitorSet & vs,
     CommonNodeElimination::Context & context)
 {
   if (context.congruent(o1, o2) || vs.visited(o1, o2))
@@ -300,7 +300,7 @@ congruent(
 static bool
 congruent(jlm::rvsdg::Output * o1, jlm::rvsdg::Output * o2, CommonNodeElimination::Context & ctx)
 {
-  vset vs;
+  VisitorSet vs;
   return congruent(o1, o2, vs, ctx);
 }
 
