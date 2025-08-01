@@ -4356,7 +4356,7 @@ LocalAliasAnalysisTest2::SetupRvsdg()
     memoryState = MemoryStateMergeOperation::Create(
         { memoryState, alloca1Outputs[1], alloca2Outputs[1], alloca3Outputs[1] });
 
-    const auto matchResult = rvsdg::match_op::Create(*Outputs_.X, { { 1, 1 } }, 0, 2);
+    const auto matchResult = rvsdg::MatchOperation::Create(*Outputs_.X, { { 1, 1 } }, 0, 2);
     const auto gamma = rvsdg::GammaNode::create(matchResult, 2);
     const auto entryVarA1 = gamma->AddEntryVar(Outputs_.Alloca1);
     const auto entryVarA2 = gamma->AddEntryVar(Outputs_.Alloca2);
