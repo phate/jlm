@@ -152,10 +152,9 @@ test_control_constant_reduction()
   view(&graph.GetRootRegion(), stdout);
 
   // Assert
-  auto match = TryGetOwnerNode<Node>(*ex1.origin());
-  assert(match && is<MatchOperation>(match->GetOperation()));
-  auto & match_op = to_match_op(match->GetOperation());
-  assert(match_op.default_alternative() == 0);
+  auto [matchNode, matchOperation] = TryGetSimpleNodeAndOp<MatchOperation>(*ex1.origin());
+  assert(matchNode && matchOperation);
+  assert(matchOperation->default_alternative() == 0);
 
   assert(TryGetOwnerNode<Node>(*ex2.origin()) == gamma);
 }
