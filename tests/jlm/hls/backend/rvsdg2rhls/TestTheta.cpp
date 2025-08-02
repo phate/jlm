@@ -39,7 +39,7 @@ TestUnknownBoundaries()
   theta->set_predicate(match);
 
   auto f = lambda->finalize({ theta->output(0), theta->output(1), theta->output(2) });
-  GraphExport::Create(*f, "");
+  jlm::rvsdg::GraphExport::Create(*f, "");
 
   jlm::rvsdg::view(rm.Rvsdg(), stdout);
 
