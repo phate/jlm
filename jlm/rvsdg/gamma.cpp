@@ -78,11 +78,11 @@ is_control_constant_reducible(GammaNode * gamma)
 {
   // check gamma predicate
   auto match = rvsdg::TryGetOwnerNode<SimpleNode>(*gamma->predicate()->origin());
-  if (!is<match_op>(match))
+  if (!is<MatchOperation>(match))
     return {};
 
   /* check number of alternatives */
-  auto match_op = static_cast<const jlm::rvsdg::match_op *>(&match->GetOperation());
+  auto match_op = static_cast<const MatchOperation *>(&match->GetOperation());
   std::unordered_set<uint64_t> set({ match_op->default_alternative() });
   for (const auto & pair : *match_op)
     set.insert(pair.second);
@@ -120,11 +120,11 @@ perform_control_constant_reduction(std::unordered_set<jlm::rvsdg::Output *> & ou
 {
   auto & gamma = rvsdg::AssertGetOwnerNode<GammaNode>(**outputs.begin());
   auto origin = gamma.predicate()->origin();
-  auto & match = AssertGetOwnerNode<SimpleNode>(*origin);
-  auto & match_op = to_match_op(match.GetOperation());
+  auto [matchNode, matchOperation] = TryGetSimpleNodeAndOp<MatchOperation>(*origin);
+  JLM_ASSERT(matchNode && matchOperation);
 
   std::unordered_map<uint64_t, uint64_t> map;
-  for (const auto & pair : match_op)
+  for (const auto & pair : *matchOperation)
     map[pair.second] = pair.first;
 
   for (const auto & xv : gamma.GetExitVars())
@@ -147,8 +147,8 @@ perform_control_constant_reduction(std::unordered_set<jlm::rvsdg::Output *> & ou
         defalt = value.alternative();
     }
 
-    auto origin = match.input(0)->origin();
-    auto m = jlm::rvsdg::match(match_op.nbits(), new_mapping, defalt, nalternatives, origin);
+    auto origin = matchNode->input(0)->origin();
+    auto m = match(matchOperation->nbits(), new_mapping, defalt, nalternatives, origin);
     xv.output->divert_users(m);
   }
 }

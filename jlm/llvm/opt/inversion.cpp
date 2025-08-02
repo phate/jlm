@@ -52,7 +52,7 @@ static rvsdg::GammaNode *
 is_applicable(const rvsdg::ThetaNode * theta)
 {
   auto matchNode = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*theta->predicate()->origin());
-  if (!jlm::rvsdg::is<jlm::rvsdg::match_op>(matchNode))
+  if (!jlm::rvsdg::is<rvsdg::MatchOperation>(matchNode))
     return nullptr;
 
   if (matchNode->output(0)->nusers() != 2)

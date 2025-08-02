@@ -34,9 +34,9 @@ IteratorRanges()
   auto node1 = TestOperation::create(&subregion, { &argument1 }, { valueType });
   auto bottomNode0 = TestOperation::create(&subregion, { &argument0, &argument1 }, { valueType });
 
-  auto & result0 = TestGraphResult::Create(*topNode0->output(0), nullptr);
-  auto & result1 = TestGraphResult::Create(*node0->output(0), nullptr);
-  auto & result2 = TestGraphResult::Create(*node1->output(0), nullptr);
+  const auto outputVar0 = structuralNode->AddResults({ topNode0->output(0) });
+  const auto outputVar1 = structuralNode->AddResults({ node0->output(0) });
+  const auto outputVar2 = structuralNode->AddResults({ node1->output(0) });
 
   // Act & Assert
   auto numArguments = std::distance(subregion.Arguments().begin(), subregion.Arguments().end());
@@ -72,7 +72,9 @@ IteratorRanges()
   assert(numResults == 3);
   for (auto & result : constSubregion.Results())
   {
-    assert(result == &result0 || result == &result1 || result == &result2);
+    assert(
+        result == outputVar0.result[0] || result == outputVar1.result[0]
+        || result == outputVar2.result[0]);
   }
 }
 
@@ -178,46 +180,49 @@ RemoveResultsWhere()
   using namespace jlm::tests;
 
   // Arrange
-  jlm::rvsdg::Graph rvsdg;
-  jlm::rvsdg::Region region(&rvsdg.GetRootRegion(), &rvsdg);
-
   auto valueType = ValueType::Create();
-  auto node = TestOperation::Create(&region, {}, {}, { valueType });
 
-  auto & result0 = TestGraphResult::Create(*node->output(0), nullptr);
-  auto & result1 = TestGraphResult::Create(*node->output(0), nullptr);
-  auto & result2 = TestGraphResult::Create(*node->output(0), nullptr);
+  jlm::rvsdg::Graph rvsdg;
+
+  auto structuralNode = TestStructuralNode::create(&rvsdg.GetRootRegion(), 1);
+  auto subregion = structuralNode->subregion(0);
+
+  auto node = TestOperation::Create(subregion, {}, {}, { valueType });
+
+  const auto outputVar0 = structuralNode->AddResults({ node->output(0) });
+  const auto outputVar1 = structuralNode->AddResults({ node->output(0) });
+  const auto outputVar2 = structuralNode->AddResults({ node->output(0) });
 
   // Act & Arrange
-  assert(region.nresults() == 3);
-  assert(result0.index() == 0);
-  assert(result1.index() == 1);
-  assert(result2.index() == 2);
+  assert(subregion->nresults() == 3);
+  assert(outputVar0.result[0]->index() == 0);
+  assert(outputVar1.result[0]->index() == 1);
+  assert(outputVar2.result[0]->index() == 2);
 
-  region.RemoveResultsWhere(
+  subregion->RemoveResultsWhere(
       [](const jlm::rvsdg::RegionResult & result)
       {
         return result.index() == 1;
       });
-  assert(region.nresults() == 2);
-  assert(result0.index() == 0);
-  assert(result2.index() == 1);
+  assert(subregion->nresults() == 2);
+  assert(outputVar0.result[0]->index() == 0);
+  assert(outputVar2.result[0]->index() == 1);
 
-  region.RemoveResultsWhere(
+  subregion->RemoveResultsWhere(
       [](const jlm::rvsdg::RegionResult &)
       {
         return false;
       });
-  assert(region.nresults() == 2);
-  assert(result0.index() == 0);
-  assert(result2.index() == 1);
+  assert(subregion->nresults() == 2);
+  assert(outputVar0.result[0]->index() == 0);
+  assert(outputVar2.result[0]->index() == 1);
 
-  region.RemoveResultsWhere(
+  subregion->RemoveResultsWhere(
       [](const jlm::rvsdg::RegionResult &)
       {
         return true;
       });
-  assert(region.nresults() == 0);
+  assert(subregion->nresults() == 0);
 }
 
 JLM_UNIT_TEST_REGISTER("jlm/rvsdg/RegionTests-RemoveResultsWhere", RemoveResultsWhere)

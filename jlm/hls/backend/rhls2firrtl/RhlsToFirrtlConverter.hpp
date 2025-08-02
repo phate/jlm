@@ -287,7 +287,7 @@ private:
   std::string
   GetModuleName(const rvsdg::Node * node);
   bool
-  IsIdentityMapping(const jlm::rvsdg::match_op & op);
+  IsIdentityMapping(const rvsdg::MatchOperation & op);
   void
   check_module(circt::firrtl::FModuleOp & module);
 

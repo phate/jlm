@@ -400,7 +400,7 @@ TestMatch()
     auto predicateConst = jlm::rvsdg::create_bitconstant(lambda->subregion(), 8, 4);
 
     auto match =
-        jlm::rvsdg::match_op::Create(*predicateConst, { { 4, 0 }, { 5, 1 }, { 6, 1 } }, 2, 2);
+        jlm::rvsdg::MatchOperation::Create(*predicateConst, { { 4, 0 }, { 5, 1 }, { 6, 1 } }, 2, 2);
 
     lambda->finalize({ match, iOStateArgument, memoryStateArgument });
 

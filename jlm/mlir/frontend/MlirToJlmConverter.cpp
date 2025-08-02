@@ -832,7 +832,7 @@ MlirToJlmConverter::ConvertOperation(
       mapping[matchRuleAttr.getValues().front()] = matchRuleAttr.getIndex();
     }
 
-    return rvsdg::TryGetOwnerNode<rvsdg::Node>(*rvsdg::match_op::Create(
+    return rvsdg::TryGetOwnerNode<rvsdg::Node>(*rvsdg::MatchOperation::Create(
         *(inputs[0]),                 // predicate
         mapping,                      // mapping
         defaultAlternative,           // defaultAlternative

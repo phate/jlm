@@ -115,7 +115,6 @@ RegionResult::Create(
     StructuralOutput * output,
     std::shared_ptr<const rvsdg::Type> type)
 {
-  JLM_ASSERT(origin.region() == &region);
   auto result = new RegionResult(&region, &origin, output, std::move(type));
   region.append_result(result);
   return *result;

@@ -66,7 +66,7 @@ public:
 
 typedef std::unordered_set<jlm::rvsdg::Output *> congruence_set;
 
-class cnectx
+class CommonNodeElimination::Context final
 {
 public:
   inline void
@@ -137,7 +137,7 @@ private:
   std::unordered_map<const jlm::rvsdg::Output *, congruence_set *> outputs_;
 };
 
-class vset
+class VisitorSet final
 {
 public:
   void
@@ -171,122 +171,144 @@ private:
       sets_;
 };
 
-/* mark phase */
-
 static bool
-congruent(jlm::rvsdg::Output * o1, jlm::rvsdg::Output * o2, vset & vs, cnectx & ctx)
+congruent(
+    rvsdg::Output * o1,
+    rvsdg::Output * o2,
+    VisitorSet & vs,
+    CommonNodeElimination::Context & context)
 {
-  if (ctx.congruent(o1, o2) || vs.visited(o1, o2))
+  if (context.congruent(o1, o2) || vs.visited(o1, o2))
     return true;
 
   if (*o1->Type() != *o2->Type())
     return false;
 
-  if (auto theta1 = rvsdg::TryGetRegionParentNode<rvsdg::ThetaNode>(*o1))
+  // Handle theta entry
   {
-    if (auto theta2 = rvsdg::TryGetRegionParentNode<rvsdg::ThetaNode>(*o2))
+    const auto thetaNode1 = rvsdg::TryGetRegionParentNode<rvsdg::ThetaNode>(*o1);
+    const auto thetaNode2 = rvsdg::TryGetRegionParentNode<rvsdg::ThetaNode>(*o2);
+    if (thetaNode1 && thetaNode2)
     {
-      JLM_ASSERT(o1->region()->node() == o2->region()->node());
-      auto loopvar1 = theta1->MapPreLoopVar(*o1);
-      auto loopvar2 = theta2->MapPreLoopVar(*o2);
       vs.insert(o1, o2);
-      auto i1 = loopvar1.input, i2 = loopvar2.input;
-      if (!congruent(loopvar1.input->origin(), loopvar2.input->origin(), vs, ctx))
+      const auto loopVariable1 = thetaNode1->MapPreLoopVar(*o1);
+      const auto loopVariable2 = thetaNode2->MapPreLoopVar(*o2);
+
+      if (!congruent(loopVariable1.input->origin(), loopVariable2.input->origin(), vs, context))
         return false;
 
-      auto output1 = o1->region()->node()->output(i1->index());
-      auto output2 = o2->region()->node()->output(i2->index());
-      return congruent(output1, output2, vs, ctx);
+      return congruent(loopVariable1.output, loopVariable2.output, vs, context);
     }
   }
 
-  if (auto theta1 = rvsdg::TryGetOwnerNode<rvsdg::ThetaNode>(*o1))
+  // Handle theta exit
   {
-    if (auto theta2 = rvsdg::TryGetOwnerNode<rvsdg::ThetaNode>(*o2))
+    const auto thetaNode1 = rvsdg::TryGetOwnerNode<rvsdg::ThetaNode>(*o1);
+    const auto thetaNode2 = rvsdg::TryGetOwnerNode<rvsdg::ThetaNode>(*o2);
+    if (thetaNode1 && thetaNode2)
     {
       vs.insert(o1, o2);
-      auto loopvar1 = theta1->MapOutputLoopVar(*o1);
-      auto loopvar2 = theta2->MapOutputLoopVar(*o2);
-      auto r1 = loopvar1.post;
-      auto r2 = loopvar2.post;
-      return congruent(r1->origin(), r2->origin(), vs, ctx);
-    }
-  }
+      const auto loopVariable1 = thetaNode1->MapOutputLoopVar(*o1);
+      const auto loopVariable2 = thetaNode2->MapOutputLoopVar(*o2);
 
-  auto n1 = rvsdg::TryGetOwnerNode<rvsdg::Node>(*o1);
-  auto n2 = rvsdg::TryGetOwnerNode<rvsdg::Node>(*o2);
-
-  if (auto gamma1 = rvsdg::TryGetOwnerNode<rvsdg::GammaNode>(*o1))
-  {
-    if (auto gamma2 = rvsdg::TryGetOwnerNode<rvsdg::GammaNode>(*o2))
-    {
-      if (gamma1 == gamma2)
+      if (rvsdg::ThetaLoopVarIsInvariant(loopVariable1)
+          && rvsdg::ThetaLoopVarIsInvariant(loopVariable2))
       {
-        auto exitvar1 = gamma1->MapOutputExitVar(*o1);
-        auto exitvar2 = gamma2->MapOutputExitVar(*o2);
-        JLM_ASSERT(exitvar1.branchResult.size() == exitvar2.branchResult.size());
-        for (size_t n = 0; n < exitvar1.branchResult.size(); ++n)
-        {
-          JLM_ASSERT(exitvar1.branchResult[n]->region() == exitvar2.branchResult[n]->region());
-          if (!congruent(
-                  exitvar1.branchResult[n]->origin(),
-                  exitvar2.branchResult[n]->origin(),
-                  vs,
-                  ctx))
-            return false;
-        }
-        return true;
+        // Both loop variables are invariant. This means both are always congruent even if they
+        // are from different theta nodes with different iteration counts. In other words, it is
+        // just a value that is passed through both thetas. Let's see whether both values are
+        // congruent before they enter the loops.
+        return congruent(loopVariable1.input->origin(), loopVariable2.input->origin(), vs, context);
       }
-    }
-  }
 
-  if (auto g1 = rvsdg::TryGetRegionParentNode<rvsdg::GammaNode>(*o1))
-  {
-    if (auto g2 = rvsdg::TryGetRegionParentNode<rvsdg::GammaNode>(*o2))
-    {
-      JLM_ASSERT(g1 == g2);
-      auto origin1 = std::visit(
-          [](const auto & rolevar) -> rvsdg::Output *
-          {
-            return rolevar.input->origin();
-          },
-          g1->MapBranchArgument(*o1));
-      auto origin2 = std::visit(
-          [](const auto & rolevar) -> rvsdg::Output *
-          {
-            return rolevar.input->origin();
-          },
-          g2->MapBranchArgument(*o2));
-      return congruent(origin1, origin2, vs, ctx);
-    }
-  }
-
-  if (jlm::rvsdg::is<rvsdg::SimpleOperation>(n1) && jlm::rvsdg::is<rvsdg::SimpleOperation>(n2)
-      && n1->GetOperation() == n2->GetOperation() && n1->ninputs() == n2->ninputs()
-      && o1->index() == o2->index())
-  {
-    for (size_t n = 0; n < n1->ninputs(); n++)
-    {
-      auto origin1 = n1->input(n)->origin();
-      auto origin2 = n2->input(n)->origin();
-      if (!congruent(origin1, origin2, vs, ctx))
+      if (thetaNode1 != thetaNode2)
+      {
+        // The loop variables are from different theta nodes. They would only be congruent if we can
+        // ensure that both theta nodes have the same iteration count, but we do not want to invest
+        // into this. Let's just bail out.
         return false;
+      }
+
+      return congruent(loopVariable1.post->origin(), loopVariable2.post->origin(), vs, context);
     }
-    return true;
+  }
+
+  // Handle gamma entry
+  {
+    const auto gammaNode1 = rvsdg::TryGetRegionParentNode<rvsdg::GammaNode>(*o1);
+    const auto gammaNode2 = rvsdg::TryGetRegionParentNode<rvsdg::GammaNode>(*o2);
+    if (gammaNode1 && gammaNode2)
+    {
+      JLM_ASSERT(gammaNode1 == gammaNode2);
+      const auto origin1 = std::visit(
+          [](const auto & roleVariable) -> rvsdg::Output *
+          {
+            return roleVariable.input->origin();
+          },
+          gammaNode1->MapBranchArgument(*o1));
+      const auto origin2 = std::visit(
+          [](const auto & roleVariable) -> rvsdg::Output *
+          {
+            return roleVariable.input->origin();
+          },
+          gammaNode2->MapBranchArgument(*o2));
+      return congruent(origin1, origin2, vs, context);
+    }
+  }
+
+  // Handle gamma exit
+  {
+    auto gammaNode1 = rvsdg::TryGetOwnerNode<rvsdg::GammaNode>(*o1);
+    auto gammaNode2 = rvsdg::TryGetOwnerNode<rvsdg::GammaNode>(*o2);
+    if (gammaNode1 && gammaNode2 && gammaNode1 == gammaNode2)
+    {
+      const auto [branchResults1, output1] = gammaNode1->MapOutputExitVar(*o1);
+      const auto [branchResults2, output2] = gammaNode2->MapOutputExitVar(*o2);
+
+      JLM_ASSERT(branchResults1.size() == branchResults2.size());
+      for (size_t n = 0; n < branchResults1.size(); ++n)
+      {
+        JLM_ASSERT(branchResults1[n]->region() == branchResults2[n]->region());
+        if (!congruent(branchResults1[n]->origin(), branchResults2[n]->origin(), vs, context))
+          return false;
+      }
+      return true;
+    }
+  }
+
+  // Handle simple nodes
+  {
+    const auto simpleNode1 = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*o1);
+    const auto simpleNode2 = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*o2);
+    if (simpleNode1 && simpleNode2 && simpleNode1->GetOperation() == simpleNode2->GetOperation()
+        && simpleNode1->ninputs() == simpleNode2->ninputs() && o1->index() == o2->index())
+    {
+      for (auto & input : simpleNode1->Inputs())
+      {
+        const auto origin1 = input.origin();
+        const auto origin2 = simpleNode2->input(input.index())->origin();
+        if (!congruent(origin1, origin2, vs, context))
+          return false;
+      }
+      return true;
+    }
   }
 
   return false;
 }
 
 static bool
-congruent(jlm::rvsdg::Output * o1, jlm::rvsdg::Output * o2, cnectx & ctx)
+congruent(jlm::rvsdg::Output * o1, jlm::rvsdg::Output * o2, CommonNodeElimination::Context & ctx)
 {
-  vset vs;
+  VisitorSet vs;
   return congruent(o1, o2, vs, ctx);
 }
 
 static void
-mark_arguments(rvsdg::StructuralInput * i1, rvsdg::StructuralInput * i2, cnectx & ctx)
+mark_arguments(
+    rvsdg::StructuralInput * i1,
+    rvsdg::StructuralInput * i2,
+    CommonNodeElimination::Context & ctx)
 {
   JLM_ASSERT(i1->node() && i1->node() == i2->node());
   JLM_ASSERT(i1->arguments.size() == i2->arguments.size());
@@ -302,10 +324,10 @@ mark_arguments(rvsdg::StructuralInput * i1, rvsdg::StructuralInput * i2, cnectx 
 }
 
 static void
-mark(rvsdg::Region *, cnectx &);
+mark(rvsdg::Region *, CommonNodeElimination::Context & ctx);
 
 static void
-mark_gamma(const rvsdg::StructuralNode * node, cnectx & ctx)
+mark_gamma(const rvsdg::StructuralNode * node, CommonNodeElimination::Context & ctx)
 {
   JLM_ASSERT(dynamic_cast<const rvsdg::GammaNode *>(node));
 
@@ -331,7 +353,7 @@ mark_gamma(const rvsdg::StructuralNode * node, cnectx & ctx)
 }
 
 static void
-mark_theta(const rvsdg::StructuralNode * node, cnectx & ctx)
+mark_theta(const rvsdg::StructuralNode * node, CommonNodeElimination::Context & ctx)
 {
   JLM_ASSERT(dynamic_cast<const rvsdg::ThetaNode *>(node));
   auto theta = static_cast<const rvsdg::ThetaNode *>(node);
@@ -357,7 +379,7 @@ mark_theta(const rvsdg::StructuralNode * node, cnectx & ctx)
 }
 
 static void
-mark_lambda(const rvsdg::StructuralNode * node, cnectx & ctx)
+mark_lambda(const rvsdg::StructuralNode * node, CommonNodeElimination::Context & ctx)
 {
   JLM_ASSERT(dynamic_cast<const rvsdg::LambdaNode *>(node));
 
@@ -377,7 +399,7 @@ mark_lambda(const rvsdg::StructuralNode * node, cnectx & ctx)
 }
 
 static void
-mark_phi(const rvsdg::StructuralNode * node, cnectx & ctx)
+mark_phi(const rvsdg::StructuralNode * node, CommonNodeElimination::Context & ctx)
 {
   auto & phi = *util::AssertedCast<const rvsdg::PhiNode>(node);
 
@@ -397,27 +419,29 @@ mark_phi(const rvsdg::StructuralNode * node, cnectx & ctx)
 }
 
 static void
-mark_delta(const rvsdg::StructuralNode * node, cnectx &)
+mark_delta(const rvsdg::StructuralNode * node, CommonNodeElimination::Context &)
 {
   JLM_ASSERT(rvsdg::is<DeltaOperation>(node));
 }
 
 static void
-mark(const rvsdg::StructuralNode * node, cnectx & ctx)
+mark(const rvsdg::StructuralNode * node, CommonNodeElimination::Context & ctx)
 {
-  static std::unordered_map<std::type_index, void (*)(const rvsdg::StructuralNode *, cnectx &)> map(
-      { { std::type_index(typeid(rvsdg::GammaNode)), mark_gamma },
-        { std::type_index(typeid(rvsdg::ThetaNode)), mark_theta },
-        { typeid(rvsdg::LambdaNode), mark_lambda },
-        { typeid(rvsdg::PhiNode), mark_phi },
-        { typeid(DeltaNode), mark_delta } });
+  static std::unordered_map<
+      std::type_index,
+      void (*)(const rvsdg::StructuralNode *, CommonNodeElimination::Context &)>
+      map({ { std::type_index(typeid(rvsdg::GammaNode)), mark_gamma },
+            { std::type_index(typeid(rvsdg::ThetaNode)), mark_theta },
+            { typeid(rvsdg::LambdaNode), mark_lambda },
+            { typeid(rvsdg::PhiNode), mark_phi },
+            { typeid(DeltaNode), mark_delta } });
 
   JLM_ASSERT(map.find(typeid(*node)) != map.end());
   map[typeid(*node)](node, ctx);
 }
 
 static void
-mark(const jlm::rvsdg::SimpleNode * node, cnectx & ctx)
+mark(const jlm::rvsdg::SimpleNode * node, CommonNodeElimination::Context & ctx)
 {
   if (node->ninputs() == 0)
   {
@@ -455,7 +479,7 @@ mark(const jlm::rvsdg::SimpleNode * node, cnectx & ctx)
 }
 
 static void
-mark(rvsdg::Region * region, cnectx & ctx)
+mark(rvsdg::Region * region, CommonNodeElimination::Context & ctx)
 {
   for (const auto & node : rvsdg::TopDownTraverser(region))
   {
@@ -469,7 +493,7 @@ mark(rvsdg::Region * region, cnectx & ctx)
 /* divert phase */
 
 static void
-divert_users(jlm::rvsdg::Output * output, cnectx & ctx)
+divert_users(jlm::rvsdg::Output * output, CommonNodeElimination::Context & ctx)
 {
   auto set = ctx.set(output);
   for (auto & other : *set)
@@ -478,24 +502,24 @@ divert_users(jlm::rvsdg::Output * output, cnectx & ctx)
 }
 
 static void
-divert_outputs(rvsdg::Node * node, cnectx & ctx)
+divert_outputs(rvsdg::Node * node, CommonNodeElimination::Context & ctx)
 {
   for (size_t n = 0; n < node->noutputs(); n++)
     divert_users(node->output(n), ctx);
 }
 
 static void
-divert_arguments(rvsdg::Region * region, cnectx & ctx)
+divert_arguments(rvsdg::Region * region, CommonNodeElimination::Context & ctx)
 {
   for (size_t n = 0; n < region->narguments(); n++)
     divert_users(region->argument(n), ctx);
 }
 
 static void
-divert(rvsdg::Region *, cnectx &);
+divert(rvsdg::Region *, CommonNodeElimination::Context &);
 
 static void
-divert_gamma(rvsdg::StructuralNode * node, cnectx & ctx)
+divert_gamma(rvsdg::StructuralNode * node, CommonNodeElimination::Context & ctx)
 {
   JLM_ASSERT(dynamic_cast<const rvsdg::GammaNode *>(node));
   auto gamma = static_cast<rvsdg::GammaNode *>(node);
@@ -513,7 +537,7 @@ divert_gamma(rvsdg::StructuralNode * node, cnectx & ctx)
 }
 
 static void
-divert_theta(rvsdg::StructuralNode * node, cnectx & ctx)
+divert_theta(rvsdg::StructuralNode * node, CommonNodeElimination::Context & ctx)
 {
   JLM_ASSERT(dynamic_cast<const rvsdg::ThetaNode *>(node));
   auto theta = static_cast<rvsdg::ThetaNode *>(node);
@@ -530,7 +554,7 @@ divert_theta(rvsdg::StructuralNode * node, cnectx & ctx)
 }
 
 static void
-divert_lambda(rvsdg::StructuralNode * node, cnectx & ctx)
+divert_lambda(rvsdg::StructuralNode * node, CommonNodeElimination::Context & ctx)
 {
   JLM_ASSERT(dynamic_cast<const rvsdg::LambdaNode *>(node));
 
@@ -539,7 +563,7 @@ divert_lambda(rvsdg::StructuralNode * node, cnectx & ctx)
 }
 
 static void
-divert_phi(rvsdg::StructuralNode * node, cnectx & ctx)
+divert_phi(rvsdg::StructuralNode * node, CommonNodeElimination::Context & ctx)
 {
   auto & phi = *util::AssertedCast<const rvsdg::PhiNode>(node);
 
@@ -548,27 +572,29 @@ divert_phi(rvsdg::StructuralNode * node, cnectx & ctx)
 }
 
 static void
-divert_delta(rvsdg::StructuralNode * node, cnectx &)
+divert_delta(rvsdg::StructuralNode * node, CommonNodeElimination::Context &)
 {
   JLM_ASSERT(is<DeltaOperation>(node));
 }
 
 static void
-divert(rvsdg::StructuralNode * node, cnectx & ctx)
+divert(rvsdg::StructuralNode * node, CommonNodeElimination::Context & ctx)
 {
-  static std::unordered_map<std::type_index, void (*)(rvsdg::StructuralNode *, cnectx &)> map(
-      { { std::type_index(typeid(rvsdg::GammaNode)), divert_gamma },
-        { std::type_index(typeid(rvsdg::ThetaNode)), divert_theta },
-        { typeid(rvsdg::LambdaNode), divert_lambda },
-        { typeid(rvsdg::PhiNode), divert_phi },
-        { typeid(DeltaNode), divert_delta } });
+  static std::unordered_map<
+      std::type_index,
+      void (*)(rvsdg::StructuralNode *, CommonNodeElimination::Context &)>
+      map({ { std::type_index(typeid(rvsdg::GammaNode)), divert_gamma },
+            { std::type_index(typeid(rvsdg::ThetaNode)), divert_theta },
+            { typeid(rvsdg::LambdaNode), divert_lambda },
+            { typeid(rvsdg::PhiNode), divert_phi },
+            { typeid(DeltaNode), divert_delta } });
 
   JLM_ASSERT(map.find(typeid(*node)) != map.end());
   map[typeid(*node)](node, ctx);
 }
 
 static void
-divert(rvsdg::Region * region, cnectx & ctx)
+divert(rvsdg::Region * region, CommonNodeElimination::Context & ctx)
 {
   for (const auto & node : rvsdg::TopDownTraverser(region))
   {
@@ -579,25 +605,6 @@ divert(rvsdg::Region * region, cnectx & ctx)
   }
 }
 
-static void
-cne(rvsdg::RvsdgModule & rvsdgModule, util::StatisticsCollector & statisticsCollector)
-{
-  auto & graph = rvsdgModule.Rvsdg();
-
-  cnectx ctx;
-  auto statistics = CommonNodeElimination::Statistics::Create(rvsdgModule.SourceFilePath().value());
-
-  statistics->start_mark_stat(graph);
-  mark(&graph.GetRootRegion(), ctx);
-  statistics->end_mark_stat();
-
-  statistics->start_divert_stat();
-  divert(&graph.GetRootRegion(), ctx);
-  statistics->end_divert_stat(graph);
-
-  statisticsCollector.CollectDemandedStatistics(std::move(statistics));
-}
-
 CommonNodeElimination::~CommonNodeElimination() noexcept = default;
 
 void
@@ -605,7 +612,20 @@ CommonNodeElimination::Run(
     rvsdg::RvsdgModule & module,
     util::StatisticsCollector & statisticsCollector)
 {
-  llvm::cne(module, statisticsCollector);
+  const auto & rvsdg = module.Rvsdg();
+
+  Context context;
+  auto statistics = Statistics::Create(module.SourceFilePath().value());
+
+  statistics->start_mark_stat(rvsdg);
+  mark(&rvsdg.GetRootRegion(), context);
+  statistics->end_mark_stat();
+
+  statistics->start_divert_stat();
+  divert(&rvsdg.GetRootRegion(), context);
+  statistics->end_divert_stat(rvsdg);
+
+  statisticsCollector.CollectDemandedStatistics(std::move(statistics));
 }
 
 }

@@ -288,7 +288,7 @@ RhlsToFirrtlConverter::MlirGenSimpleNode(const jlm::rvsdg::SimpleNode * node)
     auto input0 = GetSubfield(body, inBundles[0], "data");
     Connect(body, outData, input0);
   }
-  else if (auto op = dynamic_cast<const jlm::rvsdg::match_op *>(&(node->GetOperation())))
+  else if (auto op = dynamic_cast<const jlm::rvsdg::MatchOperation *>(&(node->GetOperation())))
   {
     auto inData = GetSubfield(body, inBundles[0], "data");
     auto outData = GetSubfield(body, outBundle, "data");
@@ -3987,7 +3987,7 @@ RhlsToFirrtlConverter::GetModuleName(const rvsdg::Node * node)
 }
 
 bool
-RhlsToFirrtlConverter::IsIdentityMapping(const jlm::rvsdg::match_op & op)
+RhlsToFirrtlConverter::IsIdentityMapping(const jlm::rvsdg::MatchOperation & op)
 {
   for (const auto & pair : op)
   {

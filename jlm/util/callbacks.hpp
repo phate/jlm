@@ -88,7 +88,7 @@ template<typename... Args>
 class notifier;
 
 template<typename... Args>
-class notifier_proxy final
+class NotifierProxy final
 {
 public:
   typedef std::function<void(Args...)> function_type;
@@ -100,7 +100,7 @@ public:
   }
 
 private:
-  notifier_proxy(notifier<Args...> & n) noexcept
+  explicit NotifierProxy(notifier<Args...> & n) noexcept
       : notifier_(n)
   {}
 
@@ -206,10 +206,10 @@ public:
     return Callback(c);
   }
 
-  inline notifier_proxy<Args...>
+  NotifierProxy<Args...>
   proxy() noexcept
   {
-    return notifier_proxy<Args...>(*this);
+    return NotifierProxy<Args...>(*this);
   }
 
 private:
