@@ -22,9 +22,10 @@ static void
 test1()
 {
   using namespace jlm::llvm;
+  using namespace jlm::rvsdg;
 
   // Arrange
-  RvsdgModule rm(jlm::util::FilePath(""), "", "");
+  jlm::llvm::RvsdgModule rm(jlm::util::FilePath(""), "", "");
   auto & graph = rm.Rvsdg();
   auto i = &jlm::tests::GraphImport::Create(graph, jlm::tests::ValueType::Create(), "i");
 
@@ -117,6 +118,7 @@ static void
 test2()
 {
   using namespace jlm::llvm;
+  using namespace jlm::rvsdg;
 
   // Arrange
   auto vt = jlm::tests::ValueType::Create();
@@ -132,7 +134,7 @@ test2()
       { PointerType::Create(), IOStateType::Create(), MemoryStateType::Create() },
       { IOStateType::Create(), MemoryStateType::Create() });
 
-  RvsdgModule rm(jlm::util::FilePath(""), "", "");
+  jlm::llvm::RvsdgModule rm(jlm::util::FilePath(""), "", "");
   auto & graph = rm.Rvsdg();
   auto i = &jlm::tests::GraphImport::Create(graph, functionType2, "i");
 

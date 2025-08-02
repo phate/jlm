@@ -16,11 +16,12 @@ static void
 TestDeltaCreation()
 {
   using namespace jlm::llvm;
+  using namespace jlm::rvsdg;
 
   // Arrange & Act
   auto valueType = jlm::tests::ValueType::Create();
   auto pointerType = PointerType::Create();
-  RvsdgModule rvsdgModule(jlm::util::FilePath(""), "", "");
+  jlm::llvm::RvsdgModule rvsdgModule(jlm::util::FilePath(""), "", "");
 
   auto imp = &jlm::tests::GraphImport::Create(rvsdgModule.Rvsdg(), valueType, "");
 

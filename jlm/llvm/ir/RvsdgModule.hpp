@@ -79,6 +79,7 @@ private:
   std::shared_ptr<const rvsdg::ValueType> ImportedType_;
 };
 
+#if 0
 /**
  * Represents an export from the RVSDG of an internal entity.
  * It is used to model externally visible entities from LLVM modules.
@@ -102,6 +103,7 @@ public:
     return *graphExport;
   }
 };
+#endif
 
 /**
  * An LLVM module utilizing the RVSDG representation.

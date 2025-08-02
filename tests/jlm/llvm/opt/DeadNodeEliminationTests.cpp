@@ -39,7 +39,7 @@ RootRegion()
   jlm::tests::GraphImport::Create(graph, jlm::tests::ValueType::Create(), "x");
   auto y = &jlm::tests::GraphImport::Create(graph, jlm::tests::ValueType::Create(), "y");
 
-  GraphExport::Create(*y, "z");
+  jlm::rvsdg::GraphExport::Create(*y, "z");
   jlm::rvsdg::view(graph, stdout);
 
   // Act
@@ -79,8 +79,8 @@ Gamma1()
   gamma->AddExitVar({ ev2.branchArgument[0], t });
   gamma->AddExitVar({ ev3.branchArgument[0], ev1.branchArgument[1] });
 
-  GraphExport::Create(*gamma->output(0), "z");
-  GraphExport::Create(*gamma->output(2), "w");
+  jlm::rvsdg::GraphExport::Create(*gamma->output(0), "z");
+  jlm::rvsdg::GraphExport::Create(*gamma->output(2), "w");
   jlm::rvsdg::view(graph, stdout);
 
   // Act
@@ -119,7 +119,7 @@ Gamma2()
 
   gamma->AddExitVar({ n1, n2 });
 
-  GraphExport::Create(*gamma->output(0), "x");
+  jlm::rvsdg::GraphExport::Create(*gamma->output(0), "x");
   jlm::rvsdg::view(graph, stdout);
 
   // Act
@@ -164,8 +164,8 @@ Theta()
   auto c = jlm::tests::create_testop(theta->subregion(), {}, { controlType })[0];
   theta->set_predicate(c);
 
-  GraphExport::Create(*lv1.output, "a");
-  GraphExport::Create(*lv4.output, "b");
+  jlm::rvsdg::GraphExport::Create(*lv1.output, "a");
+  jlm::rvsdg::GraphExport::Create(*lv4.output, "b");
   jlm::rvsdg::view(graph, stdout);
 
   // Act
@@ -216,7 +216,7 @@ NestedTheta()
 
   outerTheta->set_predicate(lvo1.pre);
 
-  GraphExport::Create(*lvo3.output, "y");
+  jlm::rvsdg::GraphExport::Create(*lvo3.output, "y");
   jlm::rvsdg::view(graph, stdout);
 
   // Act
@@ -260,7 +260,7 @@ EvolvingTheta()
 
   theta->set_predicate(lv0.pre);
 
-  GraphExport::Create(*lv1.output, "x1");
+  jlm::rvsdg::GraphExport::Create(*lv1.output, "x1");
   jlm::rvsdg::view(graph, stdout);
 
   // Act
@@ -302,7 +302,7 @@ Lambda()
 
   auto output = lambda->finalize({ lambda->GetFunctionArguments()[0], cv2 });
 
-  GraphExport::Create(*output, "f");
+  jlm::rvsdg::GraphExport::Create(*output, "f");
   jlm::rvsdg::view(graph, stdout);
 
   // Act
