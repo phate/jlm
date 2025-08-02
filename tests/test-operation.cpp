@@ -14,13 +14,6 @@ GraphImport::Copy(rvsdg::Region & region, rvsdg::StructuralInput *)
   return GraphImport::Create(*region.graph(), Type(), Name());
 }
 
-GraphExport &
-GraphExport::Copy(rvsdg::Output & origin, rvsdg::StructuralOutput * output)
-{
-  JLM_ASSERT(output == nullptr);
-  return GraphExport::Create(origin, Name());
-}
-
 TestUnaryOperation::~TestUnaryOperation() noexcept = default;
 
 bool

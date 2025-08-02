@@ -43,7 +43,7 @@ SinkInsertion()
 
   auto lambdaOutput = lambdaNode->finalize({ outputVar1.output });
 
-  jlm::tests::GraphExport::Create(*lambdaOutput, "");
+  jlm::rvsdg::GraphExport::Create(*lambdaOutput, "");
 
   view(rvsdg, stdout);
 

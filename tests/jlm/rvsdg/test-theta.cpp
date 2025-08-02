@@ -32,7 +32,7 @@ TestThetaCreation()
   lv3.post->divert_to(lv3.pre);
   theta->set_predicate(lv1.pre);
 
-  jlm::tests::GraphExport::Create(*theta->output(0), "exp");
+  GraphExport::Create(*theta->output(0), "exp");
   auto theta2 = static_cast<jlm::rvsdg::StructuralNode *>(theta)->copy(
       &graph.GetRootRegion(),
       { imp1, imp2, imp3 });
@@ -69,7 +69,7 @@ TestThetaLoopVarRemoval()
   auto lv2 = thetaNode->AddLoopVar(y);
   thetaNode->set_predicate(lv0.pre);
 
-  jlm::tests::GraphExport::Create(*lv0.output, "");
+  GraphExport::Create(*lv0.output, "");
 
   // Act & Assert
   thetaNode->RemoveLoopVars({ lv1 });

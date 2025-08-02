@@ -80,7 +80,7 @@ NormalizeUnaryOperation_Success()
   const auto unaryNode =
       &CreateOpNode<::UnaryOperation>({ nullaryNode->output(0) }, valueType, valueType);
 
-  auto & ex = jlm::tests::GraphExport::Create(*unaryNode->output(0), "o2");
+  auto & ex = GraphExport::Create(*unaryNode->output(0), "o2");
 
   view(graph, stdout);
 
@@ -115,7 +115,7 @@ NormalizeUnaryOperation_Failure()
 
   const auto unaryNode = &CreateOpNode<::UnaryOperation>({ i0 }, valueType, valueType);
 
-  auto & ex = jlm::tests::GraphExport::Create(*unaryNode->output(0), "o2");
+  auto & ex = GraphExport::Create(*unaryNode->output(0), "o2");
 
   view(graph, stdout);
 

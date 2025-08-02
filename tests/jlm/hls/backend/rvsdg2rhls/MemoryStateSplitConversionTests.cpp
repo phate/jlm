@@ -40,12 +40,12 @@ SplitConversion()
 
   auto splitResults = MemoryStateSplitOperation::Create(importY, 2);
 
-  jlm::tests::GraphExport::Create(*outputVar0.output, "o0");
-  jlm::tests::GraphExport::Create(*outputVar1.output, "o1");
-  jlm::tests::GraphExport::Create(*outputVar2.output, "o2");
+  jlm::rvsdg::GraphExport::Create(*outputVar0.output, "o0");
+  jlm::rvsdg::GraphExport::Create(*outputVar1.output, "o1");
+  jlm::rvsdg::GraphExport::Create(*outputVar2.output, "o2");
 
-  jlm::tests::GraphExport::Create(*splitResults[0], "o3");
-  jlm::tests::GraphExport::Create(*splitResults[1], "o4");
+  jlm::rvsdg::GraphExport::Create(*splitResults[0], "o3");
+  jlm::rvsdg::GraphExport::Create(*splitResults[1], "o4");
 
   view(rvsdg, stdout);
 

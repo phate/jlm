@@ -104,7 +104,7 @@ test_node_depth()
       jlm::tests::TestOperation::create(&graph.GetRootRegion(), { null->output(0), x }, { vt });
   auto un = jlm::tests::TestOperation::create(&graph.GetRootRegion(), { bin->output(0) }, { vt });
 
-  jlm::tests::GraphExport::Create(*un->output(0), "x");
+  jlm::rvsdg::GraphExport::Create(*un->output(0), "x");
 
   jlm::rvsdg::view(&graph.GetRootRegion(), stdout);
 
@@ -251,7 +251,7 @@ NodeInputIteration()
       std::vector<std::shared_ptr<const Type>>(5, valueType),
       std::vector<std::shared_ptr<const Type>>{ valueType });
 
-  jlm::tests::GraphExport::Create(*node.output(0), "x0");
+  GraphExport::Create(*node.output(0), "x0");
 
   // Act & Assert
   size_t n = 0;
@@ -288,7 +288,7 @@ NodeOutputIteration()
       std::vector<std::shared_ptr<const Type>>{ valueType },
       std::vector<std::shared_ptr<const Type>>(5, valueType));
 
-  jlm::tests::GraphExport::Create(*node.output(0), "x0");
+  GraphExport::Create(*node.output(0), "x0");
 
   // Act & Assert
   size_t n = 0;

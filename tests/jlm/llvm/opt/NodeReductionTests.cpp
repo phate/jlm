@@ -38,7 +38,7 @@ MultipleReductionsPerRegion()
   const auto c5 = bitconstant_op::create(&graph.GetRootRegion(), bitvalue_repr(32, 5));
   auto sum = bitadd_op::create(32, loadResults[0], c5);
 
-  auto & sumExport = jlm::tests::GraphExport::Create(*sum, "sum");
+  auto & sumExport = jlm::rvsdg::GraphExport::Create(*sum, "sum");
 
   view(graph, stdout);
 
