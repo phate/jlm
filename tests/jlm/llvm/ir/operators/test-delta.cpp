@@ -23,7 +23,7 @@ TestDeltaCreation()
   auto pointerType = PointerType::Create();
   jlm::llvm::RvsdgModule rvsdgModule(jlm::util::FilePath(""), "", "");
 
-  auto imp = &jlm::tests::GraphImport::Create(rvsdgModule.Rvsdg(), valueType, "");
+  auto imp = &jlm::rvsdg::GraphImport::Create(rvsdgModule.Rvsdg(), valueType, "");
 
   auto delta1 = DeltaNode::Create(
       &rvsdgModule.Rvsdg().GetRootRegion(),
@@ -72,7 +72,7 @@ TestRemoveDeltaInputsWhere()
   auto valueType = jlm::tests::ValueType::Create();
   jlm::llvm::RvsdgModule rvsdgModule(jlm::util::FilePath(""), "", "");
 
-  auto x = &jlm::tests::GraphImport::Create(rvsdgModule.Rvsdg(), valueType, "");
+  auto x = &jlm::rvsdg::GraphImport::Create(rvsdgModule.Rvsdg(), valueType, "");
 
   auto deltaNode = DeltaNode::Create(
       &rvsdgModule.Rvsdg().GetRootRegion(),
@@ -140,7 +140,7 @@ TestPruneDeltaInputs()
   auto valueType = jlm::tests::ValueType::Create();
   jlm::llvm::RvsdgModule rvsdgModule(jlm::util::FilePath(""), "", "");
 
-  auto x = &jlm::tests::GraphImport::Create(rvsdgModule.Rvsdg(), valueType, "");
+  auto x = &jlm::rvsdg::GraphImport::Create(rvsdgModule.Rvsdg(), valueType, "");
 
   auto deltaNode = DeltaNode::Create(
       &rvsdgModule.Rvsdg().GetRootRegion(),

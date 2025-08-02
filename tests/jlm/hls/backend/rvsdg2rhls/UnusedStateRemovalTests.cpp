@@ -28,10 +28,10 @@ TestGamma()
   auto rvsdgModule = RvsdgModule::Create(jlm::util::FilePath(""), "", "");
   auto & rvsdg = rvsdgModule->Rvsdg();
 
-  auto p = &jlm::tests::GraphImport::Create(rvsdg, jlm::rvsdg::ControlType::Create(2), "p");
-  auto x = &jlm::tests::GraphImport::Create(rvsdg, valueType, "x");
-  auto y = &jlm::tests::GraphImport::Create(rvsdg, valueType, "y");
-  auto z = &jlm::tests::GraphImport::Create(rvsdg, valueType, "z");
+  auto p = &jlm::rvsdg::GraphImport::Create(rvsdg, jlm::rvsdg::ControlType::Create(2), "p");
+  auto x = &jlm::rvsdg::GraphImport::Create(rvsdg, valueType, "x");
+  auto y = &jlm::rvsdg::GraphImport::Create(rvsdg, valueType, "y");
+  auto z = &jlm::rvsdg::GraphImport::Create(rvsdg, valueType, "z");
 
   auto gammaNode = jlm::rvsdg::GammaNode::create(p, 2);
 
@@ -87,10 +87,10 @@ TestTheta()
 
   auto rvsdgModule = jlm::llvm::RvsdgModule::Create(jlm::util::FilePath(""), "", "");
   auto & rvsdg = rvsdgModule->Rvsdg();
-  auto p = &jlm::tests::GraphImport::Create(rvsdg, jlm::rvsdg::ControlType::Create(2), "p");
-  auto x = &jlm::tests::GraphImport::Create(rvsdg, valueType, "x");
-  auto y = &jlm::tests::GraphImport::Create(rvsdg, valueType, "y");
-  auto z = &jlm::tests::GraphImport::Create(rvsdg, valueType, "z");
+  auto p = &jlm::rvsdg::GraphImport::Create(rvsdg, jlm::rvsdg::ControlType::Create(2), "p");
+  auto x = &jlm::rvsdg::GraphImport::Create(rvsdg, valueType, "x");
+  auto y = &jlm::rvsdg::GraphImport::Create(rvsdg, valueType, "y");
+  auto z = &jlm::rvsdg::GraphImport::Create(rvsdg, valueType, "z");
 
   auto thetaNode = jlm::rvsdg::ThetaNode::create(&rvsdg.GetRootRegion());
 
@@ -142,7 +142,7 @@ TestLambda()
   auto rvsdgModule = jlm::llvm::RvsdgModule::Create(jlm::util::FilePath(""), "", "");
   auto & rvsdg = rvsdgModule->Rvsdg();
 
-  auto x = &jlm::tests::GraphImport::Create(rvsdg, valueType, "x");
+  auto x = &jlm::rvsdg::GraphImport::Create(rvsdg, valueType, "x");
 
   auto lambdaNode = jlm::rvsdg::LambdaNode::Create(
       rvsdg.GetRootRegion(),

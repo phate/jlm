@@ -28,7 +28,7 @@ test_main()
 
   auto valueType = jlm::tests::ValueType::Create();
 
-  auto i = &jlm::tests::GraphImport::Create(graph, valueType, "i");
+  auto i = &jlm::rvsdg::GraphImport::Create(graph, valueType, "i");
 
   auto o1 = jlm::tests::TestOperation::create(&graph.GetRootRegion(), {}, { valueType })->output(0);
   auto o2 =

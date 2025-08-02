@@ -20,8 +20,8 @@ test_node_copy()
   auto vtype = jlm::tests::ValueType::Create();
 
   Graph graph;
-  auto s = &jlm::tests::GraphImport::Create(graph, stype, "");
-  auto v = &jlm::tests::GraphImport::Create(graph, vtype, "");
+  auto s = &jlm::rvsdg::GraphImport::Create(graph, stype, "");
+  auto v = &jlm::rvsdg::GraphImport::Create(graph, vtype, "");
 
   auto n1 = TestStructuralNode::create(&graph.GetRootRegion(), 3);
   auto i1 = StructuralInput::create(n1, s, stype);
@@ -98,7 +98,7 @@ test_node_depth()
   auto vt = jlm::tests::ValueType::Create();
 
   jlm::rvsdg::Graph graph;
-  auto x = &jlm::tests::GraphImport::Create(graph, vt, "x");
+  auto x = &jlm::rvsdg::GraphImport::Create(graph, vt, "x");
 
   auto null = jlm::tests::TestOperation::create(&graph.GetRootRegion(), {}, { vt });
   auto bin =
@@ -198,7 +198,7 @@ TestRemoveInputsWhere()
   // Arrange
   jlm::rvsdg::Graph rvsdg;
   auto valueType = jlm::tests::ValueType::Create();
-  auto x = &jlm::tests::GraphImport::Create(rvsdg, valueType, "x");
+  auto x = &jlm::rvsdg::GraphImport::Create(rvsdg, valueType, "x");
 
   auto & node = CreateOpNode<jlm::tests::TestOperation>(
       { x, x, x },
@@ -245,7 +245,7 @@ NodeInputIteration()
   const auto valueType = jlm::tests::ValueType::Create();
 
   Graph rvsdg;
-  auto i = &jlm::tests::GraphImport::Create(rvsdg, valueType, "i");
+  auto i = &jlm::rvsdg::GraphImport::Create(rvsdg, valueType, "i");
 
   auto & node = CreateOpNode<jlm::tests::TestOperation>(
       { i, i, i, i, i },
@@ -282,7 +282,7 @@ NodeOutputIteration()
   const auto valueType = jlm::tests::ValueType::Create();
 
   Graph rvsdg;
-  auto i = &jlm::tests::GraphImport::Create(rvsdg, valueType, "i");
+  auto i = &jlm::rvsdg::GraphImport::Create(rvsdg, valueType, "i");
 
   auto & node = CreateOpNode<jlm::tests::TestOperation>(
       { i },

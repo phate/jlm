@@ -111,7 +111,7 @@ NormalizeUnaryOperation_Failure()
   const auto valueType = jlm::tests::ValueType::Create();
 
   Graph graph;
-  auto i0 = &jlm::tests::GraphImport::Create(graph, valueType, "i0");
+  auto i0 = &GraphImport::Create(graph, valueType, "i0");
 
   const auto unaryNode = &CreateOpNode<::UnaryOperation>({ i0 }, valueType, valueType);
 

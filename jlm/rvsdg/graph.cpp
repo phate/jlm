@@ -24,6 +24,20 @@ GraphImport::debug_string() const
   return util::strfmt("import[", Name_, "]");
 }
 
+GraphImport &
+GraphImport::Copy(Region & region, StructuralInput *)
+{
+  return Create(*region.graph(), Type(), Name());
+}
+
+GraphImport &
+GraphImport::Create(Graph & graph, std::shared_ptr<const rvsdg::Type> type, std::string name)
+{
+  auto graphImport = new GraphImport(graph, std::move(type), std::move(name));
+  graph.GetRootRegion().append_argument(graphImport);
+  return *graphImport;
+}
+
 GraphExport::GraphExport(rvsdg::Output & origin, std::string name)
     : RegionResult(&origin.region()->graph()->GetRootRegion(), &origin, nullptr, origin.Type()),
       Name_(std::move(name))
