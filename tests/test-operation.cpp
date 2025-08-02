@@ -5,6 +5,8 @@
 
 #include "test-operation.hpp"
 
+#include <jlm/rvsdg/substitution.hpp>
+
 namespace jlm::tests
 {
 

@@ -7,6 +7,7 @@
 #include "test-registry.hpp"
 #include "test-types.hpp"
 
+#include <jlm/rvsdg/substitution.hpp>
 #include <jlm/rvsdg/view.hpp>
 
 static void
