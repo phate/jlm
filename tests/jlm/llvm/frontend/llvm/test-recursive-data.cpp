@@ -18,6 +18,7 @@ static void
 test()
 {
   using namespace jlm::llvm;
+  using namespace jlm::tests;
 
   auto vt = jlm::tests::ValueType::Create();
   InterProceduralGraphModule im(jlm::util::FilePath(""), "", "");
@@ -37,8 +38,8 @@ test()
   d2->add_dependency(d1);
 
   tacsvector_t tvec1, tvec2;
-  tvec1.push_back(jlm::tests::create_testop_tac({ v0, v2 }, { vt }));
-  tvec2.push_back(jlm::tests::create_testop_tac({ v0, v1 }, { vt }));
+  tvec1.push_back(TestOperation::CreateTac({ v0, v2 }, { vt }));
+  tvec2.push_back(TestOperation::CreateTac({ v0, v1 }, { vt }));
 
   d1->set_initialization(std::make_unique<data_node_init>(std::move(tvec1)));
   d2->set_initialization(std::make_unique<data_node_init>(std::move(tvec2)));
