@@ -61,9 +61,9 @@ test1()
 
   theta->set_predicate(predicate);
 
-  auto & ex1 = GraphExport::Create(*theta->output(0), "x");
-  auto & ex2 = GraphExport::Create(*theta->output(1), "y");
-  auto & ex3 = GraphExport::Create(*theta->output(2), "z");
+  auto & ex1 = jlm::rvsdg::GraphExport::Create(*theta->output(0), "x");
+  auto & ex2 = jlm::rvsdg::GraphExport::Create(*theta->output(1), "y");
+  auto & ex3 = jlm::rvsdg::GraphExport::Create(*theta->output(2), "z");
 
   //	jlm::rvsdg::view(graph.GetRootRegion(), stdout);
   jlm::llvm::LoopUnswitching tginversion;
@@ -110,7 +110,7 @@ test2()
 
   theta->set_predicate(predicate);
 
-  auto & ex = GraphExport::Create(*theta->output(0), "x");
+  auto & ex = jlm::rvsdg::GraphExport::Create(*theta->output(0), "x");
 
   //	jlm::rvsdg::view(graph.GetRootRegion(), stdout);
   jlm::llvm::LoopUnswitching tginversion;

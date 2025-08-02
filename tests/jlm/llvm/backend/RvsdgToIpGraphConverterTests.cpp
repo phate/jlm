@@ -21,16 +21,17 @@ static void
 GammaWithMatch()
 {
   using namespace jlm::llvm;
+  using namespace jlm::rvsdg;
   using namespace jlm::tests;
   using namespace jlm::util;
 
   // Arrange
-  auto valueType = ValueType::Create();
+  auto valueType = jlm::tests::ValueType::Create();
   auto functionType = jlm::rvsdg::FunctionType::Create(
       { jlm::rvsdg::bittype::Create(1), valueType, valueType },
       { valueType });
 
-  RvsdgModule rvsdgModule(FilePath(""), "", "");
+  jlm::llvm::RvsdgModule rvsdgModule(FilePath(""), "", "");
 
   auto lambdaNode = jlm::rvsdg::LambdaNode::Create(
       rvsdgModule.Rvsdg().GetRootRegion(),
@@ -44,7 +45,7 @@ GammaWithMatch()
       gamma->AddExitVar({ gammaInput1.branchArgument[0], gammaInput2.branchArgument[1] });
 
   auto lambdaOutput = lambdaNode->finalize({ gammaOutput.output });
-  jlm::llvm::GraphExport::Create(*lambdaOutput, "");
+  GraphExport::Create(*lambdaOutput, "");
 
   view(rvsdgModule.Rvsdg(), stdout);
 
@@ -70,15 +71,16 @@ GammaWithoutMatch()
 {
   using namespace jlm::llvm;
   using namespace jlm::tests;
+  using namespace jlm::rvsdg;
   using namespace jlm::util;
 
   // Arrange
-  auto valueType = ValueType::Create();
+  auto valueType = jlm::tests::ValueType::Create();
   auto functionType = jlm::rvsdg::FunctionType::Create(
       { jlm::rvsdg::ControlType::Create(2), valueType, valueType },
       { valueType });
 
-  RvsdgModule rvsdgModule(FilePath(""), "", "");
+  jlm::llvm::RvsdgModule rvsdgModule(FilePath(""), "", "");
 
   auto lambdaNode = jlm::rvsdg::LambdaNode::Create(
       rvsdgModule.Rvsdg().GetRootRegion(),
@@ -91,7 +93,7 @@ GammaWithoutMatch()
       gammaNode->AddExitVar({ gammaInput1.branchArgument[0], gammaInput2.branchArgument[1] });
 
   auto lambdaOutput = lambdaNode->finalize({ gammaOutput.output });
-  jlm::llvm::GraphExport::Create(*lambdaOutput, "");
+  GraphExport::Create(*lambdaOutput, "");
 
   jlm::rvsdg::view(rvsdgModule.Rvsdg(), stdout);
 
@@ -117,15 +119,16 @@ EmptyGammaWithTwoSubregionsAndMatch()
 {
   using namespace jlm::llvm;
   using namespace jlm::tests;
+  using namespace jlm::rvsdg;
   using namespace jlm::util;
 
   // Arrange
-  auto valueType = ValueType::Create();
+  auto valueType = jlm::tests::ValueType::Create();
   const auto functionType = jlm::rvsdg::FunctionType::Create(
       { jlm::rvsdg::bittype::Create(32), valueType, valueType },
       { valueType });
 
-  RvsdgModule rvsdgModule(FilePath(""), "", "");
+  jlm::llvm::RvsdgModule rvsdgModule(FilePath(""), "", "");
 
   const auto lambdaNode = jlm::rvsdg::LambdaNode::Create(
       rvsdgModule.Rvsdg().GetRootRegion(),
@@ -143,7 +146,7 @@ EmptyGammaWithTwoSubregionsAndMatch()
   auto [_, gammaOutput] = gammaNode->AddExitVar({ branchArgumentTrue[0], branchArgumentFalse[1] });
 
   const auto lambdaOutput = lambdaNode->finalize({ gammaOutput });
-  jlm::llvm::GraphExport::Create(*lambdaOutput, "");
+  GraphExport::Create(*lambdaOutput, "");
 
   view(rvsdgModule.Rvsdg(), stdout);
 
@@ -170,15 +173,16 @@ EmptyGammaWithTwoSubregions()
 {
   using namespace jlm::llvm;
   using namespace jlm::tests;
+  using namespace jlm::rvsdg;
   using namespace jlm::util;
 
   // Arrange
-  auto valueType = ValueType::Create();
+  auto valueType = jlm::tests::ValueType::Create();
   auto functionType = jlm::rvsdg::FunctionType::Create(
       { jlm::rvsdg::bittype::Create(32), valueType, valueType },
       { valueType });
 
-  RvsdgModule rvsdgModule(FilePath(""), "", "");
+  jlm::llvm::RvsdgModule rvsdgModule(FilePath(""), "", "");
 
   const auto lambdaNode = jlm::rvsdg::LambdaNode::Create(
       rvsdgModule.Rvsdg().GetRootRegion(),
@@ -203,7 +207,7 @@ EmptyGammaWithTwoSubregions()
   auto [_, gammaOutput] = gammaNode1->AddExitVar({ branchArgumentFalse[0], branchArgumentTrue[1] });
 
   const auto lambdaOutput = lambdaNode->finalize({ gammaOutput });
-  jlm::llvm::GraphExport::Create(*lambdaOutput, "");
+  GraphExport::Create(*lambdaOutput, "");
 
   view(rvsdgModule.Rvsdg(), stdout);
 
@@ -230,15 +234,16 @@ EmptyGammaWithThreeSubregions()
 {
   using namespace jlm::llvm;
   using namespace jlm::tests;
+  using namespace jlm::rvsdg;
   using namespace jlm::util;
 
   // Arrange
-  auto valueType = ValueType::Create();
+  auto valueType = jlm::tests::ValueType::Create();
   auto functionType = jlm::rvsdg::FunctionType::Create(
       { jlm::rvsdg::bittype::Create(32), valueType, valueType },
       { valueType });
 
-  RvsdgModule rvsdgModule(FilePath(""), "", "");
+  jlm::llvm::RvsdgModule rvsdgModule(FilePath(""), "", "");
 
   auto lambdaNode = jlm::rvsdg::LambdaNode::Create(
       rvsdgModule.Rvsdg().GetRootRegion(),
@@ -255,7 +260,7 @@ EmptyGammaWithThreeSubregions()
                                              gammaInput2.branchArgument[2] });
 
   auto lambdaOutput = lambdaNode->finalize({ gammaOutput.output });
-  jlm::llvm::GraphExport::Create(*lambdaOutput, "");
+  GraphExport::Create(*lambdaOutput, "");
 
   jlm::rvsdg::view(rvsdgModule.Rvsdg(), stdout);
 
@@ -281,15 +286,16 @@ PartialEmptyGamma()
 {
   using namespace jlm::llvm;
   using namespace jlm::tests;
+  using namespace jlm::rvsdg;
   using namespace jlm::util;
 
   // Arrange
-  auto valueType = ValueType::Create();
+  auto valueType = jlm::tests::ValueType::Create();
   auto functionType = jlm::rvsdg::FunctionType::Create(
       { jlm::rvsdg::bittype::Create(1), valueType },
       { valueType });
 
-  RvsdgModule rvsdgModule(FilePath(""), "", "");
+  jlm::llvm::RvsdgModule rvsdgModule(FilePath(""), "", "");
 
   auto lambdaNode = jlm::rvsdg::LambdaNode::Create(
       rvsdgModule.Rvsdg().GetRootRegion(),
@@ -306,7 +312,7 @@ PartialEmptyGamma()
 
   auto lambdaOutput = lambdaNode->finalize({ gammaOutput.output });
 
-  jlm::llvm::GraphExport::Create(*lambdaOutput, "");
+  GraphExport::Create(*lambdaOutput, "");
 
   jlm::rvsdg::view(rvsdgModule.Rvsdg(), stdout);
 
@@ -332,14 +338,15 @@ static void
 RecursiveData()
 {
   using namespace jlm::llvm;
+  using namespace jlm::rvsdg;
 
   // Arrange
   auto vt = jlm::tests::ValueType::Create();
   auto pt = PointerType::Create();
 
-  RvsdgModule rm(jlm::util::FilePath(""), "", "");
+  jlm::llvm::RvsdgModule rm(jlm::util::FilePath(""), "", "");
 
-  auto imp = &GraphImport::Create(rm.Rvsdg(), vt, pt, "", linkage::external_linkage);
+  auto imp = &jlm::llvm::GraphImport::Create(rm.Rvsdg(), vt, pt, "", linkage::external_linkage);
 
   jlm::rvsdg::PhiBuilder pb;
   pb.begin(&rm.Rvsdg().GetRootRegion());

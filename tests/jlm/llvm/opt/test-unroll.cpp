@@ -221,11 +221,12 @@ static inline void
 test_unknown_boundaries()
 {
   using namespace jlm::llvm;
+  using namespace jlm::rvsdg;
 
   auto bt = jlm::rvsdg::bittype::Create(32);
   jlm::tests::TestOperation op({ bt }, { bt });
 
-  RvsdgModule rm(jlm::util::FilePath(""), "", "");
+  jlm::llvm::RvsdgModule rm(jlm::util::FilePath(""), "", "");
   auto & graph = rm.Rvsdg();
 
   auto x = &jlm::tests::GraphImport::Create(graph, bt, "x");

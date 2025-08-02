@@ -53,11 +53,11 @@ TestGamma()
   auto gammaOutput5 =
       gammaNode->AddExitVar({ gammaInput6.branchArgument[0], gammaInput7.branchArgument[1] });
 
-  GraphExport::Create(*gammaOutput1.output, "");
-  GraphExport::Create(*gammaOutput2.output, "");
-  GraphExport::Create(*gammaOutput3.output, "");
-  GraphExport::Create(*gammaOutput4.output, "");
-  GraphExport::Create(*gammaOutput5.output, "");
+  jlm::rvsdg::GraphExport::Create(*gammaOutput1.output, "");
+  jlm::rvsdg::GraphExport::Create(*gammaOutput2.output, "");
+  jlm::rvsdg::GraphExport::Create(*gammaOutput3.output, "");
+  jlm::rvsdg::GraphExport::Create(*gammaOutput4.output, "");
+  jlm::rvsdg::GraphExport::Create(*gammaOutput5.output, "");
 
   // Act
   jlm::hls::RemoveUnusedStates(*rvsdgModule);
@@ -227,7 +227,7 @@ TestUsedMemoryState()
       32);
 
   auto lambdaOutput = lambda->finalize({ loadOutput[1] });
-  GraphExport::Create(*lambdaOutput, "f");
+  jlm::rvsdg::GraphExport::Create(*lambdaOutput, "f");
 
   jlm::rvsdg::view(rvsdgModule->Rvsdg(), stdout);
 
@@ -272,7 +272,7 @@ TestUnusedMemoryState()
       32);
 
   auto lambdaOutput = lambda->finalize({ loadOutput[1], functionArguments[2] });
-  GraphExport::Create(*lambdaOutput, "f");
+  jlm::rvsdg::GraphExport::Create(*lambdaOutput, "f");
 
   jlm::rvsdg::view(rvsdgModule->Rvsdg(), stdout);
 
@@ -328,7 +328,7 @@ TestInvariantMemoryState()
       { loadOutput[1], memoryStateSplit[1] });
 
   auto lambdaOutput = lambda->finalize({ &memoryStateMerge });
-  GraphExport::Create(*lambdaOutput, "f");
+  jlm::rvsdg::GraphExport::Create(*lambdaOutput, "f");
 
   jlm::rvsdg::view(rvsdgModule->Rvsdg(), stdout);
 

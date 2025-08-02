@@ -44,13 +44,13 @@ test_simple()
   auto b3 = jlm::tests::create_testop(&graph.GetRootRegion(), { n1, z }, { vt })[0];
   auto b4 = jlm::tests::create_testop(&graph.GetRootRegion(), { n2, z }, { vt })[0];
 
-  GraphExport::Create(*n1, "n1");
-  GraphExport::Create(*n2, "n2");
-  GraphExport::Create(*u1, "u1");
-  GraphExport::Create(*b1, "b1");
-  GraphExport::Create(*b2, "b2");
-  GraphExport::Create(*b3, "b3");
-  GraphExport::Create(*b4, "b4");
+  jlm::rvsdg::GraphExport::Create(*n1, "n1");
+  jlm::rvsdg::GraphExport::Create(*n2, "n2");
+  jlm::rvsdg::GraphExport::Create(*u1, "u1");
+  jlm::rvsdg::GraphExport::Create(*b1, "b1");
+  jlm::rvsdg::GraphExport::Create(*b2, "b2");
+  jlm::rvsdg::GraphExport::Create(*b3, "b3");
+  jlm::rvsdg::GraphExport::Create(*b4, "b4");
 
   //	jlm::rvsdg::view(graph.GetRootRegion(), stdout);
   jlm::llvm::CommonNodeElimination cne;
@@ -101,9 +101,9 @@ test_gamma()
   gamma->AddExitVar({ n3, ev3.branchArgument[1] });
   gamma->AddExitVar({ ev5.branchArgument[0], ev4.branchArgument[1] });
 
-  GraphExport::Create(*gamma->output(0), "x1");
-  GraphExport::Create(*gamma->output(1), "x2");
-  GraphExport::Create(*gamma->output(2), "y");
+  jlm::rvsdg::GraphExport::Create(*gamma->output(0), "x1");
+  jlm::rvsdg::GraphExport::Create(*gamma->output(1), "x2");
+  jlm::rvsdg::GraphExport::Create(*gamma->output(2), "y");
 
   //	jlm::rvsdg::view(graph.GetRootRegion(), stdout);
   jlm::llvm::CommonNodeElimination cne;
@@ -158,9 +158,9 @@ test_theta()
 
   theta->set_predicate(lv1.pre);
 
-  GraphExport::Create(*lv2.output, "lv2");
-  GraphExport::Create(*lv3.output, "lv3");
-  GraphExport::Create(*lv4.output, "lv4");
+  jlm::rvsdg::GraphExport::Create(*lv2.output, "lv2");
+  jlm::rvsdg::GraphExport::Create(*lv3.output, "lv3");
+  jlm::rvsdg::GraphExport::Create(*lv4.output, "lv4");
 
   //	jlm::rvsdg::view(graph.GetRootRegion(), stdout);
   jlm::llvm::CommonNodeElimination cne;
@@ -207,8 +207,8 @@ test_theta2()
 
   theta->set_predicate(lv1.pre);
 
-  GraphExport::Create(*lv2.output, "lv2");
-  GraphExport::Create(*lv3.output, "lv3");
+  jlm::rvsdg::GraphExport::Create(*lv2.output, "lv2");
+  jlm::rvsdg::GraphExport::Create(*lv3.output, "lv3");
 
   //	jlm::rvsdg::view(graph, stdout);
   jlm::llvm::CommonNodeElimination cne;
@@ -259,9 +259,9 @@ test_theta3()
 
   theta1->set_predicate(lv1.pre);
 
-  GraphExport::Create(*lv2.output, "lv2");
-  GraphExport::Create(*lv3.output, "lv3");
-  GraphExport::Create(*lv4.output, "lv4");
+  jlm::rvsdg::GraphExport::Create(*lv2.output, "lv2");
+  jlm::rvsdg::GraphExport::Create(*lv3.output, "lv3");
+  jlm::rvsdg::GraphExport::Create(*lv4.output, "lv4");
 
   //	jlm::rvsdg::view(graph, stdout);
   jlm::llvm::CommonNodeElimination cne;
@@ -312,10 +312,10 @@ test_theta4()
 
   theta->set_predicate(lv1.pre);
 
-  auto & ex1 = GraphExport::Create(*theta->output(1), "lv2");
-  auto & ex2 = GraphExport::Create(*theta->output(2), "lv3");
-  GraphExport::Create(*theta->output(3), "lv4");
-  GraphExport::Create(*theta->output(4), "lv5");
+  auto & ex1 = jlm::rvsdg::GraphExport::Create(*theta->output(1), "lv2");
+  auto & ex2 = jlm::rvsdg::GraphExport::Create(*theta->output(2), "lv3");
+  jlm::rvsdg::GraphExport::Create(*theta->output(3), "lv4");
+  jlm::rvsdg::GraphExport::Create(*theta->output(4), "lv5");
 
   //	jlm::rvsdg::view(graph, stdout);
   jlm::llvm::CommonNodeElimination cne;
@@ -356,10 +356,10 @@ test_theta5()
 
   theta->set_predicate(lv0.pre);
 
-  auto & ex1 = GraphExport::Create(*theta->output(1), "lv1");
-  auto & ex2 = GraphExport::Create(*theta->output(2), "lv2");
-  auto & ex3 = GraphExport::Create(*theta->output(3), "lv3");
-  auto & ex4 = GraphExport::Create(*theta->output(4), "lv4");
+  auto & ex1 = jlm::rvsdg::GraphExport::Create(*theta->output(1), "lv1");
+  auto & ex2 = jlm::rvsdg::GraphExport::Create(*theta->output(2), "lv2");
+  auto & ex3 = jlm::rvsdg::GraphExport::Create(*theta->output(3), "lv3");
+  auto & ex4 = jlm::rvsdg::GraphExport::Create(*theta->output(4), "lv4");
 
   //	jlm::rvsdg::view(graph, stdout);
   jlm::llvm::CommonNodeElimination cne;
@@ -499,7 +499,7 @@ test_lambda()
 
   auto output = lambda->finalize({ b1 });
 
-  GraphExport::Create(*output, "f");
+  jlm::rvsdg::GraphExport::Create(*output, "f");
 
   //	jlm::rvsdg::view(graph.GetRootRegion(), stdout);
   jlm::llvm::CommonNodeElimination cne;
@@ -550,8 +550,8 @@ test_phi()
 
   auto phi = pb.end();
 
-  GraphExport::Create(*phi->output(0), "f1");
-  GraphExport::Create(*phi->output(1), "f2");
+  jlm::rvsdg::GraphExport::Create(*phi->output(0), "f1");
+  jlm::rvsdg::GraphExport::Create(*phi->output(1), "f2");
 
   //	jlm::rvsdg::view(graph.GetRootRegion(), stdout);
   jlm::llvm::CommonNodeElimination cne;

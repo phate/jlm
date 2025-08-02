@@ -29,7 +29,7 @@ test_bitunary_reduction()
   auto y = bitnot_op::create(32, x);
   auto z = jlm::llvm::SExtOperation::create(64, y);
 
-  auto & ex = jlm::llvm::GraphExport::Create(*z, "x");
+  auto & ex = GraphExport::Create(*z, "x");
 
   view(graph, stdout);
 
@@ -61,7 +61,7 @@ test_bitbinary_reduction()
   auto z = bitadd_op::create(32, x, y);
   auto w = SExtOperation::create(64, z);
 
-  auto & ex = jlm::llvm::GraphExport::Create(*w, "x");
+  auto & ex = GraphExport::Create(*w, "x");
 
   view(graph, stdout);
 
@@ -92,7 +92,7 @@ test_inverse_reduction()
   auto y = TruncOperation::create(32, x);
   auto z = SExtOperation::create(64, y);
 
-  auto & ex = jlm::llvm::GraphExport::Create(*z, "x");
+  auto & ex = GraphExport::Create(*z, "x");
 
   view(graph, stdout);
 

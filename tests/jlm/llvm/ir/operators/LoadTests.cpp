@@ -92,7 +92,7 @@ TestLoadAllocaReduction()
   auto & loadNode =
       LoadNonVolatileOperation::CreateNode(*alloca1[0], { alloca1[1], alloca2[1], mux }, bt, 4);
 
-  auto & ex = GraphExport::Create(*loadNode.output(0), "l");
+  auto & ex = jlm::rvsdg::GraphExport::Create(*loadNode.output(0), "l");
 
   jlm::rvsdg::view(&graph.GetRootRegion(), stdout);
 
@@ -135,8 +135,8 @@ LoadMuxReduction_Success()
   auto mux = MemoryStateMergeOperation::Create({ s1, s2, s3 });
   auto & loadNode = LoadNonVolatileOperation::CreateNode(*address, { mux }, bitstringType, 4);
 
-  auto & ex1 = GraphExport::Create(*loadNode.output(0), "l");
-  auto & ex2 = GraphExport::Create(*loadNode.output(1), "s");
+  auto & ex1 = jlm::rvsdg::GraphExport::Create(*loadNode.output(0), "l");
+  auto & ex2 = jlm::rvsdg::GraphExport::Create(*loadNode.output(1), "s");
 
   view(&graph.GetRootRegion(), stdout);
 
@@ -191,9 +191,9 @@ LoadMuxReduction_WrongNumberOfOperands()
   auto merge = MemoryStateMergeOperation::Create(std::vector<jlm::rvsdg::Output *>{ s1, s2 });
   auto & loadNode = LoadNonVolatileOperation::CreateNode(*a, { merge, merge }, vt, 4);
 
-  auto & ex1 = GraphExport::Create(*loadNode.output(0), "v");
-  auto & ex2 = GraphExport::Create(*loadNode.output(1), "s1");
-  auto & ex3 = GraphExport::Create(*loadNode.output(2), "s2");
+  auto & ex1 = jlm::rvsdg::GraphExport::Create(*loadNode.output(0), "v");
+  auto & ex2 = jlm::rvsdg::GraphExport::Create(*loadNode.output(1), "s1");
+  auto & ex3 = jlm::rvsdg::GraphExport::Create(*loadNode.output(2), "s2");
 
   view(&graph.GetRootRegion(), stdout);
 
@@ -233,7 +233,7 @@ LoadMuxReduction_LoadWithoutStates()
 
   auto & loadNode = LoadNonVolatileOperation::CreateNode(*address, {}, valueType, 4);
 
-  auto & ex = GraphExport::Create(*loadNode.output(0), "v");
+  auto & ex = jlm::rvsdg::GraphExport::Create(*loadNode.output(0), "v");
 
   view(&graph.GetRootRegion(), stdout);
 
@@ -275,12 +275,12 @@ TestDuplicateStateReduction()
 
   auto & loadNode = LoadNonVolatileOperation::CreateNode(*a, { s1, s2, s1, s2, s3 }, valueType, 4);
 
-  auto & exA = GraphExport::Create(*loadNode.output(0), "exA");
-  auto & exS1 = GraphExport::Create(*loadNode.output(1), "exS1");
-  auto & exS2 = GraphExport::Create(*loadNode.output(2), "exS2");
-  auto & exS3 = GraphExport::Create(*loadNode.output(3), "exS3");
-  auto & exS4 = GraphExport::Create(*loadNode.output(4), "exS4");
-  auto & exS5 = GraphExport::Create(*loadNode.output(5), "exS5");
+  auto & exA = jlm::rvsdg::GraphExport::Create(*loadNode.output(0), "exA");
+  auto & exS1 = jlm::rvsdg::GraphExport::Create(*loadNode.output(1), "exS1");
+  auto & exS2 = jlm::rvsdg::GraphExport::Create(*loadNode.output(2), "exS2");
+  auto & exS3 = jlm::rvsdg::GraphExport::Create(*loadNode.output(3), "exS3");
+  auto & exS4 = jlm::rvsdg::GraphExport::Create(*loadNode.output(4), "exS4");
+  auto & exS5 = jlm::rvsdg::GraphExport::Create(*loadNode.output(5), "exS5");
 
   view(&graph.GetRootRegion(), stdout);
 
@@ -330,8 +330,8 @@ TestLoadStoreStateReduction()
       LoadNonVolatileOperation::CreateNode(*alloca1[0], { store1[0], store2[0] }, bt, 4);
   auto & loadNode2 = LoadNonVolatileOperation::CreateNode(*alloca1[0], { store1[0] }, bt, 8);
 
-  auto & ex1 = GraphExport::Create(*loadNode1.output(0), "l1");
-  auto & ex2 = GraphExport::Create(*loadNode2.output(0), "l2");
+  auto & ex1 = jlm::rvsdg::GraphExport::Create(*loadNode1.output(0), "l1");
+  auto & ex2 = jlm::rvsdg::GraphExport::Create(*loadNode2.output(0), "l2");
 
   jlm::rvsdg::view(&graph.GetRootRegion(), stdout);
 
@@ -380,8 +380,8 @@ TestLoadStoreReduction_Success()
   auto s1 = StoreNonVolatileOperation::Create(a, v, { s }, 4)[0];
   auto & loadNode = LoadNonVolatileOperation::CreateNode(*a, { s1 }, vt, 4);
 
-  auto & x1 = GraphExport::Create(*loadNode.output(0), "value");
-  auto & x2 = GraphExport::Create(*loadNode.output(1), "state");
+  auto & x1 = jlm::rvsdg::GraphExport::Create(*loadNode.output(0), "value");
+  auto & x2 = jlm::rvsdg::GraphExport::Create(*loadNode.output(1), "state");
 
   jlm::rvsdg::view(&graph.GetRootRegion(), stdout);
 
@@ -428,8 +428,8 @@ LoadStoreReduction_DifferentValueOperandType()
       jlm::rvsdg::bittype::Create(8),
       4);
 
-  auto & exportedValue = GraphExport::Create(*loadNode.output(0), "v");
-  GraphExport::Create(*loadNode.output(1), "s");
+  auto & exportedValue = jlm::rvsdg::GraphExport::Create(*loadNode.output(0), "v");
+  jlm::rvsdg::GraphExport::Create(*loadNode.output(1), "s");
 
   view(&graph.GetRootRegion(), stdout);
 
@@ -483,9 +483,9 @@ TestLoadLoadReduction()
 
   auto & loadNode = LoadNonVolatileOperation::CreateNode(*a4, { st1[0], ld1[1], ld2[1] }, vt, 4);
 
-  auto & x1 = GraphExport::Create(*loadNode.output(1), "s");
-  auto & x2 = GraphExport::Create(*loadNode.output(2), "s");
-  auto & x3 = GraphExport::Create(*loadNode.output(3), "s");
+  auto & x1 = jlm::rvsdg::GraphExport::Create(*loadNode.output(1), "s");
+  auto & x2 = jlm::rvsdg::GraphExport::Create(*loadNode.output(2), "s");
+  auto & x3 = jlm::rvsdg::GraphExport::Create(*loadNode.output(3), "s");
 
   jlm::rvsdg::view(&graph.GetRootRegion(), stdout);
 
@@ -551,8 +551,8 @@ IOBarrierAllocaAddressNormalization()
   auto & loadNode2 =
       LoadNonVolatileOperation::CreateNode(*addressImport, { memoryStateImport }, valueType, 4);
 
-  auto & ex1 = GraphExport::Create(*loadNode1.output(0), "store1");
-  auto & ex2 = GraphExport::Create(*loadNode2.output(0), "store2");
+  auto & ex1 = jlm::rvsdg::GraphExport::Create(*loadNode1.output(0), "store1");
+  auto & ex2 = jlm::rvsdg::GraphExport::Create(*loadNode2.output(0), "store2");
 
   jlm::rvsdg::view(&graph.GetRootRegion(), stdout);
 

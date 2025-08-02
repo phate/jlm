@@ -50,7 +50,7 @@ test()
   auto loop_out = loop->AddLoopVar(lambda->GetFunctionArguments()[1]);
 
   auto f = lambda->finalize({ loop_out });
-  jlm::llvm::GraphExport::Create(*f, "");
+  rvsdg::GraphExport::Create(*f, "");
 
   rvsdg::view(rm.Rvsdg(), stdout);
   hls::DotHLS dhls;

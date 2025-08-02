@@ -226,7 +226,7 @@ convert_alloca(rvsdg::Region * region)
         cout = llvm::ConstantAggregateZeroOperation::Create(*db->subregion(), po->ValueType());
       }
       auto delta = &db->finalize(cout);
-      jlm::llvm::GraphExport::Create(*delta, delta_name);
+      rvsdg::GraphExport::Create(*delta, delta_name);
       auto delta_local = route_to_region_rvsdg(delta, region);
       node->output(0)->divert_users(delta_local);
       // TODO: check that the input to alloca is a bitconst 1
@@ -397,7 +397,7 @@ split_hls_function(llvm::RvsdgModule & rm, const std::string & function_name)
           smap.insert(ln->input(i)->origin(), &graphImport);
           // add export for delta to rm
           // TODO: check if not already exported and maybe adjust linkage?
-          jlm::llvm::GraphExport::Create(odn->output(), odn->name());
+          rvsdg::GraphExport::Create(odn->output(), odn->name());
         }
         else
         {
@@ -408,7 +408,7 @@ split_hls_function(llvm::RvsdgModule & rm, const std::string & function_name)
       auto new_ln = ln->copy(&rhls->Rvsdg().GetRootRegion(), smap);
       new_ln = change_linkage(new_ln, llvm::linkage::external_linkage);
       auto oldExport = jlm::llvm::ComputeCallSummary(*ln).GetRvsdgExport();
-      jlm::llvm::GraphExport::Create(*new_ln->output(), oldExport ? oldExport->Name() : "");
+      rvsdg::GraphExport::Create(*new_ln->output(), oldExport ? oldExport->Name() : "");
       // add function as input to rm and remove it
       const auto & op = dynamic_cast<llvm::LlvmLambdaOperation &>(ln->GetOperation());
       auto & graphImport = llvm::GraphImport::Create(

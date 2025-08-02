@@ -198,6 +198,7 @@ static void
 TestStoreMuxNormalization()
 {
   using namespace jlm::llvm;
+  using namespace jlm::rvsdg;
 
   // Arrange
   auto vt = jlm::tests::ValueType::Create();
@@ -247,6 +248,7 @@ static void
 TestDuplicateStateReduction()
 {
   using namespace jlm::llvm;
+  using namespace jlm::rvsdg;
 
   // Arrange
   auto valueType = jlm::tests::ValueType::Create();
@@ -299,6 +301,7 @@ static void
 TestStoreAllocaReduction()
 {
   using namespace jlm::llvm;
+  using namespace jlm::rvsdg;
 
   // Arrange
   auto vt = jlm::tests::ValueType::Create();
@@ -353,6 +356,7 @@ static void
 TestStoreStoreReduction()
 {
   using namespace jlm::llvm;
+  using namespace jlm::rvsdg;
 
   // Arrange
   auto vt = jlm::tests::ValueType::Create();
@@ -394,6 +398,7 @@ static void
 IOBarrierAllocaAddressNormalization()
 {
   using namespace jlm::llvm;
+  using namespace jlm::rvsdg;
 
   // Arrange
   const auto valueType = jlm::tests::ValueType::Create();

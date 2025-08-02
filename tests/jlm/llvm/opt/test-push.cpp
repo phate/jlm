@@ -46,7 +46,7 @@ test_gamma()
 
   gamma->AddExitVar({ state, evs.branchArgument[1] });
 
-  GraphExport::Create(*gamma->output(0), "x");
+  jlm::rvsdg::GraphExport::Create(*gamma->output(0), "x");
 
   //	jlm::rvsdg::view(graph.GetRootRegion(), stdout);
   jlm::llvm::NodeHoisting pushout;
@@ -91,7 +91,7 @@ test_theta()
 
   theta->set_predicate(lv1.pre);
 
-  GraphExport::Create(*theta->output(0), "c");
+  jlm::rvsdg::GraphExport::Create(*theta->output(0), "c");
 
   //	jlm::rvsdg::view(graph.GetRootRegion(), stdout);
   jlm::llvm::NodeHoisting pushout;
@@ -128,7 +128,7 @@ test_push_theta_bottom()
   lvs.post->divert_to(s1);
   theta->set_predicate(lvc.pre);
 
-  auto & ex = GraphExport::Create(*lvs.output, "s");
+  auto & ex = jlm::rvsdg::GraphExport::Create(*lvs.output, "s");
 
   jlm::rvsdg::view(graph, stdout);
   jlm::llvm::push_bottom(theta);
