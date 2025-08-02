@@ -30,14 +30,10 @@ NormalizeSimpleOperationCne_NodesWithoutOperands()
   auto & nullaryStateNode2 =
       CreateOpNode<jlm::tests::NullaryOperation>(graph.GetRootRegion(), stateType);
 
-  auto & exNullaryValueNode1 =
-      GraphExport::Create(*nullaryValueNode1.output(0), "nvn1");
-  auto & exNullaryValueNode2 =
-      GraphExport::Create(*nullaryValueNode2.output(0), "nvn2");
-  auto & exNullaryStateNode1 =
-      GraphExport::Create(*nullaryStateNode1.output(0), "nsn1");
-  auto & exNullaryStateNode2 =
-      GraphExport::Create(*nullaryStateNode2.output(0), "nsn2");
+  auto & exNullaryValueNode1 = GraphExport::Create(*nullaryValueNode1.output(0), "nvn1");
+  auto & exNullaryValueNode2 = GraphExport::Create(*nullaryValueNode2.output(0), "nvn2");
+  auto & exNullaryStateNode1 = GraphExport::Create(*nullaryStateNode1.output(0), "nsn1");
+  auto & exNullaryStateNode2 = GraphExport::Create(*nullaryStateNode2.output(0), "nsn2");
 
   view(graph, stdout);
 
