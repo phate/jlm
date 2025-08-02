@@ -100,7 +100,7 @@ ReduceFlattenedBinaryReductionParallel()
 
   auto & node = CreateOpNode<FlattenedBinaryOperation>({ i0, i1, i2, i3 }, binaryOperation, 4);
 
-  auto & ex = jlm::tests::GraphExport::Create(*node.output(0), "");
+  auto & ex = GraphExport::Create(*node.output(0), "");
 
   view(graph, stdout);
 
@@ -146,7 +146,7 @@ ReduceFlattenedBinaryReductionLinear()
 
   auto & node = CreateOpNode<FlattenedBinaryOperation>({ i0, i1, i2, i3 }, binaryOperation, 4);
 
-  auto & ex = jlm::tests::GraphExport::Create(*node.output(0), "");
+  auto & ex = GraphExport::Create(*node.output(0), "");
 
   view(graph, stdout);
 
@@ -197,7 +197,7 @@ FlattenAssociativeBinaryOperation_NotAssociativeBinary()
       valueType,
       jlm::rvsdg::BinaryOperation::flags::none);
 
-  auto & ex = jlm::tests::GraphExport::Create(*o2->output(0), "o2");
+  auto & ex = GraphExport::Create(*o2->output(0), "o2");
 
   jlm::rvsdg::view(graph, stdout);
 
@@ -237,7 +237,7 @@ FlattenAssociativeBinaryOperation_NoNewOperands()
       valueType,
       jlm::rvsdg::BinaryOperation::flags::associative);
 
-  auto & ex = jlm::tests::GraphExport::Create(*b2->output(0), "o2");
+  auto & ex = GraphExport::Create(*b2->output(0), "o2");
 
   jlm::rvsdg::view(graph, stdout);
 
@@ -281,7 +281,7 @@ FlattenAssociativeBinaryOperation_Success()
       valueType,
       jlm::rvsdg::BinaryOperation::flags::associative);
 
-  auto & ex = jlm::tests::GraphExport::Create(*o2->output(0), "o2");
+  auto & ex = GraphExport::Create(*o2->output(0), "o2");
 
   jlm::rvsdg::view(graph, stdout);
 
@@ -321,7 +321,7 @@ NormalizeBinaryOperation_NoNewOperands()
       valueType,
       jlm::rvsdg::BinaryOperation::flags::associative);
 
-  auto & ex = jlm::tests::GraphExport::Create(*o1->output(0), "o2");
+  auto & ex = GraphExport::Create(*o1->output(0), "o2");
 
   jlm::rvsdg::view(graph, stdout);
 
@@ -360,7 +360,7 @@ NormalizeBinaryOperation_SingleOperand()
       valueType,
       jlm::rvsdg::BinaryOperation::flags::none);
 
-  auto & ex = jlm::tests::GraphExport::Create(*o1->output(0), "ex");
+  auto & ex = GraphExport::Create(*o1->output(0), "ex");
 
   jlm::rvsdg::view(graph, stdout);
 

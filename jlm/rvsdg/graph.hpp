@@ -41,7 +41,7 @@ private:
 class GraphExport : public RegionResult
 {
 protected:
-  GraphExport(rvsdg::Output & origin, std::string name);
+  GraphExport(Output & origin, std::string name);
 
 public:
   [[nodiscard]] const std::string &
@@ -52,6 +52,12 @@ public:
 
   [[nodiscard]] std::string
   debug_string() const override;
+
+  GraphExport &
+  Copy(Output & origin, StructuralOutput * output) override;
+
+  static GraphExport &
+  Create(Output & origin, std::string name);
 
 private:
   std::string Name_;

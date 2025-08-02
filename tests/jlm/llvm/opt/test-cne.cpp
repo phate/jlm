@@ -406,8 +406,8 @@ MultipleThetas()
   auto loopVariable3 = thetaNode3->AddLoopVar(loopVariable1.output);
   auto loopVariable4 = thetaNode3->AddLoopVar(loopVariable2.output);
 
-  auto & x1 = jlm::tests::GraphExport::Create(*loopVariable3.output, "x1");
-  auto & x2 = jlm::tests::GraphExport::Create(*loopVariable4.output, "x2");
+  auto & x1 = jlm::rvsdg::GraphExport::Create(*loopVariable3.output, "x1");
+  auto & x2 = jlm::rvsdg::GraphExport::Create(*loopVariable4.output, "x2");
 
   view(rvsdg, stdout);
 
@@ -455,8 +455,8 @@ MultipleThetasPassthrough()
   auto loopVariable3 = thetaNode3->AddLoopVar(loopVariable1.output);
   auto loopVariable4 = thetaNode3->AddLoopVar(loopVariable2.output);
 
-  auto & x1 = jlm::tests::GraphExport::Create(*loopVariable3.output, "x1");
-  auto & x2 = jlm::tests::GraphExport::Create(*loopVariable4.output, "x2");
+  auto & x1 = jlm::rvsdg::GraphExport::Create(*loopVariable3.output, "x1");
+  auto & x2 = jlm::rvsdg::GraphExport::Create(*loopVariable4.output, "x2");
 
   view(rvsdg, stdout);
 

@@ -24,9 +24,9 @@ TestInputIterator()
       std::vector<std::shared_ptr<const Type>>(5, valueType),
       std::vector<std::shared_ptr<const Type>>{ valueType });
 
-  jlm::tests::GraphExport::Create(*node.output(0), "x0");
-  jlm::tests::GraphExport::Create(*node.output(0), "x1");
-  jlm::tests::GraphExport::Create(*node.output(0), "x2");
+  GraphExport::Create(*node.output(0), "x0");
+  GraphExport::Create(*node.output(0), "x1");
+  GraphExport::Create(*node.output(0), "x2");
 
   // Act & Assert
   auto nodeIt = Input::Iterator(node.input(0));
@@ -88,9 +88,9 @@ TestInputConstIterator()
       std::vector<std::shared_ptr<const Type>>(5, valueType),
       std::vector<std::shared_ptr<const Type>>{ valueType });
 
-  jlm::tests::GraphExport::Create(*node.output(0), "x0");
-  jlm::tests::GraphExport::Create(*node.output(0), "x1");
-  jlm::tests::GraphExport::Create(*node.output(0), "x2");
+  GraphExport::Create(*node.output(0), "x0");
+  GraphExport::Create(*node.output(0), "x1");
+  GraphExport::Create(*node.output(0), "x2");
 
   // Act & Assert
   auto nodeIt = Input::ConstIterator(node.input(0));

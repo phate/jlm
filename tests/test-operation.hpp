@@ -12,7 +12,6 @@
 #include <jlm/rvsdg/operation.hpp>
 #include <jlm/rvsdg/simple-node.hpp>
 #include <jlm/rvsdg/structural-node.hpp>
-#include <jlm/rvsdg/substitution.hpp>
 #include <jlm/rvsdg/type.hpp>
 #include <jlm/rvsdg/unary.hpp>
 
@@ -41,29 +40,6 @@ public:
     auto graphImport = new GraphImport(graph, std::move(type), std::move(name));
     graph.GetRootRegion().append_argument(graphImport);
     return *graphImport;
-  }
-};
-
-/**
- * Represents an export from the RVSDG of an internal entity.
- * It can be used for testing of graph exports.
- */
-class GraphExport final : public rvsdg::GraphExport
-{
-  GraphExport(rvsdg::Output & origin, std::string name)
-      : rvsdg::GraphExport(origin, std::move(name))
-  {}
-
-public:
-  GraphExport &
-  Copy(rvsdg::Output & origin, rvsdg::StructuralOutput * output) override;
-
-  static GraphExport &
-  Create(rvsdg::Output & origin, std::string name)
-  {
-    auto graphExport = new GraphExport(origin, std::move(name));
-    origin.region()->graph()->GetRootRegion().append_result(graphExport);
-    return *graphExport;
   }
 };
 

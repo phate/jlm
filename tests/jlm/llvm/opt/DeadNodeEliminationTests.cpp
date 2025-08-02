@@ -414,8 +414,8 @@ Phi()
   rv4.result->divert_to(f4);
   auto phiNode = phiBuilder.end();
 
-  jlm::tests::GraphExport::Create(*phiNode->output(0), "f1");
-  jlm::tests::GraphExport::Create(*phiNode->output(3), "f4");
+  jlm::rvsdg::GraphExport::Create(*phiNode->output(0), "f1");
+  jlm::rvsdg::GraphExport::Create(*phiNode->output(3), "f4");
   view(rvsdg, stdout);
 
   // Act
@@ -482,7 +482,7 @@ Delta()
       std::vector<std::shared_ptr<const Type>>{ valueType });
 
   auto deltaOutput = &deltaNode->finalize(result);
-  jlm::tests::GraphExport::Create(*deltaOutput, "");
+  jlm::rvsdg::GraphExport::Create(*deltaOutput, "");
   view(rvsdg, stdout);
 
   // Act

@@ -113,7 +113,7 @@ TestTheta()
           std::vector<std::shared_ptr<const Type>>{ valueType })
           .output(0);
 
-  jlm::tests::GraphExport::Create(*result, "f");
+  jlm::rvsdg::GraphExport::Create(*result, "f");
 
   // Act
   jlm::hls::RemoveUnusedStates(*rvsdgModule);
@@ -166,7 +166,7 @@ TestLambda()
 
   auto lambdaOutput = lambdaNode->finalize({ argument0, result1, argument2, result3 });
 
-  jlm::tests::GraphExport::Create(*lambdaOutput, "f");
+  jlm::rvsdg::GraphExport::Create(*lambdaOutput, "f");
 
   // Act
   jlm::hls::RemoveUnusedStates(*rvsdgModule);

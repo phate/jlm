@@ -31,7 +31,7 @@ test_gamma()
   auto ev2 = gamma->AddEntryVar(v2);
   gamma->AddExitVar({ ev0.branchArgument[0], ev1.branchArgument[1], ev2.branchArgument[2] });
 
-  jlm::tests::GraphExport::Create(*gamma->output(0), "dummy");
+  GraphExport::Create(*gamma->output(0), "dummy");
 
   assert(gamma && gamma->GetOperation() == GammaOperation(3));
 
@@ -70,7 +70,7 @@ test_predicate_reduction()
   auto ev2 = gamma->AddEntryVar(v2);
   gamma->AddExitVar({ ev0.branchArgument[0], ev1.branchArgument[1], ev2.branchArgument[2] });
 
-  auto & r = jlm::tests::GraphExport::Create(*gamma->output(0), "");
+  auto & r = GraphExport::Create(*gamma->output(0), "");
 
   view(&graph.GetRootRegion(), stdout);
 
@@ -102,7 +102,7 @@ test_invariant_reduction()
   auto [input, branchArgument] = gammaNode->AddEntryVar(value);
   gammaNode->AddExitVar(branchArgument);
 
-  auto & ex = jlm::tests::GraphExport::Create(*gammaNode->output(0), "");
+  auto & ex = GraphExport::Create(*gammaNode->output(0), "");
 
   view(&graph.GetRootRegion(), stdout);
 
@@ -141,8 +141,8 @@ test_control_constant_reduction()
   auto xv1 = gamma->AddExitVar({ t, f });
   auto xv2 = gamma->AddExitVar({ n0, n1 });
 
-  auto & ex1 = jlm::tests::GraphExport::Create(*xv1.output, "");
-  auto & ex2 = jlm::tests::GraphExport::Create(*xv2.output, "");
+  auto & ex1 = GraphExport::Create(*xv1.output, "");
+  auto & ex2 = GraphExport::Create(*xv2.output, "");
 
   view(&graph.GetRootRegion(), stdout);
 
@@ -180,7 +180,7 @@ test_control_constant_reduction2()
 
   auto xv = gamma->AddExitVar({ t1, t2, t3, f });
 
-  auto & ex = jlm::tests::GraphExport::Create(*xv.output, "");
+  auto & ex = GraphExport::Create(*xv.output, "");
 
   jlm::rvsdg::view(&graph.GetRootRegion(), stdout);
 
@@ -221,8 +221,8 @@ TestRemoveGammaOutputsWhere()
   auto gammaOutput2 = gammaNode->AddExitVar(gammaInput2.branchArgument);
   auto gammaOutput3 = gammaNode->AddExitVar(gammaInput3.branchArgument);
 
-  jlm::tests::GraphExport::Create(*gammaOutput0.output, "");
-  jlm::tests::GraphExport::Create(*gammaOutput2.output, "");
+  GraphExport::Create(*gammaOutput0.output, "");
+  GraphExport::Create(*gammaOutput2.output, "");
 
   // Act & Assert
   assert(gammaNode->noutputs() == 4);
@@ -279,8 +279,8 @@ TestPruneOutputs()
   auto gammaOutput2 = gammaNode->AddExitVar(gammaInput2.branchArgument);
   gammaNode->AddExitVar(gammaInput3.branchArgument);
 
-  jlm::tests::GraphExport::Create(*gammaOutput0.output, "");
-  jlm::tests::GraphExport::Create(*gammaOutput2.output, "");
+  GraphExport::Create(*gammaOutput0.output, "");
+  GraphExport::Create(*gammaOutput2.output, "");
 
   // Act
   gammaNode->PruneOutputs();

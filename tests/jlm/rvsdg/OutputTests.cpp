@@ -26,7 +26,7 @@ TestOutputIterator()
       std::vector<std::shared_ptr<const Type>>(),
       std::vector<std::shared_ptr<const Type>>(5, valueType));
 
-  jlm::tests::GraphExport::Create(*node.output(0), "x0");
+  GraphExport::Create(*node.output(0), "x0");
 
   // Act & Assert
   auto nodeIt = Output::Iterator(node.output(0));

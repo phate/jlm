@@ -35,6 +35,21 @@ GraphExport::debug_string() const
   return util::strfmt("export[", Name_, "]");
 }
 
+GraphExport &
+GraphExport::Copy(Output & origin, StructuralOutput * output)
+{
+  JLM_ASSERT(output == nullptr);
+  return Create(origin, Name());
+}
+
+GraphExport &
+GraphExport::Create(Output & origin, std::string name)
+{
+  auto graphExport = new GraphExport(origin, std::move(name));
+  origin.region()->graph()->GetRootRegion().append_result(graphExport);
+  return *graphExport;
+}
+
 Graph::~Graph()
 {
   JLM_ASSERT(!has_active_trackers(this));

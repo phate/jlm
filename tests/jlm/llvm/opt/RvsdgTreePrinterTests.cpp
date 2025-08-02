@@ -63,7 +63,7 @@ PrintRvsdgTree()
       rvsdgModule->Rvsdg().GetRootRegion(),
       LlvmLambdaOperation::Create(functionType, "f", linkage::external_linkage));
   auto lambdaOutput = lambda->finalize({ lambda->GetFunctionArguments()[0] });
-  jlm::tests::GraphExport::Create(*lambdaOutput, "f");
+  jlm::rvsdg::GraphExport::Create(*lambdaOutput, "f");
 
   RvsdgTreePrinter::Configuration configuration({});
   RvsdgTreePrinter printer(configuration);
@@ -201,8 +201,8 @@ PrintNumMemoryStateInputsOutputsAnnotation()
   auto outputVarY =
       structuralNode->AddOutputWithResults({ inputVarY.argument[0], inputVarY.argument[1] });
 
-  jlm::tests::GraphExport::Create(*outputVarX.output, "x");
-  jlm::tests::GraphExport::Create(*outputVarY.output, "y");
+  jlm::rvsdg::GraphExport::Create(*outputVarX.output, "x");
+  jlm::rvsdg::GraphExport::Create(*outputVarY.output, "y");
 
   RvsdgTreePrinter::Configuration configuration(
       { RvsdgTreePrinter::Configuration::Annotation::NumMemoryStateInputsOutputs });

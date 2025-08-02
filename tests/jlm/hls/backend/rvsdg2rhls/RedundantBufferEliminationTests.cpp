@@ -35,7 +35,7 @@ BufferWithLocalLoad()
   auto loadResults = LocalLoadOperation::create(importI64, { &importMemState }, importValue);
   auto bufferResults = BufferOperation::create(*loadResults[1], 4, false);
 
-  auto & x = jlm::tests::GraphExport::Create(*bufferResults[0], "x");
+  auto & x = jlm::rvsdg::GraphExport::Create(*bufferResults[0], "x");
 
   view(rvsdg, stdout);
 
@@ -80,7 +80,7 @@ BufferWithLocalStore()
   auto storeResults = LocalStoreOperation::create(importI64, importValue, { &importMemState });
   auto bufferResults = BufferOperation::create(*storeResults[0], 4, false);
 
-  auto & x = jlm::tests::GraphExport::Create(*bufferResults[0], "x");
+  auto & x = jlm::rvsdg::GraphExport::Create(*bufferResults[0], "x");
 
   view(rvsdg, stdout);
 
@@ -125,7 +125,7 @@ BufferWithLoad()
   auto loadResults = LoadOperation::create(importPtr, { &importMemState }, importValue);
   auto bufferResults = BufferOperation::create(*loadResults[1], 4, false);
 
-  auto & x = jlm::tests::GraphExport::Create(*bufferResults[0], "x");
+  auto & x = jlm::rvsdg::GraphExport::Create(*bufferResults[0], "x");
 
   view(rvsdg, stdout);
 
@@ -175,7 +175,7 @@ BufferWithStore()
       importMemState1);
   auto bufferResults = BufferOperation::create(*storeResults[0], 4, false);
 
-  auto & x = jlm::tests::GraphExport::Create(*bufferResults[0], "x");
+  auto & x = jlm::rvsdg::GraphExport::Create(*bufferResults[0], "x");
 
   view(rvsdg, stdout);
 
@@ -221,7 +221,7 @@ BufferWithForkAndLocalLoad()
   auto forkResults = ForkOperation::create(2, *loadResults[1]);
   auto bufferResults = BufferOperation::create(*forkResults[0], 4, false);
 
-  auto & x = jlm::tests::GraphExport::Create(*bufferResults[0], "x");
+  auto & x = jlm::rvsdg::GraphExport::Create(*bufferResults[0], "x");
 
   view(rvsdg, stdout);
 
@@ -269,7 +269,7 @@ BufferWithBranchAndLocalLoad()
   auto branchResults = BranchOperation::create(importControl, *loadResults[1]);
   auto bufferResults = BufferOperation::create(*branchResults[0], 4, false);
 
-  auto & x = jlm::tests::GraphExport::Create(*bufferResults[0], "x");
+  auto & x = jlm::rvsdg::GraphExport::Create(*bufferResults[0], "x");
 
   view(rvsdg, stdout);
 
@@ -314,7 +314,7 @@ BufferWithOtherNode()
       { memoryStateType });
   auto bufferResults = BufferOperation::create(*node->output(0), 4, false);
 
-  auto & x = jlm::tests::GraphExport::Create(*bufferResults[0], "x");
+  auto & x = jlm::rvsdg::GraphExport::Create(*bufferResults[0], "x");
 
   view(rvsdg, stdout);
 
@@ -361,7 +361,7 @@ BufferWithNonMemoryStateOperand()
   auto loadResults = LocalLoadOperation::create(importI64, { &importMemState }, importValue);
   auto bufferResults = BufferOperation::create(*loadResults[0], 4, false);
 
-  auto & x = jlm::tests::GraphExport::Create(*bufferResults[0], "x");
+  auto & x = jlm::rvsdg::GraphExport::Create(*bufferResults[0], "x");
 
   view(rvsdg, stdout);
 
@@ -408,7 +408,7 @@ PassthroughBuffer()
   auto loadResults = LocalLoadOperation::create(importI64, { &importMemState }, importValue);
   auto bufferResults = BufferOperation::create(*loadResults[1], 4, true);
 
-  auto & x = jlm::tests::GraphExport::Create(*bufferResults[0], "x");
+  auto & x = jlm::rvsdg::GraphExport::Create(*bufferResults[0], "x");
 
   view(rvsdg, stdout);
 

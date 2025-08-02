@@ -30,14 +30,10 @@ NormalizeSimpleOperationCne_NodesWithoutOperands()
   auto & nullaryStateNode2 =
       CreateOpNode<jlm::tests::NullaryOperation>(graph.GetRootRegion(), stateType);
 
-  auto & exNullaryValueNode1 =
-      jlm::tests::GraphExport::Create(*nullaryValueNode1.output(0), "nvn1");
-  auto & exNullaryValueNode2 =
-      jlm::tests::GraphExport::Create(*nullaryValueNode2.output(0), "nvn2");
-  auto & exNullaryStateNode1 =
-      jlm::tests::GraphExport::Create(*nullaryStateNode1.output(0), "nsn1");
-  auto & exNullaryStateNode2 =
-      jlm::tests::GraphExport::Create(*nullaryStateNode2.output(0), "nsn2");
+  auto & exNullaryValueNode1 = GraphExport::Create(*nullaryValueNode1.output(0), "nvn1");
+  auto & exNullaryValueNode2 = GraphExport::Create(*nullaryValueNode2.output(0), "nvn2");
+  auto & exNullaryStateNode1 = GraphExport::Create(*nullaryStateNode1.output(0), "nsn1");
+  auto & exNullaryStateNode2 = GraphExport::Create(*nullaryStateNode2.output(0), "nsn2");
 
   view(graph, stdout);
 
@@ -87,10 +83,10 @@ NormalizeSimpleOperationCne_NodesWithOperands()
   auto & stateNode1 = CreateOpNode<jlm::tests::TestUnaryOperation>({ s1 }, stateType, stateType);
   auto & stateNode2 = CreateOpNode<jlm::tests::TestUnaryOperation>({ s1 }, stateType, stateType);
 
-  auto & exValueNode1 = jlm::tests::GraphExport::Create(*valueNode1.output(0), "nvn1");
-  auto & exValueNode2 = jlm::tests::GraphExport::Create(*valueNode2.output(0), "nvn2");
-  auto & exStateNode1 = jlm::tests::GraphExport::Create(*stateNode1.output(0), "nsn1");
-  auto & exStateNode2 = jlm::tests::GraphExport::Create(*stateNode2.output(0), "nsn2");
+  auto & exValueNode1 = GraphExport::Create(*valueNode1.output(0), "nvn1");
+  auto & exValueNode2 = GraphExport::Create(*valueNode2.output(0), "nvn2");
+  auto & exStateNode1 = GraphExport::Create(*stateNode1.output(0), "nsn1");
+  auto & exStateNode2 = GraphExport::Create(*stateNode2.output(0), "nsn2");
 
   view(graph, stdout);
 
@@ -144,10 +140,10 @@ NormalizeSimpleOperationCne_Failure()
   auto & unaryStateNode =
       CreateOpNode<jlm::tests::TestUnaryOperation>({ s1 }, stateType, stateType);
 
-  auto & exNullaryValueNode = jlm::tests::GraphExport::Create(*nullaryValueNode.output(0), "nvn1");
-  auto & exNullaryStateNode = jlm::tests::GraphExport::Create(*nullaryStateNode.output(0), "nvn2");
-  auto & exUnaryValueNode = jlm::tests::GraphExport::Create(*unaryValueNode.output(0), "nsn1");
-  auto & exUnaryStateNode = jlm::tests::GraphExport::Create(*unaryStateNode.output(0), "nsn2");
+  auto & exNullaryValueNode = GraphExport::Create(*nullaryValueNode.output(0), "nvn1");
+  auto & exNullaryStateNode = GraphExport::Create(*nullaryStateNode.output(0), "nvn2");
+  auto & exUnaryValueNode = GraphExport::Create(*unaryValueNode.output(0), "nsn1");
+  auto & exUnaryStateNode = GraphExport::Create(*unaryStateNode.output(0), "nsn2");
 
   view(graph, stdout);
 
