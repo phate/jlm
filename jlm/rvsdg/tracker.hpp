@@ -19,7 +19,7 @@ static const size_t tracker_nodestate_none = (size_t)-1;
 class Graph;
 class Node;
 class Region;
-class tracker_depth_state;
+class TrackerDepthState;
 class TrackerNodeState;
 
 bool
@@ -72,7 +72,7 @@ private:
   jlm::rvsdg::Graph * graph_;
 
   /* FIXME: need RAII idiom for state reservation */
-  std::vector<std::unique_ptr<tracker_depth_state>> states_;
+  std::vector<std::unique_ptr<TrackerDepthState>> states_;
 
   jlm::util::Callback depth_callback_, destroy_callback_;
 
