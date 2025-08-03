@@ -734,10 +734,7 @@ public:
 
 public:
   [[nodiscard]] Graph *
-  graph() const noexcept
-  {
-    return graph_;
-  }
+  graph() const noexcept;
 
   [[nodiscard]] rvsdg::Region *
   region() const noexcept
@@ -792,7 +789,6 @@ public:
 
 private:
   size_t depth_;
-  Graph * graph_;
   rvsdg::Region * region_;
   std::vector<std::unique_ptr<node_input>> inputs_;
   std::vector<std::unique_ptr<node_output>> outputs_;
