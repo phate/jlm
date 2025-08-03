@@ -17,9 +17,9 @@ TestOutputIterator()
 
   Graph rvsdg;
   auto & rootRegion = rvsdg.GetRootRegion();
-  auto i0 = &jlm::tests::GraphImport::Create(rvsdg, valueType, "i");
-  auto i1 = &jlm::tests::GraphImport::Create(rvsdg, valueType, "i");
-  auto i2 = &jlm::tests::GraphImport::Create(rvsdg, valueType, "i");
+  auto i0 = &GraphImport::Create(rvsdg, valueType, "i");
+  auto i1 = &GraphImport::Create(rvsdg, valueType, "i");
+  auto i2 = &GraphImport::Create(rvsdg, valueType, "i");
 
   auto & node = CreateOpNode<jlm::tests::TestOperation>(
       rootRegion,

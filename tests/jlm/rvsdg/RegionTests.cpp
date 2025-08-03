@@ -92,7 +92,7 @@ Contains()
   auto valueType = ValueType::Create();
 
   jlm::rvsdg::Graph graph;
-  auto import = &jlm::tests::GraphImport::Create(graph, valueType, "import");
+  auto import = &jlm::rvsdg::GraphImport::Create(graph, valueType, "import");
 
   auto structuralNode1 = TestStructuralNode::create(&graph.GetRootRegion(), 1);
   auto structuralInput1 = jlm::rvsdg::StructuralInput::create(structuralNode1, import, valueType);

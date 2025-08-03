@@ -20,29 +20,6 @@
 namespace jlm::tests
 {
 
-/**
- * Represents an import into the RVSDG of an external entity.
- * It can be used for testing of graph imports.
- */
-class GraphImport final : public rvsdg::GraphImport
-{
-  GraphImport(rvsdg::Graph & graph, std::shared_ptr<const rvsdg::Type> type, std::string name)
-      : rvsdg::GraphImport(graph, std::move(type), std::move(name))
-  {}
-
-public:
-  GraphImport &
-  Copy(rvsdg::Region & region, rvsdg::StructuralInput * input) override;
-
-  static GraphImport &
-  Create(rvsdg::Graph & graph, std::shared_ptr<const rvsdg::Type> type, std::string name)
-  {
-    auto graphImport = new GraphImport(graph, std::move(type), std::move(name));
-    graph.GetRootRegion().append_argument(graphImport);
-    return *graphImport;
-  }
-};
-
 class NullaryOperation final : public rvsdg::NullaryOperation
 {
 public:

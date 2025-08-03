@@ -50,7 +50,7 @@ TestArgumentIterators()
   }
 
   {
-    auto rvsdgImport = &jlm::tests::GraphImport::Create(rvsdgModule.Rvsdg(), vt, "");
+    auto rvsdgImport = &jlm::rvsdg::GraphImport::Create(rvsdgModule.Rvsdg(), vt, "");
 
     auto functionType = jlm::rvsdg::FunctionType::Create({ vt, vt, vt }, { vt, vt });
 
@@ -118,7 +118,7 @@ TestRemoveLambdaInputsWhere()
   auto rvsdgModule = jlm::llvm::RvsdgModule::Create(jlm::util::FilePath(""), "", "");
   auto & rvsdg = rvsdgModule->Rvsdg();
 
-  auto x = &jlm::tests::GraphImport::Create(rvsdg, valueType, "x");
+  auto x = &jlm::rvsdg::GraphImport::Create(rvsdg, valueType, "x");
 
   auto lambdaNode = jlm::rvsdg::LambdaNode::Create(
       rvsdg.GetRootRegion(),
@@ -189,7 +189,7 @@ TestPruneLambdaInputs()
   auto rvsdgModule = jlm::llvm::RvsdgModule::Create(jlm::util::FilePath(""), "", "");
   auto & rvsdg = rvsdgModule->Rvsdg();
 
-  auto x = &jlm::tests::GraphImport::Create(rvsdg, valueType, "x");
+  auto x = &jlm::rvsdg::GraphImport::Create(rvsdg, valueType, "x");
 
   auto lambdaNode = jlm::rvsdg::LambdaNode::Create(
       rvsdg.GetRootRegion(),

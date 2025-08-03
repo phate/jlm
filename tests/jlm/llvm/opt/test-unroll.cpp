@@ -77,7 +77,7 @@ test_unrollinfo()
 
   {
     jlm::rvsdg::Graph graph;
-    auto x = &jlm::tests::GraphImport::Create(graph, bt32, "x");
+    auto x = &jlm::rvsdg::GraphImport::Create(graph, bt32, "x");
     auto theta = create_theta(slt, add, x, x, x);
     auto ui = jlm::llvm::LoopUnrollInfo::create(theta);
 
@@ -229,8 +229,8 @@ test_unknown_boundaries()
   jlm::llvm::RvsdgModule rm(jlm::util::FilePath(""), "", "");
   auto & graph = rm.Rvsdg();
 
-  auto x = &jlm::tests::GraphImport::Create(graph, bt, "x");
-  auto y = &jlm::tests::GraphImport::Create(graph, bt, "y");
+  auto x = &jlm::rvsdg::GraphImport::Create(graph, bt, "x");
+  auto y = &jlm::rvsdg::GraphImport::Create(graph, bt, "y");
 
   auto theta = jlm::rvsdg::ThetaNode::create(&graph.GetRootRegion());
   auto lv1 = theta->AddLoopVar(x);

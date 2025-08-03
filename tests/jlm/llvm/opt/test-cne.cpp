@@ -30,9 +30,9 @@ test_simple()
   RvsdgModule rm(jlm::util::FilePath(""), "", "");
   auto & graph = rm.Rvsdg();
 
-  auto x = &jlm::tests::GraphImport::Create(graph, vt, "x");
-  auto y = &jlm::tests::GraphImport::Create(graph, vt, "y");
-  auto z = &jlm::tests::GraphImport::Create(graph, vt, "z");
+  auto x = &jlm::rvsdg::GraphImport::Create(graph, vt, "x");
+  auto y = &jlm::rvsdg::GraphImport::Create(graph, vt, "y");
+  auto z = &jlm::rvsdg::GraphImport::Create(graph, vt, "z");
 
   auto n1 = jlm::tests::create_testop(&graph.GetRootRegion(), {}, { vt })[0];
   auto n2 = jlm::tests::create_testop(&graph.GetRootRegion(), {}, { vt })[0];
@@ -73,10 +73,10 @@ test_gamma()
   RvsdgModule rm(jlm::util::FilePath(""), "", "");
   auto & graph = rm.Rvsdg();
 
-  auto c = &jlm::tests::GraphImport::Create(graph, ct, "c");
-  auto x = &jlm::tests::GraphImport::Create(graph, vt, "x");
-  auto y = &jlm::tests::GraphImport::Create(graph, vt, "y");
-  auto z = &jlm::tests::GraphImport::Create(graph, vt, "z");
+  auto c = &jlm::rvsdg::GraphImport::Create(graph, ct, "c");
+  auto x = &jlm::rvsdg::GraphImport::Create(graph, vt, "x");
+  auto y = &jlm::rvsdg::GraphImport::Create(graph, vt, "y");
+  auto z = &jlm::rvsdg::GraphImport::Create(graph, vt, "z");
 
   auto u1 = jlm::tests::create_testop(&graph.GetRootRegion(), { x }, { vt })[0];
   auto u2 = jlm::tests::create_testop(&graph.GetRootRegion(), { x }, { vt })[0];
@@ -137,8 +137,8 @@ test_theta()
   RvsdgModule rm(jlm::util::FilePath(""), "", "");
   auto & graph = rm.Rvsdg();
 
-  auto c = &jlm::tests::GraphImport::Create(graph, ct, "c");
-  auto x = &jlm::tests::GraphImport::Create(graph, vt, "x");
+  auto c = &jlm::rvsdg::GraphImport::Create(graph, ct, "c");
+  auto x = &jlm::rvsdg::GraphImport::Create(graph, vt, "x");
 
   auto theta = jlm::rvsdg::ThetaNode::create(&graph.GetRootRegion());
   auto region = theta->subregion();
@@ -188,8 +188,8 @@ test_theta2()
   RvsdgModule rm(jlm::util::FilePath(""), "", "");
   auto & graph = rm.Rvsdg();
 
-  auto c = &jlm::tests::GraphImport::Create(graph, ct, "c");
-  auto x = &jlm::tests::GraphImport::Create(graph, vt, "x");
+  auto c = &jlm::rvsdg::GraphImport::Create(graph, ct, "c");
+  auto x = &jlm::rvsdg::GraphImport::Create(graph, vt, "x");
 
   auto theta = jlm::rvsdg::ThetaNode::create(&graph.GetRootRegion());
   auto region = theta->subregion();
@@ -230,8 +230,8 @@ test_theta3()
   RvsdgModule rm(jlm::util::FilePath(""), "", "");
   auto & graph = rm.Rvsdg();
 
-  auto c = &jlm::tests::GraphImport::Create(graph, ct, "c");
-  auto x = &jlm::tests::GraphImport::Create(graph, vt, "x");
+  auto c = &jlm::rvsdg::GraphImport::Create(graph, ct, "c");
+  auto x = &jlm::rvsdg::GraphImport::Create(graph, vt, "x");
 
   auto theta1 = jlm::rvsdg::ThetaNode::create(&graph.GetRootRegion());
   auto r1 = theta1->subregion();
@@ -287,9 +287,9 @@ test_theta4()
   RvsdgModule rm(jlm::util::FilePath(""), "", "");
   auto & graph = rm.Rvsdg();
 
-  auto c = &jlm::tests::GraphImport::Create(graph, ct, "c");
-  auto x = &jlm::tests::GraphImport::Create(graph, vt, "x");
-  auto y = &jlm::tests::GraphImport::Create(graph, vt, "y");
+  auto c = &jlm::rvsdg::GraphImport::Create(graph, ct, "c");
+  auto x = &jlm::rvsdg::GraphImport::Create(graph, vt, "x");
+  auto y = &jlm::rvsdg::GraphImport::Create(graph, vt, "y");
 
   auto theta = jlm::rvsdg::ThetaNode::create(&graph.GetRootRegion());
   auto region = theta->subregion();
@@ -338,9 +338,9 @@ test_theta5()
   RvsdgModule rm(jlm::util::FilePath(""), "", "");
   auto & graph = rm.Rvsdg();
 
-  auto c = &jlm::tests::GraphImport::Create(graph, ct, "c");
-  auto x = &jlm::tests::GraphImport::Create(graph, vt, "x");
-  auto y = &jlm::tests::GraphImport::Create(graph, vt, "y");
+  auto c = &jlm::rvsdg::GraphImport::Create(graph, ct, "c");
+  auto x = &jlm::rvsdg::GraphImport::Create(graph, vt, "x");
+  auto y = &jlm::rvsdg::GraphImport::Create(graph, vt, "y");
 
   auto theta = jlm::rvsdg::ThetaNode::create(&graph.GetRootRegion());
   auto region = theta->subregion();
@@ -385,7 +385,7 @@ MultipleThetas()
   jlm::llvm::RvsdgModule rvsdgModule(jlm::util::FilePath(""), "", "");
   auto & rvsdg = rvsdgModule.Rvsdg();
 
-  auto & i0 = jlm::tests::GraphImport::Create(rvsdg, valueType, "i0");
+  auto & i0 = jlm::rvsdg::GraphImport::Create(rvsdg, valueType, "i0");
 
   // Loop 1
   auto thetaNode1 = ThetaNode::create(&rvsdg.GetRootRegion());
@@ -438,7 +438,7 @@ MultipleThetasPassthrough()
   jlm::llvm::RvsdgModule rvsdgModule(jlm::util::FilePath(""), "", "");
   auto & rvsdg = rvsdgModule.Rvsdg();
 
-  auto & i0 = jlm::tests::GraphImport::Create(rvsdg, valueType, "i0");
+  auto & i0 = jlm::rvsdg::GraphImport::Create(rvsdg, valueType, "i0");
 
   // Loop 1
   auto thetaNode1 = ThetaNode::create(&rvsdg.GetRootRegion());
@@ -486,7 +486,7 @@ test_lambda()
   RvsdgModule rm(jlm::util::FilePath(""), "", "");
   auto & graph = rm.Rvsdg();
 
-  auto x = &jlm::tests::GraphImport::Create(graph, vt, "x");
+  auto x = &jlm::rvsdg::GraphImport::Create(graph, vt, "x");
 
   auto lambda = jlm::rvsdg::LambdaNode::Create(
       graph.GetRootRegion(),
@@ -521,7 +521,7 @@ test_phi()
   RvsdgModule rm(jlm::util::FilePath(""), "", "");
   auto & graph = rm.Rvsdg();
 
-  auto & x = jlm::tests::GraphImport::Create(graph, vt, "x");
+  auto & x = jlm::rvsdg::GraphImport::Create(graph, vt, "x");
 
   jlm::rvsdg::PhiBuilder pb;
   pb.begin(&graph.GetRootRegion());

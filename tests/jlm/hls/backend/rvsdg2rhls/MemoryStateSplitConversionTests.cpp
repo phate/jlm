@@ -26,8 +26,8 @@ SplitConversion()
   jlm::llvm::RvsdgModule rvsdgModule(FilePath(""), "", "");
   auto & rvsdg = rvsdgModule.Rvsdg();
 
-  auto & importX = jlm::tests::GraphImport::Create(rvsdg, memoryStateType, "x");
-  auto & importY = jlm::tests::GraphImport::Create(rvsdg, memoryStateType, "y");
+  auto & importX = jlm::rvsdg::GraphImport::Create(rvsdg, memoryStateType, "x");
+  auto & importY = jlm::rvsdg::GraphImport::Create(rvsdg, memoryStateType, "y");
 
   auto structuralNode = jlm::tests::TestStructuralNode::create(&rvsdg.GetRootRegion(), 1);
   const auto inputVar = structuralNode->AddInputWithArguments(importX);

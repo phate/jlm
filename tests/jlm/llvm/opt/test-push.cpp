@@ -30,9 +30,9 @@ test_gamma()
   RvsdgModule rm(jlm::util::FilePath(""), "", "");
   auto & graph = rm.Rvsdg();
 
-  auto c = &jlm::tests::GraphImport::Create(graph, ct, "c");
-  auto x = &jlm::tests::GraphImport::Create(graph, vt, "x");
-  auto s = &jlm::tests::GraphImport::Create(graph, st, "s");
+  auto c = &jlm::rvsdg::GraphImport::Create(graph, ct, "c");
+  auto x = &jlm::rvsdg::GraphImport::Create(graph, vt, "x");
+  auto s = &jlm::rvsdg::GraphImport::Create(graph, st, "s");
 
   auto gamma = jlm::rvsdg::GammaNode::create(c, 2);
   auto evx = gamma->AddEntryVar(x);
@@ -70,9 +70,9 @@ test_theta()
   RvsdgModule rm(jlm::util::FilePath(""), "", "");
   auto & graph = rm.Rvsdg();
 
-  auto c = &jlm::tests::GraphImport::Create(graph, ct, "c");
-  auto x = &jlm::tests::GraphImport::Create(graph, vt, "x");
-  auto s = &jlm::tests::GraphImport::Create(graph, st, "s");
+  auto c = &jlm::rvsdg::GraphImport::Create(graph, ct, "c");
+  auto x = &jlm::rvsdg::GraphImport::Create(graph, vt, "x");
+  auto s = &jlm::rvsdg::GraphImport::Create(graph, st, "s");
 
   auto theta = jlm::rvsdg::ThetaNode::create(&graph.GetRootRegion());
 
@@ -111,10 +111,10 @@ test_push_theta_bottom()
   auto ct = jlm::rvsdg::ControlType::Create(2);
 
   jlm::rvsdg::Graph graph;
-  auto c = &jlm::tests::GraphImport::Create(graph, ct, "c");
-  auto a = &jlm::tests::GraphImport::Create(graph, pt, "a");
-  auto v = &jlm::tests::GraphImport::Create(graph, vt, "v");
-  auto s = &jlm::tests::GraphImport::Create(graph, mt, "s");
+  auto c = &jlm::rvsdg::GraphImport::Create(graph, ct, "c");
+  auto a = &jlm::rvsdg::GraphImport::Create(graph, pt, "a");
+  auto v = &jlm::rvsdg::GraphImport::Create(graph, vt, "v");
+  auto s = &jlm::rvsdg::GraphImport::Create(graph, mt, "s");
 
   auto theta = jlm::rvsdg::ThetaNode::create(&graph.GetRootRegion());
 

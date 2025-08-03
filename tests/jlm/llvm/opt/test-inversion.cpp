@@ -25,9 +25,9 @@ test1()
   RvsdgModule rm(jlm::util::FilePath(""), "", "");
   auto & graph = rm.Rvsdg();
 
-  auto x = &jlm::tests::GraphImport::Create(graph, vt, "x");
-  auto y = &jlm::tests::GraphImport::Create(graph, vt, "y");
-  auto z = &jlm::tests::GraphImport::Create(graph, vt, "z");
+  auto x = &jlm::rvsdg::GraphImport::Create(graph, vt, "x");
+  auto y = &jlm::rvsdg::GraphImport::Create(graph, vt, "y");
+  auto z = &jlm::rvsdg::GraphImport::Create(graph, vt, "z");
 
   auto theta = jlm::rvsdg::ThetaNode::create(&graph.GetRootRegion());
 
@@ -83,7 +83,7 @@ test2()
   RvsdgModule rm(jlm::util::FilePath(""), "", "");
   auto & graph = rm.Rvsdg();
 
-  auto x = &jlm::tests::GraphImport::Create(graph, vt, "x");
+  auto x = &jlm::rvsdg::GraphImport::Create(graph, vt, "x");
 
   auto theta = jlm::rvsdg::ThetaNode::create(&graph.GetRootRegion());
 
