@@ -49,26 +49,24 @@ has_active_trackers(const Graph * graph)
   return at->find(graph) != at->end();
 }
 
-/* tracker depth state */
-
-class tracker_depth_state
+class TrackerDepthState
 {
 public:
-  inline tracker_depth_state()
+  TrackerDepthState()
       : count_(0),
         top_depth_(0),
         bottom_depth_(0)
   {}
 
-  tracker_depth_state(const tracker_depth_state &) = delete;
+  TrackerDepthState(const TrackerDepthState &) = delete;
 
-  tracker_depth_state(tracker_depth_state &&) = delete;
+  TrackerDepthState(TrackerDepthState &&) = delete;
 
-  tracker_depth_state &
-  operator=(const tracker_depth_state &) = delete;
+  TrackerDepthState &
+  operator=(const TrackerDepthState &) = delete;
 
-  tracker_depth_state &
-  operator=(tracker_depth_state &&) = delete;
+  TrackerDepthState &
+  operator=(TrackerDepthState &&) = delete;
 
   inline TrackerNodeState *
   peek_top() const noexcept
@@ -167,7 +165,7 @@ Tracker::Tracker(Graph * graph, size_t nstates)
       states_(nstates)
 {
   for (size_t n = 0; n < states_.size(); n++)
-    states_[n] = std::make_unique<tracker_depth_state>();
+    states_[n] = std::make_unique<TrackerDepthState>();
 
   depth_callback_ =
       on_node_depth_change.connect(std::bind(&Tracker::node_depth_change, this, _1, _2));
