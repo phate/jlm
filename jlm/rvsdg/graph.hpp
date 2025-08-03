@@ -18,10 +18,9 @@ namespace jlm::rvsdg
  */
 class GraphImport : public RegionArgument
 {
-protected:
+public:
   GraphImport(Graph & graph, std::shared_ptr<const rvsdg::Type> type, std::string name);
 
-public:
   [[nodiscard]] const std::string &
   Name() const noexcept
   {
@@ -30,6 +29,12 @@ public:
 
   [[nodiscard]] std::string
   debug_string() const override;
+
+  GraphImport &
+  Copy(Region & region, StructuralInput * input) override;
+
+  static GraphImport &
+  Create(Graph & graph, std::shared_ptr<const rvsdg::Type> type, std::string name);
 
 private:
   std::string Name_;

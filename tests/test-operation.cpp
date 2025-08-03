@@ -10,12 +10,6 @@
 namespace jlm::tests
 {
 
-GraphImport &
-GraphImport::Copy(rvsdg::Region & region, rvsdg::StructuralInput *)
-{
-  return GraphImport::Create(*region.graph(), Type(), Name());
-}
-
 TestUnaryOperation::~TestUnaryOperation() noexcept = default;
 
 bool

@@ -28,9 +28,9 @@ BufferWithLocalLoad()
   jlm::llvm::RvsdgModule rvsdgModule(FilePath(""), "", "");
   auto & rvsdg = rvsdgModule.Rvsdg();
 
-  auto & importI64 = jlm::tests::GraphImport::Create(rvsdg, i64Type, "i64");
-  auto & importMemState = jlm::tests::GraphImport::Create(rvsdg, memoryStateType, "memstate");
-  auto & importValue = jlm::tests::GraphImport::Create(rvsdg, valueType, "value");
+  auto & importI64 = jlm::rvsdg::GraphImport::Create(rvsdg, i64Type, "i64");
+  auto & importMemState = jlm::rvsdg::GraphImport::Create(rvsdg, memoryStateType, "memstate");
+  auto & importValue = jlm::rvsdg::GraphImport::Create(rvsdg, valueType, "value");
 
   auto loadResults = LocalLoadOperation::create(importI64, { &importMemState }, importValue);
   auto bufferResults = BufferOperation::create(*loadResults[1], 4, false);
@@ -73,9 +73,9 @@ BufferWithLocalStore()
   jlm::llvm::RvsdgModule rvsdgModule(FilePath(""), "", "");
   auto & rvsdg = rvsdgModule.Rvsdg();
 
-  auto & importI64 = jlm::tests::GraphImport::Create(rvsdg, i64Type, "i64");
-  auto & importMemState = jlm::tests::GraphImport::Create(rvsdg, memoryStateType, "memstate");
-  auto & importValue = jlm::tests::GraphImport::Create(rvsdg, valueType, "value");
+  auto & importI64 = jlm::rvsdg::GraphImport::Create(rvsdg, i64Type, "i64");
+  auto & importMemState = jlm::rvsdg::GraphImport::Create(rvsdg, memoryStateType, "memstate");
+  auto & importValue = jlm::rvsdg::GraphImport::Create(rvsdg, valueType, "value");
 
   auto storeResults = LocalStoreOperation::create(importI64, importValue, { &importMemState });
   auto bufferResults = BufferOperation::create(*storeResults[0], 4, false);
@@ -118,9 +118,9 @@ BufferWithLoad()
   jlm::llvm::RvsdgModule rvsdgModule(FilePath(""), "", "");
   auto & rvsdg = rvsdgModule.Rvsdg();
 
-  auto & importPtr = jlm::tests::GraphImport::Create(rvsdg, pointerType, "ptr");
-  auto & importMemState = jlm::tests::GraphImport::Create(rvsdg, memoryStateType, "memstate");
-  auto & importValue = jlm::tests::GraphImport::Create(rvsdg, valueType, "value");
+  auto & importPtr = jlm::rvsdg::GraphImport::Create(rvsdg, pointerType, "ptr");
+  auto & importMemState = jlm::rvsdg::GraphImport::Create(rvsdg, memoryStateType, "memstate");
+  auto & importValue = jlm::rvsdg::GraphImport::Create(rvsdg, valueType, "value");
 
   auto loadResults = LoadOperation::create(importPtr, { &importMemState }, importValue);
   auto bufferResults = BufferOperation::create(*loadResults[1], 4, false);
@@ -163,10 +163,10 @@ BufferWithStore()
   jlm::llvm::RvsdgModule rvsdgModule(FilePath(""), "", "");
   auto & rvsdg = rvsdgModule.Rvsdg();
 
-  auto & importPtr = jlm::tests::GraphImport::Create(rvsdg, pointerType, "ptr");
-  auto & importMemState0 = jlm::tests::GraphImport::Create(rvsdg, memoryStateType, "memstate0");
-  auto & importMemState1 = jlm::tests::GraphImport::Create(rvsdg, memoryStateType, "memstate1");
-  auto & importValue = jlm::tests::GraphImport::Create(rvsdg, valueType, "value");
+  auto & importPtr = jlm::rvsdg::GraphImport::Create(rvsdg, pointerType, "ptr");
+  auto & importMemState0 = jlm::rvsdg::GraphImport::Create(rvsdg, memoryStateType, "memstate0");
+  auto & importMemState1 = jlm::rvsdg::GraphImport::Create(rvsdg, memoryStateType, "memstate1");
+  auto & importValue = jlm::rvsdg::GraphImport::Create(rvsdg, valueType, "value");
 
   auto storeResults = jlm::hls::StoreOperation::create(
       importPtr,
@@ -213,9 +213,9 @@ BufferWithForkAndLocalLoad()
   jlm::llvm::RvsdgModule rvsdgModule(FilePath(""), "", "");
   auto & rvsdg = rvsdgModule.Rvsdg();
 
-  auto & importI64 = jlm::tests::GraphImport::Create(rvsdg, i64Type, "i64");
-  auto & importMemState = jlm::tests::GraphImport::Create(rvsdg, memoryStateType, "memstate");
-  auto & importValue = jlm::tests::GraphImport::Create(rvsdg, valueType, "value");
+  auto & importI64 = jlm::rvsdg::GraphImport::Create(rvsdg, i64Type, "i64");
+  auto & importMemState = jlm::rvsdg::GraphImport::Create(rvsdg, memoryStateType, "memstate");
+  auto & importValue = jlm::rvsdg::GraphImport::Create(rvsdg, valueType, "value");
 
   auto loadResults = LocalLoadOperation::create(importI64, { &importMemState }, importValue);
   auto forkResults = ForkOperation::create(2, *loadResults[1]);
@@ -260,10 +260,10 @@ BufferWithBranchAndLocalLoad()
   jlm::llvm::RvsdgModule rvsdgModule(FilePath(""), "", "");
   auto & rvsdg = rvsdgModule.Rvsdg();
 
-  auto & importI64 = jlm::tests::GraphImport::Create(rvsdg, i64Type, "i64");
-  auto & importControl = jlm::tests::GraphImport::Create(rvsdg, controlType, "control");
-  auto & importMemState = jlm::tests::GraphImport::Create(rvsdg, memoryStateType, "memstate");
-  auto & importValue = jlm::tests::GraphImport::Create(rvsdg, valueType, "value");
+  auto & importI64 = jlm::rvsdg::GraphImport::Create(rvsdg, i64Type, "i64");
+  auto & importControl = jlm::rvsdg::GraphImport::Create(rvsdg, controlType, "control");
+  auto & importMemState = jlm::rvsdg::GraphImport::Create(rvsdg, memoryStateType, "memstate");
+  auto & importValue = jlm::rvsdg::GraphImport::Create(rvsdg, valueType, "value");
 
   auto loadResults = LocalLoadOperation::create(importI64, { &importMemState }, importValue);
   auto branchResults = BranchOperation::create(importControl, *loadResults[1]);
@@ -306,7 +306,7 @@ BufferWithOtherNode()
   jlm::llvm::RvsdgModule rvsdgModule(FilePath(""), "", "");
   auto & rvsdg = rvsdgModule.Rvsdg();
 
-  auto & importValue = jlm::tests::GraphImport::Create(rvsdg, valueType, "value");
+  auto & importValue = jlm::rvsdg::GraphImport::Create(rvsdg, valueType, "value");
 
   auto node = jlm::tests::TestOperation::create(
       &rvsdg.GetRootRegion(),
@@ -354,9 +354,9 @@ BufferWithNonMemoryStateOperand()
   jlm::llvm::RvsdgModule rvsdgModule(FilePath(""), "", "");
   auto & rvsdg = rvsdgModule.Rvsdg();
 
-  auto & importI64 = jlm::tests::GraphImport::Create(rvsdg, i64Type, "i64");
-  auto & importMemState = jlm::tests::GraphImport::Create(rvsdg, memoryStateType, "memstate");
-  auto & importValue = jlm::tests::GraphImport::Create(rvsdg, valueType, "value");
+  auto & importI64 = jlm::rvsdg::GraphImport::Create(rvsdg, i64Type, "i64");
+  auto & importMemState = jlm::rvsdg::GraphImport::Create(rvsdg, memoryStateType, "memstate");
+  auto & importValue = jlm::rvsdg::GraphImport::Create(rvsdg, valueType, "value");
 
   auto loadResults = LocalLoadOperation::create(importI64, { &importMemState }, importValue);
   auto bufferResults = BufferOperation::create(*loadResults[0], 4, false);
@@ -401,9 +401,9 @@ PassthroughBuffer()
   jlm::llvm::RvsdgModule rvsdgModule(FilePath(""), "", "");
   auto & rvsdg = rvsdgModule.Rvsdg();
 
-  auto & importI64 = jlm::tests::GraphImport::Create(rvsdg, i64Type, "i64");
-  auto & importMemState = jlm::tests::GraphImport::Create(rvsdg, memoryStateType, "memstate");
-  auto & importValue = jlm::tests::GraphImport::Create(rvsdg, valueType, "value");
+  auto & importI64 = jlm::rvsdg::GraphImport::Create(rvsdg, i64Type, "i64");
+  auto & importMemState = jlm::rvsdg::GraphImport::Create(rvsdg, memoryStateType, "memstate");
+  auto & importValue = jlm::rvsdg::GraphImport::Create(rvsdg, valueType, "value");
 
   auto loadResults = LocalLoadOperation::create(importI64, { &importMemState }, importValue);
   auto bufferResults = BufferOperation::create(*loadResults[1], 4, true);

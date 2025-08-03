@@ -70,9 +70,9 @@ TestRvsdgCreator()
   // Arrange
   jlm::rvsdg::Graph rvsdg;
 
-  auto address = &jlm::tests::GraphImport::Create(rvsdg, PointerType::Create(), "p");
-  auto memoryState = &jlm::tests::GraphImport::Create(rvsdg, MemoryStateType::Create(), "m");
-  auto iOState = &jlm::tests::GraphImport::Create(rvsdg, IOStateType::Create(), "io");
+  auto address = &jlm::rvsdg::GraphImport::Create(rvsdg, PointerType::Create(), "p");
+  auto memoryState = &jlm::rvsdg::GraphImport::Create(rvsdg, MemoryStateType::Create(), "m");
+  auto iOState = &jlm::rvsdg::GraphImport::Create(rvsdg, IOStateType::Create(), "io");
 
   // Act
   auto freeResults0 = FreeOperation::Create(address, {}, iOState);

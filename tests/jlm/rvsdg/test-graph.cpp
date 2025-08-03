@@ -31,7 +31,7 @@ test_recursive_prune()
   auto t = jlm::tests::ValueType::Create();
 
   Graph graph;
-  auto imp = &jlm::tests::GraphImport::Create(graph, t, "i");
+  auto imp = &jlm::rvsdg::GraphImport::Create(graph, t, "i");
 
   auto n1 = TestOperation::create(&graph.GetRootRegion(), { imp }, { t });
   auto n2 = TestOperation::create(&graph.GetRootRegion(), { imp }, { t });
@@ -136,7 +136,7 @@ Copy()
   auto valueType = jlm::tests::ValueType::Create();
 
   Graph graph;
-  auto & argument = jlm::tests::GraphImport::Create(graph, valueType, "import");
+  auto & argument = jlm::rvsdg::GraphImport::Create(graph, valueType, "import");
   auto node = TestOperation::create(&graph.GetRootRegion(), { &argument }, { valueType });
   GraphExport::Create(*node->output(0), "export");
 
@@ -146,7 +146,7 @@ Copy()
   // Assert
   assert(newGraph->GetRootRegion().narguments() == 1);
   auto copiedArgument = newGraph->GetRootRegion().argument(0);
-  assert(is<jlm::tests::GraphImport>(copiedArgument));
+  assert(is<jlm::rvsdg::GraphImport>(copiedArgument));
 
   assert(newGraph->GetRootRegion().nnodes() == 1);
   auto copiedNode = newGraph->GetRootRegion().Nodes().begin().ptr();

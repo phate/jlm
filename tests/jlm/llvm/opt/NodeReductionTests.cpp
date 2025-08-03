@@ -26,7 +26,7 @@ MultipleReductionsPerRegion()
   jlm::llvm::RvsdgModule rvsdgModule(jlm::util::FilePath(""), "", "");
   auto & graph = rvsdgModule.Rvsdg();
 
-  auto & sizeArgument = jlm::tests::GraphImport::Create(graph, bitType, "size");
+  auto & sizeArgument = jlm::rvsdg::GraphImport::Create(graph, bitType, "size");
   auto allocaResults = AllocaOperation::create(bitType, &sizeArgument, 4);
 
   const auto c3 = bitconstant_op::create(&graph.GetRootRegion(), bitvalue_repr(32, 3));
