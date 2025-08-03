@@ -38,9 +38,9 @@ eliminate_gamma_ctl(rvsdg::GammaNode * gamma)
       for (size_t j = 0; j < gamma->nsubregions(); ++j)
       {
         auto r = gamma->subregion(j)->result(i);
-        if (auto so = dynamic_cast<rvsdg::SimpleOutput *>(r->origin()))
+        if (auto simpleNode = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*r->origin()))
         {
-          if (auto ctl = dynamic_cast<const rvsdg::ctlconstant_op *>(&so->node()->GetOperation()))
+          if (auto ctl = dynamic_cast<const rvsdg::ctlconstant_op *>(&simpleNode->GetOperation()))
           {
             if (j == ctl->value().alternative())
             {
@@ -75,7 +75,7 @@ bit_type_to_ctl_type(rvsdg::GammaNode * old_gamma)
     if (o->nusers() != 1)
       continue;
     auto & user = *o->Users().begin();
-    auto [_, matchOperation] = rvsdg::TryGetSimpleNodeAndOp<rvsdg::match_op>(user);
+    auto [_, matchOperation] = rvsdg::TryGetSimpleNodeAndOp<rvsdg::MatchOperation>(user);
     if (!matchOperation)
       continue;
     // output is only used by match
@@ -134,9 +134,9 @@ fix_match_inversion(rvsdg::GammaNode * old_gamma)
       for (size_t j = 0; j < old_gamma->nsubregions(); ++j)
       {
         auto r = old_gamma->subregion(j)->result(i);
-        if (auto so = dynamic_cast<rvsdg::SimpleOutput *>(r->origin()))
+        if (auto simpleNode = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*r->origin()))
         {
-          if (auto ctl = dynamic_cast<const rvsdg::ctlconstant_op *>(&so->node()->GetOperation()))
+          if (auto ctl = dynamic_cast<const rvsdg::ctlconstant_op *>(&simpleNode->GetOperation()))
           {
             if (j != ctl->value().alternative())
             {
@@ -158,12 +158,12 @@ fix_match_inversion(rvsdg::GammaNode * old_gamma)
     {
       return false;
     }
-    if (auto match = dynamic_cast<const rvsdg::match_op *>(&pred_node->GetOperation()))
+    if (auto match = dynamic_cast<const rvsdg::MatchOperation *>(&pred_node->GetOperation()))
     {
       if (match->nalternatives() == 2)
       {
         uint64_t default_alternative = match->default_alternative() ? 0 : 1;
-        auto new_match = rvsdg::match_op::Create(
+        auto new_match = rvsdg::MatchOperation::Create(
             *pred_node->input(0)->origin(),
             { { 0, match->alternative(1) }, { 1, match->alternative(0) } },
             default_alternative,

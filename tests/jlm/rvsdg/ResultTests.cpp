@@ -22,26 +22,28 @@ ResultNodeMismatch()
   auto valueType = jlm::tests::ValueType::Create();
 
   Graph graph;
-  auto import = &jlm::tests::GraphImport::Create(graph, valueType, "import");
+  auto import = &jlm::rvsdg::GraphImport::Create(graph, valueType, "import");
 
   auto structuralNode1 = TestStructuralNode::create(&graph.GetRootRegion(), 1);
-  auto structuralNode2 = TestStructuralNode::create(&graph.GetRootRegion(), 2);
+  auto structuralNode2 = TestStructuralNode::create(&graph.GetRootRegion(), 1);
 
   auto structuralInput = StructuralInput::create(structuralNode1, import, valueType);
 
   auto & argument =
       TestGraphArgument::Create(*structuralNode1->subregion(0), structuralInput, valueType);
-  auto structuralOutput = StructuralOutput::create(structuralNode1, valueType);
 
   // Act
   bool outputErrorHandlerCalled = false;
   try
   {
     // Region mismatch
-    TestGraphResult::Create(*structuralNode2->subregion(0), argument, structuralOutput);
+    structuralNode2->AddOutputWithResults({ &argument });
+    // The line below should not be executed as the line above is expected to throw an exception.
+    assert(false);
   }
-  catch (jlm::util::error & e)
+  catch (jlm::util::Error & error)
   {
+    assert(std::string(error.what()) == "Invalid operand region.");
     outputErrorHandlerCalled = true;
   }
 
@@ -62,23 +64,23 @@ ResultInputTypeMismatch()
   auto stateType = StateType::Create();
 
   jlm::rvsdg::Graph rvsdg;
-
-  auto structuralNode = TestStructuralNode::create(&rvsdg.GetRootRegion(), 1);
-  auto structuralOutput = jlm::rvsdg::StructuralOutput::create(structuralNode, valueType);
+  auto structuralNode = TestStructuralNode::create(&rvsdg.GetRootRegion(), 2);
 
   // Act & Assert
   bool exceptionWasCaught = false;
   try
   {
-    auto simpleNode = TestOperation::create(structuralNode->subregion(0), {}, { stateType });
+    auto simpleNode0 = TestOperation::create(structuralNode->subregion(0), {}, { stateType });
+    auto simpleNode1 = TestOperation::create(structuralNode->subregion(1), {}, { valueType });
 
     // Type mismatch between simple node output and structural output
-    TestGraphResult::Create(*simpleNode->output(0), structuralOutput);
+    structuralNode->AddOutputWithResults({ simpleNode0->output(0), simpleNode1->output(0) });
     // The line below should not be executed as the line above is expected to throw an exception.
     assert(false);
   }
-  catch (TypeError &)
+  catch (TypeError & error)
   {
+    assert(std::string(error.what()) == "Type error - expected : ValueType, received : StateType");
     exceptionWasCaught = true;
   }
   assert(exceptionWasCaught);

@@ -136,7 +136,7 @@ LoopUnrollInfo::create(rvsdg::ThetaNode * theta)
   using namespace jlm::rvsdg;
 
   const auto matchNode = rvsdg::TryGetOwnerNode<SimpleNode>(*theta->predicate()->origin());
-  if (!is<match_op>(matchNode))
+  if (!is<MatchOperation>(matchNode))
     return nullptr;
 
   auto cmpnode = rvsdg::TryGetOwnerNode<SimpleNode>(*matchNode->input(0)->origin());

@@ -30,7 +30,7 @@ TestDeadLoopNode()
           "f",
           jlm::llvm::linkage::external_linkage));
 
-  loop_node::create(lambdaNode->subregion());
+  LoopNode::create(lambdaNode->subregion());
 
   lambdaNode->finalize({ lambdaNode->GetFunctionArguments()[1] });
 
@@ -65,7 +65,7 @@ TestDeadLoopNodeOutput()
   auto p = lambdaNode->GetFunctionArguments()[0];
   auto x = lambdaNode->GetFunctionArguments()[1];
 
-  auto loopNode = loop_node::create(lambdaNode->subregion());
+  auto loopNode = LoopNode::create(lambdaNode->subregion());
 
   jlm::rvsdg::Output * buffer = nullptr;
   auto output0 = loopNode->AddLoopVar(p, &buffer);
@@ -74,7 +74,7 @@ TestDeadLoopNodeOutput()
 
   auto lambdaOutput = lambdaNode->finalize({ output0 });
 
-  jlm::llvm::GraphExport::Create(*lambdaOutput, "f");
+  jlm::rvsdg::GraphExport::Create(*lambdaOutput, "f");
 
   // Act
   EliminateDeadNodes(rvsdgModule);

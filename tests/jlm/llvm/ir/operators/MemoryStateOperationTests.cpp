@@ -46,11 +46,11 @@ MemoryStateSplitNormalizeSingleResult()
   const auto memoryStateType = MemoryStateType::Create();
 
   Graph rvsdg;
-  auto & ix = jlm::tests::GraphImport::Create(rvsdg, memoryStateType, "x");
+  auto & ix = jlm::rvsdg::GraphImport::Create(rvsdg, memoryStateType, "x");
 
   auto & splitNode = MemoryStateSplitOperation::CreateNode(ix, 1);
 
-  auto & ex = jlm::tests::GraphExport::Create(*splitNode.output(0), "x");
+  auto & ex = jlm::rvsdg::GraphExport::Create(*splitNode.output(0), "x");
 
   view(&rvsdg.GetRootRegion(), stdout);
 
@@ -79,17 +79,17 @@ MemoryStateSplitNormalizeNestedSplits()
   // Arrange
   const auto memoryStateType = MemoryStateType::Create();
   Graph rvsdg;
-  auto & ix = jlm::tests::GraphImport::Create(rvsdg, memoryStateType, "x");
+  auto & ix = jlm::rvsdg::GraphImport::Create(rvsdg, memoryStateType, "x");
 
   auto & splitNode0 = MemoryStateSplitOperation::CreateNode(ix, 3);
   auto & splitNode1 = MemoryStateSplitOperation::CreateNode(*splitNode0.output(0), 2);
   auto & splitNode2 = MemoryStateSplitOperation::CreateNode(*splitNode0.output(2), 2);
 
-  auto & ex0 = jlm::tests::GraphExport::Create(*splitNode1.output(0), "sn10");
-  auto & ex1 = jlm::tests::GraphExport::Create(*splitNode1.output(1), "sn11");
-  auto & ex2 = jlm::tests::GraphExport::Create(*splitNode0.output(1), "sn01");
-  auto & ex3 = jlm::tests::GraphExport::Create(*splitNode2.output(0), "sn20");
-  auto & ex4 = jlm::tests::GraphExport::Create(*splitNode2.output(1), "sn21");
+  auto & ex0 = jlm::rvsdg::GraphExport::Create(*splitNode1.output(0), "sn10");
+  auto & ex1 = jlm::rvsdg::GraphExport::Create(*splitNode1.output(1), "sn11");
+  auto & ex2 = jlm::rvsdg::GraphExport::Create(*splitNode0.output(1), "sn01");
+  auto & ex3 = jlm::rvsdg::GraphExport::Create(*splitNode2.output(0), "sn20");
+  auto & ex4 = jlm::rvsdg::GraphExport::Create(*splitNode2.output(1), "sn21");
 
   view(&rvsdg.GetRootRegion(), stdout);
 
@@ -137,16 +137,16 @@ MemoryStateSplitNormalizeSplitMerge()
   // Arrange
   const auto memoryStateType = MemoryStateType::Create();
   Graph rvsdg;
-  auto & ix0 = jlm::tests::GraphImport::Create(rvsdg, memoryStateType, "x");
-  auto & ix1 = jlm::tests::GraphImport::Create(rvsdg, memoryStateType, "x");
-  auto & ix2 = jlm::tests::GraphImport::Create(rvsdg, memoryStateType, "x");
+  auto & ix0 = jlm::rvsdg::GraphImport::Create(rvsdg, memoryStateType, "x");
+  auto & ix1 = jlm::rvsdg::GraphImport::Create(rvsdg, memoryStateType, "x");
+  auto & ix2 = jlm::rvsdg::GraphImport::Create(rvsdg, memoryStateType, "x");
 
   auto mergeResult = MemoryStateMergeOperation::Create({ &ix0, &ix1, &ix2 });
   auto & splitNode = MemoryStateSplitOperation::CreateNode(*mergeResult, 3);
 
-  auto & ex0 = jlm::tests::GraphExport::Create(*splitNode.output(0), "ex0");
-  auto & ex1 = jlm::tests::GraphExport::Create(*splitNode.output(1), "ex1");
-  auto & ex2 = jlm::tests::GraphExport::Create(*splitNode.output(2), "ex2");
+  auto & ex0 = jlm::rvsdg::GraphExport::Create(*splitNode.output(0), "ex0");
+  auto & ex1 = jlm::rvsdg::GraphExport::Create(*splitNode.output(1), "ex1");
+  auto & ex2 = jlm::rvsdg::GraphExport::Create(*splitNode.output(2), "ex2");
 
   view(&rvsdg.GetRootRegion(), stdout);
 
@@ -199,11 +199,11 @@ MemoryStateMergeNormalizeSingleOperand()
   const auto memoryStateType = MemoryStateType::Create();
 
   Graph rvsdg;
-  auto & ix = jlm::tests::GraphImport::Create(rvsdg, memoryStateType, "x");
+  auto & ix = jlm::rvsdg::GraphImport::Create(rvsdg, memoryStateType, "x");
 
   auto & mergeNode = MemoryStateMergeOperation::CreateNode({ &ix });
 
-  auto & ex = jlm::tests::GraphExport::Create(*mergeNode.output(0), "x");
+  auto & ex = jlm::rvsdg::GraphExport::Create(*mergeNode.output(0), "x");
 
   view(&rvsdg.GetRootRegion(), stdout);
 
@@ -233,12 +233,12 @@ MemoryStateMergeNormalizeDuplicateOperands()
   const auto memoryStateType = MemoryStateType::Create();
 
   Graph rvsdg;
-  auto & ix0 = jlm::tests::GraphImport::Create(rvsdg, memoryStateType, "x0");
-  auto & ix1 = jlm::tests::GraphImport::Create(rvsdg, memoryStateType, "x1");
+  auto & ix0 = jlm::rvsdg::GraphImport::Create(rvsdg, memoryStateType, "x0");
+  auto & ix1 = jlm::rvsdg::GraphImport::Create(rvsdg, memoryStateType, "x1");
 
   auto & node = MemoryStateMergeOperation::CreateNode({ &ix0, &ix0, &ix1, &ix1 });
 
-  auto & ex = jlm::tests::GraphExport::Create(*node.output(0), "x");
+  auto & ex = jlm::rvsdg::GraphExport::Create(*node.output(0), "x");
 
   view(&rvsdg.GetRootRegion(), stdout);
 
@@ -271,18 +271,18 @@ MemoryStateMergeNormalizeNestedMerges()
   const auto memoryStateType = MemoryStateType::Create();
 
   Graph rvsdg;
-  auto & ix0 = jlm::tests::GraphImport::Create(rvsdg, memoryStateType, "x0");
-  auto & ix1 = jlm::tests::GraphImport::Create(rvsdg, memoryStateType, "x1");
-  auto & ix2 = jlm::tests::GraphImport::Create(rvsdg, memoryStateType, "x2");
-  auto & ix3 = jlm::tests::GraphImport::Create(rvsdg, memoryStateType, "x3");
-  auto & ix4 = jlm::tests::GraphImport::Create(rvsdg, memoryStateType, "x4");
+  auto & ix0 = jlm::rvsdg::GraphImport::Create(rvsdg, memoryStateType, "x0");
+  auto & ix1 = jlm::rvsdg::GraphImport::Create(rvsdg, memoryStateType, "x1");
+  auto & ix2 = jlm::rvsdg::GraphImport::Create(rvsdg, memoryStateType, "x2");
+  auto & ix3 = jlm::rvsdg::GraphImport::Create(rvsdg, memoryStateType, "x3");
+  auto & ix4 = jlm::rvsdg::GraphImport::Create(rvsdg, memoryStateType, "x4");
 
   auto & mergeNode0 = MemoryStateMergeOperation::CreateNode({ &ix0, &ix1 });
   auto & mergeNode1 = MemoryStateMergeOperation::CreateNode({ &ix2, &ix3 });
   auto & mergeNode2 =
       MemoryStateMergeOperation::CreateNode({ mergeNode0.output(0), mergeNode1.output(0), &ix4 });
 
-  auto & ex = jlm::tests::GraphExport::Create(*mergeNode2.output(0), "x");
+  auto & ex = jlm::rvsdg::GraphExport::Create(*mergeNode2.output(0), "x");
 
   view(&rvsdg.GetRootRegion(), stdout);
 
@@ -315,9 +315,9 @@ MemoryStateMergeNormalizeNestedSplits()
   const auto memoryStateType = MemoryStateType::Create();
 
   Graph rvsdg;
-  auto & ix0 = jlm::tests::GraphImport::Create(rvsdg, memoryStateType, "x0");
-  auto & ix1 = jlm::tests::GraphImport::Create(rvsdg, memoryStateType, "x1");
-  auto & ix2 = jlm::tests::GraphImport::Create(rvsdg, memoryStateType, "x2");
+  auto & ix0 = jlm::rvsdg::GraphImport::Create(rvsdg, memoryStateType, "x0");
+  auto & ix1 = jlm::rvsdg::GraphImport::Create(rvsdg, memoryStateType, "x1");
+  auto & ix2 = jlm::rvsdg::GraphImport::Create(rvsdg, memoryStateType, "x2");
 
   auto & splitNode0 = MemoryStateSplitOperation::CreateNode(ix0, 2);
   auto & splitNode1 = MemoryStateSplitOperation::CreateNode(ix1, 2);
@@ -327,7 +327,7 @@ MemoryStateMergeNormalizeNestedSplits()
                                                              splitNode1.output(1),
                                                              &ix2 });
 
-  auto & ex = jlm::tests::GraphExport::Create(*mergeNode.output(0), "x");
+  auto & ex = jlm::rvsdg::GraphExport::Create(*mergeNode.output(0), "x");
 
   view(&rvsdg.GetRootRegion(), stdout);
 
@@ -407,9 +407,9 @@ LambdaExitMemoryStateMergeNormalizeLoad()
   const auto valueType = jlm::tests::ValueType::Create();
 
   Graph graph;
-  auto & memState1 = jlm::tests::GraphImport::Create(graph, memoryStateType, "memState1");
-  auto & memState2 = jlm::tests::GraphImport::Create(graph, memoryStateType, "memState1");
-  auto & size = jlm::tests::GraphImport::Create(graph, bit32Type, "size");
+  auto & memState1 = jlm::rvsdg::GraphImport::Create(graph, memoryStateType, "memState1");
+  auto & memState2 = jlm::rvsdg::GraphImport::Create(graph, memoryStateType, "memState1");
+  auto & size = jlm::rvsdg::GraphImport::Create(graph, bit32Type, "size");
 
   auto allocaResults = AllocaOperation::create(valueType, &size, 4);
   auto & loadNode =
@@ -423,9 +423,9 @@ LambdaExitMemoryStateMergeNormalizeLoad()
       graph.GetRootRegion(),
       { &memState2, &memState1 });
 
-  auto & x = jlm::tests::GraphExport::Create(*lambdaExitMergeNode1.output(0), "x");
-  auto & y = jlm::tests::GraphExport::Create(*lambdaExitMergeNode2.output(0), "y");
-  jlm::tests::GraphExport::Create(*loadNode.output(0), "z");
+  auto & x = jlm::rvsdg::GraphExport::Create(*lambdaExitMergeNode1.output(0), "x");
+  auto & y = jlm::rvsdg::GraphExport::Create(*lambdaExitMergeNode2.output(0), "y");
+  jlm::rvsdg::GraphExport::Create(*loadNode.output(0), "z");
 
   view(&graph.GetRootRegion(), stdout);
 
@@ -469,9 +469,9 @@ LambdaExitMemoryStateMergeNormalizeStore()
   const auto valueType = jlm::tests::ValueType::Create();
 
   Graph graph;
-  auto & memState1 = jlm::tests::GraphImport::Create(graph, memoryStateType, "memState1");
-  auto & memState2 = jlm::tests::GraphImport::Create(graph, memoryStateType, "memState1");
-  auto & size = jlm::tests::GraphImport::Create(graph, bit32Type, "size");
+  auto & memState1 = jlm::rvsdg::GraphImport::Create(graph, memoryStateType, "memState1");
+  auto & memState2 = jlm::rvsdg::GraphImport::Create(graph, memoryStateType, "memState1");
+  auto & size = jlm::rvsdg::GraphImport::Create(graph, bit32Type, "size");
 
   auto allocaResults = AllocaOperation::create(valueType, &size, 4);
   auto & storeNode =
@@ -485,8 +485,8 @@ LambdaExitMemoryStateMergeNormalizeStore()
       graph.GetRootRegion(),
       { &memState2, &memState1 });
 
-  auto & x = jlm::tests::GraphExport::Create(*lambdaExitMergeNode1.output(0), "x");
-  auto & y = jlm::tests::GraphExport::Create(*lambdaExitMergeNode2.output(0), "y");
+  auto & x = jlm::rvsdg::GraphExport::Create(*lambdaExitMergeNode1.output(0), "x");
+  auto & y = jlm::rvsdg::GraphExport::Create(*lambdaExitMergeNode2.output(0), "y");
 
   view(&graph.GetRootRegion(), stdout);
 
@@ -530,9 +530,9 @@ LambdaExitMemoryStateMergeNormalizeAlloca()
   const auto valueType = jlm::tests::ValueType::Create();
 
   Graph graph;
-  auto & memState1 = jlm::tests::GraphImport::Create(graph, memoryStateType, "memState1");
-  auto & memState2 = jlm::tests::GraphImport::Create(graph, memoryStateType, "memState1");
-  auto & size = jlm::tests::GraphImport::Create(graph, bit32Type, "size");
+  auto & memState1 = jlm::rvsdg::GraphImport::Create(graph, memoryStateType, "memState1");
+  auto & memState2 = jlm::rvsdg::GraphImport::Create(graph, memoryStateType, "memState1");
+  auto & size = jlm::rvsdg::GraphImport::Create(graph, bit32Type, "size");
 
   auto allocaResults = AllocaOperation::create(valueType, &size, 4);
 
@@ -544,8 +544,8 @@ LambdaExitMemoryStateMergeNormalizeAlloca()
       graph.GetRootRegion(),
       { &memState2, &memState1 });
 
-  auto & x = jlm::tests::GraphExport::Create(*lambdaExitMergeNode1.output(0), "x");
-  auto & y = jlm::tests::GraphExport::Create(*lambdaExitMergeNode2.output(0), "y");
+  auto & x = jlm::rvsdg::GraphExport::Create(*lambdaExitMergeNode1.output(0), "x");
+  auto & y = jlm::rvsdg::GraphExport::Create(*lambdaExitMergeNode2.output(0), "y");
 
   view(&graph.GetRootRegion(), stdout);
 
@@ -619,3 +619,51 @@ CallExitMemStateOperatorEquality()
 JLM_UNIT_TEST_REGISTER(
     "jlm/llvm/ir/operators/MemoryStateOperationTests-CallExitMemStateOperatorEquality",
     CallExitMemStateOperatorEquality)
+
+static void
+CallExitMemoryStateSplit_NormalizeLambdaExitMerge()
+{
+  using namespace jlm::llvm;
+  using namespace jlm::rvsdg;
+
+  // Arrange
+  const auto memoryStateType = MemoryStateType::Create();
+
+  Graph rvsdg;
+  auto & i0 = jlm::rvsdg::GraphImport::Create(rvsdg, memoryStateType, "i0");
+  auto & i1 = jlm::rvsdg::GraphImport::Create(rvsdg, memoryStateType, "i1");
+  auto & i2 = jlm::rvsdg::GraphImport::Create(rvsdg, memoryStateType, "i2");
+
+  auto & callEntryMergeNode =
+      LambdaExitMemoryStateMergeOperation::CreateNode(rvsdg.GetRootRegion(), { &i0, &i1, &i2 });
+
+  auto & lambdaEntrySplitNode =
+      CallExitMemoryStateSplitOperation::CreateNode(*callEntryMergeNode.output(0), 3);
+
+  auto & x0 = jlm::rvsdg::GraphExport::Create(*lambdaEntrySplitNode.output(0), "x0");
+  auto & x1 = jlm::rvsdg::GraphExport::Create(*lambdaEntrySplitNode.output(1), "x1");
+  auto & x2 = jlm::rvsdg::GraphExport::Create(*lambdaEntrySplitNode.output(2), "x2");
+
+  view(&rvsdg.GetRootRegion(), stdout);
+
+  // Act
+  const auto success = jlm::rvsdg::ReduceNode<CallExitMemoryStateSplitOperation>(
+      CallExitMemoryStateSplitOperation::NormalizeLambdaExitMemoryStateMerge,
+      lambdaEntrySplitNode);
+  rvsdg.PruneNodes();
+
+  view(&rvsdg.GetRootRegion(), stdout);
+
+  // Assert
+  assert(success);
+  assert(rvsdg.GetRootRegion().nnodes() == 0);
+
+  assert(x0.origin() == &i0);
+  assert(x1.origin() == &i1);
+  assert(x2.origin() == &i2);
+}
+
+JLM_UNIT_TEST_REGISTER(
+    "jlm/llvm/opt/alias-analyses/"
+    "MemoryStateOperationTests-CallExitMemoryStateSplit_NormalizeLambdaExitMerge",
+    CallExitMemoryStateSplit_NormalizeLambdaExitMerge)

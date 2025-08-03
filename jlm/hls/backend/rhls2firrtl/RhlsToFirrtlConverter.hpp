@@ -103,7 +103,7 @@ private:
   std::unordered_map<std::string, circt::firrtl::FModuleLike> modules;
   // FIRRTL generating functions
   circt::firrtl::FModuleOp
-  MlirGen(hls::loop_node * loopNode, mlir::Block * circuitBody);
+  MlirGen(LoopNode * loopNode, mlir::Block * circuitBody);
   circt::firrtl::FModuleLike
   MlirGen(rvsdg::Region * subRegion, mlir::Block * circuitBody);
   circt::firrtl::FModuleLike
@@ -263,7 +263,7 @@ private:
   jlm::rvsdg::Output *
   TraceArgument(rvsdg::RegionArgument * arg);
 
-  rvsdg::SimpleOutput *
+  rvsdg::Output *
   TraceStructuralOutput(rvsdg::StructuralOutput * out);
 
   void
@@ -287,7 +287,7 @@ private:
   std::string
   GetModuleName(const rvsdg::Node * node);
   bool
-  IsIdentityMapping(const jlm::rvsdg::match_op & op);
+  IsIdentityMapping(const rvsdg::MatchOperation & op);
   void
   check_module(circt::firrtl::FModuleOp & module);
 

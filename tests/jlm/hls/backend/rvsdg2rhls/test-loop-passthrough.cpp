@@ -45,12 +45,12 @@ test()
       rm.Rvsdg().GetRootRegion(),
       jlm::llvm::LlvmLambdaOperation::Create(ft, "f", jlm::llvm::linkage::external_linkage));
 
-  auto loop = hls::loop_node::create(lambda->subregion());
+  auto loop = hls::LoopNode::create(lambda->subregion());
 
   auto loop_out = loop->AddLoopVar(lambda->GetFunctionArguments()[1]);
 
   auto f = lambda->finalize({ loop_out });
-  jlm::llvm::GraphExport::Create(*f, "");
+  rvsdg::GraphExport::Create(*f, "");
 
   rvsdg::view(rm.Rvsdg(), stdout);
   hls::DotHLS dhls;

@@ -51,7 +51,7 @@ TestSingleLoad()
   memoryStateArgument.post->divert_to(loadOutput[1]);
 
   auto lambdaOutput = lambda->finalize({ theta->output(0), theta->output(1) });
-  GraphExport::Create(*lambdaOutput, "f");
+  jlm::rvsdg::GraphExport::Create(*lambdaOutput, "f");
 
   auto lambdaRegion = lambda->subregion();
   jlm::rvsdg::view(rvsdgModule->Rvsdg(), stdout);
@@ -74,7 +74,7 @@ TestSingleLoad()
   ConvertThetaNodes(*rvsdgModule);
   // Simple assert as ConvertThetaNodes() is tested in separate unit tests
   jlm::rvsdg::view(rvsdgModule->Rvsdg(), stdout);
-  assert(jlm::rvsdg::Region::ContainsNodeType<loop_node>(*lambdaRegion, true));
+  assert(jlm::rvsdg::Region::ContainsNodeType<LoopNode>(*lambdaRegion, true));
 
   // Act
   mem_queue(*rvsdgModule);
@@ -131,7 +131,7 @@ TestLoadStore()
   memoryStateArgument.post->divert_to(storeOutput[0]);
 
   auto lambdaOutput = lambda->finalize({ theta->output(0), theta->output(2) });
-  GraphExport::Create(*lambdaOutput, "f");
+  jlm::rvsdg::GraphExport::Create(*lambdaOutput, "f");
 
   auto lambdaRegion = lambda->subregion();
   jlm::rvsdg::view(rvsdgModule->Rvsdg(), stdout);
@@ -154,7 +154,7 @@ TestLoadStore()
   ConvertThetaNodes(*rvsdgModule);
   // Simple assert as ConvertThetaNodes() is tested in separate unit tests
   jlm::rvsdg::view(rvsdgModule->Rvsdg(), stdout);
-  assert(jlm::rvsdg::Region::ContainsNodeType<loop_node>(*lambdaRegion, true));
+  assert(jlm::rvsdg::Region::ContainsNodeType<LoopNode>(*lambdaRegion, true));
 
   // Act
   mem_queue(*rvsdgModule);
@@ -205,7 +205,7 @@ TestAddrQueue()
   memoryStateArgument.post->divert_to(storeOutput[0]);
 
   auto lambdaOutput = lambda->finalize({ theta->output(0), theta->output(1) });
-  GraphExport::Create(*lambdaOutput, "f");
+  jlm::rvsdg::GraphExport::Create(*lambdaOutput, "f");
 
   auto lambdaRegion = lambda->subregion();
   jlm::rvsdg::view(rvsdgModule->Rvsdg(), stdout);
@@ -228,7 +228,7 @@ TestAddrQueue()
   ConvertThetaNodes(*rvsdgModule);
   // Simple assert as ConvertThetaNodes() is tested in separate unit tests
   jlm::rvsdg::view(rvsdgModule->Rvsdg(), stdout);
-  assert(jlm::rvsdg::Region::ContainsNodeType<loop_node>(*lambdaRegion, true));
+  assert(jlm::rvsdg::Region::ContainsNodeType<LoopNode>(*lambdaRegion, true));
 
   // Act
   mem_queue(*rvsdgModule);
@@ -240,7 +240,7 @@ TestAddrQueue()
 
   for (auto & node : jlm::rvsdg::TopDownTraverser(lambdaRegion))
   {
-    if (auto loopNode = dynamic_cast<jlm::hls::loop_node *>(node))
+    if (auto loopNode = dynamic_cast<jlm::hls::LoopNode *>(node))
     {
       for (auto & node : jlm::rvsdg::TopDownTraverser(loopNode->subregion()))
       {

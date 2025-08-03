@@ -120,10 +120,10 @@ IfConversion::HandleGammaNode(const rvsdg::GammaNode & gammaNode)
     }
 
     const auto matchNode = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*gammaPredicate);
-    if (is<rvsdg::match_op>(matchNode))
+    if (is<rvsdg::MatchOperation>(matchNode))
     {
       const auto matchOperation =
-          util::AssertedCast<const rvsdg::match_op>(&matchNode->GetOperation());
+          util::AssertedCast<const rvsdg::MatchOperation>(&matchNode->GetOperation());
       JLM_ASSERT(matchOperation->nalternatives() == 2);
       JLM_ASSERT(std::distance(matchOperation->begin(), matchOperation->end()) == 1);
 

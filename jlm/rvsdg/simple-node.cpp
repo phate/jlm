@@ -11,15 +11,6 @@
 namespace jlm::rvsdg
 {
 
-SimpleOutput::SimpleOutput(SimpleNode * node, std::shared_ptr<const rvsdg::Type> type)
-    : node_output(node, std::move(type))
-{}
-
-SimpleOutput::~SimpleOutput() noexcept
-{
-  on_output_destroy(this);
-}
-
 SimpleNode::~SimpleNode()
 {
   on_node_destroy(this);
@@ -33,7 +24,7 @@ SimpleNode::SimpleNode(
       Operation_(std::move(operation))
 {
   if (GetOperation().narguments() != operands.size())
-    throw jlm::util::error(jlm::util::strfmt(
+    throw util::Error(jlm::util::strfmt(
         "Argument error - expected ",
         SimpleNode::GetOperation().narguments(),
         ", received ",
@@ -47,7 +38,7 @@ SimpleNode::SimpleNode(
   }
 
   for (size_t n = 0; n < SimpleNode::GetOperation().nresults(); n++)
-    add_output(std::make_unique<SimpleOutput>(this, SimpleNode::GetOperation().result(n)));
+    add_output(std::make_unique<node_output>(this, SimpleNode::GetOperation().result(n)));
 
   on_node_create(this);
 }
@@ -78,7 +69,7 @@ SimpleNode::copy(rvsdg::Region * region, SubstitutionMap & smap) const
     if (operand == nullptr)
     {
       if (region != this->region())
-        throw jlm::util::error("Node operand not in substitution map.");
+        throw util::Error("Node operand not in substitution map.");
 
       operand = origin;
     }

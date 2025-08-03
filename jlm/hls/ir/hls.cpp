@@ -109,7 +109,7 @@ ExitResult::~ExitResult() noexcept = default;
 ExitResult::ExitResult(rvsdg::Output & origin, rvsdg::StructuralOutput & output)
     : rvsdg::RegionResult(origin.region(), &origin, &output, origin.Type())
 {
-  JLM_ASSERT(dynamic_cast<const loop_node *>(origin.region()->node()));
+  JLM_ASSERT(dynamic_cast<const LoopNode *>(origin.region()->node()));
 }
 
 ExitResult &
@@ -119,7 +119,7 @@ ExitResult::Copy(rvsdg::Output & origin, rvsdg::StructuralOutput * output)
 }
 
 rvsdg::StructuralOutput *
-loop_node::AddLoopVar(jlm::rvsdg::Output * origin, jlm::rvsdg::Output ** buffer)
+LoopNode::AddLoopVar(jlm::rvsdg::Output * origin, jlm::rvsdg::Output ** buffer)
 {
   auto input = rvsdg::StructuralInput::create(this, origin, origin->Type());
   auto output = rvsdg::StructuralOutput::create(this, origin->Type());
@@ -128,7 +128,7 @@ loop_node::AddLoopVar(jlm::rvsdg::Output * origin, jlm::rvsdg::Output ** buffer)
   auto argument_loop = add_backedge(origin->Type());
 
   auto mux =
-      MuxOperation::create(*predicate_buffer(), { &argument_in, argument_loop }, false, true)[0];
+      MuxOperation::create(GetPredicateBuffer(), { &argument_in, argument_loop }, false, true)[0];
   auto branch = BranchOperation::create(*predicate()->origin(), *mux, true);
   if (buffer != nullptr)
   {
@@ -142,24 +142,24 @@ loop_node::AddLoopVar(jlm::rvsdg::Output * origin, jlm::rvsdg::Output ** buffer)
 }
 
 [[nodiscard]] const rvsdg::Operation &
-loop_node::GetOperation() const noexcept
+LoopNode::GetOperation() const noexcept
 {
   static const LoopOperation singleton;
   return singleton;
 }
 
 jlm::rvsdg::Output *
-loop_node::add_loopconst(jlm::rvsdg::Output * origin)
+LoopNode::add_loopconst(jlm::rvsdg::Output * origin)
 {
   auto input = rvsdg::StructuralInput::create(this, origin, origin->Type());
 
   auto & argument_in = EntryArgument::Create(*subregion(), *input, origin->Type());
-  auto buffer = LoopConstantBufferOperation::create(*predicate_buffer(), argument_in)[0];
+  auto buffer = LoopConstantBufferOperation::create(GetPredicateBuffer(), argument_in)[0];
   return buffer;
 }
 
-loop_node *
-loop_node::copy(rvsdg::Region * region, rvsdg::SubstitutionMap & smap) const
+LoopNode *
+LoopNode::copy(rvsdg::Region * region, rvsdg::SubstitutionMap & smap) const
 {
   auto loop = create(region, false);
 
@@ -189,7 +189,7 @@ loop_node::copy(rvsdg::Region * region, rvsdg::SubstitutionMap & smap) const
   }
 
   subregion()->copy(loop->subregion(), smap, false, false);
-  loop->_predicate_buffer = dynamic_cast<jlm::rvsdg::node_output *>(smap.lookup(_predicate_buffer));
+  loop->PredicateBuffer_ = smap.lookup(PredicateBuffer_);
   // redirect backedges
   for (size_t i = 0; i < subregion()->narguments(); ++i)
   {
@@ -212,7 +212,7 @@ loop_node::copy(rvsdg::Region * region, rvsdg::SubstitutionMap & smap) const
 }
 
 backedge_argument *
-loop_node::add_backedge(std::shared_ptr<const jlm::rvsdg::Type> type)
+LoopNode::add_backedge(std::shared_ptr<const jlm::rvsdg::Type> type)
 {
   auto argument_loop = backedge_argument::create(subregion(), std::move(type));
   auto result_loop = backedge_result::create(argument_loop);
@@ -221,10 +221,10 @@ loop_node::add_backedge(std::shared_ptr<const jlm::rvsdg::Type> type)
   return argument_loop;
 }
 
-loop_node *
-loop_node::create(rvsdg::Region * parent, bool init)
+LoopNode *
+LoopNode::create(rvsdg::Region * parent, bool init)
 {
-  auto ln = new loop_node(parent);
+  auto ln = new LoopNode(parent);
   if (init)
   {
     auto predicate = jlm::rvsdg::control_false(ln->subregion());
@@ -233,14 +233,13 @@ loop_node::create(rvsdg::Region * parent, bool init)
     // we need a buffer without pass-through behavior to avoid a combinatorial cycle of ready
     // signals
     auto pre_buffer = BufferOperation::create(*pred_arg, 2)[0];
-    ln->_predicate_buffer =
-        dynamic_cast<jlm::rvsdg::node_output *>(PredicateBufferOperation::create(*pre_buffer)[0]);
+    ln->PredicateBuffer_ = PredicateBufferOperation::create(*pre_buffer)[0];
   }
   return ln;
 }
 
 void
-loop_node::set_predicate(jlm::rvsdg::Output * p)
+LoopNode::set_predicate(jlm::rvsdg::Output * p)
 {
   auto node = rvsdg::TryGetOwnerNode<Node>(*predicate()->origin());
   predicate()->origin()->divert_users(p);

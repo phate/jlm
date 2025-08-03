@@ -43,7 +43,7 @@ GammaWithoutMatch()
       gammaNode->AddExitVar({ gammaInput1.branchArgument[0], gammaInput2.branchArgument[1] });
 
   auto lambdaOutput = lambdaNode->finalize({ gammaOutput.output });
-  jlm::llvm::GraphExport::Create(*lambdaOutput, "");
+  jlm::rvsdg::GraphExport::Create(*lambdaOutput, "");
 
   jlm::rvsdg::view(rvsdgModule.Rvsdg(), stdout);
 
@@ -104,7 +104,7 @@ EmptyGammaWithTwoSubregionsAndMatch()
   auto [_, gammaOutput] = gammaNode->AddExitVar({ branchArgumentTrue[0], branchArgumentFalse[1] });
 
   const auto lambdaOutput = lambdaNode->finalize({ gammaOutput });
-  jlm::llvm::GraphExport::Create(*lambdaOutput, "");
+  jlm::rvsdg::GraphExport::Create(*lambdaOutput, "");
 
   view(rvsdgModule.Rvsdg(), stdout);
 
@@ -190,7 +190,7 @@ EmptyGammaWithTwoSubregions()
   auto [_, gammaOutput] = gammaNode1->AddExitVar({ branchArgumentFalse[0], branchArgumentTrue[1] });
 
   const auto lambdaOutput = lambdaNode->finalize({ gammaOutput });
-  jlm::llvm::GraphExport::Create(*lambdaOutput, "");
+  jlm::rvsdg::GraphExport::Create(*lambdaOutput, "");
 
   view(rvsdgModule.Rvsdg(), stdout);
 
@@ -244,7 +244,7 @@ EmptyGammaWithThreeSubregions()
                                              gammaInput2.branchArgument[2] });
 
   auto lambdaOutput = lambdaNode->finalize({ gammaOutput.output });
-  jlm::llvm::GraphExport::Create(*lambdaOutput, "");
+  jlm::rvsdg::GraphExport::Create(*lambdaOutput, "");
 
   view(rvsdgModule.Rvsdg(), stdout);
 
@@ -295,7 +295,7 @@ PartialEmptyGamma()
 
   auto lambdaOutput = lambdaNode->finalize({ gammaOutput.output });
 
-  jlm::llvm::GraphExport::Create(*lambdaOutput, "");
+  jlm::rvsdg::GraphExport::Create(*lambdaOutput, "");
 
   view(rvsdgModule.Rvsdg(), stdout);
 

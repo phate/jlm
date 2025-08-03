@@ -60,7 +60,7 @@ TraceEdgeToMerge(rvsdg::Input * state_edge)
     {
       JLM_UNREACHABLE("this should be handled by branch");
     }
-    else if (rvsdg::TryGetOwnerNode<loop_node>(*state_edge))
+    else if (rvsdg::TryGetOwnerNode<LoopNode>(*state_edge))
     {
       JLM_UNREACHABLE("there should be no new loops");
     }
@@ -569,7 +569,7 @@ MemoryConverter(llvm::RvsdgModule & rm)
   originalResults.insert(originalResults.end(), newResults.begin(), newResults.end());
   auto newOut = newLambda->finalize(originalResults);
   auto oldExport = llvm::ComputeCallSummary(*lambda).GetRvsdgExport();
-  llvm::GraphExport::Create(*newOut, oldExport ? oldExport->Name() : "");
+  rvsdg::GraphExport::Create(*newOut, oldExport ? oldExport->Name() : "");
 
   JLM_ASSERT(lambda->output()->nusers() == 1);
   lambda->region()->RemoveResult((*lambda->output()->Users().begin()).index());
@@ -616,20 +616,22 @@ ConnectRequestResponseMemPorts(
   std::vector<std::shared_ptr<const rvsdg::Type>> responseTypes;
   for (auto loadNode : originalLoadNodes)
   {
-    JLM_ASSERT(smap.contains(*loadNode->output(0)));
-    auto loadOutput = dynamic_cast<rvsdg::SimpleOutput *>(smap.lookup(loadNode->output(0)));
-    loadNodes.push_back(loadOutput->node());
-    auto loadOp = util::AssertedCast<const llvm::LoadNonVolatileOperation>(
-        &loadOutput->node()->GetOperation());
+    auto oldLoadedValue = loadNode->output(0);
+    JLM_ASSERT(smap.contains(*oldLoadedValue));
+    auto & newLoadNode = rvsdg::AssertGetOwnerNode<rvsdg::SimpleNode>(*smap.lookup(oldLoadedValue));
+    loadNodes.push_back(&newLoadNode);
+    auto loadOp =
+        util::AssertedCast<const llvm::LoadNonVolatileOperation>(&newLoadNode.GetOperation());
     responseTypes.push_back(loadOp->GetLoadedType());
   }
   std::vector<rvsdg::SimpleNode *> decoupledNodes;
   for (auto decoupleRequest : originalDecoupledNodes)
   {
-    JLM_ASSERT(smap.contains(*decoupleRequest->output(0)));
-    auto decoupledOutput =
-        dynamic_cast<rvsdg::SimpleOutput *>(smap.lookup(decoupleRequest->output(0)));
-    decoupledNodes.push_back(decoupledOutput->node());
+    auto oldOutput = decoupleRequest->output(0);
+    JLM_ASSERT(smap.contains(*oldOutput));
+    auto & decoupledRequestNode =
+        rvsdg::AssertGetOwnerNode<rvsdg::SimpleNode>(*smap.lookup(oldOutput));
+    decoupledNodes.push_back(&decoupledRequestNode);
     // get load type from response output
     auto channel = decoupleRequest->input(1)->origin();
     auto channelConstant = trace_constant(channel);
@@ -640,9 +642,10 @@ ConnectRequestResponseMemPorts(
   std::vector<rvsdg::SimpleNode *> storeNodes;
   for (auto storeNode : originalStoreNodes)
   {
-    JLM_ASSERT(smap.contains(*storeNode->output(0)));
-    auto storeOutput = dynamic_cast<rvsdg::SimpleOutput *>(smap.lookup(storeNode->output(0)));
-    storeNodes.push_back(storeOutput->node());
+    auto oldOutput = storeNode->output(0);
+    JLM_ASSERT(smap.contains(*oldOutput));
+    auto & newStoreNode = rvsdg::AssertGetOwnerNode<rvsdg::SimpleNode>(*smap.lookup(oldOutput));
+    storeNodes.push_back(&newStoreNode);
     // use memory state type as response for stores
     auto vt = std::make_shared<llvm::MemoryStateType>();
     responseTypes.push_back(vt);
@@ -725,7 +728,7 @@ ReplaceLoad(
   // We need the load in the new lambda such that we can replace it with a load node with explicit
   // memory ports
   auto replacedLoad =
-      static_cast<rvsdg::SimpleOutput *>(smap.lookup(originalLoad->output(0)))->node();
+      &rvsdg::AssertGetOwnerNode<rvsdg::SimpleNode>(*smap.lookup(originalLoad->output(0)));
 
   auto loadAddress = replacedLoad->input(0)->origin();
   std::vector<rvsdg::Output *> states;
@@ -767,7 +770,7 @@ ReplaceStore(
   // We need the store in the new lambda such that we can replace it with a store node with explicit
   // memory ports
   auto replacedStore =
-      static_cast<rvsdg::SimpleOutput *>(smap.lookup(originalStore->output(0)))->node();
+      &rvsdg::AssertGetOwnerNode<rvsdg::SimpleNode>(*smap.lookup(originalStore->output(0)));
 
   auto addr = replacedStore->input(0)->origin();
   JLM_ASSERT(rvsdg::is<llvm::PointerType>(addr->Type()));

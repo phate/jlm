@@ -51,7 +51,7 @@ TestTraceArgument()
       StoreNonVolatileOperation::Create(storeAddress, storeData, { loadOutput[1] }, 32);
 
   auto lambdaOutput = lambda->finalize({ storeOutput[0] });
-  jlm::llvm::GraphExport::Create(*lambdaOutput, "f");
+  jlm::rvsdg::GraphExport::Create(*lambdaOutput, "f");
 
   // Act
   jlm::rvsdg::view(rvsdgModule->Rvsdg(), stdout);
@@ -100,7 +100,7 @@ TestLoad()
       32);
 
   auto lambdaOutput = lambda->finalize({ loadOutput[0], loadOutput[1] });
-  jlm::llvm::GraphExport::Create(*lambdaOutput, "f");
+  jlm::rvsdg::GraphExport::Create(*lambdaOutput, "f");
 
   // Act
   jlm::rvsdg::view(rvsdgModule->Rvsdg(), stdout);
@@ -176,7 +176,7 @@ TestStore()
       StoreNonVolatileOperation::Create(storeAddress, storeData, { memoryStateArgument }, 32);
 
   auto lambdaOutput = lambda->finalize({ storeOutput[0] });
-  jlm::llvm::GraphExport::Create(*lambdaOutput, "f");
+  jlm::rvsdg::GraphExport::Create(*lambdaOutput, "f");
 
   // Act
   jlm::rvsdg::view(rvsdgModule->Rvsdg(), stdout);
@@ -244,7 +244,7 @@ TestLoadStore()
       StoreNonVolatileOperation::Create(loadOutput[0], storeData, { loadOutput[1] }, 32);
 
   auto lambdaOutput = lambda->finalize({ storeOutput[0] });
-  jlm::llvm::GraphExport::Create(*lambdaOutput, "f");
+  jlm::rvsdg::GraphExport::Create(*lambdaOutput, "f");
 
   // Act
   jlm::rvsdg::view(rvsdgModule->Rvsdg(), stdout);
@@ -330,7 +330,7 @@ TestThetaLoad()
   memoryStateArgument.post->divert_to(loadOutput[1]);
 
   auto lambdaOutput = lambda->finalize({ theta->output(3), theta->output(4) });
-  GraphExport::Create(*lambdaOutput, "f");
+  jlm::rvsdg::GraphExport::Create(*lambdaOutput, "f");
 
   auto lambdaRegion = lambda->subregion();
   jlm::rvsdg::view(rvsdgModule->Rvsdg(), stdout);
@@ -352,7 +352,7 @@ TestThetaLoad()
   ConvertThetaNodes(*rvsdgModule);
   // Simple assert as ConvertThetaNodes() is tested in separate unit tests
   jlm::rvsdg::view(rvsdgModule->Rvsdg(), stdout);
-  assert(jlm::rvsdg::Region::ContainsNodeType<loop_node>(*lambdaRegion, true));
+  assert(jlm::rvsdg::Region::ContainsNodeType<LoopNode>(*lambdaRegion, true));
 
   // Act
   mem_queue(*rvsdgModule);
@@ -386,7 +386,7 @@ TestThetaLoad()
   auto loopOutput =
       jlm::util::AssertedCast<const jlm::rvsdg::StructuralOutput>(requestNode->input(0)->origin());
   auto loopNode = jlm::util::AssertedCast<const jlm::rvsdg::StructuralNode>(loopOutput->node());
-  assert(dynamic_cast<const loop_node *>(loopNode));
+  assert(dynamic_cast<const LoopNode *>(loopNode));
   // Loop Result
   auto & thetaResult = loopOutput->results;
   assert(thetaResult.size() == 1);
@@ -456,7 +456,7 @@ TestThetaStore()
   memoryStateArgument.post->divert_to(storeOutput[0]);
 
   auto lambdaOutput = lambda->finalize({ theta->output(5) });
-  GraphExport::Create(*lambdaOutput, "f");
+  jlm::rvsdg::GraphExport::Create(*lambdaOutput, "f");
 
   auto lambdaRegion = lambda->subregion();
   jlm::rvsdg::view(rvsdgModule->Rvsdg(), stdout);
@@ -478,7 +478,7 @@ TestThetaStore()
   ConvertThetaNodes(*rvsdgModule);
   // Simple assert as ConvertThetaNodes() is tested in separate unit tests
   jlm::rvsdg::view(rvsdgModule->Rvsdg(), stdout);
-  assert(jlm::rvsdg::Region::ContainsNodeType<loop_node>(*lambdaRegion, true));
+  assert(jlm::rvsdg::Region::ContainsNodeType<LoopNode>(*lambdaRegion, true));
 
   // Act
   mem_queue(*rvsdgModule);
@@ -510,7 +510,7 @@ TestThetaStore()
   auto loopOutput =
       jlm::util::AssertedCast<const jlm::rvsdg::StructuralOutput>(requestNode->input(0)->origin());
   auto loopNode = jlm::util::AssertedCast<const jlm::rvsdg::StructuralNode>(loopOutput->node());
-  assert(dynamic_cast<const loop_node *>(loopNode));
+  assert(dynamic_cast<const LoopNode *>(loopNode));
   // Loop Result
   auto & thetaResult = loopOutput->results;
   assert(thetaResult.size() == 1);

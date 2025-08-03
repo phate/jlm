@@ -33,7 +33,7 @@ ComputeCallSummary(const rvsdg::LambdaNode & lambdaNode)
   AddToWorklist(worklist, lambdaNode.output()->Users());
 
   std::vector<rvsdg::SimpleNode *> directCalls;
-  GraphExport * rvsdgExport = nullptr;
+  rvsdg::GraphExport * rvsdgExport = nullptr;
   std::vector<rvsdg::Input *> otherUsers;
 
   while (!worklist.empty())
@@ -125,7 +125,7 @@ ComputeCallSummary(const rvsdg::LambdaNode & lambdaNode)
       continue;
     }
 
-    if (auto graphExport = dynamic_cast<GraphExport *>(input))
+    if (auto graphExport = dynamic_cast<rvsdg::GraphExport *>(input))
     {
       rvsdgExport = graphExport;
       continue;

@@ -7,6 +7,7 @@
 #include "test-registry.hpp"
 #include "test-types.hpp"
 
+#include <jlm/rvsdg/substitution.hpp>
 #include <jlm/rvsdg/view.hpp>
 
 static void
@@ -19,8 +20,8 @@ test_node_copy()
   auto vtype = jlm::tests::ValueType::Create();
 
   Graph graph;
-  auto s = &jlm::tests::GraphImport::Create(graph, stype, "");
-  auto v = &jlm::tests::GraphImport::Create(graph, vtype, "");
+  auto s = &jlm::rvsdg::GraphImport::Create(graph, stype, "");
+  auto v = &jlm::rvsdg::GraphImport::Create(graph, vtype, "");
 
   auto n1 = TestStructuralNode::create(&graph.GetRootRegion(), 3);
   auto i1 = StructuralInput::create(n1, s, stype);
@@ -34,8 +35,8 @@ test_node_copy()
   auto n2 = TestOperation::create(n1->subregion(0), { &a1 }, { stype });
   auto n3 = TestOperation::create(n1->subregion(0), { &a2 }, { vtype });
 
-  TestGraphResult::Create(*n2->output(0), o1);
-  TestGraphResult::Create(*n3->output(0), o2);
+  RegionResult::Create(*n1->subregion(0), *n2->output(0), o1, stype);
+  RegionResult::Create(*n1->subregion(0), *n3->output(0), o2, vtype);
 
   jlm::rvsdg::view(&graph.GetRootRegion(), stdout);
 
@@ -97,14 +98,14 @@ test_node_depth()
   auto vt = jlm::tests::ValueType::Create();
 
   jlm::rvsdg::Graph graph;
-  auto x = &jlm::tests::GraphImport::Create(graph, vt, "x");
+  auto x = &jlm::rvsdg::GraphImport::Create(graph, vt, "x");
 
   auto null = jlm::tests::TestOperation::create(&graph.GetRootRegion(), {}, { vt });
   auto bin =
       jlm::tests::TestOperation::create(&graph.GetRootRegion(), { null->output(0), x }, { vt });
   auto un = jlm::tests::TestOperation::create(&graph.GetRootRegion(), { bin->output(0) }, { vt });
 
-  jlm::tests::GraphExport::Create(*un->output(0), "x");
+  jlm::rvsdg::GraphExport::Create(*un->output(0), "x");
 
   jlm::rvsdg::view(&graph.GetRootRegion(), stdout);
 
@@ -197,7 +198,7 @@ TestRemoveInputsWhere()
   // Arrange
   jlm::rvsdg::Graph rvsdg;
   auto valueType = jlm::tests::ValueType::Create();
-  auto x = &jlm::tests::GraphImport::Create(rvsdg, valueType, "x");
+  auto x = &jlm::rvsdg::GraphImport::Create(rvsdg, valueType, "x");
 
   auto & node = CreateOpNode<jlm::tests::TestOperation>(
       { x, x, x },
@@ -234,3 +235,77 @@ test_nodes()
 }
 
 JLM_UNIT_TEST_REGISTER("jlm/rvsdg/test-nodes", test_nodes)
+
+static void
+NodeInputIteration()
+{
+  using namespace jlm::rvsdg;
+
+  // Arrange
+  const auto valueType = jlm::tests::ValueType::Create();
+
+  Graph rvsdg;
+  auto i = &jlm::rvsdg::GraphImport::Create(rvsdg, valueType, "i");
+
+  auto & node = CreateOpNode<jlm::tests::TestOperation>(
+      { i, i, i, i, i },
+      std::vector<std::shared_ptr<const Type>>(5, valueType),
+      std::vector<std::shared_ptr<const Type>>{ valueType });
+
+  GraphExport::Create(*node.output(0), "x0");
+
+  // Act & Assert
+  size_t n = 0;
+  for (auto & input : node.Inputs())
+  {
+    assert(&input == node.input(n++));
+  }
+  assert(n == node.ninputs());
+
+  n = 0;
+  const Node * constNode = &node;
+  for (auto & input : constNode->Inputs())
+  {
+    assert(&input == node.input(n++));
+  }
+  assert(n == node.ninputs());
+}
+
+JLM_UNIT_TEST_REGISTER("jlm/rvsdg/test-nodes-NodeInputIteration", NodeInputIteration)
+
+static void
+NodeOutputIteration()
+{
+  using namespace jlm::rvsdg;
+
+  // Arrange
+  const auto valueType = jlm::tests::ValueType::Create();
+
+  Graph rvsdg;
+  auto i = &jlm::rvsdg::GraphImport::Create(rvsdg, valueType, "i");
+
+  auto & node = CreateOpNode<jlm::tests::TestOperation>(
+      { i },
+      std::vector<std::shared_ptr<const Type>>{ valueType },
+      std::vector<std::shared_ptr<const Type>>(5, valueType));
+
+  GraphExport::Create(*node.output(0), "x0");
+
+  // Act & Assert
+  size_t n = 0;
+  for (auto & output : node.Outputs())
+  {
+    assert(&output == node.output(n++));
+  }
+  assert(n == node.noutputs());
+
+  n = 0;
+  const Node * constNode = &node;
+  for (auto & output : constNode->Outputs())
+  {
+    assert(&output == constNode->output(n++));
+  }
+  assert(n == constNode->noutputs());
+}
+
+JLM_UNIT_TEST_REGISTER("jlm/rvsdg/test-nodes-NodeOutputIteration", NodeOutputIteration)

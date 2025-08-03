@@ -169,7 +169,7 @@ inline_calls(rvsdg::Region * region)
             // can't inline pseudo functions used for streaming
             continue;
           }
-          throw jlm::util::error("can not inline external function " + graphImport->Name());
+          throw util::Error("can not inline external function " + graphImport->Name());
         }
       }
       JLM_ASSERT(rvsdg::is<rvsdg::LambdaOperation>(so->node()));
@@ -226,7 +226,7 @@ convert_alloca(rvsdg::Region * region)
         cout = llvm::ConstantAggregateZeroOperation::Create(*db->subregion(), po->ValueType());
       }
       auto delta = &db->finalize(cout);
-      jlm::llvm::GraphExport::Create(*delta, delta_name);
+      rvsdg::GraphExport::Create(*delta, delta_name);
       auto delta_local = route_to_region_rvsdg(delta, region);
       node->output(0)->divert_users(delta_local);
       // TODO: check that the input to alloca is a bitconst 1
@@ -374,7 +374,7 @@ split_hls_function(llvm::RvsdgModule & rm, const std::string & function_name)
         auto orig_node = orig_node_output->node();
         if (auto oln = dynamic_cast<rvsdg::LambdaNode *>(orig_node))
         {
-          throw jlm::util::error(
+          throw util::Error(
               "Inlining of function "
               + dynamic_cast<llvm::LlvmLambdaOperation &>(oln->GetOperation()).name()
               + " not supported");
@@ -397,18 +397,18 @@ split_hls_function(llvm::RvsdgModule & rm, const std::string & function_name)
           smap.insert(ln->input(i)->origin(), &graphImport);
           // add export for delta to rm
           // TODO: check if not already exported and maybe adjust linkage?
-          jlm::llvm::GraphExport::Create(odn->output(), odn->name());
+          rvsdg::GraphExport::Create(odn->output(), odn->name());
         }
         else
         {
-          throw util::error("Unsupported node type: " + orig_node->DebugString());
+          throw util::Error("Unsupported node type: " + orig_node->DebugString());
         }
       }
       // copy function into rhls
       auto new_ln = ln->copy(&rhls->Rvsdg().GetRootRegion(), smap);
       new_ln = change_linkage(new_ln, llvm::linkage::external_linkage);
       auto oldExport = jlm::llvm::ComputeCallSummary(*ln).GetRvsdgExport();
-      jlm::llvm::GraphExport::Create(*new_ln->output(), oldExport ? oldExport->Name() : "");
+      rvsdg::GraphExport::Create(*new_ln->output(), oldExport ? oldExport->Name() : "");
       // add function as input to rm and remove it
       const auto & op = dynamic_cast<llvm::LlvmLambdaOperation &>(ln->GetOperation());
       auto & graphImport = llvm::GraphImport::Create(
@@ -425,7 +425,7 @@ split_hls_function(llvm::RvsdgModule & rm, const std::string & function_name)
       return rhls;
     }
   }
-  throw jlm::util::error("HLS function " + function_name + " not found");
+  throw util::Error("HLS function " + function_name + " not found");
 }
 
 void
