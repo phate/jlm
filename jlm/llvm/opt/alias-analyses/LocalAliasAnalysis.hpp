@@ -8,6 +8,8 @@
 
 #include <jlm/llvm/opt/alias-analyses/AliasAnalysis.hpp>
 
+#include <optional>
+
 namespace jlm::llvm::aa
 {
 /**
