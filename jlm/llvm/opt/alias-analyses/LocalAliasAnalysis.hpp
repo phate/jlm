@@ -10,6 +10,7 @@
 #include <jlm/rvsdg/simple-node.hpp>
 
 #include <optional>
+#include <unordered_map>
 
 namespace jlm::llvm::aa
 {
