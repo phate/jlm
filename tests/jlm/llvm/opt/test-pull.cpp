@@ -30,8 +30,8 @@ test_pullin_top()
   RvsdgModule rm(jlm::util::FilePath(""), "", "");
   auto & graph = rm.Rvsdg();
 
-  auto c = &jlm::tests::GraphImport::Create(graph, ct, "c");
-  auto x = &jlm::tests::GraphImport::Create(graph, vt, "x");
+  auto c = &jlm::rvsdg::GraphImport::Create(graph, ct, "c");
+  auto x = &jlm::rvsdg::GraphImport::Create(graph, vt, "x");
 
   auto n1 = jlm::tests::create_testop(&graph.GetRootRegion(), { x }, { vt })[0];
   auto n2 = jlm::tests::create_testop(&graph.GetRootRegion(), { x }, { vt })[0];
@@ -45,8 +45,8 @@ test_pullin_top()
   auto ev = gamma->AddEntryVar(n5);
   gamma->AddExitVar(ev.branchArgument);
 
-  GraphExport::Create(*gamma->output(0), "x");
-  GraphExport::Create(*n2, "y");
+  jlm::rvsdg::GraphExport::Create(*gamma->output(0), "x");
+  jlm::rvsdg::GraphExport::Create(*n2, "y");
 
   //	jlm::rvsdg::view(graph, stdout);
   pullin_top(gamma);
@@ -63,8 +63,8 @@ test_pullin_bottom()
   auto ct = jlm::rvsdg::ControlType::Create(2);
 
   jlm::rvsdg::Graph graph;
-  auto c = &jlm::tests::GraphImport::Create(graph, ct, "c");
-  auto x = &jlm::tests::GraphImport::Create(graph, vt, "x");
+  auto c = &jlm::rvsdg::GraphImport::Create(graph, ct, "c");
+  auto x = &jlm::rvsdg::GraphImport::Create(graph, vt, "x");
 
   auto gamma = jlm::rvsdg::GammaNode::create(c, 2);
 
@@ -74,7 +74,7 @@ test_pullin_bottom()
   auto b1 = jlm::tests::create_testop(&graph.GetRootRegion(), { gamma->output(0), x }, { vt })[0];
   auto b2 = jlm::tests::create_testop(&graph.GetRootRegion(), { gamma->output(0), b1 }, { vt })[0];
 
-  auto & xp = jlm::llvm::GraphExport::Create(*b2, "x");
+  auto & xp = jlm::rvsdg::GraphExport::Create(*b2, "x");
 
   //	jlm::rvsdg::view(graph, stdout);
   jlm::llvm::pullin_bottom(gamma);
@@ -93,7 +93,7 @@ test_pull()
   RvsdgModule rm(jlm::util::FilePath(""), "", "");
   auto & graph = rm.Rvsdg();
 
-  auto p = &jlm::tests::GraphImport::Create(graph, jlm::rvsdg::ControlType::Create(2), "");
+  auto p = &jlm::rvsdg::GraphImport::Create(graph, jlm::rvsdg::ControlType::Create(2), "");
 
   auto croot = jlm::tests::create_testop(&graph.GetRootRegion(), {}, { vt })[0];
 
@@ -113,7 +113,7 @@ test_pull()
 
   auto g1xv = gamma1->AddExitVar({ cg1, g2xv.output });
 
-  GraphExport::Create(*g1xv.output, "");
+  jlm::rvsdg::GraphExport::Create(*g1xv.output, "");
 
   jlm::rvsdg::view(graph, stdout);
   jlm::llvm::NodeSinking pullin;

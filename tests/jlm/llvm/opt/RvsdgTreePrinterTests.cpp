@@ -63,7 +63,7 @@ PrintRvsdgTree()
       rvsdgModule->Rvsdg().GetRootRegion(),
       LlvmLambdaOperation::Create(functionType, "f", linkage::external_linkage));
   auto lambdaOutput = lambda->finalize({ lambda->GetFunctionArguments()[0] });
-  jlm::tests::GraphExport::Create(*lambdaOutput, "f");
+  jlm::rvsdg::GraphExport::Create(*lambdaOutput, "f");
 
   RvsdgTreePrinter::Configuration configuration({});
   RvsdgTreePrinter printer(configuration);
@@ -134,8 +134,8 @@ PrintNumLoadNodesAnnotation()
   auto & rvsdg = rvsdgModule->Rvsdg();
   auto rootRegion = &rvsdg.GetRootRegion();
 
-  auto & address = jlm::tests::GraphImport::Create(rvsdg, pointerType, "a");
-  auto & memoryState = jlm::tests::GraphImport::Create(rvsdg, memoryStateType, "m");
+  auto & address = jlm::rvsdg::GraphImport::Create(rvsdg, pointerType, "a");
+  auto & memoryState = jlm::rvsdg::GraphImport::Create(rvsdg, memoryStateType, "m");
 
   auto structuralNode = jlm::tests::TestStructuralNode::create(rootRegion, 3);
   const auto addressInput = structuralNode->AddInputWithArguments(address);
@@ -189,8 +189,8 @@ PrintNumMemoryStateInputsOutputsAnnotation()
   auto rvsdgModule = RvsdgModule::Create(FilePath(""), "", "");
   auto & rvsdg = rvsdgModule->Rvsdg();
 
-  auto & x = jlm::tests::GraphImport::Create(rvsdg, memoryStateType, "x");
-  auto & y = jlm::tests::GraphImport::Create(rvsdg, valueType, "y");
+  auto & x = jlm::rvsdg::GraphImport::Create(rvsdg, memoryStateType, "x");
+  auto & y = jlm::rvsdg::GraphImport::Create(rvsdg, valueType, "y");
 
   auto structuralNode = jlm::tests::TestStructuralNode::create(&rvsdg.GetRootRegion(), 2);
   const auto inputVarX = structuralNode->AddInputWithArguments(x);
@@ -201,8 +201,8 @@ PrintNumMemoryStateInputsOutputsAnnotation()
   auto outputVarY =
       structuralNode->AddOutputWithResults({ inputVarY.argument[0], inputVarY.argument[1] });
 
-  jlm::tests::GraphExport::Create(*outputVarX.output, "x");
-  jlm::tests::GraphExport::Create(*outputVarY.output, "y");
+  jlm::rvsdg::GraphExport::Create(*outputVarX.output, "x");
+  jlm::rvsdg::GraphExport::Create(*outputVarY.output, "y");
 
   RvsdgTreePrinter::Configuration configuration(
       { RvsdgTreePrinter::Configuration::Annotation::NumMemoryStateInputsOutputs });

@@ -12,12 +12,13 @@ std::unique_ptr<jlm::llvm::RvsdgModule>
 StoreTest1::SetupRvsdg()
 {
   using namespace jlm::llvm;
+  using namespace jlm::rvsdg;
 
   auto pointerType = PointerType::Create();
   auto fcttype =
       rvsdg::FunctionType::Create({ MemoryStateType::Create() }, { MemoryStateType::Create() });
 
-  auto module = RvsdgModule::Create(jlm::util::FilePath(""), "", "");
+  auto module = llvm::RvsdgModule::Create(jlm::util::FilePath(""), "", "");
   auto graph = &module->Rvsdg();
 
   auto fct = rvsdg::LambdaNode::Create(
@@ -66,12 +67,13 @@ std::unique_ptr<jlm::llvm::RvsdgModule>
 StoreTest2::SetupRvsdg()
 {
   using namespace jlm::llvm;
+  using namespace jlm::rvsdg;
 
   auto pointerType = PointerType::Create();
   auto fcttype =
       rvsdg::FunctionType::Create({ MemoryStateType::Create() }, { MemoryStateType::Create() });
 
-  auto module = RvsdgModule::Create(jlm::util::FilePath(""), "", "");
+  auto module = llvm::RvsdgModule::Create(jlm::util::FilePath(""), "", "");
   auto graph = &module->Rvsdg();
 
   auto fct = rvsdg::LambdaNode::Create(
@@ -125,6 +127,7 @@ std::unique_ptr<jlm::llvm::RvsdgModule>
 LoadTest1::SetupRvsdg()
 {
   using namespace jlm::llvm;
+  using namespace jlm::rvsdg;
 
   auto mt = MemoryStateType::Create();
   auto pointerType = PointerType::Create();
@@ -132,7 +135,7 @@ LoadTest1::SetupRvsdg()
       { PointerType::Create(), MemoryStateType::Create() },
       { jlm::rvsdg::bittype::Create(32), MemoryStateType::Create() });
 
-  auto module = RvsdgModule::Create(jlm::util::FilePath("LoadTest1.c"), "", "");
+  auto module = llvm::RvsdgModule::Create(jlm::util::FilePath("LoadTest1.c"), "", "");
   auto graph = &module->Rvsdg();
 
   auto fct = rvsdg::LambdaNode::Create(
@@ -165,13 +168,14 @@ std::unique_ptr<jlm::llvm::RvsdgModule>
 LoadTest2::SetupRvsdg()
 {
   using namespace jlm::llvm;
+  using namespace jlm::rvsdg;
 
   auto mt = MemoryStateType::Create();
   auto pointerType = PointerType::Create();
   auto fcttype =
       rvsdg::FunctionType::Create({ MemoryStateType::Create() }, { MemoryStateType::Create() });
 
-  auto module = RvsdgModule::Create(jlm::util::FilePath(""), "", "");
+  auto module = llvm::RvsdgModule::Create(jlm::util::FilePath(""), "", "");
   auto graph = &module->Rvsdg();
 
   auto fct = rvsdg::LambdaNode::Create(
@@ -231,6 +235,7 @@ std::unique_ptr<jlm::llvm::RvsdgModule>
 LoadFromUndefTest::SetupRvsdg()
 {
   using namespace jlm::llvm;
+  using namespace jlm::rvsdg;
 
   auto memoryStateType = MemoryStateType::Create();
   auto functionType = rvsdg::FunctionType::Create(
@@ -238,7 +243,7 @@ LoadFromUndefTest::SetupRvsdg()
       { jlm::rvsdg::bittype::Create(32), MemoryStateType::Create() });
   auto pointerType = PointerType::Create();
 
-  auto rvsdgModule = RvsdgModule::Create(jlm::util::FilePath(""), "", "");
+  auto rvsdgModule = llvm::RvsdgModule::Create(jlm::util::FilePath(""), "", "");
   auto & rvsdg = rvsdgModule->Rvsdg();
 
   Lambda_ = rvsdg::LambdaNode::Create(
@@ -267,8 +272,9 @@ std::unique_ptr<jlm::llvm::RvsdgModule>
 GetElementPtrTest::SetupRvsdg()
 {
   using namespace jlm::llvm;
+  using namespace jlm::rvsdg;
 
-  auto module = RvsdgModule::Create(jlm::util::FilePath(""), "", "");
+  auto module = llvm::RvsdgModule::Create(jlm::util::FilePath(""), "", "");
   auto graph = &module->Rvsdg();
 
   auto & declaration = module->AddStructTypeDeclaration(StructType::Declaration::Create(
@@ -327,11 +333,12 @@ std::unique_ptr<jlm::llvm::RvsdgModule>
 BitCastTest::SetupRvsdg()
 {
   using namespace jlm::llvm;
+  using namespace jlm::rvsdg;
 
   auto pointerType = PointerType::Create();
   auto fcttype = rvsdg::FunctionType::Create({ PointerType::Create() }, { PointerType::Create() });
 
-  auto module = RvsdgModule::Create(jlm::util::FilePath(""), "", "");
+  auto module = llvm::RvsdgModule::Create(jlm::util::FilePath(""), "", "");
   auto graph = &module->Rvsdg();
 
   auto fct = rvsdg::LambdaNode::Create(
@@ -355,8 +362,9 @@ std::unique_ptr<jlm::llvm::RvsdgModule>
 Bits2PtrTest::SetupRvsdg()
 {
   using namespace jlm::llvm;
+  using namespace jlm::rvsdg;
 
-  auto module = RvsdgModule::Create(jlm::util::FilePath(""), "", "");
+  auto module = llvm::RvsdgModule::Create(jlm::util::FilePath(""), "", "");
   auto graph = &module->Rvsdg();
 
   auto setupBit2PtrFunction = [&]()
@@ -429,6 +437,7 @@ std::unique_ptr<jlm::llvm::RvsdgModule>
 ConstantPointerNullTest::SetupRvsdg()
 {
   using namespace jlm::llvm;
+  using namespace jlm::rvsdg;
 
   auto mt = MemoryStateType::Create();
   auto pointerType = PointerType::Create();
@@ -436,7 +445,7 @@ ConstantPointerNullTest::SetupRvsdg()
       { PointerType::Create(), MemoryStateType::Create() },
       { MemoryStateType::Create() });
 
-  auto module = RvsdgModule::Create(jlm::util::FilePath(""), "", "");
+  auto module = llvm::RvsdgModule::Create(jlm::util::FilePath(""), "", "");
   auto graph = &module->Rvsdg();
 
   auto fct = rvsdg::LambdaNode::Create(
@@ -468,8 +477,9 @@ std::unique_ptr<jlm::llvm::RvsdgModule>
 CallTest1::SetupRvsdg()
 {
   using namespace jlm::llvm;
+  using namespace jlm::rvsdg;
 
-  auto module = RvsdgModule::Create(jlm::util::FilePath(""), "", "");
+  auto module = llvm::RvsdgModule::Create(jlm::util::FilePath(""), "", "");
   auto graph = &module->Rvsdg();
 
   auto SetupF = [&]()
@@ -635,8 +645,9 @@ std::unique_ptr<jlm::llvm::RvsdgModule>
 CallTest2::SetupRvsdg()
 {
   using namespace jlm::llvm;
+  using namespace jlm::rvsdg;
 
-  auto module = RvsdgModule::Create(jlm::util::FilePath(""), "", "");
+  auto module = llvm::RvsdgModule::Create(jlm::util::FilePath(""), "", "");
   auto graph = &module->Rvsdg();
 
   auto SetupCreate = [&]()
@@ -773,6 +784,7 @@ std::unique_ptr<jlm::llvm::RvsdgModule>
 IndirectCallTest1::SetupRvsdg()
 {
   using namespace jlm::llvm;
+  using namespace jlm::rvsdg;
 
   auto iOStateType = IOStateType::Create();
   auto memoryStateType = MemoryStateType::Create();
@@ -781,7 +793,7 @@ IndirectCallTest1::SetupRvsdg()
       { jlm::rvsdg::bittype::Create(32), IOStateType::Create(), MemoryStateType::Create() });
   auto pointerType = PointerType::Create();
 
-  auto module = RvsdgModule::Create(jlm::util::FilePath(""), "", "");
+  auto module = llvm::RvsdgModule::Create(jlm::util::FilePath(""), "", "");
   auto graph = &module->Rvsdg();
 
   auto SetupConstantFunction = [&](ssize_t n, const std::string & name)
@@ -890,6 +902,7 @@ std::unique_ptr<jlm::llvm::RvsdgModule>
 IndirectCallTest2::SetupRvsdg()
 {
   using namespace jlm::llvm;
+  using namespace jlm::rvsdg;
 
   auto iOStateType = IOStateType::Create();
   auto memoryStateType = MemoryStateType::Create();
@@ -898,7 +911,7 @@ IndirectCallTest2::SetupRvsdg()
       { jlm::rvsdg::bittype::Create(32), IOStateType::Create(), MemoryStateType::Create() });
   auto pointerType = PointerType::Create();
 
-  auto module = RvsdgModule::Create(jlm::util::FilePath(""), "", "");
+  auto module = llvm::RvsdgModule::Create(jlm::util::FilePath(""), "", "");
   auto graph = &module->Rvsdg();
 
   auto SetupG1 = [&]()
@@ -1159,8 +1172,9 @@ std::unique_ptr<jlm::llvm::RvsdgModule>
 ExternalCallTest1::SetupRvsdg()
 {
   using namespace jlm::llvm;
+  using namespace jlm::rvsdg;
 
-  auto rvsdgModule = RvsdgModule::Create(jlm::util::FilePath(""), "", "");
+  auto rvsdgModule = llvm::RvsdgModule::Create(jlm::util::FilePath(""), "", "");
   auto rvsdg = &rvsdgModule->Rvsdg();
 
   auto pointerType = PointerType::Create();
@@ -1175,7 +1189,7 @@ ExternalCallTest1::SetupRvsdg()
 
   auto SetupFunctionGDeclaration = [&]()
   {
-    return &GraphImport::Create(
+    return &llvm::GraphImport::Create(
         *rvsdg,
         functionGType,
         functionGType,
@@ -1370,6 +1384,7 @@ std::unique_ptr<jlm::llvm::RvsdgModule>
 GammaTest::SetupRvsdg()
 {
   using namespace jlm::llvm;
+  using namespace jlm::rvsdg;
 
   auto mt = MemoryStateType::Create();
   auto pt = PointerType::Create();
@@ -1382,7 +1397,7 @@ GammaTest::SetupRvsdg()
         MemoryStateType::Create() },
       { jlm::rvsdg::bittype::Create(32), MemoryStateType::Create() });
 
-  auto module = RvsdgModule::Create(jlm::util::FilePath(""), "", "");
+  auto module = llvm::RvsdgModule::Create(jlm::util::FilePath(""), "", "");
   auto graph = &module->Rvsdg();
 
   auto fct = rvsdg::LambdaNode::Create(
@@ -1428,8 +1443,9 @@ std::unique_ptr<llvm::RvsdgModule>
 GammaTest2::SetupRvsdg()
 {
   using namespace jlm::llvm;
+  using namespace jlm::rvsdg;
 
-  auto rvsdgModule = RvsdgModule::Create(util::FilePath(""), "", "");
+  auto rvsdgModule = llvm::RvsdgModule::Create(util::FilePath(""), "", "");
   auto rvsdg = &rvsdgModule->Rvsdg();
 
   auto SetupLambdaF = [&]()
@@ -1619,6 +1635,7 @@ std::unique_ptr<jlm::llvm::RvsdgModule>
 ThetaTest::SetupRvsdg()
 {
   using namespace jlm::llvm;
+  using namespace jlm::rvsdg;
 
   auto mt = MemoryStateType::Create();
   auto pointerType = PointerType::Create();
@@ -1629,7 +1646,7 @@ ThetaTest::SetupRvsdg()
         MemoryStateType::Create() },
       { MemoryStateType::Create() });
 
-  auto module = RvsdgModule::Create(jlm::util::FilePath(""), "", "");
+  auto module = llvm::RvsdgModule::Create(jlm::util::FilePath(""), "", "");
   auto graph = &module->Rvsdg();
 
   auto fct = rvsdg::LambdaNode::Create(
@@ -1679,8 +1696,9 @@ std::unique_ptr<jlm::llvm::RvsdgModule>
 DeltaTest1::SetupRvsdg()
 {
   using namespace jlm::llvm;
+  using namespace jlm::rvsdg;
 
-  auto module = RvsdgModule::Create(jlm::util::FilePath(""), "", "");
+  auto module = llvm::RvsdgModule::Create(jlm::util::FilePath(""), "", "");
   auto graph = &module->Rvsdg();
 
   auto SetupGlobalF = [&]()
@@ -1775,8 +1793,9 @@ std::unique_ptr<jlm::llvm::RvsdgModule>
 DeltaTest2::SetupRvsdg()
 {
   using namespace jlm::llvm;
+  using namespace jlm::rvsdg;
 
-  auto module = RvsdgModule::Create(jlm::util::FilePath(""), "", "");
+  auto module = llvm::RvsdgModule::Create(jlm::util::FilePath(""), "", "");
   auto graph = &module->Rvsdg();
 
   auto SetupD1 = [&]()
@@ -1888,8 +1907,9 @@ std::unique_ptr<jlm::llvm::RvsdgModule>
 DeltaTest3::SetupRvsdg()
 {
   using namespace jlm::llvm;
+  using namespace jlm::rvsdg;
 
-  auto module = RvsdgModule::Create(jlm::util::FilePath(""), "", "");
+  auto module = llvm::RvsdgModule::Create(jlm::util::FilePath(""), "", "");
   auto graph = &module->Rvsdg();
 
   auto SetupG1 = [&]()
@@ -2009,8 +2029,9 @@ std::unique_ptr<jlm::llvm::RvsdgModule>
 ImportTest::SetupRvsdg()
 {
   using namespace jlm::llvm;
+  using namespace jlm::rvsdg;
 
-  auto module = RvsdgModule::Create(jlm::util::FilePath(""), "", "");
+  auto module = llvm::RvsdgModule::Create(jlm::util::FilePath(""), "", "");
   auto graph = &module->Rvsdg();
 
   auto SetupF1 = [&](jlm::rvsdg::Output * d1)
@@ -2071,13 +2092,13 @@ ImportTest::SetupRvsdg()
     return std::make_tuple(lambdaOutput, &call);
   };
 
-  auto d1 = &GraphImport::Create(
+  auto d1 = &llvm::GraphImport::Create(
       *graph,
       jlm::rvsdg::bittype::Create(32),
       PointerType::Create(),
       "d1",
       linkage::external_linkage);
-  auto d2 = &GraphImport::Create(
+  auto d2 = &llvm::GraphImport::Create(
       *graph,
       jlm::rvsdg::bittype::Create(32),
       PointerType::Create(),
@@ -2103,8 +2124,9 @@ std::unique_ptr<jlm::llvm::RvsdgModule>
 PhiTest1::SetupRvsdg()
 {
   using namespace jlm::llvm;
+  using namespace jlm::rvsdg;
 
-  auto module = RvsdgModule::Create(jlm::util::FilePath(""), "", "");
+  auto module = llvm::RvsdgModule::Create(jlm::util::FilePath(""), "", "");
   auto graph = &module->Rvsdg();
 
   auto pbit64 = PointerType::Create();
@@ -2271,6 +2293,7 @@ std::unique_ptr<jlm::llvm::RvsdgModule>
 PhiTest2::SetupRvsdg()
 {
   using namespace jlm::llvm;
+  using namespace jlm::rvsdg;
 
   auto iOStateType = IOStateType::Create();
   auto memoryStateType = MemoryStateType::Create();
@@ -2293,7 +2316,7 @@ PhiTest2::SetupRvsdg()
       { PointerType::Create(), IOStateType::Create(), MemoryStateType::Create() },
       { jlm::rvsdg::bittype::Create(32), IOStateType::Create(), MemoryStateType::Create() });
 
-  auto module = RvsdgModule::Create(jlm::util::FilePath(""), "", "");
+  auto module = llvm::RvsdgModule::Create(jlm::util::FilePath(""), "", "");
   auto graph = &module->Rvsdg();
 
   auto SetupEight = [&]()
@@ -2647,8 +2670,9 @@ std::unique_ptr<jlm::llvm::RvsdgModule>
 PhiWithDeltaTest::SetupRvsdg()
 {
   using namespace jlm::llvm;
+  using namespace jlm::rvsdg;
 
-  auto rvsdgModule = RvsdgModule::Create(jlm::util::FilePath(""), "", "");
+  auto rvsdgModule = llvm::RvsdgModule::Create(jlm::util::FilePath(""), "", "");
   auto & rvsdg = rvsdgModule->Rvsdg();
 
   auto pointerType = PointerType::Create();
@@ -2684,6 +2708,7 @@ std::unique_ptr<jlm::llvm::RvsdgModule>
 ExternalMemoryTest::SetupRvsdg()
 {
   using namespace jlm::llvm;
+  using namespace jlm::rvsdg;
 
   auto mt = MemoryStateType::Create();
   auto pointerType = PointerType::Create();
@@ -2691,7 +2716,7 @@ ExternalMemoryTest::SetupRvsdg()
       { PointerType::Create(), PointerType::Create(), MemoryStateType::Create() },
       { MemoryStateType::Create() });
 
-  auto module = RvsdgModule::Create(jlm::util::FilePath(""), "", "");
+  auto module = llvm::RvsdgModule::Create(jlm::util::FilePath(""), "", "");
   auto graph = &module->Rvsdg();
 
   /**
@@ -2720,8 +2745,9 @@ std::unique_ptr<jlm::llvm::RvsdgModule>
 EscapedMemoryTest1::SetupRvsdg()
 {
   using namespace jlm::llvm;
+  using namespace jlm::rvsdg;
 
-  auto rvsdgModule = RvsdgModule::Create(jlm::util::FilePath(""), "", "");
+  auto rvsdgModule = llvm::RvsdgModule::Create(jlm::util::FilePath(""), "", "");
   auto rvsdg = &rvsdgModule->Rvsdg();
 
   auto SetupDeltaA = [&]()
@@ -2856,8 +2882,9 @@ std::unique_ptr<jlm::llvm::RvsdgModule>
 EscapedMemoryTest2::SetupRvsdg()
 {
   using namespace jlm::llvm;
+  using namespace jlm::rvsdg;
 
-  auto rvsdgModule = RvsdgModule::Create(jlm::util::FilePath(""), "", "");
+  auto rvsdgModule = llvm::RvsdgModule::Create(jlm::util::FilePath(""), "", "");
   auto rvsdg = &rvsdgModule->Rvsdg();
 
   auto pointerType = PointerType::Create();
@@ -2874,7 +2901,7 @@ EscapedMemoryTest2::SetupRvsdg()
 
   auto SetupExternalFunction1Declaration = [&]()
   {
-    return &GraphImport::Create(
+    return &llvm::GraphImport::Create(
         *rvsdg,
         externalFunction1Type,
         externalFunction1Type,
@@ -2884,7 +2911,7 @@ EscapedMemoryTest2::SetupRvsdg()
 
   auto SetupExternalFunction2Declaration = [&]()
   {
-    return &GraphImport::Create(
+    return &llvm::GraphImport::Create(
         *rvsdg,
         externalFunction2Type,
         externalFunction2Type,
@@ -3041,8 +3068,9 @@ std::unique_ptr<jlm::llvm::RvsdgModule>
 EscapedMemoryTest3::SetupRvsdg()
 {
   using namespace jlm::llvm;
+  using namespace jlm::rvsdg;
 
-  auto rvsdgModule = RvsdgModule::Create(jlm::util::FilePath(""), "", "");
+  auto rvsdgModule = llvm::RvsdgModule::Create(jlm::util::FilePath(""), "", "");
   auto rvsdg = &rvsdgModule->Rvsdg();
 
   auto pointerType = PointerType::Create();
@@ -3054,7 +3082,7 @@ EscapedMemoryTest3::SetupRvsdg()
 
   auto SetupExternalFunctionDeclaration = [&]()
   {
-    return &GraphImport::Create(
+    return &llvm::GraphImport::Create(
         *rvsdg,
         externalFunctionType,
         externalFunctionType,
@@ -3138,8 +3166,9 @@ std::unique_ptr<jlm::llvm::RvsdgModule>
 MemcpyTest::SetupRvsdg()
 {
   using namespace jlm::llvm;
+  using namespace jlm::rvsdg;
 
-  auto rvsdgModule = RvsdgModule::Create(jlm::util::FilePath(""), "", "");
+  auto rvsdgModule = llvm::RvsdgModule::Create(jlm::util::FilePath(""), "", "");
   auto rvsdg = &rvsdgModule->Rvsdg();
 
   auto arrayType = ArrayType::Create(jlm::rvsdg::bittype::Create(32), 5);
@@ -3297,8 +3326,9 @@ std::unique_ptr<jlm::llvm::RvsdgModule>
 MemcpyTest2::SetupRvsdg()
 {
   using namespace jlm::llvm;
+  using namespace jlm::rvsdg;
 
-  auto rvsdgModule = RvsdgModule::Create(jlm::util::FilePath(""), "", "");
+  auto rvsdgModule = llvm::RvsdgModule::Create(jlm::util::FilePath(""), "", "");
   auto rvsdg = &rvsdgModule->Rvsdg();
 
   auto pointerType = PointerType::Create();
@@ -3400,8 +3430,9 @@ std::unique_ptr<jlm::llvm::RvsdgModule>
 MemcpyTest3::SetupRvsdg()
 {
   using namespace jlm::llvm;
+  using namespace jlm::rvsdg;
 
-  auto rvsdgModule = RvsdgModule::Create(jlm::util::FilePath(""), "", "");
+  auto rvsdgModule = llvm::RvsdgModule::Create(jlm::util::FilePath(""), "", "");
   auto rvsdg = &rvsdgModule->Rvsdg();
 
   auto pointerType = PointerType::Create();
@@ -3457,8 +3488,9 @@ std::unique_ptr<jlm::llvm::RvsdgModule>
 LinkedListTest::SetupRvsdg()
 {
   using namespace jlm::llvm;
+  using namespace jlm::rvsdg;
 
-  auto rvsdgModule = RvsdgModule::Create(jlm::util::FilePath(""), "", "");
+  auto rvsdgModule = llvm::RvsdgModule::Create(jlm::util::FilePath(""), "", "");
   auto & rvsdg = rvsdgModule->Rvsdg();
 
   auto pointerType = PointerType::Create();
@@ -3543,17 +3575,18 @@ std::unique_ptr<jlm::llvm::RvsdgModule>
 AllMemoryNodesTest::SetupRvsdg()
 {
   using namespace jlm::llvm;
+  using namespace jlm::rvsdg;
 
   auto mt = MemoryStateType::Create();
   auto pointerType = PointerType::Create();
   auto fcttype =
       rvsdg::FunctionType::Create({ MemoryStateType::Create() }, { MemoryStateType::Create() });
 
-  auto module = RvsdgModule::Create(jlm::util::FilePath(""), "", "");
+  auto module = llvm::RvsdgModule::Create(jlm::util::FilePath(""), "", "");
   auto graph = &module->Rvsdg();
 
   // Create imported symbol "imported"
-  Import_ = &GraphImport::Create(
+  Import_ = &llvm::GraphImport::Create(
       *graph,
       rvsdg::bittype::Create(32),
       PointerType::Create(),
@@ -3641,13 +3674,14 @@ std::unique_ptr<jlm::llvm::RvsdgModule>
 NAllocaNodesTest::SetupRvsdg()
 {
   using namespace jlm::llvm;
+  using namespace jlm::rvsdg;
 
   auto mt = MemoryStateType::Create();
   auto pointerType = PointerType::Create();
   auto fcttype =
       rvsdg::FunctionType::Create({ MemoryStateType::Create() }, { MemoryStateType::Create() });
 
-  auto module = RvsdgModule::Create(jlm::util::FilePath(""), "", "");
+  auto module = llvm::RvsdgModule::Create(jlm::util::FilePath(""), "", "");
   auto graph = &module->Rvsdg();
 
   Function_ = rvsdg::LambdaNode::Create(
@@ -3681,6 +3715,7 @@ std::unique_ptr<jlm::llvm::RvsdgModule>
 EscapingLocalFunctionTest::SetupRvsdg()
 {
   using namespace jlm::llvm;
+  using namespace jlm::rvsdg;
 
   auto uint32Type = rvsdg::bittype::Create(32);
   auto mt = MemoryStateType::Create();
@@ -3692,7 +3727,7 @@ EscapingLocalFunctionTest::SetupRvsdg()
       { MemoryStateType::Create() },
       { PointerType::Create(), MemoryStateType::Create() });
 
-  auto module = RvsdgModule::Create(util::FilePath(""), "", "");
+  auto module = llvm::RvsdgModule::Create(util::FilePath(""), "", "");
   const auto graph = &module->Rvsdg();
 
   Global_ = DeltaNode::Create(
@@ -3757,12 +3792,13 @@ std::unique_ptr<llvm::RvsdgModule>
 FreeNullTest::SetupRvsdg()
 {
   using namespace jlm::llvm;
+  using namespace jlm::rvsdg;
 
   auto functionType = rvsdg::FunctionType::Create(
       { IOStateType::Create(), MemoryStateType::Create() },
       { IOStateType::Create(), MemoryStateType::Create() });
 
-  auto module = RvsdgModule::Create(jlm::util::FilePath(""), "", "");
+  auto module = llvm::RvsdgModule::Create(jlm::util::FilePath(""), "", "");
   auto graph = &module->Rvsdg();
 
   LambdaMain_ = rvsdg::LambdaNode::Create(
@@ -3788,8 +3824,9 @@ std::unique_ptr<llvm::RvsdgModule>
 LambdaCallArgumentMismatch::SetupRvsdg()
 {
   using namespace jlm::llvm;
+  using namespace jlm::rvsdg;
 
-  auto rvsdgModule = RvsdgModule::Create(util::FilePath(""), "", "");
+  auto rvsdgModule = llvm::RvsdgModule::Create(util::FilePath(""), "", "");
   auto & rvsdg = rvsdgModule->Rvsdg();
 
   auto functionType = rvsdg::FunctionType::Create(

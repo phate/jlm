@@ -12,7 +12,6 @@
 #include <jlm/rvsdg/operation.hpp>
 #include <jlm/rvsdg/simple-node.hpp>
 #include <jlm/rvsdg/structural-node.hpp>
-#include <jlm/rvsdg/substitution.hpp>
 #include <jlm/rvsdg/type.hpp>
 #include <jlm/rvsdg/unary.hpp>
 
@@ -20,52 +19,6 @@
 
 namespace jlm::tests
 {
-
-/**
- * Represents an import into the RVSDG of an external entity.
- * It can be used for testing of graph imports.
- */
-class GraphImport final : public rvsdg::GraphImport
-{
-  GraphImport(rvsdg::Graph & graph, std::shared_ptr<const rvsdg::Type> type, std::string name)
-      : rvsdg::GraphImport(graph, std::move(type), std::move(name))
-  {}
-
-public:
-  GraphImport &
-  Copy(rvsdg::Region & region, rvsdg::StructuralInput * input) override;
-
-  static GraphImport &
-  Create(rvsdg::Graph & graph, std::shared_ptr<const rvsdg::Type> type, std::string name)
-  {
-    auto graphImport = new GraphImport(graph, std::move(type), std::move(name));
-    graph.GetRootRegion().append_argument(graphImport);
-    return *graphImport;
-  }
-};
-
-/**
- * Represents an export from the RVSDG of an internal entity.
- * It can be used for testing of graph exports.
- */
-class GraphExport final : public rvsdg::GraphExport
-{
-  GraphExport(rvsdg::Output & origin, std::string name)
-      : rvsdg::GraphExport(origin, std::move(name))
-  {}
-
-public:
-  GraphExport &
-  Copy(rvsdg::Output & origin, rvsdg::StructuralOutput * output) override;
-
-  static GraphExport &
-  Create(rvsdg::Output & origin, std::string name)
-  {
-    auto graphExport = new GraphExport(origin, std::move(name));
-    origin.region()->graph()->GetRootRegion().append_result(graphExport);
-    return *graphExport;
-  }
-};
 
 class NullaryOperation final : public rvsdg::NullaryOperation
 {
@@ -385,20 +338,20 @@ public:
                                   std::move(operandTypes),
                                   std::move(resultTypes));
   }
+
+  static std::unique_ptr<llvm::ThreeAddressCode>
+  CreateTac(
+      const std::vector<const llvm::Variable *> & operands,
+      std::vector<std::shared_ptr<const rvsdg::Type>> resultTypes)
+  {
+    std::vector<std::shared_ptr<const rvsdg::Type>> operandTypes;
+    for (const auto & operand : operands)
+      operandTypes.push_back(operand->Type());
+
+    const TestOperation operation(std::move(operandTypes), std::move(resultTypes));
+    return llvm::ThreeAddressCode::create(operation, operands);
+  }
 };
-
-static inline std::unique_ptr<llvm::ThreeAddressCode>
-create_testop_tac(
-    const std::vector<const llvm::Variable *> & arguments,
-    std::vector<std::shared_ptr<const rvsdg::Type>> result_types)
-{
-  std::vector<std::shared_ptr<const rvsdg::Type>> argument_types;
-  for (const auto & arg : arguments)
-    argument_types.push_back(arg->Type());
-
-  TestOperation op(std::move(argument_types), std::move(result_types));
-  return llvm::ThreeAddressCode::create(op, arguments);
-}
 
 static inline std::vector<rvsdg::Output *>
 create_testop(

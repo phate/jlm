@@ -2,7 +2,8 @@
 # See COPYING for terms of redistribution.
 
 libllvm_SOURCES = \
-    jlm/llvm/backend/dot/DotWriter.cpp \
+    jlm/llvm/DotWriter.cpp \
+    \
     jlm/llvm/backend/IpGraphToLlvmConverter.cpp \
     jlm/llvm/backend/RvsdgToIpGraphConverter.cpp \
     \
@@ -69,6 +70,11 @@ libllvm_SOURCES = \
     jlm/llvm/opt/unroll.cpp \
 
 libllvm_HEADERS = \
+    jlm/llvm/DotWriter.hpp \
+    \
+    jlm/llvm/backend/IpGraphToLlvmConverter.hpp \
+    jlm/llvm/backend/RvsdgToIpGraphConverter.hpp \
+    \
     jlm/llvm/opt/unroll.hpp \
     jlm/llvm/opt/DeadNodeElimination.hpp \
     jlm/llvm/opt/inlining.hpp \
@@ -139,12 +145,10 @@ libllvm_HEADERS = \
     jlm/llvm/ir/operators/sext.hpp \
     jlm/llvm/ir/operators/lambda.hpp \
     jlm/llvm/ir/aggregation.hpp \
-    jlm/llvm/backend/dot/DotWriter.hpp \
-    jlm/llvm/backend/IpGraphToLlvmConverter.hpp \
-    jlm/llvm/backend/RvsdgToIpGraphConverter.hpp \
 
 libllvm_TESTS += \
-    tests/jlm/llvm/backend/dot/DotWriterTests \
+    tests/jlm/llvm/DotWriterTests \
+    \
     tests/jlm/llvm/backend/IpGraphToLlvmConverterTests \
     tests/jlm/llvm/backend/RvsdgToIpGraphConverterTests \
     tests/jlm/llvm/frontend/llvm/LoadTests \

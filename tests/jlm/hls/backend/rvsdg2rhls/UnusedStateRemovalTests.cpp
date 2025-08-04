@@ -28,10 +28,10 @@ TestGamma()
   auto rvsdgModule = RvsdgModule::Create(jlm::util::FilePath(""), "", "");
   auto & rvsdg = rvsdgModule->Rvsdg();
 
-  auto p = &jlm::tests::GraphImport::Create(rvsdg, jlm::rvsdg::ControlType::Create(2), "p");
-  auto x = &jlm::tests::GraphImport::Create(rvsdg, valueType, "x");
-  auto y = &jlm::tests::GraphImport::Create(rvsdg, valueType, "y");
-  auto z = &jlm::tests::GraphImport::Create(rvsdg, valueType, "z");
+  auto p = &jlm::rvsdg::GraphImport::Create(rvsdg, jlm::rvsdg::ControlType::Create(2), "p");
+  auto x = &jlm::rvsdg::GraphImport::Create(rvsdg, valueType, "x");
+  auto y = &jlm::rvsdg::GraphImport::Create(rvsdg, valueType, "y");
+  auto z = &jlm::rvsdg::GraphImport::Create(rvsdg, valueType, "z");
 
   auto gammaNode = jlm::rvsdg::GammaNode::create(p, 2);
 
@@ -53,11 +53,11 @@ TestGamma()
   auto gammaOutput5 =
       gammaNode->AddExitVar({ gammaInput6.branchArgument[0], gammaInput7.branchArgument[1] });
 
-  GraphExport::Create(*gammaOutput1.output, "");
-  GraphExport::Create(*gammaOutput2.output, "");
-  GraphExport::Create(*gammaOutput3.output, "");
-  GraphExport::Create(*gammaOutput4.output, "");
-  GraphExport::Create(*gammaOutput5.output, "");
+  jlm::rvsdg::GraphExport::Create(*gammaOutput1.output, "");
+  jlm::rvsdg::GraphExport::Create(*gammaOutput2.output, "");
+  jlm::rvsdg::GraphExport::Create(*gammaOutput3.output, "");
+  jlm::rvsdg::GraphExport::Create(*gammaOutput4.output, "");
+  jlm::rvsdg::GraphExport::Create(*gammaOutput5.output, "");
 
   // Act
   jlm::hls::RemoveUnusedStates(*rvsdgModule);
@@ -87,10 +87,10 @@ TestTheta()
 
   auto rvsdgModule = jlm::llvm::RvsdgModule::Create(jlm::util::FilePath(""), "", "");
   auto & rvsdg = rvsdgModule->Rvsdg();
-  auto p = &jlm::tests::GraphImport::Create(rvsdg, jlm::rvsdg::ControlType::Create(2), "p");
-  auto x = &jlm::tests::GraphImport::Create(rvsdg, valueType, "x");
-  auto y = &jlm::tests::GraphImport::Create(rvsdg, valueType, "y");
-  auto z = &jlm::tests::GraphImport::Create(rvsdg, valueType, "z");
+  auto p = &jlm::rvsdg::GraphImport::Create(rvsdg, jlm::rvsdg::ControlType::Create(2), "p");
+  auto x = &jlm::rvsdg::GraphImport::Create(rvsdg, valueType, "x");
+  auto y = &jlm::rvsdg::GraphImport::Create(rvsdg, valueType, "y");
+  auto z = &jlm::rvsdg::GraphImport::Create(rvsdg, valueType, "z");
 
   auto thetaNode = jlm::rvsdg::ThetaNode::create(&rvsdg.GetRootRegion());
 
@@ -113,7 +113,7 @@ TestTheta()
           std::vector<std::shared_ptr<const Type>>{ valueType })
           .output(0);
 
-  jlm::tests::GraphExport::Create(*result, "f");
+  jlm::rvsdg::GraphExport::Create(*result, "f");
 
   // Act
   jlm::hls::RemoveUnusedStates(*rvsdgModule);
@@ -142,7 +142,7 @@ TestLambda()
   auto rvsdgModule = jlm::llvm::RvsdgModule::Create(jlm::util::FilePath(""), "", "");
   auto & rvsdg = rvsdgModule->Rvsdg();
 
-  auto x = &jlm::tests::GraphImport::Create(rvsdg, valueType, "x");
+  auto x = &jlm::rvsdg::GraphImport::Create(rvsdg, valueType, "x");
 
   auto lambdaNode = jlm::rvsdg::LambdaNode::Create(
       rvsdg.GetRootRegion(),
@@ -166,7 +166,7 @@ TestLambda()
 
   auto lambdaOutput = lambdaNode->finalize({ argument0, result1, argument2, result3 });
 
-  jlm::tests::GraphExport::Create(*lambdaOutput, "f");
+  jlm::rvsdg::GraphExport::Create(*lambdaOutput, "f");
 
   // Act
   jlm::hls::RemoveUnusedStates(*rvsdgModule);
@@ -227,7 +227,7 @@ TestUsedMemoryState()
       32);
 
   auto lambdaOutput = lambda->finalize({ loadOutput[1] });
-  GraphExport::Create(*lambdaOutput, "f");
+  jlm::rvsdg::GraphExport::Create(*lambdaOutput, "f");
 
   jlm::rvsdg::view(rvsdgModule->Rvsdg(), stdout);
 
@@ -272,7 +272,7 @@ TestUnusedMemoryState()
       32);
 
   auto lambdaOutput = lambda->finalize({ loadOutput[1], functionArguments[2] });
-  GraphExport::Create(*lambdaOutput, "f");
+  jlm::rvsdg::GraphExport::Create(*lambdaOutput, "f");
 
   jlm::rvsdg::view(rvsdgModule->Rvsdg(), stdout);
 
@@ -328,7 +328,7 @@ TestInvariantMemoryState()
       { loadOutput[1], memoryStateSplit[1] });
 
   auto lambdaOutput = lambda->finalize({ &memoryStateMerge });
-  GraphExport::Create(*lambdaOutput, "f");
+  jlm::rvsdg::GraphExport::Create(*lambdaOutput, "f");
 
   jlm::rvsdg::view(rvsdgModule->Rvsdg(), stdout);
 

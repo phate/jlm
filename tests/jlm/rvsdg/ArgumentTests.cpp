@@ -22,7 +22,7 @@ ArgumentNodeMismatch()
   auto valueType = jlm::tests::ValueType::Create();
 
   Graph graph;
-  auto import = &jlm::tests::GraphImport::Create(graph, valueType, "import");
+  auto import = &jlm::rvsdg::GraphImport::Create(graph, valueType, "import");
 
   auto structuralNode1 = TestStructuralNode::create(&graph.GetRootRegion(), 1);
   auto structuralNode2 = TestStructuralNode::create(&graph.GetRootRegion(), 2);
@@ -57,7 +57,7 @@ ArgumentInputTypeMismatch()
   auto stateType = StateType::Create();
 
   jlm::rvsdg::Graph rvsdg;
-  auto x = &jlm::tests::GraphImport::Create(rvsdg, valueType, "import");
+  auto x = &jlm::rvsdg::GraphImport::Create(rvsdg, valueType, "import");
 
   auto structuralNode = TestStructuralNode::create(&rvsdg.GetRootRegion(), 1);
   auto structuralInput = jlm::rvsdg::StructuralInput::create(structuralNode, x, valueType);

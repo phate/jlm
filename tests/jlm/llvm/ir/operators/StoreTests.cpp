@@ -135,15 +135,15 @@ StoreVolatileNodeCopy()
   auto valueType = jlm::tests::ValueType::Create();
 
   jlm::rvsdg::Graph graph;
-  auto & address1 = jlm::tests::GraphImport::Create(graph, pointerType, "address1");
-  auto & value1 = jlm::tests::GraphImport::Create(graph, valueType, "value1");
-  auto & ioState1 = jlm::tests::GraphImport::Create(graph, ioStateType, "ioState1");
-  auto & memoryState1 = jlm::tests::GraphImport::Create(graph, memoryType, "memoryState1");
+  auto & address1 = jlm::rvsdg::GraphImport::Create(graph, pointerType, "address1");
+  auto & value1 = jlm::rvsdg::GraphImport::Create(graph, valueType, "value1");
+  auto & ioState1 = jlm::rvsdg::GraphImport::Create(graph, ioStateType, "ioState1");
+  auto & memoryState1 = jlm::rvsdg::GraphImport::Create(graph, memoryType, "memoryState1");
 
-  auto & address2 = jlm::tests::GraphImport::Create(graph, pointerType, "address2");
-  auto & value2 = jlm::tests::GraphImport::Create(graph, valueType, "value2");
-  auto & ioState2 = jlm::tests::GraphImport::Create(graph, ioStateType, "ioState2");
-  auto & memoryState2 = jlm::tests::GraphImport::Create(graph, memoryType, "memoryState2");
+  auto & address2 = jlm::rvsdg::GraphImport::Create(graph, pointerType, "address2");
+  auto & value2 = jlm::rvsdg::GraphImport::Create(graph, valueType, "value2");
+  auto & ioState2 = jlm::rvsdg::GraphImport::Create(graph, ioStateType, "ioState2");
+  auto & memoryState2 = jlm::rvsdg::GraphImport::Create(graph, memoryType, "memoryState2");
 
   auto & storeNode =
       StoreVolatileOperation::CreateNode(address1, value1, ioState1, { &memoryState1 }, 4);
@@ -174,13 +174,13 @@ TestCopy()
   auto memoryStateType = MemoryStateType::Create();
 
   jlm::rvsdg::Graph graph;
-  auto address1 = &jlm::tests::GraphImport::Create(graph, pointerType, "address1");
-  auto value1 = &jlm::tests::GraphImport::Create(graph, valueType, "value1");
-  auto memoryState1 = &jlm::tests::GraphImport::Create(graph, memoryStateType, "state1");
+  auto address1 = &jlm::rvsdg::GraphImport::Create(graph, pointerType, "address1");
+  auto value1 = &jlm::rvsdg::GraphImport::Create(graph, valueType, "value1");
+  auto memoryState1 = &jlm::rvsdg::GraphImport::Create(graph, memoryStateType, "state1");
 
-  auto address2 = &jlm::tests::GraphImport::Create(graph, pointerType, "address2");
-  auto value2 = &jlm::tests::GraphImport::Create(graph, valueType, "value2");
-  auto memoryState2 = &jlm::tests::GraphImport::Create(graph, memoryStateType, "state2");
+  auto address2 = &jlm::rvsdg::GraphImport::Create(graph, pointerType, "address2");
+  auto value2 = &jlm::rvsdg::GraphImport::Create(graph, valueType, "value2");
+  auto memoryState2 = &jlm::rvsdg::GraphImport::Create(graph, memoryStateType, "state2");
 
   auto storeResults = StoreNonVolatileOperation::Create(address1, value1, { memoryState1 }, 4);
 
@@ -198,6 +198,7 @@ static void
 TestStoreMuxNormalization()
 {
   using namespace jlm::llvm;
+  using namespace jlm::rvsdg;
 
   // Arrange
   auto vt = jlm::tests::ValueType::Create();
@@ -205,11 +206,11 @@ TestStoreMuxNormalization()
   auto mt = MemoryStateType::Create();
 
   jlm::rvsdg::Graph graph;
-  auto a = &jlm::tests::GraphImport::Create(graph, pt, "a");
-  auto v = &jlm::tests::GraphImport::Create(graph, vt, "v");
-  auto s1 = &jlm::tests::GraphImport::Create(graph, mt, "s1");
-  auto s2 = &jlm::tests::GraphImport::Create(graph, mt, "s2");
-  auto s3 = &jlm::tests::GraphImport::Create(graph, mt, "s3");
+  auto a = &jlm::rvsdg::GraphImport::Create(graph, pt, "a");
+  auto v = &jlm::rvsdg::GraphImport::Create(graph, vt, "v");
+  auto s1 = &jlm::rvsdg::GraphImport::Create(graph, mt, "s1");
+  auto s2 = &jlm::rvsdg::GraphImport::Create(graph, mt, "s2");
+  auto s3 = &jlm::rvsdg::GraphImport::Create(graph, mt, "s3");
 
   auto mux = MemoryStateMergeOperation::Create({ s1, s2, s3 });
   auto & storeNode = StoreNonVolatileOperation::CreateNode(*a, *v, { mux }, 4);
@@ -247,6 +248,7 @@ static void
 TestDuplicateStateReduction()
 {
   using namespace jlm::llvm;
+  using namespace jlm::rvsdg;
 
   // Arrange
   auto valueType = jlm::tests::ValueType::Create();
@@ -254,11 +256,11 @@ TestDuplicateStateReduction()
   auto memoryStateType = MemoryStateType::Create();
 
   jlm::rvsdg::Graph graph;
-  auto a = &jlm::tests::GraphImport::Create(graph, pointerType, "a");
-  auto v = &jlm::tests::GraphImport::Create(graph, valueType, "v");
-  auto s1 = &jlm::tests::GraphImport::Create(graph, memoryStateType, "s1");
-  auto s2 = &jlm::tests::GraphImport::Create(graph, memoryStateType, "s2");
-  auto s3 = &jlm::tests::GraphImport::Create(graph, memoryStateType, "s3");
+  auto a = &jlm::rvsdg::GraphImport::Create(graph, pointerType, "a");
+  auto v = &jlm::rvsdg::GraphImport::Create(graph, valueType, "v");
+  auto s1 = &jlm::rvsdg::GraphImport::Create(graph, memoryStateType, "s1");
+  auto s2 = &jlm::rvsdg::GraphImport::Create(graph, memoryStateType, "s2");
+  auto s3 = &jlm::rvsdg::GraphImport::Create(graph, memoryStateType, "s3");
 
   auto & storeNode = StoreNonVolatileOperation::CreateNode(*a, *v, { s1, s2, s1, s2, s3 }, 4);
 
@@ -299,6 +301,7 @@ static void
 TestStoreAllocaReduction()
 {
   using namespace jlm::llvm;
+  using namespace jlm::rvsdg;
 
   // Arrange
   auto vt = jlm::tests::ValueType::Create();
@@ -306,9 +309,9 @@ TestStoreAllocaReduction()
   auto bt = jlm::rvsdg::bittype::Create(32);
 
   jlm::rvsdg::Graph graph;
-  auto size = &jlm::tests::GraphImport::Create(graph, bt, "size");
-  auto value = &jlm::tests::GraphImport::Create(graph, vt, "value");
-  auto s = &jlm::tests::GraphImport::Create(graph, mt, "s");
+  auto size = &jlm::rvsdg::GraphImport::Create(graph, bt, "size");
+  auto value = &jlm::rvsdg::GraphImport::Create(graph, vt, "value");
+  auto s = &jlm::rvsdg::GraphImport::Create(graph, mt, "s");
 
   auto alloca1 = AllocaOperation::create(vt, size, 4);
   auto alloca2 = AllocaOperation::create(vt, size, 4);
@@ -353,6 +356,7 @@ static void
 TestStoreStoreReduction()
 {
   using namespace jlm::llvm;
+  using namespace jlm::rvsdg;
 
   // Arrange
   auto vt = jlm::tests::ValueType::Create();
@@ -360,10 +364,10 @@ TestStoreStoreReduction()
   auto mt = MemoryStateType::Create();
 
   jlm::rvsdg::Graph graph;
-  auto a = &jlm::tests::GraphImport::Create(graph, pt, "address");
-  auto v1 = &jlm::tests::GraphImport::Create(graph, vt, "value");
-  auto v2 = &jlm::tests::GraphImport::Create(graph, vt, "value");
-  auto s = &jlm::tests::GraphImport::Create(graph, mt, "state");
+  auto a = &jlm::rvsdg::GraphImport::Create(graph, pt, "address");
+  auto v1 = &jlm::rvsdg::GraphImport::Create(graph, vt, "value");
+  auto v2 = &jlm::rvsdg::GraphImport::Create(graph, vt, "value");
+  auto s = &jlm::rvsdg::GraphImport::Create(graph, mt, "state");
 
   auto & storeNode1 = StoreNonVolatileOperation::CreateNode(*a, *v1, { s }, 4);
   auto & storeNode2 = StoreNonVolatileOperation::CreateNode(*a, *v2, outputs(&storeNode1), 4);
@@ -394,6 +398,7 @@ static void
 IOBarrierAllocaAddressNormalization()
 {
   using namespace jlm::llvm;
+  using namespace jlm::rvsdg;
 
   // Arrange
   const auto valueType = jlm::tests::ValueType::Create();
@@ -403,11 +408,11 @@ IOBarrierAllocaAddressNormalization()
   const auto ioStateType = IOStateType::Create();
 
   jlm::rvsdg::Graph graph;
-  const auto addressImport = &jlm::tests::GraphImport::Create(graph, pointerType, "address");
-  const auto valueImport = &jlm::tests::GraphImport::Create(graph, valueType, "value");
-  const auto sizeImport = &jlm::tests::GraphImport::Create(graph, bit32Type, "value");
-  auto memoryStateImport = &jlm::tests::GraphImport::Create(graph, memoryStateType, "memState");
-  auto ioStateImport = &jlm::tests::GraphImport::Create(graph, ioStateType, "ioState");
+  const auto addressImport = &jlm::rvsdg::GraphImport::Create(graph, pointerType, "address");
+  const auto valueImport = &jlm::rvsdg::GraphImport::Create(graph, valueType, "value");
+  const auto sizeImport = &jlm::rvsdg::GraphImport::Create(graph, bit32Type, "value");
+  auto memoryStateImport = &jlm::rvsdg::GraphImport::Create(graph, memoryStateType, "memState");
+  auto ioStateImport = &jlm::rvsdg::GraphImport::Create(graph, ioStateType, "ioState");
 
   auto allocaResults = AllocaOperation::create(valueType, sizeImport, 4);
   auto & ioBarrierNode = jlm::rvsdg::CreateOpNode<IOBarrierOperation>(

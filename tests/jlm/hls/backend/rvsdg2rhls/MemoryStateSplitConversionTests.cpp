@@ -26,8 +26,8 @@ SplitConversion()
   jlm::llvm::RvsdgModule rvsdgModule(FilePath(""), "", "");
   auto & rvsdg = rvsdgModule.Rvsdg();
 
-  auto & importX = jlm::tests::GraphImport::Create(rvsdg, memoryStateType, "x");
-  auto & importY = jlm::tests::GraphImport::Create(rvsdg, memoryStateType, "y");
+  auto & importX = jlm::rvsdg::GraphImport::Create(rvsdg, memoryStateType, "x");
+  auto & importY = jlm::rvsdg::GraphImport::Create(rvsdg, memoryStateType, "y");
 
   auto structuralNode = jlm::tests::TestStructuralNode::create(&rvsdg.GetRootRegion(), 1);
   const auto inputVar = structuralNode->AddInputWithArguments(importX);
@@ -40,12 +40,12 @@ SplitConversion()
 
   auto splitResults = MemoryStateSplitOperation::Create(importY, 2);
 
-  jlm::tests::GraphExport::Create(*outputVar0.output, "o0");
-  jlm::tests::GraphExport::Create(*outputVar1.output, "o1");
-  jlm::tests::GraphExport::Create(*outputVar2.output, "o2");
+  jlm::rvsdg::GraphExport::Create(*outputVar0.output, "o0");
+  jlm::rvsdg::GraphExport::Create(*outputVar1.output, "o1");
+  jlm::rvsdg::GraphExport::Create(*outputVar2.output, "o2");
 
-  jlm::tests::GraphExport::Create(*splitResults[0], "o3");
-  jlm::tests::GraphExport::Create(*splitResults[1], "o4");
+  jlm::rvsdg::GraphExport::Create(*splitResults[0], "o3");
+  jlm::rvsdg::GraphExport::Create(*splitResults[1], "o4");
 
   view(rvsdg, stdout);
 

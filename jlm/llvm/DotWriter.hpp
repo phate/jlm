@@ -3,8 +3,8 @@
  * See COPYING for terms of redistribution.
  */
 
-#ifndef JLM_LLVM_BACKEND_DOT_DOTWRITER_HPP
-#define JLM_LLVM_BACKEND_DOT_DOTWRITER_HPP
+#ifndef JLM_LLVM_DOTWRITER_HPP
+#define JLM_LLVM_DOTWRITER_HPP
 
 #include <jlm/rvsdg/region.hpp>
 #include <jlm/util/GraphWriter.hpp>
@@ -26,4 +26,4 @@ util::graph::Graph &
 WriteGraphs(util::graph::Writer & writer, rvsdg::Region & region, bool emitTypeGraph);
 }
 
-#endif // JLM_LLVM_BACKEND_DOT_DOTWRITER_HPP
+#endif // JLM_LLVM_DOTWRITER_HPP
