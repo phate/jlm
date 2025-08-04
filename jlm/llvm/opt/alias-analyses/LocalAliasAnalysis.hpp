@@ -7,6 +7,7 @@
 #define JLM_LLVM_OPT_ALIAS_ANALYSES_LOCALALIASANALYSIS_HPP
 
 #include <jlm/llvm/opt/alias-analyses/AliasAnalysis.hpp>
+#include <jlm/rvsdg/simple-node.hpp>
 
 #include <optional>
 
