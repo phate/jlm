@@ -543,7 +543,7 @@ private:
 class Node
 {
 public:
-  using Id = std::size_t;
+  using Id = uint64_t;
 
   using InputIteratorRange = util::IteratorRange<Input::Iterator>;
   using InputConstIteratorRange = util::IteratorRange<Input::ConstIterator>;
