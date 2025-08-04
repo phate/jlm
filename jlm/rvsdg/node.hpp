@@ -20,10 +20,6 @@
 
 namespace jlm::rvsdg
 {
-namespace base
-{
-class type;
-}
 
 class Graph;
 class Output;
@@ -547,6 +543,8 @@ private:
 class Node
 {
 public:
+  using Id = std::size_t;
+
   using InputIteratorRange = util::IteratorRange<Input::Iterator>;
   using InputConstIteratorRange = util::IteratorRange<Input::ConstIterator>;
   using OutputIteratorRange = util::IteratorRange<Output::Iterator>;
@@ -555,6 +553,19 @@ public:
   virtual ~Node();
 
   explicit Node(Region * region);
+
+  /**
+   * @return A unique node identifier
+   *
+   * \note The identifier is guaranteed to be unique for this instance of the node throughout
+   * program execution. In other words, a node identifier is never recycled after a node has been
+   * removed from a \ref Graph and also not between different instances of \ref Graph%s.
+   */
+  [[nodiscard]] Id
+  GetNodeId() const noexcept
+  {
+    return Id_;
+  }
 
   [[nodiscard]] virtual const Operation &
   GetOperation() const noexcept = 0;
@@ -732,7 +743,6 @@ public:
     }
   }
 
-public:
   [[nodiscard]] Graph *
   graph() const noexcept;
 
@@ -788,8 +798,9 @@ public:
       region_bottom_node_list_accessor;
 
 private:
+  Id Id_;
   size_t depth_;
-  rvsdg::Region * region_;
+  Region * region_;
   std::vector<std::unique_ptr<node_input>> inputs_;
   std::vector<std::unique_ptr<node_output>> outputs_;
 };

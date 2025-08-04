@@ -252,8 +252,16 @@ node_output::node_output(Node * node, std::shared_ptr<const rvsdg::Type> type)
       node_(node)
 {}
 
+static Node::Id
+CreateNodeId() noexcept
+{
+  static Node::Id id = 0;
+  return id++;
+}
+
 Node::Node(Region * region)
-    : depth_(0),
+    : Id_(CreateNodeId()),
+      depth_(0),
       region_(region)
 {
   bool wasAdded = region->AddBottomNode(*this);
