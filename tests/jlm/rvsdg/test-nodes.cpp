@@ -333,7 +333,7 @@ NodeId()
   // We should have three unique identifiers in the set
   assert(NodeIds.Size() == 3);
 
-  // The identifiers should be following each other as no other nodes where created in between those
+  // The identifiers should be consecutive as no other nodes where created in between those
   // three nodes
   auto node0Id = node0->GetNodeId();
   auto node2Id = node2->GetNodeId();
@@ -350,7 +350,7 @@ NodeId()
   auto node3 = TestOperation::create(&rvsdg1.GetRootRegion(), {}, {});
   assert(node3->GetNodeId() == node0Id + 3);
 
-  // Identifiers should be unique for program execution and not just for each graph
+  // Identifiers should be unique for program execution and not just within each RVSDG
   Graph rvsdg2;
   auto node4 = TestOperation::create(&rvsdg2.GetRootRegion(), {}, {});
   assert(node4->GetNodeId() == node0Id + 4);
