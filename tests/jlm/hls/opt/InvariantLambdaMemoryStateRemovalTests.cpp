@@ -46,7 +46,7 @@ TestEliminateSplitAndMergeNodes()
       { loadOutput[1], memoryStateSplit[1] });
 
   auto lambdaOutput = lambda->finalize({ &memoryStateMerge });
-  GraphExport::Create(*lambdaOutput, "f");
+  jlm::rvsdg::GraphExport::Create(*lambdaOutput, "f");
 
   jlm::rvsdg::view(rvsdgModule->Rvsdg(), stdout);
 
@@ -115,7 +115,7 @@ TestInvariantMemoryState()
       { loadOutput1[1], memoryStateSplit[1], loadOutput2[1] });
 
   auto lambdaOutput = lambda->finalize({ &memoryStateMerge });
-  GraphExport::Create(*lambdaOutput, "f");
+  jlm::rvsdg::GraphExport::Create(*lambdaOutput, "f");
 
   jlm::rvsdg::view(rvsdgModule->Rvsdg(), stdout);
 

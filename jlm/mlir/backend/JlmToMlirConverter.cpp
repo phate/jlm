@@ -645,7 +645,7 @@ JlmToMlirConverter::ConvertSimpleNode(
         inputs[1],
         inputs[2]);
   }
-  else if (auto matchOp = dynamic_cast<const rvsdg::match_op *>(&operation))
+  else if (auto matchOp = dynamic_cast<const rvsdg::MatchOperation *>(&operation))
   {
     // ** region Create the MLIR mapping vector **
     //! MLIR match operation can match multiple values to one index

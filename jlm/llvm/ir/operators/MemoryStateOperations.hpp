@@ -395,11 +395,33 @@ public:
   [[nodiscard]] std::unique_ptr<Operation>
   copy() const override;
 
-  static std::vector<rvsdg::Output *>
-  Create(rvsdg::Output & output, size_t numResults)
+  /**
+   * Perform the following transformation:
+   *
+   * oN = LambdaExitMemoryStateMergeOperation o0 ... oK
+   * oX ... oZ = CallExitMemoryStateSplitOperation oN
+   * ... = AnyOp oX ... oZ
+   * =>
+   * ... = AnyOp o0 ... oK
+   *
+   * This transformation can occur after function inlining, i.e., a \ref CallOperation has been
+   * replaced with the body of its respective \ref rvsdg::LambdaNode.
+   */
+  static std::optional<std::vector<rvsdg::Output *>>
+  NormalizeLambdaExitMemoryStateMerge(
+      const CallExitMemoryStateSplitOperation & operation,
+      const std::vector<rvsdg::Output *> & operands);
+
+  static rvsdg::Node &
+  CreateNode(rvsdg::Output & operand, const size_t numResults)
   {
-    return outputs(
-        &rvsdg::CreateOpNode<CallExitMemoryStateSplitOperation>({ &output }, numResults));
+    return rvsdg::CreateOpNode<CallExitMemoryStateSplitOperation>({ &operand }, numResults);
+  }
+
+  static std::vector<rvsdg::Output *>
+  Create(rvsdg::Output & output, const size_t numResults)
+  {
+    return outputs(&CreateNode(output, numResults));
   }
 };
 

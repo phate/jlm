@@ -45,7 +45,7 @@ ForkInsertion()
   loop->set_predicate(match);
 
   auto lambdaOutput = lambda->finalize({ loop->output(0), loop->output(1), loop->output(2) });
-  GraphExport::Create(*lambdaOutput, "");
+  rvsdg::GraphExport::Create(*lambdaOutput, "");
 
   rvsdg::view(rvsdgModule.Rvsdg(), stdout);
 
@@ -106,7 +106,7 @@ ConstantForkInsertion()
   loop->set_predicate(match);
 
   auto lambdaOutput = lambda->finalize({ loop->output(0) });
-  GraphExport::Create(*lambdaOutput, "");
+  rvsdg::GraphExport::Create(*lambdaOutput, "");
 
   rvsdg::view(rvsdgModule.Rvsdg(), stdout);
 

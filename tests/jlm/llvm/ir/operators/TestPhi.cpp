@@ -73,7 +73,7 @@ TestPhiCreation()
   rv3.result->divert_to(lambdaOutput2);
 
   auto phi = pb.end();
-  GraphExport::Create(*phi->output(0), "dummy");
+  jlm::rvsdg::GraphExport::Create(*phi->output(0), "dummy");
 
   graph.PruneNodes();
 

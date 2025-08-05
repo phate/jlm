@@ -26,26 +26,26 @@ SplitConversion()
   jlm::llvm::RvsdgModule rvsdgModule(FilePath(""), "", "");
   auto & rvsdg = rvsdgModule.Rvsdg();
 
-  auto & importX = jlm::tests::GraphImport::Create(rvsdg, memoryStateType, "x");
-  auto & importY = jlm::tests::GraphImport::Create(rvsdg, memoryStateType, "y");
+  auto & importX = jlm::rvsdg::GraphImport::Create(rvsdg, memoryStateType, "x");
+  auto & importY = jlm::rvsdg::GraphImport::Create(rvsdg, memoryStateType, "y");
 
   auto structuralNode = jlm::tests::TestStructuralNode::create(&rvsdg.GetRootRegion(), 1);
-  auto & i0 = structuralNode->AddInputWithArguments(importX);
+  const auto inputVar = structuralNode->AddInputWithArguments(importX);
 
-  auto entrySplitResults = LambdaEntryMemoryStateSplitOperation::Create(i0.Argument(0), 3);
+  auto entrySplitResults = LambdaEntryMemoryStateSplitOperation::Create(*inputVar.argument[0], 3);
 
-  auto & o0 = structuralNode->AddOutputWithResults({ entrySplitResults[0] });
-  auto & o1 = structuralNode->AddOutputWithResults({ entrySplitResults[1] });
-  auto & o2 = structuralNode->AddOutputWithResults({ entrySplitResults[2] });
+  const auto outputVar0 = structuralNode->AddOutputWithResults({ entrySplitResults[0] });
+  const auto outputVar1 = structuralNode->AddOutputWithResults({ entrySplitResults[1] });
+  const auto outputVar2 = structuralNode->AddOutputWithResults({ entrySplitResults[2] });
 
   auto splitResults = MemoryStateSplitOperation::Create(importY, 2);
 
-  jlm::tests::GraphExport::Create(o0, "o0");
-  jlm::tests::GraphExport::Create(o1, "o1");
-  jlm::tests::GraphExport::Create(o2, "o2");
+  jlm::rvsdg::GraphExport::Create(*outputVar0.output, "o0");
+  jlm::rvsdg::GraphExport::Create(*outputVar1.output, "o1");
+  jlm::rvsdg::GraphExport::Create(*outputVar2.output, "o2");
 
-  jlm::tests::GraphExport::Create(*splitResults[0], "o3");
-  jlm::tests::GraphExport::Create(*splitResults[1], "o4");
+  jlm::rvsdg::GraphExport::Create(*splitResults[0], "o3");
+  jlm::rvsdg::GraphExport::Create(*splitResults[1], "o4");
 
   view(rvsdg, stdout);
 
@@ -61,9 +61,9 @@ SplitConversion()
   // The memory state split conversion pass should have replaced the
   // LambdaEntryMemoryStateSplitOperation node with a ForkOperation node
   {
-    assert(o0.nusers() == 1);
+    assert(outputVar0.output->nusers() == 1);
     auto [forkNode, forkOperation] =
-        TryGetSimpleNodeAndOp<ForkOperation>(*i0.Argument(0).Users().begin());
+        TryGetSimpleNodeAndOp<ForkOperation>(*inputVar.argument[0]->Users().begin());
     assert(forkNode && forkOperation);
   }
 

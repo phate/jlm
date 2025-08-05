@@ -74,7 +74,7 @@ TestDeadLoopNodeOutput()
 
   auto lambdaOutput = lambdaNode->finalize({ output0 });
 
-  jlm::llvm::GraphExport::Create(*lambdaOutput, "f");
+  jlm::rvsdg::GraphExport::Create(*lambdaOutput, "f");
 
   // Act
   EliminateDeadNodes(rvsdgModule);
