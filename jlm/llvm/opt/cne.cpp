@@ -434,7 +434,7 @@ mark(const rvsdg::StructuralNode * node, CommonNodeElimination::Context & ctx)
             { std::type_index(typeid(rvsdg::ThetaNode)), mark_theta },
             { typeid(rvsdg::LambdaNode), mark_lambda },
             { typeid(rvsdg::PhiNode), mark_phi },
-            { typeid(DeltaNode), mark_delta } });
+            { typeid(rvsdg::DeltaNode), mark_delta } });
 
   JLM_ASSERT(map.find(typeid(*node)) != map.end());
   map[typeid(*node)](node, ctx);
@@ -587,7 +587,7 @@ divert(rvsdg::StructuralNode * node, CommonNodeElimination::Context & ctx)
             { std::type_index(typeid(rvsdg::ThetaNode)), divert_theta },
             { typeid(rvsdg::LambdaNode), divert_lambda },
             { typeid(rvsdg::PhiNode), divert_phi },
-            { typeid(DeltaNode), divert_delta } });
+            { typeid(rvsdg::DeltaNode), divert_delta } });
 
   JLM_ASSERT(map.find(typeid(*node)) != map.end());
   map[typeid(*node)](node, ctx);

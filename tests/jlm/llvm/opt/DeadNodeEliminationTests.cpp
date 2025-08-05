@@ -458,13 +458,9 @@ Delta()
   auto y = &jlm::rvsdg::GraphImport::Create(rvsdg, valueType, "y");
   auto z = &jlm::rvsdg::GraphImport::Create(rvsdg, valueType, "z");
 
-  auto deltaNode = DeltaNode::Create(
+  auto deltaNode = jlm::rvsdg::DeltaNode::Create(
       &rvsdg.GetRootRegion(),
-      valueType,
-      "delta",
-      linkage::external_linkage,
-      "",
-      false);
+      jlm::llvm::DeltaOperation::Create(valueType, "delta", linkage::external_linkage, "", false));
 
   auto xArgument = deltaNode->AddContextVar(*x).inner;
   deltaNode->AddContextVar(*y);

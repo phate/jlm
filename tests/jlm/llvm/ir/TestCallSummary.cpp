@@ -261,13 +261,9 @@ TestCallSummaryComputationFunctionPointerInDelta()
       LlvmLambdaOperation::Create(functionType, "f", linkage::external_linkage));
   lambdaNode->finalize({ lambdaNode->GetFunctionArguments()[0] });
 
-  auto deltaNode = DeltaNode::Create(
+  auto deltaNode = jlm::rvsdg::DeltaNode::Create(
       &rvsdg->GetRootRegion(),
-      functionType,
-      "fp",
-      linkage::external_linkage,
-      "",
-      false);
+      jlm::llvm::DeltaOperation::Create(functionType, "fp", linkage::external_linkage, "", false));
   auto argument = deltaNode->AddContextVar(*lambdaNode->output()).inner;
   deltaNode->finalize(argument);
 

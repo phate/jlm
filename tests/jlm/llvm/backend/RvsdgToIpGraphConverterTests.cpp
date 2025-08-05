@@ -357,7 +357,9 @@ RecursiveData()
 
   jlm::rvsdg::Output *delta1 = nullptr, *delta2 = nullptr;
   {
-    auto delta = DeltaNode::Create(region, vt, "test-delta1", linkage::external_linkage, "", false);
+    auto delta = jlm::rvsdg::DeltaNode::Create(
+        region,
+        jlm::llvm::DeltaOperation::Create(vt, "test-delta1", linkage::external_linkage, "", false));
     auto dep1 = delta->AddContextVar(*r2.recref).inner;
     auto dep2 = delta->AddContextVar(*dep.inner).inner;
     delta1 =
@@ -365,7 +367,9 @@ RecursiveData()
   }
 
   {
-    auto delta = DeltaNode::Create(region, vt, "test-delta2", linkage::external_linkage, "", false);
+    auto delta = jlm::rvsdg::DeltaNode::Create(
+        region,
+        jlm::llvm::DeltaOperation::Create(vt, "test-delta2", linkage::external_linkage, "", false));
     auto dep1 = delta->AddContextVar(*r1.recref).inner;
     auto dep2 = delta->AddContextVar(*dep.inner).inner;
     delta2 =

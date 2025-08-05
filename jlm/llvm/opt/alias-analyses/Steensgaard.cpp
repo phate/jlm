@@ -9,6 +9,7 @@
 #include <jlm/llvm/ir/RvsdgModule.hpp>
 #include <jlm/llvm/opt/alias-analyses/PointsToGraph.hpp>
 #include <jlm/llvm/opt/alias-analyses/Steensgaard.hpp>
+#include <jlm/rvsdg/delta.hpp>
 #include <jlm/rvsdg/gamma.hpp>
 #include <jlm/rvsdg/theta.hpp>
 #include <jlm/rvsdg/traverser.hpp>
@@ -226,7 +227,7 @@ public:
       }
     }
 
-    if (rvsdg::TryGetRegionParentNode<DeltaNode>(*Output_))
+    if (rvsdg::TryGetRegionParentNode<rvsdg::DeltaNode>(*Output_))
     {
       auto dbgstr = Output_->region()->node()->DebugString();
       return jlm::util::strfmt(dbgstr, ":cv:", index);
@@ -433,13 +434,13 @@ class DeltaLocation final : public MemoryLocation
 {
   ~DeltaLocation() override = default;
 
-  constexpr explicit DeltaLocation(const DeltaNode & delta)
+  constexpr explicit DeltaLocation(const rvsdg::DeltaNode & delta)
       : MemoryLocation(),
         Delta_(delta)
   {}
 
 public:
-  [[nodiscard]] const DeltaNode &
+  [[nodiscard]] const rvsdg::DeltaNode &
   GetNode() const noexcept
   {
     return Delta_;
@@ -452,13 +453,13 @@ public:
   }
 
   static std::unique_ptr<Location>
-  Create(const DeltaNode & node)
+  Create(const rvsdg::DeltaNode & node)
   {
     return std::unique_ptr<Location>(new DeltaLocation(node));
   }
 
 private:
-  const DeltaNode & Delta_;
+  const rvsdg::DeltaNode & Delta_;
 };
 
 /**
@@ -600,7 +601,7 @@ public:
   }
 
   Location &
-  InsertDeltaLocation(const DeltaNode & delta)
+  InsertDeltaLocation(const rvsdg::DeltaNode & delta)
   {
     Locations_.push_back(DeltaLocation::Create(delta));
     auto location = Locations_.back().get();
@@ -1597,7 +1598,7 @@ Steensgaard::AnalyzeLambda(const rvsdg::LambdaNode & lambda)
 }
 
 void
-Steensgaard::AnalyzeDelta(const DeltaNode & delta)
+Steensgaard::AnalyzeDelta(const rvsdg::DeltaNode & delta)
 {
   // Handle context variables
   for (auto & ctxVar : delta.GetContextVars())
@@ -1749,7 +1750,7 @@ Steensgaard::AnalyzeStructuralNode(const rvsdg::StructuralNode & node)
   {
     AnalyzeLambda(*lambdaNode);
   }
-  else if (auto deltaNode = dynamic_cast<const DeltaNode *>(&node))
+  else if (auto deltaNode = dynamic_cast<const rvsdg::DeltaNode *>(&node))
   {
     AnalyzeDelta(*deltaNode);
   }

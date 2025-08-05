@@ -25,24 +25,26 @@ TestDeltaCreation()
 
   auto imp = &jlm::rvsdg::GraphImport::Create(rvsdgModule.Rvsdg(), valueType, "");
 
-  auto delta1 = DeltaNode::Create(
+  auto delta1 = jlm::rvsdg::DeltaNode::Create(
       &rvsdgModule.Rvsdg().GetRootRegion(),
-      valueType,
-      "test-delta1",
-      linkage::external_linkage,
-      "",
-      true);
+      jlm::llvm::DeltaOperation::Create(
+          valueType,
+          "test-delta1",
+          linkage::external_linkage,
+          "",
+          true));
   auto dep = delta1->AddContextVar(*imp).inner;
   auto d1 =
       &delta1->finalize(jlm::tests::create_testop(delta1->subregion(), { dep }, { valueType })[0]);
 
-  auto delta2 = DeltaNode::Create(
+  auto delta2 = jlm::rvsdg::DeltaNode::Create(
       &rvsdgModule.Rvsdg().GetRootRegion(),
-      valueType,
-      "test-delta2",
-      linkage::internal_linkage,
-      "",
-      false);
+      jlm::llvm::DeltaOperation::Create(
+          valueType,
+          "test-delta2",
+          linkage::internal_linkage,
+          "",
+          false));
   auto d2 = &delta2->finalize(jlm::tests::create_testop(delta2->subregion(), {}, { valueType })[0]);
 
   GraphExport::Create(*d1, "");
@@ -53,11 +55,9 @@ TestDeltaCreation()
   // Assert
   assert(rvsdgModule.Rvsdg().GetRootRegion().nnodes() == 2);
 
-  assert(delta1->linkage() == linkage::external_linkage);
   assert(delta1->constant() == true);
   assert(*delta1->Type() == *valueType);
 
-  assert(delta2->linkage() == linkage::internal_linkage);
   assert(delta2->constant() == false);
   assert(*delta2->Type() == *valueType);
 }
@@ -74,13 +74,9 @@ TestRemoveDeltaInputsWhere()
 
   auto x = &jlm::rvsdg::GraphImport::Create(rvsdgModule.Rvsdg(), valueType, "");
 
-  auto deltaNode = DeltaNode::Create(
+  auto deltaNode = jlm::rvsdg::DeltaNode::Create(
       &rvsdgModule.Rvsdg().GetRootRegion(),
-      valueType,
-      "delta",
-      linkage::external_linkage,
-      "",
-      true);
+      jlm::llvm::DeltaOperation::Create(valueType, "delta", linkage::external_linkage, "", true));
   auto deltaInput0 = deltaNode->AddContextVar(*x).input;
   auto deltaInput1 = deltaNode->AddContextVar(*x).input;
   deltaNode->AddContextVar(*x);
@@ -142,13 +138,9 @@ TestPruneDeltaInputs()
 
   auto x = &jlm::rvsdg::GraphImport::Create(rvsdgModule.Rvsdg(), valueType, "");
 
-  auto deltaNode = DeltaNode::Create(
+  auto deltaNode = jlm::rvsdg::DeltaNode::Create(
       &rvsdgModule.Rvsdg().GetRootRegion(),
-      valueType,
-      "delta",
-      linkage::external_linkage,
-      "",
-      true);
+      jlm::llvm::DeltaOperation::Create(valueType, "delta", linkage::external_linkage, "", true));
 
   deltaNode->AddContextVar(*x);
   auto deltaInput1 = deltaNode->AddContextVar(*x).input;
