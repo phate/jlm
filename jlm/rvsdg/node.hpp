@@ -555,7 +555,7 @@ public:
   explicit Node(Region * region);
 
   /**
-   * @return The node instances' unique identifier
+   * @return The unique identifier of the node instance within the region.
    *
    * \see GenerateNodeId()
    */
