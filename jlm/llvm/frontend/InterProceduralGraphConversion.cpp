@@ -1035,13 +1035,14 @@ ConvertDataNode(
     /*
      * data node with initialization
      */
-    auto deltaNode = DeltaNode::Create(
+    auto deltaNode = rvsdg::DeltaNode::Create(
         &region,
-        dataNode.GetValueType(),
-        dataNode.name(),
-        dataNode.linkage(),
-        dataNode.Section(),
-        dataNode.constant());
+        llvm::DeltaOperation::Create(
+            dataNode.GetValueType(),
+            dataNode.name(),
+            dataNode.linkage(),
+            dataNode.Section(),
+            dataNode.constant()));
     auto & outerVariableMap = regionalizedVariableMap.GetTopVariableMap();
     regionalizedVariableMap.PushRegion(*deltaNode->subregion());
 

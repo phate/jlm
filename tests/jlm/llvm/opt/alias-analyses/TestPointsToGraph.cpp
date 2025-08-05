@@ -8,6 +8,7 @@
 
 #include <jlm/llvm/opt/alias-analyses/PointsToAnalysis.hpp>
 #include <jlm/llvm/opt/alias-analyses/PointsToGraph.hpp>
+#include <jlm/rvsdg/delta.hpp>
 #include <jlm/util/Statistics.hpp>
 
 /**
@@ -63,7 +64,7 @@ private:
             aa::PointsToGraph::RegisterNode::Create(*PointsToGraph_, { node.output(0) });
         registerNode.AddEdge(mallocNode);
       }
-      else if (auto deltaNode = dynamic_cast<const DeltaNode *>(&node))
+      else if (auto deltaNode = dynamic_cast<const jlm::rvsdg::DeltaNode *>(&node))
       {
         auto & deltaPtgNode = aa::PointsToGraph::DeltaNode::Create(*PointsToGraph_, *deltaNode);
         auto & registerNode =
