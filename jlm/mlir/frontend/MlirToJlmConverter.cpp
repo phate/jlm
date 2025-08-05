@@ -905,7 +905,7 @@ MlirToJlmConverter::ConvertOperation(
       }
       else if (auto delta = dynamic_cast<llvm::DeltaNode *>(origin))
       {
-        jlm::llvm::GraphExport::Create(*input, delta->GetOperation().name());
+        jlm::rvsdg::GraphExport::Create(*input, delta->GetOperation().name());
       }
     }
     return nullptr;
