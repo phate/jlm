@@ -901,7 +901,7 @@ MlirToJlmConverter::ConvertOperation(
       if (auto lambda = dynamic_cast<rvsdg::LambdaNode *>(origin))
       {
         auto op = dynamic_cast<llvm::LlvmLambdaOperation *>(&lambda->GetOperation());
-        jlm::llvm::GraphExport::Create(*input, op->name());
+        jlm::rvsdg::GraphExport::Create(*input, op->name());
       }
       else if (auto delta = dynamic_cast<llvm::DeltaNode *>(origin))
       {
