@@ -139,6 +139,7 @@ Region::~Region() noexcept
 Region::Region(Region *, Graph * graph)
     : index_(0),
       graph_(graph),
+      NodeId_(0),
       node_(nullptr)
 {
   on_region_create(this);
@@ -147,6 +148,7 @@ Region::Region(Region *, Graph * graph)
 Region::Region(rvsdg::StructuralNode * node, size_t index)
     : index_(index),
       graph_(node->graph()),
+      NodeId_(0),
       node_(node)
 {
   on_region_create(this);

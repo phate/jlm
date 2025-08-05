@@ -555,11 +555,9 @@ public:
   explicit Node(Region * region);
 
   /**
-   * @return A unique node identifier
+   * @return The node instances' unique identifier
    *
-   * \note The identifier is guaranteed to be unique for this instance of the node throughout
-   * program execution. In other words, a node identifier is never recycled after a node has been
-   * removed from a \ref Graph and also not between different instances of \ref Graph%s.
+   * \see GenerateNodeId()
    */
   [[nodiscard]] Id
   GetNodeId() const noexcept

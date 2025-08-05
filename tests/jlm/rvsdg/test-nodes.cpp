@@ -335,25 +335,24 @@ NodeId()
 
   // The identifiers should be consecutive as no other nodes where created in between those
   // three nodes
-  auto node0Id = node0->GetNodeId();
-  auto node2Id = node2->GetNodeId();
-  assert(node1->GetNodeId() == node0Id + 1);
-  assert(node2Id == node0Id + 2);
+  assert(node0->GetNodeId() == 0);
+  assert(node1->GetNodeId() == 1);
+  assert(node2->GetNodeId() == 2);
 
   // Removing a node should not change the identifiers of the other nodes
   remove(node1);
-  assert(node0->GetNodeId() == node0Id);
-  assert(node2->GetNodeId() == node2Id);
+  assert(node0->GetNodeId() == 0);
+  assert(node2->GetNodeId() == 2);
 
   // Adding a new node should give us the next identifier as no other nodes have been created in
   // between
   auto node3 = TestOperation::create(&rvsdg1.GetRootRegion(), {}, {});
-  assert(node3->GetNodeId() == node0Id + 3);
+  assert(node3->GetNodeId() == 3);
 
-  // Identifiers should be unique for program execution and not just within each RVSDG
+  // Identifiers should be only unique for each region
   Graph rvsdg2;
   auto node4 = TestOperation::create(&rvsdg2.GetRootRegion(), {}, {});
-  assert(node4->GetNodeId() == node0Id + 4);
+  assert(node4->GetNodeId() == 0);
 }
 
 JLM_UNIT_TEST_REGISTER("jlm/rvsdg/test-nodes-NodeId", NodeId)

@@ -252,15 +252,8 @@ node_output::node_output(Node * node, std::shared_ptr<const rvsdg::Type> type)
       node_(node)
 {}
 
-static Node::Id
-CreateNodeId() noexcept
-{
-  static Node::Id id = 0;
-  return id++;
-}
-
 Node::Node(Region * region)
-    : Id_(CreateNodeId()),
+    : Id_(region->GenerateNodeId()),
       depth_(0),
       region_(region)
 {
