@@ -304,10 +304,11 @@ PartialEmptyGamma()
   auto match = jlm::rvsdg::match(1, { { 0, 0 } }, 1, 2, lambdaNode->GetFunctionArguments()[0]);
   auto gammaNode = jlm::rvsdg::GammaNode::create(match, 2);
   auto gammaInput = gammaNode->AddEntryVar(lambdaNode->GetFunctionArguments()[1]);
-  auto output = jlm::tests::create_testop(
-      gammaNode->subregion(1),
-      { gammaInput.branchArgument[1] },
-      { valueType })[0];
+  auto output = TestOperation::create(
+                    gammaNode->subregion(1),
+                    { gammaInput.branchArgument[1] },
+                    { valueType })
+                    ->output(0);
   auto gammaOutput = gammaNode->AddExitVar({ gammaInput.branchArgument[0], output });
 
   auto lambdaOutput = lambdaNode->finalize({ gammaOutput.output });
@@ -362,8 +363,8 @@ RecursiveData()
         jlm::llvm::DeltaOperation::Create(vt, "test-delta1", linkage::external_linkage, "", false));
     auto dep1 = delta->AddContextVar(*r2.recref).inner;
     auto dep2 = delta->AddContextVar(*dep.inner).inner;
-    delta1 =
-        &delta->finalize(jlm::tests::create_testop(delta->subregion(), { dep1, dep2 }, { vt })[0]);
+    delta1 = &delta->finalize(
+        jlm::tests::TestOperation::create(delta->subregion(), { dep1, dep2 }, { vt })->output(0));
   }
 
   {
@@ -372,8 +373,8 @@ RecursiveData()
         jlm::llvm::DeltaOperation::Create(vt, "test-delta2", linkage::external_linkage, "", false));
     auto dep1 = delta->AddContextVar(*r1.recref).inner;
     auto dep2 = delta->AddContextVar(*dep.inner).inner;
-    delta2 =
-        &delta->finalize(jlm::tests::create_testop(delta->subregion(), { dep1, dep2 }, { vt })[0]);
+    delta2 = &delta->finalize(
+        jlm::tests::TestOperation::create(delta->subregion(), { dep1, dep2 }, { vt })->output(0));
   }
 
   r1.result->divert_to(delta1);
