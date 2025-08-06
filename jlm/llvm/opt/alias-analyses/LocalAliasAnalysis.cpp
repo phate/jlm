@@ -455,7 +455,7 @@ LocalAliasAnalysis::IsOriginalOrigin(const rvsdg::Output & pointer)
   if (dynamic_cast<const GraphImport *>(&pointer))
     return true;
 
-  if (rvsdg::TryGetOwnerNode<DeltaNode>(pointer))
+  if (rvsdg::TryGetOwnerNode<rvsdg::DeltaNode>(pointer))
     return true;
 
   if (rvsdg::TryGetOwnerNode<rvsdg::LambdaNode>(pointer))
@@ -488,7 +488,7 @@ LocalAliasAnalysis::HasOnlyOriginalTopOrigins(TraceCollection & traces)
 std::optional<size_t>
 LocalAliasAnalysis::GetOriginalOriginSize(const rvsdg::Output & pointer)
 {
-  if (auto delta = rvsdg::TryGetOwnerNode<DeltaNode>(pointer))
+  if (auto delta = rvsdg::TryGetOwnerNode<rvsdg::DeltaNode>(pointer))
     return GetTypeSize(*delta->GetOperation().Type());
   if (auto import = dynamic_cast<const GraphImport *>(&pointer))
   {
