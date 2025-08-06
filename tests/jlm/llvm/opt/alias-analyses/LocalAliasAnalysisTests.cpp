@@ -9,6 +9,9 @@
 #include <jlm/llvm/opt/alias-analyses/LocalAliasAnalysis.hpp>
 #include <jlm/rvsdg/view.hpp>
 
+/**
+ * Helper function for expecting an alias query to return a given result
+ */
 static void
 Expect(
     jlm::llvm::aa::AliasAnalysis & aa,
@@ -26,13 +29,204 @@ Expect(
   assert(mirror == expected);
 }
 
+/**
+ * This class sets up an RVSDG representing the following code:
+ *
+ * \code{.c}
+ *   char* getPtr();
+ *
+ *   extern int global;
+ *   extern short globalShort;
+ *   extern int array[10];
+ *
+ *   void func(int** p) {
+ *     int alloca1, alloca2;
+ *
+ *     // Calculate the same offset in two ways
+ *     int* q = *p + 2;
+ *     int* qPlus2 = *p + 4;
+ *     int* qAgain = qPlus2 - 2;
+ *
+ *     // Different offsets into storage instances
+ *     int* arr1 = array + 1;
+ *     int* arr2 = array + 2;
+ *     int* arr3 = array + 3;
+ *     int* arrUnknown = array + global;
+ *
+ *     // Make alloca2 "escape" the function
+ *     *p = &alloca2;
+ *
+ *     char* bytePtr = getPtr();
+ *     char* bytePtrPlus2 = bytePtr + 2;
+ *
+ *     // All alias queries happen here
+ *   }
+ * \endcode
+ */
+class LocalAliasAnalysisTest1 final : public jlm::tests::RvsdgTest
+{
+  struct Outputs
+  {
+    jlm::rvsdg::Output * GetPtr = {};
+    jlm::rvsdg::Output * Global = {};
+    jlm::rvsdg::Output * GlobalShort = {};
+    jlm::rvsdg::Output * Array = {};
+    jlm::rvsdg::Output * Func = {};
+    jlm::rvsdg::Output * P = {};
+    jlm::rvsdg::Output * Alloca1 = {};
+    jlm::rvsdg::Output * Alloca2 = {};
+    jlm::rvsdg::Output * Q = {};
+    jlm::rvsdg::Output * QPlus2 = {};
+    jlm::rvsdg::Output * QAgain = {};
+    jlm::rvsdg::Output * Arr1 = {};
+    jlm::rvsdg::Output * Arr2 = {};
+    jlm::rvsdg::Output * Arr3 = {};
+    jlm::rvsdg::Output * ArrUnknown = {};
+    jlm::rvsdg::Output * BytePtr = {};
+    jlm::rvsdg::Output * BytePtrPlus2 = {};
+  };
+
+public:
+  const Outputs &
+  GetOutputs() const noexcept
+  {
+    return Outputs_;
+  }
+
+private:
+  std::unique_ptr<jlm::llvm::RvsdgModule>
+  SetupRvsdg() override
+  {
+    using namespace jlm;
+    using namespace jlm::llvm;
+
+    auto rvsdgModule = RvsdgModule::Create(jlm::util::FilePath(""), "", "");
+    auto & rvsdg = rvsdgModule->Rvsdg();
+
+    const auto pointerType = PointerType::Create();
+    const auto intType = rvsdg::bittype::Create(32);
+    const auto shortType = rvsdg::bittype::Create(16);
+    const auto byteType = rvsdg::bittype::Create(8);
+    const auto intArrayType = ArrayType::Create(intType, 10);
+    const auto ioStateType = IOStateType::Create();
+    const auto memoryStateType = MemoryStateType::Create();
+
+    const auto funcType = rvsdg::FunctionType::Create(
+        { pointerType, ioStateType, memoryStateType },
+        { ioStateType, memoryStateType });
+
+    const auto getPtrFuncType = rvsdg::FunctionType::Create(
+        { ioStateType, memoryStateType },
+        { pointerType, ioStateType, memoryStateType });
+
+    Outputs_.GetPtr = &GraphImport::Create(
+        rvsdg,
+        getPtrFuncType,
+        getPtrFuncType,
+        "getPtr",
+        linkage::external_linkage);
+
+    Outputs_.Global =
+        &GraphImport::Create(rvsdg, intType, pointerType, "global", linkage::external_linkage);
+    Outputs_.GlobalShort = &GraphImport::Create(
+        rvsdg,
+        shortType,
+        pointerType,
+        "globalShort",
+        linkage::external_linkage);
+    Outputs_.Array =
+        &GraphImport::Create(rvsdg, intArrayType, pointerType, "array", linkage::external_linkage);
+
+    // Setup the function "func"
+    {
+      auto & lambdaNode = *rvsdg::LambdaNode::Create(
+          rvsdg.GetRootRegion(),
+          LlvmLambdaOperation::Create(funcType, "func", linkage::internal_linkage));
+
+      Outputs_.P = lambdaNode.GetFunctionArguments()[0];
+      auto ioState = lambdaNode.GetFunctionArguments()[1];
+      auto memoryState = lambdaNode.GetFunctionArguments()[2];
+
+      const auto getPtrCtxVar = lambdaNode.AddContextVar(*Outputs_.GetPtr).inner;
+      const auto arrayCtxVar = lambdaNode.AddContextVar(*Outputs_.Array).inner;
+      const auto globalCtxVar = lambdaNode.AddContextVar(*Outputs_.Global).inner;
+
+      const auto constantOne = create_bitconstant(lambdaNode.subregion(), 32, 1);
+      const auto constantTwo = create_bitconstant(lambdaNode.subregion(), 32, 2);
+      const auto constantThree = create_bitconstant(lambdaNode.subregion(), 32, 3);
+      const auto constantFour = create_bitconstant(lambdaNode.subregion(), 32, 4);
+      const auto constantMinusTwo = create_bitconstant(lambdaNode.subregion(), 32, -2);
+
+      const auto alloca1Outputs = AllocaOperation::create(intType, constantOne, 4);
+      const auto alloca2Outputs = AllocaOperation::create(intType, constantOne, 4);
+
+      Outputs_.Alloca1 = alloca1Outputs[0];
+      Outputs_.Alloca2 = alloca2Outputs[0];
+
+      memoryState =
+          MemoryStateMergeOperation::Create({ memoryState, alloca1Outputs[1], alloca2Outputs[1] });
+
+      // Load from the pointer p
+      const auto loadP =
+          LoadNonVolatileOperation::Create(Outputs_.P, { memoryState }, pointerType, 8);
+      memoryState = loadP[1];
+
+      Outputs_.Q = GetElementPtrOperation::Create(loadP[0], { constantTwo }, intType, pointerType);
+      Outputs_.QPlus2 =
+          GetElementPtrOperation::Create(loadP[0], { constantFour }, intType, pointerType);
+      Outputs_.QAgain = GetElementPtrOperation::Create(
+          Outputs_.QPlus2,
+          { constantMinusTwo },
+          intType,
+          pointerType);
+
+      // Create offsets into array
+      Outputs_.Arr1 =
+          GetElementPtrOperation::Create(arrayCtxVar, { constantOne }, intType, pointerType);
+      Outputs_.Arr2 =
+          GetElementPtrOperation::Create(arrayCtxVar, { constantTwo }, intType, pointerType);
+      Outputs_.Arr3 =
+          GetElementPtrOperation::Create(arrayCtxVar, { constantThree }, intType, pointerType);
+
+      // Create a load of the global integer variable "global"
+      const auto loadGlobal =
+          LoadNonVolatileOperation::Create(globalCtxVar, { memoryState }, intType, 4);
+      memoryState = loadGlobal[1];
+      Outputs_.ArrUnknown =
+          GetElementPtrOperation::Create(arrayCtxVar, { loadGlobal[0] }, byteType, pointerType);
+
+      // Make alloca2 escape
+      const auto storeOutputs =
+          StoreNonVolatileOperation::Create(Outputs_.P, Outputs_.Alloca2, { memoryState }, 4);
+      memoryState = storeOutputs[0];
+
+      // Get bytePtr by calling getPtr()
+      const auto callOutputs =
+          CallOperation::Create(getPtrCtxVar, getPtrFuncType, { ioState, memoryState });
+      Outputs_.BytePtr = callOutputs[0];
+      ioState = callOutputs[1];
+      memoryState = callOutputs[2];
+
+      Outputs_.BytePtrPlus2 =
+          GetElementPtrOperation::Create(Outputs_.BytePtr, { constantTwo }, byteType, pointerType);
+
+      lambdaNode.finalize({ ioState, memoryState });
+      Outputs_.Func = lambdaNode.output();
+    }
+
+    return rvsdgModule;
+  }
+
+  Outputs Outputs_ = {};
+};
+
 void
 TestLocalAliasAnalysis()
 {
   using namespace jlm::llvm::aa;
 
   // Arrange
-  jlm::tests::LocalAliasAnalysisTest1 rvsdg;
+  LocalAliasAnalysisTest1 rvsdg;
   rvsdg.InitializeTest();
   const auto & outputs = rvsdg.GetOutputs();
 
@@ -111,13 +305,155 @@ JLM_UNIT_TEST_REGISTER(
     "jlm/llvm/opt/alias-analyses/AliasAnalysisTests-TestLocalAliasAnalysis",
     TestLocalAliasAnalysis);
 
+/**
+ * This class sets up an RVSDG representing the following code:
+ *
+ * \code{.c}
+ *
+ *   void func(int1_t x, int32_t* ptr) {
+ *     int32_t alloca1
+ *     int64_t alloca2;
+ *     int32_t alloca3[2];
+ *
+ *     // Using a gamma node
+ *     int32_t* allocaUnknown;
+ *     if (x)
+ *       allocaUnknown = &alloca1;
+ *     else
+ *       allocaUnknown = (int32_t*) &alloca2;
+ *
+ *     int32_t* allocaUnknownPlus1 = allocaUnknown + 1;
+ *     int32_t* alloca3Plus1 = alloca3 + 1;
+ *
+ *     // Using a select operation
+ *     int32_t* alloca3UnknownOffset = x ? alloca3 : alloca3Plus1;
+ *
+ *     // Using a select operation that is actually a nop
+ *     int32_t* alloca3KnownOffset = x ? alloca3Plus1 : alloca3Plus1;
+ *
+ *     // All alias queries happen here
+ *   }
+ * \endcode
+ */
+class LocalAliasAnalysisTest2 final : public jlm::tests::RvsdgTest
+{
+  struct Outputs
+  {
+    jlm::rvsdg::Output * Func = {};
+    jlm::rvsdg::Output * X = {};
+    jlm::rvsdg::Output * Ptr = {};
+    jlm::rvsdg::Output * Alloca1 = {};
+    jlm::rvsdg::Output * Alloca2 = {};
+    jlm::rvsdg::Output * Alloca3 = {};
+    jlm::rvsdg::Output * AllocaUnknown = {};
+    jlm::rvsdg::Output * AllocaUnknownPlus1 = {};
+    jlm::rvsdg::Output * Alloca3Plus1 = {};
+    jlm::rvsdg::Output * Alloca3UnknownOffset = {};
+    jlm::rvsdg::Output * Alloca3KnownOffset = {};
+  };
+
+public:
+  const Outputs &
+  GetOutputs() const noexcept
+  {
+    return Outputs_;
+  }
+
+private:
+  std::unique_ptr<jlm::llvm::RvsdgModule>
+  SetupRvsdg() override
+  {
+    using namespace jlm;
+    using namespace jlm::llvm;
+
+    auto rvsdgModule = RvsdgModule::Create(jlm::util::FilePath(""), "", "");
+    auto & rvsdg = rvsdgModule->Rvsdg();
+
+    const auto pointerType = PointerType::Create();
+    const auto int1Type = rvsdg::bittype::Create(1);
+    const auto int32Type = rvsdg::bittype::Create(32);
+    const auto int64Type = rvsdg::bittype::Create(64);
+    const auto intArrayType = ArrayType::Create(int32Type, 2);
+    const auto ioStateType = IOStateType::Create();
+    const auto memoryStateType = MemoryStateType::Create();
+
+    const auto funcType = rvsdg::FunctionType::Create(
+        { int1Type, pointerType, ioStateType, memoryStateType },
+        { ioStateType, memoryStateType });
+
+    // Setup the function "func"
+    {
+      auto & lambdaNode = *rvsdg::LambdaNode::Create(
+          rvsdg.GetRootRegion(),
+          LlvmLambdaOperation::Create(funcType, "func", linkage::internal_linkage));
+
+      Outputs_.X = lambdaNode.GetFunctionArguments()[0];
+      Outputs_.Ptr = lambdaNode.GetFunctionArguments()[1];
+      auto ioState = lambdaNode.GetFunctionArguments()[2];
+      auto memoryState = lambdaNode.GetFunctionArguments()[3];
+
+      const auto constantZero = create_bitconstant(lambdaNode.subregion(), 32, 0);
+      const auto constantOne = create_bitconstant(lambdaNode.subregion(), 32, 1);
+
+      const auto alloca1Outputs = AllocaOperation::create(int32Type, constantOne, 4);
+      const auto alloca2Outputs = AllocaOperation::create(int64Type, constantOne, 4);
+      const auto alloca3Outputs = AllocaOperation::create(intArrayType, constantOne, 4);
+
+      Outputs_.Alloca1 = alloca1Outputs[0];
+      Outputs_.Alloca2 = alloca2Outputs[0];
+      Outputs_.Alloca3 = alloca3Outputs[0];
+
+      memoryState = MemoryStateMergeOperation::Create(
+          { memoryState, alloca1Outputs[1], alloca2Outputs[1], alloca3Outputs[1] });
+
+      const auto matchResult = rvsdg::MatchOperation::Create(*Outputs_.X, { { 1, 1 } }, 0, 2);
+      const auto gamma = rvsdg::GammaNode::create(matchResult, 2);
+      const auto entryVarA1 = gamma->AddEntryVar(Outputs_.Alloca1);
+      const auto entryVarA2 = gamma->AddEntryVar(Outputs_.Alloca2);
+      const auto exitVar =
+          gamma->AddExitVar({ entryVarA1.branchArgument[0], entryVarA2.branchArgument[1] });
+      Outputs_.AllocaUnknown = exitVar.output;
+
+      Outputs_.AllocaUnknownPlus1 = GetElementPtrOperation::Create(
+          Outputs_.AllocaUnknown,
+          { constantOne },
+          int32Type,
+          pointerType);
+
+      Outputs_.Alloca3Plus1 = GetElementPtrOperation::Create(
+          Outputs_.Alloca3,
+          { constantZero, constantOne },
+          intArrayType,
+          pointerType);
+
+      Outputs_.Alloca3UnknownOffset = rvsdg::CreateOpNode<SelectOperation>(
+                                          { Outputs_.X, Outputs_.Alloca3, Outputs_.Alloca3Plus1 },
+                                          pointerType)
+                                          .output(0);
+
+      Outputs_.Alloca3KnownOffset =
+          rvsdg::CreateOpNode<SelectOperation>(
+              { Outputs_.X, Outputs_.Alloca3Plus1, Outputs_.Alloca3Plus1 },
+              pointerType)
+              .output(0);
+
+      lambdaNode.finalize({ ioState, memoryState });
+      Outputs_.Func = lambdaNode.output();
+    }
+
+    return rvsdgModule;
+  }
+
+  Outputs Outputs_ = {};
+};
+
 void
 TestLocalAliasAnalysisMultipleOrigins()
 {
   using namespace jlm::llvm::aa;
 
   // Arrange
-  jlm::tests::LocalAliasAnalysisTest2 rvsdg;
+  LocalAliasAnalysisTest2 rvsdg;
   rvsdg.InitializeTest();
   const auto & outputs = rvsdg.GetOutputs();
 

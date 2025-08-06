@@ -89,17 +89,6 @@ IsPointerCompatible(const rvsdg::Output & value);
 [[nodiscard]] const rvsdg::Output &
 NormalizeOutput(const rvsdg::Output & output);
 
-/**
- * Follows the definition of the given pointer value when it is a trivial copy of another pointer,
- * resulting in a possibly different rvsdg::output that produces exactly the same value.
- *
- * @param pointer the pointer value to be normalized
- * @return a definition of pointer normalized as much as possible
- * @see NormalizeOutput
- */
-[[nodiscard]] const rvsdg::Output &
-NormalizePointerValue(const rvsdg::Output & pointer);
-
 }
 
 #endif // JLM_LLVM_OPT_ALIAS_ANALYSES_ALIASANALYSIS_HPP

@@ -249,17 +249,6 @@ private:
   std::unordered_map<const rvsdg::Output *, bool> IsFullyTraceable_;
 };
 
-/**
- * Gets the value of the given \p output as a compile time constant, if possible.
- * The constant is interpreted as a signed value, and sign extended to int64 if needed.
- * This function does not perform any constant folding.
- *
- * @param output the output whose constant value is requested
- * @return the value of the output, or nullopt if it could not be determined.
- */
-[[nodiscard]] std::optional<int64_t>
-GetConstantSignedIntegerValue(const rvsdg::Output & output);
-
 }
 
 #endif // JLM_LLVM_OPT_ALIAS_ANALYSES_LOCALALIASANALYSIS_HPP

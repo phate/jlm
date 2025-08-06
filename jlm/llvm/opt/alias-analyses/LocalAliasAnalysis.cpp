@@ -21,6 +21,32 @@
 namespace jlm::llvm::aa
 {
 
+/**
+ * Gets the value of the given \p output as a compile time constant, if possible.
+ * The constant is interpreted as a signed value, and sign extended to int64 if needed.
+ * This function does not perform any constant folding.
+ *
+ * @param output the output whose constant value is requested
+ * @return the value of the output, or nullopt if it could not be determined.
+ */
+static std::optional<int64_t>
+GetConstantSignedIntegerValue(const rvsdg::Output & output)
+{
+  const auto & normalized = NormalizeOutput(output);
+  if (const auto [_, constant] = rvsdg::TryGetSimpleNodeAndOp<IntegerConstantOperation>(normalized);
+      constant)
+  {
+    return constant->Representation().to_int();
+  }
+  if (const auto [_, constant] = rvsdg::TryGetSimpleNodeAndOp<rvsdg::bitconstant_op>(normalized);
+      constant)
+  {
+    return constant->value().to_int();
+  }
+
+  return std::nullopt;
+}
+
 LocalAliasAnalysis::LocalAliasAnalysis() = default;
 
 LocalAliasAnalysis::~LocalAliasAnalysis() noexcept = default;
@@ -70,8 +96,8 @@ struct LocalAliasAnalysis::TraceCollection
 AliasAnalysis::AliasQueryResponse
 LocalAliasAnalysis::Query(const rvsdg::Output & p1, size_t s1, const rvsdg::Output & p2, size_t s2)
 {
-  const auto & p1Norm = NormalizePointerValue(p1);
-  const auto & p2Norm = NormalizePointerValue(p2);
+  const auto & p1Norm = NormalizeOutput(p1);
+  const auto & p2Norm = NormalizeOutput(p2);
 
   // If the two pointers are the same value, they must alias
   if (&p1Norm == &p2Norm)
@@ -272,7 +298,7 @@ LocalAliasAnalysis::TracePointerOriginPrecise(const rvsdg::Output & p)
   while (true)
   {
     // Use normalization function to get past all trivially invariant operations
-    base = &NormalizePointerValue(*base);
+    base = &NormalizeOutput(*base);
 
     if (const auto [node, gep] = rvsdg::TryGetSimpleNodeAndOp<GetElementPtrOperation>(*base); gep)
     {
@@ -327,7 +353,7 @@ LocalAliasAnalysis::TraceAllPointerOrigins(TracedPointerOrigin p, TraceCollectio
     return false;
 
   // Normalize the pointer first, to avoid tracing trivial temporary outputs
-  p.BasePointer = &NormalizePointerValue(*p.BasePointer);
+  p.BasePointer = &NormalizeOutput(*p.BasePointer);
 
   auto it = traceCollection.AllTracedOutputs.find(p.BasePointer);
   if (it != traceCollection.AllTracedOutputs.end())
@@ -739,24 +765,6 @@ LocalAliasAnalysis::HasOnlyFullyTraceableTopOrigins(TraceCollection & traces)
   }
 
   return true;
-}
-
-std::optional<int64_t>
-GetConstantSignedIntegerValue(const rvsdg::Output & output)
-{
-  const auto & normalized = NormalizeOutput(output);
-  if (const auto [_, constant] = rvsdg::TryGetSimpleNodeAndOp<IntegerConstantOperation>(normalized);
-      constant)
-  {
-    return constant->Representation().to_int();
-  }
-  if (const auto [_, constant] = rvsdg::TryGetSimpleNodeAndOp<rvsdg::bitconstant_op>(normalized);
-      constant)
-  {
-    return constant->value().to_int();
-  }
-
-  return std::nullopt;
 }
 
 }

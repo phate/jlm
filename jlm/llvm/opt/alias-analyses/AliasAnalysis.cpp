@@ -104,11 +104,4 @@ NormalizeOutput(const rvsdg::Output & output)
   return output;
 }
 
-const rvsdg::Output &
-NormalizePointerValue(const rvsdg::Output & pointer)
-{
-  JLM_ASSERT(IsPointerCompatible(pointer));
-  return NormalizeOutput(pointer);
-}
-
 }
