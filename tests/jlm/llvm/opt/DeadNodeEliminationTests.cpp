@@ -36,10 +36,10 @@ RootRegion()
   RvsdgModule rvsdgModule(jlm::util::FilePath(""), "", "");
   auto & graph = rvsdgModule.Rvsdg();
 
-  jlm::tests::GraphImport::Create(graph, jlm::tests::ValueType::Create(), "x");
-  auto y = &jlm::tests::GraphImport::Create(graph, jlm::tests::ValueType::Create(), "y");
+  jlm::rvsdg::GraphImport::Create(graph, jlm::tests::ValueType::Create(), "x");
+  auto y = &jlm::rvsdg::GraphImport::Create(graph, jlm::tests::ValueType::Create(), "y");
 
-  GraphExport::Create(*y, "z");
+  jlm::rvsdg::GraphExport::Create(*y, "z");
   jlm::rvsdg::view(graph, stdout);
 
   // Act
@@ -63,9 +63,9 @@ Gamma1()
 
   RvsdgModule rvsdgModule(jlm::util::FilePath(""), "", "");
   auto & graph = rvsdgModule.Rvsdg();
-  auto c = &jlm::tests::GraphImport::Create(graph, controlType, "c");
-  auto x = &jlm::tests::GraphImport::Create(graph, valueType, "x");
-  auto y = &jlm::tests::GraphImport::Create(graph, valueType, "y");
+  auto c = &jlm::rvsdg::GraphImport::Create(graph, controlType, "c");
+  auto x = &jlm::rvsdg::GraphImport::Create(graph, valueType, "x");
+  auto y = &jlm::rvsdg::GraphImport::Create(graph, valueType, "y");
 
   auto gamma = jlm::rvsdg::GammaNode::create(c, 2);
   auto ev1 = gamma->AddEntryVar(x);
@@ -79,8 +79,8 @@ Gamma1()
   gamma->AddExitVar({ ev2.branchArgument[0], t });
   gamma->AddExitVar({ ev3.branchArgument[0], ev1.branchArgument[1] });
 
-  GraphExport::Create(*gamma->output(0), "z");
-  GraphExport::Create(*gamma->output(2), "w");
+  jlm::rvsdg::GraphExport::Create(*gamma->output(0), "z");
+  jlm::rvsdg::GraphExport::Create(*gamma->output(2), "w");
   jlm::rvsdg::view(graph, stdout);
 
   // Act
@@ -108,8 +108,8 @@ Gamma2()
 
   RvsdgModule rvsdgModule(jlm::util::FilePath(""), "", "");
   auto & graph = rvsdgModule.Rvsdg();
-  auto c = &jlm::tests::GraphImport::Create(graph, controlType, "c");
-  auto x = &jlm::tests::GraphImport::Create(graph, valueType, "x");
+  auto c = &jlm::rvsdg::GraphImport::Create(graph, controlType, "c");
+  auto x = &jlm::rvsdg::GraphImport::Create(graph, valueType, "x");
 
   auto gamma = jlm::rvsdg::GammaNode::create(c, 2);
   gamma->AddEntryVar(x);
@@ -119,7 +119,7 @@ Gamma2()
 
   gamma->AddExitVar({ n1, n2 });
 
-  GraphExport::Create(*gamma->output(0), "x");
+  jlm::rvsdg::GraphExport::Create(*gamma->output(0), "x");
   jlm::rvsdg::view(graph, stdout);
 
   // Act
@@ -143,9 +143,9 @@ Theta()
 
   RvsdgModule rvsdgModule(jlm::util::FilePath(""), "", "");
   auto & graph = rvsdgModule.Rvsdg();
-  auto x = &jlm::tests::GraphImport::Create(graph, valueType, "x");
-  auto y = &jlm::tests::GraphImport::Create(graph, valueType, "y");
-  auto z = &jlm::tests::GraphImport::Create(graph, valueType, "z");
+  auto x = &jlm::rvsdg::GraphImport::Create(graph, valueType, "x");
+  auto y = &jlm::rvsdg::GraphImport::Create(graph, valueType, "y");
+  auto z = &jlm::rvsdg::GraphImport::Create(graph, valueType, "z");
 
   auto theta = jlm::rvsdg::ThetaNode::create(&graph.GetRootRegion());
 
@@ -164,8 +164,8 @@ Theta()
   auto c = jlm::tests::create_testop(theta->subregion(), {}, { controlType })[0];
   theta->set_predicate(c);
 
-  GraphExport::Create(*lv1.output, "a");
-  GraphExport::Create(*lv4.output, "b");
+  jlm::rvsdg::GraphExport::Create(*lv1.output, "a");
+  jlm::rvsdg::GraphExport::Create(*lv4.output, "b");
   jlm::rvsdg::view(graph, stdout);
 
   // Act
@@ -191,9 +191,9 @@ NestedTheta()
 
   RvsdgModule rvsdgModule(jlm::util::FilePath(""), "", "");
   auto & graph = rvsdgModule.Rvsdg();
-  auto c = &jlm::tests::GraphImport::Create(graph, controlType, "c");
-  auto x = &jlm::tests::GraphImport::Create(graph, valueType, "x");
-  auto y = &jlm::tests::GraphImport::Create(graph, valueType, "y");
+  auto c = &jlm::rvsdg::GraphImport::Create(graph, controlType, "c");
+  auto x = &jlm::rvsdg::GraphImport::Create(graph, valueType, "x");
+  auto y = &jlm::rvsdg::GraphImport::Create(graph, valueType, "y");
 
   auto outerTheta = jlm::rvsdg::ThetaNode::create(&graph.GetRootRegion());
 
@@ -216,7 +216,7 @@ NestedTheta()
 
   outerTheta->set_predicate(lvo1.pre);
 
-  GraphExport::Create(*lvo3.output, "y");
+  jlm::rvsdg::GraphExport::Create(*lvo3.output, "y");
   jlm::rvsdg::view(graph, stdout);
 
   // Act
@@ -240,11 +240,11 @@ EvolvingTheta()
 
   RvsdgModule rvsdgModule(jlm::util::FilePath(""), "", "");
   auto & graph = rvsdgModule.Rvsdg();
-  auto c = &jlm::tests::GraphImport::Create(graph, controlType, "c");
-  auto x1 = &jlm::tests::GraphImport::Create(graph, valueType, "x1");
-  auto x2 = &jlm::tests::GraphImport::Create(graph, valueType, "x2");
-  auto x3 = &jlm::tests::GraphImport::Create(graph, valueType, "x3");
-  auto x4 = &jlm::tests::GraphImport::Create(graph, valueType, "x4");
+  auto c = &jlm::rvsdg::GraphImport::Create(graph, controlType, "c");
+  auto x1 = &jlm::rvsdg::GraphImport::Create(graph, valueType, "x1");
+  auto x2 = &jlm::rvsdg::GraphImport::Create(graph, valueType, "x2");
+  auto x3 = &jlm::rvsdg::GraphImport::Create(graph, valueType, "x3");
+  auto x4 = &jlm::rvsdg::GraphImport::Create(graph, valueType, "x4");
 
   auto theta = jlm::rvsdg::ThetaNode::create(&graph.GetRootRegion());
 
@@ -260,7 +260,7 @@ EvolvingTheta()
 
   theta->set_predicate(lv0.pre);
 
-  GraphExport::Create(*lv1.output, "x1");
+  jlm::rvsdg::GraphExport::Create(*lv1.output, "x1");
   jlm::rvsdg::view(graph, stdout);
 
   // Act
@@ -283,8 +283,8 @@ Lambda()
 
   RvsdgModule rvsdgModule(jlm::util::FilePath(""), "", "");
   auto & graph = rvsdgModule.Rvsdg();
-  auto x = &jlm::tests::GraphImport::Create(graph, valueType, "x");
-  auto y = &jlm::tests::GraphImport::Create(graph, valueType, "y");
+  auto x = &jlm::rvsdg::GraphImport::Create(graph, valueType, "x");
+  auto y = &jlm::rvsdg::GraphImport::Create(graph, valueType, "y");
 
   auto lambda = jlm::rvsdg::LambdaNode::Create(
       graph.GetRootRegion(),
@@ -302,7 +302,7 @@ Lambda()
 
   auto output = lambda->finalize({ lambda->GetFunctionArguments()[0], cv2 });
 
-  GraphExport::Create(*output, "f");
+  jlm::rvsdg::GraphExport::Create(*output, "f");
   jlm::rvsdg::view(graph, stdout);
 
   // Act
@@ -328,9 +328,9 @@ Phi()
 
   jlm::llvm::RvsdgModule rvsdgModule(jlm::util::FilePath(""), "", "");
   auto & rvsdg = rvsdgModule.Rvsdg();
-  auto x = &jlm::tests::GraphImport::Create(rvsdg, valueType, "x");
-  auto y = &jlm::tests::GraphImport::Create(rvsdg, valueType, "y");
-  auto z = &jlm::tests::GraphImport::Create(rvsdg, valueType, "z");
+  auto x = &jlm::rvsdg::GraphImport::Create(rvsdg, valueType, "x");
+  auto y = &jlm::rvsdg::GraphImport::Create(rvsdg, valueType, "y");
+  auto z = &jlm::rvsdg::GraphImport::Create(rvsdg, valueType, "z");
 
   auto setupF1 = [&](Region & region, Output & rv2, Output & dx)
   {
@@ -414,8 +414,8 @@ Phi()
   rv4.result->divert_to(f4);
   auto phiNode = phiBuilder.end();
 
-  jlm::tests::GraphExport::Create(*phiNode->output(0), "f1");
-  jlm::tests::GraphExport::Create(*phiNode->output(3), "f4");
+  jlm::rvsdg::GraphExport::Create(*phiNode->output(0), "f1");
+  jlm::rvsdg::GraphExport::Create(*phiNode->output(3), "f4");
   view(rvsdg, stdout);
 
   // Act
@@ -454,17 +454,13 @@ Delta()
   jlm::llvm::RvsdgModule rvsdgModule(jlm::util::FilePath(""), "", "");
   auto & rvsdg = rvsdgModule.Rvsdg();
 
-  auto x = &jlm::tests::GraphImport::Create(rvsdg, valueType, "x");
-  auto y = &jlm::tests::GraphImport::Create(rvsdg, valueType, "y");
-  auto z = &jlm::tests::GraphImport::Create(rvsdg, valueType, "z");
+  auto x = &jlm::rvsdg::GraphImport::Create(rvsdg, valueType, "x");
+  auto y = &jlm::rvsdg::GraphImport::Create(rvsdg, valueType, "y");
+  auto z = &jlm::rvsdg::GraphImport::Create(rvsdg, valueType, "z");
 
-  auto deltaNode = DeltaNode::Create(
+  auto deltaNode = jlm::rvsdg::DeltaNode::Create(
       &rvsdg.GetRootRegion(),
-      valueType,
-      "delta",
-      linkage::external_linkage,
-      "",
-      false);
+      jlm::llvm::DeltaOperation::Create(valueType, "delta", linkage::external_linkage, "", false));
 
   auto xArgument = deltaNode->AddContextVar(*x).inner;
   deltaNode->AddContextVar(*y);
@@ -482,7 +478,7 @@ Delta()
       std::vector<std::shared_ptr<const Type>>{ valueType });
 
   auto deltaOutput = &deltaNode->finalize(result);
-  jlm::tests::GraphExport::Create(*deltaOutput, "");
+  jlm::rvsdg::GraphExport::Create(*deltaOutput, "");
   view(rvsdg, stdout);
 
   // Act

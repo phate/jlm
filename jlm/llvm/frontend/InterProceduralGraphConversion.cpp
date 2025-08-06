@@ -484,7 +484,7 @@ ConvertSelect(
   JLM_ASSERT(threeAddressCode.noperands() == 3 && threeAddressCode.nresults() == 1);
 
   auto p = variableMap.lookup(threeAddressCode.operand(0));
-  auto predicate = rvsdg::match_op::Create(*p, { { 1, 1 } }, 0, 2);
+  auto predicate = rvsdg::MatchOperation::Create(*p, { { 1, 1 } }, 0, 2);
 
   auto gamma = rvsdg::GammaNode::create(predicate, 2);
   auto ev1 = gamma->AddEntryVar(variableMap.lookup(threeAddressCode.operand(2)));
@@ -1035,13 +1035,14 @@ ConvertDataNode(
     /*
      * data node with initialization
      */
-    auto deltaNode = DeltaNode::Create(
+    auto deltaNode = rvsdg::DeltaNode::Create(
         &region,
-        dataNode.GetValueType(),
-        dataNode.name(),
-        dataNode.linkage(),
-        dataNode.Section(),
-        dataNode.constant());
+        llvm::DeltaOperation::Create(
+            dataNode.GetValueType(),
+            dataNode.name(),
+            dataNode.linkage(),
+            dataNode.Section(),
+            dataNode.constant()));
     auto & outerVariableMap = regionalizedVariableMap.GetTopVariableMap();
     regionalizedVariableMap.PushRegion(*deltaNode->subregion());
 
@@ -1112,7 +1113,7 @@ ConvertStronglyConnectedComponent(
     regionalizedVariableMap.GetTopVariableMap().insert(ipgNodeVariable, output);
 
     if (requiresExport(*ipgNode))
-      GraphExport::Create(*output, ipgNodeVariable->name());
+      rvsdg::GraphExport::Create(*output, ipgNodeVariable->name());
 
     return;
   }
@@ -1175,7 +1176,7 @@ ConvertStronglyConnectedComponent(
     auto recursionVariable = recursionVariables[ipgNodeVariable];
     regionalizedVariableMap.GetTopVariableMap().insert(ipgNodeVariable, recursionVariable.output);
     if (requiresExport(*ipgNode))
-      GraphExport::Create(*recursionVariable.output, ipgNodeVariable->name());
+      rvsdg::GraphExport::Create(*recursionVariable.output, ipgNodeVariable->name());
   }
 }
 

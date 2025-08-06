@@ -18,9 +18,9 @@ TestThetaCreation()
   Graph graph;
   auto t = jlm::tests::ValueType::Create();
 
-  auto imp1 = &jlm::tests::GraphImport::Create(graph, ControlType::Create(2), "imp1");
-  auto imp2 = &jlm::tests::GraphImport::Create(graph, t, "imp2");
-  auto imp3 = &jlm::tests::GraphImport::Create(graph, t, "imp3");
+  auto imp1 = &jlm::rvsdg::GraphImport::Create(graph, ControlType::Create(2), "imp1");
+  auto imp2 = &jlm::rvsdg::GraphImport::Create(graph, t, "imp2");
+  auto imp3 = &jlm::rvsdg::GraphImport::Create(graph, t, "imp3");
 
   auto theta = jlm::rvsdg::ThetaNode::create(&graph.GetRootRegion());
 
@@ -32,7 +32,7 @@ TestThetaCreation()
   lv3.post->divert_to(lv3.pre);
   theta->set_predicate(lv1.pre);
 
-  jlm::tests::GraphExport::Create(*theta->output(0), "exp");
+  GraphExport::Create(*theta->output(0), "exp");
   auto theta2 = static_cast<jlm::rvsdg::StructuralNode *>(theta)->copy(
       &graph.GetRootRegion(),
       { imp1, imp2, imp3 });
@@ -58,9 +58,9 @@ TestThetaLoopVarRemoval()
   Graph rvsdg;
   auto valueType = jlm::tests::ValueType::Create();
 
-  auto ctl = &jlm::tests::GraphImport::Create(rvsdg, ControlType::Create(2), "ctl");
-  auto x = &jlm::tests::GraphImport::Create(rvsdg, valueType, "x");
-  auto y = &jlm::tests::GraphImport::Create(rvsdg, valueType, "y");
+  auto ctl = &jlm::rvsdg::GraphImport::Create(rvsdg, ControlType::Create(2), "ctl");
+  auto x = &jlm::rvsdg::GraphImport::Create(rvsdg, valueType, "x");
+  auto y = &jlm::rvsdg::GraphImport::Create(rvsdg, valueType, "y");
 
   auto thetaNode = ThetaNode::create(&rvsdg.GetRootRegion());
 
@@ -69,7 +69,7 @@ TestThetaLoopVarRemoval()
   auto lv2 = thetaNode->AddLoopVar(y);
   thetaNode->set_predicate(lv0.pre);
 
-  jlm::tests::GraphExport::Create(*lv0.output, "");
+  GraphExport::Create(*lv0.output, "");
 
   // Act & Assert
   thetaNode->RemoveLoopVars({ lv1 });

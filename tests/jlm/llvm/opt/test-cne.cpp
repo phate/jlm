@@ -15,6 +15,7 @@
 #include <jlm/llvm/ir/RvsdgModule.hpp>
 #include <jlm/llvm/opt/cne.hpp>
 #include <jlm/rvsdg/Phi.hpp>
+#include <jlm/rvsdg/view.hpp>
 #include <jlm/util/Statistics.hpp>
 
 static jlm::util::StatisticsCollector statisticsCollector;
@@ -29,9 +30,9 @@ test_simple()
   RvsdgModule rm(jlm::util::FilePath(""), "", "");
   auto & graph = rm.Rvsdg();
 
-  auto x = &jlm::tests::GraphImport::Create(graph, vt, "x");
-  auto y = &jlm::tests::GraphImport::Create(graph, vt, "y");
-  auto z = &jlm::tests::GraphImport::Create(graph, vt, "z");
+  auto x = &jlm::rvsdg::GraphImport::Create(graph, vt, "x");
+  auto y = &jlm::rvsdg::GraphImport::Create(graph, vt, "y");
+  auto z = &jlm::rvsdg::GraphImport::Create(graph, vt, "z");
 
   auto n1 = jlm::tests::create_testop(&graph.GetRootRegion(), {}, { vt })[0];
   auto n2 = jlm::tests::create_testop(&graph.GetRootRegion(), {}, { vt })[0];
@@ -43,13 +44,13 @@ test_simple()
   auto b3 = jlm::tests::create_testop(&graph.GetRootRegion(), { n1, z }, { vt })[0];
   auto b4 = jlm::tests::create_testop(&graph.GetRootRegion(), { n2, z }, { vt })[0];
 
-  GraphExport::Create(*n1, "n1");
-  GraphExport::Create(*n2, "n2");
-  GraphExport::Create(*u1, "u1");
-  GraphExport::Create(*b1, "b1");
-  GraphExport::Create(*b2, "b2");
-  GraphExport::Create(*b3, "b3");
-  GraphExport::Create(*b4, "b4");
+  jlm::rvsdg::GraphExport::Create(*n1, "n1");
+  jlm::rvsdg::GraphExport::Create(*n2, "n2");
+  jlm::rvsdg::GraphExport::Create(*u1, "u1");
+  jlm::rvsdg::GraphExport::Create(*b1, "b1");
+  jlm::rvsdg::GraphExport::Create(*b2, "b2");
+  jlm::rvsdg::GraphExport::Create(*b3, "b3");
+  jlm::rvsdg::GraphExport::Create(*b4, "b4");
 
   //	jlm::rvsdg::view(graph.GetRootRegion(), stdout);
   jlm::llvm::CommonNodeElimination cne;
@@ -72,10 +73,10 @@ test_gamma()
   RvsdgModule rm(jlm::util::FilePath(""), "", "");
   auto & graph = rm.Rvsdg();
 
-  auto c = &jlm::tests::GraphImport::Create(graph, ct, "c");
-  auto x = &jlm::tests::GraphImport::Create(graph, vt, "x");
-  auto y = &jlm::tests::GraphImport::Create(graph, vt, "y");
-  auto z = &jlm::tests::GraphImport::Create(graph, vt, "z");
+  auto c = &jlm::rvsdg::GraphImport::Create(graph, ct, "c");
+  auto x = &jlm::rvsdg::GraphImport::Create(graph, vt, "x");
+  auto y = &jlm::rvsdg::GraphImport::Create(graph, vt, "y");
+  auto z = &jlm::rvsdg::GraphImport::Create(graph, vt, "z");
 
   auto u1 = jlm::tests::create_testop(&graph.GetRootRegion(), { x }, { vt })[0];
   auto u2 = jlm::tests::create_testop(&graph.GetRootRegion(), { x }, { vt })[0];
@@ -100,9 +101,9 @@ test_gamma()
   gamma->AddExitVar({ n3, ev3.branchArgument[1] });
   gamma->AddExitVar({ ev5.branchArgument[0], ev4.branchArgument[1] });
 
-  GraphExport::Create(*gamma->output(0), "x1");
-  GraphExport::Create(*gamma->output(1), "x2");
-  GraphExport::Create(*gamma->output(2), "y");
+  jlm::rvsdg::GraphExport::Create(*gamma->output(0), "x1");
+  jlm::rvsdg::GraphExport::Create(*gamma->output(1), "x2");
+  jlm::rvsdg::GraphExport::Create(*gamma->output(2), "y");
 
   //	jlm::rvsdg::view(graph.GetRootRegion(), stdout);
   jlm::llvm::CommonNodeElimination cne;
@@ -136,8 +137,8 @@ test_theta()
   RvsdgModule rm(jlm::util::FilePath(""), "", "");
   auto & graph = rm.Rvsdg();
 
-  auto c = &jlm::tests::GraphImport::Create(graph, ct, "c");
-  auto x = &jlm::tests::GraphImport::Create(graph, vt, "x");
+  auto c = &jlm::rvsdg::GraphImport::Create(graph, ct, "c");
+  auto x = &jlm::rvsdg::GraphImport::Create(graph, vt, "x");
 
   auto theta = jlm::rvsdg::ThetaNode::create(&graph.GetRootRegion());
   auto region = theta->subregion();
@@ -157,9 +158,9 @@ test_theta()
 
   theta->set_predicate(lv1.pre);
 
-  GraphExport::Create(*lv2.output, "lv2");
-  GraphExport::Create(*lv3.output, "lv3");
-  GraphExport::Create(*lv4.output, "lv4");
+  jlm::rvsdg::GraphExport::Create(*lv2.output, "lv2");
+  jlm::rvsdg::GraphExport::Create(*lv3.output, "lv3");
+  jlm::rvsdg::GraphExport::Create(*lv4.output, "lv4");
 
   //	jlm::rvsdg::view(graph.GetRootRegion(), stdout);
   jlm::llvm::CommonNodeElimination cne;
@@ -187,8 +188,8 @@ test_theta2()
   RvsdgModule rm(jlm::util::FilePath(""), "", "");
   auto & graph = rm.Rvsdg();
 
-  auto c = &jlm::tests::GraphImport::Create(graph, ct, "c");
-  auto x = &jlm::tests::GraphImport::Create(graph, vt, "x");
+  auto c = &jlm::rvsdg::GraphImport::Create(graph, ct, "c");
+  auto x = &jlm::rvsdg::GraphImport::Create(graph, vt, "x");
 
   auto theta = jlm::rvsdg::ThetaNode::create(&graph.GetRootRegion());
   auto region = theta->subregion();
@@ -206,8 +207,8 @@ test_theta2()
 
   theta->set_predicate(lv1.pre);
 
-  GraphExport::Create(*lv2.output, "lv2");
-  GraphExport::Create(*lv3.output, "lv3");
+  jlm::rvsdg::GraphExport::Create(*lv2.output, "lv2");
+  jlm::rvsdg::GraphExport::Create(*lv3.output, "lv3");
 
   //	jlm::rvsdg::view(graph, stdout);
   jlm::llvm::CommonNodeElimination cne;
@@ -229,8 +230,8 @@ test_theta3()
   RvsdgModule rm(jlm::util::FilePath(""), "", "");
   auto & graph = rm.Rvsdg();
 
-  auto c = &jlm::tests::GraphImport::Create(graph, ct, "c");
-  auto x = &jlm::tests::GraphImport::Create(graph, vt, "x");
+  auto c = &jlm::rvsdg::GraphImport::Create(graph, ct, "c");
+  auto x = &jlm::rvsdg::GraphImport::Create(graph, vt, "x");
 
   auto theta1 = jlm::rvsdg::ThetaNode::create(&graph.GetRootRegion());
   auto r1 = theta1->subregion();
@@ -258,9 +259,9 @@ test_theta3()
 
   theta1->set_predicate(lv1.pre);
 
-  GraphExport::Create(*lv2.output, "lv2");
-  GraphExport::Create(*lv3.output, "lv3");
-  GraphExport::Create(*lv4.output, "lv4");
+  jlm::rvsdg::GraphExport::Create(*lv2.output, "lv2");
+  jlm::rvsdg::GraphExport::Create(*lv3.output, "lv3");
+  jlm::rvsdg::GraphExport::Create(*lv4.output, "lv4");
 
   //	jlm::rvsdg::view(graph, stdout);
   jlm::llvm::CommonNodeElimination cne;
@@ -286,9 +287,9 @@ test_theta4()
   RvsdgModule rm(jlm::util::FilePath(""), "", "");
   auto & graph = rm.Rvsdg();
 
-  auto c = &jlm::tests::GraphImport::Create(graph, ct, "c");
-  auto x = &jlm::tests::GraphImport::Create(graph, vt, "x");
-  auto y = &jlm::tests::GraphImport::Create(graph, vt, "y");
+  auto c = &jlm::rvsdg::GraphImport::Create(graph, ct, "c");
+  auto x = &jlm::rvsdg::GraphImport::Create(graph, vt, "x");
+  auto y = &jlm::rvsdg::GraphImport::Create(graph, vt, "y");
 
   auto theta = jlm::rvsdg::ThetaNode::create(&graph.GetRootRegion());
   auto region = theta->subregion();
@@ -311,10 +312,10 @@ test_theta4()
 
   theta->set_predicate(lv1.pre);
 
-  auto & ex1 = GraphExport::Create(*theta->output(1), "lv2");
-  auto & ex2 = GraphExport::Create(*theta->output(2), "lv3");
-  GraphExport::Create(*theta->output(3), "lv4");
-  GraphExport::Create(*theta->output(4), "lv5");
+  auto & ex1 = jlm::rvsdg::GraphExport::Create(*theta->output(1), "lv2");
+  auto & ex2 = jlm::rvsdg::GraphExport::Create(*theta->output(2), "lv3");
+  jlm::rvsdg::GraphExport::Create(*theta->output(3), "lv4");
+  jlm::rvsdg::GraphExport::Create(*theta->output(4), "lv5");
 
   //	jlm::rvsdg::view(graph, stdout);
   jlm::llvm::CommonNodeElimination cne;
@@ -337,9 +338,9 @@ test_theta5()
   RvsdgModule rm(jlm::util::FilePath(""), "", "");
   auto & graph = rm.Rvsdg();
 
-  auto c = &jlm::tests::GraphImport::Create(graph, ct, "c");
-  auto x = &jlm::tests::GraphImport::Create(graph, vt, "x");
-  auto y = &jlm::tests::GraphImport::Create(graph, vt, "y");
+  auto c = &jlm::rvsdg::GraphImport::Create(graph, ct, "c");
+  auto x = &jlm::rvsdg::GraphImport::Create(graph, vt, "x");
+  auto y = &jlm::rvsdg::GraphImport::Create(graph, vt, "y");
 
   auto theta = jlm::rvsdg::ThetaNode::create(&graph.GetRootRegion());
   auto region = theta->subregion();
@@ -355,10 +356,10 @@ test_theta5()
 
   theta->set_predicate(lv0.pre);
 
-  auto & ex1 = GraphExport::Create(*theta->output(1), "lv1");
-  auto & ex2 = GraphExport::Create(*theta->output(2), "lv2");
-  auto & ex3 = GraphExport::Create(*theta->output(3), "lv3");
-  auto & ex4 = GraphExport::Create(*theta->output(4), "lv4");
+  auto & ex1 = jlm::rvsdg::GraphExport::Create(*theta->output(1), "lv1");
+  auto & ex2 = jlm::rvsdg::GraphExport::Create(*theta->output(2), "lv2");
+  auto & ex3 = jlm::rvsdg::GraphExport::Create(*theta->output(3), "lv3");
+  auto & ex4 = jlm::rvsdg::GraphExport::Create(*theta->output(4), "lv4");
 
   //	jlm::rvsdg::view(graph, stdout);
   jlm::llvm::CommonNodeElimination cne;
@@ -371,6 +372,109 @@ test_theta5()
   assert(region->result(2)->origin() == region->result(3)->origin());
 }
 
+static void
+MultipleThetas()
+{
+  using namespace jlm::llvm;
+  using namespace jlm::rvsdg;
+  using namespace jlm::tests;
+
+  // Arrange
+  const auto valueType = jlm::tests::ValueType::Create();
+
+  jlm::llvm::RvsdgModule rvsdgModule(jlm::util::FilePath(""), "", "");
+  auto & rvsdg = rvsdgModule.Rvsdg();
+
+  auto & i0 = jlm::rvsdg::GraphImport::Create(rvsdg, valueType, "i0");
+
+  // Loop 1
+  auto thetaNode1 = ThetaNode::create(&rvsdg.GetRootRegion());
+  auto loopVariable1 = thetaNode1->AddLoopVar(&i0);
+  auto node1 = TestOperation::create(thetaNode1->subregion(), { loopVariable1.pre }, { valueType });
+  loopVariable1.post->divert_to(node1->output(0));
+
+  // Loop 2
+  auto thetaNode2 = ThetaNode::create(&rvsdg.GetRootRegion());
+  auto predicate = control_constant(thetaNode2->subregion(), 2, 1);
+  thetaNode2->set_predicate(predicate);
+  auto loopVariable2 = thetaNode2->AddLoopVar(&i0);
+  auto node2 = TestOperation::create(thetaNode1->subregion(), { loopVariable2.pre }, { valueType });
+  loopVariable2.post->divert_to(node2->output(0));
+
+  // Loop 3
+  auto thetaNode3 = ThetaNode::create(&rvsdg.GetRootRegion());
+  auto loopVariable3 = thetaNode3->AddLoopVar(loopVariable1.output);
+  auto loopVariable4 = thetaNode3->AddLoopVar(loopVariable2.output);
+
+  auto & x1 = jlm::rvsdg::GraphExport::Create(*loopVariable3.output, "x1");
+  auto & x2 = jlm::rvsdg::GraphExport::Create(*loopVariable4.output, "x2");
+
+  view(rvsdg, stdout);
+
+  // Act
+  CommonNodeElimination commonNodeElimination;
+  commonNodeElimination.Run(rvsdgModule, statisticsCollector);
+
+  view(rvsdg, stdout);
+
+  // Assert
+  // The origins from x1 and x2 are ultimately from two different loops with different iteration
+  // counts. They are NOT congruent.
+  assert(x1.origin() != x2.origin());
+}
+
+JLM_UNIT_TEST_REGISTER("jlm/llvm/opt/test-cne-MultipleThetas", MultipleThetas)
+
+static void
+MultipleThetasPassthrough()
+{
+  using namespace jlm::llvm;
+  using namespace jlm::rvsdg;
+  using namespace jlm::tests;
+
+  // Arrange
+  const auto valueType = jlm::tests::ValueType::Create();
+
+  jlm::llvm::RvsdgModule rvsdgModule(jlm::util::FilePath(""), "", "");
+  auto & rvsdg = rvsdgModule.Rvsdg();
+
+  auto & i0 = jlm::rvsdg::GraphImport::Create(rvsdg, valueType, "i0");
+
+  // Loop 1
+  auto thetaNode1 = ThetaNode::create(&rvsdg.GetRootRegion());
+  auto loopVariable1 = thetaNode1->AddLoopVar(&i0);
+
+  // Loop 2
+  auto thetaNode2 = ThetaNode::create(&rvsdg.GetRootRegion());
+  auto predicate = control_constant(thetaNode2->subregion(), 2, 1);
+  thetaNode2->set_predicate(predicate);
+  auto loopVariable2 = thetaNode2->AddLoopVar(&i0);
+
+  // Loop 3
+  auto thetaNode3 = ThetaNode::create(&rvsdg.GetRootRegion());
+  auto loopVariable3 = thetaNode3->AddLoopVar(loopVariable1.output);
+  auto loopVariable4 = thetaNode3->AddLoopVar(loopVariable2.output);
+
+  auto & x1 = jlm::rvsdg::GraphExport::Create(*loopVariable3.output, "x1");
+  auto & x2 = jlm::rvsdg::GraphExport::Create(*loopVariable4.output, "x2");
+
+  view(rvsdg, stdout);
+
+  // Act
+  CommonNodeElimination commonNodeElimination;
+  commonNodeElimination.Run(rvsdgModule, statisticsCollector);
+
+  view(rvsdg, stdout);
+
+  // Assert
+  // The origins from x1 and x2 are ultimately from two different loops with different iteration
+  // counts, BUT the values in these loops are only passthrough values. Thus, we would expect them
+  // to be congruent.
+  assert(x1.origin() == x2.origin());
+}
+
+JLM_UNIT_TEST_REGISTER("jlm/llvm/opt/test-cne-MultipleThetasPassthrough", MultipleThetasPassthrough)
+
 static inline void
 test_lambda()
 {
@@ -382,7 +486,7 @@ test_lambda()
   RvsdgModule rm(jlm::util::FilePath(""), "", "");
   auto & graph = rm.Rvsdg();
 
-  auto x = &jlm::tests::GraphImport::Create(graph, vt, "x");
+  auto x = &jlm::rvsdg::GraphImport::Create(graph, vt, "x");
 
   auto lambda = jlm::rvsdg::LambdaNode::Create(
       graph.GetRootRegion(),
@@ -395,7 +499,7 @@ test_lambda()
 
   auto output = lambda->finalize({ b1 });
 
-  GraphExport::Create(*output, "f");
+  jlm::rvsdg::GraphExport::Create(*output, "f");
 
   //	jlm::rvsdg::view(graph.GetRootRegion(), stdout);
   jlm::llvm::CommonNodeElimination cne;
@@ -417,7 +521,7 @@ test_phi()
   RvsdgModule rm(jlm::util::FilePath(""), "", "");
   auto & graph = rm.Rvsdg();
 
-  auto & x = jlm::tests::GraphImport::Create(graph, vt, "x");
+  auto & x = jlm::rvsdg::GraphImport::Create(graph, vt, "x");
 
   jlm::rvsdg::PhiBuilder pb;
   pb.begin(&graph.GetRootRegion());
@@ -446,8 +550,8 @@ test_phi()
 
   auto phi = pb.end();
 
-  GraphExport::Create(*phi->output(0), "f1");
-  GraphExport::Create(*phi->output(1), "f2");
+  jlm::rvsdg::GraphExport::Create(*phi->output(0), "f1");
+  jlm::rvsdg::GraphExport::Create(*phi->output(1), "f2");
 
   //	jlm::rvsdg::view(graph.GetRootRegion(), stdout);
   jlm::llvm::CommonNodeElimination cne;

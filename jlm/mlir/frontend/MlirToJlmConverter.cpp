@@ -700,11 +700,30 @@ MlirToJlmConverter::ConvertOperation(
     if (!rvsdg::is<const rvsdg::ValueType>(pointeeType))
       JLM_UNREACHABLE("Expected ValueType for GepOp operation pointee.");
 
+    std::vector<rvsdg::Output *> indices;
+    // The first input is the base pointer
+    size_t dynamicInput = 1;
+    for (int32_t constant : GepOp.getRawConstantIndices())
+    {
+      // If magic number then its a dynamic index
+      if (constant == ::mlir::LLVM::GEPOp::kDynamicIndex)
+      {
+        indices.push_back(inputs[dynamicInput++]);
+      }
+      else
+      {
+        // Constant indices are not part of the inputs to a GEPOp,
+        // but they are required as explicit nodes in RVSDG
+        indices.push_back(
+            jlm::llvm::IntegerConstantOperation::Create(rvsdgRegion, 32, constant).output(0));
+      }
+    }
+
     auto pointeeValueType = std::dynamic_pointer_cast<const rvsdg::ValueType>(pointeeType);
 
     auto jlmGepOp = jlm::llvm::GetElementPtrOperation::Create(
         inputs[0],
-        std::vector(std::next(inputs.begin()), inputs.end()),
+        indices,
         pointeeValueType,
         llvm::PointerType::Create());
     return rvsdg::TryGetOwnerNode<rvsdg::Node>(*jlmGepOp);
@@ -779,13 +798,14 @@ MlirToJlmConverter::ConvertOperation(
     std::shared_ptr<rvsdg::Type> outputType = ConvertType(mlirOutputType);
     auto outputValueType = std::dynamic_pointer_cast<const rvsdg::ValueType>(outputType);
     auto linakgeString = mlirDeltaNode.getLinkage().str();
-    auto rvsdgDeltaNode = llvm::DeltaNode::Create(
+    auto rvsdgDeltaNode = rvsdg::DeltaNode::Create(
         &rvsdgRegion,
-        outputValueType,
-        mlirDeltaNode.getName().str(),
-        jlm::llvm::FromString(linakgeString),
-        mlirDeltaNode.getSection().str(),
-        mlirDeltaNode.getConstant());
+        llvm::DeltaOperation::Create(
+            outputValueType,
+            mlirDeltaNode.getName().str(),
+            jlm::llvm::FromString(linakgeString),
+            mlirDeltaNode.getSection().str(),
+            mlirDeltaNode.getConstant()));
 
     auto outputVector = ConvertRegion(mlirDeltaNode.getRegion(), *rvsdgDeltaNode->subregion());
 
@@ -813,7 +833,7 @@ MlirToJlmConverter::ConvertOperation(
       mapping[matchRuleAttr.getValues().front()] = matchRuleAttr.getIndex();
     }
 
-    return rvsdg::TryGetOwnerNode<rvsdg::Node>(*rvsdg::match_op::Create(
+    return rvsdg::TryGetOwnerNode<rvsdg::Node>(*rvsdg::MatchOperation::Create(
         *(inputs[0]),                 // predicate
         mapping,                      // mapping
         defaultAlternative,           // defaultAlternative

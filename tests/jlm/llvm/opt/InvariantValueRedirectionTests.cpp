@@ -70,7 +70,7 @@ TestGamma()
 
   auto lambdaOutput = lambdaNode->finalize({ gammaNode1->output(0), gammaNode1->output(1) });
 
-  GraphExport::Create(*lambdaOutput, "test");
+  jlm::rvsdg::GraphExport::Create(*lambdaOutput, "test");
 
   // Act
   RunInvariantValueRedirection(*rvsdgModule);
@@ -123,7 +123,7 @@ TestTheta()
   auto lambdaOutput =
       lambdaNode->finalize({ thetaVar1.output, thetaVar2.output, thetaVar3.output });
 
-  GraphExport::Create(*lambdaOutput, "test");
+  jlm::rvsdg::GraphExport::Create(*lambdaOutput, "test");
 
   // Act
   RunInvariantValueRedirection(*rvsdgModule);
@@ -208,7 +208,7 @@ TestCall()
         { controlResult, xArgument, yArgument, ioStateArgument, memoryStateArgument });
 
     lambdaOutputTest2 = lambdaNode->finalize(outputs(&callNode));
-    GraphExport::Create(*lambdaOutputTest2, "test2");
+    jlm::rvsdg::GraphExport::Create(*lambdaOutputTest2, "test2");
   }
 
   // Act
@@ -310,7 +310,7 @@ TestCallWithMemoryStateNodes()
 
     lambdaOutputTest2 = lambdaNode->finalize(
         { callNode.output(0), &CallOperation::GetIOStateOutput(callNode), &lambdaExitMergeResult });
-    GraphExport::Create(*lambdaOutputTest2, "test2");
+    jlm::rvsdg::GraphExport::Create(*lambdaOutputTest2, "test2");
   }
 
   // Act
@@ -411,7 +411,7 @@ TestCallWithMissingMemoryStateNodes()
 
     lambdaOutputTest2 = lambdaNode->finalize(
         { callNode.output(0), &CallOperation::GetIOStateOutput(callNode), &lambdaExitMergeResult });
-    jlm::llvm::GraphExport::Create(*lambdaOutputTest2, "test2");
+    GraphExport::Create(*lambdaOutputTest2, "test2");
   }
 
   std::cout << view(&rvsdg.GetRootRegion()) << std::flush;

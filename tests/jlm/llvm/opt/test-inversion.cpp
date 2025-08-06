@@ -25,9 +25,9 @@ test1()
   RvsdgModule rm(jlm::util::FilePath(""), "", "");
   auto & graph = rm.Rvsdg();
 
-  auto x = &jlm::tests::GraphImport::Create(graph, vt, "x");
-  auto y = &jlm::tests::GraphImport::Create(graph, vt, "y");
-  auto z = &jlm::tests::GraphImport::Create(graph, vt, "z");
+  auto x = &jlm::rvsdg::GraphImport::Create(graph, vt, "x");
+  auto y = &jlm::rvsdg::GraphImport::Create(graph, vt, "y");
+  auto z = &jlm::rvsdg::GraphImport::Create(graph, vt, "z");
 
   auto theta = jlm::rvsdg::ThetaNode::create(&graph.GetRootRegion());
 
@@ -61,9 +61,9 @@ test1()
 
   theta->set_predicate(predicate);
 
-  auto & ex1 = GraphExport::Create(*theta->output(0), "x");
-  auto & ex2 = GraphExport::Create(*theta->output(1), "y");
-  auto & ex3 = GraphExport::Create(*theta->output(2), "z");
+  auto & ex1 = jlm::rvsdg::GraphExport::Create(*theta->output(0), "x");
+  auto & ex2 = jlm::rvsdg::GraphExport::Create(*theta->output(1), "y");
+  auto & ex3 = jlm::rvsdg::GraphExport::Create(*theta->output(2), "z");
 
   //	jlm::rvsdg::view(graph.GetRootRegion(), stdout);
   jlm::llvm::LoopUnswitching tginversion;
@@ -83,7 +83,7 @@ test2()
   RvsdgModule rm(jlm::util::FilePath(""), "", "");
   auto & graph = rm.Rvsdg();
 
-  auto x = &jlm::tests::GraphImport::Create(graph, vt, "x");
+  auto x = &jlm::rvsdg::GraphImport::Create(graph, vt, "x");
 
   auto theta = jlm::rvsdg::ThetaNode::create(&graph.GetRootRegion());
 
@@ -110,7 +110,7 @@ test2()
 
   theta->set_predicate(predicate);
 
-  auto & ex = GraphExport::Create(*theta->output(0), "x");
+  auto & ex = jlm::rvsdg::GraphExport::Create(*theta->output(0), "x");
 
   //	jlm::rvsdg::view(graph.GetRootRegion(), stdout);
   jlm::llvm::LoopUnswitching tginversion;

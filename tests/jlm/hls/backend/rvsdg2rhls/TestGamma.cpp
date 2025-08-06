@@ -35,7 +35,7 @@ TestWithMatch()
   auto ex = gamma->AddExitVar({ ev1.branchArgument[0], ev2.branchArgument[1] });
 
   auto f = lambda->finalize({ ex.output });
-  jlm::llvm::GraphExport::Create(*f, "");
+  jlm::rvsdg::GraphExport::Create(*f, "");
 
   jlm::rvsdg::view(rm.Rvsdg(), stdout);
 
@@ -72,7 +72,7 @@ TestWithoutMatch()
   auto ex = gamma->AddExitVar({ ev1.branchArgument[0], ev2.branchArgument[1] });
 
   auto f = lambda->finalize({ ex.output });
-  jlm::llvm::GraphExport::Create(*f, "");
+  jlm::rvsdg::GraphExport::Create(*f, "");
 
   jlm::rvsdg::view(rm.Rvsdg(), stdout);
 

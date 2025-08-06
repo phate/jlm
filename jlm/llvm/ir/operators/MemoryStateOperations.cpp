@@ -382,4 +382,20 @@ CallExitMemoryStateSplitOperation::copy() const
   return std::make_unique<CallExitMemoryStateSplitOperation>(*this);
 }
 
+std::optional<std::vector<rvsdg::Output *>>
+CallExitMemoryStateSplitOperation::NormalizeLambdaExitMemoryStateMerge(
+    const CallExitMemoryStateSplitOperation & operation,
+    const std::vector<rvsdg::Output *> & operands)
+{
+  JLM_ASSERT(operands.size() == 1);
+
+  auto [lambdaExitMergeNode, lambdaExitMergeOperation] =
+      rvsdg::TryGetSimpleNodeAndOp<LambdaExitMemoryStateMergeOperation>(*operands[0]);
+  if (!lambdaExitMergeOperation)
+    return std::nullopt;
+
+  JLM_ASSERT(lambdaExitMergeNode->ninputs() == operation.nresults());
+  return rvsdg::operands(lambdaExitMergeNode);
+}
+
 }

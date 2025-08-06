@@ -7,7 +7,7 @@
 #include <test-util.hpp>
 #include <TestRvsdgs.hpp>
 
-#include <jlm/llvm/backend/dot/DotWriter.hpp>
+#include <jlm/llvm/DotWriter.hpp>
 #include <jlm/llvm/ir/operators.hpp>
 
 #include <cassert>
