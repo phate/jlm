@@ -11,6 +11,7 @@
 
 namespace jlm::rvsdg
 {
+class DeltaNode;
 class GammaNode;
 class LambdaNode;
 class Output;
@@ -29,8 +30,6 @@ class StatisticsCollector;
 
 namespace jlm::llvm
 {
-
-class DeltaNode;
 
 namespace aa
 {
@@ -126,7 +125,7 @@ private:
   EncodePhi(const rvsdg::PhiNode & phiNode);
 
   void
-  EncodeDelta(const DeltaNode & deltaNode);
+  EncodeDelta(const rvsdg::DeltaNode & deltaNode);
 
   void
   EncodeGamma(rvsdg::GammaNode & gammaNode);

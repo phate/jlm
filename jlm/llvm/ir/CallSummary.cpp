@@ -105,14 +105,14 @@ ComputeCallSummary(const rvsdg::LambdaNode & lambdaNode)
       continue;
     }
 
-    if (auto deltaNode = rvsdg::TryGetOwnerNode<DeltaNode>(*input))
+    if (auto deltaNode = rvsdg::TryGetOwnerNode<rvsdg::DeltaNode>(*input))
     {
       auto ctxVar = deltaNode->MapInputContextVar(*input);
       AddToWorklist(worklist, ctxVar.inner->Users());
       continue;
     }
 
-    if (rvsdg::TryGetRegionParentNode<DeltaNode>(*input))
+    if (rvsdg::TryGetRegionParentNode<rvsdg::DeltaNode>(*input))
     {
       otherUsers.emplace_back(input);
       continue;
