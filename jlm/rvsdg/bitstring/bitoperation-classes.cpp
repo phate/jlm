@@ -80,8 +80,10 @@ BitCompareOperation::can_reduce_operand_pair(
   if (p)
     c2_op = dynamic_cast<const bitconstant_op *>(&p->GetOperation());
 
-  bitvalue_repr arg1_repr = c1_op ? c1_op->value() : bitvalue_repr::repeat(type().nbits(), 'D');
-  bitvalue_repr arg2_repr = c2_op ? c2_op->value() : bitvalue_repr::repeat(type().nbits(), 'D');
+  BitValueRepresentation arg1_repr =
+      c1_op ? c1_op->value() : BitValueRepresentation::repeat(type().nbits(), 'D');
+  BitValueRepresentation arg2_repr =
+      c2_op ? c2_op->value() : BitValueRepresentation::repeat(type().nbits(), 'D');
 
   switch (reduce_constants(arg1_repr, arg2_repr))
   {
@@ -104,11 +106,11 @@ BitCompareOperation::reduce_operand_pair(
 {
   if (path == 1)
   {
-    return create_bitconstant(arg1->region(), "0");
+    return create_bitconstant(arg1->region(), BitValueRepresentation("0"));
   }
   if (path == 2)
   {
-    return create_bitconstant(arg1->region(), "1");
+    return create_bitconstant(arg1->region(), BitValueRepresentation("1"));
   }
 
   return nullptr;

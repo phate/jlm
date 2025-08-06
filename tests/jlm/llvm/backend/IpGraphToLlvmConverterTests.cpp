@@ -416,7 +416,7 @@ IntegerConstant()
 
   auto ft = jlm::rvsdg::FunctionType::Create({}, { jlm::rvsdg::bittype::Create(65) });
 
-  jlm::rvsdg::bitvalue_repr vr(bs);
+  jlm::rvsdg::BitValueRepresentation vr(bs);
 
   InterProceduralGraphModule im(jlm::util::FilePath(""), "", "");
 

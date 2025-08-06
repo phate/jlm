@@ -27,8 +27,8 @@ MakeBitComparisonOperation<reduction, name, opflags>::operator==(
 template<typename reduction, const char * name, enum BinaryOperation::flags opflags>
 compare_result
 MakeBitComparisonOperation<reduction, name, opflags>::reduce_constants(
-    const bitvalue_repr & arg1,
-    const bitvalue_repr & arg2) const
+    const BitValueRepresentation & arg1,
+    const BitValueRepresentation & arg2) const
 {
   switch (reduction()(arg1, arg2))
   {
