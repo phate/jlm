@@ -134,6 +134,8 @@ Region::~Region() noexcept
 
   while (arguments_.size())
     RemoveArgument(arguments_.size() - 1);
+
+  JLM_ASSERT(!HasActiveTrackers());
 }
 
 Region::Region(Region *, Graph * graph)
@@ -510,6 +512,21 @@ Region::ToString(const util::Annotation & annotation, char labelValueSeparator)
   }
 
   return util::strfmt(annotation.Label(), labelValueSeparator, value);
+}
+
+bool
+Region::RegisterTracker(const Tracker & tracker)
+{
+  if (&tracker.GetRegion() != this)
+    return false;
+
+  return Trackers_.Insert(&tracker);
+}
+
+bool
+Region::UnregisterTracker(const Tracker & tracker)
+{
+  return Trackers_.Remove(&tracker);
 }
 
 size_t
