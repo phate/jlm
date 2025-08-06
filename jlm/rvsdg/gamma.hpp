@@ -18,7 +18,7 @@ namespace jlm::rvsdg
 class Output;
 class Type;
 
-class GammaOperation final : public StructuralOperation
+class GammaOperation : public StructuralOperation
 {
 public:
   ~GammaOperation() noexcept override;

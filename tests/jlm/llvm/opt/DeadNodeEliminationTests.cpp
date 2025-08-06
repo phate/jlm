@@ -72,8 +72,11 @@ Gamma1()
   auto ev2 = gamma->AddEntryVar(y);
   auto ev3 = gamma->AddEntryVar(x);
 
-  auto t =
-      jlm::tests::create_testop(gamma->subregion(1), { ev2.branchArgument[1] }, { valueType })[0];
+  auto t = jlm::tests::TestOperation::create(
+               gamma->subregion(1),
+               { ev2.branchArgument[1] },
+               { valueType })
+               ->output(0);
 
   gamma->AddExitVar(ev1.branchArgument);
   gamma->AddExitVar({ ev2.branchArgument[0], t });
@@ -114,8 +117,8 @@ Gamma2()
   auto gamma = jlm::rvsdg::GammaNode::create(c, 2);
   gamma->AddEntryVar(x);
 
-  auto n1 = jlm::tests::create_testop(gamma->subregion(0), {}, { valueType })[0];
-  auto n2 = jlm::tests::create_testop(gamma->subregion(1), {}, { valueType })[0];
+  auto n1 = jlm::tests::TestOperation::create(gamma->subregion(0), {}, { valueType })->output(0);
+  auto n2 = jlm::tests::TestOperation::create(gamma->subregion(1), {}, { valueType })->output(0);
 
   gamma->AddExitVar({ n1, n2 });
 
@@ -157,11 +160,12 @@ Theta()
   lv1.post->divert_to(lv2.pre);
   lv2.post->divert_to(lv1.pre);
 
-  auto t = jlm::tests::create_testop(theta->subregion(), { lv3.pre }, { valueType })[0];
+  auto t =
+      jlm::tests::TestOperation::create(theta->subregion(), { lv3.pre }, { valueType })->output(0);
   lv3.post->divert_to(t);
   lv4.post->divert_to(lv2.pre);
 
-  auto c = jlm::tests::create_testop(theta->subregion(), {}, { controlType })[0];
+  auto c = jlm::tests::TestOperation::create(theta->subregion(), {}, { controlType })->output(0);
   theta->set_predicate(c);
 
   jlm::rvsdg::GraphExport::Create(*lv1.output, "a");
@@ -295,7 +299,7 @@ Lambda()
 
   auto cv1 = lambda->AddContextVar(*x).inner;
   auto cv2 = lambda->AddContextVar(*y).inner;
-  jlm::tests::create_testop(
+  jlm::tests::TestOperation::create(
       lambda->subregion(),
       { lambda->GetFunctionArguments()[0], cv1 },
       { valueType });
@@ -458,13 +462,9 @@ Delta()
   auto y = &jlm::rvsdg::GraphImport::Create(rvsdg, valueType, "y");
   auto z = &jlm::rvsdg::GraphImport::Create(rvsdg, valueType, "z");
 
-  auto deltaNode = DeltaNode::Create(
+  auto deltaNode = jlm::rvsdg::DeltaNode::Create(
       &rvsdg.GetRootRegion(),
-      valueType,
-      "delta",
-      linkage::external_linkage,
-      "",
-      false);
+      jlm::llvm::DeltaOperation::Create(valueType, "delta", linkage::external_linkage, "", false));
 
   auto xArgument = deltaNode->AddContextVar(*x).inner;
   deltaNode->AddContextVar(*y);

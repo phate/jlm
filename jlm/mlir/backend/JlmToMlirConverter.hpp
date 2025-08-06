@@ -226,7 +226,7 @@ public:
    */
   ::mlir::Operation *
   ConvertDelta(
-      const llvm::DeltaNode & node,
+      const rvsdg::DeltaNode & node,
       ::mlir::Block & block,
       const ::llvm::SmallVector<::mlir::Value> & inputs);
 
