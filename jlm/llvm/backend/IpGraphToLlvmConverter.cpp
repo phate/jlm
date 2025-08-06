@@ -161,7 +161,7 @@ IpGraphToLlvmConverter::CreateICmpInstruction(
 }
 
 static ::llvm::APInt
-convert_bitvalue_repr(const rvsdg::bitvalue_repr & vr)
+convert_bitvalue_repr(const rvsdg::BitValueRepresentation & vr)
 {
   JLM_ASSERT(vr.is_defined());
 

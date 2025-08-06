@@ -38,8 +38,8 @@ public:
   jlm::rvsdg::Output *
   reduce_operand(unop_reduction_path_t path, jlm::rvsdg::Output * arg) const override;
 
-  virtual bitvalue_repr
-  reduce_constant(const bitvalue_repr & arg) const = 0;
+  virtual BitValueRepresentation
+  reduce_constant(const BitValueRepresentation & arg) const = 0;
 
   virtual std::unique_ptr<BitUnaryOperation>
   create(size_t nbits) const = 0;
@@ -68,8 +68,9 @@ public:
       jlm::rvsdg::Output * arg1,
       jlm::rvsdg::Output * arg2) const override;
 
-  virtual bitvalue_repr
-  reduce_constants(const bitvalue_repr & arg1, const bitvalue_repr & arg2) const = 0;
+  virtual BitValueRepresentation
+  reduce_constants(const BitValueRepresentation & arg1, const BitValueRepresentation & arg2)
+      const = 0;
 
   virtual std::unique_ptr<BitBinaryOperation>
   create(size_t nbits) const = 0;
@@ -108,7 +109,8 @@ public:
       jlm::rvsdg::Output * arg2) const override;
 
   virtual compare_result
-  reduce_constants(const bitvalue_repr & arg1, const bitvalue_repr & arg2) const = 0;
+  reduce_constants(const BitValueRepresentation & arg1, const BitValueRepresentation & arg2)
+      const = 0;
 
   virtual std::unique_ptr<BitCompareOperation>
   create(size_t nbits) const = 0;

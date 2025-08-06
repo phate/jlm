@@ -107,7 +107,7 @@ is_idv(jlm::rvsdg::Input * input)
   return false;
 }
 
-std::unique_ptr<jlm::rvsdg::bitvalue_repr>
+std::unique_ptr<jlm::rvsdg::BitValueRepresentation>
 LoopUnrollInfo::niterations() const noexcept
 {
   if (!is_known() || step_value() == 0)
@@ -127,7 +127,7 @@ LoopUnrollInfo::niterations() const noexcept
   if (range.umod(step) != 0)
     return nullptr;
 
-  return std::make_unique<jlm::rvsdg::bitvalue_repr>(range.udiv(step));
+  return std::make_unique<jlm::rvsdg::BitValueRepresentation>(range.udiv(step));
 }
 
 std::unique_ptr<LoopUnrollInfo>
