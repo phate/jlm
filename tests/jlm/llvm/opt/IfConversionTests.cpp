@@ -289,8 +289,11 @@ PartialEmptyGamma()
   auto match = jlm::rvsdg::match(1, { { 0, 0 } }, 1, 2, lambdaNode->GetFunctionArguments()[0]);
   auto gammaNode = jlm::rvsdg::GammaNode::create(match, 2);
   auto gammaInput = gammaNode->AddEntryVar(lambdaNode->GetFunctionArguments()[1]);
-  auto output =
-      create_testop(gammaNode->subregion(1), { gammaInput.branchArgument[1] }, { valueType })[0];
+  auto output = TestOperation::create(
+                    gammaNode->subregion(1),
+                    { gammaInput.branchArgument[1] },
+                    { valueType })
+                    ->output(0);
   auto gammaOutput = gammaNode->AddExitVar({ gammaInput.branchArgument[0], output });
 
   auto lambdaOutput = lambdaNode->finalize({ gammaOutput.output });
