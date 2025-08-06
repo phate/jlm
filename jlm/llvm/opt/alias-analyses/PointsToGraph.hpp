@@ -51,7 +51,7 @@ public:
 
   using AllocaNodeMap = std::unordered_map<const rvsdg::Node *, std::unique_ptr<AllocaNode>>;
   using DeltaNodeMap =
-      std::unordered_map<const llvm::DeltaNode *, std::unique_ptr<PointsToGraph::DeltaNode>>;
+      std::unordered_map<const rvsdg::DeltaNode *, std::unique_ptr<PointsToGraph::DeltaNode>>;
   using ImportNodeMap =
       std::unordered_map<const rvsdg::RegionArgument *, std::unique_ptr<PointsToGraph::ImportNode>>;
   using LambdaNodeMap =
@@ -277,7 +277,7 @@ public:
   }
 
   const PointsToGraph::DeltaNode &
-  GetDeltaNode(const llvm::DeltaNode & node) const
+  GetDeltaNode(const rvsdg::DeltaNode & node) const
   {
     auto it = DeltaNodes_.find(&node);
     if (it == DeltaNodes_.end())
@@ -652,13 +652,13 @@ public:
   ~DeltaNode() noexcept override;
 
 private:
-  DeltaNode(PointsToGraph & pointsToGraph, const llvm::DeltaNode & deltaNode)
+  DeltaNode(PointsToGraph & pointsToGraph, const rvsdg::DeltaNode & deltaNode)
       : MemoryNode(pointsToGraph),
         DeltaNode_(&deltaNode)
   {}
 
 public:
-  const llvm::DeltaNode &
+  const rvsdg::DeltaNode &
   GetDeltaNode() const noexcept
   {
     return *DeltaNode_;
@@ -668,14 +668,14 @@ public:
   DebugString() const override;
 
   static PointsToGraph::DeltaNode &
-  Create(PointsToGraph & pointsToGraph, const llvm::DeltaNode & deltaNode)
+  Create(PointsToGraph & pointsToGraph, const rvsdg::DeltaNode & deltaNode)
   {
     auto n = std::unique_ptr<PointsToGraph::DeltaNode>(new DeltaNode(pointsToGraph, deltaNode));
     return pointsToGraph.AddDeltaNode(std::move(n));
   }
 
 private:
-  const llvm::DeltaNode * DeltaNode_;
+  const rvsdg::DeltaNode * DeltaNode_;
 };
 
 /** \brief PointsTo graph malloc node

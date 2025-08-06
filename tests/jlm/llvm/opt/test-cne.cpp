@@ -34,15 +34,15 @@ test_simple()
   auto y = &jlm::rvsdg::GraphImport::Create(graph, vt, "y");
   auto z = &jlm::rvsdg::GraphImport::Create(graph, vt, "z");
 
-  auto n1 = jlm::tests::create_testop(&graph.GetRootRegion(), {}, { vt })[0];
-  auto n2 = jlm::tests::create_testop(&graph.GetRootRegion(), {}, { vt })[0];
+  auto n1 = jlm::tests::TestOperation::create(&graph.GetRootRegion(), {}, { vt })->output(0);
+  auto n2 = jlm::tests::TestOperation::create(&graph.GetRootRegion(), {}, { vt })->output(0);
 
-  auto u1 = jlm::tests::create_testop(&graph.GetRootRegion(), { z }, { vt })[0];
+  auto u1 = jlm::tests::TestOperation::create(&graph.GetRootRegion(), { z }, { vt })->output(0);
 
-  auto b1 = jlm::tests::create_testop(&graph.GetRootRegion(), { x, y }, { vt })[0];
-  auto b2 = jlm::tests::create_testop(&graph.GetRootRegion(), { x, y }, { vt })[0];
-  auto b3 = jlm::tests::create_testop(&graph.GetRootRegion(), { n1, z }, { vt })[0];
-  auto b4 = jlm::tests::create_testop(&graph.GetRootRegion(), { n2, z }, { vt })[0];
+  auto b1 = jlm::tests::TestOperation::create(&graph.GetRootRegion(), { x, y }, { vt })->output(0);
+  auto b2 = jlm::tests::TestOperation::create(&graph.GetRootRegion(), { x, y }, { vt })->output(0);
+  auto b3 = jlm::tests::TestOperation::create(&graph.GetRootRegion(), { n1, z }, { vt })->output(0);
+  auto b4 = jlm::tests::TestOperation::create(&graph.GetRootRegion(), { n2, z }, { vt })->output(0);
 
   jlm::rvsdg::GraphExport::Create(*n1, "n1");
   jlm::rvsdg::GraphExport::Create(*n2, "n2");
@@ -78,8 +78,8 @@ test_gamma()
   auto y = &jlm::rvsdg::GraphImport::Create(graph, vt, "y");
   auto z = &jlm::rvsdg::GraphImport::Create(graph, vt, "z");
 
-  auto u1 = jlm::tests::create_testop(&graph.GetRootRegion(), { x }, { vt })[0];
-  auto u2 = jlm::tests::create_testop(&graph.GetRootRegion(), { x }, { vt })[0];
+  auto u1 = jlm::tests::TestOperation::create(&graph.GetRootRegion(), { x }, { vt })->output(0);
+  auto u2 = jlm::tests::TestOperation::create(&graph.GetRootRegion(), { x }, { vt })->output(0);
 
   auto gamma = jlm::rvsdg::GammaNode::create(c, 2);
 
@@ -89,9 +89,9 @@ test_gamma()
   auto ev4 = gamma->AddEntryVar(z);
   auto ev5 = gamma->AddEntryVar(z);
 
-  auto n1 = jlm::tests::create_testop(gamma->subregion(0), {}, { vt })[0];
-  auto n2 = jlm::tests::create_testop(gamma->subregion(0), {}, { vt })[0];
-  auto n3 = jlm::tests::create_testop(gamma->subregion(0), {}, { vt })[0];
+  auto n1 = jlm::tests::TestOperation::create(gamma->subregion(0), {}, { vt })->output(0);
+  auto n2 = jlm::tests::TestOperation::create(gamma->subregion(0), {}, { vt })->output(0);
+  auto n3 = jlm::tests::TestOperation::create(gamma->subregion(0), {}, { vt })->output(0);
 
   gamma->AddExitVar({ ev1.branchArgument[0], ev1.branchArgument[1] });
   gamma->AddExitVar({ ev2.branchArgument[0], ev2.branchArgument[1] });
@@ -148,9 +148,9 @@ test_theta()
   auto lv3 = theta->AddLoopVar(x);
   auto lv4 = theta->AddLoopVar(x);
 
-  auto u1 = jlm::tests::create_testop(region, { lv2.pre }, { vt })[0];
-  auto u2 = jlm::tests::create_testop(region, { lv3.pre }, { vt })[0];
-  auto b1 = jlm::tests::create_testop(region, { lv3.pre, lv4.pre }, { vt })[0];
+  auto u1 = jlm::tests::TestOperation::create(region, { lv2.pre }, { vt })->output(0);
+  auto u2 = jlm::tests::TestOperation::create(region, { lv3.pre }, { vt })->output(0);
+  auto b1 = jlm::tests::TestOperation::create(region, { lv3.pre, lv4.pre }, { vt })->output(0);
 
   lv2.post->divert_to(u1);
   lv3.post->divert_to(u2);
@@ -198,9 +198,9 @@ test_theta2()
   auto lv2 = theta->AddLoopVar(x);
   auto lv3 = theta->AddLoopVar(x);
 
-  auto u1 = jlm::tests::create_testop(region, { lv2.pre }, { vt })[0];
-  auto u2 = jlm::tests::create_testop(region, { lv3.pre }, { vt })[0];
-  auto b1 = jlm::tests::create_testop(region, { u2, u2 }, { vt })[0];
+  auto u1 = jlm::tests::TestOperation::create(region, { lv2.pre }, { vt })->output(0);
+  auto u2 = jlm::tests::TestOperation::create(region, { lv3.pre }, { vt })->output(0);
+  auto b1 = jlm::tests::TestOperation::create(region, { u2, u2 }, { vt })->output(0);
 
   lv2.post->divert_to(u1);
   lv3.post->divert_to(b1);
@@ -495,7 +495,7 @@ test_lambda()
   auto d1 = lambda->AddContextVar(*x).inner;
   auto d2 = lambda->AddContextVar(*x).inner;
 
-  auto b1 = jlm::tests::create_testop(lambda->subregion(), { d1, d2 }, { vt })[0];
+  auto b1 = jlm::tests::TestOperation::create(lambda->subregion(), { d1, d2 }, { vt })->output(0);
 
   auto output = lambda->finalize({ b1 });
 
