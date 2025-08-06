@@ -9,6 +9,7 @@
 
 #include <jlm/rvsdg/substitution.hpp>
 #include <jlm/rvsdg/view.hpp>
+#include <jlm/util/HashSet.hpp>
 
 static void
 test_node_copy()
@@ -309,3 +310,49 @@ NodeOutputIteration()
 }
 
 JLM_UNIT_TEST_REGISTER("jlm/rvsdg/test-nodes-NodeOutputIteration", NodeOutputIteration)
+
+static void
+NodeId()
+{
+  using namespace jlm::rvsdg;
+  using namespace jlm::tests;
+  using namespace jlm::util;
+
+  // Arrange & Act & Assert
+  Graph rvsdg1;
+  HashSet<Node::Id> NodeIds;
+
+  auto node0 = TestOperation::create(&rvsdg1.GetRootRegion(), {}, {});
+  auto node1 = TestOperation::create(&rvsdg1.GetRootRegion(), {}, {});
+  auto node2 = TestOperation::create(&rvsdg1.GetRootRegion(), {}, {});
+
+  NodeIds.Insert(node0->GetNodeId());
+  NodeIds.Insert(node1->GetNodeId());
+  NodeIds.Insert(node2->GetNodeId());
+
+  // We should have three unique identifiers in the set
+  assert(NodeIds.Size() == 3);
+
+  // The identifiers should be consecutive as no other nodes where created in between those
+  // three nodes
+  assert(node0->GetNodeId() == 0);
+  assert(node1->GetNodeId() == 1);
+  assert(node2->GetNodeId() == 2);
+
+  // Removing a node should not change the identifiers of the other nodes
+  remove(node1);
+  assert(node0->GetNodeId() == 0);
+  assert(node2->GetNodeId() == 2);
+
+  // Adding a new node should give us the next identifier as no other nodes have been created in
+  // between
+  auto node3 = TestOperation::create(&rvsdg1.GetRootRegion(), {}, {});
+  assert(node3->GetNodeId() == 3);
+
+  // Identifiers should be only unique for each region
+  Graph rvsdg2;
+  auto node4 = TestOperation::create(&rvsdg2.GetRootRegion(), {}, {});
+  assert(node4->GetNodeId() == 0);
+}
+
+JLM_UNIT_TEST_REGISTER("jlm/rvsdg/test-nodes-NodeId", NodeId)
