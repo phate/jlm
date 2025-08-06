@@ -104,7 +104,7 @@ BitConcatOperation::reduce_operand_pair(
     auto & arg1_constant = static_cast<const bitconstant_op &>(node1->GetOperation());
     auto & arg2_constant = static_cast<const bitconstant_op &>(node2->GetOperation());
 
-    bitvalue_repr bits(arg1_constant.value());
+    BitValueRepresentation bits(arg1_constant.value());
     bits.Append(arg2_constant.value());
     return create_bitconstant(arg1->region(), std::move(bits));
   }
