@@ -1262,7 +1262,7 @@ assert_constant(jlm::rvsdg::Output * bitstr, size_t nbits, const char bits[])
 {
   auto node = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*bitstr);
   auto op = dynamic_cast<const jlm::rvsdg::bitconstant_op &>(node->GetOperation());
-  assert(op.value() == jlm::rvsdg::bitvalue_repr(std::string(bits, nbits).c_str()));
+  assert(op.value() == jlm::rvsdg::BitValueRepresentation(std::string(bits, nbits).c_str()));
 }
 
 static void
@@ -1275,8 +1275,8 @@ types_bitstring_test_reduction()
   auto bit4Type = bittype::Create(4);
   std::vector types({ bit4Type, bit4Type });
 
-  auto a = create_bitconstant(&graph.GetRootRegion(), "1100");
-  auto b = create_bitconstant(&graph.GetRootRegion(), "1010");
+  auto a = create_bitconstant(&graph.GetRootRegion(), BitValueRepresentation("1100"));
+  auto b = create_bitconstant(&graph.GetRootRegion(), BitValueRepresentation("1010"));
 
   auto & bitAndNode = CreateOpNode<bitand_op>({ a, b }, 4);
   auto & bitOrNode = CreateOpNode<bitor_op>({ a, b }, 4);
@@ -1416,7 +1416,8 @@ SliceOfConstant()
   Graph graph;
   auto bit8Type = bittype::Create(8);
 
-  const auto constant = create_bitconstant(&graph.GetRootRegion(), "00110111");
+  const auto constant =
+      create_bitconstant(&graph.GetRootRegion(), BitValueRepresentation("00110111"));
   auto & sliceNode = CreateOpNode<BitSliceOperation>({ constant }, bit8Type, 2, 6);
   auto & ex = GraphExport::Create(*sliceNode.output(0), "dummy");
 
@@ -1431,7 +1432,7 @@ SliceOfConstant()
   // Assert
   const auto node = TryGetOwnerNode<Node>(*ex.origin());
   auto & operation = dynamic_cast<const bitconstant_op &>(node->GetOperation());
-  assert(operation.value() == bitvalue_repr("1101"));
+  assert(operation.value() == BitValueRepresentation("1101"));
 }
 
 JLM_UNIT_TEST_REGISTER("jlm/rvsdg/bitstring/bitstring-SliceOfConstant", SliceOfConstant);
@@ -1651,7 +1652,7 @@ ConcatOfConstants()
   // Assert
   auto node = TryGetOwnerNode<Node>(*ex.origin());
   auto operation = dynamic_cast<const bitconstant_op &>(node->GetOperation());
-  assert(operation.value() == bitvalue_repr("0011011111001000"));
+  assert(operation.value() == BitValueRepresentation("0011011111001000"));
 }
 
 JLM_UNIT_TEST_REGISTER("jlm/rvsdg/bitstring/bitstring-ConcatOfConstants", ConcatOfConstants);
@@ -2165,36 +2166,36 @@ types_bitstring_test_value_representation()
 
   for (size_t r = 0; r < 10; r++)
   {
-    assert(bitvalue_repr(bs[r]).lnot() == bitstring_not[r]);
+    assert(BitValueRepresentation(bs[r]).lnot() == bitstring_not[r]);
     for (size_t c = 0; c < 10; c++)
     {
-      assert(bitvalue_repr(bs[r]).land(bs[c]) == bitstring_and[r][c]);
-      assert(bitvalue_repr(bs[r]).lor(bs[c]) == bitstring_or[r][c]);
-      assert(bitvalue_repr(bs[r]).lxor(bs[c]) == bitstring_xor[r][c]);
+      assert(BitValueRepresentation(bs[r]).land(bs[c]) == bitstring_and[r][c]);
+      assert(BitValueRepresentation(bs[r]).lor(bs[c]) == bitstring_or[r][c]);
+      assert(BitValueRepresentation(bs[r]).lxor(bs[c]) == bitstring_xor[r][c]);
 
-      assert(bitvalue_repr(bs[r]).ult(bs[c]) == uless[r][c]);
-      assert(bitvalue_repr(bs[r]).slt(bs[c]) == sless[r][c]);
+      assert(BitValueRepresentation(bs[r]).ult(bs[c]) == uless[r][c]);
+      assert(BitValueRepresentation(bs[r]).slt(bs[c]) == sless[r][c]);
 
-      assert(bitvalue_repr(bs[r]).ule(bs[c]) == ulesseq[r][c]);
-      assert(bitvalue_repr(bs[r]).sle(bs[c]) == slesseq[r][c]);
+      assert(BitValueRepresentation(bs[r]).ule(bs[c]) == ulesseq[r][c]);
+      assert(BitValueRepresentation(bs[r]).sle(bs[c]) == slesseq[r][c]);
 
-      assert(bitvalue_repr(bs[r]).eq(bs[c]) == equal[r][c]);
-      assert(bitvalue_repr(bs[r]).ne(bs[c]) == notequal[r][c]);
+      assert(BitValueRepresentation(bs[r]).eq(bs[c]) == equal[r][c]);
+      assert(BitValueRepresentation(bs[r]).ne(bs[c]) == notequal[r][c]);
 
-      assert(bitvalue_repr(bs[r]).uge(bs[c]) == ugreatereq[r][c]);
-      assert(bitvalue_repr(bs[r]).sge(bs[c]) == sgreatereq[r][c]);
+      assert(BitValueRepresentation(bs[r]).uge(bs[c]) == ugreatereq[r][c]);
+      assert(BitValueRepresentation(bs[r]).sge(bs[c]) == sgreatereq[r][c]);
 
-      assert(bitvalue_repr(bs[r]).ugt(bs[c]) == ugreater[r][c]);
-      assert(bitvalue_repr(bs[r]).sgt(bs[c]) == sgreater[r][c]);
+      assert(BitValueRepresentation(bs[r]).ugt(bs[c]) == ugreater[r][c]);
+      assert(BitValueRepresentation(bs[r]).sgt(bs[c]) == sgreater[r][c]);
     }
   }
 
-  assert(bitvalue_repr("000110").to_uint() == 24);
-  assert(bitvalue_repr("00011").to_int() == -8);
+  assert(BitValueRepresentation("000110").to_uint() == 24);
+  assert(BitValueRepresentation("00011").to_int() == -8);
 
   for (ssize_t r = -4; r < 5; r++)
   {
-    bitvalue_repr rbits(32, r);
+    BitValueRepresentation rbits(32, r);
 
     assert(rbits.neg() == -r);
     assert(rbits.shl(1) == r << 1);
@@ -2210,7 +2211,7 @@ types_bitstring_test_value_representation()
 
     for (ssize_t c = -4; c < 5; c++)
     {
-      bitvalue_repr cbits(32, c);
+      BitValueRepresentation cbits(32, c);
 
       assert(rbits.add(cbits) == r + c);
       assert(rbits.sub(cbits) == r - c);
