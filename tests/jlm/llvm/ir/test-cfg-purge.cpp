@@ -21,7 +21,7 @@ test()
   auto bb0 = BasicBlock::create(cfg);
   auto bb1 = BasicBlock::create(cfg);
 
-  jlm::rvsdg::ctlconstant_op op(jlm::rvsdg::ctlvalue_repr(1, 2));
+  jlm::rvsdg::ctlconstant_op op(jlm::rvsdg::ControlValueRepresentation(1, 2));
   bb0->append_last(ThreeAddressCode::create(op, {}));
   bb0->append_last(BranchOperation::create(2, bb0->last()->result(0)));
 
