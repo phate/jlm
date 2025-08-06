@@ -38,11 +38,15 @@ test_gamma()
   auto evx = gamma->AddEntryVar(x);
   auto evs = gamma->AddEntryVar(s);
 
-  auto null = jlm::tests::create_testop(gamma->subregion(0), {}, { vt })[0];
-  auto bin =
-      jlm::tests::create_testop(gamma->subregion(0), { null, evx.branchArgument[0] }, { vt })[0];
+  auto null = jlm::tests::TestOperation::create(gamma->subregion(0), {}, { vt })->output(0);
+  auto bin = jlm::tests::TestOperation::create(
+                 gamma->subregion(0),
+                 { null, evx.branchArgument[0] },
+                 { vt })
+                 ->output(0);
   auto state =
-      jlm::tests::create_testop(gamma->subregion(0), { bin, evs.branchArgument[0] }, { st })[0];
+      jlm::tests::TestOperation::create(gamma->subregion(0), { bin, evs.branchArgument[0] }, { st })
+          ->output(0);
 
   gamma->AddExitVar({ state, evs.branchArgument[1] });
 
@@ -81,10 +85,13 @@ test_theta()
   auto lv3 = theta->AddLoopVar(x);
   auto lv4 = theta->AddLoopVar(s);
 
-  auto o1 = jlm::tests::create_testop(theta->subregion(), {}, { vt })[0];
-  auto o2 = jlm::tests::create_testop(theta->subregion(), { o1, lv3.pre }, { vt })[0];
-  auto o3 = jlm::tests::create_testop(theta->subregion(), { lv2.pre, o2 }, { vt })[0];
-  auto o4 = jlm::tests::create_testop(theta->subregion(), { lv3.pre, lv4.pre }, { st })[0];
+  auto o1 = jlm::tests::TestOperation::create(theta->subregion(), {}, { vt })->output(0);
+  auto o2 =
+      jlm::tests::TestOperation::create(theta->subregion(), { o1, lv3.pre }, { vt })->output(0);
+  auto o3 =
+      jlm::tests::TestOperation::create(theta->subregion(), { lv2.pre, o2 }, { vt })->output(0);
+  auto o4 = jlm::tests::TestOperation::create(theta->subregion(), { lv3.pre, lv4.pre }, { st })
+                ->output(0);
 
   lv2.post->divert_to(o3);
   lv4.post->divert_to(o4);
