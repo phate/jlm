@@ -14,7 +14,11 @@ namespace jlm::rvsdg
 /* control constant */
 
 // explicit instantiation
-template class domain_const_op<ControlType, ControlValueRepresentation, ctlformat_value, ctltype_of_value>;
+template class domain_const_op<
+    ControlType,
+    ControlValueRepresentation,
+    ctlformat_value,
+    ctltype_of_value>;
 
 ControlType::~ControlType() noexcept = default;
 
@@ -161,7 +165,10 @@ match(
 jlm::rvsdg::Output *
 control_constant(rvsdg::Region * region, size_t nalternatives, size_t alternative)
 {
-  return CreateOpNode<ctlconstant_op>(*region, ControlValueRepresentation(alternative, nalternatives)).output(0);
+  return CreateOpNode<ctlconstant_op>(
+             *region,
+             ControlValueRepresentation(alternative, nalternatives))
+      .output(0);
 }
 
 }
