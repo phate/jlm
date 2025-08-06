@@ -48,12 +48,12 @@ test1()
   auto evy = gamma->AddEntryVar(lvy.pre);
 
   auto b = jlm::tests::TestOperation::create(
-      gamma->subregion(0),
-      { evx.branchArgument[0], evy.branchArgument[0] },
+               gamma->subregion(0),
+               { evx.branchArgument[0], evy.branchArgument[0] },
                { vt })
                ->output(0);
   auto c = jlm::tests::TestOperation::create(
-      gamma->subregion(1),
+               gamma->subregion(1),
                { evx.branchArgument[1], evy.branchArgument[1] },
                { vt })
                ->output(0);
@@ -93,7 +93,7 @@ test2()
   auto lv1 = theta->AddLoopVar(x);
 
   auto n1 = jlm::tests::TestOperation::create(
-      theta->subregion(),
+                theta->subregion(),
                 { lv1.pre },
                 { jlm::rvsdg::bittype::Create(1) })
                 ->output(0);

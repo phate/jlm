@@ -160,7 +160,7 @@ TestCallSummaryComputationDirectCalls()
 
     auto result = tests::TestOperation::create(
                       lambdaNode->subregion(),
-        { callXResults[0], callYResults[0] },
+                      { callXResults[0], callYResults[0] },
                       { vt })
                       ->output(0);
 

@@ -45,7 +45,8 @@ TestDeltaCreation()
           linkage::internal_linkage,
           "",
           false));
-  auto d2 = &delta2->finalize(jlm::tests::TestOperation::create(delta2->subregion(), {}, { valueType })->output(0));
+  auto d2 = &delta2->finalize(
+      jlm::tests::TestOperation::create(delta2->subregion(), {}, { valueType })->output(0));
 
   GraphExport::Create(*d1, "");
   GraphExport::Create(*d2, "");

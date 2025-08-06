@@ -114,7 +114,8 @@ test_pull()
   auto ev3 = gamma2->AddEntryVar(ev2.branchArgument[1]);
   auto cg2 = jlm::tests::TestOperation::create(gamma2->subregion(0), {}, { vt })->output(0);
   auto un =
-      jlm::tests::TestOperation::create(gamma2->subregion(1), { ev3.branchArgument[1] }, { vt })->output(0);
+      jlm::tests::TestOperation::create(gamma2->subregion(1), { ev3.branchArgument[1] }, { vt })
+          ->output(0);
   auto g2xv = gamma2->AddExitVar({ cg2, un });
 
   auto g1xv = gamma1->AddExitVar({ cg1, g2xv.output });

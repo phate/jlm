@@ -160,7 +160,8 @@ Theta()
   lv1.post->divert_to(lv2.pre);
   lv2.post->divert_to(lv1.pre);
 
-  auto t = jlm::tests::TestOperation::create(theta->subregion(), { lv3.pre }, { valueType })->output(0);
+  auto t =
+      jlm::tests::TestOperation::create(theta->subregion(), { lv3.pre }, { valueType })->output(0);
   lv3.post->divert_to(t);
   lv4.post->divert_to(lv2.pre);
 
