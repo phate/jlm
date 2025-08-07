@@ -719,6 +719,19 @@ public:
   ToTree(const rvsdg::Region & region) noexcept;
 
   /**
+   * @return A unique identifier for a node within this region.
+   *
+   * \note The identifier is only unique within this region.
+   */
+  [[nodiscard]] Node::Id
+  GenerateNodeId() noexcept
+  {
+    const auto nodeId = NodeId_;
+    NodeId_++;
+    return nodeId;
+  }
+  
+  /**
    * \brief Register a \ref Tracker for this region.
    *
    * @param tracker The \ref Tracker that is supposed to be registered for this region.
@@ -788,6 +801,7 @@ private:
 
   size_t index_;
   Graph * graph_;
+  Node::Id NodeId_;
   rvsdg::StructuralNode * node_;
   std::vector<RegionResult *> results_;
   std::vector<RegionArgument *> arguments_;

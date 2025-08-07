@@ -353,26 +353,6 @@ public:
   }
 };
 
-static inline std::vector<rvsdg::Output *>
-create_testop(
-    rvsdg::Region * region,
-    const std::vector<rvsdg::Output *> & operands,
-    std::vector<std::shared_ptr<const rvsdg::Type>> result_types)
-{
-  std::vector<std::shared_ptr<const rvsdg::Type>> operand_types;
-  for (const auto & operand : operands)
-    operand_types.push_back(operand->Type());
-
-  return operands.empty() ? outputs(&rvsdg::CreateOpNode<TestOperation>(
-                                *region,
-                                std::move(operand_types),
-                                std::move(result_types)))
-                          : outputs(&rvsdg::CreateOpNode<TestOperation>(
-                                operands,
-                                std::move(operand_types),
-                                std::move(result_types)));
-}
-
 class TestGraphArgument final : public jlm::rvsdg::RegionArgument
 {
 private:

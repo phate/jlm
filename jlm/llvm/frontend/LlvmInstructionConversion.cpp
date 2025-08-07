@@ -68,7 +68,7 @@ ConvertConstant(
     std::vector<std::unique_ptr<llvm::ThreeAddressCode>> &,
     Context &);
 
-static rvsdg::bitvalue_repr
+static rvsdg::BitValueRepresentation
 convert_apint(const ::llvm::APInt & value)
 {
   ::llvm::APInt v;
@@ -78,7 +78,7 @@ convert_apint(const ::llvm::APInt & value)
   auto str = toString(value, 2, false);
   std::reverse(str.begin(), str.end());
 
-  rvsdg::bitvalue_repr vr(str.c_str());
+  rvsdg::BitValueRepresentation vr(str.c_str());
   if (value.isNegative())
     vr = vr.sext(value.getBitWidth() - str.size());
   else

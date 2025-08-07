@@ -178,10 +178,10 @@ EmptyGammaWithTwoSubregions()
   const auto gammaNode0 = jlm::rvsdg::GammaNode::create(matchResult, 2);
   const auto & c0 = jlm::rvsdg::CreateOpNode<jlm::rvsdg::ctlconstant_op>(
       *gammaNode0->subregion(0),
-      jlm::rvsdg::ctlvalue_repr(0, 2));
+      jlm::rvsdg::ControlValueRepresentation(0, 2));
   const auto & c1 = jlm::rvsdg::CreateOpNode<jlm::rvsdg::ctlconstant_op>(
       *gammaNode0->subregion(1),
-      jlm::rvsdg::ctlvalue_repr(1, 2));
+      jlm::rvsdg::ControlValueRepresentation(1, 2));
   auto c = gammaNode0->AddExitVar({ c0.output(0), c1.output(0) });
 
   const auto gammaNode1 = jlm::rvsdg::GammaNode::create(c.output, 2);
@@ -289,8 +289,11 @@ PartialEmptyGamma()
   auto match = jlm::rvsdg::match(1, { { 0, 0 } }, 1, 2, lambdaNode->GetFunctionArguments()[0]);
   auto gammaNode = jlm::rvsdg::GammaNode::create(match, 2);
   auto gammaInput = gammaNode->AddEntryVar(lambdaNode->GetFunctionArguments()[1]);
-  auto output =
-      create_testop(gammaNode->subregion(1), { gammaInput.branchArgument[1] }, { valueType })[0];
+  auto output = TestOperation::create(
+                    gammaNode->subregion(1),
+                    { gammaInput.branchArgument[1] },
+                    { valueType })
+                    ->output(0);
   auto gammaOutput = gammaNode->AddExitVar({ gammaInput.branchArgument[0], output });
 
   auto lambdaOutput = lambdaNode->finalize({ gammaOutput.output });

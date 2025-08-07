@@ -85,7 +85,7 @@ private:
 };
 
 template<typename... Args>
-class notifier;
+class Notifier;
 
 template<typename... Args>
 class NotifierProxy final
@@ -100,17 +100,17 @@ public:
   }
 
 private:
-  explicit NotifierProxy(notifier<Args...> & n) noexcept
+  explicit NotifierProxy(Notifier<Args...> & n) noexcept
       : notifier_(n)
   {}
 
-  notifier<Args...> & notifier_;
+  Notifier<Args...> & notifier_;
 
-  friend class notifier<Args...>;
+  friend class Notifier<Args...>;
 };
 
 template<typename... Args>
-class notifier final
+class Notifier final
 {
 public:
   typedef std::function<void(Args...)> function_type;
@@ -121,7 +121,7 @@ private:
   public:
     ~callback_impl() noexcept override = default;
 
-    inline callback_impl(notifier * n, function_type fn)
+    callback_impl(Notifier * n, function_type fn)
         : notifier_(n),
           fn_(std::move(fn))
     {}
@@ -154,7 +154,7 @@ private:
       notifier_ = 0;
     }
 
-    notifier * notifier_;
+    Notifier * notifier_;
     function_type fn_;
 
     callback_impl * prev_;
@@ -162,7 +162,7 @@ private:
   };
 
 public:
-  inline ~notifier() noexcept
+  ~Notifier() noexcept
   {
     while (first_)
     {
@@ -170,7 +170,7 @@ public:
     }
   }
 
-  inline constexpr notifier() noexcept
+  constexpr Notifier() noexcept
       : first_(nullptr),
         last_(nullptr)
   {}
