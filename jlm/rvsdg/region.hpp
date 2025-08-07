@@ -730,7 +730,7 @@ public:
     NodeId_++;
     return nodeId;
   }
-  
+
   /**
    * \brief Register a \ref Tracker for this region.
    *
