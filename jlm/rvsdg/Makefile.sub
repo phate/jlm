@@ -34,6 +34,7 @@ librvsdg_SOURCES = \
 
 librvsdg_HEADERS = \
     jlm/rvsdg/FunctionType.hpp \
+    jlm/rvsdg/MatchType.hpp \
     jlm/rvsdg/operation.hpp \
     jlm/rvsdg/delta.hpp \
     jlm/rvsdg/gamma.hpp \
@@ -77,6 +78,7 @@ librvsdg_TESTS = \
     tests/jlm/rvsdg/ArgumentTests \
     tests/jlm/rvsdg/InputTests \
     tests/jlm/rvsdg/OutputTests \
+    tests/jlm/rvsdg/MatchTypeTests \
     tests/jlm/rvsdg/RegionTests \
     tests/jlm/rvsdg/ResultTests \
     tests/jlm/rvsdg/SimpleOperationTests \
