@@ -6,6 +6,7 @@
 #include <jlm/llvm/ir/operators/FunctionPointer.hpp>
 #include <jlm/llvm/opt/alias-analyses/ModRefSummarizer.hpp>
 #include <jlm/llvm/opt/alias-analyses/TopDownModRefEliminator.hpp>
+#include <jlm/rvsdg/MatchType.hpp>
 #include <jlm/rvsdg/traverser.hpp>
 
 namespace jlm::llvm::aa
@@ -492,28 +493,39 @@ TopDownModRefEliminator::EliminateTopDownRootRegion(rvsdg::Region & region)
   rvsdg::BottomUpTraverser traverser(&region);
   for (auto & node : traverser)
   {
-    if (auto lambdaNode = dynamic_cast<const rvsdg::LambdaNode *>(node))
-    {
-      EliminateTopDownLambda(*lambdaNode);
-    }
-    else if (auto phiNode = dynamic_cast<const rvsdg::PhiNode *>(node))
-    {
-      EliminateTopDownPhi(*phiNode);
-    }
-    else if (is<DeltaOperation>(node))
-    {
-      // Nothing needs to be done.
-    }
-    else if (
-        is<FunctionToPointerOperation>(node->GetOperation())
-        || is<PointerToFunctionOperation>(node->GetOperation()))
-    {
-      // Nothing needs to be done.
-    }
-    else
-    {
-      JLM_UNREACHABLE("Unhandled node type!");
-    }
+    rvsdg::MatchTypeWithDefault(
+        *node,
+        [this](const rvsdg::LambdaNode & node)
+        {
+          EliminateTopDownLambda(node);
+        },
+        [this](const rvsdg::PhiNode & node)
+        {
+          EliminateTopDownPhi(node);
+        },
+        [](const rvsdg::DeltaNode & node)
+        {
+          // Nothing needs to be done.
+        },
+        [](const rvsdg::SimpleNode & node)
+        {
+          rvsdg::MatchTypeWithDefault(
+              node.GetOperation(),
+              [](const FunctionToPointerOperation &)
+              {
+              },
+              [](const PointerToFunctionOperation &)
+              {
+              },
+              []()
+              {
+                JLM_UNREACHABLE("Unhandled node type!");
+              });
+        },
+        []()
+        {
+          JLM_UNREACHABLE("Unhandled node type!");
+        });
   }
 }
 
@@ -900,7 +912,7 @@ TopDownModRefEliminator::InitializeLiveNodesOfTailLambdas(const rvsdg::RvsdgModu
         InitializeLiveNodesOfTailLambda(*phiLambdaNode);
       }
     }
-    else if (is<DeltaOperation>(node))
+    else if (dynamic_cast<const rvsdg::DeltaNode *>(node))
     {
       // Nothing needs to be done for delta nodes.
     }

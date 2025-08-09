@@ -120,21 +120,21 @@ struct callable_restype<Ret(Args...)>
  */
 template<typename T, typename... Fns>
 void
-MatchType(const T & obj, const Fns &... fns);
+MatchType(T & obj, const Fns &... fns);
 
 // Specialization to handle the termination (empty handlers) case.
 template<typename T>
 void
-MatchType(const T & x)
+MatchType(T & x)
 {}
 
 // Specialization to handle the head case.
 template<typename T, typename Fn, typename... Fns>
 void
-MatchType(const T & x, const Fn & fn, const Fns &... fns)
+MatchType(T & x, const Fn & fn, const Fns &... fns)
 {
   using S = std::remove_reference_t<typename callable_argtype<Fn>::type>;
-  if (auto i = dynamic_cast<const S *>(&x))
+  if (auto i = dynamic_cast<S *>(&x))
   {
     fn(*i);
   }
@@ -163,12 +163,12 @@ MatchType(const T & x, const Fn & fn, const Fns &... fns)
  */
 template<typename T, typename... Fns>
 void
-MatchTypeWithDefault(const T & obj, const Fns &... fns);
+MatchTypeWithDefault(T & obj, const Fns &... fns);
 
 // Specialization to handle the termination (empty handlers) case.
 template<typename T, typename Fn>
 typename callable_restype<Fn>::type
-MatchTypeWithDefault(const T & /* x */, const Fn & fn)
+MatchTypeWithDefault(T & /* x */, const Fn & fn)
 {
   return fn();
 }
@@ -176,10 +176,10 @@ MatchTypeWithDefault(const T & /* x */, const Fn & fn)
 // Specialization to handle the head case.
 template<typename T, typename Fn, typename... Fns>
 typename callable_restype<Fn>::type
-MatchTypeWithDefault(const T & x, const Fn & fn, const Fns &... fns)
+MatchTypeWithDefault(T & x, const Fn & fn, const Fns &... fns)
 {
   using S = std::remove_reference_t<typename callable_argtype<Fn>::type>;
-  if (auto i = dynamic_cast<const S *>(&x))
+  if (auto i = dynamic_cast<S *>(&x))
   {
     return fn(*i);
   }
@@ -206,15 +206,15 @@ MatchTypeWithDefault(const T & x, const Fn & fn, const Fns &... fns)
  */
 template<typename T, typename... Fns>
 void
-MatchTypeOrFail(const T & obj, const Fns &... fns);
+MatchTypeOrFail(T & obj, const Fns &... fns);
 
 // Specialization to handle the termination (last handler) case.
 template<typename T, typename Fn>
 typename callable_restype<Fn>::type
-MatchTypeOrFail(const T & x, const Fn & fn)
+MatchTypeOrFail(T & x, const Fn & fn)
 {
   using S = std::remove_reference_t<typename callable_argtype<Fn>::type>;
-  if (auto i = dynamic_cast<const S *>(&x))
+  if (auto i = dynamic_cast<S *>(&x))
   {
     return fn(*i);
   }
@@ -227,10 +227,10 @@ MatchTypeOrFail(const T & x, const Fn & fn)
 // Specialization to handle the head case.
 template<typename T, typename Fn, typename... Fns>
 typename callable_restype<Fn>::type
-MatchTypeOrFail(const T & x, const Fn & fn, const Fns &... fns)
+MatchTypeOrFail(T & x, const Fn & fn, const Fns &... fns)
 {
   using S = std::remove_reference_t<typename callable_argtype<Fn>::type>;
-  if (auto i = dynamic_cast<const S *>(&x))
+  if (auto i = dynamic_cast<S *>(&x))
   {
     return fn(*i);
   }
