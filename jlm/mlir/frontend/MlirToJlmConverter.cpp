@@ -127,6 +127,7 @@ MlirToJlmConverter::ConvertBlock(::mlir::Block & block, rvsdg::Region & rvsdgReg
       ::llvm::SmallVector<jlm::rvsdg::Output *> inputs = GetConvertedInputs(mlirOp, outputMap);
 
       auto outputs = ConvertOperation(mlirOp, rvsdgRegion, inputs);
+      JLM_ASSERT(outputs.size() == mlirOp.getNumResults());
       for (size_t i = 0; i < mlirOp.getNumResults(); i++)
       {
         auto result = mlirOp.getResult(i);
