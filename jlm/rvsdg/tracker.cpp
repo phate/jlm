@@ -8,10 +8,21 @@
 #include <jlm/rvsdg/region.hpp>
 #include <jlm/rvsdg/tracker.hpp>
 
+#include <set>
+
 using namespace std::placeholders;
 
 namespace jlm::rvsdg
 {
+
+struct cmp
+{
+  bool
+  operator()(const TrackerNodeState * lhs, const TrackerNodeState * rhs) const
+  {
+    return lhs->node()->GetNodeId() < rhs->node()->GetNodeId();
+  }
+};
 
 class TrackerDepthState
 {
@@ -116,7 +127,7 @@ private:
   size_t count_;
   size_t top_depth_;
   size_t bottom_depth_;
-  std::unordered_map<size_t, std::unordered_set<TrackerNodeState *>> nodestates_;
+  std::unordered_map<size_t, std::set<TrackerNodeState *, cmp>> nodestates_;
 };
 
 Tracker::~Tracker() noexcept
