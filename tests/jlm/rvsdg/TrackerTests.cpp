@@ -32,8 +32,8 @@ TestTrackingOrder()
   auto node3 = TestOperation::create(&rootRegion, { &i0 }, { valueType });
   auto node4 = TestOperation::create(&rootRegion, {}, { valueType });
 
-  // Ensure that the node identifiers have the relative that we expect. Otherwise, the tests below
-  // will fail for sure.
+  // Ensure that the node identifiers have the relative order that we expect. Otherwise, the tests
+  // below will fail for sure.
   assert(node0->GetNodeId() < node1->GetNodeId());
   assert(node1->GetNodeId() < node2->GetNodeId());
   assert(node2->GetNodeId() < node3->GetNodeId());
@@ -95,7 +95,7 @@ TestTrackingOrder()
   // Let's put node3 below node4 in the graph
   // This means that node4 should be now in the "top depth" node set and node3 in the "bottom depth"
   // node set
-  node3->input(0)->origin()->divert_users(node4->output(0));
+  node3->input(0)->divert_to(node4->output(0));
 
   // We expect node4 to be returned as the next top node (even though it has a greater
   // identifier than node3) as node3 is not in the "top depth" node set any longer
@@ -107,7 +107,7 @@ TestTrackingOrder()
   tracker.set_nodestate(node3, myTrackerState);
 
   // Divert the input of node3 again
-  node3->input(0)->origin()->divert_users(&i0);
+  node3->input(0)->divert_to(&i0);
 
   // Now, all nodes have the same depth again. This means that the "top depth" and "bottom depth"
   // node set should be the same again. Thus, we expect node3 and then node4 to be returned for both
