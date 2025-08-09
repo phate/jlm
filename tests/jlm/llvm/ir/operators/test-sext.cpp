@@ -24,12 +24,12 @@ test_bitunary_reduction()
   Graph graph;
   auto bitType32 = bittype::Create(32);
 
-  auto x = &jlm::tests::GraphImport::Create(graph, bitType32, "x");
+  auto x = &jlm::rvsdg::GraphImport::Create(graph, bitType32, "x");
 
   auto y = bitnot_op::create(32, x);
   auto z = jlm::llvm::SExtOperation::create(64, y);
 
-  auto & ex = jlm::llvm::GraphExport::Create(*z, "x");
+  auto & ex = GraphExport::Create(*z, "x");
 
   view(graph, stdout);
 
@@ -55,13 +55,13 @@ test_bitbinary_reduction()
   Graph graph;
   auto bt32 = bittype::Create(32);
 
-  auto x = &jlm::tests::GraphImport::Create(graph, bt32, "x");
-  auto y = &jlm::tests::GraphImport::Create(graph, bt32, "y");
+  auto x = &jlm::rvsdg::GraphImport::Create(graph, bt32, "x");
+  auto y = &jlm::rvsdg::GraphImport::Create(graph, bt32, "y");
 
   auto z = bitadd_op::create(32, x, y);
   auto w = SExtOperation::create(64, z);
 
-  auto & ex = jlm::llvm::GraphExport::Create(*w, "x");
+  auto & ex = GraphExport::Create(*w, "x");
 
   view(graph, stdout);
 
@@ -87,12 +87,12 @@ test_inverse_reduction()
   Graph graph;
   auto bt64 = bittype::Create(64);
 
-  auto x = &jlm::tests::GraphImport::Create(graph, bt64, "x");
+  auto x = &jlm::rvsdg::GraphImport::Create(graph, bt64, "x");
 
   auto y = TruncOperation::create(32, x);
   auto z = SExtOperation::create(64, y);
 
-  auto & ex = jlm::llvm::GraphExport::Create(*z, "x");
+  auto & ex = GraphExport::Create(*z, "x");
 
   view(graph, stdout);
 

@@ -16,7 +16,7 @@ namespace jlm::llvm
 
 // FIXME: Implement our own value representation instead of re-using the bitstring value
 // representation
-using IntegerValueRepresentation = rvsdg::bitvalue_repr;
+using IntegerValueRepresentation = rvsdg::BitValueRepresentation;
 
 /**
  * Represents an LLVM integer constant

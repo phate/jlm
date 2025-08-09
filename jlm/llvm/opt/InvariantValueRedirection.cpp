@@ -81,7 +81,7 @@ InvariantValueRedirection::RedirectInRootRegion(rvsdg::Graph & rvsdg)
         RedirectInRegion(*phiLambdaNode->subregion());
       }
     }
-    else if (dynamic_cast<const DeltaNode *>(node))
+    else if (dynamic_cast<const rvsdg::DeltaNode *>(node))
     {
       // Nothing needs to be done.
       // Delta nodes are irrelevant for invariant value redirection.

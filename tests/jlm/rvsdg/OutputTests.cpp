@@ -17,16 +17,16 @@ TestOutputIterator()
 
   Graph rvsdg;
   auto & rootRegion = rvsdg.GetRootRegion();
-  auto i0 = &jlm::tests::GraphImport::Create(rvsdg, valueType, "i");
-  auto i1 = &jlm::tests::GraphImport::Create(rvsdg, valueType, "i");
-  auto i2 = &jlm::tests::GraphImport::Create(rvsdg, valueType, "i");
+  auto i0 = &GraphImport::Create(rvsdg, valueType, "i");
+  auto i1 = &GraphImport::Create(rvsdg, valueType, "i");
+  auto i2 = &GraphImport::Create(rvsdg, valueType, "i");
 
   auto & node = CreateOpNode<jlm::tests::TestOperation>(
       rootRegion,
       std::vector<std::shared_ptr<const Type>>(),
       std::vector<std::shared_ptr<const Type>>(5, valueType));
 
-  jlm::tests::GraphExport::Create(*node.output(0), "x0");
+  GraphExport::Create(*node.output(0), "x0");
 
   // Act & Assert
   auto nodeIt = Output::Iterator(node.output(0));

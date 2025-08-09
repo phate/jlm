@@ -2,6 +2,7 @@ librvsdg_SOURCES = \
     jlm/rvsdg/binary.cpp \
     jlm/rvsdg/control.cpp \
     jlm/rvsdg/FunctionType.cpp \
+    jlm/rvsdg/delta.cpp \
     jlm/rvsdg/gamma.cpp \
     jlm/rvsdg/graph.cpp \
     jlm/rvsdg/lambda.cpp \
@@ -33,7 +34,9 @@ librvsdg_SOURCES = \
 
 librvsdg_HEADERS = \
     jlm/rvsdg/FunctionType.hpp \
+    jlm/rvsdg/MatchType.hpp \
     jlm/rvsdg/operation.hpp \
+    jlm/rvsdg/delta.hpp \
     jlm/rvsdg/gamma.hpp \
     jlm/rvsdg/notifiers.hpp \
     jlm/rvsdg/bitstring/constant.hpp \
@@ -75,6 +78,7 @@ librvsdg_TESTS = \
     tests/jlm/rvsdg/ArgumentTests \
     tests/jlm/rvsdg/InputTests \
     tests/jlm/rvsdg/OutputTests \
+    tests/jlm/rvsdg/MatchTypeTests \
     tests/jlm/rvsdg/RegionTests \
     tests/jlm/rvsdg/ResultTests \
     tests/jlm/rvsdg/SimpleOperationTests \
@@ -88,6 +92,7 @@ librvsdg_TESTS = \
     tests/jlm/rvsdg/test-topdown \
     tests/jlm/rvsdg/test-typemismatch \
     tests/jlm/rvsdg/TestStructuralNode \
+    tests/jlm/rvsdg/TrackerTests \
     tests/jlm/rvsdg/UnaryOperationTests \
 
 librvsdg_TEST_LIBS = \

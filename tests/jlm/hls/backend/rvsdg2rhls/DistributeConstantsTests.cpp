@@ -56,7 +56,7 @@ GammaSubregionUsage()
 
   auto lambdaOutput = lambdaNode->finalize({ exitVariable.output });
 
-  jlm::tests::GraphExport::Create(*lambdaOutput, "");
+  jlm::rvsdg::GraphExport::Create(*lambdaOutput, "");
 
   view(rvsdg, stdout);
 
@@ -145,7 +145,7 @@ NestedGammas()
 
   auto lambdaOutput = lambdaNode->finalize({ testNode1->output(0) });
 
-  jlm::tests::GraphExport::Create(*lambdaOutput, "");
+  jlm::rvsdg::GraphExport::Create(*lambdaOutput, "");
 
   view(rvsdg, stdout);
 
@@ -237,7 +237,7 @@ Theta()
   auto lambdaOutput =
       lambdaNode->finalize({ testNode1->output(0), loopVar1.output, loopVar2.output });
 
-  jlm::tests::GraphExport::Create(*lambdaOutput, "");
+  jlm::rvsdg::GraphExport::Create(*lambdaOutput, "");
 
   view(rvsdg, stdout);
 

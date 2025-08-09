@@ -670,13 +670,13 @@ private:
 class IndirectCallTest2 final : public RvsdgTest
 {
 public:
-  [[nodiscard]] jlm::llvm::DeltaNode &
+  [[nodiscard]] jlm::rvsdg::DeltaNode &
   GetDeltaG1() const noexcept
   {
     return *DeltaG1_;
   }
 
-  [[nodiscard]] jlm::llvm::DeltaNode &
+  [[nodiscard]] jlm::rvsdg::DeltaNode &
   GetDeltaG2() const noexcept
   {
     return *DeltaG2_;
@@ -782,8 +782,8 @@ private:
   std::unique_ptr<jlm::llvm::RvsdgModule>
   SetupRvsdg() override;
 
-  jlm::llvm::DeltaNode * DeltaG1_;
-  jlm::llvm::DeltaNode * DeltaG2_;
+  jlm::rvsdg::DeltaNode * DeltaG1_;
+  jlm::rvsdg::DeltaNode * DeltaG2_;
 
   jlm::rvsdg::LambdaNode * LambdaThree_;
   jlm::rvsdg::LambdaNode * LambdaFour_;
@@ -1153,7 +1153,7 @@ public:
   jlm::rvsdg::LambdaNode * lambda_g;
   jlm::rvsdg::LambdaNode * lambda_h;
 
-  jlm::llvm::DeltaNode * delta_f;
+  jlm::rvsdg::DeltaNode * delta_f;
 
   rvsdg::Node * constantFive;
 
@@ -1202,8 +1202,8 @@ public:
   jlm::rvsdg::LambdaNode * lambda_f1;
   jlm::rvsdg::LambdaNode * lambda_f2;
 
-  jlm::llvm::DeltaNode * delta_d1;
-  jlm::llvm::DeltaNode * delta_d2;
+  jlm::rvsdg::DeltaNode * delta_d1;
+  jlm::rvsdg::DeltaNode * delta_d2;
 
 private:
   std::unique_ptr<jlm::llvm::RvsdgModule>
@@ -1252,13 +1252,13 @@ public:
     return *LambdaTest_;
   }
 
-  [[nodiscard]] const jlm::llvm::DeltaNode &
+  [[nodiscard]] const jlm::rvsdg::DeltaNode &
   DeltaG1() const noexcept
   {
     return *DeltaG1_;
   }
 
-  [[nodiscard]] const jlm::llvm::DeltaNode &
+  [[nodiscard]] const jlm::rvsdg::DeltaNode &
   DeltaG2() const noexcept
   {
     return *DeltaG2_;
@@ -1277,8 +1277,8 @@ private:
   jlm::rvsdg::LambdaNode * LambdaF_;
   jlm::rvsdg::LambdaNode * LambdaTest_;
 
-  jlm::llvm::DeltaNode * DeltaG1_;
-  jlm::llvm::DeltaNode * DeltaG2_;
+  jlm::rvsdg::DeltaNode * DeltaG1_;
+  jlm::rvsdg::DeltaNode * DeltaG2_;
 
   rvsdg::SimpleNode * CallF_;
 };
@@ -1642,7 +1642,7 @@ private:
  */
 class PhiWithDeltaTest final : public RvsdgTest
 {
-  [[nodiscard]] const jlm::llvm::DeltaNode &
+  [[nodiscard]] const jlm::rvsdg::DeltaNode &
   GetDelta() const noexcept
   {
     JLM_ASSERT(Delta_ != nullptr);
@@ -1653,7 +1653,7 @@ private:
   std::unique_ptr<jlm::llvm::RvsdgModule>
   SetupRvsdg() override;
 
-  jlm::llvm::DeltaNode * Delta_ = {};
+  jlm::rvsdg::DeltaNode * Delta_ = {};
 };
 
 /** \brief ExternalMemoryTest class
@@ -1713,10 +1713,10 @@ private:
 public:
   jlm::rvsdg::LambdaNode * LambdaTest;
 
-  jlm::llvm::DeltaNode * DeltaA;
-  jlm::llvm::DeltaNode * DeltaB;
-  jlm::llvm::DeltaNode * DeltaX;
-  jlm::llvm::DeltaNode * DeltaY;
+  jlm::rvsdg::DeltaNode * DeltaA;
+  jlm::rvsdg::DeltaNode * DeltaB;
+  jlm::rvsdg::DeltaNode * DeltaX;
+  jlm::rvsdg::DeltaNode * DeltaY;
 
   rvsdg::SimpleNode * LoadNode1;
 };
@@ -1802,7 +1802,7 @@ private:
 public:
   jlm::rvsdg::LambdaNode * LambdaTest;
 
-  jlm::llvm::DeltaNode * DeltaGlobal;
+  jlm::rvsdg::DeltaNode * DeltaGlobal;
 
   jlm::rvsdg::RegionArgument * ImportExternalFunction;
 
@@ -1853,13 +1853,13 @@ public:
     return *LambdaG_;
   }
 
-  [[nodiscard]] const jlm::llvm::DeltaNode &
+  [[nodiscard]] const jlm::rvsdg::DeltaNode &
   LocalArray() const noexcept
   {
     return *LocalArray_;
   }
 
-  [[nodiscard]] const jlm::llvm::DeltaNode &
+  [[nodiscard]] const jlm::rvsdg::DeltaNode &
   GlobalArray() const noexcept
   {
     return *GlobalArray_;
@@ -1884,8 +1884,8 @@ private:
   jlm::rvsdg::LambdaNode * LambdaF_;
   jlm::rvsdg::LambdaNode * LambdaG_;
 
-  jlm::llvm::DeltaNode * LocalArray_;
-  jlm::llvm::DeltaNode * GlobalArray_;
+  jlm::rvsdg::DeltaNode * LocalArray_;
+  jlm::rvsdg::DeltaNode * GlobalArray_;
 
   rvsdg::SimpleNode * CallF_;
 
@@ -2055,7 +2055,7 @@ public:
     return *LambdaNext_;
   }
 
-  [[nodiscard]] const jlm::llvm::DeltaNode &
+  [[nodiscard]] const jlm::rvsdg::DeltaNode &
   GetDeltaMyList() const noexcept
   {
     return *DeltaMyList_;
@@ -2065,7 +2065,7 @@ private:
   std::unique_ptr<jlm::llvm::RvsdgModule>
   SetupRvsdg() override;
 
-  jlm::llvm::DeltaNode * DeltaMyList_;
+  jlm::rvsdg::DeltaNode * DeltaMyList_;
 
   jlm::rvsdg::LambdaNode * LambdaNext_;
 
@@ -2094,7 +2094,7 @@ private:
 class AllMemoryNodesTest final : public RvsdgTest
 {
 public:
-  [[nodiscard]] const jlm::llvm::DeltaNode &
+  [[nodiscard]] const jlm::rvsdg::DeltaNode &
   GetDeltaNode() const noexcept
   {
     JLM_ASSERT(Delta_);
@@ -2161,7 +2161,7 @@ private:
   std::unique_ptr<jlm::llvm::RvsdgModule>
   SetupRvsdg() override;
 
-  jlm::llvm::DeltaNode * Delta_ = {};
+  jlm::rvsdg::DeltaNode * Delta_ = {};
 
   jlm::llvm::GraphImport * Import_ = {};
 
@@ -2258,7 +2258,7 @@ private:
 class EscapingLocalFunctionTest final : public RvsdgTest
 {
 public:
-  [[nodiscard]] const jlm::llvm::DeltaNode &
+  [[nodiscard]] const jlm::rvsdg::DeltaNode &
   GetGlobal() const noexcept
   {
     JLM_ASSERT(Global_);
@@ -2304,7 +2304,7 @@ private:
   std::unique_ptr<jlm::llvm::RvsdgModule>
   SetupRvsdg() override;
 
-  jlm::llvm::DeltaNode * Global_ = {};
+  jlm::rvsdg::DeltaNode * Global_ = {};
   jlm::rvsdg::LambdaNode * LocalFunc_ = {};
   jlm::rvsdg::Output * LocalFuncParam_ = {};
   jlm::rvsdg::Output * LocalFuncRegister_ = {};

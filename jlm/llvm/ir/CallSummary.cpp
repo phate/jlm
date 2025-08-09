@@ -33,7 +33,7 @@ ComputeCallSummary(const rvsdg::LambdaNode & lambdaNode)
   AddToWorklist(worklist, lambdaNode.output()->Users());
 
   std::vector<rvsdg::SimpleNode *> directCalls;
-  GraphExport * rvsdgExport = nullptr;
+  rvsdg::GraphExport * rvsdgExport = nullptr;
   std::vector<rvsdg::Input *> otherUsers;
 
   while (!worklist.empty())
@@ -105,14 +105,14 @@ ComputeCallSummary(const rvsdg::LambdaNode & lambdaNode)
       continue;
     }
 
-    if (auto deltaNode = rvsdg::TryGetOwnerNode<DeltaNode>(*input))
+    if (auto deltaNode = rvsdg::TryGetOwnerNode<rvsdg::DeltaNode>(*input))
     {
       auto ctxVar = deltaNode->MapInputContextVar(*input);
       AddToWorklist(worklist, ctxVar.inner->Users());
       continue;
     }
 
-    if (rvsdg::TryGetRegionParentNode<DeltaNode>(*input))
+    if (rvsdg::TryGetRegionParentNode<rvsdg::DeltaNode>(*input))
     {
       otherUsers.emplace_back(input);
       continue;
@@ -125,7 +125,7 @@ ComputeCallSummary(const rvsdg::LambdaNode & lambdaNode)
       continue;
     }
 
-    if (auto graphExport = dynamic_cast<GraphExport *>(input))
+    if (auto graphExport = dynamic_cast<rvsdg::GraphExport *>(input))
     {
       rvsdgExport = graphExport;
       continue;

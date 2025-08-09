@@ -25,8 +25,8 @@ MakeBitUnaryOperation<reduction, name>::operator==(const Operation & other) cons
 }
 
 template<typename reduction, const char * name>
-bitvalue_repr
-MakeBitUnaryOperation<reduction, name>::reduce_constant(const bitvalue_repr & arg) const
+BitValueRepresentation
+MakeBitUnaryOperation<reduction, name>::reduce_constant(const BitValueRepresentation & arg) const
 {
   return reduction{}(arg);
 }
@@ -65,10 +65,10 @@ MakeBitBinaryOperation<reduction, name, opflags>::operator==(const Operation & o
 }
 
 template<typename reduction, const char * name, enum BinaryOperation::flags opflags>
-bitvalue_repr
+BitValueRepresentation
 MakeBitBinaryOperation<reduction, name, opflags>::reduce_constants(
-    const bitvalue_repr & arg1,
-    const bitvalue_repr & arg2) const
+    const BitValueRepresentation & arg1,
+    const BitValueRepresentation & arg2) const
 {
   return reduction{}(arg1, arg2);
 }

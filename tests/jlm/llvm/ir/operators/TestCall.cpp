@@ -27,15 +27,15 @@ TestCopy()
       { valueType, IOStateType::Create(), MemoryStateType::Create() });
 
   jlm::rvsdg::Graph rvsdg;
-  auto function1 = &jlm::tests::GraphImport::Create(rvsdg, functionType, "function1");
-  auto value1 = &jlm::tests::GraphImport::Create(rvsdg, valueType, "value1");
-  auto iOState1 = &jlm::tests::GraphImport::Create(rvsdg, iOStateType, "iOState1");
-  auto memoryState1 = &jlm::tests::GraphImport::Create(rvsdg, memoryStateType, "memoryState1");
+  auto function1 = &jlm::rvsdg::GraphImport::Create(rvsdg, functionType, "function1");
+  auto value1 = &jlm::rvsdg::GraphImport::Create(rvsdg, valueType, "value1");
+  auto iOState1 = &jlm::rvsdg::GraphImport::Create(rvsdg, iOStateType, "iOState1");
+  auto memoryState1 = &jlm::rvsdg::GraphImport::Create(rvsdg, memoryStateType, "memoryState1");
 
-  auto function2 = &jlm::tests::GraphImport::Create(rvsdg, functionType, "function2");
-  auto value2 = &jlm::tests::GraphImport::Create(rvsdg, valueType, "value2");
-  auto iOState2 = &jlm::tests::GraphImport::Create(rvsdg, iOStateType, "iOState2");
-  auto memoryState2 = &jlm::tests::GraphImport::Create(rvsdg, memoryStateType, "memoryState2");
+  auto function2 = &jlm::rvsdg::GraphImport::Create(rvsdg, functionType, "function2");
+  auto value2 = &jlm::rvsdg::GraphImport::Create(rvsdg, valueType, "value2");
+  auto iOState2 = &jlm::rvsdg::GraphImport::Create(rvsdg, iOStateType, "iOState2");
+  auto memoryState2 = &jlm::rvsdg::GraphImport::Create(rvsdg, memoryStateType, "memoryState2");
 
   auto callResults =
       CallOperation::Create(function1, functionType, { value1, iOState1, memoryState1 });
@@ -64,10 +64,10 @@ TestCallNodeAccessors()
       { valueType, IOStateType::Create(), MemoryStateType::Create() });
 
   jlm::rvsdg::Graph rvsdg;
-  auto f = &jlm::tests::GraphImport::Create(rvsdg, functionType, "function");
-  auto v = &jlm::tests::GraphImport::Create(rvsdg, valueType, "value");
-  auto i = &jlm::tests::GraphImport::Create(rvsdg, iOStateType, "IOState");
-  auto m = &jlm::tests::GraphImport::Create(rvsdg, memoryStateType, "memoryState");
+  auto f = &jlm::rvsdg::GraphImport::Create(rvsdg, functionType, "function");
+  auto v = &jlm::rvsdg::GraphImport::Create(rvsdg, valueType, "value");
+  auto i = &jlm::rvsdg::GraphImport::Create(rvsdg, iOStateType, "IOState");
+  auto m = &jlm::rvsdg::GraphImport::Create(rvsdg, memoryStateType, "memoryState");
 
   // Act
   auto results = CallOperation::Create(f, functionType, { v, i, m });
@@ -139,7 +139,7 @@ TestCallTypeClassifierIndirectCall()
 
     lambda->finalize(callResults);
 
-    GraphExport::Create(*lambda->output(), "f");
+    jlm::rvsdg::GraphExport::Create(*lambda->output(), "f");
 
     return std::make_tuple(
         jlm::util::AssertedCast<jlm::rvsdg::SimpleNode>(
@@ -244,7 +244,7 @@ TestCallTypeClassifierNonRecursiveDirectCall()
   auto g = SetupFunctionG();
   auto [f, callNode] = SetupFunctionF(g);
 
-  GraphExport::Create(*f->output(), "f");
+  jlm::rvsdg::GraphExport::Create(*f->output(), "f");
 
   //	jlm::rvsdg::view(&graph->GetRootRegion(), stdout);
 
@@ -359,7 +359,7 @@ TestCallTypeClassifierNonRecursiveDirectCallTheta()
 
   auto g = SetupFunctionG();
   auto [f, callNode] = SetupFunctionF(g);
-  GraphExport::Create(*f, "f");
+  jlm::rvsdg::GraphExport::Create(*f, "f");
 
   jlm::rvsdg::view(&graph->GetRootRegion(), stdout);
 
@@ -475,7 +475,7 @@ TestCallTypeClassifierRecursiveDirectCall()
     fibrv.result->divert_to(lambdaOutput);
     pb.end();
 
-    GraphExport::Create(*fibrv.output, "fib");
+    jlm::rvsdg::GraphExport::Create(*fibrv.output, "fib");
 
     return std::make_tuple(
         lambdaOutput,

@@ -12,8 +12,10 @@
 
 namespace jlm::rvsdg
 {
+class DeltaNode;
 class GammaNode;
 class Graph;
+class LambdaNode;
 class Output;
 class StructuralNode;
 class ThetaNode;
@@ -22,9 +24,6 @@ class Region;
 
 namespace jlm::llvm
 {
-
-class DeltaNode;
-class LambdaNode;
 
 /** \brief Dead Node Elimination Optimization
  *
@@ -96,7 +95,7 @@ private:
   SweepPhi(rvsdg::PhiNode & phiNode) const;
 
   static void
-  SweepDelta(DeltaNode & deltaNode);
+  SweepDelta(rvsdg::DeltaNode & deltaNode);
 
   std::unique_ptr<Context> Context_;
 };

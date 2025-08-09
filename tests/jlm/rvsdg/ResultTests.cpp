@@ -22,7 +22,7 @@ ResultNodeMismatch()
   auto valueType = jlm::tests::ValueType::Create();
 
   Graph graph;
-  auto import = &jlm::tests::GraphImport::Create(graph, valueType, "import");
+  auto import = &jlm::rvsdg::GraphImport::Create(graph, valueType, "import");
 
   auto structuralNode1 = TestStructuralNode::create(&graph.GetRootRegion(), 1);
   auto structuralNode2 = TestStructuralNode::create(&graph.GetRootRegion(), 1);

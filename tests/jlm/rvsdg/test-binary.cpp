@@ -93,14 +93,14 @@ ReduceFlattenedBinaryReductionParallel()
       jlm::rvsdg::BinaryOperation::flags::associative);
 
   Graph graph;
-  auto i0 = &jlm::tests::GraphImport::Create(graph, valueType, "");
-  auto i1 = &jlm::tests::GraphImport::Create(graph, valueType, "");
-  auto i2 = &jlm::tests::GraphImport::Create(graph, valueType, "");
-  auto i3 = &jlm::tests::GraphImport::Create(graph, valueType, "");
+  auto i0 = &jlm::rvsdg::GraphImport::Create(graph, valueType, "");
+  auto i1 = &jlm::rvsdg::GraphImport::Create(graph, valueType, "");
+  auto i2 = &jlm::rvsdg::GraphImport::Create(graph, valueType, "");
+  auto i3 = &jlm::rvsdg::GraphImport::Create(graph, valueType, "");
 
   auto & node = CreateOpNode<FlattenedBinaryOperation>({ i0, i1, i2, i3 }, binaryOperation, 4);
 
-  auto & ex = jlm::tests::GraphExport::Create(*node.output(0), "");
+  auto & ex = GraphExport::Create(*node.output(0), "");
 
   view(graph, stdout);
 
@@ -139,14 +139,14 @@ ReduceFlattenedBinaryReductionLinear()
       jlm::rvsdg::BinaryOperation::flags::associative);
 
   Graph graph;
-  auto i0 = &jlm::tests::GraphImport::Create(graph, valueType, "");
-  auto i1 = &jlm::tests::GraphImport::Create(graph, valueType, "");
-  auto i2 = &jlm::tests::GraphImport::Create(graph, valueType, "");
-  auto i3 = &jlm::tests::GraphImport::Create(graph, valueType, "");
+  auto i0 = &jlm::rvsdg::GraphImport::Create(graph, valueType, "");
+  auto i1 = &jlm::rvsdg::GraphImport::Create(graph, valueType, "");
+  auto i2 = &jlm::rvsdg::GraphImport::Create(graph, valueType, "");
+  auto i3 = &jlm::rvsdg::GraphImport::Create(graph, valueType, "");
 
   auto & node = CreateOpNode<FlattenedBinaryOperation>({ i0, i1, i2, i3 }, binaryOperation, 4);
 
-  auto & ex = jlm::tests::GraphExport::Create(*node.output(0), "");
+  auto & ex = GraphExport::Create(*node.output(0), "");
 
   view(graph, stdout);
 
@@ -182,9 +182,9 @@ FlattenAssociativeBinaryOperation_NotAssociativeBinary()
   auto valueType = jlm::tests::ValueType::Create();
 
   Graph graph;
-  auto i0 = &jlm::tests::GraphImport::Create(graph, valueType, "i0");
-  auto i1 = &jlm::tests::GraphImport::Create(graph, valueType, "i1");
-  auto i2 = &jlm::tests::GraphImport::Create(graph, valueType, "i2");
+  auto i0 = &jlm::rvsdg::GraphImport::Create(graph, valueType, "i0");
+  auto i1 = &jlm::rvsdg::GraphImport::Create(graph, valueType, "i1");
+  auto i2 = &jlm::rvsdg::GraphImport::Create(graph, valueType, "i2");
 
   auto o1 = &CreateOpNode<jlm::tests::TestBinaryOperation>(
       { i0, i1 },
@@ -197,7 +197,7 @@ FlattenAssociativeBinaryOperation_NotAssociativeBinary()
       valueType,
       jlm::rvsdg::BinaryOperation::flags::none);
 
-  auto & ex = jlm::tests::GraphExport::Create(*o2->output(0), "o2");
+  auto & ex = GraphExport::Create(*o2->output(0), "o2");
 
   jlm::rvsdg::view(graph, stdout);
 
@@ -226,8 +226,8 @@ FlattenAssociativeBinaryOperation_NoNewOperands()
   auto valueType = jlm::tests::ValueType::Create();
 
   Graph graph;
-  auto i0 = &jlm::tests::GraphImport::Create(graph, valueType, "i0");
-  auto i1 = &jlm::tests::GraphImport::Create(graph, valueType, "i1");
+  auto i0 = &jlm::rvsdg::GraphImport::Create(graph, valueType, "i0");
+  auto i1 = &jlm::rvsdg::GraphImport::Create(graph, valueType, "i1");
 
   auto u1 = &CreateOpNode<jlm::tests::TestUnaryOperation>({ i0 }, valueType, valueType);
   auto u2 = &CreateOpNode<jlm::tests::TestUnaryOperation>({ i1 }, valueType, valueType);
@@ -237,7 +237,7 @@ FlattenAssociativeBinaryOperation_NoNewOperands()
       valueType,
       jlm::rvsdg::BinaryOperation::flags::associative);
 
-  auto & ex = jlm::tests::GraphExport::Create(*b2->output(0), "o2");
+  auto & ex = GraphExport::Create(*b2->output(0), "o2");
 
   jlm::rvsdg::view(graph, stdout);
 
@@ -266,9 +266,9 @@ FlattenAssociativeBinaryOperation_Success()
   auto valueType = jlm::tests::ValueType::Create();
 
   Graph graph;
-  auto i0 = &jlm::tests::GraphImport::Create(graph, valueType, "i0");
-  auto i1 = &jlm::tests::GraphImport::Create(graph, valueType, "i1");
-  auto i2 = &jlm::tests::GraphImport::Create(graph, valueType, "i2");
+  auto i0 = &jlm::rvsdg::GraphImport::Create(graph, valueType, "i0");
+  auto i1 = &jlm::rvsdg::GraphImport::Create(graph, valueType, "i1");
+  auto i2 = &jlm::rvsdg::GraphImport::Create(graph, valueType, "i2");
 
   auto o1 = &CreateOpNode<jlm::tests::TestBinaryOperation>(
       { i0, i1 },
@@ -281,7 +281,7 @@ FlattenAssociativeBinaryOperation_Success()
       valueType,
       jlm::rvsdg::BinaryOperation::flags::associative);
 
-  auto & ex = jlm::tests::GraphExport::Create(*o2->output(0), "o2");
+  auto & ex = GraphExport::Create(*o2->output(0), "o2");
 
   jlm::rvsdg::view(graph, stdout);
 
@@ -312,8 +312,8 @@ NormalizeBinaryOperation_NoNewOperands()
   auto valueType = jlm::tests::ValueType::Create();
 
   Graph graph;
-  auto i0 = &jlm::tests::GraphImport::Create(graph, valueType, "i0");
-  auto i1 = &jlm::tests::GraphImport::Create(graph, valueType, "i1");
+  auto i0 = &jlm::rvsdg::GraphImport::Create(graph, valueType, "i0");
+  auto i1 = &jlm::rvsdg::GraphImport::Create(graph, valueType, "i1");
 
   auto o1 = &CreateOpNode<jlm::tests::TestBinaryOperation>(
       { i0, i1 },
@@ -321,7 +321,7 @@ NormalizeBinaryOperation_NoNewOperands()
       valueType,
       jlm::rvsdg::BinaryOperation::flags::associative);
 
-  auto & ex = jlm::tests::GraphExport::Create(*o1->output(0), "o2");
+  auto & ex = GraphExport::Create(*o1->output(0), "o2");
 
   jlm::rvsdg::view(graph, stdout);
 
@@ -348,8 +348,8 @@ NormalizeBinaryOperation_SingleOperand()
   auto valueType = jlm::tests::ValueType::Create();
 
   Graph graph;
-  auto s0 = &jlm::tests::GraphImport::Create(graph, valueType, "s0");
-  auto s1 = &jlm::tests::GraphImport::Create(graph, valueType, "s1");
+  auto s0 = &jlm::rvsdg::GraphImport::Create(graph, valueType, "s0");
+  auto s1 = &jlm::rvsdg::GraphImport::Create(graph, valueType, "s1");
 
   auto u1 = &CreateOpNode<jlm::tests::TestUnaryOperation>({ s0 }, valueType, valueType);
   auto u2 = &CreateOpNode<jlm::tests::TestUnaryOperation>({ s1 }, valueType, valueType);
@@ -360,7 +360,7 @@ NormalizeBinaryOperation_SingleOperand()
       valueType,
       jlm::rvsdg::BinaryOperation::flags::none);
 
-  auto & ex = jlm::tests::GraphExport::Create(*o1->output(0), "ex");
+  auto & ex = GraphExport::Create(*o1->output(0), "ex");
 
   jlm::rvsdg::view(graph, stdout);
 

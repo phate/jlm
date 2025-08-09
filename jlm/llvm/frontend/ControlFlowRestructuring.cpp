@@ -114,7 +114,7 @@ append_constant(BasicBlock * bb, const ThreeAddressCodeVariable * result, size_t
   JLM_ASSERT(dynamic_cast<const rvsdg::ControlType *>(&result->type()));
   auto nalternatives = static_cast<const rvsdg::ControlType *>(&result->type())->nalternatives();
 
-  rvsdg::ctlconstant_op op(rvsdg::ctlvalue_repr(value, nalternatives));
+  rvsdg::ctlconstant_op op(rvsdg::ControlValueRepresentation(value, nalternatives));
   bb->append_last(ThreeAddressCode::create(op, {}));
   bb->append_last(AssignmentOperation::create(bb->last()->result(0), result));
 }

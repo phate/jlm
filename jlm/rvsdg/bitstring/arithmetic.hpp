@@ -25,8 +25,8 @@ public:
   bool
   operator==(const Operation & other) const noexcept override;
 
-  bitvalue_repr
-  reduce_constant(const bitvalue_repr & arg) const override;
+  BitValueRepresentation
+  reduce_constant(const BitValueRepresentation & arg) const override;
 
   std::string
   debug_string() const override;
@@ -60,8 +60,9 @@ public:
   enum BinaryOperation::flags
   flags() const noexcept override;
 
-  bitvalue_repr
-  reduce_constants(const bitvalue_repr & arg1, const bitvalue_repr & arg2) const override;
+  BitValueRepresentation
+  reduce_constants(const BitValueRepresentation & arg1, const BitValueRepresentation & arg2)
+      const override;
 
   std::string
   debug_string() const override;

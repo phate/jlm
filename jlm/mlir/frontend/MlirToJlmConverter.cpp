@@ -798,13 +798,14 @@ MlirToJlmConverter::ConvertOperation(
     std::shared_ptr<rvsdg::Type> outputType = ConvertType(mlirOutputType);
     auto outputValueType = std::dynamic_pointer_cast<const rvsdg::ValueType>(outputType);
     auto linakgeString = mlirDeltaNode.getLinkage().str();
-    auto rvsdgDeltaNode = llvm::DeltaNode::Create(
+    auto rvsdgDeltaNode = rvsdg::DeltaNode::Create(
         &rvsdgRegion,
-        outputValueType,
-        mlirDeltaNode.getName().str(),
-        jlm::llvm::FromString(linakgeString),
-        mlirDeltaNode.getSection().str(),
-        mlirDeltaNode.getConstant());
+        llvm::DeltaOperation::Create(
+            outputValueType,
+            mlirDeltaNode.getName().str(),
+            jlm::llvm::FromString(linakgeString),
+            mlirDeltaNode.getSection().str(),
+            mlirDeltaNode.getConstant()));
 
     auto outputVector = ConvertRegion(mlirDeltaNode.getRegion(), *rvsdgDeltaNode->subregion());
 

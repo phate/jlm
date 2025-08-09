@@ -741,24 +741,26 @@ TestDelta()
   {
     auto bitType = jlm::rvsdg::bittype::Create(32);
 
-    auto delta1 = jlm::llvm::DeltaNode::Create(
+    auto delta1 = jlm::rvsdg::DeltaNode::Create(
         &graph->GetRootRegion(),
-        bitType,
-        "non-constant-delta",
-        linkage::external_linkage,
-        "section",
-        false);
+        jlm::llvm::DeltaOperation::Create(
+            bitType,
+            "non-constant-delta",
+            linkage::external_linkage,
+            "section",
+            false));
 
     auto bitConstant = jlm::rvsdg::create_bitconstant(delta1->subregion(), 32, 1);
     delta1->finalize(bitConstant);
 
-    auto delta2 = jlm::llvm::DeltaNode::Create(
+    auto delta2 = jlm::rvsdg::DeltaNode::Create(
         &graph->GetRootRegion(),
-        bitType,
-        "constant-delta",
-        linkage::external_linkage,
-        "section",
-        true);
+        jlm::llvm::DeltaOperation::Create(
+            bitType,
+            "constant-delta",
+            linkage::external_linkage,
+            "section",
+            true));
     auto bitConstant2 = jlm::rvsdg::create_bitconstant(delta2->subregion(), 32, 1);
     delta2->finalize(bitConstant2);
 
@@ -815,21 +817,22 @@ TestDelta()
       assert(region->nnodes() == 2);
       for (auto & node : region->Nodes())
       {
-        auto convertedDelta = jlm::util::AssertedCast<jlm::llvm::DeltaNode>(&node);
+        auto convertedDelta = jlm::util::AssertedCast<jlm::rvsdg::DeltaNode>(&node);
         assert(convertedDelta->subregion()->nnodes() == 1);
+        auto dop = jlm::util::AssertedCast<const jlm::llvm::DeltaOperation>(&node.GetOperation());
 
         if (convertedDelta->constant())
         {
-          assert(convertedDelta->name() == "constant-delta");
+          assert(dop->name() == "constant-delta");
         }
         else
         {
-          assert(convertedDelta->name() == "non-constant-delta");
+          assert(dop->name() == "non-constant-delta");
         }
 
-        assert(is<jlm::rvsdg::bittype>(*convertedDelta->Type()));
-        assert(convertedDelta->linkage() == linkage::external_linkage);
-        assert(convertedDelta->Section() == "section");
+        assert(is<jlm::rvsdg::bittype>(*dop->Type()));
+        assert(dop->linkage() == linkage::external_linkage);
+        assert(dop->Section() == "section");
 
         auto op = convertedDelta->subregion()->Nodes().begin();
         assert(is<jlm::llvm::IntegerConstantOperation>(op->GetOperation()));

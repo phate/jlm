@@ -19,12 +19,12 @@ ToAscii()
   Variable v0(valueType, "v0");
   Variable v1(valueType, "v1");
 
-  auto tac0 = create_testop_tac({}, {});
-  auto tac1 = create_testop_tac({ &v0 }, {});
-  auto tac2 = create_testop_tac({ &v0, &v1 }, {});
-  auto tac3 = create_testop_tac({}, { valueType });
-  auto tac4 = create_testop_tac({}, { valueType, valueType });
-  auto tac5 = create_testop_tac({ &v0, &v1 }, { valueType, valueType });
+  auto tac0 = TestOperation::CreateTac({}, {});
+  auto tac1 = TestOperation::CreateTac({ &v0 }, {});
+  auto tac2 = TestOperation::CreateTac({ &v0, &v1 }, {});
+  auto tac3 = TestOperation::CreateTac({}, { valueType });
+  auto tac4 = TestOperation::CreateTac({}, { valueType, valueType });
+  auto tac5 = TestOperation::CreateTac({ &v0, &v1 }, { valueType, valueType });
 
   // Act
   auto tac0String = ThreeAddressCode::ToAscii(*tac0);

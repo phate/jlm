@@ -30,7 +30,7 @@ class CallSummary final
 
 public:
   CallSummary(
-      GraphExport * rvsdgExport,
+      rvsdg::GraphExport * rvsdgExport,
       std::vector<rvsdg::SimpleNode *> directCalls,
       std::vector<rvsdg::Input *> otherUsers)
       : RvsdgExport_(rvsdgExport),
@@ -132,7 +132,7 @@ public:
    *
    * @return The export of the lambda from the RVSDG root region.
    */
-  [[nodiscard]] GraphExport *
+  [[nodiscard]] rvsdg::GraphExport *
   GetRvsdgExport() const noexcept
   {
     return RvsdgExport_;
@@ -173,7 +173,7 @@ public:
    */
   static std::unique_ptr<CallSummary>
   Create(
-      GraphExport * rvsdgExport,
+      rvsdg::GraphExport * rvsdgExport,
       std::vector<rvsdg::SimpleNode *> directCalls,
       std::vector<rvsdg::Input *> otherUsers)
   {
@@ -184,7 +184,7 @@ public:
   }
 
 private:
-  GraphExport * RvsdgExport_;
+  rvsdg::GraphExport * RvsdgExport_;
   std::vector<rvsdg::SimpleNode *> DirectCalls_;
   std::vector<rvsdg::Input *> OtherUsers_;
 };

@@ -292,14 +292,14 @@ DeadNodeElimination::MarkOutput(const jlm::rvsdg::Output & output)
     }
   }
 
-  if (const auto deltaNode = rvsdg::TryGetOwnerNode<DeltaNode>(output))
+  if (const auto deltaNode = rvsdg::TryGetOwnerNode<rvsdg::DeltaNode>(output))
   {
     const auto result = deltaNode->subregion()->result(0);
     MarkOutput(*result->origin());
     return;
   }
 
-  if (rvsdg::TryGetRegionParentNode<DeltaNode>(output))
+  if (rvsdg::TryGetRegionParentNode<rvsdg::DeltaNode>(output))
   {
     const auto argument = util::AssertedCast<const rvsdg::RegionArgument>(&output);
     MarkOutput(*argument->input()->origin());
@@ -385,7 +385,7 @@ DeadNodeElimination::SweepStructuralNode(rvsdg::StructuralNode & node) const
   };
   auto sweepDelta = [](auto & d, auto & n)
   {
-    d.SweepDelta(*util::AssertedCast<DeltaNode>(&n));
+    d.SweepDelta(*util::AssertedCast<rvsdg::DeltaNode>(&n));
   };
 
   static std::unordered_map<
@@ -508,7 +508,7 @@ DeadNodeElimination::SweepPhi(rvsdg::PhiNode & phiNode) const
 }
 
 void
-DeadNodeElimination::SweepDelta(DeltaNode & deltaNode)
+DeadNodeElimination::SweepDelta(rvsdg::DeltaNode & deltaNode)
 {
   // A delta subregion can only contain simple nodes. Thus, a simple prune is sufficient.
   deltaNode.subregion()->prune(false);

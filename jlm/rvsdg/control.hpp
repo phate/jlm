@@ -64,21 +64,19 @@ is_ctltype(const jlm::rvsdg::Type & type) noexcept
   return dynamic_cast<const ControlType *>(&type) != nullptr;
 }
 
-/* control value representation */
-
-class ctlvalue_repr
+class ControlValueRepresentation
 {
 public:
-  ctlvalue_repr(size_t alternative, size_t nalternatives);
+  ControlValueRepresentation(size_t alternative, size_t nalternatives);
 
   inline bool
-  operator==(const ctlvalue_repr & other) const noexcept
+  operator==(const ControlValueRepresentation & other) const noexcept
   {
     return alternative_ == other.alternative_ && nalternatives_ == other.nalternatives_;
   }
 
   inline bool
-  operator!=(const ctlvalue_repr & other) const noexcept
+  operator!=(const ControlValueRepresentation & other) const noexcept
   {
     return !(*this == other);
   }
@@ -105,7 +103,7 @@ private:
 struct ctltype_of_value
 {
   std::shared_ptr<const ControlType>
-  operator()(const ctlvalue_repr & repr) const
+  operator()(const ControlValueRepresentation & repr) const
   {
     return ControlType::Create(repr.nalternatives());
   }
@@ -114,13 +112,13 @@ struct ctltype_of_value
 struct ctlformat_value
 {
   std::string
-  operator()(const ctlvalue_repr & repr) const
+  operator()(const ControlValueRepresentation & repr) const
   {
     return jlm::util::strfmt("CTL(", repr.alternative(), ")");
   }
 };
 
-typedef domain_const_op<ControlType, ctlvalue_repr, ctlformat_value, ctltype_of_value>
+typedef domain_const_op<ControlType, ControlValueRepresentation, ctlformat_value, ctltype_of_value>
     ctlconstant_op;
 
 static inline bool
@@ -256,7 +254,7 @@ match(
 // declare explicit instantiation
 extern template class domain_const_op<
     ControlType,
-    ctlvalue_repr,
+    ControlValueRepresentation,
     ctlformat_value,
     ctltype_of_value>;
 

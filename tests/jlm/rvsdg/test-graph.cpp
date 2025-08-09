@@ -31,7 +31,7 @@ test_recursive_prune()
   auto t = jlm::tests::ValueType::Create();
 
   Graph graph;
-  auto imp = &jlm::tests::GraphImport::Create(graph, t, "i");
+  auto imp = &jlm::rvsdg::GraphImport::Create(graph, t, "i");
 
   auto n1 = TestOperation::create(&graph.GetRootRegion(), { imp }, { t });
   auto n2 = TestOperation::create(&graph.GetRootRegion(), { imp }, { t });
@@ -46,8 +46,8 @@ test_recursive_prune()
 
   auto n6 = TestStructuralNode::create(n3->subregion(0), 1);
 
-  jlm::tests::GraphExport::Create(*n2->output(0), "n2");
-  jlm::tests::GraphExport::Create(*o1, "n3");
+  GraphExport::Create(*n2->output(0), "n2");
+  GraphExport::Create(*o1, "n3");
 
   jlm::rvsdg::view(&graph.GetRootRegion(), stdout);
   graph.PruneNodes();
@@ -91,8 +91,8 @@ test_prune_replace()
   auto n2 = jlm::tests::TestOperation::create(&graph.GetRootRegion(), { n1->output(0) }, { type });
   auto n3 = jlm::tests::TestOperation::create(&graph.GetRootRegion(), { n2->output(0) }, { type });
 
-  jlm::tests::GraphExport::Create(*n2->output(0), "n2");
-  jlm::tests::GraphExport::Create(*n3->output(0), "n3");
+  GraphExport::Create(*n2->output(0), "n2");
+  GraphExport::Create(*n3->output(0), "n3");
 
   auto n4 = jlm::tests::TestOperation::create(&graph.GetRootRegion(), { n1->output(0) }, { type });
 
@@ -136,9 +136,9 @@ Copy()
   auto valueType = jlm::tests::ValueType::Create();
 
   Graph graph;
-  auto & argument = jlm::tests::GraphImport::Create(graph, valueType, "import");
+  auto & argument = jlm::rvsdg::GraphImport::Create(graph, valueType, "import");
   auto node = TestOperation::create(&graph.GetRootRegion(), { &argument }, { valueType });
-  jlm::tests::GraphExport::Create(*node->output(0), "export");
+  GraphExport::Create(*node->output(0), "export");
 
   // Act
   auto newGraph = graph.Copy();
@@ -146,7 +146,7 @@ Copy()
   // Assert
   assert(newGraph->GetRootRegion().narguments() == 1);
   auto copiedArgument = newGraph->GetRootRegion().argument(0);
-  assert(is<jlm::tests::GraphImport>(copiedArgument));
+  assert(is<jlm::rvsdg::GraphImport>(copiedArgument));
 
   assert(newGraph->GetRootRegion().nnodes() == 1);
   auto copiedNode = newGraph->GetRootRegion().Nodes().begin().ptr();
@@ -155,7 +155,7 @@ Copy()
 
   assert(newGraph->GetRootRegion().nresults() == 1);
   auto copiedResult = newGraph->GetRootRegion().result(0);
-  assert(is<jlm::tests::GraphExport>(*copiedResult));
+  assert(is<jlm::rvsdg::GraphExport>(*copiedResult));
   assert(copiedResult->origin() == copiedNode->output(0));
 }
 

@@ -31,7 +31,7 @@ TestCallSummaryComputationDead()
           "f",
           jlm::llvm::linkage::external_linkage));
 
-  auto result = tests::create_testop(lambdaNode->subregion(), {}, { vt })[0];
+  auto result = tests::TestOperation::create(lambdaNode->subregion(), {}, { vt })->output(0);
 
   lambdaNode->finalize({ result });
 
@@ -66,10 +66,10 @@ TestCallSummaryComputationExport()
           "f",
           jlm::llvm::linkage::external_linkage));
 
-  auto result = tests::create_testop(lambdaNode->subregion(), {}, { vt })[0];
+  auto result = tests::TestOperation::create(lambdaNode->subregion(), {}, { vt })->output(0);
 
   auto lambdaOutput = lambdaNode->finalize({ result });
-  auto & rvsdgExport = jlm::llvm::GraphExport::Create(*lambdaOutput, "f");
+  auto & rvsdgExport = rvsdg::GraphExport::Create(*lambdaOutput, "f");
 
   // Act
   auto callSummary = jlm::llvm::ComputeCallSummary(*lambdaNode);
@@ -108,7 +108,7 @@ TestCallSummaryComputationDirectCalls()
     auto iOStateArgument = lambdaNode->GetFunctionArguments()[0];
     auto memoryStateArgument = lambdaNode->GetFunctionArguments()[1];
 
-    auto result = tests::create_testop(lambdaNode->subregion(), {}, { vt })[0];
+    auto result = tests::TestOperation::create(lambdaNode->subregion(), {}, { vt })->output(0);
 
     return lambdaNode->finalize({ result, iOStateArgument, memoryStateArgument });
   };
@@ -131,7 +131,7 @@ TestCallSummaryComputationDirectCalls()
         { iOStateArgument, memoryStateArgument });
 
     auto lambdaOutput = lambdaNode->finalize(callResults);
-    jlm::llvm::GraphExport::Create(*lambdaOutput, "y");
+    rvsdg::GraphExport::Create(*lambdaOutput, "y");
 
     return lambdaOutput;
   };
@@ -158,13 +158,14 @@ TestCallSummaryComputationDirectCalls()
         functionType,
         { callXResults[1], callXResults[2] });
 
-    auto result = tests::create_testop(
-        lambdaNode->subregion(),
-        { callXResults[0], callYResults[0] },
-        { vt })[0];
+    auto result = tests::TestOperation::create(
+                      lambdaNode->subregion(),
+                      { callXResults[0], callYResults[0] },
+                      { vt })
+                      ->output(0);
 
     auto lambdaOutput = lambdaNode->finalize({ result, callYResults[1], callYResults[2] });
-    jlm::llvm::GraphExport::Create(*lambdaOutput, "z");
+    rvsdg::GraphExport::Create(*lambdaOutput, "z");
 
     return lambdaOutput;
   };
@@ -261,17 +262,13 @@ TestCallSummaryComputationFunctionPointerInDelta()
       LlvmLambdaOperation::Create(functionType, "f", linkage::external_linkage));
   lambdaNode->finalize({ lambdaNode->GetFunctionArguments()[0] });
 
-  auto deltaNode = DeltaNode::Create(
+  auto deltaNode = jlm::rvsdg::DeltaNode::Create(
       &rvsdg->GetRootRegion(),
-      functionType,
-      "fp",
-      linkage::external_linkage,
-      "",
-      false);
+      jlm::llvm::DeltaOperation::Create(functionType, "fp", linkage::external_linkage, "", false));
   auto argument = deltaNode->AddContextVar(*lambdaNode->output()).inner;
   deltaNode->finalize(argument);
 
-  GraphExport::Create(deltaNode->output(), "fp");
+  jlm::rvsdg::GraphExport::Create(deltaNode->output(), "fp");
 
   // Act
   auto callSummary = jlm::llvm::ComputeCallSummary(*lambdaNode);
@@ -308,7 +305,7 @@ TestCallSummaryComputationLambdaResult()
           .output(0);
   auto lambdaOutputF = lambdaNodeF->finalize({ ptr });
 
-  GraphExport::Create(*lambdaOutputF, "f");
+  jlm::rvsdg::GraphExport::Create(*lambdaOutputF, "f");
 
   // Act
   auto callSummary = jlm::llvm::ComputeCallSummary(*lambdaNodeG);

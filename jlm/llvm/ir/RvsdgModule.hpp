@@ -80,30 +80,6 @@ private:
 };
 
 /**
- * Represents an export from the RVSDG of an internal entity.
- * It is used to model externally visible entities from LLVM modules.
- */
-class GraphExport final : public rvsdg::GraphExport
-{
-private:
-  GraphExport(rvsdg::Output & origin, std::string name)
-      : rvsdg::GraphExport(origin, std::move(name))
-  {}
-
-public:
-  GraphExport &
-  Copy(rvsdg::Output & origin, rvsdg::StructuralOutput * output) override;
-
-  static GraphExport &
-  Create(rvsdg::Output & origin, std::string name)
-  {
-    auto graphExport = new GraphExport(origin, std::move(name));
-    origin.region()->graph()->GetRootRegion().append_result(graphExport);
-    return *graphExport;
-  }
-};
-
-/**
  * An LLVM module utilizing the RVSDG representation.
  */
 class RvsdgModule final : public rvsdg::RvsdgModule

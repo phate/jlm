@@ -106,7 +106,7 @@ public:
     return has_known_init() && has_known_step() && has_known_end();
   }
 
-  std::unique_ptr<jlm::rvsdg::bitvalue_repr>
+  std::unique_ptr<jlm::rvsdg::BitValueRepresentation>
   niterations() const noexcept;
 
   rvsdg::Node *
@@ -145,7 +145,7 @@ public:
     return theta()->MapPreLoopVar(*idv()).input->origin();
   }
 
-  inline const jlm::rvsdg::bitvalue_repr *
+  inline const jlm::rvsdg::BitValueRepresentation *
   init_value() const noexcept
   {
     return value(init());
@@ -157,7 +157,7 @@ public:
     return step_;
   }
 
-  inline const jlm::rvsdg::bitvalue_repr *
+  inline const jlm::rvsdg::BitValueRepresentation *
   step_value() const noexcept
   {
     return value(step());
@@ -169,7 +169,7 @@ public:
     return end_;
   }
 
-  inline const jlm::rvsdg::bitvalue_repr *
+  inline const jlm::rvsdg::BitValueRepresentation *
   end_value() const noexcept
   {
     return value(end());
@@ -196,7 +196,7 @@ public:
         .nbits();
   }
 
-  inline jlm::rvsdg::bitvalue_repr
+  inline jlm::rvsdg::BitValueRepresentation
   remainder(size_t factor) const noexcept
   {
     return niterations()->umod({ nbits(), (int64_t)factor });
@@ -217,7 +217,7 @@ private:
     return op && op->value().is_known();
   }
 
-  inline const jlm::rvsdg::bitvalue_repr *
+  inline const jlm::rvsdg::BitValueRepresentation *
   value(jlm::rvsdg::Output * output) const noexcept
   {
     if (!is_known(output))

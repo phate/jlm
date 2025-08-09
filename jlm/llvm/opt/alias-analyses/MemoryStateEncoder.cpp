@@ -500,7 +500,7 @@ MemoryStateEncoder::EncodeStructuralNode(rvsdg::StructuralNode & structuralNode)
   {
     EncodeLambda(*lambdaNode);
   }
-  else if (auto deltaNode = dynamic_cast<const DeltaNode *>(&structuralNode))
+  else if (auto deltaNode = dynamic_cast<const rvsdg::DeltaNode *>(&structuralNode))
   {
     EncodeDelta(*deltaNode);
   }
@@ -817,7 +817,7 @@ MemoryStateEncoder::EncodePhi(const rvsdg::PhiNode & phiNode)
 }
 
 void
-MemoryStateEncoder::EncodeDelta(const DeltaNode &)
+MemoryStateEncoder::EncodeDelta(const rvsdg::DeltaNode &)
 {
   // Nothing needs to be done
 }

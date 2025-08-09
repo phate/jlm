@@ -24,6 +24,22 @@ GraphImport::debug_string() const
   return util::strfmt("import[", Name_, "]");
 }
 
+GraphImport &
+GraphImport::Copy(Region & region, StructuralInput *)
+{
+  // FIXME: A import should never be created on a region, but only on a graph. This interface is
+  // broken as it suggest to the user that it should be created on \p region.
+  return Create(*region.graph(), Type(), Name());
+}
+
+GraphImport &
+GraphImport::Create(Graph & graph, std::shared_ptr<const rvsdg::Type> type, std::string name)
+{
+  auto graphImport = new GraphImport(graph, std::move(type), std::move(name));
+  graph.GetRootRegion().append_argument(graphImport);
+  return *graphImport;
+}
+
 GraphExport::GraphExport(rvsdg::Output & origin, std::string name)
     : RegionResult(&origin.region()->graph()->GetRootRegion(), &origin, nullptr, origin.Type()),
       Name_(std::move(name))
@@ -35,10 +51,22 @@ GraphExport::debug_string() const
   return util::strfmt("export[", Name_, "]");
 }
 
-Graph::~Graph()
+GraphExport &
+GraphExport::Copy(Output & origin, StructuralOutput * output)
 {
-  JLM_ASSERT(!has_active_trackers(this));
+  JLM_ASSERT(output == nullptr);
+  return Create(origin, Name());
 }
+
+GraphExport &
+GraphExport::Create(Output & origin, std::string name)
+{
+  auto graphExport = new GraphExport(origin, std::move(name));
+  origin.region()->graph()->GetRootRegion().append_result(graphExport);
+  return *graphExport;
+}
+
+Graph::~Graph() noexcept = default;
 
 Graph::Graph()
     : RootRegion_(new Region(nullptr, this))

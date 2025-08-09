@@ -16,6 +16,7 @@ static void
 test_straightening()
 {
   using namespace jlm::llvm;
+  using namespace jlm::tests;
 
   auto vt = jlm::tests::ValueType::Create();
   InterProceduralGraphModule module(jlm::util::FilePath(""), "", "");
@@ -31,9 +32,9 @@ test_straightening()
   bb3->add_outedge(cfg.exit());
 
   auto arg = cfg.entry()->append_argument(argument::create("arg", vt));
-  bb1->append_last(jlm::tests::create_testop_tac({ arg }, { vt }));
-  bb2->append_last(jlm::tests::create_testop_tac({ arg }, { vt }));
-  bb3->append_last(jlm::tests::create_testop_tac({ arg }, { vt }));
+  bb1->append_last(TestOperation::CreateTac({ arg }, { vt }));
+  bb2->append_last(TestOperation::CreateTac({ arg }, { vt }));
+  bb3->append_last(TestOperation::CreateTac({ arg }, { vt }));
 
   auto bb3_last = static_cast<const BasicBlock *>(bb3)->tacs().last();
   straighten(cfg);

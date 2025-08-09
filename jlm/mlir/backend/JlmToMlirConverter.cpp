@@ -199,7 +199,7 @@ JlmToMlirConverter::ConvertNode(
   {
     return ConvertTheta(*theta, block, inputs);
   }
-  else if (auto delta = dynamic_cast<const llvm::DeltaNode *>(&node))
+  else if (auto delta = dynamic_cast<const rvsdg::DeltaNode *>(&node))
   {
     return ConvertDelta(*delta, block, inputs);
   }
@@ -874,18 +874,19 @@ JlmToMlirConverter::ConvertTheta(
 
 ::mlir::Operation *
 JlmToMlirConverter::ConvertDelta(
-    const llvm::DeltaNode & deltaNode,
+    const rvsdg::DeltaNode & deltaNode,
     ::mlir::Block & block,
     const ::llvm::SmallVector<::mlir::Value> & inputs)
 {
+  auto op = util::AssertedCast<const llvm::DeltaOperation>(&deltaNode.GetOperation());
   auto delta = Builder_->create<::mlir::rvsdg::DeltaNode>(
       Builder_->getUnknownLoc(),
       Builder_->getType<::mlir::LLVM::LLVMPointerType>(),
       inputs,
-      ::llvm::StringRef(deltaNode.name()),
-      ::llvm::StringRef(llvm::ToString(deltaNode.linkage())),
-      ::llvm::StringRef(deltaNode.Section()),
-      deltaNode.constant());
+      ::llvm::StringRef(op->name()),
+      ::llvm::StringRef(llvm::ToString(op->linkage())),
+      ::llvm::StringRef(op->Section()),
+      op->constant());
   block.push_back(delta);
   auto & deltaBlock = delta.getRegion().emplaceBlock();
   auto regionResults = ConvertRegion(*deltaNode.subregion(), deltaBlock);

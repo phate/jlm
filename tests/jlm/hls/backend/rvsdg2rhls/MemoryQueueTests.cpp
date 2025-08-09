@@ -51,7 +51,7 @@ TestSingleLoad()
   memoryStateArgument.post->divert_to(loadOutput[1]);
 
   auto lambdaOutput = lambda->finalize({ theta->output(0), theta->output(1) });
-  GraphExport::Create(*lambdaOutput, "f");
+  jlm::rvsdg::GraphExport::Create(*lambdaOutput, "f");
 
   auto lambdaRegion = lambda->subregion();
   jlm::rvsdg::view(rvsdgModule->Rvsdg(), stdout);
@@ -131,7 +131,7 @@ TestLoadStore()
   memoryStateArgument.post->divert_to(storeOutput[0]);
 
   auto lambdaOutput = lambda->finalize({ theta->output(0), theta->output(2) });
-  GraphExport::Create(*lambdaOutput, "f");
+  jlm::rvsdg::GraphExport::Create(*lambdaOutput, "f");
 
   auto lambdaRegion = lambda->subregion();
   jlm::rvsdg::view(rvsdgModule->Rvsdg(), stdout);
@@ -205,7 +205,7 @@ TestAddrQueue()
   memoryStateArgument.post->divert_to(storeOutput[0]);
 
   auto lambdaOutput = lambda->finalize({ theta->output(0), theta->output(1) });
-  GraphExport::Create(*lambdaOutput, "f");
+  jlm::rvsdg::GraphExport::Create(*lambdaOutput, "f");
 
   auto lambdaRegion = lambda->subregion();
   jlm::rvsdg::view(rvsdgModule->Rvsdg(), stdout);

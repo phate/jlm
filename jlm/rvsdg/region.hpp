@@ -9,6 +9,7 @@
 
 #include <jlm/rvsdg/node.hpp>
 #include <jlm/util/common.hpp>
+#include <jlm/util/HashSet.hpp>
 #include <jlm/util/iterator_range.hpp>
 
 namespace jlm::util
@@ -27,6 +28,7 @@ class StructuralInput;
 class StructuralNode;
 class StructuralOutput;
 class SubstitutionMap;
+class Tracker;
 
 /**
  * \brief Represents the argument of a region.
@@ -716,6 +718,63 @@ public:
   [[nodiscard]] static std::string
   ToTree(const rvsdg::Region & region) noexcept;
 
+  /**
+   * @return A unique identifier for a node within this region.
+   *
+   * \note The identifier is only unique within this region.
+   */
+  [[nodiscard]] Node::Id
+  GenerateNodeId() noexcept
+  {
+    const auto nodeId = NodeId_;
+    NodeId_++;
+    return nodeId;
+  }
+
+  /**
+   * \brief Register a \ref Tracker for this region.
+   *
+   * @param tracker The \ref Tracker that is supposed to be registered for this region.
+   * @return True, if \p tracker was successfully registered, otherwise false.
+   *
+   * \pre \p tracker must have been initialized with this instance of \ref Region.
+   *
+   * \note This function is automatically invoked when an instance of \ref Tracker is constructed.
+   * There is no need to invoke this function manually.
+   *
+   * \see UnregisterTracker()
+   * \see HasActiveTrackers()
+   */
+  bool
+  RegisterTracker(const Tracker & tracker);
+
+  /**
+   * \brief Unregister a \ref Tracker for this region.
+   *
+   * @param tracker The \ref Tracker that is supposed to be unregistered for this region.
+   * @return True, if \p tracker was successfully unregistered, otherwise false.
+   *
+   * \note This function is automatically invoked when an instance of \ref Tracker is deconstructed.
+   * There is no need to invoke this function manually.
+   *
+   * \see RegisterTracker()
+   * \see HasActiveTrackers()
+   */
+  bool
+  UnregisterTracker(const Tracker & tracker);
+
+  /**
+   * @return True, if an instance of \ref Tracker is registered for this region, otherwise false.
+   *
+   * \see RegisterTracker()
+   * \see UnregisterTracker()
+   */
+  [[nodiscard]] bool
+  HasActiveTrackers() const noexcept
+  {
+    return !Trackers_.IsEmpty();
+  }
+
 private:
   static void
   ToTree(
@@ -742,12 +801,14 @@ private:
 
   size_t index_;
   Graph * graph_;
+  Node::Id NodeId_;
   rvsdg::StructuralNode * node_;
   std::vector<RegionResult *> results_;
   std::vector<RegionArgument *> arguments_;
   region_bottom_node_list BottomNodes_;
   region_top_node_list TopNodes_;
   region_nodes_list Nodes_;
+  util::HashSet<const Tracker *> Trackers_;
 };
 
 static inline void

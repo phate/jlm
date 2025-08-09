@@ -21,7 +21,7 @@ namespace jlm::rvsdg
  *
  * Represents the type of a callable function.
  */
-class FunctionType final : public ValueType
+class FunctionType : public ValueType
 {
 public:
   ~FunctionType() noexcept override;

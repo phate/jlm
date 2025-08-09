@@ -12,6 +12,7 @@
 
 namespace jlm::rvsdg
 {
+class DeltaNode;
 class GammaNode;
 class Graph;
 class Output;
@@ -23,8 +24,6 @@ class ThetaNode;
 
 namespace jlm::llvm
 {
-
-class DeltaNode;
 
 namespace aa
 {
@@ -89,7 +88,7 @@ private:
   AnalyzeLambda(const rvsdg::LambdaNode & node);
 
   void
-  AnalyzeDelta(const DeltaNode & node);
+  AnalyzeDelta(const rvsdg::DeltaNode & node);
 
   void
   AnalyzePhi(const rvsdg::PhiNode & node);

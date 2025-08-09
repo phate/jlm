@@ -13,7 +13,7 @@ namespace jlm::rvsdg
 struct reduce_eq
 {
   char
-  operator()(const bitvalue_repr & arg1, const bitvalue_repr & arg2) const
+  operator()(const BitValueRepresentation & arg1, const BitValueRepresentation & arg2) const
   {
     return arg1.eq(arg2);
   }
@@ -28,7 +28,7 @@ template class MakeBitComparisonOperation<
 struct reduce_ne
 {
   char
-  operator()(const bitvalue_repr & arg1, const bitvalue_repr & arg2) const
+  operator()(const BitValueRepresentation & arg1, const BitValueRepresentation & arg2) const
   {
     return arg1.ne(arg2);
   }
@@ -43,7 +43,7 @@ template class MakeBitComparisonOperation<
 struct reduce_sge
 {
   char
-  operator()(const bitvalue_repr & arg1, const bitvalue_repr & arg2) const
+  operator()(const BitValueRepresentation & arg1, const BitValueRepresentation & arg2) const
   {
     return arg1.sge(arg2);
   }
@@ -55,7 +55,7 @@ template class MakeBitComparisonOperation<reduce_sge, BitSgeLabel, BinaryOperati
 struct reduce_sgt
 {
   char
-  operator()(const bitvalue_repr & arg1, const bitvalue_repr & arg2) const
+  operator()(const BitValueRepresentation & arg1, const BitValueRepresentation & arg2) const
   {
     return arg1.sgt(arg2);
   }
@@ -67,7 +67,7 @@ template class MakeBitComparisonOperation<reduce_sgt, BitSgtLabel, BinaryOperati
 struct reduce_sle
 {
   char
-  operator()(const bitvalue_repr & arg1, const bitvalue_repr & arg2) const
+  operator()(const BitValueRepresentation & arg1, const BitValueRepresentation & arg2) const
   {
     return arg1.sle(arg2);
   }
@@ -79,7 +79,7 @@ template class MakeBitComparisonOperation<reduce_sle, BitSleLabel, BinaryOperati
 struct reduce_slt
 {
   char
-  operator()(const bitvalue_repr & arg1, const bitvalue_repr & arg2) const
+  operator()(const BitValueRepresentation & arg1, const BitValueRepresentation & arg2) const
   {
     return arg1.slt(arg2);
   }
@@ -91,7 +91,7 @@ template class MakeBitComparisonOperation<reduce_slt, BitSltLabel, BinaryOperati
 struct reduce_uge
 {
   char
-  operator()(const bitvalue_repr & arg1, const bitvalue_repr & arg2) const
+  operator()(const BitValueRepresentation & arg1, const BitValueRepresentation & arg2) const
   {
     return arg1.uge(arg2);
   }
@@ -103,7 +103,7 @@ template class MakeBitComparisonOperation<reduce_uge, BitUgeLabel, BinaryOperati
 struct reduce_ugt
 {
   char
-  operator()(const bitvalue_repr & arg1, const bitvalue_repr & arg2) const
+  operator()(const BitValueRepresentation & arg1, const BitValueRepresentation & arg2) const
   {
     return arg1.ugt(arg2);
   }
@@ -115,7 +115,7 @@ template class MakeBitComparisonOperation<reduce_ugt, BitUgtLabel, BinaryOperati
 struct reduce_ule
 {
   char
-  operator()(const bitvalue_repr & arg1, const bitvalue_repr & arg2) const
+  operator()(const BitValueRepresentation & arg1, const BitValueRepresentation & arg2) const
   {
     return arg1.ule(arg2);
   }
@@ -127,7 +127,7 @@ template class MakeBitComparisonOperation<reduce_ule, BitUleLabel, BinaryOperati
 struct reduce_ult
 {
   char
-  operator()(const bitvalue_repr & arg1, const bitvalue_repr & arg2) const
+  operator()(const BitValueRepresentation & arg1, const BitValueRepresentation & arg2) const
   {
     return arg1.ult(arg2);
   }

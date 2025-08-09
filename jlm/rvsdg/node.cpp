@@ -253,8 +253,8 @@ node_output::node_output(Node * node, std::shared_ptr<const rvsdg::Type> type)
 {}
 
 Node::Node(Region * region)
-    : depth_(0),
-      graph_(region->graph()),
+    : Id_(region->GenerateNodeId()),
+      depth_(0),
       region_(region)
 {
   bool wasAdded = region->AddBottomNode(*this);
@@ -280,6 +280,12 @@ Node::~Node()
 
   wasRemoved = region()->RemoveNode(*this);
   JLM_ASSERT(wasRemoved);
+}
+
+Graph *
+Node::graph() const noexcept
+{
+  return region_->graph();
 }
 
 node_input *

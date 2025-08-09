@@ -446,7 +446,7 @@ mark(const rvsdg::StructuralNode * node, cnectx & ctx)
         { std::type_index(typeid(LoopNode)), mark_loop },
         { typeid(LambdaNode), mark_lambda },
         { typeid(PhiNode), mark_phi },
-        { typeid(llvm::DeltaNode), mark_delta } });
+        { typeid(rvsdg::DeltaNode), mark_delta } });
 
   JLM_ASSERT(map.find(typeid(*node)) != map.end());
   map[typeid(*node)](node, ctx);
@@ -606,7 +606,7 @@ divert(rvsdg::StructuralNode * node, cnectx & ctx)
         { std::type_index(typeid(LoopNode)), divert_loop },
         { typeid(rvsdg::LambdaNode), divert_lambda },
         { typeid(PhiNode), divert_phi },
-        { typeid(llvm::DeltaNode), divert_delta } });
+        { typeid(rvsdg::DeltaNode), divert_delta } });
 
   JLM_ASSERT(map.find(typeid(*node)) != map.end());
   map[typeid(*node)](node, ctx);

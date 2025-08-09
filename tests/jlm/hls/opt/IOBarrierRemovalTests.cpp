@@ -43,7 +43,7 @@ IOBarrierRemoval()
 
   const auto lambdaOutput = lambdaNode->finalize({ sdivNode.output(0), ioState });
 
-  jlm::llvm::GraphExport::Create(*lambdaOutput, "f");
+  GraphExport::Create(*lambdaOutput, "f");
 
   // Act
   jlm::hls::IOBarrierRemoval ioBarrierRemoval;

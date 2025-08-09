@@ -27,10 +27,10 @@ namespace jlm::rvsdg
   - 'X' : undefined and unknown
 */
 
-class bitvalue_repr
+class BitValueRepresentation
 {
 public:
-  inline bitvalue_repr(size_t nbits, int64_t value)
+  BitValueRepresentation(size_t nbits, int64_t value)
   {
     if (nbits == 0)
       throw util::Error("Number of bits is zero.");
@@ -45,7 +45,7 @@ public:
     }
   }
 
-  inline bitvalue_repr(const char * s)
+  BitValueRepresentation(const char * s)
   {
     if (strlen(s) == 0)
       throw util::Error("Number of bits is zero.");
@@ -58,18 +58,18 @@ public:
     }
   }
 
-  bitvalue_repr(const bitvalue_repr & other)
+  BitValueRepresentation(const BitValueRepresentation & other)
       : data_(other.data_)
   {}
 
-  bitvalue_repr(bitvalue_repr && other)
+  BitValueRepresentation(BitValueRepresentation && other)
       : data_(std::move(other.data_))
   {}
 
-  inline static bitvalue_repr
+  static BitValueRepresentation
   repeat(size_t nbits, char bit)
   {
-    return bitvalue_repr(std::string(nbits, bit).c_str());
+    return BitValueRepresentation(std::string(nbits, bit).c_str());
   }
 
 private:
@@ -164,7 +164,10 @@ private:
   }
 
   inline void
-  udiv(const bitvalue_repr & divisor, bitvalue_repr & quotient, bitvalue_repr & remainder) const
+  udiv(
+      const BitValueRepresentation & divisor,
+      BitValueRepresentation & quotient,
+      BitValueRepresentation & remainder) const
   {
     JLM_ASSERT(quotient == 0);
     JLM_ASSERT(remainder == 0);
@@ -192,7 +195,9 @@ private:
   }
 
   inline void
-  mul(const bitvalue_repr & factor1, const bitvalue_repr & factor2, bitvalue_repr & product) const
+  mul(const BitValueRepresentation & factor1,
+      const BitValueRepresentation & factor2,
+      BitValueRepresentation & product) const
   {
     JLM_ASSERT(product.nbits() == factor1.nbits() + factor2.nbits());
 
@@ -213,15 +218,15 @@ public:
   /*
     FIXME: add <, <=, >, >= operator for uint64_t and int64_t
   */
-  inline bitvalue_repr &
-  operator=(const bitvalue_repr & other)
+  BitValueRepresentation &
+  operator=(const BitValueRepresentation & other)
   {
     data_ = other.data_;
     return *this;
   }
 
-  bitvalue_repr &
-  operator=(bitvalue_repr && other)
+  BitValueRepresentation &
+  operator=(BitValueRepresentation && other)
   {
     if (this == &other)
       return *this;
@@ -245,13 +250,13 @@ public:
   }
 
   inline bool
-  operator==(const bitvalue_repr & other) const noexcept
+  operator==(const BitValueRepresentation & other) const noexcept
   {
     return data_ == other.data_;
   }
 
   inline bool
-  operator!=(const bitvalue_repr & other) const noexcept
+  operator!=(const BitValueRepresentation & other) const noexcept
   {
     return !(*this == other);
   }
@@ -259,13 +264,13 @@ public:
   inline bool
   operator==(int64_t value) const
   {
-    return *this == bitvalue_repr(nbits(), value);
+    return *this == BitValueRepresentation(nbits(), value);
   }
 
   inline bool
   operator!=(int64_t value) const
   {
-    return !(*this == bitvalue_repr(nbits(), value));
+    return !(*this == BitValueRepresentation(nbits(), value));
   }
 
   inline bool
@@ -325,15 +330,15 @@ public:
     return sign() == '1';
   }
 
-  inline bitvalue_repr
-  concat(const bitvalue_repr & other) const
+  BitValueRepresentation
+  concat(const BitValueRepresentation & other) const
   {
-    bitvalue_repr result(*this);
+    BitValueRepresentation result(*this);
     result.data_.insert(result.data_.end(), other.data_.begin(), other.data_.end());
     return result;
   }
 
-  inline bitvalue_repr
+  BitValueRepresentation
   slice(size_t low, size_t high) const
   {
     if (high <= low || high > nbits())
@@ -341,25 +346,25 @@ public:
       throw util::Error("Slice is out of bound.");
     }
 
-    return bitvalue_repr(std::string(&data_[low], high - low).c_str());
+    return BitValueRepresentation(std::string(&data_[low], high - low).c_str());
   }
 
-  inline bitvalue_repr
+  BitValueRepresentation
   zext(size_t nbits) const
   {
     if (nbits == 0)
       return *this;
 
-    return concat(bitvalue_repr(nbits, 0));
+    return concat(BitValueRepresentation(nbits, 0));
   }
 
-  inline bitvalue_repr
+  BitValueRepresentation
   sext(size_t nbits) const
   {
     if (nbits == 0)
       return *this;
 
-    return concat(bitvalue_repr::repeat(nbits, sign()));
+    return concat(BitValueRepresentation::repeat(nbits, sign()));
   }
 
   inline size_t
@@ -381,7 +386,7 @@ public:
   to_int() const;
 
   inline char
-  ult(const bitvalue_repr & other) const
+  ult(const BitValueRepresentation & other) const
   {
     if (nbits() != other.nbits())
       throw util::Error(
@@ -395,16 +400,16 @@ public:
   }
 
   inline char
-  slt(const bitvalue_repr & other) const
+  slt(const BitValueRepresentation & other) const
   {
-    bitvalue_repr t1(*this), t2(other);
+    BitValueRepresentation t1(*this), t2(other);
     t1[t1.nbits() - 1] = lnot(t1.sign());
     t2[t2.nbits() - 1] = lnot(t2.sign());
     return t1.ult(t2);
   }
 
   inline char
-  ule(const bitvalue_repr & other) const
+  ule(const BitValueRepresentation & other) const
   {
     if (nbits() != other.nbits())
       throw util::Error(
@@ -418,16 +423,16 @@ public:
   }
 
   inline char
-  sle(const bitvalue_repr & other) const
+  sle(const BitValueRepresentation & other) const
   {
-    bitvalue_repr t1(*this), t2(other);
+    BitValueRepresentation t1(*this), t2(other);
     t1[t1.nbits() - 1] = lnot(t1.sign());
     t2[t2.nbits() - 1] = lnot(t2.sign());
     return t1.ule(t2);
   }
 
   inline char
-  ne(const bitvalue_repr & other) const
+  ne(const BitValueRepresentation & other) const
   {
     if (nbits() != other.nbits())
       throw util::Error(
@@ -440,44 +445,44 @@ public:
   }
 
   inline char
-  eq(const bitvalue_repr & other) const
+  eq(const BitValueRepresentation & other) const
   {
     return lnot(ne(other));
   }
 
   inline char
-  sge(const bitvalue_repr & other) const
+  sge(const BitValueRepresentation & other) const
   {
     return lnot(slt(other));
   }
 
   inline char
-  uge(const bitvalue_repr & other) const
+  uge(const BitValueRepresentation & other) const
   {
     return lnot(ult(other));
   }
 
   inline char
-  sgt(const bitvalue_repr & other) const
+  sgt(const BitValueRepresentation & other) const
   {
     return lnot(sle(other));
   }
 
   inline char
-  ugt(const bitvalue_repr & other) const
+  ugt(const BitValueRepresentation & other) const
   {
     return lnot(ule(other));
   }
 
-  inline bitvalue_repr
-  add(const bitvalue_repr & other) const
+  BitValueRepresentation
+  add(const BitValueRepresentation & other) const
   {
     if (nbits() != other.nbits())
       throw util::Error(
           jlm::util::strfmt("Unequal number of bits in add, ", nbits(), " != ", other.nbits()));
 
     char c = '0';
-    bitvalue_repr sum = repeat(nbits(), 'X');
+    BitValueRepresentation sum = repeat(nbits(), 'X');
     for (size_t n = 0; n < nbits(); n++)
     {
       sum[n] = add(data_[n], other[n], c);
@@ -487,59 +492,59 @@ public:
     return sum;
   }
 
-  inline bitvalue_repr
-  land(const bitvalue_repr & other) const
+  BitValueRepresentation
+  land(const BitValueRepresentation & other) const
   {
     if (nbits() != other.nbits())
       throw util::Error(
           jlm::util::strfmt("Unequal number of bits in land, ", nbits(), " != ", other.nbits()));
 
-    bitvalue_repr result = repeat(nbits(), 'X');
+    BitValueRepresentation result = repeat(nbits(), 'X');
     for (size_t n = 0; n < nbits(); n++)
       result[n] = land(data_[n], other[n]);
 
     return result;
   }
 
-  inline bitvalue_repr
-  lor(const bitvalue_repr & other) const
+  BitValueRepresentation
+  lor(const BitValueRepresentation & other) const
   {
     if (nbits() != other.nbits())
       throw util::Error(
           jlm::util::strfmt("Unequal number of bits in lor, ", nbits(), " != ", other.nbits()));
 
-    bitvalue_repr result = repeat(nbits(), 'X');
+    BitValueRepresentation result = repeat(nbits(), 'X');
     for (size_t n = 0; n < nbits(); n++)
       result[n] = lor(data_[n], other[n]);
 
     return result;
   }
 
-  inline bitvalue_repr
-  lxor(const bitvalue_repr & other) const
+  BitValueRepresentation
+  lxor(const BitValueRepresentation & other) const
   {
     if (nbits() != other.nbits())
       throw util::Error(
           jlm::util::strfmt("Unequal number of bits in lxor, ", nbits(), " != ", other.nbits()));
 
-    bitvalue_repr result = repeat(nbits(), 'X');
+    BitValueRepresentation result = repeat(nbits(), 'X');
     for (size_t n = 0; n < nbits(); n++)
       result[n] = lxor(data_[n], other[n]);
 
     return result;
   }
 
-  inline bitvalue_repr
+  BitValueRepresentation
   lnot() const
   {
     return lxor(repeat(nbits(), '1'));
   }
 
-  inline bitvalue_repr
+  BitValueRepresentation
   neg() const
   {
     char c = '1';
-    bitvalue_repr result = repeat(nbits(), 'X');
+    BitValueRepresentation result = repeat(nbits(), 'X');
     for (size_t n = 0; n < nbits(); n++)
     {
       char tmp = lxor(data_[n], '1');
@@ -550,33 +555,33 @@ public:
     return result;
   }
 
-  inline bitvalue_repr
-  sub(const bitvalue_repr & other) const
+  BitValueRepresentation
+  sub(const BitValueRepresentation & other) const
   {
     return add(other.neg());
   }
 
-  inline bitvalue_repr
+  BitValueRepresentation
   shr(size_t shift) const
   {
     if (shift >= nbits())
       return repeat(nbits(), '0');
 
-    bitvalue_repr result(std::string(&data_[shift], nbits() - shift).c_str());
+    BitValueRepresentation result(std::string(&data_[shift], nbits() - shift).c_str());
     return result.zext(shift);
   }
 
-  inline bitvalue_repr
+  BitValueRepresentation
   ashr(size_t shift) const
   {
     if (shift >= nbits())
       return repeat(nbits(), sign());
 
-    bitvalue_repr result(std::string(&data_[shift], nbits() - shift).c_str());
+    BitValueRepresentation result(std::string(&data_[shift], nbits() - shift).c_str());
     return result.sext(shift);
   }
 
-  inline bitvalue_repr
+  BitValueRepresentation
   shl(size_t shift) const
   {
     if (shift >= nbits())
@@ -585,28 +590,28 @@ public:
     return repeat(shift, '0').concat(slice(0, nbits() - shift));
   }
 
-  inline bitvalue_repr
-  udiv(const bitvalue_repr & other) const
+  BitValueRepresentation
+  udiv(const BitValueRepresentation & other) const
   {
-    bitvalue_repr quotient(nbits(), 0);
-    bitvalue_repr remainder(nbits(), 0);
+    BitValueRepresentation quotient(nbits(), 0);
+    BitValueRepresentation remainder(nbits(), 0);
     udiv(other, quotient, remainder);
     return quotient;
   }
 
-  inline bitvalue_repr
-  umod(const bitvalue_repr & other) const
+  BitValueRepresentation
+  umod(const BitValueRepresentation & other) const
   {
-    bitvalue_repr quotient(nbits(), 0);
-    bitvalue_repr remainder(nbits(), 0);
+    BitValueRepresentation quotient(nbits(), 0);
+    BitValueRepresentation remainder(nbits(), 0);
     udiv(other, quotient, remainder);
     return remainder;
   }
 
-  inline bitvalue_repr
-  sdiv(const bitvalue_repr & other) const
+  BitValueRepresentation
+  sdiv(const BitValueRepresentation & other) const
   {
-    bitvalue_repr dividend(*this), divisor(other);
+    BitValueRepresentation dividend(*this), divisor(other);
 
     if (dividend.is_negative())
       dividend = dividend.neg();
@@ -614,7 +619,7 @@ public:
     if (divisor.is_negative())
       divisor = divisor.neg();
 
-    bitvalue_repr quotient(nbits(), 0), remainder(nbits(), 0);
+    BitValueRepresentation quotient(nbits(), 0), remainder(nbits(), 0);
     dividend.udiv(divisor, quotient, remainder);
 
     if (is_negative())
@@ -626,10 +631,10 @@ public:
     return quotient;
   }
 
-  inline bitvalue_repr
-  smod(const bitvalue_repr & other) const
+  BitValueRepresentation
+  smod(const BitValueRepresentation & other) const
   {
-    bitvalue_repr dividend(*this), divisor(other);
+    BitValueRepresentation dividend(*this), divisor(other);
 
     if (dividend.is_negative())
       dividend = dividend.neg();
@@ -637,7 +642,7 @@ public:
     if (divisor.is_negative())
       divisor = divisor.neg();
 
-    bitvalue_repr quotient(nbits(), 0), remainder(nbits(), 0);
+    BitValueRepresentation quotient(nbits(), 0), remainder(nbits(), 0);
     dividend.udiv(divisor, quotient, remainder);
 
     if (is_negative())
@@ -649,48 +654,48 @@ public:
     return remainder;
   }
 
-  inline bitvalue_repr
-  mul(const bitvalue_repr & other) const
+  BitValueRepresentation
+  mul(const BitValueRepresentation & other) const
   {
     if (nbits() != other.nbits())
       throw util::Error(
           jlm::util::strfmt("Unequal number of bits in mul, ", nbits(), " != ", other.nbits()));
 
-    bitvalue_repr product(2 * nbits(), 0);
+    BitValueRepresentation product(2 * nbits(), 0);
     mul(*this, other, product);
     return product.slice(0, nbits());
   }
 
-  inline bitvalue_repr
-  umulh(const bitvalue_repr & other) const
+  BitValueRepresentation
+  umulh(const BitValueRepresentation & other) const
   {
     if (nbits() != other.nbits())
       throw util::Error(
           jlm::util::strfmt("Unequal number of bits in umulh, ", nbits(), " != ", other.nbits()));
 
-    bitvalue_repr product(4 * nbits(), 0);
-    bitvalue_repr factor1 = this->zext(nbits());
-    bitvalue_repr factor2 = other.zext(nbits());
+    BitValueRepresentation product(4 * nbits(), 0);
+    BitValueRepresentation factor1 = this->zext(nbits());
+    BitValueRepresentation factor2 = other.zext(nbits());
     mul(factor1, factor2, product);
     return product.slice(nbits(), 2 * nbits());
   }
 
-  inline bitvalue_repr
-  smulh(const bitvalue_repr & other) const
+  BitValueRepresentation
+  smulh(const BitValueRepresentation & other) const
   {
     if (nbits() != other.nbits())
       throw util::Error(
           jlm::util::strfmt("Unequal number of bits in smulh, ", nbits(), " != ", other.nbits()));
 
-    bitvalue_repr product(4 * nbits(), 0);
-    bitvalue_repr factor1 = this->sext(nbits());
-    bitvalue_repr factor2 = other.sext(nbits());
+    BitValueRepresentation product(4 * nbits(), 0);
+    BitValueRepresentation factor1 = this->sext(nbits());
+    BitValueRepresentation factor2 = other.sext(nbits());
     mul(factor1, factor2, product);
     return product.slice(nbits(), 2 * nbits());
   }
 
   void
-  Append(const bitvalue_repr & other)
+  Append(const BitValueRepresentation & other)
   {
     data_.insert(data_.end(), other.data_.begin(), other.data_.end());
   }

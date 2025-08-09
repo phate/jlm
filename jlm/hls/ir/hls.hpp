@@ -721,8 +721,6 @@ private:
       : StructuralNode(parent, 1)
   {}
 
-  jlm::rvsdg::node_output * _predicate_buffer{};
-
 public:
   [[nodiscard]] const rvsdg::Operation &
   GetOperation() const noexcept override;
@@ -744,10 +742,10 @@ public:
     return result;
   }
 
-  inline jlm::rvsdg::node_output *
-  predicate_buffer() const noexcept
+  rvsdg::Output &
+  GetPredicateBuffer() const noexcept
   {
-    return _predicate_buffer;
+    return *PredicateBuffer_;
   }
 
   void
@@ -764,6 +762,9 @@ public:
 
   LoopNode *
   copy(rvsdg::Region * region, rvsdg::SubstitutionMap & smap) const override;
+
+private:
+  rvsdg::Output * PredicateBuffer_{};
 };
 
 class BundleType final : public rvsdg::ValueType
