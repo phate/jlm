@@ -646,7 +646,9 @@ cne(rvsdg::RvsdgModule & rvsdgModule, util::StatisticsCollector & statisticsColl
 CommonNodeElimination::~CommonNodeElimination() noexcept = default;
 
 void
-CommonNodeElimination::Run(RvsdgModule & module, util::StatisticsCollector & statisticsCollector)
+CommonNodeElimination::Run(
+    rvsdg::RvsdgModule & module,
+    util::StatisticsCollector & statisticsCollector)
 {
   hls::cne(module, statisticsCollector);
 }
