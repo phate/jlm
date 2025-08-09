@@ -653,8 +653,7 @@ MlirToJlmConverter::ConvertOperation(
   }
   else if (auto MallocOp = ::mlir::dyn_cast<::mlir::jlm::Malloc>(&mlirOperation))
   {
-    auto mallocOutputs = jlm::llvm::MallocOperation::create(inputs[0]);
-    return { mallocOutputs[0] };
+    return jlm::llvm::MallocOperation::create(inputs[0]);
   }
   else if (auto StoreOp = ::mlir::dyn_cast<::mlir::jlm::Store>(&mlirOperation))
   {
