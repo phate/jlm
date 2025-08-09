@@ -12,8 +12,8 @@ namespace jlm::hls
 {
 
 // FIXME
-// The CommonNodeElimination optimization should be generalized such that it can be used for both the LLVM and HLS
-// backend.
+// The CommonNodeElimination optimization should be generalized such that it can be used for both
+// the LLVM and HLS backend.
 
 /**
  * \brief Common Node Elimination
