@@ -42,10 +42,12 @@ public:
   set_nodestate(Node * node, size_t state);
 
   /* get one of the top nodes for the given state */
+  // FIXME: Rename this method to pop_top(), because this is what it actually does
   Node *
   peek_top(size_t state) const;
 
   /* get one of the bottom nodes for the given state */
+  // FIXME: Rename this method to pop_bottom(), because this is what it actually does
   Node *
   peek_bottom(size_t state) const;
 
