@@ -12,18 +12,18 @@ namespace jlm::hls
 {
 
 // FIXME
-// The cne optimization should be generalized such that it can be used for both the LLVM and HLS
-// backend.
+// The CommonNodeElimination optimization should be generalized such that it can be used for both
+// the LLVM and HLS backend.
 
 /**
  * \brief Common Node Elimination
  * This is mainly a copy of the CNE optimization in the LLVM backend with the addition of support
  * for the hls::loop_op.
  */
-class cne final : public rvsdg::Transformation
+class CommonNodeElimination final : public rvsdg::Transformation
 {
 public:
-  ~cne() noexcept override;
+  ~CommonNodeElimination() noexcept override;
 
   void
   Run(rvsdg::RvsdgModule & module, util::StatisticsCollector & statisticsCollector) override;
