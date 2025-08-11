@@ -60,7 +60,7 @@ split_opt(llvm::RvsdgModule & rm)
 {
   // TODO: figure out which optimizations to use here
   jlm::llvm::DeadNodeElimination dne;
-  jlm::hls::cne cne;
+  CommonNodeElimination cne;
   jlm::llvm::InvariantValueRedirection ivr;
   jlm::llvm::LoopUnswitching tgi;
   jlm::llvm::NodeReduction red;
@@ -78,7 +78,7 @@ pre_opt(jlm::llvm::RvsdgModule & rm)
 {
   // TODO: figure out which optimizations to use here
   jlm::llvm::DeadNodeElimination dne;
-  jlm::hls::cne cne;
+  CommonNodeElimination cne;
   jlm::llvm::InvariantValueRedirection ivr;
   jlm::llvm::LoopUnswitching tgi;
   jlm::util::StatisticsCollector statisticsCollector;
@@ -457,7 +457,7 @@ rvsdg2rhls(llvm::RvsdgModule & rhls, util::StatisticsCollector & collector)
   jlm::llvm::LoopUnswitching tgi;
   // simplify loops
   tgi.Run(rhls, collector);
-  jlm::hls::cne cne;
+  CommonNodeElimination cne;
   cne.Run(rhls, collector);
   llvmDne.Run(rhls, collector);
   // merge gammas that were pulled out of loops

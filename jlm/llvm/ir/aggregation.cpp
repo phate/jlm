@@ -119,7 +119,7 @@ LoopAggregationNode::debug_string() const
  *
  * It associates CFG nodes with aggregation subtrees.
  */
-class aggregation_map final
+class AggregationMap final
 {
 public:
   bool
@@ -148,12 +148,12 @@ public:
     map_.erase(node);
   }
 
-  static std::unique_ptr<aggregation_map>
+  static std::unique_ptr<AggregationMap>
   create(ControlFlowGraph & cfg)
   {
     auto exit = cfg.exit();
     auto entry = cfg.entry();
-    auto map = std::make_unique<aggregation_map>();
+    auto map = std::make_unique<AggregationMap>();
 
     map->map_[entry] = EntryAggregationNode::create(entry->arguments());
     map->map_[exit] = ExitAggregationNode::create(exit->results());
@@ -225,14 +225,14 @@ is_linear(const ControlFlowGraphNode * node) noexcept
 }
 
 static ControlFlowGraphNode *
-aggregate(ControlFlowGraphNode *, ControlFlowGraphNode *, aggregation_map &);
+aggregate(ControlFlowGraphNode *, ControlFlowGraphNode *, AggregationMap &);
 
 /**
  * Reduces a tail-controlled loop subgraph to a single node and creates an aggregation subtree for
  * the subgraph.
  */
 static void
-reduce_loop(const sccstructure & sccstruct, aggregation_map & map)
+reduce_loop(const sccstructure & sccstruct, AggregationMap & map)
 {
   JLM_ASSERT(sccstruct.is_tcloop());
 
@@ -275,7 +275,7 @@ reduce_loop(const sccstructure & sccstruct, aggregation_map & map)
  * Only the split node and the individual branch nodes are reduced. The join node is not reduced.
  */
 static ControlFlowGraphNode *
-reduce_branch(ControlFlowGraphNode * split, ControlFlowGraphNode ** entry, aggregation_map & map)
+reduce_branch(ControlFlowGraphNode * split, ControlFlowGraphNode ** entry, AggregationMap & map)
 {
   /* sanity checks */
   JLM_ASSERT(split->NumOutEdges() > 1);
@@ -339,7 +339,7 @@ reduce_linear(
     ControlFlowGraphNode * source,
     ControlFlowGraphNode ** entry,
     ControlFlowGraphNode ** exit,
-    aggregation_map & map)
+    AggregationMap & map)
 {
   JLM_ASSERT(is_linear(source));
   auto sink = source->OutEdge(0)->sink();
@@ -370,7 +370,7 @@ reduce_linear(
  * Find all tail-controlled loops in an SESE subgraph and reduce each loop to a single node.
  */
 static void
-aggregate_loops(ControlFlowGraphNode * entry, ControlFlowGraphNode * exit, aggregation_map & map)
+aggregate_loops(ControlFlowGraphNode * entry, ControlFlowGraphNode * exit, AggregationMap & map)
 {
   auto sccs = find_sccs(entry, exit);
   for (auto scc : sccs)
@@ -392,7 +392,7 @@ aggregate_acyclic_sese(
     ControlFlowGraphNode * node,
     ControlFlowGraphNode ** entry,
     ControlFlowGraphNode ** exit,
-    aggregation_map & map)
+    AggregationMap & map)
 {
   /*
     We reduced the entire subgraph to a single node. We are done here.
@@ -476,7 +476,7 @@ aggregate_acyclic_sese(
  * reduced, the Acyclic SESE aggregation reduces the rest of the acyclic graph into a tree.
  */
 static ControlFlowGraphNode *
-aggregate(ControlFlowGraphNode * entry, ControlFlowGraphNode * exit, aggregation_map & map)
+aggregate(ControlFlowGraphNode * entry, ControlFlowGraphNode * exit, AggregationMap & map)
 {
   aggregate_loops(entry, exit, map);
   aggregate_acyclic_sese(entry, &entry, &exit, map);
@@ -490,7 +490,7 @@ aggregate(ControlFlowGraph & cfg)
 {
   JLM_ASSERT(is_proper_structured(cfg));
 
-  auto map = aggregation_map::create(cfg);
+  auto map = AggregationMap::create(cfg);
   auto root = aggregate(cfg.entry(), cfg.exit(), *map);
 
   return std::move(map->lookup(root));
