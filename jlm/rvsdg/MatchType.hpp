@@ -7,6 +7,7 @@
 #define JLM_RVSDG_MATCH_TYPE_HPP
 
 #include <stdexcept>
+#include <string>
 #include <tuple>
 
 namespace jlm::rvsdg

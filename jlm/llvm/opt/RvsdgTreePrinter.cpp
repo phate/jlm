@@ -145,7 +145,9 @@ RvsdgTreePrinter::AnnotateNumNodes(
           numSubregionNodes += annotateRegion(*subregion);
         }
 
-        annotationMap.AddAnnotation(structuralNode, { label, numSubregionNodes });
+        annotationMap.AddAnnotation(
+            structuralNode,
+            { label, static_cast<uint64_t>(numSubregionNodes) });
       }
 
       if (match(node))
@@ -154,7 +156,7 @@ RvsdgTreePrinter::AnnotateNumNodes(
       }
     }
 
-    annotationMap.AddAnnotation(&region, { label, numNodes });
+    annotationMap.AddAnnotation(&region, { label, static_cast<uint64_t>(numNodes) });
 
     return numNodes;
   };
