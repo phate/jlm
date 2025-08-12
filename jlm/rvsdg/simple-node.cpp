@@ -100,9 +100,9 @@ NormalizeSimpleOperationCommonNodeElimination(
 {
   auto isCongruent = [&](const Node & node)
   {
-    auto & nodeOperation = node.GetOperation();
-    return nodeOperation == operation && operands == rvsdg::operands(&node)
-        && &nodeOperation != &operation;
+    auto simpleNode = dynamic_cast<const SimpleNode *>(&node);
+    return simpleNode && simpleNode->GetOperation() == operation
+        && operands == rvsdg::operands(&node) && &simpleNode->GetOperation() != &operation;
   };
 
   if (operands.empty())

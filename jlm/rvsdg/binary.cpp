@@ -81,10 +81,19 @@ FlattenAssociativeBinaryOperation(
         if (node == nullptr)
           return false;
 
-        auto flattenedBinaryOperation =
-            dynamic_cast<const FlattenedBinaryOperation *>(&node->GetOperation());
-        return node->GetOperation() == operation
-            || (flattenedBinaryOperation && flattenedBinaryOperation->bin_operation() == operation);
+        auto simpleNode = dynamic_cast<const SimpleNode *>(node);
+        if (simpleNode)
+        {
+          auto flattenedBinaryOperation =
+              dynamic_cast<const FlattenedBinaryOperation *>(&simpleNode->GetOperation());
+          return simpleNode->GetOperation() == operation
+              || (flattenedBinaryOperation
+                  && flattenedBinaryOperation->bin_operation() == operation);
+        }
+        else
+        {
+          return false;
+        }
       });
 
   if (operands == newOperands)
@@ -220,12 +229,15 @@ FlattenedBinaryOperation::reduce(
 {
   for (auto & node : TopDownTraverser(region))
   {
-    if (is<FlattenedBinaryOperation>(node))
+    if (auto simpleNode = dynamic_cast<const SimpleNode *>(node))
     {
-      const auto op = static_cast<const FlattenedBinaryOperation *>(&node->GetOperation());
-      auto output = op->reduce(reduction, operands(node));
-      node->output(0)->divert_users(output);
-      remove(node);
+      auto op = dynamic_cast<const FlattenedBinaryOperation *>(&simpleNode->GetOperation());
+      if (op)
+      {
+        auto output = op->reduce(reduction, operands(node));
+        node->output(0)->divert_users(output);
+        remove(node);
+      }
     }
     else if (auto structnode = dynamic_cast<const StructuralNode *>(node))
     {

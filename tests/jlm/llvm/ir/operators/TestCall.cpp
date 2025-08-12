@@ -41,12 +41,14 @@ TestCopy()
       CallOperation::Create(function1, functionType, { value1, iOState1, memoryState1 });
 
   // Act
-  auto node = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*callResults[0]);
+  auto node = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(*callResults[0]);
   auto copiedNode =
       node->copy(&rvsdg.GetRootRegion(), { function2, value2, iOState2, memoryState2 });
 
   // Assert
-  assert(node->GetOperation() == copiedNode->GetOperation());
+  assert(
+      node->GetOperation()
+      == jlm::util::AssertedCast<jlm::rvsdg::SimpleNode>(copiedNode)->GetOperation());
 }
 
 static void
