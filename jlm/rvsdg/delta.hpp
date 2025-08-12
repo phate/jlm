@@ -216,7 +216,7 @@ public:
    * Returns the context variable description corresponding
    * to this bound variable reference in the delta node region.
    */
-  [[nodiscard]] std::optional<ContextVar>
+  [[nodiscard]] ContextVar
   MapBinderContextVar(const rvsdg::Output & output) const noexcept;
 
   /**
