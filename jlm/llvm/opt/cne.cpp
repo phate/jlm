@@ -447,7 +447,8 @@ mark(const jlm::rvsdg::SimpleNode * node, CommonNodeElimination::Context & ctx)
   {
     for (const auto & other : node->region()->TopNodes())
     {
-      if (&other != node && node->GetOperation() == other.GetOperation())
+      auto otherSimple = dynamic_cast<const rvsdg::SimpleNode *>(&other);
+      if (&other != node && otherSimple && node->GetOperation() == otherSimple->GetOperation())
       {
         ctx.mark(node, &other);
         break;
@@ -461,7 +462,7 @@ mark(const jlm::rvsdg::SimpleNode * node, CommonNodeElimination::Context & ctx)
   {
     for (const auto & user : origin->Users())
     {
-      const auto other = rvsdg::TryGetOwnerNode<rvsdg::Node>(user);
+      const auto other = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(user);
       if (!other || other == node || other->GetOperation() != node->GetOperation()
           || other->ninputs() != node->ninputs())
         continue;
