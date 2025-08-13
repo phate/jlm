@@ -82,6 +82,16 @@ public:
     return GetCallType() == CallType::RecursiveDirectCall;
   }
 
+  /**
+   * @return True if call is a (non-)recursive direct call, otherwise false.
+   */
+  [[nodiscard]] bool
+  IsDirectCall() const noexcept
+  {
+    return GetCallType() == CallType::NonRecursiveDirectCall
+        || GetCallType() == CallType::RecursiveDirectCall;
+  }
+
   /** \brief Determines whether call is an external call.
    *
    * @return True if call is an external call, otherwise false.

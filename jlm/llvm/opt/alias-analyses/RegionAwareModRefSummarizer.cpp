@@ -393,8 +393,22 @@ public:
   [[nodiscard]] const util::HashSet<const PointsToGraph::MemoryNode *> &
   GetCallEntryNodes(const rvsdg::SimpleNode & callNode) const override
   {
-    const auto & callSummary = GetCallSummary(callNode);
-    return callSummary.GetMemoryNodes();
+    JLM_ASSERT(is<CallOperation>(&callNode));
+
+    const auto & callMemoryNodes = GetCallSummary(callNode).GetMemoryNodes();
+
+    // Ensure that the call entry/exit memory nodes are the same as the lambda region entry/exit
+    // memory nodes
+    if (const auto callTypeClassifier = CallOperation::ClassifyCall(callNode);
+        callTypeClassifier->IsDirectCall())
+    {
+      const auto & lambdaNode =
+          rvsdg::AssertGetOwnerNode<rvsdg::LambdaNode>(callTypeClassifier->GetLambdaOutput());
+      const auto regionMemoryNodes = GetRegionEntryNodes(*lambdaNode.subregion());
+      JLM_ASSERT(callMemoryNodes == regionMemoryNodes);
+    }
+
+    return callMemoryNodes;
   }
 
   [[nodiscard]] const util::HashSet<const PointsToGraph::MemoryNode *> &
