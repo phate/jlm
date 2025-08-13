@@ -26,7 +26,8 @@ IsPointerCompatible(const rvsdg::Output & value)
 const rvsdg::Output &
 NormalizeOutput(const rvsdg::Output & output)
 {
-  if (const auto [node, ioBarrierOp] = rvsdg::TryGetSimpleNodeAndOp<IOBarrierOperation>(output);
+  if (const auto [node, ioBarrierOp] =
+          rvsdg::TryGetSimpleNodeAndOptionalOp<IOBarrierOperation>(output);
       node && ioBarrierOp)
   {
     return NormalizeOutput(*node->input(0)->origin());

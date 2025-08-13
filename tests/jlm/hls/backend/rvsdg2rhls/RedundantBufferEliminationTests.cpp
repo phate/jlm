@@ -47,7 +47,7 @@ BufferWithLocalLoad()
   // Assert
   // We expect the BufferOperation node to be replaced by a passthrough BufferOperation node
   assert(rvsdg.GetRootRegion().nnodes() == 2);
-  auto [bufferNode, bufferOperation] = TryGetSimpleNodeAndOp<BufferOperation>(*x.origin());
+  auto [bufferNode, bufferOperation] = TryGetSimpleNodeAndOptionalOp<BufferOperation>(*x.origin());
   assert(bufferNode && bufferOperation);
   assert(bufferOperation->Capacity() == 4);
   assert(bufferOperation->IsPassThrough());
@@ -92,7 +92,7 @@ BufferWithLocalStore()
   // Assert
   // We expect the BufferOperation node to be replaced by a passthrough BufferOperation node
   assert(rvsdg.GetRootRegion().nnodes() == 2);
-  auto [bufferNode, bufferOperation] = TryGetSimpleNodeAndOp<BufferOperation>(*x.origin());
+  auto [bufferNode, bufferOperation] = TryGetSimpleNodeAndOptionalOp<BufferOperation>(*x.origin());
   assert(bufferNode && bufferOperation);
   assert(bufferOperation->Capacity() == 4);
   assert(bufferOperation->IsPassThrough());
@@ -137,7 +137,7 @@ BufferWithLoad()
   // Assert
   // We expect the BufferOperation node to be replaced by a passthrough BufferOperation node
   assert(rvsdg.GetRootRegion().nnodes() == 2);
-  auto [bufferNode, bufferOperation] = TryGetSimpleNodeAndOp<BufferOperation>(*x.origin());
+  auto [bufferNode, bufferOperation] = TryGetSimpleNodeAndOptionalOp<BufferOperation>(*x.origin());
   assert(bufferNode && bufferOperation);
   assert(bufferOperation->Capacity() == 4);
   assert(bufferOperation->IsPassThrough());
@@ -187,7 +187,7 @@ BufferWithStore()
   // Assert
   // We expect the BufferOperation node to be replaced by a passthrough BufferOperation node
   assert(rvsdg.GetRootRegion().nnodes() == 2);
-  auto [bufferNode, bufferOperation] = TryGetSimpleNodeAndOp<BufferOperation>(*x.origin());
+  auto [bufferNode, bufferOperation] = TryGetSimpleNodeAndOptionalOp<BufferOperation>(*x.origin());
   assert(bufferNode && bufferOperation);
   assert(bufferOperation->Capacity() == 4);
   assert(bufferOperation->IsPassThrough());
@@ -233,7 +233,7 @@ BufferWithForkAndLocalLoad()
   // Assert
   // We expect the BufferOperation node to be replaced by a passthrough BufferOperation node
   assert(rvsdg.GetRootRegion().nnodes() == 3);
-  auto [bufferNode, bufferOperation] = TryGetSimpleNodeAndOp<BufferOperation>(*x.origin());
+  auto [bufferNode, bufferOperation] = TryGetSimpleNodeAndOptionalOp<BufferOperation>(*x.origin());
   assert(bufferNode && bufferOperation);
   assert(bufferOperation->Capacity() == 4);
   assert(bufferOperation->IsPassThrough());
@@ -281,7 +281,7 @@ BufferWithBranchAndLocalLoad()
   // Assert
   // We expect the BufferOperation node to be replaced by a passthrough BufferOperation node
   assert(rvsdg.GetRootRegion().nnodes() == 3);
-  auto [bufferNode, bufferOperation] = TryGetSimpleNodeAndOp<BufferOperation>(*x.origin());
+  auto [bufferNode, bufferOperation] = TryGetSimpleNodeAndOptionalOp<BufferOperation>(*x.origin());
   assert(bufferNode && bufferOperation);
   assert(bufferOperation->Capacity() == 4);
   assert(bufferOperation->IsPassThrough());
@@ -328,7 +328,7 @@ BufferWithOtherNode()
   // BufferOperation node cannot be traced to a Load-/Store-/LocalLoad-/LocalStoreOperation node
   assert(rvsdg.GetRootRegion().nnodes() == 2);
   assert(x.origin() == bufferResults[0]);
-  auto [bufferNode, bufferOperation] = TryGetSimpleNodeAndOp<BufferOperation>(*x.origin());
+  auto [bufferNode, bufferOperation] = TryGetSimpleNodeAndOptionalOp<BufferOperation>(*x.origin());
   assert(bufferNode && bufferOperation);
   assert(bufferOperation->Capacity() == 4);
   assert(!bufferOperation->IsPassThrough());
@@ -375,7 +375,7 @@ BufferWithNonMemoryStateOperand()
   // BufferOperation node is not of type llvm::MemoryStateType
   assert(rvsdg.GetRootRegion().nnodes() == 2);
   assert(x.origin() == bufferResults[0]);
-  auto [bufferNode, bufferOperation] = TryGetSimpleNodeAndOp<BufferOperation>(*x.origin());
+  auto [bufferNode, bufferOperation] = TryGetSimpleNodeAndOptionalOp<BufferOperation>(*x.origin());
   assert(bufferNode && bufferOperation);
   assert(bufferOperation->Capacity() == 4);
   assert(!bufferOperation->IsPassThrough());
@@ -422,7 +422,7 @@ PassthroughBuffer()
   // marked as passthrough.
   assert(rvsdg.GetRootRegion().nnodes() == 2);
   assert(x.origin() == bufferResults[0]);
-  auto [bufferNode, bufferOperation] = TryGetSimpleNodeAndOp<BufferOperation>(*x.origin());
+  auto [bufferNode, bufferOperation] = TryGetSimpleNodeAndOptionalOp<BufferOperation>(*x.origin());
   assert(bufferNode && bufferOperation);
   assert(bufferOperation->Capacity() == 4);
   assert(bufferOperation->IsPassThrough());

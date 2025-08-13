@@ -33,12 +33,14 @@ static std::optional<int64_t>
 GetConstantSignedIntegerValue(const rvsdg::Output & output)
 {
   const auto & normalized = NormalizeOutput(output);
-  if (const auto [_, constant] = rvsdg::TryGetSimpleNodeAndOp<IntegerConstantOperation>(normalized);
+  if (const auto [_, constant] =
+          rvsdg::TryGetSimpleNodeAndOptionalOp<IntegerConstantOperation>(normalized);
       constant)
   {
     return constant->Representation().to_int();
   }
-  if (const auto [_, constant] = rvsdg::TryGetSimpleNodeAndOp<rvsdg::bitconstant_op>(normalized);
+  if (const auto [_, constant] =
+          rvsdg::TryGetSimpleNodeAndOptionalOp<rvsdg::bitconstant_op>(normalized);
       constant)
   {
     return constant->value().to_int();
@@ -300,7 +302,9 @@ LocalAliasAnalysis::TracePointerOriginPrecise(const rvsdg::Output & p)
     // Use normalization function to get past all trivially invariant operations
     base = &NormalizeOutput(*base);
 
-    if (const auto [node, gep] = rvsdg::TryGetSimpleNodeAndOp<GetElementPtrOperation>(*base); gep)
+    if (const auto [node, gep] =
+            rvsdg::TryGetSimpleNodeAndOptionalOp<GetElementPtrOperation>(*base);
+        gep)
     {
       auto calculatedOffset = CalculateGepOffset(*node);
 
@@ -376,7 +380,8 @@ LocalAliasAnalysis::TraceAllPointerOrigins(TracedPointerOrigin p, TraceCollectio
   traceCollection.AllTracedOutputs[p.BasePointer] = p.Offset;
 
   // If it is a GEP, we can trace through it, but possibly lose precise offset information
-  if (const auto [node, gep] = rvsdg::TryGetSimpleNodeAndOp<GetElementPtrOperation>(*p.BasePointer);
+  if (const auto [node, gep] =
+          rvsdg::TryGetSimpleNodeAndOptionalOp<GetElementPtrOperation>(*p.BasePointer);
       gep)
   {
     // Update the base pointer and offset to represent the other side of the GEP
@@ -396,7 +401,8 @@ LocalAliasAnalysis::TraceAllPointerOrigins(TracedPointerOrigin p, TraceCollectio
   }
 
   // If the node is a \ref SelectOperation, trace through both possible inputs
-  if (const auto [node, select] = rvsdg::TryGetSimpleNodeAndOp<SelectOperation>(*p.BasePointer);
+  if (const auto [node, select] =
+          rvsdg::TryGetSimpleNodeAndOptionalOp<SelectOperation>(*p.BasePointer);
       select)
   {
     auto leftTrace = p;
@@ -409,7 +415,8 @@ LocalAliasAnalysis::TraceAllPointerOrigins(TracedPointerOrigin p, TraceCollectio
   }
 
   // If we reach undef nodes, do not include them in the TopOrigins
-  if (const auto [node, undef] = rvsdg::TryGetSimpleNodeAndOp<UndefValueOperation>(*p.BasePointer);
+  if (const auto [node, undef] =
+          rvsdg::TryGetSimpleNodeAndOptionalOp<UndefValueOperation>(*p.BasePointer);
       undef)
   {
     return true;
@@ -499,14 +506,14 @@ LocalAliasAnalysis::GetOriginalOriginSize(const rvsdg::Output & pointer)
 
     return size;
   }
-  if (const auto [node, allocaOp] = rvsdg::TryGetSimpleNodeAndOp<AllocaOperation>(pointer);
+  if (const auto [node, allocaOp] = rvsdg::TryGetSimpleNodeAndOptionalOp<AllocaOperation>(pointer);
       allocaOp)
   {
     const auto elementCount = GetConstantSignedIntegerValue(*node->input(0)->origin());
     if (elementCount.has_value())
       return *elementCount * GetTypeSize(*allocaOp->ValueType());
   }
-  if (const auto [node, mallocOp] = rvsdg::TryGetSimpleNodeAndOp<MallocOperation>(pointer);
+  if (const auto [node, mallocOp] = rvsdg::TryGetSimpleNodeAndOptionalOp<MallocOperation>(pointer);
       mallocOp)
   {
     const auto mallocSize = GetConstantSignedIntegerValue(*node->input(0)->origin());
@@ -644,7 +651,8 @@ bool
 LocalAliasAnalysis::IsOriginalOriginFullyTraceable(const rvsdg::Output & pointer)
 {
   // The only original origins that can be fully traced for escaping are ALLOCAs
-  if (const auto [_, allocaOp] = rvsdg::TryGetSimpleNodeAndOp<AllocaOperation>(pointer); !allocaOp)
+  if (const auto [_, allocaOp] = rvsdg::TryGetSimpleNodeAndOptionalOp<AllocaOperation>(pointer);
+      !allocaOp)
     return false;
 
   // Check if the result for this ALLOCA is already memoized
