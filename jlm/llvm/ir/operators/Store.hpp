@@ -111,7 +111,7 @@ public:
   MapMemoryStateOutputToInput(const rvsdg::Output & output)
   {
     JLM_ASSERT(is<MemoryStateType>(output.Type()));
-    auto [storeNode, storeOperation] = rvsdg::TryGetSimpleNodeAndOp<StoreOperation>(output);
+    auto [storeNode, storeOperation] = rvsdg::TryGetSimpleNodeAndOptionalOp<StoreOperation>(output);
     JLM_ASSERT(storeOperation);
     JLM_ASSERT(storeNode->ninputs() - 2 == storeNode->noutputs());
     const auto input = storeNode->input(output.index() + 2);

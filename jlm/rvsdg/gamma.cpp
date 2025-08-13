@@ -120,7 +120,7 @@ perform_control_constant_reduction(std::unordered_set<jlm::rvsdg::Output *> & ou
 {
   auto & gamma = rvsdg::AssertGetOwnerNode<GammaNode>(**outputs.begin());
   auto origin = gamma.predicate()->origin();
-  auto [matchNode, matchOperation] = TryGetSimpleNodeAndOp<MatchOperation>(*origin);
+  auto [matchNode, matchOperation] = TryGetSimpleNodeAndOptionalOp<MatchOperation>(*origin);
   JLM_ASSERT(matchNode && matchOperation);
 
   std::unordered_map<uint64_t, uint64_t> map;

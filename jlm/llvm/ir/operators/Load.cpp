@@ -58,7 +58,7 @@ is_load_mux_reducible(const std::vector<rvsdg::Output *> & operands)
     return false;
 
   auto [_, memStateMergeOperation] =
-      rvsdg::TryGetSimpleNodeAndOp<MemoryStateMergeOperation>(*operands[1]);
+      rvsdg::TryGetSimpleNodeAndOptionalOp<MemoryStateMergeOperation>(*operands[1]);
   if (!memStateMergeOperation)
     return false;
 
@@ -82,7 +82,8 @@ is_load_alloca_reducible(const std::vector<rvsdg::Output *> & operands)
 {
   auto address = operands[0];
 
-  auto [allocaNode, allocaOperation] = rvsdg::TryGetSimpleNodeAndOp<AllocaOperation>(*address);
+  auto [allocaNode, allocaOperation] =
+      rvsdg::TryGetSimpleNodeAndOptionalOp<AllocaOperation>(*address);
   if (!allocaOperation)
     return false;
 
@@ -100,12 +101,12 @@ static bool
 is_reducible_state(const rvsdg::Output * state, const rvsdg::Node * loadalloca)
 {
   auto [storeNode, storeOperation] =
-      rvsdg::TryGetSimpleNodeAndOp<StoreNonVolatileOperation>(*state);
+      rvsdg::TryGetSimpleNodeAndOptionalOp<StoreNonVolatileOperation>(*state);
   if (storeOperation)
   {
     auto address = StoreNonVolatileOperation::AddressInput(*storeNode).origin();
     auto [allocaNode, allocaOperation] =
-        jlm::rvsdg::TryGetSimpleNodeAndOp<AllocaOperation>(*address);
+        jlm::rvsdg::TryGetSimpleNodeAndOptionalOp<AllocaOperation>(*address);
     if (allocaOperation && allocaNode != loadalloca)
       return true;
   }
@@ -133,7 +134,8 @@ is_load_store_state_reducible(
   if (operands.size() == 2)
     return false;
 
-  auto [allocaNode, allocaOperation] = jlm::rvsdg::TryGetSimpleNodeAndOp<AllocaOperation>(*address);
+  auto [allocaNode, allocaOperation] =
+      jlm::rvsdg::TryGetSimpleNodeAndOptionalOp<AllocaOperation>(*address);
   if (!allocaOperation)
   {
     return false;
@@ -182,7 +184,7 @@ is_load_store_reducible(
   // Check that the first state edge originates from a store
   auto firstState = operands[1];
   auto [storeNode, storeOperation] =
-      rvsdg::TryGetSimpleNodeAndOp<StoreNonVolatileOperation>(*firstState);
+      rvsdg::TryGetSimpleNodeAndOptionalOp<StoreNonVolatileOperation>(*firstState);
   if (!storeOperation)
   {
     return false;
@@ -522,13 +524,13 @@ LoadNonVolatileOperation::NormalizeIOBarrierAllocaAddress(
   const auto address = operands[0];
 
   auto [ioBarrierNode, ioBarrierOperation] =
-      rvsdg::TryGetSimpleNodeAndOp<IOBarrierOperation>(*address);
+      rvsdg::TryGetSimpleNodeAndOptionalOp<IOBarrierOperation>(*address);
   if (!ioBarrierOperation)
     return std::nullopt;
 
   const auto barredAddress = IOBarrierOperation::BarredInput(*ioBarrierNode).origin();
   auto [allocaNode, allocaOperation] =
-      rvsdg::TryGetSimpleNodeAndOp<AllocaOperation>(*barredAddress);
+      rvsdg::TryGetSimpleNodeAndOptionalOp<AllocaOperation>(*barredAddress);
   if (!allocaOperation)
     return std::nullopt;
 

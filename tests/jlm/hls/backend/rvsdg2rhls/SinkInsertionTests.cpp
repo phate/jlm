@@ -60,7 +60,7 @@ SinkInsertion()
   {
     assert(outputVar0.output->nusers() == 1);
     auto [sinkNode, sinkOperation] =
-        TryGetSimpleNodeAndOp<SinkOperation>(*outputVar0.output->Users().begin());
+        TryGetSimpleNodeAndOptionalOp<SinkOperation>(*outputVar0.output->Users().begin());
     assert(sinkNode && sinkOperation);
   }
 
@@ -69,7 +69,7 @@ SinkInsertion()
     auto & i0Argument = *inputVar0.argument[0];
     assert(i0Argument.nusers() == 1);
     auto [sinkNode, sinkOperation] =
-        TryGetSimpleNodeAndOp<SinkOperation>(*i0Argument.Users().begin());
+        TryGetSimpleNodeAndOptionalOp<SinkOperation>(*i0Argument.Users().begin());
     assert(sinkNode && sinkOperation);
   }
 }

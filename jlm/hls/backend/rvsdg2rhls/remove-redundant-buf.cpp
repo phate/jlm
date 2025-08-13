@@ -70,29 +70,30 @@ RedundantBufferElimination::CanTraceToLoadOrStore(const rvsdg::Output & output)
 {
   JLM_ASSERT(rvsdg::is<llvm::MemoryStateType>(output.Type()));
 
-  auto [loadNode, loadOperation] = rvsdg::TryGetSimpleNodeAndOp<LoadOperation>(output);
+  auto [loadNode, loadOperation] = rvsdg::TryGetSimpleNodeAndOptionalOp<LoadOperation>(output);
   if (loadNode && loadOperation)
     return true;
 
   auto [localLoadNode, localLoadOperation] =
-      rvsdg::TryGetSimpleNodeAndOp<LocalLoadOperation>(output);
+      rvsdg::TryGetSimpleNodeAndOptionalOp<LocalLoadOperation>(output);
   if (localLoadNode && localLoadOperation)
     return true;
 
-  auto [storeNode, storeOperation] = rvsdg::TryGetSimpleNodeAndOp<StoreOperation>(output);
+  auto [storeNode, storeOperation] = rvsdg::TryGetSimpleNodeAndOptionalOp<StoreOperation>(output);
   if (storeNode && storeOperation)
     return true;
 
   auto [localStoreNode, localStoreOperation] =
-      rvsdg::TryGetSimpleNodeAndOp<LocalStoreOperation>(output);
+      rvsdg::TryGetSimpleNodeAndOptionalOp<LocalStoreOperation>(output);
   if (localStoreNode && localStoreOperation)
     return true;
 
-  auto [forkNode, forkOperation] = rvsdg::TryGetSimpleNodeAndOp<ForkOperation>(output);
+  auto [forkNode, forkOperation] = rvsdg::TryGetSimpleNodeAndOptionalOp<ForkOperation>(output);
   if (forkNode && forkOperation)
     return CanTraceToLoadOrStore(*forkNode->input(0)->origin());
 
-  auto [branchNode, branchOperation] = rvsdg::TryGetSimpleNodeAndOp<BranchOperation>(output);
+  auto [branchNode, branchOperation] =
+      rvsdg::TryGetSimpleNodeAndOptionalOp<BranchOperation>(output);
   if (branchNode && branchOperation)
     return CanTraceToLoadOrStore(*branchNode->input(1)->origin());
 

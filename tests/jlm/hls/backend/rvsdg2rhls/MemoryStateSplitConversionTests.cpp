@@ -63,14 +63,15 @@ SplitConversion()
   {
     assert(outputVar0.output->nusers() == 1);
     auto [forkNode, forkOperation] =
-        TryGetSimpleNodeAndOp<ForkOperation>(*inputVar.argument[0]->Users().begin());
+        TryGetSimpleNodeAndOptionalOp<ForkOperation>(*inputVar.argument[0]->Users().begin());
     assert(forkNode && forkOperation);
   }
 
   // The memory state split conversion pass should have replaced the
   // MemoryStateSplitOperation node with a ForkOperation node
   {
-    auto [forkNode, forkOperation] = TryGetSimpleNodeAndOp<ForkOperation>(*importY.Users().begin());
+    auto [forkNode, forkOperation] =
+        TryGetSimpleNodeAndOptionalOp<ForkOperation>(*importY.Users().begin());
     assert(forkNode && forkOperation);
   }
 }

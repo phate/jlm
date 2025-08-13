@@ -107,7 +107,7 @@ MemoryStateSplitNormalizeNestedSplits()
   // We should only have MemoryStateSplit left
   assert(rvsdg.GetRootRegion().nnodes() == 1);
   auto [splitNode, splitOperation] =
-      TryGetSimpleNodeAndOp<MemoryStateSplitOperation>(*ex0.origin());
+      TryGetSimpleNodeAndOptionalOp<MemoryStateSplitOperation>(*ex0.origin());
   assert(splitNode && splitOperation);
 
   // We should have 7 outputs:
@@ -251,7 +251,8 @@ MemoryStateMergeNormalizeDuplicateOperands()
 
   // Assert
   assert(rvsdg.GetRootRegion().nnodes() == 1);
-  auto [mergeNode, mergeOperation] = TryGetSimpleNodeAndOp<MemoryStateMergeOperation>(*ex.origin());
+  auto [mergeNode, mergeOperation] =
+      TryGetSimpleNodeAndOptionalOp<MemoryStateMergeOperation>(*ex.origin());
   assert(mergeNode && mergeOperation);
 
   assert(mergeNode->ninputs() == 2);
@@ -295,7 +296,8 @@ MemoryStateMergeNormalizeNestedMerges()
 
   // Assert
   assert(rvsdg.GetRootRegion().nnodes() == 1);
-  auto [mergeNode, mergeOperation] = TryGetSimpleNodeAndOp<MemoryStateMergeOperation>(*ex.origin());
+  auto [mergeNode, mergeOperation] =
+      TryGetSimpleNodeAndOptionalOp<MemoryStateMergeOperation>(*ex.origin());
   assert(mergeNode && mergeOperation);
 
   assert(mergeNode->ninputs() == 5);
@@ -338,7 +340,8 @@ MemoryStateMergeNormalizeNestedSplits()
 
   // Assert
   assert(rvsdg.GetRootRegion().nnodes() == 1);
-  auto [node, mergeOperation] = TryGetSimpleNodeAndOp<MemoryStateMergeOperation>(*ex.origin());
+  auto [node, mergeOperation] =
+      TryGetSimpleNodeAndOptionalOp<MemoryStateMergeOperation>(*ex.origin());
   assert(node && mergeOperation);
 
   assert(node->ninputs() == 5);

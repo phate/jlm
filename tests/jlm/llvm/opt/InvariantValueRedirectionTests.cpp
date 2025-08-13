@@ -433,16 +433,17 @@ TestCallWithMissingMemoryStateNodes()
   const auto lambdaExitMerge2 = GetMemoryStateExitMerge(lambdaNode2);
   assert(lambdaEntrySplit2->noutputs() == 1);
   assert(lambdaExitMerge2->ninputs() == 1);
-  const auto & [callExitSplitNode, _] = TryGetSimpleNodeAndOp<CallExitMemoryStateSplitOperation>(
-      *lambdaExitMerge2->input(0)->origin());
+  const auto & [callExitSplitNode, _] =
+      TryGetSimpleNodeAndOptionalOp<CallExitMemoryStateSplitOperation>(
+          *lambdaExitMerge2->input(0)->origin());
   assert(callExitSplitNode->noutputs() == 1);
   const auto & [callNode, calOperation] =
-      TryGetSimpleNodeAndOp<CallOperation>(*callExitSplitNode->input(0)->origin());
+      TryGetSimpleNodeAndOptionalOp<CallOperation>(*callExitSplitNode->input(0)->origin());
   assert(callNode->noutputs() == 3);
   assert(callNode->ninputs() == 4);
   const auto & memoryStateInput = CallOperation::GetMemoryStateInput(*callNode);
   const auto & [callEntryMergeNode, callEntryMergeOperation] =
-      TryGetSimpleNodeAndOp<CallEntryMemoryStateMergeOperation>(*memoryStateInput.origin());
+      TryGetSimpleNodeAndOptionalOp<CallEntryMemoryStateMergeOperation>(*memoryStateInput.origin());
   assert(callEntryMergeNode->ninputs() == 1);
   assert(callEntryMergeNode->input(0)->origin() == lambdaEntrySplit2->output(0));
 }

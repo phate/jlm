@@ -68,7 +68,7 @@ MemoryStateMergeOperation::NormalizeNestedMerges(
   for (auto operand : operands)
   {
     auto [mergeNode, mergeOperation] =
-        rvsdg::TryGetSimpleNodeAndOp<MemoryStateMergeOperation>(*operand);
+        rvsdg::TryGetSimpleNodeAndOptionalOp<MemoryStateMergeOperation>(*operand);
     if (mergeOperation)
     {
       auto mergeOperands = rvsdg::operands(mergeNode);
@@ -96,7 +96,7 @@ MemoryStateMergeOperation::NormalizeMergeSplit(
   for (const auto operand : operands)
   {
     auto [splitNode, splitOperation] =
-        rvsdg::TryGetSimpleNodeAndOp<MemoryStateSplitOperation>(*operand);
+        rvsdg::TryGetSimpleNodeAndOptionalOp<MemoryStateSplitOperation>(*operand);
     if (splitOperation)
     {
       newOperands.emplace_back(splitNode->input(0)->origin());
@@ -157,7 +157,7 @@ MemoryStateSplitOperation::NormalizeNestedSplits(
   const auto operand = operands[0];
 
   auto [splitNode, splitOperation] =
-      rvsdg::TryGetSimpleNodeAndOp<MemoryStateSplitOperation>(*operand);
+      rvsdg::TryGetSimpleNodeAndOptionalOp<MemoryStateSplitOperation>(*operand);
   if (!splitOperation)
     return std::nullopt;
 
@@ -183,7 +183,7 @@ MemoryStateSplitOperation::NormalizeSplitMerge(
   const auto operand = operands[0];
 
   auto [mergeNode, mergeOperation] =
-      rvsdg::TryGetSimpleNodeAndOp<MemoryStateMergeOperation>(*operand);
+      rvsdg::TryGetSimpleNodeAndOptionalOp<MemoryStateMergeOperation>(*operand);
   if (!mergeOperation || mergeOperation->narguments() != operation.nresults())
     return std::nullopt;
 
@@ -244,7 +244,7 @@ LambdaExitMemoryStateMergeOperation::NormalizeLoadFromAlloca(
   std::vector<rvsdg::Output *> newOperands;
   for (auto operand : operands)
   {
-    auto [loadNode, loadOperation] = rvsdg::TryGetSimpleNodeAndOp<LoadOperation>(*operand);
+    auto [loadNode, loadOperation] = rvsdg::TryGetSimpleNodeAndOptionalOp<LoadOperation>(*operand);
     if (!loadOperation)
     {
       newOperands.push_back(operand);
@@ -252,7 +252,7 @@ LambdaExitMemoryStateMergeOperation::NormalizeLoadFromAlloca(
     }
 
     auto loadAddress = LoadOperation::AddressInput(*loadNode).origin();
-    auto [_, allocaOperation] = rvsdg::TryGetSimpleNodeAndOp<AllocaOperation>(*loadAddress);
+    auto [_, allocaOperation] = rvsdg::TryGetSimpleNodeAndOptionalOp<AllocaOperation>(*loadAddress);
     if (!allocaOperation)
     {
       newOperands.push_back(operand);
@@ -282,7 +282,8 @@ LambdaExitMemoryStateMergeOperation::NormalizeStoreToAlloca(
   std::vector<rvsdg::Output *> newOperands;
   for (auto operand : operands)
   {
-    auto [storeNode, storeOperation] = rvsdg::TryGetSimpleNodeAndOp<StoreOperation>(*operand);
+    auto [storeNode, storeOperation] =
+        rvsdg::TryGetSimpleNodeAndOptionalOp<StoreOperation>(*operand);
     if (!storeOperation)
     {
       newOperands.push_back(operand);
@@ -290,7 +291,8 @@ LambdaExitMemoryStateMergeOperation::NormalizeStoreToAlloca(
     }
 
     auto storeAddress = StoreOperation::AddressInput(*storeNode).origin();
-    auto [_, allocaOperation] = rvsdg::TryGetSimpleNodeAndOp<AllocaOperation>(*storeAddress);
+    auto [_, allocaOperation] =
+        rvsdg::TryGetSimpleNodeAndOptionalOp<AllocaOperation>(*storeAddress);
     if (!allocaOperation)
     {
       newOperands.push_back(operand);
@@ -320,7 +322,8 @@ LambdaExitMemoryStateMergeOperation::NormalizeAlloca(
   std::vector<rvsdg::Output *> newOperands;
   for (auto operand : operands)
   {
-    auto [allocaNode, allocaOperation] = rvsdg::TryGetSimpleNodeAndOp<AllocaOperation>(*operand);
+    auto [allocaNode, allocaOperation] =
+        rvsdg::TryGetSimpleNodeAndOptionalOp<AllocaOperation>(*operand);
     if (allocaOperation)
     {
       auto newOperand =
@@ -390,7 +393,7 @@ CallExitMemoryStateSplitOperation::NormalizeLambdaExitMemoryStateMerge(
   JLM_ASSERT(operands.size() == 1);
 
   auto [lambdaExitMergeNode, lambdaExitMergeOperation] =
-      rvsdg::TryGetSimpleNodeAndOp<LambdaExitMemoryStateMergeOperation>(*operands[0]);
+      rvsdg::TryGetSimpleNodeAndOptionalOp<LambdaExitMemoryStateMergeOperation>(*operands[0]);
   if (!lambdaExitMergeOperation)
     return std::nullopt;
 

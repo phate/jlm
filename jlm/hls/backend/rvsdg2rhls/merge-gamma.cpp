@@ -75,7 +75,7 @@ bit_type_to_ctl_type(rvsdg::GammaNode * old_gamma)
     if (o->nusers() != 1)
       continue;
     auto & user = *o->Users().begin();
-    auto [_, matchOperation] = rvsdg::TryGetSimpleNodeAndOp<rvsdg::MatchOperation>(user);
+    auto [_, matchOperation] = rvsdg::TryGetSimpleNodeAndOptionalOp<rvsdg::MatchOperation>(user);
     if (!matchOperation)
       continue;
     // output is only used by match
@@ -83,7 +83,9 @@ bit_type_to_ctl_type(rvsdg::GammaNode * old_gamma)
     for (size_t j = 0; j < old_gamma->nsubregions(); ++j)
     {
       auto origin = old_gamma->subregion(j)->result(i)->origin();
-      if (auto [_, op] = rvsdg::TryGetSimpleNodeAndOp<llvm::IntegerConstantOperation>(*origin); !op)
+      if (auto [_, op] =
+              rvsdg::TryGetSimpleNodeAndOptionalOp<llvm::IntegerConstantOperation>(*origin);
+          !op)
       {
         all_bittype = false;
         break;
@@ -97,7 +99,7 @@ bit_type_to_ctl_type(rvsdg::GammaNode * old_gamma)
     {
       auto origin = old_gamma->subregion(j)->result(i)->origin();
       auto [_, constantOperation] =
-          rvsdg::TryGetSimpleNodeAndOp<llvm::IntegerConstantOperation>(*origin);
+          rvsdg::TryGetSimpleNodeAndOptionalOp<llvm::IntegerConstantOperation>(*origin);
       auto ctl_value = matchOperation->alternative(constantOperation->Representation().to_uint());
       auto no = rvsdg::ctlconstant_op::create(
           origin->region(),
