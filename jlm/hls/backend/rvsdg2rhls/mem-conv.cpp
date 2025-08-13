@@ -66,8 +66,9 @@ TraceEdgeToMerge(rvsdg::Input * state_edge)
     }
     auto si = state_edge;
     auto sn = &rvsdg::AssertGetOwnerNode<rvsdg::SimpleNode>(*si);
-    auto [branchNode, branchOperation] = rvsdg::TryGetSimpleNodeAndOp<BranchOperation>(*state_edge);
-    auto [muxNode, muxOperation] = rvsdg::TryGetSimpleNodeAndOp<MuxOperation>(*state_edge);
+    auto [branchNode, branchOperation] =
+        rvsdg::TryGetSimpleNodeAndOptionalOp<BranchOperation>(*state_edge);
+    auto [muxNode, muxOperation] = rvsdg::TryGetSimpleNodeAndOptionalOp<MuxOperation>(*state_edge);
     if (branchOperation)
     {
       // end of loop
@@ -82,9 +83,11 @@ TraceEdgeToMerge(rvsdg::Input * state_edge)
       state_edge = get_mem_state_user(sn->output(0));
     }
     else if (
-        std::get<1>(rvsdg::TryGetSimpleNodeAndOp<llvm::MemoryStateMergeOperation>(*state_edge))
+        std::get<1>(
+            rvsdg::TryGetSimpleNodeAndOptionalOp<llvm::MemoryStateMergeOperation>(*state_edge))
         || std::get<1>(
-            rvsdg::TryGetSimpleNodeAndOp<llvm::LambdaExitMemoryStateMergeOperation>(*state_edge)))
+            rvsdg::TryGetSimpleNodeAndOptionalOp<llvm::LambdaExitMemoryStateMergeOperation>(
+                *state_edge)))
     {
       return { state_edge, encountered_muxes };
     }

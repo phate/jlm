@@ -101,7 +101,7 @@ trace_constant(const rvsdg::Output * dst)
   }
 
   auto [constantNode, constantOperation] =
-      rvsdg::TryGetSimpleNodeAndOp<llvm::IntegerConstantOperation>(*dst);
+      rvsdg::TryGetSimpleNodeAndOptionalOp<llvm::IntegerConstantOperation>(*dst);
   if (constantNode)
   {
     if (constantOperation)
