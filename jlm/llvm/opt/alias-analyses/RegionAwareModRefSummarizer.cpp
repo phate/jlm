@@ -397,7 +397,8 @@ public:
 
     const auto & callMemoryNodes = GetCallSummary(callNode).GetMemoryNodes();
 
-    // Esnure that the call entry/exit memory nodes are the same as on the lambda region entry/exit
+    // Ensure that the call entry/exit memory nodes are the same as on the lambda region entry/exit
+    // memory nodes
     if (const auto callTypeClassifier = CallOperation::ClassifyCall(callNode);
         callTypeClassifier->IsDirectCall())
     {
