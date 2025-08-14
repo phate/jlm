@@ -43,30 +43,30 @@ test_main()
   auto & e4 = GraphExport::Create(*o4, "o4");
 
   // Act & Assert
-  ReduceNode<jlm::tests::TestOperation>(NormalizeCne, *TryGetOwnerNode<Node>(*e1.origin()));
-  ReduceNode<jlm::tests::TestOperation>(NormalizeCne, *TryGetOwnerNode<Node>(*e2.origin()));
-  ReduceNode<jlm::tests::TestOperation>(NormalizeCne, *TryGetOwnerNode<Node>(*e3.origin()));
-  ReduceNode<jlm::tests::TestOperation>(NormalizeCne, *TryGetOwnerNode<Node>(*e4.origin()));
+  ReduceNode<jlm::tests::TestOperation>(NormalizeCne, *TryGetOwnerNode<SimpleNode>(*e1.origin()));
+  ReduceNode<jlm::tests::TestOperation>(NormalizeCne, *TryGetOwnerNode<SimpleNode>(*e2.origin()));
+  ReduceNode<jlm::tests::TestOperation>(NormalizeCne, *TryGetOwnerNode<SimpleNode>(*e3.origin()));
+  ReduceNode<jlm::tests::TestOperation>(NormalizeCne, *TryGetOwnerNode<SimpleNode>(*e4.origin()));
 
   assert(e1.origin() == e3.origin());
   assert(e2.origin() == e4.origin());
 
   auto o5 = jlm::tests::TestOperation::create(&graph.GetRootRegion(), {}, { valueType })->output(0);
   auto & e5 = GraphExport::Create(*o5, "o5");
-  ReduceNode<jlm::tests::TestOperation>(NormalizeCne, *TryGetOwnerNode<Node>(*e5.origin()));
+  ReduceNode<jlm::tests::TestOperation>(NormalizeCne, *TryGetOwnerNode<SimpleNode>(*e5.origin()));
   assert(e5.origin() == e1.origin());
 
   auto o6 =
       jlm::tests::TestOperation::create(&graph.GetRootRegion(), { i }, { valueType })->output(0);
   auto & e6 = GraphExport::Create(*o6, "o6");
-  ReduceNode<jlm::tests::TestOperation>(NormalizeCne, *TryGetOwnerNode<Node>(*e6.origin()));
+  ReduceNode<jlm::tests::TestOperation>(NormalizeCne, *TryGetOwnerNode<SimpleNode>(*e6.origin()));
   assert(e6.origin() == e2.origin());
 
   auto o7 = jlm::tests::TestOperation::create(&graph.GetRootRegion(), {}, { valueType })->output(0);
   auto & e7 = GraphExport::Create(*o7, "o7");
   assert(e7.origin() != e1.origin());
 
-  ReduceNode<jlm::tests::TestOperation>(NormalizeCne, *TryGetOwnerNode<Node>(*e7.origin()));
+  ReduceNode<jlm::tests::TestOperation>(NormalizeCne, *TryGetOwnerNode<SimpleNode>(*e7.origin()));
   assert(e7.origin() == e1.origin());
 }
 

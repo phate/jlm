@@ -8,6 +8,7 @@
 
 #include <jlm/rvsdg/node.hpp>
 #include <jlm/rvsdg/region.hpp>
+#include <jlm/rvsdg/simple-node.hpp>
 #include <jlm/util/common.hpp>
 
 #include <functional>
@@ -43,7 +44,7 @@ NormalizeSequence(
 
 template<class TOperation>
 bool
-ReduceNode(const NodeNormalization<TOperation> & nodeNormalization, Node & node)
+ReduceNode(const NodeNormalization<TOperation> & nodeNormalization, SimpleNode & node)
 {
   auto operation = util::AssertedCast<const TOperation>(&node.GetOperation());
   auto operands = rvsdg::operands(&node);
