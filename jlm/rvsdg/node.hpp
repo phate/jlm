@@ -490,6 +490,20 @@ private:
   std::unordered_set<jlm::rvsdg::Input *> users_;
 };
 
+/**
+ * Routes \p output through the region tree to \p region by creating the necessary inputs and region
+ * arguments for the encountered nodes.
+ *
+ * \note The function throws an exception if the region of \p output is not an ancestor of \p
+ * region.
+ *
+ * @param output The value that is supposed to be routed to \p region.
+ * @param region The region the value is supposed to be routed to.
+ * @return The routed value in \p region.
+ */
+Output &
+RouteToRegion(Output & output, Region & region);
+
 template<class T>
 static inline bool
 is(const jlm::rvsdg::Output * output) noexcept
