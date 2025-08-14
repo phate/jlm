@@ -67,7 +67,7 @@ public:
   copy() const override;
 
   [[nodiscard]] static rvsdg::Input &
-  BarredInput(const rvsdg::Node & node) noexcept
+  BarredInput(const rvsdg::SimpleNode & node) noexcept
   {
     JLM_ASSERT(rvsdg::is<IOBarrierOperation>(&node));
     const auto input = node.input(0);

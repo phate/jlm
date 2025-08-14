@@ -117,7 +117,8 @@ SExtOperation::reduce_operand(rvsdg::unop_reduction_path_t path, rvsdg::Output *
 {
   if (path == rvsdg::unop_reduction_constant)
   {
-    auto c = static_cast<const rvsdg::bitconstant_op *>(&producer(operand)->GetOperation());
+    auto c = util::AssertedCast<const rvsdg::bitconstant_op>(
+        &util::AssertedCast<rvsdg::SimpleNode>(producer(operand))->GetOperation());
     return create_bitconstant(operand->region(), c->value().sext(ndstbits() - nsrcbits()));
   }
 
