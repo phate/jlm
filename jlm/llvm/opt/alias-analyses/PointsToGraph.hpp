@@ -365,8 +365,8 @@ public:
   [[nodiscard]] MemoryNodeId
   GenerateMemoryNodeId() noexcept
   {
-    const auto MemoryNodeId = MemoryNodeId_;
-    MemoryNodeId_++;
+    const auto MemoryNodeId = NextMemoryNodeId_;
+    NextMemoryNodeId_++;
     return MemoryNodeId;
   }
 
@@ -445,7 +445,7 @@ private:
   std::unique_ptr<PointsToGraph::UnknownMemoryNode> UnknownMemoryNode_;
   std::unique_ptr<ExternalMemoryNode> ExternalMemoryNode_;
 
-  MemoryNodeId MemoryNodeId_;
+  MemoryNodeId NextMemoryNodeId_;
 };
 
 /** \brief PointsTo graph node
