@@ -49,6 +49,8 @@ public:
   class UnknownMemoryNode;
   class ExternalMemoryNode;
 
+  using MemoryNodeId = std::size_t;
+
   using AllocaNodeMap = std::unordered_map<const rvsdg::Node *, std::unique_ptr<AllocaNode>>;
   using DeltaNodeMap =
       std::unordered_map<const rvsdg::DeltaNode *, std::unique_ptr<PointsToGraph::DeltaNode>>;
@@ -358,6 +360,17 @@ public:
   AddImportNode(std::unique_ptr<PointsToGraph::ImportNode> node);
 
   /**
+   * @return A unique identifier for a memory node within this points-to graph.
+   */
+  [[nodiscard]] MemoryNodeId
+  GenerateMemoryNodeId() noexcept
+  {
+    const auto MemoryNodeId = MemoryNodeId_;
+    MemoryNodeId_++;
+    return MemoryNodeId;
+  }
+
+  /**
    * Gets the total number of edges in the PointsToGraph.
    *
    * In addition, RegisterNodes can represent multiple registers,
@@ -431,6 +444,8 @@ private:
 
   std::unique_ptr<PointsToGraph::UnknownMemoryNode> UnknownMemoryNode_;
   std::unique_ptr<ExternalMemoryNode> ExternalMemoryNode_;
+
+  MemoryNodeId MemoryNodeId_;
 };
 
 /** \brief PointsTo graph node
@@ -600,10 +615,23 @@ public:
     return Graph().GetEscapedMemoryNodes().Contains(this);
   }
 
+  /**
+   * @return The memory node identifier associated with this memory node.
+   */
+  [[nodiscard]] const MemoryNodeId &
+  GetId() const noexcept
+  {
+    return Id_;
+  }
+
 protected:
   explicit MemoryNode(PointsToGraph & pointsToGraph)
-      : Node(pointsToGraph)
+      : Node(pointsToGraph),
+        Id_(pointsToGraph.GenerateMemoryNodeId())
   {}
+
+private:
+  MemoryNodeId Id_;
 };
 
 /** \brief PointsTo graph alloca node
