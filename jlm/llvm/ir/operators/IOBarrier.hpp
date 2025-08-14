@@ -7,8 +7,8 @@
 #define JLM_LLVM_IR_OPERATORS_IOBARRIER_HPP
 
 #include <jlm/llvm/ir/types.hpp>
-#include <jlm/rvsdg/node.hpp>
 #include <jlm/rvsdg/operation.hpp>
+#include <jlm/rvsdg/simple-node.hpp>
 
 namespace jlm::llvm
 {
