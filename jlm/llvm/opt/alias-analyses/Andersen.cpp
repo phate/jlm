@@ -50,8 +50,10 @@ Andersen::Configuration::ToString() const
       str << "LazyCD_";
     if (EnableDifferencePropagation_)
       str << "DP_";
+#ifndef ANDERSEN_NO_FLAGS
     if (EnablePreferImplicitPointees_)
       str << "PIP_";
+#endif
   }
   else if (Solver_ == Solver::WavePropagation)
   {
@@ -78,9 +80,11 @@ Andersen::Configuration::GetAllConfigurations()
 
   auto PickPreferImplicitPointees = [&](Configuration config)
   {
+#ifdef ANDERSEN_NO_FLAGS
+    configs.push_back(config);
+#else
     config.EnablePreferImplicitPointees(false);
     configs.push_back(config);
-#ifndef ANDERSEN_NO_FLAGS
     config.EnablePreferImplicitPointees(true);
     configs.push_back(config);
 #endif
@@ -1503,9 +1507,11 @@ Andersen::Analyze(
 
   AnalyzeModule(module, *statistics);
 
+  const bool solveMultipleTimes = testAllConfigsIterations || doubleCheck;
+
   // If solving multiple times, make a copy of the original constraint set
   std::pair<std::unique_ptr<PointerObjectSet>, std::unique_ptr<PointerObjectConstraintSet>> copy;
-  if (testAllConfigsIterations || doubleCheck)
+  if (solveMultipleTimes)
     copy = Constraints_->Clone();
 
   // Draw subset graph both before and after solving
@@ -1526,13 +1532,15 @@ Andersen::Analyze(
   statistics->StopAndersenStatistics();
   statisticsCollector.CollectDemandedStatistics(std::move(statistics));
 
-  // Solve again if double-checking against naive is enabled
-  if (testAllConfigsIterations || doubleCheck || useExactConfig)
+  // Solve again if enabled
+  if (solveMultipleTimes)
   {
     if (doubleCheck)
-      std::cout << "Double checking Andersen analysis using naive solving" << std::endl;
+      std::cout << "Double checking Andersen analysis using other configuration" << std::endl;
 
-    // If only double-checking, only use the naive configuration. Otherwise, try all configurations
+    // If only double-checking, only use the naive configuration,
+    // if a specific configuration is requested, use it.
+    // otherwise use all possible configurations
     std::vector<Configuration> configs;
     if (useExactConfig.has_value())
     {

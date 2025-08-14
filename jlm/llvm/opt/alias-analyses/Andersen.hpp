@@ -204,6 +204,13 @@ public:
       return EnableDifferencePropagation_;
     }
 
+#ifdef ANDERSEN_NO_FLAGS
+    [[nodiscard]] bool
+    IsPreferImplicitPointeesEnabled() const noexcept
+    {
+      return false;
+    }
+#else
     /**
      * Enables or disables preferring implicit pointees in the Worklist solver
      */
@@ -218,6 +225,7 @@ public:
     {
       return EnablePreferImplicitPointees_;
     }
+#endif
 
     [[nodiscard]] std::string
     ToString() const;
@@ -235,11 +243,17 @@ public:
       config.SetSolver(Solver::Worklist);
       config.SetWorklistSolverPolicy(
           PointerObjectConstraintSet::WorklistSolverPolicy::LeastRecentlyFired);
+#ifdef ANDERSEN_NO_FLAGS
+      config.EnableOnlineCycleDetection(true);
+#else
       config.EnableOnlineCycleDetection(false);
-      config.EnableHybridCycleDetection(true);
-      config.EnableLazyCycleDetection(true);
-      config.EnableDifferencePropagation(true);
+#endif
+      config.EnableHybridCycleDetection(false);
+      config.EnableLazyCycleDetection(false);
+      config.EnableDifferencePropagation(false);
+#ifndef ANDERSEN_NO_FLAGS
       config.EnablePreferImplicitPointees(true);
+#endif
       return config;
     }
 
@@ -276,7 +290,9 @@ public:
     bool EnableHybridCycleDetection_ = false;
     bool EnableLazyCycleDetection_ = false;
     bool EnableDifferencePropagation_ = false;
+#ifndef ANDERSEN_NO_FLAGS
     bool EnablePreferImplicitPointees_ = false;
+#endif
   };
 
   ~Andersen() noexcept override = default;
