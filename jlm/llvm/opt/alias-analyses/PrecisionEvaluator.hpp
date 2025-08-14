@@ -97,14 +97,14 @@ private:
   NormalizePointerValues();
 
   /**
-   * Removes repeated instances of the same (pointer, size) pair in the current context
+   * Counts up repeated instances of the same (pointer, size, isUse, isClobber) in the context
    */
   void
-  RemoveDuplicates();
+  AggregateDuplicates();
 
   // Called once all functions have been evaluated, to calculate and print averages
   void
-  CalculateAverageMayAliasRate(const util::file & outputFile, PrecisionStatistics & statistics)
+  CalculateAverageMayAliasRate(/*const util::file & outputFile,*/ PrecisionStatistics & statistics)
       const;
 
   // How pointers are counted in the precision evaluation
@@ -144,11 +144,12 @@ private:
 
     /**
      * During traversal of the current function, collects relevant operations on pointers.
-     * Each operation is represented by a tuple (pointer value, byte size, isUse, isClobber).
+     * Each operation is represented by a tuple (pointer value, byte size, isUse, isClobber, count).
      * All operations should be either a use, a clobber or both.
+     * The count should be 1 by default, but later used by de-duplication.
      * @see PrecisionEvaluationMode for setting which operations are counted and how
      */
-    std::vector<std::tuple<::llvm::Instruction *, const rvsdg::output *, size_t, bool, bool>>
+    std::vector<std::tuple<::llvm::Instruction *, const rvsdg::output *, size_t, bool, bool, size_t>>
         PointerOperations;
   };
 

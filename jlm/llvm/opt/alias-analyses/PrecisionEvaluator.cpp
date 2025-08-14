@@ -138,8 +138,8 @@ PrecisionEvaluator::EvaluateAliasAnalysisClient(
   statistics->StopEvaluatingPrecision();
 
   // Calculate average precision in functions and for the whole module, and print to output
-  const auto outputFile = statisticsCollector.CreateOutputFile("AAPrecisionEvaluation.log", true);
-  CalculateAverageMayAliasRate(outputFile, *statistics);
+  // const auto outputFile = statisticsCollector.CreateOutputFile("AAPrecisionEvaluation.log", true);
+  CalculateAverageMayAliasRate(*statistics);
 
   statisticsCollector.CollectDemandedStatistics(std::move(statistics));
 
@@ -187,8 +187,7 @@ PrecisionEvaluator::EvaluateFunction(
   // from the same output to be regarded as different.
   NormalizePointerValues();
 
-  if (RemoveDuplicatePointers)
-    RemoveDuplicates();
+  AggregateDuplicates();
 
   // Create a PrecisionInfo instance for this function
   auto & precisionEvaluation = Context_.PerFunctionPrecision[&function];
@@ -196,22 +195,27 @@ PrecisionEvaluator::EvaluateFunction(
   // Go over all pointer usages, find the ratio of clobbering points that may alias with it
   for (size_t i = 0; i < Context_.PointerOperations.size(); i++)
   {
-    auto [llvmInst1, p1, s1, p1IsUse, p1IsClobber] = Context_.PointerOperations[i];
+    auto [llvmInst1, p1, s1, p1IsUse, p1IsClobber, p1Count] = Context_.PointerOperations[i];
 
-    precisionEvaluation.NumOperations++;
-    precisionEvaluation.NumUseOperations += p1IsUse;
+    precisionEvaluation.NumOperations += p1Count;
+    if (p1IsUse)
+      precisionEvaluation.NumUseOperations += p1Count;
 
     if (!p1IsClobber)
       continue;
 
     PrecisionInfo::ClobberInfo clobberInfo;
 
+    // Add all the MustAliases we would normally get from querying against other copies of ourself
+    if (!RemoveDuplicatePointers)
+      clobberInfo.NumMustAlias += p1Count - 1;
+
     for (size_t j = 0; j < Context_.PointerOperations.size(); j++)
     {
       if (i == j)
         continue;
 
-      auto [llvmInst2, p2, s2, p2IsUse, p2IsClobber] = Context_.PointerOperations[j];
+      auto [llvmInst2, p2, s2, p2IsUse, p2IsClobber, p2Count] = Context_.PointerOperations[j];
       if (!p2IsUse)
         continue;
 
@@ -256,17 +260,25 @@ PrecisionEvaluator::EvaluateFunction(
         }
       }
 
+      const auto increase = RemoveDuplicatePointers ? 1 : p2Count;
+
       if (response == AliasAnalysis::NoAlias)
-        clobberInfo.NumNoAlias++;
+        clobberInfo.NumNoAlias += increase;
       else if (response == AliasAnalysis::MayAlias)
-        clobberInfo.NumMayAlias++;
+        clobberInfo.NumMayAlias += increase;
       else if (response == AliasAnalysis::MustAlias)
-        clobberInfo.NumMustAlias++;
+        clobberInfo.NumMustAlias += increase;
       else
         JLM_UNREACHABLE("Unknown AliasAnalysis query response");
     }
 
-    precisionEvaluation.ClobberOperations.push_back(clobberInfo);
+    if (RemoveDuplicatePointers)
+      precisionEvaluation.ClobberOperations.push_back(clobberInfo);
+    else
+    {
+      for (size_t j = 0; j < p1Count; j++)
+        precisionEvaluation.ClobberOperations.push_back(clobberInfo);
+    }
   }
 }
 
@@ -342,7 +354,7 @@ PrecisionEvaluator::CollectPointer(
     bool isClobber)
 {
   JLM_ASSERT(IsPointerCompatible(*value));
-  Context_.PointerOperations.push_back({ llvmInst, value, size, isUse, isClobber });
+  Context_.PointerOperations.push_back({ llvmInst, value, size, isUse, isClobber, 1 });
 }
 
 void
@@ -356,26 +368,23 @@ PrecisionEvaluator::NormalizePointerValues()
 }
 
 void
-PrecisionEvaluator::RemoveDuplicates()
+PrecisionEvaluator::AggregateDuplicates()
 {
   // For each occurrence of a (pointer, size) pair, perform logical or to find the final isUse and
   // isClobber values
-  std::map<std::pair<const rvsdg::output *, size_t>, std::tuple<::llvm::Instruction *, bool, bool>>
-      uniquePointerOps;
+  std::map<std::tuple<::llvm::Instruction *, const rvsdg::output *, size_t, bool, bool>, size_t>
+      pointerCounts;
 
-  for (const auto & [llvmInst, pointer, size, isUse, isClobber] : Context_.PointerOperations)
+  for (const auto & [llvmInst, pointer, size, isUse, isClobber, count] : Context_.PointerOperations)
   {
-    auto & op = uniquePointerOps[{ pointer, size }];
-    const auto [_, wasUse, wasClobber] = op;
-    op = { llvmInst, isUse | wasUse, isClobber | wasClobber };
+    pointerCounts[{llvmInst, pointer, size, isUse, isClobber}] += count;
   }
 
   Context_.PointerOperations.clear();
-  for (const auto & [pointerSize, op] : uniquePointerOps)
+  for (const auto & [pointerTuple, count] : pointerCounts)
   {
-    const auto [pointer, size] = pointerSize;
-    const auto [llvmInst, isUse, isClobber] = op;
-    Context_.PointerOperations.push_back({ llvmInst, pointer, size, isUse, isClobber });
+    const auto [llvmInst, pointer, size, isUse, isClobber] = pointerTuple;
+    Context_.PointerOperations.push_back({ llvmInst, pointer, size, isUse, isClobber, count });
   }
 }
 
@@ -417,7 +426,7 @@ PrecisionEvaluator::AggregateClobberInfos(
 
 void
 PrecisionEvaluator::CalculateAverageMayAliasRate(
-    const util::file & outputFile,
+    //const util::file & outputFile,
     PrecisionStatistics & statistics) const
 {
   std::vector<PrecisionInfo::ClobberInfo> allClobberInfo;
@@ -426,7 +435,7 @@ PrecisionEvaluator::CalculateAverageMayAliasRate(
   uint64_t totalNoAlias, totalMayAlias, totalMustAlias;
 
   // Write precision info about each function to an output file
-  std::ofstream out(outputFile.path().to_str());
+  // std::ofstream out(outputFile.path().to_str());
   for (auto [function, precision] : Context_.PerFunctionPrecision)
   {
     for (auto & clobberInfo : precision.ClobberOperations)
@@ -441,6 +450,7 @@ PrecisionEvaluator::CalculateAverageMayAliasRate(
         totalMayAlias,
         totalMustAlias);
 
+    /*
     out << function->GetOperation().debug_string() << " [";
     out << precision.NumOperations << " pointer operations: ";
     out << precision.NumUseOperations << " use operations, ";
@@ -452,6 +462,7 @@ PrecisionEvaluator::CalculateAverageMayAliasRate(
     out << totalMayAlias << " MayAlias \t";
     out << totalMustAlias << " MustAlias" << std::endl;
     out << std::endl;
+    */
   }
 
   AggregateClobberInfos(
@@ -463,6 +474,7 @@ PrecisionEvaluator::CalculateAverageMayAliasRate(
       totalMayAlias,
       totalMustAlias);
 
+  /*
   out << "Module total:" << std::endl;
   out << "The average clobber has: " << (clobberAverageNoAlias * 100) << " % NoAlias \t";
   out << (clobberAverageMayAlias * 100) << " % MayAlias \t";
@@ -473,9 +485,10 @@ PrecisionEvaluator::CalculateAverageMayAliasRate(
   out << std::endl;
 
   out.close();
+  */
 
   statistics.AddPrecisionSummaryStatistics(
-      outputFile.path(),
+      util::filepath("no-output-file"), //outputFile.path(),
       allClobberInfo.size(),
       clobberAverageNoAlias,
       clobberAverageMayAlias,
