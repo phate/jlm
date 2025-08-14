@@ -246,8 +246,6 @@ RouteToRegion_Failure()
 {
   using namespace jlm::rvsdg;
 
-  using namespace jlm::rvsdg;
-
   // Arrange
   const auto controlType = ControlType::Create(2);
   const auto valueType = jlm::tests::ValueType::Create();
