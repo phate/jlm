@@ -33,11 +33,11 @@ PointsToAnalysisStateEncoder<TPointsToAnalysis, TModRefSummarizer>::Run(
   // Evaluate alias analysis precision if the statistic is demanded
   PrecisionEvaluator precisionEvaluator;
   PointsToGraphAliasAnalysis ptgAA(*pointsToGraph);
-  BasicAliasAnalysis basicAA;
+  // BasicAliasAnalysis basicAA;
   LlvmAliasAnalysis llvmAA;
   ChainedAliasAnalysis ptgPlusLlvmAA(ptgAA, llvmAA);
 
-  precisionEvaluator.EvaluateAliasAnalysisClient(rvsdgModule, basicAA, statisticsCollector);
+  // precisionEvaluator.EvaluateAliasAnalysisClient(rvsdgModule, basicAA, statisticsCollector);
   precisionEvaluator.EvaluateAliasAnalysisClient(rvsdgModule, llvmAA, statisticsCollector);
   precisionEvaluator.EvaluateAliasAnalysisClient(rvsdgModule, ptgAA, statisticsCollector);
   precisionEvaluator.EvaluateAliasAnalysisClient(rvsdgModule, ptgPlusLlvmAA, statisticsCollector);
