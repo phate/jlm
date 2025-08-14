@@ -62,41 +62,6 @@ find_producer(jlm::rvsdg::Input * input)
   return find_producer(argument->input());
 }
 
-static jlm::rvsdg::Output *
-route_to_region(jlm::rvsdg::Output * output, rvsdg::Region * region)
-{
-  JLM_ASSERT(region != nullptr);
-
-  if (region == output->region())
-    return output;
-
-  output = route_to_region(output, region->node()->region());
-
-  if (auto gamma = dynamic_cast<rvsdg::GammaNode *>(region->node()))
-  {
-    gamma->AddEntryVar(output);
-    output = region->argument(region->narguments() - 1);
-  }
-  else if (auto theta = dynamic_cast<rvsdg::ThetaNode *>(region->node()))
-  {
-    output = theta->AddLoopVar(output).pre;
-  }
-  else if (auto lambda = dynamic_cast<rvsdg::LambdaNode *>(region->node()))
-  {
-    output = lambda->AddContextVar(*output).inner;
-  }
-  else if (auto phi = dynamic_cast<rvsdg::PhiNode *>(region->node()))
-  {
-    output = phi->AddContextVar(*output).inner;
-  }
-  else
-  {
-    JLM_UNREACHABLE("This should have never happened!");
-  }
-
-  return output;
-}
-
 static std::vector<jlm::rvsdg::Output *>
 route_dependencies(const rvsdg::LambdaNode * lambda, const jlm::rvsdg::SimpleNode * apply)
 {
@@ -109,7 +74,7 @@ route_dependencies(const rvsdg::LambdaNode * lambda, const jlm::rvsdg::SimpleNod
 
   /* route dependencies to apply region */
   for (size_t n = 0; n < deps.size(); n++)
-    deps[n] = route_to_region(deps[n], apply->region());
+    deps[n] = &rvsdg::RouteToRegion(*deps[n], *apply->region());
 
   return deps;
 }
