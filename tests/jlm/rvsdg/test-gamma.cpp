@@ -17,10 +17,10 @@ test_gamma()
   using namespace jlm::rvsdg;
 
   Graph graph;
-  auto cmp = &jlm::rvsdg::GraphImport::Create(graph, bittype::Create(2), "");
-  auto v0 = &jlm::rvsdg::GraphImport::Create(graph, bittype::Create(32), "");
-  auto v1 = &jlm::rvsdg::GraphImport::Create(graph, bittype::Create(32), "");
-  auto v2 = &jlm::rvsdg::GraphImport::Create(graph, bittype::Create(32), "");
+  auto cmp = &jlm::rvsdg::GraphImport::Create(graph, BitType::Create(2), "");
+  auto v0 = &jlm::rvsdg::GraphImport::Create(graph, BitType::Create(32), "");
+  auto v1 = &jlm::rvsdg::GraphImport::Create(graph, BitType::Create(32), "");
+  auto v2 = &jlm::rvsdg::GraphImport::Create(graph, BitType::Create(32), "");
   auto v3 = &jlm::rvsdg::GraphImport::Create(graph, ControlType::Create(2), "");
 
   auto pred = match(2, { { 0, 0 }, { 1, 1 } }, 2, 3, cmp);
@@ -56,11 +56,11 @@ test_predicate_reduction()
 
   // Arrange
   Graph graph;
-  bittype bits2(2);
+  BitType bits2(2);
 
-  auto v0 = &jlm::rvsdg::GraphImport::Create(graph, bittype::Create(32), "");
-  auto v1 = &jlm::rvsdg::GraphImport::Create(graph, bittype::Create(32), "");
-  auto v2 = &jlm::rvsdg::GraphImport::Create(graph, bittype::Create(32), "");
+  auto v0 = &jlm::rvsdg::GraphImport::Create(graph, BitType::Create(32), "");
+  auto v1 = &jlm::rvsdg::GraphImport::Create(graph, BitType::Create(32), "");
+  auto v2 = &jlm::rvsdg::GraphImport::Create(graph, BitType::Create(32), "");
 
   auto pred = control_constant(&graph.GetRootRegion(), 3, 1);
 
@@ -126,7 +126,7 @@ test_control_constant_reduction()
   // Arrange
   Graph graph;
 
-  auto x = &jlm::rvsdg::GraphImport::Create(graph, bittype::Create(1), "x");
+  auto x = &jlm::rvsdg::GraphImport::Create(graph, BitType::Create(1), "x");
 
   auto c = match(1, { { 0, 0 } }, 1, 2, x);
 
@@ -167,7 +167,7 @@ test_control_constant_reduction2()
   // Arrange
   Graph graph;
 
-  auto import = &jlm::rvsdg::GraphImport::Create(graph, bittype::Create(2), "import");
+  auto import = &jlm::rvsdg::GraphImport::Create(graph, BitType::Create(2), "import");
 
   auto c = match(2, { { 3, 2 }, { 2, 1 }, { 1, 0 } }, 3, 4, import);
 

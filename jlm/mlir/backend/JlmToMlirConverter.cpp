@@ -955,7 +955,7 @@ JlmToMlirConverter::ConvertFunctionType(const jlm::rvsdg::FunctionType & functio
 ::mlir::Type
 JlmToMlirConverter::ConvertType(const rvsdg::Type & type)
 {
-  if (auto bt = dynamic_cast<const rvsdg::bittype *>(&type))
+  if (auto bt = dynamic_cast<const rvsdg::BitType *>(&type))
   {
     return Builder_->getIntegerType(bt->nbits());
   }

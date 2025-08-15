@@ -1150,7 +1150,7 @@ public:
   CreateInTypes(int in_width)
   {
     std::vector<std::shared_ptr<const jlm::rvsdg::Type>> types;
-    types.emplace_back(get_mem_res_type(jlm::rvsdg::bittype::Create(in_width)));
+    types.emplace_back(get_mem_res_type(jlm::rvsdg::BitType::Create(in_width)));
     return types;
   }
 
@@ -1259,7 +1259,7 @@ public:
     }
     std::vector<std::shared_ptr<const jlm::rvsdg::Type>> types;
     types.emplace_back(
-        get_mem_req_type(jlm::rvsdg::bittype::Create(max_width), !store_types.empty()));
+        get_mem_req_type(jlm::rvsdg::BitType::Create(max_width), !store_types.empty()));
     return types;
   }
 
@@ -1513,7 +1513,7 @@ public:
   static std::vector<std::shared_ptr<const jlm::rvsdg::Type>>
   CreateInTypes(const std::shared_ptr<const jlm::rvsdg::ValueType> & valuetype, size_t numStates)
   {
-    std::vector<std::shared_ptr<const jlm::rvsdg::Type>> types(1, jlm::rvsdg::bittype::Create(64));
+    std::vector<std::shared_ptr<const jlm::rvsdg::Type>> types(1, jlm::rvsdg::BitType::Create(64));
     std::vector<std::shared_ptr<const jlm::rvsdg::Type>> states(
         numStates,
         llvm::MemoryStateType::Create());
@@ -1530,7 +1530,7 @@ public:
         numStates,
         llvm::MemoryStateType::Create());
     types.insert(types.end(), states.begin(), states.end());
-    types.emplace_back(jlm::rvsdg::bittype::Create(64)); // addr
+    types.emplace_back(jlm::rvsdg::BitType::Create(64)); // addr
     return types;
   }
 
@@ -1592,7 +1592,7 @@ public:
   CreateInTypes(const std::shared_ptr<const jlm::rvsdg::ValueType> & valuetype, size_t numStates)
   {
     std::vector<std::shared_ptr<const jlm::rvsdg::Type>> types(
-        { jlm::rvsdg::bittype::Create(64), valuetype });
+        { jlm::rvsdg::BitType::Create(64), valuetype });
     std::vector<std::shared_ptr<const jlm::rvsdg::Type>> states(
         numStates,
         llvm::MemoryStateType::Create());
@@ -1606,7 +1606,7 @@ public:
     std::vector<std::shared_ptr<const jlm::rvsdg::Type>> types(
         numStates,
         llvm::MemoryStateType::Create());
-    types.emplace_back(jlm::rvsdg::bittype::Create(64)); // addr
+    types.emplace_back(jlm::rvsdg::BitType::Create(64)); // addr
     types.emplace_back(valuetype);                       // data
     return types;
   }
@@ -1677,11 +1677,11 @@ public:
     std::vector<std::shared_ptr<const jlm::rvsdg::Type>> types(1, at);
     for (size_t i = 0; i < load_cnt; ++i)
     {
-      types.emplace_back(jlm::rvsdg::bittype::Create(64)); // addr
+      types.emplace_back(jlm::rvsdg::BitType::Create(64)); // addr
     }
     for (size_t i = 0; i < store_cnt; ++i)
     {
-      types.emplace_back(jlm::rvsdg::bittype::Create(64)); // addr
+      types.emplace_back(jlm::rvsdg::BitType::Create(64)); // addr
       types.emplace_back(at->GetElementType());            // data
     }
     return types;

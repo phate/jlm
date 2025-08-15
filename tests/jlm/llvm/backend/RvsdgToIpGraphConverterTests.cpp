@@ -28,7 +28,7 @@ GammaWithMatch()
   // Arrange
   auto valueType = jlm::tests::ValueType::Create();
   auto functionType = jlm::rvsdg::FunctionType::Create(
-      { jlm::rvsdg::bittype::Create(1), valueType, valueType },
+      { jlm::rvsdg::BitType::Create(1), valueType, valueType },
       { valueType });
 
   jlm::llvm::RvsdgModule rvsdgModule(FilePath(""), "", "");
@@ -125,7 +125,7 @@ EmptyGammaWithTwoSubregionsAndMatch()
   // Arrange
   auto valueType = jlm::tests::ValueType::Create();
   const auto functionType = jlm::rvsdg::FunctionType::Create(
-      { jlm::rvsdg::bittype::Create(32), valueType, valueType },
+      { jlm::rvsdg::BitType::Create(32), valueType, valueType },
       { valueType });
 
   jlm::llvm::RvsdgModule rvsdgModule(FilePath(""), "", "");
@@ -179,7 +179,7 @@ EmptyGammaWithTwoSubregions()
   // Arrange
   auto valueType = jlm::tests::ValueType::Create();
   auto functionType = jlm::rvsdg::FunctionType::Create(
-      { jlm::rvsdg::bittype::Create(32), valueType, valueType },
+      { jlm::rvsdg::BitType::Create(32), valueType, valueType },
       { valueType });
 
   jlm::llvm::RvsdgModule rvsdgModule(FilePath(""), "", "");
@@ -240,7 +240,7 @@ EmptyGammaWithThreeSubregions()
   // Arrange
   auto valueType = jlm::tests::ValueType::Create();
   auto functionType = jlm::rvsdg::FunctionType::Create(
-      { jlm::rvsdg::bittype::Create(32), valueType, valueType },
+      { jlm::rvsdg::BitType::Create(32), valueType, valueType },
       { valueType });
 
   jlm::llvm::RvsdgModule rvsdgModule(FilePath(""), "", "");
@@ -292,7 +292,7 @@ PartialEmptyGamma()
   // Arrange
   auto valueType = jlm::tests::ValueType::Create();
   auto functionType = jlm::rvsdg::FunctionType::Create(
-      { jlm::rvsdg::bittype::Create(1), valueType },
+      { jlm::rvsdg::BitType::Create(1), valueType },
       { valueType });
 
   jlm::llvm::RvsdgModule rvsdgModule(FilePath(""), "", "");

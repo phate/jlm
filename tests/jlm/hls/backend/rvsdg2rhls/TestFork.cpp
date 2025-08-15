@@ -18,7 +18,7 @@ ForkInsertion()
   using namespace jlm::llvm;
 
   // Arrange
-  auto bit32Type = rvsdg::bittype::Create(32);
+  auto bit32Type = rvsdg::BitType::Create(32);
   const auto functionType = jlm::rvsdg::FunctionType::Create(
       { bit32Type, bit32Type, bit32Type },
       { bit32Type, bit32Type, bit32Type });
@@ -83,7 +83,7 @@ ConstantForkInsertion()
   using namespace jlm::llvm;
 
   // Arrange
-  auto bit32Type = rvsdg::bittype::Create(32);
+  auto bit32Type = rvsdg::BitType::Create(32);
   const auto functionType = rvsdg::FunctionType::Create({ bit32Type }, { bit32Type });
 
   RvsdgModule rvsdgModule(util::FilePath(""), "", "");

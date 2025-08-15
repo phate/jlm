@@ -27,7 +27,7 @@ public:
 
 public:
   GetElementPtrOperation(
-      const std::vector<std::shared_ptr<const rvsdg::bittype>> & offsetTypes,
+      const std::vector<std::shared_ptr<const rvsdg::BitType>> & offsetTypes,
       std::shared_ptr<const rvsdg::ValueType> pointeeType)
       : SimpleOperation(CreateOperandTypes(offsetTypes), { PointerType::Create() }),
         PointeeType_(std::move(pointeeType))
@@ -128,13 +128,13 @@ private:
   }
 
   template<class T>
-  static std::vector<std::shared_ptr<const rvsdg::bittype>>
+  static std::vector<std::shared_ptr<const rvsdg::BitType>>
   CheckAndExtractOffsetTypes(const std::vector<T *> & offsets)
   {
-    std::vector<std::shared_ptr<const rvsdg::bittype>> offsetTypes;
+    std::vector<std::shared_ptr<const rvsdg::BitType>> offsetTypes;
     for (const auto & offset : offsets)
     {
-      if (auto offsetType = std::dynamic_pointer_cast<const rvsdg::bittype>(offset->Type()))
+      if (auto offsetType = std::dynamic_pointer_cast<const rvsdg::BitType>(offset->Type()))
       {
         offsetTypes.emplace_back(std::move(offsetType));
         continue;
@@ -147,7 +147,7 @@ private:
   }
 
   static std::vector<std::shared_ptr<const rvsdg::Type>>
-  CreateOperandTypes(const std::vector<std::shared_ptr<const rvsdg::bittype>> & indexTypes)
+  CreateOperandTypes(const std::vector<std::shared_ptr<const rvsdg::BitType>> & indexTypes)
   {
     std::vector<std::shared_ptr<const rvsdg::Type>> types({ PointerType::Create() });
     types.insert(types.end(), indexTypes.begin(), indexTypes.end());

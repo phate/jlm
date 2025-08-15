@@ -83,7 +83,7 @@ TestLoadAllocaReduction()
 
   // Arrange
   auto mt = MemoryStateType::Create();
-  auto bt = jlm::rvsdg::bittype::Create(32);
+  auto bt = jlm::rvsdg::BitType::Create(32);
 
   jlm::rvsdg::Graph graph;
   auto size = &jlm::rvsdg::GraphImport::Create(graph, bt, "v");
@@ -126,7 +126,7 @@ LoadMuxReduction_Success()
   // Arrange
   const auto memoryStateType = MemoryStateType::Create();
   const auto pointerType = PointerType::Create();
-  const auto bitstringType = jlm::rvsdg::bittype::Create(32);
+  const auto bitstringType = jlm::rvsdg::BitType::Create(32);
 
   jlm::rvsdg::Graph graph;
   const auto address = &jlm::rvsdg::GraphImport::Create(graph, pointerType, "address");
@@ -318,7 +318,7 @@ TestLoadStoreStateReduction()
   using namespace jlm::llvm;
 
   // Arrange
-  auto bt = jlm::rvsdg::bittype::Create(32);
+  auto bt = jlm::rvsdg::BitType::Create(32);
 
   jlm::rvsdg::Graph graph;
   auto size = &jlm::rvsdg::GraphImport::Create(graph, bt, "v");
@@ -420,14 +420,14 @@ LoadStoreReduction_DifferentValueOperandType()
 
   jlm::rvsdg::Graph graph;
   auto & address = jlm::rvsdg::GraphImport::Create(graph, pointerType, "address");
-  auto & value = jlm::rvsdg::GraphImport::Create(graph, jlm::rvsdg::bittype::Create(32), "value");
+  auto & value = jlm::rvsdg::GraphImport::Create(graph, jlm::rvsdg::BitType::Create(32), "value");
   auto memoryState = &jlm::rvsdg::GraphImport::Create(graph, memoryStateType, "memoryState");
 
   auto & storeNode = StoreNonVolatileOperation::CreateNode(address, value, { memoryState }, 4);
   auto & loadNode = LoadNonVolatileOperation::CreateNode(
       address,
       outputs(&storeNode),
-      jlm::rvsdg::bittype::Create(8),
+      jlm::rvsdg::BitType::Create(8),
       4);
 
   auto & exportedValue = jlm::rvsdg::GraphExport::Create(*loadNode.output(0), "v");
@@ -530,7 +530,7 @@ IOBarrierAllocaAddressNormalization()
   const auto valueType = jlm::tests::ValueType::Create();
   const auto pointerType = PointerType::Create();
   const auto memoryStateType = MemoryStateType::Create();
-  const auto bit32Type = jlm::rvsdg::bittype::Create(32);
+  const auto bit32Type = jlm::rvsdg::BitType::Create(32);
   const auto ioStateType = IOStateType::Create();
 
   jlm::rvsdg::Graph graph;

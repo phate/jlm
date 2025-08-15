@@ -31,7 +31,7 @@ unop_reduction_path_t
 BitSliceOperation::can_reduce_operand(const jlm::rvsdg::Output * arg) const noexcept
 {
   auto node = TryGetOwnerNode<Node>(*arg);
-  auto & arg_type = *std::dynamic_pointer_cast<const bittype>(arg->Type());
+  auto & arg_type = *std::dynamic_pointer_cast<const BitType>(arg->Type());
 
   if ((low() == 0) && (high() == arg_type.nbits()))
     return unop_reduction_idempotent;
@@ -79,7 +79,7 @@ BitSliceOperation::reduce_operand(unop_reduction_path_t path, jlm::rvsdg::Output
     {
       auto argument = node.input(n)->origin();
       size_t base = pos;
-      size_t nbits = std::static_pointer_cast<const bittype>(argument->Type())->nbits();
+      size_t nbits = std::static_pointer_cast<const BitType>(argument->Type())->nbits();
       pos = pos + nbits;
       if (base < high() && pos > low())
       {
@@ -107,7 +107,7 @@ bitslice(jlm::rvsdg::Output * argument, size_t low, size_t high)
 {
   return CreateOpNode<BitSliceOperation>(
              { argument },
-             std::dynamic_pointer_cast<const jlm::rvsdg::bittype>(argument->Type()),
+             std::dynamic_pointer_cast<const jlm::rvsdg::BitType>(argument->Type()),
              low,
              high)
       .output(0);

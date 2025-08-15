@@ -104,9 +104,9 @@ private:
     auto & rvsdg = rvsdgModule->Rvsdg();
 
     const auto pointerType = PointerType::Create();
-    const auto intType = rvsdg::bittype::Create(32);
-    const auto shortType = rvsdg::bittype::Create(16);
-    const auto byteType = rvsdg::bittype::Create(8);
+    const auto intType = rvsdg::BitType::Create(32);
+    const auto shortType = rvsdg::BitType::Create(16);
+    const auto byteType = rvsdg::BitType::Create(8);
     const auto intArrayType = ArrayType::Create(intType, 10);
     const auto ioStateType = IOStateType::Create();
     const auto memoryStateType = MemoryStateType::Create();
@@ -370,9 +370,9 @@ private:
     auto & rvsdg = rvsdgModule->Rvsdg();
 
     const auto pointerType = PointerType::Create();
-    const auto int1Type = rvsdg::bittype::Create(1);
-    const auto int32Type = rvsdg::bittype::Create(32);
-    const auto int64Type = rvsdg::bittype::Create(64);
+    const auto int1Type = rvsdg::BitType::Create(1);
+    const auto int32Type = rvsdg::BitType::Create(32);
+    const auto int64Type = rvsdg::BitType::Create(64);
     const auto intArrayType = ArrayType::Create(int32Type, 2);
     const auto ioStateType = IOStateType::Create();
     const auto memoryStateType = MemoryStateType::Create();

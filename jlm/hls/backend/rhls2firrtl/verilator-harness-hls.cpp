@@ -18,7 +18,7 @@ static constexpr int MEMORY_RESPONSE_LATENCY = 10;
 std::string
 ConvertToCType(const rvsdg::Type * type)
 {
-  if (auto t = dynamic_cast<const rvsdg::bittype *>(type))
+  if (auto t = dynamic_cast<const rvsdg::BitType *>(type))
   {
     if (t->nbits() == 1)
       return "bool";

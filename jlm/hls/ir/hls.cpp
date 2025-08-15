@@ -252,12 +252,12 @@ get_mem_req_type(std::shared_ptr<const rvsdg::ValueType> elementType, bool write
 {
   std::vector<std::pair<std::string, std::shared_ptr<const jlm::rvsdg::Type>>> elements;
   elements.emplace_back("addr", llvm::PointerType::Create());
-  elements.emplace_back("size", jlm::rvsdg::bittype::Create(4));
-  elements.emplace_back("id", jlm::rvsdg::bittype::Create(8));
+  elements.emplace_back("size", jlm::rvsdg::BitType::Create(4));
+  elements.emplace_back("id", jlm::rvsdg::BitType::Create(8));
   if (write)
   {
     elements.emplace_back("data", std::move(elementType));
-    elements.emplace_back("write", jlm::rvsdg::bittype::Create(1));
+    elements.emplace_back("write", jlm::rvsdg::BitType::Create(1));
   }
   return std::make_shared<BundleType>(std::move(elements));
 }
@@ -267,14 +267,14 @@ get_mem_res_type(std::shared_ptr<const jlm::rvsdg::ValueType> dataType)
 {
   std::vector<std::pair<std::string, std::shared_ptr<const jlm::rvsdg::Type>>> elements;
   elements.emplace_back("data", std::move(dataType));
-  elements.emplace_back("id", jlm::rvsdg::bittype::Create(8));
+  elements.emplace_back("id", jlm::rvsdg::BitType::Create(8));
   return std::make_shared<BundleType>(std::move(elements));
 }
 
 int
 JlmSize(const jlm::rvsdg::Type * type)
 {
-  if (auto bt = dynamic_cast<const jlm::rvsdg::bittype *>(type))
+  if (auto bt = dynamic_cast<const jlm::rvsdg::BitType *>(type))
   {
     return bt->nbits();
   }

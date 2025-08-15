@@ -36,7 +36,7 @@ TypeConverter::ExtractFloatingPointSize(const ::llvm::Type & type)
 }
 
 ::llvm::IntegerType *
-TypeConverter::ConvertBitType(const rvsdg::bittype & bitType, ::llvm::LLVMContext & context)
+TypeConverter::ConvertBitType(const rvsdg::BitType & bitType, ::llvm::LLVMContext & context)
 {
   return ::llvm::Type::getIntNTy(context, bitType.nbits());
 }
@@ -162,7 +162,7 @@ TypeConverter::ConvertStructType(const StructType & type, ::llvm::LLVMContext & 
 ::llvm::Type *
 TypeConverter::ConvertJlmType(const rvsdg::Type & type, ::llvm::LLVMContext & context)
 {
-  if (const auto bitType = dynamic_cast<const rvsdg::bittype *>(&type))
+  if (const auto bitType = dynamic_cast<const rvsdg::BitType *>(&type))
   {
     return ConvertBitType(*bitType, context);
   }
@@ -225,7 +225,7 @@ TypeConverter::ConvertLlvmType(::llvm::Type & type)
   case ::llvm::Type::IntegerTyID:
   {
     const auto integerType = ::llvm::cast<::llvm::IntegerType>(&type);
-    return rvsdg::bittype::Create(integerType->getBitWidth());
+    return rvsdg::BitType::Create(integerType->getBitWidth());
   }
   case ::llvm::Type::PointerTyID:
     return ConvertPointerType(*::llvm::cast<::llvm::PointerType>(&type));

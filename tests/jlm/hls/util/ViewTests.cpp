@@ -22,7 +22,7 @@ TestDumpDot()
   using namespace jlm::llvm;
 
   // Arrange
-  auto b32 = rvsdg::bittype::Create(32);
+  auto b32 = rvsdg::BitType::Create(32);
   auto ft = rvsdg::FunctionType::Create({}, { b32 });
 
   rvsdg::Graph graph;
@@ -63,7 +63,7 @@ TestDumpDotTheta()
   using namespace jlm::llvm;
 
   // Arrange
-  auto b32 = rvsdg::bittype::Create(32);
+  auto b32 = rvsdg::BitType::Create(32);
   auto ft = rvsdg::FunctionType::Create({ b32, b32, b32 }, { b32, b32, b32 });
 
   rvsdg::Graph graph;

@@ -424,7 +424,7 @@ MlirToJlmConverter::ConvertOperation(
 
   if (auto castedOp = ::mlir::dyn_cast<::mlir::arith::ExtUIOp>(&mlirOperation))
   {
-    auto st = std::dynamic_pointer_cast<const rvsdg::bittype>(inputs[0]->Type());
+    auto st = std::dynamic_pointer_cast<const rvsdg::BitType>(inputs[0]->Type());
     if (!st)
       JLM_UNREACHABLE("Expected bitstring type for ExtUIOp operation.");
     ::mlir::Type type = castedOp.getType();
@@ -442,7 +442,7 @@ MlirToJlmConverter::ConvertOperation(
   }
   else if (auto sitofpOp = ::mlir::dyn_cast<::mlir::arith::SIToFPOp>(&mlirOperation))
   {
-    auto st = std::dynamic_pointer_cast<const jlm::rvsdg::bittype>(inputs[0]->Type());
+    auto st = std::dynamic_pointer_cast<const jlm::rvsdg::BitType>(inputs[0]->Type());
     if (!st)
       JLM_UNREACHABLE("Expected bits type for SIToFPOp operation.");
 
@@ -618,10 +618,10 @@ MlirToJlmConverter::ConvertOperation(
       JLM_UNREACHABLE("Expected ValueType for AllocaOp operation.");
 
     auto jlmValueType = std::dynamic_pointer_cast<const rvsdg::ValueType>(jlmType);
-    if (!rvsdg::is<const rvsdg::bittype>(inputs[0]->Type()))
-      JLM_UNREACHABLE("Expected bittype for AllocaOp operation.");
+    if (!rvsdg::is<const rvsdg::BitType>(inputs[0]->Type()))
+      JLM_UNREACHABLE("Expected BitType for AllocaOp operation.");
 
-    auto jlmBitType = std::dynamic_pointer_cast<const jlm::rvsdg::bittype>(inputs[0]->Type());
+    auto jlmBitType = std::dynamic_pointer_cast<const jlm::rvsdg::BitType>(inputs[0]->Type());
 
     return rvsdg::outputs(&rvsdg::CreateOpNode<llvm::AllocaOperation>(
         std::vector(inputs.begin(), inputs.end()),
@@ -1051,7 +1051,7 @@ MlirToJlmConverter::ConvertType(const ::mlir::Type & type)
   }
   else if (auto intType = ::mlir::dyn_cast<::mlir::IntegerType>(type))
   {
-    return std::make_unique<rvsdg::bittype>(intType.getWidth());
+    return std::make_unique<rvsdg::BitType>(intType.getWidth());
   }
   else if (::mlir::isa<::mlir::Float16Type>(type))
   {
