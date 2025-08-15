@@ -3,7 +3,6 @@
  * See COPYING for terms of redistribution.
  */
 
-#include <jlm/llvm/ir/LambdaMemoryState.hpp>
 #include <jlm/hls/backend/rvsdg2rhls/decouple-mem-state.hpp>
 #include <jlm/hls/backend/rvsdg2rhls/hls-function-util.hpp>
 #include <jlm/hls/backend/rvsdg2rhls/mem-conv.hpp>
@@ -11,6 +10,7 @@
 #include <jlm/hls/backend/rvsdg2rhls/rhls-dne.hpp>
 #include <jlm/hls/ir/hls.hpp>
 #include <jlm/hls/util/view.hpp>
+#include <jlm/llvm/ir/LambdaMemoryState.hpp>
 #include <jlm/llvm/ir/operators/call.hpp>
 #include <jlm/llvm/ir/operators/lambda.hpp>
 #include <jlm/llvm/ir/operators/Load.hpp>
