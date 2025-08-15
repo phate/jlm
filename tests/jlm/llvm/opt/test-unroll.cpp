@@ -64,7 +64,7 @@ create_theta(
 static inline void
 test_unrollinfo()
 {
-  auto bt32 = jlm::rvsdg::bittype::Create(32);
+  auto bt32 = jlm::rvsdg::BitType::Create(32);
   jlm::rvsdg::bitslt_op slt(32);
   jlm::rvsdg::bitult_op ult(32);
   jlm::rvsdg::bitule_op ule(32);
@@ -223,7 +223,7 @@ test_unknown_boundaries()
   using namespace jlm::llvm;
   using namespace jlm::rvsdg;
 
-  auto bt = jlm::rvsdg::bittype::Create(32);
+  auto bt = jlm::rvsdg::BitType::Create(32);
   jlm::tests::TestOperation op({ bt }, { bt });
 
   jlm::llvm::RvsdgModule rm(jlm::util::FilePath(""), "", "");

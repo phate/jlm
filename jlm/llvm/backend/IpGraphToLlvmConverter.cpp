@@ -498,7 +498,7 @@ IpGraphToLlvmConverter::convert(
 {
   JLM_ASSERT(is<ConstantDataArray>(op));
 
-  if (auto bt = dynamic_cast<const rvsdg::bittype *>(&op.type()))
+  if (auto bt = dynamic_cast<const rvsdg::BitType *>(&op.type()))
   {
     if (bt->nbits() == 8)
     {
@@ -762,7 +762,7 @@ IpGraphToLlvmConverter::convert_constantdatavector(
   JLM_ASSERT(is<ConstantDataVectorOperation>(op));
   auto & cop = *static_cast<const ConstantDataVectorOperation *>(&op);
 
-  if (auto bt = dynamic_cast<const rvsdg::bittype *>(&cop.type()))
+  if (auto bt = dynamic_cast<const rvsdg::BitType *>(&cop.type()))
   {
     if (bt->nbits() == 8)
     {
@@ -1549,7 +1549,7 @@ IpGraphToLlvmConverter::create_switch(const ControlFlowGraphNode * node)
     auto sw = builder.CreateSwitch(condition, defbb);
     for (const auto & alt : *mop)
     {
-      auto & type = *std::static_pointer_cast<const rvsdg::bittype>(mop->argument(0));
+      auto & type = *std::static_pointer_cast<const rvsdg::BitType>(mop->argument(0));
       auto value =
           ::llvm::ConstantInt::get(typeConverter.ConvertBitType(type, llvmContext), alt.first);
       sw->addCase(value, Context_->basic_block(node->OutEdge(alt.second)->sink()));

@@ -34,8 +34,8 @@ test()
   using namespace jlm;
 
   auto ft = jlm::rvsdg::FunctionType::Create(
-      { rvsdg::bittype::Create(1), rvsdg::bittype::Create(8), rvsdg::bittype::Create(8) },
-      { rvsdg::bittype::Create(8) });
+      { rvsdg::BitType::Create(1), rvsdg::BitType::Create(8), rvsdg::BitType::Create(8) },
+      { rvsdg::BitType::Create(8) });
 
   jlm::llvm::RvsdgModule rm(util::FilePath(""), "", "");
 

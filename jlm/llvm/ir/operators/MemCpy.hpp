@@ -37,7 +37,7 @@ protected:
     JLM_ASSERT(is<PointerType>(srcAddressType));
 
     auto & lengthType = *operandTypes[2];
-    if (lengthType != *rvsdg::bittype::Create(32) && lengthType != *rvsdg::bittype::Create(64))
+    if (lengthType != *rvsdg::BitType::Create(32) && lengthType != *rvsdg::BitType::Create(64))
     {
       throw util::Error("Expected 32 bit or 64 bit integer type.");
     }
@@ -50,10 +50,10 @@ protected:
   }
 
 public:
-  [[nodiscard]] const rvsdg::bittype &
+  [[nodiscard]] const rvsdg::BitType &
   LengthType() const noexcept
   {
-    auto type = std::dynamic_pointer_cast<const rvsdg::bittype>(argument(2));
+    auto type = std::dynamic_pointer_cast<const rvsdg::BitType>(argument(2));
     JLM_ASSERT(type != nullptr);
     return *type;
   }

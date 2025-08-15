@@ -25,7 +25,7 @@ GammaSubregionUsage()
 
   // Arrange
   auto controlType = ControlType::Create(3);
-  auto bit32Type = bittype::Create(32);
+  auto bit32Type = BitType::Create(32);
   auto functionType = FunctionType::Create({ controlType }, { bit32Type });
 
   jlm::llvm::RvsdgModule rvsdgModule(FilePath(""), "", "");
@@ -109,7 +109,7 @@ NestedGammas()
 
   // Arrange
   auto controlType = ControlType::Create(2);
-  auto bit32Type = bittype::Create(32);
+  auto bit32Type = BitType::Create(32);
   auto functionType = FunctionType::Create({ controlType }, { bit32Type });
 
   jlm::llvm::RvsdgModule rvsdgModule(FilePath(""), "", "");
@@ -208,7 +208,7 @@ Theta()
 
   // Arrange
   auto controlType = ControlType::Create(3);
-  auto bit32Type = bittype::Create(32);
+  auto bit32Type = BitType::Create(32);
   auto functionType = FunctionType::Create({}, { bit32Type, bit32Type, bit32Type });
 
   jlm::llvm::RvsdgModule rvsdgModule(FilePath(""), "", "");

@@ -164,7 +164,7 @@ ReplaceDecouple(
 
   // handle response
   int load_capacity = 10;
-  if (rvsdg::is<const rvsdg::bittype>(decouple_response->input(2)->Type()))
+  if (rvsdg::is<const rvsdg::BitType>(decouple_response->input(2)->Type()))
   {
     auto constant = trace_constant(decouple_response->input(2)->origin());
     load_capacity = constant->Representation().to_int();
@@ -460,9 +460,9 @@ MemoryConverter(llvm::RvsdgModule & rm)
   for (auto & portNode : portNodes)
   {
     auto portWidth = CalcualtePortWidth(portNode);
-    auto responseTypePtr = get_mem_res_type(rvsdg::bittype::Create(portWidth));
-    auto requestTypePtr = get_mem_req_type(rvsdg::bittype::Create(portWidth), false);
-    auto requestTypePtrWrite = get_mem_req_type(rvsdg::bittype::Create(portWidth), true);
+    auto responseTypePtr = get_mem_res_type(rvsdg::BitType::Create(portWidth));
+    auto requestTypePtr = get_mem_req_type(rvsdg::BitType::Create(portWidth), false);
+    auto requestTypePtrWrite = get_mem_req_type(rvsdg::BitType::Create(portWidth), true);
     newArgumentTypes.push_back(responseTypePtr);
     if (std::get<1>(portNode).empty())
     {
@@ -489,9 +489,9 @@ MemoryConverter(llvm::RvsdgModule & rm)
   {
     auto portWidth = CalcualtePortWidth(
         std::make_tuple(unknownLoadNodes, unknownStoreNodes, unknownDecoupledNodes));
-    auto responseTypePtr = get_mem_res_type(rvsdg::bittype::Create(portWidth));
-    auto requestTypePtr = get_mem_req_type(rvsdg::bittype::Create(portWidth), false);
-    auto requestTypePtrWrite = get_mem_req_type(rvsdg::bittype::Create(portWidth), true);
+    auto responseTypePtr = get_mem_res_type(rvsdg::BitType::Create(portWidth));
+    auto requestTypePtr = get_mem_req_type(rvsdg::BitType::Create(portWidth), false);
+    auto requestTypePtrWrite = get_mem_req_type(rvsdg::BitType::Create(portWidth), true);
     // Extra port for loads/stores not associated to a port yet (i.e., unknown base pointer)
     newArgumentTypes.push_back(responseTypePtr);
     if (unknownStoreNodes.empty())

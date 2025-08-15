@@ -70,7 +70,7 @@ bit_type_to_ctl_type(rvsdg::GammaNode * old_gamma)
   for (size_t i = 0; i < old_gamma->noutputs(); ++i)
   {
     auto o = old_gamma->output(i);
-    if (!std::dynamic_pointer_cast<const jlm::rvsdg::bittype>(o->Type()))
+    if (!std::dynamic_pointer_cast<const jlm::rvsdg::BitType>(o->Type()))
       continue;
     if (o->nusers() != 1)
       continue;

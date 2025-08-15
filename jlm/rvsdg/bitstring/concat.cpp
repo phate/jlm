@@ -15,23 +15,23 @@ namespace jlm::rvsdg
 jlm::rvsdg::Output *
 bitconcat(const std::vector<jlm::rvsdg::Output *> & operands)
 {
-  std::vector<std::shared_ptr<const jlm::rvsdg::bittype>> types;
+  std::vector<std::shared_ptr<const jlm::rvsdg::BitType>> types;
   for (const auto operand : operands)
-    types.push_back(std::dynamic_pointer_cast<const jlm::rvsdg::bittype>(operand->Type()));
+    types.push_back(std::dynamic_pointer_cast<const jlm::rvsdg::BitType>(operand->Type()));
 
   return CreateOpNode<BitConcatOperation>(operands, std::move(types)).output(0);
 }
 
-std::shared_ptr<const bittype>
+std::shared_ptr<const BitType>
 BitConcatOperation::aggregate_arguments(
-    const std::vector<std::shared_ptr<const bittype>> & types) noexcept
+    const std::vector<std::shared_ptr<const BitType>> & types) noexcept
 {
   size_t total = 0;
   for (const auto & t : types)
   {
     total += t->nbits();
   }
-  return bittype::Create(total);
+  return BitType::Create(total);
 }
 
 BitConcatOperation::~BitConcatOperation() noexcept = default;
@@ -139,13 +139,13 @@ BitConcatOperation::copy() const
   return std::make_unique<BitConcatOperation>(*this);
 }
 
-static std::vector<std::shared_ptr<const bittype>>
+static std::vector<std::shared_ptr<const BitType>>
 GetTypesFromOperands(const std::vector<rvsdg::Output *> & args)
 {
-  std::vector<std::shared_ptr<const bittype>> types;
+  std::vector<std::shared_ptr<const BitType>> types;
   for (const auto arg : args)
   {
-    types.push_back(std::dynamic_pointer_cast<const bittype>(arg->Type()));
+    types.push_back(std::dynamic_pointer_cast<const BitType>(arg->Type()));
   }
   return types;
 }

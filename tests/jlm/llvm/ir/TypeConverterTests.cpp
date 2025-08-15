@@ -32,19 +32,19 @@ LlvmIntegerTypeConversion()
 
   // Act
   const auto i1BitType =
-      std::dynamic_pointer_cast<const jlm::rvsdg::bittype>(typeConverter.ConvertLlvmType(*i1));
+      std::dynamic_pointer_cast<const jlm::rvsdg::BitType>(typeConverter.ConvertLlvmType(*i1));
   const auto i2BitType =
-      std::dynamic_pointer_cast<const jlm::rvsdg::bittype>(typeConverter.ConvertLlvmType(*i2));
+      std::dynamic_pointer_cast<const jlm::rvsdg::BitType>(typeConverter.ConvertLlvmType(*i2));
   const auto i4BitType =
-      std::dynamic_pointer_cast<const jlm::rvsdg::bittype>(typeConverter.ConvertLlvmType(*i4));
+      std::dynamic_pointer_cast<const jlm::rvsdg::BitType>(typeConverter.ConvertLlvmType(*i4));
   const auto i8BitType =
-      std::dynamic_pointer_cast<const jlm::rvsdg::bittype>(typeConverter.ConvertLlvmType(*i8));
+      std::dynamic_pointer_cast<const jlm::rvsdg::BitType>(typeConverter.ConvertLlvmType(*i8));
   const auto i16BitType =
-      std::dynamic_pointer_cast<const jlm::rvsdg::bittype>(typeConverter.ConvertLlvmType(*i16));
+      std::dynamic_pointer_cast<const jlm::rvsdg::BitType>(typeConverter.ConvertLlvmType(*i16));
   const auto i32BitType =
-      std::dynamic_pointer_cast<const jlm::rvsdg::bittype>(typeConverter.ConvertLlvmType(*i32));
+      std::dynamic_pointer_cast<const jlm::rvsdg::BitType>(typeConverter.ConvertLlvmType(*i32));
   const auto i64BitType =
-      std::dynamic_pointer_cast<const jlm::rvsdg::bittype>(typeConverter.ConvertLlvmType(*i64));
+      std::dynamic_pointer_cast<const jlm::rvsdg::BitType>(typeConverter.ConvertLlvmType(*i64));
 
   // Assert
   assert(i1BitType && i1BitType->nbits() == 1);
@@ -112,8 +112,8 @@ LlvmFunctionTypeConversion()
   assert(functionType1Jlm->NumArguments() == 4);
   assert(functionType1Jlm->NumResults() == 2);
   auto arguments = functionType1Jlm->Arguments();
-  assert(is<bittype>(arguments[0]));
-  assert(is<bittype>(arguments[1]));
+  assert(is<BitType>(arguments[0]));
+  assert(is<BitType>(arguments[1]));
   assert(is<IOStateType>(arguments[2]));
   assert(is<MemoryStateType>(arguments[3]));
   auto results = functionType1Jlm->Results();
@@ -127,7 +127,7 @@ LlvmFunctionTypeConversion()
   assert(is<IOStateType>(arguments[0]));
   assert(is<MemoryStateType>(arguments[1]));
   results = functionType2Jlm->Results();
-  assert(is<bittype>(results[0]));
+  assert(is<BitType>(results[0]));
   assert(is<IOStateType>(results[1]));
   assert(is<MemoryStateType>(results[2]));
 
@@ -135,13 +135,13 @@ LlvmFunctionTypeConversion()
   assert(functionType3Jlm->NumArguments() == 5);
   assert(functionType3Jlm->NumResults() == 3);
   arguments = functionType3Jlm->Arguments();
-  assert(is<bittype>(arguments[0]));
-  assert(is<bittype>(arguments[1]));
+  assert(is<BitType>(arguments[0]));
+  assert(is<BitType>(arguments[1]));
   assert(is<VariableArgumentType>(arguments[2]));
   assert(is<IOStateType>(arguments[3]));
   assert(is<MemoryStateType>(arguments[4]));
   results = functionType3Jlm->Results();
-  assert(is<bittype>(results[0]));
+  assert(is<BitType>(results[0]));
   assert(is<IOStateType>(results[1]));
   assert(is<MemoryStateType>(results[2]));
 }
@@ -276,7 +276,7 @@ LlvmArrayTypeConversion()
 
   // Assert
   assert(arrayType1Jlm);
-  assert(is<bittype>(arrayType1Jlm->element_type()));
+  assert(is<BitType>(arrayType1Jlm->element_type()));
   assert(arrayType1Jlm->nelements() == 4);
 
   assert(arrayType2Jlm);
@@ -311,7 +311,7 @@ LlvmVectorTypeConversion()
 
   // Assert
   assert(vectorType1Jlm);
-  assert(is<bittype>(vectorType1Jlm->type()));
+  assert(is<BitType>(vectorType1Jlm->type()));
   assert(vectorType1Jlm->size() == 4);
 
   assert(vectorType2Jlm);
@@ -332,13 +332,13 @@ JLmBitTypeConversion()
   llvm::LLVMContext context;
   TypeConverter typeConverter;
 
-  const auto i1 = jlm::rvsdg::bittype::Create(1);
-  const auto i2 = jlm::rvsdg::bittype::Create(2);
-  const auto i4 = jlm::rvsdg::bittype::Create(4);
-  const auto i8 = jlm::rvsdg::bittype::Create(8);
-  const auto i16 = jlm::rvsdg::bittype::Create(16);
-  const auto i32 = jlm::rvsdg::bittype::Create(32);
-  const auto i64 = jlm::rvsdg::bittype::Create(64);
+  const auto i1 = jlm::rvsdg::BitType::Create(1);
+  const auto i2 = jlm::rvsdg::BitType::Create(2);
+  const auto i4 = jlm::rvsdg::BitType::Create(4);
+  const auto i8 = jlm::rvsdg::BitType::Create(8);
+  const auto i16 = jlm::rvsdg::BitType::Create(16);
+  const auto i32 = jlm::rvsdg::BitType::Create(32);
+  const auto i64 = jlm::rvsdg::BitType::Create(64);
 
   // Act
   const auto i1Type = typeConverter.ConvertJlmType(*i1, context);
@@ -384,7 +384,7 @@ JlmFunctionTypeConversion()
   llvm::LLVMContext context;
   TypeConverter typeConverter;
 
-  auto bit32Type = bittype::Create(32);
+  auto bit32Type = BitType::Create(32);
   auto ioStateType = IOStateType::Create();
   auto memoryStateType = MemoryStateType::Create();
   auto varArgType = VariableArgumentType::Create();
@@ -465,7 +465,7 @@ JlmArrayTypeConversion()
   llvm::LLVMContext context;
   TypeConverter typeConverter;
 
-  const auto bit32Type = bittype::Create(32);
+  const auto bit32Type = BitType::Create(32);
   const auto halfType = FloatingPointType::Create(fpsize::half);
   const auto arrayType1Jlm = ArrayType::Create(bit32Type, 4);
   const auto arrayType2Jlm = ArrayType::Create(halfType, 9);
@@ -559,7 +559,7 @@ JlmStructTypeConversion()
   llvm::LLVMContext context;
   TypeConverter typeConverter;
 
-  const auto bit32Type = jlm::rvsdg::bittype::Create(32);
+  const auto bit32Type = jlm::rvsdg::BitType::Create(32);
   const auto halfType = FloatingPointType::Create(fpsize::half);
 
   const auto declaration1 = StructType::Declaration::Create({ bit32Type, halfType });
@@ -623,7 +623,7 @@ JlmFixedVectorTypeConversion()
   llvm::LLVMContext context;
   TypeConverter typeConverter;
 
-  const auto bit32Type = bittype::Create(32);
+  const auto bit32Type = BitType::Create(32);
   const auto fixedVectorType1 = FixedVectorType::Create(bit32Type, 2);
   const auto fixedVectorType2 = FixedVectorType::Create(bit32Type, 4);
 
@@ -657,7 +657,7 @@ JlmScalableVectorTypeConversion()
   llvm::LLVMContext context;
   TypeConverter typeConverter;
 
-  const auto bit32Type = bittype::Create(32);
+  const auto bit32Type = BitType::Create(32);
   const auto scalableVectorType1 = ScalableVectorType::Create(bit32Type, 2);
   const auto scalableVectorType2 = ScalableVectorType::Create(bit32Type, 4);
 

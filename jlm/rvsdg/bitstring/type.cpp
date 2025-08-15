@@ -11,46 +11,43 @@
 namespace jlm::rvsdg
 {
 
-/* bistring type */
-
-bittype::~bittype() noexcept
-{}
+BitType::~BitType() noexcept = default;
 
 std::string
-bittype::debug_string() const
+BitType::debug_string() const
 {
   return jlm::util::strfmt("bit", nbits());
 }
 
 bool
-bittype::operator==(const jlm::rvsdg::Type & other) const noexcept
+BitType::operator==(const Type & other) const noexcept
 {
-  auto type = dynamic_cast<const bittype *>(&other);
+  auto type = dynamic_cast<const BitType *>(&other);
   return type != nullptr && this->nbits() == type->nbits();
 }
 
 std::size_t
-bittype::ComputeHash() const noexcept
+BitType::ComputeHash() const noexcept
 {
-  auto typeHash = typeid(bittype).hash_code();
+  auto typeHash = typeid(BitType).hash_code();
   auto numBitsHash = std::hash<size_t>()(nbits_);
   return util::CombineHashes(typeHash, numBitsHash);
 }
 
-std::shared_ptr<const bittype>
-bittype::Create(std::size_t nbits)
+std::shared_ptr<const BitType>
+BitType::Create(std::size_t nbits)
 {
-  static const bittype static_instances[65] = {
-    bittype(0),  bittype(1),  bittype(2),  bittype(3),  bittype(4),  bittype(5),  bittype(6),
-    bittype(7),  bittype(8),  bittype(9),  bittype(10), bittype(11), bittype(12), bittype(13),
-    bittype(14), bittype(15), bittype(16), bittype(17), bittype(18), bittype(19), bittype(20),
-    bittype(21), bittype(22), bittype(23), bittype(24), bittype(25), bittype(26), bittype(27),
-    bittype(28), bittype(29), bittype(30), bittype(31), bittype(32), bittype(33), bittype(34),
-    bittype(35), bittype(36), bittype(37), bittype(38), bittype(39), bittype(40), bittype(41),
-    bittype(42), bittype(43), bittype(44), bittype(45), bittype(46), bittype(47), bittype(48),
-    bittype(49), bittype(50), bittype(51), bittype(52), bittype(53), bittype(54), bittype(55),
-    bittype(56), bittype(57), bittype(58), bittype(59), bittype(60), bittype(61), bittype(62),
-    bittype(63), bittype(64)
+  static const BitType static_instances[65] = {
+    BitType(0),  BitType(1),  BitType(2),  BitType(3),  BitType(4),  BitType(5),  BitType(6),
+    BitType(7),  BitType(8),  BitType(9),  BitType(10), BitType(11), BitType(12), BitType(13),
+    BitType(14), BitType(15), BitType(16), BitType(17), BitType(18), BitType(19), BitType(20),
+    BitType(21), BitType(22), BitType(23), BitType(24), BitType(25), BitType(26), BitType(27),
+    BitType(28), BitType(29), BitType(30), BitType(31), BitType(32), BitType(33), BitType(34),
+    BitType(35), BitType(36), BitType(37), BitType(38), BitType(39), BitType(40), BitType(41),
+    BitType(42), BitType(43), BitType(44), BitType(45), BitType(46), BitType(47), BitType(48),
+    BitType(49), BitType(50), BitType(51), BitType(52), BitType(53), BitType(54), BitType(55),
+    BitType(56), BitType(57), BitType(58), BitType(59), BitType(60), BitType(61), BitType(62),
+    BitType(63), BitType(64)
   };
 
   if (nbits <= 64)
@@ -60,11 +57,11 @@ bittype::Create(std::size_t nbits)
       throw util::Error("Number of bits must be greater than zero.");
     }
 
-    return std::shared_ptr<const bittype>(std::shared_ptr<void>(), &static_instances[nbits]);
+    return std::shared_ptr<const BitType>(std::shared_ptr<void>(), &static_instances[nbits]);
   }
   else
   {
-    return std::make_shared<bittype>(nbits);
+    return std::make_shared<BitType>(nbits);
   }
 }
 

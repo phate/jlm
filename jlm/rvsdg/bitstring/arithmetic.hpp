@@ -19,7 +19,7 @@ public:
   ~MakeBitUnaryOperation() noexcept override;
 
   explicit MakeBitUnaryOperation(std::size_t nbits) noexcept
-      : BitUnaryOperation(bittype::Create(nbits))
+      : BitUnaryOperation(BitType::Create(nbits))
   {}
 
   bool
@@ -51,7 +51,7 @@ public:
   ~MakeBitBinaryOperation() noexcept override;
 
   explicit MakeBitBinaryOperation(std::size_t nbits) noexcept
-      : BitBinaryOperation(bittype::Create(nbits))
+      : BitBinaryOperation(BitType::Create(nbits))
   {}
 
   bool

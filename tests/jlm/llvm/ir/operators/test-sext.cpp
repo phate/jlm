@@ -22,7 +22,7 @@ test_bitunary_reduction()
 
   // Arrange
   Graph graph;
-  auto bitType32 = bittype::Create(32);
+  auto bitType32 = BitType::Create(32);
 
   auto x = &jlm::rvsdg::GraphImport::Create(graph, bitType32, "x");
 
@@ -53,7 +53,7 @@ test_bitbinary_reduction()
 
   // Arrange
   Graph graph;
-  auto bt32 = bittype::Create(32);
+  auto bt32 = BitType::Create(32);
 
   auto x = &jlm::rvsdg::GraphImport::Create(graph, bt32, "x");
   auto y = &jlm::rvsdg::GraphImport::Create(graph, bt32, "y");
@@ -85,7 +85,7 @@ test_inverse_reduction()
 
   // Arrange
   Graph graph;
-  auto bt64 = bittype::Create(64);
+  auto bt64 = BitType::Create(64);
 
   auto x = &jlm::rvsdg::GraphImport::Create(graph, bt64, "x");
 

@@ -135,7 +135,7 @@ public:
   ~SelectOperation() noexcept override;
 
   explicit SelectOperation(const std::shared_ptr<const rvsdg::Type> & type)
-      : SimpleOperation({ rvsdg::bittype::Create(1), type, type }, { type })
+      : SimpleOperation({ rvsdg::BitType::Create(1), type, type }, { type })
   {}
 
   bool
@@ -225,7 +225,7 @@ private:
   createVectorSelectTac(const Variable * p, const Variable * t, const Variable * f)
   {
     auto fvt = static_cast<const T *>(&t->type());
-    auto pt = T::Create(jlm::rvsdg::bittype::Create(1), fvt->size());
+    auto pt = T::Create(jlm::rvsdg::BitType::Create(1), fvt->size());
     auto vt = T::Create(fvt->Type(), fvt->size());
     const VectorSelectOperation op(pt, vt);
     return ThreeAddressCode::create(op, { p, t, f });
@@ -239,13 +239,13 @@ public:
 
   FloatingPointToUnsignedIntegerOperation(
       const fpsize size,
-      std::shared_ptr<const rvsdg::bittype> type)
+      std::shared_ptr<const rvsdg::BitType> type)
       : UnaryOperation(FloatingPointType::Create(size), std::move(type))
   {}
 
   FloatingPointToUnsignedIntegerOperation(
       std::shared_ptr<const FloatingPointType> fpt,
-      std::shared_ptr<const jlm::rvsdg::bittype> type)
+      std::shared_ptr<const jlm::rvsdg::BitType> type)
       : UnaryOperation(std::move(fpt), std::move(type))
   {}
 
@@ -258,7 +258,7 @@ public:
     if (!st)
       throw util::Error("expected floating point type.");
 
-    auto dt = dynamic_cast<const jlm::rvsdg::bittype *>(dsttype.get());
+    auto dt = dynamic_cast<const jlm::rvsdg::BitType *>(dsttype.get());
     if (!dt)
       throw util::Error("expected bitstring type.");
   }
@@ -286,7 +286,7 @@ public:
     if (!st)
       throw util::Error("expected floating point type.");
 
-    auto dt = std::dynamic_pointer_cast<const jlm::rvsdg::bittype>(type);
+    auto dt = std::dynamic_pointer_cast<const jlm::rvsdg::BitType>(type);
     if (!dt)
       throw util::Error("expected bitstring type.");
 
@@ -302,13 +302,13 @@ public:
 
   FloatingPointToSignedIntegerOperation(
       const fpsize size,
-      std::shared_ptr<const jlm::rvsdg::bittype> type)
+      std::shared_ptr<const jlm::rvsdg::BitType> type)
       : UnaryOperation(FloatingPointType::Create(size), std::move(type))
   {}
 
   FloatingPointToSignedIntegerOperation(
       std::shared_ptr<const FloatingPointType> fpt,
-      std::shared_ptr<const jlm::rvsdg::bittype> type)
+      std::shared_ptr<const jlm::rvsdg::BitType> type)
       : UnaryOperation(std::move(fpt), std::move(type))
   {}
 
@@ -321,7 +321,7 @@ public:
     if (!st)
       throw util::Error("expected floating point type.");
 
-    auto dt = dynamic_cast<const jlm::rvsdg::bittype *>(dsttype.get());
+    auto dt = dynamic_cast<const jlm::rvsdg::BitType *>(dsttype.get());
     if (!dt)
       throw util::Error("expected bitstring type.");
   }
@@ -349,7 +349,7 @@ public:
     if (!st)
       throw util::Error("expected floating point type.");
 
-    auto dt = std::dynamic_pointer_cast<const jlm::rvsdg::bittype>(type);
+    auto dt = std::dynamic_pointer_cast<const jlm::rvsdg::BitType>(type);
     if (!dt)
       throw util::Error("expected bitstring type.");
 
@@ -365,7 +365,7 @@ public:
 
   ControlToIntOperation(
       std::shared_ptr<const rvsdg::ControlType> srctype,
-      std::shared_ptr<const jlm::rvsdg::bittype> dsttype)
+      std::shared_ptr<const jlm::rvsdg::BitType> dsttype)
       : SimpleOperation({ std::move(srctype) }, { std::move(dsttype) })
   {}
 
@@ -385,7 +385,7 @@ public:
     if (!st)
       throw util::Error("expected control type.");
 
-    auto dt = std::dynamic_pointer_cast<const jlm::rvsdg::bittype>(type);
+    auto dt = std::dynamic_pointer_cast<const jlm::rvsdg::BitType>(type);
     if (!dt)
       throw util::Error("expected bitstring type.");
 
@@ -485,7 +485,7 @@ public:
   ~IntegerToPointerOperation() noexcept override;
 
   IntegerToPointerOperation(
-      std::shared_ptr<const jlm::rvsdg::bittype> btype,
+      std::shared_ptr<const jlm::rvsdg::BitType> btype,
       std::shared_ptr<const PointerType> ptype)
       : UnaryOperation(std::move(btype), std::move(ptype))
   {}
@@ -495,7 +495,7 @@ public:
       std::shared_ptr<const jlm::rvsdg::Type> dsttype)
       : UnaryOperation(srctype, dsttype)
   {
-    auto at = dynamic_cast<const jlm::rvsdg::bittype *>(srctype.get());
+    auto at = dynamic_cast<const jlm::rvsdg::BitType *>(srctype.get());
     if (!at)
       throw util::Error("expected bitstring type.");
 
@@ -523,13 +523,13 @@ public:
   inline size_t
   nbits() const noexcept
   {
-    return std::static_pointer_cast<const jlm::rvsdg::bittype>(argument(0))->nbits();
+    return std::static_pointer_cast<const jlm::rvsdg::BitType>(argument(0))->nbits();
   }
 
   static std::unique_ptr<llvm::ThreeAddressCode>
   create(const Variable * argument, std::shared_ptr<const jlm::rvsdg::Type> type)
   {
-    auto at = std::dynamic_pointer_cast<const jlm::rvsdg::bittype>(argument->Type());
+    auto at = std::dynamic_pointer_cast<const jlm::rvsdg::BitType>(argument->Type());
     if (!at)
       throw util::Error("expected bitstring type.");
 
@@ -544,7 +544,7 @@ public:
   static jlm::rvsdg::Output *
   create(jlm::rvsdg::Output * operand, std::shared_ptr<const jlm::rvsdg::Type> type)
   {
-    auto ot = std::dynamic_pointer_cast<const jlm::rvsdg::bittype>(operand->Type());
+    auto ot = std::dynamic_pointer_cast<const jlm::rvsdg::BitType>(operand->Type());
     if (!ot)
       throw util::Error("expected bitstring type.");
 
@@ -563,7 +563,7 @@ public:
 
   PtrToIntOperation(
       std::shared_ptr<const PointerType> ptype,
-      std::shared_ptr<const jlm::rvsdg::bittype> btype)
+      std::shared_ptr<const jlm::rvsdg::BitType> btype)
       : UnaryOperation(std::move(ptype), std::move(btype))
   {}
 
@@ -576,7 +576,7 @@ public:
     if (!pt)
       throw util::Error("expected pointer type.");
 
-    auto bt = dynamic_cast<const jlm::rvsdg::bittype *>(dsttype.get());
+    auto bt = dynamic_cast<const jlm::rvsdg::BitType *>(dsttype.get());
     if (!bt)
       throw util::Error("expected bitstring type.");
   }
@@ -600,7 +600,7 @@ public:
   inline size_t
   nbits() const noexcept
   {
-    return std::static_pointer_cast<const rvsdg::bittype>(result(0))->nbits();
+    return std::static_pointer_cast<const rvsdg::BitType>(result(0))->nbits();
   }
 
   static std::unique_ptr<llvm::ThreeAddressCode>
@@ -610,7 +610,7 @@ public:
     if (!pt)
       throw util::Error("expected pointer type.");
 
-    auto bt = std::dynamic_pointer_cast<const jlm::rvsdg::bittype>(type);
+    auto bt = std::dynamic_pointer_cast<const jlm::rvsdg::BitType>(type);
     if (!bt)
       throw util::Error("expected bitstring type.");
 
@@ -701,7 +701,7 @@ public:
   ~PtrCmpOperation() noexcept override;
 
   PtrCmpOperation(const std::shared_ptr<const PointerType> & ptype, const llvm::cmp & cmp)
-      : BinaryOperation({ ptype, ptype }, jlm::rvsdg::bittype::Create(1)),
+      : BinaryOperation({ ptype, ptype }, jlm::rvsdg::BitType::Create(1)),
         cmp_(cmp)
   {}
 
@@ -751,15 +751,15 @@ public:
   ~ZExtOperation() noexcept override;
 
   ZExtOperation(size_t nsrcbits, size_t ndstbits)
-      : UnaryOperation(rvsdg::bittype::Create(nsrcbits), rvsdg::bittype::Create(ndstbits))
+      : UnaryOperation(rvsdg::BitType::Create(nsrcbits), rvsdg::BitType::Create(ndstbits))
   {
     if (ndstbits < nsrcbits)
       throw util::Error("# destination bits must be greater than # source bits.");
   }
 
   ZExtOperation(
-      const std::shared_ptr<const jlm::rvsdg::bittype> & srctype,
-      const std::shared_ptr<const jlm::rvsdg::bittype> & dsttype)
+      const std::shared_ptr<const jlm::rvsdg::BitType> & srctype,
+      const std::shared_ptr<const jlm::rvsdg::BitType> & dsttype)
       : UnaryOperation(srctype, dsttype)
   {
     if (dsttype->nbits() < srctype->nbits())
@@ -771,11 +771,11 @@ public:
       std::shared_ptr<const jlm::rvsdg::Type> dsttype)
       : UnaryOperation(srctype, dsttype)
   {
-    auto st = dynamic_cast<const jlm::rvsdg::bittype *>(srctype.get());
+    auto st = dynamic_cast<const jlm::rvsdg::BitType *>(srctype.get());
     if (!st)
       throw util::Error("expected bitstring type.");
 
-    auto dt = dynamic_cast<const jlm::rvsdg::bittype *>(dsttype.get());
+    auto dt = dynamic_cast<const jlm::rvsdg::BitType *>(dsttype.get());
     if (!dt)
       throw util::Error("expected bitstring type.");
 
@@ -802,13 +802,13 @@ public:
   inline size_t
   nsrcbits() const noexcept
   {
-    return std::static_pointer_cast<const rvsdg::bittype>(argument(0))->nbits();
+    return std::static_pointer_cast<const rvsdg::BitType>(argument(0))->nbits();
   }
 
   inline size_t
   ndstbits() const noexcept
   {
-    return std::static_pointer_cast<const rvsdg::bittype>(result(0))->nbits();
+    return std::static_pointer_cast<const rvsdg::BitType>(result(0))->nbits();
   }
 
   static std::unique_ptr<llvm::ThreeAddressCode>
@@ -835,15 +835,15 @@ public:
   }
 
 private:
-  static std::shared_ptr<const rvsdg::bittype>
+  static std::shared_ptr<const rvsdg::BitType>
   CheckAndExtractBitType(const std::shared_ptr<const rvsdg::Type> & type)
   {
-    if (auto bitType = std::dynamic_pointer_cast<const rvsdg::bittype>(type))
+    if (auto bitType = std::dynamic_pointer_cast<const rvsdg::BitType>(type))
     {
       return bitType;
     }
 
-    throw util::TypeError("bittype", type->debug_string());
+    throw util::TypeError("BitType", type->debug_string());
   }
 };
 
@@ -932,12 +932,12 @@ public:
   FCmpOperation(const fpcmp & cmp, const fpsize & size)
       : BinaryOperation(
             { FloatingPointType::Create(size), FloatingPointType::Create(size) },
-            jlm::rvsdg::bittype::Create(1)),
+            jlm::rvsdg::BitType::Create(1)),
         cmp_(cmp)
   {}
 
   FCmpOperation(const fpcmp & cmp, const std::shared_ptr<const FloatingPointType> & fpt)
-      : BinaryOperation({ fpt, fpt }, jlm::rvsdg::bittype::Create(1)),
+      : BinaryOperation({ fpt, fpt }, jlm::rvsdg::BitType::Create(1)),
         cmp_(cmp)
   {}
 
@@ -1617,8 +1617,8 @@ public:
   ~TruncOperation() noexcept override;
 
   TruncOperation(
-      const std::shared_ptr<const jlm::rvsdg::bittype> & otype,
-      const std::shared_ptr<const jlm::rvsdg::bittype> & rtype)
+      const std::shared_ptr<const jlm::rvsdg::BitType> & otype,
+      const std::shared_ptr<const jlm::rvsdg::BitType> & rtype)
       : UnaryOperation(otype, rtype)
   {
     if (otype->nbits() < rtype->nbits())
@@ -1630,11 +1630,11 @@ public:
       std::shared_ptr<const jlm::rvsdg::Type> restype)
       : UnaryOperation(optype, restype)
   {
-    auto ot = dynamic_cast<const jlm::rvsdg::bittype *>(optype.get());
+    auto ot = dynamic_cast<const jlm::rvsdg::BitType *>(optype.get());
     if (!ot)
       throw util::Error("expected bits type.");
 
-    auto rt = dynamic_cast<const jlm::rvsdg::bittype *>(restype.get());
+    auto rt = dynamic_cast<const jlm::rvsdg::BitType *>(restype.get());
     if (!rt)
       throw util::Error("expected bits type.");
 
@@ -1661,23 +1661,23 @@ public:
   inline size_t
   nsrcbits() const noexcept
   {
-    return std::static_pointer_cast<const rvsdg::bittype>(argument(0))->nbits();
+    return std::static_pointer_cast<const rvsdg::BitType>(argument(0))->nbits();
   }
 
   inline size_t
   ndstbits() const noexcept
   {
-    return std::static_pointer_cast<const rvsdg::bittype>(result(0))->nbits();
+    return std::static_pointer_cast<const rvsdg::BitType>(result(0))->nbits();
   }
 
   static std::unique_ptr<llvm::ThreeAddressCode>
   create(const Variable * operand, const std::shared_ptr<const jlm::rvsdg::Type> & type)
   {
-    auto ot = std::dynamic_pointer_cast<const jlm::rvsdg::bittype>(operand->Type());
+    auto ot = std::dynamic_pointer_cast<const jlm::rvsdg::BitType>(operand->Type());
     if (!ot)
       throw util::Error("expected bits type.");
 
-    auto rt = std::dynamic_pointer_cast<const jlm::rvsdg::bittype>(type);
+    auto rt = std::dynamic_pointer_cast<const jlm::rvsdg::BitType>(type);
     if (!rt)
       throw util::Error("expected bits type.");
 
@@ -1688,14 +1688,14 @@ public:
   static jlm::rvsdg::Output *
   create(size_t ndstbits, jlm::rvsdg::Output * operand)
   {
-    auto ot = std::dynamic_pointer_cast<const jlm::rvsdg::bittype>(operand->Type());
+    auto ot = std::dynamic_pointer_cast<const jlm::rvsdg::BitType>(operand->Type());
     if (!ot)
       throw util::Error("expected bits type.");
 
     return rvsdg::CreateOpNode<TruncOperation>(
                { operand },
                std::move(ot),
-               rvsdg::bittype::Create(ndstbits))
+               rvsdg::BitType::Create(ndstbits))
         .output(0);
   }
 };
@@ -1706,7 +1706,7 @@ public:
   ~UIToFPOperation() noexcept override;
 
   UIToFPOperation(
-      std::shared_ptr<const jlm::rvsdg::bittype> srctype,
+      std::shared_ptr<const jlm::rvsdg::BitType> srctype,
       std::shared_ptr<const FloatingPointType> dsttype)
       : UnaryOperation(std::move(srctype), std::move(dsttype))
   {}
@@ -1716,7 +1716,7 @@ public:
       std::shared_ptr<const jlm::rvsdg::Type> restype)
       : UnaryOperation(optype, restype)
   {
-    auto st = dynamic_cast<const jlm::rvsdg::bittype *>(optype.get());
+    auto st = dynamic_cast<const jlm::rvsdg::BitType *>(optype.get());
     if (!st)
       throw util::Error("expected bits type.");
 
@@ -1744,7 +1744,7 @@ public:
   static std::unique_ptr<llvm::ThreeAddressCode>
   create(const Variable * operand, const std::shared_ptr<const jlm::rvsdg::Type> & type)
   {
-    auto st = std::dynamic_pointer_cast<const jlm::rvsdg::bittype>(operand->Type());
+    auto st = std::dynamic_pointer_cast<const jlm::rvsdg::BitType>(operand->Type());
     if (!st)
       throw util::Error("expected bits type.");
 
@@ -1763,7 +1763,7 @@ public:
   ~SIToFPOperation() noexcept override;
 
   SIToFPOperation(
-      std::shared_ptr<const jlm::rvsdg::bittype> srctype,
+      std::shared_ptr<const jlm::rvsdg::BitType> srctype,
       std::shared_ptr<const FloatingPointType> dsttype)
       : UnaryOperation(std::move(srctype), std::move(dsttype))
   {}
@@ -1773,7 +1773,7 @@ public:
       std::shared_ptr<const jlm::rvsdg::Type> dsttype)
       : UnaryOperation(srctype, dsttype)
   {
-    auto st = dynamic_cast<const jlm::rvsdg::bittype *>(srctype.get());
+    auto st = dynamic_cast<const jlm::rvsdg::BitType *>(srctype.get());
     if (!st)
       throw util::Error("expected bits type.");
 
@@ -1801,7 +1801,7 @@ public:
   static std::unique_ptr<llvm::ThreeAddressCode>
   create(const Variable * operand, const std::shared_ptr<const jlm::rvsdg::Type> & type)
   {
-    auto st = std::dynamic_pointer_cast<const jlm::rvsdg::bittype>(operand->Type());
+    auto st = std::dynamic_pointer_cast<const jlm::rvsdg::BitType>(operand->Type());
     if (!st)
       throw util::Error("expected bits type.");
 
@@ -1923,7 +1923,7 @@ public:
 
   ExtractElementOperation(
       const std::shared_ptr<const VectorType> & vtype,
-      const std::shared_ptr<const jlm::rvsdg::bittype> & btype)
+      const std::shared_ptr<const jlm::rvsdg::BitType> & btype)
       : SimpleOperation({ vtype, btype }, { vtype->Type() })
   {}
 
@@ -1943,7 +1943,7 @@ public:
     if (!vt)
       throw util::Error("expected vector type.");
 
-    auto bt = std::dynamic_pointer_cast<const jlm::rvsdg::bittype>(index->Type());
+    auto bt = std::dynamic_pointer_cast<const jlm::rvsdg::BitType>(index->Type());
     if (!bt)
       throw util::Error("expected bit type.");
 
@@ -2051,7 +2051,7 @@ public:
   InsertElementOperation(
       const std::shared_ptr<const VectorType> & vectype,
       const std::shared_ptr<const jlm::rvsdg::ValueType> & vtype,
-      const std::shared_ptr<const jlm::rvsdg::bittype> & btype)
+      const std::shared_ptr<const jlm::rvsdg::BitType> & btype)
       : SimpleOperation({ vectype, vtype, btype }, { vectype })
   {
     if (vectype->type() != *vtype)
@@ -2082,7 +2082,7 @@ public:
     if (!vt)
       throw util::Error("expected value type.");
 
-    auto bt = std::dynamic_pointer_cast<const jlm::rvsdg::bittype>(index->Type());
+    auto bt = std::dynamic_pointer_cast<const jlm::rvsdg::BitType>(index->Type());
     if (!bt)
       throw util::Error("expected bit type.");
 
@@ -2411,7 +2411,7 @@ class MallocOperation final : public rvsdg::SimpleOperation
 public:
   ~MallocOperation() noexcept override;
 
-  explicit MallocOperation(std::shared_ptr<const jlm::rvsdg::bittype> btype)
+  explicit MallocOperation(std::shared_ptr<const jlm::rvsdg::BitType> btype)
       : SimpleOperation({ std::move(btype) }, { PointerType::Create(), MemoryStateType::Create() })
   {}
 
@@ -2424,10 +2424,10 @@ public:
   [[nodiscard]] std::unique_ptr<Operation>
   copy() const override;
 
-  const jlm::rvsdg::bittype &
+  const jlm::rvsdg::BitType &
   size_type() const noexcept
   {
-    return *std::static_pointer_cast<const rvsdg::bittype>(argument(0));
+    return *std::static_pointer_cast<const rvsdg::BitType>(argument(0));
   }
 
   rvsdg::FunctionType
@@ -2440,7 +2440,7 @@ public:
   static std::unique_ptr<llvm::ThreeAddressCode>
   create(const Variable * size)
   {
-    auto bt = std::dynamic_pointer_cast<const jlm::rvsdg::bittype>(size->Type());
+    auto bt = std::dynamic_pointer_cast<const jlm::rvsdg::BitType>(size->Type());
     if (!bt)
       throw util::Error("expected bits type.");
 
@@ -2451,7 +2451,7 @@ public:
   static std::vector<jlm::rvsdg::Output *>
   create(jlm::rvsdg::Output * size)
   {
-    auto bt = std::dynamic_pointer_cast<const jlm::rvsdg::bittype>(size->Type());
+    auto bt = std::dynamic_pointer_cast<const jlm::rvsdg::BitType>(size->Type());
     if (!bt)
       throw util::Error("expected bits type.");
 

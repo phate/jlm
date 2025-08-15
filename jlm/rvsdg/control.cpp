@@ -91,7 +91,7 @@ MatchOperation::MatchOperation(
     const std::unordered_map<uint64_t, uint64_t> & mapping,
     uint64_t default_alternative,
     size_t nalternatives)
-    : UnaryOperation(bittype::Create(nbits), ControlType::Create(nalternatives)),
+    : UnaryOperation(BitType::Create(nbits), ControlType::Create(nalternatives)),
       default_alternative_(default_alternative),
       mapping_(mapping)
 {}

@@ -20,7 +20,7 @@ public:
   ~MakeBitComparisonOperation() noexcept override;
 
   explicit MakeBitComparisonOperation(std::size_t nbits) noexcept
-      : BitCompareOperation(bittype::Create(nbits))
+      : BitCompareOperation(BitType::Create(nbits))
   {}
 
   bool

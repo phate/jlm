@@ -88,7 +88,7 @@ instrument_ref(llvm::RvsdgModule & rm)
   //  addr, width, memstate
   auto loadFunctionType = jlm::rvsdg::FunctionType::Create(
       { jlm::llvm::PointerType::Create(),
-        jlm::rvsdg::bittype::Create(64),
+        jlm::rvsdg::BitType::Create(64),
         llvm::IOStateType::Create(),
         llvm::MemoryStateType::Create() },
       { llvm::IOStateType::Create(), llvm::MemoryStateType::Create() });
@@ -107,7 +107,7 @@ instrument_ref(llvm::RvsdgModule & rm)
   // addr, size, memstate
   auto allocaFunctionType = jlm::rvsdg::FunctionType::Create(
       { jlm::llvm::PointerType::Create(),
-        jlm::rvsdg::bittype::Create(64),
+        jlm::rvsdg::BitType::Create(64),
         llvm::IOStateType::Create(),
         jlm::llvm::MemoryStateType::Create() },
       { llvm::IOStateType::Create(), jlm::llvm::MemoryStateType::Create() });
