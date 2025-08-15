@@ -869,6 +869,7 @@ JlmToMlirConverter::ConvertTheta(
   }
 
   ::llvm::SmallVector<::mlir::NamedAttribute> attributes;
+
   auto theta = Builder_->create<::mlir::rvsdg::ThetaNode>(
       Builder_->getUnknownLoc(),
       ::mlir::TypeRange(::llvm::ArrayRef(outputTypeRange)),

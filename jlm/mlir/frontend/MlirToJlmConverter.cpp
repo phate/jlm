@@ -454,6 +454,7 @@ MlirToJlmConverter::ConvertOperation(
         std::move(st),
         std::move(rt)));
   }
+
   else if (::mlir::isa<::mlir::rvsdg::OmegaNode>(&mlirOperation))
   {
     // Omega doesn't have a corresponding RVSDG node, so we return an empty vector
@@ -505,14 +506,6 @@ MlirToJlmConverter::ConvertOperation(
     auto size = ConvertFPSize(floatType.getWidth());
     return rvsdg::outputs(
         &rvsdg::CreateOpNode<llvm::ConstantFP>(rvsdgRegion, size, constant.value()));
-  }
-  else if (auto constant = ::mlir::dyn_cast<::mlir::arith::ConstantIndexOp>(&mlirOperation))
-  {
-    auto type = constant.getType();
-    JLM_ASSERT(type.getTypeID() == ::mlir::IndexType::getTypeID());
-
-    return rvsdg::outputs(
-        &jlm::llvm::IntegerConstantOperation::Create(rvsdgRegion, 64, constant.value()));
   }
 
   else if (auto negOp = ::mlir::dyn_cast<::mlir::arith::NegFOp>(&mlirOperation))
