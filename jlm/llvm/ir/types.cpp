@@ -322,7 +322,7 @@ MemoryStateType::Create()
 size_t
 GetTypeSize(const rvsdg::ValueType & type)
 {
-  if (const auto bits = dynamic_cast<const rvsdg::bittype *>(&type))
+  if (const auto bits = dynamic_cast<const rvsdg::BitType *>(&type))
   {
     // Assume 8 bits per byte, and round up to a power of 2 bytes
     const auto bytes = (bits->nbits() + 7) / 8;
@@ -405,7 +405,7 @@ GetTypeSize(const rvsdg::ValueType & type)
 size_t
 GetTypeAlignment(const rvsdg::ValueType & type)
 {
-  if (jlm::rvsdg::is<rvsdg::bittype>(type) || jlm::rvsdg::is<PointerType>(type)
+  if (jlm::rvsdg::is<rvsdg::BitType>(type) || jlm::rvsdg::is<PointerType>(type)
       || jlm::rvsdg::is<FloatingPointType>(type) || jlm::rvsdg::is<VectorType>(type))
   {
     // These types all have alignment equal to their size

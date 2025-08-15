@@ -21,7 +21,7 @@ ConnectStreamBuffer(rvsdg::SimpleNode * enq_call, rvsdg::SimpleNode * deq_call)
 {
   int buffer_capacity = DefaultBufferCapacity;
   // buffer size as second argument
-  if (rvsdg::is<const rvsdg::bittype>(deq_call->input(2)->Type()))
+  if (rvsdg::is<const rvsdg::BitType>(deq_call->input(2)->Type()))
   {
     auto constant = trace_constant(deq_call->input(2)->origin());
     buffer_capacity = constant->Representation().to_int();

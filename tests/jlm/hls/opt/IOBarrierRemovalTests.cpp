@@ -20,7 +20,7 @@ IOBarrierRemoval()
   using namespace jlm::rvsdg;
 
   // Arrange
-  auto i32Type = bittype::Create(32);
+  auto i32Type = BitType::Create(32);
   auto ioStateType = IOStateType::Create();
   const auto functionType =
       FunctionType::Create({ i32Type, i32Type, ioStateType }, { i32Type, ioStateType });

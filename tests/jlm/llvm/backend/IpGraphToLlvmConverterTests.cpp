@@ -27,7 +27,7 @@ LoadConversion()
   // Arrange
   auto functionType = jlm::rvsdg::FunctionType::Create(
       { PointerType::Create(), MemoryStateType::Create() },
-      { jlm::rvsdg::bittype::Create(64), MemoryStateType::Create() });
+      { jlm::rvsdg::BitType::Create(64), MemoryStateType::Create() });
 
   InterProceduralGraphModule ipgModule(jlm::util::FilePath(""), "", "");
 
@@ -42,7 +42,7 @@ LoadConversion()
   auto loadTac = basicBlock->append_last(LoadNonVolatileOperation::Create(
       addressArgument,
       memoryStateArgument,
-      jlm::rvsdg::bittype::Create(64),
+      jlm::rvsdg::BitType::Create(64),
       alignment));
 
   cfg->exit()->divert_inedges(basicBlock);
@@ -86,10 +86,10 @@ LoadVolatileConversion()
   auto pointerType = PointerType::Create();
   auto ioStateType = IOStateType::Create();
   auto memoryStateType = MemoryStateType::Create();
-  auto bit64Type = jlm::rvsdg::bittype::Create(64);
+  auto bit64Type = jlm::rvsdg::BitType::Create(64);
   auto functionType = jlm::rvsdg::FunctionType::Create(
       { PointerType::Create(), IOStateType::Create(), MemoryStateType::Create() },
-      { jlm::rvsdg::bittype::Create(64), IOStateType::Create(), MemoryStateType::Create() });
+      { jlm::rvsdg::BitType::Create(64), IOStateType::Create(), MemoryStateType::Create() });
 
   InterProceduralGraphModule ipgModule(jlm::util::FilePath(""), "", "");
 
@@ -149,11 +149,11 @@ MemCpyConversion()
   // Arrange
   auto pointerType = PointerType::Create();
   auto memoryStateType = MemoryStateType::Create();
-  auto bit64Type = jlm::rvsdg::bittype::Create(64);
+  auto bit64Type = jlm::rvsdg::BitType::Create(64);
   auto functionType = jlm::rvsdg::FunctionType::Create(
       { PointerType::Create(),
         PointerType::Create(),
-        jlm::rvsdg::bittype::Create(64),
+        jlm::rvsdg::BitType::Create(64),
         MemoryStateType::Create() },
       { MemoryStateType::Create() });
 
@@ -214,11 +214,11 @@ MemCpyVolatileConversion()
   auto pointerType = PointerType::Create();
   auto ioStateType = IOStateType::Create();
   auto memoryStateType = MemoryStateType::Create();
-  auto bit64Type = jlm::rvsdg::bittype::Create(64);
+  auto bit64Type = jlm::rvsdg::BitType::Create(64);
   auto functionType = jlm::rvsdg::FunctionType::Create(
       { PointerType::Create(),
         PointerType::Create(),
-        jlm::rvsdg::bittype::Create(64),
+        jlm::rvsdg::BitType::Create(64),
         IOStateType::Create(),
         MemoryStateType::Create() },
       { IOStateType::Create(), MemoryStateType::Create() });
@@ -282,9 +282,9 @@ StoreConversion()
   // Arrange
   auto pointerType = PointerType::Create();
   auto memoryStateType = MemoryStateType::Create();
-  auto bit64Type = jlm::rvsdg::bittype::Create(64);
+  auto bit64Type = jlm::rvsdg::BitType::Create(64);
   auto functionType = jlm::rvsdg::FunctionType::Create(
-      { PointerType::Create(), jlm::rvsdg::bittype::Create(64), MemoryStateType::Create() },
+      { PointerType::Create(), jlm::rvsdg::BitType::Create(64), MemoryStateType::Create() },
       { MemoryStateType::Create() });
 
   InterProceduralGraphModule ipgModule(jlm::util::FilePath(""), "", "");
@@ -343,10 +343,10 @@ StoreVolatileConversion()
   auto pointerType = PointerType::Create();
   auto ioStateType = IOStateType::Create();
   auto memoryStateType = MemoryStateType::Create();
-  auto bit64Type = jlm::rvsdg::bittype::Create(64);
+  auto bit64Type = jlm::rvsdg::BitType::Create(64);
   auto functionType = jlm::rvsdg::FunctionType::Create(
       { PointerType::Create(),
-        jlm::rvsdg::bittype::Create(64),
+        jlm::rvsdg::BitType::Create(64),
         IOStateType::Create(),
         MemoryStateType::Create() },
       { IOStateType::Create(), MemoryStateType::Create() });
@@ -414,7 +414,7 @@ IntegerConstant()
 
   using namespace jlm::llvm;
 
-  auto ft = jlm::rvsdg::FunctionType::Create({}, { jlm::rvsdg::bittype::Create(65) });
+  auto ft = jlm::rvsdg::FunctionType::Create({}, { jlm::rvsdg::BitType::Create(65) });
 
   jlm::rvsdg::BitValueRepresentation vr(bs);
 
@@ -461,7 +461,7 @@ Malloc()
     bb->add_outedge(cfg->exit());
 
     auto size =
-        cfg->entry()->append_argument(argument::create("size", jlm::rvsdg::bittype::Create(64)));
+        cfg->entry()->append_argument(argument::create("size", jlm::rvsdg::BitType::Create(64)));
 
     bb->append_last(MallocOperation::create(size));
 
@@ -469,7 +469,7 @@ Malloc()
     cfg->exit()->append_result(bb->last()->result(1));
 
     auto ft = jlm::rvsdg::FunctionType::Create(
-        { jlm::rvsdg::bittype::Create(64) },
+        { jlm::rvsdg::BitType::Create(64) },
         { PointerType::Create(), MemoryStateType::Create() });
     auto f = FunctionNode::create(im->ipgraph(), "f", ft, linkage::external_linkage);
     f->add_cfg(std::move(cfg));
@@ -608,7 +608,7 @@ SelectWithState()
   cfg->exit()->divert_inedges(bb);
   bb->add_outedge(cfg->exit());
 
-  auto p = cfg->entry()->append_argument(argument::create("p", jlm::rvsdg::bittype::Create(1)));
+  auto p = cfg->entry()->append_argument(argument::create("p", jlm::rvsdg::BitType::Create(1)));
   auto s1 = cfg->entry()->append_argument(argument::create("s1", mt));
   auto s2 = cfg->entry()->append_argument(argument::create("s2", mt));
 
@@ -619,7 +619,7 @@ SelectWithState()
   cfg->exit()->append_result(s3);
 
   auto ft = jlm::rvsdg::FunctionType::Create(
-      { jlm::rvsdg::bittype::Create(1), MemoryStateType::Create(), MemoryStateType::Create() },
+      { jlm::rvsdg::BitType::Create(1), MemoryStateType::Create(), MemoryStateType::Create() },
       { MemoryStateType::Create(), MemoryStateType::Create() });
   auto f = FunctionNode::create(m.ipgraph(), "f", ft, linkage::external_linkage);
   f->add_cfg(std::move(cfg));

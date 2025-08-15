@@ -38,7 +38,7 @@ GetOrCreateTypeGraphNode(const rvsdg::Type & type, util::graph::Graph & typeGrap
   node.SetLabel(type.debug_string());
 
   // Some types get special handling, such as adding incoming edges from aggregate types
-  if (rvsdg::is<rvsdg::StateType>(type) || rvsdg::is<rvsdg::bittype>(type)
+  if (rvsdg::is<rvsdg::StateType>(type) || rvsdg::is<rvsdg::BitType>(type)
       || rvsdg::is<PointerType>(type) || rvsdg::is<FloatingPointType>(type)
       || rvsdg::is<VariableArgumentType>(type) || rvsdg::is<rvsdg::UnitType>(type))
   {

@@ -171,7 +171,7 @@ IfConversion::HandleGammaNode(const rvsdg::GammaNode & gammaNode)
       auto & controlToIntNode = rvsdg::CreateOpNode<ControlToIntOperation>(
           { gammaPredicate },
           rvsdg::ControlType::Create(2),
-          rvsdg::bittype::Create(1));
+          rvsdg::BitType::Create(1));
       auto & selectNode = rvsdg::CreateOpNode<SelectOperation>(
           { controlToIntNode.output(0), trueAlternative, falseAlternative },
           gammaOutput->Type());

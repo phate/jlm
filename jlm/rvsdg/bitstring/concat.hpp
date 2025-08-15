@@ -21,7 +21,7 @@ class BitConcatOperation final : public BinaryOperation
 public:
   ~BitConcatOperation() noexcept override;
 
-  explicit BitConcatOperation(const std::vector<std::shared_ptr<const bittype>> types)
+  explicit BitConcatOperation(const std::vector<std::shared_ptr<const BitType>> types)
       : BinaryOperation({ types.begin(), types.end() }, aggregate_arguments(types))
   {}
 
@@ -48,8 +48,8 @@ public:
   copy() const override;
 
 private:
-  static std::shared_ptr<const bittype>
-  aggregate_arguments(const std::vector<std::shared_ptr<const bittype>> & types) noexcept;
+  static std::shared_ptr<const BitType>
+  aggregate_arguments(const std::vector<std::shared_ptr<const BitType>> & types) noexcept;
 };
 
 jlm::rvsdg::Output *

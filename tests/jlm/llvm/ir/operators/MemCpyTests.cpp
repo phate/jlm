@@ -16,8 +16,8 @@ OperationEquality()
 
   // Arrange
   auto valueType = jlm::tests::ValueType::Create();
-  auto bit32Type = jlm::rvsdg::bittype::Create(32);
-  auto bit64Type = jlm::rvsdg::bittype::Create(64);
+  auto bit32Type = jlm::rvsdg::BitType::Create(32);
+  auto bit64Type = jlm::rvsdg::BitType::Create(64);
 
   MemCpyNonVolatileOperation operation1(bit32Type, 1);
   MemCpyNonVolatileOperation operation2(bit64Type, 4);

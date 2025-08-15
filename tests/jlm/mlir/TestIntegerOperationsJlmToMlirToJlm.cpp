@@ -102,13 +102,13 @@ TestIntegerBinaryOperation()
         {
           assert(convertedBinaryOp->nresults() == 1);
           assert(convertedBinaryOp->narguments() == 2);
-          auto inputBitType1 = jlm::util::AssertedCast<const jlm::rvsdg::bittype>(
+          auto inputBitType1 = jlm::util::AssertedCast<const jlm::rvsdg::BitType>(
               convertedBinaryOp->argument(0).get());
           assert(inputBitType1->nbits() == nbits);
-          auto inputBitType2 = jlm::util::AssertedCast<const jlm::rvsdg::bittype>(
+          auto inputBitType2 = jlm::util::AssertedCast<const jlm::rvsdg::BitType>(
               convertedBinaryOp->argument(1).get());
           assert(inputBitType2->nbits() == nbits);
-          auto outputBitType = jlm::util::AssertedCast<const jlm::rvsdg::bittype>(
+          auto outputBitType = jlm::util::AssertedCast<const jlm::rvsdg::BitType>(
               convertedBinaryOp->result(0).get());
           assert(outputBitType->nbits() == nbits);
           foundBinaryOp = true;
@@ -229,16 +229,16 @@ TestIntegerComparisonOperation(const IntegerComparisonOpTest<JlmOperation> & tes
         {
           assert(convertedCompOp->nresults() == 1);
           assert(convertedCompOp->narguments() == 2);
-          auto inputBitType1 = jlm::util::AssertedCast<const jlm::rvsdg::bittype>(
+          auto inputBitType1 = jlm::util::AssertedCast<const jlm::rvsdg::BitType>(
               convertedCompOp->argument(0).get());
           assert(inputBitType1->nbits() == nbits);
-          auto inputBitType2 = jlm::util::AssertedCast<const jlm::rvsdg::bittype>(
+          auto inputBitType2 = jlm::util::AssertedCast<const jlm::rvsdg::BitType>(
               convertedCompOp->argument(1).get());
           assert(inputBitType2->nbits() == nbits);
 
           // Check the output type is bit1 (boolean)
           auto outputBitType =
-              jlm::util::AssertedCast<const jlm::rvsdg::bittype>(convertedCompOp->result(0).get());
+              jlm::util::AssertedCast<const jlm::rvsdg::BitType>(convertedCompOp->result(0).get());
           assert(outputBitType->nbits() == 1);
 
           foundCompOp = true;

@@ -27,7 +27,7 @@ add_prints(rvsdg::Region * region)
       }
     }
     if (dynamic_cast<jlm::rvsdg::SimpleNode *>(node) && node->noutputs() == 1
-        && jlm::rvsdg::is<rvsdg::bittype>(node->output(0)->Type())
+        && jlm::rvsdg::is<rvsdg::BitType>(node->output(0)->Type())
         && !jlm::rvsdg::is<llvm::UndefValueOperation>(node))
     {
       auto out = node->output(0);
@@ -58,7 +58,7 @@ convert_prints(llvm::RvsdgModule & rm)
   auto root = &graph.GetRootRegion();
   // TODO: make this less hacky by using the correct state types
   auto fct =
-      rvsdg::FunctionType::Create({ rvsdg::bittype::Create(64), rvsdg::bittype::Create(64) }, {});
+      rvsdg::FunctionType::Create({ rvsdg::BitType::Create(64), rvsdg::BitType::Create(64) }, {});
   auto & printf =
       llvm::GraphImport::Create(graph, fct, fct, "printnode", llvm::linkage::external_linkage);
   convert_prints(root, &printf, fct);
@@ -116,11 +116,11 @@ convert_prints(
       auto printf_local = route_to_region_rvsdg(printf, region); // TODO: prevent repetition?
       auto & constantNode = llvm::IntegerConstantOperation::Create(*region, 64, po->id());
       jlm::rvsdg::Output * val = node->input(0)->origin();
-      if (*val->Type() != *jlm::rvsdg::bittype::Create(64))
+      if (*val->Type() != *jlm::rvsdg::BitType::Create(64))
       {
-        auto bt = std::dynamic_pointer_cast<const rvsdg::bittype>(val->Type());
+        auto bt = std::dynamic_pointer_cast<const rvsdg::BitType>(val->Type());
         JLM_ASSERT(bt);
-        val = &llvm::ZExtOperation::Create(*val, rvsdg::bittype::Create(64));
+        val = &llvm::ZExtOperation::Create(*val, rvsdg::BitType::Create(64));
       }
       llvm::CallOperation::Create(printf_local, functionType, { constantNode.output(0), val });
       node->output(0)->divert_users(node->input(0)->origin());

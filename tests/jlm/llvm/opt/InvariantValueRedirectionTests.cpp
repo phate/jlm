@@ -345,7 +345,7 @@ TestCallWithMissingMemoryStateNodes()
   auto ioStateType = IOStateType::Create();
   auto memoryStateType = MemoryStateType::Create();
   auto valueType = jlm::tests::ValueType::Create();
-  auto int32Type = bittype::Create(32);
+  auto int32Type = BitType::Create(32);
   auto functionType = FunctionType::Create(
       { valueType, ioStateType, memoryStateType },
       { int32Type, ioStateType, memoryStateType });

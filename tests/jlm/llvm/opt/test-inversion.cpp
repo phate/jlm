@@ -38,7 +38,7 @@ test1()
   auto a = jlm::tests::TestOperation::create(
                theta->subregion(),
                { lvx.pre, lvy.pre },
-               { jlm::rvsdg::bittype::Create(1) })
+               { jlm::rvsdg::BitType::Create(1) })
                ->output(0);
   auto predicate = jlm::rvsdg::match(1, { { 1, 0 } }, 1, 2, a);
 
@@ -95,7 +95,7 @@ test2()
   auto n1 = jlm::tests::TestOperation::create(
                 theta->subregion(),
                 { lv1.pre },
-                { jlm::rvsdg::bittype::Create(1) })
+                { jlm::rvsdg::BitType::Create(1) })
                 ->output(0);
   auto n2 = jlm::tests::TestOperation::create(theta->subregion(), { lv1.pre }, { vt })->output(0);
   auto predicate = jlm::rvsdg::match(1, { { 1, 0 } }, 1, 2, n1);

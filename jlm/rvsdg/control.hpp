@@ -195,7 +195,7 @@ public:
   inline size_t
   nbits() const noexcept
   {
-    return std::static_pointer_cast<const bittype>(argument(0))->nbits();
+    return std::static_pointer_cast<const BitType>(argument(0))->nbits();
   }
 
   inline const_iterator
@@ -228,15 +228,15 @@ public:
   }
 
 private:
-  static const bittype &
+  static const BitType &
   CheckAndExtractBitType(const rvsdg::Type & type)
   {
-    if (auto bitType = dynamic_cast<const bittype *>(&type))
+    if (auto bitType = dynamic_cast<const BitType *>(&type))
     {
       return *bitType;
     }
 
-    throw util::TypeError("bittype", type.debug_string());
+    throw util::TypeError("BitType", type.debug_string());
   }
 
   uint64_t default_alternative_;

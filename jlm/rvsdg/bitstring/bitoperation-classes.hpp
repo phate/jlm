@@ -22,14 +22,14 @@ class BitUnaryOperation : public UnaryOperation
 public:
   ~BitUnaryOperation() noexcept override;
 
-  explicit BitUnaryOperation(const std::shared_ptr<const bittype> & type) noexcept
+  explicit BitUnaryOperation(const std::shared_ptr<const BitType> & type) noexcept
       : UnaryOperation(type, type)
   {}
 
-  inline const bittype &
+  inline const BitType &
   type() const noexcept
   {
-    return *std::static_pointer_cast<const bittype>(argument(0));
+    return *std::static_pointer_cast<const BitType>(argument(0));
   }
 
   unop_reduction_path_t
@@ -53,7 +53,7 @@ class BitBinaryOperation : public BinaryOperation
 public:
   ~BitBinaryOperation() noexcept override;
 
-  explicit BitBinaryOperation(const std::shared_ptr<const bittype> type, size_t arity = 2) noexcept
+  explicit BitBinaryOperation(const std::shared_ptr<const BitType> type, size_t arity = 2) noexcept
       : BinaryOperation({ arity, type }, type)
   {}
 
@@ -75,10 +75,10 @@ public:
   virtual std::unique_ptr<BitBinaryOperation>
   create(size_t nbits) const = 0;
 
-  inline const bittype &
+  inline const BitType &
   type() const noexcept
   {
-    return *std::static_pointer_cast<const bittype>(result(0));
+    return *std::static_pointer_cast<const BitType>(result(0));
   }
 };
 
@@ -94,8 +94,8 @@ class BitCompareOperation : public BinaryOperation
 public:
   ~BitCompareOperation() noexcept override;
 
-  explicit BitCompareOperation(std::shared_ptr<const bittype> type) noexcept
-      : BinaryOperation({ type, type }, bittype::Create(1))
+  explicit BitCompareOperation(std::shared_ptr<const BitType> type) noexcept
+      : BinaryOperation({ type, type }, BitType::Create(1))
   {}
 
   binop_reduction_path_t
@@ -115,10 +115,10 @@ public:
   virtual std::unique_ptr<BitCompareOperation>
   create(size_t nbits) const = 0;
 
-  inline const bittype &
+  inline const BitType &
   type() const noexcept
   {
-    return *std::static_pointer_cast<const bittype>(argument(0));
+    return *std::static_pointer_cast<const BitType>(argument(0));
   }
 };
 

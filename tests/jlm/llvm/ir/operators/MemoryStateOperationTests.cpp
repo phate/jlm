@@ -405,7 +405,7 @@ LambdaExitMemoryStateMergeNormalizeLoad()
   using namespace jlm::rvsdg;
 
   // Arrange
-  const auto bit32Type = bittype::Create(32);
+  const auto bit32Type = BitType::Create(32);
   const auto memoryStateType = jlm::llvm::MemoryStateType::Create();
   const auto valueType = jlm::tests::ValueType::Create();
 
@@ -467,7 +467,7 @@ LambdaExitMemoryStateMergeNormalizeStore()
   using namespace jlm::rvsdg;
 
   // Arrange
-  const auto bit32Type = bittype::Create(32);
+  const auto bit32Type = BitType::Create(32);
   const auto memoryStateType = jlm::llvm::MemoryStateType::Create();
   const auto valueType = jlm::tests::ValueType::Create();
 
@@ -528,7 +528,7 @@ LambdaExitMemoryStateMergeNormalizeAlloca()
   using namespace jlm::rvsdg;
 
   // Arrange
-  const auto bit32Type = bittype::Create(32);
+  const auto bit32Type = BitType::Create(32);
   const auto memoryStateType = jlm::llvm::MemoryStateType::Create();
   const auto valueType = jlm::tests::ValueType::Create();
 

@@ -21,7 +21,7 @@ public:
 
   AllocaOperation(
       std::shared_ptr<const rvsdg::ValueType> allocatedType,
-      std::shared_ptr<const rvsdg::bittype> btype,
+      std::shared_ptr<const rvsdg::BitType> btype,
       size_t alignment)
       : SimpleOperation({ btype }, { { PointerType::Create() }, { MemoryStateType::Create() } }),
         alignment_(alignment),
@@ -41,10 +41,10 @@ public:
   [[nodiscard]] std::unique_ptr<Operation>
   copy() const override;
 
-  inline const rvsdg::bittype &
+  inline const rvsdg::BitType &
   size_type() const noexcept
   {
-    return *std::static_pointer_cast<const rvsdg::bittype>(argument(0));
+    return *std::static_pointer_cast<const rvsdg::BitType>(argument(0));
   }
 
   [[nodiscard]] const rvsdg::ValueType &
@@ -71,7 +71,7 @@ public:
       const Variable * size,
       size_t alignment)
   {
-    auto bt = std::dynamic_pointer_cast<const rvsdg::bittype>(size->Type());
+    auto bt = std::dynamic_pointer_cast<const rvsdg::BitType>(size->Type());
     if (!bt)
       throw util::Error("expected bits type.");
 
@@ -85,7 +85,7 @@ public:
       rvsdg::Output * size,
       size_t alignment)
   {
-    auto bt = std::dynamic_pointer_cast<const rvsdg::bittype>(size->Type());
+    auto bt = std::dynamic_pointer_cast<const rvsdg::BitType>(size->Type());
     if (!bt)
       throw util::Error("expected bits type.");
 
