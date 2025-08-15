@@ -9,6 +9,7 @@
 #include <jlm/hls/backend/rvsdg2rhls/mem-queue.hpp>
 #include <jlm/hls/backend/rvsdg2rhls/mem-sep.hpp>
 #include <jlm/hls/ir/hls.hpp>
+#include <jlm/llvm/ir/LambdaMemoryState.hpp>
 #include <jlm/llvm/ir/operators/call.hpp>
 #include <jlm/llvm/ir/operators/lambda.hpp>
 #include <jlm/llvm/ir/operators/Load.hpp>
@@ -485,7 +486,7 @@ jlm::hls::mem_queue(jlm::rvsdg::Region * region)
 {
   auto lambda =
       jlm::util::AssertedCast<const jlm::rvsdg::LambdaNode>(region->Nodes().begin().ptr());
-  auto state_arg = GetMemoryStateArgument(*lambda);
+  auto state_arg = &llvm::GetMemoryStateRegionArgument(*lambda);
   if (!state_arg)
   {
     // No memstate, i.e., no memory used
