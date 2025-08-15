@@ -17,11 +17,11 @@
 #include <jlm/rvsdg/theta.hpp>
 
 // MLIR RVSDG dialects
-#include <JLM/JLMDialect.h>
 #include <RVSDG/RVSDGDialect.h>
 #include <RVSDG/RVSDGPasses.h>
 
 // MLIR JLM dialects
+#include <JLM/JLMDialect.h>
 #include <JLM/JLMOps.h>
 
 // MLIR generic dialects
@@ -253,6 +253,14 @@ public:
    */
   ::mlir::Type
   ConvertType(const rvsdg::Type & type);
+
+  /**
+   * Generate a vector with memory state types.
+   * \param nresults The number of memory state types to generate.
+   * \result The vector with memory state types.
+   */
+  ::llvm::SmallVector<::mlir::Type>
+  GetMemStateRange(size_t nresults);
 
   std::unique_ptr<::mlir::OpBuilder> Builder_;
   std::unique_ptr<::mlir::MLIRContext> Context_;
