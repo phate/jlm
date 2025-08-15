@@ -49,6 +49,11 @@ public:
   static inline const char * const ENV_DOUBLE_CHECK = "JLM_ANDERSEN_DOUBLE_CHECK";
 
   /**
+   * If given, the Andersen analysis skips performing PTG construction, and just returns an empty PtG
+   */
+  static inline const char * const ENV_SKIP_CONSTRUCTING_PTR = "JLM_ANDERSEN_SKIP_CONSTRUCTING_PTG";
+
+  /**
    * Environment variable that will trigger dumping the subset graph before and after solving.
    */
   static inline const char * const ENV_DUMP_SUBSET_GRAPH = "JLM_ANDERSEN_DUMP_SUBSET_GRAPH";

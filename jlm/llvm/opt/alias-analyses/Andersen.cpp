@@ -1501,13 +1501,14 @@ Andersen::Analyze(
   if (auto useExactConfigString = std::getenv(ENV_USE_EXACT_CONFIG))
     useExactConfig = std::stoi(useExactConfigString);
   const bool doubleCheck = std::getenv(ENV_DOUBLE_CHECK);
+  const bool skipConstructingPtg = std::getenv(ENV_SKIP_CONSTRUCTING_PTR);
 
   const bool dumpGraphs = std::getenv(ENV_DUMP_SUBSET_GRAPH);
   util::GraphWriter writer;
 
   AnalyzeModule(module, *statistics);
 
-  const bool solveMultipleTimes = testAllConfigsIterations || doubleCheck;
+  const bool solveMultipleTimes = testAllConfigsIterations || doubleCheck || useExactConfig.has_value();
 
   // If solving multiple times, make a copy of the original constraint set
   std::pair<std::unique_ptr<PointerObjectSet>, std::unique_ptr<PointerObjectConstraintSet>> copy;
@@ -1518,8 +1519,12 @@ Andersen::Analyze(
   if (dumpGraphs)
     Constraints_->DrawSubsetGraph(writer);
 
-  SolveConstraints(*Constraints_, Config_, *statistics);
-  statistics->AddStatisticsFromSolution(*Set_);
+  // Only do the first solve if we actually need it. Otherwise create a dummy statistics entry
+  if (!skipConstructingPtg || doubleCheck)
+  {
+    SolveConstraints(*Constraints_, Config_, *statistics);
+    statistics->AddStatisticsFromSolution(*Set_);
+  }
 
   if (dumpGraphs)
   {
@@ -1527,7 +1532,9 @@ Andersen::Analyze(
     graph.AppendToLabel("After Solving with " + Config_.ToString());
   }
 
-  auto result = ConstructPointsToGraphFromPointerObjectSet(*Set_, *statistics);
+  auto result = skipConstructingPtg
+                  ? PointsToGraph::Create()
+                  : ConstructPointsToGraphFromPointerObjectSet(*Set_, *statistics);
 
   statistics->StopAndersenStatistics();
   statisticsCollector.CollectDemandedStatistics(std::move(statistics));
