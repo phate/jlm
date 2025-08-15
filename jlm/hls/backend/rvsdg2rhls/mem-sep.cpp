@@ -8,6 +8,7 @@
 #include <jlm/hls/backend/rvsdg2rhls/mem-conv.hpp>
 #include <jlm/hls/backend/rvsdg2rhls/mem-sep.hpp>
 #include <jlm/hls/ir/hls.hpp>
+#include <jlm/llvm/ir/LambdaMemoryState.hpp>
 #include <jlm/llvm/ir/operators/call.hpp>
 #include <jlm/llvm/ir/operators/lambda.hpp>
 #include <jlm/llvm/ir/operators/Load.hpp>
@@ -32,20 +33,6 @@ mem_sep_argument(llvm::RvsdgModule & rm)
   mem_sep_argument(root);
 }
 
-// from MemoryStateEncoder.cpp
-rvsdg::RegionArgument *
-GetMemoryStateArgument(const rvsdg::LambdaNode & lambda)
-{
-  auto subregion = lambda.subregion();
-  for (size_t n = 0; n < subregion->narguments(); n++)
-  {
-    auto argument = subregion->argument(n);
-    if (jlm::rvsdg::is<llvm::MemoryStateType>(argument->Type()))
-      return argument;
-  }
-  return nullptr;
-}
-
 rvsdg::RegionArgument *
 GetIoStateArgument(const rvsdg::LambdaNode & lambda)
 {
@@ -57,20 +44,6 @@ GetIoStateArgument(const rvsdg::LambdaNode & lambda)
       return argument;
   }
   return nullptr;
-}
-
-rvsdg::RegionResult *
-GetMemoryStateResult(const rvsdg::LambdaNode & lambda)
-{
-  auto subregion = lambda.subregion();
-  for (size_t n = 0; n < subregion->nresults(); n++)
-  {
-    auto result = subregion->result(n);
-    if (jlm::rvsdg::is<jlm::llvm::MemoryStateType>(result->Type()))
-      return result;
-  }
-
-  JLM_UNREACHABLE("This should have never happened!");
 }
 
 void
@@ -313,7 +286,7 @@ mem_sep_argument(rvsdg::Region * region)
 {
   auto lambda = dynamic_cast<const rvsdg::LambdaNode *>(region->Nodes().begin().ptr());
   auto lambda_region = lambda->subregion();
-  auto state_arg = GetMemoryStateArgument(*lambda);
+  auto state_arg = &llvm::GetMemoryStateRegionArgument(*lambda);
   if (!state_arg)
   {
     // no memstate - i.e., no memory used
@@ -349,7 +322,7 @@ mem_sep_argument(rvsdg::Region * region)
   }
   auto entry_states =
       jlm::llvm::LambdaEntryMemoryStateSplitOperation::Create(*state_arg, 1 + port_nodes.size());
-  auto state_result = GetMemoryStateResult(*lambda);
+  auto state_result = &llvm::GetMemoryStateRegionResult(*lambda);
   // handle existing state edge - TODO: remove entirely?
   auto common_edge = entry_states.back();
   entry_states.pop_back();
