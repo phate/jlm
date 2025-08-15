@@ -36,7 +36,7 @@ test_bitunary_reduction()
   // Act
   ReduceNode<SExtOperation>(
       NormalizeUnaryOperation,
-      *jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*ex.origin()));
+      *jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(*ex.origin()));
   graph.PruneNodes();
 
   view(graph, stdout);
@@ -68,7 +68,7 @@ test_bitbinary_reduction()
   // Act
   ReduceNode<SExtOperation>(
       NormalizeUnaryOperation,
-      *jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*ex.origin()));
+      *jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(*ex.origin()));
   graph.PruneNodes();
 
   view(graph, stdout);
@@ -99,7 +99,7 @@ test_inverse_reduction()
   // Act
   ReduceNode<SExtOperation>(
       NormalizeUnaryOperation,
-      *jlm::rvsdg::TryGetOwnerNode<Node>(*ex.origin()));
+      *jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(*ex.origin()));
   graph.PruneNodes();
 
   view(graph, stdout);

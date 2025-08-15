@@ -72,7 +72,7 @@ GammaSubregionUsage()
     // check subregion 0 - we expect the constantNode to be distributed into this subregion
     assert(gammaNode->subregion(0)->nnodes() == 2);
     auto [constantNode, constantOperation] =
-        TryGetSimpleNodeAndOp<IntegerConstantOperation>(*testNode0->input(0)->origin());
+        TryGetSimpleNodeAndOptionalOp<IntegerConstantOperation>(*testNode0->input(0)->origin());
     assert(constantNode && constantOperation);
   }
 
@@ -80,7 +80,7 @@ GammaSubregionUsage()
     // check subregion 1 - we expect the constantNode to be distributed into this subregion
     assert(gammaNode->subregion(1)->nnodes() == 2);
     auto [constantNode, constantOperation] =
-        TryGetSimpleNodeAndOp<IntegerConstantOperation>(*testNode1->input(0)->origin());
+        TryGetSimpleNodeAndOptionalOp<IntegerConstantOperation>(*testNode1->input(0)->origin());
     assert(constantNode && constantOperation);
   }
 
@@ -88,7 +88,8 @@ GammaSubregionUsage()
     // check subregion 2 - we expect the constantNode to be distributed into this subregion
     assert(gammaNode->subregion(2)->nnodes() == 1);
     auto [constantNode, constantOperation] =
-        TryGetSimpleNodeAndOp<IntegerConstantOperation>(*exitVariable.branchResult[2]->origin());
+        TryGetSimpleNodeAndOptionalOp<IntegerConstantOperation>(
+            *exitVariable.branchResult[2]->origin());
     assert(constantNode && constantOperation);
   }
 }
@@ -160,7 +161,7 @@ NestedGammas()
     // check gammaNodeOuter subregion 0
     assert(gammaNodeOuter->subregion(0)->nnodes() == 2);
     auto [constantNode, constantOperation] =
-        TryGetSimpleNodeAndOp<IntegerConstantOperation>(*testNode0->input(0)->origin());
+        TryGetSimpleNodeAndOptionalOp<IntegerConstantOperation>(*testNode0->input(0)->origin());
     assert(constantNode && constantOperation);
   }
 
@@ -173,16 +174,18 @@ NestedGammas()
     {
       // check gammaNodeInner subregion 0
       assert(gammaNodeInner->subregion(0)->nnodes() == 1);
-      auto [constantNode, constantOperation] = TryGetSimpleNodeAndOp<IntegerConstantOperation>(
-          *exitVariableInner.branchResult[0]->origin());
+      auto [constantNode, constantOperation] =
+          TryGetSimpleNodeAndOptionalOp<IntegerConstantOperation>(
+              *exitVariableInner.branchResult[0]->origin());
       assert(constantNode && constantOperation);
     }
 
     {
       // check gammaNodeInner subregion 1
       assert(gammaNodeInner->subregion(1)->nnodes() == 1);
-      auto [constantNode, constantOperation] = TryGetSimpleNodeAndOp<IntegerConstantOperation>(
-          *exitVariableInner.branchResult[1]->origin());
+      auto [constantNode, constantOperation] =
+          TryGetSimpleNodeAndOptionalOp<IntegerConstantOperation>(
+              *exitVariableInner.branchResult[1]->origin());
       assert(constantNode && constantOperation);
     }
   }
@@ -269,16 +272,18 @@ Theta()
     assert(loopVar.output->IsDead());
     assert(loopVar.pre->IsDead());
 
-    auto [constantNode, constantOperation] = TryGetSimpleNodeAndOp<IntegerConstantOperation>(
-        *lambdaNode->subregion()->result(1)->origin());
+    auto [constantNode, constantOperation] =
+        TryGetSimpleNodeAndOptionalOp<IntegerConstantOperation>(
+            *lambdaNode->subregion()->result(1)->origin());
     assert(constantNode && constantOperation);
     assert(constantOperation->Representation() == 1);
   }
 
   {
     // LoopVar2 was a passthrough so we expect it to be redirected to constantNode2
-    auto [constantNode, constantOperation] = TryGetSimpleNodeAndOp<IntegerConstantOperation>(
-        *lambdaNode->subregion()->result(2)->origin());
+    auto [constantNode, constantOperation] =
+        TryGetSimpleNodeAndOptionalOp<IntegerConstantOperation>(
+            *lambdaNode->subregion()->result(2)->origin());
     assert(constantNode && constantOperation);
     assert(constantNode == &constantNode2);
   }
@@ -286,7 +291,7 @@ Theta()
   {
     // We expect constantNode2 to be distributed t o the theta subregion for testNode2
     auto [constantNode, constantOperation] =
-        TryGetSimpleNodeAndOp<IntegerConstantOperation>(*testNode2->input(0)->origin());
+        TryGetSimpleNodeAndOptionalOp<IntegerConstantOperation>(*testNode2->input(0)->origin());
     assert(constantNode && constantOperation);
     assert(constantOperation->Representation() == 2);
   }

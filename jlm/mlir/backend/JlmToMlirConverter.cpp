@@ -426,7 +426,6 @@ JlmToMlirConverter::ConvertSimpleNode(
   {
     MlirOp = ConvertFpBinaryNode(*fpBinOp, inputs);
   }
-
   else if (rvsdg::is<jlm::llvm::IntegerBinaryOperation>(operation))
   {
     MlirOp = ConvertIntegerBinaryOperation(

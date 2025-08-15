@@ -152,7 +152,7 @@ test_control_constant_reduction()
   view(&graph.GetRootRegion(), stdout);
 
   // Assert
-  auto [matchNode, matchOperation] = TryGetSimpleNodeAndOp<MatchOperation>(*ex1.origin());
+  auto [matchNode, matchOperation] = TryGetSimpleNodeAndOptionalOp<MatchOperation>(*ex1.origin());
   assert(matchNode && matchOperation);
   assert(matchOperation->default_alternative() == 0);
 

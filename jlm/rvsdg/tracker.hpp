@@ -16,26 +16,22 @@ namespace jlm::rvsdg
 
 static const size_t tracker_nodestate_none = (size_t)-1;
 
-class Graph;
 class Node;
 class Region;
 class TrackerDepthState;
 class TrackerNodeState;
 
-bool
-has_active_trackers(const Graph * graph);
-
 /**
- * Track states of nodes within the graph. Each node can logically be in
+ * Track states of nodes within a region. Each node can logically be in
  * one of the numbered states, plus another "initial" state. All nodes are
  * at the beginning assumed to be implicitly in this "initial" state.
  */
-struct Tracker
+class Tracker final
 {
 public:
   ~Tracker() noexcept;
 
-  Tracker(Graph * graph, size_t nstates);
+  Tracker(Region & region, size_t nstates);
 
   /* get state of the node */
   ssize_t
@@ -46,17 +42,19 @@ public:
   set_nodestate(Node * node, size_t state);
 
   /* get one of the top nodes for the given state */
+  // FIXME: Rename this method to pop_top(), because this is what it actually does
   Node *
   peek_top(size_t state) const;
 
   /* get one of the bottom nodes for the given state */
+  // FIXME: Rename this method to pop_bottom(), because this is what it actually does
   Node *
   peek_bottom(size_t state) const;
 
-  [[nodiscard]] Graph *
-  graph() const noexcept
+  [[nodiscard]] Region &
+  GetRegion() const noexcept
   {
-    return graph_;
+    return *Region_;
   }
 
 private:
@@ -69,7 +67,7 @@ private:
   void
   node_destroy(Node * node);
 
-  jlm::rvsdg::Graph * graph_;
+  Region * Region_;
 
   /* FIXME: need RAII idiom for state reservation */
   std::vector<std::unique_ptr<TrackerDepthState>> states_;

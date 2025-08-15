@@ -56,17 +56,17 @@ BitSliceOperation::reduce_operand(unop_reduction_path_t path, jlm::rvsdg::Output
     return arg;
   }
 
-  auto node = static_cast<node_output *>(arg)->node();
+  auto & node = AssertGetOwnerNode<SimpleNode>(*arg);
 
   if (path == unop_reduction_narrow)
   {
-    auto op = static_cast<const BitSliceOperation &>(node->GetOperation());
-    return jlm::rvsdg::bitslice(node->input(0)->origin(), low() + op.low(), high() + op.low());
+    auto op = static_cast<const BitSliceOperation &>(node.GetOperation());
+    return jlm::rvsdg::bitslice(node.input(0)->origin(), low() + op.low(), high() + op.low());
   }
 
   if (path == unop_reduction_constant)
   {
-    auto op = static_cast<const bitconstant_op &>(node->GetOperation());
+    auto op = static_cast<const bitconstant_op &>(node.GetOperation());
     std::string s(&op.value()[0] + low(), high() - low());
     return create_bitconstant(arg->region(), BitValueRepresentation(s.c_str()));
   }
@@ -75,9 +75,9 @@ BitSliceOperation::reduce_operand(unop_reduction_path_t path, jlm::rvsdg::Output
   {
     size_t pos = 0, n = 0;
     std::vector<jlm::rvsdg::Output *> arguments;
-    for (n = 0; n < node->ninputs(); n++)
+    for (n = 0; n < node.ninputs(); n++)
     {
-      auto argument = node->input(n)->origin();
+      auto argument = node.input(n)->origin();
       size_t base = pos;
       size_t nbits = std::static_pointer_cast<const bittype>(argument->Type())->nbits();
       pos = pos + nbits;

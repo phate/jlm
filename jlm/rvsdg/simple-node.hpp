@@ -197,7 +197,7 @@ CreateOpNode(Region & region, OperatorArguments... operatorArguments)
  */
 template<typename TOperation>
 std::pair<SimpleNode *, const TOperation *>
-TryGetSimpleNodeAndOp(const rvsdg::Input & input) noexcept
+TryGetSimpleNodeAndOptionalOp(const Input & input) noexcept
 {
   const auto simpleNode = TryGetOwnerNode<SimpleNode>(input);
   if (!simpleNode)
@@ -235,7 +235,7 @@ TryGetSimpleNodeAndOp(const rvsdg::Input & input) noexcept
  */
 template<typename TOperation>
 std::pair<SimpleNode *, const TOperation *>
-TryGetSimpleNodeAndOp(const rvsdg::Output & output) noexcept
+TryGetSimpleNodeAndOptionalOp(const Output & output) noexcept
 {
   const auto simpleNode = TryGetOwnerNode<SimpleNode>(output);
   if (!simpleNode)

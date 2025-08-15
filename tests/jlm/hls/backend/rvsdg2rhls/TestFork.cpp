@@ -65,8 +65,8 @@ ForkInsertion()
     auto loop = util::AssertedCast<hls::LoopNode>(lambdaSubregion->Nodes().begin().ptr());
     assert(dynamic_cast<const hls::LoopNode *>(loop));
 
-    auto [forkNode, forkOperation] =
-        rvsdg::TryGetSimpleNodeAndOp<hls::ForkOperation>(*loop->subregion()->result(0)->origin());
+    auto [forkNode, forkOperation] = rvsdg::TryGetSimpleNodeAndOptionalOp<hls::ForkOperation>(
+        *loop->subregion()->result(0)->origin());
     assert(forkNode && forkOperation);
     assert(forkNode->ninputs() == 1);
     assert(forkNode->noutputs() == 4);
@@ -130,8 +130,8 @@ ConstantForkInsertion()
     assert(rvsdg::is<hls::LoopOperation>(loopNode));
     auto loop = util::AssertedCast<hls::LoopNode>(loopNode);
 
-    auto [forkNode, forkOperation] =
-        rvsdg::TryGetSimpleNodeAndOp<hls::ForkOperation>(*loop->subregion()->result(0)->origin());
+    auto [forkNode, forkOperation] = rvsdg::TryGetSimpleNodeAndOptionalOp<hls::ForkOperation>(
+        *loop->subregion()->result(0)->origin());
     assert(forkNode && forkOperation);
     assert(forkNode->ninputs() == 1);
     assert(forkNode->noutputs() == 2);
@@ -140,7 +140,7 @@ ConstantForkInsertion()
     auto matchNode = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*forkNode->input(0)->origin());
     auto bitsUltNode = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*matchNode->input(0)->origin());
     auto [cForkNode, cForkOperation] =
-        rvsdg::TryGetSimpleNodeAndOp<hls::ForkOperation>(*bitsUltNode->input(1)->origin());
+        rvsdg::TryGetSimpleNodeAndOptionalOp<hls::ForkOperation>(*bitsUltNode->input(1)->origin());
     assert(cForkNode->ninputs() == 1);
     assert(cForkNode->noutputs() == 2);
     assert(cForkOperation->IsConstant() == true);

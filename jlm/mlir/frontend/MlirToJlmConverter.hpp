@@ -22,7 +22,6 @@
 
 #include <mlir/Dialect/Arith/IR/Arith.h>
 #include <mlir/Dialect/LLVMIR/LLVMDialect.h>
-#include <mlir/Dialect/Math/IR/Math.h>
 
 namespace jlm::mlir
 {
@@ -41,8 +40,6 @@ public:
     Context_->getOrLoadDialect<::mlir::arith::ArithDialect>();
     // Load the LLVM dialect
     Context_->getOrLoadDialect<::mlir::LLVM::LLVMDialect>();
-    // Load the Math dialect
-    Context_->getOrLoadDialect<::mlir::math::MathDialect>();
   }
 
   MlirToJlmConverter(const MlirToJlmConverter &) = delete;
@@ -180,9 +177,9 @@ private:
    * \param mlirOperation The MLIR operation to be converted.
    * \param rvsdgRegion The RVSDG region that the generated RVSDG node is inserted into.
    * \param inputs The inputs for the RVSDG node.
-   * \result The converted RVSDG node.
+   * \result The outputs of the RVSDG node.
    */
-  rvsdg::Node *
+  std::vector<jlm::rvsdg::Output *>
   ConvertOperation(
       ::mlir::Operation & mlirOperation,
       rvsdg::Region & rvsdgRegion,
