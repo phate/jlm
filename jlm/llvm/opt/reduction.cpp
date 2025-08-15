@@ -167,6 +167,12 @@ NodeReduction::ReduceSimpleNode(rvsdg::SimpleNode & simpleNode)
         NormalizeCallExitMemoryStateSplitNode,
         simpleNode);
   }
+  if (is<LambdaEntryMemoryStateSplitOperation>(&simpleNode))
+  {
+    return rvsdg::ReduceNode<LambdaEntryMemoryStateSplitOperation>(
+        NormalizeLambdaEntryMemoryStateSplitNode,
+        simpleNode);
+  }
   if (is<LambdaExitMemoryStateMergeOperation>(&simpleNode))
   {
     return ReduceLambdaExitMemoryStateMergeNode(simpleNode);
@@ -307,6 +313,20 @@ NodeReduction::NormalizeCallExitMemoryStateSplitNode(
       { CallExitMemoryStateSplitOperation::NormalizeLambdaExitMemoryStateMerge });
 
   return rvsdg::NormalizeSequence<CallExitMemoryStateSplitOperation>(
+      normalizations,
+      operation,
+      operands);
+}
+
+std::optional<std::vector<rvsdg::Output *>>
+NodeReduction::NormalizeLambdaEntryMemoryStateSplitNode(
+    const LambdaEntryMemoryStateSplitOperation & operation,
+    const std::vector<rvsdg::Output *> & operands)
+{
+  static std::vector<rvsdg::NodeNormalization<LambdaEntryMemoryStateSplitOperation>> normalizations(
+      { LambdaEntryMemoryStateSplitOperation::NormalizeCallEntryMemoryStateMerge });
+
+  return rvsdg::NormalizeSequence<LambdaEntryMemoryStateSplitOperation>(
       normalizations,
       operation,
       operands);
