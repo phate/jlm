@@ -8,6 +8,7 @@
 #include <jlm/hls/backend/rvsdg2rhls/mem-conv.hpp>
 #include <jlm/hls/backend/rvsdg2rhls/mem-sep.hpp>
 #include <jlm/hls/ir/hls.hpp>
+#include <jlm/llvm/ir/LambdaMemoryState.hpp>
 #include <jlm/llvm/ir/operators/call.hpp>
 #include <jlm/llvm/ir/operators/lambda.hpp>
 #include <jlm/llvm/ir/operators/Load.hpp>
@@ -38,20 +39,6 @@ mem_sep_argument(llvm::RvsdgModule & rm)
   auto & graph = rm.Rvsdg();
   auto root = &graph.GetRootRegion();
   mem_sep_argument(root);
-}
-
-// from MemoryStateEncoder.cpp
-rvsdg::RegionArgument *
-GetMemoryStateArgument(const rvsdg::LambdaNode & lambda)
-{
-  auto subregion = lambda.subregion();
-  for (size_t n = 0; n < subregion->narguments(); n++)
-  {
-    auto argument = subregion->argument(n);
-    if (jlm::rvsdg::is<llvm::MemoryStateType>(argument->Type()))
-      return argument;
-  }
-  return nullptr;
 }
 
 rvsdg::RegionArgument *
@@ -145,7 +132,7 @@ mem_sep_independent(rvsdg::Region * region)
 {
   auto lambda = dynamic_cast<const rvsdg::LambdaNode *>(region->Nodes().begin().ptr());
   auto lambda_region = lambda->subregion();
-  auto state_arg = GetMemoryStateArgument(*lambda);
+  auto state_arg = &llvm::GetMemoryStateRegionArgument(*lambda);
   if (!state_arg)
   {
     // no memstate - i.e. no memory used
@@ -362,7 +349,7 @@ mem_sep_argument(rvsdg::Region * region)
 {
   auto lambda = dynamic_cast<const rvsdg::LambdaNode *>(region->Nodes().begin().ptr());
   auto lambda_region = lambda->subregion();
-  auto state_arg = GetMemoryStateArgument(*lambda);
+  auto state_arg = &llvm::GetMemoryStateRegionArgument(*lambda);
   if (!state_arg)
   {
     // no memstate - i.e., no memory used

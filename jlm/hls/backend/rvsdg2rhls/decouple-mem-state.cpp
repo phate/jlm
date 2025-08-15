@@ -3,6 +3,7 @@
  * See COPYING for terms of redistribution.
  */
 
+#include <jlm/llvm/ir/LambdaMemoryState.hpp>
 #include <jlm/hls/backend/rvsdg2rhls/decouple-mem-state.hpp>
 #include <jlm/hls/backend/rvsdg2rhls/hls-function-util.hpp>
 #include <jlm/hls/backend/rvsdg2rhls/mem-conv.hpp>
@@ -490,7 +491,7 @@ decouple_mem_state(rvsdg::Region * region)
 {
   JLM_ASSERT(region->nnodes() == 1);
   auto lambda = util::AssertedCast<const jlm::rvsdg::LambdaNode>(region->Nodes().begin().ptr());
-  auto state_arg = GetMemoryStateArgument(*lambda);
+  auto state_arg = &llvm::GetMemoryStateRegionArgument(*lambda);
   if (!state_arg)
   {
     // No memstate, i.e., no memory used
