@@ -54,20 +54,6 @@ GetIoStateArgument(const rvsdg::LambdaNode & lambda)
   return nullptr;
 }
 
-rvsdg::RegionResult *
-GetMemoryStateResult(const rvsdg::LambdaNode & lambda)
-{
-  auto subregion = lambda.subregion();
-  for (size_t n = 0; n < subregion->nresults(); n++)
-  {
-    auto result = subregion->result(n);
-    if (jlm::rvsdg::is<jlm::llvm::MemoryStateType>(result->Type()))
-      return result;
-  }
-
-  JLM_UNREACHABLE("This should have never happened!");
-}
-
 void
 gather_mem_nodes(rvsdg::Region * region, std::vector<jlm::rvsdg::SimpleNode *> & mem_nodes)
 {
@@ -143,7 +129,7 @@ mem_sep_independent(rvsdg::Region * region)
   gather_mem_nodes(lambda_region, mem_nodes);
   auto entry_states =
       jlm::llvm::LambdaEntryMemoryStateSplitOperation::Create(*state_arg, 1 + mem_nodes.size());
-  auto state_result = GetMemoryStateResult(*lambda);
+  auto state_result = &llvm::GetMemoryStateRegionResult(*lambda);
   // handle existing state edge - TODO: remove entirely?
   state_user.divert_to(entry_states.back());
   entry_states.pop_back();
@@ -385,7 +371,7 @@ mem_sep_argument(rvsdg::Region * region)
   }
   auto entry_states =
       jlm::llvm::LambdaEntryMemoryStateSplitOperation::Create(*state_arg, 1 + port_nodes.size());
-  auto state_result = GetMemoryStateResult(*lambda);
+  auto state_result = &llvm::GetMemoryStateRegionResult(*lambda);
   // handle existing state edge - TODO: remove entirely?
   auto common_edge = entry_states.back();
   entry_states.pop_back();

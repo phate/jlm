@@ -509,17 +509,8 @@ decouple_mem_state(rvsdg::Region * region)
   //      * split at highest loop that contains no store on edge
   //          * store not being at higher level doesn't work
   //  * apply recursively - i.e. the same way for inner loops as for outer
-  auto state_user = get_mem_state_user(state_arg);
-  auto [entryNode, entryOperation] =
-      rvsdg::TryGetSimpleNodeAndOptionalOp<llvm::LambdaEntryMemoryStateSplitOperation>(*state_user);
-  JLM_ASSERT(entryOperation);
-  JLM_ASSERT(entryNode);
-  auto state_res = GetMemoryStateResult(*lambda);
-  auto [exitNode, exitOperation] =
-      rvsdg::TryGetSimpleNodeAndOptionalOp<llvm::LambdaExitMemoryStateMergeOperation>(
-          *state_res->origin());
-  JLM_ASSERT(exitNode);
-  JLM_ASSERT(exitOperation);
+  const auto entryNode = llvm::GetMemoryStateEntrySplit(*lambda);
+  const auto exitNode = llvm::GetMemoryStateExitMerge(*lambda);
   JLM_ASSERT(entryNode->noutputs() == exitNode->ninputs());
   // process different pointer arg edges separately
   for (size_t i = 0; i < entryNode->noutputs(); ++i)

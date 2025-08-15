@@ -23,9 +23,6 @@ mem_sep_argument(rvsdg::Region * region);
 void
 mem_sep_argument(llvm::RvsdgModule & rm);
 
-rvsdg::RegionResult *
-GetMemoryStateResult(const rvsdg::LambdaNode & lambda);
-
 } // namespace jlm::hls
 
 #endif // JLM_BACKEND_HLS_RVSDG2RHLS_MEM_SEP_HPP
