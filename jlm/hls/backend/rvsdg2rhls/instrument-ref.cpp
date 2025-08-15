@@ -140,9 +140,9 @@ instrument_ref(
     jlm::rvsdg::Output * alloca_func,
     const std::shared_ptr<const jlm::rvsdg::FunctionType> & allocaFunctionType)
 {
-  load_func = route_to_region_rvsdg(load_func, region);
-  store_func = route_to_region_rvsdg(store_func, region);
-  alloca_func = route_to_region_rvsdg(alloca_func, region);
+  load_func = &rvsdg::RouteToRegion(*load_func, *region);
+  store_func = &rvsdg::RouteToRegion(*store_func, *region);
+  alloca_func = &rvsdg::RouteToRegion(*alloca_func, *region);
   auto void_ptr = jlm::llvm::PointerType::Create();
   for (auto & node : rvsdg::TopDownTraverser(region))
   {
@@ -151,7 +151,7 @@ instrument_ref(
       for (size_t n = 0; n < structnode->nsubregions(); n++)
       {
         auto subregion = structnode->subregion(n);
-        auto ioStateRouted = route_to_region_rvsdg(ioState, subregion);
+        auto ioStateRouted = &rvsdg::RouteToRegion(*ioState, *subregion);
         instrument_ref(
             subregion,
             ioStateRouted,

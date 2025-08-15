@@ -64,38 +64,6 @@ convert_prints(llvm::RvsdgModule & rm)
   convert_prints(root, &printf, fct);
 }
 
-// TODO: get rid of this and use inlining version instead
-jlm::rvsdg::Output *
-route_to_region_rvsdg(jlm::rvsdg::Output * output, rvsdg::Region * region)
-{
-  JLM_ASSERT(region != nullptr);
-
-  if (region == output->region())
-    return output;
-
-  output = route_to_region_rvsdg(output, region->node()->region());
-
-  if (auto gamma = dynamic_cast<rvsdg::GammaNode *>(region->node()))
-  {
-    gamma->AddEntryVar(output);
-    output = region->argument(region->narguments() - 1);
-  }
-  else if (auto theta = dynamic_cast<rvsdg::ThetaNode *>(region->node()))
-  {
-    output = theta->AddLoopVar(output).pre;
-  }
-  else if (auto lambda = dynamic_cast<rvsdg::LambdaNode *>(region->node()))
-  {
-    output = lambda->AddContextVar(*output).inner;
-  }
-  else
-  {
-    JLM_ASSERT(0);
-  }
-
-  return output;
-}
-
 void
 convert_prints(
     rvsdg::Region * region,
@@ -113,7 +81,8 @@ convert_prints(
     }
     else if (auto po = dynamic_cast<const PrintOperation *>(&(node->GetOperation())))
     {
-      auto printf_local = route_to_region_rvsdg(printf, region); // TODO: prevent repetition?
+      auto printf_local = &rvsdg::RouteToRegion(*printf,
+                                                *region); // TODO: prevent repetition?
       auto & constantNode = llvm::IntegerConstantOperation::Create(*region, 64, po->id());
       jlm::rvsdg::Output * val = node->input(0)->origin();
       if (*val->Type() != *jlm::rvsdg::BitType::Create(64))
