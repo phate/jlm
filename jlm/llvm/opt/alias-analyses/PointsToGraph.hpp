@@ -49,8 +49,6 @@ public:
   class UnknownMemoryNode;
   class ExternalMemoryNode;
 
-  using MemoryNodeId = std::size_t;
-
   using AllocaNodeMap = std::unordered_map<const rvsdg::Node *, std::unique_ptr<AllocaNode>>;
   using DeltaNodeMap =
       std::unordered_map<const rvsdg::DeltaNode *, std::unique_ptr<PointsToGraph::DeltaNode>>;

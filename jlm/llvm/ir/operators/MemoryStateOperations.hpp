@@ -13,6 +13,8 @@
 namespace jlm::llvm
 {
 
+using MemoryNodeId = std::size_t;
+
 /**
  * Abstract base class for all memory state operations.
  */
@@ -217,9 +219,7 @@ class LambdaEntryMemoryStateSplitOperation final : public MemoryStateOperation
 public:
   ~LambdaEntryMemoryStateSplitOperation() noexcept override;
 
-  explicit LambdaEntryMemoryStateSplitOperation(size_t numResults)
-      : MemoryStateOperation(1, numResults)
-  {}
+  LambdaEntryMemoryStateSplitOperation(size_t numResults, std::vector<MemoryNodeId> memoryNodeIds);
 
   bool
   operator==(const Operation & other) const noexcept override;
@@ -230,12 +230,36 @@ public:
   [[nodiscard]] std::unique_ptr<Operation>
   copy() const override;
 
+  // FIXME: Deprecated, needs to be removed
   static std::vector<jlm::rvsdg::Output *>
-  Create(rvsdg::Output & output, size_t numResults)
+  Create(rvsdg::Output & output, const size_t numResults)
   {
-    return outputs(
-        &rvsdg::CreateOpNode<LambdaEntryMemoryStateSplitOperation>({ &output }, numResults));
+    std::vector<MemoryNodeId> memoryNodeIds;
+    for (size_t i = 0; i < numResults; ++i)
+    {
+      memoryNodeIds.push_back(i);
+    }
+
+    return outputs(&rvsdg::CreateOpNode<LambdaEntryMemoryStateSplitOperation>(
+        { &output },
+        numResults,
+        std::move(memoryNodeIds)));
   }
+
+  static rvsdg::SimpleNode &
+  CreateNode(
+      rvsdg::Output & operand,
+      const size_t numResults,
+      std::vector<MemoryNodeId> memoryNodeIds)
+  {
+    return rvsdg::CreateOpNode<LambdaEntryMemoryStateSplitOperation>(
+        { &operand },
+        numResults,
+        std::move(memoryNodeIds));
+  }
+
+private:
+  std::vector<MemoryNodeId> MemoryNodeIds_{};
 };
 
 /**
