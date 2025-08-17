@@ -277,9 +277,7 @@ class LambdaExitMemoryStateMergeOperation final : public MemoryStateOperation
 public:
   ~LambdaExitMemoryStateMergeOperation() noexcept override;
 
-  explicit LambdaExitMemoryStateMergeOperation(size_t numOperands)
-      : MemoryStateOperation(numOperands, 1)
-  {}
+  LambdaExitMemoryStateMergeOperation(size_t numOperands, std::vector<MemoryNodeId> memoryNodeIds);
 
   bool
   operator==(const Operation & other) const noexcept override;
@@ -337,12 +335,40 @@ public:
       const LambdaExitMemoryStateMergeOperation & operation,
       const std::vector<rvsdg::Output *> & operands);
 
+  // FIXME: Deprecated, needs to be removed
   static rvsdg::Node &
   CreateNode(rvsdg::Region & region, const std::vector<rvsdg::Output *> & operands)
   {
-    return operands.empty()
-             ? rvsdg::CreateOpNode<LambdaExitMemoryStateMergeOperation>(region, operands.size())
-             : rvsdg::CreateOpNode<LambdaExitMemoryStateMergeOperation>(operands, operands.size());
+    std::vector<MemoryNodeId> memoryNodeIds;
+    for (size_t i = 0; i < operands.size(); ++i)
+    {
+      memoryNodeIds.push_back(i);
+    }
+
+    return operands.empty() ? rvsdg::CreateOpNode<LambdaExitMemoryStateMergeOperation>(
+                                  region,
+                                  operands.size(),
+                                  std::move(memoryNodeIds))
+                            : rvsdg::CreateOpNode<LambdaExitMemoryStateMergeOperation>(
+                                  operands,
+                                  operands.size(),
+                                  std::move(memoryNodeIds));
+  }
+
+  static rvsdg::SimpleNode &
+  CreateNode(
+      rvsdg::Region & region,
+      const std::vector<rvsdg::Output *> & operands,
+      std::vector<MemoryNodeId> memoryNodeIds)
+  {
+    return operands.empty() ? rvsdg::CreateOpNode<LambdaExitMemoryStateMergeOperation>(
+                                  region,
+                                  operands.size(),
+                                  std::move(memoryNodeIds))
+                            : rvsdg::CreateOpNode<LambdaExitMemoryStateMergeOperation>(
+                                  operands,
+                                  operands.size(),
+                                  std::move(memoryNodeIds));
   }
 
   static rvsdg::Output &
@@ -350,6 +376,9 @@ public:
   {
     return *CreateNode(region, operands).output(0);
   }
+
+private:
+  std::vector<MemoryNodeId> MemoryNodeIds_{};
 };
 
 /**
