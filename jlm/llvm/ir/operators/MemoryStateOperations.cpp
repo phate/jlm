@@ -190,19 +190,58 @@ MemoryStateSplitOperation::NormalizeSplitMerge(
   return { rvsdg::operands(mergeNode) };
 }
 
+static void
+CheckMemoryNodeIds(
+    const std::vector<MemoryNodeId> & memoryNodeIds,
+    const size_t numExpectedMemoryNodeIds)
+{
+  if (memoryNodeIds.size() != numExpectedMemoryNodeIds)
+    throw std::logic_error("Insufficient number of memory node identifiers");
+
+  const util::HashSet<MemoryNodeId> memoryNodeIdsSet(
+      { memoryNodeIds.begin(), memoryNodeIds.end() });
+
+  if (memoryNodeIdsSet.Size() != numExpectedMemoryNodeIds)
+    throw std::logic_error("Found duplicated memory node identifiers.");
+}
+
+static std::string
+ToString(const std::vector<MemoryNodeId> & memoryNodeIds)
+{
+  std::string str;
+  for (size_t n = 0; n < memoryNodeIds.size(); n++)
+  {
+    str.append(util::strfmt(memoryNodeIds[n]));
+    if (n != memoryNodeIds.size() - 1)
+      str.append(", ");
+  }
+
+  return str;
+}
+
+LambdaEntryMemoryStateSplitOperation::LambdaEntryMemoryStateSplitOperation(
+    const size_t numResults,
+    std::vector<MemoryNodeId> memoryNodeIds)
+    : MemoryStateOperation(1, numResults),
+      MemoryNodeIds_(std::move(memoryNodeIds))
+{
+  CheckMemoryNodeIds(MemoryNodeIds_, numResults);
+}
+
 LambdaEntryMemoryStateSplitOperation::~LambdaEntryMemoryStateSplitOperation() noexcept = default;
 
 bool
 LambdaEntryMemoryStateSplitOperation::operator==(const Operation & other) const noexcept
 {
-  auto operation = dynamic_cast<const LambdaEntryMemoryStateSplitOperation *>(&other);
-  return operation && operation->nresults() == nresults();
+  const auto operation = dynamic_cast<const LambdaEntryMemoryStateSplitOperation *>(&other);
+  return operation && operation->nresults() == nresults()
+      && operation->MemoryNodeIds_ == MemoryNodeIds_;
 }
 
 std::string
 LambdaEntryMemoryStateSplitOperation::debug_string() const
 {
-  return "LambdaEntryMemoryStateSplit";
+  return util::strfmt("LambdaEntryMemoryStateSplit[", ToString(MemoryNodeIds_), "]");
 }
 
 std::unique_ptr<rvsdg::Operation>

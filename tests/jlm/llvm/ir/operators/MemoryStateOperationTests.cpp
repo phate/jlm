@@ -363,14 +363,18 @@ LambdaEntryMemStateOperatorEquality()
 
   // Arrange
   auto memoryStateType = MemoryStateType::Create();
-  LambdaEntryMemoryStateSplitOperation operation1(2);
-  LambdaEntryMemoryStateSplitOperation operation2(4);
-  jlm::tests::TestOperation operation3({ memoryStateType }, { memoryStateType, memoryStateType });
+  const LambdaEntryMemoryStateSplitOperation operation1(2, { 1, 2 });
+  const LambdaEntryMemoryStateSplitOperation operation2(2, { 3, 4 });
+  const LambdaEntryMemoryStateSplitOperation operation3(4, { 1, 2, 3, 4 });
+  const jlm::tests::TestOperation operation4(
+      { memoryStateType },
+      { memoryStateType, memoryStateType });
 
   // Act & Assert
   assert(operation1 == operation1);
-  assert(operation1 != operation2); // Number of results differ
-  assert(operation1 != operation3); // Operation differs
+  assert(operation1 != operation2); // Memory node identifiers differ
+  assert(operation1 != operation3); // Number of results differ
+  assert(operation1 != operation4); // Operation differs
 }
 
 JLM_UNIT_TEST_REGISTER(
