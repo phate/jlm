@@ -384,17 +384,25 @@ LambdaExitMemoryStateMergeOperation::NormalizeAlloca(
 
 CallEntryMemoryStateMergeOperation::~CallEntryMemoryStateMergeOperation() noexcept = default;
 
+CallEntryMemoryStateMergeOperation::CallEntryMemoryStateMergeOperation(
+    std::vector<MemoryNodeId> memoryNodeIds)
+    : MemoryStateOperation(memoryNodeIds.size(), 1),
+      MemoryNodeIds_(std::move(memoryNodeIds))
+{
+  CheckMemoryNodeIds(MemoryNodeIds_, MemoryNodeIds_.size());
+}
+
 bool
 CallEntryMemoryStateMergeOperation::operator==(const Operation & other) const noexcept
 {
-  auto operation = dynamic_cast<const CallEntryMemoryStateMergeOperation *>(&other);
-  return operation && operation->narguments() == narguments();
+  const auto operation = dynamic_cast<const CallEntryMemoryStateMergeOperation *>(&other);
+  return operation && operation->MemoryNodeIds_ == MemoryNodeIds_;
 }
 
 std::string
 CallEntryMemoryStateMergeOperation::debug_string() const
 {
-  return "CallEntryMemoryStateMerge";
+  return util::strfmt("CallEntryMemoryStateMerge[", ToString(MemoryNodeIds_), "]");
 }
 
 std::unique_ptr<rvsdg::Operation>
