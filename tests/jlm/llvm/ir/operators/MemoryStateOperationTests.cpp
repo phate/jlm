@@ -617,14 +617,18 @@ CallExitMemStateOperatorEquality()
 
   // Arrange
   auto memoryStateType = MemoryStateType::Create();
-  CallExitMemoryStateSplitOperation operation1(2);
-  CallExitMemoryStateSplitOperation operation2(4);
-  jlm::tests::TestOperation operation3({ memoryStateType }, { memoryStateType, memoryStateType });
+  const CallExitMemoryStateSplitOperation operation1({ 1, 2 });
+  const CallExitMemoryStateSplitOperation operation2({ 3, 4 });
+  const CallExitMemoryStateSplitOperation operation3({ 1, 2, 3, 4 });
+  const jlm::tests::TestOperation operation4(
+      { memoryStateType },
+      { memoryStateType, memoryStateType });
 
   // Act & Assert
   assert(operation1 == operation1);
-  assert(operation1 != operation2); // Number of results differ
-  assert(operation1 != operation3); // Operation differs
+  assert(operation1 != operation2); // Memory node identifiers differ
+  assert(operation1 != operation3); // Number of memory node identifiers differ
+  assert(operation1 != operation4); // Operation differs
 }
 
 JLM_UNIT_TEST_REGISTER(

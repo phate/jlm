@@ -421,17 +421,25 @@ CallEntryMemoryStateMergeOperation::copy() const
 
 CallExitMemoryStateSplitOperation::~CallExitMemoryStateSplitOperation() noexcept = default;
 
+CallExitMemoryStateSplitOperation::CallExitMemoryStateSplitOperation(
+    std::vector<MemoryNodeId> memoryNodeIds)
+    : MemoryStateOperation(1, memoryNodeIds.size()),
+      MemoryNodeIds_(std::move(memoryNodeIds))
+{
+  CheckMemoryNodeIds(MemoryNodeIds_, MemoryNodeIds_.size());
+}
+
 bool
 CallExitMemoryStateSplitOperation::operator==(const Operation & other) const noexcept
 {
-  auto operation = dynamic_cast<const CallExitMemoryStateSplitOperation *>(&other);
-  return operation && operation->nresults() == nresults();
+  const auto operation = dynamic_cast<const CallExitMemoryStateSplitOperation *>(&other);
+  return operation && operation->MemoryNodeIds_ == MemoryNodeIds_;
 }
 
 std::string
 CallExitMemoryStateSplitOperation::debug_string() const
 {
-  return "CallExitMemoryStateSplit";
+  return util::strfmt("CallExitMemoryStateSplit[", ToString(MemoryNodeIds_), "]");
 }
 
 std::unique_ptr<rvsdg::Operation>
