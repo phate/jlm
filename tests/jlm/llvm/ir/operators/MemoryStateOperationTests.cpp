@@ -388,13 +388,15 @@ LambdaExitMemStateOperatorEquality()
 
   // Arrange
   auto memoryStateType = MemoryStateType::Create();
-  LambdaExitMemoryStateMergeOperation operation1(2);
-  LambdaExitMemoryStateMergeOperation operation2(4);
-  jlm::tests::TestOperation operation3({ memoryStateType, memoryStateType }, { memoryStateType });
+  const LambdaExitMemoryStateMergeOperation operation1({ 1, 2 });
+  const LambdaExitMemoryStateMergeOperation operation2({ 3, 4 });
+  const LambdaExitMemoryStateMergeOperation operation3({ 1, 2, 3, 4 });
+  jlm::tests::TestOperation operation4({ memoryStateType, memoryStateType }, { memoryStateType });
 
   // Act & Assert
   assert(operation1 == operation1);
-  assert(operation1 != operation2); // Number of operands differ
+  assert(operation1 != operation2); // Memory node identifiers differ
+  assert(operation1 != operation3); // Number of results differ
   assert(operation1 != operation3); // Operation differs
 }
 
@@ -592,13 +594,15 @@ CallEntryMemStateOperatorEquality()
 
   // Arrange
   auto memoryStateType = MemoryStateType::Create();
-  CallEntryMemoryStateMergeOperation operation1(2);
-  CallEntryMemoryStateMergeOperation operation2(4);
-  jlm::tests::TestOperation operation3({ memoryStateType, memoryStateType }, { memoryStateType });
+  const CallEntryMemoryStateMergeOperation operation1({ 1, 2 });
+  const CallEntryMemoryStateMergeOperation operation2({ 3, 4 });
+  const CallEntryMemoryStateMergeOperation operation3({ 1, 2, 3, 4 });
+  jlm::tests::TestOperation operation4({ memoryStateType, memoryStateType }, { memoryStateType });
 
   // Act & Assert
   assert(operation1 == operation1);
-  assert(operation1 != operation2); // Number of operands differ
+  assert(operation1 != operation2); // Memory node identifiers differ
+  assert(operation1 != operation3); // Number of operands differ
   assert(operation1 != operation3); // Operation differs
 }
 
