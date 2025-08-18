@@ -345,17 +345,10 @@ public:
       memoryNodeIds.push_back(i);
     }
 
-    return operands.empty() ? rvsdg::CreateOpNode<LambdaExitMemoryStateMergeOperation>(
-                                  region,
-                                  operands.size(),
-                                  std::move(memoryNodeIds))
-                            : rvsdg::CreateOpNode<LambdaExitMemoryStateMergeOperation>(
-                                  operands,
-                                  operands.size(),
-                                  std::move(memoryNodeIds));
+    return CreateNode(region, operands, memoryNodeIds);
   }
 
-  static rvsdg::SimpleNode &
+  static rvsdg::Node &
   CreateNode(
       rvsdg::Region & region,
       const std::vector<rvsdg::Output *> & operands,
