@@ -388,9 +388,9 @@ LambdaExitMemStateOperatorEquality()
 
   // Arrange
   auto memoryStateType = MemoryStateType::Create();
-  LambdaExitMemoryStateMergeOperation operation1(2, { 1, 2 });
-  LambdaExitMemoryStateMergeOperation operation2(2, { 3, 4 });
-  LambdaExitMemoryStateMergeOperation operation3(4, { 1, 2, 3, 4 });
+  const LambdaExitMemoryStateMergeOperation operation1({ 1, 2 });
+  const LambdaExitMemoryStateMergeOperation operation2({ 3, 4 });
+  const LambdaExitMemoryStateMergeOperation operation3({ 1, 2, 3, 4 });
   jlm::tests::TestOperation operation4({ memoryStateType, memoryStateType }, { memoryStateType });
 
   // Act & Assert

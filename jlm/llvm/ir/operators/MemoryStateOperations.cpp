@@ -251,12 +251,11 @@ LambdaEntryMemoryStateSplitOperation::copy() const
 }
 
 LambdaExitMemoryStateMergeOperation::LambdaExitMemoryStateMergeOperation(
-    const size_t numOperands,
     std::vector<MemoryNodeId> memoryNodeIds)
-    : MemoryStateOperation(numOperands, 1),
+    : MemoryStateOperation(memoryNodeIds.size(), 1),
       MemoryNodeIds_(std::move(memoryNodeIds))
 {
-  CheckMemoryNodeIds(MemoryNodeIds_, numOperands);
+  CheckMemoryNodeIds(MemoryNodeIds_, MemoryNodeIds_.size());
 }
 
 LambdaExitMemoryStateMergeOperation::~LambdaExitMemoryStateMergeOperation() noexcept = default;
@@ -265,8 +264,7 @@ bool
 LambdaExitMemoryStateMergeOperation::operator==(const Operation & other) const noexcept
 {
   const auto operation = dynamic_cast<const LambdaExitMemoryStateMergeOperation *>(&other);
-  return operation && operation->narguments() == narguments()
-      && operation->MemoryNodeIds_ == MemoryNodeIds_;
+  return operation && operation->MemoryNodeIds_ == MemoryNodeIds_;
 }
 
 std::string

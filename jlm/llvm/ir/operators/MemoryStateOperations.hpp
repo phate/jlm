@@ -277,7 +277,7 @@ class LambdaExitMemoryStateMergeOperation final : public MemoryStateOperation
 public:
   ~LambdaExitMemoryStateMergeOperation() noexcept override;
 
-  LambdaExitMemoryStateMergeOperation(size_t numOperands, std::vector<MemoryNodeId> memoryNodeIds);
+  LambdaExitMemoryStateMergeOperation(std::vector<MemoryNodeId> memoryNodeIds);
 
   bool
   operator==(const Operation & other) const noexcept override;
@@ -345,7 +345,7 @@ public:
       memoryNodeIds.push_back(i);
     }
 
-    return CreateNode(region, operands, memoryNodeIds);
+    return CreateNode(region, operands, std::move(memoryNodeIds));
   }
 
   static rvsdg::Node &
@@ -356,11 +356,9 @@ public:
   {
     return operands.empty() ? rvsdg::CreateOpNode<LambdaExitMemoryStateMergeOperation>(
                                   region,
-                                  operands.size(),
                                   std::move(memoryNodeIds))
                             : rvsdg::CreateOpNode<LambdaExitMemoryStateMergeOperation>(
                                   operands,
-                                  operands.size(),
                                   std::move(memoryNodeIds));
   }
 
