@@ -367,7 +367,7 @@ class CallEntryMemoryStateMergeOperation final : public MemoryStateOperation
 public:
   ~CallEntryMemoryStateMergeOperation() noexcept override;
 
-  CallEntryMemoryStateMergeOperation(size_t numOperands, std::vector<MemoryNodeId> memoryNodeIds);
+  CallEntryMemoryStateMergeOperation(std::vector<MemoryNodeId> memoryNodeIds);
 
   bool
   operator==(const Operation & other) const noexcept override;
@@ -399,11 +399,9 @@ public:
   {
     return operands.empty() ? rvsdg::CreateOpNode<CallEntryMemoryStateMergeOperation>(
                                   region,
-                                  operands.size(),
                                   std::move(memoryNodeIds))
                             : rvsdg::CreateOpNode<CallEntryMemoryStateMergeOperation>(
                                   operands,
-                                  operands.size(),
                                   std::move(memoryNodeIds));
   }
 

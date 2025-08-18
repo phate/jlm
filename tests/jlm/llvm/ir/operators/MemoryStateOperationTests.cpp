@@ -592,9 +592,9 @@ CallEntryMemStateOperatorEquality()
 
   // Arrange
   auto memoryStateType = MemoryStateType::Create();
-  const CallEntryMemoryStateMergeOperation operation1(2, { 1, 2 });
-  const CallEntryMemoryStateMergeOperation operation2(2, { 3, 4 });
-  const CallEntryMemoryStateMergeOperation operation3(4, { 1, 2, 3, 4 });
+  const CallEntryMemoryStateMergeOperation operation1({ 1, 2 });
+  const CallEntryMemoryStateMergeOperation operation2({ 3, 4 });
+  const CallEntryMemoryStateMergeOperation operation3({ 1, 2, 3, 4 });
   jlm::tests::TestOperation operation4({ memoryStateType, memoryStateType }, { memoryStateType });
 
   // Act & Assert
