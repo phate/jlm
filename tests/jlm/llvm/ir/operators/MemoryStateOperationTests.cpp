@@ -363,14 +363,18 @@ LambdaEntryMemStateOperatorEquality()
 
   // Arrange
   auto memoryStateType = MemoryStateType::Create();
-  LambdaEntryMemoryStateSplitOperation operation1(2);
-  LambdaEntryMemoryStateSplitOperation operation2(4);
-  jlm::tests::TestOperation operation3({ memoryStateType }, { memoryStateType, memoryStateType });
+  const LambdaEntryMemoryStateSplitOperation operation1(2, { 1, 2 });
+  const LambdaEntryMemoryStateSplitOperation operation2(2, { 3, 4 });
+  const LambdaEntryMemoryStateSplitOperation operation3(4, { 1, 2, 3, 4 });
+  const jlm::tests::TestOperation operation4(
+      { memoryStateType },
+      { memoryStateType, memoryStateType });
 
   // Act & Assert
   assert(operation1 == operation1);
-  assert(operation1 != operation2); // Number of results differ
-  assert(operation1 != operation3); // Operation differs
+  assert(operation1 != operation2); // Memory node identifiers differ
+  assert(operation1 != operation3); // Number of results differ
+  assert(operation1 != operation4); // Operation differs
 }
 
 JLM_UNIT_TEST_REGISTER(
@@ -384,13 +388,15 @@ LambdaExitMemStateOperatorEquality()
 
   // Arrange
   auto memoryStateType = MemoryStateType::Create();
-  LambdaExitMemoryStateMergeOperation operation1(2);
-  LambdaExitMemoryStateMergeOperation operation2(4);
-  jlm::tests::TestOperation operation3({ memoryStateType, memoryStateType }, { memoryStateType });
+  const LambdaExitMemoryStateMergeOperation operation1({ 1, 2 });
+  const LambdaExitMemoryStateMergeOperation operation2({ 3, 4 });
+  const LambdaExitMemoryStateMergeOperation operation3({ 1, 2, 3, 4 });
+  jlm::tests::TestOperation operation4({ memoryStateType, memoryStateType }, { memoryStateType });
 
   // Act & Assert
   assert(operation1 == operation1);
-  assert(operation1 != operation2); // Number of operands differ
+  assert(operation1 != operation2); // Memory node identifiers differ
+  assert(operation1 != operation3); // Number of results differ
   assert(operation1 != operation3); // Operation differs
 }
 
@@ -406,7 +412,7 @@ LambdaExitMemoryStateMergeNormalizeLoad()
 
   // Arrange
   const auto bit32Type = BitType::Create(32);
-  const auto memoryStateType = jlm::llvm::MemoryStateType::Create();
+  const auto memoryStateType = MemoryStateType::Create();
   const auto valueType = jlm::tests::ValueType::Create();
 
   Graph graph;
@@ -420,22 +426,24 @@ LambdaExitMemoryStateMergeNormalizeLoad()
 
   auto & lambdaExitMergeNode1 = LambdaExitMemoryStateMergeOperation::CreateNode(
       graph.GetRootRegion(),
-      { loadNode.output(1), &memState1 });
+      { loadNode.output(1), &memState1 },
+      { 1, 2 });
 
   auto & lambdaExitMergeNode2 = LambdaExitMemoryStateMergeOperation::CreateNode(
       graph.GetRootRegion(),
-      { &memState2, &memState1 });
+      { &memState2, &memState1 },
+      { 3, 2 });
 
-  auto & x = jlm::rvsdg::GraphExport::Create(*lambdaExitMergeNode1.output(0), "x");
-  auto & y = jlm::rvsdg::GraphExport::Create(*lambdaExitMergeNode2.output(0), "y");
-  jlm::rvsdg::GraphExport::Create(*loadNode.output(0), "z");
+  auto & x = GraphExport::Create(*lambdaExitMergeNode1.output(0), "x");
+  auto & y = GraphExport::Create(*lambdaExitMergeNode2.output(0), "y");
+  GraphExport::Create(*loadNode.output(0), "z");
 
   view(&graph.GetRootRegion(), stdout);
 
   // Act
   const auto success = jlm::rvsdg::ReduceNode<LambdaExitMemoryStateMergeOperation>(
       LambdaExitMemoryStateMergeOperation::NormalizeLoadFromAlloca,
-      *jlm::util::AssertedCast<jlm::rvsdg::SimpleNode>(&lambdaExitMergeNode1));
+      *jlm::util::AssertedCast<SimpleNode>(&lambdaExitMergeNode1));
   graph.PruneNodes();
 
   view(&graph.GetRootRegion(), stdout);
@@ -445,11 +453,13 @@ LambdaExitMemoryStateMergeNormalizeLoad()
   assert(graph.GetRootRegion().nnodes() == 4);
 
   // The lambdaExitMergeNode1 should have been replaced
-  const auto memStateMerge1Node = TryGetOwnerNode<Node>(*x.origin());
+  const auto [memStateMerge1Node, memStateMerge1Operation] =
+      TryGetSimpleNodeAndOptionalOp<LambdaExitMemoryStateMergeOperation>(*x.origin());
   assert(memStateMerge1Node != &lambdaExitMergeNode1);
   assert(memStateMerge1Node->ninputs() == 2);
   assert(memStateMerge1Node->input(0)->origin() == allocaResults[1]);
   assert(memStateMerge1Node->input(1)->origin() == &memState1);
+  assert(memStateMerge1Operation->GetMemoryNodeIds() == std::vector<MemoryNodeId>({ 1, 2 }));
 
   // The lambdaExitMergeNode2 should not have been replaced
   const auto memStateMerge2Node = TryGetOwnerNode<Node>(*y.origin());
@@ -468,7 +478,7 @@ LambdaExitMemoryStateMergeNormalizeStore()
 
   // Arrange
   const auto bit32Type = BitType::Create(32);
-  const auto memoryStateType = jlm::llvm::MemoryStateType::Create();
+  const auto memoryStateType = MemoryStateType::Create();
   const auto valueType = jlm::tests::ValueType::Create();
 
   Graph graph;
@@ -482,21 +492,23 @@ LambdaExitMemoryStateMergeNormalizeStore()
 
   auto & lambdaExitMergeNode1 = LambdaExitMemoryStateMergeOperation::CreateNode(
       graph.GetRootRegion(),
-      { storeNode.output(0), &memState1 });
+      { storeNode.output(0), &memState1 },
+      { 1, 2 });
 
   auto & lambdaExitMergeNode2 = LambdaExitMemoryStateMergeOperation::CreateNode(
       graph.GetRootRegion(),
-      { &memState2, &memState1 });
+      { &memState2, &memState1 },
+      { 3, 1 });
 
-  auto & x = jlm::rvsdg::GraphExport::Create(*lambdaExitMergeNode1.output(0), "x");
-  auto & y = jlm::rvsdg::GraphExport::Create(*lambdaExitMergeNode2.output(0), "y");
+  auto & x = GraphExport::Create(*lambdaExitMergeNode1.output(0), "x");
+  auto & y = GraphExport::Create(*lambdaExitMergeNode2.output(0), "y");
 
   view(&graph.GetRootRegion(), stdout);
 
   // Act
   const auto success = jlm::rvsdg::ReduceNode<LambdaExitMemoryStateMergeOperation>(
       LambdaExitMemoryStateMergeOperation::NormalizeStoreToAlloca,
-      *jlm::util::AssertedCast<jlm::rvsdg::SimpleNode>(&lambdaExitMergeNode1));
+      *jlm::util::AssertedCast<SimpleNode>(&lambdaExitMergeNode1));
   graph.PruneNodes();
 
   view(&graph.GetRootRegion(), stdout);
@@ -506,11 +518,13 @@ LambdaExitMemoryStateMergeNormalizeStore()
   assert(graph.GetRootRegion().nnodes() == 3);
 
   // The lambdaExitMergeNode1 should have been replaced
-  const auto memStateMerge1Node = TryGetOwnerNode<Node>(*x.origin());
+  const auto [memStateMerge1Node, memStateMerge1Operation] =
+      TryGetSimpleNodeAndOptionalOp<LambdaExitMemoryStateMergeOperation>(*x.origin());
   assert(memStateMerge1Node != &lambdaExitMergeNode1);
   assert(memStateMerge1Node->ninputs() == 2);
   assert(memStateMerge1Node->input(0)->origin() == allocaResults[1]);
   assert(memStateMerge1Node->input(1)->origin() == &memState1);
+  assert(memStateMerge1Operation->GetMemoryNodeIds() == std::vector<MemoryNodeId>({ 1, 2 }));
 
   // The lambdaExitMergeNode2 should not have been replaced
   const auto memStateMerge2Node = TryGetOwnerNode<Node>(*y.origin());
@@ -529,7 +543,7 @@ LambdaExitMemoryStateMergeNormalizeAlloca()
 
   // Arrange
   const auto bit32Type = BitType::Create(32);
-  const auto memoryStateType = jlm::llvm::MemoryStateType::Create();
+  const auto memoryStateType = MemoryStateType::Create();
   const auto valueType = jlm::tests::ValueType::Create();
 
   Graph graph;
@@ -541,21 +555,23 @@ LambdaExitMemoryStateMergeNormalizeAlloca()
 
   auto & lambdaExitMergeNode1 = LambdaExitMemoryStateMergeOperation::CreateNode(
       graph.GetRootRegion(),
-      { allocaResults[1], &memState1 });
+      { allocaResults[1], &memState1 },
+      { 1, 2 });
 
   auto & lambdaExitMergeNode2 = LambdaExitMemoryStateMergeOperation::CreateNode(
       graph.GetRootRegion(),
-      { &memState2, &memState1 });
+      { &memState2, &memState1 },
+      { 3, 2 });
 
-  auto & x = jlm::rvsdg::GraphExport::Create(*lambdaExitMergeNode1.output(0), "x");
-  auto & y = jlm::rvsdg::GraphExport::Create(*lambdaExitMergeNode2.output(0), "y");
+  auto & x = GraphExport::Create(*lambdaExitMergeNode1.output(0), "x");
+  auto & y = GraphExport::Create(*lambdaExitMergeNode2.output(0), "y");
 
   view(&graph.GetRootRegion(), stdout);
 
   // Act
   const auto success = jlm::rvsdg::ReduceNode<LambdaExitMemoryStateMergeOperation>(
       LambdaExitMemoryStateMergeOperation::NormalizeAlloca,
-      *jlm::util::AssertedCast<jlm::rvsdg::SimpleNode>(&lambdaExitMergeNode1));
+      *jlm::util::AssertedCast<SimpleNode>(&lambdaExitMergeNode1));
   graph.PruneNodes();
 
   view(&graph.GetRootRegion(), stdout);
@@ -565,9 +581,11 @@ LambdaExitMemoryStateMergeNormalizeAlloca()
   assert(graph.GetRootRegion().nnodes() == 3);
 
   // The lambdaExitMergeNode1 should have been replaced
-  const auto memStateMerge1Node = TryGetOwnerNode<Node>(*x.origin());
+  const auto [memStateMerge1Node, memStateMerge1Operation] =
+      TryGetSimpleNodeAndOptionalOp<LambdaExitMemoryStateMergeOperation>(*x.origin());
   assert(memStateMerge1Node != &lambdaExitMergeNode1);
   assert(memStateMerge1Node->ninputs() == 2);
+  assert(memStateMerge1Operation->GetMemoryNodeIds() == std::vector<MemoryNodeId>({ 1, 2 }));
   const auto undefNode = TryGetOwnerNode<Node>(*memStateMerge1Node->input(0)->origin());
   assert(undefNode);
   assert(memStateMerge1Node->input(1)->origin() == &memState1);
@@ -588,13 +606,15 @@ CallEntryMemStateOperatorEquality()
 
   // Arrange
   auto memoryStateType = MemoryStateType::Create();
-  CallEntryMemoryStateMergeOperation operation1(2);
-  CallEntryMemoryStateMergeOperation operation2(4);
-  jlm::tests::TestOperation operation3({ memoryStateType, memoryStateType }, { memoryStateType });
+  const CallEntryMemoryStateMergeOperation operation1({ 1, 2 });
+  const CallEntryMemoryStateMergeOperation operation2({ 3, 4 });
+  const CallEntryMemoryStateMergeOperation operation3({ 1, 2, 3, 4 });
+  jlm::tests::TestOperation operation4({ memoryStateType, memoryStateType }, { memoryStateType });
 
   // Act & Assert
   assert(operation1 == operation1);
-  assert(operation1 != operation2); // Number of operands differ
+  assert(operation1 != operation2); // Memory node identifiers differ
+  assert(operation1 != operation3); // Number of operands differ
   assert(operation1 != operation3); // Operation differs
 }
 
@@ -609,14 +629,18 @@ CallExitMemStateOperatorEquality()
 
   // Arrange
   auto memoryStateType = MemoryStateType::Create();
-  CallExitMemoryStateSplitOperation operation1(2);
-  CallExitMemoryStateSplitOperation operation2(4);
-  jlm::tests::TestOperation operation3({ memoryStateType }, { memoryStateType, memoryStateType });
+  const CallExitMemoryStateSplitOperation operation1({ 1, 2 });
+  const CallExitMemoryStateSplitOperation operation2({ 3, 4 });
+  const CallExitMemoryStateSplitOperation operation3({ 1, 2, 3, 4 });
+  const jlm::tests::TestOperation operation4(
+      { memoryStateType },
+      { memoryStateType, memoryStateType });
 
   // Act & Assert
   assert(operation1 == operation1);
-  assert(operation1 != operation2); // Number of results differ
-  assert(operation1 != operation3); // Operation differs
+  assert(operation1 != operation2); // Memory node identifiers differ
+  assert(operation1 != operation3); // Number of memory node identifiers differ
+  assert(operation1 != operation4); // Operation differs
 }
 
 JLM_UNIT_TEST_REGISTER(
@@ -637,8 +661,10 @@ CallExitMemoryStateSplit_NormalizeLambdaExitMerge()
   auto & i1 = jlm::rvsdg::GraphImport::Create(rvsdg, memoryStateType, "i1");
   auto & i2 = jlm::rvsdg::GraphImport::Create(rvsdg, memoryStateType, "i2");
 
-  auto & callEntryMergeNode =
-      LambdaExitMemoryStateMergeOperation::CreateNode(rvsdg.GetRootRegion(), { &i0, &i1, &i2 });
+  auto & callEntryMergeNode = LambdaExitMemoryStateMergeOperation::CreateNode(
+      rvsdg.GetRootRegion(),
+      { &i0, &i1, &i2 },
+      { 1, 2, 3 });
 
   auto & lambdaEntrySplitNode =
       CallExitMemoryStateSplitOperation::CreateNode(*callEntryMergeNode.output(0), 3);
