@@ -281,7 +281,7 @@ LambdaExitMemoryStateMergeOperation::copy() const
 
 std::optional<std::vector<rvsdg::Output *>>
 LambdaExitMemoryStateMergeOperation::NormalizeLoadFromAlloca(
-    const LambdaExitMemoryStateMergeOperation &,
+    const LambdaExitMemoryStateMergeOperation & operation,
     const std::vector<rvsdg::Output *> & operands)
 {
   if (operands.empty())
@@ -314,12 +314,14 @@ LambdaExitMemoryStateMergeOperation::NormalizeLoadFromAlloca(
   if (!replacedOperands)
     return std::nullopt;
 
-  return { { &Create(*operands[0]->region(), newOperands) } };
+  return {
+    { CreateNode(*operands[0]->region(), newOperands, operation.MemoryNodeIds_).output(0) }
+  };
 }
 
 std::optional<std::vector<rvsdg::Output *>>
 LambdaExitMemoryStateMergeOperation::NormalizeStoreToAlloca(
-    const LambdaExitMemoryStateMergeOperation &,
+    const LambdaExitMemoryStateMergeOperation & operation,
     const std::vector<rvsdg::Output *> & operands)
 {
   if (operands.empty())
@@ -354,12 +356,14 @@ LambdaExitMemoryStateMergeOperation::NormalizeStoreToAlloca(
   if (!replacedOperands)
     return std::nullopt;
 
-  return { { &Create(*operands[0]->region(), newOperands) } };
+  return {
+    { CreateNode(*operands[0]->region(), newOperands, operation.GetMemoryNodeIds()).output(0) }
+  };
 }
 
 std::optional<std::vector<rvsdg::Output *>>
 LambdaExitMemoryStateMergeOperation::NormalizeAlloca(
-    const LambdaExitMemoryStateMergeOperation &,
+    const LambdaExitMemoryStateMergeOperation & operation,
     const std::vector<rvsdg::Output *> & operands)
 {
   if (operands.empty())
@@ -387,7 +391,9 @@ LambdaExitMemoryStateMergeOperation::NormalizeAlloca(
   if (!replacedOperands)
     return std::nullopt;
 
-  return { { &Create(*operands[0]->region(), newOperands) } };
+  return {
+    { CreateNode(*operands[0]->region(), newOperands, operation.GetMemoryNodeIds()).output(0) }
+  };
 }
 
 CallEntryMemoryStateMergeOperation::~CallEntryMemoryStateMergeOperation() noexcept = default;

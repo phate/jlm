@@ -277,7 +277,7 @@ class LambdaExitMemoryStateMergeOperation final : public MemoryStateOperation
 public:
   ~LambdaExitMemoryStateMergeOperation() noexcept override;
 
-  LambdaExitMemoryStateMergeOperation(std::vector<MemoryNodeId> memoryNodeIds);
+  explicit LambdaExitMemoryStateMergeOperation(std::vector<MemoryNodeId> memoryNodeIds);
 
   bool
   operator==(const Operation & other) const noexcept override;
@@ -287,6 +287,12 @@ public:
 
   [[nodiscard]] std::unique_ptr<Operation>
   copy() const override;
+
+  [[nodiscard]] const std::vector<MemoryNodeId> &
+  GetMemoryNodeIds() const noexcept
+  {
+    return MemoryNodeIds_;
+  }
 
   /**
    * Performs the following transformation:
@@ -335,19 +341,6 @@ public:
       const LambdaExitMemoryStateMergeOperation & operation,
       const std::vector<rvsdg::Output *> & operands);
 
-  // FIXME: Deprecated, needs to be removed
-  static rvsdg::Node &
-  CreateNode(rvsdg::Region & region, const std::vector<rvsdg::Output *> & operands)
-  {
-    std::vector<MemoryNodeId> memoryNodeIds;
-    for (size_t i = 0; i < operands.size(); ++i)
-    {
-      memoryNodeIds.push_back(i);
-    }
-
-    return CreateNode(region, operands, std::move(memoryNodeIds));
-  }
-
   static rvsdg::Node &
   CreateNode(
       rvsdg::Region & region,
@@ -362,10 +355,17 @@ public:
                                   std::move(memoryNodeIds));
   }
 
+  // FIXME: Deprecated, needs to be removed
   static rvsdg::Output &
   Create(rvsdg::Region & region, const std::vector<rvsdg::Output *> & operands)
   {
-    return *CreateNode(region, operands).output(0);
+    std::vector<MemoryNodeId> memoryNodeIds;
+    for (size_t i = 0; i < operands.size(); ++i)
+    {
+      memoryNodeIds.push_back(i);
+    }
+
+    return *CreateNode(region, operands, std::move(memoryNodeIds)).output(0);
   }
 
 private:
