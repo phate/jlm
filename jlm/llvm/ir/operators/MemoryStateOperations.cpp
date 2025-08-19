@@ -357,7 +357,7 @@ LambdaExitMemoryStateMergeOperation::NormalizeStoreToAlloca(
     return std::nullopt;
 
   return {
-    { CreateNode(*operands[0]->region(), newOperands, operation.GetMemoryNodeIds()).output(0) }
+    { CreateNode(*operands[0]->region(), newOperands, operation.MemoryNodeIds_).output(0) }
   };
 }
 
@@ -392,7 +392,7 @@ LambdaExitMemoryStateMergeOperation::NormalizeAlloca(
     return std::nullopt;
 
   return {
-    { CreateNode(*operands[0]->region(), newOperands, operation.GetMemoryNodeIds()).output(0) }
+    { CreateNode(*operands[0]->region(), newOperands, operation.MemoryNodeIds_).output(0) }
   };
 }
 
