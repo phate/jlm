@@ -10,6 +10,7 @@
 #include <jlm/llvm/ir/RvsdgModule.hpp>
 #include <jlm/llvm/opt/InvariantValueRedirection.hpp>
 #include <jlm/rvsdg/gamma.hpp>
+#include <jlm/rvsdg/MatchType.hpp>
 #include <jlm/rvsdg/theta.hpp>
 #include <jlm/rvsdg/traverser.hpp>
 #include <jlm/util/Statistics.hpp>
@@ -69,33 +70,38 @@ InvariantValueRedirection::RedirectInRootRegion(rvsdg::Graph & rvsdg)
   // subregion before we try to detect invariant call outputs.
   for (auto node : rvsdg::TopDownTraverser(&rvsdg.GetRootRegion()))
   {
-    if (auto lambdaNode = dynamic_cast<rvsdg::LambdaNode *>(node))
-    {
-      RedirectInRegion(*lambdaNode->subregion());
-    }
-    else if (auto phiNode = dynamic_cast<rvsdg::PhiNode *>(node))
-    {
-      auto phiLambdaNodes = rvsdg::PhiNode::ExtractLambdaNodes(*phiNode);
-      for (auto phiLambdaNode : phiLambdaNodes)
-      {
-        RedirectInRegion(*phiLambdaNode->subregion());
-      }
-    }
-    else if (dynamic_cast<const DeltaNode *>(node))
-    {
-      // Nothing needs to be done.
-      // Delta nodes are irrelevant for invariant value redirection.
-    }
-    else if (
-        is<FunctionToPointerOperation>(node->GetOperation())
-        || is<PointerToFunctionOperation>(node->GetOperation()))
-    {
-      // Nothing needs to be done.
-    }
-    else
-    {
-      JLM_UNREACHABLE("Unhandled node type.");
-    }
+    MatchTypeOrFail(
+        *node,
+        [](const rvsdg::LambdaNode & lambdaNode)
+        {
+          RedirectInRegion(*lambdaNode.subregion());
+        },
+        [](const rvsdg::PhiNode & phiNode)
+        {
+          auto phiLambdaNodes = rvsdg::PhiNode::ExtractLambdaNodes(phiNode);
+          for (auto phiLambdaNode : phiLambdaNodes)
+          {
+            RedirectInRegion(*phiLambdaNode->subregion());
+          }
+        },
+        [](const rvsdg::DeltaNode &)
+        {
+          // Nothing needs to be done.
+          // Delta nodes are irrelevant for invariant value redirection.
+        },
+        [](const rvsdg::SimpleNode & simpleNode)
+        {
+          MatchTypeOrFail(
+              simpleNode.GetOperation(),
+              [](const FunctionToPointerOperation &)
+              {
+                // Nothing needs to be done.
+              },
+              [](const PointerToFunctionOperation &)
+              {
+                // Nothing needs to be done.
+              });
+        });
   }
 }
 
@@ -125,9 +131,12 @@ InvariantValueRedirection::RedirectInRegion(rvsdg::Region & region)
       RedirectInSubregions(*thetaNode);
       RedirectThetaOutputs(*thetaNode);
     }
-    else if (is<CallOperation>(&node))
+    else if (auto simpleNode = dynamic_cast<rvsdg::SimpleNode *>(&node))
     {
-      RedirectCallOutputs(*util::AssertedCast<rvsdg::SimpleNode>(&node));
+      if (is<CallOperation>(simpleNode))
+      {
+        RedirectCallOutputs(*util::AssertedCast<rvsdg::SimpleNode>(&node));
+      }
     }
   }
 }

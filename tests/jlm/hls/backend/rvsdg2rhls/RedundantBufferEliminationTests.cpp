@@ -22,20 +22,20 @@ BufferWithLocalLoad()
 
   // Arrange
   auto valueType = jlm::tests::ValueType::Create();
-  auto i64Type = jlm::rvsdg::bittype::Create(64);
+  auto i64Type = jlm::rvsdg::BitType::Create(64);
   auto memoryStateType = MemoryStateType::Create();
 
   jlm::llvm::RvsdgModule rvsdgModule(FilePath(""), "", "");
   auto & rvsdg = rvsdgModule.Rvsdg();
 
-  auto & importI64 = jlm::tests::GraphImport::Create(rvsdg, i64Type, "i64");
-  auto & importMemState = jlm::tests::GraphImport::Create(rvsdg, memoryStateType, "memstate");
-  auto & importValue = jlm::tests::GraphImport::Create(rvsdg, valueType, "value");
+  auto & importI64 = jlm::rvsdg::GraphImport::Create(rvsdg, i64Type, "i64");
+  auto & importMemState = jlm::rvsdg::GraphImport::Create(rvsdg, memoryStateType, "memstate");
+  auto & importValue = jlm::rvsdg::GraphImport::Create(rvsdg, valueType, "value");
 
   auto loadResults = LocalLoadOperation::create(importI64, { &importMemState }, importValue);
   auto bufferResults = BufferOperation::create(*loadResults[1], 4, false);
 
-  auto & x = jlm::tests::GraphExport::Create(*bufferResults[0], "x");
+  auto & x = jlm::rvsdg::GraphExport::Create(*bufferResults[0], "x");
 
   view(rvsdg, stdout);
 
@@ -47,7 +47,7 @@ BufferWithLocalLoad()
   // Assert
   // We expect the BufferOperation node to be replaced by a passthrough BufferOperation node
   assert(rvsdg.GetRootRegion().nnodes() == 2);
-  auto [bufferNode, bufferOperation] = TryGetSimpleNodeAndOp<BufferOperation>(*x.origin());
+  auto [bufferNode, bufferOperation] = TryGetSimpleNodeAndOptionalOp<BufferOperation>(*x.origin());
   assert(bufferNode && bufferOperation);
   assert(bufferOperation->Capacity() == 4);
   assert(bufferOperation->IsPassThrough());
@@ -67,20 +67,20 @@ BufferWithLocalStore()
 
   // Arrange
   auto valueType = jlm::tests::ValueType::Create();
-  auto i64Type = jlm::rvsdg::bittype::Create(64);
+  auto i64Type = jlm::rvsdg::BitType::Create(64);
   auto memoryStateType = MemoryStateType::Create();
 
   jlm::llvm::RvsdgModule rvsdgModule(FilePath(""), "", "");
   auto & rvsdg = rvsdgModule.Rvsdg();
 
-  auto & importI64 = jlm::tests::GraphImport::Create(rvsdg, i64Type, "i64");
-  auto & importMemState = jlm::tests::GraphImport::Create(rvsdg, memoryStateType, "memstate");
-  auto & importValue = jlm::tests::GraphImport::Create(rvsdg, valueType, "value");
+  auto & importI64 = jlm::rvsdg::GraphImport::Create(rvsdg, i64Type, "i64");
+  auto & importMemState = jlm::rvsdg::GraphImport::Create(rvsdg, memoryStateType, "memstate");
+  auto & importValue = jlm::rvsdg::GraphImport::Create(rvsdg, valueType, "value");
 
   auto storeResults = LocalStoreOperation::create(importI64, importValue, { &importMemState });
   auto bufferResults = BufferOperation::create(*storeResults[0], 4, false);
 
-  auto & x = jlm::tests::GraphExport::Create(*bufferResults[0], "x");
+  auto & x = jlm::rvsdg::GraphExport::Create(*bufferResults[0], "x");
 
   view(rvsdg, stdout);
 
@@ -92,7 +92,7 @@ BufferWithLocalStore()
   // Assert
   // We expect the BufferOperation node to be replaced by a passthrough BufferOperation node
   assert(rvsdg.GetRootRegion().nnodes() == 2);
-  auto [bufferNode, bufferOperation] = TryGetSimpleNodeAndOp<BufferOperation>(*x.origin());
+  auto [bufferNode, bufferOperation] = TryGetSimpleNodeAndOptionalOp<BufferOperation>(*x.origin());
   assert(bufferNode && bufferOperation);
   assert(bufferOperation->Capacity() == 4);
   assert(bufferOperation->IsPassThrough());
@@ -118,14 +118,14 @@ BufferWithLoad()
   jlm::llvm::RvsdgModule rvsdgModule(FilePath(""), "", "");
   auto & rvsdg = rvsdgModule.Rvsdg();
 
-  auto & importPtr = jlm::tests::GraphImport::Create(rvsdg, pointerType, "ptr");
-  auto & importMemState = jlm::tests::GraphImport::Create(rvsdg, memoryStateType, "memstate");
-  auto & importValue = jlm::tests::GraphImport::Create(rvsdg, valueType, "value");
+  auto & importPtr = jlm::rvsdg::GraphImport::Create(rvsdg, pointerType, "ptr");
+  auto & importMemState = jlm::rvsdg::GraphImport::Create(rvsdg, memoryStateType, "memstate");
+  auto & importValue = jlm::rvsdg::GraphImport::Create(rvsdg, valueType, "value");
 
   auto loadResults = LoadOperation::create(importPtr, { &importMemState }, importValue);
   auto bufferResults = BufferOperation::create(*loadResults[1], 4, false);
 
-  auto & x = jlm::tests::GraphExport::Create(*bufferResults[0], "x");
+  auto & x = jlm::rvsdg::GraphExport::Create(*bufferResults[0], "x");
 
   view(rvsdg, stdout);
 
@@ -137,7 +137,7 @@ BufferWithLoad()
   // Assert
   // We expect the BufferOperation node to be replaced by a passthrough BufferOperation node
   assert(rvsdg.GetRootRegion().nnodes() == 2);
-  auto [bufferNode, bufferOperation] = TryGetSimpleNodeAndOp<BufferOperation>(*x.origin());
+  auto [bufferNode, bufferOperation] = TryGetSimpleNodeAndOptionalOp<BufferOperation>(*x.origin());
   assert(bufferNode && bufferOperation);
   assert(bufferOperation->Capacity() == 4);
   assert(bufferOperation->IsPassThrough());
@@ -163,10 +163,10 @@ BufferWithStore()
   jlm::llvm::RvsdgModule rvsdgModule(FilePath(""), "", "");
   auto & rvsdg = rvsdgModule.Rvsdg();
 
-  auto & importPtr = jlm::tests::GraphImport::Create(rvsdg, pointerType, "ptr");
-  auto & importMemState0 = jlm::tests::GraphImport::Create(rvsdg, memoryStateType, "memstate0");
-  auto & importMemState1 = jlm::tests::GraphImport::Create(rvsdg, memoryStateType, "memstate1");
-  auto & importValue = jlm::tests::GraphImport::Create(rvsdg, valueType, "value");
+  auto & importPtr = jlm::rvsdg::GraphImport::Create(rvsdg, pointerType, "ptr");
+  auto & importMemState0 = jlm::rvsdg::GraphImport::Create(rvsdg, memoryStateType, "memstate0");
+  auto & importMemState1 = jlm::rvsdg::GraphImport::Create(rvsdg, memoryStateType, "memstate1");
+  auto & importValue = jlm::rvsdg::GraphImport::Create(rvsdg, valueType, "value");
 
   auto storeResults = jlm::hls::StoreOperation::create(
       importPtr,
@@ -175,7 +175,7 @@ BufferWithStore()
       importMemState1);
   auto bufferResults = BufferOperation::create(*storeResults[0], 4, false);
 
-  auto & x = jlm::tests::GraphExport::Create(*bufferResults[0], "x");
+  auto & x = jlm::rvsdg::GraphExport::Create(*bufferResults[0], "x");
 
   view(rvsdg, stdout);
 
@@ -187,7 +187,7 @@ BufferWithStore()
   // Assert
   // We expect the BufferOperation node to be replaced by a passthrough BufferOperation node
   assert(rvsdg.GetRootRegion().nnodes() == 2);
-  auto [bufferNode, bufferOperation] = TryGetSimpleNodeAndOp<BufferOperation>(*x.origin());
+  auto [bufferNode, bufferOperation] = TryGetSimpleNodeAndOptionalOp<BufferOperation>(*x.origin());
   assert(bufferNode && bufferOperation);
   assert(bufferOperation->Capacity() == 4);
   assert(bufferOperation->IsPassThrough());
@@ -207,21 +207,21 @@ BufferWithForkAndLocalLoad()
 
   // Arrange
   auto valueType = jlm::tests::ValueType::Create();
-  auto i64Type = jlm::rvsdg::bittype::Create(64);
+  auto i64Type = jlm::rvsdg::BitType::Create(64);
   auto memoryStateType = MemoryStateType::Create();
 
   jlm::llvm::RvsdgModule rvsdgModule(FilePath(""), "", "");
   auto & rvsdg = rvsdgModule.Rvsdg();
 
-  auto & importI64 = jlm::tests::GraphImport::Create(rvsdg, i64Type, "i64");
-  auto & importMemState = jlm::tests::GraphImport::Create(rvsdg, memoryStateType, "memstate");
-  auto & importValue = jlm::tests::GraphImport::Create(rvsdg, valueType, "value");
+  auto & importI64 = jlm::rvsdg::GraphImport::Create(rvsdg, i64Type, "i64");
+  auto & importMemState = jlm::rvsdg::GraphImport::Create(rvsdg, memoryStateType, "memstate");
+  auto & importValue = jlm::rvsdg::GraphImport::Create(rvsdg, valueType, "value");
 
   auto loadResults = LocalLoadOperation::create(importI64, { &importMemState }, importValue);
   auto forkResults = ForkOperation::create(2, *loadResults[1]);
   auto bufferResults = BufferOperation::create(*forkResults[0], 4, false);
 
-  auto & x = jlm::tests::GraphExport::Create(*bufferResults[0], "x");
+  auto & x = jlm::rvsdg::GraphExport::Create(*bufferResults[0], "x");
 
   view(rvsdg, stdout);
 
@@ -233,7 +233,7 @@ BufferWithForkAndLocalLoad()
   // Assert
   // We expect the BufferOperation node to be replaced by a passthrough BufferOperation node
   assert(rvsdg.GetRootRegion().nnodes() == 3);
-  auto [bufferNode, bufferOperation] = TryGetSimpleNodeAndOp<BufferOperation>(*x.origin());
+  auto [bufferNode, bufferOperation] = TryGetSimpleNodeAndOptionalOp<BufferOperation>(*x.origin());
   assert(bufferNode && bufferOperation);
   assert(bufferOperation->Capacity() == 4);
   assert(bufferOperation->IsPassThrough());
@@ -253,23 +253,23 @@ BufferWithBranchAndLocalLoad()
 
   // Arrange
   auto valueType = jlm::tests::ValueType::Create();
-  auto i64Type = jlm::rvsdg::bittype::Create(64);
+  auto i64Type = jlm::rvsdg::BitType::Create(64);
   auto controlType = ControlType::Create(2);
   auto memoryStateType = MemoryStateType::Create();
 
   jlm::llvm::RvsdgModule rvsdgModule(FilePath(""), "", "");
   auto & rvsdg = rvsdgModule.Rvsdg();
 
-  auto & importI64 = jlm::tests::GraphImport::Create(rvsdg, i64Type, "i64");
-  auto & importControl = jlm::tests::GraphImport::Create(rvsdg, controlType, "control");
-  auto & importMemState = jlm::tests::GraphImport::Create(rvsdg, memoryStateType, "memstate");
-  auto & importValue = jlm::tests::GraphImport::Create(rvsdg, valueType, "value");
+  auto & importI64 = jlm::rvsdg::GraphImport::Create(rvsdg, i64Type, "i64");
+  auto & importControl = jlm::rvsdg::GraphImport::Create(rvsdg, controlType, "control");
+  auto & importMemState = jlm::rvsdg::GraphImport::Create(rvsdg, memoryStateType, "memstate");
+  auto & importValue = jlm::rvsdg::GraphImport::Create(rvsdg, valueType, "value");
 
   auto loadResults = LocalLoadOperation::create(importI64, { &importMemState }, importValue);
   auto branchResults = BranchOperation::create(importControl, *loadResults[1]);
   auto bufferResults = BufferOperation::create(*branchResults[0], 4, false);
 
-  auto & x = jlm::tests::GraphExport::Create(*bufferResults[0], "x");
+  auto & x = jlm::rvsdg::GraphExport::Create(*bufferResults[0], "x");
 
   view(rvsdg, stdout);
 
@@ -281,7 +281,7 @@ BufferWithBranchAndLocalLoad()
   // Assert
   // We expect the BufferOperation node to be replaced by a passthrough BufferOperation node
   assert(rvsdg.GetRootRegion().nnodes() == 3);
-  auto [bufferNode, bufferOperation] = TryGetSimpleNodeAndOp<BufferOperation>(*x.origin());
+  auto [bufferNode, bufferOperation] = TryGetSimpleNodeAndOptionalOp<BufferOperation>(*x.origin());
   assert(bufferNode && bufferOperation);
   assert(bufferOperation->Capacity() == 4);
   assert(bufferOperation->IsPassThrough());
@@ -306,7 +306,7 @@ BufferWithOtherNode()
   jlm::llvm::RvsdgModule rvsdgModule(FilePath(""), "", "");
   auto & rvsdg = rvsdgModule.Rvsdg();
 
-  auto & importValue = jlm::tests::GraphImport::Create(rvsdg, valueType, "value");
+  auto & importValue = jlm::rvsdg::GraphImport::Create(rvsdg, valueType, "value");
 
   auto node = jlm::tests::TestOperation::create(
       &rvsdg.GetRootRegion(),
@@ -314,7 +314,7 @@ BufferWithOtherNode()
       { memoryStateType });
   auto bufferResults = BufferOperation::create(*node->output(0), 4, false);
 
-  auto & x = jlm::tests::GraphExport::Create(*bufferResults[0], "x");
+  auto & x = jlm::rvsdg::GraphExport::Create(*bufferResults[0], "x");
 
   view(rvsdg, stdout);
 
@@ -328,7 +328,7 @@ BufferWithOtherNode()
   // BufferOperation node cannot be traced to a Load-/Store-/LocalLoad-/LocalStoreOperation node
   assert(rvsdg.GetRootRegion().nnodes() == 2);
   assert(x.origin() == bufferResults[0]);
-  auto [bufferNode, bufferOperation] = TryGetSimpleNodeAndOp<BufferOperation>(*x.origin());
+  auto [bufferNode, bufferOperation] = TryGetSimpleNodeAndOptionalOp<BufferOperation>(*x.origin());
   assert(bufferNode && bufferOperation);
   assert(bufferOperation->Capacity() == 4);
   assert(!bufferOperation->IsPassThrough());
@@ -348,20 +348,20 @@ BufferWithNonMemoryStateOperand()
 
   // Arrange
   auto valueType = jlm::tests::ValueType::Create();
-  auto i64Type = jlm::rvsdg::bittype::Create(64);
+  auto i64Type = jlm::rvsdg::BitType::Create(64);
   auto memoryStateType = MemoryStateType::Create();
 
   jlm::llvm::RvsdgModule rvsdgModule(FilePath(""), "", "");
   auto & rvsdg = rvsdgModule.Rvsdg();
 
-  auto & importI64 = jlm::tests::GraphImport::Create(rvsdg, i64Type, "i64");
-  auto & importMemState = jlm::tests::GraphImport::Create(rvsdg, memoryStateType, "memstate");
-  auto & importValue = jlm::tests::GraphImport::Create(rvsdg, valueType, "value");
+  auto & importI64 = jlm::rvsdg::GraphImport::Create(rvsdg, i64Type, "i64");
+  auto & importMemState = jlm::rvsdg::GraphImport::Create(rvsdg, memoryStateType, "memstate");
+  auto & importValue = jlm::rvsdg::GraphImport::Create(rvsdg, valueType, "value");
 
   auto loadResults = LocalLoadOperation::create(importI64, { &importMemState }, importValue);
   auto bufferResults = BufferOperation::create(*loadResults[0], 4, false);
 
-  auto & x = jlm::tests::GraphExport::Create(*bufferResults[0], "x");
+  auto & x = jlm::rvsdg::GraphExport::Create(*bufferResults[0], "x");
 
   view(rvsdg, stdout);
 
@@ -375,7 +375,7 @@ BufferWithNonMemoryStateOperand()
   // BufferOperation node is not of type llvm::MemoryStateType
   assert(rvsdg.GetRootRegion().nnodes() == 2);
   assert(x.origin() == bufferResults[0]);
-  auto [bufferNode, bufferOperation] = TryGetSimpleNodeAndOp<BufferOperation>(*x.origin());
+  auto [bufferNode, bufferOperation] = TryGetSimpleNodeAndOptionalOp<BufferOperation>(*x.origin());
   assert(bufferNode && bufferOperation);
   assert(bufferOperation->Capacity() == 4);
   assert(!bufferOperation->IsPassThrough());
@@ -395,20 +395,20 @@ PassthroughBuffer()
 
   // Arrange
   auto valueType = jlm::tests::ValueType::Create();
-  auto i64Type = jlm::rvsdg::bittype::Create(64);
+  auto i64Type = jlm::rvsdg::BitType::Create(64);
   auto memoryStateType = MemoryStateType::Create();
 
   jlm::llvm::RvsdgModule rvsdgModule(FilePath(""), "", "");
   auto & rvsdg = rvsdgModule.Rvsdg();
 
-  auto & importI64 = jlm::tests::GraphImport::Create(rvsdg, i64Type, "i64");
-  auto & importMemState = jlm::tests::GraphImport::Create(rvsdg, memoryStateType, "memstate");
-  auto & importValue = jlm::tests::GraphImport::Create(rvsdg, valueType, "value");
+  auto & importI64 = jlm::rvsdg::GraphImport::Create(rvsdg, i64Type, "i64");
+  auto & importMemState = jlm::rvsdg::GraphImport::Create(rvsdg, memoryStateType, "memstate");
+  auto & importValue = jlm::rvsdg::GraphImport::Create(rvsdg, valueType, "value");
 
   auto loadResults = LocalLoadOperation::create(importI64, { &importMemState }, importValue);
   auto bufferResults = BufferOperation::create(*loadResults[1], 4, true);
 
-  auto & x = jlm::tests::GraphExport::Create(*bufferResults[0], "x");
+  auto & x = jlm::rvsdg::GraphExport::Create(*bufferResults[0], "x");
 
   view(rvsdg, stdout);
 
@@ -422,7 +422,7 @@ PassthroughBuffer()
   // marked as passthrough.
   assert(rvsdg.GetRootRegion().nnodes() == 2);
   assert(x.origin() == bufferResults[0]);
-  auto [bufferNode, bufferOperation] = TryGetSimpleNodeAndOp<BufferOperation>(*x.origin());
+  auto [bufferNode, bufferOperation] = TryGetSimpleNodeAndOptionalOp<BufferOperation>(*x.origin());
   assert(bufferNode && bufferOperation);
   assert(bufferOperation->Capacity() == 4);
   assert(bufferOperation->IsPassThrough());

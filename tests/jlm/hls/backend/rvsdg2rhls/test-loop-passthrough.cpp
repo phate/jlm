@@ -34,8 +34,8 @@ test()
   using namespace jlm;
 
   auto ft = jlm::rvsdg::FunctionType::Create(
-      { rvsdg::bittype::Create(1), rvsdg::bittype::Create(8), rvsdg::bittype::Create(8) },
-      { rvsdg::bittype::Create(8) });
+      { rvsdg::BitType::Create(1), rvsdg::BitType::Create(8), rvsdg::BitType::Create(8) },
+      { rvsdg::BitType::Create(8) });
 
   jlm::llvm::RvsdgModule rm(util::FilePath(""), "", "");
 
@@ -50,7 +50,7 @@ test()
   auto loop_out = loop->AddLoopVar(lambda->GetFunctionArguments()[1]);
 
   auto f = lambda->finalize({ loop_out });
-  jlm::llvm::GraphExport::Create(*f, "");
+  rvsdg::GraphExport::Create(*f, "");
 
   rvsdg::view(rm.Rvsdg(), stdout);
   hls::DotHLS dhls;

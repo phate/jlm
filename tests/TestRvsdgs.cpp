@@ -13,12 +13,13 @@ std::unique_ptr<jlm::llvm::RvsdgModule>
 StoreTest1::SetupRvsdg()
 {
   using namespace jlm::llvm;
+  using namespace jlm::rvsdg;
 
   auto pointerType = PointerType::Create();
   auto fcttype =
       rvsdg::FunctionType::Create({ MemoryStateType::Create() }, { MemoryStateType::Create() });
 
-  auto module = RvsdgModule::Create(jlm::util::FilePath(""), "", "");
+  auto module = llvm::RvsdgModule::Create(jlm::util::FilePath(""), "", "");
   auto graph = &module->Rvsdg();
 
   auto fct = rvsdg::LambdaNode::Create(
@@ -27,7 +28,7 @@ StoreTest1::SetupRvsdg()
 
   auto csize = jlm::rvsdg::create_bitconstant(fct->subregion(), 32, 4);
 
-  auto d = AllocaOperation::create(jlm::rvsdg::bittype::Create(32), csize, 4);
+  auto d = AllocaOperation::create(jlm::rvsdg::BitType::Create(32), csize, 4);
   auto c = AllocaOperation::create(pointerType, csize, 4);
   auto b = AllocaOperation::create(pointerType, csize, 4);
   auto a = AllocaOperation::create(pointerType, csize, 4);
@@ -67,12 +68,13 @@ std::unique_ptr<jlm::llvm::RvsdgModule>
 StoreTest2::SetupRvsdg()
 {
   using namespace jlm::llvm;
+  using namespace jlm::rvsdg;
 
   auto pointerType = PointerType::Create();
   auto fcttype =
       rvsdg::FunctionType::Create({ MemoryStateType::Create() }, { MemoryStateType::Create() });
 
-  auto module = RvsdgModule::Create(jlm::util::FilePath(""), "", "");
+  auto module = llvm::RvsdgModule::Create(jlm::util::FilePath(""), "", "");
   auto graph = &module->Rvsdg();
 
   auto fct = rvsdg::LambdaNode::Create(
@@ -81,8 +83,8 @@ StoreTest2::SetupRvsdg()
 
   auto csize = jlm::rvsdg::create_bitconstant(fct->subregion(), 32, 4);
 
-  auto a = AllocaOperation::create(jlm::rvsdg::bittype::Create(32), csize, 4);
-  auto b = AllocaOperation::create(jlm::rvsdg::bittype::Create(32), csize, 4);
+  auto a = AllocaOperation::create(jlm::rvsdg::BitType::Create(32), csize, 4);
+  auto b = AllocaOperation::create(jlm::rvsdg::BitType::Create(32), csize, 4);
   auto x = AllocaOperation::create(pointerType, csize, 4);
   auto y = AllocaOperation::create(pointerType, csize, 4);
   auto p = AllocaOperation::create(pointerType, csize, 4);
@@ -126,14 +128,15 @@ std::unique_ptr<jlm::llvm::RvsdgModule>
 LoadTest1::SetupRvsdg()
 {
   using namespace jlm::llvm;
+  using namespace jlm::rvsdg;
 
   auto mt = MemoryStateType::Create();
   auto pointerType = PointerType::Create();
   auto fcttype = rvsdg::FunctionType::Create(
       { PointerType::Create(), MemoryStateType::Create() },
-      { jlm::rvsdg::bittype::Create(32), MemoryStateType::Create() });
+      { jlm::rvsdg::BitType::Create(32), MemoryStateType::Create() });
 
-  auto module = RvsdgModule::Create(jlm::util::FilePath("LoadTest1.c"), "", "");
+  auto module = llvm::RvsdgModule::Create(jlm::util::FilePath("LoadTest1.c"), "", "");
   auto graph = &module->Rvsdg();
 
   auto fct = rvsdg::LambdaNode::Create(
@@ -146,7 +149,7 @@ LoadTest1::SetupRvsdg()
       pointerType,
       4);
   auto ld2 =
-      LoadNonVolatileOperation::Create(ld1[0], { ld1[1] }, jlm::rvsdg::bittype::Create(32), 4);
+      LoadNonVolatileOperation::Create(ld1[0], { ld1[1] }, jlm::rvsdg::BitType::Create(32), 4);
 
   fct->finalize(ld2);
 
@@ -166,13 +169,14 @@ std::unique_ptr<jlm::llvm::RvsdgModule>
 LoadTest2::SetupRvsdg()
 {
   using namespace jlm::llvm;
+  using namespace jlm::rvsdg;
 
   auto mt = MemoryStateType::Create();
   auto pointerType = PointerType::Create();
   auto fcttype =
       rvsdg::FunctionType::Create({ MemoryStateType::Create() }, { MemoryStateType::Create() });
 
-  auto module = RvsdgModule::Create(jlm::util::FilePath(""), "", "");
+  auto module = llvm::RvsdgModule::Create(jlm::util::FilePath(""), "", "");
   auto graph = &module->Rvsdg();
 
   auto fct = rvsdg::LambdaNode::Create(
@@ -181,8 +185,8 @@ LoadTest2::SetupRvsdg()
 
   auto csize = jlm::rvsdg::create_bitconstant(fct->subregion(), 32, 4);
 
-  auto a = AllocaOperation::create(jlm::rvsdg::bittype::Create(32), csize, 4);
-  auto b = AllocaOperation::create(jlm::rvsdg::bittype::Create(32), csize, 4);
+  auto a = AllocaOperation::create(jlm::rvsdg::BitType::Create(32), csize, 4);
+  auto b = AllocaOperation::create(jlm::rvsdg::BitType::Create(32), csize, 4);
   auto x = AllocaOperation::create(pointerType, csize, 4);
   auto y = AllocaOperation::create(pointerType, csize, 4);
   auto p = AllocaOperation::create(pointerType, csize, 4);
@@ -232,14 +236,15 @@ std::unique_ptr<jlm::llvm::RvsdgModule>
 LoadFromUndefTest::SetupRvsdg()
 {
   using namespace jlm::llvm;
+  using namespace jlm::rvsdg;
 
   auto memoryStateType = MemoryStateType::Create();
   auto functionType = rvsdg::FunctionType::Create(
       { MemoryStateType::Create() },
-      { jlm::rvsdg::bittype::Create(32), MemoryStateType::Create() });
+      { jlm::rvsdg::BitType::Create(32), MemoryStateType::Create() });
   auto pointerType = PointerType::Create();
 
-  auto rvsdgModule = RvsdgModule::Create(jlm::util::FilePath(""), "", "");
+  auto rvsdgModule = llvm::RvsdgModule::Create(jlm::util::FilePath(""), "", "");
   auto & rvsdg = rvsdgModule->Rvsdg();
 
   Lambda_ = rvsdg::LambdaNode::Create(
@@ -250,7 +255,7 @@ LoadFromUndefTest::SetupRvsdg()
   auto loadResults = LoadNonVolatileOperation::Create(
       undefValue,
       { Lambda_->GetFunctionArguments()[0] },
-      jlm::rvsdg::bittype::Create(32),
+      jlm::rvsdg::BitType::Create(32),
       4);
 
   Lambda_->finalize(loadResults);
@@ -268,19 +273,20 @@ std::unique_ptr<jlm::llvm::RvsdgModule>
 GetElementPtrTest::SetupRvsdg()
 {
   using namespace jlm::llvm;
+  using namespace jlm::rvsdg;
 
-  auto module = RvsdgModule::Create(jlm::util::FilePath(""), "", "");
+  auto module = llvm::RvsdgModule::Create(jlm::util::FilePath(""), "", "");
   auto graph = &module->Rvsdg();
 
   auto & declaration = module->AddStructTypeDeclaration(StructType::Declaration::Create(
-      { jlm::rvsdg::bittype::Create(32), jlm::rvsdg::bittype::Create(32) }));
+      { jlm::rvsdg::BitType::Create(32), jlm::rvsdg::BitType::Create(32) }));
   auto structType = StructType::Create(false, declaration);
 
   auto mt = MemoryStateType::Create();
   auto pointerType = PointerType::Create();
   auto fcttype = rvsdg::FunctionType::Create(
       { PointerType::Create(), MemoryStateType::Create() },
-      { jlm::rvsdg::bittype::Create(32), MemoryStateType::Create() });
+      { jlm::rvsdg::BitType::Create(32), MemoryStateType::Create() });
 
   auto fct = rvsdg::LambdaNode::Create(
       graph->GetRootRegion(),
@@ -297,7 +303,7 @@ GetElementPtrTest::SetupRvsdg()
   auto ldx = LoadNonVolatileOperation::Create(
       gepx,
       { fct->GetFunctionArguments()[1] },
-      jlm::rvsdg::bittype::Create(32),
+      jlm::rvsdg::BitType::Create(32),
       4);
 
   auto gepy = GetElementPtrOperation::Create(
@@ -305,7 +311,7 @@ GetElementPtrTest::SetupRvsdg()
       { zero, one },
       structType,
       pointerType);
-  auto ldy = LoadNonVolatileOperation::Create(gepy, { ldx[1] }, jlm::rvsdg::bittype::Create(32), 4);
+  auto ldy = LoadNonVolatileOperation::Create(gepy, { ldx[1] }, jlm::rvsdg::BitType::Create(32), 4);
 
   auto sum = jlm::rvsdg::bitadd_op::create(32, ldx[0], ldy[0]);
 
@@ -328,11 +334,12 @@ std::unique_ptr<jlm::llvm::RvsdgModule>
 BitCastTest::SetupRvsdg()
 {
   using namespace jlm::llvm;
+  using namespace jlm::rvsdg;
 
   auto pointerType = PointerType::Create();
   auto fcttype = rvsdg::FunctionType::Create({ PointerType::Create() }, { PointerType::Create() });
 
-  auto module = RvsdgModule::Create(jlm::util::FilePath(""), "", "");
+  auto module = llvm::RvsdgModule::Create(jlm::util::FilePath(""), "", "");
   auto graph = &module->Rvsdg();
 
   auto fct = rvsdg::LambdaNode::Create(
@@ -356,8 +363,9 @@ std::unique_ptr<jlm::llvm::RvsdgModule>
 Bits2PtrTest::SetupRvsdg()
 {
   using namespace jlm::llvm;
+  using namespace jlm::rvsdg;
 
-  auto module = RvsdgModule::Create(jlm::util::FilePath(""), "", "");
+  auto module = llvm::RvsdgModule::Create(jlm::util::FilePath(""), "", "");
   auto graph = &module->Rvsdg();
 
   auto setupBit2PtrFunction = [&]()
@@ -366,7 +374,7 @@ Bits2PtrTest::SetupRvsdg()
     auto iOStateType = IOStateType::Create();
     auto memoryStateType = MemoryStateType::Create();
     auto functionType = rvsdg::FunctionType::Create(
-        { jlm::rvsdg::bittype::Create(64), IOStateType::Create(), MemoryStateType::Create() },
+        { jlm::rvsdg::BitType::Create(64), IOStateType::Create(), MemoryStateType::Create() },
         { PointerType::Create(), IOStateType::Create(), MemoryStateType::Create() });
 
     auto lambda = rvsdg::LambdaNode::Create(
@@ -388,7 +396,7 @@ Bits2PtrTest::SetupRvsdg()
     auto iOStateType = IOStateType::Create();
     auto memoryStateType = MemoryStateType::Create();
     auto functionType = rvsdg::FunctionType::Create(
-        { jlm::rvsdg::bittype::Create(64), IOStateType::Create(), MemoryStateType::Create() },
+        { jlm::rvsdg::BitType::Create(64), IOStateType::Create(), MemoryStateType::Create() },
         { IOStateType::Create(), MemoryStateType::Create() });
 
     auto lambda = rvsdg::LambdaNode::Create(
@@ -430,6 +438,7 @@ std::unique_ptr<jlm::llvm::RvsdgModule>
 ConstantPointerNullTest::SetupRvsdg()
 {
   using namespace jlm::llvm;
+  using namespace jlm::rvsdg;
 
   auto mt = MemoryStateType::Create();
   auto pointerType = PointerType::Create();
@@ -437,7 +446,7 @@ ConstantPointerNullTest::SetupRvsdg()
       { PointerType::Create(), MemoryStateType::Create() },
       { MemoryStateType::Create() });
 
-  auto module = RvsdgModule::Create(jlm::util::FilePath(""), "", "");
+  auto module = llvm::RvsdgModule::Create(jlm::util::FilePath(""), "", "");
   auto graph = &module->Rvsdg();
 
   auto fct = rvsdg::LambdaNode::Create(
@@ -469,8 +478,9 @@ std::unique_ptr<jlm::llvm::RvsdgModule>
 CallTest1::SetupRvsdg()
 {
   using namespace jlm::llvm;
+  using namespace jlm::rvsdg;
 
-  auto module = RvsdgModule::Create(jlm::util::FilePath(""), "", "");
+  auto module = llvm::RvsdgModule::Create(jlm::util::FilePath(""), "", "");
   auto graph = &module->Rvsdg();
 
   auto SetupF = [&]()
@@ -483,7 +493,7 @@ CallTest1::SetupRvsdg()
           PointerType::Create(),
           IOStateType::Create(),
           MemoryStateType::Create() },
-        { jlm::rvsdg::bittype::Create(32), IOStateType::Create(), MemoryStateType::Create() });
+        { jlm::rvsdg::BitType::Create(32), IOStateType::Create(), MemoryStateType::Create() });
 
     auto lambda = rvsdg::LambdaNode::Create(
         graph->GetRootRegion(),
@@ -496,12 +506,12 @@ CallTest1::SetupRvsdg()
     auto ld1 = LoadNonVolatileOperation::Create(
         pointerArgument1,
         { memoryStateArgument },
-        jlm::rvsdg::bittype::Create(32),
+        jlm::rvsdg::BitType::Create(32),
         4);
     auto ld2 = LoadNonVolatileOperation::Create(
         pointerArgument2,
         { ld1[1] },
-        jlm::rvsdg::bittype::Create(32),
+        jlm::rvsdg::BitType::Create(32),
         4);
 
     auto sum = jlm::rvsdg::bitadd_op::create(32, ld1[0], ld2[0]);
@@ -521,7 +531,7 @@ CallTest1::SetupRvsdg()
           PointerType::Create(),
           IOStateType::Create(),
           MemoryStateType::Create() },
-        { jlm::rvsdg::bittype::Create(32), IOStateType::Create(), MemoryStateType::Create() });
+        { jlm::rvsdg::BitType::Create(32), IOStateType::Create(), MemoryStateType::Create() });
 
     auto lambda = rvsdg::LambdaNode::Create(
         graph->GetRootRegion(),
@@ -534,12 +544,12 @@ CallTest1::SetupRvsdg()
     auto ld1 = LoadNonVolatileOperation::Create(
         pointerArgument1,
         { memoryStateArgument },
-        jlm::rvsdg::bittype::Create(32),
+        jlm::rvsdg::BitType::Create(32),
         4);
     auto ld2 = LoadNonVolatileOperation::Create(
         pointerArgument2,
         { ld1[1] },
-        jlm::rvsdg::bittype::Create(32),
+        jlm::rvsdg::BitType::Create(32),
         4);
 
     auto diff = jlm::rvsdg::bitsub_op::create(32, ld1[0], ld2[0]);
@@ -555,7 +565,7 @@ CallTest1::SetupRvsdg()
     auto memoryStateType = MemoryStateType::Create();
     auto functionType = rvsdg::FunctionType::Create(
         { IOStateType::Create(), MemoryStateType::Create() },
-        { jlm::rvsdg::bittype::Create(32), IOStateType::Create(), MemoryStateType::Create() });
+        { jlm::rvsdg::BitType::Create(32), IOStateType::Create(), MemoryStateType::Create() });
 
     auto lambda = rvsdg::LambdaNode::Create(
         graph->GetRootRegion(),
@@ -568,9 +578,9 @@ CallTest1::SetupRvsdg()
 
     auto size = jlm::rvsdg::create_bitconstant(lambda->subregion(), 32, 4);
 
-    auto x = AllocaOperation::create(jlm::rvsdg::bittype::Create(32), size, 4);
-    auto y = AllocaOperation::create(jlm::rvsdg::bittype::Create(32), size, 4);
-    auto z = AllocaOperation::create(jlm::rvsdg::bittype::Create(32), size, 4);
+    auto x = AllocaOperation::create(jlm::rvsdg::BitType::Create(32), size, 4);
+    auto y = AllocaOperation::create(jlm::rvsdg::BitType::Create(32), size, 4);
+    auto z = AllocaOperation::create(jlm::rvsdg::BitType::Create(32), size, 4);
 
     auto mx = MemoryStateMergeOperation::Create(
         std::vector<jlm::rvsdg::Output *>({ x[1], memoryStateArgument }));
@@ -636,8 +646,9 @@ std::unique_ptr<jlm::llvm::RvsdgModule>
 CallTest2::SetupRvsdg()
 {
   using namespace jlm::llvm;
+  using namespace jlm::rvsdg;
 
-  auto module = RvsdgModule::Create(jlm::util::FilePath(""), "", "");
+  auto module = llvm::RvsdgModule::Create(jlm::util::FilePath(""), "", "");
   auto graph = &module->Rvsdg();
 
   auto SetupCreate = [&]()
@@ -646,7 +657,7 @@ CallTest2::SetupRvsdg()
     auto iOStateType = IOStateType::Create();
     auto memoryStateType = MemoryStateType::Create();
     auto functionType = rvsdg::FunctionType::Create(
-        { jlm::rvsdg::bittype::Create(32), IOStateType::Create(), MemoryStateType::Create() },
+        { jlm::rvsdg::BitType::Create(32), IOStateType::Create(), MemoryStateType::Create() },
         { PointerType::Create(), IOStateType::Create(), MemoryStateType::Create() });
 
     auto lambda = rvsdg::LambdaNode::Create(
@@ -774,15 +785,16 @@ std::unique_ptr<jlm::llvm::RvsdgModule>
 IndirectCallTest1::SetupRvsdg()
 {
   using namespace jlm::llvm;
+  using namespace jlm::rvsdg;
 
   auto iOStateType = IOStateType::Create();
   auto memoryStateType = MemoryStateType::Create();
   auto constantFunctionType = rvsdg::FunctionType::Create(
       { IOStateType::Create(), MemoryStateType::Create() },
-      { jlm::rvsdg::bittype::Create(32), IOStateType::Create(), MemoryStateType::Create() });
+      { jlm::rvsdg::BitType::Create(32), IOStateType::Create(), MemoryStateType::Create() });
   auto pointerType = PointerType::Create();
 
-  auto module = RvsdgModule::Create(jlm::util::FilePath(""), "", "");
+  auto module = llvm::RvsdgModule::Create(jlm::util::FilePath(""), "", "");
   auto graph = &module->Rvsdg();
 
   auto SetupConstantFunction = [&](ssize_t n, const std::string & name)
@@ -804,7 +816,7 @@ IndirectCallTest1::SetupRvsdg()
     auto memoryStateType = MemoryStateType::Create();
     auto functionType = rvsdg::FunctionType::Create(
         { PointerType::Create(), IOStateType::Create(), MemoryStateType::Create() },
-        { jlm::rvsdg::bittype::Create(32), IOStateType::Create(), MemoryStateType::Create() });
+        { jlm::rvsdg::BitType::Create(32), IOStateType::Create(), MemoryStateType::Create() });
 
     auto lambda = rvsdg::LambdaNode::Create(
         graph->GetRootRegion(),
@@ -831,7 +843,7 @@ IndirectCallTest1::SetupRvsdg()
   {
     auto functionType = rvsdg::FunctionType::Create(
         { IOStateType::Create(), MemoryStateType::Create() },
-        { jlm::rvsdg::bittype::Create(32), IOStateType::Create(), MemoryStateType::Create() });
+        { jlm::rvsdg::BitType::Create(32), IOStateType::Create(), MemoryStateType::Create() });
 
     auto lambda = rvsdg::LambdaNode::Create(
         graph->GetRootRegion(),
@@ -891,26 +903,28 @@ std::unique_ptr<jlm::llvm::RvsdgModule>
 IndirectCallTest2::SetupRvsdg()
 {
   using namespace jlm::llvm;
+  using namespace jlm::rvsdg;
 
   auto iOStateType = IOStateType::Create();
   auto memoryStateType = MemoryStateType::Create();
   auto constantFunctionType = rvsdg::FunctionType::Create(
       { IOStateType::Create(), MemoryStateType::Create() },
-      { jlm::rvsdg::bittype::Create(32), IOStateType::Create(), MemoryStateType::Create() });
+      { jlm::rvsdg::BitType::Create(32), IOStateType::Create(), MemoryStateType::Create() });
   auto pointerType = PointerType::Create();
 
-  auto module = RvsdgModule::Create(jlm::util::FilePath(""), "", "");
+  auto module = llvm::RvsdgModule::Create(jlm::util::FilePath(""), "", "");
   auto graph = &module->Rvsdg();
 
   auto SetupG1 = [&]()
   {
-    auto delta = DeltaNode::Create(
+    auto delta = rvsdg::DeltaNode::Create(
         &graph->GetRootRegion(),
-        jlm::rvsdg::bittype::Create(32),
-        "g1",
-        linkage::external_linkage,
-        "",
-        false);
+        llvm::DeltaOperation::Create(
+            jlm::rvsdg::BitType::Create(32),
+            "g1",
+            linkage::external_linkage,
+            "",
+            false));
 
     auto constant = jlm::rvsdg::create_bitconstant(delta->subregion(), 32, 1);
 
@@ -919,13 +933,14 @@ IndirectCallTest2::SetupRvsdg()
 
   auto SetupG2 = [&]()
   {
-    auto delta = DeltaNode::Create(
+    auto delta = rvsdg::DeltaNode::Create(
         &graph->GetRootRegion(),
-        jlm::rvsdg::bittype::Create(32),
-        "g2",
-        linkage::external_linkage,
-        "",
-        false);
+        llvm::DeltaOperation::Create(
+            jlm::rvsdg::BitType::Create(32),
+            "g2",
+            linkage::external_linkage,
+            "",
+            false));
 
     auto constant = jlm::rvsdg::create_bitconstant(delta->subregion(), 32, 2);
 
@@ -947,7 +962,7 @@ IndirectCallTest2::SetupRvsdg()
 
   auto functionIType = rvsdg::FunctionType::Create(
       { PointerType::Create(), IOStateType::Create(), MemoryStateType::Create() },
-      { jlm::rvsdg::bittype::Create(32), IOStateType::Create(), MemoryStateType::Create() });
+      { jlm::rvsdg::BitType::Create(32), IOStateType::Create(), MemoryStateType::Create() });
 
   auto SetupI = [&]()
   {
@@ -981,7 +996,7 @@ IndirectCallTest2::SetupRvsdg()
 
     auto functionType = rvsdg::FunctionType::Create(
         { PointerType::Create(), IOStateType::Create(), MemoryStateType::Create() },
-        { jlm::rvsdg::bittype::Create(32), IOStateType::Create(), MemoryStateType::Create() });
+        { jlm::rvsdg::BitType::Create(32), IOStateType::Create(), MemoryStateType::Create() });
 
     auto lambda = rvsdg::LambdaNode::Create(
         graph->GetRootRegion(),
@@ -1018,7 +1033,7 @@ IndirectCallTest2::SetupRvsdg()
   {
     auto functionType = rvsdg::FunctionType::Create(
         { IOStateType::Create(), MemoryStateType::Create() },
-        { jlm::rvsdg::bittype::Create(32), IOStateType::Create(), MemoryStateType::Create() });
+        { jlm::rvsdg::BitType::Create(32), IOStateType::Create(), MemoryStateType::Create() });
 
     auto lambda = rvsdg::LambdaNode::Create(
         graph->GetRootRegion(),
@@ -1033,8 +1048,8 @@ IndirectCallTest2::SetupRvsdg()
 
     auto constantSize = jlm::rvsdg::create_bitconstant(lambda->subregion(), 32, 4);
 
-    auto pxAlloca = AllocaOperation::create(jlm::rvsdg::bittype::Create(32), constantSize, 4);
-    auto pyAlloca = AllocaOperation::create(jlm::rvsdg::bittype::Create(32), constantSize, 4);
+    auto pxAlloca = AllocaOperation::create(jlm::rvsdg::BitType::Create(32), constantSize, 4);
+    auto pyAlloca = AllocaOperation::create(jlm::rvsdg::BitType::Create(32), constantSize, 4);
 
     auto pxMerge = MemoryStateMergeOperation::Create(
         std::vector<jlm::rvsdg::Output *>{ pxAlloca[1], memoryStateArgument });
@@ -1056,12 +1071,12 @@ IndirectCallTest2::SetupRvsdg()
     auto loadG1 = LoadNonVolatileOperation::Create(
         globalG1Cv,
         { &CallOperation::GetMemoryStateOutput(callY) },
-        jlm::rvsdg::bittype::Create(32),
+        jlm::rvsdg::BitType::Create(32),
         4);
     auto loadG2 = LoadNonVolatileOperation::Create(
         globalG2Cv,
         { loadG1[1] },
-        jlm::rvsdg::bittype::Create(32),
+        jlm::rvsdg::BitType::Create(32),
         4);
 
     auto sum = jlm::rvsdg::bitadd_op::create(32, callX.output(0), callY.output(0));
@@ -1087,7 +1102,7 @@ IndirectCallTest2::SetupRvsdg()
   {
     auto functionType = rvsdg::FunctionType::Create(
         { IOStateType::Create(), MemoryStateType::Create() },
-        { jlm::rvsdg::bittype::Create(32), IOStateType::Create(), MemoryStateType::Create() });
+        { jlm::rvsdg::BitType::Create(32), IOStateType::Create(), MemoryStateType::Create() });
 
     auto lambda = rvsdg::LambdaNode::Create(
         graph->GetRootRegion(),
@@ -1097,7 +1112,7 @@ IndirectCallTest2::SetupRvsdg()
 
     auto constantSize = jlm::rvsdg::create_bitconstant(lambda->subregion(), 32, 4);
 
-    auto pzAlloca = AllocaOperation::create(jlm::rvsdg::bittype::Create(32), constantSize, 4);
+    auto pzAlloca = AllocaOperation::create(jlm::rvsdg::BitType::Create(32), constantSize, 4);
     auto pzMerge = MemoryStateMergeOperation::Create(
         std::vector<jlm::rvsdg::Output *>{ pzAlloca[1], memoryStateArgument });
 
@@ -1132,8 +1147,8 @@ IndirectCallTest2::SetupRvsdg()
   /*
    * Assign
    */
-  this->DeltaG1_ = &rvsdg::AssertGetOwnerNode<llvm::DeltaNode>(*deltaG1);
-  this->DeltaG2_ = &rvsdg::AssertGetOwnerNode<llvm::DeltaNode>(*deltaG2);
+  this->DeltaG1_ = &rvsdg::AssertGetOwnerNode<rvsdg::DeltaNode>(*deltaG1);
+  this->DeltaG2_ = &rvsdg::AssertGetOwnerNode<rvsdg::DeltaNode>(*deltaG2);
   this->LambdaThree_ = &rvsdg::AssertGetOwnerNode<rvsdg::LambdaNode>(*lambdaThree);
   this->LambdaFour_ = &rvsdg::AssertGetOwnerNode<rvsdg::LambdaNode>(*lambdaFour);
   this->LambdaI_ = &rvsdg::AssertGetOwnerNode<rvsdg::LambdaNode>(*lambdaI);
@@ -1160,8 +1175,9 @@ std::unique_ptr<jlm::llvm::RvsdgModule>
 ExternalCallTest1::SetupRvsdg()
 {
   using namespace jlm::llvm;
+  using namespace jlm::rvsdg;
 
-  auto rvsdgModule = RvsdgModule::Create(jlm::util::FilePath(""), "", "");
+  auto rvsdgModule = llvm::RvsdgModule::Create(jlm::util::FilePath(""), "", "");
   auto rvsdg = &rvsdgModule->Rvsdg();
 
   auto pointerType = PointerType::Create();
@@ -1176,7 +1192,7 @@ ExternalCallTest1::SetupRvsdg()
 
   auto SetupFunctionGDeclaration = [&]()
   {
-    return &GraphImport::Create(
+    return &llvm::GraphImport::Create(
         *rvsdg,
         functionGType,
         functionGType,
@@ -1255,19 +1271,19 @@ ExternalCallTest2::SetupRvsdg()
 
   auto pointerType = PointerType::Create();
   auto & structDeclaration = rvsdgModule->AddStructTypeDeclaration(StructType::Declaration::Create(
-      { rvsdg::bittype::Create(32), PointerType::Create(), PointerType::Create() }));
+      { rvsdg::BitType::Create(32), PointerType::Create(), PointerType::Create() }));
   auto structType = StructType::Create("myStruct", false, structDeclaration);
   auto iOStateType = IOStateType::Create();
   auto memoryStateType = MemoryStateType::Create();
   VariableArgumentType varArgType;
   auto lambdaLlvmLifetimeStartType = rvsdg::FunctionType::Create(
-      { rvsdg::bittype::Create(64),
+      { rvsdg::BitType::Create(64),
         PointerType::Create(),
         IOStateType::Create(),
         MemoryStateType::Create() },
       { IOStateType::Create(), MemoryStateType::Create() });
   auto lambdaLlvmLifetimeEndType = rvsdg::FunctionType::Create(
-      { rvsdg::bittype::Create(64),
+      { rvsdg::BitType::Create(64),
         PointerType::Create(),
         IOStateType::Create(),
         MemoryStateType::Create() },
@@ -1371,19 +1387,20 @@ std::unique_ptr<jlm::llvm::RvsdgModule>
 GammaTest::SetupRvsdg()
 {
   using namespace jlm::llvm;
+  using namespace jlm::rvsdg;
 
   auto mt = MemoryStateType::Create();
   auto pt = PointerType::Create();
   auto fcttype = rvsdg::FunctionType::Create(
-      { jlm::rvsdg::bittype::Create(32),
+      { jlm::rvsdg::BitType::Create(32),
         PointerType::Create(),
         PointerType::Create(),
         PointerType::Create(),
         PointerType::Create(),
         MemoryStateType::Create() },
-      { jlm::rvsdg::bittype::Create(32), MemoryStateType::Create() });
+      { jlm::rvsdg::BitType::Create(32), MemoryStateType::Create() });
 
-  auto module = RvsdgModule::Create(jlm::util::FilePath(""), "", "");
+  auto module = llvm::RvsdgModule::Create(jlm::util::FilePath(""), "", "");
   auto graph = &module->Rvsdg();
 
   auto fct = rvsdg::LambdaNode::Create(
@@ -1406,10 +1423,10 @@ GammaTest::SetupRvsdg()
   auto ld1 = LoadNonVolatileOperation::Create(
       tmp1.output,
       { fct->GetFunctionArguments()[5] },
-      jlm::rvsdg::bittype::Create(32),
+      jlm::rvsdg::BitType::Create(32),
       4);
   auto ld2 =
-      LoadNonVolatileOperation::Create(tmp2.output, { ld1[1] }, jlm::rvsdg::bittype::Create(32), 4);
+      LoadNonVolatileOperation::Create(tmp2.output, { ld1[1] }, jlm::rvsdg::BitType::Create(32), 4);
   auto sum = jlm::rvsdg::bitadd_op::create(32, ld1[0], ld2[0]);
 
   fct->finalize({ sum, ld2[1] });
@@ -1429,8 +1446,9 @@ std::unique_ptr<llvm::RvsdgModule>
 GammaTest2::SetupRvsdg()
 {
   using namespace jlm::llvm;
+  using namespace jlm::rvsdg;
 
-  auto rvsdgModule = RvsdgModule::Create(util::FilePath(""), "", "");
+  auto rvsdgModule = llvm::RvsdgModule::Create(util::FilePath(""), "", "");
   auto rvsdg = &rvsdgModule->Rvsdg();
 
   auto SetupLambdaF = [&]()
@@ -1452,7 +1470,7 @@ GammaTest2::SetupRvsdg()
       auto loadXResults = LoadNonVolatileOperation::Create(
           gammaInputX.branchArgument[0],
           { gammaInputMemoryState.branchArgument[0] },
-          jlm::rvsdg::bittype::Create(32),
+          jlm::rvsdg::BitType::Create(32),
           4);
 
       auto one = rvsdg::create_bitconstant(gammaNode->subregion(0), 32, 1);
@@ -1466,7 +1484,7 @@ GammaTest2::SetupRvsdg()
       auto loadYResults = LoadNonVolatileOperation::Create(
           gammaInputY.branchArgument[1],
           { gammaInputMemoryState.branchArgument[1] },
-          jlm::rvsdg::bittype::Create(32),
+          jlm::rvsdg::BitType::Create(32),
           4);
 
       auto two = rvsdg::create_bitconstant(gammaNode->subregion(1), 32, 2);
@@ -1488,12 +1506,12 @@ GammaTest2::SetupRvsdg()
     auto memoryStateType = MemoryStateType::Create();
     auto pointerType = PointerType::Create();
     auto functionType = rvsdg::FunctionType::Create(
-        { rvsdg::bittype::Create(32),
+        { rvsdg::BitType::Create(32),
           PointerType::Create(),
           PointerType::Create(),
           IOStateType::Create(),
           MemoryStateType::Create() },
-        { rvsdg::bittype::Create(32), IOStateType::Create(), MemoryStateType::Create() });
+        { rvsdg::BitType::Create(32), IOStateType::Create(), MemoryStateType::Create() });
 
     auto lambda = rvsdg::LambdaNode::Create(
         rvsdg->GetRootRegion(),
@@ -1525,7 +1543,7 @@ GammaTest2::SetupRvsdg()
     auto loadZResults = LoadNonVolatileOperation::Create(
         allocaZResults[0],
         { gammaOutputMemoryState },
-        jlm::rvsdg::bittype::Create(32),
+        jlm::rvsdg::BitType::Create(32),
         4);
 
     auto sum = jlm::rvsdg::bitadd_op::create(32, gammaOutputA, loadZResults[0]);
@@ -1549,7 +1567,7 @@ GammaTest2::SetupRvsdg()
     auto pointerType = PointerType::Create();
     auto functionType = rvsdg::FunctionType::Create(
         { IOStateType::Create(), MemoryStateType::Create() },
-        { rvsdg::bittype::Create(32), IOStateType::Create(), MemoryStateType::Create() });
+        { rvsdg::BitType::Create(32), IOStateType::Create(), MemoryStateType::Create() });
 
     auto lambda = rvsdg::LambdaNode::Create(
         rvsdg->GetRootRegion(),
@@ -1560,7 +1578,7 @@ GammaTest2::SetupRvsdg()
 
     auto size = jlm::rvsdg::create_bitconstant(lambda->subregion(), 32, 4);
 
-    auto allocaXResults = AllocaOperation::create(rvsdg::bittype::Create(32), size, 4);
+    auto allocaXResults = AllocaOperation::create(rvsdg::BitType::Create(32), size, 4);
     auto allocaYResults = AllocaOperation::create(pointerType, size, 4);
 
     auto memoryState = MemoryStateMergeOperation::Create(
@@ -1620,17 +1638,18 @@ std::unique_ptr<jlm::llvm::RvsdgModule>
 ThetaTest::SetupRvsdg()
 {
   using namespace jlm::llvm;
+  using namespace jlm::rvsdg;
 
   auto mt = MemoryStateType::Create();
   auto pointerType = PointerType::Create();
   auto fcttype = rvsdg::FunctionType::Create(
-      { jlm::rvsdg::bittype::Create(32),
+      { jlm::rvsdg::BitType::Create(32),
         PointerType::Create(),
-        jlm::rvsdg::bittype::Create(32),
+        jlm::rvsdg::BitType::Create(32),
         MemoryStateType::Create() },
       { MemoryStateType::Create() });
 
-  auto module = RvsdgModule::Create(jlm::util::FilePath(""), "", "");
+  auto module = llvm::RvsdgModule::Create(jlm::util::FilePath(""), "", "");
   auto graph = &module->Rvsdg();
 
   auto fct = rvsdg::LambdaNode::Create(
@@ -1650,7 +1669,7 @@ ThetaTest::SetupRvsdg()
   auto gepnode = GetElementPtrOperation::Create(
       a.pre,
       { n.pre },
-      jlm::rvsdg::bittype::Create(32),
+      jlm::rvsdg::BitType::Create(32),
       pointerType);
   auto store = StoreNonVolatileOperation::Create(gepnode, c.pre, { s.pre }, 4);
 
@@ -1680,19 +1699,21 @@ std::unique_ptr<jlm::llvm::RvsdgModule>
 DeltaTest1::SetupRvsdg()
 {
   using namespace jlm::llvm;
+  using namespace jlm::rvsdg;
 
-  auto module = RvsdgModule::Create(jlm::util::FilePath(""), "", "");
+  auto module = llvm::RvsdgModule::Create(jlm::util::FilePath(""), "", "");
   auto graph = &module->Rvsdg();
 
   auto SetupGlobalF = [&]()
   {
-    auto dfNode = DeltaNode::Create(
+    auto dfNode = jlm::rvsdg::DeltaNode::Create(
         &graph->GetRootRegion(),
-        jlm::rvsdg::bittype::Create(32),
-        "f",
-        linkage::external_linkage,
-        "",
-        false);
+        jlm::llvm::DeltaOperation::Create(
+            jlm::rvsdg::BitType::Create(32),
+            "f",
+            linkage::external_linkage,
+            "",
+            false));
 
     auto constant = jlm::rvsdg::create_bitconstant(dfNode->subregion(), 32, 0);
 
@@ -1706,7 +1727,7 @@ DeltaTest1::SetupRvsdg()
     auto memoryStateType = MemoryStateType::Create();
     auto functionType = rvsdg::FunctionType::Create(
         { PointerType::Create(), IOStateType::Create(), MemoryStateType::Create() },
-        { jlm::rvsdg::bittype::Create(32), IOStateType::Create(), MemoryStateType::Create() });
+        { jlm::rvsdg::BitType::Create(32), IOStateType::Create(), MemoryStateType::Create() });
 
     auto lambda = rvsdg::LambdaNode::Create(
         graph->GetRootRegion(),
@@ -1718,7 +1739,7 @@ DeltaTest1::SetupRvsdg()
     auto ld = LoadNonVolatileOperation::Create(
         pointerArgument,
         { memoryStateArgument },
-        jlm::rvsdg::bittype::Create(32),
+        jlm::rvsdg::BitType::Create(32),
         4);
 
     return lambda->finalize({ ld[0], iOStateArgument, ld[1] });
@@ -1730,7 +1751,7 @@ DeltaTest1::SetupRvsdg()
     auto memoryStateType = MemoryStateType::Create();
     auto functionType = rvsdg::FunctionType::Create(
         { IOStateType::Create(), MemoryStateType::Create() },
-        { jlm::rvsdg::bittype::Create(32), IOStateType::Create(), MemoryStateType::Create() });
+        { jlm::rvsdg::BitType::Create(32), IOStateType::Create(), MemoryStateType::Create() });
 
     auto lambda = rvsdg::LambdaNode::Create(
         graph->GetRootRegion(),
@@ -1764,7 +1785,7 @@ DeltaTest1::SetupRvsdg()
   this->lambda_g = &rvsdg::AssertGetOwnerNode<rvsdg::LambdaNode>(*g);
   this->lambda_h = &rvsdg::AssertGetOwnerNode<rvsdg::LambdaNode>(*h);
 
-  this->delta_f = &rvsdg::AssertGetOwnerNode<llvm::DeltaNode>(*f);
+  this->delta_f = &rvsdg::AssertGetOwnerNode<rvsdg::DeltaNode>(*f);
 
   this->CallG_ = callFunctionG;
   this->constantFive = constantFive;
@@ -1776,19 +1797,21 @@ std::unique_ptr<jlm::llvm::RvsdgModule>
 DeltaTest2::SetupRvsdg()
 {
   using namespace jlm::llvm;
+  using namespace jlm::rvsdg;
 
-  auto module = RvsdgModule::Create(jlm::util::FilePath(""), "", "");
+  auto module = llvm::RvsdgModule::Create(jlm::util::FilePath(""), "", "");
   auto graph = &module->Rvsdg();
 
   auto SetupD1 = [&]()
   {
-    auto delta = DeltaNode::Create(
+    auto delta = jlm::rvsdg::DeltaNode::Create(
         &graph->GetRootRegion(),
-        jlm::rvsdg::bittype::Create(32),
-        "d1",
-        linkage::external_linkage,
-        "",
-        false);
+        jlm::llvm::DeltaOperation::Create(
+            jlm::rvsdg::BitType::Create(32),
+            "d1",
+            linkage::external_linkage,
+            "",
+            false));
 
     auto constant = jlm::rvsdg::create_bitconstant(delta->subregion(), 32, 0);
 
@@ -1797,13 +1820,14 @@ DeltaTest2::SetupRvsdg()
 
   auto SetupD2 = [&]()
   {
-    auto delta = DeltaNode::Create(
+    auto delta = jlm::rvsdg::DeltaNode::Create(
         &graph->GetRootRegion(),
-        jlm::rvsdg::bittype::Create(32),
-        "d2",
-        linkage::external_linkage,
-        "",
-        false);
+        jlm::llvm::DeltaOperation::Create(
+            jlm::rvsdg::BitType::Create(32),
+            "d2",
+            linkage::external_linkage,
+            "",
+            false));
 
     auto constant = jlm::rvsdg::create_bitconstant(delta->subregion(), 32, 0);
 
@@ -1877,8 +1901,8 @@ DeltaTest2::SetupRvsdg()
   this->lambda_f1 = &rvsdg::AssertGetOwnerNode<rvsdg::LambdaNode>(*f1);
   this->lambda_f2 = &rvsdg::AssertGetOwnerNode<rvsdg::LambdaNode>(*f2);
 
-  this->delta_d1 = &rvsdg::AssertGetOwnerNode<llvm::DeltaNode>(*d1);
-  this->delta_d2 = &rvsdg::AssertGetOwnerNode<llvm::DeltaNode>(*d2);
+  this->delta_d1 = &rvsdg::AssertGetOwnerNode<rvsdg::DeltaNode>(*d1);
+  this->delta_d2 = &rvsdg::AssertGetOwnerNode<rvsdg::DeltaNode>(*d2);
 
   this->CallF1_ = callF1;
 
@@ -1889,19 +1913,21 @@ std::unique_ptr<jlm::llvm::RvsdgModule>
 DeltaTest3::SetupRvsdg()
 {
   using namespace jlm::llvm;
+  using namespace jlm::rvsdg;
 
-  auto module = RvsdgModule::Create(jlm::util::FilePath(""), "", "");
+  auto module = llvm::RvsdgModule::Create(jlm::util::FilePath(""), "", "");
   auto graph = &module->Rvsdg();
 
   auto SetupG1 = [&]()
   {
-    auto delta = DeltaNode::Create(
+    auto delta = jlm::rvsdg::DeltaNode::Create(
         &graph->GetRootRegion(),
-        jlm::rvsdg::bittype::Create(32),
-        "g1",
-        linkage::external_linkage,
-        "",
-        false);
+        jlm::llvm::DeltaOperation::Create(
+            jlm::rvsdg::BitType::Create(32),
+            "g1",
+            linkage::external_linkage,
+            "",
+            false));
 
     auto constant = jlm::rvsdg::create_bitconstant(delta->subregion(), 32, 1);
 
@@ -1912,13 +1938,9 @@ DeltaTest3::SetupRvsdg()
   {
     auto pointerType = PointerType::Create();
 
-    auto delta = DeltaNode::Create(
+    auto delta = jlm::rvsdg::DeltaNode::Create(
         &graph->GetRootRegion(),
-        pointerType,
-        "g2",
-        linkage::external_linkage,
-        "",
-        false);
+        jlm::llvm::DeltaOperation::Create(pointerType, "g2", linkage::external_linkage, "", false));
 
     auto ctxVar = delta->AddContextVar(g1);
 
@@ -1931,7 +1953,7 @@ DeltaTest3::SetupRvsdg()
     auto memoryStateType = MemoryStateType::Create();
     auto functionType = rvsdg::FunctionType::Create(
         { IOStateType::Create(), MemoryStateType::Create() },
-        { jlm::rvsdg::bittype::Create(16), IOStateType::Create(), MemoryStateType::Create() });
+        { jlm::rvsdg::BitType::Create(16), IOStateType::Create(), MemoryStateType::Create() });
 
     auto lambda = rvsdg::LambdaNode::Create(
         graph->GetRootRegion(),
@@ -1952,7 +1974,7 @@ DeltaTest3::SetupRvsdg()
     loadResults = LoadNonVolatileOperation::Create(
         g1CtxVar,
         storeResults,
-        jlm::rvsdg::bittype::Create(32),
+        jlm::rvsdg::BitType::Create(32),
         8);
     auto truncResult = TruncOperation::create(16, loadResults[0]);
 
@@ -1998,8 +2020,8 @@ DeltaTest3::SetupRvsdg()
   this->LambdaF_ = &rvsdg::AssertGetOwnerNode<rvsdg::LambdaNode>(*f);
   this->LambdaTest_ = &rvsdg::AssertGetOwnerNode<rvsdg::LambdaNode>(*test);
 
-  this->DeltaG1_ = &rvsdg::AssertGetOwnerNode<llvm::DeltaNode>(*g1);
-  this->DeltaG2_ = &rvsdg::AssertGetOwnerNode<llvm::DeltaNode>(*g2);
+  this->DeltaG1_ = &rvsdg::AssertGetOwnerNode<rvsdg::DeltaNode>(*g1);
+  this->DeltaG2_ = &rvsdg::AssertGetOwnerNode<rvsdg::DeltaNode>(*g2);
 
   this->CallF_ = callF;
 
@@ -2010,8 +2032,9 @@ std::unique_ptr<jlm::llvm::RvsdgModule>
 ImportTest::SetupRvsdg()
 {
   using namespace jlm::llvm;
+  using namespace jlm::rvsdg;
 
-  auto module = RvsdgModule::Create(jlm::util::FilePath(""), "", "");
+  auto module = llvm::RvsdgModule::Create(jlm::util::FilePath(""), "", "");
   auto graph = &module->Rvsdg();
 
   auto SetupF1 = [&](jlm::rvsdg::Output * d1)
@@ -2072,15 +2095,15 @@ ImportTest::SetupRvsdg()
     return std::make_tuple(lambdaOutput, &call);
   };
 
-  auto d1 = &GraphImport::Create(
+  auto d1 = &llvm::GraphImport::Create(
       *graph,
-      jlm::rvsdg::bittype::Create(32),
+      jlm::rvsdg::BitType::Create(32),
       PointerType::Create(),
       "d1",
       linkage::external_linkage);
-  auto d2 = &GraphImport::Create(
+  auto d2 = &llvm::GraphImport::Create(
       *graph,
-      jlm::rvsdg::bittype::Create(32),
+      jlm::rvsdg::BitType::Create(32),
       PointerType::Create(),
       "d2",
       linkage::external_linkage);
@@ -2104,15 +2127,16 @@ std::unique_ptr<jlm::llvm::RvsdgModule>
 PhiTest1::SetupRvsdg()
 {
   using namespace jlm::llvm;
+  using namespace jlm::rvsdg;
 
-  auto module = RvsdgModule::Create(jlm::util::FilePath(""), "", "");
+  auto module = llvm::RvsdgModule::Create(jlm::util::FilePath(""), "", "");
   auto graph = &module->Rvsdg();
 
   auto pbit64 = PointerType::Create();
   auto iOStateType = IOStateType::Create();
   auto memoryStateType = MemoryStateType::Create();
   auto fibFunctionType = rvsdg::FunctionType::Create(
-      { jlm::rvsdg::bittype::Create(64),
+      { jlm::rvsdg::BitType::Create(64),
         PointerType::Create(),
         IOStateType::Create(),
         MemoryStateType::Create() },
@@ -2170,21 +2194,21 @@ PhiTest1::SetupRvsdg()
     auto gepnm1 = GetElementPtrOperation::Create(
         resultev.branchArgument[0],
         { nm1 },
-        jlm::rvsdg::bittype::Create(64),
+        jlm::rvsdg::BitType::Create(64),
         pbit64);
     auto ldnm1 = LoadNonVolatileOperation::Create(
         gepnm1,
         { &CallOperation::GetMemoryStateOutput(callFibm2) },
-        jlm::rvsdg::bittype::Create(64),
+        jlm::rvsdg::BitType::Create(64),
         8);
 
     auto gepnm2 = GetElementPtrOperation::Create(
         resultev.branchArgument[0],
         { nm2 },
-        jlm::rvsdg::bittype::Create(64),
+        jlm::rvsdg::BitType::Create(64),
         pbit64);
     auto ldnm2 =
-        LoadNonVolatileOperation::Create(gepnm2, { ldnm1[1] }, jlm::rvsdg::bittype::Create(64), 8);
+        LoadNonVolatileOperation::Create(gepnm2, { ldnm1[1] }, jlm::rvsdg::BitType::Create(64), 8);
 
     auto sum = jlm::rvsdg::bitadd_op::create(64, ldnm1[0], ldnm2[0]);
 
@@ -2199,7 +2223,7 @@ PhiTest1::SetupRvsdg()
     auto gepn = GetElementPtrOperation::Create(
         pointerArgument,
         { valueArgument },
-        jlm::rvsdg::bittype::Create(64),
+        jlm::rvsdg::BitType::Create(64),
         pbit64);
     auto store = StoreNonVolatileOperation::Create(gepn, sumex.output, { gOMemoryState.output }, 8);
 
@@ -2213,7 +2237,7 @@ PhiTest1::SetupRvsdg()
 
   auto SetupTestFunction = [&](rvsdg::PhiNode * phiNode)
   {
-    auto at = ArrayType::Create(jlm::rvsdg::bittype::Create(64), 10);
+    auto at = ArrayType::Create(jlm::rvsdg::BitType::Create(64), 10);
     auto pbit64 = PointerType::Create();
     auto iOStateType = IOStateType::Create();
     auto memoryStateType = MemoryStateType::Create();
@@ -2272,6 +2296,7 @@ std::unique_ptr<jlm::llvm::RvsdgModule>
 PhiTest2::SetupRvsdg()
 {
   using namespace jlm::llvm;
+  using namespace jlm::rvsdg;
 
   auto iOStateType = IOStateType::Create();
   auto memoryStateType = MemoryStateType::Create();
@@ -2280,21 +2305,21 @@ PhiTest2::SetupRvsdg()
 
   auto constantFunctionType = rvsdg::FunctionType::Create(
       { IOStateType::Create(), MemoryStateType::Create() },
-      { jlm::rvsdg::bittype::Create(32), IOStateType::Create(), MemoryStateType::Create() });
+      { jlm::rvsdg::BitType::Create(32), IOStateType::Create(), MemoryStateType::Create() });
 
   auto recursiveFunctionType = rvsdg::FunctionType::Create(
       { PointerType::Create(), IOStateType::Create(), MemoryStateType::Create() },
-      { jlm::rvsdg::bittype::Create(32), IOStateType::Create(), MemoryStateType::Create() });
+      { jlm::rvsdg::BitType::Create(32), IOStateType::Create(), MemoryStateType::Create() });
 
   auto functionIType = rvsdg::FunctionType::Create(
       { PointerType::Create(), IOStateType::Create(), MemoryStateType::Create() },
-      { jlm::rvsdg::bittype::Create(32), IOStateType::Create(), MemoryStateType::Create() });
+      { jlm::rvsdg::BitType::Create(32), IOStateType::Create(), MemoryStateType::Create() });
 
   auto recFunctionType = rvsdg::FunctionType::Create(
       { PointerType::Create(), IOStateType::Create(), MemoryStateType::Create() },
-      { jlm::rvsdg::bittype::Create(32), IOStateType::Create(), MemoryStateType::Create() });
+      { jlm::rvsdg::BitType::Create(32), IOStateType::Create(), MemoryStateType::Create() });
 
-  auto module = RvsdgModule::Create(jlm::util::FilePath(""), "", "");
+  auto module = llvm::RvsdgModule::Create(jlm::util::FilePath(""), "", "");
   auto graph = &module->Rvsdg();
 
   auto SetupEight = [&]()
@@ -2354,7 +2379,7 @@ PhiTest2::SetupRvsdg()
         StoreNonVolatileOperation::Create(pointerArgument, one, { memoryStateArgument }, 4);
 
     auto four = jlm::rvsdg::create_bitconstant(lambda->subregion(), 32, 4);
-    auto paAlloca = AllocaOperation::create(jlm::rvsdg::bittype::Create(32), four, 4);
+    auto paAlloca = AllocaOperation::create(jlm::rvsdg::BitType::Create(32), four, 4);
     auto paMerge = MemoryStateMergeOperation::Create(
         std::vector<jlm::rvsdg::Output *>({ paAlloca[1], storeNode[0] }));
 
@@ -2405,7 +2430,7 @@ PhiTest2::SetupRvsdg()
         StoreNonVolatileOperation::Create(pointerArgument, two, { memoryStateArgument }, 4);
 
     auto four = jlm::rvsdg::create_bitconstant(lambda->subregion(), 32, 4);
-    auto pbAlloca = AllocaOperation::create(jlm::rvsdg::bittype::Create(32), four, 4);
+    auto pbAlloca = AllocaOperation::create(jlm::rvsdg::BitType::Create(32), four, 4);
     auto pbMerge = MemoryStateMergeOperation::Create(
         std::vector<jlm::rvsdg::Output *>({ pbAlloca[1], storeNode[0] }));
 
@@ -2454,7 +2479,7 @@ PhiTest2::SetupRvsdg()
         StoreNonVolatileOperation::Create(xArgument, three, { memoryStateArgument }, 4);
 
     auto four = jlm::rvsdg::create_bitconstant(lambda->subregion(), 32, 4);
-    auto pcAlloca = AllocaOperation::create(jlm::rvsdg::bittype::Create(32), four, 4);
+    auto pcAlloca = AllocaOperation::create(jlm::rvsdg::BitType::Create(32), four, 4);
     auto pcMerge = MemoryStateMergeOperation::Create(
         std::vector<jlm::rvsdg::Output *>({ pcAlloca[1], storeNode[0] }));
 
@@ -2466,7 +2491,7 @@ PhiTest2::SetupRvsdg()
     auto loadX = LoadNonVolatileOperation::Create(
         xArgument,
         { &CallOperation::GetMemoryStateOutput(callA) },
-        jlm::rvsdg::bittype::Create(32),
+        jlm::rvsdg::BitType::Create(32),
         4);
 
     auto sum = jlm::rvsdg::bitadd_op::create(32, callA.output(0), loadX[0]);
@@ -2495,7 +2520,7 @@ PhiTest2::SetupRvsdg()
     auto four = jlm::rvsdg::create_bitconstant(lambda->subregion(), 32, 4);
     auto storeNode = StoreNonVolatileOperation::Create(xArgument, four, { memoryStateArgument }, 4);
 
-    auto pdAlloca = AllocaOperation::create(jlm::rvsdg::bittype::Create(32), four, 4);
+    auto pdAlloca = AllocaOperation::create(jlm::rvsdg::BitType::Create(32), four, 4);
     auto pdMerge = MemoryStateMergeOperation::Create(
         std::vector<jlm::rvsdg::Output *>({ pdAlloca[1], storeNode[0] }));
 
@@ -2564,7 +2589,7 @@ PhiTest2::SetupRvsdg()
 
     auto functionType = rvsdg::FunctionType::Create(
         { IOStateType::Create(), MemoryStateType::Create() },
-        { jlm::rvsdg::bittype::Create(32), IOStateType::Create(), MemoryStateType::Create() });
+        { jlm::rvsdg::BitType::Create(32), IOStateType::Create(), MemoryStateType::Create() });
 
     auto lambda = rvsdg::LambdaNode::Create(
         graph->GetRootRegion(),
@@ -2575,7 +2600,7 @@ PhiTest2::SetupRvsdg()
     auto functionACv = lambda->AddContextVar(functionA).inner;
 
     auto four = jlm::rvsdg::create_bitconstant(lambda->subregion(), 32, 4);
-    auto pTestAlloca = AllocaOperation::create(jlm::rvsdg::bittype::Create(32), four, 4);
+    auto pTestAlloca = AllocaOperation::create(jlm::rvsdg::BitType::Create(32), four, 4);
     auto pTestMerge = MemoryStateMergeOperation::Create(
         std::vector<jlm::rvsdg::Output *>({ pTestAlloca[1], memoryStateArgument }));
 
@@ -2648,8 +2673,9 @@ std::unique_ptr<jlm::llvm::RvsdgModule>
 PhiWithDeltaTest::SetupRvsdg()
 {
   using namespace jlm::llvm;
+  using namespace jlm::rvsdg;
 
-  auto rvsdgModule = RvsdgModule::Create(jlm::util::FilePath(""), "", "");
+  auto rvsdgModule = llvm::RvsdgModule::Create(jlm::util::FilePath(""), "", "");
   auto & rvsdg = rvsdgModule->Rvsdg();
 
   auto pointerType = PointerType::Create();
@@ -2662,8 +2688,14 @@ PhiWithDeltaTest::SetupRvsdg()
   pb.begin(&rvsdg.GetRootRegion());
   auto myArrayRecVar = pb.AddFixVar(pointerType);
 
-  auto delta =
-      DeltaNode::Create(pb.subregion(), arrayType, "myArray", linkage::external_linkage, "", false);
+  auto delta = jlm::rvsdg::DeltaNode::Create(
+      pb.subregion(),
+      jlm::llvm::DeltaOperation::Create(
+          arrayType,
+          "myArray",
+          linkage::external_linkage,
+          "",
+          false));
   auto myArrayArgument = delta->AddContextVar(*myArrayRecVar.recref).inner;
 
   auto aggregateZero = ConstantAggregateZeroOperation::Create(*delta->subregion(), structType);
@@ -2672,7 +2704,7 @@ PhiWithDeltaTest::SetupRvsdg()
   auto constantArray = ConstantArrayOperation::Create({ aggregateZero, &constantStruct });
 
   auto deltaOutput = &delta->finalize(constantArray);
-  Delta_ = &rvsdg::AssertGetOwnerNode<llvm::DeltaNode>(*deltaOutput);
+  Delta_ = &rvsdg::AssertGetOwnerNode<rvsdg::DeltaNode>(*deltaOutput);
   myArrayRecVar.result->divert_to(deltaOutput);
 
   auto phiNode = pb.end();
@@ -2685,6 +2717,7 @@ std::unique_ptr<jlm::llvm::RvsdgModule>
 ExternalMemoryTest::SetupRvsdg()
 {
   using namespace jlm::llvm;
+  using namespace jlm::rvsdg;
 
   auto mt = MemoryStateType::Create();
   auto pointerType = PointerType::Create();
@@ -2692,7 +2725,7 @@ ExternalMemoryTest::SetupRvsdg()
       { PointerType::Create(), PointerType::Create(), MemoryStateType::Create() },
       { MemoryStateType::Create() });
 
-  auto module = RvsdgModule::Create(jlm::util::FilePath(""), "", "");
+  auto module = llvm::RvsdgModule::Create(jlm::util::FilePath(""), "", "");
   auto graph = &module->Rvsdg();
 
   /**
@@ -2721,19 +2754,21 @@ std::unique_ptr<jlm::llvm::RvsdgModule>
 EscapedMemoryTest1::SetupRvsdg()
 {
   using namespace jlm::llvm;
+  using namespace jlm::rvsdg;
 
-  auto rvsdgModule = RvsdgModule::Create(jlm::util::FilePath(""), "", "");
+  auto rvsdgModule = llvm::RvsdgModule::Create(jlm::util::FilePath(""), "", "");
   auto rvsdg = &rvsdgModule->Rvsdg();
 
   auto SetupDeltaA = [&]()
   {
-    auto deltaNode = DeltaNode::Create(
+    auto deltaNode = jlm::rvsdg::DeltaNode::Create(
         &rvsdg->GetRootRegion(),
-        jlm::rvsdg::bittype::Create(32),
-        "a",
-        linkage::external_linkage,
-        "",
-        false);
+        jlm::llvm::DeltaOperation::Create(
+            jlm::rvsdg::BitType::Create(32),
+            "a",
+            linkage::external_linkage,
+            "",
+            false));
 
     auto constant = jlm::rvsdg::create_bitconstant(deltaNode->subregion(), 32, 1);
 
@@ -2742,13 +2777,14 @@ EscapedMemoryTest1::SetupRvsdg()
 
   auto SetupDeltaB = [&]()
   {
-    auto deltaNode = DeltaNode::Create(
+    auto deltaNode = jlm::rvsdg::DeltaNode::Create(
         &rvsdg->GetRootRegion(),
-        jlm::rvsdg::bittype::Create(32),
-        "b",
-        linkage::external_linkage,
-        "",
-        false);
+        jlm::llvm::DeltaOperation::Create(
+            jlm::rvsdg::BitType::Create(32),
+            "b",
+            linkage::external_linkage,
+            "",
+            false));
 
     auto constant = jlm::rvsdg::create_bitconstant(deltaNode->subregion(), 32, 2);
 
@@ -2759,13 +2795,9 @@ EscapedMemoryTest1::SetupRvsdg()
   {
     auto pointerType = PointerType::Create();
 
-    auto deltaNode = DeltaNode::Create(
+    auto deltaNode = jlm::rvsdg::DeltaNode::Create(
         &rvsdg->GetRootRegion(),
-        pointerType,
-        "x",
-        linkage::external_linkage,
-        "",
-        false);
+        jlm::llvm::DeltaOperation::Create(pointerType, "x", linkage::external_linkage, "", false));
 
     auto contextVariableA = deltaNode->AddContextVar(deltaA).inner;
 
@@ -2776,13 +2808,9 @@ EscapedMemoryTest1::SetupRvsdg()
   {
     auto pointerType = PointerType::Create();
 
-    auto deltaNode = DeltaNode::Create(
+    auto deltaNode = jlm::rvsdg::DeltaNode::Create(
         &rvsdg->GetRootRegion(),
-        pointerType,
-        "y",
-        linkage::external_linkage,
-        "",
-        false);
+        jlm::llvm::DeltaOperation::Create(pointerType, "y", linkage::external_linkage, "", false));
 
     auto contextVariableX = deltaNode->AddContextVar(deltaX).inner;
 
@@ -2799,7 +2827,7 @@ EscapedMemoryTest1::SetupRvsdg()
     auto memoryStateType = MemoryStateType::Create();
     auto functionType = rvsdg::FunctionType::Create(
         { PointerType::Create(), IOStateType::Create(), MemoryStateType::Create() },
-        { jlm::rvsdg::bittype::Create(32), IOStateType::Create(), MemoryStateType::Create() });
+        { jlm::rvsdg::BitType::Create(32), IOStateType::Create(), MemoryStateType::Create() });
 
     auto lambda = rvsdg::LambdaNode::Create(
         rvsdg->GetRootRegion(),
@@ -2815,7 +2843,7 @@ EscapedMemoryTest1::SetupRvsdg()
     auto loadResults2 = LoadNonVolatileOperation::Create(
         loadResults1[0],
         { loadResults1[1] },
-        jlm::rvsdg::bittype::Create(32),
+        jlm::rvsdg::BitType::Create(32),
         4);
 
     auto five = jlm::rvsdg::create_bitconstant(lambda->subregion(), 32, 5);
@@ -2843,10 +2871,10 @@ EscapedMemoryTest1::SetupRvsdg()
    */
   this->LambdaTest = &rvsdg::AssertGetOwnerNode<rvsdg::LambdaNode>(*lambdaTest);
 
-  this->DeltaA = &rvsdg::AssertGetOwnerNode<llvm::DeltaNode>(*deltaA);
-  this->DeltaB = &rvsdg::AssertGetOwnerNode<llvm::DeltaNode>(*deltaB);
-  this->DeltaX = &rvsdg::AssertGetOwnerNode<llvm::DeltaNode>(*deltaX);
-  this->DeltaY = &rvsdg::AssertGetOwnerNode<llvm::DeltaNode>(*deltaY);
+  this->DeltaA = &rvsdg::AssertGetOwnerNode<rvsdg::DeltaNode>(*deltaA);
+  this->DeltaB = &rvsdg::AssertGetOwnerNode<rvsdg::DeltaNode>(*deltaB);
+  this->DeltaX = &rvsdg::AssertGetOwnerNode<rvsdg::DeltaNode>(*deltaX);
+  this->DeltaY = &rvsdg::AssertGetOwnerNode<rvsdg::DeltaNode>(*deltaY);
 
   this->LoadNode1 = loadNode1;
 
@@ -2857,8 +2885,9 @@ std::unique_ptr<jlm::llvm::RvsdgModule>
 EscapedMemoryTest2::SetupRvsdg()
 {
   using namespace jlm::llvm;
+  using namespace jlm::rvsdg;
 
-  auto rvsdgModule = RvsdgModule::Create(jlm::util::FilePath(""), "", "");
+  auto rvsdgModule = llvm::RvsdgModule::Create(jlm::util::FilePath(""), "", "");
   auto rvsdg = &rvsdgModule->Rvsdg();
 
   auto pointerType = PointerType::Create();
@@ -2875,7 +2904,7 @@ EscapedMemoryTest2::SetupRvsdg()
 
   auto SetupExternalFunction1Declaration = [&]()
   {
-    return &GraphImport::Create(
+    return &llvm::GraphImport::Create(
         *rvsdg,
         externalFunction1Type,
         externalFunction1Type,
@@ -2885,7 +2914,7 @@ EscapedMemoryTest2::SetupRvsdg()
 
   auto SetupExternalFunction2Declaration = [&]()
   {
-    return &GraphImport::Create(
+    return &llvm::GraphImport::Create(
         *rvsdg,
         externalFunction2Type,
         externalFunction2Type,
@@ -2970,7 +2999,7 @@ EscapedMemoryTest2::SetupRvsdg()
     auto memoryStateType = MemoryStateType::Create();
     auto functionType = rvsdg::FunctionType::Create(
         { IOStateType::Create(), MemoryStateType::Create() },
-        { jlm::rvsdg::bittype::Create(32), IOStateType::Create(), MemoryStateType::Create() });
+        { jlm::rvsdg::BitType::Create(32), IOStateType::Create(), MemoryStateType::Create() });
 
     auto lambda = rvsdg::LambdaNode::Create(
         rvsdg->GetRootRegion(),
@@ -2991,7 +3020,7 @@ EscapedMemoryTest2::SetupRvsdg()
     auto loadResults = LoadNonVolatileOperation::Create(
         call.output(0),
         { &CallOperation::GetMemoryStateOutput(call) },
-        jlm::rvsdg::bittype::Create(32),
+        jlm::rvsdg::BitType::Create(32),
         4);
 
     auto lambdaOutput = lambda->finalize(
@@ -3042,8 +3071,9 @@ std::unique_ptr<jlm::llvm::RvsdgModule>
 EscapedMemoryTest3::SetupRvsdg()
 {
   using namespace jlm::llvm;
+  using namespace jlm::rvsdg;
 
-  auto rvsdgModule = RvsdgModule::Create(jlm::util::FilePath(""), "", "");
+  auto rvsdgModule = llvm::RvsdgModule::Create(jlm::util::FilePath(""), "", "");
   auto rvsdg = &rvsdgModule->Rvsdg();
 
   auto pointerType = PointerType::Create();
@@ -3055,7 +3085,7 @@ EscapedMemoryTest3::SetupRvsdg()
 
   auto SetupExternalFunctionDeclaration = [&]()
   {
-    return &GraphImport::Create(
+    return &llvm::GraphImport::Create(
         *rvsdg,
         externalFunctionType,
         externalFunctionType,
@@ -3065,13 +3095,14 @@ EscapedMemoryTest3::SetupRvsdg()
 
   auto SetupGlobal = [&]()
   {
-    auto delta = DeltaNode::Create(
+    auto delta = jlm::rvsdg::DeltaNode::Create(
         &rvsdg->GetRootRegion(),
-        jlm::rvsdg::bittype::Create(32),
-        "global",
-        linkage::external_linkage,
-        "",
-        false);
+        jlm::llvm::DeltaOperation::Create(
+            jlm::rvsdg::BitType::Create(32),
+            "global",
+            linkage::external_linkage,
+            "",
+            false));
 
     auto constant = jlm::rvsdg::create_bitconstant(delta->subregion(), 32, 4);
 
@@ -3088,7 +3119,7 @@ EscapedMemoryTest3::SetupRvsdg()
     auto memoryStateType = MemoryStateType::Create();
     auto functionType = rvsdg::FunctionType::Create(
         { IOStateType::Create(), MemoryStateType::Create() },
-        { jlm::rvsdg::bittype::Create(32), IOStateType::Create(), MemoryStateType::Create() });
+        { jlm::rvsdg::BitType::Create(32), IOStateType::Create(), MemoryStateType::Create() });
 
     auto lambda = rvsdg::LambdaNode::Create(
         rvsdg->GetRootRegion(),
@@ -3106,7 +3137,7 @@ EscapedMemoryTest3::SetupRvsdg()
     auto loadResults = LoadNonVolatileOperation::Create(
         call.output(0),
         { &CallOperation::GetMemoryStateOutput(call) },
-        rvsdg::bittype::Create(32),
+        rvsdg::BitType::Create(32),
         4);
 
     auto lambdaOutput = lambda->finalize(
@@ -3127,7 +3158,7 @@ EscapedMemoryTest3::SetupRvsdg()
 
   // Assign nodes
   this->LambdaTest = &rvsdg::AssertGetOwnerNode<rvsdg::LambdaNode>(*lambdaTest);
-  this->DeltaGlobal = &rvsdg::AssertGetOwnerNode<llvm::DeltaNode>(*deltaGlobal);
+  this->DeltaGlobal = &rvsdg::AssertGetOwnerNode<rvsdg::DeltaNode>(*deltaGlobal);
   this->ImportExternalFunction = importExternalFunction;
   this->CallExternalFunction = callExternalFunction;
   this->LoadNode = loadNode;
@@ -3139,21 +3170,23 @@ std::unique_ptr<jlm::llvm::RvsdgModule>
 MemcpyTest::SetupRvsdg()
 {
   using namespace jlm::llvm;
+  using namespace jlm::rvsdg;
 
-  auto rvsdgModule = RvsdgModule::Create(jlm::util::FilePath(""), "", "");
+  auto rvsdgModule = llvm::RvsdgModule::Create(jlm::util::FilePath(""), "", "");
   auto rvsdg = &rvsdgModule->Rvsdg();
 
-  auto arrayType = ArrayType::Create(jlm::rvsdg::bittype::Create(32), 5);
+  auto arrayType = ArrayType::Create(jlm::rvsdg::BitType::Create(32), 5);
 
   auto SetupLocalArray = [&]()
   {
-    auto delta = DeltaNode::Create(
+    auto delta = jlm::rvsdg::DeltaNode::Create(
         &rvsdg->GetRootRegion(),
-        arrayType,
-        "localArray",
-        linkage::external_linkage,
-        "",
-        false);
+        jlm::llvm::DeltaOperation::Create(
+            arrayType,
+            "localArray",
+            linkage::external_linkage,
+            "",
+            false));
 
     auto zero = jlm::rvsdg::create_bitconstant(delta->subregion(), 32, 0);
     auto one = jlm::rvsdg::create_bitconstant(delta->subregion(), 32, 1);
@@ -3172,13 +3205,14 @@ MemcpyTest::SetupRvsdg()
 
   auto SetupGlobalArray = [&]()
   {
-    auto delta = DeltaNode::Create(
+    auto delta = jlm::rvsdg::DeltaNode::Create(
         &rvsdg->GetRootRegion(),
-        arrayType,
-        "globalArray",
-        linkage::external_linkage,
-        "",
-        false);
+        jlm::llvm::DeltaOperation::Create(
+            arrayType,
+            "globalArray",
+            linkage::external_linkage,
+            "",
+            false));
 
     auto constantAggregateZero =
         ConstantAggregateZeroOperation::Create(*delta->subregion(), arrayType);
@@ -3196,7 +3230,7 @@ MemcpyTest::SetupRvsdg()
     auto memoryStateType = MemoryStateType::Create();
     auto functionType = rvsdg::FunctionType::Create(
         { IOStateType::Create(), MemoryStateType::Create() },
-        { jlm::rvsdg::bittype::Create(32), IOStateType::Create(), MemoryStateType::Create() });
+        { jlm::rvsdg::BitType::Create(32), IOStateType::Create(), MemoryStateType::Create() });
 
     auto lambda = rvsdg::LambdaNode::Create(
         rvsdg->GetRootRegion(),
@@ -3221,7 +3255,7 @@ MemcpyTest::SetupRvsdg()
     auto loadResults = LoadNonVolatileOperation::Create(
         gep,
         { storeResults[0] },
-        jlm::rvsdg::bittype::Create(32),
+        jlm::rvsdg::BitType::Create(32),
         8);
 
     auto lambdaOutput = lambda->finalize({ loadResults[0], iOStateArgument, loadResults[1] });
@@ -3238,7 +3272,7 @@ MemcpyTest::SetupRvsdg()
     auto memoryStateType = MemoryStateType::Create();
     auto functionType = rvsdg::FunctionType::Create(
         { IOStateType::Create(), MemoryStateType::Create() },
-        { jlm::rvsdg::bittype::Create(32), IOStateType::Create(), MemoryStateType::Create() });
+        { jlm::rvsdg::BitType::Create(32), IOStateType::Create(), MemoryStateType::Create() });
 
     auto lambda = rvsdg::LambdaNode::Create(
         rvsdg->GetRootRegion(),
@@ -3286,8 +3320,8 @@ MemcpyTest::SetupRvsdg()
    */
   this->LambdaF_ = &rvsdg::AssertGetOwnerNode<rvsdg::LambdaNode>(*lambdaF);
   this->LambdaG_ = &rvsdg::AssertGetOwnerNode<rvsdg::LambdaNode>(*lambdaG);
-  this->LocalArray_ = &rvsdg::AssertGetOwnerNode<llvm::DeltaNode>(*localArray);
-  this->GlobalArray_ = &rvsdg::AssertGetOwnerNode<llvm::DeltaNode>(*globalArray);
+  this->LocalArray_ = &rvsdg::AssertGetOwnerNode<rvsdg::DeltaNode>(*localArray);
+  this->GlobalArray_ = &rvsdg::AssertGetOwnerNode<rvsdg::DeltaNode>(*globalArray);
   this->CallF_ = callF;
   this->Memcpy_ = memcpyNode;
 
@@ -3298,8 +3332,9 @@ std::unique_ptr<jlm::llvm::RvsdgModule>
 MemcpyTest2::SetupRvsdg()
 {
   using namespace jlm::llvm;
+  using namespace jlm::rvsdg;
 
-  auto rvsdgModule = RvsdgModule::Create(jlm::util::FilePath(""), "", "");
+  auto rvsdgModule = llvm::RvsdgModule::Create(jlm::util::FilePath(""), "", "");
   auto rvsdg = &rvsdgModule->Rvsdg();
 
   auto pointerType = PointerType::Create();
@@ -3401,8 +3436,9 @@ std::unique_ptr<jlm::llvm::RvsdgModule>
 MemcpyTest3::SetupRvsdg()
 {
   using namespace jlm::llvm;
+  using namespace jlm::rvsdg;
 
-  auto rvsdgModule = RvsdgModule::Create(jlm::util::FilePath(""), "", "");
+  auto rvsdgModule = llvm::RvsdgModule::Create(jlm::util::FilePath(""), "", "");
   auto rvsdg = &rvsdgModule->Rvsdg();
 
   auto pointerType = PointerType::Create();
@@ -3458,8 +3494,9 @@ std::unique_ptr<jlm::llvm::RvsdgModule>
 LinkedListTest::SetupRvsdg()
 {
   using namespace jlm::llvm;
+  using namespace jlm::rvsdg;
 
-  auto rvsdgModule = RvsdgModule::Create(jlm::util::FilePath(""), "", "");
+  auto rvsdgModule = llvm::RvsdgModule::Create(jlm::util::FilePath(""), "", "");
   auto & rvsdg = rvsdgModule->Rvsdg();
 
   auto pointerType = PointerType::Create();
@@ -3469,13 +3506,14 @@ LinkedListTest::SetupRvsdg()
 
   auto SetupDeltaMyList = [&]()
   {
-    auto delta = DeltaNode::Create(
+    auto delta = jlm::rvsdg::DeltaNode::Create(
         &rvsdg.GetRootRegion(),
-        pointerType,
-        "MyList",
-        linkage::external_linkage,
-        "",
-        false);
+        jlm::llvm::DeltaOperation::Create(
+            pointerType,
+            "MyList",
+            linkage::external_linkage,
+            "",
+            false));
 
     auto constantPointerNullResult =
         ConstantPointerNullOperation::Create(delta->subregion(), pointerType);
@@ -3533,7 +3571,7 @@ LinkedListTest::SetupRvsdg()
   /*
    * Assign nodes
    */
-  this->DeltaMyList_ = &rvsdg::AssertGetOwnerNode<llvm::DeltaNode>(*deltaMyList);
+  this->DeltaMyList_ = &rvsdg::AssertGetOwnerNode<rvsdg::DeltaNode>(*deltaMyList);
   this->LambdaNext_ = &rvsdg::AssertGetOwnerNode<rvsdg::LambdaNode>(*lambdaNext);
   this->Alloca_ = alloca;
 
@@ -3544,31 +3582,33 @@ std::unique_ptr<jlm::llvm::RvsdgModule>
 AllMemoryNodesTest::SetupRvsdg()
 {
   using namespace jlm::llvm;
+  using namespace jlm::rvsdg;
 
   auto mt = MemoryStateType::Create();
   auto pointerType = PointerType::Create();
   auto fcttype =
       rvsdg::FunctionType::Create({ MemoryStateType::Create() }, { MemoryStateType::Create() });
 
-  auto module = RvsdgModule::Create(jlm::util::FilePath(""), "", "");
+  auto module = llvm::RvsdgModule::Create(jlm::util::FilePath(""), "", "");
   auto graph = &module->Rvsdg();
 
   // Create imported symbol "imported"
-  Import_ = &GraphImport::Create(
+  Import_ = &llvm::GraphImport::Create(
       *graph,
-      rvsdg::bittype::Create(32),
+      rvsdg::BitType::Create(32),
       PointerType::Create(),
       "imported",
       linkage::external_linkage);
 
   // Create global variable "global"
-  Delta_ = DeltaNode::Create(
+  Delta_ = jlm::rvsdg::DeltaNode::Create(
       &graph->GetRootRegion(),
-      pointerType,
-      "global",
-      linkage::external_linkage,
-      "",
-      false);
+      jlm::llvm::DeltaOperation::Create(
+          pointerType,
+          "global",
+          linkage::external_linkage,
+          "",
+          false));
   auto constantPointerNullResult =
       ConstantPointerNullOperation::Create(Delta_->subregion(), pointerType);
   Delta_->finalize(constantPointerNullResult);
@@ -3612,7 +3652,7 @@ AllMemoryNodesTest::SetupRvsdg()
   auto loadImportedOutputs = LoadNonVolatileOperation::Create(
       importContextVar,
       { loadAllocaOutputs[1] },
-      jlm::rvsdg::bittype::Create(32),
+      jlm::rvsdg::BitType::Create(32),
       4);
 
   // Store the loaded value from imported, into the address loaded from the alloca (aka. the malloc
@@ -3642,13 +3682,14 @@ std::unique_ptr<jlm::llvm::RvsdgModule>
 NAllocaNodesTest::SetupRvsdg()
 {
   using namespace jlm::llvm;
+  using namespace jlm::rvsdg;
 
   auto mt = MemoryStateType::Create();
   auto pointerType = PointerType::Create();
   auto fcttype =
       rvsdg::FunctionType::Create({ MemoryStateType::Create() }, { MemoryStateType::Create() });
 
-  auto module = RvsdgModule::Create(jlm::util::FilePath(""), "", "");
+  auto module = llvm::RvsdgModule::Create(jlm::util::FilePath(""), "", "");
   auto graph = &module->Rvsdg();
 
   Function_ = rvsdg::LambdaNode::Create(
@@ -3661,7 +3702,7 @@ NAllocaNodesTest::SetupRvsdg()
 
   for (size_t i = 0; i < NumAllocaNodes_; i++)
   {
-    auto allocaOutputs = AllocaOperation::create(jlm::rvsdg::bittype::Create(32), allocaSize, 4);
+    auto allocaOutputs = AllocaOperation::create(jlm::rvsdg::BitType::Create(32), allocaSize, 4);
     auto allocaNode = rvsdg::TryGetOwnerNode<rvsdg::Node>(*allocaOutputs[0]);
 
     AllocaNodes_.push_back(allocaNode);
@@ -3682,8 +3723,9 @@ std::unique_ptr<jlm::llvm::RvsdgModule>
 EscapingLocalFunctionTest::SetupRvsdg()
 {
   using namespace jlm::llvm;
+  using namespace jlm::rvsdg;
 
-  auto uint32Type = rvsdg::bittype::Create(32);
+  auto uint32Type = rvsdg::BitType::Create(32);
   auto mt = MemoryStateType::Create();
   auto pointerType = PointerType::Create();
   auto localFuncType = rvsdg::FunctionType::Create(
@@ -3693,16 +3735,17 @@ EscapingLocalFunctionTest::SetupRvsdg()
       { MemoryStateType::Create() },
       { PointerType::Create(), MemoryStateType::Create() });
 
-  auto module = RvsdgModule::Create(util::FilePath(""), "", "");
+  auto module = llvm::RvsdgModule::Create(util::FilePath(""), "", "");
   const auto graph = &module->Rvsdg();
 
-  Global_ = DeltaNode::Create(
+  Global_ = jlm::rvsdg::DeltaNode::Create(
       &graph->GetRootRegion(),
-      uint32Type,
-      "global",
-      linkage::internal_linkage,
-      "",
-      false);
+      jlm::llvm::DeltaOperation::Create(
+          uint32Type,
+          "global",
+          linkage::internal_linkage,
+          "",
+          false));
   const auto constantZero = rvsdg::create_bitconstant(Global_->subregion(), 32, 0);
   const auto deltaOutput = &Global_->finalize(constantZero);
 
@@ -3758,12 +3801,13 @@ std::unique_ptr<llvm::RvsdgModule>
 FreeNullTest::SetupRvsdg()
 {
   using namespace jlm::llvm;
+  using namespace jlm::rvsdg;
 
   auto functionType = rvsdg::FunctionType::Create(
       { IOStateType::Create(), MemoryStateType::Create() },
       { IOStateType::Create(), MemoryStateType::Create() });
 
-  auto module = RvsdgModule::Create(jlm::util::FilePath(""), "", "");
+  auto module = llvm::RvsdgModule::Create(jlm::util::FilePath(""), "", "");
   auto graph = &module->Rvsdg();
 
   LambdaMain_ = rvsdg::LambdaNode::Create(
@@ -3789,20 +3833,21 @@ std::unique_ptr<llvm::RvsdgModule>
 LambdaCallArgumentMismatch::SetupRvsdg()
 {
   using namespace jlm::llvm;
+  using namespace jlm::rvsdg;
 
-  auto rvsdgModule = RvsdgModule::Create(util::FilePath(""), "", "");
+  auto rvsdgModule = llvm::RvsdgModule::Create(util::FilePath(""), "", "");
   auto & rvsdg = rvsdgModule->Rvsdg();
 
   auto functionType = rvsdg::FunctionType::Create(
       { IOStateType::Create(), MemoryStateType::Create() },
-      { rvsdg::bittype::Create(32), IOStateType::Create(), MemoryStateType::Create() });
+      { rvsdg::BitType::Create(32), IOStateType::Create(), MemoryStateType::Create() });
   auto variableArgumentType = VariableArgumentType::Create();
   auto functionTypeCall = rvsdg::FunctionType::Create(
-      { rvsdg::bittype::Create(32),
+      { rvsdg::BitType::Create(32),
         variableArgumentType,
         IOStateType::Create(),
         MemoryStateType::Create() },
-      { rvsdg::bittype::Create(32), IOStateType::Create(), MemoryStateType::Create() });
+      { rvsdg::BitType::Create(32), IOStateType::Create(), MemoryStateType::Create() });
 
   auto setupLambdaG = [&]()
   {
@@ -3827,7 +3872,7 @@ LambdaCallArgumentMismatch::SetupRvsdg()
     auto memoryStateType = MemoryStateType::Create();
     auto functionTypeMain = rvsdg::FunctionType::Create(
         { IOStateType::Create(), MemoryStateType::Create() },
-        { rvsdg::bittype::Create(32), IOStateType::Create(), MemoryStateType::Create() });
+        { rvsdg::BitType::Create(32), IOStateType::Create(), MemoryStateType::Create() });
 
     auto lambda = rvsdg::LambdaNode::Create(
         rvsdg.GetRootRegion(),
@@ -3841,7 +3886,7 @@ LambdaCallArgumentMismatch::SetupRvsdg()
 
     auto vaList = VariadicArgumentListOperation::Create(*lambda->subregion(), {});
 
-    auto allocaResults = AllocaOperation::create(rvsdg::bittype::Create(32), one, 4);
+    auto allocaResults = AllocaOperation::create(rvsdg::BitType::Create(32), one, 4);
 
     auto memoryState = MemoryStateMergeOperation::Create(
         std::vector<rvsdg::Output *>{ memoryStateArgument, allocaResults[1] });
@@ -3852,7 +3897,7 @@ LambdaCallArgumentMismatch::SetupRvsdg()
     auto loadResults = LoadNonVolatileOperation::Create(
         allocaResults[0],
         storeResults,
-        rvsdg::bittype::Create(32),
+        rvsdg::BitType::Create(32),
         4);
 
     auto & call = CallOperation::CreateNode(
@@ -3897,7 +3942,7 @@ VariadicFunctionTest1::SetupRvsdg()
   auto memoryStateType = MemoryStateType::Create();
   auto varArgType = VariableArgumentType::Create();
   auto lambdaHType = rvsdg::FunctionType::Create(
-      { jlm::rvsdg::bittype::Create(32),
+      { jlm::rvsdg::BitType::Create(32),
         varArgType,
         IOStateType::Create(),
         MemoryStateType::Create() },
@@ -3953,7 +3998,7 @@ VariadicFunctionTest1::SetupRvsdg()
     auto one = jlm::rvsdg::create_bitconstant(LambdaG_->subregion(), 32, 1);
     auto five = jlm::rvsdg::create_bitconstant(LambdaG_->subregion(), 32, 5);
 
-    auto allocaResults = AllocaOperation::create(jlm::rvsdg::bittype::Create(32), one, 4);
+    auto allocaResults = AllocaOperation::create(jlm::rvsdg::BitType::Create(32), one, 4);
     auto merge = MemoryStateMergeOperation::Create(
         std::vector<jlm::rvsdg::Output *>{ allocaResults[1], memoryStateArgument });
     AllocaNode_ = rvsdg::TryGetOwnerNode<rvsdg::Node>(*allocaResults[0]);
@@ -3981,8 +4026,8 @@ VariadicFunctionTest2::SetupRvsdg()
 
   auto pointerType = PointerType::Create();
   auto & structDeclaration = rvsdgModule->AddStructTypeDeclaration(
-      StructType::Declaration::Create({ rvsdg::bittype::Create(32),
-                                        rvsdg::bittype::Create(32),
+      StructType::Declaration::Create({ rvsdg::BitType::Create(32),
+                                        rvsdg::BitType::Create(32),
                                         PointerType::Create(),
                                         PointerType::Create() }));
   auto structType = StructType::Create("struct.__va_list_tag", false, structDeclaration);
@@ -3991,13 +4036,13 @@ VariadicFunctionTest2::SetupRvsdg()
   auto memoryStateType = MemoryStateType::Create();
   auto varArgType = VariableArgumentType::Create();
   auto lambdaLlvmLifetimeStartType = rvsdg::FunctionType::Create(
-      { rvsdg::bittype::Create(64),
+      { rvsdg::BitType::Create(64),
         PointerType::Create(),
         IOStateType::Create(),
         MemoryStateType::Create() },
       { IOStateType::Create(), MemoryStateType::Create() });
   auto lambdaLlvmLifetimeEndType = rvsdg::FunctionType::Create(
-      { rvsdg::bittype::Create(64),
+      { rvsdg::BitType::Create(64),
         PointerType::Create(),
         IOStateType::Create(),
         MemoryStateType::Create() },
@@ -4009,11 +4054,11 @@ VariadicFunctionTest2::SetupRvsdg()
       { PointerType::Create(), IOStateType::Create(), MemoryStateType::Create() },
       { IOStateType::Create(), MemoryStateType::Create() });
   auto lambdaFstType = rvsdg::FunctionType::Create(
-      { rvsdg::bittype::Create(32), varArgType, IOStateType::Create(), MemoryStateType::Create() },
-      { rvsdg::bittype::Create(32), IOStateType::Create(), MemoryStateType::Create() });
+      { rvsdg::BitType::Create(32), varArgType, IOStateType::Create(), MemoryStateType::Create() },
+      { rvsdg::BitType::Create(32), IOStateType::Create(), MemoryStateType::Create() });
   auto lambdaGType = rvsdg::FunctionType::Create(
       { IOStateType::Create(), MemoryStateType::Create() },
-      { rvsdg::bittype::Create(32), IOStateType::Create(), MemoryStateType::Create() });
+      { rvsdg::BitType::Create(32), IOStateType::Create(), MemoryStateType::Create() });
 
   auto llvmLifetimeStart = &GraphImport::Create(
       rvsdg,
@@ -4075,10 +4120,10 @@ VariadicFunctionTest2::SetupRvsdg()
     auto loadResults = LoadNonVolatileOperation::Create(
         allocaResults[0],
         { &CallOperation::GetMemoryStateOutput(callVaStart) },
-        rvsdg::bittype::Create(32),
+        rvsdg::BitType::Create(32),
         16);
     auto icmpResult = rvsdg::bitult_op::create(32, loadResults[0], fortyOne);
-    auto matchResult = rvsdg::match_op::Create(*icmpResult, { { 1, 1 } }, 0, 2);
+    auto matchResult = rvsdg::MatchOperation::Create(*icmpResult, { { 1, 1 } }, 0, 2);
 
     auto gammaNode = rvsdg::GammaNode::create(matchResult, 2);
     auto gammaVaAddress = gammaNode->AddEntryVar(allocaResults[0]);
@@ -4102,7 +4147,7 @@ VariadicFunctionTest2::SetupRvsdg()
     auto gepResult2 = GetElementPtrOperation::Create(
         loadResultsGamma0[0],
         { eight },
-        rvsdg::bittype::Create(8),
+        rvsdg::BitType::Create(8),
         pointerType);
     auto storeResultsGamma0 =
         StoreNonVolatileOperation::Create(gepResult1, gepResult2, { loadResultsGamma0[1] }, 8);
@@ -4122,11 +4167,11 @@ VariadicFunctionTest2::SetupRvsdg()
         pointerType,
         16);
     auto & zextResult =
-        ZExtOperation::Create(*gammaLoadResult.branchArgument[1], rvsdg::bittype::Create(64));
+        ZExtOperation::Create(*gammaLoadResult.branchArgument[1], rvsdg::BitType::Create(64));
     gepResult2 = GetElementPtrOperation::Create(
         loadResultsGamma1[0],
         { &zextResult },
-        rvsdg::bittype::Create(8),
+        rvsdg::BitType::Create(8),
         pointerType);
     auto addResult = rvsdg::bitadd_op::create(32, gammaLoadResult.branchArgument[1], eightBit32);
     auto storeResultsGamma1 = StoreNonVolatileOperation::Create(
@@ -4142,7 +4187,7 @@ VariadicFunctionTest2::SetupRvsdg()
     loadResults = LoadNonVolatileOperation::Create(
         gammaAddress.output,
         { gammaOutputMemoryState.output },
-        rvsdg::bittype::Create(32),
+        rvsdg::BitType::Create(32),
         4);
     auto & callVaEnd = CallOperation::CreateNode(
         llvmVaEndArgument,

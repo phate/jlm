@@ -250,13 +250,13 @@ StoreNonVolatileOperation::NormalizeIOBarrierAllocaAddress(
   const auto value = operands[1];
 
   auto [ioBarrierNode, ioBarrierOperation] =
-      rvsdg::TryGetSimpleNodeAndOp<IOBarrierOperation>(*address);
+      rvsdg::TryGetSimpleNodeAndOptionalOp<IOBarrierOperation>(*address);
   if (!ioBarrierOperation)
     return std::nullopt;
 
   const auto barredAddress = IOBarrierOperation::BarredInput(*ioBarrierNode).origin();
   auto [allocaNode, allocaOperation] =
-      rvsdg::TryGetSimpleNodeAndOp<AllocaOperation>(*barredAddress);
+      rvsdg::TryGetSimpleNodeAndOptionalOp<AllocaOperation>(*barredAddress);
   if (!allocaOperation)
     return std::nullopt;
 

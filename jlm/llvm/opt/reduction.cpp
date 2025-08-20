@@ -6,6 +6,7 @@
 #include <jlm/llvm/ir/operators.hpp>
 #include <jlm/llvm/opt/reduction.hpp>
 #include <jlm/rvsdg/gamma.hpp>
+#include <jlm/rvsdg/MatchType.hpp>
 #include <jlm/rvsdg/NodeNormalization.hpp>
 #include <jlm/rvsdg/traverser.hpp>
 #include <jlm/util/Statistics.hpp>
@@ -80,18 +81,16 @@ NodeReduction::ReduceNodesInRegion(rvsdg::Region & region)
 
     for (const auto node : rvsdg::TopDownTraverser(&region))
     {
-      if (const auto structuralNode = dynamic_cast<rvsdg::StructuralNode *>(node))
-      {
-        reductionPerformed |= ReduceStructuralNode(*structuralNode);
-      }
-      else if (rvsdg::is<rvsdg::SimpleOperation>(node))
-      {
-        reductionPerformed |= ReduceSimpleNode(*node);
-      }
-      else
-      {
-        JLM_UNREACHABLE("Unhandled node type.");
-      }
+      MatchTypeOrFail(
+          *node,
+          [this, &reductionPerformed](rvsdg::StructuralNode & structuralNode)
+          {
+            reductionPerformed |= ReduceStructuralNode(structuralNode);
+          },
+          [&reductionPerformed](rvsdg::SimpleNode & simpleNode)
+          {
+            reductionPerformed |= ReduceSimpleNode(simpleNode);
+          });
     }
 
     if (reductionPerformed)
@@ -144,7 +143,7 @@ NodeReduction::ReduceGammaNode(rvsdg::StructuralNode & gammaNode)
 }
 
 bool
-NodeReduction::ReduceSimpleNode(rvsdg::Node & simpleNode)
+NodeReduction::ReduceSimpleNode(rvsdg::SimpleNode & simpleNode)
 {
   if (is<LoadNonVolatileOperation>(&simpleNode))
   {
@@ -161,6 +160,12 @@ NodeReduction::ReduceSimpleNode(rvsdg::Node & simpleNode)
   if (is<MemoryStateSplitOperation>(&simpleNode))
   {
     return ReduceMemoryStateSplitNode(simpleNode);
+  }
+  if (is<CallExitMemoryStateSplitOperation>(&simpleNode))
+  {
+    return rvsdg::ReduceNode<CallExitMemoryStateSplitOperation>(
+        NormalizeCallExitMemoryStateSplitNode,
+        simpleNode);
   }
   if (is<LambdaExitMemoryStateMergeOperation>(&simpleNode))
   {
@@ -181,7 +186,7 @@ NodeReduction::ReduceSimpleNode(rvsdg::Node & simpleNode)
 }
 
 bool
-NodeReduction::ReduceLoadNode(rvsdg::Node & simpleNode)
+NodeReduction::ReduceLoadNode(rvsdg::SimpleNode & simpleNode)
 {
   JLM_ASSERT(is<LoadNonVolatileOperation>(&simpleNode));
 
@@ -189,7 +194,7 @@ NodeReduction::ReduceLoadNode(rvsdg::Node & simpleNode)
 }
 
 bool
-NodeReduction::ReduceStoreNode(rvsdg::Node & simpleNode)
+NodeReduction::ReduceStoreNode(rvsdg::SimpleNode & simpleNode)
 {
   JLM_ASSERT(is<StoreNonVolatileOperation>(&simpleNode));
 
@@ -197,7 +202,7 @@ NodeReduction::ReduceStoreNode(rvsdg::Node & simpleNode)
 }
 
 bool
-NodeReduction::ReduceBinaryNode(rvsdg::Node & simpleNode)
+NodeReduction::ReduceBinaryNode(rvsdg::SimpleNode & simpleNode)
 {
   JLM_ASSERT(is<rvsdg::BinaryOperation>(&simpleNode));
 
@@ -205,7 +210,7 @@ NodeReduction::ReduceBinaryNode(rvsdg::Node & simpleNode)
 }
 
 bool
-NodeReduction::ReduceMemoryStateMergeNode(rvsdg::Node & simpleNode)
+NodeReduction::ReduceMemoryStateMergeNode(rvsdg::SimpleNode & simpleNode)
 {
   JLM_ASSERT(is<MemoryStateMergeOperation>(&simpleNode));
 
@@ -213,7 +218,7 @@ NodeReduction::ReduceMemoryStateMergeNode(rvsdg::Node & simpleNode)
 }
 
 bool
-NodeReduction::ReduceMemoryStateSplitNode(rvsdg::Node & simpleNode)
+NodeReduction::ReduceMemoryStateSplitNode(rvsdg::SimpleNode & simpleNode)
 {
   JLM_ASSERT(is<MemoryStateSplitOperation>(&simpleNode));
 
@@ -221,7 +226,7 @@ NodeReduction::ReduceMemoryStateSplitNode(rvsdg::Node & simpleNode)
 }
 
 bool
-NodeReduction::ReduceLambdaExitMemoryStateMergeNode(rvsdg::Node & simpleNode)
+NodeReduction::ReduceLambdaExitMemoryStateMergeNode(rvsdg::SimpleNode & simpleNode)
 {
   JLM_ASSERT(is<LambdaExitMemoryStateMergeOperation>(&simpleNode));
   return rvsdg::ReduceNode<LambdaExitMemoryStateMergeOperation>(
@@ -291,6 +296,20 @@ NodeReduction::NormalizeMemoryStateSplitNode(
         MemoryStateSplitOperation::NormalizeSplitMerge });
 
   return rvsdg::NormalizeSequence<MemoryStateSplitOperation>(normalizations, operation, operands);
+}
+
+std::optional<std::vector<rvsdg::Output *>>
+NodeReduction::NormalizeCallExitMemoryStateSplitNode(
+    const CallExitMemoryStateSplitOperation & operation,
+    const std::vector<rvsdg::Output *> & operands)
+{
+  static std::vector<rvsdg::NodeNormalization<CallExitMemoryStateSplitOperation>> normalizations(
+      { CallExitMemoryStateSplitOperation::NormalizeLambdaExitMemoryStateMerge });
+
+  return rvsdg::NormalizeSequence<CallExitMemoryStateSplitOperation>(
+      normalizations,
+      operation,
+      operands);
 }
 
 std::optional<std::vector<rvsdg::Output *>>

@@ -128,7 +128,7 @@ LoopNode::AddLoopVar(jlm::rvsdg::Output * origin, jlm::rvsdg::Output ** buffer)
   auto argument_loop = add_backedge(origin->Type());
 
   auto mux =
-      MuxOperation::create(*predicate_buffer(), { &argument_in, argument_loop }, false, true)[0];
+      MuxOperation::create(GetPredicateBuffer(), { &argument_in, argument_loop }, false, true)[0];
   auto branch = BranchOperation::create(*predicate()->origin(), *mux, true);
   if (buffer != nullptr)
   {
@@ -154,7 +154,7 @@ LoopNode::add_loopconst(jlm::rvsdg::Output * origin)
   auto input = rvsdg::StructuralInput::create(this, origin, origin->Type());
 
   auto & argument_in = EntryArgument::Create(*subregion(), *input, origin->Type());
-  auto buffer = LoopConstantBufferOperation::create(*predicate_buffer(), argument_in)[0];
+  auto buffer = LoopConstantBufferOperation::create(GetPredicateBuffer(), argument_in)[0];
   return buffer;
 }
 
@@ -189,7 +189,7 @@ LoopNode::copy(rvsdg::Region * region, rvsdg::SubstitutionMap & smap) const
   }
 
   subregion()->copy(loop->subregion(), smap, false, false);
-  loop->_predicate_buffer = dynamic_cast<jlm::rvsdg::node_output *>(smap.lookup(_predicate_buffer));
+  loop->PredicateBuffer_ = smap.lookup(PredicateBuffer_);
   // redirect backedges
   for (size_t i = 0; i < subregion()->narguments(); ++i)
   {
@@ -233,8 +233,7 @@ LoopNode::create(rvsdg::Region * parent, bool init)
     // we need a buffer without pass-through behavior to avoid a combinatorial cycle of ready
     // signals
     auto pre_buffer = BufferOperation::create(*pred_arg, 2)[0];
-    ln->_predicate_buffer =
-        dynamic_cast<jlm::rvsdg::node_output *>(PredicateBufferOperation::create(*pre_buffer)[0]);
+    ln->PredicateBuffer_ = PredicateBufferOperation::create(*pre_buffer)[0];
   }
   return ln;
 }
@@ -253,12 +252,12 @@ get_mem_req_type(std::shared_ptr<const rvsdg::ValueType> elementType, bool write
 {
   std::vector<std::pair<std::string, std::shared_ptr<const jlm::rvsdg::Type>>> elements;
   elements.emplace_back("addr", llvm::PointerType::Create());
-  elements.emplace_back("size", jlm::rvsdg::bittype::Create(4));
-  elements.emplace_back("id", jlm::rvsdg::bittype::Create(8));
+  elements.emplace_back("size", jlm::rvsdg::BitType::Create(4));
+  elements.emplace_back("id", jlm::rvsdg::BitType::Create(8));
   if (write)
   {
     elements.emplace_back("data", std::move(elementType));
-    elements.emplace_back("write", jlm::rvsdg::bittype::Create(1));
+    elements.emplace_back("write", jlm::rvsdg::BitType::Create(1));
   }
   return std::make_shared<BundleType>(std::move(elements));
 }
@@ -268,14 +267,14 @@ get_mem_res_type(std::shared_ptr<const jlm::rvsdg::ValueType> dataType)
 {
   std::vector<std::pair<std::string, std::shared_ptr<const jlm::rvsdg::Type>>> elements;
   elements.emplace_back("data", std::move(dataType));
-  elements.emplace_back("id", jlm::rvsdg::bittype::Create(8));
+  elements.emplace_back("id", jlm::rvsdg::BitType::Create(8));
   return std::make_shared<BundleType>(std::move(elements));
 }
 
 int
 JlmSize(const jlm::rvsdg::Type * type)
 {
-  if (auto bt = dynamic_cast<const jlm::rvsdg::bittype *>(type))
+  if (auto bt = dynamic_cast<const jlm::rvsdg::BitType *>(type))
   {
     return bt->nbits();
   }

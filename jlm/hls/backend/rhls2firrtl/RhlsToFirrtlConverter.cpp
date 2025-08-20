@@ -288,7 +288,7 @@ RhlsToFirrtlConverter::MlirGenSimpleNode(const jlm::rvsdg::SimpleNode * node)
     auto input0 = GetSubfield(body, inBundles[0], "data");
     Connect(body, outData, input0);
   }
-  else if (auto op = dynamic_cast<const jlm::rvsdg::match_op *>(&(node->GetOperation())))
+  else if (auto op = dynamic_cast<const jlm::rvsdg::MatchOperation *>(&(node->GetOperation())))
   {
     auto inData = GetSubfield(body, inBundles[0], "data");
     auto outData = GetSubfield(body, outBundle, "data");
@@ -333,7 +333,7 @@ RhlsToFirrtlConverter::MlirGenSimpleNode(const jlm::rvsdg::SimpleNode * node)
     for (size_t i = 1; i < node->ninputs(); i++)
     {
       int bits = JlmSize(pointeeType);
-      if (dynamic_cast<const rvsdg::bittype *>(pointeeType)
+      if (dynamic_cast<const rvsdg::BitType *>(pointeeType)
           || dynamic_cast<const llvm::FloatingPointType *>(pointeeType))
       {
         pointeeType = nullptr;
@@ -1596,14 +1596,14 @@ RhlsToFirrtlConverter::MlirGenMem(const jlm::rvsdg::SimpleNode * node)
   {
     Connect(body, memReqWrite, oneBitValue);
     Connect(body, memReqData, inData1);
-    bitWidth = std::dynamic_pointer_cast<const rvsdg::bittype>(node->input(1)->Type())->nbits();
+    bitWidth = std::dynamic_pointer_cast<const rvsdg::BitType>(node->input(1)->Type())->nbits();
   }
   else
   {
     Connect(body, memReqWrite, zeroBitValue);
     auto invalid = GetInvalid(body, 32);
     Connect(body, memReqData, invalid);
-    if (auto bitType = std::dynamic_pointer_cast<const rvsdg::bittype>(node->output(0)->Type()))
+    if (auto bitType = std::dynamic_pointer_cast<const rvsdg::BitType>(node->output(0)->Type()))
     {
       bitWidth = bitType->nbits();
     }
@@ -3926,7 +3926,7 @@ RhlsToFirrtlConverter::GetModuleName(const rvsdg::Node * node)
     for (size_t i = 1; i < node->ninputs(); i++)
     {
       int bits = JlmSize(pointeeType);
-      if (dynamic_cast<const jlm::rvsdg::bittype *>(pointeeType)
+      if (dynamic_cast<const jlm::rvsdg::BitType *>(pointeeType)
           || dynamic_cast<const llvm::FloatingPointType *>(pointeeType))
       {
         pointeeType = nullptr;
@@ -3987,7 +3987,7 @@ RhlsToFirrtlConverter::GetModuleName(const rvsdg::Node * node)
 }
 
 bool
-RhlsToFirrtlConverter::IsIdentityMapping(const jlm::rvsdg::match_op & op)
+RhlsToFirrtlConverter::IsIdentityMapping(const jlm::rvsdg::MatchOperation & op)
 {
   for (const auto & pair : op)
   {

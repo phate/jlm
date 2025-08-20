@@ -7,6 +7,7 @@
 #include <jlm/llvm/ir/RvsdgModule.hpp>
 #include <jlm/llvm/opt/DeadNodeElimination.hpp>
 #include <jlm/rvsdg/gamma.hpp>
+#include <jlm/rvsdg/MatchType.hpp>
 #include <jlm/rvsdg/theta.hpp>
 #include <jlm/util/Statistics.hpp>
 #include <jlm/util/time.hpp>
@@ -292,14 +293,14 @@ DeadNodeElimination::MarkOutput(const jlm::rvsdg::Output & output)
     }
   }
 
-  if (const auto deltaNode = rvsdg::TryGetOwnerNode<DeltaNode>(output))
+  if (const auto deltaNode = rvsdg::TryGetOwnerNode<rvsdg::DeltaNode>(output))
   {
     const auto result = deltaNode->subregion()->result(0);
     MarkOutput(*result->origin());
     return;
   }
 
-  if (rvsdg::TryGetRegionParentNode<DeltaNode>(output))
+  if (rvsdg::TryGetRegionParentNode<rvsdg::DeltaNode>(output))
   {
     const auto argument = util::AssertedCast<const rvsdg::RegionArgument>(&output);
     MarkOutput(*argument->input()->origin());
@@ -367,39 +368,28 @@ DeadNodeElimination::SweepRegion(rvsdg::Region & region) const
 void
 DeadNodeElimination::SweepStructuralNode(rvsdg::StructuralNode & node) const
 {
-  auto sweepGamma = [](auto & d, auto & n)
-  {
-    d.SweepGamma(*util::AssertedCast<rvsdg::GammaNode>(&n));
-  };
-  auto sweepTheta = [](auto & d, auto & n)
-  {
-    d.SweepTheta(*util::AssertedCast<rvsdg::ThetaNode>(&n));
-  };
-  auto sweepLambda = [](auto & d, auto & n)
-  {
-    d.SweepLambda(*util::AssertedCast<rvsdg::LambdaNode>(&n));
-  };
-  auto sweepPhi = [](auto & d, auto & n)
-  {
-    d.SweepPhi(*util::AssertedCast<rvsdg::PhiNode>(&n));
-  };
-  auto sweepDelta = [](auto & d, auto & n)
-  {
-    d.SweepDelta(*util::AssertedCast<DeltaNode>(&n));
-  };
-
-  static std::unordered_map<
-      std::type_index,
-      std::function<void(const DeadNodeElimination &, rvsdg::StructuralNode &)>>
-      map({ { typeid(rvsdg::GammaOperation), sweepGamma },
-            { typeid(rvsdg::ThetaOperation), sweepTheta },
-            { typeid(llvm::LlvmLambdaOperation), sweepLambda },
-            { typeid(rvsdg::PhiOperation), sweepPhi },
-            { typeid(DeltaOperation), sweepDelta } });
-
-  auto & op = node.GetOperation();
-  JLM_ASSERT(map.find(typeid(op)) != map.end());
-  map[typeid(op)](*this, node);
+  rvsdg::MatchTypeOrFail(
+      node,
+      [this](rvsdg::GammaNode & node)
+      {
+        SweepGamma(node);
+      },
+      [this](rvsdg::ThetaNode & node)
+      {
+        SweepTheta(node);
+      },
+      [this](rvsdg::LambdaNode & node)
+      {
+        SweepLambda(node);
+      },
+      [this](rvsdg::PhiNode & node)
+      {
+        SweepPhi(node);
+      },
+      [](rvsdg::DeltaNode & node)
+      {
+        SweepDelta(node);
+      });
 }
 
 void
@@ -508,7 +498,7 @@ DeadNodeElimination::SweepPhi(rvsdg::PhiNode & phiNode) const
 }
 
 void
-DeadNodeElimination::SweepDelta(DeltaNode & deltaNode)
+DeadNodeElimination::SweepDelta(rvsdg::DeltaNode & deltaNode)
 {
   // A delta subregion can only contain simple nodes. Thus, a simple prune is sufficient.
   deltaNode.subregion()->prune(false);

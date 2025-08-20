@@ -35,15 +35,15 @@ SinkInsertion()
   auto argument = lambdaNode->GetFunctionArguments()[0];
 
   auto structuralNode = jlm::tests::TestStructuralNode::create(lambdaNode->subregion(), 1);
-  auto & i0 = structuralNode->AddInputWithArguments(*argument);
-  auto & i1 = structuralNode->AddInputWithArguments(*argument);
+  const auto inputVar0 = structuralNode->AddInputWithArguments(*argument);
+  const auto inputVar1 = structuralNode->AddInputWithArguments(*argument);
 
-  auto & o0 = structuralNode->AddOutputWithResults({ &i1.Argument(0) });
-  auto & o1 = structuralNode->AddOutputWithResults({ &i1.Argument(0) });
+  const auto outputVar0 = structuralNode->AddOutputWithResults({ inputVar1.argument[0] });
+  const auto outputVar1 = structuralNode->AddOutputWithResults({ inputVar1.argument[0] });
 
-  auto lambdaOutput = lambdaNode->finalize({ &o1 });
+  auto lambdaOutput = lambdaNode->finalize({ outputVar1.output });
 
-  jlm::tests::GraphExport::Create(*lambdaOutput, "");
+  jlm::rvsdg::GraphExport::Create(*lambdaOutput, "");
 
   view(rvsdg, stdout);
 
@@ -58,17 +58,18 @@ SinkInsertion()
 
   // The sink insertion pass should have inserted a SinkOperation node at output o0
   {
-    assert(o0.nusers() == 1);
-    auto [sinkNode, sinkOperation] = TryGetSimpleNodeAndOp<SinkOperation>(*o0.Users().begin());
+    assert(outputVar0.output->nusers() == 1);
+    auto [sinkNode, sinkOperation] =
+        TryGetSimpleNodeAndOptionalOp<SinkOperation>(*outputVar0.output->Users().begin());
     assert(sinkNode && sinkOperation);
   }
 
   // The sink insertion pass should have inserted a SinkOperation node at the argument of i0
   {
-    auto & i0Argument = i0.Argument(0);
+    auto & i0Argument = *inputVar0.argument[0];
     assert(i0Argument.nusers() == 1);
     auto [sinkNode, sinkOperation] =
-        TryGetSimpleNodeAndOp<SinkOperation>(*i0Argument.Users().begin());
+        TryGetSimpleNodeAndOptionalOp<SinkOperation>(*i0Argument.Users().begin());
     assert(sinkNode && sinkOperation);
   }
 }

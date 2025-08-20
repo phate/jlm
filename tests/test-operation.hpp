@@ -12,7 +12,6 @@
 #include <jlm/rvsdg/operation.hpp>
 #include <jlm/rvsdg/simple-node.hpp>
 #include <jlm/rvsdg/structural-node.hpp>
-#include <jlm/rvsdg/substitution.hpp>
 #include <jlm/rvsdg/type.hpp>
 #include <jlm/rvsdg/unary.hpp>
 
@@ -20,52 +19,6 @@
 
 namespace jlm::tests
 {
-
-/**
- * Represents an import into the RVSDG of an external entity.
- * It can be used for testing of graph imports.
- */
-class GraphImport final : public rvsdg::GraphImport
-{
-  GraphImport(rvsdg::Graph & graph, std::shared_ptr<const rvsdg::Type> type, std::string name)
-      : rvsdg::GraphImport(graph, std::move(type), std::move(name))
-  {}
-
-public:
-  GraphImport &
-  Copy(rvsdg::Region & region, rvsdg::StructuralInput * input) override;
-
-  static GraphImport &
-  Create(rvsdg::Graph & graph, std::shared_ptr<const rvsdg::Type> type, std::string name)
-  {
-    auto graphImport = new GraphImport(graph, std::move(type), std::move(name));
-    graph.GetRootRegion().append_argument(graphImport);
-    return *graphImport;
-  }
-};
-
-/**
- * Represents an export from the RVSDG of an internal entity.
- * It can be used for testing of graph exports.
- */
-class GraphExport final : public rvsdg::GraphExport
-{
-  GraphExport(rvsdg::Output & origin, std::string name)
-      : rvsdg::GraphExport(origin, std::move(name))
-  {}
-
-public:
-  GraphExport &
-  Copy(rvsdg::Output & origin, rvsdg::StructuralOutput * output) override;
-
-  static GraphExport &
-  Create(rvsdg::Output & origin, std::string name)
-  {
-    auto graphExport = new GraphExport(origin, std::move(name));
-    origin.region()->graph()->GetRootRegion().append_result(graphExport);
-    return *graphExport;
-  }
-};
 
 class NullaryOperation final : public rvsdg::NullaryOperation
 {
@@ -239,10 +192,6 @@ public:
   copy() const override;
 };
 
-class StructuralNodeArgument;
-class StructuralNodeInput;
-class StructuralNodeOutput;
-
 class TestStructuralNode final : public rvsdg::StructuralNode
 {
 public:
@@ -254,20 +203,79 @@ private:
   {}
 
 public:
-  [[nodiscard]] const TestStructuralOperation &
-  GetOperation() const noexcept override;
+  /**
+   * \brief A variable routed in a \ref TestStructuralNode
+   */
+  struct InputVar
+  {
+    rvsdg::Input * input{};
+    std::vector<rvsdg::Output *> argument{};
+  };
 
-  StructuralNodeInput &
+  /**
+   * \brief A variable routed out of a \ref TestStructuralNode
+   */
+  struct OutputVar
+  {
+    rvsdg::Output * output{};
+    std::vector<rvsdg::Input *> result{};
+  };
+
+  /**
+   * Add an input WITHOUT subregion arguments to a \ref TestStructuralNode.
+   *
+   * @param origin Value to be routed in.
+   * @return Description of input variable.
+   */
+  InputVar
   AddInput(rvsdg::Output & origin);
 
-  StructuralNodeInput &
+  /**
+   * Add an input WITH subregion arguments to a \ref TestStructuralNode.
+   *
+   * @param origin Value to be routed in.
+   * @return Description of input variable.
+   */
+  InputVar
   AddInputWithArguments(rvsdg::Output & origin);
 
-  StructuralNodeOutput &
+  /**
+   * Add subregion arguments WITHOUT an input to a \ref TestStructuralNode.
+   * @param type The argument type
+   * @return Description of input variable
+   */
+  InputVar
+  AddArguments(const std::shared_ptr<const rvsdg::Type> & type);
+
+  /**
+   * Add an output WITHOUT subregion results to a \ref TestStructuralNode.
+   *
+   * @param type The output type
+   * @return Description of output variable.
+   */
+  OutputVar
   AddOutput(std::shared_ptr<const rvsdg::Type> type);
 
-  StructuralNodeOutput &
+  /**
+   * Add an output WITH subregion results to a \ref TestStructuralNode.
+   *
+   * @param origins The values to be routed out.
+   * @return Description of output variable.
+   */
+  OutputVar
   AddOutputWithResults(const std::vector<rvsdg::Output *> & origins);
+
+  /**
+   * Add subregion results WITHOUT output to a \ref TestStructuralNode.
+   *
+   * @param origins The values to be routed out.
+   * @return Description of output variable.
+   */
+  OutputVar
+  AddResults(const std::vector<rvsdg::Output *> & origins);
+
+  [[nodiscard]] const TestStructuralOperation &
+  GetOperation() const noexcept override;
 
   static TestStructuralNode *
   create(rvsdg::Region * parent, size_t nsubregions)
@@ -277,124 +285,6 @@ public:
 
   TestStructuralNode *
   copy(rvsdg::Region * region, rvsdg::SubstitutionMap & smap) const override;
-};
-
-class StructuralNodeInput final : public rvsdg::StructuralInput
-{
-  friend TestStructuralNode;
-
-public:
-  ~StructuralNodeInput() noexcept override;
-
-private:
-  StructuralNodeInput(
-      TestStructuralNode & node,
-      rvsdg::Output & origin,
-      std::shared_ptr<const rvsdg::Type> type)
-      : StructuralInput(&node, &origin, std::move(type))
-  {}
-
-public:
-  [[nodiscard]] size_t
-  NumArguments() const noexcept
-  {
-    return arguments.size();
-  }
-
-  [[nodiscard]] StructuralNodeArgument &
-  Argument(size_t n) noexcept
-  {
-    JLM_ASSERT(n < NumArguments());
-    // FIXME: I did not find a better way of doing it. The arguments attribute should be replaced
-    // by a std::vector<> to enable efficient access.
-    for (auto & argument : arguments)
-    {
-      if (argument.region()->index() == n)
-        return *util::AssertedCast<StructuralNodeArgument>(&argument);
-    }
-
-    JLM_UNREACHABLE("Unknown argument");
-  }
-};
-
-class StructuralNodeOutput final : public rvsdg::StructuralOutput
-{
-  friend TestStructuralNode;
-
-public:
-  ~StructuralNodeOutput() noexcept override;
-
-private:
-  StructuralNodeOutput(TestStructuralNode & node, std::shared_ptr<const rvsdg::Type> type)
-      : StructuralOutput(&node, std::move(type))
-  {}
-};
-
-class StructuralNodeArgument final : public rvsdg::RegionArgument
-{
-  friend TestStructuralNode;
-
-public:
-  ~StructuralNodeArgument() noexcept override;
-
-  StructuralNodeArgument &
-  Copy(rvsdg::Region & region, rvsdg::StructuralInput * input) override;
-
-private:
-  StructuralNodeArgument(
-      rvsdg::Region & region,
-      StructuralNodeInput * input,
-      std::shared_ptr<const rvsdg::Type> type)
-      : rvsdg::RegionArgument(&region, input, std::move(type))
-  {}
-
-  static StructuralNodeArgument &
-  Create(rvsdg::Region & region, StructuralNodeInput & input)
-  {
-    auto argument = new StructuralNodeArgument(region, &input, input.Type());
-    region.append_argument(argument);
-    return *argument;
-  }
-
-  static StructuralNodeArgument &
-  Create(rvsdg::Region & region, std::shared_ptr<const rvsdg::Type> type)
-  {
-    auto argument = new StructuralNodeArgument(region, nullptr, std::move(type));
-    region.append_argument(argument);
-    return *argument;
-  }
-};
-
-class StructuralNodeResult final : public rvsdg::RegionResult
-{
-  friend TestStructuralNode;
-
-public:
-  ~StructuralNodeResult() noexcept override;
-
-  StructuralNodeResult &
-  Copy(rvsdg::Output & origin, rvsdg::StructuralOutput * output) override;
-
-private:
-  StructuralNodeResult(rvsdg::Output & origin, StructuralNodeOutput * output)
-      : rvsdg::RegionResult(origin.region(), &origin, output, origin.Type())
-  {}
-
-  static StructuralNodeResult &
-  Create(rvsdg::Output & origin)
-  {
-    auto result = new StructuralNodeResult(origin, nullptr);
-    origin.region()->append_result(result);
-    return *result;
-  }
-
-  static StructuralNodeResult &
-  Create(rvsdg::Output & origin, StructuralNodeOutput & output)
-  {
-    auto result = new StructuralNodeResult(origin, &output);
-    origin.region()->append_result(result);
-    return *result;
-  }
 };
 
 class TestOperation final : public rvsdg::SimpleOperation
@@ -448,40 +338,20 @@ public:
                                   std::move(operandTypes),
                                   std::move(resultTypes));
   }
+
+  static std::unique_ptr<llvm::ThreeAddressCode>
+  CreateTac(
+      const std::vector<const llvm::Variable *> & operands,
+      std::vector<std::shared_ptr<const rvsdg::Type>> resultTypes)
+  {
+    std::vector<std::shared_ptr<const rvsdg::Type>> operandTypes;
+    for (const auto & operand : operands)
+      operandTypes.push_back(operand->Type());
+
+    const TestOperation operation(std::move(operandTypes), std::move(resultTypes));
+    return llvm::ThreeAddressCode::create(operation, operands);
+  }
 };
-
-static inline std::unique_ptr<llvm::ThreeAddressCode>
-create_testop_tac(
-    const std::vector<const llvm::Variable *> & arguments,
-    std::vector<std::shared_ptr<const rvsdg::Type>> result_types)
-{
-  std::vector<std::shared_ptr<const rvsdg::Type>> argument_types;
-  for (const auto & arg : arguments)
-    argument_types.push_back(arg->Type());
-
-  TestOperation op(std::move(argument_types), std::move(result_types));
-  return llvm::ThreeAddressCode::create(op, arguments);
-}
-
-static inline std::vector<rvsdg::Output *>
-create_testop(
-    rvsdg::Region * region,
-    const std::vector<rvsdg::Output *> & operands,
-    std::vector<std::shared_ptr<const rvsdg::Type>> result_types)
-{
-  std::vector<std::shared_ptr<const rvsdg::Type>> operand_types;
-  for (const auto & operand : operands)
-    operand_types.push_back(operand->Type());
-
-  return operands.empty() ? outputs(&rvsdg::CreateOpNode<TestOperation>(
-                                *region,
-                                std::move(operand_types),
-                                std::move(result_types)))
-                          : outputs(&rvsdg::CreateOpNode<TestOperation>(
-                                operands,
-                                std::move(operand_types),
-                                std::move(result_types)));
-}
 
 class TestGraphArgument final : public jlm::rvsdg::RegionArgument
 {
@@ -509,42 +379,6 @@ public:
     auto graphArgument = new TestGraphArgument(region, input, std::move(type));
     region.append_argument(graphArgument);
     return *graphArgument;
-  }
-};
-
-class TestGraphResult final : public jlm::rvsdg::RegionResult
-{
-private:
-  TestGraphResult(
-      rvsdg::Region & region,
-      jlm::rvsdg::Output & origin,
-      rvsdg::StructuralOutput * output)
-      : jlm::rvsdg::RegionResult(&region, &origin, output, origin.Type())
-  {}
-
-  TestGraphResult(rvsdg::Output & origin, rvsdg::StructuralOutput * output)
-      : TestGraphResult(*origin.region(), origin, output)
-  {}
-
-public:
-  TestGraphResult &
-  Copy(rvsdg::Output & origin, rvsdg::StructuralOutput * output) override
-  {
-    return Create(origin, output);
-  }
-
-  static TestGraphResult &
-  Create(rvsdg::Region & region, jlm::rvsdg::Output & origin, rvsdg::StructuralOutput * output)
-  {
-    auto graphResult = new TestGraphResult(region, origin, output);
-    origin.region()->append_result(graphResult);
-    return *graphResult;
-  }
-
-  static TestGraphResult &
-  Create(rvsdg::Output & origin, rvsdg::StructuralOutput * output)
-  {
-    return Create(*origin.region(), origin, output);
   }
 };
 

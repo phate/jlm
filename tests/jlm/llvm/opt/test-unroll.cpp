@@ -64,7 +64,7 @@ create_theta(
 static inline void
 test_unrollinfo()
 {
-  auto bt32 = jlm::rvsdg::bittype::Create(32);
+  auto bt32 = jlm::rvsdg::BitType::Create(32);
   jlm::rvsdg::bitslt_op slt(32);
   jlm::rvsdg::bitult_op ult(32);
   jlm::rvsdg::bitule_op ule(32);
@@ -77,7 +77,7 @@ test_unrollinfo()
 
   {
     jlm::rvsdg::Graph graph;
-    auto x = &jlm::tests::GraphImport::Create(graph, bt32, "x");
+    auto x = &jlm::rvsdg::GraphImport::Create(graph, bt32, "x");
     auto theta = create_theta(slt, add, x, x, x);
     auto ui = jlm::llvm::LoopUnrollInfo::create(theta);
 
@@ -221,15 +221,16 @@ static inline void
 test_unknown_boundaries()
 {
   using namespace jlm::llvm;
+  using namespace jlm::rvsdg;
 
-  auto bt = jlm::rvsdg::bittype::Create(32);
+  auto bt = jlm::rvsdg::BitType::Create(32);
   jlm::tests::TestOperation op({ bt }, { bt });
 
-  RvsdgModule rm(jlm::util::FilePath(""), "", "");
+  jlm::llvm::RvsdgModule rm(jlm::util::FilePath(""), "", "");
   auto & graph = rm.Rvsdg();
 
-  auto x = &jlm::tests::GraphImport::Create(graph, bt, "x");
-  auto y = &jlm::tests::GraphImport::Create(graph, bt, "y");
+  auto x = &jlm::rvsdg::GraphImport::Create(graph, bt, "x");
+  auto y = &jlm::rvsdg::GraphImport::Create(graph, bt, "y");
 
   auto theta = jlm::rvsdg::ThetaNode::create(&graph.GetRootRegion());
   auto lv1 = theta->AddLoopVar(x);

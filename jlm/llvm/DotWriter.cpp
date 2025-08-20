@@ -3,7 +3,7 @@
  * See COPYING for terms of redistribution.
  */
 
-#include <jlm/llvm/backend/dot/DotWriter.hpp>
+#include <jlm/llvm/DotWriter.hpp>
 #include <jlm/llvm/ir/operators/delta.hpp>
 #include <jlm/llvm/ir/RvsdgModule.hpp>
 #include <jlm/llvm/ir/types.hpp>
@@ -38,7 +38,7 @@ GetOrCreateTypeGraphNode(const rvsdg::Type & type, util::graph::Graph & typeGrap
   node.SetLabel(type.debug_string());
 
   // Some types get special handling, such as adding incoming edges from aggregate types
-  if (rvsdg::is<rvsdg::StateType>(type) || rvsdg::is<rvsdg::bittype>(type)
+  if (rvsdg::is<rvsdg::StateType>(type) || rvsdg::is<rvsdg::BitType>(type)
       || rvsdg::is<PointerType>(type) || rvsdg::is<FloatingPointType>(type)
       || rvsdg::is<VariableArgumentType>(type) || rvsdg::is<rvsdg::UnitType>(type))
   {
@@ -172,10 +172,13 @@ SetAdditionalNodeAttributes(
     util::graph::Node & node,
     util::graph::Graph * typeGraph)
 {
-  if (const auto delta = dynamic_cast<const llvm::DeltaNode *>(&rvsdgNode))
+  if (const auto delta = dynamic_cast<const rvsdg::DeltaNode *>(&rvsdgNode))
   {
-    node.SetAttribute("linkage", ToString(delta->GetOperation().linkage()));
-    node.SetAttribute("constant", delta->GetOperation().constant() ? "true" : "false");
+    if (auto op = dynamic_cast<const llvm::DeltaOperation *>(&delta->GetOperation()))
+    {
+      node.SetAttribute("linkage", ToString(op->linkage()));
+      node.SetAttribute("constant", op->constant() ? "true" : "false");
+    }
 
     if (typeGraph)
     {

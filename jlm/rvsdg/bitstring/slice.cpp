@@ -12,75 +12,74 @@
 namespace jlm::rvsdg
 {
 
-bitslice_op::~bitslice_op() noexcept
-{}
+BitSliceOperation::~BitSliceOperation() noexcept = default;
 
 bool
-bitslice_op::operator==(const Operation & other) const noexcept
+BitSliceOperation::operator==(const Operation & other) const noexcept
 {
-  auto op = dynamic_cast<const bitslice_op *>(&other);
+  auto op = dynamic_cast<const BitSliceOperation *>(&other);
   return op && op->low() == low() && op->high() == high() && op->argument(0) == argument(0);
 }
 
 std::string
-bitslice_op::debug_string() const
+BitSliceOperation::debug_string() const
 {
   return jlm::util::strfmt("SLICE[", low(), ":", high(), ")");
 }
 
 unop_reduction_path_t
-bitslice_op::can_reduce_operand(const jlm::rvsdg::Output * arg) const noexcept
+BitSliceOperation::can_reduce_operand(const jlm::rvsdg::Output * arg) const noexcept
 {
   auto node = TryGetOwnerNode<Node>(*arg);
-  auto & arg_type = *std::dynamic_pointer_cast<const bittype>(arg->Type());
+  auto & arg_type = *std::dynamic_pointer_cast<const BitType>(arg->Type());
 
   if ((low() == 0) && (high() == arg_type.nbits()))
     return unop_reduction_idempotent;
 
-  if (is<bitslice_op>(node))
+  if (is<BitSliceOperation>(node))
     return unop_reduction_narrow;
 
   if (is<bitconstant_op>(node))
     return unop_reduction_constant;
 
-  if (is<bitconcat_op>(node))
+  if (is<BitConcatOperation>(node))
     return unop_reduction_distribute;
 
   return unop_reduction_none;
 }
 
 jlm::rvsdg::Output *
-bitslice_op::reduce_operand(unop_reduction_path_t path, jlm::rvsdg::Output * arg) const
+BitSliceOperation::reduce_operand(unop_reduction_path_t path, jlm::rvsdg::Output * arg) const
 {
   if (path == unop_reduction_idempotent)
   {
     return arg;
   }
 
-  auto node = static_cast<node_output *>(arg)->node();
+  auto & node = AssertGetOwnerNode<SimpleNode>(*arg);
 
   if (path == unop_reduction_narrow)
   {
-    auto op = static_cast<const bitslice_op &>(node->GetOperation());
-    return jlm::rvsdg::bitslice(node->input(0)->origin(), low() + op.low(), high() + op.low());
+    auto op = static_cast<const BitSliceOperation &>(node.GetOperation());
+    return jlm::rvsdg::bitslice(node.input(0)->origin(), low() + op.low(), high() + op.low());
   }
 
   if (path == unop_reduction_constant)
   {
-    auto op = static_cast<const bitconstant_op &>(node->GetOperation());
+    auto op = static_cast<const bitconstant_op &>(node.GetOperation());
     std::string s(&op.value()[0] + low(), high() - low());
-    return create_bitconstant(arg->region(), s.c_str());
+    return create_bitconstant(arg->region(), BitValueRepresentation(s.c_str()));
   }
 
   if (path == unop_reduction_distribute)
   {
     size_t pos = 0, n = 0;
     std::vector<jlm::rvsdg::Output *> arguments;
-    for (n = 0; n < node->ninputs(); n++)
+    for (n = 0; n < node.ninputs(); n++)
     {
-      auto argument = node->input(n)->origin();
+      auto argument = node.input(n)->origin();
       size_t base = pos;
-      size_t nbits = std::static_pointer_cast<const bittype>(argument->Type())->nbits();
+      size_t nbits = std::static_pointer_cast<const BitType>(argument->Type())->nbits();
       pos = pos + nbits;
       if (base < high() && pos > low())
       {
@@ -98,17 +97,17 @@ bitslice_op::reduce_operand(unop_reduction_path_t path, jlm::rvsdg::Output * arg
 }
 
 std::unique_ptr<Operation>
-bitslice_op::copy() const
+BitSliceOperation::copy() const
 {
-  return std::make_unique<bitslice_op>(*this);
+  return std::make_unique<BitSliceOperation>(*this);
 }
 
 jlm::rvsdg::Output *
 bitslice(jlm::rvsdg::Output * argument, size_t low, size_t high)
 {
-  return CreateOpNode<bitslice_op>(
+  return CreateOpNode<BitSliceOperation>(
              { argument },
-             std::dynamic_pointer_cast<const jlm::rvsdg::bittype>(argument->Type()),
+             std::dynamic_pointer_cast<const jlm::rvsdg::BitType>(argument->Type()),
              low,
              high)
       .output(0);

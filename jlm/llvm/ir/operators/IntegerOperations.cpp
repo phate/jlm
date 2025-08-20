@@ -5,6 +5,8 @@
 
 #include <jlm/llvm/ir/operators/IntegerOperations.hpp>
 
+#include <jlm/rvsdg/bitstring/constant.hpp>
+
 namespace jlm::llvm
 {
 
@@ -30,6 +32,31 @@ IntegerConstantOperation::operator==(const Operation & other) const noexcept
 {
   const auto constant = dynamic_cast<const IntegerConstantOperation *>(&other);
   return constant && constant->Representation() == Representation();
+}
+
+std::optional<int64_t>
+IntegerConstantOperation::TryGetSignedConstantValue(const rvsdg::Output & output)
+{
+  const auto & normalized = NormalizeOutput(output);
+
+  if (const auto [_, constant] =
+          rvsdg::TryGetSimpleNodeAndOptionalOp<IntegerConstantOperation>(normalized);
+      constant)
+  {
+    const auto & rep = constant->Representation();
+    if (rep.is_known() && rep.nbits() <= 64)
+      return rep.to_int();
+  }
+  if (const auto [_, constant] =
+          rvsdg::TryGetSimpleNodeAndOptionalOp<rvsdg::bitconstant_op>(normalized);
+      constant)
+  {
+    const auto & rep = constant->Representation();
+    if (rep.is_known() && rep.nbits() <= 64)
+      return rep.to_int();
+  }
+
+  return std::nullopt;
 }
 
 IntegerBinaryOperation::~IntegerBinaryOperation() noexcept = default;

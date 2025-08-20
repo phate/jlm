@@ -20,17 +20,17 @@ namespace jlm::rvsdg
 
 struct type_of_value
 {
-  std::shared_ptr<const bittype>
-  operator()(const bitvalue_repr & repr) const
+  std::shared_ptr<const BitType>
+  operator()(const BitValueRepresentation & repr) const
   {
-    return bittype::Create(repr.nbits());
+    return BitType::Create(repr.nbits());
   }
 };
 
 struct format_value
 {
   std::string
-  operator()(const bitvalue_repr & repr) const
+  operator()(const BitValueRepresentation & repr) const
   {
     if (repr.is_known() && repr.nbits() <= 64)
       return jlm::util::strfmt("BITS", repr.nbits(), "(", repr.to_uint(), ")");
@@ -39,25 +39,26 @@ struct format_value
   }
 };
 
-typedef domain_const_op<bittype, bitvalue_repr, format_value, type_of_value> bitconstant_op;
+typedef domain_const_op<BitType, BitValueRepresentation, format_value, type_of_value>
+    bitconstant_op;
 
 inline bitconstant_op
 uint_constant_op(size_t nbits, uint64_t value)
 {
-  return bitconstant_op(bitvalue_repr(nbits, value));
+  return bitconstant_op(BitValueRepresentation(nbits, value));
 }
 
 inline bitconstant_op
 int_constant_op(size_t nbits, int64_t value)
 {
-  return bitconstant_op(bitvalue_repr(nbits, value));
+  return bitconstant_op(BitValueRepresentation(nbits, value));
 }
 
 // declare explicit instantiation
-extern template class domain_const_op<bittype, bitvalue_repr, format_value, type_of_value>;
+extern template class domain_const_op<BitType, BitValueRepresentation, format_value, type_of_value>;
 
 static inline jlm::rvsdg::Output *
-create_bitconstant(rvsdg::Region * region, const bitvalue_repr & vr)
+create_bitconstant(rvsdg::Region * region, const BitValueRepresentation & vr)
 {
   return CreateOpNode<bitconstant_op>(*region, vr).output(0);
 }
@@ -72,14 +73,14 @@ static inline jlm::rvsdg::Output *
 create_bitconstant_undefined(rvsdg::Region * region, size_t nbits)
 {
   std::string s(nbits, 'X');
-  return create_bitconstant(region, bitvalue_repr(s.c_str()));
+  return create_bitconstant(region, BitValueRepresentation(s.c_str()));
 }
 
 static inline jlm::rvsdg::Output *
 create_bitconstant_defined(rvsdg::Region * region, size_t nbits)
 {
   std::string s(nbits, 'D');
-  return create_bitconstant(region, bitvalue_repr(s.c_str()));
+  return create_bitconstant(region, BitValueRepresentation(s.c_str()));
 }
 
 }

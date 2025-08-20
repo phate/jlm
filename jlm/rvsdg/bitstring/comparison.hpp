@@ -20,7 +20,7 @@ public:
   ~MakeBitComparisonOperation() noexcept override;
 
   explicit MakeBitComparisonOperation(std::size_t nbits) noexcept
-      : BitCompareOperation(bittype::Create(nbits))
+      : BitCompareOperation(BitType::Create(nbits))
   {}
 
   bool
@@ -30,7 +30,8 @@ public:
   flags() const noexcept override;
 
   compare_result
-  reduce_constants(const bitvalue_repr & arg1, const bitvalue_repr & arg2) const override;
+  reduce_constants(const BitValueRepresentation & arg1, const BitValueRepresentation & arg2)
+      const override;
 
   std::string
   debug_string() const override;

@@ -13,14 +13,12 @@
 namespace jlm::rvsdg
 {
 
-/* bitstring type */
-
-class bittype final : public jlm::rvsdg::ValueType
+class BitType final : public ValueType
 {
 public:
-  ~bittype() noexcept override;
+  ~BitType() noexcept override;
 
-  inline constexpr bittype(size_t nbits)
+  explicit constexpr BitType(const size_t nbits)
       : nbits_(nbits)
   {}
 
@@ -52,7 +50,7 @@ public:
    * width. Usually this returns a singleton object instance
    * for the type
    */
-  static std::shared_ptr<const bittype>
+  static std::shared_ptr<const BitType>
   Create(std::size_t nbits);
 
 private:

@@ -28,7 +28,7 @@ TestTraceArgument()
   auto functionType = jlm::rvsdg::FunctionType::Create(
       { jlm::llvm::PointerType::Create(),
         jlm::llvm::PointerType::Create(),
-        jlm::rvsdg::bittype::Create(32),
+        jlm::rvsdg::BitType::Create(32),
         MemoryStateType::Create() },
       { MemoryStateType::Create() });
 
@@ -51,7 +51,7 @@ TestTraceArgument()
       StoreNonVolatileOperation::Create(storeAddress, storeData, { loadOutput[1] }, 32);
 
   auto lambdaOutput = lambda->finalize({ storeOutput[0] });
-  jlm::llvm::GraphExport::Create(*lambdaOutput, "f");
+  jlm::rvsdg::GraphExport::Create(*lambdaOutput, "f");
 
   // Act
   jlm::rvsdg::view(rvsdgModule->Rvsdg(), stdout);
@@ -84,7 +84,7 @@ TestLoad()
   std::cout << "Function Setup" << std::endl;
   auto functionType = jlm::rvsdg::FunctionType::Create(
       { jlm::llvm::PointerType::Create(), MemoryStateType::Create() },
-      { jlm::rvsdg::bittype::Create(32), MemoryStateType::Create() });
+      { jlm::rvsdg::BitType::Create(32), MemoryStateType::Create() });
 
   auto lambda = jlm::rvsdg::LambdaNode::Create(
       rvsdgModule->Rvsdg().GetRootRegion(),
@@ -96,11 +96,11 @@ TestLoad()
   auto loadOutput = LoadNonVolatileOperation::Create(
       loadAddress,
       { memoryStateArgument },
-      jlm::rvsdg::bittype::Create(32),
+      jlm::rvsdg::BitType::Create(32),
       32);
 
   auto lambdaOutput = lambda->finalize({ loadOutput[0], loadOutput[1] });
-  jlm::llvm::GraphExport::Create(*lambdaOutput, "f");
+  jlm::rvsdg::GraphExport::Create(*lambdaOutput, "f");
 
   // Act
   jlm::rvsdg::view(rvsdgModule->Rvsdg(), stdout);
@@ -160,7 +160,7 @@ TestStore()
   std::cout << "Function Setup" << std::endl;
   auto functionType = jlm::rvsdg::FunctionType::Create(
       { jlm::llvm::PointerType::Create(),
-        jlm::rvsdg::bittype::Create(32),
+        jlm::rvsdg::BitType::Create(32),
         MemoryStateType::Create() },
       { MemoryStateType::Create() });
 
@@ -176,7 +176,7 @@ TestStore()
       StoreNonVolatileOperation::Create(storeAddress, storeData, { memoryStateArgument }, 32);
 
   auto lambdaOutput = lambda->finalize({ storeOutput[0] });
-  jlm::llvm::GraphExport::Create(*lambdaOutput, "f");
+  jlm::rvsdg::GraphExport::Create(*lambdaOutput, "f");
 
   // Act
   jlm::rvsdg::view(rvsdgModule->Rvsdg(), stdout);
@@ -223,7 +223,7 @@ TestLoadStore()
   std::cout << "Function Setup" << std::endl;
   auto functionType = jlm::rvsdg::FunctionType::Create(
       { jlm::llvm::PointerType::Create(),
-        jlm::rvsdg::bittype::Create(32),
+        jlm::rvsdg::BitType::Create(32),
         MemoryStateType::Create() },
       { MemoryStateType::Create() });
 
@@ -244,7 +244,7 @@ TestLoadStore()
       StoreNonVolatileOperation::Create(loadOutput[0], storeData, { loadOutput[1] }, 32);
 
   auto lambdaOutput = lambda->finalize({ storeOutput[0] });
-  jlm::llvm::GraphExport::Create(*lambdaOutput, "f");
+  jlm::rvsdg::GraphExport::Create(*lambdaOutput, "f");
 
   // Act
   jlm::rvsdg::view(rvsdgModule->Rvsdg(), stdout);
@@ -295,9 +295,9 @@ TestThetaLoad()
   // Setup the function
   std::cout << "Function Setup" << std::endl;
   auto functionType = jlm::rvsdg::FunctionType::Create(
-      { jlm::rvsdg::bittype::Create(32),
-        jlm::rvsdg::bittype::Create(32),
-        jlm::rvsdg::bittype::Create(32),
+      { jlm::rvsdg::BitType::Create(32),
+        jlm::rvsdg::BitType::Create(32),
+        jlm::rvsdg::BitType::Create(32),
         jlm::llvm::PointerType::Create(),
         MemoryStateType::Create() },
       { jlm::llvm::PointerType::Create(), MemoryStateType::Create() });
@@ -330,7 +330,7 @@ TestThetaLoad()
   memoryStateArgument.post->divert_to(loadOutput[1]);
 
   auto lambdaOutput = lambda->finalize({ theta->output(3), theta->output(4) });
-  GraphExport::Create(*lambdaOutput, "f");
+  jlm::rvsdg::GraphExport::Create(*lambdaOutput, "f");
 
   auto lambdaRegion = lambda->subregion();
   jlm::rvsdg::view(rvsdgModule->Rvsdg(), stdout);
@@ -420,11 +420,11 @@ TestThetaStore()
   // Setup the function
   std::cout << "Function Setup" << std::endl;
   auto functionType = jlm::rvsdg::FunctionType::Create(
-      { jlm::rvsdg::bittype::Create(32),
-        jlm::rvsdg::bittype::Create(32),
-        jlm::rvsdg::bittype::Create(32),
+      { jlm::rvsdg::BitType::Create(32),
+        jlm::rvsdg::BitType::Create(32),
+        jlm::rvsdg::BitType::Create(32),
         jlm::llvm::PointerType::Create(),
-        jlm::rvsdg::bittype::Create(32),
+        jlm::rvsdg::BitType::Create(32),
         MemoryStateType::Create() },
       { MemoryStateType::Create() });
 
@@ -456,7 +456,7 @@ TestThetaStore()
   memoryStateArgument.post->divert_to(storeOutput[0]);
 
   auto lambdaOutput = lambda->finalize({ theta->output(5) });
-  GraphExport::Create(*lambdaOutput, "f");
+  jlm::rvsdg::GraphExport::Create(*lambdaOutput, "f");
 
   auto lambdaRegion = lambda->subregion();
   jlm::rvsdg::view(rvsdgModule->Rvsdg(), stdout);

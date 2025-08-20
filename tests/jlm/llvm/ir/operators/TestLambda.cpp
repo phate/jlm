@@ -42,7 +42,8 @@ TestArgumentIterators()
         rvsdgModule.Rvsdg().GetRootRegion(),
         LlvmLambdaOperation::Create(functionType, "f", linkage::external_linkage));
 
-    auto nullaryNode = jlm::tests::create_testop(lambda->subregion(), {}, { vt });
+    auto nullaryNode =
+        jlm::tests::TestOperation::create(lambda->subregion(), {}, { vt })->output(0);
 
     lambda->finalize({ nullaryNode });
 
@@ -50,7 +51,7 @@ TestArgumentIterators()
   }
 
   {
-    auto rvsdgImport = &jlm::tests::GraphImport::Create(rvsdgModule.Rvsdg(), vt, "");
+    auto rvsdgImport = &jlm::rvsdg::GraphImport::Create(rvsdgModule.Rvsdg(), vt, "");
 
     auto functionType = jlm::rvsdg::FunctionType::Create({ vt, vt, vt }, { vt, vt });
 
@@ -87,7 +88,7 @@ TestInvalidOperandRegion()
   auto lambdaNode = jlm::rvsdg::LambdaNode::Create(
       rvsdg->GetRootRegion(),
       LlvmLambdaOperation::Create(functionType, "f", linkage::external_linkage));
-  auto result = jlm::tests::create_testop(&rvsdg->GetRootRegion(), {}, { vt })[0];
+  auto result = jlm::tests::TestOperation::create(&rvsdg->GetRootRegion(), {}, { vt })->output(0);
 
   bool invalidRegionErrorCaught = false;
   try
@@ -118,7 +119,7 @@ TestRemoveLambdaInputsWhere()
   auto rvsdgModule = jlm::llvm::RvsdgModule::Create(jlm::util::FilePath(""), "", "");
   auto & rvsdg = rvsdgModule->Rvsdg();
 
-  auto x = &jlm::tests::GraphImport::Create(rvsdg, valueType, "x");
+  auto x = &jlm::rvsdg::GraphImport::Create(rvsdg, valueType, "x");
 
   auto lambdaNode = jlm::rvsdg::LambdaNode::Create(
       rvsdg.GetRootRegion(),
@@ -189,7 +190,7 @@ TestPruneLambdaInputs()
   auto rvsdgModule = jlm::llvm::RvsdgModule::Create(jlm::util::FilePath(""), "", "");
   auto & rvsdg = rvsdgModule->Rvsdg();
 
-  auto x = &jlm::tests::GraphImport::Create(rvsdg, valueType, "x");
+  auto x = &jlm::rvsdg::GraphImport::Create(rvsdg, valueType, "x");
 
   auto lambdaNode = jlm::rvsdg::LambdaNode::Create(
       rvsdg.GetRootRegion(),

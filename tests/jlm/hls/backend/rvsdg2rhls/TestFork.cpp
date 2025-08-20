@@ -18,7 +18,7 @@ ForkInsertion()
   using namespace jlm::llvm;
 
   // Arrange
-  auto bit32Type = rvsdg::bittype::Create(32);
+  auto bit32Type = rvsdg::BitType::Create(32);
   const auto functionType = jlm::rvsdg::FunctionType::Create(
       { bit32Type, bit32Type, bit32Type },
       { bit32Type, bit32Type, bit32Type });
@@ -45,7 +45,7 @@ ForkInsertion()
   loop->set_predicate(match);
 
   auto lambdaOutput = lambda->finalize({ loop->output(0), loop->output(1), loop->output(2) });
-  GraphExport::Create(*lambdaOutput, "");
+  rvsdg::GraphExport::Create(*lambdaOutput, "");
 
   rvsdg::view(rvsdgModule.Rvsdg(), stdout);
 
@@ -65,8 +65,8 @@ ForkInsertion()
     auto loop = util::AssertedCast<hls::LoopNode>(lambdaSubregion->Nodes().begin().ptr());
     assert(dynamic_cast<const hls::LoopNode *>(loop));
 
-    auto [forkNode, forkOperation] =
-        rvsdg::TryGetSimpleNodeAndOp<hls::ForkOperation>(*loop->subregion()->result(0)->origin());
+    auto [forkNode, forkOperation] = rvsdg::TryGetSimpleNodeAndOptionalOp<hls::ForkOperation>(
+        *loop->subregion()->result(0)->origin());
     assert(forkNode && forkOperation);
     assert(forkNode->ninputs() == 1);
     assert(forkNode->noutputs() == 4);
@@ -83,7 +83,7 @@ ConstantForkInsertion()
   using namespace jlm::llvm;
 
   // Arrange
-  auto bit32Type = rvsdg::bittype::Create(32);
+  auto bit32Type = rvsdg::BitType::Create(32);
   const auto functionType = rvsdg::FunctionType::Create({ bit32Type }, { bit32Type });
 
   RvsdgModule rvsdgModule(util::FilePath(""), "", "");
@@ -106,7 +106,7 @@ ConstantForkInsertion()
   loop->set_predicate(match);
 
   auto lambdaOutput = lambda->finalize({ loop->output(0) });
-  GraphExport::Create(*lambdaOutput, "");
+  rvsdg::GraphExport::Create(*lambdaOutput, "");
 
   rvsdg::view(rvsdgModule.Rvsdg(), stdout);
 
@@ -130,8 +130,8 @@ ConstantForkInsertion()
     assert(rvsdg::is<hls::LoopOperation>(loopNode));
     auto loop = util::AssertedCast<hls::LoopNode>(loopNode);
 
-    auto [forkNode, forkOperation] =
-        rvsdg::TryGetSimpleNodeAndOp<hls::ForkOperation>(*loop->subregion()->result(0)->origin());
+    auto [forkNode, forkOperation] = rvsdg::TryGetSimpleNodeAndOptionalOp<hls::ForkOperation>(
+        *loop->subregion()->result(0)->origin());
     assert(forkNode && forkOperation);
     assert(forkNode->ninputs() == 1);
     assert(forkNode->noutputs() == 2);
@@ -140,7 +140,7 @@ ConstantForkInsertion()
     auto matchNode = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*forkNode->input(0)->origin());
     auto bitsUltNode = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*matchNode->input(0)->origin());
     auto [cForkNode, cForkOperation] =
-        rvsdg::TryGetSimpleNodeAndOp<hls::ForkOperation>(*bitsUltNode->input(1)->origin());
+        rvsdg::TryGetSimpleNodeAndOptionalOp<hls::ForkOperation>(*bitsUltNode->input(1)->origin());
     assert(cForkNode->ninputs() == 1);
     assert(cForkNode->noutputs() == 2);
     assert(cForkOperation->IsConstant() == true);

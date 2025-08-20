@@ -17,7 +17,7 @@ test_initialization()
   auto n1 = jlm::tests::TestOperation::create(&graph.GetRootRegion(), {}, {});
   auto n2 = jlm::tests::TestOperation::create(&graph.GetRootRegion(), {}, { vtype });
 
-  jlm::tests::GraphExport::Create(*n2->output(0), "dummy");
+  jlm::rvsdg::GraphExport::Create(*n2->output(0), "dummy");
 
   bool n1_visited = false;
   bool n2_visited = false;
@@ -44,7 +44,7 @@ test_basic_traversal()
       { n1->output(0), n1->output(1) },
       { type });
 
-  jlm::tests::GraphExport::Create(*n2->output(0), "dummy");
+  jlm::rvsdg::GraphExport::Create(*n2->output(0), "dummy");
 
   {
     const jlm::rvsdg::Node * tmp = nullptr;
@@ -57,7 +57,7 @@ test_basic_traversal()
     assert(tmp == 0);
   }
 
-  assert(!has_active_trackers(&graph));
+  assert(!graph.GetRootRegion().HasActiveTrackers());
 }
 
 static void
@@ -86,7 +86,7 @@ test_order_enforcement_traversal()
     assert(tmp == nullptr);
   }
 
-  assert(!has_active_trackers(&graph));
+  assert(!graph.GetRootRegion().HasActiveTrackers());
 }
 
 static void

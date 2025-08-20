@@ -18,7 +18,7 @@ TestWithMatch()
   using namespace jlm::llvm;
 
   auto vt = jlm::tests::ValueType::Create();
-  auto ft = jlm::rvsdg::FunctionType::Create({ jlm::rvsdg::bittype::Create(1), vt, vt }, { vt });
+  auto ft = jlm::rvsdg::FunctionType::Create({ jlm::rvsdg::BitType::Create(1), vt, vt }, { vt });
 
   RvsdgModule rm(jlm::util::FilePath(""), "", "");
 
@@ -35,7 +35,7 @@ TestWithMatch()
   auto ex = gamma->AddExitVar({ ev1.branchArgument[0], ev2.branchArgument[1] });
 
   auto f = lambda->finalize({ ex.output });
-  jlm::llvm::GraphExport::Create(*f, "");
+  jlm::rvsdg::GraphExport::Create(*f, "");
 
   jlm::rvsdg::view(rm.Rvsdg(), stdout);
 
@@ -72,7 +72,7 @@ TestWithoutMatch()
   auto ex = gamma->AddExitVar({ ev1.branchArgument[0], ev2.branchArgument[1] });
 
   auto f = lambda->finalize({ ex.output });
-  jlm::llvm::GraphExport::Create(*f, "");
+  jlm::rvsdg::GraphExport::Create(*f, "");
 
   jlm::rvsdg::view(rm.Rvsdg(), stdout);
 

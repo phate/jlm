@@ -16,7 +16,7 @@ namespace jlm::llvm
 
 // FIXME: Implement our own value representation instead of re-using the bitstring value
 // representation
-using IntegerValueRepresentation = rvsdg::bitvalue_repr;
+using IntegerValueRepresentation = rvsdg::BitValueRepresentation;
 
 /**
  * Represents an LLVM integer constant
@@ -27,7 +27,7 @@ public:
   ~IntegerConstantOperation() override;
 
   explicit IntegerConstantOperation(IntegerValueRepresentation representation)
-      : NullaryOperation(rvsdg::bittype::Create(representation.nbits())),
+      : NullaryOperation(rvsdg::BitType::Create(representation.nbits())),
         Representation_(std::move(representation))
   {}
 
@@ -58,6 +58,24 @@ public:
     return Create(region, { numBits, value });
   }
 
+  /**
+   * Gets the value of the given \p output as a compile time constant, if possible.
+   * The constant is interpreted as a signed value, and sign extended to int64 if needed.
+   * This function does not perform any constant folding.
+   * @return the integer value of the output, or nullopt if it could not be determined.
+   */
+  static std::optional<std::int64_t>
+  TryGetSignedConstantValue(const rvsdg::Output & output);
+
+  /**
+   * Gets the value of the given \p output as a compile time constant, if possible.
+   * The constant is interpreted as an unsigned value, and zero extended to uint64 if needed.
+   * This function does not perform any constant folding.
+   * @return the integer value of the output, or nullopt if it could not be determined.
+   */
+  static std::optional<std::int64_t>
+  TryGetUnsignedConstantValue(const rvsdg::Output & output);
+
 private:
   IntegerValueRepresentation Representation_;
 };
@@ -74,14 +92,14 @@ public:
       const std::size_t numArgumentBits,
       const std::size_t numResultBits) noexcept
       : BinaryOperation(
-            { rvsdg::bittype::Create(numArgumentBits), rvsdg::bittype::Create(numArgumentBits) },
-            rvsdg::bittype::Create(numResultBits))
+            { rvsdg::BitType::Create(numArgumentBits), rvsdg::BitType::Create(numArgumentBits) },
+            rvsdg::BitType::Create(numResultBits))
   {}
 
-  [[nodiscard]] const rvsdg::bittype &
+  [[nodiscard]] const rvsdg::BitType &
   Type() const noexcept
   {
-    return *util::AssertedCast<const rvsdg::bittype>(argument(0).get());
+    return *util::AssertedCast<const rvsdg::BitType>(argument(0).get());
   }
 };
 

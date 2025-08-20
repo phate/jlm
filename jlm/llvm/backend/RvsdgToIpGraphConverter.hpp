@@ -17,6 +17,7 @@ class StatisticsCollector;
 
 namespace jlm::rvsdg
 {
+class DeltaNode;
 class Graph;
 class GammaNode;
 class Input;
@@ -31,7 +32,6 @@ namespace jlm::llvm
 
 class ControlFlowGraph;
 class data_node_init;
-class DeltaNode;
 class InterProceduralGraphModule;
 class RvsdgModule;
 class Variable;
@@ -75,7 +75,7 @@ private:
   ConvertNode(const rvsdg::Node & node);
 
   void
-  ConvertDeltaNode(const DeltaNode & deltaNode);
+  ConvertDeltaNode(const rvsdg::DeltaNode & deltaNode);
 
   void
   ConvertPhiNode(const rvsdg::PhiNode & phiNode);
@@ -99,7 +99,7 @@ private:
   ConvertRegion(rvsdg::Region & region);
 
   std::unique_ptr<data_node_init>
-  CreateInitialization(const DeltaNode & deltaNode);
+  CreateInitialization(const rvsdg::DeltaNode & deltaNode);
 
   static bool
   RequiresSsaPhiOperation(const rvsdg::ThetaNode::LoopVar & loopVar, const Variable & v);

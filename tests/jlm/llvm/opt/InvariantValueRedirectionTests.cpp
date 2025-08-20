@@ -70,7 +70,7 @@ TestGamma()
 
   auto lambdaOutput = lambdaNode->finalize({ gammaNode1->output(0), gammaNode1->output(1) });
 
-  GraphExport::Create(*lambdaOutput, "test");
+  jlm::rvsdg::GraphExport::Create(*lambdaOutput, "test");
 
   // Act
   RunInvariantValueRedirection(*rvsdgModule);
@@ -123,7 +123,7 @@ TestTheta()
   auto lambdaOutput =
       lambdaNode->finalize({ thetaVar1.output, thetaVar2.output, thetaVar3.output });
 
-  GraphExport::Create(*lambdaOutput, "test");
+  jlm::rvsdg::GraphExport::Create(*lambdaOutput, "test");
 
   // Act
   RunInvariantValueRedirection(*rvsdgModule);
@@ -208,7 +208,7 @@ TestCall()
         { controlResult, xArgument, yArgument, ioStateArgument, memoryStateArgument });
 
     lambdaOutputTest2 = lambdaNode->finalize(outputs(&callNode));
-    GraphExport::Create(*lambdaOutputTest2, "test2");
+    jlm::rvsdg::GraphExport::Create(*lambdaOutputTest2, "test2");
   }
 
   // Act
@@ -310,7 +310,7 @@ TestCallWithMemoryStateNodes()
 
     lambdaOutputTest2 = lambdaNode->finalize(
         { callNode.output(0), &CallOperation::GetIOStateOutput(callNode), &lambdaExitMergeResult });
-    GraphExport::Create(*lambdaOutputTest2, "test2");
+    jlm::rvsdg::GraphExport::Create(*lambdaOutputTest2, "test2");
   }
 
   // Act
@@ -345,7 +345,7 @@ TestCallWithMissingMemoryStateNodes()
   auto ioStateType = IOStateType::Create();
   auto memoryStateType = MemoryStateType::Create();
   auto valueType = jlm::tests::ValueType::Create();
-  auto int32Type = bittype::Create(32);
+  auto int32Type = BitType::Create(32);
   auto functionType = FunctionType::Create(
       { valueType, ioStateType, memoryStateType },
       { int32Type, ioStateType, memoryStateType });
@@ -411,7 +411,7 @@ TestCallWithMissingMemoryStateNodes()
 
     lambdaOutputTest2 = lambdaNode->finalize(
         { callNode.output(0), &CallOperation::GetIOStateOutput(callNode), &lambdaExitMergeResult });
-    jlm::llvm::GraphExport::Create(*lambdaOutputTest2, "test2");
+    GraphExport::Create(*lambdaOutputTest2, "test2");
   }
 
   std::cout << view(&rvsdg.GetRootRegion()) << std::flush;
@@ -433,16 +433,17 @@ TestCallWithMissingMemoryStateNodes()
   const auto lambdaExitMerge2 = GetMemoryStateExitMerge(lambdaNode2);
   assert(lambdaEntrySplit2->noutputs() == 1);
   assert(lambdaExitMerge2->ninputs() == 1);
-  const auto & [callExitSplitNode, _] = TryGetSimpleNodeAndOp<CallExitMemoryStateSplitOperation>(
-      *lambdaExitMerge2->input(0)->origin());
+  const auto & [callExitSplitNode, _] =
+      TryGetSimpleNodeAndOptionalOp<CallExitMemoryStateSplitOperation>(
+          *lambdaExitMerge2->input(0)->origin());
   assert(callExitSplitNode->noutputs() == 1);
   const auto & [callNode, calOperation] =
-      TryGetSimpleNodeAndOp<CallOperation>(*callExitSplitNode->input(0)->origin());
+      TryGetSimpleNodeAndOptionalOp<CallOperation>(*callExitSplitNode->input(0)->origin());
   assert(callNode->noutputs() == 3);
   assert(callNode->ninputs() == 4);
   const auto & memoryStateInput = CallOperation::GetMemoryStateInput(*callNode);
   const auto & [callEntryMergeNode, callEntryMergeOperation] =
-      TryGetSimpleNodeAndOp<CallEntryMemoryStateMergeOperation>(*memoryStateInput.origin());
+      TryGetSimpleNodeAndOptionalOp<CallEntryMemoryStateMergeOperation>(*memoryStateInput.origin());
   assert(callEntryMergeNode->ninputs() == 1);
   assert(callEntryMergeNode->input(0)->origin() == lambdaEntrySplit2->output(0));
 }

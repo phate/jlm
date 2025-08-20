@@ -17,6 +17,7 @@ static inline void
 test_two_phis()
 {
   using namespace jlm::llvm;
+  using namespace jlm::tests;
 
   auto vt = jlm::tests::ValueType::Create();
   InterProceduralGraphModule module(jlm::util::FilePath(""), "", "");
@@ -34,16 +35,16 @@ test_two_phis()
   bb3->add_outedge(bb4);
   bb4->add_outedge(cfg.exit());
 
-  bb2->append_last(jlm::tests::create_testop_tac({}, { vt }));
+  bb2->append_last(TestOperation::CreateTac({}, { vt }));
   auto v1 = bb2->last()->result(0);
 
-  bb2->append_last(jlm::tests::create_testop_tac({}, { vt }));
+  bb2->append_last(TestOperation::CreateTac({}, { vt }));
   auto v3 = bb2->last()->result(0);
 
-  bb3->append_last(jlm::tests::create_testop_tac({}, { vt }));
+  bb3->append_last(TestOperation::CreateTac({}, { vt }));
   auto v2 = bb3->last()->result(0);
 
-  bb3->append_last(jlm::tests::create_testop_tac({}, { vt }));
+  bb3->append_last(TestOperation::CreateTac({}, { vt }));
   auto v4 = bb3->last()->result(0);
 
   bb4->append_last(SsaPhiOperation::create({ { v1, bb2 }, { v2, bb3 } }, vt));

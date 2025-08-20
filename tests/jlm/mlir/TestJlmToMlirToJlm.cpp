@@ -23,7 +23,7 @@ TestUndef()
   {
     // Create an undef operation
     std::cout << "Undef Operation" << std::endl;
-    UndefValueOperation::Create(graph->GetRootRegion(), jlm::rvsdg::bittype::Create(32));
+    UndefValueOperation::Create(graph->GetRootRegion(), jlm::rvsdg::BitType::Create(32));
 
     // Convert the RVSDG to MLIR
     std::cout << "Convert to MLIR" << std::endl;
@@ -59,8 +59,8 @@ TestUndef()
       assert(convertedUndef != nullptr);
 
       auto outputType = convertedUndef->result(0);
-      assert(jlm::rvsdg::is<const jlm::rvsdg::bittype>(outputType));
-      assert(std::dynamic_pointer_cast<const jlm::rvsdg::bittype>(outputType)->nbits() == 32);
+      assert(jlm::rvsdg::is<const jlm::rvsdg::BitType>(outputType));
+      assert(std::dynamic_pointer_cast<const jlm::rvsdg::BitType>(outputType)->nbits() == 32);
     }
   }
 }
@@ -84,8 +84,8 @@ TestAlloca()
     std::cout << "Alloca Operation" << std::endl;
     jlm::rvsdg::CreateOpNode<AllocaOperation>(
         { bits },
-        jlm::rvsdg::bittype::Create(64),
-        jlm::rvsdg::bittype::Create(32),
+        jlm::rvsdg::BitType::Create(64),
+        jlm::rvsdg::BitType::Create(32),
         4);
 
     // Convert the RVSDG to MLIR
@@ -137,16 +137,16 @@ TestAlloca()
         {
           assert(allocaOp->alignment() == 4);
 
-          assert(jlm::rvsdg::is<jlm::rvsdg::bittype>(allocaOp->ValueType()));
+          assert(jlm::rvsdg::is<jlm::rvsdg::BitType>(allocaOp->ValueType()));
           auto valueBitType =
-              dynamic_cast<const jlm::rvsdg::bittype *>(allocaOp->ValueType().get());
+              dynamic_cast<const jlm::rvsdg::BitType *>(allocaOp->ValueType().get());
           assert(valueBitType->nbits() == 64);
 
           assert(allocaOp->narguments() == 1);
 
-          assert(jlm::rvsdg::is<jlm::rvsdg::bittype>(allocaOp->argument(0)));
+          assert(jlm::rvsdg::is<jlm::rvsdg::BitType>(allocaOp->argument(0)));
           auto inputBitType =
-              dynamic_cast<const jlm::rvsdg::bittype *>(allocaOp->argument(0).get());
+              dynamic_cast<const jlm::rvsdg::BitType *>(allocaOp->argument(0).get());
           assert(inputBitType->nbits() == 32);
 
           assert(allocaOp->nresults() == 2);
@@ -184,7 +184,7 @@ TestLoad()
     auto pointerArgument = lambda->GetFunctionArguments().at(2);
 
     // Create load operation
-    auto loadType = jlm::rvsdg::bittype::Create(32);
+    auto loadType = jlm::rvsdg::BitType::Create(32);
     auto loadOp = jlm::llvm::LoadNonVolatileOperation(loadType, 1, 4);
     auto & subregion = *(lambda->subregion());
     LoadNonVolatileOperation::Create(
@@ -249,11 +249,11 @@ TestLoad()
       assert(is<jlm::llvm::PointerType>(convertedLoad->input(0)->Type()));
       assert(is<jlm::llvm::MemoryStateType>(convertedLoad->input(1)->Type()));
 
-      assert(is<jlm::rvsdg::bittype>(convertedLoad->output(0)->Type()));
+      assert(is<jlm::rvsdg::BitType>(convertedLoad->output(0)->Type()));
       assert(is<jlm::llvm::MemoryStateType>(convertedLoad->output(1)->Type()));
 
       auto outputBitType =
-          std::dynamic_pointer_cast<const jlm::rvsdg::bittype>(convertedLoad->output(0)->Type());
+          std::dynamic_pointer_cast<const jlm::rvsdg::BitType>(convertedLoad->output(0)->Type());
       assert(outputBitType->nbits() == 32);
     }
   }
@@ -270,7 +270,7 @@ TestStore()
   auto graph = &rvsdgModule->Rvsdg();
 
   {
-    auto bitsType = jlm::rvsdg::bittype::Create(32);
+    auto bitsType = jlm::rvsdg::BitType::Create(32);
     auto functionType = jlm::rvsdg::FunctionType::Create(
         { IOStateType::Create(), MemoryStateType::Create(), PointerType::Create(), bitsType },
         { IOStateType::Create(), MemoryStateType::Create() });
@@ -343,13 +343,13 @@ TestStore()
       assert(convertedStoreOperation->NumMemoryStates() == 1);
 
       assert(is<jlm::llvm::PointerType>(convertedStore->input(0)->Type()));
-      assert(is<jlm::rvsdg::bittype>(convertedStore->input(1)->Type()));
+      assert(is<jlm::rvsdg::BitType>(convertedStore->input(1)->Type()));
       assert(is<jlm::llvm::MemoryStateType>(convertedStore->input(2)->Type()));
 
       assert(is<jlm::llvm::MemoryStateType>(convertedStore->output(0)->Type()));
 
       auto inputBitType =
-          std::dynamic_pointer_cast<const jlm::rvsdg::bittype>(convertedStore->input(1)->Type());
+          std::dynamic_pointer_cast<const jlm::rvsdg::BitType>(convertedStore->input(1)->Type());
       assert(inputBitType->nbits() == 32);
     }
   }
@@ -366,7 +366,7 @@ TestSext()
   auto graph = &rvsdgModule->Rvsdg();
   {
 
-    auto bitsType = jlm::rvsdg::bittype::Create(32);
+    auto bitsType = jlm::rvsdg::BitType::Create(32);
     auto functionType = jlm::rvsdg::FunctionType::Create({ bitsType }, {});
     auto lambda = jlm::rvsdg::LambdaNode::Create(
         graph->GetRootRegion(),
@@ -441,7 +441,7 @@ TestSitofp()
   auto graph = &rvsdgModule->Rvsdg();
   {
 
-    auto bitsType = jlm::rvsdg::bittype::Create(32);
+    auto bitsType = jlm::rvsdg::BitType::Create(32);
     auto floatType = jlm::llvm::FloatingPointType::Create(jlm::llvm::fpsize::dbl);
     auto functionType = jlm::rvsdg::FunctionType::Create({ bitsType }, {});
     auto lambda = jlm::rvsdg::LambdaNode::Create(
@@ -494,7 +494,7 @@ TestSitofp()
       auto convertedSitofp = dynamic_cast<const SIToFPOperation *>(
           &convertedLambda->subregion()->Nodes().begin()->GetOperation());
 
-      assert(jlm::rvsdg::is<jlm::rvsdg::bittype>(*convertedSitofp->argument(0).get()));
+      assert(jlm::rvsdg::is<jlm::rvsdg::BitType>(*convertedSitofp->argument(0).get()));
       assert(jlm::rvsdg::is<jlm::llvm::FloatingPointType>(*convertedSitofp->result(0).get()));
     }
   }
@@ -650,7 +650,7 @@ TestGetElementPtr()
   auto graph = &rvsdgModule->Rvsdg();
   {
     auto pointerType = PointerType::Create();
-    auto bitType = jlm::rvsdg::bittype::Create(32);
+    auto bitType = jlm::rvsdg::BitType::Create(32);
 
     auto functionType = jlm::rvsdg::FunctionType::Create({ pointerType, bitType }, {});
     auto lambda = jlm::rvsdg::LambdaNode::Create(
@@ -723,8 +723,8 @@ TestGetElementPtr()
 
       assert(is<ArrayType>(convertedGep->GetPointeeType()));
       assert(is<PointerType>(convertedGep->result(0)));
-      assert(is<jlm::rvsdg::bittype>(convertedGep->argument(1)));
-      assert(is<jlm::rvsdg::bittype>(convertedGep->argument(2)));
+      assert(is<jlm::rvsdg::BitType>(convertedGep->argument(1)));
+      assert(is<jlm::rvsdg::BitType>(convertedGep->argument(2)));
     }
   }
 }
@@ -739,26 +739,28 @@ TestDelta()
   auto rvsdgModule = RvsdgModule::Create(jlm::util::FilePath(""), "", "");
   auto graph = &rvsdgModule->Rvsdg();
   {
-    auto bitType = jlm::rvsdg::bittype::Create(32);
+    auto bitType = jlm::rvsdg::BitType::Create(32);
 
-    auto delta1 = jlm::llvm::DeltaNode::Create(
+    auto delta1 = jlm::rvsdg::DeltaNode::Create(
         &graph->GetRootRegion(),
-        bitType,
-        "non-constant-delta",
-        linkage::external_linkage,
-        "section",
-        false);
+        jlm::llvm::DeltaOperation::Create(
+            bitType,
+            "non-constant-delta",
+            linkage::external_linkage,
+            "section",
+            false));
 
     auto bitConstant = jlm::rvsdg::create_bitconstant(delta1->subregion(), 32, 1);
     delta1->finalize(bitConstant);
 
-    auto delta2 = jlm::llvm::DeltaNode::Create(
+    auto delta2 = jlm::rvsdg::DeltaNode::Create(
         &graph->GetRootRegion(),
-        bitType,
-        "constant-delta",
-        linkage::external_linkage,
-        "section",
-        true);
+        jlm::llvm::DeltaOperation::Create(
+            bitType,
+            "constant-delta",
+            linkage::external_linkage,
+            "section",
+            true));
     auto bitConstant2 = jlm::rvsdg::create_bitconstant(delta2->subregion(), 32, 1);
     delta2->finalize(bitConstant2);
 
@@ -815,21 +817,22 @@ TestDelta()
       assert(region->nnodes() == 2);
       for (auto & node : region->Nodes())
       {
-        auto convertedDelta = jlm::util::AssertedCast<jlm::llvm::DeltaNode>(&node);
+        auto convertedDelta = jlm::util::AssertedCast<jlm::rvsdg::DeltaNode>(&node);
         assert(convertedDelta->subregion()->nnodes() == 1);
+        auto dop = jlm::util::AssertedCast<const jlm::llvm::DeltaOperation>(&node.GetOperation());
 
         if (convertedDelta->constant())
         {
-          assert(convertedDelta->name() == "constant-delta");
+          assert(dop->name() == "constant-delta");
         }
         else
         {
-          assert(convertedDelta->name() == "non-constant-delta");
+          assert(dop->name() == "non-constant-delta");
         }
 
-        assert(is<jlm::rvsdg::bittype>(*convertedDelta->Type()));
-        assert(convertedDelta->linkage() == linkage::external_linkage);
-        assert(convertedDelta->Section() == "section");
+        assert(is<jlm::rvsdg::BitType>(*dop->Type()));
+        assert(dop->linkage() == linkage::external_linkage);
+        assert(dop->Section() == "section");
 
         auto op = convertedDelta->subregion()->Nodes().begin();
         assert(is<jlm::llvm::IntegerConstantOperation>(op->GetOperation()));
@@ -851,7 +854,7 @@ TestConstantDataArray()
   {
     auto bitConstant1 = jlm::rvsdg::create_bitconstant(&graph->GetRootRegion(), 32, 1);
     auto bitConstant2 = jlm::rvsdg::create_bitconstant(&graph->GetRootRegion(), 32, 2);
-    auto bitType = jlm::rvsdg::bittype::Create(32);
+    auto bitType = jlm::rvsdg::BitType::Create(32);
     jlm::llvm::ConstantDataArray::Create({ bitConstant1, bitConstant2 });
 
     // Convert the RVSDG to MLIR
@@ -904,10 +907,10 @@ TestConstantDataArray()
           auto resultType = constantDataArray->result(0);
           auto arrayType = dynamic_cast<const jlm::llvm::ArrayType *>(resultType.get());
           assert(arrayType);
-          assert(is<jlm::rvsdg::bittype>(arrayType->element_type()));
+          assert(is<jlm::rvsdg::BitType>(arrayType->element_type()));
           assert(arrayType->nelements() == 2);
-          assert(is<jlm::rvsdg::bittype>(constantDataArray->argument(0)));
-          assert(is<jlm::rvsdg::bittype>(constantDataArray->argument(1)));
+          assert(is<jlm::rvsdg::BitType>(constantDataArray->argument(0)));
+          assert(is<jlm::rvsdg::BitType>(constantDataArray->argument(1)));
         }
       }
       assert(foundConstantDataArray);
@@ -926,7 +929,7 @@ TestConstantAggregateZero()
   auto graph = &rvsdgModule->Rvsdg();
 
   {
-    auto bitType = jlm::rvsdg::bittype::Create(32);
+    auto bitType = jlm::rvsdg::BitType::Create(32);
     auto arrayType = jlm::llvm::ArrayType::Create(bitType, 2);
     ConstantAggregateZeroOperation::Create(graph->GetRootRegion(), arrayType);
 
@@ -966,7 +969,7 @@ TestConstantAggregateZero()
       auto resultType = convertedConstantAggregateZero->result(0);
       auto arrayType = dynamic_cast<const jlm::llvm::ArrayType *>(resultType.get());
       assert(arrayType);
-      assert(is<jlm::rvsdg::bittype>(arrayType->element_type()));
+      assert(is<jlm::rvsdg::BitType>(arrayType->element_type()));
       assert(arrayType->nelements() == 2);
     }
   }
@@ -983,7 +986,7 @@ TestVarArgList()
   auto graph = &rvsdgModule->Rvsdg();
 
   {
-    auto bitType = jlm::rvsdg::bittype::Create(32);
+    auto bitType = jlm::rvsdg::BitType::Create(32);
     auto bits1 = jlm::rvsdg::create_bitconstant(&graph->GetRootRegion(), 32, 1);
     auto bits2 = jlm::rvsdg::create_bitconstant(&graph->GetRootRegion(), 32, 2);
     jlm::llvm::VariadicArgumentListOperation::Create(graph->GetRootRegion(), { bits1, bits2 });
@@ -1034,8 +1037,8 @@ TestVarArgList()
           assert(convertedVarArgOp->narguments() == 2);
           auto resultType = convertedVarArgOp->result(0);
           assert(is<jlm::llvm::VariableArgumentType>(resultType));
-          assert(is<jlm::rvsdg::bittype>(convertedVarArgOp->argument(0)));
-          assert(is<jlm::rvsdg::bittype>(convertedVarArgOp->argument(1)));
+          assert(is<jlm::rvsdg::BitType>(convertedVarArgOp->argument(0)));
+          assert(is<jlm::rvsdg::BitType>(convertedVarArgOp->argument(1)));
           foundVarArgOp = true;
         }
       }
@@ -1210,8 +1213,8 @@ TestTrunc()
   auto graph = &rvsdgModule->Rvsdg();
 
   {
-    auto bitType1 = jlm::rvsdg::bittype::Create(64);
-    auto bitType2 = jlm::rvsdg::bittype::Create(32);
+    auto bitType1 = jlm::rvsdg::BitType::Create(64);
+    auto bitType2 = jlm::rvsdg::BitType::Create(32);
     auto constOp = jlm::rvsdg::create_bitconstant(&graph->GetRootRegion(), 64, 2);
     jlm::rvsdg::CreateOpNode<TruncOperation>({ constOp }, bitType1, bitType2);
 
@@ -1260,11 +1263,11 @@ TestTrunc()
         {
           assert(convertedTruncOp->nresults() == 1);
           assert(convertedTruncOp->narguments() == 1);
-          auto inputBitType = jlm::util::AssertedCast<const jlm::rvsdg::bittype>(
+          auto inputBitType = jlm::util::AssertedCast<const jlm::rvsdg::BitType>(
               convertedTruncOp->argument(0).get());
           assert(inputBitType->nbits() == 64);
           auto outputBitType =
-              jlm::util::AssertedCast<const jlm::rvsdg::bittype>(convertedTruncOp->result(0).get());
+              jlm::util::AssertedCast<const jlm::rvsdg::BitType>(convertedTruncOp->result(0).get());
           assert(outputBitType->nbits() == 32);
           foundTruncOp = true;
         }
@@ -1459,7 +1462,7 @@ TestPointerGraphImport()
   {
     jlm::llvm::GraphImport::Create(
         *graph,
-        jlm::rvsdg::bittype::Create(32),
+        jlm::rvsdg::BitType::Create(32),
         PointerType::Create(),
         "test",
         linkage::external_linkage);
@@ -1510,7 +1513,7 @@ TestPointerGraphImport()
       assert(imp);
       assert(imp->Name() == "test");
       assert(imp->Linkage() == linkage::external_linkage);
-      assert(*imp->ValueType() == *jlm::rvsdg::bittype::Create(32));
+      assert(*imp->ValueType() == *jlm::rvsdg::BitType::Create(32));
       assert(*imp->ImportedType() == *PointerType::Create());
     }
   }
@@ -1542,7 +1545,7 @@ TestIOBarrier()
     // Create the IOBarrier operation
     jlm::rvsdg::CreateOpNode<jlm::llvm::IOBarrierOperation>(
         { value, ioStateArgument },
-        jlm::rvsdg::bittype::Create(32));
+        jlm::rvsdg::BitType::Create(32));
 
     // Finalize the lambda
     lambda->finalize({});
@@ -1617,7 +1620,7 @@ TestIOBarrier()
 
           // Check that the first input is the 32-bit value
           auto valueType =
-              dynamic_cast<const jlm::rvsdg::bittype *>(ioBarrierOp->argument(0).get());
+              dynamic_cast<const jlm::rvsdg::BitType *>(ioBarrierOp->argument(0).get());
           assert(valueType);
           assert(valueType->nbits() == 32);
 
@@ -1626,7 +1629,7 @@ TestIOBarrier()
           assert(ioStateType);
 
           // Check that the output type matches the input value type
-          auto outputType = dynamic_cast<const jlm::rvsdg::bittype *>(ioBarrierOp->result(0).get());
+          auto outputType = dynamic_cast<const jlm::rvsdg::BitType *>(ioBarrierOp->result(0).get());
           assert(outputType);
           assert(outputType->nbits() == 32);
         }
@@ -1694,7 +1697,7 @@ TestMalloc()
         {
           assert(convertedMallocOp->nresults() == 2);
           assert(convertedMallocOp->narguments() == 1);
-          auto inputBitType = jlm::util::AssertedCast<const jlm::rvsdg::bittype>(
+          auto inputBitType = jlm::util::AssertedCast<const jlm::rvsdg::BitType>(
               convertedMallocOp->argument(0).get());
           assert(inputBitType->nbits() == 64);
           assert(jlm::rvsdg::is<jlm::llvm::PointerType>(convertedMallocOp->result(0)));

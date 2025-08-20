@@ -25,9 +25,9 @@ test1()
   RvsdgModule rm(jlm::util::FilePath(""), "", "");
   auto & graph = rm.Rvsdg();
 
-  auto x = &jlm::tests::GraphImport::Create(graph, vt, "x");
-  auto y = &jlm::tests::GraphImport::Create(graph, vt, "y");
-  auto z = &jlm::tests::GraphImport::Create(graph, vt, "z");
+  auto x = &jlm::rvsdg::GraphImport::Create(graph, vt, "x");
+  auto y = &jlm::rvsdg::GraphImport::Create(graph, vt, "y");
+  auto z = &jlm::rvsdg::GraphImport::Create(graph, vt, "z");
 
   auto theta = jlm::rvsdg::ThetaNode::create(&graph.GetRootRegion());
 
@@ -35,10 +35,11 @@ test1()
   auto lvy = theta->AddLoopVar(y);
   theta->AddLoopVar(z);
 
-  auto a = jlm::tests::create_testop(
-      theta->subregion(),
-      { lvx.pre, lvy.pre },
-      { jlm::rvsdg::bittype::Create(1) })[0];
+  auto a = jlm::tests::TestOperation::create(
+               theta->subregion(),
+               { lvx.pre, lvy.pre },
+               { jlm::rvsdg::BitType::Create(1) })
+               ->output(0);
   auto predicate = jlm::rvsdg::match(1, { { 1, 0 } }, 1, 2, a);
 
   auto gamma = jlm::rvsdg::GammaNode::create(predicate, 2);
@@ -46,14 +47,16 @@ test1()
   auto evx = gamma->AddEntryVar(lvx.pre);
   auto evy = gamma->AddEntryVar(lvy.pre);
 
-  auto b = jlm::tests::create_testop(
-      gamma->subregion(0),
-      { evx.branchArgument[0], evy.branchArgument[0] },
-      { vt })[0];
-  auto c = jlm::tests::create_testop(
-      gamma->subregion(1),
-      { evx.branchArgument[1], evy.branchArgument[1] },
-      { vt })[0];
+  auto b = jlm::tests::TestOperation::create(
+               gamma->subregion(0),
+               { evx.branchArgument[0], evy.branchArgument[0] },
+               { vt })
+               ->output(0);
+  auto c = jlm::tests::TestOperation::create(
+               gamma->subregion(1),
+               { evx.branchArgument[1], evy.branchArgument[1] },
+               { vt })
+               ->output(0);
 
   auto xvy = gamma->AddExitVar({ b, c });
 
@@ -61,9 +64,9 @@ test1()
 
   theta->set_predicate(predicate);
 
-  auto & ex1 = GraphExport::Create(*theta->output(0), "x");
-  auto & ex2 = GraphExport::Create(*theta->output(1), "y");
-  auto & ex3 = GraphExport::Create(*theta->output(2), "z");
+  auto & ex1 = jlm::rvsdg::GraphExport::Create(*theta->output(0), "x");
+  auto & ex2 = jlm::rvsdg::GraphExport::Create(*theta->output(1), "y");
+  auto & ex3 = jlm::rvsdg::GraphExport::Create(*theta->output(2), "z");
 
   //	jlm::rvsdg::view(graph.GetRootRegion(), stdout);
   jlm::llvm::LoopUnswitching tginversion;
@@ -83,17 +86,18 @@ test2()
   RvsdgModule rm(jlm::util::FilePath(""), "", "");
   auto & graph = rm.Rvsdg();
 
-  auto x = &jlm::tests::GraphImport::Create(graph, vt, "x");
+  auto x = &jlm::rvsdg::GraphImport::Create(graph, vt, "x");
 
   auto theta = jlm::rvsdg::ThetaNode::create(&graph.GetRootRegion());
 
   auto lv1 = theta->AddLoopVar(x);
 
-  auto n1 = jlm::tests::create_testop(
-      theta->subregion(),
-      { lv1.pre },
-      { jlm::rvsdg::bittype::Create(1) })[0];
-  auto n2 = jlm::tests::create_testop(theta->subregion(), { lv1.pre }, { vt })[0];
+  auto n1 = jlm::tests::TestOperation::create(
+                theta->subregion(),
+                { lv1.pre },
+                { jlm::rvsdg::BitType::Create(1) })
+                ->output(0);
+  auto n2 = jlm::tests::TestOperation::create(theta->subregion(), { lv1.pre }, { vt })->output(0);
   auto predicate = jlm::rvsdg::match(1, { { 1, 0 } }, 1, 2, n1);
 
   auto gamma = jlm::rvsdg::GammaNode::create(predicate, 2);
@@ -110,7 +114,7 @@ test2()
 
   theta->set_predicate(predicate);
 
-  auto & ex = GraphExport::Create(*theta->output(0), "x");
+  auto & ex = jlm::rvsdg::GraphExport::Create(*theta->output(0), "x");
 
   //	jlm::rvsdg::view(graph.GetRootRegion(), stdout);
   jlm::llvm::LoopUnswitching tginversion;

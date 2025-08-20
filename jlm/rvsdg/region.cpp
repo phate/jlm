@@ -115,7 +115,6 @@ RegionResult::Create(
     StructuralOutput * output,
     std::shared_ptr<const rvsdg::Type> type)
 {
-  JLM_ASSERT(origin.region() == &region);
   auto result = new RegionResult(&region, &origin, output, std::move(type));
   region.append_result(result);
   return *result;
@@ -135,11 +134,14 @@ Region::~Region() noexcept
 
   while (arguments_.size())
     RemoveArgument(arguments_.size() - 1);
+
+  JLM_ASSERT(!HasActiveTrackers());
 }
 
 Region::Region(Region *, Graph * graph)
     : index_(0),
       graph_(graph),
+      NodeId_(0),
       node_(nullptr)
 {
   on_region_create(this);
@@ -148,6 +150,7 @@ Region::Region(Region *, Graph * graph)
 Region::Region(rvsdg::StructuralNode * node, size_t index)
     : index_(index),
       graph_(node->graph()),
+      NodeId_(0),
       node_(node)
 {
   on_region_create(this);
@@ -511,6 +514,21 @@ Region::ToString(const util::Annotation & annotation, char labelValueSeparator)
   }
 
   return util::strfmt(annotation.Label(), labelValueSeparator, value);
+}
+
+bool
+Region::RegisterTracker(const Tracker & tracker)
+{
+  if (&tracker.GetRegion() != this)
+    return false;
+
+  return Trackers_.Insert(&tracker);
+}
+
+bool
+Region::UnregisterTracker(const Tracker & tracker)
+{
+  return Trackers_.Remove(&tracker);
 }
 
 size_t

@@ -14,7 +14,11 @@ namespace jlm::rvsdg
 /* control constant */
 
 // explicit instantiation
-template class domain_const_op<ControlType, ctlvalue_repr, ctlformat_value, ctltype_of_value>;
+template class domain_const_op<
+    ControlType,
+    ControlValueRepresentation,
+    ctlformat_value,
+    ctltype_of_value>;
 
 ControlType::~ControlType() noexcept = default;
 
@@ -72,9 +76,7 @@ ControlType::Create(std::size_t nalternatives)
   }
 }
 
-/* control value representation */
-
-ctlvalue_repr::ctlvalue_repr(size_t alternative, size_t nalternatives)
+ControlValueRepresentation::ControlValueRepresentation(size_t alternative, size_t nalternatives)
     : alternative_(alternative),
       nalternatives_(nalternatives)
 {
@@ -82,31 +84,28 @@ ctlvalue_repr::ctlvalue_repr(size_t alternative, size_t nalternatives)
     throw util::Error("Alternative is bigger than the number of possible alternatives.");
 }
 
-/* match operator */
+MatchOperation::~MatchOperation() noexcept = default;
 
-match_op::~match_op() noexcept
-{}
-
-match_op::match_op(
+MatchOperation::MatchOperation(
     size_t nbits,
     const std::unordered_map<uint64_t, uint64_t> & mapping,
     uint64_t default_alternative,
     size_t nalternatives)
-    : UnaryOperation(bittype::Create(nbits), ControlType::Create(nalternatives)),
+    : UnaryOperation(BitType::Create(nbits), ControlType::Create(nalternatives)),
       default_alternative_(default_alternative),
       mapping_(mapping)
 {}
 
 bool
-match_op::operator==(const Operation & other) const noexcept
+MatchOperation::operator==(const Operation & other) const noexcept
 {
-  auto op = dynamic_cast<const match_op *>(&other);
+  auto op = dynamic_cast<const MatchOperation *>(&other);
   return op && op->default_alternative_ == default_alternative_ && op->mapping_ == mapping_
       && op->nbits() == nbits() && op->nalternatives() == nalternatives();
 }
 
 unop_reduction_path_t
-match_op::can_reduce_operand(const jlm::rvsdg::Output * arg) const noexcept
+MatchOperation::can_reduce_operand(const jlm::rvsdg::Output * arg) const noexcept
 {
   if (is<bitconstant_op>(producer(arg)))
     return unop_reduction_constant;
@@ -115,11 +114,12 @@ match_op::can_reduce_operand(const jlm::rvsdg::Output * arg) const noexcept
 }
 
 jlm::rvsdg::Output *
-match_op::reduce_operand(unop_reduction_path_t path, jlm::rvsdg::Output * arg) const
+MatchOperation::reduce_operand(unop_reduction_path_t path, jlm::rvsdg::Output * arg) const
 {
   if (path == unop_reduction_constant)
   {
-    auto op = static_cast<const bitconstant_op &>(producer(arg)->GetOperation());
+    auto op = static_cast<const bitconstant_op &>(
+        static_cast<const SimpleNode *>(producer(arg))->GetOperation());
     return jlm::rvsdg::control_constant(
         arg->region(),
         nalternatives(),
@@ -130,7 +130,7 @@ match_op::reduce_operand(unop_reduction_path_t path, jlm::rvsdg::Output * arg) c
 }
 
 std::string
-match_op::debug_string() const
+MatchOperation::debug_string() const
 {
   std::string str("[");
   for (const auto & pair : mapping_)
@@ -141,9 +141,9 @@ match_op::debug_string() const
 }
 
 std::unique_ptr<Operation>
-match_op::copy() const
+MatchOperation::copy() const
 {
-  return std::make_unique<match_op>(*this);
+  return std::make_unique<MatchOperation>(*this);
 }
 
 jlm::rvsdg::Output *
@@ -154,14 +154,22 @@ match(
     size_t nalternatives,
     jlm::rvsdg::Output * operand)
 {
-  return CreateOpNode<match_op>({ operand }, nbits, mapping, default_alternative, nalternatives)
+  return CreateOpNode<MatchOperation>(
+             { operand },
+             nbits,
+             mapping,
+             default_alternative,
+             nalternatives)
       .output(0);
 }
 
 jlm::rvsdg::Output *
 control_constant(rvsdg::Region * region, size_t nalternatives, size_t alternative)
 {
-  return CreateOpNode<ctlconstant_op>(*region, ctlvalue_repr(alternative, nalternatives)).output(0);
+  return CreateOpNode<ctlconstant_op>(
+             *region,
+             ControlValueRepresentation(alternative, nalternatives))
+      .output(0);
 }
 
 }

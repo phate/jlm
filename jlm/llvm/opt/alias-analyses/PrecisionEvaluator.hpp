@@ -6,10 +6,11 @@
 #ifndef JLM_LLVM_OPT_ALIAS_ANALYSES_PRECISIONEVALUATOR_HPP
 #define JLM_LLVM_OPT_ALIAS_ANALYSES_PRECISIONEVALUATOR_HPP
 
+#include "jlm/rvsdg/lambda.hpp"
+#include "jlm/rvsdg/RvsdgModule.hpp"
+#include "jlm/util/GraphWriter.hpp"
 #include <jlm/llvm/opt/alias-analyses/AliasAnalysis.hpp>
 #include <jlm/util/Statistics.hpp>
-
-#include <llvm/IR/Instruction.h>
 
 #include <unordered_map>
 
@@ -99,7 +100,7 @@ private:
 
   // Called once all functions have been evaluated, to calculate and print averages
   void
-  CalculateAverageMayAliasRate(const util::file & outputFile, PrecisionStatistics & statistics)
+  CalculateAverageMayAliasRate(const util::File & outputFile, PrecisionStatistics & statistics)
       const;
 
   // How pointers are counted in the precision evaluation
@@ -140,7 +141,7 @@ private:
     /**
      * During traversal of the current function, collects relevant operations on pointers.
      * Each operation is represented by a tuple (pointer value, byte size, isUse, isClobber).
-     * All operations should be either a use, a clobber or both.
+     * All operations should be either a use, a clobber, or both.
      * @see PrecisionEvaluationMode for setting which operations are counted and how
      */
     std::vector<std::tuple<const rvsdg::Output *, size_t, bool, bool>> PointerOperations;

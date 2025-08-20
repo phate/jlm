@@ -3,8 +3,11 @@
  * See COPYING for terms of redistribution.
  */
 
-#include <jlm/llvm/backend/dot/DotWriter.hpp>
+#include "jlm/llvm/ir/operators/Load.hpp"
+#include "jlm/llvm/ir/operators/Store.hpp"
 #include <jlm/llvm/opt/alias-analyses/PrecisionEvaluator.hpp>
+
+#include <jlm/llvm/DotWriter.hpp>
 #include <jlm/rvsdg/RvsdgModule.hpp>
 #include <jlm/util/GraphWriter.hpp>
 
@@ -346,7 +349,7 @@ PrecisionEvaluator::NormalizePointerValues()
   for (size_t i = 0; i < Context_.PointerOperations.size(); i++)
   {
     auto & pointer = std::get<0>(Context_.PointerOperations[i]);
-    pointer = &NormalizePointerValue(*pointer);
+    pointer = &NormalizeOutput(*pointer);
   }
 }
 
@@ -411,7 +414,7 @@ PrecisionEvaluator::AggregateClobberInfos(
 
 void
 PrecisionEvaluator::CalculateAverageMayAliasRate(
-    const util::file & outputFile,
+    const util::File & outputFile,
     PrecisionStatistics & statistics) const
 {
   std::vector<PrecisionInfo::ClobberInfo> allClobberInfo;

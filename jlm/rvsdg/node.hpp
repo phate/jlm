@@ -20,10 +20,6 @@
 
 namespace jlm::rvsdg
 {
-namespace base
-{
-class type;
-}
 
 class Graph;
 class Output;
@@ -547,13 +543,27 @@ private:
 class Node
 {
 public:
+  using Id = uint64_t;
+
   using InputIteratorRange = util::IteratorRange<Input::Iterator>;
   using InputConstIteratorRange = util::IteratorRange<Input::ConstIterator>;
   using OutputIteratorRange = util::IteratorRange<Output::Iterator>;
+  using OutputConstIteratorRange = util::IteratorRange<Output::ConstIterator>;
 
   virtual ~Node();
 
   explicit Node(Region * region);
+
+  /**
+   * @return The unique identifier of the node instance within the region.
+   *
+   * \see GenerateNodeId()
+   */
+  [[nodiscard]] Id
+  GetNodeId() const noexcept
+  {
+    return Id_;
+  }
 
   [[nodiscard]] virtual const Operation &
   GetOperation() const noexcept = 0;
@@ -594,6 +604,18 @@ public:
   {
     JLM_ASSERT(index < noutputs());
     return outputs_[index].get();
+  }
+
+  [[nodiscard]] OutputIteratorRange
+  Outputs() noexcept
+  {
+    return { Output::Iterator(output(0)), Output::Iterator(nullptr) };
+  }
+
+  [[nodiscard]] OutputConstIteratorRange
+  Outputs() const noexcept
+  {
+    return { Output::ConstIterator(output(0)), Output::ConstIterator(nullptr) };
   }
 
   inline void
@@ -719,12 +741,8 @@ public:
     }
   }
 
-public:
   [[nodiscard]] Graph *
-  graph() const noexcept
-  {
-    return graph_;
-  }
+  graph() const noexcept;
 
   [[nodiscard]] rvsdg::Region *
   region() const noexcept
@@ -778,9 +796,9 @@ public:
       region_bottom_node_list_accessor;
 
 private:
+  Id Id_;
   size_t depth_;
-  Graph * graph_;
-  rvsdg::Region * region_;
+  Region * region_;
   std::vector<std::unique_ptr<node_input>> inputs_;
   std::vector<std::unique_ptr<node_output>> outputs_;
 };

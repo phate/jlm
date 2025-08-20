@@ -161,7 +161,7 @@ IpGraphToLlvmConverter::CreateICmpInstruction(
 }
 
 static ::llvm::APInt
-convert_bitvalue_repr(const rvsdg::bitvalue_repr & vr)
+convert_bitvalue_repr(const rvsdg::BitValueRepresentation & vr)
 {
   JLM_ASSERT(vr.is_defined());
 
@@ -281,7 +281,7 @@ IpGraphToLlvmConverter::convert(
 }
 
 static bool
-is_identity_mapping(const rvsdg::match_op & op)
+is_identity_mapping(const rvsdg::MatchOperation & op)
 {
   for (const auto & pair : op)
   {
@@ -298,8 +298,8 @@ IpGraphToLlvmConverter::convert_match(
     const std::vector<const Variable *> & args,
     ::llvm::IRBuilder<> & builder)
 {
-  JLM_ASSERT(is<rvsdg::match_op>(op));
-  auto mop = static_cast<const rvsdg::match_op *>(&op);
+  JLM_ASSERT(is<rvsdg::MatchOperation>(op));
+  auto mop = static_cast<const rvsdg::MatchOperation *>(&op);
 
   if (is_identity_mapping(*mop))
     return Context_->value(args[0]);
@@ -498,7 +498,7 @@ IpGraphToLlvmConverter::convert(
 {
   JLM_ASSERT(is<ConstantDataArray>(op));
 
-  if (auto bt = dynamic_cast<const rvsdg::bittype *>(&op.type()))
+  if (auto bt = dynamic_cast<const rvsdg::BitType *>(&op.type()))
   {
     if (bt->nbits() == 8)
     {
@@ -762,7 +762,7 @@ IpGraphToLlvmConverter::convert_constantdatavector(
   JLM_ASSERT(is<ConstantDataVectorOperation>(op));
   auto & cop = *static_cast<const ConstantDataVectorOperation *>(&op);
 
-  if (auto bt = dynamic_cast<const rvsdg::bittype *>(&cop.type()))
+  if (auto bt = dynamic_cast<const rvsdg::BitType *>(&cop.type()))
   {
     if (bt->nbits() == 8)
     {
@@ -1197,7 +1197,7 @@ IpGraphToLlvmConverter::convert_operation(
   {
     return convert<PoisonValueOperation>(op, arguments, builder);
   }
-  if (is<rvsdg::match_op>(op))
+  if (is<rvsdg::MatchOperation>(op))
   {
     return convert_match(op, arguments, builder);
   }
@@ -1540,16 +1540,16 @@ IpGraphToLlvmConverter::create_switch(const ControlFlowGraphNode * node)
   auto condition = Context_->value(branch->operand(0));
   auto match = get_match(branch);
 
-  if (is<rvsdg::match_op>(match))
+  if (is<rvsdg::MatchOperation>(match))
   {
     JLM_ASSERT(match->result(0) == branch->operand(0));
-    auto mop = static_cast<const rvsdg::match_op *>(&match->operation());
+    auto mop = static_cast<const rvsdg::MatchOperation *>(&match->operation());
 
     auto defbb = Context_->basic_block(node->OutEdge(mop->default_alternative())->sink());
     auto sw = builder.CreateSwitch(condition, defbb);
     for (const auto & alt : *mop)
     {
-      auto & type = *std::static_pointer_cast<const rvsdg::bittype>(mop->argument(0));
+      auto & type = *std::static_pointer_cast<const rvsdg::BitType>(mop->argument(0));
       auto value =
           ::llvm::ConstantInt::get(typeConverter.ConvertBitType(type, llvmContext), alt.first);
       sw->addCase(value, Context_->basic_block(node->OutEdge(alt.second)->sink()));

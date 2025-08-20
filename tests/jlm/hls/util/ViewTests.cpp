@@ -22,7 +22,7 @@ TestDumpDot()
   using namespace jlm::llvm;
 
   // Arrange
-  auto b32 = rvsdg::bittype::Create(32);
+  auto b32 = rvsdg::BitType::Create(32);
   auto ft = rvsdg::FunctionType::Create({}, { b32 });
 
   rvsdg::Graph graph;
@@ -34,7 +34,7 @@ TestDumpDot()
   auto bitConstant = rvsdg::create_bitconstant(lambda->subregion(), 32, 0);
 
   auto f = lambda->finalize({ bitConstant });
-  GraphExport::Create(*f, "");
+  rvsdg::GraphExport::Create(*f, "");
 
   rvsdg::view(graph, stdout);
 
@@ -63,7 +63,7 @@ TestDumpDotTheta()
   using namespace jlm::llvm;
 
   // Arrange
-  auto b32 = rvsdg::bittype::Create(32);
+  auto b32 = rvsdg::BitType::Create(32);
   auto ft = rvsdg::FunctionType::Create({ b32, b32, b32 }, { b32, b32, b32 });
 
   rvsdg::Graph graph;
@@ -85,7 +85,7 @@ TestDumpDotTheta()
   theta->set_predicate(match);
 
   auto f = lambda->finalize({ theta->output(0), theta->output(1), theta->output(2) });
-  GraphExport::Create(*f, "");
+  rvsdg::GraphExport::Create(*f, "");
 
   rvsdg::view(graph, stdout);
 

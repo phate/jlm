@@ -2,7 +2,8 @@
 # See COPYING for terms of redistribution.
 
 libllvm_SOURCES = \
-    jlm/llvm/backend/dot/DotWriter.cpp \
+    jlm/llvm/DotWriter.cpp \
+    \
     jlm/llvm/backend/IpGraphToLlvmConverter.cpp \
     jlm/llvm/backend/RvsdgToIpGraphConverter.cpp \
     \
@@ -48,10 +49,12 @@ libllvm_SOURCES = \
     jlm/llvm/opt/alias-analyses/AliasAnalysis.cpp \
     jlm/llvm/opt/alias-analyses/AgnosticModRefSummarizer.cpp \
     jlm/llvm/opt/alias-analyses/Andersen.cpp \
+    jlm/llvm/opt/alias-analyses/LocalAliasAnalysis.cpp \
     jlm/llvm/opt/alias-analyses/MemoryStateEncoder.cpp \
     jlm/llvm/opt/alias-analyses/Optimization.cpp \
     jlm/llvm/opt/alias-analyses/PointerObjectSet.cpp \
     jlm/llvm/opt/alias-analyses/PointsToGraph.cpp \
+    jlm/llvm/opt/alias-analyses/PointsToGraphAliasAnalysis.cpp \
     jlm/llvm/opt/alias-analyses/PrecisionEvaluator.cpp \
     jlm/llvm/opt/alias-analyses/RegionAwareModRefSummarizer.cpp \
     jlm/llvm/opt/alias-analyses/Steensgaard.cpp \
@@ -69,6 +72,11 @@ libllvm_SOURCES = \
     jlm/llvm/opt/unroll.cpp \
 
 libllvm_HEADERS = \
+    jlm/llvm/DotWriter.hpp \
+    \
+    jlm/llvm/backend/IpGraphToLlvmConverter.hpp \
+    jlm/llvm/backend/RvsdgToIpGraphConverter.hpp \
+    \
     jlm/llvm/opt/unroll.hpp \
     jlm/llvm/opt/DeadNodeElimination.hpp \
     jlm/llvm/opt/inlining.hpp \
@@ -80,6 +88,7 @@ libllvm_HEADERS = \
     jlm/llvm/opt/alias-analyses/DifferencePropagation.hpp \
     jlm/llvm/opt/alias-analyses/EliminatedModRefSummarizer.hpp \
     jlm/llvm/opt/alias-analyses/LazyCycleDetection.hpp \
+    jlm/llvm/opt/alias-analyses/LocalAliasAnalysis.hpp \
     jlm/llvm/opt/alias-analyses/OnlineCycleDetection.hpp \
     jlm/llvm/opt/alias-analyses/Optimization.hpp \
     jlm/llvm/opt/alias-analyses/ModRefEliminator.hpp \
@@ -92,6 +101,7 @@ libllvm_HEADERS = \
     jlm/llvm/opt/alias-analyses/RegionAwareModRefSummarizer.hpp \
     jlm/llvm/opt/alias-analyses/PointsToAnalysis.hpp \
     jlm/llvm/opt/alias-analyses/PointsToGraph.hpp \
+    jlm/llvm/opt/alias-analyses/PointsToGraphAliasAnalysis.hpp \
     jlm/llvm/opt/alias-analyses/PrecisionEvaluator.hpp \
     jlm/llvm/opt/pull.hpp \
     jlm/llvm/opt/reduction.hpp \
@@ -139,12 +149,10 @@ libllvm_HEADERS = \
     jlm/llvm/ir/operators/sext.hpp \
     jlm/llvm/ir/operators/lambda.hpp \
     jlm/llvm/ir/aggregation.hpp \
-    jlm/llvm/backend/dot/DotWriter.hpp \
-    jlm/llvm/backend/IpGraphToLlvmConverter.hpp \
-    jlm/llvm/backend/RvsdgToIpGraphConverter.hpp \
 
 libllvm_TESTS += \
-    tests/jlm/llvm/backend/dot/DotWriterTests \
+    tests/jlm/llvm/DotWriterTests \
+    \
     tests/jlm/llvm/backend/IpGraphToLlvmConverterTests \
     tests/jlm/llvm/backend/RvsdgToIpGraphConverterTests \
     tests/jlm/llvm/frontend/llvm/LoadTests \
@@ -190,6 +198,8 @@ libllvm_TESTS += \
     tests/jlm/llvm/ir/TypeConverterTests \
     tests/jlm/llvm/opt/alias-analyses/AliasAnalysisTests \
     tests/jlm/llvm/opt/alias-analyses/AgnosticModRefSummarizerTests \
+    tests/jlm/llvm/opt/alias-analyses/LocalAliasAnalysisTests \
+    tests/jlm/llvm/opt/alias-analyses/PointsToGraphAliasAnalysisTests \
     tests/jlm/llvm/opt/alias-analyses/TestAndersen \
     tests/jlm/llvm/opt/alias-analyses/TestDifferencePropagation \
     tests/jlm/llvm/opt/alias-analyses/TestLazyCycleDetection \

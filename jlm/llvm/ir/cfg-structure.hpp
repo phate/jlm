@@ -7,6 +7,7 @@
 #define JLM_LLVM_IR_CFG_STRUCTURE_HPP
 
 #include <jlm/util/iterator_range.hpp>
+#include <jlm/util/IteratorWrapper.hpp>
 
 #include <memory>
 #include <unordered_set>
@@ -23,7 +24,8 @@ class ControlFlowGraphNode;
  */
 class scc final
 {
-  class constiterator;
+  using constiterator = util::
+      PtrIterator<ControlFlowGraphNode, std::unordered_set<ControlFlowGraphNode *>::const_iterator>;
 
 public:
   scc(const std::unordered_set<ControlFlowGraphNode *> & nodes)
@@ -50,69 +52,6 @@ public:
 
 private:
   std::unordered_set<ControlFlowGraphNode *> nodes_;
-};
-
-/** \brief Strongly Connected Component Iterator
- */
-class scc::constiterator final
-{
-public:
-  using iterator_category = std::forward_iterator_tag;
-  using value_type = ControlFlowGraphNode *;
-  using difference_type = std::ptrdiff_t;
-  using pointer = ControlFlowGraphNode **;
-  using reference = ControlFlowGraphNode *&;
-
-private:
-  friend ::jlm::llvm::scc;
-
-private:
-  explicit constiterator(const std::unordered_set<ControlFlowGraphNode *>::const_iterator & it)
-      : it_(it)
-  {}
-
-public:
-  ControlFlowGraphNode *
-  operator->() const
-  {
-    return *it_;
-  }
-
-  ControlFlowGraphNode &
-  operator*() const
-  {
-    return *operator->();
-  }
-
-  constiterator &
-  operator++()
-  {
-    it_++;
-    return *this;
-  }
-
-  constiterator
-  operator++(int)
-  {
-    constiterator tmp = *this;
-    ++*this;
-    return tmp;
-  }
-
-  bool
-  operator==(const constiterator & other) const
-  {
-    return it_ == other.it_;
-  }
-
-  bool
-  operator!=(const constiterator & other) const
-  {
-    return !operator==(other);
-  }
-
-private:
-  std::unordered_set<ControlFlowGraphNode *>::const_iterator it_;
 };
 
 /** \brief Strongly Connected Component Structure

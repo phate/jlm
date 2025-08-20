@@ -52,8 +52,8 @@ public:
 
 private:
   LoopUnrollInfo(
-      rvsdg::Node * cmpnode,
-      rvsdg::Node * armnode,
+      rvsdg::SimpleNode * cmpnode,
+      rvsdg::SimpleNode * armnode,
       rvsdg::Output * idv,
       rvsdg::Output * step,
       rvsdg::Output * end)
@@ -106,10 +106,10 @@ public:
     return has_known_init() && has_known_step() && has_known_end();
   }
 
-  std::unique_ptr<jlm::rvsdg::bitvalue_repr>
+  std::unique_ptr<jlm::rvsdg::BitValueRepresentation>
   niterations() const noexcept;
 
-  rvsdg::Node *
+  rvsdg::SimpleNode *
   cmpnode() const noexcept
   {
     return cmpnode_;
@@ -118,10 +118,10 @@ public:
   [[nodiscard]] const rvsdg::SimpleOperation &
   cmpoperation() const noexcept
   {
-    return *static_cast<const rvsdg::SimpleOperation *>(&cmpnode()->GetOperation());
+    return cmpnode()->GetOperation();
   }
 
-  inline rvsdg::Node *
+  inline rvsdg::SimpleNode *
   armnode() const noexcept
   {
     return armnode_;
@@ -130,7 +130,7 @@ public:
   [[nodiscard]] const rvsdg::SimpleOperation &
   armoperation() const noexcept
   {
-    return *static_cast<const rvsdg::SimpleOperation *>(&armnode()->GetOperation());
+    return armnode()->GetOperation();
   }
 
   inline rvsdg::Output *
@@ -145,7 +145,7 @@ public:
     return theta()->MapPreLoopVar(*idv()).input->origin();
   }
 
-  inline const jlm::rvsdg::bitvalue_repr *
+  inline const jlm::rvsdg::BitValueRepresentation *
   init_value() const noexcept
   {
     return value(init());
@@ -157,7 +157,7 @@ public:
     return step_;
   }
 
-  inline const jlm::rvsdg::bitvalue_repr *
+  inline const jlm::rvsdg::BitValueRepresentation *
   step_value() const noexcept
   {
     return value(step());
@@ -169,7 +169,7 @@ public:
     return end_;
   }
 
-  inline const jlm::rvsdg::bitvalue_repr *
+  inline const jlm::rvsdg::BitValueRepresentation *
   end_value() const noexcept
   {
     return value(end());
@@ -196,7 +196,7 @@ public:
         .nbits();
   }
 
-  inline jlm::rvsdg::bitvalue_repr
+  inline jlm::rvsdg::BitValueRepresentation
   remainder(size_t factor) const noexcept
   {
     return niterations()->umod({ nbits(), (int64_t)factor });
@@ -209,28 +209,27 @@ private:
   inline bool
   is_known(jlm::rvsdg::Output * output) const noexcept
   {
-    auto p = producer(output);
+    auto p = dynamic_cast<const rvsdg::SimpleNode *>(producer(output));
     if (!p)
       return false;
-
     auto op = dynamic_cast<const rvsdg::bitconstant_op *>(&p->GetOperation());
     return op && op->value().is_known();
   }
 
-  inline const jlm::rvsdg::bitvalue_repr *
+  inline const jlm::rvsdg::BitValueRepresentation *
   value(jlm::rvsdg::Output * output) const noexcept
   {
     if (!is_known(output))
       return nullptr;
 
-    auto p = producer(output);
-    return &static_cast<const rvsdg::bitconstant_op *>(&p->GetOperation())->value();
+    auto p = util::AssertedCast<const rvsdg::SimpleNode>(producer(output));
+    return &util::AssertedCast<const rvsdg::bitconstant_op>(&p->GetOperation())->value();
   }
 
   rvsdg::Output * end_;
   rvsdg::Output * step_;
-  rvsdg::Node * cmpnode_;
-  rvsdg::Node * armnode_;
+  rvsdg::SimpleNode * cmpnode_;
+  rvsdg::SimpleNode * armnode_;
   rvsdg::Output * idv_;
 };
 

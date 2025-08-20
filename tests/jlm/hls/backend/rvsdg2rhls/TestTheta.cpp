@@ -17,7 +17,7 @@ TestUnknownBoundaries()
   using namespace jlm::hls;
 
   // Arrange
-  auto b32 = jlm::rvsdg::bittype::Create(32);
+  auto b32 = jlm::rvsdg::BitType::Create(32);
   auto ft = jlm::rvsdg::FunctionType::Create({ b32, b32, b32 }, { b32, b32, b32 });
 
   RvsdgModule rm(jlm::util::FilePath(""), "", "");
@@ -39,7 +39,7 @@ TestUnknownBoundaries()
   theta->set_predicate(match);
 
   auto f = lambda->finalize({ theta->output(0), theta->output(1), theta->output(2) });
-  GraphExport::Create(*f, "");
+  jlm::rvsdg::GraphExport::Create(*f, "");
 
   jlm::rvsdg::view(rm.Rvsdg(), stdout);
 
@@ -60,13 +60,13 @@ TestUnknownBoundaries()
       jlm::rvsdg::AssertGetOwnerNode<LoopNode>(lambdaRegion->argument(0)->SingleUser());
   {
     auto [bufferNode, bufferOperation] =
-        jlm::rvsdg::TryGetSimpleNodeAndOp<LoopConstantBufferOperation>(
+        jlm::rvsdg::TryGetSimpleNodeAndOptionalOp<LoopConstantBufferOperation>(
             loopNode.subregion()->argument(3)->SingleUser());
     assert(bufferNode && bufferOperation);
   }
   {
     auto [bufferNode, bufferOperation] =
-        jlm::rvsdg::TryGetSimpleNodeAndOp<LoopConstantBufferOperation>(
+        jlm::rvsdg::TryGetSimpleNodeAndOptionalOp<LoopConstantBufferOperation>(
             loopNode.subregion()->argument(4)->SingleUser());
     assert(bufferNode && bufferOperation);
   }

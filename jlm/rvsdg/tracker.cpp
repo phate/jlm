@@ -4,71 +4,44 @@
  * See COPYING for terms of redistribution.
  */
 
-#include <jlm/rvsdg/graph.hpp>
 #include <jlm/rvsdg/notifiers.hpp>
+#include <jlm/rvsdg/region.hpp>
 #include <jlm/rvsdg/tracker.hpp>
 
+#include <set>
+
 using namespace std::placeholders;
-
-namespace
-{
-
-typedef std::unordered_set<const jlm::rvsdg::Graph *> tracker_set;
-
-tracker_set *
-active_trackers()
-{
-  static std::unique_ptr<tracker_set> trackers;
-  if (!trackers)
-    trackers.reset(new tracker_set());
-
-  return trackers.get();
-}
-
-void
-register_tracker(const jlm::rvsdg::Tracker * tracker)
-{
-  active_trackers()->insert(tracker->graph());
-}
-
-void
-unregister_tracker(const jlm::rvsdg::Tracker * tracker)
-{
-  active_trackers()->erase(tracker->graph());
-}
-
-}
 
 namespace jlm::rvsdg
 {
 
-bool
-has_active_trackers(const Graph * graph)
+struct cmp
 {
-  auto at = active_trackers();
-  return at->find(graph) != at->end();
-}
+  bool
+  operator()(const TrackerNodeState * lhs, const TrackerNodeState * rhs) const
+  {
+    return lhs->node()->GetNodeId() < rhs->node()->GetNodeId();
+  }
+};
 
-/* tracker depth state */
-
-class tracker_depth_state
+class TrackerDepthState
 {
 public:
-  inline tracker_depth_state()
+  TrackerDepthState()
       : count_(0),
         top_depth_(0),
         bottom_depth_(0)
   {}
 
-  tracker_depth_state(const tracker_depth_state &) = delete;
+  TrackerDepthState(const TrackerDepthState &) = delete;
 
-  tracker_depth_state(tracker_depth_state &&) = delete;
+  TrackerDepthState(TrackerDepthState &&) = delete;
 
-  tracker_depth_state &
-  operator=(const tracker_depth_state &) = delete;
+  TrackerDepthState &
+  operator=(const TrackerDepthState &) = delete;
 
-  tracker_depth_state &
-  operator=(tracker_depth_state &&) = delete;
+  TrackerDepthState &
+  operator=(TrackerDepthState &&) = delete;
 
   inline TrackerNodeState *
   peek_top() const noexcept
@@ -154,26 +127,28 @@ private:
   size_t count_;
   size_t top_depth_;
   size_t bottom_depth_;
-  std::unordered_map<size_t, std::unordered_set<TrackerNodeState *>> nodestates_;
+  std::unordered_map<size_t, std::set<TrackerNodeState *, cmp>> nodestates_;
 };
 
 Tracker::~Tracker() noexcept
 {
-  unregister_tracker(this);
+  [[maybe_unused]] const auto isUnregistered = GetRegion().UnregisterTracker(*this);
+  JLM_ASSERT(isUnregistered);
 }
 
-Tracker::Tracker(Graph * graph, size_t nstates)
-    : graph_(graph),
+Tracker::Tracker(Region & region, size_t nstates)
+    : Region_(&region),
       states_(nstates)
 {
   for (size_t n = 0; n < states_.size(); n++)
-    states_[n] = std::make_unique<tracker_depth_state>();
+    states_[n] = std::make_unique<TrackerDepthState>();
 
   depth_callback_ =
       on_node_depth_change.connect(std::bind(&Tracker::node_depth_change, this, _1, _2));
   destroy_callback_ = on_node_destroy.connect(std::bind(&Tracker::node_destroy, this, _1));
 
-  register_tracker(this);
+  [[maybe_unused]] const auto isRegistered = region.RegisterTracker(*this);
+  JLM_ASSERT(isRegistered);
 }
 
 void

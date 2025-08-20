@@ -24,7 +24,7 @@ class Type;
 
 namespace jlm::rvsdg
 {
-class bittype;
+class BitType;
 class ControlType;
 class FunctionType;
 class Type;
@@ -55,7 +55,7 @@ public:
   ExtractFloatingPointSize(const ::llvm::Type & type);
 
   static ::llvm::IntegerType *
-  ConvertBitType(const rvsdg::bittype & bitType, ::llvm::LLVMContext & context);
+  ConvertBitType(const rvsdg::BitType & bitType, ::llvm::LLVMContext & context);
 
   ::llvm::FunctionType *
   ConvertFunctionType(const rvsdg::FunctionType & functionType, ::llvm::LLVMContext & context);

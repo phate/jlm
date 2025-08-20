@@ -68,7 +68,7 @@ ConvertConstant(
     std::vector<std::unique_ptr<llvm::ThreeAddressCode>> &,
     Context &);
 
-static rvsdg::bitvalue_repr
+static rvsdg::BitValueRepresentation
 convert_apint(const ::llvm::APInt & value)
 {
   ::llvm::APInt v;
@@ -78,7 +78,7 @@ convert_apint(const ::llvm::APInt & value)
   auto str = toString(value, 2, false);
   std::reverse(str.begin(), str.end());
 
-  rvsdg::bitvalue_repr vr(str.c_str());
+  rvsdg::BitValueRepresentation vr(str.c_str());
   if (value.isNegative())
     vr = vr.sext(value.getBitWidth() - str.size());
   else
@@ -422,7 +422,7 @@ ConvertBranchInstruction(::llvm::Instruction * instruction, tacsvector_t & tacs,
 
   auto c = ConvertValue(i->getCondition(), tacs, ctx);
   auto nbits = i->getCondition()->getType()->getIntegerBitWidth();
-  auto op = rvsdg::match_op(nbits, { { 1, 1 } }, 0, 2);
+  auto op = rvsdg::MatchOperation(nbits, { { 1, 1 } }, 0, 2);
   tacs.push_back(ThreeAddressCode::create(op, { c }));
   tacs.push_back(BranchOperation::create(2, tacs.back()->result(0)));
 
@@ -449,7 +449,7 @@ ConvertSwitchInstruction(::llvm::Instruction * instruction, tacsvector_t & tacs,
 
   auto c = ConvertValue(i->getCondition(), tacs, ctx);
   auto nbits = i->getCondition()->getType()->getIntegerBitWidth();
-  auto op = rvsdg::match_op(nbits, mapping, defaultEdge->index(), bb->NumOutEdges());
+  auto op = rvsdg::MatchOperation(nbits, mapping, defaultEdge->index(), bb->NumOutEdges());
   tacs.push_back(ThreeAddressCode::create(op, { c }));
   tacs.push_back(BranchOperation::create(bb->NumOutEdges(), tacs.back()->result(0)));
 
