@@ -202,7 +202,7 @@ CalculateIntraTypeGepOffset(
   JLM_ASSERT(inputIndex >= 2);
 
   auto & gepInput = *gepNode.input(inputIndex)->origin();
-  auto indexingValue = GetConstantSignedIntegerValue(gepInput);
+  auto indexingValue = TryGetConstantSignedInteger(gepInput);
 
   // Any unknown indexing value means the GEP offset is unknown overall
   if (!indexingValue.has_value())
@@ -248,7 +248,7 @@ LocalAliasAnalysis::CalculateGepOffset(const rvsdg::SimpleNode & gepNode)
   const auto & pointeeType = gep->GetPointeeType();
 
   const auto & wholeTypeIndexingOrigin = *gepNode.input(1)->origin();
-  const auto wholeTypeIndexing = GetConstantSignedIntegerValue(wholeTypeIndexingOrigin);
+  const auto wholeTypeIndexing = TryGetConstantSignedInteger(wholeTypeIndexingOrigin);
 
   if (!wholeTypeIndexing.has_value())
     return std::nullopt;
@@ -482,14 +482,14 @@ LocalAliasAnalysis::GetOriginalOriginSize(const rvsdg::Output & pointer)
   if (const auto [node, allocaOp] = rvsdg::TryGetSimpleNodeAndOptionalOp<AllocaOperation>(pointer);
       allocaOp)
   {
-    const auto elementCount = GetConstantSignedIntegerValue(*node->input(0)->origin());
+    const auto elementCount = TryGetConstantSignedInteger(*node->input(0)->origin());
     if (elementCount.has_value())
       return *elementCount * GetTypeSize(*allocaOp->ValueType());
   }
   if (const auto [node, mallocOp] = rvsdg::TryGetSimpleNodeAndOptionalOp<MallocOperation>(pointer);
       mallocOp)
   {
-    const auto mallocSize = GetConstantSignedIntegerValue(*node->input(0)->origin());
+    const auto mallocSize = TryGetConstantSignedInteger(*node->input(0)->origin());
     if (mallocSize.has_value())
       return *mallocSize;
   }

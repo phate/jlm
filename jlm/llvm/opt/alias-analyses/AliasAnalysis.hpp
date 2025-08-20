@@ -8,6 +8,8 @@
 
 #include <jlm/rvsdg/node.hpp>
 
+#include <optional>
+
 namespace jlm::llvm::aa
 {
 
@@ -111,6 +113,15 @@ IsPointerCompatible(const rvsdg::Output & value);
  */
 [[nodiscard]] const rvsdg::Output &
 NormalizeOutput(const rvsdg::Output & output);
+
+/**
+ * Gets the value of the given \p output as a compile time constant, if possible.
+ * The constant is interpreted as a signed value, and sign extended to int64 if needed.
+ * This function does not perform any constant folding.
+ * @return the integer value of the output, or nullopt if it could not be determined.
+ */
+std::optional<int64_t>
+TryGetConstantSignedInteger(const rvsdg::Output & output);
 
 }
 

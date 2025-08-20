@@ -4,6 +4,7 @@
  */
 
 #include "jlm/llvm/ir/operators/IntegerOperations.hpp"
+#include "jlm/rvsdg/bitstring/constant.hpp"
 #include <jlm/llvm/ir/operators/IOBarrier.hpp>
 #include <jlm/llvm/opt/alias-analyses/AliasAnalysis.hpp>
 #include <jlm/rvsdg/gamma.hpp>
@@ -138,6 +139,34 @@ NormalizeOutput(const rvsdg::Output & output)
   }
 
   return output;
+}
+
+std::optional<int64_t>
+TryGetConstantSignedInteger(const rvsdg::Output & output)
+{
+  const auto & normalized = NormalizeOutput(output);
+
+  if (const auto [_, constant] =
+          rvsdg::TryGetSimpleNodeAndOptionalOp<IntegerConstantOperation>(normalized);
+      constant)
+  {
+    const auto & rep = constant->Representation();
+    if (rep.is_known() && rep.nbits() <= 64)
+      return rep.to_int();
+    return std::nullopt;
+  }
+
+  if (const auto [_, constant] =
+          rvsdg::TryGetSimpleNodeAndOptionalOp<rvsdg::bitconstant_op>(normalized);
+      constant)
+  {
+    const auto & rep = constant->value();
+    if (rep.is_known() && rep.nbits() <= 64)
+      return rep.to_int();
+    return std::nullopt;
+  }
+
+  return std::nullopt;
 }
 
 }

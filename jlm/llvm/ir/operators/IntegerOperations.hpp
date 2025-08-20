@@ -58,24 +58,6 @@ public:
     return Create(region, { numBits, value });
   }
 
-  /**
-   * Gets the value of the given \p output as a compile time constant, if possible.
-   * The constant is interpreted as a signed value, and sign extended to int64 if needed.
-   * This function does not perform any constant folding.
-   * @return the integer value of the output, or nullopt if it could not be determined.
-   */
-  static std::optional<std::int64_t>
-  TryGetSignedConstantValue(const rvsdg::Output & output);
-
-  /**
-   * Gets the value of the given \p output as a compile time constant, if possible.
-   * The constant is interpreted as an unsigned value, and zero extended to uint64 if needed.
-   * This function does not perform any constant folding.
-   * @return the integer value of the output, or nullopt if it could not be determined.
-   */
-  static std::optional<std::int64_t>
-  TryGetUnsignedConstantValue(const rvsdg::Output & output);
-
 private:
   IntegerValueRepresentation Representation_;
 };
