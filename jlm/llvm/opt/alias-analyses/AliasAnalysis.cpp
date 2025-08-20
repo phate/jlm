@@ -3,8 +3,10 @@
  * See COPYING for terms of redistribution.
  */
 
+#include <jlm/llvm/ir/operators/IntegerOperations.hpp>
 #include <jlm/llvm/ir/operators/IOBarrier.hpp>
 #include <jlm/llvm/opt/alias-analyses/AliasAnalysis.hpp>
+#include <jlm/rvsdg/bitstring/constant.hpp>
 #include <jlm/rvsdg/gamma.hpp>
 #include <jlm/rvsdg/lambda.hpp>
 #include <jlm/rvsdg/Phi.hpp>
@@ -16,6 +18,39 @@ namespace jlm::llvm::aa
 AliasAnalysis::AliasAnalysis() = default;
 
 AliasAnalysis::~AliasAnalysis() noexcept = default;
+
+ChainedAliasAnalysis::ChainedAliasAnalysis(AliasAnalysis & first, AliasAnalysis & second)
+    : First_(first),
+      Second_(second)
+{}
+
+ChainedAliasAnalysis::~ChainedAliasAnalysis() = default;
+
+AliasAnalysis::AliasQueryResponse
+ChainedAliasAnalysis::Query(
+    const rvsdg::Output & p1,
+    size_t s1,
+    const rvsdg::Output & p2,
+    size_t s2)
+{
+  const auto firstResponse = First_.Query(p1, s1, p2, s2);
+
+  // Anything other than MayAlias is precise, and can be returned right away
+  if (firstResponse != MayAlias)
+  {
+    [[maybe_unused]] AliasQueryResponse opposite = firstResponse == MustAlias ? NoAlias : MustAlias;
+    JLM_ASSERT(Second_.Query(p1, s1, p2, s2) != opposite);
+    return firstResponse;
+  }
+
+  return Second_.Query(p1, s1, p2, s2);
+}
+
+std::string
+ChainedAliasAnalysis::ToString() const
+{
+  return util::strfmt("ChainedAA(", First_.ToString(), ",", Second_.ToString(), ")");
+}
 
 bool
 IsPointerCompatible(const rvsdg::Output & value)
@@ -103,6 +138,34 @@ NormalizeOutput(const rvsdg::Output & output)
   }
 
   return output;
+}
+
+std::optional<int64_t>
+TryGetConstantSignedInteger(const rvsdg::Output & output)
+{
+  const auto & normalized = NormalizeOutput(output);
+
+  if (const auto [_, constant] =
+          rvsdg::TryGetSimpleNodeAndOptionalOp<IntegerConstantOperation>(normalized);
+      constant)
+  {
+    const auto & rep = constant->Representation();
+    if (rep.is_known() && rep.nbits() <= 64)
+      return rep.to_int();
+    return std::nullopt;
+  }
+
+  if (const auto [_, constant] =
+          rvsdg::TryGetSimpleNodeAndOptionalOp<rvsdg::bitconstant_op>(normalized);
+      constant)
+  {
+    const auto & rep = constant->value();
+    if (rep.is_known() && rep.nbits() <= 64)
+      return rep.to_int();
+    return std::nullopt;
+  }
+
+  return std::nullopt;
 }
 
 }

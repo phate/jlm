@@ -8,6 +8,8 @@
 
 #include <jlm/rvsdg/node.hpp>
 
+#include <optional>
+
 namespace jlm::llvm::aa
 {
 
@@ -62,6 +64,28 @@ public:
 };
 
 /**
+ * Class using two instances of AliasAnalysis to answer alias analysis queries.
+ * If the first analysis responds "May Alias", the second analysis is queried.
+ */
+class ChainedAliasAnalysis final : public AliasAnalysis
+{
+public:
+  explicit ChainedAliasAnalysis(AliasAnalysis & first, AliasAnalysis & second);
+  ~ChainedAliasAnalysis() override;
+
+  std::string
+  ToString() const override;
+
+  AliasQueryResponse
+  Query(const rvsdg::Output & p1, size_t s1, const rvsdg::Output & p2, size_t s2) override;
+
+private:
+  AliasAnalysis & First_;
+  AliasAnalysis & Second_;
+};
+
+/**
+ * Determines if the given value is regarded as representing a pointer
  * @param value the value in question
  * @return true if value is or contains a pointer, false otherwise
  */
@@ -88,6 +112,15 @@ IsPointerCompatible(const rvsdg::Output & value);
  */
 [[nodiscard]] const rvsdg::Output &
 NormalizeOutput(const rvsdg::Output & output);
+
+/**
+ * Gets the value of the given \p output as a compile time constant, if possible.
+ * The constant is interpreted as a signed value, and sign extended to int64 if needed.
+ * This function does not perform any constant folding.
+ * @return the integer value of the output, or nullopt if it could not be determined.
+ */
+std::optional<int64_t>
+TryGetConstantSignedInteger(const rvsdg::Output & output);
 
 }
 
