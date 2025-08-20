@@ -216,7 +216,7 @@ public:
 
   /**
    * Checks for the existance of the given \p value in the BijectiveMap
-   * @param value the value to look for
+   * @param value the value to look forsome
    * @return true if the value exists in the BijectiveMap, otherwise false.
    */
   [[nodiscard]] bool

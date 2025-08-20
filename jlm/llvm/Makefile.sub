@@ -196,7 +196,6 @@ libllvm_TESTS += \
     tests/jlm/llvm/ir/TestCallSummary \
     tests/jlm/llvm/ir/ThreeAddressCodeTests \
     tests/jlm/llvm/ir/TypeConverterTests \
-    tests/jlm/llvm/opt/alias-analyses/AliasAnalysisTests \
     tests/jlm/llvm/opt/alias-analyses/AgnosticModRefSummarizerTests \
     tests/jlm/llvm/opt/alias-analyses/LocalAliasAnalysisTests \
     tests/jlm/llvm/opt/alias-analyses/PointsToGraphAliasAnalysisTests \

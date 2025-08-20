@@ -1,3 +1,7 @@
+/*
+ * Copyright 2025 Håvard Krogstie <krogstie.havard@gmail.com>
+ * See COPYING for terms of redistribution.
+ */
 
 #include <jlm/llvm/opt/alias-analyses/PointsToGraphAliasAnalysis.hpp>
 
@@ -106,6 +110,8 @@ PointsToGraphAliasAnalysis::GetMemoryNodeSize(const PointsToGraph::MemoryNode & 
     // Workaround for imported incomplete types appearing to have size 0 in the LLVM IR
     if (size == 0)
       return std::nullopt;
+
+    return size;
   }
   if (auto alloca = dynamic_cast<const PointsToGraph::AllocaNode *>(&node))
   {

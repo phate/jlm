@@ -1,3 +1,7 @@
+/*
+ * Copyright 2025 Håvard Krogstie <krogstie.havard@gmail.com>
+ * See COPYING for terms of redistribution.
+ */
 
 #ifndef JLM_LLVM_OPT_ALIAS_ANALYSES_POINTSTOGRAPHALIASANALYSIS_HPP
 #define JLM_LLVM_OPT_ALIAS_ANALYSES_POINTSTOGRAPHALIASANALYSIS_HPP
