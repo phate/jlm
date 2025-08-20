@@ -444,13 +444,11 @@ TestPtGAliasAnalysisOffsets()
   rvsdg.InitializeTest();
   const auto & outputs = rvsdg.GetOutputs();
 
-  jlm::rvsdg::view(&rvsdg.graph().GetRootRegion(), stdout);
+  // jlm::rvsdg::view(&rvsdg.graph().GetRootRegion(), stdout);
 
   Andersen andersen;
   auto pointsToGraph = andersen.Analyze(rvsdg.module());
-
-  std::cout << PointsToGraph::ToDot(*pointsToGraph) << std::endl;
-
+  // std::cout << PointsToGraph::ToDot(*pointsToGraph) << std::endl;
   PointsToGraphAliasAnalysis aa(*pointsToGraph);
 
   // Assert
