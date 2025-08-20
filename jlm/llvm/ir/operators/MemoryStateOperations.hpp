@@ -311,7 +311,7 @@ public:
    * @return The respective input if the memory node identifier maps to one, otherwise nullptr.
    */
   [[nodiscard]] static rvsdg::Input *
-  MapMemoryNodeIdToInput(const rvsdg::Node & node, MemoryNodeId memoryNodeId);
+  MapMemoryNodeIdToInput(const rvsdg::SimpleNode & node, MemoryNodeId memoryNodeId);
 
   /**
    * Performs the following transformation:

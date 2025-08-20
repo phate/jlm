@@ -284,7 +284,7 @@ LambdaExitMemoryStateMergeOperation::copy() const
 
 rvsdg::Input *
 LambdaExitMemoryStateMergeOperation::MapMemoryNodeIdToInput(
-    const rvsdg::Node & node,
+    const rvsdg::SimpleNode & node,
     const MemoryNodeId memoryNodeId)
 {
   const auto operation =
@@ -294,16 +294,14 @@ LambdaExitMemoryStateMergeOperation::MapMemoryNodeIdToInput(
     return nullptr;
   }
 
-  try
-  {
-    const auto index = operation->MemoryNodeIdToIndex_.LookupKey(memoryNodeId);
-    JLM_ASSERT(index < node.ninputs());
-    return node.input(index);
-  }
-  catch (...)
+  if (!operation->MemoryNodeIdToIndex_.HasKey(memoryNodeId))
   {
     return nullptr;
   }
+
+  const auto index = operation->MemoryNodeIdToIndex_.LookupKey(memoryNodeId);
+  JLM_ASSERT(index < node.ninputs());
+  return node.input(index);
 }
 
 std::optional<std::vector<rvsdg::Output *>>
