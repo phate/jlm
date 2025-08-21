@@ -251,11 +251,14 @@ LambdaEntryMemoryStateSplitOperation::copy() const
 }
 
 LambdaExitMemoryStateMergeOperation::LambdaExitMemoryStateMergeOperation(
-    std::vector<MemoryNodeId> memoryNodeIds)
-    : MemoryStateOperation(memoryNodeIds.size(), 1),
-      MemoryNodeIds_(std::move(memoryNodeIds))
+    const std::vector<MemoryNodeId> & memoryNodeIds)
+    : MemoryStateOperation(memoryNodeIds.size(), 1)
 {
-  CheckMemoryNodeIds(MemoryNodeIds_, MemoryNodeIds_.size());
+  CheckMemoryNodeIds(memoryNodeIds, memoryNodeIds.size());
+  for (size_t n = 0; n < memoryNodeIds.size(); n++)
+  {
+    MemoryNodeIdToIndex_.Insert(memoryNodeIds[n], n);
+  }
 }
 
 LambdaExitMemoryStateMergeOperation::~LambdaExitMemoryStateMergeOperation() noexcept = default;
@@ -264,19 +267,41 @@ bool
 LambdaExitMemoryStateMergeOperation::operator==(const Operation & other) const noexcept
 {
   const auto operation = dynamic_cast<const LambdaExitMemoryStateMergeOperation *>(&other);
-  return operation && operation->MemoryNodeIds_ == MemoryNodeIds_;
+  return operation && operation->MemoryNodeIdToIndex_ == MemoryNodeIdToIndex_;
 }
 
 std::string
 LambdaExitMemoryStateMergeOperation::debug_string() const
 {
-  return util::strfmt("LambdaExitMemoryStateMerge[", ToString(MemoryNodeIds_), "]");
+  return util::strfmt("LambdaExitMemoryStateMerge[", ToString(GetMemoryNodeIds()), "]");
 }
 
 std::unique_ptr<rvsdg::Operation>
 LambdaExitMemoryStateMergeOperation::copy() const
 {
   return std::make_unique<LambdaExitMemoryStateMergeOperation>(*this);
+}
+
+rvsdg::Input *
+LambdaExitMemoryStateMergeOperation::MapMemoryNodeIdToInput(
+    const rvsdg::SimpleNode & node,
+    const MemoryNodeId memoryNodeId)
+{
+  const auto operation =
+      dynamic_cast<const LambdaExitMemoryStateMergeOperation *>(&node.GetOperation());
+  if (!operation)
+  {
+    return nullptr;
+  }
+
+  if (!operation->MemoryNodeIdToIndex_.HasKey(memoryNodeId))
+  {
+    return nullptr;
+  }
+
+  const auto index = operation->MemoryNodeIdToIndex_.LookupKey(memoryNodeId);
+  JLM_ASSERT(index < node.ninputs());
+  return node.input(index);
 }
 
 std::optional<std::vector<rvsdg::Output *>>
@@ -315,7 +340,7 @@ LambdaExitMemoryStateMergeOperation::NormalizeLoadFromAlloca(
     return std::nullopt;
 
   return {
-    { CreateNode(*operands[0]->region(), newOperands, operation.MemoryNodeIds_).output(0) }
+    { CreateNode(*operands[0]->region(), newOperands, operation.GetMemoryNodeIds()).output(0) }
   };
 }
 
@@ -357,7 +382,7 @@ LambdaExitMemoryStateMergeOperation::NormalizeStoreToAlloca(
     return std::nullopt;
 
   return {
-    { CreateNode(*operands[0]->region(), newOperands, operation.MemoryNodeIds_).output(0) }
+    { CreateNode(*operands[0]->region(), newOperands, operation.GetMemoryNodeIds()).output(0) }
   };
 }
 
@@ -392,7 +417,7 @@ LambdaExitMemoryStateMergeOperation::NormalizeAlloca(
     return std::nullopt;
 
   return {
-    { CreateNode(*operands[0]->region(), newOperands, operation.MemoryNodeIds_).output(0) }
+    { CreateNode(*operands[0]->region(), newOperands, operation.GetMemoryNodeIds()).output(0) }
   };
 }
 
@@ -456,7 +481,7 @@ CallExitMemoryStateSplitOperation::copy() const
 
 std::optional<std::vector<rvsdg::Output *>>
 CallExitMemoryStateSplitOperation::NormalizeLambdaExitMemoryStateMerge(
-    const CallExitMemoryStateSplitOperation & operation,
+    const CallExitMemoryStateSplitOperation & callExitSplitOperation,
     const std::vector<rvsdg::Output *> & operands)
 {
   JLM_ASSERT(operands.size() == 1);
@@ -466,8 +491,19 @@ CallExitMemoryStateSplitOperation::NormalizeLambdaExitMemoryStateMerge(
   if (!lambdaExitMergeOperation)
     return std::nullopt;
 
-  JLM_ASSERT(lambdaExitMergeNode->ninputs() == operation.nresults());
-  return rvsdg::operands(lambdaExitMergeNode);
+  JLM_ASSERT(lambdaExitMergeNode->ninputs() == callExitSplitOperation.nresults());
+
+  std::vector<rvsdg::Output *> newOperands;
+  for (auto & memoryNodeId : callExitSplitOperation.MemoryNodeIds_)
+  {
+    const auto input = LambdaExitMemoryStateMergeOperation::MapMemoryNodeIdToInput(
+        *lambdaExitMergeNode,
+        memoryNodeId);
+    JLM_ASSERT(input != nullptr);
+    newOperands.push_back(input->origin());
+  }
+
+  return newOperands;
 }
 
 }
