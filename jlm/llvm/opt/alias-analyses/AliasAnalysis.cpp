@@ -19,6 +19,29 @@ AliasAnalysis::AliasAnalysis() = default;
 
 AliasAnalysis::~AliasAnalysis() noexcept = default;
 
+/**
+ * Checks if two alias query responses are compatible with each other.
+ * NoAlias is incompatible with MustAlias, and vice versa.
+ * MayAlias is compatible with all responses.
+ *
+ * @param a first alias query response to check
+ * @param b second alias query response to check
+ * @return true if the responses are compatible, false otherwise
+ */
+bool
+AreAliasResponsesCompatible(
+    AliasAnalysis::AliasQueryResponse a,
+    AliasAnalysis::AliasQueryResponse b)
+{
+  if (a == AliasAnalysis::NoAlias)
+    return b != AliasAnalysis::MustAlias;
+  if (a == AliasAnalysis::MayAlias)
+    return true;
+  if (a == AliasAnalysis::MustAlias)
+    return b != AliasAnalysis::NoAlias;
+  JLM_UNREACHABLE("Unknown alias response");
+}
+
 ChainedAliasAnalysis::ChainedAliasAnalysis(AliasAnalysis & first, AliasAnalysis & second)
     : First_(first),
       Second_(second)
@@ -34,16 +57,12 @@ ChainedAliasAnalysis::Query(
     size_t s2)
 {
   const auto firstResponse = First_.Query(p1, s1, p2, s2);
+  if (firstResponse == MayAlias)
+    return Second_.Query(p1, s1, p2, s2);
 
-  // Anything other than MayAlias is precise, and can be returned right away
-  if (firstResponse != MayAlias)
-  {
-    [[maybe_unused]] AliasQueryResponse opposite = firstResponse == MustAlias ? NoAlias : MustAlias;
-    JLM_ASSERT(Second_.Query(p1, s1, p2, s2) != opposite);
-    return firstResponse;
-  }
-
-  return Second_.Query(p1, s1, p2, s2);
+  // When building with asserts, always query the second analysis and double check
+  JLM_ASSERT(AreAliasResponsesCompatible(firstResponse, Second_.Query(p1, s1, p2, s2)));
+  return firstResponse;
 }
 
 std::string

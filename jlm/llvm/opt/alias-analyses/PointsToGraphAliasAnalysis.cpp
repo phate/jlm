@@ -7,11 +7,11 @@
 
 namespace jlm::llvm::aa
 {
-PointsToGraphAliasAnalysis::PointsToGraphAliasAnalysis(PointsToGraph & pointsToGraph)
+PointsToGraphAliasAnalysis::PointsToGraphAliasAnalysis(const PointsToGraph & pointsToGraph)
     : PointsToGraph_(pointsToGraph)
 {}
 
-PointsToGraphAliasAnalysis::~PointsToGraphAliasAnalysis() = default;
+PointsToGraphAliasAnalysis::~PointsToGraphAliasAnalysis() noexcept = default;
 
 std::string
 PointsToGraphAliasAnalysis::ToString() const
@@ -39,45 +39,18 @@ PointsToGraphAliasAnalysis::Query(
   if (p1RegisterNode.HasTarget(externalNode) && p2RegisterNode.HasTarget(externalNode))
     return MayAlias;
 
-  // Quickly checks if the given register node has only one possible target
-  const auto GetSingleTarget = [&](const PointsToGraph::RegisterNode & node,
-                                   size_t size) -> std::optional<const PointsToGraph::MemoryNode *>
-  {
-    std::optional<const PointsToGraph::MemoryNode *> singleTarget;
-    for (auto & target : node.Targets())
-    {
-      // Skip memory locations that are too small to hold size
-      const auto targetSize = GetMemoryNodeSize(target);
-      if (targetSize.has_value() && *targetSize < size)
-        continue;
-
-      if (singleTarget.has_value())
-        return std::nullopt;
-
-      singleTarget = &target;
-    }
-
-    return singleTarget;
-  };
-
   // If both p1 and p2 have exactly one possible target, which is the same for both,
   // and is the same size as the operations, and only represents one concrete memory location,
   // we can respond with MustAlias
   if (s1 == s2)
   {
-    const auto p1SingleTarget = GetSingleTarget(p1RegisterNode, s1);
-    const auto p2SingleTarget = GetSingleTarget(p2RegisterNode, s2);
-    if (p1SingleTarget.has_value() && p2SingleTarget.has_value())
+    const auto p1SingleTarget = TryGetSingleTarget(p1RegisterNode, s1);
+    const auto p2SingleTarget = TryGetSingleTarget(p2RegisterNode, s2);
+    if (p1SingleTarget && p1SingleTarget == p2SingleTarget
+        && IsRepresentingSingleMemoryLocation(*p1SingleTarget)
+        && GetMemoryNodeSize(*p1SingleTarget) == s1)
     {
-      if (*p1SingleTarget == *p2SingleTarget)
-      {
-        if (IsRepresentingSingleMemoryLocation(**p1SingleTarget))
-        {
-          const auto targetSize = GetMemoryNodeSize(**p1SingleTarget);
-          if (targetSize.has_value() && *targetSize == s1)
-            return MustAlias;
-        }
-      }
+      return MustAlias;
     }
   }
 
@@ -97,6 +70,29 @@ PointsToGraphAliasAnalysis::Query(
   }
 
   return NoAlias;
+}
+
+const PointsToGraph::MemoryNode *
+PointsToGraphAliasAnalysis::TryGetSingleTarget(
+    const PointsToGraph::RegisterNode & node,
+    size_t size)
+{
+  const PointsToGraph::MemoryNode * singleTarget = nullptr;
+  for (auto & target : node.Targets())
+  {
+    // Skip memory locations that are too small to hold size
+    const auto targetSize = GetMemoryNodeSize(target);
+    if (targetSize.has_value() && *targetSize < size)
+      continue;
+
+    // If we already have a "single target", there is more than one target
+    if (singleTarget)
+      return nullptr;
+
+    singleTarget = &target;
+  }
+
+  return singleTarget;
 }
 
 std::optional<size_t>

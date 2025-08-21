@@ -43,6 +43,7 @@ public:
   };
 
   AliasAnalysis();
+
   virtual ~AliasAnalysis() noexcept;
 
   /**
@@ -70,8 +71,9 @@ public:
 class ChainedAliasAnalysis final : public AliasAnalysis
 {
 public:
-  explicit ChainedAliasAnalysis(AliasAnalysis & first, AliasAnalysis & second);
-  ~ChainedAliasAnalysis() override;
+  ChainedAliasAnalysis(AliasAnalysis & first, AliasAnalysis & second);
+
+  ~ChainedAliasAnalysis() noexcept override;
 
   std::string
   ToString() const override;

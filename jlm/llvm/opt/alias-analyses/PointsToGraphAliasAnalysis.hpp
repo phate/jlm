@@ -20,9 +20,9 @@ namespace jlm::llvm::aa
 class PointsToGraphAliasAnalysis : public AliasAnalysis
 {
 public:
-  explicit PointsToGraphAliasAnalysis(PointsToGraph & pointsToGraph);
+  explicit PointsToGraphAliasAnalysis(const PointsToGraph & pointsToGraph);
 
-  ~PointsToGraphAliasAnalysis() override;
+  ~PointsToGraphAliasAnalysis() noexcept override;
 
   [[nodiscard]] std::string
   ToString() const override;
@@ -31,6 +31,18 @@ public:
   Query(const rvsdg::Output & p1, size_t s1, const rvsdg::Output & p2, size_t s2) override;
 
 private:
+  /**
+   * Determines if there is a single valid target memory node for a given register node.
+   * A target is only considered valid if it is large enough to hold the specified size.
+   * If there are multiple valid targets, nullptr is returned.
+   * @param node The register node to check the targets of
+   * @param size The minimum size that the target memory node must be able to hold
+   * @return a pointer to the single valid target memory node, or nullptr if there are zero or
+   * multiple valid targets
+   */
+  [[nodiscard]] static const PointsToGraph::MemoryNode *
+  TryGetSingleTarget(const PointsToGraph::RegisterNode & node, size_t size);
+
   /**
    * Determines the size of the memory region represented by the given memory node, if possible.
    * If the memory node represents multiple regions of the same size,
@@ -51,7 +63,7 @@ private:
   [[nodiscard]] static bool
   IsRepresentingSingleMemoryLocation(const PointsToGraph::MemoryNode & node);
 
-  PointsToGraph & PointsToGraph_;
+  const PointsToGraph & PointsToGraph_;
 };
 
 } // namespace jlm::llvm::aa

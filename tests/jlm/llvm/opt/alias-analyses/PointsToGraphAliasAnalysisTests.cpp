@@ -3,10 +3,10 @@
  * See COPYING for terms of redistribution.
  */
 
-#include "jlm/llvm/opt/alias-analyses/Andersen.hpp"
 #include <test-registry.hpp>
 #include <TestRvsdgs.hpp>
 
+#include <jlm/llvm/opt/alias-analyses/Andersen.hpp>
 #include <jlm/llvm/opt/alias-analyses/PointsToGraphAliasAnalysis.hpp>
 #include <jlm/rvsdg/view.hpp>
 
