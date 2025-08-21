@@ -47,7 +47,7 @@ ChainedAliasAnalysis::ChainedAliasAnalysis(AliasAnalysis & first, AliasAnalysis 
       Second_(second)
 {}
 
-ChainedAliasAnalysis::~ChainedAliasAnalysis() = default;
+ChainedAliasAnalysis::~ChainedAliasAnalysis() noexcept = default;
 
 AliasAnalysis::AliasQueryResponse
 ChainedAliasAnalysis::Query(
