@@ -54,7 +54,7 @@ JLC_COMPILE_TESTS = \
 $(patsubst %, $(BUILD_OUT_PREFIX)%.jlm, $(JLC_COMPILE_TESTS)): $(BUILD_OUT_PREFIX)%.jlm : %.c $(BUILD_OUT_PREFIX)jlc
 	@mkdir -p $(dir $@)
 	@cp $< $$(dirname $@)/$$(basename $<)
-	$(BUILD_OUT_PREFIX)jlc -Wall -Werror -O3 -o $@ $$(dirname $@)/$$(basename $<)
+	$(JLC) -Wall -Werror -O3 -o $@ $$(dirname $@)/$$(basename $<)
 
 GENERATED_FILES+=$(patsubst %, $(BUILD_OUT_PREFIX)%.jlm, $(JLC_COMPILE_TESTS))
 GENERATED_FILES+=$(patsubst %, $(BUILD_OUT_PREFIX)%.c, $(JLC_COMPILE_TESTS))
