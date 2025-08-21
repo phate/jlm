@@ -10,6 +10,7 @@
 #include <jlm/rvsdg/substitution.hpp>
 #include <jlm/rvsdg/traverser.hpp>
 #include <jlm/util/AnnotationMap.hpp>
+#include <jlm/util/strfmt.hpp>
 
 namespace jlm::rvsdg
 {

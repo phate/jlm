@@ -4,7 +4,7 @@
  */
 
 #include <jlm/llvm/ir/operators/delta.hpp>
-#include <jlm/rvsdg/substitution.hpp>
+#include <jlm/util/strfmt.hpp>
 
 namespace jlm::llvm
 {
