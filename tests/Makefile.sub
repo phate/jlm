@@ -1,3 +1,5 @@
+JLC ?= $(BUILD_OUT_PREFIX)jlc
+
 libjlmtest_SOURCES = \
 	tests/test-operation.cpp \
 	tests/test-registry.cpp \
