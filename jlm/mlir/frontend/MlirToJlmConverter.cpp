@@ -1189,6 +1189,26 @@ MlirToJlmConverter::ConvertType(const ::mlir::Type & type)
     // RVSDG does not support indices, which are modeled as integers
     return rvsdg::BitType::Create(MlirToJlmConverter::GetIndexBitWidth());
   }
+  else if (auto structType = ::mlir::dyn_cast<::mlir::LLVM::LLVMStructType>(type))
+  {
+    std::vector<std::shared_ptr<const rvsdg::Type>> types;
+    for (auto element : structType.getBody())
+    {
+      types.push_back(ConvertType(element));
+    }
+    auto declaration = jlm::llvm::StructType::Declaration::Create(types);
+    if (structType.getName().empty())
+    {
+      return jlm::llvm::StructType::Create(structType.isPacked(), *declaration);
+    }
+    else
+    {
+      return jlm::llvm::StructType::Create(
+          structType.getName().str(),
+          structType.isPacked(),
+          *declaration);
+    }
+  }
   else
   {
     type.dump();
