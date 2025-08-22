@@ -158,8 +158,9 @@ class ControlFlowGraph final
 {
   using iterator =
       util::PtrIterator<BasicBlock, std::unordered_set<std::unique_ptr<BasicBlock>>::iterator>;
-  using const_iterator = util::
-      PtrIterator<BasicBlock, std::unordered_set<std::unique_ptr<BasicBlock>>::const_iterator>;
+  using const_iterator = util::PtrIterator<
+      const BasicBlock,
+      std::unordered_set<std::unique_ptr<BasicBlock>>::const_iterator>;
 
 public:
   ~ControlFlowGraph() noexcept = default;
