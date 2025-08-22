@@ -28,7 +28,7 @@ AliasAnalysis::~AliasAnalysis() noexcept = default;
  * @param b second alias query response to check
  * @return true if the responses are compatible, false otherwise
  */
-bool
+static bool
 AreAliasResponsesCompatible(
     AliasAnalysis::AliasQueryResponse a,
     AliasAnalysis::AliasQueryResponse b)
