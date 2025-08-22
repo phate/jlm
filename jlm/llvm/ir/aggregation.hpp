@@ -19,8 +19,9 @@ class AggregationNode
 {
   using iterator =
       util::PtrIterator<AggregationNode, std::vector<std::unique_ptr<AggregationNode>>::iterator>;
-  using const_iterator = util::
-      PtrIterator<AggregationNode, std::vector<std::unique_ptr<AggregationNode>>::const_iterator>;
+  using const_iterator = util::PtrIterator<
+      const AggregationNode,
+      std::vector<std::unique_ptr<AggregationNode>>::const_iterator>;
 
 public:
   virtual ~AggregationNode() noexcept;
