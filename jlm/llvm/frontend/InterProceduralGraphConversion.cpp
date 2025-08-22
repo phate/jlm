@@ -995,7 +995,7 @@ ConvertFunctionNode(
 
 static rvsdg::Output *
 ConvertDataNodeInitialization(
-    const data_node_init & init,
+    const DataNodeInit & init,
     rvsdg::Region & region,
     RegionalizedVariableMap & regionalizedVariableMap)
 {
