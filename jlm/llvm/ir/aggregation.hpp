@@ -17,105 +17,10 @@ class ControlFlowGraph;
 
 class AggregationNode
 {
-  class iterator final
-  {
-  public:
-    inline iterator(std::vector<std::unique_ptr<AggregationNode>>::iterator it)
-        : it_(std::move(it))
-    {}
-
-    inline const iterator &
-    operator++() noexcept
-    {
-      it_++;
-      return *this;
-    }
-
-    inline iterator
-    operator++(int) noexcept
-    {
-      auto tmp = *this;
-      it_++;
-      return tmp;
-    }
-
-    inline bool
-    operator==(const iterator & other) const noexcept
-    {
-      return it_ == other.it_;
-    }
-
-    inline bool
-    operator!=(const iterator & other) const noexcept
-    {
-      return !(*this == other);
-    }
-
-    inline AggregationNode &
-    operator*() const noexcept
-    {
-      return *it_->get();
-    }
-
-    inline AggregationNode *
-    operator->() const noexcept
-    {
-      return it_->get();
-    }
-
-  private:
-    std::vector<std::unique_ptr<AggregationNode>>::iterator it_;
-  };
-
-  class const_iterator final
-  {
-  public:
-    inline const_iterator(std::vector<std::unique_ptr<AggregationNode>>::const_iterator it)
-        : it_(std::move(it))
-    {}
-
-    inline const const_iterator &
-    operator++() noexcept
-    {
-      it_++;
-      return *this;
-    }
-
-    inline const_iterator
-    operator++(int) noexcept
-    {
-      auto tmp = *this;
-      it_++;
-      return tmp;
-    }
-
-    inline bool
-    operator==(const const_iterator & other) const noexcept
-    {
-      return it_ == other.it_;
-    }
-
-    inline bool
-    operator!=(const const_iterator & other) const noexcept
-    {
-      return !(*this == other);
-    }
-
-    inline AggregationNode &
-    operator*() const noexcept
-    {
-      return *it_->get();
-    }
-
-    inline AggregationNode *
-    operator->() const noexcept
-    {
-      return it_->get();
-    }
-
-  private:
-    std::vector<std::unique_ptr<AggregationNode>>::const_iterator it_;
-  };
+  using iterator =
+      util::PtrIterator<AggregationNode, std::vector<std::unique_ptr<AggregationNode>>::iterator>;
+  using const_iterator = util::
+      PtrIterator<AggregationNode, std::vector<std::unique_ptr<AggregationNode>>::const_iterator>;
 
 public:
   virtual ~AggregationNode() noexcept;
