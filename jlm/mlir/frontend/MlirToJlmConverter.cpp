@@ -123,8 +123,8 @@ MlirToJlmConverter::ConvertBlock(::mlir::Block & block, rvsdg::Region & rvsdgReg
     {
       auto valueType = argument.getValueType();
       auto importedType = argument.getImportedValue().getType();
-      std::shared_ptr<rvsdg::Type> jlmValueType = ConvertType(valueType);
-      std::shared_ptr<rvsdg::Type> jlmImportedType = ConvertType(importedType);
+      auto jlmValueType = ConvertType(valueType);
+      auto jlmImportedType = ConvertType(importedType);
 
       jlm::llvm::GraphImport::Create(
           *rvsdgRegion.graph(),
@@ -447,7 +447,7 @@ MlirToJlmConverter::ConvertOperation(
       JLM_UNREACHABLE("Expected bits type for SIToFPOp operation.");
 
     auto mlirOutputType = sitofpOp.getType();
-    std::shared_ptr<rvsdg::Type> rt = ConvertType(mlirOutputType);
+    auto rt = ConvertType(mlirOutputType);
 
     return rvsdg::outputs(&rvsdg::CreateOpNode<llvm::SIToFPOperation>(
         std::vector<jlm::rvsdg::Output *>(inputs.begin(), inputs.end()),
@@ -573,7 +573,7 @@ MlirToJlmConverter::ConvertOperation(
   else if (auto UndefOp = ::mlir::dyn_cast<::mlir::jlm::Undef>(&mlirOperation))
   {
     auto type = UndefOp.getResult().getType();
-    std::shared_ptr<jlm::rvsdg::Type> jlmType = ConvertType(type);
+    auto jlmType = ConvertType(type);
     return { jlm::llvm::UndefValueOperation::Create(rvsdgRegion, jlmType) };
   }
 
@@ -613,7 +613,7 @@ MlirToJlmConverter::ConvertOperation(
   {
     auto outputType = AllocaOp.getValueType();
 
-    std::shared_ptr<jlm::rvsdg::Type> jlmType = ConvertType(outputType);
+    auto jlmType = ConvertType(outputType);
     if (!rvsdg::is<const rvsdg::ValueType>(jlmType))
       JLM_UNREACHABLE("Expected ValueType for AllocaOp operation.");
 
@@ -705,7 +705,7 @@ MlirToJlmConverter::ConvertOperation(
     auto address = inputs[0];
     auto memoryStateInputs = std::vector(std::next(inputs.begin()), inputs.end());
     auto outputType = LoadOp.getOutput().getType();
-    std::shared_ptr<jlm::rvsdg::Type> jlmType = ConvertType(outputType);
+    auto jlmType = ConvertType(outputType);
     if (!rvsdg::is<const rvsdg::ValueType>(jlmType))
       JLM_UNREACHABLE("Expected ValueType for LoadOp operation output.");
     auto jlmValueType = std::dynamic_pointer_cast<const rvsdg::ValueType>(jlmType);
@@ -718,7 +718,7 @@ MlirToJlmConverter::ConvertOperation(
   else if (auto GepOp = ::mlir::dyn_cast<::mlir::LLVM::GEPOp>(&mlirOperation))
   {
     auto elemType = GepOp.getElemType();
-    std::shared_ptr<jlm::rvsdg::Type> pointeeType = ConvertType(elemType);
+    auto pointeeType = ConvertType(elemType);
     if (!rvsdg::is<const rvsdg::ValueType>(pointeeType))
       JLM_UNREACHABLE("Expected ValueType for GepOp operation pointee.");
 
@@ -822,7 +822,7 @@ MlirToJlmConverter::ConvertOperation(
     auto terminator = deltaBlock.getTerminator();
 
     auto mlirOutputType = terminator->getOperand(0).getType();
-    std::shared_ptr<rvsdg::Type> outputType = ConvertType(mlirOutputType);
+    auto outputType = ConvertType(mlirOutputType);
     auto outputValueType = std::dynamic_pointer_cast<const rvsdg::ValueType>(outputType);
     auto linakgeString = mlirDeltaNode.getLinkage().str();
     auto rvsdgDeltaNode = rvsdg::DeltaNode::Create(
@@ -870,7 +870,7 @@ MlirToJlmConverter::ConvertOperation(
   else if (auto selectOp = ::mlir::dyn_cast<::mlir::arith::SelectOp>(&mlirOperation))
   {
     auto type = selectOp.getType();
-    std::shared_ptr<jlm::rvsdg::Type> jlmType = ConvertType(type);
+    auto jlmType = ConvertType(type);
     return rvsdg::outputs(&rvsdg::CreateOpNode<jlm::llvm::SelectOperation>(
         std::vector(inputs.begin(), inputs.end()),
         jlmType));
@@ -1042,59 +1042,59 @@ MlirToJlmConverter::ConvertLambda(
   return rvsdgLambda;
 }
 
-std::unique_ptr<rvsdg::Type>
+std::shared_ptr<const rvsdg::Type>
 MlirToJlmConverter::ConvertType(const ::mlir::Type & type)
 {
   if (auto ctrlType = ::mlir::dyn_cast<::mlir::rvsdg::RVSDG_CTRLType>(type))
   {
-    return std::make_unique<rvsdg::ControlType>(ctrlType.getNumOptions());
+    return rvsdg::ControlType::Create(ctrlType.getNumOptions());
   }
   else if (auto intType = ::mlir::dyn_cast<::mlir::IntegerType>(type))
   {
-    return std::make_unique<rvsdg::BitType>(intType.getWidth());
+    return rvsdg::BitType::Create(intType.getWidth());
   }
   else if (::mlir::isa<::mlir::Float16Type>(type))
   {
-    return std::make_unique<llvm::FloatingPointType>(llvm::fpsize::half);
+    return llvm::FloatingPointType::Create(llvm::fpsize::half);
   }
   else if (::mlir::isa<::mlir::Float32Type>(type))
   {
-    return std::make_unique<llvm::FloatingPointType>(llvm::fpsize::flt);
+    return llvm::FloatingPointType::Create(llvm::fpsize::flt);
   }
   else if (::mlir::isa<::mlir::Float64Type>(type))
   {
-    return std::make_unique<llvm::FloatingPointType>(llvm::fpsize::dbl);
+    return llvm::FloatingPointType::Create(llvm::fpsize::dbl);
   }
   else if (::mlir::isa<::mlir::Float80Type>(type))
   {
-    return std::make_unique<llvm::FloatingPointType>(llvm::fpsize::x86fp80);
+    return llvm::FloatingPointType::Create(llvm::fpsize::x86fp80);
   }
   else if (::mlir::isa<::mlir::Float128Type>(type))
   {
-    return std::make_unique<llvm::FloatingPointType>(llvm::fpsize::fp128);
+    return llvm::FloatingPointType::Create(llvm::fpsize::fp128);
   }
   else if (::mlir::isa<::mlir::rvsdg::MemStateEdgeType>(type))
   {
-    return std::make_unique<llvm::MemoryStateType>();
+    return llvm::MemoryStateType::Create();
   }
   else if (::mlir::isa<::mlir::rvsdg::IOStateEdgeType>(type))
   {
-    return std::make_unique<llvm::IOStateType>();
+    return llvm::IOStateType::Create();
   }
   else if (::mlir::isa<::mlir::LLVM::LLVMPointerType>(type))
   {
-    return std::make_unique<llvm::PointerType>();
+    return llvm::PointerType::Create();
   }
   else if (::mlir::isa<::mlir::jlm::VarargListType>(type))
   {
-    return std::make_unique<llvm::VariableArgumentType>();
+    return llvm::VariableArgumentType::Create();
   }
   else if (auto arrayType = ::mlir::dyn_cast<::mlir::LLVM::LLVMArrayType>(type))
   {
     auto mlirElementType = arrayType.getElementType();
-    std::shared_ptr<rvsdg::Type> elementType = ConvertType(mlirElementType);
+    std::shared_ptr<const rvsdg::Type> elementType = ConvertType(mlirElementType);
     auto elemenValueType = std::dynamic_pointer_cast<const rvsdg::ValueType>(elementType);
-    return std::make_unique<llvm::ArrayType>(elemenValueType, arrayType.getNumElements());
+    return llvm::ArrayType::Create(elemenValueType, arrayType.getNumElements());
   }
   else if (auto functionType = ::mlir::dyn_cast<::mlir::FunctionType>(type))
   {
@@ -1108,7 +1108,7 @@ MlirToJlmConverter::ConvertType(const ::mlir::Type & type)
     {
       resultTypes.push_back(ConvertType(resultType));
     }
-    return std::make_unique<rvsdg::FunctionType>(argumentTypes, resultTypes);
+    return rvsdg::FunctionType::Create(argumentTypes, resultTypes);
   }
   else
   {
