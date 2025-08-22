@@ -74,7 +74,7 @@ private:
 class Graph final
 {
 public:
-  ~Graph();
+  ~Graph() noexcept;
 
   Graph();
 

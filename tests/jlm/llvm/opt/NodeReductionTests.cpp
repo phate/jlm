@@ -20,7 +20,7 @@ MultipleReductionsPerRegion()
   using namespace jlm::rvsdg;
 
   // Arrange
-  const auto bitType = bittype::Create(32);
+  const auto bitType = BitType::Create(32);
   const auto memoryStateType = MemoryStateType::Create();
 
   jlm::llvm::RvsdgModule rvsdgModule(jlm::util::FilePath(""), "", "");
@@ -29,13 +29,13 @@ MultipleReductionsPerRegion()
   auto & sizeArgument = jlm::rvsdg::GraphImport::Create(graph, bitType, "size");
   auto allocaResults = AllocaOperation::create(bitType, &sizeArgument, 4);
 
-  const auto c3 = bitconstant_op::create(&graph.GetRootRegion(), bitvalue_repr(32, 3));
+  const auto c3 = bitconstant_op::create(&graph.GetRootRegion(), BitValueRepresentation(32, 3));
   auto storeResults =
       StoreNonVolatileOperation::Create(allocaResults[0], c3, { allocaResults[1] }, 4);
   auto loadResults =
       LoadNonVolatileOperation::Create(allocaResults[0], { storeResults[0] }, bitType, 4);
 
-  const auto c5 = bitconstant_op::create(&graph.GetRootRegion(), bitvalue_repr(32, 5));
+  const auto c5 = bitconstant_op::create(&graph.GetRootRegion(), BitValueRepresentation(32, 5));
   auto sum = bitadd_op::create(32, loadResults[0], c5);
 
   auto & sumExport = jlm::rvsdg::GraphExport::Create(*sum, "sum");

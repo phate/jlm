@@ -83,7 +83,7 @@ EmptyGammaWithTwoSubregionsAndMatch()
   // Arrange
   auto valueType = ValueType::Create();
   const auto functionType = jlm::rvsdg::FunctionType::Create(
-      { jlm::rvsdg::bittype::Create(32), valueType, valueType },
+      { jlm::rvsdg::BitType::Create(32), valueType, valueType },
       { valueType });
 
   RvsdgModule rvsdgModule(FilePath(""), "", "");
@@ -125,10 +125,11 @@ EmptyGammaWithTwoSubregionsAndMatch()
   assert(selectNode->input(2)->origin() == falseValue);
 
   const auto eqNode =
-      jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*selectNode->input(0)->origin());
+      jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(*selectNode->input(0)->origin());
   assert(eqNode && is<IntegerEqOperation>(eqNode));
 
-  auto constantNode = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*eqNode->input(0)->origin());
+  auto constantNode =
+      jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(*eqNode->input(0)->origin());
   if (constantNode)
   {
     assert(eqNode->input(1)->origin() == conditionValue);
@@ -140,7 +141,7 @@ EmptyGammaWithTwoSubregionsAndMatch()
   else
   {
     assert(eqNode->input(0)->origin() == conditionValue);
-    constantNode = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*eqNode->input(1)->origin());
+    constantNode = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(*eqNode->input(1)->origin());
     auto constantOperation =
         dynamic_cast<const IntegerConstantOperation *>(&constantNode->GetOperation());
     assert(constantOperation);
@@ -162,7 +163,7 @@ EmptyGammaWithTwoSubregions()
   // Arrange
   auto valueType = ValueType::Create();
   auto functionType = jlm::rvsdg::FunctionType::Create(
-      { jlm::rvsdg::bittype::Create(32), valueType, valueType },
+      { jlm::rvsdg::BitType::Create(32), valueType, valueType },
       { valueType });
 
   RvsdgModule rvsdgModule(FilePath(""), "", "");
@@ -178,10 +179,10 @@ EmptyGammaWithTwoSubregions()
   const auto gammaNode0 = jlm::rvsdg::GammaNode::create(matchResult, 2);
   const auto & c0 = jlm::rvsdg::CreateOpNode<jlm::rvsdg::ctlconstant_op>(
       *gammaNode0->subregion(0),
-      jlm::rvsdg::ctlvalue_repr(0, 2));
+      jlm::rvsdg::ControlValueRepresentation(0, 2));
   const auto & c1 = jlm::rvsdg::CreateOpNode<jlm::rvsdg::ctlconstant_op>(
       *gammaNode0->subregion(1),
-      jlm::rvsdg::ctlvalue_repr(1, 2));
+      jlm::rvsdg::ControlValueRepresentation(1, 2));
   auto c = gammaNode0->AddExitVar({ c0.output(0), c1.output(0) });
 
   const auto gammaNode1 = jlm::rvsdg::GammaNode::create(c.output, 2);
@@ -224,7 +225,7 @@ EmptyGammaWithThreeSubregions()
   // Arrange
   auto valueType = ValueType::Create();
   auto functionType = jlm::rvsdg::FunctionType::Create(
-      { jlm::rvsdg::bittype::Create(32), valueType, valueType },
+      { jlm::rvsdg::BitType::Create(32), valueType, valueType },
       { valueType });
 
   RvsdgModule rvsdgModule(FilePath(""), "", "");
@@ -277,7 +278,7 @@ PartialEmptyGamma()
   // Arrange
   auto valueType = ValueType::Create();
   auto functionType = jlm::rvsdg::FunctionType::Create(
-      { jlm::rvsdg::bittype::Create(1), valueType },
+      { jlm::rvsdg::BitType::Create(1), valueType },
       { valueType });
 
   RvsdgModule rvsdgModule(FilePath(""), "", "");
@@ -289,8 +290,11 @@ PartialEmptyGamma()
   auto match = jlm::rvsdg::match(1, { { 0, 0 } }, 1, 2, lambdaNode->GetFunctionArguments()[0]);
   auto gammaNode = jlm::rvsdg::GammaNode::create(match, 2);
   auto gammaInput = gammaNode->AddEntryVar(lambdaNode->GetFunctionArguments()[1]);
-  auto output =
-      create_testop(gammaNode->subregion(1), { gammaInput.branchArgument[1] }, { valueType })[0];
+  auto output = TestOperation::create(
+                    gammaNode->subregion(1),
+                    { gammaInput.branchArgument[1] },
+                    { valueType })
+                    ->output(0);
   auto gammaOutput = gammaNode->AddExitVar({ gammaInput.branchArgument[0], output });
 
   auto lambdaOutput = lambdaNode->finalize({ gammaOutput.output });

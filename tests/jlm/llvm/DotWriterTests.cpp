@@ -88,7 +88,7 @@ TestTypeGraph()
   // Arrange
   jlm::tests::GammaTest gammaTest;
   auto ptrType = PointerType::Create();
-  auto bit32Type = jlm::rvsdg::bittype::Create(32);
+  auto bit32Type = jlm::rvsdg::BitType::Create(32);
   auto memType = MemoryStateType::Create();
 
   // Act

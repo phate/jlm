@@ -66,10 +66,7 @@ GraphExport::Create(Output & origin, std::string name)
   return *graphExport;
 }
 
-Graph::~Graph()
-{
-  JLM_ASSERT(!has_active_trackers(this));
-}
+Graph::~Graph() noexcept = default;
 
 Graph::Graph()
     : RootRegion_(new Region(nullptr, this))

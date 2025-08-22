@@ -7,8 +7,8 @@
 #define JLM_LLVM_IR_OPERATORS_IOBARRIER_HPP
 
 #include <jlm/llvm/ir/types.hpp>
-#include <jlm/rvsdg/node.hpp>
 #include <jlm/rvsdg/operation.hpp>
+#include <jlm/rvsdg/simple-node.hpp>
 
 namespace jlm::llvm
 {
@@ -67,7 +67,7 @@ public:
   copy() const override;
 
   [[nodiscard]] static rvsdg::Input &
-  BarredInput(const rvsdg::Node & node) noexcept
+  BarredInput(const rvsdg::SimpleNode & node) noexcept
   {
     JLM_ASSERT(rvsdg::is<IOBarrierOperation>(&node));
     const auto input = node.input(0);

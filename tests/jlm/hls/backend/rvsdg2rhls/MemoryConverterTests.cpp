@@ -28,7 +28,7 @@ TestTraceArgument()
   auto functionType = jlm::rvsdg::FunctionType::Create(
       { jlm::llvm::PointerType::Create(),
         jlm::llvm::PointerType::Create(),
-        jlm::rvsdg::bittype::Create(32),
+        jlm::rvsdg::BitType::Create(32),
         MemoryStateType::Create() },
       { MemoryStateType::Create() });
 
@@ -84,7 +84,7 @@ TestLoad()
   std::cout << "Function Setup" << std::endl;
   auto functionType = jlm::rvsdg::FunctionType::Create(
       { jlm::llvm::PointerType::Create(), MemoryStateType::Create() },
-      { jlm::rvsdg::bittype::Create(32), MemoryStateType::Create() });
+      { jlm::rvsdg::BitType::Create(32), MemoryStateType::Create() });
 
   auto lambda = jlm::rvsdg::LambdaNode::Create(
       rvsdgModule->Rvsdg().GetRootRegion(),
@@ -96,7 +96,7 @@ TestLoad()
   auto loadOutput = LoadNonVolatileOperation::Create(
       loadAddress,
       { memoryStateArgument },
-      jlm::rvsdg::bittype::Create(32),
+      jlm::rvsdg::BitType::Create(32),
       32);
 
   auto lambdaOutput = lambda->finalize({ loadOutput[0], loadOutput[1] });
@@ -160,7 +160,7 @@ TestStore()
   std::cout << "Function Setup" << std::endl;
   auto functionType = jlm::rvsdg::FunctionType::Create(
       { jlm::llvm::PointerType::Create(),
-        jlm::rvsdg::bittype::Create(32),
+        jlm::rvsdg::BitType::Create(32),
         MemoryStateType::Create() },
       { MemoryStateType::Create() });
 
@@ -223,7 +223,7 @@ TestLoadStore()
   std::cout << "Function Setup" << std::endl;
   auto functionType = jlm::rvsdg::FunctionType::Create(
       { jlm::llvm::PointerType::Create(),
-        jlm::rvsdg::bittype::Create(32),
+        jlm::rvsdg::BitType::Create(32),
         MemoryStateType::Create() },
       { MemoryStateType::Create() });
 
@@ -295,9 +295,9 @@ TestThetaLoad()
   // Setup the function
   std::cout << "Function Setup" << std::endl;
   auto functionType = jlm::rvsdg::FunctionType::Create(
-      { jlm::rvsdg::bittype::Create(32),
-        jlm::rvsdg::bittype::Create(32),
-        jlm::rvsdg::bittype::Create(32),
+      { jlm::rvsdg::BitType::Create(32),
+        jlm::rvsdg::BitType::Create(32),
+        jlm::rvsdg::BitType::Create(32),
         jlm::llvm::PointerType::Create(),
         MemoryStateType::Create() },
       { jlm::llvm::PointerType::Create(), MemoryStateType::Create() });
@@ -420,11 +420,11 @@ TestThetaStore()
   // Setup the function
   std::cout << "Function Setup" << std::endl;
   auto functionType = jlm::rvsdg::FunctionType::Create(
-      { jlm::rvsdg::bittype::Create(32),
-        jlm::rvsdg::bittype::Create(32),
-        jlm::rvsdg::bittype::Create(32),
+      { jlm::rvsdg::BitType::Create(32),
+        jlm::rvsdg::BitType::Create(32),
+        jlm::rvsdg::BitType::Create(32),
         jlm::llvm::PointerType::Create(),
-        jlm::rvsdg::bittype::Create(32),
+        jlm::rvsdg::BitType::Create(32),
         MemoryStateType::Create() },
       { MemoryStateType::Create() });
 

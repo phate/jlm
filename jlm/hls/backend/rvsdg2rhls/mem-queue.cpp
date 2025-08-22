@@ -9,6 +9,7 @@
 #include <jlm/hls/backend/rvsdg2rhls/mem-queue.hpp>
 #include <jlm/hls/backend/rvsdg2rhls/mem-sep.hpp>
 #include <jlm/hls/ir/hls.hpp>
+#include <jlm/llvm/ir/LambdaMemoryState.hpp>
 #include <jlm/llvm/ir/operators/call.hpp>
 #include <jlm/llvm/ir/operators/lambda.hpp>
 #include <jlm/llvm/ir/operators/Load.hpp>
@@ -96,7 +97,8 @@ find_loop_output(jlm::rvsdg::StructuralInput * sti)
   auto sti_arg = sti->arguments.first();
   JLM_ASSERT(sti_arg->nusers() == 1);
   auto & user = *sti_arg->Users().begin();
-  auto [muxNode, muxOperation] = jlm::rvsdg::TryGetSimpleNodeAndOp<jlm::hls::MuxOperation>(user);
+  auto [muxNode, muxOperation] =
+      jlm::rvsdg::TryGetSimpleNodeAndOptionalOp<jlm::hls::MuxOperation>(user);
   JLM_ASSERT(muxNode && muxOperation);
   for (size_t i = 1; i < 3; ++i)
   {
@@ -106,10 +108,10 @@ find_loop_output(jlm::rvsdg::StructuralInput * sti)
       auto res = ba->result();
       JLM_ASSERT(res);
       auto [bufferNode, bufferOperation] =
-          jlm::rvsdg::TryGetSimpleNodeAndOp<jlm::hls::BufferOperation>(*res->origin());
+          jlm::rvsdg::TryGetSimpleNodeAndOptionalOp<jlm::hls::BufferOperation>(*res->origin());
       JLM_ASSERT(bufferNode && bufferOperation);
       auto [branchNode, branchOperation] =
-          jlm::rvsdg::TryGetSimpleNodeAndOp<jlm::hls::BranchOperation>(
+          jlm::rvsdg::TryGetSimpleNodeAndOptionalOp<jlm::hls::BranchOperation>(
               *bufferNode->input(0)->origin());
       JLM_ASSERT(branchNode && branchOperation);
       for (size_t j = 0; j < 2; ++j)
@@ -167,7 +169,7 @@ separate_load_edge(
       JLM_ASSERT(sti_arg->nusers() == 1);
       auto & user = *sti_arg->Users().begin();
       auto [muxNode, muxOperation] =
-          jlm::rvsdg::TryGetSimpleNodeAndOp<jlm::hls::MuxOperation>(user);
+          jlm::rvsdg::TryGetSimpleNodeAndOptionalOp<jlm::hls::MuxOperation>(user);
       JLM_ASSERT(muxNode && muxOperation);
       JLM_ASSERT(buffer->nusers() == 1);
       // use a separate vector to check if the loop contains stores
@@ -231,7 +233,8 @@ separate_load_edge(
           // create mux
           JLM_ASSERT(mem_edge->nusers() == 1);
           auto [muxNode, muxOperation] =
-              jlm::rvsdg::TryGetSimpleNodeAndOp<jlm::hls::MuxOperation>(*mem_edge->Users().begin());
+              jlm::rvsdg::TryGetSimpleNodeAndOptionalOp<jlm::hls::MuxOperation>(
+                  *mem_edge->Users().begin());
           JLM_ASSERT(muxNode && muxOperation);
           addr_edge = jlm::hls::MuxOperation::create(
               *muxNode->input(0)->origin(),
@@ -245,7 +248,7 @@ separate_load_edge(
         {
           // end of loop
           auto [branchNode, branchOperation] =
-              jlm::rvsdg::TryGetSimpleNodeAndOp<jlm::hls::BranchOperation>(addr_edge_user);
+              jlm::rvsdg::TryGetSimpleNodeAndOptionalOp<jlm::hls::BranchOperation>(addr_edge_user);
           JLM_ASSERT(branchNode && branchOperation);
           return nullptr;
         }
@@ -269,7 +272,7 @@ separate_load_edge(
         JLM_ASSERT(mem_edge->nusers() == 1);
         user = &*mem_edge->Users().begin();
         auto [mssNode, msso] =
-            jlm::rvsdg::TryGetSimpleNodeAndOp<jlm::llvm::MemoryStateSplitOperation>(*user);
+            jlm::rvsdg::TryGetSimpleNodeAndOptionalOp<jlm::llvm::MemoryStateSplitOperation>(*user);
         if (mssNode && msso)
         {
           // handle case where output of store is already connected to a MemStateSplit by adding an
@@ -483,7 +486,7 @@ jlm::hls::mem_queue(jlm::rvsdg::Region * region)
 {
   auto lambda =
       jlm::util::AssertedCast<const jlm::rvsdg::LambdaNode>(region->Nodes().begin().ptr());
-  auto state_arg = GetMemoryStateArgument(*lambda);
+  auto state_arg = &llvm::GetMemoryStateRegionArgument(*lambda);
   if (!state_arg)
   {
     // No memstate, i.e., no memory used

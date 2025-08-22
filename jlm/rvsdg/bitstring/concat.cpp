@@ -15,23 +15,23 @@ namespace jlm::rvsdg
 jlm::rvsdg::Output *
 bitconcat(const std::vector<jlm::rvsdg::Output *> & operands)
 {
-  std::vector<std::shared_ptr<const jlm::rvsdg::bittype>> types;
+  std::vector<std::shared_ptr<const jlm::rvsdg::BitType>> types;
   for (const auto operand : operands)
-    types.push_back(std::dynamic_pointer_cast<const jlm::rvsdg::bittype>(operand->Type()));
+    types.push_back(std::dynamic_pointer_cast<const jlm::rvsdg::BitType>(operand->Type()));
 
   return CreateOpNode<BitConcatOperation>(operands, std::move(types)).output(0);
 }
 
-std::shared_ptr<const bittype>
+std::shared_ptr<const BitType>
 BitConcatOperation::aggregate_arguments(
-    const std::vector<std::shared_ptr<const bittype>> & types) noexcept
+    const std::vector<std::shared_ptr<const BitType>> & types) noexcept
 {
   size_t total = 0;
   for (const auto & t : types)
   {
     total += t->nbits();
   }
-  return bittype::Create(total);
+  return BitType::Create(total);
 }
 
 BitConcatOperation::~BitConcatOperation() noexcept = default;
@@ -57,8 +57,8 @@ BitConcatOperation::can_reduce_operand_pair(
     const jlm::rvsdg::Output * arg1,
     const jlm::rvsdg::Output * arg2) const noexcept
 {
-  auto node1 = TryGetOwnerNode<Node>(*arg1);
-  auto node2 = TryGetOwnerNode<Node>(*arg2);
+  auto node1 = TryGetOwnerNode<SimpleNode>(*arg1);
+  auto node2 = TryGetOwnerNode<SimpleNode>(*arg2);
 
   if (!node1 || !node2)
     return binop_reduction_none;
@@ -96,24 +96,24 @@ BitConcatOperation::reduce_operand_pair(
     jlm::rvsdg::Output * arg1,
     jlm::rvsdg::Output * arg2) const
 {
-  auto node1 = static_cast<node_output *>(arg1)->node();
-  auto node2 = static_cast<node_output *>(arg2)->node();
+  auto & node1 = AssertGetOwnerNode<SimpleNode>(*arg1);
+  auto & node2 = AssertGetOwnerNode<SimpleNode>(*arg2);
 
   if (path == binop_reduction_constants)
   {
-    auto & arg1_constant = static_cast<const bitconstant_op &>(node1->GetOperation());
-    auto & arg2_constant = static_cast<const bitconstant_op &>(node2->GetOperation());
+    auto & arg1_constant = static_cast<const bitconstant_op &>(node1.GetOperation());
+    auto & arg2_constant = static_cast<const bitconstant_op &>(node2.GetOperation());
 
-    bitvalue_repr bits(arg1_constant.value());
+    BitValueRepresentation bits(arg1_constant.value());
     bits.Append(arg2_constant.value());
     return create_bitconstant(arg1->region(), std::move(bits));
   }
 
   if (path == binop_reduction_merge)
   {
-    auto arg1_slice = static_cast<const BitSliceOperation *>(&node1->GetOperation());
-    auto arg2_slice = static_cast<const BitSliceOperation *>(&node2->GetOperation());
-    return jlm::rvsdg::bitslice(node1->input(0)->origin(), arg1_slice->low(), arg2_slice->high());
+    auto arg1_slice = static_cast<const BitSliceOperation *>(&node1.GetOperation());
+    auto arg2_slice = static_cast<const BitSliceOperation *>(&node2.GetOperation());
+    return jlm::rvsdg::bitslice(node1.input(0)->origin(), arg1_slice->low(), arg2_slice->high());
 
     /* FIXME: support sign bit */
   }
@@ -139,13 +139,13 @@ BitConcatOperation::copy() const
   return std::make_unique<BitConcatOperation>(*this);
 }
 
-static std::vector<std::shared_ptr<const bittype>>
+static std::vector<std::shared_ptr<const BitType>>
 GetTypesFromOperands(const std::vector<rvsdg::Output *> & args)
 {
-  std::vector<std::shared_ptr<const bittype>> types;
+  std::vector<std::shared_ptr<const BitType>> types;
   for (const auto arg : args)
   {
-    types.push_back(std::dynamic_pointer_cast<const bittype>(arg->Type()));
+    types.push_back(std::dynamic_pointer_cast<const BitType>(arg->Type()));
   }
   return types;
 }

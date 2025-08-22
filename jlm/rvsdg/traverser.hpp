@@ -83,7 +83,7 @@ enum class traversal_nodestate
 class TraversalTracker final
 {
 public:
-  explicit inline TraversalTracker(Graph * graph);
+  explicit inline TraversalTracker(Region & region);
 
   inline traversal_nodestate
   get_nodestate(Node * node);
@@ -96,6 +96,12 @@ public:
 
   inline Node *
   peek_bottom();
+
+  [[nodiscard]] Region &
+  GetRegion() const noexcept
+  {
+    return tracker_.GetRegion();
+  }
 
 private:
   Tracker tracker_;
@@ -143,12 +149,6 @@ public:
   Node *
   next();
 
-  [[nodiscard]] rvsdg::Region *
-  region() const noexcept
-  {
-    return region_;
-  }
-
   typedef detail::TraverserIterator<TopDownTraverser> iterator;
   typedef Node * value_type;
 
@@ -174,7 +174,6 @@ private:
   void
   input_change(Input * in, Output * old_origin, Output * new_origin);
 
-  rvsdg::Region * region_;
   TraversalTracker tracker_;
   std::vector<jlm::util::Callback> callbacks_;
 };
@@ -188,12 +187,6 @@ public:
 
   Node *
   next();
-
-  [[nodiscard]] rvsdg::Region *
-  region() const noexcept
-  {
-    return region_;
-  }
 
   typedef detail::TraverserIterator<BottomUpTraverser> iterator;
   typedef Node * value_type;
@@ -220,7 +213,6 @@ private:
   void
   input_change(Input * in, Output * old_origin, Output * new_origin);
 
-  rvsdg::Region * region_;
   TraversalTracker tracker_;
   std::vector<jlm::util::Callback> callbacks_;
   traversal_nodestate new_node_state_;
@@ -228,8 +220,8 @@ private:
 
 /* traversal tracker implementation */
 
-TraversalTracker::TraversalTracker(Graph * graph)
-    : tracker_(graph, 2)
+TraversalTracker::TraversalTracker(Region & region)
+    : tracker_(region, 2)
 {}
 
 traversal_nodestate

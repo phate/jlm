@@ -19,14 +19,14 @@ public:
   ~MakeBitUnaryOperation() noexcept override;
 
   explicit MakeBitUnaryOperation(std::size_t nbits) noexcept
-      : BitUnaryOperation(bittype::Create(nbits))
+      : BitUnaryOperation(BitType::Create(nbits))
   {}
 
   bool
   operator==(const Operation & other) const noexcept override;
 
-  bitvalue_repr
-  reduce_constant(const bitvalue_repr & arg) const override;
+  BitValueRepresentation
+  reduce_constant(const BitValueRepresentation & arg) const override;
 
   std::string
   debug_string() const override;
@@ -51,7 +51,7 @@ public:
   ~MakeBitBinaryOperation() noexcept override;
 
   explicit MakeBitBinaryOperation(std::size_t nbits) noexcept
-      : BitBinaryOperation(bittype::Create(nbits))
+      : BitBinaryOperation(BitType::Create(nbits))
   {}
 
   bool
@@ -60,8 +60,9 @@ public:
   enum BinaryOperation::flags
   flags() const noexcept override;
 
-  bitvalue_repr
-  reduce_constants(const bitvalue_repr & arg1, const bitvalue_repr & arg2) const override;
+  BitValueRepresentation
+  reduce_constants(const BitValueRepresentation & arg1, const BitValueRepresentation & arg2)
+      const override;
 
   std::string
   debug_string() const override;

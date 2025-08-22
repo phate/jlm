@@ -162,8 +162,8 @@ RvsdgToIpGraphConverter::CreateInitialization(const rvsdg::DeltaNode & deltaNode
     for (size_t n = 0; n < node->ninputs(); n++)
       operands.push_back(Context_->GetVariable(node->input(n)->origin()));
 
-    // convert node to three address code
-    auto & op = *static_cast<const rvsdg::SimpleOperation *>(&node->GetOperation());
+    // convert node to tac
+    auto & op = util::AssertedCast<rvsdg::SimpleNode>(node)->GetOperation();
     tacs.push_back(ThreeAddressCode::create(op, operands));
     Context_->InsertVariable(output, tacs.back()->result(0));
   }

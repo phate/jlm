@@ -41,12 +41,14 @@ TestCopy()
       CallOperation::Create(function1, functionType, { value1, iOState1, memoryState1 });
 
   // Act
-  auto node = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*callResults[0]);
+  auto node = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(*callResults[0]);
   auto copiedNode =
       node->copy(&rvsdg.GetRootRegion(), { function2, value2, iOState2, memoryState2 });
 
   // Assert
-  assert(node->GetOperation() == copiedNode->GetOperation());
+  assert(
+      node->GetOperation()
+      == jlm::util::AssertedCast<jlm::rvsdg::SimpleNode>(copiedNode)->GetOperation());
 }
 
 static void
@@ -386,7 +388,7 @@ TestCallTypeClassifierRecursiveDirectCall()
     auto iOStateType = IOStateType::Create();
     auto memoryStateType = MemoryStateType::Create();
     auto functionType = jlm::rvsdg::FunctionType::Create(
-        { jlm::rvsdg::bittype::Create(64),
+        { jlm::rvsdg::BitType::Create(64),
           PointerType::Create(),
           IOStateType::Create(),
           MemoryStateType::Create() },
@@ -438,21 +440,21 @@ TestCallTypeClassifierRecursiveDirectCall()
     auto gepnm1 = GetElementPtrOperation::Create(
         resultev.branchArgument[0],
         { nm1 },
-        jlm::rvsdg::bittype::Create(64),
+        jlm::rvsdg::BitType::Create(64),
         pbit64);
     auto ldnm1 = LoadNonVolatileOperation::Create(
         gepnm1,
         { callfibm2Results[1] },
-        jlm::rvsdg::bittype::Create(64),
+        jlm::rvsdg::BitType::Create(64),
         8);
 
     auto gepnm2 = GetElementPtrOperation::Create(
         resultev.branchArgument[0],
         { nm2 },
-        jlm::rvsdg::bittype::Create(64),
+        jlm::rvsdg::BitType::Create(64),
         pbit64);
     auto ldnm2 =
-        LoadNonVolatileOperation::Create(gepnm2, { ldnm1[1] }, jlm::rvsdg::bittype::Create(64), 8);
+        LoadNonVolatileOperation::Create(gepnm2, { ldnm1[1] }, jlm::rvsdg::BitType::Create(64), 8);
 
     auto sum = jlm::rvsdg::bitadd_op::create(64, ldnm1[0], ldnm2[0]);
 
@@ -466,7 +468,7 @@ TestCallTypeClassifierRecursiveDirectCall()
     auto gepn = GetElementPtrOperation::Create(
         pointerArgument,
         { valueArgument },
-        jlm::rvsdg::bittype::Create(64),
+        jlm::rvsdg::BitType::Create(64),
         pbit64);
     auto store = StoreNonVolatileOperation::Create(gepn, sumex.output, { gOMemoryState.output }, 8);
 

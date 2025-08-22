@@ -185,11 +185,13 @@ TestCopy()
   auto storeResults = StoreNonVolatileOperation::Create(address1, value1, { memoryState1 }, 4);
 
   // Act
-  auto node = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*storeResults[0]);
+  auto node = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(*storeResults[0]);
   auto copiedNode = node->copy(&graph.GetRootRegion(), { address2, value2, memoryState2 });
 
   // Assert
-  assert(node->GetOperation() == copiedNode->GetOperation());
+  assert(
+      node->GetOperation()
+      == jlm::util::AssertedCast<jlm::rvsdg::SimpleNode>(copiedNode)->GetOperation());
 }
 
 JLM_UNIT_TEST_REGISTER("jlm/llvm/ir/operators/StoreTests-TestCopy", TestCopy)
@@ -232,9 +234,9 @@ TestStoreMuxNormalization()
   auto muxNode = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*ex.origin());
   assert(is<MemoryStateMergeOperation>(muxNode));
   assert(muxNode->ninputs() == 3);
-  auto n0 = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*muxNode->input(0)->origin());
-  auto n1 = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*muxNode->input(1)->origin());
-  auto n2 = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*muxNode->input(2)->origin());
+  auto n0 = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(*muxNode->input(0)->origin());
+  auto n1 = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(*muxNode->input(1)->origin());
+  auto n2 = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(*muxNode->input(2)->origin());
   assert(jlm::rvsdg::is<StoreNonVolatileOperation>(n0->GetOperation()));
   assert(jlm::rvsdg::is<StoreNonVolatileOperation>(n1->GetOperation()));
   assert(jlm::rvsdg::is<StoreNonVolatileOperation>(n2->GetOperation()));
@@ -306,7 +308,7 @@ TestStoreAllocaReduction()
   // Arrange
   auto vt = jlm::tests::ValueType::Create();
   auto mt = MemoryStateType::Create();
-  auto bt = jlm::rvsdg::bittype::Create(32);
+  auto bt = jlm::rvsdg::BitType::Create(32);
 
   jlm::rvsdg::Graph graph;
   auto size = &jlm::rvsdg::GraphImport::Create(graph, bt, "size");
@@ -404,7 +406,7 @@ IOBarrierAllocaAddressNormalization()
   const auto valueType = jlm::tests::ValueType::Create();
   const auto pointerType = PointerType::Create();
   const auto memoryStateType = MemoryStateType::Create();
-  const auto bit32Type = jlm::rvsdg::bittype::Create(32);
+  const auto bit32Type = jlm::rvsdg::BitType::Create(32);
   const auto ioStateType = IOStateType::Create();
 
   jlm::rvsdg::Graph graph;

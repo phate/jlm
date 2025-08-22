@@ -22,7 +22,7 @@ BufferWithLocalLoad()
 
   // Arrange
   auto valueType = jlm::tests::ValueType::Create();
-  auto i64Type = jlm::rvsdg::bittype::Create(64);
+  auto i64Type = jlm::rvsdg::BitType::Create(64);
   auto memoryStateType = MemoryStateType::Create();
 
   jlm::llvm::RvsdgModule rvsdgModule(FilePath(""), "", "");
@@ -47,7 +47,7 @@ BufferWithLocalLoad()
   // Assert
   // We expect the BufferOperation node to be replaced by a passthrough BufferOperation node
   assert(rvsdg.GetRootRegion().nnodes() == 2);
-  auto [bufferNode, bufferOperation] = TryGetSimpleNodeAndOp<BufferOperation>(*x.origin());
+  auto [bufferNode, bufferOperation] = TryGetSimpleNodeAndOptionalOp<BufferOperation>(*x.origin());
   assert(bufferNode && bufferOperation);
   assert(bufferOperation->Capacity() == 4);
   assert(bufferOperation->IsPassThrough());
@@ -67,7 +67,7 @@ BufferWithLocalStore()
 
   // Arrange
   auto valueType = jlm::tests::ValueType::Create();
-  auto i64Type = jlm::rvsdg::bittype::Create(64);
+  auto i64Type = jlm::rvsdg::BitType::Create(64);
   auto memoryStateType = MemoryStateType::Create();
 
   jlm::llvm::RvsdgModule rvsdgModule(FilePath(""), "", "");
@@ -92,7 +92,7 @@ BufferWithLocalStore()
   // Assert
   // We expect the BufferOperation node to be replaced by a passthrough BufferOperation node
   assert(rvsdg.GetRootRegion().nnodes() == 2);
-  auto [bufferNode, bufferOperation] = TryGetSimpleNodeAndOp<BufferOperation>(*x.origin());
+  auto [bufferNode, bufferOperation] = TryGetSimpleNodeAndOptionalOp<BufferOperation>(*x.origin());
   assert(bufferNode && bufferOperation);
   assert(bufferOperation->Capacity() == 4);
   assert(bufferOperation->IsPassThrough());
@@ -137,7 +137,7 @@ BufferWithLoad()
   // Assert
   // We expect the BufferOperation node to be replaced by a passthrough BufferOperation node
   assert(rvsdg.GetRootRegion().nnodes() == 2);
-  auto [bufferNode, bufferOperation] = TryGetSimpleNodeAndOp<BufferOperation>(*x.origin());
+  auto [bufferNode, bufferOperation] = TryGetSimpleNodeAndOptionalOp<BufferOperation>(*x.origin());
   assert(bufferNode && bufferOperation);
   assert(bufferOperation->Capacity() == 4);
   assert(bufferOperation->IsPassThrough());
@@ -187,7 +187,7 @@ BufferWithStore()
   // Assert
   // We expect the BufferOperation node to be replaced by a passthrough BufferOperation node
   assert(rvsdg.GetRootRegion().nnodes() == 2);
-  auto [bufferNode, bufferOperation] = TryGetSimpleNodeAndOp<BufferOperation>(*x.origin());
+  auto [bufferNode, bufferOperation] = TryGetSimpleNodeAndOptionalOp<BufferOperation>(*x.origin());
   assert(bufferNode && bufferOperation);
   assert(bufferOperation->Capacity() == 4);
   assert(bufferOperation->IsPassThrough());
@@ -207,7 +207,7 @@ BufferWithForkAndLocalLoad()
 
   // Arrange
   auto valueType = jlm::tests::ValueType::Create();
-  auto i64Type = jlm::rvsdg::bittype::Create(64);
+  auto i64Type = jlm::rvsdg::BitType::Create(64);
   auto memoryStateType = MemoryStateType::Create();
 
   jlm::llvm::RvsdgModule rvsdgModule(FilePath(""), "", "");
@@ -233,7 +233,7 @@ BufferWithForkAndLocalLoad()
   // Assert
   // We expect the BufferOperation node to be replaced by a passthrough BufferOperation node
   assert(rvsdg.GetRootRegion().nnodes() == 3);
-  auto [bufferNode, bufferOperation] = TryGetSimpleNodeAndOp<BufferOperation>(*x.origin());
+  auto [bufferNode, bufferOperation] = TryGetSimpleNodeAndOptionalOp<BufferOperation>(*x.origin());
   assert(bufferNode && bufferOperation);
   assert(bufferOperation->Capacity() == 4);
   assert(bufferOperation->IsPassThrough());
@@ -253,7 +253,7 @@ BufferWithBranchAndLocalLoad()
 
   // Arrange
   auto valueType = jlm::tests::ValueType::Create();
-  auto i64Type = jlm::rvsdg::bittype::Create(64);
+  auto i64Type = jlm::rvsdg::BitType::Create(64);
   auto controlType = ControlType::Create(2);
   auto memoryStateType = MemoryStateType::Create();
 
@@ -281,7 +281,7 @@ BufferWithBranchAndLocalLoad()
   // Assert
   // We expect the BufferOperation node to be replaced by a passthrough BufferOperation node
   assert(rvsdg.GetRootRegion().nnodes() == 3);
-  auto [bufferNode, bufferOperation] = TryGetSimpleNodeAndOp<BufferOperation>(*x.origin());
+  auto [bufferNode, bufferOperation] = TryGetSimpleNodeAndOptionalOp<BufferOperation>(*x.origin());
   assert(bufferNode && bufferOperation);
   assert(bufferOperation->Capacity() == 4);
   assert(bufferOperation->IsPassThrough());
@@ -328,7 +328,7 @@ BufferWithOtherNode()
   // BufferOperation node cannot be traced to a Load-/Store-/LocalLoad-/LocalStoreOperation node
   assert(rvsdg.GetRootRegion().nnodes() == 2);
   assert(x.origin() == bufferResults[0]);
-  auto [bufferNode, bufferOperation] = TryGetSimpleNodeAndOp<BufferOperation>(*x.origin());
+  auto [bufferNode, bufferOperation] = TryGetSimpleNodeAndOptionalOp<BufferOperation>(*x.origin());
   assert(bufferNode && bufferOperation);
   assert(bufferOperation->Capacity() == 4);
   assert(!bufferOperation->IsPassThrough());
@@ -348,7 +348,7 @@ BufferWithNonMemoryStateOperand()
 
   // Arrange
   auto valueType = jlm::tests::ValueType::Create();
-  auto i64Type = jlm::rvsdg::bittype::Create(64);
+  auto i64Type = jlm::rvsdg::BitType::Create(64);
   auto memoryStateType = MemoryStateType::Create();
 
   jlm::llvm::RvsdgModule rvsdgModule(FilePath(""), "", "");
@@ -375,7 +375,7 @@ BufferWithNonMemoryStateOperand()
   // BufferOperation node is not of type llvm::MemoryStateType
   assert(rvsdg.GetRootRegion().nnodes() == 2);
   assert(x.origin() == bufferResults[0]);
-  auto [bufferNode, bufferOperation] = TryGetSimpleNodeAndOp<BufferOperation>(*x.origin());
+  auto [bufferNode, bufferOperation] = TryGetSimpleNodeAndOptionalOp<BufferOperation>(*x.origin());
   assert(bufferNode && bufferOperation);
   assert(bufferOperation->Capacity() == 4);
   assert(!bufferOperation->IsPassThrough());
@@ -395,7 +395,7 @@ PassthroughBuffer()
 
   // Arrange
   auto valueType = jlm::tests::ValueType::Create();
-  auto i64Type = jlm::rvsdg::bittype::Create(64);
+  auto i64Type = jlm::rvsdg::BitType::Create(64);
   auto memoryStateType = MemoryStateType::Create();
 
   jlm::llvm::RvsdgModule rvsdgModule(FilePath(""), "", "");
@@ -422,7 +422,7 @@ PassthroughBuffer()
   // marked as passthrough.
   assert(rvsdg.GetRootRegion().nnodes() == 2);
   assert(x.origin() == bufferResults[0]);
-  auto [bufferNode, bufferOperation] = TryGetSimpleNodeAndOp<BufferOperation>(*x.origin());
+  auto [bufferNode, bufferOperation] = TryGetSimpleNodeAndOptionalOp<BufferOperation>(*x.origin());
   assert(bufferNode && bufferOperation);
   assert(bufferOperation->Capacity() == 4);
   assert(bufferOperation->IsPassThrough());

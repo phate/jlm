@@ -16,7 +16,7 @@ namespace jlm::llvm
 
 // FIXME: Implement our own value representation instead of re-using the bitstring value
 // representation
-using IntegerValueRepresentation = rvsdg::bitvalue_repr;
+using IntegerValueRepresentation = rvsdg::BitValueRepresentation;
 
 /**
  * Represents an LLVM integer constant
@@ -27,7 +27,7 @@ public:
   ~IntegerConstantOperation() override;
 
   explicit IntegerConstantOperation(IntegerValueRepresentation representation)
-      : NullaryOperation(rvsdg::bittype::Create(representation.nbits())),
+      : NullaryOperation(rvsdg::BitType::Create(representation.nbits())),
         Representation_(std::move(representation))
   {}
 
@@ -74,14 +74,14 @@ public:
       const std::size_t numArgumentBits,
       const std::size_t numResultBits) noexcept
       : BinaryOperation(
-            { rvsdg::bittype::Create(numArgumentBits), rvsdg::bittype::Create(numArgumentBits) },
-            rvsdg::bittype::Create(numResultBits))
+            { rvsdg::BitType::Create(numArgumentBits), rvsdg::BitType::Create(numArgumentBits) },
+            rvsdg::BitType::Create(numResultBits))
   {}
 
-  [[nodiscard]] const rvsdg::bittype &
+  [[nodiscard]] const rvsdg::BitType &
   Type() const noexcept
   {
-    return *util::AssertedCast<const rvsdg::bittype>(argument(0).get());
+    return *util::AssertedCast<const rvsdg::BitType>(argument(0).get());
   }
 };
 

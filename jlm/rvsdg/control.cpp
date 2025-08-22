@@ -14,7 +14,11 @@ namespace jlm::rvsdg
 /* control constant */
 
 // explicit instantiation
-template class domain_const_op<ControlType, ctlvalue_repr, ctlformat_value, ctltype_of_value>;
+template class domain_const_op<
+    ControlType,
+    ControlValueRepresentation,
+    ctlformat_value,
+    ctltype_of_value>;
 
 ControlType::~ControlType() noexcept = default;
 
@@ -72,9 +76,7 @@ ControlType::Create(std::size_t nalternatives)
   }
 }
 
-/* control value representation */
-
-ctlvalue_repr::ctlvalue_repr(size_t alternative, size_t nalternatives)
+ControlValueRepresentation::ControlValueRepresentation(size_t alternative, size_t nalternatives)
     : alternative_(alternative),
       nalternatives_(nalternatives)
 {
@@ -89,7 +91,7 @@ MatchOperation::MatchOperation(
     const std::unordered_map<uint64_t, uint64_t> & mapping,
     uint64_t default_alternative,
     size_t nalternatives)
-    : UnaryOperation(bittype::Create(nbits), ControlType::Create(nalternatives)),
+    : UnaryOperation(BitType::Create(nbits), ControlType::Create(nalternatives)),
       default_alternative_(default_alternative),
       mapping_(mapping)
 {}
@@ -116,7 +118,8 @@ MatchOperation::reduce_operand(unop_reduction_path_t path, jlm::rvsdg::Output * 
 {
   if (path == unop_reduction_constant)
   {
-    auto op = static_cast<const bitconstant_op &>(producer(arg)->GetOperation());
+    auto op = static_cast<const bitconstant_op &>(
+        static_cast<const SimpleNode *>(producer(arg))->GetOperation());
     return jlm::rvsdg::control_constant(
         arg->region(),
         nalternatives(),
@@ -163,7 +166,10 @@ match(
 jlm::rvsdg::Output *
 control_constant(rvsdg::Region * region, size_t nalternatives, size_t alternative)
 {
-  return CreateOpNode<ctlconstant_op>(*region, ctlvalue_repr(alternative, nalternatives)).output(0);
+  return CreateOpNode<ctlconstant_op>(
+             *region,
+             ControlValueRepresentation(alternative, nalternatives))
+      .output(0);
 }
 
 }

@@ -14,6 +14,7 @@ namespace jlm::llvm::aa
 {
 
 PointsToGraph::PointsToGraph()
+    : NextMemoryNodeId_(0)
 {
   UnknownMemoryNode_ = UnknownMemoryNode::Create(*this);
   ExternalMemoryNode_ = ExternalMemoryNode::Create(*this);

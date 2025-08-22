@@ -16,17 +16,17 @@ void
 CheckAddrQueue(rvsdg::Node * node)
 {
   auto [addrQueueNode, addrQueueOperation] =
-      rvsdg::TryGetSimpleNodeAndOp<AddressQueueOperation>(*node->output(0));
+      rvsdg::TryGetSimpleNodeAndOptionalOp<AddressQueueOperation>(*node->output(0));
   JLM_ASSERT(rvsdg::is<AddressQueueOperation>(node));
   // Ensure that there is no buffer between state_gate and addr_queue enq.
   // This is SG1 in the paper. Otherwise, there might be a race condition in the disambiguation
-  auto [_, stateGateOperation] =
-      rvsdg::TryGetSimpleNodeAndOp<StateGateOperation>(*FindSourceNode(node->input(1)->origin()));
+  auto [_, stateGateOperation] = rvsdg::TryGetSimpleNodeAndOptionalOp<StateGateOperation>(
+      *FindSourceNode(node->input(1)->origin()));
   JLM_ASSERT(stateGateOperation);
   // make sure there is enough buffer space on the output, so there can be no race condition with
   // SG3
   auto [bufferNode, bufferOperation] =
-      rvsdg::TryGetSimpleNodeAndOp<BufferOperation>(*node->output(0)->Users().begin());
+      rvsdg::TryGetSimpleNodeAndOptionalOp<BufferOperation>(*node->output(0)->Users().begin());
   JLM_ASSERT(bufferOperation && bufferOperation->Capacity() >= addrQueueOperation->capacity);
 }
 

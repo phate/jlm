@@ -80,8 +80,8 @@ TestGetTypeSizeAndAlignment()
   assert(GetTypeSize(*pointerType) == 8);
   assert(GetTypeAlignment(*pointerType) == 8);
 
-  auto bits32 = jlm::rvsdg::bittype::Create(32);
-  auto bits50 = jlm::rvsdg::bittype::Create(50);
+  auto bits32 = jlm::rvsdg::BitType::Create(32);
+  auto bits50 = jlm::rvsdg::BitType::Create(50);
   assert(GetTypeSize(*bits32) == 4);
   assert(GetTypeAlignment(*bits32) == 4);
 
