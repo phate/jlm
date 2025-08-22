@@ -133,7 +133,7 @@ RvsdgToIpGraphConverter::~RvsdgToIpGraphConverter() = default;
 
 RvsdgToIpGraphConverter::RvsdgToIpGraphConverter() = default;
 
-std::unique_ptr<data_node_init>
+std::unique_ptr<DataNodeInit>
 RvsdgToIpGraphConverter::CreateInitialization(const rvsdg::DeltaNode & deltaNode)
 {
   const auto subregion = deltaNode.subregion();
@@ -148,7 +148,7 @@ RvsdgToIpGraphConverter::CreateInitialization(const rvsdg::DeltaNode & deltaNode
   if (subregion->nnodes() == 0)
   {
     auto value = Context_->GetVariable(subregion->result(0)->origin());
-    return std::make_unique<data_node_init>(value);
+    return std::make_unique<DataNodeInit>(value);
   }
 
   tacsvector_t tacs;
@@ -168,7 +168,7 @@ RvsdgToIpGraphConverter::CreateInitialization(const rvsdg::DeltaNode & deltaNode
     Context_->InsertVariable(output, tacs.back()->result(0));
   }
 
-  return std::make_unique<data_node_init>(std::move(tacs));
+  return std::make_unique<DataNodeInit>(std::move(tacs));
 }
 
 void
