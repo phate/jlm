@@ -395,11 +395,15 @@ LambdaEntryMemoryStateSplit_NormalizeCallEntryMerge()
   auto & i1 = jlm::rvsdg::GraphImport::Create(rvsdg, memoryStateType, "i1");
   auto & i2 = jlm::rvsdg::GraphImport::Create(rvsdg, memoryStateType, "i2");
 
-  auto & callEntryMergeNode =
-      CallEntryMemoryStateMergeOperation::CreateNode(rvsdg.GetRootRegion(), { &i0, &i1, &i2 });
+  auto & callEntryMergeNode = CallEntryMemoryStateMergeOperation::CreateNode(
+      rvsdg.GetRootRegion(),
+      { &i0, &i1, &i2 },
+      { 1, 2, 3 });
 
-  auto & lambdaEntrySplitNode =
-      LambdaEntryMemoryStateSplitOperation::CreateNode(*callEntryMergeNode.output(0), 3);
+  auto & lambdaEntrySplitNode = LambdaEntryMemoryStateSplitOperation::CreateNode(
+      *callEntryMergeNode.output(0),
+      3,
+      { 3, 2, 1 });
 
   auto & x0 = GraphExport::Create(*lambdaEntrySplitNode.output(0), "x0");
   auto & x1 = GraphExport::Create(*lambdaEntrySplitNode.output(1), "x1");
@@ -419,9 +423,9 @@ LambdaEntryMemoryStateSplit_NormalizeCallEntryMerge()
   assert(success);
   assert(rvsdg.GetRootRegion().nnodes() == 0);
 
-  assert(x0.origin() == &i0);
+  assert(x0.origin() == &i2);
   assert(x1.origin() == &i1);
-  assert(x2.origin() == &i2);
+  assert(x2.origin() == &i0);
 }
 
 JLM_UNIT_TEST_REGISTER(
