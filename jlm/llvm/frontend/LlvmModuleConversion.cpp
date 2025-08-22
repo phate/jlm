@@ -512,7 +512,7 @@ declare_globals(::llvm::Module & lm, Context & ctx)
   }
 }
 
-static std::unique_ptr<data_node_init>
+static std::unique_ptr<DataNodeInit>
 create_initialization(::llvm::GlobalVariable & gv, Context & ctx)
 {
   if (!gv.hasInitializer())
@@ -521,9 +521,9 @@ create_initialization(::llvm::GlobalVariable & gv, Context & ctx)
   auto init = gv.getInitializer();
   auto tacs = ConvertConstant(init, ctx);
   if (tacs.empty())
-    return std::make_unique<data_node_init>(ctx.lookup_value(init));
+    return std::make_unique<DataNodeInit>(ctx.lookup_value(init));
 
-  return std::make_unique<data_node_init>(std::move(tacs));
+  return std::make_unique<DataNodeInit>(std::move(tacs));
 }
 
 static void
