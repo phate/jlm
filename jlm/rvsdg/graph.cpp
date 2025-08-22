@@ -7,6 +7,7 @@
 #include <jlm/rvsdg/graph.hpp>
 #include <jlm/rvsdg/substitution.hpp>
 #include <jlm/rvsdg/tracker.hpp>
+#include <jlm/util/strfmt.hpp>
 
 #include <algorithm>
 
