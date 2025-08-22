@@ -14,9 +14,9 @@
 namespace jlm::llvm
 {
 
-struct tcloop
+struct TailControlledLoop
 {
-  inline tcloop(ControlFlowGraphNode * entry, BasicBlock * i, BasicBlock * r)
+  TailControlledLoop(ControlFlowGraphNode * entry, BasicBlock * i, BasicBlock * r)
       : ne(entry),
         insert(i),
         replacement(r)
@@ -27,7 +27,7 @@ struct tcloop
   BasicBlock * replacement;
 };
 
-static inline tcloop
+static TailControlledLoop
 extract_tcloop(ControlFlowGraphNode * ne, ControlFlowGraphNode * nx)
 {
   JLM_ASSERT(nx->NumOutEdges() == 2);
@@ -49,11 +49,11 @@ extract_tcloop(ControlFlowGraphNode * ne, ControlFlowGraphNode * nx)
   ex->divert(exsink);
   er->divert(ne);
 
-  return tcloop(ne, exsink, replacement);
+  return TailControlledLoop(ne, exsink, replacement);
 }
 
 static inline void
-reinsert_tcloop(const tcloop & l)
+reinsert_tcloop(const TailControlledLoop & l)
 {
   JLM_ASSERT(l.insert->NumInEdges() == 1);
   JLM_ASSERT(l.replacement->NumOutEdges() == 1);
@@ -230,13 +230,13 @@ find_tvariable_bb(ControlFlowGraphNode * node)
 }
 
 static void
-restructure(ControlFlowGraphNode *, ControlFlowGraphNode *, std::vector<tcloop> &);
+restructure(ControlFlowGraphNode *, ControlFlowGraphNode *, std::vector<TailControlledLoop> &);
 
 static void
 restructure_loops(
     ControlFlowGraphNode * entry,
     ControlFlowGraphNode * exit,
-    std::vector<tcloop> & loops)
+    std::vector<TailControlledLoop> & loops)
 {
   if (entry == exit)
     return;
@@ -470,7 +470,7 @@ RestructureLoops(ControlFlowGraph * cfg)
 {
   JLM_ASSERT(is_closed(*cfg));
 
-  std::vector<tcloop> loops;
+  std::vector<TailControlledLoop> loops;
   restructure_loops(cfg->entry(), cfg->exit(), loops);
 
   for (const auto & l : loops)
@@ -489,7 +489,7 @@ static inline void
 restructure(
     ControlFlowGraphNode * entry,
     ControlFlowGraphNode * exit,
-    std::vector<tcloop> & tcloops)
+    std::vector<TailControlledLoop> & tcloops)
 {
   restructure_loops(entry, exit, tcloops);
   restructure_branches(entry, exit);
@@ -500,7 +500,7 @@ RestructureControlFlow(ControlFlowGraph * cfg)
 {
   JLM_ASSERT(is_closed(*cfg));
 
-  std::vector<tcloop> tcloops;
+  std::vector<TailControlledLoop> tcloops;
   restructure(cfg->entry(), cfg->exit(), tcloops);
 
   for (const auto & l : tcloops)
