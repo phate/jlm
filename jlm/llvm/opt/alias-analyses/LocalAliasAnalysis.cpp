@@ -3,13 +3,14 @@
  * See COPYING for terms of redistribution.
  */
 
+#include <jlm/llvm/opt/alias-analyses/LocalAliasAnalysis.hpp>
+
 #include <jlm/llvm/ir/operators.hpp>
 #include <jlm/llvm/ir/operators/alloca.hpp>
 #include <jlm/llvm/ir/operators/delta.hpp>
 #include <jlm/llvm/ir/operators/IntegerOperations.hpp>
 #include <jlm/llvm/ir/operators/IOBarrier.hpp>
 #include <jlm/llvm/ir/types.hpp>
-#include <jlm/llvm/opt/alias-analyses/LocalAliasAnalysis.hpp>
 #include <jlm/rvsdg/gamma.hpp>
 #include <jlm/rvsdg/lambda.hpp>
 #include <jlm/rvsdg/theta.hpp>
@@ -20,34 +21,6 @@
 
 namespace jlm::llvm::aa
 {
-
-/**
- * Gets the value of the given \p output as a compile time constant, if possible.
- * The constant is interpreted as a signed value, and sign extended to int64 if needed.
- * This function does not perform any constant folding.
- *
- * @param output the output whose constant value is requested
- * @return the value of the output, or nullopt if it could not be determined.
- */
-static std::optional<int64_t>
-GetConstantSignedIntegerValue(const rvsdg::Output & output)
-{
-  const auto & normalized = NormalizeOutput(output);
-  if (const auto [_, constant] =
-          rvsdg::TryGetSimpleNodeAndOptionalOp<IntegerConstantOperation>(normalized);
-      constant)
-  {
-    return constant->Representation().to_int();
-  }
-  if (const auto [_, constant] =
-          rvsdg::TryGetSimpleNodeAndOptionalOp<rvsdg::bitconstant_op>(normalized);
-      constant)
-  {
-    return constant->value().to_int();
-  }
-
-  return std::nullopt;
-}
 
 LocalAliasAnalysis::LocalAliasAnalysis() = default;
 
@@ -229,7 +202,7 @@ CalculateIntraTypeGepOffset(
   JLM_ASSERT(inputIndex >= 2);
 
   auto & gepInput = *gepNode.input(inputIndex)->origin();
-  auto indexingValue = GetConstantSignedIntegerValue(gepInput);
+  auto indexingValue = TryGetConstantSignedInteger(gepInput);
 
   // Any unknown indexing value means the GEP offset is unknown overall
   if (!indexingValue.has_value())
@@ -275,7 +248,7 @@ LocalAliasAnalysis::CalculateGepOffset(const rvsdg::SimpleNode & gepNode)
   const auto & pointeeType = gep->GetPointeeType();
 
   const auto & wholeTypeIndexingOrigin = *gepNode.input(1)->origin();
-  const auto wholeTypeIndexing = GetConstantSignedIntegerValue(wholeTypeIndexingOrigin);
+  const auto wholeTypeIndexing = TryGetConstantSignedInteger(wholeTypeIndexingOrigin);
 
   if (!wholeTypeIndexing.has_value())
     return std::nullopt;
@@ -509,14 +482,14 @@ LocalAliasAnalysis::GetOriginalOriginSize(const rvsdg::Output & pointer)
   if (const auto [node, allocaOp] = rvsdg::TryGetSimpleNodeAndOptionalOp<AllocaOperation>(pointer);
       allocaOp)
   {
-    const auto elementCount = GetConstantSignedIntegerValue(*node->input(0)->origin());
+    const auto elementCount = TryGetConstantSignedInteger(*node->input(0)->origin());
     if (elementCount.has_value())
       return *elementCount * GetTypeSize(*allocaOp->ValueType());
   }
   if (const auto [node, mallocOp] = rvsdg::TryGetSimpleNodeAndOptionalOp<MallocOperation>(pointer);
       mallocOp)
   {
-    const auto mallocSize = GetConstantSignedIntegerValue(*node->input(0)->origin());
+    const auto mallocSize = TryGetConstantSignedInteger(*node->input(0)->origin());
     if (mallocSize.has_value())
       return *mallocSize;
   }

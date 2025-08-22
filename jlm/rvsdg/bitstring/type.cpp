@@ -7,6 +7,7 @@
 #include <jlm/rvsdg/bitstring/type.hpp>
 #include <jlm/rvsdg/graph.hpp>
 #include <jlm/util/Hash.hpp>
+#include <jlm/util/strfmt.hpp>
 
 namespace jlm::rvsdg
 {

@@ -12,8 +12,8 @@
 #include <jlm/util/intrusive-list.hpp>
 #include <jlm/util/iterator_range.hpp>
 #include <jlm/util/IteratorWrapper.hpp>
-#include <jlm/util/strfmt.hpp>
 
+#include <cstdint>
 #include <unordered_set>
 #include <utility>
 #include <variant>
