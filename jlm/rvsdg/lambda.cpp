@@ -5,6 +5,7 @@
  */
 
 #include <jlm/rvsdg/lambda.hpp>
+#include <jlm/util/strfmt.hpp>
 
 namespace jlm::rvsdg
 {
