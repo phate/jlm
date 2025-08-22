@@ -641,7 +641,7 @@ straighten(ControlFlowGraph & cfg)
   auto it = cfg.begin();
   while (it != cfg.end())
   {
-    BasicBlock * bb = it.node();
+    BasicBlock * bb = &*it;
 
     // Check if bb only has one successor, and that the successor only has one predecessor
     if (!is_linear_reduction(bb))
@@ -672,7 +672,7 @@ purge(ControlFlowGraph & cfg)
   auto it = cfg.begin();
   while (it != cfg.end())
   {
-    auto bb = it.node();
+    auto bb = &*it;
 
     /*
       Ignore basic blocks with instructions
