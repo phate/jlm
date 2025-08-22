@@ -47,7 +47,7 @@ public:
   }
 };
 
-class worklist
+class Worklist
 {
 public:
   inline void
@@ -172,8 +172,8 @@ push(rvsdg::GammaNode * gamma)
         copy_from_gamma(&node, r);
     }
 
-    /* initialize worklist */
-    worklist wl;
+    // initialize worklist
+    Worklist wl;
     for (size_t n = 0; n < region->narguments(); n++)
     {
       auto argument = region->argument(n);
@@ -185,7 +185,7 @@ push(rvsdg::GammaNode * gamma)
       }
     }
 
-    /* process worklist */
+    // process worklist
     while (!wl.empty())
     {
       auto node = wl.pop_front();
@@ -195,7 +195,7 @@ push(rvsdg::GammaNode * gamma)
 
       auto arguments = copy_from_gamma(node, r);
 
-      /* add consumers to worklist */
+      // add consumers to worklist
       for (const auto & argument : arguments)
       {
         for (const auto & user : argument->Users())
@@ -246,8 +246,8 @@ push_top(rvsdg::ThetaNode * theta)
       invariants.insert(lv.pre);
   }
 
-  /* initialize worklist */
-  worklist wl;
+  // initialize worklist
+  Worklist wl;
   for (const auto & lv : theta->GetLoopVars())
   {
     auto argument = lv.pre;
@@ -259,7 +259,7 @@ push_top(rvsdg::ThetaNode * theta)
     }
   }
 
-  /* process worklist */
+  // process worklist
   while (!wl.empty())
   {
     auto node = wl.pop_front();
@@ -271,7 +271,7 @@ push_top(rvsdg::ThetaNode * theta)
     auto arguments = copy_from_theta(node);
     invariants.insert(arguments.begin(), arguments.end());
 
-    /* add consumers to worklist */
+    // add consumers to worklist
     for (const auto & argument : arguments)
     {
       for (const auto & user : argument->Users())

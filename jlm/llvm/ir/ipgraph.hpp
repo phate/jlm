@@ -311,16 +311,14 @@ private:
   FunctionNode * node_;
 };
 
-/* data node */
-
-class data_node_init final
+class DataNodeInit final
 {
 public:
-  data_node_init(const Variable * value)
+  explicit DataNodeInit(const Variable * value)
       : value_(value)
   {}
 
-  data_node_init(tacsvector_t tacs)
+  explicit DataNodeInit(tacsvector_t tacs)
       : tacs_(std::move(tacs))
   {
     if (tacs_.empty())
@@ -333,18 +331,18 @@ public:
     value_ = tac->result(0);
   }
 
-  data_node_init(const data_node_init &) = delete;
+  DataNodeInit(const DataNodeInit &) = delete;
 
-  data_node_init(data_node_init && other)
+  DataNodeInit(DataNodeInit && other) noexcept
       : tacs_(std::move(other.tacs_)),
         value_(other.value_)
   {}
 
-  data_node_init &
-  operator=(const data_node_init &) = delete;
+  DataNodeInit &
+  operator=(const DataNodeInit &) = delete;
 
-  data_node_init &
-  operator=(data_node_init &&) = delete;
+  DataNodeInit &
+  operator=(DataNodeInit &&) = delete;
 
   const Variable *
   value() const noexcept
@@ -359,7 +357,7 @@ public:
   }
 
 private:
-  tacsvector_t tacs_;
+  tacsvector_t tacs_{};
   const Variable * value_;
 };
 
@@ -418,14 +416,14 @@ public:
     return Section_;
   }
 
-  inline const data_node_init *
+  const DataNodeInit *
   initialization() const noexcept
   {
     return init_.get();
   }
 
   void
-  set_initialization(std::unique_ptr<data_node_init> init)
+  set_initialization(std::unique_ptr<DataNodeInit> init)
   {
     if (!init)
       return;
@@ -458,7 +456,7 @@ private:
   std::string Section_;
   llvm::linkage linkage_;
   std::shared_ptr<const jlm::rvsdg::ValueType> ValueType_;
-  std::unique_ptr<data_node_init> init_;
+  std::unique_ptr<DataNodeInit> init_;
 };
 
 }

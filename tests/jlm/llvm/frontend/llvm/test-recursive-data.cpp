@@ -41,8 +41,8 @@ test()
   tvec1.push_back(TestOperation::CreateTac({ v0, v2 }, { vt }));
   tvec2.push_back(TestOperation::CreateTac({ v0, v1 }, { vt }));
 
-  d1->set_initialization(std::make_unique<data_node_init>(std::move(tvec1)));
-  d2->set_initialization(std::make_unique<data_node_init>(std::move(tvec2)));
+  d1->set_initialization(std::make_unique<DataNodeInit>(std::move(tvec1)));
+  d2->set_initialization(std::make_unique<DataNodeInit>(std::move(tvec2)));
 
   jlm::util::StatisticsCollector statisticsCollector;
   auto rvsdgModule = ConvertInterProceduralGraphModule(im, statisticsCollector);

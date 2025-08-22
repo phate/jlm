@@ -31,7 +31,7 @@ namespace jlm::llvm
 {
 
 class ControlFlowGraph;
-class data_node_init;
+class DataNodeInit;
 class InterProceduralGraphModule;
 class RvsdgModule;
 class Variable;
@@ -98,7 +98,7 @@ private:
   void
   ConvertRegion(rvsdg::Region & region);
 
-  std::unique_ptr<data_node_init>
+  std::unique_ptr<DataNodeInit>
   CreateInitialization(const rvsdg::DeltaNode & deltaNode);
 
   static bool

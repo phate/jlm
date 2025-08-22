@@ -22,13 +22,13 @@ class ControlFlowGraphNode;
 
 /** \brief Strongly Connected Component
  */
-class scc final
+class StronglyConnectedComponent final
 {
   using constiterator = util::
       PtrIterator<ControlFlowGraphNode, std::unordered_set<ControlFlowGraphNode *>::const_iterator>;
 
 public:
-  scc(const std::unordered_set<ControlFlowGraphNode *> & nodes)
+  explicit StronglyConnectedComponent(const std::unordered_set<ControlFlowGraphNode *> & nodes)
       : nodes_(nodes)
   {}
 
@@ -51,7 +51,7 @@ public:
   }
 
 private:
-  std::unordered_set<ControlFlowGraphNode *> nodes_;
+  std::unordered_set<ControlFlowGraphNode *> nodes_{};
 };
 
 /** \brief Strongly Connected Component Structure
@@ -138,7 +138,7 @@ public:
    * Creates a SCC structure from SCC \p scc.
    */
   static std::unique_ptr<sccstructure>
-  create(const jlm::llvm::scc & scc);
+  create(const StronglyConnectedComponent & scc);
 
   /**
    * Checks if the SCC structure is a tail-controlled loop. A tail-controlled loop is defined as an
@@ -168,14 +168,14 @@ is_linear(const ControlFlowGraph & cfg);
 /**
  * Compute a Control Flow Graph's Strongly Connected Components.
  */
-std::vector<scc>
+std::vector<StronglyConnectedComponent>
 find_sccs(const ControlFlowGraph & cfg);
 
 /**
  * Compute all Strongly Connected Components of a single-entry/single-exit region.
  * The \p entry parameter must dominate the \p exit parameter.
  */
-std::vector<scc>
+std::vector<StronglyConnectedComponent>
 find_sccs(ControlFlowGraphNode * entry, ControlFlowGraphNode * exit);
 
 static inline bool
