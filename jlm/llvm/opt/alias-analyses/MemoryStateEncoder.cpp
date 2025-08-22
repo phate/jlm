@@ -443,6 +443,18 @@ private:
   const ModRefSummary & ModRefSummary_;
 };
 
+static std::vector<MemoryNodeId>
+GetMemoryNodeIds(const util::HashSet<const PointsToGraph::MemoryNode *> & memoryNodes)
+{
+  std::vector<MemoryNodeId> memoryNodeIds;
+  for (const auto memoryNode : memoryNodes.Items())
+  {
+    memoryNodeIds.push_back(memoryNode->GetId());
+  }
+
+  return memoryNodeIds;
+}
+
 MemoryStateEncoder::~MemoryStateEncoder() noexcept = default;
 
 MemoryStateEncoder::MemoryStateEncoder() = default;
@@ -678,28 +690,31 @@ MemoryStateEncoder::EncodeCall(const rvsdg::SimpleNode & callNode)
 void
 MemoryStateEncoder::EncodeCallEntry(const rvsdg::SimpleNode & callNode)
 {
-  auto region = callNode.region();
+  const auto region = callNode.region();
   auto & regionalizedStateMap = Context_->GetRegionalizedStateMap();
   auto & memoryNodes = Context_->GetModRefSummary().GetCallEntryNodes(callNode);
 
-  std::vector<StateMap::MemoryNodeStatePair *> memoryNodeStatePairs;
-  for (auto memoryNode : memoryNodes.Items())
+  std::vector<rvsdg::Output *> states;
+  std::vector<MemoryNodeId> memoryNodeIds;
+  for (const auto memoryNode : memoryNodes.Items())
   {
     if (regionalizedStateMap.HasState(*region, *memoryNode))
     {
-      memoryNodeStatePairs.emplace_back(regionalizedStateMap.GetState(*region, *memoryNode));
+      states.emplace_back(&regionalizedStateMap.GetState(*region, *memoryNode)->State());
     }
     else
     {
       // The state might not exist on the call side in case of lifetime aware mod/ref summarization
-      memoryNodeStatePairs.emplace_back(
-          regionalizedStateMap.InsertUndefinedState(*region, *memoryNode));
+      states.emplace_back(
+          &regionalizedStateMap.InsertUndefinedState(*region, *memoryNode)->State());
     }
+
+    memoryNodeIds.push_back(memoryNode->GetId());
   }
 
-  auto states = StateMap::MemoryNodeStatePair::States(memoryNodeStatePairs);
-  auto & state = CallEntryMemoryStateMergeOperation::Create(*region, states);
-  CallOperation::GetMemoryStateInput(callNode).divert_to(&state);
+  const auto state =
+      CallEntryMemoryStateMergeOperation::CreateNode(*region, states, memoryNodeIds).output(0);
+  CallOperation::GetMemoryStateInput(callNode).divert_to(state);
 }
 
 void
@@ -708,10 +723,11 @@ MemoryStateEncoder::EncodeCallExit(const rvsdg::SimpleNode & callNode)
   auto & stateMap = Context_->GetRegionalizedStateMap();
   auto & memoryNodes = Context_->GetModRefSummary().GetCallExitNodes(callNode);
 
-  auto states = CallExitMemoryStateSplitOperation::Create(
+  const auto states = rvsdg::outputs(&CallExitMemoryStateSplitOperation::CreateNode(
       CallOperation::GetMemoryStateOutput(callNode),
-      memoryNodes.Size());
-  auto memoryNodeStatePairs = stateMap.GetStates(*callNode.region(), memoryNodes);
+      GetMemoryNodeIds(memoryNodes)));
+
+  const auto memoryNodeStatePairs = stateMap.GetStates(*callNode.region(), memoryNodes);
   StateMap::MemoryNodeStatePair::ReplaceStates(memoryNodeStatePairs, states);
 }
 
@@ -762,12 +778,14 @@ MemoryStateEncoder::EncodeLambdaEntry(const rvsdg::LambdaNode & lambdaNode)
   auto & memoryStateArgumentUser = memoryStateArgument.SingleUser();
 
   auto & memoryNodes = Context_->GetModRefSummary().GetLambdaEntryNodes(lambdaNode);
+  const auto memoryNodeIds = GetMemoryNodeIds(memoryNodes);
   auto & stateMap = Context_->GetRegionalizedStateMap();
 
   stateMap.PushRegion(*lambdaNode.subregion());
-
-  auto states =
-      LambdaEntryMemoryStateSplitOperation::Create(memoryStateArgument, memoryNodes.Size());
+  const auto states = rvsdg::outputs(&LambdaEntryMemoryStateSplitOperation::CreateNode(
+      memoryStateArgument,
+      memoryNodes.Size(),
+      memoryNodeIds));
 
   size_t n = 0;
   for (auto & memoryNode : memoryNodes.Items())
@@ -797,15 +815,23 @@ MemoryStateEncoder::EncodeLambdaEntry(const rvsdg::LambdaNode & lambdaNode)
 void
 MemoryStateEncoder::EncodeLambdaExit(const rvsdg::LambdaNode & lambdaNode)
 {
-  auto subregion = lambdaNode.subregion();
+  const auto subregion = lambdaNode.subregion();
   auto & memoryNodes = Context_->GetModRefSummary().GetLambdaExitNodes(lambdaNode);
   auto & stateMap = Context_->GetRegionalizedStateMap();
   auto & memoryStateResult = GetMemoryStateRegionResult(lambdaNode);
 
-  auto memoryNodeStatePairs = stateMap.GetStates(*subregion, memoryNodes);
-  auto states = StateMap::MemoryNodeStatePair::States(memoryNodeStatePairs);
-  auto & mergedState = LambdaExitMemoryStateMergeOperation::Create(*subregion, states);
-  memoryStateResult.divert_to(&mergedState);
+  std::vector<rvsdg::Output *> states;
+  std::vector<MemoryNodeId> memoryNodeIds;
+  const auto memoryNodeStatePairs = stateMap.GetStates(*subregion, memoryNodes);
+  for (const auto memoryNodeStatePair : memoryNodeStatePairs)
+  {
+    states.push_back(&memoryNodeStatePair->State());
+    memoryNodeIds.push_back(memoryNodeStatePair->MemoryNode().GetId());
+  }
+
+  const auto mergedState =
+      LambdaExitMemoryStateMergeOperation::CreateNode(*subregion, states, memoryNodeIds).output(0);
+  memoryStateResult.divert_to(mergedState);
 
   stateMap.PopRegion(*lambdaNode.subregion());
 }
