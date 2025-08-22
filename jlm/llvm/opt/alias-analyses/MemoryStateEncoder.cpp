@@ -722,12 +722,12 @@ MemoryStateEncoder::EncodeCallExit(const rvsdg::SimpleNode & callNode)
 {
   auto & stateMap = Context_->GetRegionalizedStateMap();
   auto & memoryNodes = Context_->GetModRefSummary().GetCallExitNodes(callNode);
-  const auto memoryNodeStatePairs = stateMap.GetStates(*callNode.region(), memoryNodes);
-  const auto memoryNodeIds = GetMemoryNodeIds(memoryNodes);
 
   const auto states = rvsdg::outputs(&CallExitMemoryStateSplitOperation::CreateNode(
       CallOperation::GetMemoryStateOutput(callNode),
-      memoryNodeIds));
+      GetMemoryNodeIds(memoryNodes)));
+
+  const auto memoryNodeStatePairs = stateMap.GetStates(*callNode.region(), memoryNodes);
   StateMap::MemoryNodeStatePair::ReplaceStates(memoryNodeStatePairs, states);
 }
 
