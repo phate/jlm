@@ -62,7 +62,7 @@ TestLinearSubgraphAnnotation()
   using namespace jlm::llvm;
 
   // Arrange
-  auto SetupAggregationTree = [](InterProceduralGraphModule &, jlm::llvm::argument & argument)
+  auto SetupAggregationTree = [](InterProceduralGraphModule &, jlm::llvm::Argument & argument)
   {
     /*
      * Setup simple linear CFG: Entry -> B1 -> B2 -> Exit
@@ -93,7 +93,7 @@ TestLinearSubgraphAnnotation()
   };
 
   InterProceduralGraphModule module(jlm::util::FilePath(""), "", "");
-  jlm::llvm::argument argument("argument", jlm::tests::ValueType::Create());
+  jlm::llvm::Argument argument("argument", jlm::tests::ValueType::Create());
   auto [aggregationTreeRoot, v1, v2] = SetupAggregationTree(module, argument);
 
   /*

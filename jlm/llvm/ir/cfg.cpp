@@ -16,10 +16,7 @@
 namespace jlm::llvm
 {
 
-/* argument */
-
-argument::~argument()
-{}
+Argument::~Argument() noexcept = default;
 
 EntryNode::~EntryNode() noexcept = default;
 
