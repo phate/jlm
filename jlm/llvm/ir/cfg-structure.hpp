@@ -65,7 +65,7 @@ private:
  * 4. Exit nodes (xnodes): All nodes that are the target of one or more exit edges.
  * 5. Repetition edges (redges): All edges from a node inside the SCC to an entry node.
  */
-class sccstructure final
+class StronglyConnectedComponentStructure final
 {
   using cfg_edge_constiterator = std::unordered_set<ControlFlowGraphEdge *>::const_iterator;
   using cfg_node_constiterator = std::unordered_set<ControlFlowGraphNode *>::const_iterator;
@@ -137,7 +137,7 @@ public:
   /**
    * Creates a SCC structure from SCC \p scc.
    */
-  static std::unique_ptr<sccstructure>
+  static std::unique_ptr<StronglyConnectedComponentStructure>
   create(const StronglyConnectedComponent & scc);
 
   /**
