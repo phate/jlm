@@ -22,6 +22,8 @@ namespace jlm::hls
  */
 class CommonNodeElimination final : public rvsdg::Transformation
 {
+  class Statistics;
+
 public:
   ~CommonNodeElimination() noexcept override;
 
