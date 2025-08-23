@@ -172,12 +172,12 @@ is(const AggregationNode * node)
 class EntryAggregationNode final : public AggregationNode
 {
   using constiterator =
-      util::PtrIterator<const llvm::argument, std::vector<llvm::argument *>::const_iterator>;
+      util::PtrIterator<const llvm::Argument, std::vector<llvm::Argument *>::const_iterator>;
 
 public:
   ~EntryAggregationNode() noexcept override;
 
-  explicit EntryAggregationNode(const std::vector<llvm::argument *> & arguments)
+  explicit EntryAggregationNode(const std::vector<llvm::Argument *> & arguments)
       : arguments_(arguments)
   {}
 
@@ -187,7 +187,7 @@ public:
   constiterator
   end() const;
 
-  const llvm::argument *
+  const llvm::Argument *
   argument(size_t index) const noexcept
   {
     JLM_ASSERT(index < narguments());
@@ -204,13 +204,13 @@ public:
   debug_string() const override;
 
   static std::unique_ptr<AggregationNode>
-  create(const std::vector<llvm::argument *> & arguments)
+  create(const std::vector<llvm::Argument *> & arguments)
   {
     return std::make_unique<EntryAggregationNode>(arguments);
   }
 
 private:
-  std::vector<llvm::argument *> arguments_;
+  std::vector<llvm::Argument *> arguments_;
 };
 
 class ExitAggregationNode final : public AggregationNode

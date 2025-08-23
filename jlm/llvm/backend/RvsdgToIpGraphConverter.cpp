@@ -202,7 +202,7 @@ RvsdgToIpGraphConverter::CreateControlFlowGraph(const rvsdg::LambdaNode & lambda
   for (const auto functionArgument : lambda.GetFunctionArguments())
   {
     auto name = util::strfmt("_a", functionArgument->index(), "_");
-    auto argument = argument::create(
+    auto argument = Argument::create(
         name,
         functionArgument->Type(),
         lambdaOperation.GetArgumentAttributes(functionArgument->index()));

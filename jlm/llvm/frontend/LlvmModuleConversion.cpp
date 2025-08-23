@@ -284,7 +284,7 @@ convert_attributes(const ::llvm::AttributeSet & as, Context & ctx)
   return attributeSet;
 }
 
-static std::unique_ptr<llvm::argument>
+static std::unique_ptr<llvm::Argument>
 convert_argument(const ::llvm::Argument & argument, Context & ctx)
 {
   auto function = argument.getParent();
@@ -293,7 +293,7 @@ convert_argument(const ::llvm::Argument & argument, Context & ctx)
   auto attributes =
       convert_attributes(function->getAttributes().getParamAttrs(argument.getArgNo()), ctx);
 
-  return llvm::argument::create(name, type, attributes);
+  return llvm::Argument::create(name, type, attributes);
 }
 
 static void
@@ -380,15 +380,15 @@ create_cfg(::llvm::Function & f, Context & ctx)
     {
       JLM_ASSERT(n < node->fcttype().NumArguments());
       auto & type = node->fcttype().Arguments()[n++];
-      cfg.entry()->append_argument(argument::create("_varg_", type));
+      cfg.entry()->append_argument(Argument::create("_varg_", type));
     }
     JLM_ASSERT(n < node->fcttype().NumArguments());
 
     auto & iotype = node->fcttype().Arguments()[n++];
-    auto iostate = cfg.entry()->append_argument(argument::create("_io_", iotype));
+    auto iostate = cfg.entry()->append_argument(Argument::create("_io_", iotype));
 
     auto & memtype = node->fcttype().Arguments()[n++];
-    auto memstate = cfg.entry()->append_argument(argument::create("_s_", memtype));
+    auto memstate = cfg.entry()->append_argument(Argument::create("_s_", memtype));
 
     JLM_ASSERT(n == node->fcttype().NumArguments());
     ctx.set_iostate(iostate);
