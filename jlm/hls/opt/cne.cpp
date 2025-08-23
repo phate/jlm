@@ -20,16 +20,16 @@ namespace jlm::hls
 
 using namespace jlm::rvsdg;
 
-class cnestat final : public util::Statistics
+class CommonNodeElimination::Statistics final : public util::Statistics
 {
   const char * MarkTimerLabel_ = "MarkTime";
   const char * DivertTimerLabel_ = "DivertTime";
 
 public:
-  ~cnestat() override = default;
+  ~Statistics() override = default;
 
-  explicit cnestat(const util::FilePath & sourceFile)
-      : Statistics(Statistics::Id::CommonNodeElimination, sourceFile)
+  explicit Statistics(const util::FilePath & sourceFile)
+      : util::Statistics(Id::CommonNodeElimination, sourceFile)
   {}
 
   void
@@ -60,10 +60,10 @@ public:
     GetTimer(DivertTimerLabel_).stop();
   }
 
-  static std::unique_ptr<cnestat>
+  static std::unique_ptr<Statistics>
   Create(const util::FilePath & sourceFile)
   {
-    return std::make_unique<cnestat>(sourceFile);
+    return std::make_unique<Statistics>(sourceFile);
   }
 };
 
@@ -624,13 +624,17 @@ divert(rvsdg::Region * region, cnectx & ctx)
   }
 }
 
-static void
-cne(rvsdg::RvsdgModule & rvsdgModule, util::StatisticsCollector & statisticsCollector)
+CommonNodeElimination::~CommonNodeElimination() noexcept = default;
+
+void
+CommonNodeElimination::Run(
+    rvsdg::RvsdgModule & module,
+    util::StatisticsCollector & statisticsCollector)
 {
-  auto & graph = rvsdgModule.Rvsdg();
+  const auto & graph = module.Rvsdg();
 
   cnectx ctx;
-  auto statistics = cnestat::Create(rvsdgModule.SourceFilePath().value());
+  auto statistics = Statistics::Create(module.SourceFilePath().value());
 
   statistics->start_mark_stat(graph);
   mark(&graph.GetRootRegion(), ctx);
@@ -641,16 +645,6 @@ cne(rvsdg::RvsdgModule & rvsdgModule, util::StatisticsCollector & statisticsColl
   statistics->end_divert_stat(graph);
 
   statisticsCollector.CollectDemandedStatistics(std::move(statistics));
-}
-
-CommonNodeElimination::~CommonNodeElimination() noexcept = default;
-
-void
-CommonNodeElimination::Run(
-    rvsdg::RvsdgModule & module,
-    util::StatisticsCollector & statisticsCollector)
-{
-  hls::cne(module, statisticsCollector);
 }
 
 }

@@ -171,7 +171,8 @@ is(const AggregationNode * node)
 
 class EntryAggregationNode final : public AggregationNode
 {
-  class constiterator;
+  using constiterator =
+      util::PtrIterator<const llvm::argument, std::vector<llvm::argument *>::const_iterator>;
 
 public:
   ~EntryAggregationNode() noexcept override;
@@ -210,62 +211,6 @@ public:
 
 private:
   std::vector<llvm::argument *> arguments_;
-};
-
-class EntryAggregationNode::constiterator final
-{
-public:
-  using iterator_category = std::forward_iterator_tag;
-  using value_type = const llvm::argument *;
-  using difference_type = std::ptrdiff_t;
-  using pointer = const llvm::argument **;
-  using reference = const llvm::argument *&;
-
-  constexpr constiterator(const std::vector<llvm::argument *>::const_iterator & it)
-      : it_(it)
-  {}
-
-  const llvm::argument &
-  operator*() const
-  {
-    return *operator->();
-  }
-
-  const llvm::argument *
-  operator->() const
-  {
-    return *it_;
-  }
-
-  constiterator &
-  operator++()
-  {
-    it_++;
-    return *this;
-  }
-
-  constiterator
-  operator++(int)
-  {
-    constiterator tmp = *this;
-    it_++;
-    return tmp;
-  }
-
-  bool
-  operator==(const constiterator & other) const
-  {
-    return it_ == other.it_;
-  }
-
-  bool
-  operator!=(const constiterator & other) const
-  {
-    return !operator==(other);
-  }
-
-private:
-  std::vector<llvm::argument *>::const_iterator it_;
 };
 
 class ExitAggregationNode final : public AggregationNode
