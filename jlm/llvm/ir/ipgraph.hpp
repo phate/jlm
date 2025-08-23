@@ -21,62 +21,9 @@ class InterProceduralGraphNode;
 
 class InterProceduralGraph final
 {
-  class const_iterator
-  {
-  public:
-    explicit const_iterator(
-        const std::vector<std::unique_ptr<InterProceduralGraphNode>>::const_iterator & it)
-        : it_(it)
-    {}
-
-    inline bool
-    operator==(const const_iterator & other) const noexcept
-    {
-      return it_ == other.it_;
-    }
-
-    inline bool
-    operator!=(const const_iterator & other) const noexcept
-    {
-      return !(*this == other);
-    }
-
-    inline const const_iterator &
-    operator++() noexcept
-    {
-      ++it_;
-      return *this;
-    }
-
-    inline const const_iterator
-    operator++(int) noexcept
-    {
-      const_iterator tmp(it_);
-      it_++;
-      return tmp;
-    }
-
-    [[nodiscard]] const InterProceduralGraphNode *
-    node() const noexcept
-    {
-      return it_->get();
-    }
-
-    const InterProceduralGraphNode &
-    operator*() const noexcept
-    {
-      return *node();
-    }
-
-    const InterProceduralGraphNode *
-    operator->() const noexcept
-    {
-      return node();
-    }
-
-  private:
-    std::vector<std::unique_ptr<InterProceduralGraphNode>>::const_iterator it_;
-  };
+  using const_iterator = util::PtrIterator<
+      const InterProceduralGraphNode,
+      std::vector<std::unique_ptr<InterProceduralGraphNode>>::const_iterator>;
 
 public:
   ~InterProceduralGraph() noexcept = default;

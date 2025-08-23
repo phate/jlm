@@ -326,7 +326,7 @@ EnsureSingleInEdgeToExitNode(ControlFlowGraph & cfg)
     auto stronglyConnectedComponents = find_sccs(cfg);
     for (auto stronglyConnectedComponent : stronglyConnectedComponents)
     {
-      auto structure = sccstructure::create(stronglyConnectedComponent);
+      auto structure = StronglyConnectedComponentStructure::create(stronglyConnectedComponent);
 
       if (structure->nxedges() == 0)
       {
