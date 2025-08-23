@@ -627,7 +627,9 @@ divert(rvsdg::Region * region, cnectx & ctx)
 CommonNodeElimination::~CommonNodeElimination() noexcept = default;
 
 void
-CommonNodeElimination::Run(RvsdgModule & module, util::StatisticsCollector & statisticsCollector)
+CommonNodeElimination::Run(
+    rvsdg::RvsdgModule & module,
+    util::StatisticsCollector & statisticsCollector)
 {
   const auto & graph = module.Rvsdg();
 
