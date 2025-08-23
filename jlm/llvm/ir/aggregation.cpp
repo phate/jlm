@@ -232,7 +232,7 @@ aggregate(ControlFlowGraphNode *, ControlFlowGraphNode *, AggregationMap &);
  * the subgraph.
  */
 static void
-reduce_loop(const sccstructure & sccstruct, AggregationMap & map)
+reduce_loop(const StronglyConnectedComponentStructure & sccstruct, AggregationMap & map)
 {
   JLM_ASSERT(sccstruct.is_tcloop());
 
@@ -375,7 +375,7 @@ aggregate_loops(ControlFlowGraphNode * entry, ControlFlowGraphNode * exit, Aggre
   auto sccs = find_sccs(entry, exit);
   for (auto scc : sccs)
   {
-    auto sccstruct = sccstructure::create(scc);
+    auto sccstruct = StronglyConnectedComponentStructure::create(scc);
 
     if (sccstruct->is_tcloop())
     {

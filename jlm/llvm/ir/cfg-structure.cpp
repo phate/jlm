@@ -25,19 +25,17 @@ StronglyConnectedComponent::end() const
   return constiterator(nodes_.end());
 }
 
-/* sccstructure class */
-
 bool
-sccstructure::is_tcloop() const
+StronglyConnectedComponentStructure::is_tcloop() const
 {
   return nenodes() == 1 && nredges() == 1 && nxedges() == 1
       && (*redges().begin())->source() == (*xedges().begin())->source();
 }
 
-std::unique_ptr<sccstructure>
-sccstructure::create(const StronglyConnectedComponent & scc)
+std::unique_ptr<StronglyConnectedComponentStructure>
+StronglyConnectedComponentStructure::create(const StronglyConnectedComponent & scc)
 {
-  auto sccstruct = std::make_unique<sccstructure>();
+  auto sccstruct = std::make_unique<StronglyConnectedComponentStructure>();
 
   for (auto & node : scc)
   {

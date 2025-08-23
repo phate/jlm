@@ -121,7 +121,7 @@ append_constant(BasicBlock * bb, const ThreeAddressCodeVariable * result, size_t
 
 static inline void
 restructure_loop_entry(
-    const sccstructure & s,
+    const StronglyConnectedComponentStructure & s,
     BasicBlock * new_ne,
     const ThreeAddressCodeVariable * ev)
 {
@@ -147,7 +147,7 @@ restructure_loop_entry(
 
 static inline void
 restructure_loop_exit(
-    const sccstructure & s,
+    const StronglyConnectedComponentStructure & s,
     BasicBlock * new_nr,
     BasicBlock * new_nx,
     ControlFlowGraphNode * exit,
@@ -196,7 +196,7 @@ restructure_loop_exit(
 
 static inline void
 restructure_loop_repetition(
-    const sccstructure & s,
+    const StronglyConnectedComponentStructure & s,
     ControlFlowGraphNode * new_nr,
     const ThreeAddressCodeVariable * ev,
     const ThreeAddressCodeVariable * rv)
@@ -246,7 +246,7 @@ restructure_loops(
   auto sccs = find_sccs(entry, exit);
   for (auto & scc : sccs)
   {
-    auto sccstruct = sccstructure::create(scc);
+    auto sccstruct = StronglyConnectedComponentStructure::create(scc);
 
     if (sccstruct->is_tcloop())
     {
