@@ -175,6 +175,8 @@ SetAdditionalNodeAttributes(
     util::graph::Node & node,
     util::graph::Graph * typeGraph)
 {
+  node.SetAttribute("NodeId", util::strfmt(rvsdgNode.GetNodeId()));
+
   if (const auto delta = dynamic_cast<const rvsdg::DeltaNode *>(&rvsdgNode))
   {
     if (auto op = dynamic_cast<const llvm::DeltaOperation *>(&delta->GetOperation()))
