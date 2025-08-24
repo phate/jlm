@@ -97,6 +97,7 @@ AttachNodeInput(util::graph::Port & inputPort, const rvsdg::Input & rvsdgInput)
 {
   auto & graph = inputPort.GetGraph();
   inputPort.SetProgramObject(rvsdgInput);
+  inputPort.SetLabel(util::strfmt(rvsdgInput.index()));
 
   // nodes are visited in topological order, so if the origin is an output, it will already exist
   if (auto originPort = reinterpret_cast<util::graph::Port *>(
@@ -124,6 +125,8 @@ AttachNodeOutput(
     util::graph::Graph * typeGraph)
 {
   outputPort.SetProgramObject(rvsdgOutput);
+  outputPort.SetLabel(util::strfmt(rvsdgOutput.index()));
+
   if (typeGraph)
     outputPort.SetAttributeGraphElement(
         "type",
