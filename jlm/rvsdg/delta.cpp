@@ -5,6 +5,7 @@
 
 #include <jlm/rvsdg/delta.hpp>
 #include <jlm/rvsdg/substitution.hpp>
+#include <jlm/util/strfmt.hpp>
 
 namespace jlm::rvsdg
 {

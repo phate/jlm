@@ -13,33 +13,29 @@
 namespace jlm::llvm
 {
 
-/* scc class */
-
-scc::constiterator
-scc::begin() const
+StronglyConnectedComponent::constiterator
+StronglyConnectedComponent::begin() const
 {
   return constiterator(nodes_.begin());
 }
 
-scc::constiterator
-scc::end() const
+StronglyConnectedComponent::constiterator
+StronglyConnectedComponent::end() const
 {
   return constiterator(nodes_.end());
 }
 
-/* sccstructure class */
-
 bool
-sccstructure::is_tcloop() const
+StronglyConnectedComponentStructure::is_tcloop() const
 {
   return nenodes() == 1 && nredges() == 1 && nxedges() == 1
       && (*redges().begin())->source() == (*xedges().begin())->source();
 }
 
-std::unique_ptr<sccstructure>
-sccstructure::create(const llvm::scc & scc)
+std::unique_ptr<StronglyConnectedComponentStructure>
+StronglyConnectedComponentStructure::create(const StronglyConnectedComponent & scc)
 {
-  auto sccstruct = std::make_unique<sccstructure>();
+  auto sccstruct = std::make_unique<StronglyConnectedComponentStructure>();
 
   for (auto & node : scc)
   {
@@ -86,7 +82,7 @@ strongconnect(
     std::unordered_map<ControlFlowGraphNode *, std::pair<size_t, size_t>> & map,
     std::vector<ControlFlowGraphNode *> & node_stack,
     size_t & index,
-    std::vector<llvm::scc> & sccs)
+    std::vector<StronglyConnectedComponent> & sccs)
 {
   map.emplace(node, std::make_pair(index, index));
   node_stack.push_back(node);
@@ -123,11 +119,11 @@ strongconnect(
     } while (w != node);
 
     if (set.size() != 1 || (*set.begin())->has_selfloop_edge())
-      sccs.push_back(llvm::scc(set));
+      sccs.push_back(StronglyConnectedComponent(set));
   }
 }
 
-std::vector<llvm::scc>
+std::vector<StronglyConnectedComponent>
 find_sccs(const ControlFlowGraph & cfg)
 {
   JLM_ASSERT(is_closed(cfg));
@@ -135,11 +131,11 @@ find_sccs(const ControlFlowGraph & cfg)
   return find_sccs(cfg.entry(), cfg.exit());
 }
 
-std::vector<llvm::scc>
+std::vector<StronglyConnectedComponent>
 find_sccs(ControlFlowGraphNode * entry, ControlFlowGraphNode * exit)
 {
   size_t index = 0;
-  std::vector<scc> sccs;
+  std::vector<StronglyConnectedComponent> sccs;
   std::vector<ControlFlowGraphNode *> node_stack;
   std::unordered_map<ControlFlowGraphNode *, std::pair<size_t, size_t>> map;
   strongconnect(entry, exit, map, node_stack, index, sccs);
@@ -641,7 +637,7 @@ straighten(ControlFlowGraph & cfg)
   auto it = cfg.begin();
   while (it != cfg.end())
   {
-    BasicBlock * bb = it.node();
+    BasicBlock * bb = &*it;
 
     // Check if bb only has one successor, and that the successor only has one predecessor
     if (!is_linear_reduction(bb))
@@ -672,7 +668,7 @@ purge(ControlFlowGraph & cfg)
   auto it = cfg.begin();
   while (it != cfg.end())
   {
-    auto bb = it.node();
+    auto bb = &*it;
 
     /*
       Ignore basic blocks with instructions

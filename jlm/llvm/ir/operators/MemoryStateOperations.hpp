@@ -231,6 +231,23 @@ public:
   [[nodiscard]] std::unique_ptr<Operation>
   copy() const override;
 
+  /**
+   * Perform the following transformation:
+   *
+   * oN = CallEntryMemoryStateMergeOperation o0 ... oK
+   * oX ... oZ = LambdaEntryMemoryStateSplitOperation oN
+   * ... = AnyOp oX ... oZ
+   * =>
+   * ... = AnyOp o0 ... oK
+   *
+   * This transformation can occur after function inlining, i.e., a \ref CallOperation has been
+   * replaced with the body of its respective \ref rvsdg::LambdaNode.
+   */
+  static std::optional<std::vector<rvsdg::Output *>>
+  NormalizeCallEntryMemoryStateMerge(
+      const LambdaEntryMemoryStateSplitOperation & lambdaEntrySplitOperation,
+      const std::vector<rvsdg::Output *> & operands);
+
   // FIXME: Deprecated, needs to be removed
   static std::vector<jlm::rvsdg::Output *>
   Create(rvsdg::Output & output, const size_t numResults)
@@ -414,6 +431,30 @@ public:
   [[nodiscard]] std::unique_ptr<Operation>
   copy() const override;
 
+  [[nodiscard]] std::vector<MemoryNodeId>
+  GetMemoryNodeIds() const noexcept
+  {
+    std::vector<MemoryNodeId> memoryNodeIds(narguments());
+    for (auto [memoryNodeId, index] : MemoryNodeIdToIndex_)
+    {
+      JLM_ASSERT(index < narguments());
+      memoryNodeIds[index] = memoryNodeId;
+    }
+
+    return memoryNodeIds;
+  }
+
+  /**
+   * Maps a memory node identifier to the respective input of a \ref
+   * CallEntryMemoryStateMergeOperation node.
+   *
+   * @param node A \ref CallEntryMemoryStateMergeOperation node.
+   * @param memoryNodeId A memory node identifier.
+   * @return The respective input if the memory node identifier maps to one, otherwise nullptr.
+   */
+  [[nodiscard]] static rvsdg::Input *
+  MapMemoryNodeIdToInput(const rvsdg::SimpleNode & node, MemoryNodeId memoryNodeId);
+
   // FIXME: Deprecated, will be removed
   static rvsdg::Output &
   Create(rvsdg::Region & region, const std::vector<rvsdg::Output *> & operands)
@@ -442,7 +483,7 @@ public:
   }
 
 private:
-  std::vector<MemoryNodeId> MemoryNodeIds_{};
+  util::BijectiveMap<MemoryNodeId, size_t> MemoryNodeIdToIndex_{};
 };
 
 /**
