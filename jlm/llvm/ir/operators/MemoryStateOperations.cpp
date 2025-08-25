@@ -114,6 +114,60 @@ MemoryStateMergeOperation::NormalizeMergeSplit(
   return { { result } };
 }
 
+MemoryStateJoinOperation::~MemoryStateJoinOperation() noexcept = default;
+
+bool
+MemoryStateJoinOperation::operator==(const Operation & other) const noexcept
+{
+  const auto operation = dynamic_cast<const MemoryStateMergeOperation *>(&other);
+  return operation && operation->narguments() == narguments();
+}
+
+std::string
+MemoryStateJoinOperation::debug_string() const
+{
+  return "MemoryStateJoin";
+}
+
+std::unique_ptr<rvsdg::Operation>
+MemoryStateJoinOperation::copy() const
+{
+  return std::make_unique<MemoryStateJoinOperation>(*this);
+}
+
+std::optional<std::vector<rvsdg::Output *>>
+MemoryStateJoinOperation::NormalizeSingleOperand(
+    const MemoryStateJoinOperation &,
+    const std::vector<rvsdg::Output *> & operands)
+{
+  if (operands.size() == 1)
+    return operands;
+
+  return std::nullopt;
+}
+
+std::optional<std::vector<rvsdg::Output *>>
+MemoryStateJoinOperation::NormalizeDuplicateOperands(
+    const MemoryStateJoinOperation &,
+    const std::vector<rvsdg::Output *> & operands)
+{
+  std::vector<rvsdg::Output *> newOperands;
+  util::HashSet<rvsdg::Output *> seenOperands;
+  for (auto operand : operands)
+  {
+    if (seenOperands.Contains(operand))
+      continue;
+
+    seenOperands.Insert(operand);
+    newOperands.emplace_back(operand);
+  }
+
+  if (newOperands.size() == operands.size())
+    return std::nullopt;
+
+  return { { CreateNode(newOperands).output(0) } };
+}
+
 MemoryStateSplitOperation::~MemoryStateSplitOperation() noexcept = default;
 
 bool
