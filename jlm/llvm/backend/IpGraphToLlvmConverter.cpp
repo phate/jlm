@@ -1393,6 +1393,12 @@ IpGraphToLlvmConverter::convert_operation(
   {
     return convert<MemoryStateMergeOperation>(op, arguments, builder);
   }
+  if (is<MemoryStateJoinOperation>(op))
+  {
+    // This operation has no equivalent LLVM instruction.
+    // Nothing needs to be done.
+    return nullptr;
+  }
   if (is<MemoryStateSplitOperation>(op))
   {
     return convert<MemoryStateSplitOperation>(op, arguments, builder);
