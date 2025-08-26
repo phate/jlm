@@ -96,8 +96,8 @@ JlmToMlirConverter::ConvertRegion(rvsdg::Region & region, ::mlir::Block & block,
     }
   }
 
-  // Create an MLIR operation for each RVSDG node and store each pair in a
-  // hash map for easy lookup of corresponding MLIR operation
+  // Create an MLIR operation for each RVSDG node.
+  // The mapping from RVSDG output to MLIR result is added to the valueMap for quick lookup.
   for (rvsdg::Node * rvsdgNode : rvsdg::TopDownTraverser(&region))
   {
     ::llvm::SmallVector<::mlir::Value> inputs = GetConvertedInputs(*rvsdgNode, valueMap);
@@ -759,6 +759,17 @@ JlmToMlirConverter::ConvertSimpleNode(
         ::llvm::ArrayRef(resultTypes), // output type
         ::mlir::ValueRange(inputs),    // inputs
         ::llvm::ArrayRef(attributes));
+  }
+  else if (
+    auto memoryStateJoin =
+        dynamic_cast<const llvm::MemoryStateJoinOperation *>(&operation))
+  {
+    ::mlir::Type resultType = ConvertType(*memoryStateJoin->result(0));
+
+    MlirOp = Builder_->create<::mlir::rvsdg::MemoryStateJoin>(
+        Builder_->getUnknownLoc(),
+        resultType,
+        ::mlir::ValueRange(inputs));
   }
   // ** endregion structural nodes **
   else
