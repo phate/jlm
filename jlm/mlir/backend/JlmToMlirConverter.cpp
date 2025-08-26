@@ -760,9 +760,7 @@ JlmToMlirConverter::ConvertSimpleNode(
         ::mlir::ValueRange(inputs),    // inputs
         ::llvm::ArrayRef(attributes));
   }
-  else if (
-    auto memoryStateJoin =
-        dynamic_cast<const llvm::MemoryStateJoinOperation *>(&operation))
+  else if (auto memoryStateJoin = dynamic_cast<const llvm::MemoryStateJoinOperation *>(&operation))
   {
     ::mlir::Type resultType = ConvertType(*memoryStateJoin->result(0));
 
