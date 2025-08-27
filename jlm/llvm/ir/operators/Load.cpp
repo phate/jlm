@@ -365,90 +365,6 @@ perform_multiple_origin_reduction(
   return results;
 }
 
-/*
-  _ so1 = load_op _ si1
-  _ so2 = load_op _ so1
-  _ so3 = load_op _ so2
-  =>
-  _ so1 = load_op _ si1
-  _ so2 = load_op _ si1
-  _ so3 = load_op _ si1
-*/
-static bool
-is_load_load_state_reducible(const std::vector<rvsdg::Output *> & operands)
-{
-  JLM_ASSERT(operands.size() >= 2);
-
-  for (size_t n = 1; n < operands.size(); n++)
-  {
-    if (is<LoadNonVolatileOperation>(rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*operands[n])))
-      return true;
-  }
-
-  return false;
-}
-
-static std::vector<rvsdg::Output *>
-perform_load_load_state_reduction(
-    const LoadNonVolatileOperation & op,
-    const std::vector<rvsdg::Output *> & operands)
-{
-  size_t nstates = operands.size() - 1;
-
-  auto load_state_input = [](rvsdg::Output * result)
-  {
-    const auto loadNode = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*result);
-    JLM_ASSERT(is<LoadNonVolatileOperation>(loadNode));
-
-    /*
-      FIXME: This function returns the corresponding state input for a state output of a load
-      node. It should be part of a load node class.
-    */
-    for (size_t n = 1; n < loadNode->noutputs(); n++)
-    {
-      if (result == loadNode->output(n))
-        return loadNode->input(n);
-    }
-
-    JLM_UNREACHABLE("This should have never happened!");
-  };
-
-  std::function<
-      rvsdg::Output *(size_t, rvsdg::Output *, std::vector<std::vector<rvsdg::Output *>> &)>
-      reduce_state = [&](size_t index, rvsdg::Output * operand, auto & mxstates)
-  {
-    JLM_ASSERT(rvsdg::is<rvsdg::StateType>(operand->Type()));
-
-    if (!is<LoadNonVolatileOperation>(rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*operand)))
-      return operand;
-
-    mxstates[index].push_back(operand);
-    return reduce_state(index, load_state_input(operand)->origin(), mxstates);
-  };
-
-  std::vector<rvsdg::Output *> ldstates;
-  std::vector<std::vector<rvsdg::Output *>> mxstates(nstates);
-  for (size_t n = 1; n < operands.size(); n++)
-    ldstates.push_back(reduce_state(n - 1, operands[n], mxstates));
-
-  auto ld = LoadNonVolatileOperation::Create(
-      operands[0],
-      ldstates,
-      op.GetLoadedType(),
-      op.GetAlignment());
-  for (size_t n = 0; n < mxstates.size(); n++)
-  {
-    auto & states = mxstates[n];
-    if (!states.empty())
-    {
-      states.push_back(ld[n + 1]);
-      ld[n + 1] = MemoryStateMergeOperation::Create(states);
-    }
-  }
-
-  return ld;
-}
-
 std::optional<std::vector<rvsdg::Output *>>
 LoadNonVolatileOperation::NormalizeLoadMux(
     const LoadNonVolatileOperation & operation,
@@ -509,10 +425,58 @@ LoadNonVolatileOperation::NormalizeLoadLoadState(
     const LoadNonVolatileOperation & operation,
     const std::vector<rvsdg::Output *> & operands)
 {
-  if (is_load_load_state_reducible(operands))
-    return perform_load_load_state_reduction(operation, operands);
+  if (operation.NumMemoryStates() == 0)
+  {
+    return std::nullopt;
+  }
 
-  return std::nullopt;
+  bool shouldPerformNormalization = false;
+  for (size_t n = 1; n < operands.size(); n++)
+  {
+    const auto simpleNode = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*operands[n]);
+    shouldPerformNormalization |= is<LoadNonVolatileOperation>(simpleNode);
+  }
+  if (!shouldPerformNormalization)
+    return std::nullopt;
+
+  std::function<
+      rvsdg::Output *(size_t, rvsdg::Output *, std::vector<std::vector<rvsdg::Output *>> &)>
+      traceLoadState = [&](size_t index, rvsdg::Output * operand, auto & joinOperands)
+  {
+    JLM_ASSERT(rvsdg::is<rvsdg::StateType>(operand->Type()));
+
+    if (!is<LoadNonVolatileOperation>(rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*operand)))
+      return operand;
+
+    joinOperands[index].push_back(operand);
+    return traceLoadState(index, MapMemoryStateOutputToInput(*operand).origin(), joinOperands);
+  };
+
+  std::vector<rvsdg::Output *> newLoadMemoryStates;
+  std::vector<std::vector<rvsdg::Output *>> joinOperands(operation.NumMemoryStates());
+  for (size_t n = 1; n < operands.size(); n++)
+  {
+    newLoadMemoryStates.push_back(traceLoadState(n - 1, operands[n], joinOperands));
+  }
+
+  const auto loadAddress = operands[0];
+  auto loadResults = rvsdg::outputs(&CreateNode(
+      *loadAddress,
+      newLoadMemoryStates,
+      operation.GetLoadedType(),
+      operation.GetAlignment()));
+
+  for (size_t n = 0; n < joinOperands.size(); n++)
+  {
+    auto & states = joinOperands[n];
+    if (!states.empty())
+    {
+      states.push_back(loadResults[n + 1]);
+      loadResults[n + 1] = MemoryStateJoinOperation::CreateNode(states).output(0);
+    }
+  }
+
+  return loadResults;
 }
 
 std::optional<std::vector<rvsdg::Output *>>

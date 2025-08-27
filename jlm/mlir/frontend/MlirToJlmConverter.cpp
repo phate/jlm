@@ -665,7 +665,12 @@ MlirToJlmConverter::ConvertOperation(
     auto outputs = jlm::llvm::CallExitMemoryStateSplitOperation::Create(
         *operands.front(),
         CallExitMemstateSplitOp.getNumResults());
-    return std::vector<jlm::rvsdg::Output *>(outputs.begin(), outputs.end());
+    return outputs;
+  }
+  else if (::mlir::isa<::mlir::rvsdg::MemoryStateJoin>(&mlirOperation))
+  {
+    std::vector operands(inputs.begin(), inputs.end());
+    return rvsdg::outputs(&llvm::MemoryStateJoinOperation::CreateNode(operands));
   }
   else if (auto IOBarrierOp = ::mlir::dyn_cast<::mlir::jlm::IOBarrier>(&mlirOperation))
   {
