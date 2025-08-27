@@ -24,9 +24,11 @@ class FMulAddIntrinsicOperation final : public rvsdg::SimpleOperation
 public:
   ~FMulAddIntrinsicOperation() noexcept override;
 
-  explicit FMulAddIntrinsicOperation(const std::shared_ptr<const FloatingPointType> & type)
+  explicit FMulAddIntrinsicOperation(const std::shared_ptr<const rvsdg::Type> & type)
       : SimpleOperation({ type, type, type }, { type })
-  {}
+  {
+    CheckType(type);
+  }
 
   bool
   operator==(const Operation & other) const noexcept override;
@@ -40,23 +42,21 @@ public:
   static rvsdg::SimpleNode &
   CreateNode(rvsdg::Output & multiplier, rvsdg::Output & multiplicand, rvsdg::Output & summand)
   {
-    const auto type = CheckAndExtractType(multiplier.Type());
     return rvsdg::CreateOpNode<FMulAddIntrinsicOperation>(
         { &multiplier, &multiplicand, &summand },
-        type);
+        multiplier.Type());
   }
 
   static std::unique_ptr<ThreeAddressCode>
   CreateTac(const Variable & multiplier, const Variable & multiplicand, const Variable & summand)
   {
-    const auto type = CheckAndExtractType(multiplier.Type());
-    const FMulAddIntrinsicOperation operation(type);
+    const FMulAddIntrinsicOperation operation(multiplier.Type());
     return ThreeAddressCode::create(operation, { &multiplier, &multiplicand, &summand });
   }
 
 private:
-  static std::shared_ptr<const FloatingPointType>
-  CheckAndExtractType(const std::shared_ptr<const rvsdg::Type> & type);
+  static void
+  CheckType(const std::shared_ptr<const rvsdg::Type> & type);
 };
 
 }

@@ -30,17 +30,22 @@ FMulAddIntrinsicOperation::copy() const
   return std::make_unique<FMulAddIntrinsicOperation>(*this);
 }
 
-std::shared_ptr<const FloatingPointType>
-FMulAddIntrinsicOperation::CheckAndExtractType(const std::shared_ptr<const rvsdg::Type> & type)
+void
+FMulAddIntrinsicOperation::CheckType(const std::shared_ptr<const rvsdg::Type> & type)
 {
-  const auto fpType = std::dynamic_pointer_cast<const FloatingPointType>(type);
+  std::shared_ptr<const rvsdg::Type> scalarType = type;
+
+  if (const auto vectorType = std::dynamic_pointer_cast<const VectorType>(type))
+  {
+    scalarType = std::static_pointer_cast<const rvsdg::Type>(vectorType->Type());
+  }
+
+  const auto fpType = std::dynamic_pointer_cast<const FloatingPointType>(scalarType);
   if (!fpType)
   {
     throw std::runtime_error(
         "FMulAddIntrinsicOperation::CheckAndExtractType: Expected floating point type.");
   }
-
-  return fpType;
 }
 
 }
