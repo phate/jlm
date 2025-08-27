@@ -4,6 +4,8 @@
  * See COPYING for terms of redistribution.
  */
 
+#include <jlm/rvsdg/gamma.hpp>
+#include <jlm/rvsdg/lambda.hpp>
 #include <jlm/rvsdg/notifiers.hpp>
 #include <jlm/rvsdg/region.hpp>
 #include <jlm/rvsdg/simple-node.hpp>
@@ -425,6 +427,71 @@ producer(const jlm::rvsdg::Output * output) noexcept
     return nullptr;
 
   return producer(argument->input()->origin());
+}
+
+Output &
+TraceOutputIntraProcedural(Output & output)
+{
+  if (TryGetOwnerNode<SimpleNode>(output))
+  {
+    return output;
+  }
+
+  // Handle gamma node outputs
+  if (const auto gammaNode = TryGetOwnerNode<GammaNode>(output))
+  {
+    const auto exitVar = gammaNode->MapOutputExitVar(output);
+    if (const auto origin = GetGammaInvariantOrigin(*gammaNode, exitVar))
+    {
+      return TraceOutputIntraProcedural(*origin.value());
+    }
+
+    return output;
+  }
+
+  // Handle gamma node arguments
+  if (const auto gammaNode = TryGetRegionParentNode<GammaNode>(output))
+  {
+    const auto roleVar = gammaNode->MapBranchArgument(output);
+    if (const auto entryVar = std::get_if<GammaNode::EntryVar>(&roleVar))
+    {
+      return TraceOutputIntraProcedural(*entryVar->input->origin());
+    }
+
+    return output;
+  }
+
+  // Handle theta node outputs
+  if (const auto thetaNode = TryGetOwnerNode<ThetaNode>(output))
+  {
+    const auto loopVar = thetaNode->MapOutputLoopVar(output);
+    if (ThetaLoopVarIsInvariant(loopVar))
+    {
+      return TraceOutputIntraProcedural(*loopVar.input->origin());
+    }
+
+    return output;
+  }
+
+  // Handle theta node arguments
+  if (const auto thetaNode = TryGetRegionParentNode<ThetaNode>(output))
+  {
+    const auto loopVar = thetaNode->MapPreLoopVar(output);
+    if (ThetaLoopVarIsInvariant(loopVar))
+    {
+      return TraceOutputIntraProcedural(*loopVar.input->origin());
+    }
+
+    return output;
+  }
+
+  // Handle lambda node arguments
+  if (TryGetRegionParentNode<LambdaNode>(output))
+  {
+    return output;
+  }
+
+  JLM_UNREACHABLE("TraceOutputIntraProcedural: Unhandled output case.");
 }
 
 /**

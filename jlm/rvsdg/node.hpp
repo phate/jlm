@@ -1001,6 +1001,9 @@ is(const Node * node) noexcept
 Node *
 producer(const jlm::rvsdg::Output * output) noexcept;
 
+Output &
+TraceOutputIntraProcedural(const Output & output);
+
 }
 
 #endif
