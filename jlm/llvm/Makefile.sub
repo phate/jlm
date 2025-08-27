@@ -38,6 +38,7 @@ libllvm_SOURCES = \
     jlm/llvm/ir/operators/MemoryStateOperations.cpp \
     jlm/llvm/ir/operators/operators.cpp \
     jlm/llvm/ir/operators/sext.cpp \
+    jlm/llvm/ir/operators/SpecializedArithmeticIntrinsicOperations.cpp \
     jlm/llvm/ir/operators/Store.cpp \
     jlm/llvm/ir/print.cpp \
     jlm/llvm/ir/RvsdgModule.cpp \
@@ -146,6 +147,7 @@ libllvm_HEADERS = \
     jlm/llvm/ir/operators/call.hpp \
     jlm/llvm/ir/operators/sext.hpp \
     jlm/llvm/ir/operators/lambda.hpp \
+    jlm/llvm/ir/operators/SpecializedArithmeticIntrinsicOperations.hpp \
     jlm/llvm/ir/aggregation.hpp \
 
 libllvm_TESTS += \
