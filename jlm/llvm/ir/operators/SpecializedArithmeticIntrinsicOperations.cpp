@@ -40,12 +40,6 @@ FMulAddIntrinsicOperation::CheckAndExtractType(const std::shared_ptr<const rvsdg
         "FMulAddIntrinsicOperation::CheckAndExtractType: Expected floating point type.");
   }
 
-  if (fpType->size() != fpsize::flt && fpType->size() != fpsize::dbl)
-  {
-    throw std::runtime_error("FMulAddIntrinsicOperation::CheckAndExtractType: Expected float or "
-                             "double floating point type size.");
-  }
-
   return fpType;
 }
 
