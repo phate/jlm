@@ -14,6 +14,7 @@
 #include <jlm/llvm/ir/operators/IOBarrier.hpp>
 #include <jlm/llvm/ir/operators/MemoryStateOperations.hpp>
 #include <jlm/llvm/ir/operators/operators.hpp>
+#include <jlm/llvm/ir/operators/SpecializedArithmeticIntrinsicOperations.hpp>
 #include <jlm/llvm/ir/TypeConverter.hpp>
 #include <jlm/rvsdg/control.hpp>
 
@@ -1420,6 +1421,19 @@ IpGraphToLlvmConverter::convert_operation(
   if (is<FunctionToPointerOperation>(op))
   {
     return convert<FunctionToPointerOperation>(op, arguments, builder);
+  }
+  if (is<FMulAddIntrinsicOperation>(op))
+  {
+    auto multiplier = Context_->value(arguments[0]);
+    auto multiplicand = Context_->value(arguments[1]);
+    auto summand = Context_->value(arguments[2]);
+
+    auto type =
+        Context_->GetTypeConverter().ConvertJlmType(arguments[0]->type(), builder.getContext());
+    return builder.CreateIntrinsic(
+        ::llvm::Intrinsic::fmuladd,
+        { type },
+        { multiplier, multiplicand, summand });
   }
 
   JLM_UNREACHABLE(util::strfmt("Unhandled operation type: ", op.debug_string()).c_str());
