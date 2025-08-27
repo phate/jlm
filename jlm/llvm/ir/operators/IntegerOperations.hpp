@@ -18,6 +18,178 @@ namespace jlm::llvm
 // representation
 using IntegerValueRepresentation = rvsdg::BitValueRepresentation;
 
+class IntegerValueRepresentation final
+{
+public:
+  IntegerValueRepresentation(const size_t numBits, int64_t value)
+  {
+    if (numBits == 0)
+      throw std::runtime_error("Number of bits is zeo.");
+
+    if (numBits < 64 && (value >> numBits) != 0 && (value >> numBits != -1))
+      throw std::runtime_error("Value cannot be represented with the given number of bits.");
+
+    InitializeToBitValue(numBits, 0);
+    for (size_t n = 0; n < numBits; ++n)
+    {
+      SetBit(n, value & 1);
+      value = value >> 1;
+    }
+  }
+
+  size_t NumBits() const noexcept
+  {
+    return NumBits_;
+  }
+
+  size_t SignBit() const noexcept
+  {
+    return Bits_[NumBits() - 1];
+  }
+
+  IntegerValueRepresentation
+  And(const IntegerValueRepresentation &other)
+  {
+    if (NumBits() != other.NumBits())
+      throw std::runtime_error("Unequal number of bits.");
+
+    IntegerValueRepresentation result(NumBits(), 0);
+    for (size_t n = 0; n < NumBits(); n++)
+      SetBit(n, GetBit(n) & other.GetBit(n));
+
+    return result;
+  }
+
+  IntegerValueRepresentation
+  Or(const IntegerValueRepresentation & other)
+  {
+    if (NumBits() != other.NumBits())
+      throw std::runtime_error("Unequal number of bits.");
+
+    IntegerValueRepresentation result(NumBits(), 0);
+    for (size_t n = 0; n < NumBits(); n++)
+      SetBit(n, GetBit(n) | other.GetBit(n));
+
+    return result;
+  }
+
+  IntegerValueRepresentation
+  XOr(const IntegerValueRepresentation & other)
+  {
+    if (NumBits() != other.NumBits())
+      throw std::runtime_error("Unequal number of bits.");
+
+    IntegerValueRepresentation result(NumBits(), 0);
+    for (size_t n = 0; n < NumBits(); n++)
+      SetBit(n, GetBit(n) ^ other.GetBit(n));
+
+    return result;
+  }
+
+  IntegerValueRepresentation
+  Add(const IntegerValueRepresentation & other) const
+  {
+    if (NumBits() != other.NumBits())
+      throw std::runtime_error("Unequal number of bits.");
+
+    uint64_t carry = 0;
+    IntegerValueRepresentation sum(NumBits(), 0);
+    for (size_t n = 0; n < NumBits(); n++)
+    {
+      sum.SetBit(n, Add(GetBit(n), other.GetBit(n), carry));
+      carry = Carry(GetBit(n), other.GetBit(n), carry);
+    }
+
+    return sum;
+  }
+
+  IntegerValueRepresentation
+  Negate() const
+  {
+    uint64_t c = 1;
+    IntegerValueRepresentation result(NumBits(), 0);
+    for (size_t n = 0; n < NumBits(); n++)
+    {
+      const uint64_t tmp = GetBit(n) ^ 1;
+      result.SetBit(n, Add(tmp, 0, c));
+      c = Carry(tmp, 0, c);
+    }
+
+    return result;
+  }
+
+  IntegerValueRepresentation
+  Subtract(const IntegerValueRepresentation & other) const
+  {
+    return Add(other.Negate());
+  }
+
+  IntegerValueRepresentation
+  Multiply(const IntegerValueRepresentation & other) const
+  {
+    if (NumBits() != other.NumBits())
+      throw std::runtime_error("Unequal number of bits.");
+
+    IntegerValueRepresentation product(2 * NumBits(), 0);
+    mul(*this, other, product);
+    return product.slice(0, nbits());
+  }
+
+private:
+  static uint64_t Carry(const uint64_t x, const uint64_t y, const uint64_t z)
+  {
+    JLM_ASSERT(x == 0 || x == 1);
+    JLM_ASSERT(y == 0 || y == 1);
+    JLM_ASSERT(z == 0 || z == 1);
+
+    return (x & y) | (x & z) | (y & z);
+  }
+
+  static uint64_t Add(const uint64_t x, const uint64_t y, const uint64_t z)
+  {
+    JLM_ASSERT(x == 0 || x == 1);
+    JLM_ASSERT(y == 0 || y == 1);
+    JLM_ASSERT(z == 0 || z == 1);
+
+    return (x ^ y) ^ z;
+  }
+
+  void SetBit(const size_t bit, const uint64_t bitValue) noexcept
+  {
+    JLM_ASSERT(bit < NumBits());
+    JLM_ASSERT(bitValue == 0 || bitValue == 1);
+
+    const auto index = bit / 64;
+    const auto remBits = bit % 64;
+    Bits_[index] = Bits_[index] | (bitValue << remBits);
+  }
+
+  uint64_t GetBit(const size_t bit) const noexcept
+  {
+    JLM_ASSERT(bit < NumBits());
+
+    const auto index = bit / 64;
+    const auto remBits = bit % 64;
+    return Bits_[index] & (1 << remBits);
+  }
+
+  void
+  InitializeToBitValue(const size_t numBits, const uint64_t bitValue)
+  {
+    JLM_ASSERT(bitValue == 0 || bitValue == 1);
+
+    size_t numIndices = numBits / 64;
+    if (numBits % 64 != 0)
+      numIndices++;
+
+    Bits_ = std::vector(numIndices, bitValue);
+  }
+
+  // [LSB ... MSB]
+  std::vector<uint64_t> Bits_{};
+  size_t NumBits_{};
+};
+
 /**
  * Represents an LLVM integer constant
  */
