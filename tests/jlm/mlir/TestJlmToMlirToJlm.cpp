@@ -3,14 +3,13 @@
  * See COPYING for terms of redistribution.
  */
 
-#include "jlm/llvm/ir/operators/SpecializedArithmeticIntrinsicOperations.hpp"
 #include <test-registry.hpp>
 #include <TestRvsdgs.hpp>
 
 #include <jlm/llvm/ir/operators/IOBarrier.hpp>
+#include <jlm/llvm/ir/operators/SpecializedArithmeticIntrinsicOperations.hpp>
 #include <jlm/mlir/backend/JlmToMlirConverter.hpp>
 #include <jlm/mlir/frontend/MlirToJlmConverter.hpp>
-#include <jlm/rvsdg/traverser.hpp>
 
 static void
 TestUndef()
