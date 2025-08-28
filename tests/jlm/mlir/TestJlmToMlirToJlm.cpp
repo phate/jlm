@@ -3,6 +3,7 @@
  * See COPYING for terms of redistribution.
  */
 
+#include "jlm/llvm/ir/operators/SpecializedArithmeticIntrinsicOperations.hpp"
 #include <test-registry.hpp>
 #include <TestRvsdgs.hpp>
 
@@ -237,8 +238,9 @@ TestLoad()
       assert(is<jlm::rvsdg::LambdaOperation>(convertedLambda));
 
       assert(convertedLambda->subregion()->nnodes() == 1);
-      assert(is<LoadNonVolatileOperation>(
-          convertedLambda->subregion()->Nodes().begin()->GetOperation()));
+      assert(
+          is<LoadNonVolatileOperation>(
+              convertedLambda->subregion()->Nodes().begin()->GetOperation()));
       auto convertedLoad = convertedLambda->subregion()->Nodes().begin().ptr();
       auto loadOperation =
           dynamic_cast<const LoadNonVolatileOperation *>(&convertedLoad->GetOperation());
@@ -333,8 +335,9 @@ TestStore()
       assert(is<jlm::rvsdg::LambdaOperation>(convertedLambda));
 
       assert(convertedLambda->subregion()->nnodes() == 1);
-      assert(is<StoreNonVolatileOperation>(
-          convertedLambda->subregion()->Nodes().begin()->GetOperation()));
+      assert(
+          is<StoreNonVolatileOperation>(
+              convertedLambda->subregion()->Nodes().begin()->GetOperation()));
       auto convertedStore = convertedLambda->subregion()->Nodes().begin().ptr();
       auto convertedStoreOperation =
           dynamic_cast<const StoreNonVolatileOperation *>(&convertedStore->GetOperation());
@@ -639,6 +642,61 @@ TestFpBinary()
   }
 }
 JLM_UNIT_TEST_REGISTER("jlm/mlir/TestMlirFpBinaryGen", TestFpBinary)
+
+static void
+TestFMulAddOp()
+{
+  using namespace jlm::llvm;
+  using namespace mlir::rvsdg;
+
+  auto rvsdgModule = RvsdgModule::Create(jlm::util::FilePath(""), "", "");
+  auto graph = &rvsdgModule->Rvsdg();
+  {
+    auto floatType = jlm::llvm::FloatingPointType::Create(jlm::llvm::fpsize::dbl);
+    auto functionType =
+        jlm::rvsdg::FunctionType::Create({ floatType, floatType, floatType }, { floatType });
+    auto lambda = jlm::rvsdg::LambdaNode::Create(
+        graph->GetRootRegion(),
+        LlvmLambdaOperation::Create(functionType, "test", linkage::external_linkage));
+
+    auto floatArgument1 = lambda->GetFunctionArguments().at(0);
+    auto floatArgument2 = lambda->GetFunctionArguments().at(1);
+    auto floatArgument3 = lambda->GetFunctionArguments().at(2);
+
+    auto & node = jlm::rvsdg::CreateOpNode<jlm::llvm::FMulAddIntrinsicOperation>(
+        { floatArgument1, floatArgument2, floatArgument3 },
+        floatType);
+
+    lambda->finalize({ node.output(0) });
+
+    // Convert the RVSDG to MLIR
+    std::cout << "Convert to MLIR" << std::endl;
+    jlm::mlir::JlmToMlirConverter mlirgen;
+    auto omega = mlirgen.ConvertModule(*rvsdgModule);
+
+    // Validate the generated MLIR
+    std::cout << "Validate MLIR" << std::endl;
+    auto & mlirOp = omega.getRegion().front().front().getRegion(0).front().front();
+    assert(mlir::isa<mlir::LLVM::FMulAddOp>(mlirOp));
+
+    // Convert the MLIR to RVSDG and check the result
+    std::cout << "Converting MLIR to RVSDG" << std::endl;
+    std::unique_ptr<mlir::Block> rootBlock = std::make_unique<mlir::Block>();
+    rootBlock->push_back(omega);
+    auto roundTripModule = jlm::mlir::MlirToJlmConverter::CreateAndConvert(rootBlock);
+
+    // Assert
+    auto region = &roundTripModule->Rvsdg().GetRootRegion();
+    assert(region->nnodes() == 1);
+    auto convertedLambda =
+        jlm::util::AssertedCast<jlm::rvsdg::LambdaNode>(region->Nodes().begin().ptr());
+    assert(convertedLambda->subregion()->nnodes() == 1);
+
+    auto & convertedNode = *convertedLambda->subregion()->Nodes().begin();
+    assert(is<jlm::llvm::FMulAddIntrinsicOperation>(&convertedNode));
+  }
+}
+JLM_UNIT_TEST_REGISTER("jlm/mlir/TestMlirFMulAddOp", TestFMulAddOp)
 
 static void
 TestGetElementPtr()
