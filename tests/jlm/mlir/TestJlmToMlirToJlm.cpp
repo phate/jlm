@@ -688,9 +688,17 @@ TestFMulAddOp()
     auto convertedLambda =
         jlm::util::AssertedCast<jlm::rvsdg::LambdaNode>(region->Nodes().begin().ptr());
     assert(convertedLambda->subregion()->nnodes() == 1);
+    const auto arguments = convertedLambda->GetFunctionArguments();
+    const auto results = convertedLambda->GetFunctionResults();
+    assert(arguments.size() == 3);
+    assert(results.size() == 1);
 
     auto & convertedNode = *convertedLambda->subregion()->Nodes().begin();
     assert(is<jlm::llvm::FMulAddIntrinsicOperation>(&convertedNode));
+    assert(convertedNode.input(0)->origin() == arguments[0]);
+    assert(convertedNode.input(1)->origin() == arguments[1]);
+    assert(convertedNode.input(2)->origin() == arguments[2]);
+    assert(results[0]->origin() == convertedNode.output(0));
   }
 }
 JLM_UNIT_TEST_REGISTER("jlm/mlir/TestMlirFMulAddOp", TestFMulAddOp)
