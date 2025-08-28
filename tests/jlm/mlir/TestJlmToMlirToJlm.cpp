@@ -7,9 +7,9 @@
 #include <TestRvsdgs.hpp>
 
 #include <jlm/llvm/ir/operators/IOBarrier.hpp>
+#include <jlm/llvm/ir/operators/SpecializedArithmeticIntrinsicOperations.hpp>
 #include <jlm/mlir/backend/JlmToMlirConverter.hpp>
 #include <jlm/mlir/frontend/MlirToJlmConverter.hpp>
-#include <jlm/rvsdg/traverser.hpp>
 
 static void
 TestUndef()
@@ -639,6 +639,69 @@ TestFpBinary()
   }
 }
 JLM_UNIT_TEST_REGISTER("jlm/mlir/TestMlirFpBinaryGen", TestFpBinary)
+
+static void
+TestFMulAddOp()
+{
+  using namespace jlm::llvm;
+  using namespace mlir::rvsdg;
+
+  auto rvsdgModule = RvsdgModule::Create(jlm::util::FilePath(""), "", "");
+  auto graph = &rvsdgModule->Rvsdg();
+  {
+    auto floatType = jlm::llvm::FloatingPointType::Create(jlm::llvm::fpsize::dbl);
+    auto functionType =
+        jlm::rvsdg::FunctionType::Create({ floatType, floatType, floatType }, { floatType });
+    auto lambda = jlm::rvsdg::LambdaNode::Create(
+        graph->GetRootRegion(),
+        LlvmLambdaOperation::Create(functionType, "test", linkage::external_linkage));
+
+    auto floatArgument1 = lambda->GetFunctionArguments().at(0);
+    auto floatArgument2 = lambda->GetFunctionArguments().at(1);
+    auto floatArgument3 = lambda->GetFunctionArguments().at(2);
+
+    auto & node = jlm::rvsdg::CreateOpNode<jlm::llvm::FMulAddIntrinsicOperation>(
+        { floatArgument1, floatArgument2, floatArgument3 },
+        floatType);
+
+    lambda->finalize({ node.output(0) });
+
+    // Convert the RVSDG to MLIR
+    std::cout << "Convert to MLIR" << std::endl;
+    jlm::mlir::JlmToMlirConverter mlirgen;
+    auto omega = mlirgen.ConvertModule(*rvsdgModule);
+
+    // Validate the generated MLIR
+    std::cout << "Validate MLIR" << std::endl;
+    auto & mlirOp = omega.getRegion().front().front().getRegion(0).front().front();
+    assert(mlir::isa<mlir::LLVM::FMulAddOp>(mlirOp));
+
+    // Convert the MLIR to RVSDG and check the result
+    std::cout << "Converting MLIR to RVSDG" << std::endl;
+    std::unique_ptr<mlir::Block> rootBlock = std::make_unique<mlir::Block>();
+    rootBlock->push_back(omega);
+    auto roundTripModule = jlm::mlir::MlirToJlmConverter::CreateAndConvert(rootBlock);
+
+    // Assert
+    auto region = &roundTripModule->Rvsdg().GetRootRegion();
+    assert(region->nnodes() == 1);
+    auto convertedLambda =
+        jlm::util::AssertedCast<jlm::rvsdg::LambdaNode>(region->Nodes().begin().ptr());
+    assert(convertedLambda->subregion()->nnodes() == 1);
+    const auto arguments = convertedLambda->GetFunctionArguments();
+    const auto results = convertedLambda->GetFunctionResults();
+    assert(arguments.size() == 3);
+    assert(results.size() == 1);
+
+    auto & convertedNode = *convertedLambda->subregion()->Nodes().begin();
+    assert(is<jlm::llvm::FMulAddIntrinsicOperation>(&convertedNode));
+    assert(convertedNode.input(0)->origin() == arguments[0]);
+    assert(convertedNode.input(1)->origin() == arguments[1]);
+    assert(convertedNode.input(2)->origin() == arguments[2]);
+    assert(results[0]->origin() == convertedNode.output(0));
+  }
+}
+JLM_UNIT_TEST_REGISTER("jlm/mlir/TestMlirFMulAddOp", TestFMulAddOp)
 
 static void
 TestGetElementPtr()

@@ -7,8 +7,8 @@ jlc_SOURCES = \
 
 jlc_LIBS += \
 	libtooling \
-	libllvm \
 	libmlir \
+	libllvm \
 	librvsdg \
 	libutil \
 
@@ -23,8 +23,8 @@ jlm-opt_SOURCES = \
 
 jlm-opt_LIBS = \
 	libtooling \
-	libllvm \
 	libmlir \
+	libllvm \
 	librvsdg \
 	libutil \
 
