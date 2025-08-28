@@ -432,11 +432,6 @@ producer(const jlm::rvsdg::Output * output) noexcept
 Output &
 TraceOutputIntraProcedural(Output & output)
 {
-  if (TryGetOwnerNode<SimpleNode>(output))
-  {
-    return output;
-  }
-
   // Handle gamma node outputs
   if (const auto gammaNode = TryGetOwnerNode<GammaNode>(output))
   {
@@ -456,6 +451,11 @@ TraceOutputIntraProcedural(Output & output)
     if (const auto entryVar = std::get_if<GammaNode::EntryVar>(&roleVar))
     {
       return TraceOutputIntraProcedural(*entryVar->input->origin());
+    }
+
+    if (const auto matchVar = std::get_if<GammaNode::MatchVar>(&roleVar))
+    {
+      return TraceOutputIntraProcedural(*matchVar->input->origin());
     }
 
     return output;
@@ -485,13 +485,7 @@ TraceOutputIntraProcedural(Output & output)
     return output;
   }
 
-  // Handle lambda node arguments
-  if (TryGetRegionParentNode<LambdaNode>(output))
-  {
-    return output;
-  }
-
-  JLM_UNREACHABLE("TraceOutputIntraProcedural: Unhandled output case.");
+  return output;
 }
 
 /**

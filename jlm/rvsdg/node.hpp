@@ -1001,8 +1001,9 @@ is(const Node * node) noexcept
 Node *
 producer(const jlm::rvsdg::Output * output) noexcept;
 
+// FiXME: add documentation
 Output &
-TraceOutputIntraProcedural(const Output & output);
+TraceOutputIntraProcedural(Output & output);
 
 }
 

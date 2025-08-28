@@ -7,6 +7,7 @@
 #include "test-registry.hpp"
 #include "test-types.hpp"
 
+#include <jlm/rvsdg/gamma.hpp>
 #include <jlm/rvsdg/substitution.hpp>
 #include <jlm/rvsdg/view.hpp>
 #include <jlm/util/HashSet.hpp>
@@ -356,3 +357,54 @@ NodeId()
 }
 
 JLM_UNIT_TEST_REGISTER("jlm/rvsdg/test-nodes-NodeId", NodeId)
+
+static void
+TraceOutputIntraProcedural_Gamma()
+{
+  using namespace jlm::rvsdg;
+  using namespace jlm::tests;
+
+  // Assert
+  const auto controlType = ControlType::Create(2);
+  const auto valueType = jlm::tests::ValueType::Create();
+
+  Graph rvsdg;
+
+  auto & i0 = GraphImport::Create(rvsdg, controlType, "i0");
+  auto & i1 = GraphImport::Create(rvsdg, valueType, "i1");
+  auto & i2 = GraphImport::Create(rvsdg, valueType, "i2");
+
+  const auto gammaNode = GammaNode::create(&i0, 2);
+  auto entryVar1 = gammaNode->AddEntryVar(&i1);
+  auto entryVar2 = gammaNode->AddEntryVar(&i2);
+
+  auto node = TestOperation::create(
+      gammaNode->subregion(1),
+      { entryVar2.branchArgument[1] },
+      { valueType });
+
+  auto exitVar1 =
+      gammaNode->AddExitVar({ entryVar1.branchArgument[0], entryVar1.branchArgument[1] });
+  auto exitVar2 = gammaNode->AddExitVar({ entryVar2.branchArgument[0], node->output(0) });
+
+  auto & x0 = GraphExport::Create(*exitVar1.output, "x0");
+  auto & x1 = GraphExport::Create(*exitVar2.output, "x1");
+
+  view(&rvsdg.GetRootRegion(), stdout);
+
+  // Act
+  const auto & tracedX0 = TraceOutputIntraProcedural(*x0.origin());
+  const auto & tracedX1 = TraceOutputIntraProcedural(*x1.origin());
+  const auto & traceGammaEntry = TraceOutputIntraProcedural(*entryVar1.branchArgument[0]);
+  const auto & tracedNodeInput = TraceOutputIntraProcedural(*node->input(0)->origin());
+
+  // Assert
+  assert(&tracedX0 == &i1);
+  assert(&tracedX1 == x1.origin());
+  assert(&traceGammaEntry == &i1);
+  assert(&tracedNodeInput == &i2);
+}
+
+JLM_UNIT_TEST_REGISTER(
+    "jlm/rvsdg/test-nodes-TraceOutputIntraProcedural_Gamma",
+    TraceOutputIntraProcedural_Gamma)
