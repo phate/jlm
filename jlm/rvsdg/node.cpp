@@ -4,11 +4,13 @@
  * See COPYING for terms of redistribution.
  */
 
+#include <jlm/rvsdg/delta.hpp>
 #include <jlm/rvsdg/gamma.hpp>
 #include <jlm/rvsdg/lambda.hpp>
+#include <jlm/rvsdg/MatchType.hpp>
 #include <jlm/rvsdg/notifiers.hpp>
+#include <jlm/rvsdg/Phi.hpp>
 #include <jlm/rvsdg/region.hpp>
-#include <jlm/rvsdg/simple-node.hpp>
 #include <jlm/rvsdg/substitution.hpp>
 #include <jlm/rvsdg/theta.hpp>
 
@@ -459,6 +461,49 @@ TraceOutputIntraProcedurally(const Output & output)
   }
 
   return output;
+}
+
+Output &
+RouteToRegion(Output & output, Region & region)
+{
+  if (&region == output.region())
+    return output;
+
+  if (&region == &region.graph()->GetRootRegion())
+  {
+    // We reached the root region and have not found the outputs' region yet.
+    // This means that the output comes from a region in the region tree that
+    // is not an ancestor of "region".
+    throw std::logic_error("Output is not in an ancestor of region.");
+  }
+
+  auto & origin = RouteToRegion(output, *region.node()->region());
+
+  const auto newOrigin = MatchTypeOrFail(
+      *region.node(),
+      [&origin, &region](GammaNode & gammaNode)
+      {
+        auto [input, branchArgument] = gammaNode.AddEntryVar(&origin);
+        return branchArgument[region.index()];
+      },
+      [&origin](ThetaNode & thetaNode)
+      {
+        return thetaNode.AddLoopVar(&origin).pre;
+      },
+      [&origin](LambdaNode & lambdaNode)
+      {
+        return lambdaNode.AddContextVar(origin).inner;
+      },
+      [&origin](PhiNode & phiNode)
+      {
+        return phiNode.AddContextVar(origin).inner;
+      },
+      [&origin](DeltaNode & deltaNode)
+      {
+        return deltaNode.AddContextVar(origin).inner;
+      });
+
+  return *newOrigin;
 }
 
 /**
