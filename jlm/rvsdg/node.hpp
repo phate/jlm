@@ -1015,8 +1015,8 @@ producer(const jlm::rvsdg::Output * output) noexcept;
  * @param output The \ref Output that needs to be traced.
  * @return The final value of the tracing.
  */
-Output &
-TraceOutputIntraProcedurally(Output & output);
+const Output &
+TraceOutputIntraProcedurally(const Output & output);
 
 }
 
