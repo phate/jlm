@@ -24,7 +24,7 @@ remove_unused_loop_backedges(LoopNode * ln)
     if ((dynamic_cast<BackEdgeArgument *>(arg) && arg->nusers() == 1) || arg->IsDead())
     {
       auto & user = *arg->Users().begin();
-      if (auto result = dynamic_cast<backedge_result *>(&user))
+      if (auto result = dynamic_cast<BackEdgeResult *>(&user))
       {
         sr->RemoveResult(result->index());
         sr->RemoveArgument(arg->index());
