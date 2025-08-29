@@ -38,6 +38,7 @@ libllvm_SOURCES = \
     jlm/llvm/ir/operators/MemoryStateOperations.cpp \
     jlm/llvm/ir/operators/operators.cpp \
     jlm/llvm/ir/operators/sext.cpp \
+    jlm/llvm/ir/operators/SpecializedArithmeticIntrinsicOperations.cpp \
     jlm/llvm/ir/operators/Store.cpp \
     jlm/llvm/ir/print.cpp \
     jlm/llvm/ir/RvsdgModule.cpp \
@@ -54,6 +55,7 @@ libllvm_SOURCES = \
     jlm/llvm/opt/alias-analyses/Optimization.cpp \
     jlm/llvm/opt/alias-analyses/PointerObjectSet.cpp \
     jlm/llvm/opt/alias-analyses/PointsToGraph.cpp \
+    jlm/llvm/opt/alias-analyses/PointsToGraphAliasAnalysis.cpp \
     jlm/llvm/opt/alias-analyses/RegionAwareModRefSummarizer.cpp \
     jlm/llvm/opt/alias-analyses/Steensgaard.cpp \
     jlm/llvm/opt/alias-analyses/TopDownModRefEliminator.cpp \
@@ -99,6 +101,7 @@ libllvm_HEADERS = \
     jlm/llvm/opt/alias-analyses/RegionAwareModRefSummarizer.hpp \
     jlm/llvm/opt/alias-analyses/PointsToAnalysis.hpp \
     jlm/llvm/opt/alias-analyses/PointsToGraph.hpp \
+    jlm/llvm/opt/alias-analyses/PointsToGraphAliasAnalysis.hpp \
     jlm/llvm/opt/pull.hpp \
     jlm/llvm/opt/reduction.hpp \
     jlm/llvm/opt/IfConversion.hpp \
@@ -144,6 +147,7 @@ libllvm_HEADERS = \
     jlm/llvm/ir/operators/call.hpp \
     jlm/llvm/ir/operators/sext.hpp \
     jlm/llvm/ir/operators/lambda.hpp \
+    jlm/llvm/ir/operators/SpecializedArithmeticIntrinsicOperations.hpp \
     jlm/llvm/ir/aggregation.hpp \
 
 libllvm_TESTS += \
@@ -153,6 +157,7 @@ libllvm_TESTS += \
     tests/jlm/llvm/backend/RvsdgToIpGraphConverterTests \
     tests/jlm/llvm/frontend/llvm/LoadTests \
     tests/jlm/llvm/frontend/llvm/MemCpyTests \
+    tests/jlm/llvm/frontend/llvm/SpecializedArithmeticIntrinsicOperationTests \
     tests/jlm/llvm/frontend/llvm/StoreTests \
     tests/jlm/llvm/frontend/llvm/TestAttributeConversion \
     tests/jlm/llvm/frontend/llvm/test-endless-loop \
@@ -194,6 +199,7 @@ libllvm_TESTS += \
     tests/jlm/llvm/ir/TypeConverterTests \
     tests/jlm/llvm/opt/alias-analyses/AgnosticModRefSummarizerTests \
     tests/jlm/llvm/opt/alias-analyses/LocalAliasAnalysisTests \
+    tests/jlm/llvm/opt/alias-analyses/PointsToGraphAliasAnalysisTests \
     tests/jlm/llvm/opt/alias-analyses/TestAndersen \
     tests/jlm/llvm/opt/alias-analyses/TestDifferencePropagation \
     tests/jlm/llvm/opt/alias-analyses/TestLazyCycleDetection \

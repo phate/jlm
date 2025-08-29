@@ -8,6 +8,7 @@
 #include <jlm/hls/backend/rvsdg2rhls/mem-conv.hpp>
 #include <jlm/hls/backend/rvsdg2rhls/mem-sep.hpp>
 #include <jlm/hls/ir/hls.hpp>
+#include <jlm/llvm/ir/LambdaMemoryState.hpp>
 #include <jlm/llvm/ir/operators/call.hpp>
 #include <jlm/llvm/ir/operators/lambda.hpp>
 #include <jlm/llvm/ir/operators/Load.hpp>
@@ -25,33 +26,11 @@ namespace jlm::hls
 {
 
 void
-mem_sep_independent(llvm::RvsdgModule & rm)
-{
-  auto & graph = rm.Rvsdg();
-  auto root = &graph.GetRootRegion();
-  mem_sep_independent(root);
-}
-
-void
 mem_sep_argument(llvm::RvsdgModule & rm)
 {
   auto & graph = rm.Rvsdg();
   auto root = &graph.GetRootRegion();
   mem_sep_argument(root);
-}
-
-// from MemoryStateEncoder.cpp
-rvsdg::RegionArgument *
-GetMemoryStateArgument(const rvsdg::LambdaNode & lambda)
-{
-  auto subregion = lambda.subregion();
-  for (size_t n = 0; n < subregion->narguments(); n++)
-  {
-    auto argument = subregion->argument(n);
-    if (jlm::rvsdg::is<llvm::MemoryStateType>(argument->Type()))
-      return argument;
-  }
-  return nullptr;
 }
 
 rvsdg::RegionArgument *
@@ -65,20 +44,6 @@ GetIoStateArgument(const rvsdg::LambdaNode & lambda)
       return argument;
   }
   return nullptr;
-}
-
-rvsdg::RegionResult *
-GetMemoryStateResult(const rvsdg::LambdaNode & lambda)
-{
-  auto subregion = lambda.subregion();
-  for (size_t n = 0; n < subregion->nresults(); n++)
-  {
-    auto result = subregion->result(n);
-    if (jlm::rvsdg::is<jlm::llvm::MemoryStateType>(result->Type()))
-      return result;
-  }
-
-  JLM_UNREACHABLE("This should have never happened!");
 }
 
 void
@@ -136,47 +101,6 @@ route_through(rvsdg::Region * target, jlm::rvsdg::Output * response)
       return lv.pre;
     }
     JLM_UNREACHABLE("THIS SHOULD NOT HAPPEN");
-  }
-}
-
-/* assign each load and store its own state edge. */
-void
-mem_sep_independent(rvsdg::Region * region)
-{
-  auto lambda = dynamic_cast<const rvsdg::LambdaNode *>(region->Nodes().begin().ptr());
-  auto lambda_region = lambda->subregion();
-  auto state_arg = GetMemoryStateArgument(*lambda);
-  if (!state_arg)
-  {
-    // no memstate - i.e. no memory used
-    return;
-  }
-  auto & state_user = *state_arg->Users().begin();
-  std::vector<jlm::rvsdg::SimpleNode *> mem_nodes;
-  gather_mem_nodes(lambda_region, mem_nodes);
-  auto entry_states =
-      jlm::llvm::LambdaEntryMemoryStateSplitOperation::Create(*state_arg, 1 + mem_nodes.size());
-  auto state_result = GetMemoryStateResult(*lambda);
-  // handle existing state edge - TODO: remove entirely?
-  state_user.divert_to(entry_states.back());
-  entry_states.pop_back();
-  entry_states.push_back(state_result->origin());
-  auto & merged_state =
-      jlm::llvm::LambdaExitMemoryStateMergeOperation::Create(*lambda_region, entry_states);
-  entry_states.pop_back();
-  state_result->divert_to(&merged_state);
-  for (auto node : mem_nodes)
-  {
-    auto in_state = route_through(node->region(), entry_states.back());
-    auto & out_state = *in_state->Users().begin();
-    auto node_input = node->input(node->ninputs() - 1);
-    auto old_in_state = node_input->origin();
-    node_input->divert_to(in_state);
-    auto node_output = node->output(node->noutputs() - 1);
-    JLM_ASSERT(node_output->nusers() == 1);
-    node->output(node->noutputs() - 1)->divert_users(old_in_state);
-    out_state.divert_to(node_output);
-    entry_states.pop_back();
   }
 }
 
@@ -362,7 +286,7 @@ mem_sep_argument(rvsdg::Region * region)
 {
   auto lambda = dynamic_cast<const rvsdg::LambdaNode *>(region->Nodes().begin().ptr());
   auto lambda_region = lambda->subregion();
-  auto state_arg = GetMemoryStateArgument(*lambda);
+  auto state_arg = &llvm::GetMemoryStateRegionArgument(*lambda);
   if (!state_arg)
   {
     // no memstate - i.e., no memory used
@@ -398,7 +322,7 @@ mem_sep_argument(rvsdg::Region * region)
   }
   auto entry_states =
       jlm::llvm::LambdaEntryMemoryStateSplitOperation::Create(*state_arg, 1 + port_nodes.size());
-  auto state_result = GetMemoryStateResult(*lambda);
+  auto state_result = &llvm::GetMemoryStateRegionResult(*lambda);
   // handle existing state edge - TODO: remove entirely?
   auto common_edge = entry_states.back();
   entry_states.pop_back();

@@ -23,12 +23,12 @@ class ThreeAddressCode;
 
 /** \brief Function argument
  */
-class argument final : public Variable
+class Argument final : public Variable
 {
 public:
-  ~argument() override;
+  ~Argument() noexcept override;
 
-  argument(
+  Argument(
       const std::string & name,
       std::shared_ptr<const jlm::rvsdg::Type> type,
       const AttributeSet & attributes)
@@ -36,11 +36,11 @@ public:
         attributes_(attributes)
   {}
 
-  argument(const std::string & name, std::shared_ptr<const jlm::rvsdg::Type> type)
+  Argument(const std::string & name, std::shared_ptr<const jlm::rvsdg::Type> type)
       : Variable(std::move(type), name)
   {}
 
-  argument(
+  Argument(
       const std::string & name,
       std::unique_ptr<jlm::rvsdg::Type> type,
       const AttributeSet & attributes)
@@ -54,16 +54,16 @@ public:
     return attributes_;
   }
 
-  static std::unique_ptr<argument>
+  static std::unique_ptr<Argument>
   create(
       const std::string & name,
       std::shared_ptr<const jlm::rvsdg::Type> type,
       const AttributeSet & attributes)
   {
-    return std::make_unique<argument>(name, std::move(type), attributes);
+    return std::make_unique<Argument>(name, std::move(type), attributes);
   }
 
-  static std::unique_ptr<argument>
+  static std::unique_ptr<Argument>
   create(const std::string & name, std::shared_ptr<const jlm::rvsdg::Type> type)
   {
     return create(name, std::move(type), {});
@@ -88,24 +88,24 @@ public:
     return arguments_.size();
   }
 
-  const llvm::argument *
+  const llvm::Argument *
   argument(size_t index) const
   {
     JLM_ASSERT(index < narguments());
     return arguments_[index].get();
   }
 
-  llvm::argument *
-  append_argument(std::unique_ptr<llvm::argument> arg)
+  llvm::Argument *
+  append_argument(std::unique_ptr<llvm::Argument> arg)
   {
     arguments_.push_back(std::move(arg));
     return arguments_.back().get();
   }
 
-  std::vector<llvm::argument *>
+  std::vector<llvm::Argument *>
   arguments() const noexcept
   {
-    std::vector<llvm::argument *> arguments;
+    std::vector<llvm::Argument *> arguments;
     for (auto & argument : arguments_)
       arguments.push_back(argument.get());
 
@@ -113,7 +113,7 @@ public:
   }
 
 private:
-  std::vector<std::unique_ptr<llvm::argument>> arguments_;
+  std::vector<std::unique_ptr<llvm::Argument>> arguments_;
 };
 
 class ExitNode final : public ControlFlowGraphNode
@@ -156,111 +156,11 @@ private:
 
 class ControlFlowGraph final
 {
-  class iterator final
-  {
-  public:
-    inline iterator(std::unordered_set<std::unique_ptr<BasicBlock>>::iterator it)
-        : it_(it)
-    {}
-
-    inline bool
-    operator==(const iterator & other) const noexcept
-    {
-      return it_ == other.it_;
-    }
-
-    inline bool
-    operator!=(const iterator & other) const noexcept
-    {
-      return !(*this == other);
-    }
-
-    inline const iterator &
-    operator++() noexcept
-    {
-      ++it_;
-      return *this;
-    }
-
-    inline const iterator
-    operator++(int) noexcept
-    {
-      iterator tmp(it_);
-      it_++;
-      return tmp;
-    }
-
-    inline BasicBlock *
-    node() const noexcept
-    {
-      return it_->get();
-    }
-
-    inline BasicBlock &
-    operator*() const noexcept
-    {
-      return *it_->get();
-    }
-
-    inline BasicBlock *
-    operator->() const noexcept
-    {
-      return node();
-    }
-
-  private:
-    std::unordered_set<std::unique_ptr<BasicBlock>>::iterator it_;
-  };
-
-  class const_iterator final
-  {
-  public:
-    inline const_iterator(std::unordered_set<std::unique_ptr<BasicBlock>>::const_iterator it)
-        : it_(it)
-    {}
-
-    inline bool
-    operator==(const const_iterator & other) const noexcept
-    {
-      return it_ == other.it_;
-    }
-
-    inline bool
-    operator!=(const const_iterator & other) const noexcept
-    {
-      return !(*this == other);
-    }
-
-    inline const const_iterator &
-    operator++() noexcept
-    {
-      ++it_;
-      return *this;
-    }
-
-    inline const const_iterator
-    operator++(int) noexcept
-    {
-      const_iterator tmp(it_);
-      it_++;
-      return tmp;
-    }
-
-    inline const BasicBlock &
-    operator*() noexcept
-    {
-      return *it_->get();
-    }
-
-    inline const BasicBlock *
-    operator->() noexcept
-    {
-      return it_->get();
-    }
-
-  private:
-    std::unordered_set<std::unique_ptr<BasicBlock>>::const_iterator it_;
-  };
+  using iterator =
+      util::PtrIterator<BasicBlock, std::unordered_set<std::unique_ptr<BasicBlock>>::iterator>;
+  using const_iterator = util::PtrIterator<
+      const BasicBlock,
+      std::unordered_set<std::unique_ptr<BasicBlock>>::const_iterator>;
 
 public:
   ~ControlFlowGraph() noexcept = default;

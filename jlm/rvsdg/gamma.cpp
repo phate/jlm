@@ -231,7 +231,7 @@ GammaNode::GammaNode(
     : StructuralNode(predicate->region(), nalternatives),
       Operation_(nalternatives, std::move(match_content_types))
 {
-  add_input(std::unique_ptr<node_input>(
+  add_input(std::unique_ptr<NodeInput>(
       new StructuralInput(this, predicate, ControlType::Create(nalternatives))));
   for (std::size_t n = 0; n < nalternatives; ++n)
   {
@@ -249,7 +249,7 @@ GammaNode::EntryVar
 GammaNode::AddEntryVar(rvsdg::Output * origin)
 {
   auto gammaInput = new StructuralInput(this, origin, origin->Type());
-  add_input(std::unique_ptr<node_input>(gammaInput));
+  add_input(std::unique_ptr<NodeInput>(gammaInput));
 
   EntryVar ev;
   ev.input = gammaInput;

@@ -16,10 +16,7 @@
 namespace jlm::llvm
 {
 
-/* argument */
-
-argument::~argument()
-{}
+Argument::~Argument() noexcept = default;
 
 EntryNode::~EntryNode() noexcept = default;
 
@@ -40,12 +37,12 @@ ControlFlowGraph::remove_node(ControlFlowGraph::iterator & nodeit)
 
   for (auto & inedge : nodeit->InEdges())
   {
-    if (inedge.source() != nodeit.node())
+    if (inedge.source() != &*nodeit)
       throw util::Error("cannot remove node. It has still incoming edges.");
   }
 
   nodeit->remove_outedges();
-  std::unique_ptr<BasicBlock> tmp(nodeit.node());
+  std::unique_ptr<BasicBlock> tmp(&*nodeit);
   auto rit = iterator(std::next(cfg.nodes_.find(tmp)));
   cfg.nodes_.erase(tmp);
   tmp.release();

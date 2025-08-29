@@ -8,13 +8,12 @@
 
 #include <jlm/llvm/ir/operators/delta.hpp>
 #include <jlm/llvm/ir/operators/lambda.hpp>
+#include <jlm/llvm/ir/operators/operators.hpp>
 #include <jlm/llvm/ir/RvsdgModule.hpp>
 #include <jlm/rvsdg/bitstring/comparison.hpp>
 #include <jlm/rvsdg/bitstring/constant.hpp>
 #include <jlm/rvsdg/gamma.hpp>
 #include <jlm/rvsdg/theta.hpp>
-
-#include <jlm/llvm/ir/operators/operators.hpp>
 
 #include <JLM/JLMDialect.h>
 #include <JLM/JLMOps.h>
@@ -195,6 +194,14 @@ private:
   ConvertFPSize(unsigned int size);
 
   /**
+   * Converts a string representing a linkage to jlm::llvm::linkage.
+   * \param stringValue The string to be converted.
+   * \result The linkage.
+   */
+  llvm::linkage
+  ConvertLinkage(std::string stringValue);
+
+  /**
    * Converts an MLIR omega operation and insterst it into an RVSDG region.
    * \param omegaNode The MLIR omega opeation to the converted
    * \return The converted RVSDG graph.
@@ -220,7 +227,7 @@ private:
    * \param type The MLIR type to be converted.
    * \result The converted RVSDG type.
    */
-  static std::unique_ptr<rvsdg::Type>
+  static std::shared_ptr<const rvsdg::Type>
   ConvertType(const ::mlir::Type & type);
 
   std::unique_ptr<::mlir::MLIRContext> Context_;

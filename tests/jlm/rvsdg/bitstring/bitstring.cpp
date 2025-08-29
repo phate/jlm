@@ -18,8 +18,8 @@ types_bitstring_arithmetic_test_bitand()
 
   // Arrange
   Graph graph;
-  const auto s0 = &jlm::rvsdg::GraphImport::Create(graph, bittype::Create(32), "s0");
-  const auto s1 = &jlm::rvsdg::GraphImport::Create(graph, bittype::Create(32), "s1");
+  const auto s0 = &jlm::rvsdg::GraphImport::Create(graph, BitType::Create(32), "s0");
+  const auto s1 = &jlm::rvsdg::GraphImport::Create(graph, BitType::Create(32), "s1");
 
   const auto c0 = create_bitconstant(&graph.GetRootRegion(), 32, 3);
   const auto c1 = create_bitconstant(&graph.GetRootRegion(), 32, 5);
@@ -53,8 +53,8 @@ types_bitstring_arithmetic_test_bitashr()
 
   // Arrange
   Graph graph;
-  auto s0 = &jlm::rvsdg::GraphImport::Create(graph, bittype::Create(32), "s0");
-  auto s1 = &jlm::rvsdg::GraphImport::Create(graph, bittype::Create(32), "s1");
+  auto s0 = &jlm::rvsdg::GraphImport::Create(graph, BitType::Create(32), "s0");
+  auto s1 = &jlm::rvsdg::GraphImport::Create(graph, BitType::Create(32), "s1");
 
   auto c0 = create_bitconstant(&graph.GetRootRegion(), 32, 16);
   auto c1 = create_bitconstant(&graph.GetRootRegion(), 32, -16);
@@ -102,8 +102,8 @@ types_bitstring_arithmetic_test_bitdifference()
 
   // Arrange
   Graph graph;
-  auto s0 = &jlm::rvsdg::GraphImport::Create(graph, bittype::Create(32), "s0");
-  auto s1 = &jlm::rvsdg::GraphImport::Create(graph, bittype::Create(32), "s1");
+  auto s0 = &jlm::rvsdg::GraphImport::Create(graph, BitType::Create(32), "s0");
+  auto s1 = &jlm::rvsdg::GraphImport::Create(graph, BitType::Create(32), "s1");
 
   auto & diff = CreateOpNode<bitsub_op>({ s0, s1 }, 32);
 
@@ -130,7 +130,7 @@ types_bitstring_arithmetic_test_bitnegate()
 
   // Arrange
   Graph graph;
-  auto s0 = &jlm::rvsdg::GraphImport::Create(graph, bittype::Create(32), "s0");
+  auto s0 = &jlm::rvsdg::GraphImport::Create(graph, BitType::Create(32), "s0");
   auto c0 = create_bitconstant(&graph.GetRootRegion(), 32, 3);
 
   auto & neg0 = CreateOpNode<bitneg_op>({ s0 }, 32);
@@ -166,7 +166,7 @@ types_bitstring_arithmetic_test_bitnot()
 
   // Arrange
   Graph graph;
-  auto s0 = &jlm::rvsdg::GraphImport::Create(graph, bittype::Create(32), "s0");
+  auto s0 = &jlm::rvsdg::GraphImport::Create(graph, BitType::Create(32), "s0");
   auto c0 = create_bitconstant(&graph.GetRootRegion(), 32, 3);
 
   auto & not0 = CreateOpNode<bitnot_op>({ s0 }, 32);
@@ -202,8 +202,8 @@ types_bitstring_arithmetic_test_bitor()
 
   // Arrange
   Graph graph;
-  auto s0 = &jlm::rvsdg::GraphImport::Create(graph, bittype::Create(32), "s0");
-  auto s1 = &jlm::rvsdg::GraphImport::Create(graph, bittype::Create(32), "s1");
+  auto s0 = &jlm::rvsdg::GraphImport::Create(graph, BitType::Create(32), "s0");
+  auto s1 = &jlm::rvsdg::GraphImport::Create(graph, BitType::Create(32), "s1");
 
   auto c0 = create_bitconstant(&graph.GetRootRegion(), 32, 3);
   auto c1 = create_bitconstant(&graph.GetRootRegion(), 32, 5);
@@ -237,8 +237,8 @@ types_bitstring_arithmetic_test_bitproduct()
 
   // Arrange
   Graph graph;
-  auto s0 = &jlm::rvsdg::GraphImport::Create(graph, bittype::Create(32), "s0");
-  auto s1 = &jlm::rvsdg::GraphImport::Create(graph, bittype::Create(32), "s1");
+  auto s0 = &jlm::rvsdg::GraphImport::Create(graph, BitType::Create(32), "s0");
+  auto s1 = &jlm::rvsdg::GraphImport::Create(graph, BitType::Create(32), "s1");
 
   auto c0 = create_bitconstant(&graph.GetRootRegion(), 32, 3);
   auto c1 = create_bitconstant(&graph.GetRootRegion(), 32, 5);
@@ -272,8 +272,8 @@ types_bitstring_arithmetic_test_bitshiproduct()
 
   // Arrange
   Graph graph;
-  auto s0 = &jlm::rvsdg::GraphImport::Create(graph, bittype::Create(32), "s0");
-  auto s1 = &jlm::rvsdg::GraphImport::Create(graph, bittype::Create(32), "s1");
+  auto s0 = &jlm::rvsdg::GraphImport::Create(graph, BitType::Create(32), "s0");
+  auto s1 = &jlm::rvsdg::GraphImport::Create(graph, BitType::Create(32), "s1");
 
   auto & shiproduct = CreateOpNode<bitsmulh_op>({ s0, s1 }, 32);
 
@@ -300,8 +300,8 @@ types_bitstring_arithmetic_test_bitshl()
 
   // Arrange
   Graph graph;
-  auto s0 = &jlm::rvsdg::GraphImport::Create(graph, bittype::Create(32), "s0");
-  auto s1 = &jlm::rvsdg::GraphImport::Create(graph, bittype::Create(32), "s1");
+  auto s0 = &jlm::rvsdg::GraphImport::Create(graph, BitType::Create(32), "s0");
+  auto s1 = &jlm::rvsdg::GraphImport::Create(graph, BitType::Create(32), "s1");
 
   auto c0 = create_bitconstant(&graph.GetRootRegion(), 32, 16);
   auto c1 = create_bitconstant(&graph.GetRootRegion(), 32, 2);
@@ -340,8 +340,8 @@ types_bitstring_arithmetic_test_bitshr()
 
   // Arrange
   Graph graph;
-  auto s0 = &jlm::rvsdg::GraphImport::Create(graph, bittype::Create(32), "s0");
-  auto s1 = &jlm::rvsdg::GraphImport::Create(graph, bittype::Create(32), "s1");
+  auto s0 = &jlm::rvsdg::GraphImport::Create(graph, BitType::Create(32), "s0");
+  auto s1 = &jlm::rvsdg::GraphImport::Create(graph, BitType::Create(32), "s1");
 
   auto c0 = create_bitconstant(&graph.GetRootRegion(), 32, 16);
   auto c1 = create_bitconstant(&graph.GetRootRegion(), 32, 2);
@@ -380,8 +380,8 @@ types_bitstring_arithmetic_test_bitsmod()
 
   // Arrange
   Graph graph;
-  auto s0 = &jlm::rvsdg::GraphImport::Create(graph, bittype::Create(32), "s0");
-  auto s1 = &jlm::rvsdg::GraphImport::Create(graph, bittype::Create(32), "s1");
+  auto s0 = &jlm::rvsdg::GraphImport::Create(graph, BitType::Create(32), "s0");
+  auto s1 = &jlm::rvsdg::GraphImport::Create(graph, BitType::Create(32), "s1");
 
   auto c0 = create_bitconstant(&graph.GetRootRegion(), 32, -7);
   auto c1 = create_bitconstant(&graph.GetRootRegion(), 32, 3);
@@ -415,8 +415,8 @@ types_bitstring_arithmetic_test_bitsquotient()
 
   // Arrange
   Graph graph;
-  auto s0 = &jlm::rvsdg::GraphImport::Create(graph, bittype::Create(32), "s0");
-  auto s1 = &jlm::rvsdg::GraphImport::Create(graph, bittype::Create(32), "s1");
+  auto s0 = &jlm::rvsdg::GraphImport::Create(graph, BitType::Create(32), "s0");
+  auto s1 = &jlm::rvsdg::GraphImport::Create(graph, BitType::Create(32), "s1");
 
   auto c0 = create_bitconstant(&graph.GetRootRegion(), 32, 7);
   auto c1 = create_bitconstant(&graph.GetRootRegion(), 32, -3);
@@ -450,8 +450,8 @@ types_bitstring_arithmetic_test_bitsum()
 
   // Arrange
   Graph graph;
-  auto s0 = &jlm::rvsdg::GraphImport::Create(graph, bittype::Create(32), "s0");
-  auto s1 = &jlm::rvsdg::GraphImport::Create(graph, bittype::Create(32), "s1");
+  auto s0 = &jlm::rvsdg::GraphImport::Create(graph, BitType::Create(32), "s0");
+  auto s1 = &jlm::rvsdg::GraphImport::Create(graph, BitType::Create(32), "s1");
 
   auto c0 = create_bitconstant(&graph.GetRootRegion(), 32, 3);
   auto c1 = create_bitconstant(&graph.GetRootRegion(), 32, 5);
@@ -485,8 +485,8 @@ types_bitstring_arithmetic_test_bituhiproduct()
 
   // Arrange
   Graph graph;
-  auto s0 = &jlm::rvsdg::GraphImport::Create(graph, bittype::Create(32), "s0");
-  auto s1 = &jlm::rvsdg::GraphImport::Create(graph, bittype::Create(32), "s1");
+  auto s0 = &jlm::rvsdg::GraphImport::Create(graph, BitType::Create(32), "s0");
+  auto s1 = &jlm::rvsdg::GraphImport::Create(graph, BitType::Create(32), "s1");
 
   auto & uhiproduct = CreateOpNode<bitumulh_op>({ s0, s1 }, 32);
 
@@ -513,8 +513,8 @@ types_bitstring_arithmetic_test_bitumod()
 
   // Arrange
   Graph graph;
-  auto s0 = &jlm::rvsdg::GraphImport::Create(graph, bittype::Create(32), "s0");
-  auto s1 = &jlm::rvsdg::GraphImport::Create(graph, bittype::Create(32), "s1");
+  auto s0 = &jlm::rvsdg::GraphImport::Create(graph, BitType::Create(32), "s0");
+  auto s1 = &jlm::rvsdg::GraphImport::Create(graph, BitType::Create(32), "s1");
 
   auto c0 = create_bitconstant(&graph.GetRootRegion(), 32, 7);
   auto c1 = create_bitconstant(&graph.GetRootRegion(), 32, 3);
@@ -548,8 +548,8 @@ types_bitstring_arithmetic_test_bituquotient()
 
   // Arrange
   Graph graph;
-  auto s0 = &jlm::rvsdg::GraphImport::Create(graph, bittype::Create(32), "s0");
-  auto s1 = &jlm::rvsdg::GraphImport::Create(graph, bittype::Create(32), "s1");
+  auto s0 = &jlm::rvsdg::GraphImport::Create(graph, BitType::Create(32), "s0");
+  auto s1 = &jlm::rvsdg::GraphImport::Create(graph, BitType::Create(32), "s1");
 
   auto c0 = create_bitconstant(&graph.GetRootRegion(), 32, 7);
   auto c1 = create_bitconstant(&graph.GetRootRegion(), 32, 3);
@@ -583,8 +583,8 @@ types_bitstring_arithmetic_test_bitxor()
 
   // Arrange
   Graph graph;
-  auto s0 = &jlm::rvsdg::GraphImport::Create(graph, bittype::Create(32), "s0");
-  auto s1 = &jlm::rvsdg::GraphImport::Create(graph, bittype::Create(32), "s1");
+  auto s0 = &jlm::rvsdg::GraphImport::Create(graph, BitType::Create(32), "s0");
+  auto s1 = &jlm::rvsdg::GraphImport::Create(graph, BitType::Create(32), "s1");
 
   auto c0 = create_bitconstant(&graph.GetRootRegion(), 32, 3);
   auto c1 = create_bitconstant(&graph.GetRootRegion(), 32, 5);
@@ -634,8 +634,8 @@ types_bitstring_comparison_test_bitequal()
 
   // Arrange
   Graph graph;
-  auto s0 = &jlm::rvsdg::GraphImport::Create(graph, bittype::Create(32), "s0");
-  auto s1 = &jlm::rvsdg::GraphImport::Create(graph, bittype::Create(32), "s1");
+  auto s0 = &jlm::rvsdg::GraphImport::Create(graph, BitType::Create(32), "s0");
+  auto s1 = &jlm::rvsdg::GraphImport::Create(graph, BitType::Create(32), "s1");
   auto c0 = create_bitconstant(&graph.GetRootRegion(), 32, 4);
   auto c1 = create_bitconstant(&graph.GetRootRegion(), 32, 5);
   auto c2 = create_bitconstant_undefined(&graph.GetRootRegion(), 32);
@@ -677,8 +677,8 @@ types_bitstring_comparison_test_bitnotequal()
 
   // Arrange
   Graph graph;
-  auto s0 = &jlm::rvsdg::GraphImport::Create(graph, bittype::Create(32), "s0");
-  auto s1 = &jlm::rvsdg::GraphImport::Create(graph, bittype::Create(32), "s1");
+  auto s0 = &jlm::rvsdg::GraphImport::Create(graph, BitType::Create(32), "s0");
+  auto s1 = &jlm::rvsdg::GraphImport::Create(graph, BitType::Create(32), "s1");
   auto c0 = create_bitconstant(&graph.GetRootRegion(), 32, 4);
   auto c1 = create_bitconstant(&graph.GetRootRegion(), 32, 5);
   auto c2 = create_bitconstant_undefined(&graph.GetRootRegion(), 32);
@@ -720,8 +720,8 @@ types_bitstring_comparison_test_bitsgreater()
 
   // Arrange
   Graph graph;
-  auto s0 = &jlm::rvsdg::GraphImport::Create(graph, bittype::Create(32), "s0");
-  auto s1 = &jlm::rvsdg::GraphImport::Create(graph, bittype::Create(32), "s1");
+  auto s0 = &jlm::rvsdg::GraphImport::Create(graph, BitType::Create(32), "s0");
+  auto s1 = &jlm::rvsdg::GraphImport::Create(graph, BitType::Create(32), "s1");
 
   auto c0 = create_bitconstant(&graph.GetRootRegion(), 32, 4);
   auto c1 = create_bitconstant(&graph.GetRootRegion(), 32, 5);
@@ -769,8 +769,8 @@ types_bitstring_comparison_test_bitsgreatereq()
 
   // Arrange
   Graph graph;
-  auto s0 = &jlm::rvsdg::GraphImport::Create(graph, bittype::Create(32), "s0");
-  auto s1 = &jlm::rvsdg::GraphImport::Create(graph, bittype::Create(32), "s1");
+  auto s0 = &jlm::rvsdg::GraphImport::Create(graph, BitType::Create(32), "s0");
+  auto s1 = &jlm::rvsdg::GraphImport::Create(graph, BitType::Create(32), "s1");
   auto c0 = create_bitconstant(&graph.GetRootRegion(), 32, 4);
   auto c1 = create_bitconstant(&graph.GetRootRegion(), 32, 5);
   auto c2 = create_bitconstant(&graph.GetRootRegion(), 32, 0x7fffffffL);
@@ -821,8 +821,8 @@ types_bitstring_comparison_test_bitsless()
 
   // Arrange
   Graph graph;
-  auto s0 = &jlm::rvsdg::GraphImport::Create(graph, bittype::Create(32), "s0");
-  auto s1 = &jlm::rvsdg::GraphImport::Create(graph, bittype::Create(32), "s1");
+  auto s0 = &jlm::rvsdg::GraphImport::Create(graph, BitType::Create(32), "s0");
+  auto s1 = &jlm::rvsdg::GraphImport::Create(graph, BitType::Create(32), "s1");
 
   auto c0 = create_bitconstant(&graph.GetRootRegion(), 32, 4);
   auto c1 = create_bitconstant(&graph.GetRootRegion(), 32, 5);
@@ -870,8 +870,8 @@ types_bitstring_comparison_test_bitslesseq()
 
   // Arrange
   Graph graph;
-  auto s0 = &jlm::rvsdg::GraphImport::Create(graph, bittype::Create(32), "s0");
-  auto s1 = &jlm::rvsdg::GraphImport::Create(graph, bittype::Create(32), "s1");
+  auto s0 = &jlm::rvsdg::GraphImport::Create(graph, BitType::Create(32), "s0");
+  auto s1 = &jlm::rvsdg::GraphImport::Create(graph, BitType::Create(32), "s1");
 
   auto c0 = create_bitconstant(&graph.GetRootRegion(), 32, 4);
   auto c1 = create_bitconstant(&graph.GetRootRegion(), 32, 5);
@@ -922,8 +922,8 @@ types_bitstring_comparison_test_bitugreater()
   using namespace jlm::rvsdg;
 
   Graph graph;
-  auto s0 = &jlm::rvsdg::GraphImport::Create(graph, bittype::Create(32), "s0");
-  auto s1 = &jlm::rvsdg::GraphImport::Create(graph, bittype::Create(32), "s1");
+  auto s0 = &jlm::rvsdg::GraphImport::Create(graph, BitType::Create(32), "s0");
+  auto s1 = &jlm::rvsdg::GraphImport::Create(graph, BitType::Create(32), "s1");
 
   auto c0 = create_bitconstant(&graph.GetRootRegion(), 32, 4);
   auto c1 = create_bitconstant(&graph.GetRootRegion(), 32, 5);
@@ -970,8 +970,8 @@ types_bitstring_comparison_test_bitugreatereq()
   using namespace jlm::rvsdg;
 
   Graph graph;
-  auto s0 = &jlm::rvsdg::GraphImport::Create(graph, bittype::Create(32), "s0");
-  auto s1 = &jlm::rvsdg::GraphImport::Create(graph, bittype::Create(32), "s1");
+  auto s0 = &jlm::rvsdg::GraphImport::Create(graph, BitType::Create(32), "s0");
+  auto s1 = &jlm::rvsdg::GraphImport::Create(graph, BitType::Create(32), "s1");
 
   auto c0 = create_bitconstant(&graph.GetRootRegion(), 32, 4);
   auto c1 = create_bitconstant(&graph.GetRootRegion(), 32, 5);
@@ -1023,8 +1023,8 @@ types_bitstring_comparison_test_bituless()
 
   // Arrange
   Graph graph;
-  auto s0 = &jlm::rvsdg::GraphImport::Create(graph, bittype::Create(32), "s0");
-  auto s1 = &jlm::rvsdg::GraphImport::Create(graph, bittype::Create(32), "s1");
+  auto s0 = &jlm::rvsdg::GraphImport::Create(graph, BitType::Create(32), "s0");
+  auto s1 = &jlm::rvsdg::GraphImport::Create(graph, BitType::Create(32), "s1");
 
   auto c0 = create_bitconstant(&graph.GetRootRegion(), 32, 4);
   auto c1 = create_bitconstant(&graph.GetRootRegion(), 32, 5);
@@ -1072,8 +1072,8 @@ types_bitstring_comparison_test_bitulesseq()
 
   // Arrange
   Graph graph;
-  auto s0 = &jlm::rvsdg::GraphImport::Create(graph, bittype::Create(32), "s0");
-  auto s1 = &jlm::rvsdg::GraphImport::Create(graph, bittype::Create(32), "s1");
+  auto s0 = &jlm::rvsdg::GraphImport::Create(graph, BitType::Create(32), "s0");
+  auto s1 = &jlm::rvsdg::GraphImport::Create(graph, BitType::Create(32), "s1");
 
   auto c0 = create_bitconstant(&graph.GetRootRegion(), 32, 4);
   auto c1 = create_bitconstant(&graph.GetRootRegion(), 32, 5);
@@ -1215,8 +1215,8 @@ types_bitstring_test_normalize()
   // Arrange
   Graph graph;
 
-  bittype bits32(32);
-  auto imp = &jlm::rvsdg::GraphImport::Create(graph, bittype::Create(32), "imp");
+  BitType bits32(32);
+  auto imp = &jlm::rvsdg::GraphImport::Create(graph, BitType::Create(32), "imp");
 
   auto c0 = create_bitconstant(&graph.GetRootRegion(), 32, 3);
   auto c1 = create_bitconstant(&graph.GetRootRegion(), 32, 4);
@@ -1242,7 +1242,7 @@ types_bitstring_test_normalize()
   assert(node->ninputs() == 2);
   auto op1 = node->input(0)->origin();
   auto op2 = node->input(1)->origin();
-  if (!is<node_output>(op1))
+  if (!is<NodeOutput>(op1))
   {
     auto tmp = op1;
     op1 = op2;
@@ -1272,7 +1272,7 @@ types_bitstring_test_reduction()
 
   // Arrange
   Graph graph;
-  auto bit4Type = bittype::Create(4);
+  auto bit4Type = BitType::Create(4);
   std::vector types({ bit4Type, bit4Type });
 
   auto a = create_bitconstant(&graph.GetRootRegion(), BitValueRepresentation("1100"));
@@ -1328,8 +1328,8 @@ SliceOfConcatReduction()
 
   // Arrange
   Graph graph;
-  auto bit16Type = bittype::Create(16);
-  auto bit32Type = bittype::Create(32);
+  auto bit16Type = BitType::Create(16);
+  auto bit32Type = BitType::Create(32);
   std::vector types({ bit16Type, bit16Type });
 
   auto x = &jlm::rvsdg::GraphImport::Create(graph, bit16Type, "x");
@@ -1377,8 +1377,8 @@ ConcatOfSliceReduction()
 
   // Arrange
   Graph graph;
-  auto bit8Type = bittype::Create(8);
-  auto bit16Type = bittype::Create(16);
+  auto bit8Type = BitType::Create(8);
+  auto bit16Type = BitType::Create(16);
   std::vector types({ bit8Type, bit8Type });
 
   auto x = &jlm::rvsdg::GraphImport::Create(graph, bit16Type, "x");
@@ -1414,7 +1414,7 @@ SliceOfConstant()
 
   // Arrange
   Graph graph;
-  auto bit8Type = bittype::Create(8);
+  auto bit8Type = BitType::Create(8);
 
   const auto constant =
       create_bitconstant(&graph.GetRootRegion(), BitValueRepresentation("00110111"));
@@ -1444,9 +1444,9 @@ SliceOfSlice()
 
   // Arrange
   Graph graph;
-  auto bit4Type = bittype::Create(4);
+  auto bit4Type = BitType::Create(4);
 
-  auto x = &jlm::rvsdg::GraphImport::Create(graph, bittype::Create(8), "x");
+  auto x = &jlm::rvsdg::GraphImport::Create(graph, BitType::Create(8), "x");
 
   auto slice1 = bitslice(x, 2, 6);
   auto & sliceNode2 = CreateOpNode<BitSliceOperation>({ slice1 }, bit4Type, 1, 3);
@@ -1475,9 +1475,9 @@ SliceOfFullNode()
 
   // Arrange
   Graph graph;
-  auto bit8Type = bittype::Create(8);
+  auto bit8Type = BitType::Create(8);
 
-  const auto x = &jlm::rvsdg::GraphImport::Create(graph, bittype::Create(8), "x");
+  const auto x = &jlm::rvsdg::GraphImport::Create(graph, BitType::Create(8), "x");
 
   auto & sliceNode = CreateOpNode<BitSliceOperation>({ x }, bit8Type, 0, 8);
 
@@ -1503,10 +1503,10 @@ SliceOfConcat()
 
   // Arrange
   Graph graph;
-  auto bit16Type = bittype::Create(16);
+  auto bit16Type = BitType::Create(16);
 
-  auto x = &jlm::rvsdg::GraphImport::Create(graph, bittype::Create(8), "x");
-  auto y = &jlm::rvsdg::GraphImport::Create(graph, bittype::Create(8), "y");
+  auto x = &jlm::rvsdg::GraphImport::Create(graph, BitType::Create(8), "x");
+  auto y = &jlm::rvsdg::GraphImport::Create(graph, BitType::Create(8), "y");
 
   auto concatResult = bitconcat({ x, y });
   auto & sliceNode = CreateOpNode<BitSliceOperation>({ concatResult }, bit16Type, 0, 8);
@@ -1527,7 +1527,7 @@ SliceOfConcat()
   view(graph, stdout);
 
   // Assert
-  const auto bitType = std::dynamic_pointer_cast<const bittype>(ex.origin()->Type());
+  const auto bitType = std::dynamic_pointer_cast<const BitType>(ex.origin()->Type());
   assert(bitType && bitType->nbits() == 8);
   assert(ex.origin() == x);
 }
@@ -1541,9 +1541,9 @@ ConcatFlattening()
 
   // Arrange
   Graph graph;
-  auto x = &jlm::rvsdg::GraphImport::Create(graph, bittype::Create(8), "x");
-  auto y = &jlm::rvsdg::GraphImport::Create(graph, bittype::Create(8), "y");
-  auto z = &jlm::rvsdg::GraphImport::Create(graph, bittype::Create(8), "z");
+  auto x = &jlm::rvsdg::GraphImport::Create(graph, BitType::Create(8), "x");
+  auto y = &jlm::rvsdg::GraphImport::Create(graph, BitType::Create(8), "y");
+  auto z = &jlm::rvsdg::GraphImport::Create(graph, BitType::Create(8), "z");
 
   auto concatResult1 = bitconcat({ x, y });
   auto concatResult2 = bitconcat({ concatResult1, z });
@@ -1575,7 +1575,7 @@ ConcatWithSingleOperand()
 
   // Arrange
   Graph graph;
-  auto bit8Type = bittype::Create(8);
+  auto bit8Type = BitType::Create(8);
   std::vector bit8Types({ bit8Type });
 
   auto x = &jlm::rvsdg::GraphImport::Create(graph, bit8Type, "x");
@@ -1606,10 +1606,10 @@ ConcatOfSlices()
 
   // Assert
   Graph graph;
-  auto bit4Type = bittype::Create(4);
+  auto bit4Type = BitType::Create(4);
   std::vector bit4Types({ bit4Type, bit4Type });
 
-  const auto x = &jlm::rvsdg::GraphImport::Create(graph, bittype::Create(8), "x");
+  const auto x = &jlm::rvsdg::GraphImport::Create(graph, BitType::Create(8), "x");
 
   auto sliceResult1 = bitslice(x, 0, 4);
   auto sliceResult2 = bitslice(x, 4, 8);
@@ -1677,7 +1677,7 @@ ConcatCne()
         operands);
   };
 
-  auto bitType8 = bittype::Create(8);
+  auto bitType8 = BitType::Create(8);
   std::vector bitTypes({ bitType8, bitType8 });
 
   auto x = &jlm::rvsdg::GraphImport::Create(graph, bitType8, "x");
@@ -1720,7 +1720,7 @@ SliceCne()
         operands);
   };
 
-  auto bitType8 = bittype::Create(8);
+  auto bitType8 = BitType::Create(8);
 
   auto x = &jlm::rvsdg::GraphImport::Create(graph, bitType8, "x");
 

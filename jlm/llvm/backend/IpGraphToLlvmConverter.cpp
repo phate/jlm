@@ -14,6 +14,7 @@
 #include <jlm/llvm/ir/operators/IOBarrier.hpp>
 #include <jlm/llvm/ir/operators/MemoryStateOperations.hpp>
 #include <jlm/llvm/ir/operators/operators.hpp>
+#include <jlm/llvm/ir/operators/SpecializedArithmeticIntrinsicOperations.hpp>
 #include <jlm/llvm/ir/TypeConverter.hpp>
 #include <jlm/rvsdg/control.hpp>
 
@@ -498,7 +499,7 @@ IpGraphToLlvmConverter::convert(
 {
   JLM_ASSERT(is<ConstantDataArray>(op));
 
-  if (auto bt = dynamic_cast<const rvsdg::bittype *>(&op.type()))
+  if (auto bt = dynamic_cast<const rvsdg::BitType *>(&op.type()))
   {
     if (bt->nbits() == 8)
     {
@@ -762,7 +763,7 @@ IpGraphToLlvmConverter::convert_constantdatavector(
   JLM_ASSERT(is<ConstantDataVectorOperation>(op));
   auto & cop = *static_cast<const ConstantDataVectorOperation *>(&op);
 
-  if (auto bt = dynamic_cast<const rvsdg::bittype *>(&cop.type()))
+  if (auto bt = dynamic_cast<const rvsdg::BitType *>(&cop.type()))
   {
     if (bt->nbits() == 8)
     {
@@ -1393,6 +1394,12 @@ IpGraphToLlvmConverter::convert_operation(
   {
     return convert<MemoryStateMergeOperation>(op, arguments, builder);
   }
+  if (is<MemoryStateJoinOperation>(op))
+  {
+    // This operation has no equivalent LLVM instruction.
+    // Nothing needs to be done.
+    return nullptr;
+  }
   if (is<MemoryStateSplitOperation>(op))
   {
     return convert<MemoryStateSplitOperation>(op, arguments, builder);
@@ -1420,6 +1427,19 @@ IpGraphToLlvmConverter::convert_operation(
   if (is<FunctionToPointerOperation>(op))
   {
     return convert<FunctionToPointerOperation>(op, arguments, builder);
+  }
+  if (is<FMulAddIntrinsicOperation>(op))
+  {
+    auto multiplier = Context_->value(arguments[0]);
+    auto multiplicand = Context_->value(arguments[1]);
+    auto summand = Context_->value(arguments[2]);
+
+    auto type =
+        Context_->GetTypeConverter().ConvertJlmType(arguments[0]->type(), builder.getContext());
+    return builder.CreateIntrinsic(
+        ::llvm::Intrinsic::fmuladd,
+        { type },
+        { multiplier, multiplicand, summand });
   }
 
   JLM_UNREACHABLE(util::strfmt("Unhandled operation type: ", op.debug_string()).c_str());
@@ -1549,7 +1569,7 @@ IpGraphToLlvmConverter::create_switch(const ControlFlowGraphNode * node)
     auto sw = builder.CreateSwitch(condition, defbb);
     for (const auto & alt : *mop)
     {
-      auto & type = *std::static_pointer_cast<const rvsdg::bittype>(mop->argument(0));
+      auto & type = *std::static_pointer_cast<const rvsdg::BitType>(mop->argument(0));
       auto value =
           ::llvm::ConstantInt::get(typeConverter.ConvertBitType(type, llvmContext), alt.first);
       sw->addCase(value, Context_->basic_block(node->OutEdge(alt.second)->sink()));

@@ -9,9 +9,12 @@
 #include <jlm/llvm/ir/tac.hpp>
 #include <jlm/llvm/ir/types.hpp>
 #include <jlm/rvsdg/simple-node.hpp>
+#include <jlm/util/BijectiveMap.hpp>
 
 namespace jlm::llvm
 {
+
+using MemoryNodeId = std::size_t;
 
 /**
  * Abstract base class for all memory state operations.
@@ -125,6 +128,64 @@ public:
 };
 
 /**
+ * A memory state join operation takes multiple states that represent the same abstract memory
+ * location as input and joins them together to a single output state.
+ *
+ * The operation has no equivalent LLVM instruction.
+ */
+class MemoryStateJoinOperation final : public MemoryStateOperation
+{
+public:
+  ~MemoryStateJoinOperation() noexcept override;
+
+  explicit MemoryStateJoinOperation(const size_t numOperands)
+      : MemoryStateOperation(numOperands, 1)
+  {
+    if (numOperands == 0)
+      throw std::logic_error("Insufficient number of operands.");
+  }
+
+  bool
+  operator==(const Operation & other) const noexcept override;
+
+  [[nodiscard]] std::string
+  debug_string() const override;
+
+  [[nodiscard]] std::unique_ptr<Operation>
+  copy() const override;
+
+  /** \brief Removes the MemoryStateJoinOperation as it has only a single operand, i.e., no
+   * joining is performed.
+   *
+   * so = MemoryStateJoinOperation si
+   * ... = AnyOperation so
+   * =>
+   * ... = AnyOperation si
+   */
+  static std::optional<std::vector<rvsdg::Output *>>
+  NormalizeSingleOperand(
+      const MemoryStateJoinOperation & operation,
+      const std::vector<rvsdg::Output *> & operands);
+
+  /** \brief Removes duplicated operands from the MemoryStateJoinOperation.
+   *
+   * so = MemoryStateJoinOperation si0 si0 si1 si1 si2
+   * =>
+   * so = MemoryStateJoinOperation si0 si1 si2
+   */
+  static std::optional<std::vector<rvsdg::Output *>>
+  NormalizeDuplicateOperands(
+      const MemoryStateJoinOperation & operation,
+      const std::vector<rvsdg::Output *> & operands);
+
+  static rvsdg::SimpleNode &
+  CreateNode(const std::vector<rvsdg::Output *> & operands)
+  {
+    return rvsdg::CreateOpNode<MemoryStateJoinOperation>(operands, operands.size());
+  }
+};
+
+/**
  * A memory state split operation takes a single input state and splits it into multiple output
  * states.
  *
@@ -217,9 +278,7 @@ class LambdaEntryMemoryStateSplitOperation final : public MemoryStateOperation
 public:
   ~LambdaEntryMemoryStateSplitOperation() noexcept override;
 
-  explicit LambdaEntryMemoryStateSplitOperation(size_t numResults)
-      : MemoryStateOperation(1, numResults)
-  {}
+  LambdaEntryMemoryStateSplitOperation(size_t numResults, std::vector<MemoryNodeId> memoryNodeIds);
 
   bool
   operator==(const Operation & other) const noexcept override;
@@ -230,12 +289,53 @@ public:
   [[nodiscard]] std::unique_ptr<Operation>
   copy() const override;
 
+  /**
+   * Perform the following transformation:
+   *
+   * oN = CallEntryMemoryStateMergeOperation o0 ... oK
+   * oX ... oZ = LambdaEntryMemoryStateSplitOperation oN
+   * ... = AnyOp oX ... oZ
+   * =>
+   * ... = AnyOp o0 ... oK
+   *
+   * This transformation can occur after function inlining, i.e., a \ref CallOperation has been
+   * replaced with the body of its respective \ref rvsdg::LambdaNode.
+   */
+  static std::optional<std::vector<rvsdg::Output *>>
+  NormalizeCallEntryMemoryStateMerge(
+      const LambdaEntryMemoryStateSplitOperation & lambdaEntrySplitOperation,
+      const std::vector<rvsdg::Output *> & operands);
+
+  // FIXME: Deprecated, needs to be removed
   static std::vector<jlm::rvsdg::Output *>
-  Create(rvsdg::Output & output, size_t numResults)
+  Create(rvsdg::Output & output, const size_t numResults)
   {
-    return outputs(
-        &rvsdg::CreateOpNode<LambdaEntryMemoryStateSplitOperation>({ &output }, numResults));
+    std::vector<MemoryNodeId> memoryNodeIds;
+    for (size_t i = 0; i < numResults; ++i)
+    {
+      memoryNodeIds.push_back(i);
+    }
+
+    return outputs(&rvsdg::CreateOpNode<LambdaEntryMemoryStateSplitOperation>(
+        { &output },
+        numResults,
+        std::move(memoryNodeIds)));
   }
+
+  static rvsdg::SimpleNode &
+  CreateNode(
+      rvsdg::Output & operand,
+      const size_t numResults,
+      std::vector<MemoryNodeId> memoryNodeIds)
+  {
+    return rvsdg::CreateOpNode<LambdaEntryMemoryStateSplitOperation>(
+        { &operand },
+        numResults,
+        std::move(memoryNodeIds));
+  }
+
+private:
+  std::vector<MemoryNodeId> MemoryNodeIds_{};
 };
 
 /**
@@ -253,9 +353,7 @@ class LambdaExitMemoryStateMergeOperation final : public MemoryStateOperation
 public:
   ~LambdaExitMemoryStateMergeOperation() noexcept override;
 
-  explicit LambdaExitMemoryStateMergeOperation(size_t numOperands)
-      : MemoryStateOperation(numOperands, 1)
-  {}
+  explicit LambdaExitMemoryStateMergeOperation(const std::vector<MemoryNodeId> & memoryNodeIds);
 
   bool
   operator==(const Operation & other) const noexcept override;
@@ -265,6 +363,30 @@ public:
 
   [[nodiscard]] std::unique_ptr<Operation>
   copy() const override;
+
+  [[nodiscard]] std::vector<MemoryNodeId>
+  GetMemoryNodeIds() const noexcept
+  {
+    std::vector<MemoryNodeId> memoryNodeIds(narguments());
+    for (auto [memoryNodeId, index] : MemoryNodeIdToIndex_)
+    {
+      JLM_ASSERT(index < narguments());
+      memoryNodeIds[index] = memoryNodeId;
+    }
+
+    return memoryNodeIds;
+  }
+
+  /**
+   * Maps a memory node identifier to the respective input of a LambdaExitMemoryStateMergeOperation
+   * node.
+   *
+   * @param node A LambdaExitMemoryStateMergeOperation node.
+   * @param memoryNodeId A memory node identifier.
+   * @return The respective input if the memory node identifier maps to one, otherwise nullptr.
+   */
+  [[nodiscard]] static rvsdg::Input *
+  MapMemoryNodeIdToInput(const rvsdg::SimpleNode & node, MemoryNodeId memoryNodeId);
 
   /**
    * Performs the following transformation:
@@ -314,18 +436,31 @@ public:
       const std::vector<rvsdg::Output *> & operands);
 
   static rvsdg::Node &
-  CreateNode(rvsdg::Region & region, const std::vector<rvsdg::Output *> & operands)
+  CreateNode(
+      rvsdg::Region & region,
+      const std::vector<rvsdg::Output *> & operands,
+      const std::vector<MemoryNodeId> & memoryNodeIds)
   {
     return operands.empty()
-             ? rvsdg::CreateOpNode<LambdaExitMemoryStateMergeOperation>(region, operands.size())
-             : rvsdg::CreateOpNode<LambdaExitMemoryStateMergeOperation>(operands, operands.size());
+             ? rvsdg::CreateOpNode<LambdaExitMemoryStateMergeOperation>(region, memoryNodeIds)
+             : rvsdg::CreateOpNode<LambdaExitMemoryStateMergeOperation>(operands, memoryNodeIds);
   }
 
+  // FIXME: Deprecated, needs to be removed
   static rvsdg::Output &
   Create(rvsdg::Region & region, const std::vector<rvsdg::Output *> & operands)
   {
-    return *CreateNode(region, operands).output(0);
+    std::vector<MemoryNodeId> memoryNodeIds;
+    for (size_t i = 0; i < operands.size(); ++i)
+    {
+      memoryNodeIds.push_back(i);
+    }
+
+    return *CreateNode(region, operands, std::move(memoryNodeIds)).output(0);
   }
+
+private:
+  util::BijectiveMap<MemoryNodeId, size_t> MemoryNodeIdToIndex_{};
 };
 
 /**
@@ -343,9 +478,7 @@ class CallEntryMemoryStateMergeOperation final : public MemoryStateOperation
 public:
   ~CallEntryMemoryStateMergeOperation() noexcept override;
 
-  explicit CallEntryMemoryStateMergeOperation(size_t numOperands)
-      : MemoryStateOperation(numOperands, 1)
-  {}
+  CallEntryMemoryStateMergeOperation(std::vector<MemoryNodeId> memoryNodeIds);
 
   bool
   operator==(const Operation & other) const noexcept override;
@@ -356,15 +489,59 @@ public:
   [[nodiscard]] std::unique_ptr<Operation>
   copy() const override;
 
+  [[nodiscard]] std::vector<MemoryNodeId>
+  GetMemoryNodeIds() const noexcept
+  {
+    std::vector<MemoryNodeId> memoryNodeIds(narguments());
+    for (auto [memoryNodeId, index] : MemoryNodeIdToIndex_)
+    {
+      JLM_ASSERT(index < narguments());
+      memoryNodeIds[index] = memoryNodeId;
+    }
+
+    return memoryNodeIds;
+  }
+
+  /**
+   * Maps a memory node identifier to the respective input of a \ref
+   * CallEntryMemoryStateMergeOperation node.
+   *
+   * @param node A \ref CallEntryMemoryStateMergeOperation node.
+   * @param memoryNodeId A memory node identifier.
+   * @return The respective input if the memory node identifier maps to one, otherwise nullptr.
+   */
+  [[nodiscard]] static rvsdg::Input *
+  MapMemoryNodeIdToInput(const rvsdg::SimpleNode & node, MemoryNodeId memoryNodeId);
+
+  // FIXME: Deprecated, will be removed
   static rvsdg::Output &
   Create(rvsdg::Region & region, const std::vector<rvsdg::Output *> & operands)
   {
-    return operands.empty()
-             ? *rvsdg::CreateOpNode<CallEntryMemoryStateMergeOperation>(region, operands.size())
-                    .output(0)
-             : *rvsdg::CreateOpNode<CallEntryMemoryStateMergeOperation>(operands, operands.size())
-                    .output(0);
+    std::vector<MemoryNodeId> memoryNodeIds;
+    for (size_t i = 0; i < operands.size(); ++i)
+    {
+      memoryNodeIds.push_back(i);
+    }
+
+    return *CreateNode(region, operands, std::move(memoryNodeIds)).output(0);
   }
+
+  static rvsdg::SimpleNode &
+  CreateNode(
+      rvsdg::Region & region,
+      const std::vector<rvsdg::Output *> & operands,
+      std::vector<MemoryNodeId> memoryNodeIds)
+  {
+    return operands.empty() ? rvsdg::CreateOpNode<CallEntryMemoryStateMergeOperation>(
+                                  region,
+                                  std::move(memoryNodeIds))
+                            : rvsdg::CreateOpNode<CallEntryMemoryStateMergeOperation>(
+                                  operands,
+                                  std::move(memoryNodeIds));
+  }
+
+private:
+  util::BijectiveMap<MemoryNodeId, size_t> MemoryNodeIdToIndex_{};
 };
 
 /**
@@ -382,9 +559,7 @@ class CallExitMemoryStateSplitOperation final : public MemoryStateOperation
 public:
   ~CallExitMemoryStateSplitOperation() noexcept override;
 
-  explicit CallExitMemoryStateSplitOperation(size_t numResults)
-      : MemoryStateOperation(1, numResults)
-  {}
+  explicit CallExitMemoryStateSplitOperation(std::vector<MemoryNodeId> memoryNodeIds);
 
   bool
   operator==(const Operation & other) const noexcept override;
@@ -409,20 +584,32 @@ public:
    */
   static std::optional<std::vector<rvsdg::Output *>>
   NormalizeLambdaExitMemoryStateMerge(
-      const CallExitMemoryStateSplitOperation & operation,
+      const CallExitMemoryStateSplitOperation & callExitSplitOperation,
       const std::vector<rvsdg::Output *> & operands);
 
-  static rvsdg::Node &
-  CreateNode(rvsdg::Output & operand, const size_t numResults)
+  static rvsdg::SimpleNode &
+  CreateNode(rvsdg::Output & operand, std::vector<MemoryNodeId> memoryNodeIds)
   {
-    return rvsdg::CreateOpNode<CallExitMemoryStateSplitOperation>({ &operand }, numResults);
+    return rvsdg::CreateOpNode<CallExitMemoryStateSplitOperation>(
+        { &operand },
+        std::move(memoryNodeIds));
   }
 
+  // FIXME: Deprecated, will be removed
   static std::vector<rvsdg::Output *>
   Create(rvsdg::Output & output, const size_t numResults)
   {
-    return outputs(&CreateNode(output, numResults));
+    std::vector<MemoryNodeId> memoryNodeIds;
+    for (size_t i = 0; i < numResults; i++)
+    {
+      memoryNodeIds.push_back(i);
+    }
+
+    return outputs(&CreateNode(output, std::move(memoryNodeIds)));
   }
+
+private:
+  std::vector<MemoryNodeId> MemoryNodeIds_{};
 };
 
 }

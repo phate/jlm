@@ -164,7 +164,7 @@ ReplaceDecouple(
 
   // handle response
   int load_capacity = 10;
-  if (rvsdg::is<const rvsdg::bittype>(decouple_response->input(2)->Type()))
+  if (rvsdg::is<const rvsdg::BitType>(decouple_response->input(2)->Type()))
   {
     auto constant = trace_constant(decouple_response->input(2)->origin());
     load_capacity = constant->Representation().to_int();
@@ -220,7 +220,7 @@ ReplaceDecouple(
     OptimizeResMemState(sg_resp[1]);
   }
 
-  auto nn = dynamic_cast<rvsdg::node_output *>(dload_out[0])->node();
+  auto nn = dynamic_cast<rvsdg::NodeOutput *>(dload_out[0])->node();
   return dynamic_cast<rvsdg::SimpleNode *>(nn);
 }
 
@@ -326,7 +326,7 @@ TracePointer(
     }
     else if (auto r = dynamic_cast<rvsdg::RegionResult *>(&user))
     {
-      if (auto ber = dynamic_cast<backedge_result *>(r))
+      if (auto ber = dynamic_cast<BackEdgeResult *>(r))
       {
         TracePointer(ber->argument(), loadNodes, storeNodes, decoupleNodes, visited);
       }
@@ -460,9 +460,9 @@ MemoryConverter(llvm::RvsdgModule & rm)
   for (auto & portNode : portNodes)
   {
     auto portWidth = CalcualtePortWidth(portNode);
-    auto responseTypePtr = get_mem_res_type(rvsdg::bittype::Create(portWidth));
-    auto requestTypePtr = get_mem_req_type(rvsdg::bittype::Create(portWidth), false);
-    auto requestTypePtrWrite = get_mem_req_type(rvsdg::bittype::Create(portWidth), true);
+    auto responseTypePtr = get_mem_res_type(rvsdg::BitType::Create(portWidth));
+    auto requestTypePtr = get_mem_req_type(rvsdg::BitType::Create(portWidth), false);
+    auto requestTypePtrWrite = get_mem_req_type(rvsdg::BitType::Create(portWidth), true);
     newArgumentTypes.push_back(responseTypePtr);
     if (std::get<1>(portNode).empty())
     {
@@ -489,9 +489,9 @@ MemoryConverter(llvm::RvsdgModule & rm)
   {
     auto portWidth = CalcualtePortWidth(
         std::make_tuple(unknownLoadNodes, unknownStoreNodes, unknownDecoupledNodes));
-    auto responseTypePtr = get_mem_res_type(rvsdg::bittype::Create(portWidth));
-    auto requestTypePtr = get_mem_req_type(rvsdg::bittype::Create(portWidth), false);
-    auto requestTypePtrWrite = get_mem_req_type(rvsdg::bittype::Create(portWidth), true);
+    auto responseTypePtr = get_mem_res_type(rvsdg::BitType::Create(portWidth));
+    auto requestTypePtr = get_mem_req_type(rvsdg::BitType::Create(portWidth), false);
+    auto requestTypePtrWrite = get_mem_req_type(rvsdg::BitType::Create(portWidth), true);
     // Extra port for loads/stores not associated to a port yet (i.e., unknown base pointer)
     newArgumentTypes.push_back(responseTypePtr);
     if (unknownStoreNodes.empty())
@@ -745,13 +745,13 @@ ReplaceLoad(
   {
     size_t load_capacity = 10;
     auto outputs = DecoupledLoadOperation::create(*loadAddress, *response, load_capacity);
-    newLoad = dynamic_cast<rvsdg::node_output *>(outputs[0])->node();
+    newLoad = dynamic_cast<rvsdg::NodeOutput *>(outputs[0])->node();
   }
   else
   {
     // TODO: switch this to a decoupled load?
     auto outputs = LoadOperation::create(*loadAddress, states, *response);
-    newLoad = dynamic_cast<rvsdg::node_output *>(outputs[0])->node();
+    newLoad = dynamic_cast<rvsdg::NodeOutput *>(outputs[0])->node();
   }
 
   for (size_t i = 0; i < replacedLoad->noutputs(); ++i)
@@ -784,7 +784,7 @@ ReplaceStore(
     states.push_back(replacedStore->input(i)->origin());
   }
   auto storeOuts = StoreOperation::create(*addr, *data, states, *response);
-  auto newStore = dynamic_cast<rvsdg::node_output *>(storeOuts[0])->node();
+  auto newStore = dynamic_cast<rvsdg::NodeOutput *>(storeOuts[0])->node();
   // iterate over output states
   for (size_t i = 0; i < replacedStore->noutputs(); ++i)
   {

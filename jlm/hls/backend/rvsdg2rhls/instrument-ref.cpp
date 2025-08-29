@@ -88,7 +88,7 @@ instrument_ref(llvm::RvsdgModule & rm)
   //  addr, width, memstate
   auto loadFunctionType = jlm::rvsdg::FunctionType::Create(
       { jlm::llvm::PointerType::Create(),
-        jlm::rvsdg::bittype::Create(64),
+        jlm::rvsdg::BitType::Create(64),
         llvm::IOStateType::Create(),
         llvm::MemoryStateType::Create() },
       { llvm::IOStateType::Create(), llvm::MemoryStateType::Create() });
@@ -107,7 +107,7 @@ instrument_ref(llvm::RvsdgModule & rm)
   // addr, size, memstate
   auto allocaFunctionType = jlm::rvsdg::FunctionType::Create(
       { jlm::llvm::PointerType::Create(),
-        jlm::rvsdg::bittype::Create(64),
+        jlm::rvsdg::BitType::Create(64),
         llvm::IOStateType::Create(),
         jlm::llvm::MemoryStateType::Create() },
       { llvm::IOStateType::Create(), jlm::llvm::MemoryStateType::Create() });
@@ -190,7 +190,7 @@ instrument_ref(
     {
       // ensure that the size is one
       JLM_ASSERT(node->ninputs() == 1);
-      auto constant_output = dynamic_cast<jlm::rvsdg::node_output *>(node->input(0)->origin());
+      auto constant_output = dynamic_cast<rvsdg::NodeOutput *>(node->input(0)->origin());
       JLM_ASSERT(constant_output);
       auto constant_operation = dynamic_cast<const llvm::IntegerConstantOperation *>(
           &constant_output->node()->GetOperation());

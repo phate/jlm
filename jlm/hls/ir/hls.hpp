@@ -575,8 +575,8 @@ public:
   }
 };
 
-class backedge_argument;
-class backedge_result;
+class BackEdgeArgument;
+class BackEdgeResult;
 class LoopNode;
 
 /**
@@ -615,72 +615,72 @@ public:
   }
 };
 
-class backedge_argument : public rvsdg::RegionArgument
+class BackEdgeArgument final : public rvsdg::RegionArgument
 {
   friend LoopNode;
-  friend backedge_result;
+  friend BackEdgeResult;
 
 public:
-  ~backedge_argument() override = default;
+  ~BackEdgeArgument() noexcept override = default;
 
-  backedge_result *
+  BackEdgeResult *
   result()
   {
     return result_;
   }
 
-  backedge_argument &
+  BackEdgeArgument &
   Copy(rvsdg::Region & region, rvsdg::StructuralInput * input) override;
 
 private:
-  backedge_argument(rvsdg::Region * region, const std::shared_ptr<const jlm::rvsdg::Type> & type)
+  BackEdgeArgument(rvsdg::Region * region, const std::shared_ptr<const jlm::rvsdg::Type> & type)
       : rvsdg::RegionArgument(region, nullptr, type),
         result_(nullptr)
   {}
 
-  static backedge_argument *
+  static BackEdgeArgument *
   create(rvsdg::Region * region, std::shared_ptr<const jlm::rvsdg::Type> type)
   {
-    auto argument = new backedge_argument(region, std::move(type));
+    auto argument = new BackEdgeArgument(region, std::move(type));
     region->append_argument(argument);
     return argument;
   }
 
-  backedge_result * result_;
+  BackEdgeResult * result_;
 };
 
-class backedge_result : public rvsdg::RegionResult
+class BackEdgeResult : public rvsdg::RegionResult
 {
   friend LoopNode;
-  friend backedge_argument;
+  friend BackEdgeArgument;
 
 public:
-  ~backedge_result() override = default;
+  ~BackEdgeResult() override = default;
 
-  backedge_argument *
+  BackEdgeArgument *
   argument() const
   {
     return argument_;
   }
 
-  backedge_result &
+  BackEdgeResult &
   Copy(rvsdg::Output & origin, rvsdg::StructuralOutput * output) override;
 
 private:
-  backedge_result(jlm::rvsdg::Output * origin)
+  BackEdgeResult(rvsdg::Output * origin)
       : rvsdg::RegionResult(origin->region(), origin, nullptr, origin->Type()),
         argument_(nullptr)
   {}
 
-  static backedge_result *
+  static BackEdgeResult *
   create(jlm::rvsdg::Output * origin)
   {
-    auto result = new backedge_result(origin);
+    auto result = new BackEdgeResult(origin);
     origin->region()->append_result(result);
     return result;
   }
 
-  backedge_argument * argument_;
+  BackEdgeArgument * argument_;
 };
 
 /**
@@ -751,7 +751,7 @@ public:
   void
   set_predicate(jlm::rvsdg::Output * p);
 
-  backedge_argument *
+  BackEdgeArgument *
   add_backedge(std::shared_ptr<const jlm::rvsdg::Type> type);
 
   rvsdg::StructuralOutput *
@@ -1150,7 +1150,7 @@ public:
   CreateInTypes(int in_width)
   {
     std::vector<std::shared_ptr<const jlm::rvsdg::Type>> types;
-    types.emplace_back(get_mem_res_type(jlm::rvsdg::bittype::Create(in_width)));
+    types.emplace_back(get_mem_res_type(jlm::rvsdg::BitType::Create(in_width)));
     return types;
   }
 
@@ -1259,7 +1259,7 @@ public:
     }
     std::vector<std::shared_ptr<const jlm::rvsdg::Type>> types;
     types.emplace_back(
-        get_mem_req_type(jlm::rvsdg::bittype::Create(max_width), !store_types.empty()));
+        get_mem_req_type(jlm::rvsdg::BitType::Create(max_width), !store_types.empty()));
     return types;
   }
 
@@ -1513,7 +1513,7 @@ public:
   static std::vector<std::shared_ptr<const jlm::rvsdg::Type>>
   CreateInTypes(const std::shared_ptr<const jlm::rvsdg::ValueType> & valuetype, size_t numStates)
   {
-    std::vector<std::shared_ptr<const jlm::rvsdg::Type>> types(1, jlm::rvsdg::bittype::Create(64));
+    std::vector<std::shared_ptr<const jlm::rvsdg::Type>> types(1, jlm::rvsdg::BitType::Create(64));
     std::vector<std::shared_ptr<const jlm::rvsdg::Type>> states(
         numStates,
         llvm::MemoryStateType::Create());
@@ -1530,7 +1530,7 @@ public:
         numStates,
         llvm::MemoryStateType::Create());
     types.insert(types.end(), states.begin(), states.end());
-    types.emplace_back(jlm::rvsdg::bittype::Create(64)); // addr
+    types.emplace_back(jlm::rvsdg::BitType::Create(64)); // addr
     return types;
   }
 
@@ -1592,7 +1592,7 @@ public:
   CreateInTypes(const std::shared_ptr<const jlm::rvsdg::ValueType> & valuetype, size_t numStates)
   {
     std::vector<std::shared_ptr<const jlm::rvsdg::Type>> types(
-        { jlm::rvsdg::bittype::Create(64), valuetype });
+        { jlm::rvsdg::BitType::Create(64), valuetype });
     std::vector<std::shared_ptr<const jlm::rvsdg::Type>> states(
         numStates,
         llvm::MemoryStateType::Create());
@@ -1606,7 +1606,7 @@ public:
     std::vector<std::shared_ptr<const jlm::rvsdg::Type>> types(
         numStates,
         llvm::MemoryStateType::Create());
-    types.emplace_back(jlm::rvsdg::bittype::Create(64)); // addr
+    types.emplace_back(jlm::rvsdg::BitType::Create(64)); // addr
     types.emplace_back(valuetype);                       // data
     return types;
   }
@@ -1677,11 +1677,11 @@ public:
     std::vector<std::shared_ptr<const jlm::rvsdg::Type>> types(1, at);
     for (size_t i = 0; i < load_cnt; ++i)
     {
-      types.emplace_back(jlm::rvsdg::bittype::Create(64)); // addr
+      types.emplace_back(jlm::rvsdg::BitType::Create(64)); // addr
     }
     for (size_t i = 0; i < store_cnt; ++i)
     {
-      types.emplace_back(jlm::rvsdg::bittype::Create(64)); // addr
+      types.emplace_back(jlm::rvsdg::BitType::Create(64)); // addr
       types.emplace_back(at->GetElementType());            // data
     }
     return types;

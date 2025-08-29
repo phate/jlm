@@ -25,7 +25,7 @@ test()
   InterProceduralGraphModule im(jlm::util::FilePath(""), "", "");
 
   ControlFlowGraph cfg(im);
-  auto arg = cfg.entry()->append_argument(argument::create("arg", vt));
+  auto arg = cfg.entry()->append_argument(Argument::create("arg", vt));
   auto bb0 = BasicBlock::create(cfg);
   auto bb1 = BasicBlock::create(cfg);
 

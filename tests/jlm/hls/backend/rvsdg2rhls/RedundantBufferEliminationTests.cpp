@@ -22,7 +22,7 @@ BufferWithLocalLoad()
 
   // Arrange
   auto valueType = jlm::tests::ValueType::Create();
-  auto i64Type = jlm::rvsdg::bittype::Create(64);
+  auto i64Type = jlm::rvsdg::BitType::Create(64);
   auto memoryStateType = MemoryStateType::Create();
 
   jlm::llvm::RvsdgModule rvsdgModule(FilePath(""), "", "");
@@ -67,7 +67,7 @@ BufferWithLocalStore()
 
   // Arrange
   auto valueType = jlm::tests::ValueType::Create();
-  auto i64Type = jlm::rvsdg::bittype::Create(64);
+  auto i64Type = jlm::rvsdg::BitType::Create(64);
   auto memoryStateType = MemoryStateType::Create();
 
   jlm::llvm::RvsdgModule rvsdgModule(FilePath(""), "", "");
@@ -207,7 +207,7 @@ BufferWithForkAndLocalLoad()
 
   // Arrange
   auto valueType = jlm::tests::ValueType::Create();
-  auto i64Type = jlm::rvsdg::bittype::Create(64);
+  auto i64Type = jlm::rvsdg::BitType::Create(64);
   auto memoryStateType = MemoryStateType::Create();
 
   jlm::llvm::RvsdgModule rvsdgModule(FilePath(""), "", "");
@@ -253,7 +253,7 @@ BufferWithBranchAndLocalLoad()
 
   // Arrange
   auto valueType = jlm::tests::ValueType::Create();
-  auto i64Type = jlm::rvsdg::bittype::Create(64);
+  auto i64Type = jlm::rvsdg::BitType::Create(64);
   auto controlType = ControlType::Create(2);
   auto memoryStateType = MemoryStateType::Create();
 
@@ -348,7 +348,7 @@ BufferWithNonMemoryStateOperand()
 
   // Arrange
   auto valueType = jlm::tests::ValueType::Create();
-  auto i64Type = jlm::rvsdg::bittype::Create(64);
+  auto i64Type = jlm::rvsdg::BitType::Create(64);
   auto memoryStateType = MemoryStateType::Create();
 
   jlm::llvm::RvsdgModule rvsdgModule(FilePath(""), "", "");
@@ -395,7 +395,7 @@ PassthroughBuffer()
 
   // Arrange
   auto valueType = jlm::tests::ValueType::Create();
-  auto i64Type = jlm::rvsdg::bittype::Create(64);
+  auto i64Type = jlm::rvsdg::BitType::Create(64);
   auto memoryStateType = MemoryStateType::Create();
 
   jlm::llvm::RvsdgModule rvsdgModule(FilePath(""), "", "");

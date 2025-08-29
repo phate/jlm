@@ -4,9 +4,9 @@
  * See COPYING for terms of redistribution.
  */
 
-#include <jlm/rvsdg/delta.hpp>
 #include <jlm/rvsdg/gamma.hpp>
 #include <jlm/rvsdg/lambda.hpp>
+#include <jlm/rvsdg/delta.hpp>
 #include <jlm/rvsdg/MatchType.hpp>
 #include <jlm/rvsdg/notifiers.hpp>
 #include <jlm/rvsdg/Phi.hpp>
@@ -242,16 +242,14 @@ Output::ConstIterator::ComputeNext() const
   return ComputeNextOutput(Output_);
 }
 
-node_input::node_input(
+NodeInput::NodeInput(
     jlm::rvsdg::Output * origin,
     Node * node,
     std::shared_ptr<const rvsdg::Type> type)
     : jlm::rvsdg::Input(*node, *origin, std::move(type))
 {}
 
-/* node_output class */
-
-node_output::node_output(Node * node, std::shared_ptr<const rvsdg::Type> type)
+NodeOutput::NodeOutput(Node * node, std::shared_ptr<const rvsdg::Type> type)
     : Output(*node, std::move(type)),
       node_(node)
 {}
@@ -292,8 +290,8 @@ Node::graph() const noexcept
   return region_->graph();
 }
 
-node_input *
-Node::add_input(std::unique_ptr<node_input> input)
+NodeInput *
+Node::add_input(std::unique_ptr<NodeInput> input)
 {
   auto producer = rvsdg::TryGetOwnerNode<Node>(*input->origin());
 
@@ -406,29 +404,63 @@ Node::copy(rvsdg::Region * region, const std::vector<jlm::rvsdg::Output *> & ope
   return copy(region, smap);
 }
 
-Node *
-producer(const jlm::rvsdg::Output * output) noexcept
+const Output &
+TraceOutputIntraProcedurally(const Output & output)
 {
-  if (auto node = TryGetOwnerNode<Node>(*output))
-    return node;
-
-  if (auto theta = TryGetRegionParentNode<ThetaNode>(*output))
+  // Handle gamma node outputs
+  if (const auto gammaNode = TryGetOwnerNode<GammaNode>(output))
   {
-    auto loopvar = theta->MapPreLoopVar(*output);
-    if (loopvar.post->origin() != output)
+    const auto exitVar = gammaNode->MapOutputExitVar(output);
+    if (const auto origin = GetGammaInvariantOrigin(*gammaNode, exitVar))
     {
-      return nullptr;
+      return TraceOutputIntraProcedurally(*origin.value());
     }
-    return producer(loopvar.input->origin());
+
+    return output;
   }
 
-  JLM_ASSERT(dynamic_cast<const RegionArgument *>(output));
-  auto argument = static_cast<const RegionArgument *>(output);
+  // Handle gamma node arguments
+  if (const auto gammaNode = TryGetRegionParentNode<GammaNode>(output))
+  {
+    const auto roleVar = gammaNode->MapBranchArgument(output);
+    if (const auto entryVar = std::get_if<GammaNode::EntryVar>(&roleVar))
+    {
+      return TraceOutputIntraProcedurally(*entryVar->input->origin());
+    }
 
-  if (!argument->input())
-    return nullptr;
+    if (const auto matchVar = std::get_if<GammaNode::MatchVar>(&roleVar))
+    {
+      return TraceOutputIntraProcedurally(*matchVar->input->origin());
+    }
 
-  return producer(argument->input()->origin());
+    return output;
+  }
+
+  // Handle theta node outputs
+  if (const auto thetaNode = TryGetOwnerNode<ThetaNode>(output))
+  {
+    const auto loopVar = thetaNode->MapOutputLoopVar(output);
+    if (ThetaLoopVarIsInvariant(loopVar))
+    {
+      return TraceOutputIntraProcedurally(*loopVar.input->origin());
+    }
+
+    return output;
+  }
+
+  // Handle theta node arguments
+  if (const auto thetaNode = TryGetRegionParentNode<ThetaNode>(output))
+  {
+    const auto loopVar = thetaNode->MapPreLoopVar(output);
+    if (ThetaLoopVarIsInvariant(loopVar))
+    {
+      return TraceOutputIntraProcedurally(*loopVar.input->origin());
+    }
+
+    return output;
+  }
+
+  return output;
 }
 
 Output &

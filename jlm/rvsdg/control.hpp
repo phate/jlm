@@ -13,6 +13,7 @@
 #include <jlm/rvsdg/unary.hpp>
 #include <jlm/util/strfmt.hpp>
 
+#include <cstdint>
 #include <unordered_map>
 
 namespace jlm::rvsdg
@@ -118,7 +119,11 @@ struct ctlformat_value
   }
 };
 
-typedef domain_const_op<ControlType, ControlValueRepresentation, ctlformat_value, ctltype_of_value>
+typedef DomainConstOperation<
+    ControlType,
+    ControlValueRepresentation,
+    ctlformat_value,
+    ctltype_of_value>
     ctlconstant_op;
 
 static inline bool
@@ -195,7 +200,7 @@ public:
   inline size_t
   nbits() const noexcept
   {
-    return std::static_pointer_cast<const bittype>(argument(0))->nbits();
+    return std::static_pointer_cast<const BitType>(argument(0))->nbits();
   }
 
   inline const_iterator
@@ -228,15 +233,15 @@ public:
   }
 
 private:
-  static const bittype &
+  static const BitType &
   CheckAndExtractBitType(const rvsdg::Type & type)
   {
-    if (auto bitType = dynamic_cast<const bittype *>(&type))
+    if (auto bitType = dynamic_cast<const BitType *>(&type))
     {
       return *bitType;
     }
 
-    throw util::TypeError("bittype", type.debug_string());
+    throw util::TypeError("BitType", type.debug_string());
   }
 
   uint64_t default_alternative_;
@@ -252,7 +257,7 @@ match(
     jlm::rvsdg::Output * operand);
 
 // declare explicit instantiation
-extern template class domain_const_op<
+extern template class DomainConstOperation<
     ControlType,
     ControlValueRepresentation,
     ctlformat_value,

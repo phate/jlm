@@ -17,105 +17,11 @@ class ControlFlowGraph;
 
 class AggregationNode
 {
-  class iterator final
-  {
-  public:
-    inline iterator(std::vector<std::unique_ptr<AggregationNode>>::iterator it)
-        : it_(std::move(it))
-    {}
-
-    inline const iterator &
-    operator++() noexcept
-    {
-      it_++;
-      return *this;
-    }
-
-    inline iterator
-    operator++(int) noexcept
-    {
-      auto tmp = *this;
-      it_++;
-      return tmp;
-    }
-
-    inline bool
-    operator==(const iterator & other) const noexcept
-    {
-      return it_ == other.it_;
-    }
-
-    inline bool
-    operator!=(const iterator & other) const noexcept
-    {
-      return !(*this == other);
-    }
-
-    inline AggregationNode &
-    operator*() const noexcept
-    {
-      return *it_->get();
-    }
-
-    inline AggregationNode *
-    operator->() const noexcept
-    {
-      return it_->get();
-    }
-
-  private:
-    std::vector<std::unique_ptr<AggregationNode>>::iterator it_;
-  };
-
-  class const_iterator final
-  {
-  public:
-    inline const_iterator(std::vector<std::unique_ptr<AggregationNode>>::const_iterator it)
-        : it_(std::move(it))
-    {}
-
-    inline const const_iterator &
-    operator++() noexcept
-    {
-      it_++;
-      return *this;
-    }
-
-    inline const_iterator
-    operator++(int) noexcept
-    {
-      auto tmp = *this;
-      it_++;
-      return tmp;
-    }
-
-    inline bool
-    operator==(const const_iterator & other) const noexcept
-    {
-      return it_ == other.it_;
-    }
-
-    inline bool
-    operator!=(const const_iterator & other) const noexcept
-    {
-      return !(*this == other);
-    }
-
-    inline AggregationNode &
-    operator*() const noexcept
-    {
-      return *it_->get();
-    }
-
-    inline AggregationNode *
-    operator->() const noexcept
-    {
-      return it_->get();
-    }
-
-  private:
-    std::vector<std::unique_ptr<AggregationNode>>::const_iterator it_;
-  };
+  using iterator =
+      util::PtrIterator<AggregationNode, std::vector<std::unique_ptr<AggregationNode>>::iterator>;
+  using const_iterator = util::PtrIterator<
+      const AggregationNode,
+      std::vector<std::unique_ptr<AggregationNode>>::const_iterator>;
 
 public:
   virtual ~AggregationNode() noexcept;
@@ -265,12 +171,13 @@ is(const AggregationNode * node)
 
 class EntryAggregationNode final : public AggregationNode
 {
-  class constiterator;
+  using constiterator =
+      util::PtrIterator<const llvm::Argument, std::vector<llvm::Argument *>::const_iterator>;
 
 public:
   ~EntryAggregationNode() noexcept override;
 
-  explicit EntryAggregationNode(const std::vector<llvm::argument *> & arguments)
+  explicit EntryAggregationNode(const std::vector<llvm::Argument *> & arguments)
       : arguments_(arguments)
   {}
 
@@ -280,7 +187,7 @@ public:
   constiterator
   end() const;
 
-  const llvm::argument *
+  const llvm::Argument *
   argument(size_t index) const noexcept
   {
     JLM_ASSERT(index < narguments());
@@ -297,69 +204,13 @@ public:
   debug_string() const override;
 
   static std::unique_ptr<AggregationNode>
-  create(const std::vector<llvm::argument *> & arguments)
+  create(const std::vector<llvm::Argument *> & arguments)
   {
     return std::make_unique<EntryAggregationNode>(arguments);
   }
 
 private:
-  std::vector<llvm::argument *> arguments_;
-};
-
-class EntryAggregationNode::constiterator final
-{
-public:
-  using iterator_category = std::forward_iterator_tag;
-  using value_type = const llvm::argument *;
-  using difference_type = std::ptrdiff_t;
-  using pointer = const llvm::argument **;
-  using reference = const llvm::argument *&;
-
-  constexpr constiterator(const std::vector<llvm::argument *>::const_iterator & it)
-      : it_(it)
-  {}
-
-  const llvm::argument &
-  operator*() const
-  {
-    return *operator->();
-  }
-
-  const llvm::argument *
-  operator->() const
-  {
-    return *it_;
-  }
-
-  constiterator &
-  operator++()
-  {
-    it_++;
-    return *this;
-  }
-
-  constiterator
-  operator++(int)
-  {
-    constiterator tmp = *this;
-    it_++;
-    return tmp;
-  }
-
-  bool
-  operator==(const constiterator & other) const
-  {
-    return it_ == other.it_;
-  }
-
-  bool
-  operator!=(const constiterator & other) const
-  {
-    return !operator==(other);
-  }
-
-private:
-  std::vector<llvm::argument *>::const_iterator it_;
+  std::vector<llvm::Argument *> arguments_;
 };
 
 class ExitAggregationNode final : public AggregationNode

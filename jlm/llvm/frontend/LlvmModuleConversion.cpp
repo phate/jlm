@@ -284,7 +284,7 @@ convert_attributes(const ::llvm::AttributeSet & as, Context & ctx)
   return attributeSet;
 }
 
-static std::unique_ptr<llvm::argument>
+static std::unique_ptr<llvm::Argument>
 convert_argument(const ::llvm::Argument & argument, Context & ctx)
 {
   auto function = argument.getParent();
@@ -293,7 +293,7 @@ convert_argument(const ::llvm::Argument & argument, Context & ctx)
   auto attributes =
       convert_attributes(function->getAttributes().getParamAttrs(argument.getArgNo()), ctx);
 
-  return llvm::argument::create(name, type, attributes);
+  return llvm::Argument::create(name, type, attributes);
 }
 
 static void
@@ -326,7 +326,7 @@ EnsureSingleInEdgeToExitNode(ControlFlowGraph & cfg)
     auto stronglyConnectedComponents = find_sccs(cfg);
     for (auto stronglyConnectedComponent : stronglyConnectedComponents)
     {
-      auto structure = sccstructure::create(stronglyConnectedComponent);
+      auto structure = StronglyConnectedComponentStructure::create(stronglyConnectedComponent);
 
       if (structure->nxedges() == 0)
       {
@@ -362,11 +362,11 @@ EnsureSingleInEdgeToExitNode(ControlFlowGraph & cfg)
 static std::unique_ptr<ControlFlowGraph>
 create_cfg(::llvm::Function & f, Context & ctx)
 {
-  auto node = static_cast<const fctvariable *>(ctx.lookup_value(&f))->function();
+  auto node = static_cast<const FunctionVariable *>(ctx.lookup_value(&f))->function();
 
   auto add_arguments = [](const ::llvm::Function & f, ControlFlowGraph & cfg, Context & ctx)
   {
-    auto node = static_cast<const fctvariable *>(ctx.lookup_value(&f))->function();
+    auto node = static_cast<const FunctionVariable *>(ctx.lookup_value(&f))->function();
 
     size_t n = 0;
     for (const auto & arg : f.args())
@@ -380,15 +380,15 @@ create_cfg(::llvm::Function & f, Context & ctx)
     {
       JLM_ASSERT(n < node->fcttype().NumArguments());
       auto & type = node->fcttype().Arguments()[n++];
-      cfg.entry()->append_argument(argument::create("_varg_", type));
+      cfg.entry()->append_argument(Argument::create("_varg_", type));
     }
     JLM_ASSERT(n < node->fcttype().NumArguments());
 
     auto & iotype = node->fcttype().Arguments()[n++];
-    auto iostate = cfg.entry()->append_argument(argument::create("_io_", iotype));
+    auto iostate = cfg.entry()->append_argument(Argument::create("_io_", iotype));
 
     auto & memtype = node->fcttype().Arguments()[n++];
-    auto memstate = cfg.entry()->append_argument(argument::create("_s_", memtype));
+    auto memstate = cfg.entry()->append_argument(Argument::create("_s_", memtype));
 
     JLM_ASSERT(n == node->fcttype().NumArguments());
     ctx.set_iostate(iostate);
@@ -441,7 +441,7 @@ convert_function(::llvm::Function & function, Context & ctx)
   if (function.isDeclaration())
     return;
 
-  auto fv = static_cast<const fctvariable *>(ctx.lookup_value(&function));
+  auto fv = static_cast<const FunctionVariable *>(ctx.lookup_value(&function));
 
   ctx.set_node(fv->function());
   fv->function()->add_cfg(create_cfg(function, ctx));
@@ -512,7 +512,7 @@ declare_globals(::llvm::Module & lm, Context & ctx)
   }
 }
 
-static std::unique_ptr<data_node_init>
+static std::unique_ptr<DataNodeInit>
 create_initialization(::llvm::GlobalVariable & gv, Context & ctx)
 {
   if (!gv.hasInitializer())
@@ -521,9 +521,9 @@ create_initialization(::llvm::GlobalVariable & gv, Context & ctx)
   auto init = gv.getInitializer();
   auto tacs = ConvertConstant(init, ctx);
   if (tacs.empty())
-    return std::make_unique<data_node_init>(ctx.lookup_value(init));
+    return std::make_unique<DataNodeInit>(ctx.lookup_value(init));
 
-  return std::make_unique<data_node_init>(std::move(tacs));
+  return std::make_unique<DataNodeInit>(std::move(tacs));
 }
 
 static void

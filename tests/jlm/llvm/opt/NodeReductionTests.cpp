@@ -20,7 +20,7 @@ MultipleReductionsPerRegion()
   using namespace jlm::rvsdg;
 
   // Arrange
-  const auto bitType = bittype::Create(32);
+  const auto bitType = BitType::Create(32);
   const auto memoryStateType = MemoryStateType::Create();
 
   jlm::llvm::RvsdgModule rvsdgModule(jlm::util::FilePath(""), "", "");

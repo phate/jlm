@@ -308,7 +308,7 @@ TestStoreAllocaReduction()
   // Arrange
   auto vt = jlm::tests::ValueType::Create();
   auto mt = MemoryStateType::Create();
-  auto bt = jlm::rvsdg::bittype::Create(32);
+  auto bt = jlm::rvsdg::BitType::Create(32);
 
   jlm::rvsdg::Graph graph;
   auto size = &jlm::rvsdg::GraphImport::Create(graph, bt, "size");
@@ -406,7 +406,7 @@ IOBarrierAllocaAddressNormalization()
   const auto valueType = jlm::tests::ValueType::Create();
   const auto pointerType = PointerType::Create();
   const auto memoryStateType = MemoryStateType::Create();
-  const auto bit32Type = jlm::rvsdg::bittype::Create(32);
+  const auto bit32Type = jlm::rvsdg::BitType::Create(32);
   const auto ioStateType = IOStateType::Create();
 
   jlm::rvsdg::Graph graph;

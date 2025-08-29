@@ -133,7 +133,7 @@ RvsdgToIpGraphConverter::~RvsdgToIpGraphConverter() = default;
 
 RvsdgToIpGraphConverter::RvsdgToIpGraphConverter() = default;
 
-std::unique_ptr<data_node_init>
+std::unique_ptr<DataNodeInit>
 RvsdgToIpGraphConverter::CreateInitialization(const rvsdg::DeltaNode & deltaNode)
 {
   const auto subregion = deltaNode.subregion();
@@ -148,7 +148,7 @@ RvsdgToIpGraphConverter::CreateInitialization(const rvsdg::DeltaNode & deltaNode
   if (subregion->nnodes() == 0)
   {
     auto value = Context_->GetVariable(subregion->result(0)->origin());
-    return std::make_unique<data_node_init>(value);
+    return std::make_unique<DataNodeInit>(value);
   }
 
   tacsvector_t tacs;
@@ -168,7 +168,7 @@ RvsdgToIpGraphConverter::CreateInitialization(const rvsdg::DeltaNode & deltaNode
     Context_->InsertVariable(output, tacs.back()->result(0));
   }
 
-  return std::make_unique<data_node_init>(std::move(tacs));
+  return std::make_unique<DataNodeInit>(std::move(tacs));
 }
 
 void
@@ -202,7 +202,7 @@ RvsdgToIpGraphConverter::CreateControlFlowGraph(const rvsdg::LambdaNode & lambda
   for (const auto functionArgument : lambda.GetFunctionArguments())
   {
     auto name = util::strfmt("_a", functionArgument->index(), "_");
-    auto argument = argument::create(
+    auto argument = Argument::create(
         name,
         functionArgument->Type(),
         lambdaOperation.GetArgumentAttributes(functionArgument->index()));
@@ -475,7 +475,7 @@ RvsdgToIpGraphConverter::ConvertPhiNode(const rvsdg::PhiNode & phiNode)
     if (const auto lambdaNode = rvsdg::TryGetOwnerNode<rvsdg::LambdaNode>(origin))
     {
       const auto variable =
-          util::AssertedCast<const fctvariable>(Context_->GetVariable(subregion->argument(n)));
+          util::AssertedCast<const FunctionVariable>(Context_->GetVariable(subregion->argument(n)));
       variable->function()->add_cfg(CreateControlFlowGraph(*lambdaNode));
       Context_->InsertVariable(lambdaNode->output(), variable);
     }

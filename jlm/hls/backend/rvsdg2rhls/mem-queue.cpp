@@ -9,6 +9,7 @@
 #include <jlm/hls/backend/rvsdg2rhls/mem-queue.hpp>
 #include <jlm/hls/backend/rvsdg2rhls/mem-sep.hpp>
 #include <jlm/hls/ir/hls.hpp>
+#include <jlm/llvm/ir/LambdaMemoryState.hpp>
 #include <jlm/llvm/ir/operators/call.hpp>
 #include <jlm/llvm/ir/operators/lambda.hpp>
 #include <jlm/llvm/ir/operators/Load.hpp>
@@ -74,7 +75,7 @@ find_load_store(
     }
     else if (auto r = dynamic_cast<jlm::rvsdg::RegionResult *>(&user))
     {
-      if (auto ber = dynamic_cast<jlm::hls::backedge_result *>(r))
+      if (auto ber = dynamic_cast<jlm::hls::BackEdgeResult *>(r))
       {
         find_load_store(ber->argument(), load_nodes, store_nodes, visited);
       }
@@ -102,7 +103,7 @@ find_loop_output(jlm::rvsdg::StructuralInput * sti)
   for (size_t i = 1; i < 3; ++i)
   {
     auto arg = muxNode->input(i)->origin();
-    if (auto ba = dynamic_cast<jlm::hls::backedge_argument *>(arg))
+    if (auto ba = dynamic_cast<jlm::hls::BackEdgeArgument *>(arg))
     {
       auto res = ba->result();
       JLM_ASSERT(res);
@@ -485,7 +486,7 @@ jlm::hls::mem_queue(jlm::rvsdg::Region * region)
 {
   auto lambda =
       jlm::util::AssertedCast<const jlm::rvsdg::LambdaNode>(region->Nodes().begin().ptr());
-  auto state_arg = GetMemoryStateArgument(*lambda);
+  auto state_arg = &llvm::GetMemoryStateRegionArgument(*lambda);
   if (!state_arg)
   {
     // No memstate, i.e., no memory used

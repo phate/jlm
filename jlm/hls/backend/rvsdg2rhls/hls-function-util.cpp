@@ -76,7 +76,7 @@ trace_function_calls(
     }
     else if (auto r = dynamic_cast<rvsdg::RegionResult *>(&user))
     {
-      if (auto ber = dynamic_cast<backedge_result *>(r))
+      if (auto ber = dynamic_cast<BackEdgeResult *>(r))
       {
         trace_function_calls(ber->argument(), calls, visited);
       }
@@ -218,7 +218,7 @@ trace_call_rhls(const rvsdg::Output * output)
     {
       return argument;
     }
-    else if (dynamic_cast<const backedge_argument *>(argument))
+    else if (dynamic_cast<const BackEdgeArgument *>(argument))
     {
       // don't follow backedges to avoid cycles
       return nullptr;
@@ -318,7 +318,7 @@ get_mem_state_user(rvsdg::Output * state_edge)
 rvsdg::Output *
 FindSourceNode(rvsdg::Output * out)
 {
-  if (auto ba = dynamic_cast<backedge_argument *>(out))
+  if (auto ba = dynamic_cast<BackEdgeArgument *>(out))
   {
     return FindSourceNode(ba->result()->origin());
   }

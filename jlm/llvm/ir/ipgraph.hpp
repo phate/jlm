@@ -21,62 +21,9 @@ class InterProceduralGraphNode;
 
 class InterProceduralGraph final
 {
-  class const_iterator
-  {
-  public:
-    explicit const_iterator(
-        const std::vector<std::unique_ptr<InterProceduralGraphNode>>::const_iterator & it)
-        : it_(it)
-    {}
-
-    inline bool
-    operator==(const const_iterator & other) const noexcept
-    {
-      return it_ == other.it_;
-    }
-
-    inline bool
-    operator!=(const const_iterator & other) const noexcept
-    {
-      return !(*this == other);
-    }
-
-    inline const const_iterator &
-    operator++() noexcept
-    {
-      ++it_;
-      return *this;
-    }
-
-    inline const const_iterator
-    operator++(int) noexcept
-    {
-      const_iterator tmp(it_);
-      it_++;
-      return tmp;
-    }
-
-    [[nodiscard]] const InterProceduralGraphNode *
-    node() const noexcept
-    {
-      return it_->get();
-    }
-
-    const InterProceduralGraphNode &
-    operator*() const noexcept
-    {
-      return *node();
-    }
-
-    const InterProceduralGraphNode *
-    operator->() const noexcept
-    {
-      return node();
-    }
-
-  private:
-    std::vector<std::unique_ptr<InterProceduralGraphNode>>::const_iterator it_;
-  };
+  using const_iterator = util::PtrIterator<
+      const InterProceduralGraphNode,
+      std::vector<std::unique_ptr<InterProceduralGraphNode>>::const_iterator>;
 
 public:
   ~InterProceduralGraph() noexcept = default;
@@ -291,12 +238,12 @@ private:
   std::unique_ptr<ControlFlowGraph> cfg_;
 };
 
-class fctvariable final : public GlobalVariable
+class FunctionVariable final : public GlobalVariable
 {
 public:
-  ~fctvariable() noexcept override;
+  ~FunctionVariable() noexcept override;
 
-  explicit fctvariable(FunctionNode * node)
+  explicit FunctionVariable(FunctionNode * node)
       : GlobalVariable(node->Type(), node->name()),
         node_(node)
   {}
@@ -311,16 +258,14 @@ private:
   FunctionNode * node_;
 };
 
-/* data node */
-
-class data_node_init final
+class DataNodeInit final
 {
 public:
-  data_node_init(const Variable * value)
+  explicit DataNodeInit(const Variable * value)
       : value_(value)
   {}
 
-  data_node_init(tacsvector_t tacs)
+  explicit DataNodeInit(tacsvector_t tacs)
       : tacs_(std::move(tacs))
   {
     if (tacs_.empty())
@@ -333,18 +278,18 @@ public:
     value_ = tac->result(0);
   }
 
-  data_node_init(const data_node_init &) = delete;
+  DataNodeInit(const DataNodeInit &) = delete;
 
-  data_node_init(data_node_init && other)
+  DataNodeInit(DataNodeInit && other) noexcept
       : tacs_(std::move(other.tacs_)),
         value_(other.value_)
   {}
 
-  data_node_init &
-  operator=(const data_node_init &) = delete;
+  DataNodeInit &
+  operator=(const DataNodeInit &) = delete;
 
-  data_node_init &
-  operator=(data_node_init &&) = delete;
+  DataNodeInit &
+  operator=(DataNodeInit &&) = delete;
 
   const Variable *
   value() const noexcept
@@ -359,7 +304,7 @@ public:
   }
 
 private:
-  tacsvector_t tacs_;
+  tacsvector_t tacs_{};
   const Variable * value_;
 };
 
@@ -418,14 +363,14 @@ public:
     return Section_;
   }
 
-  inline const data_node_init *
+  const DataNodeInit *
   initialization() const noexcept
   {
     return init_.get();
   }
 
   void
-  set_initialization(std::unique_ptr<data_node_init> init)
+  set_initialization(std::unique_ptr<DataNodeInit> init)
   {
     if (!init)
       return;
@@ -458,7 +403,7 @@ private:
   std::string Section_;
   llvm::linkage linkage_;
   std::shared_ptr<const jlm::rvsdg::ValueType> ValueType_;
-  std::unique_ptr<data_node_init> init_;
+  std::unique_ptr<DataNodeInit> init_;
 };
 
 }

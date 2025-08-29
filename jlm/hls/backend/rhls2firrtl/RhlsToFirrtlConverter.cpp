@@ -333,7 +333,7 @@ RhlsToFirrtlConverter::MlirGenSimpleNode(const jlm::rvsdg::SimpleNode * node)
     for (size_t i = 1; i < node->ninputs(); i++)
     {
       int bits = JlmSize(pointeeType);
-      if (dynamic_cast<const rvsdg::bittype *>(pointeeType)
+      if (dynamic_cast<const rvsdg::BitType *>(pointeeType)
           || dynamic_cast<const llvm::FloatingPointType *>(pointeeType))
       {
         pointeeType = nullptr;
@@ -1596,14 +1596,14 @@ RhlsToFirrtlConverter::MlirGenMem(const jlm::rvsdg::SimpleNode * node)
   {
     Connect(body, memReqWrite, oneBitValue);
     Connect(body, memReqData, inData1);
-    bitWidth = std::dynamic_pointer_cast<const rvsdg::bittype>(node->input(1)->Type())->nbits();
+    bitWidth = std::dynamic_pointer_cast<const rvsdg::BitType>(node->input(1)->Type())->nbits();
   }
   else
   {
     Connect(body, memReqWrite, zeroBitValue);
     auto invalid = GetInvalid(body, 32);
     Connect(body, memReqData, invalid);
-    if (auto bitType = std::dynamic_pointer_cast<const rvsdg::bittype>(node->output(0)->Type()))
+    if (auto bitType = std::dynamic_pointer_cast<const rvsdg::BitType>(node->output(0)->Type()))
     {
       bitWidth = bitType->nbits();
     }
@@ -2528,7 +2528,7 @@ RhlsToFirrtlConverter::TraceArgument(rvsdg::RegionArgument * arg)
   auto node = region->node();
   if (dynamic_cast<LoopNode *>(node))
   {
-    if (auto ba = dynamic_cast<backedge_argument *>(arg))
+    if (auto ba = dynamic_cast<BackEdgeArgument *>(arg))
     {
       return ba->result()->origin();
     }
@@ -2571,7 +2571,7 @@ RhlsToFirrtlConverter::MlirGen(rvsdg::Region * subRegion, mlir::Block * circuitB
   // Argument ports
   for (size_t i = 0; i < subRegion->narguments(); ++i)
   {
-    if (!dynamic_cast<backedge_argument *>(subRegion->argument(i)))
+    if (!dynamic_cast<BackEdgeArgument *>(subRegion->argument(i)))
     {
       AddBundlePort(
           &ports,
@@ -2583,7 +2583,7 @@ RhlsToFirrtlConverter::MlirGen(rvsdg::Region * subRegion, mlir::Block * circuitB
   // Result ports
   for (size_t i = 0; i < subRegion->nresults(); ++i)
   {
-    if (!dynamic_cast<backedge_result *>(subRegion->result(i)))
+    if (!dynamic_cast<BackEdgeResult *>(subRegion->result(i)))
     {
       AddBundlePort(
           &ports,
@@ -2612,7 +2612,7 @@ RhlsToFirrtlConverter::MlirGen(rvsdg::Region * subRegion, mlir::Block * circuitB
   // Arguments
   for (size_t i = 0; i < subRegion->narguments(); ++i)
   {
-    if (dynamic_cast<backedge_argument *>(subRegion->argument(i)))
+    if (dynamic_cast<BackEdgeArgument *>(subRegion->argument(i)))
     {
       auto bundleType = GetBundleType(GetFirrtlType(subRegion->argument(i)->Type().get()));
       auto op = Builder_->create<circt::firrtl::WireOp>(
@@ -2663,7 +2663,7 @@ RhlsToFirrtlConverter::MlirGen(rvsdg::Region * subRegion, mlir::Block * circuitB
   for (size_t i = 0; i < subRegion->nresults(); ++i)
   {
     mlir::Value resultSink;
-    if (auto ber = dynamic_cast<backedge_result *>(subRegion->result(i)))
+    if (auto ber = dynamic_cast<BackEdgeResult *>(subRegion->result(i)))
     {
       auto bundleType = GetBundleType(GetFirrtlType(subRegion->result(i)->Type().get()));
       auto op = Builder_->create<circt::firrtl::WireOp>(
@@ -3926,7 +3926,7 @@ RhlsToFirrtlConverter::GetModuleName(const rvsdg::Node * node)
     for (size_t i = 1; i < node->ninputs(); i++)
     {
       int bits = JlmSize(pointeeType);
-      if (dynamic_cast<const jlm::rvsdg::bittype *>(pointeeType)
+      if (dynamic_cast<const jlm::rvsdg::BitType *>(pointeeType)
           || dynamic_cast<const llvm::FloatingPointType *>(pointeeType))
       {
         pointeeType = nullptr;

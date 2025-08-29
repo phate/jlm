@@ -70,7 +70,7 @@ bit_type_to_ctl_type(rvsdg::GammaNode * old_gamma)
   for (size_t i = 0; i < old_gamma->noutputs(); ++i)
   {
     auto o = old_gamma->output(i);
-    if (!std::dynamic_pointer_cast<const jlm::rvsdg::bittype>(o->Type()))
+    if (!std::dynamic_pointer_cast<const jlm::rvsdg::BitType>(o->Type()))
       continue;
     if (o->nusers() != 1)
       continue;
@@ -274,7 +274,7 @@ merge_gamma(rvsdg::Region * region)
 bool
 is_output_of(jlm::rvsdg::Output * output, rvsdg::Node * node)
 {
-  auto no = dynamic_cast<jlm::rvsdg::node_output *>(output);
+  auto no = dynamic_cast<rvsdg::NodeOutput *>(output);
   return no && no->node() == node;
 }
 
@@ -286,7 +286,7 @@ depends_on(jlm::rvsdg::Output * output, rvsdg::Node * node)
   {
     return false;
   }
-  auto no = dynamic_cast<jlm::rvsdg::node_output *>(output);
+  auto no = dynamic_cast<rvsdg::NodeOutput *>(output);
   JLM_ASSERT(no);
   if (no->node() == node)
   {

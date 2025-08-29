@@ -19,8 +19,8 @@ public:
   ~SExtOperation() noexcept override;
 
   SExtOperation(
-      std::shared_ptr<const rvsdg::bittype> otype,
-      std::shared_ptr<const rvsdg::bittype> rtype)
+      std::shared_ptr<const rvsdg::BitType> otype,
+      std::shared_ptr<const rvsdg::BitType> rtype)
       : UnaryOperation(otype, rtype)
   {
     if (otype->nbits() >= rtype->nbits())
@@ -32,11 +32,11 @@ public:
       std::shared_ptr<const rvsdg::Type> dsttype)
       : UnaryOperation(srctype, dsttype)
   {
-    auto ot = std::dynamic_pointer_cast<const rvsdg::bittype>(srctype);
+    auto ot = std::dynamic_pointer_cast<const rvsdg::BitType>(srctype);
     if (!ot)
       throw util::Error("expected bits type.");
 
-    auto rt = std::dynamic_pointer_cast<const rvsdg::bittype>(dsttype);
+    auto rt = std::dynamic_pointer_cast<const rvsdg::BitType>(dsttype);
     if (!rt)
       throw util::Error("expected bits type.");
 
@@ -62,23 +62,23 @@ public:
   inline size_t
   nsrcbits() const noexcept
   {
-    return std::static_pointer_cast<const rvsdg::bittype>(argument(0))->nbits();
+    return std::static_pointer_cast<const rvsdg::BitType>(argument(0))->nbits();
   }
 
   inline size_t
   ndstbits() const noexcept
   {
-    return std::static_pointer_cast<const rvsdg::bittype>(result(0))->nbits();
+    return std::static_pointer_cast<const rvsdg::BitType>(result(0))->nbits();
   }
 
   static std::unique_ptr<llvm::ThreeAddressCode>
   create(const Variable * operand, const std::shared_ptr<const rvsdg::Type> & type)
   {
-    auto ot = std::dynamic_pointer_cast<const rvsdg::bittype>(operand->Type());
+    auto ot = std::dynamic_pointer_cast<const rvsdg::BitType>(operand->Type());
     if (!ot)
       throw util::Error("expected bits type.");
 
-    auto rt = std::dynamic_pointer_cast<const rvsdg::bittype>(type);
+    auto rt = std::dynamic_pointer_cast<const rvsdg::BitType>(type);
     if (!rt)
       throw util::Error("expected bits type.");
 
@@ -89,14 +89,14 @@ public:
   static rvsdg::Output *
   create(size_t ndstbits, rvsdg::Output * operand)
   {
-    auto ot = std::dynamic_pointer_cast<const rvsdg::bittype>(operand->Type());
+    auto ot = std::dynamic_pointer_cast<const rvsdg::BitType>(operand->Type());
     if (!ot)
       throw util::Error("expected bits type.");
 
     return rvsdg::CreateOpNode<SExtOperation>(
                { operand },
                std::move(ot),
-               rvsdg::bittype::Create(ndstbits))
+               rvsdg::BitType::Create(ndstbits))
         .output(0);
   }
 };

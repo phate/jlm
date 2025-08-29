@@ -272,9 +272,9 @@ TestDivOperation()
       assert(convertedLambda->subregion()->nnodes() == 3);
 
       // Traverse the rvsgd graph upwards to check connections
-      node_output * lambdaResultOriginNodeOuput = nullptr;
+      NodeOutput * lambdaResultOriginNodeOuput = nullptr;
       assert(
-          lambdaResultOriginNodeOuput = dynamic_cast<jlm::rvsdg::node_output *>(
+          lambdaResultOriginNodeOuput = dynamic_cast<jlm::rvsdg::NodeOutput *>(
               convertedLambda->subregion()->result(0)->origin()));
       Node * lambdaResultOriginNode = lambdaResultOriginNodeOuput->node();
       assert(is<jlm::llvm::IntegerUDivOperation>(lambdaResultOriginNode->GetOperation()));
@@ -285,8 +285,8 @@ TestDivOperation()
       assert(
           DivInput0 = dynamic_cast<jlm::rvsdg::RegionArgument *>(
               lambdaResultOriginNode->input(0)->origin()));
-      assert(jlm::rvsdg::is<bittype>(DivInput0->Type()));
-      assert(std::dynamic_pointer_cast<const bittype>(DivInput0->Type())->nbits() == 32);
+      assert(jlm::rvsdg::is<BitType>(DivInput0->Type()));
+      assert(std::dynamic_pointer_cast<const BitType>(DivInput0->Type())->nbits() == 32);
 
       // Check second input
       auto DivInput1Node = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(
@@ -296,8 +296,8 @@ TestDivOperation()
       auto DivInput1Constant =
           dynamic_cast<const jlm::llvm::IntegerConstantOperation *>(&DivInput1Node->GetOperation());
       assert(DivInput1Constant->Representation().to_int() == 5);
-      assert(is<const bittype>(DivInput1Constant->result(0)));
-      assert(std::dynamic_pointer_cast<const bittype>(DivInput1Constant->result(0))->nbits() == 32);
+      assert(is<const BitType>(DivInput1Constant->result(0)));
+      assert(std::dynamic_pointer_cast<const BitType>(DivInput1Constant->result(0))->nbits() == 32);
     }
   }
 }
@@ -486,8 +486,8 @@ TestCompZeroExt()
       auto Const2Op =
           dynamic_cast<const jlm::llvm::IntegerConstantOperation *>(&Const2Node->GetOperation());
       assert(Const2Op->Representation().to_int() == 5);
-      assert(is<const bittype>(Const2Op->result(0)));
-      assert(std::dynamic_pointer_cast<const bittype>(Const2Op->result(0))->nbits() == 32);
+      assert(is<const BitType>(Const2Op->result(0)));
+      assert(std::dynamic_pointer_cast<const BitType>(Const2Op->result(0))->nbits() == 32);
 
       // Check add op
       auto AddOp = dynamic_cast<const jlm::llvm::IntegerAddOperation *>(&AddNode->GetOperation());
@@ -496,8 +496,8 @@ TestCompZeroExt()
       // Check add input0
       RegionArgument * AddInput0 = nullptr;
       assert(AddInput0 = dynamic_cast<jlm::rvsdg::RegionArgument *>(AddNode->input(0)->origin()));
-      assert(jlm::rvsdg::is<bittype>(AddInput0->Type()));
-      assert(std::dynamic_pointer_cast<const bittype>(AddInput0->Type())->nbits() == 32);
+      assert(jlm::rvsdg::is<BitType>(AddInput0->Type()));
+      assert(std::dynamic_pointer_cast<const BitType>(AddInput0->Type())->nbits() == 32);
 
       // Check add input1
       auto Const1Node =
@@ -508,8 +508,8 @@ TestCompZeroExt()
       auto Const1Op =
           dynamic_cast<const jlm::llvm::IntegerConstantOperation *>(&Const1Node->GetOperation());
       assert(Const1Op->Representation().to_int() == 20);
-      assert(is<const bittype>(Const1Op->result(0)));
-      assert(std::dynamic_pointer_cast<const bittype>(Const1Op->result(0))->nbits() == 32);
+      assert(is<const BitType>(Const1Op->result(0)));
+      assert(std::dynamic_pointer_cast<const BitType>(Const1Op->result(0))->nbits() == 32);
     }
   }
 }
@@ -653,8 +653,8 @@ TestMatchOp()
 
       auto matchOp = dynamic_cast<const MatchOperation *>(&matchNode->GetOperation());
       assert(matchOp->narguments() == 1);
-      assert(is<const bittype>(matchOp->argument(0)));
-      assert(std::dynamic_pointer_cast<const bittype>(matchOp->argument(0))->nbits() == 32);
+      assert(is<const BitType>(matchOp->argument(0)));
+      assert(std::dynamic_pointer_cast<const BitType>(matchOp->argument(0))->nbits() == 32);
 
       // 3 alternatives + default
       assert(matchOp->nalternatives() == 4);

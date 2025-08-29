@@ -18,7 +18,7 @@ FindUserNode(rvsdg::Output * out)
 {
 
   auto user = &out->SingleUser();
-  if (auto br = dynamic_cast<backedge_result *>(user))
+  if (auto br = dynamic_cast<BackEdgeResult *>(user))
   {
     return FindUserNode(br->argument());
   }
@@ -470,7 +470,7 @@ CreateLoopFrontier(
     const LoopNode * loop,
     std::unordered_map<rvsdg::Output *, size_t> & output_cycles,
     std::unordered_set<rvsdg::Input *> & frontier,
-    std::unordered_set<backedge_result *> & stream_backedges,
+    std::unordered_set<BackEdgeResult *> & stream_backedges,
     std::unordered_set<rvsdg::SimpleNode *> & top_muxes)
 {
   for (size_t i = 0; i < loop->ninputs(); ++i)
@@ -503,7 +503,7 @@ CreateLoopFrontier(
   }
   for (auto arg : loop->subregion()->Arguments())
   {
-    auto backedge = dynamic_cast<backedge_argument *>(arg);
+    auto backedge = dynamic_cast<BackEdgeArgument *>(arg);
     if (!backedge)
     {
       continue;
@@ -541,7 +541,7 @@ void
 PushCycleFrontier(
     std::unordered_map<rvsdg::Output *, size_t> & output_cycles,
     std::unordered_set<rvsdg::Input *> & frontier,
-    std::unordered_set<backedge_result *> & stream_backedges,
+    std::unordered_set<BackEdgeResult *> & stream_backedges,
     std::unordered_set<rvsdg::SimpleNode *> & top_muxes)
 {
   bool changed = false;
@@ -607,7 +607,7 @@ PushCycleFrontier(
         changed = true;
         break;
       }
-      else if (auto be = dynamic_cast<backedge_result *>(in))
+      else if (auto be = dynamic_cast<BackEdgeResult *>(in))
       {
         frontier.erase(in);
         auto out = be->argument();
@@ -690,7 +690,7 @@ CalculateLoopCycleDepth(
     }
   }
   std::unordered_set<rvsdg::Input *> frontier;
-  std::unordered_set<backedge_result *> stream_backedges;
+  std::unordered_set<BackEdgeResult *> stream_backedges;
   std::unordered_set<rvsdg::SimpleNode *> top_muxes;
   CreateLoopFrontier(loop, output_cycles, frontier, stream_backedges, top_muxes);
   std::unordered_set<rvsdg::Input *> frontier2(frontier);
@@ -813,7 +813,7 @@ AdjustLoopBuffers(
     }
   }
   std::unordered_set<rvsdg::Input *> frontier;
-  std::unordered_set<backedge_result *> stream_backedges;
+  std::unordered_set<BackEdgeResult *> stream_backedges;
   std::unordered_set<rvsdg::SimpleNode *> top_muxes;
   CreateLoopFrontier(loop, buffer_capacity, frontier, stream_backedges, top_muxes);
   // set buffer capacity for constant nodes to max
@@ -916,7 +916,7 @@ AdjustLoopBuffers(
         changed = true;
         break;
       }
-      else if (auto be = dynamic_cast<backedge_result *>(in))
+      else if (auto be = dynamic_cast<BackEdgeResult *>(in))
       {
         frontier.erase(in);
         auto out = be->argument();

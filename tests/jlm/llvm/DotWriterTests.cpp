@@ -24,7 +24,8 @@ TestWriteGraphs()
 
   // Act
   Writer writer;
-  dot::WriteGraphs(writer, gammaTest.graph().GetRootRegion(), false);
+  dot::LlvmDotWriter dotWriter;
+  dotWriter.WriteGraphs(writer, gammaTest.graph().GetRootRegion(), false);
 
   writer.OutputAllGraphs(std::cout, OutputFormat::Dot);
 
@@ -88,12 +89,13 @@ TestTypeGraph()
   // Arrange
   jlm::tests::GammaTest gammaTest;
   auto ptrType = PointerType::Create();
-  auto bit32Type = jlm::rvsdg::bittype::Create(32);
+  auto bit32Type = jlm::rvsdg::BitType::Create(32);
   auto memType = MemoryStateType::Create();
 
   // Act
   Writer writer;
-  dot::WriteGraphs(writer, gammaTest.graph().GetRootRegion(), true);
+  dot::LlvmDotWriter dotWriter;
+  dotWriter.WriteGraphs(writer, gammaTest.graph().GetRootRegion(), true);
 
   writer.Finalize();
   writer.OutputAllGraphs(std::cout, OutputFormat::Dot);

@@ -7,6 +7,7 @@
 #include <jlm/rvsdg/notifiers.hpp>
 #include <jlm/rvsdg/simple-node.hpp>
 #include <jlm/rvsdg/substitution.hpp>
+#include <jlm/util/strfmt.hpp>
 
 namespace jlm::rvsdg
 {
@@ -34,11 +35,11 @@ SimpleNode::SimpleNode(
   for (size_t n = 0; n < SimpleNode::GetOperation().narguments(); n++)
   {
     add_input(
-        std::make_unique<node_input>(operands[n], this, SimpleNode::GetOperation().argument(n)));
+        std::make_unique<NodeInput>(operands[n], this, SimpleNode::GetOperation().argument(n)));
   }
 
   for (size_t n = 0; n < SimpleNode::GetOperation().nresults(); n++)
-    add_output(std::make_unique<node_output>(this, SimpleNode::GetOperation().result(n)));
+    add_output(std::make_unique<NodeOutput>(this, SimpleNode::GetOperation().result(n)));
 
   on_node_create(this);
 }

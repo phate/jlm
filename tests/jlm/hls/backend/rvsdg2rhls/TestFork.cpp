@@ -18,7 +18,7 @@ ForkInsertion()
   using namespace jlm::llvm;
 
   // Arrange
-  auto bit32Type = rvsdg::bittype::Create(32);
+  auto bit32Type = rvsdg::BitType::Create(32);
   const auto functionType = jlm::rvsdg::FunctionType::Create(
       { bit32Type, bit32Type, bit32Type },
       { bit32Type, bit32Type, bit32Type });
@@ -83,7 +83,7 @@ ConstantForkInsertion()
   using namespace jlm::llvm;
 
   // Arrange
-  auto bit32Type = rvsdg::bittype::Create(32);
+  auto bit32Type = rvsdg::BitType::Create(32);
   const auto functionType = rvsdg::FunctionType::Create({ bit32Type }, { bit32Type });
 
   RvsdgModule rvsdgModule(util::FilePath(""), "", "");
@@ -124,8 +124,8 @@ ConstantForkInsertion()
     auto lambdaRegion = lambda->subregion();
     assert(lambdaRegion->nnodes() == 1);
 
-    const rvsdg::node_output * loopOutput = nullptr;
-    assert(loopOutput = dynamic_cast<jlm::rvsdg::node_output *>(lambdaRegion->result(0)->origin()));
+    const rvsdg::NodeOutput * loopOutput = nullptr;
+    assert(loopOutput = dynamic_cast<jlm::rvsdg::NodeOutput *>(lambdaRegion->result(0)->origin()));
     auto loopNode = loopOutput->node();
     assert(rvsdg::is<hls::LoopOperation>(loopNode));
     auto loop = util::AssertedCast<hls::LoopNode>(loopNode);
