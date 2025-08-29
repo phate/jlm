@@ -998,9 +998,6 @@ is(const Node * node) noexcept
   return is<T>(node->GetOperation());
 }
 
-Node *
-producer(const jlm::rvsdg::Output * output) noexcept;
-
 /**
  * Traces \p output intra-procedurally through the RVSDG. The function is capable of tracing
  * through:
