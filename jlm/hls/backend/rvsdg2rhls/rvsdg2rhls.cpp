@@ -228,7 +228,7 @@ convert_alloca(rvsdg::Region * region)
       }
       auto delta = &db->finalize(cout);
       rvsdg::GraphExport::Create(*delta, delta_name);
-      auto delta_local = route_to_region_rvsdg(delta, region);
+      auto delta_local = &rvsdg::RouteToRegion(*delta, *region);
       node->output(0)->divert_users(delta_local);
       // TODO: check that the input to alloca is a bitconst 1
       // TODO: handle general case of other nodes getting state edge without a merge
