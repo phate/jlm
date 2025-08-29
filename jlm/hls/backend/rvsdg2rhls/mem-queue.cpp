@@ -75,7 +75,7 @@ find_load_store(
     }
     else if (auto r = dynamic_cast<jlm::rvsdg::RegionResult *>(&user))
     {
-      if (auto ber = dynamic_cast<jlm::hls::backedge_result *>(r))
+      if (auto ber = dynamic_cast<jlm::hls::BackEdgeResult *>(r))
       {
         find_load_store(ber->argument(), load_nodes, store_nodes, visited);
       }

@@ -2583,7 +2583,7 @@ RhlsToFirrtlConverter::MlirGen(rvsdg::Region * subRegion, mlir::Block * circuitB
   // Result ports
   for (size_t i = 0; i < subRegion->nresults(); ++i)
   {
-    if (!dynamic_cast<backedge_result *>(subRegion->result(i)))
+    if (!dynamic_cast<BackEdgeResult *>(subRegion->result(i)))
     {
       AddBundlePort(
           &ports,
@@ -2663,7 +2663,7 @@ RhlsToFirrtlConverter::MlirGen(rvsdg::Region * subRegion, mlir::Block * circuitB
   for (size_t i = 0; i < subRegion->nresults(); ++i)
   {
     mlir::Value resultSink;
-    if (auto ber = dynamic_cast<backedge_result *>(subRegion->result(i)))
+    if (auto ber = dynamic_cast<BackEdgeResult *>(subRegion->result(i)))
     {
       auto bundleType = GetBundleType(GetFirrtlType(subRegion->result(i)->Type().get()));
       auto op = Builder_->create<circt::firrtl::WireOp>(

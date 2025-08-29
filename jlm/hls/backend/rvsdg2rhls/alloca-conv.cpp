@@ -83,7 +83,7 @@ private:
       }
       else if (auto r = dynamic_cast<rvsdg::RegionResult *>(&user))
       {
-        if (auto ber = dynamic_cast<backedge_result *>(r))
+        if (auto ber = dynamic_cast<BackEdgeResult *>(r))
         {
           trace(ber->argument());
         }
