@@ -127,7 +127,7 @@ public:
 typedef jlm::util::IntrusiveList<RegionResult, RegionResult::structural_output_accessor>
     result_list;
 
-class StructuralOutput : public node_output
+class StructuralOutput : public NodeOutput
 {
   friend StructuralNode;
 
@@ -146,7 +146,7 @@ public:
   StructuralNode *
   node() const noexcept
   {
-    return static_cast<StructuralNode *>(node_output::node());
+    return static_cast<StructuralNode *>(NodeOutput::node());
   }
 
   result_list results;

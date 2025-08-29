@@ -39,7 +39,7 @@ StructuralOutput::~StructuralOutput() noexcept
 }
 
 StructuralOutput::StructuralOutput(StructuralNode * node, std::shared_ptr<const rvsdg::Type> type)
-    : node_output(node, std::move(type))
+    : NodeOutput(node, std::move(type))
 {
   on_output_create(this);
 }
@@ -97,7 +97,7 @@ StructuralNode::append_output(std::unique_ptr<StructuralOutput> output)
   if (index != 0 || (index == 0 && noutputs() > 0 && this->output(0) == output.get()))
     return this->output(index);
 
-  auto soutput = std::unique_ptr<node_output>(output.release());
+  auto soutput = std::unique_ptr<NodeOutput>(output.release());
   return static_cast<StructuralOutput *>(add_output(std::move(soutput)));
 }
 

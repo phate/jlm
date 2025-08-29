@@ -190,7 +190,7 @@ instrument_ref(
     {
       // ensure that the size is one
       JLM_ASSERT(node->ninputs() == 1);
-      auto constant_output = dynamic_cast<jlm::rvsdg::node_output *>(node->input(0)->origin());
+      auto constant_output = dynamic_cast<rvsdg::NodeOutput *>(node->input(0)->origin());
       JLM_ASSERT(constant_output);
       auto constant_operation = dynamic_cast<const llvm::IntegerConstantOperation *>(
           &constant_output->node()->GetOperation());
