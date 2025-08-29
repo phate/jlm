@@ -238,12 +238,12 @@ private:
   std::unique_ptr<ControlFlowGraph> cfg_;
 };
 
-class fctvariable final : public GlobalVariable
+class FunctionVariable final : public GlobalVariable
 {
 public:
-  ~fctvariable() noexcept override;
+  ~FunctionVariable() noexcept override;
 
-  explicit fctvariable(FunctionNode * node)
+  explicit FunctionVariable(FunctionNode * node)
       : GlobalVariable(node->Type(), node->name()),
         node_(node)
   {}
