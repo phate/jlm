@@ -8,8 +8,8 @@ jhls_SOURCES = \
 jhls_LIBS = \
 	libtooling \
 	libhls \
-	libllvm \
 	libmlir \
+	libllvm \
 	librvsdg \
 	libutil \
 

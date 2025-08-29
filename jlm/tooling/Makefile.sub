@@ -58,8 +58,8 @@ libtooling_TESTS = \
 libtooling_TEST_LIBS = \
     libtooling \
     libhls \
-    libllvm \
     libmlir \
+    libllvm \
     librvsdg \
     libutil \
     libjlmtest \
