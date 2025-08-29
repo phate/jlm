@@ -97,7 +97,10 @@ SExtOperation::copy() const
 rvsdg::unop_reduction_path_t
 SExtOperation::can_reduce_operand(const rvsdg::Output * operand) const noexcept
 {
-  if (rvsdg::is<rvsdg::bitconstant_op>(producer(operand)))
+  auto & tracedOutput = rvsdg::TraceOutputIntraProcedurally(*operand);
+  auto [constantNode, constantOperation] =
+      rvsdg::TryGetSimpleNodeAndOptionalOp<rvsdg::bitconstant_op>(tracedOutput);
+  if (constantNode && constantOperation)
     return rvsdg::unop_reduction_constant;
 
   if (is_bitunary_reducible(operand))
@@ -117,9 +120,13 @@ SExtOperation::reduce_operand(rvsdg::unop_reduction_path_t path, rvsdg::Output *
 {
   if (path == rvsdg::unop_reduction_constant)
   {
-    auto c = util::AssertedCast<const rvsdg::bitconstant_op>(
-        &util::AssertedCast<rvsdg::SimpleNode>(producer(operand))->GetOperation());
-    return create_bitconstant(operand->region(), c->value().sext(ndstbits() - nsrcbits()));
+    auto & tracedOutput = rvsdg::TraceOutputIntraProcedurally(*operand);
+    auto [constantNode, constantOperation] =
+        rvsdg::TryGetSimpleNodeAndOptionalOp<rvsdg::bitconstant_op>(tracedOutput);
+    JLM_ASSERT(constantNode && constantOperation);
+    return create_bitconstant(
+        operand->region(),
+        constantOperation->value().sext(ndstbits() - nsrcbits()));
   }
 
   if (path == sext_reduction_bitunary)
