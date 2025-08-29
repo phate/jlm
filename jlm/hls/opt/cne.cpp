@@ -442,11 +442,11 @@ mark(const rvsdg::StructuralNode * node, Context & ctx)
 {
   static std::unordered_map<std::type_index, void (*)(const rvsdg::StructuralNode *, Context &)>
       map({ { std::type_index(typeid(GammaNode)), mark_gamma },
-        { std::type_index(typeid(ThetaNode)), mark_theta },
-        { std::type_index(typeid(LoopNode)), mark_loop },
-        { typeid(LambdaNode), mark_lambda },
-        { typeid(PhiNode), mark_phi },
-        { typeid(rvsdg::DeltaNode), mark_delta } });
+            { std::type_index(typeid(ThetaNode)), mark_theta },
+            { std::type_index(typeid(LoopNode)), mark_loop },
+            { typeid(LambdaNode), mark_lambda },
+            { typeid(PhiNode), mark_phi },
+            { typeid(rvsdg::DeltaNode), mark_delta } });
 
   JLM_ASSERT(map.find(typeid(*node)) != map.end());
   map[typeid(*node)](node, ctx);
