@@ -576,7 +576,7 @@ public:
 };
 
 class BackEdgeArgument;
-class backedge_result;
+class BackEdgeResult;
 class LoopNode;
 
 /**
@@ -618,12 +618,12 @@ public:
 class BackEdgeArgument final : public rvsdg::RegionArgument
 {
   friend LoopNode;
-  friend backedge_result;
+  friend BackEdgeResult;
 
 public:
   ~BackEdgeArgument() noexcept override = default;
 
-  backedge_result *
+  BackEdgeResult *
   result()
   {
     return result_;
@@ -646,16 +646,16 @@ private:
     return argument;
   }
 
-  backedge_result * result_;
+  BackEdgeResult * result_;
 };
 
-class backedge_result : public rvsdg::RegionResult
+class BackEdgeResult : public rvsdg::RegionResult
 {
   friend LoopNode;
   friend BackEdgeArgument;
 
 public:
-  ~backedge_result() override = default;
+  ~BackEdgeResult() override = default;
 
   BackEdgeArgument *
   argument() const
@@ -663,19 +663,19 @@ public:
     return argument_;
   }
 
-  backedge_result &
+  BackEdgeResult &
   Copy(rvsdg::Output & origin, rvsdg::StructuralOutput * output) override;
 
 private:
-  backedge_result(jlm::rvsdg::Output * origin)
+  BackEdgeResult(rvsdg::Output * origin)
       : rvsdg::RegionResult(origin->region(), origin, nullptr, origin->Type()),
         argument_(nullptr)
   {}
 
-  static backedge_result *
+  static BackEdgeResult *
   create(jlm::rvsdg::Output * origin)
   {
-    auto result = new backedge_result(origin);
+    auto result = new BackEdgeResult(origin);
     origin->region()->append_result(result);
     return result;
   }

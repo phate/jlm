@@ -97,11 +97,11 @@ BackEdgeArgument::Copy(rvsdg::Region & region, rvsdg::StructuralInput * input)
   return *create(&region, Type());
 }
 
-backedge_result &
-backedge_result::Copy(rvsdg::Output & origin, rvsdg::StructuralOutput * output)
+BackEdgeResult &
+BackEdgeResult::Copy(rvsdg::Output & origin, rvsdg::StructuralOutput * output)
 {
   JLM_ASSERT(output == nullptr);
-  return *backedge_result::create(&origin);
+  return *create(&origin);
 }
 
 ExitResult::~ExitResult() noexcept = default;
@@ -215,7 +215,7 @@ BackEdgeArgument *
 LoopNode::add_backedge(std::shared_ptr<const jlm::rvsdg::Type> type)
 {
   auto argument_loop = BackEdgeArgument::create(subregion(), std::move(type));
-  auto result_loop = backedge_result::create(argument_loop);
+  auto result_loop = BackEdgeResult::create(argument_loop);
   argument_loop->result_ = result_loop;
   result_loop->argument_ = argument_loop;
   return argument_loop;
