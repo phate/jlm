@@ -17,25 +17,15 @@
 
 namespace jlm::llvm::dot
 {
-/**
- * Creates a node in the \p typeGraph representing the given \p type,
- * or returns such a node if it has already been created.
- * The function is recursive, and will create nodes for subtypes of aggregate types.
- */
-static util::graph::Node &
-GetOrCreateTypeGraphNode(const rvsdg::Type & type, util::graph::Graph & typeGraph)
-{
-  // If the type already has a corresponding node, return it
-  if (auto * graphElement = typeGraph.GetElementFromProgramObject(type))
-  {
-    auto * node = reinterpret_cast<util::graph::Node *>(graphElement);
-    JLM_ASSERT(node);
-    return *node;
-  }
 
-  auto & node = typeGraph.CreateNode();
-  node.SetProgramObject(type);
-  node.SetLabel(type.debug_string());
+DotWriter::~DotWriter() noexcept = default;
+
+LlvmDotWriter::~LlvmDotWriter() noexcept = default;
+
+void
+LlvmDotWriter::AnnotateTypeGraphNode(const rvsdg::Type & type, util::graph::Node & node)
+{
+  auto & typeGraph = node.GetGraph();
 
   // Some types get special handling, such as adding incoming edges from aggregate types
   if (rvsdg::is<rvsdg::StateType>(type) || rvsdg::is<rvsdg::BitType>(type)
@@ -82,6 +72,28 @@ GetOrCreateTypeGraphNode(const rvsdg::Type & type, util::graph::Graph & typeGrap
   {
     JLM_UNREACHABLE("Unknown type");
   }
+}
+
+/**
+ * Creates a node in the \p typeGraph representing the given \p type,
+ * or returns such a node if it has already been created.
+ */
+util::graph::Node &
+DotWriter::GetOrCreateTypeGraphNode(const rvsdg::Type & type, util::graph::Graph & typeGraph)
+{
+  // If the type already has a corresponding node, return it
+  if (auto * graphElement = typeGraph.GetElementFromProgramObject(type))
+  {
+    auto * node = reinterpret_cast<util::graph::Node *>(graphElement);
+    JLM_ASSERT(node);
+    return *node;
+  }
+
+  auto & node = typeGraph.CreateNode();
+  node.SetProgramObject(type);
+  node.SetLabel(type.debug_string());
+
+  AnnotateTypeGraphNode(type, node);
 
   return node;
 }
@@ -92,8 +104,8 @@ GetOrCreateTypeGraphNode(const rvsdg::Type & type, util::graph::Graph & typeGrap
  * @param inputPort the GraphWriter port representing the input
  * @param rvsdgInput the RVSDG input
  */
-static void
-AttachNodeInput(util::graph::Port & inputPort, const rvsdg::Input & rvsdgInput)
+void
+DotWriter::AttachNodeInput(util::graph::Port & inputPort, const rvsdg::Input & rvsdgInput)
 {
   auto & graph = inputPort.GetGraph();
   inputPort.SetProgramObject(rvsdgInput);
@@ -118,8 +130,8 @@ AttachNodeInput(util::graph::Port & inputPort, const rvsdg::Input & rvsdgInput)
  * @param rvsdgOutput the RVSDG output
  * @param typeGraph the type graph, or nullptr if the output's type should not be included
  */
-static void
-AttachNodeOutput(
+void
+DotWriter::AttachNodeOutput(
     util::graph::Port & outputPort,
     const rvsdg::Output & rvsdgOutput,
     util::graph::Graph * typeGraph)
@@ -141,8 +153,8 @@ AttachNodeOutput(
  * @param node the output graph node representing it
  * @param typeGraph the optional type graph, used for dumping types
  */
-static void
-SetAdditionalArgumentAttributes(
+void
+LlvmDotWriter::AnnotateRegionArgument(
     const rvsdg::RegionArgument & rvsdgArgument,
     util::graph::Node & node,
     util::graph::Graph * typeGraph)
@@ -169,8 +181,8 @@ SetAdditionalArgumentAttributes(
  * @param node the output graph node representing it
  * @param typeGraph the optional type graph, used for dumping types
  */
-static void
-SetAdditionalNodeAttributes(
+void
+LlvmDotWriter::AnnotateGraphNode(
     const rvsdg::Node & rvsdgNode,
     util::graph::Node & node,
     util::graph::Graph * typeGraph)
@@ -200,8 +212,11 @@ SetAdditionalNodeAttributes(
  * If \p typeGraph is not nullptr, all rvsdg outputs get a type reference to the type graph.
  * If the type does not already exist in the type graph, it is created.
  */
-static void
-CreateGraphNodes(util::graph::Graph & graph, rvsdg::Region & region, util::graph::Graph * typeGraph)
+void
+DotWriter::CreateGraphNodes(
+    util::graph::Graph & graph,
+    rvsdg::Region & region,
+    util::graph::Graph * typeGraph)
 {
   graph.SetProgramObject(region);
 
@@ -226,7 +241,7 @@ CreateGraphNodes(util::graph::Graph & graph, rvsdg::Region & region, util::graph
       node.AppendToLabel(util::strfmt("<- ", argument.input()->debug_string()), " ");
     }
 
-    SetAdditionalArgumentAttributes(argument, node, typeGraph);
+    AnnotateRegionArgument(argument, node, typeGraph);
   }
 
   // Create a node for each node in the region in topological order.
@@ -254,7 +269,7 @@ CreateGraphNodes(util::graph::Graph & graph, rvsdg::Region & region, util::graph
       }
     }
 
-    SetAdditionalNodeAttributes(*rvsdgNode, node, typeGraph);
+    AnnotateGraphNode(*rvsdgNode, node, typeGraph);
   }
 
   // Create result nodes for the region's results, and attach them to their origins
@@ -281,7 +296,7 @@ CreateGraphNodes(util::graph::Graph & graph, rvsdg::Region & region, util::graph
 }
 
 util::graph::Graph &
-WriteGraphs(util::graph::Writer & writer, rvsdg::Region & region, bool emitTypeGraph)
+DotWriter::WriteGraphs(util::graph::Writer & writer, rvsdg::Region & region, bool emitTypeGraph)
 {
   util::graph::Graph * typeGraph = nullptr;
   if (emitTypeGraph)
