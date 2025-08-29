@@ -15,7 +15,9 @@ BitUnaryOperation::~BitUnaryOperation() noexcept = default;
 unop_reduction_path_t
 BitUnaryOperation::can_reduce_operand(const jlm::rvsdg::Output * arg) const noexcept
 {
-  if (is<bitconstant_op>(producer(arg)))
+  auto & tracedOperand = TraceOutputIntraProcedurally(*arg);
+  auto [_, constantOperation] = rvsdg::TryGetSimpleNodeAndOptionalOp<bitconstant_op>(tracedOperand);
+  if (constantOperation)
     return unop_reduction_constant;
 
   return unop_reduction_none;
@@ -26,9 +28,10 @@ BitUnaryOperation::reduce_operand(unop_reduction_path_t path, jlm::rvsdg::Output
 {
   if (path == unop_reduction_constant)
   {
-    auto p = static_cast<const SimpleNode *>(producer(arg));
-    auto & c = static_cast<const bitconstant_op &>(p->GetOperation());
-    return create_bitconstant(p->region(), reduce_constant(c.value()));
+    auto & tracedOperand = TraceOutputIntraProcedurally(*arg);
+    auto [constantNode, constantOperation] =
+        rvsdg::TryGetSimpleNodeAndOptionalOp<bitconstant_op>(tracedOperand);
+    return create_bitconstant(constantNode->region(), reduce_constant(constantOperation->value()));
   }
 
   return nullptr;
@@ -41,7 +44,14 @@ BitBinaryOperation::can_reduce_operand_pair(
     const jlm::rvsdg::Output * arg1,
     const jlm::rvsdg::Output * arg2) const noexcept
 {
-  if (is<bitconstant_op>(producer(arg1)) && is<bitconstant_op>(producer(arg2)))
+  auto & tracedOperand1 = TraceOutputIntraProcedurally(*arg1);
+  auto [constantNode1, constantOperation1] =
+      rvsdg::TryGetSimpleNodeAndOptionalOp<bitconstant_op>(tracedOperand1);
+  auto & tracedOperand2 = TraceOutputIntraProcedurally(*arg2);
+  auto [constantNode2, constantOperation2] =
+      rvsdg::TryGetSimpleNodeAndOptionalOp<bitconstant_op>(tracedOperand2);
+
+  if (constantOperation1 && constantOperation2)
     return binop_reduction_constants;
 
   return binop_reduction_none;
@@ -55,11 +65,17 @@ BitBinaryOperation::reduce_operand_pair(
 {
   if (path == binop_reduction_constants)
   {
-    auto & c1 = static_cast<const bitconstant_op &>(
-        static_cast<const SimpleNode *>(producer(arg1))->GetOperation());
-    auto & c2 = static_cast<const bitconstant_op &>(
-        static_cast<const SimpleNode *>(producer(arg2))->GetOperation());
-    return create_bitconstant(arg1->region(), reduce_constants(c1.value(), c2.value()));
+    auto & tracedOperand1 = TraceOutputIntraProcedurally(*arg1);
+    auto [constantNode1, constantOperation1] =
+        rvsdg::TryGetSimpleNodeAndOptionalOp<bitconstant_op>(tracedOperand1);
+
+    auto & tracedOperand2 = TraceOutputIntraProcedurally(*arg2);
+    auto [constantNode2, constantOperation2] =
+        rvsdg::TryGetSimpleNodeAndOptionalOp<bitconstant_op>(tracedOperand2);
+
+    return create_bitconstant(
+        arg1->region(),
+        reduce_constants(constantOperation1->value(), constantOperation2->value()));
   }
 
   return nullptr;
@@ -72,20 +88,19 @@ BitCompareOperation::can_reduce_operand_pair(
     const jlm::rvsdg::Output * arg1,
     const jlm::rvsdg::Output * arg2) const noexcept
 {
-  auto p = dynamic_cast<const SimpleNode *>(producer(arg1));
-  const bitconstant_op * c1_op = nullptr;
-  if (p)
-    c1_op = dynamic_cast<const bitconstant_op *>(&p->GetOperation());
+  auto & tracedOperand1 = TraceOutputIntraProcedurally(*arg1);
+  auto [constantNode1, constantOperation1] =
+      rvsdg::TryGetSimpleNodeAndOptionalOp<bitconstant_op>(tracedOperand1);
+  auto & tracedOperand2 = TraceOutputIntraProcedurally(*arg2);
+  auto [constantNode2, constantOperation2] =
+      rvsdg::TryGetSimpleNodeAndOptionalOp<bitconstant_op>(tracedOperand2);
 
-  p = dynamic_cast<const SimpleNode *>(producer(arg2));
-  const bitconstant_op * c2_op = nullptr;
-  if (p)
-    c2_op = dynamic_cast<const bitconstant_op *>(&p->GetOperation());
-
-  BitValueRepresentation arg1_repr =
-      c1_op ? c1_op->value() : BitValueRepresentation::repeat(type().nbits(), 'D');
-  BitValueRepresentation arg2_repr =
-      c2_op ? c2_op->value() : BitValueRepresentation::repeat(type().nbits(), 'D');
+  BitValueRepresentation arg1_repr = constantOperation1
+                                       ? constantOperation1->value()
+                                       : BitValueRepresentation::repeat(type().nbits(), 'D');
+  BitValueRepresentation arg2_repr = constantOperation2
+                                       ? constantOperation2->value()
+                                       : BitValueRepresentation::repeat(type().nbits(), 'D');
 
   switch (reduce_constants(arg1_repr, arg2_repr))
   {

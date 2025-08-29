@@ -402,31 +402,6 @@ Node::copy(rvsdg::Region * region, const std::vector<jlm::rvsdg::Output *> & ope
   return copy(region, smap);
 }
 
-Node *
-producer(const jlm::rvsdg::Output * output) noexcept
-{
-  if (auto node = TryGetOwnerNode<Node>(*output))
-    return node;
-
-  if (auto theta = TryGetRegionParentNode<ThetaNode>(*output))
-  {
-    auto loopvar = theta->MapPreLoopVar(*output);
-    if (loopvar.post->origin() != output)
-    {
-      return nullptr;
-    }
-    return producer(loopvar.input->origin());
-  }
-
-  JLM_ASSERT(dynamic_cast<const RegionArgument *>(output));
-  auto argument = static_cast<const RegionArgument *>(output);
-
-  if (!argument->input())
-    return nullptr;
-
-  return producer(argument->input()->origin());
-}
-
 const Output &
 TraceOutputIntraProcedurally(const Output & output)
 {
