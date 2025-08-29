@@ -14,7 +14,7 @@ namespace jlm::rvsdg
 /* control constant */
 
 // explicit instantiation
-template class domain_const_op<
+template class DomainConstOperation<
     ControlType,
     ControlValueRepresentation,
     ctlformat_value,
