@@ -429,8 +429,8 @@ producer(const jlm::rvsdg::Output * output) noexcept
   return producer(argument->input()->origin());
 }
 
-Output &
-TraceOutputIntraProcedurally(Output & output)
+const Output &
+TraceOutputIntraProcedurally(const Output & output)
 {
   // Handle gamma node outputs
   if (const auto gammaNode = TryGetOwnerNode<GammaNode>(output))
