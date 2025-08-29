@@ -218,6 +218,9 @@ private:
   const rvsdg::BitValueRepresentation *
   value(const rvsdg::Output * output) const noexcept
   {
+    if (!is_known(output))
+      return nullptr;
+
     auto & tracedOutput = rvsdg::TraceOutputIntraProcedurally(*output);
     auto [_, constantOperation] =
         rvsdg::TryGetSimpleNodeAndOptionalOp<rvsdg::bitconstant_op>(tracedOutput);
