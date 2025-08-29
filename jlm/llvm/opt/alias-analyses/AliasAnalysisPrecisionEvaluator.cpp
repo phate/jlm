@@ -19,12 +19,18 @@ namespace jlm::llvm::aa
 
 class AliasAnalysisPrecisionEvaluator::PrecisionStatistics final : public util::Statistics
 {
-  static constexpr auto PrecisionEvaluationMode_ = "PrecisionEvaluationMode";
   // The output from calling ToString on the AliasAnalysis
   static constexpr auto PairwiseAliasAnalysisType_ = "PairwiseAliasAnalysisType";
-  static constexpr auto IsRemovingDuplicatePointers_ = "IsRemovingDuplicatePointers";
-  // This statistic places additional information in a separate file. This is the path of the file.
-  static constexpr auto PrecisionDumpFile_ = "DumpFile";
+
+  static constexpr auto LoadsConsideredClobbers_ = "LoadsConsideredClobbers";
+  static constexpr auto DeduplicatingPointers_ = "DeduplicatingPointers";
+  // The path of the file where per-function statistics are written, if enabled
+  static constexpr auto PerFunctionOutputFile_ = "PerFunctionOutputFile";
+  // The path of the file where the aliasing graph is written, if enabled
+  static constexpr auto AliasingGraphOutputFile_ = "AliasingGraphOutputFile";
+
+  // The total number of clobbering operations considered by the precision evaluator.
+  // If deduplication is enabled, only unique clobbers are counted.
   static constexpr auto ModuleNumClobbers_ = "ModuleNumClobbers";
   // The rate of each response type, for the average clobbering operations. Should sum up to 1
   static constexpr auto ClobberAverageNoAlias = "ClobberAverageNoAlias";
@@ -45,12 +51,18 @@ public:
   {}
 
   void
-  StartEvaluatingPrecision(Mode mode, AliasAnalysis & aliasAnalysis)
+  StartEvaluatingPrecision(
+      const AliasAnalysisPrecisionEvaluator & evaluator,
+      const AliasAnalysis & aliasAnalysis)
   {
     AddTimer(PrecisionEvaluationTimer_).start();
-    AddMeasurement(PrecisionEvaluationMode_, std::string(PrecisionEvaluationModeToString(mode)));
     AddMeasurement(PairwiseAliasAnalysisType_, aliasAnalysis.ToString());
-    AddMeasurement(IsRemovingDuplicatePointers_, RemoveDuplicatePointers ? "true" : "false");
+    AddMeasurement(
+        LoadsConsideredClobbers_,
+        evaluator.AreLoadsConsideredClobbers() ? "true" : "false");
+    AddMeasurement(
+        DeduplicatingPointers_,
+        evaluator.IsDeduplicatingPointers() ? "true" : "false");
   }
 
   void
@@ -60,8 +72,19 @@ public:
   }
 
   void
+  AddPerFunctionOutputFile(const util::FilePath & outputFile)
+  {
+    AddMeasurement(PerFunctionOutputFile_, outputFile.to_str());
+  }
+
+  void
+  AddAliasingGraphOutputFile(const util::FilePath & outputFile)
+  {
+    AddMeasurement(AliasingGraphOutputFile_, outputFile.to_str());
+  }
+
+  void
   AddPrecisionSummaryStatistics(
-      const util::FilePath & outputFile,
       uint64_t moduleNumClobbers,
       double clobberAverageNoAlias,
       double clobberAverageMayAlias,
@@ -70,7 +93,6 @@ public:
       uint64_t totalMayAlias,
       uint64_t totalMustAlias)
   {
-    AddMeasurement(PrecisionDumpFile_, outputFile.to_str());
     AddMeasurement(ModuleNumClobbers_, moduleNumClobbers);
     AddMeasurement(ClobberAverageNoAlias, clobberAverageNoAlias);
     AddMeasurement(ClobberAverageMayAlias, clobberAverageMayAlias);
@@ -105,31 +127,34 @@ AliasAnalysisPrecisionEvaluator::EvaluateAliasAnalysisClient(
 
   Context_ = Context{};
 
+  // If creating an aliasing graph is enabled, initialize an empty graph
   util::graph::Writer gw;
-  if (OutputAliasingGraph)
+  if (IsAliasingGraphEnabled())
   {
     AliasingGraph_ = &gw.CreateGraph();
     dot::WriteGraphs(gw, rvsdgModule.Rvsdg().GetRootRegion(), true);
   }
 
-  statistics->StartEvaluatingPrecision(Mode_, aliasAnalysis);
-
+  // Do the pairwise alias queries
+  statistics->StartEvaluatingPrecision(*this, aliasAnalysis);
   EvaluateAllFunctions(rvsdgModule.Rvsdg().GetRootRegion(), aliasAnalysis);
-
   statistics->StopEvaluatingPrecision();
 
-  // Calculate average precision in functions and for the whole module, and print to output
+  // Calculate average precision in functions and for the whole module
+  std::optional<util::File>
   const auto outputFile = statisticsCollector.CreateOutputFile("AAPrecisionEvaluation.log", true);
-  CalculateAverageMayAliasRate(outputFile, *statistics);
+  CalculateAverageMayAliasRate(*statistics);
 
-  statisticsCollector.CollectDemandedStatistics(std::move(statistics));
-
-  if (OutputAliasingGraph)
+  if (IsAliasingGraphEnabled())
   {
-    auto out = statisticsCollector.CreateOutputFile("AAGraph.dot", true);
+    auto out = statisticsCollector.CreateOutputFile("AliasingGraph.dot", true);
     std::ofstream fd(out.path().to_str());
     gw.OutputAllGraphs(fd, util::graph::OutputFormat::Dot);
+    statistics->AddAliasingGraphOutputFile(out.path());
+    AliasingGraph_ = nullptr;
   }
+
+  statisticsCollector.CollectDemandedStatistics(std::move(statistics));
 }
 
 void
@@ -296,7 +321,8 @@ AliasAnalysisPrecisionEvaluator::CollectPointersFromSimpleNode(const rvsdg::Simp
 }
 
 void
-AliasAnalysisPrecisionEvaluator::CollectPointersFromStructuralNode(const rvsdg::StructuralNode & node)
+AliasAnalysisPrecisionEvaluator::CollectPointersFromStructuralNode(
+    const rvsdg::StructuralNode & node)
 {
   for (size_t n = 0; n < node.nsubregions(); n++)
   {
@@ -386,7 +412,7 @@ AliasAnalysisPrecisionEvaluator::AggregateClobberInfos(
 
 void
 AliasAnalysisPrecisionEvaluator::CalculateAverageMayAliasRate(
-    const util::File & outputFile,
+    std::ostream * perFunctionOut,
     PrecisionStatistics & statistics) const
 {
   std::vector<PrecisionInfo::ClobberInfo> allClobberInfo;
@@ -444,7 +470,6 @@ AliasAnalysisPrecisionEvaluator::CalculateAverageMayAliasRate(
   out.close();
 
   statistics.AddPrecisionSummaryStatistics(
-      outputFile.path(),
       allClobberInfo.size(),
       clobberAverageNoAlias,
       clobberAverageMayAlias,
