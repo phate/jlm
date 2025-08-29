@@ -997,6 +997,23 @@ is(const Node * node) noexcept
 Node *
 producer(const jlm::rvsdg::Output * output) noexcept;
 
+/**
+ * Traces \p output intra-procedurally through the RVSDG. The function is capable of tracing
+ * through:
+ *
+ * 1. Gamma nodes if the exit variable is invariant
+ * 2. Theta nodes if the loop variable is invariant
+ *
+ * Tracing stops when a lambda function argument or context argument is reached. If the function is
+ * invoked with an output that is not from within a lambda node, then this output is simply
+ * returned.
+ *
+ * @param output The \ref Output that needs to be traced.
+ * @return The final value of the tracing.
+ */
+const Output &
+TraceOutputIntraProcedurally(const Output & output);
+
 }
 
 #endif
