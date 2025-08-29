@@ -39,7 +39,7 @@ SimpleNode::SimpleNode(
   }
 
   for (size_t n = 0; n < SimpleNode::GetOperation().nresults(); n++)
-    add_output(std::make_unique<node_output>(this, SimpleNode::GetOperation().result(n)));
+    add_output(std::make_unique<NodeOutput>(this, SimpleNode::GetOperation().result(n)));
 
   on_node_create(this);
 }

@@ -294,7 +294,7 @@ dead_loop_lcb(rvsdg::Node * lcb_node)
   }
   // depend on same control
   auto branch_cond_origin = branchNode->input(0)->origin();
-  auto pred_buf_out = dynamic_cast<jlm::rvsdg::node_output *>(lcb_node->input(0)->origin());
+  auto pred_buf_out = dynamic_cast<rvsdg::NodeOutput *>(lcb_node->input(0)->origin());
   if (!pred_buf_out
       || !dynamic_cast<const PredicateBufferOperation *>(&pred_buf_out->node()->GetOperation()))
   {
@@ -302,7 +302,7 @@ dead_loop_lcb(rvsdg::Node * lcb_node)
   }
   auto pred_buf_cond_origin = pred_buf_out->node()->input(0)->origin();
   // TODO: remove this once predicate buffers decouple combinatorial loops
-  auto extra_buf_out = dynamic_cast<jlm::rvsdg::node_output *>(pred_buf_cond_origin);
+  auto extra_buf_out = dynamic_cast<rvsdg::NodeOutput *>(pred_buf_cond_origin);
   if (!extra_buf_out
       || !dynamic_cast<const BufferOperation *>(&extra_buf_out->node()->GetOperation()))
   {
