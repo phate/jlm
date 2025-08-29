@@ -240,7 +240,7 @@ Output::ConstIterator::ComputeNext() const
   return ComputeNextOutput(Output_);
 }
 
-node_input::node_input(
+NodeInput::NodeInput(
     jlm::rvsdg::Output * origin,
     Node * node,
     std::shared_ptr<const rvsdg::Type> type)
@@ -290,8 +290,8 @@ Node::graph() const noexcept
   return region_->graph();
 }
 
-node_input *
-Node::add_input(std::unique_ptr<node_input> input)
+NodeInput *
+Node::add_input(std::unique_ptr<NodeInput> input)
 {
   auto producer = rvsdg::TryGetOwnerNode<Node>(*input->origin());
 

@@ -501,12 +501,10 @@ is(const jlm::rvsdg::Output * output) noexcept
   return dynamic_cast<const T *>(output) != nullptr;
 }
 
-/* node_input class */
-
-class node_input : public jlm::rvsdg::Input
+class NodeInput : public Input
 {
 public:
-  node_input(jlm::rvsdg::Output * origin, Node * node, std::shared_ptr<const rvsdg::Type> type);
+  NodeInput(Output * origin, Node * node, std::shared_ptr<const rvsdg::Type> type);
 
   Node *
   node() const noexcept
@@ -574,7 +572,7 @@ public:
     return inputs_.size();
   }
 
-  node_input *
+  NodeInput *
   input(size_t index) const noexcept
   {
     JLM_ASSERT(index < ninputs());
@@ -646,8 +644,8 @@ public:
   DebugString() const = 0;
 
 protected:
-  node_input *
-  add_input(std::unique_ptr<node_input> input);
+  NodeInput *
+  add_input(std::unique_ptr<NodeInput> input);
 
   /**
    * Removes an input from the node given the inputs' index.
@@ -799,7 +797,7 @@ private:
   Id Id_;
   size_t depth_;
   Region * region_;
-  std::vector<std::unique_ptr<node_input>> inputs_;
+  std::vector<std::unique_ptr<NodeInput>> inputs_;
   std::vector<std::unique_ptr<node_output>> outputs_;
 };
 
