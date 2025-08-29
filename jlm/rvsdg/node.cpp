@@ -430,7 +430,7 @@ producer(const jlm::rvsdg::Output * output) noexcept
 }
 
 Output &
-TraceOutputIntraProcedural(Output & output)
+TraceOutputIntraProcedurally(Output & output)
 {
   // Handle gamma node outputs
   if (const auto gammaNode = TryGetOwnerNode<GammaNode>(output))
@@ -438,7 +438,7 @@ TraceOutputIntraProcedural(Output & output)
     const auto exitVar = gammaNode->MapOutputExitVar(output);
     if (const auto origin = GetGammaInvariantOrigin(*gammaNode, exitVar))
     {
-      return TraceOutputIntraProcedural(*origin.value());
+      return TraceOutputIntraProcedurally(*origin.value());
     }
 
     return output;
@@ -450,12 +450,12 @@ TraceOutputIntraProcedural(Output & output)
     const auto roleVar = gammaNode->MapBranchArgument(output);
     if (const auto entryVar = std::get_if<GammaNode::EntryVar>(&roleVar))
     {
-      return TraceOutputIntraProcedural(*entryVar->input->origin());
+      return TraceOutputIntraProcedurally(*entryVar->input->origin());
     }
 
     if (const auto matchVar = std::get_if<GammaNode::MatchVar>(&roleVar))
     {
-      return TraceOutputIntraProcedural(*matchVar->input->origin());
+      return TraceOutputIntraProcedurally(*matchVar->input->origin());
     }
 
     return output;
@@ -467,7 +467,7 @@ TraceOutputIntraProcedural(Output & output)
     const auto loopVar = thetaNode->MapOutputLoopVar(output);
     if (ThetaLoopVarIsInvariant(loopVar))
     {
-      return TraceOutputIntraProcedural(*loopVar.input->origin());
+      return TraceOutputIntraProcedurally(*loopVar.input->origin());
     }
 
     return output;
@@ -479,7 +479,7 @@ TraceOutputIntraProcedural(Output & output)
     const auto loopVar = thetaNode->MapPreLoopVar(output);
     if (ThetaLoopVarIsInvariant(loopVar))
     {
-      return TraceOutputIntraProcedural(*loopVar.input->origin());
+      return TraceOutputIntraProcedurally(*loopVar.input->origin());
     }
 
     return output;

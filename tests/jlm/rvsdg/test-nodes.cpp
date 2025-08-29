@@ -9,6 +9,7 @@
 
 #include <jlm/rvsdg/gamma.hpp>
 #include <jlm/rvsdg/substitution.hpp>
+#include <jlm/rvsdg/theta.hpp>
 #include <jlm/rvsdg/view.hpp>
 #include <jlm/util/HashSet.hpp>
 
@@ -369,7 +370,6 @@ TraceOutputIntraProcedural_Gamma()
   const auto valueType = jlm::tests::ValueType::Create();
 
   Graph rvsdg;
-
   auto & i0 = GraphImport::Create(rvsdg, controlType, "i0");
   auto & i1 = GraphImport::Create(rvsdg, valueType, "i1");
   auto & i2 = GraphImport::Create(rvsdg, valueType, "i2");
@@ -393,10 +393,10 @@ TraceOutputIntraProcedural_Gamma()
   view(&rvsdg.GetRootRegion(), stdout);
 
   // Act
-  const auto & tracedX0 = TraceOutputIntraProcedural(*x0.origin());
-  const auto & tracedX1 = TraceOutputIntraProcedural(*x1.origin());
-  const auto & traceGammaEntry = TraceOutputIntraProcedural(*entryVar1.branchArgument[0]);
-  const auto & tracedNodeInput = TraceOutputIntraProcedural(*node->input(0)->origin());
+  const auto & tracedX0 = TraceOutputIntraProcedurally(*x0.origin());
+  const auto & tracedX1 = TraceOutputIntraProcedurally(*x1.origin());
+  const auto & traceGammaEntry = TraceOutputIntraProcedurally(*entryVar1.branchArgument[0]);
+  const auto & tracedNodeInput = TraceOutputIntraProcedurally(*node->input(0)->origin());
 
   // Assert
   assert(&tracedX0 == &i1);
@@ -408,3 +408,45 @@ TraceOutputIntraProcedural_Gamma()
 JLM_UNIT_TEST_REGISTER(
     "jlm/rvsdg/test-nodes-TraceOutputIntraProcedural_Gamma",
     TraceOutputIntraProcedural_Gamma)
+
+static void
+TraceOutputIntraProcedural_Theta()
+{
+  using namespace jlm::rvsdg;
+  using namespace jlm::tests;
+
+  // Assert
+  const auto valueType = jlm::tests::ValueType::Create();
+
+  Graph rvsdg;
+  auto & i0 = GraphImport::Create(rvsdg, valueType, "i1");
+  auto & i1 = GraphImport::Create(rvsdg, valueType, "i2");
+
+  const auto thetaNode = ThetaNode::create(&rvsdg.GetRootRegion());
+  auto loopVar0 = thetaNode->AddLoopVar(&i0);
+  auto loopVar1 = thetaNode->AddLoopVar(&i1);
+
+  auto node = TestOperation::create(thetaNode->subregion(), { loopVar1.pre }, { valueType });
+  loopVar1.post->divert_to(node->output(0));
+
+  auto & x0 = GraphExport::Create(*loopVar0.output, "x0");
+  auto & x1 = GraphExport::Create(*loopVar1.output, "x1");
+
+  view(&rvsdg.GetRootRegion(), stdout);
+
+  // Act
+  const auto & tracedX0 = TraceOutputIntraProcedurally(*x0.origin());
+  const auto & tracedX1 = TraceOutputIntraProcedurally(*x1.origin());
+  const auto & traceGammaEntry = TraceOutputIntraProcedurally(*loopVar0.pre);
+  const auto & tracedNodeInput = TraceOutputIntraProcedurally(*node->input(0)->origin());
+
+  // Assert
+  assert(&tracedX0 == &i0);
+  assert(&tracedX1 == x1.origin());
+  assert(&traceGammaEntry == &i0);
+  assert(&tracedNodeInput == loopVar1.pre);
+}
+
+JLM_UNIT_TEST_REGISTER(
+    "jlm/rvsdg/test-nodes-TraceOutputIntraProcedural_Theta",
+    TraceOutputIntraProcedural_Theta)
