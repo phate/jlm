@@ -103,7 +103,7 @@ find_loop_output(jlm::rvsdg::StructuralInput * sti)
   for (size_t i = 1; i < 3; ++i)
   {
     auto arg = muxNode->input(i)->origin();
-    if (auto ba = dynamic_cast<jlm::hls::backedge_argument *>(arg))
+    if (auto ba = dynamic_cast<jlm::hls::BackEdgeArgument *>(arg))
     {
       auto res = ba->result();
       JLM_ASSERT(res);

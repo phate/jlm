@@ -322,7 +322,7 @@ DotHLS::prepare_loop_out_port(LoopNode * ln)
   for (size_t i = 0; i < sr->narguments(); ++i)
   {
     auto arg = sr->argument(i);
-    auto ba = dynamic_cast<backedge_argument *>(arg);
+    auto ba = dynamic_cast<BackEdgeArgument *>(arg);
     if (!ba)
     {
       JLM_ASSERT(arg->input() != nullptr);

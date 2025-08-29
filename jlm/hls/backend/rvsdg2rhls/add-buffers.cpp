@@ -503,7 +503,7 @@ CreateLoopFrontier(
   }
   for (auto arg : loop->subregion()->Arguments())
   {
-    auto backedge = dynamic_cast<backedge_argument *>(arg);
+    auto backedge = dynamic_cast<BackEdgeArgument *>(arg);
     if (!backedge)
     {
       continue;

@@ -2528,7 +2528,7 @@ RhlsToFirrtlConverter::TraceArgument(rvsdg::RegionArgument * arg)
   auto node = region->node();
   if (dynamic_cast<LoopNode *>(node))
   {
-    if (auto ba = dynamic_cast<backedge_argument *>(arg))
+    if (auto ba = dynamic_cast<BackEdgeArgument *>(arg))
     {
       return ba->result()->origin();
     }
@@ -2571,7 +2571,7 @@ RhlsToFirrtlConverter::MlirGen(rvsdg::Region * subRegion, mlir::Block * circuitB
   // Argument ports
   for (size_t i = 0; i < subRegion->narguments(); ++i)
   {
-    if (!dynamic_cast<backedge_argument *>(subRegion->argument(i)))
+    if (!dynamic_cast<BackEdgeArgument *>(subRegion->argument(i)))
     {
       AddBundlePort(
           &ports,
@@ -2612,7 +2612,7 @@ RhlsToFirrtlConverter::MlirGen(rvsdg::Region * subRegion, mlir::Block * circuitB
   // Arguments
   for (size_t i = 0; i < subRegion->narguments(); ++i)
   {
-    if (dynamic_cast<backedge_argument *>(subRegion->argument(i)))
+    if (dynamic_cast<BackEdgeArgument *>(subRegion->argument(i)))
     {
       auto bundleType = GetBundleType(GetFirrtlType(subRegion->argument(i)->Type().get()));
       auto op = Builder_->create<circt::firrtl::WireOp>(

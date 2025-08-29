@@ -90,11 +90,11 @@ EntryArgument::Copy(rvsdg::Region & region, rvsdg::StructuralInput * input)
   return EntryArgument::Create(region, *input, Type());
 }
 
-backedge_argument &
-backedge_argument::Copy(rvsdg::Region & region, rvsdg::StructuralInput * input)
+BackEdgeArgument &
+BackEdgeArgument::Copy(rvsdg::Region & region, rvsdg::StructuralInput * input)
 {
   JLM_ASSERT(input == nullptr);
-  return *backedge_argument::create(&region, Type());
+  return *create(&region, Type());
 }
 
 backedge_result &
@@ -181,7 +181,7 @@ LoopNode::copy(rvsdg::Region * region, rvsdg::SubstitutionMap & smap) const
   for (size_t i = 0; i < subregion()->narguments(); ++i)
   {
     auto arg = subregion()->argument(i);
-    if (auto ba = dynamic_cast<backedge_argument *>(arg))
+    if (auto ba = dynamic_cast<BackEdgeArgument *>(arg))
     {
       auto na = loop->add_backedge(arg->Type());
       smap.insert(ba, na);
@@ -194,9 +194,9 @@ LoopNode::copy(rvsdg::Region * region, rvsdg::SubstitutionMap & smap) const
   for (size_t i = 0; i < subregion()->narguments(); ++i)
   {
     auto arg = subregion()->argument(i);
-    if (auto ba = dynamic_cast<backedge_argument *>(arg))
+    if (auto ba = dynamic_cast<BackEdgeArgument *>(arg))
     {
-      auto na = dynamic_cast<backedge_argument *>(smap.lookup(ba));
+      auto na = dynamic_cast<BackEdgeArgument *>(smap.lookup(ba));
       na->result()->divert_to(smap.lookup(ba->result()->origin()));
     }
   }
@@ -211,10 +211,10 @@ LoopNode::copy(rvsdg::Region * region, rvsdg::SubstitutionMap & smap) const
   return loop;
 }
 
-backedge_argument *
+BackEdgeArgument *
 LoopNode::add_backedge(std::shared_ptr<const jlm::rvsdg::Type> type)
 {
-  auto argument_loop = backedge_argument::create(subregion(), std::move(type));
+  auto argument_loop = BackEdgeArgument::create(subregion(), std::move(type));
   auto result_loop = backedge_result::create(argument_loop);
   argument_loop->result_ = result_loop;
   result_loop->argument_ = argument_loop;
