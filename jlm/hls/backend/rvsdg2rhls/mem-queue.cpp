@@ -3,6 +3,7 @@
  * See COPYING for terms of redistribution.
  */
 
+#include "../../../rvsdg/node.hpp"
 #include <jlm/hls/backend/rvsdg2rhls/decouple-mem-state.hpp>
 #include <jlm/hls/backend/rvsdg2rhls/hls-function-util.hpp>
 #include <jlm/hls/backend/rvsdg2rhls/mem-conv.hpp>
@@ -247,9 +248,7 @@ separate_load_edge(
         else
         {
           // end of loop
-          auto [branchNode, branchOperation] =
-              jlm::rvsdg::TryGetSimpleNodeAndOptionalOp<jlm::hls::BranchOperation>(addr_edge_user);
-          JLM_ASSERT(branchNode && branchOperation);
+          JLM_ASSERT(jlm::rvsdg::IsOwnerNodeOperation<jlm::hls::BranchOperation>(addr_edge_user));
           return nullptr;
         }
       }

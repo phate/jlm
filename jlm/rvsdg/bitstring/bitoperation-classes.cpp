@@ -16,8 +16,7 @@ unop_reduction_path_t
 BitUnaryOperation::can_reduce_operand(const jlm::rvsdg::Output * arg) const noexcept
 {
   auto & tracedOperand = TraceOutputIntraProcedurally(*arg);
-  auto [_, constantOperation] = rvsdg::TryGetSimpleNodeAndOptionalOp<bitconstant_op>(tracedOperand);
-  if (constantOperation)
+  if (rvsdg::IsOwnerNodeOperation<bitconstant_op>(tracedOperand))
     return unop_reduction_constant;
 
   return unop_reduction_none;
@@ -45,13 +44,10 @@ BitBinaryOperation::can_reduce_operand_pair(
     const jlm::rvsdg::Output * arg2) const noexcept
 {
   auto & tracedOperand1 = TraceOutputIntraProcedurally(*arg1);
-  auto [constantNode1, constantOperation1] =
-      rvsdg::TryGetSimpleNodeAndOptionalOp<bitconstant_op>(tracedOperand1);
   auto & tracedOperand2 = TraceOutputIntraProcedurally(*arg2);
-  auto [constantNode2, constantOperation2] =
-      rvsdg::TryGetSimpleNodeAndOptionalOp<bitconstant_op>(tracedOperand2);
 
-  if (constantOperation1 && constantOperation2)
+  if (rvsdg::IsOwnerNodeOperation<bitconstant_op>(tracedOperand1)
+      && rvsdg::IsOwnerNodeOperation<bitconstant_op>(tracedOperand2))
     return binop_reduction_constants;
 
   return binop_reduction_none;
