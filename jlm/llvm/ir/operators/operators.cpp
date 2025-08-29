@@ -393,7 +393,10 @@ ZExtOperation::copy() const
 rvsdg::unop_reduction_path_t
 ZExtOperation::can_reduce_operand(const rvsdg::Output * operand) const noexcept
 {
-  if (rvsdg::is<rvsdg::bitconstant_op>(producer(operand)))
+  auto & tracedOperand = rvsdg::TraceOutputIntraProcedurally(*operand);
+  auto [_, constantOperation] =
+      rvsdg::TryGetSimpleNodeAndOptionalOp<rvsdg::bitconstant_op>(tracedOperand);
+  if (constantOperation)
     return rvsdg::unop_reduction_constant;
 
   return rvsdg::unop_reduction_none;
@@ -404,11 +407,13 @@ ZExtOperation::reduce_operand(rvsdg::unop_reduction_path_t path, rvsdg::Output *
 {
   if (path == rvsdg::unop_reduction_constant)
   {
-    auto c = util::AssertedCast<const rvsdg::bitconstant_op>(
-        &util::AssertedCast<rvsdg::SimpleNode>(producer(operand))->GetOperation());
+    auto & tracedOperand = rvsdg::TraceOutputIntraProcedurally(*operand);
+    auto [_, constantOperation] =
+        rvsdg::TryGetSimpleNodeAndOptionalOp<rvsdg::bitconstant_op>(tracedOperand);
+    JLM_ASSERT(constantOperation);
     return create_bitconstant(
         rvsdg::TryGetOwnerNode<rvsdg::Node>(*operand)->region(),
-        c->value().zext(ndstbits() - nsrcbits()));
+        constantOperation->value().zext(ndstbits() - nsrcbits()));
   }
 
   return nullptr;
