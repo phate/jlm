@@ -274,7 +274,7 @@ merge_gamma(rvsdg::Region * region)
 bool
 is_output_of(jlm::rvsdg::Output * output, rvsdg::Node * node)
 {
-  auto no = dynamic_cast<jlm::rvsdg::node_output *>(output);
+  auto no = dynamic_cast<rvsdg::NodeOutput *>(output);
   return no && no->node() == node;
 }
 
@@ -286,7 +286,7 @@ depends_on(jlm::rvsdg::Output * output, rvsdg::Node * node)
   {
     return false;
   }
-  auto no = dynamic_cast<jlm::rvsdg::node_output *>(output);
+  auto no = dynamic_cast<rvsdg::NodeOutput *>(output);
   JLM_ASSERT(no);
   if (no->node() == node)
   {

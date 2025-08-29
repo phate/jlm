@@ -30,7 +30,7 @@ public:
   NodeInput *
   input(size_t index) const noexcept;
 
-  node_output *
+  NodeOutput *
   output(size_t index) const noexcept;
 
   [[nodiscard]] const SimpleOperation &
@@ -84,10 +84,10 @@ SimpleNode::input(size_t index) const noexcept
   return Node::input(index);
 }
 
-inline node_output *
+inline NodeOutput *
 SimpleNode::output(size_t index) const noexcept
 {
-  return static_cast<node_output *>(Node::output(index));
+  return Node::output(index);
 }
 
 /**

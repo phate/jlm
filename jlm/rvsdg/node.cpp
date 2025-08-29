@@ -245,9 +245,7 @@ NodeInput::NodeInput(
     : jlm::rvsdg::Input(*node, *origin, std::move(type))
 {}
 
-/* node_output class */
-
-node_output::node_output(Node * node, std::shared_ptr<const rvsdg::Type> type)
+NodeOutput::NodeOutput(Node * node, std::shared_ptr<const rvsdg::Type> type)
     : Output(*node, std::move(type)),
       node_(node)
 {}

@@ -220,7 +220,7 @@ ReplaceDecouple(
     OptimizeResMemState(sg_resp[1]);
   }
 
-  auto nn = dynamic_cast<rvsdg::node_output *>(dload_out[0])->node();
+  auto nn = dynamic_cast<rvsdg::NodeOutput *>(dload_out[0])->node();
   return dynamic_cast<rvsdg::SimpleNode *>(nn);
 }
 
@@ -745,13 +745,13 @@ ReplaceLoad(
   {
     size_t load_capacity = 10;
     auto outputs = DecoupledLoadOperation::create(*loadAddress, *response, load_capacity);
-    newLoad = dynamic_cast<rvsdg::node_output *>(outputs[0])->node();
+    newLoad = dynamic_cast<rvsdg::NodeOutput *>(outputs[0])->node();
   }
   else
   {
     // TODO: switch this to a decoupled load?
     auto outputs = LoadOperation::create(*loadAddress, states, *response);
-    newLoad = dynamic_cast<rvsdg::node_output *>(outputs[0])->node();
+    newLoad = dynamic_cast<rvsdg::NodeOutput *>(outputs[0])->node();
   }
 
   for (size_t i = 0; i < replacedLoad->noutputs(); ++i)
@@ -784,7 +784,7 @@ ReplaceStore(
     states.push_back(replacedStore->input(i)->origin());
   }
   auto storeOuts = StoreOperation::create(*addr, *data, states, *response);
-  auto newStore = dynamic_cast<rvsdg::node_output *>(storeOuts[0])->node();
+  auto newStore = dynamic_cast<rvsdg::NodeOutput *>(storeOuts[0])->node();
   // iterate over output states
   for (size_t i = 0; i < replacedStore->noutputs(); ++i)
   {

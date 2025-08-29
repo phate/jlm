@@ -519,12 +519,10 @@ public:
   }
 };
 
-/* node_output class */
-
-class node_output : public jlm::rvsdg::Output
+class NodeOutput : public Output
 {
 public:
-  node_output(Node * node, std::shared_ptr<const rvsdg::Type> type);
+  NodeOutput(Node * node, std::shared_ptr<const rvsdg::Type> type);
 
   [[nodiscard]] Node *
   node() const noexcept
@@ -597,7 +595,7 @@ public:
     return outputs_.size();
   }
 
-  node_output *
+  NodeOutput *
   output(size_t index) const noexcept
   {
     JLM_ASSERT(index < noutputs());
@@ -688,8 +686,8 @@ public:
   }
 
 protected:
-  node_output *
-  add_output(std::unique_ptr<node_output> output)
+  NodeOutput *
+  add_output(std::unique_ptr<NodeOutput> output)
   {
     output->index_ = noutputs();
     outputs_.push_back(std::move(output));
@@ -798,7 +796,7 @@ private:
   size_t depth_;
   Region * region_;
   std::vector<std::unique_ptr<NodeInput>> inputs_;
-  std::vector<std::unique_ptr<node_output>> outputs_;
+  std::vector<std::unique_ptr<NodeOutput>> outputs_;
 };
 
 /**

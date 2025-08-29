@@ -360,7 +360,7 @@ split_hls_function(llvm::RvsdgModule & rm, const std::string & function_name)
       rvsdg::SubstitutionMap smap;
       for (size_t i = 0; i < ln->ninputs(); ++i)
       {
-        auto orig_node_output = dynamic_cast<jlm::rvsdg::node_output *>(ln->input(i)->origin());
+        auto orig_node_output = dynamic_cast<rvsdg::NodeOutput *>(ln->input(i)->origin());
         if (!orig_node_output)
         {
           // handle decouple stuff

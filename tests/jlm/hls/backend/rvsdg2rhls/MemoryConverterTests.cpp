@@ -123,22 +123,22 @@ TestLoad()
 
   // Load Address
   auto loadNode =
-      jlm::util::AssertedCast<jlm::rvsdg::node_output>(lambdaRegion->result(0)->origin())->node();
+      jlm::util::AssertedCast<jlm::rvsdg::NodeOutput>(lambdaRegion->result(0)->origin())->node();
   assert(is<jlm::hls::LoadOperation>(loadNode));
 
   // Load Data
   loadNode =
-      jlm::util::AssertedCast<jlm::rvsdg::node_output>(lambdaRegion->result(1)->origin())->node();
+      jlm::util::AssertedCast<jlm::rvsdg::NodeOutput>(lambdaRegion->result(1)->origin())->node();
   assert(is<jlm::hls::LoadOperation>(loadNode));
 
   // Request Node
   auto requestNode =
-      jlm::util::AssertedCast<jlm::rvsdg::node_output>(lambdaRegion->result(2)->origin())->node();
+      jlm::util::AssertedCast<jlm::rvsdg::NodeOutput>(lambdaRegion->result(2)->origin())->node();
   assert(is<MemoryRequestOperation>(requestNode));
 
   // Response Node
   auto responseNode =
-      jlm::util::AssertedCast<jlm::rvsdg::node_output>(loadNode->input(2)->origin())->node();
+      jlm::util::AssertedCast<jlm::rvsdg::NodeOutput>(loadNode->input(2)->origin())->node();
   assert(is<MemoryResponseOperation>(responseNode));
 
   // Response source
@@ -196,17 +196,17 @@ TestStore()
 
   assert(is<MemoryStateType>(lambdaRegion->result(0)->origin()->Type()));
   auto bufferNode =
-      jlm::util::AssertedCast<jlm::rvsdg::node_output>(lambdaRegion->result(0)->origin())->node();
+      jlm::util::AssertedCast<jlm::rvsdg::NodeOutput>(lambdaRegion->result(0)->origin())->node();
   auto storeNode =
-      jlm::util::AssertedCast<jlm::rvsdg::node_output>(bufferNode->input(0)->origin())->node();
+      jlm::util::AssertedCast<jlm::rvsdg::NodeOutput>(bufferNode->input(0)->origin())->node();
   assert(is<jlm::hls::StoreOperation>(storeNode));
   auto requestNode =
-      jlm::util::AssertedCast<jlm::rvsdg::node_output>(lambdaRegion->result(1)->origin())->node();
+      jlm::util::AssertedCast<jlm::rvsdg::NodeOutput>(lambdaRegion->result(1)->origin())->node();
   assert(is<MemoryRequestOperation>(requestNode));
 
   // Request source
   auto requestSource = requestNode->input(0)->origin();
-  storeNode = jlm::util::AssertedCast<jlm::rvsdg::node_output>(requestSource)->node();
+  storeNode = jlm::util::AssertedCast<jlm::rvsdg::NodeOutput>(requestSource)->node();
   assert(is<jlm::hls::StoreOperation>(storeNode));
 }
 JLM_UNIT_TEST_REGISTER("jlm/hls/backend/rvsdg2rhls/MemoryConverterTests-Store", TestStore)
@@ -265,21 +265,21 @@ TestLoadStore()
   std::cout << lambdaRegion->result(0)->origin()->Type()->debug_string() << std::endl;
   assert(is<MemoryStateType>(lambdaRegion->result(0)->origin()->Type()));
   auto bufferNode =
-      jlm::util::AssertedCast<jlm::rvsdg::node_output>(lambdaRegion->result(0)->origin())->node();
+      jlm::util::AssertedCast<jlm::rvsdg::NodeOutput>(lambdaRegion->result(0)->origin())->node();
   auto storeNode =
-      jlm::util::AssertedCast<jlm::rvsdg::node_output>(bufferNode->input(0)->origin())->node();
+      jlm::util::AssertedCast<jlm::rvsdg::NodeOutput>(bufferNode->input(0)->origin())->node();
   assert(is<jlm::hls::StoreOperation>(storeNode));
   auto firstRequestNode =
-      jlm::util::AssertedCast<jlm::rvsdg::node_output>(lambdaRegion->result(1)->origin())->node();
+      jlm::util::AssertedCast<jlm::rvsdg::NodeOutput>(lambdaRegion->result(1)->origin())->node();
   assert(is<MemoryRequestOperation>(firstRequestNode));
   auto secondRequestNode =
-      jlm::util::AssertedCast<jlm::rvsdg::node_output>(lambdaRegion->result(2)->origin())->node();
+      jlm::util::AssertedCast<jlm::rvsdg::NodeOutput>(lambdaRegion->result(2)->origin())->node();
   assert(is<MemoryRequestOperation>(secondRequestNode));
   auto loadNode =
-      jlm::util::AssertedCast<jlm::rvsdg::node_output>(storeNode->input(0)->origin())->node();
+      jlm::util::AssertedCast<jlm::rvsdg::NodeOutput>(storeNode->input(0)->origin())->node();
   assert(is<jlm::hls::LoadOperation>(loadNode));
   auto responseNode =
-      jlm::util::AssertedCast<jlm::rvsdg::node_output>(loadNode->input(2)->origin())->node();
+      jlm::util::AssertedCast<jlm::rvsdg::NodeOutput>(loadNode->input(2)->origin())->node();
   assert(is<MemoryResponseOperation>(responseNode));
 }
 JLM_UNIT_TEST_REGISTER("jlm/hls/backend/rvsdg2rhls/MemoryConverterTests-LoadStore", TestLoadStore)
@@ -345,7 +345,7 @@ TestThetaLoad()
       jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(entryMemoryStateSplitInput);
   assert(is<LambdaEntryMemoryStateSplitOperation>(entryMemoryStateSplitNode));
   auto exitMemoryStateMergeNode =
-      jlm::util::AssertedCast<jlm::rvsdg::node_output>(lambdaRegion->result(1)->origin())->node();
+      jlm::util::AssertedCast<jlm::rvsdg::NodeOutput>(lambdaRegion->result(1)->origin())->node();
   assert(is<LambdaExitMemoryStateMergeOperation>(exitMemoryStateMergeNode));
 
   // Act
@@ -379,7 +379,7 @@ TestThetaLoad()
 
   // Request Node
   auto requestNode =
-      jlm::util::AssertedCast<jlm::rvsdg::node_output>(lambdaRegion->result(2)->origin())->node();
+      jlm::util::AssertedCast<jlm::rvsdg::NodeOutput>(lambdaRegion->result(2)->origin())->node();
   assert(is<MemoryRequestOperation>(requestNode));
 
   // HLS_LOOP Node
@@ -392,7 +392,7 @@ TestThetaLoad()
   assert(thetaResult.size() == 1);
   // Load Node
   auto loadNode =
-      jlm::util::AssertedCast<const jlm::rvsdg::node_output>(thetaResult.first()->origin())->node();
+      jlm::util::AssertedCast<const jlm::rvsdg::NodeOutput>(thetaResult.first()->origin())->node();
   assert(is<DecoupledLoadOperation>(loadNode));
   // Loop Argument
   auto thetaArgument =
@@ -401,7 +401,7 @@ TestThetaLoad()
 
   // Response Node
   auto responseNode =
-      jlm::util::AssertedCast<const jlm::rvsdg::node_output>(thetaInput->origin())->node();
+      jlm::util::AssertedCast<const jlm::rvsdg::NodeOutput>(thetaInput->origin())->node();
   assert(is<MemoryResponseOperation>(responseNode));
 
   // Lambda argument
@@ -471,7 +471,7 @@ TestThetaStore()
       jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(entryMemoryStateSplitInput);
   assert(is<LambdaEntryMemoryStateSplitOperation>(entryMemoryStateSplitNode));
   auto exitMemoryStateMergeNode =
-      jlm::util::AssertedCast<jlm::rvsdg::node_output>(lambdaRegion->result(0)->origin())->node();
+      jlm::util::AssertedCast<jlm::rvsdg::NodeOutput>(lambdaRegion->result(0)->origin())->node();
   assert(is<LambdaExitMemoryStateMergeOperation>(exitMemoryStateMergeNode));
 
   // Act
@@ -503,7 +503,7 @@ TestThetaStore()
 
   // Request Node
   auto requestNode =
-      jlm::util::AssertedCast<jlm::rvsdg::node_output>(lambdaRegion->result(1)->origin())->node();
+      jlm::util::AssertedCast<jlm::rvsdg::NodeOutput>(lambdaRegion->result(1)->origin())->node();
   assert(is<MemoryRequestOperation>(requestNode));
 
   // HLS_LOOP Node
@@ -516,11 +516,11 @@ TestThetaStore()
   assert(thetaResult.size() == 1);
   // Load Node
   auto storeNode =
-      jlm::util::AssertedCast<const jlm::rvsdg::node_output>(thetaResult.first()->origin())->node();
+      jlm::util::AssertedCast<const jlm::rvsdg::NodeOutput>(thetaResult.first()->origin())->node();
   assert(is<jlm::hls::StoreOperation>(storeNode));
   // NDMux Node
   auto ndMuxNode =
-      jlm::util::AssertedCast<const jlm::rvsdg::node_output>(storeNode->input(2)->origin())->node();
+      jlm::util::AssertedCast<const jlm::rvsdg::NodeOutput>(storeNode->input(2)->origin())->node();
   assert(is<MuxOperation>(ndMuxNode));
   // Loop Argument
   assert(is<jlm::rvsdg::RegionArgument>(ndMuxNode->input(2)->origin()));
