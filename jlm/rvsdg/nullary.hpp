@@ -50,26 +50,26 @@ struct default_type_of_value
  *   the Type instances corresponding to this value (in case the type
  *   class is polymorphic) */
 template<typename Type, typename ValueRepr, typename FormatValue, typename TypeOfValue>
-class domain_const_op final : public NullaryOperation
+class DomainConstOperation final : public NullaryOperation
 {
 public:
   typedef ValueRepr value_repr;
 
-  ~domain_const_op() noexcept override = default;
+  ~DomainConstOperation() noexcept override = default;
 
-  explicit domain_const_op(const value_repr & value)
+  explicit DomainConstOperation(const value_repr & value)
       : NullaryOperation(TypeOfValue()(value)),
         value_(value)
   {}
 
-  inline domain_const_op(const domain_const_op & other) = default;
+  DomainConstOperation(const DomainConstOperation & other) = default;
 
-  inline domain_const_op(domain_const_op && other) = default;
+  DomainConstOperation(DomainConstOperation && other) = default;
 
   bool
   operator==(const Operation & other) const noexcept override
   {
-    auto op = dynamic_cast<const domain_const_op *>(&other);
+    auto op = dynamic_cast<const DomainConstOperation *>(&other);
     return op && op->value_ == value_;
   }
 
@@ -88,13 +88,13 @@ public:
   [[nodiscard]] std::unique_ptr<Operation>
   copy() const override
   {
-    return std::make_unique<domain_const_op>(*this);
+    return std::make_unique<DomainConstOperation>(*this);
   }
 
   static inline jlm::rvsdg::Output *
   create(rvsdg::Region * region, const value_repr & vr)
   {
-    return CreateOpNode<domain_const_op>(*region, vr).output(0);
+    return CreateOpNode<DomainConstOperation>(*region, vr).output(0);
   }
 
 private:

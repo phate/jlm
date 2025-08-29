@@ -35,7 +35,7 @@ SimpleNode::SimpleNode(
   for (size_t n = 0; n < SimpleNode::GetOperation().narguments(); n++)
   {
     add_input(
-        std::make_unique<node_input>(operands[n], this, SimpleNode::GetOperation().argument(n)));
+        std::make_unique<NodeInput>(operands[n], this, SimpleNode::GetOperation().argument(n)));
   }
 
   for (size_t n = 0; n < SimpleNode::GetOperation().nresults(); n++)
