@@ -4,9 +4,9 @@
  * See COPYING for terms of redistribution.
  */
 
+#include <jlm/rvsdg/delta.hpp>
 #include <jlm/rvsdg/gamma.hpp>
 #include <jlm/rvsdg/lambda.hpp>
-#include <jlm/rvsdg/delta.hpp>
 #include <jlm/rvsdg/MatchType.hpp>
 #include <jlm/rvsdg/notifiers.hpp>
 #include <jlm/rvsdg/Phi.hpp>
