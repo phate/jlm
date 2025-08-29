@@ -21,7 +21,7 @@ remove_unused_loop_backedges(LoopNode * ln)
   for (int i = sr->narguments() - 1; i >= 0; --i)
   {
     auto arg = sr->argument(i);
-    if ((dynamic_cast<backedge_argument *>(arg) && arg->nusers() == 1) || arg->IsDead())
+    if ((dynamic_cast<BackEdgeArgument *>(arg) && arg->nusers() == 1) || arg->IsDead())
     {
       auto & user = *arg->Users().begin();
       if (auto result = dynamic_cast<backedge_result *>(&user))
@@ -109,7 +109,7 @@ remove_unused_loop_inputs(LoopNode * ln)
   for (int i = sr->narguments() - 1; i >= 0; --i)
   {
     auto arg = sr->argument(i);
-    if (auto ba = dynamic_cast<backedge_argument *>(arg))
+    if (auto ba = dynamic_cast<BackEdgeArgument *>(arg))
     {
       auto result = ba->result();
       JLM_ASSERT(*result->Type() == *arg->Type());
@@ -199,7 +199,7 @@ dead_loop(rvsdg::Node * ndmux_node)
   const auto mux_op = util::AssertedCast<const MuxOperation>(&ndmux_node->GetOperation());
   JLM_ASSERT(!mux_op->discarding);
   // origin is a backedege argument
-  auto backedge_arg = dynamic_cast<backedge_argument *>(ndmux_node->input(2)->origin());
+  auto backedge_arg = dynamic_cast<BackEdgeArgument *>(ndmux_node->input(2)->origin());
   if (!backedge_arg)
   {
     return false;
@@ -251,7 +251,7 @@ dead_loop(rvsdg::Node * ndmux_node)
   }
   auto extra_buf_cond_origin = extra_buf_out_node->input(0)->origin();
 
-  if (auto pred_be = dynamic_cast<backedge_argument *>(extra_buf_cond_origin))
+  if (auto pred_be = dynamic_cast<BackEdgeArgument *>(extra_buf_cond_origin))
   {
     extra_buf_cond_origin = pred_be->result()->origin();
   }
@@ -310,7 +310,7 @@ dead_loop_lcb(rvsdg::Node * lcb_node)
   }
   auto extra_buf_cond_origin = extra_buf_out->node()->input(0)->origin();
 
-  if (auto pred_be = dynamic_cast<backedge_argument *>(extra_buf_cond_origin))
+  if (auto pred_be = dynamic_cast<BackEdgeArgument *>(extra_buf_cond_origin))
   {
     extra_buf_cond_origin = pred_be->result()->origin();
   }
