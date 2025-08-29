@@ -8,6 +8,7 @@
 #include <jlm/llvm/ir/operators.hpp>
 #include <jlm/llvm/ir/operators/IntegerOperations.hpp>
 #include <jlm/llvm/ir/operators/IOBarrier.hpp>
+#include <jlm/llvm/ir/operators/SpecializedArithmeticIntrinsicOperations.hpp>
 
 #include <llvm/ADT/StringExtras.h>
 #include <llvm/IR/Constants.h>
@@ -818,6 +819,24 @@ convert_memcpy_call(const ::llvm::CallInst * instruction, tacsvector_t & tacs, C
   return nullptr;
 }
 
+static bool
+IsFMulAddIntrinsic(const ::llvm::Instruction & instruction)
+{
+  const auto intrinsic = ::llvm::dyn_cast<::llvm::IntrinsicInst>(&instruction);
+  return intrinsic && intrinsic->getIntrinsicID() == ::llvm::Intrinsic::fmuladd;
+}
+
+static const Variable *
+ConvertFMulAddIntrinsic(const ::llvm::CallInst & instruction, tacsvector_t & tacs, Context & ctx)
+{
+  const auto multiplier = ConvertValue(instruction.getArgOperand(0), tacs, ctx);
+  const auto multiplicand = ConvertValue(instruction.getArgOperand(1), tacs, ctx);
+  const auto summand = ConvertValue(instruction.getArgOperand(2), tacs, ctx);
+  tacs.push_back(FMulAddIntrinsicOperation::CreateTac(*multiplier, *multiplicand, *summand));
+
+  return tacs.back()->result(0);
+}
+
 static const Variable *
 convert_call_instruction(::llvm::Instruction * instruction, tacsvector_t & tacs, Context & ctx)
 {
@@ -868,6 +887,8 @@ convert_call_instruction(::llvm::Instruction * instruction, tacsvector_t & tacs,
     return convert_free_call(i, tacs, ctx);
   if (IsMemcpyCall(i))
     return convert_memcpy_call(i, tacs, ctx);
+  if (IsFMulAddIntrinsic(*instruction))
+    return ConvertFMulAddIntrinsic(*i, tacs, ctx);
 
   auto ftype = i->getFunctionType();
   auto convertedFType = ctx.GetTypeConverter().ConvertFunctionType(*ftype);

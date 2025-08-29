@@ -157,6 +157,7 @@ libllvm_TESTS += \
     tests/jlm/llvm/backend/RvsdgToIpGraphConverterTests \
     tests/jlm/llvm/frontend/llvm/LoadTests \
     tests/jlm/llvm/frontend/llvm/MemCpyTests \
+    tests/jlm/llvm/frontend/llvm/SpecializedArithmeticIntrinsicOperationTests \
     tests/jlm/llvm/frontend/llvm/StoreTests \
     tests/jlm/llvm/frontend/llvm/TestAttributeConversion \
     tests/jlm/llvm/frontend/llvm/test-endless-loop \
