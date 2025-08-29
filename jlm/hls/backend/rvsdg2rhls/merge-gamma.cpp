@@ -3,7 +3,6 @@
  * See COPYING for terms of redistribution.
  */
 
-#include "../../../util/common.hpp"
 #include <jlm/hls/backend/rvsdg2rhls/hls-function-util.hpp>
 #include <jlm/hls/backend/rvsdg2rhls/merge-gamma.hpp>
 #include <jlm/hls/ir/hls.hpp>
