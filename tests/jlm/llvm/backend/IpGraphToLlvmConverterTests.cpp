@@ -12,6 +12,7 @@
 #include <jlm/llvm/ir/ipgraph-module.hpp>
 #include <jlm/llvm/ir/operators.hpp>
 #include <jlm/llvm/ir/operators/IntegerOperations.hpp>
+#include <jlm/llvm/ir/operators/SpecializedArithmeticIntrinsicOperations.hpp>
 #include <jlm/llvm/ir/print.hpp>
 #include <llvm/IR/Attributes.h>
 #include <llvm/IR/Instructions.h>
@@ -400,6 +401,74 @@ StoreVolatileConversion()
 JLM_UNIT_TEST_REGISTER(
     "jlm/llvm/backend/IpGraphToLlvmConverterTests-StoreVolatileConversion",
     StoreVolatileConversion)
+
+static void
+FMulAddConversion()
+{
+  using namespace jlm::llvm;
+
+  // Arrange
+  const auto pointerType = PointerType::Create();
+  const auto ioStateType = IOStateType::Create();
+  const auto memoryStateType = MemoryStateType::Create();
+  auto doubleType = FloatingPointType::Create(fpsize::dbl);
+  const auto functionType = jlm::rvsdg::FunctionType::Create(
+      { doubleType, doubleType, doubleType, IOStateType::Create(), MemoryStateType::Create() },
+      { doubleType, IOStateType::Create(), MemoryStateType::Create() });
+
+  InterProceduralGraphModule ipgModule(jlm::util::FilePath(""), "", "");
+  {
+    auto cfg = ControlFlowGraph::create(ipgModule);
+    auto & multiplierArgument =
+        *cfg->entry()->append_argument(Argument::create("multiplier", doubleType));
+    auto & multiplicandArgument =
+        *cfg->entry()->append_argument(Argument::create("multiplicand", doubleType));
+    auto & summandArgument =
+        *cfg->entry()->append_argument(Argument::create("summand", doubleType));
+    const auto ioStateArgument =
+        cfg->entry()->append_argument(Argument::create("ioState", ioStateType));
+    const auto memoryStateArgument =
+        cfg->entry()->append_argument(Argument::create("memoryState", memoryStateType));
+
+    auto basicBlock = BasicBlock::create(*cfg);
+    auto fMulAddTac = basicBlock->append_last(FMulAddIntrinsicOperation::CreateTac(
+        multiplierArgument,
+        multiplicandArgument,
+        summandArgument));
+
+    cfg->exit()->divert_inedges(basicBlock);
+    basicBlock->add_outedge(cfg->exit());
+    cfg->exit()->append_result(fMulAddTac->result(0));
+    cfg->exit()->append_result(ioStateArgument);
+    cfg->exit()->append_result(memoryStateArgument);
+
+    auto f =
+        FunctionNode::create(ipgModule.ipgraph(), "f", functionType, linkage::external_linkage);
+    f->add_cfg(std::move(cfg));
+  }
+
+  print(ipgModule, stdout);
+
+  // Act
+  llvm::LLVMContext ctx;
+  const auto llvmModule = IpGraphToLlvmConverter::CreateAndConvertModule(ipgModule, ctx);
+  jlm::tests::print(*llvmModule);
+
+  // Assert
+  {
+    const auto llvmFunction = llvmModule->getFunction("f");
+    auto & basicBlock = llvmFunction->back();
+    auto & instruction = basicBlock.front();
+
+    const auto fMulAddInstruction = ::llvm::dyn_cast<::llvm::CallInst>(&instruction);
+    assert(fMulAddInstruction != nullptr);
+    assert(fMulAddInstruction->getIntrinsicID() == ::llvm::Intrinsic::fmuladd);
+  }
+}
+
+JLM_UNIT_TEST_REGISTER(
+    "jlm/llvm/backend/IpGraphToLlvmConverterTests-FMulAddConversion",
+    FMulAddConversion)
 
 static void
 IntegerConstant()

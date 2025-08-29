@@ -240,7 +240,7 @@ Output::ConstIterator::ComputeNext() const
   return ComputeNextOutput(Output_);
 }
 
-node_input::node_input(
+NodeInput::NodeInput(
     jlm::rvsdg::Output * origin,
     Node * node,
     std::shared_ptr<const rvsdg::Type> type)
@@ -290,8 +290,8 @@ Node::graph() const noexcept
   return region_->graph();
 }
 
-node_input *
-Node::add_input(std::unique_ptr<node_input> input)
+NodeInput *
+Node::add_input(std::unique_ptr<NodeInput> input)
 {
   auto producer = rvsdg::TryGetOwnerNode<Node>(*input->origin());
 
@@ -402,6 +402,65 @@ Node::copy(rvsdg::Region * region, const std::vector<jlm::rvsdg::Output *> & ope
     smap.insert(input(n)->origin(), operands[n]);
 
   return copy(region, smap);
+}
+
+const Output &
+TraceOutputIntraProcedurally(const Output & output)
+{
+  // Handle gamma node outputs
+  if (const auto gammaNode = TryGetOwnerNode<GammaNode>(output))
+  {
+    const auto exitVar = gammaNode->MapOutputExitVar(output);
+    if (const auto origin = GetGammaInvariantOrigin(*gammaNode, exitVar))
+    {
+      return TraceOutputIntraProcedurally(*origin.value());
+    }
+
+    return output;
+  }
+
+  // Handle gamma node arguments
+  if (const auto gammaNode = TryGetRegionParentNode<GammaNode>(output))
+  {
+    const auto roleVar = gammaNode->MapBranchArgument(output);
+    if (const auto entryVar = std::get_if<GammaNode::EntryVar>(&roleVar))
+    {
+      return TraceOutputIntraProcedurally(*entryVar->input->origin());
+    }
+
+    if (const auto matchVar = std::get_if<GammaNode::MatchVar>(&roleVar))
+    {
+      return TraceOutputIntraProcedurally(*matchVar->input->origin());
+    }
+
+    return output;
+  }
+
+  // Handle theta node outputs
+  if (const auto thetaNode = TryGetOwnerNode<ThetaNode>(output))
+  {
+    const auto loopVar = thetaNode->MapOutputLoopVar(output);
+    if (ThetaLoopVarIsInvariant(loopVar))
+    {
+      return TraceOutputIntraProcedurally(*loopVar.input->origin());
+    }
+
+    return output;
+  }
+
+  // Handle theta node arguments
+  if (const auto thetaNode = TryGetRegionParentNode<ThetaNode>(output))
+  {
+    const auto loopVar = thetaNode->MapPreLoopVar(output);
+    if (ThetaLoopVarIsInvariant(loopVar))
+    {
+      return TraceOutputIntraProcedurally(*loopVar.input->origin());
+    }
+
+    return output;
+  }
+
+  return output;
 }
 
 const Output &

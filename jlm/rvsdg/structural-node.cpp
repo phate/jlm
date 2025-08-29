@@ -24,7 +24,7 @@ StructuralInput::StructuralInput(
     rvsdg::StructuralNode * node,
     jlm::rvsdg::Output * origin,
     std::shared_ptr<const rvsdg::Type> type)
-    : node_input(origin, node, std::move(type))
+    : NodeInput(origin, node, std::move(type))
 {
   on_input_create(this);
 }
@@ -82,7 +82,7 @@ StructuralNode::append_input(std::unique_ptr<StructuralInput> input)
   if (index != 0 || (index == 0 && ninputs() > 0 && this->input(0) == input.get()))
     return this->input(index);
 
-  auto sinput = std::unique_ptr<node_input>(input.release());
+  auto sinput = std::unique_ptr<NodeInput>(input.release());
   return static_cast<StructuralInput *>(add_input(std::move(sinput)));
 }
 

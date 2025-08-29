@@ -91,7 +91,7 @@ private:
 typedef jlm::util::IntrusiveList<RegionArgument, RegionArgument::structural_input_accessor>
     argument_list;
 
-class StructuralInput : public node_input
+class StructuralInput : public NodeInput
 {
   friend StructuralNode;
 
@@ -116,7 +116,7 @@ public:
   StructuralNode *
   node() const noexcept
   {
-    return static_cast<StructuralNode *>(node_input::node());
+    return static_cast<StructuralNode *>(NodeInput::node());
   }
 
   argument_list arguments;

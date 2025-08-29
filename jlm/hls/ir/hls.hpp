@@ -575,8 +575,8 @@ public:
   }
 };
 
-class backedge_argument;
-class backedge_result;
+class BackEdgeArgument;
+class BackEdgeResult;
 class LoopNode;
 
 /**
@@ -615,72 +615,72 @@ public:
   }
 };
 
-class backedge_argument : public rvsdg::RegionArgument
+class BackEdgeArgument final : public rvsdg::RegionArgument
 {
   friend LoopNode;
-  friend backedge_result;
+  friend BackEdgeResult;
 
 public:
-  ~backedge_argument() override = default;
+  ~BackEdgeArgument() noexcept override = default;
 
-  backedge_result *
+  BackEdgeResult *
   result()
   {
     return result_;
   }
 
-  backedge_argument &
+  BackEdgeArgument &
   Copy(rvsdg::Region & region, rvsdg::StructuralInput * input) override;
 
 private:
-  backedge_argument(rvsdg::Region * region, const std::shared_ptr<const jlm::rvsdg::Type> & type)
+  BackEdgeArgument(rvsdg::Region * region, const std::shared_ptr<const jlm::rvsdg::Type> & type)
       : rvsdg::RegionArgument(region, nullptr, type),
         result_(nullptr)
   {}
 
-  static backedge_argument *
+  static BackEdgeArgument *
   create(rvsdg::Region * region, std::shared_ptr<const jlm::rvsdg::Type> type)
   {
-    auto argument = new backedge_argument(region, std::move(type));
+    auto argument = new BackEdgeArgument(region, std::move(type));
     region->append_argument(argument);
     return argument;
   }
 
-  backedge_result * result_;
+  BackEdgeResult * result_;
 };
 
-class backedge_result : public rvsdg::RegionResult
+class BackEdgeResult : public rvsdg::RegionResult
 {
   friend LoopNode;
-  friend backedge_argument;
+  friend BackEdgeArgument;
 
 public:
-  ~backedge_result() override = default;
+  ~BackEdgeResult() override = default;
 
-  backedge_argument *
+  BackEdgeArgument *
   argument() const
   {
     return argument_;
   }
 
-  backedge_result &
+  BackEdgeResult &
   Copy(rvsdg::Output & origin, rvsdg::StructuralOutput * output) override;
 
 private:
-  backedge_result(jlm::rvsdg::Output * origin)
+  BackEdgeResult(rvsdg::Output * origin)
       : rvsdg::RegionResult(origin->region(), origin, nullptr, origin->Type()),
         argument_(nullptr)
   {}
 
-  static backedge_result *
+  static BackEdgeResult *
   create(jlm::rvsdg::Output * origin)
   {
-    auto result = new backedge_result(origin);
+    auto result = new BackEdgeResult(origin);
     origin->region()->append_result(result);
     return result;
   }
 
-  backedge_argument * argument_;
+  BackEdgeArgument * argument_;
 };
 
 /**
@@ -751,7 +751,7 @@ public:
   void
   set_predicate(jlm::rvsdg::Output * p);
 
-  backedge_argument *
+  BackEdgeArgument *
   add_backedge(std::shared_ptr<const jlm::rvsdg::Type> type);
 
   rvsdg::StructuralOutput *
