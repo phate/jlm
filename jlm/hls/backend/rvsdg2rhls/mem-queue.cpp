@@ -7,7 +7,6 @@
 #include <jlm/hls/backend/rvsdg2rhls/hls-function-util.hpp>
 #include <jlm/hls/backend/rvsdg2rhls/mem-conv.hpp>
 #include <jlm/hls/backend/rvsdg2rhls/mem-queue.hpp>
-#include <jlm/hls/backend/rvsdg2rhls/mem-sep.hpp>
 #include <jlm/hls/ir/hls.hpp>
 #include <jlm/llvm/ir/LambdaMemoryState.hpp>
 #include <jlm/llvm/ir/operators/call.hpp>
@@ -15,12 +14,10 @@
 #include <jlm/llvm/ir/operators/Load.hpp>
 #include <jlm/llvm/ir/operators/MemoryStateOperations.hpp>
 #include <jlm/llvm/ir/operators/Store.hpp>
-#include <jlm/rvsdg/substitution.hpp>
+#include <jlm/rvsdg/node.hpp>
 #include <jlm/rvsdg/theta.hpp>
-#include <jlm/rvsdg/traverser.hpp>
 #include <jlm/rvsdg/view.hpp>
 
-#include "jlm/hls/util/view.hpp"
 #include <deque>
 
 void
@@ -247,9 +244,7 @@ separate_load_edge(
         else
         {
           // end of loop
-          auto [branchNode, branchOperation] =
-              jlm::rvsdg::TryGetSimpleNodeAndOptionalOp<jlm::hls::BranchOperation>(addr_edge_user);
-          JLM_ASSERT(branchNode && branchOperation);
+          JLM_ASSERT(jlm::rvsdg::IsOwnerNodeOperation<jlm::hls::BranchOperation>(addr_edge_user));
           return nullptr;
         }
       }

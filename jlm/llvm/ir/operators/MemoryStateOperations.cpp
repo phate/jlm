@@ -405,8 +405,7 @@ LambdaExitMemoryStateMergeOperation::NormalizeLoadFromAlloca(
     }
 
     auto loadAddress = LoadOperation::AddressInput(*loadNode).origin();
-    auto [_, allocaOperation] = rvsdg::TryGetSimpleNodeAndOptionalOp<AllocaOperation>(*loadAddress);
-    if (!allocaOperation)
+    if (!rvsdg::IsOwnerNodeOperation<AllocaOperation>(*loadAddress))
     {
       newOperands.push_back(operand);
       continue;
@@ -446,9 +445,7 @@ LambdaExitMemoryStateMergeOperation::NormalizeStoreToAlloca(
     }
 
     auto storeAddress = StoreOperation::AddressInput(*storeNode).origin();
-    auto [_, allocaOperation] =
-        rvsdg::TryGetSimpleNodeAndOptionalOp<AllocaOperation>(*storeAddress);
-    if (!allocaOperation)
+    if (!rvsdg::IsOwnerNodeOperation<AllocaOperation>(*storeAddress))
     {
       newOperands.push_back(operand);
       continue;

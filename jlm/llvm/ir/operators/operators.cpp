@@ -394,9 +394,7 @@ rvsdg::unop_reduction_path_t
 ZExtOperation::can_reduce_operand(const rvsdg::Output * operand) const noexcept
 {
   auto & tracedOperand = rvsdg::TraceOutputIntraProcedurally(*operand);
-  auto [_, constantOperation] =
-      rvsdg::TryGetSimpleNodeAndOptionalOp<rvsdg::bitconstant_op>(tracedOperand);
-  if (constantOperation)
+  if (rvsdg::IsOwnerNodeOperation<rvsdg::bitconstant_op>(tracedOperand))
     return rvsdg::unop_reduction_constant;
 
   return rvsdg::unop_reduction_none;
