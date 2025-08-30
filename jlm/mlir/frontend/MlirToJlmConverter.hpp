@@ -231,11 +231,14 @@ private:
   ConvertType(const ::mlir::Type & type);
 
   /**
-   * This function should return an architecture dependent number of bits that is used to represent the MLIR intex type.
-   * \result The number of bits used to represent the index type (currently hardcoded to 32 bits for x86)
+   * This function should return an architecture dependent number of bits that is used to represent
+   * the MLIR intex type.
+   * \result The number of bits used to represent the index type (currently
+   * hardcoded to 32 bits for x86)
    */
   static size_t
-  GetIndexBitWidth() {
+  GetIndexBitWidth()
+  {
     // TODO
     // This should return an architeture dependent size
     // 32-bits are used for x86.
