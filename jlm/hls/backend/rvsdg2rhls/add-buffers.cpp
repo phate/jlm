@@ -217,7 +217,7 @@ OptimizeLoop(LoopNode * loopNode)
       auto oldBufInput = &branchNode->output(1)->SingleUser();
       auto [oldBufferNode, oldBufferOperation] =
           rvsdg::TryGetSimpleNodeAndOptionalOp<BufferOperation>(*oldBufInput);
-      if (std::get<1>(rvsdg::TryGetSimpleNodeAndOptionalOp<SinkOperation>(*oldBufInput)))
+      if (rvsdg::IsOwnerNodeOperation<SinkOperation>(*oldBufInput))
       {
         // no backedge
         continue;
@@ -259,8 +259,7 @@ OptimizeLoop(LoopNode * loopNode)
           continue;
         }
       }
-      else if (std::get<1>(
-                   rvsdg::TryGetSimpleNodeAndOptionalOp<LoopConstantBufferOperation>(*user)))
+      else if (rvsdg::IsOwnerNodeOperation<LoopConstantBufferOperation>(*user))
       {
       }
       else
@@ -407,8 +406,7 @@ NodeCycles(rvsdg::SimpleNode * node, std::vector<size_t> & input_cycles)
   {
     // handle special state gate that sits on dec_load response
     auto sg0_user = &node->output(0)->SingleUser();
-    if (std::get<1>(rvsdg::TryGetSimpleNodeAndOptionalOp<DecoupledLoadOperation>(*sg0_user))
-        && sg0_user->index() == 1)
+    if (rvsdg::IsOwnerNodeOperation<DecoupledLoadOperation>(*sg0_user) && sg0_user->index() == 1)
     {
       JLM_ASSERT(max_cycles == 0);
       return { 0, MemoryLatency };
@@ -451,8 +449,7 @@ NodeCapacity(rvsdg::SimpleNode * node, std::vector<size_t> & input_capacities)
   {
     // handle special state gate that sits on dec_load response
     auto sg0_user = &node->output(0)->SingleUser();
-    if (std::get<1>(rvsdg::TryGetSimpleNodeAndOptionalOp<DecoupledLoadOperation>(*sg0_user))
-        && sg0_user->index() == 1)
+    if (rvsdg::IsOwnerNodeOperation<DecoupledLoadOperation>(*sg0_user) && sg0_user->index() == 1)
     {
       JLM_ASSERT(min_capacity == UnlimitedBufferCapacity);
       return { 0, MemoryLatency };
@@ -481,7 +478,7 @@ CreateLoopFrontier(
     auto user = &arg->SingleUser();
     auto userNode = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*user);
     auto [muxNode, muxOperation] = rvsdg::TryGetSimpleNodeAndOptionalOp<MuxOperation>(*user);
-    if (std::get<1>(rvsdg::TryGetSimpleNodeAndOptionalOp<LoopConstantBufferOperation>(*user))
+    if (rvsdg::IsOwnerNodeOperation<LoopConstantBufferOperation>(*user)
         || (muxOperation && muxOperation->loop))
     {
       top_muxes.insert(userNode);
@@ -514,11 +511,10 @@ CreateLoopFrontier(
     {
       continue;
     }
-    if (std::get<1>(rvsdg::TryGetSimpleNodeAndOptionalOp<BufferOperation>(*user)))
+    if (rvsdg::IsOwnerNodeOperation<BufferOperation>(*user))
     {
       auto bufNode = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*user);
-      if (std::get<1>(rvsdg::TryGetSimpleNodeAndOptionalOp<PredicateBufferOperation>(
-              bufNode->output(0)->SingleUser())))
+      if (rvsdg::IsOwnerNodeOperation<PredicateBufferOperation>(bufNode->output(0)->SingleUser()))
       {
         // skip predicate buffer
         continue;
@@ -969,9 +965,8 @@ AdjustLoopBuffers(
             auto user = &inner_loop->input(i)->arguments.begin().ptr()->SingleUser();
             auto [muxNode, muxOperation] =
                 rvsdg::TryGetSimpleNodeAndOptionalOp<MuxOperation>(*user);
-            if (auto [node, op] =
-                    rvsdg::TryGetSimpleNodeAndOptionalOp<LoopConstantBufferOperation>(*user);
-                (muxOperation && muxOperation->loop) || op)
+            if ((muxOperation && muxOperation->loop)
+                || rvsdg::IsOwnerNodeOperation<LoopConstantBufferOperation>(*user))
             {
               size_t capacity_diff = max_cycles - capacity;
               capacity += PlaceBufferLoop(inner_loop->input(i)->origin(), capacity_diff, true);

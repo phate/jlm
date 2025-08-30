@@ -83,11 +83,8 @@ TraceEdgeToMerge(rvsdg::Input * state_edge)
       state_edge = get_mem_state_user(sn->output(0));
     }
     else if (
-        std::get<1>(
-            rvsdg::TryGetSimpleNodeAndOptionalOp<llvm::MemoryStateMergeOperation>(*state_edge))
-        || std::get<1>(
-            rvsdg::TryGetSimpleNodeAndOptionalOp<llvm::LambdaExitMemoryStateMergeOperation>(
-                *state_edge)))
+        rvsdg::IsOwnerNodeOperation<llvm::MemoryStateMergeOperation>(*state_edge)
+        || rvsdg::IsOwnerNodeOperation<llvm::LambdaExitMemoryStateMergeOperation>(*state_edge))
     {
       return { state_edge, encountered_muxes };
     }

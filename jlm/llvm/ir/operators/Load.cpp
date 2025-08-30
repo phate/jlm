@@ -57,12 +57,7 @@ is_load_mux_reducible(const std::vector<rvsdg::Output *> & operands)
   if (operands.size() != 2)
     return false;
 
-  auto [_, memStateMergeOperation] =
-      rvsdg::TryGetSimpleNodeAndOptionalOp<MemoryStateMergeOperation>(*operands[1]);
-  if (!memStateMergeOperation)
-    return false;
-
-  return true;
+  return rvsdg::IsOwnerNodeOperation<MemoryStateMergeOperation>(*operands[1]);
 }
 
 /*
@@ -493,9 +488,7 @@ LoadNonVolatileOperation::NormalizeIOBarrierAllocaAddress(
     return std::nullopt;
 
   const auto barredAddress = IOBarrierOperation::BarredInput(*ioBarrierNode).origin();
-  auto [allocaNode, allocaOperation] =
-      rvsdg::TryGetSimpleNodeAndOptionalOp<AllocaOperation>(*barredAddress);
-  if (!allocaOperation)
+  if (!rvsdg::IsOwnerNodeOperation<AllocaOperation>(*barredAddress))
     return std::nullopt;
 
   auto & loadNode = CreateNode(

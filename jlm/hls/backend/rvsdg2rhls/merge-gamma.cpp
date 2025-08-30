@@ -83,9 +83,7 @@ bit_type_to_ctl_type(rvsdg::GammaNode * old_gamma)
     for (size_t j = 0; j < old_gamma->nsubregions(); ++j)
     {
       auto origin = old_gamma->subregion(j)->result(i)->origin();
-      if (auto [_, op] =
-              rvsdg::TryGetSimpleNodeAndOptionalOp<llvm::IntegerConstantOperation>(*origin);
-          !op)
+      if (!rvsdg::IsOwnerNodeOperation<llvm::IntegerConstantOperation>(*origin))
       {
         all_bittype = false;
         break;
@@ -100,6 +98,7 @@ bit_type_to_ctl_type(rvsdg::GammaNode * old_gamma)
       auto origin = old_gamma->subregion(j)->result(i)->origin();
       auto [_, constantOperation] =
           rvsdg::TryGetSimpleNodeAndOptionalOp<llvm::IntegerConstantOperation>(*origin);
+      JLM_ASSERT(constantOperation);
       auto ctl_value = matchOperation->alternative(constantOperation->Representation().to_uint());
       auto no = rvsdg::ctlconstant_op::create(
           origin->region(),

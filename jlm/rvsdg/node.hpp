@@ -814,6 +814,28 @@ private:
 };
 
 /**
+ * \brief Checks if the given node is not null, and has an operation of the specified type.
+ *
+ * \tparam OperationType
+ *   The subclass of operation to check for.
+ *
+ * \param node
+ *   The node being checked.
+ *
+ * \returns
+ *   true if node has an operation that is an instance of the specified type, otherwise false.
+ */
+template<class OperationType>
+inline bool
+is(const Node * node) noexcept
+{
+  if (!node)
+    return false;
+
+  return is<OperationType>(node->GetOperation());
+}
+
+/**
  * \brief Checks if this is an input to a node of specified type.
  *
  * \tparam NodeType
@@ -943,6 +965,46 @@ AssertGetOwnerNode(const rvsdg::Output & output)
   return *node;
 }
 
+/**
+ * \brief Checks if the input belongs to a node of the specified operation type.
+ *
+ * \tparam OperationType
+ *   The subclass of Operation to check for.
+ *
+ * \param input
+ *   The output being checked.
+ *
+ * \returns
+ *   True if the input is owned by a node, whose operation is an instance of the specified type.
+ *   Otherwise, false.
+ */
+template<typename OperationType>
+bool
+IsOwnerNodeOperation(const rvsdg::Input & input) noexcept
+{
+  return is<OperationType>(TryGetOwnerNode<Node>(input));
+}
+
+/**
+ * \brief Checks if the output belongs to a node of the specified operation type.
+ *
+ * \tparam OperationType
+ *   The subclass of Operation to check for.
+ *
+ * \param output
+ *   The output being checked.
+ *
+ * \returns
+ *   True if the output is owned by a node, whose operation is an instance of the specified type.
+ *   Otherwise, false.
+ */
+template<typename OperationType>
+bool
+IsOwnerNodeOperation(const rvsdg::Output & output) noexcept
+{
+  return is<OperationType>(TryGetOwnerNode<Node>(output));
+}
+
 inline Region *
 TryGetOwnerRegion(const rvsdg::Input & input) noexcept
 {
@@ -996,16 +1058,6 @@ divert_users(Node * node, const std::vector<Output *> & outputs)
 
   for (size_t n = 0; n < outputs.size(); n++)
     node->output(n)->divert_users(outputs[n]);
-}
-
-template<class T>
-static inline bool
-is(const Node * node) noexcept
-{
-  if (!node)
-    return false;
-
-  return is<T>(node->GetOperation());
 }
 
 /**
