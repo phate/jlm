@@ -45,6 +45,9 @@ protected:
       util::graph::Graph * typeGraph) = 0;
 
   virtual void
+  AnnotateEdge(const rvsdg::Input & rvsdgInput, util::graph::Edge & edge) = 0;
+
+  virtual void
   AnnotateRegionArgument(
       const rvsdg::RegionArgument & regionArgument,
       util::graph::Node & node,
@@ -86,6 +89,9 @@ protected:
       const rvsdg::RegionArgument & regionArgument,
       util::graph::Node & node,
       util::graph::Graph * typeGraph) override;
+
+  void
+  AnnotateEdge(const rvsdg::Input & rvsdgInput, util::graph::Edge & edge) override;
 };
 
 }
