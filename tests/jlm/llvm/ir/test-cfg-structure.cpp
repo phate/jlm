@@ -31,7 +31,7 @@ test_straightening()
   bb2->add_outedge(bb3);
   bb3->add_outedge(cfg.exit());
 
-  auto arg = cfg.entry()->append_argument(argument::create("arg", vt));
+  auto arg = cfg.entry()->append_argument(Argument::create("arg", vt));
   bb1->append_last(TestOperation::CreateTac({ arg }, { vt }));
   bb2->append_last(TestOperation::CreateTac({ arg }, { vt }));
   bb3->append_last(TestOperation::CreateTac({ arg }, { vt }));

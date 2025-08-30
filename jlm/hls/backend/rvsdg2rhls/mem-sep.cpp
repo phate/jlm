@@ -263,7 +263,7 @@ eliminate_io_state(rvsdg::RegionArgument * iostate, rvsdg::Region * region)
     {
       if (dynamic_cast<const llvm::CallOperation *>(&simplenode->GetOperation()))
       {
-        auto io_routed = route_to_region_rvsdg(iostate, region);
+        auto io_routed = &rvsdg::RouteToRegion(*iostate, *region);
         auto io_in = node->input(node->ninputs() - 2);
         io_in->divert_to(io_routed);
       }
@@ -274,7 +274,7 @@ eliminate_io_state(rvsdg::RegionArgument * iostate, rvsdg::Region * region)
       auto out = node->output(i);
       if (!jlm::rvsdg::is<jlm::llvm::IOStateType>(out->Type()))
         continue;
-      auto routed = route_to_region_rvsdg(iostate, region);
+      auto routed = &rvsdg::RouteToRegion(*iostate, *region);
       out->divert_users(routed);
     }
   }

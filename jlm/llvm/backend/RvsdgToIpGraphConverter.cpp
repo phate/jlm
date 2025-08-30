@@ -202,7 +202,7 @@ RvsdgToIpGraphConverter::CreateControlFlowGraph(const rvsdg::LambdaNode & lambda
   for (const auto functionArgument : lambda.GetFunctionArguments())
   {
     auto name = util::strfmt("_a", functionArgument->index(), "_");
-    auto argument = argument::create(
+    auto argument = Argument::create(
         name,
         functionArgument->Type(),
         lambdaOperation.GetArgumentAttributes(functionArgument->index()));
@@ -475,7 +475,7 @@ RvsdgToIpGraphConverter::ConvertPhiNode(const rvsdg::PhiNode & phiNode)
     if (const auto lambdaNode = rvsdg::TryGetOwnerNode<rvsdg::LambdaNode>(origin))
     {
       const auto variable =
-          util::AssertedCast<const fctvariable>(Context_->GetVariable(subregion->argument(n)));
+          util::AssertedCast<const FunctionVariable>(Context_->GetVariable(subregion->argument(n)));
       variable->function()->add_cfg(CreateControlFlowGraph(*lambdaNode));
       Context_->InsertVariable(lambdaNode->output(), variable);
     }

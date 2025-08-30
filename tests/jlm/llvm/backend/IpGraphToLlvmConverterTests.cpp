@@ -12,6 +12,7 @@
 #include <jlm/llvm/ir/ipgraph-module.hpp>
 #include <jlm/llvm/ir/operators.hpp>
 #include <jlm/llvm/ir/operators/IntegerOperations.hpp>
+#include <jlm/llvm/ir/operators/SpecializedArithmeticIntrinsicOperations.hpp>
 #include <jlm/llvm/ir/print.hpp>
 #include <llvm/IR/Attributes.h>
 #include <llvm/IR/Instructions.h>
@@ -33,9 +34,9 @@ LoadConversion()
 
   auto cfg = ControlFlowGraph::create(ipgModule);
   auto addressArgument =
-      cfg->entry()->append_argument(argument::create("address", PointerType::Create()));
+      cfg->entry()->append_argument(Argument::create("address", PointerType::Create()));
   auto memoryStateArgument =
-      cfg->entry()->append_argument(argument::create("memoryState", MemoryStateType::Create()));
+      cfg->entry()->append_argument(Argument::create("memoryState", MemoryStateType::Create()));
 
   auto basicBlock = BasicBlock::create(*cfg);
   size_t alignment = 4;
@@ -94,10 +95,10 @@ LoadVolatileConversion()
   InterProceduralGraphModule ipgModule(jlm::util::FilePath(""), "", "");
 
   auto cfg = ControlFlowGraph::create(ipgModule);
-  auto addressArgument = cfg->entry()->append_argument(argument::create("address", pointerType));
-  auto ioStateArgument = cfg->entry()->append_argument(argument::create("ioState", ioStateType));
+  auto addressArgument = cfg->entry()->append_argument(Argument::create("address", pointerType));
+  auto ioStateArgument = cfg->entry()->append_argument(Argument::create("ioState", ioStateType));
   auto memoryStateArgument =
-      cfg->entry()->append_argument(argument::create("memoryState", memoryStateType));
+      cfg->entry()->append_argument(Argument::create("memoryState", memoryStateType));
 
   auto basicBlock = BasicBlock::create(*cfg);
   size_t alignment = 4;
@@ -161,11 +162,11 @@ MemCpyConversion()
 
   auto cfg = ControlFlowGraph::create(ipgModule);
   auto destinationArgument =
-      cfg->entry()->append_argument(argument::create("destination", pointerType));
-  auto sourceArgument = cfg->entry()->append_argument(argument::create("source", pointerType));
-  auto lengthArgument = cfg->entry()->append_argument(argument::create("length", bit64Type));
+      cfg->entry()->append_argument(Argument::create("destination", pointerType));
+  auto sourceArgument = cfg->entry()->append_argument(Argument::create("source", pointerType));
+  auto lengthArgument = cfg->entry()->append_argument(Argument::create("length", bit64Type));
   auto memoryStateArgument =
-      cfg->entry()->append_argument(argument::create("memoryState", memoryStateType));
+      cfg->entry()->append_argument(Argument::create("memoryState", memoryStateType));
 
   auto basicBlock = BasicBlock::create(*cfg);
   auto memCpyTac = basicBlock->append_last(MemCpyNonVolatileOperation::create(
@@ -227,12 +228,12 @@ MemCpyVolatileConversion()
 
   auto cfg = ControlFlowGraph::create(ipgModule);
   auto & destinationArgument =
-      *cfg->entry()->append_argument(argument::create("destination", pointerType));
-  auto & sourceArgument = *cfg->entry()->append_argument(argument::create("source", pointerType));
-  auto & lengthArgument = *cfg->entry()->append_argument(argument::create("length", bit64Type));
-  auto & ioStateArgument = *cfg->entry()->append_argument(argument::create("ioState", ioStateType));
+      *cfg->entry()->append_argument(Argument::create("destination", pointerType));
+  auto & sourceArgument = *cfg->entry()->append_argument(Argument::create("source", pointerType));
+  auto & lengthArgument = *cfg->entry()->append_argument(Argument::create("length", bit64Type));
+  auto & ioStateArgument = *cfg->entry()->append_argument(Argument::create("ioState", ioStateType));
   auto & memoryStateArgument =
-      *cfg->entry()->append_argument(argument::create("memoryState", memoryStateType));
+      *cfg->entry()->append_argument(Argument::create("memoryState", memoryStateType));
 
   auto basicBlock = BasicBlock::create(*cfg);
   auto memCpyTac = basicBlock->append_last(MemCpyVolatileOperation::CreateThreeAddressCode(
@@ -290,10 +291,10 @@ StoreConversion()
   InterProceduralGraphModule ipgModule(jlm::util::FilePath(""), "", "");
 
   auto cfg = ControlFlowGraph::create(ipgModule);
-  auto addressArgument = cfg->entry()->append_argument(argument::create("address", pointerType));
-  auto valueArgument = cfg->entry()->append_argument(argument::create("value", bit64Type));
+  auto addressArgument = cfg->entry()->append_argument(Argument::create("address", pointerType));
+  auto valueArgument = cfg->entry()->append_argument(Argument::create("value", bit64Type));
   auto memoryStateArgument =
-      cfg->entry()->append_argument(argument::create("memoryState", memoryStateType));
+      cfg->entry()->append_argument(Argument::create("memoryState", memoryStateType));
 
   auto basicBlock = BasicBlock::create(*cfg);
   size_t alignment = 4;
@@ -354,11 +355,11 @@ StoreVolatileConversion()
   InterProceduralGraphModule ipgModule(jlm::util::FilePath(""), "", "");
 
   auto cfg = ControlFlowGraph::create(ipgModule);
-  auto addressArgument = cfg->entry()->append_argument(argument::create("address", pointerType));
-  auto valueArgument = cfg->entry()->append_argument(argument::create("value", bit64Type));
-  auto ioStateArgument = cfg->entry()->append_argument(argument::create("ioState", ioStateType));
+  auto addressArgument = cfg->entry()->append_argument(Argument::create("address", pointerType));
+  auto valueArgument = cfg->entry()->append_argument(Argument::create("value", bit64Type));
+  auto ioStateArgument = cfg->entry()->append_argument(Argument::create("ioState", ioStateType));
   auto memoryStateArgument =
-      cfg->entry()->append_argument(argument::create("memoryState", memoryStateType));
+      cfg->entry()->append_argument(Argument::create("memoryState", memoryStateType));
 
   auto basicBlock = BasicBlock::create(*cfg);
   size_t alignment = 4;
@@ -400,6 +401,74 @@ StoreVolatileConversion()
 JLM_UNIT_TEST_REGISTER(
     "jlm/llvm/backend/IpGraphToLlvmConverterTests-StoreVolatileConversion",
     StoreVolatileConversion)
+
+static void
+FMulAddConversion()
+{
+  using namespace jlm::llvm;
+
+  // Arrange
+  const auto pointerType = PointerType::Create();
+  const auto ioStateType = IOStateType::Create();
+  const auto memoryStateType = MemoryStateType::Create();
+  auto doubleType = FloatingPointType::Create(fpsize::dbl);
+  const auto functionType = jlm::rvsdg::FunctionType::Create(
+      { doubleType, doubleType, doubleType, IOStateType::Create(), MemoryStateType::Create() },
+      { doubleType, IOStateType::Create(), MemoryStateType::Create() });
+
+  InterProceduralGraphModule ipgModule(jlm::util::FilePath(""), "", "");
+  {
+    auto cfg = ControlFlowGraph::create(ipgModule);
+    auto & multiplierArgument =
+        *cfg->entry()->append_argument(Argument::create("multiplier", doubleType));
+    auto & multiplicandArgument =
+        *cfg->entry()->append_argument(Argument::create("multiplicand", doubleType));
+    auto & summandArgument =
+        *cfg->entry()->append_argument(Argument::create("summand", doubleType));
+    const auto ioStateArgument =
+        cfg->entry()->append_argument(Argument::create("ioState", ioStateType));
+    const auto memoryStateArgument =
+        cfg->entry()->append_argument(Argument::create("memoryState", memoryStateType));
+
+    auto basicBlock = BasicBlock::create(*cfg);
+    auto fMulAddTac = basicBlock->append_last(FMulAddIntrinsicOperation::CreateTac(
+        multiplierArgument,
+        multiplicandArgument,
+        summandArgument));
+
+    cfg->exit()->divert_inedges(basicBlock);
+    basicBlock->add_outedge(cfg->exit());
+    cfg->exit()->append_result(fMulAddTac->result(0));
+    cfg->exit()->append_result(ioStateArgument);
+    cfg->exit()->append_result(memoryStateArgument);
+
+    auto f =
+        FunctionNode::create(ipgModule.ipgraph(), "f", functionType, linkage::external_linkage);
+    f->add_cfg(std::move(cfg));
+  }
+
+  print(ipgModule, stdout);
+
+  // Act
+  llvm::LLVMContext ctx;
+  const auto llvmModule = IpGraphToLlvmConverter::CreateAndConvertModule(ipgModule, ctx);
+  jlm::tests::print(*llvmModule);
+
+  // Assert
+  {
+    const auto llvmFunction = llvmModule->getFunction("f");
+    auto & basicBlock = llvmFunction->back();
+    auto & instruction = basicBlock.front();
+
+    const auto fMulAddInstruction = ::llvm::dyn_cast<::llvm::CallInst>(&instruction);
+    assert(fMulAddInstruction != nullptr);
+    assert(fMulAddInstruction->getIntrinsicID() == ::llvm::Intrinsic::fmuladd);
+  }
+}
+
+JLM_UNIT_TEST_REGISTER(
+    "jlm/llvm/backend/IpGraphToLlvmConverterTests-FMulAddConversion",
+    FMulAddConversion)
 
 static void
 IntegerConstant()
@@ -461,7 +530,7 @@ Malloc()
     bb->add_outedge(cfg->exit());
 
     auto size =
-        cfg->entry()->append_argument(argument::create("size", jlm::rvsdg::BitType::Create(64)));
+        cfg->entry()->append_argument(Argument::create("size", jlm::rvsdg::BitType::Create(64)));
 
     bb->append_last(MallocOperation::create(size));
 
@@ -520,9 +589,9 @@ Free()
     auto f = FunctionNode::create(ipgmod->ipgraph(), "f", ft, linkage::external_linkage);
 
     auto cfg = ControlFlowGraph::create(*ipgmod);
-    auto arg0 = cfg->entry()->append_argument(argument::create("pointer", pt));
-    auto arg1 = cfg->entry()->append_argument(argument::create("memstate", mt));
-    auto arg2 = cfg->entry()->append_argument(argument::create("iostate", iot));
+    auto arg0 = cfg->entry()->append_argument(Argument::create("pointer", pt));
+    auto arg1 = cfg->entry()->append_argument(Argument::create("memstate", mt));
+    auto arg2 = cfg->entry()->append_argument(Argument::create("iostate", iot));
 
     auto bb = BasicBlock::create(*cfg);
     cfg->exit()->divert_inedges(bb);
@@ -608,9 +677,9 @@ SelectWithState()
   cfg->exit()->divert_inedges(bb);
   bb->add_outedge(cfg->exit());
 
-  auto p = cfg->entry()->append_argument(argument::create("p", jlm::rvsdg::BitType::Create(1)));
-  auto s1 = cfg->entry()->append_argument(argument::create("s1", mt));
-  auto s2 = cfg->entry()->append_argument(argument::create("s2", mt));
+  auto p = cfg->entry()->append_argument(Argument::create("p", jlm::rvsdg::BitType::Create(1)));
+  auto s1 = cfg->entry()->append_argument(Argument::create("s1", mt));
+  auto s2 = cfg->entry()->append_argument(Argument::create("s2", mt));
 
   bb->append_last(SelectOperation::create(p, s1, s2));
   auto s3 = bb->last()->result(0);

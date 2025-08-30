@@ -21,10 +21,10 @@ remove_unused_loop_backedges(LoopNode * ln)
   for (int i = sr->narguments() - 1; i >= 0; --i)
   {
     auto arg = sr->argument(i);
-    if ((dynamic_cast<backedge_argument *>(arg) && arg->nusers() == 1) || arg->IsDead())
+    if ((dynamic_cast<BackEdgeArgument *>(arg) && arg->nusers() == 1) || arg->IsDead())
     {
       auto & user = *arg->Users().begin();
-      if (auto result = dynamic_cast<backedge_result *>(&user))
+      if (auto result = dynamic_cast<BackEdgeResult *>(&user))
       {
         sr->RemoveResult(result->index());
         sr->RemoveArgument(arg->index());
@@ -109,7 +109,7 @@ remove_unused_loop_inputs(LoopNode * ln)
   for (int i = sr->narguments() - 1; i >= 0; --i)
   {
     auto arg = sr->argument(i);
-    if (auto ba = dynamic_cast<backedge_argument *>(arg))
+    if (auto ba = dynamic_cast<BackEdgeArgument *>(arg))
     {
       auto result = ba->result();
       JLM_ASSERT(*result->Type() == *arg->Type());
@@ -199,7 +199,7 @@ dead_loop(rvsdg::Node * ndmux_node)
   const auto mux_op = util::AssertedCast<const MuxOperation>(&ndmux_node->GetOperation());
   JLM_ASSERT(!mux_op->discarding);
   // origin is a backedege argument
-  auto backedge_arg = dynamic_cast<backedge_argument *>(ndmux_node->input(2)->origin());
+  auto backedge_arg = dynamic_cast<BackEdgeArgument *>(ndmux_node->input(2)->origin());
   if (!backedge_arg)
   {
     return false;
@@ -251,7 +251,7 @@ dead_loop(rvsdg::Node * ndmux_node)
   }
   auto extra_buf_cond_origin = extra_buf_out_node->input(0)->origin();
 
-  if (auto pred_be = dynamic_cast<backedge_argument *>(extra_buf_cond_origin))
+  if (auto pred_be = dynamic_cast<BackEdgeArgument *>(extra_buf_cond_origin))
   {
     extra_buf_cond_origin = pred_be->result()->origin();
   }
@@ -294,7 +294,7 @@ dead_loop_lcb(rvsdg::Node * lcb_node)
   }
   // depend on same control
   auto branch_cond_origin = branchNode->input(0)->origin();
-  auto pred_buf_out = dynamic_cast<jlm::rvsdg::node_output *>(lcb_node->input(0)->origin());
+  auto pred_buf_out = dynamic_cast<rvsdg::NodeOutput *>(lcb_node->input(0)->origin());
   if (!pred_buf_out
       || !dynamic_cast<const PredicateBufferOperation *>(&pred_buf_out->node()->GetOperation()))
   {
@@ -302,7 +302,7 @@ dead_loop_lcb(rvsdg::Node * lcb_node)
   }
   auto pred_buf_cond_origin = pred_buf_out->node()->input(0)->origin();
   // TODO: remove this once predicate buffers decouple combinatorial loops
-  auto extra_buf_out = dynamic_cast<jlm::rvsdg::node_output *>(pred_buf_cond_origin);
+  auto extra_buf_out = dynamic_cast<rvsdg::NodeOutput *>(pred_buf_cond_origin);
   if (!extra_buf_out
       || !dynamic_cast<const BufferOperation *>(&extra_buf_out->node()->GetOperation()))
   {
@@ -310,7 +310,7 @@ dead_loop_lcb(rvsdg::Node * lcb_node)
   }
   auto extra_buf_cond_origin = extra_buf_out->node()->input(0)->origin();
 
-  if (auto pred_be = dynamic_cast<backedge_argument *>(extra_buf_cond_origin))
+  if (auto pred_be = dynamic_cast<BackEdgeArgument *>(extra_buf_cond_origin))
   {
     extra_buf_cond_origin = pred_be->result()->origin();
   }
@@ -343,8 +343,7 @@ fix_mem_split(rvsdg::Node * split_node)
     if (split_node->output(i)->IsDead())
       continue;
     auto user = get_mem_state_user(split_node->output(i));
-    if (auto [_, op] = rvsdg::TryGetSimpleNodeAndOptionalOp<llvm::MemoryStateSplitOperation>(*user);
-        op)
+    if (rvsdg::IsOwnerNodeOperation<llvm::MemoryStateSplitOperation>(*user))
     {
       auto sub_split = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*user);
       for (size_t j = 0; j < sub_split->noutputs(); ++j)
@@ -387,9 +386,7 @@ fix_mem_merge(rvsdg::Node * merge_node)
   for (size_t i = 0; i < merge_node->ninputs(); ++i)
   {
     auto origin = merge_node->input(i)->origin();
-    if (auto [_, op] =
-            rvsdg::TryGetSimpleNodeAndOptionalOp<llvm::MemoryStateMergeOperation>(*origin);
-        op)
+    if (rvsdg::IsOwnerNodeOperation<llvm::MemoryStateMergeOperation>(*origin))
     {
       auto sub_merge = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*origin);
       for (size_t j = 0; j < sub_merge->ninputs(); ++j)
@@ -397,9 +394,7 @@ fix_mem_merge(rvsdg::Node * merge_node)
         combined_origins.push_back(sub_merge->input(j)->origin());
       }
     }
-    else if (auto [_, op] =
-                 rvsdg::TryGetSimpleNodeAndOptionalOp<llvm::MemoryStateSplitOperation>(*origin);
-             op)
+    else if (rvsdg::IsOwnerNodeOperation<llvm::MemoryStateSplitOperation>(*origin))
     {
       // ensure that there is only one direct connection to a split.
       // We need to keep one, so that the optimizations for decouple edges work

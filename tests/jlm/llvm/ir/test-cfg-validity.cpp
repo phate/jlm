@@ -22,7 +22,7 @@ test_single_operand_phi()
   InterProceduralGraphModule im(jlm::util::FilePath(""), "", "");
 
   ControlFlowGraph cfg(im);
-  auto arg = cfg.entry()->append_argument(argument::create("arg", vt));
+  auto arg = cfg.entry()->append_argument(Argument::create("arg", vt));
 
   auto bb0 = BasicBlock::create(cfg);
   bb0->append_first(SsaPhiOperation::create({ { arg, cfg.entry() } }, vt));

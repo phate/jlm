@@ -121,7 +121,7 @@ append_constant(BasicBlock * bb, const ThreeAddressCodeVariable * result, size_t
 
 static inline void
 restructure_loop_entry(
-    const sccstructure & s,
+    const StronglyConnectedComponentStructure & s,
     BasicBlock * new_ne,
     const ThreeAddressCodeVariable * ev)
 {
@@ -147,7 +147,7 @@ restructure_loop_entry(
 
 static inline void
 restructure_loop_exit(
-    const sccstructure & s,
+    const StronglyConnectedComponentStructure & s,
     BasicBlock * new_nr,
     BasicBlock * new_nx,
     ControlFlowGraphNode * exit,
@@ -196,7 +196,7 @@ restructure_loop_exit(
 
 static inline void
 restructure_loop_repetition(
-    const sccstructure & s,
+    const StronglyConnectedComponentStructure & s,
     ControlFlowGraphNode * new_nr,
     const ThreeAddressCodeVariable * ev,
     const ThreeAddressCodeVariable * rv)
@@ -246,7 +246,7 @@ restructure_loops(
   auto sccs = find_sccs(entry, exit);
   for (auto & scc : sccs)
   {
-    auto sccstruct = sccstructure::create(scc);
+    auto sccstruct = StronglyConnectedComponentStructure::create(scc);
 
     if (sccstruct->is_tcloop())
     {
@@ -339,13 +339,13 @@ find_dominator_graph(const ControlFlowGraphEdge * edge)
   return nodes;
 }
 
-struct continuation
+struct Continuation
 {
   std::unordered_set<ControlFlowGraphNode *> points;
   std::unordered_map<ControlFlowGraphEdge *, std::unordered_set<ControlFlowGraphEdge *>> edges;
 };
 
-static inline continuation
+static Continuation
 compute_continuation(ControlFlowGraphNode * hb)
 {
   JLM_ASSERT(hb->NumOutEdges() > 1);
@@ -354,7 +354,7 @@ compute_continuation(ControlFlowGraphNode * hb)
   for (auto & outedge : hb->OutEdges())
     dgraphs[&outedge] = find_dominator_graph(&outedge);
 
-  continuation c;
+  Continuation c;
   for (auto & outedge : hb->OutEdges())
   {
     auto & dgraph = dgraphs[&outedge];
@@ -410,7 +410,7 @@ restructure_branches(ControlFlowGraphNode * entry, ControlFlowGraphNode * exit)
         continue;
       }
 
-      /* only one continuation edge */
+      // only one continuation edge
       if (cedges.size() == 1)
       {
         auto e = *cedges.begin();
@@ -419,7 +419,7 @@ restructure_branches(ControlFlowGraphNode * entry, ControlFlowGraphNode * exit)
         continue;
       }
 
-      /* more than one continuation edge */
+      // more than one continuation edge
       auto null = BasicBlock::create(cfg);
       null->add_outedge(cpoint);
       for (const auto & e : cedges)
@@ -432,7 +432,7 @@ restructure_branches(ControlFlowGraphNode * entry, ControlFlowGraphNode * exit)
     return;
   }
 
-  /* insert new continuation point */
+  // insert new continuation point
   auto p = create_pvariable(hbb, rvsdg::ControlType::Create(c.points.size()));
   auto cn = BasicBlock::create(cfg);
   append_branch(cn, p);

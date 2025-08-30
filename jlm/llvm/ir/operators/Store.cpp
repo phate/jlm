@@ -255,9 +255,7 @@ StoreNonVolatileOperation::NormalizeIOBarrierAllocaAddress(
     return std::nullopt;
 
   const auto barredAddress = IOBarrierOperation::BarredInput(*ioBarrierNode).origin();
-  auto [allocaNode, allocaOperation] =
-      rvsdg::TryGetSimpleNodeAndOptionalOp<AllocaOperation>(*barredAddress);
-  if (!allocaOperation)
+  if (!rvsdg::IsOwnerNodeOperation<AllocaOperation>(*barredAddress))
     return std::nullopt;
 
   auto & storeNode = CreateNode(

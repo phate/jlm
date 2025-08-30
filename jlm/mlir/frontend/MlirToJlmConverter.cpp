@@ -4,29 +4,22 @@
  * See COPYING for terms of redistribution.
  */
 
-#include <jlm/mlir/frontend/MlirToJlmConverter.hpp>
-#include <jlm/mlir/MLIRConverterCommon.hpp>
-
-#include <llvm/Support/raw_os_ostream.h>
-#include <mlir/Parser/Parser.h>
-#include <mlir/Transforms/TopologicalSortUtils.h>
-
-#include <jlm/llvm/ir/operators/sext.hpp>
-#include <jlm/rvsdg/bitstring/arithmetic.hpp>
-#include <jlm/rvsdg/bitstring/comparison.hpp>
-#include <jlm/rvsdg/bitstring/constant.hpp>
-
-#include <jlm/llvm/ir/operators/operators.hpp>
-
 #include <jlm/llvm/ir/operators/alloca.hpp>
 #include <jlm/llvm/ir/operators/call.hpp>
 #include <jlm/llvm/ir/operators/GetElementPtr.hpp>
+#include <jlm/llvm/ir/operators/IntegerOperations.hpp>
 #include <jlm/llvm/ir/operators/IOBarrier.hpp>
 #include <jlm/llvm/ir/operators/Load.hpp>
 #include <jlm/llvm/ir/operators/MemoryStateOperations.hpp>
+#include <jlm/llvm/ir/operators/operators.hpp>
+#include <jlm/llvm/ir/operators/sext.hpp>
+#include <jlm/llvm/ir/operators/SpecializedArithmeticIntrinsicOperations.hpp>
 #include <jlm/llvm/ir/operators/Store.hpp>
-
-#include <jlm/llvm/ir/operators/IntegerOperations.hpp>
+#include <jlm/mlir/frontend/MlirToJlmConverter.hpp>
+#include <jlm/mlir/MLIRConverterCommon.hpp>
+#include <jlm/rvsdg/bitstring/constant.hpp>
+#include <mlir/Parser/Parser.h>
+#include <mlir/Transforms/TopologicalSortUtils.h>
 
 namespace jlm::mlir
 {
@@ -429,6 +422,13 @@ MlirToJlmConverter::ConvertOperation(
   {
     return rvsdg::outputs(convertedFloatBinaryNode);
   }
+
+  if (::mlir::isa<::mlir::LLVM::FMulAddOp>(&mlirOperation))
+  {
+    JLM_ASSERT(inputs.size() == 3);
+    return rvsdg::outputs(
+        &llvm::FMulAddIntrinsicOperation::CreateNode(*inputs[0], *inputs[1], *inputs[2]));
+  }
   // ** endregion Arithmetic Float Operation **
 
   if (auto castedOp = ::mlir::dyn_cast<::mlir::arith::ExtUIOp>(&mlirOperation))
@@ -734,7 +734,12 @@ MlirToJlmConverter::ConvertOperation(
     auto outputs = jlm::llvm::CallExitMemoryStateSplitOperation::Create(
         *operands.front(),
         CallExitMemstateSplitOp.getNumResults());
-    return std::vector<jlm::rvsdg::Output *>(outputs.begin(), outputs.end());
+    return outputs;
+  }
+  else if (::mlir::isa<::mlir::rvsdg::MemoryStateJoin>(&mlirOperation))
+  {
+    std::vector operands(inputs.begin(), inputs.end());
+    return rvsdg::outputs(&llvm::MemoryStateJoinOperation::CreateNode(operands));
   }
   else if (auto IOBarrierOp = ::mlir::dyn_cast<::mlir::jlm::IOBarrier>(&mlirOperation))
   {
@@ -753,10 +758,6 @@ MlirToJlmConverter::ConvertOperation(
     return rvsdg::outputs(&rvsdg::CreateOpNode<llvm::IOBarrierOperation>(
         std::vector(inputs.begin(), inputs.end()),
         ConvertType(type)));
-  }
-  else if (auto MallocOp = ::mlir::dyn_cast<::mlir::jlm::Malloc>(&mlirOperation))
-  {
-    return jlm::llvm::MallocOperation::create(inputs[0]);
   }
   else if (auto StoreOp = ::mlir::dyn_cast<::mlir::jlm::Store>(&mlirOperation))
   {

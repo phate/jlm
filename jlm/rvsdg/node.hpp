@@ -490,6 +490,20 @@ private:
   std::unordered_set<jlm::rvsdg::Input *> users_;
 };
 
+/**
+ * Routes \p output through the region tree to \p region by creating the necessary inputs and region
+ * arguments for the encountered nodes.
+ *
+ * \note The function throws an exception if the region of \p output is not an ancestor of \p
+ * region.
+ *
+ * @param output The value that is supposed to be routed to \p region.
+ * @param region The region the value is supposed to be routed to.
+ * @return The routed value in \p region.
+ */
+Output &
+RouteToRegion(Output & output, Region & region);
+
 template<class T>
 static inline bool
 is(const jlm::rvsdg::Output * output) noexcept
@@ -501,12 +515,10 @@ is(const jlm::rvsdg::Output * output) noexcept
   return dynamic_cast<const T *>(output) != nullptr;
 }
 
-/* node_input class */
-
-class node_input : public jlm::rvsdg::Input
+class NodeInput : public Input
 {
 public:
-  node_input(jlm::rvsdg::Output * origin, Node * node, std::shared_ptr<const rvsdg::Type> type);
+  NodeInput(Output * origin, Node * node, std::shared_ptr<const rvsdg::Type> type);
 
   Node *
   node() const noexcept
@@ -521,12 +533,10 @@ public:
   }
 };
 
-/* node_output class */
-
-class node_output : public jlm::rvsdg::Output
+class NodeOutput : public Output
 {
 public:
-  node_output(Node * node, std::shared_ptr<const rvsdg::Type> type);
+  NodeOutput(Node * node, std::shared_ptr<const rvsdg::Type> type);
 
   [[nodiscard]] Node *
   node() const noexcept
@@ -574,7 +584,7 @@ public:
     return inputs_.size();
   }
 
-  node_input *
+  NodeInput *
   input(size_t index) const noexcept
   {
     JLM_ASSERT(index < ninputs());
@@ -599,7 +609,7 @@ public:
     return outputs_.size();
   }
 
-  node_output *
+  NodeOutput *
   output(size_t index) const noexcept
   {
     JLM_ASSERT(index < noutputs());
@@ -646,8 +656,8 @@ public:
   DebugString() const = 0;
 
 protected:
-  node_input *
-  add_input(std::unique_ptr<node_input> input);
+  NodeInput *
+  add_input(std::unique_ptr<NodeInput> input);
 
   /**
    * Removes an input from the node given the inputs' index.
@@ -690,8 +700,8 @@ public:
   }
 
 protected:
-  node_output *
-  add_output(std::unique_ptr<node_output> output)
+  NodeOutput *
+  add_output(std::unique_ptr<NodeOutput> output)
   {
     output->index_ = noutputs();
     outputs_.push_back(std::move(output));
@@ -799,9 +809,31 @@ private:
   Id Id_;
   size_t depth_;
   Region * region_;
-  std::vector<std::unique_ptr<node_input>> inputs_;
-  std::vector<std::unique_ptr<node_output>> outputs_;
+  std::vector<std::unique_ptr<NodeInput>> inputs_;
+  std::vector<std::unique_ptr<NodeOutput>> outputs_;
 };
+
+/**
+ * \brief Checks if the given node is not null, and has an operation of the specified type.
+ *
+ * \tparam OperationType
+ *   The subclass of operation to check for.
+ *
+ * \param node
+ *   The node being checked.
+ *
+ * \returns
+ *   true if node has an operation that is an instance of the specified type, otherwise false.
+ */
+template<class OperationType>
+inline bool
+is(const Node * node) noexcept
+{
+  if (!node)
+    return false;
+
+  return is<OperationType>(node->GetOperation());
+}
 
 /**
  * \brief Checks if this is an input to a node of specified type.
@@ -933,6 +965,46 @@ AssertGetOwnerNode(const rvsdg::Output & output)
   return *node;
 }
 
+/**
+ * \brief Checks if the input belongs to a node of the specified operation type.
+ *
+ * \tparam OperationType
+ *   The subclass of Operation to check for.
+ *
+ * \param input
+ *   The output being checked.
+ *
+ * \returns
+ *   True if the input is owned by a node, whose operation is an instance of the specified type.
+ *   Otherwise, false.
+ */
+template<typename OperationType>
+bool
+IsOwnerNodeOperation(const rvsdg::Input & input) noexcept
+{
+  return is<OperationType>(TryGetOwnerNode<Node>(input));
+}
+
+/**
+ * \brief Checks if the output belongs to a node of the specified operation type.
+ *
+ * \tparam OperationType
+ *   The subclass of Operation to check for.
+ *
+ * \param output
+ *   The output being checked.
+ *
+ * \returns
+ *   True if the output is owned by a node, whose operation is an instance of the specified type.
+ *   Otherwise, false.
+ */
+template<typename OperationType>
+bool
+IsOwnerNodeOperation(const rvsdg::Output & output) noexcept
+{
+  return is<OperationType>(TryGetOwnerNode<Node>(output));
+}
+
 inline Region *
 TryGetOwnerRegion(const rvsdg::Input & input) noexcept
 {
@@ -988,18 +1060,22 @@ divert_users(Node * node, const std::vector<Output *> & outputs)
     node->output(n)->divert_users(outputs[n]);
 }
 
-template<class T>
-static inline bool
-is(const Node * node) noexcept
-{
-  if (!node)
-    return false;
-
-  return is<T>(node->GetOperation());
-}
-
-Node *
-producer(const jlm::rvsdg::Output * output) noexcept;
+/**
+ * Traces \p output intra-procedurally through the RVSDG. The function is capable of tracing
+ * through:
+ *
+ * 1. Gamma nodes if the exit variable is invariant
+ * 2. Theta nodes if the loop variable is invariant
+ *
+ * Tracing stops when a lambda function argument or context argument is reached. If the function is
+ * invoked with an output that is not from within a lambda node, then this output is simply
+ * returned.
+ *
+ * @param output The \ref Output that needs to be traced.
+ * @return The final value of the tracing.
+ */
+const Output &
+TraceOutputIntraProcedurally(const Output & output);
 
 }
 
