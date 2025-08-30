@@ -341,7 +341,7 @@ MlirToJlmConverter::ConvertBitBinaryNode(
   }
   else if (type.isIndex())
   {
-    width = 32;
+    width = MlirToJlmConverter::GetIndexBitWidth();
   }
   else
   {
@@ -518,7 +518,6 @@ MlirToJlmConverter::ConvertOperation(
   }
 
   // RVSDG does not have an index type. Indices are therefore converted to integers.
-  // The width of indices are machine dependent and 32-bits are used for x86.
 
   else if (auto constant = ::mlir::dyn_cast<::mlir::arith::ConstantIndexOp>(&mlirOperation))
   {
@@ -526,7 +525,7 @@ MlirToJlmConverter::ConvertOperation(
     JLM_ASSERT(type.getTypeID() == ::mlir::IndexType::getTypeID());
 
     return rvsdg::outputs(
-        &jlm::llvm::IntegerConstantOperation::Create(rvsdgRegion, 32, constant.value()));
+        &jlm::llvm::IntegerConstantOperation::Create(rvsdgRegion, MlirToJlmConverter::GetIndexBitWidth(), constant.value()));
   }
   else if (auto indexCast = ::mlir::dyn_cast<::mlir::arith::IndexCastOp>(&mlirOperation))
   {
@@ -537,12 +536,12 @@ MlirToJlmConverter::ConvertOperation(
 
     if (inputType.isIndex())
     {
-      if (outputBits == 32)
+      if (outputBits == MlirToJlmConverter::GetIndexBitWidth())
       {
         // Nothing is needed to be done so we simply pass on the inputs
         return { inputs.begin(), inputs.end() };
       }
-      else if (outputBits > 32)
+      else if (outputBits > MlirToJlmConverter::GetIndexBitWidth())
       {
         return { llvm::SExtOperation::create(outputBits, inputs[0]) };
       }
@@ -553,18 +552,18 @@ MlirToJlmConverter::ConvertOperation(
     }
     else
     {
-      if (inputBits == 32)
+      if (inputBits == MlirToJlmConverter::GetIndexBitWidth())
       {
         // Nothing to be done as indices are not supported and of default width
         return { inputs.begin(), inputs.end() };
       }
-      else if (inputBits > 32)
+      else if (inputBits > MlirToJlmConverter::GetIndexBitWidth())
       {
-        return { llvm::TruncOperation::create(32, inputs[0]) };
+        return { llvm::TruncOperation::create(MlirToJlmConverter::GetIndexBitWidth(), inputs[0]) };
       }
       else
       {
-        return { &llvm::ZExtOperation::Create(*(inputs[0]), rvsdg::BitType::Create(32)) };
+        return { &llvm::ZExtOperation::Create(*(inputs[0]), rvsdg::BitType::Create(MlirToJlmConverter::GetIndexBitWidth())) };
       }
     }
   }
@@ -616,7 +615,7 @@ MlirToJlmConverter::ConvertOperation(
     }
     else if (type.isIndex())
     {
-      return rvsdg::outputs(ConvertCmpIOp(ComOp, inputs, 32));
+      return rvsdg::outputs(ConvertCmpIOp(ComOp, inputs, MlirToJlmConverter::GetIndexBitWidth()));
     }
     else
     {
@@ -1182,8 +1181,8 @@ MlirToJlmConverter::ConvertType(const ::mlir::Type & type)
   }
   else if (type.isIndex())
   {
-    // RVSDG does not support indices, which are modeled as 32-bit integers
-    return rvsdg::BitType::Create(32);
+    // RVSDG does not support indices, which are modeled as integers
+    return rvsdg::BitType::Create(MlirToJlmConverter::GetIndexBitWidth());
   }
   else
   {
