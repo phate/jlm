@@ -91,6 +91,21 @@ public:
     return *output;
   }
 
+  [[nodiscard]] static rvsdg::Node::InputIteratorRange
+  MemoryStateInputs(const rvsdg::SimpleNode & node) noexcept
+  {
+    const auto loadOperation = util::AssertedCast<const LoadOperation>(&node.GetOperation());
+    if (loadOperation->NumMemoryStates_ == 0)
+    {
+      return { rvsdg::Input::Iterator(nullptr), rvsdg::Input::Iterator(nullptr) };
+    }
+
+    const auto firstMemoryStateInput =
+        node.input(loadOperation->narguments() - loadOperation->NumMemoryStates_);
+    JLM_ASSERT(is<MemoryStateType>(firstMemoryStateInput->Type()));
+    return { rvsdg::Input::Iterator(firstMemoryStateInput), rvsdg::Input::Iterator(nullptr) };
+  }
+
   [[nodiscard]] static rvsdg::Node::OutputIteratorRange
   MemoryStateOutputs(const rvsdg::SimpleNode & node) noexcept
   {
@@ -119,6 +134,21 @@ public:
     const auto input = loadNode->input(output.index());
     JLM_ASSERT(is<MemoryStateType>(input->Type()));
     return *input;
+  }
+
+  /**
+   * Maps a memory state input of a load operation to its corresponding memory state output.
+   */
+  [[nodiscard]] static rvsdg::Output &
+  MapMemoryStateInputToOutput(const rvsdg::Input & input)
+  {
+    JLM_ASSERT(is<MemoryStateType>(input.Type()));
+    auto [loadNode, loadOperation] = rvsdg::TryGetSimpleNodeAndOptionalOp<LoadOperation>(input);
+    JLM_ASSERT(loadOperation);
+    JLM_ASSERT(loadNode->ninputs() == loadNode->noutputs());
+    const auto output = loadNode->output(input.index());
+    JLM_ASSERT(is<MemoryStateType>(output->Type()));
+    return *output;
   }
 
 private:
@@ -280,9 +310,6 @@ public:
    * =>
    * v sl1 ... slM = LoadNonVolatileOperation a si1 ... siM
    * sx1 = MemStateMergeOperation sl1 ... slM
-   *
-   * FIXME: The reduction can be generalized: A load node can have multiple operands from different
-   * merge nodes.
    *
    * @return If the normalization could be applied, then the results of the load operation after
    * the transformation. Otherwise, std::nullopt.

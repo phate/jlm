@@ -1051,6 +1051,18 @@ outputs(const Node * node)
   return outputs;
 }
 
+static inline std::vector<Output*>
+Outputs(const Node & node, const size_t start, const size_t size)
+{
+  JLM_ASSERT(start + size < node.noutputs());
+
+  std::vector<Output*> outputs;
+  for (size_t n = start; n < start+size; n++)
+    outputs.push_back(node.output(n));
+
+  return outputs;
+}
+
 static inline void
 divert_users(Node * node, const std::vector<Output *> & outputs)
 {
