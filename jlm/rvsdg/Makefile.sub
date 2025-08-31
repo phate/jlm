@@ -3,6 +3,7 @@ librvsdg_SOURCES = \
     jlm/rvsdg/control.cpp \
     jlm/rvsdg/FunctionType.cpp \
     jlm/rvsdg/delta.cpp \
+    jlm/rvsdg/DotWriter.cpp \
     jlm/rvsdg/gamma.cpp \
     jlm/rvsdg/graph.cpp \
     jlm/rvsdg/lambda.cpp \
@@ -37,6 +38,7 @@ librvsdg_HEADERS = \
     jlm/rvsdg/MatchType.hpp \
     jlm/rvsdg/operation.hpp \
     jlm/rvsdg/delta.hpp \
+    jlm/rvsdg/DotWriter.hpp \
     jlm/rvsdg/gamma.hpp \
     jlm/rvsdg/notifiers.hpp \
     jlm/rvsdg/bitstring/constant.hpp \
