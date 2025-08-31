@@ -1051,6 +1051,29 @@ outputs(const Node * node)
   return outputs;
 }
 
+/**
+ * Returns a subset of the outputs from a node as a vector.
+ *
+ * @param node The node from which the outputs are taken.
+ * @param startIdx The index of the first output.
+ * @param size The number of outputs that are returned.
+ * @return A vector of outputs.
+ *
+ * \pre The \p startIdx + \p size must be smaller or equal than the number of outputs of \p node.
+ */
+static inline std::vector<Output *>
+Outputs(const Node & node, const size_t startIdx, const size_t size)
+{
+  JLM_ASSERT(startIdx + size <= node.noutputs());
+
+  std::vector<Output *> outputs;
+  for (size_t n = startIdx; n < startIdx + size; n++)
+    outputs.push_back(node.output(n));
+
+  JLM_ASSERT(outputs.size() == size);
+  return outputs;
+}
+
 static inline void
 divert_users(Node * node, const std::vector<Output *> & outputs)
 {
