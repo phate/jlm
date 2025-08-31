@@ -116,11 +116,17 @@ DotWriter::AttachNodeInput(util::graph::Port & inputPort, const rvsdg::Input & r
           graph.GetElementFromProgramObject(*rvsdgInput.origin())))
   {
     auto & edge = graph.CreateDirectedEdge(*originPort, inputPort);
-    if (rvsdg::is<MemoryStateType>(rvsdgInput.Type()))
-      edge.SetAttribute("color", util::graph::Colors::Red);
-    if (rvsdg::is<IOStateType>(rvsdgInput.Type()))
-      edge.SetAttribute("color", util::graph::Colors::Green);
+    AnnotateEdge(rvsdgInput, edge);
   }
+}
+
+void
+LlvmDotWriter::AnnotateEdge(const rvsdg::Input & rvsdgInput, util::graph::Edge & edge)
+{
+  if (rvsdg::is<MemoryStateType>(rvsdgInput.Type()))
+    edge.SetAttribute("color", util::graph::Colors::Red);
+  if (rvsdg::is<IOStateType>(rvsdgInput.Type()))
+    edge.SetAttribute("color", util::graph::Colors::Green);
 }
 
 /**

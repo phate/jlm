@@ -326,11 +326,20 @@ MlirToJlmConverter::ConvertBitBinaryNode(
 
   auto type = mlirOperation.getResult(0).getType();
 
-  if (!type.isa<::mlir::IntegerType>())
+  size_t width = 0;
+  if (type.isa<::mlir::IntegerType>())
+  {
+    auto integerType = type.cast<::mlir::IntegerType>();
+    width = integerType.getWidth();
+  }
+  else if (type.isIndex())
+  {
+    width = MlirToJlmConverter::GetIndexBitWidth();
+  }
+  else
+  {
     return nullptr;
-
-  auto integerType = type.cast<::mlir::IntegerType>();
-  auto width = integerType.getWidth();
+  }
 
   if (::mlir::isa<::mlir::arith::AddIOp>(mlirOperation))
   {
@@ -508,6 +517,61 @@ MlirToJlmConverter::ConvertOperation(
         &rvsdg::CreateOpNode<llvm::ConstantFP>(rvsdgRegion, size, constant.value()));
   }
 
+  // RVSDG does not have an index type. Indices are therefore converted to integers.
+
+  else if (auto constant = ::mlir::dyn_cast<::mlir::arith::ConstantIndexOp>(&mlirOperation))
+  {
+    auto type = constant.getType();
+    JLM_ASSERT(type.getTypeID() == ::mlir::IndexType::getTypeID());
+
+    return rvsdg::outputs(&jlm::llvm::IntegerConstantOperation::Create(
+        rvsdgRegion,
+        MlirToJlmConverter::GetIndexBitWidth(),
+        constant.value()));
+  }
+  else if (auto indexCast = ::mlir::dyn_cast<::mlir::arith::IndexCastOp>(&mlirOperation))
+  {
+    auto outputType = indexCast.getResult().getType();
+    auto inputType = indexCast.getIn().getType();
+    unsigned inputBits = inputType.getIntOrFloatBitWidth();
+    unsigned outputBits = outputType.getIntOrFloatBitWidth();
+
+    if (inputType.isIndex())
+    {
+      if (outputBits == MlirToJlmConverter::GetIndexBitWidth())
+      {
+        // Nothing is needed to be done so we simply pass on the inputs
+        return { inputs.begin(), inputs.end() };
+      }
+      else if (outputBits > MlirToJlmConverter::GetIndexBitWidth())
+      {
+        return { llvm::SExtOperation::create(outputBits, inputs[0]) };
+      }
+      else
+      {
+        return { llvm::TruncOperation::create(outputBits, inputs[0]) };
+      }
+    }
+    else
+    {
+      if (inputBits == MlirToJlmConverter::GetIndexBitWidth())
+      {
+        // Nothing to be done as indices are not supported and of default width
+        return { inputs.begin(), inputs.end() };
+      }
+      else if (inputBits > MlirToJlmConverter::GetIndexBitWidth())
+      {
+        return { llvm::TruncOperation::create(MlirToJlmConverter::GetIndexBitWidth(), inputs[0]) };
+      }
+      else
+      {
+        return { &llvm::ZExtOperation::Create(
+            *(inputs[0]),
+            rvsdg::BitType::Create(MlirToJlmConverter::GetIndexBitWidth())) };
+      }
+    }
+  }
+
   else if (auto negOp = ::mlir::dyn_cast<::mlir::arith::NegFOp>(&mlirOperation))
   {
     auto type = negOp.getResult().getType();
@@ -548,10 +612,19 @@ MlirToJlmConverter::ConvertOperation(
   else if (auto ComOp = ::mlir::dyn_cast<::mlir::arith::CmpIOp>(&mlirOperation))
   {
     auto type = ComOp.getOperandTypes()[0];
-    JLM_ASSERT(type.getTypeID() == ::mlir::IntegerType::getTypeID());
-    auto integerType = ::mlir::cast<::mlir::IntegerType>(type);
-
-    return rvsdg::outputs(ConvertCmpIOp(ComOp, inputs, integerType.getWidth()));
+    if (type.isa<::mlir::IntegerType>())
+    {
+      auto integerType = ::mlir::cast<::mlir::IntegerType>(type);
+      return rvsdg::outputs(ConvertCmpIOp(ComOp, inputs, integerType.getWidth()));
+    }
+    else if (type.isIndex())
+    {
+      return rvsdg::outputs(ConvertCmpIOp(ComOp, inputs, MlirToJlmConverter::GetIndexBitWidth()));
+    }
+    else
+    {
+      JLM_UNREACHABLE("Wrong type given to CmpIOp.");
+    }
   }
 
   else if (auto ComOp = ::mlir::dyn_cast<::mlir::arith::CmpFOp>(&mlirOperation))
@@ -1110,6 +1183,11 @@ MlirToJlmConverter::ConvertType(const ::mlir::Type & type)
       resultTypes.push_back(ConvertType(resultType));
     }
     return rvsdg::FunctionType::Create(argumentTypes, resultTypes);
+  }
+  else if (type.isIndex())
+  {
+    // RVSDG does not support indices, which are modeled as integers
+    return rvsdg::BitType::Create(MlirToJlmConverter::GetIndexBitWidth());
   }
   else
   {
