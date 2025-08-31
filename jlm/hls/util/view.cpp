@@ -401,7 +401,7 @@ RegionToDot(
   for (size_t i = 0; i < region->nresults(); ++i)
   {
     dot << Edge(region->result(i)->origin(), region->result(i), tailLabel);
-    if (auto be = dynamic_cast<backedge_result *>(region->result(i)))
+    if (auto be = dynamic_cast<BackEdgeResult *>(region->result(i)))
     {
       dot << Edge(be->argument(), be, tailLabel, true);
     }

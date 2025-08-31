@@ -1242,7 +1242,7 @@ types_bitstring_test_normalize()
   assert(node->ninputs() == 2);
   auto op1 = node->input(0)->origin();
   auto op2 = node->input(1)->origin();
-  if (!is<node_output>(op1))
+  if (!is<NodeOutput>(op1))
   {
     auto tmp = op1;
     op1 = op2;

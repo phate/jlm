@@ -59,18 +59,14 @@ SinkInsertion()
   // The sink insertion pass should have inserted a SinkOperation node at output o0
   {
     assert(outputVar0.output->nusers() == 1);
-    auto [sinkNode, sinkOperation] =
-        TryGetSimpleNodeAndOptionalOp<SinkOperation>(*outputVar0.output->Users().begin());
-    assert(sinkNode && sinkOperation);
+    assert(IsOwnerNodeOperation<SinkOperation>(*outputVar0.output->Users().begin()));
   }
 
   // The sink insertion pass should have inserted a SinkOperation node at the argument of i0
   {
     auto & i0Argument = *inputVar0.argument[0];
     assert(i0Argument.nusers() == 1);
-    auto [sinkNode, sinkOperation] =
-        TryGetSimpleNodeAndOptionalOp<SinkOperation>(*i0Argument.Users().begin());
-    assert(sinkNode && sinkOperation);
+    assert(IsOwnerNodeOperation<SinkOperation>(*i0Argument.Users().begin()));
   }
 }
 

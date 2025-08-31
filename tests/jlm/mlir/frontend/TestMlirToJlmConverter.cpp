@@ -272,9 +272,9 @@ TestDivOperation()
       assert(convertedLambda->subregion()->nnodes() == 3);
 
       // Traverse the rvsgd graph upwards to check connections
-      node_output * lambdaResultOriginNodeOuput = nullptr;
+      NodeOutput * lambdaResultOriginNodeOuput = nullptr;
       assert(
-          lambdaResultOriginNodeOuput = dynamic_cast<jlm::rvsdg::node_output *>(
+          lambdaResultOriginNodeOuput = dynamic_cast<jlm::rvsdg::NodeOutput *>(
               convertedLambda->subregion()->result(0)->origin()));
       Node * lambdaResultOriginNode = lambdaResultOriginNodeOuput->node();
       assert(is<jlm::llvm::IntegerUDivOperation>(lambdaResultOriginNode->GetOperation()));

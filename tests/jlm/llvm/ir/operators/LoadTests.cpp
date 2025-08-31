@@ -464,13 +464,14 @@ static void
 TestLoadLoadReduction()
 {
   using namespace jlm::llvm;
+  using namespace jlm::rvsdg;
 
   // Arrange
   auto vt = jlm::tests::ValueType::Create();
   auto pt = PointerType::Create();
   auto mt = MemoryStateType::Create();
 
-  jlm::rvsdg::Graph graph;
+  Graph graph;
   auto a1 = &jlm::rvsdg::GraphImport::Create(graph, pt, "a1");
   auto a2 = &jlm::rvsdg::GraphImport::Create(graph, pt, "a2");
   auto a3 = &jlm::rvsdg::GraphImport::Create(graph, pt, "a3");
@@ -479,42 +480,56 @@ TestLoadLoadReduction()
   auto s1 = &jlm::rvsdg::GraphImport::Create(graph, mt, "s1");
   auto s2 = &jlm::rvsdg::GraphImport::Create(graph, mt, "s2");
 
-  auto st1 = StoreNonVolatileOperation::Create(a1, v1, { s1 }, 4);
-  auto ld1 = LoadNonVolatileOperation::Create(a2, { s1 }, vt, 4);
-  auto ld2 = LoadNonVolatileOperation::Create(a3, { s2 }, vt, 4);
+  auto & storeNode = StoreNonVolatileOperation::CreateNode(*a1, *v1, { s1 }, 4);
+  auto & loadNode1 = LoadNonVolatileOperation::CreateNode(*a2, { s1 }, vt, 4);
+  auto & loadNode2 = LoadNonVolatileOperation::CreateNode(*a3, { s2 }, vt, 4);
 
-  auto & loadNode = LoadNonVolatileOperation::CreateNode(*a4, { st1[0], ld1[1], ld2[1] }, vt, 4);
+  auto & loadNode3 = LoadNonVolatileOperation::CreateNode(
+      *a4,
+      { storeNode.output(0), loadNode1.output(1), loadNode2.output(1) },
+      vt,
+      4);
 
-  auto & x1 = jlm::rvsdg::GraphExport::Create(*loadNode.output(1), "s");
-  auto & x2 = jlm::rvsdg::GraphExport::Create(*loadNode.output(2), "s");
-  auto & x3 = jlm::rvsdg::GraphExport::Create(*loadNode.output(3), "s");
+  auto & x1 = GraphExport::Create(*loadNode3.output(1), "s");
+  auto & x2 = GraphExport::Create(*loadNode3.output(2), "s");
+  auto & x3 = GraphExport::Create(*loadNode3.output(3), "s");
 
-  jlm::rvsdg::view(&graph.GetRootRegion(), stdout);
+  view(&graph.GetRootRegion(), stdout);
 
   // Act
   const auto success = jlm::rvsdg::ReduceNode<LoadNonVolatileOperation>(
       LoadNonVolatileOperation::NormalizeLoadLoadState,
-      loadNode);
+      loadNode3);
   graph.PruneNodes();
 
-  jlm::rvsdg::view(&graph.GetRootRegion(), stdout);
+  view(&graph.GetRootRegion(), stdout);
 
   // Assert
   assert(success);
   assert(graph.GetRootRegion().nnodes() == 6);
 
-  auto ld = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*x1.origin());
-  assert(is<LoadNonVolatileOperation>(ld));
+  const auto newLoadNode3 = jlm::rvsdg::TryGetOwnerNode<Node>(*x1.origin());
+  assert(is<LoadNonVolatileOperation>(newLoadNode3));
 
-  auto mx1 = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*x2.origin());
-  assert(is<MemoryStateMergeOperation>(mx1) && mx1->ninputs() == 2);
-  assert(mx1->input(0)->origin() == ld1[1] || mx1->input(0)->origin() == ld->output(2));
-  assert(mx1->input(1)->origin() == ld1[1] || mx1->input(1)->origin() == ld->output(2));
+  assert(newLoadNode3->input(1)->origin() == storeNode.output(0));
 
-  auto mx2 = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*x3.origin());
-  assert(is<MemoryStateMergeOperation>(mx2) && mx2->ninputs() == 2);
-  assert(mx2->input(0)->origin() == ld2[1] || mx2->input(0)->origin() == ld->output(3));
-  assert(mx2->input(1)->origin() == ld2[1] || mx2->input(1)->origin() == ld->output(3));
+  {
+    auto [joinNode, joinOperation] =
+        jlm::rvsdg::TryGetSimpleNodeAndOptionalOp<MemoryStateJoinOperation>(*x2.origin());
+    assert(joinNode && joinOperation);
+    assert(joinNode->ninputs() == 2);
+    assert(joinNode->input(0)->origin() == loadNode1.output(1));
+    assert(joinNode->input(1)->origin() == newLoadNode3->output(2));
+  }
+
+  {
+    auto [joinNode, joinOperation] =
+        jlm::rvsdg::TryGetSimpleNodeAndOptionalOp<MemoryStateJoinOperation>(*x3.origin());
+    assert(joinNode && joinOperation);
+    assert(joinNode->ninputs() == 2);
+    assert(joinNode->input(0)->origin() == loadNode2.output(1));
+    assert(joinNode->input(1)->origin() == newLoadNode3->output(3));
+  }
 }
 
 JLM_UNIT_TEST_REGISTER(

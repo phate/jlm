@@ -362,11 +362,11 @@ EnsureSingleInEdgeToExitNode(ControlFlowGraph & cfg)
 static std::unique_ptr<ControlFlowGraph>
 create_cfg(::llvm::Function & f, Context & ctx)
 {
-  auto node = static_cast<const fctvariable *>(ctx.lookup_value(&f))->function();
+  auto node = static_cast<const FunctionVariable *>(ctx.lookup_value(&f))->function();
 
   auto add_arguments = [](const ::llvm::Function & f, ControlFlowGraph & cfg, Context & ctx)
   {
-    auto node = static_cast<const fctvariable *>(ctx.lookup_value(&f))->function();
+    auto node = static_cast<const FunctionVariable *>(ctx.lookup_value(&f))->function();
 
     size_t n = 0;
     for (const auto & arg : f.args())
@@ -441,7 +441,7 @@ convert_function(::llvm::Function & function, Context & ctx)
   if (function.isDeclaration())
     return;
 
-  auto fv = static_cast<const fctvariable *>(ctx.lookup_value(&function));
+  auto fv = static_cast<const FunctionVariable *>(ctx.lookup_value(&function));
 
   ctx.set_node(fv->function());
   fv->function()->add_cfg(create_cfg(function, ctx));

@@ -357,6 +357,77 @@ JLM_UNIT_TEST_REGISTER(
     MemoryStateMergeNormalizeNestedSplits)
 
 static void
+MemoryStateJoin_NormalizeSingleOperand()
+{
+  using namespace jlm::llvm;
+  using namespace jlm::rvsdg;
+
+  // Arrange
+  const auto memoryStateType = MemoryStateType::Create();
+
+  Graph rvsdg;
+  auto & ix = jlm::rvsdg::GraphImport::Create(rvsdg, memoryStateType, "x");
+
+  auto & mergeNode = MemoryStateJoinOperation::CreateNode({ &ix });
+
+  auto & ex = GraphExport::Create(*mergeNode.output(0), "x");
+
+  view(&rvsdg.GetRootRegion(), stdout);
+
+  // Act
+  ReduceNode<MemoryStateJoinOperation>(MemoryStateJoinOperation::NormalizeSingleOperand, mergeNode);
+  rvsdg.PruneNodes();
+  view(&rvsdg.GetRootRegion(), stdout);
+
+  // Assert
+  assert(rvsdg.GetRootRegion().nnodes() == 0);
+  assert(ex.origin() == &ix);
+}
+
+JLM_UNIT_TEST_REGISTER(
+    "jlm/llvm/ir/operators/MemoryStateOperationTests-MemoryStateJoin_NormalizeSingleOperand",
+    MemoryStateJoin_NormalizeSingleOperand)
+
+static void
+MemoryStateJoin_NormalizeDuplicateOperands()
+{
+  using namespace jlm::llvm;
+  using namespace jlm::rvsdg;
+
+  // Arrange
+  const auto memoryStateType = MemoryStateType::Create();
+
+  Graph rvsdg;
+  auto & ix0 = jlm::rvsdg::GraphImport::Create(rvsdg, memoryStateType, "x0");
+  auto & ix1 = jlm::rvsdg::GraphImport::Create(rvsdg, memoryStateType, "x1");
+
+  auto & node = MemoryStateJoinOperation::CreateNode({ &ix0, &ix0, &ix1, &ix1 });
+
+  auto & ex = GraphExport::Create(*node.output(0), "x");
+
+  view(&rvsdg.GetRootRegion(), stdout);
+
+  // Act
+  ReduceNode<MemoryStateJoinOperation>(MemoryStateJoinOperation::NormalizeDuplicateOperands, node);
+  rvsdg.PruneNodes();
+  view(&rvsdg.GetRootRegion(), stdout);
+
+  // Assert
+  assert(rvsdg.GetRootRegion().nnodes() == 1);
+  auto [joinNode, joinOperation] =
+      TryGetSimpleNodeAndOptionalOp<MemoryStateJoinOperation>(*ex.origin());
+  assert(joinNode && joinOperation);
+
+  assert(joinNode->ninputs() == 2);
+  assert(joinNode->input(0)->origin() == &ix0);
+  assert(joinNode->input(1)->origin() == &ix1);
+}
+
+JLM_UNIT_TEST_REGISTER(
+    "jlm/llvm/ir/operators/MemoryStateOperationTests-MemoryStateJoin_NormalizeDuplicateOperands",
+    MemoryStateJoin_NormalizeDuplicateOperands)
+
+static void
 LambdaEntryMemStateOperatorEquality()
 {
   using namespace jlm::llvm;

@@ -60,7 +60,7 @@ RemoveUnusedInputs(LoopNode & loopNode)
   {
     auto argument = loopSubregion->argument(i);
 
-    if (auto backedgeArgument = dynamic_cast<backedge_argument *>(argument))
+    if (auto backedgeArgument = dynamic_cast<BackEdgeArgument *>(argument))
     {
       auto result = backedgeArgument->result();
       JLM_ASSERT(*result->Type() == *argument->Type());

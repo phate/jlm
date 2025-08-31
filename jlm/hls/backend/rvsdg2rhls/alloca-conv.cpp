@@ -83,7 +83,7 @@ private:
       }
       else if (auto r = dynamic_cast<rvsdg::RegionResult *>(&user))
       {
-        if (auto ber = dynamic_cast<backedge_result *>(r))
+        if (auto ber = dynamic_cast<BackEdgeResult *>(r))
         {
           trace(ber->argument());
         }
@@ -130,7 +130,7 @@ alloca_conv(rvsdg::Region * region)
     {
       // ensure that the size is one
       JLM_ASSERT(node->ninputs() == 1);
-      auto constant_output = dynamic_cast<jlm::rvsdg::node_output *>(node->input(0)->origin());
+      auto constant_output = dynamic_cast<rvsdg::NodeOutput *>(node->input(0)->origin());
       JLM_ASSERT(constant_output);
       auto constant_operation = dynamic_cast<const llvm::IntegerConstantOperation *>(
           &constant_output->node()->GetOperation());
@@ -159,7 +159,7 @@ alloca_conv(rvsdg::Region * region)
           states.push_back(l->input(i)->origin());
         }
         auto load_outs = LocalLoadOperation::create(*index, states, *response);
-        auto nn = dynamic_cast<jlm::rvsdg::node_output *>(load_outs[0])->node();
+        auto nn = dynamic_cast<rvsdg::NodeOutput *>(load_outs[0])->node();
         for (size_t i = 0; i < l->noutputs(); ++i)
         {
           l->output(i)->divert_users(nn->output(i));
@@ -178,7 +178,7 @@ alloca_conv(rvsdg::Region * region)
           states.push_back(s->input(i)->origin());
         }
         auto store_outs = LocalStoreOperation::create(*index, *s->input(1)->origin(), states);
-        auto nn = dynamic_cast<jlm::rvsdg::node_output *>(store_outs[0])->node();
+        auto nn = dynamic_cast<rvsdg::NodeOutput *>(store_outs[0])->node();
         for (size_t i = 0; i < s->noutputs(); ++i)
         {
           s->output(i)->divert_users(nn->output(i));

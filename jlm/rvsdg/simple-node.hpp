@@ -27,10 +27,10 @@ private:
       const std::vector<jlm::rvsdg::Output *> & operands);
 
 public:
-  node_input *
+  NodeInput *
   input(size_t index) const noexcept;
 
-  node_output *
+  NodeOutput *
   output(size_t index) const noexcept;
 
   [[nodiscard]] const SimpleOperation &
@@ -78,16 +78,16 @@ NormalizeSimpleOperationCommonNodeElimination(
     const SimpleOperation & operation,
     const std::vector<rvsdg::Output *> & operands);
 
-inline node_input *
+inline NodeInput *
 SimpleNode::input(size_t index) const noexcept
 {
   return Node::input(index);
 }
 
-inline node_output *
+inline NodeOutput *
 SimpleNode::output(size_t index) const noexcept
 {
-  return static_cast<node_output *>(Node::output(index));
+  return Node::output(index);
 }
 
 /**

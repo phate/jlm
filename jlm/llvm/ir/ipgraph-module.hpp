@@ -135,7 +135,7 @@ public:
   {
     JLM_ASSERT(!variable(node));
 
-    auto v = std::unique_ptr<llvm::Variable>(new fctvariable(node));
+    auto v = std::unique_ptr<Variable>(new FunctionVariable(node));
     auto pv = v.get();
     functions_[node] = pv;
     variables_.insert(std::move(v));

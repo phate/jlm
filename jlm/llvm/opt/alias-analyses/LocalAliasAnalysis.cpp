@@ -388,9 +388,7 @@ LocalAliasAnalysis::TraceAllPointerOrigins(TracedPointerOrigin p, TraceCollectio
   }
 
   // If we reach undef nodes, do not include them in the TopOrigins
-  if (const auto [node, undef] =
-          rvsdg::TryGetSimpleNodeAndOptionalOp<UndefValueOperation>(*p.BasePointer);
-      undef)
+  if (rvsdg::IsOwnerNodeOperation<UndefValueOperation>(*p.BasePointer))
   {
     return true;
   }
@@ -624,8 +622,7 @@ bool
 LocalAliasAnalysis::IsOriginalOriginFullyTraceable(const rvsdg::Output & pointer)
 {
   // The only original origins that can be fully traced for escaping are ALLOCAs
-  if (const auto [_, allocaOp] = rvsdg::TryGetSimpleNodeAndOptionalOp<AllocaOperation>(pointer);
-      !allocaOp)
+  if (!rvsdg::IsOwnerNodeOperation<AllocaOperation>(pointer))
     return false;
 
   // Check if the result for this ALLOCA is already memoized

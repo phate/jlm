@@ -4,29 +4,22 @@
  * See COPYING for terms of redistribution.
  */
 
-#include <jlm/mlir/frontend/MlirToJlmConverter.hpp>
-#include <jlm/mlir/MLIRConverterCommon.hpp>
-
-#include <llvm/Support/raw_os_ostream.h>
-#include <mlir/Parser/Parser.h>
-#include <mlir/Transforms/TopologicalSortUtils.h>
-
-#include <jlm/llvm/ir/operators/sext.hpp>
-#include <jlm/rvsdg/bitstring/arithmetic.hpp>
-#include <jlm/rvsdg/bitstring/comparison.hpp>
-#include <jlm/rvsdg/bitstring/constant.hpp>
-
-#include <jlm/llvm/ir/operators/operators.hpp>
-
 #include <jlm/llvm/ir/operators/alloca.hpp>
 #include <jlm/llvm/ir/operators/call.hpp>
 #include <jlm/llvm/ir/operators/GetElementPtr.hpp>
+#include <jlm/llvm/ir/operators/IntegerOperations.hpp>
 #include <jlm/llvm/ir/operators/IOBarrier.hpp>
 #include <jlm/llvm/ir/operators/Load.hpp>
 #include <jlm/llvm/ir/operators/MemoryStateOperations.hpp>
+#include <jlm/llvm/ir/operators/operators.hpp>
+#include <jlm/llvm/ir/operators/sext.hpp>
+#include <jlm/llvm/ir/operators/SpecializedArithmeticIntrinsicOperations.hpp>
 #include <jlm/llvm/ir/operators/Store.hpp>
-
-#include <jlm/llvm/ir/operators/IntegerOperations.hpp>
+#include <jlm/mlir/frontend/MlirToJlmConverter.hpp>
+#include <jlm/mlir/MLIRConverterCommon.hpp>
+#include <jlm/rvsdg/bitstring/constant.hpp>
+#include <mlir/Parser/Parser.h>
+#include <mlir/Transforms/TopologicalSortUtils.h>
 
 namespace jlm::mlir
 {
@@ -333,11 +326,20 @@ MlirToJlmConverter::ConvertBitBinaryNode(
 
   auto type = mlirOperation.getResult(0).getType();
 
-  if (!type.isa<::mlir::IntegerType>())
+  size_t width = 0;
+  if (type.isa<::mlir::IntegerType>())
+  {
+    auto integerType = type.cast<::mlir::IntegerType>();
+    width = integerType.getWidth();
+  }
+  else if (type.isIndex())
+  {
+    width = MlirToJlmConverter::GetIndexBitWidth();
+  }
+  else
+  {
     return nullptr;
-
-  auto integerType = type.cast<::mlir::IntegerType>();
-  auto width = integerType.getWidth();
+  }
 
   if (::mlir::isa<::mlir::arith::AddIOp>(mlirOperation))
   {
@@ -419,6 +421,13 @@ MlirToJlmConverter::ConvertOperation(
   if (convertedFloatBinaryNode)
   {
     return rvsdg::outputs(convertedFloatBinaryNode);
+  }
+
+  if (::mlir::isa<::mlir::LLVM::FMulAddOp>(&mlirOperation))
+  {
+    JLM_ASSERT(inputs.size() == 3);
+    return rvsdg::outputs(
+        &llvm::FMulAddIntrinsicOperation::CreateNode(*inputs[0], *inputs[1], *inputs[2]));
   }
   // ** endregion Arithmetic Float Operation **
 
@@ -508,6 +517,61 @@ MlirToJlmConverter::ConvertOperation(
         &rvsdg::CreateOpNode<llvm::ConstantFP>(rvsdgRegion, size, constant.value()));
   }
 
+  // RVSDG does not have an index type. Indices are therefore converted to integers.
+
+  else if (auto constant = ::mlir::dyn_cast<::mlir::arith::ConstantIndexOp>(&mlirOperation))
+  {
+    auto type = constant.getType();
+    JLM_ASSERT(type.getTypeID() == ::mlir::IndexType::getTypeID());
+
+    return rvsdg::outputs(&jlm::llvm::IntegerConstantOperation::Create(
+        rvsdgRegion,
+        MlirToJlmConverter::GetIndexBitWidth(),
+        constant.value()));
+  }
+  else if (auto indexCast = ::mlir::dyn_cast<::mlir::arith::IndexCastOp>(&mlirOperation))
+  {
+    auto outputType = indexCast.getResult().getType();
+    auto inputType = indexCast.getIn().getType();
+    unsigned inputBits = inputType.getIntOrFloatBitWidth();
+    unsigned outputBits = outputType.getIntOrFloatBitWidth();
+
+    if (inputType.isIndex())
+    {
+      if (outputBits == MlirToJlmConverter::GetIndexBitWidth())
+      {
+        // Nothing is needed to be done so we simply pass on the inputs
+        return { inputs.begin(), inputs.end() };
+      }
+      else if (outputBits > MlirToJlmConverter::GetIndexBitWidth())
+      {
+        return { llvm::SExtOperation::create(outputBits, inputs[0]) };
+      }
+      else
+      {
+        return { llvm::TruncOperation::create(outputBits, inputs[0]) };
+      }
+    }
+    else
+    {
+      if (inputBits == MlirToJlmConverter::GetIndexBitWidth())
+      {
+        // Nothing to be done as indices are not supported and of default width
+        return { inputs.begin(), inputs.end() };
+      }
+      else if (inputBits > MlirToJlmConverter::GetIndexBitWidth())
+      {
+        return { llvm::TruncOperation::create(MlirToJlmConverter::GetIndexBitWidth(), inputs[0]) };
+      }
+      else
+      {
+        return { &llvm::ZExtOperation::Create(
+            *(inputs[0]),
+            rvsdg::BitType::Create(MlirToJlmConverter::GetIndexBitWidth())) };
+      }
+    }
+  }
+
   else if (auto negOp = ::mlir::dyn_cast<::mlir::arith::NegFOp>(&mlirOperation))
   {
     auto type = negOp.getResult().getType();
@@ -548,10 +612,19 @@ MlirToJlmConverter::ConvertOperation(
   else if (auto ComOp = ::mlir::dyn_cast<::mlir::arith::CmpIOp>(&mlirOperation))
   {
     auto type = ComOp.getOperandTypes()[0];
-    JLM_ASSERT(type.getTypeID() == ::mlir::IntegerType::getTypeID());
-    auto integerType = ::mlir::cast<::mlir::IntegerType>(type);
-
-    return rvsdg::outputs(ConvertCmpIOp(ComOp, inputs, integerType.getWidth()));
+    if (type.isa<::mlir::IntegerType>())
+    {
+      auto integerType = ::mlir::cast<::mlir::IntegerType>(type);
+      return rvsdg::outputs(ConvertCmpIOp(ComOp, inputs, integerType.getWidth()));
+    }
+    else if (type.isIndex())
+    {
+      return rvsdg::outputs(ConvertCmpIOp(ComOp, inputs, MlirToJlmConverter::GetIndexBitWidth()));
+    }
+    else
+    {
+      JLM_UNREACHABLE("Wrong type given to CmpIOp.");
+    }
   }
 
   else if (auto ComOp = ::mlir::dyn_cast<::mlir::arith::CmpFOp>(&mlirOperation))
@@ -665,7 +738,12 @@ MlirToJlmConverter::ConvertOperation(
     auto outputs = jlm::llvm::CallExitMemoryStateSplitOperation::Create(
         *operands.front(),
         CallExitMemstateSplitOp.getNumResults());
-    return std::vector<jlm::rvsdg::Output *>(outputs.begin(), outputs.end());
+    return outputs;
+  }
+  else if (::mlir::isa<::mlir::rvsdg::MemoryStateJoin>(&mlirOperation))
+  {
+    std::vector operands(inputs.begin(), inputs.end());
+    return rvsdg::outputs(&llvm::MemoryStateJoinOperation::CreateNode(operands));
   }
   else if (auto IOBarrierOp = ::mlir::dyn_cast<::mlir::jlm::IOBarrier>(&mlirOperation))
   {
@@ -684,10 +762,6 @@ MlirToJlmConverter::ConvertOperation(
     return rvsdg::outputs(&rvsdg::CreateOpNode<llvm::IOBarrierOperation>(
         std::vector(inputs.begin(), inputs.end()),
         ConvertType(type)));
-  }
-  else if (auto MallocOp = ::mlir::dyn_cast<::mlir::jlm::Malloc>(&mlirOperation))
-  {
-    return jlm::llvm::MallocOperation::create(inputs[0]);
   }
   else if (auto StoreOp = ::mlir::dyn_cast<::mlir::jlm::Store>(&mlirOperation))
   {
@@ -1109,6 +1183,11 @@ MlirToJlmConverter::ConvertType(const ::mlir::Type & type)
       resultTypes.push_back(ConvertType(resultType));
     }
     return rvsdg::FunctionType::Create(argumentTypes, resultTypes);
+  }
+  else if (type.isIndex())
+  {
+    // RVSDG does not support indices, which are modeled as integers
+    return rvsdg::BitType::Create(MlirToJlmConverter::GetIndexBitWidth());
   }
   else
   {

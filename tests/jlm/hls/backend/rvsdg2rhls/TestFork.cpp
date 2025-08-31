@@ -124,8 +124,8 @@ ConstantForkInsertion()
     auto lambdaRegion = lambda->subregion();
     assert(lambdaRegion->nnodes() == 1);
 
-    const rvsdg::node_output * loopOutput = nullptr;
-    assert(loopOutput = dynamic_cast<jlm::rvsdg::node_output *>(lambdaRegion->result(0)->origin()));
+    const rvsdg::NodeOutput * loopOutput = nullptr;
+    assert(loopOutput = dynamic_cast<jlm::rvsdg::NodeOutput *>(lambdaRegion->result(0)->origin()));
     auto loopNode = loopOutput->node();
     assert(rvsdg::is<hls::LoopOperation>(loopNode));
     auto loop = util::AssertedCast<hls::LoopNode>(loopNode);

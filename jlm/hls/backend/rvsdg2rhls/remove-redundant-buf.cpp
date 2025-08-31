@@ -70,22 +70,16 @@ RedundantBufferElimination::CanTraceToLoadOrStore(const rvsdg::Output & output)
 {
   JLM_ASSERT(rvsdg::is<llvm::MemoryStateType>(output.Type()));
 
-  auto [loadNode, loadOperation] = rvsdg::TryGetSimpleNodeAndOptionalOp<LoadOperation>(output);
-  if (loadNode && loadOperation)
+  if (rvsdg::IsOwnerNodeOperation<LoadOperation>(output))
     return true;
 
-  auto [localLoadNode, localLoadOperation] =
-      rvsdg::TryGetSimpleNodeAndOptionalOp<LocalLoadOperation>(output);
-  if (localLoadNode && localLoadOperation)
+  if (rvsdg::IsOwnerNodeOperation<LocalLoadOperation>(output))
     return true;
 
-  auto [storeNode, storeOperation] = rvsdg::TryGetSimpleNodeAndOptionalOp<StoreOperation>(output);
-  if (storeNode && storeOperation)
+  if (rvsdg::IsOwnerNodeOperation<StoreOperation>(output))
     return true;
 
-  auto [localStoreNode, localStoreOperation] =
-      rvsdg::TryGetSimpleNodeAndOptionalOp<LocalStoreOperation>(output);
-  if (localStoreNode && localStoreOperation)
+  if (rvsdg::IsOwnerNodeOperation<LocalStoreOperation>(output))
     return true;
 
   auto [forkNode, forkOperation] = rvsdg::TryGetSimpleNodeAndOptionalOp<ForkOperation>(output);

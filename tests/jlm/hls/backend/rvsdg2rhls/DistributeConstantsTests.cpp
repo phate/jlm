@@ -71,26 +71,19 @@ GammaSubregionUsage()
   {
     // check subregion 0 - we expect the constantNode to be distributed into this subregion
     assert(gammaNode->subregion(0)->nnodes() == 2);
-    auto [constantNode, constantOperation] =
-        TryGetSimpleNodeAndOptionalOp<IntegerConstantOperation>(*testNode0->input(0)->origin());
-    assert(constantNode && constantOperation);
+    assert(IsOwnerNodeOperation<IntegerConstantOperation>(*testNode0->input(0)->origin()));
   }
 
   {
     // check subregion 1 - we expect the constantNode to be distributed into this subregion
     assert(gammaNode->subregion(1)->nnodes() == 2);
-    auto [constantNode, constantOperation] =
-        TryGetSimpleNodeAndOptionalOp<IntegerConstantOperation>(*testNode1->input(0)->origin());
-    assert(constantNode && constantOperation);
+    assert(IsOwnerNodeOperation<IntegerConstantOperation>(*testNode1->input(0)->origin()));
   }
 
   {
     // check subregion 2 - we expect the constantNode to be distributed into this subregion
     assert(gammaNode->subregion(2)->nnodes() == 1);
-    auto [constantNode, constantOperation] =
-        TryGetSimpleNodeAndOptionalOp<IntegerConstantOperation>(
-            *exitVariable.branchResult[2]->origin());
-    assert(constantNode && constantOperation);
+    assert(IsOwnerNodeOperation<IntegerConstantOperation>(*exitVariable.branchResult[2]->origin()));
   }
 }
 
@@ -160,9 +153,7 @@ NestedGammas()
   {
     // check gammaNodeOuter subregion 0
     assert(gammaNodeOuter->subregion(0)->nnodes() == 2);
-    auto [constantNode, constantOperation] =
-        TryGetSimpleNodeAndOptionalOp<IntegerConstantOperation>(*testNode0->input(0)->origin());
-    assert(constantNode && constantOperation);
+    assert(IsOwnerNodeOperation<IntegerConstantOperation>(*testNode0->input(0)->origin()));
   }
 
   {
@@ -174,19 +165,15 @@ NestedGammas()
     {
       // check gammaNodeInner subregion 0
       assert(gammaNodeInner->subregion(0)->nnodes() == 1);
-      auto [constantNode, constantOperation] =
-          TryGetSimpleNodeAndOptionalOp<IntegerConstantOperation>(
-              *exitVariableInner.branchResult[0]->origin());
-      assert(constantNode && constantOperation);
+      assert(IsOwnerNodeOperation<IntegerConstantOperation>(
+          *exitVariableInner.branchResult[0]->origin()));
     }
 
     {
       // check gammaNodeInner subregion 1
       assert(gammaNodeInner->subregion(1)->nnodes() == 1);
-      auto [constantNode, constantOperation] =
-          TryGetSimpleNodeAndOptionalOp<IntegerConstantOperation>(
-              *exitVariableInner.branchResult[1]->origin());
-      assert(constantNode && constantOperation);
+      assert(IsOwnerNodeOperation<IntegerConstantOperation>(
+          *exitVariableInner.branchResult[1]->origin()));
     }
   }
 

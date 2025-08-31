@@ -134,7 +134,7 @@ FunctionNode::add_cfg(std::unique_ptr<ControlFlowGraph> cfg)
   cfg_ = std::move(cfg);
 }
 
-fctvariable::~fctvariable() noexcept = default;
+FunctionVariable::~FunctionVariable() noexcept = default;
 
 DataNode::~DataNode() noexcept = default;
 

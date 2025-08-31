@@ -128,6 +128,64 @@ public:
 };
 
 /**
+ * A memory state join operation takes multiple states that represent the same abstract memory
+ * location as input and joins them together to a single output state.
+ *
+ * The operation has no equivalent LLVM instruction.
+ */
+class MemoryStateJoinOperation final : public MemoryStateOperation
+{
+public:
+  ~MemoryStateJoinOperation() noexcept override;
+
+  explicit MemoryStateJoinOperation(const size_t numOperands)
+      : MemoryStateOperation(numOperands, 1)
+  {
+    if (numOperands == 0)
+      throw std::logic_error("Insufficient number of operands.");
+  }
+
+  bool
+  operator==(const Operation & other) const noexcept override;
+
+  [[nodiscard]] std::string
+  debug_string() const override;
+
+  [[nodiscard]] std::unique_ptr<Operation>
+  copy() const override;
+
+  /** \brief Removes the MemoryStateJoinOperation as it has only a single operand, i.e., no
+   * joining is performed.
+   *
+   * so = MemoryStateJoinOperation si
+   * ... = AnyOperation so
+   * =>
+   * ... = AnyOperation si
+   */
+  static std::optional<std::vector<rvsdg::Output *>>
+  NormalizeSingleOperand(
+      const MemoryStateJoinOperation & operation,
+      const std::vector<rvsdg::Output *> & operands);
+
+  /** \brief Removes duplicated operands from the MemoryStateJoinOperation.
+   *
+   * so = MemoryStateJoinOperation si0 si0 si1 si1 si2
+   * =>
+   * so = MemoryStateJoinOperation si0 si1 si2
+   */
+  static std::optional<std::vector<rvsdg::Output *>>
+  NormalizeDuplicateOperands(
+      const MemoryStateJoinOperation & operation,
+      const std::vector<rvsdg::Output *> & operands);
+
+  static rvsdg::SimpleNode &
+  CreateNode(const std::vector<rvsdg::Output *> & operands)
+  {
+    return rvsdg::CreateOpNode<MemoryStateJoinOperation>(operands, operands.size());
+  }
+};
+
+/**
  * A memory state split operation takes a single input state and splits it into multiple output
  * states.
  *
