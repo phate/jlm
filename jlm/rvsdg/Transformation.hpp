@@ -55,7 +55,7 @@ public:
   }
 
 private:
-  std::string_view Name_{};
+  std::string_view Name_;
 };
 
 /**
