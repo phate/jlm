@@ -25,6 +25,10 @@ class MemoryStateSplitConversion final : public rvsdg::Transformation
 public:
   ~MemoryStateSplitConversion() noexcept override;
 
+  MemoryStateSplitConversion()
+      : Transformation("MemoryStateSplitConversion")
+  {}
+
   void
   Run(rvsdg::RvsdgModule & module, util::StatisticsCollector & statisticsCollector) override;
 

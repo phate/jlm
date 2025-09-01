@@ -21,6 +21,10 @@ class Transformation
 public:
   virtual ~Transformation() noexcept;
 
+  explicit Transformation(std::string_view Name)
+      : Name_(std::move(Name))
+  {}
+
   /**
    * \brief Perform RVSDG transformation
    *
@@ -49,6 +53,9 @@ public:
     util::StatisticsCollector statisticsCollector;
     Run(module, statisticsCollector);
   }
+
+private:
+  std::string_view Name_{};
 };
 
 /**
@@ -62,7 +69,8 @@ public:
   ~TransformationSequence() noexcept override;
 
   explicit TransformationSequence(std::vector<Transformation *> transformations)
-      : Transformations_(std::move(transformations))
+      : Transformation("TransformationSequence"),
+        Transformations_(std::move(transformations))
   {}
 
   /**

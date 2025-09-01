@@ -51,7 +51,9 @@ NodeReduction::Statistics::GetNumIterations(const rvsdg::Region & region) const 
 
 NodeReduction::~NodeReduction() noexcept = default;
 
-NodeReduction::NodeReduction() = default;
+NodeReduction::NodeReduction()
+    : Transformation("NodeReduction")
+{}
 
 void
 NodeReduction::Run(

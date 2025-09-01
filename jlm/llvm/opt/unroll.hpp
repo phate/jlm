@@ -26,8 +26,9 @@ public:
 
   ~LoopUnrolling() noexcept override;
 
-  constexpr LoopUnrolling(size_t factor)
-      : factor_(factor)
+  explicit LoopUnrolling(const size_t factor)
+      : Transformation("LoopUnrolling"),
+        factor_(factor)
   {}
 
   /**
