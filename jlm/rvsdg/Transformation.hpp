@@ -22,7 +22,7 @@ public:
   virtual ~Transformation() noexcept;
 
   explicit Transformation(std::string_view Name)
-      : Name_(std::move(Name))
+      : Name_(Name)
   {}
 
   /**

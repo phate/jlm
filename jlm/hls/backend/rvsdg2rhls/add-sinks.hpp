@@ -22,7 +22,7 @@ namespace jlm::hls
 class SinkInsertion final : public rvsdg::Transformation
 {
 public:
-  ~SinkInsertion() noexcept;
+  ~SinkInsertion() noexcept override;
 
   SinkInsertion()
       : Transformation("SinkInsertion")
