@@ -12,6 +12,7 @@
 #include <jlm/util/GraphWriter.hpp>
 
 #include <fstream>
+#include <llvm/Support/CommandLine.h>
 #include <map>
 
 namespace jlm::llvm::aa
@@ -60,9 +61,7 @@ public:
     AddMeasurement(
         LoadsConsideredClobbers_,
         evaluator.AreLoadsConsideredClobbers() ? "true" : "false");
-    AddMeasurement(
-        DeduplicatingPointers_,
-        evaluator.IsDeduplicatingPointers() ? "true" : "false");
+    AddMeasurement(DeduplicatingPointers_, evaluator.IsDeduplicatingPointers() ? "true" : "false");
   }
 
   void
@@ -84,22 +83,15 @@ public:
   }
 
   void
-  AddPrecisionSummaryStatistics(
-      uint64_t moduleNumClobbers,
-      double clobberAverageNoAlias,
-      double clobberAverageMayAlias,
-      double clobberAverageMustAlias,
-      uint64_t totalNoAlias,
-      uint64_t totalMayAlias,
-      uint64_t totalMustAlias)
+  AddPrecisionSummaryStatistics(const AggregatedClobberInfos & clobberInfos)
   {
-    AddMeasurement(ModuleNumClobbers_, moduleNumClobbers);
-    AddMeasurement(ClobberAverageNoAlias, clobberAverageNoAlias);
-    AddMeasurement(ClobberAverageMayAlias, clobberAverageMayAlias);
-    AddMeasurement(ClobberAverageMustAlias, clobberAverageMustAlias);
-    AddMeasurement(NumTotalNoAlias_, totalNoAlias);
-    AddMeasurement(NumTotalMayAlias_, totalMayAlias);
-    AddMeasurement(NumTotalMustAlias_, totalMustAlias);
+    AddMeasurement(ModuleNumClobbers_, clobberInfos.NumClobberOperations);
+    AddMeasurement(ClobberAverageNoAlias, clobberInfos.ClobberAverageNoAlias);
+    AddMeasurement(ClobberAverageMayAlias, clobberInfos.ClobberAverageMayAlias);
+    AddMeasurement(ClobberAverageMustAlias, clobberInfos.ClobberAverageMustAlias);
+    AddMeasurement(NumTotalNoAlias_, clobberInfos.TotalNoAlias);
+    AddMeasurement(NumTotalMayAlias_, clobberInfos.TotalMayAlias);
+    AddMeasurement(NumTotalMustAlias_, clobberInfos.TotalMustAlias);
   }
 
   static std::unique_ptr<PrecisionStatistics>
@@ -121,7 +113,7 @@ AliasAnalysisPrecisionEvaluator::EvaluateAliasAnalysisClient(
 {
   auto statistics = PrecisionStatistics::Create(rvsdgModule.SourceFilePath().value());
 
-  // If a precision evaluation is not demanded, skip doing it
+  // If precision evaluation statistics are not demanded, skip doing it
   if (!statisticsCollector.IsDemanded(*statistics))
     return;
 
@@ -131,8 +123,11 @@ AliasAnalysisPrecisionEvaluator::EvaluateAliasAnalysisClient(
   util::graph::Writer gw;
   if (IsAliasingGraphEnabled())
   {
-    AliasingGraph_ = &gw.CreateGraph();
-    dot::WriteGraphs(gw, rvsdgModule.Rvsdg().GetRootRegion(), true);
+    Context_.AliasingGraph_ = &gw.CreateGraph();
+
+    // Also emit the RVSDG to the graph writer
+    dot::LlvmDotWriter writer;
+    writer.WriteGraphs(gw, rvsdgModule.Rvsdg().GetRootRegion(), true);
   }
 
   // Do the pairwise alias queries
@@ -140,19 +135,23 @@ AliasAnalysisPrecisionEvaluator::EvaluateAliasAnalysisClient(
   EvaluateAllFunctions(rvsdgModule.Rvsdg().GetRootRegion(), aliasAnalysis);
   statistics->StopEvaluatingPrecision();
 
-  // Calculate average precision in functions and for the whole module
-  std::optional<util::File>
-  const auto outputFile = statisticsCollector.CreateOutputFile("AAPrecisionEvaluation.log", true);
-  CalculateAverageMayAliasRate(*statistics);
-
+  // If an aliasing graph was constructed during the evaluation, print it out now
   if (IsAliasingGraphEnabled())
   {
     auto out = statisticsCollector.CreateOutputFile("AliasingGraph.dot", true);
     std::ofstream fd(out.path().to_str());
     gw.OutputAllGraphs(fd, util::graph::OutputFormat::Dot);
     statistics->AddAliasingGraphOutputFile(out.path());
-    AliasingGraph_ = nullptr;
   }
+
+  // If precision metrics are demanded per function, create the output file
+  std::optional<util::FilePath> perFunctionOutputFile;
+  if (IsPerFunctionOutputEnabled())
+    perFunctionOutputFile =
+        statisticsCollector.CreateOutputFile("AAPrecisionEvaluation.log", true).path();
+
+  // Calculate total and average precision statistics
+  CalculateResults(perFunctionOutputFile, *statistics);
 
   statisticsCollector.CollectDemandedStatistics(std::move(statistics));
 }
@@ -193,8 +192,9 @@ AliasAnalysisPrecisionEvaluator::EvaluateFunction(
   // from the same output to be regarded as different.
   NormalizePointerValues();
 
-  if (RemoveDuplicatePointers)
-    RemoveDuplicates();
+  // If IsDeduplicatingPointers() is true, duplicate pointers are discarded
+  // Even if deduplicating is disabled, duplicates are still grouped, but only for performance.
+  AggregateDuplicates();
 
   // Create a PrecisionInfo instance for this function
   auto & precisionEvaluation = Context_.PerFunctionPrecision[&function];
@@ -202,24 +202,29 @@ AliasAnalysisPrecisionEvaluator::EvaluateFunction(
   // Go over all pointer usages, find the ratio of clobbering points that may alias with it
   for (size_t i = 0; i < Context_.PointerOperations.size(); i++)
   {
-    auto [p1, s1, p1IsUse, p1IsClobber] = Context_.PointerOperations[i];
+    auto [p1, s1, p1IsClobber, p1Multiplier] = Context_.PointerOperations[i];
 
-    precisionEvaluation.NumOperations++;
-    precisionEvaluation.NumUseOperations += p1IsUse;
+    precisionEvaluation.NumOperations += p1Multiplier;
 
     if (!p1IsClobber)
       continue;
 
+    precisionEvaluation.NumClobberOperations += p1Multiplier;
+
     PrecisionInfo::ClobberInfo clobberInfo;
+    clobberInfo.Multiplier = p1Multiplier;
+
+    // If p1 represents more than one concrete clobber operation,
+    // add the result of querying against all the other clobber operations
+    if (p1Multiplier > 1)
+      clobberInfo.NumMustAlias += p1Multiplier - 1;
 
     for (size_t j = 0; j < Context_.PointerOperations.size(); j++)
     {
       if (i == j)
         continue;
 
-      auto [p2, s2, p2IsUse, p2IsClobber] = Context_.PointerOperations[j];
-      if (!p2IsUse)
-        continue;
+      auto [p2, s2, p2IsClobber, p2Multiplier] = Context_.PointerOperations[j];
 
       auto response = aliasAnalysis.Query(*p1, s1, *p2, s2);
 
@@ -228,46 +233,17 @@ AliasAnalysisPrecisionEvaluator::EvaluateFunction(
       JLM_ASSERT(response == aliasAnalysis.Query(*p2, s2, *p1, s1));
 
       // Add edge to aliasing graph if dumping a graph of alias analysis response edges is requested
-      if (OutputAliasingGraph && p1 < p2)
+      if (IsAliasingGraphEnabled())
       {
-        // Create a node associated with the given output
-        // but also attach it to the GraphElement that already represents it
-        const auto GetOrCreateAliasGraphNode = [&](const rvsdg::Output & p) -> util::graph::Node &
-        {
-          const auto element = AliasingGraph_->GetElementFromProgramObject(p);
-          const auto node = dynamic_cast<util::graph::Node *>(element);
-          if (node)
-            return *node;
-
-          auto & newNode = AliasingGraph_->CreateNode();
-          auto existingElement = AliasingGraph_->GetWriter().GetElementFromProgramObject(p);
-          newNode.SetAttributeGraphElement("output", *existingElement);
-          newNode.SetProgramObject(p);
-          return newNode;
-        };
-
-        auto & p1Node = GetOrCreateAliasGraphNode(*p1);
-        auto & p2Node = GetOrCreateAliasGraphNode(*p2);
-
-        std::optional<std::string> edgeColor;
-        if (response == AliasAnalysis::MayAlias)
-          edgeColor = util::graph::Colors::Purple;
-        else if (response == AliasAnalysis::MustAlias)
-          edgeColor = util::graph::Colors::Orange;
-
-        if (edgeColor)
-        {
-          auto & edge = AliasingGraph_->CreateEdge(p1Node, p2Node, false);
-          edge.SetAttribute("color", *edgeColor);
-        }
+        AddToAliasingGraph(*p1, s1, *p2, s2, response);
       }
 
       if (response == AliasAnalysis::NoAlias)
-        clobberInfo.NumNoAlias++;
+        clobberInfo.NumNoAlias += p2Multiplier;
       else if (response == AliasAnalysis::MayAlias)
-        clobberInfo.NumMayAlias++;
+        clobberInfo.NumMayAlias += p2Multiplier;
       else if (response == AliasAnalysis::MustAlias)
-        clobberInfo.NumMustAlias++;
+        clobberInfo.NumMustAlias += p2Multiplier;
       else
         JLM_UNREACHABLE("Unknown AliasAnalysis query response");
     }
@@ -299,24 +275,16 @@ AliasAnalysisPrecisionEvaluator::CollectPointersFromRegion(const rvsdg::Region &
 void
 AliasAnalysisPrecisionEvaluator::CollectPointersFromSimpleNode(const rvsdg::SimpleNode & node)
 {
-  bool loadsClobber;
-  if (Mode_ == Mode::AllLoadStorePairs)
-    loadsClobber = true;
-  else if (Mode_ == Mode::ClobberingStores)
-    loadsClobber = false;
-  else
-    JLM_UNREACHABLE("Unknown mode");
-
   // In this mode, only (volatile) load and store operations count as uses and clobbers
   if (const auto load = dynamic_cast<const LoadOperation *>(&node.GetOperation()))
   {
     const auto size = GetTypeSize(*load->GetLoadedType());
-    CollectPointer(LoadOperation::AddressInput(node).origin(), size, true, loadsClobber);
+    CollectPointer(LoadOperation::AddressInput(node).origin(), size, AreLoadsConsideredClobbers());
   }
   else if (auto store = dynamic_cast<const StoreOperation *>(&node.GetOperation()))
   {
     const auto size = GetTypeSize(store->GetStoredType());
-    CollectPointer(StoreOperation::AddressInput(node).origin(), size, true, true);
+    CollectPointer(StoreOperation::AddressInput(node).origin(), size, true);
   }
 }
 
@@ -334,11 +302,10 @@ void
 AliasAnalysisPrecisionEvaluator::CollectPointer(
     const rvsdg::Output * value,
     size_t size,
-    bool isUse,
     bool isClobber)
 {
   JLM_ASSERT(IsPointerCompatible(*value));
-  Context_.PointerOperations.push_back({ value, size, isUse, isClobber });
+  Context_.PointerOperations.push_back({ value, size, isClobber, 1 });
 }
 
 void
@@ -352,131 +319,180 @@ AliasAnalysisPrecisionEvaluator::NormalizePointerValues()
 }
 
 void
-AliasAnalysisPrecisionEvaluator::RemoveDuplicates()
+AliasAnalysisPrecisionEvaluator::AggregateDuplicates()
 {
-  // For each occurrence of a (pointer, size) pair, perform logical or to find the final isUse and
-  // isClobber values
-  std::map<std::pair<const rvsdg::Output *, size_t>, std::tuple<bool, bool>> uniquePointerOps;
+  // Add up the multipliers of all (pointer, size, isClobber) values
+  std::map<std::tuple<const rvsdg::Output *, size_t, bool>, size_t> pointerOpMultipliers;
 
-  for (const auto & [pointer, size, isUse, isClobber] : Context_.PointerOperations)
+  for (const auto & [pointer, size, isClobber, multiplier] : Context_.PointerOperations)
   {
-    auto & op = uniquePointerOps[{ pointer, size }];
-    const auto [wasUse, wasClobber] = op;
-    op = { isUse | wasUse, isClobber | wasClobber };
+    pointerOpMultipliers[{ pointer, size, isClobber }] += multiplier;
   }
 
   Context_.PointerOperations.clear();
-  for (const auto & [pointerSize, op] : uniquePointerOps)
+  for (const auto & [pointerOp, multiplier] : pointerOpMultipliers)
   {
-    const auto [pointer, size] = pointerSize;
-    const auto [isUse, isClobber] = op;
-    Context_.PointerOperations.push_back({ pointer, size, isUse, isClobber });
+    const auto [pointer, size, isClobber] = pointerOp;
+
+    if (IsDeduplicatingPointers())
+    {
+      // If Deduplication is being done, set all multipliers to 1
+      // Also, if the operation exists both as a clobber and not a clobber, only add the former
+      if (!isClobber && pointerOpMultipliers.count({ pointer, size, true }) > 0)
+        continue;
+      Context_.PointerOperations.push_back({ pointer, size, isClobber, 1 });
+    }
+    else
+    {
+      // When deduplication is not enabled, use the sum of multipliers as the final multiplier
+      Context_.PointerOperations.push_back({ pointer, size, isClobber, multiplier });
+    }
   }
 }
 
 void
-AliasAnalysisPrecisionEvaluator::AggregateClobberInfos(
-    const std::vector<PrecisionInfo::ClobberInfo> & clobberInfos,
-    double & clobberAverageNoAlias,
-    double & clobberAverageMayAlias,
-    double & clobberAverageMustAlias,
-    uint64_t & totalNoAlias,
-    uint64_t & totalMayAlias,
-    uint64_t & totalMustAlias)
+AliasAnalysisPrecisionEvaluator::AddToAliasingGraph(
+    const rvsdg::Output & p1,
+    size_t s1,
+    const rvsdg::Output & p2,
+    size_t s2,
+    AliasAnalysis::AliasQueryResponse response)
 {
-  clobberAverageNoAlias = 0.0;
-  clobberAverageMayAlias = 0.0;
-  clobberAverageMustAlias = 0.0;
-  totalNoAlias = 0;
-  totalMayAlias = 0;
-  totalMustAlias = 0;
+  // Create a node associated with the given output
+  // but also attach it to the GraphElement that already represents it
+  const auto GetOrCreateAliasGraphNode = [&](const rvsdg::Output & p) -> util::graph::Node &
+  {
+    const auto element = Context_.AliasingGraph_->GetElementFromProgramObject(p);
+    const auto node = dynamic_cast<util::graph::Node *>(element);
+    if (node)
+      return *node;
+
+    auto & newNode = Context_.AliasingGraph_->CreateNode();
+    auto existingElement = Context_.AliasingGraph_->GetWriter().GetElementFromProgramObject(p);
+    newNode.SetAttributeGraphElement("output", *existingElement);
+    newNode.SetProgramObject(p);
+    return newNode;
+  };
+
+  auto & p1Node = GetOrCreateAliasGraphNode(p1);
+  auto & p2Node = GetOrCreateAliasGraphNode(p2);
+
+  // Only create edges for MayAlias and MustAlias
+  std::optional<std::string> edgeColor;
+  if (response == AliasAnalysis::MayAlias)
+    edgeColor = util::graph::Colors::Purple;
+  else if (response == AliasAnalysis::MustAlias)
+    edgeColor = util::graph::Colors::Orange;
+
+  if (edgeColor)
+  {
+    auto & edge = Context_.AliasingGraph_->CreateEdge(p1Node, p2Node, false);
+    edge.SetAttribute("s1", util::strfmt(s1));
+    edge.SetAttribute("s2", util::strfmt(s2));
+    edge.SetAttribute("color", *edgeColor);
+  }
+}
+
+AliasAnalysisPrecisionEvaluator::AggregatedClobberInfos
+AliasAnalysisPrecisionEvaluator::AggregateClobberInfos(
+    const std::vector<PrecisionInfo::ClobberInfo> & clobberInfos)
+{
+  AggregatedClobberInfos result;
 
   for (auto & clobber : clobberInfos)
   {
     size_t total = clobber.NumNoAlias + clobber.NumMayAlias + clobber.NumMustAlias;
+
+    // Avoid division by 0 by skipping clobbers that are alone in their function
     if (total == 0)
       continue;
 
-    clobberAverageNoAlias += static_cast<double>(clobber.NumNoAlias) / total;
-    clobberAverageMayAlias += static_cast<double>(clobber.NumMayAlias) / total;
-    clobberAverageMustAlias += static_cast<double>(clobber.NumMustAlias) / total;
-    totalNoAlias += clobber.NumNoAlias;
-    totalMayAlias += clobber.NumMayAlias;
-    totalMustAlias += clobber.NumMustAlias;
+    result.NumClobberOperations += clobber.Multiplier;
+
+    result.ClobberAverageNoAlias +=
+        static_cast<double>(clobber.NumNoAlias) / total * clobber.Multiplier;
+    result.ClobberAverageMayAlias +=
+        static_cast<double>(clobber.NumMayAlias) / total * clobber.Multiplier;
+    result.ClobberAverageMustAlias +=
+        static_cast<double>(clobber.NumMustAlias) / total * clobber.Multiplier;
+    result.TotalNoAlias += clobber.NumNoAlias * clobber.Multiplier;
+    result.TotalMayAlias += clobber.NumMayAlias * clobber.Multiplier;
+    result.TotalMustAlias += clobber.NumMustAlias * clobber.Multiplier;
   }
 
-  clobberAverageNoAlias /= clobberInfos.size();
-  clobberAverageMayAlias /= clobberInfos.size();
-  clobberAverageMustAlias /= clobberInfos.size();
+  if (result.NumClobberOperations > 0)
+  {
+    // Perform the final division to get the average across all clobbers
+    result.ClobberAverageNoAlias /= result.NumClobberOperations;
+    result.ClobberAverageMayAlias /= result.NumClobberOperations;
+    ;
+    result.ClobberAverageMustAlias /= result.NumClobberOperations;
+  }
+
+  return result;
 }
 
 void
-AliasAnalysisPrecisionEvaluator::CalculateAverageMayAliasRate(
-    std::ostream * perFunctionOut,
-    PrecisionStatistics & statistics) const
+AliasAnalysisPrecisionEvaluator::PrintAggregatedClobberInfos(
+    const AggregatedClobberInfos & clobberInfos,
+    std::ostream & out)
 {
-  std::vector<PrecisionInfo::ClobberInfo> allClobberInfo;
-
-  double clobberAverageNoAlias, clobberAverageMayAlias, clobberAverageMustAlias;
-  uint64_t totalNoAlias, totalMayAlias, totalMustAlias;
-
-  // Write precision info about each function to an output file
-  std::ofstream out(outputFile.path().to_str());
-  for (auto [function, precision] : Context_.PerFunctionPrecision)
+  if (clobberInfos.NumClobberOperations == 0)
   {
-    for (auto & clobberInfo : precision.ClobberOperations)
-      allClobberInfo.push_back(clobberInfo);
-
-    AggregateClobberInfos(
-        precision.ClobberOperations,
-        clobberAverageNoAlias,
-        clobberAverageMayAlias,
-        clobberAverageMustAlias,
-        totalNoAlias,
-        totalMayAlias,
-        totalMustAlias);
-
-    out << function->GetOperation().debug_string() << " [";
-    out << precision.NumOperations << " pointer operations: ";
-    out << precision.NumUseOperations << " use operations, ";
-    out << precision.ClobberOperations.size() << " clobbering operations]:" << std::endl;
-    out << "The average clobber has: " << (clobberAverageNoAlias * 100) << " % NoAlias \t";
-    out << (clobberAverageMayAlias * 100) << " % MayAlias \t";
-    out << (clobberAverageMustAlias * 100) << " % MustAlias" << std::endl;
-    out << "Total responses: " << totalNoAlias << " NoAlias \t";
-    out << totalMayAlias << " MayAlias \t";
-    out << totalMustAlias << " MustAlias" << std::endl;
-    out << std::endl;
+    out << "No clobber operations" << std::endl;
+    return;
   }
 
-  AggregateClobberInfos(
-      allClobberInfo,
-      clobberAverageNoAlias,
-      clobberAverageMayAlias,
-      clobberAverageMustAlias,
-      totalNoAlias,
-      totalMayAlias,
-      totalMustAlias);
-
-  out << "Module total:" << std::endl;
-  out << "The average clobber has: " << (clobberAverageNoAlias * 100) << " % NoAlias \t";
-  out << (clobberAverageMayAlias * 100) << " % MayAlias \t";
-  out << (clobberAverageMustAlias * 100) << " % MustAlias" << std::endl;
-  out << "Total responses: " << totalNoAlias << " NoAlias \t";
-  out << totalMayAlias << " MayAlias \t";
-  out << totalMustAlias << " MustAlias" << std::endl;
+  out << "Number of clobbering operations: " << clobberInfos.NumClobberOperations << std::endl;
+  out << "The average clobber has: " << (clobberInfos.ClobberAverageNoAlias * 100)
+      << " % NoAlias \t";
+  out << (clobberInfos.ClobberAverageMayAlias * 100) << " % MayAlias \t";
+  out << (clobberInfos.ClobberAverageMustAlias * 100) << " % MustAlias" << std::endl;
+  out << "Total responses: " << clobberInfos.TotalNoAlias << " NoAlias \t";
+  out << clobberInfos.TotalMayAlias << " MayAlias \t";
+  out << clobberInfos.TotalMustAlias << " MustAlias" << std::endl;
   out << std::endl;
+}
 
-  out.close();
+void
+AliasAnalysisPrecisionEvaluator::CalculateResults(
+    std::optional<util::FilePath> perFunctionOutputFile,
+    PrecisionStatistics & statistics) const
+{
+  // Adds up the total set of clobber operations in the entire module
+  std::vector<PrecisionInfo::ClobberInfo> allClobberInfos;
 
-  statistics.AddPrecisionSummaryStatistics(
-      allClobberInfo.size(),
-      clobberAverageNoAlias,
-      clobberAverageMayAlias,
-      clobberAverageMustAlias,
-      totalNoAlias,
-      totalMayAlias,
-      totalMustAlias);
+  // Write precision info about each function to an output file
+  std::ofstream out;
+  if (perFunctionOutputFile)
+    out.open(perFunctionOutputFile->to_str());
+
+  for (auto [function, precision] : Context_.PerFunctionPrecision)
+  {
+    // Calculate and print information about the clobbers in this function
+    if (perFunctionOutputFile)
+    {
+      const auto aggregated = AggregateClobberInfos(precision.ClobberOperations);
+      out << function->GetOperation().debug_string() << " [";
+      out << precision.NumOperations << " pointer operations]:" << std::endl;
+      PrintAggregatedClobberInfos(aggregated, out);
+    }
+
+    // Add the clobber operations to the list of all clobbers
+    for (auto & clobberInfo : precision.ClobberOperations)
+      allClobberInfos.push_back(clobberInfo);
+  }
+
+  const auto aggregated = AggregateClobberInfos(allClobberInfos);
+
+  if (perFunctionOutputFile)
+  {
+    out << "Module total:" << std::endl;
+    PrintAggregatedClobberInfos(aggregated, out);
+    out.close();
+  }
+
+  statistics.AddPrecisionSummaryStatistics(aggregated);
 }
 
 }

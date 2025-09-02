@@ -32,16 +32,22 @@ PointsToAnalysisStateEncoder<TPointsToAnalysis, TModRefSummarizer>::Run(
   TPointsToAnalysis ptaPass;
   auto pointsToGraph = ptaPass.Analyze(rvsdgModule, statisticsCollector);
 
-  // Evaluate alias analysis precision.
-  // Evaluation is skipped if the statistic is not requested.
-  PrecisionEvaluator precisionEvaluator;
-  LocalAliasAnalysis localAA;
-  PointsToGraphAliasAnalysis ptgAA(*pointsToGraph);
-  ChainedAliasAnalysis ptgPlusLocalAA(ptgAA, localAA);
+  if (statisticsCollector.IsDemanded(util::Statistics::Id::AliasAnalysisPrecisionEvaluation))
+  {
+    AliasAnalysisPrecisionEvaluator precisionEvaluator;
 
-  precisionEvaluator.EvaluateAliasAnalysisClient(rvsdgModule, localAA, statisticsCollector);
-  precisionEvaluator.EvaluateAliasAnalysisClient(rvsdgModule, ptgAA, statisticsCollector);
-  precisionEvaluator.EvaluateAliasAnalysisClient(rvsdgModule, ptgPlusLocalAA, statisticsCollector);
+    // Use different alias analyses, and their combination
+    LocalAliasAnalysis localAA;
+    PointsToGraphAliasAnalysis ptgAA(*pointsToGraph);
+    ChainedAliasAnalysis ptgPlusLocalAA(ptgAA, localAA);
+
+    precisionEvaluator.EvaluateAliasAnalysisClient(rvsdgModule, localAA, statisticsCollector);
+    precisionEvaluator.EvaluateAliasAnalysisClient(rvsdgModule, ptgAA, statisticsCollector);
+    precisionEvaluator.EvaluateAliasAnalysisClient(
+        rvsdgModule,
+        ptgPlusLocalAA,
+        statisticsCollector);
+  }
 
   auto modRefSummary = TModRefSummarizer::Create(rvsdgModule, *pointsToGraph, statisticsCollector);
 
