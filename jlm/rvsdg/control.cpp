@@ -14,7 +14,7 @@ namespace jlm::rvsdg
 /* control constant */
 
 // explicit instantiation
-template class domain_const_op<
+template class DomainConstOperation<
     ControlType,
     ControlValueRepresentation,
     ctlformat_value,
@@ -107,7 +107,8 @@ MatchOperation::operator==(const Operation & other) const noexcept
 unop_reduction_path_t
 MatchOperation::can_reduce_operand(const jlm::rvsdg::Output * arg) const noexcept
 {
-  if (is<bitconstant_op>(producer(arg)))
+  auto & tracedOutput = TraceOutputIntraProcedurally(*arg);
+  if (rvsdg::IsOwnerNodeOperation<bitconstant_op>(tracedOutput))
     return unop_reduction_constant;
 
   return unop_reduction_none;
@@ -118,12 +119,13 @@ MatchOperation::reduce_operand(unop_reduction_path_t path, jlm::rvsdg::Output * 
 {
   if (path == unop_reduction_constant)
   {
-    auto op = static_cast<const bitconstant_op &>(
-        static_cast<const SimpleNode *>(producer(arg))->GetOperation());
-    return jlm::rvsdg::control_constant(
+    auto & tracedOutput = TraceOutputIntraProcedurally(*arg);
+    auto [_, constantOperation] = TryGetSimpleNodeAndOptionalOp<bitconstant_op>(tracedOutput);
+    JLM_ASSERT(constantOperation);
+    return control_constant(
         arg->region(),
         nalternatives(),
-        alternative(op.value().to_uint()));
+        alternative(constantOperation->value().to_uint()));
   }
 
   return nullptr;

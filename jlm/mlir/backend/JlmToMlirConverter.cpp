@@ -12,6 +12,7 @@
 #include <jlm/llvm/ir/operators/Load.hpp>
 #include <jlm/llvm/ir/operators/MemoryStateOperations.hpp>
 #include <jlm/llvm/ir/operators/sext.hpp>
+#include <jlm/llvm/ir/operators/SpecializedArithmeticIntrinsicOperations.hpp>
 #include <jlm/llvm/ir/operators/Store.hpp>
 #include <jlm/mlir/backend/JlmToMlirConverter.hpp>
 #include <jlm/mlir/MLIRConverterCommon.hpp>
@@ -425,6 +426,14 @@ JlmToMlirConverter::ConvertSimpleNode(
   else if (auto fpBinOp = dynamic_cast<const jlm::llvm::FBinaryOperation *>(&operation))
   {
     MlirOp = ConvertFpBinaryNode(*fpBinOp, inputs);
+  }
+  else if (rvsdg::is<jlm::llvm::FMulAddIntrinsicOperation>(operation))
+  {
+    MlirOp = Builder_->create<::mlir::LLVM::FMulAddOp>(
+        Builder_->getUnknownLoc(),
+        inputs[0],
+        inputs[1],
+        inputs[2]);
   }
   else if (rvsdg::is<jlm::llvm::IntegerBinaryOperation>(operation))
   {

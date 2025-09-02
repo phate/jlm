@@ -36,7 +36,6 @@
 #include <jlm/llvm/ir/operators/delta.hpp>
 #include <jlm/llvm/ir/operators/IntegerOperations.hpp>
 #include <jlm/llvm/ir/RvsdgModule.hpp>
-#include <jlm/llvm/opt/alias-analyses/Optimization.hpp>
 #include <jlm/llvm/opt/DeadNodeElimination.hpp>
 #include <jlm/llvm/opt/inlining.hpp>
 #include <jlm/llvm/opt/InvariantValueRedirection.hpp>
@@ -228,7 +227,7 @@ convert_alloca(rvsdg::Region * region)
       }
       auto delta = &db->finalize(cout);
       rvsdg::GraphExport::Create(*delta, delta_name);
-      auto delta_local = route_to_region_rvsdg(delta, region);
+      auto delta_local = &rvsdg::RouteToRegion(*delta, *region);
       node->output(0)->divert_users(delta_local);
       // TODO: check that the input to alloca is a bitconst 1
       // TODO: handle general case of other nodes getting state edge without a merge
@@ -360,7 +359,7 @@ split_hls_function(llvm::RvsdgModule & rm, const std::string & function_name)
       rvsdg::SubstitutionMap smap;
       for (size_t i = 0; i < ln->ninputs(); ++i)
       {
-        auto orig_node_output = dynamic_cast<jlm::rvsdg::node_output *>(ln->input(i)->origin());
+        auto orig_node_output = dynamic_cast<rvsdg::NodeOutput *>(ln->input(i)->origin());
         if (!orig_node_output)
         {
           // handle decouple stuff

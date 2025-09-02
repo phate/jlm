@@ -38,6 +38,7 @@ libllvm_SOURCES = \
     jlm/llvm/ir/operators/MemoryStateOperations.cpp \
     jlm/llvm/ir/operators/operators.cpp \
     jlm/llvm/ir/operators/sext.cpp \
+    jlm/llvm/ir/operators/SpecializedArithmeticIntrinsicOperations.cpp \
     jlm/llvm/ir/operators/Store.cpp \
     jlm/llvm/ir/print.cpp \
     jlm/llvm/ir/RvsdgModule.cpp \
@@ -52,8 +53,8 @@ libllvm_SOURCES = \
     jlm/llvm/opt/alias-analyses/Andersen.cpp \
     jlm/llvm/opt/alias-analyses/LocalAliasAnalysis.cpp \
     jlm/llvm/opt/alias-analyses/MemoryStateEncoder.cpp \
-    jlm/llvm/opt/alias-analyses/Optimization.cpp \
     jlm/llvm/opt/alias-analyses/PointerObjectSet.cpp \
+    jlm/llvm/opt/alias-analyses/PointsToAnalysisStateEncoder.cpp \
     jlm/llvm/opt/alias-analyses/PointsToGraph.cpp \
     jlm/llvm/opt/alias-analyses/PointsToGraphAliasAnalysis.cpp \
     jlm/llvm/opt/alias-analyses/RegionAwareModRefSummarizer.cpp \
@@ -91,7 +92,7 @@ libllvm_HEADERS = \
     jlm/llvm/opt/alias-analyses/LazyCycleDetection.hpp \
     jlm/llvm/opt/alias-analyses/LocalAliasAnalysis.hpp \
     jlm/llvm/opt/alias-analyses/OnlineCycleDetection.hpp \
-    jlm/llvm/opt/alias-analyses/Optimization.hpp \
+    jlm/llvm/opt/alias-analyses/PointsToAnalysisStateEncoder.hpp \
     jlm/llvm/opt/alias-analyses/ModRefEliminator.hpp \
     jlm/llvm/opt/alias-analyses/MemoryStateEncoder.hpp \
     jlm/llvm/opt/alias-analyses/ModRefSummarizer.hpp \
@@ -148,6 +149,7 @@ libllvm_HEADERS = \
     jlm/llvm/ir/operators/call.hpp \
     jlm/llvm/ir/operators/sext.hpp \
     jlm/llvm/ir/operators/lambda.hpp \
+    jlm/llvm/ir/operators/SpecializedArithmeticIntrinsicOperations.hpp \
     jlm/llvm/ir/aggregation.hpp \
 
 libllvm_TESTS += \
@@ -157,6 +159,7 @@ libllvm_TESTS += \
     tests/jlm/llvm/backend/RvsdgToIpGraphConverterTests \
     tests/jlm/llvm/frontend/llvm/LoadTests \
     tests/jlm/llvm/frontend/llvm/MemCpyTests \
+    tests/jlm/llvm/frontend/llvm/SpecializedArithmeticIntrinsicOperationTests \
     tests/jlm/llvm/frontend/llvm/StoreTests \
     tests/jlm/llvm/frontend/llvm/TestAttributeConversion \
     tests/jlm/llvm/frontend/llvm/test-endless-loop \

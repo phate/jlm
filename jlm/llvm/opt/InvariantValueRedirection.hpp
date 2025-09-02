@@ -55,6 +55,10 @@ class InvariantValueRedirection final : public rvsdg::Transformation
 public:
   ~InvariantValueRedirection() override;
 
+  InvariantValueRedirection()
+      : Transformation("InvariantValueRedirection")
+  {}
+
   void
   Run(rvsdg::RvsdgModule & module, util::StatisticsCollector & statisticsCollector) override;
 

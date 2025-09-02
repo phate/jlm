@@ -31,6 +31,10 @@ class IOBarrierRemoval final : public rvsdg::Transformation
 public:
   ~IOBarrierRemoval() noexcept override;
 
+  IOBarrierRemoval()
+      : Transformation("IOBarrierRemoval")
+  {}
+
   void
   Run(rvsdg::RvsdgModule & module, util::StatisticsCollector & statisticsCollector) override;
 

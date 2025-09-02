@@ -13,7 +13,7 @@
 #include <jlm/llvm/opt/alias-analyses/AgnosticModRefSummarizer.hpp>
 #include <jlm/llvm/opt/alias-analyses/Andersen.hpp>
 #include <jlm/llvm/opt/alias-analyses/EliminatedModRefSummarizer.hpp>
-#include <jlm/llvm/opt/alias-analyses/Optimization.hpp>
+#include <jlm/llvm/opt/alias-analyses/PointsToAnalysisStateEncoder.hpp>
 #include <jlm/llvm/opt/alias-analyses/RegionAwareModRefSummarizer.hpp>
 #include <jlm/llvm/opt/alias-analyses/Steensgaard.hpp>
 #include <jlm/llvm/opt/alias-analyses/TopDownModRefEliminator.hpp>
@@ -604,7 +604,8 @@ JlmOptCommand::PrintAsDot(
   auto & rootRegion = rvsdgModule.Rvsdg().GetRootRegion();
 
   util::graph::Writer writer;
-  llvm::dot::WriteGraphs(writer, rootRegion, true);
+  llvm::dot::LlvmDotWriter dotWriter;
+  dotWriter.WriteGraphs(writer, rootRegion, true);
 
   if (outputFile == "")
   {

@@ -21,6 +21,10 @@ public:
 
   ~LoopUnswitching() noexcept override;
 
+  LoopUnswitching()
+      : Transformation("LoopUnswitching")
+  {}
+
   void
   Run(rvsdg::RvsdgModule & module, util::StatisticsCollector & statisticsCollector) override;
 };

@@ -27,6 +27,10 @@ public:
 
   ~NodeHoisting() noexcept override;
 
+  NodeHoisting()
+      : Transformation("NodeHoisting")
+  {}
+
   void
   Run(rvsdg::RvsdgModule & module, util::StatisticsCollector & statisticsCollector) override;
 };
