@@ -100,7 +100,8 @@ public:
   ~RvsdgTreePrinter() noexcept override;
 
   explicit RvsdgTreePrinter(Configuration configuration)
-      : Configuration_(std::move(configuration))
+      : Transformation("RvsdgTreePrinter"),
+        Configuration_(std::move(configuration))
   {}
 
   RvsdgTreePrinter(const RvsdgTreePrinter &) = delete;

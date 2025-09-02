@@ -142,7 +142,9 @@ public:
 
 DeadNodeElimination::~DeadNodeElimination() noexcept = default;
 
-DeadNodeElimination::DeadNodeElimination() = default;
+DeadNodeElimination::DeadNodeElimination()
+    : Transformation("DeadNodeElimination")
+{}
 
 void
 DeadNodeElimination::run(rvsdg::Region & region)

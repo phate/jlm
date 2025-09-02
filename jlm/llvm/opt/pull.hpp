@@ -27,6 +27,10 @@ public:
 
   ~NodeSinking() noexcept override;
 
+  NodeSinking()
+      : Transformation("NodeSinking")
+  {}
+
   void
   Run(rvsdg::RvsdgModule & module, util::StatisticsCollector & statisticsCollector) override;
 };
