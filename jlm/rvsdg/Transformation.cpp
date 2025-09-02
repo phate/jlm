@@ -3,9 +3,11 @@
  * See COPYING for terms of redistribution.
  */
 
-#include "RvsdgModule.hpp"
 #include <jlm/rvsdg/graph.hpp>
+#include <jlm/rvsdg/RvsdgModule.hpp>
 #include <jlm/rvsdg/Transformation.hpp>
+
+#include <fstream>
 
 namespace jlm::rvsdg
 {
@@ -52,13 +54,55 @@ TransformationSequence::Run(
   auto statistics = Statistics::Create(rvsdgModule.SourceFilePath().value());
   statistics->StartMeasuring(rvsdgModule.Rvsdg());
 
-  for (const auto & optimization : Transformations_)
+  size_t numPasses = 0;
+  if (DumpRvsdgDotGraphs_)
   {
-    optimization->Run(rvsdgModule, statisticsCollector);
+    DumpDotGraphs(
+        rvsdgModule,
+        statisticsCollector.GetSettings().GetOutputDirectory(),
+        "Pristine",
+        numPasses);
+    numPasses++;
+  }
+
+  for (const auto & transformation : Transformations_)
+  {
+    transformation->Run(rvsdgModule, statisticsCollector);
+    if (DumpRvsdgDotGraphs_)
+    {
+      DumpDotGraphs(
+          rvsdgModule,
+          statisticsCollector.GetSettings().GetOutputDirectory(),
+          "After" + std::string(transformation->GetName()),
+          numPasses);
+      numPasses++;
+    }
   }
 
   statistics->EndMeasuring(rvsdgModule.Rvsdg());
   statisticsCollector.CollectDemandedStatistics(std::move(statistics));
+}
+
+void
+TransformationSequence::DumpDotGraphs(
+    RvsdgModule & rvsdgModule,
+    const util::FilePath & outputDir,
+    const std::string & passName,
+    size_t numPass) const
+{
+  JLM_ASSERT(outputDir.Exists() && outputDir.IsDirectory());
+
+  util::graph::Writer graphWriter;
+  DotWriter_.WriteGraphs(graphWriter, rvsdgModule.Rvsdg().GetRootRegion(), true);
+
+  std::stringstream filePath;
+  filePath << outputDir.to_str() << "/" << std::setw(3) << std::setfill('0') << numPass << "-"
+           << passName << ".dot";
+
+  std::ofstream outputFile;
+  outputFile.open(filePath.str().c_str());
+  graphWriter.OutputAllGraphs(outputFile, util::graph::OutputFormat::Dot);
+  outputFile.close();
 }
 
 }

@@ -35,7 +35,8 @@ TestStatistics()
       statisticsCollectorSettings,
       RvsdgTreePrinter::Configuration({}),
       { JlmOptCommandLineOptions::OptimizationId::DeadNodeElimination,
-        JlmOptCommandLineOptions::OptimizationId::LoopUnrolling });
+        JlmOptCommandLineOptions::OptimizationId::LoopUnrolling },
+      false);
 
   JlmOptCommand command("jlm-opt", commandLineOptions);
 
@@ -83,7 +84,8 @@ OptimizationIdToOptimizationTranslation()
       JlmOptCommandLineOptions::OutputFormat::Llvm,
       StatisticsCollectorSettings(),
       RvsdgTreePrinter::Configuration({}),
-      optimizationIds);
+      optimizationIds,
+      false);
 
   // Act & Assert
   // terminates on unhandled optimization id

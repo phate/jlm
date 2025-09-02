@@ -141,7 +141,8 @@ JlcCommandGraphGenerator::GenerateCommandGraph(const JlcCommandLineOptions & com
           JlmOptCommandLineOptions::OutputFormat::Llvm,
           std::move(statisticsCollectorSettings),
           jlm::llvm::RvsdgTreePrinter::Configuration({}),
-          commandLineOptions.JlmOptOptimizations_);
+          commandLineOptions.JlmOptOptimizations_,
+          false);
 
       auto & jlmOptCommandNode =
           JlmOptCommand::Create(*commandGraph, "jlm-opt", std::move(jlmOptCommandLineOptions));

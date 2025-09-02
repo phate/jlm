@@ -697,6 +697,8 @@ JlmOptCommandLineParser::ParseCommandLineArguments(int argc, const char * const 
       cl::value_desc("file"));
 
   const auto statisticsDirectoryDefault = util::FilePath::TempDirectoryPath().Join("jlm");
+  statisticsDirectoryDefault.CreateDirectory();
+
   const auto statisticDirectoryDescription =
       "Write statistics and debug output to files in <dir>. Default is "
       + statisticsDirectoryDefault.to_str() + ".";
@@ -705,6 +707,11 @@ JlmOptCommandLineParser::ParseCommandLineArguments(int argc, const char * const 
       cl::init(statisticsDirectoryDefault.to_str()),
       cl::desc(statisticDirectoryDescription),
       cl::value_desc("dir"));
+
+  cl::opt<bool> dumpRvsdgDotGraphs(
+      "dumpRvsdgDotGraphs",
+      cl::init(false),
+      cl::desc("Dump RVSDG as dot graphs after each transformation in debug folder."));
 
   cl::list<util::Statistics::Id> printStatistics(
       cl::values(
@@ -959,7 +966,8 @@ JlmOptCommandLineParser::ParseCommandLineArguments(int argc, const char * const 
       outputFormat,
       std::move(statisticsCollectorSettings),
       std::move(treePrinterConfiguration),
-      std::move(optimizationIds));
+      std::move(optimizationIds),
+      dumpRvsdgDotGraphs);
 
   return *CommandLineOptions_;
 }
