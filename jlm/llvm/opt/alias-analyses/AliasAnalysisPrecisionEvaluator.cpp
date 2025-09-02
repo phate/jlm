@@ -147,8 +147,11 @@ AliasAnalysisPrecisionEvaluator::EvaluateAliasAnalysisClient(
   // If precision metrics are demanded per function, create the output file
   std::optional<util::FilePath> perFunctionOutputFile;
   if (IsPerFunctionOutputEnabled())
+  {
     perFunctionOutputFile =
         statisticsCollector.CreateOutputFile("AAPrecisionEvaluation.log", true).path();
+    statistics->AddPerFunctionOutputFile(*perFunctionOutputFile);
+  }
 
   // Calculate total and average precision statistics
   CalculateResults(perFunctionOutputFile, *statistics);
