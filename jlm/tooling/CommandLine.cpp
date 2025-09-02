@@ -5,16 +5,7 @@
 
 #include <jlm/llvm/opt/alias-analyses/AgnosticModRefSummarizer.hpp>
 #include <jlm/llvm/opt/alias-analyses/Andersen.hpp>
-#include <jlm/llvm/opt/alias-analyses/Optimization.hpp>
-#include <jlm/llvm/opt/alias-analyses/RegionAwareModRefSummarizer.hpp>
 #include <jlm/llvm/opt/alias-analyses/Steensgaard.hpp>
-#include <jlm/llvm/opt/cne.hpp>
-#include <jlm/llvm/opt/DeadNodeElimination.hpp>
-#include <jlm/llvm/opt/inlining.hpp>
-#include <jlm/llvm/opt/InvariantValueRedirection.hpp>
-#include <jlm/llvm/opt/inversion.hpp>
-#include <jlm/llvm/opt/pull.hpp>
-#include <jlm/llvm/opt/push.hpp>
 #include <jlm/llvm/opt/reduction.hpp>
 #include <jlm/llvm/opt/RvsdgTreePrinter.hpp>
 #include <jlm/llvm/opt/unroll.hpp>

@@ -4,8 +4,8 @@
  * See COPYING for terms of redistribution.
  */
 
-#ifndef JLM_LLVM_OPT_ALIAS_ANALYSES_OPTIMIZATION_HPP
-#define JLM_LLVM_OPT_ALIAS_ANALYSES_OPTIMIZATION_HPP
+#ifndef JLM_LLVM_OPT_ALIAS_ANALYSES_POINTSTOANALYSISSTATEENCODER_HPP
+#define JLM_LLVM_OPT_ALIAS_ANALYSES_POINTSTOANALYSISSTATEENCODER_HPP
 
 #include <jlm/llvm/opt/alias-analyses/ModRefSummarizer.hpp>
 #include <jlm/llvm/opt/alias-analyses/PointsToAnalysis.hpp>
