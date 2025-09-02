@@ -40,6 +40,10 @@ class PointsToAnalysisStateEncoder final : public rvsdg::Transformation
 public:
   ~PointsToAnalysisStateEncoder() noexcept override;
 
+  PointsToAnalysisStateEncoder()
+      : Transformation("PointsToAnalysisStateEncoder")
+  {}
+
   void
   Run(rvsdg::RvsdgModule & rvsdgModule, util::StatisticsCollector & statisticsCollector) override;
 };

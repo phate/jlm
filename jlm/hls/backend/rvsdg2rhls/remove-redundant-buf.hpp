@@ -30,6 +30,10 @@ class RedundantBufferElimination final : public rvsdg::Transformation
 public:
   ~RedundantBufferElimination() noexcept override;
 
+  RedundantBufferElimination()
+      : Transformation("RedundantBufferElimination")
+  {}
+
   void
   Run(rvsdg::RvsdgModule & module, util::StatisticsCollector & statisticsCollector) override;
 

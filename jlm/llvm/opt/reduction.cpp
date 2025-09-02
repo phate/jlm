@@ -51,7 +51,9 @@ NodeReduction::Statistics::GetNumIterations(const rvsdg::Region & region) const 
 
 NodeReduction::~NodeReduction() noexcept = default;
 
-NodeReduction::NodeReduction() = default;
+NodeReduction::NodeReduction()
+    : Transformation("NodeReduction")
+{}
 
 void
 NodeReduction::Run(
@@ -246,7 +248,7 @@ NodeReduction::NormalizeLoadNode(
     const std::vector<rvsdg::Output *> & operands)
 {
   static std::vector<rvsdg::NodeNormalization<LoadNonVolatileOperation>> loadNodeNormalizations(
-      { LoadNonVolatileOperation::NormalizeLoadMux,
+      { LoadNonVolatileOperation::NormalizeLoadMemoryStateMerge,
         LoadNonVolatileOperation::NormalizeLoadStore,
         LoadNonVolatileOperation::NormalizeLoadAlloca,
         LoadNonVolatileOperation::NormalizeDuplicateStates,

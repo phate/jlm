@@ -134,17 +134,23 @@ LoadMuxReduction_Success()
   auto s2 = &jlm::rvsdg::GraphImport::Create(graph, memoryStateType, "state2");
   auto s3 = &jlm::rvsdg::GraphImport::Create(graph, memoryStateType, "state3");
 
-  auto mux = MemoryStateMergeOperation::Create({ s1, s2, s3 });
-  auto & loadNode = LoadNonVolatileOperation::CreateNode(*address, { mux }, bitstringType, 4);
+  auto mergeResult1 = MemoryStateMergeOperation::Create({ s1, s2, s3 });
+  auto mergeResult2 = MemoryStateMergeOperation::Create({ s1, s2, s3 });
+  auto & loadNode = LoadNonVolatileOperation::CreateNode(
+      *address,
+      { mergeResult1, mergeResult2 },
+      bitstringType,
+      4);
 
   auto & ex1 = jlm::rvsdg::GraphExport::Create(*loadNode.output(0), "l");
-  auto & ex2 = jlm::rvsdg::GraphExport::Create(*loadNode.output(1), "s");
+  auto & ex2 = jlm::rvsdg::GraphExport::Create(*loadNode.output(1), "s1");
+  auto & ex3 = jlm::rvsdg::GraphExport::Create(*loadNode.output(2), "s2");
 
   view(&graph.GetRootRegion(), stdout);
 
   // Act
   const auto success = jlm::rvsdg::ReduceNode<LoadNonVolatileOperation>(
-      LoadNonVolatileOperation::NormalizeLoadMux,
+      LoadNonVolatileOperation::NormalizeLoadMemoryStateMerge,
       loadNode);
   graph.PruneNodes();
 
@@ -154,72 +160,43 @@ LoadMuxReduction_Success()
   assert(success);
   const auto reducedLoadNode = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*ex1.origin());
   assert(is<LoadNonVolatileOperation>(reducedLoadNode));
-  assert(reducedLoadNode->ninputs() == 4);
+  assert(reducedLoadNode->ninputs() == 7);
   assert(reducedLoadNode->input(0)->origin() == address);
   assert(reducedLoadNode->input(1)->origin() == s1);
   assert(reducedLoadNode->input(2)->origin() == s2);
   assert(reducedLoadNode->input(3)->origin() == s3);
+  assert(reducedLoadNode->input(4)->origin() == s1);
+  assert(reducedLoadNode->input(5)->origin() == s2);
+  assert(reducedLoadNode->input(6)->origin() == s3);
 
-  const auto merge = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*ex2.origin());
-  assert(is<MemoryStateMergeOperation>(merge));
-  assert(merge->ninputs() == 3);
-  for (size_t n = 0; n < merge->ninputs(); n++)
   {
-    const auto expectedLoadNode =
-        jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*merge->input(n)->origin());
-    assert(expectedLoadNode == reducedLoadNode);
+    const auto merge = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*ex2.origin());
+    assert(is<MemoryStateMergeOperation>(merge));
+    assert(merge->ninputs() == 3);
+    for (size_t n = 0; n < merge->ninputs(); n++)
+    {
+      const auto expectedLoadNode =
+          jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*merge->input(n)->origin());
+      assert(expectedLoadNode == reducedLoadNode);
+    }
+  }
+
+  {
+    const auto merge = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*ex3.origin());
+    assert(is<MemoryStateMergeOperation>(merge));
+    assert(merge->ninputs() == 3);
+    for (size_t n = 0; n < merge->ninputs(); n++)
+    {
+      const auto expectedLoadNode =
+          jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*merge->input(n)->origin());
+      assert(expectedLoadNode == reducedLoadNode);
+    }
   }
 }
 
 JLM_UNIT_TEST_REGISTER(
     "jlm/llvm/ir/operators/LoadNonVolatileTests-LoadMuxReduction_Success",
     LoadMuxReduction_Success)
-
-static void
-LoadMuxReduction_WrongNumberOfOperands()
-{
-  // Arrange
-  using namespace jlm::llvm;
-
-  const auto vt = jlm::tests::ValueType::Create();
-  const auto pt = PointerType::Create();
-  const auto mt = MemoryStateType::Create();
-
-  jlm::rvsdg::Graph graph;
-  const auto a = &jlm::rvsdg::GraphImport::Create(graph, pt, "a");
-  const auto s1 = &jlm::rvsdg::GraphImport::Create(graph, mt, "s1");
-  const auto s2 = &jlm::rvsdg::GraphImport::Create(graph, mt, "s2");
-
-  auto merge = MemoryStateMergeOperation::Create(std::vector<jlm::rvsdg::Output *>{ s1, s2 });
-  auto & loadNode = LoadNonVolatileOperation::CreateNode(*a, { merge, merge }, vt, 4);
-
-  auto & ex1 = jlm::rvsdg::GraphExport::Create(*loadNode.output(0), "v");
-  auto & ex2 = jlm::rvsdg::GraphExport::Create(*loadNode.output(1), "s1");
-  auto & ex3 = jlm::rvsdg::GraphExport::Create(*loadNode.output(2), "s2");
-
-  view(&graph.GetRootRegion(), stdout);
-
-  // Act
-  const auto success = jlm::rvsdg::ReduceNode<LoadNonVolatileOperation>(
-      LoadNonVolatileOperation::NormalizeLoadMux,
-      loadNode);
-  graph.PruneNodes();
-
-  view(&graph.GetRootRegion(), stdout);
-
-  // Assert
-  // The LoadMux reduction should not be performed, as the current implementation does not correctly
-  // take care of the two identical load state operands originating from the merge node.
-  assert(success == false);
-  assert(loadNode.noutputs() == 3);
-  assert(ex1.origin() == loadNode.output(0));
-  assert(ex2.origin() == loadNode.output(1));
-  assert(ex3.origin() == loadNode.output(2));
-}
-
-JLM_UNIT_TEST_REGISTER(
-    "jlm/llvm/ir/operators/LoadNonVolatileTests-LoadMuxReduction_WrongNumberOfOperands",
-    LoadMuxReduction_WrongNumberOfOperands)
 
 static void
 LoadMuxReduction_LoadWithoutStates()
@@ -241,7 +218,7 @@ LoadMuxReduction_LoadWithoutStates()
 
   // Act
   const auto success = jlm::rvsdg::ReduceNode<LoadNonVolatileOperation>(
-      LoadNonVolatileOperation::NormalizeLoadMux,
+      LoadNonVolatileOperation::NormalizeLoadMemoryStateMerge,
       loadNode);
   graph.PruneNodes();
 

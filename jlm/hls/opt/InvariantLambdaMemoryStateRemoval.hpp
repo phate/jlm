@@ -32,6 +32,10 @@ class InvariantLambdaMemoryStateRemoval final : public rvsdg::Transformation
 public:
   ~InvariantLambdaMemoryStateRemoval() noexcept override;
 
+  InvariantLambdaMemoryStateRemoval()
+      : Transformation("InvariantLambdaMemoryStateRemoval")
+  {}
+
   /**
    * @brief Applies the transformation on the provided RVSDG module.
    *
