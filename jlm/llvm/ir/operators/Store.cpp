@@ -254,12 +254,13 @@ StoreNonVolatileOperation::NormalizeIOBarrierAllocaAddress(
   if (!ioBarrierOperation)
     return std::nullopt;
 
-  const auto barredAddress = IOBarrierOperation::BarredInput(*ioBarrierNode).origin();
-  if (!rvsdg::IsOwnerNodeOperation<AllocaOperation>(*barredAddress))
+  auto & barredAddress = *IOBarrierOperation::BarredInput(*ioBarrierNode).origin();
+  const auto & tracedAddress = rvsdg::TraceOutputIntraProcedurally(barredAddress);
+  if (!rvsdg::IsOwnerNodeOperation<AllocaOperation>(tracedAddress))
     return std::nullopt;
 
   auto & storeNode = CreateNode(
-      *barredAddress,
+      barredAddress,
       *value,
       { std::next(operands.begin(), 2), operands.end() },
       operation.GetAlignment());
