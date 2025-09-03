@@ -13,6 +13,7 @@
 #include <jlm/llvm/ir/operators/MemoryStateOperations.hpp>
 #include <jlm/llvm/ir/operators/Store.hpp>
 #include <jlm/llvm/ir/RvsdgModule.hpp>
+#include <jlm/rvsdg/gamma.hpp>
 #include <jlm/rvsdg/NodeNormalization.hpp>
 #include <jlm/rvsdg/view.hpp>
 
@@ -579,6 +580,75 @@ IOBarrierAllocaAddressNormalization()
 JLM_UNIT_TEST_REGISTER(
     "jlm/llvm/ir/operators/LoadTests-IOBarrierAllocaAddressNormalization",
     IOBarrierAllocaAddressNormalization)
+
+static void
+IOBarrierAllocaAddressNormalization_Gamma()
+{
+  using namespace jlm::llvm;
+  using namespace jlm::rvsdg;
+
+  // Arrange
+  const auto valueType = jlm::tests::ValueType::Create();
+  const auto pointerType = PointerType::Create();
+  const auto memoryStateType = MemoryStateType::Create();
+  const auto bit32Type = jlm::rvsdg::BitType::Create(32);
+  const auto ioStateType = IOStateType::Create();
+  const auto controlType = ControlType::Create(2);
+
+  Graph graph;
+  const auto sizeImport = &jlm::rvsdg::GraphImport::Create(graph, bit32Type, "value");
+  const auto controlImport = &jlm::rvsdg::GraphImport::Create(graph, controlType, "control");
+  auto ioStateImport = &jlm::rvsdg::GraphImport::Create(graph, ioStateType, "ioState");
+  auto valueImport = &jlm::rvsdg::GraphImport::Create(graph, valueType, "value");
+
+  auto allocaResults = AllocaOperation::create(valueType, sizeImport, 4);
+
+  auto gammaNode = GammaNode::create(controlImport, 2);
+  auto addressEntryVar = gammaNode->AddEntryVar(allocaResults[0]);
+  auto memoryStateEntryVar = gammaNode->AddEntryVar(allocaResults[1]);
+  auto ioStateEntryVar = gammaNode->AddEntryVar(ioStateImport);
+  auto valueEntryVar = gammaNode->AddEntryVar(valueImport);
+
+  auto & ioBarrierNode = jlm::rvsdg::CreateOpNode<IOBarrierOperation>(
+      { addressEntryVar.branchArgument[0], ioStateEntryVar.branchArgument[0] },
+      pointerType);
+
+  auto & loadNode = LoadNonVolatileOperation::CreateNode(
+      *ioBarrierNode.output(0),
+      { memoryStateEntryVar.branchArgument[0] },
+      valueType,
+      4);
+
+  auto exitVar = gammaNode->AddExitVar({ loadNode.output(0), valueEntryVar.branchArgument[1] });
+
+  GraphExport::Create(*exitVar.output, "load1");
+
+  view(&graph.GetRootRegion(), stdout);
+
+  // Act
+  const auto successLoadNode = jlm::rvsdg::ReduceNode<LoadNonVolatileOperation>(
+      LoadNonVolatileOperation::NormalizeIOBarrierAllocaAddress,
+      loadNode);
+
+  graph.PruneNodes();
+
+  view(&graph.GetRootRegion(), stdout);
+
+  // Assert
+  assert(successLoadNode);
+  // There should only be the load node left.
+  // The IOBarrier node should have been pruned.
+  assert(gammaNode->subregion(0)->nnodes() == 1);
+  assert(
+      jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*exitVar.branchResult[0]->origin())
+          ->input(0)
+          ->origin()
+      == addressEntryVar.branchArgument[0]);
+}
+
+JLM_UNIT_TEST_REGISTER(
+    "jlm/llvm/ir/operators/LoadTests-IOBarrierAllocaAddressNormalization_Gamma",
+    IOBarrierAllocaAddressNormalization_Gamma)
 
 static void
 LoadVolatileOperationEquality()
