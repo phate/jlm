@@ -27,7 +27,7 @@ DeltaNode::MapInputContextVar(const rvsdg::Input & input) const noexcept
   return ContextVar{ const_cast<rvsdg::Input *>(&input), subregion()->argument(input.index()) };
 }
 
-[[nodiscard]] std::optional<DeltaNode::ContextVar>
+[[nodiscard]] DeltaNode::ContextVar
 DeltaNode::MapBinderContextVar(const rvsdg::Output & output) const noexcept
 {
   JLM_ASSERT(rvsdg::TryGetOwnerRegion(output) == subregion());
