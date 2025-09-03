@@ -495,12 +495,13 @@ LoadNonVolatileOperation::NormalizeIOBarrierAllocaAddress(
   if (!ioBarrierOperation)
     return std::nullopt;
 
-  const auto barredAddress = IOBarrierOperation::BarredInput(*ioBarrierNode).origin();
-  if (!rvsdg::IsOwnerNodeOperation<AllocaOperation>(*barredAddress))
+  auto & barredAddress = *IOBarrierOperation::BarredInput(*ioBarrierNode).origin();
+  const auto & tracedAddress = rvsdg::TraceOutputIntraProcedurally(barredAddress);
+  if (!rvsdg::IsOwnerNodeOperation<AllocaOperation>(tracedAddress))
     return std::nullopt;
 
   auto & loadNode = CreateNode(
-      *barredAddress,
+      barredAddress,
       { std::next(operands.begin()), operands.end() },
       operation.GetLoadedType(),
       operation.GetAlignment());
