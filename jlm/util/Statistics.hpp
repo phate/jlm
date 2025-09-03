@@ -34,9 +34,9 @@ public:
   {
     FirstEnumValue, // must always be the first enum value, used for iteration
 
-    AliasAnalysisPrecisionEvaluation,
     Aggregation,
     AgnosticModRefSummarizer,
+    AliasAnalysisPrecisionEvaluation,
     AndersenAnalysis,
     Annotation,
     CommonNodeElimination,
@@ -541,7 +541,7 @@ public:
   void
   CollectDemandedStatistics(std::unique_ptr<Statistics> statistics)
   {
-    if (GetSettings().IsDemanded(statistics->GetId()))
+    if (IsDemanded(*statistics))
       CollectedStatistics_.emplace_back(std::move(statistics));
   }
 

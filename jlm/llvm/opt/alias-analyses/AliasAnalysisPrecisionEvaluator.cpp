@@ -3,16 +3,15 @@
  * See COPYING for terms of redistribution.
  */
 
-#include "jlm/llvm/ir/operators/Load.hpp"
-#include "jlm/llvm/ir/operators/Store.hpp"
-#include <jlm/llvm/opt/alias-analyses/AliasAnalysisPrecisionEvaluator.hpp>
-
+#include "jlm/rvsdg/Phi.hpp"
 #include <jlm/llvm/DotWriter.hpp>
+#include <jlm/llvm/ir/operators/Load.hpp>
+#include <jlm/llvm/ir/operators/Store.hpp>
+#include <jlm/llvm/opt/alias-analyses/AliasAnalysisPrecisionEvaluator.hpp>
 #include <jlm/rvsdg/RvsdgModule.hpp>
 #include <jlm/util/GraphWriter.hpp>
 
 #include <fstream>
-#include <llvm/Support/CommandLine.h>
 #include <map>
 
 namespace jlm::llvm::aa
@@ -170,12 +169,9 @@ AliasAnalysisPrecisionEvaluator::EvaluateAllFunctions(
     {
       EvaluateFunction(*lambda, aliasAnalysis);
     }
-    else if (auto structural = dynamic_cast<const rvsdg::StructuralNode *>(&node))
+    else if (auto phi = dynamic_cast<const rvsdg::PhiNode *>(&node))
     {
-      for (size_t n = 0; n < structural->nsubregions(); n++)
-      {
-        EvaluateAllFunctions(*structural->subregion(n), aliasAnalysis);
-      }
+      EvaluateAllFunctions(*phi->subregion(), aliasAnalysis);
     }
   }
 }
@@ -278,14 +274,19 @@ AliasAnalysisPrecisionEvaluator::CollectPointersFromRegion(const rvsdg::Region &
 void
 AliasAnalysisPrecisionEvaluator::CollectPointersFromSimpleNode(const rvsdg::SimpleNode & node)
 {
-  // In this mode, only (volatile) load and store operations count as uses and clobbers
   if (const auto load = dynamic_cast<const LoadOperation *>(&node.GetOperation()))
   {
+    // At the time of writing, these are the only loads we know about
+    JLM_ASSERT(is<LoadNonVolatileOperation>(*load) || is<LoadVolatileOperation>(*load));
+
     const auto size = GetTypeSize(*load->GetLoadedType());
     CollectPointer(LoadOperation::AddressInput(node).origin(), size, AreLoadsConsideredClobbers());
   }
   else if (auto store = dynamic_cast<const StoreOperation *>(&node.GetOperation()))
   {
+    // At the time of writing, these are the only stores we know about
+    JLM_ASSERT(is<StoreNonVolatileOperation>(*store) || is<StoreVolatileOperation>(*store));
+
     const auto size = GetTypeSize(store->GetStoredType());
     CollectPointer(StoreOperation::AddressInput(node).origin(), size, true);
   }
@@ -295,9 +296,9 @@ void
 AliasAnalysisPrecisionEvaluator::CollectPointersFromStructuralNode(
     const rvsdg::StructuralNode & node)
 {
-  for (size_t n = 0; n < node.nsubregions(); n++)
+  for (auto & subregion : node.Subregions())
   {
-    CollectPointersFromRegion(*node.subregion(n));
+    CollectPointersFromRegion(subregion);
   }
 }
 

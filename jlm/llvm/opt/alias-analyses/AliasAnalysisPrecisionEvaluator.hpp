@@ -3,13 +3,13 @@
  * See COPYING for terms of redistribution.
  */
 
-#ifndef JLM_LLVM_OPT_ALIAS_ANALYSES_PRECISIONEVALUATOR_HPP
-#define JLM_LLVM_OPT_ALIAS_ANALYSES_PRECISIONEVALUATOR_HPP
+#ifndef JLM_LLVM_OPT_ALIAS_ANALYSES_ALIASANALYSISPRECISIONEVALUATOR_HPP
+#define JLM_LLVM_OPT_ALIAS_ANALYSES_ALIASANALYSISPRECISIONEVALUATOR_HPP
 
-#include "jlm/rvsdg/lambda.hpp"
-#include "jlm/rvsdg/RvsdgModule.hpp"
-#include "jlm/util/GraphWriter.hpp"
 #include <jlm/llvm/opt/alias-analyses/AliasAnalysis.hpp>
+#include <jlm/rvsdg/lambda.hpp>
+#include <jlm/rvsdg/RvsdgModule.hpp>
+#include <jlm/util/GraphWriter.hpp>
 #include <jlm/util/Statistics.hpp>
 
 #include <unordered_map>
@@ -27,7 +27,7 @@ namespace jlm::llvm::aa
  * Uses a pairwise alias analysis to ask MayAlias queries on relevant pairs of pointers.
  * Only considers load and store operations, and not function calls.
  */
-class AliasAnalysisPrecisionEvaluator
+class AliasAnalysisPrecisionEvaluator final
 {
   class PrecisionStatistics;
 
@@ -50,7 +50,7 @@ public:
     LoadsConsideredClobbers_ = loadsConsideredClobbers;
   }
 
-  bool
+  [[nodiscard]] bool
   AreLoadsConsideredClobbers() const noexcept
   {
     return LoadsConsideredClobbers_;
@@ -69,7 +69,7 @@ public:
     DeduplicatePointers_ = deduplicatePointers;
   }
 
-  bool
+  [[nodiscard]] bool
   IsDeduplicatingPointers() const noexcept
   {
     return DeduplicatePointers_;
@@ -90,7 +90,7 @@ public:
     AliasingGraphEnabled_ = aliasingGraphEnabled;
   }
 
-  bool
+  [[nodiscard]] bool
   IsAliasingGraphEnabled() const noexcept
   {
     return AliasingGraphEnabled_;
@@ -108,7 +108,7 @@ public:
     PerFunctionOutputEnabled_ = perFunctionOutputEnabled;
   }
 
-  bool
+  [[nodiscard]] bool
   IsPerFunctionOutputEnabled() const noexcept
   {
     return PerFunctionOutputEnabled_;
@@ -248,7 +248,7 @@ private:
    * Adds up a list of ClobberInfo structs, where each element represents N clobber operations
    * Returns results for the average clobber, as well as total alias query response counts
    */
-  static AggregatedClobberInfos
+  [[nodiscard]] static AggregatedClobberInfos
   AggregateClobberInfos(const std::vector<PrecisionInfo::ClobberInfo> & clobberInfos);
 
   /**
@@ -293,4 +293,4 @@ private:
 
 }
 
-#endif // JLM_LLVM_OPT_ALIAS_ANALYSES_PRECISIONEVALUATOR_HPP
+#endif // JLM_LLVM_OPT_ALIAS_ANALYSES_ALIASANALYSISPRECISIONEVALUATOR_HPP
