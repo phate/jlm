@@ -20,6 +20,7 @@ GetStatisticsIdNames()
   static util::BijectiveMap<Statistics::Id, std::string_view> mapping = {
     { Statistics::Id::Aggregation, "Aggregation" },
     { Statistics::Id::AgnosticModRefSummarizer, "AgnosticModRefSummarizer" },
+    { Statistics::Id::AliasAnalysisPrecisionEvaluation, "AliasAnalysisPrecisionEvaluation" },
     { Statistics::Id::AndersenAnalysis, "AndersenAnalysis" },
     { Statistics::Id::Annotation, "Annotation" },
     { Statistics::Id::CommonNodeElimination, "CNE" },
