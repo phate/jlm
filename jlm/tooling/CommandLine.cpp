@@ -215,6 +215,7 @@ JlmOptCommandLineOptions::GetStatisticsIdCommandLineArguments()
   static util::BijectiveMap<util::Statistics::Id, std::string_view> mapping = {
     { util::Statistics::Id::Aggregation, "print-aggregation-time" },
     { util::Statistics::Id::AgnosticModRefSummarizer, "print-agnostic-mod-ref-summarization" },
+    { util::Statistics::Id::AliasAnalysisPrecisionEvaluation, "print-aa-precision-evaluation" },
     { util::Statistics::Id::AndersenAnalysis, "print-andersen-analysis" },
     { util::Statistics::Id::Annotation, "print-annotation-time" },
     { util::Statistics::Id::CommonNodeElimination, "print-cne-stat" },
@@ -705,6 +706,9 @@ JlmOptCommandLineParser::ParseCommandLineArguments(int argc, const char * const 
           CreateStatisticsOption(
               util::Statistics::Id::AgnosticModRefSummarizer,
               "Collect agnostic mod/ref summarization pass statistics."),
+          CreateStatisticsOption(
+              util::Statistics::Id::AliasAnalysisPrecisionEvaluation,
+              "Evaluate alias analysis precision and store to file"),
           CreateStatisticsOption(
               util::Statistics::Id::AndersenAnalysis,
               "Collect Andersen alias analysis pass statistics."),

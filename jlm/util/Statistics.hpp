@@ -36,6 +36,7 @@ public:
 
     Aggregation,
     AgnosticModRefSummarizer,
+    AliasAnalysisPrecisionEvaluation,
     AndersenAnalysis,
     Annotation,
     CommonNodeElimination,
@@ -505,6 +506,19 @@ public:
   }
 
   /**
+   * Checks statistics with the given id are demanded.
+   *
+   * @param id The statistics id to check.
+   *
+   * @return True if \p statistics with the given id are demanded, otherwise false.
+   */
+  [[nodiscard]] bool
+  IsDemanded(Statistics::Id id) const noexcept
+  {
+    return GetSettings().IsDemanded(id);
+  }
+
+  /**
    * Checks if the pass statistics is demanded.
    *
    * @param statistics The statistics to check whether it is demanded.
@@ -514,7 +528,7 @@ public:
   [[nodiscard]] bool
   IsDemanded(const Statistics & statistics) const noexcept
   {
-    return GetSettings().IsDemanded(statistics.GetId());
+    return IsDemanded(statistics.GetId());
   }
 
   /**
@@ -527,7 +541,7 @@ public:
   void
   CollectDemandedStatistics(std::unique_ptr<Statistics> statistics)
   {
-    if (GetSettings().IsDemanded(statistics->GetId()))
+    if (IsDemanded(*statistics))
       CollectedStatistics_.emplace_back(std::move(statistics));
   }
 
