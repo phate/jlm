@@ -344,7 +344,6 @@ public:
   GetOutputDirectory() const noexcept
   {
     JLM_ASSERT(Directory_.has_value());
-    Directory_->CreateDirectory();
     return Directory_.value();
   }
 
