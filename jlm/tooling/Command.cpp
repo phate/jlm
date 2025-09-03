@@ -333,7 +333,8 @@ JlmOptCommand::ToString() const
   }
 
   std::string statisticsDirArgument =
-      "-s " + CommandLineOptions_.GetStatisticsCollectorSettings().GetOutputDirectory().to_str()
+      "-s "
+      + CommandLineOptions_.GetStatisticsCollectorSettings().GetOrCreateOutputDirectory().to_str()
       + " ";
 
   return util::strfmt(

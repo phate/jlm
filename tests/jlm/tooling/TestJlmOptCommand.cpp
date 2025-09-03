@@ -20,7 +20,7 @@ TestStatistics()
   using namespace jlm::util;
 
   // Arrange
-  FilePath expectedStatisticsDir("/myStatisticsDir/");
+  FilePath expectedStatisticsDir("/tmp/myStatisticsDir/");
 
   jlm::util::StatisticsCollectorSettings statisticsCollectorSettings(
       { jlm::util::Statistics::Id::SteensgaardAnalysis },

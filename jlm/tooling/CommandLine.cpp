@@ -688,8 +688,6 @@ JlmOptCommandLineParser::ParseCommandLineArguments(int argc, const char * const 
       cl::value_desc("file"));
 
   const auto statisticsDirectoryDefault = util::FilePath::TempDirectoryPath().Join("jlm");
-  statisticsDirectoryDefault.CreateDirectory();
-
   const auto statisticDirectoryDescription =
       "Write statistics and debug output to files in <dir>. Default is "
       + statisticsDirectoryDefault.to_str() + ".";

@@ -339,12 +339,15 @@ public:
 
   /**
    * @return the directory used for outputting statistics and debug output files.
-   * If no output directory is given, an assertion failure occurs.
+   *
+   * \note If no output directory path is given, an assertion failure occurs. If the directory
+   * does not exist yet, it is created.
    */
   [[nodiscard]] const FilePath &
-  GetOutputDirectory() const noexcept
+  GetOrCreateOutputDirectory() const noexcept
   {
     JLM_ASSERT(Directory_.has_value());
+    Directory_->CreateDirectory();
     return Directory_.value();
   }
 

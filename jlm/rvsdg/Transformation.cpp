@@ -59,7 +59,7 @@ TransformationSequence::Run(
   {
     DumpDotGraphs(
         rvsdgModule,
-        statisticsCollector.GetSettings().GetOutputDirectory(),
+        statisticsCollector.GetSettings().GetOrCreateOutputDirectory(),
         "Pristine",
         numPasses);
     numPasses++;
@@ -72,7 +72,7 @@ TransformationSequence::Run(
     {
       DumpDotGraphs(
           rvsdgModule,
-          statisticsCollector.GetSettings().GetOutputDirectory(),
+          statisticsCollector.GetSettings().GetOrCreateOutputDirectory(),
           "After" + std::string(transformation->GetName()),
           numPasses);
       numPasses++;
@@ -100,7 +100,7 @@ TransformationSequence::DumpDotGraphs(
            << passName << ".dot";
 
   std::ofstream outputFile;
-  outputFile.open(filePath.str().c_str());
+  outputFile.open(filePath.str());
   graphWriter.OutputAllGraphs(outputFile, util::graph::OutputFormat::Dot);
   outputFile.close();
 }
