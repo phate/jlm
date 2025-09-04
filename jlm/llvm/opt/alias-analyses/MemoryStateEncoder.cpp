@@ -15,11 +15,140 @@
 namespace jlm::llvm::aa
 {
 
+/**
+ * \brief Helper struct for counting up MemoryNodes, among some set of entities that use them
+ */
+struct MemoryStateTypeCounter final
+{
+  // The number of entities that have been counted
+  uint64_t NumEntities = 0;
+
+  // Count of total memory states, divided by MemoryNode type
+  uint64_t NumAllocas = 0;
+  uint64_t NumMallocs = 0;
+  uint64_t NumDeltas = 0;
+  uint64_t NumImports = 0;
+  uint64_t NumLambdas = 0;
+  uint64_t NumExternal = 0;
+
+  // Among the MemoryNodes counted above, how many were not escaping
+  uint64_t NumNonEscaped = 0;
+
+  // Remember the single entity with the highest number of memory states
+  uint64_t MaxMemoryStateEntity = 0;
+  // Do the same, but only include non-escaped MemoryNodes
+  uint64_t MaxNonEscapedMemoryStateEntity = 0;
+
+  void
+  CountEntity(
+      uint64_t numAllocas,
+      uint64_t numMallocs,
+      uint64_t numDeltas,
+      uint64_t numImports,
+      uint64_t numLambdas,
+      uint64_t numExternal,
+      uint64_t numNonEscaped)
+  {
+    NumEntities++;
+
+    NumAllocas += numAllocas;
+    NumMallocs += numMallocs;
+    NumDeltas += numDeltas;
+    NumImports += numImports;
+    NumLambdas += numLambdas;
+    NumExternal += numExternal;
+
+    const uint64_t totalMemoryStates =
+        numAllocas + numMallocs + numDeltas + numImports + numLambdas + numExternal;
+    if (totalMemoryStates > MaxMemoryStateEntity)
+      MaxMemoryStateEntity = totalMemoryStates;
+
+    NumNonEscaped += numNonEscaped;
+    if (numNonEscaped > MaxNonEscapedMemoryStateEntity)
+      MaxNonEscapedMemoryStateEntity = numNonEscaped;
+  }
+
+  void
+  CountEntity(util::HashSet<const PointsToGraph::MemoryNode *> memoryNodes)
+  {
+    uint64_t numAllocas = 0;
+    uint64_t numMallocs = 0;
+    uint64_t numDeltas = 0;
+    uint64_t numImports = 0;
+    uint64_t numLambdas = 0;
+    uint64_t numExternal = 0;
+
+    uint64_t numNonEscaped = 0;
+
+    for (const auto memoryNode : memoryNodes.Items())
+    {
+      if (!memoryNode->IsModuleEscaping())
+        numNonEscaped++;
+
+      if (dynamic_cast<const PointsToGraph::AllocaNode *>(memoryNode))
+        numAllocas++;
+      else if (dynamic_cast<const PointsToGraph::MallocNode *>(memoryNode))
+        numMallocs++;
+      else if (dynamic_cast<const PointsToGraph::DeltaNode *>(memoryNode))
+        numDeltas++;
+      else if (dynamic_cast<const PointsToGraph::ImportNode *>(memoryNode))
+        numImports++;
+      else if (dynamic_cast<const PointsToGraph::LambdaNode *>(memoryNode))
+        numLambdas++;
+      else if (dynamic_cast<const PointsToGraph::ExternalMemoryNode *>(memoryNode))
+        numExternal++;
+      else
+        JLM_UNREACHABLE("Unknown MemoryNode type");
+    }
+
+    CountEntity(
+        numAllocas,
+        numMallocs,
+        numDeltas,
+        numImports,
+        numLambdas,
+        numExternal,
+        numNonEscaped);
+  }
+};
+
 /** \brief Statistics class for memory state encoder encoding
  *
  */
 class EncodingStatistics final : public util::Statistics
 {
+  // These are prefixes for statistics that count MemoryNode types
+  static constexpr auto NumTotalAllocaState_ = "#TotalAllocaState";
+  static constexpr auto NumTotalMallocState_ = "#TotalMallocState";
+  static constexpr auto NumTotalDeltaState_ = "#TotalDeltaState";
+  static constexpr auto NumTotalImportState_ = "#TotalImportState";
+  static constexpr auto NumTotalLambdaState_ = "#TotalLambdaState";
+  static constexpr auto NumTotalExternalState_ = "#TotalExternalState";
+  // Among all the MemoryNodes counted above, how many of them are not marked as escaped
+  static constexpr auto NumTotalNonEscapedState_ = "#TotalNonEscapedState";
+  static constexpr auto NumMaxMemoryState_ = "#MaxMemoryState";
+  static constexpr auto NumMaxNonEscapedMemoryState_ = "#MaxNonEscapedMemoryState";
+
+  // The number of regions that are inside lambda nodes (including the lambda subregion itself)
+  static constexpr auto NumIntraProceduralRegions_ = "#IntraProceduralRegions";
+  // Suffix used when counting region state arguments (or LambdaEntrySplit for lambda subregions)
+  static constexpr auto RegionArgumentStateSuffix_ = "Arguments";
+
+  // Counting both volatile and non-volatile loads
+  static constexpr auto NumLoadOperations_ = "#LoadOperations";
+  // Suffix used when counting memory states routed through loads
+  static constexpr auto LoadStateSuffix_ = "sThroughLoad";
+
+  // Counting both volatile and non-volatile stores
+  static constexpr auto NumStoreOperations_ = "#StoreOperations";
+  // Suffix used when counting memory states routed through stores
+  static constexpr auto StoreStateSuffix_ = "sThroughStore";
+
+  // Counting call entry merges
+  static constexpr auto NumCallEntryMergeOperations_ = "#CallEntryMergeOperations";
+  // Suffix used when counting memory states routed into call entry merges
+  static constexpr auto CallEntryMergeStateSuffix_ = "sIntoCallEntryMerge";
+
 public:
   ~EncodingStatistics() override = default;
 
@@ -40,10 +169,54 @@ public:
     GetTimer(Label::Timer).stop();
   }
 
+  void
+  AddIntraProceduralRegionMemoryStateCounts(const MemoryStateTypeCounter & counter)
+  {
+    AddMeasurement(NumIntraProceduralRegions_, counter.NumEntities);
+    AddMemoryStateTypeCounter(RegionArgumentStateSuffix_, counter);
+  }
+
+  void
+  AddLoadMemoryStateCounts(const MemoryStateTypeCounter & counter)
+  {
+    AddMeasurement(NumLoadOperations_, counter.NumEntities);
+    AddMemoryStateTypeCounter(LoadStateSuffix_, counter);
+  }
+
+  void
+  AddStoreMemoryStateCounts(const MemoryStateTypeCounter & counter)
+  {
+    AddMeasurement(NumStoreOperations_, counter.NumEntities);
+    AddMemoryStateTypeCounter(StoreStateSuffix_, counter);
+  }
+
+  void
+  AddCallEntryMergeStateCounts(const MemoryStateTypeCounter & counter)
+  {
+    AddMeasurement(NumCallEntryMergeOperations_, counter.NumEntities);
+    AddMemoryStateTypeCounter(CallEntryMergeStateSuffix_, counter);
+  }
+
   static std::unique_ptr<EncodingStatistics>
   Create(const util::FilePath & sourceFile)
   {
     return std::make_unique<EncodingStatistics>(sourceFile);
+  }
+
+private:
+  void
+  AddMemoryStateTypeCounter(const std::string & suffix, const MemoryStateTypeCounter & counter)
+  {
+    AddMeasurement(NumTotalAllocaState_ + suffix, counter.NumAllocas);
+    AddMeasurement(NumTotalMallocState_ + suffix, counter.NumMallocs);
+    AddMeasurement(NumTotalDeltaState_ + suffix, counter.NumDeltas);
+    AddMeasurement(NumTotalImportState_ + suffix, counter.NumImports);
+    AddMeasurement(NumTotalLambdaState_ + suffix, counter.NumLambdas);
+    AddMeasurement(NumTotalExternalState_ + suffix, counter.NumExternal);
+    AddMeasurement(NumTotalNonEscapedState_ + suffix, counter.NumNonEscaped);
+
+    AddMeasurement(NumMaxMemoryState_ + suffix, counter.MaxMemoryStateEntity);
+    AddMeasurement(NumMaxNonEscapedMemoryState_ + suffix, counter.MaxNonEscapedMemoryStateEntity);
   }
 };
 
@@ -298,9 +471,7 @@ public:
   std::vector<StateMap::MemoryNodeStatePair *>
   GetStates(const rvsdg::Output & output) noexcept
   {
-    auto memoryNodes = GetMemoryNodes(output);
-    return memoryNodes.Size() == 0 ? std::vector<StateMap::MemoryNodeStatePair *>()
-                                   : GetStates(*output.region(), memoryNodes);
+    return GetStates(*output.region(), GetMemoryNodes(output));
   }
 
   std::vector<StateMap::MemoryNodeStatePair *>
@@ -432,6 +603,30 @@ public:
     return ModRefSummary_;
   }
 
+  MemoryStateTypeCounter &
+  GetInterProceduralRegionCounter()
+  {
+    return InterProceduralRegionCounter_;
+  }
+
+  MemoryStateTypeCounter &
+  GetLoadCounter()
+  {
+    return LoadCounter_;
+  }
+
+  MemoryStateTypeCounter &
+  GetStoreCounter()
+  {
+    return StoreCounter_;
+  }
+
+  MemoryStateTypeCounter &
+  GetCallEntryMergeCounter()
+  {
+    return CallEntryMergeCounter_;
+  }
+
   static std::unique_ptr<MemoryStateEncoder::Context>
   Create(const ModRefSummary & modRefSummary)
   {
@@ -441,6 +636,12 @@ public:
 private:
   RegionalizedStateMap RegionalizedStateMap_;
   const ModRefSummary & ModRefSummary_;
+
+  // Counters used for producing statistics about memory states
+  MemoryStateTypeCounter InterProceduralRegionCounter_;
+  MemoryStateTypeCounter LoadCounter_;
+  MemoryStateTypeCounter StoreCounter_;
+  MemoryStateTypeCounter CallEntryMergeCounter_;
 };
 
 static std::vector<MemoryNodeId>
@@ -471,6 +672,12 @@ MemoryStateEncoder::Encode(
   statistics->Start(rvsdgModule.Rvsdg());
   EncodeRegion(rvsdgModule.Rvsdg().GetRootRegion());
   statistics->Stop();
+
+  statistics->AddIntraProceduralRegionMemoryStateCounts(
+      Context_->GetInterProceduralRegionCounter());
+  statistics->AddLoadMemoryStateCounts(Context_->GetLoadCounter());
+  statistics->AddStoreMemoryStateCounts(Context_->GetStoreCounter());
+  statistics->AddCallEntryMergeStateCounts(Context_->GetCallEntryMergeCounter());
 
   statisticsCollector.CollectDemandedStatistics(std::move(statistics));
 
@@ -625,11 +832,14 @@ MemoryStateEncoder::EncodeLoad(const rvsdg::SimpleNode & node)
   JLM_ASSERT(is<LoadOperation>(&node));
   auto & stateMap = Context_->GetRegionalizedStateMap();
 
-  auto address = LoadOperation::AddressInput(node).origin();
-  auto memoryNodeStatePairs = stateMap.GetStates(*address);
-  auto memoryStates = StateMap::MemoryNodeStatePair::States(memoryNodeStatePairs);
+  const auto address = LoadOperation::AddressInput(node).origin();
+  const auto memoryNodes = stateMap.GetMemoryNodes(*address);
+  Context_->GetLoadCounter().CountEntity(memoryNodes);
 
-  auto & newLoadNode = ReplaceLoadNode(node, memoryStates);
+  const auto memoryNodeStatePairs = stateMap.GetStates(*node.region(), memoryNodes);
+  const auto memoryStates = StateMap::MemoryNodeStatePair::States(memoryNodeStatePairs);
+
+  const auto & newLoadNode = ReplaceLoadNode(node, memoryStates);
 
   StateMap::MemoryNodeStatePair::ReplaceStates(
       memoryNodeStatePairs,
@@ -649,7 +859,10 @@ MemoryStateEncoder::EncodeStore(const rvsdg::SimpleNode & node)
   auto & stateMap = Context_->GetRegionalizedStateMap();
 
   const auto address = StoreOperation::AddressInput(node).origin();
-  const auto memoryNodeStatePairs = stateMap.GetStates(*address);
+  const auto memoryNodes = stateMap.GetMemoryNodes(*address);
+  Context_->GetStoreCounter().CountEntity(memoryNodes);
+
+  const auto memoryNodeStatePairs = stateMap.GetStates(*node.region(), memoryNodes);
   const auto memoryStates = StateMap::MemoryNodeStatePair::States(memoryNodeStatePairs);
 
   const auto & newStoreNode = ReplaceStoreNode(node, memoryStates);
@@ -693,6 +906,7 @@ MemoryStateEncoder::EncodeCallEntry(const rvsdg::SimpleNode & callNode)
   const auto region = callNode.region();
   auto & regionalizedStateMap = Context_->GetRegionalizedStateMap();
   auto & memoryNodes = Context_->GetModRefSummary().GetCallEntryNodes(callNode);
+  Context_->GetCallEntryMergeCounter().CountEntity(memoryNodes);
 
   std::vector<rvsdg::Output *> states;
   std::vector<MemoryNodeId> memoryNodeIds;
@@ -778,6 +992,8 @@ MemoryStateEncoder::EncodeLambdaEntry(const rvsdg::LambdaNode & lambdaNode)
   auto & memoryStateArgumentUser = memoryStateArgument.SingleUser();
 
   auto & memoryNodes = Context_->GetModRefSummary().GetLambdaEntryNodes(lambdaNode);
+  Context_->GetInterProceduralRegionCounter().CountEntity(memoryNodes);
+
   const auto memoryNodeIds = GetMemoryNodeIds(memoryNodes);
   auto & stateMap = Context_->GetRegionalizedStateMap();
 
@@ -872,6 +1088,10 @@ MemoryStateEncoder::EncodeGammaEntry(rvsdg::GammaNode & gammaNode)
   auto & stateMap = Context_->GetRegionalizedStateMap();
   auto memoryNodes = Context_->GetModRefSummary().GetGammaEntryNodes(gammaNode);
 
+  // Count the memory state arguments once per subregion
+  for (size_t i = 0; i < gammaNode.nsubregions(); i++)
+    Context_->GetInterProceduralRegionCounter().CountEntity(memoryNodes);
+
   auto memoryNodeStatePairs = stateMap.GetStates(*region, memoryNodes);
   for (auto & memoryNodeStatePair : memoryNodeStatePairs)
   {
@@ -922,6 +1142,7 @@ MemoryStateEncoder::EncodeThetaEntry(rvsdg::ThetaNode & thetaNode)
   auto region = thetaNode.region();
   auto & stateMap = Context_->GetRegionalizedStateMap();
   auto & memoryNodes = Context_->GetModRefSummary().GetThetaEntryExitNodes(thetaNode);
+  Context_->GetInterProceduralRegionCounter().CountEntity(memoryNodes);
 
   std::vector<rvsdg::Output *> thetaStateOutputs;
   auto memoryNodeStatePairs = stateMap.GetStates(*region, memoryNodes);
