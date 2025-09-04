@@ -901,7 +901,7 @@ TestPointerObjectConstraintSetSolve(Args... args)
   }
   else
   {
-    static_assert(false, "Unknown solver");
+    JLM_UNREACHABLE("Unknown solver");
   }
 
   // alloca1 should point to alloca2, etc
