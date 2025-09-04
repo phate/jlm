@@ -115,6 +115,11 @@ private:
       const std::vector<rvsdg::Output *> & operands);
 
   static std::optional<std::vector<rvsdg::Output *>>
+  NormalizeMemoryStateJoinNode(
+      const MemoryStateJoinOperation & operation,
+      const std::vector<rvsdg::Output *> & operands);
+
+  static std::optional<std::vector<rvsdg::Output *>>
   NormalizeMemoryStateSplitNode(
       const MemoryStateSplitOperation & operation,
       const std::vector<rvsdg::Output *> & operands);
