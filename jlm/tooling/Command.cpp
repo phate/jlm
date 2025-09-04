@@ -359,10 +359,13 @@ JlmOptCommand::Run() const
       CommandLineOptions_.GetInputFormat(),
       statisticsCollector);
 
+  llvm::dot::LlvmDotWriter dotWriter;
   rvsdg::TransformationSequence::CreateAndRun(
       *rvsdgModule,
       statisticsCollector,
-      GetTransformations());
+      GetTransformations(),
+      dotWriter,
+      CommandLineOptions_.DumpRvsdgDotGraphs());
 
   PrintRvsdgModule(
       *rvsdgModule,

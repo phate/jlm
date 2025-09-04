@@ -181,12 +181,7 @@ StatisticsCollector::CreateOutputFile(std::string fileNameSuffix, bool includeCo
 {
   JLM_ASSERT(Settings_.HasOutputDirectory());
 
-  // Ensure the output folder exists, or create it
-  auto directory = Settings_.GetOutputDirectory();
-  if (directory.IsFile())
-    throw Error("The specified statistics output directory is a file: " + directory.to_str());
-  if (!directory.Exists())
-    directory.CreateDirectory();
+  auto directory = Settings_.GetOrCreateOutputDirectory();
 
   // If the fileNameSuffix should have a count included, place it before the '.' (or at the end)
   if (includeCount)

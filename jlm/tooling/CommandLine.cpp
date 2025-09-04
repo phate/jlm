@@ -698,6 +698,11 @@ JlmOptCommandLineParser::ParseCommandLineArguments(int argc, const char * const 
       cl::desc(statisticDirectoryDescription),
       cl::value_desc("dir"));
 
+  cl::opt<bool> dumpRvsdgDotGraphs(
+      "dumpRvsdgDotGraphs",
+      cl::init(false),
+      cl::desc("Dump RVSDG as dot graphs after each transformation in debug folder."));
+
   cl::list<util::Statistics::Id> printStatistics(
       cl::values(
           CreateStatisticsOption(
@@ -954,7 +959,8 @@ JlmOptCommandLineParser::ParseCommandLineArguments(int argc, const char * const 
       outputFormat,
       std::move(statisticsCollectorSettings),
       std::move(treePrinterConfiguration),
-      std::move(optimizationIds));
+      std::move(optimizationIds),
+      dumpRvsdgDotGraphs);
 
   return *CommandLineOptions_;
 }
