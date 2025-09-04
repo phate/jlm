@@ -24,10 +24,11 @@ class StructuralNode;
 namespace jlm::llvm
 {
 
+class CallExitMemoryStateSplitOperation;
 class LambdaEntryMemoryStateSplitOperation;
 class LambdaExitMemoryStateMergeOperation;
-class CallExitMemoryStateSplitOperation;
 class LoadNonVolatileOperation;
+class MemoryStateJoinOperation;
 class MemoryStateMergeOperation;
 class MemoryStateSplitOperation;
 class StoreNonVolatileOperation;
@@ -112,6 +113,11 @@ private:
   static std::optional<std::vector<rvsdg::Output *>>
   NormalizeMemoryStateMergeNode(
       const MemoryStateMergeOperation & operation,
+      const std::vector<rvsdg::Output *> & operands);
+
+  static std::optional<std::vector<rvsdg::Output *>>
+  NormalizeMemoryStateJoinNode(
+      const MemoryStateJoinOperation & operation,
       const std::vector<rvsdg::Output *> & operands);
 
   static std::optional<std::vector<rvsdg::Output *>>

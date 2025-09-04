@@ -159,6 +159,10 @@ NodeReduction::ReduceSimpleNode(rvsdg::SimpleNode & simpleNode)
   {
     return ReduceMemoryStateMergeNode(simpleNode);
   }
+  if (is<MemoryStateJoinOperation>(&simpleNode))
+  {
+    return rvsdg::ReduceNode<MemoryStateJoinOperation>(NormalizeMemoryStateJoinNode, simpleNode);
+  }
   if (is<MemoryStateSplitOperation>(&simpleNode))
   {
     return ReduceMemoryStateSplitNode(simpleNode);
@@ -292,6 +296,18 @@ NodeReduction::NormalizeMemoryStateMergeNode(
         MemoryStateMergeOperation::NormalizeMergeSplit });
 
   return rvsdg::NormalizeSequence<MemoryStateMergeOperation>(normalizations, operation, operands);
+}
+
+std::optional<std::vector<rvsdg::Output *>>
+NodeReduction::NormalizeMemoryStateJoinNode(
+    const MemoryStateJoinOperation & operation,
+    const std::vector<rvsdg::Output *> & operands)
+{
+  static std::vector<rvsdg::NodeNormalization<MemoryStateJoinOperation>> normalizations(
+      { MemoryStateJoinOperation::NormalizeSingleOperand,
+        MemoryStateJoinOperation::NormalizeDuplicateOperands });
+
+  return rvsdg::NormalizeSequence<MemoryStateJoinOperation>(normalizations, operation, operands);
 }
 
 std::optional<std::vector<rvsdg::Output *>>
