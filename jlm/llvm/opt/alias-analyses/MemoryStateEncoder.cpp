@@ -23,7 +23,7 @@ struct MemoryStateTypeCounter final
   // The number of entities that have been counted
   uint64_t NumEntities = 0;
 
-  // Count of total memory states, divided by MemoryNode type
+  // Count of total memory states, separated by MemoryNode type
   uint64_t NumAllocas = 0;
   uint64_t NumMallocs = 0;
   uint64_t NumDeltas = 0;
@@ -85,17 +85,17 @@ struct MemoryStateTypeCounter final
       if (!memoryNode->IsModuleEscaping())
         numNonEscaped++;
 
-      if (dynamic_cast<const PointsToGraph::AllocaNode *>(memoryNode))
+      if (is<PointsToGraph::AllocaNode>(*memoryNode))
         numAllocas++;
-      else if (dynamic_cast<const PointsToGraph::MallocNode *>(memoryNode))
+      else if (is<PointsToGraph::MallocNode>(*memoryNode))
         numMallocs++;
-      else if (dynamic_cast<const PointsToGraph::DeltaNode *>(memoryNode))
+      else if (is<PointsToGraph::DeltaNode>(*memoryNode))
         numDeltas++;
-      else if (dynamic_cast<const PointsToGraph::ImportNode *>(memoryNode))
+      else if (is<PointsToGraph::ImportNode>(*memoryNode))
         numImports++;
-      else if (dynamic_cast<const PointsToGraph::LambdaNode *>(memoryNode))
+      else if (is<PointsToGraph::LambdaNode>(*memoryNode))
         numLambdas++;
-      else if (dynamic_cast<const PointsToGraph::ExternalMemoryNode *>(memoryNode))
+      else if (is<PointsToGraph::ExternalMemoryNode>(*memoryNode))
         numExternal++;
       else
         JLM_UNREACHABLE("Unknown MemoryNode type");
@@ -1067,18 +1067,18 @@ MemoryStateEncoder::EncodeDelta(const rvsdg::DeltaNode &)
 void
 MemoryStateEncoder::EncodeGamma(rvsdg::GammaNode & gammaNode)
 {
-  for (size_t n = 0; n < gammaNode.nsubregions(); n++)
-    Context_->GetRegionalizedStateMap().PushRegion(*gammaNode.subregion(n));
+  for (auto & subregion : gammaNode.Subregions())
+    Context_->GetRegionalizedStateMap().PushRegion(subregion);
 
   EncodeGammaEntry(gammaNode);
 
-  for (size_t n = 0; n < gammaNode.nsubregions(); n++)
-    EncodeRegion(*gammaNode.subregion(n));
+  for (auto & subregion : gammaNode.Subregions())
+    EncodeRegion(subregion);
 
   EncodeGammaExit(gammaNode);
 
-  for (size_t n = 0; n < gammaNode.nsubregions(); n++)
-    Context_->GetRegionalizedStateMap().PopRegion(*gammaNode.subregion(n));
+  for (auto & subregion : gammaNode.Subregions())
+    Context_->GetRegionalizedStateMap().PopRegion(subregion);
 }
 
 void
@@ -1089,7 +1089,7 @@ MemoryStateEncoder::EncodeGammaEntry(rvsdg::GammaNode & gammaNode)
   auto memoryNodes = Context_->GetModRefSummary().GetGammaEntryNodes(gammaNode);
 
   // Count the memory state arguments once per subregion
-  for (size_t i = 0; i < gammaNode.nsubregions(); i++)
+  for (auto & _ : gammaNode.Subregions())
     Context_->GetInterProceduralRegionCounter().CountEntity(memoryNodes);
 
   auto memoryNodeStatePairs = stateMap.GetStates(*region, memoryNodes);
@@ -1111,11 +1111,10 @@ MemoryStateEncoder::EncodeGammaExit(rvsdg::GammaNode & gammaNode)
   for (auto & memoryNodeStatePair : memoryNodeStatePairs)
   {
     std::vector<rvsdg::Output *> states;
-    for (size_t n = 0; n < gammaNode.nsubregions(); n++)
-    {
-      auto subregion = gammaNode.subregion(n);
 
-      auto & state = stateMap.GetState(*subregion, memoryNodeStatePair->MemoryNode())->State();
+    for (auto & subregion : gammaNode.Subregions())
+    {
+      auto & state = stateMap.GetState(subregion, memoryNodeStatePair->MemoryNode())->State();
       states.push_back(&state);
     }
 
