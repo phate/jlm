@@ -1089,7 +1089,7 @@ MemoryStateEncoder::EncodeGammaEntry(rvsdg::GammaNode & gammaNode)
   auto memoryNodes = Context_->GetModRefSummary().GetGammaEntryNodes(gammaNode);
 
   // Count the memory state arguments once per subregion
-  for (auto & _ : gammaNode.Subregions())
+  for ([[maybe_unused]] auto & subregion : gammaNode.Subregions())
     Context_->GetInterProceduralRegionCounter().CountEntity(memoryNodes);
 
   auto memoryNodeStatePairs = stateMap.GetStates(*region, memoryNodes);
