@@ -18,7 +18,7 @@
 #include <jlm/rvsdg/view.hpp>
 
 static void
-OperationEquality()
+LoadNonVolatileOperationEquality()
 {
   using namespace jlm::llvm;
 
@@ -42,8 +42,8 @@ OperationEquality()
 }
 
 JLM_UNIT_TEST_REGISTER(
-    "jlm/llvm/ir/operators/LoadNonVolatileTests-OperationEquality",
-    OperationEquality)
+    "jlm/llvm/ir/operators/LoadTests-LoadNonVolatileOperationEquality",
+    LoadNonVolatileOperationEquality)
 
 static void
 TestCopy()
@@ -75,7 +75,7 @@ TestCopy()
       == jlm::util::AssertedCast<jlm::rvsdg::SimpleNode>(copiedNode)->GetOperation());
 }
 
-JLM_UNIT_TEST_REGISTER("jlm/llvm/ir/operators/LoadNonVolatileTests-Copy", TestCopy)
+JLM_UNIT_TEST_REGISTER("jlm/llvm/ir/operators/LoadTests-Copy", TestCopy)
 
 static void
 TestLoadAllocaReduction()
@@ -116,11 +116,11 @@ TestLoadAllocaReduction()
 }
 
 JLM_UNIT_TEST_REGISTER(
-    "jlm/llvm/ir/operators/LoadNonVolatileTests-LoadAllocaReduction",
+    "jlm/llvm/ir/operators/LoadTests-LoadAllocaReduction",
     TestLoadAllocaReduction)
 
 static void
-LoadMuxReduction_Success()
+LoadMemoryStateMergeReduction_Success()
 {
   using namespace jlm::llvm;
 
@@ -196,11 +196,11 @@ LoadMuxReduction_Success()
 }
 
 JLM_UNIT_TEST_REGISTER(
-    "jlm/llvm/ir/operators/LoadNonVolatileTests-LoadMuxReduction_Success",
-    LoadMuxReduction_Success)
+    "jlm/llvm/ir/operators/LoadTests-LoadMemoryStateMergeReduction_Success",
+    LoadMemoryStateMergeReduction_Success)
 
 static void
-LoadMuxReduction_LoadWithoutStates()
+LoadMemoryStateMergeReduction_LoadWithoutStates()
 {
   using namespace jlm::llvm;
 
@@ -234,8 +234,87 @@ LoadMuxReduction_LoadWithoutStates()
 }
 
 JLM_UNIT_TEST_REGISTER(
-    "jlm/llvm/ir/operators/LoadNonVolatileTests-LoadMuxReduction_LoadWithoutStates",
-    LoadMuxReduction_LoadWithoutStates)
+    "jlm/llvm/ir/operators/LoadTests-LoadMemoryStateMergeReduction_LoadWithoutStates",
+    LoadMemoryStateMergeReduction_LoadWithoutStates)
+
+static void
+LoadMemoryStateJoinReduction_Success()
+{
+  using namespace jlm::llvm;
+  using namespace jlm::rvsdg;
+
+  // Arrange
+  const auto memoryStateType = MemoryStateType::Create();
+  const auto pointerType = PointerType::Create();
+  const auto bitstringType = BitType::Create(32);
+
+  Graph graph;
+  const auto address = &jlm::rvsdg::GraphImport::Create(graph, pointerType, "address");
+  auto s1 = &jlm::rvsdg::GraphImport::Create(graph, memoryStateType, "state1");
+  auto s2 = &jlm::rvsdg::GraphImport::Create(graph, memoryStateType, "state2");
+  auto s3 = &jlm::rvsdg::GraphImport::Create(graph, memoryStateType, "state3");
+
+  auto mergeResult1 = MemoryStateJoinOperation::CreateNode({ s1, s2, s3 }).output(0);
+  auto mergeResult2 = MemoryStateJoinOperation::CreateNode({ s1, s2, s3 }).output(0);
+  auto & loadNode = LoadNonVolatileOperation::CreateNode(
+      *address,
+      { mergeResult1, mergeResult2 },
+      bitstringType,
+      4);
+
+  auto & ex1 = GraphExport::Create(*loadNode.output(0), "l");
+  auto & ex2 = GraphExport::Create(*loadNode.output(1), "s1");
+  auto & ex3 = GraphExport::Create(*loadNode.output(2), "s2");
+
+  view(&graph.GetRootRegion(), stdout);
+
+  // Act
+  const auto success = jlm::rvsdg::ReduceNode<LoadNonVolatileOperation>(
+      LoadNonVolatileOperation::NormalizeLoadMemoryStateJoin,
+      loadNode);
+  graph.PruneNodes();
+
+  view(&graph.GetRootRegion(), stdout);
+
+  // Assert
+  assert(success);
+  const auto reducedLoadNode = jlm::rvsdg::TryGetOwnerNode<Node>(*ex1.origin());
+  assert(is<LoadNonVolatileOperation>(reducedLoadNode));
+  assert(reducedLoadNode->ninputs() == 7);
+  assert(reducedLoadNode->input(0)->origin() == address);
+  assert(reducedLoadNode->input(1)->origin() == s1);
+  assert(reducedLoadNode->input(2)->origin() == s2);
+  assert(reducedLoadNode->input(3)->origin() == s3);
+  assert(reducedLoadNode->input(4)->origin() == s1);
+  assert(reducedLoadNode->input(5)->origin() == s2);
+  assert(reducedLoadNode->input(6)->origin() == s3);
+
+  {
+    const auto merge = jlm::rvsdg::TryGetOwnerNode<Node>(*ex2.origin());
+    assert(is<MemoryStateJoinOperation>(merge));
+    assert(merge->ninputs() == 3);
+    for (size_t n = 0; n < merge->ninputs(); n++)
+    {
+      const auto expectedLoadNode = jlm::rvsdg::TryGetOwnerNode<Node>(*merge->input(n)->origin());
+      assert(expectedLoadNode == reducedLoadNode);
+    }
+  }
+
+  {
+    const auto merge = jlm::rvsdg::TryGetOwnerNode<Node>(*ex3.origin());
+    assert(is<MemoryStateJoinOperation>(merge));
+    assert(merge->ninputs() == 3);
+    for (size_t n = 0; n < merge->ninputs(); n++)
+    {
+      const auto expectedLoadNode = jlm::rvsdg::TryGetOwnerNode<Node>(*merge->input(n)->origin());
+      assert(expectedLoadNode == reducedLoadNode);
+    }
+  }
+}
+
+JLM_UNIT_TEST_REGISTER(
+    "jlm/llvm/ir/operators/LoadTests-LoadMemoryStateJoinReduction_Success",
+    LoadMemoryStateJoinReduction_Success)
 
 static void
 TestDuplicateStateReduction()
@@ -287,7 +366,7 @@ TestDuplicateStateReduction()
 }
 
 JLM_UNIT_TEST_REGISTER(
-    "jlm/llvm/ir/operators/LoadNonVolatileTests-DuplicateStateReduction",
+    "jlm/llvm/ir/operators/LoadTests-DuplicateStateReduction",
     TestDuplicateStateReduction)
 
 static void
@@ -339,7 +418,7 @@ TestLoadStoreStateReduction()
 }
 
 JLM_UNIT_TEST_REGISTER(
-    "jlm/llvm/ir/operators/LoadNonVolatileTests-LoadStoreStateReduction",
+    "jlm/llvm/ir/operators/LoadTests-LoadStoreStateReduction",
     TestLoadStoreStateReduction)
 
 static void
@@ -380,7 +459,7 @@ TestLoadStoreReduction_Success()
 }
 
 JLM_UNIT_TEST_REGISTER(
-    "jlm/llvm/ir/operators/LoadNonVolatileTests-LoadStoreReduction_Success",
+    "jlm/llvm/ir/operators/LoadTests-LoadStoreReduction_Success",
     TestLoadStoreReduction_Success)
 
 /**
@@ -435,7 +514,7 @@ LoadStoreReduction_DifferentValueOperandType()
 }
 
 JLM_UNIT_TEST_REGISTER(
-    "jlm/llvm/ir/operators/LoadNonVolatileTests-LoadStoreReduction_DifferentValueOperandType",
+    "jlm/llvm/ir/operators/LoadTests-LoadStoreReduction_DifferentValueOperandType",
     LoadStoreReduction_DifferentValueOperandType)
 
 static void
@@ -510,9 +589,7 @@ TestLoadLoadReduction()
   }
 }
 
-JLM_UNIT_TEST_REGISTER(
-    "jlm/llvm/ir/operators/LoadNonVolatileTests-LoadLoadReduction",
-    TestLoadLoadReduction)
+JLM_UNIT_TEST_REGISTER("jlm/llvm/ir/operators/LoadTests-LoadLoadReduction", TestLoadLoadReduction)
 
 static void
 IOBarrierAllocaAddressNormalization()
@@ -675,7 +752,7 @@ LoadVolatileOperationEquality()
 }
 
 JLM_UNIT_TEST_REGISTER(
-    "jlm/llvm/ir/operators/LoadVolatileTests-OperationEquality",
+    "jlm/llvm/ir/operators/LoadTests-LoadVolatileOperationEquality",
     LoadVolatileOperationEquality)
 
 static void
@@ -697,7 +774,7 @@ OperationCopy()
   assert(*copiedOperation == operation);
 }
 
-JLM_UNIT_TEST_REGISTER("jlm/llvm/ir/operators/LoadVolatileTests-OperationCopy", OperationCopy)
+JLM_UNIT_TEST_REGISTER("jlm/llvm/ir/operators/LoadTests-OperationCopy", OperationCopy)
 
 static void
 OperationAccessors()
@@ -721,9 +798,7 @@ OperationAccessors()
   assert(operation.nresults() == numMemoryStates + 2);   // [loadedValue, ioState, memoryStates]
 }
 
-JLM_UNIT_TEST_REGISTER(
-    "jlm/llvm/ir/operators/LoadVolatileTests-OperationAccessors",
-    OperationAccessors)
+JLM_UNIT_TEST_REGISTER("jlm/llvm/ir/operators/LoadTests-OperationAccessors", OperationAccessors)
 
 static void
 NodeCopy()
@@ -765,4 +840,4 @@ NodeCopy()
   assert(*copiedOperation->GetLoadedType() == *valueType);
 }
 
-JLM_UNIT_TEST_REGISTER("jlm/llvm/ir/operators/LoadVolatileTests-NodeCopy", NodeCopy)
+JLM_UNIT_TEST_REGISTER("jlm/llvm/ir/operators/LoadTests-NodeCopy", NodeCopy)
