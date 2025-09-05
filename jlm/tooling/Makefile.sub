@@ -57,12 +57,21 @@ libtooling_TESTS = \
 
 libtooling_TEST_LIBS = \
     libtooling \
-    libhls \
-    libmlir \
     libllvm \
     librvsdg \
     libutil \
     libjlmtest \
+
+# Conditionally add HLS library if enabled
+ifdef ENABLE_HLS
+libtooling_TEST_LIBS += libhls
+endif
+
+# Conditionally add MLIR library if enabled
+ifdef ENABLE_MLIR
+libtooling_TEST_LIBS += libmlir
+endif
+
 
 libtooling_TEST_EXTRA_LDFLAGS = \
     $(MLIR_LDFLAGS) \
