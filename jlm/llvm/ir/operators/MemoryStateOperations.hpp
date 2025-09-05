@@ -178,6 +178,18 @@ public:
       const MemoryStateJoinOperation & operation,
       const std::vector<rvsdg::Output *> & operands);
 
+  /** \brief Fuses nested \ref MemoryStateJoinOperation nodes into a single node
+   *
+   * o1 = MemoryStateJoinOperation i1 i2
+   * o2 = MemoryStateJoinOperation o1 i3
+   * =>
+   * o2 = MemoryStateJoinOperation i1 i2 i3
+   */
+  static std::optional<std::vector<rvsdg::Output *>>
+  NormalizeNestedJoins(
+      const MemoryStateJoinOperation & operation,
+      const std::vector<rvsdg::Output *> & operands);
+
   static rvsdg::SimpleNode &
   CreateNode(const std::vector<rvsdg::Output *> & operands)
   {
