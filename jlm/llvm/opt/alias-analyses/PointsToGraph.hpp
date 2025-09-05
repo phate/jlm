@@ -1145,22 +1145,6 @@ private:
   typename std::unordered_set<NODETYPE *>::const_iterator It_;
 };
 
-/**
- * Checks if the given PointsToGraph Node is of the specified type
- * @tparam NodeType the type of node to check against
- * @param node the node instance to check
- * @return true if node is an instance of NodeType, false otherwise
- */
-template<typename NodeType>
-[[nodiscard]] bool
-is(const PointsToGraph::Node & node) noexcept
-{
-  static_assert(
-      std::is_base_of_v<PointsToGraph::Node, NodeType>,
-      "NodeType must be derived from PointsToGraph::Node.");
-  return dynamic_cast<const NodeType *>(&node) != nullptr;
-}
-
 }
 }
 

@@ -85,17 +85,17 @@ struct MemoryStateTypeCounter final
       if (!memoryNode->IsModuleEscaping())
         numNonEscaped++;
 
-      if (is<PointsToGraph::AllocaNode>(*memoryNode))
+      if (PointsToGraph::Node::Is<PointsToGraph::AllocaNode>(*memoryNode))
         numAllocas++;
-      else if (is<PointsToGraph::MallocNode>(*memoryNode))
+      else if (PointsToGraph::Node::Is<PointsToGraph::MallocNode>(*memoryNode))
         numMallocs++;
-      else if (is<PointsToGraph::DeltaNode>(*memoryNode))
+      else if (PointsToGraph::Node::Is<PointsToGraph::DeltaNode>(*memoryNode))
         numDeltas++;
-      else if (is<PointsToGraph::ImportNode>(*memoryNode))
+      else if (PointsToGraph::Node::Is<PointsToGraph::ImportNode>(*memoryNode))
         numImports++;
-      else if (is<PointsToGraph::LambdaNode>(*memoryNode))
+      else if (PointsToGraph::Node::Is<PointsToGraph::LambdaNode>(*memoryNode))
         numLambdas++;
-      else if (is<PointsToGraph::ExternalMemoryNode>(*memoryNode))
+      else if (PointsToGraph::Node::Is<PointsToGraph::ExternalMemoryNode>(*memoryNode))
         numExternal++;
       else
         JLM_UNREACHABLE("Unknown MemoryNode type");
