@@ -608,6 +608,10 @@ public:
   }
 };
 
+Andersen::Andersen() = default;
+
+Andersen::~Andersen() noexcept = default;
+
 void
 Andersen::AnalyzeSimpleNode(const rvsdg::SimpleNode & node)
 {

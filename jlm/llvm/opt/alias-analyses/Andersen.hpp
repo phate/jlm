@@ -42,9 +42,9 @@ public:
   static inline const char * const ENV_USE_EXACT_CONFIG = "JLM_ANDERSEN_USE_EXACT_CONFIG";
 
   /**
-   * Environment variable that will trigger double checking of the analysis.
-   * If ENV_TEST_ALL_CONFIGS is set, the output is double checked against them all.
-   * Otherwise, the output is double checked only against the default naive solver.
+   * Environment variable that will trigger double-checking of the analysis.
+   * If ENV_TEST_ALL_CONFIGS is set, the output is double-checked against them all.
+   * Otherwise, the output is double-checked only against the default naive solver.
    */
   static inline const char * const ENV_DOUBLE_CHECK = "JLM_ANDERSEN_DOUBLE_CHECK";
 
@@ -58,7 +58,6 @@ public:
    */
   class Configuration
   {
-  private:
     Configuration() = default;
 
   public:
@@ -278,9 +277,9 @@ public:
     bool EnablePreferImplicitPointees_ = false;
   };
 
-  ~Andersen() noexcept override = default;
+  Andersen();
 
-  Andersen() = default;
+  ~Andersen() noexcept override;
 
   Andersen(const Andersen &) = delete;
 
@@ -455,8 +454,8 @@ private:
 
   Configuration Config_ = Configuration::DefaultConfiguration();
 
-  std::unique_ptr<PointerObjectSet> Set_;
-  std::unique_ptr<PointerObjectConstraintSet> Constraints_;
+  std::unique_ptr<PointerObjectSet> Set_ = {};
+  std::unique_ptr<PointerObjectConstraintSet> Constraints_ = {};
 };
 
 }
