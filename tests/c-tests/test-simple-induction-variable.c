@@ -1,13 +1,11 @@
 #include <stdio.h>
 
-int main() {
-  int i = 1;        // this will be an induction variable
-  int sum = 0;      // this will NOT be an induction variable
-
+int main()
+{
+  int i = 0;
   do {
-    i = i + 2;    // induction variable: adds constant 2 each iteration
-    sum = sum + i; // NOT induction variable: adds variable amount (i changes)
-  } while (i < 10);
+    i = 1 + i;
+  } while (i < 5);
 
   return 0;
 }
