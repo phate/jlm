@@ -3,6 +3,7 @@
  * See COPYING for terms of redistribution.
  */
 
+#include <jlm/llvm/opt/ScalarEvolution.hpp>
 #include <jlm/llvm/backend/IpGraphToLlvmConverter.hpp>
 #include <jlm/llvm/backend/RvsdgToIpGraphConverter.hpp>
 #include <jlm/llvm/DotWriter.hpp>
@@ -436,6 +437,8 @@ JlmOptCommand::CreateTransformation(
         CommandLineOptions_.GetRvsdgTreePrinterConfiguration());
   case JlmOptCommandLineOptions::OptimizationId::ThetaGammaInversion:
     return std::make_unique<llvm::LoopUnswitching>();
+  case JlmOptCommandLineOptions::OptimizationId::ScalarEvolution:
+    return std::make_unique<llvm::ScalarEvolution>();
   default:
     JLM_UNREACHABLE("Unhandled optimization id.");
   }
