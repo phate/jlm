@@ -13,6 +13,7 @@
 #include <jlm/rvsdg/view.hpp>
 #include <jlm/util/Statistics.hpp>
 
+#if 0
 static void
 MultipleReductionsPerRegion()
 {
@@ -72,3 +73,55 @@ MultipleReductionsPerRegion()
 JLM_UNIT_TEST_REGISTER(
     "jlm/llvm/opt/NodeReductionTests-MultipleReductionsPerRegion",
     MultipleReductionsPerRegion)
+#endif
+
+static void
+CreateLoadChain(jlm::rvsdg::Graph & rvsdg, size_t numLoadNodes)
+{
+  using namespace jlm::llvm;
+  using namespace jlm::rvsdg;
+
+  auto pointerType = PointerType::Create();
+  auto memoryStateType = MemoryStateType::Create();
+
+  auto & address = jlm::rvsdg::GraphImport::Create(rvsdg, pointerType, "address");
+  Output * memoryState = &jlm::rvsdg::GraphImport::Create(rvsdg, memoryStateType, "memoryState");
+
+  for (size_t n = 0; n < numLoadNodes; ++n)
+  {
+    auto & loadNode =
+        LoadNonVolatileOperation::CreateNode(address, { memoryState }, pointerType, 4);
+    memoryState = loadNode.output(1);
+  }
+
+  jlm::rvsdg::GraphImport::Create(rvsdg, memoryStateType, "memoryState");
+}
+
+static void
+ProofOfConcept()
+{
+  using namespace jlm::rvsdg;
+  using namespace jlm::llvm;
+
+  for (size_t n = 1; n < 100; n++)
+  {
+    size_t numLoadNodes = n * 100;
+
+    jlm::llvm::RvsdgModule rvsdgModule(jlm::util::FilePath(""), "", "");
+    CreateLoadChain(rvsdgModule.Rvsdg(), numLoadNodes);
+
+    NodeReduction nodeReduction;
+    jlm::util::StatisticsCollector statisticsCollector(
+        jlm::util::StatisticsCollectorSettings({ jlm::util::Statistics::Id::ReduceNodes }));
+    nodeReduction.Run(rvsdgModule, statisticsCollector);
+
+    std::cout << "Time " << numLoadNodes << " "
+              << statisticsCollector.CollectedStatistics()
+                     .begin()
+                     .GetStatistics()
+                     ->GetTimerElapsedNanoseconds("Time")
+              << "\n";
+  }
+}
+
+JLM_UNIT_TEST_REGISTER("jlm/llvm/opt/NodeReductionTests-ProofOfConcept", ProofOfConcept)
