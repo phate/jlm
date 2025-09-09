@@ -7,6 +7,9 @@
 #ifndef JLM_RVSDG_TRAVERSER_HPP
 #define JLM_RVSDG_TRAVERSER_HPP
 
+#include <list>
+#include <unordered_map>
+
 #include <jlm/rvsdg/tracker.hpp>
 
 namespace jlm::rvsdg
@@ -14,7 +17,9 @@ namespace jlm::rvsdg
 
 class Graph;
 class Input;
+class Node;
 class Output;
+class Region;
 
 namespace detail
 {
@@ -92,25 +97,32 @@ public:
   set_nodestate(Node * node, traversal_nodestate state);
 
   inline Node *
-  peek_top();
-
-  inline Node *
-  peek_bottom();
+  peek();
 
   [[nodiscard]] Region &
   GetRegion() const noexcept
   {
-    return tracker_.GetRegion();
+    return region_;
   }
 
 private:
-  Tracker tracker_;
+  using FrontierList = std::list<Node *>;
+
+  struct State
+  {
+    traversal_nodestate state = traversal_nodestate::ahead;
+    FrontierList::iterator pos = {};
+  };
+
+  Region & region_;
+  std::unordered_map<Node *, State> states_;
+  FrontierList frontier_;
 };
 
 /** \brief TopDown Traverser
  *
- * The topdown traverser visits a regions' nodes starting at the nodes with the lowest depth to the
- * nodes with the highest depth, i.e. from the topmost nodes to the nodes at the bottom. The
+ * The topdown traverser visits a regions' nodes starting at the nodes that have no inputs
+ * besides graph arguments, i.e. from the topmost nodes to the nodes at the bottom. The
  * traverser guarantees that newly created nodes are never visited iff the created nodes replace
  * already traversed nodes, including the current node under inspection, and iff the edges of the
  * inputs of the newly created nodes originate from already traversed nodes. Otherwise, newly
@@ -136,8 +148,6 @@ private:
  * behind. Otherwise, it is marked as <em>frontier</em>.
  *
  * An alternative to traversing all nodes using next() is the utilization of begin() and end().
- *
- * @see node::depth()
  */
 class TopDownTraverser final
 {
@@ -217,36 +227,6 @@ private:
   std::vector<jlm::util::Callback> callbacks_;
   traversal_nodestate new_node_state_;
 };
-
-/* traversal tracker implementation */
-
-TraversalTracker::TraversalTracker(Region & region)
-    : tracker_(region, 2)
-{}
-
-traversal_nodestate
-TraversalTracker::get_nodestate(Node * node)
-{
-  return static_cast<traversal_nodestate>(tracker_.get_nodestate(node));
-}
-
-void
-TraversalTracker::set_nodestate(Node * node, traversal_nodestate state)
-{
-  tracker_.set_nodestate(node, static_cast<size_t>(state));
-}
-
-Node *
-TraversalTracker::peek_top()
-{
-  return tracker_.peek_top(static_cast<size_t>(traversal_nodestate::frontier));
-}
-
-Node *
-TraversalTracker::peek_bottom()
-{
-  return tracker_.peek_bottom(static_cast<size_t>(traversal_nodestate::frontier));
-}
 
 }
 
