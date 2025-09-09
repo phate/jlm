@@ -7,10 +7,10 @@
 #ifndef JLM_RVSDG_TRAVERSER_HPP
 #define JLM_RVSDG_TRAVERSER_HPP
 
+#include <jlm/util/callbacks.hpp>
+
 #include <list>
 #include <unordered_map>
-
-#include <jlm/rvsdg/tracker.hpp>
 
 namespace jlm::rvsdg
 {
