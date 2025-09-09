@@ -42,6 +42,27 @@ public:
   FindInductionVariables(const rvsdg::ThetaNode * thetaNode);
 
 private:
+  /**
+   * \brief Method used to check if the input to a node is a loop variable.
+   *
+   * \returns
+   *   An std::optional with the loop variable, if found.
+   */
+  static std::optional<rvsdg::ThetaNode::LoopVar>
+  TryGetLoopVarFromInput(
+      const rvsdg::Input * input,
+      std::vector<rvsdg::ThetaNode::LoopVar> loopVars)
+  {
+    for (auto & loopVar : loopVars)
+    {
+      if (input->origin() == loopVar.pre)
+      {
+        return loopVar;
+      }
+    }
+    return std::nullopt;
+  }
+
   typedef std::unordered_set<rvsdg::Output *>
       InductionVariableSet; // This set holds the ".pre"-pointer for the induction variables in a
                             // theta node

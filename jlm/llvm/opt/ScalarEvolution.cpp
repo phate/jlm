@@ -140,11 +140,11 @@ ScalarEvolution::FindInductionVariables(const rvsdg::ThetaNode * thetaNode)
       // Check for basic induction variables (BIV)
 
       assert(simpleNode->ninputs() == 2); // Assert because this should never happen
-      const rvsdg::NodeInput * i0 = simpleNode->input(0);
-      const rvsdg::NodeInput * i1 = simpleNode->input(1);
+      const rvsdg::Input * i0 = simpleNode->input(0);
+      const rvsdg::Input * i1 = simpleNode->input(1);
 
-      auto i0LoopVar = thetaNode->TryMapInputLoopVar(i0);
-      auto i1LoopVar = thetaNode->TryMapInputLoopVar(i1);
+      auto i0LoopVar = TryGetLoopVarFromInput(i0, loopVars);
+      auto i1LoopVar = TryGetLoopVarFromInput(i1, loopVars);
 
       if (!(i0LoopVar || i1LoopVar))
       {
