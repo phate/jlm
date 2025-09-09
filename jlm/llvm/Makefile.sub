@@ -71,6 +71,7 @@ libllvm_SOURCES = \
     jlm/llvm/opt/reduction.cpp \
     jlm/llvm/opt/RvsdgTreePrinter.cpp \
     jlm/llvm/opt/unroll.cpp \
+    jlm/llvm/opt/ScalarEvolution.cpp \
 
 libllvm_HEADERS = \
     jlm/llvm/DotWriter.hpp \
@@ -110,6 +111,7 @@ libllvm_HEADERS = \
     jlm/llvm/opt/InvariantValueRedirection.hpp \
     jlm/llvm/opt/inversion.hpp \
     jlm/llvm/opt/RvsdgTreePrinter.hpp \
+    jlm/llvm/opt/ScalarEvolution.hpp \
     jlm/llvm/frontend/LlvmModuleConversion.hpp \
     jlm/llvm/frontend/ControlFlowRestructuring.hpp \
     jlm/llvm/frontend/LlvmConversionContext.hpp \
