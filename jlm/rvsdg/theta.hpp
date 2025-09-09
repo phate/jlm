@@ -160,22 +160,6 @@ public:
   MapInputLoopVar(const rvsdg::Input & input) const;
 
   /**
-   * \brief A safe wrapper for the MapInputLoopVar function.
-   *
-   * \returns
-   *   An std::optional with the loop variable.
-   */
-  std::optional<LoopVar>
-  TryMapInputLoopVar(const rvsdg::Input * input) const
-  {
-    if (rvsdg::TryGetOwnerNode<rvsdg::ThetaNode>(*input) != this)
-    {
-      return std::nullopt;
-    }
-    return this->MapInputLoopVar(*input);
-  };
-
-  /**
    * \brief Maps variable at start of loop iteration to full varibale description.
    *
    * \param argument
