@@ -70,8 +70,8 @@ libllvm_SOURCES = \
     jlm/llvm/opt/push.cpp \
     jlm/llvm/opt/reduction.cpp \
     jlm/llvm/opt/RvsdgTreePrinter.cpp \
-    jlm/llvm/opt/unroll.cpp \
     jlm/llvm/opt/ScalarEvolution.cpp \
+    jlm/llvm/opt/unroll.cpp \
 
 libllvm_HEADERS = \
     jlm/llvm/DotWriter.hpp \

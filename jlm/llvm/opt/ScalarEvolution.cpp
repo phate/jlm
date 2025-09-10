@@ -1,7 +1,10 @@
-#include <iostream>
+/*
+ * Copyright 2025 Andreas Lilleby Hjulstad <andreas.lilleby.hjulstad@gmail.com>
+ * See COPYING for terms of redistribution.
+ */
+
 #include <jlm/llvm/ir/operators/IntegerOperations.hpp>
 #include <jlm/llvm/opt/ScalarEvolution.hpp>
-#include <jlm/rvsdg/gamma.hpp>
 #include <jlm/rvsdg/lambda.hpp>
 #include <jlm/rvsdg/MatchType.hpp>
 #include <jlm/rvsdg/RvsdgModule.hpp>
@@ -9,6 +12,7 @@
 #include <jlm/rvsdg/traverser.hpp>
 #include <jlm/util/Statistics.hpp>
 
+#include <iostream>
 #include <variant>
 
 namespace jlm::llvm
@@ -18,7 +22,7 @@ class ScalarEvolution::Statistics final : public util::Statistics
 {
 
 public:
-  ~Statistics() override = default;
+  ~Statistics() noexcept override = default;
 
   explicit Statistics(const util::FilePath & sourceFile)
       : util::Statistics(Id::ScalarEvolution, sourceFile)
@@ -43,6 +47,8 @@ public:
   }
 };
 
+ScalarEvolution::~ScalarEvolution() noexcept = default;
+
 void
 ScalarEvolution::Run(
     rvsdg::RvsdgModule & rvsdgModule,
@@ -51,6 +57,7 @@ ScalarEvolution::Run(
   auto statistics = Statistics::Create(rvsdgModule.SourceFilePath().value());
   statistics->Start();
 
+  InductionVariableMap_.clear();
   TraverseGraph(rvsdgModule.Rvsdg());
 
   statistics->Stop();
@@ -63,15 +70,15 @@ ScalarEvolution::TraverseRegion(rvsdg::Region * region)
   for (const auto node : rvsdg::TopDownTraverser(region))
   {
     std::cout << node->DebugString() << '\n';
-    if (const auto structuralNode = dynamic_cast<const rvsdg::StructuralNode *>(node))
+    if (const auto structuralNode = dynamic_cast<rvsdg::StructuralNode *>(node))
     {
       if (const auto thetaNode = dynamic_cast<const rvsdg::ThetaNode *>(structuralNode))
         FindInductionVariables(thetaNode);
       else
       {
-        for (size_t r = 0; r < structuralNode->nsubregions(); r++)
+        for (auto & subregion : structuralNode->Subregions())
         {
-          TraverseRegion(structuralNode->subregion(r));
+          TraverseRegion(&subregion);
         }
       }
     }
@@ -124,7 +131,7 @@ ScalarEvolution::FindInductionVariables(const rvsdg::ThetaNode * thetaNode)
     {
       // Only add loop-variant variables to the set, since loop-invariant variables are trivially
       // not induction variables
-      inductionVariableCandidates.insert(loopVar.pre);
+      inductionVariableCandidates.Insert(loopVar.pre);
     }
   }
   for (const auto node : rvsdg::TopDownTraverser(thetaNode->subregion()))
@@ -139,7 +146,7 @@ ScalarEvolution::FindInductionVariables(const rvsdg::ThetaNode * thetaNode)
       }
       // Check for basic induction variables (BIV)
 
-      assert(simpleNode->ninputs() == 2); // Assert because this should never happen
+      assert(simpleNode->ninputs() == 2);
       const rvsdg::Input * i0 = simpleNode->input(0);
       const rvsdg::Input * i1 = simpleNode->input(1);
 
@@ -160,7 +167,7 @@ ScalarEvolution::FindInductionVariables(const rvsdg::ThetaNode * thetaNode)
           // If it is not, the lhs is not an induction variable
           if (!rvsdg::ThetaLoopVarIsInvariant(i1LoopVar.value()))
           {
-            inductionVariableCandidates.erase(i0LoopVar.value().pre);
+            inductionVariableCandidates.Remove(i0LoopVar.value().pre);
           }
         }
         else if (i0LoopVar && !i1LoopVar)
@@ -170,7 +177,7 @@ ScalarEvolution::FindInductionVariables(const rvsdg::ThetaNode * thetaNode)
           // If it is not incremented by a constant value, remove it from candidates
           if (!dynamic_cast<const llvm::IntegerConstantOperation *>(
                   &(i1OriginNode->GetOperation())))
-            inductionVariableCandidates.erase(i0LoopVar.value().pre);
+            inductionVariableCandidates.Remove(i0LoopVar.value().pre);
         }
         else if (!i0LoopVar && i1LoopVar)
         {
@@ -180,7 +187,7 @@ ScalarEvolution::FindInductionVariables(const rvsdg::ThetaNode * thetaNode)
 
           if (!dynamic_cast<const llvm::IntegerConstantOperation *>(
                   &(i0OriginNode->GetOperation())))
-            inductionVariableCandidates.erase(i1LoopVar.value().pre);
+            inductionVariableCandidates.Remove(i1LoopVar.value().pre);
         }
       }
       // TODO: Handle other operations (SUB, MULT)
@@ -191,7 +198,7 @@ ScalarEvolution::FindInductionVariables(const rvsdg::ThetaNode * thetaNode)
         if (i0LoopVar)
         {
           // For now, just remove these from the candidates
-          inductionVariableCandidates.erase(i0LoopVar.value().pre);
+          inductionVariableCandidates.Remove(i0LoopVar.value().pre);
         }
       }
     }
@@ -200,7 +207,7 @@ ScalarEvolution::FindInductionVariables(const rvsdg::ThetaNode * thetaNode)
   InductionVariableMap_.emplace(thetaNode, inductionVariableCandidates);
 
   std::cout << "These are the induction variables for the theta loop: ";
-  for (const auto & indVar : InductionVariableMap_[thetaNode])
+  for (const auto & indVar : InductionVariableMap_[thetaNode].Items())
   {
     std::cout << indVar->debug_string() << " ";
   }

@@ -1,10 +1,13 @@
+/*
+ * Copyright 2025 Andreas Lilleby Hjulstad <andreas.lilleby.hjulstad@gmail.com>
+ * See COPYING for terms of redistribution.
+ */
+
 #ifndef JLM_LLVM_OPT_SCALAR_EVOLUTION_HPP
 #define JLM_LLVM_OPT_SCALAR_EVOLUTION_HPP
 
 #include <jlm/rvsdg/theta.hpp>
 #include <jlm/rvsdg/Transformation.hpp>
-
-#include <unordered_set>
 
 namespace jlm::llvm
 {
@@ -13,7 +16,7 @@ class ScalarEvolution final : public jlm::rvsdg::Transformation
   class Statistics;
 
 public:
-  ~ScalarEvolution() noexcept override = default;
+  ~ScalarEvolution() noexcept override;
 
   ScalarEvolution()
       : Transformation("ScalarEvolution")
@@ -63,7 +66,7 @@ private:
     return std::nullopt;
   }
 
-  typedef std::unordered_set<rvsdg::Output *>
+  typedef util::HashSet<rvsdg::Output *>
       InductionVariableSet; // This set holds the ".pre"-pointer for the induction variables in a
                             // theta node
 

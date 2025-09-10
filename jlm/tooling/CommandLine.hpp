@@ -80,8 +80,8 @@ public:
     NodePushOut,
     NodeReduction,
     RvsdgTreePrinter,
-    ThetaGammaInversion,
     ScalarEvolution,
+    ThetaGammaInversion,
 
     LastEnumValue // must always be the last enum value, used for iteration
   };

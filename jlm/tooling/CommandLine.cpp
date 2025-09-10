@@ -117,9 +117,9 @@ JlmOptCommandLineOptions::FromCommandLineArgumentToOptimizationId(
         { OptimizationCommandLineArgument::NodePullIn_, OptimizationId::NodePullIn },
         { OptimizationCommandLineArgument::NodeReduction_, OptimizationId::NodeReduction },
         { OptimizationCommandLineArgument::RvsdgTreePrinter_, OptimizationId::RvsdgTreePrinter },
+        { OptimizationCommandLineArgument::ScalarEvolution_, OptimizationId::ScalarEvolution },
         { OptimizationCommandLineArgument::ThetaGammaInversion_,
           OptimizationId::ThetaGammaInversion },
-        { OptimizationCommandLineArgument::ScalarEvolution_, OptimizationId::ScalarEvolution },
         { OptimizationCommandLineArgument::LoopUnrolling_, OptimizationId::LoopUnrolling } });
 
   if (map.find(commandLineArgument) != map.end())
@@ -238,9 +238,9 @@ JlmOptCommandLineOptions::GetStatisticsIdCommandLineArguments()
     { util::Statistics::Id::RvsdgDestruction, "print-rvsdg-destruction" },
     { util::Statistics::Id::RvsdgOptimization, "print-rvsdg-optimization" },
     { util::Statistics::Id::RvsdgTreePrinter, "print-rvsdg-tree" },
+    { util::Statistics::Id::ScalarEvolution, "print-scalar-evolution" },
     { util::Statistics::Id::SteensgaardAnalysis, "print-steensgaard-analysis" },
     { util::Statistics::Id::ThetaGammaInversion, "print-ivt-stat" },
-    { util::Statistics::Id::ScalarEvolution, "print-scalar-evolution" },
     { util::Statistics::Id::TopDownMemoryNodeEliminator, "TopDownMemoryNodeEliminator" },
   };
 
@@ -545,14 +545,14 @@ JlcCommandLineParser::ParseCommandLineArguments(int argc, const char * const * a
               util::Statistics::Id::RvsdgTreePrinter,
               "Collect RVSDG tree printer pass statistics."),
           CreateStatisticsOption(
+              util::Statistics::Id::ScalarEvolution,
+              "Collect scalar evolution analysis pass statistics."),
+          CreateStatisticsOption(
               util::Statistics::Id::SteensgaardAnalysis,
               "Collect Steensgaard alias analysis pass statistics."),
           CreateStatisticsOption(
               util::Statistics::Id::ThetaGammaInversion,
-              "Collect theta-gamma inversion pass statistics."),
-          CreateStatisticsOption(
-              util::Statistics::Id::ScalarEvolution,
-              "Collect scalar evolution analysis pass statistics.")),
+              "Collect theta-gamma inversion pass statistics.")),
 
       cl::desc("Collect jlm-opt pass statistics"));
 
@@ -783,11 +783,11 @@ JlmOptCommandLineParser::ParseCommandLineArguments(int argc, const char * const 
               util::Statistics::Id::RvsdgTreePrinter,
               "Write RVSDG tree printer pass statistics."),
           CreateStatisticsOption(
-              util::Statistics::Id::SteensgaardAnalysis,
-              "Write Steensgaard analysis statistics to file."),
-          CreateStatisticsOption(
               util::Statistics::Id::ScalarEvolution,
               "Write scalar evolution statistics to file."),
+          CreateStatisticsOption(
+              util::Statistics::Id::SteensgaardAnalysis,
+              "Write Steensgaard analysis statistics to file."),
           CreateStatisticsOption(
               util::Statistics::Id::ThetaGammaInversion,
               "Write theta-gamma inversion statistics to file.")),
@@ -849,9 +849,9 @@ JlmOptCommandLineParser::ParseCommandLineArguments(int argc, const char * const 
   auto nodePullIn = JlmOptCommandLineOptions::OptimizationId::NodePullIn;
   auto nodeReduction = JlmOptCommandLineOptions::OptimizationId::NodeReduction;
   auto rvsdgTreePrinter = JlmOptCommandLineOptions::OptimizationId::RvsdgTreePrinter;
+  auto scalarEvolution = JlmOptCommandLineOptions::OptimizationId::ScalarEvolution;
   auto thetaGammaInversion = JlmOptCommandLineOptions::OptimizationId::ThetaGammaInversion;
   auto loopUnrolling = JlmOptCommandLineOptions::OptimizationId::LoopUnrolling;
-  auto scalarEvolution = JlmOptCommandLineOptions::OptimizationId::ScalarEvolution;
 
   cl::list<JlmOptCommandLineOptions::OptimizationId> optimizationIds(
       cl::values(
@@ -912,13 +912,13 @@ JlmOptCommandLineParser::ParseCommandLineArguments(int argc, const char * const 
               JlmOptCommandLineOptions::ToCommandLineArgument(rvsdgTreePrinter),
               "Rvsdg Tree Printer"),
           ::clEnumValN(
-              thetaGammaInversion,
-              JlmOptCommandLineOptions::ToCommandLineArgument(thetaGammaInversion),
-              "Theta-Gamma Inversion"),
-          ::clEnumValN(
               scalarEvolution,
               JlmOptCommandLineOptions::ToCommandLineArgument(scalarEvolution),
               "Scalar evolution"),
+          ::clEnumValN(
+              thetaGammaInversion,
+              JlmOptCommandLineOptions::ToCommandLineArgument(thetaGammaInversion),
+              "Theta-Gamma Inversion"),
           ::clEnumValN(
               loopUnrolling,
               JlmOptCommandLineOptions::ToCommandLineArgument(loopUnrolling),
