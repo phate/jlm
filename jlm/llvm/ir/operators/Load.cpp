@@ -446,7 +446,7 @@ LoadNonVolatileOperation::NormalizeLoadLoadState(
       rvsdg::Output *(size_t, rvsdg::Output *, std::vector<std::vector<rvsdg::Output *>> &)>
       traceLoadState = [&](size_t index, rvsdg::Output * operand, auto & joinOperands)
   {
-    JLM_ASSERT(rvsdg::is<rvsdg::StateType>(operand->Type()));
+    JLM_ASSERT(operand->Type()->Kind() == rvsdg::TypeKind::State);
 
     if (!is<LoadNonVolatileOperation>(rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*operand)))
       return operand;

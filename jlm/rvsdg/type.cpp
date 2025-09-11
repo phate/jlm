@@ -11,8 +11,4 @@ namespace jlm::rvsdg
 
 Type::~Type() noexcept = default;
 
-ValueType::~ValueType() noexcept = default;
-
-StateType::~StateType() noexcept = default;
-
 }
