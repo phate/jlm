@@ -20,7 +20,7 @@ public:
   ~AllocaOperation() noexcept override;
 
   AllocaOperation(
-      std::shared_ptr<const rvsdg::ValueType> allocatedType,
+      std::shared_ptr<const rvsdg::Type> allocatedType,
       std::shared_ptr<const rvsdg::BitType> btype,
       size_t alignment)
       : SimpleOperation({ btype }, { { PointerType::Create() }, { MemoryStateType::Create() } }),
@@ -47,13 +47,13 @@ public:
     return *std::static_pointer_cast<const rvsdg::BitType>(argument(0));
   }
 
-  [[nodiscard]] const rvsdg::ValueType &
+  [[nodiscard]] const rvsdg::Type &
   value_type() const noexcept
   {
     return *AllocatedType_;
   }
 
-  [[nodiscard]] const std::shared_ptr<const rvsdg::ValueType> &
+  [[nodiscard]] const std::shared_ptr<const rvsdg::Type> &
   ValueType() const noexcept
   {
     return AllocatedType_;
@@ -66,10 +66,7 @@ public:
   }
 
   static std::unique_ptr<llvm::ThreeAddressCode>
-  create(
-      std::shared_ptr<const rvsdg::ValueType> allocatedType,
-      const Variable * size,
-      size_t alignment)
+  create(std::shared_ptr<const rvsdg::Type> allocatedType, const Variable * size, size_t alignment)
   {
     auto bt = std::dynamic_pointer_cast<const rvsdg::BitType>(size->Type());
     if (!bt)
@@ -80,10 +77,7 @@ public:
   }
 
   static std::vector<rvsdg::Output *>
-  create(
-      std::shared_ptr<const rvsdg::ValueType> allocatedType,
-      rvsdg::Output * size,
-      size_t alignment)
+  create(std::shared_ptr<const rvsdg::Type> allocatedType, rvsdg::Output * size, size_t alignment)
   {
     auto bt = std::dynamic_pointer_cast<const rvsdg::BitType>(size->Type());
     if (!bt)
@@ -98,7 +92,7 @@ public:
 
 private:
   size_t alignment_;
-  std::shared_ptr<const rvsdg::ValueType> AllocatedType_;
+  std::shared_ptr<const rvsdg::Type> AllocatedType_;
 };
 
 }

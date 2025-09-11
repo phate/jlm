@@ -23,8 +23,8 @@ class GraphImport final : public rvsdg::GraphImport
 private:
   GraphImport(
       rvsdg::Graph & graph,
-      std::shared_ptr<const rvsdg::ValueType> valueType,
-      std::shared_ptr<const rvsdg::ValueType> importedType,
+      std::shared_ptr<const rvsdg::Type> valueType,
+      std::shared_ptr<const rvsdg::Type> importedType,
       std::string name,
       llvm::linkage linkage)
       : rvsdg::GraphImport(graph, importedType, std::move(name)),
@@ -40,13 +40,13 @@ public:
     return Linkage_;
   }
 
-  [[nodiscard]] const std::shared_ptr<const jlm::rvsdg::ValueType> &
+  [[nodiscard]] const std::shared_ptr<const jlm::rvsdg::Type> &
   ValueType() const noexcept
   {
     return ValueType_;
   }
 
-  [[nodiscard]] const std::shared_ptr<const jlm::rvsdg::ValueType> &
+  [[nodiscard]] const std::shared_ptr<const jlm::rvsdg::Type> &
   ImportedType() const noexcept
   {
     return ImportedType_;
@@ -58,8 +58,8 @@ public:
   static GraphImport &
   Create(
       rvsdg::Graph & graph,
-      std::shared_ptr<const rvsdg::ValueType> valueType,
-      std::shared_ptr<const rvsdg::ValueType> importedType,
+      std::shared_ptr<const rvsdg::Type> valueType,
+      std::shared_ptr<const rvsdg::Type> importedType,
       std::string name,
       llvm::linkage linkage)
   {
@@ -75,8 +75,8 @@ public:
 
 private:
   llvm::linkage Linkage_;
-  std::shared_ptr<const rvsdg::ValueType> ValueType_;
-  std::shared_ptr<const rvsdg::ValueType> ImportedType_;
+  std::shared_ptr<const rvsdg::Type> ValueType_;
+  std::shared_ptr<const rvsdg::Type> ImportedType_;
 };
 
 /**

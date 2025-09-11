@@ -94,7 +94,7 @@ CanGammaNodeBeSpeculative(const rvsdg::GammaNode & gammaNode)
   for (size_t i = 0; i < gammaNode.noutputs(); ++i)
   {
     auto gammaOutput = gammaNode.output(i);
-    if (rvsdg::is<rvsdg::StateType>(gammaOutput->Type()))
+    if (gammaOutput->Type()->Kind() == rvsdg::TypeKind::State)
     {
       // don't allow state outputs since they imply operations with side effects
       return false;
