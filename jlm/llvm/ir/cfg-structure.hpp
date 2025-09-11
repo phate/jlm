@@ -6,6 +6,7 @@
 #ifndef JLM_LLVM_IR_CFG_STRUCTURE_HPP
 #define JLM_LLVM_IR_CFG_STRUCTURE_HPP
 
+#include <jlm/util/HashSet.hpp>
 #include <jlm/util/iterator_range.hpp>
 #include <jlm/util/IteratorWrapper.hpp>
 
@@ -59,101 +60,101 @@ private:
  * This class computes the structure of strongly connected components (SCCs). It detects the
  * following entities:
  *
- * 1. Entry edges (eedges): All edges from a node outside the SCC pointing to a node in the SCC.
- * 2. Entry nodes (enodes): All nodes that are the target of one or more entry edges.
- * 3. Exit edges (xedges): All edges from a node inside the SCC pointing to a node outside the SCC.
- * 4. Exit nodes (xnodes): All nodes that are the target of one or more exit edges.
- * 5. Repetition edges (redges): All edges from a node inside the SCC to an entry node.
+ * 1. Entry edges: All edges from a node outside the SCC pointing to a node in the SCC.
+ * 2. Entry nodes: All nodes that are the target of one or more entry edges.
+ * 3. Exit edges: All edges from a node inside the SCC pointing to a node outside the SCC.
+ * 4. Exit nodes: All nodes that are the target of one or more exit edges.
+ * 5. Repetition edges: All edges from a node inside the SCC to an entry node.
  */
 class StronglyConnectedComponentStructure final
 {
-  using cfg_edge_constiterator = std::unordered_set<ControlFlowGraphEdge *>::const_iterator;
-  using cfg_node_constiterator = std::unordered_set<ControlFlowGraphNode *>::const_iterator;
+  using CfgEdgeConstIterator = util::HashSet<ControlFlowGraphEdge *>::ItemConstIterator;
+  using CfgNodeConstIterator = util::HashSet<ControlFlowGraphNode *>::ItemConstIterator;
 
-  using edge_iterator_range = util::IteratorRange<cfg_edge_constiterator>;
-  using node_iterator_range = util::IteratorRange<cfg_node_constiterator>;
+  using EdgeIteratorRange = util::IteratorRange<CfgEdgeConstIterator>;
+  using NodeIteratorRange = util::IteratorRange<CfgNodeConstIterator>;
 
 public:
   size_t
-  nenodes() const noexcept
+  NumEntryNodes() const noexcept
   {
-    return enodes_.size();
+    return EntryNodes_.Size();
   }
 
   size_t
-  nxnodes() const noexcept
+  NumExitNodes() const noexcept
   {
-    return xnodes_.size();
+    return ExitNodes_.Size();
   }
 
   size_t
-  needges() const noexcept
+  NumEntryEdges() const noexcept
   {
-    return eedges_.size();
+    return EntryEdges_.Size();
   }
 
   size_t
-  nredges() const noexcept
+  NumRepetitionEdges() const noexcept
   {
-    return redges_.size();
+    return RepetitionEdges_.Size();
   }
 
   size_t
-  nxedges() const noexcept
+  NumExitEdges() const noexcept
   {
-    return xedges_.size();
+    return ExitEdges_.Size();
   }
 
-  node_iterator_range
-  enodes() const
+  NodeIteratorRange
+  EntryNodes() const
   {
-    return node_iterator_range(enodes_);
+    return { EntryNodes_.Items().begin(), EntryNodes_.Items().end() };
   }
 
-  node_iterator_range
-  xnodes() const
+  NodeIteratorRange
+  ExitNodes() const
   {
-    return node_iterator_range(xnodes_);
+    return { ExitNodes_.Items().begin(), ExitNodes_.Items().end() };
   }
 
-  edge_iterator_range
-  eedges() const
+  EdgeIteratorRange
+  EntryEdges() const
   {
-    return edge_iterator_range(eedges_);
+    return { EntryEdges_.Items().begin(), EntryEdges_.Items().end() };
   }
 
-  edge_iterator_range
-  redges() const
+  EdgeIteratorRange
+  RepetitionEdges() const
   {
-    return edge_iterator_range(redges_);
+    return { RepetitionEdges_.Items().begin(), RepetitionEdges_.Items().end() };
   }
 
-  edge_iterator_range
-  xedges() const
+  EdgeIteratorRange
+  ExitEdges() const
   {
-    return edge_iterator_range(xedges_);
+    return { ExitEdges_.Items().begin(), ExitEdges_.Items().end() };
   }
 
   /**
-   * Creates a SCC structure from SCC \p scc.
+   * Creates an SCC structure from \p scc.
    */
   static std::unique_ptr<StronglyConnectedComponentStructure>
-  create(const StronglyConnectedComponent & scc);
+  Create(const StronglyConnectedComponent & scc);
 
   /**
    * Checks if the SCC structure is a tail-controlled loop. A tail-controlled loop is defined as an
-   * SSC with a single enttry node, as well as a single repetition and exit edge. Both these edges
+   * SSC with a single entry node, as well as a single repetition and exit edge. Both these edges
    * must have the same CFG node as origin.
    */
   bool
-  is_tcloop() const;
+  IsTailControlledLoop() const noexcept;
 
 private:
-  std::unordered_set<ControlFlowGraphNode *> enodes_;
-  std::unordered_set<ControlFlowGraphNode *> xnodes_;
-  std::unordered_set<ControlFlowGraphEdge *> eedges_;
-  std::unordered_set<ControlFlowGraphEdge *> redges_;
-  std::unordered_set<ControlFlowGraphEdge *> xedges_;
+  util::HashSet<ControlFlowGraphNode *> EntryNodes_{};
+  util::HashSet<ControlFlowGraphNode *> ExitNodes_{};
+  util::HashSet<ControlFlowGraphEdge *> EntryEdges_{};
+  util::HashSet<ControlFlowGraphEdge *> RepetitionEdges_{};
+  util::HashSet<ControlFlowGraphEdge *> ExitEdges_{};
 };
 
 bool
