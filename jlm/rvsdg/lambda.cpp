@@ -100,6 +100,21 @@ LambdaNode::MapBinderContextVar(const rvsdg::Output & output) const noexcept
   }
 }
 
+std::variant<LambdaNode::ArgumentVar, LambdaNode::ContextVar>
+LambdaNode::MapArgument(const rvsdg::Output & output) const
+{
+  JLM_ASSERT(rvsdg::TryGetOwnerNode<LambdaNode>(output) == this);
+  std::size_t nargs = GetOperation().Type()->NumArguments();
+  if (output.index() < nargs)
+  {
+    return ArgumentVar{ subregion()->argument(output.index()) };
+  }
+  else
+  {
+    return ContextVar{ input(output.index() - nargs), subregion()->argument(output.index()) };
+  }
+}
+
 [[nodiscard]] std::vector<LambdaNode::ContextVar>
 LambdaNode::GetContextVars() const noexcept
 {
@@ -206,6 +221,50 @@ LambdaNode::copy(rvsdg::Region * region, rvsdg::SubstitutionMap & smap) const
   smap.insert(output(), o);
 
   return lambda;
+}
+
+LambdaBuilder::LambdaBuilder(Region & region, std::vector<std::shared_ptr<const Type>> argtypes)
+    : Node_(LambdaNode::Create(
+          region,
+          std::make_unique<LambdaOperation>(FunctionType::Create(std::move(argtypes), {}))))
+{
+  // Note that the above inserts a "placeholder" function type, for now.
+  // This is to avoid requiring the caller to specify the return type(s)
+  // already when starting to construct the object. It is sometimes easier
+  // to let them be determined while building.
+}
+
+std::vector<Output *>
+LambdaBuilder::Arguments()
+{
+  JLM_ASSERT(Node_);
+  return Node_->GetFunctionArguments();
+}
+
+rvsdg::Region *
+LambdaBuilder::GetRegion() noexcept
+{
+  JLM_ASSERT(Node_);
+  return Node_->subregion();
+}
+
+LambdaNode::ContextVar
+LambdaBuilder::AddContextVar(jlm::rvsdg::Output & origin)
+{
+  JLM_ASSERT(Node_);
+  return Node_->AddContextVar(origin);
+}
+
+Output &
+LambdaBuilder::Finalize(
+    const std::vector<jlm::rvsdg::Output *> & results,
+    std::unique_ptr<LambdaOperation> op)
+{
+  JLM_ASSERT(Node_);
+  Node_->Operation_ = std::move(op);
+  auto output = Node_->finalize(results);
+  Node_ = nullptr;
+  return *output;
 }
 
 }
