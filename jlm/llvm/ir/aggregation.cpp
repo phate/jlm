@@ -234,12 +234,12 @@ aggregate(ControlFlowGraphNode *, ControlFlowGraphNode *, AggregationMap &);
 static void
 reduce_loop(const StronglyConnectedComponentStructure & sccstruct, AggregationMap & map)
 {
-  JLM_ASSERT(sccstruct.is_tcloop());
+  JLM_ASSERT(sccstruct.IsTailControlledLoop());
 
-  auto exit = (*sccstruct.xedges().begin())->source();
-  auto entry = *sccstruct.enodes().begin();
+  auto exit = (*sccstruct.ExitEdges().begin())->source();
+  auto entry = *sccstruct.EntryNodes().begin();
 
-  auto redge = *sccstruct.redges().begin();
+  auto redge = *sccstruct.RepetitionEdges().begin();
   redge->source()->remove_outedge(redge->index());
 
   auto sese = aggregate(entry, exit, map);
@@ -375,11 +375,11 @@ aggregate_loops(ControlFlowGraphNode * entry, ControlFlowGraphNode * exit, Aggre
   auto sccs = find_sccs(entry, exit);
   for (auto scc : sccs)
   {
-    auto sccstruct = StronglyConnectedComponentStructure::create(scc);
+    auto sccStructure = StronglyConnectedComponentStructure::Create(scc);
 
-    if (sccstruct->is_tcloop())
+    if (sccStructure->IsTailControlledLoop())
     {
-      reduce_loop(*sccstruct, map);
+      reduce_loop(*sccStructure, map);
       continue;
     }
 
