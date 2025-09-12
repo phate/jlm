@@ -57,7 +57,7 @@ libtooling_TESTS = \
 
 libtooling_TEST_LIBS = \
     libtooling \
-    $(ifdef ENABLE_HLS,libhls) \ # Only link optional libraries when enabled
+    $(ifdef ENABLE_HLS,libhls) \
     $(ifdef ENABLE_MLIR,libmlir) \
     libllvm \
     librvsdg \
