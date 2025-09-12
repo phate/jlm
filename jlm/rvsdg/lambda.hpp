@@ -19,6 +19,8 @@
 namespace jlm::rvsdg
 {
 
+class LambdaBuilder;
+
 /** \brief Lambda operation
  *
  * A lambda operation determines a lambda's \ref FunctionType "function type".
@@ -115,6 +117,17 @@ public:
     rvsdg::Output * inner;
   };
 
+  /**
+   * \brief Formal argument variable
+   */
+  struct ArgumentVar
+  {
+    /**
+     * \brief Access argument object in subregion.
+     */
+    rvsdg::Output * arg;
+  };
+
   [[nodiscard]] std::vector<rvsdg::Output *>
   GetFunctionArguments() const;
 
@@ -197,6 +210,18 @@ public:
   GetContextVars() const noexcept;
 
   /**
+   * \brief Maps region argument to its disposition (formal argument or context var).
+   *
+   * \returns
+   *   A description of the role that this arguments plays.
+   *
+   * \pre
+   *   \p output must be an argument to the subregion of this node.
+   */
+  std::variant<ArgumentVar, ContextVar>
+  MapArgument(const rvsdg::Output & output) const;
+
+  /**
    * Remove lambda inputs and their respective arguments.
    *
    * An input must match the condition specified by \p match and its argument must be dead.
@@ -262,6 +287,8 @@ public:
 
 private:
   std::unique_ptr<LambdaOperation> Operation_;
+
+  friend class LambdaBuilder;
 };
 
 template<typename F>
@@ -286,6 +313,84 @@ LambdaNode::RemoveLambdaInputsWhere(const F & match)
 
   return numRemovedInputs;
 }
+
+/**
+ * \brief Constructs a lambda node
+ */
+class LambdaBuilder
+{
+public:
+  /**
+   * \brief Creates builder for a lambda construct.
+   *
+   * All methods of this builder can be used to incrementally construct
+   * the object until the \ref Finalize method is called.
+   *
+   */
+  LambdaBuilder(Region & region, std::vector<std::shared_ptr<const Type>> argtypes);
+
+  /**
+   * \brief Obtains definition points of parameters to the function.
+   *
+   * \return
+   *   Region arguments that represent formal parameters of the function.
+   *
+   * \pre
+   *   \p this must not have been finalized yet.
+   *
+   */
+  std::vector<Output *>
+  Arguments();
+
+  /**
+   * \brief Returns region to place nodes in.
+   *
+   * \return
+   *   The region
+   *
+   * \pre
+   *   \p this must not have been finalized yet.
+   *
+   */
+  rvsdg::Region *
+  GetRegion() noexcept;
+
+  /**
+   * \brief Adds a context/free variable to the lambda node.
+   *
+   * \param origin
+   *   The value to be bound into the lambda node.
+   *
+   * \pre
+   *   \p this must not have been finalized yet.
+   *
+   * \return
+   *   The context variable argument of the lambda abstraction.
+   */
+  LambdaNode::ContextVar
+  AddContextVar(jlm::rvsdg::Output & origin);
+
+  /**
+   * \brief Verifies well-formedness of lambda node and completes it.
+   *
+   * \param results
+   *   The result values to be returned by the lambda node.
+   *
+   * \param op
+   *   The operations struct for this lambda, including the formal type signature of the function.
+   *
+   * \pre
+   *   \p this must not have been finalized yet.
+   *
+   * \return
+   *   The output representing the bound lambda object.
+   */
+  Output &
+  Finalize(const std::vector<jlm::rvsdg::Output *> & results, std::unique_ptr<LambdaOperation> op);
+
+private:
+  LambdaNode * Node_;
+};
 
 }
 
