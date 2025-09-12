@@ -428,6 +428,57 @@ JLM_UNIT_TEST_REGISTER(
     MemoryStateJoin_NormalizeDuplicateOperands)
 
 static void
+MemoryStateJoin_NormalizeNestedJoins()
+{
+  using namespace jlm::llvm;
+  using namespace jlm::rvsdg;
+
+  // Arrange
+  const auto memoryStateType = MemoryStateType::Create();
+
+  Graph rvsdg;
+  auto & ix0 = jlm::rvsdg::GraphImport::Create(rvsdg, memoryStateType, "x0");
+  auto & ix1 = jlm::rvsdg::GraphImport::Create(rvsdg, memoryStateType, "x1");
+  auto & ix2 = jlm::rvsdg::GraphImport::Create(rvsdg, memoryStateType, "x2");
+  auto & ix3 = jlm::rvsdg::GraphImport::Create(rvsdg, memoryStateType, "x3");
+  auto & ix4 = jlm::rvsdg::GraphImport::Create(rvsdg, memoryStateType, "x4");
+  auto & ix5 = jlm::rvsdg::GraphImport::Create(rvsdg, memoryStateType, "x4");
+
+  auto & joinNode0 = MemoryStateJoinOperation::CreateNode({ &ix0, &ix1 });
+  auto & joinNode1 = MemoryStateJoinOperation::CreateNode({ joinNode0.output(0), &ix2 });
+  auto & joinNode2 = MemoryStateJoinOperation::CreateNode({ &ix3, &ix4 });
+  auto & joinNode3 =
+      MemoryStateJoinOperation::CreateNode({ joinNode1.output(0), joinNode2.output(0), &ix5 });
+
+  auto & ex = GraphExport::Create(*joinNode3.output(0), "x");
+
+  view(&rvsdg.GetRootRegion(), stdout);
+
+  // Act
+  ReduceNode<MemoryStateJoinOperation>(MemoryStateJoinOperation::NormalizeNestedJoins, joinNode3);
+  rvsdg.PruneNodes();
+  view(&rvsdg.GetRootRegion(), stdout);
+
+  // Assert
+  assert(rvsdg.GetRootRegion().nnodes() == 1);
+  auto [joinNode, joinOperation] =
+      TryGetSimpleNodeAndOptionalOp<MemoryStateJoinOperation>(*ex.origin());
+  assert(joinNode && joinOperation);
+
+  assert(joinNode->ninputs() == 6);
+  assert(joinNode->input(0)->origin() == &ix0);
+  assert(joinNode->input(1)->origin() == &ix1);
+  assert(joinNode->input(2)->origin() == &ix2);
+  assert(joinNode->input(3)->origin() == &ix3);
+  assert(joinNode->input(4)->origin() == &ix4);
+  assert(joinNode->input(5)->origin() == &ix5);
+}
+
+JLM_UNIT_TEST_REGISTER(
+    "jlm/llvm/ir/operators/MemoryStateOperationTests-MemoryStateJoin_NormalizeNestedJoins",
+    MemoryStateJoin_NormalizeNestedJoins)
+
+static void
 LambdaEntryMemStateOperatorEquality()
 {
   using namespace jlm::llvm;

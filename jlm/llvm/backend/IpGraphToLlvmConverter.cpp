@@ -337,12 +337,12 @@ IpGraphToLlvmConverter::convert_phi(
   auto & llvmContext = Context_->llvm_module().getContext();
   auto & typeConverter = Context_->GetTypeConverter();
 
-  if (rvsdg::is<IOStateType>(phi.type()))
+  if (rvsdg::is<IOStateType>(phi.Type()))
     return nullptr;
-  if (rvsdg::is<MemoryStateType>(phi.type()))
+  if (rvsdg::is<MemoryStateType>(phi.Type()))
     return nullptr;
 
-  auto t = typeConverter.ConvertJlmType(phi.type(), llvmContext);
+  auto t = typeConverter.ConvertJlmType(*phi.Type(), llvmContext);
   return builder.CreatePHI(t, op.narguments());
 }
 
