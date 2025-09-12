@@ -7,7 +7,7 @@ jlc_SOURCES = \
 
 jlc_LIBS = \
     libtooling \
-    $(ifdef ENABLE_MLIR,libmlir) \
+    $(if $(ENABLE_MLIR),libmlir) \
     libllvm \
     librvsdg \
     libutil \
@@ -23,7 +23,7 @@ jlm-opt_SOURCES = \
 
 jlm-opt_LIBS = \
     libtooling \
-    $(ifdef ENABLE_MLIR,libmlir) \
+    $(if $(ENABLE_MLIR),libmlir) \
     libllvm \
     librvsdg \
     libutil \
