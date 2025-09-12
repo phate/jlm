@@ -157,6 +157,7 @@ libllvm_TESTS += \
     \
     tests/jlm/llvm/backend/IpGraphToLlvmConverterTests \
     tests/jlm/llvm/backend/RvsdgToIpGraphConverterTests \
+    tests/jlm/llvm/frontend/llvm/ControlFlowRestructuringTests \
     tests/jlm/llvm/frontend/llvm/LoadTests \
     tests/jlm/llvm/frontend/llvm/MemCpyTests \
     tests/jlm/llvm/frontend/llvm/SpecializedArithmeticIntrinsicOperationTests \
@@ -168,7 +169,6 @@ libllvm_TESTS += \
     tests/jlm/llvm/frontend/llvm/test-function-call \
     tests/jlm/llvm/frontend/llvm/LlvmPhiConversionTests \
     tests/jlm/llvm/frontend/llvm/test-recursive-data \
-    tests/jlm/llvm/frontend/llvm/test-restructuring \
     tests/jlm/llvm/frontend/llvm/test-select \
     tests/jlm/llvm/frontend/llvm/ThreeAddressCodeConversionTests \
     tests/jlm/llvm/ir/operators/LoadTests \

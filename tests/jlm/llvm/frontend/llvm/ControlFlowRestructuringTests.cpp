@@ -41,7 +41,7 @@ AcyclicStructured()
 }
 
 JLM_UNIT_TEST_REGISTER(
-    "jlm/llvm/frontend/llvm/test-restructuring-AcyclicStructured",
+    "jlm/llvm/frontend/llvm/ControlFlowRestructuringTests-AcyclicStructured",
     AcyclicStructured)
 
 static void
@@ -75,7 +75,7 @@ AcyclicUnstructured()
 }
 
 JLM_UNIT_TEST_REGISTER(
-    "jlm/llvm/frontend/llvm/test-restructuring-AcyclicUnstructured",
+    "jlm/llvm/frontend/llvm/ControlFlowRestructuringTests-AcyclicUnstructured",
     AcyclicUnstructured)
 
 static void
@@ -109,7 +109,9 @@ DoWhileLoop()
   assert(bb3->OutEdge(0)->sink() == bb1);
 }
 
-JLM_UNIT_TEST_REGISTER("jlm/llvm/frontend/llvm/test-restructuring-DoWhileLoop", DoWhileLoop)
+JLM_UNIT_TEST_REGISTER(
+    "jlm/llvm/frontend/llvm/ControlFlowRestructuringTests-DoWhileLoop",
+    DoWhileLoop)
 
 static void
 WhileLoop()
@@ -137,7 +139,7 @@ WhileLoop()
   assert(is_proper_structured(cfg));
 }
 
-JLM_UNIT_TEST_REGISTER("jlm/llvm/frontend/llvm/test-restructuring-WhileLoop", WhileLoop)
+JLM_UNIT_TEST_REGISTER("jlm/llvm/frontend/llvm/ControlFlowRestructuringTests-WhileLoop", WhileLoop)
 
 static void
 IrreducibleCfg()
@@ -171,7 +173,9 @@ IrreducibleCfg()
   assert(is_proper_structured(cfg));
 }
 
-JLM_UNIT_TEST_REGISTER("jlm/llvm/frontend/llvm/test-restructuring-IrreducibleCfg", IrreducibleCfg)
+JLM_UNIT_TEST_REGISTER(
+    "jlm/llvm/frontend/llvm/ControlFlowRestructuringTests-IrreducibleCfg",
+    IrreducibleCfg)
 
 static void
 AcyclicUnstructuredInDoWhileLoop()
@@ -204,7 +208,7 @@ AcyclicUnstructuredInDoWhileLoop()
 }
 
 JLM_UNIT_TEST_REGISTER(
-    "jlm/llvm/frontend/llvm/test-restructuring-AcyclicUnstructuredInDoWhileLoop",
+    "jlm/llvm/frontend/llvm/ControlFlowRestructuringTests-AcyclicUnstructuredInDoWhileLoop",
     AcyclicUnstructuredInDoWhileLoop)
 
 static void
@@ -238,7 +242,7 @@ LorBeforeDoWhileLoop()
 }
 
 JLM_UNIT_TEST_REGISTER(
-    "jlm/llvm/frontend/llvm/test-restructuring-LorBeforeDoWhileLoop",
+    "jlm/llvm/frontend/llvm/ControlFlowRestructuringTests-LorBeforeDoWhileLoop",
     LorBeforeDoWhileLoop)
 
 static void
@@ -267,5 +271,5 @@ StaticEndlessLoop()
 }
 
 JLM_UNIT_TEST_REGISTER(
-    "jlm/llvm/frontend/llvm/test-restructuring-StaticEndlessLoop",
+    "jlm/llvm/frontend/llvm/ControlFlowRestructuringTests-StaticEndlessLoop",
     StaticEndlessLoop)
