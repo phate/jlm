@@ -26,50 +26,50 @@ StronglyConnectedComponent::end() const
 }
 
 bool
-StronglyConnectedComponentStructure::is_tcloop() const
+StronglyConnectedComponentStructure::IsTailControlledLoop() const noexcept
 {
-  return nenodes() == 1 && nredges() == 1 && nxedges() == 1
-      && (*redges().begin())->source() == (*xedges().begin())->source();
+  return NumEntryNodes() == 1 && NumRepetitionEdges() == 1 && NumExitEdges() == 1
+      && (*RepetitionEdges().begin())->source() == (*ExitEdges().begin())->source();
 }
 
 std::unique_ptr<StronglyConnectedComponentStructure>
-StronglyConnectedComponentStructure::create(const StronglyConnectedComponent & scc)
+StronglyConnectedComponentStructure::Create(const StronglyConnectedComponent & scc)
 {
-  auto sccstruct = std::make_unique<StronglyConnectedComponentStructure>();
+  auto sccStructure = std::make_unique<StronglyConnectedComponentStructure>();
 
   for (auto & node : scc)
   {
-    for (auto & inedge : node.InEdges())
+    for (auto & inEdge : node.InEdges())
     {
-      if (!scc.contains(inedge.source()))
+      if (!scc.contains(inEdge.source()))
       {
-        sccstruct->eedges_.insert(&inedge);
-        if (sccstruct->enodes_.find(&node) == sccstruct->enodes_.end())
-          sccstruct->enodes_.insert(&node);
+        sccStructure->EntryEdges_.Insert(&inEdge);
+        if (!sccStructure->EntryNodes_.Contains(&node))
+          sccStructure->EntryNodes_.Insert(&node);
       }
     }
 
-    for (auto & edge : node.OutEdges())
+    for (auto & outEdge : node.OutEdges())
     {
-      if (!scc.contains(edge.sink()))
+      if (!scc.contains(outEdge.sink()))
       {
-        sccstruct->xedges_.insert(&edge);
-        if (sccstruct->xnodes_.find(edge.sink()) == sccstruct->xnodes_.end())
-          sccstruct->xnodes_.insert(edge.sink());
+        sccStructure->ExitEdges_.Insert(&outEdge);
+        if (!sccStructure->ExitNodes_.Contains(outEdge.sink()))
+          sccStructure->ExitNodes_.Insert(outEdge.sink());
       }
     }
   }
 
   for (auto & node : scc)
   {
-    for (auto & edge : node.OutEdges())
+    for (auto & outEdge : node.OutEdges())
     {
-      if (sccstruct->enodes_.find(edge.sink()) != sccstruct->enodes_.end())
-        sccstruct->redges_.insert(&edge);
+      if (sccStructure->EntryNodes_.Contains(outEdge.sink()))
+        sccStructure->RepetitionEdges_.Insert(&outEdge);
     }
   }
 
-  return sccstruct;
+  return sccStructure;
 }
 
 /**

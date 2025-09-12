@@ -127,7 +127,7 @@ restructure_loop_entry(
 {
   size_t n = 0;
   std::unordered_map<llvm::ControlFlowGraphNode *, size_t> indices;
-  for (auto & node : s.enodes())
+  for (auto & node : s.EntryNodes())
   {
     new_ne->add_outedge(node);
     indices[node] = n++;
@@ -136,7 +136,7 @@ restructure_loop_entry(
   if (ev)
     append_branch(new_ne, ev);
 
-  for (auto & edge : s.eedges())
+  for (auto & edge : s.EntryEdges())
   {
     auto os = edge->sink();
     edge->divert(new_ne);
@@ -166,7 +166,7 @@ restructure_loop_exit(
     This edge is never taken at runtime, but fixes the CFGs structure at compile-time such
     that we can create an RVSDG.
   */
-  if (s.nxedges() == 0)
+  if (s.NumExitEdges() == 0)
   {
     new_nx->add_outedge(exit);
     return;
@@ -174,7 +174,7 @@ restructure_loop_exit(
 
   size_t n = 0;
   std::unordered_map<llvm::ControlFlowGraphNode *, size_t> indices;
-  for (auto & node : s.xnodes())
+  for (auto & node : s.ExitNodes())
   {
     new_nx->add_outedge(node);
     indices[node] = n++;
@@ -183,7 +183,7 @@ restructure_loop_exit(
   if (xv)
     append_branch(new_nx, xv);
 
-  for (auto & edge : s.xedges())
+  for (auto & edge : s.ExitEdges())
   {
     auto os = edge->sink();
     edge->divert(new_nr);
@@ -203,10 +203,10 @@ restructure_loop_repetition(
 {
   size_t n = 0;
   std::unordered_map<llvm::ControlFlowGraphNode *, size_t> indices;
-  for (auto & node : s.enodes())
+  for (auto & node : s.EntryNodes())
     indices[node] = n++;
 
-  for (auto & edge : s.redges())
+  for (auto & edge : s.RepetitionEdges())
   {
     auto os = edge->sink();
     edge->divert(new_nr);
@@ -246,12 +246,12 @@ restructure_loops(
   auto sccs = find_sccs(entry, exit);
   for (auto & scc : sccs)
   {
-    auto sccstruct = StronglyConnectedComponentStructure::create(scc);
+    auto sccstruct = StronglyConnectedComponentStructure::Create(scc);
 
-    if (sccstruct->is_tcloop())
+    if (sccstruct->IsTailControlledLoop())
     {
-      auto tcloop_entry = *sccstruct->enodes().begin();
-      auto tcloop_exit = (*sccstruct->xedges().begin())->source();
+      auto tcloop_entry = *sccstruct->EntryNodes().begin();
+      auto tcloop_exit = (*sccstruct->ExitEdges().begin())->source();
       restructure(tcloop_entry, tcloop_exit, loops);
       loops.push_back(extract_tcloop(tcloop_entry, tcloop_exit));
       continue;
@@ -264,17 +264,17 @@ restructure_loops(
     new_nr->add_outedge(new_ne);
 
     const ThreeAddressCodeVariable * ev = nullptr;
-    if (sccstruct->nenodes() > 1)
+    if (sccstruct->NumEntryNodes() > 1)
     {
       auto bb = find_tvariable_bb(entry);
-      ev = create_tvariable(*bb, rvsdg::ControlType::Create(sccstruct->nenodes()));
+      ev = create_tvariable(*bb, rvsdg::ControlType::Create(sccstruct->NumEntryNodes()));
     }
 
     auto rv = create_rvariable(*new_ne);
 
     const ThreeAddressCodeVariable * xv = nullptr;
-    if (sccstruct->nxnodes() > 1)
-      xv = create_qvariable(*new_ne, rvsdg::ControlType::Create(sccstruct->nxnodes()));
+    if (sccstruct->NumExitNodes() > 1)
+      xv = create_qvariable(*new_ne, rvsdg::ControlType::Create(sccstruct->NumExitNodes()));
 
     append_branch(new_nr, rv);
 
