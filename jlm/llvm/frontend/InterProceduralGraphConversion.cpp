@@ -860,7 +860,7 @@ RestructureControlFlowGraph(
 {
   auto restructureControlFlowGraph = [](ControlFlowGraph * controlFlowGraph)
   {
-    RestructureControlFlow(controlFlowGraph);
+    RestructureControlFlow(*controlFlowGraph);
     straighten(*controlFlowGraph);
   };
 

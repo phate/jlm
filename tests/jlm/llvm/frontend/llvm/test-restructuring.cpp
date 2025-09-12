@@ -3,15 +3,15 @@
  * See COPYING for terms of redistribution.
  */
 
-#include "test-registry.hpp"
+#include <test-registry.hpp>
 
 #include <jlm/llvm/frontend/ControlFlowRestructuring.hpp>
 #include <jlm/llvm/ir/basic-block.hpp>
 #include <jlm/llvm/ir/cfg-structure.hpp>
 #include <jlm/llvm/ir/ipgraph-module.hpp>
 
-static inline void
-test_acyclic_structured()
+static void
+AcyclicStructured()
 {
   using namespace jlm::llvm;
 
@@ -33,15 +33,19 @@ test_acyclic_structured()
   //	jlm::view_ascii(cfg, stdout);
 
   size_t nnodes = cfg.nnodes();
-  RestructureBranches(&cfg);
+  RestructureBranches(cfg);
 
   //	jlm::view_ascii(cfg, stdout);
 
   assert(nnodes == cfg.nnodes());
 }
 
-static inline void
-test_acyclic_unstructured()
+JLM_UNIT_TEST_REGISTER(
+    "jlm/llvm/frontend/llvm/test-restructuring-AcyclicStructured",
+    AcyclicStructured)
+
+static void
+AcyclicUnstructured()
 {
   using namespace jlm::llvm;
 
@@ -63,15 +67,19 @@ test_acyclic_unstructured()
 
   //	jlm::view_ascii(cfg, stdout);
 
-  RestructureBranches(&cfg);
+  RestructureBranches(cfg);
 
   //	jlm::view_ascii(cfg, stdout);
 
   assert(is_proper_structured(cfg));
 }
 
-static inline void
-test_dowhile()
+JLM_UNIT_TEST_REGISTER(
+    "jlm/llvm/frontend/llvm/test-restructuring-AcyclicUnstructured",
+    AcyclicUnstructured)
+
+static void
+DoWhileLoop()
 {
   using namespace jlm::llvm;
 
@@ -92,7 +100,7 @@ test_dowhile()
   //	jlm::view_ascii(cfg, stdout);
 
   size_t nnodes = cfg.nnodes();
-  RestructureControlFlow(&cfg);
+  RestructureControlFlow(cfg);
 
   //	jlm::view_ascii(cfg, stdout);
 
@@ -101,8 +109,10 @@ test_dowhile()
   assert(bb3->OutEdge(0)->sink() == bb1);
 }
 
-static inline void
-test_while()
+JLM_UNIT_TEST_REGISTER("jlm/llvm/frontend/llvm/test-restructuring-DoWhileLoop", DoWhileLoop)
+
+static void
+WhileLoop()
 {
   using namespace jlm::llvm;
 
@@ -119,7 +129,7 @@ test_while()
 
   //	jlm::view_ascii(cfg, stdout);
 
-  RestructureControlFlow(&cfg);
+  RestructureControlFlow(cfg);
 
   /* FIXME: Nodes are not printed in the right order */
   //	jlm::view_ascii(cfg, stdout);
@@ -127,8 +137,10 @@ test_while()
   assert(is_proper_structured(cfg));
 }
 
-static inline void
-test_irreducible()
+JLM_UNIT_TEST_REGISTER("jlm/llvm/frontend/llvm/test-restructuring-WhileLoop", WhileLoop)
+
+static void
+IrreducibleCfg()
 {
   using namespace jlm::llvm;
 
@@ -153,14 +165,16 @@ test_irreducible()
 
   //	jlm::view_ascii(cfg, stdout);
 
-  RestructureControlFlow(&cfg);
+  RestructureControlFlow(cfg);
 
   //	jlm::view_ascii(cfg, stdout);
   assert(is_proper_structured(cfg));
 }
 
-static inline void
-test_acyclic_unstructured_in_dowhile()
+JLM_UNIT_TEST_REGISTER("jlm/llvm/frontend/llvm/test-restructuring-IrreducibleCfg", IrreducibleCfg)
+
+static void
+AcyclicUnstructuredInDoWhileLoop()
 {
   using namespace jlm::llvm;
 
@@ -183,14 +197,18 @@ test_acyclic_unstructured_in_dowhile()
 
   //	jlm::view_ascii(cfg, stdout);
 
-  RestructureControlFlow(&cfg);
+  RestructureControlFlow(cfg);
 
   //	jlm::view_ascii(cfg, stdout);
   assert(is_proper_structured(cfg));
 }
 
-static inline void
-test_lor_before_dowhile()
+JLM_UNIT_TEST_REGISTER(
+    "jlm/llvm/frontend/llvm/test-restructuring-AcyclicUnstructuredInDoWhileLoop",
+    AcyclicUnstructuredInDoWhileLoop)
+
+static void
+LorBeforeDoWhileLoop()
 {
   using namespace jlm::llvm;
 
@@ -213,14 +231,18 @@ test_lor_before_dowhile()
 
   //	jlm::view_ascii(cfg, stdout);
 
-  RestructureControlFlow(&cfg);
+  RestructureControlFlow(cfg);
 
   //	jlm::view_ascii(cfg, stdout);
   assert(is_proper_structured(cfg));
 }
 
+JLM_UNIT_TEST_REGISTER(
+    "jlm/llvm/frontend/llvm/test-restructuring-LorBeforeDoWhileLoop",
+    LorBeforeDoWhileLoop)
+
 static void
-test_static_endless_loop()
+StaticEndlessLoop()
 {
   using namespace jlm::llvm;
 
@@ -238,23 +260,12 @@ test_static_endless_loop()
 
   //	jlm::print_dot(cfg, stdout);
 
-  RestructureControlFlow(&cfg);
+  RestructureControlFlow(cfg);
 
   //	jlm::print_dot(cfg, stdout);
   assert(is_proper_structured(cfg));
 }
 
-static void
-verify()
-{
-  test_acyclic_structured();
-  test_acyclic_unstructured();
-  test_dowhile();
-  test_while();
-  test_irreducible();
-  test_acyclic_unstructured_in_dowhile();
-  test_lor_before_dowhile();
-  test_static_endless_loop();
-}
-
-JLM_UNIT_TEST_REGISTER("jlm/llvm/frontend/llvm/test-restructuring", verify)
+JLM_UNIT_TEST_REGISTER(
+    "jlm/llvm/frontend/llvm/test-restructuring-StaticEndlessLoop",
+    StaticEndlessLoop)
