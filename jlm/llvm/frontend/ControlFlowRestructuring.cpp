@@ -9,7 +9,6 @@
 
 #include <deque>
 #include <unordered_map>
-#include <unordered_set>
 
 namespace jlm::llvm
 {
@@ -28,200 +27,205 @@ struct TailControlledLoop
 };
 
 static TailControlledLoop
-extract_tcloop(ControlFlowGraphNode * ne, ControlFlowGraphNode * nx)
+ExtractLoop(ControlFlowGraphNode & loopEntry, ControlFlowGraphNode & loopExit)
 {
-  JLM_ASSERT(nx->NumOutEdges() == 2);
-  auto & cfg = ne->cfg();
+  JLM_ASSERT(loopExit.NumOutEdges() == 2);
+  auto & cfg = loopEntry.cfg();
 
-  auto er = nx->OutEdge(0);
-  auto ex = nx->OutEdge(1);
-  if (er->sink() != ne)
+  auto er = loopExit.OutEdge(0);
+  auto ex = loopExit.OutEdge(1);
+  if (er->sink() != &loopEntry)
   {
-    er = nx->OutEdge(1);
-    ex = nx->OutEdge(0);
+    er = loopExit.OutEdge(1);
+    ex = loopExit.OutEdge(0);
   }
-  JLM_ASSERT(er->sink() == ne);
+  JLM_ASSERT(er->sink() == &loopEntry);
 
   auto exsink = BasicBlock::create(cfg);
   auto replacement = BasicBlock::create(cfg);
-  ne->divert_inedges(replacement);
+  loopEntry.divert_inedges(replacement);
   replacement->add_outedge(ex->sink());
   ex->divert(exsink);
-  er->divert(ne);
+  er->divert(&loopEntry);
 
-  return TailControlledLoop(ne, exsink, replacement);
+  return TailControlledLoop(&loopEntry, exsink, replacement);
 }
 
-static inline void
-reinsert_tcloop(const TailControlledLoop & l)
+static void
+ReinsertLoop(const TailControlledLoop & loop)
 {
-  JLM_ASSERT(l.insert->NumInEdges() == 1);
-  JLM_ASSERT(l.replacement->NumOutEdges() == 1);
-  auto & cfg = l.ne->cfg();
+  JLM_ASSERT(loop.insert->NumInEdges() == 1);
+  JLM_ASSERT(loop.replacement->NumOutEdges() == 1);
+  auto & cfg = loop.ne->cfg();
 
-  l.replacement->divert_inedges(l.ne);
-  l.insert->divert_inedges(l.replacement->OutEdge(0)->sink());
+  loop.replacement->divert_inedges(loop.ne);
+  loop.insert->divert_inedges(loop.replacement->OutEdge(0)->sink());
 
-  cfg.remove_node(l.insert);
-  cfg.remove_node(l.replacement);
+  cfg.remove_node(loop.insert);
+  cfg.remove_node(loop.replacement);
 }
 
 static const ThreeAddressCodeVariable *
-create_pvariable(BasicBlock & bb, std::shared_ptr<const rvsdg::ControlType> type)
+CreateContinuationVariable(BasicBlock & bb, std::shared_ptr<const rvsdg::ControlType> type)
 {
   static size_t c = 0;
-  auto name = util::strfmt("#p", c++, "#");
+  const auto name = util::strfmt("#p", c++, "#");
   return bb.insert_before_branch(UndefValueOperation::Create(std::move(type), name))->result(0);
 }
 
-static const ThreeAddressCodeVariable *
-create_qvariable(BasicBlock & bb, std::shared_ptr<const rvsdg::ControlType> type)
+static const ThreeAddressCodeVariable &
+CreateLoopExitVariable(BasicBlock & bb, std::shared_ptr<const rvsdg::ControlType> type)
 {
   static size_t c = 0;
-  auto name = util::strfmt("#q", c++, "#");
-  return bb.append_last(UndefValueOperation::Create(std::move(type), name))->result(0);
+  const auto name = util::strfmt("#q", c++, "#");
+
+  auto exitVariable = UndefValueOperation::Create(std::move(type), name);
+  return *bb.append_last(std::move(exitVariable))->result(0);
 }
 
-static const ThreeAddressCodeVariable *
-create_tvariable(BasicBlock & bb, std::shared_ptr<const rvsdg::ControlType> type)
+static const ThreeAddressCodeVariable &
+CreateLoopEntryVariable(BasicBlock & bb, std::shared_ptr<const rvsdg::ControlType> type)
 {
   static size_t c = 0;
-  auto name = util::strfmt("#q", c++, "#");
-  return bb.insert_before_branch(UndefValueOperation::Create(std::move(type), name))->result(0);
+  const auto name = util::strfmt("#q", c++, "#");
+
+  auto entryVariable = UndefValueOperation::Create(std::move(type), name);
+  return *bb.insert_before_branch(std::move(entryVariable))->result(0);
 }
 
-static const ThreeAddressCodeVariable *
-create_rvariable(BasicBlock & bb)
+static const ThreeAddressCodeVariable &
+CreateLoopRepetitionVariable(BasicBlock & basicBlock)
 {
   static size_t c = 0;
-  auto name = util::strfmt("#r", c++, "#");
+  const auto name = util::strfmt("#r", c++, "#");
 
-  return bb.append_last(UndefValueOperation::Create(rvsdg::ControlType::Create(2), name))
-      ->result(0);
+  auto repetitionVariable = UndefValueOperation::Create(rvsdg::ControlType::Create(2), name);
+  return *basicBlock.append_last(std::move(repetitionVariable))->result(0);
 }
 
-static inline void
-append_branch(BasicBlock * bb, const Variable * operand)
+static void
+AppendBranch(BasicBlock & basicBlock, const Variable * operand)
 {
-  JLM_ASSERT(dynamic_cast<const rvsdg::ControlType *>(&operand->type()));
-  auto nalternatives = static_cast<const rvsdg::ControlType *>(&operand->type())->nalternatives();
-  bb->append_last(BranchOperation::create(nalternatives, operand));
+  const auto numAlternatives =
+      util::AssertedCast<const rvsdg::ControlType>(&operand->type())->nalternatives();
+  basicBlock.append_last(BranchOperation::create(numAlternatives, operand));
 }
 
-static inline void
-append_constant(BasicBlock * bb, const ThreeAddressCodeVariable * result, size_t value)
+static void
+AppendConstantAssignment(
+    BasicBlock & basicBlock,
+    const ThreeAddressCodeVariable & variable,
+    const size_t value)
 {
-  JLM_ASSERT(dynamic_cast<const rvsdg::ControlType *>(&result->type()));
-  auto nalternatives = static_cast<const rvsdg::ControlType *>(&result->type())->nalternatives();
+  const auto numAlternatives =
+      util::AssertedCast<const rvsdg::ControlType>(&variable.type())->nalternatives();
 
-  rvsdg::ctlconstant_op op(rvsdg::ControlValueRepresentation(value, nalternatives));
-  bb->append_last(ThreeAddressCode::create(op, {}));
-  bb->append_last(AssignmentOperation::create(bb->last()->result(0), result));
+  const rvsdg::ctlconstant_op op(rvsdg::ControlValueRepresentation(value, numAlternatives));
+  basicBlock.append_last(ThreeAddressCode::create(op, {}));
+  basicBlock.append_last(AssignmentOperation::create(basicBlock.last()->result(0), &variable));
 }
 
-static inline void
-restructure_loop_entry(
-    const StronglyConnectedComponentStructure & s,
-    BasicBlock * new_ne,
-    const ThreeAddressCodeVariable * ev)
+static void
+RestructureLoopEntry(
+    const StronglyConnectedComponentStructure & sccStructure,
+    BasicBlock * newEntryNode,
+    const ThreeAddressCodeVariable * entryVariable)
 {
   size_t n = 0;
-  std::unordered_map<llvm::ControlFlowGraphNode *, size_t> indices;
-  for (auto & node : s.EntryNodes())
+  std::unordered_map<ControlFlowGraphNode *, size_t> indices;
+  for (auto & node : sccStructure.EntryNodes())
   {
-    new_ne->add_outedge(node);
+    newEntryNode->add_outedge(node);
     indices[node] = n++;
   }
 
-  if (ev)
-    append_branch(new_ne, ev);
+  if (entryVariable)
+    AppendBranch(*newEntryNode, entryVariable);
 
-  for (auto & edge : s.EntryEdges())
+  for (auto & edge : sccStructure.EntryEdges())
   {
     auto os = edge->sink();
-    edge->divert(new_ne);
-    if (ev)
-      append_constant(edge->split(), ev, indices[os]);
+    edge->divert(newEntryNode);
+    if (entryVariable)
+      AppendConstantAssignment(*edge->split(), *entryVariable, indices[os]);
   }
 }
 
-static inline void
-restructure_loop_exit(
-    const StronglyConnectedComponentStructure & s,
-    BasicBlock * new_nr,
-    BasicBlock * new_nx,
-    ControlFlowGraphNode * exit,
-    const ThreeAddressCodeVariable * rv,
-    const ThreeAddressCodeVariable * xv)
+static void
+RestructureLoopExit(
+    const StronglyConnectedComponentStructure & sccStructure,
+    BasicBlock & newRepetitionNode,
+    BasicBlock & newExitNode,
+    ControlFlowGraphNode & regionExit,
+    const ThreeAddressCodeVariable & repetitionVariable,
+    const ThreeAddressCodeVariable * exitVariable)
 {
-  /*
-    It could be that an SCC has no exit edge. This can arise when the input CFG contains a
-    statically detectable endless loop, e.g., entry -> basic block  exit. Note the missing
-                                                       ^_________|
-    edge to the exit node.
-
-    Such CFGs do not play well with our restructuring algorithm, as the exit node does not
-    post-dominate the basic block. We circumvent this problem by inserting an additional
-    edge from the newly created exit basic block of the loop to the exit of the SESE region.
-    This edge is never taken at runtime, but fixes the CFGs structure at compile-time such
-    that we can create an RVSDG.
-  */
-  if (s.NumExitEdges() == 0)
+  // It could be that an SCC has no exit edge. This can arise when the input CFG contains a
+  // statically detectable endless loop, e.g., entry -> basic block  exit. Note the missing
+  //                                                    ^_________|
+  // edge to the exit node.
+  //
+  // Such CFGs do not play well with our restructuring algorithm, as the exit node does not
+  // post-dominate the basic block. We circumvent this problem by inserting an additional
+  // edge from the newly created exit basic block of the loop to the exit of the SESE region.
+  // This edge is never taken at runtime, but fixes the CFGs structure at compile-time such
+  // that we can create an RVSDG.
+  if (sccStructure.NumExitEdges() == 0)
   {
-    new_nx->add_outedge(exit);
+    newExitNode.add_outedge(&regionExit);
     return;
   }
 
   size_t n = 0;
-  std::unordered_map<llvm::ControlFlowGraphNode *, size_t> indices;
-  for (auto & node : s.ExitNodes())
+  std::unordered_map<ControlFlowGraphNode *, size_t> indices;
+  for (auto & node : sccStructure.ExitNodes())
   {
-    new_nx->add_outedge(node);
+    newExitNode.add_outedge(node);
     indices[node] = n++;
   }
 
-  if (xv)
-    append_branch(new_nx, xv);
+  if (exitVariable)
+    AppendBranch(newExitNode, exitVariable);
 
-  for (auto & edge : s.ExitEdges())
+  for (auto & edge : sccStructure.ExitEdges())
   {
     auto os = edge->sink();
-    edge->divert(new_nr);
+    edge->divert(&newRepetitionNode);
     auto bb = edge->split();
-    if (xv)
-      append_constant(bb, xv, indices[os]);
-    append_constant(bb, rv, 0);
+    if (exitVariable)
+      AppendConstantAssignment(*bb, *exitVariable, indices[os]);
+    AppendConstantAssignment(*bb, repetitionVariable, 0);
   }
 }
 
-static inline void
-restructure_loop_repetition(
-    const StronglyConnectedComponentStructure & s,
-    ControlFlowGraphNode * new_nr,
-    const ThreeAddressCodeVariable * ev,
-    const ThreeAddressCodeVariable * rv)
+static void
+RestructureLoopRepetition(
+    const StronglyConnectedComponentStructure & sccStructure,
+    ControlFlowGraphNode & newRepetitionNode,
+    const ThreeAddressCodeVariable * entryVariable,
+    const ThreeAddressCodeVariable & repetitionVariable)
 {
   size_t n = 0;
-  std::unordered_map<llvm::ControlFlowGraphNode *, size_t> indices;
-  for (auto & node : s.EntryNodes())
+  std::unordered_map<ControlFlowGraphNode *, size_t> indices;
+  for (auto & node : sccStructure.EntryNodes())
     indices[node] = n++;
 
-  for (auto & edge : s.RepetitionEdges())
+  for (auto & edge : sccStructure.RepetitionEdges())
   {
     auto os = edge->sink();
-    edge->divert(new_nr);
-    auto bb = edge->split();
-    if (ev)
-      append_constant(bb, ev, indices[os]);
-    append_constant(bb, rv, 1);
+    edge->divert(&newRepetitionNode);
+    auto basicBlock = edge->split();
+    if (entryVariable)
+      AppendConstantAssignment(*basicBlock, *entryVariable, indices[os]);
+    AppendConstantAssignment(*basicBlock, repetitionVariable, 1);
   }
 }
 
 static BasicBlock *
-find_tvariable_bb(ControlFlowGraphNode * node)
+GetEntryVariableBlock(ControlFlowGraphNode * node)
 {
-  if (auto bb = dynamic_cast<BasicBlock *>(node))
-    return bb;
+  if (auto basicBlock = dynamic_cast<BasicBlock *>(node))
+    return basicBlock;
 
   auto sink = node->OutEdge(0)->sink();
   JLM_ASSERT(is<BasicBlock>(sink));
@@ -230,95 +234,108 @@ find_tvariable_bb(ControlFlowGraphNode * node)
 }
 
 static void
-restructure(ControlFlowGraphNode *, ControlFlowGraphNode *, std::vector<TailControlledLoop> &);
+RestructureControlFlow(
+    ControlFlowGraphNode &,
+    ControlFlowGraphNode &,
+    std::vector<TailControlledLoop> &);
 
 static void
-restructure_loops(
-    ControlFlowGraphNode * entry,
-    ControlFlowGraphNode * exit,
+RestructureLoops(
+    ControlFlowGraphNode & regionEntry,
+    ControlFlowGraphNode & regionExit,
     std::vector<TailControlledLoop> & loops)
 {
-  if (entry == exit)
+  if (&regionEntry == &regionExit)
     return;
 
-  auto & cfg = entry->cfg();
+  auto & cfg = regionEntry.cfg();
 
-  auto sccs = find_sccs(entry, exit);
-  for (auto & scc : sccs)
+  const auto stronglyConnectedComponents = find_sccs(&regionEntry, &regionExit);
+  for (auto & scc : stronglyConnectedComponents)
   {
-    auto sccstruct = StronglyConnectedComponentStructure::Create(scc);
+    auto sccStructure = StronglyConnectedComponentStructure::Create(scc);
 
-    if (sccstruct->IsTailControlledLoop())
+    if (sccStructure->IsTailControlledLoop())
     {
-      auto tcloop_entry = *sccstruct->EntryNodes().begin();
-      auto tcloop_exit = (*sccstruct->ExitEdges().begin())->source();
-      restructure(tcloop_entry, tcloop_exit, loops);
-      loops.push_back(extract_tcloop(tcloop_entry, tcloop_exit));
+      auto loopEntry = *sccStructure->EntryNodes().begin();
+      auto loopExit = (*sccStructure->ExitEdges().begin())->source();
+      RestructureControlFlow(*loopEntry, *loopExit, loops);
+      loops.push_back(ExtractLoop(*loopEntry, *loopExit));
       continue;
     }
 
-    auto new_ne = BasicBlock::create(cfg);
-    auto new_nr = BasicBlock::create(cfg);
-    auto new_nx = BasicBlock::create(cfg);
-    new_nr->add_outedge(new_nx);
-    new_nr->add_outedge(new_ne);
+    auto & newEntryNode = *BasicBlock::create(cfg);
+    auto & newRepetitionNode = *BasicBlock::create(cfg);
+    auto & newExitNode = *BasicBlock::create(cfg);
+    newRepetitionNode.add_outedge(&newExitNode);
+    newRepetitionNode.add_outedge(&newEntryNode);
 
-    const ThreeAddressCodeVariable * ev = nullptr;
-    if (sccstruct->NumEntryNodes() > 1)
+    const ThreeAddressCodeVariable * entryVariable = nullptr;
+    if (sccStructure->NumEntryNodes() > 1)
     {
-      auto bb = find_tvariable_bb(entry);
-      ev = create_tvariable(*bb, rvsdg::ControlType::Create(sccstruct->NumEntryNodes()));
+      auto bb = GetEntryVariableBlock(&regionEntry);
+      entryVariable =
+          &CreateLoopEntryVariable(*bb, rvsdg::ControlType::Create(sccStructure->NumEntryNodes()));
     }
 
-    auto rv = create_rvariable(*new_ne);
+    auto & repetitionVariable = CreateLoopRepetitionVariable(newEntryNode);
 
-    const ThreeAddressCodeVariable * xv = nullptr;
-    if (sccstruct->NumExitNodes() > 1)
-      xv = create_qvariable(*new_ne, rvsdg::ControlType::Create(sccstruct->NumExitNodes()));
+    const ThreeAddressCodeVariable * exitVariable = nullptr;
+    if (sccStructure->NumExitNodes() > 1)
+      exitVariable = &CreateLoopExitVariable(
+          newEntryNode,
+          rvsdg::ControlType::Create(sccStructure->NumExitNodes()));
 
-    append_branch(new_nr, rv);
+    AppendBranch(newRepetitionNode, &repetitionVariable);
 
-    restructure_loop_entry(*sccstruct, new_ne, ev);
-    restructure_loop_exit(*sccstruct, new_nr, new_nx, exit, rv, xv);
-    restructure_loop_repetition(*sccstruct, new_nr, ev, rv);
+    RestructureLoopEntry(*sccStructure, &newEntryNode, entryVariable);
+    RestructureLoopExit(
+        *sccStructure,
+        newRepetitionNode,
+        newExitNode,
+        regionExit,
+        repetitionVariable,
+        exitVariable);
+    RestructureLoopRepetition(*sccStructure, newRepetitionNode, entryVariable, repetitionVariable);
 
-    restructure(new_ne, new_nr, loops);
-    loops.push_back(extract_tcloop(new_ne, new_nr));
+    RestructureControlFlow(newEntryNode, newRepetitionNode, loops);
+    loops.push_back(ExtractLoop(newEntryNode, newRepetitionNode));
   }
 }
 
-static ControlFlowGraphNode *
-find_head_branch(ControlFlowGraphNode * start, ControlFlowGraphNode * end)
+static ControlFlowGraphNode &
+ComputeHeadBranch(ControlFlowGraphNode & start, ControlFlowGraphNode & end)
 {
+  ControlFlowGraphNode * headBranch = &start;
   do
   {
-    if (start->is_branch() || start == end)
+    if (headBranch->is_branch() || headBranch == &end)
       break;
 
-    start = start->OutEdge(0)->sink();
-  } while (1);
+    headBranch = headBranch->OutEdge(0)->sink();
+  } while (true);
 
-  return start;
+  return *headBranch;
 }
 
-static std::unordered_set<llvm::ControlFlowGraphNode *>
-find_dominator_graph(const ControlFlowGraphEdge * edge)
+static util::HashSet<ControlFlowGraphNode *>
+ComputeDominatorGraph(const ControlFlowGraphEdge * edge)
 {
-  std::unordered_set<llvm::ControlFlowGraphNode *> nodes;
-  std::unordered_set<const ControlFlowGraphEdge *> edges({ edge });
+  util::HashSet<ControlFlowGraphNode *> nodes;
+  util::HashSet edges({ edge });
 
-  std::deque<llvm::ControlFlowGraphNode *> to_visit(1, edge->sink());
-  while (to_visit.size() != 0)
+  std::deque toVisit(1, edge->sink());
+  while (toVisit.size() != 0)
   {
-    ControlFlowGraphNode * node = to_visit.front();
-    to_visit.pop_front();
-    if (nodes.find(node) != nodes.end())
+    ControlFlowGraphNode * node = toVisit.front();
+    toVisit.pop_front();
+    if (nodes.Contains(node))
       continue;
 
     bool accept = true;
     for (auto & inedge : node->InEdges())
     {
-      if (edges.find(&inedge) == edges.end())
+      if (!edges.Contains(&inedge))
       {
         accept = false;
         break;
@@ -327,11 +344,11 @@ find_dominator_graph(const ControlFlowGraphEdge * edge)
 
     if (accept)
     {
-      nodes.insert(node);
+      nodes.Insert(node);
       for (auto & outedge : node->OutEdges())
       {
-        edges.insert(&outedge);
-        to_visit.push_back(outedge.sink());
+        edges.Insert(&outedge);
+        toVisit.push_back(outedge.sink());
       }
     }
   }
@@ -341,38 +358,38 @@ find_dominator_graph(const ControlFlowGraphEdge * edge)
 
 struct Continuation
 {
-  std::unordered_set<ControlFlowGraphNode *> points;
-  std::unordered_map<ControlFlowGraphEdge *, std::unordered_set<ControlFlowGraphEdge *>> edges;
+  util::HashSet<ControlFlowGraphNode *> points;
+  std::unordered_map<ControlFlowGraphEdge *, util::HashSet<ControlFlowGraphEdge *>> edges;
 };
 
 static Continuation
-compute_continuation(ControlFlowGraphNode * hb)
+ComputeContinuation(const ControlFlowGraphNode & headBranch)
 {
-  JLM_ASSERT(hb->NumOutEdges() > 1);
+  JLM_ASSERT(headBranch.NumOutEdges() > 1);
 
-  std::unordered_map<ControlFlowGraphEdge *, std::unordered_set<ControlFlowGraphNode *>> dgraphs;
-  for (auto & outedge : hb->OutEdges())
-    dgraphs[&outedge] = find_dominator_graph(&outedge);
+  std::unordered_map<ControlFlowGraphEdge *, util::HashSet<ControlFlowGraphNode *>> dominatorGraphs;
+  for (auto & outedge : headBranch.OutEdges())
+    dominatorGraphs[&outedge] = ComputeDominatorGraph(&outedge);
 
   Continuation c;
-  for (auto & outedge : hb->OutEdges())
+  for (auto & outedge : headBranch.OutEdges())
   {
-    auto & dgraph = dgraphs[&outedge];
-    if (dgraph.empty())
+    auto & dominatorGraph = dominatorGraphs[&outedge];
+    if (dominatorGraph.IsEmpty())
     {
-      c.edges[&outedge].insert(&outedge);
-      c.points.insert(outedge.sink());
+      c.edges[&outedge].Insert(&outedge);
+      c.points.Insert(outedge.sink());
       continue;
     }
 
-    for (const auto & node : dgraph)
+    for (const auto & node : dominatorGraph.Items())
     {
       for (auto & outedge2 : node->OutEdges())
       {
-        if (dgraph.find(outedge2.sink()) == dgraph.end())
+        if (!dominatorGraph.Contains(outedge2.sink()))
         {
-          c.edges[&outedge].insert(&outedge2);
-          c.points.insert(outedge2.sink());
+          c.edges[&outedge].Insert(&outedge2);
+          c.points.Insert(outedge2.sink());
         }
       }
     }
@@ -381,132 +398,132 @@ compute_continuation(ControlFlowGraphNode * hb)
   return c;
 }
 
-static inline void
-restructure_branches(ControlFlowGraphNode * entry, ControlFlowGraphNode * exit)
+static void
+RestructureBranches(ControlFlowGraphNode & entry, ControlFlowGraphNode & exit)
 {
-  auto & cfg = entry->cfg();
+  auto & cfg = entry.cfg();
 
-  auto hb = find_head_branch(entry, exit);
-  if (hb == exit)
+  auto & headBranch = ComputeHeadBranch(entry, exit);
+  if (&headBranch == &exit)
     return;
 
-  JLM_ASSERT(is<BasicBlock>(hb));
-  auto & hbb = *static_cast<BasicBlock *>(hb);
+  JLM_ASSERT(is<BasicBlock>(&headBranch));
+  auto & hbb = *static_cast<BasicBlock *>(&headBranch);
 
-  auto c = compute_continuation(hb);
-  JLM_ASSERT(!c.points.empty());
+  auto [continuationPoints, continuationEdgesDict] = ComputeContinuation(headBranch);
+  JLM_ASSERT(!continuationPoints.IsEmpty());
 
-  if (c.points.size() == 1)
+  if (continuationPoints.Size() == 1)
   {
-    auto cpoint = *c.points.begin();
-    for (auto & outedge : hb->OutEdges())
+    const auto continuationPoint = *continuationPoints.Items().begin();
+    for (auto & outedge : headBranch.OutEdges())
     {
-      auto cedges = c.edges[&outedge];
+      auto continuationEdges = continuationEdgesDict[&outedge];
 
-      /* empty branch subgraph */
-      if (outedge.sink() == cpoint)
+      // Empty branch subgraph
+      if (outedge.sink() == continuationPoint)
       {
         outedge.split();
         continue;
       }
 
       // only one continuation edge
-      if (cedges.size() == 1)
+      if (continuationEdges.Size() == 1)
       {
-        auto e = *cedges.begin();
-        JLM_ASSERT(e != &outedge);
-        restructure_branches(outedge.sink(), e->source());
+        const auto continuationEdge = *continuationEdges.Items().begin();
+        JLM_ASSERT(continuationEdge != &outedge);
+        RestructureBranches(*outedge.sink(), *continuationEdge->source());
         continue;
       }
 
       // more than one continuation edge
-      auto null = BasicBlock::create(cfg);
-      null->add_outedge(cpoint);
-      for (const auto & e : cedges)
-        e->divert(null);
-      restructure_branches(outedge.sink(), null);
+      auto nullNode = BasicBlock::create(cfg);
+      nullNode->add_outedge(continuationPoint);
+      for (const auto & e : continuationEdges.Items())
+        e->divert(nullNode);
+      RestructureBranches(*outedge.sink(), *nullNode);
     }
 
-    /* restructure tail subgraph */
-    restructure_branches(cpoint, exit);
+    // Restructure tail subgraph
+    RestructureBranches(*continuationPoint, exit);
     return;
   }
 
   // insert new continuation point
-  auto p = create_pvariable(hbb, rvsdg::ControlType::Create(c.points.size()));
-  auto cn = BasicBlock::create(cfg);
-  append_branch(cn, p);
+  auto p = CreateContinuationVariable(hbb, rvsdg::ControlType::Create(continuationPoints.Size()));
+  auto continuationNode = BasicBlock::create(cfg);
+  AppendBranch(*continuationNode, p);
   std::unordered_map<ControlFlowGraphNode *, size_t> indices;
-  for (const auto & cp : c.points)
+  for (const auto & cp : continuationPoints.Items())
   {
-    cn->add_outedge(cp);
+    continuationNode->add_outedge(cp);
     indices.insert({ cp, indices.size() });
   }
 
-  /* restructure branch subgraphs */
-  for (auto & outedge : hb->OutEdges())
+  // Restructure branch subgraphs
+  for (auto & outedge : headBranch.OutEdges())
   {
-    auto cedges = c.edges[&outedge];
+    auto continuationEdges = continuationEdgesDict[&outedge];
 
-    auto null = BasicBlock::create(cfg);
-    null->add_outedge(cn);
-    for (const auto & e : cedges)
+    auto nullNode = BasicBlock::create(cfg);
+    nullNode->add_outedge(continuationNode);
+    for (const auto & e : continuationEdges.Items())
     {
       auto bb = BasicBlock::create(cfg);
-      append_constant(bb, p, indices[e->sink()]);
-      bb->add_outedge(null);
+      AppendConstantAssignment(*bb, *p, indices[e->sink()]);
+      bb->add_outedge(nullNode);
       e->divert(bb);
     }
 
-    restructure_branches(outedge.sink(), null);
+    RestructureBranches(*outedge.sink(), *nullNode);
   }
 
-  /* restructure tail subgraph */
-  restructure_branches(cn, exit);
+  // Restructure tail subgraph
+  RestructureBranches(*continuationNode, exit);
 }
 
 void
-RestructureLoops(ControlFlowGraph * cfg)
+RestructureLoops(ControlFlowGraph & cfg)
 {
-  JLM_ASSERT(is_closed(*cfg));
+  JLM_ASSERT(is_closed(cfg));
 
   std::vector<TailControlledLoop> loops;
-  restructure_loops(cfg->entry(), cfg->exit(), loops);
+  RestructureLoops(*cfg.entry(), *cfg.exit(), loops);
 
-  for (const auto & l : loops)
-    reinsert_tcloop(l);
+  for (const auto & loop : loops)
+    ReinsertLoop(loop);
 }
 
 void
-RestructureBranches(ControlFlowGraph * cfg)
+RestructureBranches(ControlFlowGraph & cfg)
 {
-  JLM_ASSERT(is_acyclic(*cfg));
-  restructure_branches(cfg->entry(), cfg->exit());
-  JLM_ASSERT(is_proper_structured(*cfg));
+  JLM_ASSERT(is_acyclic(cfg));
+  RestructureBranches(*cfg.entry(), *cfg.exit());
+  JLM_ASSERT(is_proper_structured(cfg));
 }
 
-static inline void
-restructure(
-    ControlFlowGraphNode * entry,
-    ControlFlowGraphNode * exit,
-    std::vector<TailControlledLoop> & tcloops)
+static void
+RestructureControlFlow(
+    ControlFlowGraphNode & entry,
+    ControlFlowGraphNode & exit,
+    std::vector<TailControlledLoop> & tailControlledLoops)
 {
-  restructure_loops(entry, exit, tcloops);
-  restructure_branches(entry, exit);
+  RestructureLoops(entry, exit, tailControlledLoops);
+  RestructureBranches(entry, exit);
 }
 
 void
-RestructureControlFlow(ControlFlowGraph * cfg)
+RestructureControlFlow(ControlFlowGraph & cfg)
 {
-  JLM_ASSERT(is_closed(*cfg));
+  JLM_ASSERT(is_closed(cfg));
 
-  std::vector<TailControlledLoop> tcloops;
-  restructure(cfg->entry(), cfg->exit(), tcloops);
+  std::vector<TailControlledLoop> loops;
+  RestructureControlFlow(*cfg.entry(), *cfg.exit(), loops);
 
-  for (const auto & l : tcloops)
-    reinsert_tcloop(l);
+  for (const auto & loop : loops)
+    ReinsertLoop(loop);
 
-  JLM_ASSERT(is_proper_structured(*cfg));
+  JLM_ASSERT(is_proper_structured(cfg));
 }
 
 }
