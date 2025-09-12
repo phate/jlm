@@ -57,8 +57,8 @@ libtooling_TESTS = \
 
 libtooling_TEST_LIBS = \
     libtooling \
-    libhls \
-    libmlir \
+    $(if $(ENABLE_HLS),libhls) \
+    $(if $(ENABLE_MLIR),libmlir) \
     libllvm \
     librvsdg \
     libutil \
