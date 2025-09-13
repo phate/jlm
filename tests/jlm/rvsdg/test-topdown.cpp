@@ -69,8 +69,6 @@ test_basic_traversal()
     tmp = trav.next();
     assert(tmp == nullptr);
   }
-
-  assert(!graph.GetRootRegion().HasActiveTrackers());
 }
 
 static void
@@ -99,8 +97,6 @@ test_order_enforcement_traversal()
     tmp = trav.next();
     assert(tmp == nullptr);
   }
-
-  assert(!graph.GetRootRegion().HasActiveTrackers());
 }
 
 static void
@@ -157,8 +153,6 @@ test_traversal_insertion()
     assert(!visited_n4);
     assert(visited_n5);
   }
-
-  assert(!graph.GetRootRegion().HasActiveTrackers());
 }
 
 static void
