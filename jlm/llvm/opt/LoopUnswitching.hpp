@@ -3,8 +3,8 @@
  * See COPYING for terms of redistribution.
  */
 
-#ifndef JLM_LLVM_OPT_INVERSION_HPP
-#define JLM_LLVM_OPT_INVERSION_HPP
+#ifndef JLM_LLVM_OPT_LOOPUNSWITCHING_HPP
+#define JLM_LLVM_OPT_LOOPUNSWITCHING_HPP
 
 #include <jlm/rvsdg/Transformation.hpp>
 

@@ -39,7 +39,7 @@
 #include <jlm/llvm/opt/DeadNodeElimination.hpp>
 #include <jlm/llvm/opt/inlining.hpp>
 #include <jlm/llvm/opt/InvariantValueRedirection.hpp>
-#include <jlm/llvm/opt/inversion.hpp>
+#include <jlm/llvm/opt/LoopUnswitching.hpp>
 #include <jlm/llvm/opt/reduction.hpp>
 #include <jlm/rvsdg/traverser.hpp>
 #include <jlm/rvsdg/view.hpp>
