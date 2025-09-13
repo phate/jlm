@@ -11,7 +11,7 @@
 #include <jlm/rvsdg/theta.hpp>
 
 #include <jlm/llvm/ir/RvsdgModule.hpp>
-#include <jlm/llvm/opt/inversion.hpp>
+#include <jlm/llvm/opt/LoopUnswitching.hpp>
 #include <jlm/util/Statistics.hpp>
 
 static const auto vt = jlm::tests::ValueType::Create();

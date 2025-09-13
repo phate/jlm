@@ -22,7 +22,7 @@
 #include <jlm/llvm/opt/IfConversion.hpp>
 #include <jlm/llvm/opt/inlining.hpp>
 #include <jlm/llvm/opt/InvariantValueRedirection.hpp>
-#include <jlm/llvm/opt/inversion.hpp>
+#include <jlm/llvm/opt/LoopUnswitching.hpp>
 #include <jlm/llvm/opt/pull.hpp>
 #include <jlm/llvm/opt/push.hpp>
 #include <jlm/llvm/opt/reduction.hpp>
