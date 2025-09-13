@@ -37,7 +37,6 @@ Input::CheckTypes(
 
 Input::Input(rvsdg::Node & owner, rvsdg::Output & origin, std::shared_ptr<const rvsdg::Type> type)
     : index_(0),
-      origin_(&origin),
       Owner_(&owner),
       Type_(std::move(type))
 {
@@ -47,7 +46,6 @@ Input::Input(rvsdg::Node & owner, rvsdg::Output & origin, std::shared_ptr<const 
 
 Input::Input(rvsdg::Region & owner, rvsdg::Output & origin, std::shared_ptr<const rvsdg::Type> type)
     : index_(0),
-      origin_(&origin),
       Owner_(&owner),
       Type_(std::move(type))
 {
@@ -75,7 +73,6 @@ Input::divert_to(jlm::rvsdg::Output * new_origin)
 
   auto old_origin = origin();
   old_origin->remove_user(this);
-  this->origin_ = new_origin;
   new_origin->add_user(this);
 
   if (auto node = TryGetOwnerNode<Node>(*this))
@@ -137,7 +134,7 @@ Input::ConstIterator::ComputeNext() const
 
 Output::~Output() noexcept
 {
-  JLM_ASSERT(nusers() == 0);
+  JLM_ASSERT(NumUsers_ == 0);
 }
 
 Output::Output(Node & owner, std::shared_ptr<const rvsdg::Type> type)
@@ -178,9 +175,11 @@ Output::debug_string() const
 void
 Output::remove_user(jlm::rvsdg::Input * user)
 {
-  JLM_ASSERT(users_.find(user) != users_.end());
+  JLM_ASSERT(user->origin_ == this);
+  user->origin_ = nullptr;
 
-  users_.erase(user);
+  Users_.erase(user);
+  NumUsers_ -= 1;
 
   if (auto node = TryGetOwnerNode<Node>(*this))
   {
@@ -195,7 +194,8 @@ Output::remove_user(jlm::rvsdg::Input * user)
 void
 Output::add_user(jlm::rvsdg::Input * user)
 {
-  JLM_ASSERT(users_.find(user) == users_.end());
+  JLM_ASSERT(user->origin_ == nullptr);
+  user->origin_ = this;
 
   if (auto node = TryGetOwnerNode<Node>(*this))
   {
@@ -205,7 +205,9 @@ Output::add_user(jlm::rvsdg::Input * user)
       JLM_ASSERT(wasRemoved);
     }
   }
-  users_.insert(user);
+
+  Users_.push_back(user);
+  NumUsers_ += 1;
 }
 
 static Output *

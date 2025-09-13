@@ -220,9 +220,14 @@ private:
       const std::shared_ptr<const rvsdg::Type> & type);
 
   size_t index_;
-  jlm::rvsdg::Output * origin_;
+  jlm::rvsdg::Output * origin_ = nullptr;
   std::variant<Node *, Region *> Owner_;
   std::shared_ptr<const rvsdg::Type> Type_;
+  jlm::util::IntrusiveListAnchor<Input> UsersList_;
+  using UsersListAccessor = jlm::util::intrusive_list_accessor<Input, &Input::UsersList_>;
+  using UsersList = jlm::util::IntrusiveList<Input, UsersListAccessor>;
+
+  friend class Output;
 };
 
 template<class T>
@@ -243,12 +248,239 @@ class Output
   friend class rvsdg::Region;
 
 public:
-  using UserIterator = util::PtrIterator<Input, std::unordered_set<Input *>::iterator>;
-  using UserConstIterator =
-      util::PtrIterator<const Input, std::unordered_set<Input *>::const_iterator>;
+  using UsersList = Input::UsersList;
 
-  using UserIteratorRange = util::IteratorRange<UserIterator>;
-  using UserConstIteratorRange = util::IteratorRange<UserConstIterator>;
+  class UserIterator
+  {
+  public:
+    using iterator_category = std::forward_iterator_tag;
+    using difference_type = std::ptrdiff_t;
+    using value_type = Input;
+    using pointer = Input *;
+    using reference = Input &;
+
+    inline explicit UserIterator(UsersList::Iterator iter)
+        : iter_(iter)
+    {}
+
+    reference
+    operator*() const
+    {
+      return *iter_;
+    }
+
+    pointer
+    operator->()
+    {
+      return &*iter_;
+    }
+
+    UserIterator &
+    operator++()
+    {
+      ++iter_;
+      return *this;
+    }
+
+    UserIterator
+    operator++(int)
+    {
+      UserIterator tmp = *this;
+      ++iter_;
+      return tmp;
+    }
+
+    friend bool
+    operator==(const UserIterator & a, const UserIterator & b)
+    {
+      return a.iter_ == b.iter_;
+    };
+
+    friend bool
+    operator!=(const UserIterator & a, const UserIterator & b)
+    {
+      return a.iter_ != b.iter_;
+    };
+
+  private:
+    UsersList::Iterator iter_;
+  };
+
+  class UserConstIterator
+  {
+  public:
+    using iterator_category = std::forward_iterator_tag;
+    using difference_type = std::ptrdiff_t;
+    using value_type = const Input;
+    using pointer = const Input *;
+    using reference = const Input &;
+
+    inline explicit UserConstIterator(UsersList::ConstIterator iter)
+        : iter_(iter)
+    {}
+
+    reference
+    operator*() const
+    {
+      return *iter_;
+    }
+
+    pointer
+    operator->()
+    {
+      return &*iter_;
+    }
+
+    UserConstIterator &
+    operator++()
+    {
+      ++iter_;
+      return *this;
+    }
+
+    UserConstIterator
+    operator++(int)
+    {
+      UserConstIterator tmp = *this;
+      ++iter_;
+      return tmp;
+    }
+
+    friend bool
+    operator==(const UserConstIterator & a, const UserConstIterator & b)
+    {
+      return a.iter_ == b.iter_;
+    };
+
+    friend bool
+    operator!=(const UserConstIterator & a, const UserConstIterator & b)
+    {
+      return a.iter_ != b.iter_;
+    };
+
+  private:
+    UsersList::ConstIterator iter_;
+  };
+
+  class UsersRange
+  {
+  public:
+    using value_type = Input;
+    using iterator = UserIterator;
+    using const_iterator = UserConstIterator;
+    using reference = Input &;
+    using const_reference = const Input &;
+    using size_type = size_t;
+
+    inline explicit UsersRange(Output * output)
+        : output_(output)
+    {}
+
+    iterator
+    begin() noexcept
+    {
+      return iterator(output_->Users_.begin());
+    }
+
+    iterator
+    end() noexcept
+    {
+      return iterator(output_->Users_.end());
+    }
+
+    const_iterator
+    begin() const noexcept
+    {
+      return const_iterator(output_->Users_.cbegin());
+    }
+
+    const_iterator
+    end() const noexcept
+    {
+      return const_iterator(output_->Users_.cend());
+    }
+
+    const_iterator
+    cbegin() const noexcept
+    {
+      return const_iterator(output_->Users_.cbegin());
+    }
+
+    const_iterator
+    cend() const noexcept
+    {
+      return const_iterator(output_->Users_.cend());
+    }
+
+    std::size_t
+    size() const noexcept
+    {
+      return output_->NumUsers_;
+    }
+
+    bool
+    empty() const noexcept
+    {
+      return output_->Users_.empty();
+    }
+
+  private:
+    Output * output_;
+  };
+
+  class UsersConstRange
+  {
+  public:
+    using value_type = const Input;
+    using iterator = UserConstIterator;
+    using const_iterator = UserConstIterator;
+    using reference = const Input &;
+    using const_reference = const Input &;
+    using size_type = size_t;
+
+    inline explicit UsersConstRange(const Output * output)
+        : output_(output)
+    {}
+
+    const_iterator
+    begin() const noexcept
+    {
+      return const_iterator(output_->Users_.begin());
+    }
+
+    const_iterator
+    end() const noexcept
+    {
+      return const_iterator(output_->Users_.end());
+    }
+
+    const_iterator
+    cbegin() const noexcept
+    {
+      return const_iterator(output_->Users_.begin());
+    }
+
+    const_iterator
+    cend() const noexcept
+    {
+      return const_iterator(output_->Users_.end());
+    }
+
+    std::size_t
+    size() const noexcept
+    {
+      return output_->NumUsers_;
+    }
+
+    bool
+    empty() const noexcept
+    {
+      return output_->Users_.empty();
+    }
+
+  private:
+    const Output * output_;
+  };
 
   virtual ~Output() noexcept;
 
@@ -275,7 +507,7 @@ public:
   inline size_t
   nusers() const noexcept
   {
-    return users_.size();
+    return NumUsers_;
   }
 
   /**
@@ -290,7 +522,7 @@ public:
   [[nodiscard]] bool
   IsDead() const noexcept
   {
-    return nusers() == 0;
+    return NumUsers_ == 0;
   }
 
   inline void
@@ -299,8 +531,8 @@ public:
     if (this == new_origin)
       return;
 
-    while (users_.size())
-      (*users_.begin())->divert_to(new_origin);
+    while (!Users_.empty())
+      Users_.begin()->divert_to(new_origin);
   }
 
   /**
@@ -309,22 +541,22 @@ public:
    * \pre The output has only a single user.
    */
   [[nodiscard]] rvsdg::Input &
-  SingleUser() const noexcept
+  SingleUser() noexcept
   {
-    JLM_ASSERT(nusers() == 1);
-    return **users_.begin();
+    JLM_ASSERT(NumUsers_ == 1);
+    return *Users_.begin();
   }
 
-  UserIteratorRange
+  UsersRange
   Users()
   {
-    return { UserIterator(users_.begin()), UserIterator(users_.end()) };
+    return UsersRange(this);
   }
 
-  [[nodiscard]] UserConstIteratorRange
+  UsersConstRange
   Users() const
   {
-    return { UserConstIterator(users_.begin()), UserConstIterator(users_.end()) };
+    return UsersConstRange(this);
   }
 
   [[nodiscard]] const std::shared_ptr<const rvsdg::Type> &
@@ -487,7 +719,8 @@ private:
   size_t index_;
   std::variant<Node *, Region *> Owner_;
   std::shared_ptr<const rvsdg::Type> Type_;
-  std::unordered_set<jlm::rvsdg::Input *> users_;
+  UsersList Users_;
+  std::size_t NumUsers_ = 0;
 };
 
 /**
