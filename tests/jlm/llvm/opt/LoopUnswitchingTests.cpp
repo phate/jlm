@@ -3,9 +3,9 @@
  * See COPYING for terms of redistribution.
  */
 
-#include "test-operation.hpp"
-#include "test-registry.hpp"
-#include "test-types.hpp"
+#include <test-operation.hpp>
+#include <test-registry.hpp>
+#include <test-types.hpp>
 
 #include <jlm/rvsdg/gamma.hpp>
 #include <jlm/rvsdg/theta.hpp>
@@ -14,121 +14,129 @@
 #include <jlm/llvm/opt/LoopUnswitching.hpp>
 #include <jlm/util/Statistics.hpp>
 
-static const auto vt = jlm::tests::ValueType::Create();
-static jlm::util::StatisticsCollector statisticsCollector;
-
-static inline void
-test1()
+static void
+Test1()
 {
   using namespace jlm::llvm;
 
-  RvsdgModule rm(jlm::util::FilePath(""), "", "");
-  auto & graph = rm.Rvsdg();
+  // Arrange
+  const auto valueType = jlm::tests::ValueType::Create();
 
-  auto x = &jlm::rvsdg::GraphImport::Create(graph, vt, "x");
-  auto y = &jlm::rvsdg::GraphImport::Create(graph, vt, "y");
-  auto z = &jlm::rvsdg::GraphImport::Create(graph, vt, "z");
+  RvsdgModule rvsdgModule(jlm::util::FilePath(""), "", "");
+  auto & graph = rvsdgModule.Rvsdg();
 
-  auto theta = jlm::rvsdg::ThetaNode::create(&graph.GetRootRegion());
+  auto x = &jlm::rvsdg::GraphImport::Create(graph, valueType, "x");
+  auto y = &jlm::rvsdg::GraphImport::Create(graph, valueType, "y");
+  auto z = &jlm::rvsdg::GraphImport::Create(graph, valueType, "z");
 
-  auto lvx = theta->AddLoopVar(x);
-  auto lvy = theta->AddLoopVar(y);
-  theta->AddLoopVar(z);
+  auto thetaNode = jlm::rvsdg::ThetaNode::create(&graph.GetRootRegion());
+
+  auto loopVarX = thetaNode->AddLoopVar(x);
+  auto loopVarY = thetaNode->AddLoopVar(y);
+  thetaNode->AddLoopVar(z);
 
   auto a = jlm::tests::TestOperation::create(
-               theta->subregion(),
-               { lvx.pre, lvy.pre },
+               thetaNode->subregion(),
+               { loopVarX.pre, loopVarY.pre },
                { jlm::rvsdg::BitType::Create(1) })
                ->output(0);
   auto predicate = jlm::rvsdg::match(1, { { 1, 0 } }, 1, 2, a);
 
   auto gamma = jlm::rvsdg::GammaNode::create(predicate, 2);
 
-  auto evx = gamma->AddEntryVar(lvx.pre);
-  auto evy = gamma->AddEntryVar(lvy.pre);
+  auto entryVarX = gamma->AddEntryVar(loopVarX.pre);
+  auto entryVarY = gamma->AddEntryVar(loopVarY.pre);
 
   auto b = jlm::tests::TestOperation::create(
                gamma->subregion(0),
-               { evx.branchArgument[0], evy.branchArgument[0] },
-               { vt })
+               { entryVarX.branchArgument[0], entryVarY.branchArgument[0] },
+               { valueType })
                ->output(0);
   auto c = jlm::tests::TestOperation::create(
                gamma->subregion(1),
-               { evx.branchArgument[1], evy.branchArgument[1] },
-               { vt })
+               { entryVarX.branchArgument[1], entryVarY.branchArgument[1] },
+               { valueType })
                ->output(0);
 
-  auto xvy = gamma->AddExitVar({ b, c });
+  auto exitVarY = gamma->AddExitVar({ b, c });
 
-  lvy.post->divert_to(xvy.output);
+  loopVarY.post->divert_to(exitVarY.output);
 
-  theta->set_predicate(predicate);
+  thetaNode->set_predicate(predicate);
 
-  auto & ex1 = jlm::rvsdg::GraphExport::Create(*theta->output(0), "x");
-  auto & ex2 = jlm::rvsdg::GraphExport::Create(*theta->output(1), "y");
-  auto & ex3 = jlm::rvsdg::GraphExport::Create(*theta->output(2), "z");
+  auto & ex1 = jlm::rvsdg::GraphExport::Create(*thetaNode->output(0), "x");
+  auto & ex2 = jlm::rvsdg::GraphExport::Create(*thetaNode->output(1), "y");
+  auto & ex3 = jlm::rvsdg::GraphExport::Create(*thetaNode->output(2), "z");
 
   //	jlm::rvsdg::view(graph.GetRootRegion(), stdout);
-  jlm::llvm::LoopUnswitching tginversion;
-  tginversion.Run(rm, statisticsCollector);
+
+  // Act
+  jlm::util::StatisticsCollector statisticsCollector;
+  LoopUnswitching::CreateAndRun(rvsdgModule, statisticsCollector);
+
   //	jlm::rvsdg::view(graph.GetRootRegion(), stdout);
 
+  // Assert
   assert(jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::GammaNode>(*ex1.origin()));
   assert(jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::GammaNode>(*ex2.origin()));
   assert(jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::GammaNode>(*ex3.origin()));
 }
 
-static inline void
-test2()
+JLM_UNIT_TEST_REGISTER("jlm/llvm/opt/LoopUnswitchingTests-Test1", Test1)
+
+static void
+Test2()
 {
   using namespace jlm::llvm;
 
-  RvsdgModule rm(jlm::util::FilePath(""), "", "");
-  auto & graph = rm.Rvsdg();
+  // Arrange
+  const auto valueType = jlm::tests::ValueType::Create();
 
-  auto x = &jlm::rvsdg::GraphImport::Create(graph, vt, "x");
+  RvsdgModule rvsdgModule(jlm::util::FilePath(""), "", "");
+  auto & graph = rvsdgModule.Rvsdg();
 
-  auto theta = jlm::rvsdg::ThetaNode::create(&graph.GetRootRegion());
+  auto x = &jlm::rvsdg::GraphImport::Create(graph, valueType, "x");
 
-  auto lv1 = theta->AddLoopVar(x);
+  auto thetaNode = jlm::rvsdg::ThetaNode::create(&graph.GetRootRegion());
+
+  auto loopVarX = thetaNode->AddLoopVar(x);
 
   auto n1 = jlm::tests::TestOperation::create(
-                theta->subregion(),
-                { lv1.pre },
+                thetaNode->subregion(),
+                { loopVarX.pre },
                 { jlm::rvsdg::BitType::Create(1) })
                 ->output(0);
-  auto n2 = jlm::tests::TestOperation::create(theta->subregion(), { lv1.pre }, { vt })->output(0);
+  auto n2 =
+      jlm::tests::TestOperation::create(thetaNode->subregion(), { loopVarX.pre }, { valueType })
+          ->output(0);
   auto predicate = jlm::rvsdg::match(1, { { 1, 0 } }, 1, 2, n1);
 
-  auto gamma = jlm::rvsdg::GammaNode::create(predicate, 2);
+  auto gammaNode = jlm::rvsdg::GammaNode::create(predicate, 2);
 
-  auto ev1 = gamma->AddEntryVar(n1);
-  auto ev2 = gamma->AddEntryVar(lv1.pre);
-  auto ev3 = gamma->AddEntryVar(n2);
+  auto ev1 = gammaNode->AddEntryVar(n1);
+  auto ev2 = gammaNode->AddEntryVar(loopVarX.pre);
+  auto ev3 = gammaNode->AddEntryVar(n2);
 
-  gamma->AddExitVar(ev1.branchArgument);
-  gamma->AddExitVar(ev2.branchArgument);
-  gamma->AddExitVar(ev3.branchArgument);
+  gammaNode->AddExitVar(ev1.branchArgument);
+  gammaNode->AddExitVar(ev2.branchArgument);
+  gammaNode->AddExitVar(ev3.branchArgument);
 
-  lv1.post->divert_to(gamma->output(1));
+  loopVarX.post->divert_to(gammaNode->output(1));
 
-  theta->set_predicate(predicate);
+  thetaNode->set_predicate(predicate);
 
-  auto & ex = jlm::rvsdg::GraphExport::Create(*theta->output(0), "x");
+  auto & ex = jlm::rvsdg::GraphExport::Create(*thetaNode->output(0), "x");
 
   //	jlm::rvsdg::view(graph.GetRootRegion(), stdout);
-  jlm::llvm::LoopUnswitching tginversion;
-  tginversion.Run(rm, statisticsCollector);
+
+  // Act
+  jlm::util::StatisticsCollector statisticsCollector;
+  LoopUnswitching::CreateAndRun(rvsdgModule, statisticsCollector);
+
   //	jlm::rvsdg::view(graph.GetRootRegion(), stdout);
 
+  // Assert
   assert(jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::GammaNode>(*ex.origin()));
 }
 
-static void
-verify()
-{
-  test1();
-  test2();
-}
-
-JLM_UNIT_TEST_REGISTER("jlm/llvm/opt/LoopUnswitchingTests", verify)
+JLM_UNIT_TEST_REGISTER("jlm/llvm/opt/LoopUnswitchingTests-Test2", Test2)
