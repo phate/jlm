@@ -131,4 +131,4 @@ verify()
   test2();
 }
 
-JLM_UNIT_TEST_REGISTER("jlm/llvm/opt/test-inversion", verify)
+JLM_UNIT_TEST_REGISTER("jlm/llvm/opt/LoopUnswitchingTests", verify)
