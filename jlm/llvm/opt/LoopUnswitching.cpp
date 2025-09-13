@@ -340,4 +340,13 @@ LoopUnswitching::Run(
   invert(module, statisticsCollector);
 }
 
+void
+LoopUnswitching::CreateAndRun(
+    rvsdg::RvsdgModule & rvsdgModule,
+    util::StatisticsCollector & statisticsCollector)
+{
+  LoopUnswitching loopUnswitching;
+  loopUnswitching.Run(rvsdgModule, statisticsCollector);
+}
+
 }
