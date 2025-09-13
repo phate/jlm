@@ -121,8 +121,8 @@ MlirToJlmConverter::ConvertBlock(::mlir::Block & block, rvsdg::Region & rvsdgReg
 
       jlm::llvm::GraphImport::Create(
           *rvsdgRegion.graph(),
-          std::dynamic_pointer_cast<const rvsdg::ValueType>(jlmValueType),
-          std::dynamic_pointer_cast<const rvsdg::ValueType>(jlmImportedType),
+          jlmValueType,
+          jlmImportedType,
           argument.getNameAttr().cast<::mlir::StringAttr>().str(),
           llvm::FromString(argument.getLinkageAttr().cast<::mlir::StringAttr>().str()));
 
@@ -687,10 +687,9 @@ MlirToJlmConverter::ConvertOperation(
     auto outputType = AllocaOp.getValueType();
 
     auto jlmType = ConvertType(outputType);
-    if (!rvsdg::is<const rvsdg::ValueType>(jlmType))
+    if (jlmType->Kind() != rvsdg::TypeKind::Value)
       JLM_UNREACHABLE("Expected ValueType for AllocaOp operation.");
 
-    auto jlmValueType = std::dynamic_pointer_cast<const rvsdg::ValueType>(jlmType);
     if (!rvsdg::is<const rvsdg::BitType>(inputs[0]->Type()))
       JLM_UNREACHABLE("Expected BitType for AllocaOp operation.");
 
@@ -698,7 +697,7 @@ MlirToJlmConverter::ConvertOperation(
 
     return rvsdg::outputs(&rvsdg::CreateOpNode<llvm::AllocaOperation>(
         std::vector(inputs.begin(), inputs.end()),
-        jlmValueType,
+        jlmType,
         jlmBitType,
         AllocaOp.getAlignment()));
   }
@@ -780,20 +779,19 @@ MlirToJlmConverter::ConvertOperation(
     auto memoryStateInputs = std::vector(std::next(inputs.begin()), inputs.end());
     auto outputType = LoadOp.getOutput().getType();
     auto jlmType = ConvertType(outputType);
-    if (!rvsdg::is<const rvsdg::ValueType>(jlmType))
+    if (jlmType->Kind() != rvsdg::TypeKind::Value)
       JLM_UNREACHABLE("Expected ValueType for LoadOp operation output.");
-    auto jlmValueType = std::dynamic_pointer_cast<const rvsdg::ValueType>(jlmType);
     return rvsdg::outputs(&llvm::LoadNonVolatileOperation::CreateNode(
         *address,
         memoryStateInputs,
-        jlmValueType,
+        jlmType,
         LoadOp.getAlignment()));
   }
   else if (auto GepOp = ::mlir::dyn_cast<::mlir::LLVM::GEPOp>(&mlirOperation))
   {
     auto elemType = GepOp.getElemType();
     auto pointeeType = ConvertType(elemType);
-    if (!rvsdg::is<const rvsdg::ValueType>(pointeeType))
+    if (pointeeType->Kind() != rvsdg::TypeKind::Value)
       JLM_UNREACHABLE("Expected ValueType for GepOp operation pointee.");
 
     std::vector<rvsdg::Output *> indices;
@@ -815,12 +813,10 @@ MlirToJlmConverter::ConvertOperation(
       }
     }
 
-    auto pointeeValueType = std::dynamic_pointer_cast<const rvsdg::ValueType>(pointeeType);
-
     return { jlm::llvm::GetElementPtrOperation::Create(
         inputs[0],
         indices,
-        pointeeValueType,
+        pointeeType,
         llvm::PointerType::Create()) };
   }
   // * region Structural nodes **
@@ -897,12 +893,11 @@ MlirToJlmConverter::ConvertOperation(
 
     auto mlirOutputType = terminator->getOperand(0).getType();
     auto outputType = ConvertType(mlirOutputType);
-    auto outputValueType = std::dynamic_pointer_cast<const rvsdg::ValueType>(outputType);
     auto linakgeString = mlirDeltaNode.getLinkage().str();
     auto rvsdgDeltaNode = rvsdg::DeltaNode::Create(
         &rvsdgRegion,
         llvm::DeltaOperation::Create(
-            outputValueType,
+            outputType,
             mlirDeltaNode.getName().str(),
             ConvertLinkage(linakgeString),
             mlirDeltaNode.getSection().str(),
@@ -1167,8 +1162,7 @@ MlirToJlmConverter::ConvertType(const ::mlir::Type & type)
   {
     auto mlirElementType = arrayType.getElementType();
     std::shared_ptr<const rvsdg::Type> elementType = ConvertType(mlirElementType);
-    auto elemenValueType = std::dynamic_pointer_cast<const rvsdg::ValueType>(elementType);
-    return llvm::ArrayType::Create(elemenValueType, arrayType.getNumElements());
+    return llvm::ArrayType::Create(elementType, arrayType.getNumElements());
   }
   else if (auto functionType = ::mlir::dyn_cast<::mlir::FunctionType>(type))
   {

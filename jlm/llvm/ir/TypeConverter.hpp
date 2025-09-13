@@ -78,7 +78,7 @@ public:
   static std::shared_ptr<const PointerType>
   ConvertPointerType(const ::llvm::PointerType & pointerType);
 
-  std::shared_ptr<const rvsdg::ValueType>
+  std::shared_ptr<const rvsdg::Type>
   ConvertLlvmType(::llvm::Type & type);
 
   /**

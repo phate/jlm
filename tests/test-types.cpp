@@ -30,6 +30,12 @@ ValueType::ComputeHash() const noexcept
   return typeid(ValueType).hash_code();
 }
 
+rvsdg::TypeKind
+ValueType::Kind() const noexcept
+{
+  return rvsdg::TypeKind::Value;
+}
+
 std::shared_ptr<const ValueType>
 ValueType::Create()
 {
@@ -55,6 +61,12 @@ std::size_t
 StateType::ComputeHash() const noexcept
 {
   return typeid(StateType).hash_code();
+}
+
+rvsdg::TypeKind
+StateType::Kind() const noexcept
+{
+  return rvsdg::TypeKind::State;
 }
 
 std::shared_ptr<const StateType>

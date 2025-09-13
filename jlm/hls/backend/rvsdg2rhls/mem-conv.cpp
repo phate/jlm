@@ -636,7 +636,7 @@ ConnectRequestResponseMemPorts(
     auto channel = decoupleRequest->input(1)->origin();
     auto channelConstant = trace_constant(channel);
     auto reponse = find_decouple_response(lambda, channelConstant);
-    auto vt = std::dynamic_pointer_cast<const rvsdg::ValueType>(reponse->output(0)->Type());
+    auto vt = reponse->output(0)->Type();
     responseTypes.push_back(vt);
   }
   std::vector<rvsdg::SimpleNode *> storeNodes;
@@ -659,7 +659,7 @@ ConnectRequestResponseMemPorts(
       responseTypes,
       portWidth);
   // The (decoupled) load nodes are replaced so the pointer to the types will become invalid
-  std::vector<std::shared_ptr<const rvsdg::ValueType>> loadTypes;
+  std::vector<std::shared_ptr<const rvsdg::Type>> loadTypes;
   std::vector<rvsdg::Output *> loadAddresses;
   for (size_t i = 0; i < loadNodes.size(); ++i)
   {
@@ -670,7 +670,7 @@ ConnectRequestResponseMemPorts(
     auto address =
         route_request_rhls(lambdaRegion, replacement->output(replacement->noutputs() - 1));
     loadAddresses.push_back(address);
-    std::shared_ptr<const rvsdg::ValueType> type;
+    std::shared_ptr<const rvsdg::Type> type;
     if (auto loadOperation = dynamic_cast<const LoadOperation *>(&replacement->GetOperation()))
     {
       type = loadOperation->GetLoadedType();

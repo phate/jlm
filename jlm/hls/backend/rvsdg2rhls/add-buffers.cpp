@@ -121,7 +121,7 @@ OptimizeFork(rvsdg::SimpleNode * node)
     {
       bufferSize = BufferSizeForkControl;
     }
-    else if (rvsdg::is<rvsdg::StateType>(node->input(0)->Type()))
+    else if (node->input(0)->Type()->Kind() == rvsdg::TypeKind::State)
     {
       bufferSize = BufferSizeForkState;
     }
@@ -145,7 +145,7 @@ OptimizeBranch(rvsdg::SimpleNode * node)
     // TODO: this optimization is for long stores with responses. It might be better to do it
     // somewhere else and more selectively (only when there is a store in one of the gamma
     // subregions, and only on outputs that don't go to store)
-    if (rvsdg::is<rvsdg::StateType>(node->input(1)->Type()))
+    if (node->input(1)->Type()->Kind() == rvsdg::TypeKind::State)
     {
       for (size_t i = 0; i < node->noutputs(); ++i)
       {

@@ -348,7 +348,7 @@ IpGraphToLlvmConverter::convert_phi(
 
 ::llvm::Value *
 IpGraphToLlvmConverter::CreateLoadInstruction(
-    const rvsdg::ValueType & loadedType,
+    const rvsdg::Type & loadedType,
     const Variable * address,
     bool isVolatile,
     size_t alignment,
@@ -720,7 +720,7 @@ IpGraphToLlvmConverter::convert_select(
 {
   auto & select = *util::AssertedCast<const SelectOperation>(&op);
 
-  if (rvsdg::is<rvsdg::StateType>(select.type()))
+  if (select.type().Kind() == rvsdg::TypeKind::State)
     return nullptr;
 
   auto c = Context_->value(operands[0]);
@@ -891,7 +891,7 @@ IpGraphToLlvmConverter::convert_cast(
   JLM_ASSERT(::llvm::Instruction::isCast(OPCODE));
   auto & typeConverter = Context_->GetTypeConverter();
   ::llvm::LLVMContext & llvmContext = Context_->llvm_module().getContext();
-  auto dsttype = std::dynamic_pointer_cast<const rvsdg::ValueType>(op.result(0));
+  auto dsttype = op.result(0);
   auto operand = operands[0];
 
   if (const auto vt = dynamic_cast<const FixedVectorType *>(&operand->type()))
@@ -1490,7 +1490,7 @@ has_return_value(const ControlFlowGraph & cfg)
   for (size_t n = 0; n < cfg.exit()->nresults(); n++)
   {
     auto result = cfg.exit()->result(n);
-    if (rvsdg::is<rvsdg::ValueType>(result->type()))
+    if (result->Type()->Kind() == rvsdg::TypeKind::Value)
       return true;
   }
 
@@ -1513,7 +1513,7 @@ IpGraphToLlvmConverter::create_return(const ControlFlowGraphNode * node)
   }
 
   auto result = cfg.exit()->result(0);
-  JLM_ASSERT(rvsdg::is<rvsdg::ValueType>(result->type()));
+  JLM_ASSERT(result->Type()->Kind() == rvsdg::TypeKind::Value);
   builder.CreateRet(Context_->value(result));
 }
 
@@ -1796,7 +1796,7 @@ IpGraphToLlvmConverter::convert_attributes(const FunctionNode & f)
   {
     auto argument = f.cfg()->entry()->argument(n);
 
-    if (rvsdg::is<rvsdg::StateType>(argument->type()))
+    if (argument->type().Kind() == rvsdg::TypeKind::State)
       continue;
 
     argsets.push_back(convert_attributes(argument->attributes()));

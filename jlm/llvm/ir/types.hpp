@@ -21,7 +21,7 @@ namespace jlm::llvm
  *
  * This operator is the Jlm equivalent of LLVM's PointerType class.
  */
-class PointerType final : public jlm::rvsdg::ValueType
+class PointerType final : public jlm::rvsdg::Type
 {
 public:
   ~PointerType() noexcept override;
@@ -37,16 +37,19 @@ public:
   [[nodiscard]] std::size_t
   ComputeHash() const noexcept override;
 
+  rvsdg::TypeKind
+  Kind() const noexcept override;
+
   static std::shared_ptr<const PointerType>
   Create();
 };
 
-class ArrayType final : public rvsdg::ValueType
+class ArrayType final : public rvsdg::Type
 {
 public:
   ~ArrayType() noexcept override;
 
-  ArrayType(std::shared_ptr<const ValueType> type, size_t nelements)
+  ArrayType(std::shared_ptr<const Type> type, size_t nelements)
       : nelements_(nelements),
         type_(std::move(type))
   {}
@@ -70,33 +73,36 @@ public:
   [[nodiscard]] std::size_t
   ComputeHash() const noexcept override;
 
+  rvsdg::TypeKind
+  Kind() const noexcept override;
+
   inline size_t
   nelements() const noexcept
   {
     return nelements_;
   }
 
-  [[nodiscard]] const rvsdg::ValueType &
+  [[nodiscard]] const rvsdg::Type &
   element_type() const noexcept
   {
     return *type_;
   }
 
-  [[nodiscard]] const std::shared_ptr<const rvsdg::ValueType> &
+  [[nodiscard]] const std::shared_ptr<const rvsdg::Type> &
   GetElementType() const noexcept
   {
     return type_;
   }
 
   static std::shared_ptr<const ArrayType>
-  Create(std::shared_ptr<const ValueType> type, size_t nelements)
+  Create(std::shared_ptr<const Type> type, size_t nelements)
   {
     return std::make_shared<ArrayType>(std::move(type), nelements);
   }
 
 private:
   size_t nelements_;
-  std::shared_ptr<const rvsdg::ValueType> type_;
+  std::shared_ptr<const rvsdg::Type> type_;
 };
 
 /* floating point type */
@@ -110,7 +116,7 @@ enum class fpsize
   fp128
 };
 
-class FloatingPointType final : public rvsdg::ValueType
+class FloatingPointType final : public rvsdg::Type
 {
 public:
   ~FloatingPointType() noexcept override;
@@ -128,6 +134,9 @@ public:
   [[nodiscard]] std::size_t
   ComputeHash() const noexcept override;
 
+  rvsdg::TypeKind
+  Kind() const noexcept override;
+
   inline const fpsize &
   size() const noexcept
   {
@@ -141,7 +150,7 @@ private:
   fpsize size_;
 };
 
-class VariableArgumentType final : public rvsdg::StateType
+class VariableArgumentType final : public rvsdg::Type
 {
 public:
   ~VariableArgumentType() noexcept override;
@@ -154,6 +163,9 @@ public:
   [[nodiscard]] std::size_t
   ComputeHash() const noexcept override;
 
+  rvsdg::TypeKind
+  Kind() const noexcept override;
+
   [[nodiscard]] std::string
   debug_string() const override;
 
@@ -165,7 +177,7 @@ public:
  *
  * This class is the equivalent of LLVM's StructType class.
  */
-class StructType final : public rvsdg::ValueType
+class StructType final : public rvsdg::Type
 {
 public:
   class Declaration;
@@ -173,13 +185,13 @@ public:
   ~StructType() override;
 
   StructType(bool isPacked, const Declaration & declaration)
-      : rvsdg::ValueType(),
+      : rvsdg::Type(),
         IsPacked_(isPacked),
         Declaration_(declaration)
   {}
 
   StructType(std::string name, bool isPacked, const Declaration & declaration)
-      : rvsdg::ValueType(),
+      : rvsdg::Type(),
         IsPacked_(isPacked),
         Name_(std::move(name)),
         Declaration_(declaration)
@@ -200,6 +212,9 @@ public:
 
   [[nodiscard]] std::size_t
   ComputeHash() const noexcept override;
+
+  rvsdg::TypeKind
+  Kind() const noexcept override;
 
   [[nodiscard]] std::string
   debug_string() const override;
@@ -278,24 +293,22 @@ public:
     return Types_.size();
   }
 
-  [[nodiscard]] const ValueType &
+  [[nodiscard]] const Type &
   GetElement(size_t index) const noexcept
   {
     JLM_ASSERT(index < NumElements());
-    return *util::AssertedCast<const ValueType>(Types_[index].get());
+    return *Types_[index].get();
   }
 
-  [[nodiscard]] std::shared_ptr<const ValueType>
+  [[nodiscard]] std::shared_ptr<const Type>
   GetElementType(size_t index) const noexcept
   {
     JLM_ASSERT(index < NumElements());
-    auto type = std::dynamic_pointer_cast<const ValueType>(Types_[index]);
-    JLM_ASSERT(type);
-    return type;
+    return Types_[index];
   }
 
   void
-  Append(std::shared_ptr<const ValueType> type)
+  Append(std::shared_ptr<const Type> type)
   {
     Types_.push_back(std::move(type));
   }
@@ -316,10 +329,10 @@ private:
   std::vector<std::shared_ptr<const rvsdg::Type>> Types_;
 };
 
-class VectorType : public rvsdg::ValueType
+class VectorType : public rvsdg::Type
 {
 public:
-  VectorType(std::shared_ptr<const ValueType> type, size_t size)
+  VectorType(std::shared_ptr<const Type> type, size_t size)
       : size_(size),
         type_(std::move(type))
   {}
@@ -337,19 +350,22 @@ public:
   bool
   operator==(const jlm::rvsdg::Type & other) const noexcept override;
 
+  rvsdg::TypeKind
+  Kind() const noexcept override;
+
   size_t
   size() const noexcept
   {
     return size_;
   }
 
-  [[nodiscard]] const rvsdg::ValueType &
+  [[nodiscard]] const rvsdg::Type &
   type() const noexcept
   {
     return *type_;
   }
 
-  [[nodiscard]] const std::shared_ptr<const rvsdg::ValueType> &
+  [[nodiscard]] const std::shared_ptr<const rvsdg::Type> &
   Type() const noexcept
   {
     return type_;
@@ -357,7 +373,7 @@ public:
 
 private:
   size_t size_;
-  std::shared_ptr<const rvsdg::ValueType> type_;
+  std::shared_ptr<const rvsdg::Type> type_;
 };
 
 class FixedVectorType final : public VectorType
@@ -365,7 +381,7 @@ class FixedVectorType final : public VectorType
 public:
   ~FixedVectorType() noexcept override;
 
-  FixedVectorType(std::shared_ptr<const ValueType> type, size_t size)
+  FixedVectorType(std::shared_ptr<const rvsdg::Type> type, size_t size)
       : VectorType(std::move(type), size)
   {}
 
@@ -379,7 +395,7 @@ public:
   debug_string() const override;
 
   static std::shared_ptr<const FixedVectorType>
-  Create(std::shared_ptr<const rvsdg::ValueType> type, size_t size)
+  Create(std::shared_ptr<const rvsdg::Type> type, size_t size)
   {
     return std::make_shared<FixedVectorType>(std::move(type), size);
   }
@@ -390,7 +406,7 @@ class ScalableVectorType final : public VectorType
 public:
   ~ScalableVectorType() noexcept override;
 
-  ScalableVectorType(std::shared_ptr<const ValueType> type, size_t size)
+  ScalableVectorType(std::shared_ptr<const rvsdg::Type> type, size_t size)
       : VectorType(std::move(type), size)
   {}
 
@@ -404,7 +420,7 @@ public:
   debug_string() const override;
 
   static std::shared_ptr<const ScalableVectorType>
-  Create(std::shared_ptr<const rvsdg::ValueType> type, size_t size)
+  Create(std::shared_ptr<const rvsdg::Type> type, size_t size)
   {
     return std::make_shared<ScalableVectorType>(std::move(type), size);
   }
@@ -414,7 +430,7 @@ public:
  *
  * This type is used for state edges that sequentialize input/output operations.
  */
-class IOStateType final : public rvsdg::StateType
+class IOStateType final : public rvsdg::Type
 {
 public:
   ~IOStateType() noexcept override;
@@ -430,6 +446,9 @@ public:
   [[nodiscard]] std::string
   debug_string() const override;
 
+  rvsdg::TypeKind
+  Kind() const noexcept override;
+
   static std::shared_ptr<const IOStateType>
   Create();
 };
@@ -439,7 +458,7 @@ public:
  * Represents the type of abstract memory locations and is used in state edges for sequentialiazing
  * memory operations, such as load and store operations.
  */
-class MemoryStateType final : public rvsdg::StateType
+class MemoryStateType final : public rvsdg::Type
 {
 public:
   ~MemoryStateType() noexcept override;
@@ -454,6 +473,9 @@ public:
 
   [[nodiscard]] std::size_t
   ComputeHash() const noexcept override;
+
+  rvsdg::TypeKind
+  Kind() const noexcept override;
 
   static std::shared_ptr<const MemoryStateType>
   Create();
@@ -505,7 +527,7 @@ IsAggregateType(const jlm::rvsdg::Type & type)
  * @return the byte size of the type
  */
 [[nodiscard]] size_t
-GetTypeSize(const rvsdg::ValueType & type);
+GetTypeSize(const rvsdg::Type & type);
 
 /**
  * Returns the natural alignment of the given type, in bytes.
@@ -516,7 +538,7 @@ GetTypeSize(const rvsdg::ValueType & type);
  * @return the byte alignment of the type
  */
 [[nodiscard]] size_t
-GetTypeAlignment(const rvsdg::ValueType & type);
+GetTypeAlignment(const rvsdg::Type & type);
 
 }
 

@@ -13,6 +13,30 @@
 namespace jlm::rvsdg
 {
 
+/**
+ * \brief The kinds of types supported in rvsdg
+ *
+ * Note: there might be reasons to make this extensible eventually.
+ */
+enum class TypeKind
+{
+  /**
+   * \brief Designate a value type
+   *
+   * Value types represent things that can be created, copied and
+   * destroyed at will.
+   */
+  Value,
+  /**
+   * \brief Designate a state type
+   *
+   * State types represent things that exist in mutable form.
+   * They cannot be copied, but objects of this kind must
+   * be used linearly.
+   */
+  State
+};
+
 class Type
 {
 public:
@@ -42,28 +66,12 @@ public:
    */
   [[nodiscard]] virtual std::size_t
   ComputeHash() const noexcept = 0;
-};
 
-class ValueType : public Type
-{
-public:
-  ~ValueType() noexcept override;
-
-protected:
-  constexpr ValueType() noexcept
-      : jlm::rvsdg::Type()
-  {}
-};
-
-class StateType : public Type
-{
-public:
-  ~StateType() noexcept override;
-
-protected:
-  constexpr StateType() noexcept
-      : Type()
-  {}
+  /**
+   * \brief Return the kind of this type
+   */
+  virtual TypeKind
+  Kind() const noexcept = 0;
 };
 
 template<class T>

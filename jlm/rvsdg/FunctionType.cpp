@@ -17,7 +17,7 @@ FunctionType::~FunctionType() noexcept = default;
 FunctionType::FunctionType(
     std::vector<std::shared_ptr<const jlm::rvsdg::Type>> argumentTypes,
     std::vector<std::shared_ptr<const jlm::rvsdg::Type>> resultTypes)
-    : jlm::rvsdg::ValueType(),
+    : jlm::rvsdg::Type(),
       ArgumentTypes_(std::move(argumentTypes)),
       ResultTypes_(std::move(resultTypes))
 {}
@@ -103,6 +103,12 @@ FunctionType::ComputeHash() const noexcept
   }
 
   return seed;
+}
+
+TypeKind
+FunctionType::Kind() const noexcept
+{
+  return TypeKind::Value;
 }
 
 std::shared_ptr<const FunctionType>

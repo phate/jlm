@@ -62,6 +62,12 @@ TriggerType::ComputeHash() const noexcept
   return typeid(TriggerType).hash_code();
 }
 
+rvsdg::TypeKind
+TriggerType::Kind() const noexcept
+{
+  return rvsdg::TypeKind::State;
+}
+
 std::shared_ptr<const TriggerType>
 TriggerType::Create()
 {
@@ -80,6 +86,12 @@ BundleType::ComputeHash() const noexcept
   }
 
   return seed;
+}
+
+rvsdg::TypeKind
+BundleType::Kind() const noexcept
+{
+  return rvsdg::TypeKind::Value;
 }
 
 EntryArgument::~EntryArgument() noexcept = default;
@@ -248,7 +260,7 @@ LoopNode::set_predicate(jlm::rvsdg::Output * p)
 }
 
 std::shared_ptr<const BundleType>
-get_mem_req_type(std::shared_ptr<const rvsdg::ValueType> elementType, bool write)
+get_mem_req_type(std::shared_ptr<const rvsdg::Type> elementType, bool write)
 {
   std::vector<std::pair<std::string, std::shared_ptr<const jlm::rvsdg::Type>>> elements;
   elements.emplace_back("addr", llvm::PointerType::Create());
@@ -263,7 +275,7 @@ get_mem_req_type(std::shared_ptr<const rvsdg::ValueType> elementType, bool write
 }
 
 std::shared_ptr<const BundleType>
-get_mem_res_type(std::shared_ptr<const jlm::rvsdg::ValueType> dataType)
+get_mem_res_type(std::shared_ptr<const jlm::rvsdg::Type> dataType)
 {
   std::vector<std::pair<std::string, std::shared_ptr<const jlm::rvsdg::Type>>> elements;
   elements.emplace_back("data", std::move(dataType));
@@ -294,7 +306,7 @@ JlmSize(const jlm::rvsdg::Type * type)
   {
     return ceil(log2(ct->nalternatives()));
   }
-  else if (dynamic_cast<const rvsdg::StateType *>(type))
+  else if (type->Kind() == rvsdg::TypeKind::State)
   {
     return 1;
   }

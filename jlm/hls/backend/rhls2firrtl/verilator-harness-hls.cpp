@@ -69,7 +69,7 @@ GetReturnTypeAsC(const rvsdg::LambdaNode & kernel)
 
   const auto & type = results.front();
 
-  if (rvsdg::is<rvsdg::StateType>(type))
+  if (type->Kind() == rvsdg::TypeKind::State)
     return std::nullopt;
 
   return ConvertToCType(type.get());
@@ -92,7 +92,7 @@ GetParameterListAsC(const rvsdg::LambdaNode & kernel)
 
   for (auto & argType : kernel.GetOperation().type().Arguments())
   {
-    if (rvsdg::is<rvsdg::StateType>(argType))
+    if (argType->Kind() == rvsdg::TypeKind::State)
       continue;
     if (rvsdg::is<BundleType>(argType))
       continue;
@@ -423,7 +423,7 @@ static void verilator_init(int argc, char **argv) {
   for (size_t i = 0; i < first_ctx_var; i++)
   {
     // don't generate ports for state edges
-    if (rvsdg::is<rvsdg::StateType>(reg_args[i]->Type()))
+    if (reg_args[i]->Type()->Kind() == rvsdg::TypeKind::State)
       continue;
     cpp << "    top->i_data_" << i << " = 0;" << std::endl;
   }

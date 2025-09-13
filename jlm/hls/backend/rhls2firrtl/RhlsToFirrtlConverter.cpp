@@ -749,7 +749,7 @@ RhlsToFirrtlConverter::MlirGenHlsMemResp(const jlm::rvsdg::SimpleNode * node)
     auto elseBody = body;
     for (size_t i = 0; i < node->noutputs(); ++i)
     {
-      bool isStore = rvsdg::is<rvsdg::StateType>(node->output(i)->Type());
+      bool isStore = node->output(i)->Type()->Kind() == rvsdg::TypeKind::State;
       auto outBundle = GetOutPort(module, i);
       auto outValid = GetSubfield(elseBody, outBundle, "valid");
       auto outReady = GetSubfield(elseBody, outBundle, "ready");
@@ -2766,7 +2766,7 @@ RhlsToFirrtlConverter::MlirGen(const rvsdg::LambdaNode * lambdaNode)
   for (size_t i = 0; i < reg_args.size(); ++i)
   {
     // don't generate ports for state edges
-    if (rvsdg::is<rvsdg::StateType>(reg_args[i]->Type()))
+    if (reg_args[i]->Type()->Kind() == rvsdg::TypeKind::State)
       continue;
     std::string portName("data_");
     portName.append(std::to_string(i));
@@ -2789,7 +2789,7 @@ RhlsToFirrtlConverter::MlirGen(const rvsdg::LambdaNode * lambdaNode)
   for (size_t i = 0; i < reg_results.size(); ++i)
   {
     // don't generate ports for state edges
-    if (rvsdg::is<rvsdg::StateType>(reg_results[i]->Type()))
+    if (reg_results[i]->Type()->Kind() == rvsdg::TypeKind::State)
       continue;
     std::string portName("data_");
     portName.append(std::to_string(i));
@@ -3014,7 +3014,7 @@ RhlsToFirrtlConverter::MlirGen(const rvsdg::LambdaNode * lambdaNode)
   for (size_t i = 0; i < outputDataRegs.size(); i++)
   {
     // don't generate ports for state edges
-    if (rvsdg::is<rvsdg::StateType>(reg_results[i]->Type()))
+    if (reg_results[i]->Type()->Kind() == rvsdg::TypeKind::State)
       continue;
     auto outData = GetSubfield(body, outBundle, "data_" + std::to_string(i));
     Connect(body, outData, outputDataRegs[i].getResult());
@@ -3034,7 +3034,7 @@ RhlsToFirrtlConverter::MlirGen(const rvsdg::LambdaNode * lambdaNode)
     {
       Connect(thenBody, inputValidRegs[i].getResult(), oneBitValue);
       // don't generate ports for state edges
-      if (rvsdg::is<rvsdg::StateType>(reg_args[i]->Type()))
+      if (reg_args[i]->Type()->Kind() == rvsdg::TypeKind::State)
         continue;
       auto inData = GetSubfield(thenBody, inBundle, "data_" + std::to_string(i));
       Connect(thenBody, inputDataRegs[i].getResult(), inData);
