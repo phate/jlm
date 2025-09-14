@@ -324,7 +324,7 @@ LoopUnswitching::HandleRegion(rvsdg::Region & region)
     }
   }
 
-  // If we successfully unswitched a loop, ensure the old (loop) nodes are pruned.
+  // If we successfully unswitched a loop, ensure the old nodes are pruned.
   if (unswitchedLoop)
   {
     region.prune(false);
