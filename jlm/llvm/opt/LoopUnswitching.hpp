@@ -8,6 +8,13 @@
 
 #include <jlm/rvsdg/Transformation.hpp>
 
+namespace jlm::rvsdg
+{
+class GammaNode;
+class Region;
+class ThetaNode;
+}
+
 namespace jlm::llvm
 {
 
@@ -26,10 +33,23 @@ public:
   {}
 
   void
-  Run(rvsdg::RvsdgModule & module, util::StatisticsCollector & statisticsCollector) override;
+  Run(rvsdg::RvsdgModule & rvsdgModule, util::StatisticsCollector & statisticsCollector) override;
 
   static void
   CreateAndRun(rvsdg::RvsdgModule & rvsdgModule, util::StatisticsCollector & statisticsCollector);
+
+private:
+  static void
+  HandleRegion(rvsdg::Region & region);
+
+  static bool
+  UnswitchLoop(rvsdg::ThetaNode & thetaNode);
+
+  static rvsdg::GammaNode *
+  IsUnswitchable(const rvsdg::ThetaNode & thetaNode);
+
+  static void
+  SinkNodesIntoGamma(rvsdg::GammaNode & gammaNode, const rvsdg::ThetaNode & thetaNode);
 };
 
 }
