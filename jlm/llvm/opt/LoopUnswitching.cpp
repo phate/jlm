@@ -48,38 +48,41 @@ public:
   }
 };
 
-static rvsdg::GammaNode *
-is_applicable(const rvsdg::ThetaNode * theta)
+rvsdg::GammaNode *
+LoopUnswitching::IsUnswitchable(const rvsdg::ThetaNode & theta)
 {
-  auto matchNode = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*theta->predicate()->origin());
-  if (!jlm::rvsdg::is<rvsdg::MatchOperation>(matchNode))
+  auto [matchNode, matchOperation] =
+      rvsdg::TryGetSimpleNodeAndOptionalOp<rvsdg::MatchOperation>(*theta.predicate()->origin());
+  if (!matchOperation)
     return nullptr;
 
+  // The output of the match node should only be connected to the theta and gamma node
   if (matchNode->output(0)->nusers() != 2)
     return nullptr;
 
-  rvsdg::GammaNode * gnode = nullptr;
+  rvsdg::GammaNode * gammaNode = nullptr;
   for (const auto & user : matchNode->output(0)->Users())
   {
-    if (&user == theta->predicate())
+    if (&user == theta.predicate())
       continue;
 
-    gnode = rvsdg::TryGetOwnerNode<rvsdg::GammaNode>(user);
-    if (!gnode)
+    gammaNode = rvsdg::TryGetOwnerNode<rvsdg::GammaNode>(user);
+    if (!gammaNode)
       return nullptr;
   }
-  // only apply tgi if theta is a converted for loop - i.e. everything but the predicate is
-  // contained in the gamma
-  for (auto & lv : theta->GetLoopVars())
+
+  // Only apply loop unswitching if the theta node is a converted for loop, i.e., everything but the
+  // predicate is contained in the gamma
+  for (const auto & loopVar : theta.GetLoopVars())
   {
-    auto origin = lv.post->origin();
-    if (dynamic_cast<rvsdg::RegionArgument *>(origin))
+    const auto origin = loopVar.post->origin();
+    if (rvsdg::TryGetRegionParentNode<rvsdg::ThetaNode>(*origin))
     {
-      // origin is a theta argument
+      // origin is a theta subregion argument
     }
-    else if (rvsdg::TryGetOwnerNode<rvsdg::GammaNode>(*origin) == gnode)
+    else if (rvsdg::TryGetOwnerNode<rvsdg::GammaNode>(*origin) == gammaNode)
     {
-      // origin is gnode
+      // origin is an output of gamma node
     }
     else
     {
@@ -88,37 +91,42 @@ is_applicable(const rvsdg::ThetaNode * theta)
     }
   }
 
-  return gnode;
+  return gammaNode;
 }
 
-static void
-pullin(rvsdg::GammaNode * gamma, rvsdg::ThetaNode * theta)
+void
+LoopUnswitching::SinkNodesIntoGamma(
+    rvsdg::GammaNode & gammaNode,
+    const rvsdg::ThetaNode & thetaNode)
 {
-  pullin_bottom(gamma);
-  for (const auto & lv : theta->GetLoopVars())
+  pullin_bottom(&gammaNode);
+
+  // Ensure all loop variables are routed through the gamma node
+  for (const auto & loopVar : thetaNode.GetLoopVars())
   {
-    if (rvsdg::TryGetOwnerNode<rvsdg::Node>(*lv.post->origin()) != gamma)
+    if (rvsdg::TryGetOwnerNode<rvsdg::Node>(*loopVar.post->origin()) != &gammaNode)
     {
-      auto ev = gamma->AddEntryVar(lv.post->origin());
-      JLM_ASSERT(ev.branchArgument.size() == 2);
-      auto xv = gamma->AddExitVar({ ev.branchArgument[0], ev.branchArgument[1] }).output;
-      lv.post->divert_to(xv);
+      auto [input, branchArgument] = gammaNode.AddEntryVar(loopVar.post->origin());
+      JLM_ASSERT(branchArgument.size() == 2);
+      auto [_, output] = gammaNode.AddExitVar({ branchArgument[0], branchArgument[1] });
+      loopVar.post->divert_to(output);
     }
   }
-  pullin_top(gamma);
+
+  pullin_top(&gammaNode);
 }
 
-static std::vector<std::vector<rvsdg::Node *>>
-collect_condition_nodes(rvsdg::StructuralNode * tnode, jlm::rvsdg::StructuralNode * gnode)
+std::vector<std::vector<rvsdg::Node *>>
+LoopUnswitching::CollectPredicateNodes(
+    const rvsdg::ThetaNode & thetaNode,
+    const rvsdg::GammaNode & gammaNode)
 {
-  JLM_ASSERT(dynamic_cast<const rvsdg::ThetaNode *>(tnode));
-  JLM_ASSERT(dynamic_cast<const rvsdg::GammaNode *>(gnode));
-  JLM_ASSERT(gnode->region()->node() == tnode);
+  JLM_ASSERT(gammaNode.region()->node() == &thetaNode);
 
   std::vector<std::vector<rvsdg::Node *>> nodes;
-  for (auto & node : tnode->subregion(0)->Nodes())
+  for (auto & node : thetaNode.subregion()->Nodes())
   {
-    if (&node == gnode)
+    if (&node == &gammaNode)
       continue;
 
     if (node.depth() >= nodes.size())
@@ -129,215 +137,214 @@ collect_condition_nodes(rvsdg::StructuralNode * tnode, jlm::rvsdg::StructuralNod
   return nodes;
 }
 
-static void
-copy_condition_nodes(
-    rvsdg::Region * target,
-    rvsdg::SubstitutionMap & smap,
+void
+LoopUnswitching::CopyPredicateNodes(
+    rvsdg::Region & target,
+    rvsdg::SubstitutionMap & substitutionMap,
     const std::vector<std::vector<rvsdg::Node *>> & nodes)
 {
-  for (size_t n = 0; n < nodes.size(); n++)
+  for (auto & sameDepthNodes : nodes)
   {
-    for (const auto & node : nodes[n])
-      node->copy(target, smap);
+    for (const auto & node : sameDepthNodes)
+      node->copy(&target, substitutionMap);
   }
 }
 
-static jlm::rvsdg::StructuralOutput *
-to_structural_output(jlm::rvsdg::Output * output)
+bool
+LoopUnswitching::UnswitchLoop(rvsdg::ThetaNode & oldThetaNode)
 {
-  return dynamic_cast<rvsdg::StructuralOutput *>(output);
-}
+  auto oldGammaNode = IsUnswitchable(oldThetaNode);
+  if (!oldGammaNode)
+    return false;
 
-static rvsdg::RegionArgument *
-to_argument(jlm::rvsdg::Output * output)
-{
-  return dynamic_cast<rvsdg::RegionArgument *>(output);
-}
+  SinkNodesIntoGamma(*oldGammaNode, oldThetaNode);
 
-static void
-invert(rvsdg::ThetaNode * otheta)
-{
-  auto ogamma = is_applicable(otheta);
-  if (!ogamma)
-    return;
+  // Copy condition nodes for new gamma node
+  rvsdg::SubstitutionMap substitutionMap;
+  auto conditionNodes = CollectPredicateNodes(oldThetaNode, *oldGammaNode);
+  for (const auto & oldLoopVar : oldThetaNode.GetLoopVars())
+    substitutionMap.insert(oldLoopVar.pre, oldLoopVar.input->origin());
+  CopyPredicateNodes(*oldThetaNode.region(), substitutionMap, conditionNodes);
 
-  pullin(ogamma, otheta);
+  auto newGammaNode = rvsdg::GammaNode::create(
+      substitutionMap.lookup(oldGammaNode->predicate()->origin()),
+      oldGammaNode->nsubregions());
 
-  /* copy condition nodes for new gamma node */
-  rvsdg::SubstitutionMap smap;
-  auto cnodes = collect_condition_nodes(otheta, ogamma);
-  for (const auto & olv : otheta->GetLoopVars())
-    smap.insert(olv.pre, olv.input->origin());
-  copy_condition_nodes(otheta->region(), smap, cnodes);
-
-  auto ngamma =
-      rvsdg::GammaNode::create(smap.lookup(ogamma->predicate()->origin()), ogamma->nsubregions());
-
-  /* handle subregion 0 */
-  rvsdg::SubstitutionMap r0map;
+  // Handle subregion 0
+  rvsdg::SubstitutionMap subregion0Map;
   {
-    /* setup substitution map for exit region copying */
-    auto osubregion0 = ogamma->subregion(0);
-    for (const auto & oev : ogamma->GetEntryVars())
+    // Setup substitution map for exit region copying
+    auto oldSubregion0 = oldGammaNode->subregion(0);
+    for (const auto & [oldInput, oldBranchArgument] : oldGammaNode->GetEntryVars())
     {
-      if (auto argument = to_argument(oev.input->origin()))
+      if (rvsdg::TryGetRegionParentNode<rvsdg::ThetaNode>(*oldInput->origin()))
       {
-        auto nev = ngamma->AddEntryVar(argument->input()->origin());
-        r0map.insert(oev.branchArgument[0], nev.branchArgument[0]);
+        auto oldLoopVar = oldThetaNode.MapPreLoopVar(*oldInput->origin());
+        auto [_, branchArgument] = newGammaNode->AddEntryVar(oldLoopVar.input->origin());
+        subregion0Map.insert(oldBranchArgument[0], branchArgument[0]);
       }
       else
       {
-        auto substitute = smap.lookup(oev.input->origin());
-        auto nev = ngamma->AddEntryVar(substitute);
-        r0map.insert(oev.branchArgument[0], nev.branchArgument[0]);
+        auto substitute = substitutionMap.lookup(oldInput->origin());
+        auto [_, branchArgument] = newGammaNode->AddEntryVar(substitute);
+        subregion0Map.insert(oldBranchArgument[0], branchArgument[0]);
       }
     }
 
-    /* copy exit region */
-    osubregion0->copy(ngamma->subregion(0), r0map, false, false);
+    // Copy exit region
+    oldSubregion0->copy(newGammaNode->subregion(0), subregion0Map, false, false);
 
-    /* update substitution map for insertion of exit variables */
-    for (const auto & olv : otheta->GetLoopVars())
+    // Update substitution map for insertion of exit variables
+    for (const auto & oldLoopVar : oldThetaNode.GetLoopVars())
     {
-      auto output = to_structural_output(olv.post->origin());
-      auto substitute = r0map.lookup(osubregion0->result(output->index())->origin());
-      r0map.insert(olv.post->origin(), substitute);
+      auto output = oldLoopVar.post->origin();
+      auto substitute = subregion0Map.lookup(oldSubregion0->result(output->index())->origin());
+      subregion0Map.insert(oldLoopVar.post->origin(), substitute);
     }
   }
 
-  /* handle subregion 1 */
-  rvsdg::SubstitutionMap r1map;
+  // Handle subregion 1
+  rvsdg::SubstitutionMap subregion1Map;
   {
-    auto ntheta = rvsdg::ThetaNode::create(ngamma->subregion(1));
+    auto newThetaNode = rvsdg::ThetaNode::create(newGammaNode->subregion(1));
 
-    /* add loop variables to new theta node and setup substitution map */
-    auto osubregion0 = ogamma->subregion(0);
-    auto osubregion1 = ogamma->subregion(1);
-    std::unordered_map<jlm::rvsdg::Input *, rvsdg::ThetaNode::LoopVar> nlvs;
-    for (const auto & olv : otheta->GetLoopVars())
+    // Add loop variables to new theta node and setup substitution map
+    auto oldSubregion0 = oldGammaNode->subregion(0);
+    auto oldSubregion1 = oldGammaNode->subregion(1);
+
+    std::unordered_map<rvsdg::Input *, rvsdg::ThetaNode::LoopVar> newLoopVars;
+    for (const auto & oldLoopVar : oldThetaNode.GetLoopVars())
     {
-      auto ev = ngamma->AddEntryVar(olv.input->origin());
-      auto nlv = ntheta->AddLoopVar(ev.branchArgument[1]);
-      r1map.insert(olv.pre, nlv.pre);
-      nlvs[olv.input] = nlv;
+      auto [_, branchArgument] = newGammaNode->AddEntryVar(oldLoopVar.input->origin());
+      auto newLoopVar = newThetaNode->AddLoopVar(branchArgument[1]);
+      subregion1Map.insert(oldLoopVar.pre, newLoopVar.pre);
+      newLoopVars[oldLoopVar.input] = newLoopVar;
     }
-    for (const auto & oev : ogamma->GetEntryVars())
+    for (const auto & [oldInput, oldBranchArgument] : oldGammaNode->GetEntryVars())
     {
-      if (auto argument = to_argument(oev.input->origin()))
+      if (rvsdg::TryGetRegionParentNode<rvsdg::ThetaNode>(*oldInput->origin()))
       {
-        r1map.insert(oev.branchArgument[1], nlvs[argument->input()].pre);
+        auto oldLoopVar = oldThetaNode.MapPreLoopVar(*oldInput->origin());
+        subregion1Map.insert(oldBranchArgument[1], newLoopVars[oldLoopVar.input].pre);
       }
       else
       {
-        auto ev = ngamma->AddEntryVar(smap.lookup(oev.input->origin()));
-        auto nlv = ntheta->AddLoopVar(ev.branchArgument[1]);
-        r1map.insert(oev.branchArgument[1], nlv.pre);
-        nlvs[oev.input] = nlv;
+        auto [_, newBranchArgument] =
+            newGammaNode->AddEntryVar(substitutionMap.lookup(oldInput->origin()));
+        auto newLoopVar = newThetaNode->AddLoopVar(newBranchArgument[1]);
+        subregion1Map.insert(oldBranchArgument[1], newLoopVar.pre);
+        newLoopVars[oldInput] = newLoopVar;
       }
     }
 
-    /* copy repetition region  */
-    osubregion1->copy(ntheta->subregion(), r1map, false, false);
+    // Copy repetition region
+    oldSubregion1->copy(newThetaNode->subregion(), subregion1Map, false, false);
 
-    /* adjust values in substitution map for condition node copying */
-    for (const auto & olv : otheta->GetLoopVars())
+    // Adjust values in substitution map for condition node copying
+    for (const auto & oldLopVar : oldThetaNode.GetLoopVars())
     {
-      auto output = to_structural_output(olv.post->origin());
-      auto substitute = r1map.lookup(osubregion1->result(output->index())->origin());
-      r1map.insert(olv.pre, substitute);
+      auto output = oldLopVar.post->origin();
+      auto substitute = subregion1Map.lookup(oldSubregion1->result(output->index())->origin());
+      subregion1Map.insert(oldLopVar.pre, substitute);
     }
 
-    /* copy condition nodes */
-    copy_condition_nodes(ntheta->subregion(), r1map, cnodes);
-    auto predicate = r1map.lookup(ogamma->predicate()->origin());
+    // Copy condition nodes
+    CopyPredicateNodes(*newThetaNode->subregion(), subregion1Map, conditionNodes);
+    auto predicate = subregion1Map.lookup(oldGammaNode->predicate()->origin());
 
-    /* redirect results of loop variables and adjust substitution map for exit region copying */
-    for (const auto & olv : otheta->GetLoopVars())
+    // Redirect results of loop variables and adjust substitution map for exit region copying
+    for (const auto & oldLoopVar : oldThetaNode.GetLoopVars())
     {
-      auto output = to_structural_output(olv.post->origin());
-      auto substitute = r1map.lookup(osubregion1->result(output->index())->origin());
-      nlvs[olv.input].post->divert_to(substitute);
-      r1map.insert(olv.post->origin(), nlvs[olv.input].output);
+      auto output = oldLoopVar.post->origin();
+      auto substitute = subregion1Map.lookup(oldSubregion1->result(output->index())->origin());
+      newLoopVars[oldLoopVar.input].post->divert_to(substitute);
+      subregion1Map.insert(oldLoopVar.post->origin(), newLoopVars[oldLoopVar.input].output);
     }
-    for (const auto & oev : ogamma->GetEntryVars())
+    for (const auto & [input, branchArgument] : oldGammaNode->GetEntryVars())
     {
-      if (auto argument = to_argument(oev.input->origin()))
+      if (rvsdg::TryGetRegionParentNode<rvsdg::ThetaNode>(*input->origin()))
       {
-        r1map.insert(oev.branchArgument[0], nlvs[argument->input()].output);
+        auto oldLoopVar = oldThetaNode.MapPreLoopVar(*input->origin());
+        subregion1Map.insert(branchArgument[0], newLoopVars[oldLoopVar.input].output);
       }
       else
       {
-        auto substitute = r1map.lookup(oev.input->origin());
-        nlvs[oev.input].post->divert_to(substitute);
-        r1map.insert(oev.branchArgument[0], nlvs[oev.input].output);
+        auto substitute = subregion1Map.lookup(input->origin());
+        newLoopVars[input].post->divert_to(substitute);
+        subregion1Map.insert(branchArgument[0], newLoopVars[input].output);
       }
     }
 
-    ntheta->set_predicate(predicate);
+    newThetaNode->set_predicate(predicate);
 
-    /* copy exit region */
-    osubregion0->copy(ngamma->subregion(1), r1map, false, false);
+    // Copy exit region
+    oldSubregion0->copy(newGammaNode->subregion(1), subregion1Map, false, false);
 
-    /* adjust values in substitution map for exit variable creation */
-    for (const auto & olv : otheta->GetLoopVars())
+    // Adjust values in substitution map for exit variable creation
+    for (const auto & oldLoopVar : oldThetaNode.GetLoopVars())
     {
-      auto output = to_structural_output(olv.post->origin());
-      auto substitute = r1map.lookup(osubregion0->result(output->index())->origin());
-      r1map.insert(olv.post->origin(), substitute);
+      auto output = oldLoopVar.post->origin();
+      auto substitute = subregion1Map.lookup(oldSubregion0->result(output->index())->origin());
+      subregion1Map.insert(oldLoopVar.post->origin(), substitute);
     }
   }
 
-  /* add exit variables to new gamma */
-  for (const auto & olv : otheta->GetLoopVars())
+  // Add exit variables to new gamma
+  for (const auto & oldLoopVar : oldThetaNode.GetLoopVars())
   {
-    auto o0 = r0map.lookup(olv.post->origin());
-    auto o1 = r1map.lookup(olv.post->origin());
-    auto ex = ngamma->AddExitVar({ o0, o1 });
-    smap.insert(olv.output, ex.output);
+    auto o0 = subregion0Map.lookup(oldLoopVar.post->origin());
+    auto o1 = subregion1Map.lookup(oldLoopVar.post->origin());
+    auto [_, output] = newGammaNode->AddExitVar({ o0, o1 });
+    substitutionMap.insert(oldLoopVar.output, output);
   }
 
-  /* replace outputs */
-  for (const auto & olv : otheta->GetLoopVars())
-    olv.output->divert_users(smap.lookup(olv.output));
-  remove(otheta);
+  // Replace outputs
+  for (const auto & oldLoopVar : oldThetaNode.GetLoopVars())
+    oldLoopVar.output->divert_users(substitutionMap.lookup(oldLoopVar.output));
+
+  return true;
 }
 
-static void
-invert(rvsdg::Region * region)
+void
+LoopUnswitching::HandleRegion(rvsdg::Region & region)
 {
-  for (auto & node : rvsdg::TopDownTraverser(region))
+  bool unswitchedLoop = false;
+  for (auto & node : region.Nodes())
   {
-    if (auto structnode = dynamic_cast<rvsdg::StructuralNode *>(node))
+    if (const auto structuralNode = dynamic_cast<rvsdg::StructuralNode *>(&node))
     {
-      for (size_t r = 0; r < structnode->nsubregions(); r++)
-        invert(structnode->subregion(r));
+      // Handle innermost theta nodes first
+      for (auto & subregion : structuralNode->Subregions())
+        HandleRegion(subregion);
 
-      if (auto theta = dynamic_cast<rvsdg::ThetaNode *>(structnode))
-        invert(theta);
+      if (const auto thetaNode = dynamic_cast<rvsdg::ThetaNode *>(structuralNode))
+      {
+        unswitchedLoop |= UnswitchLoop(*thetaNode);
+      }
     }
   }
-}
 
-static void
-invert(rvsdg::RvsdgModule & rvsdgModule, util::StatisticsCollector & statisticsCollector)
-{
-  auto statistics = LoopUnswitching::Statistics::Create(rvsdgModule.SourceFilePath().value());
-
-  statistics->start(rvsdgModule.Rvsdg());
-  invert(&rvsdgModule.Rvsdg().GetRootRegion());
-  statistics->end(rvsdgModule.Rvsdg());
-
-  statisticsCollector.CollectDemandedStatistics(std::move(statistics));
+  // If we successfully unswitched a loop, ensure the old nodes are pruned.
+  if (unswitchedLoop)
+  {
+    region.prune(false);
+  }
 }
 
 LoopUnswitching::~LoopUnswitching() noexcept = default;
 
 void
 LoopUnswitching::Run(
-    rvsdg::RvsdgModule & module,
-    jlm::util::StatisticsCollector & statisticsCollector)
+    rvsdg::RvsdgModule & rvsdgModule,
+    util::StatisticsCollector & statisticsCollector)
 {
-  invert(module, statisticsCollector);
+  auto statistics = Statistics::Create(rvsdgModule.SourceFilePath().value());
+
+  statistics->start(rvsdgModule.Rvsdg());
+  HandleRegion(rvsdgModule.Rvsdg().GetRootRegion());
+  statistics->end(rvsdgModule.Rvsdg());
+
+  statisticsCollector.CollectDemandedStatistics(std::move(statistics));
 }
 
 void
