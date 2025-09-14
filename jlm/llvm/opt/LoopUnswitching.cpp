@@ -116,17 +116,17 @@ LoopUnswitching::SinkNodesIntoGamma(
   pullin_top(&gammaNode);
 }
 
-static std::vector<std::vector<rvsdg::Node *>>
-collect_condition_nodes(rvsdg::StructuralNode * tnode, jlm::rvsdg::StructuralNode * gnode)
+std::vector<std::vector<rvsdg::Node *>>
+LoopUnswitching::CollectConditionNodes(
+    const rvsdg::ThetaNode & thetaNode,
+    const rvsdg::GammaNode & gammaNode)
 {
-  JLM_ASSERT(dynamic_cast<const rvsdg::ThetaNode *>(tnode));
-  JLM_ASSERT(dynamic_cast<const rvsdg::GammaNode *>(gnode));
-  JLM_ASSERT(gnode->region()->node() == tnode);
+  JLM_ASSERT(gammaNode.region()->node() == &thetaNode);
 
   std::vector<std::vector<rvsdg::Node *>> nodes;
-  for (auto & node : tnode->subregion(0)->Nodes())
+  for (auto & node : thetaNode.subregion()->Nodes())
   {
-    if (&node == gnode)
+    if (&node == &gammaNode)
       continue;
 
     if (node.depth() >= nodes.size())
@@ -161,7 +161,7 @@ LoopUnswitching::UnswitchLoop(rvsdg::ThetaNode & oldThetaNode)
 
   // Copy condition nodes for new gamma node
   rvsdg::SubstitutionMap substitutionMap;
-  auto conditionNodes = collect_condition_nodes(&oldThetaNode, oldGammaNode);
+  auto conditionNodes = CollectConditionNodes(oldThetaNode, *oldGammaNode);
   for (const auto & oldLoopVar : oldThetaNode.GetLoopVars())
     substitutionMap.insert(oldLoopVar.pre, oldLoopVar.input->origin());
   copy_condition_nodes(oldThetaNode.region(), substitutionMap, conditionNodes);
