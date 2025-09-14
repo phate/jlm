@@ -150,12 +150,6 @@ copy_condition_nodes(
   }
 }
 
-static jlm::rvsdg::StructuralOutput *
-to_structural_output(jlm::rvsdg::Output * output)
-{
-  return dynamic_cast<rvsdg::StructuralOutput *>(output);
-}
-
 bool
 LoopUnswitching::UnswitchLoop(rvsdg::ThetaNode & oldThetaNode)
 {
@@ -203,7 +197,7 @@ LoopUnswitching::UnswitchLoop(rvsdg::ThetaNode & oldThetaNode)
     // Update substitution map for insertion of exit variables
     for (const auto & oldLoopVar : oldThetaNode.GetLoopVars())
     {
-      auto output = to_structural_output(oldLoopVar.post->origin());
+      auto output = oldLoopVar.post->origin();
       auto substitute = subregion0Map.lookup(oldSubregion0->result(output->index())->origin());
       subregion0Map.insert(oldLoopVar.post->origin(), substitute);
     }
@@ -249,7 +243,7 @@ LoopUnswitching::UnswitchLoop(rvsdg::ThetaNode & oldThetaNode)
     // Adjust values in substitution map for condition node copying
     for (const auto & oldLopVar : oldThetaNode.GetLoopVars())
     {
-      auto output = to_structural_output(oldLopVar.post->origin());
+      auto output = oldLopVar.post->origin();
       auto substitute = subregion1Map.lookup(oldSubregion1->result(output->index())->origin());
       subregion1Map.insert(oldLopVar.pre, substitute);
     }
@@ -261,7 +255,7 @@ LoopUnswitching::UnswitchLoop(rvsdg::ThetaNode & oldThetaNode)
     // Redirect results of loop variables and adjust substitution map for exit region copying
     for (const auto & oldLoopVar : oldThetaNode.GetLoopVars())
     {
-      auto output = to_structural_output(oldLoopVar.post->origin());
+      auto output = oldLoopVar.post->origin();
       auto substitute = subregion1Map.lookup(oldSubregion1->result(output->index())->origin());
       newLoopVars[oldLoopVar.input].post->divert_to(substitute);
       subregion1Map.insert(oldLoopVar.post->origin(), newLoopVars[oldLoopVar.input].output);
@@ -289,7 +283,7 @@ LoopUnswitching::UnswitchLoop(rvsdg::ThetaNode & oldThetaNode)
     // Adjust values in substitution map for exit variable creation
     for (const auto & oldLoopVar : oldThetaNode.GetLoopVars())
     {
-      auto output = to_structural_output(oldLoopVar.post->origin());
+      auto output = oldLoopVar.post->origin();
       auto substitute = subregion1Map.lookup(oldSubregion0->result(output->index())->origin());
       subregion1Map.insert(oldLoopVar.post->origin(), substitute);
     }
