@@ -52,7 +52,7 @@ private:
   SinkNodesIntoGamma(rvsdg::GammaNode & gammaNode, const rvsdg::ThetaNode & thetaNode);
 
   static std::vector<std::vector<rvsdg::Node *>>
-  CollectConditionNodes(const rvsdg::ThetaNode & thetaNode, const rvsdg::GammaNode & gammaNode);
+  CollectPredicateNodes(const rvsdg::ThetaNode & thetaNode, const rvsdg::GammaNode & gammaNode);
 };
 
 }

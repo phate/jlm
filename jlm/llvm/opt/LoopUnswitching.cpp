@@ -117,7 +117,7 @@ LoopUnswitching::SinkNodesIntoGamma(
 }
 
 std::vector<std::vector<rvsdg::Node *>>
-LoopUnswitching::CollectConditionNodes(
+LoopUnswitching::CollectPredicateNodes(
     const rvsdg::ThetaNode & thetaNode,
     const rvsdg::GammaNode & gammaNode)
 {
@@ -138,15 +138,15 @@ LoopUnswitching::CollectConditionNodes(
 }
 
 static void
-copy_condition_nodes(
+CopyPredicateNodes(
     rvsdg::Region * target,
-    rvsdg::SubstitutionMap & smap,
+    rvsdg::SubstitutionMap & substitutionMap,
     const std::vector<std::vector<rvsdg::Node *>> & nodes)
 {
-  for (size_t n = 0; n < nodes.size(); n++)
+  for (auto & sameDepthNodes : nodes)
   {
-    for (const auto & node : nodes[n])
-      node->copy(target, smap);
+    for (const auto & node : sameDepthNodes)
+      node->copy(target, substitutionMap);
   }
 }
 
@@ -161,10 +161,10 @@ LoopUnswitching::UnswitchLoop(rvsdg::ThetaNode & oldThetaNode)
 
   // Copy condition nodes for new gamma node
   rvsdg::SubstitutionMap substitutionMap;
-  auto conditionNodes = CollectConditionNodes(oldThetaNode, *oldGammaNode);
+  auto conditionNodes = CollectPredicateNodes(oldThetaNode, *oldGammaNode);
   for (const auto & oldLoopVar : oldThetaNode.GetLoopVars())
     substitutionMap.insert(oldLoopVar.pre, oldLoopVar.input->origin());
-  copy_condition_nodes(oldThetaNode.region(), substitutionMap, conditionNodes);
+  CopyPredicateNodes(oldThetaNode.region(), substitutionMap, conditionNodes);
 
   auto newGammaNode = rvsdg::GammaNode::create(
       substitutionMap.lookup(oldGammaNode->predicate()->origin()),
@@ -249,7 +249,7 @@ LoopUnswitching::UnswitchLoop(rvsdg::ThetaNode & oldThetaNode)
     }
 
     // Copy condition nodes
-    copy_condition_nodes(newThetaNode->subregion(), subregion1Map, conditionNodes);
+    CopyPredicateNodes(newThetaNode->subregion(), subregion1Map, conditionNodes);
     auto predicate = subregion1Map.lookup(oldGammaNode->predicate()->origin());
 
     // Redirect results of loop variables and adjust substitution map for exit region copying
