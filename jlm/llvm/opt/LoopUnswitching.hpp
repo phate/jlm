@@ -11,7 +11,9 @@
 namespace jlm::rvsdg
 {
 class GammaNode;
+class Node;
 class Region;
+class SubstitutionMap;
 class ThetaNode;
 }
 
@@ -53,6 +55,12 @@ private:
 
   static std::vector<std::vector<rvsdg::Node *>>
   CollectPredicateNodes(const rvsdg::ThetaNode & thetaNode, const rvsdg::GammaNode & gammaNode);
+
+  static void
+  CopyPredicateNodes(
+      rvsdg::Region & target,
+      rvsdg::SubstitutionMap & substitutionMap,
+      const std::vector<std::vector<rvsdg::Node *>> & nodes);
 };
 
 }

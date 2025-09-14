@@ -137,8 +137,8 @@ LoopUnswitching::CollectPredicateNodes(
   return nodes;
 }
 
-static void
-CopyPredicateNodes(
+void
+LoopUnswitching::CopyPredicateNodes(
     rvsdg::Region & target,
     rvsdg::SubstitutionMap & substitutionMap,
     const std::vector<std::vector<rvsdg::Node *>> & nodes)
