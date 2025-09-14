@@ -156,12 +156,6 @@ to_structural_output(jlm::rvsdg::Output * output)
   return dynamic_cast<rvsdg::StructuralOutput *>(output);
 }
 
-static rvsdg::RegionArgument *
-to_argument(jlm::rvsdg::Output * output)
-{
-  return dynamic_cast<rvsdg::RegionArgument *>(output);
-}
-
 bool
 LoopUnswitching::UnswitchLoop(rvsdg::ThetaNode & oldThetaNode)
 {
@@ -189,9 +183,10 @@ LoopUnswitching::UnswitchLoop(rvsdg::ThetaNode & oldThetaNode)
     auto oldSubregion0 = oldGammaNode->subregion(0);
     for (const auto & [oldInput, oldBranchArgument] : oldGammaNode->GetEntryVars())
     {
-      if (auto argument = to_argument(oldInput->origin()))
+      if (rvsdg::TryGetRegionParentNode<rvsdg::ThetaNode>(*oldInput->origin()))
       {
-        auto [_, branchArgument] = newGammaNode->AddEntryVar(argument->input()->origin());
+        auto oldLoopVar = oldThetaNode.MapPreLoopVar(*oldInput->origin());
+        auto [_, branchArgument] = newGammaNode->AddEntryVar(oldLoopVar.input->origin());
         subregion0Map.insert(oldBranchArgument[0], branchArgument[0]);
       }
       else
@@ -233,9 +228,10 @@ LoopUnswitching::UnswitchLoop(rvsdg::ThetaNode & oldThetaNode)
     }
     for (const auto & [oldInput, oldBranchArgument] : oldGammaNode->GetEntryVars())
     {
-      if (auto argument = to_argument(oldInput->origin()))
+      if (rvsdg::TryGetRegionParentNode<rvsdg::ThetaNode>(*oldInput->origin()))
       {
-        subregion1Map.insert(oldBranchArgument[1], newLoopVars[argument->input()].pre);
+        auto oldLoopVar = oldThetaNode.MapPreLoopVar(*oldInput->origin());
+        subregion1Map.insert(oldBranchArgument[1], newLoopVars[oldLoopVar.input].pre);
       }
       else
       {
@@ -272,9 +268,10 @@ LoopUnswitching::UnswitchLoop(rvsdg::ThetaNode & oldThetaNode)
     }
     for (const auto & [input, branchArgument] : oldGammaNode->GetEntryVars())
     {
-      if (auto argument = to_argument(input->origin()))
+      if (rvsdg::TryGetRegionParentNode<rvsdg::ThetaNode>(*input->origin()))
       {
-        subregion1Map.insert(branchArgument[0], newLoopVars[argument->input()].output);
+        auto oldLoopVar = oldThetaNode.MapPreLoopVar(*input->origin());
+        subregion1Map.insert(branchArgument[0], newLoopVars[oldLoopVar.input].output);
       }
       else
       {
