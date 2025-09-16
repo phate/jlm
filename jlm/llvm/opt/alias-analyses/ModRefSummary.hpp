@@ -27,74 +27,39 @@ public:
   [[nodiscard]] virtual const PointsToGraph &
   GetPointsToGraph() const noexcept = 0;
 
-  [[nodiscard]] virtual const jlm::util::HashSet<const PointsToGraph::MemoryNode *> &
-  GetRegionEntryNodes(const rvsdg::Region & region) const = 0;
+  [[nodiscard]] virtual const util::HashSet<const PointsToGraph::MemoryNode *> &
+  GetModRefForRegion(const rvsdg::Region & region) const = 0;
 
-  [[nodiscard]] virtual const jlm::util::HashSet<const PointsToGraph::MemoryNode *> &
-  GetRegionExitNodes(const rvsdg::Region & region) const = 0;
+  [[nodiscard]] virtual const util::HashSet<const PointsToGraph::MemoryNode *> &
+  GetModRefForNode(const rvsdg::Node & node) const = 0;
 
-  [[nodiscard]] virtual const jlm::util::HashSet<const PointsToGraph::MemoryNode *> &
-  GetCallEntryNodes(const rvsdg::SimpleNode & callNode) const = 0;
+  [[nodiscard]] virtual const util::HashSet<const PointsToGraph::MemoryNode *> &
+  GetModRefForLambda(const rvsdg::LambdaNode & node) const = 0;
+  /*
+  [[nodiscard]] virtual const util::HashSet<const PointsToGraph::MemoryNode *> &
+  GetModRefForLoad(const rvsdg::SimpleNode & loadNode) const = 0;
 
-  [[nodiscard]] virtual const jlm::util::HashSet<const PointsToGraph::MemoryNode *> &
-  GetCallExitNodes(const rvsdg::SimpleNode & callNode) const = 0;
+  [[nodiscard]] virtual const util::HashSet<const PointsToGraph::MemoryNode *> &
+  GetModRefForStore(const rvsdg::SimpleNode & storeNode) const = 0;
 
-  /**
-   * Retrieves the set of memory locations that may be targeted by the given pointer typed value
-   * @param output the output producing the pointer value
-   * @return a conservative set of memory locations the pointer may target
-   */
-  [[nodiscard]] virtual jlm::util::HashSet<const PointsToGraph::MemoryNode *>
-  GetOutputNodes(const jlm::rvsdg::Output & output) const = 0;
+  [[nodiscard]] virtual const util::HashSet<const PointsToGraph::MemoryNode *> &
+  GetModRefForMemcpy(const rvsdg::SimpleNode & memcpyNode) const = 0;
 
-  [[nodiscard]] virtual const jlm::util::HashSet<const PointsToGraph::MemoryNode *> &
-  GetLambdaEntryNodes(const rvsdg::LambdaNode & lambdaNode) const
-  {
-    return GetRegionEntryNodes(*lambdaNode.subregion());
-  }
+  [[nodiscard]] virtual const util::HashSet<const PointsToGraph::MemoryNode *> &
+  GetModRefForFree(const rvsdg::SimpleNode & freeNode) const = 0;
 
-  [[nodiscard]] virtual const jlm::util::HashSet<const PointsToGraph::MemoryNode *> &
-  GetLambdaExitNodes(const rvsdg::LambdaNode & lambdaNode) const
-  {
-    return GetRegionExitNodes(*lambdaNode.subregion());
-  }
+  [[nodiscard]] virtual const util::HashSet<const PointsToGraph::MemoryNode *> &
+  GetModRefForCall(const rvsdg::SimpleNode & callNode) const = 0;
 
-  [[nodiscard]] virtual const jlm::util::HashSet<const PointsToGraph::MemoryNode *> &
-  GetThetaEntryExitNodes(const rvsdg::ThetaNode & thetaNode) const
-  {
-    auto & entryNodes = GetRegionEntryNodes(*thetaNode.subregion());
-    auto & exitNodes = GetRegionExitNodes(*thetaNode.subregion());
-    JLM_ASSERT(entryNodes == exitNodes);
-    return entryNodes;
-  }
+  [[nodiscard]] virtual const util::HashSet<const PointsToGraph::MemoryNode *> &
+  GetModRefForTheta(const rvsdg::ThetaNode & thetaNode) const = 0;
 
-  [[nodiscard]] virtual jlm::util::HashSet<const PointsToGraph::MemoryNode *>
-  GetGammaEntryNodes(const rvsdg::GammaNode & gammaNode) const
-  {
-    jlm::util::HashSet<const PointsToGraph::MemoryNode *> allMemoryNodes;
-    for (size_t n = 0; n < gammaNode.nsubregions(); n++)
-    {
-      auto & subregion = *gammaNode.subregion(n);
-      auto & memoryNodes = GetRegionEntryNodes(subregion);
-      allMemoryNodes.UnionWith(memoryNodes);
-    }
+  [[nodiscard]] virtual const util::HashSet<const PointsToGraph::MemoryNode *> &
+  GetModRefForGamma(const rvsdg::GammaNode & gammaNode) const = 0;
 
-    return allMemoryNodes;
-  }
-
-  [[nodiscard]] virtual jlm::util::HashSet<const PointsToGraph::MemoryNode *>
-  GetGammaExitNodes(const rvsdg::GammaNode & gammaNode) const
-  {
-    jlm::util::HashSet<const PointsToGraph::MemoryNode *> allMemoryNodes;
-    for (size_t n = 0; n < gammaNode.nsubregions(); n++)
-    {
-      auto & subregion = *gammaNode.subregion(n);
-      auto & memoryNodes = GetRegionExitNodes(subregion);
-      allMemoryNodes.UnionWith(memoryNodes);
-    }
-
-    return allMemoryNodes;
-  }
+  [[nodiscard]] virtual const util::HashSet<const PointsToGraph::MemoryNode *> &
+  GetModRefForLambda(const rvsdg::LambdaNode & lambdaNode) const = 0;
+  */
 };
 
 }

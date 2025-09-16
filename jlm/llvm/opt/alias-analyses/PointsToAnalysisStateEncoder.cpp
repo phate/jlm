@@ -4,10 +4,10 @@
  * See COPYING for terms of redistribution.
  */
 
-#include <jlm/llvm/opt/alias-analyses/AgnosticModRefSummarizer.hpp>
+// #include <jlm/llvm/opt/alias-analyses/AgnosticModRefSummarizer.hpp>
 #include <jlm/llvm/opt/alias-analyses/AliasAnalysisPrecisionEvaluator.hpp>
 #include <jlm/llvm/opt/alias-analyses/Andersen.hpp>
-#include <jlm/llvm/opt/alias-analyses/EliminatedModRefSummarizer.hpp>
+// #include <jlm/llvm/opt/alias-analyses/EliminatedModRefSummarizer.hpp>
 #include <jlm/llvm/opt/alias-analyses/LocalAliasAnalysis.hpp>
 #include <jlm/llvm/opt/alias-analyses/MemoryStateEncoder.hpp>
 #include <jlm/llvm/opt/alias-analyses/PointsToAnalysisStateEncoder.hpp>
@@ -56,12 +56,12 @@ PointsToAnalysisStateEncoder<TPointsToAnalysis, TModRefSummarizer>::Run(
 }
 
 // Explicitly initialize all combinations
-template class PointsToAnalysisStateEncoder<Steensgaard, AgnosticModRefSummarizer>;
+// template class PointsToAnalysisStateEncoder<Steensgaard, AgnosticModRefSummarizer>;
 template class PointsToAnalysisStateEncoder<Steensgaard, RegionAwareModRefSummarizer>;
-template class PointsToAnalysisStateEncoder<Andersen, AgnosticModRefSummarizer>;
+// template class PointsToAnalysisStateEncoder<Andersen, AgnosticModRefSummarizer>;
 template class PointsToAnalysisStateEncoder<Andersen, RegionAwareModRefSummarizer>;
-template class PointsToAnalysisStateEncoder<
-    Andersen,
-    EliminatedModRefSummarizer<AgnosticModRefSummarizer, TopDownModRefEliminator>>;
+// template class PointsToAnalysisStateEncoder<
+//    Andersen,
+//    EliminatedModRefSummarizer<AgnosticModRefSummarizer, TopDownModRefEliminator>>;
 
 }

@@ -396,21 +396,22 @@ JlmOptCommand::CreateTransformation(
 {
   using Andersen = llvm::aa::Andersen;
   using Steensgaard = llvm::aa::Steensgaard;
-  using AgnosticMrs = llvm::aa::AgnosticModRefSummarizer;
+  // using AgnosticMrs = llvm::aa::AgnosticModRefSummarizer;
   using RegionAwareMrs = llvm::aa::RegionAwareModRefSummarizer;
-  using TopDownLifetimeMrs =
-      llvm::aa::EliminatedModRefSummarizer<AgnosticMrs, llvm::aa::TopDownModRefEliminator>;
+  // using TopDownLifetimeMrs =
+  //     llvm::aa::EliminatedModRefSummarizer<AgnosticMrs, llvm::aa::TopDownModRefEliminator>;
 
   switch (optimizationId)
   {
-  case JlmOptCommandLineOptions::OptimizationId::AAAndersenAgnostic:
-    return std::make_unique<llvm::aa::PointsToAnalysisStateEncoder<Andersen, AgnosticMrs>>();
+  // case JlmOptCommandLineOptions::OptimizationId::AAAndersenAgnostic:
+  //   return std::make_unique<llvm::aa::PointsToAnalysisStateEncoder<Andersen, AgnosticMrs>>();
   case JlmOptCommandLineOptions::OptimizationId::AAAndersenRegionAware:
     return std::make_unique<llvm::aa::PointsToAnalysisStateEncoder<Andersen, RegionAwareMrs>>();
-  case JlmOptCommandLineOptions::OptimizationId::AAAndersenTopDownLifetimeAware:
-    return std::make_unique<llvm::aa::PointsToAnalysisStateEncoder<Andersen, TopDownLifetimeMrs>>();
-  case JlmOptCommandLineOptions::OptimizationId::AASteensgaardAgnostic:
-    return std::make_unique<llvm::aa::PointsToAnalysisStateEncoder<Steensgaard, AgnosticMrs>>();
+  // case JlmOptCommandLineOptions::OptimizationId::AAAndersenTopDownLifetimeAware:
+  //   return std::make_unique<llvm::aa::PointsToAnalysisStateEncoder<Andersen,
+  //   TopDownLifetimeMrs>>();
+  // case JlmOptCommandLineOptions::OptimizationId::AASteensgaardAgnostic:
+  //   return std::make_unique<llvm::aa::PointsToAnalysisStateEncoder<Steensgaard, AgnosticMrs>>();
   case JlmOptCommandLineOptions::OptimizationId::AASteensgaardRegionAware:
     return std::make_unique<llvm::aa::PointsToAnalysisStateEncoder<Steensgaard, RegionAwareMrs>>();
   case JlmOptCommandLineOptions::OptimizationId::CommonNodeElimination:

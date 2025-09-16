@@ -49,7 +49,6 @@ libllvm_SOURCES = \
     \
     jlm/llvm/opt/alias-analyses/AliasAnalysis.cpp \
     jlm/llvm/opt/alias-analyses/AliasAnalysisPrecisionEvaluator.cpp \
-    jlm/llvm/opt/alias-analyses/AgnosticModRefSummarizer.cpp \
     jlm/llvm/opt/alias-analyses/Andersen.cpp \
     jlm/llvm/opt/alias-analyses/LocalAliasAnalysis.cpp \
     jlm/llvm/opt/alias-analyses/MemoryStateEncoder.cpp \
@@ -59,7 +58,6 @@ libllvm_SOURCES = \
     jlm/llvm/opt/alias-analyses/PointsToGraphAliasAnalysis.cpp \
     jlm/llvm/opt/alias-analyses/RegionAwareModRefSummarizer.cpp \
     jlm/llvm/opt/alias-analyses/Steensgaard.cpp \
-    jlm/llvm/opt/alias-analyses/TopDownModRefEliminator.cpp \
     jlm/llvm/opt/cne.cpp \
     jlm/llvm/opt/DeadNodeElimination.cpp \
     jlm/llvm/opt/IfConversion.cpp \
@@ -85,7 +83,6 @@ libllvm_HEADERS = \
     jlm/llvm/opt/push.hpp \
     jlm/llvm/opt/alias-analyses/AliasAnalysis.hpp \
     jlm/llvm/opt/alias-analyses/AliasAnalysisPrecisionEvaluator.hpp \
-    jlm/llvm/opt/alias-analyses/AgnosticModRefSummarizer.hpp \
     jlm/llvm/opt/alias-analyses/Andersen.hpp \
     jlm/llvm/opt/alias-analyses/DifferencePropagation.hpp \
     jlm/llvm/opt/alias-analyses/EliminatedModRefSummarizer.hpp \
@@ -98,7 +95,6 @@ libllvm_HEADERS = \
     jlm/llvm/opt/alias-analyses/ModRefSummarizer.hpp \
     jlm/llvm/opt/alias-analyses/ModRefSummary.hpp \
     jlm/llvm/opt/alias-analyses/Steensgaard.hpp \
-    jlm/llvm/opt/alias-analyses/TopDownModRefEliminator.hpp \
     jlm/llvm/opt/alias-analyses/PointerObjectSet.hpp \
     jlm/llvm/opt/alias-analyses/RegionAwareModRefSummarizer.hpp \
     jlm/llvm/opt/alias-analyses/PointsToAnalysis.hpp \
@@ -199,7 +195,6 @@ libllvm_TESTS += \
     tests/jlm/llvm/ir/TestCallSummary \
     tests/jlm/llvm/ir/ThreeAddressCodeTests \
     tests/jlm/llvm/ir/TypeConverterTests \
-    tests/jlm/llvm/opt/alias-analyses/AgnosticModRefSummarizerTests \
     tests/jlm/llvm/opt/alias-analyses/LocalAliasAnalysisTests \
     tests/jlm/llvm/opt/alias-analyses/PointsToGraphAliasAnalysisTests \
     tests/jlm/llvm/opt/alias-analyses/TestAndersen \
@@ -208,9 +203,7 @@ libllvm_TESTS += \
     tests/jlm/llvm/opt/alias-analyses/TestMemoryStateEncoder \
     tests/jlm/llvm/opt/alias-analyses/TestPointerObjectSet \
     tests/jlm/llvm/opt/alias-analyses/TestPointsToGraph \
-    tests/jlm/llvm/opt/alias-analyses/RegionAwareModRefSummarizerTests \
     tests/jlm/llvm/opt/alias-analyses/TestSteensgaard \
-    tests/jlm/llvm/opt/alias-analyses/TopDownModRefEliminatorTests \
     tests/jlm/llvm/opt/DeadNodeEliminationTests \
     tests/jlm/llvm/opt/IfConversionTests \
     tests/jlm/llvm/opt/InvariantValueRedirectionTests \
