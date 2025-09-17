@@ -49,10 +49,10 @@ public:
 };
 
 rvsdg::GammaNode *
-LoopUnswitching::IsUnswitchable(const rvsdg::ThetaNode & theta)
+LoopUnswitching::IsApplicable(const rvsdg::ThetaNode & thetaNode)
 {
   auto [matchNode, matchOperation] =
-      rvsdg::TryGetSimpleNodeAndOptionalOp<rvsdg::MatchOperation>(*theta.predicate()->origin());
+      rvsdg::TryGetSimpleNodeAndOptionalOp<rvsdg::MatchOperation>(*thetaNode.predicate()->origin());
   if (!matchOperation)
     return nullptr;
 
@@ -63,7 +63,7 @@ LoopUnswitching::IsUnswitchable(const rvsdg::ThetaNode & theta)
   rvsdg::GammaNode * gammaNode = nullptr;
   for (const auto & user : matchNode->output(0)->Users())
   {
-    if (&user == theta.predicate())
+    if (&user == thetaNode.predicate())
       continue;
 
     gammaNode = rvsdg::TryGetOwnerNode<rvsdg::GammaNode>(user);
@@ -73,7 +73,7 @@ LoopUnswitching::IsUnswitchable(const rvsdg::ThetaNode & theta)
 
   // Only apply loop unswitching if the theta node is a converted for loop, i.e., everything but the
   // predicate is contained in the gamma
-  for (const auto & loopVar : theta.GetLoopVars())
+  for (const auto & loopVar : thetaNode.GetLoopVars())
   {
     const auto origin = loopVar.post->origin();
     if (rvsdg::TryGetRegionParentNode<rvsdg::ThetaNode>(*origin))
@@ -153,7 +153,7 @@ LoopUnswitching::CopyPredicateNodes(
 bool
 LoopUnswitching::UnswitchLoop(rvsdg::ThetaNode & oldThetaNode)
 {
-  auto oldGammaNode = IsUnswitchable(oldThetaNode);
+  auto oldGammaNode = IsApplicable(oldThetaNode);
   if (!oldGammaNode)
     return false;
 

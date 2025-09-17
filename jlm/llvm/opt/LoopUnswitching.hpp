@@ -34,6 +34,9 @@ public:
       : Transformation("LoopUnswitching")
   {}
 
+  static rvsdg::GammaNode *
+  IsApplicable(const rvsdg::ThetaNode & thetaNode);
+
   void
   Run(rvsdg::RvsdgModule & rvsdgModule, util::StatisticsCollector & statisticsCollector) override;
 
@@ -46,9 +49,6 @@ private:
 
   static bool
   UnswitchLoop(rvsdg::ThetaNode & thetaNode);
-
-  static rvsdg::GammaNode *
-  IsUnswitchable(const rvsdg::ThetaNode & thetaNode);
 
   static void
   SinkNodesIntoGamma(rvsdg::GammaNode & gammaNode, const rvsdg::ThetaNode & thetaNode);
