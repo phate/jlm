@@ -17,7 +17,7 @@ namespace jlm::rvsdg
 template class DomainConstOperation<
     ControlType,
     ControlValueRepresentation,
-    ctlformat_value,
+    ControlValueRepresentationFormatValue,
     ctltype_of_value>;
 
 ControlType::~ControlType() noexcept = default;
