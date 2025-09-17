@@ -20,7 +20,7 @@ TestStatistics()
   using namespace jlm::util;
 
   // Arrange
-  FilePath expectedStatisticsDir("/myStatisticsDir/");
+  FilePath expectedStatisticsDir("/tmp/myStatisticsDir/");
 
   jlm::util::StatisticsCollectorSettings statisticsCollectorSettings(
       { jlm::util::Statistics::Id::SteensgaardAnalysis },
@@ -35,7 +35,8 @@ TestStatistics()
       statisticsCollectorSettings,
       RvsdgTreePrinter::Configuration({}),
       { JlmOptCommandLineOptions::OptimizationId::DeadNodeElimination,
-        JlmOptCommandLineOptions::OptimizationId::LoopUnrolling });
+        JlmOptCommandLineOptions::OptimizationId::LoopUnrolling },
+      false);
 
   JlmOptCommand command("jlm-opt", commandLineOptions);
 
@@ -83,7 +84,8 @@ OptimizationIdToOptimizationTranslation()
       JlmOptCommandLineOptions::OutputFormat::Llvm,
       StatisticsCollectorSettings(),
       RvsdgTreePrinter::Configuration({}),
-      optimizationIds);
+      optimizationIds,
+      false);
 
   // Act & Assert
   // terminates on unhandled optimization id

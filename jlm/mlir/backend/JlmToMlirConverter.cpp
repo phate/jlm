@@ -12,6 +12,7 @@
 #include <jlm/llvm/ir/operators/Load.hpp>
 #include <jlm/llvm/ir/operators/MemoryStateOperations.hpp>
 #include <jlm/llvm/ir/operators/sext.hpp>
+#include <jlm/llvm/ir/operators/SpecializedArithmeticIntrinsicOperations.hpp>
 #include <jlm/llvm/ir/operators/Store.hpp>
 #include <jlm/mlir/backend/JlmToMlirConverter.hpp>
 #include <jlm/mlir/MLIRConverterCommon.hpp>
@@ -96,8 +97,8 @@ JlmToMlirConverter::ConvertRegion(rvsdg::Region & region, ::mlir::Block & block,
     }
   }
 
-  // Create an MLIR operation for each RVSDG node and store each pair in a
-  // hash map for easy lookup of corresponding MLIR operation
+  // Create an MLIR operation for each RVSDG node.
+  // The mapping from RVSDG output to MLIR result is added to the valueMap for quick lookup.
   for (rvsdg::Node * rvsdgNode : rvsdg::TopDownTraverser(&region))
   {
     ::llvm::SmallVector<::mlir::Value> inputs = GetConvertedInputs(*rvsdgNode, valueMap);
@@ -425,6 +426,14 @@ JlmToMlirConverter::ConvertSimpleNode(
   else if (auto fpBinOp = dynamic_cast<const jlm::llvm::FBinaryOperation *>(&operation))
   {
     MlirOp = ConvertFpBinaryNode(*fpBinOp, inputs);
+  }
+  else if (rvsdg::is<jlm::llvm::FMulAddIntrinsicOperation>(operation))
+  {
+    MlirOp = Builder_->create<::mlir::LLVM::FMulAddOp>(
+        Builder_->getUnknownLoc(),
+        inputs[0],
+        inputs[1],
+        inputs[2]);
   }
   else if (rvsdg::is<jlm::llvm::IntegerBinaryOperation>(operation))
   {
@@ -759,6 +768,15 @@ JlmToMlirConverter::ConvertSimpleNode(
         ::llvm::ArrayRef(resultTypes), // output type
         ::mlir::ValueRange(inputs),    // inputs
         ::llvm::ArrayRef(attributes));
+  }
+  else if (auto memoryStateJoin = dynamic_cast<const llvm::MemoryStateJoinOperation *>(&operation))
+  {
+    ::mlir::Type resultType = ConvertType(*memoryStateJoin->result(0));
+
+    MlirOp = Builder_->create<::mlir::rvsdg::MemoryStateJoin>(
+        Builder_->getUnknownLoc(),
+        resultType,
+        ::mlir::ValueRange(inputs));
   }
   // ** endregion structural nodes **
   else

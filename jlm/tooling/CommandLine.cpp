@@ -5,16 +5,7 @@
 
 #include <jlm/llvm/opt/alias-analyses/AgnosticModRefSummarizer.hpp>
 #include <jlm/llvm/opt/alias-analyses/Andersen.hpp>
-#include <jlm/llvm/opt/alias-analyses/Optimization.hpp>
-#include <jlm/llvm/opt/alias-analyses/RegionAwareModRefSummarizer.hpp>
 #include <jlm/llvm/opt/alias-analyses/Steensgaard.hpp>
-#include <jlm/llvm/opt/cne.hpp>
-#include <jlm/llvm/opt/DeadNodeElimination.hpp>
-#include <jlm/llvm/opt/inlining.hpp>
-#include <jlm/llvm/opt/InvariantValueRedirection.hpp>
-#include <jlm/llvm/opt/inversion.hpp>
-#include <jlm/llvm/opt/pull.hpp>
-#include <jlm/llvm/opt/push.hpp>
 #include <jlm/llvm/opt/reduction.hpp>
 #include <jlm/llvm/opt/RvsdgTreePrinter.hpp>
 #include <jlm/llvm/opt/unroll.hpp>
@@ -224,6 +215,7 @@ JlmOptCommandLineOptions::GetStatisticsIdCommandLineArguments()
   static util::BijectiveMap<util::Statistics::Id, std::string_view> mapping = {
     { util::Statistics::Id::Aggregation, "print-aggregation-time" },
     { util::Statistics::Id::AgnosticModRefSummarizer, "print-agnostic-mod-ref-summarization" },
+    { util::Statistics::Id::AliasAnalysisPrecisionEvaluation, "print-aa-precision-evaluation" },
     { util::Statistics::Id::AndersenAnalysis, "print-andersen-analysis" },
     { util::Statistics::Id::Annotation, "print-annotation-time" },
     { util::Statistics::Id::CommonNodeElimination, "print-cne-stat" },
@@ -706,6 +698,11 @@ JlmOptCommandLineParser::ParseCommandLineArguments(int argc, const char * const 
       cl::desc(statisticDirectoryDescription),
       cl::value_desc("dir"));
 
+  cl::opt<bool> dumpRvsdgDotGraphs(
+      "dumpRvsdgDotGraphs",
+      cl::init(false),
+      cl::desc("Dump RVSDG as dot graphs after each transformation in debug folder."));
+
   cl::list<util::Statistics::Id> printStatistics(
       cl::values(
           CreateStatisticsOption(
@@ -714,6 +711,9 @@ JlmOptCommandLineParser::ParseCommandLineArguments(int argc, const char * const 
           CreateStatisticsOption(
               util::Statistics::Id::AgnosticModRefSummarizer,
               "Collect agnostic mod/ref summarization pass statistics."),
+          CreateStatisticsOption(
+              util::Statistics::Id::AliasAnalysisPrecisionEvaluation,
+              "Evaluate alias analysis precision and store to file"),
           CreateStatisticsOption(
               util::Statistics::Id::AndersenAnalysis,
               "Collect Andersen alias analysis pass statistics."),
@@ -959,7 +959,8 @@ JlmOptCommandLineParser::ParseCommandLineArguments(int argc, const char * const 
       outputFormat,
       std::move(statisticsCollectorSettings),
       std::move(treePrinterConfiguration),
-      std::move(optimizationIds));
+      std::move(optimizationIds),
+      dumpRvsdgDotGraphs);
 
   return *CommandLineOptions_;
 }

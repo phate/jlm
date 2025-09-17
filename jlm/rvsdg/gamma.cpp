@@ -224,32 +224,38 @@ GammaOperation::GetMatchContentType(std::size_t alternative) const
 
 GammaNode::~GammaNode() noexcept = default;
 
-GammaNode::GammaNode(
-    rvsdg::Output * predicate,
-    size_t nalternatives,
-    std::vector<std::shared_ptr<const Type>> match_content_types)
-    : StructuralNode(predicate->region(), nalternatives),
-      Operation_(nalternatives, std::move(match_content_types))
+GammaNode::GammaNode(rvsdg::Output & predicate, std::unique_ptr<GammaOperation> op)
+    : StructuralNode(predicate.region(), op->nalternatives()),
+      Operation_(std::move(op))
 {
-  add_input(std::unique_ptr<node_input>(
-      new StructuralInput(this, predicate, ControlType::Create(nalternatives))));
-  for (std::size_t n = 0; n < nalternatives; ++n)
+  add_input(std::unique_ptr<NodeInput>(
+      new StructuralInput(this, &predicate, ControlType::Create(Operation_->nalternatives()))));
+  for (std::size_t n = 0; n < Operation_->nalternatives(); ++n)
   {
-    RegionArgument::Create(*subregion(n), nullptr, Operation_.GetMatchContentType(n));
+    RegionArgument::Create(*subregion(n), nullptr, Operation_->GetMatchContentType(n));
   }
 }
+
+GammaNode::GammaNode(
+    rvsdg::Output & predicate,
+    size_t nalternatives,
+    std::vector<std::shared_ptr<const Type>> match_content_types)
+    : GammaNode(
+          predicate,
+          std::make_unique<GammaOperation>(nalternatives, std::move(match_content_types)))
+{}
 
 [[nodiscard]] const GammaOperation &
 GammaNode::GetOperation() const noexcept
 {
-  return Operation_;
+  return *Operation_;
 }
 
 GammaNode::EntryVar
 GammaNode::AddEntryVar(rvsdg::Output * origin)
 {
   auto gammaInput = new StructuralInput(this, origin, origin->Type());
-  add_input(std::unique_ptr<node_input>(gammaInput));
+  add_input(std::unique_ptr<NodeInput>(gammaInput));
 
   EntryVar ev;
   ev.input = gammaInput;

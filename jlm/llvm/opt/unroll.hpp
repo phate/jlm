@@ -26,8 +26,9 @@ public:
 
   ~LoopUnrolling() noexcept override;
 
-  constexpr LoopUnrolling(size_t factor)
-      : factor_(factor)
+  explicit LoopUnrolling(const size_t factor)
+      : Transformation("LoopUnrolling"),
+        factor_(factor)
   {}
 
   /**
@@ -206,24 +207,25 @@ public:
   create(rvsdg::ThetaNode * theta);
 
 private:
-  inline bool
-  is_known(jlm::rvsdg::Output * output) const noexcept
+  bool
+  is_known(const rvsdg::Output * output) const noexcept
   {
-    auto p = dynamic_cast<const rvsdg::SimpleNode *>(producer(output));
-    if (!p)
-      return false;
-    auto op = dynamic_cast<const rvsdg::bitconstant_op *>(&p->GetOperation());
-    return op && op->value().is_known();
+    auto & tracedOutput = rvsdg::TraceOutputIntraProcedurally(*output);
+    auto [_, constantOperation] =
+        rvsdg::TryGetSimpleNodeAndOptionalOp<rvsdg::bitconstant_op>(tracedOutput);
+    return constantOperation && constantOperation->value().is_known();
   }
 
-  inline const jlm::rvsdg::BitValueRepresentation *
-  value(jlm::rvsdg::Output * output) const noexcept
+  const rvsdg::BitValueRepresentation *
+  value(const rvsdg::Output * output) const noexcept
   {
     if (!is_known(output))
       return nullptr;
 
-    auto p = util::AssertedCast<const rvsdg::SimpleNode>(producer(output));
-    return &util::AssertedCast<const rvsdg::bitconstant_op>(&p->GetOperation())->value();
+    auto & tracedOutput = rvsdg::TraceOutputIntraProcedurally(*output);
+    auto [_, constantOperation] =
+        rvsdg::TryGetSimpleNodeAndOptionalOp<rvsdg::bitconstant_op>(tracedOutput);
+    return constantOperation == nullptr ? nullptr : &constantOperation->value();
   }
 
   rvsdg::Output * end_;

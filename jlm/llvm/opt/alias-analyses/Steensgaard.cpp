@@ -11,6 +11,7 @@
 #include <jlm/llvm/opt/alias-analyses/Steensgaard.hpp>
 #include <jlm/rvsdg/delta.hpp>
 #include <jlm/rvsdg/gamma.hpp>
+#include <jlm/rvsdg/MatchType.hpp>
 #include <jlm/rvsdg/theta.hpp>
 #include <jlm/rvsdg/traverser.hpp>
 #include <jlm/util/Statistics.hpp>
@@ -202,10 +203,9 @@ public:
   [[nodiscard]] std::string
   DebugString() const noexcept override
   {
-    auto node = rvsdg::TryGetOwnerNode<rvsdg::Node>(*Output_);
     auto index = Output_->index();
 
-    if (jlm::rvsdg::is<rvsdg::SimpleOperation>(node))
+    if (auto node = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*Output_))
     {
       auto nodestr = node->DebugString();
       auto outputstr = Output_->Type()->debug_string();
@@ -325,7 +325,8 @@ class AllocaLocation final : public MemoryLocation
       : MemoryLocation(),
         Node_(node)
   {
-    JLM_ASSERT(is<AllocaOperation>(&node));
+    JLM_ASSERT(is<AllocaOperation>(
+        jlm::util::AssertedCast<const rvsdg::SimpleNode>(&node)->GetOperation()));
   }
 
 public:
@@ -363,7 +364,8 @@ class MallocLocation final : public MemoryLocation
       : MemoryLocation(),
         Node_(node)
   {
-    JLM_ASSERT(is<MallocOperation>(&node));
+    JLM_ASSERT(is<MallocOperation>(
+        jlm::util::AssertedCast<const rvsdg::SimpleNode>(&node)->GetOperation()));
   }
 
 public:
@@ -997,95 +999,101 @@ Steensgaard::Steensgaard() = default;
 void
 Steensgaard::AnalyzeSimpleNode(const jlm::rvsdg::SimpleNode & node)
 {
-  if (is<AllocaOperation>(&node))
-  {
-    AnalyzeAlloca(node);
-  }
-  else if (is<MallocOperation>(&node))
-  {
-    AnalyzeMalloc(node);
-  }
-  else if (is<LoadOperation>(&node))
-  {
-    AnalyzeLoad(node);
-  }
-  else if (is<StoreOperation>(&node))
-  {
-    AnalyzeStore(node);
-  }
-  else if (is<CallOperation>(&node))
-  {
-    AnalyzeCall(node);
-  }
-  else if (is<GetElementPtrOperation>(&node))
-  {
-    AnalyzeGep(node);
-  }
-  else if (is<BitCastOperation>(&node))
-  {
-    AnalyzeBitcast(node);
-  }
-  else if (is<IntegerToPointerOperation>(&node))
-  {
-    AnalyzeBits2ptr(node);
-  }
-  else if (is<PtrToIntOperation>(&node))
-  {
-    AnalyzePtrToInt(node);
-  }
-  else if (is<ConstantPointerNullOperation>(&node))
-  {
-    AnalyzeConstantPointerNull(node);
-  }
-  else if (is<UndefValueOperation>(&node))
-  {
-    AnalyzeUndef(node);
-  }
-  else if (is<MemCpyOperation>(&node))
-  {
-    AnalyzeMemcpy(node);
-  }
-  else if (is<ConstantArrayOperation>(&node))
-  {
-    AnalyzeConstantArray(node);
-  }
-  else if (is<ConstantStruct>(&node))
-  {
-    AnalyzeConstantStruct(node);
-  }
-  else if (is<ConstantAggregateZeroOperation>(&node))
-  {
-    AnalyzeConstantAggregateZero(node);
-  }
-  else if (is<ExtractValueOperation>(&node))
-  {
-    AnalyzeExtractValue(node);
-  }
-  else if (is<VariadicArgumentListOperation>(&node))
-  {
-    AnalyzeVaList(node);
-  }
-  else if (is<PointerToFunctionOperation>(&node))
-  {
-    AnalyzePointerToFunction(node);
-  }
-  else if (is<FunctionToPointerOperation>(&node))
-  {
-    AnalyzeFunctionToPointer(node);
-  }
-  else if (is<IOBarrierOperation>(&node))
-  {
-    AnalyzeIOBarrier(node);
-  }
-  else if (is<FreeOperation>(&node) || is<PtrCmpOperation>(&node))
-  {
-    // Nothing needs to be done as FreeOperation and PtrCmpOperation do not affect points-to sets
-  }
-  else
-  {
-    // Ensure that we took care of all pointer consuming nodes.
-    JLM_ASSERT(!ShouldHandle(node));
-  }
+  rvsdg::MatchTypeWithDefault(
+      node.GetOperation(),
+      [&](const AllocaOperation &)
+      {
+        AnalyzeAlloca(node);
+      },
+      [&](const MallocOperation &)
+      {
+        AnalyzeMalloc(node);
+      },
+      [&](const LoadOperation &)
+      {
+        AnalyzeLoad(node);
+      },
+      [&](const StoreOperation &)
+      {
+        AnalyzeStore(node);
+      },
+      [&](const CallOperation &)
+      {
+        AnalyzeCall(node);
+      },
+      [&](const GetElementPtrOperation &)
+      {
+        AnalyzeGep(node);
+      },
+      [&](const BitCastOperation &)
+      {
+        AnalyzeBitcast(node);
+      },
+      [&](const IntegerToPointerOperation &)
+      {
+        AnalyzeBits2ptr(node);
+      },
+      [&](const PtrToIntOperation &)
+      {
+        AnalyzePtrToInt(node);
+      },
+      [&](const ConstantPointerNullOperation &)
+      {
+        AnalyzeConstantPointerNull(node);
+      },
+      [&](const UndefValueOperation &)
+      {
+        AnalyzeUndef(node);
+      },
+      [&](const MemCpyOperation &)
+      {
+        AnalyzeMemcpy(node);
+      },
+      [&](const ConstantArrayOperation &)
+      {
+        AnalyzeConstantArray(node);
+      },
+      [&](const ConstantStruct &)
+      {
+        AnalyzeConstantStruct(node);
+      },
+      [&](const ConstantAggregateZeroOperation &)
+      {
+        AnalyzeConstantAggregateZero(node);
+      },
+      [&](const ExtractValueOperation &)
+      {
+        AnalyzeExtractValue(node);
+      },
+      [&](const VariadicArgumentListOperation &)
+      {
+        AnalyzeVaList(node);
+      },
+      [&](const PointerToFunctionOperation &)
+      {
+        AnalyzePointerToFunction(node);
+      },
+      [&](const FunctionToPointerOperation &)
+      {
+        AnalyzeFunctionToPointer(node);
+      },
+      [&](const IOBarrierOperation &)
+      {
+        AnalyzeIOBarrier(node);
+      },
+      [&](const FreeOperation &)
+      {
+        // Takes pointers as input, but does not affect any points-to sets
+      },
+      [&](const PtrCmpOperation &)
+      {
+        // Takes pointers as input, but does not affect any points-to sets
+      },
+      [&]()
+      {
+        // Ensure that we took care of all pointer consuming nodes.
+        JLM_ASSERT(!ShouldHandle(node));
+      });
 }
 
 void
@@ -1746,30 +1754,28 @@ Steensgaard::AnalyzeTheta(const rvsdg::ThetaNode & theta)
 void
 Steensgaard::AnalyzeStructuralNode(const rvsdg::StructuralNode & node)
 {
-  if (auto lambdaNode = dynamic_cast<const rvsdg::LambdaNode *>(&node))
-  {
-    AnalyzeLambda(*lambdaNode);
-  }
-  else if (auto deltaNode = dynamic_cast<const rvsdg::DeltaNode *>(&node))
-  {
-    AnalyzeDelta(*deltaNode);
-  }
-  else if (auto gammaNode = dynamic_cast<const rvsdg::GammaNode *>(&node))
-  {
-    AnalyzeGamma(*gammaNode);
-  }
-  else if (auto thetaNode = dynamic_cast<const rvsdg::ThetaNode *>(&node))
-  {
-    AnalyzeTheta(*thetaNode);
-  }
-  else if (auto phiNode = dynamic_cast<const rvsdg::PhiNode *>(&node))
-  {
-    AnalyzePhi(*phiNode);
-  }
-  else
-  {
-    JLM_UNREACHABLE("Unhandled node type!");
-  }
+  MatchTypeOrFail(
+      node,
+      [this](const rvsdg::LambdaNode & lambdaNode)
+      {
+        AnalyzeLambda(lambdaNode);
+      },
+      [this](const rvsdg::DeltaNode & deltaNode)
+      {
+        AnalyzeDelta(deltaNode);
+      },
+      [this](const rvsdg::PhiNode & phiNode)
+      {
+        AnalyzePhi(phiNode);
+      },
+      [this](const rvsdg::GammaNode & gammaNode)
+      {
+        AnalyzeGamma(gammaNode);
+      },
+      [this](const rvsdg::ThetaNode & thetaNode)
+      {
+        AnalyzeTheta(thetaNode);
+      });
 }
 
 void
@@ -1790,18 +1796,16 @@ Steensgaard::AnalyzeRegion(rvsdg::Region & region)
   TopDownTraverser traverser(&region);
   for (auto & node : traverser)
   {
-    if (auto simpleNode = dynamic_cast<const SimpleNode *>(node))
-    {
-      AnalyzeSimpleNode(*simpleNode);
-    }
-    else if (auto structuralNode = dynamic_cast<const StructuralNode *>(node))
-    {
-      AnalyzeStructuralNode(*structuralNode);
-    }
-    else
-    {
-      JLM_UNREACHABLE("Unhandled node type.");
-    }
+    MatchTypeOrFail(
+        *node,
+        [this](const SimpleNode & simpleNode)
+        {
+          AnalyzeSimpleNode(simpleNode);
+        },
+        [this](const StructuralNode & structuralNode)
+        {
+          AnalyzeStructuralNode(structuralNode);
+        });
   }
 }
 

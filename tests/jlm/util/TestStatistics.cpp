@@ -175,7 +175,7 @@ TestCreateOutputFile()
   // Arrange
   StatisticsCollectorSettings settings(
       { Statistics::Id::Aggregation },
-      FilePath("."),
+      FilePath("/tmp"),
       "test-module");
   settings.SetUniqueString("ABC");
   StatisticsCollector collector(std::move(settings));
@@ -190,13 +190,13 @@ TestCreateOutputFile()
   const auto nice1 = collector.CreateOutputFile("nice.txt", true);
 
   // Assert
-  assert(statsFile.path() == "./test-module-ABC-stats.log");
+  assert(statsFile.path() == "/tmp/test-module-ABC-stats.log");
 
-  assert(cool0.path() == "./test-module-ABC-cool-0");
-  assert(cool1.path() == "./test-module-ABC-cool-1");
+  assert(cool0.path() == "/tmp/test-module-ABC-cool-0");
+  assert(cool1.path() == "/tmp/test-module-ABC-cool-1");
 
-  assert(nice0.path() == "./test-module-ABC-nice-0.txt");
-  assert(nice1.path() == "./test-module-ABC-nice-1.txt");
+  assert(nice0.path() == "/tmp/test-module-ABC-nice-0.txt");
+  assert(nice1.path() == "/tmp/test-module-ABC-nice-1.txt");
 }
 
 JLM_UNIT_TEST_REGISTER("jlm/util/TestStatistics-TestCreateOutputFile", TestCreateOutputFile)

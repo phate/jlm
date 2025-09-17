@@ -5,10 +5,13 @@
  */
 
 #include <jlm/llvm/opt/alias-analyses/AgnosticModRefSummarizer.hpp>
+#include <jlm/llvm/opt/alias-analyses/AliasAnalysisPrecisionEvaluator.hpp>
 #include <jlm/llvm/opt/alias-analyses/Andersen.hpp>
 #include <jlm/llvm/opt/alias-analyses/EliminatedModRefSummarizer.hpp>
+#include <jlm/llvm/opt/alias-analyses/LocalAliasAnalysis.hpp>
 #include <jlm/llvm/opt/alias-analyses/MemoryStateEncoder.hpp>
-#include <jlm/llvm/opt/alias-analyses/Optimization.hpp>
+#include <jlm/llvm/opt/alias-analyses/PointsToAnalysisStateEncoder.hpp>
+#include <jlm/llvm/opt/alias-analyses/PointsToGraphAliasAnalysis.hpp>
 #include <jlm/llvm/opt/alias-analyses/RegionAwareModRefSummarizer.hpp>
 #include <jlm/llvm/opt/alias-analyses/Steensgaard.hpp>
 #include <jlm/llvm/opt/alias-analyses/TopDownModRefEliminator.hpp>
@@ -28,6 +31,24 @@ PointsToAnalysisStateEncoder<TPointsToAnalysis, TModRefSummarizer>::Run(
 {
   TPointsToAnalysis ptaPass;
   auto pointsToGraph = ptaPass.Analyze(rvsdgModule, statisticsCollector);
+
+  if (statisticsCollector.IsDemanded(util::Statistics::Id::AliasAnalysisPrecisionEvaluation))
+  {
+    AliasAnalysisPrecisionEvaluator precisionEvaluator;
+
+    // Use different alias analyses, and their combination
+    LocalAliasAnalysis localAA;
+    PointsToGraphAliasAnalysis ptgAA(*pointsToGraph);
+    ChainedAliasAnalysis ptgPlusLocalAA(ptgAA, localAA);
+
+    precisionEvaluator.EvaluateAliasAnalysisClient(rvsdgModule, localAA, statisticsCollector);
+    precisionEvaluator.EvaluateAliasAnalysisClient(rvsdgModule, ptgAA, statisticsCollector);
+    precisionEvaluator.EvaluateAliasAnalysisClient(
+        rvsdgModule,
+        ptgPlusLocalAA,
+        statisticsCollector);
+  }
+
   auto modRefSummary = TModRefSummarizer::Create(rvsdgModule, *pointsToGraph, statisticsCollector);
 
   MemoryStateEncoder encoder;

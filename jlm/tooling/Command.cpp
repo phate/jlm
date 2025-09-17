@@ -13,7 +13,7 @@
 #include <jlm/llvm/opt/alias-analyses/AgnosticModRefSummarizer.hpp>
 #include <jlm/llvm/opt/alias-analyses/Andersen.hpp>
 #include <jlm/llvm/opt/alias-analyses/EliminatedModRefSummarizer.hpp>
-#include <jlm/llvm/opt/alias-analyses/Optimization.hpp>
+#include <jlm/llvm/opt/alias-analyses/PointsToAnalysisStateEncoder.hpp>
 #include <jlm/llvm/opt/alias-analyses/RegionAwareModRefSummarizer.hpp>
 #include <jlm/llvm/opt/alias-analyses/Steensgaard.hpp>
 #include <jlm/llvm/opt/alias-analyses/TopDownModRefEliminator.hpp>
@@ -22,7 +22,7 @@
 #include <jlm/llvm/opt/IfConversion.hpp>
 #include <jlm/llvm/opt/inlining.hpp>
 #include <jlm/llvm/opt/InvariantValueRedirection.hpp>
-#include <jlm/llvm/opt/inversion.hpp>
+#include <jlm/llvm/opt/LoopUnswitching.hpp>
 #include <jlm/llvm/opt/pull.hpp>
 #include <jlm/llvm/opt/push.hpp>
 #include <jlm/llvm/opt/reduction.hpp>
@@ -359,10 +359,13 @@ JlmOptCommand::Run() const
       CommandLineOptions_.GetInputFormat(),
       statisticsCollector);
 
+  llvm::dot::LlvmDotWriter dotWriter;
   rvsdg::TransformationSequence::CreateAndRun(
       *rvsdgModule,
       statisticsCollector,
-      GetTransformations());
+      GetTransformations(),
+      dotWriter,
+      CommandLineOptions_.DumpRvsdgDotGraphs());
 
   PrintRvsdgModule(
       *rvsdgModule,
@@ -604,7 +607,8 @@ JlmOptCommand::PrintAsDot(
   auto & rootRegion = rvsdgModule.Rvsdg().GetRootRegion();
 
   util::graph::Writer writer;
-  llvm::dot::WriteGraphs(writer, rootRegion, true);
+  llvm::dot::LlvmDotWriter dotWriter;
+  dotWriter.WriteGraphs(writer, rootRegion, true);
 
   if (outputFile == "")
   {

@@ -5,12 +5,12 @@
 jlc_SOURCES = \
 	tools/jlc/jlc.cpp \
 
-jlc_LIBS += \
-	libtooling \
-	libllvm \
-	libmlir \
-	librvsdg \
-	libutil \
+jlc_LIBS = \
+    libtooling \
+    $(if $(ENABLE_MLIR),libmlir) \
+    libllvm \
+    librvsdg \
+    libutil \
 
 jlc_EXTRA_LDFLAGS += \
 	${MLIR_LDFLAGS} \
@@ -22,11 +22,11 @@ jlm-opt_SOURCES = \
 	tools/jlm-opt/jlm-opt.cpp \
 
 jlm-opt_LIBS = \
-	libtooling \
-	libllvm \
-	libmlir \
-	librvsdg \
-	libutil \
+    libtooling \
+    $(if $(ENABLE_MLIR),libmlir) \
+    libllvm \
+    librvsdg \
+    libutil \
 
 jlm-opt_EXTRA_LDFLAGS = \
 	${MLIR_LDFLAGS} \

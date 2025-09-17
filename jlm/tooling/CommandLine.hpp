@@ -92,14 +92,16 @@ public:
       OutputFormat outputFormat,
       util::StatisticsCollectorSettings statisticsCollectorSettings,
       llvm::RvsdgTreePrinter::Configuration rvsdgTreePrinterConfiguration,
-      std::vector<OptimizationId> optimizations)
+      std::vector<OptimizationId> optimizations,
+      const bool dumpRvsdgDotGraphs)
       : InputFile_(std::move(inputFile)),
         InputFormat_(inputFormat),
         OutputFile_(std::move(outputFile)),
         OutputFormat_(outputFormat),
         StatisticsCollectorSettings_(std::move(statisticsCollectorSettings)),
         OptimizationIds_(std::move(optimizations)),
-        RvsdgTreePrinterConfiguration_(std::move(rvsdgTreePrinterConfiguration))
+        RvsdgTreePrinterConfiguration_(std::move(rvsdgTreePrinterConfiguration)),
+        DumpRvsdgDotGraphs_(dumpRvsdgDotGraphs)
   {}
 
   void
@@ -147,6 +149,12 @@ public:
     return RvsdgTreePrinterConfiguration_;
   }
 
+  [[nodiscard]] bool
+  DumpRvsdgDotGraphs() const noexcept
+  {
+    return DumpRvsdgDotGraphs_;
+  }
+
   static OptimizationId
   FromCommandLineArgumentToOptimizationId(const std::string & commandLineArgument);
 
@@ -173,7 +181,8 @@ public:
       OutputFormat outputFormat,
       util::StatisticsCollectorSettings statisticsCollectorSettings,
       llvm::RvsdgTreePrinter::Configuration rvsdgTreePrinterConfiguration,
-      std::vector<OptimizationId> optimizations)
+      std::vector<OptimizationId> optimizations,
+      bool dumpRvsdgDotGraphs)
   {
     return std::make_unique<JlmOptCommandLineOptions>(
         std::move(inputFile),
@@ -182,7 +191,8 @@ public:
         outputFormat,
         std::move(statisticsCollectorSettings),
         std::move(rvsdgTreePrinterConfiguration),
-        std::move(optimizations));
+        std::move(optimizations),
+        dumpRvsdgDotGraphs);
   }
 
 private:
@@ -193,6 +203,7 @@ private:
   util::StatisticsCollectorSettings StatisticsCollectorSettings_;
   std::vector<OptimizationId> OptimizationIds_;
   llvm::RvsdgTreePrinter::Configuration RvsdgTreePrinterConfiguration_;
+  bool DumpRvsdgDotGraphs_;
 
   struct OptimizationCommandLineArgument
   {

@@ -822,7 +822,7 @@ TestDrawSubsetGraph()
 }
 
 // Tests crating a ConstraintSet with multiple different constraints and calling Solve()
-template<bool useWorklist, typename... Args>
+template<jlm::llvm::aa::Andersen::Configuration::Solver solver, typename... Args>
 static void
 TestPointerObjectConstraintSetSolve(Args... args)
 {
@@ -890,14 +890,18 @@ TestPointerObjectConstraintSetSolve(Args... args)
   constraints.AddConstraint(LoadConstraint(reg[10], reg[8]));
 
   // Find a solution to all the constraints
-  if constexpr (useWorklist)
+  if constexpr (solver == Andersen::Configuration::Solver::Worklist)
   {
     constraints.SolveUsingWorklist(args...);
   }
-  else
+  else if constexpr (solver == Andersen::Configuration::Solver::Naive)
   {
     static_assert(sizeof...(args) == 0, "The naive solver takes no arguments");
     constraints.SolveNaively();
+  }
+  else
+  {
+    JLM_UNREACHABLE("Unknown solver");
   }
 
   // alloca1 should point to alloca2, etc
@@ -1007,7 +1011,10 @@ TestPointerObjectSet()
   TestAddPointsToExternalConstraint();
   TestAddRegisterContentEscapedConstraint();
   TestDrawSubsetGraph();
-  TestPointerObjectConstraintSetSolve<false>();
+
+  using Configuration = jlm::llvm::aa::Andersen::Configuration;
+
+  TestPointerObjectConstraintSetSolve<Configuration::Solver::Naive>();
 
   auto allConfigs = jlm::llvm::aa::Andersen::Configuration::GetAllConfigurations();
   for (const auto & config : allConfigs)
@@ -1020,7 +1027,7 @@ TestPointerObjectSet()
     if (config.IsOfflineConstraintNormalizationEnabled())
       continue;
 
-    TestPointerObjectConstraintSetSolve<true>(
+    TestPointerObjectConstraintSetSolve<Configuration::Solver::Worklist>(
         config.GetWorklistSoliverPolicy(),
         config.IsOnlineCycleDetectionEnabled(),
         config.IsHybridCycleDetectionEnabled(),

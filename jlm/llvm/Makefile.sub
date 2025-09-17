@@ -38,6 +38,7 @@ libllvm_SOURCES = \
     jlm/llvm/ir/operators/MemoryStateOperations.cpp \
     jlm/llvm/ir/operators/operators.cpp \
     jlm/llvm/ir/operators/sext.cpp \
+    jlm/llvm/ir/operators/SpecializedArithmeticIntrinsicOperations.cpp \
     jlm/llvm/ir/operators/Store.cpp \
     jlm/llvm/ir/print.cpp \
     jlm/llvm/ir/RvsdgModule.cpp \
@@ -47,12 +48,13 @@ libllvm_SOURCES = \
     jlm/llvm/ir/variable.cpp \
     \
     jlm/llvm/opt/alias-analyses/AliasAnalysis.cpp \
+    jlm/llvm/opt/alias-analyses/AliasAnalysisPrecisionEvaluator.cpp \
     jlm/llvm/opt/alias-analyses/AgnosticModRefSummarizer.cpp \
     jlm/llvm/opt/alias-analyses/Andersen.cpp \
     jlm/llvm/opt/alias-analyses/LocalAliasAnalysis.cpp \
     jlm/llvm/opt/alias-analyses/MemoryStateEncoder.cpp \
-    jlm/llvm/opt/alias-analyses/Optimization.cpp \
     jlm/llvm/opt/alias-analyses/PointerObjectSet.cpp \
+    jlm/llvm/opt/alias-analyses/PointsToAnalysisStateEncoder.cpp \
     jlm/llvm/opt/alias-analyses/PointsToGraph.cpp \
     jlm/llvm/opt/alias-analyses/PointsToGraphAliasAnalysis.cpp \
     jlm/llvm/opt/alias-analyses/RegionAwareModRefSummarizer.cpp \
@@ -63,7 +65,7 @@ libllvm_SOURCES = \
     jlm/llvm/opt/IfConversion.cpp \
     jlm/llvm/opt/inlining.cpp \
     jlm/llvm/opt/InvariantValueRedirection.cpp \
-    jlm/llvm/opt/inversion.cpp \
+    jlm/llvm/opt/LoopUnswitching.cpp \
     jlm/llvm/opt/pull.cpp \
     jlm/llvm/opt/push.cpp \
     jlm/llvm/opt/reduction.cpp \
@@ -82,6 +84,7 @@ libllvm_HEADERS = \
     jlm/llvm/opt/cne.hpp \
     jlm/llvm/opt/push.hpp \
     jlm/llvm/opt/alias-analyses/AliasAnalysis.hpp \
+    jlm/llvm/opt/alias-analyses/AliasAnalysisPrecisionEvaluator.hpp \
     jlm/llvm/opt/alias-analyses/AgnosticModRefSummarizer.hpp \
     jlm/llvm/opt/alias-analyses/Andersen.hpp \
     jlm/llvm/opt/alias-analyses/DifferencePropagation.hpp \
@@ -89,7 +92,7 @@ libllvm_HEADERS = \
     jlm/llvm/opt/alias-analyses/LazyCycleDetection.hpp \
     jlm/llvm/opt/alias-analyses/LocalAliasAnalysis.hpp \
     jlm/llvm/opt/alias-analyses/OnlineCycleDetection.hpp \
-    jlm/llvm/opt/alias-analyses/Optimization.hpp \
+    jlm/llvm/opt/alias-analyses/PointsToAnalysisStateEncoder.hpp \
     jlm/llvm/opt/alias-analyses/ModRefEliminator.hpp \
     jlm/llvm/opt/alias-analyses/MemoryStateEncoder.hpp \
     jlm/llvm/opt/alias-analyses/ModRefSummarizer.hpp \
@@ -105,7 +108,7 @@ libllvm_HEADERS = \
     jlm/llvm/opt/reduction.hpp \
     jlm/llvm/opt/IfConversion.hpp \
     jlm/llvm/opt/InvariantValueRedirection.hpp \
-    jlm/llvm/opt/inversion.hpp \
+    jlm/llvm/opt/LoopUnswitching.hpp \
     jlm/llvm/opt/RvsdgTreePrinter.hpp \
     jlm/llvm/frontend/LlvmModuleConversion.hpp \
     jlm/llvm/frontend/ControlFlowRestructuring.hpp \
@@ -146,6 +149,7 @@ libllvm_HEADERS = \
     jlm/llvm/ir/operators/call.hpp \
     jlm/llvm/ir/operators/sext.hpp \
     jlm/llvm/ir/operators/lambda.hpp \
+    jlm/llvm/ir/operators/SpecializedArithmeticIntrinsicOperations.hpp \
     jlm/llvm/ir/aggregation.hpp \
 
 libllvm_TESTS += \
@@ -153,8 +157,10 @@ libllvm_TESTS += \
     \
     tests/jlm/llvm/backend/IpGraphToLlvmConverterTests \
     tests/jlm/llvm/backend/RvsdgToIpGraphConverterTests \
+    tests/jlm/llvm/frontend/llvm/ControlFlowRestructuringTests \
     tests/jlm/llvm/frontend/llvm/LoadTests \
     tests/jlm/llvm/frontend/llvm/MemCpyTests \
+    tests/jlm/llvm/frontend/llvm/SpecializedArithmeticIntrinsicOperationTests \
     tests/jlm/llvm/frontend/llvm/StoreTests \
     tests/jlm/llvm/frontend/llvm/TestAttributeConversion \
     tests/jlm/llvm/frontend/llvm/test-endless-loop \
@@ -163,7 +169,6 @@ libllvm_TESTS += \
     tests/jlm/llvm/frontend/llvm/test-function-call \
     tests/jlm/llvm/frontend/llvm/LlvmPhiConversionTests \
     tests/jlm/llvm/frontend/llvm/test-recursive-data \
-    tests/jlm/llvm/frontend/llvm/test-restructuring \
     tests/jlm/llvm/frontend/llvm/test-select \
     tests/jlm/llvm/frontend/llvm/ThreeAddressCodeConversionTests \
     tests/jlm/llvm/ir/operators/LoadTests \
@@ -209,11 +214,11 @@ libllvm_TESTS += \
     tests/jlm/llvm/opt/DeadNodeEliminationTests \
     tests/jlm/llvm/opt/IfConversionTests \
     tests/jlm/llvm/opt/InvariantValueRedirectionTests \
+    tests/jlm/llvm/opt/LoopUnswitchingTests \
     tests/jlm/llvm/opt/NodeReductionTests \
     tests/jlm/llvm/opt/RvsdgTreePrinterTests \
     tests/jlm/llvm/opt/test-cne \
     tests/jlm/llvm/opt/test-inlining \
-    tests/jlm/llvm/opt/test-inversion \
     tests/jlm/llvm/opt/test-pull \
     tests/jlm/llvm/opt/test-push \
     tests/jlm/llvm/opt/test-unroll \

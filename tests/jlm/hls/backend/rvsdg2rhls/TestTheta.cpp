@@ -59,16 +59,12 @@ TestUnknownBoundaries()
   auto & loopNode =
       jlm::rvsdg::AssertGetOwnerNode<LoopNode>(lambdaRegion->argument(0)->SingleUser());
   {
-    auto [bufferNode, bufferOperation] =
-        jlm::rvsdg::TryGetSimpleNodeAndOptionalOp<LoopConstantBufferOperation>(
-            loopNode.subregion()->argument(3)->SingleUser());
-    assert(bufferNode && bufferOperation);
+    assert(jlm::rvsdg::IsOwnerNodeOperation<LoopConstantBufferOperation>(
+        loopNode.subregion()->argument(3)->SingleUser()));
   }
   {
-    auto [bufferNode, bufferOperation] =
-        jlm::rvsdg::TryGetSimpleNodeAndOptionalOp<LoopConstantBufferOperation>(
-            loopNode.subregion()->argument(4)->SingleUser());
-    assert(bufferNode && bufferOperation);
+    assert(jlm::rvsdg::IsOwnerNodeOperation<LoopConstantBufferOperation>(
+        loopNode.subregion()->argument(4)->SingleUser()));
   }
 }
 

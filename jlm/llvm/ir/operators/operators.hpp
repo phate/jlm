@@ -57,12 +57,6 @@ public:
   [[nodiscard]] std::unique_ptr<Operation>
   copy() const override;
 
-  const rvsdg::Type &
-  type() const noexcept
-  {
-    return *result(0);
-  }
-
   const std::shared_ptr<const rvsdg::Type> &
   Type() const noexcept
   {

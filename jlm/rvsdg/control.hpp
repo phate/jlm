@@ -110,7 +110,7 @@ struct ctltype_of_value
   }
 };
 
-struct ctlformat_value
+struct ControlValueRepresentationFormatValue
 {
   std::string
   operator()(const ControlValueRepresentation & repr) const
@@ -119,7 +119,11 @@ struct ctlformat_value
   }
 };
 
-typedef domain_const_op<ControlType, ControlValueRepresentation, ctlformat_value, ctltype_of_value>
+typedef DomainConstOperation<
+    ControlType,
+    ControlValueRepresentation,
+    ControlValueRepresentationFormatValue,
+    ctltype_of_value>
     ctlconstant_op;
 
 static inline bool
@@ -253,10 +257,10 @@ match(
     jlm::rvsdg::Output * operand);
 
 // declare explicit instantiation
-extern template class domain_const_op<
+extern template class DomainConstOperation<
     ControlType,
     ControlValueRepresentation,
-    ctlformat_value,
+    ControlValueRepresentationFormatValue,
     ctltype_of_value>;
 
 jlm::rvsdg::Output *

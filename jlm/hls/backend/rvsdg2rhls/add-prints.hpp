@@ -27,9 +27,6 @@ convert_prints(
     rvsdg::Output * printf,
     const std::shared_ptr<const rvsdg::FunctionType> & functionType);
 
-rvsdg::Output *
-route_to_region_rvsdg(jlm::rvsdg::Output * output, rvsdg::Region * region);
-
 }
 
 #endif // JLM_HLS_BACKEND_RVSDG2RHLS_ADD_PRINTS_HPP

@@ -59,26 +59,43 @@ MemoryStateMergeOperation::NormalizeDuplicateOperands(
   return { { result } };
 }
 
-std::optional<std::vector<rvsdg::Output *>>
-MemoryStateMergeOperation::NormalizeNestedMerges(
-    const MemoryStateMergeOperation &,
-    const std::vector<rvsdg::Output *> & operands)
+template<class TMemoryStateMergeOrJoinOperation>
+std::vector<rvsdg::Output *>
+CollectNestedMemoryStateMergeOrJoinOperands(const std::vector<rvsdg::Output *> & operands)
 {
+  static_assert(
+      std::is_same_v<TMemoryStateMergeOrJoinOperation, MemoryStateMergeOperation>
+          || std::is_same_v<TMemoryStateMergeOrJoinOperation, MemoryStateJoinOperation>,
+      "Template parameter T must be a MemoryStateMergeOperation or a MemoryStateJoinOperation!");
+
   std::vector<rvsdg::Output *> newOperands;
   for (auto operand : operands)
   {
-    auto [mergeNode, mergeOperation] =
-        rvsdg::TryGetSimpleNodeAndOptionalOp<MemoryStateMergeOperation>(*operand);
-    if (mergeOperation)
+    auto [node, operation] =
+        rvsdg::TryGetSimpleNodeAndOptionalOp<TMemoryStateMergeOrJoinOperation>(*operand);
+    if (operation)
     {
-      auto mergeOperands = rvsdg::operands(mergeNode);
-      newOperands.insert(newOperands.end(), mergeOperands.begin(), mergeOperands.end());
+      auto nodeOperands =
+          CollectNestedMemoryStateMergeOrJoinOperands<TMemoryStateMergeOrJoinOperation>(
+              rvsdg::operands(node));
+      newOperands.insert(newOperands.end(), nodeOperands.begin(), nodeOperands.end());
     }
     else
     {
       newOperands.emplace_back(operand);
     }
   }
+
+  return newOperands;
+}
+
+std::optional<std::vector<rvsdg::Output *>>
+MemoryStateMergeOperation::NormalizeNestedMerges(
+    const MemoryStateMergeOperation &,
+    const std::vector<rvsdg::Output *> & operands)
+{
+  auto newOperands =
+      CollectNestedMemoryStateMergeOrJoinOperands<MemoryStateMergeOperation>(operands);
 
   if (operands == newOperands)
     return std::nullopt;
@@ -112,6 +129,75 @@ MemoryStateMergeOperation::NormalizeMergeSplit(
 
   auto result = Create(std::move(newOperands));
   return { { result } };
+}
+
+MemoryStateJoinOperation::~MemoryStateJoinOperation() noexcept = default;
+
+bool
+MemoryStateJoinOperation::operator==(const Operation & other) const noexcept
+{
+  const auto operation = dynamic_cast<const MemoryStateMergeOperation *>(&other);
+  return operation && operation->narguments() == narguments();
+}
+
+std::string
+MemoryStateJoinOperation::debug_string() const
+{
+  return "MemoryStateJoin";
+}
+
+std::unique_ptr<rvsdg::Operation>
+MemoryStateJoinOperation::copy() const
+{
+  return std::make_unique<MemoryStateJoinOperation>(*this);
+}
+
+std::optional<std::vector<rvsdg::Output *>>
+MemoryStateJoinOperation::NormalizeSingleOperand(
+    const MemoryStateJoinOperation &,
+    const std::vector<rvsdg::Output *> & operands)
+{
+  if (operands.size() == 1)
+    return operands;
+
+  return std::nullopt;
+}
+
+std::optional<std::vector<rvsdg::Output *>>
+MemoryStateJoinOperation::NormalizeDuplicateOperands(
+    const MemoryStateJoinOperation &,
+    const std::vector<rvsdg::Output *> & operands)
+{
+  std::vector<rvsdg::Output *> newOperands;
+  util::HashSet<rvsdg::Output *> seenOperands;
+  for (auto operand : operands)
+  {
+    if (seenOperands.Contains(operand))
+      continue;
+
+    seenOperands.Insert(operand);
+    newOperands.emplace_back(operand);
+  }
+
+  if (newOperands.size() == operands.size())
+    return std::nullopt;
+
+  return { { CreateNode(newOperands).output(0) } };
+}
+
+std::optional<std::vector<rvsdg::Output *>>
+MemoryStateJoinOperation::NormalizeNestedJoins(
+    const MemoryStateJoinOperation &,
+    const std::vector<rvsdg::Output *> & operands)
+{
+  auto newOperands =
+      CollectNestedMemoryStateMergeOrJoinOperands<MemoryStateJoinOperation>(operands);
+
+  if (operands == newOperands)
+    return std::nullopt;
+
+  const auto & memoryStateJoinNode = CreateNode(std::move(newOperands));
+  return { { memoryStateJoinNode.output(0) } };
 }
 
 MemoryStateSplitOperation::~MemoryStateSplitOperation() noexcept = default;
@@ -351,8 +437,7 @@ LambdaExitMemoryStateMergeOperation::NormalizeLoadFromAlloca(
     }
 
     auto loadAddress = LoadOperation::AddressInput(*loadNode).origin();
-    auto [_, allocaOperation] = rvsdg::TryGetSimpleNodeAndOptionalOp<AllocaOperation>(*loadAddress);
-    if (!allocaOperation)
+    if (!rvsdg::IsOwnerNodeOperation<AllocaOperation>(*loadAddress))
     {
       newOperands.push_back(operand);
       continue;
@@ -392,9 +477,7 @@ LambdaExitMemoryStateMergeOperation::NormalizeStoreToAlloca(
     }
 
     auto storeAddress = StoreOperation::AddressInput(*storeNode).origin();
-    auto [_, allocaOperation] =
-        rvsdg::TryGetSimpleNodeAndOptionalOp<AllocaOperation>(*storeAddress);
-    if (!allocaOperation)
+    if (!rvsdg::IsOwnerNodeOperation<AllocaOperation>(*storeAddress))
     {
       newOperands.push_back(operand);
       continue;
