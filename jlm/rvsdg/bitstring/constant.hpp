@@ -27,7 +27,7 @@ struct type_of_value
   }
 };
 
-struct format_value
+struct BitValueRepresentationFormatValue
 {
   std::string
   operator()(const BitValueRepresentation & repr) const
@@ -39,7 +39,11 @@ struct format_value
   }
 };
 
-typedef DomainConstOperation<BitType, BitValueRepresentation, format_value, type_of_value>
+typedef DomainConstOperation<
+    BitType,
+    BitValueRepresentation,
+    BitValueRepresentationFormatValue,
+    type_of_value>
     bitconstant_op;
 
 inline bitconstant_op
@@ -58,7 +62,7 @@ int_constant_op(size_t nbits, int64_t value)
 extern template class DomainConstOperation<
     BitType,
     BitValueRepresentation,
-    format_value,
+    BitValueRepresentationFormatValue,
     type_of_value>;
 
 static inline jlm::rvsdg::Output *
