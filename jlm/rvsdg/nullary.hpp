@@ -28,16 +28,6 @@ public:
   {}
 };
 
-template<typename Type, typename ValueRepr>
-struct default_type_of_value
-{
-  Type
-  operator()(const ValueRepr &) const noexcept
-  {
-    return Type();
-  }
-};
-
 /* Template to represent a domain-specific constant. Instances are fully
  * characterised by the value they contain.
  *
