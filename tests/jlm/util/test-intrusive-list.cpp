@@ -12,17 +12,17 @@
 namespace
 {
 
-struct my_item
+struct MyItem
 {
-  inline my_item()
+  MyItem()
       : p(nullptr)
   {}
 
-  explicit my_item(int * ptr)
+  explicit MyItem(int * ptr)
       : p(ptr)
   {}
 
-  inline ~my_item()
+  ~MyItem()
   {
     if (p)
     {
@@ -31,12 +31,12 @@ struct my_item
   }
 
   int * p;
-  jlm::util::IntrusiveListAnchor<my_item> anchor{};
-  typedef jlm::util::intrusive_list_accessor<my_item, &my_item::anchor> accessor;
+  jlm::util::IntrusiveListAnchor<MyItem> anchor{};
+  typedef jlm::util::intrusive_list_accessor<MyItem, &MyItem::anchor> accessor;
 };
 
-typedef jlm::util::IntrusiveList<my_item, my_item::accessor> my_list;
-typedef jlm::util::OwnerIntrusiveList<my_item, my_item::accessor> my_owner_list;
+typedef jlm::util::IntrusiveList<MyItem, MyItem::accessor> my_list;
+typedef jlm::util::OwnerIntrusiveList<MyItem, MyItem::accessor> my_owner_list;
 
 static void
 test_simple_list()
@@ -44,7 +44,7 @@ test_simple_list()
   my_list l;
 
   assert(l.empty());
-  my_item i1, i2, i3;
+  MyItem i1, i2, i3;
 
   l.push_back(&i2);
   assert(l.begin().ptr() == &i2);
@@ -91,18 +91,18 @@ test_owner_list()
 
     assert(l.empty());
 
-    l.push_back(std::unique_ptr<my_item>(new my_item(&v2)));
+    l.push_back(std::unique_ptr<MyItem>(new MyItem(&v2)));
     assert(l.begin()->p == &v2);
     assert(std::next(l.begin()) == l.end());
     assert(std::prev(l.end())->p == &v2);
 
-    l.insert(l.begin(), std::unique_ptr<my_item>(new my_item(&v1)));
+    l.insert(l.begin(), std::unique_ptr<MyItem>(new MyItem(&v1)));
     assert(l.begin()->p == &v1);
     assert(std::next(l.begin())->p == &v2);
     assert(std::next(l.begin(), 2) == l.end());
     assert(std::prev(l.end())->p == &v2);
 
-    l.insert(l.end(), std::unique_ptr<my_item>(new my_item(&v3)));
+    l.insert(l.end(), std::unique_ptr<MyItem>(new MyItem(&v3)));
     assert(l.begin()->p == &v1);
     assert(std::next(l.begin())->p == &v2);
     assert(std::next(l.begin(), 2)->p == &v3);
@@ -122,7 +122,7 @@ test_owner_list()
     assert(std::prev(l.end())->p == &v3);
     assert(std::prev(l.end(), 2)->p == &v1);
 
-    std::unique_ptr<my_item> i = l.unlink(l.begin());
+    std::unique_ptr<MyItem> i = l.unlink(l.begin());
     assert(v1 == 1); // destructor not invoked, transferred ownership
     assert(v2 == 0);
     assert(v3 == 3);
