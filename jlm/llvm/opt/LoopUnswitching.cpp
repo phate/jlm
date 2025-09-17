@@ -98,26 +98,6 @@ LoopUnswitching::IsApplicable(const rvsdg::ThetaNode & thetaNode)
     return nullptr;
   }
 
-  // Only apply loop unswitching if the theta node is a converted for loop, i.e., everything but the
-  // predicate is contained in the gamma
-  for (const auto & loopVar : thetaNode.GetLoopVars())
-  {
-    const auto origin = loopVar.post->origin();
-    if (rvsdg::TryGetRegionParentNode<rvsdg::ThetaNode>(*origin))
-    {
-      // origin is a theta subregion argument
-    }
-    else if (rvsdg::TryGetOwnerNode<rvsdg::GammaNode>(*origin) == gammaNode)
-    {
-      // origin is an output of gamma node
-    }
-    else
-    {
-      // we don't want to invert this
-      return nullptr;
-    }
-  }
-
   return gammaNode;
 }
 
