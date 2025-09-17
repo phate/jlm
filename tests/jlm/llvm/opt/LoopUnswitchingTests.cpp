@@ -10,8 +10,11 @@
 #include <jlm/rvsdg/gamma.hpp>
 #include <jlm/rvsdg/theta.hpp>
 
+#include <jlm/llvm/ir/operators/IntegerOperations.hpp>
+#include <jlm/llvm/ir/operators/operators.hpp>
 #include <jlm/llvm/ir/RvsdgModule.hpp>
 #include <jlm/llvm/opt/LoopUnswitching.hpp>
+#include <jlm/rvsdg/view.hpp>
 #include <jlm/util/Statistics.hpp>
 
 static void
@@ -140,3 +143,55 @@ Test2()
 }
 
 JLM_UNIT_TEST_REGISTER("jlm/llvm/opt/LoopUnswitchingTests-Test2", Test2)
+
+static void
+Test3()
+{
+  using namespace jlm::llvm;
+  using namespace jlm::rvsdg;
+
+  // Arrange
+  jlm::llvm::RvsdgModule rvsdgModule(jlm::util::FilePath(""), "", "");
+  auto & rvsdg = rvsdgModule.Rvsdg();
+
+  auto & zeroNode = IntegerConstantOperation::Create(rvsdg.GetRootRegion(), 32, 0);
+
+  auto thetaNode = jlm::rvsdg::ThetaNode::create(&rvsdg.GetRootRegion());
+  auto loopVar = thetaNode->AddLoopVar(zeroNode.output(0));
+
+  auto & oneNode = IntegerConstantOperation::Create(*thetaNode->subregion(), 32, 1);
+  auto & fiveNode = IntegerConstantOperation::Create(*thetaNode->subregion(), 32, 5);
+
+  auto & addNode = CreateOpNode<IntegerAddOperation>({ loopVar.pre, oneNode.output(0) }, 32);
+  auto & ultNode = CreateOpNode<IntegerUltOperation>({ addNode.output(0), fiveNode.output(0) }, 32);
+
+  auto matchResult = MatchOperation::Create(*ultNode.output(0), { { 1, 1 } }, 0, 2);
+
+  auto gammaNode = GammaNode::create(matchResult, 2);
+  auto entryVar1 = gammaNode->AddEntryVar(addNode.output(0));
+  auto entryVar2 = gammaNode->AddEntryVar(loopVar.pre);
+
+  auto controlZero = control_constant(gammaNode->subregion(0), 2, 0);
+  auto controlOne = control_constant(gammaNode->subregion(1), 2, 1);
+
+  auto exitVarCtl = gammaNode->AddExitVar({ controlZero, controlOne });
+  auto exitVarIV =
+      gammaNode->AddExitVar({ entryVar2.branchArgument[0], entryVar1.branchArgument[1] });
+
+  loopVar.post->divert_to(exitVarIV.output);
+  thetaNode->set_predicate(exitVarCtl.output);
+
+  GraphExport::Create(*thetaNode->output(0), "x");
+
+  view(&rvsdg.GetRootRegion(), stdout);
+
+  // Act
+  jlm::util::StatisticsCollector statisticsCollector;
+  LoopUnswitching::CreateAndRun(rvsdgModule, statisticsCollector);
+
+  view(&rvsdg.GetRootRegion(), stdout);
+
+  // Assert
+}
+
+JLM_UNIT_TEST_REGISTER("jlm/llvm/opt/LoopUnswitchingTests-Test3", Test3)
