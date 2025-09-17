@@ -16,12 +16,12 @@ namespace jlm::util
 class Callback final
 {
 public:
-  class callback_impl
+  class CallbackImplementation
   {
   public:
-    virtual ~callback_impl() noexcept;
+    virtual ~CallbackImplementation() noexcept;
 
-    inline constexpr callback_impl()
+    constexpr CallbackImplementation()
         : refcount(1)
     {}
 
@@ -36,7 +36,7 @@ public:
     disconnect();
   }
 
-  inline explicit Callback(callback_impl * impl) noexcept
+  explicit Callback(CallbackImplementation * impl) noexcept
       : impl_(impl)
   {
     impl->refcount.fetch_add(1, std::memory_order_relaxed);
@@ -81,7 +81,7 @@ private:
     }
   }
 
-  callback_impl * impl_;
+  CallbackImplementation * impl_;
 };
 
 template<typename... Args>
@@ -116,7 +116,7 @@ public:
   typedef std::function<void(Args...)> function_type;
 
 private:
-  class callback_impl final : public Callback::callback_impl
+  class callback_impl final : public Callback::CallbackImplementation
   {
   public:
     ~callback_impl() noexcept override = default;
