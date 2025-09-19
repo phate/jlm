@@ -40,7 +40,7 @@ class Tracker;
  */
 class RegionArgument : public Output
 {
-  util::intrusive_list_anchor<RegionArgument> structural_input_anchor_{};
+  util::IntrusiveListAnchor<RegionArgument> structural_input_anchor_{};
 
 public:
   typedef util::intrusive_list_accessor<RegionArgument, &RegionArgument::structural_input_anchor_>
@@ -119,7 +119,7 @@ private:
  */
 class RegionResult : public Input
 {
-  util::intrusive_list_anchor<RegionResult> structural_output_anchor_{};
+  util::IntrusiveListAnchor<RegionResult> structural_output_anchor_{};
 
 public:
   typedef util::intrusive_list_accessor<RegionResult, &RegionResult::structural_output_anchor_>
