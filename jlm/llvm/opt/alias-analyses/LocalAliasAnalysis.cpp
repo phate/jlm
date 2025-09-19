@@ -190,7 +190,7 @@ static std::optional<int64_t>
 CalculateIntraTypeGepOffset(
     const rvsdg::SimpleNode & gepNode,
     size_t inputIndex,
-    const rvsdg::ValueType & type)
+    const rvsdg::Type & type)
 {
   // If we have no more input index values, we are not offsetting into the type
   if (inputIndex >= gepNode.ninputs())

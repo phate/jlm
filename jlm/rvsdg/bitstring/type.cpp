@@ -35,6 +35,12 @@ BitType::ComputeHash() const noexcept
   return util::CombineHashes(typeHash, numBitsHash);
 }
 
+TypeKind
+BitType::Kind() const noexcept
+{
+  return TypeKind::Value;
+}
+
 std::shared_ptr<const BitType>
 BitType::Create(std::size_t nbits)
 {

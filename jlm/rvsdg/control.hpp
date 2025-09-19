@@ -19,7 +19,7 @@
 namespace jlm::rvsdg
 {
 
-class ControlType final : public StateType
+class ControlType final : public Type
 {
 public:
   ~ControlType() noexcept override;
@@ -34,6 +34,9 @@ public:
 
   std::size_t
   ComputeHash() const noexcept override;
+
+  TypeKind
+  Kind() const noexcept override;
 
   inline size_t
   nalternatives() const noexcept
