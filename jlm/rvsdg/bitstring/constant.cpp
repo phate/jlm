@@ -14,6 +14,6 @@ template class DomainConstOperation<
     BitType,
     BitValueRepresentation,
     BitValueRepresentationFormatValue,
-    type_of_value>;
+    BitValueRepresentationTypeOfValue>;
 
 }
