@@ -23,7 +23,7 @@ public:
   class Set;
 
 private:
-  class member_iterator final
+  class MemberIterator final
   {
   public:
     using iterator_category = std::forward_iterator_tag;
@@ -35,7 +35,7 @@ private:
   private:
     friend class DisjointSet::Set;
 
-    member_iterator(const Set * node)
+    explicit MemberIterator(const Set * node)
         : node_(node)
     {}
 
@@ -53,7 +53,7 @@ private:
       return &operator*();
     }
 
-    member_iterator &
+    MemberIterator &
     operator++()
     {
       JLM_ASSERT(node_ != nullptr);
@@ -62,22 +62,22 @@ private:
       return *this;
     }
 
-    member_iterator
+    MemberIterator
     operator++(int)
     {
-      member_iterator tmp = *this;
+      MemberIterator tmp = *this;
       ++*this;
       return tmp;
     }
 
     bool
-    operator==(const member_iterator & other) const
+    operator==(const MemberIterator & other) const
     {
       return node_ == other.node_;
     }
 
     bool
-    operator!=(const member_iterator & other) const
+    operator!=(const MemberIterator & other) const
     {
       return !operator==(other);
     }
@@ -145,16 +145,16 @@ public:
       return !operator==(other);
     }
 
-    member_iterator
+    MemberIterator
     begin() const
     {
-      return member_iterator(root()->next_);
+      return MemberIterator(root()->next_);
     }
 
-    member_iterator
+    MemberIterator
     end() const
     {
-      return member_iterator(nullptr);
+      return MemberIterator(nullptr);
     }
 
     size_t
@@ -222,7 +222,7 @@ public:
     set_iterator
     operator++(int)
     {
-      member_iterator tmp = *this;
+      MemberIterator tmp = *this;
       ++*this;
       return tmp;
     }
