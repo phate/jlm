@@ -39,7 +39,7 @@ Input::Input(rvsdg::Node & owner, rvsdg::Output & origin, std::shared_ptr<const 
     : index_(0),
       Owner_(&owner),
       Type_(std::move(type)),
-      UsersList_()
+      UsersListAnchor_()
 {
   CheckTypes(*owner.region(), origin, Type_);
   origin.add_user(this);
@@ -49,7 +49,7 @@ Input::Input(rvsdg::Region & owner, rvsdg::Output & origin, std::shared_ptr<cons
     : index_(0),
       Owner_(&owner),
       Type_(std::move(type)),
-      UsersList_()
+      UsersListAnchor_()
 {
   CheckTypes(owner, origin, Type_);
   origin.add_user(this);
@@ -180,7 +180,7 @@ Output::remove_user(jlm::rvsdg::Input * user)
   JLM_ASSERT(user->origin_ == this);
   user->origin_ = nullptr;
 
-  Users_.erase(user);
+  Users_.erase(Users_.iterator_to(*user));
   NumUsers_ -= 1;
 
   if (auto node = TryGetOwnerNode<Node>(*this))
@@ -208,7 +208,7 @@ Output::add_user(jlm::rvsdg::Input * user)
     }
   }
 
-  Users_.push_back(user);
+  Users_.push_back(*user);
   NumUsers_ += 1;
 }
 

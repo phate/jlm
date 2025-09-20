@@ -18,6 +18,8 @@
 #include <utility>
 #include <variant>
 
+#include <boost/intrusive/list.hpp>
+
 namespace jlm::rvsdg
 {
 
@@ -223,9 +225,11 @@ private:
   jlm::rvsdg::Output * origin_ = nullptr;
   std::variant<Node *, Region *> Owner_;
   std::shared_ptr<const rvsdg::Type> Type_;
-  jlm::util::IntrusiveListAnchor<Input> UsersList_;
-  using UsersListAccessor = jlm::util::intrusive_list_accessor<Input, &Input::UsersList_>;
-  using UsersList = jlm::util::IntrusiveList<Input, UsersListAccessor>;
+  boost::intrusive::list_member_hook<> UsersListAnchor_;
+  using UsersList = boost::intrusive::list<
+      Input,
+      boost::intrusive::
+          member_hook<Input, boost::intrusive::list_member_hook<>, &Input::UsersListAnchor_>>;
 
   friend class Output;
 };
@@ -249,8 +253,8 @@ class Output
 
 public:
   using UsersList = Input::UsersList;
-  using UsersRange = jlm::util::IteratorRange<UsersList::Iterator>;
-  using UsersConstRange = jlm::util::IteratorRange<UsersList::ConstIterator>;
+  using UsersRange = jlm::util::IteratorRange<UsersList::iterator>;
+  using UsersConstRange = jlm::util::IteratorRange<UsersList::const_iterator>;
 
   virtual ~Output() noexcept;
 
