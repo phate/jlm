@@ -96,7 +96,7 @@ namespace jlm::util
 // FIXME: for some weird reason, std::equal_to does not specify noexcept, so
 // define our own equality comparison operator here
 template<typename T>
-struct safe_equal
+struct SafeEqual
 {
   inline bool
   operator()(const T & a, const T & b) const
@@ -107,7 +107,7 @@ struct safe_equal
 };
 
 template<>
-struct safe_equal<std::string>
+struct SafeEqual<std::string>
 {
   inline bool
   operator()(const std::string & a, const std::string & b) const noexcept
@@ -125,7 +125,7 @@ template<
     typename ElementType,
     typename Accessor,
     typename KeyHash = std::hash<KeyType>,
-    typename KeyEqual = safe_equal<KeyType>>
+    typename KeyEqual = SafeEqual<KeyType>>
 class IntrusiveHash
 {
 private:
@@ -624,7 +624,7 @@ template<
     typename ElementType,
     typename Accessor,
     typename KeyHash = std::hash<KeyType>,
-    typename KeyEqual = safe_equal<KeyType>>
+    typename KeyEqual = SafeEqual<KeyType>>
 class OwnerIntrusiveHash
 {
   typedef IntrusiveHash<KeyType, ElementType, Accessor, KeyHash, KeyEqual> internal_hash_type;
