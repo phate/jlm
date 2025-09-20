@@ -91,7 +91,7 @@ struct CallableArgumentType<Ret(Args...)>
  *   Callable object to deduce first parameter of.
  */
 template<typename Callable>
-struct callable_restype
+struct CallableResultType
 {
   // Deduce for object types.
   using type = typename member_function_pointer_restype<decltype(&Callable::operator())>::type;
@@ -99,7 +99,7 @@ struct callable_restype
 
 // Partial specialization to deduce if callable object is a function pointer type.
 template<typename Ret, typename... Args>
-struct callable_restype<Ret(Args...)>
+struct CallableResultType<Ret(Args...)>
 {
   // Specialization to deduce for function pointer types.
   using type = Ret;
@@ -168,7 +168,7 @@ MatchTypeWithDefault(T & obj, const Fns &... fns);
 
 // Specialization to handle the termination (empty handlers) case.
 template<typename T, typename Fn>
-typename callable_restype<Fn>::type
+typename CallableResultType<Fn>::type
 MatchTypeWithDefault(T & /* x */, const Fn & fn)
 {
   return fn();
@@ -176,7 +176,7 @@ MatchTypeWithDefault(T & /* x */, const Fn & fn)
 
 // Specialization to handle the head case.
 template<typename T, typename Fn, typename... Fns>
-typename callable_restype<Fn>::type
+typename CallableResultType<Fn>::type
 MatchTypeWithDefault(T & x, const Fn & fn, const Fns &... fns)
 {
   using S = std::remove_reference_t<typename CallableArgumentType<Fn>::type>;
@@ -211,7 +211,7 @@ MatchTypeOrFail(T & obj, const Fns &... fns);
 
 // Specialization to handle the termination (last handler) case.
 template<typename T, typename Fn>
-typename callable_restype<Fn>::type
+typename CallableResultType<Fn>::type
 MatchTypeOrFail(T & x, const Fn & fn)
 {
   using S = std::remove_reference_t<typename CallableArgumentType<Fn>::type>;
@@ -227,7 +227,7 @@ MatchTypeOrFail(T & x, const Fn & fn)
 
 // Specialization to handle the head case.
 template<typename T, typename Fn, typename... Fns>
-typename callable_restype<Fn>::type
+typename CallableResultType<Fn>::type
 MatchTypeOrFail(T & x, const Fn & fn, const Fns &... fns)
 {
   using S = std::remove_reference_t<typename CallableArgumentType<Fn>::type>;

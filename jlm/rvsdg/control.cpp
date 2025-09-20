@@ -18,7 +18,7 @@ template class DomainConstOperation<
     ControlType,
     ControlValueRepresentation,
     ControlValueRepresentationFormatValue,
-    ctltype_of_value>;
+    ControlValueRepresentationTypeOfValue>;
 
 ControlType::~ControlType() noexcept = default;
 

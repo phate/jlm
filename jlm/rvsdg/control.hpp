@@ -104,7 +104,7 @@ private:
 
 /* control constant */
 
-struct ctltype_of_value
+struct ControlValueRepresentationTypeOfValue
 {
   std::shared_ptr<const ControlType>
   operator()(const ControlValueRepresentation & repr) const
@@ -126,7 +126,7 @@ typedef DomainConstOperation<
     ControlType,
     ControlValueRepresentation,
     ControlValueRepresentationFormatValue,
-    ctltype_of_value>
+    ControlValueRepresentationTypeOfValue>
     ctlconstant_op;
 
 static inline bool
@@ -264,7 +264,7 @@ extern template class DomainConstOperation<
     ControlType,
     ControlValueRepresentation,
     ControlValueRepresentationFormatValue,
-    ctltype_of_value>;
+    ControlValueRepresentationTypeOfValue>;
 
 jlm::rvsdg::Output *
 control_constant(rvsdg::Region * region, size_t nalternatives, size_t alternative);
