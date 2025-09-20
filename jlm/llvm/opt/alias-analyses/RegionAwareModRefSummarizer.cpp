@@ -226,22 +226,13 @@ public:
     return RegionMap_[&region] = CreateModRefSet();
   }
 
-  [[nodiscard]] ModRefSetIndex
-  MapRegionToExistingSet(const rvsdg::Region & region, ModRefSetIndex index)
-  {
-    JLM_ASSERT(!HasSetForRegion(region));
-
-    ModRefSets_.emplace_back();
-    return RegionMap_[&region] = ModRefSets_.size() - 1;
-  }
-
   [[nodiscard]] bool
   HasSetForNode(const rvsdg::Node & node) const
   {
     return NodeMap_.find(&node) != NodeMap_.end();
   }
 
-  [[nodiscard]] bool
+  [[nodiscard]] ModRefSetIndex
   GetSetForNode(const rvsdg::Node & node) const
   {
     const auto it = NodeMap_.find(&node);
@@ -473,10 +464,11 @@ RegionAwareModRefSummarizer::SummarizeModRefs(
   statistics->StopAnnotationStatistics();
 
   statistics->StartSolvingStatistics();
-  SolveModRefSetContraintGraph();
+  SolveModRefSetConstraintGraph();
   statistics->StopSolvingStatistics();
 
   // Print debug output
+  // std::cerr << PointsToGraph::ToDot(pointsToGraph) << std::endl;
   // std::cerr << "Call Graph SCCs:" << std::endl << CallGraphSCCsToString(*this) << std::endl;
   // std::cerr << "RegionTree:" << std::endl << ToRegionTree(rvsdgModule.Rvsdg(), *ModRefSummary_)
   // << std::endl;
@@ -701,6 +693,7 @@ RegionAwareModRefSummarizer::CreateCallGraph(const rvsdg::RvsdgModule & rvsdgMod
   }
 
   // Add edges between the SCCs for all calls
+  Context_->SccCallTargets.resize(numSCCs);
   for (size_t i = 0; i < numCallGraphNodes; i++)
   {
     for (auto target : callGraphSuccessors[i].Items())
@@ -875,9 +868,9 @@ RegionAwareModRefSummarizer::AnnotateStructuralNode(
 {
   const auto nodeModRefSet = ModRefSummary_->GetOrCreateSetForNode(structuralNode);
 
-  for (size_t n = 0; n < structuralNode.nsubregions(); n++)
+  for (auto & subregion : structuralNode.Subregions())
   {
-    const auto subregionModRefSef = AnnotateRegion(*structuralNode.subregion(n), lambda);
+    const auto subregionModRefSef = AnnotateRegion(subregion, lambda);
     AddModRefSimpleConstraint(subregionModRefSef, nodeModRefSet);
   }
 
@@ -894,6 +887,12 @@ RegionAwareModRefSummarizer::AnnotateSimpleNode(
 
   if (is<StoreOperation>(&simpleNode))
     return AnnotateStore(simpleNode, lambda);
+
+  if (is<AllocaOperation>(&simpleNode))
+    return AnnotateAlloca(simpleNode);
+
+  if (is<MallocOperation>(&simpleNode))
+    return AnnotateMalloc(simpleNode);
 
   if (is<FreeOperation>(&simpleNode))
     return AnnotateFree(simpleNode, lambda);
@@ -950,6 +949,24 @@ RegionAwareModRefSummarizer::AnnotateStore(
   const auto origin = StoreOperation::AddressInput(storeNode).origin();
   // TODO: Only include memory large enough to be the target of the store
   AnnotateWithPointerOrigin(nodeModRef, *origin, lambda);
+  return nodeModRef;
+}
+
+ModRefSetIndex
+RegionAwareModRefSummarizer::AnnotateAlloca(const rvsdg::SimpleNode & allocaNode)
+{
+  const auto nodeModRef = ModRefSummary_->GetOrCreateSetForNode(allocaNode);
+  const auto & allocaMemoryNode = ModRefSummary_->GetPointsToGraph().GetAllocaNode(allocaNode);
+  ModRefSummary_->GetModRefSet(nodeModRef).AddMemoryNode(allocaMemoryNode);
+  return nodeModRef;
+}
+
+ModRefSetIndex
+RegionAwareModRefSummarizer::AnnotateMalloc(const rvsdg::SimpleNode & mallocNode)
+{
+  const auto nodeModRef = ModRefSummary_->GetOrCreateSetForNode(mallocNode);
+  const auto & mallocMemoryNode = ModRefSummary_->GetPointsToGraph().GetMallocNode(mallocNode);
+  ModRefSummary_->GetModRefSet(nodeModRef).AddMemoryNode(mallocMemoryNode);
   return nodeModRef;
 }
 
@@ -1017,8 +1034,10 @@ RegionAwareModRefSummarizer::AnnotateCall(
 }
 
 void
-RegionAwareModRefSummarizer::SolveModRefSetContraintGraph()
+RegionAwareModRefSummarizer::SolveModRefSetConstraintGraph()
 {
+  Context_->ModRefSetSimpleConstraints.resize(ModRefSummary_->NumModRefSets());
+
   util::FifoWorklist<ModRefSetIndex> worklist;
 
   // Start by pushing everything to the worklist
@@ -1027,18 +1046,18 @@ RegionAwareModRefSummarizer::SolveModRefSetContraintGraph()
 
   while (worklist.HasMoreWorkItems())
   {
-    const auto n = worklist.PopWorkItem();
-    auto & modRefSet = ModRefSummary_->GetModRefSet(n);
+    const auto workItemModRefIndex = worklist.PopWorkItem();
+    auto & workItemModRefSet = ModRefSummary_->GetModRefSet(workItemModRefIndex);
 
-    for (auto target : Context_->ModRefSetSimpleConstraints[n].Items())
+    for (auto target : Context_->ModRefSetSimpleConstraints[workItemModRefIndex].Items())
     {
       auto & targetModRefSet = ModRefSummary_->GetModRefSet(target);
-      if (modRefSet.PropagateTo(targetModRefSet))
+      if (workItemModRefSet.PropagateTo(targetModRefSet))
         worklist.PushWorkItem(target);
     }
 
     // check if we have a complex constraint
-    if (const auto it = Context_->ModRefSetComplexConstraints.find(n);
+    if (const auto it = Context_->ModRefSetComplexConstraints.find(workItemModRefIndex);
         it != Context_->ModRefSetComplexConstraints.end())
     {
       const auto & lambda = *it->second;
@@ -1049,7 +1068,7 @@ RegionAwareModRefSummarizer::SolveModRefSetContraintGraph()
 
       // Propagate along the complex constraint, but skip Non-Reentrant allocas
       bool changed = false;
-      for (const auto memoryNode : modRefSet.GetMemoryNodes().Items())
+      for (const auto memoryNode : workItemModRefSet.GetMemoryNodes().Items())
       {
         // Skip propagating non-reentrant allocas
         if (SKIP_NON_REENTRANT_ALLOCAS && nonReentrantAllocas.Contains(memoryNode))
@@ -1089,55 +1108,64 @@ RegionAwareModRefSummarizer::ToRegionTree(
     const rvsdg::Graph & rvsdg,
     const RegionAwareModRefSummary & modRefSummary)
 {
-  auto toString = [](const util::HashSet<const PointsToGraph::MemoryNode *> & memoryNodes)
+  std::ostringstream ss;
+
+  auto toString = [&](const util::HashSet<const PointsToGraph::MemoryNode *> & memoryNodes)
   {
-    std::string s = "{";
+    ss << "MemoryNodes: {";
     for (auto & memoryNode : memoryNodes.Items())
     {
-      s += util::strfmt(memoryNode, ", ");
+      ss << memoryNode->DebugString();
+      ss << ", ";
     }
-    s += "}";
-    return s;
+    ss << "}" << std::endl;
   };
 
-  auto indent = [](size_t depth)
+  auto indent = [&](size_t depth, char c='-')
   {
-    return std::string(depth, '-');
+    for (size_t i = 0; i < depth; i++)
+      ss << c;
   };
 
-  std::function<std::string(const rvsdg::Region *, size_t)> toRegionTree =
+  std::function<void(const rvsdg::Region *, size_t)> toRegionTree =
       [&](const rvsdg::Region * region, size_t depth)
   {
-    std::string subtree;
-    if (region->node())
+    indent(depth, '-');
+    ss << "region " << region << std::endl;
+
+    if (modRefSummary.HasSetForRegion(*region))
     {
-      subtree += util::strfmt(indent(depth), region, "\n");
-    }
-    else
-    {
-      subtree = "ROOT\n";
+      auto & memoryNodes = modRefSummary.GetModRefForRegion(*region);
+      indent(depth, ' ');
+      toString(memoryNodes);
     }
 
     depth += 1;
-    auto & memoryNodes = modRefSummary.GetModRefForRegion(*region);
-    subtree += util::strfmt(indent(depth), "MemoryNodes: ", toString(memoryNodes), "\n");
-
     for (const auto & node : region->Nodes())
     {
+      if (!modRefSummary.HasSetForNode(node))
+        continue;
+
+      indent(depth, '-');
+      ss << node.DebugString() << " " << modRefSummary.GetSetForNode(node) << std::endl;
+
+      auto & memoryNodes = modRefSummary.GetModRefForNode(node);
+      indent(depth, ' ');
+      toString(memoryNodes);
+
       if (auto structuralNode = dynamic_cast<const rvsdg::StructuralNode *>(&node))
       {
-        subtree += util::strfmt(indent(depth), structuralNode->DebugString(), "\n");
         for (size_t n = 0; n < structuralNode->nsubregions(); n++)
         {
-          subtree += toRegionTree(structuralNode->subregion(n), depth + 1);
+          toRegionTree(structuralNode->subregion(n), depth + 1);
         }
       }
     }
-
-    return subtree;
   };
 
-  return toRegionTree(&rvsdg.GetRootRegion(), 0);
+  toRegionTree(&rvsdg.GetRootRegion(), 0);
+
+  return ss.str();
 }
 
 std::unique_ptr<ModRefSummary>

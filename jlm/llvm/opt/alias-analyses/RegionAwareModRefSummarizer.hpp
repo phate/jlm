@@ -203,6 +203,12 @@ private:
   AnnotateStore(const rvsdg::SimpleNode & storeNode, const rvsdg::LambdaNode & lambda);
 
   ModRefSetIndex
+  AnnotateAlloca(const rvsdg::SimpleNode & allocaNode);
+
+  ModRefSetIndex
+  AnnotateMalloc(const rvsdg::SimpleNode & mallocNode);
+
+  ModRefSetIndex
   AnnotateFree(const rvsdg::SimpleNode & freeNode, const rvsdg::LambdaNode & lambda);
 
   ModRefSetIndex
@@ -216,7 +222,7 @@ private:
    * until all constraints are satisfied.
    */
   void
-  SolveModRefSetContraintGraph();
+  SolveModRefSetConstraintGraph();
 
   /**
    * Helper function for debugging, listing out all functions, grouped by call graph SCC.

@@ -7,8 +7,6 @@
 #define JLM_LLVM_OPT_ALIAS_ANALYSES_MODREFSUMMARY_HPP
 
 #include <jlm/llvm/opt/alias-analyses/PointsToGraph.hpp>
-#include <jlm/rvsdg/gamma.hpp>
-#include <jlm/rvsdg/theta.hpp>
 #include <jlm/util/HashSet.hpp>
 
 namespace jlm::llvm::aa
@@ -27,39 +25,59 @@ public:
   [[nodiscard]] virtual const PointsToGraph &
   GetPointsToGraph() const noexcept = 0;
 
+  /**
+   * Provides the set of MemoryNodes that represent memory locations that may be
+   * modified or referenced by the given simple node.
+   *
+   * The simple node can be any operation that affects memory:
+   *  - Load, Store, Memcpy, Free, Call, which have memory states routed through them
+   *  - Alloca or Malloc, which produce memory states
+   *
+   * @param node the node operating on memory
+   * @return the Mod/Ref set of the node.
+   */
   [[nodiscard]] virtual const util::HashSet<const PointsToGraph::MemoryNode *> &
-  GetModRefForRegion(const rvsdg::Region & region) const = 0;
+  GetSimpleNodeModRef(const rvsdg::SimpleNode & node) const = 0;
 
+  /**
+   * Provides the set of MemoryNodes that should be routed into a given Gamma node
+   * @param gamma the Gamma node
+   * @return the entry Mod/Ref set for the Gamma
+   */
   [[nodiscard]] virtual const util::HashSet<const PointsToGraph::MemoryNode *> &
-  GetModRefForNode(const rvsdg::Node & node) const = 0;
+  GetGammaEntryModRef(const rvsdg::GammaNode & gamma) const = 0;
 
+  /**
+   * Provides the set of MemoryNodes that should be routed out of a given Gamma node
+   * @param gamma the Gamma node
+   * @return the exit Mod/Ref set for the Gamma
+   */
   [[nodiscard]] virtual const util::HashSet<const PointsToGraph::MemoryNode *> &
-  GetModRefForLambda(const rvsdg::LambdaNode & node) const = 0;
-  /*
-  [[nodiscard]] virtual const util::HashSet<const PointsToGraph::MemoryNode *> &
-  GetModRefForLoad(const rvsdg::SimpleNode & loadNode) const = 0;
+  GetGammaExitModRef(const rvsdg::GammaNode & gamma) const = 0;
 
+  /**
+   * Provides the set of MemoryNodes that should be routed in and out of a Theta node
+   * @param theta the Theta node
+   * @return the Mod/Ref set for the Theta
+   */
   [[nodiscard]] virtual const util::HashSet<const PointsToGraph::MemoryNode *> &
-  GetModRefForStore(const rvsdg::SimpleNode & storeNode) const = 0;
+  GetThetaModRef(const rvsdg::ThetaNode & theta) const = 0;
 
+  /**
+   * Provides the set of MemoryNodes that are routed in to the given Lambda's subregion
+   * @param lambda the Lambda node
+   * @return the entry Mod/Ref set for the Lambda
+   */
   [[nodiscard]] virtual const util::HashSet<const PointsToGraph::MemoryNode *> &
-  GetModRefForMemcpy(const rvsdg::SimpleNode & memcpyNode) const = 0;
+  GetLambdaEntryModRef(const rvsdg::LambdaNode & lambda) const = 0;
 
+  /**
+   * Provides the set of MemoryNodes that are routed out of the given Lambda's subregion
+   * @param lambda the Lambda node
+   * @return the exit Mod/Ref set for the Lambda
+   */
   [[nodiscard]] virtual const util::HashSet<const PointsToGraph::MemoryNode *> &
-  GetModRefForFree(const rvsdg::SimpleNode & freeNode) const = 0;
-
-  [[nodiscard]] virtual const util::HashSet<const PointsToGraph::MemoryNode *> &
-  GetModRefForCall(const rvsdg::SimpleNode & callNode) const = 0;
-
-  [[nodiscard]] virtual const util::HashSet<const PointsToGraph::MemoryNode *> &
-  GetModRefForTheta(const rvsdg::ThetaNode & thetaNode) const = 0;
-
-  [[nodiscard]] virtual const util::HashSet<const PointsToGraph::MemoryNode *> &
-  GetModRefForGamma(const rvsdg::GammaNode & gammaNode) const = 0;
-
-  [[nodiscard]] virtual const util::HashSet<const PointsToGraph::MemoryNode *> &
-  GetModRefForLambda(const rvsdg::LambdaNode & lambdaNode) const = 0;
-  */
+  GetLambdaExitModRef(const rvsdg::LambdaNode & lambda) const = 0;
 };
 
 }
