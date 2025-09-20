@@ -38,7 +38,8 @@ Input::CheckTypes(
 Input::Input(rvsdg::Node & owner, rvsdg::Output & origin, std::shared_ptr<const rvsdg::Type> type)
     : index_(0),
       Owner_(&owner),
-      Type_(std::move(type))
+      Type_(std::move(type)),
+      UsersList_()
 {
   CheckTypes(*owner.region(), origin, Type_);
   origin.add_user(this);
@@ -47,7 +48,8 @@ Input::Input(rvsdg::Node & owner, rvsdg::Output & origin, std::shared_ptr<const 
 Input::Input(rvsdg::Region & owner, rvsdg::Output & origin, std::shared_ptr<const rvsdg::Type> type)
     : index_(0),
       Owner_(&owner),
-      Type_(std::move(type))
+      Type_(std::move(type)),
+      UsersList_()
 {
   CheckTypes(owner, origin, Type_);
   origin.add_user(this);
