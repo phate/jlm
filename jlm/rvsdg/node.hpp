@@ -84,10 +84,10 @@ public:
   {
   public:
     using iterator_category = std::forward_iterator_tag;
-    using value_type = Input *;
+    using value_type = Input;
     using difference_type = std::ptrdiff_t;
-    using pointer = Input **;
-    using reference = Input *&;
+    using pointer = Input *;
+    using reference = Input &;
 
     constexpr explicit Iterator(Input * input)
         : Input_(input)
@@ -150,10 +150,10 @@ public:
   {
   public:
     using iterator_category = std::forward_iterator_tag;
-    using value_type = const Input *;
+    using value_type = const Input;
     using difference_type = std::ptrdiff_t;
-    using pointer = const Input **;
-    using reference = const Input *&;
+    using pointer = const Input *;
+    using reference = const Input &;
 
     constexpr explicit ConstIterator(const Input * input)
         : Input_(input)
