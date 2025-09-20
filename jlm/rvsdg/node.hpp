@@ -224,7 +224,7 @@ private:
   std::variant<Node *, Region *> Owner_;
   std::shared_ptr<const rvsdg::Type> Type_;
   jlm::util::IntrusiveListAnchor<Input> UsersList_;
-  using UsersListAccessor = jlm::util::intrusive_list_accessor<Input, &Input::UsersList_>;
+  using UsersListAccessor = util::IntrusiveListAccessor<Input, &Input::UsersList_>;
   using UsersList = jlm::util::IntrusiveList<Input, UsersListAccessor>;
 
   friend class Output;
@@ -799,13 +799,13 @@ private:
   util::IntrusiveListAnchor<Node> region_bottom_node_list_anchor_{};
 
 public:
-  typedef util::intrusive_list_accessor<Node, &Node::region_node_list_anchor_>
+  typedef util::IntrusiveListAccessor<Node, &Node::region_node_list_anchor_>
       region_node_list_accessor;
 
-  typedef util::intrusive_list_accessor<Node, &Node::region_top_node_list_anchor_>
+  typedef util::IntrusiveListAccessor<Node, &Node::region_top_node_list_anchor_>
       region_top_node_list_accessor;
 
-  typedef util::intrusive_list_accessor<Node, &Node::region_bottom_node_list_anchor_>
+  typedef util::IntrusiveListAccessor<Node, &Node::region_bottom_node_list_anchor_>
       region_bottom_node_list_accessor;
 
 private:
