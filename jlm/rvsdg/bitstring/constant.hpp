@@ -18,7 +18,7 @@
 namespace jlm::rvsdg
 {
 
-struct type_of_value
+struct BitValueRepresentationTypeOfValue
 {
   std::shared_ptr<const BitType>
   operator()(const BitValueRepresentation & repr) const
@@ -43,7 +43,7 @@ typedef DomainConstOperation<
     BitType,
     BitValueRepresentation,
     BitValueRepresentationFormatValue,
-    type_of_value>
+    BitValueRepresentationTypeOfValue>
     bitconstant_op;
 
 inline bitconstant_op
@@ -63,7 +63,7 @@ extern template class DomainConstOperation<
     BitType,
     BitValueRepresentation,
     BitValueRepresentationFormatValue,
-    type_of_value>;
+    BitValueRepresentationTypeOfValue>;
 
 static inline jlm::rvsdg::Output *
 create_bitconstant(rvsdg::Region * region, const BitValueRepresentation & vr)
