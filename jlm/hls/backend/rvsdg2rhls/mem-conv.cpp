@@ -414,8 +414,206 @@ CalcualtePortWidth(const std::tuple<
   return max_width;
 }
 
-void
-MemoryConverter(llvm::RvsdgModule & rm)
+static rvsdg::SimpleNode *
+ReplaceLoad(
+    rvsdg::SubstitutionMap & smap,
+    const rvsdg::SimpleNode * originalLoad,
+    rvsdg::Output * response)
+{
+  // We have the load from the original lambda since it is needed to update the smap
+  // We need the load in the new lambda such that we can replace it with a load node with explicit
+  // memory ports
+  auto replacedLoad =
+      &rvsdg::AssertGetOwnerNode<rvsdg::SimpleNode>(*smap.lookup(originalLoad->output(0)));
+
+  auto loadAddress = replacedLoad->input(0)->origin();
+  std::vector<rvsdg::Output *> states;
+  for (size_t i = 1; i < replacedLoad->ninputs(); ++i)
+  {
+    states.push_back(replacedLoad->input(i)->origin());
+  }
+
+  rvsdg::Node * newLoad = nullptr;
+  if (states.empty())
+  {
+    size_t load_capacity = 10;
+    auto outputs = DecoupledLoadOperation::create(*loadAddress, *response, load_capacity);
+    newLoad = dynamic_cast<rvsdg::NodeOutput *>(outputs[0])->node();
+  }
+  else
+  {
+    // TODO: switch this to a decoupled load?
+    auto outputs = LoadOperation::create(*loadAddress, states, *response);
+    newLoad = dynamic_cast<rvsdg::NodeOutput *>(outputs[0])->node();
+  }
+
+  for (size_t i = 0; i < replacedLoad->noutputs(); ++i)
+  {
+    smap.insert(originalLoad->output(i), newLoad->output(i));
+    replacedLoad->output(i)->divert_users(newLoad->output(i));
+  }
+  remove(replacedLoad);
+  return dynamic_cast<rvsdg::SimpleNode *>(newLoad);
+}
+
+static rvsdg::SimpleNode *
+ReplaceStore(
+    rvsdg::SubstitutionMap & smap,
+    const rvsdg::SimpleNode * originalStore,
+    rvsdg::Output * response)
+{
+  // We have the store from the original lambda since it is needed to update the smap
+  // We need the store in the new lambda such that we can replace it with a store node with explicit
+  // memory ports
+  auto replacedStore =
+      &rvsdg::AssertGetOwnerNode<rvsdg::SimpleNode>(*smap.lookup(originalStore->output(0)));
+
+  auto addr = replacedStore->input(0)->origin();
+  JLM_ASSERT(rvsdg::is<llvm::PointerType>(addr->Type()));
+  auto data = replacedStore->input(1)->origin();
+  std::vector<rvsdg::Output *> states;
+  for (size_t i = 2; i < replacedStore->ninputs(); ++i)
+  {
+    states.push_back(replacedStore->input(i)->origin());
+  }
+  auto storeOuts = StoreOperation::create(*addr, *data, states, *response);
+  auto newStore = dynamic_cast<rvsdg::NodeOutput *>(storeOuts[0])->node();
+  // iterate over output states
+  for (size_t i = 0; i < replacedStore->noutputs(); ++i)
+  {
+    // create a buffer to avoid a scenario where the reponse port is blocked because a merge waits
+    // for the store
+    // TODO: It might be better to have memstate merges consume individual tokens instead,, and fire
+    // the output once all inputs have consumed
+    const auto bo = BufferOperation::create(*storeOuts[i], 1, true)[0];
+    smap.insert(originalStore->output(i), bo);
+    replacedStore->output(i)->divert_users(bo);
+  }
+  remove(replacedStore);
+  return dynamic_cast<rvsdg::SimpleNode *>(newStore);
+}
+
+static rvsdg::Output *
+ConnectRequestResponseMemPorts(
+    const rvsdg::LambdaNode * lambda,
+    size_t argumentIndex,
+    rvsdg::SubstitutionMap & smap,
+    const std::vector<rvsdg::SimpleNode *> & originalLoadNodes,
+    const std::vector<rvsdg::SimpleNode *> & originalStoreNodes,
+    const std::vector<rvsdg::SimpleNode *> & originalDecoupledNodes)
+{
+  //
+  // We have the memory operations from the original lambda and need to lookup the corresponding
+  // nodes in the new lambda
+  //
+  std::vector<rvsdg::SimpleNode *> loadNodes;
+  std::vector<std::shared_ptr<const rvsdg::Type>> responseTypes;
+  for (auto loadNode : originalLoadNodes)
+  {
+    auto oldLoadedValue = loadNode->output(0);
+    JLM_ASSERT(smap.contains(*oldLoadedValue));
+    auto & newLoadNode = rvsdg::AssertGetOwnerNode<rvsdg::SimpleNode>(*smap.lookup(oldLoadedValue));
+    loadNodes.push_back(&newLoadNode);
+    auto loadOp =
+        util::AssertedCast<const llvm::LoadNonVolatileOperation>(&newLoadNode.GetOperation());
+    responseTypes.push_back(loadOp->GetLoadedType());
+  }
+  std::vector<rvsdg::SimpleNode *> decoupledNodes;
+  for (auto decoupleRequest : originalDecoupledNodes)
+  {
+    auto oldOutput = decoupleRequest->output(0);
+    JLM_ASSERT(smap.contains(*oldOutput));
+    auto & decoupledRequestNode =
+        rvsdg::AssertGetOwnerNode<rvsdg::SimpleNode>(*smap.lookup(oldOutput));
+    decoupledNodes.push_back(&decoupledRequestNode);
+    // get load type from response output
+    auto channel = decoupleRequest->input(1)->origin();
+    auto channelConstant = trace_constant(channel);
+    auto reponse = find_decouple_response(lambda, channelConstant);
+    auto vt = reponse->output(0)->Type();
+    responseTypes.push_back(vt);
+  }
+  std::vector<rvsdg::SimpleNode *> storeNodes;
+  for (auto storeNode : originalStoreNodes)
+  {
+    auto oldOutput = storeNode->output(0);
+    JLM_ASSERT(smap.contains(*oldOutput));
+    auto & newStoreNode = rvsdg::AssertGetOwnerNode<rvsdg::SimpleNode>(*smap.lookup(oldOutput));
+    storeNodes.push_back(&newStoreNode);
+    // use memory state type as response for stores
+    auto vt = std::make_shared<llvm::MemoryStateType>();
+    responseTypes.push_back(vt);
+  }
+
+  auto lambdaRegion = lambda->subregion();
+  auto portWidth = CalcualtePortWidth(
+      std::make_tuple(originalLoadNodes, originalStoreNodes, originalDecoupledNodes));
+  auto responses = MemoryResponseOperation::create(
+      *lambdaRegion->argument(argumentIndex),
+      responseTypes,
+      portWidth);
+  // The (decoupled) load nodes are replaced so the pointer to the types will become invalid
+  std::vector<std::shared_ptr<const rvsdg::Type>> loadTypes;
+  std::vector<rvsdg::Output *> loadAddresses;
+  for (size_t i = 0; i < loadNodes.size(); ++i)
+  {
+    auto routed = route_response_rhls(loadNodes[i]->region(), responses[i]);
+    // The smap contains the nodes from the original lambda so we need to use the original load node
+    // when replacing the load since the smap must be updated
+    auto replacement = ReplaceLoad(smap, originalLoadNodes[i], routed);
+    auto address =
+        route_request_rhls(lambdaRegion, replacement->output(replacement->noutputs() - 1));
+    loadAddresses.push_back(address);
+    std::shared_ptr<const rvsdg::Type> type;
+    if (auto loadOperation = dynamic_cast<const LoadOperation *>(&replacement->GetOperation()))
+    {
+      type = loadOperation->GetLoadedType();
+    }
+    else if (
+        auto loadOperation =
+            dynamic_cast<const DecoupledLoadOperation *>(&replacement->GetOperation()))
+    {
+      type = loadOperation->GetLoadedType();
+    }
+    else
+    {
+      JLM_UNREACHABLE("Unknown load GetOperation");
+    }
+    JLM_ASSERT(type);
+    loadTypes.push_back(type);
+  }
+  for (size_t i = 0; i < decoupledNodes.size(); ++i)
+  {
+    auto response = responses[loadNodes.size() + i];
+    auto node = decoupledNodes[i];
+
+    // TODO: this beahvior is not completly correct - if a function returns a top-level result from
+    // a decouple it fails and smap translation would be required
+    auto replacement = ReplaceDecouple(lambda, node, response);
+    auto addr = route_request_rhls(lambdaRegion, replacement->output(1));
+    loadAddresses.push_back(addr);
+    loadTypes.push_back(dynamic_cast<const DecoupledLoadOperation *>(&replacement->GetOperation())
+                            ->GetLoadedType());
+  }
+  std::vector<rvsdg::Output *> storeOperands;
+  for (size_t i = 0; i < storeNodes.size(); ++i)
+  {
+    auto response = responses[loadNodes.size() + decoupledNodes.size() + i];
+    auto routed = route_response_rhls(storeNodes[i]->region(), response);
+    // The smap contains the nodes from the original lambda so we need to use the original store
+    // node when replacing the store since the smap must be updated
+    auto replacement = ReplaceStore(smap, originalStoreNodes[i], routed);
+    auto addr = route_request_rhls(lambdaRegion, replacement->output(replacement->noutputs() - 2));
+    auto data = route_request_rhls(lambdaRegion, replacement->output(replacement->noutputs() - 1));
+    storeOperands.push_back(addr);
+    storeOperands.push_back(data);
+  }
+
+  return MemoryRequestOperation::create(loadAddresses, loadTypes, storeOperands, lambdaRegion)[0];
+}
+
+static void
+ConvertMemory(rvsdg::RvsdgModule & rm)
 {
   //
   // Replacing memory nodes with nodes that have explicit memory ports requires arguments and
@@ -601,201 +799,16 @@ MemoryConverter(llvm::RvsdgModule & rm)
   newLambda->PruneLambdaInputs();
 }
 
-rvsdg::Output *
-ConnectRequestResponseMemPorts(
-    const rvsdg::LambdaNode * lambda,
-    size_t argumentIndex,
-    rvsdg::SubstitutionMap & smap,
-    const std::vector<rvsdg::SimpleNode *> & originalLoadNodes,
-    const std::vector<rvsdg::SimpleNode *> & originalStoreNodes,
-    const std::vector<rvsdg::SimpleNode *> & originalDecoupledNodes)
+MemoryConverter::~MemoryConverter() noexcept = default;
+
+MemoryConverter::MemoryConverter()
+    : Transformation("MemoryConverter")
+{}
+
+void
+MemoryConverter::Run(rvsdg::RvsdgModule & rvsdgModule, util::StatisticsCollector &)
 {
-  //
-  // We have the memory operations from the original lambda and need to lookup the corresponding
-  // nodes in the new lambda
-  //
-  std::vector<rvsdg::SimpleNode *> loadNodes;
-  std::vector<std::shared_ptr<const rvsdg::Type>> responseTypes;
-  for (auto loadNode : originalLoadNodes)
-  {
-    auto oldLoadedValue = loadNode->output(0);
-    JLM_ASSERT(smap.contains(*oldLoadedValue));
-    auto & newLoadNode = rvsdg::AssertGetOwnerNode<rvsdg::SimpleNode>(*smap.lookup(oldLoadedValue));
-    loadNodes.push_back(&newLoadNode);
-    auto loadOp =
-        util::AssertedCast<const llvm::LoadNonVolatileOperation>(&newLoadNode.GetOperation());
-    responseTypes.push_back(loadOp->GetLoadedType());
-  }
-  std::vector<rvsdg::SimpleNode *> decoupledNodes;
-  for (auto decoupleRequest : originalDecoupledNodes)
-  {
-    auto oldOutput = decoupleRequest->output(0);
-    JLM_ASSERT(smap.contains(*oldOutput));
-    auto & decoupledRequestNode =
-        rvsdg::AssertGetOwnerNode<rvsdg::SimpleNode>(*smap.lookup(oldOutput));
-    decoupledNodes.push_back(&decoupledRequestNode);
-    // get load type from response output
-    auto channel = decoupleRequest->input(1)->origin();
-    auto channelConstant = trace_constant(channel);
-    auto reponse = find_decouple_response(lambda, channelConstant);
-    auto vt = reponse->output(0)->Type();
-    responseTypes.push_back(vt);
-  }
-  std::vector<rvsdg::SimpleNode *> storeNodes;
-  for (auto storeNode : originalStoreNodes)
-  {
-    auto oldOutput = storeNode->output(0);
-    JLM_ASSERT(smap.contains(*oldOutput));
-    auto & newStoreNode = rvsdg::AssertGetOwnerNode<rvsdg::SimpleNode>(*smap.lookup(oldOutput));
-    storeNodes.push_back(&newStoreNode);
-    // use memory state type as response for stores
-    auto vt = std::make_shared<llvm::MemoryStateType>();
-    responseTypes.push_back(vt);
-  }
-
-  auto lambdaRegion = lambda->subregion();
-  auto portWidth = CalcualtePortWidth(
-      std::make_tuple(originalLoadNodes, originalStoreNodes, originalDecoupledNodes));
-  auto responses = MemoryResponseOperation::create(
-      *lambdaRegion->argument(argumentIndex),
-      responseTypes,
-      portWidth);
-  // The (decoupled) load nodes are replaced so the pointer to the types will become invalid
-  std::vector<std::shared_ptr<const rvsdg::Type>> loadTypes;
-  std::vector<rvsdg::Output *> loadAddresses;
-  for (size_t i = 0; i < loadNodes.size(); ++i)
-  {
-    auto routed = route_response_rhls(loadNodes[i]->region(), responses[i]);
-    // The smap contains the nodes from the original lambda so we need to use the original load node
-    // when replacing the load since the smap must be updated
-    auto replacement = ReplaceLoad(smap, originalLoadNodes[i], routed);
-    auto address =
-        route_request_rhls(lambdaRegion, replacement->output(replacement->noutputs() - 1));
-    loadAddresses.push_back(address);
-    std::shared_ptr<const rvsdg::Type> type;
-    if (auto loadOperation = dynamic_cast<const LoadOperation *>(&replacement->GetOperation()))
-    {
-      type = loadOperation->GetLoadedType();
-    }
-    else if (
-        auto loadOperation =
-            dynamic_cast<const DecoupledLoadOperation *>(&replacement->GetOperation()))
-    {
-      type = loadOperation->GetLoadedType();
-    }
-    else
-    {
-      JLM_UNREACHABLE("Unknown load GetOperation");
-    }
-    JLM_ASSERT(type);
-    loadTypes.push_back(type);
-  }
-  for (size_t i = 0; i < decoupledNodes.size(); ++i)
-  {
-    auto response = responses[loadNodes.size() + i];
-    auto node = decoupledNodes[i];
-
-    // TODO: this beahvior is not completly correct - if a function returns a top-level result from
-    // a decouple it fails and smap translation would be required
-    auto replacement = ReplaceDecouple(lambda, node, response);
-    auto addr = route_request_rhls(lambdaRegion, replacement->output(1));
-    loadAddresses.push_back(addr);
-    loadTypes.push_back(dynamic_cast<const DecoupledLoadOperation *>(&replacement->GetOperation())
-                            ->GetLoadedType());
-  }
-  std::vector<rvsdg::Output *> storeOperands;
-  for (size_t i = 0; i < storeNodes.size(); ++i)
-  {
-    auto response = responses[loadNodes.size() + decoupledNodes.size() + i];
-    auto routed = route_response_rhls(storeNodes[i]->region(), response);
-    // The smap contains the nodes from the original lambda so we need to use the original store
-    // node when replacing the store since the smap must be updated
-    auto replacement = ReplaceStore(smap, originalStoreNodes[i], routed);
-    auto addr = route_request_rhls(lambdaRegion, replacement->output(replacement->noutputs() - 2));
-    auto data = route_request_rhls(lambdaRegion, replacement->output(replacement->noutputs() - 1));
-    storeOperands.push_back(addr);
-    storeOperands.push_back(data);
-  }
-
-  return MemoryRequestOperation::create(loadAddresses, loadTypes, storeOperands, lambdaRegion)[0];
+  ConvertMemory(rvsdgModule);
 }
 
-rvsdg::SimpleNode *
-ReplaceLoad(
-    rvsdg::SubstitutionMap & smap,
-    const rvsdg::SimpleNode * originalLoad,
-    rvsdg::Output * response)
-{
-  // We have the load from the original lambda since it is needed to update the smap
-  // We need the load in the new lambda such that we can replace it with a load node with explicit
-  // memory ports
-  auto replacedLoad =
-      &rvsdg::AssertGetOwnerNode<rvsdg::SimpleNode>(*smap.lookup(originalLoad->output(0)));
-
-  auto loadAddress = replacedLoad->input(0)->origin();
-  std::vector<rvsdg::Output *> states;
-  for (size_t i = 1; i < replacedLoad->ninputs(); ++i)
-  {
-    states.push_back(replacedLoad->input(i)->origin());
-  }
-
-  rvsdg::Node * newLoad = nullptr;
-  if (states.empty())
-  {
-    size_t load_capacity = 10;
-    auto outputs = DecoupledLoadOperation::create(*loadAddress, *response, load_capacity);
-    newLoad = dynamic_cast<rvsdg::NodeOutput *>(outputs[0])->node();
-  }
-  else
-  {
-    // TODO: switch this to a decoupled load?
-    auto outputs = LoadOperation::create(*loadAddress, states, *response);
-    newLoad = dynamic_cast<rvsdg::NodeOutput *>(outputs[0])->node();
-  }
-
-  for (size_t i = 0; i < replacedLoad->noutputs(); ++i)
-  {
-    smap.insert(originalLoad->output(i), newLoad->output(i));
-    replacedLoad->output(i)->divert_users(newLoad->output(i));
-  }
-  remove(replacedLoad);
-  return dynamic_cast<rvsdg::SimpleNode *>(newLoad);
-}
-
-rvsdg::SimpleNode *
-ReplaceStore(
-    rvsdg::SubstitutionMap & smap,
-    const rvsdg::SimpleNode * originalStore,
-    rvsdg::Output * response)
-{
-  // We have the store from the original lambda since it is needed to update the smap
-  // We need the store in the new lambda such that we can replace it with a store node with explicit
-  // memory ports
-  auto replacedStore =
-      &rvsdg::AssertGetOwnerNode<rvsdg::SimpleNode>(*smap.lookup(originalStore->output(0)));
-
-  auto addr = replacedStore->input(0)->origin();
-  JLM_ASSERT(rvsdg::is<llvm::PointerType>(addr->Type()));
-  auto data = replacedStore->input(1)->origin();
-  std::vector<rvsdg::Output *> states;
-  for (size_t i = 2; i < replacedStore->ninputs(); ++i)
-  {
-    states.push_back(replacedStore->input(i)->origin());
-  }
-  auto storeOuts = StoreOperation::create(*addr, *data, states, *response);
-  auto newStore = dynamic_cast<rvsdg::NodeOutput *>(storeOuts[0])->node();
-  // iterate over output states
-  for (size_t i = 0; i < replacedStore->noutputs(); ++i)
-  {
-    // create a buffer to avoid a scenario where the reponse port is blocked because a merge waits
-    // for the store
-    // TODO: It might be better to have memstate merges consume individual tokens instead,, and fire
-    // the output once all inputs have consumed
-    const auto bo = BufferOperation::create(*storeOuts[i], 1, true)[0];
-    smap.insert(originalStore->output(i), bo);
-    replacedStore->output(i)->divert_users(bo);
-  }
-  remove(replacedStore);
-  return dynamic_cast<rvsdg::SimpleNode *>(newStore);
-}
 }

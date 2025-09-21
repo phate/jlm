@@ -475,7 +475,7 @@ rvsdg2rhls(llvm::RvsdgModule & rhls, util::StatisticsCollector & collector)
   AddressQueueInsertion::CreateAndRun(rhls, collector);
   decouple_mem_state(rhls);
   UnusedStateRemoval::CreateAndRun(rhls, collector);
-  MemoryConverter(rhls);
+  MemoryConverter::CreateAndRun(rhls, collector);
   llvm::NodeReduction llvmRed;
   llvmRed.Run(rhls, collector);
   MemoryStateSplitConversion::CreateAndRun(rhls, collector);
