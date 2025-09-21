@@ -584,7 +584,8 @@ MemoryConverter(llvm::RvsdgModule & rm)
   // It might be better to apply this functionality above such that we only create a new lambda
   // once.
   //
-  RemoveUnusedStates(rm);
+  util::StatisticsCollector statisticsCollector;
+  UnusedStateRemoval::CreateAndRun(rm, statisticsCollector);
 
   // Need to get the lambda from the root since remote_unused_state replaces the lambda
   JLM_ASSERT(root->nnodes() == 1);

@@ -60,7 +60,8 @@ TestGamma()
   jlm::rvsdg::GraphExport::Create(*gammaOutput5.output, "");
 
   // Act
-  jlm::hls::RemoveUnusedStates(*rvsdgModule);
+  jlm::util::StatisticsCollector statisticsCollector;
+  jlm::hls::UnusedStateRemoval::CreateAndRun(*rvsdgModule, statisticsCollector);
 
   // Assert
   assert(gammaNode->ninputs() == 7);  // gammaInput1 was removed
@@ -110,7 +111,8 @@ TestTheta()
   auto & exportZ = GraphExport::Create(*loopVarZ.output, "z");
 
   // Act
-  jlm::hls::RemoveUnusedStates(*rvsdgModule);
+  jlm::util::StatisticsCollector statisticsCollector;
+  jlm::hls::UnusedStateRemoval::CreateAndRun(*rvsdgModule, statisticsCollector);
 
   // Assert
   assert(thetaNode->ninputs() == 3);
@@ -164,7 +166,8 @@ TestLambda()
   jlm::rvsdg::GraphExport::Create(*lambdaOutput, "f");
 
   // Act
-  jlm::hls::RemoveUnusedStates(*rvsdgModule);
+  jlm::util::StatisticsCollector statisticsCollector;
+  jlm::hls::UnusedStateRemoval::CreateAndRun(*rvsdgModule, statisticsCollector);
 
   // Assert
   assert(rvsdg.GetRootRegion().nnodes() == 1);
@@ -227,7 +230,9 @@ TestUsedMemoryState()
   jlm::rvsdg::view(rvsdgModule->Rvsdg(), stdout);
 
   // Act
-  RemoveInvariantLambdaStateEdges(*rvsdgModule);
+  jlm::util::StatisticsCollector statisticsCollector;
+  UnusedStateRemoval::CreateAndRun(*rvsdgModule, statisticsCollector);
+
   // Assert
   jlm::rvsdg::view(rvsdgModule->Rvsdg(), stdout);
   auto * node = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
@@ -272,7 +277,9 @@ TestUnusedMemoryState()
   jlm::rvsdg::view(rvsdgModule->Rvsdg(), stdout);
 
   // Act
-  RemoveInvariantLambdaStateEdges(*rvsdgModule);
+  jlm::util::StatisticsCollector statisticsCollector;
+  UnusedStateRemoval::CreateAndRun(*rvsdgModule, statisticsCollector);
+
   // Assert
   auto * node = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
       *rvsdgModule->Rvsdg().GetRootRegion().result(0)->origin());
@@ -329,7 +336,9 @@ TestInvariantMemoryState()
 
   // Act
   // This pass should have no effect on the graph
-  RemoveInvariantLambdaStateEdges(*rvsdgModule);
+  jlm::util::StatisticsCollector statisticsCollector;
+  UnusedStateRemoval::CreateAndRun(*rvsdgModule, statisticsCollector);
+
   // Assert
   auto * node = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
       *rvsdgModule->Rvsdg().GetRootRegion().result(0)->origin());

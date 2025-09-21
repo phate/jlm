@@ -447,9 +447,9 @@ rvsdg2rhls(llvm::RvsdgModule & rhls, util::StatisticsCollector & collector)
   ioBarrierRemoval.Run(rhls, collector);
 
   // TODO: do mem state separation early, so there are no false dependencies between loops
-  mem_sep_argument(rhls);
-  merge_gamma(rhls);
-  RemoveUnusedStates(rhls);
+  MemoryStateSeparation::CreateAndRun(rhls, collector);
+  GammaMerge::CreateAndRun(rhls, collector);
+  UnusedStateRemoval::CreateAndRun(rhls, collector);
 
   llvm::DeadNodeElimination llvmDne;
   llvmDne.Run(rhls, collector);
@@ -460,9 +460,9 @@ rvsdg2rhls(llvm::RvsdgModule & rhls, util::StatisticsCollector & collector)
   cne.Run(rhls, collector);
   llvmDne.Run(rhls, collector);
   // merge gammas that were pulled out of loops
-  merge_gamma(rhls);
+  GammaMerge::CreateAndRun(rhls, collector);
   llvmDne.Run(rhls, collector);
-  RemoveUnusedStates(rhls);
+  UnusedStateRemoval::CreateAndRun(rhls, collector);
   // main conversion steps
   ConstantDistribution::CreateAndRun(rhls, collector);
   ConvertGammaNodes(rhls);
@@ -474,7 +474,7 @@ rvsdg2rhls(llvm::RvsdgModule & rhls, util::StatisticsCollector & collector)
   jlm::hls::stream_conv(rhls);
   mem_queue(rhls);
   decouple_mem_state(rhls);
-  RemoveUnusedStates(rhls);
+  UnusedStateRemoval::CreateAndRun(rhls, collector);
   MemoryConverter(rhls);
   llvm::NodeReduction llvmRed;
   llvmRed.Run(rhls, collector);
