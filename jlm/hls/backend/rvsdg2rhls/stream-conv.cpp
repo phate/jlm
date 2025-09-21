@@ -51,8 +51,8 @@ ConnectStreamBuffer(rvsdg::SimpleNode * enq_call, rvsdg::SimpleNode * deq_call)
   remove(enq_call);
 }
 
-void
-stream_conv(llvm::RvsdgModule & rm)
+static void
+stream_conv(rvsdg::RvsdgModule & rm)
 {
   auto & graph = rm.Rvsdg();
   auto root = &graph.GetRootRegion();
@@ -108,4 +108,17 @@ stream_conv(llvm::RvsdgModule & rm)
   // remove dead cvargs
   lambda->PruneLambdaInputs();
 }
+
+StreamConversion::~StreamConversion() noexcept = default;
+
+StreamConversion::StreamConversion()
+    : Transformation("StreamConversion")
+{}
+
+void
+StreamConversion::Run(rvsdg::RvsdgModule & rvsdgModule, util::StatisticsCollector &)
+{
+  stream_conv(rvsdgModule);
+}
+
 }
