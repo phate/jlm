@@ -5,17 +5,38 @@
 #ifndef JLM_BACKEND_HLS_RVSDG2RHLS_MEM_SEP_HPP
 #define JLM_BACKEND_HLS_RVSDG2RHLS_MEM_SEP_HPP
 
-#include <jlm/llvm/ir/operators/lambda.hpp>
-#include <jlm/llvm/ir/RvsdgModule.hpp>
+#include <jlm/rvsdg/Transformation.hpp>
 
 namespace jlm::hls
 {
 
-void
-mem_sep_argument(rvsdg::Region * region);
+class MemoryStateSeparation final : public rvsdg::Transformation
+{
+public:
+  ~MemoryStateSeparation() noexcept override;
 
-void
-mem_sep_argument(llvm::RvsdgModule & rm);
+  MemoryStateSeparation();
+
+  MemoryStateSeparation(const MemoryStateSeparation &) = delete;
+
+  MemoryStateSeparation(MemoryStateSeparation &&) = delete;
+
+  MemoryStateSeparation &
+  operator=(const MemoryStateSeparation &) = delete;
+
+  MemoryStateSeparation &
+  operator=(MemoryStateSeparation &&) = delete;
+
+  void
+  Run(rvsdg::RvsdgModule & rvsdgModule, util::StatisticsCollector & statisticsCollector) override;
+
+  static void
+  CreateAndRun(rvsdg::RvsdgModule & rvsdgModule, util::StatisticsCollector & statisticsCollector)
+  {
+    MemoryStateSeparation memoryStateSeparation;
+    memoryStateSeparation.Run(rvsdgModule, statisticsCollector);
+  }
+};
 
 } // namespace jlm::hls
 

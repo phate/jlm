@@ -6,20 +6,38 @@
 #ifndef JLM_BACKEND_HLS_RVSDG2RHLS_MERGE_GAMMA_HPP
 #define JLM_BACKEND_HLS_RVSDG2RHLS_MERGE_GAMMA_HPP
 
-#include <jlm/llvm/ir/RvsdgModule.hpp>
-#include <jlm/rvsdg/gamma.hpp>
+#include <jlm/rvsdg/Transformation.hpp>
 
 namespace jlm::hls
 {
 
-void
-merge_gamma(rvsdg::Region * region);
+class GammaMerge final : public rvsdg::Transformation
+{
+public:
+  ~GammaMerge() noexcept override;
 
-void
-merge_gamma(llvm::RvsdgModule & rm);
+  GammaMerge();
 
-bool
-merge_gamma(rvsdg::GammaNode * gamma);
+  GammaMerge(const GammaMerge &) = delete;
+
+  GammaMerge(GammaMerge &&) = delete;
+
+  GammaMerge &
+  operator=(const GammaMerge &) = delete;
+
+  GammaMerge &
+  operator=(GammaMerge &&) = delete;
+
+  void
+  Run(rvsdg::RvsdgModule & rvsdgModule, util::StatisticsCollector & statisticsCollector) override;
+
+  static void
+  CreateAndRun(rvsdg::RvsdgModule & rvsdgModule, util::StatisticsCollector & statisticsCollector)
+  {
+    GammaMerge gammaMerge;
+    gammaMerge.Run(rvsdgModule, statisticsCollector);
+  }
+};
 
 }
 
