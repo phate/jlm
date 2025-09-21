@@ -102,7 +102,7 @@ private:
   std::unordered_set<jlm::rvsdg::Output *> visited;
 };
 
-jlm::rvsdg::Output *
+static jlm::rvsdg::Output *
 gep_to_index(jlm::rvsdg::Output * o)
 {
   // TODO: handle geps that are not direct predecessors
@@ -114,7 +114,7 @@ gep_to_index(jlm::rvsdg::Output * o)
   return node.input(2)->origin();
 }
 
-void
+static void
 alloca_conv(rvsdg::Region * region)
 {
   for (auto & node : rvsdg::TopDownTraverser(region))
@@ -223,12 +223,16 @@ alloca_conv(rvsdg::Region * region)
   }
 }
 
+AllocaNodeConversion::~AllocaNodeConversion() noexcept = default;
+
+AllocaNodeConversion::AllocaNodeConversion()
+    : Transformation("AllocaNodeConversion")
+{}
+
 void
-alloca_conv(jlm::llvm::RvsdgModule & rm)
+AllocaNodeConversion::Run(rvsdg::RvsdgModule & rvsdgModule, util::StatisticsCollector &)
 {
-  auto & graph = rm.Rvsdg();
-  auto root = &graph.GetRootRegion();
-  alloca_conv(root);
+  alloca_conv(&rvsdgModule.Rvsdg().GetRootRegion());
 }
 
 } // namespace jlm::hls
