@@ -472,7 +472,7 @@ rvsdg2rhls(llvm::RvsdgModule & rhls, util::StatisticsCollector & collector)
   RhlsDeadNodeElimination::CreateAndRun(rhls, collector);
   alloca_conv(rhls);
   StreamConversion::CreateAndRun(rhls, collector);
-  mem_queue(rhls);
+  AddressQueueInsertion::CreateAndRun(rhls, collector);
   decouple_mem_state(rhls);
   UnusedStateRemoval::CreateAndRun(rhls, collector);
   MemoryConverter(rhls);
