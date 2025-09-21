@@ -80,7 +80,8 @@ TestSingleLoad()
   assert(jlm::rvsdg::Region::ContainsNodeType<LoopNode>(*lambdaRegion, true));
 
   // Act
-  mem_queue(*rvsdgModule);
+  AddressQueueInsertion::CreateAndRun(*rvsdgModule, statisticsCollector);
+
   // Assert
   jlm::rvsdg::view(rvsdgModule->Rvsdg(), stdout);
   assert(jlm::rvsdg::Region::ContainsOperation<StateGateOperation>(*lambdaRegion, true));
@@ -162,7 +163,8 @@ TestLoadStore()
   assert(jlm::rvsdg::Region::ContainsNodeType<LoopNode>(*lambdaRegion, true));
 
   // Act
-  mem_queue(*rvsdgModule);
+  AddressQueueInsertion::CreateAndRun(*rvsdgModule, statisticsCollector);
+
   // Assert
   jlm::rvsdg::view(rvsdgModule->Rvsdg(), stdout);
   assert(jlm::rvsdg::Region::ContainsOperation<StateGateOperation>(*lambdaRegion, true));
@@ -238,7 +240,7 @@ TestAddrQueue()
   assert(jlm::rvsdg::Region::ContainsNodeType<LoopNode>(*lambdaRegion, true));
 
   // Act
-  mem_queue(*rvsdgModule);
+  AddressQueueInsertion::CreateAndRun(*rvsdgModule, statisticsCollector);
 
   // Assert
   jlm::rvsdg::view(rvsdgModule->Rvsdg(), stdout);

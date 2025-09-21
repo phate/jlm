@@ -472,10 +472,10 @@ rvsdg2rhls(llvm::RvsdgModule & rhls, util::StatisticsCollector & collector)
   RhlsDeadNodeElimination::CreateAndRun(rhls, collector);
   AllocaNodeConversion::CreateAndRun(rhls, collector);
   StreamConversion::CreateAndRun(rhls, collector);
-  mem_queue(rhls);
-  decouple_mem_state(rhls);
+  AddressQueueInsertion::CreateAndRun(rhls, collector);
+  MemoryStateDecoupling::CreateAndRun(rhls, collector);
   UnusedStateRemoval::CreateAndRun(rhls, collector);
-  MemoryConverter(rhls);
+  MemoryConverter::CreateAndRun(rhls, collector);
   llvm::NodeReduction llvmRed;
   llvmRed.Run(rhls, collector);
   MemoryStateSplitConversion::CreateAndRun(rhls, collector);
