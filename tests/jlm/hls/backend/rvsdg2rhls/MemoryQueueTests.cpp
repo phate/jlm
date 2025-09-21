@@ -57,7 +57,9 @@ TestSingleLoad()
   jlm::rvsdg::view(rvsdgModule->Rvsdg(), stdout);
 
   // Act
-  mem_sep_argument(*rvsdgModule);
+  jlm::util::StatisticsCollector statisticsCollector;
+  MemoryStateSeparation::CreateAndRun(*rvsdgModule, statisticsCollector);
+
   // Assert
   jlm::rvsdg::view(rvsdgModule->Rvsdg(), stdout);
   auto & entryMemoryStateSplitInput = lambdaRegion->argument(1)->SingleUser();
@@ -137,7 +139,9 @@ TestLoadStore()
   jlm::rvsdg::view(rvsdgModule->Rvsdg(), stdout);
 
   // Act
-  mem_sep_argument(*rvsdgModule);
+  jlm::util::StatisticsCollector statisticsCollector;
+  MemoryStateSeparation::CreateAndRun(*rvsdgModule, statisticsCollector);
+
   // Assert
   jlm::rvsdg::view(rvsdgModule->Rvsdg(), stdout);
   auto & entryMemoryStateSplitInput = lambdaRegion->argument(2)->SingleUser();
@@ -211,7 +215,9 @@ TestAddrQueue()
   jlm::rvsdg::view(rvsdgModule->Rvsdg(), stdout);
 
   // Act
-  mem_sep_argument(*rvsdgModule);
+  jlm::util::StatisticsCollector statisticsCollector;
+  MemoryStateSeparation::CreateAndRun(*rvsdgModule, statisticsCollector);
+
   // Assert
   jlm::rvsdg::view(rvsdgModule->Rvsdg(), stdout);
   auto & entryMemoryStateSplitInput = lambdaRegion->argument(1)->SingleUser();
