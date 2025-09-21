@@ -25,14 +25,6 @@
 namespace jlm::hls
 {
 
-void
-mem_sep_argument(llvm::RvsdgModule & rm)
-{
-  auto & graph = rm.Rvsdg();
-  auto root = &graph.GetRootRegion();
-  mem_sep_argument(root);
-}
-
 rvsdg::RegionArgument *
 GetIoStateArgument(const rvsdg::LambdaNode & lambda)
 {
@@ -339,6 +331,18 @@ mem_sep_argument(rvsdg::Region * region)
     entry_states.pop_back();
     trace_edge(common_edge, new_edge, std::get<0>(tp), std::get<1>(tp), std::get<2>(tp));
   }
+}
+
+MemoryStateSeparation::~MemoryStateSeparation() noexcept = default;
+
+MemoryStateSeparation::MemoryStateSeparation()
+    : Transformation("MemoryStateSeparation")
+{}
+
+void
+MemoryStateSeparation::Run(rvsdg::RvsdgModule & rvsdgModule, util::StatisticsCollector &)
+{
+  mem_sep_argument(&rvsdgModule.Rvsdg().GetRootRegion());
 }
 
 } // namespace jlm::hls
