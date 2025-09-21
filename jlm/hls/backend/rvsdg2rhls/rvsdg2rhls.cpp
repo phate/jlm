@@ -448,7 +448,7 @@ rvsdg2rhls(llvm::RvsdgModule & rhls, util::StatisticsCollector & collector)
 
   // TODO: do mem state separation early, so there are no false dependencies between loops
   mem_sep_argument(rhls);
-  merge_gamma(rhls);
+  GammaMerge::CreateAndRun(rhls, collector);
   RemoveUnusedStates(rhls);
 
   llvm::DeadNodeElimination llvmDne;
@@ -460,7 +460,7 @@ rvsdg2rhls(llvm::RvsdgModule & rhls, util::StatisticsCollector & collector)
   cne.Run(rhls, collector);
   llvmDne.Run(rhls, collector);
   // merge gammas that were pulled out of loops
-  merge_gamma(rhls);
+  GammaMerge::CreateAndRun(rhls, collector);
   llvmDne.Run(rhls, collector);
   RemoveUnusedStates(rhls);
   // main conversion steps
