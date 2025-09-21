@@ -489,8 +489,6 @@ RhlsDeadNodeElimination::Run(
         if (fix_mem_split(node))
         {
           changed = true;
-          // might break bottom up traversal
-          break;
         }
       }
       else if (dynamic_cast<const llvm::MemoryStateMergeOperation *>(&node->GetOperation()))
@@ -498,9 +496,12 @@ RhlsDeadNodeElimination::Run(
         if (fix_mem_merge(node))
         {
           changed = true;
-          // might break bottom up traversal
-          break;
         }
+      }
+      if (changed)
+      {
+        // Changes might break bottom up traversal
+        break;
       }
     }
     any_changed |= changed;
