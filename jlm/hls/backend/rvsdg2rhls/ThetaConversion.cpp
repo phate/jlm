@@ -5,6 +5,8 @@
 
 #include <jlm/hls/backend/rvsdg2rhls/ThetaConversion.hpp>
 #include <jlm/hls/ir/hls.hpp>
+#include <jlm/rvsdg/RvsdgModule.hpp>
+#include <jlm/rvsdg/theta.hpp>
 #include <jlm/rvsdg/traverser.hpp>
 
 namespace jlm::hls
@@ -91,8 +93,14 @@ ConvertThetaNodesInRegion(rvsdg::Region & region)
   }
 }
 
+ThetaNodeConversion::~ThetaNodeConversion() noexcept = default;
+
+ThetaNodeConversion::ThetaNodeConversion()
+    : Transformation("ThetaNodeConversion")
+{}
+
 void
-ConvertThetaNodes(jlm::llvm::RvsdgModule & rvsdgModule)
+ThetaNodeConversion::Run(rvsdg::RvsdgModule & rvsdgModule, util::StatisticsCollector &)
 {
   ConvertThetaNodesInRegion(rvsdgModule.Rvsdg().GetRootRegion());
 }

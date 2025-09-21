@@ -8,10 +8,10 @@
 #include <jlm/hls/backend/rvsdg2rhls/mem-conv.hpp>
 #include <jlm/hls/backend/rvsdg2rhls/mem-queue.hpp>
 #include <jlm/hls/backend/rvsdg2rhls/mem-sep.hpp>
-#include <jlm/hls/backend/rvsdg2rhls/rhls-dne.hpp>
 #include <jlm/hls/backend/rvsdg2rhls/ThetaConversion.hpp>
 #include <jlm/hls/ir/hls.hpp>
 #include <jlm/llvm/ir/operators.hpp>
+#include <jlm/rvsdg/theta.hpp>
 #include <jlm/rvsdg/view.hpp>
 #include <jlm/util/Statistics.hpp>
 
@@ -350,13 +350,14 @@ TestThetaLoad()
   assert(is<LambdaExitMemoryStateMergeOperation>(exitMemoryStateMergeNode));
 
   // Act
-  ConvertThetaNodes(*rvsdgModule);
+  ThetaNodeConversion::CreateAndRun(*rvsdgModule, statisticsCollector);
   // Simple assert as ConvertThetaNodes() is tested in separate unit tests
   jlm::rvsdg::view(rvsdgModule->Rvsdg(), stdout);
   assert(jlm::rvsdg::Region::ContainsNodeType<LoopNode>(*lambdaRegion, true));
 
   // Act
-  mem_queue(*rvsdgModule);
+  AddressQueueInsertion::CreateAndRun(*rvsdgModule, statisticsCollector);
+
   // Simple assert as mem_queue() is tested in separate unit tests
   jlm::rvsdg::view(rvsdgModule->Rvsdg(), stdout);
   assert(jlm::rvsdg::Region::ContainsOperation<StateGateOperation>(*lambdaRegion, true));
@@ -477,13 +478,14 @@ TestThetaStore()
   assert(is<LambdaExitMemoryStateMergeOperation>(exitMemoryStateMergeNode));
 
   // Act
-  ConvertThetaNodes(*rvsdgModule);
+  ThetaNodeConversion::CreateAndRun(*rvsdgModule, statisticsCollector);
   // Simple assert as ConvertThetaNodes() is tested in separate unit tests
   jlm::rvsdg::view(rvsdgModule->Rvsdg(), stdout);
   assert(jlm::rvsdg::Region::ContainsNodeType<LoopNode>(*lambdaRegion, true));
 
   // Act
-  mem_queue(*rvsdgModule);
+  AddressQueueInsertion::CreateAndRun(*rvsdgModule, statisticsCollector);
+
   // Simple assert as mem_queue() is tested in separate unit tests
   jlm::rvsdg::view(rvsdgModule->Rvsdg(), stdout);
   assert(jlm::rvsdg::Region::ContainsOperation<MemoryStateSplitOperation>(*lambdaRegion, true));

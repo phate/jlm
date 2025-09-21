@@ -3,22 +3,37 @@
  * See COPYING for terms of redistribution.
  */
 
-#ifndef JLM_LIBJLM_SRC_BACKEND_HLS_RVSDG2RHLS_DISTRIBUTE_CONSTANTS_HPP
-#define JLM_LIBJLM_SRC_BACKEND_HLS_RVSDG2RHLS_DISTRIBUTE_CONSTANTS_HPP
+#ifndef JLM_HLS_BACKEND_RVSDG2RHLS_DISTRIBUTE_CONSTANTS_HPP
+#define JLM_HLS_BACKEND_RVSDG2RHLS_DISTRIBUTE_CONSTANTS_HPP
 
-#include <jlm/llvm/ir/operators/lambda.hpp>
-#include <jlm/llvm/ir/RvsdgModule.hpp>
-#include <jlm/rvsdg/region.hpp>
+#include <jlm/rvsdg/Transformation.hpp>
 
-namespace jlm
+namespace jlm::hls
 {
-namespace hls
-{
-void
-distribute_constants(rvsdg::Region * region);
 
-void
-distribute_constants(llvm::RvsdgModule & rm);
+class ConstantDistribution final : rvsdg::Transformation
+{
+public:
+  ~ConstantDistribution() noexcept override;
+
+  ConstantDistribution();
+
+  ConstantDistribution(const ConstantDistribution &) = delete;
+
+  ConstantDistribution &
+  operator=(const ConstantDistribution &) = delete;
+
+  void
+  Run(rvsdg::RvsdgModule & rvsdgModule, util::StatisticsCollector & statisticsCollector) override;
+
+  static void
+  CreateAndRun(rvsdg::RvsdgModule & rvsdgModule, util::StatisticsCollector & statisticsCollector)
+  {
+    ConstantDistribution constantDistribution;
+    constantDistribution.Run(rvsdgModule, statisticsCollector);
+  }
+};
+
 }
-}
-#endif // JLM_LIBJLM_SRC_BACKEND_HLS_RVSDG2RHLS_DISTRIBUTE_CONSTANTS_HPP
+
+#endif

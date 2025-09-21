@@ -576,7 +576,9 @@ MemoryConverter(llvm::RvsdgModule & rm)
   remove(lambda);
 
   // Remove imports for decouple_ function pointers
-  dne(newLambda->subregion());
+  RhlsDeadNodeElimination dne;
+  util::StatisticsCollector statisticsCollector;
+  dne.Run(*newLambda->subregion(), statisticsCollector);
 
   //
   // TODO
@@ -584,7 +586,6 @@ MemoryConverter(llvm::RvsdgModule & rm)
   // It might be better to apply this functionality above such that we only create a new lambda
   // once.
   //
-  util::StatisticsCollector statisticsCollector;
   UnusedStateRemoval::CreateAndRun(rm, statisticsCollector);
 
   // Need to get the lambda from the root since remote_unused_state replaces the lambda
