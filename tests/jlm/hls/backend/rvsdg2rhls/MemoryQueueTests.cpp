@@ -10,6 +10,7 @@
 #include <jlm/hls/backend/rvsdg2rhls/ThetaConversion.hpp>
 #include <jlm/hls/ir/hls.hpp>
 #include <jlm/llvm/ir/operators.hpp>
+#include <jlm/rvsdg/theta.hpp>
 #include <jlm/rvsdg/traverser.hpp>
 #include <jlm/rvsdg/view.hpp>
 #include <jlm/util/Statistics.hpp>
@@ -73,7 +74,7 @@ TestSingleLoad()
       &exitMemoryStateMergeNode->GetOperation());
 
   // Act
-  ConvertThetaNodes(*rvsdgModule);
+  ThetaNodeConversion::CreateAndRun(*rvsdgModule, statisticsCollector);
   // Simple assert as ConvertThetaNodes() is tested in separate unit tests
   jlm::rvsdg::view(rvsdgModule->Rvsdg(), stdout);
   assert(jlm::rvsdg::Region::ContainsNodeType<LoopNode>(*lambdaRegion, true));
@@ -155,7 +156,7 @@ TestLoadStore()
       &exitMemoryStateMergeNode->GetOperation());
 
   // Act
-  ConvertThetaNodes(*rvsdgModule);
+  ThetaNodeConversion::CreateAndRun(*rvsdgModule, statisticsCollector);
   // Simple assert as ConvertThetaNodes() is tested in separate unit tests
   jlm::rvsdg::view(rvsdgModule->Rvsdg(), stdout);
   assert(jlm::rvsdg::Region::ContainsNodeType<LoopNode>(*lambdaRegion, true));
@@ -231,7 +232,7 @@ TestAddrQueue()
       &exitMemoryStateMergeNode->GetOperation());
 
   // Act
-  ConvertThetaNodes(*rvsdgModule);
+  ThetaNodeConversion::CreateAndRun(*rvsdgModule, statisticsCollector);
   // Simple assert as ConvertThetaNodes() is tested in separate unit tests
   jlm::rvsdg::view(rvsdgModule->Rvsdg(), stdout);
   assert(jlm::rvsdg::Region::ContainsNodeType<LoopNode>(*lambdaRegion, true));
