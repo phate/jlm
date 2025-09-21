@@ -470,7 +470,7 @@ rvsdg2rhls(llvm::RvsdgModule & rhls, util::StatisticsCollector & collector)
   cne.Run(rhls, collector);
   // rhls optimization
   RhlsDeadNodeElimination::CreateAndRun(rhls, collector);
-  alloca_conv(rhls);
+  AllocaNodeConversion::CreateAndRun(rhls, collector);
   StreamConversion::CreateAndRun(rhls, collector);
   mem_queue(rhls);
   decouple_mem_state(rhls);
