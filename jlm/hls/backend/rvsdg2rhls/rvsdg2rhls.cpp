@@ -482,7 +482,7 @@ rvsdg2rhls(llvm::RvsdgModule & rhls, util::StatisticsCollector & collector)
   RedundantBufferElimination::CreateAndRun(rhls, collector);
   SinkInsertion::CreateAndRun(rhls, collector);
   ForkInsertion::CreateAndRun(rhls, collector);
-  add_buffers(rhls);
+  BufferInsertion::CreateAndRun(rhls, collector);
   // ensure that all rhls rules are met
   check_rhls(rhls);
 }
