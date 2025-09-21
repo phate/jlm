@@ -6,29 +6,36 @@
 #ifndef JLM_HLS_BACKEND_RVSDG2RHLS_RHLS_DNE_HPP
 #define JLM_HLS_BACKEND_RVSDG2RHLS_RHLS_DNE_HPP
 
-#include <jlm/hls/ir/hls.hpp>
-#include <jlm/llvm/ir/RvsdgModule.hpp>
+#include <jlm/rvsdg/Transformation.hpp>
 
 namespace jlm::hls
 {
 
-bool
-remove_unused_loop_outputs(LoopNode * ln);
+class RhlsDeadNodeElimination final : public rvsdg::Transformation
+{
+public:
+  ~RhlsDeadNodeElimination() noexcept override;
 
-bool
-remove_unused_loop_backedges(LoopNode * ln);
+  RhlsDeadNodeElimination();
 
-bool
-remove_loop_passthrough(LoopNode * ln);
+  RhlsDeadNodeElimination(const RhlsDeadNodeElimination &) = delete;
 
-bool
-remove_unused_loop_inputs(LoopNode * ln);
+  RhlsDeadNodeElimination &
+  operator=(const RhlsDeadNodeElimination &) = delete;
 
-bool
-dne(rvsdg::Region * sr);
+  void
+  Run(rvsdg::RvsdgModule & rvsdgModule, util::StatisticsCollector & statisticsCollector) override;
 
-void
-dne(llvm::RvsdgModule & rm);
+  bool
+  Run(rvsdg::Region & region, util::StatisticsCollector & statisticsCollector);
+
+  static void
+  CreateAndRun(rvsdg::RvsdgModule & rvsdgModule, util::StatisticsCollector & statisticsCollector)
+  {
+    RhlsDeadNodeElimination deadNoneElimination;
+    deadNoneElimination.Run(rvsdgModule, statisticsCollector);
+  }
+};
 
 } // namespace jlm::hls
 

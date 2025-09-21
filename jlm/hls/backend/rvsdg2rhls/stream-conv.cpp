@@ -94,7 +94,10 @@ stream_conv(llvm::RvsdgModule & rm)
     }
   }
   // clean up routed function pointers
-  dne(lambda->subregion());
+  RhlsDeadNodeElimination dne;
+  util::StatisticsCollector statisticsCollector;
+  dne.Run(*lambda->subregion(), statisticsCollector);
+
   std::vector<rvsdg::LambdaNode::ContextVar> remove_vars(stream_enqs);
   remove_vars.insert(remove_vars.cend(), stream_deqs.begin(), stream_deqs.end());
   // make sure context vars are actually dead
