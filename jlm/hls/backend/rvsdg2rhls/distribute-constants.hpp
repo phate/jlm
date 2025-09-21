@@ -18,12 +18,7 @@ public:
 
   ConstantDistribution();
 
-  ConstantDistribution(const ConstantDistribution &) = delete;
-
   ConstantDistribution(ConstantDistribution &&) = delete;
-
-  ConstantDistribution &
-  operator=(const ConstantDistribution &) = delete;
 
   ConstantDistribution &
   operator=(ConstantDistribution &&) = delete;
