@@ -5,11 +5,10 @@
 
 #include "test-registry.hpp"
 
-#include <jlm/hls/backend/rvsdg2rhls/add-forks.hpp>
-#include <jlm/hls/backend/rvsdg2rhls/ThetaConversion.hpp>
 #include <jlm/hls/ir/hls.hpp>
 #include <jlm/hls/util/view.hpp>
 #include <jlm/llvm/ir/operators.hpp>
+#include <jlm/rvsdg/theta.hpp>
 #include <jlm/rvsdg/view.hpp>
 
 static void
