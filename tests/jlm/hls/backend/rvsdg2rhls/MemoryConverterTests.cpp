@@ -356,7 +356,8 @@ TestThetaLoad()
   assert(jlm::rvsdg::Region::ContainsNodeType<LoopNode>(*lambdaRegion, true));
 
   // Act
-  mem_queue(*rvsdgModule);
+  AddressQueueInsertion::CreateAndRun(*rvsdgModule, statisticsCollector);
+
   // Simple assert as mem_queue() is tested in separate unit tests
   jlm::rvsdg::view(rvsdgModule->Rvsdg(), stdout);
   assert(jlm::rvsdg::Region::ContainsOperation<StateGateOperation>(*lambdaRegion, true));
@@ -483,7 +484,8 @@ TestThetaStore()
   assert(jlm::rvsdg::Region::ContainsNodeType<LoopNode>(*lambdaRegion, true));
 
   // Act
-  mem_queue(*rvsdgModule);
+  AddressQueueInsertion::CreateAndRun(*rvsdgModule, statisticsCollector);
+
   // Simple assert as mem_queue() is tested in separate unit tests
   jlm::rvsdg::view(rvsdgModule->Rvsdg(), stdout);
   assert(jlm::rvsdg::Region::ContainsOperation<MemoryStateSplitOperation>(*lambdaRegion, true));

@@ -464,15 +464,15 @@ rvsdg2rhls(llvm::RvsdgModule & rhls, util::StatisticsCollector & collector)
   llvmDne.Run(rhls, collector);
   UnusedStateRemoval::CreateAndRun(rhls, collector);
   // main conversion steps
-  distribute_constants(rhls);
+  ConstantDistribution::CreateAndRun(rhls, collector);
   ConvertGammaNodes(rhls);
   ThetaNodeConversion::CreateAndRun(rhls, collector);
   cne.Run(rhls, collector);
   // rhls optimization
   RhlsDeadNodeElimination::CreateAndRun(rhls, collector);
-  alloca_conv(rhls);
+  AllocaNodeConversion::CreateAndRun(rhls, collector);
   StreamConversion::CreateAndRun(rhls, collector);
-  mem_queue(rhls);
+  AddressQueueInsertion::CreateAndRun(rhls, collector);
   MemoryStateDecoupling::CreateAndRun(rhls, collector);
   UnusedStateRemoval::CreateAndRun(rhls, collector);
   MemoryConverter(rhls);
