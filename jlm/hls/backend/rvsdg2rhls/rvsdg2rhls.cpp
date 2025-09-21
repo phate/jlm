@@ -473,7 +473,7 @@ rvsdg2rhls(llvm::RvsdgModule & rhls, util::StatisticsCollector & collector)
   alloca_conv(rhls);
   StreamConversion::CreateAndRun(rhls, collector);
   mem_queue(rhls);
-  decouple_mem_state(rhls);
+  MemoryStateDecoupling::CreateAndRun(rhls, collector);
   UnusedStateRemoval::CreateAndRun(rhls, collector);
   MemoryConverter(rhls);
   llvm::NodeReduction llvmRed;
