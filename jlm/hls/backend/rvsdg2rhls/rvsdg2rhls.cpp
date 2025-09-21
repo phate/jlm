@@ -447,7 +447,7 @@ rvsdg2rhls(llvm::RvsdgModule & rhls, util::StatisticsCollector & collector)
   ioBarrierRemoval.Run(rhls, collector);
 
   // TODO: do mem state separation early, so there are no false dependencies between loops
-  mem_sep_argument(rhls);
+  MemoryStateSeparation::CreateAndRun(rhls, collector);
   GammaMerge::CreateAndRun(rhls, collector);
   RemoveUnusedStates(rhls);
 
