@@ -493,7 +493,9 @@ decouple_mem_state(rvsdg::Region * region)
         exitNode->input(i)->origin());
   }
 
-  dne(lambda->subregion());
+  RhlsDeadNodeElimination dne;
+  util::StatisticsCollector statisticsCollector;
+  dne.Run(*lambda->subregion(), statisticsCollector);
 }
 
 void
