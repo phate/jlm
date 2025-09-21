@@ -449,7 +449,7 @@ rvsdg2rhls(llvm::RvsdgModule & rhls, util::StatisticsCollector & collector)
   // TODO: do mem state separation early, so there are no false dependencies between loops
   MemoryStateSeparation::CreateAndRun(rhls, collector);
   GammaMerge::CreateAndRun(rhls, collector);
-  RemoveUnusedStates(rhls);
+  UnusedStateRemoval::CreateAndRun(rhls, collector);
 
   llvm::DeadNodeElimination llvmDne;
   llvmDne.Run(rhls, collector);
@@ -462,27 +462,27 @@ rvsdg2rhls(llvm::RvsdgModule & rhls, util::StatisticsCollector & collector)
   // merge gammas that were pulled out of loops
   GammaMerge::CreateAndRun(rhls, collector);
   llvmDne.Run(rhls, collector);
-  RemoveUnusedStates(rhls);
+  UnusedStateRemoval::CreateAndRun(rhls, collector);
   // main conversion steps
-  distribute_constants(rhls);
+  ConstantDistribution::CreateAndRun(rhls, collector);
   GammaNodeConversion::CreateAndRun(rhls, collector);
-  ConvertThetaNodes(rhls);
+  ThetaNodeConversion::CreateAndRun(rhls, collector);
   cne.Run(rhls, collector);
   // rhls optimization
-  dne(rhls);
-  alloca_conv(rhls);
-  jlm::hls::stream_conv(rhls);
-  mem_queue(rhls);
-  decouple_mem_state(rhls);
-  RemoveUnusedStates(rhls);
-  MemoryConverter(rhls);
+  RhlsDeadNodeElimination::CreateAndRun(rhls, collector);
+  AllocaNodeConversion::CreateAndRun(rhls, collector);
+  StreamConversion::CreateAndRun(rhls, collector);
+  AddressQueueInsertion::CreateAndRun(rhls, collector);
+  MemoryStateDecoupling::CreateAndRun(rhls, collector);
+  UnusedStateRemoval::CreateAndRun(rhls, collector);
+  MemoryConverter::CreateAndRun(rhls, collector);
   llvm::NodeReduction llvmRed;
   llvmRed.Run(rhls, collector);
   MemoryStateSplitConversion::CreateAndRun(rhls, collector);
   RedundantBufferElimination::CreateAndRun(rhls, collector);
   SinkInsertion::CreateAndRun(rhls, collector);
   ForkInsertion::CreateAndRun(rhls, collector);
-  add_buffers(rhls);
+  BufferInsertion::CreateAndRun(rhls, collector);
   // ensure that all rhls rules are met
   check_rhls(rhls);
 }

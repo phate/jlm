@@ -6,19 +6,36 @@
 #ifndef JLM_HLS_BACKEND_RVSDG2RHLS_THETACONVERSION_HPP
 #define JLM_HLS_BACKEND_RVSDG2RHLS_THETACONVERSION_HPP
 
-#include <jlm/llvm/ir/RvsdgModule.hpp>
-#include <jlm/rvsdg/theta.hpp>
+#include <jlm/rvsdg/Transformation.hpp>
 
 namespace jlm::hls
 {
 
 /**
  * Converts every rvsdg::ThetaNode in \p rvsdgModule to an hls::LoopNode.
- *
- * @param rvsdgModule The RVSDG module the transformation is performed on.
  */
-void
-ConvertThetaNodes(jlm::llvm::RvsdgModule & rvsdgModule);
+class ThetaNodeConversion final : public rvsdg::Transformation
+{
+public:
+  ~ThetaNodeConversion() noexcept override;
+
+  ThetaNodeConversion();
+
+  ThetaNodeConversion(const ThetaNodeConversion &) = delete;
+
+  ThetaNodeConversion &
+  operator=(const ThetaNodeConversion &) = delete;
+
+  void
+  Run(rvsdg::RvsdgModule & rvsdgModule, util::StatisticsCollector & statisticsCollector) override;
+
+  static void
+  CreateAndRun(rvsdg::RvsdgModule & rvsdgModule, util::StatisticsCollector & statisticsCollector)
+  {
+    ThetaNodeConversion thetaNodeConversion;
+    thetaNodeConversion.Run(rvsdgModule, statisticsCollector);
+  }
+};
 
 }
 

@@ -51,8 +51,8 @@ ConnectStreamBuffer(rvsdg::SimpleNode * enq_call, rvsdg::SimpleNode * deq_call)
   remove(enq_call);
 }
 
-void
-stream_conv(llvm::RvsdgModule & rm)
+static void
+stream_conv(rvsdg::RvsdgModule & rm)
 {
   auto & graph = rm.Rvsdg();
   auto root = &graph.GetRootRegion();
@@ -94,7 +94,10 @@ stream_conv(llvm::RvsdgModule & rm)
     }
   }
   // clean up routed function pointers
-  dne(lambda->subregion());
+  RhlsDeadNodeElimination dne;
+  util::StatisticsCollector statisticsCollector;
+  dne.Run(*lambda->subregion(), statisticsCollector);
+
   std::vector<rvsdg::LambdaNode::ContextVar> remove_vars(stream_enqs);
   remove_vars.insert(remove_vars.cend(), stream_deqs.begin(), stream_deqs.end());
   // make sure context vars are actually dead
@@ -105,4 +108,17 @@ stream_conv(llvm::RvsdgModule & rm)
   // remove dead cvargs
   lambda->PruneLambdaInputs();
 }
+
+StreamConversion::~StreamConversion() noexcept = default;
+
+StreamConversion::StreamConversion()
+    : Transformation("StreamConversion")
+{}
+
+void
+StreamConversion::Run(rvsdg::RvsdgModule & rvsdgModule, util::StatisticsCollector &)
+{
+  stream_conv(rvsdgModule);
+}
+
 }

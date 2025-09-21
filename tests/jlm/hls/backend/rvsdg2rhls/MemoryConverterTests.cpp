@@ -8,10 +8,10 @@
 #include <jlm/hls/backend/rvsdg2rhls/mem-conv.hpp>
 #include <jlm/hls/backend/rvsdg2rhls/mem-queue.hpp>
 #include <jlm/hls/backend/rvsdg2rhls/mem-sep.hpp>
-#include <jlm/hls/backend/rvsdg2rhls/rhls-dne.hpp>
 #include <jlm/hls/backend/rvsdg2rhls/ThetaConversion.hpp>
 #include <jlm/hls/ir/hls.hpp>
 #include <jlm/llvm/ir/operators.hpp>
+#include <jlm/rvsdg/theta.hpp>
 #include <jlm/rvsdg/view.hpp>
 #include <jlm/util/Statistics.hpp>
 
@@ -102,9 +102,12 @@ TestLoad()
   auto lambdaOutput = lambda->finalize({ loadOutput[0], loadOutput[1] });
   jlm::rvsdg::GraphExport::Create(*lambdaOutput, "f");
 
-  // Act
   jlm::rvsdg::view(rvsdgModule->Rvsdg(), stdout);
-  MemoryConverter(*rvsdgModule);
+
+  // Act
+  jlm::util::StatisticsCollector statisticsCollector;
+  MemoryConverter::CreateAndRun(*rvsdgModule, statisticsCollector);
+
   jlm::rvsdg::view(rvsdgModule->Rvsdg(), stdout);
 
   // Memory Converter replaces the lambda so we start from the root of the graph
@@ -178,9 +181,12 @@ TestStore()
   auto lambdaOutput = lambda->finalize({ storeOutput[0] });
   jlm::rvsdg::GraphExport::Create(*lambdaOutput, "f");
 
-  // Act
   jlm::rvsdg::view(rvsdgModule->Rvsdg(), stdout);
-  MemoryConverter(*rvsdgModule);
+
+  // Act
+  jlm::util::StatisticsCollector statisticsCollector;
+  MemoryConverter::CreateAndRun(*rvsdgModule, statisticsCollector);
+
   jlm::rvsdg::view(rvsdgModule->Rvsdg(), stdout);
 
   // Memory Converter replaces the lambda so we start from the root of the graph
@@ -246,9 +252,12 @@ TestLoadStore()
   auto lambdaOutput = lambda->finalize({ storeOutput[0] });
   jlm::rvsdg::GraphExport::Create(*lambdaOutput, "f");
 
-  // Act
   jlm::rvsdg::view(rvsdgModule->Rvsdg(), stdout);
-  MemoryConverter(*rvsdgModule);
+
+  // Act
+  jlm::util::StatisticsCollector statisticsCollector;
+  MemoryConverter::CreateAndRun(*rvsdgModule, statisticsCollector);
+
   jlm::rvsdg::view(rvsdgModule->Rvsdg(), stdout);
 
   // Memory Converter replaces the lambda so we start from the root of the graph
@@ -350,13 +359,14 @@ TestThetaLoad()
   assert(is<LambdaExitMemoryStateMergeOperation>(exitMemoryStateMergeNode));
 
   // Act
-  ConvertThetaNodes(*rvsdgModule);
+  ThetaNodeConversion::CreateAndRun(*rvsdgModule, statisticsCollector);
   // Simple assert as ConvertThetaNodes() is tested in separate unit tests
   jlm::rvsdg::view(rvsdgModule->Rvsdg(), stdout);
   assert(jlm::rvsdg::Region::ContainsNodeType<LoopNode>(*lambdaRegion, true));
 
   // Act
-  mem_queue(*rvsdgModule);
+  AddressQueueInsertion::CreateAndRun(*rvsdgModule, statisticsCollector);
+
   // Simple assert as mem_queue() is tested in separate unit tests
   jlm::rvsdg::view(rvsdgModule->Rvsdg(), stdout);
   assert(jlm::rvsdg::Region::ContainsOperation<StateGateOperation>(*lambdaRegion, true));
@@ -364,7 +374,7 @@ TestThetaLoad()
   assert(jlm::rvsdg::Region::ContainsOperation<MemoryStateMergeOperation>(*lambdaRegion, true));
 
   // Act
-  MemoryConverter(*rvsdgModule);
+  MemoryConverter::CreateAndRun(*rvsdgModule, statisticsCollector);
 
   // Assert
   jlm::rvsdg::view(rvsdgModule->Rvsdg(), stdout);
@@ -477,20 +487,21 @@ TestThetaStore()
   assert(is<LambdaExitMemoryStateMergeOperation>(exitMemoryStateMergeNode));
 
   // Act
-  ConvertThetaNodes(*rvsdgModule);
+  ThetaNodeConversion::CreateAndRun(*rvsdgModule, statisticsCollector);
   // Simple assert as ConvertThetaNodes() is tested in separate unit tests
   jlm::rvsdg::view(rvsdgModule->Rvsdg(), stdout);
   assert(jlm::rvsdg::Region::ContainsNodeType<LoopNode>(*lambdaRegion, true));
 
   // Act
-  mem_queue(*rvsdgModule);
+  AddressQueueInsertion::CreateAndRun(*rvsdgModule, statisticsCollector);
+
   // Simple assert as mem_queue() is tested in separate unit tests
   jlm::rvsdg::view(rvsdgModule->Rvsdg(), stdout);
   assert(jlm::rvsdg::Region::ContainsOperation<MemoryStateSplitOperation>(*lambdaRegion, true));
   assert(jlm::rvsdg::Region::ContainsOperation<MemoryStateMergeOperation>(*lambdaRegion, true));
 
   // Act
-  MemoryConverter(*rvsdgModule);
+  MemoryConverter::CreateAndRun(*rvsdgModule, statisticsCollector);
 
   // Assert
   jlm::rvsdg::view(rvsdgModule->Rvsdg(), stdout);
