@@ -469,9 +469,9 @@ rvsdg2rhls(llvm::RvsdgModule & rhls, util::StatisticsCollector & collector)
   ThetaNodeConversion::CreateAndRun(rhls, collector);
   cne.Run(rhls, collector);
   // rhls optimization
-  dne(rhls);
+  RhlsDeadNodeElimination::CreateAndRun(rhls, collector);
   alloca_conv(rhls);
-  jlm::hls::stream_conv(rhls);
+  StreamConversion::CreateAndRun(rhls, collector);
   mem_queue(rhls);
   decouple_mem_state(rhls);
   UnusedStateRemoval::CreateAndRun(rhls, collector);
