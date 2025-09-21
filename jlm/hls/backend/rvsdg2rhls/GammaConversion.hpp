@@ -6,8 +6,7 @@
 #ifndef JLM_HLS_BACKEND_RVSDG2RHLS_GAMMACONVERSION_HPP
 #define JLM_HLS_BACKEND_RVSDG2RHLS_GAMMACONVERSION_HPP
 
-#include <jlm/llvm/ir/RvsdgModule.hpp>
-#include <jlm/rvsdg/gamma.hpp>
+#include <jlm/rvsdg/Transformation.hpp>
 
 namespace jlm::hls
 {
@@ -17,8 +16,28 @@ namespace jlm::hls
  *
  * @param rvsdgModule The RVSDG module the transformation is performed on.
  */
-void
-ConvertGammaNodes(llvm::RvsdgModule & rvsdgModule);
+class GammaNodeConversion final : public rvsdg::Transformation
+{
+public:
+  ~GammaNodeConversion() noexcept override;
+
+  GammaNodeConversion();
+
+  GammaNodeConversion(const GammaNodeConversion &) = delete;
+
+  GammaNodeConversion &
+  operator=(const GammaNodeConversion &) = delete;
+
+  void
+  Run(rvsdg::RvsdgModule & rvsdgModule, util::StatisticsCollector & statisticsCollector) override;
+
+  static void
+  CreateAndRun(rvsdg::RvsdgModule & rvsdgModule, util::StatisticsCollector & statisticsCollector)
+  {
+    GammaNodeConversion gammaNodeConversion;
+    gammaNodeConversion.Run(rvsdgModule, statisticsCollector);
+  }
+};
 
 }
 

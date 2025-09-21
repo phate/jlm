@@ -10,6 +10,7 @@
 #include <jlm/hls/backend/rvsdg2rhls/GammaConversion.hpp>
 #include <jlm/hls/ir/hls.hpp>
 #include <jlm/llvm/ir/operators.hpp>
+#include <jlm/rvsdg/gamma.hpp>
 #include <jlm/rvsdg/view.hpp>
 
 static void
@@ -17,12 +18,11 @@ TestWithMatch()
 {
   using namespace jlm::llvm;
 
+  // Arrange
   auto vt = jlm::tests::ValueType::Create();
   auto ft = jlm::rvsdg::FunctionType::Create({ jlm::rvsdg::BitType::Create(1), vt, vt }, { vt });
 
   RvsdgModule rm(jlm::util::FilePath(""), "", "");
-
-  /* Setup graph */
 
   auto lambda = jlm::rvsdg::LambdaNode::Create(
       rm.Rvsdg().GetRootRegion(),
@@ -39,13 +39,13 @@ TestWithMatch()
 
   jlm::rvsdg::view(rm.Rvsdg(), stdout);
 
-  /* Convert graph to RHLS */
+  // Act
+  jlm::util::StatisticsCollector statisticsCollector;
+  jlm::hls::GammaNodeConversion::CreateAndRun(rm, statisticsCollector);
 
-  jlm::hls::ConvertGammaNodes(rm);
   jlm::rvsdg::view(rm.Rvsdg(), stdout);
 
-  /* Verify output */
-
+  // Assert
   assert(jlm::rvsdg::Region::ContainsOperation<jlm::hls::MuxOperation>(*lambda->subregion(), true));
 }
 
@@ -54,6 +54,7 @@ TestWithoutMatch()
 {
   using namespace jlm::llvm;
 
+  // Arrange
   auto vt = jlm::tests::ValueType::Create();
   auto ft =
       jlm::rvsdg::FunctionType::Create({ jlm::rvsdg::ControlType::Create(2), vt, vt }, { vt });
@@ -76,13 +77,13 @@ TestWithoutMatch()
 
   jlm::rvsdg::view(rm.Rvsdg(), stdout);
 
-  /* Convert graph to RHLS */
+  // Act
+  jlm::util::StatisticsCollector statisticsCollector;
+  jlm::hls::GammaNodeConversion::CreateAndRun(rm, statisticsCollector);
 
-  jlm::hls::ConvertGammaNodes(rm);
   jlm::rvsdg::view(rm.Rvsdg(), stdout);
 
-  /* Verify output */
-
+  // Assert
   assert(jlm::rvsdg::Region::ContainsOperation<jlm::hls::MuxOperation>(*lambda->subregion(), true));
 }
 
