@@ -20,15 +20,10 @@
 
 #include <deque>
 
-void
-jlm::hls::mem_queue(llvm::RvsdgModule & rm)
+namespace jlm::hls
 {
-  auto & graph = rm.Rvsdg();
-  auto root = &graph.GetRootRegion();
-  mem_queue(root);
-}
 
-void
+static void
 find_load_store(
     jlm::rvsdg::Output * op,
     std::vector<jlm::rvsdg::SimpleNode *> & load_nodes,
@@ -88,7 +83,7 @@ find_load_store(
   }
 }
 
-jlm::rvsdg::StructuralOutput *
+static rvsdg::StructuralOutput *
 find_loop_output(jlm::rvsdg::StructuralInput * sti)
 {
   auto sti_arg = sti->arguments.first();
@@ -126,7 +121,7 @@ find_loop_output(jlm::rvsdg::StructuralInput * sti)
   JLM_UNREACHABLE("This should never happen");
 }
 
-jlm::rvsdg::Output *
+static rvsdg::Output *
 separate_load_edge(
     jlm::rvsdg::Output * mem_edge,
     jlm::rvsdg::Output * addr_edge,
@@ -476,8 +471,8 @@ process_loops(jlm::rvsdg::Output * state_edge)
   }
 }
 
-void
-jlm::hls::mem_queue(jlm::rvsdg::Region * region)
+static void
+mem_queue(jlm::rvsdg::Region * region)
 {
   auto lambda =
       jlm::util::AssertedCast<const jlm::rvsdg::LambdaNode>(region->Nodes().begin().ptr());
@@ -517,4 +512,18 @@ jlm::hls::mem_queue(jlm::rvsdg::Region * region)
   }
   // There is no memory state splitter, so process the single state edge in the graph
   process_loops(state_arg);
+}
+
+AddressQueueInsertion::~AddressQueueInsertion() noexcept = default;
+
+AddressQueueInsertion::AddressQueueInsertion()
+    : Transformation("AddressQueueInsertion")
+{}
+
+void
+AddressQueueInsertion::Run(rvsdg::RvsdgModule & rvsdgModule, util::StatisticsCollector &)
+{
+  mem_queue(&rvsdgModule.Rvsdg().GetRootRegion());
+}
+
 }
