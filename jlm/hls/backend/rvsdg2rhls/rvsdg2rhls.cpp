@@ -484,7 +484,7 @@ rvsdg2rhls(llvm::RvsdgModule & rhls, util::StatisticsCollector & collector)
   ForkInsertion::CreateAndRun(rhls, collector);
   add_buffers(rhls);
   // ensure that all rhls rules are met
-  check_rhls(rhls);
+  RhlsVerification::CreateAndRun(rhls, collector);
 }
 
 void
