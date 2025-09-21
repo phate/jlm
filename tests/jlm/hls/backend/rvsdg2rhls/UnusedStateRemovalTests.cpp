@@ -81,50 +81,45 @@ TestTheta()
 
   // Arrange
   auto valueType = jlm::tests::ValueType::Create();
-  auto functionType = jlm::rvsdg::FunctionType::Create(
-      { jlm::rvsdg::ControlType::Create(2), valueType, valueType, valueType },
+  auto functionType = FunctionType::Create(
+      { ControlType::Create(2), valueType, valueType, valueType },
       { valueType });
 
   auto rvsdgModule = jlm::llvm::RvsdgModule::Create(jlm::util::FilePath(""), "", "");
   auto & rvsdg = rvsdgModule->Rvsdg();
-  auto p = &jlm::rvsdg::GraphImport::Create(rvsdg, jlm::rvsdg::ControlType::Create(2), "p");
-  auto x = &jlm::rvsdg::GraphImport::Create(rvsdg, valueType, "x");
-  auto y = &jlm::rvsdg::GraphImport::Create(rvsdg, valueType, "y");
-  auto z = &jlm::rvsdg::GraphImport::Create(rvsdg, valueType, "z");
 
-  auto thetaNode = jlm::rvsdg::ThetaNode::create(&rvsdg.GetRootRegion());
+  auto importP = &jlm::rvsdg::GraphImport::Create(rvsdg, ControlType::Create(2), "p");
+  auto importX = &jlm::rvsdg::GraphImport::Create(rvsdg, valueType, "x");
+  auto importY = &jlm::rvsdg::GraphImport::Create(rvsdg, valueType, "y");
+  auto importZ = &jlm::rvsdg::GraphImport::Create(rvsdg, valueType, "z");
 
-  auto thetaOutput0 = thetaNode->AddLoopVar(p);
-  auto thetaOutput1 = thetaNode->AddLoopVar(x);
-  auto thetaOutput2 = thetaNode->AddLoopVar(y);
-  auto thetaOutput3 = thetaNode->AddLoopVar(z);
+  auto thetaNode = ThetaNode::create(&rvsdg.GetRootRegion());
 
-  thetaOutput2.post->divert_to(thetaOutput3.pre);
-  thetaOutput3.post->divert_to(thetaOutput2.pre);
-  thetaNode->set_predicate(thetaOutput0.pre);
+  auto loopVarP = thetaNode->AddLoopVar(importP);
+  auto loopVarX = thetaNode->AddLoopVar(importX);
+  auto loopVarY = thetaNode->AddLoopVar(importY);
+  auto loopVarZ = thetaNode->AddLoopVar(importZ);
 
-  auto result =
-      jlm::rvsdg::CreateOpNode<jlm::tests::TestOperation>(
-          { thetaOutput0.output, thetaOutput1.output, thetaOutput2.output, thetaOutput3.output },
-          std::vector<std::shared_ptr<const Type>>{ ControlType::Create(2),
-                                                    valueType,
-                                                    valueType,
-                                                    valueType },
-          std::vector<std::shared_ptr<const Type>>{ valueType })
-          .output(0);
+  loopVarY.post->divert_to(loopVarZ.pre);
+  loopVarZ.post->divert_to(loopVarY.pre);
+  thetaNode->set_predicate(loopVarP.pre);
 
-  jlm::rvsdg::GraphExport::Create(*result, "f");
+  auto & exportP = GraphExport::Create(*loopVarP.output, "p");
+  auto & exportX = GraphExport::Create(*loopVarX.output, "x");
+  auto & exportY = GraphExport::Create(*loopVarY.output, "y");
+  auto & exportZ = GraphExport::Create(*loopVarZ.output, "z");
 
   // Act
   jlm::hls::RemoveUnusedStates(*rvsdgModule);
 
   // Assert
-  // This assert is only here so that we do not forget this test when we refactor the code
-  assert(thetaNode->ninputs() == 1);
+  assert(thetaNode->ninputs() == 3);
+  assert(thetaNode->noutputs() == 3);
 
-  // FIXME: This transformation is broken for theta nodes. For the setup above, it
-  // removes all inputs/outputs, except the predicate. However, the only
-  // input and output it should remove are input 1 and output 0, respectively.
+  assert(TryGetOwnerNode<ThetaNode>(*exportP.origin()) == thetaNode);
+  assert(exportX.origin() == importX);
+  assert(TryGetOwnerNode<ThetaNode>(*exportY.origin()) == thetaNode);
+  assert(TryGetOwnerNode<ThetaNode>(*exportZ.origin()) == thetaNode);
 }
 
 static void

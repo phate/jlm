@@ -116,12 +116,12 @@ public:
   typedef std::function<void(Args...)> function_type;
 
 private:
-  class callback_impl final : public Callback::CallbackImplementation
+  class CallbackImplementation final : public Callback::CallbackImplementation
   {
   public:
-    ~callback_impl() noexcept override = default;
+    ~CallbackImplementation() noexcept override = default;
 
-    callback_impl(Notifier * n, function_type fn)
+    CallbackImplementation(Notifier * n, function_type fn)
         : notifier_(n),
           fn_(std::move(fn))
     {}
@@ -157,8 +157,8 @@ private:
     Notifier * notifier_;
     function_type fn_;
 
-    callback_impl * prev_;
-    callback_impl * next_;
+    CallbackImplementation * prev_;
+    CallbackImplementation * next_;
   };
 
 public:
@@ -178,7 +178,7 @@ public:
   inline void
   operator()(Args... args) const
   {
-    callback_impl * current = first_;
+    CallbackImplementation * current = first_;
     while (current)
     {
       current->fn_(args...);
@@ -189,7 +189,7 @@ public:
   inline Callback
   connect(function_type fn)
   {
-    callback_impl * c = new callback_impl(this, std::move(fn));
+    CallbackImplementation * c = new CallbackImplementation(this, std::move(fn));
 
     c->prev_ = last_;
     c->next_ = nullptr;
@@ -213,8 +213,8 @@ public:
   }
 
 private:
-  callback_impl * first_;
-  callback_impl * last_;
+  CallbackImplementation * first_;
+  CallbackImplementation * last_;
 };
 
 }

@@ -32,7 +32,7 @@ ConnectStreamBuffer(rvsdg::SimpleNode * enq_call, rvsdg::SimpleNode * deq_call)
   // remove call nodes
   for (size_t i = 0; i < deq_call->ninputs(); ++i)
   {
-    if (rvsdg::is<const rvsdg::StateType>(deq_call->input(i)->Type()))
+    if (deq_call->input(i)->Type()->Kind() == rvsdg::TypeKind::State)
     {
       int oi = deq_call->noutputs() - deq_call->ninputs() + i;
       deq_call->output(oi)->divert_users(deq_call->input(i)->origin());
@@ -42,7 +42,7 @@ ConnectStreamBuffer(rvsdg::SimpleNode * enq_call, rvsdg::SimpleNode * deq_call)
   remove(deq_call);
   for (size_t i = 0; i < enq_call->ninputs(); ++i)
   {
-    if (rvsdg::is<const rvsdg::StateType>(enq_call->input(i)->Type()))
+    if (enq_call->input(i)->Type()->Kind() == rvsdg::TypeKind::State)
     {
       int oi = enq_call->noutputs() - enq_call->ninputs() + i;
       enq_call->output(oi)->divert_users(enq_call->input(i)->origin());

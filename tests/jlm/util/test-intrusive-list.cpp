@@ -31,8 +31,8 @@ struct MyItem
   }
 
   int * p;
-  jlm::util::intrusive_list_anchor<MyItem> anchor{};
-  typedef jlm::util::intrusive_list_accessor<MyItem, &MyItem::anchor> accessor;
+  jlm::util::IntrusiveListAnchor<MyItem> anchor{};
+  typedef jlm::util::IntrusiveListAccessor<MyItem, &MyItem::anchor> accessor;
 };
 
 typedef jlm::util::IntrusiveList<MyItem, MyItem::accessor> my_list;

@@ -23,6 +23,12 @@ UnitType::ComputeHash() const noexcept
   return typeid(UnitType).hash_code();
 }
 
+TypeKind
+UnitType::Kind() const noexcept
+{
+  return TypeKind::Value;
+}
+
 std::shared_ptr<const UnitType>
 UnitType::Create()
 {

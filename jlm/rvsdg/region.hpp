@@ -40,10 +40,10 @@ class Tracker;
  */
 class RegionArgument : public Output
 {
-  util::intrusive_list_anchor<RegionArgument> structural_input_anchor_{};
+  util::IntrusiveListAnchor<RegionArgument> structural_input_anchor_{};
 
 public:
-  typedef util::intrusive_list_accessor<RegionArgument, &RegionArgument::structural_input_anchor_>
+  typedef util::IntrusiveListAccessor<RegionArgument, &RegionArgument::structural_input_anchor_>
       structural_input_accessor;
 
   ~RegionArgument() noexcept override;
@@ -119,10 +119,10 @@ private:
  */
 class RegionResult : public Input
 {
-  util::intrusive_list_anchor<RegionResult> structural_output_anchor_{};
+  util::IntrusiveListAnchor<RegionResult> structural_output_anchor_{};
 
 public:
-  typedef util::intrusive_list_accessor<RegionResult, &RegionResult::structural_output_anchor_>
+  typedef util::IntrusiveListAccessor<RegionResult, &RegionResult::structural_output_anchor_>
       structural_output_accessor;
 
   ~RegionResult() noexcept override;

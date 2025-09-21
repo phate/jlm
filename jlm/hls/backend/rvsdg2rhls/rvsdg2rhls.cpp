@@ -206,7 +206,7 @@ convert_alloca(rvsdg::Region * region)
       auto db = rvsdg::DeltaNode::Create(
           rr,
           llvm::DeltaOperation::Create(
-              std::static_pointer_cast<const rvsdg::ValueType>(po->ValueType()),
+              po->ValueType(),
               delta_name,
               llvm::linkage::external_linkage,
               "",
@@ -270,7 +270,7 @@ rename_delta(rvsdg::DeltaNode * odn)
   auto db = rvsdg::DeltaNode::Create(
       odn->region(),
       llvm::DeltaOperation::Create(
-          std::static_pointer_cast<const rvsdg::ValueType>(odn->Type()),
+          odn->Type(),
           name,
           llvm::linkage::external_linkage,
           "",
