@@ -18,10 +18,10 @@ public:
 
   ConstantDistribution();
 
-  ConstantDistribution(ConstantDistribution &&) = delete;
+  ConstantDistribution(const ConstantDistribution &) = delete;
 
   ConstantDistribution &
-  operator=(ConstantDistribution &&) = delete;
+  operator=(const ConstantDistribution &) = delete;
 
   void
   Run(rvsdg::RvsdgModule & rvsdgModule, util::StatisticsCollector & statisticsCollector) override;
