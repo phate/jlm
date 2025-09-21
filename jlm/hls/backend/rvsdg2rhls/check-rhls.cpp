@@ -12,7 +12,8 @@
 
 namespace jlm::hls
 {
-void
+
+static void
 CheckAddrQueue(rvsdg::Node * node)
 {
   auto [addrQueueNode, addrQueueOperation] =
@@ -29,7 +30,7 @@ CheckAddrQueue(rvsdg::Node * node)
   JLM_ASSERT(bufferOperation && bufferOperation->Capacity() >= addrQueueOperation->capacity);
 }
 
-void
+static void
 check_rhls(rvsdg::Region * sr)
 {
   for (auto & node : rvsdg::TopDownTraverser(sr))
@@ -63,8 +64,8 @@ check_rhls(rvsdg::Region * sr)
   }
 }
 
-void
-check_rhls(llvm::RvsdgModule & rm)
+static void
+check_rhls(rvsdg::RvsdgModule & rm)
 {
   auto & graph = rm.Rvsdg();
   auto root = &graph.GetRootRegion();
@@ -78,6 +79,18 @@ check_rhls(llvm::RvsdgModule & rm)
     throw util::Error("Node needs to be a lambda");
   }
   check_rhls(ln->subregion());
+}
+
+RhlsVerification::~RhlsVerification() noexcept = default;
+
+RhlsVerification::RhlsVerification()
+    : Transformation("RhlsVerification")
+{}
+
+void
+RhlsVerification::Run(rvsdg::RvsdgModule & rvsdgModule, util::StatisticsCollector &)
+{
+  check_rhls(rvsdgModule);
 }
 
 }
