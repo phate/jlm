@@ -466,7 +466,7 @@ rvsdg2rhls(llvm::RvsdgModule & rhls, util::StatisticsCollector & collector)
   // main conversion steps
   distribute_constants(rhls);
   ConvertGammaNodes(rhls);
-  ConvertThetaNodes(rhls);
+  ThetaNodeConversion::CreateAndRun(rhls, collector);
   cne.Run(rhls, collector);
   // rhls optimization
   dne(rhls);
