@@ -6,9 +6,9 @@
 #ifndef JLM_BACKEND_HLS_RVSDG2RHLS_MEM_CONV_HPP
 #define JLM_BACKEND_HLS_RVSDG2RHLS_MEM_CONV_HPP
 
-#include "jlm/llvm/ir/operators/IntegerOperations.hpp"
+#include <jlm/llvm/ir/operators/IntegerOperations.hpp>
 #include <jlm/llvm/ir/operators/lambda.hpp>
-#include <jlm/llvm/ir/RvsdgModule.hpp>
+#include <jlm/rvsdg/Transformation.hpp>
 
 namespace jlm::hls
 {
@@ -33,39 +33,28 @@ find_decouple_response(
     const jlm::rvsdg::LambdaNode * lambda,
     const jlm::llvm::IntegerConstantOperation * request_constant);
 
-void
-MemoryConverter(llvm::RvsdgModule & rm);
+class MemoryConverter final : public rvsdg::Transformation
+{
+public:
+  ~MemoryConverter() noexcept override;
 
-/**
- * @param lambda The lambda node for wich the load and store operations are to be connected to
- * response (argument) ports
- * @param argumentIndex The index of the reponse (argument) port to be connected
- * @param smap The substitution map for the lambda node
- * @param originalLoadNodes The load nodes to be connected to the reponse port
- * @param originalStoreNodes The store nodes to be connected to the reponse port
- * @param originalDecoupledNodes The decouple nodes to be connected to the reponse port
- * @result The request output to which the memory operations are connected
- */
-jlm::rvsdg::Output *
-ConnectRequestResponseMemPorts(
-    const rvsdg::LambdaNode * lambda,
-    size_t argumentIndex,
-    rvsdg::SubstitutionMap & smap,
-    const std::vector<jlm::rvsdg::SimpleNode *> & originalLoadNodes,
-    const std::vector<jlm::rvsdg::SimpleNode *> & originalStoreNodes,
-    const std::vector<jlm::rvsdg::SimpleNode *> & originalDecoupledNodes);
+  MemoryConverter();
 
-jlm::rvsdg::SimpleNode *
-ReplaceLoad(
-    rvsdg::SubstitutionMap & smap,
-    const jlm::rvsdg::SimpleNode * originalLoad,
-    jlm::rvsdg::Output * response);
+  MemoryConverter(const MemoryConverter &) = delete;
 
-jlm::rvsdg::SimpleNode *
-ReplaceStore(
-    rvsdg::SubstitutionMap & smap,
-    const jlm::rvsdg::SimpleNode * originalStore,
-    rvsdg::Output * response);
+  MemoryConverter &
+  operator=(const MemoryConverter &) = delete;
+
+  void
+  Run(rvsdg::RvsdgModule & rvsdgModule, util::StatisticsCollector & statisticsCollector) override;
+
+  static void
+  CreateAndRun(rvsdg::RvsdgModule & rvsdgModule, util::StatisticsCollector & statisticsCollector)
+  {
+    MemoryConverter memoryConverter;
+    memoryConverter.Run(rvsdgModule, statisticsCollector);
+  }
+};
 
 } // namespace jlm::hls
 

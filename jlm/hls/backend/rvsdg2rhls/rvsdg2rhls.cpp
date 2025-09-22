@@ -465,7 +465,7 @@ rvsdg2rhls(llvm::RvsdgModule & rhls, util::StatisticsCollector & collector)
   UnusedStateRemoval::CreateAndRun(rhls, collector);
   // main conversion steps
   ConstantDistribution::CreateAndRun(rhls, collector);
-  ConvertGammaNodes(rhls);
+  GammaNodeConversion::CreateAndRun(rhls, collector);
   ThetaNodeConversion::CreateAndRun(rhls, collector);
   cne.Run(rhls, collector);
   // rhls optimization
@@ -473,18 +473,18 @@ rvsdg2rhls(llvm::RvsdgModule & rhls, util::StatisticsCollector & collector)
   AllocaNodeConversion::CreateAndRun(rhls, collector);
   StreamConversion::CreateAndRun(rhls, collector);
   AddressQueueInsertion::CreateAndRun(rhls, collector);
-  decouple_mem_state(rhls);
+  MemoryStateDecoupling::CreateAndRun(rhls, collector);
   UnusedStateRemoval::CreateAndRun(rhls, collector);
-  MemoryConverter(rhls);
+  MemoryConverter::CreateAndRun(rhls, collector);
   llvm::NodeReduction llvmRed;
   llvmRed.Run(rhls, collector);
   MemoryStateSplitConversion::CreateAndRun(rhls, collector);
   RedundantBufferElimination::CreateAndRun(rhls, collector);
   SinkInsertion::CreateAndRun(rhls, collector);
   ForkInsertion::CreateAndRun(rhls, collector);
-  add_buffers(rhls);
+  BufferInsertion::CreateAndRun(rhls, collector);
   // ensure that all rhls rules are met
-  check_rhls(rhls);
+  RhlsVerification::CreateAndRun(rhls, collector);
 }
 
 void

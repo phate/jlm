@@ -6,20 +6,37 @@
 #ifndef JLM_HLS_BACKEND_RVSDG2RHLS_ADD_BUFFERS_HPP
 #define JLM_HLS_BACKEND_RVSDG2RHLS_ADD_BUFFERS_HPP
 
-#include <jlm/llvm/ir/RvsdgModule.hpp>
-#include <jlm/rvsdg/region.hpp>
+#include <jlm/rvsdg/Transformation.hpp>
 
 namespace jlm::hls
 {
 
 void
-add_buffers(rvsdg::Region * region, bool pass_through);
-
-void
-add_buffers(llvm::RvsdgModule & rm);
-
-void
 setMemoryLatency(size_t memoryLatency);
+
+class BufferInsertion final : public rvsdg::Transformation
+{
+public:
+  ~BufferInsertion() noexcept override;
+
+  BufferInsertion();
+
+  BufferInsertion(const BufferInsertion &) = delete;
+
+  BufferInsertion &
+  operator=(const BufferInsertion &) = delete;
+
+  void
+  Run(rvsdg::RvsdgModule & rvsdgModule, util::StatisticsCollector & statisticsCollector) override;
+
+  static void
+  CreateAndRun(rvsdg::RvsdgModule & rvsdgModule, util::StatisticsCollector & statisticsCollector)
+  {
+    BufferInsertion bufferInsertion;
+    bufferInsertion.Run(rvsdgModule, statisticsCollector);
+  }
+};
+
 }
 
 #endif // JLM_HLS_BACKEND_RVSDG2RHLS_ADD_BUFFERS_HPP
