@@ -16,8 +16,7 @@ namespace jlm::llvm::aa
 
 /** \brief Mod/Ref Summary
  *
- * Contains the memory nodes that are required at the entry and exit of a region, and for call
- * nodes.
+ * Contains the memory nodes that are required to be routed into nodes and function bodies.
  */
 class ModRefSummary
 {
@@ -27,74 +26,59 @@ public:
   [[nodiscard]] virtual const PointsToGraph &
   GetPointsToGraph() const noexcept = 0;
 
-  [[nodiscard]] virtual const jlm::util::HashSet<const PointsToGraph::MemoryNode *> &
-  GetRegionEntryNodes(const rvsdg::Region & region) const = 0;
-
-  [[nodiscard]] virtual const jlm::util::HashSet<const PointsToGraph::MemoryNode *> &
-  GetRegionExitNodes(const rvsdg::Region & region) const = 0;
-
-  [[nodiscard]] virtual const jlm::util::HashSet<const PointsToGraph::MemoryNode *> &
-  GetCallEntryNodes(const rvsdg::SimpleNode & callNode) const = 0;
-
-  [[nodiscard]] virtual const jlm::util::HashSet<const PointsToGraph::MemoryNode *> &
-  GetCallExitNodes(const rvsdg::SimpleNode & callNode) const = 0;
+  /**
+   * Provides the set of MemoryNodes that represent memory locations that may be
+   * modified or referenced by the given simple node.
+   *
+   * The simple node can be any operation that affects memory:
+   *  - Load, Store, Memcpy, Free, Call, which have memory states routed through them
+   *  - Alloca or Malloc, which produce memory states
+   *
+   * @param node the node operating on memory
+   * @return the Mod/Ref set of the node.
+   */
+  [[nodiscard]] virtual const util::HashSet<const PointsToGraph::MemoryNode *> &
+  GetSimpleNodeModRef(const rvsdg::SimpleNode & node) const = 0;
 
   /**
-   * Retrieves the set of memory locations that may be targeted by the given pointer typed value
-   * @param output the output producing the pointer value
-   * @return a conservative set of memory locations the pointer may target
+   * Provides the set of MemoryNodes that should be routed into a given Gamma node
+   * @param gamma the Gamma node
+   * @return the entry Mod/Ref set for the Gamma
    */
-  [[nodiscard]] virtual jlm::util::HashSet<const PointsToGraph::MemoryNode *>
-  GetOutputNodes(const jlm::rvsdg::Output & output) const = 0;
+  [[nodiscard]] virtual const util::HashSet<const PointsToGraph::MemoryNode *> &
+  GetGammaEntryModRef(const rvsdg::GammaNode & gamma) const = 0;
 
-  [[nodiscard]] virtual const jlm::util::HashSet<const PointsToGraph::MemoryNode *> &
-  GetLambdaEntryNodes(const rvsdg::LambdaNode & lambdaNode) const
-  {
-    return GetRegionEntryNodes(*lambdaNode.subregion());
-  }
+  /**
+   * Provides the set of MemoryNodes that should be routed out of a given Gamma node
+   * @param gamma the Gamma node
+   * @return the exit Mod/Ref set for the Gamma
+   */
+  [[nodiscard]] virtual const util::HashSet<const PointsToGraph::MemoryNode *> &
+  GetGammaExitModRef(const rvsdg::GammaNode & gamma) const = 0;
 
-  [[nodiscard]] virtual const jlm::util::HashSet<const PointsToGraph::MemoryNode *> &
-  GetLambdaExitNodes(const rvsdg::LambdaNode & lambdaNode) const
-  {
-    return GetRegionExitNodes(*lambdaNode.subregion());
-  }
+  /**
+   * Provides the set of MemoryNodes that should be routed in and out of a Theta node
+   * @param theta the Theta node
+   * @return the Mod/Ref set for the Theta
+   */
+  [[nodiscard]] virtual const util::HashSet<const PointsToGraph::MemoryNode *> &
+  GetThetaModRef(const rvsdg::ThetaNode & theta) const = 0;
 
-  [[nodiscard]] virtual const jlm::util::HashSet<const PointsToGraph::MemoryNode *> &
-  GetThetaEntryExitNodes(const rvsdg::ThetaNode & thetaNode) const
-  {
-    auto & entryNodes = GetRegionEntryNodes(*thetaNode.subregion());
-    auto & exitNodes = GetRegionExitNodes(*thetaNode.subregion());
-    JLM_ASSERT(entryNodes == exitNodes);
-    return entryNodes;
-  }
+  /**
+   * Provides the set of MemoryNodes that are routed in to the given Lambda's subregion
+   * @param lambda the Lambda node
+   * @return the entry Mod/Ref set for the Lambda
+   */
+  [[nodiscard]] virtual const util::HashSet<const PointsToGraph::MemoryNode *> &
+  GetLambdaEntryModRef(const rvsdg::LambdaNode & lambda) const = 0;
 
-  [[nodiscard]] virtual jlm::util::HashSet<const PointsToGraph::MemoryNode *>
-  GetGammaEntryNodes(const rvsdg::GammaNode & gammaNode) const
-  {
-    jlm::util::HashSet<const PointsToGraph::MemoryNode *> allMemoryNodes;
-    for (size_t n = 0; n < gammaNode.nsubregions(); n++)
-    {
-      auto & subregion = *gammaNode.subregion(n);
-      auto & memoryNodes = GetRegionEntryNodes(subregion);
-      allMemoryNodes.UnionWith(memoryNodes);
-    }
-
-    return allMemoryNodes;
-  }
-
-  [[nodiscard]] virtual jlm::util::HashSet<const PointsToGraph::MemoryNode *>
-  GetGammaExitNodes(const rvsdg::GammaNode & gammaNode) const
-  {
-    jlm::util::HashSet<const PointsToGraph::MemoryNode *> allMemoryNodes;
-    for (size_t n = 0; n < gammaNode.nsubregions(); n++)
-    {
-      auto & subregion = *gammaNode.subregion(n);
-      auto & memoryNodes = GetRegionExitNodes(subregion);
-      allMemoryNodes.UnionWith(memoryNodes);
-    }
-
-    return allMemoryNodes;
-  }
+  /**
+   * Provides the set of MemoryNodes that are routed out of the given Lambda's subregion
+   * @param lambda the Lambda node
+   * @return the exit Mod/Ref set for the Lambda
+   */
+  [[nodiscard]] virtual const util::HashSet<const PointsToGraph::MemoryNode *> &
+  GetLambdaExitModRef(const rvsdg::LambdaNode & lambda) const = 0;
 };
 
 }

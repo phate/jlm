@@ -42,40 +42,39 @@ public:
   }
 
   [[nodiscard]] const util::HashSet<const PointsToGraph::MemoryNode *> &
-  GetRegionEntryNodes(const rvsdg::Region &) const override
+  GetSimpleNodeModRef([[maybe_unused]] const rvsdg::SimpleNode & node) const override
   {
     return MemoryNodes_;
   }
 
   [[nodiscard]] const util::HashSet<const PointsToGraph::MemoryNode *> &
-  GetRegionExitNodes(const rvsdg::Region &) const override
+  GetGammaEntryModRef([[maybe_unused]] const rvsdg::GammaNode & gamma) const override
   {
     return MemoryNodes_;
   }
 
   [[nodiscard]] const util::HashSet<const PointsToGraph::MemoryNode *> &
-  GetCallEntryNodes(const rvsdg::SimpleNode &) const override
+  GetGammaExitModRef([[maybe_unused]] const rvsdg::GammaNode & gamma) const override
   {
     return MemoryNodes_;
   }
 
   [[nodiscard]] const util::HashSet<const PointsToGraph::MemoryNode *> &
-  GetCallExitNodes(const rvsdg::SimpleNode &) const override
+  GetThetaModRef([[maybe_unused]] const rvsdg::ThetaNode & theta) const override
   {
     return MemoryNodes_;
   }
 
-  [[nodiscard]] util::HashSet<const PointsToGraph::MemoryNode *>
-  GetOutputNodes(const rvsdg::Output & output) const override
+  [[nodiscard]] const util::HashSet<const PointsToGraph::MemoryNode *> &
+  GetLambdaEntryModRef([[maybe_unused]]const rvsdg::LambdaNode & lambda) const override
   {
-    JLM_ASSERT(is<PointerType>(output.Type()));
+    return MemoryNodes_;
+  }
 
-    util::HashSet<const PointsToGraph::MemoryNode *> memoryNodes;
-    auto registerNode = &PointsToGraph_.GetRegisterNode(output);
-    for (auto & memoryNode : registerNode->Targets())
-      memoryNodes.Insert(&memoryNode);
-
-    return memoryNodes;
+  [[nodiscard]] const util::HashSet<const PointsToGraph::MemoryNode *> &
+  GetLambdaExitModRef([[maybe_unused]] const rvsdg::LambdaNode & lambda) const override
+  {
+    return MemoryNodes_;
   }
 
   static std::unique_ptr<AgnosticModRefSummary>
