@@ -219,6 +219,7 @@ libllvm_TESTS += \
     tests/jlm/llvm/opt/LoopUnswitchingTests \
     tests/jlm/llvm/opt/NodeReductionTests \
     tests/jlm/llvm/opt/RvsdgTreePrinterTests \
+    tests/jlm/llvm/opt/ScalarEvolutionTests \
     tests/jlm/llvm/opt/test-cne \
     tests/jlm/llvm/opt/test-inlining \
     tests/jlm/llvm/opt/test-pull \
