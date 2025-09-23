@@ -16,6 +16,8 @@ class ScalarEvolution final : public jlm::rvsdg::Transformation
   class Statistics;
 
 public:
+  typedef util::HashSet<const rvsdg::ThetaNode::LoopVar *> InductionVariableSet;
+
   ~ScalarEvolution() noexcept override;
 
   ScalarEvolution()
@@ -39,37 +41,15 @@ public:
   TraverseGraph(const rvsdg::Graph & rvsdg);
 
   void
-  TraverseRegion(rvsdg::Region * region);
+  TraverseRegion(const rvsdg::Region * region);
 
-  void
+  static InductionVariableSet
   FindInductionVariables(const rvsdg::ThetaNode * thetaNode);
 
+  static bool
+  IsBasedOnInductionVariable(const rvsdg::Output * output, const rvsdg::ThetaNode * thetaNode);
+
 private:
-  /**
-   * \brief Method used to check if the input to a node is a loop variable.
-   *
-   * \returns
-   *   An std::optional with the loop variable, if found.
-   */
-  static std::optional<rvsdg::ThetaNode::LoopVar>
-  TryGetLoopVarFromInput(
-      const rvsdg::Input * input,
-      std::vector<rvsdg::ThetaNode::LoopVar> loopVars)
-  {
-    for (auto & loopVar : loopVars)
-    {
-      if (input->origin() == loopVar.pre)
-      {
-        return loopVar;
-      }
-    }
-    return std::nullopt;
-  }
-
-  typedef util::HashSet<rvsdg::Output *>
-      InductionVariableSet; // This set holds the ".pre"-pointer for the induction variables in a
-                            // theta node
-
   std::unordered_map<const rvsdg::ThetaNode *, InductionVariableSet> InductionVariableMap_;
 };
 

@@ -9,11 +9,9 @@
 #include <jlm/rvsdg/MatchType.hpp>
 #include <jlm/rvsdg/RvsdgModule.hpp>
 #include <jlm/rvsdg/theta.hpp>
-#include <jlm/rvsdg/traverser.hpp>
 #include <jlm/util/Statistics.hpp>
 
 #include <iostream>
-#include <variant>
 
 namespace jlm::llvm
 {
@@ -65,21 +63,20 @@ ScalarEvolution::Run(
 };
 
 void
-ScalarEvolution::TraverseRegion(rvsdg::Region * region)
+ScalarEvolution::TraverseRegion(const rvsdg::Region * region)
 {
-  for (const auto node : rvsdg::TopDownTraverser(region))
+  for (const auto & node : region->Nodes())
   {
-    std::cout << node->DebugString() << '\n';
-    if (const auto structuralNode = dynamic_cast<rvsdg::StructuralNode *>(node))
+    if (const auto structuralNode = dynamic_cast<const rvsdg::StructuralNode *>(&node))
     {
-      if (const auto thetaNode = dynamic_cast<const rvsdg::ThetaNode *>(structuralNode))
-        FindInductionVariables(thetaNode);
-      else
+      for (auto & subregion : structuralNode->Subregions())
       {
-        for (auto & subregion : structuralNode->Subregions())
-        {
-          TraverseRegion(&subregion);
-        }
+        TraverseRegion(&subregion);
+      }
+      if (const auto thetaNode = dynamic_cast<const rvsdg::ThetaNode *>(structuralNode))
+      {
+        const auto candidates = FindInductionVariables(thetaNode);
+        InductionVariableMap_.emplace(thetaNode, candidates);
       }
     }
   }
@@ -88,129 +85,116 @@ ScalarEvolution::TraverseRegion(rvsdg::Region * region)
 void
 ScalarEvolution::TraverseGraph(const rvsdg::Graph & rvsdg)
 {
-  rvsdg::Region & rootRegion = rvsdg.GetRootRegion();
+  const rvsdg::Region & rootRegion = rvsdg.GetRootRegion();
   TraverseRegion(&rootRegion);
 }
 
-void
+bool
+ScalarEvolution::IsBasedOnInductionVariable(
+    const rvsdg::Output * output,
+    const rvsdg::ThetaNode * thetaNode)
+{
+  if (rvsdg::TryGetRegionParentNode<rvsdg::ThetaNode>(*output))
+  {
+    // We know the output is a loop variable
+    const auto input = thetaNode->input(output->index());
+
+    if (const auto simpleNode = rvsdg::TryGetOwnerNode<const rvsdg::SimpleNode>(*input->origin()))
+    {
+      if (const auto constOp =
+              dynamic_cast<const IntegerConstantOperation *>(&simpleNode->GetOperation()))
+      {
+        std::cout << constOp->Representation().to_uint();
+      }
+    }
+    return true;
+  }
+
+  if (const auto simpleNode = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*output))
+  {
+    if (rvsdg::is<IntegerConstantOperation>(simpleNode->GetOperation()))
+    {
+      const auto constOp =
+          dynamic_cast<const IntegerConstantOperation *>(&simpleNode->GetOperation());
+      const auto value = constOp->Representation().to_uint();
+      std::cout << value;
+      return true;
+    }
+    if (rvsdg::is<IntegerMulOperation>(simpleNode->GetOperation())
+        || rvsdg::is<IntegerSubOperation>(simpleNode->GetOperation()))
+    {
+      // TODO: Handle SUB and MUL nodes
+      // For now, just return false
+      return false;
+    }
+    if (rvsdg::is<IntegerAddOperation>(simpleNode->GetOperation()))
+    {
+      std::cout << "+";
+    }
+    for (size_t n = 0; n < simpleNode->ninputs(); ++n)
+    {
+      const auto origin = simpleNode->input(n)->origin();
+      if (!IsBasedOnInductionVariable(origin, thetaNode))
+      {
+        return false;
+      }
+    }
+    return true;
+  }
+  // TODO: Handle structural nodes
+  return false;
+}
+
+ScalarEvolution::InductionVariableSet
 ScalarEvolution::FindInductionVariables(const rvsdg::ThetaNode * thetaNode)
 {
   /*
    * What do we have to do?
    *
-   * Traverse the loop and find Basic Induction Variables (BIVs). These are variables with
-   * statements of the form i = i + c or i = i - c (increments by loop-invariant expressions), and
-   * put them in a set. Traverse the loop again and find General Induction Variables (GIVs)
-   * (linear combinations of BIVs) using the BIVs in the set. Put them in the set too.
+   * Traverse the loop and find (basic) induction variables. These are variables with
+   * statements of the form i = i + c or i = i - c (increments by loop-invariant expressions). In
+   * the future, support for general induction variables (linear combinations of basic induction
+   * variables) will be added.
+   *
+   * We start with all loop variables in a set of induction variable candidates.
    *
    * How can we traverse the loop?
-   * We can traverse top down, finding multiplication/addition nodes which use loop variables.
-   * Start by having all non loop-invariant loop variables in a set of induction variables, while
-   * traversing, look for addition nodes. If one of the loop variables is incremented by an
-   * expression that is not loop-invariant, remove it from the set.
-   * For other binary operations, remove them from the set for now.
+   * We iterate through each loop variable and traverse bottom-up, checking if they are loop
+   * invariant. This is done through recursion, by checking for each node whether both of it's
+   * inputs are only based on induction variables. If one of the outputs aren't, we return false and
+   * remove the loop variable from the set of candidates. If we make it to the top of the theta
+   * node, the loop variable is an induction variable and we return true. In this approach constants
+   * are seen as trivial induction variables (incremented by 0 each iteration).
    *
-   * How do we make it robust?
-   * Need to handle different cases:
-   * 1. Loop variable and constant (loop variable at both rhs and lhs)
-   * 2. Loop variable and another loop variable
-   * 3. No loop variables
-   *
-   * How do we know if the expression is loop invariant?
-   * 1. It is a constant -> trivially invariant
-   * 2. It is a loop variable -> Check if it is loop invariant using ThetaLoopVarIsInvariant()
+   * We run a fixed-point analysis by iterating through all the induction variable candidates until
+   * no change occurs in the set. This is done in a do-while loop.
    */
 
   const std::vector<rvsdg::ThetaNode::LoopVar> loopVars = thetaNode->GetLoopVars();
+  // Starting out, all loop variables are induction variable candidates
   InductionVariableSet inductionVariableCandidates{};
-
-  // Starting out, all non loop-invariant loop variables are induction variable candidates
-  for (auto loopVar : loopVars)
+  for (const auto & loopVar : loopVars)
   {
-    if (!rvsdg::ThetaLoopVarIsInvariant(loopVar))
+    inductionVariableCandidates.Insert(&loopVar);
+  }
+
+  bool changed = false;
+  do
+  {
+    for (const auto & loopVar : loopVars)
     {
-      // Only add loop-variant variables to the set, since loop-invariant variables are trivially
-      // not induction variables
-      inductionVariableCandidates.Insert(loopVar.pre);
+      const rvsdg::Output * origin = loopVar.post->origin();
+
+      std::cout << loopVar.pre->debug_string() << ": ";
+      if (!IsBasedOnInductionVariable(origin, thetaNode))
+      {
+        changed = inductionVariableCandidates.Remove(&loopVar);
+      }
+      std::cout << '\n';
     }
-  }
-  for (const auto node : rvsdg::TopDownTraverser(thetaNode->subregion()))
-  {
-    std::cout << node->DebugString() << '\n';
-    if (const auto simpleNode = dynamic_cast<rvsdg::SimpleNode *>(node))
-    {
-      if (!rvsdg::is<llvm::IntegerBinaryOperation>(simpleNode))
-      {
-        // TODO: Handle nodes that are not binary integer operations
-        continue;
-      }
-      // Check for basic induction variables (BIV)
 
-      assert(simpleNode->ninputs() == 2);
-      const rvsdg::Input * i0 = simpleNode->input(0);
-      const rvsdg::Input * i1 = simpleNode->input(1);
+  } while (changed == true);
 
-      auto i0LoopVar = TryGetLoopVarFromInput(i0, loopVars);
-      auto i1LoopVar = TryGetLoopVarFromInput(i1, loopVars);
-
-      if (!(i0LoopVar || i1LoopVar))
-      {
-        // No loop variables in computation, go to the next node.
-        continue;
-      }
-
-      if (rvsdg::is<llvm::IntegerAddOperation>(simpleNode))
-      {
-        if (i0LoopVar && i1LoopVar)
-        {
-          // Both are loop variables, need to check if the rhs is loop-invariant.
-          // If it is not, the lhs is not an induction variable
-          if (!rvsdg::ThetaLoopVarIsInvariant(i1LoopVar.value()))
-          {
-            inductionVariableCandidates.Remove(i0LoopVar.value().pre);
-          }
-        }
-        else if (i0LoopVar && !i1LoopVar)
-        {
-          const auto i1OriginNode = std::get<rvsdg::Node *>(i1->origin()->GetOwner());
-
-          // If it is not incremented by a constant value, remove it from candidates
-          if (!dynamic_cast<const llvm::IntegerConstantOperation *>(
-                  &(i1OriginNode->GetOperation())))
-            inductionVariableCandidates.Remove(i0LoopVar.value().pre);
-        }
-        else if (!i0LoopVar && i1LoopVar)
-        {
-          // Since addition is a commutative operation (a + b = b + a), we need to check cases where
-          // the rhs is a loop variable as well
-          const auto i0OriginNode = std::get<rvsdg::Node *>(i0->origin()->GetOwner());
-
-          if (!dynamic_cast<const llvm::IntegerConstantOperation *>(
-                  &(i0OriginNode->GetOperation())))
-            inductionVariableCandidates.Remove(i1LoopVar.value().pre);
-        }
-      }
-      // TODO: Handle other operations (SUB, MULT)
-      else
-      {
-        // For other binary operations that are not addition
-
-        if (i0LoopVar)
-        {
-          // For now, just remove these from the candidates
-          inductionVariableCandidates.Remove(i0LoopVar.value().pre);
-        }
-      }
-    }
-  }
-
-  InductionVariableMap_.emplace(thetaNode, inductionVariableCandidates);
-
-  std::cout << "These are the induction variables for the theta loop: ";
-  for (const auto & indVar : InductionVariableMap_[thetaNode].Items())
-  {
-    std::cout << indVar->debug_string() << " ";
-  }
-  std::cout << std::endl;
+  return inductionVariableCandidates;
 }
 }
