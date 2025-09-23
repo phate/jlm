@@ -187,3 +187,55 @@ RecursiveInductionVariable()
 JLM_UNIT_TEST_REGISTER(
     "jlm/llvm/opt/ScalarEvolutionTests-RecursiveInductionVariable",
     RecursiveInductionVariable)
+
+static void
+PolynomialInductionVariable()
+{
+  using namespace jlm::llvm;
+
+  // Arrange
+  const auto intType = jlm::rvsdg::BitType::Create(32);
+
+  RvsdgModule rvsdgModule(jlm::util::FilePath(""), "", "");
+  auto & graph = rvsdgModule.Rvsdg();
+  const auto x = &jlm::rvsdg::GraphImport::Create(graph, intType, "x");
+  const auto y = &jlm::rvsdg::GraphImport::Create(graph, intType, "y");
+
+  const auto & c0 = IntegerConstantOperation::Create(graph.GetRootRegion(), 32, 0);
+  const auto & c2 = IntegerConstantOperation::Create(graph.GetRootRegion(), 32, 2);
+
+  const auto theta = jlm::rvsdg::ThetaNode::create(&graph.GetRootRegion());
+  auto lv1 = theta->AddLoopVar(x);
+  lv1.input->divert_to(c0.output(0));
+  auto lv2 = theta->AddLoopVar(y);
+  lv2.input->divert_to(c2.output(0));
+
+  const auto & c1 = IntegerConstantOperation::Create(*theta->subregion(), 32, 1);
+  const auto & addNode =
+      jlm::rvsdg::CreateOpNode<IntegerAddOperation>({ lv1.pre, c1.output(0) }, 32);
+  const auto res1 = addNode.output(0);
+
+  const auto & c5 = IntegerConstantOperation::Create(*theta->subregion(), 32, 5);
+  const auto & sltNode = jlm::rvsdg::CreateOpNode<IntegerSltOperation>({ res1, c5.output(0) }, 32);
+  const auto matchResult =
+      jlm::rvsdg::MatchOperation::Create(*sltNode.output(0), { { 1, 1 } }, 0, 2);
+
+  const auto & addNode2 = jlm::rvsdg::CreateOpNode<IntegerAddOperation>({ lv2.pre, res1 }, 32);
+  const auto res2 = addNode2.output(0);
+
+  theta->set_predicate(matchResult);
+  lv1.post->divert_to(res1);
+  lv2.post->divert_to(res2);
+
+  jlm::rvsdg::view(graph, stdout);
+
+  // Act
+  ScalarEvolution::InductionVariableSet inductionVariables = RunScalarEvolution(theta);
+
+  // Assert
+  assert(inductionVariables.Size() == 2);
+}
+
+JLM_UNIT_TEST_REGISTER(
+    "jlm/llvm/opt/ScalarEvolutionTests-PolynomialInductionVariable",
+    PolynomialInductionVariable)
