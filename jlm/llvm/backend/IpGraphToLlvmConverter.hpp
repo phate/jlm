@@ -425,7 +425,7 @@ private:
 
   ::llvm::Value *
   CreateLoadInstruction(
-      const rvsdg::ValueType & loadedType,
+      const rvsdg::Type & loadedType,
       const Variable * address,
       bool isVolatile,
       size_t alignment,

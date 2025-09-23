@@ -10,6 +10,8 @@
 
 #include <jlm/hls/backend/rvsdg2rhls/distribute-constants.hpp>
 #include <jlm/llvm/ir/operators/IntegerOperations.hpp>
+#include <jlm/llvm/ir/operators/lambda.hpp>
+#include <jlm/llvm/ir/RvsdgModule.hpp>
 #include <jlm/rvsdg/gamma.hpp>
 #include <jlm/rvsdg/view.hpp>
 #include <jlm/util/Statistics.hpp>
@@ -61,7 +63,8 @@ GammaSubregionUsage()
   view(rvsdg, stdout);
 
   // Act
-  distribute_constants(rvsdgModule);
+  StatisticsCollector statisticsCollector;
+  ConstantDistribution::CreateAndRun(rvsdgModule, statisticsCollector);
   view(rvsdg, stdout);
 
   // Assert
@@ -144,7 +147,8 @@ NestedGammas()
   view(rvsdg, stdout);
 
   // Act
-  distribute_constants(rvsdgModule);
+  StatisticsCollector statisticsCollector;
+  ConstantDistribution::CreateAndRun(rvsdgModule, statisticsCollector);
   view(rvsdg, stdout);
 
   // Assert
@@ -232,7 +236,8 @@ Theta()
   view(rvsdg, stdout);
 
   // Act
-  distribute_constants(rvsdgModule);
+  StatisticsCollector statisticsCollector;
+  ConstantDistribution::CreateAndRun(rvsdgModule, statisticsCollector);
   view(rvsdg, stdout);
 
   // Arrange

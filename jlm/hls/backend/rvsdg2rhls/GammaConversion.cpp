@@ -5,6 +5,8 @@
 
 #include <jlm/hls/backend/rvsdg2rhls/GammaConversion.hpp>
 #include <jlm/hls/ir/hls.hpp>
+#include <jlm/rvsdg/gamma.hpp>
+#include <jlm/rvsdg/RvsdgModule.hpp>
 #include <jlm/rvsdg/theta.hpp>
 #include <jlm/rvsdg/traverser.hpp>
 
@@ -94,7 +96,7 @@ CanGammaNodeBeSpeculative(const rvsdg::GammaNode & gammaNode)
   for (size_t i = 0; i < gammaNode.noutputs(); ++i)
   {
     auto gammaOutput = gammaNode.output(i);
-    if (rvsdg::is<rvsdg::StateType>(gammaOutput->Type()))
+    if (gammaOutput->Type()->Kind() == rvsdg::TypeKind::State)
     {
       // don't allow state outputs since they imply operations with side effects
       return false;
@@ -164,8 +166,14 @@ ConvertGammaNodesInRegion(rvsdg::Region & region)
   }
 }
 
+GammaNodeConversion::~GammaNodeConversion() noexcept = default;
+
+GammaNodeConversion::GammaNodeConversion()
+    : Transformation("GammaNodeConversion")
+{}
+
 void
-ConvertGammaNodes(llvm::RvsdgModule & rvsdgModule)
+GammaNodeConversion::Run(rvsdg::RvsdgModule & rvsdgModule, util::StatisticsCollector &)
 {
   ConvertGammaNodesInRegion(rvsdgModule.Rvsdg().GetRootRegion());
 }

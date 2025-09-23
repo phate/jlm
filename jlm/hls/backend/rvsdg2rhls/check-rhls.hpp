@@ -7,15 +7,33 @@
 #define JLM_HLS_BACKEND_RVSDG2RHLS_CHECK_RHLS_HPP
 
 #include <jlm/llvm/ir/RvsdgModule.hpp>
+#include <jlm/rvsdg/Transformation.hpp>
 
 namespace jlm::hls
 {
 
-void
-check_rhls(rvsdg::Region * sr);
+class RhlsVerification final : public rvsdg::Transformation
+{
+public:
+  ~RhlsVerification() noexcept override;
 
-void
-check_rhls(llvm::RvsdgModule & rm);
+  RhlsVerification();
+
+  RhlsVerification(const RhlsVerification &) = delete;
+
+  RhlsVerification &
+  operator=(const RhlsVerification &) = delete;
+
+  void
+  Run(rvsdg::RvsdgModule & rvsdgModule, util::StatisticsCollector & statisticsCollector) override;
+
+  static void
+  CreateAndRun(rvsdg::RvsdgModule & rvsdgModule, util::StatisticsCollector & statisticsCollector)
+  {
+    RhlsVerification rhlsVerification;
+    rhlsVerification.Run(rvsdgModule, statisticsCollector);
+  }
+};
 
 }
 

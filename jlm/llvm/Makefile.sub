@@ -65,7 +65,7 @@ libllvm_SOURCES = \
     jlm/llvm/opt/IfConversion.cpp \
     jlm/llvm/opt/inlining.cpp \
     jlm/llvm/opt/InvariantValueRedirection.cpp \
-    jlm/llvm/opt/inversion.cpp \
+    jlm/llvm/opt/LoopUnswitching.cpp \
     jlm/llvm/opt/pull.cpp \
     jlm/llvm/opt/push.cpp \
     jlm/llvm/opt/reduction.cpp \
@@ -109,7 +109,7 @@ libllvm_HEADERS = \
     jlm/llvm/opt/reduction.hpp \
     jlm/llvm/opt/IfConversion.hpp \
     jlm/llvm/opt/InvariantValueRedirection.hpp \
-    jlm/llvm/opt/inversion.hpp \
+    jlm/llvm/opt/LoopUnswitching.hpp \
     jlm/llvm/opt/RvsdgTreePrinter.hpp \
     jlm/llvm/opt/ScalarEvolution.hpp \
     jlm/llvm/frontend/LlvmModuleConversion.hpp \
@@ -159,6 +159,7 @@ libllvm_TESTS += \
     \
     tests/jlm/llvm/backend/IpGraphToLlvmConverterTests \
     tests/jlm/llvm/backend/RvsdgToIpGraphConverterTests \
+    tests/jlm/llvm/frontend/llvm/ControlFlowRestructuringTests \
     tests/jlm/llvm/frontend/llvm/LoadTests \
     tests/jlm/llvm/frontend/llvm/MemCpyTests \
     tests/jlm/llvm/frontend/llvm/SpecializedArithmeticIntrinsicOperationTests \
@@ -170,7 +171,6 @@ libllvm_TESTS += \
     tests/jlm/llvm/frontend/llvm/test-function-call \
     tests/jlm/llvm/frontend/llvm/LlvmPhiConversionTests \
     tests/jlm/llvm/frontend/llvm/test-recursive-data \
-    tests/jlm/llvm/frontend/llvm/test-restructuring \
     tests/jlm/llvm/frontend/llvm/test-select \
     tests/jlm/llvm/frontend/llvm/ThreeAddressCodeConversionTests \
     tests/jlm/llvm/ir/operators/LoadTests \
@@ -216,11 +216,11 @@ libllvm_TESTS += \
     tests/jlm/llvm/opt/DeadNodeEliminationTests \
     tests/jlm/llvm/opt/IfConversionTests \
     tests/jlm/llvm/opt/InvariantValueRedirectionTests \
+    tests/jlm/llvm/opt/LoopUnswitchingTests \
     tests/jlm/llvm/opt/NodeReductionTests \
     tests/jlm/llvm/opt/RvsdgTreePrinterTests \
     tests/jlm/llvm/opt/test-cne \
     tests/jlm/llvm/opt/test-inlining \
-    tests/jlm/llvm/opt/test-inversion \
     tests/jlm/llvm/opt/test-pull \
     tests/jlm/llvm/opt/test-push \
     tests/jlm/llvm/opt/test-unroll \

@@ -18,9 +18,9 @@ namespace jlm::llvm
 {
 
 static void
-AddToWorklist(std::deque<rvsdg::Input *> & worklist, rvsdg::Output::UserIteratorRange userRange)
+AddToWorklist(std::deque<rvsdg::Input *> & worklist, rvsdg::Output & output)
 {
-  for (auto & user : userRange)
+  for (auto & user : output.Users())
   {
     worklist.emplace_back(&user);
   }
@@ -30,7 +30,7 @@ CallSummary
 ComputeCallSummary(const rvsdg::LambdaNode & lambdaNode)
 {
   std::deque<rvsdg::Input *> worklist;
-  AddToWorklist(worklist, lambdaNode.output()->Users());
+  AddToWorklist(worklist, *lambdaNode.output());
 
   std::vector<rvsdg::SimpleNode *> directCalls;
   rvsdg::GraphExport * rvsdgExport = nullptr;
@@ -44,7 +44,7 @@ ComputeCallSummary(const rvsdg::LambdaNode & lambdaNode)
     if (auto lambdaNode = rvsdg::TryGetOwnerNode<rvsdg::LambdaNode>(*input))
     {
       auto & argument = *lambdaNode->MapInputContextVar(*input).inner;
-      AddToWorklist(worklist, argument.Users());
+      AddToWorklist(worklist, argument);
       continue;
     }
 
@@ -61,7 +61,7 @@ ComputeCallSummary(const rvsdg::LambdaNode & lambdaNode)
       {
         for (auto & argument : entryvar->branchArgument)
         {
-          AddToWorklist(worklist, argument->Users());
+          AddToWorklist(worklist, *argument);
         }
       }
       continue;
@@ -70,45 +70,45 @@ ComputeCallSummary(const rvsdg::LambdaNode & lambdaNode)
     if (auto gamma = rvsdg::TryGetRegionParentNode<rvsdg::GammaNode>(*input))
     {
       auto output = gamma->MapBranchResultExitVar(*input).output;
-      AddToWorklist(worklist, output->Users());
+      AddToWorklist(worklist, *output);
       continue;
     }
 
     if (auto theta = rvsdg::TryGetOwnerNode<rvsdg::ThetaNode>(*input))
     {
       auto loopvar = theta->MapInputLoopVar(*input);
-      AddToWorklist(worklist, loopvar.pre->Users());
+      AddToWorklist(worklist, *loopvar.pre);
       continue;
     }
 
     if (auto theta = rvsdg::TryGetRegionParentNode<rvsdg::ThetaNode>(*input))
     {
       auto loopvar = theta->MapPostLoopVar(*input);
-      AddToWorklist(worklist, loopvar.output->Users());
+      AddToWorklist(worklist, *loopvar.output);
       continue;
     }
 
     if (auto phi = rvsdg::TryGetOwnerNode<rvsdg::PhiNode>(*input))
     {
       auto ctxvar = phi->MapInputContextVar(*input);
-      AddToWorklist(worklist, ctxvar.inner->Users());
+      AddToWorklist(worklist, *ctxvar.inner);
       continue;
     }
 
     if (auto phi = rvsdg::TryGetRegionParentNode<rvsdg::PhiNode>(*input))
     {
       auto fixvar = phi->MapResultFixVar(*input);
-      AddToWorklist(worklist, fixvar.recref->Users());
+      AddToWorklist(worklist, *fixvar.recref);
 
       auto output = fixvar.output;
-      AddToWorklist(worklist, output->Users());
+      AddToWorklist(worklist, *output);
       continue;
     }
 
     if (auto deltaNode = rvsdg::TryGetOwnerNode<rvsdg::DeltaNode>(*input))
     {
       auto ctxVar = deltaNode->MapInputContextVar(*input);
-      AddToWorklist(worklist, ctxVar.inner->Users());
+      AddToWorklist(worklist, *ctxVar.inner);
       continue;
     }
 

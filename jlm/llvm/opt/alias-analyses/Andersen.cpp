@@ -6,6 +6,7 @@
 #include <jlm/llvm/ir/operators/IOBarrier.hpp>
 #include <jlm/llvm/opt/alias-analyses/Andersen.hpp>
 #include <jlm/llvm/opt/alias-analyses/PointsToGraph.hpp>
+#include <jlm/rvsdg/MatchType.hpp>
 #include <jlm/rvsdg/traverser.hpp>
 #include <jlm/util/Statistics.hpp>
 
@@ -615,60 +616,102 @@ Andersen::~Andersen() noexcept = default;
 void
 Andersen::AnalyzeSimpleNode(const rvsdg::SimpleNode & node)
 {
-  const auto & op = node.GetOperation();
-
-  if (is<AllocaOperation>(op))
-    AnalyzeAlloca(node);
-  else if (is<MallocOperation>(op))
-    AnalyzeMalloc(node);
-  else if (is<LoadOperation>(&node))
-    AnalyzeLoad(node);
-  else if (is<StoreOperation>(&node))
-    AnalyzeStore(node);
-  else if (is<CallOperation>(&node))
-    AnalyzeCall(node);
-  else if (is<GetElementPtrOperation>(op))
-    AnalyzeGep(node);
-  else if (is<BitCastOperation>(op))
-    AnalyzeBitcast(node);
-  else if (is<IntegerToPointerOperation>(op))
-    AnalyzeBits2ptr(node);
-  else if (is<PtrToIntOperation>(op))
-    AnalyzePtrToInt(node);
-  else if (is<ConstantPointerNullOperation>(op))
-    AnalyzeConstantPointerNull(node);
-  else if (is<UndefValueOperation>(op))
-    AnalyzeUndef(node);
-  else if (is<MemCpyOperation>(op))
-    AnalyzeMemcpy(node);
-  else if (is<ConstantArrayOperation>(op))
-    AnalyzeConstantArray(node);
-  else if (is<ConstantStruct>(op))
-    AnalyzeConstantStruct(node);
-  else if (is<ConstantAggregateZeroOperation>(op))
-    AnalyzeConstantAggregateZero(node);
-  else if (is<ExtractValueOperation>(op))
-    AnalyzeExtractValue(node);
-  else if (is<VariadicArgumentListOperation>(op))
-    AnalyzeValist(node);
-  else if (is<PointerToFunctionOperation>(op))
-    AnalyzePointerToFunction(node);
-  else if (is<FunctionToPointerOperation>(op))
-    AnalyzeFunctionToPointer(node);
-  else if (is<IOBarrierOperation>(op))
-    AnalyzeIOBarrier(node);
-  else if (is<FreeOperation>(op) || is<PtrCmpOperation>(op))
-  {
-    // These operations take pointers as input, but do not affect any points-to sets
-  }
-  else
-  {
-    // This node operation is unknown, make sure it doesn't consume any pointers
-    for (size_t i = 0; i < node.ninputs(); i++)
-    {
-      JLM_ASSERT(!IsOrContainsPointerType(*node.input(i)->Type()));
-    }
-  }
+  rvsdg::MatchTypeWithDefault(
+      node.GetOperation(),
+      [&](const AllocaOperation &)
+      {
+        AnalyzeAlloca(node);
+      },
+      [&](const MallocOperation &)
+      {
+        AnalyzeMalloc(node);
+      },
+      [&](const LoadOperation &)
+      {
+        AnalyzeLoad(node);
+      },
+      [&](const StoreOperation &)
+      {
+        AnalyzeStore(node);
+      },
+      [&](const CallOperation &)
+      {
+        AnalyzeCall(node);
+      },
+      [&](const GetElementPtrOperation &)
+      {
+        AnalyzeGep(node);
+      },
+      [&](const BitCastOperation &)
+      {
+        AnalyzeBitcast(node);
+      },
+      [&](const IntegerToPointerOperation &)
+      {
+        AnalyzeBits2ptr(node);
+      },
+      [&](const PtrToIntOperation &)
+      {
+        AnalyzePtrToInt(node);
+      },
+      [&](const ConstantPointerNullOperation &)
+      {
+        AnalyzeConstantPointerNull(node);
+      },
+      [&](const UndefValueOperation &)
+      {
+        AnalyzeUndef(node);
+      },
+      [&](const MemCpyOperation &)
+      {
+        AnalyzeMemcpy(node);
+      },
+      [&](const ConstantArrayOperation &)
+      {
+        AnalyzeConstantArray(node);
+      },
+      [&](const ConstantStruct &)
+      {
+        AnalyzeConstantStruct(node);
+      },
+      [&](const ConstantAggregateZeroOperation &)
+      {
+        AnalyzeConstantAggregateZero(node);
+      },
+      [&](const ExtractValueOperation &)
+      {
+        AnalyzeExtractValue(node);
+      },
+      [&](const VariadicArgumentListOperation &)
+      {
+        AnalyzeValist(node);
+      },
+      [&](const PointerToFunctionOperation &)
+      {
+        AnalyzePointerToFunction(node);
+      },
+      [&](const FunctionToPointerOperation &)
+      {
+        AnalyzeFunctionToPointer(node);
+      },
+      [&](const IOBarrierOperation &)
+      {
+        AnalyzeIOBarrier(node);
+      },
+      [&](const FreeOperation &)
+      {
+        // Takes pointers as input, but does not affect any points-to sets
+      },
+      [&](const PtrCmpOperation &)
+      {
+        // Takes pointers as input, but does not affect any points-to sets
+      },
+      [&]()
+      {
+        // This node operation is unknown, make sure it doesn't consume any pointers
+        for (size_t n = 0; n < node.ninputs(); n++)
+          JLM_ASSERT(!IsOrContainsPointerType(*node.input(n)->Type()));
+      });
 }
 
 void
@@ -687,7 +730,7 @@ Andersen::AnalyzeAlloca(const rvsdg::SimpleNode & node)
 void
 Andersen::AnalyzeMalloc(const rvsdg::SimpleNode & node)
 {
-  JLM_ASSERT(is<MallocOperation>(&node));
+  JLM_ASSERT(is<MallocOperation>(node.GetOperation()));
 
   const auto & outputRegister = *node.output(0);
   const auto outputRegisterPO = Set_->CreateRegisterPointerObject(outputRegister);
@@ -700,7 +743,7 @@ Andersen::AnalyzeMalloc(const rvsdg::SimpleNode & node)
 void
 Andersen::AnalyzeLoad(const rvsdg::SimpleNode & node)
 {
-  JLM_ASSERT(is<LoadOperation>(&node));
+  JLM_ASSERT(is<LoadOperation>(node.GetOperation()));
 
   const auto & addressRegister = *LoadOperation::AddressInput(node).origin();
   const auto & outputRegister = LoadOperation::LoadedValueOutput(node);
@@ -741,7 +784,7 @@ Andersen::AnalyzeStore(const rvsdg::SimpleNode & node)
 void
 Andersen::AnalyzeCall(const rvsdg::SimpleNode & callNode)
 {
-  JLM_ASSERT(is<CallOperation>(&callNode));
+  JLM_ASSERT(is<CallOperation>(callNode.GetOperation()));
 
   // The address being called by the call node
   const auto & callTarget = *CallOperation::GetFunctionInput(callNode).origin();
@@ -764,7 +807,7 @@ Andersen::AnalyzeCall(const rvsdg::SimpleNode & callNode)
 void
 Andersen::AnalyzeGep(const rvsdg::SimpleNode & node)
 {
-  JLM_ASSERT(is<GetElementPtrOperation>(&node));
+  JLM_ASSERT(is<GetElementPtrOperation>(node.GetOperation()));
 
   // The analysis is field insensitive, so ignoring the offset and mapping the output
   // to the same PointerObject as the input is sufficient.
@@ -779,7 +822,7 @@ Andersen::AnalyzeGep(const rvsdg::SimpleNode & node)
 void
 Andersen::AnalyzeBitcast(const rvsdg::SimpleNode & node)
 {
-  JLM_ASSERT(is<BitCastOperation>(&node));
+  JLM_ASSERT(is<BitCastOperation>(node.GetOperation()));
 
   const auto & inputRegister = *node.input(0)->origin();
   const auto & outputRegister = *node.output(0);
@@ -798,7 +841,7 @@ Andersen::AnalyzeBitcast(const rvsdg::SimpleNode & node)
 void
 Andersen::AnalyzeBits2ptr(const rvsdg::SimpleNode & node)
 {
-  JLM_ASSERT(is<IntegerToPointerOperation>(&node));
+  JLM_ASSERT(is<IntegerToPointerOperation>(node.GetOperation()));
   const auto & output = *node.output(0);
   JLM_ASSERT(is<PointerType>(output.Type()));
 
@@ -812,7 +855,7 @@ Andersen::AnalyzeBits2ptr(const rvsdg::SimpleNode & node)
 void
 Andersen::AnalyzePtrToInt(const rvsdg::SimpleNode & node)
 {
-  JLM_ASSERT(is<PtrToIntOperation>(&node));
+  JLM_ASSERT(is<PtrToIntOperation>(node.GetOperation()));
   const auto & inputRegister = *node.input(0)->origin();
   JLM_ASSERT(is<PointerType>(inputRegister.Type()));
 
@@ -824,7 +867,7 @@ Andersen::AnalyzePtrToInt(const rvsdg::SimpleNode & node)
 void
 Andersen::AnalyzeConstantPointerNull(const rvsdg::SimpleNode & node)
 {
-  JLM_ASSERT(is<ConstantPointerNullOperation>(&node));
+  JLM_ASSERT(is<ConstantPointerNullOperation>(node.GetOperation()));
   const auto & output = *node.output(0);
   JLM_ASSERT(is<PointerType>(output.Type()));
 
@@ -836,7 +879,7 @@ Andersen::AnalyzeConstantPointerNull(const rvsdg::SimpleNode & node)
 void
 Andersen::AnalyzeUndef(const rvsdg::SimpleNode & node)
 {
-  JLM_ASSERT(is<UndefValueOperation>(&node));
+  JLM_ASSERT(is<UndefValueOperation>(node.GetOperation()));
   const auto & output = *node.output(0);
 
   if (!IsOrContainsPointerType(*output.Type()))
@@ -850,7 +893,7 @@ Andersen::AnalyzeUndef(const rvsdg::SimpleNode & node)
 void
 Andersen::AnalyzeMemcpy(const rvsdg::SimpleNode & node)
 {
-  JLM_ASSERT(is<MemCpyOperation>(&node));
+  JLM_ASSERT(is<MemCpyOperation>(node.GetOperation()));
 
   auto & dstAddressRegister = *node.input(0)->origin();
   auto & srcAddressRegister = *node.input(1)->origin();
@@ -872,7 +915,7 @@ Andersen::AnalyzeMemcpy(const rvsdg::SimpleNode & node)
 void
 Andersen::AnalyzeConstantArray(const rvsdg::SimpleNode & node)
 {
-  JLM_ASSERT(is<ConstantArrayOperation>(&node));
+  JLM_ASSERT(is<ConstantArrayOperation>(node.GetOperation()));
 
   if (!IsOrContainsPointerType(*node.output(0)->Type()))
     return;
@@ -894,7 +937,7 @@ Andersen::AnalyzeConstantArray(const rvsdg::SimpleNode & node)
 void
 Andersen::AnalyzeConstantStruct(const rvsdg::SimpleNode & node)
 {
-  JLM_ASSERT(is<ConstantStruct>(&node));
+  JLM_ASSERT(is<ConstantStruct>(node.GetOperation()));
 
   if (!IsOrContainsPointerType(*node.output(0)->Type()))
     return;
@@ -917,7 +960,7 @@ Andersen::AnalyzeConstantStruct(const rvsdg::SimpleNode & node)
 void
 Andersen::AnalyzeConstantAggregateZero(const rvsdg::SimpleNode & node)
 {
-  JLM_ASSERT(is<ConstantAggregateZeroOperation>(&node));
+  JLM_ASSERT(is<ConstantAggregateZeroOperation>(node.GetOperation()));
   auto & output = *node.output(0);
 
   if (!IsOrContainsPointerType(*output.Type()))
@@ -931,7 +974,7 @@ Andersen::AnalyzeConstantAggregateZero(const rvsdg::SimpleNode & node)
 void
 Andersen::AnalyzeExtractValue(const rvsdg::SimpleNode & node)
 {
-  JLM_ASSERT(is<ExtractValueOperation>(&node));
+  JLM_ASSERT(is<ExtractValueOperation>(node.GetOperation()));
 
   const auto & result = *node.output(0);
   if (!IsOrContainsPointerType(*result.Type()))
@@ -946,7 +989,7 @@ Andersen::AnalyzeExtractValue(const rvsdg::SimpleNode & node)
 void
 Andersen::AnalyzeValist(const rvsdg::SimpleNode & node)
 {
-  JLM_ASSERT(is<VariadicArgumentListOperation>(&node));
+  JLM_ASSERT(is<VariadicArgumentListOperation>(node.GetOperation()));
 
   // Members of the valist are extracted using the va_arg macro, which loads from the va_list struct
   // on the stack. This struct will be marked as escaped from the call to va_start, and thus point
@@ -967,7 +1010,7 @@ Andersen::AnalyzeValist(const rvsdg::SimpleNode & node)
 void
 Andersen::AnalyzePointerToFunction(const rvsdg::SimpleNode & node)
 {
-  JLM_ASSERT(is<PointerToFunctionOperation>(&node));
+  JLM_ASSERT(is<PointerToFunctionOperation>(node.GetOperation()));
 
   // For pointer analysis purposes, function objects and pointers
   // to functions are treated as being the same.
@@ -982,7 +1025,7 @@ Andersen::AnalyzePointerToFunction(const rvsdg::SimpleNode & node)
 void
 Andersen::AnalyzeFunctionToPointer(const rvsdg::SimpleNode & node)
 {
-  JLM_ASSERT(is<FunctionToPointerOperation>(&node));
+  JLM_ASSERT(is<FunctionToPointerOperation>(node.GetOperation()));
 
   // For pointer analysis purposes, function objects and pointers
   // to functions are treated as being the same.
@@ -997,7 +1040,7 @@ Andersen::AnalyzeFunctionToPointer(const rvsdg::SimpleNode & node)
 void
 Andersen::AnalyzeIOBarrier(const rvsdg::SimpleNode & node)
 {
-  JLM_ASSERT(is<IOBarrierOperation>(&node));
+  JLM_ASSERT(is<IOBarrierOperation>(node.GetOperation()));
 
   const auto operation = util::AssertedCast<const IOBarrierOperation>(&node.GetOperation());
   if (!IsOrContainsPointerType(*operation->Type()))
@@ -1012,18 +1055,28 @@ Andersen::AnalyzeIOBarrier(const rvsdg::SimpleNode & node)
 void
 Andersen::AnalyzeStructuralNode(const rvsdg::StructuralNode & node)
 {
-  if (const auto lambdaNode = dynamic_cast<const rvsdg::LambdaNode *>(&node))
-    AnalyzeLambda(*lambdaNode);
-  else if (const auto deltaNode = dynamic_cast<const rvsdg::DeltaNode *>(&node))
-    AnalyzeDelta(*deltaNode);
-  else if (const auto phiNode = dynamic_cast<const rvsdg::PhiNode *>(&node))
-    AnalyzePhi(*phiNode);
-  else if (const auto gammaNode = dynamic_cast<const rvsdg::GammaNode *>(&node))
-    AnalyzeGamma(*gammaNode);
-  else if (const auto thetaNode = dynamic_cast<const rvsdg::ThetaNode *>(&node))
-    AnalyzeTheta(*thetaNode);
-  else
-    JLM_UNREACHABLE("Unknown structural node operation");
+  MatchTypeOrFail(
+      node,
+      [this](const rvsdg::LambdaNode & lambdaNode)
+      {
+        AnalyzeLambda(lambdaNode);
+      },
+      [this](const rvsdg::DeltaNode & deltaNode)
+      {
+        AnalyzeDelta(deltaNode);
+      },
+      [this](const rvsdg::PhiNode & phiNode)
+      {
+        AnalyzePhi(phiNode);
+      },
+      [this](const rvsdg::GammaNode & gammaNode)
+      {
+        AnalyzeGamma(gammaNode);
+      },
+      [this](const rvsdg::ThetaNode & thetaNode)
+      {
+        AnalyzeTheta(thetaNode);
+      });
 }
 
 void

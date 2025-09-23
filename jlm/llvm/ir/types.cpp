@@ -35,6 +35,12 @@ PointerType::ComputeHash() const noexcept
   return typeid(PointerType).hash_code();
 }
 
+rvsdg::TypeKind
+PointerType::Kind() const noexcept
+{
+  return rvsdg::TypeKind::Value;
+}
+
 std::shared_ptr<const PointerType>
 PointerType::Create()
 {
@@ -65,6 +71,12 @@ ArrayType::ComputeHash() const noexcept
   return util::CombineHashes(typeHash, type_->ComputeHash(), numElementsHash);
 }
 
+rvsdg::TypeKind
+ArrayType::Kind() const noexcept
+{
+  return rvsdg::TypeKind::Value;
+}
+
 FloatingPointType::~FloatingPointType() noexcept = default;
 
 std::string
@@ -93,6 +105,12 @@ FloatingPointType::ComputeHash() const noexcept
   const auto typeHash = typeid(FloatingPointType).hash_code();
   const auto sizeHash = std::hash<fpsize>()(size_);
   return util::CombineHashes(typeHash, sizeHash);
+}
+
+rvsdg::TypeKind
+FloatingPointType::Kind() const noexcept
+{
+  return rvsdg::TypeKind::Value;
 }
 
 std::shared_ptr<const FloatingPointType>
@@ -146,6 +164,12 @@ VariableArgumentType::ComputeHash() const noexcept
   return typeid(VariableArgumentType).hash_code();
 }
 
+rvsdg::TypeKind
+VariableArgumentType::Kind() const noexcept
+{
+  return rvsdg::TypeKind::State;
+}
+
 std::string
 VariableArgumentType::debug_string() const
 {
@@ -177,6 +201,12 @@ StructType::ComputeHash() const noexcept
   auto nameHash = std::hash<std::string>()(Name_);
   auto declarationHash = std::hash<const StructType::Declaration *>()(&Declaration_);
   return util::CombineHashes(typeHash, isPackedHash, nameHash, declarationHash);
+}
+
+rvsdg::TypeKind
+StructType::Kind() const noexcept
+{
+  return rvsdg::TypeKind::Value;
 }
 
 std::string
@@ -216,6 +246,12 @@ VectorType::operator==(const rvsdg::Type & other) const noexcept
 {
   const auto type = dynamic_cast<const VectorType *>(&other);
   return type && type->size_ == size_ && *type->type_ == *type_;
+}
+
+rvsdg::TypeKind
+VectorType::Kind() const noexcept
+{
+  return rvsdg::TypeKind::Value;
 }
 
 FixedVectorType::~FixedVectorType() noexcept = default;
@@ -276,6 +312,12 @@ IOStateType::ComputeHash() const noexcept
   return typeid(IOStateType).hash_code();
 }
 
+rvsdg::TypeKind
+IOStateType::Kind() const noexcept
+{
+  return rvsdg::TypeKind::State;
+}
+
 std::string
 IOStateType::debug_string() const
 {
@@ -312,6 +354,12 @@ MemoryStateType::ComputeHash() const noexcept
   return typeid(MemoryStateType).hash_code();
 }
 
+rvsdg::TypeKind
+MemoryStateType::Kind() const noexcept
+{
+  return rvsdg::TypeKind::State;
+}
+
 std::shared_ptr<const MemoryStateType>
 MemoryStateType::Create()
 {
@@ -320,7 +368,7 @@ MemoryStateType::Create()
 }
 
 size_t
-GetTypeSize(const rvsdg::ValueType & type)
+GetTypeSize(const rvsdg::Type & type)
 {
   if (const auto bits = dynamic_cast<const rvsdg::BitType *>(&type))
   {
@@ -403,7 +451,7 @@ GetTypeSize(const rvsdg::ValueType & type)
 }
 
 size_t
-GetTypeAlignment(const rvsdg::ValueType & type)
+GetTypeAlignment(const rvsdg::Type & type)
 {
   if (jlm::rvsdg::is<rvsdg::BitType>(type) || jlm::rvsdg::is<PointerType>(type)
       || jlm::rvsdg::is<FloatingPointType>(type) || jlm::rvsdg::is<VectorType>(type))

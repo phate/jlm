@@ -24,7 +24,7 @@ public:
   ~DeltaOperation() noexcept override;
 
   DeltaOperation(
-      std::shared_ptr<const rvsdg::ValueType> type,
+      std::shared_ptr<const rvsdg::Type> type,
       const std::string & name,
       const llvm::linkage & linkage,
       std::string section,
@@ -74,7 +74,7 @@ public:
 
   static inline std::unique_ptr<DeltaOperation>
   Create(
-      std::shared_ptr<const rvsdg::ValueType> type,
+      std::shared_ptr<const rvsdg::Type> type,
       const std::string & name,
       const llvm::linkage & linkage,
       std::string section,

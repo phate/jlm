@@ -27,9 +27,9 @@
  * class X {
  * private:
  *   int num;
- *   jlm::util::intrusive_list_anchor<X> num_list_anchor;
+ *   jlm::util::IntrusiveListAnchor<X> num_list_anchor;
  * public:
- *   typedef jlm::util::intrusive_list_accessor<
+ *   typedef jlm::util::IntrusiveListAccessor<
  *     X,                  // element type
  *     &X::num_list_anchor // anchor member
  *   > num_list_accessor;
@@ -576,15 +576,15 @@ private:
 };
 
 template<typename ElementType>
-class intrusive_list_anchor
+class IntrusiveListAnchor
 {
 public:
   ElementType * prev;
   ElementType * next;
 };
 
-template<typename ElementType, intrusive_list_anchor<ElementType> ElementType::*anchor_member>
-class intrusive_list_accessor
+template<typename ElementType, IntrusiveListAnchor<ElementType> ElementType::*anchor_member>
+class IntrusiveListAccessor
 {
 public:
   inline ElementType *
