@@ -16,7 +16,6 @@ librvsdg_SOURCES = \
     jlm/rvsdg/simple-node.cpp \
     jlm/rvsdg/structural-node.cpp \
     jlm/rvsdg/theta.cpp \
-    jlm/rvsdg/tracker.cpp \
     jlm/rvsdg/Transformation.cpp \
     jlm/rvsdg/traverser.cpp \
     jlm/rvsdg/type.cpp \
@@ -58,7 +57,6 @@ librvsdg_HEADERS = \
     jlm/rvsdg/substitution.hpp \
     jlm/rvsdg/unary.hpp \
     jlm/rvsdg/UnitType.hpp \
-    jlm/rvsdg/tracker.hpp \
     jlm/rvsdg/simple-node.hpp \
     jlm/rvsdg/type.hpp \
     jlm/rvsdg/binary.hpp \
@@ -94,7 +92,6 @@ librvsdg_TESTS = \
     tests/jlm/rvsdg/test-topdown \
     tests/jlm/rvsdg/test-typemismatch \
     tests/jlm/rvsdg/TestStructuralNode \
-    tests/jlm/rvsdg/TrackerTests \
     tests/jlm/rvsdg/TransformationSequenceTests \
     tests/jlm/rvsdg/UnaryOperationTests \
 
