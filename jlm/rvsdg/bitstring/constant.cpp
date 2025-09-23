@@ -10,6 +10,10 @@ namespace jlm::rvsdg
 {
 
 // explicit instantiation
-template class DomainConstOperation<BitType, BitValueRepresentation, format_value, type_of_value>;
+template class DomainConstOperation<
+    BitType,
+    BitValueRepresentation,
+    BitValueRepresentationFormatValue,
+    BitValueRepresentationTypeOfValue>;
 
 }

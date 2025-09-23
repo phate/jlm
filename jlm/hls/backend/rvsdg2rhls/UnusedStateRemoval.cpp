@@ -17,6 +17,12 @@ namespace jlm::hls
 {
 
 static bool
+IsPassthroughLoopVar(const rvsdg::ThetaNode::LoopVar & loopVar)
+{
+  return rvsdg::ThetaLoopVarIsInvariant(loopVar) && loopVar.pre->nusers() == 1;
+}
+
+static bool
 IsPassthroughArgument(const rvsdg::Output & argument)
 {
   if (argument.nusers() != 1)
@@ -116,22 +122,6 @@ RemoveUnusedStatesFromLambda(rvsdg::LambdaNode & lambdaNode)
   remove(&lambdaNode);
 }
 
-static void
-RemovePassthroughArgument(const rvsdg::RegionArgument & argument)
-{
-  auto origin = argument.input()->origin();
-  auto result = dynamic_cast<const rvsdg::RegionResult *>(&*argument.Users().begin());
-  argument.region()->node()->output(result->output()->index())->divert_users(origin);
-
-  auto inputIndex = argument.input()->index();
-  auto outputIndex = result->output()->index();
-  auto region = argument.region();
-  region->RemoveResult(result->index());
-  region->RemoveArgument(argument.index());
-  region->node()->RemoveInput(inputIndex);
-  region->node()->RemoveOutput(outputIndex);
-}
-
 // If this output has a single user and that single user happens to be
 // the exit variable of this gamma node, then return it.
 static std::optional<rvsdg::GammaNode::ExitVar>
@@ -184,15 +174,17 @@ RemoveUnusedStatesFromGammaNode(rvsdg::GammaNode & gammaNode)
 static void
 RemoveUnusedStatesFromThetaNode(rvsdg::ThetaNode & thetaNode)
 {
-  auto thetaSubregion = thetaNode.subregion();
-  for (int i = thetaSubregion->narguments() - 1; i >= 0; --i)
+  std::vector<rvsdg::ThetaNode::LoopVar> passthroughLoopVars;
+  for (auto & loopVar : thetaNode.GetLoopVars())
   {
-    auto & argument = *thetaSubregion->argument(i);
-    if (IsPassthroughArgument(argument))
+    if (IsPassthroughLoopVar(loopVar))
     {
-      RemovePassthroughArgument(argument);
+      loopVar.output->divert_users(loopVar.input->origin());
+      passthroughLoopVars.emplace_back(loopVar);
     }
   }
+
+  thetaNode.RemoveLoopVars(std::move(passthroughLoopVars));
 }
 
 static void
@@ -233,23 +225,16 @@ RemoveUnusedStatesInRegion(rvsdg::Region & region)
   }
 }
 
-void
-RemoveUnusedStates(llvm::RvsdgModule & rvsdgModule)
-{
-  RemoveUnusedStatesInRegion(rvsdgModule.Rvsdg().GetRootRegion());
-}
+UnusedStateRemoval::~UnusedStateRemoval() noexcept = default;
+
+UnusedStateRemoval::UnusedStateRemoval()
+    : Transformation("UnusedStateRemoval")
+{}
 
 void
-RemoveInvariantLambdaStateEdges(llvm::RvsdgModule & rvsdgModule)
+UnusedStateRemoval::Run(rvsdg::RvsdgModule & rvsdgModule, util::StatisticsCollector &)
 {
-  auto & root = rvsdgModule.Rvsdg().GetRootRegion();
-  for (auto & node : rvsdg::TopDownTraverser(&root))
-  {
-    if (auto lambdaNode = dynamic_cast<rvsdg::LambdaNode *>(node))
-    {
-      RemoveUnusedStatesFromLambda(*lambdaNode);
-    }
-  }
+  RemoveUnusedStatesInRegion(rvsdgModule.Rvsdg().GetRootRegion());
 }
 
 }

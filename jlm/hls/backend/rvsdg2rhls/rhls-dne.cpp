@@ -5,6 +5,7 @@
 
 #include <jlm/hls/backend/rvsdg2rhls/hls-function-util.hpp>
 #include <jlm/hls/backend/rvsdg2rhls/rhls-dne.hpp>
+#include <jlm/hls/ir/hls.hpp>
 #include <jlm/llvm/ir/operators/lambda.hpp>
 #include <jlm/llvm/ir/operators/MemoryStateOperations.hpp>
 #include <jlm/rvsdg/traverser.hpp>
@@ -426,14 +427,16 @@ fix_mem_merge(rvsdg::Node * merge_node)
 }
 
 bool
-dne(rvsdg::Region * sr)
+RhlsDeadNodeElimination::Run(
+    rvsdg::Region & region,
+    util::StatisticsCollector & statisticsCollector)
 {
   bool any_changed = false;
   bool changed = false;
   do
   {
     changed = false;
-    for (auto & node : rvsdg::BottomUpTraverser(sr))
+    for (auto & node : rvsdg::BottomUpTraverser(&region))
     {
       if (node->IsDead())
       {
@@ -464,7 +467,7 @@ dne(rvsdg::Region * sr)
         changed |= remove_unused_loop_inputs(ln);
         changed |= remove_unused_loop_backedges(ln);
         changed |= remove_loop_passthrough(ln);
-        changed |= dne(ln->subregion());
+        changed |= Run(*ln->subregion(), statisticsCollector);
       }
       else if (const auto mux = dynamic_cast<const MuxOperation *>(&node->GetOperation()))
       {
@@ -486,8 +489,6 @@ dne(rvsdg::Region * sr)
         if (fix_mem_split(node))
         {
           changed = true;
-          // might break bottom up traversal
-          break;
         }
       }
       else if (dynamic_cast<const llvm::MemoryStateMergeOperation *>(&node->GetOperation()))
@@ -495,31 +496,44 @@ dne(rvsdg::Region * sr)
         if (fix_mem_merge(node))
         {
           changed = true;
-          // might break bottom up traversal
-          break;
         }
+      }
+      if (changed)
+      {
+        // Changes might break bottom up traversal
+        break;
       }
     }
     any_changed |= changed;
   } while (changed);
+
   return any_changed;
 }
 
+RhlsDeadNodeElimination::~RhlsDeadNodeElimination() noexcept = default;
+
+RhlsDeadNodeElimination::RhlsDeadNodeElimination()
+    : Transformation("RhlsDeadNodeElimination")
+{}
+
 void
-dne(llvm::RvsdgModule & rm)
+RhlsDeadNodeElimination::Run(
+    rvsdg::RvsdgModule & rvsdgModule,
+    util::StatisticsCollector & statisticsCollector)
 {
-  auto & graph = rm.Rvsdg();
-  auto root = &graph.GetRootRegion();
-  if (root->nnodes() != 1)
+  auto & graph = rvsdgModule.Rvsdg();
+  const auto rootRegion = &graph.GetRootRegion();
+  if (rootRegion->nnodes() != 1)
   {
     throw util::Error("Root should have only one node now");
   }
-  auto ln = dynamic_cast<const rvsdg::LambdaNode *>(root->Nodes().begin().ptr());
-  if (!ln)
+  const auto lambdaNode =
+      dynamic_cast<const rvsdg::LambdaNode *>(rootRegion->Nodes().begin().ptr());
+  if (!lambdaNode)
   {
     throw util::Error("Node needs to be a lambda");
   }
-  dne(ln->subregion());
+  Run(*lambdaNode->subregion(), statisticsCollector);
 }
 
 } // namespace jlm::hls

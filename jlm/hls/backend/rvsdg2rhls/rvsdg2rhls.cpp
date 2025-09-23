@@ -39,7 +39,7 @@
 #include <jlm/llvm/opt/DeadNodeElimination.hpp>
 #include <jlm/llvm/opt/inlining.hpp>
 #include <jlm/llvm/opt/InvariantValueRedirection.hpp>
-#include <jlm/llvm/opt/inversion.hpp>
+#include <jlm/llvm/opt/LoopUnswitching.hpp>
 #include <jlm/llvm/opt/reduction.hpp>
 #include <jlm/rvsdg/traverser.hpp>
 #include <jlm/rvsdg/view.hpp>
@@ -206,7 +206,7 @@ convert_alloca(rvsdg::Region * region)
       auto db = rvsdg::DeltaNode::Create(
           rr,
           llvm::DeltaOperation::Create(
-              std::static_pointer_cast<const rvsdg::ValueType>(po->ValueType()),
+              po->ValueType(),
               delta_name,
               llvm::linkage::external_linkage,
               "",
@@ -270,7 +270,7 @@ rename_delta(rvsdg::DeltaNode * odn)
   auto db = rvsdg::DeltaNode::Create(
       odn->region(),
       llvm::DeltaOperation::Create(
-          std::static_pointer_cast<const rvsdg::ValueType>(odn->Type()),
+          odn->Type(),
           name,
           llvm::linkage::external_linkage,
           "",
@@ -447,9 +447,9 @@ rvsdg2rhls(llvm::RvsdgModule & rhls, util::StatisticsCollector & collector)
   ioBarrierRemoval.Run(rhls, collector);
 
   // TODO: do mem state separation early, so there are no false dependencies between loops
-  mem_sep_argument(rhls);
-  merge_gamma(rhls);
-  RemoveUnusedStates(rhls);
+  MemoryStateSeparation::CreateAndRun(rhls, collector);
+  GammaMerge::CreateAndRun(rhls, collector);
+  UnusedStateRemoval::CreateAndRun(rhls, collector);
 
   llvm::DeadNodeElimination llvmDne;
   llvmDne.Run(rhls, collector);
@@ -460,31 +460,31 @@ rvsdg2rhls(llvm::RvsdgModule & rhls, util::StatisticsCollector & collector)
   cne.Run(rhls, collector);
   llvmDne.Run(rhls, collector);
   // merge gammas that were pulled out of loops
-  merge_gamma(rhls);
+  GammaMerge::CreateAndRun(rhls, collector);
   llvmDne.Run(rhls, collector);
-  RemoveUnusedStates(rhls);
+  UnusedStateRemoval::CreateAndRun(rhls, collector);
   // main conversion steps
-  distribute_constants(rhls);
-  ConvertGammaNodes(rhls);
-  ConvertThetaNodes(rhls);
+  ConstantDistribution::CreateAndRun(rhls, collector);
+  GammaNodeConversion::CreateAndRun(rhls, collector);
+  ThetaNodeConversion::CreateAndRun(rhls, collector);
   cne.Run(rhls, collector);
   // rhls optimization
-  dne(rhls);
-  alloca_conv(rhls);
-  jlm::hls::stream_conv(rhls);
-  mem_queue(rhls);
-  decouple_mem_state(rhls);
-  RemoveUnusedStates(rhls);
-  MemoryConverter(rhls);
+  RhlsDeadNodeElimination::CreateAndRun(rhls, collector);
+  AllocaNodeConversion::CreateAndRun(rhls, collector);
+  StreamConversion::CreateAndRun(rhls, collector);
+  AddressQueueInsertion::CreateAndRun(rhls, collector);
+  MemoryStateDecoupling::CreateAndRun(rhls, collector);
+  UnusedStateRemoval::CreateAndRun(rhls, collector);
+  MemoryConverter::CreateAndRun(rhls, collector);
   llvm::NodeReduction llvmRed;
   llvmRed.Run(rhls, collector);
   MemoryStateSplitConversion::CreateAndRun(rhls, collector);
   RedundantBufferElimination::CreateAndRun(rhls, collector);
   SinkInsertion::CreateAndRun(rhls, collector);
   ForkInsertion::CreateAndRun(rhls, collector);
-  add_buffers(rhls);
+  BufferInsertion::CreateAndRun(rhls, collector);
   // ensure that all rhls rules are met
-  check_rhls(rhls);
+  RhlsVerification::CreateAndRun(rhls, collector);
 }
 
 void

@@ -67,7 +67,7 @@ TypeConverter::ConvertFunctionType(
   // The return type can either be (ValueType, StateType, StateType, ...) if the function has
   // a return value, or (StateType, StateType, ...) if the function returns void.
   auto resultType = ::llvm::Type::getVoidTy(context);
-  if (functionType.NumResults() > 0 && rvsdg::is<rvsdg::ValueType>(functionType.ResultType(0)))
+  if (functionType.NumResults() > 0 && functionType.ResultType(0).Kind() == rvsdg::TypeKind::Value)
     resultType = ConvertJlmType(functionType.ResultType(0), context);
 
   return ::llvm::FunctionType::get(resultType, argumentTypes, isVariableArgument);
@@ -217,7 +217,7 @@ TypeConverter::ConvertJlmType(const rvsdg::Type & type, ::llvm::LLVMContext & co
   JLM_UNREACHABLE("TypeConverter::ConvertJlmType: Unhandled jlm type.");
 }
 
-std::shared_ptr<const rvsdg::ValueType>
+std::shared_ptr<const rvsdg::Type>
 TypeConverter::ConvertLlvmType(::llvm::Type & type)
 {
   switch (type.getTypeID())

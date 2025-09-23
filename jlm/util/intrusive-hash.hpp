@@ -78,7 +78,7 @@
  * - erase an object does not invalidate iterators except those pointing
  *   to the object removed and does not invalidate traversal order
  *
- * An additional template "owner_intrusive_hash" implements the same
+ * An additional template "OwnerIntrusiveHash" implements the same
  * interface, but in addition assumes "ownership" of the objects it contains.
  * This means that upon destruction of the container, the elements will
  * be deleted as well. In particular, it differs in the following ways:
@@ -96,7 +96,7 @@ namespace jlm::util
 // FIXME: for some weird reason, std::equal_to does not specify noexcept, so
 // define our own equality comparison operator here
 template<typename T>
-struct safe_equal
+struct SafeEqual
 {
   inline bool
   operator()(const T & a, const T & b) const
@@ -107,7 +107,7 @@ struct safe_equal
 };
 
 template<>
-struct safe_equal<std::string>
+struct SafeEqual<std::string>
 {
   inline bool
   operator()(const std::string & a, const std::string & b) const noexcept
@@ -125,7 +125,7 @@ template<
     typename ElementType,
     typename Accessor,
     typename KeyHash = std::hash<KeyType>,
-    typename KeyEqual = safe_equal<KeyType>>
+    typename KeyEqual = SafeEqual<KeyType>>
 class IntrusiveHash
 {
 private:
@@ -624,8 +624,8 @@ template<
     typename ElementType,
     typename Accessor,
     typename KeyHash = std::hash<KeyType>,
-    typename KeyEqual = safe_equal<KeyType>>
-class owner_intrusive_hash
+    typename KeyEqual = SafeEqual<KeyType>>
+class OwnerIntrusiveHash
 {
   typedef IntrusiveHash<KeyType, ElementType, Accessor, KeyHash, KeyEqual> internal_hash_type;
 
@@ -640,25 +640,25 @@ public:
   typedef typename internal_hash_type::key_type key_type;
   typedef typename internal_hash_type::size_type size_type;
 
-  ~owner_intrusive_hash() noexcept
+  ~OwnerIntrusiveHash() noexcept
   {
     clear();
   }
 
-  inline constexpr owner_intrusive_hash() noexcept
+  inline constexpr OwnerIntrusiveHash() noexcept
   {}
 
-  owner_intrusive_hash(const owner_intrusive_hash & other) = delete;
+  OwnerIntrusiveHash(const OwnerIntrusiveHash & other) = delete;
 
   void
-  operator=(const owner_intrusive_hash & other) = delete;
+  operator=(const OwnerIntrusiveHash & other) = delete;
 
-  owner_intrusive_hash(owner_intrusive_hash && other) noexcept
+  OwnerIntrusiveHash(OwnerIntrusiveHash && other) noexcept
       : internal_hash_(std::move(other.internal_hash_))
   {}
 
   void
-  swap(owner_intrusive_hash & other) noexcept
+  swap(OwnerIntrusiveHash & other) noexcept
   {
     internal_hash_.swap(other.internal_hash_);
   }

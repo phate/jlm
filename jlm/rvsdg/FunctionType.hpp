@@ -21,7 +21,7 @@ namespace jlm::rvsdg
  *
  * Represents the type of a callable function.
  */
-class FunctionType : public ValueType
+class FunctionType : public Type
 {
 public:
   ~FunctionType() noexcept override;
@@ -76,6 +76,9 @@ public:
 
   [[nodiscard]] std::size_t
   ComputeHash() const noexcept override;
+
+  TypeKind
+  Kind() const noexcept override;
 
   static std::shared_ptr<const FunctionType>
   Create(

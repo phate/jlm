@@ -6,10 +6,7 @@
 #ifndef JLM_HLS_BACKEND_RVSDG2RHLS_UNUSEDSTATEREMOVAL_HPP
 #define JLM_HLS_BACKEND_RVSDG2RHLS_UNUSEDSTATEREMOVAL_HPP
 
-namespace jlm::llvm
-{
-class RvsdgModule;
-}
+#include <jlm/rvsdg/Transformation.hpp>
 
 namespace jlm::hls
 {
@@ -17,25 +14,37 @@ namespace jlm::hls
 /**
  * Remove invariant values from gamma, theta, and lambda nodes.
  *
- * @param rvsdgModule The RVSDG module the optimization is performed on.
- *
  * FIXME: This entire transformation can be expressed using llvm::InvariantValueRedirection and
- * llvm::DeadNodeElimination, and should be replaced by them. The llvm::DeadNodeElimination would
+ * llvm::UnusedStateRemoval, and should be replaced by them. The llvm::UnusedStateRemoval would
  * need to be extended to remove unused state edges in lambda nodes though.
  */
-void
-RemoveUnusedStates(llvm::RvsdgModule & rvsdgModule);
+class UnusedStateRemoval final : rvsdg::Transformation
+{
+public:
+  ~UnusedStateRemoval() noexcept override;
 
-/**
- * @brief Removes invariant state edges from the lambdas in the RVSDG module.
- *
- * The pass replaces the lambda with a new function signature if a state edge is found to be
- * invariant.
- *
- * @param rvsdgModule The RVSDG module for which to remove invariant state edges.
- */
-void
-RemoveInvariantLambdaStateEdges(llvm::RvsdgModule & rvsdgModule);
+  UnusedStateRemoval();
+
+  UnusedStateRemoval(const UnusedStateRemoval &) = delete;
+
+  UnusedStateRemoval(UnusedStateRemoval &&) = delete;
+
+  UnusedStateRemoval &
+  operator=(const UnusedStateRemoval &) = delete;
+
+  UnusedStateRemoval &
+  operator=(UnusedStateRemoval &&) = delete;
+
+  void
+  Run(rvsdg::RvsdgModule & rvsdgModule, util::StatisticsCollector & statisticsCollector) override;
+
+  static void
+  CreateAndRun(rvsdg::RvsdgModule & rvsdgModule, util::StatisticsCollector & statisticsCollector)
+  {
+    UnusedStateRemoval unusedStateRemoval;
+    unusedStateRemoval.Run(rvsdgModule, statisticsCollector);
+  }
+};
 
 }
 

@@ -70,7 +70,7 @@ struct member_function_pointer_restype<Ret (MFP::*)(Args...) const>
  *   Callable object to deduce result type of.
  */
 template<typename Callable>
-struct callable_argtype
+struct CallableArgumentType
 {
   // Deduce for object types.
   using type = typename member_function_pointer_argtype<decltype(&Callable::operator())>::type;
@@ -78,7 +78,7 @@ struct callable_argtype
 
 // Partial specialization to deduce if callabale object is a function pointer type.
 template<typename Ret, typename... Args>
-struct callable_argtype<Ret(Args...)>
+struct CallableArgumentType<Ret(Args...)>
 {
   // Specialization to deduce for function pointer types.
   using type = std::tuple_element_t<0, std::tuple<Args...>>;
@@ -91,7 +91,7 @@ struct callable_argtype<Ret(Args...)>
  *   Callable object to deduce first parameter of.
  */
 template<typename Callable>
-struct callable_restype
+struct CallableResultType
 {
   // Deduce for object types.
   using type = typename member_function_pointer_restype<decltype(&Callable::operator())>::type;
@@ -99,7 +99,7 @@ struct callable_restype
 
 // Partial specialization to deduce if callable object is a function pointer type.
 template<typename Ret, typename... Args>
-struct callable_restype<Ret(Args...)>
+struct CallableResultType<Ret(Args...)>
 {
   // Specialization to deduce for function pointer types.
   using type = Ret;
@@ -134,7 +134,7 @@ template<typename T, typename Fn, typename... Fns>
 void
 MatchType(T & x, const Fn & fn, const Fns &... fns)
 {
-  using S = std::remove_reference_t<typename callable_argtype<Fn>::type>;
+  using S = std::remove_reference_t<typename CallableArgumentType<Fn>::type>;
   if (auto i = dynamic_cast<S *>(&x))
   {
     fn(*i);
@@ -168,7 +168,7 @@ MatchTypeWithDefault(T & obj, const Fns &... fns);
 
 // Specialization to handle the termination (empty handlers) case.
 template<typename T, typename Fn>
-typename callable_restype<Fn>::type
+typename CallableResultType<Fn>::type
 MatchTypeWithDefault(T & /* x */, const Fn & fn)
 {
   return fn();
@@ -176,10 +176,10 @@ MatchTypeWithDefault(T & /* x */, const Fn & fn)
 
 // Specialization to handle the head case.
 template<typename T, typename Fn, typename... Fns>
-typename callable_restype<Fn>::type
+typename CallableResultType<Fn>::type
 MatchTypeWithDefault(T & x, const Fn & fn, const Fns &... fns)
 {
-  using S = std::remove_reference_t<typename callable_argtype<Fn>::type>;
+  using S = std::remove_reference_t<typename CallableArgumentType<Fn>::type>;
   if (auto i = dynamic_cast<S *>(&x))
   {
     return fn(*i);
@@ -211,10 +211,10 @@ MatchTypeOrFail(T & obj, const Fns &... fns);
 
 // Specialization to handle the termination (last handler) case.
 template<typename T, typename Fn>
-typename callable_restype<Fn>::type
+typename CallableResultType<Fn>::type
 MatchTypeOrFail(T & x, const Fn & fn)
 {
-  using S = std::remove_reference_t<typename callable_argtype<Fn>::type>;
+  using S = std::remove_reference_t<typename CallableArgumentType<Fn>::type>;
   if (auto i = dynamic_cast<S *>(&x))
   {
     return fn(*i);
@@ -227,10 +227,10 @@ MatchTypeOrFail(T & x, const Fn & fn)
 
 // Specialization to handle the head case.
 template<typename T, typename Fn, typename... Fns>
-typename callable_restype<Fn>::type
+typename CallableResultType<Fn>::type
 MatchTypeOrFail(T & x, const Fn & fn, const Fns &... fns)
 {
-  using S = std::remove_reference_t<typename callable_argtype<Fn>::type>;
+  using S = std::remove_reference_t<typename CallableArgumentType<Fn>::type>;
   if (auto i = dynamic_cast<S *>(&x))
   {
     return fn(*i);

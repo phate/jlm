@@ -20,7 +20,7 @@ namespace jlm::rvsdg
  *
  * This roughly corresponds to the "void" type in C/C++.
  */
-class UnitType final : public ValueType
+class UnitType final : public Type
 {
 public:
   ~UnitType() noexcept override;
@@ -33,6 +33,9 @@ public:
 
   std::size_t
   ComputeHash() const noexcept override;
+
+  TypeKind
+  Kind() const noexcept override;
 
   static std::shared_ptr<const UnitType>
   Create();
