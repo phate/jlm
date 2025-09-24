@@ -14,7 +14,7 @@ namespace jlm::hls
 void
 convert_loop_state_to_lcb(rvsdg::Input * loop_state_input);
 
-class MemoryStateDecoupling final : rvsdg::Transformation
+class MemoryStateDecoupling final : public rvsdg::Transformation
 {
 public:
   ~MemoryStateDecoupling() noexcept override;
