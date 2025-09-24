@@ -47,16 +47,14 @@ class RegionAwareModRefSummarizer::Statistics final : public util::Statistics
 
   static constexpr auto SimpleAllocasSetTimer_ = "SimpleAllocasSetTimer";
   static constexpr auto CallGraphTimer_ = "CallGraphTimer";
-  static constexpr auto AllocasLiveInSccTimer_ = "AllocasLiveInSCCsTimer";
+  static constexpr auto AllocasDeadInSccTimer_ = "AllocasDeadInSCCsTimer";
   static constexpr auto AnnotationTimer_ = "AnnotationTimer";
   static constexpr auto SolvingTimer_ = "SolvingTimer";
 
 public:
   ~Statistics() override = default;
 
-  explicit Statistics(
-      const rvsdg::RvsdgModule & rvsdgModule,
-      const PointsToGraph & pointsToGraph)
+  explicit Statistics(const rvsdg::RvsdgModule & rvsdgModule, const PointsToGraph & pointsToGraph)
       : util::Statistics(Id::RegionAwareModRefSummarizer, rvsdgModule.SourceFilePath().value())
   {
     AddMeasurement(Label::NumRvsdgNodes, rvsdg::nnodes(&rvsdgModule.Rvsdg().GetRootRegion()));
@@ -93,15 +91,15 @@ public:
   }
 
   void
-  StartAllocasLiveInSccStatistics()
+  StartAllocasDeadInSccStatistics()
   {
-    AddTimer(AllocasLiveInSccTimer_).start();
+    AddTimer(AllocasDeadInSccTimer_).start();
   }
 
   void
-  StopAllocasLiveInSccStatistics()
+  StopAllocasDeadInSccStatistics()
   {
-    GetTimer(AllocasLiveInSccTimer_).stop();
+    GetTimer(AllocasDeadInSccTimer_).stop();
   }
 
   void
@@ -129,9 +127,7 @@ public:
   }
 
   static std::unique_ptr<Statistics>
-  Create(
-      const rvsdg::RvsdgModule & rvsdgModule,
-      const PointsToGraph & pointsToGraph)
+  Create(const rvsdg::RvsdgModule & rvsdgModule, const PointsToGraph & pointsToGraph)
   {
     return std::make_unique<Statistics>(rvsdgModule, pointsToGraph);
   }
@@ -195,6 +191,13 @@ public:
 
   [[nodiscard]] ModRefSet &
   GetModRefSet(ModRefSetIndex index)
+  {
+    JLM_ASSERT(index < ModRefSets_.size());
+    return ModRefSets_[index];
+  }
+
+  [[nodiscard]] const ModRefSet &
+  GetModRefSet(ModRefSetIndex index) const
   {
     JLM_ASSERT(index < ModRefSets_.size());
     return ModRefSets_[index];
@@ -354,7 +357,7 @@ struct RegionAwareModRefSummarizer::Context
   /**
    * A ModRefSet containing all MemoryNodes that can be read or written to from external functions.
    */
-  ModRefSetIndex ExternalModRefIndex;
+  ModRefSetIndex ExternalModRefIndex = 0;
 
   /**
    * Simple edges in the ModRefSet constraint graph.
@@ -364,12 +367,14 @@ struct RegionAwareModRefSummarizer::Context
   std::vector<util::HashSet<ModRefSetIndex>> ModRefSetSimpleConstraints;
 
   /**
-   * Complex edges in the ModRefSet constraint graph.
-   * Only used to connect r -> f, where f is a function, and r is the body region of the function.
-   * Used to filter away MemoryNodes from f's ModRefSet when possible.
-   * ModRefSetComplexEdges maps the ModRefSetIndex of r to the actual LambdaNode for f.
+   * Filtered edges in the ModRefSet constraint graph.
+   * An edge a -> b will propagate the members of the ModRefSet a into b,
+   * except for any MemoryNode included in the provided filter.
    */
-  std::unordered_map<ModRefSetIndex, const rvsdg::LambdaNode *> ModRefSetComplexConstraints;
+  std::unordered_multimap<
+      ModRefSetIndex,
+      std::pair<ModRefSetIndex, const util::HashSet<const PointsToGraph::MemoryNode *> *>>
+      ModRefSetFilteredConstraints;
 };
 
 RegionAwareModRefSummarizer::~RegionAwareModRefSummarizer() noexcept = default;
@@ -389,16 +394,16 @@ RegionAwareModRefSummarizer::SummarizeModRefs(
   statistics->StartCreateSimpleAllocasSetStatistics();
   Context_->SimpleAllocas = CreateSimpleAllocaSet(pointsToGraph);
   statistics->StopCreateSimpleAllocasSetStatistics(Context_->SimpleAllocas.Size());
-  
+
   CreateNonReentrantAllocaSets();
 
   statistics->StartCallGraphStatistics();
   CreateCallGraph(rvsdgModule);
   statistics->StopCallGraphStatistics(Context_->SccFunctions.size());
 
-  statistics->StartAllocasLiveInSccStatistics();
-  FindAllocasLiveInSccs();
-  statistics->StopAllocasLiveInSccStatistics();
+  statistics->StartAllocasDeadInSccStatistics();
+  FindAllocasDeadInSccs();
+  statistics->StopAllocasDeadInSccStatistics();
 
   CreateExternalModRefSet();
 
@@ -687,33 +692,45 @@ RegionAwareModRefSummarizer::CollectLambdaNodes(const rvsdg::RvsdgModule & rvsdg
 }
 
 void
-RegionAwareModRefSummarizer::FindAllocasLiveInSccs()
+RegionAwareModRefSummarizer::FindAllocasDeadInSccs()
 {
-  // Initialize empty sets for all SCCs in the call graph
-  Context_->AllocasLiveInScc.resize(Context_->SccFunctions.size());
+  // First find which allocas may be live in each SCC
+  std::vector<util::HashSet<const PointsToGraph::MemoryNode *>> liveAllocas(
+      Context_->SccFunctions.size());
+
+  util::HashSet<const PointsToGraph::MemoryNode *> allAllocas;
 
   // Add all Allocas to the SCC of the function they are defined in
   for (auto & allocaNode : ModRefSummary_->GetPointsToGraph().AllocaNodes())
   {
+    allAllocas.Insert(&allocaNode);
+
     const auto parentNode = allocaNode.GetAllocaNode().region()->node();
     const auto lambdaNode = util::AssertedCast<const rvsdg::LambdaNode>(parentNode);
     JLM_ASSERT(Context_->FunctionToSccIndex.count(lambdaNode));
     const auto sccIndex = Context_->FunctionToSccIndex[lambdaNode];
-    Context_->AllocasLiveInScc[sccIndex].Insert(&allocaNode);
+    liveAllocas[sccIndex].Insert(&allocaNode);
   }
 
   // Propagate live allocas to targets of function calls.
   // I.e., if a() -> b(), then any alloca that is live in a() may also be live in b()
   // Start at the topologically earliest SCC, which has the largest SCC index
-  for (size_t i = 0; i < Context_->SccFunctions.size(); i++)
+  // The topologically latest SCC can't have any targets
+  for (size_t sccIndex = Context_->SccFunctions.size() - 1; sccIndex > 0; sccIndex--)
   {
-    size_t sccIndex = Context_->SccFunctions.size() - 1 - i;
-
     for (auto targetScc : Context_->SccCallTargets[sccIndex].Items())
     {
       if (targetScc != sccIndex)
-        Context_->AllocasLiveInScc[targetScc].UnionWith(Context_->AllocasLiveInScc[sccIndex]);
+        liveAllocas[targetScc].UnionWith(liveAllocas[sccIndex]);
     }
+  }
+
+  // Any alloca that is not live in the SCC gets added to the set of allocas that are dead
+  Context_->AllocasDeadInScc.resize(Context_->SccFunctions.size());
+  for (size_t sccIndex = 0; sccIndex < Context_->SccFunctions.size(); sccIndex++)
+  {
+    Context_->AllocasDeadInScc[sccIndex].UnionWith(allAllocas);
+    Context_->AllocasDeadInScc[sccIndex].DifferenceWith(liveAllocas[sccIndex]);
   }
 }
 
@@ -742,7 +759,13 @@ RegionAwareModRefSummarizer::CreateExternalModRefSet()
   for (auto & lambda : ModRefSummary_->GetPointsToGraph().LambdaNodes())
   {
     if (lambda.IsModuleEscaping())
+    {
       set.AddMemoryNode(lambda);
+
+      // Add a call from external to the function
+      auto lambdaModRefIndex = ModRefSummary_->GetOrCreateSetForNode(lambda.GetLambdaNode());
+      AddModRefSimpleConstraint(lambdaModRefIndex, Context_->ExternalModRefIndex);
+    }
   }
   for (auto & import : ModRefSummary_->GetPointsToGraph().ImportNodes())
   {
@@ -762,13 +785,12 @@ RegionAwareModRefSummarizer::AddModRefSimpleConstraint(ModRefSetIndex from, ModR
 }
 
 void
-RegionAwareModRefSummarizer::AddModRefComplexConstraint(
+RegionAwareModRefSummarizer::AddModRefFilteredConstraint(
     ModRefSetIndex from,
-    const rvsdg::LambdaNode & to)
+    ModRefSetIndex to,
+    const util::HashSet<const PointsToGraph::MemoryNode *> & filter)
 {
-  // Ensure we do not already have any complex outgoing edges going out of from
-  JLM_ASSERT(Context_->ModRefSetComplexConstraints.count(from) == 0);
-  Context_->ModRefSetComplexConstraints[from] = &to;
+  Context_->ModRefSetFilteredConstraints.insert({ from, { to, &filter } });
 }
 
 void
@@ -776,10 +798,18 @@ RegionAwareModRefSummarizer::AnnotateFunction(const rvsdg::LambdaNode & lambda)
 {
   const auto & region = *lambda.subregion();
   const auto regionModRefSet = AnnotateRegion(region, lambda);
-  AddModRefComplexConstraint(regionModRefSet, lambda);
 
   // Create a ModRefSet for the lambda node, so that the complex constraint has a real target
-  [[maybe_unused]] const auto lambdaModRefSet = ModRefSummary_->GetOrCreateSetForNode(lambda);
+  const auto lambdaModRefSet = ModRefSummary_->GetOrCreateSetForNode(lambda);
+
+  // Propagate from the region to the lambda itself, filtering away allocas that are non-reentrant
+  if (ENV_SKIP_NON_REENTRANT_ALLOCAS)
+    AddModRefFilteredConstraint(
+        regionModRefSet,
+        lambdaModRefSet,
+        Context_->NonReentrantAllocas[&lambda]);
+  else
+    AddModRefSimpleConstraint(regionModRefSet, lambdaModRefSet);
 }
 
 ModRefSetIndex
@@ -787,7 +817,7 @@ RegionAwareModRefSummarizer::AnnotateRegion(
     const rvsdg::Region & region,
     const rvsdg::LambdaNode & lambda)
 {
-  const auto regionModRefSet = ModRefSummary_->GetOrCreateSetForRegion(region);
+  const auto regionModRefSet = ModRefSummary_->CreateModRefSet();
 
   for (auto & node : region.Nodes())
   {
@@ -863,16 +893,13 @@ RegionAwareModRefSummarizer::AnnotateWithPointerOrigin(
     const rvsdg::LambdaNode & lambda)
 {
   auto & set = ModRefSummary_->GetModRefSet(modRefSetIndex);
-
-  // The set of allocas that may actually be live in the current function
-  const auto & liveAllocas = Context_->AllocasLiveInScc[Context_->FunctionToSccIndex[&lambda]];
-
   const auto & registerNode = ModRefSummary_->GetPointsToGraph().GetRegisterNode(origin);
+
+  // TODO Re-use ModRefSets for all uses of the registerNode in this function
   for (const auto & target : registerNode.Targets())
   {
-    // Check if the target is an alloca, and if so, if it is known to not be live in this function
-    if (ONLY_LIVE_ALLOCAS && PointsToGraph::Node::Is<PointsToGraph::AllocaNode>(target)
-        && !liveAllocas.Contains(&target))
+    if (ENV_SKIP_DEAD_ALLOCAS
+        && Context_->AllocasDeadInScc[Context_->FunctionToSccIndex[&lambda]].Contains(&target))
       continue;
     set.AddMemoryNode(target);
   }
@@ -956,8 +983,8 @@ RegionAwareModRefSummarizer::AnnotateCall(
 {
   JLM_ASSERT(is<CallOperation>(&callNode));
 
-  const auto nodeModRef = ModRefSummary_->GetOrCreateSetForNode(callNode);
-  // TODO: Apply the same live allocas filtering here as for loads, stores etc.
+  // This ModRefSet represents everything the call may affect, before filtering
+  const auto innerModRef = ModRefSummary_->CreateModRefSet();
 
   // Go over all possible targets of the call and add them to the call summary
   const auto targetPtr = callNode.input(0)->origin();
@@ -970,17 +997,25 @@ RegionAwareModRefSummarizer::AnnotateCall(
     {
       const auto & lambdaNode = lambdaCallee->GetLambdaNode();
       const auto targetModRefSet = ModRefSummary_->GetOrCreateSetForNode(lambdaNode);
-      AddModRefSimpleConstraint(targetModRefSet, nodeModRef);
+      AddModRefSimpleConstraint(targetModRefSet, innerModRef);
     }
     else if (
         PointsToGraph::Node::Is<PointsToGraph::ExternalMemoryNode>(callee)
         || PointsToGraph::Node::Is<PointsToGraph::ImportNode>(callee))
     {
-      AddModRefSimpleConstraint(Context_->ExternalModRefIndex, nodeModRef);
+      AddModRefSimpleConstraint(Context_->ExternalModRefIndex, innerModRef);
     }
   }
 
-  return nodeModRef;
+  const auto outerModRef = ModRefSummary_->GetOrCreateSetForNode(callNode);
+  if (ENV_SKIP_DEAD_ALLOCAS)
+    AddModRefFilteredConstraint(
+        innerModRef,
+        outerModRef,
+        Context_->AllocasDeadInScc[Context_->FunctionToSccIndex[&lambda]]);
+  else
+    AddModRefSimpleConstraint(innerModRef, outerModRef);
+  return outerModRef;
 }
 
 void
@@ -999,6 +1034,7 @@ RegionAwareModRefSummarizer::SolveModRefSetConstraintGraph()
     const auto workItemModRefIndex = worklist.PopWorkItem();
     auto & workItemModRefSet = ModRefSummary_->GetModRefSet(workItemModRefIndex);
 
+    // Handle simple constraints
     for (auto target : Context_->ModRefSetSimpleConstraints[workItemModRefIndex].Items())
     {
       auto & targetModRefSet = ModRefSummary_->GetModRefSet(target);
@@ -1006,27 +1042,24 @@ RegionAwareModRefSummarizer::SolveModRefSetConstraintGraph()
         worklist.PushWorkItem(target);
     }
 
-    // check if we have a complex constraint
-    if (const auto it = Context_->ModRefSetComplexConstraints.find(workItemModRefIndex);
-        it != Context_->ModRefSetComplexConstraints.end())
+    // Handle filtered constraints
+    for (auto it = Context_->ModRefSetFilteredConstraints.find(workItemModRefIndex);
+         it->first == workItemModRefIndex;
+         ++it)
     {
-      const auto & lambda = *it->second;
-      const auto lambdaModRefIndex = ModRefSummary_->GetOrCreateSetForNode(lambda);
-      auto & lambdaModRefSet = ModRefSummary_->GetModRefSet(lambdaModRefIndex);
+      const auto & [target, filter] = it->second;
+      auto & targetModRefSet = ModRefSummary_->GetModRefSet(target);
 
-      const auto & nonReentrantAllocas = Context_->NonReentrantAllocas[&lambda];
-
-      // Propagate along the complex constraint, but skip Non-Reentrant allocas
+      // Propagate along the complex constraint, skipping filtered MemoryNodes
       bool changed = false;
       for (const auto memoryNode : workItemModRefSet.GetMemoryNodes().Items())
       {
-        // Skip propagating non-reentrant allocas
-        if (SKIP_NON_REENTRANT_ALLOCAS && nonReentrantAllocas.Contains(memoryNode))
+        if (filter->Contains(memoryNode))
           continue;
-        changed |= lambdaModRefSet.AddMemoryNode(*memoryNode);
+        changed |= targetModRefSet.AddMemoryNode(*memoryNode);
       }
       if (changed)
-        worklist.PushWorkItem(lambdaModRefIndex);
+        worklist.PushWorkItem(target);
     }
   }
 }
@@ -1071,49 +1104,41 @@ RegionAwareModRefSummarizer::ToRegionTree(
     ss << "}" << std::endl;
   };
 
-  auto indent = [&](size_t depth, char c='-')
+  auto indent = [&](size_t depth, char c = '-')
   {
     for (size_t i = 0; i < depth; i++)
       ss << c;
   };
 
-  std::function<void(const rvsdg::Region *, size_t)> toRegionTree =
-      [&](const rvsdg::Region * region, size_t depth)
+  std::function<void(const rvsdg::Node &, size_t)> toRegionTree =
+      [&](const rvsdg::Node & node, size_t depth)
   {
+    if (!modRefSummary.HasSetForNode(node))
+      return;
+
     indent(depth, '-');
-    ss << "region " << region << std::endl;
+    ss << node.DebugString();
 
-    if (modRefSummary.HasSetForRegion(*region))
+    auto modRefIndex = modRefSummary.GetSetForNode(node);
+    auto & memoryNodes = modRefSummary.GetModRefSet(modRefIndex).GetMemoryNodes();
+    ss << " ";
+    toString(memoryNodes);
+    ss << std::endl;
+
+    if (auto structuralNode = dynamic_cast<const rvsdg::StructuralNode *>(&node))
     {
-      auto & memoryNodes = modRefSummary.GetModRefForRegion(*region);
-      indent(depth, ' ');
-      toString(memoryNodes);
-    }
-
-    depth += 1;
-    for (const auto & node : region->Nodes())
-    {
-      if (!modRefSummary.HasSetForNode(node))
-        continue;
-
-      indent(depth, '-');
-      ss << node.DebugString() << " " << modRefSummary.GetSetForNode(node) << std::endl;
-
-      auto & memoryNodes = modRefSummary.GetModRefForNode(node);
-      indent(depth, ' ');
-      toString(memoryNodes);
-
-      if (auto structuralNode = dynamic_cast<const rvsdg::StructuralNode *>(&node))
+      for (auto & region : structuralNode->Subregions())
       {
-        for (size_t n = 0; n < structuralNode->nsubregions(); n++)
-        {
-          toRegionTree(structuralNode->subregion(n), depth + 1);
-        }
+        indent(depth + 1, '-');
+        ss << "region" << std::endl;
+        for (auto & n : region.Nodes())
+          toRegionTree(n, depth + 2);
       }
     }
   };
 
-  toRegionTree(&rvsdg.GetRootRegion(), 0);
+  for (auto & node : rvsdg.GetRootRegion().Nodes())
+    toRegionTree(node, 0);
 
   return ss.str();
 }

@@ -12,11 +12,9 @@
 #include <jlm/llvm/ir/RvsdgModule.hpp>
 #include <jlm/llvm/opt/alias-analyses/AgnosticModRefSummarizer.hpp>
 #include <jlm/llvm/opt/alias-analyses/Andersen.hpp>
-#include <jlm/llvm/opt/alias-analyses/EliminatedModRefSummarizer.hpp>
 #include <jlm/llvm/opt/alias-analyses/PointsToAnalysisStateEncoder.hpp>
 #include <jlm/llvm/opt/alias-analyses/RegionAwareModRefSummarizer.hpp>
 #include <jlm/llvm/opt/alias-analyses/Steensgaard.hpp>
-#include <jlm/llvm/opt/alias-analyses/TopDownModRefEliminator.hpp>
 #include <jlm/llvm/opt/cne.hpp>
 #include <jlm/llvm/opt/DeadNodeElimination.hpp>
 #include <jlm/llvm/opt/IfConversion.hpp>
@@ -398,8 +396,6 @@ JlmOptCommand::CreateTransformation(
   using Steensgaard = llvm::aa::Steensgaard;
   using AgnosticMrs = llvm::aa::AgnosticModRefSummarizer;
   using RegionAwareMrs = llvm::aa::RegionAwareModRefSummarizer;
-  using TopDownLifetimeMrs =
-      llvm::aa::EliminatedModRefSummarizer<AgnosticMrs, llvm::aa::TopDownModRefEliminator>;
 
   switch (optimizationId)
   {
@@ -407,8 +403,6 @@ JlmOptCommand::CreateTransformation(
     return std::make_unique<llvm::aa::PointsToAnalysisStateEncoder<Andersen, AgnosticMrs>>();
   case JlmOptCommandLineOptions::OptimizationId::AAAndersenRegionAware:
     return std::make_unique<llvm::aa::PointsToAnalysisStateEncoder<Andersen, RegionAwareMrs>>();
-  case JlmOptCommandLineOptions::OptimizationId::AAAndersenTopDownLifetimeAware:
-    return std::make_unique<llvm::aa::PointsToAnalysisStateEncoder<Andersen, TopDownLifetimeMrs>>();
   case JlmOptCommandLineOptions::OptimizationId::AASteensgaardAgnostic:
     return std::make_unique<llvm::aa::PointsToAnalysisStateEncoder<Steensgaard, AgnosticMrs>>();
   case JlmOptCommandLineOptions::OptimizationId::AASteensgaardRegionAware:

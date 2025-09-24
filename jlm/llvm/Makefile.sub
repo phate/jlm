@@ -59,7 +59,6 @@ libllvm_SOURCES = \
     jlm/llvm/opt/alias-analyses/PointsToGraphAliasAnalysis.cpp \
     jlm/llvm/opt/alias-analyses/RegionAwareModRefSummarizer.cpp \
     jlm/llvm/opt/alias-analyses/Steensgaard.cpp \
-    jlm/llvm/opt/alias-analyses/TopDownModRefEliminator.cpp \
     jlm/llvm/opt/cne.cpp \
     jlm/llvm/opt/DeadNodeElimination.cpp \
     jlm/llvm/opt/IfConversion.cpp \
@@ -98,7 +97,6 @@ libllvm_HEADERS = \
     jlm/llvm/opt/alias-analyses/ModRefSummarizer.hpp \
     jlm/llvm/opt/alias-analyses/ModRefSummary.hpp \
     jlm/llvm/opt/alias-analyses/Steensgaard.hpp \
-    jlm/llvm/opt/alias-analyses/TopDownModRefEliminator.hpp \
     jlm/llvm/opt/alias-analyses/PointerObjectSet.hpp \
     jlm/llvm/opt/alias-analyses/RegionAwareModRefSummarizer.hpp \
     jlm/llvm/opt/alias-analyses/PointsToAnalysis.hpp \
@@ -210,7 +208,6 @@ libllvm_TESTS += \
     tests/jlm/llvm/opt/alias-analyses/TestPointsToGraph \
     tests/jlm/llvm/opt/alias-analyses/RegionAwareModRefSummarizerTests \
     tests/jlm/llvm/opt/alias-analyses/TestSteensgaard \
-    tests/jlm/llvm/opt/alias-analyses/TopDownModRefEliminatorTests \
     tests/jlm/llvm/opt/DeadNodeEliminationTests \
     tests/jlm/llvm/opt/IfConversionTests \
     tests/jlm/llvm/opt/InvariantValueRedirectionTests \

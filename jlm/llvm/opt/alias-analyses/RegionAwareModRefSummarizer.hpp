@@ -133,11 +133,11 @@ private:
   CollectLambdaNodes(const rvsdg::RvsdgModule & rvsdgModule);
 
   /**
-   * For each SCC in the call graph, determines which allocas may be live while a
-   * function from the SCC is at the top of the call stack.
+   * For each SCC in the call graph, determines which allocas can be known to not be live
+   * when a function from the SCC is at the top of the call stack.
    */
   void
-  FindAllocasLiveInSccs();
+  FindAllocasDeadInSccs();
 
   /**
    * Creates one ModRefSet which is responsible for representing all reads and writes
@@ -155,11 +155,14 @@ private:
 
   /**
    * Adds the fact that everything in the ModRefSet \p from should also be included
-   * in the ModRefSet of the function \p to, except MemoryNodes that can be shown to not need
-   * their state routed into the function by callers.
+   * in the ModRefSet \p to, except for anything included in the filter set.
+   * The filter reference must stay valid until solving is finished.
    */
   void
-  AddModRefComplexConstraint(ModRefSetIndex from, const rvsdg::LambdaNode & to);
+  AddModRefFilteredConstraint(
+      ModRefSetIndex from,
+      ModRefSetIndex to,
+      const util::HashSet<const PointsToGraph::MemoryNode *> & filter);
 
   /**
    * Creates ModRefSets for regions and nodes within the function.
