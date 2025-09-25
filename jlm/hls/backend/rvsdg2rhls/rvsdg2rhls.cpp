@@ -452,7 +452,7 @@ createTransformationSequence(
   auto loopUnswitching = std::make_unique<llvm::LoopUnswitching>();
   auto ioBarrierRemoval = std::make_unique<IOBarrierRemoval>();
   auto memoryStateSeparation = std::make_unique<MemoryStateSeparation>();
-  auto gammaMerge = std::make_unique<GammaNodeConversion>();
+  auto gammaMerge = std::make_unique<GammaMerge>();
   auto unusedStateRemoval = std::make_unique<UnusedStateRemoval>();
   auto constantDistribution = std::make_unique<ConstantDistribution>();
   auto gammaNodeConversion = std::make_unique<GammaNodeConversion>();
