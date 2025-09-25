@@ -16,7 +16,9 @@ class ScalarEvolution final : public jlm::rvsdg::Transformation
   class Statistics;
 
 public:
-  typedef util::HashSet<const rvsdg::ThetaNode::LoopVar *> InductionVariableSet;
+  typedef util::HashSet<const rvsdg::Output *>
+      InductionVariableSet; // Stores the pointers to the output result from the subregion for the
+                            // induction variables
 
   ~ScalarEvolution() noexcept override;
 
@@ -37,20 +39,17 @@ public:
   void
   Run(rvsdg::RvsdgModule & rvsdgModule, util::StatisticsCollector & statisticsCollector) override;
 
-  void
-  TraverseGraph(const rvsdg::Graph & rvsdg);
-
-  void
-  TraverseRegion(const rvsdg::Region * region);
-
   static InductionVariableSet
-  FindInductionVariables(const rvsdg::ThetaNode * thetaNode);
-
-  static bool
-  IsBasedOnInductionVariable(const rvsdg::Output * output, const rvsdg::ThetaNode * thetaNode);
+  FindInductionVariables(const rvsdg::ThetaNode & thetaNode);
 
 private:
   std::unordered_map<const rvsdg::ThetaNode *, InductionVariableSet> InductionVariableMap_;
+
+  void
+  TraverseRegion(const rvsdg::Region & region);
+
+  static bool
+  IsBasedOnInductionVariable(const rvsdg::Output & output, InductionVariableSet & candidates);
 };
 
 }

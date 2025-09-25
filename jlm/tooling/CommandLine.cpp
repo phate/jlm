@@ -553,7 +553,6 @@ JlcCommandLineParser::ParseCommandLineArguments(int argc, const char * const * a
           CreateStatisticsOption(
               util::Statistics::Id::ThetaGammaInversion,
               "Collect theta-gamma inversion pass statistics.")),
-
       cl::desc("Collect jlm-opt pass statistics"));
 
   cl::ParseCommandLineOptions(argc, argv);

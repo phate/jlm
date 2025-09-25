@@ -3,13 +3,12 @@
  * See COPYING for terms of redistribution.
  */
 
-#include "jlm/llvm/ir/operators/IntegerOperations.hpp"
-#include "jlm/rvsdg/bitstring/arithmetic.hpp"
-#include "jlm/rvsdg/bitstring/constant.hpp"
-#include "jlm/util/Statistics.hpp"
-#include "test-operation.hpp"
-#include "test-registry.hpp"
-#include "test-types.hpp"
+#include <jlm/llvm/ir/operators/IntegerOperations.hpp>
+#include <jlm/rvsdg/bitstring/arithmetic.hpp>
+#include <jlm/rvsdg/bitstring/constant.hpp>
+#include <jlm/util/Statistics.hpp>
+#include <test-operation.hpp>
+#include <test-registry.hpp>
 
 #include <jlm/llvm/ir/operators/delta.hpp>
 #include <jlm/llvm/ir/operators/lambda.hpp>
@@ -23,7 +22,7 @@
 #include <cassert>
 
 static jlm::llvm::ScalarEvolution::InductionVariableSet
-RunScalarEvolution(const jlm::rvsdg::ThetaNode * thetaNode)
+RunScalarEvolution(const jlm::rvsdg::ThetaNode & thetaNode)
 {
   jlm::util::StatisticsCollector statisticsCollector;
   jlm::llvm::ScalarEvolution scalarEvolution;
@@ -36,20 +35,17 @@ SimpleInductionVariable()
   using namespace jlm::llvm;
 
   // Arrange
-  const auto valueType = jlm::tests::ValueType::Create();
   const auto intType = jlm::rvsdg::BitType::Create(32);
 
   RvsdgModule rvsdgModule(jlm::util::FilePath(""), "", "");
-  auto & graph = rvsdgModule.Rvsdg();
-  const auto x = &jlm::rvsdg::GraphImport::Create(graph, intType, "x");
-  const auto y = &jlm::rvsdg::GraphImport::Create(graph, valueType, "y");
+  const auto & graph = rvsdgModule.Rvsdg();
 
   const auto & c0 = IntegerConstantOperation::Create(graph.GetRootRegion(), 32, 0);
+  const auto & c2 = IntegerConstantOperation::Create(graph.GetRootRegion(), 32, 2);
 
   const auto theta = jlm::rvsdg::ThetaNode::create(&graph.GetRootRegion());
-  auto lv1 = theta->AddLoopVar(x);
-  lv1.input->divert_to(c0.output(0));
-  theta->AddLoopVar(y);
+  const auto lv1 = theta->AddLoopVar(c0.output(0));
+  const auto lv2 = theta->AddLoopVar(c2.output(0));
 
   const auto & c1 = IntegerConstantOperation::Create(*theta->subregion(), 32, 1);
   const auto & addNode =
@@ -68,10 +64,12 @@ SimpleInductionVariable()
   jlm::rvsdg::view(graph, stdout);
 
   // Act
-  ScalarEvolution::InductionVariableSet inductionVariables = RunScalarEvolution(theta);
+  ScalarEvolution::InductionVariableSet inductionVariables = RunScalarEvolution(*theta);
 
   // Assert
   assert(inductionVariables.Size() == 2);
+  assert(inductionVariables.Contains(lv1.pre));
+  assert(inductionVariables.Contains(lv2.pre));
 }
 
 JLM_UNIT_TEST_REGISTER(
@@ -87,16 +85,14 @@ InductionVariableWithMultiplication()
   const auto intType = jlm::rvsdg::BitType::Create(32);
 
   RvsdgModule rvsdgModule(jlm::util::FilePath(""), "", "");
-  auto & graph = rvsdgModule.Rvsdg();
-  const auto x = &jlm::rvsdg::GraphImport::Create(graph, intType, "x");
-  const auto y = &jlm::rvsdg::GraphImport::Create(graph, intType, "y");
+  const auto & graph = rvsdgModule.Rvsdg();
 
   const auto & c0 = IntegerConstantOperation::Create(graph.GetRootRegion(), 32, 0);
+  const auto & c3 = IntegerConstantOperation::Create(graph.GetRootRegion(), 32, 3);
 
   const auto theta = jlm::rvsdg::ThetaNode::create(&graph.GetRootRegion());
-  auto lv1 = theta->AddLoopVar(x);
-  lv1.input->divert_to(c0.output(0));
-  auto lv2 = theta->AddLoopVar(y);
+  const auto lv1 = theta->AddLoopVar(c0.output(0));
+  const auto lv2 = theta->AddLoopVar(c3.output(0));
 
   const auto & c1 = IntegerConstantOperation::Create(*theta->subregion(), 32, 1);
   const auto & addNode =
@@ -120,10 +116,12 @@ InductionVariableWithMultiplication()
   jlm::rvsdg::view(graph, stdout);
 
   // Act
-  ScalarEvolution::InductionVariableSet inductionVariables = RunScalarEvolution(theta);
+  ScalarEvolution::InductionVariableSet inductionVariables = RunScalarEvolution(*theta);
 
   // Assert
   assert(inductionVariables.Size() == 1);
+  assert(inductionVariables.Contains(lv1.pre));
+  assert(!inductionVariables.Contains(lv2.pre));
 }
 
 JLM_UNIT_TEST_REGISTER(
@@ -139,18 +137,14 @@ RecursiveInductionVariable()
   const auto intType = jlm::rvsdg::BitType::Create(32);
 
   RvsdgModule rvsdgModule(jlm::util::FilePath(""), "", "");
-  auto & graph = rvsdgModule.Rvsdg();
-  const auto x = &jlm::rvsdg::GraphImport::Create(graph, intType, "x");
-  const auto y = &jlm::rvsdg::GraphImport::Create(graph, intType, "y");
+  const auto & graph = rvsdgModule.Rvsdg();
 
   const auto & c0 = IntegerConstantOperation::Create(graph.GetRootRegion(), 32, 0);
   const auto & c4 = IntegerConstantOperation::Create(graph.GetRootRegion(), 32, 4);
 
   const auto theta = jlm::rvsdg::ThetaNode::create(&graph.GetRootRegion());
-  auto lv1 = theta->AddLoopVar(x);
-  lv1.input->divert_to(c0.output(0));
-  auto lv2 = theta->AddLoopVar(y);
-  lv2.input->divert_to(c4.output(0));
+  const auto lv1 = theta->AddLoopVar(c0.output(0));
+  const auto lv2 = theta->AddLoopVar(c4.output(0));
 
   const auto & c1 = IntegerConstantOperation::Create(*theta->subregion(), 32, 1);
   const auto & addNode =
@@ -178,10 +172,12 @@ RecursiveInductionVariable()
   jlm::rvsdg::view(graph, stdout);
 
   // Act
-  ScalarEvolution::InductionVariableSet inductionVariables = RunScalarEvolution(theta);
+  ScalarEvolution::InductionVariableSet inductionVariables = RunScalarEvolution(*theta);
 
   // Assert
   assert(inductionVariables.Size() == 2);
+  assert(inductionVariables.Contains(lv1.pre));
+  assert(inductionVariables.Contains(lv2.pre));
 }
 
 JLM_UNIT_TEST_REGISTER(
@@ -197,18 +193,14 @@ PolynomialInductionVariable()
   const auto intType = jlm::rvsdg::BitType::Create(32);
 
   RvsdgModule rvsdgModule(jlm::util::FilePath(""), "", "");
-  auto & graph = rvsdgModule.Rvsdg();
-  const auto x = &jlm::rvsdg::GraphImport::Create(graph, intType, "x");
-  const auto y = &jlm::rvsdg::GraphImport::Create(graph, intType, "y");
+  const auto & graph = rvsdgModule.Rvsdg();
 
   const auto & c0 = IntegerConstantOperation::Create(graph.GetRootRegion(), 32, 0);
   const auto & c2 = IntegerConstantOperation::Create(graph.GetRootRegion(), 32, 2);
 
   const auto theta = jlm::rvsdg::ThetaNode::create(&graph.GetRootRegion());
-  auto lv1 = theta->AddLoopVar(x);
-  lv1.input->divert_to(c0.output(0));
-  auto lv2 = theta->AddLoopVar(y);
-  lv2.input->divert_to(c2.output(0));
+  const auto lv1 = theta->AddLoopVar(c0.output(0));
+  const auto lv2 = theta->AddLoopVar(c2.output(0));
 
   const auto & c1 = IntegerConstantOperation::Create(*theta->subregion(), 32, 1);
   const auto & addNode =
@@ -230,10 +222,12 @@ PolynomialInductionVariable()
   jlm::rvsdg::view(graph, stdout);
 
   // Act
-  ScalarEvolution::InductionVariableSet inductionVariables = RunScalarEvolution(theta);
+  const ScalarEvolution::InductionVariableSet inductionVariables = RunScalarEvolution(*theta);
 
   // Assert
   assert(inductionVariables.Size() == 2);
+  assert(inductionVariables.Contains(lv1.pre));
+  assert(inductionVariables.Contains(lv2.pre));
 }
 
 JLM_UNIT_TEST_REGISTER(
