@@ -129,9 +129,9 @@ template<
 class IntrusiveHash
 {
 private:
-  struct bucket_type
+  struct BucketType
   {
-    constexpr inline bucket_type() noexcept
+    constexpr inline BucketType() noexcept
         : first(nullptr),
           last(nullptr)
     {}
@@ -354,7 +354,7 @@ public:
   void
   clear() noexcept
   {
-    for (bucket_type & bucket : buckets_)
+    for (BucketType & bucket : buckets_)
     {
       bucket.first = nullptr;
       bucket.last = nullptr;
@@ -379,7 +379,7 @@ public:
   erase(ElementType * element) noexcept
   {
     size_t index = hash_(accessor_.get_key(element)) & mask_;
-    bucket_type & b = buckets_[index];
+    BucketType & b = buckets_[index];
     ElementType * prev = accessor_.get_prev(element);
     ElementType * next = accessor_.get_next(element);
     if (prev)
@@ -492,7 +492,7 @@ private:
   ElementType *
   first_object() const noexcept
   {
-    for (const bucket_type & bucket : buckets_)
+    for (const BucketType & bucket : buckets_)
     {
       if (bucket.first)
       {
@@ -504,11 +504,11 @@ private:
 
   size_t size_;
   size_t mask_;
-  std::vector<bucket_type> buckets_;
+  std::vector<BucketType> buckets_;
 
   inline void
   private_insert_into(
-      std::vector<bucket_type> & bucket_types,
+      std::vector<BucketType> & bucket_types,
       size_t mask,
       ElementType * element) noexcept
   {
@@ -529,12 +529,12 @@ private:
   void
   rehash()
   {
-    std::vector<bucket_type> new_buckets(
+    std::vector<BucketType> new_buckets(
         std::max(typename decltype(buckets_)::size_type(1), buckets_.size() * 2),
-        bucket_type());
+        BucketType());
     size_t new_mask = new_buckets.size() - 1;
 
-    for (bucket_type & old_bucket_type : buckets_)
+    for (BucketType & old_bucket_type : buckets_)
     {
       ElementType * element = old_bucket_type.first;
       while (element)
