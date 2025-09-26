@@ -10,6 +10,7 @@
 #include <jlm/llvm/ir/operators/operators.hpp>
 #include <jlm/llvm/ir/RvsdgModule.hpp>
 #include <jlm/rvsdg/node.hpp>
+#include <jlm/rvsdg/Transformation.hpp>
 #include <jlm/util/Statistics.hpp>
 
 namespace jlm::hls
@@ -23,8 +24,11 @@ is_constant(const rvsdg::Node * node)
       || jlm::rvsdg::is<jlm::rvsdg::ctlconstant_op>(node);
 }
 
-void
-rvsdg2rhls(llvm::RvsdgModule & rm, util::StatisticsCollector & collector);
+std::unique_ptr<rvsdg::TransformationSequence>
+createTransformationSequence(
+    rvsdg::DotWriter & dotWriter,
+    bool dumpRvsdgDotGraphs,
+    util::HashSet<std::unique_ptr<rvsdg::Transformation>> & transformations);
 
 void
 rvsdg2ref(llvm::RvsdgModule & rm, const util::FilePath & function_name);

@@ -11,7 +11,7 @@
 namespace jlm::hls
 {
 
-class ConstantDistribution final : rvsdg::Transformation
+class ConstantDistribution final : public rvsdg::Transformation
 {
 public:
   ~ConstantDistribution() noexcept override;
