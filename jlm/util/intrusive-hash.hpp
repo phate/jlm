@@ -33,7 +33,7 @@
  *   int num;
  *   jlm::util::IntrusiveHashAnchor<X> num_hash_anchor;
  * public:
- *   typedef jlm::util::intrusive_hash_accessor<
+ *   typedef jlm::util::IntrusiveHashAccessor<
  *     int,                // key type
  *     X,                  // element type
  *     &X::num,            // key member
@@ -585,7 +585,7 @@ template<
     typename ElementType,
     KeyType ElementType::*key_member,
     IntrusiveHashAnchor<ElementType> ElementType::*anchor_member>
-class intrusive_hash_accessor
+class IntrusiveHashAccessor
 {
 public:
   inline KeyType

@@ -73,7 +73,7 @@ struct my_stritem
   jlm::util::IntrusiveHashAnchor<my_stritem> hash_chain{};
 
   typedef jlm::util::
-      intrusive_hash_accessor<std::string, my_stritem, &my_stritem::key, &my_stritem::hash_chain>
+      IntrusiveHashAccessor<std::string, my_stritem, &my_stritem::key, &my_stritem::hash_chain>
           hash_accessor;
 };
 
