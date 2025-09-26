@@ -27,6 +27,7 @@
 #include <jlm/llvm/opt/push.hpp>
 #include <jlm/llvm/opt/reduction.hpp>
 #include <jlm/llvm/opt/RvsdgTreePrinter.hpp>
+#include <jlm/llvm/opt/ScalarEvolution.hpp>
 #include <jlm/llvm/opt/unroll.hpp>
 #include <jlm/rvsdg/view.hpp>
 #include <jlm/tooling/Command.hpp>
@@ -434,6 +435,8 @@ JlmOptCommand::CreateTransformation(
   case JlmOptCommandLineOptions::OptimizationId::RvsdgTreePrinter:
     return std::make_unique<llvm::RvsdgTreePrinter>(
         CommandLineOptions_.GetRvsdgTreePrinterConfiguration());
+  case JlmOptCommandLineOptions::OptimizationId::ScalarEvolution:
+    return std::make_unique<llvm::ScalarEvolution>();
   case JlmOptCommandLineOptions::OptimizationId::ThetaGammaInversion:
     return std::make_unique<llvm::LoopUnswitching>();
   default:

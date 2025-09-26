@@ -8,10 +8,11 @@
 #include <jlm/hls/ir/hls.hpp>
 #include <jlm/hls/util/view.hpp>
 #include <jlm/rvsdg/gamma.hpp>
+#include <jlm/rvsdg/lambda.hpp>
 #include <jlm/rvsdg/theta.hpp>
 #include <jlm/rvsdg/traverser.hpp>
 
-namespace jlm
+namespace jlm::hls
 {
 
 void
@@ -96,7 +97,7 @@ distribute_constant(const rvsdg::SimpleOperation & op, rvsdg::Output * out)
 }
 
 void
-hls::distribute_constants(rvsdg::Region * region)
+distribute_constants(rvsdg::Region * region)
 {
   // push constants down as far as possible, since this is cheaper than having forks and potentially
   // buffers for them
@@ -138,12 +139,16 @@ hls::distribute_constants(rvsdg::Region * region)
   }
 }
 
+ConstantDistribution::~ConstantDistribution() noexcept = default;
+
+ConstantDistribution::ConstantDistribution()
+    : Transformation("ConstantDistribution")
+{}
+
 void
-hls::distribute_constants(llvm::RvsdgModule & rm)
+ConstantDistribution::Run(rvsdg::RvsdgModule & rvsdgModule, util::StatisticsCollector &)
 {
-  auto & graph = rm.Rvsdg();
-  auto root = &graph.GetRootRegion();
-  distribute_constants(root);
+  distribute_constants(&rvsdgModule.Rvsdg().GetRootRegion());
 }
 
 } // namespace jlm
