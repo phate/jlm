@@ -31,7 +31,7 @@
  * class X {
  * private:
  *   int num;
- *   jlm::util::intrusive_hash_anchor<X> num_hash_anchor;
+ *   jlm::util::IntrusiveHashAnchor<X> num_hash_anchor;
  * public:
  *   typedef jlm::util::intrusive_hash_accessor<
  *     int,                // key type
@@ -54,7 +54,7 @@
  * set_prev and set_next members must be implemented appropriately.
  *
  * An object h of num_hash class then supports STL-style operations
- * - num_hash::Iterator, num_hash::const_iterator for iteration
+ * - num_hash::Iterator, num_hash::ConstIterator for iteration
  * - h.begin(), h.end() and const-qualified variants
  * - h.find(key) performs lookup and yields an Iterator
  * - h.insert(element) links an object into the data structure
@@ -150,7 +150,7 @@ public:
   static_assert(
       noexcept(KeyEqual()(std::declval<KeyType &>(), std::declval<KeyType &>())),
       "require noexcept key equality");
-  class const_iterator;
+  class ConstIterator;
 
   class Iterator
   {
@@ -231,10 +231,10 @@ public:
   private:
     const IntrusiveHash * map_;
     ElementType * element_;
-    friend class const_iterator;
+    friend class ConstIterator;
   };
 
-  class const_iterator
+  class ConstIterator
   {
   public:
     typedef const ElementType value_type;
@@ -244,24 +244,24 @@ public:
     typedef size_t size_type;
     typedef ssize_t difference_type;
 
-    constexpr const_iterator(const const_iterator & other) noexcept = default;
+    constexpr ConstIterator(const ConstIterator & other) noexcept = default;
 
-    constexpr const_iterator(const Iterator & other) noexcept
+    constexpr ConstIterator(const Iterator & other) noexcept
         : map_(other.map_),
           element_(other.element_)
     {}
 
-    constexpr const_iterator() noexcept
+    constexpr ConstIterator() noexcept
         : map_(nullptr),
           element_(nullptr)
     {}
 
-    constexpr const_iterator(const IntrusiveHash * map, const ElementType * object)
+    constexpr ConstIterator(const IntrusiveHash * map, const ElementType * object)
         : map_(map),
           element_(object)
     {}
 
-    inline const const_iterator &
+    inline const ConstIterator &
     operator++() noexcept
     {
       ElementType * next = map_->accessor_.get_next(element_);
@@ -279,10 +279,10 @@ public:
       return *this;
     }
 
-    inline const_iterator
+    inline ConstIterator
     operator++(int) noexcept
     {
-      const_iterator i = *this;
+      ConstIterator i = *this;
       ++*this;
       return i;
     }
@@ -300,13 +300,13 @@ public:
     }
 
     inline bool
-    operator==(const const_iterator & other) const noexcept
+    operator==(const ConstIterator & other) const noexcept
     {
       return element_ == other.element_;
     }
 
     inline bool
-    operator!=(const const_iterator & other) const noexcept
+    operator!=(const ConstIterator & other) const noexcept
     {
       return element_ != other.element_;
     }
@@ -452,25 +452,25 @@ public:
     return Iterator(this, nullptr);
   }
 
-  const_iterator
+  ConstIterator
   cbegin() const noexcept
   {
     return const_iterator(this, first_object());
   }
 
-  const_iterator
+  ConstIterator
   cend() const noexcept
   {
     return const_iterator(this, nullptr);
   }
 
-  const_iterator
+  ConstIterator
   begin() const noexcept
   {
     return cbegin();
   }
 
-  const_iterator
+  ConstIterator
   end() const noexcept
   {
     return cend();
@@ -482,7 +482,7 @@ public:
     return Iterator(this, lookup(key));
   }
 
-  inline const_iterator
+  inline ConstIterator
   find(const KeyType & key) const noexcept
   {
     return const_iterator(this, lookup(key));
@@ -573,7 +573,7 @@ private:
 };
 
 template<typename ElementType>
-class intrusive_hash_anchor
+class IntrusiveHashAnchor
 {
 public:
   ElementType * prev;
@@ -584,7 +584,7 @@ template<
     typename KeyType,
     typename ElementType,
     KeyType ElementType::*key_member,
-    intrusive_hash_anchor<ElementType> ElementType::*anchor_member>
+    IntrusiveHashAnchor<ElementType> ElementType::*anchor_member>
 class intrusive_hash_accessor
 {
 public:
