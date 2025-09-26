@@ -18,7 +18,7 @@ namespace jlm::hls
  * llvm::UnusedStateRemoval, and should be replaced by them. The llvm::UnusedStateRemoval would
  * need to be extended to remove unused state edges in lambda nodes though.
  */
-class UnusedStateRemoval final : rvsdg::Transformation
+class UnusedStateRemoval final : public rvsdg::Transformation
 {
 public:
   ~UnusedStateRemoval() noexcept override;
