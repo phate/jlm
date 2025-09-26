@@ -48,13 +48,11 @@ SimpleInductionVariable()
   const auto lv2 = theta->AddLoopVar(c2.output(0));
 
   const auto & c1 = IntegerConstantOperation::Create(*theta->subregion(), 32, 1);
-  const auto & addNode =
-      jlm::rvsdg::CreateOpNode<IntegerAddOperation>({ lv1.pre, c1.output(0) }, 32);
+  auto & addNode = jlm::rvsdg::CreateOpNode<IntegerAddOperation>({ lv1.pre, c1.output(0) }, 32);
   const auto result = addNode.output(0);
 
   const auto & c5 = IntegerConstantOperation::Create(*theta->subregion(), 32, 5);
-  const auto & sltNode =
-      jlm::rvsdg::CreateOpNode<IntegerSltOperation>({ result, c5.output(0) }, 32);
+  auto & sltNode = jlm::rvsdg::CreateOpNode<IntegerSltOperation>({ result, c5.output(0) }, 32);
   const auto matchResult =
       jlm::rvsdg::MatchOperation::Create(*sltNode.output(0), { { 1, 1 } }, 0, 2);
 
@@ -95,17 +93,15 @@ InductionVariableWithMultiplication()
   const auto lv2 = theta->AddLoopVar(c3.output(0));
 
   const auto & c1 = IntegerConstantOperation::Create(*theta->subregion(), 32, 1);
-  const auto & addNode =
-      jlm::rvsdg::CreateOpNode<IntegerAddOperation>({ lv1.pre, c1.output(0) }, 32);
+  auto & addNode = jlm::rvsdg::CreateOpNode<IntegerAddOperation>({ lv1.pre, c1.output(0) }, 32);
   const auto res1 = addNode.output(0);
 
   const auto & c2 = IntegerConstantOperation::Create(*theta->subregion(), 32, 2);
-  const auto & mulNode =
-      jlm::rvsdg::CreateOpNode<IntegerMulOperation>({ lv2.pre, c2.output(0) }, 32);
+  auto & mulNode = jlm::rvsdg::CreateOpNode<IntegerMulOperation>({ lv2.pre, c2.output(0) }, 32);
   const auto res2 = mulNode.output(0);
 
   const auto & c5 = IntegerConstantOperation::Create(*theta->subregion(), 32, 5);
-  const auto & sltNode = jlm::rvsdg::CreateOpNode<IntegerSltOperation>({ res1, c5.output(0) }, 32);
+  auto & sltNode = jlm::rvsdg::CreateOpNode<IntegerSltOperation>({ res1, c5.output(0) }, 32);
   const auto matchResult =
       jlm::rvsdg::MatchOperation::Create(*sltNode.output(0), { { 1, 1 } }, 0, 2);
 
@@ -147,22 +143,20 @@ RecursiveInductionVariable()
   const auto lv2 = theta->AddLoopVar(c4.output(0));
 
   const auto & c1 = IntegerConstantOperation::Create(*theta->subregion(), 32, 1);
-  const auto & addNode =
-      jlm::rvsdg::CreateOpNode<IntegerAddOperation>({ lv1.pre, c1.output(0) }, 32);
+  auto & addNode = jlm::rvsdg::CreateOpNode<IntegerAddOperation>({ lv1.pre, c1.output(0) }, 32);
   const auto res1 = addNode.output(0);
 
   const auto & c5 = IntegerConstantOperation::Create(*theta->subregion(), 32, 5);
-  const auto & sltNode = jlm::rvsdg::CreateOpNode<IntegerSltOperation>({ res1, c5.output(0) }, 32);
+  auto & sltNode = jlm::rvsdg::CreateOpNode<IntegerSltOperation>({ res1, c5.output(0) }, 32);
   const auto matchResult =
       jlm::rvsdg::MatchOperation::Create(*sltNode.output(0), { { 1, 1 } }, 0, 2);
 
   const auto & c2 = IntegerConstantOperation::Create(*theta->subregion(), 32, 2);
-  const auto & addNode2 =
-      jlm::rvsdg::CreateOpNode<IntegerAddOperation>({ lv2.pre, c2.output(0) }, 32);
+  auto & addNode2 = jlm::rvsdg::CreateOpNode<IntegerAddOperation>({ lv2.pre, c2.output(0) }, 32);
   const auto res2 = addNode2.output(0);
 
   const auto & c3 = IntegerConstantOperation::Create(*theta->subregion(), 32, 3);
-  const auto & addNode3 = jlm::rvsdg::CreateOpNode<IntegerAddOperation>({ res2, c3.output(0) }, 32);
+  auto & addNode3 = jlm::rvsdg::CreateOpNode<IntegerAddOperation>({ res2, c3.output(0) }, 32);
   const auto res3 = addNode3.output(0);
 
   theta->set_predicate(matchResult);
@@ -203,16 +197,15 @@ PolynomialInductionVariable()
   const auto lv2 = theta->AddLoopVar(c2.output(0));
 
   const auto & c1 = IntegerConstantOperation::Create(*theta->subregion(), 32, 1);
-  const auto & addNode =
-      jlm::rvsdg::CreateOpNode<IntegerAddOperation>({ lv1.pre, c1.output(0) }, 32);
+  auto & addNode = jlm::rvsdg::CreateOpNode<IntegerAddOperation>({ lv1.pre, c1.output(0) }, 32);
   const auto res1 = addNode.output(0);
 
   const auto & c5 = IntegerConstantOperation::Create(*theta->subregion(), 32, 5);
-  const auto & sltNode = jlm::rvsdg::CreateOpNode<IntegerSltOperation>({ res1, c5.output(0) }, 32);
+  auto & sltNode = jlm::rvsdg::CreateOpNode<IntegerSltOperation>({ res1, c5.output(0) }, 32);
   const auto matchResult =
       jlm::rvsdg::MatchOperation::Create(*sltNode.output(0), { { 1, 1 } }, 0, 2);
 
-  const auto & addNode2 = jlm::rvsdg::CreateOpNode<IntegerAddOperation>({ lv2.pre, res1 }, 32);
+  auto & addNode2 = jlm::rvsdg::CreateOpNode<IntegerAddOperation>({ lv2.pre, res1 }, 32);
   const auto res2 = addNode2.output(0);
 
   theta->set_predicate(matchResult);
