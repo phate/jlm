@@ -70,9 +70,9 @@ struct MyStringItem
 
   std::string key{};
   std::string value{};
-  jlm::util::intrusive_hash_anchor<MyStringItem> hash_chain{};
+  jlm::util::IntrusiveHashAnchor<my_stritem> hash_chain{};
 
-  typedef jlm::util::intrusive_hash_accessor<
+  typedef jlm::util::IntrusiveHashAccessor<
       std::string,
       MyStringItem,
       &MyStringItem::key,
