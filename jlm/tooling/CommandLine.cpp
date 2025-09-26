@@ -117,6 +117,7 @@ JlmOptCommandLineOptions::FromCommandLineArgumentToOptimizationId(
         { OptimizationCommandLineArgument::NodePullIn_, OptimizationId::NodePullIn },
         { OptimizationCommandLineArgument::NodeReduction_, OptimizationId::NodeReduction },
         { OptimizationCommandLineArgument::RvsdgTreePrinter_, OptimizationId::RvsdgTreePrinter },
+        { OptimizationCommandLineArgument::ScalarEvolution_, OptimizationId::ScalarEvolution },
         { OptimizationCommandLineArgument::ThetaGammaInversion_,
           OptimizationId::ThetaGammaInversion },
         { OptimizationCommandLineArgument::LoopUnrolling_, OptimizationId::LoopUnrolling } });
@@ -154,6 +155,7 @@ JlmOptCommandLineOptions::ToCommandLineArgument(OptimizationId optimizationId)
         { OptimizationId::NodePushOut, OptimizationCommandLineArgument::NodePushOut_ },
         { OptimizationId::NodeReduction, OptimizationCommandLineArgument::NodeReduction_ },
         { OptimizationId::RvsdgTreePrinter, OptimizationCommandLineArgument::RvsdgTreePrinter_ },
+        { OptimizationId::ScalarEvolution, OptimizationCommandLineArgument::ScalarEvolution_ },
         { OptimizationId::ThetaGammaInversion,
           OptimizationCommandLineArgument::ThetaGammaInversion_ } });
 
@@ -236,9 +238,10 @@ JlmOptCommandLineOptions::GetStatisticsIdCommandLineArguments()
     { util::Statistics::Id::RvsdgDestruction, "print-rvsdg-destruction" },
     { util::Statistics::Id::RvsdgOptimization, "print-rvsdg-optimization" },
     { util::Statistics::Id::RvsdgTreePrinter, "print-rvsdg-tree" },
+    { util::Statistics::Id::ScalarEvolution, "print-scalar-evolution" },
     { util::Statistics::Id::SteensgaardAnalysis, "print-steensgaard-analysis" },
     { util::Statistics::Id::ThetaGammaInversion, "print-ivt-stat" },
-    { util::Statistics::Id::TopDownMemoryNodeEliminator, "TopDownMemoryNodeEliminator" }
+    { util::Statistics::Id::TopDownMemoryNodeEliminator, "TopDownMemoryNodeEliminator" },
   };
 
   auto firstIndex = static_cast<size_t>(util::Statistics::Id::FirstEnumValue);
@@ -337,6 +340,7 @@ JlcCommandLineParser::ParseCommandLineArguments(int argc, const char * const * a
           JlmOptCommandLineOptions::OptimizationId::IfConversion,
           JlmOptCommandLineOptions::OptimizationId::CommonNodeElimination,
           JlmOptCommandLineOptions::OptimizationId::DeadNodeElimination,
+          JlmOptCommandLineOptions::OptimizationId::ScalarEvolution,
       });
     }
 
@@ -540,6 +544,9 @@ JlcCommandLineParser::ParseCommandLineArguments(int argc, const char * const * a
           CreateStatisticsOption(
               util::Statistics::Id::RvsdgTreePrinter,
               "Collect RVSDG tree printer pass statistics."),
+          CreateStatisticsOption(
+              util::Statistics::Id::ScalarEvolution,
+              "Collect scalar evolution analysis pass statistics."),
           CreateStatisticsOption(
               util::Statistics::Id::SteensgaardAnalysis,
               "Collect Steensgaard alias analysis pass statistics."),
@@ -775,6 +782,9 @@ JlmOptCommandLineParser::ParseCommandLineArguments(int argc, const char * const 
               util::Statistics::Id::RvsdgTreePrinter,
               "Write RVSDG tree printer pass statistics."),
           CreateStatisticsOption(
+              util::Statistics::Id::ScalarEvolution,
+              "Write scalar evolution statistics to file."),
+          CreateStatisticsOption(
               util::Statistics::Id::SteensgaardAnalysis,
               "Write Steensgaard analysis statistics to file."),
           CreateStatisticsOption(
@@ -838,6 +848,7 @@ JlmOptCommandLineParser::ParseCommandLineArguments(int argc, const char * const 
   auto nodePullIn = JlmOptCommandLineOptions::OptimizationId::NodePullIn;
   auto nodeReduction = JlmOptCommandLineOptions::OptimizationId::NodeReduction;
   auto rvsdgTreePrinter = JlmOptCommandLineOptions::OptimizationId::RvsdgTreePrinter;
+  auto scalarEvolution = JlmOptCommandLineOptions::OptimizationId::ScalarEvolution;
   auto thetaGammaInversion = JlmOptCommandLineOptions::OptimizationId::ThetaGammaInversion;
   auto loopUnrolling = JlmOptCommandLineOptions::OptimizationId::LoopUnrolling;
 
@@ -899,6 +910,10 @@ JlmOptCommandLineParser::ParseCommandLineArguments(int argc, const char * const 
               rvsdgTreePrinter,
               JlmOptCommandLineOptions::ToCommandLineArgument(rvsdgTreePrinter),
               "Rvsdg Tree Printer"),
+          ::clEnumValN(
+              scalarEvolution,
+              JlmOptCommandLineOptions::ToCommandLineArgument(scalarEvolution),
+              "Scalar evolution"),
           ::clEnumValN(
               thetaGammaInversion,
               JlmOptCommandLineOptions::ToCommandLineArgument(thetaGammaInversion),
