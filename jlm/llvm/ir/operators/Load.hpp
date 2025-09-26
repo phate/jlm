@@ -288,6 +288,23 @@ public:
       const std::vector<rvsdg::Output *> & operands);
 
   /**
+   * \brief Swaps a \ref MemoryStateJoinOperation and a \ref LoadNonVolatileOperation
+   *
+   * sx1 = MemoryStateJoinOperation si1 ... siM
+   * v sl1 = LoadNonVolatileOperation a sx1
+   * =>
+   * v sl1 ... slM = LoadNonVolatileOperation a si1 ... siM
+   * sx1 = MemoryStateJoinOperation sl1 ... SlM
+   *
+   * @return If the normalization could be applied, then the results of the \ref
+   * LoadNonVolatileOperation after the transformation. Otherwise, std::nullopt.
+   */
+  static std::optional<std::vector<rvsdg::Output *>>
+  NormalizeLoadMemoryStateJoin(
+      const LoadNonVolatileOperation & operation,
+      const std::vector<rvsdg::Output *> & operands);
+
+  /**
    * \brief If the producer of a load's address is an alloca operation, then we can remove all
    * state edges originating from other alloca operations.
    *

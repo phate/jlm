@@ -317,53 +317,64 @@ perform_multiple_origin_reduction(
   return results;
 }
 
+template<class TMemoryStateMergeOrJoinOperation>
 std::optional<std::vector<rvsdg::Output *>>
-LoadNonVolatileOperation::NormalizeLoadMemoryStateMerge(
+NormalizeMemoryStateMergeOrJoin(
     const LoadNonVolatileOperation & operation,
     const std::vector<rvsdg::Output *> & operands)
 {
+  static_assert(
+      std::is_same_v<TMemoryStateMergeOrJoinOperation, MemoryStateMergeOperation>
+          || std::is_same_v<TMemoryStateMergeOrJoinOperation, MemoryStateJoinOperation>,
+      "Template parameter T must be a MemoryStateMergeOperation or a MemoryStateJoinOperation!");
+
   auto & address = *operands[0];
   const auto oldLoadMemoryStates = std::vector(std::next(operands.begin()), operands.end());
 
-  bool foundMemoryStateMergeOperation = false;
+  bool foundMergeOrJoinOperation = false;
   std::vector<rvsdg::Output *> newLoadMemoryStates;
   for (const auto memoryState : oldLoadMemoryStates)
   {
-    auto [memoryStateMergeNode, memoryStateMergeOperation] =
-        rvsdg::TryGetSimpleNodeAndOptionalOp<MemoryStateMergeOperation>(*memoryState);
-    if (memoryStateMergeOperation)
+    auto [memoryStateNode, memoryStateOperation] =
+        rvsdg::TryGetSimpleNodeAndOptionalOp<TMemoryStateMergeOrJoinOperation>(*memoryState);
+    if (memoryStateOperation)
     {
-      foundMemoryStateMergeOperation = true;
-      auto memoryStateMergeOperands = rvsdg::operands(memoryStateMergeNode);
+      foundMergeOrJoinOperation = true;
+      auto memoryStateOpOperands = rvsdg::operands(memoryStateNode);
       newLoadMemoryStates.insert(
           newLoadMemoryStates.end(),
-          memoryStateMergeOperands.begin(),
-          memoryStateMergeOperands.end());
+          memoryStateOpOperands.begin(),
+          memoryStateOpOperands.end());
     }
     else
     {
       newLoadMemoryStates.push_back(memoryState);
     }
   }
-  if (!foundMemoryStateMergeOperation)
+  if (!foundMergeOrJoinOperation)
     return std::nullopt;
 
-  auto & newLoadNode =
-      CreateNode(address, newLoadMemoryStates, operation.GetLoadedType(), operation.GetAlignment());
+  auto & newLoadNode = LoadNonVolatileOperation::CreateNode(
+      address,
+      newLoadMemoryStates,
+      operation.GetLoadedType(),
+      operation.GetAlignment());
 
   size_t newMemoryStateResultIndex = 1;
   std::vector<rvsdg::Output *> results;
-  results.push_back(&LoadedValueOutput(newLoadNode));
+  results.push_back(&LoadOperation::LoadedValueOutput(newLoadNode));
   for (auto & oldMemoryStateOperand : oldLoadMemoryStates)
   {
-    auto [memoryStateMergeNode, memoryStateMergeOperation] =
-        rvsdg::TryGetSimpleNodeAndOptionalOp<MemoryStateMergeOperation>(*oldMemoryStateOperand);
-    if (memoryStateMergeOperation)
+    auto [memoryStateNode, memoryStateOperation] =
+        rvsdg::TryGetSimpleNodeAndOptionalOp<TMemoryStateMergeOrJoinOperation>(
+            *oldMemoryStateOperand);
+    if (memoryStateOperation)
     {
-      size_t numMemoryStates = memoryStateMergeNode->ninputs();
-      auto memoryStateMergeOperands =
+      size_t numMemoryStates = memoryStateNode->ninputs();
+      auto memoryStateOpOperands =
           rvsdg::Outputs(newLoadNode, newMemoryStateResultIndex, numMemoryStates);
-      const auto result = MemoryStateMergeOperation::CreateNode(memoryStateMergeOperands).output(0);
+      const auto result =
+          TMemoryStateMergeOrJoinOperation::CreateNode(memoryStateOpOperands).output(0);
       results.push_back(result);
       newMemoryStateResultIndex += numMemoryStates;
     }
@@ -377,6 +388,22 @@ LoadNonVolatileOperation::NormalizeLoadMemoryStateMerge(
   }
 
   return results;
+}
+
+std::optional<std::vector<rvsdg::Output *>>
+LoadNonVolatileOperation::NormalizeLoadMemoryStateMerge(
+    const LoadNonVolatileOperation & operation,
+    const std::vector<rvsdg::Output *> & operands)
+{
+  return NormalizeMemoryStateMergeOrJoin<MemoryStateMergeOperation>(operation, operands);
+}
+
+std::optional<std::vector<rvsdg::Output *>>
+LoadNonVolatileOperation::NormalizeLoadMemoryStateJoin(
+    const LoadNonVolatileOperation & operation,
+    const std::vector<rvsdg::Output *> & operands)
+{
+  return NormalizeMemoryStateMergeOrJoin<MemoryStateJoinOperation>(operation, operands);
 }
 
 std::optional<std::vector<rvsdg::Output *>>
