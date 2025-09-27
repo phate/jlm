@@ -89,7 +89,7 @@ main(int argc, char ** argv)
   {
     jlm::hls::rvsdg2ref(*rvsdgModule, commandLineOptions.OutputFiles_.WithSuffix(".ref.ll"));
 
-    jlm::llvm::dot::LlvmDotWriter dotWriter;
+    jlm::llvm::LlvmDotWriter dotWriter;
     jlm::util::HashSet<std::unique_ptr<jlm::rvsdg::Transformation>> transformations;
     auto transformationSequence =
         jlm::hls::createTransformationSequence(dotWriter, false, transformations);
@@ -128,7 +128,7 @@ main(int argc, char ** argv)
   else if (
       commandLineOptions.OutputFormat_ == jlm::tooling::JlmHlsCommandLineOptions::OutputFormat::Dot)
   {
-    jlm::llvm::dot::LlvmDotWriter dotWriter;
+    jlm::llvm::LlvmDotWriter dotWriter;
     jlm::util::HashSet<std::unique_ptr<jlm::rvsdg::Transformation>> transformations;
     auto transformationSequence =
         jlm::hls::createTransformationSequence(dotWriter, false, transformations);

@@ -360,7 +360,7 @@ JlmOptCommand::Run() const
       CommandLineOptions_.GetInputFormat(),
       statisticsCollector);
 
-  llvm::dot::LlvmDotWriter dotWriter;
+  llvm::LlvmDotWriter dotWriter;
   rvsdg::TransformationSequence::CreateAndRun(
       *rvsdgModule,
       statisticsCollector,
@@ -610,7 +610,7 @@ JlmOptCommand::PrintAsDot(
   auto & rootRegion = rvsdgModule.Rvsdg().GetRootRegion();
 
   util::graph::Writer writer;
-  llvm::dot::LlvmDotWriter dotWriter;
+  llvm::LlvmDotWriter dotWriter;
   dotWriter.WriteGraphs(writer, rootRegion, true);
 
   if (outputFile == "")

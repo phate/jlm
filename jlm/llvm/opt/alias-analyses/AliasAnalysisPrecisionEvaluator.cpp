@@ -125,7 +125,7 @@ AliasAnalysisPrecisionEvaluator::EvaluateAliasAnalysisClient(
     Context_.AliasingGraph_ = &gw.CreateGraph();
 
     // Also emit the RVSDG to the graph writer
-    dot::LlvmDotWriter writer;
+    LlvmDotWriter writer;
     writer.WriteGraphs(gw, rvsdgModule.Rvsdg().GetRootRegion(), true);
   }
 
