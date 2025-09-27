@@ -61,7 +61,7 @@ private:
    * @param output The memory state output of a \ref LoadOperation node.
    * @param [out] joinOperands A vector of all the memory state outputs encountered while tracing up
    * the load chain.
-   * @return The final output that is not owned by a \ref LoadOpertion node.
+   * @return The final output that is not owned by a \ref LoadOperation node.
    */
   static rvsdg::Output &
   traceLoadNodeMemoryState(rvsdg::Output & output, std::vector<rvsdg::Output *> & joinOperands);
