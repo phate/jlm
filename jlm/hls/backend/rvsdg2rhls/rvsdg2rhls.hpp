@@ -25,10 +25,7 @@ is_constant(const rvsdg::Node * node)
 }
 
 std::unique_ptr<rvsdg::TransformationSequence>
-createTransformationSequence(
-    rvsdg::DotWriter & dotWriter,
-    bool dumpRvsdgDotGraphs,
-    util::HashSet<std::unique_ptr<rvsdg::Transformation>> & transformations);
+createTransformationSequence(rvsdg::DotWriter & dotWriter, bool dumpRvsdgDotGraphs);
 
 void
 rvsdg2ref(llvm::RvsdgModule & rm, const util::FilePath & function_name);
