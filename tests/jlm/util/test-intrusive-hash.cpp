@@ -9,9 +9,9 @@
 
 #include <cassert>
 
-struct my_item
+struct MyItem
 {
-  my_item(int k, int v)
+  MyItem(int k, int v)
       : key(k),
         value(v)
   {}
@@ -21,63 +21,66 @@ struct my_item
 
   struct
   {
-    my_item * prev;
-    my_item * next;
+    MyItem * prev;
+    MyItem * next;
   } hash_chain{ nullptr, nullptr };
 };
 
-struct my_accessor
+struct MyAccessor
 {
   int
-  get_key(const my_item * item) const noexcept
+  get_key(const MyItem * item) const noexcept
   {
     return item->key;
   }
 
-  my_item *
-  get_prev(const my_item * item) const noexcept
+  MyItem *
+  get_prev(const MyItem * item) const noexcept
   {
     return item->hash_chain.prev;
   }
 
-  my_item *
-  get_next(const my_item * item) const noexcept
+  MyItem *
+  get_next(const MyItem * item) const noexcept
   {
     return item->hash_chain.next;
   }
 
   void
-  set_prev(my_item * item, my_item * prev) const noexcept
+  set_prev(MyItem * item, MyItem * prev) const noexcept
   {
     item->hash_chain.prev = prev;
   }
 
   void
-  set_next(my_item * item, my_item * next) const noexcept
+  set_next(MyItem * item, MyItem * next) const noexcept
   {
     item->hash_chain.next = next;
   }
 };
 
-typedef jlm::util::IntrusiveHash<int, my_item, my_accessor> my_hash;
+typedef jlm::util::IntrusiveHash<int, MyItem, MyAccessor> my_hash;
 
-struct my_stritem
+struct MyStringItem
 {
-  my_stritem(const std::string & k, const std::string & v)
+  MyStringItem(const std::string & k, const std::string & v)
       : key(k),
         value(v)
   {}
 
   std::string key{};
   std::string value{};
-  jlm::util::intrusive_hash_anchor<my_stritem> hash_chain{};
+  jlm::util::IntrusiveHashAnchor<MyStringItem> hash_chain{};
 
-  typedef jlm::util::
-      intrusive_hash_accessor<std::string, my_stritem, &my_stritem::key, &my_stritem::hash_chain>
-          hash_accessor;
+  typedef jlm::util::IntrusiveHashAccessor<
+      std::string,
+      MyStringItem,
+      &MyStringItem::key,
+      &MyStringItem::hash_chain>
+      hash_accessor;
 };
 
-typedef jlm::util::IntrusiveHash<std::string, my_stritem, my_stritem::hash_accessor> my_strhash;
+typedef jlm::util::IntrusiveHash<std::string, MyStringItem, MyStringItem::hash_accessor> my_strhash;
 
 static void
 test_int_hash()
@@ -86,11 +89,11 @@ test_int_hash()
 
   assert(m.find(42) == m.end());
 
-  my_item i1 = { 42, 0 };
+  MyItem i1 = { 42, 0 };
   m.insert(&i1);
   assert(&*m.find(42) == &i1);
 
-  my_item i2 = { 10, 0 };
+  MyItem i2 = { 10, 0 };
   m.insert(&i2);
 
   m.erase(&i1);
@@ -99,7 +102,7 @@ test_int_hash()
   assert(&*m.find(42) == &i1);
 
   int seen_i1 = 0, seen_i2 = 0;
-  for (const my_item & i : m)
+  for (const MyItem & i : m)
   {
     assert((&i == &i1) || (&i == &i2));
     if (&i == &i1)
@@ -122,11 +125,11 @@ test_str_hash()
 
   assert(m.find("42") == m.end());
 
-  my_stritem i1 = { "42", "0" };
+  MyStringItem i1 = { "42", "0" };
   m.insert(&i1);
   assert(&*m.find("42") == &i1);
 
-  my_stritem i2 = { "10", "0" };
+  MyStringItem i2 = { "10", "0" };
   m.insert(&i2);
 
   m.erase(&i1);
@@ -135,7 +138,7 @@ test_str_hash()
   assert(&*m.find("42") == &i1);
 
   int seen_i1 = 0, seen_i2 = 0;
-  for (const my_stritem & i : m)
+  for (const MyStringItem & i : m)
   {
     assert((&i == &i1) || (&i == &i2));
     if (&i == &i1)
