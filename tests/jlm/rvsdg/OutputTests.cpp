@@ -270,3 +270,79 @@ RouteToRegion_Failure()
 }
 
 JLM_UNIT_TEST_REGISTER("jlm/rvsdg/OutputTests-RouteToRegion_Failure", RouteToRegion_Failure)
+
+static void
+DivertUsersWhere()
+{
+  using namespace jlm::rvsdg;
+
+  // Assert
+  const auto valueType = jlm::tests::ValueType::Create();
+
+  Graph rvsdg;
+  auto & i0 = GraphImport::Create(rvsdg, valueType, "i0");
+  auto & i1 = GraphImport::Create(rvsdg, valueType, "i1");
+
+  auto & x0 = GraphExport::Create(i0, "x0");
+  auto & x1 = GraphExport::Create(i0, "x1");
+  auto & x2 = GraphExport::Create(i0, "x2");
+  auto & x3 = GraphExport::Create(i0, "x3");
+
+  // Act & Assert
+
+  // The new origin is the same as the old origin. Nothing should happen.
+  auto numDivertedUsers = i0.divertUsersWhere(
+      i0,
+      [](const Input &)
+      {
+        return true;
+      });
+  assert(numDivertedUsers == 0);
+  assert(i0.nusers() == 4);
+
+  // Divert user x0 to new origin i0
+  numDivertedUsers = i0.divertUsersWhere(
+      i1,
+      [&x0](const Input & user)
+      {
+        return &user == &x0;
+      });
+  assert(numDivertedUsers == 1);
+  assert(i0.nusers() == 3);
+  assert(x0.origin() == &i1);
+
+  // Nothing should happen as x0 is no longer a user of i0
+  numDivertedUsers = i0.divertUsersWhere(
+      i1,
+      [&x0](const Input & user)
+      {
+        return &user == &x0;
+      });
+  assert(numDivertedUsers == 0);
+  assert(i0.nusers() == 3);
+
+  // Divert users x1 and x2 to i1
+  numDivertedUsers = i0.divertUsersWhere(
+      i1,
+      [&x1, &x2](const Input & user)
+      {
+        return &user == &x1 || &user == &x2;
+      });
+  assert(numDivertedUsers == 2);
+  assert(i0.nusers() == 1);
+  assert(x1.origin() == &i1);
+  assert(x2.origin() == &i1);
+
+  // Finally, divert user x3 to i1
+  numDivertedUsers = i0.divertUsersWhere(
+      i1,
+      [&x3](const Input & user)
+      {
+        return &user == &x3;
+      });
+  assert(numDivertedUsers == 1);
+  assert(i0.nusers() == 0);
+  assert(x3.origin() == &i1);
+}
+
+JLM_UNIT_TEST_REGISTER("jlm/rvsdg/OutputTests-DivertUsersWhere", DivertUsersWhere)

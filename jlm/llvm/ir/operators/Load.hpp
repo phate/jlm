@@ -89,8 +89,16 @@ public:
     return *output;
   }
 
+  /**
+   * Returns a range over the memory state outputs of a \ref LoadOperation node.
+   *
+   * @param node A \ref LoadOperation node.
+   * @return A range over the memory state outputs of \p node.
+   *
+   * @pre \p node is expected to be a \ref LoadOperation node.
+   */
   [[nodiscard]] static rvsdg::Node::OutputIteratorRange
-  MemoryStateOutputs(const rvsdg::SimpleNode & node) noexcept
+  MemoryStateOutputs(const rvsdg::Node & node) noexcept
   {
     const auto loadOperation = util::AssertedCast<const LoadOperation>(&node.GetOperation());
     if (loadOperation->NumMemoryStates_ == 0)
@@ -102,6 +110,29 @@ public:
         node.output(loadOperation->nresults() - loadOperation->NumMemoryStates_);
     JLM_ASSERT(is<MemoryStateType>(firstMemoryStateOutput->Type()));
     return { rvsdg::Output::Iterator(firstMemoryStateOutput), rvsdg::Output::Iterator(nullptr) };
+  }
+
+  /**
+   * Returns a range over the memory state inputs of a \ref LoadOperation node.
+   *
+   * @param node A \ref LoadOperation node.
+   * @return A range over the memory state inputs of \p node.
+   *
+   * @pre \p node is expected to be a \ref LoadOperation node.
+   */
+  [[nodiscard]] static rvsdg::Node::InputIteratorRange
+  MemoryStateInputs(const rvsdg::Node & node) noexcept
+  {
+    const auto loadOperation = util::AssertedCast<const LoadOperation>(&node.GetOperation());
+    if (loadOperation->NumMemoryStates_ == 0)
+    {
+      return { rvsdg::Input::Iterator(nullptr), rvsdg::Input::Iterator(nullptr) };
+    }
+
+    const auto firstMemoryStateOutput =
+        node.input(loadOperation->narguments() - loadOperation->NumMemoryStates_);
+    JLM_ASSERT(is<MemoryStateType>(firstMemoryStateOutput->Type()));
+    return { rvsdg::Input::Iterator(firstMemoryStateOutput), rvsdg::Input::Iterator(nullptr) };
   }
 
   /**
