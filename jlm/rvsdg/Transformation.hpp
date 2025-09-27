@@ -76,7 +76,7 @@ public:
   ~TransformationSequence() noexcept override;
 
   explicit TransformationSequence(
-      std::vector<Transformation *> transformations,
+      std::vector<std::shared_ptr<Transformation>> transformations,
       DotWriter & dotWriter,
       const bool dumpRvsdgDotGraphs)
       : Transformation("TransformationSequence"),
@@ -107,7 +107,7 @@ public:
   CreateAndRun(
       RvsdgModule & rvsdgModule,
       util::StatisticsCollector & statisticsCollector,
-      std::vector<Transformation *> transformations,
+      std::vector<std::shared_ptr<Transformation>> transformations,
       DotWriter & dotWriter,
       const bool dumpRvsdgDotGraphs)
   {
@@ -128,7 +128,7 @@ private:
 
   DotWriter & DotWriter_;
   bool DumpRvsdgDotGraphs_;
-  std::vector<Transformation *> Transformations_;
+  std::vector<std::shared_ptr<Transformation>> Transformations_;
 };
 
 }
