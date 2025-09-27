@@ -441,106 +441,76 @@ rvsdg2ref(llvm::RvsdgModule & rhls, const util::FilePath & path)
 }
 
 std::unique_ptr<rvsdg::TransformationSequence>
-createTransformationSequence(
-    rvsdg::DotWriter & dotWriter,
-    const bool dumpRvsdgDotGraphs,
-    util::HashSet<std::unique_ptr<rvsdg::Transformation>> & transformations)
+createTransformationSequence(rvsdg::DotWriter & dotWriter, const bool dumpRvsdgDotGraphs)
 {
-  auto deadNodeElimination = std::make_unique<llvm::DeadNodeElimination>();
-  auto commonNodeElimination = std::make_unique<CommonNodeElimination>();
-  auto invariantValueRedirection = std::make_unique<llvm::InvariantValueRedirection>();
-  auto loopUnswitching = std::make_unique<llvm::LoopUnswitching>();
-  auto ioBarrierRemoval = std::make_unique<IOBarrierRemoval>();
-  auto memoryStateSeparation = std::make_unique<MemoryStateSeparation>();
-  auto gammaMerge = std::make_unique<GammaMerge>();
-  auto unusedStateRemoval = std::make_unique<UnusedStateRemoval>();
-  auto constantDistribution = std::make_unique<ConstantDistribution>();
-  auto gammaNodeConversion = std::make_unique<GammaNodeConversion>();
-  auto thetaNodeConversion = std::make_unique<ThetaNodeConversion>();
-  auto rhlsDeadNodeElimination = std::make_unique<RhlsDeadNodeElimination>();
-  auto allocaNodeConversion = std::make_unique<AllocaNodeConversion>();
-  auto streamConversion = std::make_unique<StreamConversion>();
-  auto addressQueueInsertion = std::make_unique<AddressQueueInsertion>();
-  auto memoryStateDecoupling = std::make_unique<MemoryStateDecoupling>();
-  auto memoryConverter = std::make_unique<MemoryConverter>();
-  auto nodeReduction = std::make_unique<llvm::NodeReduction>();
-  auto memoryStateSplitConversion = std::make_unique<MemoryStateSplitConversion>();
-  auto redundantBufferElimination = std::make_unique<RedundantBufferElimination>();
-  auto sinkInsertion = std::make_unique<SinkInsertion>();
-  auto forkInsertion = std::make_unique<ForkInsertion>();
-  auto bufferInsertion = std::make_unique<BufferInsertion>();
-  auto rhlsVerification = std::make_unique<RhlsVerification>();
+  auto deadNodeElimination = std::make_shared<llvm::DeadNodeElimination>();
+  auto commonNodeElimination = std::make_shared<CommonNodeElimination>();
+  auto invariantValueRedirection = std::make_shared<llvm::InvariantValueRedirection>();
+  auto loopUnswitching = std::make_shared<llvm::LoopUnswitching>();
+  auto ioBarrierRemoval = std::make_shared<IOBarrierRemoval>();
+  auto memoryStateSeparation = std::make_shared<MemoryStateSeparation>();
+  auto gammaMerge = std::make_shared<GammaMerge>();
+  auto unusedStateRemoval = std::make_shared<UnusedStateRemoval>();
+  auto constantDistribution = std::make_shared<ConstantDistribution>();
+  auto gammaNodeConversion = std::make_shared<GammaNodeConversion>();
+  auto thetaNodeConversion = std::make_shared<ThetaNodeConversion>();
+  auto rhlsDeadNodeElimination = std::make_shared<RhlsDeadNodeElimination>();
+  auto allocaNodeConversion = std::make_shared<AllocaNodeConversion>();
+  auto streamConversion = std::make_shared<StreamConversion>();
+  auto addressQueueInsertion = std::make_shared<AddressQueueInsertion>();
+  auto memoryStateDecoupling = std::make_shared<MemoryStateDecoupling>();
+  auto memoryConverter = std::make_shared<MemoryConverter>();
+  auto nodeReduction = std::make_shared<llvm::NodeReduction>();
+  auto memoryStateSplitConversion = std::make_shared<MemoryStateSplitConversion>();
+  auto redundantBufferElimination = std::make_shared<RedundantBufferElimination>();
+  auto sinkInsertion = std::make_shared<SinkInsertion>();
+  auto forkInsertion = std::make_shared<ForkInsertion>();
+  auto bufferInsertion = std::make_shared<BufferInsertion>();
+  auto rhlsVerification = std::make_shared<RhlsVerification>();
 
-  std::vector<rvsdg::Transformation *> sequence({
-      loopUnswitching.get(),
-      deadNodeElimination.get(),
-      commonNodeElimination.get(),
-      invariantValueRedirection.get(),
-      deadNodeElimination.get(),
-      commonNodeElimination.get(),
-      deadNodeElimination.get(),
-      ioBarrierRemoval.get(),
-      memoryStateSeparation.get(),
-      gammaMerge.get(),
-      unusedStateRemoval.get(),
-      deadNodeElimination.get(),
-      loopUnswitching.get(),
-      commonNodeElimination.get(),
-      deadNodeElimination.get(),
-      gammaMerge.get(),
-      deadNodeElimination.get(),
-      unusedStateRemoval.get(),
-      constantDistribution.get(),
-      gammaNodeConversion.get(),
-      thetaNodeConversion.get(),
-      commonNodeElimination.get(),
-      rhlsDeadNodeElimination.get(),
-      allocaNodeConversion.get(),
-      streamConversion.get(),
-      addressQueueInsertion.get(),
-      memoryStateDecoupling.get(),
-      unusedStateRemoval.get(),
-      memoryConverter.get(),
-      nodeReduction.get(),
-      memoryStateSplitConversion.get(),
-      redundantBufferElimination.get(),
-      sinkInsertion.get(),
-      forkInsertion.get(),
-      bufferInsertion.get(),
-      rhlsVerification.get(),
+  std::vector<std::shared_ptr<rvsdg::Transformation>> sequence({
+      loopUnswitching,
+      deadNodeElimination,
+      commonNodeElimination,
+      invariantValueRedirection,
+      deadNodeElimination,
+      commonNodeElimination,
+      deadNodeElimination,
+      ioBarrierRemoval,
+      memoryStateSeparation,
+      gammaMerge,
+      unusedStateRemoval,
+      deadNodeElimination,
+      loopUnswitching,
+      commonNodeElimination,
+      deadNodeElimination,
+      gammaMerge,
+      deadNodeElimination,
+      unusedStateRemoval,
+      constantDistribution,
+      gammaNodeConversion,
+      thetaNodeConversion,
+      commonNodeElimination,
+      rhlsDeadNodeElimination,
+      allocaNodeConversion,
+      streamConversion,
+      addressQueueInsertion,
+      memoryStateDecoupling,
+      unusedStateRemoval,
+      memoryConverter,
+      nodeReduction,
+      memoryStateSplitConversion,
+      redundantBufferElimination,
+      sinkInsertion,
+      forkInsertion,
+      bufferInsertion,
+      rhlsVerification,
   });
 
-  auto transformationSequence = std::make_unique<rvsdg::TransformationSequence>(
+  return std::make_unique<rvsdg::TransformationSequence>(
       std::move(sequence),
       dotWriter,
       dumpRvsdgDotGraphs);
-
-  transformations.Insert(std::move(deadNodeElimination));
-  transformations.Insert(std::move(commonNodeElimination));
-  transformations.Insert(std::move(invariantValueRedirection));
-  transformations.Insert(std::move(loopUnswitching));
-  transformations.Insert(std::move(ioBarrierRemoval));
-  transformations.Insert(std::move(memoryStateSeparation));
-  transformations.Insert(std::move(gammaMerge));
-  transformations.Insert(std::move(unusedStateRemoval));
-  transformations.Insert(std::move(constantDistribution));
-  transformations.Insert(std::move(gammaNodeConversion));
-  transformations.Insert(std::move(thetaNodeConversion));
-  transformations.Insert(std::move(rhlsDeadNodeElimination));
-  transformations.Insert(std::move(allocaNodeConversion));
-  transformations.Insert(std::move(streamConversion));
-  transformations.Insert(std::move(addressQueueInsertion));
-  transformations.Insert(std::move(memoryStateDecoupling));
-  transformations.Insert(std::move(memoryConverter));
-  transformations.Insert(std::move(nodeReduction));
-  transformations.Insert(std::move(memoryStateSplitConversion));
-  transformations.Insert(std::move(redundantBufferElimination));
-  transformations.Insert(std::move(sinkInsertion));
-  transformations.Insert(std::move(forkInsertion));
-  transformations.Insert(std::move(bufferInsertion));
-  transformations.Insert(std::move(rhlsVerification));
-
-  return transformationSequence;
 }
 
 void

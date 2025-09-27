@@ -60,13 +60,13 @@ RvsdgDumping()
   StatisticsCollector statisticsCollector(statisticsCollectorSettings);
 
   TestDotWriter dotWriter;
-  TestTransformation testTransformation;
+  auto testTransformation = std::make_shared<TestTransformation>();
 
   // Act
   TransformationSequence::CreateAndRun(
       rvsdgModule,
       statisticsCollector,
-      { &testTransformation },
+      { testTransformation },
       dotWriter,
       true);
 
