@@ -24,7 +24,7 @@ TestWriteGraphs()
 
   // Act
   Writer writer;
-  dot::LlvmDotWriter dotWriter;
+  LlvmDotWriter dotWriter;
   dotWriter.WriteGraphs(writer, gammaTest.graph().GetRootRegion(), false);
 
   writer.OutputAllGraphs(std::cout, OutputFormat::Dot);
@@ -94,7 +94,7 @@ TestTypeGraph()
 
   // Act
   Writer writer;
-  dot::LlvmDotWriter dotWriter;
+  LlvmDotWriter dotWriter;
   dotWriter.WriteGraphs(writer, gammaTest.graph().GetRootRegion(), true);
 
   writer.Finalize();
