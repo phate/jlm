@@ -42,6 +42,7 @@ public:
     ControlFlowRecovery,
     DataNodeToDelta,
     DeadNodeElimination,
+    PartialRedundancyElimination,
     FunctionInlining,
     IfConversion,
     InvariantValueRedirection,

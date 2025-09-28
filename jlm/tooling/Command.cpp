@@ -23,6 +23,7 @@
 #include <jlm/llvm/opt/inlining.hpp>
 #include <jlm/llvm/opt/InvariantValueRedirection.hpp>
 #include <jlm/llvm/opt/inversion.hpp>
+#include <jlm/llvm/opt/PartialRedundancyElimination.hpp>
 #include <jlm/llvm/opt/pull.hpp>
 #include <jlm/llvm/opt/push.hpp>
 #include <jlm/llvm/opt/reduction.hpp>
@@ -414,6 +415,8 @@ JlmOptCommand::CreateTransformation(
     return std::make_unique<llvm::CommonNodeElimination>();
   case JlmOptCommandLineOptions::OptimizationId::DeadNodeElimination:
     return std::make_unique<llvm::DeadNodeElimination>();
+  case JlmOptCommandLineOptions::OptimizationId::PartialRedundancyElimination:
+    return std::make_unique<llvm::PartialRedundancyElimination>();
   case JlmOptCommandLineOptions::OptimizationId::FunctionInlining:
     return std::make_unique<llvm::FunctionInlining>();
   case JlmOptCommandLineOptions::OptimizationId::IfConversion:

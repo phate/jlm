@@ -109,6 +109,8 @@ JlmOptCommandLineOptions::FromCommandLineArgumentToOptimizationId(
           OptimizationId::CommonNodeElimination },
         { OptimizationCommandLineArgument::DeadNodeElimination_,
           OptimizationId::DeadNodeElimination },
+        { OptimizationCommandLineArgument::PartialRedundancyElimination_,
+          OptimizationId::PartialRedundancyElimination },
         { OptimizationCommandLineArgument::FunctionInlining_, OptimizationId::FunctionInlining },
         { OptimizationCommandLineArgument::IfConversion_, OptimizationId::IfConversion },
         { OptimizationCommandLineArgument::InvariantValueRedirection_,
@@ -145,6 +147,8 @@ JlmOptCommandLineOptions::ToCommandLineArgument(OptimizationId optimizationId)
           OptimizationCommandLineArgument::CommonNodeElimination_ },
         { OptimizationId::DeadNodeElimination,
           OptimizationCommandLineArgument::DeadNodeElimination_ },
+{ OptimizationId::PartialRedundancyElimination,
+OptimizationCommandLineArgument::PartialRedundancyElimination_ },
         { OptimizationId::FunctionInlining, OptimizationCommandLineArgument::FunctionInlining_ },
         { OptimizationId::IfConversion, OptimizationCommandLineArgument::IfConversion_ },
         { OptimizationId::InvariantValueRedirection,
@@ -504,6 +508,9 @@ JlcCommandLineParser::ParseCommandLineArguments(int argc, const char * const * a
               util::Statistics::Id::DeadNodeElimination,
               "Collect dead node elimination pass statistics."),
           CreateStatisticsOption(
+              util::Statistics::Id::PartialRedundancyElimination,
+             "Collect dead node elimination2 pass statistics."),
+          CreateStatisticsOption(
               util::Statistics::Id::FunctionInlining,
               "Collect function inlining pass statistics."),
           CreateStatisticsOption(
@@ -821,6 +828,7 @@ JlmOptCommandLineParser::ParseCommandLineArguments(int argc, const char * const 
       JlmOptCommandLineOptions::OptimizationId::AASteensgaardRegionAware;
   auto commonNodeElimination = JlmOptCommandLineOptions::OptimizationId::CommonNodeElimination;
   auto deadNodeElimination = JlmOptCommandLineOptions::OptimizationId::DeadNodeElimination;
+  auto PartialRedundancyElimination = JlmOptCommandLineOptions::OptimizationId::PartialRedundancyElimination;
   auto functionInlining = JlmOptCommandLineOptions::OptimizationId::FunctionInlining;
   auto ifConversion = JlmOptCommandLineOptions::OptimizationId::IfConversion;
   auto invariantValueRedirection =
@@ -862,6 +870,10 @@ JlmOptCommandLineParser::ParseCommandLineArguments(int argc, const char * const 
               deadNodeElimination,
               JlmOptCommandLineOptions::ToCommandLineArgument(deadNodeElimination),
               "Dead Node Elimination"),
+          ::clEnumValN(
+              PartialRedundancyElimination,
+              JlmOptCommandLineOptions::ToCommandLineArgument(PartialRedundancyElimination),
+              "Partial Redundancy Elimination. Eliminate computations found redundant along some execution paths"),
           ::clEnumValN(
               functionInlining,
               JlmOptCommandLineOptions::ToCommandLineArgument(functionInlining),

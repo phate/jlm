@@ -18,6 +18,7 @@ libhls_SOURCES = \
     jlm/hls/backend/rvsdg2rhls/alloca-conv.cpp \
     jlm/hls/backend/rvsdg2rhls/check-rhls.cpp \
     jlm/hls/backend/rvsdg2rhls/DeadNodeElimination.cpp \
+    jlm/hls/backend/rvsdg2rhls/PartialRedundancyElimination.cpp \
     jlm/hls/backend/rvsdg2rhls/decouple-mem-state.cpp \
     jlm/hls/backend/rvsdg2rhls/distribute-constants.cpp \
     jlm/hls/backend/rvsdg2rhls/GammaConversion.cpp \
@@ -60,6 +61,7 @@ libhls_HEADERS = \
     jlm/hls/backend/rvsdg2rhls/alloca-conv.hpp \
     jlm/hls/backend/rvsdg2rhls/check-rhls.hpp \
     jlm/hls/backend/rvsdg2rhls/DeadNodeElimination.hpp \
+    jlm/hls/backend/rvsdg2rhls/PartialRedundancyElimination.hpp \
     jlm/hls/backend/rvsdg2rhls/decouple-mem-state.hpp \
     jlm/hls/backend/rvsdg2rhls/distribute-constants.hpp \
     jlm/hls/backend/rvsdg2rhls/GammaConversion.hpp \
