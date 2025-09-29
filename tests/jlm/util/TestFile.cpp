@@ -21,16 +21,18 @@ TestFilePathMethods()
   assert(f.base() == "archive");
   assert(f.suffix() == "gz");
   assert(f.complete_suffix() == "tar.gz");
-  assert(f.Dirname() == "/tmp/");
+  assert(f.Dirname() == "/tmp");
 
-  std::vector<std::pair<std::string, std::string>> pathPairs = { { "/tmp/jlm/", "/tmp/" },
+  std::vector<std::pair<std::string, std::string>> pathPairs = { { "/tmp/jlm/", "/tmp" },
+                                                                 { "/tmp/jlm", "/tmp" },
                                                                  { "/tmp/", "/" },
-                                                                 { "d/d2/file.txt", "d/d2/" },
-                                                                 { "test.txt", "" },
-                                                                 { "./test2.txt", "./" },
+                                                                 { "d/d2/file.txt", "d/d2" },
+                                                                 { "test.txt", "." },
+                                                                 { "./test2.txt", "." },
+                                                                 { "a/..", "a" },
                                                                  { "/", "/" },
-                                                                 { ".", "" },
-                                                                 { "", "" } };
+                                                                 { ".", "." },
+                                                                 { "", "." } };
   for (const auto & [fullPath, path] : pathPairs)
   {
     assert(jlm::util::FilePath(fullPath).Dirname() == path);
@@ -80,12 +82,16 @@ TestFilepathJoin()
   const jlm::util::FilePath path1("tmp");
   const jlm::util::FilePath path2("a/b/");
   const jlm::util::FilePath path3("/c/d");
+  const jlm::util::FilePath path4(".");
 
   assert(path1.Join(path2).to_str() == "tmp/a/b/");
   assert(path2.Join(path1).to_str() == "a/b/tmp");
 
   assert(path1.Join(path3).to_str() == "/c/d");
   assert(path3.Join(path1).to_str() == "/c/d/tmp");
+
+  assert(path4.Join(path1).to_str() == "tmp");
+  assert(path4.Join(path2).to_str() == "a/b/");
 }
 
 JLM_UNIT_TEST_REGISTER("jlm/util/TestFile-TestFilepathJoin", TestFilepathJoin)
@@ -101,7 +107,7 @@ TestCreateUniqueFileName()
   auto filePath = jlm::util::FilePath::CreateUniqueFileName(tmpDirectory, "myPrefix", "mySuffix");
 
   // Assert
-  assert(filePath.Dirname() == (tmpDirectory.to_str() + "/"));
+  assert(filePath.Dirname() == tmpDirectory.to_str());
 }
 
 JLM_UNIT_TEST_REGISTER("jlm/util/TestFile-TestCreateUniqueFileName", TestCreateUniqueFileName)

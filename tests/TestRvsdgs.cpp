@@ -131,9 +131,10 @@ LoadTest1::SetupRvsdg()
 
   auto mt = MemoryStateType::Create();
   auto pointerType = PointerType::Create();
+  auto intType = BitType::Create(32);
   auto fcttype = rvsdg::FunctionType::Create(
       { PointerType::Create(), MemoryStateType::Create() },
-      { jlm::rvsdg::BitType::Create(32), MemoryStateType::Create() });
+      { intType, MemoryStateType::Create() });
 
   auto module = llvm::RvsdgModule::Create(jlm::util::FilePath("LoadTest1.c"), "", "");
   auto graph = &module->Rvsdg();
@@ -148,7 +149,7 @@ LoadTest1::SetupRvsdg()
       pointerType,
       4);
   auto ld2 =
-      LoadNonVolatileOperation::Create(ld1[0], { ld1[1] }, jlm::rvsdg::BitType::Create(32), 4);
+      LoadNonVolatileOperation::Create(ld1[0], { ld1[1] }, intType, 4);
 
   fct->finalize(ld2);
 
@@ -3306,7 +3307,7 @@ MemcpyTest::SetupRvsdg()
     return std::make_tuple(
         lambdaOutput,
         &call,
-        rvsdg::TryGetOwnerNode<rvsdg::Node>(*memcpyResults[0]));
+        &rvsdg::AssertGetOwnerNode<rvsdg::SimpleNode>(*memcpyResults[0]));
   };
 
   auto localArray = SetupLocalArray();

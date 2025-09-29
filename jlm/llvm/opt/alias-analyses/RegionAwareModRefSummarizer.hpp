@@ -1,5 +1,6 @@
 /*
  * Copyright 2022 Nico Reißmann <nico.reissmann@gmail.com>
+ * Copyright 2025 Håvard Krogstie <krogstie.havard@gmail.com>
  * See COPYING for terms of redistribution.
  */
 
@@ -109,10 +110,11 @@ private:
   CreateSimpleAllocaSet(const PointsToGraph & pointsToGraph);
 
   /**
-   * Creates a set for each function f containing allocas defined in f that are both
-   * simple, and not accessible through f's parameters. These allocas are known as Non-Reentrant.
+   * Creates a set for each region that contains alloca definitions,
+   * where the alloca fits the requirements for being non-reentrant.
+   * @return the total number of non-reentrant allocs in the module.
    */
-  void
+  size_t
   CreateNonReentrantAllocaSets();
 
   /**
@@ -154,15 +156,19 @@ private:
   AddModRefSimpleConstraint(ModRefSetIndex from, ModRefSetIndex to);
 
   /**
-   * Adds the fact that everything in the ModRefSet \p from should also be included
-   * in the ModRefSet \p to, except for anything included in the filter set.
-   * The filter reference must stay valid until solving is finished.
+   * Defines a set of MemoryNodes that should be blocked from the ModRefSet with the given \p index.
+   * A ModRefSet can have at most one such blocklist.
+   * The reference to the blocklist must stay valid until solving is finished.
+   *
+   * Note: The blocklist only prevents propagation during solving,
+   * so the user must avoid adding blocked MemoryNodes manually.
+   *
+   * @See VerifyBlocklists to check that no blocked MemoryNodes have been added
    */
   void
-  AddModRefFilteredConstraint(
-      ModRefSetIndex from,
-      ModRefSetIndex to,
-      const util::HashSet<const PointsToGraph::MemoryNode *> & filter);
+  AddModRefSetBlocklist(
+      ModRefSetIndex index,
+      const util::HashSet<const PointsToGraph::MemoryNode *> & blocklist);
 
   /**
    * Creates ModRefSets for regions and nodes within the function.
@@ -226,6 +232,13 @@ private:
    */
   void
   SolveModRefSetConstraintGraph();
+
+  /**
+   * For all ModRefSets where a blocklist is defined,
+   * checks that none of the MemoryNodes from the blocklist have been added to the ModRefSet.
+   * @return true if all blocklists are satisfied.
+   */
+  bool VerifyBlocklists() const;
 
   /**
    * Helper function for debugging, listing out all functions, grouped by call graph SCC.
