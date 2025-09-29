@@ -50,9 +50,7 @@ ValidateTest(std::function<void(const Test &)> validateEncoding)
   auto pointsToGraph = aliasAnalysis.Analyze(rvsdgModule, statisticsCollector);
   std::cout << jlm::llvm::aa::PointsToGraph::ToDot(*pointsToGraph);
 
-  TModRefSummarizer summarizer;
-  auto modRefSummary =
-      summarizer.SummarizeModRefs(rvsdgModule, *pointsToGraph, statisticsCollector);
+  auto modRefSummary = TModRefSummarizer::Create(rvsdgModule, *pointsToGraph, statisticsCollector);
 
   jlm::llvm::aa::MemoryStateEncoder encoder;
   encoder.Encode(rvsdgModule, *modRefSummary, statisticsCollector);

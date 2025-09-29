@@ -855,8 +855,8 @@ RegionAwareModRefSummarizer::AddModRefSetBlocklist(
     ModRefSetIndex index,
     const util::HashSet<const PointsToGraph::MemoryNode *> & blocklist)
 {
-  JLM_ASSERT(Context_->ModRefSetBlocklists.count(index) == 0);
-  Context_->ModRefSetBlocklists.insert({ index, &blocklist });
+  JLM_ASSERT(Context_->ModRefSetBlocklists.find(index) == Context_->ModRefSetBlocklists.end());
+  Context_->ModRefSetBlocklists[index] = &blocklist;
 }
 
 void
@@ -900,6 +900,12 @@ RegionAwareModRefSummarizer::AnnotateRegion(
   {
     JLM_ASSERT(ModRefSummary_->GetModRefSet(regionModRefSet).IsEmpty());
     AddModRefSetBlocklist(regionModRefSet, it->second);
+    std::cout << "Adding blocklist to " << regionModRefSet << ": ";
+    for (auto blocked : it->second.Items())
+    {
+      std::cout << blocked << ", ";
+    }
+    std::cout << std::endl;
   }
 
   return regionModRefSet;
@@ -1048,7 +1054,7 @@ RegionAwareModRefSummarizer::AnnotateCall(
   JLM_ASSERT(is<CallOperation>(&callNode));
 
   // This ModRefSet represents everything the call may affect
-  const auto callModRef = ModRefSummary_->CreateModRefSet();
+  const auto callModRef = ModRefSummary_->GetOrCreateSetForNode(callNode);
 
   // Go over all possible targets of the call and add them to the call summary
   const auto targetPtr = callNode.input(0)->origin();
@@ -1078,6 +1084,12 @@ RegionAwareModRefSummarizer::AnnotateCall(
     AddModRefSetBlocklist(
         callModRef,
         Context_->AllocasDeadInScc[Context_->FunctionToSccIndex[&lambda]]);
+    std::cout << "Adding call blocklist to " << callModRef << ": ";
+    for (auto blocked : Context_->AllocasDeadInScc[Context_->FunctionToSccIndex[&lambda]].Items())
+    {
+      std::cout << blocked << ", ";
+    }
+    std::cout << std::endl;
   }
 
   return callModRef;
@@ -1101,7 +1113,7 @@ RegionAwareModRefSummarizer::SolveModRefSetConstraintGraph()
     for (auto target : Context_->ModRefSetSimpleConstraints[workItem].Items())
     {
       bool changed = false;
-      if (auto blocklist = Context_->ModRefSetBlocklists.find(workItem);
+      if (auto blocklist = Context_->ModRefSetBlocklists.find(target);
           blocklist != Context_->ModRefSetBlocklists.end())
       {
         // The target has a blocklist, avoid propagating blocked MemoryNodes
