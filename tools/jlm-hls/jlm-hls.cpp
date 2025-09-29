@@ -13,6 +13,7 @@
 #include <jlm/hls/backend/rvsdg2rhls/rvsdg2rhls.hpp>
 #include <jlm/llvm/backend/IpGraphToLlvmConverter.hpp>
 #include <jlm/llvm/backend/RvsdgToIpGraphConverter.hpp>
+#include <jlm/llvm/DotWriter.hpp>
 #include <jlm/llvm/frontend/InterProceduralGraphConversion.hpp>
 #include <jlm/llvm/frontend/LlvmModuleConversion.hpp>
 #include <jlm/tooling/CommandLine.hpp>
@@ -87,7 +88,10 @@ main(int argc, char ** argv)
       == jlm::tooling::JlmHlsCommandLineOptions::OutputFormat::Firrtl)
   {
     jlm::hls::rvsdg2ref(*rvsdgModule, commandLineOptions.OutputFiles_.WithSuffix(".ref.ll"));
-    jlm::hls::rvsdg2rhls(*rvsdgModule, collector);
+
+    jlm::llvm::LlvmDotWriter dotWriter;
+    auto transformationSequence = jlm::hls::createTransformationSequence(dotWriter, false);
+    transformationSequence->Run(*rvsdgModule, collector);
 
     // Writing the FIRRTL to a file and then reading it back in to convert to Verilog.
     // Could potentially change to pass the FIRRTL directly to the converter, but the converter
@@ -122,7 +126,9 @@ main(int argc, char ** argv)
   else if (
       commandLineOptions.OutputFormat_ == jlm::tooling::JlmHlsCommandLineOptions::OutputFormat::Dot)
   {
-    jlm::hls::rvsdg2rhls(*rvsdgModule, collector);
+    jlm::llvm::LlvmDotWriter dotWriter;
+    auto transformationSequence = jlm::hls::createTransformationSequence(dotWriter, false);
+    transformationSequence->Run(*rvsdgModule, collector);
 
     jlm::hls::DotHLS dhls;
     stringToFile(

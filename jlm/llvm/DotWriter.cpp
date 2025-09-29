@@ -11,7 +11,7 @@
 #include <jlm/rvsdg/region.hpp>
 #include <jlm/rvsdg/UnitType.hpp>
 
-namespace jlm::llvm::dot
+namespace jlm::llvm
 {
 
 LlvmDotWriter::~LlvmDotWriter() noexcept = default;

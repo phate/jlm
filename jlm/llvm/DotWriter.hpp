@@ -8,7 +8,7 @@
 
 #include <jlm/rvsdg/DotWriter.hpp>
 
-namespace jlm::llvm::dot
+namespace jlm::llvm
 {
 
 class LlvmDotWriter final : public rvsdg::DotWriter
