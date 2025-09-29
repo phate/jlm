@@ -85,6 +85,7 @@ TestFilepathJoin()
   const jlm::util::FilePath path2("a/b/");
   const jlm::util::FilePath path3("/c/d");
   const jlm::util::FilePath path4(".");
+  const jlm::util::FilePath emptyPath("");
 
   assert(path1.Join(path2).to_str() == "tmp/a/b/");
   assert(path2.Join(path1).to_str() == "a/b/tmp");
@@ -96,6 +97,8 @@ TestFilepathJoin()
   assert(path4.Join(path2).to_str() == "a/b/");
   assert(path1.Join(path4).to_str() == "tmp/.");
   assert(path2.Join(path4).to_str() == "a/b/.");
+
+  assert(emptyPath.Join(path1).to_str() == "tmp");
 }
 
 JLM_UNIT_TEST_REGISTER("jlm/util/TestFile-TestFilepathJoin", TestFilepathJoin)
