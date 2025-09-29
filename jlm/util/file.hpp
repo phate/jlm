@@ -148,23 +148,25 @@ public:
   Dirname() const noexcept
   {
     if (path_.empty())
-      return FilePath("");
+      return FilePath(".");
     if (path_ == "/")
       return FilePath("/");
 
-    // Ignore a potential trailing '/'
-    auto pos = path_.find_last_of("/", path_.size() - 2);
+    // Find the last '/' char, ignoring a trailing '/'
+    size_t lastSlash = std::string::npos;
+    if (path_.size() >= 1)
+      lastSlash = path_.find_last_of('/', path_.size() - 2);
 
-    // If no / was found, path_ is a file in the current working directory, or is "." itself
-    if (pos == std::string::npos)
+    // If no '/' was found, path_ is a file in the current working directory, or is "." itself
+    if (lastSlash == std::string::npos)
       return FilePath(".");
 
-    // The only "/" was at the very beginning of the path. We must keep it
-    if (pos == 0)
+    // The only '/' was at the very beginning of the path. We must keep it.
+    if (lastSlash == 0)
       return FilePath("/");
 
-    // Return the path with the trailing / removed
-    return FilePath(path_.substr(0, pos));
+    // Return the path of the parent directory, without a trailing '/'
+    return FilePath(path_.substr(0, lastSlash));
   }
 
   /**
