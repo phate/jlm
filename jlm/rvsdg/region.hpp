@@ -730,6 +730,9 @@ public:
     return nodeId;
   }
 
+  static std::unordered_map<const Node *, size_t>
+  computeDepthMap(const Region & region);
+
 private:
   static void
   ToTree(
