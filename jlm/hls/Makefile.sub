@@ -42,6 +42,8 @@ libhls_SOURCES = \
     jlm/hls/opt/IOBarrierRemoval.cpp \
     \
     jlm/hls/util/view.cpp \
+    \
+    jlm/hls/HlsDotWriter.cpp \
 
 libhls_HEADERS = \
     jlm/hls/backend/firrtl2verilog/FirrtlToVerilogConverter.hpp \
@@ -84,6 +86,8 @@ libhls_HEADERS = \
     jlm/hls/opt/IOBarrierRemoval.hpp \
     \
     jlm/hls/util/view.hpp \
+    \
+    jlm/hls/HlsDotWriter.hpp \
 
 libhls_TESTS += \
     tests/jlm/hls/backend/rvsdg2rhls/DeadNodeEliminationTests \
