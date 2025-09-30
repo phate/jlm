@@ -125,7 +125,7 @@ private:
   [[nodiscard]] bool
   IsDemanded() const noexcept
   {
-    return StatisticsCollector_.GetSettings().IsDemanded(GetId());
+    return StatisticsCollector_.GetSettings().isDemanded(GetId());
   }
 
   const util::StatisticsCollector & StatisticsCollector_;

@@ -628,12 +628,22 @@ public:
   [[nodiscard]] InputIteratorRange
   Inputs() noexcept
   {
+    if (ninputs() == 0)
+    {
+      return { Input::Iterator(nullptr), Input::Iterator(nullptr) };
+    }
+
     return { Input::Iterator(input(0)), Input::Iterator(nullptr) };
   }
 
   [[nodiscard]] InputConstIteratorRange
   Inputs() const noexcept
   {
+    if (ninputs() == 0)
+    {
+      return { Input::ConstIterator(nullptr), Input::ConstIterator(nullptr) };
+    }
+
     return { Input::ConstIterator(input(0)), Input::ConstIterator(nullptr) };
   }
 
@@ -653,12 +663,22 @@ public:
   [[nodiscard]] OutputIteratorRange
   Outputs() noexcept
   {
+    if (noutputs() == 0)
+    {
+      return { Output::Iterator(nullptr), Output::Iterator(nullptr) };
+    }
+
     return { Output::Iterator(output(0)), Output::Iterator(nullptr) };
   }
 
   [[nodiscard]] OutputConstIteratorRange
   Outputs() const noexcept
   {
+    if (noutputs() == 0)
+    {
+      return { Output::ConstIterator(nullptr), Output::ConstIterator(nullptr) };
+    }
+
     return { Output::ConstIterator(output(0)), Output::ConstIterator(nullptr) };
   }
 

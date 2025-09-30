@@ -113,14 +113,16 @@ JlmOptCommandLineOptions::FromCommandLineArgumentToOptimizationId(
         { OptimizationCommandLineArgument::IfConversion_, OptimizationId::IfConversion },
         { OptimizationCommandLineArgument::InvariantValueRedirection_,
           OptimizationId::InvariantValueRedirection },
+        { OptimizationCommandLineArgument::LoadChainSeparation_,
+          OptimizationId::LoadChainSeparation },
+        { OptimizationCommandLineArgument::LoopUnrolling_, OptimizationId::LoopUnrolling },
         { OptimizationCommandLineArgument::NodePushOut_, OptimizationId::NodePushOut },
         { OptimizationCommandLineArgument::NodePullIn_, OptimizationId::NodePullIn },
         { OptimizationCommandLineArgument::NodeReduction_, OptimizationId::NodeReduction },
         { OptimizationCommandLineArgument::RvsdgTreePrinter_, OptimizationId::RvsdgTreePrinter },
         { OptimizationCommandLineArgument::ScalarEvolution_, OptimizationId::ScalarEvolution },
         { OptimizationCommandLineArgument::ThetaGammaInversion_,
-          OptimizationId::ThetaGammaInversion },
-        { OptimizationCommandLineArgument::LoopUnrolling_, OptimizationId::LoopUnrolling } });
+          OptimizationId::ThetaGammaInversion } });
 
   if (map.find(commandLineArgument) != map.end())
     return map[commandLineArgument];
@@ -150,6 +152,8 @@ JlmOptCommandLineOptions::ToCommandLineArgument(OptimizationId optimizationId)
         { OptimizationId::IfConversion, OptimizationCommandLineArgument::IfConversion_ },
         { OptimizationId::InvariantValueRedirection,
           OptimizationCommandLineArgument::InvariantValueRedirection_ },
+        { OptimizationId::LoadChainSeparation,
+          OptimizationCommandLineArgument::LoadChainSeparation_ },
         { OptimizationId::LoopUnrolling, OptimizationCommandLineArgument::LoopUnrolling_ },
         { OptimizationId::NodePullIn, OptimizationCommandLineArgument::NodePullIn_ },
         { OptimizationId::NodePushOut, OptimizationCommandLineArgument::NodePushOut_ },
@@ -851,6 +855,7 @@ JlmOptCommandLineParser::ParseCommandLineArguments(int argc, const char * const 
   auto scalarEvolution = JlmOptCommandLineOptions::OptimizationId::ScalarEvolution;
   auto thetaGammaInversion = JlmOptCommandLineOptions::OptimizationId::ThetaGammaInversion;
   auto loopUnrolling = JlmOptCommandLineOptions::OptimizationId::LoopUnrolling;
+  auto loadChainSeparation = JlmOptCommandLineOptions::OptimizationId::LoadChainSeparation;
 
   cl::list<JlmOptCommandLineOptions::OptimizationId> optimizationIds(
       cl::values(
@@ -895,6 +900,14 @@ JlmOptCommandLineParser::ParseCommandLineArguments(int argc, const char * const 
               JlmOptCommandLineOptions::ToCommandLineArgument(invariantValueRedirection),
               "Invariant Value Redirection"),
           ::clEnumValN(
+              loadChainSeparation,
+              JlmOptCommandLineOptions::ToCommandLineArgument(loadChainSeparation),
+              "Separate chains of load operations"),
+          ::clEnumValN(
+              loopUnrolling,
+              JlmOptCommandLineOptions::ToCommandLineArgument(loopUnrolling),
+              "Loop Unrolling"),
+          ::clEnumValN(
               nodePushOut,
               JlmOptCommandLineOptions::ToCommandLineArgument(nodePushOut),
               "Node Push Out"),
@@ -917,11 +930,7 @@ JlmOptCommandLineParser::ParseCommandLineArguments(int argc, const char * const 
           ::clEnumValN(
               thetaGammaInversion,
               JlmOptCommandLineOptions::ToCommandLineArgument(thetaGammaInversion),
-              "Theta-Gamma Inversion"),
-          ::clEnumValN(
-              loopUnrolling,
-              JlmOptCommandLineOptions::ToCommandLineArgument(loopUnrolling),
-              "Loop Unrolling")),
+              "Theta-Gamma Inversion")),
       cl::desc("Perform optimization"));
 
   cl::list<llvm::RvsdgTreePrinter::Configuration::Annotation> rvsdgTreePrinterAnnotations(

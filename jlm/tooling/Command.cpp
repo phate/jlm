@@ -22,6 +22,7 @@
 #include <jlm/llvm/opt/IfConversion.hpp>
 #include <jlm/llvm/opt/inlining.hpp>
 #include <jlm/llvm/opt/InvariantValueRedirection.hpp>
+#include <jlm/llvm/opt/LoadChainSeparation.hpp>
 #include <jlm/llvm/opt/LoopUnswitching.hpp>
 #include <jlm/llvm/opt/pull.hpp>
 #include <jlm/llvm/opt/push.hpp>
@@ -429,6 +430,8 @@ JlmOptCommand::CreateTransformation(JlmOptCommandLineOptions::OptimizationId opt
     return std::make_shared<llvm::IfConversion>();
   case JlmOptCommandLineOptions::OptimizationId::InvariantValueRedirection:
     return std::make_shared<llvm::InvariantValueRedirection>();
+  case JlmOptCommandLineOptions::OptimizationId::LoadChainSeparation:
+    return std::make_shared<llvm::LoadChainSeparation>();
   case JlmOptCommandLineOptions::OptimizationId::LoopUnrolling:
     return std::make_shared<llvm::LoopUnrolling>(4);
   case JlmOptCommandLineOptions::OptimizationId::NodePullIn:
