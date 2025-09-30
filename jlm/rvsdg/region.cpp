@@ -446,15 +446,12 @@ computeDepth(const Node & node, std::unordered_map<const Node *, size_t> & depth
     {
       inputDepths.push_back(computeDepth(*owner, depthMap));
     }
-    else
-    {
-      JLM_ASSERT(TryGetOwnerRegion(*input.origin()));
-      inputDepths.push_back(0);
-    }
   }
 
-  const size_t depth = *std::max_element(inputDepths.begin(), inputDepths.end());
-  depthMap[&node] = depth + 1;
+  const size_t depth =
+      inputDepths.empty() ? 0 : *std::max_element(inputDepths.begin(), inputDepths.end()) + 1;
+  depthMap[&node] = depth;
+
   return depth;
 }
 

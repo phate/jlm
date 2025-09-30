@@ -761,6 +761,12 @@ public:
   [[nodiscard]] static std::string
   ToTree(const rvsdg::Region & region) noexcept;
 
+  /**
+   * Computes the depth for all nodes in \p region.
+   *
+   * @param region The region for which to compute the depth of its nodes.
+   * @return A dictionary mapping nodes to their depth.
+   */
   static std::unordered_map<const Node *, size_t>
   computeDepthMap(const Region & region);
 
