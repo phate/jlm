@@ -30,6 +30,7 @@
 #include <jlm/hls/util/view.hpp>
 #include <jlm/llvm/backend/IpGraphToLlvmConverter.hpp>
 #include <jlm/llvm/backend/RvsdgToIpGraphConverter.hpp>
+#include <jlm/llvm/DotWriter.hpp>
 #include <jlm/llvm/ir/CallSummary.hpp>
 #include <jlm/llvm/ir/operators/alloca.hpp>
 #include <jlm/llvm/ir/operators/call.hpp>
@@ -41,6 +42,7 @@
 #include <jlm/llvm/opt/InvariantValueRedirection.hpp>
 #include <jlm/llvm/opt/LoopUnswitching.hpp>
 #include <jlm/llvm/opt/reduction.hpp>
+#include <jlm/rvsdg/Transformation.hpp>
 #include <jlm/rvsdg/traverser.hpp>
 #include <jlm/rvsdg/view.hpp>
 #include <jlm/util/Statistics.hpp>
@@ -438,53 +440,77 @@ rvsdg2ref(llvm::RvsdgModule & rhls, const util::FilePath & path)
   dump_ref(rhls, path);
 }
 
-void
-rvsdg2rhls(llvm::RvsdgModule & rhls, util::StatisticsCollector & collector)
+std::unique_ptr<rvsdg::TransformationSequence>
+createTransformationSequence(rvsdg::DotWriter & dotWriter, const bool dumpRvsdgDotGraphs)
 {
-  pre_opt(rhls);
+  auto deadNodeElimination = std::make_shared<llvm::DeadNodeElimination>();
+  auto commonNodeElimination = std::make_shared<CommonNodeElimination>();
+  auto invariantValueRedirection = std::make_shared<llvm::InvariantValueRedirection>();
+  auto loopUnswitching = std::make_shared<llvm::LoopUnswitching>();
+  auto ioBarrierRemoval = std::make_shared<IOBarrierRemoval>();
+  auto memoryStateSeparation = std::make_shared<MemoryStateSeparation>();
+  auto gammaMerge = std::make_shared<GammaMerge>();
+  auto unusedStateRemoval = std::make_shared<UnusedStateRemoval>();
+  auto constantDistribution = std::make_shared<ConstantDistribution>();
+  auto gammaNodeConversion = std::make_shared<GammaNodeConversion>();
+  auto thetaNodeConversion = std::make_shared<ThetaNodeConversion>();
+  auto rhlsDeadNodeElimination = std::make_shared<RhlsDeadNodeElimination>();
+  auto allocaNodeConversion = std::make_shared<AllocaNodeConversion>();
+  auto streamConversion = std::make_shared<StreamConversion>();
+  auto addressQueueInsertion = std::make_shared<AddressQueueInsertion>();
+  auto memoryStateDecoupling = std::make_shared<MemoryStateDecoupling>();
+  auto memoryConverter = std::make_shared<MemoryConverter>();
+  auto nodeReduction = std::make_shared<llvm::NodeReduction>();
+  auto memoryStateSplitConversion = std::make_shared<MemoryStateSplitConversion>();
+  auto redundantBufferElimination = std::make_shared<RedundantBufferElimination>();
+  auto sinkInsertion = std::make_shared<SinkInsertion>();
+  auto forkInsertion = std::make_shared<ForkInsertion>();
+  auto bufferInsertion = std::make_shared<BufferInsertion>();
+  auto rhlsVerification = std::make_shared<RhlsVerification>();
 
-  IOBarrierRemoval ioBarrierRemoval;
-  ioBarrierRemoval.Run(rhls, collector);
+  std::vector<std::shared_ptr<rvsdg::Transformation>> sequence({
+      loopUnswitching,
+      deadNodeElimination,
+      commonNodeElimination,
+      invariantValueRedirection,
+      deadNodeElimination,
+      commonNodeElimination,
+      deadNodeElimination,
+      ioBarrierRemoval,
+      memoryStateSeparation,
+      gammaMerge,
+      unusedStateRemoval,
+      deadNodeElimination,
+      loopUnswitching,
+      commonNodeElimination,
+      deadNodeElimination,
+      gammaMerge,
+      deadNodeElimination,
+      unusedStateRemoval,
+      constantDistribution,
+      gammaNodeConversion,
+      thetaNodeConversion,
+      commonNodeElimination,
+      rhlsDeadNodeElimination,
+      allocaNodeConversion,
+      streamConversion,
+      addressQueueInsertion,
+      memoryStateDecoupling,
+      unusedStateRemoval,
+      memoryConverter,
+      nodeReduction,
+      memoryStateSplitConversion,
+      redundantBufferElimination,
+      sinkInsertion,
+      forkInsertion,
+      bufferInsertion,
+      rhlsVerification,
+  });
 
-  // TODO: do mem state separation early, so there are no false dependencies between loops
-  MemoryStateSeparation::CreateAndRun(rhls, collector);
-  GammaMerge::CreateAndRun(rhls, collector);
-  UnusedStateRemoval::CreateAndRun(rhls, collector);
-
-  llvm::DeadNodeElimination llvmDne;
-  llvmDne.Run(rhls, collector);
-  jlm::llvm::LoopUnswitching tgi;
-  // simplify loops
-  tgi.Run(rhls, collector);
-  CommonNodeElimination cne;
-  cne.Run(rhls, collector);
-  llvmDne.Run(rhls, collector);
-  // merge gammas that were pulled out of loops
-  GammaMerge::CreateAndRun(rhls, collector);
-  llvmDne.Run(rhls, collector);
-  UnusedStateRemoval::CreateAndRun(rhls, collector);
-  // main conversion steps
-  ConstantDistribution::CreateAndRun(rhls, collector);
-  GammaNodeConversion::CreateAndRun(rhls, collector);
-  ThetaNodeConversion::CreateAndRun(rhls, collector);
-  cne.Run(rhls, collector);
-  // rhls optimization
-  RhlsDeadNodeElimination::CreateAndRun(rhls, collector);
-  AllocaNodeConversion::CreateAndRun(rhls, collector);
-  StreamConversion::CreateAndRun(rhls, collector);
-  AddressQueueInsertion::CreateAndRun(rhls, collector);
-  MemoryStateDecoupling::CreateAndRun(rhls, collector);
-  UnusedStateRemoval::CreateAndRun(rhls, collector);
-  MemoryConverter::CreateAndRun(rhls, collector);
-  llvm::NodeReduction llvmRed;
-  llvmRed.Run(rhls, collector);
-  MemoryStateSplitConversion::CreateAndRun(rhls, collector);
-  RedundantBufferElimination::CreateAndRun(rhls, collector);
-  SinkInsertion::CreateAndRun(rhls, collector);
-  ForkInsertion::CreateAndRun(rhls, collector);
-  BufferInsertion::CreateAndRun(rhls, collector);
-  // ensure that all rhls rules are met
-  RhlsVerification::CreateAndRun(rhls, collector);
+  return std::make_unique<rvsdg::TransformationSequence>(
+      std::move(sequence),
+      dotWriter,
+      dumpRvsdgDotGraphs);
 }
 
 void

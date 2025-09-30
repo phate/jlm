@@ -9,12 +9,12 @@
 
 #include <jlm/rvsdg/operation.hpp>
 #include <jlm/util/common.hpp>
+#include <jlm/util/HashSet.hpp>
 #include <jlm/util/intrusive-list.hpp>
 #include <jlm/util/iterator_range.hpp>
 #include <jlm/util/IteratorWrapper.hpp>
 
 #include <cstdint>
-#include <unordered_set>
 #include <utility>
 #include <variant>
 
@@ -303,6 +303,37 @@ public:
 
     while (!Users_.empty())
       Users_.begin()->divert_to(new_origin);
+  }
+
+  /**
+   * Divert all users of the output that satisfy the predicate \p match.
+   *
+   * @tparam F A functor with the signature (const rvsdg::Input &) -> bool
+   * @param newOrigin The new origin of each user that satisfies \p match.
+   * @param match An instance of F, to be invoked on each user
+   *
+   * @return The number of diverted users.
+   */
+  template<typename F>
+  size_t
+  divertUsersWhere(Output & newOrigin, const F & match)
+  {
+    if (this == &newOrigin)
+      return 0;
+
+    util::HashSet<Input *> matchedUsers;
+    for (auto & user : Users_)
+    {
+      if (match(user))
+        matchedUsers.Insert(&user);
+    }
+
+    for (auto & user : matchedUsers.Items())
+    {
+      user->divert_to(&newOrigin);
+    }
+
+    return matchedUsers.Size();
   }
 
   /**
@@ -597,12 +628,22 @@ public:
   [[nodiscard]] InputIteratorRange
   Inputs() noexcept
   {
+    if (ninputs() == 0)
+    {
+      return { Input::Iterator(nullptr), Input::Iterator(nullptr) };
+    }
+
     return { Input::Iterator(input(0)), Input::Iterator(nullptr) };
   }
 
   [[nodiscard]] InputConstIteratorRange
   Inputs() const noexcept
   {
+    if (ninputs() == 0)
+    {
+      return { Input::ConstIterator(nullptr), Input::ConstIterator(nullptr) };
+    }
+
     return { Input::ConstIterator(input(0)), Input::ConstIterator(nullptr) };
   }
 
@@ -622,12 +663,22 @@ public:
   [[nodiscard]] OutputIteratorRange
   Outputs() noexcept
   {
+    if (noutputs() == 0)
+    {
+      return { Output::Iterator(nullptr), Output::Iterator(nullptr) };
+    }
+
     return { Output::Iterator(output(0)), Output::Iterator(nullptr) };
   }
 
   [[nodiscard]] OutputConstIteratorRange
   Outputs() const noexcept
   {
+    if (noutputs() == 0)
+    {
+      return { Output::ConstIterator(nullptr), Output::ConstIterator(nullptr) };
+    }
+
     return { Output::ConstIterator(output(0)), Output::ConstIterator(nullptr) };
   }
 

@@ -22,6 +22,7 @@
 #include <jlm/llvm/opt/IfConversion.hpp>
 #include <jlm/llvm/opt/inlining.hpp>
 #include <jlm/llvm/opt/InvariantValueRedirection.hpp>
+#include <jlm/llvm/opt/LoadChainSeparation.hpp>
 #include <jlm/llvm/opt/LoopUnswitching.hpp>
 #include <jlm/llvm/opt/pull.hpp>
 #include <jlm/llvm/opt/push.hpp>
@@ -294,13 +295,7 @@ JlmOptCommand::JlmOptCommand(
     const jlm::tooling::JlmOptCommandLineOptions & commandLineOptions)
     : ProgramName_(std::move(programName)),
       CommandLineOptions_(std::move(commandLineOptions))
-{
-  for (auto optimizationId : CommandLineOptions_.GetOptimizationIds())
-  {
-    if (auto it = Optimizations_.find(optimizationId); it == Optimizations_.end())
-      Optimizations_[optimizationId] = CreateTransformation(optimizationId);
-  }
-}
+{}
 
 std::string
 JlmOptCommand::ToString() const
@@ -360,7 +355,7 @@ JlmOptCommand::Run() const
       CommandLineOptions_.GetInputFormat(),
       statisticsCollector);
 
-  llvm::dot::LlvmDotWriter dotWriter;
+  llvm::LlvmDotWriter dotWriter;
   rvsdg::TransformationSequence::CreateAndRun(
       *rvsdgModule,
       statisticsCollector,
@@ -377,23 +372,34 @@ JlmOptCommand::Run() const
   statisticsCollector.PrintStatistics();
 }
 
-std::vector<rvsdg::Transformation *>
+std::vector<std::shared_ptr<rvsdg::Transformation>>
 JlmOptCommand::GetTransformations() const
 {
-  std::vector<rvsdg::Transformation *> optimizations;
+  std::unordered_map<
+      JlmOptCommandLineOptions::OptimizationId,
+      std::shared_ptr<rvsdg::Transformation>>
+      transformations;
+
+  std::vector<std::shared_ptr<rvsdg::Transformation>> transformationSequence;
   for (auto optimizationId : CommandLineOptions_.GetOptimizationIds())
   {
-    auto it = Optimizations_.find(optimizationId);
-    JLM_ASSERT(it != Optimizations_.end());
-    optimizations.emplace_back(it->second.get());
+    if (auto it = transformations.find(optimizationId); it != transformations.end())
+    {
+      transformationSequence.push_back(it->second);
+    }
+    else
+    {
+      auto transformation = CreateTransformation(optimizationId);
+      transformationSequence.push_back(transformation);
+      transformations[optimizationId] = transformation;
+    }
   }
 
-  return optimizations;
+  return transformationSequence;
 }
 
-std::unique_ptr<rvsdg::Transformation>
-JlmOptCommand::CreateTransformation(
-    enum JlmOptCommandLineOptions::OptimizationId optimizationId) const
+std::shared_ptr<rvsdg::Transformation>
+JlmOptCommand::CreateTransformation(JlmOptCommandLineOptions::OptimizationId optimizationId) const
 {
   using Andersen = llvm::aa::Andersen;
   using Steensgaard = llvm::aa::Steensgaard;
@@ -405,40 +411,42 @@ JlmOptCommand::CreateTransformation(
   switch (optimizationId)
   {
   case JlmOptCommandLineOptions::OptimizationId::AAAndersenAgnostic:
-    return std::make_unique<llvm::aa::PointsToAnalysisStateEncoder<Andersen, AgnosticMrs>>();
+    return std::make_shared<llvm::aa::PointsToAnalysisStateEncoder<Andersen, AgnosticMrs>>();
   case JlmOptCommandLineOptions::OptimizationId::AAAndersenRegionAware:
-    return std::make_unique<llvm::aa::PointsToAnalysisStateEncoder<Andersen, RegionAwareMrs>>();
+    return std::make_shared<llvm::aa::PointsToAnalysisStateEncoder<Andersen, RegionAwareMrs>>();
   case JlmOptCommandLineOptions::OptimizationId::AAAndersenTopDownLifetimeAware:
-    return std::make_unique<llvm::aa::PointsToAnalysisStateEncoder<Andersen, TopDownLifetimeMrs>>();
+    return std::make_shared<llvm::aa::PointsToAnalysisStateEncoder<Andersen, TopDownLifetimeMrs>>();
   case JlmOptCommandLineOptions::OptimizationId::AASteensgaardAgnostic:
-    return std::make_unique<llvm::aa::PointsToAnalysisStateEncoder<Steensgaard, AgnosticMrs>>();
+    return std::make_shared<llvm::aa::PointsToAnalysisStateEncoder<Steensgaard, AgnosticMrs>>();
   case JlmOptCommandLineOptions::OptimizationId::AASteensgaardRegionAware:
-    return std::make_unique<llvm::aa::PointsToAnalysisStateEncoder<Steensgaard, RegionAwareMrs>>();
+    return std::make_shared<llvm::aa::PointsToAnalysisStateEncoder<Steensgaard, RegionAwareMrs>>();
   case JlmOptCommandLineOptions::OptimizationId::CommonNodeElimination:
-    return std::make_unique<llvm::CommonNodeElimination>();
+    return std::make_shared<llvm::CommonNodeElimination>();
   case JlmOptCommandLineOptions::OptimizationId::DeadNodeElimination:
-    return std::make_unique<llvm::DeadNodeElimination>();
+    return std::make_shared<llvm::DeadNodeElimination>();
   case JlmOptCommandLineOptions::OptimizationId::FunctionInlining:
-    return std::make_unique<llvm::FunctionInlining>();
+    return std::make_shared<llvm::FunctionInlining>();
   case JlmOptCommandLineOptions::OptimizationId::IfConversion:
-    return std::make_unique<llvm::IfConversion>();
+    return std::make_shared<llvm::IfConversion>();
   case JlmOptCommandLineOptions::OptimizationId::InvariantValueRedirection:
-    return std::make_unique<llvm::InvariantValueRedirection>();
+    return std::make_shared<llvm::InvariantValueRedirection>();
+  case JlmOptCommandLineOptions::OptimizationId::LoadChainSeparation:
+    return std::make_shared<llvm::LoadChainSeparation>();
   case JlmOptCommandLineOptions::OptimizationId::LoopUnrolling:
-    return std::make_unique<llvm::LoopUnrolling>(4);
+    return std::make_shared<llvm::LoopUnrolling>(4);
   case JlmOptCommandLineOptions::OptimizationId::NodePullIn:
-    return std::make_unique<llvm::NodeSinking>();
+    return std::make_shared<llvm::NodeSinking>();
   case JlmOptCommandLineOptions::OptimizationId::NodePushOut:
-    return std::make_unique<llvm::NodeHoisting>();
+    return std::make_shared<llvm::NodeHoisting>();
   case JlmOptCommandLineOptions::OptimizationId::NodeReduction:
-    return std::make_unique<llvm::NodeReduction>();
+    return std::make_shared<llvm::NodeReduction>();
   case JlmOptCommandLineOptions::OptimizationId::RvsdgTreePrinter:
-    return std::make_unique<llvm::RvsdgTreePrinter>(
+    return std::make_shared<llvm::RvsdgTreePrinter>(
         CommandLineOptions_.GetRvsdgTreePrinterConfiguration());
   case JlmOptCommandLineOptions::OptimizationId::ScalarEvolution:
-    return std::make_unique<llvm::ScalarEvolution>();
+    return std::make_shared<llvm::ScalarEvolution>();
   case JlmOptCommandLineOptions::OptimizationId::ThetaGammaInversion:
-    return std::make_unique<llvm::LoopUnswitching>();
+    return std::make_shared<llvm::LoopUnswitching>();
   default:
     JLM_UNREACHABLE("Unhandled optimization id.");
   }
@@ -610,7 +618,7 @@ JlmOptCommand::PrintAsDot(
   auto & rootRegion = rvsdgModule.Rvsdg().GetRootRegion();
 
   util::graph::Writer writer;
-  llvm::dot::LlvmDotWriter dotWriter;
+  llvm::LlvmDotWriter dotWriter;
   dotWriter.WriteGraphs(writer, rootRegion, true);
 
   if (outputFile == "")
