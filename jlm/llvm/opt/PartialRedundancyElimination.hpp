@@ -27,22 +27,6 @@ class Region;
 namespace jlm::llvm
 {
 
-class StrictHasher
-{
-
-  /** \brief Partial Redundancy Elimination
-   *
-   * This hasher assumes all function arguments are different.
-   *
-   *
-   */
-public:
-  void populate_table(rvsdg::Region& reg);
-private:
-  std::unordered_map<jlm::rvsdg::Node*, uint64_t> hashes;
-
-};
-
 /** \brief Partial Redundancy Elimination
  *
  * Todo: description here
@@ -74,37 +58,59 @@ public:
   Run(rvsdg::RvsdgModule & module, util::StatisticsCollector & statisticsCollector) override;
 
 private:
- /* void
-  MarkRegion(const rvsdg::Region & region);
 
-  void
-  MarkOutput(const jlm::rvsdg::Output & output);
 
-  void
-  SweepRvsdg(rvsdg::Graph & rvsdg) const;
+  void TraverseSubRegions(rvsdg::Region& reg,          void(*cb)(PartialRedundancyElimination* pe, rvsdg::Node& node));
 
-  void
-  SweepRegion(rvsdg::Region & region) const;
+  static void dump_region(        PartialRedundancyElimination *pe, rvsdg::Node& node);
+  static void dump_node(          PartialRedundancyElimination *pe, rvsdg::Node& node);
+  static void register_leaf_hash( PartialRedundancyElimination *pe, rvsdg::Node& node);
+  static void hash_bin(           PartialRedundancyElimination *pe, rvsdg::Node& node);
 
-  void
-  SweepStructuralNode(rvsdg::StructuralNode & node) const;
+  inline void register_hash(jlm::rvsdg::Output* k, size_t h)
+  {
+    output_hashes.insert({k, h});
+    register_hash(h);
+  }
 
-  void
-  SweepGamma(rvsdg::GammaNode & gammaNode) const;
+  inline void register_hash_for_output(jlm::rvsdg::Output* out, std::string base, int index)
+  {
+    const std::hash<std::string> hasher;
 
-  void
-  SweepTheta(rvsdg::ThetaNode & thetaNode) const;
+    size_t h = hasher(base);
+    h ^= index;
+    output_hashes.insert({out, h});
+    register_hash(h);
+  }
 
-  void
-  SweepLambda(rvsdg::LambdaNode & lambdaNode) const;
+  //todo rename to gvn_hashes
+  std::unordered_map<jlm::rvsdg::Output*, size_t> output_hashes;
 
-  void
-  SweepPhi(rvsdg::PhiNode & phiNode) const;
+  /* Debug data */
+  std::unordered_map<size_t, size_t> hash_counts;
 
-  static void
-  SweepDelta(rvsdg::DeltaNode & deltaNode);
-*/
-  std::unique_ptr<Context> Context_;
+  inline void register_hash(size_t h)
+  {
+    if (hash_counts.find(h) == hash_counts.end())
+    {
+      hash_counts.insert({h, 1});
+    }else
+    {
+      hash_counts[h] = hash_counts[h] + 1;
+    }
+  }
+
+  inline size_t hash_count(size_t h)
+  {
+    if (hash_counts.find(h) != hash_counts.end())
+    {
+      return hash_counts[h];
+    }else
+    {
+      return 0;
+    }
+  }
+
 };
 
 }

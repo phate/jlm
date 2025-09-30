@@ -9,14 +9,26 @@
 #define  TR_FG(r,g,b)  TR_CMD "[38;2;" #r ";" #g ";" #b "m"
 #define  TR_RED     TR_FG(255,64,64)
 #define  TR_GREEN   TR_FG(64, 255, 64)
+
 #define  TR_YELLOW  TR_FG(255, 255, 64)
+#define  TR_ORANGE  TR_FG(255, 128, 0)
 #define  TR_BLUE    TR_FG(64, 64, 255)
+#define  TR_PINK    TR_FG(255,128,128)
 #define  TR_CYAN    TR_FG(64, 255, 255)
 
+#include "../../../tests/test-operation.hpp"
+#include "../../rvsdg/lambda.hpp"
+#include "../../rvsdg/MatchType.hpp"
+#include "../../rvsdg/node.hpp"
+#include "../../rvsdg/nullary.hpp"
 #include "../../rvsdg/structural-node.hpp"
 #include "../../util/GraphWriter.hpp"
+#include "../ir/operators/call.hpp"
+#include "PartialRedundancyElimination.hpp"
 #include <fstream>
+#include <functional>
 #include <iostream>
+#include <unordered_map>
 
 #include <jlm/llvm/ir/operators.hpp>
 #include <jlm/llvm/ir/RvsdgModule.hpp>
@@ -27,44 +39,17 @@
 #include <jlm/util/Statistics.hpp>
 #include <jlm/util/time.hpp>
 #include <ostream>
+#include <jlm/rvsdg/lambda.hpp>
 #include <jlm/llvm/DotWriter.hpp>
 #include <jlm/util/GraphWriter.hpp>
 #include <jlm/rvsdg/traverser.hpp>
 
+#include <jlm/llvm/ir/operators/IntegerOperations.hpp>
+
+#include <typeinfo>
+
 namespace jlm::llvm
 {
-
-
-void StrictHasher::populate_table(rvsdg::Region& reg)
-{
-  for (auto node : rvsdg::TopDownTraverser(&reg)){
-
-    std::cout << TR_RED << node << TR_RESET << std::endl;
-    std::cout << TR_RED << "==========================================" << std::endl;
-    rvsdg::MatchTypeWithDefault(
-        *node,
-        [](const rvsdg::LambdaNode & node)
-        {
-          std::cout<<TR_BLUE<< "Found lambda"<<TR_RESET<< std::endl;
-        },
-        [](const rvsdg::PhiNode & node)
-        {
-          std::cout<<TR_CYAN<< "Found phi node"<<TR_RESET<< std::endl;
-        },
-        [](const rvsdg::DeltaNode & node)
-        {
-          std::cout<<TR_YELLOW<< "Found delta node"<<TR_RESET<< std::endl;
-        },
-        [](const rvsdg::SimpleNode & node)
-        {
-          std::cout<<TR_GREEN<< "Found simple node"<<TR_RESET<< std::endl;
-        },
-        []()
-        {
-          std::cout<<TR_RED<<"Unhandled case"<<TR_RESET<<std::endl;
-        });
-  }
-}
 
 class PartialRedundancyElimination::Context final
 {
@@ -165,39 +150,189 @@ PartialRedundancyElimination::~PartialRedundancyElimination() noexcept = default
 PartialRedundancyElimination::PartialRedundancyElimination()
     : Transformation("PartialRedundancyElimination")
 {}
-/*
-void
-PartialRedundancyElimination::run(rvsdg::Region & region)
+
+
+
+void PartialRedundancyElimination::dump_region(PartialRedundancyElimination* pe, rvsdg::Node& node)
 {
-  std::cerr << TR_RED << "Not actually called?" << TR_RESET << std::endl;
-  Context_ = Context::Create();
+  std::string name = node.DebugString() + std::to_string(node.GetNodeId());
+  size_t reg_counter = 0;
 
-  MarkRegion(region);
-  SweepRegion(region);
-
-  // Discard internal state to free up memory after we are done
-  Context_.reset();
-}*/
-
-static int regions_dumped = 0;
-
-static void dump_region(jlm::rvsdg::Region& reg, std::string& name)
-{
+  MatchType(node, [&name, &reg_counter](rvsdg::StructuralNode& sn)
   {
-    auto my_graph_writer = new jlm::util::graph::Writer();
+    for (auto& reg : sn.Subregions())
+    {
+      auto my_graph_writer = jlm::util::graph::Writer();
 
-    jlm::llvm::dot::LlvmDotWriter my_dot_writer;
-    my_dot_writer.WriteGraphs(*my_graph_writer , reg, false);
+      jlm::llvm::dot::LlvmDotWriter my_dot_writer;
+      my_dot_writer.WriteGraphs(my_graph_writer , reg, false);
 
-    std::string full_name = name+std::to_string(regions_dumped++)+".dot";
-    std::cout<< TR_RED<<full_name<<TR_RESET<<std::endl;
+      std::string full_name = name+std::to_string(reg_counter++)+".dot";
+      std::cout<< TR_RED<<full_name<<TR_RESET<<std::endl;
 
-    std::ofstream my_dot_oss (full_name);
-    my_graph_writer->OutputAllGraphs(my_dot_oss, jlm::util::graph::OutputFormat::Dot);
-    my_dot_oss.close();
+      std::ofstream my_dot_oss (full_name);
+      my_graph_writer.OutputAllGraphs(my_dot_oss, jlm::util::graph::OutputFormat::Dot);
+      std::cout << TR_GREEN << "-------------------------------------" << TR_RESET << std::endl;
+    }
+  });
 
-    delete my_graph_writer;
+}
+
+
+static int indentation_level = 0;
+
+inline std::string ind()
+{
+  std::string acc = "";
+  for (int i = 0;i<indentation_level;i++)
+  {
+    acc += "    ";
   }
+  return acc;
+}
+
+class IndentMan
+{
+
+public:
+  IndentMan()
+  {
+    indentation_level++;
+  }
+  ~IndentMan()
+  {
+    indentation_level--;
+  }
+
+};
+
+void PartialRedundancyElimination::TraverseSubRegions(rvsdg::Region& reg, void(*cb)(PartialRedundancyElimination* pe, rvsdg::Node& node))
+{
+  IndentMan indenter = IndentMan();
+  for (rvsdg::Node* node : rvsdg::TopDownTraverser(&reg))
+  {
+    cb(this, *node);
+    MatchType(*node, [this,cb](rvsdg::StructuralNode& sn)
+    {
+      for (auto& reg : sn.Subregions())
+      {
+        this->TraverseSubRegions(reg, cb);
+      }
+    });
+  }
+}
+
+
+/*
+void TraverseSubTrees(rvsdg::StructuralNode& node, void(*cb)(PartialRedundancyElimination* pe, rvsdg::StructuralNode& node));
+*/
+
+void PartialRedundancyElimination::dump_node(PartialRedundancyElimination* pe, rvsdg::Node& node)
+{
+  std::cout << ind() << TR_BLUE << node.DebugString() << TR_CYAN<<node.GetNodeId() << TR_RESET;
+  for (size_t i = 0; i < node.noutputs(); i++)
+  {
+    auto k_present = pe->output_hashes.find(node.output(i));
+    if (k_present != pe->output_hashes.end() )
+    {
+      size_t h = pe->output_hashes[node.output(i)];
+      std::string color = (pe->hash_count(h) > 1 ? TR_GREEN : TR_YELLOW);
+
+      MatchType(node.GetOperation(),[&color](const jlm::llvm::CallOperation& op){color = TR_ORANGE;});
+      MatchType(node, [&color, pe, h](rvsdg::LambdaNode& lm){color = pe->hash_count(h) > 1 ? TR_RED : TR_ORANGE;});
+
+      std::cout << " : " << color << h << TR_RESET;
+    }
+  }
+  MatchType(node, [pe](rvsdg::LambdaNode& lm)
+  {
+    for (auto& param : lm.GetFunctionArguments())
+    {
+      if (pe->output_hashes.find(param) != pe->output_hashes.end())
+      {
+        size_t h = pe->output_hashes[param];
+        std::cout << ( pe->hash_count(h) > 1 ? TR_RED : TR_ORANGE) << " : " << h << TR_RESET;
+      }
+
+    }
+  });
+  std::cout << std::endl;
+}
+
+void PartialRedundancyElimination::register_leaf_hash(PartialRedundancyElimination *pe, rvsdg::Node& node)
+{
+  MatchType(node.GetOperation(),
+    [pe, &node](const jlm::llvm::IntegerConstantOperation& iconst)
+    {
+      std::hash<std::string> hasher;
+      size_t h = hasher(iconst.Representation().str());
+      pe->register_hash(node.output(0), h);
+    }
+    ,
+    [pe, &node](const jlm::llvm::CallOperation& op)
+    {
+      auto s = node.DebugString() + std::to_string(node.GetNodeId() );
+      for (size_t i = 0; i < node.noutputs(); i++){
+        pe->register_hash_for_output(node.output(i), s, i);
+      }
+    }
+  );
+
+  /* Add each lambda parameter as a leaf hash for hashing within its body */
+  MatchType(node, [pe, &node](rvsdg::LambdaNode& lm)
+  {
+    auto fargs = lm.GetFunctionArguments();
+    auto s = node.DebugString() + std::to_string(node.GetNodeId());
+    for (size_t i = 0; i < fargs.size(); i++){
+      pe->register_hash_for_output(fargs[i], node.DebugString(), i);
+    }
+  });
+}
+
+
+void PartialRedundancyElimination::hash_bin(PartialRedundancyElimination *pe, rvsdg::Node& node)
+{
+  MatchType(node.GetOperation(), [pe, &node](const rvsdg::BinaryOperation& op)
+  {
+    std::hash<std::string> hasher;
+    size_t h = hasher(op.debug_string());
+    bool was_hashable = true;
+    for (size_t i = 0 ; i < node.ninputs(); i++)
+    {
+      if (pe->output_hashes.find(node.input(i)->origin()) != pe->output_hashes.end())
+      {
+        size_t hash_in = pe->output_hashes[node.input(i)->origin()];
+        if (op.is_commutative() && op.is_associative())
+        {
+          h += hasher(std::to_string(hash_in));
+        }else
+        {
+          h |= hasher(std::to_string(hash_in)) * (i+1);
+        }
+      }else
+      {
+        std::cout << TR_RED << node.DebugString() << node.GetNodeId()<< "MISSING INPUT HASH" << TR_RESET << std::endl;
+        auto input_source = node.input(i)->origin()->GetOwner();
+        try
+        {
+          auto src_node = std::get<rvsdg::Node*>(input_source);
+          std::cout << TR_RED << "origin: " << src_node->DebugString() << src_node->GetNodeId() << TR_RESET<< std::endl;
+        }catch (std::bad_variant_access& ex)
+        {
+          std::cout<<TR_RED<<"Found a hash coming from a region. Todo: error info here."<<TR_RESET<<std::endl;
+        }
+
+
+        was_hashable = false;
+      }
+    }
+    if (was_hashable)
+    {
+      pe->output_hashes.insert( {node.output(0), h} );
+      pe->register_hash(h);
+    }
+
+  });
 }
 
 void
@@ -208,372 +343,25 @@ PartialRedundancyElimination::Run(
   std::cout << TR_BLUE << "Hello JLM its me." << TR_RESET << std::endl;
 
 
-  Context_ = Context::Create();
+
+
+
 
   auto & rvsdg = module.Rvsdg();
   auto statistics = Statistics::Create(module.SourceFilePath().value());
 
-  StrictHasher myhasher;
-  myhasher.populate_table(rvsdg.GetRootRegion());
+  this->TraverseSubRegions(rvsdg.GetRootRegion(), PartialRedundancyElimination::dump_region);
+  this->TraverseSubRegions(rvsdg.GetRootRegion(), PartialRedundancyElimination::dump_node);
+  std::cout << TR_RED << "================================================================" << TR_RESET << std::endl;
+  this->TraverseSubRegions(rvsdg.GetRootRegion(), PartialRedundancyElimination::register_leaf_hash);
+  std::cout << TR_RED << "================================================================" << TR_RESET << std::endl;
+  this->TraverseSubRegions(rvsdg.GetRootRegion(), PartialRedundancyElimination::dump_node);
+  std::cout << TR_BLUE << "================================================================" << TR_RESET << std::endl;
+  this->TraverseSubRegions(rvsdg.GetRootRegion(), PartialRedundancyElimination::hash_bin);
+  std::cout << TR_PINK << "================================================================" << TR_RESET << std::endl;
+  this->TraverseSubRegions(rvsdg.GetRootRegion(), PartialRedundancyElimination::dump_node);
 
-  for (auto& node : rvsdg.GetRootRegion().Nodes())
-  {
-    rvsdg::StructuralNode* snode = dynamic_cast<rvsdg::StructuralNode*>(&node);
-    if (snode)
-    {
-      for (auto& sub_reg : snode->Subregions())
-      {
-        std::string tmp = snode->DebugString();
-        dump_region(sub_reg, tmp);
-      }
-    }
-  }
-
-  std::cout << TR_RESET;
-
-/*
-  util::graph::Graph &
-    WriteGraphs(util::graph::Writer & writer, Region & region, bool emitTypeGraph);
-*/
-  statistics->StartMarkStatistics(rvsdg);
-  //MarkRegion(rvsdg.GetRootRegion());
-  statistics->StopMarkStatistics();
-
-  //statistics->StartSweepStatistics();
-  //SweepRvsdg(rvsdg);
-  //statistics->StopSweepStatistics(rvsdg);
-
-  statisticsCollector.CollectDemandedStatistics(std::move(statistics));
-
-  // Discard internal state to free up memory after we are done
-  Context_.reset();
+  std::cout << TR_GREEN << "=================================================" << TR_RESET << std::endl;
 }
-/*
-void
-PartialRedundancyElimination::MarkRegion(const rvsdg::Region & region)
-{
-  for (size_t n = 0; n < region.nresults(); n++)
-  {
-    MarkOutput(*region.result(n)->origin());
-  }
-}*/
-/*
-void
-PartialRedundancyElimination::MarkOutput(const jlm::rvsdg::Output & output)
-{
-  if (Context_->IsAlive(output))
-  {
-    return;
-  }
-
-  Context_->MarkAlive(output);
-
-  if (is<rvsdg::GraphImport>(&output))
-  {
-    return;
-  }
-
-  if (auto gamma = rvsdg::TryGetOwnerNode<rvsdg::GammaNode>(output))
-  {
-    MarkOutput(*gamma->predicate()->origin());
-    for (const auto & result : gamma->MapOutputExitVar(output).branchResult)
-    {
-      MarkOutput(*result->origin());
-    }
-    return;
-  }
-
-  if (auto gamma = rvsdg::TryGetRegionParentNode<rvsdg::GammaNode>(output))
-  {
-    auto external_origin = std::visit(
-        [](const auto & rolevar) -> rvsdg::Output *
-        {
-          return rolevar.input->origin();
-        },
-        gamma->MapBranchArgument(output));
-    MarkOutput(*external_origin);
-    return;
-  }
-
-  if (auto theta = rvsdg::TryGetOwnerNode<rvsdg::ThetaNode>(output))
-  {
-    auto loopvar = theta->MapOutputLoopVar(output);
-    MarkOutput(*theta->predicate()->origin());
-    MarkOutput(*loopvar.post->origin());
-    MarkOutput(*loopvar.input->origin());
-    return;
-  }
-
-  if (auto theta = rvsdg::TryGetRegionParentNode<rvsdg::ThetaNode>(output))
-  {
-    auto loopvar = theta->MapPreLoopVar(output);
-    MarkOutput(*loopvar.output);
-    MarkOutput(*loopvar.input->origin());
-    return;
-  }
-
-  if (auto lambda = rvsdg::TryGetOwnerNode<rvsdg::LambdaNode>(output))
-  {
-    for (auto & result : lambda->GetFunctionResults())
-    {
-      MarkOutput(*result->origin());
-    }
-    return;
-  }
-
-  if (auto lambda = rvsdg::TryGetRegionParentNode<rvsdg::LambdaNode>(output))
-  {
-    if (auto ctxvar = lambda->MapBinderContextVar(output))
-    {
-      // Bound context variable.
-      MarkOutput(*ctxvar->input->origin());
-      return;
-    }
-    else
-    {
-      // Function argument.
-      return;
-    }
-  }
-
-  if (auto phi = rvsdg::TryGetOwnerNode<rvsdg::PhiNode>(output))
-  {
-    MarkOutput(*phi->MapOutputFixVar(output).result->origin());
-    return;
-  }
-
-  if (auto phi = rvsdg::TryGetRegionParentNode<rvsdg::PhiNode>(output))
-  {
-    auto var = phi->MapArgument(output);
-    if (auto fix = std::get_if<rvsdg::PhiNode::FixVar>(&var))
-    {
-      // Recursion argument
-      MarkOutput(*fix->result->origin());
-      return;
-    }
-    else if (auto ctx = std::get_if<rvsdg::PhiNode::ContextVar>(&var))
-    {
-      // Bound context variable.
-      MarkOutput(*ctx->input->origin());
-      return;
-    }
-    else
-    {
-      JLM_UNREACHABLE("Phi argument must be either fixpoint or context variable");
-    }
-  }
-
-  if (const auto deltaNode = rvsdg::TryGetOwnerNode<rvsdg::DeltaNode>(output))
-  {
-    const auto result = deltaNode->subregion()->result(0);
-    MarkOutput(*result->origin());
-    return;
-  }
-
-  if (rvsdg::TryGetRegionParentNode<rvsdg::DeltaNode>(output))
-  {
-    const auto argument = util::AssertedCast<const rvsdg::RegionArgument>(&output);
-    MarkOutput(*argument->input()->origin());
-    return;
-  }
-
-  if (const auto simpleNode = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(output))
-  {
-    for (size_t n = 0; n < simpleNode->ninputs(); n++)
-    {
-      MarkOutput(*simpleNode->input(n)->origin());
-    }
-    return;
-  }
-
-  JLM_UNREACHABLE("We should have never reached this statement.");
-}*/
-/*
-void
-PartialRedundancyElimination::SweepRvsdg(rvsdg::Graph & rvsdg) const
-{
-  SweepRegion(rvsdg.GetRootRegion());
-
-  // Remove dead imports
-  for (size_t n = rvsdg.GetRootRegion().narguments() - 1; n != static_cast<size_t>(-1); n--)
-  {
-    if (!Context_->IsAlive(*rvsdg.GetRootRegion().argument(n)))
-    {
-      rvsdg.GetRootRegion().RemoveArgument(n);
-    }
-  }
-}*/
-/*
-void
-PartialRedundancyElimination::SweepRegion(rvsdg::Region & region) const
-{
-  region.prune(false);
-
-  std::vector<std::vector<rvsdg::Node *>> nodesTopDown(region.nnodes());
-  for (auto & node : region.Nodes())
-  {
-    nodesTopDown[node.depth()].push_back(&node);
-  }
-
-  for (auto it = nodesTopDown.rbegin(); it != nodesTopDown.rend(); it++)
-  {
-    for (auto node : *it)
-    {
-      if (!Context_->IsAlive(*node))
-      {
-        remove(node);
-        continue;
-      }
-
-      if (auto structuralNode = dynamic_cast<rvsdg::StructuralNode *>(node))
-      {
-        SweepStructuralNode(*structuralNode);
-      }
-    }
-  }
-
-  JLM_ASSERT(region.NumBottomNodes() == 0);
-}*/
-/*
-void
-PartialRedundancyElimination::SweepStructuralNode(rvsdg::StructuralNode & node) const
-{
-  rvsdg::MatchTypeOrFail(
-      node,
-      [this](rvsdg::GammaNode & node)
-      {
-        SweepGamma(node);
-      },
-      [this](rvsdg::ThetaNode & node)
-      {
-        SweepTheta(node);
-      },
-      [this](rvsdg::LambdaNode & node)
-      {
-        SweepLambda(node);
-      },
-      [this](rvsdg::PhiNode & node)
-      {
-        SweepPhi(node);
-      },
-      [](rvsdg::DeltaNode & node)
-      {
-        SweepDelta(node);
-      });
-}*/
-/*
-void
-PartialRedundancyElimination::SweepGamma(rvsdg::GammaNode & gammaNode) const
-{
-  // Remove dead exit vars.
-  std::vector<rvsdg::GammaNode::ExitVar> deadExitVars;
-  for (const auto & exitvar : gammaNode.GetExitVars())
-  {
-    if (!Context_->IsAlive(*exitvar.output))
-    {
-      deadExitVars.push_back(exitvar);
-    }
-  }
-  gammaNode.RemoveExitVars(deadExitVars);
-
-  // Sweep gamma subregions
-  for (size_t r = 0; r < gammaNode.nsubregions(); r++)
-  {
-    SweepRegion(*gammaNode.subregion(r));
-  }
-
-  // Remove dead entry vars.
-  std::vector<rvsdg::GammaNode::EntryVar> deadEntryVars;
-  for (const auto & entryvar : gammaNode.GetEntryVars())
-  {
-    bool alive = std::any_of(
-        entryvar.branchArgument.begin(),
-        entryvar.branchArgument.end(),
-        [this](const rvsdg::Output * arg)
-        {
-          return Context_->IsAlive(*arg);
-        });
-    if (!alive)
-    {
-      deadEntryVars.push_back(entryvar);
-    }
-  }
-  gammaNode.RemoveEntryVars(deadEntryVars);
-}*/
-/*
-void
-PartialRedundancyElimination::SweepTheta(rvsdg::ThetaNode & thetaNode) const
-{
-  // Determine loop variables to be removed.
-  std::vector<rvsdg::ThetaNode::LoopVar> loopvars;
-  for (const auto & loopvar : thetaNode.GetLoopVars())
-  {
-    if (!Context_->IsAlive(*loopvar.pre) && !Context_->IsAlive(*loopvar.output))
-    {
-      loopvar.post->divert_to(loopvar.pre);
-      loopvars.push_back(loopvar);
-    }
-  }
-
-  // Now that the loop variables to be eliminated only point to
-  // their own pre-iteration values, any outputs within the subregion
-  // that only contributed to computing the post-iteration values
-  // of the variables are unlinked and can be removed as well.
-  SweepRegion(*thetaNode.subregion());
-
-  // There are now no other users of the pre-iteration values of the
-  // variables to be removed left in the subregion anymore.
-  // The variables have become "loop-invariant" and can simply
-  // be eliminated from the theta node.
-  thetaNode.RemoveLoopVars(std::move(loopvars));
-}*/
-/*
-void
-PartialRedundancyElimination::SweepLambda(rvsdg::LambdaNode & lambdaNode) const
-{
-  SweepRegion(*lambdaNode.subregion());
-  lambdaNode.PruneLambdaInputs();
-}*/
-/*
-void
-PartialRedundancyElimination::SweepPhi(rvsdg::PhiNode & phiNode) const
-{
-  std::vector<rvsdg::PhiNode::FixVar> deadFixvars;
-  std::vector<rvsdg::PhiNode::ContextVar> deadCtxvars;
-
-  for (const auto & fixvar : phiNode.GetFixVars())
-  {
-    bool isDead = !Context_->IsAlive(*fixvar.output) && !Context_->IsAlive(*fixvar.recref);
-    if (isDead)
-    {
-      deadFixvars.push_back(fixvar);
-      // Temporarily redirect the variable so it refers to itself
-      // (so the object is simply defined to be "itself").
-      fixvar.result->divert_to(fixvar.recref);
-    }
-  }*/
-/*
-  SweepRegion(*phiNode.subregion());
-
-  for (const auto & ctxvar : phiNode.GetContextVars())
-  {
-    if (ctxvar.inner->IsDead())
-    {
-      deadCtxvars.push_back(ctxvar);
-    }
-  }
-
-  phiNode.RemoveContextVars(std::move(deadCtxvars));
-  phiNode.RemoveFixVars(std::move(deadFixvars));
-}*/
-/*
-void
-PartialRedundancyElimination::SweepDelta(rvsdg::DeltaNode & deltaNode)
-{
-  // A delta subregion can only contain simple nodes. Thus, a simple prune is sufficient.
-  deltaNode.subregion()->prune(false);
-
-  deltaNode.PruneDeltaInputs();
-}*/
 
 }
