@@ -75,6 +75,7 @@ public:
     FunctionInlining,
     IfConversion,
     InvariantValueRedirection,
+    LoadChainSeparation,
     LoopUnrolling,
     NodePullIn,
     NodePushOut,
@@ -221,6 +222,7 @@ private:
     inline static const char * NodePullIn_ = "NodePullIn";
     inline static const char * NodePushOut_ = "NodePushOut";
     inline static const char * ThetaGammaInversion_ = "ThetaGammaInversion";
+    inline static const char * LoadChainSeparation_ = "LoadChainSeparation";
     inline static const char * LoopUnrolling_ = "LoopUnrolling";
     inline static const char * NodeReduction_ = "NodeReduction";
     inline static const char * RvsdgTreePrinter_ = "RvsdgTreePrinter";
