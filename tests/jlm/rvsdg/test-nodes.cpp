@@ -314,6 +314,42 @@ NodeOutputIteration()
 JLM_UNIT_TEST_REGISTER("jlm/rvsdg/test-nodes-NodeOutputIteration", NodeOutputIteration)
 
 static void
+zeroInputOutputIteration()
+{
+  using namespace jlm::rvsdg;
+  using namespace jlm::tests;
+
+  // Arrange
+  Graph rvsdg;
+  auto node = TestOperation::create(&rvsdg.GetRootRegion(), {}, {});
+
+  // Act & Assert
+  bool enteredLoopBody = false;
+  for ([[maybe_unused]] auto & _ : node->Inputs())
+  {
+    enteredLoopBody = true;
+  }
+  for ([[maybe_unused]] auto & _ : node->Outputs())
+  {
+    enteredLoopBody = true;
+  }
+
+  const Node * constNode = node;
+  for ([[maybe_unused]] auto & _ : constNode->Inputs())
+  {
+    enteredLoopBody = true;
+  }
+  for ([[maybe_unused]] auto & _ : constNode->Outputs())
+  {
+    enteredLoopBody = true;
+  }
+
+  assert(enteredLoopBody == false);
+}
+
+JLM_UNIT_TEST_REGISTER("jlm/rvsdg/test-nodes-zeroInputOutputIteration", zeroInputOutputIteration)
+
+static void
 NodeId()
 {
   using namespace jlm::rvsdg;
