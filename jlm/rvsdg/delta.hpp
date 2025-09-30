@@ -20,9 +20,9 @@ public:
   ~DeltaOperation() noexcept override;
 
   DeltaOperation(
-      std::shared_ptr<const rvsdg::ValueType> type,
+      std::shared_ptr<const rvsdg::Type> type,
       bool constant,
-      std::shared_ptr<const rvsdg::ValueType> reftype)
+      std::shared_ptr<const rvsdg::Type> reftype)
       : constant_(constant),
         type_(std::move(type)),
         reftype_(std::move(reftype))
@@ -53,19 +53,19 @@ public:
     return constant_;
   }
 
-  [[nodiscard]] const rvsdg::ValueType &
+  [[nodiscard]] const rvsdg::Type &
   type() const noexcept
   {
     return *type_;
   }
 
-  [[nodiscard]] const std::shared_ptr<const rvsdg::ValueType> &
+  [[nodiscard]] const std::shared_ptr<const rvsdg::Type> &
   Type() const noexcept
   {
     return type_;
   }
 
-  [[nodiscard]] const std::shared_ptr<const rvsdg::ValueType> &
+  [[nodiscard]] const std::shared_ptr<const rvsdg::Type> &
   ReferenceType() const noexcept
   {
     return reftype_;
@@ -91,17 +91,17 @@ public:
    */
   static inline std::unique_ptr<DeltaOperation>
   Create(
-      std::shared_ptr<const rvsdg::ValueType> type,
+      std::shared_ptr<const rvsdg::Type> type,
       bool constant,
-      std::shared_ptr<const rvsdg::ValueType> reftype)
+      std::shared_ptr<const rvsdg::Type> reftype)
   {
     return std::make_unique<DeltaOperation>(std::move(type), constant, std::move(reftype));
   }
 
 private:
   bool constant_;
-  std::shared_ptr<const rvsdg::ValueType> type_;
-  std::shared_ptr<const rvsdg::ValueType> reftype_;
+  std::shared_ptr<const rvsdg::Type> type_;
+  std::shared_ptr<const rvsdg::Type> reftype_;
 };
 
 /** \brief Delta node
@@ -239,7 +239,7 @@ public:
   [[nodiscard]] const DeltaOperation &
   GetOperation() const noexcept override;
 
-  [[nodiscard]] const std::shared_ptr<const rvsdg::ValueType> &
+  [[nodiscard]] const std::shared_ptr<const rvsdg::Type> &
   Type() const noexcept
   {
     return GetOperation().Type();

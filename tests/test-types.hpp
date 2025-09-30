@@ -11,7 +11,7 @@
 namespace jlm::tests
 {
 
-class ValueType final : public rvsdg::ValueType
+class ValueType final : public rvsdg::Type
 {
 public:
   ~ValueType() noexcept override;
@@ -27,11 +27,14 @@ public:
   [[nodiscard]] std::size_t
   ComputeHash() const noexcept override;
 
+  rvsdg::TypeKind
+  Kind() const noexcept override;
+
   static std::shared_ptr<const ValueType>
   Create();
 };
 
-class StateType final : public rvsdg::StateType
+class StateType final : public rvsdg::Type
 {
 public:
   ~StateType() noexcept override;
@@ -46,6 +49,9 @@ public:
 
   [[nodiscard]] std::size_t
   ComputeHash() const noexcept override;
+
+  rvsdg::TypeKind
+  Kind() const noexcept override;
 
   static std::shared_ptr<const StateType>
   Create();

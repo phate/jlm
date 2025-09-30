@@ -8,6 +8,7 @@
 #include <jlm/hls/backend/rvsdg2rhls/ThetaConversion.hpp>
 #include <jlm/hls/ir/hls.hpp>
 #include <jlm/llvm/ir/operators.hpp>
+#include <jlm/rvsdg/theta.hpp>
 #include <jlm/rvsdg/view.hpp>
 
 static void
@@ -44,7 +45,8 @@ TestUnknownBoundaries()
   jlm::rvsdg::view(rm.Rvsdg(), stdout);
 
   // Act
-  ConvertThetaNodes(rm);
+  jlm::util::StatisticsCollector statisticsCollector;
+  ThetaNodeConversion::CreateAndRun(rm, statisticsCollector);
   jlm::rvsdg::view(rm.Rvsdg(), stdout);
 
   // Assert

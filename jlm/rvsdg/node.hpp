@@ -9,12 +9,12 @@
 
 #include <jlm/rvsdg/operation.hpp>
 #include <jlm/util/common.hpp>
+#include <jlm/util/HashSet.hpp>
 #include <jlm/util/intrusive-list.hpp>
 #include <jlm/util/iterator_range.hpp>
 #include <jlm/util/IteratorWrapper.hpp>
 
 #include <cstdint>
-#include <unordered_set>
 #include <utility>
 #include <variant>
 
@@ -84,10 +84,10 @@ public:
   {
   public:
     using iterator_category = std::forward_iterator_tag;
-    using value_type = Input *;
+    using value_type = Input;
     using difference_type = std::ptrdiff_t;
-    using pointer = Input **;
-    using reference = Input *&;
+    using pointer = Input *;
+    using reference = Input &;
 
     constexpr explicit Iterator(Input * input)
         : Input_(input)
@@ -150,10 +150,10 @@ public:
   {
   public:
     using iterator_category = std::forward_iterator_tag;
-    using value_type = const Input *;
+    using value_type = const Input;
     using difference_type = std::ptrdiff_t;
-    using pointer = const Input **;
-    using reference = const Input *&;
+    using pointer = const Input *;
+    using reference = const Input &;
 
     constexpr explicit ConstIterator(const Input * input)
         : Input_(input)
@@ -220,9 +220,14 @@ private:
       const std::shared_ptr<const rvsdg::Type> & type);
 
   size_t index_;
-  jlm::rvsdg::Output * origin_;
+  jlm::rvsdg::Output * origin_ = nullptr;
   std::variant<Node *, Region *> Owner_;
   std::shared_ptr<const rvsdg::Type> Type_;
+  jlm::util::IntrusiveListAnchor<Input> UsersList_;
+  using UsersListAccessor = util::IntrusiveListAccessor<Input, &Input::UsersList_>;
+  using UsersList = jlm::util::IntrusiveList<Input, UsersListAccessor>;
+
+  friend class Output;
 };
 
 template<class T>
@@ -243,12 +248,9 @@ class Output
   friend class rvsdg::Region;
 
 public:
-  using UserIterator = util::PtrIterator<Input, std::unordered_set<Input *>::iterator>;
-  using UserConstIterator =
-      util::PtrIterator<const Input, std::unordered_set<Input *>::const_iterator>;
-
-  using UserIteratorRange = util::IteratorRange<UserIterator>;
-  using UserConstIteratorRange = util::IteratorRange<UserConstIterator>;
+  using UsersList = Input::UsersList;
+  using UsersRange = jlm::util::IteratorRange<UsersList::Iterator>;
+  using UsersConstRange = jlm::util::IteratorRange<UsersList::ConstIterator>;
 
   virtual ~Output() noexcept;
 
@@ -275,7 +277,7 @@ public:
   inline size_t
   nusers() const noexcept
   {
-    return users_.size();
+    return NumUsers_;
   }
 
   /**
@@ -290,7 +292,7 @@ public:
   [[nodiscard]] bool
   IsDead() const noexcept
   {
-    return nusers() == 0;
+    return NumUsers_ == 0;
   }
 
   inline void
@@ -299,8 +301,39 @@ public:
     if (this == new_origin)
       return;
 
-    while (users_.size())
-      (*users_.begin())->divert_to(new_origin);
+    while (!Users_.empty())
+      Users_.begin()->divert_to(new_origin);
+  }
+
+  /**
+   * Divert all users of the output that satisfy the predicate \p match.
+   *
+   * @tparam F A functor with the signature (const rvsdg::Input &) -> bool
+   * @param newOrigin The new origin of each user that satisfies \p match.
+   * @param match An instance of F, to be invoked on each user
+   *
+   * @return The number of diverted users.
+   */
+  template<typename F>
+  size_t
+  divertUsersWhere(Output & newOrigin, const F & match)
+  {
+    if (this == &newOrigin)
+      return 0;
+
+    util::HashSet<Input *> matchedUsers;
+    for (auto & user : Users_)
+    {
+      if (match(user))
+        matchedUsers.Insert(&user);
+    }
+
+    for (auto & user : matchedUsers.Items())
+    {
+      user->divert_to(&newOrigin);
+    }
+
+    return matchedUsers.Size();
   }
 
   /**
@@ -309,22 +342,22 @@ public:
    * \pre The output has only a single user.
    */
   [[nodiscard]] rvsdg::Input &
-  SingleUser() const noexcept
+  SingleUser() noexcept
   {
-    JLM_ASSERT(nusers() == 1);
-    return **users_.begin();
+    JLM_ASSERT(NumUsers_ == 1);
+    return *Users_.begin();
   }
 
-  UserIteratorRange
+  UsersRange
   Users()
   {
-    return { UserIterator(users_.begin()), UserIterator(users_.end()) };
+    return UsersRange(Users_.begin(), Users_.end());
   }
 
-  [[nodiscard]] UserConstIteratorRange
+  UsersConstRange
   Users() const
   {
-    return { UserConstIterator(users_.begin()), UserConstIterator(users_.end()) };
+    return UsersConstRange(Users_.cbegin(), Users_.cend());
   }
 
   [[nodiscard]] const std::shared_ptr<const rvsdg::Type> &
@@ -487,7 +520,8 @@ private:
   size_t index_;
   std::variant<Node *, Region *> Owner_;
   std::shared_ptr<const rvsdg::Type> Type_;
-  std::unordered_set<jlm::rvsdg::Input *> users_;
+  UsersList Users_;
+  std::size_t NumUsers_ = 0;
 };
 
 /**
@@ -796,13 +830,13 @@ private:
   util::IntrusiveListAnchor<Node> region_bottom_node_list_anchor_{};
 
 public:
-  typedef util::intrusive_list_accessor<Node, &Node::region_node_list_anchor_>
+  typedef util::IntrusiveListAccessor<Node, &Node::region_node_list_anchor_>
       region_node_list_accessor;
 
-  typedef util::intrusive_list_accessor<Node, &Node::region_top_node_list_anchor_>
+  typedef util::IntrusiveListAccessor<Node, &Node::region_top_node_list_anchor_>
       region_top_node_list_accessor;
 
-  typedef util::intrusive_list_accessor<Node, &Node::region_bottom_node_list_anchor_>
+  typedef util::IntrusiveListAccessor<Node, &Node::region_bottom_node_list_anchor_>
       region_bottom_node_list_accessor;
 
 private:

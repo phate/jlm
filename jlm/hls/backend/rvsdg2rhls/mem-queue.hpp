@@ -6,16 +6,33 @@
 #ifndef JLM_BACKEND_HLS_RVSDG2RHLS_MEM_QUEUE_HPP
 #define JLM_BACKEND_HLS_RVSDG2RHLS_MEM_QUEUE_HPP
 
-#include <jlm/llvm/ir/RvsdgModule.hpp>
+#include <jlm/rvsdg/Transformation.hpp>
 
 namespace jlm::hls
 {
 
-void
-mem_queue(rvsdg::Region * region);
+class AddressQueueInsertion final : public rvsdg::Transformation
+{
+public:
+  ~AddressQueueInsertion() noexcept override;
 
-void
-mem_queue(llvm::RvsdgModule & rm);
+  AddressQueueInsertion();
+
+  AddressQueueInsertion(const AddressQueueInsertion &) = delete;
+
+  AddressQueueInsertion &
+  operator=(const AddressQueueInsertion &) = delete;
+
+  void
+  Run(rvsdg::RvsdgModule & rvsdgModule, util::StatisticsCollector & statisticsCollector) override;
+
+  static void
+  CreateAndRun(rvsdg::RvsdgModule & rvsdgModule, util::StatisticsCollector & statisticsCollector)
+  {
+    AddressQueueInsertion addressQueueInsertion;
+    addressQueueInsertion.Run(rvsdgModule, statisticsCollector);
+  }
+};
 
 }
 

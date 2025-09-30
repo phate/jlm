@@ -225,23 +225,16 @@ RemoveUnusedStatesInRegion(rvsdg::Region & region)
   }
 }
 
-void
-RemoveUnusedStates(llvm::RvsdgModule & rvsdgModule)
-{
-  RemoveUnusedStatesInRegion(rvsdgModule.Rvsdg().GetRootRegion());
-}
+UnusedStateRemoval::~UnusedStateRemoval() noexcept = default;
+
+UnusedStateRemoval::UnusedStateRemoval()
+    : Transformation("UnusedStateRemoval")
+{}
 
 void
-RemoveInvariantLambdaStateEdges(llvm::RvsdgModule & rvsdgModule)
+UnusedStateRemoval::Run(rvsdg::RvsdgModule & rvsdgModule, util::StatisticsCollector &)
 {
-  auto & root = rvsdgModule.Rvsdg().GetRootRegion();
-  for (auto & node : rvsdg::TopDownTraverser(&root))
-  {
-    if (auto lambdaNode = dynamic_cast<rvsdg::LambdaNode *>(node))
-    {
-      RemoveUnusedStatesFromLambda(*lambdaNode);
-    }
-  }
+  RemoveUnusedStatesInRegion(rvsdgModule.Rvsdg().GetRootRegion());
 }
 
 }

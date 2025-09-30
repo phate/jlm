@@ -56,7 +56,9 @@ test()
   hls::DotHLS dhls;
   stringToFile(dhls.run(rm), "/tmp/jlm_hls_test_before.dot");
 
-  hls::dne(rm);
+  util::StatisticsCollector statisticsCollector;
+  hls::RhlsDeadNodeElimination::CreateAndRun(rm, statisticsCollector);
+
   hls::DotHLS dhls2;
   stringToFile(dhls2.run(rm), "/tmp/jlm_hls_test_after.dot");
 

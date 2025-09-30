@@ -32,7 +32,7 @@ ConnectStreamBuffer(rvsdg::SimpleNode * enq_call, rvsdg::SimpleNode * deq_call)
   // remove call nodes
   for (size_t i = 0; i < deq_call->ninputs(); ++i)
   {
-    if (rvsdg::is<const rvsdg::StateType>(deq_call->input(i)->Type()))
+    if (deq_call->input(i)->Type()->Kind() == rvsdg::TypeKind::State)
     {
       int oi = deq_call->noutputs() - deq_call->ninputs() + i;
       deq_call->output(oi)->divert_users(deq_call->input(i)->origin());
@@ -42,7 +42,7 @@ ConnectStreamBuffer(rvsdg::SimpleNode * enq_call, rvsdg::SimpleNode * deq_call)
   remove(deq_call);
   for (size_t i = 0; i < enq_call->ninputs(); ++i)
   {
-    if (rvsdg::is<const rvsdg::StateType>(enq_call->input(i)->Type()))
+    if (enq_call->input(i)->Type()->Kind() == rvsdg::TypeKind::State)
     {
       int oi = enq_call->noutputs() - enq_call->ninputs() + i;
       enq_call->output(oi)->divert_users(enq_call->input(i)->origin());
@@ -51,8 +51,8 @@ ConnectStreamBuffer(rvsdg::SimpleNode * enq_call, rvsdg::SimpleNode * deq_call)
   remove(enq_call);
 }
 
-void
-stream_conv(llvm::RvsdgModule & rm)
+static void
+stream_conv(rvsdg::RvsdgModule & rm)
 {
   auto & graph = rm.Rvsdg();
   auto root = &graph.GetRootRegion();
@@ -94,7 +94,10 @@ stream_conv(llvm::RvsdgModule & rm)
     }
   }
   // clean up routed function pointers
-  dne(lambda->subregion());
+  RhlsDeadNodeElimination dne;
+  util::StatisticsCollector statisticsCollector;
+  dne.Run(*lambda->subregion(), statisticsCollector);
+
   std::vector<rvsdg::LambdaNode::ContextVar> remove_vars(stream_enqs);
   remove_vars.insert(remove_vars.cend(), stream_deqs.begin(), stream_deqs.end());
   // make sure context vars are actually dead
@@ -105,4 +108,17 @@ stream_conv(llvm::RvsdgModule & rm)
   // remove dead cvargs
   lambda->PruneLambdaInputs();
 }
+
+StreamConversion::~StreamConversion() noexcept = default;
+
+StreamConversion::StreamConversion()
+    : Transformation("StreamConversion")
+{}
+
+void
+StreamConversion::Run(rvsdg::RvsdgModule & rvsdgModule, util::StatisticsCollector &)
+{
+  stream_conv(rvsdgModule);
+}
+
 }
