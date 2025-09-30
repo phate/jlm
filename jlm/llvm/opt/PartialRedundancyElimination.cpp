@@ -17,6 +17,7 @@
 #define  TR_CYAN    TR_FG(64, 255, 255)
 
 #include "../../../tests/test-operation.hpp"
+#include "../../rvsdg/gamma.hpp"
 #include "../../rvsdg/lambda.hpp"
 #include "../../rvsdg/MatchType.hpp"
 #include "../../rvsdg/node.hpp"
@@ -238,8 +239,8 @@ void PartialRedundancyElimination::dump_node(PartialRedundancyElimination* pe, r
       size_t h = pe->output_hashes[node.output(i)];
       std::string color = (pe->hash_count(h) > 1 ? TR_GREEN : TR_YELLOW);
 
-      MatchType(node.GetOperation(),[&color](const jlm::llvm::CallOperation& op){color = TR_ORANGE;});
-      MatchType(node, [&color, pe, h](rvsdg::LambdaNode& lm){color = pe->hash_count(h) > 1 ? TR_RED : TR_ORANGE;});
+      MatchType(node.GetOperation(),[&color](const jlm::llvm::CallOperation& op){color = TR_CYAN;});
+      MatchType(node, [&color](rvsdg::LambdaNode& lm){color = TR_ORANGE;});
 
       std::cout << " : " << color << h << TR_RESET;
     }
@@ -289,6 +290,34 @@ void PartialRedundancyElimination::register_leaf_hash(PartialRedundancyEliminati
   });
 }
 
+void PartialRedundancyElimination::hash_gamma(PartialRedundancyElimination* pe, rvsdg::Node& node)
+{
+  MatchType(node, [pe](rvsdg::GammaNode& node)
+  {
+    for (auto ev : node.GetEntryVars())
+    {
+      rvsdg::Output* origin = ev.input->origin();
+      if (pe->output_has_hash(origin))
+      {
+        size_t h = pe->output_hashes[origin];
+        for (rvsdg::Output* brarg : ev.branchArgument)
+        {
+          pe->register_hash(brarg, h);
+        }
+      }
+    }
+  });
+}
+
+void PartialRedundancyElimination::hash_node(PartialRedundancyElimination *pe, rvsdg::Node& node)
+{
+  /*Match by operation*/
+  MatchType(node.GetOperation(),
+    [pe, &node](const rvsdg::BinaryOperation& op){hash_bin(pe, node);}
+  );
+  /*Match by node type*/
+  MatchType(node, [pe](rvsdg::GammaNode& node){hash_gamma(pe, node);});
+}
 
 void PartialRedundancyElimination::hash_bin(PartialRedundancyElimination *pe, rvsdg::Node& node)
 {
@@ -321,8 +350,6 @@ void PartialRedundancyElimination::hash_bin(PartialRedundancyElimination *pe, rv
         {
           std::cout<<TR_RED<<"Found a hash coming from a region. Todo: error info here."<<TR_RESET<<std::endl;
         }
-
-
         was_hashable = false;
       }
     }
@@ -357,7 +384,7 @@ PartialRedundancyElimination::Run(
   std::cout << TR_RED << "================================================================" << TR_RESET << std::endl;
   this->TraverseSubRegions(rvsdg.GetRootRegion(), PartialRedundancyElimination::dump_node);
   std::cout << TR_BLUE << "================================================================" << TR_RESET << std::endl;
-  this->TraverseSubRegions(rvsdg.GetRootRegion(), PartialRedundancyElimination::hash_bin);
+  this->TraverseSubRegions(rvsdg.GetRootRegion(), PartialRedundancyElimination::hash_node);
   std::cout << TR_PINK << "================================================================" << TR_RESET << std::endl;
   this->TraverseSubRegions(rvsdg.GetRootRegion(), PartialRedundancyElimination::dump_node);
 

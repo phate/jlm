@@ -66,6 +66,9 @@ private:
   static void dump_node(          PartialRedundancyElimination *pe, rvsdg::Node& node);
   static void register_leaf_hash( PartialRedundancyElimination *pe, rvsdg::Node& node);
   static void hash_bin(           PartialRedundancyElimination *pe, rvsdg::Node& node);
+  static void hash_gamma(         PartialRedundancyElimination *pe, rvsdg::Node& node);
+  static void hash_node(          PartialRedundancyElimination *pe, rvsdg::Node& node);
+  //static void hash_call(          PartialRedundancyElimination *pe, rvsdg::Node& node);
 
   inline void register_hash(jlm::rvsdg::Output* k, size_t h)
   {
@@ -88,6 +91,8 @@ private:
 
   /* Debug data */
   std::unordered_map<size_t, size_t> hash_counts;
+
+  inline bool output_has_hash(rvsdg::Output* out){return output_hashes.find(out) != output_hashes.end();}
 
   inline void register_hash(size_t h)
   {
