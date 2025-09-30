@@ -4,8 +4,8 @@
  * See COPYING for terms of redistribution.
  */
 
-#include <TestRvsdgs.hpp>
 #include <test-registry.hpp>
+#include <TestRvsdgs.hpp>
 
 #include <jlm/llvm/opt/alias-analyses/Andersen.hpp>
 #include <jlm/llvm/opt/alias-analyses/RegionAwareModRefSummarizer.hpp>
@@ -46,12 +46,13 @@ TestStore1()
     auto & allocaCMemoryNode = pointsToGraph.GetAllocaNode(*test.alloca_c);
     auto & allocaDMemoryNode = pointsToGraph.GetAllocaNode(*test.alloca_d);
 
-    jlm::util::HashSet<const jlm::llvm::aa::PointsToGraph::MemoryNode *> expectedMemoryNodes({
-        &allocaAMemoryNode,
-        &allocaBMemoryNode,
-        &allocaCMemoryNode,
-        &allocaDMemoryNode,
-    });
+    jlm::util::HashSet<const jlm::llvm::aa::PointsToGraph::MemoryNode *> expectedMemoryNodes(
+        {
+            &allocaAMemoryNode,
+            &allocaBMemoryNode,
+            &allocaCMemoryNode,
+            &allocaDMemoryNode,
+        });
 
     auto & lambdaEntryNodes = modRefSummary.GetLambdaEntryModRef(*test.lambda);
     assert(setsEqual(lambdaEntryNodes, expectedMemoryNodes));
@@ -80,7 +81,6 @@ TestStore1()
 JLM_UNIT_TEST_REGISTER(
     "jlm/llvm/opt/alias-analyses/RegionAwareModRefSummarizerTests-TestStore1",
     TestStore1)
-
 
 static void
 TestStore2()
@@ -181,27 +181,13 @@ TestLoad2()
    * Arrange
    */
   auto ValidateProvider = [](const jlm::tests::LoadTest2 & test,
-                             const jlm::llvm::aa::ModRefSummary & modRefSummary,
-                             const jlm::llvm::aa::PointsToGraph & pointsToGraph)
+                             const jlm::llvm::aa::ModRefSummary & modRefSummary)
   {
-    auto & allocaAMemoryNode = pointsToGraph.GetAllocaNode(*test.alloca_a);
-    auto & allocaBMemoryNode = pointsToGraph.GetAllocaNode(*test.alloca_b);
-    auto & allocaPMemoryNode = pointsToGraph.GetAllocaNode(*test.alloca_p);
-    auto & allocaXMemoryNode = pointsToGraph.GetAllocaNode(*test.alloca_x);
-    auto & allocaYMemoryNode = pointsToGraph.GetAllocaNode(*test.alloca_y);
-
-    jlm::util::HashSet<const jlm::llvm::aa::PointsToGraph::MemoryNode *> expectedMemoryNodes(
-        { &allocaAMemoryNode,
-          &allocaBMemoryNode,
-          &allocaPMemoryNode,
-          &allocaXMemoryNode,
-          &allocaYMemoryNode });
-
     auto & lambdaEntryNodes = modRefSummary.GetLambdaEntryModRef(*test.lambda);
-    assert(setsEqual(lambdaEntryNodes, expectedMemoryNodes));
+    assert(setsEqual(lambdaEntryNodes, {}));
 
     auto & lambdaExitNodes = modRefSummary.GetLambdaExitModRef(*test.lambda);
-    assert(setsEqual(lambdaExitNodes, expectedMemoryNodes));
+    assert(setsEqual(lambdaExitNodes, {}));
   };
 
   jlm::tests::LoadTest2 test;
@@ -219,7 +205,7 @@ TestLoad2()
   /*
    * Assert
    */
-  ValidateProvider(test, *modRefSummary, *pointsToGraph);
+  ValidateProvider(test, *modRefSummary);
 }
 JLM_UNIT_TEST_REGISTER(
     "jlm/llvm/opt/alias-analyses/RegionAwareModRefSummarizerTests-TestLoad2",
@@ -304,9 +290,7 @@ TestCall1()
      */
     {
       auto & lambdaHEntryNodes = modRefSummary.GetLambdaEntryModRef(*test.lambda_h);
-      assert(setsEqual(
-          lambdaHEntryNodes,
-          { &allocaXMemoryNode, &allocaYMemoryNode, &allocaZMemoryNode }));
+      assert(setsEqual(lambdaHEntryNodes, {}));
 
       auto & callFNodes = modRefSummary.GetSimpleNodeModRef(test.CallF());
       assert(setsEqual(callFNodes, { &allocaXMemoryNode, &allocaYMemoryNode }));
@@ -315,9 +299,7 @@ TestCall1()
       assert(setsEqual(callGNodes, { &allocaZMemoryNode }));
 
       auto & lambdaHExitNodes = modRefSummary.GetLambdaExitModRef(*test.lambda_h);
-      assert(setsEqual(
-          lambdaHExitNodes,
-          { &allocaXMemoryNode, &allocaYMemoryNode, &allocaZMemoryNode }));
+      assert(setsEqual(lambdaHExitNodes, {}));
     }
   };
 
@@ -523,8 +505,14 @@ TestIndirectCall2()
     auto & allocaPyMemoryNode = pointsToGraph.GetAllocaNode(test.GetAllocaPy());
     auto & allocaPzMemoryNode = pointsToGraph.GetAllocaNode(test.GetAllocaPz());
 
+    const jlm::util::HashSet<const jlm::llvm::aa::PointsToGraph::MemoryNode *> pX = {
+      &allocaPxMemoryNode,
+    };
     const jlm::util::HashSet<const jlm::llvm::aa::PointsToGraph::MemoryNode *> pY = {
       &allocaPyMemoryNode,
+    };
+    const jlm::util::HashSet<const jlm::llvm::aa::PointsToGraph::MemoryNode *> pZ = {
+      &allocaPzMemoryNode,
     };
     const jlm::util::HashSet<const jlm::llvm::aa::PointsToGraph::MemoryNode *> pXZ = {
       &allocaPxMemoryNode,
@@ -534,6 +522,10 @@ TestIndirectCall2()
       &allocaPxMemoryNode,
       &allocaPyMemoryNode,
       &allocaPzMemoryNode,
+      &deltaG1MemoryNode,
+      &deltaG2MemoryNode
+    };
+    const jlm::util::HashSet<const jlm::llvm::aa::PointsToGraph::MemoryNode *> pG1G2 = {
       &deltaG1MemoryNode,
       &deltaG2MemoryNode
     };
@@ -601,16 +593,16 @@ TestIndirectCall2()
      */
     {
       auto & lambdaEntryNodes = modRefSummary.GetLambdaEntryModRef(test.GetLambdaTest());
-      assert(setsEqual(lambdaEntryNodes, pXYZG1G2));
+      assert(setsEqual(lambdaEntryNodes, pG1G2));
 
       auto & callXNodes = modRefSummary.GetSimpleNodeModRef(test.GetTestCallX());
-      assert(setsEqual(callXNodes, pXZ));
+      assert(setsEqual(callXNodes, pX));
 
       auto & callYNodes = modRefSummary.GetSimpleNodeModRef(test.GetCallY());
       assert(setsEqual(callYNodes, pY));
 
       auto & lambdaExitNodes = modRefSummary.GetLambdaExitModRef(test.GetLambdaTest());
-      assert(setsEqual(lambdaExitNodes, pXYZG1G2));
+      assert(setsEqual(lambdaExitNodes, pG1G2));
     }
 
     /*
@@ -618,13 +610,13 @@ TestIndirectCall2()
      */
     {
       auto & lambdaEntryNodes = modRefSummary.GetLambdaEntryModRef(test.GetLambdaTest2());
-      assert(setsEqual(lambdaEntryNodes, pXZ));
+      assert(setsEqual(lambdaEntryNodes, {}));
 
       auto & callXNodes = modRefSummary.GetSimpleNodeModRef(test.GetTest2CallX());
-      assert(setsEqual(callXNodes, pXZ));
+      assert(setsEqual(callXNodes, pZ));
 
       auto & lambdaExitNodes = modRefSummary.GetLambdaExitModRef(test.GetLambdaTest2());
-      assert(setsEqual(lambdaExitNodes, pXZ));
+      assert(setsEqual(lambdaExitNodes, {}));
     }
   };
 
@@ -1170,10 +1162,10 @@ TestMemcpy()
      */
     {
       auto & lambdaEntryNodes = modRefSummary.GetLambdaEntryModRef(test.LambdaF());
-      assert(setsEqual(lambdaEntryNodes, { &globalArrayMemoryNode, &localArrayMemoryNode }));
+      assert(setsEqual(lambdaEntryNodes, { &globalArrayMemoryNode }));
 
       auto & lambdaExitNodes = modRefSummary.GetLambdaExitModRef(test.LambdaF());
-      assert(setsEqual(lambdaExitNodes, { &globalArrayMemoryNode, &localArrayMemoryNode }));
+      assert(setsEqual(lambdaExitNodes, { &globalArrayMemoryNode }));
     }
 
     /*
@@ -1184,7 +1176,7 @@ TestMemcpy()
       assert(setsEqual(lambdaEntryNodes, { &localArrayMemoryNode, &globalArrayMemoryNode }));
 
       auto & callNodes = modRefSummary.GetSimpleNodeModRef(test.CallF());
-      assert(setsEqual(callNodes, { &globalArrayMemoryNode, &localArrayMemoryNode }));
+      assert(setsEqual(callNodes, { &globalArrayMemoryNode }));
 
       auto & lambdaExitNodes = modRefSummary.GetLambdaExitModRef(test.LambdaG());
       assert(setsEqual(lambdaExitNodes, { &localArrayMemoryNode, &globalArrayMemoryNode }));
@@ -1275,6 +1267,9 @@ TestEscapedMemory2()
                              const jlm::llvm::aa::ModRefSummary & modRefSummary,
                              const jlm::llvm::aa::PointsToGraph & pointsToGraph)
   {
+    auto & externalFunction1ImportMemoryNode = pointsToGraph.GetImportNode(*test.ExternalFunction1Import);
+    auto & externalFunction2ImportMemoryNode = pointsToGraph.GetImportNode(*test.ExternalFunction2Import);
+
     auto & returnAddressMallocMemoryNode = pointsToGraph.GetMallocNode(*test.ReturnAddressMalloc);
     auto & callExternalFunction1MallocMemoryNode =
         pointsToGraph.GetMallocNode(*test.CallExternalFunction1Malloc);
@@ -1303,7 +1298,10 @@ TestEscapedMemory2()
      */
     {
       jlm::util::HashSet<const jlm::llvm::aa::PointsToGraph::MemoryNode *> expectedMemoryNodes(
-          { &returnAddressMallocMemoryNode,
+          {
+            &externalFunction1ImportMemoryNode,
+            &externalFunction2ImportMemoryNode,
+            &returnAddressMallocMemoryNode,
             &callExternalFunction1MallocMemoryNode,
             &returnAddressLambdaMemoryNode,
             &callExternalFunction1LambdaMemoryNode,
@@ -1325,7 +1323,10 @@ TestEscapedMemory2()
      */
     {
       jlm::util::HashSet<const jlm::llvm::aa::PointsToGraph::MemoryNode *> expectedMemoryNodes(
-          { &returnAddressMallocMemoryNode,
+          {
+            &externalFunction1ImportMemoryNode,
+            &externalFunction2ImportMemoryNode,
+            &returnAddressMallocMemoryNode,
             &callExternalFunction1MallocMemoryNode,
             &returnAddressLambdaMemoryNode,
             &callExternalFunction1LambdaMemoryNode,
@@ -1374,12 +1375,13 @@ TestEscapedMemory3()
                              const jlm::llvm::aa::ModRefSummary & modRefSummary,
                              const jlm::llvm::aa::PointsToGraph & pointsToGraph)
   {
+    auto & importedFunctionMemoryNode = pointsToGraph.GetImportNode(*test.ImportExternalFunction);
     auto & lambdaMemoryNode = pointsToGraph.GetLambdaNode(*test.LambdaTest);
     auto & deltaMemoryNode = pointsToGraph.GetDeltaNode(*test.DeltaGlobal);
     auto & externalMemoryNode = pointsToGraph.GetExternalMemoryNode();
 
     jlm::util::HashSet<const jlm::llvm::aa::PointsToGraph::MemoryNode *> expectedMemoryNodes(
-        { &lambdaMemoryNode, &deltaMemoryNode, &externalMemoryNode });
+        { &importedFunctionMemoryNode, &lambdaMemoryNode, &deltaMemoryNode, &externalMemoryNode });
 
     auto & lambdaEntryNodes = modRefSummary.GetLambdaEntryModRef(*test.LambdaTest);
     assert(setsEqual(lambdaEntryNodes, expectedMemoryNodes));
@@ -1441,7 +1443,6 @@ TestStatistics()
   assert(statistics.GetMeasurementValue<uint64_t>("#SimpleAllocas") == 5);
   assert(statistics.GetMeasurementValue<uint64_t>("#NonReentrantAllocas") == 5);
   assert(statistics.GetMeasurementValue<uint64_t>("#CallGraphSccs") == 1);
-
 
   assert(statistics.HasTimer("SimpleAllocasSetTimer"));
   assert(statistics.HasTimer("NonReentrantAllocaSetsTimer"));

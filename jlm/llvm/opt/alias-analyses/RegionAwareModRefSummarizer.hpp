@@ -23,20 +23,20 @@ using ModRefSetIndex = uint32_t;
  * superfluous states will be routed through structural nodes and renders them independent if they
  * do not reference the same memory location. The region-aware analysis proceeds as follows:
  *
- * 1. Simple Alloca Set Creation: An Alloca is "simple" if its address is never stored to
- * any memory location, except for other simple Allocas.
- * The PointsToGraph is used to determine which allocas are simple.
- *
- * 2. Create sets of Non-Reentrant allocas for each function.
- *
- * 3. Call Graph Creation: creates a call graph by looking at all call operations.
+ * 1. Call Graph Creation: creates a call graph by looking at all call operations.
  * This graph includes calls to external functions, and calls from external functions.
  * Each function is assigned to a strongly connected component.
  *
- * 4. Find allocas that are dead in each SCC:
+ * 2. Find allocas that are dead in each SCC:
  * For each SCC in the call graph, only allocas defined within the SCC,
  * or within one of its predecessors, can be live.
  * All other allocas are placed in the DeadAllocasInScc lists.
+ *
+ * 3. Simple Alloca Set Creation: An Alloca is "simple" if its address is never stored to
+ * any memory location, except for other simple Allocas.
+ * The PointsToGraph is used to determine which allocas are simple.
+ *
+ * 4. Create sets of Non-Reentrant allocas for each region.
  *
  * 5. Mod/Ref Graph Building: Creates a graph containing nodes for loads, stores, calls,
  * regions and functions. Each node has a Mod/Ref set, and edges propagate info.
@@ -102,6 +102,22 @@ public:
 
 private:
   /**
+   * Creates a call graph including all functions in the module, and groups all functions into SCCs.
+   * The resulting SCCs and topological order will be stored in the Context_ field.
+   *
+   * @param rvsdgModule the module for which a mod/ref summary is computed.
+   */
+  void
+  CreateCallGraph(const rvsdg::RvsdgModule & rvsdgModule);
+
+  /**
+   * For each SCC in the call graph, determines which allocas can be known to not be live
+   * when a function from the SCC is at the top of the call stack.
+   */
+  void
+  FindAllocasDeadInSccs();
+
+  /**
    * Creates a set containing all simple Allocas is the PointsToGraph.
    * An Alloca is simple if it is only reachable from other simple Allocas,
    * or from RegisterNodes, in the PointsToGraph.
@@ -110,36 +126,23 @@ private:
   CreateSimpleAllocaSet(const PointsToGraph & pointsToGraph);
 
   /**
+   * Uses the call graph to determine if the given function can ever be involved
+   * in a recursive chain of function calls.
+   *
+   * @param lambda the function in question.
+   * @return true if it is possible for lambda to be involved in recursion, false otherwise
+   */
+  bool
+  IsRecursionPossible(const rvsdg::LambdaNode & lambda);
+
+  /**
    * Creates a set for each region that contains alloca definitions,
    * where the alloca fits the requirements for being non-reentrant.
-   * @return the total number of non-reentrant allocs in the module.
+   * @return the total number of non-reentrant alloca never involved in any recursion
+    // the alloca is definitely non-reentrant.s in the module.
    */
   size_t
   CreateNonReentrantAllocaSets();
-
-  /**
-   * Creates a call graph including all functions in the module, and groups all functions into SCCs.
-   * The resulting SCCs and topological order will be stored in the `FunctionSCCs_` field.
-   *
-   * @param rvsdgModule the module for which a mod/ref summary is computed.
-   */
-  void
-  CreateCallGraph(const rvsdg::RvsdgModule & rvsdgModule);
-
-  /**
-   * Collects all lambda nodes defined in the given module, in an unspecified order.
-   * @param rvsdgModule the module
-   * @return a list of all lambda nodes in the module
-   */
-  static std::vector<const rvsdg::LambdaNode *>
-  CollectLambdaNodes(const rvsdg::RvsdgModule & rvsdgModule);
-
-  /**
-   * For each SCC in the call graph, determines which allocas can be known to not be live
-   * when a function from the SCC is at the top of the call stack.
-   */
-  void
-  FindAllocasDeadInSccs();
 
   /**
    * Creates one ModRefSet which is responsible for representing all reads and writes

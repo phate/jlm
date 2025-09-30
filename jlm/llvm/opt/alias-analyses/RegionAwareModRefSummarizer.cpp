@@ -340,30 +340,21 @@ private:
 struct RegionAwareModRefSummarizer::Context
 {
   /**
-   * The set of all Simple Allocas in the module.
-   * @see CreateSimpleAllocaSet
-   */
-  util::HashSet<const PointsToGraph::MemoryNode *> SimpleAllocas;
-
-  /**
-   * For each region, this field contains the set of allocas defined in the region,
-   * that have been show to be Non-Reentrant.
-   */
-  std::unordered_map<const rvsdg::Region *, util::HashSet<const PointsToGraph::MemoryNode *>>
-      NonReentrantAllocas;
-
-  /**
    * The set of functions belonging to each SCC in the call graph.
    * The SCCs are ordered in reverse topological order, so
    * if function a() calls b(), and they are not in the same SCC,
    * the SCC containing a() comes after the SCC containing b().
    *
    * External functions are not included in these sets, see \ref ExternalNodeSccIndex.
+   *
+   * Assigned in \ref CreateCallGraph(). Remains constant after.
    */
   std::vector<util::HashSet<const rvsdg::LambdaNode *>> SccFunctions;
 
   /**
    * The index of the SCC in the call graph that represent containing all external functions
+   *
+   * Assigned in \ref CreateCallGraph(). Remains constant after.
    */
   size_t ExternalNodeSccIndex = 0;
 
@@ -371,23 +362,46 @@ struct RegionAwareModRefSummarizer::Context
    * For each SCC in the call graph, the set of SCCs it targets using calls.
    * Since SCCs are ordered in reverse topological order, an SCC never targets higher indices.
    * If there is any possibility of recursion within an SCC, it also targets itself.
+   *
+   * Assigned in \ref CreateCallGraph(). Remains constant after.
    */
   std::vector<util::HashSet<size_t>> SccCallTargets;
 
   /**
    * A mapping from functions to the index of the SCC they belong to in the call graph
+   *
+   * Assigned in \ref CreateCallGraph(). Remains constant after.
    */
   std::unordered_map<const rvsdg::LambdaNode *, size_t> FunctionToSccIndex;
 
   /**
    * For each SCC, only allocas defined within the SCC, or within a predecessor of the SCC,
    * can possibly be live. All other allocas are considered dead in the SCC.
-   * @see FindAllocasDeadInSccs()
+   *
+   * Assigned in \ref FindAllocasDeadInSccs(). Remains constant after.
    */
   std::vector<util::HashSet<const PointsToGraph::MemoryNode *>> AllocasDeadInScc;
 
   /**
+   * The set of all Simple Allocas in the module.
+   *
+   * Assigned in \ref CreateSimpleAllocaSet(). Remains constant after.
+   */
+  util::HashSet<const PointsToGraph::MemoryNode *> SimpleAllocas;
+
+  /**
+   * For each region, this field contains the set of allocas defined in the region,
+   * that have been show to be Non-Reentrant.
+   *
+   * Assigned in \ref CreateNonReentrantAllocaSets(). Remains constant after.
+   */
+  std::unordered_map<const rvsdg::Region *, util::HashSet<const PointsToGraph::MemoryNode *>>
+      NonReentrantAllocas;
+
+  /**
    * A ModRefSet containing all MemoryNodes that can be read or written to from external functions.
+   *
+   * Assigned in \ref CreateExternalModRefSet(). Remains constant after.
    */
   ModRefSetIndex ExternalModRefIndex = 0;
 
@@ -402,6 +416,7 @@ struct RegionAwareModRefSummarizer::Context
    * Blocklists in the ModRefSet constraint graphs.
    * During solving, a MemoryNode x that is about to be propagated to a ModRefSet a
    * will be skipped if x is in the Blocklist associated with a.
+   * The pointer to the blocklist must remain valid until solving is finished.
    */
   std::unordered_map<ModRefSetIndex, const util::HashSet<const PointsToGraph::MemoryNode *> *>
       ModRefSetBlocklists;
@@ -421,14 +436,6 @@ RegionAwareModRefSummarizer::SummarizeModRefs(
   Context_ = std::make_unique<Context>();
   auto statistics = Statistics::Create(rvsdgModule, pointsToGraph);
 
-  statistics->StartCreateSimpleAllocasSetStatistics();
-  Context_->SimpleAllocas = CreateSimpleAllocaSet(pointsToGraph);
-  statistics->StopCreateSimpleAllocasSetStatistics(Context_->SimpleAllocas.Size());
-
-  statistics->StartCreateNonReentrantAllocaSetsStatistics();
-  auto numNonReentrantAllocas = CreateNonReentrantAllocaSets();
-  statistics->StopCreateNonReentrantAllocaSetsStatistics(numNonReentrantAllocas);
-
   statistics->StartCallGraphStatistics();
   CreateCallGraph(rvsdgModule);
   statistics->StopCallGraphStatistics(Context_->SccFunctions.size());
@@ -436,6 +443,14 @@ RegionAwareModRefSummarizer::SummarizeModRefs(
   statistics->StartAllocasDeadInSccStatistics();
   FindAllocasDeadInSccs();
   statistics->StopAllocasDeadInSccStatistics();
+
+  statistics->StartCreateSimpleAllocasSetStatistics();
+  Context_->SimpleAllocas = CreateSimpleAllocaSet(pointsToGraph);
+  statistics->StopCreateSimpleAllocasSetStatistics(Context_->SimpleAllocas.Size());
+
+  statistics->StartCreateNonReentrantAllocaSetsStatistics();
+  auto numNonReentrantAllocas = CreateNonReentrantAllocaSets();
+  statistics->StopCreateNonReentrantAllocaSetsStatistics(numNonReentrantAllocas);
 
   statistics->StartCreateExternalModRefSet();
   CreateExternalModRefSet();
@@ -458,149 +473,50 @@ RegionAwareModRefSummarizer::SummarizeModRefs(
 
   // Print debug output
   // std::cerr << PointsToGraph::ToDot(pointsToGraph) << std::endl;
+  // std::cerr << "numSimpleAllocas: " << Context_->SimpleAllocas.Size() << std::endl;
+  // std::cerr << "numNonReentrantAllocas: " << numNonReentrantAllocas << std::endl;
   // std::cerr << "Call Graph SCCs:" << std::endl << CallGraphSCCsToString(*this) << std::endl;
-  // std::cerr << "RegionTree:" << std::endl << ToRegionTree(rvsdgModule.Rvsdg(), *ModRefSummary_)
-  // << std::endl;
+  // std::cerr << "RegionTree:" << std::endl
+  //           << ToRegionTree(rvsdgModule.Rvsdg(), *ModRefSummary_) << std::endl;
 
   statisticsCollector.CollectDemandedStatistics(std::move(statistics));
   Context_.reset();
   return std::move(ModRefSummary_);
 }
 
-util::HashSet<const PointsToGraph::MemoryNode *>
-RegionAwareModRefSummarizer::CreateSimpleAllocaSet(const PointsToGraph & pointsToGraph)
+/**
+ * Collects all lambda nodes defined in the given module, in an unspecified order.
+ * @param rvsdgModule the module
+ * @return a list of all lambda nodes in the module
+ */
+static std::vector<const rvsdg::LambdaNode *>
+CollectLambdaNodes(const rvsdg::RvsdgModule & rvsdgModule)
 {
-  // The set of allocas that are simple. Starts off as an over-approximation
-  util::HashSet<const PointsToGraph::MemoryNode *> simpleAllocas;
-  // A queue used to visit all allocas that have been found to not be simple
-  std::queue<const PointsToGraph::MemoryNode *> notSimple;
+  std::vector<const rvsdg::LambdaNode *> result;
 
-  const auto OnlyAllocaSources = [](const PointsToGraph::MemoryNode & node)
+  // Recursively traverses all structural nodes, but does not enter into lambdas
+  const std::function<void(rvsdg::Region &)> CollectLambdasInRegion =
+      [&](rvsdg::Region & region) -> void
   {
-    // Allocas that have escaped the module are never simple
-    if (node.IsModuleEscaping())
-      return false;
-
-    for (const auto & source : node.Sources())
+    for (auto & node : region.Nodes())
     {
-      if (!PointsToGraph::Node::Is<PointsToGraph::AllocaNode>(source)
-          && !PointsToGraph::Node::Is<PointsToGraph::RegisterNode>(source))
-        return false;
+      if (auto lambda = dynamic_cast<rvsdg::LambdaNode *>(&node))
+      {
+        result.push_back(lambda);
+      }
+      else if (auto structural = dynamic_cast<rvsdg::StructuralNode *>(&node))
+      {
+        for (size_t i = 0; i < structural->nsubregions(); i++)
+        {
+          CollectLambdasInRegion(*structural->subregion(i));
+        }
+      }
     }
-
-    return true;
   };
 
-  for (const auto & allocaNode : pointsToGraph.AllocaNodes())
-  {
-    if (OnlyAllocaSources(allocaNode))
-      simpleAllocas.Insert(&allocaNode);
-    else
-      notSimple.push(&allocaNode);
-  }
+  CollectLambdasInRegion(rvsdgModule.Rvsdg().GetRootRegion());
 
-  // Now all Allocas are either in the simpleAllocas candidate set,
-  // or in the notSimple queue. Process the queue until empty
-  while (!notSimple.empty())
-  {
-    const auto & allocaNode = *notSimple.front();
-    notSimple.pop();
-
-    // Any node targeted by the allocaNode can not be simple
-    for (const auto & target : allocaNode.Targets())
-    {
-      // If the target is currently in the simple allocas candiate set, move it to the queue
-      if (simpleAllocas.Remove(&target))
-        notSimple.push(&target);
-    }
-  }
-
-  return simpleAllocas;
-}
-
-[[nodiscard]] static const rvsdg::LambdaNode &
-GetSurroundingLambdaNode(const rvsdg::Node & node)
-{
-  auto it = &node;
-  while (it)
-  {
-    if (auto lambda = dynamic_cast<const rvsdg::LambdaNode *>(it))
-      return *lambda;
-    it = it->region()->node();
-  }
-  JLM_UNREACHABLE("node was not in a lambda");
-}
-
-/**
- * Checks if it is possible to reach the given \p allocaMemoryNode from an argument of \p region,
- * via zero or more AllocaMemoryNodes in the PointsToGraph.
- * Other types of MemoryNodes are ignored, as they would disqualify the alloca from being simple.
- * @param allocaMemoryNode the AllocaMemoryNode representing a simple alloca
- * @param region the region whose arguments are checked
- * @return true if it was possible to reach the alloca from the region parameters
- */
-static bool
-IsSimpleAllocaReachableFromRegionArguments(
-    const PointsToGraph::AllocaNode & allocaMemoryNode,
-    const rvsdg::Region & region)
-{
-  const auto & pointsToGraph = allocaMemoryNode.Graph();
-
-  // Use a queue and a set to traverse the PointsToGraph
-  util::HashSet<const PointsToGraph::Node *> seen;
-  std::queue<const PointsToGraph::Node *> nodes;
-  for (auto argument : region.Arguments())
-  {
-    if (!IsPointerCompatible(*argument))
-      continue;
-    auto & ptgNode = pointsToGraph.GetRegisterNode(*argument);
-    nodes.push(&ptgNode);
-    seen.Insert(&ptgNode);
-  }
-
-  // Traverse along PointsToGraph edges to find all reachable allocas
-  while (!nodes.empty())
-  {
-    auto & ptgNode = *nodes.front();
-    nodes.pop();
-
-    for (auto & target : ptgNode.Targets())
-    {
-      if (&target == &allocaMemoryNode)
-        return false;
-
-      // We only are about following allocas, as simple allocas are only reachable from them.
-      if (!PointsToGraph::Node::Is<PointsToGraph::AllocaNode>(target))
-        continue;
-
-      if (seen.Insert(&target))
-        nodes.push(&target);
-    }
-  }
-
-  return true;
-}
-
-size_t
-RegionAwareModRefSummarizer::CreateNonReentrantAllocaSets()
-{
-  size_t numNonReentrantAllocas = 0;
-
-  // Only simple allocas are candidates for being Non-Reentrant
-  for (auto memoryNode : Context_->SimpleAllocas.Items())
-  {
-    auto & allocaMemoryNode = *util::AssertedCast<const PointsToGraph::AllocaNode>(memoryNode);
-
-    const auto & region = *allocaMemoryNode.GetAllocaNode().region();
-    if (IsSimpleAllocaReachableFromRegionArguments(allocaMemoryNode, region))
-      continue;
-
-    // This operation creates a set for the region if it does not already have one
-    Context_->NonReentrantAllocas[&region].Insert(memoryNode);
-    numNonReentrantAllocas++;
-  }
-
-  return numNonReentrantAllocas;
+  return result;
 }
 
 void
@@ -690,6 +606,9 @@ RegionAwareModRefSummarizer::CreateCallGraph(const rvsdg::RvsdgModule & rvsdgMod
     }
   }
 
+  // Finally add the fact that the external node may call itself
+  callGraphSuccessors[externalNodeIndex].Insert(externalNodeIndex);
+
   // Used by the implementation of Tarjan's SCC algorithm
   const auto GetSuccessors = [&](size_t nodeIndex)
   {
@@ -728,34 +647,17 @@ RegionAwareModRefSummarizer::CreateCallGraph(const rvsdg::RvsdgModule & rvsdgMod
   Context_->ExternalNodeSccIndex = sccIndex[externalNodeIndex];
 }
 
-std::vector<const rvsdg::LambdaNode *>
-RegionAwareModRefSummarizer::CollectLambdaNodes(const rvsdg::RvsdgModule & rvsdgModule)
+[[nodiscard]] static const rvsdg::LambdaNode &
+GetSurroundingLambdaNode(const rvsdg::Node & node)
 {
-  std::vector<const rvsdg::LambdaNode *> result;
-
-  // Recursively traverses all structural nodes, but does not enter into lambdas
-  const std::function<void(rvsdg::Region &)> CollectLambdasInRegion =
-      [&](rvsdg::Region & region) -> void
+  auto it = &node;
+  while (it)
   {
-    for (auto & node : region.Nodes())
-    {
-      if (auto lambda = dynamic_cast<rvsdg::LambdaNode *>(&node))
-      {
-        result.push_back(lambda);
-      }
-      else if (auto structural = dynamic_cast<rvsdg::StructuralNode *>(&node))
-      {
-        for (size_t i = 0; i < structural->nsubregions(); i++)
-        {
-          CollectLambdasInRegion(*structural->subregion(i));
-        }
-      }
-    }
-  };
-
-  CollectLambdasInRegion(rvsdgModule.Rvsdg().GetRootRegion());
-
-  return result;
+    if (auto lambda = dynamic_cast<const rvsdg::LambdaNode *>(it))
+      return *lambda;
+    it = it->region()->node();
+  }
+  JLM_UNREACHABLE("node was not in a lambda");
 }
 
 void
@@ -797,6 +699,142 @@ RegionAwareModRefSummarizer::FindAllocasDeadInSccs()
     Context_->AllocasDeadInScc[sccIndex].UnionWith(allAllocas);
     Context_->AllocasDeadInScc[sccIndex].DifferenceWith(liveAllocas[sccIndex]);
   }
+}
+
+util::HashSet<const PointsToGraph::MemoryNode *>
+RegionAwareModRefSummarizer::CreateSimpleAllocaSet(const PointsToGraph & pointsToGraph)
+{
+  // The set of allocas that are simple. Starts off as an over-approximation
+  util::HashSet<const PointsToGraph::MemoryNode *> simpleAllocas;
+  // A queue used to visit all allocas that have been found to not be simple
+  std::queue<const PointsToGraph::MemoryNode *> notSimple;
+
+  const auto OnlyAllocaSources = [](const PointsToGraph::MemoryNode & node)
+  {
+    // Allocas that have escaped the module are never simple
+    if (node.IsModuleEscaping())
+      return false;
+
+    for (const auto & source : node.Sources())
+    {
+      if (!PointsToGraph::Node::Is<PointsToGraph::AllocaNode>(source)
+          && !PointsToGraph::Node::Is<PointsToGraph::RegisterNode>(source))
+        return false;
+    }
+
+    return true;
+  };
+
+  for (const auto & allocaNode : pointsToGraph.AllocaNodes())
+  {
+    if (OnlyAllocaSources(allocaNode))
+      simpleAllocas.Insert(&allocaNode);
+    else
+      notSimple.push(&allocaNode);
+  }
+
+  // Now all Allocas are either in the simpleAllocas candidate set,
+  // or in the notSimple queue. Process the queue until empty
+  while (!notSimple.empty())
+  {
+    const auto & allocaNode = *notSimple.front();
+    notSimple.pop();
+
+    // Any node targeted by the allocaNode can not be simple
+    for (const auto & target : allocaNode.Targets())
+    {
+      // If the target is currently in the simple allocas candiate set, move it to the queue
+      if (simpleAllocas.Remove(&target))
+        notSimple.push(&target);
+    }
+  }
+
+  return simpleAllocas;
+}
+
+/**
+ * Checks if it is possible to reach the given \p allocaMemoryNode from an argument of \p region,
+ * via zero or more AllocaMemoryNodes in the PointsToGraph.
+ * Other types of MemoryNodes are ignored, as they would disqualify the alloca from being simple.
+ * @param allocaMemoryNode the AllocaMemoryNode representing a simple alloca
+ * @param region the region whose arguments are checked
+ * @return true if it was possible to reach the alloca from the region parameters
+ */
+static bool
+IsSimpleAllocaReachableFromRegionArguments(
+    const PointsToGraph::AllocaNode & allocaMemoryNode,
+    const rvsdg::Region & region)
+{
+  const auto & pointsToGraph = allocaMemoryNode.Graph();
+
+  // Use a queue and a set to traverse the PointsToGraph
+  util::HashSet<const PointsToGraph::Node *> seen;
+  std::queue<const PointsToGraph::Node *> nodes;
+  for (auto argument : region.Arguments())
+  {
+    if (!IsPointerCompatible(*argument))
+      continue;
+    auto & ptgNode = pointsToGraph.GetRegisterNode(*argument);
+    nodes.push(&ptgNode);
+    seen.Insert(&ptgNode);
+  }
+
+  // Traverse along PointsToGraph edges to find all reachable allocas
+  while (!nodes.empty())
+  {
+    auto & ptgNode = *nodes.front();
+    nodes.pop();
+
+    for (auto & target : ptgNode.Targets())
+    {
+      if (&target == &allocaMemoryNode)
+        return true;
+
+      // We only are about following allocas, as simple allocas are only reachable from them.
+      if (!PointsToGraph::Node::Is<PointsToGraph::AllocaNode>(target))
+        continue;
+
+      if (seen.Insert(&target))
+        nodes.push(&target);
+    }
+  }
+
+  return false;
+}
+
+bool
+RegionAwareModRefSummarizer::IsRecursionPossible(const rvsdg::LambdaNode & lambda)
+{
+  const auto scc = Context_->FunctionToSccIndex[&lambda];
+  return Context_->SccCallTargets[scc].Contains(scc);
+}
+
+size_t
+RegionAwareModRefSummarizer::CreateNonReentrantAllocaSets()
+{
+  size_t numNonReentrantAllocas = 0;
+
+  // Only simple allocas are candidates for being Non-Reentrant
+  for (auto memoryNode : Context_->SimpleAllocas.Items())
+  {
+    auto & allocaMemoryNode = *util::AssertedCast<const PointsToGraph::AllocaNode>(memoryNode);
+    auto & allocaNode = allocaMemoryNode.GetAllocaNode();
+    const auto & region = *allocaNode.region();
+
+    // If the alloca's function is never involved in any recursion
+    // the alloca is definitely non-reentrant.
+    const auto & lambda = GetSurroundingLambdaNode(allocaNode);
+
+    if (IsRecursionPossible(lambda)
+        && IsSimpleAllocaReachableFromRegionArguments(allocaMemoryNode, region))
+      continue;
+
+    // Creates a set for the region if it does not already have one, and add the alloca
+    Context_->NonReentrantAllocas[&region].Insert(&allocaMemoryNode);
+    numNonReentrantAllocas++;
+  }
+
+  return numNonReentrantAllocas;
 }
 
 void
@@ -900,12 +938,6 @@ RegionAwareModRefSummarizer::AnnotateRegion(
   {
     JLM_ASSERT(ModRefSummary_->GetModRefSet(regionModRefSet).IsEmpty());
     AddModRefSetBlocklist(regionModRefSet, it->second);
-    std::cout << "Adding blocklist to " << regionModRefSet << ": ";
-    for (auto blocked : it->second.Items())
-    {
-      std::cout << blocked << ", ";
-    }
-    std::cout << std::endl;
   }
 
   return regionModRefSet;
@@ -1084,12 +1116,6 @@ RegionAwareModRefSummarizer::AnnotateCall(
     AddModRefSetBlocklist(
         callModRef,
         Context_->AllocasDeadInScc[Context_->FunctionToSccIndex[&lambda]]);
-    std::cout << "Adding call blocklist to " << callModRef << ": ";
-    for (auto blocked : Context_->AllocasDeadInScc[Context_->FunctionToSccIndex[&lambda]].Items())
-    {
-      std::cout << blocked << ", ";
-    }
-    std::cout << std::endl;
   }
 
   return callModRef;
@@ -1154,7 +1180,6 @@ RegionAwareModRefSummarizer::VerifyBlocklists() const
   return true;
 }
 
-
 std::string
 RegionAwareModRefSummarizer::CallGraphSCCsToString(const RegionAwareModRefSummarizer & summarizer)
 {
@@ -1214,7 +1239,6 @@ RegionAwareModRefSummarizer::ToRegionTree(
     auto & memoryNodes = modRefSummary.GetModRefSet(modRefIndex);
     ss << " ";
     toString(memoryNodes);
-    ss << std::endl;
 
     if (auto structuralNode = dynamic_cast<const rvsdg::StructuralNode *>(&node))
     {

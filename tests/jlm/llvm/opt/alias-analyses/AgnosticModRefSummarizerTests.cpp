@@ -752,7 +752,7 @@ TestMemcpy()
       assert(numLambdaEntryNodes == pointsToGraph.NumMemoryNodes());
       assert(numLambdaExitNodes == pointsToGraph.NumMemoryNodes());
       assert(numCallFNodes == pointsToGraph.NumMemoryNodes());
-      assert(numMemcpyNodes == pointsToGraph.NumMemoryNodes());
+      assert(numMemcpyNodes == 2);
     }
   };
 
