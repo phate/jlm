@@ -439,17 +439,14 @@ computeDepth(const Node & node, std::unordered_map<const Node *, size_t> & depth
     return depthMap[&node];
   }
 
-  std::vector<size_t> inputDepths;
+  size_t depth = 0;
   for (auto & input : node.Inputs())
   {
     if (const auto owner = TryGetOwnerNode<Node>(*input.origin()))
     {
-      inputDepths.push_back(computeDepth(*owner, depthMap));
+      depth = std::max(depth, computeDepth(*owner, depthMap) + 1);
     }
   }
-
-  const size_t depth =
-      inputDepths.empty() ? 0 : *std::max_element(inputDepths.begin(), inputDepths.end()) + 1;
   depthMap[&node] = depth;
 
   return depth;
