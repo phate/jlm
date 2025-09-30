@@ -24,13 +24,13 @@ TestStartStop()
 {
   Timer t;
   assert(t.ns() == 0);
-  assert(!t.IsRunning());
+  assert(!t.isRunning());
 
   t.start();
-  assert(t.IsRunning());
+  assert(t.isRunning());
   sleepUs(10);
   t.stop();
-  assert(!t.IsRunning());
+  assert(!t.isRunning());
   auto ns = t.ns();
   assert(ns >= 10000);
 
@@ -46,7 +46,7 @@ TestReset()
 {
   Timer t;
   assert(t.ns() == 0);
-  assert(!t.IsRunning());
+  assert(!t.isRunning());
 
   t.start();
   sleepUs(1);
@@ -55,13 +55,13 @@ TestReset()
   assert(t.ns() != 0);
   t.reset();
   assert(t.ns() == 0);
-  assert(!t.IsRunning());
+  assert(!t.isRunning());
 
   // Resetting while running
   t.start();
   t.reset();
   assert(t.ns() == 0);
-  assert(!t.IsRunning());
+  assert(!t.isRunning());
 }
 
 static void
