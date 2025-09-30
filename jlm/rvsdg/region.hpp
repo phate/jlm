@@ -761,6 +761,9 @@ public:
   [[nodiscard]] static std::string
   ToTree(const rvsdg::Region & region) noexcept;
 
+  static std::unordered_map<const Node *, size_t>
+  computeDepthMap(const Region & region);
+
 private:
   static void
   ToTree(

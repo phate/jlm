@@ -431,6 +431,45 @@ Region::NumRegions(const rvsdg::Region & region) noexcept
   return numRegions;
 }
 
+static size_t
+computeDepth(const Node & node, std::unordered_map<const Node *, size_t> & depthMap)
+{
+  if (depthMap.find(&node) != depthMap.end())
+  {
+    return depthMap[&node];
+  }
+
+  std::vector<size_t> inputDepths;
+  for (auto & input : node.Inputs())
+  {
+    if (const auto owner = TryGetOwnerNode<Node>(*input.origin()))
+    {
+      inputDepths.push_back(computeDepth(*owner, depthMap));
+    }
+    else
+    {
+      JLM_ASSERT(TryGetOwnerRegion(*input.origin()));
+      inputDepths.push_back(0);
+    }
+  }
+
+  const size_t depth = *std::max_element(inputDepths.begin(), inputDepths.end());
+  depthMap[&node] = depth + 1;
+  return depth;
+}
+
+std::unordered_map<const Node *, size_t>
+Region::computeDepthMap(const Region & region)
+{
+  std::unordered_map<const Node *, size_t> depthMap;
+  for (auto & node : region.Nodes())
+  {
+    computeDepth(node, depthMap);
+  }
+
+  return depthMap;
+}
+
 std::string
 Region::ToTree(const rvsdg::Region & region, const util::AnnotationMap & annotationMap) noexcept
 {
