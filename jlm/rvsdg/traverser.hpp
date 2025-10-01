@@ -88,8 +88,6 @@ enum class traversal_nodestate
 class TraversalTracker final
 {
 public:
-  explicit inline TraversalTracker(Region & region);
-
   inline traversal_nodestate
   get_nodestate(Node * node);
 
@@ -98,12 +96,6 @@ public:
 
   inline Node *
   peek();
-
-  [[nodiscard]] Region &
-  GetRegion() const noexcept
-  {
-    return region_;
-  }
 
 private:
   using FrontierList = std::list<Node *>;
@@ -114,7 +106,6 @@ private:
     FrontierList::iterator pos = {};
   };
 
-  Region & region_;
   std::unordered_map<Node *, State> states_;
   FrontierList frontier_;
 };
@@ -184,6 +175,7 @@ private:
   void
   input_change(Input * in, Output * old_origin, Output * new_origin);
 
+  Region & region_;
   TraversalTracker tracker_;
   std::vector<jlm::util::Callback> callbacks_;
 };
@@ -224,6 +216,7 @@ private:
   input_change(Input * in, Output * old_origin, Output * new_origin);
 
   TraversalTracker tracker_;
+  Region & region_;
   std::vector<jlm::util::Callback> callbacks_;
   traversal_nodestate new_node_state_;
 };
