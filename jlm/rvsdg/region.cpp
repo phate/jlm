@@ -518,9 +518,10 @@ Region::ToString(const util::Annotation & annotation, char labelValueSeparator)
 static size_t
 computeDepth(const Node & node, std::unordered_map<const Node *, size_t> & depthMap)
 {
-  if (depthMap.find(&node) != depthMap.end())
+  const auto it = depthMap.find(&node);
+  if (it != depthMap.end())
   {
-    return depthMap[&node];
+    return it->second;
   }
 
   size_t depth = 0;
