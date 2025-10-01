@@ -533,3 +533,103 @@ IOBarrierAllocaAddressNormalization_Gamma()
 JLM_UNIT_TEST_REGISTER(
     "jlm/llvm/ir/operators/StoreTests-TestIOBarrierAllocaAddressNormalization_Gamma",
     IOBarrierAllocaAddressNormalization_Gamma)
+
+static void
+storeAllocaSingleUser()
+{
+  using namespace jlm::llvm;
+  using namespace jlm::rvsdg;
+
+  // Arrange
+  const auto valueType = jlm::tests::ValueType::Create();
+  const auto bit32Type = BitType::Create(32);
+
+  Graph graph;
+  const auto valueImport = &jlm::rvsdg::GraphImport::Create(graph, valueType, "value");
+  const auto sizeImport = &jlm::rvsdg::GraphImport::Create(graph, bit32Type, "value");
+
+  auto allocaResults = AllocaOperation::create(valueType, sizeImport, 4);
+
+  auto & storeNode = StoreNonVolatileOperation::CreateNode(
+      *allocaResults[0],
+      *valueImport,
+      { allocaResults[1] },
+      4);
+
+  auto & x1 = GraphExport::Create(*storeNode.output(0), "store");
+
+  view(&graph.GetRootRegion(), stdout);
+
+  // Act
+  const auto success = jlm::rvsdg::ReduceNode<StoreNonVolatileOperation>(
+      StoreNonVolatileOperation::normalizeStoreAllocaSingleUser,
+      storeNode);
+
+  graph.PruneNodes();
+
+  view(&graph.GetRootRegion(), stdout);
+
+  // Assert
+  assert(success);
+  assert(x1.origin() == allocaResults[1]);
+}
+
+JLM_UNIT_TEST_REGISTER(
+    "jlm/llvm/ir/operators/StoreTests-storeAllocaSingleUser",
+    storeAllocaSingleUser)
+
+static void
+storeAllocaSingleUser_MultipleUsers()
+{
+  using namespace jlm::llvm;
+  using namespace jlm::rvsdg;
+
+  // Arrange
+  const auto valueType = jlm::tests::ValueType::Create();
+  const auto bit32Type = BitType::Create(32);
+
+  Graph graph;
+  const auto valueImport = &jlm::rvsdg::GraphImport::Create(graph, valueType, "value");
+  const auto sizeImport = &jlm::rvsdg::GraphImport::Create(graph, bit32Type, "value");
+
+  auto allocaResults = AllocaOperation::create(valueType, sizeImport, 4);
+
+  auto & storeNode1 = StoreNonVolatileOperation::CreateNode(
+      *allocaResults[0],
+      *valueImport,
+      { allocaResults[1] },
+      4);
+
+  auto & storeNode2 = StoreNonVolatileOperation::CreateNode(
+      *allocaResults[0],
+      *valueImport,
+      { storeNode1.output(0) },
+      4);
+
+  auto & x1 = GraphExport::Create(*storeNode1.output(0), "store1");
+  auto & x2 = GraphExport::Create(*storeNode2.output(0), "store2");
+
+  view(&graph.GetRootRegion(), stdout);
+
+  // Act
+  const auto successStoreNode1 = jlm::rvsdg::ReduceNode<StoreNonVolatileOperation>(
+      StoreNonVolatileOperation::normalizeStoreAllocaSingleUser,
+      storeNode1);
+  const auto successStoreNode2 = jlm::rvsdg::ReduceNode<StoreNonVolatileOperation>(
+      StoreNonVolatileOperation::normalizeStoreAllocaSingleUser,
+      storeNode2);
+
+  graph.PruneNodes();
+
+  view(&graph.GetRootRegion(), stdout);
+
+  // Assert
+  assert(!successStoreNode1);
+  assert(!successStoreNode2);
+  assert(x1.origin() == storeNode1.output(0));
+  assert(x2.origin() == storeNode2.output(0));
+}
+
+JLM_UNIT_TEST_REGISTER(
+    "jlm/llvm/ir/operators/StoreTests-storeAllocaSingleUser_MultipleUsers",
+    storeAllocaSingleUser_MultipleUsers)
