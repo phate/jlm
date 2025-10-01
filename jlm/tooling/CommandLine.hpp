@@ -67,7 +67,6 @@ public:
 
     AAAndersenAgnostic,
     AAAndersenRegionAware,
-    AAAndersenTopDownLifetimeAware,
     AASteensgaardAgnostic,
     AASteensgaardRegionAware,
     CommonNodeElimination,
@@ -211,7 +210,6 @@ private:
   {
     inline static const char * AaAndersenAgnostic_ = "AAAndersenAgnostic";
     inline static const char * AaAndersenRegionAware_ = "AAAndersenRegionAware";
-    inline static const char * AaAndersenTopDownLifetimeAware_ = "AAAndersenTopDownLifetimeAware";
     inline static const char * AaSteensgaardAgnostic_ = "AASteensgaardAgnostic";
     inline static const char * AaSteensgaardRegionAware_ = "AASteensgaardRegionAware";
     inline static const char * CommonNodeElimination_ = "CommonNodeElimination";
