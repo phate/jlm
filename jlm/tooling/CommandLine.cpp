@@ -1040,6 +1040,11 @@ JlmHlsCommandLineParser::ParseCommandLineArguments(int argc, const char * const 
       cl::Prefix,
       cl::desc("Extracts function specified by hls-function"));
 
+  cl::opt<bool> dumpRvsdgDotGraphs(
+      "dumpRvsdgDotGraphs",
+      cl::init(false),
+      cl::desc("Dump RVSDG as dot graphs after each transformation in debug folder."));
+
   cl::opt<JlmHlsCommandLineOptions::OutputFormat> format(
       cl::values(
           ::clEnumValN(
@@ -1063,6 +1068,7 @@ JlmHlsCommandLineParser::ParseCommandLineArguments(int argc, const char * const 
   CommandLineOptions_.OutputFiles_ = util::FilePath(outputFolder);
   CommandLineOptions_.ExtractHlsFunction_ = extractHlsFunction;
   CommandLineOptions_.OutputFormat_ = format;
+  CommandLineOptions_.dumpRvsdgDotGraphs_ = dumpRvsdgDotGraphs;
 
   if (latency < 1)
   {
