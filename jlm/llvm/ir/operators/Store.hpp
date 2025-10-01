@@ -260,6 +260,23 @@ public:
       const StoreNonVolatileOperation & operation,
       const std::vector<rvsdg::Output *> & operands);
 
+  /**
+   * Redirect the users of the \ref StoreNonVolatileOperation results to its memory state operands
+   * if it can be shown that the \ref StoreNonVolatileOperation is the only user of an \ref
+   * AllocaOperation.
+   *
+   * a s1 = AllocaOperation ...
+   * s2 = StoreNonVolatileOperation a v s1
+   * ... = AnyOperation s2
+   * =>
+   * a s1 = AllocaOperation ...
+   * ... = AnyOperation s1
+   */
+  static std::optional<std::vector<rvsdg::Output *>>
+  normalizeStoreAllocaSingleUser(
+      const StoreNonVolatileOperation & operation,
+      const std::vector<rvsdg::Output *> & operands);
+
   static std::unique_ptr<llvm::ThreeAddressCode>
   Create(const Variable * address, const Variable * value, const Variable * state, size_t alignment)
   {
