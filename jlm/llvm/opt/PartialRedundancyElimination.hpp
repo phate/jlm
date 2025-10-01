@@ -68,7 +68,7 @@ private:
   static void hash_bin(           PartialRedundancyElimination *pe, rvsdg::Node& node);
   static void hash_gamma(         PartialRedundancyElimination *pe, rvsdg::Node& node);
   static void hash_node(          PartialRedundancyElimination *pe, rvsdg::Node& node);
-  //static void hash_call(          PartialRedundancyElimination *pe, rvsdg::Node& node);
+  static void hash_call(          PartialRedundancyElimination *pe, rvsdg::Node& node);
 
   inline void register_hash(jlm::rvsdg::Output* k, size_t h)
   {

@@ -15,6 +15,7 @@
 #define  TR_BLUE    TR_FG(64, 64, 255)
 #define  TR_PINK    TR_FG(255,128,128)
 #define  TR_CYAN    TR_FG(64, 255, 255)
+#define  TR_GRAY    TR_FG(52,52,52)
 
 #include "../../../tests/test-operation.hpp"
 #include "../../rvsdg/gamma.hpp"
@@ -25,6 +26,7 @@
 #include "../../rvsdg/structural-node.hpp"
 #include "../../util/GraphWriter.hpp"
 #include "../ir/operators/call.hpp"
+#include "../ir/operators/operators.hpp"
 #include "PartialRedundancyElimination.hpp"
 #include <fstream>
 #include <functional>
@@ -218,6 +220,7 @@ void PartialRedundancyElimination::TraverseSubRegions(rvsdg::Region& reg, void(*
       for (auto& reg : sn.Subregions())
       {
         this->TraverseSubRegions(reg, cb);
+        std::cout << ind() << TR_GRAY << "..........................." << TR_RESET << std::endl;
       }
     });
   }
@@ -230,7 +233,7 @@ void TraverseSubTrees(rvsdg::StructuralNode& node, void(*cb)(PartialRedundancyEl
 
 void PartialRedundancyElimination::dump_node(PartialRedundancyElimination* pe, rvsdg::Node& node)
 {
-  std::cout << ind() << TR_BLUE << node.DebugString() << TR_CYAN<<node.GetNodeId() << TR_RESET;
+  std::cout << ind() << TR_BLUE << node.DebugString() << "<"<<node.GetNodeId() <<">"<< TR_RESET;
   for (size_t i = 0; i < node.noutputs(); i++)
   {
     auto k_present = pe->output_hashes.find(node.output(i));
@@ -252,7 +255,7 @@ void PartialRedundancyElimination::dump_node(PartialRedundancyElimination* pe, r
       if (pe->output_hashes.find(param) != pe->output_hashes.end())
       {
         size_t h = pe->output_hashes[param];
-        std::cout << ( pe->hash_count(h) > 1 ? TR_RED : TR_ORANGE) << " : " << h << TR_RESET;
+        std::cout << TR_ORANGE << " : " << h << TR_RESET;
       }
 
     }
@@ -269,14 +272,6 @@ void PartialRedundancyElimination::register_leaf_hash(PartialRedundancyEliminati
       size_t h = hasher(iconst.Representation().str());
       pe->register_hash(node.output(0), h);
     }
-    ,
-    [pe, &node](const jlm::llvm::CallOperation& op)
-    {
-      auto s = node.DebugString() + std::to_string(node.GetNodeId() );
-      for (size_t i = 0; i < node.noutputs(); i++){
-        pe->register_hash_for_output(node.output(i), s, i);
-      }
-    }
   );
 
   /* Add each lambda parameter as a leaf hash for hashing within its body */
@@ -287,6 +282,17 @@ void PartialRedundancyElimination::register_leaf_hash(PartialRedundancyEliminati
     for (size_t i = 0; i < fargs.size(); i++){
       pe->register_hash_for_output(fargs[i], node.DebugString(), i);
     }
+    pe->register_hash_for_output(node.output(0), node.DebugString() + "LM_NODE", 0);
+  });
+}
+
+void PartialRedundancyElimination::hash_call(PartialRedundancyElimination* pe, rvsdg::Node& node)
+{
+  MatchType(node.GetOperation(), [pe, &node](const jlm::llvm::CallOperation& op)
+  {
+    std::string s = node.DebugString() + std::to_string(node.GetNodeId()); // + op.GetLambdaOutput();
+    //std::cout << TR_PINK << s << TR_RESET << std::endl;
+    pe->register_hash_for_output(node.output(0), s, 0);
   });
 }
 
@@ -313,10 +319,13 @@ void PartialRedundancyElimination::hash_node(PartialRedundancyElimination *pe, r
 {
   /*Match by operation*/
   MatchType(node.GetOperation(),
-    [pe, &node](const rvsdg::BinaryOperation& op){hash_bin(pe, node);}
+    [pe, &node](const rvsdg::BinaryOperation& op){hash_bin(pe, node);},
+    [pe, &node](const jlm::llvm::CallOperation& op){hash_call(pe, node);}
   );
   /*Match by node type*/
-  MatchType(node, [pe](rvsdg::GammaNode& node){hash_gamma(pe, node);});
+  MatchType(node,
+    [pe](rvsdg::GammaNode& node){hash_gamma(pe, node);}
+  );
 }
 
 void PartialRedundancyElimination::hash_bin(PartialRedundancyElimination *pe, rvsdg::Node& node)
