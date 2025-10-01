@@ -325,6 +325,7 @@ JlcCommandLineParser::ParseCommandLineArguments(int argc, const char * const * a
           JlmOptCommandLineOptions::OptimizationId::AAAndersenRegionAware,
           JlmOptCommandLineOptions::OptimizationId::FunctionInlining,
           JlmOptCommandLineOptions::OptimizationId::InvariantValueRedirection,
+          JlmOptCommandLineOptions::OptimizationId::LoadChainSeparation,
           JlmOptCommandLineOptions::OptimizationId::NodeReduction,
           JlmOptCommandLineOptions::OptimizationId::DeadNodeElimination,
           JlmOptCommandLineOptions::OptimizationId::ThetaGammaInversion,
