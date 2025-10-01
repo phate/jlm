@@ -60,7 +60,6 @@ public:
     SteensgaardAnalysis,
     ThetaGammaInversion,
     ScalarEvolution,
-    TopDownMemoryNodeEliminator,
 
     LastEnumValue // must always be the last enum value, used for iteration
   };
