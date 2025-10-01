@@ -3,8 +3,8 @@
  * See COPYING for terms of redistribution.
  */
 
-#include "AliasAnalysis.hpp"
 #include <jlm/llvm/opt/alias-analyses/AgnosticModRefSummarizer.hpp>
+#include <jlm/llvm/opt/alias-analyses/AliasAnalysis.hpp>
 
 namespace jlm::llvm::aa
 {
