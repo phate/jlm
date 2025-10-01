@@ -431,39 +431,6 @@ Region::NumRegions(const rvsdg::Region & region) noexcept
   return numRegions;
 }
 
-static size_t
-computeDepth(const Node & node, std::unordered_map<const Node *, size_t> & depthMap)
-{
-  if (depthMap.find(&node) != depthMap.end())
-  {
-    return depthMap[&node];
-  }
-
-  size_t depth = 0;
-  for (auto & input : node.Inputs())
-  {
-    if (const auto owner = TryGetOwnerNode<Node>(*input.origin()))
-    {
-      depth = std::max(depth, computeDepth(*owner, depthMap) + 1);
-    }
-  }
-  depthMap[&node] = depth;
-
-  return depth;
-}
-
-std::unordered_map<const Node *, size_t>
-Region::computeDepthMap(const Region & region)
-{
-  std::unordered_map<const Node *, size_t> depthMap;
-  for (auto & node : region.Nodes())
-  {
-    computeDepth(node, depthMap);
-  }
-
-  return depthMap;
-}
-
 std::string
 Region::ToTree(const rvsdg::Region & region, const util::AnnotationMap & annotationMap) noexcept
 {
@@ -600,6 +567,39 @@ RegionObserver::RegionObserver(const Region & region)
   }
   pprev_ = &region.observers_;
   region.observers_ = this;
+}
+
+static size_t
+computeDepth(const Node & node, std::unordered_map<const Node *, size_t> & depthMap)
+{
+  if (depthMap.find(&node) != depthMap.end())
+  {
+    return depthMap[&node];
+  }
+
+  size_t depth = 0;
+  for (auto & input : node.Inputs())
+  {
+    if (const auto owner = TryGetOwnerNode<Node>(*input.origin()))
+    {
+      depth = std::max(depth, computeDepth(*owner, depthMap) + 1);
+    }
+  }
+  depthMap[&node] = depth;
+
+  return depth;
+}
+
+std::unordered_map<const Node *, size_t>
+computeDepthMap(const Region & region)
+{
+  std::unordered_map<const Node *, size_t> depthMap;
+  for (auto & node : region.Nodes())
+  {
+    computeDepth(node, depthMap);
+  }
+
+  return depthMap;
 }
 
 size_t

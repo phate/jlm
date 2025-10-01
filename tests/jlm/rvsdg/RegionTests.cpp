@@ -496,7 +496,7 @@ computeDepthMap()
   GraphExport::Create(*node3->output(0), "x0");
 
   // Act
-  auto depthMap = Region::computeDepthMap(rvsdg.GetRootRegion());
+  const auto depthMap = computeDepthMap(rvsdg.GetRootRegion());
 
   // Assert
   assert(depthMap.size() == 4);
