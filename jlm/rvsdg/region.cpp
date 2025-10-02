@@ -515,6 +515,26 @@ Region::ToString(const util::Annotation & annotation, char labelValueSeparator)
   return util::strfmt(annotation.Label(), labelValueSeparator, value);
 }
 
+std::unordered_map<const Node *, size_t>
+computeDepthMap(const Region & region)
+{
+  std::unordered_map<const Node *, size_t> depthMap;
+  for (const auto node : TopDownTraverser(const_cast<Region *>(&region)))
+  {
+    size_t depth = 0;
+    for (auto & input : node->Inputs())
+    {
+      if (const auto owner = TryGetOwnerNode<Node>(*input.origin()))
+      {
+        depth = std::max(depth, depthMap[owner] + 1);
+      }
+    }
+    depthMap[node] = depth;
+  }
+
+  return depthMap;
+}
+
 size_t
 nnodes(const jlm::rvsdg::Region * region) noexcept
 {
