@@ -569,35 +569,21 @@ RegionObserver::RegionObserver(const Region & region)
   region.observers_ = this;
 }
 
-static size_t
-computeDepth(const Node & node, std::unordered_map<const Node *, size_t> & depthMap)
-{
-  const auto it = depthMap.find(&node);
-  if (it != depthMap.end())
-  {
-    return it->second;
-  }
-
-  size_t depth = 0;
-  for (auto & input : node.Inputs())
-  {
-    if (const auto owner = TryGetOwnerNode<Node>(*input.origin()))
-    {
-      depth = std::max(depth, computeDepth(*owner, depthMap) + 1);
-    }
-  }
-  depthMap[&node] = depth;
-
-  return depth;
-}
-
 std::unordered_map<const Node *, size_t>
 computeDepthMap(const Region & region)
 {
   std::unordered_map<const Node *, size_t> depthMap;
-  for (auto & node : region.Nodes())
+  for (const auto node : TopDownTraverser(const_cast<Region *>(&region)))
   {
-    computeDepth(node, depthMap);
+    size_t depth = 0;
+    for (auto & input : node->Inputs())
+    {
+      if (const auto owner = TryGetOwnerNode<Node>(*input.origin()))
+      {
+        depth = std::max(depth, depthMap[owner] + 1);
+      }
+    }
+    depthMap[node] = depth;
   }
 
   return depthMap;
