@@ -125,8 +125,25 @@ TopDownTraverser::input_change(Input * in, Output *, Output *)
 TopDownConstTraverser::~TopDownConstTraverser() noexcept = default;
 
 TopDownConstTraverser::TopDownConstTraverser(const Region & region)
-    : region_(region)
-{}
+{
+  for (auto & node : region.TopNodes())
+    tracker_.set_nodestate(&node, traversal_nodestate::frontier);
+
+  for (size_t n = 0; n < region.narguments(); n++)
+  {
+    auto argument = region.argument(n);
+    for (const auto & user : argument->Users())
+    {
+      if (auto node = TryGetOwnerNode<Node>(user))
+      {
+        if (!predecessors_visited(node))
+          continue;
+
+        tracker_.set_nodestate(node, traversal_nodestate::frontier);
+      }
+    }
+  }
+}
 
 const Node *
 TopDownConstTraverser::next()

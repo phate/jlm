@@ -288,7 +288,6 @@ private:
   bool
   predecessors_visited(const Node * node) noexcept;
 
-  const Region & region_;
   TraversalConstTracker tracker_;
 };
 
