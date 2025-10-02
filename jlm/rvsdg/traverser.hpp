@@ -75,6 +75,59 @@ private:
   Node * node_;
 };
 
+template<typename T>
+class TraverserConstIterator
+{
+public:
+  typedef std::input_iterator_tag iterator_category;
+  typedef const Node * value_type;
+  typedef ssize_t difference_type;
+  typedef value_type * pointer;
+  typedef value_type & reference;
+
+  constexpr explicit TraverserConstIterator(
+      T * traverser = nullptr,
+      const Node * node = nullptr) noexcept
+      : traverser_(traverser),
+        node_(node)
+  {}
+
+  const TraverserConstIterator &
+  operator++() noexcept
+  {
+    node_ = traverser_->next();
+    return *this;
+  }
+
+  bool
+  operator==(const TraverserConstIterator & other) const noexcept
+  {
+    return traverser_ == other.traverser_ && node_ == other.node_;
+  }
+
+  bool
+  operator!=(const TraverserConstIterator & other) const noexcept
+  {
+    return !(*this == other);
+  }
+
+  value_type &
+  operator*() noexcept
+  {
+    return node_;
+  }
+
+  value_type
+  operator->() const noexcept
+  {
+    return node_;
+  }
+
+private:
+  T * traverser_;
+  const Node * node_;
+};
+
 }
 
 enum class traversal_nodestate
@@ -108,6 +161,31 @@ private:
 
   std::unordered_map<Node *, State> states_;
   FrontierList frontier_;
+};
+
+class TraversalConstTracker final
+{
+public:
+  traversal_nodestate
+  get_nodestate(const Node * node);
+
+  void
+  set_nodestate(const Node * node, traversal_nodestate state);
+
+  const Node *
+  peek();
+
+private:
+  using FrontierList = std::list<const Node *>;
+
+  struct State
+  {
+    traversal_nodestate state = traversal_nodestate::ahead;
+    FrontierList::iterator pos = {};
+  };
+
+  std::unordered_map<const Node *, State> states_{};
+  FrontierList frontier_{};
 };
 
 /** \brief TopDown Traverser
@@ -178,6 +256,40 @@ private:
   Region & region_;
   TraversalTracker tracker_;
   std::vector<jlm::util::Callback> callbacks_;
+};
+
+class TopDownConstTraverser final
+{
+  using constIterator = detail::TraverserConstIterator<TopDownConstTraverser>;
+  using constIteratorRange = util::IteratorRange<constIterator>;
+
+public:
+  ~TopDownConstTraverser() noexcept;
+
+  explicit TopDownConstTraverser(const Region & region);
+
+  TopDownConstTraverser(const TopDownConstTraverser &) = delete;
+
+  const TopDownConstTraverser &
+  operator=(const TopDownConstTraverser &) = delete;
+
+  TopDownConstTraverser(TopDownConstTraverser &&) = delete;
+
+  const Node *
+  next();
+
+  constIteratorRange
+  nodes()
+  {
+    return { constIterator(this, next()), constIterator(this, nullptr) };
+  }
+
+private:
+  bool
+  predecessors_visited(const Node * node) noexcept;
+
+  const Region & region_;
+  TraversalConstTracker tracker_;
 };
 
 class BottomUpTraverser final

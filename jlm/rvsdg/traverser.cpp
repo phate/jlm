@@ -122,6 +122,57 @@ TopDownTraverser::input_change(Input * in, Output *, Output *)
     tracker_.set_nodestate(node, traversal_nodestate::frontier);
 }
 
+TopDownConstTraverser::~TopDownConstTraverser() noexcept = default;
+
+TopDownConstTraverser::TopDownConstTraverser(const Region & region)
+    : region_(region)
+{}
+
+const Node *
+TopDownConstTraverser::next()
+{
+  const Node * node = tracker_.peek();
+  if (!node)
+    return nullptr;
+
+  tracker_.set_nodestate(node, traversal_nodestate::behind);
+  for (size_t n = 0; n < node->noutputs(); n++)
+  {
+    for (const auto & user : node->output(n)->Users())
+    {
+      if (auto node = TryGetOwnerNode<Node>(user))
+      {
+        if (!predecessors_visited(node))
+        {
+          continue;
+        }
+        if (tracker_.get_nodestate(node) == traversal_nodestate::ahead)
+        {
+          tracker_.set_nodestate(node, traversal_nodestate::frontier);
+        }
+      }
+    }
+  }
+
+  return node;
+}
+
+bool
+TopDownConstTraverser::predecessors_visited(const Node * node) noexcept
+{
+  for (size_t n = 0; n < node->ninputs(); n++)
+  {
+    auto predecessor = TryGetOwnerNode<Node>(*node->input(n)->origin());
+    if (!predecessor)
+      continue;
+
+    if (tracker_.get_nodestate(predecessor) != traversal_nodestate::behind)
+      return false;
+  }
+
+  return true;
+}
+
 static bool
 HasSuccessors(const Node & node)
 {
@@ -290,6 +341,53 @@ TraversalTracker::set_nodestate(Node * node, traversal_nodestate state)
 
 Node *
 TraversalTracker::peek()
+{
+  return frontier_.empty() ? nullptr : frontier_.front();
+}
+
+traversal_nodestate
+TraversalConstTracker::get_nodestate(const Node * node)
+{
+  auto i = states_.find(node);
+  return i == states_.end() ? traversal_nodestate::ahead : i->second.state;
+}
+
+void
+TraversalConstTracker::set_nodestate(const Node * node, traversal_nodestate state)
+{
+  auto i = states_.find(node);
+  if (i == states_.end())
+  {
+    FrontierList::iterator j = frontier_.end();
+    if (state == traversal_nodestate::frontier)
+    {
+      frontier_.push_back(node);
+      j = std::prev(frontier_.end());
+    }
+    states_.emplace(node, State{ state, j });
+  }
+  else
+  {
+    auto old_state = i->second.state;
+    if (old_state != state)
+    {
+      if (old_state == traversal_nodestate::frontier)
+      {
+        frontier_.erase(i->second.pos);
+        i->second.pos = frontier_.end();
+      }
+      i->second.state = state;
+      if (state == traversal_nodestate::frontier)
+      {
+        frontier_.push_back(node);
+        i->second.pos = std::prev(frontier_.end());
+      }
+    }
+  }
+}
+
+const Node *
+TraversalConstTracker::peek()
 {
   return frontier_.empty() ? nullptr : frontier_.front();
 }
