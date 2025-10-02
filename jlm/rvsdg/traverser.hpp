@@ -9,8 +9,7 @@
 
 #include <jlm/util/callbacks.hpp>
 
-#include <list>
-#include <unordered_map>
+#include <map>
 
 namespace jlm::rvsdg
 {
@@ -24,142 +23,81 @@ class Region;
 namespace detail
 {
 
-template<typename T>
+template<typename Traverser, typename NodeType>
 class TraverserIterator
 {
 public:
-  typedef std::input_iterator_tag iterator_category;
-  typedef Node * value_type;
-  typedef ssize_t difference_type;
-  typedef value_type * pointer;
-  typedef value_type & reference;
+  using iterator_category = std::input_iterator_tag;
+  using difference_type = std::ptrdiff_t;
+  using value_type = NodeType *;
+  using pointer = value_type *;
+  using reference = value_type &;
 
-  constexpr explicit TraverserIterator(T * traverser = nullptr, Node * node = nullptr) noexcept
+  constexpr explicit TraverserIterator(
+      Traverser * traverser = nullptr,
+      NodeType * node = nullptr) noexcept
       : traverser_(traverser),
         node_(node)
   {}
 
-  inline const TraverserIterator &
+  TraverserIterator &
   operator++() noexcept
   {
     node_ = traverser_->next();
     return *this;
   }
 
-  inline bool
+  bool
   operator==(const TraverserIterator & other) const noexcept
   {
     return traverser_ == other.traverser_ && node_ == other.node_;
   }
 
-  inline bool
+  bool
   operator!=(const TraverserIterator & other) const noexcept
   {
     return !(*this == other);
   }
 
-  inline value_type &
+  reference
   operator*() noexcept
   {
     return node_;
   }
 
-  inline value_type
+  pointer
   operator->() noexcept
   {
-    return node_;
+    return &node_;
   }
 
 private:
-  T * traverser_;
-  Node * node_;
+  Traverser * traverser_;
+  NodeType * node_;
 };
 
-}
-
-enum class traversal_nodestate
-{
-  ahead = -1,
-  frontier = 0,
-  behind = +1
-};
-
-/* support class to track traversal states of nodes */
-class TraversalTracker final
+template<bool IsConst>
+class TopDownTraverserGeneric final
 {
 public:
-  inline traversal_nodestate
-  get_nodestate(Node * node);
+  using NodeType = std::conditional_t<IsConst, const Node, Node>;
+  using RegionType = std::conditional_t<IsConst, const Region, Region>;
+  using iterator = TraverserIterator<TopDownTraverserGeneric, NodeType>;
 
-  inline void
-  set_nodestate(Node * node, traversal_nodestate state);
+  ~TopDownTraverserGeneric() noexcept;
 
-  inline Node *
-  peek();
+  explicit TopDownTraverserGeneric(RegionType * region);
 
-private:
-  using FrontierList = std::list<Node *>;
-
-  struct State
-  {
-    traversal_nodestate state = traversal_nodestate::ahead;
-    FrontierList::iterator pos = {};
-  };
-
-  std::unordered_map<Node *, State> states_;
-  FrontierList frontier_;
-};
-
-/** \brief TopDown Traverser
- *
- * The topdown traverser visits a regions' nodes starting at the nodes that have no inputs
- * besides graph arguments, i.e. from the topmost nodes to the nodes at the bottom. The
- * traverser guarantees that newly created nodes are never visited iff the created nodes replace
- * already traversed nodes, including the current node under inspection, and iff the edges of the
- * inputs of the newly created nodes originate from already traversed nodes. Otherwise, newly
- * created nodes might also be traversed. The main usage of the topdown traverser is for replacing
- * subgraphs in the already visited part of a region.
- *
- * The topdown traverser associates three distinct states with any node in the region throughout
- * traversal:
- *
- * 1. <b>ahead</b>: Nodes that have not been visited yet and are not yet marked for visitation.
- * 2. <b>frontier</b>: Nodes that are marked for visitation.
- * 3. <b>behind</b>: Nodes that were already visited.
- *
- * All nodes are by default in state <em>ahead</em>. The topdown_traverser() constructor associates
- * the <em>frontier</em> state with the top-most nodes in the region, <em>i.e.</em>, all nodes that
- * have no inputs or only region arguments as origins. The next() method can then be used to
- * traverse these <em>frontier</em> nodes. Before a <em>frontier</em> node is returned by next(), it
- * is marked as <em>behind</em> and all nodes that depend on its outputs are transferred from the
- * <em>ahead</em> state to state <em>frontier</em>. The repeated invocation of next() traverses all
- * nodes in the region.
- *
- * A newly created node is marked as <em>behind</em> iff all the nodes' predecessors are marked as
- * behind. Otherwise, it is marked as <em>frontier</em>.
- *
- * An alternative to traversing all nodes using next() is the utilization of begin() and end().
- */
-class TopDownTraverser final
-{
-public:
-  ~TopDownTraverser() noexcept;
-
-  explicit TopDownTraverser(Region * region);
-
-  Node *
+  NodeType *
   next();
 
-  typedef detail::TraverserIterator<TopDownTraverser> iterator;
-  typedef Node * value_type;
-
-  inline iterator
+  [[nodiscard]] iterator
   begin()
   {
     return iterator(this, next());
   }
 
-  inline iterator
+  [[nodiscard]] iterator
   end()
   {
     return iterator(this, nullptr);
@@ -167,60 +105,124 @@ public:
 
 private:
   bool
-  predecessors_visited(const Node * node) noexcept;
+  allPredecessorsVisited(const Node & node) const noexcept;
 
-  void
-  node_create(Node * node);
+  /**
+   * If the frontier is empty, while some nodes have yet to be visited,
+   * this method builds a new frontier.
+   * @return true if there is a frontier, false is all nodes have been visited.
+   */
+  [[nodiscard]] bool
+  prepareFrontier();
 
-  void
-  input_change(Input * in, Output * old_origin, Output * new_origin);
+  /**
+   * Extracts a node from the frontier.
+   * In non-const traversals, it double checks that the node is actually ready to be visited.
+   * @returns the popped node, or nullptr if all nodes have been visited.
+   */
+  [[nodiscard]] NodeType *
+  popFrontier();
 
-  Region & region_;
-  TraversalTracker tracker_;
-  std::vector<jlm::util::Callback> callbacks_;
+  // The set of nodes that are yet to be visited
+  util::HashSet<NodeType *> unvisited_;
+  // The frontier, containing nodes that are ready to be visited.
+  // If inputs have changed during traversal, nodes can be on the frontier incorrectly.
+  // uses Node:Id as key for determinism
+  std::map<size_t, NodeType *> frontier_;
 };
 
-class BottomUpTraverser final
+template<bool IsConst>
+class BottomUpTraverserGeneric final
 {
 public:
-  ~BottomUpTraverser() noexcept;
+  using NodeType = std::conditional_t<IsConst, const Node, Node>;
+  using RegionType = std::conditional_t<IsConst, const Region, Region>;
+  using iterator = TraverserIterator<BottomUpTraverserGeneric, NodeType>;
 
-  explicit BottomUpTraverser(Region * region, bool revisit = false);
+  ~BottomUpTraverserGeneric() noexcept;
 
-  Node *
+  explicit BottomUpTraverserGeneric(RegionType * region);
+
+  NodeType *
   next();
 
-  typedef detail::TraverserIterator<BottomUpTraverser> iterator;
-  typedef Node * value_type;
-
-  inline iterator
+  [[nodiscard]] iterator
   begin()
   {
     return iterator(this, next());
   }
 
-  inline iterator
+  [[nodiscard]] iterator
   end()
   {
     return iterator(this, nullptr);
   }
 
 private:
-  void
-  node_create(Node * node);
+  bool
+  allSuccessorsVisited(const Node & node) const noexcept;
 
-  void
-  node_destroy(Node * node);
+  /**
+   * If the frontier is empty, while some nodes have yet to be visited,
+   * this method builds a new frontier.
+   * @return true if there is a frontier, false is all nodes have been visited.
+   */
+  [[nodiscard]] bool
+  prepareFrontier();
 
-  void
-  input_change(Input * in, Output * old_origin, Output * new_origin);
+  /**
+   * Extracts a node from the frontier.
+   * In non-const traversals, it double checks that the node is actually ready to be visited.
+   * @returns the popped node, or nullptr if all nodes have been visited.
+   */
+  [[nodiscard]] NodeType *
+  popFrontier();
 
-  TraversalTracker tracker_;
-  Region & region_;
-  std::vector<jlm::util::Callback> callbacks_;
-  traversal_nodestate new_node_state_;
+  // The set of nodes that are yet to be visited
+  util::HashSet<NodeType *> unvisited_;
+  // The frontier, containing nodes that are ready to be visited.
+  // If outputs have gained new users during traversal, nodes can be on the frontier incorrectly.
+  // uses Node:Id as key for determinism
+  std::map<size_t, NodeType *> frontier_;
 };
 
+}
+
+/** \brief TopDown Traverser
+ *
+ * The topdown traverser visits the nodes of a region, starting at the nodes that have no inputs
+ * besides region arguments, visiting every node until the bottom of the region is reached.
+ * A node is only visited once all its predecessors have been visited,
+ * even if its inputs have been changed during traversal.
+ * Nodes created during traversal are <em>never</em> visited.
+ *
+ * It is forbidden to delete nodes that have not yet been visited during traversal.
+ * Deleting the current node is allowed.
+ *
+ * The main usage of the topdown traverser is for replacing subgraphs
+ * in the already visited part of a region.
+ *
+ * Nodes can either be visited by repeated calls to next(), or using begin() and end().
+ */
+using TopDownTraverser = detail::TopDownTraverserGeneric<false>;
+using TopDownConstTraverser = detail::TopDownTraverserGeneric<true>;
+
+/**
+ * \brief BottomUp Traverser
+ *
+ * The bottom up traverser visits all nodes in the region, starting at nodes that have no outputs
+ * besides region results, visiting every node until the top of the region is reached.
+ * A node is only visited once all its successors have been visited,
+ * even if it has gained new successors during traversal.
+ * Nodes created during traversal are <em>never</em> visited.
+ *
+ * It is forbidden to delete nodes that have not yet been visited during traversal.
+ * Deleting the current node is allowed.
+ *
+ * Nodes can either be visited by repeated calls to next(), or using begin() and end().
+ */
+using BottomUpTraverser = detail::BottomUpTraverserGeneric<false>;
+using BottomUpConstTraverser = detail::BottomUpTraverserGeneric<true>;
 }
 
 #endif

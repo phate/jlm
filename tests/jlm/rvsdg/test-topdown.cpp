@@ -126,18 +126,11 @@ test_traversal_insertion()
     auto n4 = jlm::tests::TestOperation::create(&graph.GetRootRegion(), { n3->output(0) }, {});
     auto n5 = jlm::tests::TestOperation::create(&graph.GetRootRegion(), { n2->output(0) }, {});
 
-    /*
-      The newly created nodes n3 and n4 will not be visited,
-      as they were not created as descendants of unvisited
-      nodes. n5 must be visited, as n2 has not been visited yet.
-    */
+    // None of the created nodes should be visited
 
     bool visited_n2 = false, visited_n3 = false, visited_n4 = false, visited_n5 = false;
-    for (;;)
+    while ((node = trav.next()))
     {
-      node = trav.next();
-      if (!node)
-        break;
       if (node == n2)
         visited_n2 = true;
       if (node == n3)
@@ -151,7 +144,7 @@ test_traversal_insertion()
     assert(visited_n2);
     assert(!visited_n3);
     assert(!visited_n4);
-    assert(visited_n5);
+    assert(!visited_n5);
   }
 }
 
