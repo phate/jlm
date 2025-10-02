@@ -793,12 +793,15 @@ MemoryStateEncoder::EncodeAlloca(const rvsdg::SimpleNode & allocaNode)
       Context_->GetModRefSummary().GetPointsToGraph().GetAllocaNode(allocaNode);
   auto & allocaNodeStateOutput = *allocaNode.output(1);
 
+  // If a state representing the alloca already exists in the region,
+  // merge it with the state created by the alloca using a MemoryStateJoin node.
   if (stateMap.HasState(*allocaNode.region(), allocaMemoryNode))
   {
-    // The state for the alloca memory node should already exist in case of lifetime agnostic
-    // mod/ref summarization.
     auto memoryNodeStatePair = stateMap.GetState(*allocaNode.region(), allocaMemoryNode);
-    memoryNodeStatePair->ReplaceState(allocaNodeStateOutput);
+    auto & joinNode = MemoryStateJoinOperation::CreateNode(
+        { &allocaNodeStateOutput, &memoryNodeStatePair->State() });
+    auto & joinOutput = *joinNode.output(0);
+    memoryNodeStatePair->ReplaceState(joinOutput);
   }
   else
   {
@@ -811,19 +814,26 @@ MemoryStateEncoder::EncodeMalloc(const rvsdg::SimpleNode & mallocNode)
 {
   JLM_ASSERT(is<MallocOperation>(&mallocNode));
   auto & stateMap = Context_->GetRegionalizedStateMap();
-
   auto & mallocMemoryNode =
       Context_->GetModRefSummary().GetPointsToGraph().GetMallocNode(mallocNode);
+  auto & mallocNodeStateOutput = *mallocNode.output(1);
 
   // We use a static heap model. This means that multiple invocations of an malloc
   // at runtime can refer to the same abstract memory location. We therefore need to
   // merge the previous and the current state to ensure that the previous state
   // is not just simply replaced and therefore "lost".
-  auto memoryNodeStatePair = stateMap.GetState(*mallocNode.region(), mallocMemoryNode);
-  auto mallocState = mallocNode.output(1);
-  auto mergedState =
-      MemoryStateMergeOperation::Create({ mallocState, &memoryNodeStatePair->State() });
-  memoryNodeStatePair->ReplaceState(*mergedState);
+  if (stateMap.HasState(*mallocNode.region(), mallocMemoryNode))
+  {
+    auto memoryNodeStatePair = stateMap.GetState(*mallocNode.region(), mallocMemoryNode);
+    auto & joinNode = MemoryStateJoinOperation::CreateNode(
+        { &mallocNodeStateOutput, &memoryNodeStatePair->State() });
+    auto & joinOutput = *joinNode.output(0);
+    memoryNodeStatePair->ReplaceState(joinOutput);
+  }
+  else
+  {
+    stateMap.InsertState(mallocMemoryNode, mallocNodeStateOutput);
+  }
 }
 
 void
