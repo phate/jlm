@@ -14,6 +14,10 @@
 namespace jlm::llvm
 {
 
+/**
+ * Types of linkage for global variables, constants and functions.
+ * Based on LLVM's \ref ::llvm::GlobalValue::LinkageTypes
+ */
 enum class linkage
 {
   external_linkage,
@@ -29,14 +33,43 @@ enum class linkage
   common_linkage
 };
 
-static inline bool
+/**
+ * Determines if a function / global variable with the given linkage should be exported.
+ * @param lnk the linkage
+ * @return true if the function / global should be exported, false otherwise
+ */
+inline bool
 is_externally_visible(const linkage & lnk)
 {
-  /* FIXME: Refine this again. */
-  return lnk != linkage::internal_linkage;
+  // TODO: LLVM has a function isDiscardableIfUnused, which might be closer to what we mean
+  // It is true for:
+  //  - link once any
+  //  - link once odr
+  //  - internal
+  //  - private
+  //  - available_externally_linkage
+
+  switch (lnk)
+  {
+  case linkage::external_linkage:
+  case linkage::available_externally_linkage:
+  case linkage::link_once_any_linkage:
+  case linkage::link_once_odr_linkage:
+  case linkage::weak_any_linkage:
+  case linkage::weak_odr_linkage:
+  case linkage::appending_linkage:
+  case linkage::external_weak_linkage:
+  case linkage::common_linkage:
+    return true;
+  case linkage::internal_linkage:
+  case linkage::private_linkage:
+    return false;
+  default:
+    JLM_UNREACHABLE("Unknown linkage type");
+  }
 }
 
-static inline std::string
+inline std::string
 ToString(const linkage & lnk)
 {
   static std::unordered_map<linkage, std::string> strings = {
@@ -57,7 +90,7 @@ ToString(const linkage & lnk)
   return strings[lnk];
 }
 
-static inline linkage
+inline linkage
 FromString(const std::string_view stringValue)
 {
   static std::unordered_map<std::string_view, linkage> linkages = {
