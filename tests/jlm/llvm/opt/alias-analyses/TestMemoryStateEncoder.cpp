@@ -1521,10 +1521,10 @@ ValidateMemcpySteensgaardAgnostic(const jlm::tests::MemcpyTest & test)
         memcpy = node;
     }
     assert(memcpy != nullptr);
-    assert(is<MemCpyNonVolatileOperation>(*memcpy, 7, 4));
+    assert(is<MemCpyNonVolatileOperation>(*memcpy, 5, 2));
 
     auto lambdaEntrySplit =
-        jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*memcpy->input(5)->origin());
+        jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*memcpy->input(4)->origin());
     assert(is<LambdaEntryMemoryStateSplitOperation>(*lambdaEntrySplit, 1, 5));
   }
 }
@@ -1572,13 +1572,13 @@ ValidateMemcpySteensgaardRegionAware(const jlm::tests::MemcpyTest & test)
 
     auto memcpyNode =
         jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*callEntryMerge->input(0)->origin());
-    assert(is<MemCpyNonVolatileOperation>(*memcpyNode, 7, 4));
+    assert(is<MemCpyNonVolatileOperation>(*memcpyNode, 5, 2));
 
     auto lambdaEntrySplit =
-        jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*memcpyNode->input(4)->origin());
+        jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*memcpyNode->input(3)->origin());
     assert(is<LambdaEntryMemoryStateSplitOperation>(*lambdaEntrySplit, 1, 2));
     assert(
-        jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*memcpyNode->input(5)->origin())
+        jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*memcpyNode->input(4)->origin())
         == lambdaEntrySplit);
 
     auto lambdaExitMerge =
