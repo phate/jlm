@@ -500,7 +500,6 @@ public:
   }
 
 private:
-
   StateMap &
   GetStateMap(const rvsdg::Region & region) const noexcept
   {
