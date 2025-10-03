@@ -3,6 +3,7 @@
  * See COPYING for terms of redistribution.
  */
 
+#include "opt/alias-analyses/AliasAnalysisPrecisionEvaluator.hpp"
 #include <jlm/llvm/DotWriter.hpp>
 #include <jlm/llvm/ir/operators/delta.hpp>
 #include <jlm/llvm/ir/RvsdgModule.hpp>
@@ -137,6 +138,15 @@ LlvmDotWriter::AnnotateGraphNode(
       node.SetAttributeGraphElement("type", typeNode);
     }
   }
+}
+
+void
+LlvmDotWriter::CreateAndDumpDot(rvsdg::Region & region, std::ostream & os)
+{
+  util::graph::Writer writer;
+  LlvmDotWriter dotWriter;
+  dotWriter.WriteGraphs(writer, region, true);
+  writer.OutputAllGraphs(os, util::graph::OutputFormat::Dot);
 }
 
 }

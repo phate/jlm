@@ -33,6 +33,15 @@ protected:
 
   void
   AnnotateEdge(const rvsdg::Input & rvsdgInput, util::graph::Edge & edge) override;
+
+public:
+  /**
+   * Utility function for quickly dumping a region and its subregions as a Dot graph.
+   * @param region the region to dump
+   * @param os the output stream to write the graph to, e.g. std::cout or an std::ofstream
+   */
+  static void
+  CreateAndDumpDot(rvsdg::Region & region, std::ostream & os);
 };
 
 }
