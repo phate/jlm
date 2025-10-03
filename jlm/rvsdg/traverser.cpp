@@ -5,82 +5,113 @@
  */
 
 #include <jlm/rvsdg/graph.hpp>
-#include <jlm/rvsdg/notifiers.hpp>
 #include <jlm/rvsdg/traverser.hpp>
-
-using namespace std::placeholders;
-
-/* top down traverser */
 
 namespace jlm::rvsdg
 {
 
-TopDownTraverser::~TopDownTraverser() noexcept = default;
-
-TopDownTraverser::TopDownTraverser(Region * region)
-    : region_(*region)
+namespace detail
 {
-  for (auto & node : region->TopNodes())
-    tracker_.set_nodestate(&node, traversal_nodestate::frontier);
+template<bool IsConst>
+TopDownTraverserGeneric<IsConst>::~TopDownTraverserGeneric() noexcept = default;
 
-  for (size_t n = 0; n < region->narguments(); n++)
+template<bool IsConst>
+TopDownTraverserGeneric<IsConst>::TopDownTraverserGeneric(RegionType * region)
+{
+  for (auto & node : region->Nodes())
   {
-    auto argument = region->argument(n);
-    for (const auto & user : argument->Users())
-    {
-      if (auto node = TryGetOwnerNode<Node>(user))
-      {
-        if (!predecessors_visited(node))
-          continue;
+    unvisited_.Insert(&node);
 
-        tracker_.set_nodestate(node, traversal_nodestate::frontier);
+    // Build the initial frontier from nodes that have no predecessor nodes
+    bool onFrontier = true;
+    for (auto & input : node.Inputs())
+    {
+      if (TryGetOwnerNode<Node>(*input.origin()))
+      {
+        onFrontier = false;
+        break;
       }
     }
+    if (onFrontier)
+      frontier_.emplace(node.GetNodeId(), &node);
   }
-
-  callbacks_.push_back(on_node_create.connect(std::bind(&TopDownTraverser::node_create, this, _1)));
-  callbacks_.push_back(
-      on_input_change.connect(std::bind(&TopDownTraverser::input_change, this, _1, _2, _3)));
 }
 
+template<bool IsConst>
 bool
-TopDownTraverser::predecessors_visited(const Node * node) noexcept
+TopDownTraverserGeneric<IsConst>::allPredecessorsVisited(const Node & node) const noexcept
 {
-  for (size_t n = 0; n < node->ninputs(); n++)
+  for (auto & input : node.Inputs())
   {
-    auto predecessor = TryGetOwnerNode<Node>(*node->input(n)->origin());
-    if (!predecessor)
-      continue;
-
-    if (tracker_.get_nodestate(predecessor) != traversal_nodestate::behind)
+    if (auto predecessor = TryGetOwnerNode<Node>(*input.origin());
+        predecessor && unvisited_.Contains(predecessor))
       return false;
   }
 
   return true;
 }
 
-Node *
-TopDownTraverser::next()
+template<bool IsConst>
+bool
+TopDownTraverserGeneric<IsConst>::prepareFrontier()
 {
-  Node * node = tracker_.peek();
+  if (!frontier_.empty())
+    return true;
+
+  if (unvisited_.IsEmpty())
+    return false;
+
+  // We still have unvisited nodes, despite the frontier being empty
+  // This can happen in rare cases when nodes ahead of the frontier change their inputs.
+  // Go over the unvisited nodes again to create a new frontier
+  for (auto & node : unvisited_.Items())
+  {
+    if (allPredecessorsVisited(*node))
+    {
+      frontier_.emplace(node->GetNodeId(), node);
+    }
+  }
+
+  JLM_ASSERT(!frontier_.empty());
+  return true;
+}
+
+template<bool IsConst>
+typename TopDownTraverserGeneric<IsConst>::NodeType *
+TopDownTraverserGeneric<IsConst>::popFrontier()
+{
+  while (true)
+  {
+    if (!prepareFrontier())
+      return nullptr;
+
+    NodeType * node = frontier_.begin()->second;
+    frontier_.erase(frontier_.begin());
+
+    // For non-const traversals, we must double check that all predecessors have been visited
+    if (IsConst || allPredecessorsVisited(*node))
+      return node;
+  }
+}
+
+template<bool IsConst>
+typename TopDownTraverserGeneric<IsConst>::NodeType *
+TopDownTraverserGeneric<IsConst>::next()
+{
+  NodeType * node = popFrontier();
   if (!node)
     return nullptr;
 
-  tracker_.set_nodestate(node, traversal_nodestate::behind);
-  for (size_t n = 0; n < node->noutputs(); n++)
+  unvisited_.Remove(node);
+  for (auto & output : node->Outputs())
   {
-    for (const auto & user : node->output(n)->Users())
+    for (const auto & user : output.Users())
     {
-      if (auto node = TryGetOwnerNode<Node>(user))
+      if (auto userNode = TryGetOwnerNode<Node>(user);
+          userNode && unvisited_.Contains(userNode) && frontier_.count(userNode->GetNodeId()) == 0
+          && allPredecessorsVisited(*userNode))
       {
-        if (!predecessors_visited(node))
-        {
-          continue;
-        }
-        if (tracker_.get_nodestate(node) == traversal_nodestate::ahead)
-        {
-          tracker_.set_nodestate(node, traversal_nodestate::frontier);
-        }
+        frontier_.emplace(userNode->GetNodeId(), userNode);
       }
     }
   }
@@ -88,210 +119,121 @@ TopDownTraverser::next()
   return node;
 }
 
-void
-TopDownTraverser::node_create(Node * node)
+template<bool IsConst>
+BottomUpTraverserGeneric<IsConst>::~BottomUpTraverserGeneric() noexcept = default;
+
+template<bool IsConst>
+BottomUpTraverserGeneric<IsConst>::BottomUpTraverserGeneric(RegionType * region)
 {
-  if (node->region() != &region_)
-    return;
-
-  if (predecessors_visited(node))
-    tracker_.set_nodestate(node, traversal_nodestate::behind);
-  else
-    tracker_.set_nodestate(node, traversal_nodestate::frontier);
-}
-
-void
-TopDownTraverser::input_change(Input * in, Output *, Output *)
-{
-  if (in->region() != &region_)
-    return;
-
-  auto node = TryGetOwnerNode<Node>(*in);
-  if (!node)
-    return;
-
-  auto state = tracker_.get_nodestate(node);
-
-  // ignore nodes that have been traversed already, or that are already
-  // marked for later traversal
-  if (state != traversal_nodestate::ahead)
-    return;
-
-  // node may just have become eligible for visiting, check
-  if (predecessors_visited(node))
-    tracker_.set_nodestate(node, traversal_nodestate::frontier);
-}
-
-static bool
-HasSuccessors(const Node & node)
-{
-  for (size_t n = 0; n < node.noutputs(); n++)
+  for (auto & node : region->Nodes())
   {
-    const auto output = node.output(n);
-    for (const auto & user : output->Users())
-    {
-      if (TryGetOwnerNode<Node>(user))
-        return true;
-    }
-  }
+    unvisited_.Insert(&node);
 
-  return false;
-}
-
-BottomUpTraverser::~BottomUpTraverser() noexcept = default;
-
-BottomUpTraverser::BottomUpTraverser(Region * region, bool revisit)
-    : region_(*region),
-      new_node_state_(revisit ? traversal_nodestate::frontier : traversal_nodestate::behind)
-{
-  for (auto & bottomNode : region->BottomNodes())
-  {
-    tracker_.set_nodestate(&bottomNode, traversal_nodestate::frontier);
-  }
-
-  for (size_t n = 0; n < region->nresults(); n++)
-  {
-    const auto node = TryGetOwnerNode<Node>(*region->result(n)->origin());
-    if (node && !HasSuccessors(*node))
-      tracker_.set_nodestate(node, traversal_nodestate::frontier);
-  }
-
-  callbacks_.push_back(
-      on_node_create.connect(std::bind(&BottomUpTraverser::node_create, this, _1)));
-  callbacks_.push_back(
-      on_node_destroy.connect(std::bind(&BottomUpTraverser::node_destroy, this, _1)));
-  callbacks_.push_back(
-      on_input_change.connect(std::bind(&BottomUpTraverser::input_change, this, _1, _2, _3)));
-}
-
-Node *
-BottomUpTraverser::next()
-{
-  auto node = tracker_.peek();
-  if (!node)
-    return nullptr;
-
-  tracker_.set_nodestate(node, traversal_nodestate::behind);
-  for (size_t n = 0; n < node->ninputs(); n++)
-  {
-    auto producer = TryGetOwnerNode<Node>(*node->input(n)->origin());
-    if (producer && tracker_.get_nodestate(producer) == traversal_nodestate::ahead)
-      tracker_.set_nodestate(producer, traversal_nodestate::frontier);
-  }
-  return node;
-}
-
-void
-BottomUpTraverser::node_create(Node * node)
-{
-  if (node->region() != &region_)
-    return;
-
-  tracker_.set_nodestate(node, new_node_state_);
-}
-
-void
-BottomUpTraverser::node_destroy(Node * node)
-{
-  if (node->region() != &region_)
-    return;
-
-  for (size_t n = 0; n < node->ninputs(); n++)
-  {
-    auto producer = TryGetOwnerNode<Node>(*node->input(n)->origin());
-    if (!producer)
-    {
-      continue;
-    }
-    bool successors_visited = true;
-    for (const auto & output : producer->Outputs())
+    // Build the initial frontier from nodes that have no successor nodes
+    bool onFrontier = true;
+    for (auto & output : node.Outputs())
     {
       for (auto & user : output.Users())
       {
-        auto u_node = TryGetOwnerNode<Node>(user);
-        successors_visited =
-            successors_visited && tracker_.get_nodestate(u_node) == traversal_nodestate::behind;
+        if (TryGetOwnerNode<Node>(user))
+        {
+          onFrontier = false;
+          break;
+        }
       }
     }
-    if (!successors_visited)
-    {
-      continue;
-    }
-    if (producer && tracker_.get_nodestate(producer) == traversal_nodestate::ahead)
-      tracker_.set_nodestate(producer, traversal_nodestate::frontier);
+    if (onFrontier)
+      frontier_.emplace(node.GetNodeId(), &node);
   }
 }
 
-void
-BottomUpTraverser::input_change(Input * in, Output * old_origin, Output *)
+template<bool IsConst>
+bool
+BottomUpTraverserGeneric<IsConst>::allSuccessorsVisited(const Node & node) const noexcept
 {
-  if (in->region() != &region_)
-    return;
+  for (auto & output : node.Outputs())
+  {
+    for (auto & user : output.Users())
+    {
+      if (auto successor = TryGetOwnerNode<Node>(user); successor && unvisited_.Contains(successor))
+        return false;
+    }
+  }
 
-  if (!TryGetOwnerNode<Node>(*in))
-    return;
+  return true;
+}
 
-  auto node = TryGetOwnerNode<Node>(*old_origin);
+template<bool IsConst>
+bool
+BottomUpTraverserGeneric<IsConst>::prepareFrontier()
+{
+  if (!frontier_.empty())
+    return true;
+
+  if (unvisited_.IsEmpty())
+    return false;
+
+  // We still have unvisited nodes, despite the frontier being empty
+  // This can happen in rare cases when nodes ahead of the frontier change users.
+  // Go over the unvisited nodes again to create a new frontier
+  for (auto & node : unvisited_.Items())
+  {
+    if (allSuccessorsVisited(*node))
+    {
+      frontier_.emplace(node->GetNodeId(), node);
+    }
+  }
+
+  JLM_ASSERT(!frontier_.empty());
+  return true;
+}
+
+template<bool IsConst>
+typename BottomUpTraverserGeneric<IsConst>::NodeType *
+BottomUpTraverserGeneric<IsConst>::popFrontier()
+{
+  while (true)
+  {
+    if (!prepareFrontier())
+      return nullptr;
+
+    NodeType * node = frontier_.begin()->second;
+    frontier_.erase(frontier_.begin());
+
+    // For non-const traversals, we must double check that all successors have been visited
+    if (IsConst || allSuccessorsVisited(*node))
+      return node;
+  }
+}
+
+template<bool IsConst>
+typename BottomUpTraverserGeneric<IsConst>::NodeType *
+BottomUpTraverserGeneric<IsConst>::next()
+{
+  NodeType * node = popFrontier();
   if (!node)
-    return;
+    return nullptr;
 
-  traversal_nodestate state = tracker_.get_nodestate(node);
-
-  /* ignore nodes that have been traversed already, or that are already
-  marked for later traversal */
-  if (state != traversal_nodestate::ahead)
-    return;
-
-  /* make sure node is visited eventually, might now be visited earlier
-  as there (potentially) is one less obstructing node below */
-  tracker_.set_nodestate(node, traversal_nodestate::frontier);
-}
-
-traversal_nodestate
-TraversalTracker::get_nodestate(Node * node)
-{
-  auto i = states_.find(node);
-  return i == states_.end() ? traversal_nodestate::ahead : i->second.state;
-}
-
-void
-TraversalTracker::set_nodestate(Node * node, traversal_nodestate state)
-{
-  auto i = states_.find(node);
-  if (i == states_.end())
+  unvisited_.Remove(node);
+  for (auto & input : node->Inputs())
   {
-    FrontierList::iterator j = frontier_.end();
-    if (state == traversal_nodestate::frontier)
+    if (auto originNode = TryGetOwnerNode<Node>(*input.origin());
+        originNode && unvisited_.Contains(originNode)
+        && frontier_.count(originNode->GetNodeId()) == 0 && allSuccessorsVisited(*originNode))
     {
-      frontier_.push_back(node);
-      j = std::prev(frontier_.end());
-    }
-    states_.emplace(node, State{ state, j });
-  }
-  else
-  {
-    auto old_state = i->second.state;
-    if (old_state != state)
-    {
-      if (old_state == traversal_nodestate::frontier)
-      {
-        frontier_.erase(i->second.pos);
-        i->second.pos = frontier_.end();
-      }
-      i->second.state = state;
-      if (state == traversal_nodestate::frontier)
-      {
-        frontier_.push_back(node);
-        i->second.pos = std::prev(frontier_.end());
-      }
+      frontier_.emplace(originNode->GetNodeId(), originNode);
     }
   }
+
+  return node;
 }
 
-Node *
-TraversalTracker::peek()
-{
-  return frontier_.empty() ? nullptr : frontier_.front();
+// Explicit instantiation of the const and non-const classes
+template class TopDownTraverserGeneric<true>;
+template class TopDownTraverserGeneric<false>;
+
+template class BottomUpTraverserGeneric<true>;
+template class BottomUpTraverserGeneric<false>;
 }
 
 }
