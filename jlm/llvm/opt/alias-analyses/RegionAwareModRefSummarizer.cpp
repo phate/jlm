@@ -48,10 +48,10 @@ class RegionAwareModRefSummarizer::Statistics final : public util::Statistics
   static constexpr auto NumNonReentrantAllocas_ = "#NonReentrantAllocas";
   static constexpr auto NumCallGraphSccs_ = "#CallGraphSccs";
 
-  static constexpr auto SimpleAllocasSetTimer_ = "SimpleAllocasSetTimer";
-  static constexpr auto NonReentrantAllocaSetsTimer_ = "NonReentrantAllocaSetsTimer";
   static constexpr auto CallGraphTimer_ = "CallGraphTimer";
   static constexpr auto AllocasDeadInSccsTimer_ = "AllocasDeadInSccsTimer";
+  static constexpr auto SimpleAllocasSetTimer_ = "SimpleAllocasSetTimer";
+  static constexpr auto NonReentrantAllocaSetsTimer_ = "NonReentrantAllocaSetsTimer";
   static constexpr auto CreateExternalModRefSetTimer_ = "CreateExternalModRefSetTimer";
   static constexpr auto AnnotationTimer_ = "AnnotationTimer";
   static constexpr auto SolvingTimer_ = "SolvingTimer";
@@ -67,6 +67,31 @@ public:
         NumRvsdgRegionsLabel_,
         rvsdg::Region::NumRegions(rvsdgModule.Rvsdg().GetRootRegion()));
     AddMeasurement(Label::NumPointsToGraphMemoryNodes, pointsToGraph.NumMemoryNodes());
+  }
+
+  void
+  StartCallGraphStatistics()
+  {
+    AddTimer(CallGraphTimer_).start();
+  }
+
+  void
+  StopCallGraphStatistics(size_t numSccs)
+  {
+    GetTimer(CallGraphTimer_).stop();
+    AddMeasurement(NumCallGraphSccs_, numSccs);
+  }
+
+  void
+  StartAllocasDeadInSccStatistics()
+  {
+    AddTimer(AllocasDeadInSccsTimer_).start();
+  }
+
+  void
+  StopAllocasDeadInSccStatistics()
+  {
+    GetTimer(AllocasDeadInSccsTimer_).stop();
   }
 
   void
@@ -93,31 +118,6 @@ public:
   {
     AddMeasurement(NumNonReentrantAllocas_, numNonReentrantAllocas);
     GetTimer(NonReentrantAllocaSetsTimer_).stop();
-  }
-
-  void
-  StartCallGraphStatistics()
-  {
-    AddTimer(CallGraphTimer_).start();
-  }
-
-  void
-  StopCallGraphStatistics(size_t numSccs)
-  {
-    GetTimer(CallGraphTimer_).stop();
-    AddMeasurement(NumCallGraphSccs_, numSccs);
-  }
-
-  void
-  StartAllocasDeadInSccStatistics()
-  {
-    AddTimer(AllocasDeadInSccsTimer_).start();
-  }
-
-  void
-  StopAllocasDeadInSccStatistics()
-  {
-    GetTimer(AllocasDeadInSccsTimer_).stop();
   }
 
   void

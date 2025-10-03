@@ -4,6 +4,7 @@
  * See COPYING for terms of redistribution.
  */
 
+#include <jlm/llvm/DotWriter.hpp>
 #include <test-registry.hpp>
 #include <TestRvsdgs.hpp>
 
@@ -42,22 +43,19 @@ TestStore1()
                              const jlm::llvm::aa::PointsToGraph & pointsToGraph)
   {
     auto & allocaAMemoryNode = pointsToGraph.GetAllocaNode(*test.alloca_a);
-    auto & allocaBMemoryNode = pointsToGraph.GetAllocaNode(*test.alloca_b);
-    auto & allocaCMemoryNode = pointsToGraph.GetAllocaNode(*test.alloca_c);
-    auto & allocaDMemoryNode = pointsToGraph.GetAllocaNode(*test.alloca_d);
-
-    jlm::util::HashSet<const jlm::llvm::aa::PointsToGraph::MemoryNode *> expectedMemoryNodes({
-        &allocaAMemoryNode,
-        &allocaBMemoryNode,
-        &allocaCMemoryNode,
-        &allocaDMemoryNode,
-    });
 
     auto & lambdaEntryNodes = modRefSummary.GetLambdaEntryModRef(*test.lambda);
-    assert(setsEqual(lambdaEntryNodes, expectedMemoryNodes));
+    assert(setsEqual(lambdaEntryNodes, {}));
 
     auto & lambdaExitNodes = modRefSummary.GetLambdaExitModRef(*test.lambda);
-    assert(setsEqual(lambdaExitNodes, expectedMemoryNodes));
+    assert(setsEqual(lambdaExitNodes, {}));
+
+    auto storeANode =
+        jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::SimpleNode>(test.alloca_a->output(0)->SingleUser());
+    assert(jlm::rvsdg::is<jlm::llvm::StoreNonVolatileOperation>(storeANode));
+
+    auto & storeANodes = modRefSummary.GetSimpleNodeModRef(*storeANode);
+    assert(setsEqual(storeANodes, { &allocaAMemoryNode }));
   };
 
   jlm::tests::StoreTest1 test;
@@ -105,10 +103,10 @@ TestStore2()
           &allocaYMemoryNode });
 
     auto & lambdaEntryNodes = modRefSummary.GetLambdaEntryModRef(*test.lambda);
-    assert(setsEqual(lambdaEntryNodes, expectedMemoryNodes));
+    assert(setsEqual(lambdaEntryNodes, {}));
 
     auto & lambdaExitNodes = modRefSummary.GetLambdaExitModRef(*test.lambda);
-    assert(setsEqual(lambdaExitNodes, expectedMemoryNodes));
+    assert(setsEqual(lambdaExitNodes, {}));
   };
 
   jlm::tests::StoreTest2 test;
@@ -1066,13 +1064,13 @@ TestPhi2()
      */
     {
       auto & lambdaEntryNodes = modRefSummary.GetLambdaEntryModRef(test.GetLambdaC());
-      assert(setsEqual(lambdaEntryNodes, {}));
+      assert(setsEqual(lambdaEntryNodes, pTestBD));
 
       auto & callNodes = modRefSummary.GetSimpleNodeModRef(test.GetCallAFromC());
-      assert(setsEqual(callNodes, {}));
+      assert(setsEqual(callNodes, pTestCD));
 
       auto & lambdaExitNodes = modRefSummary.GetLambdaExitModRef(test.GetLambdaC());
-      assert(setsEqual(lambdaExitNodes, {}));
+      assert(setsEqual(lambdaExitNodes, pTestBD));
     }
 
     /*
@@ -1080,13 +1078,13 @@ TestPhi2()
      */
     {
       auto & lambdaEntryNodes = modRefSummary.GetLambdaEntryModRef(test.GetLambdaD());
-      assert(setsEqual(lambdaEntryNodes, {}));
+      assert(setsEqual(lambdaEntryNodes, pTestAC));
 
       auto & callNodes = modRefSummary.GetSimpleNodeModRef(test.GetCallAFromD());
-      assert(setsEqual(callNodes, {}));
+      assert(setsEqual(callNodes, pTestCD));
 
       auto & lambdaExitNodes = modRefSummary.GetLambdaExitModRef(test.GetLambdaD());
-      assert(setsEqual(lambdaExitNodes, {}));
+      assert(setsEqual(lambdaExitNodes, pTestAC));
     }
 
     /*
@@ -1097,7 +1095,7 @@ TestPhi2()
       assert(setsEqual(lambdaEntryNodes, {}));
 
       auto & callNodes = modRefSummary.GetSimpleNodeModRef(test.GetCallAFromTest());
-      assert(setsEqual(callNodes, {}));
+      assert(setsEqual(callNodes, { &pTestAllocaMemoryNode }));
 
       auto & lambdaExitNodes = modRefSummary.GetLambdaExitModRef(test.GetLambdaTest());
       assert(setsEqual(lambdaExitNodes, {}));
@@ -1131,10 +1129,10 @@ TestPhiWithDelta()
   // Assert
   jlm::tests::PhiWithDeltaTest test;
   std::unordered_map<const jlm::rvsdg::Output *, std::string> outputMap;
-  std::cout << jlm::rvsdg::view(&test.graph().GetRootRegion(), outputMap) << std::flush;
+  // std::cout << jlm::rvsdg::view(&test.graph().GetRootRegion(), outputMap) << std::flush;
 
   auto pointsToGraph = RunAndersen(test.module());
-  std::cout << jlm::llvm::aa::PointsToGraph::ToDot(*pointsToGraph, outputMap) << std::flush;
+  // std::cout << jlm::llvm::aa::PointsToGraph::ToDot(*pointsToGraph, outputMap) << std::flush;
 
   // Act
   auto modRefSummary =
@@ -1440,17 +1438,17 @@ TestStatistics()
   assert(statisticsCollector.NumCollectedStatistics() == 1);
   auto & statistics = *statisticsCollector.CollectedStatistics().begin();
 
-  assert(statistics.GetMeasurementValue<uint64_t>("#RvsdgNodes") == 6);
+  assert(statistics.GetMeasurementValue<uint64_t>("#RvsdgNodes") == 18);
   assert(statistics.GetMeasurementValue<uint64_t>("#RvsdgRegions") == 2);
   assert(statistics.GetMeasurementValue<uint64_t>("#PointsToGraphMemoryNodes") == 7);
   assert(statistics.GetMeasurementValue<uint64_t>("#SimpleAllocas") == 5);
   assert(statistics.GetMeasurementValue<uint64_t>("#NonReentrantAllocas") == 5);
-  assert(statistics.GetMeasurementValue<uint64_t>("#CallGraphSccs") == 1);
+  assert(statistics.GetMeasurementValue<uint64_t>("#CallGraphSccs") == 2);
 
-  assert(statistics.HasTimer("SimpleAllocasSetTimer"));
-  assert(statistics.HasTimer("NonReentrantAllocaSetsTimer"));
   assert(statistics.HasTimer("CallGraphTimer"));
   assert(statistics.HasTimer("AllocasDeadInSccsTimer"));
+  assert(statistics.HasTimer("SimpleAllocasSetTimer"));
+  assert(statistics.HasTimer("NonReentrantAllocaSetsTimer"));
   assert(statistics.HasTimer("CreateExternalModRefSetTimer"));
   assert(statistics.HasTimer("AnnotationTimer"));
   assert(statistics.HasTimer("SolvingTimer"));

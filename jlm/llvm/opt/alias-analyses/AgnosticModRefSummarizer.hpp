@@ -35,17 +35,12 @@ public:
 
   ~AgnosticModRefSummarizer() override;
 
-  AgnosticModRefSummarizer() = default;
+  AgnosticModRefSummarizer();
 
   AgnosticModRefSummarizer(const AgnosticModRefSummarizer &) = delete;
 
-  AgnosticModRefSummarizer(AgnosticModRefSummarizer &&) = delete;
-
   AgnosticModRefSummarizer &
   operator=(const AgnosticModRefSummarizer &) = delete;
-
-  AgnosticModRefSummarizer &
-  operator=(AgnosticModRefSummarizer &&) = delete;
 
   std::unique_ptr<ModRefSummary>
   SummarizeModRefs(

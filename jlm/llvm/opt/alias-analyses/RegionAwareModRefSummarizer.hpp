@@ -60,13 +60,8 @@ public:
 
   RegionAwareModRefSummarizer(const RegionAwareModRefSummarizer &) = delete;
 
-  RegionAwareModRefSummarizer(RegionAwareModRefSummarizer &&) = delete;
-
   RegionAwareModRefSummarizer &
   operator=(const RegionAwareModRefSummarizer &) = delete;
-
-  RegionAwareModRefSummarizer &
-  operator=(RegionAwareModRefSummarizer &&) = delete;
 
   std::unique_ptr<ModRefSummary>
   SummarizeModRefs(

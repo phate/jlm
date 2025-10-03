@@ -113,6 +113,8 @@ private:
   util::HashSet<const PointsToGraph::MemoryNode *> AllMemoryNodes_;
 };
 
+AgnosticModRefSummarizer::AgnosticModRefSummarizer() = default;
+
 AgnosticModRefSummarizer::~AgnosticModRefSummarizer() = default;
 
 std::unique_ptr<ModRefSummary>

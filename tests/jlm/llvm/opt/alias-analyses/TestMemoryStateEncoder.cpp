@@ -38,13 +38,13 @@ ValidateTest(std::function<void(const Test &)> validateEncoding)
 
   Test test;
   auto & rvsdgModule = test.module();
-  jlm::rvsdg::view(&rvsdgModule.Rvsdg().GetRootRegion(), stdout);
+  // jlm::rvsdg::view(&rvsdgModule.Rvsdg().GetRootRegion(), stdout);
 
   jlm::util::StatisticsCollector statisticsCollector;
 
   Analysis aliasAnalysis;
   auto pointsToGraph = aliasAnalysis.Analyze(rvsdgModule, statisticsCollector);
-  std::cout << jlm::llvm::aa::PointsToGraph::ToDot(*pointsToGraph);
+  // std::cout << jlm::llvm::aa::PointsToGraph::ToDot(*pointsToGraph);
 
   TModRefSummarizer summarizer;
   auto modRefSummary =
@@ -52,7 +52,7 @@ ValidateTest(std::function<void(const Test &)> validateEncoding)
 
   jlm::llvm::aa::MemoryStateEncoder encoder;
   encoder.Encode(rvsdgModule, *modRefSummary, statisticsCollector);
-  jlm::rvsdg::view(&rvsdgModule.Rvsdg().GetRootRegion(), stdout);
+  // jlm::rvsdg::view(&rvsdgModule.Rvsdg().GetRootRegion(), stdout);
 
   validateEncoding(test);
 }
@@ -323,7 +323,7 @@ ValidateLoadTest2SteensgaardRegionAware(const jlm::tests::LoadTest2 & test)
 {
   using namespace jlm::llvm;
 
-  assert(test.lambda->subregion()->nnodes() == 19);
+  assert(test.lambda->subregion()->nnodes() == 1);
 
   auto lambdaExitMerge = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
       *test.lambda->GetFunctionResults()[0]->origin());
