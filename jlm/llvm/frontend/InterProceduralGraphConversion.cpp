@@ -337,7 +337,7 @@ public:
     auto statistics =
         ControlFlowRestructuringStatistics::Create(SourceFileName_, std::move(functionName));
 
-    if (!StatisticsCollector_.GetSettings().IsDemanded(statistics->GetId()))
+    if (!StatisticsCollector_.GetSettings().isDemanded(statistics->GetId()))
     {
       restructureControlFlowGraph(&cfg);
       return;
@@ -359,7 +359,7 @@ public:
   {
     auto statistics = AggregationStatistics::Create(SourceFileName_, std::move(functionName));
 
-    if (!StatisticsCollector_.GetSettings().IsDemanded(statistics->GetId()))
+    if (!StatisticsCollector_.GetSettings().isDemanded(statistics->GetId()))
       return aggregateControlFlowGraph(cfg);
 
     statistics->Start(cfg);
@@ -380,7 +380,7 @@ public:
   {
     auto statistics = AnnotationStatistics::Create(SourceFileName_, std::move(functionName));
 
-    if (!StatisticsCollector_.GetSettings().IsDemanded(statistics->GetId()))
+    if (!StatisticsCollector_.GetSettings().isDemanded(statistics->GetId()))
       return annotateAggregationTree(aggregationTreeRoot);
 
     statistics->Start(aggregationTreeRoot);
@@ -400,7 +400,7 @@ public:
     auto statistics =
         AggregationTreeToLambdaStatistics::Create(SourceFileName_, std::move(functionName));
 
-    if (!StatisticsCollector_.GetSettings().IsDemanded(statistics->GetId()))
+    if (!StatisticsCollector_.GetSettings().isDemanded(statistics->GetId()))
       return convertAggregationTreeToLambda();
 
     statistics->Start();
@@ -418,7 +418,7 @@ public:
   {
     auto statistics = DataNodeToDeltaStatistics::Create(SourceFileName_, std::move(dataNodeName));
 
-    if (!StatisticsCollector_.GetSettings().IsDemanded(statistics->GetId()))
+    if (!StatisticsCollector_.GetSettings().isDemanded(statistics->GetId()))
       return convertDataNodeToDelta();
 
     statistics->Start(NumInitializationThreeAddressCodes);
@@ -438,7 +438,7 @@ public:
   {
     auto statistics = InterProceduralGraphToRvsdgStatistics::Create(SourceFileName_);
 
-    if (!StatisticsCollector_.GetSettings().IsDemanded(statistics->GetId()))
+    if (!StatisticsCollector_.GetSettings().isDemanded(statistics->GetId()))
       return convertInterProceduralGraphModule(interProceduralGraphModule);
 
     statistics->Start(interProceduralGraphModule);

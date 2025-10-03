@@ -268,6 +268,29 @@ StoreNonVolatileOperation::NormalizeIOBarrierAllocaAddress(
   return { outputs(&storeNode) };
 }
 
+std::optional<std::vector<rvsdg::Output *>>
+StoreNonVolatileOperation::normalizeStoreAllocaSingleUser(
+    const StoreNonVolatileOperation & operation,
+    const std::vector<rvsdg::Output *> & operands)
+{
+  JLM_ASSERT(operands.size() >= 2);
+  const auto & address = *operands[0];
+
+  // We cannot(!) use the traced address in this normalization as it might result in the wrong
+  // number of users. The address can be routed through a structural node where it has multiple
+  // users, but the traced address would still just have a single user.
+  if (!rvsdg::IsOwnerNodeOperation<AllocaOperation>(address))
+    return std::nullopt;
+
+  if (address.nusers() != 1)
+    return std::nullopt;
+
+  std::vector newMemoryStateResults(operands.begin() + 2, operands.end());
+  JLM_ASSERT(newMemoryStateResults.size() == operation.NumMemoryStates());
+
+  return newMemoryStateResults;
+}
+
 StoreVolatileOperation::~StoreVolatileOperation() noexcept = default;
 
 bool

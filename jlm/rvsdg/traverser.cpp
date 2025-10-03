@@ -18,7 +18,7 @@ namespace jlm::rvsdg
 TopDownTraverser::~TopDownTraverser() noexcept = default;
 
 TopDownTraverser::TopDownTraverser(Region * region)
-    : tracker_(*region)
+    : region_(*region)
 {
   for (auto & node : region->TopNodes())
     tracker_.set_nodestate(&node, traversal_nodestate::frontier);
@@ -91,7 +91,7 @@ TopDownTraverser::next()
 void
 TopDownTraverser::node_create(Node * node)
 {
-  if (node->region() != &tracker_.GetRegion())
+  if (node->region() != &region_)
     return;
 
   if (predecessors_visited(node))
@@ -103,7 +103,7 @@ TopDownTraverser::node_create(Node * node)
 void
 TopDownTraverser::input_change(Input * in, Output *, Output *)
 {
-  if (in->region() != &tracker_.GetRegion())
+  if (in->region() != &region_)
     return;
 
   auto node = TryGetOwnerNode<Node>(*in);
@@ -141,7 +141,7 @@ HasSuccessors(const Node & node)
 BottomUpTraverser::~BottomUpTraverser() noexcept = default;
 
 BottomUpTraverser::BottomUpTraverser(Region * region, bool revisit)
-    : tracker_(*region),
+    : region_(*region),
       new_node_state_(revisit ? traversal_nodestate::frontier : traversal_nodestate::behind)
 {
   for (auto & bottomNode : region->BottomNodes())
@@ -184,7 +184,7 @@ BottomUpTraverser::next()
 void
 BottomUpTraverser::node_create(Node * node)
 {
-  if (node->region() != &tracker_.GetRegion())
+  if (node->region() != &region_)
     return;
 
   tracker_.set_nodestate(node, new_node_state_);
@@ -193,7 +193,7 @@ BottomUpTraverser::node_create(Node * node)
 void
 BottomUpTraverser::node_destroy(Node * node)
 {
-  if (node->region() != &tracker_.GetRegion())
+  if (node->region() != &region_)
     return;
 
   for (size_t n = 0; n < node->ninputs(); n++)
@@ -225,7 +225,7 @@ BottomUpTraverser::node_destroy(Node * node)
 void
 BottomUpTraverser::input_change(Input * in, Output * old_origin, Output *)
 {
-  if (in->region() != &tracker_.GetRegion())
+  if (in->region() != &region_)
     return;
 
   if (!TryGetOwnerNode<Node>(*in))
@@ -246,10 +246,6 @@ BottomUpTraverser::input_change(Input * in, Output * old_origin, Output *)
   as there (potentially) is one less obstructing node below */
   tracker_.set_nodestate(node, traversal_nodestate::frontier);
 }
-
-TraversalTracker::TraversalTracker(Region & region)
-    : region_(region)
-{}
 
 traversal_nodestate
 TraversalTracker::get_nodestate(Node * node)
