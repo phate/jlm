@@ -209,7 +209,7 @@ public:
 
 };
 
-void PartialRedundancyElimination::TraverseSubRegions(rvsdg::Region& reg, void(*cb)(PartialRedundancyElimination* pe, rvsdg::Node& node))
+void PartialRedundancyElimination::TraverseTopDownRecursively(rvsdg::Region& reg, void(*cb)(PartialRedundancyElimination* pe, rvsdg::Node& node))
 {
   IndentMan indenter = IndentMan();
   for (rvsdg::Node* node : rvsdg::TopDownTraverser(&reg))
@@ -219,28 +219,23 @@ void PartialRedundancyElimination::TraverseSubRegions(rvsdg::Region& reg, void(*
     {
       for (auto& reg : sn.Subregions())
       {
-        this->TraverseSubRegions(reg, cb);
+        this->TraverseTopDownRecursively(reg, cb);
         std::cout << ind() << TR_GRAY << "..........................." << TR_RESET << std::endl;
       }
     });
   }
 }
 
-
-/*
-void TraverseSubTrees(rvsdg::StructuralNode& node, void(*cb)(PartialRedundancyElimination* pe, rvsdg::StructuralNode& node));
-*/
-
 void PartialRedundancyElimination::dump_node(PartialRedundancyElimination* pe, rvsdg::Node& node)
 {
   std::cout << ind() << TR_BLUE << node.DebugString() << "<"<<node.GetNodeId() <<">"<< TR_RESET;
   for (size_t i = 0; i < node.noutputs(); i++)
   {
-    auto k_present = pe->output_hashes.find(node.output(i));
-    if (k_present != pe->output_hashes.end() )
+    auto k_present = pe->gvn_hashes_.find(node.output(i));
+    if (k_present != pe->gvn_hashes_.end() )
     {
-      size_t h = pe->output_hashes[node.output(i)];
-      std::string color = (pe->hash_count(h) > 1 ? TR_GREEN : TR_YELLOW);
+      size_t h = pe->gvn_hashes_[node.output(i)];
+      std::string color = (pe->DBG_HashCount(h) > 1 ? TR_GREEN : TR_YELLOW);
 
       MatchType(node.GetOperation(),[&color](const jlm::llvm::CallOperation& op){color = TR_CYAN;});
       MatchType(node, [&color](rvsdg::LambdaNode& lm){color = TR_ORANGE;});
@@ -252,9 +247,9 @@ void PartialRedundancyElimination::dump_node(PartialRedundancyElimination* pe, r
   {
     for (auto& param : lm.GetFunctionArguments())
     {
-      if (pe->output_hashes.find(param) != pe->output_hashes.end())
+      if (pe->gvn_hashes_.find(param) != pe->gvn_hashes_.end())
       {
-        size_t h = pe->output_hashes[param];
+        size_t h = pe->gvn_hashes_[param];
         std::cout << TR_ORANGE << " : " << h << TR_RESET;
       }
 
@@ -280,9 +275,9 @@ void PartialRedundancyElimination::register_leaf_hash(PartialRedundancyEliminati
     auto fargs = lm.GetFunctionArguments();
     auto s = node.DebugString() + std::to_string(node.GetNodeId());
     for (size_t i = 0; i < fargs.size(); i++){
-      pe->register_hash_for_output(fargs[i], node.DebugString(), i);
+      pe->register_hash(fargs[i], node.DebugString(), i);
     }
-    pe->register_hash_for_output(node.output(0), node.DebugString() + "LM_NODE", 0);
+    pe->register_hash(node.output(0), node.DebugString() + "LM_NODE", 0);
   });
 }
 
@@ -292,7 +287,7 @@ void PartialRedundancyElimination::hash_call(PartialRedundancyElimination* pe, r
   {
     std::string s = node.DebugString() + std::to_string(node.GetNodeId()); // + op.GetLambdaOutput();
     //std::cout << TR_PINK << s << TR_RESET << std::endl;
-    pe->register_hash_for_output(node.output(0), s, 0);
+    pe->register_hash(node.output(0), s, 0);
   });
 }
 
@@ -303,9 +298,9 @@ void PartialRedundancyElimination::hash_gamma(PartialRedundancyElimination* pe, 
     for (auto ev : node.GetEntryVars())
     {
       rvsdg::Output* origin = ev.input->origin();
-      if (pe->output_has_hash(origin))
+      if (pe->OutputHasHash(origin))
       {
-        size_t h = pe->output_hashes[origin];
+        size_t h = pe->gvn_hashes_[origin];
         for (rvsdg::Output* brarg : ev.branchArgument)
         {
           pe->register_hash(brarg, h);
@@ -337,15 +332,15 @@ void PartialRedundancyElimination::hash_bin(PartialRedundancyElimination *pe, rv
     bool was_hashable = true;
     for (size_t i = 0 ; i < node.ninputs(); i++)
     {
-      if (pe->output_hashes.find(node.input(i)->origin()) != pe->output_hashes.end())
+      if (pe->gvn_hashes_.find(node.input(i)->origin()) != pe->gvn_hashes_.end())
       {
-        size_t hash_in = pe->output_hashes[node.input(i)->origin()];
+        size_t hash_in = pe->gvn_hashes_[node.input(i)->origin()];
         if (op.is_commutative() && op.is_associative())
         {
           h += hasher(std::to_string(hash_in));
         }else
         {
-          h |= hasher(std::to_string(hash_in)) * (i+1);
+          h ^= hasher(std::to_string(hash_in)) * (i+1);
         }
       }else
       {
@@ -364,7 +359,7 @@ void PartialRedundancyElimination::hash_bin(PartialRedundancyElimination *pe, rv
     }
     if (was_hashable)
     {
-      pe->output_hashes.insert( {node.output(0), h} );
+      pe->gvn_hashes_.insert( {node.output(0), h} );
       pe->register_hash(h);
     }
 
@@ -386,16 +381,16 @@ PartialRedundancyElimination::Run(
   auto & rvsdg = module.Rvsdg();
   auto statistics = Statistics::Create(module.SourceFilePath().value());
 
-  this->TraverseSubRegions(rvsdg.GetRootRegion(), PartialRedundancyElimination::dump_region);
-  this->TraverseSubRegions(rvsdg.GetRootRegion(), PartialRedundancyElimination::dump_node);
+  this->TraverseTopDownRecursively(rvsdg.GetRootRegion(), PartialRedundancyElimination::dump_region);
+  this->TraverseTopDownRecursively(rvsdg.GetRootRegion(), PartialRedundancyElimination::dump_node);
   std::cout << TR_RED << "================================================================" << TR_RESET << std::endl;
-  this->TraverseSubRegions(rvsdg.GetRootRegion(), PartialRedundancyElimination::register_leaf_hash);
+  this->TraverseTopDownRecursively(rvsdg.GetRootRegion(), PartialRedundancyElimination::register_leaf_hash);
   std::cout << TR_RED << "================================================================" << TR_RESET << std::endl;
-  this->TraverseSubRegions(rvsdg.GetRootRegion(), PartialRedundancyElimination::dump_node);
+  this->TraverseTopDownRecursively(rvsdg.GetRootRegion(), PartialRedundancyElimination::dump_node);
   std::cout << TR_BLUE << "================================================================" << TR_RESET << std::endl;
-  this->TraverseSubRegions(rvsdg.GetRootRegion(), PartialRedundancyElimination::hash_node);
+  this->TraverseTopDownRecursively(rvsdg.GetRootRegion(), PartialRedundancyElimination::hash_node);
   std::cout << TR_PINK << "================================================================" << TR_RESET << std::endl;
-  this->TraverseSubRegions(rvsdg.GetRootRegion(), PartialRedundancyElimination::dump_node);
+  this->TraverseTopDownRecursively(rvsdg.GetRootRegion(), PartialRedundancyElimination::dump_node);
 
   std::cout << TR_GREEN << "=================================================" << TR_RESET << std::endl;
 }

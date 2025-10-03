@@ -58,9 +58,12 @@ public:
   Run(rvsdg::RvsdgModule & module, util::StatisticsCollector & statisticsCollector) override;
 
 private:
+  std::unordered_map<jlm::rvsdg::Output*, size_t> gvn_hashes_;
 
+  /* Debug data */
+  std::unordered_map<size_t, size_t> dbg_hash_counts_;
 
-  void TraverseSubRegions(rvsdg::Region& reg,          void(*cb)(PartialRedundancyElimination* pe, rvsdg::Node& node));
+  void TraverseTopDownRecursively(rvsdg::Region& reg,          void(*cb)(PartialRedundancyElimination* pe, rvsdg::Node& node));
 
   static void dump_region(        PartialRedundancyElimination *pe, rvsdg::Node& node);
   static void dump_node(          PartialRedundancyElimination *pe, rvsdg::Node& node);
@@ -70,46 +73,52 @@ private:
   static void hash_node(          PartialRedundancyElimination *pe, rvsdg::Node& node);
   static void hash_call(          PartialRedundancyElimination *pe, rvsdg::Node& node);
 
-  inline void register_hash(jlm::rvsdg::Output* k, size_t h)
+  /**
+   * Insert the hash into a map of {hash => count} for debugging purposes.
+   * \link dbg_hash_counts_
+   */
+
+  inline void register_hash(size_t h)
   {
-    output_hashes.insert({k, h});
+    if (dbg_hash_counts_.find(h) == dbg_hash_counts_.end())
+    {
+      dbg_hash_counts_.insert({h, 1});
+    }else
+    {
+      dbg_hash_counts_[h] = dbg_hash_counts_[h] + 1;
+    }
+  }
+
+inline void register_hash(jlm::rvsdg::Output* k, size_t h)
+  {
+    gvn_hashes_.insert({k, h});
     register_hash(h);
   }
 
-  inline void register_hash_for_output(jlm::rvsdg::Output* out, std::string base, int index)
+  /**
+   * Convenience method for annotating outputs such as function arguments with hashes.
+   *
+   * @param out output to annotate with gvn value
+   * @param base a string to base the hash on
+   * @param index an index which is hashed together with the string hash
+   */
+  inline void register_hash(jlm::rvsdg::Output* out, std::string base, int index)
   {
     const std::hash<std::string> hasher;
 
     size_t h = hasher(base);
     h ^= index;
-    output_hashes.insert({out, h});
+    gvn_hashes_.insert({out, h});
     register_hash(h);
   }
 
-  //todo rename to gvn_hashes
-  std::unordered_map<jlm::rvsdg::Output*, size_t> output_hashes;
+  inline bool OutputHasHash(rvsdg::Output* out){return gvn_hashes_.find(out) != gvn_hashes_.end();}
 
-  /* Debug data */
-  std::unordered_map<size_t, size_t> hash_counts;
-
-  inline bool output_has_hash(rvsdg::Output* out){return output_hashes.find(out) != output_hashes.end();}
-
-  inline void register_hash(size_t h)
+  inline size_t DBG_HashCount(size_t h)
   {
-    if (hash_counts.find(h) == hash_counts.end())
+    if (dbg_hash_counts_.find(h) != dbg_hash_counts_.end())
     {
-      hash_counts.insert({h, 1});
-    }else
-    {
-      hash_counts[h] = hash_counts[h] + 1;
-    }
-  }
-
-  inline size_t hash_count(size_t h)
-  {
-    if (hash_counts.find(h) != hash_counts.end())
-    {
-      return hash_counts[h];
+      return dbg_hash_counts_[h];
     }else
     {
       return 0;
