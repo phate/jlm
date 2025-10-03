@@ -251,6 +251,43 @@ TryGetSimpleNodeAndOptionalOp(const Output & output) noexcept
   return std::make_pair(simpleNode, nullptr);
 }
 
+/**
+ * \brief Checks if the node is a \ref SimpleNode of the specified operation type.
+ *
+ * \tparam TOperation
+ *   The operation type to be matched against.
+ *
+ * \param node
+ *   Node to be checked.
+ *
+ * \returns
+ *   A pair of the simple node and requested operation. If \p node is not a \ref SimpleNode,
+ *   then <nullptr, nullptr> is returned. If \p is a \ref SimpleNode of a different operation type,
+ *   then <SimpleNode*, nullptr> are returned. Otherwise, <SimpleNode*, TOperation*> are returned.
+ *
+ * Checks if the specified \p node is a \ref SimpleNode of the requested operation type.
+ * If this is the case, returns a pair of pointers to the SimpleNode and operation.
+ *
+ * See \ref def_use_inspection.
+ */
+template<typename TOperation>
+std::pair<const SimpleNode *, const TOperation *>
+TryGetSimpleNodeAndOptionalOp(const Node & node) noexcept
+{
+  const auto simpleNode = dynamic_cast<const SimpleNode *>(&node);
+  if (!simpleNode)
+  {
+    return std::make_pair(nullptr, nullptr);
+  }
+
+  if (auto operation = dynamic_cast<const TOperation *>(&simpleNode->GetOperation()))
+  {
+    return std::make_pair(simpleNode, operation);
+  }
+
+  return std::make_pair(simpleNode, nullptr);
+}
+
 }
 
 #endif
