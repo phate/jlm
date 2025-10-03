@@ -423,7 +423,7 @@ public:
     return GetStates(*node.region(), GetSimpleNodeModRef(node));
   }
 
-  util::HashSet<const PointsToGraph::MemoryNode *>
+  const util::HashSet<const PointsToGraph::MemoryNode *> &
   GetSimpleNodeModRef(const rvsdg::SimpleNode & node)
   {
     return ModRefSummary_.GetSimpleNodeModRef(node);
@@ -756,7 +756,7 @@ MemoryStateEncoder::EncodeLoad(const rvsdg::SimpleNode & node)
   JLM_ASSERT(is<LoadOperation>(&node));
   auto & stateMap = Context_->GetRegionalizedStateMap();
 
-  const auto memoryNodes = stateMap.GetSimpleNodeModRef(node);
+  const auto & memoryNodes = stateMap.GetSimpleNodeModRef(node);
   Context_->GetLoadCounter().CountEntity(memoryNodes);
 
   const auto memoryNodeStatePairs = stateMap.GetStates(*node.region(), memoryNodes);
@@ -774,7 +774,7 @@ MemoryStateEncoder::EncodeStore(const rvsdg::SimpleNode & node)
 {
   auto & stateMap = Context_->GetRegionalizedStateMap();
 
-  const auto memoryNodes = stateMap.GetSimpleNodeModRef(node);
+  const auto & memoryNodes = stateMap.GetSimpleNodeModRef(node);
   Context_->GetStoreCounter().CountEntity(memoryNodes);
 
   const auto memoryNodeStatePairs = stateMap.GetStates(*node.region(), memoryNodes);
