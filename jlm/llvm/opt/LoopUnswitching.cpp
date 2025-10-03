@@ -48,47 +48,54 @@ public:
   }
 };
 
-rvsdg::GammaNode *
-LoopUnswitching::IsUnswitchable(const rvsdg::ThetaNode & theta)
+static bool
+HasControlConstantOwner(const rvsdg::Output & output, const size_t value)
 {
-  auto [matchNode, matchOperation] =
-      rvsdg::TryGetSimpleNodeAndOptionalOp<rvsdg::MatchOperation>(*theta.predicate()->origin());
-  if (!matchOperation)
-    return nullptr;
+  auto [constantNode, constantOperation] =
+      rvsdg::TryGetSimpleNodeAndOptionalOp<rvsdg::ctlconstant_op>(output);
 
-  // The output of the match node should only be connected to the theta and gamma node
-  if (matchNode->output(0)->nusers() != 2)
-    return nullptr;
+  return constantOperation
+      && constantOperation->value() == rvsdg::ControlValueRepresentation(value, 2);
+}
 
-  rvsdg::GammaNode * gammaNode = nullptr;
-  for (const auto & user : matchNode->output(0)->Users())
+rvsdg::GammaNode *
+LoopUnswitching::IsApplicable(const rvsdg::ThetaNode & thetaNode)
+{
+  const auto & thetaPredicateOperand = *thetaNode.predicate()->origin();
+  const auto gammaNode = rvsdg::TryGetOwnerNode<rvsdg::GammaNode>(thetaPredicateOperand);
+  if (!gammaNode)
   {
-    if (&user == theta.predicate())
-      continue;
-
-    gammaNode = rvsdg::TryGetOwnerNode<rvsdg::GammaNode>(user);
-    if (!gammaNode)
-      return nullptr;
+    return nullptr;
   }
 
-  // Only apply loop unswitching if the theta node is a converted for loop, i.e., everything but the
-  // predicate is contained in the gamma
-  for (const auto & loopVar : theta.GetLoopVars())
+  // We expect the gamma node to only have two cases
+  if (gammaNode->nsubregions() != 2)
   {
-    const auto origin = loopVar.post->origin();
-    if (rvsdg::TryGetRegionParentNode<rvsdg::ThetaNode>(*origin))
-    {
-      // origin is a theta subregion argument
-    }
-    else if (rvsdg::TryGetOwnerNode<rvsdg::GammaNode>(*origin) == gammaNode)
-    {
-      // origin is an output of gamma node
-    }
-    else
-    {
-      // we don't want to invert this
-      return nullptr;
-    }
+    return nullptr;
+  }
+
+  // Check for respective control constants in gamma subregions
+  auto [branchResult, _] = gammaNode->MapOutputExitVar(thetaPredicateOperand);
+  if (!HasControlConstantOwner(*branchResult[0]->origin(), 0))
+  {
+    return nullptr;
+  }
+  if (!HasControlConstantOwner(*branchResult[1]->origin(), 1))
+  {
+    return nullptr;
+  }
+
+  // Check predicate of gamma node
+  const auto & gammaPredicateOperand = *gammaNode->predicate()->origin();
+  auto [matchNode, matchOperation] =
+      rvsdg::TryGetSimpleNodeAndOptionalOp<rvsdg::MatchOperation>(gammaPredicateOperand);
+  if (!matchOperation || matchNode->output(0)->nusers() != 1)
+  {
+    return nullptr;
+  }
+  if (matchOperation->alternative(1) != 1 || matchOperation->default_alternative() != 0)
+  {
+    return nullptr;
   }
 
   return gammaNode;
@@ -153,7 +160,7 @@ LoopUnswitching::CopyPredicateNodes(
 bool
 LoopUnswitching::UnswitchLoop(rvsdg::ThetaNode & oldThetaNode)
 {
-  auto oldGammaNode = IsUnswitchable(oldThetaNode);
+  auto oldGammaNode = IsApplicable(oldThetaNode);
   if (!oldGammaNode)
     return false;
 
