@@ -91,9 +91,10 @@ private:
    * @param output the pointer typed output
    * @param modRefSet the set of MemoryNodes that should be expanded with \p outputs targets
    */
-  void AddPointerToModRefSet(
-    const rvsdg::Output & output,
-    util::HashSet<const PointsToGraph::MemoryNode *> & modRefSet);
+  void
+  AddPointerToModRefSet(
+      const rvsdg::Output & output,
+      util::HashSet<const PointsToGraph::MemoryNode *> & modRefSet);
 
   /**
    * Recursively traverses the given \p region, creating ModRef sets for simple nodes.

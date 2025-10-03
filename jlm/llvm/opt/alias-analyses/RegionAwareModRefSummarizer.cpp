@@ -1232,9 +1232,6 @@ RegionAwareModRefSummarizer::ToRegionTree(
     if (!modRefSummary.HasSetForNode(node))
       return;
 
-    indent(depth, '-');
-    ss << node.DebugString();
-
     auto modRefIndex = modRefSummary.GetSetForNode(node);
     auto & memoryNodes = modRefSummary.GetModRefSet(modRefIndex);
     ss << " ";

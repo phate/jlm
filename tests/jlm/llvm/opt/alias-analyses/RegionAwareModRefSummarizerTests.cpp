@@ -46,13 +46,12 @@ TestStore1()
     auto & allocaCMemoryNode = pointsToGraph.GetAllocaNode(*test.alloca_c);
     auto & allocaDMemoryNode = pointsToGraph.GetAllocaNode(*test.alloca_d);
 
-    jlm::util::HashSet<const jlm::llvm::aa::PointsToGraph::MemoryNode *> expectedMemoryNodes(
-        {
-            &allocaAMemoryNode,
-            &allocaBMemoryNode,
-            &allocaCMemoryNode,
-            &allocaDMemoryNode,
-        });
+    jlm::util::HashSet<const jlm::llvm::aa::PointsToGraph::MemoryNode *> expectedMemoryNodes({
+        &allocaAMemoryNode,
+        &allocaBMemoryNode,
+        &allocaCMemoryNode,
+        &allocaDMemoryNode,
+    });
 
     auto & lambdaEntryNodes = modRefSummary.GetLambdaEntryModRef(*test.lambda);
     assert(setsEqual(lambdaEntryNodes, expectedMemoryNodes));
@@ -993,15 +992,15 @@ TestPhi2()
     auto & pdAllocaMemoryNode = pointsToGraph.GetAllocaNode(test.GetPdAlloca());
 
     jlm::util::HashSet<const jlm::llvm::aa::PointsToGraph::MemoryNode *> pTestAC(
-      { &pTestAllocaMemoryNode, &paAllocaMemoryNode, &pcAllocaMemoryNode });
+        { &pTestAllocaMemoryNode, &paAllocaMemoryNode, &pcAllocaMemoryNode });
     jlm::util::HashSet<const jlm::llvm::aa::PointsToGraph::MemoryNode *> pTestBD(
-      { &pTestAllocaMemoryNode, &pbAllocaMemoryNode, &pdAllocaMemoryNode });
+        { &pTestAllocaMemoryNode, &pbAllocaMemoryNode, &pdAllocaMemoryNode });
     jlm::util::HashSet<const jlm::llvm::aa::PointsToGraph::MemoryNode *> pTestCD(
         { &pTestAllocaMemoryNode, &pcAllocaMemoryNode, &pdAllocaMemoryNode });
     jlm::util::HashSet<const jlm::llvm::aa::PointsToGraph::MemoryNode *> pTestAD(
-      { &pTestAllocaMemoryNode, &paAllocaMemoryNode, &pdAllocaMemoryNode });
+        { &pTestAllocaMemoryNode, &paAllocaMemoryNode, &pdAllocaMemoryNode });
     jlm::util::HashSet<const jlm::llvm::aa::PointsToGraph::MemoryNode *> pTestACD(
-      { &pTestAllocaMemoryNode, &paAllocaMemoryNode, &pcAllocaMemoryNode, &pdAllocaMemoryNode });
+        { &pTestAllocaMemoryNode, &paAllocaMemoryNode, &pcAllocaMemoryNode, &pdAllocaMemoryNode });
 
     /*
      * Validate function eight()

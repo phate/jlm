@@ -148,8 +148,7 @@ LoadTest1::SetupRvsdg()
       { fct->GetFunctionArguments()[1] },
       pointerType,
       4);
-  auto ld2 =
-      LoadNonVolatileOperation::Create(ld1[0], { ld1[1] }, intType, 4);
+  auto ld2 = LoadNonVolatileOperation::Create(ld1[0], { ld1[1] }, intType, 4);
 
   fct->finalize(ld2);
 

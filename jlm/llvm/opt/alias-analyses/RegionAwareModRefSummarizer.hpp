@@ -241,7 +241,8 @@ private:
    * checks that none of the MemoryNodes from the blocklist have been added to the ModRefSet.
    * @return true if all blocklists are satisfied.
    */
-  bool VerifyBlocklists() const;
+  bool
+  VerifyBlocklists() const;
 
   /**
    * Helper function for debugging, listing out all functions, grouped by call graph SCC.

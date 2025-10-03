@@ -60,7 +60,6 @@ public:
     SteensgaardAnalysis,
     ThetaGammaInversion,
     ScalarEvolution,
-    TopDownMemoryNodeEliminator,
 
     LastEnumValue // must always be the last enum value, used for iteration
   };
@@ -324,7 +323,7 @@ public:
    * @return True if a statistics is demanded, otherwise false.
    */
   [[nodiscard]] bool
-  IsDemanded(Statistics::Id id) const noexcept
+  isDemanded(Statistics::Id id) const noexcept
   {
     return DemandedStatistics_.Contains(id);
   }
@@ -529,7 +528,7 @@ public:
   [[nodiscard]] bool
   IsDemanded(Statistics::Id id) const noexcept
   {
-    return GetSettings().IsDemanded(id);
+    return GetSettings().isDemanded(id);
   }
 
   /**

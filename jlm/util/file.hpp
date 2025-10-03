@@ -241,7 +241,7 @@ public:
    * @return True if the file path is a file, otherwise false.
    */
   [[nodiscard]] bool
-  IsFile() const noexcept
+  isFile() const noexcept
   {
     auto fileStatus = std::filesystem::status(path_);
     return std::filesystem::is_regular_file(fileStatus);
@@ -257,7 +257,7 @@ public:
   void
   CreateDirectory() const
   {
-    if (IsFile())
+    if (isFile())
       throw Error("file already exists: " + path_);
 
     FilePath baseDir(Dirname());
