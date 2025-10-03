@@ -992,8 +992,14 @@ TestPhi2()
     auto & pcAllocaMemoryNode = pointsToGraph.GetAllocaNode(test.GetPcAlloca());
     auto & pdAllocaMemoryNode = pointsToGraph.GetAllocaNode(test.GetPdAlloca());
 
+    jlm::util::HashSet<const jlm::llvm::aa::PointsToGraph::MemoryNode *> pTestAC(
+      { &pTestAllocaMemoryNode, &paAllocaMemoryNode, &pcAllocaMemoryNode });
+    jlm::util::HashSet<const jlm::llvm::aa::PointsToGraph::MemoryNode *> pTestBD(
+      { &pTestAllocaMemoryNode, &pbAllocaMemoryNode, &pdAllocaMemoryNode });
     jlm::util::HashSet<const jlm::llvm::aa::PointsToGraph::MemoryNode *> pTestCD(
         { &pTestAllocaMemoryNode, &pcAllocaMemoryNode, &pdAllocaMemoryNode });
+    jlm::util::HashSet<const jlm::llvm::aa::PointsToGraph::MemoryNode *> pTestAD(
+      { &pTestAllocaMemoryNode, &paAllocaMemoryNode, &pdAllocaMemoryNode });
     jlm::util::HashSet<const jlm::llvm::aa::PointsToGraph::MemoryNode *> pTestACD(
       { &pTestAllocaMemoryNode, &paAllocaMemoryNode, &pcAllocaMemoryNode, &pdAllocaMemoryNode });
 
@@ -1030,10 +1036,10 @@ TestPhi2()
       assert(setsEqual(lambdaEntryNodes, pTestCD));
 
       auto & callBNodes = modRefSummary.GetSimpleNodeModRef(test.GetCallB());
-      assert(setsEqual(callBNodes, pTestACD));
+      assert(setsEqual(callBNodes, pTestAD));
 
       auto & callDNodes = modRefSummary.GetSimpleNodeModRef(test.GetCallD());
-      assert(setsEqual(callDNodes, pTestACD));
+      assert(setsEqual(callDNodes, pTestAC));
 
       auto & lambdaExitNodes = modRefSummary.GetLambdaExitModRef(test.GetLambdaA());
       assert(setsEqual(lambdaExitNodes, pTestCD));
@@ -1044,16 +1050,16 @@ TestPhi2()
      */
     {
       auto & lambdaEntryNodes = modRefSummary.GetLambdaEntryModRef(test.GetLambdaB());
-      assert(setsEqual(lambdaEntryNodes, {}));
+      assert(setsEqual(lambdaEntryNodes, pTestAD));
 
       auto & callINodes = modRefSummary.GetSimpleNodeModRef(test.GetCallI());
       assert(setsEqual(callINodes, {}));
 
       auto & callCNodes = modRefSummary.GetSimpleNodeModRef(test.GetCallC());
-      assert(setsEqual(callCNodes, {}));
+      assert(setsEqual(callCNodes, pTestBD));
 
       auto & lambdaExitNodes = modRefSummary.GetLambdaExitModRef(test.GetLambdaB());
-      assert(setsEqual(lambdaExitNodes, {}));
+      assert(setsEqual(lambdaExitNodes, pTestAD));
     }
 
     /*
