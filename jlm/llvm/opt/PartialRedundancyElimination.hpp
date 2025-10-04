@@ -1,5 +1,5 @@
 /*
- * Copyright 2017 Nico Reißmann <nico.reissmann@gmail.com>
+ * Copyright 2025 Lars Astrup Sundt <lars.astrup.sundt@gmail.com>
  * See COPYING for terms of redistribution.
  */
 
@@ -27,11 +27,31 @@ class Region;
 namespace jlm::llvm
 {
 
+struct GVN_Hash
+{
+  size_t value;
+  inline GVN_Hash(){this->value = 0;}
+  inline GVN_Hash(size_t v){this->value = v;}
+  inline static GVN_Hash None()   {return GVN_Hash(0);}
+  inline static GVN_Hash Tainted(){return GVN_Hash(1);}
+  inline bool IsValid(){return value >= 2;}
+  inline bool IsSome(){return value != 0;}
+};
+
+/** Boiler plate for making the struct compatible with std::unordered_map **/
+struct GVN_Map_Hash{
+  size_t operator()(const GVN_Hash& v) const{return v.value;}
+};
+
+struct GVN_Map_Eq
+{
+  bool operator()(const GVN_Hash& a, const GVN_Hash& b) const{return a.value == b.value;}
+};
+
+
 /** \brief Partial Redundancy Elimination
  *
- * Todo: description here
- *
- *
+ * A pass for doing partial redundancy analysis and elimination
  */
 class PartialRedundancyElimination final : public rvsdg::Transformation
 {
@@ -51,17 +71,15 @@ public:
   PartialRedundancyElimination &
   operator=(PartialRedundancyElimination &&) = delete;
 
-  /*void
-  run(rvsdg::Region & region);*/
-
   void
   Run(rvsdg::RvsdgModule & module, util::StatisticsCollector & statisticsCollector) override;
 
 private:
-  std::unordered_map<jlm::rvsdg::Output*, size_t> gvn_hashes_;
+  /** \brief A mapping from Input and Output to gvn hashes **/
+  std::unordered_map<void* , GVN_Hash> gvn_hashes_;
 
   /* Debug data */
-  std::unordered_map<size_t, size_t> dbg_hash_counts_;
+  std::unordered_map<GVN_Hash, size_t, GVN_Map_Hash, GVN_Map_Eq> dbg_hash_counts_;
 
   void TraverseTopDownRecursively(rvsdg::Region& reg,          void(*cb)(PartialRedundancyElimination* pe, rvsdg::Node& node));
 
@@ -72,27 +90,33 @@ private:
   static void hash_gamma(         PartialRedundancyElimination *pe, rvsdg::Node& node);
   static void hash_node(          PartialRedundancyElimination *pe, rvsdg::Node& node);
   static void hash_call(          PartialRedundancyElimination *pe, rvsdg::Node& node);
+  static void hash_theta_pre(     PartialRedundancyElimination *pe, rvsdg::Node& node);
+  //static void hash_theta_post(    PartialRedundancyElimination *pe, rvsdg::Node& ndoe);
 
   /**
    * Insert the hash into a map of {hash => count} for debugging purposes.
-   * \link dbg_hash_counts_
+   * \ref dbg_hash_counts_
    */
 
-  inline void register_hash(size_t h)
+  inline void DBG_CountGVN_HashCounts(GVN_Hash h)
   {
-    if (dbg_hash_counts_.find(h) == dbg_hash_counts_.end())
-    {
+    if (dbg_hash_counts_.find(h) == dbg_hash_counts_.end()){
       dbg_hash_counts_.insert({h, 1});
-    }else
-    {
+    }else{
       dbg_hash_counts_[h] = dbg_hash_counts_[h] + 1;
     }
   }
 
-inline void register_hash(jlm::rvsdg::Output* k, size_t h)
+inline void AssignGVN(jlm::rvsdg::Output* k, GVN_Hash h)
   {
     gvn_hashes_.insert({k, h});
-    register_hash(h);
+    DBG_CountGVN_HashCounts(h);
+  }
+
+  inline void AssignGVN(jlm::rvsdg::Input* k, GVN_Hash h)
+  {
+    gvn_hashes_.insert({k, h});
+    DBG_CountGVN_HashCounts(h);
   }
 
   /**
@@ -102,19 +126,24 @@ inline void register_hash(jlm::rvsdg::Output* k, size_t h)
    * @param base a string to base the hash on
    * @param index an index which is hashed together with the string hash
    */
-  inline void register_hash(jlm::rvsdg::Output* out, std::string base, int index)
+  inline void AssignGVN(jlm::rvsdg::Output* out, std::string base, int index)
   {
     const std::hash<std::string> hasher;
 
     size_t h = hasher(base);
     h ^= index;
-    gvn_hashes_.insert({out, h});
-    register_hash(h);
+    gvn_hashes_.insert({out, GVN_Hash(h)});
+    DBG_CountGVN_HashCounts(h);
   }
 
-  inline bool OutputHasHash(rvsdg::Output* out){return gvn_hashes_.find(out) != gvn_hashes_.end();}
+  /** Safely returns a valid hash value or None **/
+  GVN_Hash GetHash(void* input_or_output)
+  {
+    if (gvn_hashes_.find(input_or_output) != gvn_hashes_.end()){return gvn_hashes_[input_or_output];}
+    return GVN_Hash::None();
+  }
 
-  inline size_t DBG_HashCount(size_t h)
+  inline size_t DBG_HashCount(GVN_Hash h)
   {
     if (dbg_hash_counts_.find(h) != dbg_hash_counts_.end())
     {
@@ -128,5 +157,19 @@ inline void register_hash(jlm::rvsdg::Output* k, size_t h)
 };
 
 }
+
+namespace std
+{
+  inline std::string to_string(jlm::llvm::GVN_Hash h)
+  {
+    switch (h.value)
+    {
+    case 0:  return std::string("none");
+    case 1:  return std::string("tainted");
+    default: return std::to_string(h.value);
+    }
+  }
+}
+
 
 #endif
