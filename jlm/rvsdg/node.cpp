@@ -80,7 +80,7 @@ Input::divert_to(jlm::rvsdg::Output * new_origin)
   if (auto node = TryGetOwnerNode<Node>(*this))
     node->recompute_depth();
 
-  on_input_change(this, old_origin, new_origin);
+  region()->NotifyInputChange(this, old_origin, new_origin);
 }
 
 [[nodiscard]] rvsdg::Region *

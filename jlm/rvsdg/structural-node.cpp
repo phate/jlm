@@ -23,30 +23,24 @@ StructuralInput::StructuralInput(
     jlm::rvsdg::Output * origin,
     std::shared_ptr<const rvsdg::Type> type)
     : NodeInput(origin, node, std::move(type))
-{
-  on_input_create(this);
-}
+{}
 
 /* structural output */
 
 StructuralOutput::~StructuralOutput() noexcept
 {
   JLM_ASSERT(results.empty());
-
-  on_output_destroy(this);
 }
 
 StructuralOutput::StructuralOutput(StructuralNode * node, std::shared_ptr<const rvsdg::Type> type)
     : NodeOutput(node, std::move(type))
-{
-  on_output_create(this);
-}
+{}
 
 /* structural node */
 
 StructuralNode::~StructuralNode() noexcept
 {
-  on_node_destroy(this);
+  region()->NotifyNodeDestroy(this);
 
   subregions_.clear();
 }
@@ -60,7 +54,7 @@ StructuralNode::StructuralNode(rvsdg::Region * region, size_t nsubregions)
   for (size_t n = 0; n < nsubregions; n++)
     subregions_.emplace_back(std::unique_ptr<rvsdg::Region>(new jlm::rvsdg::Region(this, n)));
 
-  on_node_create(this);
+  region->NotifyNodeCreate(this);
 }
 
 std::string
