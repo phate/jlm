@@ -250,6 +250,11 @@ public:
 
   Region(rvsdg::StructuralNode * node, size_t index);
 
+  Region(const Region &) = delete;
+
+  Region &
+  operator=(const Region &) = delete;
+
   /**
    * @return Returns an iterator range for iterating through the arguments of the region.
    */
