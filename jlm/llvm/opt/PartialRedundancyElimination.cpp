@@ -294,7 +294,7 @@ void PartialRedundancyElimination::hash_theta_pre(PartialRedundancyElimination *
   MatchTypeOrFail(node,
      [pe, &node](rvsdg::ThetaNode& th)
      {
-       std::cout << TR_RED << "Thefta here" << TR_RESET << std::endl;
+       std::cout << TR_RED << "Theta here" << TR_RESET << std::endl;
        for (size_t i = 0 ; i < node.ninputs() ; i++)
        {
          auto input = node.input(i);
