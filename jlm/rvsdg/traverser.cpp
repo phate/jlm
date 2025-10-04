@@ -39,8 +39,7 @@ TopDownTraverser::Observer::InputChange(Input * input, Output * old_origin, Outp
 TopDownTraverser::~TopDownTraverser() noexcept = default;
 
 TopDownTraverser::TopDownTraverser(Region * region)
-    : region_(*region),
-      observer_(region, this)
+    : observer_(region, this)
 {
   for (auto & node : region->TopNodes())
     tracker_.set_nodestate(&node, traversal_nodestate::frontier);
@@ -175,10 +174,8 @@ BottomUpTraverser::Observer::InputChange(Input * input, Output * old_origin, Out
 
 BottomUpTraverser::~BottomUpTraverser() noexcept = default;
 
-BottomUpTraverser::BottomUpTraverser(Region * region, bool revisit)
-    : region_(*region),
-      new_node_state_(revisit ? traversal_nodestate::frontier : traversal_nodestate::behind),
-      observer_(region, this)
+BottomUpTraverser::BottomUpTraverser(Region * region)
+    : observer_(region, this)
 {
   for (auto & bottomNode : region->BottomNodes())
   {
@@ -213,7 +210,7 @@ BottomUpTraverser::next()
 void
 BottomUpTraverser::node_create(Node * node)
 {
-  tracker_.set_nodestate(node, new_node_state_);
+  tracker_.set_nodestate(node, traversal_nodestate::behind);
 }
 
 void

@@ -193,9 +193,7 @@ private:
   void
   input_change(Input * in, Output * old_origin, Output * new_origin);
 
-  Region & region_;
   TraversalTracker tracker_;
-  std::vector<jlm::util::Callback> callbacks_;
   Observer observer_;
 };
 
@@ -204,7 +202,7 @@ class BottomUpTraverser final
 public:
   ~BottomUpTraverser() noexcept;
 
-  explicit BottomUpTraverser(Region * region, bool revisit = false);
+  explicit BottomUpTraverser(Region * region);
 
   Node *
   next();
@@ -253,8 +251,6 @@ private:
   input_change(Input * in, Output * old_origin, Output * new_origin);
 
   TraversalTracker tracker_;
-  Region & region_;
-  traversal_nodestate new_node_state_;
   Observer observer_;
 };
 
