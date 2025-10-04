@@ -380,9 +380,7 @@ Node::recompute_depth() noexcept
   if (new_depth == depth())
     return;
 
-  size_t old_depth = depth();
   depth_ = new_depth;
-  on_node_depth_change(this, old_depth);
 
   for (size_t n = 0; n < noutputs(); n++)
   {

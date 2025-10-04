@@ -16,8 +16,6 @@ namespace jlm::rvsdg
 StructuralInput::~StructuralInput() noexcept
 {
   JLM_ASSERT(arguments.empty());
-
-  on_input_destroy(this);
 }
 
 StructuralInput::StructuralInput(
