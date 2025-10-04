@@ -7,8 +7,6 @@
 #include <jlm/rvsdg/graph.hpp>
 #include <jlm/rvsdg/traverser.hpp>
 
-using namespace std::placeholders;
-
 /* top down traverser */
 
 namespace jlm::rvsdg
