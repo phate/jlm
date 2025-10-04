@@ -5,7 +5,6 @@
  */
 
 #include <jlm/rvsdg/graph.hpp>
-#include <jlm/rvsdg/notifiers.hpp>
 #include <jlm/rvsdg/structural-node.hpp>
 #include <jlm/rvsdg/substitution.hpp>
 #include <jlm/rvsdg/traverser.hpp>
@@ -505,7 +504,6 @@ Region::ToString(const util::Annotation & annotation, char labelValueSeparator)
 void
 Region::NotifyNodeCreate(Node * node)
 {
-  on_node_create(node);
   for (auto observer = observers_; observer; observer = observer->next_)
   {
     observer->NodeCreate(node);
@@ -515,7 +513,6 @@ Region::NotifyNodeCreate(Node * node)
 void
 Region::NotifyNodeDestroy(Node * node)
 {
-  on_node_destroy(node);
   for (auto observer = observers_; observer; observer = observer->next_)
   {
     observer->NodeDestroy(node);
@@ -525,7 +522,6 @@ Region::NotifyNodeDestroy(Node * node)
 void
 Region::NotifyInputChange(Input * input, Output * old_origin, Output * new_origin)
 {
-  on_input_change(input, old_origin, new_origin);
   for (auto observer = observers_; observer; observer = observer->next_)
   {
     observer->InputChange(input, old_origin, new_origin);
