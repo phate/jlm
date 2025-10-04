@@ -8,7 +8,6 @@
 #include <jlm/rvsdg/gamma.hpp>
 #include <jlm/rvsdg/lambda.hpp>
 #include <jlm/rvsdg/MatchType.hpp>
-#include <jlm/rvsdg/notifiers.hpp>
 #include <jlm/rvsdg/Phi.hpp>
 #include <jlm/rvsdg/region.hpp>
 #include <jlm/rvsdg/substitution.hpp>

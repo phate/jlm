@@ -7,7 +7,7 @@
 #ifndef JLM_RVSDG_TRAVERSER_HPP
 #define JLM_RVSDG_TRAVERSER_HPP
 
-#include <jlm/util/callbacks.hpp>
+#include <jlm/rvsdg/region.hpp>
 
 #include <list>
 #include <unordered_map>
