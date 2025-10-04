@@ -5,7 +5,6 @@
  */
 
 #include <jlm/rvsdg/graph.hpp>
-#include <jlm/rvsdg/notifiers.hpp>
 #include <jlm/rvsdg/structural-node.hpp>
 #include <jlm/rvsdg/substitution.hpp>
 #include <jlm/rvsdg/traverser.hpp>
@@ -17,8 +16,6 @@ namespace jlm::rvsdg
 
 RegionArgument::~RegionArgument() noexcept
 {
-  on_output_destroy(this);
-
   if (input())
     input()->arguments.erase(this);
 }
@@ -69,8 +66,6 @@ RegionArgument::Create(
 
 RegionResult::~RegionResult() noexcept
 {
-  on_input_destroy(this);
-
   if (output())
     output()->results.erase(this);
 }
@@ -123,8 +118,6 @@ RegionResult::Create(
 
 Region::~Region() noexcept
 {
-  on_region_destroy(this);
-
   while (results_.size())
     RemoveResult(results_.size() - 1);
 
@@ -142,18 +135,14 @@ Region::Region(Region *, Graph * graph)
       graph_(graph),
       NodeId_(0),
       node_(nullptr)
-{
-  on_region_create(this);
-}
+{}
 
 Region::Region(rvsdg::StructuralNode * node, size_t index)
     : index_(index),
       graph_(node->graph()),
       NodeId_(0),
       node_(node)
-{
-  on_region_create(this);
-}
+{}
 
 void
 Region::append_argument(RegionArgument * argument)
@@ -168,7 +157,6 @@ Region::append_argument(RegionArgument * argument)
 
   argument->index_ = narguments();
   arguments_.push_back(argument);
-  on_output_create(argument);
 }
 
 void
@@ -183,7 +171,6 @@ Region::insert_argument(size_t index, RegionArgument * argument)
   arguments_.insert(arguments_.begin() + index, argument);
   for (size_t n = index + 1; n < arguments_.size(); ++n)
     arguments_[n]->index_ = n;
-  on_output_create(argument);
 }
 
 void
@@ -218,7 +205,6 @@ Region::append_result(RegionResult * result)
 
   result->index_ = nresults();
   results_.push_back(result);
-  on_input_create(result);
 }
 
 void
@@ -514,6 +500,65 @@ Region::ToString(const util::Annotation & annotation, char labelValueSeparator)
 
   return util::strfmt(annotation.Label(), labelValueSeparator, value);
 }
+
+void
+Region::NotifyNodeCreate(Node * node)
+{
+  for (auto observer = observers_; observer; observer = observer->next_)
+  {
+    observer->NodeCreate(node);
+  }
+}
+
+void
+Region::NotifyNodeDestroy(Node * node)
+{
+  for (auto observer = observers_; observer; observer = observer->next_)
+  {
+    observer->NodeDestroy(node);
+  }
+}
+
+void
+Region::NotifyInputChange(Input * input, Output * old_origin, Output * new_origin)
+{
+  for (auto observer = observers_; observer; observer = observer->next_)
+  {
+    observer->InputChange(input, old_origin, new_origin);
+  }
+}
+
+RegionObserver::~RegionObserver()
+{
+  *pprev_ = next_;
+  if (next_)
+  {
+    next_->pprev_ = pprev_;
+  }
+}
+
+RegionObserver::RegionObserver(Region * region)
+{
+  next_ = region->observers_;
+  if (next_)
+  {
+    next_->pprev_ = &next_;
+  }
+  pprev_ = &region->observers_;
+  region->observers_ = this;
+}
+
+void
+RegionObserver::NodeCreate(Node *)
+{}
+
+void
+RegionObserver::NodeDestroy(Node *)
+{}
+
+void
+RegionObserver::InputChange(Input * input, Output * o, Output * n)
+{}
 
 size_t
 nnodes(const jlm::rvsdg::Region * region) noexcept

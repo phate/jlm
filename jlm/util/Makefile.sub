@@ -1,5 +1,4 @@
 libutil_SOURCES = \
-    jlm/util/callbacks.cpp \
     jlm/util/common.cpp \
     jlm/util/GraphWriter.cpp \
     jlm/util/Statistics.cpp \
@@ -8,7 +7,6 @@ libutil_SOURCES = \
 libutil_HEADERS = \
     jlm/util/AnnotationMap.hpp \
     jlm/util/BijectiveMap.hpp \
-    jlm/util/callbacks.hpp \
     jlm/util/common.hpp \
     jlm/util/disjointset.hpp \
     jlm/util/file.hpp \
