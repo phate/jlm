@@ -17,8 +17,6 @@ namespace jlm::rvsdg
 
 RegionArgument::~RegionArgument() noexcept
 {
-  on_output_destroy(this);
-
   if (input())
     input()->arguments.erase(this);
 }
@@ -69,8 +67,6 @@ RegionArgument::Create(
 
 RegionResult::~RegionResult() noexcept
 {
-  on_input_destroy(this);
-
   if (output())
     output()->results.erase(this);
 }
@@ -123,8 +119,6 @@ RegionResult::Create(
 
 Region::~Region() noexcept
 {
-  on_region_destroy(this);
-
   while (results_.size())
     RemoveResult(results_.size() - 1);
 
@@ -142,18 +136,14 @@ Region::Region(Region *, Graph * graph)
       graph_(graph),
       NodeId_(0),
       node_(nullptr)
-{
-  on_region_create(this);
-}
+{}
 
 Region::Region(rvsdg::StructuralNode * node, size_t index)
     : index_(index),
       graph_(node->graph()),
       NodeId_(0),
       node_(node)
-{
-  on_region_create(this);
-}
+{}
 
 void
 Region::append_argument(RegionArgument * argument)
@@ -168,7 +158,6 @@ Region::append_argument(RegionArgument * argument)
 
   argument->index_ = narguments();
   arguments_.push_back(argument);
-  on_output_create(argument);
 }
 
 void
@@ -183,7 +172,6 @@ Region::insert_argument(size_t index, RegionArgument * argument)
   arguments_.insert(arguments_.begin() + index, argument);
   for (size_t n = index + 1; n < arguments_.size(); ++n)
     arguments_[n]->index_ = n;
-  on_output_create(argument);
 }
 
 void
@@ -218,7 +206,6 @@ Region::append_result(RegionResult * result)
 
   result->index_ = nresults();
   results_.push_back(result);
-  on_input_create(result);
 }
 
 void
