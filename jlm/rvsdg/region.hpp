@@ -785,7 +785,13 @@ class RegionObserver
 {
 public:
   ~RegionObserver();
-  RegionObserver(Region * region);
+
+  explicit RegionObserver(Region * region);
+
+  RegionObserver(const RegionObserver &) = delete;
+
+  RegionObserver &
+  operator=(const RegionObserver &) = delete;
 
   virtual void
   NodeCreate(Node * node);
