@@ -1191,22 +1191,31 @@ MlirToJlmConverter::ConvertType(const ::mlir::Type & type)
   }
   else if (auto structType = ::mlir::dyn_cast<::mlir::LLVM::LLVMStructType>(type))
   {
+    // Check if the struct type has already been created
+    if (this->NamedStructs_.count(structType.getName().str()) != 0)
+    {
+      JLM_ASSERT(this->NamedStructs_.count(structType.getName().str()) == 1);
+      return this->NamedStructs_[structType.getName().str()];
+    }
+
     std::vector<std::shared_ptr<const rvsdg::Type>> types;
     for (auto element : structType.getBody())
     {
       types.push_back(ConvertType(element));
     }
-    auto declaration = jlm::llvm::StructType::Declaration::Create(types);
     if (structType.getName().empty())
     {
-      return jlm::llvm::StructType::Create(structType.isPacked(), *declaration);
+      return jlm::llvm::StructType::Create(structType.isPacked(), *jlm::llvm::StructType::Declaration::Create(types));
     }
-    else
+    else 
     {
-      return jlm::llvm::StructType::Create(
+      JLM_ASSERT(this->NamedStructs_.count(structType.getName().str()) == 0);
+      auto newStruct = jlm::llvm::StructType::Create(
           structType.getName().str(),
           structType.isPacked(),
-          *declaration);
+          *jlm::llvm::StructType::Declaration::Create(types));
+      this->NamedStructs_[structType.getName().str()] = newStruct;
+      return newStruct;
     }
   }
   else

@@ -227,7 +227,7 @@ private:
    * \param type The MLIR type to be converted.
    * \result The converted RVSDG type.
    */
-  static std::shared_ptr<const rvsdg::Type>
+  std::shared_ptr<const rvsdg::Type>
   ConvertType(const ::mlir::Type & type);
 
   /**
@@ -247,6 +247,7 @@ private:
   }
 
   std::unique_ptr<::mlir::MLIRContext> Context_;
+  std::unordered_map<std::string, std::shared_ptr<const rvsdg::Type>> NamedStructs_;
 };
 
 } // namespace jlm::mlir
