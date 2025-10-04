@@ -1205,9 +1205,11 @@ MlirToJlmConverter::ConvertType(const ::mlir::Type & type)
     }
     if (structType.getName().empty())
     {
-      return jlm::llvm::StructType::Create(structType.isPacked(), *jlm::llvm::StructType::Declaration::Create(types));
+      return jlm::llvm::StructType::Create(
+          structType.isPacked(),
+          *jlm::llvm::StructType::Declaration::Create(types));
     }
-    else 
+    else
     {
       JLM_ASSERT(this->NamedStructs_.count(structType.getName().str()) == 0);
       auto newStruct = jlm::llvm::StructType::Create(
