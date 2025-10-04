@@ -22,6 +22,10 @@ public:
 
   ~FunctionInlining() noexcept override;
 
+  FunctionInlining()
+      : Transformation("FunctionInlining")
+  {}
+
   void
   Run(rvsdg::RvsdgModule & module, util::StatisticsCollector & statisticsCollector) override;
 };

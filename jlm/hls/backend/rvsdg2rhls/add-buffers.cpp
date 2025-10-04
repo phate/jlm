@@ -13,7 +13,7 @@
 namespace jlm::hls
 {
 
-rvsdg::Input *
+static rvsdg::Input *
 FindUserNode(rvsdg::Output * out)
 {
 
@@ -48,7 +48,7 @@ FindUserNode(rvsdg::Output * out)
   JLM_UNREACHABLE("This should not have happened!");
 }
 
-void
+static void
 PlaceBuffer(rvsdg::Output * out, size_t capacity, bool passThrough)
 {
   // places or re-places a buffer on an output
@@ -88,81 +88,7 @@ PlaceBuffer(rvsdg::Output * out, size_t capacity, bool passThrough)
   }
 }
 
-const size_t BufferSizeForkState = 1;
-const size_t BufferSizeForkControl = 8;
-const size_t BufferSizeForkOther = 4;
-
-void
-OptimizeFork(rvsdg::SimpleNode * node)
-{
-  const auto fork = util::AssertedCast<const ForkOperation>(&node->GetOperation());
-  bool inLoop = rvsdg::is<LoopOperation>(node->region()->node());
-  if (fork->IsConstant() || !inLoop)
-  {
-    // cForks and forks outside of loops should have no buffers after it
-    for (size_t i = 0; i < node->noutputs(); ++i)
-    {
-      auto user = FindUserNode(node->output(0));
-      auto [bufferNode, bufferOperation] =
-          rvsdg::TryGetSimpleNodeAndOptionalOp<BufferOperation>(*user);
-      if (bufferOperation)
-      {
-        bufferNode->output(0)->divert_users(node->output(0));
-        JLM_ASSERT(bufferNode->IsDead());
-        remove(bufferNode);
-      }
-    }
-  }
-  else
-  {
-    // forks inside of loops should have buffers after it
-    size_t bufferSize = BufferSizeForkOther;
-    if (rvsdg::is<rvsdg::ControlType>(node->input(0)->Type()))
-    {
-      bufferSize = BufferSizeForkControl;
-    }
-    else if (rvsdg::is<rvsdg::StateType>(node->input(0)->Type()))
-    {
-      bufferSize = BufferSizeForkState;
-    }
-    for (size_t i = 0; i < node->noutputs(); ++i)
-    {
-      PlaceBuffer(node->output(i), bufferSize, true);
-    }
-  }
-}
-
-const size_t BufferSizeBranchState = BufferSizeForkControl;
-
-void
-OptimizeBranch(rvsdg::SimpleNode * node)
-{
-  auto branch = dynamic_cast<const BranchOperation *>(&node->GetOperation());
-  JLM_ASSERT(branch);
-  bool inLoop = rvsdg::is<LoopOperation>(node->region()->node());
-  if (inLoop && !branch->loop)
-  {
-    // TODO: this optimization is for long stores with responses. It might be better to do it
-    // somewhere else and more selectively (only when there is a store in one of the gamma
-    // subregions, and only on outputs that don't go to store)
-    if (rvsdg::is<rvsdg::StateType>(node->input(1)->Type()))
-    {
-      for (size_t i = 0; i < node->noutputs(); ++i)
-      {
-        PlaceBuffer(node->output(i), BufferSizeBranchState, true);
-      }
-    }
-  }
-}
-
-void
-OptimizeStateGate(rvsdg::SimpleNode * node)
-{
-  // TODO: remove duplicate? somewhere else?
-  // TODO: place buffers on state outputs?
-}
-
-void
+static void
 OptimizeAddrQ(rvsdg::SimpleNode * node)
 {
   auto addrq = dynamic_cast<const AddressQueueOperation *>(&node->GetOperation());
@@ -171,7 +97,7 @@ OptimizeAddrQ(rvsdg::SimpleNode * node)
   PlaceBuffer(node->output(0), addrq->capacity, true);
 }
 
-void
+static void
 OptimizeBuffer(rvsdg::SimpleNode * node)
 {
   auto buf = dynamic_cast<const BufferOperation *>(&node->GetOperation());
@@ -194,7 +120,7 @@ OptimizeBuffer(rvsdg::SimpleNode * node)
   }
 }
 
-void
+static void
 OptimizeLoop(LoopNode * loopNode)
 {
   // TODO: should this be changed?
@@ -271,7 +197,7 @@ OptimizeLoop(LoopNode * loopNode)
   }
 }
 
-void
+static void
 AddBuffers(rvsdg::Region * region)
 {
   for (auto & node : rvsdg::TopDownTraverser(region))
@@ -312,9 +238,9 @@ AddBuffers(rvsdg::Region * region)
   }
 }
 
-size_t MemoryLatency = 10;
+static size_t MemoryLatency = 10;
 
-constexpr uint32_t
+static constexpr uint32_t
 round_up_pow2(uint32_t x)
 {
   if (x == 0)
@@ -328,7 +254,7 @@ round_up_pow2(uint32_t x)
   return x + 1;
 }
 
-void
+static void
 MaximizeBuffers(rvsdg::Region * region)
 {
   //  const size_t capacity = 256;
@@ -375,7 +301,7 @@ MaximizeBuffers(rvsdg::Region * region)
   }
 }
 
-std::vector<size_t>
+static std::vector<size_t>
 NodeCycles(rvsdg::SimpleNode * node, std::vector<size_t> & input_cycles)
 {
   auto max_cycles = *std::max_element(input_cycles.begin(), input_cycles.end());
@@ -422,7 +348,7 @@ NodeCycles(rvsdg::SimpleNode * node, std::vector<size_t> & input_cycles)
 
 const size_t UnlimitedBufferCapacity = std::numeric_limits<uint32_t>::max();
 
-std::vector<size_t>
+static std::vector<size_t>
 NodeCapacity(rvsdg::SimpleNode * node, std::vector<size_t> & input_capacities)
 {
   auto min_capacity = *std::min_element(input_capacities.begin(), input_capacities.end());
@@ -462,7 +388,7 @@ NodeCapacity(rvsdg::SimpleNode * node, std::vector<size_t> & input_capacities)
   return std::vector<size_t>(node->noutputs(), min_capacity);
 }
 
-void
+static void
 CreateLoopFrontier(
     const LoopNode * loop,
     std::unordered_map<rvsdg::Output *, size_t> & output_cycles,
@@ -527,13 +453,13 @@ CreateLoopFrontier(
   }
 }
 
-void
+static void
 CalculateLoopCycleDepth(
     LoopNode * loop,
     std::unordered_map<rvsdg::Output *, size_t> & output_cycles,
     bool analyze_inner_loop = false);
 
-void
+static void
 PushCycleFrontier(
     std::unordered_map<rvsdg::Output *, size_t> & output_cycles,
     std::unordered_set<rvsdg::Input *> & frontier,
@@ -732,7 +658,7 @@ setMemoryLatency(size_t memoryLatency)
 
 const size_t MaximumBufferSize = 512;
 
-size_t
+static size_t
 PlaceBufferLoop(rvsdg::Output * out, size_t min_capacity, bool passThrough)
 {
   // places or re-places a buffer on an output
@@ -793,7 +719,7 @@ PlaceBufferLoop(rvsdg::Output * out, size_t min_capacity, bool passThrough)
   }
 }
 
-void
+static void
 AdjustLoopBuffers(
     LoopNode * loop,
     std::unordered_map<rvsdg::Output *, size_t> & output_cycles,
@@ -1007,7 +933,7 @@ AdjustLoopBuffers(
   }
 }
 
-void
+static void
 CalculateLoopDepths(rvsdg::Region * region)
 {
   for (auto node : rvsdg::TopDownTraverser(region))
@@ -1024,10 +950,16 @@ CalculateLoopDepths(rvsdg::Region * region)
   }
 }
 
+BufferInsertion::~BufferInsertion() noexcept = default;
+
+BufferInsertion::BufferInsertion()
+    : Transformation("BufferInsertion")
+{}
+
 void
-add_buffers(llvm::RvsdgModule & rm)
+BufferInsertion::Run(rvsdg::RvsdgModule & rvsdgModule, util::StatisticsCollector &)
 {
-  auto & graph = rm.Rvsdg();
+  auto & graph = rvsdgModule.Rvsdg();
   auto root = &graph.GetRootRegion();
   auto lambda = dynamic_cast<rvsdg::LambdaNode *>(root->Nodes().begin().ptr());
   AddBuffers(lambda->subregion());

@@ -13,6 +13,7 @@
 #include <jlm/llvm/ir/operators/Store.hpp>
 #include <jlm/llvm/ir/RvsdgModule.hpp>
 #include <jlm/rvsdg/bitstring/type.hpp>
+#include <jlm/rvsdg/gamma.hpp>
 #include <jlm/rvsdg/NodeNormalization.hpp>
 #include <jlm/rvsdg/view.hpp>
 
@@ -464,3 +465,171 @@ IOBarrierAllocaAddressNormalization()
 JLM_UNIT_TEST_REGISTER(
     "jlm/llvm/ir/operators/StoreTests-TestIOBarrierAllocaAddressNormalization",
     IOBarrierAllocaAddressNormalization)
+
+static void
+IOBarrierAllocaAddressNormalization_Gamma()
+{
+  using namespace jlm::llvm;
+  using namespace jlm::rvsdg;
+
+  // Arrange
+  const auto valueType = jlm::tests::ValueType::Create();
+  const auto pointerType = PointerType::Create();
+  const auto bit32Type = jlm::rvsdg::BitType::Create(32);
+  const auto ioStateType = IOStateType::Create();
+  const auto controlTye = ControlType::Create(2);
+
+  Graph graph;
+  const auto valueImport = &jlm::rvsdg::GraphImport::Create(graph, valueType, "value");
+  const auto sizeImport = &jlm::rvsdg::GraphImport::Create(graph, bit32Type, "value");
+  auto ioStateImport = &jlm::rvsdg::GraphImport::Create(graph, ioStateType, "ioState");
+  const auto controlImport = &jlm::rvsdg::GraphImport::Create(graph, controlTye, "control");
+
+  auto allocaResults = AllocaOperation::create(valueType, sizeImport, 4);
+
+  auto gammaNode = GammaNode::create(controlImport, 2);
+  auto addressEntryVar = gammaNode->AddEntryVar(allocaResults[0]);
+  auto memoryStateEntryVar = gammaNode->AddEntryVar(allocaResults[1]);
+  auto ioStateEntryVar = gammaNode->AddEntryVar(ioStateImport);
+  auto valueEntryVar = gammaNode->AddEntryVar(valueImport);
+
+  auto & ioBarrierNode = jlm::rvsdg::CreateOpNode<IOBarrierOperation>(
+      { addressEntryVar.branchArgument[0], ioStateEntryVar.branchArgument[0] },
+      pointerType);
+
+  auto & storeNode = StoreNonVolatileOperation::CreateNode(
+      *ioBarrierNode.output(0),
+      *valueEntryVar.branchArgument[0],
+      { memoryStateEntryVar.branchArgument[0] },
+      4);
+
+  auto exitVar =
+      gammaNode->AddExitVar({ storeNode.output(0), memoryStateEntryVar.branchArgument[1] });
+
+  GraphExport::Create(*exitVar.output, "store");
+
+  view(&graph.GetRootRegion(), stdout);
+
+  // Act
+  const auto successStoreNode = jlm::rvsdg::ReduceNode<StoreNonVolatileOperation>(
+      StoreNonVolatileOperation::NormalizeIOBarrierAllocaAddress,
+      storeNode);
+  graph.PruneNodes();
+
+  view(&graph.GetRootRegion(), stdout);
+
+  // Assert
+  assert(successStoreNode);
+  // There should only be the store node left.
+  // The IOBarrier node should have been pruned.
+  assert(gammaNode->subregion(0)->nnodes() == 1);
+  assert(
+      jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*exitVar.branchResult[0]->origin())
+          ->input(0)
+          ->origin()
+      == addressEntryVar.branchArgument[0]);
+}
+
+JLM_UNIT_TEST_REGISTER(
+    "jlm/llvm/ir/operators/StoreTests-TestIOBarrierAllocaAddressNormalization_Gamma",
+    IOBarrierAllocaAddressNormalization_Gamma)
+
+static void
+storeAllocaSingleUser()
+{
+  using namespace jlm::llvm;
+  using namespace jlm::rvsdg;
+
+  // Arrange
+  const auto valueType = jlm::tests::ValueType::Create();
+  const auto bit32Type = BitType::Create(32);
+
+  Graph graph;
+  const auto valueImport = &jlm::rvsdg::GraphImport::Create(graph, valueType, "value");
+  const auto sizeImport = &jlm::rvsdg::GraphImport::Create(graph, bit32Type, "value");
+
+  auto allocaResults = AllocaOperation::create(valueType, sizeImport, 4);
+
+  auto & storeNode = StoreNonVolatileOperation::CreateNode(
+      *allocaResults[0],
+      *valueImport,
+      { allocaResults[1] },
+      4);
+
+  auto & x1 = GraphExport::Create(*storeNode.output(0), "store");
+
+  view(&graph.GetRootRegion(), stdout);
+
+  // Act
+  const auto success = jlm::rvsdg::ReduceNode<StoreNonVolatileOperation>(
+      StoreNonVolatileOperation::normalizeStoreAllocaSingleUser,
+      storeNode);
+
+  graph.PruneNodes();
+
+  view(&graph.GetRootRegion(), stdout);
+
+  // Assert
+  assert(success);
+  assert(x1.origin() == allocaResults[1]);
+}
+
+JLM_UNIT_TEST_REGISTER(
+    "jlm/llvm/ir/operators/StoreTests-storeAllocaSingleUser",
+    storeAllocaSingleUser)
+
+static void
+storeAllocaSingleUser_MultipleUsers()
+{
+  using namespace jlm::llvm;
+  using namespace jlm::rvsdg;
+
+  // Arrange
+  const auto valueType = jlm::tests::ValueType::Create();
+  const auto bit32Type = BitType::Create(32);
+
+  Graph graph;
+  const auto valueImport = &jlm::rvsdg::GraphImport::Create(graph, valueType, "value");
+  const auto sizeImport = &jlm::rvsdg::GraphImport::Create(graph, bit32Type, "value");
+
+  auto allocaResults = AllocaOperation::create(valueType, sizeImport, 4);
+
+  auto & storeNode1 = StoreNonVolatileOperation::CreateNode(
+      *allocaResults[0],
+      *valueImport,
+      { allocaResults[1] },
+      4);
+
+  auto & storeNode2 = StoreNonVolatileOperation::CreateNode(
+      *allocaResults[0],
+      *valueImport,
+      { storeNode1.output(0) },
+      4);
+
+  auto & x1 = GraphExport::Create(*storeNode1.output(0), "store1");
+  auto & x2 = GraphExport::Create(*storeNode2.output(0), "store2");
+
+  view(&graph.GetRootRegion(), stdout);
+
+  // Act
+  const auto successStoreNode1 = jlm::rvsdg::ReduceNode<StoreNonVolatileOperation>(
+      StoreNonVolatileOperation::normalizeStoreAllocaSingleUser,
+      storeNode1);
+  const auto successStoreNode2 = jlm::rvsdg::ReduceNode<StoreNonVolatileOperation>(
+      StoreNonVolatileOperation::normalizeStoreAllocaSingleUser,
+      storeNode2);
+
+  graph.PruneNodes();
+
+  view(&graph.GetRootRegion(), stdout);
+
+  // Assert
+  assert(!successStoreNode1);
+  assert(!successStoreNode2);
+  assert(x1.origin() == storeNode1.output(0));
+  assert(x2.origin() == storeNode2.output(0));
+}
+
+JLM_UNIT_TEST_REGISTER(
+    "jlm/llvm/ir/operators/StoreTests-storeAllocaSingleUser_MultipleUsers",
+    storeAllocaSingleUser_MultipleUsers)

@@ -67,7 +67,6 @@ public:
 
     AAAndersenAgnostic,
     AAAndersenRegionAware,
-    AAAndersenTopDownLifetimeAware,
     AASteensgaardAgnostic,
     AASteensgaardRegionAware,
     CommonNodeElimination,
@@ -75,11 +74,13 @@ public:
     FunctionInlining,
     IfConversion,
     InvariantValueRedirection,
+    LoadChainSeparation,
     LoopUnrolling,
     NodePullIn,
     NodePushOut,
     NodeReduction,
     RvsdgTreePrinter,
+    ScalarEvolution,
     ThetaGammaInversion,
 
     LastEnumValue // must always be the last enum value, used for iteration
@@ -92,14 +93,16 @@ public:
       OutputFormat outputFormat,
       util::StatisticsCollectorSettings statisticsCollectorSettings,
       llvm::RvsdgTreePrinter::Configuration rvsdgTreePrinterConfiguration,
-      std::vector<OptimizationId> optimizations)
+      std::vector<OptimizationId> optimizations,
+      const bool dumpRvsdgDotGraphs)
       : InputFile_(std::move(inputFile)),
         InputFormat_(inputFormat),
         OutputFile_(std::move(outputFile)),
         OutputFormat_(outputFormat),
         StatisticsCollectorSettings_(std::move(statisticsCollectorSettings)),
         OptimizationIds_(std::move(optimizations)),
-        RvsdgTreePrinterConfiguration_(std::move(rvsdgTreePrinterConfiguration))
+        RvsdgTreePrinterConfiguration_(std::move(rvsdgTreePrinterConfiguration)),
+        DumpRvsdgDotGraphs_(dumpRvsdgDotGraphs)
   {}
 
   void
@@ -147,6 +150,12 @@ public:
     return RvsdgTreePrinterConfiguration_;
   }
 
+  [[nodiscard]] bool
+  DumpRvsdgDotGraphs() const noexcept
+  {
+    return DumpRvsdgDotGraphs_;
+  }
+
   static OptimizationId
   FromCommandLineArgumentToOptimizationId(const std::string & commandLineArgument);
 
@@ -173,7 +182,8 @@ public:
       OutputFormat outputFormat,
       util::StatisticsCollectorSettings statisticsCollectorSettings,
       llvm::RvsdgTreePrinter::Configuration rvsdgTreePrinterConfiguration,
-      std::vector<OptimizationId> optimizations)
+      std::vector<OptimizationId> optimizations,
+      bool dumpRvsdgDotGraphs)
   {
     return std::make_unique<JlmOptCommandLineOptions>(
         std::move(inputFile),
@@ -182,7 +192,8 @@ public:
         outputFormat,
         std::move(statisticsCollectorSettings),
         std::move(rvsdgTreePrinterConfiguration),
-        std::move(optimizations));
+        std::move(optimizations),
+        dumpRvsdgDotGraphs);
   }
 
 private:
@@ -193,12 +204,12 @@ private:
   util::StatisticsCollectorSettings StatisticsCollectorSettings_;
   std::vector<OptimizationId> OptimizationIds_;
   llvm::RvsdgTreePrinter::Configuration RvsdgTreePrinterConfiguration_;
+  bool DumpRvsdgDotGraphs_;
 
   struct OptimizationCommandLineArgument
   {
     inline static const char * AaAndersenAgnostic_ = "AAAndersenAgnostic";
     inline static const char * AaAndersenRegionAware_ = "AAAndersenRegionAware";
-    inline static const char * AaAndersenTopDownLifetimeAware_ = "AAAndersenTopDownLifetimeAware";
     inline static const char * AaSteensgaardAgnostic_ = "AASteensgaardAgnostic";
     inline static const char * AaSteensgaardRegionAware_ = "AASteensgaardRegionAware";
     inline static const char * CommonNodeElimination_ = "CommonNodeElimination";
@@ -209,9 +220,11 @@ private:
     inline static const char * NodePullIn_ = "NodePullIn";
     inline static const char * NodePushOut_ = "NodePushOut";
     inline static const char * ThetaGammaInversion_ = "ThetaGammaInversion";
+    inline static const char * LoadChainSeparation_ = "LoadChainSeparation";
     inline static const char * LoopUnrolling_ = "LoopUnrolling";
     inline static const char * NodeReduction_ = "NodeReduction";
     inline static const char * RvsdgTreePrinter_ = "RvsdgTreePrinter";
+    inline static const char * ScalarEvolution_ = "ScalarEvolution";
   };
 
   static const util::BijectiveMap<util::Statistics::Id, std::string_view> &
@@ -399,7 +412,8 @@ public:
         OutputFiles_(""),
         OutputFormat_(OutputFormat::Firrtl),
         ExtractHlsFunction_(false),
-        MemoryLatency_(10)
+        MemoryLatency_(10),
+        dumpRvsdgDotGraphs_(false)
   {
     JLM_ASSERT(MemoryLatency_ > 0);
   }
@@ -413,6 +427,7 @@ public:
   std::string HlsFunction_;
   bool ExtractHlsFunction_;
   size_t MemoryLatency_;
+  bool dumpRvsdgDotGraphs_;
 };
 
 /**

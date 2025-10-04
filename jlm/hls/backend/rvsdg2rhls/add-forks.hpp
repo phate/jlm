@@ -21,6 +21,12 @@ namespace jlm::hls
 class ForkInsertion final : public rvsdg::Transformation
 {
 public:
+  ~ForkInsertion() noexcept override;
+
+  ForkInsertion()
+      : Transformation("ForkInsertion")
+  {}
+
   void
   Run(rvsdg::RvsdgModule & module, util::StatisticsCollector & statisticsCollector) override;
 

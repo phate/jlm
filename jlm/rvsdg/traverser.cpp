@@ -18,7 +18,7 @@ namespace jlm::rvsdg
 TopDownTraverser::~TopDownTraverser() noexcept = default;
 
 TopDownTraverser::TopDownTraverser(Region * region)
-    : tracker_(*region)
+    : region_(*region)
 {
   for (auto & node : region->TopNodes())
     tracker_.set_nodestate(&node, traversal_nodestate::frontier);
@@ -62,7 +62,7 @@ TopDownTraverser::predecessors_visited(const Node * node) noexcept
 Node *
 TopDownTraverser::next()
 {
-  Node * node = tracker_.peek_top();
+  Node * node = tracker_.peek();
   if (!node)
     return nullptr;
 
@@ -73,8 +73,14 @@ TopDownTraverser::next()
     {
       if (auto node = TryGetOwnerNode<Node>(user))
       {
+        if (!predecessors_visited(node))
+        {
+          continue;
+        }
         if (tracker_.get_nodestate(node) == traversal_nodestate::ahead)
+        {
           tracker_.set_nodestate(node, traversal_nodestate::frontier);
+        }
       }
     }
   }
@@ -85,7 +91,7 @@ TopDownTraverser::next()
 void
 TopDownTraverser::node_create(Node * node)
 {
-  if (node->region() != &tracker_.GetRegion())
+  if (node->region() != &region_)
     return;
 
   if (predecessors_visited(node))
@@ -97,7 +103,7 @@ TopDownTraverser::node_create(Node * node)
 void
 TopDownTraverser::input_change(Input * in, Output *, Output *)
 {
-  if (in->region() != &tracker_.GetRegion())
+  if (in->region() != &region_)
     return;
 
   auto node = TryGetOwnerNode<Node>(*in);
@@ -106,14 +112,14 @@ TopDownTraverser::input_change(Input * in, Output *, Output *)
 
   auto state = tracker_.get_nodestate(node);
 
-  /* ignore nodes that have been traversed already, or that are already
-  marked for later traversal */
+  // ignore nodes that have been traversed already, or that are already
+  // marked for later traversal
   if (state != traversal_nodestate::ahead)
     return;
 
-  /* make sure node is visited eventually, might now be visited earlier
-  as depth of the node could be lowered */
-  tracker_.set_nodestate(node, traversal_nodestate::frontier);
+  // node may just have become eligible for visiting, check
+  if (predecessors_visited(node))
+    tracker_.set_nodestate(node, traversal_nodestate::frontier);
 }
 
 static bool
@@ -135,7 +141,7 @@ HasSuccessors(const Node & node)
 BottomUpTraverser::~BottomUpTraverser() noexcept = default;
 
 BottomUpTraverser::BottomUpTraverser(Region * region, bool revisit)
-    : tracker_(*region),
+    : region_(*region),
       new_node_state_(revisit ? traversal_nodestate::frontier : traversal_nodestate::behind)
 {
   for (auto & bottomNode : region->BottomNodes())
@@ -161,7 +167,7 @@ BottomUpTraverser::BottomUpTraverser(Region * region, bool revisit)
 Node *
 BottomUpTraverser::next()
 {
-  auto node = tracker_.peek_bottom();
+  auto node = tracker_.peek();
   if (!node)
     return nullptr;
 
@@ -178,7 +184,7 @@ BottomUpTraverser::next()
 void
 BottomUpTraverser::node_create(Node * node)
 {
-  if (node->region() != &tracker_.GetRegion())
+  if (node->region() != &region_)
     return;
 
   tracker_.set_nodestate(node, new_node_state_);
@@ -187,12 +193,30 @@ BottomUpTraverser::node_create(Node * node)
 void
 BottomUpTraverser::node_destroy(Node * node)
 {
-  if (node->region() != &tracker_.GetRegion())
+  if (node->region() != &region_)
     return;
 
   for (size_t n = 0; n < node->ninputs(); n++)
   {
     auto producer = TryGetOwnerNode<Node>(*node->input(n)->origin());
+    if (!producer)
+    {
+      continue;
+    }
+    bool successors_visited = true;
+    for (const auto & output : producer->Outputs())
+    {
+      for (auto & user : output.Users())
+      {
+        auto u_node = TryGetOwnerNode<Node>(user);
+        successors_visited =
+            successors_visited && tracker_.get_nodestate(u_node) == traversal_nodestate::behind;
+      }
+    }
+    if (!successors_visited)
+    {
+      continue;
+    }
     if (producer && tracker_.get_nodestate(producer) == traversal_nodestate::ahead)
       tracker_.set_nodestate(producer, traversal_nodestate::frontier);
   }
@@ -201,7 +225,7 @@ BottomUpTraverser::node_destroy(Node * node)
 void
 BottomUpTraverser::input_change(Input * in, Output * old_origin, Output *)
 {
-  if (in->region() != &tracker_.GetRegion())
+  if (in->region() != &region_)
     return;
 
   if (!TryGetOwnerNode<Node>(*in))
@@ -221,6 +245,53 @@ BottomUpTraverser::input_change(Input * in, Output * old_origin, Output *)
   /* make sure node is visited eventually, might now be visited earlier
   as there (potentially) is one less obstructing node below */
   tracker_.set_nodestate(node, traversal_nodestate::frontier);
+}
+
+traversal_nodestate
+TraversalTracker::get_nodestate(Node * node)
+{
+  auto i = states_.find(node);
+  return i == states_.end() ? traversal_nodestate::ahead : i->second.state;
+}
+
+void
+TraversalTracker::set_nodestate(Node * node, traversal_nodestate state)
+{
+  auto i = states_.find(node);
+  if (i == states_.end())
+  {
+    FrontierList::iterator j = frontier_.end();
+    if (state == traversal_nodestate::frontier)
+    {
+      frontier_.push_back(node);
+      j = std::prev(frontier_.end());
+    }
+    states_.emplace(node, State{ state, j });
+  }
+  else
+  {
+    auto old_state = i->second.state;
+    if (old_state != state)
+    {
+      if (old_state == traversal_nodestate::frontier)
+      {
+        frontier_.erase(i->second.pos);
+        i->second.pos = frontier_.end();
+      }
+      i->second.state = state;
+      if (state == traversal_nodestate::frontier)
+      {
+        frontier_.push_back(node);
+        i->second.pos = std::prev(frontier_.end());
+      }
+    }
+  }
+}
+
+Node *
+TraversalTracker::peek()
+{
+  return frontier_.empty() ? nullptr : frontier_.front();
 }
 
 }

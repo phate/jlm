@@ -317,7 +317,7 @@ private:
   DataNode(
       InterProceduralGraph & clg,
       const std::string & name,
-      std::shared_ptr<const jlm::rvsdg::ValueType> valueType,
+      std::shared_ptr<const jlm::rvsdg::Type> valueType,
       const llvm::linkage & linkage,
       std::string section,
       bool constant)
@@ -336,7 +336,7 @@ public:
   std::shared_ptr<const jlm::rvsdg::Type>
   Type() const override;
 
-  [[nodiscard]] const std::shared_ptr<const jlm::rvsdg::ValueType> &
+  [[nodiscard]] const std::shared_ptr<const jlm::rvsdg::Type> &
   GetValueType() const noexcept
   {
     return ValueType_;
@@ -385,7 +385,7 @@ public:
   Create(
       InterProceduralGraph & clg,
       const std::string & name,
-      std::shared_ptr<const jlm::rvsdg::ValueType> valueType,
+      std::shared_ptr<const jlm::rvsdg::Type> valueType,
       const llvm::linkage & linkage,
       std::string section,
       bool constant)
@@ -402,7 +402,7 @@ private:
   std::string name_;
   std::string Section_;
   llvm::linkage linkage_;
-  std::shared_ptr<const jlm::rvsdg::ValueType> ValueType_;
+  std::shared_ptr<const jlm::rvsdg::Type> ValueType_;
   std::unique_ptr<DataNodeInit> init_;
 };
 

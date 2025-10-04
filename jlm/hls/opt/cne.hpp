@@ -27,6 +27,10 @@ class CommonNodeElimination final : public rvsdg::Transformation
 public:
   ~CommonNodeElimination() noexcept override;
 
+  CommonNodeElimination()
+      : Transformation("CommonNodeElimination")
+  {}
+
   void
   Run(rvsdg::RvsdgModule & module, util::StatisticsCollector & statisticsCollector) override;
 };

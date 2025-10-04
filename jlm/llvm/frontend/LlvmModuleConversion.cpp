@@ -326,11 +326,11 @@ EnsureSingleInEdgeToExitNode(ControlFlowGraph & cfg)
     auto stronglyConnectedComponents = find_sccs(cfg);
     for (auto stronglyConnectedComponent : stronglyConnectedComponents)
     {
-      auto structure = StronglyConnectedComponentStructure::create(stronglyConnectedComponent);
+      auto sccStructure = StronglyConnectedComponentStructure::Create(stronglyConnectedComponent);
 
-      if (structure->nxedges() == 0)
+      if (sccStructure->NumExitEdges() == 0)
       {
-        auto repetitionEdge = *structure->redges().begin();
+        auto repetitionEdge = *sccStructure->RepetitionEdges().begin();
 
         auto basicBlock = BasicBlock::create(cfg);
 

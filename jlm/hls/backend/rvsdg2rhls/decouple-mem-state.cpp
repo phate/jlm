@@ -437,7 +437,7 @@ follow_state_edge(
 void
 convert_loop_state_to_lcb(rvsdg::Input * loop_state_input)
 {
-  JLM_ASSERT(rvsdg::is<rvsdg::StateType>(loop_state_input->Type()));
+  JLM_ASSERT(loop_state_input->Type()->Kind() == rvsdg::TypeKind::State);
   JLM_ASSERT(rvsdg::TryGetOwnerNode<LoopNode>(*loop_state_input));
   auto si = util::AssertedCast<rvsdg::StructuralInput>(loop_state_input);
   auto arg = si->arguments.begin().ptr();
@@ -453,7 +453,7 @@ convert_loop_state_to_lcb(rvsdg::Input * loop_state_input)
   remove(mux_node);
 }
 
-void
+static void
 decouple_mem_state(rvsdg::Region * region)
 {
   JLM_ASSERT(region->nnodes() == 1);
@@ -493,14 +493,21 @@ decouple_mem_state(rvsdg::Region * region)
         exitNode->input(i)->origin());
   }
 
-  dne(lambda->subregion());
+  RhlsDeadNodeElimination dne;
+  util::StatisticsCollector statisticsCollector;
+  dne.Run(*lambda->subregion(), statisticsCollector);
 }
 
+MemoryStateDecoupling::~MemoryStateDecoupling() noexcept = default;
+
+MemoryStateDecoupling::MemoryStateDecoupling()
+    : Transformation("MemoryStateDecoupling")
+{}
+
 void
-decouple_mem_state(llvm::RvsdgModule & rm)
+MemoryStateDecoupling::Run(rvsdg::RvsdgModule & rvsdgModule, util::StatisticsCollector &)
 {
-  auto & graph = rm.Rvsdg();
-  auto root = &graph.GetRootRegion();
-  decouple_mem_state(root);
+  decouple_mem_state(&rvsdgModule.Rvsdg().GetRootRegion());
 }
+
 }

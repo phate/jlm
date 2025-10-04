@@ -19,7 +19,7 @@
 namespace jlm::rvsdg
 {
 
-class ControlType final : public StateType
+class ControlType final : public Type
 {
 public:
   ~ControlType() noexcept override;
@@ -34,6 +34,9 @@ public:
 
   std::size_t
   ComputeHash() const noexcept override;
+
+  TypeKind
+  Kind() const noexcept override;
 
   inline size_t
   nalternatives() const noexcept
@@ -101,7 +104,7 @@ private:
 
 /* control constant */
 
-struct ctltype_of_value
+struct ControlValueRepresentationTypeOfValue
 {
   std::shared_ptr<const ControlType>
   operator()(const ControlValueRepresentation & repr) const
@@ -110,7 +113,7 @@ struct ctltype_of_value
   }
 };
 
-struct ctlformat_value
+struct ControlValueRepresentationFormatValue
 {
   std::string
   operator()(const ControlValueRepresentation & repr) const
@@ -122,8 +125,8 @@ struct ctlformat_value
 typedef DomainConstOperation<
     ControlType,
     ControlValueRepresentation,
-    ctlformat_value,
-    ctltype_of_value>
+    ControlValueRepresentationFormatValue,
+    ControlValueRepresentationTypeOfValue>
     ctlconstant_op;
 
 static inline bool
@@ -260,8 +263,8 @@ match(
 extern template class DomainConstOperation<
     ControlType,
     ControlValueRepresentation,
-    ctlformat_value,
-    ctltype_of_value>;
+    ControlValueRepresentationFormatValue,
+    ControlValueRepresentationTypeOfValue>;
 
 jlm::rvsdg::Output *
 control_constant(rvsdg::Region * region, size_t nalternatives, size_t alternative);

@@ -13,7 +13,7 @@
 namespace jlm::rvsdg
 {
 
-class BitType final : public ValueType
+class BitType final : public Type
 {
 public:
   ~BitType() noexcept override;
@@ -36,6 +36,9 @@ public:
 
   [[nodiscard]] std::size_t
   ComputeHash() const noexcept override;
+
+  TypeKind
+  Kind() const noexcept override;
 
   /**
    * \brief Creates bit type of specified width

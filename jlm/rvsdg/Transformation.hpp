@@ -6,6 +6,7 @@
 #ifndef JLM_RVSDG_TRANSFORMATION_HPP
 #define JLM_RVSDG_TRANSFORMATION_HPP
 
+#include <jlm/rvsdg/DotWriter.hpp>
 #include <jlm/util/Statistics.hpp>
 
 namespace jlm::rvsdg
@@ -20,6 +21,16 @@ class Transformation
 {
 public:
   virtual ~Transformation() noexcept;
+
+  explicit Transformation(std::string_view Name)
+      : Name_(Name)
+  {}
+
+  [[nodiscard]] const std::string_view &
+  GetName() const noexcept
+  {
+    return Name_;
+  }
 
   /**
    * \brief Perform RVSDG transformation
@@ -49,6 +60,9 @@ public:
     util::StatisticsCollector statisticsCollector;
     Run(module, statisticsCollector);
   }
+
+private:
+  std::string_view Name_;
 };
 
 /**
@@ -61,8 +75,14 @@ class TransformationSequence final : public Transformation
 public:
   ~TransformationSequence() noexcept override;
 
-  explicit TransformationSequence(std::vector<Transformation *> transformations)
-      : Transformations_(std::move(transformations))
+  explicit TransformationSequence(
+      std::vector<std::shared_ptr<Transformation>> transformations,
+      DotWriter & dotWriter,
+      const bool dumpRvsdgDotGraphs)
+      : Transformation("TransformationSequence"),
+        DotWriter_(dotWriter),
+        DumpRvsdgDotGraphs_(dumpRvsdgDotGraphs),
+        Transformations_(std::move(transformations))
   {}
 
   /**
@@ -80,19 +100,35 @@ public:
    * @param rvsdgModule RVSDG module the transformation is performed on.
    * @param statisticsCollector Statistics collector for collecting transformation statistics.
    * @param transformations The transformations that are sequentially applied to \p rvsdgModule.
+   * @param dotWriter The DOT writer for dumping the RVSDG graphs.
+   * @param dumpRvsdgDotGraphs Determines whether to dump the RVSDG graphs.
    */
   static void
   CreateAndRun(
       RvsdgModule & rvsdgModule,
       util::StatisticsCollector & statisticsCollector,
-      std::vector<Transformation *> transformations)
+      std::vector<std::shared_ptr<Transformation>> transformations,
+      DotWriter & dotWriter,
+      const bool dumpRvsdgDotGraphs)
   {
-    TransformationSequence sequentialApplication(std::move(transformations));
+    TransformationSequence sequentialApplication(
+        std::move(transformations),
+        dotWriter,
+        dumpRvsdgDotGraphs);
     sequentialApplication.Run(rvsdgModule, statisticsCollector);
   }
 
 private:
-  std::vector<Transformation *> Transformations_;
+  void
+  DumpDotGraphs(
+      RvsdgModule & rvsdgModule,
+      const util::FilePath & filePath,
+      const std::string & passName,
+      size_t numPass) const;
+
+  DotWriter & DotWriter_;
+  bool DumpRvsdgDotGraphs_;
+  std::vector<std::shared_ptr<Transformation>> Transformations_;
 };
 
 }

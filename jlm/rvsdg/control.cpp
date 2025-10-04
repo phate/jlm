@@ -17,13 +17,13 @@ namespace jlm::rvsdg
 template class DomainConstOperation<
     ControlType,
     ControlValueRepresentation,
-    ctlformat_value,
-    ctltype_of_value>;
+    ControlValueRepresentationFormatValue,
+    ControlValueRepresentationTypeOfValue>;
 
 ControlType::~ControlType() noexcept = default;
 
 ControlType::ControlType(size_t nalternatives)
-    : StateType(),
+    : Type(),
       nalternatives_(nalternatives)
 {}
 
@@ -46,6 +46,12 @@ ControlType::ComputeHash() const noexcept
   auto typeHash = typeid(ControlType).hash_code();
   auto numAlternativesHash = std::hash<size_t>()(nalternatives_);
   return util::CombineHashes(typeHash, numAlternativesHash);
+}
+
+TypeKind
+ControlType::Kind() const noexcept
+{
+  return TypeKind::State;
 }
 
 std::shared_ptr<const ControlType>

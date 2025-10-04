@@ -51,7 +51,9 @@ NodeReduction::Statistics::GetNumIterations(const rvsdg::Region & region) const 
 
 NodeReduction::~NodeReduction() noexcept = default;
 
-NodeReduction::NodeReduction() = default;
+NodeReduction::NodeReduction()
+    : Transformation("NodeReduction")
+{}
 
 void
 NodeReduction::Run(
@@ -157,6 +159,10 @@ NodeReduction::ReduceSimpleNode(rvsdg::SimpleNode & simpleNode)
   {
     return ReduceMemoryStateMergeNode(simpleNode);
   }
+  if (is<MemoryStateJoinOperation>(&simpleNode))
+  {
+    return rvsdg::ReduceNode<MemoryStateJoinOperation>(NormalizeMemoryStateJoinNode, simpleNode);
+  }
   if (is<MemoryStateSplitOperation>(&simpleNode))
   {
     return ReduceMemoryStateSplitNode(simpleNode);
@@ -246,7 +252,7 @@ NodeReduction::NormalizeLoadNode(
     const std::vector<rvsdg::Output *> & operands)
 {
   static std::vector<rvsdg::NodeNormalization<LoadNonVolatileOperation>> loadNodeNormalizations(
-      { LoadNonVolatileOperation::NormalizeLoadMux,
+      { LoadNonVolatileOperation::NormalizeLoadMemoryStateMerge,
         LoadNonVolatileOperation::NormalizeLoadStore,
         LoadNonVolatileOperation::NormalizeLoadAlloca,
         LoadNonVolatileOperation::NormalizeDuplicateStates,
@@ -270,7 +276,8 @@ NodeReduction::NormalizeStoreNode(
         StoreNonVolatileOperation::NormalizeStoreStore,
         StoreNonVolatileOperation::NormalizeStoreAlloca,
         StoreNonVolatileOperation::NormalizeDuplicateStates,
-        StoreNonVolatileOperation::NormalizeIOBarrierAllocaAddress });
+        StoreNonVolatileOperation::NormalizeIOBarrierAllocaAddress,
+        StoreNonVolatileOperation::normalizeStoreAllocaSingleUser });
 
   return rvsdg::NormalizeSequence<StoreNonVolatileOperation>(
       storeNodeNormalizations,
@@ -290,6 +297,18 @@ NodeReduction::NormalizeMemoryStateMergeNode(
         MemoryStateMergeOperation::NormalizeMergeSplit });
 
   return rvsdg::NormalizeSequence<MemoryStateMergeOperation>(normalizations, operation, operands);
+}
+
+std::optional<std::vector<rvsdg::Output *>>
+NodeReduction::NormalizeMemoryStateJoinNode(
+    const MemoryStateJoinOperation & operation,
+    const std::vector<rvsdg::Output *> & operands)
+{
+  static std::vector<rvsdg::NodeNormalization<MemoryStateJoinOperation>> normalizations(
+      { MemoryStateJoinOperation::NormalizeSingleOperand,
+        MemoryStateJoinOperation::NormalizeDuplicateOperands });
+
+  return rvsdg::NormalizeSequence<MemoryStateJoinOperation>(normalizations, operation, operands);
 }
 
 std::optional<std::vector<rvsdg::Output *>>

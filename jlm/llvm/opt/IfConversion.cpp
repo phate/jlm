@@ -46,7 +46,9 @@ public:
 
 IfConversion::~IfConversion() noexcept = default;
 
-IfConversion::IfConversion() = default;
+IfConversion::IfConversion()
+    : Transformation("IfConversion")
+{}
 
 void
 IfConversion::Run(rvsdg::RvsdgModule & module, util::StatisticsCollector & statisticsCollector)

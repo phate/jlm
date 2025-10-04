@@ -59,26 +59,43 @@ MemoryStateMergeOperation::NormalizeDuplicateOperands(
   return { { result } };
 }
 
-std::optional<std::vector<rvsdg::Output *>>
-MemoryStateMergeOperation::NormalizeNestedMerges(
-    const MemoryStateMergeOperation &,
-    const std::vector<rvsdg::Output *> & operands)
+template<class TMemoryStateMergeOrJoinOperation>
+std::vector<rvsdg::Output *>
+CollectNestedMemoryStateMergeOrJoinOperands(const std::vector<rvsdg::Output *> & operands)
 {
+  static_assert(
+      std::is_same_v<TMemoryStateMergeOrJoinOperation, MemoryStateMergeOperation>
+          || std::is_same_v<TMemoryStateMergeOrJoinOperation, MemoryStateJoinOperation>,
+      "Template parameter T must be a MemoryStateMergeOperation or a MemoryStateJoinOperation!");
+
   std::vector<rvsdg::Output *> newOperands;
   for (auto operand : operands)
   {
-    auto [mergeNode, mergeOperation] =
-        rvsdg::TryGetSimpleNodeAndOptionalOp<MemoryStateMergeOperation>(*operand);
-    if (mergeOperation)
+    auto [node, operation] =
+        rvsdg::TryGetSimpleNodeAndOptionalOp<TMemoryStateMergeOrJoinOperation>(*operand);
+    if (operation)
     {
-      auto mergeOperands = rvsdg::operands(mergeNode);
-      newOperands.insert(newOperands.end(), mergeOperands.begin(), mergeOperands.end());
+      auto nodeOperands =
+          CollectNestedMemoryStateMergeOrJoinOperands<TMemoryStateMergeOrJoinOperation>(
+              rvsdg::operands(node));
+      newOperands.insert(newOperands.end(), nodeOperands.begin(), nodeOperands.end());
     }
     else
     {
       newOperands.emplace_back(operand);
     }
   }
+
+  return newOperands;
+}
+
+std::optional<std::vector<rvsdg::Output *>>
+MemoryStateMergeOperation::NormalizeNestedMerges(
+    const MemoryStateMergeOperation &,
+    const std::vector<rvsdg::Output *> & operands)
+{
+  auto newOperands =
+      CollectNestedMemoryStateMergeOrJoinOperands<MemoryStateMergeOperation>(operands);
 
   if (operands == newOperands)
     return std::nullopt;
@@ -166,6 +183,21 @@ MemoryStateJoinOperation::NormalizeDuplicateOperands(
     return std::nullopt;
 
   return { { CreateNode(newOperands).output(0) } };
+}
+
+std::optional<std::vector<rvsdg::Output *>>
+MemoryStateJoinOperation::NormalizeNestedJoins(
+    const MemoryStateJoinOperation &,
+    const std::vector<rvsdg::Output *> & operands)
+{
+  auto newOperands =
+      CollectNestedMemoryStateMergeOrJoinOperands<MemoryStateJoinOperation>(operands);
+
+  if (operands == newOperands)
+    return std::nullopt;
+
+  const auto & memoryStateJoinNode = CreateNode(std::move(newOperands));
+  return { { memoryStateJoinNode.output(0) } };
 }
 
 MemoryStateSplitOperation::~MemoryStateSplitOperation() noexcept = default;

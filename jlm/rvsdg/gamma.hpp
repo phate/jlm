@@ -101,8 +101,10 @@ public:
   ~GammaNode() noexcept override;
 
 private:
+  GammaNode(rvsdg::Output & predicate, std::unique_ptr<GammaOperation> op);
+
   GammaNode(
-      rvsdg::Output * predicate,
+      rvsdg::Output & predicate,
       size_t nalternatives,
       std::vector<std::shared_ptr<const Type>> match_content_types);
 
@@ -158,16 +160,22 @@ public:
   static GammaNode *
   create(jlm::rvsdg::Output * predicate, size_t nalternatives)
   {
-    return new GammaNode(predicate, nalternatives, {});
+    return new GammaNode(*predicate, nalternatives, {});
   }
 
   static GammaNode &
   Create(
-      jlm::rvsdg::Output * predicate,
+      jlm::rvsdg::Output & predicate,
       size_t numAlternatives,
       std::vector<std::shared_ptr<const Type>> matchContentTypes)
   {
     return *new GammaNode(predicate, numAlternatives, std::move(matchContentTypes));
+  }
+
+  static GammaNode &
+  Create(jlm::rvsdg::Output & predicate, std::unique_ptr<GammaOperation> op)
+  {
+    return *new GammaNode(predicate, std::move(op));
   }
 
   inline rvsdg::Input *
@@ -364,7 +372,7 @@ private:
   EntryVar
   GetEntryVar(std::size_t index) const;
 
-  GammaOperation Operation_;
+  std::unique_ptr<GammaOperation> Operation_;
 };
 
 /**

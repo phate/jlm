@@ -20,6 +20,7 @@ GetStatisticsIdNames()
   static util::BijectiveMap<Statistics::Id, std::string_view> mapping = {
     { Statistics::Id::Aggregation, "Aggregation" },
     { Statistics::Id::AgnosticModRefSummarizer, "AgnosticModRefSummarizer" },
+    { Statistics::Id::AliasAnalysisPrecisionEvaluation, "AliasAnalysisPrecisionEvaluation" },
     { Statistics::Id::AndersenAnalysis, "AndersenAnalysis" },
     { Statistics::Id::Annotation, "Annotation" },
     { Statistics::Id::CommonNodeElimination, "CNE" },
@@ -40,9 +41,9 @@ GetStatisticsIdNames()
     { Statistics::Id::RvsdgDestruction, "RVSDGDESTRUCTION" },
     { Statistics::Id::RvsdgOptimization, "RVSDGOPTIMIZATION" },
     { Statistics::Id::RvsdgTreePrinter, "RvsdgTreePrinter" },
+    { Statistics::Id::ScalarEvolution, "ScalarEvolution" },
     { Statistics::Id::SteensgaardAnalysis, "SteensgaardAnalysis" },
     { Statistics::Id::ThetaGammaInversion, "IVT" },
-    { Statistics::Id::TopDownMemoryNodeEliminator, "TopDownMemoryNodeEliminator" }
   };
   // Make sure every Statistic is mentioned in the mapping
   auto lastIdx = static_cast<size_t>(Statistics::Id::LastEnumValue);
@@ -180,12 +181,7 @@ StatisticsCollector::CreateOutputFile(std::string fileNameSuffix, bool includeCo
 {
   JLM_ASSERT(Settings_.HasOutputDirectory());
 
-  // Ensure the output folder exists, or create it
-  auto directory = Settings_.GetOutputDirectory();
-  if (directory.IsFile())
-    throw Error("The specified statistics output directory is a file: " + directory.to_str());
-  if (!directory.Exists())
-    directory.CreateDirectory();
+  auto directory = Settings_.GetOrCreateOutputDirectory();
 
   // If the fileNameSuffix should have a count included, place it before the '.' (or at the end)
   if (includeCount)

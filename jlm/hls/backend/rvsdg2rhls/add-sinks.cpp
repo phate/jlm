@@ -10,6 +10,8 @@
 namespace jlm::hls
 {
 
+SinkInsertion::~SinkInsertion() noexcept = default;
+
 void
 SinkInsertion::Run(rvsdg::RvsdgModule & module, util::StatisticsCollector &)
 {

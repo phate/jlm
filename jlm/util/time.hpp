@@ -30,7 +30,7 @@ public:
   operator=(Timer && other) = default;
 
   [[nodiscard]] bool
-  IsRunning() const noexcept
+  isRunning() const noexcept
   {
     return IsRunning_;
   }

@@ -36,6 +36,7 @@ public:
 
     Aggregation,
     AgnosticModRefSummarizer,
+    AliasAnalysisPrecisionEvaluation,
     AndersenAnalysis,
     Annotation,
     CommonNodeElimination,
@@ -58,7 +59,7 @@ public:
     RvsdgTreePrinter,
     SteensgaardAnalysis,
     ThetaGammaInversion,
-    TopDownMemoryNodeEliminator,
+    ScalarEvolution,
 
     LastEnumValue // must always be the last enum value, used for iteration
   };
@@ -322,7 +323,7 @@ public:
    * @return True if a statistics is demanded, otherwise false.
    */
   [[nodiscard]] bool
-  IsDemanded(Statistics::Id id) const noexcept
+  isDemanded(Statistics::Id id) const noexcept
   {
     return DemandedStatistics_.Contains(id);
   }
@@ -339,12 +340,25 @@ public:
 
   /**
    * @return the directory used for outputting statistics and debug output files.
-   * If no output directory is given, an assertion failure occurs.
    */
   [[nodiscard]] const FilePath &
   GetOutputDirectory() const noexcept
   {
     JLM_ASSERT(Directory_.has_value());
+    return Directory_.value();
+  }
+
+  /**
+   * @return the directory used for outputting statistics and debug output files.
+   *
+   * \note If no output directory path is given, an assertion failure occurs. If the directory
+   * does not exist yet, it is created.
+   */
+  [[nodiscard]] const FilePath &
+  GetOrCreateOutputDirectory() const noexcept
+  {
+    JLM_ASSERT(Directory_.has_value());
+    Directory_->CreateDirectory();
     return Directory_.value();
   }
 
@@ -505,6 +519,19 @@ public:
   }
 
   /**
+   * Checks statistics with the given id are demanded.
+   *
+   * @param id The statistics id to check.
+   *
+   * @return True if \p statistics with the given id are demanded, otherwise false.
+   */
+  [[nodiscard]] bool
+  IsDemanded(Statistics::Id id) const noexcept
+  {
+    return GetSettings().isDemanded(id);
+  }
+
+  /**
    * Checks if the pass statistics is demanded.
    *
    * @param statistics The statistics to check whether it is demanded.
@@ -514,7 +541,7 @@ public:
   [[nodiscard]] bool
   IsDemanded(const Statistics & statistics) const noexcept
   {
-    return GetSettings().IsDemanded(statistics.GetId());
+    return IsDemanded(statistics.GetId());
   }
 
   /**
@@ -527,7 +554,7 @@ public:
   void
   CollectDemandedStatistics(std::unique_ptr<Statistics> statistics)
   {
-    if (GetSettings().IsDemanded(statistics->GetId()))
+    if (IsDemanded(*statistics))
       CollectedStatistics_.emplace_back(std::move(statistics));
   }
 

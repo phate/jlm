@@ -5,16 +5,7 @@
 
 #include <jlm/llvm/opt/alias-analyses/AgnosticModRefSummarizer.hpp>
 #include <jlm/llvm/opt/alias-analyses/Andersen.hpp>
-#include <jlm/llvm/opt/alias-analyses/Optimization.hpp>
-#include <jlm/llvm/opt/alias-analyses/RegionAwareModRefSummarizer.hpp>
 #include <jlm/llvm/opt/alias-analyses/Steensgaard.hpp>
-#include <jlm/llvm/opt/cne.hpp>
-#include <jlm/llvm/opt/DeadNodeElimination.hpp>
-#include <jlm/llvm/opt/inlining.hpp>
-#include <jlm/llvm/opt/InvariantValueRedirection.hpp>
-#include <jlm/llvm/opt/inversion.hpp>
-#include <jlm/llvm/opt/pull.hpp>
-#include <jlm/llvm/opt/push.hpp>
 #include <jlm/llvm/opt/reduction.hpp>
 #include <jlm/llvm/opt/RvsdgTreePrinter.hpp>
 #include <jlm/llvm/opt/unroll.hpp>
@@ -108,8 +99,6 @@ JlmOptCommandLineOptions::FromCommandLineArgumentToOptimizationId(
           OptimizationId::AAAndersenAgnostic },
         { OptimizationCommandLineArgument::AaAndersenRegionAware_,
           OptimizationId::AAAndersenRegionAware },
-        { OptimizationCommandLineArgument::AaAndersenTopDownLifetimeAware_,
-          OptimizationId::AAAndersenTopDownLifetimeAware },
         { OptimizationCommandLineArgument::AaSteensgaardAgnostic_,
           OptimizationId::AASteensgaardAgnostic },
         { OptimizationCommandLineArgument::AaSteensgaardRegionAware_,
@@ -122,13 +111,16 @@ JlmOptCommandLineOptions::FromCommandLineArgumentToOptimizationId(
         { OptimizationCommandLineArgument::IfConversion_, OptimizationId::IfConversion },
         { OptimizationCommandLineArgument::InvariantValueRedirection_,
           OptimizationId::InvariantValueRedirection },
+        { OptimizationCommandLineArgument::LoadChainSeparation_,
+          OptimizationId::LoadChainSeparation },
+        { OptimizationCommandLineArgument::LoopUnrolling_, OptimizationId::LoopUnrolling },
         { OptimizationCommandLineArgument::NodePushOut_, OptimizationId::NodePushOut },
         { OptimizationCommandLineArgument::NodePullIn_, OptimizationId::NodePullIn },
         { OptimizationCommandLineArgument::NodeReduction_, OptimizationId::NodeReduction },
         { OptimizationCommandLineArgument::RvsdgTreePrinter_, OptimizationId::RvsdgTreePrinter },
+        { OptimizationCommandLineArgument::ScalarEvolution_, OptimizationId::ScalarEvolution },
         { OptimizationCommandLineArgument::ThetaGammaInversion_,
-          OptimizationId::ThetaGammaInversion },
-        { OptimizationCommandLineArgument::LoopUnrolling_, OptimizationId::LoopUnrolling } });
+          OptimizationId::ThetaGammaInversion } });
 
   if (map.find(commandLineArgument) != map.end())
     return map[commandLineArgument];
@@ -144,8 +136,6 @@ JlmOptCommandLineOptions::ToCommandLineArgument(OptimizationId optimizationId)
           OptimizationCommandLineArgument::AaAndersenAgnostic_ },
         { OptimizationId::AAAndersenRegionAware,
           OptimizationCommandLineArgument::AaAndersenRegionAware_ },
-        { OptimizationId::AAAndersenTopDownLifetimeAware,
-          OptimizationCommandLineArgument::AaAndersenTopDownLifetimeAware_ },
         { OptimizationId::AASteensgaardAgnostic,
           OptimizationCommandLineArgument::AaSteensgaardAgnostic_ },
         { OptimizationId::AASteensgaardRegionAware,
@@ -158,11 +148,14 @@ JlmOptCommandLineOptions::ToCommandLineArgument(OptimizationId optimizationId)
         { OptimizationId::IfConversion, OptimizationCommandLineArgument::IfConversion_ },
         { OptimizationId::InvariantValueRedirection,
           OptimizationCommandLineArgument::InvariantValueRedirection_ },
+        { OptimizationId::LoadChainSeparation,
+          OptimizationCommandLineArgument::LoadChainSeparation_ },
         { OptimizationId::LoopUnrolling, OptimizationCommandLineArgument::LoopUnrolling_ },
         { OptimizationId::NodePullIn, OptimizationCommandLineArgument::NodePullIn_ },
         { OptimizationId::NodePushOut, OptimizationCommandLineArgument::NodePushOut_ },
         { OptimizationId::NodeReduction, OptimizationCommandLineArgument::NodeReduction_ },
         { OptimizationId::RvsdgTreePrinter, OptimizationCommandLineArgument::RvsdgTreePrinter_ },
+        { OptimizationId::ScalarEvolution, OptimizationCommandLineArgument::ScalarEvolution_ },
         { OptimizationId::ThetaGammaInversion,
           OptimizationCommandLineArgument::ThetaGammaInversion_ } });
 
@@ -224,6 +217,7 @@ JlmOptCommandLineOptions::GetStatisticsIdCommandLineArguments()
   static util::BijectiveMap<util::Statistics::Id, std::string_view> mapping = {
     { util::Statistics::Id::Aggregation, "print-aggregation-time" },
     { util::Statistics::Id::AgnosticModRefSummarizer, "print-agnostic-mod-ref-summarization" },
+    { util::Statistics::Id::AliasAnalysisPrecisionEvaluation, "print-aa-precision-evaluation" },
     { util::Statistics::Id::AndersenAnalysis, "print-andersen-analysis" },
     { util::Statistics::Id::Annotation, "print-annotation-time" },
     { util::Statistics::Id::CommonNodeElimination, "print-cne-stat" },
@@ -244,9 +238,9 @@ JlmOptCommandLineOptions::GetStatisticsIdCommandLineArguments()
     { util::Statistics::Id::RvsdgDestruction, "print-rvsdg-destruction" },
     { util::Statistics::Id::RvsdgOptimization, "print-rvsdg-optimization" },
     { util::Statistics::Id::RvsdgTreePrinter, "print-rvsdg-tree" },
+    { util::Statistics::Id::ScalarEvolution, "print-scalar-evolution" },
     { util::Statistics::Id::SteensgaardAnalysis, "print-steensgaard-analysis" },
     { util::Statistics::Id::ThetaGammaInversion, "print-ivt-stat" },
-    { util::Statistics::Id::TopDownMemoryNodeEliminator, "TopDownMemoryNodeEliminator" }
   };
 
   auto firstIndex = static_cast<size_t>(util::Statistics::Id::FirstEnumValue);
@@ -326,6 +320,7 @@ JlcCommandLineParser::ParseCommandLineArguments(int argc, const char * const * a
           JlmOptCommandLineOptions::OptimizationId::AAAndersenRegionAware,
           JlmOptCommandLineOptions::OptimizationId::FunctionInlining,
           JlmOptCommandLineOptions::OptimizationId::InvariantValueRedirection,
+          JlmOptCommandLineOptions::OptimizationId::LoadChainSeparation,
           JlmOptCommandLineOptions::OptimizationId::NodeReduction,
           JlmOptCommandLineOptions::OptimizationId::DeadNodeElimination,
           JlmOptCommandLineOptions::OptimizationId::ThetaGammaInversion,
@@ -345,6 +340,7 @@ JlcCommandLineParser::ParseCommandLineArguments(int argc, const char * const * a
           JlmOptCommandLineOptions::OptimizationId::IfConversion,
           JlmOptCommandLineOptions::OptimizationId::CommonNodeElimination,
           JlmOptCommandLineOptions::OptimizationId::DeadNodeElimination,
+          JlmOptCommandLineOptions::OptimizationId::ScalarEvolution,
       });
     }
 
@@ -549,6 +545,9 @@ JlcCommandLineParser::ParseCommandLineArguments(int argc, const char * const * a
               util::Statistics::Id::RvsdgTreePrinter,
               "Collect RVSDG tree printer pass statistics."),
           CreateStatisticsOption(
+              util::Statistics::Id::ScalarEvolution,
+              "Collect scalar evolution analysis pass statistics."),
+          CreateStatisticsOption(
               util::Statistics::Id::SteensgaardAnalysis,
               "Collect Steensgaard alias analysis pass statistics."),
           CreateStatisticsOption(
@@ -706,6 +705,11 @@ JlmOptCommandLineParser::ParseCommandLineArguments(int argc, const char * const 
       cl::desc(statisticDirectoryDescription),
       cl::value_desc("dir"));
 
+  cl::opt<bool> dumpRvsdgDotGraphs(
+      "dumpRvsdgDotGraphs",
+      cl::init(false),
+      cl::desc("Dump RVSDG as dot graphs after each transformation in debug folder."));
+
   cl::list<util::Statistics::Id> printStatistics(
       cl::values(
           CreateStatisticsOption(
@@ -714,6 +718,9 @@ JlmOptCommandLineParser::ParseCommandLineArguments(int argc, const char * const 
           CreateStatisticsOption(
               util::Statistics::Id::AgnosticModRefSummarizer,
               "Collect agnostic mod/ref summarization pass statistics."),
+          CreateStatisticsOption(
+              util::Statistics::Id::AliasAnalysisPrecisionEvaluation,
+              "Evaluate alias analysis precision and store to file"),
           CreateStatisticsOption(
               util::Statistics::Id::AndersenAnalysis,
               "Collect Andersen alias analysis pass statistics."),
@@ -775,6 +782,9 @@ JlmOptCommandLineParser::ParseCommandLineArguments(int argc, const char * const 
               util::Statistics::Id::RvsdgTreePrinter,
               "Write RVSDG tree printer pass statistics."),
           CreateStatisticsOption(
+              util::Statistics::Id::ScalarEvolution,
+              "Write scalar evolution statistics to file."),
+          CreateStatisticsOption(
               util::Statistics::Id::SteensgaardAnalysis,
               "Write Steensgaard analysis statistics to file."),
           CreateStatisticsOption(
@@ -823,8 +833,6 @@ JlmOptCommandLineParser::ParseCommandLineArguments(int argc, const char * const 
 
   auto aAAndersenAgnostic = JlmOptCommandLineOptions::OptimizationId::AAAndersenAgnostic;
   auto aAAndersenRegionAware = JlmOptCommandLineOptions::OptimizationId::AAAndersenRegionAware;
-  auto aAAndersenTopDownLifetimeAware =
-      JlmOptCommandLineOptions::OptimizationId::AAAndersenTopDownLifetimeAware;
   auto aASteensgaardAgnostic = JlmOptCommandLineOptions::OptimizationId::AASteensgaardAgnostic;
   auto aASteensgaardRegionAware =
       JlmOptCommandLineOptions::OptimizationId::AASteensgaardRegionAware;
@@ -838,8 +846,10 @@ JlmOptCommandLineParser::ParseCommandLineArguments(int argc, const char * const 
   auto nodePullIn = JlmOptCommandLineOptions::OptimizationId::NodePullIn;
   auto nodeReduction = JlmOptCommandLineOptions::OptimizationId::NodeReduction;
   auto rvsdgTreePrinter = JlmOptCommandLineOptions::OptimizationId::RvsdgTreePrinter;
+  auto scalarEvolution = JlmOptCommandLineOptions::OptimizationId::ScalarEvolution;
   auto thetaGammaInversion = JlmOptCommandLineOptions::OptimizationId::ThetaGammaInversion;
   auto loopUnrolling = JlmOptCommandLineOptions::OptimizationId::LoopUnrolling;
+  auto loadChainSeparation = JlmOptCommandLineOptions::OptimizationId::LoadChainSeparation;
 
   cl::list<JlmOptCommandLineOptions::OptimizationId> optimizationIds(
       cl::values(
@@ -851,10 +861,6 @@ JlmOptCommandLineParser::ParseCommandLineArguments(int argc, const char * const 
               aAAndersenRegionAware,
               JlmOptCommandLineOptions::ToCommandLineArgument(aAAndersenRegionAware),
               "Andersen alias analysis with region-aware memory state encoding"),
-          ::clEnumValN(
-              aAAndersenTopDownLifetimeAware,
-              JlmOptCommandLineOptions::ToCommandLineArgument(aAAndersenTopDownLifetimeAware),
-              "Andersen alias analysis with top-down lifetime-aware memory node elimination"),
           ::clEnumValN(
               aASteensgaardAgnostic,
               JlmOptCommandLineOptions::ToCommandLineArgument(aASteensgaardAgnostic),
@@ -884,6 +890,14 @@ JlmOptCommandLineParser::ParseCommandLineArguments(int argc, const char * const 
               JlmOptCommandLineOptions::ToCommandLineArgument(invariantValueRedirection),
               "Invariant Value Redirection"),
           ::clEnumValN(
+              loadChainSeparation,
+              JlmOptCommandLineOptions::ToCommandLineArgument(loadChainSeparation),
+              "Separate chains of load operations"),
+          ::clEnumValN(
+              loopUnrolling,
+              JlmOptCommandLineOptions::ToCommandLineArgument(loopUnrolling),
+              "Loop Unrolling"),
+          ::clEnumValN(
               nodePushOut,
               JlmOptCommandLineOptions::ToCommandLineArgument(nodePushOut),
               "Node Push Out"),
@@ -900,13 +914,13 @@ JlmOptCommandLineParser::ParseCommandLineArguments(int argc, const char * const 
               JlmOptCommandLineOptions::ToCommandLineArgument(rvsdgTreePrinter),
               "Rvsdg Tree Printer"),
           ::clEnumValN(
+              scalarEvolution,
+              JlmOptCommandLineOptions::ToCommandLineArgument(scalarEvolution),
+              "Scalar evolution"),
+          ::clEnumValN(
               thetaGammaInversion,
               JlmOptCommandLineOptions::ToCommandLineArgument(thetaGammaInversion),
-              "Theta-Gamma Inversion"),
-          ::clEnumValN(
-              loopUnrolling,
-              JlmOptCommandLineOptions::ToCommandLineArgument(loopUnrolling),
-              "Loop Unrolling")),
+              "Theta-Gamma Inversion")),
       cl::desc("Perform optimization"));
 
   cl::list<llvm::RvsdgTreePrinter::Configuration::Annotation> rvsdgTreePrinterAnnotations(
@@ -959,7 +973,8 @@ JlmOptCommandLineParser::ParseCommandLineArguments(int argc, const char * const 
       outputFormat,
       std::move(statisticsCollectorSettings),
       std::move(treePrinterConfiguration),
-      std::move(optimizationIds));
+      std::move(optimizationIds),
+      dumpRvsdgDotGraphs);
 
   return *CommandLineOptions_;
 }
@@ -1014,6 +1029,11 @@ JlmHlsCommandLineParser::ParseCommandLineArguments(int argc, const char * const 
       cl::Prefix,
       cl::desc("Extracts function specified by hls-function"));
 
+  cl::opt<bool> dumpRvsdgDotGraphs(
+      "dumpRvsdgDotGraphs",
+      cl::init(false),
+      cl::desc("Dump RVSDG as dot graphs after each transformation in debug folder."));
+
   cl::opt<JlmHlsCommandLineOptions::OutputFormat> format(
       cl::values(
           ::clEnumValN(
@@ -1037,6 +1057,7 @@ JlmHlsCommandLineParser::ParseCommandLineArguments(int argc, const char * const 
   CommandLineOptions_.OutputFiles_ = util::FilePath(outputFolder);
   CommandLineOptions_.ExtractHlsFunction_ = extractHlsFunction;
   CommandLineOptions_.OutputFormat_ = format;
+  CommandLineOptions_.dumpRvsdgDotGraphs_ = dumpRvsdgDotGraphs;
 
   if (latency < 1)
   {

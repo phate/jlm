@@ -9,6 +9,8 @@
 namespace jlm::hls
 {
 
+ForkInsertion::~ForkInsertion() noexcept = default;
+
 void
 ForkInsertion::Run(rvsdg::RvsdgModule & module, util::StatisticsCollector &)
 {

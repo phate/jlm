@@ -40,7 +40,7 @@ protected:
     JLM_ASSERT(is<PointerType>(addressType));
 
     auto & storedType = *operandTypes[1];
-    JLM_ASSERT(is<rvsdg::ValueType>(storedType));
+    JLM_ASSERT(storedType.Kind() == rvsdg::TypeKind::Value);
 
     JLM_ASSERT(operandTypes.size() == resultTypes.size() + 2);
     for (size_t n = 0; n < resultTypes.size(); n++)
@@ -48,7 +48,7 @@ protected:
       auto & operandType = *operandTypes[n + 2];
       auto & resultType = *resultTypes[n];
       JLM_ASSERT(operandType == resultType);
-      JLM_ASSERT(is<rvsdg::StateType>(operandType));
+      JLM_ASSERT(operandType.Kind() == rvsdg::TypeKind::State);
     }
   }
 
@@ -59,10 +59,10 @@ public:
     return Alignment_;
   }
 
-  [[nodiscard]] const rvsdg::ValueType &
+  [[nodiscard]] const rvsdg::Type &
   GetStoredType() const noexcept
   {
-    return *util::AssertedCast<const rvsdg::ValueType>(argument(1).get());
+    return *argument(1).get();
   }
 
   [[nodiscard]] size_t
@@ -85,7 +85,7 @@ public:
   {
     JLM_ASSERT(is<StoreOperation>(&node));
     auto & input = *node.input(1);
-    JLM_ASSERT(is<rvsdg::ValueType>(input.Type()));
+    JLM_ASSERT(input.Type()->Kind() == rvsdg::TypeKind::Value);
     return input;
   }
 
@@ -135,7 +135,7 @@ public:
   ~StoreNonVolatileOperation() noexcept override;
 
   StoreNonVolatileOperation(
-      std::shared_ptr<const rvsdg::ValueType> storedType,
+      std::shared_ptr<const rvsdg::Type> storedType,
       const size_t numMemoryStates,
       const size_t alignment)
       : StoreOperation(
@@ -260,6 +260,23 @@ public:
       const StoreNonVolatileOperation & operation,
       const std::vector<rvsdg::Output *> & operands);
 
+  /**
+   * Redirect the users of the \ref StoreNonVolatileOperation results to its memory state operands
+   * if it can be shown that the \ref StoreNonVolatileOperation is the only user of an \ref
+   * AllocaOperation.
+   *
+   * a s1 = AllocaOperation ...
+   * s2 = StoreNonVolatileOperation a v s1
+   * ... = AnyOperation s2
+   * =>
+   * a s1 = AllocaOperation ...
+   * ... = AnyOperation s1
+   */
+  static std::optional<std::vector<rvsdg::Output *>>
+  normalizeStoreAllocaSingleUser(
+      const StoreNonVolatileOperation & operation,
+      const std::vector<rvsdg::Output *> & operands);
+
   static std::unique_ptr<llvm::ThreeAddressCode>
   Create(const Variable * address, const Variable * value, const Variable * state, size_t alignment)
   {
@@ -317,19 +334,19 @@ public:
   }
 
 private:
-  static const std::shared_ptr<const jlm::rvsdg::ValueType>
+  static const std::shared_ptr<const jlm::rvsdg::Type>
   CheckAndExtractStoredType(const std::shared_ptr<const rvsdg::Type> & type)
   {
-    if (auto storedType = std::dynamic_pointer_cast<const rvsdg::ValueType>(type))
+    if (type->Kind() == rvsdg::TypeKind::Value)
     {
-      return storedType;
+      return type;
     }
 
     throw util::Error("Expected value type");
   }
 
   static std::vector<std::shared_ptr<const rvsdg::Type>>
-  CreateOperandTypes(std::shared_ptr<const rvsdg::ValueType> storedType, size_t numMemoryStates)
+  CreateOperandTypes(std::shared_ptr<const rvsdg::Type> storedType, size_t numMemoryStates)
   {
     std::vector<std::shared_ptr<const rvsdg::Type>> types(
         { PointerType::Create(), std::move(storedType) });
@@ -358,7 +375,7 @@ public:
   ~StoreVolatileOperation() noexcept override;
 
   StoreVolatileOperation(
-      std::shared_ptr<const rvsdg::ValueType> storedType,
+      std::shared_ptr<const rvsdg::Type> storedType,
       const size_t numMemoryStates,
       const size_t alignment)
       : StoreOperation(
@@ -446,17 +463,17 @@ public:
   }
 
 private:
-  static std::shared_ptr<const rvsdg::ValueType>
+  static std::shared_ptr<const rvsdg::Type>
   CheckAndExtractStoredType(const std::shared_ptr<const rvsdg::Type> & type)
   {
-    if (auto storedType = std::dynamic_pointer_cast<const rvsdg::ValueType>(type))
-      return storedType;
+    if (type->Kind() == rvsdg::TypeKind::Value)
+      return type;
 
     throw util::Error("Expected value type");
   }
 
   static std::vector<std::shared_ptr<const rvsdg::Type>>
-  CreateOperandTypes(std::shared_ptr<const rvsdg::ValueType> storedType, size_t numMemoryStates)
+  CreateOperandTypes(std::shared_ptr<const rvsdg::Type> storedType, size_t numMemoryStates)
   {
     std::vector<std::shared_ptr<const rvsdg::Type>> types(
         { PointerType::Create(), std::move(storedType), IOStateType::Create() });
