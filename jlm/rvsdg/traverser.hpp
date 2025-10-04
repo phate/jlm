@@ -166,6 +166,24 @@ public:
   }
 
 private:
+  class Observer final : public RegionObserver
+  {
+  public:
+    Observer(Region * region, TopDownTraverser * traverser);
+
+    void
+    NodeCreate(Node * node) override;
+
+    void
+    NodeDestroy(Node * node) override;
+
+    void
+    InputChange(Input * input, Output * old_origin, Output * new_origin) override;
+
+  private:
+    TopDownTraverser * traverser_;
+  };
+
   bool
   predecessors_visited(const Node * node) noexcept;
 
@@ -178,6 +196,7 @@ private:
   Region & region_;
   TraversalTracker tracker_;
   std::vector<jlm::util::Callback> callbacks_;
+  Observer observer_;
 };
 
 class BottomUpTraverser final
@@ -206,6 +225,24 @@ public:
   }
 
 private:
+  class Observer final : public RegionObserver
+  {
+  public:
+    Observer(Region * region, BottomUpTraverser * traverser);
+
+    void
+    NodeCreate(Node * node) override;
+
+    void
+    NodeDestroy(Node * node) override;
+
+    void
+    InputChange(Input * input, Output * old_origin, Output * new_origin) override;
+
+  private:
+    BottomUpTraverser * traverser_;
+  };
+
   void
   node_create(Node * node);
 
@@ -217,8 +254,8 @@ private:
 
   TraversalTracker tracker_;
   Region & region_;
-  std::vector<jlm::util::Callback> callbacks_;
   traversal_nodestate new_node_state_;
+  Observer observer_;
 };
 
 }
