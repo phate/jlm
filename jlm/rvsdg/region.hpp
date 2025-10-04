@@ -28,6 +28,7 @@ class StructuralInput;
 class StructuralNode;
 class StructuralOutput;
 class SubstitutionMap;
+class RegionObserver;
 
 /**
  * \brief Represents the argument of a region.
@@ -754,6 +755,15 @@ private:
   [[nodiscard]] static std::string
   ToString(const util::Annotation & annotation, char labelValueSeparator);
 
+  void
+  NotifyNodeCreate(Node * node);
+
+  void
+  NotifyNodeDestroy(Node * node);
+
+  void
+  NotifyInputChange(Input * input, Output * old_origin, Output * new_origin);
+
   size_t index_;
   Graph * graph_;
   Node::Id NodeId_;
@@ -763,6 +773,34 @@ private:
   region_bottom_node_list BottomNodes_;
   region_top_node_list TopNodes_;
   region_nodes_list Nodes_;
+  RegionObserver * observers_ = nullptr;
+
+  friend class RegionObserver;
+  friend class SimpleNode;
+  friend class StructuralNode;
+  friend class Input;
+};
+
+class RegionObserver
+{
+public:
+  ~RegionObserver();
+  RegionObserver(Region * region);
+
+  virtual void
+  NodeCreate(Node * node);
+
+  virtual void
+  NodeDestroy(Node * node);
+
+  virtual void
+  InputChange(Input * input, Output * old_origin, Output * new_origin);
+
+private:
+  RegionObserver ** pprev_;
+  RegionObserver * next_;
+
+  friend class Region;
 };
 
 static inline void

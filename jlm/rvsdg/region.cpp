@@ -502,6 +502,68 @@ Region::ToString(const util::Annotation & annotation, char labelValueSeparator)
   return util::strfmt(annotation.Label(), labelValueSeparator, value);
 }
 
+void
+Region::NotifyNodeCreate(Node * node)
+{
+  on_node_create(node);
+  for (auto observer = observers_; observer; observer = observer->next_)
+  {
+    observer->NodeCreate(node);
+  }
+}
+
+void
+Region::NotifyNodeDestroy(Node * node)
+{
+  on_node_destroy(node);
+  for (auto observer = observers_; observer; observer = observer->next_)
+  {
+    observer->NodeDestroy(node);
+  }
+}
+
+void
+Region::NotifyInputChange(Input * input, Output * old_origin, Output * new_origin)
+{
+  on_input_change(input, old_origin, new_origin);
+  for (auto observer = observers_; observer; observer = observer->next_)
+  {
+    observer->InputChange(input, old_origin, new_origin);
+  }
+}
+
+RegionObserver::~RegionObserver()
+{
+  *pprev_ = next_;
+  if (next_)
+  {
+    next_->pprev_ = pprev_;
+  }
+}
+
+RegionObserver::RegionObserver(Region * region)
+{
+  next_ = region->observers_;
+  if (next_)
+  {
+    next_->pprev_ = &next_;
+  }
+  pprev_ = &region->observers_;
+  region->observers_ = this;
+}
+
+void
+RegionObserver::NodeCreate(Node *)
+{}
+
+void
+RegionObserver::NodeDestroy(Node *)
+{}
+
+void
+RegionObserver::InputChange(Input * input, Output * o, Output * n)
+{}
+
 size_t
 nnodes(const jlm::rvsdg::Region * region) noexcept
 {
