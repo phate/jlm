@@ -16,7 +16,7 @@ namespace jlm::llvm
 
 /**
  * Types of linkage for global variables, constants and functions.
- * Based on LLVM's \ref ::llvm::GlobalValue::LinkageTypes
+ * Based on LLVM's ::llvm::GlobalValue::LinkageTypes
  */
 enum class linkage
 {
