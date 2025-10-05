@@ -166,6 +166,18 @@ PartialRedundancyElimination::Run(
   this->TraverseTopDownRecursively(rvsdg.GetRootRegion(), PartialRedundancyElimination::dump_node);
 
   std::cout << TR_GREEN << "=================================================" << TR_RESET << std::endl;
+
+
+  flows::AnalysisData<int> my_int_tags;
+
+  flows::RecurseTopDown(my_int_tags,
+    rvsdg.GetRootRegion(),
+    [](rvsdg::Node& node)
+    {
+      std::cout <<"."<< std::endl;
+      return flows::FlowValue<int>(flows::FlowType::NODE, node.GetNodeId());
+    }
+  );
 }
 
 /** -------------------------------------------------------------------------------------------- **/
