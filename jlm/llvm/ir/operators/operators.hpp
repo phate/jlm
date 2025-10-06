@@ -2466,6 +2466,19 @@ public:
   [[nodiscard]] std::unique_ptr<Operation>
   copy() const override;
 
+  /**
+   * @param node a SimpleNode containing a FreeOperation
+   * @return the input of \p node that takes the pointer value to be freed.
+   */
+  [[nodiscard]] static rvsdg::Input &
+  addressInput(const rvsdg::Node & node) noexcept
+  {
+    JLM_ASSERT(is<FreeOperation>(&node));
+    const auto input = node.input(0);
+    JLM_ASSERT(is<PointerType>(input->Type()));
+    return *input;
+  }
+
   static std::unique_ptr<llvm::ThreeAddressCode>
   Create(
       const Variable * pointer,
