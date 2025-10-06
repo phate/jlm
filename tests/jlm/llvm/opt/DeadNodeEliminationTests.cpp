@@ -295,7 +295,7 @@ Lambda()
       LlvmLambdaOperation::Create(
           jlm::rvsdg::FunctionType::Create({ valueType }, { valueType, valueType }),
           "f",
-          linkage::external_linkage));
+          Linkage::external_linkage));
 
   auto cv1 = lambda->AddContextVar(*x).inner;
   auto cv2 = lambda->AddContextVar(*y).inner;
@@ -340,7 +340,7 @@ Phi()
   {
     auto lambda1 = jlm::rvsdg::LambdaNode::Create(
         region,
-        LlvmLambdaOperation::Create(functionType, "f1", linkage::external_linkage));
+        LlvmLambdaOperation::Create(functionType, "f1", Linkage::external_linkage));
     auto f2Argument = lambda1->AddContextVar(rv2).inner;
     auto xArgument = lambda1->AddContextVar(dx).inner;
 
@@ -358,7 +358,7 @@ Phi()
   {
     auto lambda2 = jlm::rvsdg::LambdaNode::Create(
         region,
-        LlvmLambdaOperation::Create(functionType, "f2", linkage::external_linkage));
+        LlvmLambdaOperation::Create(functionType, "f2", Linkage::external_linkage));
     auto f1Argument = lambda2->AddContextVar(rv1).inner;
     lambda2->AddContextVar(dy);
 
@@ -375,7 +375,7 @@ Phi()
   {
     auto lambda3 = jlm::rvsdg::LambdaNode::Create(
         region,
-        LlvmLambdaOperation::Create(functionType, "f3", linkage::external_linkage));
+        LlvmLambdaOperation::Create(functionType, "f3", Linkage::external_linkage));
     auto zArgument = lambda3->AddContextVar(dz).inner;
 
     auto result = jlm::rvsdg::CreateOpNode<jlm::tests::TestOperation>(
@@ -391,7 +391,7 @@ Phi()
   {
     auto lambda = jlm::rvsdg::LambdaNode::Create(
         region,
-        LlvmLambdaOperation::Create(functionType, "f4", linkage::external_linkage));
+        LlvmLambdaOperation::Create(functionType, "f4", Linkage::external_linkage));
     return lambda->finalize({ lambda->GetFunctionArguments()[0] });
   };
 
@@ -464,7 +464,7 @@ Delta()
 
   auto deltaNode = jlm::rvsdg::DeltaNode::Create(
       &rvsdg.GetRootRegion(),
-      jlm::llvm::DeltaOperation::Create(valueType, "delta", linkage::external_linkage, "", false));
+      jlm::llvm::DeltaOperation::Create(valueType, "delta", Linkage::external_linkage, "", false));
 
   auto xArgument = deltaNode->AddContextVar(*x).inner;
   deltaNode->AddContextVar(*y);

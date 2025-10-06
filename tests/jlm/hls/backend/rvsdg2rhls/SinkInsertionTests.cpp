@@ -31,7 +31,7 @@ SinkInsertion()
 
   auto lambdaNode = jlm::rvsdg::LambdaNode::Create(
       rvsdg.GetRootRegion(),
-      LlvmLambdaOperation::Create(functionType, "f", linkage::external_linkage));
+      LlvmLambdaOperation::Create(functionType, "f", Linkage::external_linkage));
   auto argument = lambdaNode->GetFunctionArguments()[0];
 
   auto structuralNode = jlm::tests::TestStructuralNode::create(lambdaNode->subregion(), 1);

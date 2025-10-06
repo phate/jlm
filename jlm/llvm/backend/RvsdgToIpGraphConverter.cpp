@@ -577,7 +577,7 @@ RvsdgToIpGraphConverter::ConvertImports(const rvsdg::Graph & graph)
             std::dynamic_pointer_cast<const rvsdg::FunctionType>(graphImport->ValueType()))
     {
       const auto functionNode =
-          FunctionNode::create(ipGraph, graphImport->Name(), functionType, graphImport->Linkage());
+          FunctionNode::create(ipGraph, graphImport->Name(), functionType, graphImport->linkage());
       const auto variable = ipGraphModule.create_variable(functionNode);
       Context_->InsertVariable(graphImport, variable);
     }
@@ -587,7 +587,7 @@ RvsdgToIpGraphConverter::ConvertImports(const rvsdg::Graph & graph)
           ipGraph,
           graphImport->Name(),
           graphImport->ValueType(),
-          graphImport->Linkage(),
+          graphImport->linkage(),
           "",
           false);
       const auto variable = ipGraphModule.create_global_value(dataNode);

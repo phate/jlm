@@ -124,24 +124,24 @@ private:
         getPtrFuncType,
         getPtrFuncType,
         "getPtr",
-        linkage::external_linkage);
+        Linkage::external_linkage);
 
     Outputs_.Global =
-        &GraphImport::Create(rvsdg, intType, pointerType, "global", linkage::external_linkage);
+        &GraphImport::Create(rvsdg, intType, pointerType, "global", Linkage::external_linkage);
     Outputs_.GlobalShort = &GraphImport::Create(
         rvsdg,
         shortType,
         pointerType,
         "globalShort",
-        linkage::external_linkage);
+        Linkage::external_linkage);
     Outputs_.Array =
-        &GraphImport::Create(rvsdg, intArrayType, pointerType, "array", linkage::external_linkage);
+        &GraphImport::Create(rvsdg, intArrayType, pointerType, "array", Linkage::external_linkage);
 
     // Setup the function "func"
     {
       auto & lambdaNode = *rvsdg::LambdaNode::Create(
           rvsdg.GetRootRegion(),
-          LlvmLambdaOperation::Create(funcType, "func", linkage::internal_linkage));
+          LlvmLambdaOperation::Create(funcType, "func", Linkage::internal_linkage));
 
       Outputs_.P = lambdaNode.GetFunctionArguments()[0];
       auto ioState = lambdaNode.GetFunctionArguments()[1];
@@ -385,7 +385,7 @@ private:
     {
       auto & lambdaNode = *rvsdg::LambdaNode::Create(
           rvsdg.GetRootRegion(),
-          LlvmLambdaOperation::Create(funcType, "func", linkage::internal_linkage));
+          LlvmLambdaOperation::Create(funcType, "func", Linkage::internal_linkage));
 
       Outputs_.X = lambdaNode.GetFunctionArguments()[0];
       Outputs_.Ptr = lambdaNode.GetFunctionArguments()[1];

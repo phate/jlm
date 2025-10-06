@@ -48,7 +48,7 @@ TestGamma()
 
   auto lambdaNode = jlm::rvsdg::LambdaNode::Create(
       rvsdg.GetRootRegion(),
-      jlm::llvm::LlvmLambdaOperation::Create(functionType, "test", linkage::external_linkage));
+      jlm::llvm::LlvmLambdaOperation::Create(functionType, "test", Linkage::external_linkage));
 
   auto c = lambdaNode->GetFunctionArguments()[0];
   auto x = lambdaNode->GetFunctionArguments()[1];
@@ -100,7 +100,7 @@ TestTheta()
 
   auto lambdaNode = jlm::rvsdg::LambdaNode::Create(
       rvsdg.GetRootRegion(),
-      jlm::llvm::LlvmLambdaOperation::Create(functionType, "test", linkage::external_linkage));
+      jlm::llvm::LlvmLambdaOperation::Create(functionType, "test", Linkage::external_linkage));
 
   auto c = lambdaNode->GetFunctionArguments()[0];
   auto x = lambdaNode->GetFunctionArguments()[1];
@@ -157,7 +157,7 @@ TestCall()
   {
     auto lambdaNode = jlm::rvsdg::LambdaNode::Create(
         rvsdg.GetRootRegion(),
-        LlvmLambdaOperation::Create(functionTypeTest1, "test1", linkage::external_linkage));
+        LlvmLambdaOperation::Create(functionTypeTest1, "test1", Linkage::external_linkage));
 
     auto controlArgument = lambdaNode->GetFunctionArguments()[0];
     auto xArgument = lambdaNode->GetFunctionArguments()[1];
@@ -193,7 +193,7 @@ TestCall()
 
     auto lambdaNode = jlm::rvsdg::LambdaNode::Create(
         rvsdg.GetRootRegion(),
-        LlvmLambdaOperation::Create(functionType, "test2", linkage::external_linkage));
+        LlvmLambdaOperation::Create(functionType, "test2", Linkage::external_linkage));
     auto xArgument = lambdaNode->GetFunctionArguments()[0];
     auto yArgument = lambdaNode->GetFunctionArguments()[1];
     auto ioStateArgument = lambdaNode->GetFunctionArguments()[2];
@@ -246,7 +246,7 @@ TestCallWithMemoryStateNodes()
   {
     auto lambdaNode = jlm::rvsdg::LambdaNode::Create(
         rvsdg.GetRootRegion(),
-        LlvmLambdaOperation::Create(functionTypeTest1, "test1", linkage::external_linkage));
+        LlvmLambdaOperation::Create(functionTypeTest1, "test1", Linkage::external_linkage));
 
     auto controlArgument = lambdaNode->GetFunctionArguments()[0];
     auto xArgument = lambdaNode->GetFunctionArguments()[1];
@@ -282,7 +282,7 @@ TestCallWithMemoryStateNodes()
 
     auto lambdaNode = jlm::rvsdg::LambdaNode::Create(
         rvsdg.GetRootRegion(),
-        LlvmLambdaOperation::Create(functionType, "test2", linkage::external_linkage));
+        LlvmLambdaOperation::Create(functionType, "test2", Linkage::external_linkage));
     auto xArgument = lambdaNode->GetFunctionArguments()[0];
     auto ioStateArgument = lambdaNode->GetFunctionArguments()[1];
     auto memoryStateArgument = lambdaNode->GetFunctionArguments()[2];
@@ -357,7 +357,7 @@ TestCallWithMissingMemoryStateNodes()
   {
     auto lambdaNode = LambdaNode::Create(
         rvsdg.GetRootRegion(),
-        LlvmLambdaOperation::Create(functionType, "test", linkage::external_linkage));
+        LlvmLambdaOperation::Create(functionType, "test", Linkage::external_linkage));
 
     auto xArgument = lambdaNode->GetFunctionArguments()[0];
     auto ioStateArgument = lambdaNode->GetFunctionArguments()[1];
@@ -385,7 +385,7 @@ TestCallWithMissingMemoryStateNodes()
   {
     auto lambdaNode = LambdaNode::Create(
         rvsdg.GetRootRegion(),
-        LlvmLambdaOperation::Create(functionType, "test2", linkage::external_linkage));
+        LlvmLambdaOperation::Create(functionType, "test2", Linkage::external_linkage));
     auto xArgument = lambdaNode->GetFunctionArguments()[0];
     auto ioStateArgument = lambdaNode->GetFunctionArguments()[1];
     auto memoryStateArgument = lambdaNode->GetFunctionArguments()[2];

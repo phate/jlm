@@ -30,7 +30,7 @@ IOBarrierRemoval()
 
   const auto lambdaNode = LambdaNode::Create(
       rvsdg.GetRootRegion(),
-      LlvmLambdaOperation::Create(functionType, "f", linkage::external_linkage));
+      LlvmLambdaOperation::Create(functionType, "f", Linkage::external_linkage));
 
   auto x = lambdaNode->GetFunctionArguments()[0];
   auto y = lambdaNode->GetFunctionArguments()[1];

@@ -97,13 +97,13 @@ instrument_ref(llvm::RvsdgModule & rm)
       loadFunctionType,
       loadFunctionType,
       "reference_load",
-      llvm::linkage::external_linkage);
+      llvm::Linkage::external_linkage);
   auto & reference_store = llvm::GraphImport::Create(
       graph,
       loadFunctionType,
       loadFunctionType,
       "reference_store",
-      llvm::linkage::external_linkage);
+      llvm::Linkage::external_linkage);
   // addr, size, memstate
   auto allocaFunctionType = jlm::rvsdg::FunctionType::Create(
       { jlm::llvm::PointerType::Create(),
@@ -116,7 +116,7 @@ instrument_ref(llvm::RvsdgModule & rm)
       allocaFunctionType,
       allocaFunctionType,
       "reference_alloca",
-      llvm::linkage::external_linkage);
+      llvm::Linkage::external_linkage);
 
   instrument_ref(
       root,

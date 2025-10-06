@@ -35,7 +35,7 @@ GammaSubregionUsage()
 
   auto lambdaNode = LambdaNode::Create(
       rvsdg.GetRootRegion(),
-      LlvmLambdaOperation::Create(functionType, "f", linkage::external_linkage));
+      LlvmLambdaOperation::Create(functionType, "f", Linkage::external_linkage));
   auto controlArgument = lambdaNode->GetFunctionArguments()[0];
 
   auto & constantNode = IntegerConstantOperation::Create(*lambdaNode->subregion(), 32, 5);
@@ -113,7 +113,7 @@ NestedGammas()
 
   auto lambdaNode = LambdaNode::Create(
       rvsdg.GetRootRegion(),
-      LlvmLambdaOperation::Create(functionType, "f", linkage::external_linkage));
+      LlvmLambdaOperation::Create(functionType, "f", Linkage::external_linkage));
   auto controlArgument = lambdaNode->GetFunctionArguments()[0];
 
   auto & constantNode = IntegerConstantOperation::Create(*lambdaNode->subregion(), 32, 5);
@@ -207,7 +207,7 @@ Theta()
 
   auto lambdaNode = LambdaNode::Create(
       rvsdg.GetRootRegion(),
-      LlvmLambdaOperation::Create(functionType, "f", linkage::external_linkage));
+      LlvmLambdaOperation::Create(functionType, "f", Linkage::external_linkage));
 
   auto & constantNode0 = IntegerConstantOperation::Create(*lambdaNode->subregion(), 32, 0);
   auto & constantNode2 = IntegerConstantOperation::Create(*lambdaNode->subregion(), 32, 2);

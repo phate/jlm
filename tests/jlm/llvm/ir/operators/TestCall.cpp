@@ -119,7 +119,7 @@ TestCallTypeClassifierIndirectCall()
   {
     auto lambda = jlm::rvsdg::LambdaNode::Create(
         graph->GetRootRegion(),
-        LlvmLambdaOperation::Create(fcttype2, "fct", linkage::external_linkage));
+        LlvmLambdaOperation::Create(fcttype2, "fct", Linkage::external_linkage));
     auto iOStateArgument = lambda->GetFunctionArguments()[1];
     auto memoryStateArgument = lambda->GetFunctionArguments()[2];
 
@@ -180,7 +180,7 @@ TestCallTypeClassifierNonRecursiveDirectCall()
   {
     auto lambda = jlm::rvsdg::LambdaNode::Create(
         graph->GetRootRegion(),
-        LlvmLambdaOperation::Create(functionTypeG, "g", linkage::external_linkage));
+        LlvmLambdaOperation::Create(functionTypeG, "g", Linkage::external_linkage));
     auto iOStateArgument = lambda->GetFunctionArguments()[0];
     auto memoryStateArgument = lambda->GetFunctionArguments()[1];
 
@@ -223,7 +223,7 @@ TestCallTypeClassifierNonRecursiveDirectCall()
 
     auto lambda = jlm::rvsdg::LambdaNode::Create(
         graph->GetRootRegion(),
-        LlvmLambdaOperation::Create(functionType, "f", linkage::external_linkage));
+        LlvmLambdaOperation::Create(functionType, "f", Linkage::external_linkage));
     auto functionGArgument = lambda->AddContextVar(*g).inner;
     auto iOStateArgument = lambda->GetFunctionArguments()[0];
     auto memoryStateArgument = lambda->GetFunctionArguments()[1];
@@ -279,7 +279,7 @@ TestCallTypeClassifierNonRecursiveDirectCallTheta()
   {
     auto lambda = jlm::rvsdg::LambdaNode::Create(
         graph->GetRootRegion(),
-        LlvmLambdaOperation::Create(functionTypeG, "g", linkage::external_linkage));
+        LlvmLambdaOperation::Create(functionTypeG, "g", Linkage::external_linkage));
     auto iOStateArgument = lambda->GetFunctionArguments()[0];
     auto memoryStateArgument = lambda->GetFunctionArguments()[1];
 
@@ -340,7 +340,7 @@ TestCallTypeClassifierNonRecursiveDirectCallTheta()
 
     auto lambda = jlm::rvsdg::LambdaNode::Create(
         graph->GetRootRegion(),
-        LlvmLambdaOperation::Create(functionType, "f", linkage::external_linkage));
+        LlvmLambdaOperation::Create(functionType, "f", Linkage::external_linkage));
     auto functionG = lambda->AddContextVar(*g).inner;
     auto iOStateArgument = lambda->GetFunctionArguments()[0];
     auto memoryStateArgument = lambda->GetFunctionArguments()[1];
@@ -401,7 +401,7 @@ TestCallTypeClassifierRecursiveDirectCall()
 
     auto lambda = jlm::rvsdg::LambdaNode::Create(
         *pb.subregion(),
-        LlvmLambdaOperation::Create(functionType, "fib", linkage::external_linkage));
+        LlvmLambdaOperation::Create(functionType, "fib", Linkage::external_linkage));
     auto valueArgument = lambda->GetFunctionArguments()[0];
     auto pointerArgument = lambda->GetFunctionArguments()[1];
     auto iOStateArgument = lambda->GetFunctionArguments()[2];

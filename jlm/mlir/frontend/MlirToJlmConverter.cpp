@@ -124,7 +124,7 @@ MlirToJlmConverter::ConvertBlock(::mlir::Block & block, rvsdg::Region & rvsdgReg
           jlmValueType,
           jlmImportedType,
           argument.getNameAttr().cast<::mlir::StringAttr>().str(),
-          llvm::FromString(argument.getLinkageAttr().cast<::mlir::StringAttr>().str()));
+          llvm::linkageFromString(argument.getLinkageAttr().cast<::mlir::StringAttr>().str()));
 
       auto key = argument.getResult().getAsOpaquePointer();
       outputMap[key] = rvsdgRegion.argument(rvsdgRegion.narguments() - 1);
@@ -1007,52 +1007,52 @@ MlirToJlmConverter::ConvertFPSize(unsigned int size)
   }
 }
 
-llvm::linkage
+llvm::Linkage
 MlirToJlmConverter::ConvertLinkage(std::string stringValue)
 {
   if (!stringValue.compare("external_linkage"))
   {
-    return llvm::linkage::external_linkage;
+    return llvm::Linkage::external_linkage;
   }
   else if (!stringValue.compare("available_externally_linkage"))
   {
-    return llvm::linkage::available_externally_linkage;
+    return llvm::Linkage::available_externally_linkage;
   }
   else if (!stringValue.compare("link_once_any_linkage"))
   {
-    return llvm::linkage::link_once_any_linkage;
+    return llvm::Linkage::link_once_any_linkage;
   }
   else if (!stringValue.compare("link_once_odr_linkage"))
   {
-    return llvm::linkage::link_once_odr_linkage;
+    return llvm::Linkage::link_once_odr_linkage;
   }
   else if (!stringValue.compare("weak_any_linkage"))
   {
-    return llvm::linkage::weak_any_linkage;
+    return llvm::Linkage::weak_any_linkage;
   }
   else if (!stringValue.compare("weak_odr_linkage"))
   {
-    return llvm::linkage::weak_odr_linkage;
+    return llvm::Linkage::weak_odr_linkage;
   }
   else if (!stringValue.compare("appending_linkage"))
   {
-    return llvm::linkage::appending_linkage;
+    return llvm::Linkage::appending_linkage;
   }
   else if (!stringValue.compare("internal_linkage"))
   {
-    return llvm::linkage::internal_linkage;
+    return llvm::Linkage::internal_linkage;
   }
   else if (!stringValue.compare("private_linkage"))
   {
-    return llvm::linkage::private_linkage;
+    return llvm::Linkage::private_linkage;
   }
   else if (!stringValue.compare("external_weak_linkage"))
   {
-    return llvm::linkage::external_weak_linkage;
+    return llvm::Linkage::external_weak_linkage;
   }
   else if (!stringValue.compare("common_linkage"))
   {
-    return llvm::linkage::common_linkage;
+    return llvm::Linkage::common_linkage;
   }
   auto message = util::strfmt("Unsupported linkage: ", stringValue, "\n");
   JLM_UNREACHABLE(message.c_str());
@@ -1096,7 +1096,7 @@ MlirToJlmConverter::ConvertLambda(
       llvm::LlvmLambdaOperation::Create(
           functionType,
           functionName.getValue().str(),
-          llvm::linkage::external_linkage));
+          llvm::Linkage::external_linkage));
 
   for (auto input : inputs)
   {

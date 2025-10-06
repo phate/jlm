@@ -85,7 +85,7 @@ JlmToMlirConverter::ConvertRegion(rvsdg::Region & region, ::mlir::Block & block,
           Builder_->getUnknownLoc(),
           ConvertType(*imp->ImportedType()),
           ConvertType(*imp->ValueType()),
-          Builder_->getStringAttr(llvm::ToString(imp->Linkage())),
+          Builder_->getStringAttr(llvm::linkageToString(imp->Linkage())),
           Builder_->getStringAttr(imp->Name())));
       valueMap[arg] = block.back().getResult(0); // Add the output of the omega argument
     }
@@ -815,7 +815,7 @@ JlmToMlirConverter::ConvertLambda(
   attributes.push_back(symbolName);
   auto linkage = Builder_->getNamedAttr(
       Builder_->getStringAttr("linkage"),
-      Builder_->getStringAttr(llvm::ToString(
+      Builder_->getStringAttr(llvm::linkageToString(
           dynamic_cast<llvm::LlvmLambdaOperation &>(lambdaNode.GetOperation()).linkage())));
   attributes.push_back(linkage);
 
@@ -918,7 +918,7 @@ JlmToMlirConverter::ConvertDelta(
       Builder_->getType<::mlir::LLVM::LLVMPointerType>(),
       inputs,
       ::llvm::StringRef(op->name()),
-      ::llvm::StringRef(llvm::ToString(op->linkage())),
+      ::llvm::StringRef(llvm::linkageToString(op->linkage())),
       ::llvm::StringRef(op->Section()),
       op->constant());
   block.push_back(delta);

@@ -28,7 +28,7 @@ TestDumpDot()
 
   auto lambda = rvsdg::LambdaNode::Create(
       graph.GetRootRegion(),
-      LlvmLambdaOperation::Create(ft, "f", linkage::external_linkage));
+      LlvmLambdaOperation::Create(ft, "f", Linkage::external_linkage));
 
   auto bitConstant = rvsdg::create_bitconstant(lambda->subregion(), 32, 0);
 
@@ -69,7 +69,7 @@ TestDumpDotTheta()
 
   auto lambda = rvsdg::LambdaNode::Create(
       graph.GetRootRegion(),
-      LlvmLambdaOperation::Create(ft, "f", linkage::external_linkage));
+      LlvmLambdaOperation::Create(ft, "f", Linkage::external_linkage));
 
   auto theta = rvsdg::ThetaNode::create(lambda->subregion());
   auto idv = theta->AddLoopVar(lambda->GetFunctionArguments()[0]);

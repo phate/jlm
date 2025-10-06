@@ -31,7 +31,7 @@ GammaWithoutMatch()
 
   auto lambdaNode = jlm::rvsdg::LambdaNode::Create(
       rvsdgModule.Rvsdg().GetRootRegion(),
-      LlvmLambdaOperation::Create(functionType, "lambdaOutput", linkage::external_linkage));
+      LlvmLambdaOperation::Create(functionType, "lambdaOutput", Linkage::external_linkage));
   const auto conditionValue = lambdaNode->GetFunctionArguments()[0];
   const auto trueValue = lambdaNode->GetFunctionArguments()[1];
   const auto falseValue = lambdaNode->GetFunctionArguments()[2];
@@ -90,7 +90,7 @@ EmptyGammaWithTwoSubregionsAndMatch()
 
   const auto lambdaNode = jlm::rvsdg::LambdaNode::Create(
       rvsdgModule.Rvsdg().GetRootRegion(),
-      LlvmLambdaOperation::Create(functionType, "lambdaOutput", linkage::external_linkage));
+      LlvmLambdaOperation::Create(functionType, "lambdaOutput", Linkage::external_linkage));
   const auto conditionValue = lambdaNode->GetFunctionArguments()[0];
   const auto trueValue = lambdaNode->GetFunctionArguments()[1];
   const auto falseValue = lambdaNode->GetFunctionArguments()[2];
@@ -170,7 +170,7 @@ EmptyGammaWithTwoSubregions()
 
   const auto lambdaNode = jlm::rvsdg::LambdaNode::Create(
       rvsdgModule.Rvsdg().GetRootRegion(),
-      LlvmLambdaOperation::Create(functionType, "lambdaOutput", linkage::external_linkage));
+      LlvmLambdaOperation::Create(functionType, "lambdaOutput", Linkage::external_linkage));
   const auto trueValue = lambdaNode->GetFunctionArguments()[1];
   const auto falseValue = lambdaNode->GetFunctionArguments()[2];
 
@@ -232,7 +232,7 @@ EmptyGammaWithThreeSubregions()
 
   auto lambdaNode = jlm::rvsdg::LambdaNode::Create(
       rvsdgModule.Rvsdg().GetRootRegion(),
-      LlvmLambdaOperation::Create(functionType, "lambdaOutput", linkage::external_linkage));
+      LlvmLambdaOperation::Create(functionType, "lambdaOutput", Linkage::external_linkage));
 
   auto match =
       jlm::rvsdg::match(32, { { 0, 0 }, { 1, 1 } }, 2, 3, lambdaNode->GetFunctionArguments()[0]);
@@ -285,7 +285,7 @@ PartialEmptyGamma()
 
   auto lambdaNode = jlm::rvsdg::LambdaNode::Create(
       rvsdgModule.Rvsdg().GetRootRegion(),
-      LlvmLambdaOperation::Create(functionType, "lambdaOutput", linkage::external_linkage));
+      LlvmLambdaOperation::Create(functionType, "lambdaOutput", Linkage::external_linkage));
 
   auto match = jlm::rvsdg::match(1, { { 0, 0 } }, 1, 2, lambdaNode->GetFunctionArguments()[0]);
   auto gammaNode = jlm::rvsdg::GammaNode::create(match, 2);

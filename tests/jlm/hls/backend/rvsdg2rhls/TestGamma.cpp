@@ -26,7 +26,7 @@ TestWithMatch()
 
   auto lambda = jlm::rvsdg::LambdaNode::Create(
       rm.Rvsdg().GetRootRegion(),
-      LlvmLambdaOperation::Create(ft, "f", linkage::external_linkage));
+      LlvmLambdaOperation::Create(ft, "f", Linkage::external_linkage));
 
   auto match = jlm::rvsdg::match(1, { { 0, 0 } }, 1, 2, lambda->GetFunctionArguments()[0]);
   auto gamma = jlm::rvsdg::GammaNode::create(match, 2);
@@ -65,7 +65,7 @@ TestWithoutMatch()
 
   auto lambda = jlm::rvsdg::LambdaNode::Create(
       rm.Rvsdg().GetRootRegion(),
-      LlvmLambdaOperation::Create(ft, "f", linkage::external_linkage));
+      LlvmLambdaOperation::Create(ft, "f", Linkage::external_linkage));
 
   auto gamma = jlm::rvsdg::GammaNode::create(lambda->GetFunctionArguments()[0], 2);
   auto ev1 = gamma->AddEntryVar(lambda->GetFunctionArguments()[1]);

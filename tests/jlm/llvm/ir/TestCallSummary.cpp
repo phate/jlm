@@ -29,7 +29,7 @@ TestCallSummaryComputationDead()
       jlm::llvm::LlvmLambdaOperation::Create(
           functionType,
           "f",
-          jlm::llvm::linkage::external_linkage));
+          jlm::llvm::Linkage::external_linkage));
 
   auto result = tests::TestOperation::create(lambdaNode->subregion(), {}, { vt })->output(0);
 
@@ -64,7 +64,7 @@ TestCallSummaryComputationExport()
       jlm::llvm::LlvmLambdaOperation::Create(
           functionType,
           "f",
-          jlm::llvm::linkage::external_linkage));
+          jlm::llvm::Linkage::external_linkage));
 
   auto result = tests::TestOperation::create(lambdaNode->subregion(), {}, { vt })->output(0);
 
@@ -104,7 +104,7 @@ TestCallSummaryComputationDirectCalls()
         jlm::llvm::LlvmLambdaOperation::Create(
             functionType,
             "x",
-            jlm::llvm::linkage::external_linkage));
+            jlm::llvm::Linkage::external_linkage));
     auto iOStateArgument = lambdaNode->GetFunctionArguments()[0];
     auto memoryStateArgument = lambdaNode->GetFunctionArguments()[1];
 
@@ -120,7 +120,7 @@ TestCallSummaryComputationDirectCalls()
         jlm::llvm::LlvmLambdaOperation::Create(
             functionType,
             "y",
-            jlm::llvm::linkage::external_linkage));
+            jlm::llvm::Linkage::external_linkage));
     auto iOStateArgument = lambdaNode->GetFunctionArguments()[0];
     auto memoryStateArgument = lambdaNode->GetFunctionArguments()[1];
     auto lambdaXCv = lambdaNode->AddContextVar(lambdaX).inner;
@@ -143,7 +143,7 @@ TestCallSummaryComputationDirectCalls()
         jlm::llvm::LlvmLambdaOperation::Create(
             functionType,
             "y",
-            jlm::llvm::linkage::external_linkage));
+            jlm::llvm::Linkage::external_linkage));
     auto iOStateArgument = lambdaNode->GetFunctionArguments()[0];
     auto memoryStateArgument = lambdaNode->GetFunctionArguments()[1];
     auto lambdaXCv = lambdaNode->AddContextVar(lambdaX).inner;
@@ -259,12 +259,12 @@ TestCallSummaryComputationFunctionPointerInDelta()
 
   auto lambdaNode = jlm::rvsdg::LambdaNode::Create(
       rvsdg->GetRootRegion(),
-      LlvmLambdaOperation::Create(functionType, "f", linkage::external_linkage));
+      LlvmLambdaOperation::Create(functionType, "f", Linkage::external_linkage));
   lambdaNode->finalize({ lambdaNode->GetFunctionArguments()[0] });
 
   auto deltaNode = jlm::rvsdg::DeltaNode::Create(
       &rvsdg->GetRootRegion(),
-      jlm::llvm::DeltaOperation::Create(functionType, "fp", linkage::external_linkage, "", false));
+      jlm::llvm::DeltaOperation::Create(functionType, "fp", Linkage::external_linkage, "", false));
   auto argument = deltaNode->AddContextVar(*lambdaNode->output()).inner;
   deltaNode->finalize(argument);
 
@@ -293,12 +293,12 @@ TestCallSummaryComputationLambdaResult()
 
   auto lambdaNodeG = jlm::rvsdg::LambdaNode::Create(
       rvsdg.GetRootRegion(),
-      jlm::llvm::LlvmLambdaOperation::Create(functionTypeG, "g", linkage::external_linkage));
+      jlm::llvm::LlvmLambdaOperation::Create(functionTypeG, "g", Linkage::external_linkage));
   auto lambdaOutputG = lambdaNodeG->finalize({ lambdaNodeG->GetFunctionArguments()[0] });
 
   auto lambdaNodeF = jlm::rvsdg::LambdaNode::Create(
       rvsdg.GetRootRegion(),
-      jlm::llvm::LlvmLambdaOperation::Create(functionTypeF, "f", linkage::external_linkage));
+      jlm::llvm::LlvmLambdaOperation::Create(functionTypeF, "f", Linkage::external_linkage));
   auto lambdaGArgument = lambdaNodeF->AddContextVar(*lambdaOutputG).inner;
   auto ptr =
       jlm::rvsdg::CreateOpNode<FunctionToPointerOperation>({ lambdaGArgument }, functionTypeG)

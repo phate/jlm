@@ -28,7 +28,7 @@ ForkInsertion()
 
   auto lambda = jlm::rvsdg::LambdaNode::Create(
       rootRegion,
-      LlvmLambdaOperation::Create(functionType, "f", linkage::external_linkage));
+      LlvmLambdaOperation::Create(functionType, "f", Linkage::external_linkage));
 
   auto loop = hls::LoopNode::create(lambda->subregion());
   rvsdg::Output * idvBuffer = nullptr;
@@ -91,7 +91,7 @@ ConstantForkInsertion()
 
   auto lambda = rvsdg::LambdaNode::Create(
       rootRegion,
-      LlvmLambdaOperation::Create(functionType, "f", linkage::external_linkage));
+      LlvmLambdaOperation::Create(functionType, "f", Linkage::external_linkage));
 
   auto loop = hls::LoopNode::create(lambda->subregion());
   auto subregion = loop->subregion();

@@ -60,7 +60,7 @@ convert_prints(llvm::RvsdgModule & rm)
   auto fct =
       rvsdg::FunctionType::Create({ rvsdg::BitType::Create(64), rvsdg::BitType::Create(64) }, {});
   auto & printf =
-      llvm::GraphImport::Create(graph, fct, fct, "printnode", llvm::linkage::external_linkage);
+      llvm::GraphImport::Create(graph, fct, fct, "printnode", llvm::Linkage::external_linkage);
   convert_prints(root, &printf, fct);
 }
 

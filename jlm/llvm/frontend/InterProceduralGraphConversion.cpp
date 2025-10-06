@@ -458,7 +458,7 @@ private:
 static bool
 requiresExport(const InterProceduralGraphNode & ipgNode)
 {
-  return ipgNode.hasBody() && is_externally_visible(ipgNode.linkage());
+  return ipgNode.hasBody() && !isDiscardableIfUnused(ipgNode.linkage());
 }
 
 static void
@@ -911,7 +911,7 @@ ConvertAggregationTreeToLambda(
     RegionalizedVariableMap & scopedVariableMap,
     const std::string & functionName,
     std::shared_ptr<const rvsdg::FunctionType> functionType,
-    const linkage & functionLinkage,
+    const Linkage & functionLinkage,
     const AttributeSet & functionAttributes,
     InterProceduralGraphToRvsdgStatisticsCollector & statisticsCollector)
 {
