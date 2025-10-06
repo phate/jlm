@@ -7,7 +7,7 @@
 #ifndef JLM_RVSDG_TRAVERSER_HPP
 #define JLM_RVSDG_TRAVERSER_HPP
 
-#include <jlm/util/callbacks.hpp>
+#include <jlm/rvsdg/region.hpp>
 
 #include <list>
 #include <unordered_map>
@@ -166,6 +166,24 @@ public:
   }
 
 private:
+  class Observer final : public RegionObserver
+  {
+  public:
+    Observer(Region & region, TopDownTraverser & traverser);
+
+    void
+    onNodeCreate(Node * node) override;
+
+    void
+    onNodeDestroy(Node * node) override;
+
+    void
+    onInputChange(Input * input, Output * old_origin, Output * new_origin) override;
+
+  private:
+    TopDownTraverser & traverser_;
+  };
+
   bool
   predecessors_visited(const Node * node) noexcept;
 
@@ -175,9 +193,8 @@ private:
   void
   input_change(Input * in, Output * old_origin, Output * new_origin);
 
-  Region & region_;
   TraversalTracker tracker_;
-  std::vector<jlm::util::Callback> callbacks_;
+  Observer observer_;
 };
 
 class BottomUpTraverser final
@@ -185,7 +202,7 @@ class BottomUpTraverser final
 public:
   ~BottomUpTraverser() noexcept;
 
-  explicit BottomUpTraverser(Region * region, bool revisit = false);
+  explicit BottomUpTraverser(Region * region);
 
   Node *
   next();
@@ -206,6 +223,24 @@ public:
   }
 
 private:
+  class Observer final : public RegionObserver
+  {
+  public:
+    Observer(Region & region, BottomUpTraverser & traverser);
+
+    void
+    onNodeCreate(Node * node) override;
+
+    void
+    onNodeDestroy(Node * node) override;
+
+    void
+    onInputChange(Input * input, Output * old_origin, Output * new_origin) override;
+
+  private:
+    BottomUpTraverser & traverser_;
+  };
+
   void
   node_create(Node * node);
 
@@ -216,9 +251,7 @@ private:
   input_change(Input * in, Output * old_origin, Output * new_origin);
 
   TraversalTracker tracker_;
-  Region & region_;
-  std::vector<jlm::util::Callback> callbacks_;
-  traversal_nodestate new_node_state_;
+  Observer observer_;
 };
 
 }
