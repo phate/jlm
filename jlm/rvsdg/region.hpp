@@ -761,13 +761,13 @@ private:
   ToString(const util::Annotation & annotation, char labelValueSeparator);
 
   void
-  NotifyNodeCreate(Node * node);
+  notifyNodeCreate(Node * node);
 
   void
-  NotifyNodeDestroy(Node * node);
+  notifyNodeDestroy(Node * node);
 
   void
-  NotifyInputChange(Input * input, Output * old_origin, Output * new_origin);
+  notifyInputChange(Input * input, Output * old_origin, Output * new_origin);
 
   size_t index_;
   Graph * graph_;
@@ -791,7 +791,7 @@ class RegionObserver
 public:
   ~RegionObserver();
 
-  explicit RegionObserver(Region * region);
+  explicit RegionObserver(Region & region);
 
   RegionObserver(const RegionObserver &) = delete;
 
@@ -799,13 +799,13 @@ public:
   operator=(const RegionObserver &) = delete;
 
   virtual void
-  NodeCreate(Node * node);
+  nodeCreate(Node * node) = 0;
 
   virtual void
-  NodeDestroy(Node * node);
+  nodeDestroy(Node * node) = 0;
 
   virtual void
-  InputChange(Input * input, Output * old_origin, Output * new_origin);
+  inputChange(Input * input, Output * old_origin, Output * new_origin) = 0;
 
 private:
   RegionObserver ** pprev_;

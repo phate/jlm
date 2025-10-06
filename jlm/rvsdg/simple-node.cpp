@@ -13,7 +13,7 @@ namespace jlm::rvsdg
 
 SimpleNode::~SimpleNode()
 {
-  region()->NotifyNodeDestroy(this);
+  region()->notifyNodeDestroy(this);
 }
 
 SimpleNode::SimpleNode(
@@ -40,7 +40,7 @@ SimpleNode::SimpleNode(
   for (size_t n = 0; n < SimpleNode::GetOperation().nresults(); n++)
     add_output(std::make_unique<NodeOutput>(this, SimpleNode::GetOperation().result(n)));
 
-  region.NotifyNodeCreate(this);
+  region.notifyNodeCreate(this);
 }
 
 const SimpleOperation &

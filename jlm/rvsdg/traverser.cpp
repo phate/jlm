@@ -13,22 +13,22 @@ namespace jlm::rvsdg
 {
 
 TopDownTraverser::Observer::Observer(Region * region, TopDownTraverser * traverser)
-    : RegionObserver(region),
+    : RegionObserver(*region),
       traverser_(traverser)
 {}
 
 void
-TopDownTraverser::Observer::NodeCreate(Node * node)
+TopDownTraverser::Observer::nodeCreate(Node * node)
 {
   traverser_->node_create(node);
 }
 
 void
-TopDownTraverser::Observer::NodeDestroy(Node * node)
+TopDownTraverser::Observer::nodeDestroy(Node * node)
 {}
 
 void
-TopDownTraverser::Observer::InputChange(Input * input, Output * old_origin, Output * new_origin)
+TopDownTraverser::Observer::inputChange(Input * input, Output * old_origin, Output * new_origin)
 {
   traverser_->input_change(input, old_origin, new_origin);
 }
@@ -147,24 +147,24 @@ HasSuccessors(const Node & node)
 }
 
 BottomUpTraverser::Observer::Observer(Region * region, BottomUpTraverser * traverser)
-    : RegionObserver(region),
+    : RegionObserver(*region),
       traverser_(traverser)
 {}
 
 void
-BottomUpTraverser::Observer::NodeCreate(Node * node)
+BottomUpTraverser::Observer::nodeCreate(Node * node)
 {
   traverser_->node_create(node);
 }
 
 void
-BottomUpTraverser::Observer::NodeDestroy(Node * node)
+BottomUpTraverser::Observer::nodeDestroy(Node * node)
 {
   traverser_->node_destroy(node);
 }
 
 void
-BottomUpTraverser::Observer::InputChange(Input * input, Output * old_origin, Output * new_origin)
+BottomUpTraverser::Observer::inputChange(Input * input, Output * old_origin, Output * new_origin)
 {
   traverser_->input_change(input, old_origin, new_origin);
 }

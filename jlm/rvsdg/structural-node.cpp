@@ -39,7 +39,7 @@ StructuralOutput::StructuralOutput(StructuralNode * node, std::shared_ptr<const 
 
 StructuralNode::~StructuralNode() noexcept
 {
-  region()->NotifyNodeDestroy(this);
+  region()->notifyNodeDestroy(this);
 
   subregions_.clear();
 }
@@ -53,7 +53,7 @@ StructuralNode::StructuralNode(rvsdg::Region * region, size_t nsubregions)
   for (size_t n = 0; n < nsubregions; n++)
     subregions_.emplace_back(std::unique_ptr<rvsdg::Region>(new jlm::rvsdg::Region(this, n)));
 
-  region->NotifyNodeCreate(this);
+  region->notifyNodeCreate(this);
 }
 
 std::string
