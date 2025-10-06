@@ -24,6 +24,7 @@ TestFreeConstructor()
   assert(free2.narguments() == 4);
   assert(free2.nresults() == 3);
 }
+JLM_UNIT_TEST_REGISTER("jlm/llvm/ir/operators/TestFree-TestFreeConstructor", TestFreeConstructor)
 
 static void
 TestEqualityOperator()
@@ -40,6 +41,7 @@ TestEqualityOperator()
   assert(free1 == free1);
   assert(free1 != free2); // 2 different instances should not compare equal
 }
+JLM_UNIT_TEST_REGISTER("jlm/llvm/ir/operators/TestFree-TestEqualityOperator", TestEqualityOperator)
 
 static void
 TestThreeAddressCodeCreator()
@@ -61,6 +63,9 @@ TestThreeAddressCodeCreator()
   assert(free0->nresults() == 1);
   assert(free1->nresults() == 2);
 }
+JLM_UNIT_TEST_REGISTER(
+    "jlm/llvm/ir/operators/TestFree-TestThreeAddressCodeCreator",
+    TestThreeAddressCodeCreator)
 
 static void
 TestRvsdgCreator()
@@ -78,19 +83,11 @@ TestRvsdgCreator()
   auto freeResults0 = FreeOperation::Create(address, {}, iOState);
   auto freeResults1 = FreeOperation::Create(address, { memoryState }, iOState);
 
+  auto & freeNode0 = jlm::rvsdg::AssertGetOwnerNode<jlm::rvsdg::SimpleNode>(*freeResults0[0]);
+
   // Assert
   assert(freeResults0.size() == 1);
   assert(freeResults1.size() == 2);
+  assert(FreeOperation::AddressInput(freeNode0).origin() == address);
 }
-
-static void
-TestFree()
-{
-  TestFreeConstructor();
-  TestEqualityOperator();
-
-  TestThreeAddressCodeCreator();
-  TestRvsdgCreator();
-}
-
-JLM_UNIT_TEST_REGISTER("jlm/llvm/ir/operators/TestFree", TestFree)
+JLM_UNIT_TEST_REGISTER("jlm/llvm/ir/operators/TestFree-TestRvsdgCreator", TestRvsdgCreator)

@@ -3,6 +3,7 @@
  * See COPYING for terms of redistribution.
  */
 
+#include <jlm/llvm/ir/operators/IntegerOperations.hpp>
 #include <test-operation.hpp>
 #include <test-registry.hpp>
 #include <test-types.hpp>
@@ -32,3 +33,32 @@ OperationEquality()
 JLM_UNIT_TEST_REGISTER(
     "jlm/llvm/ir/operators/MemCpyNonVolatileTests-OperationEquality",
     OperationEquality)
+
+static void
+Accessors()
+{
+  using namespace jlm::llvm;
+
+  // Arrange
+  auto pointerType = PointerType::Create();
+  auto bit32Type = jlm::rvsdg::BitType::Create(32);
+  auto memStateType = jlm::llvm::MemoryStateType::Create();
+
+  jlm::rvsdg::Graph graph;
+  auto & address1 = jlm::rvsdg::GraphImport::Create(graph, pointerType, "address1");
+  auto & address2 = jlm::rvsdg::GraphImport::Create(graph, pointerType, "address2");
+  auto & memState = jlm::rvsdg::GraphImport::Create(graph, memStateType, "memState");
+  auto & constant100 = IntegerConstantOperation::Create(graph.GetRootRegion(), 32, 100);
+
+  auto & memCpy = jlm::rvsdg::CreateOpNode<MemCpyNonVolatileOperation>(
+      { &address1, &address2, constant100.output(0), &memState },
+      bit32Type,
+      1);
+
+  // Act & Assert
+  assert(MemCpyOperation::DestinationInput(memCpy).origin() == &address1);
+  assert(MemCpyOperation::SourceInput(memCpy).origin() == &address2);
+  assert(MemCpyOperation::CountInput(memCpy).origin() == constant100.output(0));
+}
+
+JLM_UNIT_TEST_REGISTER("jlm/llvm/ir/operators/MemCpyNonVolatileTests-Accessors", Accessors)

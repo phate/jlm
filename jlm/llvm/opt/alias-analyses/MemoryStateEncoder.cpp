@@ -459,12 +459,12 @@ public:
     }
     else if (jlm::rvsdg::is<FreeOperation>(&node))
     {
-      addOutputToModRefSet(*node.input(0)->origin());
+      addOutputToModRefSet(*FreeOperation::AddressInput(node).origin());
     }
     else if (jlm::rvsdg::is<MemCpyOperation>(&node))
     {
-      addOutputToModRefSet(*node.input(0)->origin());
-      addOutputToModRefSet(*node.input(1)->origin());
+      addOutputToModRefSet(*MemCpyOperation::DestinationInput(node).origin());
+      addOutputToModRefSet(*MemCpyOperation::SourceInput(node).origin());
     }
     else if (jlm::rvsdg::is<AllocaOperation>(&node))
     {
@@ -480,7 +480,7 @@ public:
     }
     else
     {
-      JLM_UNREACHABLE("Unhandled node type.");
+      throw std::logic_error("Unhandled node type.");
     }
     return result;
   }
