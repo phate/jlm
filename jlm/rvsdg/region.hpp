@@ -806,13 +806,13 @@ public:
   operator=(const RegionObserver &) = delete;
 
   virtual void
-  nodeCreate(Node * node) = 0;
+  onNodeCreate(Node * node) = 0;
 
   virtual void
-  nodeDestroy(Node * node) = 0;
+  onNodeDestroy(Node * node) = 0;
 
   virtual void
-  inputChange(Input * input, Output * old_origin, Output * new_origin) = 0;
+  onInputChange(Input * input, Output * old_origin, Output * new_origin) = 0;
 
 private:
   RegionObserver ** pprev_;

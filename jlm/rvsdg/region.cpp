@@ -515,7 +515,7 @@ Region::notifyNodeCreate(Node * node)
 {
   for (auto observer = observers_; observer; observer = observer->next_)
   {
-    observer->nodeCreate(node);
+    observer->onNodeCreate(node);
   }
 }
 
@@ -524,7 +524,7 @@ Region::notifyNodeDestroy(Node * node)
 {
   for (auto observer = observers_; observer; observer = observer->next_)
   {
-    observer->nodeDestroy(node);
+    observer->onNodeDestroy(node);
   }
 }
 
@@ -533,7 +533,7 @@ Region::notifyInputChange(Input * input, Output * old_origin, Output * new_origi
 {
   for (auto observer = observers_; observer; observer = observer->next_)
   {
-    observer->inputChange(input, old_origin, new_origin);
+    observer->onInputChange(input, old_origin, new_origin);
   }
 }
 

@@ -172,13 +172,13 @@ private:
     Observer(Region * region, TopDownTraverser * traverser);
 
     void
-    nodeCreate(Node * node) override;
+    onNodeCreate(Node * node) override;
 
     void
-    nodeDestroy(Node * node) override;
+    onNodeDestroy(Node * node) override;
 
     void
-    inputChange(Input * input, Output * old_origin, Output * new_origin) override;
+    onInputChange(Input * input, Output * old_origin, Output * new_origin) override;
 
   private:
     TopDownTraverser * traverser_;
@@ -229,13 +229,13 @@ private:
     Observer(Region * region, BottomUpTraverser * traverser);
 
     void
-    nodeCreate(Node * node) override;
+    onNodeCreate(Node * node) override;
 
     void
-    nodeDestroy(Node * node) override;
+    onNodeDestroy(Node * node) override;
 
     void
-    inputChange(Input * input, Output * old_origin, Output * new_origin) override;
+    onInputChange(Input * input, Output * old_origin, Output * new_origin) override;
 
   private:
     BottomUpTraverser * traverser_;

@@ -18,17 +18,17 @@ TopDownTraverser::Observer::Observer(Region * region, TopDownTraverser * travers
 {}
 
 void
-TopDownTraverser::Observer::nodeCreate(Node * node)
+TopDownTraverser::Observer::onNodeCreate(Node * node)
 {
   traverser_->node_create(node);
 }
 
 void
-TopDownTraverser::Observer::nodeDestroy(Node * node)
+TopDownTraverser::Observer::onNodeDestroy(Node * node)
 {}
 
 void
-TopDownTraverser::Observer::inputChange(Input * input, Output * old_origin, Output * new_origin)
+TopDownTraverser::Observer::onInputChange(Input * input, Output * old_origin, Output * new_origin)
 {
   traverser_->input_change(input, old_origin, new_origin);
 }
@@ -152,19 +152,19 @@ BottomUpTraverser::Observer::Observer(Region * region, BottomUpTraverser * trave
 {}
 
 void
-BottomUpTraverser::Observer::nodeCreate(Node * node)
+BottomUpTraverser::Observer::onNodeCreate(Node * node)
 {
   traverser_->node_create(node);
 }
 
 void
-BottomUpTraverser::Observer::nodeDestroy(Node * node)
+BottomUpTraverser::Observer::onNodeDestroy(Node * node)
 {
   traverser_->node_destroy(node);
 }
 
 void
-BottomUpTraverser::Observer::inputChange(Input * input, Output * old_origin, Output * new_origin)
+BottomUpTraverser::Observer::onInputChange(Input * input, Output * old_origin, Output * new_origin)
 {
   traverser_->input_change(input, old_origin, new_origin);
 }
