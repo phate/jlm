@@ -157,16 +157,19 @@ PartialRedundancyElimination::Run(
 
 
   flows::FlowData<GVN_Hash> fd(&gvn_hashes_);
-  auto merge_gvn = [](GVN_Hash& a, GVN_Hash b){return GVN_Hash(0);};
+  auto merge_gvn_ga = [](std::optional<GVN_Hash>& a, std::optional<GVN_Hash>& b){return std::optional<GVN_Hash>(0);};
+  auto merge_gvn_th = [](std::optional<GVN_Hash>& a, std::optional<GVN_Hash>& b){return std::optional<GVN_Hash>(0);};
 
 
-  flows::ApplyDataFlowsTopDown(rvsdg.GetRootRegion(), fd, merge_gvn,
+  flows::ApplyDataFlowsTopDown(rvsdg.GetRootRegion(), fd, merge_gvn_ga, merge_gvn_th,
       [](rvsdg::Node& node,
         flows::FlowData<GVN_Hash>& fd,
         std::vector<std::optional<GVN_Hash>>& flows_in,
         std::vector<std::optional<GVN_Hash>>& flows_out
         )
       {
+
+
 
         std::cout << TR_GREEN << node.GetNodeId() << node.DebugString() << TR_RESET << std::endl;
         rvsdg::MatchType(node.GetOperation(),
@@ -188,6 +191,7 @@ PartialRedundancyElimination::Run(
         );
       }
     );
+
 
     std::cout << TR_RED << "%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%" << std::endl;
 

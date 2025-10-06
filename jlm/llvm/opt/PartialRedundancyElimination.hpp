@@ -176,9 +176,14 @@ using namespace jlm;
 
   /** \brief abstracts away the walking of the rvsdg graph for data flows of a reactive nature
    *  Theta and Gamma nodes have special semantics as they must sometimes merge values.
+   *  Merges at gamma and theta nodes combine flows.
+   *  The merge at theta nodes represent values with multiple alternatives from
+   *    different loop iterations.
+   *  Merges at gamma nodes represent the combined value from switch cases
+   *  The merges may be different or the same
    * */
-  template<typename D, typename Merger, typename Prod>
-  void ApplyDataFlowsTopDown(rvsdg::Region& scope, FlowData<D>& fd, Merger mr, Prod cb){
+  template<typename D, typename GaMerger, typename ThMerger, typename Prod>
+  void ApplyDataFlowsTopDown(rvsdg::Region& scope, FlowData<D>& fd, GaMerger mrGa, ThMerger mrTh,  Prod cb){
     // A queue of nodes and regions to visit or equivalently a continuation
     //    of instruction to be executed by the interpreter below.
     std::vector<WorkItemValue> workItems;
@@ -262,6 +267,7 @@ using namespace jlm;
           // Finally iterate over lambda body
           workItems.push_back(w.lm->subregion());
         }break;
+
         case WorkItemType::GAMMA:
         {
           //Split flows
@@ -274,12 +280,35 @@ using namespace jlm;
               }
             }
           }
-          //Push todos in LIFO order
+          //Push tasks in LIFO order
           workItems.push_back(WorkItemValue(WorkItemType::GAMMA_END, w.gn));
           for (size_t i = 0; i < w.gn->nsubregions() ; i++){
             workItems.push_back(w.gn->subregion(i));
           }
         }break;
+        case WorkItemType::GAMMA_END:{
+          // Reduce all outputs from exitVars with mrGa
+          auto ex_vars = w.gn->GetExitVars();
+          JLM_ASSERT(ex_vars.size() == w.gn->noutputs());
+          for (size_t v = 0; v < ex_vars.size(); v++){
+            auto br_can_be_null = ex_vars[v].branchResult[0];
+            if (br_can_be_null){flows_out[v] = fd.Get( br_can_be_null->origin() );}
+            auto merged_val = br_can_be_null ? fd.Get(br_can_be_null->origin()) : std::nullopt;
+
+            for (size_t b = 1;b < ex_vars[v].branchResult.size();b++){  // !!! from 1
+              auto next_br = ex_vars[v].branchResult[b];
+              auto next_br_value = next_br ? fd.Get(next_br->origin()) : std::nullopt;
+              merged_val = mrGa(merged_val, next_br_value);
+            }
+
+            fd.Set(ex_vars[v].output, merged_val);
+            JLM_ASSERT(ex_vars.size() == w.gn->noutputs());
+            JLM_ASSERT(ex_vars[v].output == w.gn->output(v));
+          }
+        }break;
+
+
+
         default: std::cout << static_cast<int>(w.type) <<"Ignoring work item..."<<std::endl;
       }
     }
