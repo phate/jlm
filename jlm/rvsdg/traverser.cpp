@@ -12,15 +12,15 @@
 namespace jlm::rvsdg
 {
 
-TopDownTraverser::Observer::Observer(Region * region, TopDownTraverser * traverser)
-    : RegionObserver(*region),
+TopDownTraverser::Observer::Observer(Region & region, TopDownTraverser & traverser)
+    : RegionObserver(region),
       traverser_(traverser)
 {}
 
 void
 TopDownTraverser::Observer::onNodeCreate(Node * node)
 {
-  traverser_->node_create(node);
+  traverser_.node_create(node);
 }
 
 void
@@ -30,13 +30,13 @@ TopDownTraverser::Observer::onNodeDestroy(Node * node)
 void
 TopDownTraverser::Observer::onInputChange(Input * input, Output * old_origin, Output * new_origin)
 {
-  traverser_->input_change(input, old_origin, new_origin);
+  traverser_.input_change(input, old_origin, new_origin);
 }
 
 TopDownTraverser::~TopDownTraverser() noexcept = default;
 
 TopDownTraverser::TopDownTraverser(Region * region)
-    : observer_(region, this)
+    : observer_(*region, *this)
 {
   for (auto & node : region->TopNodes())
     tracker_.set_nodestate(&node, traversal_nodestate::frontier);
@@ -146,33 +146,33 @@ HasSuccessors(const Node & node)
   return false;
 }
 
-BottomUpTraverser::Observer::Observer(Region * region, BottomUpTraverser * traverser)
-    : RegionObserver(*region),
+BottomUpTraverser::Observer::Observer(Region & region, BottomUpTraverser & traverser)
+    : RegionObserver(region),
       traverser_(traverser)
 {}
 
 void
 BottomUpTraverser::Observer::onNodeCreate(Node * node)
 {
-  traverser_->node_create(node);
+  traverser_.node_create(node);
 }
 
 void
 BottomUpTraverser::Observer::onNodeDestroy(Node * node)
 {
-  traverser_->node_destroy(node);
+  traverser_.node_destroy(node);
 }
 
 void
 BottomUpTraverser::Observer::onInputChange(Input * input, Output * old_origin, Output * new_origin)
 {
-  traverser_->input_change(input, old_origin, new_origin);
+  traverser_.input_change(input, old_origin, new_origin);
 }
 
 BottomUpTraverser::~BottomUpTraverser() noexcept = default;
 
 BottomUpTraverser::BottomUpTraverser(Region * region)
-    : observer_(region, this)
+    : observer_(*region, *this)
 {
   for (auto & bottomNode : region->BottomNodes())
   {

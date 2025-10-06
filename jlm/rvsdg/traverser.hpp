@@ -169,7 +169,7 @@ private:
   class Observer final : public RegionObserver
   {
   public:
-    Observer(Region * region, TopDownTraverser * traverser);
+    Observer(Region & region, TopDownTraverser & traverser);
 
     void
     onNodeCreate(Node * node) override;
@@ -181,7 +181,7 @@ private:
     onInputChange(Input * input, Output * old_origin, Output * new_origin) override;
 
   private:
-    TopDownTraverser * traverser_;
+    TopDownTraverser & traverser_;
   };
 
   bool
@@ -226,7 +226,7 @@ private:
   class Observer final : public RegionObserver
   {
   public:
-    Observer(Region * region, BottomUpTraverser * traverser);
+    Observer(Region & region, BottomUpTraverser & traverser);
 
     void
     onNodeCreate(Node * node) override;
@@ -238,7 +238,7 @@ private:
     onInputChange(Input * input, Output * old_origin, Output * new_origin) override;
 
   private:
-    BottomUpTraverser * traverser_;
+    BottomUpTraverser & traverser_;
   };
 
   void
