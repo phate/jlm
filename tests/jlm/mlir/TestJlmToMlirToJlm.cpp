@@ -1505,7 +1505,7 @@ TestFunctionGraphImport()
       auto imp = dynamic_cast<jlm::llvm::GraphImport *>(arg);
       assert(imp);
       assert(imp->Name() == "test");
-      assert(imp->Linkage() == Linkage::external_linkage);
+      assert(imp->linkage() == Linkage::external_linkage);
       assert(*imp->ValueType() == *functionType);
       assert(*imp->ImportedType() == *functionType);
     }
@@ -1575,7 +1575,7 @@ TestPointerGraphImport()
       auto imp = dynamic_cast<jlm::llvm::GraphImport *>(arg);
       assert(imp);
       assert(imp->Name() == "test");
-      assert(imp->Linkage() == Linkage::external_linkage);
+      assert(imp->linkage() == Linkage::external_linkage);
       assert(*imp->ValueType() == *jlm::rvsdg::BitType::Create(32));
       assert(*imp->ImportedType() == *PointerType::Create());
     }

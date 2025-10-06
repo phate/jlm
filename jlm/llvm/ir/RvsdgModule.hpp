@@ -54,7 +54,7 @@ public:
 
   /**
    * Symbols are imported as references to an underlying function or global variable.
-   * The imported type is the type of this reference, e.g. a \ref PointerType or \ref FunctionType.
+   * The imported type is the type of this reference, e.g., a pointer or function type.
    * The imported type is actual type of the RVSDG region argument.
    *
    * @return the type used to reference the imported symbol.

@@ -85,7 +85,7 @@ JlmToMlirConverter::ConvertRegion(rvsdg::Region & region, ::mlir::Block & block,
           Builder_->getUnknownLoc(),
           ConvertType(*imp->ImportedType()),
           ConvertType(*imp->ValueType()),
-          Builder_->getStringAttr(llvm::linkageToString(imp->Linkage())),
+          Builder_->getStringAttr(llvm::linkageToString(imp->linkage())),
           Builder_->getStringAttr(imp->Name())));
       valueMap[arg] = block.back().getResult(0); // Add the output of the omega argument
     }
