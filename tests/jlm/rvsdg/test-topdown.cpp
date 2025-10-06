@@ -132,10 +132,12 @@ test_traversal_insertion()
       nodes. n5 must be visited, as n2 has not been visited yet.
     */
 
+    std::cout << "start test\n";
     bool visited_n2 = false, visited_n3 = false, visited_n4 = false, visited_n5 = false;
     for (;;)
     {
       node = trav.next();
+      std::cout << "visiting " << node << "\n";
       if (!node)
         break;
       if (node == n2)

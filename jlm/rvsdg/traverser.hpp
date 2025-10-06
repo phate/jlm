@@ -88,13 +88,31 @@ enum class traversal_nodestate
 class TraversalTracker final
 {
 public:
-  inline traversal_nodestate
-  get_nodestate(Node * node);
+  /** \brief Determines whether node has been visited already. */
+  bool
+  isNodeVisited(Node * node) const;
 
-  inline void
-  set_nodestate(Node * node, traversal_nodestate state);
+  /** \brief Checks activation count whether node is ready for visiting. */
+  void
+  checkNodeActivation(Node * node, std::size_t threshold);
 
-  inline Node *
+  /** \brief Checks activation count whether node is no longer ready for visiting. */
+  void
+  checkNodeDeactivation(Node * node, std::size_t threshold);
+
+  /** \brief Marks a node visited if it is currently ready for visiting. */
+  void
+  checkMarkNodeVisited(Node * node);
+
+  /** \brief Increments activation count; adds to frontier if threshold is met. */
+  void
+  incActivationCount(Node * node, std::size_t threshold);
+
+  /** \brief Decrements activation count; removes from frontier if threshold is on longer. */
+  void
+  decActivationCount(Node * node, std::size_t threshold);
+
+  Node *
   peek();
 
 private:
@@ -103,6 +121,7 @@ private:
   struct State
   {
     traversal_nodestate state = traversal_nodestate::ahead;
+    std::size_t activation_count = 0;
     FrontierList::iterator pos = {};
   };
 
@@ -193,13 +212,25 @@ private:
   };
 
   bool
-  predecessors_visited(const Node * node) noexcept;
+  isOutputActivated(const Output * output) const;
 
   void
-  node_create(Node * node);
+  markVisited(Node * node);
 
   void
-  input_change(Input * in, Output * old_origin, Output * new_origin);
+  onNodeCreate(Node * node);
+
+  void
+  onNodeDestroy(Node * node);
+
+  void
+  onInputCreate(Input * input);
+
+  void
+  onInputChange(Input * in, Output * old_origin, Output * new_origin);
+
+  void
+  onInputDestroy(Input * input);
 
   TraversalTracker tracker_;
   Observer observer_;
@@ -257,14 +288,26 @@ private:
     BottomUpTraverser & traverser_;
   };
 
-  void
-  node_create(Node * node);
+  bool
+  isInputActivated(const Input * input) const;
 
   void
-  node_destroy(Node * node);
+  onNodeCreate(Node * node);
 
   void
-  input_change(Input * in, Output * old_origin, Output * new_origin);
+  onNodeDestroy(Node * node);
+
+  void
+  onInputCreate(Input * input);
+
+  void
+  onInputChange(Input * in, Output * old_origin, Output * new_origin);
+
+  void
+  onInputDestroy(Input * input);
+
+  void
+  markVisited(Node * node);
 
   TraversalTracker tracker_;
   Observer observer_;
