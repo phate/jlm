@@ -11,7 +11,7 @@
 #include <jlm/llvm/ir/operators/MemCpy.hpp>
 
 static void
-OperationEquality()
+operationEquality()
 {
   using namespace jlm::llvm;
 
@@ -31,11 +31,11 @@ OperationEquality()
 }
 
 JLM_UNIT_TEST_REGISTER(
-    "jlm/llvm/ir/operators/MemCpyNonVolatileTests-OperationEquality",
-    OperationEquality)
+    "jlm/llvm/ir/operators/MemCpyNonVolatileTests-operationEquality",
+    operationEquality)
 
 static void
-Accessors()
+accessors()
 {
   using namespace jlm::llvm;
 
@@ -56,9 +56,9 @@ Accessors()
       1);
 
   // Act & Assert
-  assert(MemCpyOperation::DestinationInput(memCpy).origin() == &address1);
-  assert(MemCpyOperation::SourceInput(memCpy).origin() == &address2);
-  assert(MemCpyOperation::CountInput(memCpy).origin() == constant100.output(0));
+  assert(MemCpyOperation::destinationInput(memCpy).origin() == &address1);
+  assert(MemCpyOperation::sourceInput(memCpy).origin() == &address2);
+  assert(MemCpyOperation::countInput(memCpy).origin() == constant100.output(0));
 }
 
-JLM_UNIT_TEST_REGISTER("jlm/llvm/ir/operators/MemCpyNonVolatileTests-Accessors", Accessors)
+JLM_UNIT_TEST_REGISTER("jlm/llvm/ir/operators/MemCpyNonVolatileTests-accessors", accessors)

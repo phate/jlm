@@ -2471,7 +2471,7 @@ public:
    * @return the input of \p node that takes the pointer value to be freed.
    */
   [[nodiscard]] static rvsdg::Input &
-  AddressInput(const rvsdg::Node & node) noexcept
+  addressInput(const rvsdg::Node & node) noexcept
   {
     JLM_ASSERT(is<FreeOperation>(&node));
     const auto input = node.input(0);
