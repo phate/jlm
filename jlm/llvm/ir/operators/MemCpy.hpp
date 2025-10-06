@@ -60,6 +60,44 @@ public:
 
   [[nodiscard]] virtual size_t
   NumMemoryStates() const noexcept = 0;
+
+  /**
+   * @param node a SimpleNode containing a MemCpyOperation
+   * @return the input of \p node that takes the pointer to store bytes to.
+   */
+  [[nodiscard]] static rvsdg::Input &
+  DestinationInput(const rvsdg::Node & node) noexcept
+  {
+    JLM_ASSERT(is<MemCpyOperation>(&node));
+    const auto input = node.input(0);
+    JLM_ASSERT(is<PointerType>(input->Type()));
+    return *input;
+  }
+
+  /**
+   * @param node a SimpleNode containing a MemCpyOperation
+   * @return the input of \p node that takes the pointer to load bytes from.
+   */
+  [[nodiscard]] static rvsdg::Input &
+  SourceInput(const rvsdg::Node & node) noexcept
+  {
+    JLM_ASSERT(is<MemCpyOperation>(&node));
+    const auto input = node.input(1);
+    JLM_ASSERT(is<PointerType>(input->Type()));
+    return *input;
+  }
+
+  /**
+   * @param node a SimpleNode containing a MemCpyOperation
+   * @return the input of \p node that takes the number of bytes to copy.
+   */
+  [[nodiscard]] static rvsdg::Input &
+  CountInput(const rvsdg::Node & node) noexcept
+  {
+    JLM_ASSERT(is<MemCpyOperation>(&node));
+    const auto input = node.input(2);
+    return *input;
+  }
 };
 
 /**

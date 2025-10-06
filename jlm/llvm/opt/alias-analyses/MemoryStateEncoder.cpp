@@ -390,13 +390,6 @@ public:
     return GetStateMap(*state.region()).InsertState(memoryNode, state);
   }
 
-  StateMap::MemoryNodeStatePair *
-  InsertUndefinedState(rvsdg::Region & region, const PointsToGraph::MemoryNode & memoryNode)
-  {
-    auto & undefinedState = GetOrInsertUndefinedMemoryState(region);
-    return InsertState(memoryNode, undefinedState);
-  }
-
   bool
   HasState(const rvsdg::Region & region, const PointsToGraph::MemoryNode & memoryNode)
   {
@@ -444,34 +437,6 @@ public:
   }
 
 private:
-  rvsdg::Output &
-  GetOrInsertUndefinedMemoryState(rvsdg::Region & region)
-  {
-    return HasUndefinedMemoryState(region) ? GetUndefinedMemoryState(region)
-                                           : InsertUndefinedMemoryState(region);
-  }
-
-  bool
-  HasUndefinedMemoryState(const rvsdg::Region & region) const noexcept
-  {
-    return UndefinedMemoryStates_.find(&region) != UndefinedMemoryStates_.end();
-  }
-
-  rvsdg::Output &
-  GetUndefinedMemoryState(const rvsdg::Region & region) const noexcept
-  {
-    JLM_ASSERT(HasUndefinedMemoryState(region));
-    return *UndefinedMemoryStates_.find(&region)->second;
-  }
-
-  rvsdg::Output &
-  InsertUndefinedMemoryState(rvsdg::Region & region) noexcept
-  {
-    auto undefinedMemoryState = UndefValueOperation::Create(region, MemoryStateType::Create());
-    UndefinedMemoryStates_[&region] = undefinedMemoryState;
-    return *undefinedMemoryState;
-  }
-
   StateMap &
   GetStateMap(const rvsdg::Region & region) const noexcept
   {
@@ -482,7 +447,6 @@ private:
   const ModRefSummary & ModRefSummary_;
 
   std::unordered_map<const rvsdg::Region *, std::unique_ptr<StateMap>> StateMaps_;
-  std::unordered_map<const rvsdg::Region *, rvsdg::Output *> UndefinedMemoryStates_;
 };
 
 /** \brief Context for the memory state encoder
@@ -703,8 +667,9 @@ MemoryStateEncoder::EncodeAlloca(const rvsdg::SimpleNode & allocaNode)
   JLM_ASSERT(is<AllocaOperation>(&allocaNode));
 
   auto & stateMap = Context_->GetRegionalizedStateMap();
-  auto & allocaMemoryNode =
-      Context_->GetModRefSummary().GetPointsToGraph().GetAllocaNode(allocaNode);
+  auto allocaMemoryNodes = stateMap.GetSimpleNodeModRef(allocaNode);
+  JLM_ASSERT(allocaMemoryNodes.Size() == 1);
+  auto & allocaMemoryNode = **allocaMemoryNodes.Items().begin();
   auto & allocaNodeStateOutput = *allocaNode.output(1);
 
   // If a state representing the alloca already exists in the region,
@@ -728,8 +693,10 @@ MemoryStateEncoder::EncodeMalloc(const rvsdg::SimpleNode & mallocNode)
 {
   JLM_ASSERT(is<MallocOperation>(&mallocNode));
   auto & stateMap = Context_->GetRegionalizedStateMap();
-  auto & mallocMemoryNode =
-      Context_->GetModRefSummary().GetPointsToGraph().GetMallocNode(mallocNode);
+  auto mallocMemoryNodes = stateMap.GetSimpleNodeModRef(mallocNode);
+  JLM_ASSERT(mallocMemoryNodes.Size() == 1);
+  auto & mallocMemoryNode = **mallocMemoryNodes.Items().begin();
+
   auto & mallocNodeStateOutput = *mallocNode.output(1);
 
   // We use a static heap model. This means that multiple invocations of an malloc
@@ -827,17 +794,7 @@ MemoryStateEncoder::EncodeCallEntry(const rvsdg::SimpleNode & callNode)
   std::vector<MemoryNodeId> memoryNodeIds;
   for (const auto memoryNode : memoryNodes.Items())
   {
-    if (regionalizedStateMap.HasState(*region, *memoryNode))
-    {
-      states.emplace_back(&regionalizedStateMap.GetState(*region, *memoryNode)->State());
-    }
-    else
-    {
-      // The state might not exist on the call side in case of lifetime aware mod/ref summarization
-      states.emplace_back(
-          &regionalizedStateMap.InsertUndefinedState(*region, *memoryNode)->State());
-    }
-
+    states.emplace_back(&regionalizedStateMap.GetState(*region, *memoryNode)->State());
     memoryNodeIds.push_back(memoryNode->GetId());
   }
 
