@@ -786,6 +786,13 @@ private:
   friend class Input;
 };
 
+/**
+ * \brief Proxy object to observe changes to a region.
+ *
+ * Subscribers can implement and instantiate this interface for
+ * a specific region to receive notifications about the region.
+ *
+ */
 class RegionObserver
 {
 public:

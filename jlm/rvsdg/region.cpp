@@ -128,6 +128,15 @@ Region::~Region() noexcept
 
   while (arguments_.size())
     RemoveArgument(arguments_.size() - 1);
+
+  // Disconnect observers
+  while (observers_)
+  {
+    RegionObserver * head = observers_;
+    observers_ = head->next_;
+    head->pprev_ = &head->next_;
+    head->next_ = nullptr;
+  }
 }
 
 Region::Region(Region *, Graph * graph)
