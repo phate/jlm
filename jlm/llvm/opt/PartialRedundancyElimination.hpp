@@ -9,6 +9,7 @@
 #include "jlm/rvsdg/MatchType.hpp"
 #include "jlm/rvsdg/traverser.hpp"
 #include <jlm/rvsdg/lambda.hpp>
+#include <jlm/rvsdg/delta.hpp>
 #include <jlm/rvsdg/node.hpp>
 #include <jlm/rvsdg/Phi.hpp>
 #include <jlm/rvsdg/Transformation.hpp>
@@ -28,13 +29,15 @@ class Region;
 
 
 namespace jlm::llvm::flows{
+
+/*
 const size_t  PRE_PTR_TAG_OUTPUT = 0x1;
 const size_t  PRE_PTR_TAG_INPUT  = 0x2;
 const size_t  PRE_PTR_TAG_NODE   = 0x3;
 const size_t  PRE_PTR_TAG_MASK   = 0x3;
-
+*/
 /** \brief A pointer to either rvsdg::Node*, rvsdg::Input or rvsdg::Output using the low bits as inline tags. **/
-union Flow
+/*union Flow
 {
   Flow(rvsdg::Input* i){SetInput(i);}
   Flow(rvsdg::Output* o){SetOutput(o);}
@@ -63,26 +66,8 @@ private:
   rvsdg::Node* node_;
 };
 
-struct Flow_Hash{void* operator()(const Flow& v) const{return v.UnsafeGetRaw();}};
-struct Flow_Eq{bool operator()(const Flow& a, const Flow& b) const{return a.UnsafeGetRaw() == b.UnsafeGetRaw();}};
+*/
 
-template<typename D>
-struct AnalysisData
-{
-  std::unordered_map<Flow, D, Flow_Hash, Flow_Eq> annot_flows;
-  D Get(Output o)
-  {
-    Flow f(o);
-    if (annot_flows.find(f) != annot_flows.end())
-    {
-      return annot_flows[f];
-    }else{
-      return D(); /** Empty value **/
-    }
-  }
-};
-
-/** \brief the type of flow. **/
 enum class FlowType
 {
   //Optionally differentiate between single and multiple cases in order to catch logic errors
@@ -93,15 +78,8 @@ enum class FlowType
   PARAMETER,
 };
 
-template<typename D>
-struct FlowValue
-{
-  FlowType type;
-  D value;
-  size_t index;
-  FlowValue(FlowType type, D value) : type(type), value(value), index(0){}
-  FlowValue(D value, size_t index) : type(FlowType::PARAMETER),value(value), index(index){}
-};
+
+
 
 /** TODO: one data structure for storing annotations and another for storing reactive state **/
 /** TODO: no need for intermediate buffers. Project flows onto edges and update reactive state as needed **/
@@ -110,24 +88,6 @@ struct FlowValue
 /** \brief FlowsCtx a context used as a proxy inside graph traversers
  * D must be comparable
  * **/
-
-
-
-/** \brief a buffer for the inputs and output flows from a node or region **/
-template<typename D>
-class FlowsBuffer
-{
-public:
-  FlowsBuffer(){}
-  void Resize(size_t ninputs){
-    values.resize(ninputs);
-    flow_direction.resize(ninputs);
-  }
-  void Clear(){values.clear(); values.clear();}
-  std::vector<D> values;
-private:
-  std::vector<FlowType> flow_direction;
-};
 
 }
 
@@ -150,57 +110,181 @@ namespace jlm::llvm::flows
 {
 using namespace jlm;
 
-/** \brief reactively update annotated data for nodes and edges until a fixed point is reached **/
-template<typename D, typename Fn>
-void RecurseTopDownWithFlows(AnalysisData<D>& analysis, rvsdg::Region& reg, Fn cb_producer)
-{
-  using namespace jlm::rvsdg;
-
-  for (Node& node : reg.TopNodes())
+  /** A view into the data to manipulate by flows **/
+  template<typename D>
+  class FlowData
   {
-    MatchType(node,
-      /** Split and merge values for each branch **/
-      [&analysis](GammaNode& gn)
-      {
-        FlowsBuffer<D> outputs;
-        outputs.Resize(gn.noutputs() );
-
-        FlowsBuffer<D> inputs;
-        inputs.Resize(gn.ninputs());
-
-        for (auto i = 0; i )
-
-        for (size_t i = 0; i < gn.ninputs() ; i++)
-        {
-          if (gn.input(i)){inputs[i] = analysis.GetValue(gn.input(i)->origin());}
-        }
-
-
-        /* Split flows */
-        size_t reg_count =    gn.nsubregions();
-        size_t input_count =  gn.ninputs();
-        size_t output_count = gn.noutputs();
-
-
-
+  public:
+    FlowData(std::unordered_map<void*, D> * output_values)
+    {
+      JLM_ASSERT(output_values);   //should be non-null
+      output_values_ = output_values;
+    }
+    std::optional<D> Get(rvsdg::Output* k)
+    {
+      bool present = output_values_->find(k) == output_values_->end();
+      return present ? std::optional<D>((*output_values_)[k]) : std::nullopt;
+    }
+    void Set(rvsdg::Output* k, std::optional<D> v)
+    {
+      if (v){
+        output_values_->insert({k,*v});
       }
-    );
-  }
-}
+    }
+  private:
+    std::unordered_map<void*, D>* output_values_;
+  };
 
-template<typename D, typename Fn>
-void RecurseTopDown(AnalysisData<D>& analysis, rvsdg::Region& reg, Fn cb_node)
-{
-  for ( rvsdg::Node* node : jlm::rvsdg::TopDownTraverser(&reg) )
+  enum class WorkItemType
   {
-    if (node){
-      FlowValue<D> fl = cb_node(*node);
-      std::cout << "The flow type is: " << std::to_string(fl.type) << std::endl;
-      std::cout << std::to_string(fl.value) << std::endl;
-      analysis.annot_node[node] = fl.value;
+    REGION,
+    DELTA,
+    NODE,
+    GAMMA,
+    GAMMA_END,
+    THETA,
+    THETA_END,
+    LAMBDA,
+  };
+  struct WorkItemValue
+  {
+    // implicit conversions are ok here
+    WorkItemValue(rvsdg::Region* r)                 {this->type = WorkItemType::REGION; this->region = r;}
+    WorkItemValue(WorkItemType type, rvsdg::Node* n){this->type = type;                 this->node = n;}
+    WorkItemValue(rvsdg::Node* n)
+    {
+      this->node = n;
+      this->type = WorkItemType::NODE;
+      rvsdg::MatchType(*n,
+        [this](jlm::rvsdg::GammaNode& gn){this->type = WorkItemType::GAMMA;},
+        [this](jlm::rvsdg::ThetaNode& tn){this->type = WorkItemType::THETA;},
+        [this](jlm::rvsdg::LambdaNode& lm)     {this->type = WorkItemType::LAMBDA;},
+        [this](jlm::rvsdg::DeltaNode& dl)     {this->type = WorkItemType::DELTA;}
+      );
+    }
+
+    WorkItemType type;
+    union{
+      rvsdg::DeltaNode* dl;
+      rvsdg::Region* region;
+      rvsdg::Node* node;
+      rvsdg::GammaNode* gn;
+      rvsdg::ThetaNode* tn;
+      rvsdg::LambdaNode* lm;
+    };
+  };
+
+  /** \brief abstracts away the walking of the rvsdg graph for data flows of a reactive nature
+   *  Theta and Gamma nodes have special semantics as they must sometimes merge values.
+   * */
+  template<typename D, typename Merger, typename Prod>
+  void ApplyDataFlowsTopDown(rvsdg::Region& scope, FlowData<D>& fd, Merger mr, Prod cb){
+    // A queue of nodes and regions to visit or equivalently a continuation
+    //    of instruction to be executed by the interpreter below.
+    std::vector<WorkItemValue> workItems;
+    // A buffer for flow values.
+    // The flows function handles lookup of values from the fd map.
+    std::vector< std::optional<D> > flows_in;
+    std::vector< std::optional<D> > flows_out;
+
+    workItems.push_back(WorkItemValue(&scope));
+
+    while (workItems.size())
+    {
+      auto w = workItems.back();  workItems.pop_back();
+      switch (w.type)
+      {
+        case WorkItemType::DELTA:{
+          for (auto& reg : w.lm->Subregions()){
+            workItems.push_back(WorkItemValue(&reg));
+          }
+          std::cout << "WL:DELTA"<<std::endl;
+          if (workItems.size() > 1000){std::cout<<"Stack overflow" << std::endl; return;}
+
+        }break;
+
+        case WorkItemType::REGION:{
+          std::cout << "WL:REGION"<<std::endl;
+          // Push all nodes inside a region in topological order onto the queue
+          std::vector<WorkItemValue> tmp;
+          for (auto node : rvsdg::TopDownTraverser(w.region)){tmp.push_back(WorkItemValue(node));}
+          while (tmp.size()){workItems.push_back(tmp.back()); tmp.pop_back();}
+        }break;
+        case WorkItemType::NODE:{
+          std::cout << "WL:NODE:"<<w.node->DebugString()<< std::endl;
+          // initialize input buffer
+          flows_in.clear();
+          for (size_t i=0;i < w.node->ninputs() ; i++){
+            auto ni = w.node->input(i);  //check just in case Input is NULL
+            std::optional<D> val = ni ? fd.Get(ni->origin()) : std::nullopt;
+            flows_in.push_back(std::optional<D>(val));
+          }
+          // initialize output buffer
+          flows_out.clear();
+          flows_out.resize(w.node->noutputs(), std::nullopt);
+
+          // visit node
+          cb(*(w.node), fd, flows_in, flows_out);
+
+          // update map
+          for ( size_t i = 0; i < w.node->noutputs(); i++){
+            fd.Set(w.node->output(i), flows_out[i]);
+          }
+          //DEBUG
+          for (size_t i = 0; i < flows_out.size(); i++){
+            if (flows_out[i]){
+              std::cout << "Flow out ["<<i<<"] : " << std::endl;
+            }
+          }
+        }break;
+        case WorkItemType::LAMBDA:{
+          // This case only handles params out
+          // Add an enum for visit type later
+          // initialize input buffer
+          flows_in.clear();
+          auto f_args = w.lm->GetFunctionArguments();
+          flows_out.clear(); flows_out.resize(f_args.size(), std::nullopt);
+
+          // visit node
+          cb(*(w.node), fd, flows_in, flows_out);
+
+          // update map
+          for ( size_t i = 0; i < f_args.size(); i++){
+            fd.Set(f_args[i], flows_out[i]);
+          }
+          //DEBUG
+          for (size_t i = 0; i < flows_out.size(); i++){
+            if (flows_out[i]){
+              std::cout << "Lambda: Flow out [" << i << "] : " << std::endl;
+            }
+          }
+          // Todododo : visit lambda after body has been visited once.
+          // Finally iterate over lambda body
+          workItems.push_back(w.lm->subregion());
+        }break;
+        case WorkItemType::GAMMA:
+        {
+          //Split flows
+          for (auto ev : w.gn->GetEntryVars()){
+            auto tmp = ev.input;
+            auto flow_from = tmp ? fd.Get(tmp->origin()) : std::nullopt;
+            if (flow_from){
+              for (rvsdg::Output* brarg : ev.branchArgument){
+                fd.Set(brarg, *flow_from);
+              }
+            }
+          }
+          //Push todos in LIFO order
+          workItems.push_back(WorkItemValue(WorkItemType::GAMMA_END, w.gn));
+          for (size_t i = 0; i < w.gn->nsubregions() ; i++){
+            workItems.push_back(w.gn->subregion(i));
+          }
+        }break;
+        default: std::cout << static_cast<int>(w.type) <<"Ignoring work item..."<<std::endl;
+      }
     }
   }
-}
+
 }
 
 namespace jlm::llvm

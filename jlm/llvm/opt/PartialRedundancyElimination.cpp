@@ -141,6 +141,7 @@ void PartialRedundancyElimination::TraverseTopDownRecursively(rvsdg::Region& reg
       }
     });
   }
+
 }
 
 
@@ -153,6 +154,44 @@ PartialRedundancyElimination::Run(
 
   auto & rvsdg = module.Rvsdg();
   auto statistics = Statistics::Create(module.SourceFilePath().value());
+
+
+  flows::FlowData<GVN_Hash> fd(&gvn_hashes_);
+  auto merge_gvn = [](GVN_Hash& a, GVN_Hash b){return GVN_Hash(0);};
+
+
+  flows::ApplyDataFlowsTopDown(rvsdg.GetRootRegion(), fd, merge_gvn,
+      [](rvsdg::Node& node,
+        flows::FlowData<GVN_Hash>& fd,
+        std::vector<std::optional<GVN_Hash>>& flows_in,
+        std::vector<std::optional<GVN_Hash>>& flows_out
+        )
+      {
+
+        std::cout << TR_GREEN << node.GetNodeId() << node.DebugString() << TR_RESET << std::endl;
+        rvsdg::MatchType(node.GetOperation(),
+          [&flows_out](const jlm::llvm::IntegerConstantOperation& iconst){
+            std::hash<std::string> hasher;
+            if (flows_out.size() == 0){return;}
+            flows_out[0] = GVN_Hash( hasher(iconst.Representation().str()) );
+          }
+        );
+
+        rvsdg::MatchType(node,
+          [&flows_out](rvsdg::LambdaNode& lm){
+            auto s = lm.DebugString();
+            std::hash<std::string> hasher;
+            for (size_t i = 0; i < flows_out.size(); i++){
+              flows_out[i] = GVN_Hash( hasher(s + std::to_string(i)) );
+            }
+          }
+        );
+      }
+    );
+
+    std::cout << TR_RED << "%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%" << std::endl;
+
+
 
   this->TraverseTopDownRecursively(rvsdg.GetRootRegion(), PartialRedundancyElimination::dump_region);
   this->TraverseTopDownRecursively(rvsdg.GetRootRegion(), PartialRedundancyElimination::dump_node);
@@ -168,16 +207,6 @@ PartialRedundancyElimination::Run(
   std::cout << TR_GREEN << "=================================================" << TR_RESET << std::endl;
 
 
-  flows::AnalysisData<int> my_int_tags;
-
-  flows::RecurseTopDown(my_int_tags,
-    rvsdg.GetRootRegion(),
-    [](rvsdg::Node& node)
-    {
-      std::cout <<"."<< std::endl;
-      return flows::FlowValue<int>(flows::FlowType::NODE, node.GetNodeId());
-    }
-  );
 }
 
 /** -------------------------------------------------------------------------------------------- **/
@@ -205,7 +234,6 @@ void PartialRedundancyElimination::dump_region(PartialRedundancyElimination* pe,
     }
   });
 }
-
 
 void PartialRedundancyElimination::dump_node(PartialRedundancyElimination* pe, rvsdg::Node& node)
 {
@@ -296,29 +324,7 @@ void PartialRedundancyElimination::hash_node(PartialRedundancyElimination *pe, r
   );
   /*Match by node type*/
   MatchType(node,
-    [pe](rvsdg::GammaNode& node){hash_gamma(pe, node);},
-       [pe](rvsdg::ThetaNode& node){hash_theta_pre(pe, node);}
-  );
-}
-
-void PartialRedundancyElimination::hash_theta_pre(PartialRedundancyElimination *pe, rvsdg::Node& node)
-{
-  MatchTypeOrFail(node,
-     [pe, &node](rvsdg::ThetaNode& th)
-     {
-       std::cout << TR_RED << "Theta here" << TR_RESET << std::endl;
-       for (size_t i = 0 ; i < node.ninputs() ; i++)
-       {
-         auto input = node.input(i);
-         if (input)
-         {
-          std::cout << TR_RED << "TODO: route loop variable." << TR_RESET << std::endl;
-         }else
-         {
-           std::cout << TR_RED << "WARN:pre: input to theta node is null" << TR_RESET << std::endl;
-         }
-       }
-     }
+    [pe](rvsdg::GammaNode& node){hash_gamma(pe, node);}
   );
 }
 
