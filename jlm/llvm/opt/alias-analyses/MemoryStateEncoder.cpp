@@ -459,12 +459,12 @@ public:
     }
     else if (jlm::rvsdg::is<FreeOperation>(&node))
     {
-      addOutputToModRefSet(*FreeOperation::AddressInput(node).origin());
+      addOutputToModRefSet(*FreeOperation::addressInput(node).origin());
     }
     else if (jlm::rvsdg::is<MemCpyOperation>(&node))
     {
-      addOutputToModRefSet(*MemCpyOperation::DestinationInput(node).origin());
-      addOutputToModRefSet(*MemCpyOperation::SourceInput(node).origin());
+      addOutputToModRefSet(*MemCpyOperation::destinationInput(node).origin());
+      addOutputToModRefSet(*MemCpyOperation::sourceInput(node).origin());
     }
     else if (jlm::rvsdg::is<AllocaOperation>(&node))
     {

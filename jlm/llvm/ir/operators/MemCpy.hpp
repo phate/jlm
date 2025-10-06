@@ -66,7 +66,7 @@ public:
    * @return the input of \p node that takes the pointer to store bytes to.
    */
   [[nodiscard]] static rvsdg::Input &
-  DestinationInput(const rvsdg::Node & node) noexcept
+  destinationInput(const rvsdg::Node & node) noexcept
   {
     JLM_ASSERT(is<MemCpyOperation>(&node));
     const auto input = node.input(0);
@@ -79,7 +79,7 @@ public:
    * @return the input of \p node that takes the pointer to load bytes from.
    */
   [[nodiscard]] static rvsdg::Input &
-  SourceInput(const rvsdg::Node & node) noexcept
+  sourceInput(const rvsdg::Node & node) noexcept
   {
     JLM_ASSERT(is<MemCpyOperation>(&node));
     const auto input = node.input(1);
@@ -92,10 +92,11 @@ public:
    * @return the input of \p node that takes the number of bytes to copy.
    */
   [[nodiscard]] static rvsdg::Input &
-  CountInput(const rvsdg::Node & node) noexcept
+  countInput(const rvsdg::Node & node) noexcept
   {
     JLM_ASSERT(is<MemCpyOperation>(&node));
     const auto input = node.input(2);
+    JLM_ASSERT(is<rvsdg::BitType>(input->Type()));
     return *input;
   }
 };

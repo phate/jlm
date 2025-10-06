@@ -88,6 +88,6 @@ TestRvsdgCreator()
   // Assert
   assert(freeResults0.size() == 1);
   assert(freeResults1.size() == 2);
-  assert(FreeOperation::AddressInput(freeNode0).origin() == address);
+  assert(FreeOperation::addressInput(freeNode0).origin() == address);
 }
 JLM_UNIT_TEST_REGISTER("jlm/llvm/ir/operators/TestFree-TestRvsdgCreator", TestRvsdgCreator)
