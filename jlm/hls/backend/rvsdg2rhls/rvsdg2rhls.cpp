@@ -371,7 +371,7 @@ split_hls_function(llvm::RvsdgModule & rm, const std::string & function_name)
               oldGraphImport->ValueType(),
               oldGraphImport->ImportedType(),
               oldGraphImport->Name(),
-              oldGraphImport->Linkage());
+              oldGraphImport->linkage());
           smap.insert(ln->input(i)->origin(), &newGraphImport);
           continue;
         }
