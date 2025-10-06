@@ -161,7 +161,7 @@ private:
    * Note: The blocklist only prevents propagation during solving,
    * so the user must avoid adding blocked MemoryNodes manually.
    *
-   * @See VerifyBlocklists to check that no blocked MemoryNodes have been added
+   * @see VerifyBlocklists to check that no blocked MemoryNodes have been added
    */
   void
   AddModRefSetBlocklist(
