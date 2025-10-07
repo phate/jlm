@@ -185,6 +185,9 @@ using namespace jlm;
    * */
   template<typename D, typename GaMerger, typename ThMerger, typename Prod>
   void ApplyDataFlowsTopDown(rvsdg::Region& scope, FlowData<D>& fd, GaMerger mrGa, ThMerger mrTh,  Prod cb){
+    // mrGa: represent the intersection of values from one data flow out from a gamma node
+    // mrTh: represent the merging of output of theta node with the input
+    //
     // A queue of nodes and regions to visit or equivalently a continuation
     //    of instruction to be executed by the interpreter below.
     std::vector<WorkItemValue> workItems;

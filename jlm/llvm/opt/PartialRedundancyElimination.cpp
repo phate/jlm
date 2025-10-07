@@ -155,11 +155,21 @@ PartialRedundancyElimination::Run(
   auto & rvsdg = module.Rvsdg();
   auto statistics = Statistics::Create(module.SourceFilePath().value());
 
-
   flows::FlowData<GVN_Hash> fd(&gvn_hashes_);
-  auto merge_gvn_ga = [](std::optional<GVN_Hash>& a, std::optional<GVN_Hash>& b){return std::optional<GVN_Hash>(0);};
-  auto merge_gvn_th = [](std::optional<GVN_Hash>& a, std::optional<GVN_Hash>& b){return std::optional<GVN_Hash>(0);};
+  auto merge_gvn_ga = [](std::optional<GVN_Hash>& a, std::optional<GVN_Hash>& b)
+  {
+    if (!a){return b;}  if (!b){return a;}
+    if (*a == GVN_Hash::Tainted() || *b == GVN_Hash::Tainted()){ return std::optional(GVN_Hash::Tainted()); }
+    size_t h = a->value ^ (b->value << 3);
+    return std::optional( GVN_Hash(h) );
+  };
 
+  auto merge_gvn_th = [](std::optional<GVN_Hash>& a, std::optional<GVN_Hash>& b)
+  {
+    if (!a){return b;}  if (!b){return a;}
+    if (*a == GVN_Hash::Tainted() || *b == GVN_Hash::Tainted()){ return std::optional(GVN_Hash::Tainted() ); }
+    return a->value == b->value ? a : std::optional( GVN_Hash::Tainted() );
+  };
 
   flows::ApplyDataFlowsTopDown(rvsdg.GetRootRegion(), fd, merge_gvn_ga, merge_gvn_th,
       [](rvsdg::Node& node,
@@ -169,8 +179,6 @@ PartialRedundancyElimination::Run(
         )
       {
 
-
-
         std::cout << TR_GREEN << node.GetNodeId() << node.DebugString() << TR_RESET << std::endl;
 
         rvsdg::MatchType(node.GetOperation(),
@@ -178,6 +186,22 @@ PartialRedundancyElimination::Run(
             std::hash<std::string> hasher;
             if (flows_out.size() == 0){return;}
             flows_out[0] = GVN_Hash( hasher(iconst.Representation().str()) );
+          },
+
+          [&flows_in, &flows_out](const rvsdg::BinaryOperation& op){
+            JLM_ASSERT(flows_in.size() == 2);
+            if (!(flows_in[0]) || !(flows_in[1])){
+              std::cout<< TR_RED << "Expected some input" << TR_RESET << std::endl;return;
+            }
+
+            std::hash<std::string> hasher;
+            size_t h = hasher(op.debug_string() );
+
+            size_t a = hasher(std::to_string(flows_in[0]->value));
+            size_t b = hasher(std::to_string(flows_in[1]->value));
+            bool c_and_a = op.is_commutative() && op.is_associative();
+            h ^= c_and_a ? (a + b) : (a ^ (b << 3));
+            flows_out[0] = std::optional<GVN_Hash>(h);
           }
         );
 
