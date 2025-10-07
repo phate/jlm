@@ -120,8 +120,12 @@ namespace jlm::llvm::flows
   template<typename D, typename GaMerger, typename ThMerger, typename Prod>
   void ApplyDataFlowsTopDown(rvsdg::Region& scope, FlowData<D>& fd, GaMerger mrGa, ThMerger mrTh,  Prod cb){
     // mrGa: represent the intersection of values from one data flow out from a gamma node
-    // mrTh: represent the merging of output of theta node with the input
-
+    // mrTh: represent the merging of output of theta node with the input. Third arg must be non-null if second is something.
+    //       args :  theta node
+    //               value from older iteration
+    //               value from last iteration
+    //
+    //
     // A FIFO queue of nodes and regions to visit or equivalently a continuation
     //    of instruction to be executed by the interpreter below.
     std::vector<WorkItemValue> workItems;
@@ -273,14 +277,16 @@ namespace jlm::llvm::flows
           auto loopvars = w.tn->GetLoopVars();
           bool fixed_point_reached = true;
 
+          /* Try to push inputs into the loop */
+          /* values from previous iterations stored on Output* of .pre field */
           for (size_t i = 0;i < loopvars.size(); i++){
             auto lv = loopvars[i];
+            JLM_ASSERT(lv.input->origin() != lv.pre);
+
             auto lv_input = fd.Get( lv.input ? lv.input->origin() : NULL );
+            auto lv_pre   = fd.Get( lv.pre );
+            auto merged = mrTh( *(w.tn), lv_pre, lv_input );
 
-            auto lv_post = fd.Get( lv.post ? lv.post->origin() : NULL );
-            auto merged = mrTh( lv_input, lv_post );
-
-            auto lv_pre = fd.Get( lv.pre );
             if (
               (merged && !lv_pre) || (!merged && lv_pre) || (*merged != *lv_pre)
             ){fixed_point_reached = false;}
@@ -298,7 +304,12 @@ namespace jlm::llvm::flows
           auto loopvars = w.tn->GetLoopVars();
           for (size_t i = 0;i < loopvars.size(); i++){
             auto lv = loopvars[i];
-            fd.Set( lv.output, fd.Get( lv.post ? lv.post->origin() : NULL ) );   // Required for downstream nodes
+            auto lv_pre  = fd.Get( lv.pre );
+            auto lv_post = fd.Get( lv.post ? lv.post->origin() : NULL );
+            auto merged = mrTh(*(w.tn), lv_pre, lv_post );
+
+            fd.Set( lv.output,  lv_post );   // Required for downstream nodes
+            fd.Set( lv.pre,  merged);        // Required for blocking new iterations
           }
           workItems.push_back( WorkItemValue(w.node) ); // Attempt another loop iteration
         }break;
@@ -314,24 +325,22 @@ namespace jlm::llvm
 {
 struct GVN_Hash
 {
+#define GVN_LV_BIT 0x1000
   size_t value;
   inline GVN_Hash(){this->value = 0;}
-  inline GVN_Hash(size_t v){this->value = v;}
+  inline GVN_Hash(size_t v){this->value = v &(~GVN_LV_BIT);}
+  inline static GVN_Hash LoopVar(size_t v){auto h = GVN_Hash(v); h.value |= GVN_LV_BIT;
+    std::cout << "LP" << h.value << " !! " << h.IsLoopVar() << std::endl;
+    return h;
+  }
+  inline bool IsLoopVar() const {return value & GVN_LV_BIT;}
   inline static GVN_Hash None()   {return GVN_Hash(0);}
   inline static GVN_Hash Tainted(){return GVN_Hash(1);}
   inline bool IsValid(){return value >= 2;}
   inline bool IsSome(){return value != 0;}
   inline bool operator==(const GVN_Hash &other){return this->value == other.value;}
   inline bool operator!=(const GVN_Hash &other){return this->value != other.value;}
-  inline GVN_Hash Merge(GVN_Hash& other)
-  {
-    if (other.IsSome())
-    {
-      return (this->value == other.value) ? *this : GVN_Hash::Tainted();
-    }else{
-      return this->IsSome() ? *this : other;
-    }
-  }
+  #undef GVN_LV_BIT
 };
 
 /** Boiler plate for making the struct compatible with std::unordered_map **/
@@ -458,9 +467,12 @@ namespace std
   {
     switch (h.value)
     {
-    case 0:  return std::string("none");
-    case 1:  return std::string("tainted");
-    default: return std::to_string(h.value);
+      case 0:  return std::string("none");
+      case 1:  return std::string("tainted");
+      default:{
+        if (h.IsLoopVar()){ return std::string("lv") + std::to_string(h.value); }
+        return std::to_string(h.value);
+      }
     }
   }
 }

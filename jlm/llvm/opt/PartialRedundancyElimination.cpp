@@ -178,12 +178,15 @@ PartialRedundancyElimination::Run(
   //cb for merging flows coming into a theta node for the first time and from previous iterations.
   //  on the second iteration all sub-nodes will have their values overwritten, except
   //  loop invariant nodes.
-  auto merge_gvn_th = [](std::optional<GVN_Hash>& a, std::optional<GVN_Hash>& b)
+  auto merge_gvn_th = [](rvsdg::ThetaNode& tn, std::optional<GVN_Hash>& a, std::optional<GVN_Hash>& b)
   {
-    if (!a){return b;}  if (!b){return a;}
+    if (!a){return b;}  if (!b){std::cout<<"UNREACHABLE"; exit(-1);}
     if (*a == GVN_Hash::Tainted() || *b == GVN_Hash::Tainted()){ return std::optional(GVN_Hash::Tainted() ); }
-    return a->value == b->value ? a : std::optional( GVN_Hash::Tainted() );
+    if (a->value == b->value){return a;}
+    if (a && a->IsLoopVar()){return a;}
+    return std::optional( GVN_Hash::LoopVar( a->value ^ b->value ));
   };
+
 
   flows::ApplyDataFlowsTopDown(rvsdg.GetRootRegion(), fd, merge_gvn_ga, merge_gvn_th,
   [](rvsdg::Node& node,
