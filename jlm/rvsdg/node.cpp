@@ -8,7 +8,6 @@
 #include <jlm/rvsdg/gamma.hpp>
 #include <jlm/rvsdg/lambda.hpp>
 #include <jlm/rvsdg/MatchType.hpp>
-#include <jlm/rvsdg/notifiers.hpp>
 #include <jlm/rvsdg/Phi.hpp>
 #include <jlm/rvsdg/region.hpp>
 #include <jlm/rvsdg/substitution.hpp>
@@ -80,7 +79,7 @@ Input::divert_to(jlm::rvsdg::Output * new_origin)
   if (auto node = TryGetOwnerNode<Node>(*this))
     node->recompute_depth();
 
-  on_input_change(this, old_origin, new_origin);
+  region()->notifyInputChange(this, old_origin, new_origin);
 }
 
 [[nodiscard]] rvsdg::Region *
@@ -380,9 +379,7 @@ Node::recompute_depth() noexcept
   if (new_depth == depth())
     return;
 
-  size_t old_depth = depth();
   depth_ = new_depth;
-  on_node_depth_change(this, old_depth);
 
   for (size_t n = 0; n < noutputs(); n++)
   {

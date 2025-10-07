@@ -28,6 +28,7 @@ class StructuralInput;
 class StructuralNode;
 class StructuralOutput;
 class SubstitutionMap;
+class RegionObserver;
 
 /**
  * \brief Represents the argument of a region.
@@ -248,6 +249,11 @@ public:
   Region(rvsdg::Region * parent, Graph * graph);
 
   Region(rvsdg::StructuralNode * node, size_t index);
+
+  Region(const Region &) = delete;
+
+  Region &
+  operator=(const Region &) = delete;
 
   /**
    * @return Returns an iterator range for iterating through the arguments of the region.
@@ -754,6 +760,15 @@ private:
   [[nodiscard]] static std::string
   ToString(const util::Annotation & annotation, char labelValueSeparator);
 
+  void
+  notifyNodeCreate(Node * node);
+
+  void
+  notifyNodeDestroy(Node * node);
+
+  void
+  notifyInputChange(Input * input, Output * old_origin, Output * new_origin);
+
   size_t index_;
   Graph * graph_;
   Node::Id NodeId_;
@@ -763,6 +778,47 @@ private:
   region_bottom_node_list BottomNodes_;
   region_top_node_list TopNodes_;
   region_nodes_list Nodes_;
+  RegionObserver * observers_ = nullptr;
+
+  friend class RegionObserver;
+  friend class SimpleNode;
+  friend class StructuralNode;
+  friend class Input;
+};
+
+/**
+ * \brief Proxy object to observe changes to a region.
+ *
+ * Subscribers can implement and instantiate this interface for
+ * a specific region to receive notifications about the region.
+ *
+ */
+class RegionObserver
+{
+public:
+  ~RegionObserver();
+
+  explicit RegionObserver(Region & region);
+
+  RegionObserver(const RegionObserver &) = delete;
+
+  RegionObserver &
+  operator=(const RegionObserver &) = delete;
+
+  virtual void
+  onNodeCreate(Node * node) = 0;
+
+  virtual void
+  onNodeDestroy(Node * node) = 0;
+
+  virtual void
+  onInputChange(Input * input, Output * old_origin, Output * new_origin) = 0;
+
+private:
+  RegionObserver ** pprev_;
+  RegionObserver * next_;
+
+  friend class Region;
 };
 
 static inline void

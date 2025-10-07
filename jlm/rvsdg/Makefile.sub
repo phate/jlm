@@ -8,7 +8,6 @@ librvsdg_SOURCES = \
     jlm/rvsdg/graph.cpp \
     jlm/rvsdg/lambda.cpp \
     jlm/rvsdg/node.cpp \
-    jlm/rvsdg/notifiers.cpp \
     jlm/rvsdg/nullary.cpp \
     jlm/rvsdg/operation.cpp \
     jlm/rvsdg/Phi.cpp \
@@ -39,7 +38,6 @@ librvsdg_HEADERS = \
     jlm/rvsdg/delta.hpp \
     jlm/rvsdg/DotWriter.hpp \
     jlm/rvsdg/gamma.hpp \
-    jlm/rvsdg/notifiers.hpp \
     jlm/rvsdg/bitstring/constant.hpp \
     jlm/rvsdg/bitstring/slice.hpp \
     jlm/rvsdg/bitstring/arithmetic-impl.hpp \
