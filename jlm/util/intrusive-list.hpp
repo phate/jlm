@@ -589,6 +589,13 @@ template<typename ElementType>
 class IntrusiveListAnchor
 {
 public:
+  IntrusiveListAnchor() noexcept = default;
+
+  IntrusiveListAnchor(const IntrusiveListAnchor & other) = delete;
+
+  IntrusiveListAnchor &
+  operator=(const IntrusiveListAnchor & other) = delete;
+
   ElementType * prev;
   ElementType * next;
 };
