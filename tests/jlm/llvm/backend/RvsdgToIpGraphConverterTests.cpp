@@ -35,7 +35,7 @@ GammaWithMatch()
 
   auto lambdaNode = jlm::rvsdg::LambdaNode::Create(
       rvsdgModule.Rvsdg().GetRootRegion(),
-      LlvmLambdaOperation::Create(functionType, "lambdaOutput", linkage::external_linkage));
+      LlvmLambdaOperation::Create(functionType, "lambdaOutput", Linkage::externalLinkage));
 
   auto match = jlm::rvsdg::match(1, { { 0, 0 } }, 1, 2, lambdaNode->GetFunctionArguments()[0]);
   auto gamma = jlm::rvsdg::GammaNode::create(match, 2);
@@ -84,7 +84,7 @@ GammaWithoutMatch()
 
   auto lambdaNode = jlm::rvsdg::LambdaNode::Create(
       rvsdgModule.Rvsdg().GetRootRegion(),
-      LlvmLambdaOperation::Create(functionType, "lambdaOutput", linkage::external_linkage));
+      LlvmLambdaOperation::Create(functionType, "lambdaOutput", Linkage::externalLinkage));
 
   auto gammaNode = jlm::rvsdg::GammaNode::create(lambdaNode->GetFunctionArguments()[0], 2);
   auto gammaInput1 = gammaNode->AddEntryVar(lambdaNode->GetFunctionArguments()[1]);
@@ -132,7 +132,7 @@ EmptyGammaWithTwoSubregionsAndMatch()
 
   const auto lambdaNode = jlm::rvsdg::LambdaNode::Create(
       rvsdgModule.Rvsdg().GetRootRegion(),
-      LlvmLambdaOperation::Create(functionType, "lambdaOutput", linkage::external_linkage));
+      LlvmLambdaOperation::Create(functionType, "lambdaOutput", Linkage::externalLinkage));
   const auto conditionValue = lambdaNode->GetFunctionArguments()[0];
   const auto trueValue = lambdaNode->GetFunctionArguments()[1];
   const auto falseValue = lambdaNode->GetFunctionArguments()[2];
@@ -186,7 +186,7 @@ EmptyGammaWithTwoSubregions()
 
   const auto lambdaNode = jlm::rvsdg::LambdaNode::Create(
       rvsdgModule.Rvsdg().GetRootRegion(),
-      LlvmLambdaOperation::Create(functionType, "lambdaOutput", linkage::external_linkage));
+      LlvmLambdaOperation::Create(functionType, "lambdaOutput", Linkage::externalLinkage));
   const auto trueValue = lambdaNode->GetFunctionArguments()[1];
   const auto falseValue = lambdaNode->GetFunctionArguments()[2];
 
@@ -247,7 +247,7 @@ EmptyGammaWithThreeSubregions()
 
   auto lambdaNode = jlm::rvsdg::LambdaNode::Create(
       rvsdgModule.Rvsdg().GetRootRegion(),
-      LlvmLambdaOperation::Create(functionType, "lambdaOutput", linkage::external_linkage));
+      LlvmLambdaOperation::Create(functionType, "lambdaOutput", Linkage::externalLinkage));
 
   auto match =
       jlm::rvsdg::match(32, { { 0, 0 }, { 1, 1 } }, 2, 3, lambdaNode->GetFunctionArguments()[0]);
@@ -299,7 +299,7 @@ PartialEmptyGamma()
 
   auto lambdaNode = jlm::rvsdg::LambdaNode::Create(
       rvsdgModule.Rvsdg().GetRootRegion(),
-      LlvmLambdaOperation::Create(functionType, "lambdaOutput", linkage::external_linkage));
+      LlvmLambdaOperation::Create(functionType, "lambdaOutput", Linkage::externalLinkage));
 
   auto match = jlm::rvsdg::match(1, { { 0, 0 } }, 1, 2, lambdaNode->GetFunctionArguments()[0]);
   auto gammaNode = jlm::rvsdg::GammaNode::create(match, 2);
@@ -347,7 +347,7 @@ RecursiveData()
 
   jlm::llvm::RvsdgModule rm(jlm::util::FilePath(""), "", "");
 
-  auto imp = &jlm::llvm::GraphImport::Create(rm.Rvsdg(), vt, pt, "", linkage::external_linkage);
+  auto imp = &jlm::llvm::GraphImport::Create(rm.Rvsdg(), vt, pt, "", Linkage::externalLinkage);
 
   jlm::rvsdg::PhiBuilder pb;
   pb.begin(&rm.Rvsdg().GetRootRegion());
@@ -360,7 +360,7 @@ RecursiveData()
   {
     auto delta = jlm::rvsdg::DeltaNode::Create(
         region,
-        jlm::llvm::DeltaOperation::Create(vt, "test-delta1", linkage::external_linkage, "", false));
+        jlm::llvm::DeltaOperation::Create(vt, "test-delta1", Linkage::externalLinkage, "", false));
     auto dep1 = delta->AddContextVar(*r2.recref).inner;
     auto dep2 = delta->AddContextVar(*dep.inner).inner;
     delta1 = &delta->finalize(
@@ -370,7 +370,7 @@ RecursiveData()
   {
     auto delta = jlm::rvsdg::DeltaNode::Create(
         region,
-        jlm::llvm::DeltaOperation::Create(vt, "test-delta2", linkage::external_linkage, "", false));
+        jlm::llvm::DeltaOperation::Create(vt, "test-delta2", Linkage::externalLinkage, "", false));
     auto dep1 = delta->AddContextVar(*r1.recref).inner;
     auto dep2 = delta->AddContextVar(*dep.inner).inner;
     delta2 = &delta->finalize(
