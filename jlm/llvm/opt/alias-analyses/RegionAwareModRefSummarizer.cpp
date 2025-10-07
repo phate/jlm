@@ -35,6 +35,21 @@ static const bool ENABLE_DEAD_ALLOCA_BLOCKLIST = !std::getenv("JLM_DISABLE_DEAD_
 static const bool ENABLE_NON_REENTRANT_ALLOCA_BLOCKLIST =
     !std::getenv("JLM_DISABLE_NON_REENTRANT_ALLOCA_BLOCKLIST");
 
+/**
+ * Operations like loads and stores have a size.
+ * If the size is larger than the size of a memory represented by a memory node X,
+ * X can be excluded from the Mod/Ref summary of the operation.
+ */
+static const bool ENABLE_OPERATION_SIZE_BLOCKING =
+    !std::getenv("JLM_DISABLE_OPERATION_SIZE_BLOCKING");
+
+/**
+ * Constant memory, such as functions, constant globals and constant import, can never change.
+ * We therefore never need to route their memory states through anything.
+ */
+static const bool ENABLE_CONSTANT_MEMORY_BLOCKING =
+    !std::getenv("JLM_DISABLE_CONSTANT_MEMORY_BLOCKING");
+
 /** \brief Region-aware mod/ref summarizer statistics
  *
  * The statistics collected when running the region-aware mod/ref summarizer.
@@ -989,9 +1004,10 @@ RegionAwareModRefSummarizer::AnnotateSimpleNode(
 }
 
 void
-RegionAwareModRefSummarizer::AnnotateWithPointerOrigin(
+RegionAwareModRefSummarizer::AddPointerOriginTargets(
     ModRefSetIndex modRefSetIndex,
     const rvsdg::Output & origin,
+    std::optional<size_t> minTargetSize,
     const rvsdg::LambdaNode & lambda)
 {
   // TODO Re-use ModRefSets for all uses of the registerNode in this function
@@ -1000,8 +1016,17 @@ RegionAwareModRefSummarizer::AnnotateWithPointerOrigin(
   const auto & allocasDead = Context_->AllocasDeadInScc[Context_->FunctionToSccIndex[&lambda]];
   for (const auto & target : registerNode.Targets())
   {
+    if (ENABLE_CONSTANT_MEMORY_BLOCKING && isMemoryNodeConstant(target))
+      continue;
+    if (ENABLE_OPERATION_SIZE_BLOCKING && minTargetSize)
+    {
+      const auto targetSize = getMemoryNodeSize(target);
+      if (targetSize && *targetSize < minTargetSize)
+        continue;
+    }
     if (ENABLE_DEAD_ALLOCA_BLOCKLIST && allocasDead.Contains(&target))
       continue;
+
     ModRefSummary_->AddToModRefSet(modRefSetIndex, target);
   }
 }
@@ -1013,8 +1038,10 @@ RegionAwareModRefSummarizer::AnnotateLoad(
 {
   const auto nodeModRef = ModRefSummary_->GetOrCreateSetForNode(loadNode);
   const auto origin = LoadOperation::AddressInput(loadNode).origin();
+  const auto loadOperation = util::AssertedCast<const LoadOperation>(&loadNode.GetOperation());
+  const auto loadSize = GetTypeSize(*loadOperation->GetLoadedType());
   // TODO: Only include memory large enough to be the target of the load
-  AnnotateWithPointerOrigin(nodeModRef, *origin, lambda);
+  AddPointerOriginTargets(nodeModRef, *origin, , lambda);
   return nodeModRef;
 }
 

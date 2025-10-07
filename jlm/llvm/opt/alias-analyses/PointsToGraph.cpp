@@ -7,6 +7,7 @@
 #include <jlm/llvm/ir/RvsdgModule.hpp>
 #include <jlm/llvm/opt/alias-analyses/PointsToGraph.hpp>
 
+#include <jlm/llvm/ir/trace.hpp>
 #include <typeindex>
 #include <unordered_map>
 
@@ -607,6 +608,69 @@ std::string
 PointsToGraph::ExternalMemoryNode::DebugString() const
 {
   return "ExternalMemory";
+}
+
+std::optional<size_t>
+getMemoryNodeSize(const PointsToGraph::MemoryNode & memoryNode)
+{
+  if (dynamic_cast<const PointsToGraph::LambdaNode *>(&memoryNode))
+  {
+    // Functions should never be read from or written to, so they have no size
+    return 0;
+  }
+  if (auto delta = dynamic_cast<const PointsToGraph::DeltaNode *>(&memoryNode))
+  {
+    return GetTypeSize(*delta->GetDeltaNode().GetOperation().Type());
+  }
+  if (auto import = dynamic_cast<const PointsToGraph::ImportNode *>(&memoryNode))
+  {
+    auto size = GetTypeSize(*import->GetArgument().ValueType());
+    // Workaround for imported incomplete types appearing to have size 0 in the LLVM IR
+    if (size == 0)
+      return std::nullopt;
+
+    return size;
+  }
+  if (auto alloca = dynamic_cast<const PointsToGraph::AllocaNode *>(&memoryNode))
+  {
+    const auto & allocaNode = alloca->GetAllocaNode();
+    const auto allocaOp = util::AssertedCast<const AllocaOperation>(&allocaNode.GetOperation());
+
+    // An alloca has a count parameter, which on rare occasions is not just the constant 1.
+    const auto elementCount = TryGetConstantSignedInteger(*allocaNode.input(0)->origin());
+    if (elementCount.has_value())
+      return *elementCount * GetTypeSize(*allocaOp->ValueType());
+
+    return std::nullopt;
+  }
+  if (auto malloc = dynamic_cast<const PointsToGraph::MallocNode *>(&memoryNode))
+  {
+    const auto & mallocNode = malloc->GetMallocNode();
+
+    const auto mallocSize = TryGetConstantSignedInteger(*mallocNode.input(0)->origin());
+    return mallocSize;
+  }
+
+  throw std::logic_error("Unknown memory node type.");
+}
+
+bool
+isMemoryNodeConstant(const PointsToGraph::MemoryNode & memoryNode)
+{
+  if (dynamic_cast<const PointsToGraph::LambdaNode *>(&memoryNode))
+  {
+    // Functions are always constant memory
+    return true;
+  }
+  if (auto delta = dynamic_cast<const PointsToGraph::DeltaNode *>(&memoryNode))
+  {
+    return delta->GetDeltaNode().constant();
+  }
+  if (auto import = dynamic_cast<const PointsToGraph::ImportNode *>(&memoryNode))
+  {
+    return import->GetArgument().isConstant();
+  }
+  return false;
 }
 
 }

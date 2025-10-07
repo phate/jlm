@@ -26,11 +26,13 @@ private:
       std::shared_ptr<const rvsdg::Type> valueType,
       std::shared_ptr<const rvsdg::Type> importedType,
       std::string name,
-      llvm::linkage linkage)
+      llvm::linkage linkage,
+      bool constant)
       : rvsdg::GraphImport(graph, importedType, std::move(name)),
-        Linkage_(std::move(linkage)),
         ValueType_(std::move(valueType)),
-        ImportedType_(std::move(importedType))
+        ImportedType_(std::move(importedType)),
+        Linkage_(std::move(linkage)),
+        constant_(constant)
   {}
 
 public:
@@ -38,6 +40,12 @@ public:
   Linkage() const noexcept
   {
     return Linkage_;
+  }
+
+  [[nodiscard]] bool
+  isConstant() const noexcept
+  {
+    return constant_;
   }
 
   [[nodiscard]] const std::shared_ptr<const jlm::rvsdg::Type> &
@@ -61,22 +69,25 @@ public:
       std::shared_ptr<const rvsdg::Type> valueType,
       std::shared_ptr<const rvsdg::Type> importedType,
       std::string name,
-      llvm::linkage linkage)
+      llvm::linkage linkage,
+      bool constant)
   {
     auto graphImport = new GraphImport(
         graph,
         std::move(valueType),
         std::move(importedType),
         std::move(name),
-        std::move(linkage));
+        std::move(linkage),
+        constant);
     graph.GetRootRegion().append_argument(graphImport);
     return *graphImport;
   }
 
 private:
-  llvm::linkage Linkage_;
   std::shared_ptr<const rvsdg::Type> ValueType_;
   std::shared_ptr<const rvsdg::Type> ImportedType_;
+  llvm::linkage Linkage_;
+  bool constant_;
 };
 
 /**

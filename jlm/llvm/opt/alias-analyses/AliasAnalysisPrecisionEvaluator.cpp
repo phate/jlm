@@ -6,6 +6,7 @@
 #include <jlm/llvm/DotWriter.hpp>
 #include <jlm/llvm/ir/operators/Load.hpp>
 #include <jlm/llvm/ir/operators/Store.hpp>
+#include <jlm/llvm/ir/trace.hpp>
 #include <jlm/llvm/opt/alias-analyses/AliasAnalysisPrecisionEvaluator.hpp>
 #include <jlm/rvsdg/Phi.hpp>
 #include <jlm/rvsdg/RvsdgModule.hpp>
@@ -318,7 +319,7 @@ AliasAnalysisPrecisionEvaluator::NormalizePointerValues()
   for (size_t i = 0; i < Context_.PointerOperations.size(); i++)
   {
     auto & pointer = std::get<0>(Context_.PointerOperations[i]);
-    pointer = &NormalizeOutput(*pointer);
+    pointer = &llvm::TraceOutput(*pointer);
   }
 }
 

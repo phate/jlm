@@ -4,6 +4,7 @@
  */
 
 #include <jlm/llvm/ir/operators/IntegerOperations.hpp>
+#include <jlm/rvsdg/bitstring/constant.hpp>
 
 namespace jlm::llvm
 {

@@ -195,12 +195,14 @@ private:
    * Helper function for filling ModRefSets based on the pointer being operated on
    * @param modRefSetIndex the index of the ModRefSet representing some memory operation
    * @param origin the output producing the pointer value being operated on
+   * @param minTargetSize an optional size requirement for targeted memory locations
    * @param lambda the function the operation is happening in
    */
   void
-  AnnotateWithPointerOrigin(
+  AddPointerOriginTargets(
       ModRefSetIndex modRefSetIndex,
       const rvsdg::Output & origin,
+      std::optional<size_t> minTargetSize,
       const rvsdg::LambdaNode & lambda);
 
   ModRefSetIndex
