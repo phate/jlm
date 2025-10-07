@@ -58,7 +58,7 @@ emit_function_node(const InterProceduralGraphNode & clg_node)
   operands += ">";
 
   std::string cfg = node.cfg() ? ControlFlowGraph::ToAscii(*node.cfg()) : "";
-  std::string exported = !is_externally_visible(node.linkage()) ? "static" : "";
+  std::string exported = isPrivateOrInternal(node.linkage()) ? "static" : "";
 
   return exported + results + " " + node.name() + " " + operands + "\n{\n" + cfg + "\n}\n";
 }

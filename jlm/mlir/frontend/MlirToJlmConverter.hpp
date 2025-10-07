@@ -198,7 +198,7 @@ private:
    * \param stringValue The string to be converted.
    * \result The linkage.
    */
-  llvm::linkage
+  llvm::Linkage
   ConvertLinkage(std::string stringValue);
 
   /**

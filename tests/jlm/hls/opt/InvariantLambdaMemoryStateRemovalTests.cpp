@@ -25,7 +25,7 @@ TestEliminateSplitAndMergeNodes()
 
   auto lambda = jlm::rvsdg::LambdaNode::Create(
       rvsdgModule->Rvsdg().GetRootRegion(),
-      LlvmLambdaOperation::Create(functionType, "test", linkage::external_linkage));
+      LlvmLambdaOperation::Create(functionType, "test", Linkage::externalLinkage));
 
   auto functionArguments = lambda->GetFunctionArguments();
 
@@ -87,7 +87,7 @@ TestInvariantMemoryState()
 
   auto lambda = jlm::rvsdg::LambdaNode::Create(
       rvsdgModule->Rvsdg().GetRootRegion(),
-      LlvmLambdaOperation::Create(functionType, "test", linkage::external_linkage));
+      LlvmLambdaOperation::Create(functionType, "test", Linkage::externalLinkage));
 
   auto functionArguments = lambda->GetFunctionArguments();
 

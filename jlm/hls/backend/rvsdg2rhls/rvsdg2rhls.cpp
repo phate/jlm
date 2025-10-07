@@ -210,7 +210,7 @@ convert_alloca(rvsdg::Region * region)
           llvm::DeltaOperation::Create(
               po->ValueType(),
               delta_name,
-              llvm::linkage::external_linkage,
+              llvm::Linkage::externalLinkage,
               "",
               false));
       // create zero constant of allocated type
@@ -274,7 +274,7 @@ rename_delta(rvsdg::DeltaNode * odn)
       llvm::DeltaOperation::Create(
           odn->Type(),
           name,
-          llvm::linkage::external_linkage,
+          llvm::Linkage::externalLinkage,
           "",
           op->constant()));
   /* add dependencies */
@@ -298,7 +298,7 @@ rename_delta(rvsdg::DeltaNode * odn)
 }
 
 rvsdg::LambdaNode *
-change_linkage(rvsdg::LambdaNode * ln, llvm::linkage link)
+change_linkage(rvsdg::LambdaNode * ln, llvm::Linkage link)
 {
   const auto & op = dynamic_cast<llvm::LlvmLambdaOperation &>(ln->GetOperation());
   auto lambda = rvsdg::LambdaNode::Create(
@@ -371,7 +371,7 @@ split_hls_function(llvm::RvsdgModule & rm, const std::string & function_name)
               oldGraphImport->ValueType(),
               oldGraphImport->ImportedType(),
               oldGraphImport->Name(),
-              oldGraphImport->Linkage());
+              oldGraphImport->linkage());
           smap.insert(ln->input(i)->origin(), &newGraphImport);
           continue;
         }
@@ -399,7 +399,7 @@ split_hls_function(llvm::RvsdgModule & rm, const std::string & function_name)
               op->Type(),
               llvm::PointerType::Create(),
               op->name(),
-              llvm::linkage::external_linkage);
+              llvm::Linkage::externalLinkage);
           smap.insert(ln->input(i)->origin(), &graphImport);
           // add export for delta to rm
           // TODO: check if not already exported and maybe adjust linkage?
@@ -412,7 +412,7 @@ split_hls_function(llvm::RvsdgModule & rm, const std::string & function_name)
       }
       // copy function into rhls
       auto new_ln = ln->copy(&rhls->Rvsdg().GetRootRegion(), smap);
-      new_ln = change_linkage(new_ln, llvm::linkage::external_linkage);
+      new_ln = change_linkage(new_ln, llvm::Linkage::externalLinkage);
       auto oldExport = jlm::llvm::ComputeCallSummary(*ln).GetRvsdgExport();
       rvsdg::GraphExport::Create(*new_ln->output(), oldExport ? oldExport->Name() : "");
       // add function as input to rm and remove it
@@ -422,7 +422,7 @@ split_hls_function(llvm::RvsdgModule & rm, const std::string & function_name)
           op.Type(),
           op.Type(),
           op.name(),
-          llvm::linkage::external_linkage); // TODO: change linkage?
+          llvm::Linkage::externalLinkage); // TODO: change linkage?
       ln->output()->divert_users(&graphImport);
       remove(ln);
       std::cout << "function "

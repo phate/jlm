@@ -178,7 +178,7 @@ TestLoad()
         { IOStateType::Create(), MemoryStateType::Create() });
     auto lambda = jlm::rvsdg::LambdaNode::Create(
         graph->GetRootRegion(),
-        LlvmLambdaOperation::Create(functionType, "test", linkage::external_linkage));
+        LlvmLambdaOperation::Create(functionType, "test", Linkage::externalLinkage));
     auto iOStateArgument = lambda->GetFunctionArguments().at(0);
     auto memoryStateArgument = lambda->GetFunctionArguments().at(1);
     auto pointerArgument = lambda->GetFunctionArguments().at(2);
@@ -276,7 +276,7 @@ TestStore()
         { IOStateType::Create(), MemoryStateType::Create() });
     auto lambda = jlm::rvsdg::LambdaNode::Create(
         graph->GetRootRegion(),
-        LlvmLambdaOperation::Create(functionType, "test", linkage::external_linkage));
+        LlvmLambdaOperation::Create(functionType, "test", Linkage::externalLinkage));
     auto iOStateArgument = lambda->GetFunctionArguments().at(0);
     auto memoryStateArgument = lambda->GetFunctionArguments().at(1);
     auto pointerArgument = lambda->GetFunctionArguments().at(2);
@@ -370,7 +370,7 @@ TestSext()
     auto functionType = jlm::rvsdg::FunctionType::Create({ bitsType }, {});
     auto lambda = jlm::rvsdg::LambdaNode::Create(
         graph->GetRootRegion(),
-        LlvmLambdaOperation::Create(functionType, "test", linkage::external_linkage));
+        LlvmLambdaOperation::Create(functionType, "test", Linkage::externalLinkage));
     auto bitsArgument = lambda->GetFunctionArguments().at(0);
 
     // Create sext operation
@@ -446,7 +446,7 @@ TestSitofp()
     auto functionType = jlm::rvsdg::FunctionType::Create({ bitsType }, {});
     auto lambda = jlm::rvsdg::LambdaNode::Create(
         graph->GetRootRegion(),
-        LlvmLambdaOperation::Create(functionType, "test", linkage::external_linkage));
+        LlvmLambdaOperation::Create(functionType, "test", Linkage::externalLinkage));
     auto bitsArgument = lambda->GetFunctionArguments().at(0);
 
     // Create sitofp operation
@@ -513,7 +513,7 @@ TestConstantFP()
     auto functionType = jlm::rvsdg::FunctionType::Create({}, {});
     auto lambda = jlm::rvsdg::LambdaNode::Create(
         graph->GetRootRegion(),
-        LlvmLambdaOperation::Create(functionType, "test", linkage::external_linkage));
+        LlvmLambdaOperation::Create(functionType, "test", Linkage::externalLinkage));
 
     // Create sitofp operation
     jlm::rvsdg::CreateOpNode<ConstantFP>(*lambda->subregion(), fpsize::dbl, ::llvm::APFloat(2.0));
@@ -573,7 +573,7 @@ TestFpBinary()
       auto functionType = jlm::rvsdg::FunctionType::Create({ floatType, floatType }, {});
       auto lambda = jlm::rvsdg::LambdaNode::Create(
           graph->GetRootRegion(),
-          LlvmLambdaOperation::Create(functionType, "test", linkage::external_linkage));
+          LlvmLambdaOperation::Create(functionType, "test", Linkage::externalLinkage));
 
       auto floatArgument1 = lambda->GetFunctionArguments().at(0);
       auto floatArgument2 = lambda->GetFunctionArguments().at(1);
@@ -654,7 +654,7 @@ TestFMulAddOp()
         jlm::rvsdg::FunctionType::Create({ floatType, floatType, floatType }, { floatType });
     auto lambda = jlm::rvsdg::LambdaNode::Create(
         graph->GetRootRegion(),
-        LlvmLambdaOperation::Create(functionType, "test", linkage::external_linkage));
+        LlvmLambdaOperation::Create(functionType, "test", Linkage::externalLinkage));
 
     auto floatArgument1 = lambda->GetFunctionArguments().at(0);
     auto floatArgument2 = lambda->GetFunctionArguments().at(1);
@@ -718,7 +718,7 @@ TestGetElementPtr()
     auto functionType = jlm::rvsdg::FunctionType::Create({ pointerType, bitType }, {});
     auto lambda = jlm::rvsdg::LambdaNode::Create(
         graph->GetRootRegion(),
-        LlvmLambdaOperation::Create(functionType, "test", linkage::external_linkage));
+        LlvmLambdaOperation::Create(functionType, "test", Linkage::externalLinkage));
 
     auto pointerArgument = lambda->GetFunctionArguments().at(0);
     auto bitArgument = lambda->GetFunctionArguments().at(1);
@@ -809,7 +809,7 @@ TestDelta()
         jlm::llvm::DeltaOperation::Create(
             bitType,
             "non-constant-delta",
-            linkage::external_linkage,
+            Linkage::externalLinkage,
             "section",
             false));
 
@@ -821,7 +821,7 @@ TestDelta()
         jlm::llvm::DeltaOperation::Create(
             bitType,
             "constant-delta",
-            linkage::external_linkage,
+            Linkage::externalLinkage,
             "section",
             true));
     auto bitConstant2 = jlm::rvsdg::create_bitconstant(delta2->subregion(), 32, 1);
@@ -894,7 +894,7 @@ TestDelta()
         }
 
         assert(is<jlm::rvsdg::BitType>(*dop->Type()));
-        assert(dop->linkage() == linkage::external_linkage);
+        assert(dop->linkage() == Linkage::externalLinkage);
         assert(dop->Section() == "section");
 
         auto op = convertedDelta->subregion()->Nodes().begin();
@@ -1356,7 +1356,7 @@ TestFree()
         {});
     auto lambda = jlm::rvsdg::LambdaNode::Create(
         graph->GetRootRegion(),
-        LlvmLambdaOperation::Create(functionType, "test", linkage::external_linkage));
+        LlvmLambdaOperation::Create(functionType, "test", Linkage::externalLinkage));
     auto iOStateArgument = lambda->GetFunctionArguments().at(0);
     auto memoryStateArgument = lambda->GetFunctionArguments().at(1);
     auto pointerArgument = lambda->GetFunctionArguments().at(2);
@@ -1451,7 +1451,7 @@ TestFunctionGraphImport()
         functionType,
         functionType,
         "test",
-        linkage::external_linkage);
+        Linkage::externalLinkage);
 
     // Convert the RVSDG to MLIR
     std::cout << "Convert to MLIR" << std::endl;
@@ -1505,7 +1505,7 @@ TestFunctionGraphImport()
       auto imp = dynamic_cast<jlm::llvm::GraphImport *>(arg);
       assert(imp);
       assert(imp->Name() == "test");
-      assert(imp->Linkage() == linkage::external_linkage);
+      assert(imp->linkage() == Linkage::externalLinkage);
       assert(*imp->ValueType() == *functionType);
       assert(*imp->ImportedType() == *functionType);
     }
@@ -1528,7 +1528,7 @@ TestPointerGraphImport()
         jlm::rvsdg::BitType::Create(32),
         PointerType::Create(),
         "test",
-        linkage::external_linkage);
+        Linkage::externalLinkage);
 
     // Convert the RVSDG to MLIR
     std::cout << "Convert to MLIR" << std::endl;
@@ -1575,7 +1575,7 @@ TestPointerGraphImport()
       auto imp = dynamic_cast<jlm::llvm::GraphImport *>(arg);
       assert(imp);
       assert(imp->Name() == "test");
-      assert(imp->Linkage() == linkage::external_linkage);
+      assert(imp->linkage() == Linkage::externalLinkage);
       assert(*imp->ValueType() == *jlm::rvsdg::BitType::Create(32));
       assert(*imp->ImportedType() == *PointerType::Create());
     }
@@ -1599,7 +1599,7 @@ TestIOBarrier()
 
     auto lambda = jlm::rvsdg::LambdaNode::Create(
         graph->GetRootRegion(),
-        LlvmLambdaOperation::Create(functionType, "test", linkage::external_linkage));
+        LlvmLambdaOperation::Create(functionType, "test", Linkage::externalLinkage));
     auto ioStateArgument = lambda->GetFunctionArguments()[0];
 
     // Create a value to pass through the barrier
