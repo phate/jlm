@@ -845,19 +845,9 @@ public:
 private:
   util::IntrusiveListAnchor<Node> region_node_list_anchor_{};
 
-  util::IntrusiveListAnchor<Node> region_top_node_list_anchor_{};
-
-  util::IntrusiveListAnchor<Node> region_bottom_node_list_anchor_{};
-
 public:
   typedef util::IntrusiveListAccessor<Node, &Node::region_node_list_anchor_>
       region_node_list_accessor;
-
-  typedef util::IntrusiveListAccessor<Node, &Node::region_top_node_list_anchor_>
-      region_top_node_list_accessor;
-
-  typedef util::IntrusiveListAccessor<Node, &Node::region_bottom_node_list_anchor_>
-      region_bottom_node_list_accessor;
 
 private:
   Id Id_;

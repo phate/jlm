@@ -246,10 +246,7 @@ Region::AddTopNode(Node & node)
   if (node.ninputs() != 0)
     return false;
 
-  // FIXME: We should check that a node is not already part of the top nodes before adding it.
-  TopNodes_.push_back(&node);
-
-  return true;
+  return topNodes_.Insert(&node);
 }
 
 bool
@@ -261,10 +258,7 @@ Region::AddBottomNode(Node & node)
   if (!node.IsDead())
     return false;
 
-  // FIXME: We should check that a node is not already part of the bottom nodes before adding it.
-  BottomNodes_.push_back(&node);
-
-  return true;
+  return bottomNodes_.Insert(&node);
 }
 
 bool
@@ -279,19 +273,15 @@ Region::AddNode(Node & node)
 }
 
 bool
-Region::RemoveBottomNode(Node & node)
+Region::RemoveTopNode(Node & node)
 {
-  auto numBottomNodes = NumBottomNodes();
-  BottomNodes_.erase(&node);
-  return numBottomNodes != NumBottomNodes();
+  return topNodes_.Remove(&node);
 }
 
 bool
-Region::RemoveTopNode(Node & node)
+Region::RemoveBottomNode(Node & node)
 {
-  auto numTopNodes = NumTopNodes();
-  TopNodes_.erase(&node);
-  return numTopNodes != NumTopNodes();
+  return bottomNodes_.Remove(&node);
 }
 
 bool
@@ -352,8 +342,8 @@ Region::copy(Region * target, SubstitutionMap & smap, bool copy_arguments, bool 
 void
 Region::prune(bool recursive)
 {
-  while (BottomNodes_.first())
-    remove_node(BottomNodes_.first());
+  while (!bottomNodes_.IsEmpty())
+    remove_node(*bottomNodes_.Items().begin());
 
   if (!recursive)
     return;

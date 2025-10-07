@@ -214,10 +214,6 @@ class Region
 {
   typedef util::IntrusiveList<Node, Node::region_node_list_accessor> region_nodes_list;
 
-  typedef util::IntrusiveList<Node, Node::region_top_node_list_accessor> region_top_node_list;
-
-  typedef util::IntrusiveList<Node, Node::region_bottom_node_list_accessor> region_bottom_node_list;
-
   using RegionArgumentIterator = std::vector<RegionArgument *>::iterator;
   using RegionArgumentConstIterator = std::vector<RegionArgument *>::const_iterator;
   using RegionArgumentRange = util::IteratorRange<RegionArgumentIterator>;
@@ -228,18 +224,20 @@ class Region
   using RegionResultRange = util::IteratorRange<RegionResultIterator>;
   using RegionResultConstRange = util::IteratorRange<RegionResultConstIterator>;
 
-  using TopNodeIterator = region_top_node_list::Iterator;
-  using TopNodeConstIterator = region_top_node_list::ConstIterator;
-  using TopNodeRange = util::IteratorRange<TopNodeIterator>;
-  using TopNodeConstRange = util::IteratorRange<TopNodeConstIterator>;
-
   using NodeIterator = region_nodes_list::Iterator;
   using NodeConstIterator = region_nodes_list::ConstIterator;
   using NodeRange = util::IteratorRange<NodeIterator>;
   using NodeConstRange = util::IteratorRange<NodeConstIterator>;
 
-  using BottomNodeIterator = region_bottom_node_list::Iterator;
-  using BottomNodeConstIterator = region_bottom_node_list::ConstIterator;
+  using TopNodeIterator = util::PtrIterator<Node, util::HashSet<Node *>::ItemConstIterator>;
+  using TopNodeConstIterator =
+      util::PtrIterator<const Node, util::HashSet<Node *>::ItemConstIterator>;
+  using TopNodeRange = util::IteratorRange<TopNodeIterator>;
+  using TopNodeConstRange = util::IteratorRange<TopNodeConstIterator>;
+
+  using BottomNodeIterator = util::PtrIterator<Node, util::HashSet<Node *>::ItemConstIterator>;
+  using BottomNodeConstIterator =
+      util::PtrIterator<const Node, util::HashSet<Node *>::ItemConstIterator>;
   using BottomNodeRange = util::IteratorRange<BottomNodeIterator>;
   using BottomNodeConstRange = util::IteratorRange<BottomNodeConstIterator>;
 
@@ -297,7 +295,7 @@ public:
   [[nodiscard]] TopNodeRange
   TopNodes() noexcept
   {
-    return { TopNodes_.begin(), TopNodes_.end() };
+    return TopNodeRange( topNodes_.Items() );
   }
 
   /**
@@ -306,7 +304,7 @@ public:
   [[nodiscard]] TopNodeConstRange
   TopNodes() const noexcept
   {
-    return { TopNodes_.begin(), TopNodes_.end() };
+    return TopNodeConstRange(topNodes_.Items());
   }
 
   /**
@@ -333,7 +331,7 @@ public:
   [[nodiscard]] BottomNodeRange
   BottomNodes() noexcept
   {
-    return { BottomNodes_.begin(), BottomNodes_.end() };
+    return BottomNodeRange(bottomNodes_.Items());
   }
 
   /**
@@ -343,7 +341,7 @@ public:
   [[nodiscard]] BottomNodeConstRange
   BottomNodes() const noexcept
   {
-    return { BottomNodes_.begin(), BottomNodes_.end() };
+    return BottomNodeConstRange(bottomNodes_.Items());
   }
 
   [[nodiscard]] Graph *
@@ -521,7 +519,7 @@ public:
   [[nodiscard]] size_t
   NumTopNodes() const noexcept
   {
-    return TopNodes_.size();
+    return topNodes_.Size();
   }
 
   /**
@@ -530,7 +528,7 @@ public:
   [[nodiscard]] size_t
   NumBottomNodes() const noexcept
   {
-    return BottomNodes_.size();
+    return bottomNodes_.Size();
   }
 
   void
@@ -539,9 +537,10 @@ public:
   /**
    * \brief Adds \p node to the top nodes of the region.
    *
-   * The node \p node is only added to the top nodes of this region, iff:
+   * The node \p node is added to the top nodes of this region iff:
    * 1. The node \p node belongs to the same region instance.
    * 2. The node \p node has no inputs.
+   * 3. The node \p is not already in the set of top nodes
    *
    * @param node The node that is added.
    * @return True, if \p node was added, otherwise false.
@@ -558,6 +557,7 @@ public:
    * The node \p node is only added to the bottom nodes of this region, iff:
    * 1. The node \p node belongs to the same region instance.
    * 2. All the outputs of \p node are dead. See node::IsDead() for more details.
+   * 3. The node \p is not already in the set of bottom nodes
    *
    * @param node The node that is added.
    * @return True, if \p node was added, otherwise false.
@@ -583,9 +583,9 @@ public:
   AddNode(Node & node);
 
   /**
-   * Removes \p node from the top nodes in the region.
+   * Removes \p node from the set of top nodes in the region.
    *
-   * @param node The node that is removed.
+   * @param node The node to be removed.
    * @return True, if \p node was a top node and removed, otherwise false.
    *
    * @note This method is automatically invoked when inputs are added to a node. There is no need to
@@ -595,9 +595,9 @@ public:
   RemoveTopNode(Node & node);
 
   /**
-   * Removes \p node from the bottom nodes in the region.
+   * Removes \p node from the set of bottom nodes in the region.
    *
-   * @param node The node that is removed.
+   * @param node The node to be removed.
    * @return True, if \p node was a bottom node and removed, otherwise false.
    *
    * @note This method is automatically invoked when a node cedes to be dead. There is no need to
@@ -775,8 +775,8 @@ private:
   rvsdg::StructuralNode * node_;
   std::vector<RegionResult *> results_;
   std::vector<RegionArgument *> arguments_;
-  region_bottom_node_list BottomNodes_;
-  region_top_node_list TopNodes_;
+  util::HashSet<Node *> topNodes_;
+  util::HashSet<Node *> bottomNodes_;
   region_nodes_list Nodes_;
   RegionObserver * observers_ = nullptr;
 
