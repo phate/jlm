@@ -212,12 +212,12 @@ namespace jlm::llvm::flows
             //std::cout << "lambda: Flow out ["<<i<<"] : " << std::endl;
             fd.Set(f_args[i], flows_out[i]);
           }
-
-          auto reg = w.lm->subregion();
+          //This might replicate the above.
+          /*auto reg = w.lm->subregion();
           for (size_t i = 0 ; i<reg->narguments() ; i++){
             auto reg_arg = reg->argument(i);
             fd.Set( reg_arg, fd.Get( reg_arg->input() ? reg_arg->input()->origin() : NULL) );
-          }
+          }*/
 
           // Todododo : visit lambda after body has been visited once.
 
