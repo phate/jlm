@@ -114,6 +114,8 @@ namespace jlm::llvm::flows
    *    different loop iterations.
    *  Merges at gamma nodes represent the combined value from switch cases
    *  The merges may be different or the same
+   *
+   *  The style of traversing the graph can be adapted to more complex cases.
    * */
   template<typename D, typename GaMerger, typename ThMerger, typename Prod>
   void ApplyDataFlowsTopDown(rvsdg::Region& scope, FlowData<D>& fd, GaMerger mrGa, ThMerger mrTh,  Prod cb){
@@ -192,7 +194,7 @@ namespace jlm::llvm::flows
         }break;
         case WorkItemType::LAMBDA:{
           // This case only handles params out
-          // Add an enum for visit type later
+          // Add an enum for other visit types later
           // initialize input buffer
           flows_in.clear();
           auto f_args = w.lm->GetFunctionArguments();
@@ -287,7 +289,7 @@ namespace jlm::llvm::flows
           }
 
           if (!fixed_point_reached){
-            workItems.push_back( WorkItemValue(WorkItemType::THETA_END, w.tn) );
+            workItems.push_back( WorkItemValue(WorkItemType::THETA_END, w.node) );
             workItems.push_back( w.tn->subregion() );
           }
         }break;
@@ -298,7 +300,7 @@ namespace jlm::llvm::flows
             auto lv = loopvars[i];
             fd.Set( lv.output, fd.Get( lv.post ? lv.post->origin() : NULL ) );   // Required for downstream nodes
           }
-          workItems.push_back( WorkItemValue(w.tn) ); // Attempt another loop iteration
+          workItems.push_back( WorkItemValue(w.node) ); // Attempt another loop iteration
         }break;
 
         default: std::cout << static_cast<int>(w.type) <<"Ignoring work item..."<<std::endl;

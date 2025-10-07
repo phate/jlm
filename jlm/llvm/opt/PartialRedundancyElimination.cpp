@@ -156,17 +156,27 @@ PartialRedundancyElimination::Run(
   auto & rvsdg = module.Rvsdg();
   auto statistics = Statistics::Create(module.SourceFilePath().value());
 
+  // NEWER CODE USING REACTIVE STYLE CALLBACKS
+  // SHOULD HANDLE THETA NODES, BUT HAVEN'T TESTED THIS YET
 
   flows::FlowData<GVN_Hash> fd(&gvn_hashes_);
+
+  //cb for handling two flows coming from different sub-regions of a gamma node.
+  //  This reprents the GVN of expressions such as (a > b ? a : b)
+  //  Thus, the branch order matters.
+  //  The net hash of outputs from gamma nodes is computed by reducing each output across branches
+  //    with this callback.
   auto merge_gvn_ga = [](std::optional<GVN_Hash>& a, std::optional<GVN_Hash>& b)
   {
     if (!a){return b;}  if (!b){return a;}
     if (*a == GVN_Hash::Tainted() || *b == GVN_Hash::Tainted()){ return std::optional(GVN_Hash::Tainted()); }
-    size_t h = a->value ^ (b->value << 3);
+    size_t h = a->value ^ (b->value << 3); //Hash branches differently.
     return std::optional( GVN_Hash(h) );
   };
 
-
+  //cb for merging flows coming into a theta node for the first time and from previous iterations.
+  //  on the second iteration all sub-nodes will have their values overwritten, except
+  //  loop invariant nodes.
   auto merge_gvn_th = [](std::optional<GVN_Hash>& a, std::optional<GVN_Hash>& b)
   {
     if (!a){return b;}  if (!b){return a;}
@@ -174,15 +184,15 @@ PartialRedundancyElimination::Run(
     return a->value == b->value ? a : std::optional( GVN_Hash::Tainted() );
   };
 
-
   flows::ApplyDataFlowsTopDown(rvsdg.GetRootRegion(), fd, merge_gvn_ga, merge_gvn_th,
   [](rvsdg::Node& node,
     std::vector<std::optional<GVN_Hash>>& flows_in,
     std::vector<std::optional<GVN_Hash>>& flows_out
     )
     {
-
-      std::cout << TR_GREEN << node.GetNodeId() << node.DebugString() << TR_RESET << std::endl;
+      // The gvn hashes are stored automatically by the argument fd, when the flows_out vector
+      // is written to.
+      std::cout << TR_GREEN << node.GetNodeId() << ":" << node.DebugString() << TR_RESET << std::endl;
 
       rvsdg::MatchType(node.GetOperation(),
         // -----------------------------------------------------------------------------------------
@@ -194,15 +204,12 @@ PartialRedundancyElimination::Run(
         // -----------------------------------------------------------------------------------------
         [&flows_in, &flows_out](const rvsdg::BinaryOperation& op){
           JLM_ASSERT(flows_in.size() == 2);
-
           if (!(flows_in[0]) || !(flows_in[1])){
-
             std::cout<< TR_RED << "Expected some input" << TR_RESET << std::endl;return;
           }
 
           std::hash<std::string> hasher;
           size_t h = hasher(op.debug_string() );
-
 
           size_t a = hasher(std::to_string(flows_in[0]->value));
           size_t b = hasher(std::to_string(flows_in[1]->value));
@@ -216,19 +223,21 @@ PartialRedundancyElimination::Run(
             std::cout<< TR_RED << "Expected some input" << TR_RESET << std::endl;return;
           }
           std::hash<std::string> hasher;
-          size_t h = hasher(op.debug_string() ) << 3;
+          size_t h = hasher(op.debug_string() );
           size_t a = hasher(std::to_string(flows_in[0]->value));
           h ^= a;
           flows_out[0] = std::optional<GVN_Hash>(h);
         },
         // -----------------------------------------------------------------------------------------
         [&node, &flows_in, &flows_out](const jlm::llvm::CallOperation& op){
-          std::string s = node.DebugString() + std::to_string(node.GetNodeId()); // + op.GetLambdaOutput();
+          std::string s = node.DebugString() + "CALL";
           std::hash<std::string> hasher;
-          flows_out[0] = std::optional(hasher(s));
+          size_t h = hasher(s);
+          for (size_t i = 0; i < flows_out.size(); i++){
+            flows_out[i] = std::optional<GVN_Hash>( h + i);
+          }
         }
       );
-
 
       rvsdg::MatchType(node,
         // -----------------------------------------------------------------------------------------
@@ -246,24 +255,27 @@ PartialRedundancyElimination::Run(
   );
 
 
-    std::cout << TR_RED << "%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%" << std::endl;
+  std::cout << TR_RED << "%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%" << std::endl;
 
 
-
+  //OLD CODE BELOW.
   this->TraverseTopDownRecursively(rvsdg.GetRootRegion(), PartialRedundancyElimination::dump_region);
-  //this->TraverseTopDownRecursively(rvsdg.GetRootRegion(), PartialRedundancyElimination::dump_node);
-  std::cout << TR_RED << "================================================================" << TR_RESET << std::endl;
-  //this->TraverseTopDownRecursively(rvsdg.GetRootRegion(), PartialRedundancyElimination::register_leaf_hash);
-  std::cout << TR_RED << "================================================================" << TR_RESET << std::endl;
-  //this->TraverseTopDownRecursively(rvsdg.GetRootRegion(), PartialRedundancyElimination::dump_node);
-  std::cout << TR_BLUE << "================================================================" << TR_RESET << std::endl;
-  //this->TraverseTopDownRecursively(rvsdg.GetRootRegion(), PartialRedundancyElimination::hash_node);
-  std::cout << TR_PINK << "================================================================" << TR_RESET << std::endl;
+  /*
+  {
+    this->TraverseTopDownRecursively(rvsdg.GetRootRegion(), PartialRedundancyElimination::dump_node);
+    std::cout << TR_RED << "================================================================" << TR_RESET << std::endl;
+    this->TraverseTopDownRecursively(rvsdg.GetRootRegion(), PartialRedundancyElimination::register_leaf_hash);
+    std::cout << TR_RED << "================================================================" << TR_RESET << std::endl;
+    this->TraverseTopDownRecursively(rvsdg.GetRootRegion(), PartialRedundancyElimination::dump_node);
+    std::cout << TR_BLUE << "================================================================" << TR_RESET << std::endl;
+    this->TraverseTopDownRecursively(rvsdg.GetRootRegion(), PartialRedundancyElimination::hash_node);
+    std::cout << TR_PINK << "================================================================" << TR_RESET << std::endl;
+  }
+  */
+
   this->TraverseTopDownRecursively(rvsdg.GetRootRegion(), PartialRedundancyElimination::dump_node);
 
   std::cout << TR_GREEN << "=================================================" << TR_RESET << std::endl;
-
-
 }
 
 /** -------------------------------------------------------------------------------------------- **/
