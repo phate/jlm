@@ -234,7 +234,9 @@ using namespace jlm;
           flows_out.resize(w.node->noutputs(), std::nullopt);
 
           // visit node
-          cb(*(w.node), flows_in, flows_out);
+          if (flows_out.size()){
+            cb(*(w.node), flows_in, flows_out);
+          }
 
           // update map
           for ( size_t i = 0; i < w.node->noutputs(); i++){
@@ -256,7 +258,9 @@ using namespace jlm;
           flows_out.clear(); flows_out.resize(f_args.size(), std::nullopt);
 
           // visit node
-          cb(*(w.node), flows_in, flows_out);
+          if (flows_out.size()){
+            cb(*(w.node), flows_in, flows_out);
+          }
 
           // update map
           for ( size_t i = 0; i < f_args.size(); i++){

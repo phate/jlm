@@ -184,7 +184,6 @@ PartialRedundancyElimination::Run(
         // -----------------------------------------------------------------------------------------
         [&flows_out](const jlm::llvm::IntegerConstantOperation& iconst){
           std::hash<std::string> hasher;
-          if(flows_out.size() != 1){return;}  // Unused constant value.
           flows_out[0] = GVN_Hash( hasher(iconst.Representation().str()) );
         },
         // -----------------------------------------------------------------------------------------
@@ -205,16 +204,20 @@ PartialRedundancyElimination::Run(
         },
         // -----------------------------------------------------------------------------------------
         [&flows_in, &flows_out](const rvsdg::UnaryOperation& op){
-          JLM_ASSERT(flows_in.size() == 1);
-          if (!(flows_in[0])){
+          if (!(flows_in.size())){
             std::cout<< TR_RED << "Expected some input" << TR_RESET << std::endl;return;
           }
-
           std::hash<std::string> hasher;
           size_t h = hasher(op.debug_string() ) << 3;
           size_t a = hasher(std::to_string(flows_in[0]->value));
           h ^= a;
           flows_out[0] = std::optional<GVN_Hash>(h);
+        },
+        // -----------------------------------------------------------------------------------------
+        [&node, &flows_in, &flows_out](const jlm::llvm::CallOperation& op){
+          std::string s = node.DebugString() + std::to_string(node.GetNodeId()); // + op.GetLambdaOutput();
+          std::hash<std::string> hasher;
+          flows_out[0] = std::optional(hasher(s));
         }
       );
 
@@ -223,8 +226,9 @@ PartialRedundancyElimination::Run(
         [&flows_out](rvsdg::LambdaNode& lm){
           auto s = lm.DebugString();
           std::hash<std::string> hasher;
+          size_t h = hasher(s);
           for (size_t i = 0; i < flows_out.size(); i++){
-            flows_out[i] = GVN_Hash( hasher(s + std::to_string(i)) );
+            flows_out[i] = GVN_Hash( h+i );
           }
         }
       );
@@ -237,13 +241,13 @@ PartialRedundancyElimination::Run(
 
 
   this->TraverseTopDownRecursively(rvsdg.GetRootRegion(), PartialRedundancyElimination::dump_region);
-  this->TraverseTopDownRecursively(rvsdg.GetRootRegion(), PartialRedundancyElimination::dump_node);
+  //this->TraverseTopDownRecursively(rvsdg.GetRootRegion(), PartialRedundancyElimination::dump_node);
   std::cout << TR_RED << "================================================================" << TR_RESET << std::endl;
-  this->TraverseTopDownRecursively(rvsdg.GetRootRegion(), PartialRedundancyElimination::register_leaf_hash);
+  //this->TraverseTopDownRecursively(rvsdg.GetRootRegion(), PartialRedundancyElimination::register_leaf_hash);
   std::cout << TR_RED << "================================================================" << TR_RESET << std::endl;
-  this->TraverseTopDownRecursively(rvsdg.GetRootRegion(), PartialRedundancyElimination::dump_node);
+  //this->TraverseTopDownRecursively(rvsdg.GetRootRegion(), PartialRedundancyElimination::dump_node);
   std::cout << TR_BLUE << "================================================================" << TR_RESET << std::endl;
-  this->TraverseTopDownRecursively(rvsdg.GetRootRegion(), PartialRedundancyElimination::hash_node);
+  //this->TraverseTopDownRecursively(rvsdg.GetRootRegion(), PartialRedundancyElimination::hash_node);
   std::cout << TR_PINK << "================================================================" << TR_RESET << std::endl;
   this->TraverseTopDownRecursively(rvsdg.GetRootRegion(), PartialRedundancyElimination::dump_node);
 
