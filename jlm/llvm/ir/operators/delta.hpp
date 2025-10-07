@@ -26,7 +26,7 @@ public:
   DeltaOperation(
       std::shared_ptr<const rvsdg::Type> type,
       const std::string & name,
-      const llvm::linkage & linkage,
+      const llvm::Linkage & linkage,
       std::string section,
       bool constant)
       : rvsdg::DeltaOperation(type, constant, PointerType::Create()),
@@ -66,7 +66,7 @@ public:
     return Section_;
   }
 
-  const llvm::linkage &
+  const llvm::Linkage &
   linkage() const noexcept
   {
     return linkage_;
@@ -76,7 +76,7 @@ public:
   Create(
       std::shared_ptr<const rvsdg::Type> type,
       const std::string & name,
-      const llvm::linkage & linkage,
+      const llvm::Linkage & linkage,
       std::string section,
       bool constant)
   {
@@ -91,7 +91,7 @@ public:
 private:
   std::string name_;
   std::string Section_;
-  llvm::linkage linkage_;
+  llvm::Linkage linkage_;
 };
 
 }

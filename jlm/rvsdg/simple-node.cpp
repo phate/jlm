@@ -4,7 +4,6 @@
  */
 
 #include <jlm/rvsdg/graph.hpp>
-#include <jlm/rvsdg/notifiers.hpp>
 #include <jlm/rvsdg/simple-node.hpp>
 #include <jlm/rvsdg/substitution.hpp>
 #include <jlm/util/strfmt.hpp>
@@ -14,7 +13,7 @@ namespace jlm::rvsdg
 
 SimpleNode::~SimpleNode()
 {
-  on_node_destroy(this);
+  region()->notifyNodeDestroy(this);
 }
 
 SimpleNode::SimpleNode(
@@ -41,7 +40,7 @@ SimpleNode::SimpleNode(
   for (size_t n = 0; n < SimpleNode::GetOperation().nresults(); n++)
     add_output(std::make_unique<NodeOutput>(this, SimpleNode::GetOperation().result(n)));
 
-  on_node_create(this);
+  region.notifyNodeCreate(this);
 }
 
 const SimpleOperation &

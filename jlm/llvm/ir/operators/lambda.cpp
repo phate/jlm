@@ -16,7 +16,7 @@ LlvmLambdaOperation::~LlvmLambdaOperation() = default;
 LlvmLambdaOperation::LlvmLambdaOperation(
     std::shared_ptr<const jlm::rvsdg::FunctionType> type,
     std::string name,
-    const jlm::llvm::linkage & linkage,
+    const jlm::llvm::Linkage & linkage,
     jlm::llvm::AttributeSet attributes)
     : rvsdg::LambdaOperation(std::move(type)),
       name_(std::move(name)),

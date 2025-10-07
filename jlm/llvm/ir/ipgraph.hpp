@@ -128,7 +128,7 @@ public:
   virtual std::shared_ptr<const jlm::rvsdg::Type>
   Type() const = 0;
 
-  virtual const llvm::linkage &
+  virtual const llvm::Linkage &
   linkage() const noexcept = 0;
 
   virtual bool
@@ -149,7 +149,7 @@ private:
       InterProceduralGraph & clg,
       const std::string & name,
       std::shared_ptr<const rvsdg::FunctionType> type,
-      const llvm::linkage & linkage,
+      const llvm::Linkage & linkage,
       const AttributeSet & attributes)
       : InterProceduralGraphNode(clg),
         FunctionType_(type),
@@ -183,7 +183,7 @@ public:
     return FunctionType_;
   }
 
-  [[nodiscard]] const llvm::linkage &
+  [[nodiscard]] const llvm::Linkage &
   linkage() const noexcept override;
 
   [[nodiscard]] const std::string &
@@ -210,7 +210,7 @@ public:
       InterProceduralGraph & ipg,
       const std::string & name,
       std::shared_ptr<const rvsdg::FunctionType> type,
-      const llvm::linkage & linkage,
+      const llvm::Linkage & linkage,
       const AttributeSet & attributes)
   {
     std::unique_ptr<FunctionNode> node(
@@ -225,7 +225,7 @@ public:
       InterProceduralGraph & ipg,
       const std::string & name,
       std::shared_ptr<const rvsdg::FunctionType> type,
-      const llvm::linkage & linkage)
+      const llvm::Linkage & linkage)
   {
     return create(ipg, name, std::move(type), linkage, {});
   }
@@ -233,7 +233,7 @@ public:
 private:
   std::shared_ptr<const rvsdg::FunctionType> FunctionType_;
   std::string name_;
-  llvm::linkage linkage_;
+  llvm::Linkage linkage_;
   AttributeSet attributes_;
   std::unique_ptr<ControlFlowGraph> cfg_;
 };
@@ -318,7 +318,7 @@ private:
       InterProceduralGraph & clg,
       const std::string & name,
       std::shared_ptr<const jlm::rvsdg::Type> valueType,
-      const llvm::linkage & linkage,
+      const llvm::Linkage & linkage,
       std::string section,
       bool constant)
       : InterProceduralGraphNode(clg),
@@ -345,7 +345,7 @@ public:
   [[nodiscard]] const std::string &
   name() const noexcept override;
 
-  [[nodiscard]] const llvm::linkage &
+  [[nodiscard]] const llvm::Linkage &
   linkage() const noexcept override;
 
   [[nodiscard]] bool
@@ -386,7 +386,7 @@ public:
       InterProceduralGraph & clg,
       const std::string & name,
       std::shared_ptr<const jlm::rvsdg::Type> valueType,
-      const llvm::linkage & linkage,
+      const llvm::Linkage & linkage,
       std::string section,
       bool constant)
   {
@@ -401,7 +401,7 @@ private:
   bool constant_;
   std::string name_;
   std::string Section_;
-  llvm::linkage linkage_;
+  llvm::Linkage linkage_;
   std::shared_ptr<const jlm::rvsdg::Type> ValueType_;
   std::unique_ptr<DataNodeInit> init_;
 };

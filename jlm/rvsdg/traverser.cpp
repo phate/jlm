@@ -5,20 +5,38 @@
  */
 
 #include <jlm/rvsdg/graph.hpp>
-#include <jlm/rvsdg/notifiers.hpp>
 #include <jlm/rvsdg/traverser.hpp>
-
-using namespace std::placeholders;
 
 /* top down traverser */
 
 namespace jlm::rvsdg
 {
 
+TopDownTraverser::Observer::Observer(Region & region, TopDownTraverser & traverser)
+    : RegionObserver(region),
+      traverser_(traverser)
+{}
+
+void
+TopDownTraverser::Observer::onNodeCreate(Node * node)
+{
+  traverser_.node_create(node);
+}
+
+void
+TopDownTraverser::Observer::onNodeDestroy(Node * node)
+{}
+
+void
+TopDownTraverser::Observer::onInputChange(Input * input, Output * old_origin, Output * new_origin)
+{
+  traverser_.input_change(input, old_origin, new_origin);
+}
+
 TopDownTraverser::~TopDownTraverser() noexcept = default;
 
 TopDownTraverser::TopDownTraverser(Region * region)
-    : region_(*region)
+    : observer_(*region, *this)
 {
   for (auto & node : region->TopNodes())
     tracker_.set_nodestate(&node, traversal_nodestate::frontier);
@@ -37,10 +55,6 @@ TopDownTraverser::TopDownTraverser(Region * region)
       }
     }
   }
-
-  callbacks_.push_back(on_node_create.connect(std::bind(&TopDownTraverser::node_create, this, _1)));
-  callbacks_.push_back(
-      on_input_change.connect(std::bind(&TopDownTraverser::input_change, this, _1, _2, _3)));
 }
 
 bool
@@ -91,9 +105,6 @@ TopDownTraverser::next()
 void
 TopDownTraverser::node_create(Node * node)
 {
-  if (node->region() != &region_)
-    return;
-
   if (predecessors_visited(node))
     tracker_.set_nodestate(node, traversal_nodestate::behind);
   else
@@ -103,9 +114,6 @@ TopDownTraverser::node_create(Node * node)
 void
 TopDownTraverser::input_change(Input * in, Output *, Output *)
 {
-  if (in->region() != &region_)
-    return;
-
   auto node = TryGetOwnerNode<Node>(*in);
   if (!node)
     return;
@@ -138,11 +146,33 @@ HasSuccessors(const Node & node)
   return false;
 }
 
+BottomUpTraverser::Observer::Observer(Region & region, BottomUpTraverser & traverser)
+    : RegionObserver(region),
+      traverser_(traverser)
+{}
+
+void
+BottomUpTraverser::Observer::onNodeCreate(Node * node)
+{
+  traverser_.node_create(node);
+}
+
+void
+BottomUpTraverser::Observer::onNodeDestroy(Node * node)
+{
+  traverser_.node_destroy(node);
+}
+
+void
+BottomUpTraverser::Observer::onInputChange(Input * input, Output * old_origin, Output * new_origin)
+{
+  traverser_.input_change(input, old_origin, new_origin);
+}
+
 BottomUpTraverser::~BottomUpTraverser() noexcept = default;
 
-BottomUpTraverser::BottomUpTraverser(Region * region, bool revisit)
-    : region_(*region),
-      new_node_state_(revisit ? traversal_nodestate::frontier : traversal_nodestate::behind)
+BottomUpTraverser::BottomUpTraverser(Region * region)
+    : observer_(*region, *this)
 {
   for (auto & bottomNode : region->BottomNodes())
   {
@@ -155,13 +185,6 @@ BottomUpTraverser::BottomUpTraverser(Region * region, bool revisit)
     if (node && !HasSuccessors(*node))
       tracker_.set_nodestate(node, traversal_nodestate::frontier);
   }
-
-  callbacks_.push_back(
-      on_node_create.connect(std::bind(&BottomUpTraverser::node_create, this, _1)));
-  callbacks_.push_back(
-      on_node_destroy.connect(std::bind(&BottomUpTraverser::node_destroy, this, _1)));
-  callbacks_.push_back(
-      on_input_change.connect(std::bind(&BottomUpTraverser::input_change, this, _1, _2, _3)));
 }
 
 Node *
@@ -184,18 +207,12 @@ BottomUpTraverser::next()
 void
 BottomUpTraverser::node_create(Node * node)
 {
-  if (node->region() != &region_)
-    return;
-
-  tracker_.set_nodestate(node, new_node_state_);
+  tracker_.set_nodestate(node, traversal_nodestate::behind);
 }
 
 void
 BottomUpTraverser::node_destroy(Node * node)
 {
-  if (node->region() != &region_)
-    return;
-
   for (size_t n = 0; n < node->ninputs(); n++)
   {
     auto producer = TryGetOwnerNode<Node>(*node->input(n)->origin());
@@ -225,9 +242,6 @@ BottomUpTraverser::node_destroy(Node * node)
 void
 BottomUpTraverser::input_change(Input * in, Output * old_origin, Output *)
 {
-  if (in->region() != &region_)
-    return;
-
   if (!TryGetOwnerNode<Node>(*in))
     return;
 
