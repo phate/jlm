@@ -202,6 +202,18 @@ PartialRedundancyElimination::Run(
             bool c_and_a = op.is_commutative() && op.is_associative();
             h ^= c_and_a ? (a + b) : (a ^ (b << 3));
             flows_out[0] = std::optional<GVN_Hash>(h);
+          },
+          [&flows_in, &flows_out](const rvsdg::UnaryOperation& op){
+            JLM_ASSERT(flows_in.size() == 1);
+            if (!(flows_in[0])){
+              std::cout<< TR_RED << "Expected some input" << TR_RESET << std::endl;return;
+            }
+
+            std::hash<std::string> hasher;
+            size_t h = hasher(op.debug_string() ) << 3;
+            size_t a = hasher(std::to_string(flows_in[0]->value));
+            h ^= a;
+            flows_out[0] = std::optional<GVN_Hash>(h);
           }
         );
 
