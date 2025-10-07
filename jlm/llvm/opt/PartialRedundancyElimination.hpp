@@ -27,90 +27,18 @@ class ThetaNode;
 class Region;
 }
 
-
-namespace jlm::llvm::flows{
-
-/*
-const size_t  PRE_PTR_TAG_OUTPUT = 0x1;
-const size_t  PRE_PTR_TAG_INPUT  = 0x2;
-const size_t  PRE_PTR_TAG_NODE   = 0x3;
-const size_t  PRE_PTR_TAG_MASK   = 0x3;
-*/
-/** \brief A pointer to either rvsdg::Node*, rvsdg::Input or rvsdg::Output using the low bits as inline tags. **/
-/*union Flow
-{
-  Flow(rvsdg::Input* i){SetInput(i);}
-  Flow(rvsdg::Output* o){SetOutput(o);}
-  Flow(rvsdg::Node* n){SetNode(n);}
-
-  inline void SetInput(rvsdg::Input* i)
-  {
-    this->input_ = reinterpret_cast<rvsdg::Input*>(reinterpret_cast<size_t>(i) | PRE_PTR_TAG_INPUT);
-  }
-  inline void SetOutput(rvsdg::Output* o)
-  {
-    this->output_ = reinterpret_cast<rvsdg::Output*>(reinterpret_cast<size_t>(o) | PRE_PTR_TAG_OUTPUT);
-  }
-  inline void SetNode(rvsdg::Node* n)
-  {
-    this->node_ = reinterpret_cast<rvsdg::Node*>(reinterpret_cast<size_t>(n) | PRE_PTR_TAG_NODE);
-  }
-
-  inline rvsdg::Input*  GetInput(){return (reinterpret_cast<size_t>(input_)   & PRE_PTR_TAG_MASK) == PRE_PTR_TAG_INPUT ? input_ : NULL;}
-  inline rvsdg::Output* GetOutput(){return (reinterpret_cast<size_t>(output_) & PRE_PTR_TAG_MASK) == PRE_PTR_TAG_OUTPUT ? output_ : NULL;}
-  inline rvsdg::Node*   GetNode(){return (reinterpret_cast<size_t>(output_)   & PRE_PTR_TAG_MASK) == PRE_PTR_TAG_NODE ? node_ : NULL;}
-  inline void* UnsafeGetRaw() const {return static_cast<void*>(input_);}
-private:
-  rvsdg::Input* input_;
-  rvsdg::Output* output_;
-  rvsdg::Node* node_;
-};
-
-*/
-
-enum class FlowType
-{
-  //Optionally differentiate between single and multiple cases in order to catch logic errors
-  //   where a single value is expected to flow from a node, but there are multiple exits
-  INPUT,
-  OUTPUT,
-  NODE,
-  PARAMETER,
-};
-
-
-
-
-/** TODO: one data structure for storing annotations and another for storing reactive state **/
-/** TODO: no need for intermediate buffers. Project flows onto edges and update reactive state as needed **/
-/** Avoid duplicating data by storing maps elsewhere and provide mapping functions **/
-
-/** \brief FlowsCtx a context used as a proxy inside graph traversers
- * D must be comparable
- * **/
-
-}
-
-namespace std
-{
-inline std::string to_string(jlm::llvm::flows::FlowType ft)
-{
-  switch (ft)
-  {
-  case jlm::llvm::flows::FlowType::NODE:  return std::string("NODE");
-  case jlm::llvm::flows::FlowType::INPUT: return std::string("INPUT");
-  case jlm::llvm::flows::FlowType::OUTPUT: return std::string("OUTPUT");
-  case jlm::llvm::flows::FlowType::PARAMETER: return std::string("PARAMETER");
-  default: return std::string("Invalid flow type");
-  }
-}
-}
-
 namespace jlm::llvm::flows
 {
-using namespace jlm;
+  /** Generic functions for some data flow analyses.
+   *  Nodes are treated as part of a reactive flow network.
+   *  This makes it possible to write more generic analyses as some common tasks
+   *  such as ensuring the data is passed to all downstream (or upstream) usage sites.
+   *  Currently only a top-down flow is implemented. Usable for GVN.
+   */
+  using namespace jlm;
 
   /** A view into the data to manipulate by flows **/
+  /** This represents the value output from nodes **/
   template<typename D>
   class FlowData
   {
@@ -137,6 +65,9 @@ using namespace jlm;
     std::unordered_map<void*, D>* output_values_;
   };
 
+  /** \ref WorkItemType    Union type tag.
+   *  \ref WorkItemValue   Used internally by the reactive interpreter to keep track of nodes and regions yet to be visited.
+   *  **/
   enum class WorkItemType
   {
     REGION,
@@ -164,7 +95,7 @@ using namespace jlm;
         [this](jlm::rvsdg::DeltaNode& dl)     {this->type = WorkItemType::DELTA;}
       );
     }
-
+    /* Fields should be made const */
     WorkItemType type;
     union{
       rvsdg::DeltaNode* dl;
@@ -188,10 +119,11 @@ using namespace jlm;
   void ApplyDataFlowsTopDown(rvsdg::Region& scope, FlowData<D>& fd, GaMerger mrGa, ThMerger mrTh,  Prod cb){
     // mrGa: represent the intersection of values from one data flow out from a gamma node
     // mrTh: represent the merging of output of theta node with the input
-    //
-    // A queue of nodes and regions to visit or equivalently a continuation
+
+    // A FIFO queue of nodes and regions to visit or equivalently a continuation
     //    of instruction to be executed by the interpreter below.
     std::vector<WorkItemValue> workItems;
+
     // A buffer for flow values.
     // The flows function handles lookup of values from the fd map.
     std::vector< std::optional<D> > flows_in;
@@ -204,8 +136,7 @@ using namespace jlm;
       max_iter--;
       auto w = workItems.back();  workItems.pop_back();
 
-      switch (w.type)
-      {
+      switch (w.type){
         case WorkItemType::DELTA:{
           for (auto& reg : w.lm->Subregions()){
             workItems.push_back(WorkItemValue(&reg));
