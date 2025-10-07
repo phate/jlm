@@ -1871,7 +1871,7 @@ public:
     return *CallF_;
   }
 
-  [[nodiscard]] const rvsdg::Node &
+  [[nodiscard]] const rvsdg::SimpleNode &
   Memcpy() const noexcept
   {
     return *Memcpy_;
@@ -1889,7 +1889,7 @@ private:
 
   rvsdg::SimpleNode * CallF_;
 
-  rvsdg::Node * Memcpy_;
+  rvsdg::SimpleNode * Memcpy_;
 };
 
 /**

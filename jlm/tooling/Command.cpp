@@ -12,7 +12,6 @@
 #include <jlm/llvm/ir/RvsdgModule.hpp>
 #include <jlm/llvm/opt/alias-analyses/AgnosticModRefSummarizer.hpp>
 #include <jlm/llvm/opt/alias-analyses/Andersen.hpp>
-#include <jlm/llvm/opt/alias-analyses/EliminatedModRefSummarizer.hpp>
 #include <jlm/llvm/opt/alias-analyses/PointsToAnalysisStateEncoder.hpp>
 #include <jlm/llvm/opt/alias-analyses/RegionAwareModRefSummarizer.hpp>
 #include <jlm/llvm/opt/alias-analyses/Steensgaard.hpp>
@@ -410,7 +409,7 @@ JlmOptCommand::CreateTransformation(JlmOptCommandLineOptions::OptimizationId opt
   case JlmOptCommandLineOptions::OptimizationId::AAAndersenAgnostic:
     return std::make_shared<llvm::aa::PointsToAnalysisStateEncoder<Andersen, AgnosticMrs>>();
   case JlmOptCommandLineOptions::OptimizationId::AAAndersenRegionAware:
-    return std::make_shared<llvm::aa::PointsToAnalysisStateEncoder<Andersen, RegionAwareMrs>>();
+    return std::make_unique<llvm::aa::PointsToAnalysisStateEncoder<Andersen, RegionAwareMrs>>();
   case JlmOptCommandLineOptions::OptimizationId::AASteensgaardAgnostic:
     return std::make_shared<llvm::aa::PointsToAnalysisStateEncoder<Steensgaard, AgnosticMrs>>();
   case JlmOptCommandLineOptions::OptimizationId::AASteensgaardRegionAware:

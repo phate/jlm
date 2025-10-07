@@ -390,27 +390,6 @@ public:
     return GetStateMap(*state.region()).InsertState(memoryNode, state);
   }
 
-  void
-  ReplaceAddress(const rvsdg::Output & oldAddress, const rvsdg::Output & newAddress)
-  {
-    // TODO: This method is temporary until the new ModRefSummary interface is added
-    ReplacementMap_[&newAddress] = &oldAddress;
-  }
-
-  const rvsdg::Output &
-  LookupAddress(const rvsdg::Output & output)
-  {
-    // TODO: This method is temporary until the new ModRefSummary interface is added
-    const rvsdg::Output * result = &output;
-    while (true)
-    {
-      auto it = ReplacementMap_.find(result);
-      if (it == ReplacementMap_.end())
-        return *result;
-      result = it->second;
-    }
-  }
-
   bool
   HasState(const rvsdg::Region & region, const PointsToGraph::MemoryNode & memoryNode)
   {
@@ -437,52 +416,10 @@ public:
     return GetStates(*node.region(), GetSimpleNodeModRef(node));
   }
 
-  util::HashSet<const PointsToGraph::MemoryNode *>
+  const util::HashSet<const PointsToGraph::MemoryNode *> &
   GetSimpleNodeModRef(const rvsdg::SimpleNode & node)
   {
-    // TODO: This implementation is temporary, until the new ModRefSummary interface is added
-    util::HashSet<const PointsToGraph::MemoryNode *> result;
-    const auto & addOutputToModRefSet = [&](const rvsdg::Output & output)
-    {
-      auto & trueOutput = LookupAddress(output);
-      auto memoryNodes = ModRefSummary_.GetOutputNodes(trueOutput);
-      result.UnionWithAndClear(memoryNodes);
-    };
-
-    if (jlm::rvsdg::is<StoreOperation>(&node))
-    {
-      addOutputToModRefSet(*StoreOperation::AddressInput(node).origin());
-    }
-    else if (jlm::rvsdg::is<LoadOperation>(&node))
-    {
-      addOutputToModRefSet(*LoadOperation::AddressInput(node).origin());
-    }
-    else if (jlm::rvsdg::is<FreeOperation>(&node))
-    {
-      addOutputToModRefSet(*FreeOperation::addressInput(node).origin());
-    }
-    else if (jlm::rvsdg::is<MemCpyOperation>(&node))
-    {
-      addOutputToModRefSet(*MemCpyOperation::destinationInput(node).origin());
-      addOutputToModRefSet(*MemCpyOperation::sourceInput(node).origin());
-    }
-    else if (jlm::rvsdg::is<AllocaOperation>(&node))
-    {
-      result.Insert(&ModRefSummary_.GetPointsToGraph().GetAllocaNode(node));
-    }
-    else if (jlm::rvsdg::is<MallocOperation>(&node))
-    {
-      result.Insert(&ModRefSummary_.GetPointsToGraph().GetMallocNode(node));
-    }
-    else if (jlm::rvsdg::is<CallOperation>(&node))
-    {
-      return ModRefSummary_.GetCallEntryNodes(node);
-    }
-    else
-    {
-      throw std::logic_error("Unhandled node type.");
-    }
-    return result;
+    return ModRefSummary_.GetSimpleNodeModRef(node);
   }
 
   void
@@ -508,9 +445,6 @@ private:
   }
 
   const ModRefSummary & ModRefSummary_;
-
-  // TODO: Temporary until new ModRefSummary interface is added
-  std::unordered_map<const rvsdg::Output *, const rvsdg::Output *> ReplacementMap_;
 
   std::unordered_map<const rvsdg::Region *, std::unique_ptr<StateMap>> StateMaps_;
 };
@@ -789,7 +723,7 @@ MemoryStateEncoder::EncodeLoad(const rvsdg::SimpleNode & node)
   JLM_ASSERT(is<LoadOperation>(&node));
   auto & stateMap = Context_->GetRegionalizedStateMap();
 
-  const auto memoryNodes = stateMap.GetSimpleNodeModRef(node);
+  const auto & memoryNodes = stateMap.GetSimpleNodeModRef(node);
   Context_->GetLoadCounter().CountEntity(memoryNodes);
 
   const auto memoryNodeStatePairs = stateMap.GetStates(*node.region(), memoryNodes);
@@ -800,13 +734,6 @@ MemoryStateEncoder::EncodeLoad(const rvsdg::SimpleNode & node)
   StateMap::MemoryNodeStatePair::ReplaceStates(
       memoryNodeStatePairs,
       LoadOperation::MemoryStateOutputs(newLoadNode));
-
-  if (is<PointerType>(LoadOperation::LoadedValueOutput(node).Type()))
-  {
-    stateMap.ReplaceAddress(
-        LoadOperation::LoadedValueOutput(node),
-        LoadOperation::LoadedValueOutput(newLoadNode));
-  }
 }
 
 void
@@ -814,7 +741,7 @@ MemoryStateEncoder::EncodeStore(const rvsdg::SimpleNode & node)
 {
   auto & stateMap = Context_->GetRegionalizedStateMap();
 
-  const auto memoryNodes = stateMap.GetSimpleNodeModRef(node);
+  const auto & memoryNodes = stateMap.GetSimpleNodeModRef(node);
   Context_->GetStoreCounter().CountEntity(memoryNodes);
 
   const auto memoryNodeStatePairs = stateMap.GetStates(*node.region(), memoryNodes);
@@ -919,7 +846,7 @@ MemoryStateEncoder::EncodeLambdaEntry(const rvsdg::LambdaNode & lambdaNode)
   JLM_ASSERT(memoryStateArgument.nusers() == 1);
   auto & memoryStateArgumentUser = memoryStateArgument.SingleUser();
 
-  const auto & memoryNodes = Context_->GetModRefSummary().GetLambdaEntryNodes(lambdaNode);
+  const auto & memoryNodes = Context_->GetModRefSummary().GetLambdaEntryModRef(lambdaNode);
   Context_->GetInterProceduralRegionCounter().CountEntity(memoryNodes);
 
   const auto memoryNodeIds = GetMemoryNodeIds(memoryNodes);
@@ -959,7 +886,7 @@ MemoryStateEncoder::EncodeLambdaEntry(const rvsdg::LambdaNode & lambdaNode)
 void
 MemoryStateEncoder::EncodeLambdaExit(const rvsdg::LambdaNode & lambdaNode)
 {
-  auto & memoryNodes = Context_->GetModRefSummary().GetLambdaExitNodes(lambdaNode);
+  const auto & memoryNodes = Context_->GetModRefSummary().GetLambdaExitModRef(lambdaNode);
   auto & stateMap = Context_->GetRegionalizedStateMap();
   auto & memoryStateResult = GetMemoryStateRegionResult(lambdaNode);
 
@@ -1014,7 +941,7 @@ MemoryStateEncoder::EncodeGammaEntry(rvsdg::GammaNode & gammaNode)
 {
   auto region = gammaNode.region();
   auto & stateMap = Context_->GetRegionalizedStateMap();
-  auto memoryNodes = Context_->GetModRefSummary().GetGammaEntryNodes(gammaNode);
+  auto memoryNodes = Context_->GetModRefSummary().GetGammaEntryModRef(gammaNode);
 
   // Count the memory state arguments once per subregion
   for ([[maybe_unused]] auto & subregion : gammaNode.Subregions())
@@ -1033,7 +960,7 @@ void
 MemoryStateEncoder::EncodeGammaExit(rvsdg::GammaNode & gammaNode)
 {
   auto & stateMap = Context_->GetRegionalizedStateMap();
-  auto memoryNodes = Context_->GetModRefSummary().GetGammaExitNodes(gammaNode);
+  auto memoryNodes = Context_->GetModRefSummary().GetGammaExitModRef(gammaNode);
   auto memoryNodeStatePairs = stateMap.GetStates(*gammaNode.region(), memoryNodes);
 
   for (auto & memoryNodeStatePair : memoryNodeStatePairs)
@@ -1068,7 +995,7 @@ MemoryStateEncoder::EncodeThetaEntry(rvsdg::ThetaNode & thetaNode)
 {
   auto region = thetaNode.region();
   auto & stateMap = Context_->GetRegionalizedStateMap();
-  auto & memoryNodes = Context_->GetModRefSummary().GetThetaEntryExitNodes(thetaNode);
+  const auto & memoryNodes = Context_->GetModRefSummary().GetThetaModRef(thetaNode);
   Context_->GetInterProceduralRegionCounter().CountEntity(memoryNodes);
 
   std::vector<rvsdg::Output *> thetaStateOutputs;
@@ -1090,7 +1017,7 @@ MemoryStateEncoder::EncodeThetaExit(
 {
   auto subregion = thetaNode.subregion();
   auto & stateMap = Context_->GetRegionalizedStateMap();
-  auto & memoryNodes = Context_->GetModRefSummary().GetThetaEntryExitNodes(thetaNode);
+  const auto & memoryNodes = Context_->GetModRefSummary().GetThetaModRef(thetaNode);
   auto memoryNodeStatePairs = stateMap.GetStates(*thetaNode.region(), memoryNodes);
 
   JLM_ASSERT(memoryNodeStatePairs.size() == thetaStateOutputs.size());
