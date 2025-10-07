@@ -172,62 +172,63 @@ PartialRedundancyElimination::Run(
   };
 
   flows::ApplyDataFlowsTopDown(rvsdg.GetRootRegion(), fd, merge_gvn_ga, merge_gvn_th,
-      [](rvsdg::Node& node,
-        flows::FlowData<GVN_Hash>& fd,
-        std::vector<std::optional<GVN_Hash>>& flows_in,
-        std::vector<std::optional<GVN_Hash>>& flows_out
-        )
-      {
+  [](rvsdg::Node& node,
+    std::vector<std::optional<GVN_Hash>>& flows_in,
+    std::vector<std::optional<GVN_Hash>>& flows_out
+    )
+    {
+      /////////////////////////////////
+      std::cout << TR_GREEN << node.GetNodeId() << node.DebugString() << TR_RESET << std::endl;
 
-        std::cout << TR_GREEN << node.GetNodeId() << node.DebugString() << TR_RESET << std::endl;
+      rvsdg::MatchType(node.GetOperation(),
+        [&flows_out](const jlm::llvm::IntegerConstantOperation& iconst){
+          std::hash<std::string> hasher;
+          if (flows_out.size() == 0){return;}
+          flows_out[0] = GVN_Hash( hasher(iconst.Representation().str()) );
+        },
 
-        rvsdg::MatchType(node.GetOperation(),
-          [&flows_out](const jlm::llvm::IntegerConstantOperation& iconst){
-            std::hash<std::string> hasher;
-            if (flows_out.size() == 0){return;}
-            flows_out[0] = GVN_Hash( hasher(iconst.Representation().str()) );
-          },
-
-          [&flows_in, &flows_out](const rvsdg::BinaryOperation& op){
-            JLM_ASSERT(flows_in.size() == 2);
-            if (!(flows_in[0]) || !(flows_in[1])){
-              std::cout<< TR_RED << "Expected some input" << TR_RESET << std::endl;return;
-            }
-
-            std::hash<std::string> hasher;
-            size_t h = hasher(op.debug_string() );
-
-            size_t a = hasher(std::to_string(flows_in[0]->value));
-            size_t b = hasher(std::to_string(flows_in[1]->value));
-            bool c_and_a = op.is_commutative() && op.is_associative();
-            h ^= c_and_a ? (a + b) : (a ^ (b << 3));
-            flows_out[0] = std::optional<GVN_Hash>(h);
-          },
-          [&flows_in, &flows_out](const rvsdg::UnaryOperation& op){
-            JLM_ASSERT(flows_in.size() == 1);
-            if (!(flows_in[0])){
-              std::cout<< TR_RED << "Expected some input" << TR_RESET << std::endl;return;
-            }
-
-            std::hash<std::string> hasher;
-            size_t h = hasher(op.debug_string() ) << 3;
-            size_t a = hasher(std::to_string(flows_in[0]->value));
-            h ^= a;
-            flows_out[0] = std::optional<GVN_Hash>(h);
+        [&flows_in, &flows_out](const rvsdg::BinaryOperation& op){
+          JLM_ASSERT(flows_in.size() == 2);
+          if (!(flows_in[0]) || !(flows_in[1])){
+            std::cout<< TR_RED << "Expected some input" << TR_RESET << std::endl;return;
           }
-        );
 
-        rvsdg::MatchType(node,
-          [&flows_out](rvsdg::LambdaNode& lm){
-            auto s = lm.DebugString();
-            std::hash<std::string> hasher;
-            for (size_t i = 0; i < flows_out.size(); i++){
-              flows_out[i] = GVN_Hash( hasher(s + std::to_string(i)) );
-            }
+          std::hash<std::string> hasher;
+          size_t h = hasher(op.debug_string() );
+
+          size_t a = hasher(std::to_string(flows_in[0]->value));
+          size_t b = hasher(std::to_string(flows_in[1]->value));
+          bool c_and_a = op.is_commutative() && op.is_associative();
+          h ^= c_and_a ? (a + b) : (a ^ (b << 3));
+          flows_out[0] = std::optional<GVN_Hash>(h);
+        },
+        [&flows_in, &flows_out](const rvsdg::UnaryOperation& op){
+          JLM_ASSERT(flows_in.size() == 1);
+          if (!(flows_in[0])){
+            std::cout<< TR_RED << "Expected some input" << TR_RESET << std::endl;return;
           }
-        );
-      }
-    );
+
+          std::hash<std::string> hasher;
+          size_t h = hasher(op.debug_string() ) << 3;
+          size_t a = hasher(std::to_string(flows_in[0]->value));
+          h ^= a;
+          flows_out[0] = std::optional<GVN_Hash>(h);
+        }
+      );
+
+      rvsdg::MatchType(node,
+        [&flows_out](rvsdg::LambdaNode& lm){
+          auto s = lm.DebugString();
+          std::hash<std::string> hasher;
+          for (size_t i = 0; i < flows_out.size(); i++){
+            flows_out[i] = GVN_Hash( hasher(s + std::to_string(i)) );
+          }
+        }
+      );
+
+    //////////////////////////////////////////
+    }
+  );
 
 
     std::cout << TR_RED << "%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%" << std::endl;
