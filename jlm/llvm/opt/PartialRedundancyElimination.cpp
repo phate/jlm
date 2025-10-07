@@ -177,16 +177,17 @@ PartialRedundancyElimination::Run(
     std::vector<std::optional<GVN_Hash>>& flows_out
     )
     {
-      /////////////////////////////////
+
       std::cout << TR_GREEN << node.GetNodeId() << node.DebugString() << TR_RESET << std::endl;
 
       rvsdg::MatchType(node.GetOperation(),
+        // -----------------------------------------------------------------------------------------
         [&flows_out](const jlm::llvm::IntegerConstantOperation& iconst){
           std::hash<std::string> hasher;
           if (flows_out.size() == 0){return;}
           flows_out[0] = GVN_Hash( hasher(iconst.Representation().str()) );
         },
-
+        // -----------------------------------------------------------------------------------------
         [&flows_in, &flows_out](const rvsdg::BinaryOperation& op){
           JLM_ASSERT(flows_in.size() == 2);
           if (!(flows_in[0]) || !(flows_in[1])){
@@ -202,6 +203,7 @@ PartialRedundancyElimination::Run(
           h ^= c_and_a ? (a + b) : (a ^ (b << 3));
           flows_out[0] = std::optional<GVN_Hash>(h);
         },
+        // -----------------------------------------------------------------------------------------
         [&flows_in, &flows_out](const rvsdg::UnaryOperation& op){
           JLM_ASSERT(flows_in.size() == 1);
           if (!(flows_in[0])){
@@ -217,6 +219,7 @@ PartialRedundancyElimination::Run(
       );
 
       rvsdg::MatchType(node,
+        // -----------------------------------------------------------------------------------------
         [&flows_out](rvsdg::LambdaNode& lm){
           auto s = lm.DebugString();
           std::hash<std::string> hasher;
@@ -225,8 +228,6 @@ PartialRedundancyElimination::Run(
           }
         }
       );
-
-    //////////////////////////////////////////
     }
   );
 
