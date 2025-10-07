@@ -495,7 +495,7 @@ createTransformationSequence(rvsdg::DotWriter & dotWriter, const bool dumpRvsdgD
       allocaNodeConversion,
       streamConversion,
       addressQueueInsertion,
-      memoryStateDecoupling,
+      // memoryStateDecoupling,
       unusedStateRemoval,
       memoryConverter,
       nodeReduction,
