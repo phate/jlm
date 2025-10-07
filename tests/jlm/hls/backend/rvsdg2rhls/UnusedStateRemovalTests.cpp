@@ -143,7 +143,7 @@ TestLambda()
 
   auto lambdaNode = jlm::rvsdg::LambdaNode::Create(
       rvsdg.GetRootRegion(),
-      LlvmLambdaOperation::Create(functionType, "f", Linkage::external_linkage));
+      LlvmLambdaOperation::Create(functionType, "f", Linkage::externalLinkage));
   auto argument0 = lambdaNode->GetFunctionArguments()[0];
   auto argument1 = lambdaNode->GetFunctionArguments()[1];
   auto argument2 = lambdaNode->AddContextVar(*x).inner;
@@ -214,7 +214,7 @@ TestUsedMemoryState()
 
   auto lambda = jlm::rvsdg::LambdaNode::Create(
       rvsdgModule->Rvsdg().GetRootRegion(),
-      LlvmLambdaOperation::Create(functionType, "test", Linkage::external_linkage));
+      LlvmLambdaOperation::Create(functionType, "test", Linkage::externalLinkage));
 
   // Load node
   auto functionArguments = lambda->GetFunctionArguments();
@@ -261,7 +261,7 @@ TestUnusedMemoryState()
 
   auto lambda = jlm::rvsdg::LambdaNode::Create(
       rvsdgModule->Rvsdg().GetRootRegion(),
-      LlvmLambdaOperation::Create(functionType, "test", Linkage::external_linkage));
+      LlvmLambdaOperation::Create(functionType, "test", Linkage::externalLinkage));
 
   // Load node
   auto functionArguments = lambda->GetFunctionArguments();
@@ -309,7 +309,7 @@ TestInvariantMemoryState()
 
   auto lambda = jlm::rvsdg::LambdaNode::Create(
       rvsdgModule->Rvsdg().GetRootRegion(),
-      LlvmLambdaOperation::Create(functionType, "test", Linkage::external_linkage));
+      LlvmLambdaOperation::Create(functionType, "test", Linkage::externalLinkage));
 
   auto functionArguments = lambda->GetFunctionArguments();
 

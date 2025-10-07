@@ -1932,18 +1932,18 @@ const ::llvm::GlobalValue::LinkageTypes &
 IpGraphToLlvmConverter::convert_linkage(const llvm::Linkage & linkage)
 {
   static std::unordered_map<llvm::Linkage, ::llvm::GlobalValue::LinkageTypes> map(
-      { { llvm::Linkage::external_linkage, ::llvm::GlobalValue::ExternalLinkage },
-        { llvm::Linkage::available_externally_linkage,
+      { { llvm::Linkage::externalLinkage, ::llvm::GlobalValue::ExternalLinkage },
+        { llvm::Linkage::availableExternallyLinkage,
           ::llvm::GlobalValue::AvailableExternallyLinkage },
-        { llvm::Linkage::link_once_any_linkage, ::llvm::GlobalValue::LinkOnceAnyLinkage },
-        { llvm::Linkage::link_once_odr_linkage, ::llvm::GlobalValue::LinkOnceODRLinkage },
-        { llvm::Linkage::weak_any_linkage, ::llvm::GlobalValue::WeakAnyLinkage },
-        { llvm::Linkage::weak_odr_linkage, ::llvm::GlobalValue::WeakODRLinkage },
-        { llvm::Linkage::appending_linkage, ::llvm::GlobalValue::AppendingLinkage },
-        { llvm::Linkage::internal_linkage, ::llvm::GlobalValue::InternalLinkage },
-        { llvm::Linkage::private_linkage, ::llvm::GlobalValue::PrivateLinkage },
-        { llvm::Linkage::external_weak_linkage, ::llvm::GlobalValue::ExternalWeakLinkage },
-        { llvm::Linkage::common_linkage, ::llvm::GlobalValue::CommonLinkage } });
+        { llvm::Linkage::linkOnceAnyLinkage, ::llvm::GlobalValue::LinkOnceAnyLinkage },
+        { llvm::Linkage::linkOnceOdrLinkage, ::llvm::GlobalValue::LinkOnceODRLinkage },
+        { llvm::Linkage::weakAnyLinkage, ::llvm::GlobalValue::WeakAnyLinkage },
+        { llvm::Linkage::weakOdrLinkage, ::llvm::GlobalValue::WeakODRLinkage },
+        { llvm::Linkage::appendingLinkage, ::llvm::GlobalValue::AppendingLinkage },
+        { llvm::Linkage::internalLinkage, ::llvm::GlobalValue::InternalLinkage },
+        { llvm::Linkage::privateLinkage, ::llvm::GlobalValue::PrivateLinkage },
+        { llvm::Linkage::externalWeakLinkage, ::llvm::GlobalValue::ExternalWeakLinkage },
+        { llvm::Linkage::commonLinkage, ::llvm::GlobalValue::CommonLinkage } });
 
   JLM_ASSERT(map.find(linkage) != map.end());
   return map[linkage];

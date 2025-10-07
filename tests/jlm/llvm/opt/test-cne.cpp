@@ -490,7 +490,7 @@ test_lambda()
 
   auto lambda = jlm::rvsdg::LambdaNode::Create(
       graph.GetRootRegion(),
-      LlvmLambdaOperation::Create(ft, "f", Linkage::external_linkage));
+      LlvmLambdaOperation::Create(ft, "f", Linkage::externalLinkage));
 
   auto d1 = lambda->AddContextVar(*x).inner;
   auto d2 = lambda->AddContextVar(*x).inner;
@@ -535,13 +535,13 @@ test_phi()
 
   auto lambda1 = jlm::rvsdg::LambdaNode::Create(
       *region,
-      LlvmLambdaOperation::Create(ft, "f", Linkage::external_linkage));
+      LlvmLambdaOperation::Create(ft, "f", Linkage::externalLinkage));
   auto cv1 = lambda1->AddContextVar(*d1.inner).inner;
   auto f1 = lambda1->finalize({ cv1 });
 
   auto lambda2 = jlm::rvsdg::LambdaNode::Create(
       *region,
-      LlvmLambdaOperation::Create(ft, "f", Linkage::external_linkage));
+      LlvmLambdaOperation::Create(ft, "f", Linkage::externalLinkage));
   auto cv2 = lambda2->AddContextVar(*d2.inner).inner;
   auto f2 = lambda2->finalize({ cv2 });
 

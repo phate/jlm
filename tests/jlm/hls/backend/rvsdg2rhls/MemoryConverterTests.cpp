@@ -34,7 +34,7 @@ TestTraceArgument()
 
   auto lambda = jlm::rvsdg::LambdaNode::Create(
       rvsdgModule->Rvsdg().GetRootRegion(),
-      LlvmLambdaOperation::Create(functionType, "test", Linkage::external_linkage));
+      LlvmLambdaOperation::Create(functionType, "test", Linkage::externalLinkage));
 
   // Load followed by store
   auto loadAddress = lambda->GetFunctionArguments()[0];
@@ -88,7 +88,7 @@ TestLoad()
 
   auto lambda = jlm::rvsdg::LambdaNode::Create(
       rvsdgModule->Rvsdg().GetRootRegion(),
-      LlvmLambdaOperation::Create(functionType, "test", Linkage::external_linkage));
+      LlvmLambdaOperation::Create(functionType, "test", Linkage::externalLinkage));
 
   // Single load
   auto loadAddress = lambda->GetFunctionArguments()[0];
@@ -169,7 +169,7 @@ TestStore()
 
   auto lambda = jlm::rvsdg::LambdaNode::Create(
       rvsdgModule->Rvsdg().GetRootRegion(),
-      LlvmLambdaOperation::Create(functionType, "test", Linkage::external_linkage));
+      LlvmLambdaOperation::Create(functionType, "test", Linkage::externalLinkage));
 
   // Single load
   auto storeAddress = lambda->GetFunctionArguments()[0];
@@ -235,7 +235,7 @@ TestLoadStore()
 
   auto lambda = jlm::rvsdg::LambdaNode::Create(
       rvsdgModule->Rvsdg().GetRootRegion(),
-      LlvmLambdaOperation::Create(functionType, "test", Linkage::external_linkage));
+      LlvmLambdaOperation::Create(functionType, "test", Linkage::externalLinkage));
 
   // Load followed by store
   auto loadAddress = lambda->GetFunctionArguments()[0];
@@ -313,7 +313,7 @@ TestThetaLoad()
 
   auto lambda = jlm::rvsdg::LambdaNode::Create(
       rvsdgModule->Rvsdg().GetRootRegion(),
-      LlvmLambdaOperation::Create(functionType, "test", Linkage::external_linkage));
+      LlvmLambdaOperation::Create(functionType, "test", Linkage::externalLinkage));
 
   // Theta
   auto theta = jlm::rvsdg::ThetaNode::create(lambda->subregion());
@@ -441,7 +441,7 @@ TestThetaStore()
 
   auto lambda = jlm::rvsdg::LambdaNode::Create(
       rvsdgModule->Rvsdg().GetRootRegion(),
-      LlvmLambdaOperation::Create(functionType, "test", Linkage::external_linkage));
+      LlvmLambdaOperation::Create(functionType, "test", Linkage::externalLinkage));
 
   // Theta
   auto theta = jlm::rvsdg::ThetaNode::create(lambda->subregion());

@@ -43,7 +43,7 @@ test()
 
   auto lambda = jlm::rvsdg::LambdaNode::Create(
       rm.Rvsdg().GetRootRegion(),
-      jlm::llvm::LlvmLambdaOperation::Create(ft, "f", jlm::llvm::Linkage::external_linkage));
+      jlm::llvm::LlvmLambdaOperation::Create(ft, "f", jlm::llvm::Linkage::externalLinkage));
 
   auto loop = hls::LoopNode::create(lambda->subregion());
 

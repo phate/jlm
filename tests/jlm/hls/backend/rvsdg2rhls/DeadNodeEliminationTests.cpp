@@ -28,7 +28,7 @@ TestDeadLoopNode()
       jlm::llvm::LlvmLambdaOperation::Create(
           functionType,
           "f",
-          jlm::llvm::Linkage::external_linkage));
+          jlm::llvm::Linkage::externalLinkage));
 
   LoopNode::create(lambdaNode->subregion());
 
@@ -60,7 +60,7 @@ TestDeadLoopNodeOutput()
       jlm::llvm::LlvmLambdaOperation::Create(
           functionType,
           "f",
-          jlm::llvm::Linkage::external_linkage));
+          jlm::llvm::Linkage::externalLinkage));
 
   auto p = lambdaNode->GetFunctionArguments()[0];
   auto x = lambdaNode->GetFunctionArguments()[1];

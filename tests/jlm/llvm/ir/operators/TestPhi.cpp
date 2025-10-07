@@ -33,7 +33,7 @@ TestPhiCreation()
   {
     auto lambda = jlm::rvsdg::LambdaNode::Create(
         *region,
-        LlvmLambdaOperation::Create(f0type, name, Linkage::external_linkage));
+        LlvmLambdaOperation::Create(f0type, name, Linkage::externalLinkage));
     auto iOStateArgument = lambda->GetFunctionArguments()[1];
     auto memoryStateArgument = lambda->GetFunctionArguments()[2];
 
@@ -44,7 +44,7 @@ TestPhiCreation()
   {
     auto lambda = jlm::rvsdg::LambdaNode::Create(
         *region,
-        LlvmLambdaOperation::Create(f1type, "f2", Linkage::external_linkage));
+        LlvmLambdaOperation::Create(f1type, "f2", Linkage::externalLinkage));
     auto ctxVarF2 = lambda->AddContextVar(*f2).inner;
     auto valueArgument = lambda->GetFunctionArguments()[0];
     auto iOStateArgument = lambda->GetFunctionArguments()[1];

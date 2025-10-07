@@ -24,7 +24,7 @@ TestArgumentIterators()
 
     auto lambda = jlm::rvsdg::LambdaNode::Create(
         rvsdgModule.Rvsdg().GetRootRegion(),
-        LlvmLambdaOperation::Create(functionType, "f", Linkage::external_linkage));
+        LlvmLambdaOperation::Create(functionType, "f", Linkage::externalLinkage));
     lambda->finalize({ lambda->GetFunctionArguments()[0] });
 
     std::vector<const jlm::rvsdg::Output *> functionArguments;
@@ -40,7 +40,7 @@ TestArgumentIterators()
 
     auto lambda = jlm::rvsdg::LambdaNode::Create(
         rvsdgModule.Rvsdg().GetRootRegion(),
-        LlvmLambdaOperation::Create(functionType, "f", Linkage::external_linkage));
+        LlvmLambdaOperation::Create(functionType, "f", Linkage::externalLinkage));
 
     auto nullaryNode =
         jlm::tests::TestOperation::create(lambda->subregion(), {}, { vt })->output(0);
@@ -57,7 +57,7 @@ TestArgumentIterators()
 
     auto lambda = jlm::rvsdg::LambdaNode::Create(
         rvsdgModule.Rvsdg().GetRootRegion(),
-        LlvmLambdaOperation::Create(functionType, "f", Linkage::external_linkage));
+        LlvmLambdaOperation::Create(functionType, "f", Linkage::externalLinkage));
 
     auto cv = lambda->AddContextVar(*rvsdgImport).inner;
 
@@ -87,7 +87,7 @@ TestInvalidOperandRegion()
 
   auto lambdaNode = jlm::rvsdg::LambdaNode::Create(
       rvsdg->GetRootRegion(),
-      LlvmLambdaOperation::Create(functionType, "f", Linkage::external_linkage));
+      LlvmLambdaOperation::Create(functionType, "f", Linkage::externalLinkage));
   auto result = jlm::tests::TestOperation::create(&rvsdg->GetRootRegion(), {}, { vt })->output(0);
 
   bool invalidRegionErrorCaught = false;
@@ -123,7 +123,7 @@ TestRemoveLambdaInputsWhere()
 
   auto lambdaNode = jlm::rvsdg::LambdaNode::Create(
       rvsdg.GetRootRegion(),
-      LlvmLambdaOperation::Create(functionType, "f", Linkage::external_linkage));
+      LlvmLambdaOperation::Create(functionType, "f", Linkage::externalLinkage));
 
   auto lambdaBinder0 = lambdaNode->AddContextVar(*x);
   auto lambdaBinder1 = lambdaNode->AddContextVar(*x);
@@ -194,7 +194,7 @@ TestPruneLambdaInputs()
 
   auto lambdaNode = jlm::rvsdg::LambdaNode::Create(
       rvsdg.GetRootRegion(),
-      LlvmLambdaOperation::Create(functionType, "f", Linkage::external_linkage));
+      LlvmLambdaOperation::Create(functionType, "f", Linkage::externalLinkage));
 
   lambdaNode->AddContextVar(*x);
   auto lambdaInput1 = lambdaNode->AddContextVar(*x);

@@ -51,7 +51,7 @@ LoadConversion()
   cfg->exit()->append_result(loadTac->result(0));
   cfg->exit()->append_result(loadTac->result(1));
 
-  auto f = FunctionNode::create(ipgModule.ipgraph(), "f", functionType, Linkage::external_linkage);
+  auto f = FunctionNode::create(ipgModule.ipgraph(), "f", functionType, Linkage::externalLinkage);
   f->add_cfg(std::move(cfg));
 
   print(ipgModule, stdout);
@@ -115,7 +115,7 @@ LoadVolatileConversion()
   cfg->exit()->append_result(loadTac->result(1));
   cfg->exit()->append_result(loadTac->result(2));
 
-  auto f = FunctionNode::create(ipgModule.ipgraph(), "f", functionType, Linkage::external_linkage);
+  auto f = FunctionNode::create(ipgModule.ipgraph(), "f", functionType, Linkage::externalLinkage);
   f->add_cfg(std::move(cfg));
 
   print(ipgModule, stdout);
@@ -179,7 +179,7 @@ MemCpyConversion()
   basicBlock->add_outedge(cfg->exit());
   cfg->exit()->append_result(memCpyTac->result(0));
 
-  auto f = FunctionNode::create(ipgModule.ipgraph(), "f", functionType, Linkage::external_linkage);
+  auto f = FunctionNode::create(ipgModule.ipgraph(), "f", functionType, Linkage::externalLinkage);
   f->add_cfg(std::move(cfg));
 
   print(ipgModule, stdout);
@@ -248,7 +248,7 @@ MemCpyVolatileConversion()
   cfg->exit()->append_result(memCpyTac->result(0));
   cfg->exit()->append_result(memCpyTac->result(1));
 
-  auto f = FunctionNode::create(ipgModule.ipgraph(), "f", functionType, Linkage::external_linkage);
+  auto f = FunctionNode::create(ipgModule.ipgraph(), "f", functionType, Linkage::externalLinkage);
   f->add_cfg(std::move(cfg));
 
   print(ipgModule, stdout);
@@ -308,7 +308,7 @@ StoreConversion()
   basicBlock->add_outedge(cfg->exit());
   cfg->exit()->append_result(storeTac->result(0));
 
-  auto f = FunctionNode::create(ipgModule.ipgraph(), "f", functionType, Linkage::external_linkage);
+  auto f = FunctionNode::create(ipgModule.ipgraph(), "f", functionType, Linkage::externalLinkage);
   f->add_cfg(std::move(cfg));
 
   print(ipgModule, stdout);
@@ -375,7 +375,7 @@ StoreVolatileConversion()
   cfg->exit()->append_result(storeTac->result(0));
   cfg->exit()->append_result(storeTac->result(1));
 
-  auto f = FunctionNode::create(ipgModule.ipgraph(), "f", functionType, Linkage::external_linkage);
+  auto f = FunctionNode::create(ipgModule.ipgraph(), "f", functionType, Linkage::externalLinkage);
   f->add_cfg(std::move(cfg));
 
   print(ipgModule, stdout);
@@ -443,7 +443,7 @@ FMulAddConversion()
     cfg->exit()->append_result(memoryStateArgument);
 
     auto f =
-        FunctionNode::create(ipgModule.ipgraph(), "f", functionType, Linkage::external_linkage);
+        FunctionNode::create(ipgModule.ipgraph(), "f", functionType, Linkage::externalLinkage);
     f->add_cfg(std::move(cfg));
   }
 
@@ -498,7 +498,7 @@ IntegerConstant()
   bb->add_outedge(cfg->exit());
   cfg->exit()->append_result(c);
 
-  auto f = FunctionNode::create(im.ipgraph(), "f", ft, Linkage::external_linkage);
+  auto f = FunctionNode::create(im.ipgraph(), "f", ft, Linkage::externalLinkage);
   f->add_cfg(std::move(cfg));
 
   print(im, stdout);
@@ -540,7 +540,7 @@ Malloc()
     auto ft = jlm::rvsdg::FunctionType::Create(
         { jlm::rvsdg::BitType::Create(64) },
         { PointerType::Create(), MemoryStateType::Create() });
-    auto f = FunctionNode::create(im->ipgraph(), "f", ft, Linkage::external_linkage);
+    auto f = FunctionNode::create(im->ipgraph(), "f", ft, Linkage::externalLinkage);
     f->add_cfg(std::move(cfg));
 
     return im;
@@ -586,7 +586,7 @@ Free()
     auto ft = jlm::rvsdg::FunctionType::Create(
         { PointerType::Create(), MemoryStateType::Create(), IOStateType::Create() },
         { MemoryStateType::Create(), IOStateType::Create() });
-    auto f = FunctionNode::create(ipgmod->ipgraph(), "f", ft, Linkage::external_linkage);
+    auto f = FunctionNode::create(ipgmod->ipgraph(), "f", ft, Linkage::externalLinkage);
 
     auto cfg = ControlFlowGraph::create(*ipgmod);
     auto arg0 = cfg->entry()->append_argument(Argument::create("pointer", pt));
@@ -651,7 +651,7 @@ IgnoreMemoryState()
   cfg->exit()->append_result(s1);
 
   auto ft = FunctionType::Create({}, { mt });
-  auto f = FunctionNode::create(m.ipgraph(), "f", ft, Linkage::external_linkage);
+  auto f = FunctionNode::create(m.ipgraph(), "f", ft, Linkage::externalLinkage);
   f->add_cfg(std::move(cfg));
 
   llvm::LLVMContext ctx;
@@ -690,7 +690,7 @@ SelectWithState()
   auto ft = jlm::rvsdg::FunctionType::Create(
       { jlm::rvsdg::BitType::Create(1), MemoryStateType::Create(), MemoryStateType::Create() },
       { MemoryStateType::Create(), MemoryStateType::Create() });
-  auto f = FunctionNode::create(m.ipgraph(), "f", ft, Linkage::external_linkage);
+  auto f = FunctionNode::create(m.ipgraph(), "f", ft, Linkage::externalLinkage);
   f->add_cfg(std::move(cfg));
 
   print(m, stdout);

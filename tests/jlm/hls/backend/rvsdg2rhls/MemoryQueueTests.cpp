@@ -31,7 +31,7 @@ TestSingleLoad()
 
   auto lambda = jlm::rvsdg::LambdaNode::Create(
       rvsdgModule->Rvsdg().GetRootRegion(),
-      LlvmLambdaOperation::Create(functionType, "test", Linkage::external_linkage));
+      LlvmLambdaOperation::Create(functionType, "test", Linkage::externalLinkage));
 
   // Theta
   auto theta = jlm::rvsdg::ThetaNode::create(lambda->subregion());
@@ -107,7 +107,7 @@ TestLoadStore()
 
   auto lambda = jlm::rvsdg::LambdaNode::Create(
       rvsdgModule->Rvsdg().GetRootRegion(),
-      LlvmLambdaOperation::Create(functionType, "test", Linkage::external_linkage));
+      LlvmLambdaOperation::Create(functionType, "test", Linkage::externalLinkage));
 
   // Theta
   auto theta = jlm::rvsdg::ThetaNode::create(lambda->subregion());
@@ -188,7 +188,7 @@ TestAddrQueue()
 
   auto lambda = jlm::rvsdg::LambdaNode::Create(
       rvsdgModule->Rvsdg().GetRootRegion(),
-      LlvmLambdaOperation::Create(functionType, "test", Linkage::external_linkage));
+      LlvmLambdaOperation::Create(functionType, "test", Linkage::externalLinkage));
 
   // Theta
   auto theta = jlm::rvsdg::ThetaNode::create(lambda->subregion());

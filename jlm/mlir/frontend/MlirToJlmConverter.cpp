@@ -1012,47 +1012,47 @@ MlirToJlmConverter::ConvertLinkage(std::string stringValue)
 {
   if (!stringValue.compare("external_linkage"))
   {
-    return llvm::Linkage::external_linkage;
+    return llvm::Linkage::externalLinkage;
   }
   else if (!stringValue.compare("available_externally_linkage"))
   {
-    return llvm::Linkage::available_externally_linkage;
+    return llvm::Linkage::availableExternallyLinkage;
   }
   else if (!stringValue.compare("link_once_any_linkage"))
   {
-    return llvm::Linkage::link_once_any_linkage;
+    return llvm::Linkage::linkOnceAnyLinkage;
   }
   else if (!stringValue.compare("link_once_odr_linkage"))
   {
-    return llvm::Linkage::link_once_odr_linkage;
+    return llvm::Linkage::linkOnceOdrLinkage;
   }
   else if (!stringValue.compare("weak_any_linkage"))
   {
-    return llvm::Linkage::weak_any_linkage;
+    return llvm::Linkage::weakAnyLinkage;
   }
   else if (!stringValue.compare("weak_odr_linkage"))
   {
-    return llvm::Linkage::weak_odr_linkage;
+    return llvm::Linkage::weakOdrLinkage;
   }
   else if (!stringValue.compare("appending_linkage"))
   {
-    return llvm::Linkage::appending_linkage;
+    return llvm::Linkage::appendingLinkage;
   }
   else if (!stringValue.compare("internal_linkage"))
   {
-    return llvm::Linkage::internal_linkage;
+    return llvm::Linkage::internalLinkage;
   }
   else if (!stringValue.compare("private_linkage"))
   {
-    return llvm::Linkage::private_linkage;
+    return llvm::Linkage::privateLinkage;
   }
   else if (!stringValue.compare("external_weak_linkage"))
   {
-    return llvm::Linkage::external_weak_linkage;
+    return llvm::Linkage::externalWeakLinkage;
   }
   else if (!stringValue.compare("common_linkage"))
   {
-    return llvm::Linkage::common_linkage;
+    return llvm::Linkage::commonLinkage;
   }
   auto message = util::strfmt("Unsupported linkage: ", stringValue, "\n");
   JLM_UNREACHABLE(message.c_str());
@@ -1096,7 +1096,7 @@ MlirToJlmConverter::ConvertLambda(
       llvm::LlvmLambdaOperation::Create(
           functionType,
           functionName.getValue().str(),
-          llvm::Linkage::external_linkage));
+          llvm::Linkage::externalLinkage));
 
   for (auto input : inputs)
   {

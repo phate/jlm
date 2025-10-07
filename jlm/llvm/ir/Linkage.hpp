@@ -6,7 +6,7 @@
 #ifndef JLM_LLVM_IR_LINKAGE_HPP
 #define JLM_LLVM_IR_LINKAGE_HPP
 
-#include <jlm/util/common.hpp>
+#include <string_view>
 
 namespace jlm::llvm
 {
@@ -17,17 +17,19 @@ namespace jlm::llvm
  */
 enum class Linkage
 {
-  external_linkage,
-  available_externally_linkage,
-  link_once_any_linkage,
-  link_once_odr_linkage,
-  weak_any_linkage,
-  weak_odr_linkage,
-  appending_linkage,
-  internal_linkage,
-  private_linkage,
-  external_weak_linkage,
-  common_linkage
+  externalLinkage,
+  availableExternallyLinkage,
+  linkOnceAnyLinkage,
+  linkOnceOdrLinkage,
+  weakAnyLinkage,
+  weakOdrLinkage,
+  appendingLinkage,
+  // internal symbols are only included in the module's own local symbol table.
+  internalLinkage,
+  // private linkage is excluded from all symbol tables.
+  privateLinkage,
+  externalWeakLinkage,
+  commonLinkage
 };
 
 /**
@@ -43,11 +45,11 @@ isDiscardableIfUnused(const Linkage linkage)
 {
   switch (linkage)
   {
-  case Linkage::available_externally_linkage:
-  case Linkage::link_once_any_linkage:
-  case Linkage::link_once_odr_linkage:
-  case Linkage::internal_linkage:
-  case Linkage::private_linkage:
+  case Linkage::availableExternallyLinkage:
+  case Linkage::linkOnceAnyLinkage:
+  case Linkage::linkOnceOdrLinkage:
+  case Linkage::internalLinkage:
+  case Linkage::privateLinkage:
     return true;
   default:
     return false;
@@ -56,19 +58,17 @@ isDiscardableIfUnused(const Linkage linkage)
 
 /**
  * Checks if the given linkage is private or internal.
- * Internal symbols are only included in the module's own local symbol table,
- * while private linkage is excluded from all symbol tables.
  * @param linkage the linkage
  * @return true if the linkage type is private or internal
  */
 [[nodiscard]] inline bool
 isPrivateOrInternal(const Linkage linkage)
 {
-  return linkage == Linkage::private_linkage || linkage == Linkage::internal_linkage;
+  return linkage == Linkage::privateLinkage || linkage == Linkage::internalLinkage;
 }
 
 [[nodiscard]] std::string_view
-linkageToString(Linkage lnk);
+linkageToString(Linkage linkage);
 
 [[nodiscard]] Linkage
 linkageFromString(std::string_view stringValue);
