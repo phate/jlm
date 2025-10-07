@@ -122,6 +122,7 @@ using namespace jlm;
     }
     std::optional<D> Get(rvsdg::Output* k)
     {
+      if (k == NULL){return std::nullopt;}
       bool present = output_values_->find(k) == output_values_->end();
       return present ? std::optional<D>((*output_values_)[k]) : std::nullopt;
     }
@@ -193,9 +194,10 @@ using namespace jlm;
     std::vector< std::optional<D> > flows_out;
 
     workItems.push_back(WorkItemValue(&scope));
-
-    while (workItems.size())
+    size_t max_iter = 500;
+    while (workItems.size() && max_iter)
     {
+      max_iter--;
       auto w = workItems.back();  workItems.pop_back();
       switch (w.type)
       {
@@ -264,6 +266,7 @@ using namespace jlm;
             }
           }
           // Todododo : visit lambda after body has been visited once.
+
           // Finally iterate over lambda body
           workItems.push_back(w.lm->subregion());
         }break;
@@ -291,13 +294,12 @@ using namespace jlm;
           auto ex_vars = w.gn->GetExitVars();
           JLM_ASSERT(ex_vars.size() == w.gn->noutputs());
           for (size_t v = 0; v < ex_vars.size(); v++){
-            auto br_can_be_null = ex_vars[v].branchResult[0];
-            if (br_can_be_null){flows_out[v] = fd.Get( br_can_be_null->origin() );}
-            auto merged_val = br_can_be_null ? fd.Get(br_can_be_null->origin()) : std::nullopt;
+            auto br_fst = ex_vars[v].branchResult[0];
+            auto merged_val = fd.Get( br_fst ? br_fst->origin() : NULL );
 
             for (size_t b = 1;b < ex_vars[v].branchResult.size();b++){  // !!! from 1
               auto next_br = ex_vars[v].branchResult[b];
-              auto next_br_value = next_br ? fd.Get(next_br->origin()) : std::nullopt;
+              auto next_br_value = fd.Get( next_br ? next_br->origin() : NULL );
               merged_val = mrGa(merged_val, next_br_value);
             }
 
@@ -307,7 +309,44 @@ using namespace jlm;
           }
         }break;
 
+        case WorkItemType::THETA:{
+          // At entry into a theta node check if the flow into each loop variable
+          // is compatible with the last output previous loop iterations
+          // This ensures theta bodies are only visited twice during GVN
+          // It is the responsibility of merge callbacks to ensure values
+          //    reach a fixpoint.
+          auto loopvars = w.tn->GetLoopVars();
+          bool fixed_point_reached = true;
 
+          for (size_t i = 0;i < loopvars.size(); i++){
+            auto lv = loopvars[i];
+            auto lv_input = fd.Get( lv.input ? lv.input->origin() : NULL );
+
+            auto lv_post = fd.Get( lv.post ? lv.post->origin() : NULL );
+            auto merged = mrTh( lv_input, lv_post );
+
+            auto lv_pre = fd.Get( lv.pre );
+            if (
+              (merged && !lv_pre) || (!merged && lv_pre) || (*merged != *lv_pre)
+            ){fixed_point_reached = false;}
+
+            fd.Set( lv.pre, merged );
+          }
+
+          if (!fixed_point_reached){
+            workItems.push_back( WorkItemValue(WorkItemType::THETA_END, w.tn) );
+            workItems.push_back( w.tn->subregion() );
+          }
+        }break;
+
+        case WorkItemType::THETA_END:{
+          auto loopvars = w.tn->GetLoopVars();
+          for (size_t i = 0;i < loopvars.size(); i++){
+            auto lv = loopvars[i];
+            fd.Set( lv.output, fd.Get( lv.post ? lv.post->origin() : NULL ) );   // Required for downstream nodes
+          }
+          workItems.push_back( WorkItemValue(w.tn) ); // Attempt another loop iteration
+        }break;
 
         default: std::cout << static_cast<int>(w.type) <<"Ignoring work item..."<<std::endl;
       }
@@ -327,6 +366,8 @@ struct GVN_Hash
   inline static GVN_Hash Tainted(){return GVN_Hash(1);}
   inline bool IsValid(){return value >= 2;}
   inline bool IsSome(){return value != 0;}
+  inline bool operator==(const GVN_Hash &other){return this->value == other.value;}
+  inline bool operator!=(const GVN_Hash &other){return this->value != other.value;}
   inline GVN_Hash Merge(GVN_Hash& other)
   {
     if (other.IsSome())

@@ -172,6 +172,7 @@ PartialRedundancyElimination::Run(
 
 
         std::cout << TR_GREEN << node.GetNodeId() << node.DebugString() << TR_RESET << std::endl;
+
         rvsdg::MatchType(node.GetOperation(),
           [&flows_out](const jlm::llvm::IntegerConstantOperation& iconst){
             std::hash<std::string> hasher;
