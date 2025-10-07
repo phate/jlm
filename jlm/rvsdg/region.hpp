@@ -295,7 +295,7 @@ public:
   [[nodiscard]] TopNodeRange
   TopNodes() noexcept
   {
-    return TopNodeRange( topNodes_.Items() );
+    return TopNodeRange(topNodes_.Items());
   }
 
   /**
