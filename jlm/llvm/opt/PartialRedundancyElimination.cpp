@@ -184,7 +184,7 @@ PartialRedundancyElimination::Run(
         // -----------------------------------------------------------------------------------------
         [&flows_out](const jlm::llvm::IntegerConstantOperation& iconst){
           std::hash<std::string> hasher;
-          if (flows_out.size() == 0){return;}
+          if(flows_out.size() != 1){return;}  // Unused constant value.
           flows_out[0] = GVN_Hash( hasher(iconst.Representation().str()) );
         },
         // -----------------------------------------------------------------------------------------
