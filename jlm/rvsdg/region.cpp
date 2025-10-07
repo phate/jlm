@@ -153,6 +153,12 @@ Region::Region(rvsdg::StructuralNode * node, size_t index)
       node_(node)
 {}
 
+bool
+Region::IsRootRegion() const noexcept
+{
+  return &this->graph()->GetRootRegion() == this;
+}
+
 void
 Region::append_argument(RegionArgument * argument)
 {
@@ -232,74 +238,11 @@ Region::RemoveResult(size_t index)
 }
 
 void
-Region::remove_node(Node * node)
+Region::removeNode(Node * node)
 {
+  JLM_ASSERT(node->region() == this);
+  // The node's destructor handles informing the region about removal
   delete node;
-}
-
-bool
-Region::AddTopNode(Node & node)
-{
-  if (node.region() != this)
-    return false;
-
-  if (node.ninputs() != 0)
-    return false;
-
-  // FIXME: We should check that a node is not already part of the top nodes before adding it.
-  TopNodes_.push_back(&node);
-
-  return true;
-}
-
-bool
-Region::AddBottomNode(Node & node)
-{
-  if (node.region() != this)
-    return false;
-
-  if (!node.IsDead())
-    return false;
-
-  // FIXME: We should check that a node is not already part of the bottom nodes before adding it.
-  BottomNodes_.push_back(&node);
-
-  return true;
-}
-
-bool
-Region::AddNode(Node & node)
-{
-  if (node.region() != this)
-    return false;
-
-  Nodes_.push_back(&node);
-
-  return true;
-}
-
-bool
-Region::RemoveBottomNode(Node & node)
-{
-  auto numBottomNodes = NumBottomNodes();
-  BottomNodes_.erase(&node);
-  return numBottomNodes != NumBottomNodes();
-}
-
-bool
-Region::RemoveTopNode(Node & node)
-{
-  auto numTopNodes = NumTopNodes();
-  TopNodes_.erase(&node);
-  return numTopNodes != NumTopNodes();
-}
-
-bool
-Region::RemoveNode(Node & node)
-{
-  auto numNodes = nnodes();
-  Nodes_.erase(&node);
-  return numNodes != nnodes();
 }
 
 void
@@ -352,8 +295,8 @@ Region::copy(Region * target, SubstitutionMap & smap, bool copy_arguments, bool 
 void
 Region::prune(bool recursive)
 {
-  while (BottomNodes_.first())
-    remove_node(BottomNodes_.first());
+  while (bottomNodes_.first())
+    removeNode(bottomNodes_.first());
 
   if (!recursive)
     return;
@@ -368,10 +311,74 @@ Region::prune(bool recursive)
   }
 }
 
-bool
-Region::IsRootRegion() const noexcept
+void
+Region::onTopNodeAdded(Node & node)
 {
-  return &this->graph()->GetRootRegion() == this;
+  JLM_ASSERT(node.region() == this);
+  JLM_ASSERT(node.ninputs() == 0);
+  topNodes_.push_back(&node);
+}
+
+void
+Region::onTopNodeRemoved(Node & node)
+{
+  JLM_ASSERT(node.region() == this);
+  topNodes_.erase(&node);
+}
+void
+Region::onBottomNodeAdded(Node & node)
+{
+  JLM_ASSERT(node.region() == this);
+  JLM_ASSERT(node.IsDead());
+  bottomNodes_.push_back(&node);
+}
+
+void
+Region::onBottomNodeRemoved(Node & node)
+{
+  JLM_ASSERT(node.region() == this);
+  bottomNodes_.erase(&node);
+}
+
+void
+Region::onNodeAdded(Node & node)
+{
+  JLM_ASSERT(node.region() == this);
+  nodes_.push_back(&node);
+}
+
+void
+Region::onNodeRemoved(Node & node)
+{
+  JLM_ASSERT(node.region() == this);
+  nodes_.erase(&node);
+}
+
+void
+Region::notifyNodeCreate(Node * node)
+{
+  for (auto observer = observers_; observer; observer = observer->next_)
+  {
+    observer->onNodeCreate(node);
+  }
+}
+
+void
+Region::notifyNodeDestroy(Node * node)
+{
+  for (auto observer = observers_; observer; observer = observer->next_)
+  {
+    observer->onNodeDestroy(node);
+  }
+}
+
+void
+Region::notifyInputChange(Input * input, Output * old_origin, Output * new_origin)
+{
+  for (auto observer = observers_; observer; observer = observer->next_)
+  {
+    observer->onInputChange(input, old_origin, new_origin);
+  }
 }
 
 size_t
@@ -508,33 +515,6 @@ Region::ToString(const util::Annotation & annotation, char labelValueSeparator)
   }
 
   return util::strfmt(annotation.Label(), labelValueSeparator, value);
-}
-
-void
-Region::notifyNodeCreate(Node * node)
-{
-  for (auto observer = observers_; observer; observer = observer->next_)
-  {
-    observer->onNodeCreate(node);
-  }
-}
-
-void
-Region::notifyNodeDestroy(Node * node)
-{
-  for (auto observer = observers_; observer; observer = observer->next_)
-  {
-    observer->onNodeDestroy(node);
-  }
-}
-
-void
-Region::notifyInputChange(Input * input, Output * old_origin, Output * new_origin)
-{
-  for (auto observer = observers_; observer; observer = observer->next_)
-  {
-    observer->onInputChange(input, old_origin, new_origin);
-  }
 }
 
 RegionObserver::~RegionObserver()
