@@ -62,7 +62,7 @@
  * - insert is O(1) amortized
  * - erase, empty, are O(1) and noexcept
  * - end is O(1)
- * - begin is O(n)
+ * - begin is O(1)
  * - inserting a new object does not invalidate iterators or change order
  *   of previously inserted objects
  * - erasing an object does not invalidate iterators except those pointing
@@ -292,7 +292,8 @@ public:
 
   inline constexpr IntrusiveList() noexcept
       : first_(nullptr),
-        last_(nullptr)
+        last_(nullptr),
+        size_(0)
   {}
 
   IntrusiveList(const IntrusiveList & other) = delete;
@@ -318,6 +319,7 @@ public:
   {
     std::swap(first_, other.first_);
     std::swap(last_, other.last_);
+    std::swap(size_, other.size_);
   }
 
   inline void
@@ -334,6 +336,8 @@ public:
       first_ = element;
     }
     last_ = element;
+
+    size_++;
   }
 
   inline void
@@ -350,6 +354,8 @@ public:
       last_ = element;
     }
     first_ = element;
+
+    size_++;
   }
 
   Iterator
@@ -375,6 +381,8 @@ public:
     {
       last_ = element;
     }
+    size_++;
+
     return Iterator(this, element);
   }
 
@@ -399,6 +407,7 @@ public:
     {
       last_ = prev;
     }
+    size_--;
   }
 
   Iterator
@@ -443,6 +452,9 @@ public:
       return;
     }
 
+    // Maintaining the sizes of the linked lists requires range splicing to be O(n)
+    size_t count = std::distance(begin, end);
+
     ElementType * first = begin.ptr();
     ElementType * before = accessor_.get_prev(first);
     ElementType * after = end.ptr();
@@ -465,6 +477,7 @@ public:
     {
       other.last_ = before;
     }
+    other.size_ -= count;
 
     /* link to destination */
     ElementType * dst_next = position.ptr();
@@ -487,17 +500,13 @@ public:
     {
       last_ = last;
     }
+    size_ += count;
   }
 
   inline size_type
   size() const noexcept
   {
-    size_type count = 0;
-    for (ConstIterator i = begin(); i != end(); ++i)
-    {
-      ++count;
-    }
-    return count;
+    return size_;
   }
 
   inline bool
@@ -571,6 +580,7 @@ public:
 private:
   ElementType * first_;
   ElementType * last_;
+  size_t size_;
 
   Accessor accessor_;
 };

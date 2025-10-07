@@ -260,7 +260,7 @@ RemoveArgumentsWhere()
   assert(region.narguments() == 1);
   assert(argument1.index() == 0);
 
-  region.remove_node(node);
+  region.removeNode(node);
   region.RemoveArgumentsWhere(
       [](const jlm::rvsdg::RegionArgument &)
       {
@@ -310,7 +310,7 @@ PruneArguments()
   assert(argument0.index() == 0);
   assert(argument2.index() == 1);
 
-  region.remove_node(node);
+  region.removeNode(node);
   region.PruneArguments();
   assert(region.narguments() == 0);
 }

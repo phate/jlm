@@ -649,7 +649,6 @@ private:
   notifyInputChange(Input * input, Output * old_origin, Output * new_origin);
 
 public:
-
   /**
    * Checks if an operation is contained within the given \p region. If \p checkSubregions is true,
    * then the subregions of all contained structural nodes are recursively checked as well.
@@ -760,7 +759,6 @@ private:
 
   [[nodiscard]] static std::string
   ToString(const util::Annotation & annotation, char labelValueSeparator);
-
 
   size_t index_;
   Graph * graph_;

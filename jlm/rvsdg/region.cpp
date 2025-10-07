@@ -325,6 +325,7 @@ Region::onTopNodeRemoved(Node & node)
   JLM_ASSERT(node.region() == this);
   topNodes_.erase(&node);
 }
+
 void
 Region::onBottomNodeAdded(Node & node)
 {
