@@ -2325,10 +2325,7 @@ PhiTest2::SetupRvsdg()
   {
     auto lambda = rvsdg::LambdaNode::Create(
         graph->GetRootRegion(),
-        llvm::LlvmLambdaOperation::Create(
-            constantFunctionType,
-            "eight",
-            Linkage::externalLinkage));
+        llvm::LlvmLambdaOperation::Create(constantFunctionType, "eight", Linkage::externalLinkage));
     auto iOStateArgument = lambda->GetFunctionArguments()[0];
     auto memoryStateArgument = lambda->GetFunctionArguments()[1];
 
@@ -2689,12 +2686,7 @@ PhiWithDeltaTest::SetupRvsdg()
 
   auto delta = jlm::rvsdg::DeltaNode::Create(
       pb.subregion(),
-      jlm::llvm::DeltaOperation::Create(
-          arrayType,
-          "myArray",
-          Linkage::externalLinkage,
-          "",
-          false));
+      jlm::llvm::DeltaOperation::Create(arrayType, "myArray", Linkage::externalLinkage, "", false));
   auto myArrayArgument = delta->AddContextVar(*myArrayRecVar.recref).inner;
 
   auto aggregateZero = ConstantAggregateZeroOperation::Create(*delta->subregion(), structType);
@@ -2932,10 +2924,7 @@ EscapedMemoryTest2::SetupRvsdg()
 
     auto lambda = rvsdg::LambdaNode::Create(
         rvsdg->GetRootRegion(),
-        llvm::LlvmLambdaOperation::Create(
-            functionType,
-            "ReturnAddress",
-            Linkage::externalLinkage));
+        llvm::LlvmLambdaOperation::Create(functionType, "ReturnAddress", Linkage::externalLinkage));
     auto iOStateArgument = lambda->GetFunctionArguments()[0];
     auto memoryStateArgument = lambda->GetFunctionArguments()[1];
 
@@ -3739,12 +3728,7 @@ EscapingLocalFunctionTest::SetupRvsdg()
 
   Global_ = jlm::rvsdg::DeltaNode::Create(
       &graph->GetRootRegion(),
-      jlm::llvm::DeltaOperation::Create(
-          uint32Type,
-          "global",
-          Linkage::internalLinkage,
-          "",
-          false));
+      jlm::llvm::DeltaOperation::Create(uint32Type, "global", Linkage::internalLinkage, "", false));
   const auto constantZero = rvsdg::create_bitconstant(Global_->subregion(), 32, 0);
   const auto deltaOutput = &Global_->finalize(constantZero);
 

@@ -143,12 +143,8 @@ private:
     }
     Outputs_.Local = &localDelta.output();
 
-    Outputs_.Imported = &GraphImport::Create(
-        rvsdg,
-        pointerType,
-        pointerType,
-        "imported",
-        Linkage::externalLinkage);
+    Outputs_.Imported =
+        &GraphImport::Create(rvsdg, pointerType, pointerType, "imported", Linkage::externalLinkage);
 
     // Setup the function "func"
     {
@@ -390,12 +386,8 @@ private:
     Outputs_.GlobalInt =
         &GraphImport::Create(rvsdg, int32Type, pointerType, "globalInt", Linkage::externalLinkage);
 
-    Outputs_.GlobalLong = &GraphImport::Create(
-        rvsdg,
-        int64Type,
-        pointerType,
-        "globalLong",
-        Linkage::externalLinkage);
+    Outputs_.GlobalLong =
+        &GraphImport::Create(rvsdg, int64Type, pointerType, "globalLong", Linkage::externalLinkage);
 
     // Setup the function "func"
     {

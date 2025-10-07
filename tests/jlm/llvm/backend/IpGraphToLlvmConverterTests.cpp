@@ -442,8 +442,7 @@ FMulAddConversion()
     cfg->exit()->append_result(ioStateArgument);
     cfg->exit()->append_result(memoryStateArgument);
 
-    auto f =
-        FunctionNode::create(ipgModule.ipgraph(), "f", functionType, Linkage::externalLinkage);
+    auto f = FunctionNode::create(ipgModule.ipgraph(), "f", functionType, Linkage::externalLinkage);
     f->add_cfg(std::move(cfg));
   }
 

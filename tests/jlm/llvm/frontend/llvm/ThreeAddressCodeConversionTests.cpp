@@ -71,8 +71,7 @@ SetupFunctionWithThreeAddressCode(const jlm::rvsdg::SimpleOperation & operation)
 
   auto functionType = jlm::rvsdg::FunctionType::Create(operandTypes, resultTypes);
 
-  auto functionNode =
-      FunctionNode::create(ipgraph, "test", functionType, Linkage::externalLinkage);
+  auto functionNode = FunctionNode::create(ipgraph, "test", functionType, Linkage::externalLinkage);
   auto cfg = SetupControlFlowGraph(*ipgModule, operation);
   functionNode->add_cfg(std::move(cfg));
   ipgModule->create_variable(functionNode);
