@@ -564,7 +564,7 @@ public:
 
   /**
    * Removes all dead nodes from the region, including nodes that become dead during pruning.
-   * @param recursive it true, any subregions are also pruned, as well as their subregions etc.
+   * @param recursive if true, any subregions are also pruned, as well as their subregions etc.
    */
   void
   prune(bool recursive);
