@@ -106,7 +106,7 @@ EliminateDeadNodesInRegion(rvsdg::Region & region)
     anyChanged |= changed;
   } while (changed);
 
-  JLM_ASSERT(region.NumBottomNodes() == 0);
+  JLM_ASSERT(region.numBottomNodes() == 0);
   return anyChanged;
 }
 
@@ -115,7 +115,7 @@ EliminateDeadNodes(llvm::RvsdgModule & rvsdgModule)
 {
   auto & rootRegion = rvsdgModule.Rvsdg().GetRootRegion();
 
-  if (rootRegion.nnodes() != 1)
+  if (rootRegion.numNodes() != 1)
   {
     throw util::Error("Root should have only one node now");
   }

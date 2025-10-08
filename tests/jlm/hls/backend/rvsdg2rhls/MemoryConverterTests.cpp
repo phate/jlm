@@ -112,12 +112,12 @@ TestLoad()
 
   // Memory Converter replaces the lambda so we start from the root of the graph
   auto region = &rvsdgModule->Rvsdg().GetRootRegion();
-  assert(region->nnodes() == 1);
+  assert(region->numNodes() == 1);
   lambda = jlm::util::AssertedCast<jlm::rvsdg::LambdaNode>(region->Nodes().begin().ptr());
 
   // Assert
   auto lambdaRegion = lambda->subregion();
-  assert(lambdaRegion->nnodes() == 3);
+  assert(lambdaRegion->numNodes() == 3);
   assert(lambdaRegion->narguments() == 3);
   assert(lambdaRegion->nresults() == 3);
 
@@ -191,12 +191,12 @@ TestStore()
 
   // Memory Converter replaces the lambda so we start from the root of the graph
   auto region = &rvsdgModule->Rvsdg().GetRootRegion();
-  assert(region->nnodes() == 1);
+  assert(region->numNodes() == 1);
   lambda = jlm::util::AssertedCast<jlm::rvsdg::LambdaNode>(region->Nodes().begin().ptr());
 
   // Assert
   auto lambdaRegion = lambda->subregion();
-  assert(lambdaRegion->nnodes() == 4);
+  assert(lambdaRegion->numNodes() == 4);
   assert(lambdaRegion->narguments() == 4);
   assert(lambdaRegion->nresults() == 2);
 
@@ -262,12 +262,12 @@ TestLoadStore()
 
   // Memory Converter replaces the lambda so we start from the root of the graph
   auto region = &rvsdgModule->Rvsdg().GetRootRegion();
-  assert(region->nnodes() == 1);
+  assert(region->numNodes() == 1);
   lambda = jlm::util::AssertedCast<jlm::rvsdg::LambdaNode>(region->Nodes().begin().ptr());
 
   // Assert
   auto lambdaRegion = lambda->subregion();
-  assert(lambdaRegion->nnodes() == 7);
+  assert(lambdaRegion->numNodes() == 7);
   assert(lambdaRegion->narguments() == 5);
   assert(lambdaRegion->nresults() == 3);
 
@@ -381,7 +381,7 @@ TestThetaLoad()
 
   // Memory Converter replaces the lambda so we start from the root of the graph
   auto region = &rvsdgModule->Rvsdg().GetRootRegion();
-  assert(region->nnodes() == 1);
+  assert(region->numNodes() == 1);
   lambda = jlm::util::AssertedCast<jlm::rvsdg::LambdaNode>(region->Nodes().begin().ptr());
   lambdaRegion = lambda->subregion();
 
@@ -508,7 +508,7 @@ TestThetaStore()
 
   // Memory Converter replaces the lambda so we start from the root of the graph
   auto region = &rvsdgModule->Rvsdg().GetRootRegion();
-  assert(region->nnodes() == 1);
+  assert(region->numNodes() == 1);
   lambda = jlm::util::AssertedCast<jlm::rvsdg::LambdaNode>(region->Nodes().begin().ptr());
   lambdaRegion = lambda->subregion();
 

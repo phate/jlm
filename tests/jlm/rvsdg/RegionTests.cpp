@@ -260,7 +260,7 @@ RemoveArgumentsWhere()
   assert(region.narguments() == 1);
   assert(argument1.index() == 0);
 
-  region.remove_node(node);
+  region.removeNode(node);
   region.RemoveArgumentsWhere(
       [](const jlm::rvsdg::RegionArgument &)
       {
@@ -310,7 +310,7 @@ PruneArguments()
   assert(argument0.index() == 0);
   assert(argument2.index() == 1);
 
-  region.remove_node(node);
+  region.removeNode(node);
   region.PruneArguments();
   assert(region.narguments() == 0);
 }
@@ -347,7 +347,7 @@ ToTree_EmptyRvsdgWithAnnotations()
   AnnotationMap annotationMap;
   annotationMap.AddAnnotation(
       &rvsdg.GetRootRegion(),
-      Annotation("NumNodes", static_cast<uint64_t>(rvsdg.GetRootRegion().nnodes())));
+      Annotation("NumNodes", static_cast<uint64_t>(rvsdg.GetRootRegion().numNodes())));
 
   // Act
   auto tree = Region::ToTree(rvsdg.GetRootRegion(), annotationMap);
@@ -408,7 +408,7 @@ ToTree_RvsdgWithStructuralNodesAndAnnotations()
   AnnotationMap annotationMap;
   annotationMap.AddAnnotation(
       subregion2,
-      Annotation("NumNodes", static_cast<uint64_t>(subregion2->nnodes())));
+      Annotation("NumNodes", static_cast<uint64_t>(subregion2->numNodes())));
   annotationMap.AddAnnotation(
       subregion2,
       Annotation("NumArguments", static_cast<uint64_t>(subregion2->narguments())));
@@ -447,14 +447,14 @@ BottomNodeTests()
   // A newly created node without any users should automatically be added to the bottom nodes
   auto structuralNode = TestStructuralNode::create(&rvsdg.GetRootRegion(), 1);
   assert(structuralNode->IsDead());
-  assert(rvsdg.GetRootRegion().NumBottomNodes() == 1);
+  assert(rvsdg.GetRootRegion().numBottomNodes() == 1);
   assert(&*(rvsdg.GetRootRegion().BottomNodes().begin()) == structuralNode);
 
   // The node cedes to be dead
   auto [output, _] = structuralNode->AddOutput(valueType);
   GraphExport::Create(*output, "x");
   assert(structuralNode->IsDead() == false);
-  assert(rvsdg.GetRootRegion().NumBottomNodes() == 0);
+  assert(rvsdg.GetRootRegion().numBottomNodes() == 0);
   assert(rvsdg.GetRootRegion().BottomNodes().begin() == rvsdg.GetRootRegion().BottomNodes().end());
 
   // And it becomes dead again
@@ -464,7 +464,7 @@ BottomNodeTests()
         return true;
       });
   assert(structuralNode->IsDead());
-  assert(rvsdg.GetRootRegion().NumBottomNodes() == 1);
+  assert(rvsdg.GetRootRegion().numBottomNodes() == 1);
   assert(&*(rvsdg.GetRootRegion().BottomNodes().begin()) == structuralNode);
 }
 

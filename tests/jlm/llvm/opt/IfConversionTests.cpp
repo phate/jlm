@@ -260,7 +260,7 @@ EmptyGammaWithThreeSubregions()
 
   // Only the gamma and match nodes should be in the lambda region. No select operation
   // should have been created.
-  assert(lambdaNode->subregion()->nnodes() == 2);
+  assert(lambdaNode->subregion()->numNodes() == 2);
   assert(!gammaNode->IsDead());
 }
 
@@ -314,7 +314,7 @@ PartialEmptyGamma()
 
   // Only the gamma and match nodes should be in the lambda region. No select operation
   // should have been created.
-  assert(lambdaNode->subregion()->nnodes() == 2);
+  assert(lambdaNode->subregion()->numNodes() == 2);
   assert(!gammaNode->IsDead());
 }
 

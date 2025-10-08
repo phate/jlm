@@ -62,7 +62,7 @@ MemoryStateSplitNormalizeSingleResult()
   view(&rvsdg.GetRootRegion(), stdout);
 
   // Assert
-  assert(rvsdg.GetRootRegion().nnodes() == 0);
+  assert(rvsdg.GetRootRegion().numNodes() == 0);
   assert(ex.origin() == &ix);
 }
 
@@ -105,7 +105,7 @@ MemoryStateSplitNormalizeNestedSplits()
 
   // Assert
   // We should only have MemoryStateSplit left
-  assert(rvsdg.GetRootRegion().nnodes() == 1);
+  assert(rvsdg.GetRootRegion().numNodes() == 1);
   auto [splitNode, splitOperation] =
       TryGetSimpleNodeAndOptionalOp<MemoryStateSplitOperation>(*ex0.origin());
   assert(splitNode && splitOperation);
@@ -158,7 +158,7 @@ MemoryStateSplitNormalizeSplitMerge()
   view(&rvsdg.GetRootRegion(), stdout);
 
   // Assert
-  assert(rvsdg.GetRootRegion().nnodes() == 0);
+  assert(rvsdg.GetRootRegion().numNodes() == 0);
   assert(ex0.origin() == &ix0);
   assert(ex1.origin() == &ix1);
   assert(ex2.origin() == &ix2);
@@ -215,7 +215,7 @@ MemoryStateMergeNormalizeSingleOperand()
   view(&rvsdg.GetRootRegion(), stdout);
 
   // Assert
-  assert(rvsdg.GetRootRegion().nnodes() == 0);
+  assert(rvsdg.GetRootRegion().numNodes() == 0);
   assert(ex.origin() == &ix);
 }
 
@@ -250,7 +250,7 @@ MemoryStateMergeNormalizeDuplicateOperands()
   view(&rvsdg.GetRootRegion(), stdout);
 
   // Assert
-  assert(rvsdg.GetRootRegion().nnodes() == 1);
+  assert(rvsdg.GetRootRegion().numNodes() == 1);
   auto [mergeNode, mergeOperation] =
       TryGetSimpleNodeAndOptionalOp<MemoryStateMergeOperation>(*ex.origin());
   assert(mergeNode && mergeOperation);
@@ -295,7 +295,7 @@ MemoryStateMergeNormalizeNestedMerges()
   view(&rvsdg.GetRootRegion(), stdout);
 
   // Assert
-  assert(rvsdg.GetRootRegion().nnodes() == 1);
+  assert(rvsdg.GetRootRegion().numNodes() == 1);
   auto [mergeNode, mergeOperation] =
       TryGetSimpleNodeAndOptionalOp<MemoryStateMergeOperation>(*ex.origin());
   assert(mergeNode && mergeOperation);
@@ -339,7 +339,7 @@ MemoryStateMergeNormalizeNestedSplits()
   view(&rvsdg.GetRootRegion(), stdout);
 
   // Assert
-  assert(rvsdg.GetRootRegion().nnodes() == 1);
+  assert(rvsdg.GetRootRegion().numNodes() == 1);
   auto [node, mergeOperation] =
       TryGetSimpleNodeAndOptionalOp<MemoryStateMergeOperation>(*ex.origin());
   assert(node && mergeOperation);
@@ -380,7 +380,7 @@ MemoryStateJoin_NormalizeSingleOperand()
   view(&rvsdg.GetRootRegion(), stdout);
 
   // Assert
-  assert(rvsdg.GetRootRegion().nnodes() == 0);
+  assert(rvsdg.GetRootRegion().numNodes() == 0);
   assert(ex.origin() == &ix);
 }
 
@@ -413,7 +413,7 @@ MemoryStateJoin_NormalizeDuplicateOperands()
   view(&rvsdg.GetRootRegion(), stdout);
 
   // Assert
-  assert(rvsdg.GetRootRegion().nnodes() == 1);
+  assert(rvsdg.GetRootRegion().numNodes() == 1);
   auto [joinNode, joinOperation] =
       TryGetSimpleNodeAndOptionalOp<MemoryStateJoinOperation>(*ex.origin());
   assert(joinNode && joinOperation);
@@ -460,7 +460,7 @@ MemoryStateJoin_NormalizeNestedJoins()
   view(&rvsdg.GetRootRegion(), stdout);
 
   // Assert
-  assert(rvsdg.GetRootRegion().nnodes() == 1);
+  assert(rvsdg.GetRootRegion().numNodes() == 1);
   auto [joinNode, joinOperation] =
       TryGetSimpleNodeAndOptionalOp<MemoryStateJoinOperation>(*ex.origin());
   assert(joinNode && joinOperation);
@@ -543,7 +543,7 @@ LambdaEntryMemoryStateSplit_NormalizeCallEntryMerge()
 
   // Assert
   assert(success);
-  assert(rvsdg.GetRootRegion().nnodes() == 0);
+  assert(rvsdg.GetRootRegion().numNodes() == 0);
 
   assert(x0.origin() == &i2);
   assert(x1.origin() == &i1);
@@ -624,7 +624,7 @@ LambdaExitMemoryStateMergeNormalizeLoad()
 
   // Assert
   assert(success);
-  assert(graph.GetRootRegion().nnodes() == 4);
+  assert(graph.GetRootRegion().numNodes() == 4);
 
   // The lambdaExitMergeNode1 should have been replaced
   const auto [memStateMerge1Node, memStateMerge1Operation] =
@@ -689,7 +689,7 @@ LambdaExitMemoryStateMergeNormalizeStore()
 
   // Assert
   assert(success);
-  assert(graph.GetRootRegion().nnodes() == 3);
+  assert(graph.GetRootRegion().numNodes() == 3);
 
   // The lambdaExitMergeNode1 should have been replaced
   const auto [memStateMerge1Node, memStateMerge1Operation] =
@@ -752,7 +752,7 @@ LambdaExitMemoryStateMergeNormalizeAlloca()
 
   // Assert
   assert(success);
-  assert(graph.GetRootRegion().nnodes() == 3);
+  assert(graph.GetRootRegion().numNodes() == 3);
 
   // The lambdaExitMergeNode1 should have been replaced
   const auto [memStateMerge1Node, memStateMerge1Operation] =
@@ -859,7 +859,7 @@ CallExitMemoryStateSplit_NormalizeLambdaExitMerge()
 
   // Assert
   assert(success);
-  assert(rvsdg.GetRootRegion().nnodes() == 0);
+  assert(rvsdg.GetRootRegion().numNodes() == 0);
 
   assert(x0.origin() == &i2);
   assert(x1.origin() == &i1);

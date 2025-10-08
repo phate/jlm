@@ -55,8 +55,8 @@ SplitConversion()
   view(rvsdg, stdout);
 
   // Assert
-  assert(rvsdg.GetRootRegion().nnodes() == 2);
-  assert(structuralNode->subregion(0)->nnodes() == 1);
+  assert(rvsdg.GetRootRegion().numNodes() == 2);
+  assert(structuralNode->subregion(0)->numNodes() == 1);
 
   // The memory state split conversion pass should have replaced the
   // LambdaEntryMemoryStateSplitOperation node with a ForkOperation node

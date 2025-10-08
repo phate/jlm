@@ -145,7 +145,7 @@ RvsdgToIpGraphConverter::CreateInitialization(const rvsdg::DeltaNode & deltaNode
     Context_->InsertVariable(deltaNode.input(n)->arguments.first(), variable);
   }
 
-  if (subregion->nnodes() == 0)
+  if (subregion->numNodes() == 0)
   {
     auto value = Context_->GetVariable(subregion->result(0)->origin());
     return std::make_unique<DataNodeInit>(value);

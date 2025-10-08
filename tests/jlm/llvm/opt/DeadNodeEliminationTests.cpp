@@ -92,7 +92,7 @@ Gamma1()
 
   // Assert
   assert(gamma->noutputs() == 2);
-  assert(gamma->subregion(1)->nnodes() == 0);
+  assert(gamma->subregion(1)->numNodes() == 0);
   assert(gamma->subregion(1)->narguments() == 3);
   assert(gamma->ninputs() == 3);
   assert(graph.GetRootRegion().narguments() == 2);
@@ -178,7 +178,7 @@ Theta()
 
   // Assert
   assert(theta->noutputs() == 3);
-  assert(theta->subregion()->nnodes() == 1);
+  assert(theta->subregion()->numNodes() == 1);
   assert(graph.GetRootRegion().narguments() == 2);
 }
 
@@ -314,7 +314,7 @@ Lambda()
   jlm::rvsdg::view(graph, stdout);
 
   // Assert
-  assert(lambda->subregion()->nnodes() == 0);
+  assert(lambda->subregion()->numNodes() == 0);
   assert(graph.GetRootRegion().narguments() == 1);
 }
 
@@ -490,7 +490,7 @@ Delta()
   view(rvsdg, stdout);
 
   // Assert
-  assert(deltaNode->subregion()->nnodes() == 1);
+  assert(deltaNode->subregion()->numNodes() == 1);
   assert(deltaNode->ninputs() == 1);
 }
 

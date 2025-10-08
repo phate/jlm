@@ -293,20 +293,22 @@ public:
 
   /**
    * @return Returns an iterator range for iterating through the top nodes of the region.
+   * The top nodes are all nodes that do not have any inputs.
    */
   [[nodiscard]] TopNodeRange
   TopNodes() noexcept
   {
-    return { TopNodes_.begin(), TopNodes_.end() };
+    return { topNodes_.begin(), topNodes_.end() };
   }
 
   /**
    * @return Returns an iterator range for iterating through the top nodes of the region.
+   * The top nodes are all nodes that do not have any inputs.
    */
   [[nodiscard]] TopNodeConstRange
   TopNodes() const noexcept
   {
-    return { TopNodes_.begin(), TopNodes_.end() };
+    return { topNodes_.begin(), topNodes_.end() };
   }
 
   /**
@@ -315,7 +317,7 @@ public:
   [[nodiscard]] NodeRange
   Nodes() noexcept
   {
-    return { Nodes_.begin(), Nodes_.end() };
+    return { nodes_.begin(), nodes_.end() };
   }
 
   /**
@@ -324,26 +326,27 @@ public:
   [[nodiscard]] NodeConstRange
   Nodes() const noexcept
   {
-    return { Nodes_.begin(), Nodes_.end() };
+    return { nodes_.begin(), nodes_.end() };
   }
 
   /**
    * @return Returns an iterator range for iterating through the bottom nodes of the region.
+   * The bottom nodes are all nodes with only unused outputs, aka. dead nodes.
    */
   [[nodiscard]] BottomNodeRange
   BottomNodes() noexcept
   {
-    return { BottomNodes_.begin(), BottomNodes_.end() };
+    return { bottomNodes_.begin(), bottomNodes_.end() };
   }
 
   /**
-   * @return Returns an iterator range for iterating through the bottom nodes of the
-   * region.
+   * @return Returns an iterator range for iterating through the bottom nodes of the region.
+   * The bottom nodes are all nodes with only unused outputs, aka. dead nodes.
    */
   [[nodiscard]] BottomNodeConstRange
   BottomNodes() const noexcept
   {
-    return { BottomNodes_.begin(), BottomNodes_.end() };
+    return { bottomNodes_.begin(), bottomNodes_.end() };
   }
 
   [[nodiscard]] Graph *
@@ -509,114 +512,40 @@ public:
     return results_[index];
   }
 
-  inline size_t
-  nnodes() const noexcept
+  /**
+   * @return The number of nodes in the region.
+   */
+  [[nodiscard]] size_t
+  numNodes() const noexcept
   {
-    return Nodes_.size();
+    return numNodes_;
   }
 
   /**
    * @return The number of top nodes in the region.
    */
   [[nodiscard]] size_t
-  NumTopNodes() const noexcept
+  numTopNodes() const noexcept
   {
-    return TopNodes_.size();
+    return numTopNodes_;
   }
 
   /**
    * @return The number of bottom nodes in the region.
    */
   [[nodiscard]] size_t
-  NumBottomNodes() const noexcept
+  numBottomNodes() const noexcept
   {
-    return BottomNodes_.size();
+    return numBottomNodes_;
   }
 
+  /**
+   * Deletes the given node from the region.
+   * The node must belong to this region, and be dead.
+   * @param node the node to remove
+   */
   void
-  remove_node(Node * node);
-
-  /**
-   * \brief Adds \p node to the top nodes of the region.
-   *
-   * The node \p node is only added to the top nodes of this region, iff:
-   * 1. The node \p node belongs to the same region instance.
-   * 2. The node \p node has no inputs.
-   *
-   * @param node The node that is added.
-   * @return True, if \p node was added, otherwise false.
-   *
-   * @note This method is automatically invoked when a node is created. There is
-   * no need to invoke it manually.
-   */
-  bool
-  AddTopNode(Node & node);
-
-  /**
-   * \brief Adds \p node to the bottom nodes of the region.
-   *
-   * The node \p node is only added to the bottom nodes of this region, iff:
-   * 1. The node \p node belongs to the same region instance.
-   * 2. All the outputs of \p node are dead. See node::IsDead() for more details.
-   *
-   * @param node The node that is added.
-   * @return True, if \p node was added, otherwise false.
-   *
-   * @note This method is automatically invoked when a node is created or becomes dead. There is
-   * no need to invoke it manually.
-   */
-  bool
-  AddBottomNode(Node & node);
-
-  /**
-   * \brief Adds \p node to the region.
-   *
-   * The node \p node is only added to this region, iff \p node belongs to the same region instance.
-   *
-   * @param node The node that is added.
-   * @return True, if \p node was added, otherwise false.
-   *
-   * @note This method is automatically invoked when a node is created. There is no need to invoke
-   * it manually.
-   */
-  bool
-  AddNode(Node & node);
-
-  /**
-   * Removes \p node from the top nodes in the region.
-   *
-   * @param node The node that is removed.
-   * @return True, if \p node was a top node and removed, otherwise false.
-   *
-   * @note This method is automatically invoked when inputs are added to a node. There is no need to
-   * invoke it manually.
-   */
-  bool
-  RemoveTopNode(Node & node);
-
-  /**
-   * Removes \p node from the bottom nodes in the region.
-   *
-   * @param node The node that is removed.
-   * @return True, if \p node was a bottom node and removed, otherwise false.
-   *
-   * @note This method is automatically invoked when a node cedes to be dead. There is no need to
-   * invoke it manually.
-   */
-  bool
-  RemoveBottomNode(Node & node);
-
-  /**
-   * Remove \p node from the region.
-   *
-   * @param node The node that is removed.
-   * @return True, if \p node was removed, otherwise false.
-   *
-   * @note This method is automatically invoked when a node is deleted. There is no need to invoke
-   * it manually.
-   */
-  bool
-  RemoveNode(Node & node);
+  removeNode(Node * node);
 
   /**
     \brief Copy a region with substitutions
@@ -633,9 +562,96 @@ public:
   void
   copy(Region * target, SubstitutionMap & smap, bool copy_arguments, bool copy_results) const;
 
+  /**
+   * Removes all dead nodes from the region, including nodes that become dead during pruning.
+   * @param recursive if true, any subregions are also pruned, as well as their subregions etc.
+   */
   void
   prune(bool recursive);
 
+private:
+  /**
+   * \brief Adds \p node to the top nodes of the region.
+   * @param node The node that is now a top node.
+   * @see TopNodes
+   *
+   * @note This method is automatically invoked when a top node is created.
+   */
+  void
+  onTopNodeAdded(Node & node);
+
+  /**
+   * Removes \p node from the list of top nodes in the region.
+   * @param node The node that is no longer a top node.
+   *
+   * @note This method is automatically invoked when inputs are added to a node.
+   */
+  void
+  onTopNodeRemoved(Node & node);
+
+  /**
+   * \brief Adds \p node to the set of bottom nodes in the region.
+   * @param node The node that is now a bottom node.
+   * @see BottomNodes
+   *
+   * @note This method is automatically invoked when a node is created or becomes dead.
+   */
+  void
+  onBottomNodeAdded(Node & node);
+
+  /**
+   * Removes \p node from the list of bottom nodes in the region.
+   * @param node The node that is no longer a bottom node.
+   *
+   * @note This method is automatically invoked when a node ceases to be dead.
+   */
+  void
+  onBottomNodeRemoved(Node & node);
+
+  /**
+   * \brief Adds \p node to the list of nodes in the region.
+   * @param node The node that has been created in the region.
+   *
+   * @note This method is automatically invoked when a node is created.
+   */
+  void
+  onNodeAdded(Node & node);
+
+  /**
+   * Remove \p node from the region.
+   *
+   * @param node The node that is removed.
+   * @return True, if \p node was removed, otherwise false.
+   *
+   * @note This method is automatically invoked when a node is deleted.
+   */
+  void
+  onNodeRemoved(Node & node);
+
+  /**
+   * @return A unique identifier for a node within this region.
+   *
+   * @note This method is automatically invoked when a node is created.
+   * The identifier is only unique within this region.
+   */
+  [[nodiscard]] Node::Id
+  generateNodeId() noexcept
+  {
+    const auto nodeId = nextNodeId_;
+    nextNodeId_++;
+    return nodeId;
+  }
+
+  void
+  notifyNodeCreate(Node * node);
+
+  void
+  notifyNodeDestroy(Node * node);
+
+  void
+  notifyInputChange(Input * input, Output * old_origin, Output * new_origin);
+
+public:
   /**
    * Checks if an operation is contained within the given \p region. If \p checkSubregions is true,
    * then the subregions of all contained structural nodes are recursively checked as well.
@@ -723,19 +739,6 @@ public:
   [[nodiscard]] static std::string
   ToTree(const rvsdg::Region & region) noexcept;
 
-  /**
-   * @return A unique identifier for a node within this region.
-   *
-   * \note The identifier is only unique within this region.
-   */
-  [[nodiscard]] Node::Id
-  GenerateNodeId() noexcept
-  {
-    const auto nodeId = NodeId_;
-    NodeId_++;
-    return nodeId;
-  }
-
 private:
   static void
   ToTree(
@@ -760,30 +763,26 @@ private:
   [[nodiscard]] static std::string
   ToString(const util::Annotation & annotation, char labelValueSeparator);
 
-  void
-  notifyNodeCreate(Node * node);
-
-  void
-  notifyNodeDestroy(Node * node);
-
-  void
-  notifyInputChange(Input * input, Output * old_origin, Output * new_origin);
-
   size_t index_;
   Graph * graph_;
-  Node::Id NodeId_;
+  Node::Id nextNodeId_;
   rvsdg::StructuralNode * node_;
   std::vector<RegionResult *> results_;
   std::vector<RegionArgument *> arguments_;
-  region_bottom_node_list BottomNodes_;
-  region_top_node_list TopNodes_;
-  region_nodes_list Nodes_;
+  region_top_node_list topNodes_;
+  size_t numTopNodes_;
+  region_bottom_node_list bottomNodes_;
+  size_t numBottomNodes_;
+  region_nodes_list nodes_;
+  size_t numNodes_;
   RegionObserver * observers_ = nullptr;
 
+  friend class Node;
   friend class RegionObserver;
   friend class SimpleNode;
   friend class StructuralNode;
   friend class Input;
+  friend class Output;
 };
 
 /**
@@ -824,7 +823,7 @@ private:
 static inline void
 remove(Node * node)
 {
-  return node->region()->remove_node(node);
+  return node->region()->removeNode(node);
 }
 
 size_t

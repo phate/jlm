@@ -456,7 +456,7 @@ convert_loop_state_to_lcb(rvsdg::Input * loop_state_input)
 static void
 decouple_mem_state(rvsdg::Region * region)
 {
-  JLM_ASSERT(region->nnodes() == 1);
+  JLM_ASSERT(region->numNodes() == 1);
   auto lambda = util::AssertedCast<const jlm::rvsdg::LambdaNode>(region->Nodes().begin().ptr());
   auto state_arg = &llvm::GetMemoryStateRegionArgument(*lambda);
   if (!state_arg)

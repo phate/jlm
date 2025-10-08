@@ -112,12 +112,12 @@ TestLambda()
       using namespace jlm::rvsdg;
       std::cout << "Checking the result" << std::endl;
 
-      assert(region->nnodes() == 1);
+      assert(region->numNodes() == 1);
       auto convertedLambda =
           jlm::util::AssertedCast<jlm::rvsdg::LambdaNode>(region->Nodes().begin().ptr());
       assert(is<jlm::llvm::LlvmLambdaOperation>(convertedLambda->GetOperation()));
 
-      assert(convertedLambda->subregion()->nnodes() == 1);
+      assert(convertedLambda->subregion()->numNodes() == 1);
       assert(is<jlm::llvm::IntegerConstantOperation>(
           convertedLambda->subregion()->Nodes().begin().ptr()));
     }
@@ -261,7 +261,7 @@ TestDivOperation()
     {
       using namespace jlm::rvsdg;
 
-      assert(region->nnodes() == 1);
+      assert(region->numNodes() == 1);
 
       // Get the lambda block
       auto convertedLambda =
@@ -269,7 +269,7 @@ TestDivOperation()
       assert(is<jlm::llvm::LlvmLambdaOperation>(convertedLambda));
 
       // 2 Constants + 1 DivUIOp
-      assert(convertedLambda->subregion()->nnodes() == 3);
+      assert(convertedLambda->subregion()->numNodes() == 3);
 
       // Traverse the rvsgd graph upwards to check connections
       NodeOutput * lambdaResultOriginNodeOuput = nullptr;
@@ -434,7 +434,7 @@ TestCompZeroExt()
 
       std::cout << "Checking the result" << std::endl;
 
-      assert(region->nnodes() == 1);
+      assert(region->numNodes() == 1);
 
       // Get the lambda block
       auto convertedLambda =
@@ -442,7 +442,7 @@ TestCompZeroExt()
       assert(is<jlm::llvm::LlvmLambdaOperation>(convertedLambda));
 
       // 2 Constants + AddOp + CompOp + ZeroExtOp
-      assert(convertedLambda->subregion()->nnodes() == 5);
+      assert(convertedLambda->subregion()->numNodes() == 5);
 
       // Traverse the rvsgd graph upwards to check connections
       std::cout << "Testing lambdaResultOriginNodeOuput\n";
@@ -806,7 +806,7 @@ TestGammaOp()
     {
       using namespace jlm::rvsdg;
 
-      assert(region->nnodes() == 1);
+      assert(region->numNodes() == 1);
 
       // Get the lambda block
       auto convertedLambda =
@@ -816,7 +816,7 @@ TestGammaOp()
       auto lambdaRegion = convertedLambda->subregion();
 
       // 2 constants + gamma
-      assert(lambdaRegion->nnodes() == 3);
+      assert(lambdaRegion->numNodes() == 3);
 
       auto gammaNode = &jlm::rvsdg::AssertGetOwnerNode<jlm::rvsdg::GammaNode>(
           *lambdaRegion->result(0)->origin());
@@ -931,7 +931,7 @@ TestThetaOp()
     {
       using namespace jlm::rvsdg;
 
-      assert(region->nnodes() == 1);
+      assert(region->numNodes() == 1);
 
       // Get the lambda block
       auto convertedLambda =
@@ -941,7 +941,7 @@ TestThetaOp()
       auto lambdaRegion = convertedLambda->subregion();
 
       // Just the theta node
-      assert(lambdaRegion->nnodes() == 1);
+      assert(lambdaRegion->numNodes() == 1);
 
       auto thetaNode = &jlm::rvsdg::AssertGetOwnerNode<jlm::rvsdg::ThetaNode>(
           *lambdaRegion->result(0)->origin());

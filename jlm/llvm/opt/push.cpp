@@ -386,10 +386,10 @@ push(rvsdg::ThetaNode * theta)
   bool done = false;
   while (!done)
   {
-    auto nnodes = theta->subregion()->nnodes();
+    auto nnodes = theta->subregion()->numNodes();
     push_top(theta);
     push_bottom(theta);
-    if (nnodes == theta->subregion()->nnodes())
+    if (nnodes == theta->subregion()->numNodes())
       done = true;
   }
 }
