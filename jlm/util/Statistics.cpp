@@ -195,8 +195,12 @@ StatisticsCollector::CreateOutputFile(std::string fileNameSuffix, bool includeCo
         strfmt(fileNameSuffix.substr(0, firstDot), "-", count, fileNameSuffix.substr(firstDot));
   }
 
-  const auto fileName =
-      strfmt(Settings_.GetModuleName(), '-', Settings_.GetUniqueString(), '-', fileNameSuffix);
+  std::string fileName;
+  if (!Settings_.GetModuleName().empty())
+    fileName += Settings_.GetModuleName() + "-";
+  if (!Settings_.GetUniqueString().empty())
+    fileName += Settings_.GetUniqueString() + "-";
+  fileName += fileNameSuffix;
 
   auto fullPath = directory.Join(fileName);
   if (fullPath.Exists())

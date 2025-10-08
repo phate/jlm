@@ -508,11 +508,10 @@ DumpDotTransformation::DumpDotTransformation()
 {}
 
 void
-DumpDotTransformation::Run(rvsdg::RvsdgModule & rvsdgModule, util::StatisticsCollector &)
+DumpDotTransformation::Run(rvsdg::RvsdgModule & rvsdgModule, util::StatisticsCollector & statisticsCollector)
 {
-  DumpDot(
-      *dynamic_cast<jlm::llvm::RvsdgModule *>(&rvsdgModule),
-      "rvsdg-graph-" + std::to_string(this->Count_++) + ".dot");
+  const auto file = statisticsCollector.CreateOutputFile("rvsdg-graph.dot", true);
+  DumpDot(&rvsdgModule.Rvsdg().GetRootRegion(), file.path().to_str());
 }
 
 } // namespace jlm::hls
