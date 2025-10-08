@@ -787,7 +787,7 @@ ConvertMemory(rvsdg::RvsdgModule & rm)
   UnusedStateRemoval::CreateAndRun(rm, statisticsCollector);
 
   // Need to get the lambda from the root since remote_unused_state replaces the lambda
-  JLM_ASSERT(root->nnodes() == 1);
+  JLM_ASSERT(root->numNodes() == 1);
   newLambda = util::AssertedCast<rvsdg::LambdaNode>(root->Nodes().begin().ptr());
   auto decouple_funcs = find_function_arguments(newLambda, "decoupled");
   // make sure context vars are actually dead

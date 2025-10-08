@@ -170,7 +170,7 @@ TestLambda()
   jlm::hls::UnusedStateRemoval::CreateAndRun(*rvsdgModule, statisticsCollector);
 
   // Assert
-  assert(rvsdg.GetRootRegion().nnodes() == 1);
+  assert(rvsdg.GetRootRegion().numNodes() == 1);
   auto & newLambdaNode =
       dynamic_cast<const jlm::rvsdg::LambdaNode &>(*rvsdg.GetRootRegion().Nodes().begin());
   assert(newLambdaNode.ninputs() == 2);

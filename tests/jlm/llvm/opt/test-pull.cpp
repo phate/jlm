@@ -53,8 +53,8 @@ test_pullin_top()
   pullin_top(gamma);
   //	jlm::rvsdg::view(graph, stdout);
 
-  assert(gamma->subregion(0)->nnodes() == 2);
-  assert(gamma->subregion(1)->nnodes() == 2);
+  assert(gamma->subregion(0)->numNodes() == 2);
+  assert(gamma->subregion(1)->numNodes() == 2);
 }
 
 static inline void
@@ -86,8 +86,8 @@ test_pullin_bottom()
   //	jlm::rvsdg::view(graph, stdout);
 
   assert(jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*xp.origin()) == gamma);
-  assert(gamma->subregion(0)->nnodes() == 2);
-  assert(gamma->subregion(1)->nnodes() == 2);
+  assert(gamma->subregion(0)->numNodes() == 2);
+  assert(gamma->subregion(1)->numNodes() == 2);
 }
 
 static void
@@ -128,7 +128,7 @@ test_pull()
   graph.PruneNodes();
   jlm::rvsdg::view(graph, stdout);
 
-  assert(graph.GetRootRegion().nnodes() == 1);
+  assert(graph.GetRootRegion().numNodes() == 1);
 }
 
 static void

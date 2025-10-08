@@ -54,7 +54,7 @@ TestDeltaCreation()
   jlm::rvsdg::view(rvsdgModule.Rvsdg(), stdout);
 
   // Assert
-  assert(rvsdgModule.Rvsdg().GetRootRegion().nnodes() == 2);
+  assert(rvsdgModule.Rvsdg().GetRootRegion().numNodes() == 2);
 
   assert(delta1->constant() == true);
   assert(*delta1->Type() == *valueType);

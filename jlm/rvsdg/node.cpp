@@ -186,8 +186,7 @@ Output::remove_user(jlm::rvsdg::Input * user)
   {
     if (node->IsDead())
     {
-      bool wasAdded = region()->AddBottomNode(*node);
-      JLM_ASSERT(wasAdded);
+      region()->onBottomNodeAdded(*node);
     }
   }
 }
@@ -202,8 +201,7 @@ Output::add_user(jlm::rvsdg::Input * user)
   {
     if (node->IsDead())
     {
-      bool wasRemoved = region()->RemoveBottomNode(*node);
-      JLM_ASSERT(wasRemoved);
+      region()->onBottomNodeRemoved(*node);
     }
   }
 
@@ -258,33 +256,29 @@ NodeOutput::NodeOutput(Node * node, std::shared_ptr<const rvsdg::Type> type)
 {}
 
 Node::Node(Region * region)
-    : Id_(region->GenerateNodeId()),
+    : Id_(region->generateNodeId()),
       depth_(0),
       region_(region)
 {
-  bool wasAdded = region->AddBottomNode(*this);
-  JLM_ASSERT(wasAdded);
-  wasAdded = region->AddTopNode(*this);
-  JLM_ASSERT(wasAdded);
-  wasAdded = region->AddNode(*this);
-  JLM_ASSERT(wasAdded);
+  region->onBottomNodeAdded(*this);
+  region->onTopNodeAdded(*this);
+  region->onNodeAdded(*this);
 }
 
 Node::~Node()
 {
+  // Nodes should always be dead before they are removed
+  JLM_ASSERT(IsDead());
   outputs_.clear();
-  bool wasRemoved = region()->RemoveBottomNode(*this);
-  JLM_ASSERT(wasRemoved);
+  region()->onBottomNodeRemoved(*this);
 
   if (ninputs() == 0)
   {
-    wasRemoved = region()->RemoveTopNode(*this);
-    JLM_ASSERT(wasRemoved);
+    region()->onTopNodeRemoved(*this);
   }
   inputs_.clear();
 
-  wasRemoved = region()->RemoveNode(*this);
-  JLM_ASSERT(wasRemoved);
+  region()->onNodeRemoved(*this);
 }
 
 Graph *
@@ -298,11 +292,11 @@ Node::add_input(std::unique_ptr<NodeInput> input)
 {
   auto producer = rvsdg::TryGetOwnerNode<Node>(*input->origin());
 
+  // If we used to be a top node, we no longer are
   if (ninputs() == 0)
   {
     JLM_ASSERT(depth() == 0);
-    const auto wasRemoved = region()->RemoveTopNode(*this);
-    JLM_ASSERT(wasRemoved);
+    region()->onTopNodeRemoved(*this);
   }
 
   input->index_ = ninputs();
@@ -339,12 +333,11 @@ Node::RemoveInput(size_t index)
   }
   recompute_depth();
 
-  /* add to region's top nodes */
+  // If we no longer have any inputs we are now a top node
   if (ninputs() == 0)
   {
     JLM_ASSERT(depth() == 0);
-    const auto wasAdded = region()->AddTopNode(*this);
-    JLM_ASSERT(wasAdded);
+    region()->onTopNodeAdded(*this);
   }
 }
 
@@ -352,6 +345,7 @@ void
 Node::RemoveOutput(size_t index)
 {
   JLM_ASSERT(index < noutputs());
+  JLM_ASSERT(outputs_[index]->IsDead());
 
   for (size_t n = index; n < noutputs() - 1; n++)
   {
