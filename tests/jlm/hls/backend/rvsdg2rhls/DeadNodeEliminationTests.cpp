@@ -38,7 +38,7 @@ TestDeadLoopNode()
   EliminateDeadNodes(rvsdgModule);
 
   // Assert
-  assert(lambdaNode->subregion()->nnodes() == 0);
+  assert(lambdaNode->subregion()->numNodes() == 0);
 }
 
 static void

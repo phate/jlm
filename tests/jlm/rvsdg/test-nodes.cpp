@@ -62,7 +62,7 @@ test_node_copy()
   assert(r2->result(0)->output() == o1);
   assert(r2->result(1)->output() == o2);
 
-  assert(r2->nnodes() == 2);
+  assert(r2->numNodes() == 2);
 
   /* copy second into third region only with arguments */
   jlm::rvsdg::SubstitutionMap smap2;
@@ -82,7 +82,7 @@ test_node_copy()
   assert(r3->result(0)->output() == o1);
   assert(r3->result(1)->output() == o2);
 
-  assert(r3->nnodes() == 2);
+  assert(r3->numNodes() == 2);
 
   /* copy structural node */
   jlm::rvsdg::SubstitutionMap smap3;
@@ -92,7 +92,7 @@ test_node_copy()
 
   jlm::rvsdg::view(&graph.GetRootRegion(), stdout);
 
-  assert(graph.GetRootRegion().nnodes() == 2);
+  assert(graph.GetRootRegion().numNodes() == 2);
 }
 
 static inline void

@@ -512,28 +512,31 @@ public:
     return results_[index];
   }
 
-  inline size_t
-  nnodes() const noexcept
+  /**
+   * @return The number of nodes in the region.
+   */
+  [[nodiscard]] size_t
+  numNodes() const noexcept
   {
-    return nodes_.size();
+    return numNodes_;
   }
 
   /**
    * @return The number of top nodes in the region.
    */
   [[nodiscard]] size_t
-  NumTopNodes() const noexcept
+  numTopNodes() const noexcept
   {
-    return topNodes_.size();
+    return numTopNodes_;
   }
 
   /**
    * @return The number of bottom nodes in the region.
    */
   [[nodiscard]] size_t
-  NumBottomNodes() const noexcept
+  numBottomNodes() const noexcept
   {
-    return bottomNodes_.size();
+    return numBottomNodes_;
   }
 
   /**
@@ -634,8 +637,8 @@ private:
   [[nodiscard]] Node::Id
   generateNodeId() noexcept
   {
-    const auto nodeId = NodeId_;
-    NodeId_++;
+    const auto nodeId = nextNodeId_;
+    nextNodeId_++;
     return nodeId;
   }
 
@@ -762,13 +765,16 @@ private:
 
   size_t index_;
   Graph * graph_;
-  Node::Id NodeId_;
+  Node::Id nextNodeId_;
   rvsdg::StructuralNode * node_;
   std::vector<RegionResult *> results_;
   std::vector<RegionArgument *> arguments_;
-  region_bottom_node_list bottomNodes_;
   region_top_node_list topNodes_;
+  size_t numTopNodes_;
+  region_bottom_node_list bottomNodes_;
+  size_t numBottomNodes_;
   region_nodes_list nodes_;
+  size_t numNodes_;
   RegionObserver * observers_ = nullptr;
 
   friend class Node;

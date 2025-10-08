@@ -122,9 +122,9 @@ Region::~Region() noexcept
     RemoveResult(results_.size() - 1);
 
   prune(false);
-  JLM_ASSERT(nnodes() == 0);
-  JLM_ASSERT(NumTopNodes() == 0);
-  JLM_ASSERT(NumBottomNodes() == 0);
+  JLM_ASSERT(numNodes() == 0);
+  JLM_ASSERT(numTopNodes() == 0);
+  JLM_ASSERT(numBottomNodes() == 0);
 
   while (arguments_.size())
     RemoveArgument(arguments_.size() - 1);
@@ -142,15 +142,21 @@ Region::~Region() noexcept
 Region::Region(Region *, Graph * graph)
     : index_(0),
       graph_(graph),
-      NodeId_(0),
-      node_(nullptr)
+      nextNodeId_(0),
+      node_(nullptr),
+      numTopNodes_(0),
+      numBottomNodes_(0),
+      numNodes_(0)
 {}
 
 Region::Region(rvsdg::StructuralNode * node, size_t index)
     : index_(index),
       graph_(node->graph()),
-      NodeId_(0),
-      node_(node)
+      nextNodeId_(0),
+      node_(node),
+      numTopNodes_(0),
+      numBottomNodes_(0),
+      numNodes_(0)
 {}
 
 bool
@@ -251,7 +257,7 @@ Region::copy(Region * target, SubstitutionMap & smap, bool copy_arguments, bool 
   smap.insert(this, target);
 
   // order nodes top-down
-  std::vector<std::vector<const Node *>> context(nnodes());
+  std::vector<std::vector<const Node *>> context(numNodes());
   for (const auto & node : Nodes())
   {
     JLM_ASSERT(node.depth() < context.size());
@@ -317,6 +323,7 @@ Region::onTopNodeAdded(Node & node)
   JLM_ASSERT(node.region() == this);
   JLM_ASSERT(node.ninputs() == 0);
   topNodes_.push_back(&node);
+  numTopNodes_++;
 }
 
 void
@@ -324,6 +331,7 @@ Region::onTopNodeRemoved(Node & node)
 {
   JLM_ASSERT(node.region() == this);
   topNodes_.erase(&node);
+  numTopNodes_--;
 }
 
 void
@@ -332,6 +340,7 @@ Region::onBottomNodeAdded(Node & node)
   JLM_ASSERT(node.region() == this);
   JLM_ASSERT(node.IsDead());
   bottomNodes_.push_back(&node);
+  numBottomNodes_++;
 }
 
 void
@@ -339,6 +348,7 @@ Region::onBottomNodeRemoved(Node & node)
 {
   JLM_ASSERT(node.region() == this);
   bottomNodes_.erase(&node);
+  numBottomNodes_--;
 }
 
 void
@@ -346,6 +356,7 @@ Region::onNodeAdded(Node & node)
 {
   JLM_ASSERT(node.region() == this);
   nodes_.push_back(&node);
+  numNodes_++;
 }
 
 void
@@ -353,6 +364,7 @@ Region::onNodeRemoved(Node & node)
 {
   JLM_ASSERT(node.region() == this);
   nodes_.erase(&node);
+  numNodes_--;
 }
 
 void
@@ -541,7 +553,7 @@ RegionObserver::RegionObserver(Region & region)
 size_t
 nnodes(const jlm::rvsdg::Region * region) noexcept
 {
-  size_t n = region->nnodes();
+  size_t n = region->numNodes();
   for (const auto & node : region->Nodes())
   {
     if (auto snode = dynamic_cast<const rvsdg::StructuralNode *>(&node))

@@ -277,13 +277,13 @@ public:
   inline size_t
   nusers() const noexcept
   {
-    return Users_.size();
+    return NumUsers_;
   }
 
   /**
    * Determines whether the output is dead.
    *
-   * An output is considered dead when it has no users.x
+   * An output is considered dead when it has no users.
    *
    * @return True, if the output is dead, otherwise false.
    *
@@ -292,7 +292,7 @@ public:
   [[nodiscard]] bool
   IsDead() const noexcept
   {
-    return Users_.size() == 0;
+    return NumUsers_ == 0;
   }
 
   inline void

@@ -523,7 +523,7 @@ RhlsDeadNodeElimination::Run(
 {
   auto & graph = rvsdgModule.Rvsdg();
   const auto rootRegion = &graph.GetRootRegion();
-  if (rootRegion->nnodes() != 1)
+  if (rootRegion->numNodes() != 1)
   {
     throw util::Error("Root should have only one node now");
   }

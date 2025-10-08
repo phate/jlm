@@ -374,7 +374,7 @@ TestLoadStoreReduction_Success()
 
   // Assert
   assert(success);
-  assert(graph.GetRootRegion().nnodes() == 1);
+  assert(graph.GetRootRegion().numNodes() == 1);
   assert(x1.origin() == v);
   assert(x2.origin() == s1);
 }
@@ -484,7 +484,7 @@ TestLoadLoadReduction()
 
   // Assert
   assert(success);
-  assert(graph.GetRootRegion().nnodes() == 6);
+  assert(graph.GetRootRegion().numNodes() == 6);
 
   const auto newLoadNode3 = jlm::rvsdg::TryGetOwnerNode<Node>(*x1.origin());
   assert(is<LoadNonVolatileOperation>(newLoadNode3));
@@ -638,7 +638,7 @@ IOBarrierAllocaAddressNormalization_Gamma()
   assert(successLoadNode);
   // There should only be the load node left.
   // The IOBarrier node should have been pruned.
-  assert(gammaNode->subregion(0)->nnodes() == 1);
+  assert(gammaNode->subregion(0)->numNodes() == 1);
   assert(
       jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*exitVar.branchResult[0]->origin())
           ->input(0)

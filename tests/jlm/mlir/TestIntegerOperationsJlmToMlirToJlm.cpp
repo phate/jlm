@@ -93,7 +93,7 @@ TestIntegerBinaryOperation()
     {
       using namespace jlm::llvm;
 
-      assert(region->nnodes() == 3);
+      assert(region->numNodes() == 3);
       bool foundBinaryOp = false;
       for (auto & node : region->Nodes())
       {
@@ -220,7 +220,7 @@ TestIntegerComparisonOperation(const IntegerComparisonOpTest<JlmOperation> & tes
     {
       using namespace jlm::llvm;
 
-      assert(region->nnodes() == 3);
+      assert(region->numNodes() == 3);
       bool foundCompOp = false;
       for (auto & node : region->Nodes())
       {

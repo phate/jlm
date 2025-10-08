@@ -46,7 +46,7 @@ BufferWithLocalLoad()
 
   // Assert
   // We expect the BufferOperation node to be replaced by a passthrough BufferOperation node
-  assert(rvsdg.GetRootRegion().nnodes() == 2);
+  assert(rvsdg.GetRootRegion().numNodes() == 2);
   auto [bufferNode, bufferOperation] = TryGetSimpleNodeAndOptionalOp<BufferOperation>(*x.origin());
   assert(bufferNode && bufferOperation);
   assert(bufferOperation->Capacity() == 4);
@@ -91,7 +91,7 @@ BufferWithLocalStore()
 
   // Assert
   // We expect the BufferOperation node to be replaced by a passthrough BufferOperation node
-  assert(rvsdg.GetRootRegion().nnodes() == 2);
+  assert(rvsdg.GetRootRegion().numNodes() == 2);
   auto [bufferNode, bufferOperation] = TryGetSimpleNodeAndOptionalOp<BufferOperation>(*x.origin());
   assert(bufferNode && bufferOperation);
   assert(bufferOperation->Capacity() == 4);
@@ -136,7 +136,7 @@ BufferWithLoad()
 
   // Assert
   // We expect the BufferOperation node to be replaced by a passthrough BufferOperation node
-  assert(rvsdg.GetRootRegion().nnodes() == 2);
+  assert(rvsdg.GetRootRegion().numNodes() == 2);
   auto [bufferNode, bufferOperation] = TryGetSimpleNodeAndOptionalOp<BufferOperation>(*x.origin());
   assert(bufferNode && bufferOperation);
   assert(bufferOperation->Capacity() == 4);
@@ -186,7 +186,7 @@ BufferWithStore()
 
   // Assert
   // We expect the BufferOperation node to be replaced by a passthrough BufferOperation node
-  assert(rvsdg.GetRootRegion().nnodes() == 2);
+  assert(rvsdg.GetRootRegion().numNodes() == 2);
   auto [bufferNode, bufferOperation] = TryGetSimpleNodeAndOptionalOp<BufferOperation>(*x.origin());
   assert(bufferNode && bufferOperation);
   assert(bufferOperation->Capacity() == 4);
@@ -232,7 +232,7 @@ BufferWithForkAndLocalLoad()
 
   // Assert
   // We expect the BufferOperation node to be replaced by a passthrough BufferOperation node
-  assert(rvsdg.GetRootRegion().nnodes() == 3);
+  assert(rvsdg.GetRootRegion().numNodes() == 3);
   auto [bufferNode, bufferOperation] = TryGetSimpleNodeAndOptionalOp<BufferOperation>(*x.origin());
   assert(bufferNode && bufferOperation);
   assert(bufferOperation->Capacity() == 4);
@@ -280,7 +280,7 @@ BufferWithBranchAndLocalLoad()
 
   // Assert
   // We expect the BufferOperation node to be replaced by a passthrough BufferOperation node
-  assert(rvsdg.GetRootRegion().nnodes() == 3);
+  assert(rvsdg.GetRootRegion().numNodes() == 3);
   auto [bufferNode, bufferOperation] = TryGetSimpleNodeAndOptionalOp<BufferOperation>(*x.origin());
   assert(bufferNode && bufferOperation);
   assert(bufferOperation->Capacity() == 4);
@@ -326,7 +326,7 @@ BufferWithOtherNode()
   // Assert
   // We expect the BufferOperation node to NOT have been replaced as the operand of the
   // BufferOperation node cannot be traced to a Load-/Store-/LocalLoad-/LocalStoreOperation node
-  assert(rvsdg.GetRootRegion().nnodes() == 2);
+  assert(rvsdg.GetRootRegion().numNodes() == 2);
   assert(x.origin() == bufferResults[0]);
   auto [bufferNode, bufferOperation] = TryGetSimpleNodeAndOptionalOp<BufferOperation>(*x.origin());
   assert(bufferNode && bufferOperation);
@@ -373,7 +373,7 @@ BufferWithNonMemoryStateOperand()
   // Assert
   // We expect the BufferOperation node to NOT have been replaced as the operand of the
   // BufferOperation node is not of type llvm::MemoryStateType
-  assert(rvsdg.GetRootRegion().nnodes() == 2);
+  assert(rvsdg.GetRootRegion().numNodes() == 2);
   assert(x.origin() == bufferResults[0]);
   auto [bufferNode, bufferOperation] = TryGetSimpleNodeAndOptionalOp<BufferOperation>(*x.origin());
   assert(bufferNode && bufferOperation);
@@ -420,7 +420,7 @@ PassthroughBuffer()
   // Assert
   // We expect the BufferOperation node to NOT have been replaced as the BufferOperation is already
   // marked as passthrough.
-  assert(rvsdg.GetRootRegion().nnodes() == 2);
+  assert(rvsdg.GetRootRegion().numNodes() == 2);
   assert(x.origin() == bufferResults[0]);
   auto [bufferNode, bufferOperation] = TryGetSimpleNodeAndOptionalOp<BufferOperation>(*x.origin());
   assert(bufferNode && bufferOperation);

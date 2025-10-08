@@ -358,7 +358,7 @@ test_nested_theta()
     unroll algorithm would hoist code from the innner
     thetas.
   */
-  assert(otheta->subregion()->nnodes() <= 20);
+  assert(otheta->subregion()->numNodes() <= 20);
   /*
     The inner theta should not be unrolled and since the
     original graph contains 5 nodes and the unroll factor
@@ -367,7 +367,7 @@ test_nested_theta()
     unroll algorithm would hoist code from the innner
     thetas.
   */
-  assert(inner_theta->subregion()->nnodes() <= 15);
+  assert(inner_theta->subregion()->numNodes() <= 15);
   /*
     The innermost theta should be unrolled and since the
     original graph contains 3 nodes and the unroll factor
@@ -377,7 +377,7 @@ test_nested_theta()
     thetas.
   */
   auto thetas = find_thetas(inner_theta->subregion());
-  assert(thetas.size() == 1 && thetas[0]->subregion()->nnodes() >= 7);
+  assert(thetas.size() == 1 && thetas[0]->subregion()->numNodes() >= 7);
   /*
     The second inner theta should be unrolled and since
     the original graph contains 3 nodes and the unroll
@@ -387,7 +387,7 @@ test_nested_theta()
     innner thetas.
   */
   thetas = find_thetas(otheta->subregion());
-  assert(thetas.size() == 2 && thetas[1]->subregion()->nnodes() >= 7);
+  assert(thetas.size() == 2 && thetas[1]->subregion()->numNodes() >= 7);
   //	jlm::rvsdg::view(graph, stdout);
   jlm::llvm::unroll(otheta, 4);
   //	jlm::rvsdg::view(graph, stdout);

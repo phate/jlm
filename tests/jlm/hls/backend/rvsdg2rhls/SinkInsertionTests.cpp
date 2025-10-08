@@ -53,8 +53,8 @@ SinkInsertion()
   view(rvsdg, stdout);
 
   // Assert
-  assert(structuralNode->subregion(0)->nnodes() == 1);
-  assert(lambdaNode->subregion()->nnodes() == 2);
+  assert(structuralNode->subregion(0)->numNodes() == 1);
+  assert(lambdaNode->subregion()->numNodes() == 2);
 
   // The sink insertion pass should have inserted a SinkOperation node at output o0
   {

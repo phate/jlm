@@ -49,7 +49,7 @@ empty(const rvsdg::GammaNode * gamma)
 {
   for (size_t n = 0; n < gamma->nsubregions(); n++)
   {
-    if (gamma->subregion(n)->nnodes() != 0)
+    if (gamma->subregion(n)->numNodes() != 0)
       return false;
   }
 
