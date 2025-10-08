@@ -468,6 +468,9 @@ createTransformationSequence(rvsdg::DotWriter & dotWriter, const bool dumpRvsdgD
   auto bufferInsertion = std::make_shared<BufferInsertion>();
   auto rhlsVerification = std::make_shared<RhlsVerification>();
 
+  // Use this transformation to dump HLS dot graphs at specific points in the sequence
+  [[maybe_unused]] auto dumpDot = std::make_shared<DumpDotTransformation>();
+
   std::vector<std::shared_ptr<rvsdg::Transformation>> sequence({
       loopUnswitching,
       deadNodeElimination,
