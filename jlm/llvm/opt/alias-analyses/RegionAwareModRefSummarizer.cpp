@@ -16,6 +16,7 @@
 #include <jlm/util/TarjanScc.hpp>
 #include <jlm/util/Worklist.hpp>
 
+#include <jlm/llvm/ir/trace.hpp>
 #include <queue>
 
 namespace jlm::llvm::aa
@@ -1040,8 +1041,8 @@ RegionAwareModRefSummarizer::AnnotateLoad(
   const auto origin = LoadOperation::AddressInput(loadNode).origin();
   const auto loadOperation = util::AssertedCast<const LoadOperation>(&loadNode.GetOperation());
   const auto loadSize = GetTypeSize(*loadOperation->GetLoadedType());
-  // TODO: Only include memory large enough to be the target of the load
-  AddPointerOriginTargets(nodeModRef, *origin, , lambda);
+
+  AddPointerOriginTargets(nodeModRef, *origin, loadSize, lambda);
   return nodeModRef;
 }
 
@@ -1052,8 +1053,10 @@ RegionAwareModRefSummarizer::AnnotateStore(
 {
   const auto nodeModRef = ModRefSummary_->GetOrCreateSetForNode(storeNode);
   const auto origin = StoreOperation::AddressInput(storeNode).origin();
-  // TODO: Only include memory large enough to be the target of the store
-  AnnotateWithPointerOrigin(nodeModRef, *origin, lambda);
+  const auto storeOperation = util::AssertedCast<const StoreOperation>(&storeNode.GetOperation());
+  const auto storeSize = GetTypeSize(storeOperation->GetStoredType());
+
+  AddPointerOriginTargets(nodeModRef, *origin, storeSize, lambda);
   return nodeModRef;
 }
 
@@ -1085,7 +1088,7 @@ RegionAwareModRefSummarizer::AnnotateFree(
   const auto nodeModRef = ModRefSummary_->GetOrCreateSetForNode(freeNode);
   const auto origin = freeNode.input(0)->origin();
   // TODO: Only free MallocMemoryNodes
-  AnnotateWithPointerOrigin(nodeModRef, *origin, lambda);
+  AddPointerOriginTargets(nodeModRef, *origin, std::nullopt, lambda);
   return nodeModRef;
 }
 
@@ -1096,12 +1099,13 @@ RegionAwareModRefSummarizer::AnnotateMemcpy(
 {
   JLM_ASSERT(is<MemCpyOperation>(&memcpyNode));
 
-  // TODO: For compile time known sizes, only include MemoryNodes that are large enough
   const auto nodeModRef = ModRefSummary_->GetOrCreateSetForNode(memcpyNode);
-  const auto dstOrigin = memcpyNode.input(0)->origin();
-  const auto srcOrigin = memcpyNode.input(1)->origin();
-  AnnotateWithPointerOrigin(nodeModRef, *dstOrigin, lambda);
-  AnnotateWithPointerOrigin(nodeModRef, *srcOrigin, lambda);
+  const auto dstOrigin = MemCpyOperation::destinationInput(memcpyNode).origin();
+  const auto srcOrigin = MemCpyOperation::sourceInput(memcpyNode).origin();
+  const auto countOrigin = MemCpyOperation::countInput(memcpyNode).origin();
+  const auto count = TryGetConstantSignedInteger(*countOrigin);
+  AddPointerOriginTargets(nodeModRef, *dstOrigin, count, lambda);
+  AddPointerOriginTargets(nodeModRef, *srcOrigin, count, lambda);
   return nodeModRef;
 }
 

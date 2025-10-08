@@ -8,14 +8,13 @@
 #include <jlm/llvm/ir/operators.hpp>
 #include <jlm/llvm/ir/operators/alloca.hpp>
 #include <jlm/llvm/ir/operators/delta.hpp>
-#include <jlm/llvm/ir/operators/IntegerOperations.hpp>
 #include <jlm/llvm/ir/operators/IOBarrier.hpp>
+#include <jlm/llvm/ir/trace.hpp>
 #include <jlm/llvm/ir/types.hpp>
 #include <jlm/rvsdg/gamma.hpp>
 #include <jlm/rvsdg/lambda.hpp>
 #include <jlm/rvsdg/theta.hpp>
 
-#include <llvm/IR/Instruction.h>
 #include <numeric>
 #include <queue>
 
@@ -71,8 +70,8 @@ struct LocalAliasAnalysis::TraceCollection
 AliasAnalysis::AliasQueryResponse
 LocalAliasAnalysis::Query(const rvsdg::Output & p1, size_t s1, const rvsdg::Output & p2, size_t s2)
 {
-  const auto & p1Norm = NormalizeOutput(p1);
-  const auto & p2Norm = NormalizeOutput(p2);
+  const auto & p1Norm = llvm::TraceOutput(p1);
+  const auto & p2Norm = llvm::TraceOutput(p2);
 
   // If the two pointers are the same value, they must alias
   if (&p1Norm == &p2Norm)
@@ -273,7 +272,7 @@ LocalAliasAnalysis::TracePointerOriginPrecise(const rvsdg::Output & p)
   while (true)
   {
     // Use normalization function to get past all trivially invariant operations
-    base = &NormalizeOutput(*base);
+    base = &llvm::TraceOutput(*base);
 
     if (const auto [node, gep] =
             rvsdg::TryGetSimpleNodeAndOptionalOp<GetElementPtrOperation>(*base);
@@ -330,7 +329,7 @@ LocalAliasAnalysis::TraceAllPointerOrigins(TracedPointerOrigin p, TraceCollectio
     return false;
 
   // Normalize the pointer first, to avoid tracing trivial temporary outputs
-  p.BasePointer = &NormalizeOutput(*p.BasePointer);
+  p.BasePointer = &llvm::TraceOutput(*p.BasePointer);
 
   auto it = traceCollection.AllTracedOutputs.find(p.BasePointer);
   if (it != traceCollection.AllTracedOutputs.end())

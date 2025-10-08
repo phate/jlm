@@ -70,7 +70,7 @@ public:
       std::shared_ptr<const rvsdg::Type> importedType,
       std::string name,
       llvm::linkage linkage,
-      bool constant)
+      bool constant = false)
   {
     auto graphImport = new GraphImport(
         graph,

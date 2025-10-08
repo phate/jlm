@@ -647,8 +647,11 @@ getMemoryNodeSize(const PointsToGraph::MemoryNode & memoryNode)
   {
     const auto & mallocNode = malloc->GetMallocNode();
 
-    const auto mallocSize = TryGetConstantSignedInteger(*mallocNode.input(0)->origin());
-    return mallocSize;
+    return TryGetConstantSignedInteger(*mallocNode.input(0)->origin());
+  }
+  if (dynamic_cast<const PointsToGraph::ExternalMemoryNode *>(&memoryNode))
+  {
+    return std::nullopt;
   }
 
   throw std::logic_error("Unknown memory node type.");
