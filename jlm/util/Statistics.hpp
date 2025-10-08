@@ -251,11 +251,12 @@ class StatisticsCollectorSettings final
 {
 public:
   /**
-   * Creates settings for a StatisticsCollector that does not demand any statistics,
-   * and uses the current working directory for output files.
+   * Creates settings for a StatisticsCollector that does not demand any statistics.
+   * Uses the current working directory for any output files.
    */
   StatisticsCollectorSettings()
-      : Directory_(".")
+      : Directory_("."),
+        ModuleName_("")
   {}
 
   /**
@@ -265,7 +266,8 @@ public:
    */
   explicit StatisticsCollectorSettings(HashSet<Statistics::Id> demandedStatistics)
       : DemandedStatistics_(std::move(demandedStatistics)),
-        Directory_(".")
+        Directory_("."),
+        ModuleName_("")
   {}
 
   /**

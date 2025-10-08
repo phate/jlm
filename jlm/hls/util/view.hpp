@@ -100,7 +100,7 @@ public:
   Run(rvsdg::RvsdgModule & rvsdgModule, util::StatisticsCollector & statisticsCollector) override;
 
   static void
-  CreateAndRun(rvsdg::RvsdgModule & rvsdgModule, util::StatisticsCollector & statisticsCollector)
+  createAndRun(rvsdg::RvsdgModule & rvsdgModule, util::StatisticsCollector & statisticsCollector)
   {
     DumpDotTransformation dumpDot;
     dumpDot.Run(rvsdgModule, statisticsCollector);

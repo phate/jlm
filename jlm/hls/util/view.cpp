@@ -508,7 +508,9 @@ DumpDotTransformation::DumpDotTransformation()
 {}
 
 void
-DumpDotTransformation::Run(rvsdg::RvsdgModule & rvsdgModule, util::StatisticsCollector & statisticsCollector)
+DumpDotTransformation::Run(
+    rvsdg::RvsdgModule & rvsdgModule,
+    util::StatisticsCollector & statisticsCollector)
 {
   const auto file = statisticsCollector.CreateOutputFile("rvsdg-graph.dot", true);
   DumpDot(&rvsdgModule.Rvsdg().GetRootRegion(), file.path().to_str());
