@@ -8,6 +8,8 @@
 
 #include <jlm/llvm/ir/RvsdgModule.hpp>
 #include <jlm/rvsdg/graph.hpp>
+#include <jlm/rvsdg/Transformation.hpp>
+#include <jlm/util/Statistics.hpp>
 #include <string>
 
 namespace jlm::hls
@@ -71,6 +73,32 @@ DumpDot(rvsdg::Region * region, const std::string & fileName);
 
 void
 DotToSvg(const std::string & fileName);
+
+class DumpDotTransformation final : public rvsdg::Transformation
+{
+public:
+  ~DumpDotTransformation() noexcept override;
+
+  DumpDotTransformation();
+
+  DumpDotTransformation(const DumpDotTransformation &) = delete;
+
+  DumpDotTransformation &
+  operator=(const DumpDotTransformation &) = delete;
+
+  void
+  Run(rvsdg::RvsdgModule & rvsdgModule, util::StatisticsCollector & statisticsCollector);
+
+  static void
+  CreateAndRun(rvsdg::RvsdgModule & rvsdgModule, util::StatisticsCollector & statisticsCollector)
+  {
+    DumpDotTransformation dumpDot;
+    dumpDot.Run(rvsdgModule, statisticsCollector);
+  }
+
+private:
+  unsigned Count_ = 1;
+};
 
 } // namespace jlm::hls
 

@@ -501,4 +501,18 @@ DotToSvg(const std::string & file_name)
     exit(EXIT_FAILURE);
 }
 
+DumpDotTransformation::~DumpDotTransformation() noexcept = default;
+
+DumpDotTransformation::DumpDotTransformation()
+    : Transformation("DumpDotTransformation")
+{}
+
+void
+DumpDotTransformation::Run(rvsdg::RvsdgModule & rvsdgModule, util::StatisticsCollector &)
+{
+  DumpDot(
+      *dynamic_cast<jlm::llvm::RvsdgModule *>(&rvsdgModule),
+      "rvsdg-graph-" + std::to_string(this->Count_++) + ".dot");
+}
+
 } // namespace jlm::hls
