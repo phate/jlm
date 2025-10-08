@@ -448,22 +448,22 @@ convert_function(::llvm::Function & function, Context & ctx)
   ctx.set_node(nullptr);
 }
 
-static const llvm::linkage &
+static const llvm::Linkage &
 convert_linkage(const ::llvm::GlobalValue::LinkageTypes & linkage)
 {
-  static std::unordered_map<::llvm::GlobalValue::LinkageTypes, llvm::linkage> map(
-      { { ::llvm::GlobalValue::ExternalLinkage, llvm::linkage::external_linkage },
+  static std::unordered_map<::llvm::GlobalValue::LinkageTypes, llvm::Linkage> map(
+      { { ::llvm::GlobalValue::ExternalLinkage, llvm::Linkage::externalLinkage },
         { ::llvm::GlobalValue::AvailableExternallyLinkage,
-          llvm::linkage::available_externally_linkage },
-        { ::llvm::GlobalValue::LinkOnceAnyLinkage, llvm::linkage::link_once_any_linkage },
-        { ::llvm::GlobalValue::LinkOnceODRLinkage, llvm::linkage::link_once_odr_linkage },
-        { ::llvm::GlobalValue::WeakAnyLinkage, llvm::linkage::weak_any_linkage },
-        { ::llvm::GlobalValue::WeakODRLinkage, llvm::linkage::weak_odr_linkage },
-        { ::llvm::GlobalValue::AppendingLinkage, llvm::linkage::appending_linkage },
-        { ::llvm::GlobalValue::InternalLinkage, llvm::linkage::internal_linkage },
-        { ::llvm::GlobalValue::PrivateLinkage, llvm::linkage::private_linkage },
-        { ::llvm::GlobalValue::ExternalWeakLinkage, llvm::linkage::external_weak_linkage },
-        { ::llvm::GlobalValue::CommonLinkage, llvm::linkage::common_linkage } });
+          llvm::Linkage::availableExternallyLinkage },
+        { ::llvm::GlobalValue::LinkOnceAnyLinkage, llvm::Linkage::linkOnceAnyLinkage },
+        { ::llvm::GlobalValue::LinkOnceODRLinkage, llvm::Linkage::linkOnceOdrLinkage },
+        { ::llvm::GlobalValue::WeakAnyLinkage, llvm::Linkage::weakAnyLinkage },
+        { ::llvm::GlobalValue::WeakODRLinkage, llvm::Linkage::weakOdrLinkage },
+        { ::llvm::GlobalValue::AppendingLinkage, llvm::Linkage::appendingLinkage },
+        { ::llvm::GlobalValue::InternalLinkage, llvm::Linkage::internalLinkage },
+        { ::llvm::GlobalValue::PrivateLinkage, llvm::Linkage::privateLinkage },
+        { ::llvm::GlobalValue::ExternalWeakLinkage, llvm::Linkage::externalWeakLinkage },
+        { ::llvm::GlobalValue::CommonLinkage, llvm::Linkage::commonLinkage } });
 
   JLM_ASSERT(map.find(linkage) != map.end());
   return map[linkage];
