@@ -87,7 +87,7 @@ public:
   operator=(const DumpDotTransformation &) = delete;
 
   void
-  Run(rvsdg::RvsdgModule & rvsdgModule, util::StatisticsCollector & statisticsCollector);
+  Run(rvsdg::RvsdgModule & rvsdgModule, util::StatisticsCollector & statisticsCollector) override;
 
   static void
   CreateAndRun(rvsdg::RvsdgModule & rvsdgModule, util::StatisticsCollector & statisticsCollector)
