@@ -6,7 +6,7 @@
 #ifndef JLM_LLVM_IR_VARIABLE_HPP
 #define JLM_LLVM_IR_VARIABLE_HPP
 
-#include <jlm/llvm/ir/linkage.hpp>
+#include <jlm/llvm/ir/Linkage.hpp>
 #include <jlm/rvsdg/type.hpp>
 #include <jlm/util/strfmt.hpp>
 
