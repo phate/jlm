@@ -8,6 +8,8 @@
 
 #include <jlm/llvm/ir/RvsdgModule.hpp>
 #include <jlm/rvsdg/graph.hpp>
+#include <jlm/rvsdg/Transformation.hpp>
+#include <jlm/util/Statistics.hpp>
 #include <string>
 
 namespace jlm::hls
@@ -71,6 +73,39 @@ DumpDot(rvsdg::Region * region, const std::string & fileName);
 
 void
 DotToSvg(const std::string & fileName);
+
+/**
+ * This transformation does nothing except dumping the RVSDG module to a dot file,
+ * using the hls dot output.
+ */
+class DumpDotTransformation final : public rvsdg::Transformation
+{
+public:
+  ~DumpDotTransformation() noexcept override;
+
+  DumpDotTransformation();
+
+  DumpDotTransformation(const DumpDotTransformation &) = delete;
+
+  DumpDotTransformation &
+  operator=(const DumpDotTransformation &) = delete;
+
+  /**
+   * Dumps the given \p rvsdgModule to an GraphViz dot file.
+   * The file is placed in the output folder of the \p statisticsCollector.
+   * @param rvsdgModule the module to dump
+   * @param statisticsCollector the statistics collector whose output folder is used
+   */
+  void
+  Run(rvsdg::RvsdgModule & rvsdgModule, util::StatisticsCollector & statisticsCollector) override;
+
+  static void
+  createAndRun(rvsdg::RvsdgModule & rvsdgModule, util::StatisticsCollector & statisticsCollector)
+  {
+    DumpDotTransformation dumpDot;
+    dumpDot.Run(rvsdgModule, statisticsCollector);
+  }
+};
 
 } // namespace jlm::hls
 

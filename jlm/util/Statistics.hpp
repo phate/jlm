@@ -251,19 +251,23 @@ class StatisticsCollectorSettings final
 {
 public:
   /**
-   * Creates settings for a StatisticsCollector that neither demands any statistics,
-   * nor specifies a directory to place statistics and debug output files in.
+   * Creates settings for a StatisticsCollector that does not demand any statistics.
+   * Uses the current working directory for any output files.
    */
   StatisticsCollectorSettings()
+      : Directory_("."),
+        ModuleName_("")
   {}
 
   /**
-   * Creates settings for a StatisticsCollector that demands the given statistics be collected in
-   * memory.
+   * Creates settings for a StatisticsCollector that demands the given statistics be collected.
+   * Uses the current working directory for any output files.
    * @param demandedStatistics a hash set of statistics ids to collect
    */
   explicit StatisticsCollectorSettings(HashSet<Statistics::Id> demandedStatistics)
-      : DemandedStatistics_(std::move(demandedStatistics))
+      : DemandedStatistics_(std::move(demandedStatistics)),
+        Directory_("."),
+        ModuleName_("")
   {}
 
   /**
@@ -568,10 +572,14 @@ public:
 
   /**
    * Creates a unique file name in the statistics and debug output directory.
+   * If a module name is specified in the settings, it is included in the file name.
+   * If a unique string is specified in the settings, it is also included.
+   * Lastly the given \p fileNameSuffix is used as the suffix for the file,
+   * including an optional counter if \p includeCount is true.
    *
    * If the specified output directory does not exist, it is created.
    *
-   * @param fileNameSuffix the suffix to be used for the output file name, e.g., "statistics.log"
+   * @param fileNameSuffix the output file name suffix, e.g., "statistics.log"
    * @param includeCount include a counter per suffix, to avoid naming collisions
    * @return a file representing the new output file
    * @throws jlm::util::error in any of the following cases:

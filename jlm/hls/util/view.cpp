@@ -501,4 +501,19 @@ DotToSvg(const std::string & file_name)
     exit(EXIT_FAILURE);
 }
 
+DumpDotTransformation::~DumpDotTransformation() noexcept = default;
+
+DumpDotTransformation::DumpDotTransformation()
+    : Transformation("DumpDotTransformation")
+{}
+
+void
+DumpDotTransformation::Run(
+    rvsdg::RvsdgModule & rvsdgModule,
+    util::StatisticsCollector & statisticsCollector)
+{
+  const auto file = statisticsCollector.CreateOutputFile("rvsdg-graph.dot", true);
+  DumpDot(&rvsdgModule.Rvsdg().GetRootRegion(), file.path().to_str());
+}
+
 } // namespace jlm::hls
