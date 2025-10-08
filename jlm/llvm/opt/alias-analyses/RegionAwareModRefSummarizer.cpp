@@ -861,34 +861,48 @@ RegionAwareModRefSummarizer::CreateExternalModRefSet()
   // Go through all types of memory node and add them to the external ModRefSet if escaping
   for (auto & alloca : ModRefSummary_->GetPointsToGraph().AllocaNodes())
   {
-    if (alloca.IsModuleEscaping())
-      ModRefSummary_->AddToModRefSet(Context_->ExternalModRefIndex, alloca);
+    if (!alloca.IsModuleEscaping())
+      continue;
+    if (ENABLE_CONSTANT_MEMORY_BLOCKING && isMemoryNodeConstant(alloca))
+      continue;
+    ModRefSummary_->AddToModRefSet(Context_->ExternalModRefIndex, alloca);
   }
   for (auto & malloc : ModRefSummary_->GetPointsToGraph().MallocNodes())
   {
-    if (malloc.IsModuleEscaping())
-      ModRefSummary_->AddToModRefSet(Context_->ExternalModRefIndex, malloc);
+    if (!malloc.IsModuleEscaping())
+      continue;
+    if (ENABLE_CONSTANT_MEMORY_BLOCKING && isMemoryNodeConstant(malloc))
+      continue;
+    ModRefSummary_->AddToModRefSet(Context_->ExternalModRefIndex, malloc);
   }
   for (auto & delta : ModRefSummary_->GetPointsToGraph().DeltaNodes())
   {
-    if (delta.IsModuleEscaping())
-      ModRefSummary_->AddToModRefSet(Context_->ExternalModRefIndex, delta);
+    if (!delta.IsModuleEscaping())
+      continue;
+    if (ENABLE_CONSTANT_MEMORY_BLOCKING && isMemoryNodeConstant(delta))
+      continue;
+    ModRefSummary_->AddToModRefSet(Context_->ExternalModRefIndex, delta);
   }
   for (auto & lambda : ModRefSummary_->GetPointsToGraph().LambdaNodes())
   {
-    if (lambda.IsModuleEscaping())
-    {
-      ModRefSummary_->AddToModRefSet(Context_->ExternalModRefIndex, lambda);
+    if (!lambda.IsModuleEscaping())
+      continue;
 
-      // Add a call from external to the function
-      auto lambdaModRefIndex = ModRefSummary_->GetOrCreateSetForNode(lambda.GetLambdaNode());
-      AddModRefSimpleConstraint(lambdaModRefIndex, Context_->ExternalModRefIndex);
-    }
+    // Add a call from external to the function
+    auto lambdaModRefIndex = ModRefSummary_->GetOrCreateSetForNode(lambda.GetLambdaNode());
+    AddModRefSimpleConstraint(lambdaModRefIndex, Context_->ExternalModRefIndex);
+
+    if (ENABLE_CONSTANT_MEMORY_BLOCKING && isMemoryNodeConstant(lambda))
+      continue;
+    ModRefSummary_->AddToModRefSet(Context_->ExternalModRefIndex, lambda);
   }
   for (auto & import : ModRefSummary_->GetPointsToGraph().ImportNodes())
   {
-    if (import.IsModuleEscaping())
-      ModRefSummary_->AddToModRefSet(Context_->ExternalModRefIndex, import);
+    if (!import.IsModuleEscaping())
+      continue;
+    if (ENABLE_CONSTANT_MEMORY_BLOCKING && isMemoryNodeConstant(import))
+      continue;
+    ModRefSummary_->AddToModRefSet(Context_->ExternalModRefIndex, import);
   }
 
   ModRefSummary_->AddToModRefSet(

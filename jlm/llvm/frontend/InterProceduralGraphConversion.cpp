@@ -989,7 +989,7 @@ ConvertFunctionNode(
         functionNode.name(),
         functionNode.linkage(),
         true // Function imports are regarded as constant
-        );
+    );
   }
 
   return ConvertControlFlowGraph(functionNode, regionalizedVariableMap, statisticsCollector);
