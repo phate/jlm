@@ -156,8 +156,8 @@ PartialRedundancyElimination::Run(
   auto & rvsdg = module.Rvsdg();
   auto statistics = Statistics::Create(module.SourceFilePath().value());
 
-  // NEWER CODE USING REACTIVE STYLE CALLBACKS
-  // SHOULD HANDLE THETA NODES, BUT HAVEN'T TESTED THIS YET
+  // NEW CODE USING REACTIVE STYLE CALLBACKS
+  // SHOULD HANDLE THETA NODES, BUT MORE TESTING IS REQUIRED
 
   flows::FlowData<GVN_Hash> fd(&gvn_hashes_);
 
@@ -171,6 +171,7 @@ PartialRedundancyElimination::Run(
   {
     if (!a){return b;}  if (!b){return a;}
     if (*a == GVN_Hash::Tainted() || *b == GVN_Hash::Tainted()){ return std::optional(GVN_Hash::Tainted()); }
+    if ( a->value == b->value ){ return a; }
     size_t h = a->value ^ (b->value << 3); //Hash branches differently.
     return std::optional( GVN_Hash(h) );
   };
@@ -183,7 +184,10 @@ PartialRedundancyElimination::Run(
     if (!a){return b;}  if (!b){std::cout<<"UNREACHABLE"; exit(-1);}
     if (*a == GVN_Hash::Tainted() || *b == GVN_Hash::Tainted()){ return std::optional(GVN_Hash::Tainted() ); }
     if (a->value == b->value){return a;}
-    if (a && a->IsLoopVar()){return a;}
+    if (a && a->IsLoopVar()){return a;} // This is required for fixed points to be reached by gvn
+                                        // Values are identified as variant on exit of first iteration
+                                        // LoopVar hashes trickle through the loop body once more
+                                        // Subsequent iterations are blocked as loopvar hashes are never overwritten
     return std::optional( GVN_Hash::LoopVar( a->value ^ b->value ));
   };
 

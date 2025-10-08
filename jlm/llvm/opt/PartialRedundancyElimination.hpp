@@ -137,9 +137,9 @@ namespace jlm::llvm::flows
 
     workItems.push_back(WorkItemValue(&scope));
     size_t max_iter = 500;
-    while (workItems.size() && max_iter)
+    while (workItems.size() )
     {
-      max_iter--;
+      max_iter--;  if (!max_iter){std::cout<<"ApplyDataFlowsTopDownMaximum iteration count reached"<<std::endl; return;}
       auto w = workItems.back();  workItems.pop_back();
 
       switch (w.type){
