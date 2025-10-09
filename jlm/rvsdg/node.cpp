@@ -184,6 +184,7 @@ Output::remove_user(jlm::rvsdg::Input * user)
 
   if (auto node = TryGetOwnerNode<Node>(*this))
   {
+    node->nsuccessors_ -= 1;
     if (node->IsDead())
     {
       region()->onBottomNodeAdded(*node);
@@ -203,6 +204,7 @@ Output::add_user(jlm::rvsdg::Input * user)
     {
       region()->onBottomNodeRemoved(*node);
     }
+    node->nsuccessors_ += 1;
   }
 
   Users_.push_back(user);
