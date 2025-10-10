@@ -9,7 +9,6 @@
 
 #include <jlm/rvsdg/node.hpp>
 #include <jlm/util/common.hpp>
-#include <jlm/util/HashSet.hpp>
 #include <jlm/util/iterator_range.hpp>
 
 namespace jlm::util
@@ -46,12 +45,12 @@ public:
   typedef util::IntrusiveListAccessor<RegionArgument, &RegionArgument::structural_input_anchor_>
       structural_input_accessor;
 
-  ~RegionArgument() noexcept override;
-
   RegionArgument(
       rvsdg::Region * region,
       StructuralInput * input,
       std::shared_ptr<const rvsdg::Type> type);
+
+  ~RegionArgument() noexcept override;
 
   RegionArgument(const RegionArgument &) = delete;
 
@@ -212,12 +211,6 @@ private:
  */
 class Region
 {
-  typedef util::IntrusiveList<Node, Node::region_node_list_accessor> region_nodes_list;
-
-  typedef util::IntrusiveList<Node, Node::region_top_node_list_accessor> region_top_node_list;
-
-  typedef util::IntrusiveList<Node, Node::region_bottom_node_list_accessor> region_bottom_node_list;
-
   using RegionArgumentIterator = std::vector<RegionArgument *>::iterator;
   using RegionArgumentConstIterator = std::vector<RegionArgument *>::const_iterator;
   using RegionArgumentRange = util::IteratorRange<RegionArgumentIterator>;
@@ -227,6 +220,10 @@ class Region
   using RegionResultConstIterator = std::vector<RegionResult *>::const_iterator;
   using RegionResultRange = util::IteratorRange<RegionResultIterator>;
   using RegionResultConstRange = util::IteratorRange<RegionResultConstIterator>;
+
+  using region_nodes_list = util::IntrusiveList<Node, Node::region_node_list_accessor>;
+  using region_top_node_list = util::IntrusiveList<Node, Node::region_top_node_list_accessor>;
+  using region_bottom_node_list = util::IntrusiveList<Node, Node::region_bottom_node_list_accessor>;
 
   using TopNodeIterator = region_top_node_list::Iterator;
   using TopNodeConstIterator = region_top_node_list::ConstIterator;
@@ -375,19 +372,28 @@ public:
   [[nodiscard]] bool
   IsRootRegion() const noexcept;
 
-  /* \brief Append \p argument to the region
+  /**
+   * Appends the given region \p argument to the list of region arguments.
+   * Invalidates any existing iterators to the argument list.
    *
-   * Multiple invocations of append_argument for the same argument are undefined.
+   * @param argument the argument to add
+   * @return a reference to the added argument
    */
-  void
-  append_argument(RegionArgument * argument);
+  RegionArgument &
+  addArgument(std::unique_ptr<RegionArgument> argument);
 
-  /* \brief Insert \p argument into argument list of the region
+  /**
+   * Inserts the given region \p argument in the list of region arguments, at the given \p index.
+   * Shifts any results with equal or greater index one to the right to make room.
+   * Invalidates any existing iterators to the argument list.
    *
-   * Multiple invocations of append_argument for the same argument are undefined.
+   * @param index the position to add the result
+   * @param argument the argument to add
+   * @return a reference to the added result
+   * @see addArgument to add to the end
    */
-  void
-  insert_argument(size_t index, RegionArgument * argument);
+  RegionArgument &
+  insertArgument(size_t index, std::unique_ptr<RegionArgument> argument);
 
   /**
    * Removes an argument from the region given an arguments' index.
@@ -441,12 +447,15 @@ public:
     return arguments_[index];
   }
 
-  /* \brief Appends \p result to the region
+  /**
+   * Appends the given region result to the list of region results.
+   * Invalidates any existing iterators to the result list.
    *
-   * Multiple invocations of append_result for the same result are undefined.
+   * @param result the result to add
+   * @return a reference to the added result
    */
-  void
-  append_result(RegionResult * result);
+  RegionResult &
+  addResult(std::unique_ptr<RegionResult> result);
 
   /**
    * Removes a result from the region given a results' index.
@@ -649,7 +658,13 @@ private:
   notifyNodeDestroy(Node * node);
 
   void
+  notifyInputCreate(Input * input);
+
+  void
   notifyInputChange(Input * input, Output * old_origin, Output * new_origin);
+
+  void
+  notifyInputDestory(Input * input);
 
 public:
   /**
@@ -767,6 +782,8 @@ private:
   Graph * graph_;
   Node::Id nextNodeId_;
   rvsdg::StructuralNode * node_;
+
+  // The region owns its results, arguments and nodes
   std::vector<RegionResult *> results_;
   std::vector<RegionArgument *> arguments_;
   region_top_node_list topNodes_;
@@ -783,6 +800,7 @@ private:
   friend class StructuralNode;
   friend class Input;
   friend class Output;
+  friend class RegionResult;
 };
 
 /**
@@ -795,7 +813,7 @@ private:
 class RegionObserver
 {
 public:
-  ~RegionObserver();
+  virtual ~RegionObserver() noexcept;
 
   explicit RegionObserver(Region & region);
 
@@ -804,14 +822,46 @@ public:
   RegionObserver &
   operator=(const RegionObserver &) = delete;
 
+  /**
+   * Called right after a node is added to the region,
+   * after the node has its inputs and output added.
+   * @param node the node being added
+   */
   virtual void
   onNodeCreate(Node * node) = 0;
 
+  /**
+   * Called right before a node is removed from the region,
+   * before the node has its inputs and outputs removed.
+   * @param node the node being removed
+   */
   virtual void
   onNodeDestroy(Node * node) = 0;
 
+  /**
+   * Called after a node gets a new input, or the region gets a new result.
+   * This method is not called when creating new nodes, only modifying existing nodes.
+   * @param input the new input
+   */
+  virtual void
+  onInputCreate(Input * input) = 0;
+
+  /**
+   * Called right after the given input gets a new origin.
+   * @param input the input.
+   * @param old_origin the input's old origin.
+   * @param new_origin the input's new origin.
+   */
   virtual void
   onInputChange(Input * input, Output * old_origin, Output * new_origin) = 0;
+
+  /**
+   * Called right before remove a node input or region result from the region.
+   * This method is not called when deleting nodes, only modifying existing nodes.
+   * @param input the input that is removed
+   */
+  virtual void
+  onInputDestroy(Input * input) = 0;
 
 private:
   RegionObserver ** pprev_;

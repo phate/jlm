@@ -12,6 +12,8 @@
 namespace jlm::rvsdg
 {
 
+TopDownTraverser::Observer::~Observer() noexcept = default;
+
 TopDownTraverser::Observer::Observer(Region & region, TopDownTraverser & traverser)
     : RegionObserver(region),
       traverser_(traverser)
@@ -28,10 +30,18 @@ TopDownTraverser::Observer::onNodeDestroy(Node * node)
 {}
 
 void
+TopDownTraverser::Observer::onInputCreate(Input * input)
+{}
+
+void
 TopDownTraverser::Observer::onInputChange(Input * input, Output * old_origin, Output * new_origin)
 {
   traverser_.input_change(input, old_origin, new_origin);
 }
+
+void
+TopDownTraverser::Observer::onInputDestroy(Input * input)
+{}
 
 TopDownTraverser::~TopDownTraverser() noexcept = default;
 
@@ -146,6 +156,8 @@ HasSuccessors(const Node & node)
   return false;
 }
 
+BottomUpTraverser::Observer::~Observer() noexcept = default;
+
 BottomUpTraverser::Observer::Observer(Region & region, BottomUpTraverser & traverser)
     : RegionObserver(region),
       traverser_(traverser)
@@ -164,10 +176,18 @@ BottomUpTraverser::Observer::onNodeDestroy(Node * node)
 }
 
 void
+BottomUpTraverser::Observer::onInputCreate(Input * input)
+{}
+
+void
 BottomUpTraverser::Observer::onInputChange(Input * input, Output * old_origin, Output * new_origin)
 {
   traverser_.input_change(input, old_origin, new_origin);
 }
+
+void
+BottomUpTraverser::Observer::onInputDestroy(Input * input)
+{}
 
 BottomUpTraverser::~BottomUpTraverser() noexcept = default;
 

@@ -48,8 +48,8 @@ ThetaNode::ThetaNode(rvsdg::Region & parent)
 ThetaNode::LoopVar
 ThetaNode::AddLoopVar(rvsdg::Output * origin)
 {
-  Node::add_input(std::make_unique<StructuralInput>(this, origin, origin->Type()));
-  Node::add_output(std::make_unique<StructuralOutput>(this, origin->Type()));
+  Node::addInput(std::make_unique<StructuralInput>(this, origin, origin->Type()), true);
+  Node::addOutput(std::make_unique<StructuralOutput>(this, origin->Type()));
 
   auto input = ThetaNode::input(ninputs() - 1);
   auto output = ThetaNode::output(noutputs() - 1);
@@ -74,13 +74,18 @@ ThetaNode::RemoveLoopVars(std::vector<LoopVar> loopvars)
   for (const auto & loopvar : loopvars)
   {
     JLM_ASSERT(loopvar.output->IsDead());
-    JLM_ASSERT(loopvar.post->origin() == loopvar.pre);
-    JLM_ASSERT(loopvar.pre->nusers() == 1);
+
+    // If the pre argument has a user, it can only be be the corresponding post result
+    JLM_ASSERT(loopvar.pre->nusers() <= 1);
+    if (loopvar.pre->nusers() == 1)
+    {
+      JLM_ASSERT(loopvar.post->origin() == loopvar.pre);
+    }
 
     subregion()->RemoveResult(loopvar.post->index());
     subregion()->RemoveArgument(loopvar.pre->index());
-    RemoveOutput(loopvar.output->index());
-    RemoveInput(loopvar.input->index());
+    removeOutput(loopvar.output->index());
+    removeInput(loopvar.input->index(), true);
   }
 }
 

@@ -130,8 +130,9 @@ LambdaNode::GetContextVars() const noexcept
 LambdaNode::ContextVar
 LambdaNode::AddContextVar(jlm::rvsdg::Output & origin)
 {
-  auto input = rvsdg::StructuralInput::create(this, &origin, origin.Type());
-  auto argument = &rvsdg::RegionArgument::Create(*subregion(), input, origin.Type());
+  const auto input = new StructuralInput(this, &origin, origin.Type());
+  addInput(std::unique_ptr<StructuralInput>(input), true);
+  const auto argument = &RegionArgument::Create(*subregion(), input, origin.Type());
   return ContextVar{ input, argument };
 }
 
@@ -168,7 +169,7 @@ LambdaNode::finalize(const std::vector<jlm::rvsdg::Output *> & results)
   for (const auto & origin : results)
     rvsdg::RegionResult::Create(*origin->region(), *origin, nullptr, origin->Type());
 
-  return append_output(std::make_unique<rvsdg::StructuralOutput>(this, GetOperation().Type()));
+  return addOutput(std::make_unique<StructuralOutput>(this, GetOperation().Type()));
 }
 
 rvsdg::Output *
