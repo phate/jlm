@@ -248,14 +248,26 @@ public:
   static InductionVariableSet
   FindInductionVariables(const rvsdg::ThetaNode & thetaNode);
 
+  void
+  CreateChainRecurrences(
+      const InductionVariableSet & inductionVariables,
+      const rvsdg::ThetaNode & thetaNode);
+
 private:
   std::unordered_map<const rvsdg::ThetaNode *, InductionVariableSet> InductionVariableMap_;
+  std::unordered_map<const rvsdg::Output *, std::unique_ptr<SCEV>> UniqueSCEVs_;
 
   void
   TraverseRegion(const rvsdg::Region & region);
 
   static bool
   IsBasedOnInductionVariable(const rvsdg::Output & output, InductionVariableSet & candidates);
+
+  std::unique_ptr<SCEV>
+  GetOrCreateSCEVForOutput(const rvsdg::Output & output);
+
+  std::optional<const SCEV *>
+  TryGetSCEVForOutput(const rvsdg::Output & output);
 };
 
 }
