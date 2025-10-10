@@ -4,20 +4,11 @@
  */
 
 #include <jlm/llvm/ir/operators/IntegerOperations.hpp>
-#include <jlm/rvsdg/bitstring/arithmetic.hpp>
-#include <jlm/rvsdg/bitstring/constant.hpp>
-#include <jlm/util/Statistics.hpp>
-#include <test-operation.hpp>
-#include <test-registry.hpp>
-
-#include <jlm/llvm/ir/operators/delta.hpp>
-#include <jlm/llvm/ir/operators/lambda.hpp>
 #include <jlm/llvm/ir/RvsdgModule.hpp>
 #include <jlm/llvm/opt/ScalarEvolution.hpp>
-#include <jlm/rvsdg/control.hpp>
-#include <jlm/rvsdg/Phi.hpp>
 #include <jlm/rvsdg/theta.hpp>
 #include <jlm/rvsdg/view.hpp>
+#include <test-registry.hpp>
 
 #include <cassert>
 
@@ -26,8 +17,52 @@ RunScalarEvolution(const jlm::rvsdg::ThetaNode & thetaNode)
 {
   jlm::util::StatisticsCollector statisticsCollector;
   jlm::llvm::ScalarEvolution scalarEvolution;
-  return scalarEvolution.FindInductionVariables(thetaNode);
+  const auto inductionVariables = scalarEvolution.FindInductionVariables(thetaNode);
+  scalarEvolution.CreateChainRecurrences(inductionVariables, thetaNode);
+  return inductionVariables;
 }
+
+static void
+VerySimpleInductionVariable()
+{
+  using namespace jlm::llvm;
+
+  // Arrange
+  const auto intType = jlm::rvsdg::BitType::Create(32);
+
+  RvsdgModule rvsdgModule(jlm::util::FilePath(""), "", "");
+  const auto & graph = rvsdgModule.Rvsdg();
+
+  const auto & c0 = IntegerConstantOperation::Create(graph.GetRootRegion(), 32, 0);
+
+  const auto theta = jlm::rvsdg::ThetaNode::create(&graph.GetRootRegion());
+  const auto lv1 = theta->AddLoopVar(c0.output(0));
+
+  const auto & c1 = IntegerConstantOperation::Create(*theta->subregion(), 32, 1);
+  auto & addNode = jlm::rvsdg::CreateOpNode<IntegerAddOperation>({ lv1.pre, c1.output(0) }, 32);
+  const auto result = addNode.output(0);
+
+  const auto & c5 = IntegerConstantOperation::Create(*theta->subregion(), 32, 5);
+  auto & sltNode = jlm::rvsdg::CreateOpNode<IntegerSltOperation>({ result, c5.output(0) }, 32);
+  const auto matchResult =
+      jlm::rvsdg::MatchOperation::Create(*sltNode.output(0), { { 1, 1 } }, 0, 2);
+
+  theta->set_predicate(matchResult);
+  lv1.post->divert_to(result);
+
+  jlm::rvsdg::view(graph, stdout);
+
+  // Act
+  ScalarEvolution::InductionVariableSet inductionVariables = RunScalarEvolution(*theta);
+
+  // Assert
+  assert(inductionVariables.Size() == 1);
+  assert(inductionVariables.Contains(lv1.pre));
+}
+
+JLM_UNIT_TEST_REGISTER(
+    "jlm/llvm/opt/ScalarEvolutionTests-VerySimpleInductionVariable",
+    VerySimpleInductionVariable)
 
 static void
 SimpleInductionVariable()
