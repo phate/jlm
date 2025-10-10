@@ -9,8 +9,214 @@
 #include <jlm/rvsdg/theta.hpp>
 #include <jlm/rvsdg/Transformation.hpp>
 
+#include <string>
+
 namespace jlm::llvm
 {
+class SCEV
+{
+  friend class ScalarEvolution;
+
+public:
+  virtual ~SCEV() noexcept = default;
+
+  virtual std::string
+  DebugString() const = 0;
+
+  virtual std::unique_ptr<SCEV>
+  Clone() const = 0;
+};
+
+class SCEVUnknown final : public SCEV
+{
+public:
+  explicit SCEVUnknown()
+  {}
+
+  std::string
+  DebugString() const override
+  {
+    return "Unknown";
+  }
+
+  std::unique_ptr<SCEV>
+  Clone() const override
+  {
+    return std::make_unique<SCEVUnknown>();
+  }
+};
+
+class SCEVPlaceholder final : public SCEV
+{
+public:
+  explicit SCEVPlaceholder(const rvsdg::Output & pre)
+      : PrePointer_{ &pre }
+  {}
+
+  const rvsdg::Output *
+  GetPrePointer() const
+  {
+    return PrePointer_;
+  }
+
+  std::string
+  DebugString() const override
+  {
+    std::ostringstream oss;
+    oss << "PH(" << PrePointer_->debug_string() << ")";
+    return oss.str();
+  }
+
+  std::unique_ptr<SCEV>
+  Clone() const override
+  {
+    return std::make_unique<SCEVPlaceholder>(*PrePointer_);
+  }
+
+private:
+  const rvsdg::Output * PrePointer_;
+};
+
+class SCEVConstant final : public SCEV
+{
+public:
+  explicit SCEVConstant(const uint64_t value)
+      : Value_{ value }
+  {}
+
+  uint64_t
+  GetValue() const
+  {
+    return Value_;
+  }
+
+  std::string
+  DebugString() const override
+  {
+    return std::to_string(Value_);
+  }
+
+  std::unique_ptr<SCEV>
+  Clone() const override
+  {
+    return std::make_unique<SCEVConstant>(Value_);
+  }
+
+private:
+  uint64_t Value_;
+};
+
+class SCEVAddExpr final : public SCEV
+{
+public:
+  SCEVAddExpr()
+      : LeftOperand_{},
+        RightOperand_{}
+  {}
+
+  SCEVAddExpr(std::unique_ptr<SCEV> left, std::unique_ptr<SCEV> right)
+      : LeftOperand_{ std::move(left) },
+        RightOperand_{ std::move(right) }
+  {}
+
+  const std::unique_ptr<SCEV>
+  GetLeftOperand() const
+  {
+    return LeftOperand_->Clone();
+  }
+
+  const std::unique_ptr<SCEV>
+  GetRightOperand() const
+  {
+    return RightOperand_->Clone();
+  }
+
+  void
+  SetLeftOperand(std::unique_ptr<SCEV> op)
+  {
+    LeftOperand_ = std::move(op);
+  }
+
+  void
+  SetRightOperand(std::unique_ptr<SCEV> op)
+  {
+    RightOperand_ = std::move(op);
+  }
+
+  std::string
+  DebugString() const override
+  {
+    std::ostringstream oss;
+    std::string leftStr = LeftOperand_ ? LeftOperand_->DebugString() : "null";
+    std::string rightStr = RightOperand_ ? RightOperand_->DebugString() : "null";
+    oss << "{" << leftStr << ",+," << rightStr << "}";
+    return oss.str();
+  }
+
+  std::unique_ptr<SCEV>
+  Clone() const override
+  {
+    std::unique_ptr<SCEV> leftClone = LeftOperand_ ? LeftOperand_->Clone() : nullptr;
+    std::unique_ptr<SCEV> rightClone = RightOperand_ ? RightOperand_->Clone() : nullptr;
+    return std::make_unique<SCEVAddExpr>(std::move(leftClone), std::move(rightClone));
+  }
+
+private:
+  std::unique_ptr<SCEV> LeftOperand_;
+  std::unique_ptr<SCEV> RightOperand_;
+};
+
+class SCEVChrecExpr final : public SCEV
+{
+  friend class ScalarEvolution;
+
+public:
+  explicit SCEVChrecExpr(const rvsdg::ThetaNode * theta)
+      : Operands_{},
+        Loop_{ theta }
+  {}
+
+  void
+  AddOperand(std::unique_ptr<SCEV> scev)
+  {
+    Operands_.push_back(std::move(scev));
+  }
+
+  const rvsdg::ThetaNode *
+  GetLoop() const
+  {
+    return Loop_;
+  }
+
+  std::string
+  DebugString() const override
+  {
+    std::ostringstream oss;
+    oss << "{";
+    for (size_t i = 0; i < Operands_.size(); ++i)
+    {
+      oss << Operands_.at(i)->DebugString() << "+";
+    }
+    oss << "}" << '\n';
+    return oss.str();
+  }
+
+  std::unique_ptr<SCEV>
+  Clone() const override
+  {
+    auto copy = std::make_unique<SCEVChrecExpr>(Loop_);
+    for (const auto & op : Operands_)
+    {
+      copy->AddOperand(op->Clone());
+    }
+    return copy;
+  }
+
+protected:
+  std::vector<std::unique_ptr<SCEV>> Operands_;
+  const rvsdg::ThetaNode * Loop_;
+};
+
 class ScalarEvolution final : public jlm::rvsdg::Transformation
 {
   class Statistics;
