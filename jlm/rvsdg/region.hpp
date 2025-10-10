@@ -628,9 +628,7 @@ private:
 
   /**
    * Remove \p node from the region.
-   *
    * @param node The node that is removed.
-   * @return True, if \p node was removed, otherwise false.
    *
    * @note This method is automatically invoked when a node is deleted.
    */

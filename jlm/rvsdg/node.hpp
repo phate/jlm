@@ -31,9 +31,9 @@ class Input
   friend class Region;
 
 protected:
-  Input(Node & owner, Output & origin, std::shared_ptr<const Type> type);
+  Input(Node & owner, Output & origin, std::shared_ptr<const rvsdg::Type> type);
 
-  Input(Region & owner, Output & origin, std::shared_ptr<const Type> type);
+  Input(Region & owner, Output & origin, std::shared_ptr<const rvsdg::Type> type);
 
 public:
   virtual ~Input() noexcept;
@@ -249,9 +249,9 @@ class Output
   friend class Region;
 
 protected:
-  Output(Node & owner, std::shared_ptr<const Type> type);
+  Output(Node & owner, std::shared_ptr<const rvsdg::Type> type);
 
-  Output(Region * owner, std::shared_ptr<const Type> type);
+  Output(Region * owner, std::shared_ptr<const rvsdg::Type> type);
 
 public:
   using UsersList = Input::UsersList;
