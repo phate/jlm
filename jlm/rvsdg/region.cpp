@@ -166,7 +166,7 @@ RegionArgument &
 Region::addArgument(std::unique_ptr<RegionArgument> argument)
 {
   if (argument->region() != this)
-    throw util::Error("Appending result to wrong region.");
+    throw util::Error("Appending argument to wrong region.");
 
   argument->index_ = narguments();
   arguments_.push_back(argument.release());
@@ -177,7 +177,7 @@ RegionArgument &
 Region::insertArgument(size_t index, std::unique_ptr<RegionArgument> argument)
 {
   if (argument->region() != this)
-    throw util::Error("Appending result to wrong region.");
+    throw util::Error("Inserting argument to wrong region.");
 
   if (index > narguments())
     throw util::Error("Inserting argument after end of region.");
