@@ -424,65 +424,6 @@ LoadNonVolatileOperation::NormalizeDuplicateStates(
 }
 
 std::optional<std::vector<rvsdg::Output *>>
-LoadNonVolatileOperation::NormalizeLoadLoadState(
-    const LoadNonVolatileOperation & operation,
-    const std::vector<rvsdg::Output *> & operands)
-{
-  if (operation.NumMemoryStates() == 0)
-  {
-    return std::nullopt;
-  }
-
-  bool shouldPerformNormalization = false;
-  for (size_t n = 1; n < operands.size(); n++)
-  {
-    const auto simpleNode = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*operands[n]);
-    shouldPerformNormalization |= is<LoadNonVolatileOperation>(simpleNode);
-  }
-  if (!shouldPerformNormalization)
-    return std::nullopt;
-
-  std::function<
-      rvsdg::Output *(size_t, rvsdg::Output *, std::vector<std::vector<rvsdg::Output *>> &)>
-      traceLoadState = [&](size_t index, rvsdg::Output * operand, auto & joinOperands)
-  {
-    JLM_ASSERT(operand->Type()->Kind() == rvsdg::TypeKind::State);
-
-    if (!is<LoadNonVolatileOperation>(rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*operand)))
-      return operand;
-
-    joinOperands[index].push_back(operand);
-    return traceLoadState(index, MapMemoryStateOutputToInput(*operand).origin(), joinOperands);
-  };
-
-  std::vector<rvsdg::Output *> newLoadMemoryStates;
-  std::vector<std::vector<rvsdg::Output *>> joinOperands(operation.NumMemoryStates());
-  for (size_t n = 1; n < operands.size(); n++)
-  {
-    newLoadMemoryStates.push_back(traceLoadState(n - 1, operands[n], joinOperands));
-  }
-
-  const auto loadAddress = operands[0];
-  auto loadResults = rvsdg::outputs(&CreateNode(
-      *loadAddress,
-      newLoadMemoryStates,
-      operation.GetLoadedType(),
-      operation.GetAlignment()));
-
-  for (size_t n = 0; n < joinOperands.size(); n++)
-  {
-    auto & states = joinOperands[n];
-    if (!states.empty())
-    {
-      states.push_back(loadResults[n + 1]);
-      loadResults[n + 1] = MemoryStateJoinOperation::CreateNode(states).output(0);
-    }
-  }
-
-  return loadResults;
-}
-
-std::optional<std::vector<rvsdg::Output *>>
 LoadNonVolatileOperation::NormalizeIOBarrierAllocaAddress(
     const LoadNonVolatileOperation & operation,
     const std::vector<rvsdg::Output *> & operands)

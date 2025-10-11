@@ -257,7 +257,6 @@ NodeReduction::NormalizeLoadNode(
         LoadNonVolatileOperation::NormalizeLoadAlloca,
         LoadNonVolatileOperation::NormalizeDuplicateStates,
         LoadNonVolatileOperation::NormalizeLoadStoreState,
-        LoadNonVolatileOperation::NormalizeLoadLoadState,
         LoadNonVolatileOperation::NormalizeIOBarrierAllocaAddress });
 
   return rvsdg::NormalizeSequence<LoadNonVolatileOperation>(
