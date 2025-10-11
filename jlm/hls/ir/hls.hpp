@@ -608,7 +608,7 @@ public:
   Create(
       rvsdg::Region & region,
       rvsdg::StructuralInput & input,
-      const std::shared_ptr<const rvsdg::Type> & type)
+      const std::shared_ptr<const rvsdg::Type> type)
   {
     std::unique_ptr<EntryArgument> argument(new EntryArgument(region, input, std::move(type)));
     return static_cast<EntryArgument &>(region.addArgument(std::move(argument)));
