@@ -608,11 +608,10 @@ public:
   Create(
       rvsdg::Region & region,
       rvsdg::StructuralInput & input,
-      const std::shared_ptr<const rvsdg::Type> type)
+      const std::shared_ptr<const rvsdg::Type> & type)
   {
-    const auto argument = new EntryArgument(region, input, std::move(type));
-    region.addArgument(std::unique_ptr<RegionArgument>(argument));
-    return *argument;
+    std::unique_ptr<EntryArgument> argument(new EntryArgument(region, input, std::move(type)));
+    return static_cast<EntryArgument &>(region.addArgument(std::move(argument)));
   }
 };
 
@@ -641,9 +640,8 @@ public:
   static BackEdgeArgument &
   create(rvsdg::Region * region, std::shared_ptr<const jlm::rvsdg::Type> type)
   {
-    const auto argument = new BackEdgeArgument(region, std::move(type));
-    region->addArgument(std::unique_ptr<RegionArgument>(argument));
-    return *argument;
+    std::unique_ptr<BackEdgeArgument> argument(new BackEdgeArgument(region, std::move(type)));
+    return static_cast<BackEdgeArgument &>(region->addArgument(std::move(argument)));
   }
 
   BackEdgeResult * result_;
@@ -674,9 +672,8 @@ public:
   static BackEdgeResult &
   create(jlm::rvsdg::Output * origin)
   {
-    const auto result = new BackEdgeResult(origin);
-    origin->region()->addResult(std::unique_ptr<RegionResult>(result));
-    return *result;
+    std::unique_ptr<BackEdgeResult> result(new BackEdgeResult(origin));
+    return static_cast<BackEdgeResult &>(origin->region()->addResult(std::move(result)));
   }
 
   BackEdgeArgument * argument_;
@@ -702,9 +699,8 @@ public:
   static ExitResult &
   Create(rvsdg::Output & origin, rvsdg::StructuralOutput & output)
   {
-    const auto result = new ExitResult(origin, output);
-    origin.region()->addResult(std::unique_ptr<RegionResult>(result));
-    return *result;
+    std::unique_ptr<RegionResult> result(new ExitResult(origin, output));
+    return static_cast<ExitResult &>(origin.region()->addResult(std::move(result)));
   }
 };
 

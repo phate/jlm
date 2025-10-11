@@ -720,18 +720,15 @@ protected:
   /**
    * Removes an input from the node given the inputs' \p index.
    *
-   * The removal of an input invalidates the node's existing input iterators.
+   * The removal of an input invalidates the node's existing input iterators,
+   * and changes the index of all following inputs.
    *
    * @param index The inputs' index. It must be between [0, ninputs()).
    * @param notifyRegion If true, the region is informed about the removal.
    * This should be false if the node has already notified the region about being removed,
    * i.e., this function is being called from the node's destructor.
    *
-   * \note The method may adjust the indices of the other inputs after the removal.
-   * Moreover, it also might need to recompute the depth of the node.
-   *
    * \see ninputs()
-   * \see recompute_depth()
    * \see input#index()
    */
   void

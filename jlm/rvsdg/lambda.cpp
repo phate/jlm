@@ -130,8 +130,8 @@ LambdaNode::GetContextVars() const noexcept
 LambdaNode::ContextVar
 LambdaNode::AddContextVar(jlm::rvsdg::Output & origin)
 {
-  const auto input = new StructuralInput(this, &origin, origin.Type());
-  addInput(std::unique_ptr<StructuralInput>(input), true);
+  const auto input =
+      addInput(std::make_unique<StructuralInput>(this, &origin, origin.Type()), true);
   const auto argument = &RegionArgument::Create(*subregion(), input, origin.Type());
   return ContextVar{ input, argument };
 }

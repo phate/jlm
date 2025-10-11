@@ -45,12 +45,12 @@ public:
   typedef util::IntrusiveListAccessor<RegionArgument, &RegionArgument::structural_input_anchor_>
       structural_input_accessor;
 
+  ~RegionArgument() noexcept override;
+
   RegionArgument(
       rvsdg::Region * region,
       StructuralInput * input,
       std::shared_ptr<const rvsdg::Type> type);
-
-  ~RegionArgument() noexcept override;
 
   RegionArgument(const RegionArgument &) = delete;
 
@@ -854,7 +854,7 @@ public:
   onInputChange(Input * input, Output * old_origin, Output * new_origin) = 0;
 
   /**
-   * Called right before remove a node input or region result from the region.
+   * Called right before a node input or region result is removed.
    * This method is not called when deleting nodes, only modifying existing nodes.
    * @param input the input that is removed
    */

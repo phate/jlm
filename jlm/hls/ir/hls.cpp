@@ -134,8 +134,8 @@ rvsdg::StructuralOutput *
 LoopNode::AddLoopVar(jlm::rvsdg::Output * origin, jlm::rvsdg::Output ** buffer)
 {
   // Create StructuralInput and EntryArgument
-  auto input = new rvsdg::StructuralInput(this, origin, origin->Type());
-  addInput(std::unique_ptr<rvsdg::StructuralInput>(input), true);
+  const auto input =
+      addInput(std::make_unique<rvsdg::StructuralInput>(this, origin, origin->Type()), true);
   auto & argument_in = EntryArgument::Create(*subregion(), *input, origin->Type());
 
   // Create back-edge
@@ -157,8 +157,7 @@ LoopNode::AddLoopVar(jlm::rvsdg::Output * origin, jlm::rvsdg::Output ** buffer)
   auto branch = BranchOperation::create(*predicate()->origin(), *mux, true);
 
   // Create an ExitResult + StructuralOutput for when the loop is finished
-  auto output = new rvsdg::StructuralOutput(this, origin->Type());
-  addOutput(std::unique_ptr<rvsdg::StructuralOutput>(output));
+  const auto output = addOutput(std::make_unique<rvsdg::StructuralOutput>(this, origin->Type()));
   ExitResult::Create(*branch[0], *output);
 
   // If the loop is not done, send the value to the BackEdgeResult, with a small buffer in between.
@@ -181,16 +180,15 @@ LoopNode::addLoopConstant(jlm::rvsdg::Output * origin)
 rvsdg::Output *
 LoopNode::addResponseInput(rvsdg::Output * origin)
 {
-  auto input = new rvsdg::StructuralInput(this, origin, origin->Type());
-  addInput(std::unique_ptr<rvsdg::StructuralInput>(input), true);
+  const auto input =
+      addInput(std::make_unique<rvsdg::StructuralInput>(this, origin, origin->Type()), true);
   return &EntryArgument::Create(*subregion(), *input, origin->Type());
 }
 
 rvsdg::Output *
 LoopNode::addRequestOutput(rvsdg::Output * origin)
 {
-  auto output = new rvsdg::StructuralOutput(this, origin->Type());
-  addOutput(std::unique_ptr<rvsdg::StructuralOutput>(output));
+  const auto output = addOutput(std::make_unique<rvsdg::StructuralOutput>(this, origin->Type()));
   ExitResult::Create(*origin, *output);
   return output;
 }
@@ -234,8 +232,9 @@ LoopNode::copy(rvsdg::Region * region, rvsdg::SubstitutionMap & smap) const
   for (size_t i = 0; i < ninputs(); ++i)
   {
     auto in_origin = smap.lookup(input(i)->origin());
-    auto inp = new rvsdg::StructuralInput(loop, in_origin, in_origin->Type());
-    loop->addInput(std::unique_ptr<rvsdg::StructuralInput>(inp), true);
+    auto inp = loop->addInput(
+        std::make_unique<rvsdg::StructuralInput>(loop, in_origin, in_origin->Type()),
+        true);
 
     smap.insert(input(i), loop->input(i));
     auto oarg = input(i)->arguments.begin().ptr();
@@ -244,8 +243,7 @@ LoopNode::copy(rvsdg::Region * region, rvsdg::SubstitutionMap & smap) const
   }
   for (size_t i = 0; i < noutputs(); ++i)
   {
-    auto out = new rvsdg::StructuralOutput(loop, output(i)->Type());
-    loop->addOutput(std::unique_ptr<rvsdg::StructuralOutput>(out));
+    auto out = loop->addOutput(std::make_unique<rvsdg::StructuralOutput>(loop, output(i)->Type()));
 
     smap.insert(output(i), out);
     smap.insert(output(i), out);

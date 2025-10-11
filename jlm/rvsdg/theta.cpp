@@ -75,7 +75,7 @@ ThetaNode::RemoveLoopVars(std::vector<LoopVar> loopvars)
   {
     JLM_ASSERT(loopvar.output->IsDead());
 
-    // If the pre argument has a user, it can only be be the corresponding post result
+    // If the pre argument has a user, it can only be the corresponding post result
     JLM_ASSERT(loopvar.pre->nusers() <= 1);
     if (loopvar.pre->nusers() == 1)
     {

@@ -39,13 +39,11 @@ PhiNode::GetOperation() const noexcept
 PhiNode::ContextVar
 PhiNode::AddContextVar(rvsdg::Output & origin)
 {
-  addInput(std::make_unique<jlm::rvsdg::StructuralInput>(this, &origin, origin.Type()), true);
-  auto input = static_cast<jlm::rvsdg::StructuralInput *>(Node::input(ninputs() - 1));
+  auto input = addInput(std::make_unique<StructuralInput>(this, &origin, origin.Type()), true);
+  auto & argument =
+      subregion()->addArgument(std::make_unique<RegionArgument>(subregion(), input, origin.Type()));
 
-  const auto argument = new RegionArgument(subregion(), input, origin.Type());
-  subregion()->addArgument(std::unique_ptr<RegionArgument>(argument));
-
-  return ContextVar{ input, argument };
+  return ContextVar{ input, &argument };
 }
 
 [[nodiscard]] std::vector<PhiNode::ContextVar>
@@ -260,13 +258,13 @@ PhiNode::FixVar
 PhiBuilder::AddFixVar(std::shared_ptr<const jlm::rvsdg::Type> type)
 {
   auto output = node_->addOutput(std::make_unique<StructuralOutput>(node_, type));
+  auto & argument = subregion()->insertArgument(
+      subregion()->nresults(),
+      std::make_unique<RegionArgument>(subregion(), nullptr, type));
+  auto & result =
+      subregion()->addResult(std::make_unique<RegionResult>(subregion(), &argument, output, type));
 
-  auto argument = new RegionArgument(subregion(), nullptr, type);
-  subregion()->insertArgument(subregion()->nresults(), std::unique_ptr<RegionArgument>(argument));
-  auto result = new RegionResult(subregion(), argument, output, type);
-  subregion()->addResult(std::unique_ptr<RegionResult>(result));
-
-  return PhiNode::FixVar{ argument, result, output };
+  return PhiNode::FixVar{ &argument, &result, output };
 }
 
 PhiNode *
