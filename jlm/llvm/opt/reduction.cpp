@@ -252,8 +252,7 @@ NodeReduction::NormalizeLoadNode(
     const std::vector<rvsdg::Output *> & operands)
 {
   static std::vector<rvsdg::NodeNormalization<LoadNonVolatileOperation>> loadNodeNormalizations(
-      { LoadNonVolatileOperation::NormalizeLoadMemoryStateMerge,
-        LoadNonVolatileOperation::NormalizeLoadStore,
+      { LoadNonVolatileOperation::NormalizeLoadStore,
         LoadNonVolatileOperation::NormalizeLoadAlloca,
         LoadNonVolatileOperation::NormalizeDuplicateStates,
         LoadNonVolatileOperation::NormalizeLoadStoreState,
