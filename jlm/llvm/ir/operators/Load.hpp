@@ -302,23 +302,6 @@ public:
   copy() const override;
 
   /**
-   * \brief Swaps a memory state merge operation and a load operation.
-   *
-   * sx1 = MemStateMergeOperation si1 ... siM
-   * v sl1 = LoadNonVolatileOperation a sx1
-   * =>
-   * v sl1 ... slM = LoadNonVolatileOperation a si1 ... siM
-   * sx1 = MemStateMergeOperation sl1 ... slM
-   *
-   * @return If the normalization could be applied, then the results of the load operation after
-   * the transformation. Otherwise, std::nullopt.
-   */
-  static std::optional<std::vector<rvsdg::Output *>>
-  NormalizeLoadMemoryStateMerge(
-      const LoadNonVolatileOperation & operation,
-      const std::vector<rvsdg::Output *> & operands);
-
-  /**
    * \brief If the producer of a load's address is an alloca operation, then we can remove all
    * state edges originating from other alloca operations.
    *
