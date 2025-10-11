@@ -208,8 +208,8 @@ public:
    */
   struct InputVar
   {
-    rvsdg::Input * input{};
-    std::vector<rvsdg::Output *> argument{};
+    rvsdg::StructuralInput * input{};
+    std::vector<rvsdg::RegionArgument *> argument{};
   };
 
   /**
@@ -217,18 +217,18 @@ public:
    */
   struct OutputVar
   {
-    rvsdg::Output * output{};
-    std::vector<rvsdg::Input *> result{};
+    rvsdg::StructuralOutput * output{};
+    std::vector<rvsdg::RegionResult *> result{};
   };
 
   /**
    * Add an input WITHOUT subregion arguments to a \ref TestStructuralNode.
    *
    * @param origin Value to be routed in.
-   * @return Description of input variable.
+   * @return The created input variable.
    */
-  InputVar
-  AddInput(rvsdg::Output & origin);
+  rvsdg::StructuralInput &
+  addInputOnly(rvsdg::Output & origin);
 
   /**
    * Add an input WITH subregion arguments to a \ref TestStructuralNode.
@@ -237,24 +237,33 @@ public:
    * @return Description of input variable.
    */
   InputVar
-  AddInputWithArguments(rvsdg::Output & origin);
+  addInputWithArguments(rvsdg::Output & origin);
+
+  /**
+   * Removes the input with the given \p index,
+   * and any subregion arguments associated with it.
+   * All such arguments must be dead.
+   * @param index the index of the input to remove.
+   */
+  void
+  removeInputAndArguments(size_t index);
 
   /**
    * Add subregion arguments WITHOUT an input to a \ref TestStructuralNode.
    * @param type The argument type
-   * @return Description of input variable
+   * @return Description of input variable.
    */
   InputVar
-  AddArguments(const std::shared_ptr<const rvsdg::Type> & type);
+  addArguments(const std::shared_ptr<const rvsdg::Type> & type);
 
   /**
    * Add an output WITHOUT subregion results to a \ref TestStructuralNode.
    *
    * @param type The output type
-   * @return Description of output variable.
+   * @return The created output variable.
    */
-  OutputVar
-  AddOutput(std::shared_ptr<const rvsdg::Type> type);
+  rvsdg::StructuralOutput &
+  addOutputOnly(std::shared_ptr<const rvsdg::Type> type);
 
   /**
    * Add an output WITH subregion results to a \ref TestStructuralNode.
@@ -263,7 +272,15 @@ public:
    * @return Description of output variable.
    */
   OutputVar
-  AddOutputWithResults(const std::vector<rvsdg::Output *> & origins);
+  addOutputWithResults(const std::vector<rvsdg::Output *> & origins);
+
+  /**
+   * Removes the output with the given \p index,
+   * and any subregion results associated with it.
+   * @param index the index of the output to remove.
+   */
+  void
+  removeOutputAndResults(size_t index);
 
   /**
    * Add subregion results WITHOUT output to a \ref TestStructuralNode.
@@ -272,7 +289,7 @@ public:
    * @return Description of output variable.
    */
   OutputVar
-  AddResults(const std::vector<rvsdg::Output *> & origins);
+  addResults(const std::vector<rvsdg::Output *> & origins);
 
   [[nodiscard]] const TestStructuralOperation &
   GetOperation() const noexcept override;
@@ -377,7 +394,7 @@ public:
       std::shared_ptr<const jlm::rvsdg::Type> type)
   {
     auto graphArgument = new TestGraphArgument(region, input, std::move(type));
-    region.append_argument(graphArgument);
+    region.addArgument(std::unique_ptr<RegionArgument>(graphArgument));
     return *graphArgument;
   }
 };

@@ -158,14 +158,16 @@ TestStructuralNode::copy(rvsdg::Region * parent, rvsdg::SubstitutionMap & smap) 
   {
     auto origin = smap.lookup(input(n)->origin());
     auto neworigin = origin ? origin : input(n)->origin();
-    auto new_input = rvsdg::StructuralInput::create(node, neworigin, input(n)->Type());
+    auto new_input = new rvsdg::StructuralInput(node, neworigin, input(n)->Type());
+    node->addInput(std::unique_ptr<rvsdg::StructuralInput>(new_input), true);
     smap.insert(input(n), new_input);
   }
 
   /* copy outputs */
   for (size_t n = 0; n < noutputs(); n++)
   {
-    auto new_output = rvsdg::StructuralOutput::create(node, output(n)->Type());
+    auto new_output = new rvsdg::StructuralOutput(node, output(n)->Type());
+    node->addOutput(std::unique_ptr<rvsdg::StructuralOutput>(new_output));
     smap.insert(output(n), new_output);
   }
 
@@ -176,18 +178,18 @@ TestStructuralNode::copy(rvsdg::Region * parent, rvsdg::SubstitutionMap & smap) 
   return node;
 }
 
-TestStructuralNode::InputVar
-TestStructuralNode::AddInput(rvsdg::Output & origin)
+rvsdg::StructuralInput &
+TestStructuralNode::addInputOnly(rvsdg::Output & origin)
 {
   const auto input =
-      add_input(std::make_unique<rvsdg::StructuralInput>(this, &origin, origin.Type()));
-  return { input, {} };
+      addInput(std::make_unique<rvsdg::StructuralInput>(this, &origin, origin.Type()), true);
+  return *input;
 }
 
 TestStructuralNode::InputVar
-TestStructuralNode::AddInputWithArguments(rvsdg::Output & origin)
+TestStructuralNode::addInputWithArguments(rvsdg::Output & origin)
 {
-  auto inputVar = AddInput(origin);
+  InputVar inputVar{ &addInputOnly(origin), {} };
 
   for (auto & subregion : Subregions())
   {
@@ -201,10 +203,25 @@ TestStructuralNode::AddInputWithArguments(rvsdg::Output & origin)
   return inputVar;
 }
 
-TestStructuralNode::InputVar
-TestStructuralNode::AddArguments(const std::shared_ptr<const rvsdg::Type> & type)
+void
+TestStructuralNode::removeInputAndArguments(size_t index)
 {
-  std::vector<rvsdg::Output *> arguments;
+  if (index >= ninputs())
+    throw std::out_of_range("Invalid input index.");
+
+  auto in = input(index);
+  for (auto & argument : in->arguments)
+  {
+    argument.region()->RemoveArgument(argument.index());
+  }
+
+  removeInput(index, true);
+}
+
+TestStructuralNode::InputVar
+TestStructuralNode::addArguments(const std::shared_ptr<const rvsdg::Type> & type)
+{
+  std::vector<rvsdg::RegionArgument *> arguments;
   for (auto & subregion : Subregions())
   {
     const auto argument = &rvsdg::RegionArgument::Create(subregion, nullptr, type);
@@ -214,21 +231,20 @@ TestStructuralNode::AddArguments(const std::shared_ptr<const rvsdg::Type> & type
   return { nullptr, std::move(arguments) };
 }
 
-TestStructuralNode::OutputVar
-TestStructuralNode::AddOutput(std::shared_ptr<const rvsdg::Type> type)
+rvsdg::StructuralOutput &
+TestStructuralNode::addOutputOnly(std::shared_ptr<const rvsdg::Type> type)
 {
-  const auto output = add_output(std::make_unique<rvsdg::StructuralOutput>(this, std::move(type)));
-  return { output, {} };
+  return *addOutput(std::make_unique<rvsdg::StructuralOutput>(this, std::move(type)));
 }
 
 TestStructuralNode::OutputVar
-TestStructuralNode::AddOutputWithResults(const std::vector<rvsdg::Output *> & origins)
+TestStructuralNode::addOutputWithResults(const std::vector<rvsdg::Output *> & origins)
 {
   if (origins.size() != nsubregions())
     throw util::Error("Insufficient number of origins.");
 
   size_t n = 0;
-  auto outputVar = AddOutput(origins[0]->Type());
+  OutputVar outputVar{ &addOutputOnly(origins[0]->Type()), {} };
   for (auto & subregion : Subregions())
   {
     const auto origin = origins[n++];
@@ -243,14 +259,29 @@ TestStructuralNode::AddOutputWithResults(const std::vector<rvsdg::Output *> & or
   return outputVar;
 }
 
+void
+TestStructuralNode::removeOutputAndResults(size_t index)
+{
+  if (index >= noutputs())
+    throw std::out_of_range("Invalid output index.");
+
+  auto out = output(index);
+  for (auto & result : out->results)
+  {
+    result.region()->RemoveResult(result.index());
+  }
+
+  removeOutput(index);
+}
+
 TestStructuralNode::OutputVar
-TestStructuralNode::AddResults(const std::vector<rvsdg::Output *> & origins)
+TestStructuralNode::addResults(const std::vector<rvsdg::Output *> & origins)
 {
   if (origins.size() != nsubregions())
     throw util::Error("Insufficient number of origins.");
 
   size_t n = 0;
-  std::vector<rvsdg::Input *> results;
+  std::vector<rvsdg::RegionResult *> results;
   for (auto & subregion : Subregions())
   {
     const auto origin = origins[n++];

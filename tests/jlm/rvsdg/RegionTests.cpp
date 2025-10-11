@@ -34,9 +34,9 @@ IteratorRanges()
   auto node1 = TestOperation::create(&subregion, { &argument1 }, { valueType });
   auto bottomNode0 = TestOperation::create(&subregion, { &argument0, &argument1 }, { valueType });
 
-  const auto outputVar0 = structuralNode->AddResults({ topNode0->output(0) });
-  const auto outputVar1 = structuralNode->AddResults({ node0->output(0) });
-  const auto outputVar2 = structuralNode->AddResults({ node1->output(0) });
+  const auto outputVar0 = structuralNode->addResults({ topNode0->output(0) });
+  const auto outputVar1 = structuralNode->addResults({ node0->output(0) });
+  const auto outputVar2 = structuralNode->addResults({ node1->output(0) });
 
   // Act & Assert
   auto numArguments = std::distance(subregion.Arguments().begin(), subregion.Arguments().end());
@@ -95,16 +95,16 @@ Contains()
   auto import = &jlm::rvsdg::GraphImport::Create(graph, valueType, "import");
 
   auto structuralNode1 = TestStructuralNode::create(&graph.GetRootRegion(), 1);
-  auto structuralInput1 = jlm::rvsdg::StructuralInput::create(structuralNode1, import, valueType);
-  auto & regionArgument1 =
-      TestGraphArgument::Create(*structuralNode1->subregion(0), structuralInput1, valueType);
-  TestUnaryOperation::create(structuralNode1->subregion(0), valueType, &regionArgument1, valueType);
+  auto inputVar1 = structuralNode1->addInputWithArguments(*import);
+  TestUnaryOperation::create(
+      structuralNode1->subregion(0),
+      valueType,
+      inputVar1.argument[0],
+      valueType);
 
   auto structuralNode2 = TestStructuralNode::create(&graph.GetRootRegion(), 1);
-  auto structuralInput2 = jlm::rvsdg::StructuralInput::create(structuralNode2, import, valueType);
-  auto & regionArgument2 =
-      TestGraphArgument::Create(*structuralNode2->subregion(0), structuralInput2, valueType);
-  TestBinaryOperation::create(valueType, valueType, &regionArgument2, &regionArgument2);
+  auto inputVar2 = structuralNode2->addInputWithArguments(*import);
+  TestBinaryOperation::create(valueType, valueType, inputVar2.argument[0], inputVar2.argument[0]);
 
   // Act & Assert
   assert(jlm::rvsdg::Region::ContainsNodeType<TestStructuralNode>(graph.GetRootRegion(), false));
@@ -189,9 +189,9 @@ RemoveResultsWhere()
 
   auto node = TestOperation::Create(subregion, {}, {}, { valueType });
 
-  const auto outputVar0 = structuralNode->AddResults({ node->output(0) });
-  const auto outputVar1 = structuralNode->AddResults({ node->output(0) });
-  const auto outputVar2 = structuralNode->AddResults({ node->output(0) });
+  const auto outputVar0 = structuralNode->addResults({ node->output(0) });
+  const auto outputVar1 = structuralNode->addResults({ node->output(0) });
+  const auto outputVar2 = structuralNode->addResults({ node->output(0) });
 
   // Act & Arrange
   assert(subregion->nresults() == 3);
@@ -451,8 +451,8 @@ BottomNodeTests()
   assert(&*(rvsdg.GetRootRegion().BottomNodes().begin()) == structuralNode);
 
   // The node cedes to be dead
-  auto [output, _] = structuralNode->AddOutput(valueType);
-  GraphExport::Create(*output, "x");
+  auto & output = structuralNode->addOutputOnly(valueType);
+  GraphExport::Create(output, "x");
   assert(structuralNode->IsDead() == false);
   assert(rvsdg.GetRootRegion().numBottomNodes() == 0);
   assert(rvsdg.GetRootRegion().BottomNodes().begin() == rvsdg.GetRootRegion().BottomNodes().end());

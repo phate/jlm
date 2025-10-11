@@ -83,7 +83,7 @@ public:
         std::move(importedType),
         std::move(name),
         std::move(linkage));
-    graph.GetRootRegion().append_argument(graphImport);
+    graph.GetRootRegion().addArgument(std::unique_ptr<RegionArgument>(graphImport));
     return *graphImport;
   }
 

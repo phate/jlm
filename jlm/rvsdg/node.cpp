@@ -251,8 +251,7 @@ NodeInput::NodeInput(
 {}
 
 NodeOutput::NodeOutput(Node * node, std::shared_ptr<const rvsdg::Type> type)
-    : Output(*node, std::move(type)),
-      node_(node)
+    : Output(*node, std::move(type))
 {}
 
 Node::Node(Region * region)
@@ -288,10 +287,8 @@ Node::graph() const noexcept
 }
 
 NodeInput *
-Node::add_input(std::unique_ptr<NodeInput> input)
+Node::addInput(std::unique_ptr<NodeInput> input, bool notifyRegion)
 {
-  auto producer = rvsdg::TryGetOwnerNode<Node>(*input->origin());
-
   // If we used to be a top node, we no longer are
   if (ninputs() == 0)
   {
@@ -301,18 +298,27 @@ Node::add_input(std::unique_ptr<NodeInput> input)
 
   input->index_ = ninputs();
   inputs_.push_back(std::move(input));
+  const auto inputPtr = inputs_.back().get();
 
-  auto new_depth = producer ? producer->depth() + 1 : 0;
+  const auto producer = rvsdg::TryGetOwnerNode<Node>(*inputPtr->origin());
+  const auto new_depth = producer ? producer->depth() + 1 : 0;
   if (new_depth > depth())
     recompute_depth();
 
-  return this->input(ninputs() - 1);
+  if (notifyRegion)
+    region()->notifyInputCreate(inputPtr);
+
+  return inputPtr;
 }
 
 void
-Node::RemoveInput(size_t index)
+Node::removeInput(size_t index, bool notifyRegion)
 {
   JLM_ASSERT(index < ninputs());
+
+  if (notifyRegion)
+    region()->notifyInputDestory(input(index));
+
   auto producer = rvsdg::TryGetOwnerNode<Node>(*input(index)->origin());
 
   /* remove input */
@@ -342,7 +348,7 @@ Node::RemoveInput(size_t index)
 }
 
 void
-Node::RemoveOutput(size_t index)
+Node::removeOutput(size_t index)
 {
   JLM_ASSERT(index < noutputs());
   JLM_ASSERT(outputs_[index]->IsDead());

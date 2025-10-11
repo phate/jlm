@@ -13,7 +13,7 @@
 namespace jlm::hls
 {
 
-bool
+static bool
 remove_unused_loop_backedges(LoopNode * ln)
 {
   bool any_changed = false;
@@ -36,58 +36,49 @@ remove_unused_loop_backedges(LoopNode * ln)
   return any_changed;
 }
 
-bool
+static bool
 remove_unused_loop_outputs(LoopNode * ln)
 {
   bool any_changed = false;
-  auto sr = ln->subregion();
   // go through in reverse because we remove some
   for (int i = ln->noutputs() - 1; i >= 0; --i)
   {
-    auto out = ln->output(i);
+    const auto out = ln->output(i);
     if (out->nusers() == 0)
     {
-      JLM_ASSERT(out->results.size() == 1);
-      auto result = out->results.begin();
-      sr->RemoveResult(result->index());
-      ln->RemoveOutput(out->index());
+      ln->removeLoopOutput(out);
       any_changed = true;
     }
   }
   return any_changed;
 }
 
-bool
+static bool
 remove_loop_passthrough(LoopNode * ln)
 {
   bool any_changed = false;
-  auto sr = ln->subregion();
   // go through in reverse because we remove some
   for (int i = ln->ninputs() - 1; i >= 0; --i)
   {
-    auto in = ln->input(i);
+    const auto in = ln->input(i);
     JLM_ASSERT(in->arguments.size() == 1);
-    auto arg = in->arguments.begin();
-    if (arg->nusers() == 1)
+    const auto arg = in->arguments.begin();
+    if (arg->nusers() != 1)
+      continue;
+
+    auto & user = *arg->Users().begin();
+    if (const auto result = dynamic_cast<rvsdg::RegionResult *>(&user))
     {
-      auto & user = *arg->Users().begin();
-      if (auto result = dynamic_cast<rvsdg::RegionResult *>(&user))
-      {
-        auto out = result->output();
-        out->divert_users(in->origin());
-        sr->RemoveResult(result->index());
-        ln->RemoveOutput(out->index());
-        auto inputIndex = arg->input()->index();
-        sr->RemoveArgument(arg->index());
-        ln->RemoveInput(inputIndex);
-        any_changed = true;
-      }
+      result->output()->divert_users(in->origin());
+      ln->removeLoopOutput(result->output());
+      ln->removeLoopInput(arg->input());
+      any_changed = true;
     }
   }
   return any_changed;
 }
 
-bool
+static bool
 remove_unused_loop_inputs(LoopNode * ln)
 {
   bool any_changed = false;
@@ -100,8 +91,7 @@ remove_unused_loop_inputs(LoopNode * ln)
     auto arg = in->arguments.begin();
     if (arg->nusers() == 0)
     {
-      sr->RemoveArgument(arg->index());
-      ln->RemoveInput(in->index());
+      ln->removeLoopInput(in);
       any_changed = true;
     }
   }
@@ -128,7 +118,7 @@ remove_unused_loop_inputs(LoopNode * ln)
   return any_changed;
 }
 
-bool
+static bool
 dead_spec_gamma(rvsdg::Node * dmux_node)
 {
   const auto mux_op = util::AssertedCast<const MuxOperation>(&dmux_node->GetOperation());
@@ -153,7 +143,7 @@ dead_spec_gamma(rvsdg::Node * dmux_node)
   return false;
 }
 
-bool
+static bool
 dead_nonspec_gamma(rvsdg::Node * ndmux_node)
 {
   auto mux_op = util::AssertedCast<const MuxOperation>(&ndmux_node->GetOperation());
@@ -194,7 +184,7 @@ dead_nonspec_gamma(rvsdg::Node * ndmux_node)
   return false;
 }
 
-bool
+static bool
 dead_loop(rvsdg::Node * ndmux_node)
 {
   const auto mux_op = util::AssertedCast<const MuxOperation>(&ndmux_node->GetOperation());
@@ -272,7 +262,7 @@ dead_loop(rvsdg::Node * ndmux_node)
   return true;
 }
 
-bool
+static bool
 dead_loop_lcb(rvsdg::Node * lcb_node)
 {
   JLM_ASSERT(jlm::rvsdg::is<LoopConstantBufferOperation>(lcb_node));
@@ -326,7 +316,7 @@ dead_loop_lcb(rvsdg::Node * lcb_node)
   return true;
 }
 
-bool
+static bool
 fix_mem_split(rvsdg::Node * split_node)
 {
   if (split_node->noutputs() == 1)
@@ -371,7 +361,7 @@ fix_mem_split(rvsdg::Node * split_node)
   return false;
 }
 
-bool
+static bool
 fix_mem_merge(rvsdg::Node * merge_node)
 {
   // remove single merge

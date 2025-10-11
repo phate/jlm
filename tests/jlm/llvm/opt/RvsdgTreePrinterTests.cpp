@@ -138,8 +138,8 @@ PrintNumLoadNodesAnnotation()
   auto & memoryState = jlm::rvsdg::GraphImport::Create(rvsdg, memoryStateType, "m");
 
   auto structuralNode = jlm::tests::TestStructuralNode::create(rootRegion, 3);
-  const auto addressInput = structuralNode->AddInputWithArguments(address);
-  const auto memoryStateInput = structuralNode->AddInputWithArguments(memoryState);
+  const auto addressInput = structuralNode->addInputWithArguments(address);
+  const auto memoryStateInput = structuralNode->addInputWithArguments(memoryState);
   LoadNonVolatileOperation::Create(
       addressInput.argument[0],
       { memoryStateInput.argument[0] },
@@ -193,13 +193,13 @@ PrintNumMemoryStateInputsOutputsAnnotation()
   auto & y = jlm::rvsdg::GraphImport::Create(rvsdg, valueType, "y");
 
   auto structuralNode = jlm::tests::TestStructuralNode::create(&rvsdg.GetRootRegion(), 2);
-  const auto inputVarX = structuralNode->AddInputWithArguments(x);
-  const auto inputVarY = structuralNode->AddInputWithArguments(y);
+  const auto inputVarX = structuralNode->addInputWithArguments(x);
+  const auto inputVarY = structuralNode->addInputWithArguments(y);
 
   auto outputVarX =
-      structuralNode->AddOutputWithResults({ inputVarX.argument[0], inputVarX.argument[1] });
+      structuralNode->addOutputWithResults({ inputVarX.argument[0], inputVarX.argument[1] });
   auto outputVarY =
-      structuralNode->AddOutputWithResults({ inputVarY.argument[0], inputVarY.argument[1] });
+      structuralNode->addOutputWithResults({ inputVarY.argument[0], inputVarY.argument[1] });
 
   jlm::rvsdg::GraphExport::Create(*outputVarX.output, "x");
   jlm::rvsdg::GraphExport::Create(*outputVarY.output, "y");

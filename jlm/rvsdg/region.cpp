@@ -59,9 +59,7 @@ RegionArgument::Create(
     StructuralInput * input,
     std::shared_ptr<const rvsdg::Type> type)
 {
-  auto argument = new RegionArgument(&region, input, std::move(type));
-  region.append_argument(argument);
-  return *argument;
+  return region.addArgument(std::make_unique<RegionArgument>(&region, input, std::move(type)));
 }
 
 RegionResult::~RegionResult() noexcept
@@ -111,9 +109,8 @@ RegionResult::Create(
     StructuralOutput * output,
     std::shared_ptr<const rvsdg::Type> type)
 {
-  auto result = new RegionResult(&region, &origin, output, std::move(type));
-  region.append_result(result);
-  return *result;
+  return region.addResult(
+      std::make_unique<RegionResult>(&region, &origin, output, std::move(type)));
 }
 
 Region::~Region() noexcept
@@ -165,33 +162,38 @@ Region::IsRootRegion() const noexcept
   return &this->graph()->GetRootRegion() == this;
 }
 
-void
-Region::append_argument(RegionArgument * argument)
+RegionArgument &
+Region::addArgument(std::unique_ptr<RegionArgument> argument)
 {
   if (argument->region() != this)
     throw util::Error("Appending argument to wrong region.");
 
-  auto index = argument->index();
-  JLM_ASSERT(index == 0);
-  if (index != 0 || (index == 0 && narguments() > 0 && this->argument(0) == argument))
-    return;
-
   argument->index_ = narguments();
-  arguments_.push_back(argument);
+  arguments_.push_back(argument.release());
+  return *arguments_.back();
 }
 
-void
-Region::insert_argument(size_t index, RegionArgument * argument)
+RegionArgument &
+Region::insertArgument(size_t index, std::unique_ptr<RegionArgument> argument)
 {
   if (argument->region() != this)
     throw util::Error("Inserting argument to wrong region.");
 
-  JLM_ASSERT(argument->index() == 0);
+  if (index > narguments())
+    throw util::Error("Inserting argument after end of region.");
 
-  argument->index_ = index;
-  arguments_.insert(arguments_.begin() + index, argument);
-  for (size_t n = index + 1; n < arguments_.size(); ++n)
+  arguments_.push_back(nullptr);
+
+  // Move everything at index or above one index up
+  for (size_t n = narguments() - 1; n > index; n--)
+  {
+    arguments_[n] = arguments_[n - 1];
     arguments_[n]->index_ = n;
+  }
+  arguments_[index] = argument.release();
+  arguments_[index]->index_ = index;
+
+  return *arguments_[index];
 }
 
 void
@@ -209,23 +211,20 @@ Region::RemoveArgument(size_t index)
   arguments_.pop_back();
 }
 
-void
-Region::append_result(RegionResult * result)
+RegionResult &
+Region::addResult(std::unique_ptr<RegionResult> result)
 {
-  if (result->region() != this)
+  const auto resultPtr = result.release();
+
+  if (resultPtr->region() != this)
     throw util::Error("Appending result to wrong region.");
 
-  /*
-    Check if result was already appended to this region. This check
-    relies on the fact that an unappended result has an index of zero.
-  */
-  auto index = result->index();
-  JLM_ASSERT(index == 0);
-  if (index != 0 || (index == 0 && nresults() > 0 && this->result(0) == result))
-    return;
+  resultPtr->index_ = nresults();
+  results_.push_back(resultPtr);
 
-  result->index_ = nresults();
-  results_.push_back(result);
+  notifyInputCreate(resultPtr);
+
+  return *resultPtr;
 }
 
 void
@@ -233,6 +232,8 @@ Region::RemoveResult(size_t index)
 {
   JLM_ASSERT(index < results_.size());
   RegionResult * result = results_[index];
+
+  notifyInputDestory(result);
 
   delete result;
   for (size_t n = index; n < results_.size() - 1; n++)
@@ -386,11 +387,29 @@ Region::notifyNodeDestroy(Node * node)
 }
 
 void
+Region::notifyInputCreate(Input * input)
+{
+  for (auto observer = observers_; observer; observer = observer->next_)
+  {
+    observer->onInputCreate(input);
+  }
+}
+
+void
 Region::notifyInputChange(Input * input, Output * old_origin, Output * new_origin)
 {
   for (auto observer = observers_; observer; observer = observer->next_)
   {
     observer->onInputChange(input, old_origin, new_origin);
+  }
+}
+
+void
+Region::notifyInputDestory(Input * input)
+{
+  for (auto observer = observers_; observer; observer = observer->next_)
+  {
+    observer->onInputDestroy(input);
   }
 }
 
@@ -530,7 +549,7 @@ Region::ToString(const util::Annotation & annotation, char labelValueSeparator)
   return util::strfmt(annotation.Label(), labelValueSeparator, value);
 }
 
-RegionObserver::~RegionObserver()
+RegionObserver::~RegionObserver() noexcept
 {
   *pprev_ = next_;
   if (next_)

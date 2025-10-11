@@ -19,32 +19,32 @@ TestOutputRemoval()
   auto valueType = tests::ValueType::Create();
 
   auto structuralNode = tests::TestStructuralNode::create(&rvsdg.GetRootRegion(), 1);
-  auto output0 = rvsdg::StructuralOutput::create(structuralNode, valueType);
-  auto output1 = rvsdg::StructuralOutput::create(structuralNode, valueType);
-  auto output2 = rvsdg::StructuralOutput::create(structuralNode, valueType);
-  auto output3 = rvsdg::StructuralOutput::create(structuralNode, valueType);
-  auto output4 = rvsdg::StructuralOutput::create(structuralNode, valueType);
+  auto & output0 = structuralNode->addOutputOnly(valueType);
+  auto & output1 = structuralNode->addOutputOnly(valueType);
+  auto & output2 = structuralNode->addOutputOnly(valueType);
+  auto & output3 = structuralNode->addOutputOnly(valueType);
+  auto & output4 = structuralNode->addOutputOnly(valueType);
 
   // Act & Assert
   assert(structuralNode->noutputs() == 5);
-  assert(output0->index() == 0);
-  assert(output1->index() == 1);
-  assert(output2->index() == 2);
-  assert(output3->index() == 3);
-  assert(output4->index() == 4);
+  assert(output0.index() == 0);
+  assert(output1.index() == 1);
+  assert(output2.index() == 2);
+  assert(output3.index() == 3);
+  assert(output4.index() == 4);
 
-  structuralNode->RemoveOutput(2);
+  structuralNode->removeOutputAndResults(2);
   assert(structuralNode->noutputs() == 4);
-  assert(output0->index() == 0);
-  assert(output1->index() == 1);
-  assert(output3->index() == 2);
-  assert(output4->index() == 3);
+  assert(output0.index() == 0);
+  assert(output1.index() == 1);
+  assert(output3.index() == 2);
+  assert(output4.index() == 3);
 
-  structuralNode->RemoveOutput(3);
+  structuralNode->removeOutputAndResults(3);
   assert(structuralNode->noutputs() == 3);
-  assert(output0->index() == 0);
-  assert(output1->index() == 1);
-  assert(output3->index() == 2);
+  assert(output0.index() == 0);
+  assert(output1.index() == 1);
+  assert(output3.index() == 2);
 }
 
 static void

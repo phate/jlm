@@ -31,23 +31,22 @@ test_recursive_prune()
   auto t = jlm::tests::ValueType::Create();
 
   Graph graph;
-  auto imp = &jlm::rvsdg::GraphImport::Create(graph, t, "i");
+  auto & imp = jlm::rvsdg::GraphImport::Create(graph, t, "i");
 
-  auto n1 = TestOperation::create(&graph.GetRootRegion(), { imp }, { t });
-  auto n2 = TestOperation::create(&graph.GetRootRegion(), { imp }, { t });
+  auto n1 = TestOperation::create(&graph.GetRootRegion(), { &imp }, { t });
+  auto n2 = TestOperation::create(&graph.GetRootRegion(), { &imp }, { t });
 
   auto n3 = TestStructuralNode::create(&graph.GetRootRegion(), 1);
-  StructuralInput::create(n3, imp, t);
+  auto input0 = n3->addInputWithArguments(imp);
   auto & a1 = TestGraphArgument::Create(*n3->subregion(0), nullptr, t);
   auto n4 = TestOperation::create(n3->subregion(0), { &a1 }, { t });
   auto n5 = TestOperation::create(n3->subregion(0), { &a1 }, { t });
-  n3->AddResults({ n4->output(0) });
-  auto o1 = StructuralOutput::create(n3, t);
+  auto o1 = n3->addOutputWithResults({ n4->output(0) });
 
   auto n6 = TestStructuralNode::create(n3->subregion(0), 1);
 
   GraphExport::Create(*n2->output(0), "n2");
-  GraphExport::Create(*o1, "n3");
+  GraphExport::Create(*o1.output, "n3");
 
   jlm::rvsdg::view(&graph.GetRootRegion(), stdout);
   graph.PruneNodes();

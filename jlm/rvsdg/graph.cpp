@@ -35,8 +35,8 @@ GraphImport::Copy(Region & region, StructuralInput *)
 GraphImport &
 GraphImport::Create(Graph & graph, std::shared_ptr<const rvsdg::Type> type, std::string name)
 {
-  auto graphImport = new GraphImport(graph, std::move(type), std::move(name));
-  graph.GetRootRegion().append_argument(graphImport);
+  const auto graphImport = new GraphImport(graph, std::move(type), std::move(name));
+  graph.GetRootRegion().addArgument(std::unique_ptr<GraphImport>(graphImport));
   return *graphImport;
 }
 
@@ -61,8 +61,8 @@ GraphExport::Copy(Output & origin, StructuralOutput * output)
 GraphExport &
 GraphExport::Create(Output & origin, std::string name)
 {
-  auto graphExport = new GraphExport(origin, std::move(name));
-  origin.region()->graph()->GetRootRegion().append_result(graphExport);
+  const auto graphExport = new GraphExport(origin, std::move(name));
+  origin.region()->graph()->GetRootRegion().addResult(std::unique_ptr<GraphExport>(graphExport));
   return *graphExport;
 }
 

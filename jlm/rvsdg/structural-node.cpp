@@ -62,34 +62,4 @@ StructuralNode::DebugString() const
   return GetOperation().debug_string();
 }
 
-StructuralInput *
-StructuralNode::append_input(std::unique_ptr<StructuralInput> input)
-{
-  if (input->node() != this)
-    throw util::Error("Appending input to wrong node.");
-
-  auto index = input->index();
-  JLM_ASSERT(index == 0);
-  if (index != 0 || (index == 0 && ninputs() > 0 && this->input(0) == input.get()))
-    return this->input(index);
-
-  auto sinput = std::unique_ptr<NodeInput>(input.release());
-  return static_cast<StructuralInput *>(add_input(std::move(sinput)));
-}
-
-StructuralOutput *
-StructuralNode::append_output(std::unique_ptr<StructuralOutput> output)
-{
-  if (output->node() != this)
-    throw util::Error("Appending output to wrong node.");
-
-  auto index = output->index();
-  JLM_ASSERT(index == 0);
-  if (index != 0 || (index == 0 && noutputs() > 0 && this->output(0) == output.get()))
-    return this->output(index);
-
-  auto soutput = std::unique_ptr<NodeOutput>(output.release());
-  return static_cast<StructuralOutput *>(add_output(std::move(soutput)));
-}
-
 }

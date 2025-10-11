@@ -169,6 +169,8 @@ private:
   class Observer final : public RegionObserver
   {
   public:
+    ~Observer() noexcept override;
+
     Observer(Region & region, TopDownTraverser & traverser);
 
     void
@@ -178,7 +180,13 @@ private:
     onNodeDestroy(Node * node) override;
 
     void
+    onInputCreate(Input * input) override;
+
+    void
     onInputChange(Input * input, Output * old_origin, Output * new_origin) override;
+
+    void
+    onInputDestroy(Input * input) override;
 
   private:
     TopDownTraverser & traverser_;
@@ -226,6 +234,8 @@ private:
   class Observer final : public RegionObserver
   {
   public:
+    ~Observer() noexcept override;
+
     Observer(Region & region, BottomUpTraverser & traverser);
 
     void
@@ -235,7 +245,13 @@ private:
     onNodeDestroy(Node * node) override;
 
     void
+    onInputCreate(Input * input) override;
+
+    void
     onInputChange(Input * input, Output * old_origin, Output * new_origin) override;
+
+    void
+    onInputDestroy(Input * input) override;
 
   private:
     BottomUpTraverser & traverser_;

@@ -72,15 +72,12 @@ public:
   [[nodiscard]] inline StructuralOutput *
   output(size_t index) const noexcept;
 
+protected:
   StructuralInput *
-  append_input(std::unique_ptr<StructuralInput> input);
+  addInput(std::unique_ptr<StructuralInput> input, bool notifyRegion);
 
   StructuralOutput *
-  append_output(std::unique_ptr<StructuralOutput> output);
-
-  using Node::RemoveInput;
-
-  using Node::RemoveOutput;
+  addOutput(std::unique_ptr<StructuralOutput> input);
 
 private:
   std::vector<std::unique_ptr<rvsdg::Region>> subregions_;
@@ -102,16 +99,6 @@ public:
       StructuralNode * node,
       jlm::rvsdg::Output * origin,
       std::shared_ptr<const rvsdg::Type> type);
-
-  static StructuralInput *
-  create(
-      StructuralNode * node,
-      jlm::rvsdg::Output * origin,
-      std::shared_ptr<const jlm::rvsdg::Type> type)
-  {
-    auto input = std::make_unique<StructuralInput>(node, origin, std::move(type));
-    return node->append_input(std::move(input));
-  }
 
   StructuralNode *
   node() const noexcept
@@ -136,13 +123,6 @@ public:
 
   StructuralOutput(StructuralNode * node, std::shared_ptr<const rvsdg::Type> type);
 
-  static StructuralOutput *
-  create(StructuralNode * node, std::shared_ptr<const jlm::rvsdg::Type> type)
-  {
-    auto output = std::make_unique<StructuralOutput>(node, std::move(type));
-    return node->append_output(std::move(output));
-  }
-
   StructuralNode *
   node() const noexcept
   {
@@ -164,6 +144,18 @@ inline StructuralOutput *
 StructuralNode::output(size_t index) const noexcept
 {
   return static_cast<StructuralOutput *>(Node::output(index));
+}
+
+inline StructuralInput *
+StructuralNode::addInput(std::unique_ptr<StructuralInput> input, bool notifyRegion)
+{
+  return static_cast<StructuralInput *>(Node::addInput(std::move(input), notifyRegion));
+}
+
+inline StructuralOutput *
+StructuralNode::addOutput(std::unique_ptr<StructuralOutput> output)
+{
+  return static_cast<StructuralOutput *>(Node::addOutput(std::move(output)));
 }
 
 template<class Operation>
