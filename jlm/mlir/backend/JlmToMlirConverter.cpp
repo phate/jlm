@@ -80,7 +80,7 @@ JlmToMlirConverter::ConvertRegion(rvsdg::Region & region, ::mlir::Block & block,
     auto arg = region.argument(i);
     if (isRoot) // Omega arguments are treated separately
     {
-      auto imp = util::AssertedCast<llvm::GraphImport>(arg);
+      auto imp = util::assertedCast<llvm::GraphImport>(arg);
       block.push_back(Builder_->create<::mlir::rvsdg::OmegaArgument>(
           Builder_->getUnknownLoc(),
           ConvertType(*imp->ImportedType()),
@@ -841,7 +841,7 @@ JlmToMlirConverter::ConvertGamma(
     ::mlir::Block & block,
     const ::llvm::SmallVector<::mlir::Value> & inputs)
 {
-  auto & gammaOp = *util::AssertedCast<const rvsdg::GammaOperation>(&gammaNode.GetOperation());
+  auto & gammaOp = *util::assertedCast<const rvsdg::GammaOperation>(&gammaNode.GetOperation());
 
   ::llvm::SmallVector<::mlir::Type> typeRangeOuput;
   for (size_t i = 0; i < gammaNode.noutputs(); ++i)
@@ -912,7 +912,7 @@ JlmToMlirConverter::ConvertDelta(
     ::mlir::Block & block,
     const ::llvm::SmallVector<::mlir::Value> & inputs)
 {
-  auto op = util::AssertedCast<const llvm::DeltaOperation>(&deltaNode.GetOperation());
+  auto op = util::assertedCast<const llvm::DeltaOperation>(&deltaNode.GetOperation());
   auto delta = Builder_->create<::mlir::rvsdg::DeltaNode>(
       Builder_->getUnknownLoc(),
       Builder_->getType<::mlir::LLVM::LLVMPointerType>(),

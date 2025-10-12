@@ -121,7 +121,7 @@ remove_unused_loop_inputs(LoopNode * ln)
 static bool
 dead_spec_gamma(rvsdg::Node * dmux_node)
 {
-  const auto mux_op = util::AssertedCast<const MuxOperation>(&dmux_node->GetOperation());
+  const auto mux_op = util::assertedCast<const MuxOperation>(&dmux_node->GetOperation());
   JLM_ASSERT(mux_op->discarding);
   // check if all inputs have the same origin
   bool all_inputs_same = true;
@@ -146,7 +146,7 @@ dead_spec_gamma(rvsdg::Node * dmux_node)
 static bool
 dead_nonspec_gamma(rvsdg::Node * ndmux_node)
 {
-  auto mux_op = util::AssertedCast<const MuxOperation>(&ndmux_node->GetOperation());
+  auto mux_op = util::assertedCast<const MuxOperation>(&ndmux_node->GetOperation());
   JLM_ASSERT(!mux_op->discarding);
   // check if all inputs go to outputs of same branch
   bool all_inputs_same_branch = true;
@@ -187,7 +187,7 @@ dead_nonspec_gamma(rvsdg::Node * ndmux_node)
 static bool
 dead_loop(rvsdg::Node * ndmux_node)
 {
-  const auto mux_op = util::AssertedCast<const MuxOperation>(&ndmux_node->GetOperation());
+  const auto mux_op = util::assertedCast<const MuxOperation>(&ndmux_node->GetOperation());
   JLM_ASSERT(!mux_op->discarding);
   // origin is a backedege argument
   auto backedge_arg = dynamic_cast<BackEdgeArgument *>(ndmux_node->input(2)->origin());

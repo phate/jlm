@@ -1091,9 +1091,9 @@ IndirectCallTest2::SetupRvsdg()
         lambdaOutput,
         &callX,
         &callY,
-        jlm::util::AssertedCast<rvsdg::SimpleNode>(
+        jlm::util::assertedCast<rvsdg::SimpleNode>(
             rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*pxAlloca[0])),
-        jlm::util::AssertedCast<rvsdg::SimpleNode>(
+        jlm::util::assertedCast<rvsdg::SimpleNode>(
             rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*pyAlloca[0])));
   };
 
@@ -1128,7 +1128,7 @@ IndirectCallTest2::SetupRvsdg()
     return std::make_tuple(
         lambdaOutput,
         &callX,
-        jlm::util::AssertedCast<jlm::rvsdg::SimpleNode>(
+        jlm::util::assertedCast<jlm::rvsdg::SimpleNode>(
             rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*pzAlloca[0])));
   };
 
@@ -2401,7 +2401,7 @@ PhiTest2::SetupRvsdg()
         lambdaOutput,
         &callB,
         &callD,
-        jlm::util::AssertedCast<jlm::rvsdg::SimpleNode>(
+        jlm::util::assertedCast<jlm::rvsdg::SimpleNode>(
             rvsdg::TryGetOwnerNode<rvsdg::Node>(*paAlloca[0])));
   };
 
@@ -2455,7 +2455,7 @@ PhiTest2::SetupRvsdg()
         lambdaOutput,
         &callI,
         &callC,
-        jlm::util::AssertedCast<jlm::rvsdg::SimpleNode>(
+        jlm::util::assertedCast<jlm::rvsdg::SimpleNode>(
             rvsdg::TryGetOwnerNode<rvsdg::Node>(*pbAlloca[0])));
   };
 
@@ -2498,7 +2498,7 @@ PhiTest2::SetupRvsdg()
     return std::make_tuple(
         lambdaOutput,
         &callA,
-        jlm::util::AssertedCast<jlm::rvsdg::SimpleNode>(
+        jlm::util::assertedCast<jlm::rvsdg::SimpleNode>(
             rvsdg::TryGetOwnerNode<rvsdg::Node>(*pcAlloca[0])));
   };
 
@@ -2530,7 +2530,7 @@ PhiTest2::SetupRvsdg()
     return std::make_tuple(
         lambdaOutput,
         &callA,
-        jlm::util::AssertedCast<jlm::rvsdg::SimpleNode>(
+        jlm::util::assertedCast<jlm::rvsdg::SimpleNode>(
             rvsdg::TryGetOwnerNode<rvsdg::Node>(*pdAlloca[0])));
   };
 
@@ -2611,7 +2611,7 @@ PhiTest2::SetupRvsdg()
     return std::make_tuple(
         lambdaOutput,
         &callA,
-        jlm::util::AssertedCast<jlm::rvsdg::SimpleNode>(
+        jlm::util::assertedCast<jlm::rvsdg::SimpleNode>(
             rvsdg::TryGetOwnerNode<rvsdg::Node>(*pTestAlloca[0])));
   };
 
@@ -2847,7 +2847,7 @@ EscapedMemoryTest1::SetupRvsdg()
 
     return std::make_tuple(
         lambdaOutput,
-        jlm::util::AssertedCast<rvsdg::SimpleNode>(
+        jlm::util::assertedCast<rvsdg::SimpleNode>(
             rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*loadResults1[0])));
   };
 
@@ -3019,7 +3019,7 @@ EscapedMemoryTest2::SetupRvsdg()
     return std::make_tuple(
         lambdaOutput,
         &call,
-        jlm::util::AssertedCast<rvsdg::SimpleNode>(
+        jlm::util::assertedCast<rvsdg::SimpleNode>(
             rvsdg::TryGetOwnerNode<rvsdg::Node>(*loadResults[0])));
   };
 
@@ -3136,7 +3136,7 @@ EscapedMemoryTest3::SetupRvsdg()
     return std::make_tuple(
         lambdaOutput,
         &call,
-        jlm::util::AssertedCast<rvsdg::SimpleNode>(
+        jlm::util::assertedCast<rvsdg::SimpleNode>(
             rvsdg::TryGetOwnerNode<rvsdg::Node>(*loadResults[0])));
   };
 

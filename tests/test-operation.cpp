@@ -195,7 +195,7 @@ TestStructuralNode::addInputWithArguments(rvsdg::Output & origin)
   {
     const auto argument = &rvsdg::RegionArgument::Create(
         subregion,
-        util::AssertedCast<rvsdg::StructuralInput>(inputVar.input),
+        util::assertedCast<rvsdg::StructuralInput>(inputVar.input),
         inputVar.input->Type());
     inputVar.argument.push_back(argument);
   }
@@ -251,7 +251,7 @@ TestStructuralNode::addOutputWithResults(const std::vector<rvsdg::Output *> & or
     const auto result = &rvsdg::RegionResult::Create(
         subregion,
         *origin,
-        util::AssertedCast<rvsdg::StructuralOutput>(outputVar.output),
+        util::assertedCast<rvsdg::StructuralOutput>(outputVar.output),
         origin->Type());
     outputVar.result.push_back(result);
   }

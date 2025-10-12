@@ -57,7 +57,7 @@ TestEliminateSplitAndMergeNodes()
   // Assert
   auto * node = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
       *rvsdgModule->Rvsdg().GetRootRegion().result(0)->origin());
-  auto lambdaSubregion = jlm::util::AssertedCast<jlm::rvsdg::LambdaNode>(node)->subregion();
+  auto lambdaSubregion = jlm::util::assertedCast<jlm::rvsdg::LambdaNode>(node)->subregion();
   jlm::rvsdg::view(rvsdgModule->Rvsdg(), stdout);
   assert(lambdaSubregion->narguments() == 2);
   assert(lambdaSubregion->nresults() == 1);
@@ -65,7 +65,7 @@ TestEliminateSplitAndMergeNodes()
   auto loadNode =
       jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*lambdaSubregion->result(0)->origin());
   assert(is<LoadNonVolatileOperation>(loadNode->GetOperation()));
-  jlm::util::AssertedCast<jlm::rvsdg::RegionArgument>(loadNode->input(1)->origin());
+  jlm::util::assertedCast<jlm::rvsdg::RegionArgument>(loadNode->input(1)->origin());
 }
 JLM_UNIT_TEST_REGISTER(
     "jlm/hls/opt/InvariantLambdaMemoryStateRemovalTests-EliminateSplitAndMergeNodes",

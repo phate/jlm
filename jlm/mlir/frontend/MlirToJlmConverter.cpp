@@ -956,7 +956,7 @@ MlirToJlmConverter::ConvertOperation(
       }
       else if (auto delta = dynamic_cast<rvsdg::DeltaNode *>(origin))
       {
-        auto op = util::AssertedCast<const llvm::DeltaOperation>(&delta->GetOperation());
+        auto op = util::assertedCast<const llvm::DeltaOperation>(&delta->GetOperation());
         jlm::rvsdg::GraphExport::Create(*input, op->name());
       }
     }

@@ -100,7 +100,7 @@ public:
   [[nodiscard]] static rvsdg::Node::OutputIteratorRange
   MemoryStateOutputs(const rvsdg::Node & node) noexcept
   {
-    const auto loadOperation = util::AssertedCast<const LoadOperation>(&node.GetOperation());
+    const auto loadOperation = util::assertedCast<const LoadOperation>(&node.GetOperation());
     if (loadOperation->NumMemoryStates_ == 0)
     {
       return { rvsdg::Output::Iterator(nullptr), rvsdg::Output::Iterator(nullptr) };
@@ -123,7 +123,7 @@ public:
   [[nodiscard]] static rvsdg::Node::InputIteratorRange
   MemoryStateInputs(const rvsdg::Node & node) noexcept
   {
-    const auto loadOperation = util::AssertedCast<const LoadOperation>(&node.GetOperation());
+    const auto loadOperation = util::assertedCast<const LoadOperation>(&node.GetOperation());
     if (loadOperation->NumMemoryStates_ == 0)
     {
       return { rvsdg::Input::Iterator(nullptr), rvsdg::Input::Iterator(nullptr) };

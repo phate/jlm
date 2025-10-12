@@ -127,7 +127,7 @@ JlcCommandGraphGenerator::GenerateCommandGraph(const JlcCommandLineOptions & com
 
     if (compilation.RequiresOptimization())
     {
-      auto clangCommand = util::AssertedCast<ClangCommand>(&lastNode->GetCommand());
+      auto clangCommand = util::assertedCast<ClangCommand>(&lastNode->GetCommand());
 
       util::StatisticsCollectorSettings statisticsCollectorSettings(
           commandLineOptions.JlmOptPassStatistics_,
@@ -152,7 +152,7 @@ JlcCommandGraphGenerator::GenerateCommandGraph(const JlcCommandLineOptions & com
 
     if (compilation.RequiresAssembly())
     {
-      auto jlmOptCommand = util::AssertedCast<JlmOptCommand>(&lastNode->GetCommand());
+      auto jlmOptCommand = util::assertedCast<JlmOptCommand>(&lastNode->GetCommand());
       auto & llvmLlcCommandNode = LlcCommand::Create(
           *commandGraph,
           jlmOptCommand->GetCommandLineOptions().GetOutputFile(),

@@ -54,7 +54,7 @@ Node *
 SimpleNode::copy(rvsdg::Region * region, const std::vector<jlm::rvsdg::Output *> & operands) const
 {
   std::unique_ptr<SimpleOperation> operation(
-      util::AssertedCast<SimpleOperation>(GetOperation().copy().release()));
+      util::assertedCast<SimpleOperation>(GetOperation().copy().release()));
   return &Create(*region, std::move(operation), operands);
 }
 
