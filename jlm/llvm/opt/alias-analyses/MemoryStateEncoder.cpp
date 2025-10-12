@@ -468,11 +468,11 @@ public:
     }
     else if (jlm::rvsdg::is<AllocaOperation>(&node))
     {
-      result.Insert(&ModRefSummary_.GetPointsToGraph().GetAllocaNode(node));
+      result.insert(&ModRefSummary_.GetPointsToGraph().GetAllocaNode(node));
     }
     else if (jlm::rvsdg::is<MallocOperation>(&node))
     {
-      result.Insert(&ModRefSummary_.GetPointsToGraph().GetMallocNode(node));
+      result.insert(&ModRefSummary_.GetPointsToGraph().GetMallocNode(node));
     }
     else if (jlm::rvsdg::is<CallOperation>(&node))
     {

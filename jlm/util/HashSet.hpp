@@ -207,7 +207,7 @@ public:
    * @return True if \p item is added to the HashSet object. False if \p item is already present.
    */
   bool
-  Insert(ItemType item)
+  insert(ItemType item)
   {
     auto size = Size();
     Set_.emplace(std::move(item));

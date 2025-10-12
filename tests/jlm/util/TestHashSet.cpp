@@ -19,9 +19,9 @@ TestInt()
   assert(hashSet.Contains(3));
   assert(!hashSet.Contains(8));
 
-  assert(hashSet.Insert(8));
+  assert(hashSet.insert(8));
   assert(hashSet.Contains(8));
-  assert(!hashSet.Insert(8));
+  assert(!hashSet.insert(8));
 
   assert(hashSet.Remove(1));
   assert(!hashSet.Contains(1));
@@ -54,7 +54,7 @@ TestUniquePointer()
 {
   jlm::util::HashSet<std::unique_ptr<int>> hashSet;
 
-  hashSet.Insert(std::make_unique<int>(0));
+  hashSet.insert(std::make_unique<int>(0));
   assert(hashSet.Size() == 1);
 
   hashSet.Remove(std::make_unique<int>(0));
@@ -72,11 +72,11 @@ TestPair()
   jlm::util::HashSet<std::pair<int, int>> hashSet{ { 1, 10 }, { 5, 50 } };
 
   // Inserting new value
-  auto result = hashSet.Insert({ 7, 70 });
+  auto result = hashSet.insert({ 7, 70 });
   assert(result && hashSet.Size() == 3);
 
   // Try inserting already inserted
-  result = hashSet.Insert({ 1, 10 });
+  result = hashSet.insert({ 1, 10 });
   assert(!result && hashSet.Size() == 3);
 
   // Contains is only true in the correct order
@@ -158,9 +158,9 @@ TestIntersectWith()
   set123.IntersectWith(set45);
   assert(set123.Size() == 0);
 
-  set123.Insert(1);
-  set123.Insert(2);
-  set123.Insert(3);
+  set123.insert(1);
+  set123.insert(2);
+  set123.insert(3);
   set123.IntersectWithAndClear(set12);
 
   assert(set123.Size() == 2);
@@ -188,8 +188,8 @@ TestDifferenceWith()
   assert(set12 == set12Copy);
 
   // Create the set {0, 1, 3}
-  set123.Insert(0);
-  set123.Insert(1);
+  set123.insert(0);
+  set123.insert(1);
 
   set12.DifferenceWith(set123); // {1, 2} - {0, 1, 3}
   assert(set12.Size() == 1);

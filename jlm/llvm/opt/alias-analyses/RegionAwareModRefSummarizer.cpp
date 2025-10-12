@@ -425,7 +425,7 @@ public:
     util::HashSet<const PointsToGraph::MemoryNode *> memoryNodes;
     const auto registerNode = &PointsToGraph_.GetRegisterNode(output);
     for (auto & memoryNode : registerNode->Targets())
-      memoryNodes.Insert(&memoryNode);
+      memoryNodes.insert(&memoryNode);
 
     return memoryNodes;
   }
@@ -656,14 +656,14 @@ RegionAwareModRefSummarizer::CreateCallGraph(const rvsdg::RvsdgModule & rvsdgMod
         const auto calleeCallGraphNode = callGraphNodeIndex[&lambdaNode];
 
         // Add the edge caller -> callee to the call graph
-        callGraphSuccessors[callerIndex].Insert(calleeCallGraphNode);
+        callGraphSuccessors[callerIndex].insert(calleeCallGraphNode);
       }
       else if (
           PointsToGraph::Node::Is<PointsToGraph::ExternalMemoryNode>(callee)
           || PointsToGraph::Node::Is<PointsToGraph::ImportNode>(callee))
       {
         // Add the edge caller -> node representing external functions
-        callGraphSuccessors[callerIndex].Insert(externalNodeIndex);
+        callGraphSuccessors[callerIndex].insert(externalNodeIndex);
       }
     }
   };
@@ -697,7 +697,7 @@ RegionAwareModRefSummarizer::CreateCallGraph(const rvsdg::RvsdgModule & rvsdgMod
     const auto & lambdaMemoryNode = pointsToGraph.GetLambdaNode(*lambdaNodes[i]);
     if (pointsToGraph.GetEscapedMemoryNodes().Contains(&lambdaMemoryNode))
     {
-      callGraphSuccessors[externalNodeIndex].Insert(i);
+      callGraphSuccessors[externalNodeIndex].insert(i);
     }
   }
 
@@ -721,7 +721,7 @@ RegionAwareModRefSummarizer::CreateCallGraph(const rvsdg::RvsdgModule & rvsdgMod
   Context_.SccFunctions.resize(numSCCs);
   for (size_t i = 0; i < lambdaNodes.size(); i++)
   {
-    Context_.SccFunctions[sccIndex[i]].Insert(lambdaNodes[i]);
+    Context_.SccFunctions[sccIndex[i]].insert(lambdaNodes[i]);
     Context_.FunctionToSccIndex[lambdaNodes[i]] = sccIndex[i];
   }
 
