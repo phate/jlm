@@ -21,7 +21,7 @@ JlcCommandGraphGenerator::~JlcCommandGraphGenerator() noexcept = default;
 util::FilePath
 JlcCommandGraphGenerator::CreateJlmOptCommandOutputFile(const util::FilePath & inputFile)
 {
-  return util::FilePath::CreateUniqueFileName(
+  return util::FilePath::createUniqueFileName(
       util::FilePath::TempDirectoryPath(),
       inputFile.base() + "-",
       "-jlm-opt.ll");
@@ -30,7 +30,7 @@ JlcCommandGraphGenerator::CreateJlmOptCommandOutputFile(const util::FilePath & i
 util::FilePath
 JlcCommandGraphGenerator::CreateParserCommandOutputFile(const util::FilePath & inputFile)
 {
-  return util::FilePath::CreateUniqueFileName(
+  return util::FilePath::createUniqueFileName(
       util::FilePath::TempDirectoryPath(),
       inputFile.base() + "-",
       "-clang.ll");
@@ -206,7 +206,7 @@ JhlsCommandGraphGenerator::CreateParserCommandOutputFile(
     const util::FilePath & tmpDirectory,
     const util::FilePath & inputFile)
 {
-  return util::FilePath::CreateUniqueFileName(tmpDirectory, inputFile.base() + "-", "-clang.ll");
+  return util::FilePath::createUniqueFileName(tmpDirectory, inputFile.base() + "-", "-clang.ll");
 }
 
 util::FilePath
@@ -214,7 +214,7 @@ JhlsCommandGraphGenerator::CreateJlmOptCommandOutputFile(
     const util::FilePath & tmpDirectory,
     const util::FilePath & inputFile)
 {
-  return util::FilePath::CreateUniqueFileName(tmpDirectory, inputFile.base() + "-", "-jlm-opt.ll");
+  return util::FilePath::createUniqueFileName(tmpDirectory, inputFile.base() + "-", "-jlm-opt.ll");
 }
 
 ClangCommand::LanguageStandard
@@ -281,7 +281,7 @@ JhlsCommandGraphGenerator::GenerateCommandGraph(const JhlsCommandLineOptions & c
   }
 
   const auto tmp_folder =
-      util::FilePath::CreateUniqueFileName(util::FilePath::TempDirectoryPath(), tmp_identifier, "");
+      util::FilePath::createUniqueFileName(util::FilePath::TempDirectoryPath(), tmp_identifier, "");
   auto & mkdir = MkdirCommand::Create(*commandGraph, tmp_folder);
   commandGraph->GetEntryNode().AddEdge(mkdir);
 
