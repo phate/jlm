@@ -18,18 +18,18 @@ TestLog2Floor()
   auto testByteRange = [](auto type)
   {
     using T = decltype(type);
-    assert(Log2Floor<T>(-10) == -1);
-    assert(Log2Floor<T>(-1) == -1);
-    assert(Log2Floor<T>(0) == -1);
-    assert(Log2Floor<T>(1) == 0);
-    assert(Log2Floor<T>(2) == 1);
-    assert(Log2Floor<T>(3) == 1);
-    assert(Log2Floor<T>(4) == 2);
-    assert(Log2Floor<T>(7) == 2);
-    assert(Log2Floor<T>(8) == 3);
-    assert(Log2Floor<T>(63) == 5);
-    assert(Log2Floor<T>(64) == 6);
-    assert(Log2Floor<T>(127) == 6);
+    assert(log2Floor<T>(-10) == -1);
+    assert(log2Floor<T>(-1) == -1);
+    assert(log2Floor<T>(0) == -1);
+    assert(log2Floor<T>(1) == 0);
+    assert(log2Floor<T>(2) == 1);
+    assert(log2Floor<T>(3) == 1);
+    assert(log2Floor<T>(4) == 2);
+    assert(log2Floor<T>(7) == 2);
+    assert(log2Floor<T>(8) == 3);
+    assert(log2Floor<T>(63) == 5);
+    assert(log2Floor<T>(64) == 6);
+    assert(log2Floor<T>(127) == 6);
   };
 
   testByteRange(int8_t(0));
