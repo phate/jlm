@@ -1087,7 +1087,7 @@ public:
    * @param format the format to emit the graphs in
    */
   void
-  OutputAllGraphs(std::ostream & out, OutputFormat format);
+  outputAllGraphs(std::ostream & out, OutputFormat format);
 
 private:
   [[nodiscard]] Graph &
