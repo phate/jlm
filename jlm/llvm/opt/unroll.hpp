@@ -80,7 +80,7 @@ public:
   theta() const noexcept
   {
     auto node = idv()->region()->node();
-    return util::AssertedCast<rvsdg::ThetaNode>(node);
+    return util::assertedCast<rvsdg::ThetaNode>(node);
   }
 
   inline bool

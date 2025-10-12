@@ -74,7 +74,7 @@ TraceEdgeToMerge(rvsdg::Input * state_edge)
       // end of loop
       JLM_ASSERT(branchOperation->loop);
       state_edge = get_mem_state_user(
-          util::AssertedCast<rvsdg::RegionResult>(get_mem_state_user(sn->output(0)))->output());
+          util::assertedCast<rvsdg::RegionResult>(get_mem_state_user(sn->output(0)))->output());
     }
     else if (muxOperation && !muxOperation->loop)
     {
@@ -391,13 +391,13 @@ CalcualtePortWidth(const std::tuple<
   int max_width = 0;
   for (auto node : std::get<0>(loadStoreDecouple))
   {
-    auto loadOp = util::AssertedCast<const llvm::LoadNonVolatileOperation>(&node->GetOperation());
+    auto loadOp = util::assertedCast<const llvm::LoadNonVolatileOperation>(&node->GetOperation());
     auto sz = JlmSize(loadOp->GetLoadedType().get());
     max_width = sz > max_width ? sz : max_width;
   }
   for (auto node : std::get<1>(loadStoreDecouple))
   {
-    auto storeOp = util::AssertedCast<const llvm::StoreNonVolatileOperation>(&node->GetOperation());
+    auto storeOp = util::assertedCast<const llvm::StoreNonVolatileOperation>(&node->GetOperation());
     auto sz = JlmSize(&storeOp->GetStoredType());
     max_width = sz > max_width ? sz : max_width;
   }
@@ -515,7 +515,7 @@ ConnectRequestResponseMemPorts(
     auto & newLoadNode = rvsdg::AssertGetOwnerNode<rvsdg::SimpleNode>(*smap.lookup(oldLoadedValue));
     loadNodes.push_back(&newLoadNode);
     auto loadOp =
-        util::AssertedCast<const llvm::LoadNonVolatileOperation>(&newLoadNode.GetOperation());
+        util::assertedCast<const llvm::LoadNonVolatileOperation>(&newLoadNode.GetOperation());
     responseTypes.push_back(loadOp->GetLoadedType());
   }
   std::vector<rvsdg::SimpleNode *> decoupledNodes;
@@ -788,7 +788,7 @@ ConvertMemory(rvsdg::RvsdgModule & rm)
 
   // Need to get the lambda from the root since remote_unused_state replaces the lambda
   JLM_ASSERT(root->numNodes() == 1);
-  newLambda = util::AssertedCast<rvsdg::LambdaNode>(root->Nodes().begin().ptr());
+  newLambda = util::assertedCast<rvsdg::LambdaNode>(root->Nodes().begin().ptr());
   auto decouple_funcs = find_function_arguments(newLambda, "decoupled");
   // make sure context vars are actually dead
   for (auto cv : decouple_funcs)

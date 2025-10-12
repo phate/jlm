@@ -112,7 +112,7 @@ PointsToGraphAliasAnalysis::GetMemoryNodeSize(const PointsToGraph::MemoryNode & 
   if (auto alloca = dynamic_cast<const PointsToGraph::AllocaNode *>(&node))
   {
     const auto & allocaNode = alloca->GetAllocaNode();
-    const auto allocaOp = util::AssertedCast<const AllocaOperation>(&allocaNode.GetOperation());
+    const auto allocaOp = util::assertedCast<const AllocaOperation>(&allocaNode.GetOperation());
 
     // An alloca has a count parameter, which on rare occasions is not just the constant 1.
     const auto elementCount = TryGetConstantSignedInteger(*allocaNode.input(0)->origin());

@@ -517,7 +517,7 @@ Convert(
   }
 
   std::unique_ptr<TOperation> operation(
-      util::AssertedCast<TOperation>(threeAddressCode.operation().copy().release()));
+      util::assertedCast<TOperation>(threeAddressCode.operation().copy().release()));
   auto results = TNode::Create(region, std::move(operation), operands);
 
   JLM_ASSERT(results.size() == threeAddressCode.nresults());

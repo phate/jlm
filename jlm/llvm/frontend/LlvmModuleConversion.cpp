@@ -85,7 +85,7 @@ PatchPhiOperands(const std::vector<::llvm::PHINode *> & phis, Context & ctx)
 
     JLM_ASSERT(operands.size() >= 1);
 
-    auto phi_tac = util::AssertedCast<const ThreeAddressCodeVariable>(ctx.lookup_value(phi))->tac();
+    auto phi_tac = util::assertedCast<const ThreeAddressCodeVariable>(ctx.lookup_value(phi))->tac();
     phi_tac->replace(
         SsaPhiOperation(std::move(incomingNodes), phi_tac->result(0)->Type()),
         operands);
