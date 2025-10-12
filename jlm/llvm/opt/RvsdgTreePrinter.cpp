@@ -58,7 +58,7 @@ RvsdgTreePrinter::Run(
   auto annotationMap = ComputeAnnotationMap(rvsdgModule.Rvsdg());
   auto tree = rvsdg::Region::ToTree(rvsdgModule.Rvsdg().GetRootRegion(), annotationMap);
 
-  auto file = statisticsCollector.CreateOutputFile("rvsdgTree.txt", true);
+  auto file = statisticsCollector.createOutputFile("rvsdgTree.txt", true);
   file.open("w");
   fprintf(file.fd(), "%s\n", tree.c_str());
   file.close();
