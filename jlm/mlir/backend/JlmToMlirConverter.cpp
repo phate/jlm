@@ -670,11 +670,10 @@ JlmToMlirConverter::ConvertSimpleNode(
       mappingVector.push_back(matchRule);
     }
     //! The default alternative has an empty mapping
-    mappingVector.push_back(
-        ::mlir::rvsdg::MatchRuleAttr::get(
-            Builder_->getContext(),
-            ::llvm::ArrayRef<int64_t>(),
-            matchOp->default_alternative()));
+    mappingVector.push_back(::mlir::rvsdg::MatchRuleAttr::get(
+        Builder_->getContext(),
+        ::llvm::ArrayRef<int64_t>(),
+        matchOp->default_alternative()));
     // ** endregion Create the MLIR mapping vector **
 
     MlirOp = Builder_->create<::mlir::rvsdg::Match>(
@@ -816,9 +815,8 @@ JlmToMlirConverter::ConvertLambda(
   attributes.push_back(symbolName);
   auto linkage = Builder_->getNamedAttr(
       Builder_->getStringAttr("linkage"),
-      Builder_->getStringAttr(
-          llvm::linkageToString(
-              dynamic_cast<llvm::LlvmLambdaOperation &>(lambdaNode.GetOperation()).linkage())));
+      Builder_->getStringAttr(llvm::linkageToString(
+          dynamic_cast<llvm::LlvmLambdaOperation &>(lambdaNode.GetOperation()).linkage())));
   attributes.push_back(linkage);
 
   auto lambda = Builder_->create<::mlir::rvsdg::LambdaNode>(

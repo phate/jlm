@@ -277,9 +277,8 @@ GetElementPtrTest::SetupRvsdg()
   auto module = llvm::RvsdgModule::Create(jlm::util::FilePath(""), "", "");
   auto graph = &module->Rvsdg();
 
-  auto & declaration = module->AddStructTypeDeclaration(
-      StructType::Declaration::Create(
-          { jlm::rvsdg::BitType::Create(32), jlm::rvsdg::BitType::Create(32) }));
+  auto & declaration = module->AddStructTypeDeclaration(StructType::Declaration::Create(
+      { jlm::rvsdg::BitType::Create(32), jlm::rvsdg::BitType::Create(32) }));
   auto structType = StructType::Create(false, declaration);
 
   auto mt = MemoryStateType::Create();
@@ -609,10 +608,9 @@ CallTest1::SetupRvsdg()
 
     auto sum = jlm::rvsdg::bitadd_op::create(32, callF.output(0), callG.output(0));
 
-    lambda->finalize(
-        { sum,
-          &CallOperation::GetIOStateOutput(callG),
-          &CallOperation::GetMemoryStateOutput(callG) });
+    lambda->finalize({ sum,
+                       &CallOperation::GetIOStateOutput(callG),
+                       &CallOperation::GetMemoryStateOutput(callG) });
     GraphExport::Create(*lambda->output(), "h");
 
     auto allocaX = rvsdg::TryGetOwnerNode<rvsdg::Node>(*x[0]);
@@ -751,9 +749,8 @@ CallTest2::SetupRvsdg()
           &CallOperation::GetIOStateOutput(destroy1),
           &CallOperation::GetMemoryStateOutput(destroy1) });
 
-    lambda->finalize(
-        { &CallOperation::GetIOStateOutput(destroy2),
-          &CallOperation::GetMemoryStateOutput(destroy2) });
+    lambda->finalize({ &CallOperation::GetIOStateOutput(destroy2),
+                       &CallOperation::GetMemoryStateOutput(destroy2) });
     GraphExport::Create(*lambda->output(), "test");
 
     return std::make_tuple(lambda, &create1, &create2, &destroy1, &destroy2);
@@ -870,10 +867,9 @@ IndirectCallTest1::SetupRvsdg()
 
     auto add = jlm::rvsdg::bitadd_op::create(32, call_four.output(0), call_three.output(0));
 
-    auto lambdaOutput = lambda->finalize(
-        { add,
-          &CallOperation::GetIOStateOutput(call_three),
-          &CallOperation::GetMemoryStateOutput(call_three) });
+    auto lambdaOutput = lambda->finalize({ add,
+                                           &CallOperation::GetIOStateOutput(call_three),
+                                           &CallOperation::GetMemoryStateOutput(call_three) });
     GraphExport::Create(*lambda->output(), "test");
 
     return std::make_tuple(lambdaOutput, &call_three, &call_four);
@@ -1086,10 +1082,9 @@ IndirectCallTest2::SetupRvsdg()
     sum = jlm::rvsdg::bitadd_op::create(32, sum, loadG1[0]);
     sum = jlm::rvsdg::bitadd_op::create(32, sum, loadG2[0]);
 
-    auto lambdaOutput = lambda->finalize(
-        { sum,
-          &CallOperation::GetIOStateOutput(callY),
-          &CallOperation::GetMemoryStateOutput(callY) });
+    auto lambdaOutput = lambda->finalize({ sum,
+                                           &CallOperation::GetIOStateOutput(callY),
+                                           &CallOperation::GetMemoryStateOutput(callY) });
     GraphExport::Create(*lambdaOutput, "test");
 
     return std::make_tuple(
@@ -1274,9 +1269,8 @@ ExternalCallTest2::SetupRvsdg()
   auto & rvsdg = rvsdgModule->Rvsdg();
 
   auto pointerType = PointerType::Create();
-  auto & structDeclaration = rvsdgModule->AddStructTypeDeclaration(
-      StructType::Declaration::Create(
-          { rvsdg::BitType::Create(32), PointerType::Create(), PointerType::Create() }));
+  auto & structDeclaration = rvsdgModule->AddStructTypeDeclaration(StructType::Declaration::Create(
+      { rvsdg::BitType::Create(32), PointerType::Create(), PointerType::Create() }));
   auto structType = StructType::Create("myStruct", false, structDeclaration);
   auto iOStateType = IOStateType::Create();
   auto memoryStateType = MemoryStateType::Create();
@@ -2399,10 +2393,9 @@ PhiTest2::SetupRvsdg()
 
     auto sum = jlm::rvsdg::bitadd_op::create(32, callB.output(0), callD.output(0));
 
-    auto lambdaOutput = lambda->finalize(
-        { sum,
-          &CallOperation::GetIOStateOutput(callD),
-          &CallOperation::GetMemoryStateOutput(callD) });
+    auto lambdaOutput = lambda->finalize({ sum,
+                                           &CallOperation::GetIOStateOutput(callD),
+                                           &CallOperation::GetMemoryStateOutput(callD) });
 
     return std::make_tuple(
         lambdaOutput,
@@ -2454,10 +2447,9 @@ PhiTest2::SetupRvsdg()
 
     auto sum = jlm::rvsdg::bitadd_op::create(32, callI.output(0), callC.output(0));
 
-    auto lambdaOutput = lambda->finalize(
-        { sum,
-          &CallOperation::GetIOStateOutput(callC),
-          &CallOperation::GetMemoryStateOutput(callC) });
+    auto lambdaOutput = lambda->finalize({ sum,
+                                           &CallOperation::GetIOStateOutput(callC),
+                                           &CallOperation::GetMemoryStateOutput(callC) });
 
     return std::make_tuple(
         lambdaOutput,
@@ -4017,11 +4009,10 @@ VariadicFunctionTest2::SetupRvsdg()
 
   auto pointerType = PointerType::Create();
   auto & structDeclaration = rvsdgModule->AddStructTypeDeclaration(
-      StructType::Declaration::Create(
-          { rvsdg::BitType::Create(32),
-            rvsdg::BitType::Create(32),
-            PointerType::Create(),
-            PointerType::Create() }));
+      StructType::Declaration::Create({ rvsdg::BitType::Create(32),
+                                        rvsdg::BitType::Create(32),
+                                        PointerType::Create(),
+                                        PointerType::Create() }));
   auto structType = StructType::Create("struct.__va_list_tag", false, structDeclaration);
   auto arrayType = ArrayType::Create(structType, 1);
   auto iOStateType = IOStateType::Create();
@@ -4193,10 +4184,9 @@ VariadicFunctionTest2::SetupRvsdg()
           &CallOperation::GetIOStateOutput(callVaEnd),
           &CallOperation::GetMemoryStateOutput(callVaEnd) });
 
-    LambdaFst_->finalize(
-        { loadResults[0],
-          &CallOperation::GetIOStateOutput(callLLvmLifetimeEnd),
-          &CallOperation::GetMemoryStateOutput(callLLvmLifetimeEnd) });
+    LambdaFst_->finalize({ loadResults[0],
+                           &CallOperation::GetIOStateOutput(callLLvmLifetimeEnd),
+                           &CallOperation::GetMemoryStateOutput(callLLvmLifetimeEnd) });
   }
 
   // Setup function g()

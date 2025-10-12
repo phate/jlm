@@ -24,13 +24,12 @@ SimpleNode::SimpleNode(
       Operation_(std::move(operation))
 {
   if (GetOperation().narguments() != operands.size())
-    throw util::Error(
-        jlm::util::strfmt(
-            "Argument error - expected ",
-            SimpleNode::GetOperation().narguments(),
-            ", received ",
-            operands.size(),
-            " arguments."));
+    throw util::Error(jlm::util::strfmt(
+        "Argument error - expected ",
+        SimpleNode::GetOperation().narguments(),
+        ", received ",
+        operands.size(),
+        " arguments."));
 
   for (size_t n = 0; n < SimpleNode::GetOperation().narguments(); n++)
   {

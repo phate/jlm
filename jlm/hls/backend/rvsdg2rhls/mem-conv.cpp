@@ -383,11 +383,10 @@ find_containing_lambda(rvsdg::Region * region)
 }
 
 size_t
-CalcualtePortWidth(
-    const std::tuple<
-        std::vector<rvsdg::SimpleNode *>,
-        std::vector<rvsdg::SimpleNode *>,
-        std::vector<rvsdg::SimpleNode *>> & loadStoreDecouple)
+CalcualtePortWidth(const std::tuple<
+                   std::vector<rvsdg::SimpleNode *>,
+                   std::vector<rvsdg::SimpleNode *>,
+                   std::vector<rvsdg::SimpleNode *>> & loadStoreDecouple)
 {
   int max_width = 0;
   for (auto node : std::get<0>(loadStoreDecouple))
@@ -593,9 +592,8 @@ ConnectRequestResponseMemPorts(
     auto replacement = ReplaceDecouple(lambda, node, response);
     auto addr = route_request_rhls(lambdaRegion, replacement->output(1));
     loadAddresses.push_back(addr);
-    loadTypes.push_back(
-        dynamic_cast<const DecoupledLoadOperation *>(&replacement->GetOperation())
-            ->GetLoadedType());
+    loadTypes.push_back(dynamic_cast<const DecoupledLoadOperation *>(&replacement->GetOperation())
+                            ->GetLoadedType());
   }
   std::vector<rvsdg::Output *> storeOperands;
   for (size_t i = 0; i < storeNodes.size(); ++i)

@@ -225,10 +225,9 @@ LambdaNode::copy(rvsdg::Region * region, rvsdg::SubstitutionMap & smap) const
 }
 
 LambdaBuilder::LambdaBuilder(Region & region, std::vector<std::shared_ptr<const Type>> argtypes)
-    : Node_(
-          LambdaNode::Create(
-              region,
-              std::make_unique<LambdaOperation>(FunctionType::Create(std::move(argtypes), {}))))
+    : Node_(LambdaNode::Create(
+          region,
+          std::make_unique<LambdaOperation>(FunctionType::Create(std::move(argtypes), {}))))
 {
   // Note that the above inserts a "placeholder" function type, for now.
   // This is to avoid requiring the caller to specify the return type(s)

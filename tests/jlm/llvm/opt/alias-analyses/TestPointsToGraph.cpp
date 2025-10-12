@@ -165,12 +165,11 @@ TestNodeIterators()
   }
 
   assert(pointsToGraph->NumRegisterNodes() == 5);
-  jlm::util::HashSet<const jlm::rvsdg::Output *> expectedRegisters(
-      { &test.GetImportOutput(),
-        &test.GetLambdaOutput(),
-        &test.GetDeltaOutput(),
-        &test.GetAllocaOutput(),
-        &test.GetMallocOutput() });
+  jlm::util::HashSet<const jlm::rvsdg::Output *> expectedRegisters({ &test.GetImportOutput(),
+                                                                     &test.GetLambdaOutput(),
+                                                                     &test.GetDeltaOutput(),
+                                                                     &test.GetAllocaOutput(),
+                                                                     &test.GetMallocOutput() });
   for (auto & registerNode : pointsToGraph->RegisterNodes())
   {
     for (auto & output : registerNode.GetOutputs().Items())

@@ -347,14 +347,12 @@ TestInvariantMemoryState()
   assert(lambdaSubregion->narguments() == 2);
   assert(lambdaSubregion->nresults() == 1);
   assert(is<MemoryStateType>(lambdaSubregion->result(0)->Type()));
-  assert(
-      jlm::rvsdg::Region::ContainsOperation<LambdaEntryMemoryStateSplitOperation>(
-          *lambdaSubregion,
-          true));
-  assert(
-      jlm::rvsdg::Region::ContainsOperation<LambdaExitMemoryStateMergeOperation>(
-          *lambdaSubregion,
-          true));
+  assert(jlm::rvsdg::Region::ContainsOperation<LambdaEntryMemoryStateSplitOperation>(
+      *lambdaSubregion,
+      true));
+  assert(jlm::rvsdg::Region::ContainsOperation<LambdaExitMemoryStateMergeOperation>(
+      *lambdaSubregion,
+      true));
 }
 JLM_UNIT_TEST_REGISTER(
     "jlm/hls/backend/rvsdg2rhls/UnusedStateRemovalTests-InvariantMemoryState",

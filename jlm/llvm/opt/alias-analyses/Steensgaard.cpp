@@ -325,9 +325,8 @@ class AllocaLocation final : public MemoryLocation
       : MemoryLocation(),
         Node_(node)
   {
-    JLM_ASSERT(
-        is<AllocaOperation>(
-            jlm::util::assertedCast<const rvsdg::SimpleNode>(&node)->GetOperation()));
+    JLM_ASSERT(is<AllocaOperation>(
+        jlm::util::assertedCast<const rvsdg::SimpleNode>(&node)->GetOperation()));
   }
 
 public:
@@ -365,9 +364,8 @@ class MallocLocation final : public MemoryLocation
       : MemoryLocation(),
         Node_(node)
   {
-    JLM_ASSERT(
-        is<MallocOperation>(
-            jlm::util::assertedCast<const rvsdg::SimpleNode>(&node)->GetOperation()));
+    JLM_ASSERT(is<MallocOperation>(
+        jlm::util::assertedCast<const rvsdg::SimpleNode>(&node)->GetOperation()));
   }
 
 public:
