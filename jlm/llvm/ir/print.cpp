@@ -33,7 +33,7 @@ emit_tacs(const tacsvector_t & tacs)
 static std::string
 emit_function_node(const InterProceduralGraphNode & clg_node)
 {
-  const auto & node = *util::AssertedCast<const FunctionNode>(&clg_node);
+  const auto & node = *util::assertedCast<const FunctionNode>(&clg_node);
 
   const auto & fcttype = node.fcttype();
 
@@ -66,7 +66,7 @@ emit_function_node(const InterProceduralGraphNode & clg_node)
 static std::string
 emit_data_node(const InterProceduralGraphNode & clg_node)
 {
-  const auto & node = *util::AssertedCast<const DataNode>(&clg_node);
+  const auto & node = *util::assertedCast<const DataNode>(&clg_node);
   auto init = node.initialization();
 
   std::string str = node.name();

@@ -181,7 +181,7 @@ LambdaNode::output() const noexcept
 LambdaNode *
 LambdaNode::copy(rvsdg::Region * region, const std::vector<jlm::rvsdg::Output *> & operands) const
 {
-  return util::AssertedCast<LambdaNode>(rvsdg::Node::copy(region, operands));
+  return util::assertedCast<LambdaNode>(rvsdg::Node::copy(region, operands));
 }
 
 LambdaNode *
@@ -190,7 +190,7 @@ LambdaNode::copy(rvsdg::Region * region, rvsdg::SubstitutionMap & smap) const
   const auto & op = GetOperation();
   auto lambda = Create(
       *region,
-      std::unique_ptr<LambdaOperation>(util::AssertedCast<LambdaOperation>(op.copy().release())));
+      std::unique_ptr<LambdaOperation>(util::assertedCast<LambdaOperation>(op.copy().release())));
 
   /* add context variables */
   rvsdg::SubstitutionMap subregionmap;

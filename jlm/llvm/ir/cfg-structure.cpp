@@ -768,7 +768,7 @@ update_phi_operands(
     llvm::ThreeAddressCode & phitac,
     const std::unordered_set<ControlFlowGraphNode *> & deadnodes)
 {
-  const auto phi = util::AssertedCast<const SsaPhiOperation>(&phitac.operation());
+  const auto phi = util::assertedCast<const SsaPhiOperation>(&phitac.operation());
 
   std::vector<ControlFlowGraphNode *> incomingNodes;
   std::vector<const Variable *> operands;

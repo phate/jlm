@@ -192,7 +192,7 @@ TestCopy()
   // Assert
   assert(
       node->GetOperation()
-      == jlm::util::AssertedCast<jlm::rvsdg::SimpleNode>(copiedNode)->GetOperation());
+      == jlm::util::assertedCast<jlm::rvsdg::SimpleNode>(copiedNode)->GetOperation());
 }
 
 JLM_UNIT_TEST_REGISTER("jlm/llvm/ir/operators/StoreTests-TestCopy", TestCopy)

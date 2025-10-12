@@ -135,7 +135,7 @@ InvariantValueRedirection::RedirectInRegion(rvsdg::Region & region)
     {
       if (is<CallOperation>(simpleNode))
       {
-        RedirectCallOutputs(*util::AssertedCast<rvsdg::SimpleNode>(&node));
+        RedirectCallOutputs(*util::assertedCast<rvsdg::SimpleNode>(&node));
       }
     }
   }
