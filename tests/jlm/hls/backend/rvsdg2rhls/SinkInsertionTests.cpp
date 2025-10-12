@@ -35,11 +35,11 @@ SinkInsertion()
   auto argument = lambdaNode->GetFunctionArguments()[0];
 
   auto structuralNode = jlm::tests::TestStructuralNode::create(lambdaNode->subregion(), 1);
-  const auto inputVar0 = structuralNode->AddInputWithArguments(*argument);
-  const auto inputVar1 = structuralNode->AddInputWithArguments(*argument);
+  const auto inputVar0 = structuralNode->addInputWithArguments(*argument);
+  const auto inputVar1 = structuralNode->addInputWithArguments(*argument);
 
-  const auto outputVar0 = structuralNode->AddOutputWithResults({ inputVar1.argument[0] });
-  const auto outputVar1 = structuralNode->AddOutputWithResults({ inputVar1.argument[0] });
+  const auto outputVar0 = structuralNode->addOutputWithResults({ inputVar1.argument[0] });
+  const auto outputVar1 = structuralNode->addOutputWithResults({ inputVar1.argument[0] });
 
   auto lambdaOutput = lambdaNode->finalize({ outputVar1.output });
 

@@ -14,19 +14,14 @@ static bool
 RemoveUnusedLoopOutputs(LoopNode & loopNode)
 {
   bool anyChanged = false;
-  auto loopSubregion = loopNode.subregion();
 
   // go through in reverse because we might remove outputs
   for (int i = loopNode.noutputs() - 1; i >= 0; --i)
   {
     auto output = loopNode.output(i);
-
     if (output->nusers() == 0)
     {
-      JLM_ASSERT(output->results.size() == 1);
-      auto result = output->results.begin();
-      loopSubregion->RemoveResult(result->index());
-      loopNode.RemoveOutput(output->index());
+      loopNode.removeLoopOutput(output);
       anyChanged = true;
     }
   }
@@ -48,8 +43,7 @@ RemoveUnusedInputs(LoopNode & loopNode)
 
     if (argument->nusers() == 0)
     {
-      loopSubregion->RemoveArgument(argument->index());
-      loopNode.RemoveInput(input->index());
+      loopNode.removeLoopInput(input);
       anyChanged = true;
     }
   }

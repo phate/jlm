@@ -344,7 +344,7 @@ DeltaNode::RemoveDeltaInputsWhere(const F & match)
     if (argument.IsDead() && match(deltaInput))
     {
       subregion()->RemoveArgument(argument.index());
-      RemoveInput(deltaInput.index());
+      removeInput(deltaInput.index(), true);
       numRemovedInputs++;
     }
   }

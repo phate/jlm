@@ -228,8 +228,12 @@ GammaNode::GammaNode(rvsdg::Output & predicate, std::unique_ptr<GammaOperation> 
     : StructuralNode(predicate.region(), op->nalternatives()),
       Operation_(std::move(op))
 {
-  add_input(std::unique_ptr<NodeInput>(
-      new StructuralInput(this, &predicate, ControlType::Create(Operation_->nalternatives()))));
+  addInput(
+      std::make_unique<StructuralInput>(
+          this,
+          &predicate,
+          ControlType::Create(Operation_->nalternatives())),
+      false);
   for (std::size_t n = 0; n < Operation_->nalternatives(); ++n)
   {
     RegionArgument::Create(*subregion(n), nullptr, Operation_->GetMatchContentType(n));
@@ -255,7 +259,7 @@ GammaNode::EntryVar
 GammaNode::AddEntryVar(rvsdg::Output * origin)
 {
   auto gammaInput = new StructuralInput(this, origin, origin->Type());
-  add_input(std::unique_ptr<NodeInput>(gammaInput));
+  addInput(std::unique_ptr<StructuralInput>(gammaInput), true);
 
   EntryVar ev;
   ev.input = gammaInput;
@@ -340,8 +344,7 @@ GammaNode::AddExitVar(std::vector<jlm::rvsdg::Output *> values)
     throw util::Error("Incorrect number of values.");
 
   const auto & type = values[0]->Type();
-  auto output =
-      static_cast<StructuralOutput *>(add_output(std::make_unique<StructuralOutput>(this, type)));
+  auto output = addOutput(std::make_unique<StructuralOutput>(this, type));
 
   std::vector<rvsdg::Input *> branchResults;
   for (size_t n = 0; n < nsubregions(); n++)
@@ -416,7 +419,7 @@ GammaNode::RemoveExitVars(const std::vector<ExitVar> & exitvars)
     {
       subregion(r)->RemoveResult(index);
     }
-    RemoveOutput(index);
+    removeOutput(index);
   }
 }
 
@@ -429,21 +432,16 @@ GammaNode::RemoveEntryVars(const std::vector<EntryVar> & entryvars)
     JLM_ASSERT(TryGetOwnerNode<GammaNode>(*entryvar.input) == this);
     indices.push_back(entryvar.input->index());
   }
-  std::sort(
-      indices.begin(),
-      indices.end(),
-      [](std::size_t x, std::size_t y)
-      {
-        return x > y;
-      });
+  // Sort indices descending
+  std::sort(indices.rbegin(), indices.rend());
   indices.erase(std::unique(indices.begin(), indices.end()), indices.end());
   for (auto index : indices)
   {
-    for (std::size_t r = 0; r < nsubregions(); ++r)
+    for (auto & subregion : Subregions())
     {
-      subregion(r)->RemoveArgument(index);
+      subregion.RemoveArgument(index);
     }
-    RemoveInput(index);
+    removeInput(index, true);
   }
 }
 

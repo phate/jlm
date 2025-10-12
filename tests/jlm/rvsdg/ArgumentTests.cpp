@@ -22,18 +22,18 @@ ArgumentNodeMismatch()
   auto valueType = jlm::tests::ValueType::Create();
 
   Graph graph;
-  auto import = &jlm::rvsdg::GraphImport::Create(graph, valueType, "import");
+  auto & import = jlm::rvsdg::GraphImport::Create(graph, valueType, "import");
 
   auto structuralNode1 = TestStructuralNode::create(&graph.GetRootRegion(), 1);
   auto structuralNode2 = TestStructuralNode::create(&graph.GetRootRegion(), 2);
 
-  auto structuralInput = StructuralInput::create(structuralNode1, import, valueType);
+  auto & structuralInput = structuralNode1->addInputOnly(import);
 
   // Act
   bool inputErrorHandlerCalled = false;
   try
   {
-    TestGraphArgument::Create(*structuralNode2->subregion(0), structuralInput, valueType);
+    TestGraphArgument::Create(*structuralNode2->subregion(0), &structuralInput, valueType);
   }
   catch (jlm::util::Error &)
   {
@@ -57,29 +57,16 @@ ArgumentInputTypeMismatch()
   auto stateType = StateType::Create();
 
   jlm::rvsdg::Graph rvsdg;
-  auto x = &jlm::rvsdg::GraphImport::Create(rvsdg, valueType, "import");
+  auto & x = jlm::rvsdg::GraphImport::Create(rvsdg, valueType, "import");
 
   auto structuralNode = TestStructuralNode::create(&rvsdg.GetRootRegion(), 1);
-  auto structuralInput = jlm::rvsdg::StructuralInput::create(structuralNode, x, valueType);
+  auto & structuralInput = structuralNode->addInputOnly(x);
 
   // Act & Assert
   bool exceptionWasCaught = false;
   try
   {
-    TestGraphArgument::Create(*structuralNode->subregion(0), structuralInput, stateType);
-    // The line below should not be executed as the line above is expected to throw an exception.
-    assert(false);
-  }
-  catch (TypeError &)
-  {
-    exceptionWasCaught = true;
-  }
-  assert(exceptionWasCaught);
-
-  exceptionWasCaught = false;
-  try
-  {
-    TestGraphArgument::Create(*structuralNode->subregion(0), structuralInput, stateType);
+    TestGraphArgument::Create(*structuralNode->subregion(0), &structuralInput, stateType);
     // The line below should not be executed as the line above is expected to throw an exception.
     assert(false);
   }

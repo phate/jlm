@@ -306,7 +306,7 @@ LambdaNode::RemoveLambdaInputsWhere(const F & match)
     if (argument.IsDead() && match(*lambdaInput))
     {
       subregion()->RemoveArgument(argument.index());
-      RemoveInput(n);
+      removeInput(n, true);
       numRemovedInputs++;
     }
   }
