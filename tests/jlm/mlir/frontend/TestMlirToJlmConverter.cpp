@@ -114,12 +114,13 @@ TestLambda()
 
       assert(region->numNodes() == 1);
       auto convertedLambda =
-          jlm::util::AssertedCast<jlm::rvsdg::LambdaNode>(region->Nodes().begin().ptr());
+          jlm::util::assertedCast<jlm::rvsdg::LambdaNode>(region->Nodes().begin().ptr());
       assert(is<jlm::llvm::LlvmLambdaOperation>(convertedLambda->GetOperation()));
 
       assert(convertedLambda->subregion()->numNodes() == 1);
-      assert(is<jlm::llvm::IntegerConstantOperation>(
-          convertedLambda->subregion()->Nodes().begin().ptr()));
+      assert(
+          is<jlm::llvm::IntegerConstantOperation>(
+              convertedLambda->subregion()->Nodes().begin().ptr()));
     }
   }
 }
@@ -265,7 +266,7 @@ TestDivOperation()
 
       // Get the lambda block
       auto convertedLambda =
-          jlm::util::AssertedCast<jlm::rvsdg::LambdaNode>(region->Nodes().begin().ptr());
+          jlm::util::assertedCast<jlm::rvsdg::LambdaNode>(region->Nodes().begin().ptr());
       assert(is<jlm::llvm::LlvmLambdaOperation>(convertedLambda));
 
       // 2 Constants + 1 DivUIOp
@@ -438,7 +439,7 @@ TestCompZeroExt()
 
       // Get the lambda block
       auto convertedLambda =
-          jlm::util::AssertedCast<jlm::rvsdg::LambdaNode>(region->Nodes().begin().ptr());
+          jlm::util::assertedCast<jlm::rvsdg::LambdaNode>(region->Nodes().begin().ptr());
       assert(is<jlm::llvm::LlvmLambdaOperation>(convertedLambda));
 
       // 2 Constants + AddOp + CompOp + ZeroExtOp
@@ -588,18 +589,21 @@ TestMatchOp()
 
     ::llvm::SmallVector<::mlir::Attribute> mappingVector;
 
-    mappingVector.push_back(::mlir::rvsdg::MatchRuleAttr::get(
-        Builder_->getContext(),
-        ::llvm::ArrayRef(static_cast<int64_t>(0)),
-        4));
-    mappingVector.push_back(::mlir::rvsdg::MatchRuleAttr::get(
-        Builder_->getContext(),
-        ::llvm::ArrayRef(static_cast<int64_t>(1)),
-        5));
-    mappingVector.push_back(::mlir::rvsdg::MatchRuleAttr::get(
-        Builder_->getContext(),
-        ::llvm::ArrayRef(static_cast<int64_t>(1)),
-        6));
+    mappingVector.push_back(
+        ::mlir::rvsdg::MatchRuleAttr::get(
+            Builder_->getContext(),
+            ::llvm::ArrayRef(static_cast<int64_t>(0)),
+            4));
+    mappingVector.push_back(
+        ::mlir::rvsdg::MatchRuleAttr::get(
+            Builder_->getContext(),
+            ::llvm::ArrayRef(static_cast<int64_t>(1)),
+            5));
+    mappingVector.push_back(
+        ::mlir::rvsdg::MatchRuleAttr::get(
+            Builder_->getContext(),
+            ::llvm::ArrayRef(static_cast<int64_t>(1)),
+            6));
     //! The default alternative has an empty mapping
     mappingVector.push_back(
         ::mlir::rvsdg::MatchRuleAttr::get(Builder_->getContext(), ::llvm::ArrayRef<int64_t>(), 2));
@@ -642,7 +646,7 @@ TestMatchOp()
 
       // Get the lambda block
       auto convertedLambda =
-          jlm::util::AssertedCast<jlm::rvsdg::LambdaNode>(region->Nodes().begin().ptr());
+          jlm::util::assertedCast<jlm::rvsdg::LambdaNode>(region->Nodes().begin().ptr());
       assert(is<jlm::llvm::LlvmLambdaOperation>(convertedLambda));
 
       auto lambdaRegion = convertedLambda->subregion();
@@ -810,7 +814,7 @@ TestGammaOp()
 
       // Get the lambda block
       auto convertedLambda =
-          jlm::util::AssertedCast<jlm::rvsdg::LambdaNode>(region->Nodes().begin().ptr());
+          jlm::util::assertedCast<jlm::rvsdg::LambdaNode>(region->Nodes().begin().ptr());
       assert(is<jlm::llvm::LlvmLambdaOperation>(convertedLambda->GetOperation()));
 
       auto lambdaRegion = convertedLambda->subregion();
@@ -935,7 +939,7 @@ TestThetaOp()
 
       // Get the lambda block
       auto convertedLambda =
-          jlm::util::AssertedCast<jlm::rvsdg::LambdaNode>(region->Nodes().begin().ptr());
+          jlm::util::assertedCast<jlm::rvsdg::LambdaNode>(region->Nodes().begin().ptr());
       assert(is<jlm::llvm::LlvmLambdaOperation>(convertedLambda->GetOperation()));
 
       auto lambdaRegion = convertedLambda->subregion();

@@ -325,8 +325,9 @@ class AllocaLocation final : public MemoryLocation
       : MemoryLocation(),
         Node_(node)
   {
-    JLM_ASSERT(is<AllocaOperation>(
-        jlm::util::AssertedCast<const rvsdg::SimpleNode>(&node)->GetOperation()));
+    JLM_ASSERT(
+        is<AllocaOperation>(
+            jlm::util::assertedCast<const rvsdg::SimpleNode>(&node)->GetOperation()));
   }
 
 public:
@@ -364,8 +365,9 @@ class MallocLocation final : public MemoryLocation
       : MemoryLocation(),
         Node_(node)
   {
-    JLM_ASSERT(is<MallocOperation>(
-        jlm::util::AssertedCast<const rvsdg::SimpleNode>(&node)->GetOperation()));
+    JLM_ASSERT(
+        is<MallocOperation>(
+            jlm::util::assertedCast<const rvsdg::SimpleNode>(&node)->GetOperation()));
   }
 
 public:
@@ -1822,7 +1824,7 @@ Steensgaard::AnalyzeImports(const rvsdg::Graph & graph)
   auto rootRegion = &graph.GetRootRegion();
   for (size_t n = 0; n < rootRegion->narguments(); n++)
   {
-    auto & graphImport = *util::AssertedCast<const GraphImport>(rootRegion->argument(n));
+    auto & graphImport = *util::assertedCast<const GraphImport>(rootRegion->argument(n));
 
     if (HasOrContainsPointerType(graphImport))
     {

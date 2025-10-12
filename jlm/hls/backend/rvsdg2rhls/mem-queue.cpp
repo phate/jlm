@@ -151,7 +151,7 @@ separate_load_edge(
     }
     else if (auto sti = dynamic_cast<jlm::rvsdg::StructuralInput *>(user))
     {
-      auto loop_node = jlm::util::AssertedCast<jlm::hls::LoopNode>(sti->node());
+      auto loop_node = jlm::util::assertedCast<jlm::hls::LoopNode>(sti->node());
       jlm::rvsdg::Output * buffer = nullptr;
       auto addr_edge_before_loop = addr_edge;
       addr_edge = loop_node->AddLoopVar(addr_edge, &buffer);
@@ -456,11 +456,12 @@ process_loops(jlm::rvsdg::Output * state_edge)
         {
           JLM_ASSERT(state_gate_addr_in->origin()->region() == store_addresses[j]->region());
           JLM_ASSERT(store_dequeues[j]->region() == store_addresses[j]->region());
-          state_gate_addr_in->divert_to(jlm::hls::AddressQueueOperation::create(
-              *state_gate_addr_in->origin(),
-              *store_addresses[j],
-              *store_dequeues[j],
-              store_precedes[j]));
+          state_gate_addr_in->divert_to(
+              jlm::hls::AddressQueueOperation::create(
+                  *state_gate_addr_in->origin(),
+                  *store_addresses[j],
+                  *store_dequeues[j],
+                  store_precedes[j]));
         }
       }
     }
@@ -475,7 +476,7 @@ static void
 mem_queue(jlm::rvsdg::Region * region)
 {
   auto lambda =
-      jlm::util::AssertedCast<const jlm::rvsdg::LambdaNode>(region->Nodes().begin().ptr());
+      jlm::util::assertedCast<const jlm::rvsdg::LambdaNode>(region->Nodes().begin().ptr());
   auto state_arg = &llvm::GetMemoryStateRegionArgument(*lambda);
   if (!state_arg)
   {

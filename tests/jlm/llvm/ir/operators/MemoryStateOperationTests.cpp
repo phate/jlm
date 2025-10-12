@@ -323,11 +323,12 @@ MemoryStateMergeNormalizeNestedSplits()
 
   auto & splitNode0 = MemoryStateSplitOperation::CreateNode(ix0, 2);
   auto & splitNode1 = MemoryStateSplitOperation::CreateNode(ix1, 2);
-  auto & mergeNode = MemoryStateMergeOperation::CreateNode({ splitNode0.output(0),
-                                                             splitNode0.output(1),
-                                                             splitNode1.output(0),
-                                                             splitNode1.output(1),
-                                                             &ix2 });
+  auto & mergeNode = MemoryStateMergeOperation::CreateNode(
+      { splitNode0.output(0),
+        splitNode0.output(1),
+        splitNode1.output(0),
+        splitNode1.output(1),
+        &ix2 });
 
   auto & ex = jlm::rvsdg::GraphExport::Create(*mergeNode.output(0), "x");
 
@@ -617,7 +618,7 @@ LambdaExitMemoryStateMergeNormalizeLoad()
   // Act
   const auto success = jlm::rvsdg::ReduceNode<LambdaExitMemoryStateMergeOperation>(
       LambdaExitMemoryStateMergeOperation::NormalizeLoadFromAlloca,
-      *jlm::util::AssertedCast<SimpleNode>(&lambdaExitMergeNode1));
+      *jlm::util::assertedCast<SimpleNode>(&lambdaExitMergeNode1));
   graph.PruneNodes();
 
   view(&graph.GetRootRegion(), stdout);
@@ -682,7 +683,7 @@ LambdaExitMemoryStateMergeNormalizeStore()
   // Act
   const auto success = jlm::rvsdg::ReduceNode<LambdaExitMemoryStateMergeOperation>(
       LambdaExitMemoryStateMergeOperation::NormalizeStoreToAlloca,
-      *jlm::util::AssertedCast<SimpleNode>(&lambdaExitMergeNode1));
+      *jlm::util::assertedCast<SimpleNode>(&lambdaExitMergeNode1));
   graph.PruneNodes();
 
   view(&graph.GetRootRegion(), stdout);
@@ -745,7 +746,7 @@ LambdaExitMemoryStateMergeNormalizeAlloca()
   // Act
   const auto success = jlm::rvsdg::ReduceNode<LambdaExitMemoryStateMergeOperation>(
       LambdaExitMemoryStateMergeOperation::NormalizeAlloca,
-      *jlm::util::AssertedCast<SimpleNode>(&lambdaExitMergeNode1));
+      *jlm::util::assertedCast<SimpleNode>(&lambdaExitMergeNode1));
   graph.PruneNodes();
 
   view(&graph.GetRootRegion(), stdout);
@@ -852,7 +853,7 @@ CallExitMemoryStateSplit_NormalizeLambdaExitMerge()
   // Act
   const auto success = jlm::rvsdg::ReduceNode<CallExitMemoryStateSplitOperation>(
       CallExitMemoryStateSplitOperation::NormalizeLambdaExitMemoryStateMerge,
-      *jlm::util::AssertedCast<SimpleNode>(&lambdaEntrySplitNode));
+      *jlm::util::assertedCast<SimpleNode>(&lambdaEntrySplitNode));
   rvsdg.PruneNodes();
 
   view(&rvsdg.GetRootRegion(), stdout);

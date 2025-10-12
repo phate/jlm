@@ -93,7 +93,7 @@ private:
     auto & rootRegion = rvsdg.GetRootRegion();
     for (size_t n = 0; n < rootRegion.narguments(); n++)
     {
-      auto & graphImport = *jlm::util::AssertedCast<const GraphImport>(rootRegion.argument(n));
+      auto & graphImport = *jlm::util::assertedCast<const GraphImport>(rootRegion.argument(n));
 
       auto & importNode = aa::PointsToGraph::ImportNode::Create(*PointsToGraph_, graphImport);
       auto & registerNode =
@@ -165,11 +165,12 @@ TestNodeIterators()
   }
 
   assert(pointsToGraph->NumRegisterNodes() == 5);
-  jlm::util::HashSet<const jlm::rvsdg::Output *> expectedRegisters({ &test.GetImportOutput(),
-                                                                     &test.GetLambdaOutput(),
-                                                                     &test.GetDeltaOutput(),
-                                                                     &test.GetAllocaOutput(),
-                                                                     &test.GetMallocOutput() });
+  jlm::util::HashSet<const jlm::rvsdg::Output *> expectedRegisters(
+      { &test.GetImportOutput(),
+        &test.GetLambdaOutput(),
+        &test.GetDeltaOutput(),
+        &test.GetAllocaOutput(),
+        &test.GetMallocOutput() });
   for (auto & registerNode : pointsToGraph->RegisterNodes())
   {
     for (auto & output : registerNode.GetOutputs().Items())

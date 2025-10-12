@@ -862,7 +862,7 @@ RhlsToFirrtlConverter::MlirGenHlsMemReq(const jlm::rvsdg::SimpleNode * node)
   ::llvm::SmallVector<mlir::Value> storeGranted(storeTypes->size(), zeroBitValue);
   for (size_t j = 0; j < node->noutputs(); ++j)
   {
-    auto reqType = util::AssertedCast<const BundleType>(node->output(j)->Type().get());
+    auto reqType = util::assertedCast<const BundleType>(node->output(j)->Type().get());
     auto hasWrite = reqType->elements_.size() == 5;
     mlir::BlockArgument memReq = GetOutPort(module, j);
     mlir::Value memReqData;
@@ -1168,7 +1168,7 @@ RhlsToFirrtlConverter::MlirGenHlsDLoad(const jlm::rvsdg::SimpleNode * node)
 circt::firrtl::FModuleOp
 RhlsToFirrtlConverter::MlirGenHlsLocalMem(const jlm::rvsdg::SimpleNode * node)
 {
-  auto lmem_op = util::AssertedCast<const LocalMemoryOperation>(&node->GetOperation());
+  auto lmem_op = util::assertedCast<const LocalMemoryOperation>(&node->GetOperation());
   auto res_node = rvsdg::TryGetOwnerNode<rvsdg::Node>(*node->output(0)->Users().begin());
   JLM_ASSERT(rvsdg::is<LocalMemoryResponseOperation>(res_node));
   auto req_node = rvsdg::TryGetOwnerNode<rvsdg::Node>(*node->output(1)->Users().begin());
@@ -1280,10 +1280,11 @@ RhlsToFirrtlConverter::MlirGenHlsLocalMem(const jlm::rvsdg::SimpleNode * node)
   auto dataType = GetFirrtlType(&arraytype->element_type());
   ::llvm::SmallVector<mlir::Type> memTypes;
   ::llvm::SmallVector<mlir::Attribute> memNames;
-  memTypes.push_back(circt::firrtl::MemOp::getTypeForPort(
-      depth,
-      dataType,
-      circt::firrtl::MemOp::PortKind::ReadWrite));
+  memTypes.push_back(
+      circt::firrtl::MemOp::getTypeForPort(
+          depth,
+          dataType,
+          circt::firrtl::MemOp::PortKind::ReadWrite));
   memNames.push_back(Builder_->getStringAttr("rw0"));
   //    memTypes.push_back(circt::firrtl::MemOp::getTypeForPort(depth, dataType,
   //    circt::firrtl::MemOp::PortKind::ReadWrite));
@@ -3962,8 +3963,9 @@ RhlsToFirrtlConverter::GetModuleName(const rvsdg::Node * node)
   if (auto op = dynamic_cast<const LocalMemoryOperation *>(&node->GetOperation()))
   {
     append.append("_S");
-    append.append(std::to_string(
-        std::dynamic_pointer_cast<const llvm::ArrayType>(op->result(0))->nelements()));
+    append.append(
+        std::to_string(
+            std::dynamic_pointer_cast<const llvm::ArrayType>(op->result(0))->nelements()));
     append.append("_L");
     size_t loads =
         rvsdg::TryGetOwnerNode<rvsdg::Node>(*node->output(0)->Users().begin())->noutputs();
