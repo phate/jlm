@@ -222,9 +222,10 @@ ClangCommand::ToString(const LanguageStandard & languageStandard)
 std::string
 ClangCommand::ToString(const ClangArgument & clangArgument)
 {
-  static std::unordered_map<ClangArgument, const char *> map({
-      { ClangArgument::DisableO0OptNone, "-disable-O0-optnone" },
-  });
+  static std::unordered_map<ClangArgument, const char *> map(
+      {
+          { ClangArgument::DisableO0OptNone, "-disable-O0-optnone" },
+      });
 
   JLM_ASSERT(map.find(clangArgument) != map.end());
   return map[clangArgument];
@@ -278,10 +279,11 @@ LlcCommand::ToString(const OptimizationLevel & optimizationLevel)
 std::string
 LlcCommand::ToString(const RelocationModel & relocationModel)
 {
-  static std::unordered_map<RelocationModel, const char *> map({
-      { RelocationModel::Static, "static" },
-      { RelocationModel::Pic, "pic" },
-  });
+  static std::unordered_map<RelocationModel, const char *> map(
+      {
+          { RelocationModel::Static, "static" },
+          { RelocationModel::Pic, "pic" },
+      });
 
   JLM_ASSERT(map.find(relocationModel) != map.end());
   return map[relocationModel];
@@ -304,15 +306,17 @@ JlmOptCommand::ToString() const
     optimizationArguments +=
         "--" + std::string(JlmOptCommandLineOptions::ToCommandLineArgument(optimization)) + " ";
 
-  auto inputFormatArgument = "--input-format="
-                           + std::string(JlmOptCommandLineOptions::ToCommandLineArgument(
-                               CommandLineOptions_.GetInputFormat()))
-                           + " ";
+  auto inputFormatArgument =
+      "--input-format="
+      + std::string(
+          JlmOptCommandLineOptions::ToCommandLineArgument(CommandLineOptions_.GetInputFormat()))
+      + " ";
 
-  auto outputFormatArgument = "--output-format="
-                            + std::string(JlmOptCommandLineOptions::ToCommandLineArgument(
-                                CommandLineOptions_.GetOutputFormat()))
-                            + " ";
+  auto outputFormatArgument =
+      "--output-format="
+      + std::string(
+          JlmOptCommandLineOptions::ToCommandLineArgument(CommandLineOptions_.GetOutputFormat()))
+      + " ";
 
   auto outputFileArgument = !CommandLineOptions_.GetOutputFile().to_str().empty()
                               ? "-o " + CommandLineOptions_.GetOutputFile().to_str() + " "
@@ -618,13 +622,13 @@ JlmOptCommand::PrintAsDot(
 
   if (outputFile == "")
   {
-    writer.OutputAllGraphs(std::cout, util::graph::OutputFormat::Dot);
+    writer.outputAllGraphs(std::cout, util::graph::OutputFormat::Dot);
   }
   else
   {
     std::ofstream fs;
     fs.open(outputFile.to_str());
-    writer.OutputAllGraphs(fs, util::graph::OutputFormat::Dot);
+    writer.outputAllGraphs(fs, util::graph::OutputFormat::Dot);
     fs.close();
   }
 }
@@ -719,9 +723,10 @@ LlvmOptCommand::ToString() const
 std::string
 LlvmOptCommand::ToString(const Optimization & optimization)
 {
-  static std::unordered_map<Optimization, const char *> map({
-      { Optimization::Mem2Reg, "mem2reg" },
-  });
+  static std::unordered_map<Optimization, const char *> map(
+      {
+          { Optimization::Mem2Reg, "mem2reg" },
+      });
 
   JLM_ASSERT(map.find(optimization) != map.end());
   return map[optimization];
