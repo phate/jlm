@@ -168,11 +168,8 @@ route_response_rhls(rvsdg::Region * target, rvsdg::Output * response)
   else
   {
     auto parent_response = route_response_rhls(target->node()->region(), response);
-    auto ln = dynamic_cast<LoopNode *>(target->node());
-    JLM_ASSERT(ln);
-    auto input = rvsdg::StructuralInput::create(ln, parent_response, parent_response->Type());
-    auto & argument = EntryArgument::Create(*target, *input, response->Type());
-    return &argument;
+    auto ln = util::AssertedCast<LoopNode>(target->node());
+    return ln->addResponseInput(parent_response);
   }
 }
 
@@ -183,14 +180,11 @@ route_request_rhls(rvsdg::Region * target, rvsdg::Output * request)
   {
     return request;
   }
-  else
-  {
-    auto ln = dynamic_cast<LoopNode *>(request->region()->node());
-    JLM_ASSERT(ln);
-    auto output = rvsdg::StructuralOutput::create(ln, request->Type());
-    ExitResult::Create(*request, *output);
-    return route_request_rhls(target, output);
-  }
+
+  auto ln = util::AssertedCast<LoopNode>(request->region()->node());
+  auto output = ln->addRequestOutput(request);
+
+  return route_request_rhls(target, output);
 }
 
 std::deque<rvsdg::Region *>

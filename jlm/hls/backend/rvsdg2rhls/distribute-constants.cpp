@@ -37,10 +37,7 @@ distribute_constant(const rvsdg::SimpleOperation & op, rvsdg::Output * out)
           loopvar.pre->divert_users(arg_replacement);
           loopvar.output->divert_users(out);
           distribute_constant(op, arg_replacement);
-          theta->subregion()->RemoveResult(loopvar.post->index());
-          theta->subregion()->RemoveArgument(loopvar.pre->index());
-          theta->RemoveInput(loopvar.input->index());
-          theta->RemoveOutput(loopvar.output->index());
+          theta->RemoveLoopVars({ loopvar });
           changed = true;
           break;
         }
@@ -81,9 +78,8 @@ distribute_constant(const rvsdg::SimpleOperation & op, rvsdg::Output * out)
               argument->divert_users(arg_replacement);
               distribute_constant(op, arg_replacement);
             }
-            argument->region()->RemoveArgument(argument->index());
           }
-          gammaNode->RemoveInput(user.index());
+          gammaNode->RemoveEntryVars({ *entryvar });
           changed = true;
           break;
         }
