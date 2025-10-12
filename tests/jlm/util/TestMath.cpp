@@ -37,13 +37,13 @@ TestLog2Floor()
   testByteRange(int32_t(0));
   testByteRange(int64_t(0));
 
-  assert(Log2Floor<uint16_t>(0x7FFF) == 14);
-  assert(Log2Floor<uint16_t>(0x8000) == 15);
-  assert(Log2Floor<uint16_t>(0xFFFF) == 15);
+  assert(log2Floor<uint16_t>(0x7FFF) == 14);
+  assert(log2Floor<uint16_t>(0x8000) == 15);
+  assert(log2Floor<uint16_t>(0xFFFF) == 15);
 
-  assert(Log2Floor<uint32_t>(0x7FFFFFFF) == 30);
-  assert(Log2Floor<uint32_t>(0x80000000) == 31);
-  assert(Log2Floor<uint32_t>(0xFFFFFFFF) == 31);
+  assert(log2Floor<uint32_t>(0x7FFFFFFF) == 30);
+  assert(log2Floor<uint32_t>(0x80000000) == 31);
+  assert(log2Floor<uint32_t>(0xFFFFFFFF) == 31);
 }
 JLM_UNIT_TEST_REGISTER("jlm/util/TestMath-TestLog2Floor", TestLog2Floor)
 

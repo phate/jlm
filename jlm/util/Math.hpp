@@ -22,7 +22,7 @@ namespace jlm::util
  */
 template<class T>
 static constexpr int
-Log2Floor(T value)
+log2Floor(T value)
 {
   static_assert(std::is_integral_v<T>, "T must be integral type");
   if (value < 1)
