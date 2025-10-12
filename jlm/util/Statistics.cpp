@@ -167,7 +167,7 @@ StatisticsCollector::PrintStatistics()
   if (NumCollectedStatistics() == 0)
     return;
 
-  auto file = CreateOutputFile("statistics.log");
+  auto file = createOutputFile("statistics.log");
   file.open("w");
 
   for (auto & statistics : CollectedStatistics())
@@ -177,7 +177,7 @@ StatisticsCollector::PrintStatistics()
 }
 
 File
-StatisticsCollector::CreateOutputFile(std::string fileNameSuffix, bool includeCount)
+StatisticsCollector::createOutputFile(std::string fileNameSuffix, bool includeCount)
 {
   JLM_ASSERT(Settings_.HasOutputDirectory());
 
