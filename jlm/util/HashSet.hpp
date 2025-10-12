@@ -237,7 +237,7 @@ public:
   {
     const size_t sizeBefore = Size();
     for (auto & item : other.Items())
-      Insert(item);
+      insert(item);
     return sizeBefore != Size();
   }
 
