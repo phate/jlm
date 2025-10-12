@@ -363,7 +363,7 @@ TestGraphWriterClass()
 
   // Render all the graphs to dot, which first finalizes the graphs to assign unique IDs
   std::ostringstream out;
-  writer.OutputAllGraphs(out, OutputFormat::Dot);
+  writer.outputAllGraphs(out, OutputFormat::Dot);
   auto string = out.str();
 
   assert(graph0.IsFinalized());

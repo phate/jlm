@@ -139,7 +139,7 @@ AliasAnalysisPrecisionEvaluator::EvaluateAliasAnalysisClient(
   {
     auto out = statisticsCollector.createOutputFile("AliasingGraph.dot", true);
     std::ofstream fd(out.path().to_str());
-    gw.OutputAllGraphs(fd, util::graph::OutputFormat::Dot);
+    gw.outputAllGraphs(fd, util::graph::OutputFormat::Dot);
     statistics->AddAliasingGraphOutputFile(out.path());
   }
 
