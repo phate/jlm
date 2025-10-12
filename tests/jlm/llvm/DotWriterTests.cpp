@@ -27,7 +27,7 @@ TestWriteGraphs()
   LlvmDotWriter dotWriter;
   dotWriter.WriteGraphs(writer, gammaTest.graph().GetRootRegion(), false);
 
-  writer.OutputAllGraphs(std::cout, OutputFormat::Dot);
+  writer.outputAllGraphs(std::cout, OutputFormat::Dot);
 
   // Assert
   auto & rootGraph = writer.GetGraph(0);
@@ -98,7 +98,7 @@ TestTypeGraph()
   dotWriter.WriteGraphs(writer, gammaTest.graph().GetRootRegion(), true);
 
   writer.Finalize();
-  writer.OutputAllGraphs(std::cout, OutputFormat::Dot);
+  writer.outputAllGraphs(std::cout, OutputFormat::Dot);
 
   // Assert
   auto & typeGraph = writer.GetGraph(0);
