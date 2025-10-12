@@ -137,7 +137,7 @@ AliasAnalysisPrecisionEvaluator::EvaluateAliasAnalysisClient(
   // If an aliasing graph was constructed during the evaluation, print it out now
   if (IsAliasingGraphEnabled())
   {
-    auto out = statisticsCollector.CreateOutputFile("AliasingGraph.dot", true);
+    auto out = statisticsCollector.createOutputFile("AliasingGraph.dot", true);
     std::ofstream fd(out.path().to_str());
     gw.OutputAllGraphs(fd, util::graph::OutputFormat::Dot);
     statistics->AddAliasingGraphOutputFile(out.path());
@@ -148,7 +148,7 @@ AliasAnalysisPrecisionEvaluator::EvaluateAliasAnalysisClient(
   if (IsPerFunctionOutputEnabled())
   {
     perFunctionOutputFile =
-        statisticsCollector.CreateOutputFile("AAPrecisionEvaluation.log", true).path();
+        statisticsCollector.createOutputFile("AAPrecisionEvaluation.log", true).path();
     statistics->AddPerFunctionOutputFile(*perFunctionOutputFile);
   }
 
