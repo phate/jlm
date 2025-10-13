@@ -454,10 +454,21 @@ convert_loop_state_to_lcb(rvsdg::Input * loop_state_input)
 }
 
 static void
-decouple_mem_state(rvsdg::Region * region)
+decouple_mem_state(rvsdg::RvsdgModule & rvsdgModule)
 {
-  JLM_ASSERT(region->numNodes() == 1);
-  auto lambda = util::assertedCast<const jlm::rvsdg::LambdaNode>(region->Nodes().begin().ptr());
+  const auto & graph = rvsdgModule.Rvsdg();
+  const auto rootRegion = &graph.GetRootRegion();
+  if (rootRegion->numNodes() != 1)
+  {
+    throw std::logic_error("Root should have only one node now");
+  }
+
+  const auto lambda = dynamic_cast<const rvsdg::LambdaNode *>(rootRegion->Nodes().begin().ptr());
+  if (!lambda)
+  {
+    throw std::logic_error("Node needs to be a lambda");
+  }
+
   auto state_arg = &llvm::GetMemoryStateRegionArgument(*lambda);
   if (!state_arg)
   {
@@ -507,7 +518,7 @@ MemoryStateDecoupling::MemoryStateDecoupling()
 void
 MemoryStateDecoupling::Run(rvsdg::RvsdgModule & rvsdgModule, util::StatisticsCollector &)
 {
-  decouple_mem_state(&rvsdgModule.Rvsdg().GetRootRegion());
+  decouple_mem_state(rvsdgModule);
 }
 
 }
