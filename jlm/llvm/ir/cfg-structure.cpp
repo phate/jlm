@@ -43,9 +43,9 @@ StronglyConnectedComponentStructure::Create(const StronglyConnectedComponent & s
     {
       if (!scc.contains(inEdge.source()))
       {
-        sccStructure->EntryEdges_.Insert(&inEdge);
+        sccStructure->EntryEdges_.insert(&inEdge);
         if (!sccStructure->EntryNodes_.Contains(&node))
-          sccStructure->EntryNodes_.Insert(&node);
+          sccStructure->EntryNodes_.insert(&node);
       }
     }
 
@@ -53,9 +53,9 @@ StronglyConnectedComponentStructure::Create(const StronglyConnectedComponent & s
     {
       if (!scc.contains(outEdge.sink()))
       {
-        sccStructure->ExitEdges_.Insert(&outEdge);
+        sccStructure->ExitEdges_.insert(&outEdge);
         if (!sccStructure->ExitNodes_.Contains(outEdge.sink()))
-          sccStructure->ExitNodes_.Insert(outEdge.sink());
+          sccStructure->ExitNodes_.insert(outEdge.sink());
       }
     }
   }
@@ -65,7 +65,7 @@ StronglyConnectedComponentStructure::Create(const StronglyConnectedComponent & s
     for (auto & outEdge : node.OutEdges())
     {
       if (sccStructure->EntryNodes_.Contains(outEdge.sink()))
-        sccStructure->RepetitionEdges_.Insert(&outEdge);
+        sccStructure->RepetitionEdges_.insert(&outEdge);
     }
   }
 
@@ -495,7 +495,7 @@ has_valid_phis(const BasicBlock & bb)
     util::HashSet<ControlFlowGraphNode *> phiIncoming;
     for (size_t i = 0; i < phi->narguments(); i++)
     {
-      phiIncoming.Insert(phi->GetIncomingNode(i));
+      phiIncoming.insert(phi->GetIncomingNode(i));
     }
     if (phiIncoming.Size() != phi->narguments())
       return false;
@@ -504,7 +504,7 @@ has_valid_phis(const BasicBlock & bb)
     util::HashSet<ControlFlowGraphNode *> predecessors;
     for (auto & inEdge : bb.InEdges())
     {
-      predecessors.Insert(inEdge.source());
+      predecessors.insert(inEdge.source());
     }
     if (phiIncoming != predecessors)
       return false;

@@ -73,7 +73,7 @@ public:
     util::HashSet<const PointsToGraph::MemoryNode *> memoryNodes;
     auto registerNode = &PointsToGraph_.GetRegisterNode(output);
     for (auto & memoryNode : registerNode->Targets())
-      memoryNodes.Insert(&memoryNode);
+      memoryNodes.insert(&memoryNode);
 
     return memoryNodes;
   }
@@ -106,21 +106,21 @@ AgnosticModRefSummarizer::SummarizeModRefs(
 
   util::HashSet<const PointsToGraph::MemoryNode *> memoryNodes;
   for (auto & allocaNode : pointsToGraph.AllocaNodes())
-    memoryNodes.Insert(&allocaNode);
+    memoryNodes.insert(&allocaNode);
 
   for (auto & deltaNode : pointsToGraph.DeltaNodes())
-    memoryNodes.Insert(&deltaNode);
+    memoryNodes.insert(&deltaNode);
 
   for (auto & lambdaNode : pointsToGraph.LambdaNodes())
-    memoryNodes.Insert(&lambdaNode);
+    memoryNodes.insert(&lambdaNode);
 
   for (auto & mallocNode : pointsToGraph.MallocNodes())
-    memoryNodes.Insert(&mallocNode);
+    memoryNodes.insert(&mallocNode);
 
   for (auto & importNode : pointsToGraph.ImportNodes())
-    memoryNodes.Insert(&importNode);
+    memoryNodes.insert(&importNode);
 
-  memoryNodes.Insert(&pointsToGraph.GetExternalMemoryNode());
+  memoryNodes.insert(&pointsToGraph.GetExternalMemoryNode());
 
   auto modRefSummary = AgnosticModRefSummary::Create(pointsToGraph, std::move(memoryNodes));
 

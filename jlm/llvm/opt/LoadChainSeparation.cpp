@@ -110,7 +110,7 @@ LoadChainSeparation::findLoadChainBottoms(rvsdg::Region & region)
       auto & memoryStateInput = LoadOperation::MapMemoryStateOutputToInput(memoryStateOutput);
       if (hasLoadNodeAsOperandOwner(memoryStateInput))
       {
-        loadChainBottoms.Insert(&memoryStateOutput);
+        loadChainBottoms.insert(&memoryStateOutput);
       }
     }
   }
