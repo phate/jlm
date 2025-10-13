@@ -34,12 +34,12 @@ TestUnifiesCycles()
   //  \          V
   //   --> 5 --> 4
   std::vector<util::HashSet<PointerObjectIndex>> successors(set.NumPointerObjects());
-  successors[0].Insert(1);
-  successors[1].Insert(2);
-  successors[2].Insert(3);
-  successors[2].Insert(4);
-  successors[0].Insert(5);
-  successors[5].Insert(4);
+  successors[0].insert(1);
+  successors[1].insert(2);
+  successors[2].insert(3);
+  successors[2].insert(4);
+  successors[0].insert(5);
+  successors[5].insert(4);
 
   auto GetSuccessors = [&](PointerObjectIndex i)
   {
@@ -79,7 +79,7 @@ TestUnifiesCycles()
   assert(lcd.NumCycleUnifications() == 0);
 
   // Act 3 - add the edge 3->1 that creates a cycle 3-1-2-3
-  successors[3].Insert(1);
+  successors[3].insert(1);
   lcd.OnPropagatedNothing(3, 1);
 
   // Assert that the cycle was found and unified
@@ -90,7 +90,7 @@ TestUnifiesCycles()
   assert(set.GetUnificationRoot(1) == set.GetUnificationRoot(3));
 
   // Act 4 - add the edge 4 -> 0, creating two cycles 4-0-5-4 and 4-0-(1/2/3)-4
-  successors[4].Insert(0);
+  successors[4].insert(0);
   lcd.OnPropagatedNothing(4, 0);
 
   // Assert that both cycles were found.

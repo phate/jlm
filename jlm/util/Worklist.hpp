@@ -97,7 +97,7 @@ public:
   void
   PushWorkItem(T item) override
   {
-    if (OnList_.Insert(item))
+    if (OnList_.insert(item))
       WorkItems_.push(item);
   }
 
@@ -142,7 +142,7 @@ public:
   void
   PushWorkItem(T item) override
   {
-    if (OnList_.Insert(item))
+    if (OnList_.insert(item))
       WorkItems_.push(item);
   }
 
@@ -325,7 +325,7 @@ public:
   void
   PushWorkItem(T item) override
   {
-    PushedItems_.Insert(item);
+    PushedItems_.insert(item);
   }
 
   [[nodiscard]] bool

@@ -42,11 +42,11 @@ public:
   {
     if (auto simpleNode = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(output))
     {
-      SimpleNodes_.Insert(simpleNode);
+      SimpleNodes_.insert(simpleNode);
       return;
     }
 
-    Outputs_.Insert(&output);
+    Outputs_.insert(&output);
   }
 
   bool

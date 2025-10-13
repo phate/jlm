@@ -1599,7 +1599,7 @@ Andersen::ConstructPointsToGraphFromPointerObjectSet(
   for (auto [outputNode, registerIdx] : set.GetRegisterMap())
   {
     auto root = set.GetUnificationRoot(registerIdx);
-    outputsInRegister[root].Insert(outputNode);
+    outputsInRegister[root].insert(outputNode);
   }
 
   // Create PointsToGraph::RegisterNodes for each PointerObject of register kind, and add edges
