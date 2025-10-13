@@ -1976,7 +1976,7 @@ Steensgaard::CollectEscapedMemoryNodes(
     auto & set = Context_->GetSet(*registerLocation);
     if (auto pointsToLocation = set.value()->GetPointsTo())
     {
-      toVisit.Insert(pointsToLocation);
+      toVisit.insert(pointsToLocation);
     }
   }
 
@@ -1995,18 +1995,18 @@ Steensgaard::CollectEscapedMemoryNodes(
     {
       continue;
     }
-    visited.Insert(&set);
+    visited.insert(&set);
 
     auto & memoryNodes = memoryNodesInSet.at(&set);
     for (auto & memoryNode : memoryNodes)
     {
       memoryNode->MarkAsModuleEscaping();
-      escapedMemoryNodes.Insert(memoryNode);
+      escapedMemoryNodes.insert(memoryNode);
     }
 
     if (auto pointsToLocation = set.value()->GetPointsTo())
     {
-      toVisit.Insert(pointsToLocation);
+      toVisit.insert(pointsToLocation);
     }
   }
 
@@ -2039,11 +2039,11 @@ Steensgaard::ConstructPointsToGraph() const
     {
       if (auto registerLocation = dynamic_cast<RegisterLocation *>(location))
       {
-        registers.Insert(&registerLocation->GetOutput());
-        registerLocations.Insert(registerLocation);
+        registers.insert(&registerLocation->GetOutput());
+        registerLocations.insert(registerLocation);
 
         if (registerLocation->HasEscaped())
-          escapingRegisterLocations.Insert(registerLocation);
+          escapingRegisterLocations.insert(registerLocation);
       }
       else if (Location::Is<MemoryLocation>(*location))
       {

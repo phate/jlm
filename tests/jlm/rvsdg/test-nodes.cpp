@@ -364,9 +364,9 @@ NodeId()
   auto node1 = TestOperation::create(&rvsdg1.GetRootRegion(), {}, {});
   auto node2 = TestOperation::create(&rvsdg1.GetRootRegion(), {}, {});
 
-  NodeIds.Insert(node0->GetNodeId());
-  NodeIds.Insert(node1->GetNodeId());
-  NodeIds.Insert(node2->GetNodeId());
+  NodeIds.insert(node0->GetNodeId());
+  NodeIds.insert(node1->GetNodeId());
+  NodeIds.insert(node2->GetNodeId());
 
   // We should have three unique identifiers in the set
   assert(NodeIds.Size() == 3);
