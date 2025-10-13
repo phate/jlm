@@ -304,7 +304,7 @@ DeadNodeElimination::MarkOutput(const jlm::rvsdg::Output & output)
 
   if (rvsdg::TryGetRegionParentNode<rvsdg::DeltaNode>(output))
   {
-    const auto argument = util::AssertedCast<const rvsdg::RegionArgument>(&output);
+    const auto argument = util::assertedCast<const rvsdg::RegionArgument>(&output);
     MarkOutput(*argument->input()->origin());
     return;
   }

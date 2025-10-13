@@ -101,7 +101,7 @@ TransformationSequence::DumpDotGraphs(
 
   std::ofstream outputFile;
   outputFile.open(filePath.str());
-  graphWriter.OutputAllGraphs(outputFile, util::graph::OutputFormat::Dot);
+  graphWriter.outputAllGraphs(outputFile, util::graph::OutputFormat::Dot);
   outputFile.close();
 }
 

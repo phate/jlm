@@ -93,7 +93,7 @@ private:
     auto & rootRegion = rvsdg.GetRootRegion();
     for (size_t n = 0; n < rootRegion.narguments(); n++)
     {
-      auto & graphImport = *jlm::util::AssertedCast<const GraphImport>(rootRegion.argument(n));
+      auto & graphImport = *jlm::util::assertedCast<const GraphImport>(rootRegion.argument(n));
 
       auto & importNode = aa::PointsToGraph::ImportNode::Create(*PointsToGraph_, graphImport);
       auto & registerNode =

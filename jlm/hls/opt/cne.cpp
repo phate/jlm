@@ -412,7 +412,7 @@ mark_lambda(const rvsdg::StructuralNode * node, Context & ctx)
 static void
 mark_phi(const rvsdg::StructuralNode * node, Context & ctx)
 {
-  auto phi = util::AssertedCast<const rvsdg::PhiNode>(node);
+  auto phi = util::assertedCast<const rvsdg::PhiNode>(node);
 
   auto ctxvars = phi->GetContextVars();
 
@@ -585,7 +585,7 @@ divert_lambda(rvsdg::StructuralNode * node, Context & ctx)
 static void
 divert_phi(rvsdg::StructuralNode * node, Context & ctx)
 {
-  auto phi = util::AssertedCast<PhiNode>(node);
+  auto phi = util::assertedCast<PhiNode>(node);
 
   divert_arguments(phi->subregion(), ctx);
   divert(phi->subregion(), ctx);

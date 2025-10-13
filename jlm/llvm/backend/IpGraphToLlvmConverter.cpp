@@ -179,7 +179,7 @@ IpGraphToLlvmConverter::ConverterIntegerConstant(
     ::llvm::IRBuilder<> & builder)
 {
   const auto & representation =
-      util::AssertedCast<const IntegerConstantOperation>(&op)->Representation();
+      util::assertedCast<const IntegerConstantOperation>(&op)->Representation();
   const auto type = ::llvm::IntegerType::get(builder.getContext(), representation.nbits());
 
   if (representation.is_defined())
@@ -333,7 +333,7 @@ IpGraphToLlvmConverter::convert_phi(
     const std::vector<const Variable *> &,
     ::llvm::IRBuilder<> & builder)
 {
-  auto & phi = *util::AssertedCast<const SsaPhiOperation>(&op);
+  auto & phi = *util::assertedCast<const SsaPhiOperation>(&op);
   auto & llvmContext = Context_->llvm_module().getContext();
   auto & typeConverter = Context_->GetTypeConverter();
 
@@ -410,7 +410,7 @@ IpGraphToLlvmConverter::convert_store(
     const std::vector<const Variable *> & operands,
     ::llvm::IRBuilder<> & builder)
 {
-  auto storeOperation = util::AssertedCast<const StoreNonVolatileOperation>(&operation);
+  auto storeOperation = util::assertedCast<const StoreNonVolatileOperation>(&operation);
   CreateStoreInstruction(operands[0], operands[1], false, storeOperation->GetAlignment(), builder);
   return nullptr;
 }
@@ -718,7 +718,7 @@ IpGraphToLlvmConverter::convert_select(
     const std::vector<const Variable *> & operands,
     ::llvm::IRBuilder<> & builder)
 {
-  auto & select = *util::AssertedCast<const SelectOperation>(&op);
+  auto & select = *util::assertedCast<const SelectOperation>(&op);
 
   if (select.type().Kind() == rvsdg::TypeKind::State)
     return nullptr;

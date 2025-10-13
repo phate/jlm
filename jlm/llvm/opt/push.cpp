@@ -117,7 +117,7 @@ copy_from_gamma(rvsdg::Node * node, size_t r)
   {
     auto ev = gamma->AddEntryVar(copy->output(n));
     node->output(n)->divert_users(ev.branchArgument[r]);
-    arguments.push_back(util::AssertedCast<rvsdg::RegionArgument>(ev.branchArgument[r]));
+    arguments.push_back(util::assertedCast<rvsdg::RegionArgument>(ev.branchArgument[r]));
   }
 
   return arguments;

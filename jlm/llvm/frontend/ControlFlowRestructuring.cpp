@@ -107,7 +107,7 @@ static void
 AppendBranch(BasicBlock & basicBlock, const Variable * operand)
 {
   const auto numAlternatives =
-      util::AssertedCast<const rvsdg::ControlType>(&operand->type())->nalternatives();
+      util::assertedCast<const rvsdg::ControlType>(&operand->type())->nalternatives();
   basicBlock.append_last(BranchOperation::create(numAlternatives, operand));
 }
 
@@ -118,7 +118,7 @@ AppendConstantAssignment(
     const size_t value)
 {
   const auto numAlternatives =
-      util::AssertedCast<const rvsdg::ControlType>(&variable.type())->nalternatives();
+      util::assertedCast<const rvsdg::ControlType>(&variable.type())->nalternatives();
 
   const rvsdg::ctlconstant_op op(rvsdg::ControlValueRepresentation(value, numAlternatives));
   basicBlock.append_last(ThreeAddressCode::create(op, {}));

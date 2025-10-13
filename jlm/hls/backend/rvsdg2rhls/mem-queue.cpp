@@ -151,7 +151,7 @@ separate_load_edge(
     }
     else if (auto sti = dynamic_cast<jlm::rvsdg::StructuralInput *>(user))
     {
-      auto loop_node = jlm::util::AssertedCast<jlm::hls::LoopNode>(sti->node());
+      auto loop_node = jlm::util::assertedCast<jlm::hls::LoopNode>(sti->node());
       jlm::rvsdg::Output * buffer = nullptr;
       auto addr_edge_before_loop = addr_edge;
       addr_edge = loop_node->AddLoopVar(addr_edge, &buffer);
@@ -475,7 +475,7 @@ static void
 mem_queue(jlm::rvsdg::Region * region)
 {
   auto lambda =
-      jlm::util::AssertedCast<const jlm::rvsdg::LambdaNode>(region->Nodes().begin().ptr());
+      jlm::util::assertedCast<const jlm::rvsdg::LambdaNode>(region->Nodes().begin().ptr());
   auto state_arg = &llvm::GetMemoryStateRegionArgument(*lambda);
   if (!state_arg)
   {

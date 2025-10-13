@@ -969,7 +969,7 @@ public:
   [[nodiscard]] const llvm::PointerType &
   GetPointerType() const noexcept
   {
-    return *util::AssertedCast<const llvm::PointerType>(argument(0).get());
+    return *util::assertedCast<const llvm::PointerType>(argument(0).get());
   }
 
   [[nodiscard]] std::shared_ptr<const rvsdg::Type>
@@ -1167,7 +1167,7 @@ public:
   [[nodiscard]] const llvm::PointerType &
   GetPointerType() const noexcept
   {
-    return *util::AssertedCast<const llvm::PointerType>(argument(0).get());
+    return *util::assertedCast<const llvm::PointerType>(argument(0).get());
   }
 
   [[nodiscard]] std::shared_ptr<const rvsdg::Type>
@@ -1442,7 +1442,7 @@ public:
   [[nodiscard]] const llvm::PointerType &
   GetPointerType() const noexcept
   {
-    return *util::AssertedCast<const llvm::PointerType>(argument(0).get());
+    return *util::assertedCast<const llvm::PointerType>(argument(0).get());
   }
 
   [[nodiscard]] const rvsdg::Type &

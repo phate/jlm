@@ -28,7 +28,7 @@ find_function_arguments(const rvsdg::LambdaNode * lambda, std::string name_conta
     auto ip = cv.input;
     auto traced = trace_call_rhls(ip);
     JLM_ASSERT(traced);
-    auto arg = util::AssertedCast<const llvm::GraphImport>(traced);
+    auto arg = util::assertedCast<const llvm::GraphImport>(traced);
     if (dynamic_cast<const rvsdg::FunctionType *>(arg->ImportedType().get())
         && arg->Name().find(name_contains) != arg->Name().npos)
     {
@@ -168,7 +168,7 @@ route_response_rhls(rvsdg::Region * target, rvsdg::Output * response)
   else
   {
     auto parent_response = route_response_rhls(target->node()->region(), response);
-    auto ln = util::AssertedCast<LoopNode>(target->node());
+    auto ln = util::assertedCast<LoopNode>(target->node());
     return ln->addResponseInput(parent_response);
   }
 }
@@ -181,7 +181,7 @@ route_request_rhls(rvsdg::Region * target, rvsdg::Output * request)
     return request;
   }
 
-  auto ln = util::AssertedCast<LoopNode>(request->region()->node());
+  auto ln = util::assertedCast<LoopNode>(request->region()->node());
   auto output = ln->addRequestOutput(request);
 
   return route_request_rhls(target, output);
@@ -263,7 +263,7 @@ is_function_argument(const rvsdg::LambdaNode::ContextVar & cv)
   auto ip = cv.input;
   auto traced = trace_call_rhls(ip);
   JLM_ASSERT(traced);
-  auto arg = util::AssertedCast<const llvm::GraphImport>(traced);
+  auto arg = util::assertedCast<const llvm::GraphImport>(traced);
   return dynamic_cast<const rvsdg::FunctionType *>(arg->ImportedType().get());
 }
 
@@ -272,7 +272,7 @@ get_function_name(jlm::rvsdg::Input * input)
 {
   auto traced = jlm::hls::trace_call_rhls(input);
   JLM_ASSERT(traced);
-  auto arg = jlm::util::AssertedCast<const jlm::llvm::GraphImport>(traced);
+  auto arg = jlm::util::assertedCast<const jlm::llvm::GraphImport>(traced);
   return arg->Name();
 }
 

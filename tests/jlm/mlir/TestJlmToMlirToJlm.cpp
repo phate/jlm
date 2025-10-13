@@ -233,7 +233,7 @@ TestLoad()
 
       assert(region->numNodes() == 1);
       auto convertedLambda =
-          jlm::util::AssertedCast<jlm::rvsdg::LambdaNode>(region->Nodes().begin().ptr());
+          jlm::util::assertedCast<jlm::rvsdg::LambdaNode>(region->Nodes().begin().ptr());
       assert(is<jlm::rvsdg::LambdaOperation>(convertedLambda));
 
       assert(convertedLambda->subregion()->numNodes() == 1);
@@ -329,7 +329,7 @@ TestStore()
 
       assert(region->numNodes() == 1);
       auto convertedLambda =
-          jlm::util::AssertedCast<jlm::rvsdg::LambdaNode>(region->Nodes().begin().ptr());
+          jlm::util::assertedCast<jlm::rvsdg::LambdaNode>(region->Nodes().begin().ptr());
       assert(is<jlm::rvsdg::LambdaOperation>(convertedLambda));
 
       assert(convertedLambda->subregion()->numNodes() == 1);
@@ -415,7 +415,7 @@ TestSext()
 
       assert(region->numNodes() == 1);
       auto convertedLambda =
-          jlm::util::AssertedCast<jlm::rvsdg::LambdaNode>(region->Nodes().begin().ptr());
+          jlm::util::assertedCast<jlm::rvsdg::LambdaNode>(region->Nodes().begin().ptr());
       assert(is<jlm::rvsdg::LambdaOperation>(convertedLambda));
 
       assert(convertedLambda->subregion()->numNodes() == 1);
@@ -488,7 +488,7 @@ TestSitofp()
 
       assert(region->numNodes() == 1);
       auto convertedLambda =
-          jlm::util::AssertedCast<jlm::rvsdg::LambdaNode>(region->Nodes().begin().ptr());
+          jlm::util::assertedCast<jlm::rvsdg::LambdaNode>(region->Nodes().begin().ptr());
       assert(convertedLambda->subregion()->numNodes() == 1);
       assert(is<SIToFPOperation>(convertedLambda->subregion()->Nodes().begin()->GetOperation()));
       auto convertedSitofp = dynamic_cast<const SIToFPOperation *>(
@@ -545,7 +545,7 @@ TestConstantFP()
 
       assert(region->numNodes() == 1);
       auto convertedLambda =
-          jlm::util::AssertedCast<jlm::rvsdg::LambdaNode>(region->Nodes().begin().ptr());
+          jlm::util::assertedCast<jlm::rvsdg::LambdaNode>(region->Nodes().begin().ptr());
       assert(convertedLambda->subregion()->numNodes() == 1);
       assert(is<ConstantFP>(convertedLambda->subregion()->Nodes().begin()->GetOperation()));
       auto convertedConst = dynamic_cast<const ConstantFP *>(
@@ -625,12 +625,12 @@ TestFpBinary()
 
         assert(region->numNodes() == 1);
         auto convertedLambda =
-            jlm::util::AssertedCast<jlm::rvsdg::LambdaNode>(region->Nodes().begin().ptr());
+            jlm::util::assertedCast<jlm::rvsdg::LambdaNode>(region->Nodes().begin().ptr());
         assert(convertedLambda->subregion()->numNodes() == 1);
 
         auto node = convertedLambda->subregion()->Nodes().begin().ptr();
         auto convertedFpbin =
-            jlm::util::AssertedCast<const FBinaryOperation>(&node->GetOperation());
+            jlm::util::assertedCast<const FBinaryOperation>(&node->GetOperation());
         assert(convertedFpbin->fpop() == binOp);
         assert(convertedFpbin->nresults() == 1);
         assert(convertedFpbin->narguments() == 2);
@@ -686,7 +686,7 @@ TestFMulAddOp()
     auto region = &roundTripModule->Rvsdg().GetRootRegion();
     assert(region->numNodes() == 1);
     auto convertedLambda =
-        jlm::util::AssertedCast<jlm::rvsdg::LambdaNode>(region->Nodes().begin().ptr());
+        jlm::util::assertedCast<jlm::rvsdg::LambdaNode>(region->Nodes().begin().ptr());
     assert(convertedLambda->subregion()->numNodes() == 1);
     const auto arguments = convertedLambda->GetFunctionArguments();
     const auto results = convertedLambda->GetFunctionResults();
@@ -777,7 +777,7 @@ TestGetElementPtr()
 
       assert(region->numNodes() == 1);
       auto convertedLambda =
-          jlm::util::AssertedCast<jlm::rvsdg::LambdaNode>(region->Nodes().begin().ptr());
+          jlm::util::assertedCast<jlm::rvsdg::LambdaNode>(region->Nodes().begin().ptr());
       assert(convertedLambda->subregion()->numNodes() == 1);
 
       auto op = convertedLambda->subregion()->Nodes().begin();
@@ -880,9 +880,9 @@ TestDelta()
       assert(region->numNodes() == 2);
       for (auto & node : region->Nodes())
       {
-        auto convertedDelta = jlm::util::AssertedCast<jlm::rvsdg::DeltaNode>(&node);
+        auto convertedDelta = jlm::util::assertedCast<jlm::rvsdg::DeltaNode>(&node);
         assert(convertedDelta->subregion()->numNodes() == 1);
-        auto dop = jlm::util::AssertedCast<const jlm::llvm::DeltaOperation>(&node.GetOperation());
+        auto dop = jlm::util::assertedCast<const jlm::llvm::DeltaOperation>(&node.GetOperation());
 
         if (convertedDelta->constant())
         {
@@ -1025,7 +1025,7 @@ TestConstantAggregateZero()
 
       assert(region->numNodes() == 1);
       auto const convertedConstantAggregateZero =
-          jlm::util::AssertedCast<const ConstantAggregateZeroOperation>(
+          jlm::util::assertedCast<const ConstantAggregateZeroOperation>(
               &region->Nodes().begin().ptr()->GetOperation());
       assert(convertedConstantAggregateZero->nresults() == 1);
       assert(convertedConstantAggregateZero->narguments() == 0);
@@ -1173,10 +1173,10 @@ TestFNeg()
         {
           assert(convertedFNegOp->nresults() == 1);
           assert(convertedFNegOp->narguments() == 1);
-          auto inputFloatType = jlm::util::AssertedCast<const jlm::llvm::FloatingPointType>(
+          auto inputFloatType = jlm::util::assertedCast<const jlm::llvm::FloatingPointType>(
               convertedFNegOp->argument(0).get());
           assert(inputFloatType->size() == jlm::llvm::fpsize::flt);
-          auto outputFloatType = jlm::util::AssertedCast<const jlm::llvm::FloatingPointType>(
+          auto outputFloatType = jlm::util::assertedCast<const jlm::llvm::FloatingPointType>(
               convertedFNegOp->result(0).get());
           assert(outputFloatType->size() == jlm::llvm::fpsize::flt);
           foundFNegOp = true;
@@ -1251,10 +1251,10 @@ TestFPExt()
         {
           assert(convertedFPExtOp->nresults() == 1);
           assert(convertedFPExtOp->narguments() == 1);
-          auto inputFloatType = jlm::util::AssertedCast<const jlm::llvm::FloatingPointType>(
+          auto inputFloatType = jlm::util::assertedCast<const jlm::llvm::FloatingPointType>(
               convertedFPExtOp->argument(0).get());
           assert(inputFloatType->size() == jlm::llvm::fpsize::flt);
-          auto outputFloatType = jlm::util::AssertedCast<const jlm::llvm::FloatingPointType>(
+          auto outputFloatType = jlm::util::assertedCast<const jlm::llvm::FloatingPointType>(
               convertedFPExtOp->result(0).get());
           assert(outputFloatType->size() == jlm::llvm::fpsize::dbl);
           foundFPExtOp = true;
@@ -1326,11 +1326,11 @@ TestTrunc()
         {
           assert(convertedTruncOp->nresults() == 1);
           assert(convertedTruncOp->narguments() == 1);
-          auto inputBitType = jlm::util::AssertedCast<const jlm::rvsdg::BitType>(
+          auto inputBitType = jlm::util::assertedCast<const jlm::rvsdg::BitType>(
               convertedTruncOp->argument(0).get());
           assert(inputBitType->nbits() == 64);
           auto outputBitType =
-              jlm::util::AssertedCast<const jlm::rvsdg::BitType>(convertedTruncOp->result(0).get());
+              jlm::util::assertedCast<const jlm::rvsdg::BitType>(convertedTruncOp->result(0).get());
           assert(outputBitType->nbits() == 32);
           foundTruncOp = true;
         }
@@ -1410,7 +1410,7 @@ TestFree()
 
       assert(region->numNodes() == 1);
       auto convertedLambda =
-          jlm::util::AssertedCast<jlm::rvsdg::LambdaNode>(region->Nodes().begin().ptr());
+          jlm::util::assertedCast<jlm::rvsdg::LambdaNode>(region->Nodes().begin().ptr());
       assert(is<jlm::rvsdg::LambdaOperation>(convertedLambda));
 
       assert(convertedLambda->subregion()->numNodes() == 1);
@@ -1760,7 +1760,7 @@ TestMalloc()
         {
           assert(convertedMallocOp->nresults() == 2);
           assert(convertedMallocOp->narguments() == 1);
-          auto inputBitType = jlm::util::AssertedCast<const jlm::rvsdg::BitType>(
+          auto inputBitType = jlm::util::assertedCast<const jlm::rvsdg::BitType>(
               convertedMallocOp->argument(0).get());
           assert(inputBitType->nbits() == 64);
           assert(jlm::rvsdg::is<jlm::llvm::PointerType>(convertedMallocOp->result(0)));

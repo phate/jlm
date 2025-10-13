@@ -72,7 +72,7 @@ TestCopy()
   // Assert
   assert(
       node->GetOperation()
-      == jlm::util::AssertedCast<jlm::rvsdg::SimpleNode>(copiedNode)->GetOperation());
+      == jlm::util::assertedCast<jlm::rvsdg::SimpleNode>(copiedNode)->GetOperation());
 }
 
 JLM_UNIT_TEST_REGISTER("jlm/llvm/ir/operators/LoadNonVolatileTests-Copy", TestCopy)
@@ -564,7 +564,7 @@ NodeCopy()
 
   // Assert
   auto copiedOperation = dynamic_cast<const LoadVolatileOperation *>(
-      &jlm::util::AssertedCast<SimpleNode>(copiedNode)->GetOperation());
+      &jlm::util::assertedCast<SimpleNode>(copiedNode)->GetOperation());
   assert(copiedOperation != nullptr);
   assert(LoadOperation::AddressInput(*copiedNode).origin() == &address2);
   assert(LoadVolatileOperation::IOStateInput(*copiedNode).origin() == &iOState2);
