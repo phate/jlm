@@ -27,6 +27,7 @@
 #include <jlm/hls/opt/cne.hpp>
 #include <jlm/hls/opt/InvariantLambdaMemoryStateRemoval.hpp>
 #include <jlm/hls/opt/IOBarrierRemoval.hpp>
+#include <jlm/hls/opt/IOStateElimination.hpp>
 #include <jlm/hls/util/view.hpp>
 #include <jlm/llvm/backend/IpGraphToLlvmConverter.hpp>
 #include <jlm/llvm/backend/RvsdgToIpGraphConverter.hpp>
@@ -448,6 +449,7 @@ createTransformationSequence(rvsdg::DotWriter & dotWriter, const bool dumpRvsdgD
   auto invariantValueRedirection = std::make_shared<llvm::InvariantValueRedirection>();
   auto loopUnswitching = std::make_shared<llvm::LoopUnswitching>();
   auto ioBarrierRemoval = std::make_shared<IOBarrierRemoval>();
+  auto ioStateElimination = std::make_shared<IOStateElimination>();
   auto memoryStateSeparation = std::make_shared<MemoryStateSeparation>();
   auto gammaMerge = std::make_shared<GammaMerge>();
   auto unusedStateRemoval = std::make_shared<UnusedStateRemoval>();
@@ -480,6 +482,7 @@ createTransformationSequence(rvsdg::DotWriter & dotWriter, const bool dumpRvsdgD
       commonNodeElimination,
       deadNodeElimination,
       ioBarrierRemoval,
+      ioStateElimination,
       memoryStateSeparation,
       gammaMerge,
       unusedStateRemoval,

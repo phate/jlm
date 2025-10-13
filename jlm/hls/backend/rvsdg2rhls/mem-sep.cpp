@@ -25,19 +25,6 @@
 namespace jlm::hls
 {
 
-rvsdg::RegionArgument *
-GetIoStateArgument(const rvsdg::LambdaNode & lambda)
-{
-  auto subregion = lambda.subregion();
-  for (size_t n = 0; n < subregion->narguments(); n++)
-  {
-    auto argument = subregion->argument(n);
-    if (jlm::rvsdg::is<jlm::llvm::IOStateType>(argument->Type()))
-      return argument;
-  }
-  return nullptr;
-}
-
 void
 gather_mem_nodes(rvsdg::Region * region, std::vector<jlm::rvsdg::SimpleNode *> & mem_nodes)
 {
@@ -239,39 +226,6 @@ gather_other_calls(rvsdg::Region * region, std::vector<jlm::rvsdg::SimpleNode *>
   }
 }
 
-void
-eliminate_io_state(rvsdg::RegionArgument * iostate, rvsdg::Region * region)
-{
-  // eliminates iostate fromm all calls, as well as removes iostate from node outputs
-  // this leaves a pseudo-dependecy routed to the respective argument
-  for (auto & node : rvsdg::TopDownTraverser(region))
-  {
-    if (auto structnode = dynamic_cast<rvsdg::StructuralNode *>(node))
-    {
-      for (size_t n = 0; n < structnode->nsubregions(); n++)
-        eliminate_io_state(iostate, structnode->subregion(n));
-    }
-    else if (auto simplenode = dynamic_cast<jlm::rvsdg::SimpleNode *>(node))
-    {
-      if (dynamic_cast<const llvm::CallOperation *>(&simplenode->GetOperation()))
-      {
-        auto io_routed = &rvsdg::RouteToRegion(*iostate, *region);
-        auto io_in = node->input(node->ninputs() - 2);
-        io_in->divert_to(io_routed);
-      }
-    }
-    // make sure iostate outputs are not used to break dependencies
-    for (size_t i = 0; i < node->noutputs(); ++i)
-    {
-      auto out = node->output(i);
-      if (!jlm::rvsdg::is<jlm::llvm::IOStateType>(out->Type()))
-        continue;
-      auto routed = &rvsdg::RouteToRegion(*iostate, *region);
-      out->divert_users(routed);
-    }
-  }
-}
-
 /* assign each pointer argument its own state edge. */
 void
 mem_sep_argument(rvsdg::Region * region)
@@ -284,8 +238,6 @@ mem_sep_argument(rvsdg::Region * region)
     // no memstate - i.e., no memory used
     return;
   }
-
-  eliminate_io_state(GetIoStateArgument(*lambda), lambda_region);
 
   auto & state_user = *state_arg->Users().begin();
   port_load_store_decouple port_nodes;
