@@ -20,6 +20,11 @@ public:
       : Transformation("IOStateElimination")
   {}
 
+  IOStateElimination(const IOStateElimination &) = delete;
+
+  IOStateElimination &
+  operator=(const IOStateElimination &) = delete;
+
   void
   Run(rvsdg::RvsdgModule & module, util::StatisticsCollector & statisticsCollector) override;
 };
