@@ -613,7 +613,7 @@ ConnectRequestResponseMemPorts(
 }
 
 static void
-ConvertMemory(rvsdg::RvsdgModule & rm)
+ConvertMemory(rvsdg::RvsdgModule & rvsdgModule)
 {
   //
   // Replacing memory nodes with nodes that have explicit memory ports requires arguments and
@@ -624,8 +624,18 @@ ConvertMemory(rvsdg::RvsdgModule & rm)
   // arguments.
   //
 
-  auto root = &rm.Rvsdg().GetRootRegion();
-  auto lambda = dynamic_cast<rvsdg::LambdaNode *>(root->Nodes().begin().ptr());
+  const auto & graph = rvsdgModule.Rvsdg();
+  const auto rootRegion = &graph.GetRootRegion();
+  if (rootRegion->numNodes() != 1)
+  {
+    throw std::logic_error("Root should have only one node now");
+  }
+
+  const auto lambda = dynamic_cast<rvsdg::LambdaNode *>(rootRegion->Nodes().begin().ptr());
+  if (!lambda)
+  {
+    throw std::logic_error("Node needs to be a lambda");
+  }
 
   //
   // Converting loads and stores to explicitly use memory ports
@@ -675,7 +685,7 @@ ConvertMemory(rvsdg::RvsdgModule & rm)
   std::vector<rvsdg::SimpleNode *> unknownStoreNodes;
   std::vector<rvsdg::SimpleNode *> unknownDecoupledNodes;
   gather_mem_nodes(
-      root,
+      rootRegion,
       unknownLoadNodes,
       unknownStoreNodes,
       unknownDecoupledNodes,
@@ -784,11 +794,11 @@ ConvertMemory(rvsdg::RvsdgModule & rm)
   // It might be better to apply this functionality above such that we only create a new lambda
   // once.
   //
-  UnusedStateRemoval::CreateAndRun(rm, statisticsCollector);
+  UnusedStateRemoval::CreateAndRun(rvsdgModule, statisticsCollector);
 
   // Need to get the lambda from the root since remote_unused_state replaces the lambda
-  JLM_ASSERT(root->numNodes() == 1);
-  newLambda = util::assertedCast<rvsdg::LambdaNode>(root->Nodes().begin().ptr());
+  JLM_ASSERT(rootRegion->numNodes() == 1);
+  newLambda = util::assertedCast<rvsdg::LambdaNode>(rootRegion->Nodes().begin().ptr());
   auto decouple_funcs = find_function_arguments(newLambda, "decoupled");
   // make sure context vars are actually dead
   for (auto cv : decouple_funcs)
