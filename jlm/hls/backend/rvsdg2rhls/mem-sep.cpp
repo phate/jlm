@@ -294,7 +294,21 @@ MemoryStateSeparation::MemoryStateSeparation()
 void
 MemoryStateSeparation::Run(rvsdg::RvsdgModule & rvsdgModule, util::StatisticsCollector &)
 {
-  mem_sep_argument(&rvsdgModule.Rvsdg().GetRootRegion());
+  const auto & graph = rvsdgModule.Rvsdg();
+  const auto rootRegion = &graph.GetRootRegion();
+  if (rootRegion->numNodes() != 1)
+  {
+    throw std::logic_error("Root should have only one node now");
+  }
+
+  const auto lambdaNode =
+      dynamic_cast<const rvsdg::LambdaNode *>(rootRegion->Nodes().begin().ptr());
+  if (!lambdaNode)
+  {
+    throw std::logic_error("Node needs to be a lambda");
+  }
+
+  mem_sep_argument(rootRegion);
 }
 
 } // namespace jlm::hls
