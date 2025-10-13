@@ -40,6 +40,7 @@ libhls_SOURCES = \
     jlm/hls/opt/cne.cpp \
     jlm/hls/opt/InvariantLambdaMemoryStateRemoval.cpp \
     jlm/hls/opt/IOBarrierRemoval.cpp \
+    jlm/hls/opt/IOStateElimination.cpp \
     \
     jlm/hls/util/view.cpp \
     \
@@ -84,6 +85,7 @@ libhls_HEADERS = \
     jlm/hls/opt/cne.hpp \
     jlm/hls/opt/InvariantLambdaMemoryStateRemoval.hpp \
     jlm/hls/opt/IOBarrierRemoval.hpp \
+    jlm/hls/opt/IOStateElimination.hpp \
     \
     jlm/hls/util/view.hpp \
     \
