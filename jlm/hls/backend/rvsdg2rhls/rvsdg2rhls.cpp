@@ -25,7 +25,6 @@
 #include <jlm/hls/backend/rvsdg2rhls/ThetaConversion.hpp>
 #include <jlm/hls/backend/rvsdg2rhls/UnusedStateRemoval.hpp>
 #include <jlm/hls/opt/cne.hpp>
-#include <jlm/hls/opt/InvariantLambdaMemoryStateRemoval.hpp>
 #include <jlm/hls/opt/IOBarrierRemoval.hpp>
 #include <jlm/hls/opt/IOStateElimination.hpp>
 #include <jlm/hls/util/view.hpp>
