@@ -113,7 +113,8 @@ public:
   decActivationCount(Node * node, std::size_t threshold);
 
   /** \brief Removes any state associated with the given node */
-  void removeNode(Node * node);
+  void
+  removeNode(Node * node);
 
   Node *
   peek();

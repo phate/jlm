@@ -493,10 +493,7 @@ createTransformationSequence(rvsdg::DotWriter & dotWriter, const bool dumpRvsdgD
       deadNodeElimination,
       unusedStateRemoval,
       constantDistribution,
-
-      dumpDot,
       gammaNodeConversion,
-
       thetaNodeConversion,
       commonNodeElimination,
       rhlsDeadNodeElimination,

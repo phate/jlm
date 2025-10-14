@@ -143,7 +143,8 @@ TopDownTraverser::onNodeCreate(Node * node)
   tracker_.checkMarkNodeVisited(node);
 }
 
-void TopDownTraverser::onNodeDestroy(Node * node)
+void
+TopDownTraverser::onNodeDestroy(Node * node)
 {
   tracker_.removeNode(node);
 }
@@ -252,12 +253,12 @@ BottomUpTraverser::BottomUpTraverser(Region * region)
     : observer_(*region, *this)
 {
   for (auto & node : region->BottomNodes())
-    tracker_.checkNodeActivation(&node, node.NumSuccessors());
+    tracker_.checkNodeActivation(&node, node.numSuccessors());
 
   for (size_t n = 0; n < region->nresults(); n++)
   {
     if (auto node = TryGetOwnerNode<Node>(*region->result(n)->origin()))
-      tracker_.incActivationCount(node, node->NumSuccessors());
+      tracker_.incActivationCount(node, node->numSuccessors());
   }
 }
 
@@ -293,7 +294,7 @@ BottomUpTraverser::markVisited(Node * node)
   {
     if (auto pred = TryGetOwnerNode<Node>(*input.origin()))
     {
-      tracker_.incActivationCount(pred, pred->NumSuccessors());
+      tracker_.incActivationCount(pred, pred->numSuccessors());
     }
   }
 }
@@ -329,11 +330,11 @@ BottomUpTraverser::onInputCreate(Input * input)
   {
     if (isInputActivated(input))
     {
-      tracker_.incActivationCount(pred, pred->NumSuccessors());
+      tracker_.incActivationCount(pred, pred->numSuccessors());
     }
     else
     {
-      tracker_.checkNodeDeactivation(pred, pred->NumSuccessors());
+      tracker_.checkNodeDeactivation(pred, pred->numSuccessors());
     }
   }
 }
@@ -345,11 +346,11 @@ BottomUpTraverser::onInputChange(Input * in, Output * old_origin, Output * new_o
   {
     if (auto pred = TryGetOwnerNode<Node>(*old_origin))
     {
-      tracker_.decActivationCount(pred, pred->NumSuccessors());
+      tracker_.decActivationCount(pred, pred->numSuccessors());
     }
     if (auto pred = TryGetOwnerNode<Node>(*new_origin))
     {
-      tracker_.incActivationCount(pred, pred->NumSuccessors());
+      tracker_.incActivationCount(pred, pred->numSuccessors());
     }
   }
 }
@@ -365,7 +366,7 @@ BottomUpTraverser::onInputDestroy(Input * input)
     }
     else
     {
-      tracker_.checkNodeActivation(pred, pred->NumSuccessors() - 1);
+      tracker_.checkNodeActivation(pred, pred->numSuccessors() - 1);
     }
   }
 }

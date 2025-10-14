@@ -192,7 +192,7 @@ testInsertingTopNode()
   auto node = trav.next();
   assert(node == n1);
 
-  auto nX = jlm::tests::TestOperation::create(&graph.GetRootRegion(), { }, { type });
+  auto nX = jlm::tests::TestOperation::create(&graph.GetRootRegion(), {}, { type });
   n1->output(0)->divert_users(nX->output(0));
 
   node = trav.next();
