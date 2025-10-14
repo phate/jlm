@@ -25,64 +25,6 @@
 namespace jlm::hls
 {
 
-void
-gather_mem_nodes(rvsdg::Region * region, std::vector<jlm::rvsdg::SimpleNode *> & mem_nodes)
-{
-  for (auto & node : rvsdg::TopDownTraverser(region))
-  {
-    if (auto structnode = dynamic_cast<rvsdg::StructuralNode *>(node))
-    {
-      for (size_t n = 0; n < structnode->nsubregions(); n++)
-        gather_mem_nodes(structnode->subregion(n), mem_nodes);
-    }
-    else if (auto simplenode = dynamic_cast<jlm::rvsdg::SimpleNode *>(node))
-    {
-      if (dynamic_cast<const llvm::StoreNonVolatileOperation *>(&simplenode->GetOperation()))
-      {
-        mem_nodes.push_back(simplenode);
-      }
-      else if (dynamic_cast<const llvm::LoadNonVolatileOperation *>(&simplenode->GetOperation()))
-      {
-        mem_nodes.push_back(simplenode);
-      }
-    }
-  }
-}
-
-jlm::rvsdg::Output *
-route_through(rvsdg::Region * target, jlm::rvsdg::Output * response)
-{
-  if (response->region() == target)
-  {
-    return response;
-  }
-  else
-  {
-    auto parent_response = route_through(target->node()->region(), response);
-    auto & parrent_user = *parent_response->Users().begin();
-    if (auto gn = dynamic_cast<rvsdg::GammaNode *>(target->node()))
-    {
-      auto ip = gn->AddEntryVar(parent_response);
-      parrent_user.divert_to(gn->AddExitVar(ip.branchArgument).output);
-      for (auto arg : ip.branchArgument)
-      {
-        if (arg->region() == target)
-        {
-          return arg;
-        }
-      }
-      JLM_UNREACHABLE("THIS SHOULD NOT HAPPEN");
-    }
-    else if (auto tn = dynamic_cast<rvsdg::ThetaNode *>(target->node()))
-    {
-      auto lv = tn->AddLoopVar(parent_response);
-      parrent_user.divert_to(lv.output);
-      return lv.pre;
-    }
-    JLM_UNREACHABLE("THIS SHOULD NOT HAPPEN");
-  }
-}
-
 rvsdg::RegionResult *
 trace_edge(
     jlm::rvsdg::Output * common_edge,
