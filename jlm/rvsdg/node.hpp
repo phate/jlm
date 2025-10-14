@@ -327,7 +327,7 @@ public:
     for (auto & user : Users_)
     {
       if (match(user))
-        matchedUsers.Insert(&user);
+        matchedUsers.insert(&user);
     }
 
     for (auto & user : matchedUsers.Items())

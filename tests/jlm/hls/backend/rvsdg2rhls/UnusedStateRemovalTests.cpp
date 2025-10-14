@@ -237,7 +237,7 @@ TestUsedMemoryState()
   jlm::rvsdg::view(rvsdgModule->Rvsdg(), stdout);
   auto * node = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
       *rvsdgModule->Rvsdg().GetRootRegion().result(0)->origin());
-  auto lambdaSubregion = jlm::util::AssertedCast<jlm::rvsdg::LambdaNode>(node)->subregion();
+  auto lambdaSubregion = jlm::util::assertedCast<jlm::rvsdg::LambdaNode>(node)->subregion();
   assert(lambdaSubregion->nresults() == 1);
   assert(is<MemoryStateType>(lambdaSubregion->result(0)->Type()));
 }
@@ -283,7 +283,7 @@ TestUnusedMemoryState()
   // Assert
   auto * node = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
       *rvsdgModule->Rvsdg().GetRootRegion().result(0)->origin());
-  auto lambdaSubregion = jlm::util::AssertedCast<jlm::rvsdg::LambdaNode>(node)->subregion();
+  auto lambdaSubregion = jlm::util::assertedCast<jlm::rvsdg::LambdaNode>(node)->subregion();
   jlm::rvsdg::view(rvsdgModule->Rvsdg(), stdout);
   assert(lambdaSubregion->narguments() == 2);
   assert(lambdaSubregion->nresults() == 1);
@@ -342,7 +342,7 @@ TestInvariantMemoryState()
   // Assert
   auto * node = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
       *rvsdgModule->Rvsdg().GetRootRegion().result(0)->origin());
-  auto lambdaSubregion = jlm::util::AssertedCast<jlm::rvsdg::LambdaNode>(node)->subregion();
+  auto lambdaSubregion = jlm::util::assertedCast<jlm::rvsdg::LambdaNode>(node)->subregion();
   jlm::rvsdg::view(rvsdgModule->Rvsdg(), stdout);
   assert(lambdaSubregion->narguments() == 2);
   assert(lambdaSubregion->nresults() == 1);

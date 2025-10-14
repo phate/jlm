@@ -111,7 +111,7 @@ TestCreateUniqueFileName()
   auto tmpDirectory = jlm::util::FilePath::TempDirectoryPath().Join(randomString);
 
   // Act
-  auto filePath = jlm::util::FilePath::CreateUniqueFileName(tmpDirectory, "myPrefix", "mySuffix");
+  auto filePath = jlm::util::FilePath::createUniqueFileName(tmpDirectory, "myPrefix", "mySuffix");
 
   // Assert
   assert(filePath.Dirname() == tmpDirectory.to_str());

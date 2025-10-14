@@ -181,13 +181,13 @@ TestCreateOutputFile()
   StatisticsCollector collector(std::move(settings));
 
   // Act
-  const auto statsFile = collector.CreateOutputFile("stats.log");
+  const auto statsFile = collector.createOutputFile("stats.log");
 
-  const auto cool0 = collector.CreateOutputFile("cool", true);
-  const auto cool1 = collector.CreateOutputFile("cool", true);
+  const auto cool0 = collector.createOutputFile("cool", true);
+  const auto cool1 = collector.createOutputFile("cool", true);
 
-  const auto nice0 = collector.CreateOutputFile("nice.txt", true);
-  const auto nice1 = collector.CreateOutputFile("nice.txt", true);
+  const auto nice0 = collector.createOutputFile("nice.txt", true);
+  const auto nice1 = collector.createOutputFile("nice.txt", true);
 
   // Assert
   assert(statsFile.path() == "/tmp/test-module-ABC-stats.log");

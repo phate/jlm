@@ -419,7 +419,7 @@ PointerObjectSet::AddToPointsToSet(PointerObjectIndex pointer, PointerObjectInde
   const auto pointerRoot = GetUnificationRoot(pointer);
 
   NumSetInsertionAttempts_++;
-  return PointsToSets_[pointerRoot].Insert(pointee);
+  return PointsToSets_[pointerRoot].insert(pointee);
 }
 
 // Makes P(superset) a superset of P(subset)
@@ -444,7 +444,7 @@ PointerObjectSet::PropagateNewPointees(
   bool modified = false;
   for (PointerObjectIndex pointee : P_sub.Items())
   {
-    if (P_super.Insert(pointee))
+    if (P_super.insert(pointee))
     {
       onNewPointee(pointee);
       modified = true;
@@ -476,7 +476,7 @@ PointerObjectSet::MakePointsToSetSuperset(
 {
   const auto & NewPointee = [&](PointerObjectIndex pointee)
   {
-    newPointees.Insert(pointee);
+    newPointees.insert(pointee);
   };
   return PropagateNewPointees(superset, subset, NewPointee);
 }
@@ -1283,10 +1283,10 @@ PointerObjectConstraintSet::CreateOvsSubsetGraph()
       auto subset = Set_.GetUnificationRoot(supersetConstraint->GetSubset());
       auto superset = Set_.GetUnificationRoot(supersetConstraint->GetSuperset());
 
-      successors[subset].Insert(superset);
+      successors[subset].insert(superset);
       // Also add an edge for *subset -> *superset, from the original OVS paper.
       // It is not mentioned in Hardekopf and Lin, 2007: The Ant and the Grasshopper.
-      successors[subset + derefNodeOffset].Insert(superset + derefNodeOffset);
+      successors[subset + derefNodeOffset].insert(superset + derefNodeOffset);
     }
     else if (auto * storeConstraint = std::get_if<StoreConstraint>(&constraint))
     {
@@ -1294,7 +1294,7 @@ PointerObjectConstraintSet::CreateOvsSubsetGraph()
       auto value = Set_.GetUnificationRoot(storeConstraint->GetValue());
 
       // Add an edge for value -> *pointer
-      successors[value].Insert(pointer + derefNodeOffset);
+      successors[value].insert(pointer + derefNodeOffset);
     }
     else if (auto * loadConstraint = std::get_if<LoadConstraint>(&constraint))
     {
@@ -1302,7 +1302,7 @@ PointerObjectConstraintSet::CreateOvsSubsetGraph()
       auto pointer = Set_.GetUnificationRoot(loadConstraint->GetPointer());
 
       // Add an edge for *pointer -> value
-      successors[pointer + derefNodeOffset].Insert(value);
+      successors[pointer + derefNodeOffset].insert(value);
     }
     else if (auto * callConstraint = std::get_if<FunctionCallConstraint>(&constraint))
     {
@@ -1510,7 +1510,7 @@ PointerObjectConstraintSet::NormalizeConstraints()
       if (supersetRoot == subsetRoot)
         continue;
 
-      if (addedSupersetConstraints.Insert({ supersetRoot, subsetRoot }))
+      if (addedSupersetConstraints.insert({ supersetRoot, subsetRoot }))
         newConstraints.emplace_back(SupersetConstraint(supersetRoot, subsetRoot));
     }
     else if (auto * storeConstraint = std::get_if<StoreConstraint>(&constraint))
@@ -1518,7 +1518,7 @@ PointerObjectConstraintSet::NormalizeConstraints()
       auto pointerRoot = Set_.GetUnificationRoot(storeConstraint->GetPointer());
       auto valueRoot = Set_.GetUnificationRoot(storeConstraint->GetValue());
 
-      if (addedStoreConstraints.Insert({ pointerRoot, valueRoot }))
+      if (addedStoreConstraints.insert({ pointerRoot, valueRoot }))
         newConstraints.emplace_back(StoreConstraint(pointerRoot, valueRoot));
     }
     else if (auto * loadConstraint = std::get_if<LoadConstraint>(&constraint))
@@ -1526,7 +1526,7 @@ PointerObjectConstraintSet::NormalizeConstraints()
       auto valueRoot = Set_.GetUnificationRoot(loadConstraint->GetValue());
       auto pointerRoot = Set_.GetUnificationRoot(loadConstraint->GetPointer());
 
-      if (addedLoadConstraints.Insert({ pointerRoot, valueRoot }))
+      if (addedLoadConstraints.insert({ pointerRoot, valueRoot }))
         newConstraints.emplace_back(LoadConstraint(valueRoot, pointerRoot));
     }
     else if (auto * functionCallConstraint = std::get_if<FunctionCallConstraint>(&constraint))
@@ -1534,7 +1534,7 @@ PointerObjectConstraintSet::NormalizeConstraints()
       auto pointerRoot = Set_.GetUnificationRoot(functionCallConstraint->GetPointer());
       auto & callNode = functionCallConstraint->GetCallNode();
 
-      if (addedCallConstraints.Insert({ pointerRoot, &callNode }))
+      if (addedCallConstraints.insert({ pointerRoot, &callNode }))
         newConstraints.emplace_back(FunctionCallConstraint(pointerRoot, callNode));
     }
     else
@@ -1589,28 +1589,28 @@ PointerObjectConstraintSet::RunWorklistSolver(WorklistStatistics & statistics)
       auto subset = Set_.GetUnificationRoot(ssConstraint->GetSubset());
 
       if (superset != subset) // Ignore self-edges
-        supersetEdges[subset].Insert(superset);
+        supersetEdges[subset].insert(superset);
     }
     else if (const auto * storeConstraint = std::get_if<StoreConstraint>(&constraint))
     {
       auto pointer = Set_.GetUnificationRoot(storeConstraint->GetPointer());
       auto value = Set_.GetUnificationRoot(storeConstraint->GetValue());
 
-      storeConstraints[pointer].Insert(value);
+      storeConstraints[pointer].insert(value);
     }
     else if (const auto * loadConstraint = std::get_if<LoadConstraint>(&constraint))
     {
       auto pointer = Set_.GetUnificationRoot(loadConstraint->GetPointer());
       auto value = Set_.GetUnificationRoot(loadConstraint->GetValue());
 
-      loadConstraints[pointer].Insert(value);
+      loadConstraints[pointer].insert(value);
     }
     else if (const auto * callConstraint = std::get_if<FunctionCallConstraint>(&constraint))
     {
       auto pointer = Set_.GetUnificationRoot(callConstraint->GetPointer());
       const auto & callNode = callConstraint->GetCallNode();
 
-      callConstraints[pointer].Insert(&callNode);
+      callConstraints[pointer].insert(&callNode);
     }
   }
 
@@ -1778,7 +1778,7 @@ PointerObjectConstraintSet::RunWorklistSolver(WorklistStatistics & statistics)
     }
 
     // If the edge already exists, ignore
-    if (!supersetEdges[subset].Insert(superset))
+    if (!supersetEdges[subset].insert(superset))
       return;
 
     // The edge is now added. If OCD is enabled, check if it broke the topological order, and fix it
@@ -1815,7 +1815,7 @@ PointerObjectConstraintSet::RunWorklistSolver(WorklistStatistics & statistics)
     subset = Set_.GetUnificationRoot(subset);
     if (superset == subset || supersetEdges[subset].Contains(superset))
       return;
-    newSupersetEdges.Insert({ superset, subset });
+    newSupersetEdges.insert({ superset, subset });
   };
 
   const auto FlushNewSupersetEdges = [&]()

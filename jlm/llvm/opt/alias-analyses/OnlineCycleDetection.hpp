@@ -137,7 +137,7 @@ public:
       {
         // If a "first visit" of this node has already occurred, skip it.
         // This can happen if the same node is pushed multiple times before being popped.
-        if (!DfsNodesVisited_.Insert(node))
+        if (!DfsNodesVisited_.insert(node))
           continue;
 
         // Push node again to visit it a second time on the way back
@@ -172,7 +172,7 @@ public:
         // If this node is the subset, then there is a cycle
         if (node == subset)
         {
-          DfsCycleNodes_.Insert(node);
+          DfsCycleNodes_.insert(node);
           continue;
         }
 
@@ -182,7 +182,7 @@ public:
           auto successorParent = Set_.GetUnificationRoot(successor);
           if (DfsCycleNodes_.Contains(successorParent))
           {
-            DfsCycleNodes_.Insert(node);
+            DfsCycleNodes_.insert(node);
             break;
           }
         }

@@ -107,7 +107,7 @@ gep_to_index(jlm::rvsdg::Output * o)
 {
   // TODO: handle geps that are not direct predecessors
   auto & node = rvsdg::AssertGetOwnerNode<rvsdg::SimpleNode>(*o);
-  util::AssertedCast<const jlm::llvm::GetElementPtrOperation>(&node.GetOperation());
+  util::assertedCast<const jlm::llvm::GetElementPtrOperation>(&node.GetOperation());
   // pointer to array, i.e. first index is zero
   // TODO: check
   JLM_ASSERT(node.ninputs() == 3);

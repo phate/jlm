@@ -48,7 +48,7 @@ TestCopy()
   // Assert
   assert(
       node->GetOperation()
-      == jlm::util::AssertedCast<jlm::rvsdg::SimpleNode>(copiedNode)->GetOperation());
+      == jlm::util::assertedCast<jlm::rvsdg::SimpleNode>(copiedNode)->GetOperation());
 }
 
 static void
@@ -74,7 +74,7 @@ TestCallNodeAccessors()
   // Act
   auto results = CallOperation::Create(f, functionType, { v, i, m });
   auto & callNode =
-      *jlm::util::AssertedCast<SimpleNode>(jlm::rvsdg::TryGetOwnerNode<Node>(*results[0]));
+      *jlm::util::assertedCast<SimpleNode>(jlm::rvsdg::TryGetOwnerNode<Node>(*results[0]));
 
   // Assert
   assert(CallOperation::NumArguments(callNode) == 3);
@@ -144,7 +144,7 @@ TestCallTypeClassifierIndirectCall()
     jlm::rvsdg::GraphExport::Create(*lambda->output(), "f");
 
     return std::make_tuple(
-        jlm::util::AssertedCast<jlm::rvsdg::SimpleNode>(
+        jlm::util::assertedCast<jlm::rvsdg::SimpleNode>(
             jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*callResults[0])),
         fn);
   };
@@ -239,7 +239,7 @@ TestCallTypeClassifierNonRecursiveDirectCall()
 
     return std::make_tuple(
         lambda,
-        jlm::util::AssertedCast<jlm::rvsdg::SimpleNode>(
+        jlm::util::assertedCast<jlm::rvsdg::SimpleNode>(
             jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*callResults[0])));
   };
 
@@ -326,7 +326,7 @@ TestCallTypeClassifierNonRecursiveDirectCallTheta()
           thetaOutputValue,
           thetaOutputIoState,
           thetaOutputMemoryState,
-          jlm::util::AssertedCast<jlm::rvsdg::SimpleNode>(
+          jlm::util::assertedCast<jlm::rvsdg::SimpleNode>(
               jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*callResults[0])));
     };
 
@@ -481,9 +481,9 @@ TestCallTypeClassifierRecursiveDirectCall()
 
     return std::make_tuple(
         lambdaOutput,
-        jlm::util::AssertedCast<jlm::rvsdg::SimpleNode>(
+        jlm::util::assertedCast<jlm::rvsdg::SimpleNode>(
             jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*callfibm1Results[0])),
-        jlm::util::AssertedCast<jlm::rvsdg::SimpleNode>(
+        jlm::util::assertedCast<jlm::rvsdg::SimpleNode>(
             jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*callfibm2Results[0])));
   };
 
