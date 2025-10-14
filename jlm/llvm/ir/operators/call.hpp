@@ -297,7 +297,7 @@ public:
    * @return The call node's input/output state input.
    */
   [[nodiscard]] static rvsdg::Input &
-  GetIOStateInput(const rvsdg::SimpleNode & node) noexcept
+  GetIOStateInput(const rvsdg::Node & node) noexcept
   {
     JLM_ASSERT(is<CallOperation>(&node));
     const auto ioState = node.input(node.ninputs() - 2);

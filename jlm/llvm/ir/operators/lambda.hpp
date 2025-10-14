@@ -70,6 +70,9 @@ public:
   void
   SetArgumentAttributes(std::size_t index, const jlm::llvm::AttributeSet & attributes);
 
+  [[nodiscard]] static rvsdg::Output &
+  getIOStateArgument(const rvsdg::LambdaNode & lambdaNode) noexcept;
+
   static std::unique_ptr<LlvmLambdaOperation>
   Create(
       std::shared_ptr<const jlm::rvsdg::FunctionType> type,
