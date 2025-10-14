@@ -8,6 +8,7 @@
 #include <jlm/llvm/ir/operators/lambda.hpp>
 #include <jlm/llvm/ir/operators/Store.hpp>
 #include <jlm/llvm/ir/RvsdgModule.hpp>
+#include <jlm/llvm/ir/trace.hpp>
 #include <jlm/llvm/opt/alias-analyses/AliasAnalysis.hpp>
 #include <jlm/llvm/opt/alias-analyses/RegionAwareModRefSummarizer.hpp>
 #include <jlm/llvm/opt/DeadNodeElimination.hpp>
@@ -16,7 +17,6 @@
 #include <jlm/util/TarjanScc.hpp>
 #include <jlm/util/Worklist.hpp>
 
-#include <jlm/llvm/ir/trace.hpp>
 #include <queue>
 
 namespace jlm::llvm::aa
@@ -240,7 +240,7 @@ public:
   AddToModRefSet(ModRefSetIndex index, const PointsToGraph::MemoryNode & node)
   {
     JLM_ASSERT(index < ModRefSets_.size());
-    return ModRefSets_[index].GetMemoryNodes().Insert(&node);
+    return ModRefSets_[index].GetMemoryNodes().insert(&node);
   }
 
   bool
@@ -577,14 +577,14 @@ RegionAwareModRefSummarizer::CreateCallGraph(const rvsdg::RvsdgModule & rvsdgMod
         const auto calleeCallGraphNode = callGraphNodeIndex[&lambdaNode];
 
         // Add the edge caller -> callee to the call graph
-        callGraphSuccessors[callerIndex].Insert(calleeCallGraphNode);
+        callGraphSuccessors[callerIndex].insert(calleeCallGraphNode);
       }
       else if (
           PointsToGraph::Node::Is<PointsToGraph::ExternalMemoryNode>(callee)
           || PointsToGraph::Node::Is<PointsToGraph::ImportNode>(callee))
       {
         // Add the edge caller -> node representing external functions
-        callGraphSuccessors[callerIndex].Insert(externalNodeIndex);
+        callGraphSuccessors[callerIndex].insert(externalNodeIndex);
       }
     }
   };
@@ -618,12 +618,12 @@ RegionAwareModRefSummarizer::CreateCallGraph(const rvsdg::RvsdgModule & rvsdgMod
     const auto & lambdaMemoryNode = pointsToGraph.GetLambdaNode(*lambdaNodes[i]);
     if (pointsToGraph.GetEscapedMemoryNodes().Contains(&lambdaMemoryNode))
     {
-      callGraphSuccessors[externalNodeIndex].Insert(i);
+      callGraphSuccessors[externalNodeIndex].insert(i);
     }
   }
 
   // Finally add the fact that the external node may call itself
-  callGraphSuccessors[externalNodeIndex].Insert(externalNodeIndex);
+  callGraphSuccessors[externalNodeIndex].insert(externalNodeIndex);
 
   // Used by the implementation of Tarjan's SCC algorithm
   const auto GetSuccessors = [&](size_t nodeIndex)
@@ -645,7 +645,7 @@ RegionAwareModRefSummarizer::CreateCallGraph(const rvsdg::RvsdgModule & rvsdgMod
   Context_->SccFunctions.resize(numSCCs);
   for (size_t i = 0; i < lambdaNodes.size(); i++)
   {
-    Context_->SccFunctions[sccIndex[i]].Insert(lambdaNodes[i]);
+    Context_->SccFunctions[sccIndex[i]].insert(lambdaNodes[i]);
     Context_->FunctionToSccIndex[lambdaNodes[i]] = sccIndex[i];
   }
 
@@ -655,7 +655,7 @@ RegionAwareModRefSummarizer::CreateCallGraph(const rvsdg::RvsdgModule & rvsdgMod
   {
     for (auto target : callGraphSuccessors[i].Items())
     {
-      Context_->SccCallTargets[sccIndex[i]].Insert(sccIndex[target]);
+      Context_->SccCallTargets[sccIndex[i]].insert(sccIndex[target]);
     }
   }
 
@@ -688,11 +688,11 @@ RegionAwareModRefSummarizer::FindAllocasDeadInSccs()
   // Add all Allocas to the SCC of the function they are defined in
   for (auto & allocaNode : ModRefSummary_->GetPointsToGraph().AllocaNodes())
   {
-    allAllocas.Insert(&allocaNode);
+    allAllocas.insert(&allocaNode);
     const auto & lambdaNode = GetSurroundingLambdaNode(allocaNode.GetAllocaNode());
     JLM_ASSERT(Context_->FunctionToSccIndex.count(&lambdaNode));
     const auto sccIndex = Context_->FunctionToSccIndex[&lambdaNode];
-    liveAllocas[sccIndex].Insert(&allocaNode);
+    liveAllocas[sccIndex].insert(&allocaNode);
   }
 
   // Propagate live allocas to targets of function calls.
@@ -744,7 +744,7 @@ RegionAwareModRefSummarizer::CreateSimpleAllocaSet(const PointsToGraph & pointsT
   for (const auto & allocaNode : pointsToGraph.AllocaNodes())
   {
     if (OnlyAllocaSources(allocaNode))
-      simpleAllocas.Insert(&allocaNode);
+      simpleAllocas.insert(&allocaNode);
     else
       notSimple.push(&allocaNode);
   }
@@ -792,7 +792,7 @@ IsSimpleAllocaReachableFromRegionArguments(
       continue;
     auto & ptgNode = pointsToGraph.GetRegisterNode(*argument);
     nodes.push(&ptgNode);
-    seen.Insert(&ptgNode);
+    seen.insert(&ptgNode);
   }
 
   // Traverse along PointsToGraph edges to find all reachable allocas
@@ -810,7 +810,7 @@ IsSimpleAllocaReachableFromRegionArguments(
       if (!PointsToGraph::Node::Is<PointsToGraph::AllocaNode>(target))
         continue;
 
-      if (seen.Insert(&target))
+      if (seen.insert(&target))
         nodes.push(&target);
     }
   }
@@ -833,7 +833,7 @@ RegionAwareModRefSummarizer::CreateNonReentrantAllocaSets()
   // Only simple allocas are candidates for being Non-Reentrant
   for (auto memoryNode : Context_->SimpleAllocas.Items())
   {
-    auto & allocaMemoryNode = *util::AssertedCast<const PointsToGraph::AllocaNode>(memoryNode);
+    auto & allocaMemoryNode = *util::assertedCast<const PointsToGraph::AllocaNode>(memoryNode);
     auto & allocaNode = allocaMemoryNode.GetAllocaNode();
     const auto & region = *allocaNode.region();
 
@@ -846,7 +846,7 @@ RegionAwareModRefSummarizer::CreateNonReentrantAllocaSets()
       continue;
 
     // Creates a set for the region if it does not already have one, and add the alloca
-    Context_->NonReentrantAllocas[&region].Insert(&allocaMemoryNode);
+    Context_->NonReentrantAllocas[&region].insert(&allocaMemoryNode);
     numNonReentrantAllocas++;
   }
 
@@ -915,7 +915,7 @@ RegionAwareModRefSummarizer::AddModRefSimpleConstraint(ModRefSetIndex from, ModR
 {
   // Ensure the constraint vector is large enough
   Context_->ModRefSetSimpleConstraints.resize(ModRefSummary_->NumModRefSets());
-  Context_->ModRefSetSimpleConstraints[from].Insert(to);
+  Context_->ModRefSetSimpleConstraints[from].insert(to);
 }
 
 void
@@ -1053,7 +1053,7 @@ RegionAwareModRefSummarizer::AnnotateLoad(
 {
   const auto nodeModRef = ModRefSummary_->GetOrCreateSetForNode(loadNode);
   const auto origin = LoadOperation::AddressInput(loadNode).origin();
-  const auto loadOperation = util::AssertedCast<const LoadOperation>(&loadNode.GetOperation());
+  const auto loadOperation = util::assertedCast<const LoadOperation>(&loadNode.GetOperation());
   const auto loadSize = GetTypeSize(*loadOperation->GetLoadedType());
 
   AddPointerOriginTargets(nodeModRef, *origin, loadSize, lambda);
@@ -1067,7 +1067,7 @@ RegionAwareModRefSummarizer::AnnotateStore(
 {
   const auto nodeModRef = ModRefSummary_->GetOrCreateSetForNode(storeNode);
   const auto origin = StoreOperation::AddressInput(storeNode).origin();
-  const auto storeOperation = util::AssertedCast<const StoreOperation>(&storeNode.GetOperation());
+  const auto storeOperation = util::assertedCast<const StoreOperation>(&storeNode.GetOperation());
   const auto storeSize = GetTypeSize(storeOperation->GetStoredType());
 
   AddPointerOriginTargets(nodeModRef, *origin, storeSize, lambda);

@@ -23,76 +23,76 @@ test_node_copy()
   auto vtype = jlm::tests::ValueType::Create();
 
   Graph graph;
-  auto s = &jlm::rvsdg::GraphImport::Create(graph, stype, "");
-  auto v = &jlm::rvsdg::GraphImport::Create(graph, vtype, "");
+  auto & s = jlm::rvsdg::GraphImport::Create(graph, stype, "");
+  auto & v = jlm::rvsdg::GraphImport::Create(graph, vtype, "");
 
   auto n1 = TestStructuralNode::create(&graph.GetRootRegion(), 3);
-  auto i1 = StructuralInput::create(n1, s, stype);
-  auto i2 = StructuralInput::create(n1, v, vtype);
-  auto o1 = StructuralOutput::create(n1, stype);
-  auto o2 = StructuralOutput::create(n1, vtype);
+  auto & i1 = n1->addInputOnly(s);
+  auto & i2 = n1->addInputOnly(v);
+  auto & o1 = n1->addOutputOnly(stype);
+  auto & o2 = n1->addOutputOnly(vtype);
 
-  auto & a1 = TestGraphArgument::Create(*n1->subregion(0), i1, stype);
-  auto & a2 = TestGraphArgument::Create(*n1->subregion(0), i2, vtype);
+  auto & a1 = TestGraphArgument::Create(*n1->subregion(0), &i1, stype);
+  auto & a2 = TestGraphArgument::Create(*n1->subregion(0), &i2, vtype);
 
   auto n2 = TestOperation::create(n1->subregion(0), { &a1 }, { stype });
   auto n3 = TestOperation::create(n1->subregion(0), { &a2 }, { vtype });
 
-  RegionResult::Create(*n1->subregion(0), *n2->output(0), o1, stype);
-  RegionResult::Create(*n1->subregion(0), *n3->output(0), o2, vtype);
+  RegionResult::Create(*n1->subregion(0), *n2->output(0), &o1, stype);
+  RegionResult::Create(*n1->subregion(0), *n3->output(0), &o2, vtype);
 
   jlm::rvsdg::view(&graph.GetRootRegion(), stdout);
 
   /* copy first into second region with arguments and results */
   SubstitutionMap smap;
-  smap.insert(i1, i1);
-  smap.insert(i2, i2);
-  smap.insert(o1, o1);
-  smap.insert(o2, o2);
+  smap.insert(&i1, &i1);
+  smap.insert(&i2, &i2);
+  smap.insert(&o1, &o1);
+  smap.insert(&o2, &o2);
   n1->subregion(0)->copy(n1->subregion(1), smap, true, true);
 
   jlm::rvsdg::view(&graph.GetRootRegion(), stdout);
 
   auto r2 = n1->subregion(1);
   assert(r2->narguments() == 2);
-  assert(r2->argument(0)->input() == i1);
-  assert(r2->argument(1)->input() == i2);
+  assert(r2->argument(0)->input() == &i1);
+  assert(r2->argument(1)->input() == &i2);
 
   assert(r2->nresults() == 2);
-  assert(r2->result(0)->output() == o1);
-  assert(r2->result(1)->output() == o2);
+  assert(r2->result(0)->output() == &o1);
+  assert(r2->result(1)->output() == &o2);
 
-  assert(r2->nnodes() == 2);
+  assert(r2->numNodes() == 2);
 
   /* copy second into third region only with arguments */
   jlm::rvsdg::SubstitutionMap smap2;
-  auto & a3 = TestGraphArgument::Create(*n1->subregion(2), i1, stype);
-  auto & a4 = TestGraphArgument::Create(*n1->subregion(2), i2, vtype);
+  auto & a3 = TestGraphArgument::Create(*n1->subregion(2), &i1, stype);
+  auto & a4 = TestGraphArgument::Create(*n1->subregion(2), &i2, vtype);
   smap2.insert(r2->argument(0), &a3);
   smap2.insert(r2->argument(1), &a4);
 
-  smap2.insert(o1, o1);
-  smap2.insert(o2, o2);
+  smap2.insert(&o1, &o1);
+  smap2.insert(&o2, &o2);
   n1->subregion(1)->copy(n1->subregion(2), smap2, false, true);
 
   jlm::rvsdg::view(&graph.GetRootRegion(), stdout);
 
   auto r3 = n1->subregion(2);
   assert(r3->nresults() == 2);
-  assert(r3->result(0)->output() == o1);
-  assert(r3->result(1)->output() == o2);
+  assert(r3->result(0)->output() == &o1);
+  assert(r3->result(1)->output() == &o2);
 
-  assert(r3->nnodes() == 2);
+  assert(r3->numNodes() == 2);
 
   /* copy structural node */
   jlm::rvsdg::SubstitutionMap smap3;
-  smap3.insert(s, s);
-  smap3.insert(v, v);
+  smap3.insert(&s, &s);
+  smap3.insert(&v, &v);
   n1->copy(&graph.GetRootRegion(), smap3);
 
   jlm::rvsdg::view(&graph.GetRootRegion(), stdout);
 
-  assert(graph.GetRootRegion().nnodes() == 2);
+  assert(graph.GetRootRegion().numNodes() == 2);
 }
 
 static inline void
@@ -364,9 +364,9 @@ NodeId()
   auto node1 = TestOperation::create(&rvsdg1.GetRootRegion(), {}, {});
   auto node2 = TestOperation::create(&rvsdg1.GetRootRegion(), {}, {});
 
-  NodeIds.Insert(node0->GetNodeId());
-  NodeIds.Insert(node1->GetNodeId());
-  NodeIds.Insert(node2->GetNodeId());
+  NodeIds.insert(node0->GetNodeId());
+  NodeIds.insert(node1->GetNodeId());
+  NodeIds.insert(node2->GetNodeId());
 
   // We should have three unique identifiers in the set
   assert(NodeIds.Size() == 3);

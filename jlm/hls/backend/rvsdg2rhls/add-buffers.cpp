@@ -959,9 +959,19 @@ BufferInsertion::BufferInsertion()
 void
 BufferInsertion::Run(rvsdg::RvsdgModule & rvsdgModule, util::StatisticsCollector &)
 {
-  auto & graph = rvsdgModule.Rvsdg();
-  auto root = &graph.GetRootRegion();
-  auto lambda = dynamic_cast<rvsdg::LambdaNode *>(root->Nodes().begin().ptr());
+  const auto & graph = rvsdgModule.Rvsdg();
+  const auto rootRegion = &graph.GetRootRegion();
+  if (rootRegion->numNodes() != 1)
+  {
+    throw std::logic_error("Root should have only one node now");
+  }
+
+  const auto lambda = dynamic_cast<const rvsdg::LambdaNode *>(rootRegion->Nodes().begin().ptr());
+  if (!lambda)
+  {
+    throw std::logic_error("Node needs to be a lambda");
+  }
+
   AddBuffers(lambda->subregion());
   MaximizeBuffers(lambda->subregion());
   CalculateLoopDepths(lambda->subregion());

@@ -45,7 +45,7 @@ perform_bitunary_reduction(const SExtOperation & op, rvsdg::Output * operand)
 
   auto output = SExtOperation::create(op.ndstbits(), unaryNode->input(0)->origin());
   std::unique_ptr<rvsdg::SimpleOperation> simpleOperation(
-      util::AssertedCast<rvsdg::SimpleOperation>(uop->create(op.ndstbits()).release()));
+      util::assertedCast<rvsdg::SimpleOperation>(uop->create(op.ndstbits()).release()));
   return rvsdg::SimpleNode::Create(*region, std::move(simpleOperation), { output }).output(0);
 }
 
@@ -62,7 +62,7 @@ perform_bitbinary_reduction(const SExtOperation & op, rvsdg::Output * operand)
   auto op2 = SExtOperation::create(op.ndstbits(), binaryNode->input(1)->origin());
 
   std::unique_ptr<rvsdg::SimpleOperation> simpleOperation(
-      util::AssertedCast<rvsdg::SimpleOperation>(bop->create(op.ndstbits()).release()));
+      util::assertedCast<rvsdg::SimpleOperation>(bop->create(op.ndstbits()).release()));
   return rvsdg::SimpleNode::Create(*region, std::move(simpleOperation), { op1, op2 }).output(0);
 }
 

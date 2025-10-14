@@ -589,10 +589,6 @@ class EntryArgument : public rvsdg::RegionArgument
 {
   friend LoopNode;
 
-public:
-  ~EntryArgument() noexcept override;
-
-private:
   EntryArgument(
       rvsdg::Region & region,
       rvsdg::StructuralInput & input,
@@ -601,6 +597,8 @@ private:
   {}
 
 public:
+  ~EntryArgument() noexcept override;
+
   EntryArgument &
   Copy(rvsdg::Region & region, rvsdg::StructuralInput * input) override;
 
@@ -612,9 +610,8 @@ public:
       rvsdg::StructuralInput & input,
       const std::shared_ptr<const rvsdg::Type> type)
   {
-    auto argument = new EntryArgument(region, input, std::move(type));
-    region.append_argument(argument);
-    return *argument;
+    std::unique_ptr<EntryArgument> argument(new EntryArgument(region, input, std::move(type)));
+    return static_cast<EntryArgument &>(region.addArgument(std::move(argument)));
   }
 };
 
@@ -622,6 +619,11 @@ class BackEdgeArgument final : public rvsdg::RegionArgument
 {
   friend LoopNode;
   friend BackEdgeResult;
+
+  BackEdgeArgument(rvsdg::Region * region, const std::shared_ptr<const jlm::rvsdg::Type> & type)
+      : rvsdg::RegionArgument(region, nullptr, type),
+        result_(nullptr)
+  {}
 
 public:
   ~BackEdgeArgument() noexcept override = default;
@@ -635,18 +637,11 @@ public:
   BackEdgeArgument &
   Copy(rvsdg::Region & region, rvsdg::StructuralInput * input) override;
 
-private:
-  BackEdgeArgument(rvsdg::Region * region, const std::shared_ptr<const jlm::rvsdg::Type> & type)
-      : rvsdg::RegionArgument(region, nullptr, type),
-        result_(nullptr)
-  {}
-
-  static BackEdgeArgument *
+  static BackEdgeArgument &
   create(rvsdg::Region * region, std::shared_ptr<const jlm::rvsdg::Type> type)
   {
-    auto argument = new BackEdgeArgument(region, std::move(type));
-    region->append_argument(argument);
-    return argument;
+    std::unique_ptr<BackEdgeArgument> argument(new BackEdgeArgument(region, std::move(type)));
+    return static_cast<BackEdgeArgument &>(region->addArgument(std::move(argument)));
   }
 
   BackEdgeResult * result_;
@@ -656,6 +651,11 @@ class BackEdgeResult : public rvsdg::RegionResult
 {
   friend LoopNode;
   friend BackEdgeArgument;
+
+  BackEdgeResult(rvsdg::Output * origin)
+      : rvsdg::RegionResult(origin->region(), origin, nullptr, origin->Type()),
+        argument_(nullptr)
+  {}
 
 public:
   ~BackEdgeResult() override = default;
@@ -669,18 +669,11 @@ public:
   BackEdgeResult &
   Copy(rvsdg::Output & origin, rvsdg::StructuralOutput * output) override;
 
-private:
-  BackEdgeResult(rvsdg::Output * origin)
-      : rvsdg::RegionResult(origin->region(), origin, nullptr, origin->Type()),
-        argument_(nullptr)
-  {}
-
-  static BackEdgeResult *
+  static BackEdgeResult &
   create(jlm::rvsdg::Output * origin)
   {
-    auto result = new BackEdgeResult(origin);
-    origin->region()->append_result(result);
-    return result;
+    std::unique_ptr<BackEdgeResult> result(new BackEdgeResult(origin));
+    return static_cast<BackEdgeResult &>(origin->region()->addResult(std::move(result)));
   }
 
   BackEdgeArgument * argument_;
@@ -693,13 +686,11 @@ class ExitResult final : public rvsdg::RegionResult
 {
   friend LoopNode;
 
-public:
-  ~ExitResult() noexcept override;
-
-private:
   ExitResult(rvsdg::Output & origin, rvsdg::StructuralOutput & output);
 
 public:
+  ~ExitResult() noexcept override;
+
   ExitResult &
   Copy(rvsdg::Output & origin, rvsdg::StructuralOutput * output) override;
 
@@ -708,9 +699,8 @@ public:
   static ExitResult &
   Create(rvsdg::Output & origin, rvsdg::StructuralOutput & output)
   {
-    auto result = new ExitResult(origin, output);
-    origin.region()->append_result(result);
-    return *result;
+    std::unique_ptr<RegionResult> result(new ExitResult(origin, output));
+    return static_cast<ExitResult &>(origin.region()->addResult(std::move(result)));
   }
 };
 
@@ -757,11 +747,70 @@ public:
   BackEdgeArgument *
   add_backedge(std::shared_ptr<const jlm::rvsdg::Type> type);
 
+  /**
+   * Creates a loop-carried variable for this LoopNode.
+   *
+   * Creates a node input for the initial loop variable, which takes the \p origin as its value.
+   * Inside the loop region, a corresponding EntryArgument is created.
+   * A back-edge is also created, by adding a BackEdgeResult and corresponding BackEdgeArgument.
+   * Lastly an ExitResult with a corresponding node output is created.
+   *
+   * At the top of the loop region, a MuxOperation predicated on the loop predicate buffer is used
+   * to pick between the EntryArgument and the BackEdgeArgument.
+   *
+   * At the bottom of the region, a BranchOperation predicated on the loop predicate is used
+   * to send the result to an ExitResult when the loop is done, or to the BackEdgeResult if not.
+   * The BackEdgeResult has a small non-passthrough buffer in front of it, to break cycles.
+   *
+   * @param origin the initial value, defined outside the loop
+   * @param buffer if non-null, will be set to a pointer to the Mux output.
+   * @return the created node output that yields the variable's value when the loop exits
+   */
   rvsdg::StructuralOutput *
-  AddLoopVar(jlm::rvsdg::Output * origin, jlm::rvsdg::Output ** buffer = nullptr);
+  AddLoopVar(rvsdg::Output * origin, rvsdg::Output ** buffer = nullptr);
 
-  jlm::rvsdg::Output *
-  add_loopconst(jlm::rvsdg::Output * origin);
+  /**
+   * Creates a node input for a loop constant, and a LoopConstantBuffer inside the loop region.
+   *
+   * @param origin the origin of the value outside the loop
+   * @return the output of the LoopConstantBuffer inside the loop region
+   */
+  rvsdg::Output *
+  addLoopConstant(rvsdg::Output * origin);
+
+  /**
+   * Creates an input / region argument pair for sending responses into the loop body.
+   * This input behaves as an escape hatch, and does not follow standard RVSDG semantics.
+   *
+   * @param origin the origin of the response outside the loop
+   * @return the created EntryArgument inside the loop region
+   */
+  rvsdg::Output *
+  addResponseInput(rvsdg::Output * origin);
+
+  /**
+   * Creates a node output / region result pair for sending requests out of the loop body.
+   * This output behaves as an escape hatch, and does not follow standard RVSDG semantics.
+   *
+   * @param origin the origin of the request inside the loop
+   * @return the created node output
+   */
+  rvsdg::Output *
+  addRequestOutput(rvsdg::Output * origin);
+
+  /**
+   * Removes the given node output, and the corresponding region result.
+   * @param output the node output to remove. Must be dead.
+   */
+  void
+  removeLoopOutput(rvsdg::StructuralOutput * output);
+
+  /**
+   * Removes the given node input, and the corresponding region argument.
+   * @param input the node input to remove. Its argument must be dead.
+   */
+  void
+  removeLoopInput(rvsdg::StructuralInput * input);
 
   LoopNode *
   copy(rvsdg::Region * region, rvsdg::SubstitutionMap & smap) const override;
@@ -920,7 +969,7 @@ public:
   [[nodiscard]] const llvm::PointerType &
   GetPointerType() const noexcept
   {
-    return *util::AssertedCast<const llvm::PointerType>(argument(0).get());
+    return *util::assertedCast<const llvm::PointerType>(argument(0).get());
   }
 
   [[nodiscard]] std::shared_ptr<const rvsdg::Type>
@@ -1118,7 +1167,7 @@ public:
   [[nodiscard]] const llvm::PointerType &
   GetPointerType() const noexcept
   {
-    return *util::AssertedCast<const llvm::PointerType>(argument(0).get());
+    return *util::assertedCast<const llvm::PointerType>(argument(0).get());
   }
 
   [[nodiscard]] std::shared_ptr<const rvsdg::Type>
@@ -1393,7 +1442,7 @@ public:
   [[nodiscard]] const llvm::PointerType &
   GetPointerType() const noexcept
   {
-    return *util::AssertedCast<const llvm::PointerType>(argument(0).get());
+    return *util::assertedCast<const llvm::PointerType>(argument(0).get());
   }
 
   [[nodiscard]] const rvsdg::Type &

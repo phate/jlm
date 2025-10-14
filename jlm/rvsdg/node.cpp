@@ -8,7 +8,6 @@
 #include <jlm/rvsdg/gamma.hpp>
 #include <jlm/rvsdg/lambda.hpp>
 #include <jlm/rvsdg/MatchType.hpp>
-#include <jlm/rvsdg/notifiers.hpp>
 #include <jlm/rvsdg/Phi.hpp>
 #include <jlm/rvsdg/region.hpp>
 #include <jlm/rvsdg/substitution.hpp>
@@ -80,7 +79,7 @@ Input::divert_to(jlm::rvsdg::Output * new_origin)
   if (auto node = TryGetOwnerNode<Node>(*this))
     node->recompute_depth();
 
-  on_input_change(this, old_origin, new_origin);
+  region()->notifyInputChange(this, old_origin, new_origin);
 }
 
 [[nodiscard]] rvsdg::Region *
@@ -185,10 +184,10 @@ Output::remove_user(jlm::rvsdg::Input * user)
 
   if (auto node = TryGetOwnerNode<Node>(*this))
   {
+    node->numSuccessors_ -= 1;
     if (node->IsDead())
     {
-      bool wasAdded = region()->AddBottomNode(*node);
-      JLM_ASSERT(wasAdded);
+      region()->onBottomNodeAdded(*node);
     }
   }
 }
@@ -203,9 +202,9 @@ Output::add_user(jlm::rvsdg::Input * user)
   {
     if (node->IsDead())
     {
-      bool wasRemoved = region()->RemoveBottomNode(*node);
-      JLM_ASSERT(wasRemoved);
+      region()->onBottomNodeRemoved(*node);
     }
+    node->numSuccessors_ += 1;
   }
 
   Users_.push_back(user);
@@ -254,38 +253,33 @@ NodeInput::NodeInput(
 {}
 
 NodeOutput::NodeOutput(Node * node, std::shared_ptr<const rvsdg::Type> type)
-    : Output(*node, std::move(type)),
-      node_(node)
+    : Output(*node, std::move(type))
 {}
 
 Node::Node(Region * region)
-    : Id_(region->GenerateNodeId()),
+    : Id_(region->generateNodeId()),
       depth_(0),
       region_(region)
 {
-  bool wasAdded = region->AddBottomNode(*this);
-  JLM_ASSERT(wasAdded);
-  wasAdded = region->AddTopNode(*this);
-  JLM_ASSERT(wasAdded);
-  wasAdded = region->AddNode(*this);
-  JLM_ASSERT(wasAdded);
+  region->onBottomNodeAdded(*this);
+  region->onTopNodeAdded(*this);
+  region->onNodeAdded(*this);
 }
 
 Node::~Node()
 {
+  // Nodes should always be dead before they are removed
+  JLM_ASSERT(IsDead());
   outputs_.clear();
-  bool wasRemoved = region()->RemoveBottomNode(*this);
-  JLM_ASSERT(wasRemoved);
+  region()->onBottomNodeRemoved(*this);
 
   if (ninputs() == 0)
   {
-    wasRemoved = region()->RemoveTopNode(*this);
-    JLM_ASSERT(wasRemoved);
+    region()->onTopNodeRemoved(*this);
   }
   inputs_.clear();
 
-  wasRemoved = region()->RemoveNode(*this);
-  JLM_ASSERT(wasRemoved);
+  region()->onNodeRemoved(*this);
 }
 
 Graph *
@@ -295,31 +289,38 @@ Node::graph() const noexcept
 }
 
 NodeInput *
-Node::add_input(std::unique_ptr<NodeInput> input)
+Node::addInput(std::unique_ptr<NodeInput> input, bool notifyRegion)
 {
-  auto producer = rvsdg::TryGetOwnerNode<Node>(*input->origin());
-
+  // If we used to be a top node, we no longer are
   if (ninputs() == 0)
   {
     JLM_ASSERT(depth() == 0);
-    const auto wasRemoved = region()->RemoveTopNode(*this);
-    JLM_ASSERT(wasRemoved);
+    region()->onTopNodeRemoved(*this);
   }
 
   input->index_ = ninputs();
   inputs_.push_back(std::move(input));
+  const auto inputPtr = inputs_.back().get();
 
-  auto new_depth = producer ? producer->depth() + 1 : 0;
+  const auto producer = rvsdg::TryGetOwnerNode<Node>(*inputPtr->origin());
+  const auto new_depth = producer ? producer->depth() + 1 : 0;
   if (new_depth > depth())
     recompute_depth();
 
-  return this->input(ninputs() - 1);
+  if (notifyRegion)
+    region()->notifyInputCreate(inputPtr);
+
+  return inputPtr;
 }
 
 void
-Node::RemoveInput(size_t index)
+Node::removeInput(size_t index, bool notifyRegion)
 {
   JLM_ASSERT(index < ninputs());
+
+  if (notifyRegion)
+    region()->notifyInputDestory(input(index));
+
   auto producer = rvsdg::TryGetOwnerNode<Node>(*input(index)->origin());
 
   /* remove input */
@@ -340,19 +341,19 @@ Node::RemoveInput(size_t index)
   }
   recompute_depth();
 
-  /* add to region's top nodes */
+  // If we no longer have any inputs we are now a top node
   if (ninputs() == 0)
   {
     JLM_ASSERT(depth() == 0);
-    const auto wasAdded = region()->AddTopNode(*this);
-    JLM_ASSERT(wasAdded);
+    region()->onTopNodeAdded(*this);
   }
 }
 
 void
-Node::RemoveOutput(size_t index)
+Node::removeOutput(size_t index)
 {
   JLM_ASSERT(index < noutputs());
+  JLM_ASSERT(outputs_[index]->IsDead());
 
   for (size_t n = index; n < noutputs() - 1; n++)
   {
@@ -380,9 +381,7 @@ Node::recompute_depth() noexcept
   if (new_depth == depth())
     return;
 
-  size_t old_depth = depth();
   depth_ = new_depth;
-  on_node_depth_change(this, old_depth);
 
   for (size_t n = 0; n < noutputs(); n++)
   {

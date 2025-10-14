@@ -113,7 +113,7 @@ FunctionNode::Type() const
   return FunctionType_;
 }
 
-const llvm::linkage &
+const llvm::Linkage &
 FunctionNode::linkage() const noexcept
 {
   return linkage_;
@@ -157,7 +157,7 @@ DataNode::Type() const
   return PointerType::Create();
 }
 
-const llvm::linkage &
+const llvm::Linkage &
 DataNode::linkage() const noexcept
 {
   return linkage_;

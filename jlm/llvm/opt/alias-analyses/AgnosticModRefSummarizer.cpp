@@ -145,21 +145,21 @@ AgnosticModRefSummarizer::GetAllMemoryNodes(const PointsToGraph & pointsToGraph)
 {
   util::HashSet<const PointsToGraph::MemoryNode *> memoryNodes;
   for (auto & allocaNode : pointsToGraph.AllocaNodes())
-    memoryNodes.Insert(&allocaNode);
+    memoryNodes.insert(&allocaNode);
 
   for (auto & deltaNode : pointsToGraph.DeltaNodes())
-    memoryNodes.Insert(&deltaNode);
+    memoryNodes.insert(&deltaNode);
 
   for (auto & lambdaNode : pointsToGraph.LambdaNodes())
-    memoryNodes.Insert(&lambdaNode);
+    memoryNodes.insert(&lambdaNode);
 
   for (auto & mallocNode : pointsToGraph.MallocNodes())
-    memoryNodes.Insert(&mallocNode);
+    memoryNodes.insert(&mallocNode);
 
   for (auto & importNode : pointsToGraph.ImportNodes())
-    memoryNodes.Insert(&importNode);
+    memoryNodes.insert(&importNode);
 
-  memoryNodes.Insert(&pointsToGraph.GetExternalMemoryNode());
+  memoryNodes.insert(&pointsToGraph.GetExternalMemoryNode());
 
   return memoryNodes;
 }
@@ -193,7 +193,7 @@ AgnosticModRefSummarizer::AddPointerToModRefSet(
   const auto & addressReg = ModRefSummary_->GetPointsToGraph().GetRegisterNode(output);
   for (auto & target : addressReg.Targets())
   {
-    modRefSet.Insert(&target);
+    modRefSet.insert(&target);
   }
 }
 

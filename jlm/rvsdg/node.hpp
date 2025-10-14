@@ -28,14 +28,15 @@ class SubstitutionMap;
 class Input
 {
   friend class Node;
-  friend class rvsdg::Region;
+  friend class Region;
+
+protected:
+  Input(Node & owner, Output & origin, std::shared_ptr<const rvsdg::Type> type);
+
+  Input(Region & owner, Output & origin, std::shared_ptr<const rvsdg::Type> type);
 
 public:
   virtual ~Input() noexcept;
-
-  Input(rvsdg::Node & owner, rvsdg::Output & origin, std::shared_ptr<const rvsdg::Type> type);
-
-  Input(rvsdg::Region & owner, rvsdg::Output & origin, std::shared_ptr<const rvsdg::Type> type);
 
   Input(const Input &) = delete;
 
@@ -47,20 +48,20 @@ public:
   Input &
   operator=(Input &&) = delete;
 
-  inline size_t
+  size_t
   index() const noexcept
   {
     return index_;
   }
 
-  jlm::rvsdg::Output *
+  Output *
   origin() const noexcept
   {
     return origin_;
   }
 
   void
-  divert_to(jlm::rvsdg::Output * new_origin);
+  divert_to(Output * new_origin);
 
   [[nodiscard]] const std::shared_ptr<const rvsdg::Type> &
   Type() const noexcept
@@ -68,7 +69,7 @@ public:
     return Type_;
   }
 
-  [[nodiscard]] rvsdg::Region *
+  [[nodiscard]] Region *
   region() const noexcept;
 
   virtual std::string
@@ -245,7 +246,12 @@ class Output
 {
   friend Input;
   friend class Node;
-  friend class rvsdg::Region;
+  friend class Region;
+
+protected:
+  Output(Node & owner, std::shared_ptr<const rvsdg::Type> type);
+
+  Output(Region * owner, std::shared_ptr<const rvsdg::Type> type);
 
 public:
   using UsersList = Input::UsersList;
@@ -253,10 +259,6 @@ public:
   using UsersConstRange = jlm::util::IteratorRange<UsersList::ConstIterator>;
 
   virtual ~Output() noexcept;
-
-  Output(rvsdg::Node & owner, std::shared_ptr<const rvsdg::Type> type);
-
-  Output(rvsdg::Region * owner, std::shared_ptr<const rvsdg::Type> type);
 
   Output(const Output &) = delete;
 
@@ -268,13 +270,13 @@ public:
   Output &
   operator=(Output &&) = delete;
 
-  inline size_t
+  size_t
   index() const noexcept
   {
     return index_;
   }
 
-  inline size_t
+  size_t
   nusers() const noexcept
   {
     return NumUsers_;
@@ -325,7 +327,7 @@ public:
     for (auto & user : Users_)
     {
       if (match(user))
-        matchedUsers.Insert(&user);
+        matchedUsers.insert(&user);
     }
 
     for (auto & user : matchedUsers.Items())
@@ -554,16 +556,10 @@ class NodeInput : public Input
 public:
   NodeInput(Output * origin, Node * node, std::shared_ptr<const rvsdg::Type> type);
 
-  Node *
+  [[nodiscard]] Node *
   node() const noexcept
   {
-    auto owner = GetOwner();
-    if (auto node = std::get_if<Node *>(&owner))
-    {
-      return *node;
-    }
-
-    JLM_UNREACHABLE("This should not have happened!");
+    return std::get<Node *>(GetOwner());
   }
 };
 
@@ -575,11 +571,8 @@ public:
   [[nodiscard]] Node *
   node() const noexcept
   {
-    return node_;
+    return std::get<Node *>(GetOwner());
   }
-
-private:
-  Node * node_;
 };
 
 /* node class */
@@ -601,7 +594,7 @@ public:
   /**
    * @return The unique identifier of the node instance within the region.
    *
-   * \see GenerateNodeId()
+   * \see Region::generateNodeId()
    */
   [[nodiscard]] Id
   GetNodeId() const noexcept
@@ -697,38 +690,49 @@ public:
   [[nodiscard]] bool
   IsDead() const noexcept
   {
-    for (auto & output : outputs_)
-    {
-      if (!output->IsDead())
-        return false;
-    }
+    return numSuccessors_ == 0;
+  }
 
-    return true;
+  [[nodiscard]] std::size_t
+  numSuccessors() const noexcept
+  {
+    return numSuccessors_;
   }
 
   virtual std::string
   DebugString() const = 0;
 
 protected:
+  /**
+   * Adds the given \p input to the node's inputs.
+   * Invalidates existing iterators to the node's inputs.
+   *
+   * @param input an owned pointer to the new input
+   * @param notifyRegion If true, the region is informed about the new input.
+   * This should be false if the node has not yet notified the region about being created,
+   * i.e., this function is being called from the node's constructor.
+   *
+   * @return a pointer to the added input
+   */
   NodeInput *
-  add_input(std::unique_ptr<NodeInput> input);
+  addInput(std::unique_ptr<NodeInput> input, bool notifyRegion);
 
   /**
-   * Removes an input from the node given the inputs' index.
+   * Removes an input from the node given the inputs' \p index.
    *
-   * The removal of an input invalidates the node's existing input iterators.
+   * The removal of an input invalidates the node's existing input iterators,
+   * and changes the index of all following inputs.
    *
    * @param index The inputs' index. It must be between [0, ninputs()).
-   *
-   * \note The method must adjust the indices of the other inputs after the removal. Moreover, it
-   * also might need to recompute the depth of the node.
+   * @param notifyRegion If true, the region is informed about the removal.
+   * This should be false if the node has already notified the region about being removed,
+   * i.e., this function is being called from the node's destructor.
    *
    * \see ninputs()
-   * \see recompute_depth()
    * \see input#index()
    */
   void
-  RemoveInput(size_t index);
+  removeInput(size_t index, bool notifyRegion);
 
   // FIXME: I really would not like to be RemoveInputsWhere() to be public
 public:
@@ -748,15 +752,17 @@ public:
       auto & input = *Node::input(n);
       if (match(input))
       {
-        RemoveInput(n);
+        removeInput(n, true);
       }
     }
   }
 
 protected:
   NodeOutput *
-  add_output(std::unique_ptr<NodeOutput> output)
+  addOutput(std::unique_ptr<NodeOutput> output)
   {
+    if (output->node() != this)
+      throw std::logic_error("Output does not belong to this node!");
     output->index_ = noutputs();
     outputs_.push_back(std::move(output));
     return this->output(noutputs() - 1);
@@ -778,7 +784,7 @@ protected:
    * \see output#nusers()
    */
   void
-  RemoveOutput(size_t index);
+  removeOutput(size_t index);
 
   // FIXME: I really would not like to be RemoveOutputsWhere() to be public
 public:
@@ -800,7 +806,7 @@ public:
       auto & output = *Node::output(n);
       if (output.nusers() == 0 && match(output))
       {
-        RemoveOutput(n);
+        removeOutput(n);
       }
     }
   }
@@ -865,6 +871,9 @@ private:
   Region * region_;
   std::vector<std::unique_ptr<NodeInput>> inputs_;
   std::vector<std::unique_ptr<NodeOutput>> outputs_;
+  std::size_t numSuccessors_ = 0;
+
+  friend class Output;
 };
 
 /**

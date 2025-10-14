@@ -30,13 +30,13 @@ SplitConversion()
   auto & importY = jlm::rvsdg::GraphImport::Create(rvsdg, memoryStateType, "y");
 
   auto structuralNode = jlm::tests::TestStructuralNode::create(&rvsdg.GetRootRegion(), 1);
-  const auto inputVar = structuralNode->AddInputWithArguments(importX);
+  const auto inputVar = structuralNode->addInputWithArguments(importX);
 
   auto entrySplitResults = LambdaEntryMemoryStateSplitOperation::Create(*inputVar.argument[0], 3);
 
-  const auto outputVar0 = structuralNode->AddOutputWithResults({ entrySplitResults[0] });
-  const auto outputVar1 = structuralNode->AddOutputWithResults({ entrySplitResults[1] });
-  const auto outputVar2 = structuralNode->AddOutputWithResults({ entrySplitResults[2] });
+  const auto outputVar0 = structuralNode->addOutputWithResults({ entrySplitResults[0] });
+  const auto outputVar1 = structuralNode->addOutputWithResults({ entrySplitResults[1] });
+  const auto outputVar2 = structuralNode->addOutputWithResults({ entrySplitResults[2] });
 
   auto splitResults = MemoryStateSplitOperation::Create(importY, 2);
 
@@ -55,8 +55,8 @@ SplitConversion()
   view(rvsdg, stdout);
 
   // Assert
-  assert(rvsdg.GetRootRegion().nnodes() == 2);
-  assert(structuralNode->subregion(0)->nnodes() == 1);
+  assert(rvsdg.GetRootRegion().numNodes() == 2);
+  assert(structuralNode->subregion(0)->numNodes() == 1);
 
   // The memory state split conversion pass should have replaced the
   // LambdaEntryMemoryStateSplitOperation node with a ForkOperation node

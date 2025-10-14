@@ -419,7 +419,7 @@ GammaNode::RemoveGammaOutputsWhere(const F & match)
         subregion(r)->RemoveResult(n);
       }
 
-      RemoveOutput(n);
+      removeOutput(n);
     }
   }
 }

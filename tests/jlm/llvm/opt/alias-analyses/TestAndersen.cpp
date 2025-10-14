@@ -54,7 +54,7 @@ EscapedIsExactly(
     const std::unordered_set<const jlm::llvm::aa::PointsToGraph::MemoryNode *> & nodes)
 {
   jlm::util::HashSet hashSet(nodes);
-  hashSet.Insert(&ptg.GetExternalMemoryNode());
+  hashSet.insert(&ptg.GetExternalMemoryNode());
   return ptg.GetEscapedMemoryNodes() == hashSet;
 }
 

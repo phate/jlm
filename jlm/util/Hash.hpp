@@ -42,10 +42,10 @@ struct Hash<std::pair<First, Second>>
  */
 template<typename... Args>
 void
-CombineHashesWithSeed(std::size_t & seed, std::size_t hash, Args... args)
+combineHashesWithSeed(std::size_t & seed, std::size_t hash, Args... args)
 {
   seed ^= hash + 0x9e3779b9 + (seed << 6) + (seed >> 2);
-  (CombineHashesWithSeed(seed, args), ...);
+  (combineHashesWithSeed(seed, args), ...);
 }
 
 /**
@@ -63,7 +63,7 @@ std::size_t
 CombineHashes(std::size_t hash, Args... args)
 {
   std::size_t seed = 0;
-  CombineHashesWithSeed(seed, hash, std::forward<Args>(args)...);
+  combineHashesWithSeed(seed, hash, std::forward<Args>(args)...);
   return seed;
 }
 

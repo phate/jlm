@@ -92,7 +92,7 @@ public:
   [[nodiscard]] static rvsdg::Node::OutputIteratorRange
   MemoryStateOutputs(const rvsdg::SimpleNode & node) noexcept
   {
-    const auto storeOperation = util::AssertedCast<const StoreOperation>(&node.GetOperation());
+    const auto storeOperation = util::assertedCast<const StoreOperation>(&node.GetOperation());
     if (storeOperation->NumMemoryStates_ == 0)
     {
       return { rvsdg::Output::Iterator(nullptr), rvsdg::Output::Iterator(nullptr) };

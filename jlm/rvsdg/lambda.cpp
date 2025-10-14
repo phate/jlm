@@ -130,8 +130,9 @@ LambdaNode::GetContextVars() const noexcept
 LambdaNode::ContextVar
 LambdaNode::AddContextVar(jlm::rvsdg::Output & origin)
 {
-  auto input = rvsdg::StructuralInput::create(this, &origin, origin.Type());
-  auto argument = &rvsdg::RegionArgument::Create(*subregion(), input, origin.Type());
+  const auto input =
+      addInput(std::make_unique<StructuralInput>(this, &origin, origin.Type()), true);
+  const auto argument = &RegionArgument::Create(*subregion(), input, origin.Type());
   return ContextVar{ input, argument };
 }
 
@@ -168,7 +169,7 @@ LambdaNode::finalize(const std::vector<jlm::rvsdg::Output *> & results)
   for (const auto & origin : results)
     rvsdg::RegionResult::Create(*origin->region(), *origin, nullptr, origin->Type());
 
-  return append_output(std::make_unique<rvsdg::StructuralOutput>(this, GetOperation().Type()));
+  return addOutput(std::make_unique<StructuralOutput>(this, GetOperation().Type()));
 }
 
 rvsdg::Output *
@@ -180,7 +181,7 @@ LambdaNode::output() const noexcept
 LambdaNode *
 LambdaNode::copy(rvsdg::Region * region, const std::vector<jlm::rvsdg::Output *> & operands) const
 {
-  return util::AssertedCast<LambdaNode>(rvsdg::Node::copy(region, operands));
+  return util::assertedCast<LambdaNode>(rvsdg::Node::copy(region, operands));
 }
 
 LambdaNode *
@@ -189,7 +190,7 @@ LambdaNode::copy(rvsdg::Region * region, rvsdg::SubstitutionMap & smap) const
   const auto & op = GetOperation();
   auto lambda = Create(
       *region,
-      std::unique_ptr<LambdaOperation>(util::AssertedCast<LambdaOperation>(op.copy().release())));
+      std::unique_ptr<LambdaOperation>(util::assertedCast<LambdaOperation>(op.copy().release())));
 
   /* add context variables */
   rvsdg::SubstitutionMap subregionmap;

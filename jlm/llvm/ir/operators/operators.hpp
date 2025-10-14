@@ -445,7 +445,7 @@ public:
   [[nodiscard]] const PointerType &
   GetPointerType() const noexcept
   {
-    return *util::AssertedCast<const PointerType>(result(0).get());
+    return *util::assertedCast<const PointerType>(result(0).get());
   }
 
   static std::unique_ptr<llvm::ThreeAddressCode>

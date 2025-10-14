@@ -7,7 +7,7 @@
 #ifndef JLM_RVSDG_TRAVERSER_HPP
 #define JLM_RVSDG_TRAVERSER_HPP
 
-#include <jlm/util/callbacks.hpp>
+#include <jlm/rvsdg/region.hpp>
 
 #include <list>
 #include <unordered_map>
@@ -88,13 +88,35 @@ enum class traversal_nodestate
 class TraversalTracker final
 {
 public:
-  inline traversal_nodestate
-  get_nodestate(Node * node);
+  /** \brief Determines whether node has been visited already. */
+  bool
+  isNodeVisited(Node * node) const;
 
-  inline void
-  set_nodestate(Node * node, traversal_nodestate state);
+  /** \brief Checks activation count whether node is ready for visiting. */
+  void
+  checkNodeActivation(Node * node, std::size_t threshold);
 
-  inline Node *
+  /** \brief Checks activation count whether node is no longer ready for visiting. */
+  void
+  checkNodeDeactivation(Node * node, std::size_t threshold);
+
+  /** \brief Marks a node visited if it is currently ready for visiting. */
+  void
+  checkMarkNodeVisited(Node * node);
+
+  /** \brief Increments activation count; adds to frontier if threshold is met. */
+  void
+  incActivationCount(Node * node, std::size_t threshold);
+
+  /** \brief Decrements activation count; removes from frontier if threshold is on longer. */
+  void
+  decActivationCount(Node * node, std::size_t threshold);
+
+  /** \brief Removes any state associated with the given node */
+  void
+  removeNode(Node * node);
+
+  Node *
   peek();
 
 private:
@@ -103,6 +125,7 @@ private:
   struct State
   {
     traversal_nodestate state = traversal_nodestate::ahead;
+    std::size_t activation_count = 0;
     FrontierList::iterator pos = {};
   };
 
@@ -166,18 +189,55 @@ public:
   }
 
 private:
+  class Observer final : public RegionObserver
+  {
+  public:
+    ~Observer() noexcept override;
+
+    Observer(Region & region, TopDownTraverser & traverser);
+
+    void
+    onNodeCreate(Node * node) override;
+
+    void
+    onNodeDestroy(Node * node) override;
+
+    void
+    onInputCreate(Input * input) override;
+
+    void
+    onInputChange(Input * input, Output * old_origin, Output * new_origin) override;
+
+    void
+    onInputDestroy(Input * input) override;
+
+  private:
+    TopDownTraverser & traverser_;
+  };
+
   bool
-  predecessors_visited(const Node * node) noexcept;
+  isOutputActivated(const Output * output) const;
 
   void
-  node_create(Node * node);
+  markVisited(Node * node);
 
   void
-  input_change(Input * in, Output * old_origin, Output * new_origin);
+  onNodeCreate(Node * node);
 
-  Region & region_;
+  void
+  onNodeDestroy(Node * node);
+
+  void
+  onInputCreate(Input * input);
+
+  void
+  onInputChange(Input * in, Output * old_origin, Output * new_origin);
+
+  void
+  onInputDestroy(Input * input);
+
   TraversalTracker tracker_;
-  std::vector<jlm::util::Callback> callbacks_;
+  Observer observer_;
 };
 
 class BottomUpTraverser final
@@ -185,7 +245,7 @@ class BottomUpTraverser final
 public:
   ~BottomUpTraverser() noexcept;
 
-  explicit BottomUpTraverser(Region * region, bool revisit = false);
+  explicit BottomUpTraverser(Region * region);
 
   Node *
   next();
@@ -206,19 +266,55 @@ public:
   }
 
 private:
-  void
-  node_create(Node * node);
+  class Observer final : public RegionObserver
+  {
+  public:
+    ~Observer() noexcept override;
+
+    Observer(Region & region, BottomUpTraverser & traverser);
+
+    void
+    onNodeCreate(Node * node) override;
+
+    void
+    onNodeDestroy(Node * node) override;
+
+    void
+    onInputCreate(Input * input) override;
+
+    void
+    onInputChange(Input * input, Output * old_origin, Output * new_origin) override;
+
+    void
+    onInputDestroy(Input * input) override;
+
+  private:
+    BottomUpTraverser & traverser_;
+  };
+
+  bool
+  isInputActivated(const Input * input) const;
 
   void
-  node_destroy(Node * node);
+  onNodeCreate(Node * node);
 
   void
-  input_change(Input * in, Output * old_origin, Output * new_origin);
+  onNodeDestroy(Node * node);
+
+  void
+  onInputCreate(Input * input);
+
+  void
+  onInputChange(Input * in, Output * old_origin, Output * new_origin);
+
+  void
+  onInputDestroy(Input * input);
+
+  void
+  markVisited(Node * node);
 
   TraversalTracker tracker_;
-  Region & region_;
-  std::vector<jlm::util::Callback> callbacks_;
-  traversal_nodestate new_node_state_;
+  Observer observer_;
 };
 
 }

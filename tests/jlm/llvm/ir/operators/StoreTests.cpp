@@ -192,7 +192,7 @@ TestCopy()
   // Assert
   assert(
       node->GetOperation()
-      == jlm::util::AssertedCast<jlm::rvsdg::SimpleNode>(copiedNode)->GetOperation());
+      == jlm::util::assertedCast<jlm::rvsdg::SimpleNode>(copiedNode)->GetOperation());
 }
 
 JLM_UNIT_TEST_REGISTER("jlm/llvm/ir/operators/StoreTests-TestCopy", TestCopy)
@@ -389,7 +389,7 @@ TestStoreStoreReduction()
 
   // Assert
   assert(success);
-  assert(graph.GetRootRegion().nnodes() == 1);
+  assert(graph.GetRootRegion().numNodes() == 1);
   assert(jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*ex.origin())->input(1)->origin() == v2);
 }
 
@@ -522,7 +522,7 @@ IOBarrierAllocaAddressNormalization_Gamma()
   assert(successStoreNode);
   // There should only be the store node left.
   // The IOBarrier node should have been pruned.
-  assert(gammaNode->subregion(0)->nnodes() == 1);
+  assert(gammaNode->subregion(0)->numNodes() == 1);
   assert(
       jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(*exitVar.branchResult[0]->origin())
           ->input(0)

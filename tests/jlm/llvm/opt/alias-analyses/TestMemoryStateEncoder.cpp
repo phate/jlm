@@ -69,7 +69,7 @@ ValidateStoreTest1SteensgaardAgnostic(const jlm::tests::StoreTest1 & test)
 {
   using namespace jlm::llvm;
 
-  assert(test.lambda->subregion()->nnodes() == 14);
+  assert(test.lambda->subregion()->numNodes() == 14);
 
   auto lambdaExitMerge = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
       *test.lambda->GetFunctionResults()[0]->origin());
@@ -115,7 +115,7 @@ ValidateStoreTest1SteensgaardRegionAware(const jlm::tests::StoreTest1 & test)
 {
   using namespace jlm::llvm;
 
-  assert(test.lambda->subregion()->nnodes() == 1);
+  assert(test.lambda->subregion()->numNodes() == 1);
 
   auto lambdaExitMerge = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
       *test.lambda->GetFunctionResults()[0]->origin());
@@ -127,7 +127,7 @@ ValidateStoreTest2SteensgaardAgnostic(const jlm::tests::StoreTest2 & test)
 {
   using namespace jlm::llvm;
 
-  assert(test.lambda->subregion()->nnodes() == 17);
+  assert(test.lambda->subregion()->numNodes() == 17);
 
   auto lambdaExitMerge = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
       *test.lambda->GetFunctionResults()[0]->origin());
@@ -184,8 +184,7 @@ static void
 ValidateStoreTest2SteensgaardRegionAware(const jlm::tests::StoreTest2 & test)
 {
   using namespace jlm::llvm;
-
-  assert(test.lambda->subregion()->nnodes() == 1);
+  assert(test.lambda->subregion()->numNodes() == 1);
 
   auto lambdaExitMerge = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
       *test.lambda->GetFunctionResults()[0]->origin());
@@ -197,7 +196,7 @@ ValidateLoadTest1SteensgaardAgnostic(const jlm::tests::LoadTest1 & test)
 {
   using namespace jlm::llvm;
 
-  assert(test.lambda->subregion()->nnodes() == 4);
+  assert(test.lambda->subregion()->numNodes() == 4);
 
   auto lambdaExitMerge = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
       *test.lambda->GetFunctionResults()[1]->origin());
@@ -226,7 +225,7 @@ ValidateLoadTest1SteensgaardRegionAware(const jlm::tests::LoadTest1 & test)
 {
   using namespace jlm::llvm;
 
-  assert(test.lambda->subregion()->nnodes() == 4);
+  assert(test.lambda->subregion()->numNodes() == 4);
 
   auto lambdaExitMerge = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
       *test.lambda->GetFunctionResults()[1]->origin());
@@ -255,7 +254,7 @@ ValidateLoadTest2SteensgaardAgnostic(const jlm::tests::LoadTest2 & test)
 {
   using namespace jlm::llvm;
 
-  assert(test.lambda->subregion()->nnodes() == 19);
+  assert(test.lambda->subregion()->numNodes() == 19);
 
   auto lambdaExitMerge = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
       *test.lambda->GetFunctionResults()[0]->origin());
@@ -322,8 +321,7 @@ static void
 ValidateLoadTest2SteensgaardRegionAware(const jlm::tests::LoadTest2 & test)
 {
   using namespace jlm::llvm;
-
-  assert(test.lambda->subregion()->nnodes() == 1);
+  assert(test.lambda->subregion()->numNodes() == 1);
 
   auto lambdaExitMerge = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
       *test.lambda->GetFunctionResults()[0]->origin());
@@ -335,7 +333,7 @@ ValidateLoadFromUndefSteensgaardAgnostic(const jlm::tests::LoadFromUndefTest & t
 {
   using namespace jlm::llvm;
 
-  assert(test.Lambda().subregion()->nnodes() == 4);
+  assert(test.Lambda().subregion()->numNodes() == 4);
 
   auto lambdaExitMerge = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
       *test.Lambda().GetFunctionResults()[1]->origin());
@@ -355,7 +353,7 @@ ValidateLoadFromUndefSteensgaardRegionAware(const jlm::tests::LoadFromUndefTest 
 {
   using namespace jlm::llvm;
 
-  assert(test.Lambda().subregion()->nnodes() == 3);
+  assert(test.Lambda().subregion()->numNodes() == 3);
 
   auto lambdaExitMerge = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
       *test.Lambda().GetFunctionResults()[1]->origin());
@@ -514,7 +512,7 @@ ValidateCallTest2SteensgaardAgnostic(const jlm::tests::CallTest2 & test)
 
   /* validate create function */
   {
-    assert(test.lambda_create->subregion()->nnodes() == 7);
+    assert(test.lambda_create->subregion()->numNodes() == 7);
 
     auto stateJoin =
         jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(test.malloc->output(1)->SingleUser());
@@ -535,12 +533,12 @@ ValidateCallTest2SteensgaardAgnostic(const jlm::tests::CallTest2 & test)
 
   /* validate destroy function */
   {
-    assert(test.lambda_destroy->subregion()->nnodes() == 4);
+    assert(test.lambda_destroy->subregion()->numNodes() == 4);
   }
 
   /* validate test function */
   {
-    assert(test.lambda_test->subregion()->nnodes() == 16);
+    assert(test.lambda_test->subregion()->numNodes() == 16);
   }
 }
 
@@ -551,7 +549,7 @@ ValidateCallTest2SteensgaardRegionAware(const jlm::tests::CallTest2 & test)
 
   /* validate create function */
   {
-    assert(test.lambda_create->subregion()->nnodes() == 7);
+    assert(test.lambda_create->subregion()->numNodes() == 7);
 
     auto stateJoin =
         jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(test.malloc->output(1)->SingleUser());
@@ -572,12 +570,12 @@ ValidateCallTest2SteensgaardRegionAware(const jlm::tests::CallTest2 & test)
 
   /* validate destroy function */
   {
-    assert(test.lambda_destroy->subregion()->nnodes() == 4);
+    assert(test.lambda_destroy->subregion()->numNodes() == 4);
   }
 
   /* validate test function */
   {
-    assert(test.lambda_test->subregion()->nnodes() == 16);
+    assert(test.lambda_test->subregion()->numNodes() == 16);
   }
 }
 
@@ -588,7 +586,7 @@ ValidateIndirectCallTest1SteensgaardAgnostic(const jlm::tests::IndirectCallTest1
 
   /* validate indcall function */
   {
-    assert(test.GetLambdaIndcall().subregion()->nnodes() == 6);
+    assert(test.GetLambdaIndcall().subregion()->numNodes() == 6);
 
     auto lambda_exit_mux = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
         *test.GetLambdaIndcall().GetFunctionResults()[2]->origin());
@@ -611,7 +609,7 @@ ValidateIndirectCallTest1SteensgaardAgnostic(const jlm::tests::IndirectCallTest1
 
   /* validate test function */
   {
-    assert(test.GetLambdaTest().subregion()->nnodes() == 9);
+    assert(test.GetLambdaTest().subregion()->numNodes() == 9);
 
     auto lambda_exit_mux = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
         *test.GetLambdaTest().GetFunctionResults()[2]->origin());
@@ -650,7 +648,7 @@ ValidateIndirectCallTest1SteensgaardRegionAware(const jlm::tests::IndirectCallTe
 
   /* validate indcall function */
   {
-    assert(test.GetLambdaIndcall().subregion()->nnodes() == 4);
+    assert(test.GetLambdaIndcall().subregion()->numNodes() == 4);
 
     auto lambdaExitMerge = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
         *test.GetLambdaIndcall().GetFunctionResults()[2]->origin());
@@ -666,7 +664,7 @@ ValidateIndirectCallTest1SteensgaardRegionAware(const jlm::tests::IndirectCallTe
 
   /* validate test function */
   {
-    assert(test.GetLambdaTest().subregion()->nnodes() == 6);
+    assert(test.GetLambdaTest().subregion()->numNodes() == 6);
 
     auto lambdaExitMerge = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
         *test.GetLambdaTest().GetFunctionResults()[2]->origin());
@@ -697,7 +695,7 @@ ValidateIndirectCallTest2SteensgaardAgnostic(const jlm::tests::IndirectCallTest2
 
   // validate function three()
   {
-    assert(test.GetLambdaThree().subregion()->nnodes() == 3);
+    assert(test.GetLambdaThree().subregion()->numNodes() == 3);
 
     auto lambdaExitMerge = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
         *test.GetLambdaThree().GetFunctionResults()[2]->origin());
@@ -710,7 +708,7 @@ ValidateIndirectCallTest2SteensgaardAgnostic(const jlm::tests::IndirectCallTest2
 
   // validate function four()
   {
-    assert(test.GetLambdaFour().subregion()->nnodes() == 3);
+    assert(test.GetLambdaFour().subregion()->numNodes() == 3);
 
     auto lambdaExitMerge = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
         *test.GetLambdaFour().GetFunctionResults()[2]->origin());
@@ -723,7 +721,7 @@ ValidateIndirectCallTest2SteensgaardAgnostic(const jlm::tests::IndirectCallTest2
 
   // validate function i()
   {
-    assert(test.GetLambdaI().subregion()->nnodes() == 6);
+    assert(test.GetLambdaI().subregion()->numNodes() == 6);
 
     auto lambdaExitMerge = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
         *test.GetLambdaI().GetFunctionResults()[2]->origin());
@@ -750,7 +748,7 @@ ValidateIndirectCallTest2SteensgaardRegionAware(const jlm::tests::IndirectCallTe
 
   // validate function three()
   {
-    assert(test.GetLambdaThree().subregion()->nnodes() == 2);
+    assert(test.GetLambdaThree().subregion()->numNodes() == 2);
 
     auto lambdaExitMerge = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
         *test.GetLambdaThree().GetFunctionResults()[2]->origin());
@@ -759,7 +757,7 @@ ValidateIndirectCallTest2SteensgaardRegionAware(const jlm::tests::IndirectCallTe
 
   // validate function four()
   {
-    assert(test.GetLambdaFour().subregion()->nnodes() == 2);
+    assert(test.GetLambdaFour().subregion()->numNodes() == 2);
 
     auto lambdaExitMerge = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
         *test.GetLambdaFour().GetFunctionResults()[2]->origin());
@@ -768,7 +766,7 @@ ValidateIndirectCallTest2SteensgaardRegionAware(const jlm::tests::IndirectCallTe
 
   // validate function i()
   {
-    assert(test.GetLambdaI().subregion()->nnodes() == 4);
+    assert(test.GetLambdaI().subregion()->numNodes() == 4);
 
     auto lambdaExitMerge = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
         *test.GetLambdaI().GetFunctionResults()[2]->origin());
@@ -781,7 +779,7 @@ ValidateIndirectCallTest2SteensgaardRegionAware(const jlm::tests::IndirectCallTe
 
   // validate function x()
   {
-    assert(test.GetLambdaX().subregion()->nnodes() == 7);
+    assert(test.GetLambdaX().subregion()->numNodes() == 7);
 
     auto lambdaExitMerge = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
         *test.GetLambdaX().GetFunctionResults()[2]->origin());
@@ -794,7 +792,7 @@ ValidateIndirectCallTest2SteensgaardRegionAware(const jlm::tests::IndirectCallTe
 
   // validate function y()
   {
-    assert(test.GetLambdaY().subregion()->nnodes() == 7);
+    assert(test.GetLambdaY().subregion()->numNodes() == 7);
 
     auto lambdaExitMerge = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
         *test.GetLambdaY().GetFunctionResults()[2]->origin());
@@ -807,7 +805,7 @@ ValidateIndirectCallTest2SteensgaardRegionAware(const jlm::tests::IndirectCallTe
 
   // validate function test()
   {
-    assert(test.GetLambdaTest().subregion()->nnodes() == 14);
+    assert(test.GetLambdaTest().subregion()->numNodes() == 14);
 
     auto lambdaExitMerge = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
         *test.GetLambdaTest().GetFunctionResults()[2]->origin());
@@ -828,7 +826,7 @@ ValidateIndirectCallTest2SteensgaardRegionAware(const jlm::tests::IndirectCallTe
 
   // validate function test2()
   {
-    assert(test.GetLambdaTest2().subregion()->nnodes() == 5);
+    assert(test.GetLambdaTest2().subregion()->numNodes() == 5);
 
     auto lambdaExitMerge = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
         *test.GetLambdaTest2().GetFunctionResults()[2]->origin());
@@ -885,7 +883,7 @@ ValidateThetaTestSteensgaardAgnostic(const jlm::tests::ThetaTest & test)
 {
   using namespace jlm::llvm;
 
-  assert(test.lambda->subregion()->nnodes() == 4);
+  assert(test.lambda->subregion()->numNodes() == 4);
 
   auto lambda_exit_mux = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
       *test.lambda->GetFunctionResults()[0]->origin());
@@ -910,7 +908,7 @@ ValidateThetaTestSteensgaardRegionAware(const jlm::tests::ThetaTest & test)
 {
   using namespace jlm::llvm;
 
-  assert(test.lambda->subregion()->nnodes() == 4);
+  assert(test.lambda->subregion()->numNodes() == 4);
 
   auto lambdaExitMerge = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
       *test.lambda->GetFunctionResults()[0]->origin());
@@ -935,7 +933,7 @@ ValidateDeltaTest1SteensgaardAgnostic(const jlm::tests::DeltaTest1 & test)
 {
   using namespace jlm::llvm;
 
-  assert(test.lambda_h->subregion()->nnodes() == 7);
+  assert(test.lambda_h->subregion()->numNodes() == 7);
 
   auto lambdaEntrySplit = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
       test.lambda_h->GetFunctionArguments()[1]->SingleUser());
@@ -961,7 +959,7 @@ ValidateDeltaTest1SteensgaardRegionAware(const jlm::tests::DeltaTest1 & test)
 {
   using namespace jlm::llvm;
 
-  assert(test.lambda_h->subregion()->nnodes() == 7);
+  assert(test.lambda_h->subregion()->numNodes() == 7);
 
   auto lambdaEntrySplit = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
       test.lambda_h->GetFunctionArguments()[1]->SingleUser());
@@ -987,7 +985,7 @@ ValidateDeltaTest2SteensgaardAgnostic(const jlm::tests::DeltaTest2 & test)
 {
   using namespace jlm::llvm;
 
-  assert(test.lambda_f2->subregion()->nnodes() == 9);
+  assert(test.lambda_f2->subregion()->numNodes() == 9);
 
   auto lambdaEntrySplit = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
       test.lambda_f2->GetFunctionArguments()[1]->SingleUser());
@@ -1022,7 +1020,7 @@ ValidateDeltaTest2SteensgaardRegionAware(const jlm::tests::DeltaTest2 & test)
 
   /* Validate f1() */
   {
-    assert(test.lambda_f1->subregion()->nnodes() == 4);
+    assert(test.lambda_f1->subregion()->numNodes() == 4);
 
     auto lambdaExitMerge = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
         *test.lambda_f1->GetFunctionResults()[1]->origin());
@@ -1039,7 +1037,7 @@ ValidateDeltaTest2SteensgaardRegionAware(const jlm::tests::DeltaTest2 & test)
 
   /* Validate f2() */
   {
-    assert(test.lambda_f2->subregion()->nnodes() == 9);
+    assert(test.lambda_f2->subregion()->numNodes() == 9);
 
     auto lambdaEntrySplit = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
         test.lambda_f2->GetFunctionArguments()[1]->SingleUser());
@@ -1084,7 +1082,7 @@ ValidateDeltaTest3SteensgaardAgnostic(const jlm::tests::DeltaTest3 & test)
 
   /* validate f() */
   {
-    assert(test.LambdaF().subregion()->nnodes() == 6);
+    assert(test.LambdaF().subregion()->numNodes() == 6);
 
     auto lambdaExitMerge = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
         *test.LambdaF().GetFunctionResults()[2]->origin());
@@ -1130,7 +1128,7 @@ ValidateDeltaTest3SteensgaardRegionAware(const jlm::tests::DeltaTest3 & test)
 
   /* validate f() */
   {
-    assert(test.LambdaF().subregion()->nnodes() == 6);
+    assert(test.LambdaF().subregion()->numNodes() == 6);
 
     auto lambdaExitMerge = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
         *test.LambdaF().GetFunctionResults()[2]->origin());
@@ -1174,7 +1172,7 @@ ValidateImportTestSteensgaardAgnostic(const jlm::tests::ImportTest & test)
 {
   using namespace jlm::llvm;
 
-  assert(test.lambda_f2->subregion()->nnodes() == 9);
+  assert(test.lambda_f2->subregion()->numNodes() == 9);
 
   auto lambdaEntrySplit = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
       test.lambda_f2->GetFunctionArguments()[1]->SingleUser());
@@ -1209,7 +1207,7 @@ ValidateImportTestSteensgaardRegionAware(const jlm::tests::ImportTest & test)
 
   /* Validate f1() */
   {
-    assert(test.lambda_f1->subregion()->nnodes() == 4);
+    assert(test.lambda_f1->subregion()->numNodes() == 4);
 
     auto lambdaExitMerge = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
         *test.lambda_f1->GetFunctionResults()[1]->origin());
@@ -1226,7 +1224,7 @@ ValidateImportTestSteensgaardRegionAware(const jlm::tests::ImportTest & test)
 
   /* Validate f2() */
   {
-    assert(test.lambda_f2->subregion()->nnodes() == 9);
+    assert(test.lambda_f2->subregion()->numNodes() == 9);
 
     auto lambdaEntrySplit = jlm::rvsdg::TryGetOwnerNode<jlm::rvsdg::Node>(
         test.lambda_f2->GetFunctionArguments()[1]->SingleUser());
@@ -1546,4 +1544,5 @@ TestMemoryStateEncoder()
   ValidateTest<jlm::tests::FreeNullTest, Steensgaard, AgnosticModRefSummarizer>(
       ValidateFreeNullTestSteensgaardAgnostic);
 }
+
 JLM_UNIT_TEST_REGISTER("jlm/llvm/opt/alias-analyses/TestMemoryStateEncoder", TestMemoryStateEncoder)

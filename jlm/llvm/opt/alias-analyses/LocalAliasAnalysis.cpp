@@ -241,7 +241,7 @@ CalculateIntraTypeGepOffset(
 std::optional<int64_t>
 LocalAliasAnalysis::CalculateGepOffset(const rvsdg::SimpleNode & gepNode)
 {
-  const auto gep = util::AssertedCast<const GetElementPtrOperation>(&gepNode.GetOperation());
+  const auto gep = util::assertedCast<const GetElementPtrOperation>(&gepNode.GetOperation());
 
   // The pointee type. Gets updated by the loop below if the GEP has multiple levels of offsets
   const auto & pointeeType = gep->GetPointeeType();

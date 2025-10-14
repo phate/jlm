@@ -21,14 +21,14 @@ PointsToGraph::PointsToGraph()
   ExternalMemoryNode_ = ExternalMemoryNode::Create(*this);
 
   // The external memory node has by definition always escaped
-  EscapedMemoryNodes_.Insert(ExternalMemoryNode_.get());
+  EscapedMemoryNodes_.insert(ExternalMemoryNode_.get());
 }
 
 void
 PointsToGraph::AddEscapedMemoryNode(PointsToGraph::MemoryNode & memoryNode)
 {
   JLM_ASSERT(&memoryNode.Graph() == this);
-  EscapedMemoryNodes_.Insert(&memoryNode);
+  EscapedMemoryNodes_.insert(&memoryNode);
 }
 
 PointsToGraph::AllocaNodeRange

@@ -16,7 +16,7 @@ GraphImport::Copy(rvsdg::Region & region, rvsdg::StructuralInput *)
       ValueType(),
       ImportedType(),
       Name(),
-      Linkage(),
+      linkage(),
       isConstant());
 }
 

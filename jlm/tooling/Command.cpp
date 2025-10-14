@@ -617,13 +617,13 @@ JlmOptCommand::PrintAsDot(
 
   if (outputFile == "")
   {
-    writer.OutputAllGraphs(std::cout, util::graph::OutputFormat::Dot);
+    writer.outputAllGraphs(std::cout, util::graph::OutputFormat::Dot);
   }
   else
   {
     std::ofstream fs;
     fs.open(outputFile.to_str());
-    writer.OutputAllGraphs(fs, util::graph::OutputFormat::Dot);
+    writer.outputAllGraphs(fs, util::graph::OutputFormat::Dot);
     fs.close();
   }
 }
