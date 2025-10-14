@@ -182,11 +182,10 @@ mem_sep_argument(rvsdg::Region * region)
   }
 
   auto & state_user = *state_arg->Users().begin();
-  port_load_store_decouple port_nodes;
-  TracePointerArguments(lambda, port_nodes);
-  for (auto & tp : port_nodes)
+  auto tracedPointerNodesVector = TracePointerArguments(lambda);
+  for (auto & tp : tracedPointerNodesVector)
   {
-    auto & decouple_nodes = std::get<2>(tp);
+    auto & decouple_nodes = tp.decoupleNodes;
     auto decouple_requests_cnt = decouple_nodes.size();
     // place decouple responses along same state edge
     for (size_t i = 0; i < decouple_requests_cnt; ++i)
@@ -203,11 +202,12 @@ mem_sep_argument(rvsdg::Region * region)
   gather_other_calls(lambda_region, other_calls);
   for (auto call : other_calls)
   {
-    port_nodes.emplace_back();
-    std::get<2>(port_nodes.back()).push_back(call);
+    tracedPointerNodesVector.emplace_back();
+    tracedPointerNodesVector.back().decoupleNodes.push_back(call);
   }
-  auto entry_states =
-      jlm::llvm::LambdaEntryMemoryStateSplitOperation::Create(*state_arg, 1 + port_nodes.size());
+  auto entry_states = jlm::llvm::LambdaEntryMemoryStateSplitOperation::Create(
+      *state_arg,
+      1 + tracedPointerNodesVector.size());
   auto state_result = &llvm::GetMemoryStateRegionResult(*lambda);
   // handle existing state edge - TODO: remove entirely?
   auto common_edge = entry_states.back();
@@ -219,11 +219,11 @@ mem_sep_argument(rvsdg::Region * region)
   entry_states.pop_back();
   state_result->divert_to(&merged_state);
 
-  for (auto tp : port_nodes)
+  for (auto tp : tracedPointerNodesVector)
   {
     auto new_edge = entry_states.back();
     entry_states.pop_back();
-    trace_edge(common_edge, new_edge, std::get<0>(tp), std::get<1>(tp), std::get<2>(tp));
+    trace_edge(common_edge, new_edge, tp.loadNodes, tp.storeNodes, tp.decoupleNodes);
   }
 }
 
