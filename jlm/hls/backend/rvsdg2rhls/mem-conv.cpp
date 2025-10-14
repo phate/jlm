@@ -264,18 +264,14 @@ gather_mem_nodes(
  * If the output is a pointer, it traces it to all memory operations it reaches.
  * Pointers read from memory is not traced, i.e., the output of load operations is not traced.
  * @param output The output to trace
- * @param loadNodes A vector containing all load nodes that are reached
- * @param storeNodes A vector containing all store nodes that are reached
- * @param decoupleNodes A vector containing all decoupled load nodes that are reached
  * @param visited A set of already visited outputs
+ * @param tracedPointerNodes All nodes that are reached
  */
-void
+static void
 TracePointer(
     rvsdg::Output * output,
-    std::vector<rvsdg::SimpleNode *> & loadNodes,
-    std::vector<rvsdg::SimpleNode *> & storeNodes,
-    std::vector<rvsdg::SimpleNode *> & decoupleNodes,
-    std::unordered_set<rvsdg::Output *> & visited)
+    std::unordered_set<rvsdg::Output *> & visited,
+    TracedPointerNodes & tracedPointerNodes)
 {
   if (!rvsdg::is<llvm::PointerType>(output->Type()))
   {
@@ -294,23 +290,23 @@ TracePointer(
     {
       if (dynamic_cast<const llvm::StoreNonVolatileOperation *>(&simplenode->GetOperation()))
       {
-        storeNodes.push_back(simplenode);
+        tracedPointerNodes.storeNodes.push_back(simplenode);
       }
       else if (dynamic_cast<const llvm::LoadNonVolatileOperation *>(&simplenode->GetOperation()))
       {
-        loadNodes.push_back(simplenode);
+        tracedPointerNodes.loadNodes.push_back(simplenode);
       }
       else if (dynamic_cast<const llvm::CallOperation *>(&simplenode->GetOperation()))
       {
         // request
         JLM_ASSERT(is_dec_req(simplenode));
-        decoupleNodes.push_back(simplenode);
+        tracedPointerNodes.decoupleNodes.push_back(simplenode);
       }
       else
       {
         for (size_t i = 0; i < simplenode->noutputs(); ++i)
         {
-          TracePointer(simplenode->output(i), loadNodes, storeNodes, decoupleNodes, visited);
+          TracePointer(simplenode->output(i), visited, tracedPointerNodes);
         }
       }
     }
@@ -318,18 +314,18 @@ TracePointer(
     {
       for (auto & arg : sti->arguments)
       {
-        TracePointer(&arg, loadNodes, storeNodes, decoupleNodes, visited);
+        TracePointer(&arg, visited, tracedPointerNodes);
       }
     }
     else if (auto r = dynamic_cast<rvsdg::RegionResult *>(&user))
     {
       if (auto ber = dynamic_cast<BackEdgeResult *>(r))
       {
-        TracePointer(ber->argument(), loadNodes, storeNodes, decoupleNodes, visited);
+        TracePointer(ber->argument(), visited, tracedPointerNodes);
       }
       else
       {
-        TracePointer(r->output(), loadNodes, storeNodes, decoupleNodes, visited);
+        TracePointer(r->output(), visited, tracedPointerNodes);
       }
     }
     else
@@ -339,37 +335,31 @@ TracePointer(
   }
 }
 
-void
-TracePointerArguments(const rvsdg::LambdaNode * lambda, port_load_store_decouple & portNodes)
+std::vector<TracedPointerNodes>
+TracePointerArguments(const rvsdg::LambdaNode * lambda)
 {
-  for (auto arg : lambda->GetFunctionArguments())
+  std::vector<TracedPointerNodes> tracedPointerNodes;
+  for (const auto argument : lambda->GetFunctionArguments())
   {
-    if (rvsdg::is<llvm::PointerType>(arg->Type()))
+    if (rvsdg::is<llvm::PointerType>(argument->Type()))
     {
       std::unordered_set<rvsdg::Output *> visited;
-      portNodes.emplace_back();
-      TracePointer(
-          arg,
-          std::get<0>(portNodes.back()),
-          std::get<1>(portNodes.back()),
-          std::get<2>(portNodes.back()),
-          visited);
+      tracedPointerNodes.emplace_back();
+      TracePointer(argument, visited, tracedPointerNodes.back());
     }
   }
+
   for (auto cv : lambda->GetContextVars())
   {
     if (rvsdg::is<llvm::PointerType>(cv.inner->Type()) && !is_function_argument(cv))
     {
       std::unordered_set<rvsdg::Output *> visited;
-      portNodes.emplace_back();
-      TracePointer(
-          cv.inner,
-          std::get<0>(portNodes.back()),
-          std::get<1>(portNodes.back()),
-          std::get<2>(portNodes.back()),
-          visited);
+      tracedPointerNodes.emplace_back();
+      TracePointer(cv.inner, visited, tracedPointerNodes.back());
     }
   }
+
+  return tracedPointerNodes;
 }
 
 rvsdg::LambdaNode *
@@ -382,26 +372,23 @@ find_containing_lambda(rvsdg::Region * region)
   return find_containing_lambda(region->node()->region());
 }
 
-size_t
-CalcualtePortWidth(const std::tuple<
-                   std::vector<rvsdg::SimpleNode *>,
-                   std::vector<rvsdg::SimpleNode *>,
-                   std::vector<rvsdg::SimpleNode *>> & loadStoreDecouple)
+static size_t
+CalculatePortWidth(const TracedPointerNodes & tracedPointerNodes)
 {
   int max_width = 0;
-  for (auto node : std::get<0>(loadStoreDecouple))
+  for (auto node : tracedPointerNodes.loadNodes)
   {
     auto loadOp = util::assertedCast<const llvm::LoadNonVolatileOperation>(&node->GetOperation());
     auto sz = JlmSize(loadOp->GetLoadedType().get());
     max_width = sz > max_width ? sz : max_width;
   }
-  for (auto node : std::get<1>(loadStoreDecouple))
+  for (auto node : tracedPointerNodes.storeNodes)
   {
     auto storeOp = util::assertedCast<const llvm::StoreNonVolatileOperation>(&node->GetOperation());
     auto sz = JlmSize(&storeOp->GetStoredType());
     max_width = sz > max_width ? sz : max_width;
   }
-  for (auto decoupleRequest : std::get<2>(loadStoreDecouple))
+  for (auto decoupleRequest : tracedPointerNodes.decoupleNodes)
   {
     auto lambda = find_containing_lambda(decoupleRequest->region());
     auto channel = decoupleRequest->input(1)->origin();
@@ -546,8 +533,8 @@ ConnectRequestResponseMemPorts(
   }
 
   auto lambdaRegion = lambda->subregion();
-  auto portWidth = CalcualtePortWidth(
-      std::make_tuple(originalLoadNodes, originalStoreNodes, originalDecoupledNodes));
+  auto portWidth =
+      CalculatePortWidth({ originalLoadNodes, originalStoreNodes, originalDecoupledNodes });
   auto responses = MemoryResponseOperation::create(
       *lambdaRegion->argument(argumentIndex),
       responseTypes,
@@ -658,18 +645,17 @@ ConvertMemory(rvsdg::RvsdgModule & rvsdgModule)
   // Get the load and store nodes and add an argument and result for each to represent the memory
   // response and request ports
   //
-  port_load_store_decouple portNodes;
-  TracePointerArguments(lambda, portNodes);
+  auto tracedPointerNodesVector = TracePointerArguments(lambda);
 
   std::unordered_set<rvsdg::SimpleNode *> accountedNodes;
-  for (auto & portNode : portNodes)
+  for (auto & portNode : tracedPointerNodesVector)
   {
-    auto portWidth = CalcualtePortWidth(portNode);
+    auto portWidth = CalculatePortWidth(portNode);
     auto responseTypePtr = get_mem_res_type(rvsdg::BitType::Create(portWidth));
     auto requestTypePtr = get_mem_req_type(rvsdg::BitType::Create(portWidth), false);
     auto requestTypePtrWrite = get_mem_req_type(rvsdg::BitType::Create(portWidth), true);
     newArgumentTypes.push_back(responseTypePtr);
-    if (std::get<1>(portNode).empty())
+    if (portNode.storeNodes.empty())
     {
       newResultTypes.push_back(requestTypePtr);
     }
@@ -677,9 +663,9 @@ ConvertMemory(rvsdg::RvsdgModule & rvsdgModule)
     {
       newResultTypes.push_back(requestTypePtrWrite);
     }
-    accountedNodes.insert(std::get<0>(portNode).begin(), std::get<0>(portNode).end());
-    accountedNodes.insert(std::get<1>(portNode).begin(), std::get<1>(portNode).end());
-    accountedNodes.insert(std::get<2>(portNode).begin(), std::get<2>(portNode).end());
+    accountedNodes.insert(portNode.loadNodes.begin(), portNode.loadNodes.end());
+    accountedNodes.insert(portNode.storeNodes.begin(), portNode.storeNodes.end());
+    accountedNodes.insert(portNode.decoupleNodes.begin(), portNode.decoupleNodes.end());
   }
   std::vector<rvsdg::SimpleNode *> unknownLoadNodes;
   std::vector<rvsdg::SimpleNode *> unknownStoreNodes;
@@ -692,8 +678,8 @@ ConvertMemory(rvsdg::RvsdgModule & rvsdgModule)
       accountedNodes);
   if (!unknownLoadNodes.empty() || !unknownStoreNodes.empty() || !unknownDecoupledNodes.empty())
   {
-    auto portWidth = CalcualtePortWidth(
-        std::make_tuple(unknownLoadNodes, unknownStoreNodes, unknownDecoupledNodes));
+    auto portWidth =
+        CalculatePortWidth({ unknownLoadNodes, unknownStoreNodes, unknownDecoupledNodes });
     auto responseTypePtr = get_mem_res_type(rvsdg::BitType::Create(portWidth));
     auto requestTypePtr = get_mem_req_type(rvsdg::BitType::Create(portWidth), false);
     auto requestTypePtrWrite = get_mem_req_type(rvsdg::BitType::Create(portWidth), true);
@@ -745,18 +731,15 @@ ConvertMemory(rvsdg::RvsdgModule & rvsdgModule)
   // The new arguments are placed directly after the original arguments so we create an index that
   // points to the first new argument
   auto newArgumentsIndex = args.size();
-  for (auto & portNode : portNodes)
+  for (auto & portNode : tracedPointerNodesVector)
   {
-    auto loadNodes = std::get<0>(portNode);
-    auto storeNodes = std::get<1>(portNode);
-    auto decoupledNodes = std::get<2>(portNode);
     newResults.push_back(ConnectRequestResponseMemPorts(
         newLambda,
         newArgumentsIndex++,
         smap,
-        loadNodes,
-        storeNodes,
-        decoupledNodes));
+        portNode.loadNodes,
+        portNode.storeNodes,
+        portNode.decoupleNodes));
   }
   if (!unknownLoadNodes.empty() || !unknownStoreNodes.empty() || !unknownDecoupledNodes.empty())
   {

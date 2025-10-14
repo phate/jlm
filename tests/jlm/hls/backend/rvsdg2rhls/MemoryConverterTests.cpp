@@ -55,18 +55,17 @@ TestTraceArgument()
 
   // Act
   jlm::rvsdg::view(rvsdgModule->Rvsdg(), stdout);
-  port_load_store_decouple portNodes;
-  TracePointerArguments(lambda, portNodes);
+  const auto tracedPointerNodesVector = TracePointerArguments(lambda);
   jlm::rvsdg::view(rvsdgModule->Rvsdg(), stdout);
 
   // Assert
-  assert(portNodes.size() == 2);                 // 2 pointer arguments
-  assert(std::get<0>(portNodes[0]).size() == 1); // 1 load for the first pointer
-  assert(std::get<1>(portNodes[0]).size() == 0); // 0 store for the first pointer
-  assert(std::get<2>(portNodes[0]).size() == 0); // 0 decouple for the first pointer
-  assert(std::get<0>(portNodes[1]).size() == 0); // 0 load for the first pointer
-  assert(std::get<1>(portNodes[1]).size() == 1); // 1 store for the second pointer
-  assert(std::get<2>(portNodes[1]).size() == 0); // 0 load for the first pointer
+  assert(tracedPointerNodesVector.size() == 2);                  // 2 pointer arguments
+  assert(tracedPointerNodesVector[0].loadNodes.size() == 1);     // 1 load for the first pointer
+  assert(tracedPointerNodesVector[0].storeNodes.size() == 0);    // 0 store for the first pointer
+  assert(tracedPointerNodesVector[0].decoupleNodes.size() == 0); // 0 decouple for the first pointer
+  assert(tracedPointerNodesVector[1].loadNodes.size() == 0);     // 0 load for the first pointer
+  assert(tracedPointerNodesVector[1].storeNodes.size() == 1);    // 1 store for the second pointer
+  assert(tracedPointerNodesVector[1].decoupleNodes.size() == 0); // 0 load for the first pointer
 }
 JLM_UNIT_TEST_REGISTER(
     "jlm/hls/backend/rvsdg2rhls/MemoryConverterTests-TraceArgument",
