@@ -10,7 +10,7 @@
 #include <jlm/rvsdg/traverser.hpp>
 
 static void
-test_initialization()
+testInitialization()
 {
   auto vtype = jlm::tests::ValueType::Create();
 
@@ -44,8 +44,10 @@ test_initialization()
   assert(constant_visited);
 }
 
+JLM_UNIT_TEST_REGISTER("jlm/rvsdg/TopdownTraverserTest-testInitialization", testInitialization);
+
 static void
-test_basic_traversal()
+testBasicTraversal()
 {
   jlm::rvsdg::Graph graph;
   auto type = jlm::tests::ValueType::Create();
@@ -71,8 +73,10 @@ test_basic_traversal()
   }
 }
 
+JLM_UNIT_TEST_REGISTER("jlm/rvsdg/TopdownTraverserTest-testBasicTraversal", testBasicTraversal);
+
 static void
-test_order_enforcement_traversal()
+testOrderEnforcement()
 {
   jlm::rvsdg::Graph graph;
   auto type = jlm::tests::ValueType::Create();
@@ -99,8 +103,10 @@ test_order_enforcement_traversal()
   }
 }
 
+JLM_UNIT_TEST_REGISTER("jlm/rvsdg/TopdownTraverserTest-testOrderEnforcement", testOrderEnforcement);
+
 static void
-test_traversal_insertion()
+testInsertion()
 {
   jlm::rvsdg::Graph graph;
   auto type = jlm::tests::ValueType::Create();
@@ -157,8 +163,49 @@ test_traversal_insertion()
   }
 }
 
+JLM_UNIT_TEST_REGISTER("jlm/rvsdg/TopdownTraverserTest-testInsertion", testInsertion);
+
 static void
-test_mutable_traverse()
+testInsertingTopNode()
+{
+  // Starts with a graph like
+  // n1 -> n2 -> GraphExport
+  //
+  // when n1 is visited, the graph is converted into
+  //
+  // n1
+  // nX -> n2 -> GraphExport
+  //
+  // Since nX is created without any unvisited predecessors, it should not be visited.
+  // n2 should be visited, however.
+
+  jlm::rvsdg::Graph graph;
+  auto type = jlm::tests::ValueType::Create();
+
+  auto n1 = jlm::tests::TestOperation::create(&graph.GetRootRegion(), {}, { type });
+  auto n2 = jlm::tests::TestOperation::create(&graph.GetRootRegion(), { n1->output(0) }, { type });
+
+  jlm::rvsdg::GraphExport::Create(*n2->output(0), "dummy");
+
+  // Act and assert
+  jlm::rvsdg::TopDownTraverser trav(&graph.GetRootRegion());
+  auto node = trav.next();
+  assert(node == n1);
+
+  auto nX = jlm::tests::TestOperation::create(&graph.GetRootRegion(), { }, { type });
+  n1->output(0)->divert_users(nX->output(0));
+
+  node = trav.next();
+  assert(node == n2);
+
+  node = trav.next();
+  assert(node == nullptr);
+}
+
+JLM_UNIT_TEST_REGISTER("jlm/rvsdg/TopdownTraverserTest-testInsertingTopNode", testInsertingTopNode);
+
+static void
+testMutating()
 {
   auto test = [](jlm::rvsdg::Graph * graph,
                  jlm::rvsdg::Node * n1,
@@ -195,14 +242,57 @@ test_mutable_traverse()
   test(&graph, n1, n2, n3);
 }
 
+JLM_UNIT_TEST_REGISTER("jlm/rvsdg/TopdownTraverserTest-testMutating", testMutating);
+
 static void
-test_main()
+testReplacement()
 {
-  test_initialization();
-  test_basic_traversal();
-  test_order_enforcement_traversal();
-  test_traversal_insertion();
-  test_mutable_traverse();
+  // Starts with a graph like
+  // n1 -> n2 -> n3 -> n4 -> GraphExport
+  //         \-> n5 -> GraphExport
+  //
+  // when n2 is visited, the graph is converted into
+  //
+  // n1 -> n2 -> n3
+  //   \-> nX -> nY -> n4 -> GraphExport
+  //         \-> n5 -> GraphExport
+  //
+  // Since nX is created as a successor of only visited nodes, it is not visited.
+  // nY is not visited either, as its predecessor nX is already "visited".
+  // n3, n4 and n5 should be visited, however.
+
+  jlm::rvsdg::Graph graph;
+  auto type = jlm::tests::ValueType::Create();
+
+  auto n1 = jlm::tests::TestOperation::create(&graph.GetRootRegion(), {}, { type });
+  auto n2 = jlm::tests::TestOperation::create(&graph.GetRootRegion(), { n1->output(0) }, { type });
+  auto n3 = jlm::tests::TestOperation::create(&graph.GetRootRegion(), { n2->output(0) }, { type });
+  auto n4 = jlm::tests::TestOperation::create(&graph.GetRootRegion(), { n3->output(0) }, { type });
+  auto n5 = jlm::tests::TestOperation::create(&graph.GetRootRegion(), { n2->output(0) }, { type });
+
+  jlm::rvsdg::GraphExport::Create(*n4->output(0), "dummy");
+
+  // Act and assert
+  jlm::rvsdg::TopDownTraverser trav(&graph.GetRootRegion());
+  auto node = trav.next();
+  assert(node == n1);
+
+  node = trav.next();
+  assert(node == n2);
+  auto nX = jlm::tests::TestOperation::create(&graph.GetRootRegion(), { n1->output(0) }, { type });
+  auto nY = jlm::tests::TestOperation::create(&graph.GetRootRegion(), { nX->output(0) }, { type });
+  n3->output(0)->divert_users(nY->output(0));
+  n5->input(0)->divert_to(nX->output(0));
+
+  auto next1 = trav.next();
+  auto next2 = trav.next();
+  auto next3 = trav.next();
+  assert(n3 == next1 || n3 == next2 || n3 == next3);
+  assert(n4 == next1 || n4 == next2 || n4 == next3);
+  assert(n5 == next1 || n5 == next2 || n5 == next3);
+
+  auto next4 = trav.next();
+  assert(next4 == nullptr);
 }
 
-JLM_UNIT_TEST_REGISTER("jlm/rvsdg/test-topdown", test_main)
+JLM_UNIT_TEST_REGISTER("jlm/rvsdg/TopdownTraverserTest-testReplacement", testReplacement);

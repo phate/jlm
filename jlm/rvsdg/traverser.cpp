@@ -39,7 +39,9 @@ TopDownTraverser::Observer::onNodeCreate(Node * node)
 
 void
 TopDownTraverser::Observer::onNodeDestroy(Node * node)
-{}
+{
+  traverser_.onNodeDestroy(node);
+}
 
 void
 TopDownTraverser::Observer::onInputCreate(Input * input)
@@ -56,7 +58,7 @@ TopDownTraverser::Observer::onInputChange(Input * input, Output * old_origin, Ou
 void
 TopDownTraverser::Observer::onInputDestroy(Input * input)
 {
-  traverser_.onInputCreate(input);
+  traverser_.onInputDestroy(input);
 }
 
 TopDownTraverser::~TopDownTraverser() noexcept = default;
@@ -89,10 +91,8 @@ TopDownTraverser::isOutputActivated(const Output * output) const
   {
     return tracker_.isNodeVisited(pred);
   }
-  else
-  {
-    return true;
-  }
+
+  return true;
 }
 
 void
@@ -134,10 +134,18 @@ TopDownTraverser::onNodeCreate(Node * node)
     }
   }
 
+  if (node->ninputs() == 0)
+    tracker_.checkNodeActivation(node, node->ninputs());
+
   // If node would end up on frontier (because all predecessors
   // have been visited), mark it as visited instead (we do not
   // want to revisit newly created nodes during topdown traversal).
   tracker_.checkMarkNodeVisited(node);
+}
+
+void TopDownTraverser::onNodeDestroy(Node * node)
+{
+  tracker_.removeNode(node);
 }
 
 void
@@ -410,12 +418,7 @@ TraversalTracker::incActivationCount(Node * node, std::size_t threshold)
 {
   auto i = states_.emplace(node, State{ traversal_nodestate::ahead }).first;
   i->second.activation_count += 1;
-  if (i->second.activation_count == threshold && i->second.state == traversal_nodestate::ahead)
-  {
-    frontier_.push_back(node);
-    i->second.pos = std::prev(frontier_.end());
-    i->second.state = traversal_nodestate::frontier;
-  }
+  checkNodeActivation(node, threshold);
 }
 
 void
@@ -423,11 +426,17 @@ TraversalTracker::decActivationCount(Node * node, std::size_t threshold)
 {
   auto i = states_.emplace(node, State{ traversal_nodestate::ahead }).first;
   i->second.activation_count -= 1;
-  if (i->second.activation_count < threshold && i->second.state == traversal_nodestate::frontier)
+  checkNodeDeactivation(node, threshold);
+}
+
+void
+TraversalTracker::removeNode(Node * node)
+{
+  if (const auto it = states_.find(node); it != states_.end())
   {
-    frontier_.erase(i->second.pos);
-    i->second.pos = frontier_.end();
-    i->second.state = traversal_nodestate::ahead;
+    if (it->second.state == traversal_nodestate::frontier)
+      frontier_.erase(it->second.pos);
+    states_.erase(it);
   }
 }
 
