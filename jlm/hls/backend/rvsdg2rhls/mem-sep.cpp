@@ -171,15 +171,8 @@ gather_other_calls(rvsdg::Region * region, std::vector<jlm::rvsdg::SimpleNode *>
 void
 MemoryStateSeparation::separateMemoryStates(const rvsdg::LambdaNode & lambdaNode)
 {
-  auto & memoryStateArgument = llvm::GetMemoryStateRegionArgument(lambdaNode);
-  const auto & memoryStateResult = llvm::GetMemoryStateRegionResult(lambdaNode);
-  if (memoryStateResult.origin() == &memoryStateArgument)
-  {
-    // Nothing needs to be done as no memory states are used in this lambda node
-    return;
-  }
-
   const auto lambdaSubregion = lambdaNode.subregion();
+  auto & memoryStateArgument = llvm::GetMemoryStateRegionArgument(lambdaNode);
 
   auto & state_user = *memoryStateArgument.Users().begin();
   auto tracedPointerNodesVector = TracePointerArguments(&lambdaNode);
