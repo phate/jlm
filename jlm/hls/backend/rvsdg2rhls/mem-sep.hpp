@@ -7,6 +7,11 @@
 
 #include <jlm/rvsdg/Transformation.hpp>
 
+namespace jlm::rvsdg
+{
+class LambdaNode;
+}
+
 namespace jlm::hls
 {
 
@@ -36,6 +41,10 @@ public:
     MemoryStateSeparation memoryStateSeparation;
     memoryStateSeparation.Run(rvsdgModule, statisticsCollector);
   }
+
+private:
+  static void
+  separateMemoryStates(const rvsdg::LambdaNode & lambdaNode);
 };
 
 } // namespace jlm::hls
