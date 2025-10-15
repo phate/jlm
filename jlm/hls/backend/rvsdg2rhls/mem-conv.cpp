@@ -224,10 +224,10 @@ ReplaceDecouple(
 void
 gather_mem_nodes(
     rvsdg::Region * region,
-    std::vector<rvsdg::SimpleNode *> & loadNodes,
-    std::vector<rvsdg::SimpleNode *> & storeNodes,
-    std::vector<rvsdg::SimpleNode *> & decoupleNodes,
-    std::unordered_set<rvsdg::SimpleNode *> exclude)
+    std::vector<rvsdg::Node *> & loadNodes,
+    std::vector<rvsdg::Node *> & storeNodes,
+    std::vector<rvsdg::Node *> & decoupleNodes,
+    std::unordered_set<rvsdg::Node *> exclude)
 {
   for (auto & node : rvsdg::TopDownTraverser(region))
   {
@@ -404,7 +404,7 @@ CalculatePortWidth(const TracedPointerNodes & tracedPointerNodes)
 static rvsdg::SimpleNode *
 ReplaceLoad(
     rvsdg::SubstitutionMap & smap,
-    const rvsdg::SimpleNode * originalLoad,
+    const rvsdg::Node * originalLoad,
     rvsdg::Output * response)
 {
   // We have the load from the original lambda since it is needed to update the smap
@@ -446,7 +446,7 @@ ReplaceLoad(
 static rvsdg::SimpleNode *
 ReplaceStore(
     rvsdg::SubstitutionMap & smap,
-    const rvsdg::SimpleNode * originalStore,
+    const rvsdg::Node * originalStore,
     rvsdg::Output * response)
 {
   // We have the store from the original lambda since it is needed to update the smap
@@ -485,9 +485,9 @@ ConnectRequestResponseMemPorts(
     const rvsdg::LambdaNode * lambda,
     size_t argumentIndex,
     rvsdg::SubstitutionMap & smap,
-    const std::vector<rvsdg::SimpleNode *> & originalLoadNodes,
-    const std::vector<rvsdg::SimpleNode *> & originalStoreNodes,
-    const std::vector<rvsdg::SimpleNode *> & originalDecoupledNodes)
+    const std::vector<rvsdg::Node *> & originalLoadNodes,
+    const std::vector<rvsdg::Node *> & originalStoreNodes,
+    const std::vector<rvsdg::Node *> & originalDecoupledNodes)
 {
   //
   // We have the memory operations from the original lambda and need to lookup the corresponding
@@ -647,7 +647,7 @@ ConvertMemory(rvsdg::RvsdgModule & rvsdgModule)
   //
   auto tracedPointerNodesVector = TracePointerArguments(lambda);
 
-  std::unordered_set<rvsdg::SimpleNode *> accountedNodes;
+  std::unordered_set<rvsdg::Node *> accountedNodes;
   for (auto & portNode : tracedPointerNodesVector)
   {
     auto portWidth = CalculatePortWidth(portNode);
@@ -667,9 +667,9 @@ ConvertMemory(rvsdg::RvsdgModule & rvsdgModule)
     accountedNodes.insert(portNode.storeNodes.begin(), portNode.storeNodes.end());
     accountedNodes.insert(portNode.decoupleNodes.begin(), portNode.decoupleNodes.end());
   }
-  std::vector<rvsdg::SimpleNode *> unknownLoadNodes;
-  std::vector<rvsdg::SimpleNode *> unknownStoreNodes;
-  std::vector<rvsdg::SimpleNode *> unknownDecoupledNodes;
+  std::vector<rvsdg::Node *> unknownLoadNodes;
+  std::vector<rvsdg::Node *> unknownStoreNodes;
+  std::vector<rvsdg::Node *> unknownDecoupledNodes;
   gather_mem_nodes(
       rootRegion,
       unknownLoadNodes,

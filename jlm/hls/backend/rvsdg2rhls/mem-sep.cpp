@@ -29,9 +29,9 @@ rvsdg::RegionResult *
 trace_edge(
     jlm::rvsdg::Output * common_edge,
     jlm::rvsdg::Output * new_edge,
-    std::vector<jlm::rvsdg::SimpleNode *> & load_nodes,
-    const std::vector<jlm::rvsdg::SimpleNode *> & store_nodes,
-    std::vector<jlm::rvsdg::SimpleNode *> & decouple_nodes)
+    std::vector<rvsdg::Node *> & load_nodes,
+    const std::vector<rvsdg::Node *> & store_nodes,
+    std::vector<rvsdg::Node *> & decouple_nodes)
 {
   // follows along common edge and routes new edge through the same regions
   // redirects the supplied loads, stores and decouples to the new edge
