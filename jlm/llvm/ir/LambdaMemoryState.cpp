@@ -12,7 +12,8 @@ namespace jlm::llvm
 rvsdg::Output &
 GetMemoryStateRegionArgument(const rvsdg::LambdaNode & lambdaNode) noexcept
 {
-  auto argument = lambdaNode.GetFunctionArguments().back();
+  JLM_ASSERT(is<llvm::LlvmLambdaOperation>(&lambdaNode));
+  const auto argument = lambdaNode.GetFunctionArguments().back();
   JLM_ASSERT(is<MemoryStateType>(argument->Type()));
   return *argument;
 }
@@ -20,7 +21,8 @@ GetMemoryStateRegionArgument(const rvsdg::LambdaNode & lambdaNode) noexcept
 rvsdg::Input &
 GetMemoryStateRegionResult(const rvsdg::LambdaNode & lambdaNode) noexcept
 {
-  auto result = lambdaNode.GetFunctionResults().back();
+  JLM_ASSERT(is<llvm::LlvmLambdaOperation>(&lambdaNode));
+  const auto result = lambdaNode.GetFunctionResults().back();
   JLM_ASSERT(is<MemoryStateType>(result->Type()));
   return *result;
 }

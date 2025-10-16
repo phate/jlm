@@ -25,13 +25,13 @@
 namespace jlm::hls
 {
 
-rvsdg::RegionResult *
+static rvsdg::RegionResult *
 trace_edge(
     jlm::rvsdg::Output * common_edge,
     jlm::rvsdg::Output * new_edge,
-    std::vector<jlm::rvsdg::SimpleNode *> & load_nodes,
-    const std::vector<jlm::rvsdg::SimpleNode *> & store_nodes,
-    std::vector<jlm::rvsdg::SimpleNode *> & decouple_nodes)
+    std::vector<rvsdg::Node *> & load_nodes,
+    const std::vector<rvsdg::Node *> & store_nodes,
+    std::vector<rvsdg::Node *> & decouple_nodes)
 {
   // follows along common edge and routes new edge through the same regions
   // redirects the supplied loads, stores and decouples to the new edge
@@ -145,44 +145,47 @@ trace_edge(
   }
 }
 
-void
-gather_other_calls(rvsdg::Region * region, std::vector<jlm::rvsdg::SimpleNode *> & calls)
+std::vector<rvsdg::Node *>
+MemoryStateSeparation::gatherNonDecoupleCalls(rvsdg::Region & region)
 {
-  for (auto & node : rvsdg::TopDownTraverser(region))
+  std::function<void(rvsdg::Region &, std::vector<rvsdg::Node *> &)> gatherCalls =
+      [&gatherCalls](rvsdg::Region & region, std::vector<rvsdg::Node *> & calls)
   {
-    if (auto structnode = dynamic_cast<rvsdg::StructuralNode *>(node))
+    for (auto node : rvsdg::TopDownTraverser(&region))
     {
-      for (size_t n = 0; n < structnode->nsubregions(); n++)
-        gather_other_calls(structnode->subregion(n), calls);
-    }
-    else if (auto simplenode = dynamic_cast<jlm::rvsdg::SimpleNode *>(node))
-    {
-      if (dynamic_cast<const llvm::CallOperation *>(&simplenode->GetOperation()))
+      // Handle innermost regions first
+      if (const auto structuralNode = dynamic_cast<rvsdg::StructuralNode *>(node))
       {
-        auto name = jlm::hls::get_function_name(simplenode->input(0));
-        // only non-decouple callse
-        if (name.rfind("decouple") == name.npos)
-          calls.push_back(simplenode);
+        for (auto & subregion : structuralNode->Subregions())
+        {
+          gatherCalls(subregion, calls);
+        }
+      }
+
+      if (rvsdg::is<llvm::CallOperation>(node))
+      {
+        auto functionName = get_function_name(node->input(0));
+        if (functionName.rfind("decouple") == functionName.npos)
+        {
+          calls.push_back(node);
+        }
       }
     }
-  }
+  };
+
+  std::vector<rvsdg::Node *> calls;
+  gatherCalls(region, calls);
+  return calls;
 }
 
-/* assign each pointer argument its own state edge. */
 void
-mem_sep_argument(rvsdg::Region * region)
+MemoryStateSeparation::separateMemoryStates(const rvsdg::LambdaNode & lambdaNode)
 {
-  auto lambda = dynamic_cast<const rvsdg::LambdaNode *>(region->Nodes().begin().ptr());
-  auto lambda_region = lambda->subregion();
-  auto state_arg = &llvm::GetMemoryStateRegionArgument(*lambda);
-  if (!state_arg)
-  {
-    // no memstate - i.e., no memory used
-    return;
-  }
+  const auto lambdaSubregion = lambdaNode.subregion();
+  auto & memoryStateArgument = llvm::GetMemoryStateRegionArgument(lambdaNode);
 
-  auto & state_user = *state_arg->Users().begin();
-  auto tracedPointerNodesVector = TracePointerArguments(lambda);
+  auto & state_user = *memoryStateArgument.Users().begin();
+  auto tracedPointerNodesVector = TracePointerArguments(&lambdaNode);
   for (auto & tp : tracedPointerNodesVector)
   {
     auto & decouple_nodes = tp.decoupleNodes;
@@ -193,29 +196,30 @@ mem_sep_argument(rvsdg::Region * region)
       auto req = decouple_nodes[i];
       auto channel = req->input(1)->origin();
       auto channel_constant = jlm::hls::trace_constant(channel);
-      auto decouple_response = jlm::hls::find_decouple_response(lambda, channel_constant);
+      auto decouple_response = find_decouple_response(&lambdaNode, channel_constant);
       decouple_nodes.push_back(decouple_response);
     }
   }
-  // create fake ports for non-decouple calls
-  std::vector<jlm::rvsdg::SimpleNode *> other_calls;
-  gather_other_calls(lambda_region, other_calls);
-  for (auto call : other_calls)
+
+  // Create fake ports for non-decouple calls
+  const auto nonDecoupleCalls = gatherNonDecoupleCalls(*lambdaSubregion);
+  for (auto call : nonDecoupleCalls)
   {
     tracedPointerNodesVector.emplace_back();
     tracedPointerNodesVector.back().decoupleNodes.push_back(call);
   }
-  auto entry_states = jlm::llvm::LambdaEntryMemoryStateSplitOperation::Create(
-      *state_arg,
+
+  auto entry_states = llvm::LambdaEntryMemoryStateSplitOperation::Create(
+      memoryStateArgument,
       1 + tracedPointerNodesVector.size());
-  auto state_result = &llvm::GetMemoryStateRegionResult(*lambda);
+  auto state_result = &llvm::GetMemoryStateRegionResult(lambdaNode);
   // handle existing state edge - TODO: remove entirely?
   auto common_edge = entry_states.back();
   entry_states.pop_back();
   state_user.divert_to(common_edge);
   entry_states.push_back(state_result->origin());
   auto & merged_state =
-      jlm::llvm::LambdaExitMemoryStateMergeOperation::Create(*lambda_region, entry_states);
+      llvm::LambdaExitMemoryStateMergeOperation::Create(*lambdaSubregion, entry_states);
   entry_states.pop_back();
   state_result->divert_to(&merged_state);
 
@@ -250,7 +254,7 @@ MemoryStateSeparation::Run(rvsdg::RvsdgModule & rvsdgModule, util::StatisticsCol
     throw std::logic_error("Node needs to be a lambda");
   }
 
-  mem_sep_argument(rootRegion);
+  separateMemoryStates(*lambdaNode);
 }
 
 } // namespace jlm::hls
