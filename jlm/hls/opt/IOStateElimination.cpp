@@ -4,56 +4,35 @@
  */
 
 #include <jlm/hls/opt/IOStateElimination.hpp>
-#include <jlm/llvm/ir/operators/call.hpp>
+#include <jlm/llvm/ir/operators/lambda.hpp>
 #include <jlm/llvm/ir/types.hpp>
-#include <jlm/rvsdg/lambda.hpp>
-#include <jlm/rvsdg/traverser.hpp>
 
 namespace jlm::hls
 {
 
-static rvsdg::RegionArgument *
-GetIoStateArgument(const rvsdg::LambdaNode & lambda)
+void
+IOStateElimination::eliminateIOStates(rvsdg::Region & region, rvsdg::Output & ioStateArgument)
 {
-  auto subregion = lambda.subregion();
-  for (size_t n = 0; n < subregion->narguments(); n++)
-  {
-    auto argument = subregion->argument(n);
-    if (jlm::rvsdg::is<jlm::llvm::IOStateType>(argument->Type()))
-      return argument;
-  }
-  return nullptr;
-}
+  // FIXME: This method routes a lot of superfluous IO states into regions. It is unnecessary work,
+  // even though DNE + CNE eventually removes them again.
 
-static void
-eliminate_io_state(rvsdg::RegionArgument * iostate, rvsdg::Region * region)
-{
-  // eliminates iostate fromm all calls, as well as removes iostate from node outputs
-  // this leaves a pseudo-dependecy routed to the respective argument
-  for (auto & node : rvsdg::TopDownTraverser(region))
+  for (auto & node : region.Nodes())
   {
-    if (auto structnode = dynamic_cast<rvsdg::StructuralNode *>(node))
+    // Handle innermost regions first
+    if (const auto structuralNode = dynamic_cast<rvsdg::StructuralNode *>(&node))
     {
-      for (size_t n = 0; n < structnode->nsubregions(); n++)
-        eliminate_io_state(iostate, structnode->subregion(n));
+      for (auto & subregion : structuralNode->Subregions())
+        eliminateIOStates(subregion, ioStateArgument);
     }
-    else if (auto simplenode = dynamic_cast<jlm::rvsdg::SimpleNode *>(node))
+
+    // Ensure all IO state outputs become dead
+    for (auto & output : node.Outputs())
     {
-      if (dynamic_cast<const llvm::CallOperation *>(&simplenode->GetOperation()))
+      if (rvsdg::is<llvm::IOStateType>(output.Type()))
       {
-        auto io_routed = &rvsdg::RouteToRegion(*iostate, *region);
-        auto io_in = node->input(node->ninputs() - 2);
-        io_in->divert_to(io_routed);
+        auto & ioStateOperand = rvsdg::RouteToRegion(ioStateArgument, region);
+        output.divert_users(&ioStateOperand);
       }
-    }
-    // make sure iostate outputs are not used to break dependencies
-    for (size_t i = 0; i < node->noutputs(); ++i)
-    {
-      auto out = node->output(i);
-      if (!jlm::rvsdg::is<jlm::llvm::IOStateType>(out->Type()))
-        continue;
-      auto routed = &rvsdg::RouteToRegion(*iostate, *region);
-      out->divert_users(routed);
     }
   }
 }
@@ -77,7 +56,9 @@ IOStateElimination::Run(rvsdg::RvsdgModule & module, util::StatisticsCollector &
     throw std::logic_error("Node needs to be a lambda");
   }
 
-  eliminate_io_state(GetIoStateArgument(*lambdaNode), lambdaNode->subregion());
+  eliminateIOStates(
+      *lambdaNode->subregion(),
+      llvm::LlvmLambdaOperation::getIOStateArgument(*lambdaNode));
 }
 
 }

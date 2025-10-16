@@ -15,9 +15,9 @@ namespace jlm::hls
 
 struct TracedPointerNodes
 {
-  std::vector<rvsdg::SimpleNode *> loadNodes{};
-  std::vector<rvsdg::SimpleNode *> storeNodes{};
-  std::vector<rvsdg::SimpleNode *> decoupleNodes{};
+  std::vector<rvsdg::Node *> loadNodes{};
+  std::vector<rvsdg::Node *> storeNodes{};
+  std::vector<rvsdg::Node *> decoupleNodes{};
 };
 
 /**
