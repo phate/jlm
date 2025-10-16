@@ -25,7 +25,7 @@
 namespace jlm::hls
 {
 
-rvsdg::RegionResult *
+static rvsdg::RegionResult *
 trace_edge(
     jlm::rvsdg::Output * common_edge,
     jlm::rvsdg::Output * new_edge,
@@ -145,27 +145,37 @@ trace_edge(
   }
 }
 
-void
-gather_other_calls(rvsdg::Region * region, std::vector<jlm::rvsdg::SimpleNode *> & calls)
+std::vector<rvsdg::Node *>
+MemoryStateSeparation::gatherNonDecoupleCalls(rvsdg::Region & region)
 {
-  for (auto & node : rvsdg::TopDownTraverser(region))
+  std::function<void(rvsdg::Region &, std::vector<rvsdg::Node *> &)> gatherCalls =
+      [&gatherCalls](rvsdg::Region & region, std::vector<rvsdg::Node *> & calls)
   {
-    if (auto structnode = dynamic_cast<rvsdg::StructuralNode *>(node))
+    for (auto node : rvsdg::TopDownTraverser(&region))
     {
-      for (size_t n = 0; n < structnode->nsubregions(); n++)
-        gather_other_calls(structnode->subregion(n), calls);
-    }
-    else if (auto simplenode = dynamic_cast<jlm::rvsdg::SimpleNode *>(node))
-    {
-      if (dynamic_cast<const llvm::CallOperation *>(&simplenode->GetOperation()))
+      // Handle innermost regions first
+      if (const auto structuralNode = dynamic_cast<rvsdg::StructuralNode *>(node))
       {
-        auto name = jlm::hls::get_function_name(simplenode->input(0));
-        // only non-decouple callse
-        if (name.rfind("decouple") == name.npos)
-          calls.push_back(simplenode);
+        for (auto & subregion : structuralNode->Subregions())
+        {
+          gatherCalls(subregion, calls);
+        }
+      }
+
+      if (rvsdg::is<llvm::CallOperation>(node))
+      {
+        auto functionName = get_function_name(node->input(0));
+        if (functionName.rfind("decouple") == functionName.npos)
+        {
+          calls.push_back(node);
+        }
       }
     }
-  }
+  };
+
+  std::vector<rvsdg::Node *> calls;
+  gatherCalls(region, calls);
+  return calls;
 }
 
 void
@@ -190,14 +200,15 @@ MemoryStateSeparation::separateMemoryStates(const rvsdg::LambdaNode & lambdaNode
       decouple_nodes.push_back(decouple_response);
     }
   }
-  // create fake ports for non-decouple calls
-  std::vector<jlm::rvsdg::SimpleNode *> other_calls;
-  gather_other_calls(lambdaSubregion, other_calls);
-  for (auto call : other_calls)
+
+  // Create fake ports for non-decouple calls
+  const auto nonDecoupleCalls = gatherNonDecoupleCalls(*lambdaSubregion);
+  for (auto call : nonDecoupleCalls)
   {
     tracedPointerNodesVector.emplace_back();
     tracedPointerNodesVector.back().decoupleNodes.push_back(call);
   }
+
   auto entry_states = llvm::LambdaEntryMemoryStateSplitOperation::Create(
       memoryStateArgument,
       1 + tracedPointerNodesVector.size());
