@@ -98,7 +98,7 @@ TopDownTraverser::isOutputActivated(const Output * output) const
 void
 TopDownTraverser::markVisited(Node * node)
 {
-  tracker_.checkMarkNodeVisited(node);
+  tracker_.checkMarkNodeVisitedIfFrontier(node);
   for (const auto & output : node->Outputs())
   {
     for (const auto & user : output.Users())
@@ -140,7 +140,7 @@ TopDownTraverser::onNodeCreate(Node * node)
   // If node would end up on frontier (because all predecessors
   // have been visited), mark it as visited instead (we do not
   // want to revisit newly created nodes during topdown traversal).
-  tracker_.checkMarkNodeVisited(node);
+  tracker_.checkMarkNodeVisitedIfFrontier(node);
 }
 
 void
@@ -289,7 +289,7 @@ BottomUpTraverser::isInputActivated(const Input * input) const
 void
 BottomUpTraverser::markVisited(Node * node)
 {
-  tracker_.checkMarkNodeVisited(node);
+  tracker_.checkMarkNodeVisitedIfFrontier(node);
   for (const auto & input : node->Inputs())
   {
     if (auto pred = TryGetOwnerNode<Node>(*input.origin()))
@@ -382,7 +382,7 @@ void
 TraversalTracker::checkNodeActivation(Node * node, std::size_t threshold)
 {
   auto i = states_.emplace(node, State{ traversal_nodestate::ahead }).first;
-  if (i->second.activation_count >= threshold && i->second.state == traversal_nodestate::ahead)
+  if (i->second.activationCount >= threshold && i->second.state == traversal_nodestate::ahead)
   {
     frontier_.push_back(node);
     i->second.pos = std::prev(frontier_.end());
@@ -394,7 +394,7 @@ void
 TraversalTracker::checkNodeDeactivation(Node * node, std::size_t threshold)
 {
   auto i = states_.emplace(node, State{ traversal_nodestate::ahead }).first;
-  if (i->second.activation_count < threshold && i->second.state == traversal_nodestate::frontier)
+  if (i->second.activationCount < threshold && i->second.state == traversal_nodestate::frontier)
   {
     frontier_.erase(i->second.pos);
     i->second.pos = frontier_.end();
@@ -403,7 +403,7 @@ TraversalTracker::checkNodeDeactivation(Node * node, std::size_t threshold)
 }
 
 void
-TraversalTracker::checkMarkNodeVisited(Node * node)
+TraversalTracker::checkMarkNodeVisitedIfFrontier(Node * node)
 {
   auto i = states_.emplace(node, State{ traversal_nodestate::ahead }).first;
   if (i->second.state == traversal_nodestate::frontier)
@@ -418,7 +418,7 @@ void
 TraversalTracker::incActivationCount(Node * node, std::size_t threshold)
 {
   auto i = states_.emplace(node, State{ traversal_nodestate::ahead }).first;
-  i->second.activation_count += 1;
+  i->second.activationCount += 1;
   checkNodeActivation(node, threshold);
 }
 
@@ -426,7 +426,7 @@ void
 TraversalTracker::decActivationCount(Node * node, std::size_t threshold)
 {
   auto i = states_.emplace(node, State{ traversal_nodestate::ahead }).first;
-  i->second.activation_count -= 1;
+  i->second.activationCount -= 1;
   checkNodeDeactivation(node, threshold);
 }
 

@@ -102,13 +102,13 @@ public:
 
   /** \brief Marks a node visited if it is currently ready for visiting. */
   void
-  checkMarkNodeVisited(Node * node);
+  checkMarkNodeVisitedIfFrontier(Node * node);
 
   /** \brief Increments activation count; adds to frontier if threshold is met. */
   void
   incActivationCount(Node * node, std::size_t threshold);
 
-  /** \brief Decrements activation count; removes from frontier if threshold is on longer. */
+  /** \brief Decrements activation count; removes from frontier if threshold is no longer met. */
   void
   decActivationCount(Node * node, std::size_t threshold);
 
@@ -125,7 +125,7 @@ private:
   struct State
   {
     traversal_nodestate state = traversal_nodestate::ahead;
-    std::size_t activation_count = 0;
+    std::size_t activationCount = 0;
     FrontierList::iterator pos = {};
   };
 
