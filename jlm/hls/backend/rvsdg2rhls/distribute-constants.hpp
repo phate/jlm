@@ -8,6 +8,11 @@
 
 #include <jlm/rvsdg/Transformation.hpp>
 
+namespace jlm::rvsdg
+{
+class LambdaNode;
+}
+
 namespace jlm::hls
 {
 
@@ -32,6 +37,19 @@ public:
     ConstantDistribution constantDistribution;
     constantDistribution.Run(rvsdgModule, statisticsCollector);
   }
+
+private:
+  static void
+  distributeConstantsInRootRegion(rvsdg::Region & region);
+
+  static void
+  distributeConstantsInLambda(rvsdg::LambdaNode & lambdaNode);
+
+  static util::HashSet<rvsdg::SimpleNode *>
+  collectConstants(rvsdg::Region & region);
+
+  static util::HashSet<rvsdg::Output *>
+  collectOutputsWithSimpleNodeUsers(const rvsdg::SimpleNode & simpleNode);
 };
 
 }
