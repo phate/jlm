@@ -50,15 +50,12 @@ namespace jlm::llvm::flows
     }
     std::optional<D> Get(rvsdg::Output* k)
     {
-      //std::cout << "GET: " << k << std::endl;
       if (k == NULL){return std::nullopt;}
       bool present = output_values_->find(k) != output_values_->end();
       return present ? std::optional<D>((*output_values_)[k]) : std::nullopt;
     }
     void Set(rvsdg::Output* k, std::optional<D> v)
     {
-      //std::string opt_s = v ? "some" : "none";
-      //std::cout << "SET: " << k << " = " << opt_s << std::endl;
       output_values_->insert({k,*v});
     }
   private:
@@ -147,13 +144,11 @@ namespace jlm::llvm::flows
           for (auto& reg : w.lm->Subregions()){
             workItems.push_back(WorkItemValue(&reg));
           }
-          //std::cout << "WL:DELTA"<<std::endl;
           if (workItems.size() > 1000){std::cout<<"Stack overflow" << std::endl; return;}
 
         }break;
 
         case WorkItemType::REGION:{
-          //std::cout << "WL:REGION"<<std::endl;
           // Push all nodes inside a region in topological order onto the queue
           std::vector<WorkItemValue> tmp;
           for (auto node : rvsdg::TopDownTraverser(w.region)){tmp.push_back(WorkItemValue(node));}
@@ -163,7 +158,6 @@ namespace jlm::llvm::flows
           }
         }break;
         case WorkItemType::NODE:{
-          //std::cout << "WL:NODE:"<<w.node->DebugString() << w.node->GetNodeId() << std::endl;
           // initialize input buffer
           flows_in.resize(w.node->ninputs(), std::nullopt);
 
@@ -171,9 +165,6 @@ namespace jlm::llvm::flows
             auto ni = w.node->input(i);  //check just in case Input is NULL
             auto v = fd.Get(ni ? ni->origin() : NULL);
             flows_in[i] = v;
-            if (!v){
-              //std::cout << w.node->DebugString() << "MISSING ARG from origin: " << ni->origin() << std::endl;
-            }
           }
           // initialize output buffer
           flows_out.clear();
@@ -182,18 +173,11 @@ namespace jlm::llvm::flows
           // visit node
           if (flows_out.size()){
             cb(*(w.node), flows_in, flows_out);
-          }else{
-            //std::cout<< "WARN : ignored node " << w.node->DebugString() << std::endl;
           }
 
           // update map
           for ( size_t i = 0; i < w.node->noutputs(); i++){
             fd.Set(w.node->output(i), flows_out[i]);
-            //if (flows_out[i])
-            //{
-              //auto s = std::to_string(flows_out[i].value().value);
-              //std::cout << "Node: "<<w.node->DebugString()<<" : Flow out ["<<s<<"] : " << (void*)w.node->output(i) << std::endl;
-           //}
           }
         }break;
         case WorkItemType::LAMBDA:{
@@ -205,10 +189,7 @@ namespace jlm::llvm::flows
           flows_out.clear(); flows_out.resize(f_args.size(), std::nullopt);
 
           // visit node
-          if (flows_out.size()){
-            //std::cout << "VISIT" << std::endl;
-            cb(*(w.node), flows_in, flows_out);
-          }
+          if (flows_out.size()){  cb(*(w.node), flows_in, flows_out);  }
 
           // update map
           for ( size_t i = 0; i < f_args.size(); i++){
@@ -216,15 +197,7 @@ namespace jlm::llvm::flows
             //std::cout << "lambda: Flow out ["<<i<<"] : " << std::endl;
             fd.Set(f_args[i], flows_out[i]);
           }
-          //This might replicate the above.
-          /*auto reg = w.lm->subregion();
-          for (size_t i = 0 ; i<reg->narguments() ; i++){
-            auto reg_arg = reg->argument(i);
-            fd.Set( reg_arg, fd.Get( reg_arg->input() ? reg_arg->input()->origin() : NULL) );
-          }*/
-
           // Todododo : visit lambda after body has been visited once.
-
 
           // Finally iterate over lambda body
           workItems.push_back(w.lm->subregion());
