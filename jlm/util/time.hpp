@@ -82,7 +82,8 @@ public:
   [[nodiscard]] size_t
   ns() const
   {
-    JLM_ASSERT(!IsRunning_);
+    if (IsRunning_)
+      throw std::logic_error("Timer is running");
     return ElapsedTimeInNanoseconds_;
   }
 

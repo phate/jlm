@@ -307,7 +307,7 @@ public:
   void
   End(const rvsdg::Graph & graph) noexcept
   {
-    AddTimer(Label::Timer).stop();
+    GetTimer(Label::Timer).stop();
     AddMeasurement(Label::NumRvsdgNodes, rvsdg::nnodes(&graph.GetRootRegion()));
   }
 
