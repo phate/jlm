@@ -690,13 +690,13 @@ public:
   [[nodiscard]] bool
   IsDead() const noexcept
   {
-    for (auto & output : outputs_)
-    {
-      if (!output->IsDead())
-        return false;
-    }
+    return numSuccessors_ == 0;
+  }
 
-    return true;
+  [[nodiscard]] std::size_t
+  numSuccessors() const noexcept
+  {
+    return numSuccessors_;
   }
 
   virtual std::string
@@ -871,6 +871,9 @@ private:
   Region * region_;
   std::vector<std::unique_ptr<NodeInput>> inputs_;
   std::vector<std::unique_ptr<NodeOutput>> outputs_;
+  std::size_t numSuccessors_ = 0;
+
+  friend class Output;
 };
 
 /**
