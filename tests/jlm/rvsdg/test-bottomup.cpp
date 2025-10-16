@@ -10,7 +10,7 @@
 #include <jlm/rvsdg/traverser.hpp>
 
 static void
-test_initialization()
+testInitialization()
 {
   jlm::rvsdg::Graph graph;
   auto vtype = jlm::tests::ValueType::Create();
@@ -32,9 +32,10 @@ test_initialization()
   assert(n1_visited);
   assert(n2_visited);
 }
+JLM_UNIT_TEST_REGISTER("jlm/rvsdg/test-bottomup-testInitialization", testInitialization)
 
 static void
-test_basic_traversal()
+testBasicTraversal()
 {
   jlm::rvsdg::Graph graph;
   auto type = jlm::tests::ValueType::Create();
@@ -57,9 +58,10 @@ test_basic_traversal()
     assert(tmp == 0);
   }
 }
+JLM_UNIT_TEST_REGISTER("jlm/rvsdg/test-bottomup-testBasicTraversal", testBasicTraversal)
 
 static void
-test_order_enforcement_traversal()
+testOrderEnforcement()
 {
   jlm::rvsdg::Graph graph;
   auto type = jlm::tests::ValueType::Create();
@@ -84,13 +86,4 @@ test_order_enforcement_traversal()
     assert(tmp == nullptr);
   }
 }
-
-static void
-test_main()
-{
-  test_initialization();
-  test_basic_traversal();
-  test_order_enforcement_traversal();
-}
-
-JLM_UNIT_TEST_REGISTER("jlm/rvsdg/test-bottomup", test_main)
+JLM_UNIT_TEST_REGISTER("jlm/rvsdg/test-bottomup-testOrderEnforcement", testOrderEnforcement)

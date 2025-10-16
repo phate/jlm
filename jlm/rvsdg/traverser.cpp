@@ -49,7 +49,8 @@ void
 TraverserTracker<NodeType>::increaseActivationCount(NodeType & node, size_t threshold)
 {
   auto & activations = activations_[&node];
-  JLM_ASSERT(activations != VISITED);
+  if (activations == VISITED)
+    return;
   JLM_ASSERT(activations < threshold);
 
   activations++;
@@ -64,7 +65,8 @@ void
 TraverserTracker<NodeType>::decreaseActivationCount(NodeType & node, size_t threshold)
 {
   auto & activations = activations_[&node];
-  JLM_ASSERT(activations != VISITED);
+  if (activations == VISITED)
+    return;
   JLM_ASSERT(activations > 0);
 
   activations--;
@@ -76,9 +78,8 @@ TraverserTracker<NodeType>::decreaseActivationCount(NodeType & node, size_t thre
 
 template<typename NodeType>
 void
-TraverserTracker<NodeType>::onThresholdIncrease(NodeType & node, size_t threshold)
+TraverserTracker<NodeType>::onThresholdIncrease(NodeType & node, [[maybe_unused]] size_t threshold)
 {
-  JLM_ASSERT(activations_[&node] < threshold);
   frontier_.erase(node.GetNodeId());
 }
 
@@ -87,7 +88,8 @@ void
 TraverserTracker<NodeType>::onThresholdDecrease(NodeType & node, size_t threshold)
 {
   auto & activations = activations_[&node];
-  JLM_ASSERT(activations != VISITED);
+  if (activations == VISITED)
+    return;
   JLM_ASSERT(activations <= threshold);
 
   if (activations == threshold)
@@ -379,7 +381,7 @@ BottomUpTraverserGeneric<IsConst>::markAsVisited(NodeType & node)
   tracker_.markAsVisited(node);
   for (const auto & input : node.Inputs())
   {
-    if (auto predecessor = TryGetOwnerNode<Node>(input))
+    if (auto predecessor = TryGetOwnerNode<Node>(*input.origin()))
     {
       tracker_.increaseActivationCount(*predecessor, predecessor->numSuccessors());
     }

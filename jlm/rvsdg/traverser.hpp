@@ -8,10 +8,10 @@
 #define JLM_RVSDG_TRAVERSER_HPP
 
 #include <jlm/rvsdg/region.hpp>
-#include <limits>
 
-#include <unordered_map>
+#include <limits>
 #include <map>
+#include <unordered_map>
 
 namespace jlm::rvsdg
 {
