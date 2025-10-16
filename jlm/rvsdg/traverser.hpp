@@ -329,7 +329,7 @@ private:
  *
  * The top down traverser visits all nodes in a region, starting at the nodes that have no inputs
  * besides graph arguments, i.e. from the topmost nodes to the nodes at the bottom.
- * Nodes created during traversal are visited iff they take an unvisited node as input.
+ * Nodes created during traversal are not visited.
  *
  * The main usage of the top down traverser is for analyzing graphs, or replacing subgraphs in the
  * already visited part of a region.

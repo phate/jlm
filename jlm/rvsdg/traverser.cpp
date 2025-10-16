@@ -257,20 +257,8 @@ template<bool IsConst>
 void
 TopDownTraverserGeneric<IsConst>::onNodeCreate(NodeType * node)
 {
-  size_t activations = 0;
-  for (const auto & input : node->Inputs())
-  {
-    if (isOutputActivated(*input.origin()))
-    {
-      activations++;
-    }
-  }
-
-  // New nodes where all predecessors are already visited should not be visited
-  if (activations < node->ninputs())
-    tracker_.addNodeWithActivations(*node, activations, node->ninputs());
-  else
-    markAsVisited(*node);
+  // Nodes created during traversal never get visited
+  markAsVisited(*node);
 }
 
 template<bool IsConst>

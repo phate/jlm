@@ -16,7 +16,6 @@
 #include <jlm/rvsdg/view.hpp>
 
 #include <iostream>
-#include <jlm/llvm/DotWriter.hpp>
 #include <jlm/llvm/opt/alias-analyses/AliasAnalysisPrecisionEvaluator.hpp>
 
 template<class Test, class Analysis, class TModRefSummarizer>
@@ -73,11 +72,6 @@ static void
 ValidateStoreTest1SteensgaardAgnostic(const jlm::tests::StoreTest1 & test)
 {
   using namespace jlm::llvm;
-
-  LlvmDotWriter dw;
-  jlm::util::graph::Writer writer;
-  dw.WriteGraphs(writer, *test.lambda->subregion(), true);
-  writer.outputAllGraphs(std::cout, jlm::util::graph::OutputFormat::Dot);
 
   assert(test.lambda->subregion()->numNodes() == 14);
 
