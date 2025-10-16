@@ -45,6 +45,9 @@ public:
 private:
   static void
   separateMemoryStates(const rvsdg::LambdaNode & lambdaNode);
+
+  static std::vector<rvsdg::Node *>
+  gatherNonDecoupleCalls(rvsdg::Region & region);
 };
 
 } // namespace jlm::hls
