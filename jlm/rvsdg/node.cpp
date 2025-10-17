@@ -466,6 +466,49 @@ TraceOutputIntraProcedurally(const Output & output)
   return output;
 }
 
+const Output &
+TraceOutput(const Output & startingOutput)
+{
+  const auto & output = TraceOutputIntraProcedurally(startingOutput);
+
+  // Handle lambda context variables
+  if (const auto lambda = rvsdg::TryGetRegionParentNode<rvsdg::LambdaNode>(output))
+  {
+    // If the argument is a contex variable, continue normalizing
+    if (const auto ctxVar = lambda->MapBinderContextVar(output))
+      return TraceOutput(*ctxVar->input->origin());
+
+    return output;
+  }
+
+  // Handle phi outputs
+  if (const auto phiNode = rvsdg::TryGetOwnerNode<rvsdg::PhiNode>(output))
+  {
+    const auto fixVar = phiNode->MapOutputFixVar(output);
+    return TraceOutput(*fixVar.result->origin());
+  }
+
+  // Handle phi region arguments
+  if (const auto phiNode = rvsdg::TryGetRegionParentNode<rvsdg::PhiNode>(output))
+  {
+    const auto argument = phiNode->MapArgument(output);
+    if (const auto ctxVar = std::get_if<rvsdg::PhiNode::ContextVar>(&argument))
+    {
+      // Follow the context variable to outside the phi
+      return TraceOutput(*ctxVar->input->origin());
+    }
+    if (const auto fixVar = std::get_if<rvsdg::PhiNode::FixVar>(&argument))
+    {
+      // Follow to the recursion variable's definition
+      return TraceOutput(*fixVar->result->origin());
+    }
+
+    JLM_UNREACHABLE("Unknown phi argument type");
+  }
+
+  return output;
+}
+
 Output &
 RouteToRegion(Output & output, Region & region)
 {

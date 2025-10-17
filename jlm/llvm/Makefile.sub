@@ -45,6 +45,7 @@ libllvm_SOURCES = \
     jlm/llvm/ir/RvsdgModule.cpp \
     jlm/llvm/ir/ssa.cpp \
     jlm/llvm/ir/tac.cpp \
+    jlm/llvm/ir/trace.cpp \
     jlm/llvm/ir/types.cpp \
     jlm/llvm/ir/variable.cpp \
     \
@@ -136,6 +137,7 @@ libllvm_HEADERS = \
     jlm/llvm/ir/variable.hpp \
     jlm/llvm/ir/basic-block.hpp \
     jlm/llvm/ir/print.hpp \
+    jlm/llvm/ir/trace.hpp \
     jlm/llvm/ir/types.hpp \
     jlm/llvm/ir/cfg-structure.hpp \
     jlm/llvm/ir/operators/operators.hpp \
