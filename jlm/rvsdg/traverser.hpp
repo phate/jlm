@@ -9,9 +9,7 @@
 
 #include <jlm/rvsdg/region.hpp>
 
-#include <limits>
 #include <list>
-#include <map>
 #include <unordered_map>
 
 namespace jlm::rvsdg
@@ -26,7 +24,7 @@ class Region;
 namespace detail
 {
 
-enum class traversal_nodestate
+enum class TraversalNodestate
 {
   ahead = -1,
   frontier = 0,
@@ -74,7 +72,7 @@ private:
 
   struct State
   {
-    traversal_nodestate state = traversal_nodestate::ahead;
+    TraversalNodestate state = TraversalNodestate::ahead;
     std::size_t activationCount = 0;
     typename FrontierList::iterator pos = {};
   };
@@ -93,7 +91,7 @@ public:
   using pointer = value_type *;
   using reference = value_type &;
 
-  constexpr TraverserIterator(Traverser * traverser = nullptr, NodeType * node = nullptr) noexcept
+  constexpr TraverserIterator(Traverser * traverser, NodeType * node) noexcept
       : traverser_(traverser),
         node_(node)
   {}
@@ -285,7 +283,7 @@ private:
   onInputCreate(Input * input);
 
   void
-  onInputChange(Input * in, Output * old_origin, Output * new_origin);
+  onInputChange(Input * input, Output * oldOrigin, Output * newOrigin);
 
   void
   onInputDestroy(Input * input);

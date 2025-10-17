@@ -27,90 +27,6 @@ namespace jlm::rvsdg
 namespace detail
 {
 
-template<typename NodeType>
-bool
-TraversalTracker<NodeType>::isNodeVisited(NodeType * node) const
-{
-  auto i = states_.find(node);
-  return i == states_.end() ? false : i->second.state == traversal_nodestate::behind;
-}
-
-template<typename NodeType>
-void
-TraversalTracker<NodeType>::checkNodeActivation(NodeType * node, std::size_t threshold)
-{
-  auto i = states_.emplace(node, State{ traversal_nodestate::ahead }).first;
-  if (i->second.activationCount >= threshold && i->second.state == traversal_nodestate::ahead)
-  {
-    frontier_.push_back(node);
-    i->second.pos = std::prev(frontier_.end());
-    i->second.state = traversal_nodestate::frontier;
-  }
-}
-
-template<typename NodeType>
-void
-TraversalTracker<NodeType>::checkNodeDeactivation(NodeType * node, std::size_t threshold)
-{
-  auto i = states_.emplace(node, State{ traversal_nodestate::ahead }).first;
-  if (i->second.activationCount < threshold && i->second.state == traversal_nodestate::frontier)
-  {
-    frontier_.erase(i->second.pos);
-    i->second.pos = frontier_.end();
-    i->second.state = traversal_nodestate::ahead;
-  }
-}
-
-template<typename NodeType>
-void
-TraversalTracker<NodeType>::checkMarkNodeVisitedIfFrontier(NodeType * node)
-{
-  auto i = states_.emplace(node, State{ traversal_nodestate::ahead }).first;
-  if (i->second.state == traversal_nodestate::frontier)
-  {
-    frontier_.erase(i->second.pos);
-    i->second.pos = frontier_.end();
-    i->second.state = traversal_nodestate::behind;
-  }
-}
-
-template<typename NodeType>
-void
-TraversalTracker<NodeType>::incActivationCount(NodeType * node, std::size_t threshold)
-{
-  auto i = states_.emplace(node, State{ traversal_nodestate::ahead }).first;
-  i->second.activationCount += 1;
-  checkNodeActivation(node, threshold);
-}
-
-template<typename NodeType>
-void
-TraversalTracker<NodeType>::decActivationCount(NodeType * node, std::size_t threshold)
-{
-  auto i = states_.emplace(node, State{ traversal_nodestate::ahead }).first;
-  i->second.activationCount -= 1;
-  checkNodeDeactivation(node, threshold);
-}
-
-template<typename NodeType>
-void
-TraversalTracker<NodeType>::removeNode(NodeType * node)
-{
-  if (const auto it = states_.find(node); it != states_.end())
-  {
-    if (it->second.state == traversal_nodestate::frontier)
-      frontier_.erase(it->second.pos);
-    states_.erase(it);
-  }
-}
-
-template<typename NodeType>
-NodeType *
-TraversalTracker<NodeType>::peek()
-{
-  return frontier_.empty() ? nullptr : frontier_.front();
-}
-
 template<typename Traverser>
 ForwardingObserver<Traverser>::~ForwardingObserver() noexcept = default;
 
@@ -243,6 +159,9 @@ TopDownTraverserGeneric<IsConst>::onNodeCreate(NodeType * node)
   if (node->ninputs() == 0)
     tracker_.checkNodeActivation(node, node->ninputs());
 
+  // If node would end up on frontier (because all predecessors
+  // have been visited), mark it as visited instead (we do not
+  // want to revisit newly created nodes during topdown traversal).
   tracker_.checkMarkNodeVisitedIfFrontier(node);
 }
 
@@ -476,6 +395,90 @@ BottomUpTraverserGeneric<IsConst>::onInputDestroy(Input * input)
   {
     tracker_.checkNodeActivation(node, node->numSuccessors() - 1);
   }
+}
+
+template<typename NodeType>
+bool
+TraversalTracker<NodeType>::isNodeVisited(NodeType * node) const
+{
+  auto i = states_.find(node);
+  return i == states_.end() ? false : i->second.state == TraversalNodestate::behind;
+}
+
+template<typename NodeType>
+void
+TraversalTracker<NodeType>::checkNodeActivation(NodeType * node, std::size_t threshold)
+{
+  auto i = states_.emplace(node, State{ TraversalNodestate::ahead }).first;
+  if (i->second.activationCount >= threshold && i->second.state == TraversalNodestate::ahead)
+  {
+    frontier_.push_back(node);
+    i->second.pos = std::prev(frontier_.end());
+    i->second.state = TraversalNodestate::frontier;
+  }
+}
+
+template<typename NodeType>
+void
+TraversalTracker<NodeType>::checkNodeDeactivation(NodeType * node, std::size_t threshold)
+{
+  auto i = states_.emplace(node, State{ TraversalNodestate::ahead }).first;
+  if (i->second.activationCount < threshold && i->second.state == TraversalNodestate::frontier)
+  {
+    frontier_.erase(i->second.pos);
+    i->second.pos = frontier_.end();
+    i->second.state = TraversalNodestate::ahead;
+  }
+}
+
+template<typename NodeType>
+void
+TraversalTracker<NodeType>::checkMarkNodeVisitedIfFrontier(NodeType * node)
+{
+  auto i = states_.emplace(node, State{ TraversalNodestate::ahead }).first;
+  if (i->second.state == TraversalNodestate::frontier)
+  {
+    frontier_.erase(i->second.pos);
+    i->second.pos = frontier_.end();
+    i->second.state = TraversalNodestate::behind;
+  }
+}
+
+template<typename NodeType>
+void
+TraversalTracker<NodeType>::incActivationCount(NodeType * node, std::size_t threshold)
+{
+  auto i = states_.emplace(node, State{ TraversalNodestate::ahead }).first;
+  i->second.activationCount += 1;
+  checkNodeActivation(node, threshold);
+}
+
+template<typename NodeType>
+void
+TraversalTracker<NodeType>::decActivationCount(NodeType * node, std::size_t threshold)
+{
+  auto i = states_.emplace(node, State{ TraversalNodestate::ahead }).first;
+  i->second.activationCount -= 1;
+  checkNodeDeactivation(node, threshold);
+}
+
+template<typename NodeType>
+void
+TraversalTracker<NodeType>::removeNode(NodeType * node)
+{
+  if (const auto it = states_.find(node); it != states_.end())
+  {
+    if (it->second.state == TraversalNodestate::frontier)
+      frontier_.erase(it->second.pos);
+    states_.erase(it);
+  }
+}
+
+template<typename NodeType>
+NodeType *
+TraversalTracker<NodeType>::peek()
+{
+  return frontier_.empty() ? nullptr : frontier_.front();
 }
 
 // Explicit instantiation of all versions
