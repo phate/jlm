@@ -10,6 +10,7 @@
 #include <jlm/rvsdg/region.hpp>
 
 #include <limits>
+#include <list>
 #include <map>
 #include <unordered_map>
 
@@ -25,93 +26,61 @@ class Region;
 namespace detail
 {
 
+enum class traversal_nodestate
+{
+  ahead = -1,
+  frontier = 0,
+  behind = +1
+};
+
+/* support class to track traversal states of nodes */
 template<typename NodeType>
-class TraverserTracker final
+class TraversalTracker final
 {
 public:
-  static constexpr size_t VISITED = std::numeric_limits<size_t>::max();
-
-  /**
-   * Adds a new node to the tracker with a starting set of activations.
-   * If the threshold is met, the node is also added to the frontier.
-   * @param node a new node, not previously seen by the tracker
-   * @param activations the number of activations the node starts with
-   * @param threshold the node's initial threshold
-   */
-  void
-  addNodeWithActivations(NodeType & node, size_t activations, size_t threshold);
-
-  /**
-   * Increases the activation number of the given \p node.
-   * If the node is new to the tracker, it gets added.
-   * If the node has enough activations to meet its threshold, it is added to the frontier.
-   * @param node the activated node
-   * @param threshold the node's threshold
-   */
-  void
-  increaseActivationCount(NodeType & node, size_t threshold);
-
-  /**
-   * Decreases the activation number of the given \p node.
-   * If the new activation is below the threshold, it is removed from the frontier.
-   * @param node the activated node
-   * @param threshold the node's threshold
-   */
-  void
-  decreaseActivationCount(NodeType & node, size_t threshold);
-
-  /**
-   * Call when the threshold increased without a corresponding increase in activation count
-   * @param node the node whose threshold changed
-   * @param threshold the new threshold value
-   */
-  void
-  onThresholdIncrease(NodeType & node, size_t threshold);
-
-  /**
-   * Call when the threshold decreased without a corresponding decrease in activation count
-   * @param node the node whose threshold changed
-   * @param threshold the new threshold value
-   */
-  void
-  onThresholdDecrease(NodeType & node, size_t threshold);
-
-  /**
-   * Extracts one node from the frontier, deterministically.
-   * @return the popped node, or nullptr if the frontier is empty.
-   */
-  NodeType * popFrontier();
-
-  /**
-   * Marks the given \p node as visited.
-   * The node must not be on the frontier, and not already marked as visited.
-   * @param node the node to be marked
-   */
-  void
-  markAsVisited(NodeType & node);
-
-  /**
-   * Checks if the given \p node has been visited
-   * @param node the node in question
-   * @return true if the node is marked as visited, false otherwise
-   */
+  /** \brief Determines whether node has been visited already. */
   bool
-  hasBeenVisited(NodeType & node);
+  isNodeVisited(NodeType * node) const;
 
-  /**
-   * Removes any recollection of the given \p node existing.
-   * @param node the node in question
-   */
-  void removeNode(NodeType & node);
+  /** \brief Checks activation count whether node is ready for visiting. */
+  void
+  checkNodeActivation(NodeType * node, std::size_t threshold);
+
+  /** \brief Checks activation count whether node is no longer ready for visiting. */
+  void
+  checkNodeDeactivation(NodeType * node, std::size_t threshold);
+
+  /** \brief Marks a node visited if it is currently ready for visiting. */
+  void
+  checkMarkNodeVisitedIfFrontier(NodeType * node);
+
+  /** \brief Increments activation count; adds to frontier if threshold is met. */
+  void
+  incActivationCount(NodeType * node, std::size_t threshold);
+
+  /** \brief Decrements activation count; removes from frontier if threshold is no longer met. */
+  void
+  decActivationCount(NodeType * node, std::size_t threshold);
+
+  /** \brief Removes any state associated with the given node */
+  void
+  removeNode(NodeType * node);
+
+  NodeType *
+  peek();
 
 private:
+  using FrontierList = std::list<NodeType *>;
 
-  // The number of activations a node has seen.
-  // All nodes whose activations = numInputs are on the frontier
-  // Once a node is visited, its activation count is set to VISITED
-  std::unordered_map<NodeType *, size_t> activations_;
-  // The frontier queue, indexed by NodeId
-  std::map<typename NodeType::Id, NodeType *> frontier_;
+  struct State
+  {
+    traversal_nodestate state = traversal_nodestate::ahead;
+    std::size_t activationCount = 0;
+    typename FrontierList::iterator pos = {};
+  };
+
+  std::unordered_map<NodeType *, State> states_;
+  FrontierList frontier_;
 };
 
 template<typename Traverser, typename NodeType>
@@ -244,7 +213,8 @@ private:
   bool
   isOutputActivated(const Output & output);
 
-  void markAsVisited(NodeType & node);
+  void
+  markAsVisited(NodeType & node);
 
   void
   onNodeCreate(NodeType * node);
@@ -261,7 +231,7 @@ private:
   void
   onInputDestroy(Input * input);
 
-  TraverserTracker<NodeType> tracker_;
+  TraversalTracker<NodeType> tracker_;
   ObserverType observer_;
 };
 
@@ -302,7 +272,8 @@ private:
   bool
   isInputActivated(const Input & output);
 
-  void markAsVisited(NodeType & node);
+  void
+  markAsVisited(NodeType & node);
 
   void
   onNodeCreate(NodeType * node);
@@ -319,7 +290,7 @@ private:
   void
   onInputDestroy(Input * input);
 
-  TraverserTracker<NodeType> tracker_;
+  TraversalTracker<NodeType> tracker_;
   ObserverType observer_;
 };
 
