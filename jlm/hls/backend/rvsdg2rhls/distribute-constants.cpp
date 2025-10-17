@@ -46,8 +46,6 @@ ConstantDistribution::distributeConstantsInLambda(const rvsdg::LambdaNode & lamb
   const auto constants = collectConstants(*lambdaNode.subregion());
   for (const auto constant : constants.Items())
   {
-    auto outputs = collectOutputs(*constant);
-
     std::unordered_map<rvsdg::Region *, rvsdg::Node *> distributedConstants;
     distributedConstants[constant->region()] = constant;
 
@@ -71,6 +69,7 @@ ConstantDistribution::distributeConstantsInLambda(const rvsdg::LambdaNode & lamb
       output.divert_users(newConstant->output(0));
     };
 
+    auto outputs = collectOutputs(*constant);
     for (const auto output : outputs.Items())
     {
       if (rvsdg::TryGetOwnerNode<rvsdg::GammaNode>(*output)
