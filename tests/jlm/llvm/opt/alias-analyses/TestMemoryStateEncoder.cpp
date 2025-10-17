@@ -51,6 +51,7 @@ ValidateTest(std::function<void(const Test &)> validateEncoding)
       summarizer.SummarizeModRefs(rvsdgModule, *pointsToGraph, statisticsCollector);
 
   jlm::llvm::aa::MemoryStateEncoder encoder;
+  std::cout << "run encoder\n";
   encoder.Encode(rvsdgModule, *modRefSummary, statisticsCollector);
   // jlm::rvsdg::view(&rvsdgModule.Rvsdg().GetRootRegion(), stdout);
 
