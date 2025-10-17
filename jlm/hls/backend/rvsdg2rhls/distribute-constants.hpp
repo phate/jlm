@@ -16,6 +16,9 @@ class LambdaNode;
 namespace jlm::hls
 {
 
+/**
+ * Distributes constants into subregions of gamma and theta nodes if they have users there.
+ */
 class ConstantDistribution final : public rvsdg::Transformation
 {
 public:
@@ -43,13 +46,13 @@ private:
   distributeConstantsInRootRegion(rvsdg::Region & region);
 
   static void
-  distributeConstantsInLambda(rvsdg::LambdaNode & lambdaNode);
+  distributeConstantsInLambda(const rvsdg::LambdaNode & lambdaNode);
 
   static util::HashSet<rvsdg::SimpleNode *>
   collectConstants(rvsdg::Region & region);
 
   static util::HashSet<rvsdg::Output *>
-  collectOutputsWithSimpleNodeUsers(const rvsdg::SimpleNode & simpleNode);
+  collectOutputs(const rvsdg::SimpleNode & simpleNode);
 };
 
 }

@@ -3,16 +3,15 @@
  * See COPYING for terms of redistribution.
  */
 
-#include "jlm/rvsdg/theta.hpp"
-#include "test-operation.hpp"
-#include "test-registry.hpp"
-#include "test-types.hpp"
+#include <test-operation.hpp>
+#include <test-registry.hpp>
 
 #include <jlm/hls/backend/rvsdg2rhls/distribute-constants.hpp>
 #include <jlm/llvm/ir/operators/IntegerOperations.hpp>
 #include <jlm/llvm/ir/operators/lambda.hpp>
 #include <jlm/llvm/ir/RvsdgModule.hpp>
 #include <jlm/rvsdg/gamma.hpp>
+#include <jlm/rvsdg/theta.hpp>
 #include <jlm/rvsdg/view.hpp>
 #include <jlm/util/Statistics.hpp>
 
@@ -69,7 +68,6 @@ GammaSubregionUsage()
 
   // Assert
   assert(lambdaNode->subregion()->numNodes() == 2);
-  assert(constantNode.output(0)->IsDead());
 
   {
     // check subregion 0 - we expect the constantNode to be distributed into this subregion
@@ -168,16 +166,12 @@ NestedGammas()
 
     {
       // check gammaNodeInner subregion 0
-      assert(gammaNodeInner->subregion(0)->numNodes() == 1);
-      assert(IsOwnerNodeOperation<IntegerConstantOperation>(
-          *exitVariableInner.branchResult[0]->origin()));
+      assert(gammaNodeInner->subregion(0)->numNodes() == 0);
     }
 
     {
       // check gammaNodeInner subregion 1
-      assert(gammaNodeInner->subregion(1)->numNodes() == 1);
-      assert(IsOwnerNodeOperation<IntegerConstantOperation>(
-          *exitVariableInner.branchResult[1]->origin()));
+      assert(gammaNodeInner->subregion(1)->numNodes() == 0);
     }
   }
 

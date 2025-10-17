@@ -18,127 +18,6 @@
 namespace jlm::hls
 {
 
-#if 0
-void
-distribute_constant(const rvsdg::SimpleOperation & op, rvsdg::Output * out)
-{
-  JLM_ASSERT(hls::is_constant(rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*out)));
-
-  bool changed = true;
-  while (changed)
-  {
-    changed = false;
-    for (auto & user : out->Users())
-    {
-      if (auto theta = rvsdg::TryGetOwnerNode<rvsdg::ThetaNode>(user))
-      {
-        auto loopvar = theta->MapInputLoopVar(user);
-        if (loopvar.post->origin() == loopvar.pre)
-        {
-          // pass-through
-          auto arg_replacement =
-              rvsdg::SimpleNode::Create(*theta->subregion(), op.copy(), {}).output(0);
-          loopvar.pre->divert_users(arg_replacement);
-          loopvar.output->divert_users(out);
-          distribute_constant(op, arg_replacement);
-          theta->RemoveLoopVars({ loopvar });
-          changed = true;
-          break;
-        }
-      }
-      // push constants that are returned by loops out of them
-      if (auto res = dynamic_cast<rvsdg::RegionResult *>(&user))
-      {
-        auto out = res->output();
-        if (out && rvsdg::TryGetOwnerNode<rvsdg::ThetaNode>(*out))
-        {
-          if (out->nusers())
-          {
-            auto out_replacement =
-                rvsdg::SimpleNode::Create(*out->node()->region(), op.copy(), {}).output(0);
-            out->divert_users(out_replacement);
-            distribute_constant(op, out_replacement);
-            changed = true;
-            break;
-          }
-        }
-      }
-      if (auto gammaNode = rvsdg::TryGetOwnerNode<rvsdg::GammaNode>(user))
-      {
-        auto rolevar = gammaNode->MapInput(user);
-        if (std::get_if<rvsdg::GammaNode::MatchVar>(&rolevar))
-        {
-          // ignore predicate
-          continue;
-        }
-        else if (auto entryvar = std::get_if<rvsdg::GammaNode::EntryVar>(&rolevar))
-        {
-          for (auto argument : entryvar->branchArgument)
-          {
-            if (argument->nusers())
-            {
-              auto arg_replacement =
-                  rvsdg::SimpleNode::Create(*argument->region(), op.copy(), {}).output(0);
-              argument->divert_users(arg_replacement);
-              distribute_constant(op, arg_replacement);
-            }
-          }
-          gammaNode->RemoveEntryVars({ *entryvar });
-          changed = true;
-          break;
-        }
-        else
-        {
-          JLM_UNREACHABLE("Gamma input must either by MatchVar or EntryVar");
-        }
-      }
-    }
-  }
-}
-
-void
-distribute_constants(rvsdg::Region * region)
-{
-  // push constants down as far as possible, since this is cheaper than having forks and potentially
-  // buffers for them
-  for (auto & node : rvsdg::TopDownTraverser(region))
-  {
-    if (rvsdg::is<rvsdg::StructuralOperation>(node))
-    {
-      if (auto ln = dynamic_cast<rvsdg::LambdaNode *>(node))
-      {
-        distribute_constants(ln->subregion());
-      }
-      else if (auto t = dynamic_cast<rvsdg::ThetaNode *>(node))
-      {
-        distribute_constants(t->subregion());
-      }
-      else if (auto gn = dynamic_cast<rvsdg::GammaNode *>(node))
-      {
-        for (size_t i = 0; i < gn->nsubregions(); ++i)
-        {
-          distribute_constants(gn->subregion(i));
-        }
-      }
-      else
-      {
-        throw util::Error("Unexpected node type: " + node->DebugString());
-      }
-    }
-    else if (auto sn = dynamic_cast<rvsdg::SimpleNode *>(node))
-    {
-      if (is_constant(node))
-      {
-        distribute_constant(sn->GetOperation(), sn->output(0));
-      }
-    }
-    else
-    {
-      throw util::Error("Unexpected node type: " + node->DebugString());
-    }
-  }
-}
-#endif
 void
 ConstantDistribution::distributeConstantsInRootRegion(rvsdg::Region & region)
 {
@@ -162,27 +41,59 @@ ConstantDistribution::distributeConstantsInRootRegion(rvsdg::Region & region)
 }
 
 void
-ConstantDistribution::distributeConstantsInLambda(rvsdg::LambdaNode & lambdaNode)
+ConstantDistribution::distributeConstantsInLambda(const rvsdg::LambdaNode & lambdaNode)
 {
   const auto constants = collectConstants(*lambdaNode.subregion());
   for (const auto constant : constants.Items())
   {
-    auto outputs = collectOutputsWithSimpleNodeUsers(*constant);
+    auto outputs = collectOutputs(*constant);
 
     std::unordered_map<rvsdg::Region *, rvsdg::Node *> distributedConstants;
-    for (const auto output : outputs.Items())
+    distributedConstants[constant->region()] = constant;
+
+    auto insertAndDivertToNewConstant =
+        [&distributedConstants](rvsdg::Output & output, const rvsdg::Node & oldConstant)
     {
-      auto it = distributedConstants.find(output->region());
+      rvsdg::Node * newConstant = nullptr;
+      const auto region = output.region();
+
+      const auto it = distributedConstants.find(region);
       if (it == distributedConstants.end())
       {
-        auto region = output->region();
-        const auto newConstant = constant->copy(region, {});
+        newConstant = oldConstant.copy(region, {});
         distributedConstants[region] = newConstant;
-        output->divert_users(newConstant->output(0));
       }
       else
       {
-        output->divert_users(it->second->output(0));
+        newConstant = it->second;
+      }
+
+      output.divert_users(newConstant->output(0));
+    };
+
+    for (const auto output : outputs.Items())
+    {
+      if (rvsdg::TryGetOwnerNode<rvsdg::GammaNode>(*output)
+          || rvsdg::TryGetOwnerNode<rvsdg::ThetaNode>(*output)
+          || rvsdg::TryGetRegionParentNode<rvsdg::ThetaNode>(*output))
+      {
+        insertAndDivertToNewConstant(*output, *constant);
+      }
+      else if (const auto gammaNode = rvsdg::TryGetRegionParentNode<rvsdg::GammaNode>(*output))
+      {
+        // We would like to create constants in every gamma subregion
+        auto roleVar = gammaNode->MapBranchArgument(*output);
+        if (const auto entryVar = std::get_if<rvsdg::GammaNode::EntryVar>(&roleVar))
+        {
+          for (const auto argument : entryVar->branchArgument)
+          {
+            insertAndDivertToNewConstant(*argument, *constant);
+          }
+        }
+      }
+      else
+      {
+        throw std::logic_error("Unhandled output type");
       }
     }
   }
@@ -191,58 +102,65 @@ ConstantDistribution::distributeConstantsInLambda(rvsdg::LambdaNode & lambdaNode
 util::HashSet<rvsdg::SimpleNode *>
 ConstantDistribution::collectConstants(rvsdg::Region & region)
 {
-  util::HashSet<rvsdg::SimpleNode *> constants;
-  for (auto & node : region.Nodes())
+  std::function<void(rvsdg::Region &, util::HashSet<rvsdg::SimpleNode *> &)> collect =
+      [&collect](rvsdg::Region & region, util::HashSet<rvsdg::SimpleNode *> & constants)
   {
-    rvsdg::MatchTypeOrFail(
-        node,
-        [&](rvsdg::GammaNode & gammaNode)
-        {
-          for (auto & subregion : gammaNode.Subregions())
+    for (auto & node : region.Nodes())
+    {
+      rvsdg::MatchTypeOrFail(
+          node,
+          [&](rvsdg::GammaNode & gammaNode)
           {
-            collectConstants(subregion);
-          }
-        },
-        [&](rvsdg::ThetaNode & thetaNode)
-        {
-          collectConstants(*thetaNode.subregion());
-        },
-        [&constants](rvsdg::SimpleNode & simpleNode)
-        {
-          if (is_constant(&simpleNode))
+            for (auto & subregion : gammaNode.Subregions())
+            {
+              collect(subregion, constants);
+            }
+          },
+          [&](rvsdg::ThetaNode & thetaNode)
           {
-            constants.insert(&simpleNode);
-          }
-        });
-  }
+            collect(*thetaNode.subregion(), constants);
+          },
+          [&constants](rvsdg::SimpleNode & simpleNode)
+          {
+            if (is_constant(&simpleNode))
+            {
+              constants.insert(&simpleNode);
+            }
+          });
+    }
+  };
 
+  util::HashSet<rvsdg::SimpleNode *> constants;
+  collect(region, constants);
   return constants;
 }
 
 util::HashSet<rvsdg::Output *>
-ConstantDistribution::collectOutputsWithSimpleNodeUsers(const rvsdg::SimpleNode & simpleNode)
+ConstantDistribution::collectOutputs(const rvsdg::SimpleNode & simpleNode)
 {
   JLM_ASSERT(is_constant(&simpleNode));
   JLM_ASSERT(simpleNode.noutputs() == 1);
 
   std::function<void(rvsdg::Output &, util::HashSet<rvsdg::Output *> &)> collectOutputs =
-      [&collectOutputs](rvsdg::Output & output, util::HashSet<rvsdg::Output *> & users)
+      [&collectOutputs](rvsdg::Output & output, util::HashSet<rvsdg::Output *> & outputs)
   {
     for (auto & user : output.Users())
     {
-      if (const auto _ = rvsdg::TryGetRegionParentNode<rvsdg::LambdaNode>(user))
-      {
-        // Nothing needs to be done.
-      }
-      else if (const auto thetaNode = rvsdg::TryGetOwnerNode<rvsdg::ThetaNode>(user))
+      if (const auto thetaNode = rvsdg::TryGetOwnerNode<rvsdg::ThetaNode>(user))
       {
         const auto loopVar = thetaNode->MapInputLoopVar(user);
-        collectOutputs(*loopVar.pre, users);
+        if (rvsdg::ThetaLoopVarIsInvariant(loopVar))
+        {
+          collectOutputs(*loopVar.pre, outputs);
+        }
       }
       else if (const auto thetaNode = rvsdg::TryGetRegionParentNode<rvsdg::ThetaNode>(user))
       {
-        const auto loopVar = thetaNode->MapPostLoopVar(user);
-        collectOutputs(*loopVar.output, users);
+        if (&user != thetaNode->predicate())
+        {
+          const auto loopVar = thetaNode->MapPostLoopVar(user);
+          collectOutputs(*loopVar.output, outputs);
+        }
       }
       else if (const auto gammaNode = rvsdg::TryGetOwnerNode<rvsdg::GammaNode>(user))
       {
@@ -251,18 +169,23 @@ ConstantDistribution::collectOutputsWithSimpleNodeUsers(const rvsdg::SimpleNode 
         {
           for (const auto argument : entryVar->branchArgument)
           {
-            collectOutputs(*argument, users);
+            collectOutputs(*argument, outputs);
           }
         }
       }
       else if (const auto gammaNode = rvsdg::TryGetRegionParentNode<rvsdg::GammaNode>(user))
       {
-        auto exitVar = gammaNode->MapBranchResultExitVar(user);
-        collectOutputs(*exitVar.output, users);
+        const auto exitVar = gammaNode->MapBranchResultExitVar(user);
+        if (rvsdg::GetGammaInvariantOrigin(*gammaNode, exitVar))
+        {
+          collectOutputs(*exitVar.output, outputs);
+        }
       }
-      else if (const auto _ = rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(user))
+      else if (
+          rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(user)
+          || rvsdg::TryGetRegionParentNode<rvsdg::LambdaNode>(user))
       {
-        users.insert(&output);
+        outputs.insert(&output);
       }
       else
       {
@@ -285,9 +208,7 @@ ConstantDistribution::ConstantDistribution()
 void
 ConstantDistribution::Run(rvsdg::RvsdgModule & rvsdgModule, util::StatisticsCollector &)
 {
-  // distribute_constants(&rvsdgModule.Rvsdg().GetRootRegion());
-
   distributeConstantsInRootRegion(rvsdgModule.Rvsdg().GetRootRegion());
 }
 
-} // namespace jlm
+}
