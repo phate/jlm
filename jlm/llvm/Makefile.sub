@@ -203,6 +203,7 @@ libllvm_TESTS += \
     tests/jlm/llvm/ir/TestAnnotation \
     tests/jlm/llvm/ir/TestCallSummary \
     tests/jlm/llvm/ir/ThreeAddressCodeTests \
+    tests/jlm/llvm/ir/TraceTests \
     tests/jlm/llvm/ir/TypeConverterTests \
     tests/jlm/llvm/opt/alias-analyses/AgnosticModRefSummarizerTests \
     tests/jlm/llvm/opt/alias-analyses/LocalAliasAnalysisTests \
