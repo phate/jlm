@@ -8,9 +8,17 @@
 
 #include <jlm/rvsdg/Transformation.hpp>
 
+namespace jlm::rvsdg
+{
+class LambdaNode;
+}
+
 namespace jlm::hls
 {
 
+/**
+ * Distributes constants into subregions of gamma and theta nodes if they have users there.
+ */
 class ConstantDistribution final : public rvsdg::Transformation
 {
 public:
@@ -32,6 +40,19 @@ public:
     ConstantDistribution constantDistribution;
     constantDistribution.Run(rvsdgModule, statisticsCollector);
   }
+
+private:
+  static void
+  distributeConstantsInRootRegion(rvsdg::Region & region);
+
+  static void
+  distributeConstantsInLambda(const rvsdg::LambdaNode & lambdaNode);
+
+  static util::HashSet<rvsdg::SimpleNode *>
+  collectConstants(rvsdg::Region & region);
+
+  static util::HashSet<rvsdg::Output *>
+  collectOutputs(const rvsdg::SimpleNode & simpleNode);
 };
 
 }
