@@ -135,7 +135,7 @@ testInsertion()
     /*
       The newly created nodes n3 and n4 will not be visited,
       as they were not created as descendants of unvisited
-      nodes. n5 should not be visited, as it is new.
+      nodes. n5 must be visited, as n2 has not been visited yet.
     */
 
     std::cout << "start test\n";
@@ -159,7 +159,7 @@ testInsertion()
     assert(visited_n2);
     assert(!visited_n3);
     assert(!visited_n4);
-    assert(!visited_n5);
+    assert(visited_n5);
   }
 }
 

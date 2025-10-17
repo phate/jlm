@@ -105,9 +105,9 @@ template<bool IsConst>
 bool
 TopDownTraverserGeneric<IsConst>::isOutputActivated(const Output & output)
 {
-  if (auto node = TryGetOwnerNode<Node>(output))
+  if (auto pred = TryGetOwnerNode<Node>(output))
   {
-    return tracker_.isNodeVisited(node);
+    return tracker_.isNodeVisited(pred);
   }
 
   // The output is a region argument, always considered activated
@@ -123,9 +123,9 @@ TopDownTraverserGeneric<IsConst>::markAsVisited(NodeType & node)
   {
     for (const auto & user : output.Users())
     {
-      if (auto successor = TryGetOwnerNode<Node>(user))
+      if (auto next = TryGetOwnerNode<Node>(user))
       {
-        tracker_.incActivationCount(successor, successor->ninputs());
+        tracker_.incActivationCount(next, next->ninputs());
       }
     }
   }
@@ -135,7 +135,7 @@ template<bool IsConst>
 typename TopDownTraverserGeneric<IsConst>::NodeType *
 TopDownTraverserGeneric<IsConst>::next()
 {
-  auto node = tracker_.peek();
+  const auto node = tracker_.peek();
   if (!node)
     return nullptr;
 
@@ -169,7 +169,7 @@ template<bool IsConst>
 void
 TopDownTraverserGeneric<IsConst>::onNodeDestroy(NodeType * node)
 {
-  // The node is already dead, so removing it does not add anything to the frontier
+  // The node is already dead, so removing it can never add anything to the frontier
   tracker_.removeNode(node);
 }
 
@@ -231,9 +231,13 @@ TopDownTraverserGeneric<IsConst>::onInputDestroy(Input * input)
     return;
 
   if (isOutputActivated(*input->origin()))
+  {
     tracker_.decActivationCount(node, node->ninputs() - 1);
+  }
   else
+  {
     tracker_.checkNodeActivation(node, node->ninputs() - 1);
+  }
 }
 
 template<bool IsConst>
@@ -300,7 +304,7 @@ template<bool IsConst>
 void
 BottomUpTraverserGeneric<IsConst>::onNodeCreate(NodeType * node)
 {
-  // The new node should never be visited
+  // The new node should never be visited, so activate all its predecessors immediately
   markAsVisited(*node);
 }
 
@@ -308,10 +312,10 @@ template<bool IsConst>
 void
 BottomUpTraverserGeneric<IsConst>::onNodeDestroy(NodeType * node)
 {
-  // If we are removing a node that has not been visited, make it visited first
-  // This way any predecessor that is only waiting for this node, will become activated
+  // Require nodes we remove to have been visited.
+  // This ensures that removing a node never causes other nodes to be added to the frontier
   if (!tracker_.isNodeVisited(node))
-    markAsVisited(*node);
+    throw std::logic_error("Removing unvisited node");
 
   for (const auto & input : node->Inputs())
   {
@@ -319,8 +323,8 @@ BottomUpTraverserGeneric<IsConst>::onNodeDestroy(NodeType * node)
     {
       // Set the threshold to 0 here: The predecessor node is
       // still connected, so its successor count is not correct.
-      // However, if the predecessor is activated, it will
-      // remain activated after this removal.
+      // However, if the predecessor is on the frontier, it will
+      // remain on the frontier after this removal.
       tracker_.decActivationCount(pred, 0);
     }
   }

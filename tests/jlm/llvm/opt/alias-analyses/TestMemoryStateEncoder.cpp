@@ -16,7 +16,6 @@
 #include <jlm/rvsdg/view.hpp>
 
 #include <iostream>
-#include <jlm/llvm/opt/alias-analyses/AliasAnalysisPrecisionEvaluator.hpp>
 
 template<class Test, class Analysis, class TModRefSummarizer>
 static void
