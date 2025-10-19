@@ -40,6 +40,7 @@
 #include <jlm/rvsdg/gamma.hpp>
 #include <jlm/rvsdg/MatchType.hpp>
 #include <jlm/rvsdg/theta.hpp>
+#include <jlm/rvsdg/operation.hpp>
 #include <jlm/util/Statistics.hpp>
 #include <jlm/util/time.hpp>
 #include <ostream>
@@ -51,6 +52,45 @@
 #include <jlm/llvm/ir/operators/IntegerOperations.hpp>
 
 #include <typeinfo>
+
+
+/**
+ *  Partial redundancy elimination:
+ *  -invariants: after each insertion of a new GVN all GVN shall have unique values
+ *               -including op clusters
+ *  -GVN source:
+ *        -create a variant type for flows into an operator and gvn from constants
+ *            -GVN map responsible for comparing constants
+ *  -Collisions:
+ *        -a GVN value is always generated when a new tuple of (op, flow0, flow1, ...) is inserted
+ *        -on a collision generate a unique symbol
+ *            -this prevents accidental matches downstream and keep the invariant of one gvn per
+ * value -it should be possible to recompute tuples from edges -outputs -operators: -keep around
+ * vectors of leaves with a count after performing the operation -vecs only required for internal
+ * nodes in op clusters -compare vectors rather than GVN arguments -in effect operator nodes whose
+ * args have the same op return a vector of leaf inputs to the operator dag -tracebacks from op
+ * nodes will thus bypasses non-leaf nodes -vectors of leaf counts stored per output edge -possible
+ * to discard for too large vectors, preventing excess memory usage -Theta nodes: -Complicated:
+ *          -initial values passed into thetas must not match
+ *          -the outputs might depend on other loop variables transitively
+ *        -Solution:
+ *          -dynamically switch between which table to insert values into
+ *          -compute a GVN value by setting each loop input to a simple (OP-LOOP-PARAM, index)
+ *               -these are placed in a separate table
+ *          -this value unique identifies a loop
+ *          -this scales well as each loop body is only scanned once for identifying structure
+ *              and once afterwards to trickle down values from outer contexts
+ *          -for a given set of loop inputs and loop hash, outputs are unique
+ *              -that is treat theta nodes as operators from the outside
+ *          -once such hashes have been calculated for all thetas proceed by passing
+ *              -values into thetas hashed with loop hashes
+ *              -two identical loops called with the same values give the same outputs
+ */
+
+namespace jlm::rvsdg
+{
+class Operation;
+}
 
 /** This might be moved to util if proven useful elsewhere **/
 static int indentation_level = 0;
@@ -145,6 +185,72 @@ void PartialRedundancyElimination::TraverseTopDownRecursively(rvsdg::Region& reg
 
 }
 
+void PartialRedundancyElimination::TraverseTopDownRecursively(rvsdg::Region& reg)
+{
+  IndentMan indenter = IndentMan();
+  for (rvsdg::Node* node : rvsdg::TopDownTraverser(&reg))
+  {
+    MatchType(*node, [this](rvsdg::LambdaNode& lm){
+      for (auto& param : lm.GetFunctionArguments())
+      {
+        auto deps = gvn_man_.DepsFromOutput(param);
+        std::cout << TR_RED << "IN LAMBDA" << TR_RESET;
+        std::cout << TR_GREEN << "deps:" << deps.inputs.size() << TR_RESET;;
+      }
+    });
+
+    MatchType(*node, [this](rvsdg::StructuralNode& sn)
+    {
+      for (auto& reg : sn.Subregions())
+      {
+        this->TraverseTopDownRecursively(reg);
+        std::cout << ind() << TR_GRAY << "..........................." << TR_RESET << std::endl;
+      }
+    });
+  }
+}
+
+class  LambdaParameterOperation : public jlm::rvsdg::Operation
+{
+public:
+  LambdaParameterOperation(){} //trivial constructor
+  bool operator==(const Operation & other) const noexcept;
+  std::string debug_string() const override;
+  virtual ~LambdaParameterOperation() noexcept override;
+  [[nodiscard]] virtual std::unique_ptr<jlm::rvsdg::Operation>copy() const override;
+};
+
+LambdaParameterOperation::~LambdaParameterOperation() noexcept = default;
+
+bool LambdaParameterOperation::operator==(const Operation & other) const noexcept {return &other == this;}
+std::string LambdaParameterOperation::debug_string() const { return "LambdaParameterOperation";}
+std::unique_ptr<jlm::rvsdg::Operation> LambdaParameterOperation::copy() const { std::cout<<"Attempt to copy singleton"; JLM_ASSERT(false); return nullptr; }
+static LambdaParameterOperation lambdaParamOp;
+
+GVN_Deps GVN_Manager::DepsFromOutput(rvsdg::Output* output)
+{
+  auto deps = GVN_Deps();
+  deps.op = NULL;
+  if (!output){return deps;}
+  auto owner = output->GetOwner();
+
+  if (std::holds_alternative<rvsdg::Region*>(owner)){
+    std::cout << "Owner is region" << std::endl;
+  }
+  if (std::holds_alternative<rvsdg::Node*>(owner)){
+    std::cout << "Owner is node" << std::endl;
+    rvsdg::Node* n = std::get<rvsdg::Node*>(owner);
+    if (!n){return deps;}
+    jlm::rvsdg::MatchType(*n, [this, &deps, &output](rvsdg::LambdaNode& lm){
+      std::cout << "Lambda node from variant." << std::endl;
+      deps.op = &lambdaParamOp;
+      auto gi = GVN_Input(this->FromIndex( output->index() ));
+      deps.inputs.push_back(gi);
+    });
+  }
+
+  return deps;
+}
 
 void
 PartialRedundancyElimination::Run(
@@ -155,122 +261,124 @@ PartialRedundancyElimination::Run(
 
   auto & rvsdg = module.Rvsdg();
   auto statistics = Statistics::Create(module.SourceFilePath().value());
-
-  // NEW CODE USING REACTIVE STYLE CALLBACKS
-  // SHOULD HANDLE THETA NODES, BUT MORE TESTING IS REQUIRED
-
-  flows::FlowData<GVN_Hash> fd(&gvn_hashes_);
-
-
-  //cb for handling two flows coming from different sub-regions of a gamma node.
-  //  This reprents the GVN of expressions such as (a > b ? a : b)
-  //  Thus, the branch order matters.
-  //  The net hash of outputs from gamma nodes is computed by reducing each output across branches
-  //    with this callback.
-  auto merge_gvn_ga = [](std::optional<GVN_Hash>& a, std::optional<GVN_Hash>& b)
-  {
-    if (!a){return b;}  if (!b){return a;}
-    if (*a == GVN_Hash::Tainted() || *b == GVN_Hash::Tainted()){ return std::optional(GVN_Hash::Tainted()); }
-    if ( a->value == b->value ){ return a; }
-    size_t h = a->value ^ (b->value << 3); //Hash branches differently.
-    return std::optional( GVN_Hash(h) );
-  };
-
-  //cb for merging flows coming into a theta node for the first time and from previous iterations.
-  //  on the second iteration all sub-nodes will have their values overwritten, except
-  //  loop invariant nodes.
-  auto merge_gvn_th = [](rvsdg::ThetaNode& tn, std::optional<GVN_Hash>& a, std::optional<GVN_Hash>& b)
-  {
-    if (!a){return b;}  if (!b){std::cout<<"UNREACHABLE"; exit(-1);}
-    if (*a == GVN_Hash::Tainted() || *b == GVN_Hash::Tainted()){ return std::optional(GVN_Hash::Tainted() ); }
-    if (a->value == b->value){return a;}
-    if (a && a->IsLoopVar()){return a;} // This is required for fixed points to be reached by gvn
-                                        // Values are identified as variant on exit of first iteration
-                                        // LoopVar hashes trickle through the loop body once more
-                                        // Subsequent iterations are blocked as loopvar hashes are never overwritten
-    return std::optional( GVN_Hash::LoopVar( a->value ^ b->value ));
-  };
-
-
-  flows::ApplyDataFlowsTopDown(rvsdg.GetRootRegion(), fd, merge_gvn_ga, merge_gvn_th,
-  [](rvsdg::Node& node,
-    std::vector<std::optional<GVN_Hash>>& flows_in,
-    std::vector<std::optional<GVN_Hash>>& flows_out
-    )
-    {
-      // The gvn hashes are stored automatically by the argument fd, when the flows_out vector
-      // is written to.
-      std::cout << TR_GREEN << node.GetNodeId() << ":" << node.DebugString() << TR_RESET << std::endl;
-
-      rvsdg::MatchType(node.GetOperation(),
-        // -----------------------------------------------------------------------------------------
-        [&flows_out](const jlm::llvm::IntegerConstantOperation& iconst){
-          std::hash<std::string> hasher;
-          flows_out[0] = GVN_Hash( hasher(iconst.Representation().str()) );
-        },
-
-        // -----------------------------------------------------------------------------------------
-        [&flows_in, &flows_out](const rvsdg::BinaryOperation& op){
-          JLM_ASSERT(flows_in.size() == 2);
-          if (!(flows_in[0]) || !(flows_in[1])){
-            std::cout<< TR_RED << "Expected some input" << TR_RESET << std::endl;return;
-          }
-
-          std::hash<std::string> hasher;
-          size_t h = hasher(op.debug_string() );
-
-          size_t a = hasher(std::to_string(flows_in[0]->value));
-          size_t b = hasher(std::to_string(flows_in[1]->value));
-          bool c_and_a = op.is_commutative() && op.is_associative();
-          h ^= c_and_a ? (a + b) : (a ^ (b << 3));
-          flows_out[0] = std::optional<GVN_Hash>(h);
-        },
-        // -----------------------------------------------------------------------------------------
-        [&flows_in, &flows_out](const rvsdg::UnaryOperation& op){
-          if (!(flows_in.size())){
-            std::cout<< TR_RED << "Expected some input" << TR_RESET << std::endl;return;
-          }
-          std::hash<std::string> hasher;
-          size_t h = hasher(op.debug_string() );
-          size_t a = hasher(std::to_string(flows_in[0]->value));
-          h ^= a;
-          flows_out[0] = std::optional<GVN_Hash>(h);
-        },
-        // -----------------------------------------------------------------------------------------
-        [&node, &flows_in, &flows_out](const jlm::llvm::CallOperation& op){
-          std::string s = node.DebugString() + "CALL";
-          std::hash<std::string> hasher;
-          size_t h = hasher(s);
-          for (size_t i = 0; i < flows_out.size(); i++){
-            flows_out[i] = std::optional<GVN_Hash>( h + i);
-          }
-        }
-      );
-
-      rvsdg::MatchType(node,
-        // -----------------------------------------------------------------------------------------
-        [&flows_out](rvsdg::LambdaNode& lm){
-          //std::cout << TR_PINK << "LAMBDA PARAMS" << flows_out.size() << TR_RESET << std::endl;
-          auto s = lm.DebugString();
-          std::hash<std::string> hasher;
-          size_t h = hasher(s);
-          for (size_t i = 0; i < flows_out.size(); i++){
-            flows_out[i] = std::optional( GVN_Hash( h+i ) );
-          }
-        }
-      );
-    }
-  );
-
+  //
+  // // NEW CODE USING REACTIVE STYLE CALLBACKS
+  // // SHOULD HANDLE THETA NODES, BUT MORE TESTING IS REQUIRED
+  //
+  // jlm::llvm::flows::FlowData<GVN_Hash> fd(&gvn_hashes_);
+  //
+  //
+  // //cb for handling two flows coming from different sub-regions of a gamma node.
+  // //  This reprents the GVN of expressions such as (a > b ? a : b)
+  // //  Thus, the branch order matters.
+  // //  The net hash of outputs from gamma nodes is computed by reducing each output across branches
+  // //    with this callback.
+  // auto merge_gvn_ga = [](std::optional<GVN_Hash>& a, std::optional<GVN_Hash>& b)
+  // {
+  //   if (!a){return b;}  if (!b){return a;}
+  //   if (*a == GVN_Hash::Tainted() || *b == GVN_Hash::Tainted()){ return std::optional(GVN_Hash::Tainted()); }
+  //   if ( a->value == b->value ){ return a; }
+  //   size_t h = a->value ^ (b->value << 3); //Hash branches differently.
+  //   return std::optional( GVN_Hash(h) );
+  // };
+  //
+  // //cb for merging flows coming into a theta node for the first time and from previous iterations.
+  // //  on the second iteration all sub-nodes will have their values overwritten, except
+  // //  loop invariant nodes.
+  // auto merge_gvn_th = [](rvsdg::ThetaNode& tn, std::optional<GVN_Hash>& a, std::optional<GVN_Hash>& b)
+  // {
+  //   if (!a){return b;}  if (!b){std::cout<<"UNREACHABLE"; exit(-1);}
+  //   if (*a == GVN_Hash::Tainted() || *b == GVN_Hash::Tainted()){ return std::optional(GVN_Hash::Tainted() ); }
+  //   if (a->value == b->value){return a;}
+  //   if (a && a->IsLoopVar()){return a;} // This is required for fixed points to be reached by gvn
+  //                                       // Values are identified as variant on exit of first iteration
+  //                                       // LoopVar hashes trickle through the loop body once more
+  //                                       // Subsequent iterations are blocked as loopvar hashes are never overwritten
+  //   return std::optional( GVN_Hash::LoopVar( a->value ^ b->value ));
+  // };
+  //
+  //
+  // jlm::llvm::flows::ApplyDataFlowsTopDown(rvsdg.GetRootRegion(), fd, merge_gvn_ga, merge_gvn_th,
+  // [](rvsdg::Node& node,
+  //   std::vector<std::optional<GVN_Hash>>& flows_in,
+  //   std::vector<std::optional<GVN_Hash>>& flows_out
+  //   )
+  //   {
+  //     // The gvn hashes are stored automatically by the argument fd, when the flows_out vector
+  //     // is written to.
+  //     std::cout << TR_GREEN << node.GetNodeId() << ":" << node.DebugString() << TR_RESET << std::endl;
+  //
+  //     rvsdg::MatchType(node.GetOperation(),
+  //       // -----------------------------------------------------------------------------------------
+  //       [&flows_out](const jlm::llvm::IntegerConstantOperation& iconst){
+  //         std::hash<std::string> hasher;
+  //         flows_out[0] = GVN_Hash( hasher(iconst.Representation().str()) );
+  //       },
+  //
+  //       // -----------------------------------------------------------------------------------------
+  //       [&flows_in, &flows_out](const rvsdg::BinaryOperation& op){
+  //         JLM_ASSERT(flows_in.size() == 2);
+  //         if (!(flows_in[0]) || !(flows_in[1])){
+  //           std::cout<< TR_RED << "Expected some input" << TR_RESET << std::endl;return;
+  //         }
+  //
+  //         std::hash<std::string> hasher;
+  //         size_t h = hasher(op.debug_string() );
+  //
+  //         size_t a = hasher(std::to_string(flows_in[0]->value));
+  //         size_t b = hasher(std::to_string(flows_in[1]->value));
+  //         bool c_and_a = op.is_commutative() && op.is_associative();
+  //         h ^= c_and_a ? (a + b) : (a ^ (b << 3));
+  //         flows_out[0] = std::optional<GVN_Hash>(h);
+  //       },
+  //       // -----------------------------------------------------------------------------------------
+  //       [&flows_in, &flows_out](const rvsdg::UnaryOperation& op){
+  //         if (!(flows_in.size())){
+  //           std::cout<< TR_RED << "Expected some input" << TR_RESET << std::endl;return;
+  //         }
+  //         std::hash<std::string> hasher;
+  //         size_t h = hasher(op.debug_string() );
+  //         size_t a = hasher(std::to_string(flows_in[0]->value));
+  //         h ^= a;
+  //         flows_out[0] = std::optional<GVN_Hash>(h);
+  //       },
+  //       // -----------------------------------------------------------------------------------------
+  //       [&node, &flows_in, &flows_out](const jlm::llvm::CallOperation& op){
+  //         std::string s = node.DebugString() + "CALL";
+  //         std::hash<std::string> hasher;
+  //         size_t h = hasher(s);
+  //         for (size_t i = 0; i < flows_out.size(); i++){
+  //           flows_out[i] = std::optional<GVN_Hash>( h + i);
+  //         }
+  //       }
+  //     );
+  //
+  //     rvsdg::MatchType(node,
+  //       // -----------------------------------------------------------------------------------------
+  //       [&flows_out](rvsdg::LambdaNode& lm){
+  //         //std::cout << TR_PINK << "LAMBDA PARAMS" << flows_out.size() << TR_RESET << std::endl;
+  //         auto s = lm.DebugString();
+  //         std::hash<std::string> hasher;
+  //         size_t h = hasher(s);
+  //         for (size_t i = 0; i < flows_out.size(); i++){
+  //           flows_out[i] = std::optional( GVN_Hash( h+i ) );
+  //         }
+  //       }
+  //     );
+  //   }
+  // );
+  //
 
   std::cout << TR_RED << "%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%" << std::endl;
 
 
-  //OLD CODE BELOW.
   this->TraverseTopDownRecursively(rvsdg.GetRootRegion(), PartialRedundancyElimination::dump_region);
+
+  this->TraverseTopDownRecursively(rvsdg.GetRootRegion(), PartialRedundancyElimination::dump_node);
+  this->TraverseTopDownRecursively( rvsdg.GetRootRegion() );
   /*
   {
-    this->TraverseTopDownRecursively(rvsdg.GetRootRegion(), PartialRedundancyElimination::dump_node);
+
     std::cout << TR_RED << "================================================================" << TR_RESET << std::endl;
     this->TraverseTopDownRecursively(rvsdg.GetRootRegion(), PartialRedundancyElimination::register_leaf_hash);
     std::cout << TR_RED << "================================================================" << TR_RESET << std::endl;

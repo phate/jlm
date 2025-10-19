@@ -6,10 +6,11 @@
 #ifndef JLM_LLVM_OPT_PartialRedundancyElimination_HPP
 #define JLM_LLVM_OPT_PartialRedundancyElimination_HPP
 
+#include "jlm/llvm/ir/operators/IntegerOperations.hpp"
 #include "jlm/rvsdg/MatchType.hpp"
 #include "jlm/rvsdg/traverser.hpp"
-#include <jlm/rvsdg/lambda.hpp>
 #include <jlm/rvsdg/delta.hpp>
+#include <jlm/rvsdg/lambda.hpp>
 #include <jlm/rvsdg/node.hpp>
 #include <jlm/rvsdg/Phi.hpp>
 #include <jlm/rvsdg/Transformation.hpp>
@@ -296,6 +297,83 @@ namespace jlm::llvm::flows
 
 namespace jlm::llvm
 {
+
+typedef size_t GVN_Val;
+
+class GVN_Manager;
+union GVN_Input{
+  static constexpr size_t FL_IS_VALUE = 0x1;
+
+  bool IsValue() const  {return    value_ & FL_IS_VALUE;}
+  bool IsOutput() const {return  !(value_ & FL_IS_VALUE);}
+
+  GVN_Input(rvsdg::Output* o){this->output_ = o;}
+  GVN_Input(GVN_Val v){this->value_ = v;}
+  rvsdg::Output* AsOutput() const {return output_;}
+  GVN_Val AsValue() const {return value_;}
+private:
+  rvsdg::Output* output_;
+  GVN_Val value_;
+};
+
+// A collection of all data required to compute a gvn value for an Output*
+struct GVN_Deps{
+  rvsdg::Operation* op;
+  std::vector<GVN_Input> inputs;
+};
+
+
+
+class GVN_Manager
+{
+  /** \brief Utility class for managing the symbol space created by GVN values.
+   *  Responsibilities: keep track of which values are already in use and
+   *    provide means of mapping simple literals to gvn values
+   *
+   */
+
+public:
+  GVN_Deps DepsFromOutput(rvsdg::Output* output);
+  GVN_Val FromLit(std::string s)
+  {
+    if (lit_to_gvn_.find(s) == lit_to_gvn_.end()){lit_to_gvn_.insert({s, CreateUniqueGVN()});}
+    return lit_to_gvn_[s];
+  }
+  GVN_Val FromIndex(std::size_t index)
+  {
+    if (index_to_gvn_.find(index) == index_to_gvn_.end()){index_to_gvn_.insert({index, CreateUniqueGVN()});}
+    return index_to_gvn_[index];
+  }
+  GVN_Val FromOp(rvsdg::Operation* op)
+  {
+    if (op_to_gvn_.find(op) == op_to_gvn_.end()){op_to_gvn_.insert({op, CreateUniqueGVN()});}
+    return op_to_gvn_[op];
+  }
+
+private:
+  GVN_Val CreateUniqueGVN()
+  {
+    GVN_Val v = random() | GVN_Input::FL_IS_VALUE;   //always set 1 bit so the tagged ptr union above works
+    while (occurrences_.count(v) != 0){v = random();}
+    JLM_ASSERT(v & GVN_Input::FL_IS_VALUE);
+    occurrences_.insert(v);
+    return v;
+  }
+  // Multiple output edges may map to the same gvn
+  // No collisions here
+  std::unordered_map<rvsdg::Output*,    GVN_Val>    edges_to_gvn_;
+  std::unordered_map<std::string,       GVN_Val>    lit_to_gvn_;
+  std::unordered_map<std::size_t,       GVN_Val>    index_to_gvn_;
+  std::unordered_map<rvsdg::Operation*, GVN_Val>    op_to_gvn_;
+
+  std::unordered_set<GVN_Val> occurrences_;
+};
+
+
+};
+
+namespace jlm::llvm{
+
 struct GVN_Hash
 {
 #define GVN_LV_BIT 0x1000
@@ -358,7 +436,10 @@ private:
   /* Debug data */
   std::unordered_map<GVN_Hash, size_t, GVN_Map_Hash, GVN_Map_Eq> dbg_hash_counts_;
 
+  GVN_Manager gvn_man_;
+
   void TraverseTopDownRecursively(rvsdg::Region& reg,          void(*cb)(PartialRedundancyElimination* pe, rvsdg::Node& node));
+  void TraverseTopDownRecursively(rvsdg::Region& reg);
 
   static void dump_region(        PartialRedundancyElimination *pe, rvsdg::Node& node);
   static void dump_node(          PartialRedundancyElimination *pe, rvsdg::Node& node);
@@ -368,6 +449,7 @@ private:
   static void hash_node(          PartialRedundancyElimination *pe, rvsdg::Node& node);
   static void hash_call(          PartialRedundancyElimination *pe, rvsdg::Node& node);
   static void hash_theta_pre(     PartialRedundancyElimination *pe, rvsdg::Node& node);
+
   //static void hash_theta_post(    PartialRedundancyElimination *pe, rvsdg::Node& node);
 
   /**
