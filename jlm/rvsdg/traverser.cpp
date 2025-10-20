@@ -31,7 +31,7 @@ template<typename Traverser>
 ForwardingObserver<Traverser>::~ForwardingObserver() noexcept = default;
 
 template<typename Traverser>
-ForwardingObserver<Traverser>::ForwardingObserver(Region & region, Traverser & traverser)
+ForwardingObserver<Traverser>::ForwardingObserver(const Region & region, Traverser & traverser)
     : RegionObserver(region),
       traverser_(traverser)
 {}
@@ -71,18 +71,13 @@ ForwardingObserver<Traverser>::onInputDestroy(Input * input)
   traverser_.onInputDestroy(input);
 }
 
-template<typename Traverser>
-DummyObserver<Traverser>::DummyObserver(
-    [[maybe_unused]] const Region & region,
-    [[maybe_unused]] Traverser & traverser)
-{}
-
 template<bool IsConst>
 TopDownTraverserGeneric<IsConst>::~TopDownTraverserGeneric() noexcept = default;
 
 template<bool IsConst>
 TopDownTraverserGeneric<IsConst>::TopDownTraverserGeneric(RegionType * region)
-    : observer_(*region, *this)
+    : observer_(*region, *this),
+      nodeIdCutoff_(region->getNextNodeId())
 {
   for (auto & node : region->TopNodes())
   {
@@ -103,7 +98,7 @@ TopDownTraverserGeneric<IsConst>::TopDownTraverserGeneric(RegionType * region)
 
 template<bool IsConst>
 bool
-TopDownTraverserGeneric<IsConst>::isOutputActivated(const Output & output)
+TopDownTraverserGeneric<IsConst>::isOutputActivated(const Output & output) const
 {
   if (auto pred = TryGetOwnerNode<Node>(output))
   {
@@ -135,29 +130,40 @@ template<bool IsConst>
 typename TopDownTraverserGeneric<IsConst>::NodeType *
 TopDownTraverserGeneric<IsConst>::next()
 {
-  const auto node = tracker_.peek();
-  if (!node)
-    return nullptr;
+  while (true)
+  {
+    const auto node = tracker_.peek();
+    if (!node)
+      return nullptr;
 
-  markAsVisited(*node);
+    markAsVisited(*node);
 
-  return node;
+    // Skip nodes that were created after traversal started
+    if (node->GetNodeId() >= nodeIdCutoff_)
+      continue;
+
+    return node;
+  }
 }
 
 template<bool IsConst>
 void
 TopDownTraverserGeneric<IsConst>::onNodeCreate(NodeType * node)
 {
-  for (const auto & input : node->Inputs())
+  if (node->ninputs() == 0)
   {
-    if (isOutputActivated(*input.origin()))
+    tracker_.checkNodeActivation(node, node->ninputs());
+  }
+  else
+  {
+    for (const auto & input : node->Inputs())
     {
-      tracker_.incActivationCount(node, node->ninputs());
+      if (isOutputActivated(*input.origin()))
+      {
+        tracker_.incActivationCount(node, node->ninputs());
+      }
     }
   }
-
-  if (node->ninputs() == 0)
-    tracker_.checkNodeActivation(node, node->ninputs());
 
   // If node would end up on frontier (because all predecessors
   // have been visited), mark it as visited instead (we do not
@@ -232,10 +238,13 @@ TopDownTraverserGeneric<IsConst>::onInputDestroy(Input * input)
 
   if (isOutputActivated(*input->origin()))
   {
-    tracker_.decActivationCount(node, node->ninputs() - 1);
+    // Removing an activated input can never cause de-activation of the node,
+    // so we can use 0 as the deactivation threshold
+    tracker_.decActivationCount(node, 0);
   }
   else
   {
+    // The callback is called before the input is actually removed, so use the new threshold
     tracker_.checkNodeActivation(node, node->ninputs() - 1);
   }
 }
@@ -263,7 +272,7 @@ BottomUpTraverserGeneric<IsConst>::BottomUpTraverserGeneric(RegionType * region)
 
 template<bool IsConst>
 bool
-BottomUpTraverserGeneric<IsConst>::isInputActivated(const Input & input)
+BottomUpTraverserGeneric<IsConst>::isInputActivated(const Input & input) const
 {
   if (auto node = TryGetOwnerNode<Node>(input))
   {
@@ -312,10 +321,10 @@ template<bool IsConst>
 void
 BottomUpTraverserGeneric<IsConst>::onNodeDestroy(NodeType * node)
 {
-  // Require nodes we remove to have been visited.
-  // This ensures that removing a node never causes other nodes to be added to the frontier
+  // In case this is the last node a predecessor is waiting for,
+  // make sure it gets activated before removal.
   if (!tracker_.isNodeVisited(node))
-    throw std::logic_error("Removing unvisited node");
+    markAsVisited(*node);
 
   for (const auto & input : node->Inputs())
   {
@@ -387,17 +396,19 @@ template<bool IsConst>
 void
 BottomUpTraverserGeneric<IsConst>::onInputDestroy(Input * input)
 {
-  const auto node = TryGetOwnerNode<Node>(*input->origin());
-  if (!node)
+  const auto pred = TryGetOwnerNode<Node>(*input->origin());
+  if (!pred)
     return;
 
   if (isInputActivated(*input))
   {
-    tracker_.decActivationCount(node, node->numSuccessors() - 1);
+    // Removing an activated user can never cause de-activation of pred.
+    // The threshold for de-activation can therefore be set to 0.
+    tracker_.decActivationCount(pred, 0);
   }
   else
   {
-    tracker_.checkNodeActivation(node, node->numSuccessors() - 1);
+    tracker_.checkNodeActivation(pred, pred->numSuccessors() - 1);
   }
 }
 
@@ -406,19 +417,19 @@ bool
 TraversalTracker<NodeType>::isNodeVisited(NodeType * node) const
 {
   auto i = states_.find(node);
-  return i == states_.end() ? false : i->second.state == TraversalNodestate::behind;
+  return i == states_.end() ? false : i->second.state == TraversalNodeState::behind;
 }
 
 template<typename NodeType>
 void
 TraversalTracker<NodeType>::checkNodeActivation(NodeType * node, std::size_t threshold)
 {
-  auto i = states_.emplace(node, State{ TraversalNodestate::ahead }).first;
-  if (i->second.activationCount >= threshold && i->second.state == TraversalNodestate::ahead)
+  auto i = states_.emplace(node, State{ TraversalNodeState::ahead }).first;
+  if (i->second.activationCount >= threshold && i->second.state == TraversalNodeState::ahead)
   {
     frontier_.push_back(node);
     i->second.pos = std::prev(frontier_.end());
-    i->second.state = TraversalNodestate::frontier;
+    i->second.state = TraversalNodeState::frontier;
   }
 }
 
@@ -426,12 +437,12 @@ template<typename NodeType>
 void
 TraversalTracker<NodeType>::checkNodeDeactivation(NodeType * node, std::size_t threshold)
 {
-  auto i = states_.emplace(node, State{ TraversalNodestate::ahead }).first;
-  if (i->second.activationCount < threshold && i->second.state == TraversalNodestate::frontier)
+  auto i = states_.emplace(node, State{ TraversalNodeState::ahead }).first;
+  if (i->second.activationCount < threshold && i->second.state == TraversalNodeState::frontier)
   {
     frontier_.erase(i->second.pos);
     i->second.pos = frontier_.end();
-    i->second.state = TraversalNodestate::ahead;
+    i->second.state = TraversalNodeState::ahead;
   }
 }
 
@@ -439,12 +450,12 @@ template<typename NodeType>
 void
 TraversalTracker<NodeType>::checkMarkNodeVisitedIfFrontier(NodeType * node)
 {
-  auto i = states_.emplace(node, State{ TraversalNodestate::ahead }).first;
-  if (i->second.state == TraversalNodestate::frontier)
+  auto i = states_.emplace(node, State{ TraversalNodeState::ahead }).first;
+  if (i->second.state == TraversalNodeState::frontier)
   {
     frontier_.erase(i->second.pos);
     i->second.pos = frontier_.end();
-    i->second.state = TraversalNodestate::behind;
+    i->second.state = TraversalNodeState::behind;
   }
 }
 
@@ -452,7 +463,7 @@ template<typename NodeType>
 void
 TraversalTracker<NodeType>::incActivationCount(NodeType * node, std::size_t threshold)
 {
-  auto i = states_.emplace(node, State{ TraversalNodestate::ahead }).first;
+  auto i = states_.emplace(node, State{ TraversalNodeState::ahead }).first;
   i->second.activationCount += 1;
   checkNodeActivation(node, threshold);
 }
@@ -461,7 +472,7 @@ template<typename NodeType>
 void
 TraversalTracker<NodeType>::decActivationCount(NodeType * node, std::size_t threshold)
 {
-  auto i = states_.emplace(node, State{ TraversalNodestate::ahead }).first;
+  auto i = states_.emplace(node, State{ TraversalNodeState::ahead }).first;
   i->second.activationCount -= 1;
   checkNodeDeactivation(node, threshold);
 }
@@ -472,7 +483,7 @@ TraversalTracker<NodeType>::removeNode(NodeType * node)
 {
   if (const auto it = states_.find(node); it != states_.end())
   {
-    if (it->second.state == TraversalNodestate::frontier)
+    if (it->second.state == TraversalNodeState::frontier)
       frontier_.erase(it->second.pos);
     states_.erase(it);
   }

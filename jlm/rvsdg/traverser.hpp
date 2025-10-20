@@ -24,14 +24,20 @@ class Region;
 namespace detail
 {
 
-enum class TraversalNodestate
+enum class TraversalNodeState : uint8_t
 {
-  ahead = -1,
-  frontier = 0,
-  behind = +1
+  // Nodes that are not ready to be visited
+  ahead = 0,
+  // Nodes that are ready to be visited
+  frontier = 1,
+  // Nodes that have been visited
+  behind = 2
 };
 
-/* support class to track traversal states of nodes */
+/**
+ * Support class for tracking the state of nodes during traversal.
+ * @tparam NodeType the type of the node being tracked
+ */
 template<typename NodeType>
 class TraversalTracker final
 {
@@ -72,8 +78,8 @@ private:
 
   struct State
   {
-    TraversalNodestate state = TraversalNodestate::ahead;
-    std::size_t activationCount = 0;
+    TraversalNodeState state = TraversalNodeState::ahead;
+    uint32_t activationCount = 0;
     typename FrontierList::iterator pos = {};
   };
 
@@ -91,7 +97,7 @@ public:
   using pointer = value_type *;
   using reference = value_type &;
 
-  constexpr TraverserIterator(Traverser * traverser, NodeType * node) noexcept
+  constexpr TraverserIterator(Traverser & traverser, NodeType * node) noexcept
       : traverser_(traverser),
         node_(node)
   {}
@@ -99,14 +105,14 @@ public:
   const TraverserIterator &
   operator++() noexcept
   {
-    node_ = traverser_->next();
+    node_ = traverser_.next();
     return *this;
   }
 
   bool
   operator==(const TraverserIterator & other) const noexcept
   {
-    return traverser_ == other.traverser_ && node_ == other.node_;
+    return &traverser_ == &other.traverser_ && node_ == other.node_;
   }
 
   bool
@@ -128,7 +134,7 @@ public:
   }
 
 private:
-  Traverser * traverser_;
+  Traverser & traverser_;
   NodeType * node_;
 };
 
@@ -142,7 +148,7 @@ class ForwardingObserver final : public RegionObserver
 public:
   ~ForwardingObserver() noexcept override;
 
-  ForwardingObserver(Region & region, Traverser & traverser);
+  ForwardingObserver(const Region & region, Traverser & traverser);
 
   void
   onNodeCreate(Node * node) override;
@@ -154,7 +160,7 @@ public:
   onInputCreate(Input * input) override;
 
   void
-  onInputChange(Input * input, Output * old_origin, Output * new_origin) override;
+  onInputChange(Input * input, Output * oldOrigin, Output * newOrigin) override;
 
   void
   onInputDestroy(Input * input) override;
@@ -163,27 +169,21 @@ private:
   Traverser & traverser_;
 };
 
-/**
- * A fake region observer that does not register itself with the region.
- * @tparam Traverser the type of the target traverser
+/** \brief TopDown Traverser
+ *
+ * The top down traverser visits all nodes in a region, starting at the nodes that have no inputs
+ * besides graph arguments, i.e. from the topmost nodes to the nodes at the bottom.
+ * Nodes created during traversal are not visited.
+ *
+ * An alternative to traversing all nodes using next() is the utilization of begin() and end().
  */
-template<typename Traverser>
-class DummyObserver final
-{
-public:
-  DummyObserver(const Region & region, Traverser & traverser);
-};
-
 template<bool IsConst>
 class TopDownTraverserGeneric final
 {
 public:
   using NodeType = std::conditional_t<IsConst, const Node, Node>;
   using RegionType = std::conditional_t<IsConst, const Region, Region>;
-  using ObserverType = std::conditional_t<
-      IsConst,
-      DummyObserver<TopDownTraverserGeneric>,
-      ForwardingObserver<TopDownTraverserGeneric>>;
+  using ObserverType = ForwardingObserver<TopDownTraverserGeneric>;
   using iterator = TraverserIterator<TopDownTraverserGeneric, NodeType>;
 
   friend class ForwardingObserver<TopDownTraverserGeneric>;
@@ -198,18 +198,18 @@ public:
   iterator
   begin()
   {
-    return iterator(this, next());
+    return iterator(*this, next());
   }
 
   iterator
   end()
   {
-    return iterator(this, nullptr);
+    return iterator(*this, nullptr);
   }
 
 private:
   bool
-  isOutputActivated(const Output & output);
+  isOutputActivated(const Output & output) const;
 
   void
   markAsVisited(NodeType & node);
@@ -231,18 +231,25 @@ private:
 
   TraversalTracker<NodeType> tracker_;
   ObserverType observer_;
+  // Any node with Id >= this cutoff was created after traversal began and will be skipped
+  Node::Id nodeIdCutoff_;
 };
 
+/** \brief BottomUp Traverser
+ *
+ * The bottom up traverser visits all nodes in a region, starting at the nodes that have no users
+ * besides graph results, i.e. from the bottommost nodes to the nodes at the top.
+ * Nodes created during traversal are never visited.
+ *
+ * An alternative to traversing all nodes using next() is the utilization of begin() and end().
+ */
 template<bool IsConst>
 class BottomUpTraverserGeneric final
 {
 public:
   using NodeType = std::conditional_t<IsConst, const Node, Node>;
   using RegionType = std::conditional_t<IsConst, const Region, Region>;
-  using ObserverType = std::conditional_t<
-      IsConst,
-      DummyObserver<BottomUpTraverserGeneric>,
-      ForwardingObserver<BottomUpTraverserGeneric>>;
+  using ObserverType = ForwardingObserver<BottomUpTraverserGeneric>;
   using iterator = TraverserIterator<BottomUpTraverserGeneric, NodeType>;
 
   friend class ForwardingObserver<BottomUpTraverserGeneric>;
@@ -257,18 +264,18 @@ public:
   iterator
   begin()
   {
-    return iterator(this, next());
+    return iterator(*this, next());
   }
 
   iterator
   end()
   {
-    return iterator(this, nullptr);
+    return iterator(*this, nullptr);
   }
 
 private:
   bool
-  isInputActivated(const Input & output);
+  isInputActivated(const Input & input) const;
 
   void
   markAsVisited(NodeType & node);
@@ -294,36 +301,27 @@ private:
 
 }
 
-/** \brief TopDown Traverser
+/** \brief Traverser for visiting every node in a region in a top down order.
  *
- * The top down traverser visits all nodes in a region, starting at the nodes that have no inputs
- * besides graph arguments, i.e. from the topmost nodes to the nodes at the bottom.
- * Nodes created during traversal are not visited.
- *
- * The main usage of the top down traverser is for analyzing graphs, or replacing subgraphs in the
- * already visited part of a region.
- *
- * An alternative to traversing all nodes using next() is the utilization of begin() and end().
+ * @see TopDownTraverserGeneric
  */
 using TopDownTraverser = detail::TopDownTraverserGeneric<false>;
-/** \brief Const top down traverser
+
+/** \brief Traverser for visiting every node in a const region in a top down order.
  *
- * A version of \ref TopDownTraverser that does not support the region changing during traversal.
+ * @see TopDownTraverserGeneric
  */
 using TopDownConstTraverser = detail::TopDownTraverserGeneric<true>;
 
-/** \brief BottomUp Traverser
+/** \brief Traverser for visiting every node in a region in a bottom up order.
  *
- * The bottom up traverser visits all nodes in a region, starting at the nodes that have no users
- * besides graph results, i.e. from the bottommost nodes to the nodes at the top.
- * Nodes created during traversal are never visited.
- *
- * An alternative to traversing all nodes using next() is the utilization of begin() and end().
+ * @see BottomUpTraverserGeneric
  */
 using BottomUpTraverser = detail::BottomUpTraverserGeneric<false>;
-/** \brief Const bottom up traverser
+
+/** \brief Traverser for visiting every node in a const region in a bottom up order.
  *
- * A version of \ref BottomUpTraverser that does not support the region changing during traversal.
+ * @see BottomUpTraverserGeneric
  */
 using BottomUpConstTraverser = detail::BottomUpTraverserGeneric<false>;
 
