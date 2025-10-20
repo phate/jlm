@@ -319,7 +319,7 @@ AliasAnalysisPrecisionEvaluator::NormalizePointerValues()
   for (size_t i = 0; i < Context_.PointerOperations.size(); i++)
   {
     auto & pointer = std::get<0>(Context_.PointerOperations[i]);
-    pointer = &llvm::TraceOutput(*pointer);
+    pointer = &llvm::traceOutput(*pointer);
   }
 }
 
