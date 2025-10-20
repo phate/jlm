@@ -301,6 +301,12 @@ public:
   [[nodiscard]] std::unique_ptr<Operation>
   copy() const override;
 
+  [[nodiscard]] std::vector<MemoryNodeId>
+  getMemoryNodeIds() const noexcept
+  {
+    return MemoryNodeIds_;
+  }
+
   /**
    * Perform the following transformation:
    *
@@ -317,22 +323,6 @@ public:
   NormalizeCallEntryMemoryStateMerge(
       const LambdaEntryMemoryStateSplitOperation & lambdaEntrySplitOperation,
       const std::vector<rvsdg::Output *> & operands);
-
-  // FIXME: Deprecated, needs to be removed
-  static std::vector<jlm::rvsdg::Output *>
-  Create(rvsdg::Output & output, const size_t numResults)
-  {
-    std::vector<MemoryNodeId> memoryNodeIds;
-    for (size_t i = 0; i < numResults; ++i)
-    {
-      memoryNodeIds.push_back(i);
-    }
-
-    return outputs(&rvsdg::CreateOpNode<LambdaEntryMemoryStateSplitOperation>(
-        { &output },
-        numResults,
-        std::move(memoryNodeIds)));
-  }
 
   static rvsdg::SimpleNode &
   CreateNode(

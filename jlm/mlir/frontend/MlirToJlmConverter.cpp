@@ -710,10 +710,20 @@ MlirToJlmConverter::ConvertOperation(
       auto LambdaEntryMemstateSplitOp =
           ::mlir::dyn_cast<::mlir::rvsdg::LambdaEntryMemoryStateSplitOperation>(&mlirOperation))
   {
+    // FIXME: the MLIR LambdaEntryMemoryStateSplitOperation does not support the memoryNodeIds
+    // parameter at the moment
+    size_t numMemoryStates = LambdaEntryMemstateSplitOp.getNumResults();
+    std::vector<llvm::MemoryNodeId> memoryNodeIds;
+    for (size_t i = 0; i < numMemoryStates; ++i)
+    {
+      memoryNodeIds.push_back(i);
+    }
+
     auto operands = std::vector(inputs.begin(), inputs.end());
-    return jlm::llvm::LambdaEntryMemoryStateSplitOperation::Create(
+    return outputs(&jlm::llvm::LambdaEntryMemoryStateSplitOperation::CreateNode(
         *operands.front(),
-        LambdaEntryMemstateSplitOp.getNumResults());
+        LambdaEntryMemstateSplitOp.getNumResults(),
+        memoryNodeIds));
   }
   else if (
       auto LambdaExitMemstateMergeOp =

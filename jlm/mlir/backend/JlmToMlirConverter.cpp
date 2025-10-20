@@ -707,8 +707,16 @@ JlmToMlirConverter::ConvertSimpleNode(
   }
   else if (
       auto lambdaStateSplit =
-          dynamic_cast<const jlm::llvm::LambdaEntryMemoryStateSplitOperation *>(&operation))
+          dynamic_cast<const llvm::LambdaEntryMemoryStateSplitOperation *>(&operation))
   {
+    // FIXME: the MLIR LambdaEntryMemoryStateSplitOperation does not support the memoryNodeIds
+    // parameter at the moment
+    auto memoryNodeIds = lambdaStateSplit->getMemoryNodeIds();
+    for (size_t n = 0; n < memoryNodeIds.size(); n++)
+    {
+      JLM_ASSERT(memoryNodeIds[n] == n);
+    }
+
     ::llvm::SmallVector<::mlir::Type> resultTypes;
     for (size_t i = 0; i < lambdaStateSplit->nresults(); i++)
     {
