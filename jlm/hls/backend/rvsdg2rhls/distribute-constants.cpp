@@ -74,6 +74,7 @@ ConstantDistribution::distributeConstantsInLambda(const rvsdg::LambdaNode & lamb
     {
       if (rvsdg::TryGetOwnerNode<rvsdg::GammaNode>(*output)
           || rvsdg::TryGetOwnerNode<rvsdg::ThetaNode>(*output)
+          || rvsdg::TryGetOwnerNode<rvsdg::SimpleNode>(*output)
           || rvsdg::TryGetRegionParentNode<rvsdg::ThetaNode>(*output))
       {
         insertAndDivertToNewConstant(*output, *constant);
