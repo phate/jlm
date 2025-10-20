@@ -1147,11 +1147,12 @@ divert_users(Node * node, const std::vector<Output *> & outputs)
 }
 
 /**
- * Traces \p output intra-procedurally through the RVSDG. The function is capable of tracing
- * through:
+ * Traces \p output intra-procedurally through the RVSDG. The function is capable of tracing:
  *
- * 1. Gamma nodes if the exit variable is invariant
- * 2. Theta nodes if the loop variable is invariant
+ * 1. Through gamma nodes if the exit variable is invariant
+ * 2. Out of gamma nodes from entry variable arguments
+ * 3. Through theta nodes if the loop variable is invariant
+ * 4. Out of theta nodes from the arguments, if the loop variable is invariant
  *
  * Tracing stops when a lambda function argument or context argument is reached. If the function is
  * invoked with an output that is not from within a lambda node, then this output is simply
@@ -1161,21 +1162,22 @@ divert_users(Node * node, const std::vector<Output *> & outputs)
  * @return The final value of the tracing.
  */
 const Output &
-TraceOutputIntraProcedurally(const Output & output);
+traceOutputIntraProcedurally(const Output & output);
 
 /**
  * Traces \p output through the RVSDG.
- * The function is capable of tracing through everything \ref TraceOutputIntraProcedurally is,
+ * The function is capable of tracing through everything \ref traceOutputIntraProcedurally is,
  * in addition to:
  *
  * 1. From lambda context variables out of the lambda
- * 2. Phi node recursion variables and context variables
+ * 2. From delta context variables out of the delta
+ * 3. Phi node recursion variables and context variables
  *
  * @param output the output to trace.
  * @return the final value of the tracing
  */
 const Output &
-TraceOutput(const Output & output);
+traceOutput(const Output & output);
 
 }
 

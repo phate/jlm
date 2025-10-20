@@ -15,7 +15,7 @@ namespace jlm::llvm
 
 /**
  * Traces the origin of the given \p output to find the origin of the value.
- * Traces through everything handled by \ref jlm::rvsdg::TraceOutput,
+ * Traces through everything handled by \ref jlm::rvsdg::traceOutput,
  * with the addition of LLVM-specific operations.
  *
  * @param output the output to start tracing from

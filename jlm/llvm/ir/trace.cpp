@@ -15,7 +15,7 @@ namespace jlm::llvm
 const rvsdg::Output &
 traceOutput(const rvsdg::Output & startingOutput)
 {
-  auto & output = rvsdg::TraceOutput(startingOutput);
+  auto & output = rvsdg::traceOutput(startingOutput);
 
   if (const auto [node, ioBarrierOp] =
           rvsdg::TryGetSimpleNodeAndOptionalOp<IOBarrierOperation>(output);
