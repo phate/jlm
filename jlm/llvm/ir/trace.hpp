@@ -15,14 +15,14 @@ namespace jlm::llvm
 
 /**
  * Traces the origin of the given \p output to find the origin of the value.
- * Traces through everything handled by \ref jlm::rvsdg::TraceOutput,
+ * Traces through everything handled by \ref jlm::rvsdg::traceOutput,
  * with the addition of LLVM-specific operations.
  *
  * @param output the output to start tracing from
  * @return the maximally traced output
  */
 const rvsdg::Output &
-TraceOutput(const rvsdg::Output & output);
+traceOutput(const rvsdg::Output & output);
 
 /**
  * Attempts to find the constant integer value of a given \p output,
@@ -32,7 +32,7 @@ TraceOutput(const rvsdg::Output & output);
  * @return the constant integer value if found, otherwise nullopt.
  */
 std::optional<int64_t>
-TryGetConstantSignedInteger(const rvsdg::Output & output);
+tryGetConstantSignedInteger(const rvsdg::Output & output);
 
 }
 

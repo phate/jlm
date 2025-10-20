@@ -1117,7 +1117,7 @@ RegionAwareModRefSummarizer::AnnotateMemcpy(
   const auto dstOrigin = MemCpyOperation::destinationInput(memcpyNode).origin();
   const auto srcOrigin = MemCpyOperation::sourceInput(memcpyNode).origin();
   const auto countOrigin = MemCpyOperation::countInput(memcpyNode).origin();
-  const auto count = TryGetConstantSignedInteger(*countOrigin);
+  const auto count = tryGetConstantSignedInteger(*countOrigin);
   AddPointerOriginTargets(nodeModRef, *dstOrigin, count, lambda);
   AddPointerOriginTargets(nodeModRef, *srcOrigin, count, lambda);
   return nodeModRef;

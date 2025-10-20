@@ -13,24 +13,24 @@ namespace jlm::llvm
 {
 
 const rvsdg::Output &
-TraceOutput(const rvsdg::Output & startingOutput)
+traceOutput(const rvsdg::Output & startingOutput)
 {
-  auto & output = rvsdg::TraceOutput(startingOutput);
+  auto & output = rvsdg::traceOutput(startingOutput);
 
   if (const auto [node, ioBarrierOp] =
           rvsdg::TryGetSimpleNodeAndOptionalOp<IOBarrierOperation>(output);
       node && ioBarrierOp)
   {
-    return llvm::TraceOutput(*node->input(0)->origin());
+    return llvm::traceOutput(*node->input(0)->origin());
   }
 
   return output;
 }
 
 std::optional<int64_t>
-TryGetConstantSignedInteger(const rvsdg::Output & output)
+tryGetConstantSignedInteger(const rvsdg::Output & output)
 {
-  const auto & normalized = llvm::TraceOutput(output);
+  const auto & normalized = llvm::traceOutput(output);
 
   if (const auto [_, constant] =
           rvsdg::TryGetSimpleNodeAndOptionalOp<IntegerConstantOperation>(normalized);

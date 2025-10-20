@@ -637,7 +637,7 @@ getMemoryNodeSize(const PointsToGraph::MemoryNode & memoryNode)
     const auto allocaOp = util::assertedCast<const AllocaOperation>(&allocaNode.GetOperation());
 
     // An alloca has a count parameter, which on rare occasions is not just the constant 1.
-    const auto elementCount = TryGetConstantSignedInteger(*allocaNode.input(0)->origin());
+    const auto elementCount = tryGetConstantSignedInteger(*allocaNode.input(0)->origin());
     if (elementCount.has_value())
       return *elementCount * GetTypeSize(*allocaOp->ValueType());
 
@@ -647,7 +647,7 @@ getMemoryNodeSize(const PointsToGraph::MemoryNode & memoryNode)
   {
     const auto & mallocNode = malloc->GetMallocNode();
 
-    return TryGetConstantSignedInteger(*mallocNode.input(0)->origin());
+    return tryGetConstantSignedInteger(*mallocNode.input(0)->origin());
   }
   if (dynamic_cast<const PointsToGraph::ExternalMemoryNode *>(&memoryNode))
   {

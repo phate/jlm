@@ -8,8 +8,6 @@
 
 #include <jlm/rvsdg/node.hpp>
 
-#include <optional>
-
 namespace jlm::llvm::aa
 {
 
