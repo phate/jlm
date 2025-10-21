@@ -255,7 +255,7 @@ StoreNonVolatileOperation::NormalizeIOBarrierAllocaAddress(
     return std::nullopt;
 
   auto & barredAddress = *IOBarrierOperation::BarredInput(*ioBarrierNode).origin();
-  const auto & tracedAddress = rvsdg::TraceOutputIntraProcedurally(barredAddress);
+  const auto & tracedAddress = rvsdg::traceOutputIntraProcedurally(barredAddress);
   if (!rvsdg::IsOwnerNodeOperation<AllocaOperation>(tracedAddress))
     return std::nullopt;
 
