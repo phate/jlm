@@ -300,112 +300,217 @@ namespace jlm::llvm
 
 typedef size_t GVN_Val;
 
-class GVN_Manager;
-
 /** \brief A collection of all data required to compute a gvn value for an Output* */
 struct GVN_Deps{
-  GVN_Deps() = default;
-  rvsdg::Output* output;
+  GVN_Deps() : op(nullptr), producers(), literal(0), has_literal(false){}
+  GVN_Deps(const GVN_Deps& from)
+  {
+    std::cout << "CP called" << std::endl;
+    op = from.op;
+    producers = from.producers;
+    literal = from.literal;
+    has_literal = from.has_literal;
+  }
   rvsdg::Operation* op;   // Some edges have
-  rvsdg::Node* node;
   std::vector<rvsdg::Output*> producers;
   GVN_Val literal;
   bool has_literal;
   void reset(){
-    output = NULL;
-    op = NULL;
-    node = NULL;
+    op = nullptr;
     producers.clear();
     literal = 0;
     has_literal = false;
   }
 };
 
-
-
 class GVN_Manager
 {
-  /** \brief Utility class for managing the symbol space created by GVN values.
-   *  Responsibilities: keep track of which values are already in use and
-   *    provide means of mapping simple literals to gvn values
-   *
-   */
+  /** \brief A class for creating GVN hashes and keeping track of GVN values already in use. */
 
 public:
   GVN_Manager() = default;
-  inline GVN_Manager& Start(rvsdg::Output* output, rvsdg::Operation& op, rvsdg::Node* node){
-    CheckDepsEmpty();
+  /** \brief GVN values are created using a simple builder pattern. Remember to call End().*/
+  /** \param output : The output edge the GVN value applies to. */
+  /** \param op : The operator which produced the value. */
+  inline GVN_Manager* Start(rvsdg::Output* output, rvsdg::Operation* op){
+    CheckDepsEmpty(); //was the last GVN value completed?
     if (!output){throw std::runtime_error("Output pointer was null");}
-    build_deps_.output = output;
-    build_deps_.op = &op;
-    build_deps_.node = node;
+    build_output_ = output;
+    build_deps_.op = op;
 
-    if (op_to_gvn_.find(&op) == op_to_gvn_.end()){
-      op_to_gvn_.insert({&op, CreateUniqueGVN()});
+    if (op_to_gvn_.find(op) == op_to_gvn_.end()){
+      op_to_gvn_.insert({op, CreateUniqueGVN()});
     }
 
-    return *this;
+    return this;
   }
-  inline GVN_Manager& WithEdge(rvsdg::Output* source){
+
+  inline GVN_Manager* WithEdge(rvsdg::Output* source){
     build_deps_.producers.push_back(source);
-    return *this;
+    return this;
   }
-  inline GVN_Manager& WithStr(std::string& str){
+
+  inline GVN_Manager* WithStr(std::string& str){
     CheckLitEmpty();
     build_deps_.has_literal = true;
     bool not_created = lit_to_gvn_.find(str) == lit_to_gvn_.end();
     if (not_created){lit_to_gvn_.insert( {str, CreateUniqueGVN() });}
     build_deps_.literal = lit_to_gvn_[str];
-    return *this;
+    return this;
   }
-  inline GVN_Manager& WithIndex(size_t index){
+
+  inline GVN_Manager* WithIndex(size_t index){
     CheckLitEmpty();
     build_deps_.has_literal = true;
     bool not_created = index_to_gvn_.find(index) == index_to_gvn_.end();
     if (not_created){index_to_gvn_.insert( {index, CreateUniqueGVN() });}
     build_deps_.literal = index_to_gvn_[index];
-    return *this;
+    return this;
   }
+
   inline void End(){
+    // This method is the only place where non-literal nodes should allocate a new gvn value.
     auto fresh_value = HashDeps(build_deps_);
-
-    std::cout << "FLUSH GVN:" << std::endl;
-    std::cout << "   op: " << build_deps_.op->debug_string() << std::endl;
-    if (build_deps_.node){std::cout << "   node: " << build_deps_.node->DebugString() << std::endl;}
-    std::cout << "   literal: " << build_deps_.literal << std::endl;
-    std::cout << ".........................." << std::endl;
-
     if (!fresh_value){
+      // The value either has missing dependencies or has been explicitly marked as unique.
       fresh_value = std::optional<GVN_Val>(CreateUniqueGVN());
     }
-    //TODO: compare for structural equality here
-    edges_to_gvn_.insert({build_deps_.output, *fresh_value});
-    occurrences_.insert(*fresh_value);
+
+    build_deps_.reset();
+    return;
+
+    std::cout << "GVN:" << std::endl;
+    std::cout << "   op: " << build_deps_.op->debug_string() << std::endl;
+    std::cout << "   literal: " << build_deps_.literal << std::endl;
+    std::cout << ".........................." << std::endl;
+/*
+    //Check if gvn value already exists
+    //  if this is the case compare it with existing values
+    if (occurrences_.find(*fresh_value) != occurrences_.end()){
+      if (!CompareDeps(gvn_to_deps_[*fresh_value], build_deps_)){
+        std::cout << "COLLISION DETECTED" << std::endl;
+        fresh_value = CreateUniqueGVN();
+        gvn_to_deps_.insert({*fresh_value, build_deps_});
+      }
+    }else{
+      std::cout << "CP?? [[";
+      gvn_to_deps_.insert({*fresh_value, build_deps_});
+      std::cout  << "]]";
+    }
+*/
+    if (occurrences_.find(*fresh_value) == occurrences_.end()){
+      occurrences_.insert(*fresh_value);
+    }
+
+    edges_to_gvn_.insert({build_output_, *fresh_value});
 
     build_deps_.reset();
   }
 
+  /** \brief Extend the flow of a value into a structural node */
+  inline void ExtendFlow(rvsdg::Output* from, rvsdg::Output* downto)
+  {
+    if (traceback_flows_.find(downto) != traceback_flows_.end()){throw std::runtime_error("Incorrect extension of flow. Cannot have two origins.");}
+    //This map can also be used when redirecting to available expressions in outer scopes.
+    traceback_flows_.insert({downto, from});
+  }
+  inline void ExtendFlow(rvsdg::Input* from, rvsdg::Output* downto)
+  {
+    if (!from || !from->origin()){throw std::runtime_error("Input lacks source");}
+    ExtendFlow(from->origin(), downto);
+  }
 
+  std::optional<GVN_Val> GetGVN(rvsdg::Output* output)
+  {
+    if (edges_to_gvn_.find(output) != edges_to_gvn_.end()){return edges_to_gvn_[output];}
+    return std::nullopt;
+  }
 
 private:
-  GVN_Deps build_deps_;
-  static bool CanHashAsAssociativeCumulativeOp(GVN_Deps& deps)
+  // Multiple output edges may map to the same gvn
+
+  std::unordered_map<rvsdg::Output*,    GVN_Val>    edges_to_gvn_;
+  std::unordered_map<GVN_Val,           GVN_Deps>   gvn_to_deps_; // For collision detection.
+  std::unordered_map<std::string,       GVN_Val>    lit_to_gvn_;
+  std::unordered_map<std::size_t,       GVN_Val>    index_to_gvn_;
+  std::unordered_map<rvsdg::Operation*, GVN_Val>    op_to_gvn_;
+
+  std::unordered_map<rvsdg::Output*, rvsdg::Output*> traceback_flows_;
+
+  std::unordered_set<GVN_Val> occurrences_;
+
+  /* ********************************************************************** */
+  GVN_Val CreateUniqueGVN()
   {
-    if (!deps.node){return false;}
+    // All GVN values start here
+    GVN_Val v = random();
+    while (occurrences_.count(v) != 0){v = random();}
+    occurrences_.insert(v);
+    return v;
+  }
+
+  /* ********************************************************************** */
+
+  bool CompareDeps(GVN_Deps& a, GVN_Deps& b)
+  {
+    // Strict structural equality
+    bool m_lit = a.literal == b.literal && a.has_literal == b.has_literal;
+    bool m_op = a.op == b.op;
+    bool m_prods = false;
+    if (a.producers.size() == b.producers.size()){
+      m_prods = true;
+      for (size_t i = 0; i < a.producers.size(); i++){
+        auto ea = ResolveEdge(a.producers[i]);
+        auto eb = ResolveEdge(b.producers[i]);
+        if (!ea){m_prods = false;break;}
+        if (!eb){m_prods = false;break;}
+        if (*ea != *eb){m_prods = false;break;}
+      }
+    }
+    return m_lit && m_op && m_prods;
+  }
+  // GVN values are computed one at the time using
+  // the builder interface above.
+  // These fields hold the data required
+  GVN_Deps       build_deps_;
+  rvsdg::Output* build_output_;
+
+  static bool CanHashAsAssociativeCumulativeOp(const GVN_Deps& deps)
+  {
     bool hash_as_ca = false;
-    MatchType(deps.node->GetOperation(), [&hash_as_ca](const rvsdg::BinaryOperation& bin_op){
+    MatchType(*(deps.op), [&hash_as_ca](const rvsdg::BinaryOperation& bin_op){
       hash_as_ca = bin_op.is_associative() && bin_op.is_commutative();
     });
     return hash_as_ca;
   }
 
+  bool DepsAreEquivalent(const GVN_Deps& a, const GVN_Deps& b)
+  {
+    // Expensive check for detecting collisions
+    if (a.op != b.op){return false;}
+    if (a.literal != b.literal){return false;}
+
+    //TODO: handle ca and gamma here
+    if (a.producers.size() != b.producers.size()){return false;}
+
+    for (size_t i = 0; i < a.producers.size(); i++){
+      auto g_a = ResolveEdge(a.producers[i]);
+      auto g_b = ResolveEdge(b.producers[i]);
+      if (g_a != g_b){return false;}
+    }
+
+    return true;
+  }
+
   std::optional<GVN_Val> HashDeps(GVN_Deps& deps)
   {
-    GVN_Val h = op_to_gvn_[deps.op];
-
+    GVN_Val h = op_to_gvn_[deps.op] ^ deps.literal;
+    if (!deps.has_literal && !deps.producers.size()){
+      throw std::runtime_error("Logic error: missing data sources for hashing.");
+    }
     if (CanHashAsAssociativeCumulativeOp(deps)){
       for (size_t i = 0 ; i < deps.producers.size() ; i++){
-        auto g = FromEdge(deps.producers[i]);
+        auto g = ResolveEdge(deps.producers[i]);
         if (!g){ return std::nullopt; }
         size_t a = static_cast<size_t>(*g);
         h ^= a;                                // independent of order
@@ -415,7 +520,7 @@ private:
 
     // Default hashing, in order with each edge treated differently based on order
     for (size_t i = 0 ; i < deps.producers.size() ; i++){
-      auto g = FromEdge(deps.producers[i]);
+      auto g = ResolveEdge(deps.producers[i]);
       if (!g){ return std::nullopt; }
       size_t a = static_cast<size_t>(*g);
       h ^= a * (i+1) + a;                     // dependent on order
@@ -424,29 +529,17 @@ private:
     return std::optional<GVN_Val>(h);
   }
 
-  std::optional<GVN_Val> FromEdge(rvsdg::Output* producer){
+  std::optional<GVN_Val> ResolveEdge(rvsdg::Output* producer){
+    //trace the edge all the way back to the top, crossing into lambdas(context vars), gammas and theta nodes
+    while (traceback_flows_.find(producer) != traceback_flows_.end()){
+      producer = traceback_flows_[producer];
+    }
     if (edges_to_gvn_.find(producer) == edges_to_gvn_.end()){return std::nullopt;}
     return edges_to_gvn_[producer];
   }
 
-  void CheckLitEmpty(){if (build_deps_.has_literal){throw std::runtime_error("Maximum one literal supported per Output*");}}
-  void CheckDepsEmpty(){if (build_deps_.op){throw std::runtime_error("Previous GVN value not flushed.");}}
-  GVN_Val CreateUniqueGVN()
-  {
-    // All GVN values start here
-    GVN_Val v = random();
-    while (occurrences_.count(v) != 0){v = random();}
-    occurrences_.insert(v);
-    return v;
-  }
-  // Multiple output edges may map to the same gvn
-  // No collisions here
-  std::unordered_map<rvsdg::Output*,    GVN_Val>    edges_to_gvn_;
-  std::unordered_map<std::string,       GVN_Val>    lit_to_gvn_;
-  std::unordered_map<std::size_t,       GVN_Val>    index_to_gvn_;
-  std::unordered_map<rvsdg::Operation*, GVN_Val>    op_to_gvn_;
-
-  std::unordered_set<GVN_Val> occurrences_;
+  void CheckLitEmpty() const {if (build_deps_.has_literal){throw std::runtime_error("Maximum one literal supported per Output*");}}
+  void CheckDepsEmpty() const {if (build_deps_.op){throw std::runtime_error("Previous GVN value not flushed.");}}
 };
 
 
@@ -519,7 +612,7 @@ private:
   GVN_Manager gvn_man_;
 
   void TraverseTopDownRecursively(rvsdg::Region& reg,          void(*cb)(PartialRedundancyElimination* pe, rvsdg::Node& node));
-  void TraverseTopDownRecursively(rvsdg::Region& reg);
+  void GVN_Compute(rvsdg::Region& reg);
 
   static void dump_region(        PartialRedundancyElimination *pe, rvsdg::Node& node);
   static void dump_node(          PartialRedundancyElimination *pe, rvsdg::Node& node);

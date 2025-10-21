@@ -10,6 +10,7 @@
 #define  TR_RED     TR_FG(255,64,64)
 #define  TR_GREEN   TR_FG(64, 255, 64)
 
+#define  TR_PURPLE  TR_FG(128,0,128)
 #define  TR_YELLOW  TR_FG(255, 255, 64)
 #define  TR_ORANGE  TR_FG(255, 128, 0)
 #define  TR_BLUE    TR_FG(64, 64, 255)
@@ -20,6 +21,7 @@
 #include "../../../tests/test-operation.hpp"
 #include "../../rvsdg/gamma.hpp"
 #include "../../rvsdg/lambda.hpp"
+#include "../../rvsdg/theta.hpp"
 #include "../../rvsdg/MatchType.hpp"
 #include "../../rvsdg/node.hpp"
 #include "../../rvsdg/nullary.hpp"
@@ -182,9 +184,9 @@ std::unique_ptr<jlm::rvsdg::Operation> LambdaParameterOperation::copy() const { 
 static LambdaParameterOperation lambdaParamOp;
 
 
-PartialRedundancyElimination::~PartialRedundancyElimination() noexcept = default;
+PartialRedundancyElimination::~PartialRedundancyElimination() noexcept {}
 
-PartialRedundancyElimination::PartialRedundancyElimination(): Transformation("PartialRedundancyElimination"){}
+PartialRedundancyElimination::PartialRedundancyElimination(): jlm::rvsdg::Transformation("PartialRedundancyElimination"), gvn_man_(){}
 
 
 void PartialRedundancyElimination::TraverseTopDownRecursively(rvsdg::Region& reg, void(*cb)(PartialRedundancyElimination* pe, rvsdg::Node& node))
@@ -205,23 +207,43 @@ void PartialRedundancyElimination::TraverseTopDownRecursively(rvsdg::Region& reg
 
 }
 
-void PartialRedundancyElimination::TraverseTopDownRecursively(rvsdg::Region& reg)
+void PartialRedundancyElimination::GVN_Compute(rvsdg::Region& reg)
 {
   IndentMan indenter = IndentMan();
   for (rvsdg::Node* node : rvsdg::TopDownTraverser(&reg))
   {
-    MatchType(*node, [this, node](rvsdg::LambdaNode& lm){
-      auto params = lm.GetFunctionArguments();
-      for (size_t i = 0; i < params.size() ; i++){
-        gvn_man_.Start(params[i], lambdaParamOp, node).WithIndex(i).End();
+    /* setup flows into regions of structural nodes */
+    MatchType(*node,
+      [this](const rvsdg::GammaNode& gn){
+        for (auto v : gn.GetEntryVars()){
+          for (auto ba : v.branchArgument){
+            gvn_man_.ExtendFlow(v.input, ba);
+          }
+        }
+      },
+      [this](const rvsdg::ThetaNode& tn){
+        for (auto v : tn.GetLoopVars()){
+          if (rvsdg::ThetaLoopVarIsInvariant(v)){
+            gvn_man_.ExtendFlow(v.input, v.pre);
+          }
+        }
+      },
+      [this](rvsdg::LambdaNode& lm){
+        for ( auto cv : lm.GetContextVars() ){
+          gvn_man_.ExtendFlow(cv.input, cv.inner );
+        }
+        auto params = lm.GetFunctionArguments();
+        for (size_t i = 0; i < params.size() ; i++){
+          gvn_man_.Start(params[i], &lambdaParamOp)->WithIndex(i)->End();
+        }
       }
-    });
+    );
 
     MatchType(*node, [this](rvsdg::StructuralNode& sn)
     {
-      for (auto& reg : sn.Subregions())
+      for (auto& subreg : sn.Subregions())
       {
-        this->TraverseTopDownRecursively(reg);
+        this->GVN_Compute(subreg );
         std::cout << ind() << TR_GRAY << "..........................." << TR_RESET << std::endl;
       }
     });
@@ -351,7 +373,7 @@ PartialRedundancyElimination::Run(
   this->TraverseTopDownRecursively(rvsdg.GetRootRegion(), PartialRedundancyElimination::dump_region);
 
   this->TraverseTopDownRecursively(rvsdg.GetRootRegion(), PartialRedundancyElimination::dump_node);
-  this->TraverseTopDownRecursively( rvsdg.GetRootRegion() );
+  this->GVN_Compute( rvsdg.GetRootRegion() );
   /*
   {
 
@@ -401,6 +423,9 @@ void PartialRedundancyElimination::dump_node(PartialRedundancyElimination* pe, r
   std::cout << ind() << TR_BLUE << node.DebugString() << "<"<<node.GetNodeId() <<">"<< TR_RESET;
   for (size_t i = 0; i < node.noutputs(); i++)
   {
+    if (pe->gvn_man_.GetGVN(node.output(i))){
+      std::cout << TR_PURPLE << "gvn" << *(pe->gvn_man_.GetGVN(node.output(i))) << TR_RESET;
+    }
     auto h = pe->GetHash(node.output(i));
     if (h.IsSome())
     {
