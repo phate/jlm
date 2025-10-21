@@ -300,26 +300,78 @@ namespace jlm::llvm
 
 typedef size_t GVN_Val;
 
+struct LeafCounts
+{
+  std::vector< std::pair<GVN_Val, size_t> > counts;
+
+  void MakeSorted(){
+    std::sort(counts.begin(), counts.end(),
+      [](const std::pair<GVN_Val, size_t>& a, std::pair<GVN_Val, size_t>& b){return a.first < b.first;}
+    );
+  }
+  // Vector of leaf hashes for operator clusters
+  LeafCounts():counts(){}
+  explicit LeafCounts(std::vector< std::pair<GVN_Val, size_t> >& c) : counts(){
+    counts = c;
+    MakeSorted();
+  }
+  LeafCounts(GVN_Val a, GVN_Val b){
+    if (a == b){
+      counts.push_back(std::make_pair(a, 2));
+    }else{
+      counts.push_back(std::make_pair(a, 1));
+      counts.push_back(std::make_pair(b, 1));
+      MakeSorted();
+    }
+  }
+
+  inline bool operator==(const LeafCounts &other) const {
+    return counts == other.counts;
+  }
+
+  inline static LeafCounts Add(const LeafCounts& a, const LeafCounts& b)
+  {
+    std::vector< std::pair<GVN_Val, size_t> > acc;
+    size_t pos_a = 0;
+    size_t pos_b = 0;
+    while (pos_a < a.counts.size() || pos_b < b.counts.size()){
+      std::cout << "(" << pos_a << ", " << pos_b << ")" << std::endl;
+      if (pos_a >= a.counts.size()){
+        acc.push_back(b.counts[pos_b]);
+        pos_b++; continue;
+      }
+      if (pos_b >= b.counts.size()){
+        acc.push_back(a.counts[pos_a]);
+        pos_a++; continue;
+      }
+      if (a.counts[pos_a].first == b.counts[pos_b].first){
+        auto ab = a.counts[pos_a].second + b.counts[pos_b].second;
+        acc.push_back(std::make_pair(a.counts[pos_a].first, ab));
+        pos_a++; pos_b++; continue;
+      }
+      if (a.counts[pos_a].first < b.counts[pos_b].first){
+        acc.push_back(a.counts[pos_a]); pos_a++;
+      }else{
+        acc.push_back(b.counts[pos_b]); pos_b++;
+      }
+    }
+    return LeafCounts(acc);
+  }
+};
+
 /** \brief A collection of all data required to compute a gvn value for an Output* */
 struct GVN_Deps{
-  GVN_Deps() : op(nullptr), producers(), literal(0), has_literal(false){}
-  GVN_Deps(const GVN_Deps& from)
-  {
-    std::cout << "CP called" << std::endl;
-    op = from.op;
-    producers = from.producers;
-    literal = from.literal;
-    has_literal = from.has_literal;
-  }
-  rvsdg::Operation* op;   // Some edges have
+  const rvsdg::Operation* op;   // Some edges have
   std::vector<rvsdg::Output*> producers;
   GVN_Val literal;
   bool has_literal;
+  std::optional<LeafCounts> leaf_counts; // For ca operations
   void reset(){
     op = nullptr;
     producers.clear();
     literal = 0;
     has_literal = false;
+    leaf_counts = std::nullopt;
   }
 };
 
@@ -332,7 +384,7 @@ public:
   /** \brief GVN values are created using a simple builder pattern. Remember to call End().*/
   /** \param output : The output edge the GVN value applies to. */
   /** \param op : The operator which produced the value. */
-  inline GVN_Manager* Start(rvsdg::Output* output, rvsdg::Operation* op){
+  inline GVN_Manager* Start(rvsdg::Output* output, const rvsdg::Operation* op){
     CheckDepsEmpty(); //was the last GVN value completed?
     if (!output){throw std::runtime_error("Output pointer was null");}
     build_output_ = output;
@@ -349,13 +401,24 @@ public:
     build_deps_.producers.push_back(source);
     return this;
   }
+  inline GVN_Manager* WithEdge(rvsdg::Input* flow)
+  {
+    if (!flow || !flow->origin()){build_deps_.producers.push_back(nullptr);return this;}
+    build_deps_.producers.push_back(flow->origin());
+    return this;
+  }
 
-  inline GVN_Manager* WithStr(std::string& str){
+  inline GVN_Manager* WithStr(std::string str){
     CheckLitEmpty();
     build_deps_.has_literal = true;
     bool not_created = lit_to_gvn_.find(str) == lit_to_gvn_.end();
     if (not_created){lit_to_gvn_.insert( {str, CreateUniqueGVN() });}
     build_deps_.literal = lit_to_gvn_[str];
+    return this;
+  }
+
+  inline GVN_Manager* WithUnique(){
+    build_deps_.producers.push_back(nullptr);
     return this;
   }
 
@@ -373,32 +436,30 @@ public:
     auto fresh_value = HashDeps(build_deps_);
     if (!fresh_value){
       // The value either has missing dependencies or has been explicitly marked as unique.
-      fresh_value = std::optional<GVN_Val>(CreateUniqueGVN());
+      fresh_value = std::optional<GVN_Val>(CreateUniqueGVN()); //This prevents structural comparisons
     }
-
-    build_deps_.reset();
-    return;
 
     std::cout << "GVN:" << std::endl;
     std::cout << "   op: " << build_deps_.op->debug_string() << std::endl;
     std::cout << "   literal: " << build_deps_.literal << std::endl;
     std::cout << ".........................." << std::endl;
-/*
+
+    //ComputeCA_Leaves(build_deps_);
+
     //Check if gvn value already exists
     //  if this is the case compare it with existing values
-    if (occurrences_.find(*fresh_value) != occurrences_.end()){
+    if (gvn_to_deps_.find(*fresh_value) != gvn_to_deps_.end()){
       if (!CompareDeps(gvn_to_deps_[*fresh_value], build_deps_)){
-        std::cout << "COLLISION DETECTED" << std::endl;
+        std::cout << *fresh_value << "------------------COLLISION DETECTED--------------------" << std::endl;
+        auto prev = gvn_to_deps_[*fresh_value];
+        std::cout << build_deps_.op->debug_string() << " =?= " << prev.op->debug_string() << std::endl;
+        std::cout << build_deps_.producers.size()   << " =?= " << prev.producers.size() << std::endl;
         fresh_value = CreateUniqueGVN();
-        gvn_to_deps_.insert({*fresh_value, build_deps_});
       }
-    }else{
-      std::cout << "CP?? [[";
-      gvn_to_deps_.insert({*fresh_value, build_deps_});
-      std::cout  << "]]";
     }
-*/
+
     if (occurrences_.find(*fresh_value) == occurrences_.end()){
+      gvn_to_deps_.insert({*fresh_value, build_deps_});
       occurrences_.insert(*fresh_value);
     }
 
@@ -408,16 +469,18 @@ public:
   }
 
   /** \brief Extend the flow of a value into a structural node */
-  inline void ExtendFlow(rvsdg::Output* from, rvsdg::Output* downto)
+  inline void ExtendFlow(rvsdg::Output* from, rvsdg::Output* downto, rvsdg::Node* into)
   {
+    edges_to_gvn_.insert({downto, edges_to_gvn_[from]});
+
     if (traceback_flows_.find(downto) != traceback_flows_.end()){throw std::runtime_error("Incorrect extension of flow. Cannot have two origins.");}
     //This map can also be used when redirecting to available expressions in outer scopes.
-    traceback_flows_.insert({downto, from});
+    traceback_flows_.insert({downto, std::make_pair(from, into)});
   }
-  inline void ExtendFlow(rvsdg::Input* from, rvsdg::Output* downto)
+  inline void ExtendFlow(rvsdg::Input* from, rvsdg::Output* downto, rvsdg::Node* into)
   {
     if (!from || !from->origin()){throw std::runtime_error("Input lacks source");}
-    ExtendFlow(from->origin(), downto);
+    ExtendFlow(from->origin(), downto, into);
   }
 
   std::optional<GVN_Val> GetGVN(rvsdg::Output* output)
@@ -433,9 +496,9 @@ private:
   std::unordered_map<GVN_Val,           GVN_Deps>   gvn_to_deps_; // For collision detection.
   std::unordered_map<std::string,       GVN_Val>    lit_to_gvn_;
   std::unordered_map<std::size_t,       GVN_Val>    index_to_gvn_;
-  std::unordered_map<rvsdg::Operation*, GVN_Val>    op_to_gvn_;
+  std::unordered_map<const rvsdg::Operation*, GVN_Val>    op_to_gvn_;
 
-  std::unordered_map<rvsdg::Output*, rvsdg::Output*> traceback_flows_;
+  std::unordered_map<rvsdg::Output*, std::pair<rvsdg::Output*, rvsdg::Node*> > traceback_flows_;
 
   std::unordered_set<GVN_Val> occurrences_;
 
@@ -443,7 +506,7 @@ private:
   GVN_Val CreateUniqueGVN()
   {
     // All GVN values start here
-    GVN_Val v = random();
+    GVN_Val v = random() & 0xFFFF;
     while (occurrences_.count(v) != 0){v = random();}
     occurrences_.insert(v);
     return v;
@@ -451,8 +514,57 @@ private:
 
   /* ********************************************************************** */
 
+  /** \brief Associative and commutative operations are treated such that (a+b) + c + c == c+(b+a)+c
+   *         This is accomplished by symbolically comparing their sums of the bottom arguments
+   */
+  void ComputeCA_Leaves(GVN_Deps& deps)
+  {
+    if (CanHashAsAssociativeCommutativeOp(deps) && deps.producers.size() == 2){
+      auto g_a = ResolveEdge(deps.producers[0]);
+      auto g_b = ResolveEdge(deps.producers[1]);
+      if (!g_a || !g_b){return;} //no deps for args. This Output* will be assigned a unique gvn.
+      if (gvn_to_deps_.find(*g_a) == gvn_to_deps_.end()){throw std::runtime_error("no dep_a");}
+      if (gvn_to_deps_.find(*g_b) == gvn_to_deps_.end()){throw std::runtime_error("no dep_b");}
+      auto deps_a = gvn_to_deps_[*g_a];
+      auto deps_b = gvn_to_deps_[*g_b];
+      if (build_deps_.op == deps_a.op || build_deps_.op == deps_b.op){
+        LeafCounts la;
+        LeafCounts lb;
+
+        if (build_deps_.op != deps_a.op){
+          la.counts.push_back(std::make_pair(*g_a, 1));
+        }else{
+          if (deps_a.leaf_counts){
+            la = *deps_a.leaf_counts;
+          }
+        }
+
+        if (build_deps_.op != deps_b.op){
+          lb.counts.push_back(std::make_pair(*g_b, 1));
+        }else{
+          if (deps_b.leaf_counts){
+            lb = *deps_b.leaf_counts;
+          }
+        }
+        if (la.counts.size() && lb.counts.size()){
+          build_deps_.leaf_counts = LeafCounts::Add(la, lb);
+          return;
+        }
+      }
+      if (build_deps_.op != deps_a.op && build_deps_.op != deps_b.op){
+        build_deps_.leaf_counts = LeafCounts(*g_a, *g_b);
+        return;
+      }
+    }
+    deps.leaf_counts = std::nullopt;
+  }
   bool CompareDeps(GVN_Deps& a, GVN_Deps& b)
   {
+    if (CanHashAsAssociativeCommutativeOp(a)){
+      if (a.op == b.op && a.leaf_counts && b.leaf_counts){
+        return a.leaf_counts == b.leaf_counts;
+      }
+    }
     // Strict structural equality
     bool m_lit = a.literal == b.literal && a.has_literal == b.has_literal;
     bool m_op = a.op == b.op;
@@ -475,7 +587,7 @@ private:
   GVN_Deps       build_deps_;
   rvsdg::Output* build_output_;
 
-  static bool CanHashAsAssociativeCumulativeOp(const GVN_Deps& deps)
+  static bool CanHashAsAssociativeCommutativeOp(const GVN_Deps& deps)
   {
     bool hash_as_ca = false;
     MatchType(*(deps.op), [&hash_as_ca](const rvsdg::BinaryOperation& bin_op){
@@ -484,31 +596,13 @@ private:
     return hash_as_ca;
   }
 
-  bool DepsAreEquivalent(const GVN_Deps& a, const GVN_Deps& b)
-  {
-    // Expensive check for detecting collisions
-    if (a.op != b.op){return false;}
-    if (a.literal != b.literal){return false;}
-
-    //TODO: handle ca and gamma here
-    if (a.producers.size() != b.producers.size()){return false;}
-
-    for (size_t i = 0; i < a.producers.size(); i++){
-      auto g_a = ResolveEdge(a.producers[i]);
-      auto g_b = ResolveEdge(b.producers[i]);
-      if (g_a != g_b){return false;}
-    }
-
-    return true;
-  }
-
   std::optional<GVN_Val> HashDeps(GVN_Deps& deps)
   {
     GVN_Val h = op_to_gvn_[deps.op] ^ deps.literal;
     if (!deps.has_literal && !deps.producers.size()){
       throw std::runtime_error("Logic error: missing data sources for hashing.");
     }
-    if (CanHashAsAssociativeCumulativeOp(deps)){
+    if (CanHashAsAssociativeCommutativeOp(deps)){
       for (size_t i = 0 ; i < deps.producers.size() ; i++){
         auto g = ResolveEdge(deps.producers[i]);
         if (!g){ return std::nullopt; }
@@ -530,9 +624,11 @@ private:
   }
 
   std::optional<GVN_Val> ResolveEdge(rvsdg::Output* producer){
+    if (!producer){return std::nullopt;}
     //trace the edge all the way back to the top, crossing into lambdas(context vars), gammas and theta nodes
+    //might be easier traverse the rvsdg upwards instead
     while (traceback_flows_.find(producer) != traceback_flows_.end()){
-      producer = traceback_flows_[producer];
+      producer = traceback_flows_[producer].first;
     }
     if (edges_to_gvn_.find(producer) == edges_to_gvn_.end()){return std::nullopt;}
     return edges_to_gvn_[producer];

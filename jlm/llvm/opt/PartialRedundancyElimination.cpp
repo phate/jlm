@@ -21,7 +21,6 @@
 #include "../../../tests/test-operation.hpp"
 #include "../../rvsdg/gamma.hpp"
 #include "../../rvsdg/lambda.hpp"
-#include "../../rvsdg/theta.hpp"
 #include "../../rvsdg/MatchType.hpp"
 #include "../../rvsdg/node.hpp"
 #include "../../rvsdg/nullary.hpp"
@@ -29,6 +28,7 @@
 #include "../../rvsdg/theta.hpp"
 #include "../../util/GraphWriter.hpp"
 #include "../ir/operators/call.hpp"
+#include "../ir/operators/IntegerOperations.hpp"
 #include "../ir/operators/operators.hpp"
 #include "PartialRedundancyElimination.hpp"
 #include <fstream>
@@ -214,23 +214,23 @@ void PartialRedundancyElimination::GVN_Compute(rvsdg::Region& reg)
   {
     /* setup flows into regions of structural nodes */
     MatchType(*node,
-      [this](const rvsdg::GammaNode& gn){
+      [this](rvsdg::GammaNode& gn){
         for (auto v : gn.GetEntryVars()){
           for (auto ba : v.branchArgument){
-            gvn_man_.ExtendFlow(v.input, ba);
+            gvn_man_.ExtendFlow(v.input, ba, &gn);
           }
         }
       },
-      [this](const rvsdg::ThetaNode& tn){
+      [this](rvsdg::ThetaNode& tn){
         for (auto v : tn.GetLoopVars()){
           if (rvsdg::ThetaLoopVarIsInvariant(v)){
-            gvn_man_.ExtendFlow(v.input, v.pre);
+            gvn_man_.ExtendFlow(v.input, v.pre, &tn);
           }
         }
       },
       [this](rvsdg::LambdaNode& lm){
         for ( auto cv : lm.GetContextVars() ){
-          gvn_man_.ExtendFlow(cv.input, cv.inner );
+          gvn_man_.ExtendFlow(cv.input, cv.inner, &lm);
         }
         auto params = lm.GetFunctionArguments();
         for (size_t i = 0; i < params.size() ; i++){
@@ -239,14 +239,35 @@ void PartialRedundancyElimination::GVN_Compute(rvsdg::Region& reg)
       }
     );
 
-    MatchType(*node, [this](rvsdg::StructuralNode& sn)
-    {
-      for (auto& subreg : sn.Subregions())
-      {
-        this->GVN_Compute(subreg );
-        std::cout << ind() << TR_GRAY << "..........................." << TR_RESET << std::endl;
+    MatchType(node->GetOperation(),
+      [this, &node](const rvsdg::BinaryOperation& op){
+        gvn_man_.Start(node->output(0), &op)
+                 ->WithEdge(node->input(0))
+                 ->WithEdge(node->input(1))
+                 ->End();
+      },
+      [this, &node](const jlm::llvm::IntegerConstantOperation& iconst){
+        gvn_man_.Start(node->output(0), &iconst)
+                 ->WithStr(iconst.Representation().str())
+                 ->End();
+      },
+      [this, &node](const jlm::llvm::CallOperation& op){
+        for (size_t i = 0; i < node->noutputs() ; i++){
+          gvn_man_.Start(node->output(i), &op)
+                   ->WithUnique()
+                   ->End();
+        }
       }
-    });
+    );
+
+    MatchType(*node,
+      [this](rvsdg::StructuralNode& sn){
+        for (auto& subreg : sn.Subregions()){
+          this->GVN_Compute(subreg );
+          std::cout << ind() << TR_GRAY << "..........................." << TR_RESET << std::endl;
+        }
+      }
+    );
   }
 }
 
@@ -424,7 +445,7 @@ void PartialRedundancyElimination::dump_node(PartialRedundancyElimination* pe, r
   for (size_t i = 0; i < node.noutputs(); i++)
   {
     if (pe->gvn_man_.GetGVN(node.output(i))){
-      std::cout << TR_PURPLE << "gvn" << *(pe->gvn_man_.GetGVN(node.output(i))) << TR_RESET;
+      std::cout << TR_PURPLE << " | " << *(pe->gvn_man_.GetGVN(node.output(i))) << TR_RESET;
     }
     auto h = pe->GetHash(node.output(i));
     if (h.IsSome())
@@ -441,6 +462,9 @@ void PartialRedundancyElimination::dump_node(PartialRedundancyElimination* pe, r
   {
     for (auto& param : lm.GetFunctionArguments())
     {
+      if (pe->gvn_man_.GetGVN(param)){
+        std::cout << TR_ORANGE << " | " << *(pe->gvn_man_.GetGVN(param)) << TR_RESET;
+      }
       if (pe->gvn_hashes_.find(param) != pe->gvn_hashes_.end())
       {
         GVN_Hash h = pe->gvn_hashes_[param];
