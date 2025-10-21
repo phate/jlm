@@ -8,8 +8,6 @@
 
 #include <jlm/rvsdg/node.hpp>
 
-#include <optional>
-
 namespace jlm::llvm::aa
 {
 
@@ -93,36 +91,6 @@ private:
  */
 [[nodiscard]] bool
 IsPointerCompatible(const rvsdg::Output & value);
-
-/**
- * Follows the definition of the given \p output through operations that do not modify its value,
- * and out of / into regions when the value is guaranteed to be the same.
- * Take for example a program like:
- *
- * p1 = alloca
- * p2, _ = IOBarrier(p1, _)
- * _ = Gamma(_, p2)
- *   [p3]{
- *     x = load p3
- *   }[x]
- *   ...
- *
- * Normalizing p3 yields p1
- *
- * @param output the output to trace from
- * @return the most normalized source of the given output
- */
-[[nodiscard]] const rvsdg::Output &
-NormalizeOutput(const rvsdg::Output & output);
-
-/**
- * Gets the value of the given \p output as a compile time constant, if possible.
- * The constant is interpreted as a signed value, and sign extended to int64 if needed.
- * This function does not perform any constant folding.
- * @return the integer value of the output, or nullopt if it could not be determined.
- */
-std::optional<int64_t>
-TryGetConstantSignedInteger(const rvsdg::Output & output);
 
 }
 
