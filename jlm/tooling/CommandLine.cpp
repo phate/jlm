@@ -99,8 +99,6 @@ JlmOptCommandLineOptions::FromCommandLineArgumentToOptimizationId(
           OptimizationId::AAAndersenAgnostic },
         { OptimizationCommandLineArgument::AaAndersenRegionAware_,
           OptimizationId::AAAndersenRegionAware },
-        { OptimizationCommandLineArgument::AaAndersenTopDownLifetimeAware_,
-          OptimizationId::AAAndersenTopDownLifetimeAware },
         { OptimizationCommandLineArgument::AaSteensgaardAgnostic_,
           OptimizationId::AASteensgaardAgnostic },
         { OptimizationCommandLineArgument::AaSteensgaardRegionAware_,
@@ -138,8 +136,6 @@ JlmOptCommandLineOptions::ToCommandLineArgument(OptimizationId optimizationId)
           OptimizationCommandLineArgument::AaAndersenAgnostic_ },
         { OptimizationId::AAAndersenRegionAware,
           OptimizationCommandLineArgument::AaAndersenRegionAware_ },
-        { OptimizationId::AAAndersenTopDownLifetimeAware,
-          OptimizationCommandLineArgument::AaAndersenTopDownLifetimeAware_ },
         { OptimizationId::AASteensgaardAgnostic,
           OptimizationCommandLineArgument::AaSteensgaardAgnostic_ },
         { OptimizationId::AASteensgaardRegionAware,
@@ -245,7 +241,6 @@ JlmOptCommandLineOptions::GetStatisticsIdCommandLineArguments()
     { util::Statistics::Id::ScalarEvolution, "print-scalar-evolution" },
     { util::Statistics::Id::SteensgaardAnalysis, "print-steensgaard-analysis" },
     { util::Statistics::Id::ThetaGammaInversion, "print-ivt-stat" },
-    { util::Statistics::Id::TopDownMemoryNodeEliminator, "TopDownMemoryNodeEliminator" },
   };
 
   auto firstIndex = static_cast<size_t>(util::Statistics::Id::FirstEnumValue);
@@ -325,6 +320,7 @@ JlcCommandLineParser::ParseCommandLineArguments(int argc, const char * const * a
           JlmOptCommandLineOptions::OptimizationId::AAAndersenRegionAware,
           JlmOptCommandLineOptions::OptimizationId::FunctionInlining,
           JlmOptCommandLineOptions::OptimizationId::InvariantValueRedirection,
+          JlmOptCommandLineOptions::OptimizationId::LoadChainSeparation,
           JlmOptCommandLineOptions::OptimizationId::NodeReduction,
           JlmOptCommandLineOptions::OptimizationId::DeadNodeElimination,
           JlmOptCommandLineOptions::OptimizationId::ThetaGammaInversion,
@@ -837,8 +833,6 @@ JlmOptCommandLineParser::ParseCommandLineArguments(int argc, const char * const 
 
   auto aAAndersenAgnostic = JlmOptCommandLineOptions::OptimizationId::AAAndersenAgnostic;
   auto aAAndersenRegionAware = JlmOptCommandLineOptions::OptimizationId::AAAndersenRegionAware;
-  auto aAAndersenTopDownLifetimeAware =
-      JlmOptCommandLineOptions::OptimizationId::AAAndersenTopDownLifetimeAware;
   auto aASteensgaardAgnostic = JlmOptCommandLineOptions::OptimizationId::AASteensgaardAgnostic;
   auto aASteensgaardRegionAware =
       JlmOptCommandLineOptions::OptimizationId::AASteensgaardRegionAware;
@@ -867,10 +861,6 @@ JlmOptCommandLineParser::ParseCommandLineArguments(int argc, const char * const 
               aAAndersenRegionAware,
               JlmOptCommandLineOptions::ToCommandLineArgument(aAAndersenRegionAware),
               "Andersen alias analysis with region-aware memory state encoding"),
-          ::clEnumValN(
-              aAAndersenTopDownLifetimeAware,
-              JlmOptCommandLineOptions::ToCommandLineArgument(aAAndersenTopDownLifetimeAware),
-              "Andersen alias analysis with top-down lifetime-aware memory node elimination"),
           ::clEnumValN(
               aASteensgaardAgnostic,
               JlmOptCommandLineOptions::ToCommandLineArgument(aASteensgaardAgnostic),
@@ -1039,6 +1029,11 @@ JlmHlsCommandLineParser::ParseCommandLineArguments(int argc, const char * const 
       cl::Prefix,
       cl::desc("Extracts function specified by hls-function"));
 
+  cl::opt<bool> dumpRvsdgDotGraphs(
+      "dumpRvsdgDotGraphs",
+      cl::init(false),
+      cl::desc("Dump RVSDG as dot graphs after each transformation in debug folder."));
+
   cl::opt<JlmHlsCommandLineOptions::OutputFormat> format(
       cl::values(
           ::clEnumValN(
@@ -1062,6 +1057,7 @@ JlmHlsCommandLineParser::ParseCommandLineArguments(int argc, const char * const 
   CommandLineOptions_.OutputFiles_ = util::FilePath(outputFolder);
   CommandLineOptions_.ExtractHlsFunction_ = extractHlsFunction;
   CommandLineOptions_.OutputFormat_ = format;
+  CommandLineOptions_.dumpRvsdgDotGraphs_ = dumpRvsdgDotGraphs;
 
   if (latency < 1)
   {

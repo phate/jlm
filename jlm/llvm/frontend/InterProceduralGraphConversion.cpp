@@ -307,7 +307,7 @@ public:
   void
   End(const rvsdg::Graph & graph) noexcept
   {
-    AddTimer(Label::Timer).stop();
+    GetTimer(Label::Timer).stop();
     AddMeasurement(Label::NumRvsdgNodes, rvsdg::nnodes(&graph.GetRootRegion()));
   }
 
@@ -337,7 +337,7 @@ public:
     auto statistics =
         ControlFlowRestructuringStatistics::Create(SourceFileName_, std::move(functionName));
 
-    if (!StatisticsCollector_.GetSettings().IsDemanded(statistics->GetId()))
+    if (!StatisticsCollector_.GetSettings().isDemanded(statistics->GetId()))
     {
       restructureControlFlowGraph(&cfg);
       return;
@@ -359,7 +359,7 @@ public:
   {
     auto statistics = AggregationStatistics::Create(SourceFileName_, std::move(functionName));
 
-    if (!StatisticsCollector_.GetSettings().IsDemanded(statistics->GetId()))
+    if (!StatisticsCollector_.GetSettings().isDemanded(statistics->GetId()))
       return aggregateControlFlowGraph(cfg);
 
     statistics->Start(cfg);
@@ -380,7 +380,7 @@ public:
   {
     auto statistics = AnnotationStatistics::Create(SourceFileName_, std::move(functionName));
 
-    if (!StatisticsCollector_.GetSettings().IsDemanded(statistics->GetId()))
+    if (!StatisticsCollector_.GetSettings().isDemanded(statistics->GetId()))
       return annotateAggregationTree(aggregationTreeRoot);
 
     statistics->Start(aggregationTreeRoot);
@@ -400,7 +400,7 @@ public:
     auto statistics =
         AggregationTreeToLambdaStatistics::Create(SourceFileName_, std::move(functionName));
 
-    if (!StatisticsCollector_.GetSettings().IsDemanded(statistics->GetId()))
+    if (!StatisticsCollector_.GetSettings().isDemanded(statistics->GetId()))
       return convertAggregationTreeToLambda();
 
     statistics->Start();
@@ -418,7 +418,7 @@ public:
   {
     auto statistics = DataNodeToDeltaStatistics::Create(SourceFileName_, std::move(dataNodeName));
 
-    if (!StatisticsCollector_.GetSettings().IsDemanded(statistics->GetId()))
+    if (!StatisticsCollector_.GetSettings().isDemanded(statistics->GetId()))
       return convertDataNodeToDelta();
 
     statistics->Start(NumInitializationThreeAddressCodes);
@@ -438,7 +438,7 @@ public:
   {
     auto statistics = InterProceduralGraphToRvsdgStatistics::Create(SourceFileName_);
 
-    if (!StatisticsCollector_.GetSettings().IsDemanded(statistics->GetId()))
+    if (!StatisticsCollector_.GetSettings().isDemanded(statistics->GetId()))
       return convertInterProceduralGraphModule(interProceduralGraphModule);
 
     statistics->Start(interProceduralGraphModule);
@@ -458,7 +458,7 @@ private:
 static bool
 requiresExport(const InterProceduralGraphNode & ipgNode)
 {
-  return ipgNode.hasBody() && is_externally_visible(ipgNode.linkage());
+  return ipgNode.hasBody() && !isDiscardableIfUnused(ipgNode.linkage());
 }
 
 static void
@@ -517,7 +517,7 @@ Convert(
   }
 
   std::unique_ptr<TOperation> operation(
-      util::AssertedCast<TOperation>(threeAddressCode.operation().copy().release()));
+      util::assertedCast<TOperation>(threeAddressCode.operation().copy().release()));
   auto results = TNode::Create(region, std::move(operation), operands);
 
   JLM_ASSERT(results.size() == threeAddressCode.nresults());
@@ -911,7 +911,7 @@ ConvertAggregationTreeToLambda(
     RegionalizedVariableMap & scopedVariableMap,
     const std::string & functionName,
     std::shared_ptr<const rvsdg::FunctionType> functionType,
-    const linkage & functionLinkage,
+    const Linkage & functionLinkage,
     const AttributeSet & functionAttributes,
     InterProceduralGraphToRvsdgStatisticsCollector & statisticsCollector)
 {

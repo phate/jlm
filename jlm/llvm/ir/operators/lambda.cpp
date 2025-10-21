@@ -16,7 +16,7 @@ LlvmLambdaOperation::~LlvmLambdaOperation() = default;
 LlvmLambdaOperation::LlvmLambdaOperation(
     std::shared_ptr<const jlm::rvsdg::FunctionType> type,
     std::string name,
-    const jlm::llvm::linkage & linkage,
+    const jlm::llvm::Linkage & linkage,
     jlm::llvm::AttributeSet attributes)
     : rvsdg::LambdaOperation(std::move(type)),
       name_(std::move(name)),
@@ -60,6 +60,16 @@ LlvmLambdaOperation::SetArgumentAttributes(
 {
   JLM_ASSERT(index < ArgumentAttributes_.size());
   ArgumentAttributes_[index] = attributes;
+}
+
+rvsdg::Output &
+LlvmLambdaOperation::getIOStateArgument(const rvsdg::LambdaNode & lambdaNode) noexcept
+{
+  JLM_ASSERT(is<LlvmLambdaOperation>(&lambdaNode));
+  const auto functionArguments = lambdaNode.GetFunctionArguments();
+  const auto ioStateArgument = functionArguments[functionArguments.size() - 2];
+  JLM_ASSERT(is<IOStateType>(ioStateArgument->Type()));
+  return *ioStateArgument;
 }
 
 }

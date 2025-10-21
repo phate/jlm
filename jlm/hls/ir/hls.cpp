@@ -82,7 +82,7 @@ BundleType::ComputeHash() const noexcept
   for (auto & element : elements_)
   {
     auto firstHash = std::hash<std::string>()(element.first);
-    util::CombineHashesWithSeed(seed, firstHash, element.second->ComputeHash());
+    util::combineHashesWithSeed(seed, firstHash, element.second->ComputeHash());
   }
 
   return seed;
@@ -106,14 +106,14 @@ BackEdgeArgument &
 BackEdgeArgument::Copy(rvsdg::Region & region, rvsdg::StructuralInput * input)
 {
   JLM_ASSERT(input == nullptr);
-  return *create(&region, Type());
+  return create(&region, Type());
 }
 
 BackEdgeResult &
 BackEdgeResult::Copy(rvsdg::Output & origin, rvsdg::StructuralOutput * output)
 {
   JLM_ASSERT(output == nullptr);
-  return *create(&origin);
+  return create(&origin);
 }
 
 ExitResult::~ExitResult() noexcept = default;
@@ -133,24 +133,88 @@ ExitResult::Copy(rvsdg::Output & origin, rvsdg::StructuralOutput * output)
 rvsdg::StructuralOutput *
 LoopNode::AddLoopVar(jlm::rvsdg::Output * origin, jlm::rvsdg::Output ** buffer)
 {
-  auto input = rvsdg::StructuralInput::create(this, origin, origin->Type());
-  auto output = rvsdg::StructuralOutput::create(this, origin->Type());
+  // Create StructuralInput and EntryArgument
+  const auto input =
+      addInput(std::make_unique<rvsdg::StructuralInput>(this, origin, origin->Type()), true);
+  auto & argument_in = EntryArgument::Create(*subregion(), *input, origin->Type());
+
+  // Create back-edge
+  auto backedge_argument = add_backedge(origin->Type());
+  auto backedge_result = backedge_argument->result();
+
+  // Create Mux to pick between EntryArgument and BackEdgeArgument
+  auto mux = MuxOperation::create(
+      GetPredicateBuffer(),
+      { &argument_in, backedge_argument },
+      false,
+      true)[0];
+  // Give the caller a
+  if (buffer != nullptr)
+    *buffer = mux;
+
+  // Create Branch to send the result to either an ExitResult or a BackEdgeResult
+  // We need to give it a value, so use the output of the mux as the result for now
+  auto branch = BranchOperation::create(*predicate()->origin(), *mux, true);
+
+  // Create an ExitResult + StructuralOutput for when the loop is finished
+  const auto output = addOutput(std::make_unique<rvsdg::StructuralOutput>(this, origin->Type()));
+  ExitResult::Create(*branch[0], *output);
+
+  // If the loop is not done, send the value to the BackEdgeResult, with a small buffer in between.
+  auto buf = BufferOperation::create(*branch[1], 2)[0];
+  backedge_result->divert_to(buf);
+  return output;
+}
+
+jlm::rvsdg::Output *
+LoopNode::addLoopConstant(jlm::rvsdg::Output * origin)
+{
+  auto input =
+      addInput(std::make_unique<rvsdg::StructuralInput>(this, origin, origin->Type()), true);
 
   auto & argument_in = EntryArgument::Create(*subregion(), *input, origin->Type());
-  auto argument_loop = add_backedge(origin->Type());
+  auto buffer = LoopConstantBufferOperation::create(GetPredicateBuffer(), argument_in)[0];
+  return buffer;
+}
 
-  auto mux =
-      MuxOperation::create(GetPredicateBuffer(), { &argument_in, argument_loop }, false, true)[0];
-  auto branch = BranchOperation::create(*predicate()->origin(), *mux, true);
-  if (buffer != nullptr)
-  {
-    *buffer = mux;
-  }
-  ExitResult::Create(*branch[0], *output);
-  auto result_loop = argument_loop->result();
-  auto buf = BufferOperation::create(*branch[1], 2)[0];
-  result_loop->divert_to(buf);
+rvsdg::Output *
+LoopNode::addResponseInput(rvsdg::Output * origin)
+{
+  const auto input =
+      addInput(std::make_unique<rvsdg::StructuralInput>(this, origin, origin->Type()), true);
+  return &EntryArgument::Create(*subregion(), *input, origin->Type());
+}
+
+rvsdg::Output *
+LoopNode::addRequestOutput(rvsdg::Output * origin)
+{
+  const auto output = addOutput(std::make_unique<rvsdg::StructuralOutput>(this, origin->Type()));
+  ExitResult::Create(*origin, *output);
   return output;
+}
+
+void
+LoopNode::removeLoopOutput(rvsdg::StructuralOutput * output)
+{
+  JLM_ASSERT(output->node() == this);
+  JLM_ASSERT(output->IsDead());
+  JLM_ASSERT(output->results.size() == 1);
+  auto result = output->results.begin();
+
+  subregion()->RemoveResult(result->index());
+  removeOutput(output->index());
+}
+
+void
+LoopNode::removeLoopInput(rvsdg::StructuralInput * input)
+{
+  JLM_ASSERT(input->node() == this);
+  JLM_ASSERT(input->arguments.size() == 1);
+  auto argument = input->arguments.begin();
+  JLM_ASSERT(argument->IsDead());
+
+  subregion()->RemoveArgument(argument->index());
+  removeInput(input->index(), true);
 }
 
 [[nodiscard]] const rvsdg::Operation &
@@ -158,16 +222,6 @@ LoopNode::GetOperation() const noexcept
 {
   static const LoopOperation singleton;
   return singleton;
-}
-
-jlm::rvsdg::Output *
-LoopNode::add_loopconst(jlm::rvsdg::Output * origin)
-{
-  auto input = rvsdg::StructuralInput::create(this, origin, origin->Type());
-
-  auto & argument_in = EntryArgument::Create(*subregion(), *input, origin->Type());
-  auto buffer = LoopConstantBufferOperation::create(GetPredicateBuffer(), argument_in)[0];
-  return buffer;
 }
 
 LoopNode *
@@ -178,7 +232,10 @@ LoopNode::copy(rvsdg::Region * region, rvsdg::SubstitutionMap & smap) const
   for (size_t i = 0; i < ninputs(); ++i)
   {
     auto in_origin = smap.lookup(input(i)->origin());
-    auto inp = rvsdg::StructuralInput::create(loop, in_origin, in_origin->Type());
+    auto inp = loop->addInput(
+        std::make_unique<rvsdg::StructuralInput>(loop, in_origin, in_origin->Type()),
+        true);
+
     smap.insert(input(i), loop->input(i));
     auto oarg = input(i)->arguments.begin().ptr();
     auto & narg = EntryArgument::Create(*loop->subregion(), *inp, oarg->Type());
@@ -186,7 +243,8 @@ LoopNode::copy(rvsdg::Region * region, rvsdg::SubstitutionMap & smap) const
   }
   for (size_t i = 0; i < noutputs(); ++i)
   {
-    auto out = rvsdg::StructuralOutput::create(loop, output(i)->Type());
+    auto out = loop->addOutput(std::make_unique<rvsdg::StructuralOutput>(loop, output(i)->Type()));
+
     smap.insert(output(i), out);
     smap.insert(output(i), out);
   }
@@ -226,11 +284,11 @@ LoopNode::copy(rvsdg::Region * region, rvsdg::SubstitutionMap & smap) const
 BackEdgeArgument *
 LoopNode::add_backedge(std::shared_ptr<const jlm::rvsdg::Type> type)
 {
-  auto argument_loop = BackEdgeArgument::create(subregion(), std::move(type));
-  auto result_loop = BackEdgeResult::create(argument_loop);
-  argument_loop->result_ = result_loop;
-  result_loop->argument_ = argument_loop;
-  return argument_loop;
+  auto & argument_loop = BackEdgeArgument::create(subregion(), std::move(type));
+  auto & result_loop = BackEdgeResult::create(&argument_loop);
+  argument_loop.result_ = &result_loop;
+  result_loop.argument_ = &argument_loop;
+  return &argument_loop;
 }
 
 LoopNode *

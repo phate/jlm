@@ -57,7 +57,7 @@ test_gamma()
   pushout.Run(rm, statisticsCollector);
   //	jlm::rvsdg::view(graph.GetRootRegion(), stdout);
 
-  assert(graph.GetRootRegion().nnodes() == 3);
+  assert(graph.GetRootRegion().numNodes() == 3);
 }
 
 static inline void
@@ -105,7 +105,7 @@ test_theta()
   pushout.Run(rm, statisticsCollector);
   //	jlm::rvsdg::view(graph.GetRootRegion(), stdout);
 
-  assert(graph.GetRootRegion().nnodes() == 3);
+  assert(graph.GetRootRegion().numNodes() == 3);
 }
 
 static inline void

@@ -25,7 +25,7 @@ TestUnknownBoundaries()
 
   auto lambda = jlm::rvsdg::LambdaNode::Create(
       rm.Rvsdg().GetRootRegion(),
-      LlvmLambdaOperation::Create(ft, "f", linkage::external_linkage));
+      LlvmLambdaOperation::Create(ft, "f", Linkage::externalLinkage));
 
   auto theta = jlm::rvsdg::ThetaNode::create(lambda->subregion());
   auto idv = theta->AddLoopVar(lambda->GetFunctionArguments()[0]);

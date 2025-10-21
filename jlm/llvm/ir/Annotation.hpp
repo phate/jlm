@@ -505,7 +505,7 @@ public:
   {
     JLM_ASSERT(Contains(aggregationNode));
     auto & demandSet = Map_.find(&aggregationNode)->second;
-    return *jlm::util::AssertedCast<T>(demandSet.get());
+    return *jlm::util::assertedCast<T>(demandSet.get());
   }
 
   void

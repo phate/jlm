@@ -11,6 +11,7 @@
 #include <jlm/hls/backend/rhls2firrtl/VerilatorHarnessAxi.hpp>
 #include <jlm/hls/backend/rvsdg2rhls/add-buffers.hpp>
 #include <jlm/hls/backend/rvsdg2rhls/rvsdg2rhls.hpp>
+#include <jlm/hls/HlsDotWriter.hpp>
 #include <jlm/llvm/backend/IpGraphToLlvmConverter.hpp>
 #include <jlm/llvm/backend/RvsdgToIpGraphConverter.hpp>
 #include <jlm/llvm/DotWriter.hpp>
@@ -89,8 +90,9 @@ main(int argc, char ** argv)
   {
     jlm::hls::rvsdg2ref(*rvsdgModule, commandLineOptions.OutputFiles_.WithSuffix(".ref.ll"));
 
-    jlm::llvm::LlvmDotWriter dotWriter;
-    auto transformationSequence = jlm::hls::createTransformationSequence(dotWriter, false);
+    jlm::hls::HlsDotWriter dotWriter;
+    auto transformationSequence =
+        jlm::hls::createTransformationSequence(dotWriter, commandLineOptions.dumpRvsdgDotGraphs_);
     transformationSequence->Run(*rvsdgModule, collector);
 
     // Writing the FIRRTL to a file and then reading it back in to convert to Verilog.
@@ -126,8 +128,9 @@ main(int argc, char ** argv)
   else if (
       commandLineOptions.OutputFormat_ == jlm::tooling::JlmHlsCommandLineOptions::OutputFormat::Dot)
   {
-    jlm::llvm::LlvmDotWriter dotWriter;
-    auto transformationSequence = jlm::hls::createTransformationSequence(dotWriter, false);
+    jlm::hls::HlsDotWriter dotWriter;
+    auto transformationSequence =
+        jlm::hls::createTransformationSequence(dotWriter, commandLineOptions.dumpRvsdgDotGraphs_);
     transformationSequence->Run(*rvsdgModule, collector);
 
     jlm::hls::DotHLS dhls;

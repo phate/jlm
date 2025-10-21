@@ -5,297 +5,503 @@
  */
 
 #include <jlm/rvsdg/graph.hpp>
-#include <jlm/rvsdg/notifiers.hpp>
 #include <jlm/rvsdg/traverser.hpp>
 
-using namespace std::placeholders;
+/*
+  How traversers operate:
 
-/* top down traverser */
+  Each node needs a number of "activations" depending on edges
+  connected to the node (is inputs or outputs, dependent on direction
+  of traversal).
 
+  Each edge coming from the region boundaries will provide one activation,
+  and each edge outgoing from a node that has been visited already will
+  provide one activation. So effectively, both bottom up and top down
+  traversers are just a little bit of beancounting edges and activations.
+  This is done in such a way that each node and each edge is visited exactly
+  once. Thus, the overall time complexity of either traversal is O(#N + #E).
+*/
 namespace jlm::rvsdg
 {
 
-TopDownTraverser::~TopDownTraverser() noexcept = default;
+namespace detail
+{
 
-TopDownTraverser::TopDownTraverser(Region * region)
-    : tracker_(*region)
+template<typename Traverser>
+ForwardingObserver<Traverser>::~ForwardingObserver() noexcept = default;
+
+template<typename Traverser>
+ForwardingObserver<Traverser>::ForwardingObserver(const Region & region, Traverser & traverser)
+    : RegionObserver(region),
+      traverser_(traverser)
+{}
+
+template<typename Traverser>
+void
+ForwardingObserver<Traverser>::onNodeCreate(Node * node)
+{
+  traverser_.onNodeCreate(node);
+}
+
+template<typename Traverser>
+void
+ForwardingObserver<Traverser>::onNodeDestroy(Node * node)
+{
+  traverser_.onNodeDestroy(node);
+}
+
+template<typename Traverser>
+void
+ForwardingObserver<Traverser>::onInputCreate(Input * input)
+{
+  traverser_.onInputCreate(input);
+}
+
+template<typename Traverser>
+void
+ForwardingObserver<Traverser>::onInputChange(Input * input, Output * oldOrigin, Output * newOrigin)
+{
+  traverser_.onInputChange(input, oldOrigin, newOrigin);
+}
+
+template<typename Traverser>
+void
+ForwardingObserver<Traverser>::onInputDestroy(Input * input)
+{
+  traverser_.onInputDestroy(input);
+}
+
+template<bool IsConst>
+TopDownTraverserGeneric<IsConst>::~TopDownTraverserGeneric() noexcept = default;
+
+template<bool IsConst>
+TopDownTraverserGeneric<IsConst>::TopDownTraverserGeneric(RegionType * region)
+    : observer_(*region, *this),
+      nodeIdCutoff_(region->getNextNodeId())
 {
   for (auto & node : region->TopNodes())
-    tracker_.set_nodestate(&node, traversal_nodestate::frontier);
-
-  for (size_t n = 0; n < region->narguments(); n++)
   {
-    auto argument = region->argument(n);
+    tracker_.checkNodeActivation(&node, node.ninputs());
+  }
+
+  for (auto argument : region->Arguments())
+  {
     for (const auto & user : argument->Users())
     {
       if (auto node = TryGetOwnerNode<Node>(user))
       {
-        if (!predecessors_visited(node))
-          continue;
-
-        tracker_.set_nodestate(node, traversal_nodestate::frontier);
+        tracker_.incActivationCount(node, node->ninputs());
       }
     }
   }
-
-  callbacks_.push_back(on_node_create.connect(std::bind(&TopDownTraverser::node_create, this, _1)));
-  callbacks_.push_back(
-      on_input_change.connect(std::bind(&TopDownTraverser::input_change, this, _1, _2, _3)));
 }
 
+template<bool IsConst>
 bool
-TopDownTraverser::predecessors_visited(const Node * node) noexcept
+TopDownTraverserGeneric<IsConst>::isOutputActivated(const Output & output) const
 {
-  for (size_t n = 0; n < node->ninputs(); n++)
+  if (auto pred = TryGetOwnerNode<Node>(output))
   {
-    auto predecessor = TryGetOwnerNode<Node>(*node->input(n)->origin());
-    if (!predecessor)
-      continue;
-
-    if (tracker_.get_nodestate(predecessor) != traversal_nodestate::behind)
-      return false;
+    return tracker_.isNodeVisited(pred);
   }
 
+  // The output is a region argument, always considered activated
   return true;
 }
 
-Node *
-TopDownTraverser::next()
+template<bool IsConst>
+void
+TopDownTraverserGeneric<IsConst>::markAsVisited(NodeType & node)
 {
-  Node * node = tracker_.peek();
-  if (!node)
-    return nullptr;
-
-  tracker_.set_nodestate(node, traversal_nodestate::behind);
-  for (size_t n = 0; n < node->noutputs(); n++)
+  tracker_.checkMarkNodeVisitedIfFrontier(&node);
+  for (const auto & output : node.Outputs())
   {
-    for (const auto & user : node->output(n)->Users())
+    for (const auto & user : output.Users())
     {
-      if (auto node = TryGetOwnerNode<Node>(user))
+      if (auto next = TryGetOwnerNode<Node>(user))
       {
-        if (!predecessors_visited(node))
-        {
-          continue;
-        }
-        if (tracker_.get_nodestate(node) == traversal_nodestate::ahead)
-        {
-          tracker_.set_nodestate(node, traversal_nodestate::frontier);
-        }
+        tracker_.incActivationCount(next, next->ninputs());
+      }
+    }
+  }
+}
+
+template<bool IsConst>
+typename TopDownTraverserGeneric<IsConst>::NodeType *
+TopDownTraverserGeneric<IsConst>::next()
+{
+  while (true)
+  {
+    const auto node = tracker_.peek();
+    if (!node)
+      return nullptr;
+
+    markAsVisited(*node);
+
+    // Skip nodes that were created after traversal started
+    if (node->GetNodeId() >= nodeIdCutoff_)
+      continue;
+
+    return node;
+  }
+}
+
+template<bool IsConst>
+void
+TopDownTraverserGeneric<IsConst>::onNodeCreate(NodeType * node)
+{
+  if (node->ninputs() == 0)
+  {
+    tracker_.checkNodeActivation(node, node->ninputs());
+  }
+  else
+  {
+    for (const auto & input : node->Inputs())
+    {
+      if (isOutputActivated(*input.origin()))
+      {
+        tracker_.incActivationCount(node, node->ninputs());
       }
     }
   }
 
-  return node;
+  // If node would end up on frontier (because all predecessors
+  // have been visited), mark it as visited instead (we do not
+  // want to revisit newly created nodes during topdown traversal).
+  tracker_.checkMarkNodeVisitedIfFrontier(node);
 }
 
+template<bool IsConst>
 void
-TopDownTraverser::node_create(Node * node)
+TopDownTraverserGeneric<IsConst>::onNodeDestroy(NodeType * node)
 {
-  if (node->region() != &tracker_.GetRegion())
-    return;
-
-  if (predecessors_visited(node))
-    tracker_.set_nodestate(node, traversal_nodestate::behind);
-  else
-    tracker_.set_nodestate(node, traversal_nodestate::frontier);
+  // The node is already dead, so removing it can never add anything to the frontier
+  tracker_.removeNode(node);
 }
 
+template<bool IsConst>
 void
-TopDownTraverser::input_change(Input * in, Output *, Output *)
+TopDownTraverserGeneric<IsConst>::onInputCreate(Input * input)
 {
-  if (in->region() != &tracker_.GetRegion())
-    return;
-
-  auto node = TryGetOwnerNode<Node>(*in);
+  const auto node = TryGetOwnerNode<Node>(*input);
   if (!node)
     return;
 
-  auto state = tracker_.get_nodestate(node);
+  if (isOutputActivated(*input->origin()))
+  {
+    tracker_.incActivationCount(node, node->ninputs());
+  }
+  else
+  {
+    tracker_.checkNodeDeactivation(node, node->ninputs());
+  }
+}
 
-  // ignore nodes that have been traversed already, or that are already
-  // marked for later traversal
-  if (state != traversal_nodestate::ahead)
+template<bool IsConst>
+void
+TopDownTraverserGeneric<IsConst>::onInputChange(
+    Input * input,
+    Output * oldOrigin,
+    Output * newOrigin)
+{
+  const auto node = TryGetOwnerNode<Node>(*input);
+  if (!node)
     return;
 
-  // node may just have become eligible for visiting, check
-  if (predecessors_visited(node))
-    tracker_.set_nodestate(node, traversal_nodestate::frontier);
+  int change = 0;
+  if (isOutputActivated(*newOrigin))
+  {
+    change += 1;
+  }
+  if (isOutputActivated(*oldOrigin))
+  {
+    change -= 1;
+  }
+
+  if (change == 1)
+  {
+    tracker_.incActivationCount(node, node->ninputs());
+  }
+  else if (change == -1)
+  {
+    tracker_.decActivationCount(node, node->ninputs());
+  }
 }
 
-static bool
-HasSuccessors(const Node & node)
+template<bool IsConst>
+void
+TopDownTraverserGeneric<IsConst>::onInputDestroy(Input * input)
 {
-  for (size_t n = 0; n < node.noutputs(); n++)
+  const auto node = TryGetOwnerNode<Node>(*input);
+  if (!node)
+    return;
+
+  if (isOutputActivated(*input->origin()))
   {
-    const auto output = node.output(n);
-    for (const auto & user : output->Users())
+    // Removing an activated input can never cause de-activation of the node,
+    // so we can use 0 as the deactivation threshold
+    tracker_.decActivationCount(node, 0);
+  }
+  else
+  {
+    // The callback is called before the input is actually removed, so use the new threshold
+    tracker_.checkNodeActivation(node, node->ninputs() - 1);
+  }
+}
+
+template<bool IsConst>
+BottomUpTraverserGeneric<IsConst>::~BottomUpTraverserGeneric() noexcept = default;
+
+template<bool IsConst>
+BottomUpTraverserGeneric<IsConst>::BottomUpTraverserGeneric(RegionType * region)
+    : observer_(*region, *this)
+{
+  for (auto & node : region->BottomNodes())
+  {
+    tracker_.checkNodeActivation(&node, node.numSuccessors());
+  }
+
+  for (auto result : region->Results())
+  {
+    if (auto node = TryGetOwnerNode<Node>(*result->origin()))
     {
-      if (TryGetOwnerNode<Node>(user))
-        return true;
+      tracker_.incActivationCount(node, node->numSuccessors());
     }
   }
-
-  return false;
 }
 
-BottomUpTraverser::~BottomUpTraverser() noexcept = default;
-
-BottomUpTraverser::BottomUpTraverser(Region * region, bool revisit)
-    : tracker_(*region),
-      new_node_state_(revisit ? traversal_nodestate::frontier : traversal_nodestate::behind)
+template<bool IsConst>
+bool
+BottomUpTraverserGeneric<IsConst>::isInputActivated(const Input & input) const
 {
-  for (auto & bottomNode : region->BottomNodes())
+  if (auto node = TryGetOwnerNode<Node>(input))
   {
-    tracker_.set_nodestate(&bottomNode, traversal_nodestate::frontier);
+    return tracker_.isNodeVisited(node);
   }
 
-  for (size_t n = 0; n < region->nresults(); n++)
-  {
-    const auto node = TryGetOwnerNode<Node>(*region->result(n)->origin());
-    if (node && !HasSuccessors(*node))
-      tracker_.set_nodestate(node, traversal_nodestate::frontier);
-  }
-
-  callbacks_.push_back(
-      on_node_create.connect(std::bind(&BottomUpTraverser::node_create, this, _1)));
-  callbacks_.push_back(
-      on_node_destroy.connect(std::bind(&BottomUpTraverser::node_destroy, this, _1)));
-  callbacks_.push_back(
-      on_input_change.connect(std::bind(&BottomUpTraverser::input_change, this, _1, _2, _3)));
+  // The output is a region result, always considered activated
+  return true;
 }
 
-Node *
-BottomUpTraverser::next()
+template<bool IsConst>
+void
+BottomUpTraverserGeneric<IsConst>::markAsVisited(NodeType & node)
+{
+  tracker_.checkMarkNodeVisitedIfFrontier(&node);
+  for (const auto & input : node.Inputs())
+  {
+    if (auto predecessor = TryGetOwnerNode<Node>(*input.origin()))
+    {
+      tracker_.incActivationCount(predecessor, predecessor->numSuccessors());
+    }
+  }
+}
+
+template<bool IsConst>
+typename BottomUpTraverserGeneric<IsConst>::NodeType *
+BottomUpTraverserGeneric<IsConst>::next()
 {
   auto node = tracker_.peek();
   if (!node)
     return nullptr;
 
-  tracker_.set_nodestate(node, traversal_nodestate::behind);
-  for (size_t n = 0; n < node->ninputs(); n++)
-  {
-    auto producer = TryGetOwnerNode<Node>(*node->input(n)->origin());
-    if (producer && tracker_.get_nodestate(producer) == traversal_nodestate::ahead)
-      tracker_.set_nodestate(producer, traversal_nodestate::frontier);
-  }
+  markAsVisited(*node);
   return node;
 }
 
+template<bool IsConst>
 void
-BottomUpTraverser::node_create(Node * node)
+BottomUpTraverserGeneric<IsConst>::onNodeCreate(NodeType * node)
 {
-  if (node->region() != &tracker_.GetRegion())
-    return;
-
-  tracker_.set_nodestate(node, new_node_state_);
+  // The new node should never be visited, so activate all its predecessors immediately
+  markAsVisited(*node);
 }
 
+template<bool IsConst>
 void
-BottomUpTraverser::node_destroy(Node * node)
+BottomUpTraverserGeneric<IsConst>::onNodeDestroy(NodeType * node)
 {
-  if (node->region() != &tracker_.GetRegion())
-    return;
+  // In case this is the last node a predecessor is waiting for,
+  // make sure it gets activated before removal.
+  if (!tracker_.isNodeVisited(node))
+    markAsVisited(*node);
 
-  for (size_t n = 0; n < node->ninputs(); n++)
+  for (const auto & input : node->Inputs())
   {
-    auto producer = TryGetOwnerNode<Node>(*node->input(n)->origin());
-    if (!producer)
+    if (auto pred = TryGetOwnerNode<Node>(*input.origin()))
     {
-      continue;
+      // Set the threshold to 0 here: The predecessor node is
+      // still connected, so its successor count is not correct.
+      // However, if the predecessor is on the frontier, it will
+      // remain on the frontier after this removal.
+      tracker_.decActivationCount(pred, 0);
     }
-    bool successors_visited = true;
-    for (const auto & output : producer->Outputs())
-    {
-      for (auto & user : output.Users())
-      {
-        auto u_node = TryGetOwnerNode<Node>(user);
-        successors_visited =
-            successors_visited && tracker_.get_nodestate(u_node) == traversal_nodestate::behind;
-      }
-    }
-    if (!successors_visited)
-    {
-      continue;
-    }
-    if (producer && tracker_.get_nodestate(producer) == traversal_nodestate::ahead)
-      tracker_.set_nodestate(producer, traversal_nodestate::frontier);
   }
 }
 
+template<bool IsConst>
 void
-BottomUpTraverser::input_change(Input * in, Output * old_origin, Output *)
+BottomUpTraverserGeneric<IsConst>::onInputCreate(Input * input)
 {
-  if (in->region() != &tracker_.GetRegion())
-    return;
-
-  if (!TryGetOwnerNode<Node>(*in))
-    return;
-
-  auto node = TryGetOwnerNode<Node>(*old_origin);
+  const auto node = TryGetOwnerNode<Node>(*input->origin());
   if (!node)
     return;
 
-  traversal_nodestate state = tracker_.get_nodestate(node);
-
-  /* ignore nodes that have been traversed already, or that are already
-  marked for later traversal */
-  if (state != traversal_nodestate::ahead)
-    return;
-
-  /* make sure node is visited eventually, might now be visited earlier
-  as there (potentially) is one less obstructing node below */
-  tracker_.set_nodestate(node, traversal_nodestate::frontier);
-}
-
-TraversalTracker::TraversalTracker(Region & region)
-    : region_(region)
-{}
-
-traversal_nodestate
-TraversalTracker::get_nodestate(Node * node)
-{
-  auto i = states_.find(node);
-  return i == states_.end() ? traversal_nodestate::ahead : i->second.state;
-}
-
-void
-TraversalTracker::set_nodestate(Node * node, traversal_nodestate state)
-{
-  auto i = states_.find(node);
-  if (i == states_.end())
+  if (isInputActivated(*input))
   {
-    FrontierList::iterator j = frontier_.end();
-    if (state == traversal_nodestate::frontier)
-    {
-      frontier_.push_back(node);
-      j = std::prev(frontier_.end());
-    }
-    states_.emplace(node, State{ state, j });
+    tracker_.incActivationCount(node, node->numSuccessors());
   }
   else
   {
-    auto old_state = i->second.state;
-    if (old_state != state)
+    tracker_.checkNodeDeactivation(node, node->numSuccessors());
+  }
+}
+
+template<bool IsConst>
+void
+BottomUpTraverserGeneric<IsConst>::onInputChange(
+    Input * input,
+    Output * oldOrigin,
+    Output * newOrigin)
+{
+  const auto inputActive = isInputActivated(*input);
+
+  if (auto oldNode = TryGetOwnerNode<Node>(*oldOrigin))
+  {
+    if (inputActive)
     {
-      if (old_state == traversal_nodestate::frontier)
-      {
-        frontier_.erase(i->second.pos);
-        i->second.pos = frontier_.end();
-      }
-      i->second.state = state;
-      if (state == traversal_nodestate::frontier)
-      {
-        frontier_.push_back(node);
-        i->second.pos = std::prev(frontier_.end());
-      }
+      tracker_.decActivationCount(oldNode, oldNode->numSuccessors());
+    }
+    else
+    {
+      // The oldNode might have just lost its final non-active user
+      tracker_.checkNodeActivation(oldNode, oldNode->numSuccessors());
+    }
+  }
+
+  if (auto newNode = TryGetOwnerNode<Node>(*newOrigin))
+  {
+    if (inputActive)
+    {
+      tracker_.incActivationCount(newNode, newNode->numSuccessors());
+    }
+    else
+    {
+      tracker_.checkNodeDeactivation(newNode, newNode->numSuccessors());
     }
   }
 }
 
-Node *
-TraversalTracker::peek()
+template<bool IsConst>
+void
+BottomUpTraverserGeneric<IsConst>::onInputDestroy(Input * input)
+{
+  const auto pred = TryGetOwnerNode<Node>(*input->origin());
+  if (!pred)
+    return;
+
+  if (isInputActivated(*input))
+  {
+    // Removing an activated user can never cause de-activation of pred.
+    // The threshold for de-activation can therefore be set to 0.
+    tracker_.decActivationCount(pred, 0);
+  }
+  else
+  {
+    tracker_.checkNodeActivation(pred, pred->numSuccessors() - 1);
+  }
+}
+
+template<typename NodeType>
+bool
+TraversalTracker<NodeType>::isNodeVisited(NodeType * node) const
+{
+  auto i = states_.find(node);
+  return i == states_.end() ? false : i->second.state == TraversalNodeState::behind;
+}
+
+template<typename NodeType>
+void
+TraversalTracker<NodeType>::checkNodeActivation(NodeType * node, std::size_t threshold)
+{
+  auto i = states_.emplace(node, State{ TraversalNodeState::ahead }).first;
+  if (i->second.activationCount >= threshold && i->second.state == TraversalNodeState::ahead)
+  {
+    frontier_.push_back(node);
+    i->second.pos = std::prev(frontier_.end());
+    i->second.state = TraversalNodeState::frontier;
+  }
+}
+
+template<typename NodeType>
+void
+TraversalTracker<NodeType>::checkNodeDeactivation(NodeType * node, std::size_t threshold)
+{
+  auto i = states_.emplace(node, State{ TraversalNodeState::ahead }).first;
+  if (i->second.activationCount < threshold && i->second.state == TraversalNodeState::frontier)
+  {
+    frontier_.erase(i->second.pos);
+    i->second.pos = frontier_.end();
+    i->second.state = TraversalNodeState::ahead;
+  }
+}
+
+template<typename NodeType>
+void
+TraversalTracker<NodeType>::checkMarkNodeVisitedIfFrontier(NodeType * node)
+{
+  auto i = states_.emplace(node, State{ TraversalNodeState::ahead }).first;
+  if (i->second.state == TraversalNodeState::frontier)
+  {
+    frontier_.erase(i->second.pos);
+    i->second.pos = frontier_.end();
+    i->second.state = TraversalNodeState::behind;
+  }
+}
+
+template<typename NodeType>
+void
+TraversalTracker<NodeType>::incActivationCount(NodeType * node, std::size_t threshold)
+{
+  auto i = states_.emplace(node, State{ TraversalNodeState::ahead }).first;
+  i->second.activationCount += 1;
+  checkNodeActivation(node, threshold);
+}
+
+template<typename NodeType>
+void
+TraversalTracker<NodeType>::decActivationCount(NodeType * node, std::size_t threshold)
+{
+  auto i = states_.emplace(node, State{ TraversalNodeState::ahead }).first;
+  i->second.activationCount -= 1;
+  checkNodeDeactivation(node, threshold);
+}
+
+template<typename NodeType>
+void
+TraversalTracker<NodeType>::removeNode(NodeType * node)
+{
+  if (const auto it = states_.find(node); it != states_.end())
+  {
+    if (it->second.state == TraversalNodeState::frontier)
+      frontier_.erase(it->second.pos);
+    states_.erase(it);
+  }
+}
+
+template<typename NodeType>
+NodeType *
+TraversalTracker<NodeType>::peek()
 {
   return frontier_.empty() ? nullptr : frontier_.front();
+}
+
+// Explicit instantiation of all versions
+template class TopDownTraverserGeneric<false>;
+template class TopDownTraverserGeneric<true>;
+template class BottomUpTraverserGeneric<false>;
+template class BottomUpTraverserGeneric<true>;
+
 }
 
 }

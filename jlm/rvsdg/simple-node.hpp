@@ -55,7 +55,7 @@ public:
       throw util::Error("Expected operation derived from SimpleOperation");
 
     std::unique_ptr<SimpleOperation> simpleOperation(
-        util::AssertedCast<SimpleOperation>(operation.release()));
+        util::assertedCast<SimpleOperation>(operation.release()));
     return *new SimpleNode(region, std::move(simpleOperation), operands);
   }
 

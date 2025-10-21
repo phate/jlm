@@ -68,7 +68,7 @@ public:
     JLM_ASSERT(Set_.IsUnificationRoot(superset));
 
     // Add this edge to the list of checked edges, or return if it was already there
-    if (!CheckedEdges_.Insert({ subset, superset }))
+    if (!CheckedEdges_.insert({ subset, superset }))
       return std::nullopt;
 
     NumCycleDetectAttempts_++;

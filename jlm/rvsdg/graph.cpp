@@ -35,13 +35,13 @@ GraphImport::Copy(Region & region, StructuralInput *)
 GraphImport &
 GraphImport::Create(Graph & graph, std::shared_ptr<const rvsdg::Type> type, std::string name)
 {
-  auto graphImport = new GraphImport(graph, std::move(type), std::move(name));
-  graph.GetRootRegion().append_argument(graphImport);
-  return *graphImport;
+  std::unique_ptr<GraphImport> graphImport(
+      new GraphImport(graph, std::move(type), std::move(name)));
+  return static_cast<GraphImport &>(graph.GetRootRegion().addArgument(std::move(graphImport)));
 }
 
 GraphExport::GraphExport(rvsdg::Output & origin, std::string name)
-    : RegionResult(&origin.region()->graph()->GetRootRegion(), &origin, nullptr, origin.Type()),
+    : RegionResult(origin.region(), &origin, nullptr, origin.Type()),
       Name_(std::move(name))
 {}
 
@@ -61,9 +61,11 @@ GraphExport::Copy(Output & origin, StructuralOutput * output)
 GraphExport &
 GraphExport::Create(Output & origin, std::string name)
 {
-  auto graphExport = new GraphExport(origin, std::move(name));
-  origin.region()->graph()->GetRootRegion().append_result(graphExport);
-  return *graphExport;
+  if (!origin.region()->IsRootRegion())
+    throw std::logic_error("Cannot create a GraphExport on a non-root region.");
+
+  std::unique_ptr<GraphExport> graphExport(new GraphExport(origin, std::move(name)));
+  return static_cast<GraphExport &>(graphExport->region()->addResult(std::move(graphExport)));
 }
 
 Graph::~Graph() noexcept = default;

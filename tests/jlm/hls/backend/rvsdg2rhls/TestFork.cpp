@@ -28,7 +28,7 @@ ForkInsertion()
 
   auto lambda = jlm::rvsdg::LambdaNode::Create(
       rootRegion,
-      LlvmLambdaOperation::Create(functionType, "f", linkage::external_linkage));
+      LlvmLambdaOperation::Create(functionType, "f", Linkage::externalLinkage));
 
   auto loop = hls::LoopNode::create(lambda->subregion());
   rvsdg::Output * idvBuffer = nullptr;
@@ -56,13 +56,13 @@ ForkInsertion()
 
   // Assert
   {
-    assert(rootRegion.nnodes() == 1);
-    auto lambda = util::AssertedCast<jlm::rvsdg::LambdaNode>(rootRegion.Nodes().begin().ptr());
+    assert(rootRegion.numNodes() == 1);
+    auto lambda = util::assertedCast<jlm::rvsdg::LambdaNode>(rootRegion.Nodes().begin().ptr());
     assert(dynamic_cast<const jlm::rvsdg::LambdaNode *>(lambda));
 
     auto lambdaSubregion = lambda->subregion();
-    assert(lambdaSubregion->nnodes() == 1);
-    auto loop = util::AssertedCast<hls::LoopNode>(lambdaSubregion->Nodes().begin().ptr());
+    assert(lambdaSubregion->numNodes() == 1);
+    auto loop = util::assertedCast<hls::LoopNode>(lambdaSubregion->Nodes().begin().ptr());
     assert(dynamic_cast<const hls::LoopNode *>(loop));
 
     auto [forkNode, forkOperation] = rvsdg::TryGetSimpleNodeAndOptionalOp<hls::ForkOperation>(
@@ -91,7 +91,7 @@ ConstantForkInsertion()
 
   auto lambda = rvsdg::LambdaNode::Create(
       rootRegion,
-      LlvmLambdaOperation::Create(functionType, "f", linkage::external_linkage));
+      LlvmLambdaOperation::Create(functionType, "f", Linkage::externalLinkage));
 
   auto loop = hls::LoopNode::create(lambda->subregion());
   auto subregion = loop->subregion();
@@ -117,18 +117,18 @@ ConstantForkInsertion()
 
   // Assert
   {
-    assert(rootRegion.nnodes() == 1);
-    auto lambda = util::AssertedCast<jlm::rvsdg::LambdaNode>(rootRegion.Nodes().begin().ptr());
+    assert(rootRegion.numNodes() == 1);
+    auto lambda = util::assertedCast<jlm::rvsdg::LambdaNode>(rootRegion.Nodes().begin().ptr());
     assert(rvsdg::is<jlm::rvsdg::LambdaOperation>(lambda));
 
     auto lambdaRegion = lambda->subregion();
-    assert(lambdaRegion->nnodes() == 1);
+    assert(lambdaRegion->numNodes() == 1);
 
     const rvsdg::NodeOutput * loopOutput = nullptr;
     assert(loopOutput = dynamic_cast<jlm::rvsdg::NodeOutput *>(lambdaRegion->result(0)->origin()));
     auto loopNode = loopOutput->node();
     assert(rvsdg::is<hls::LoopOperation>(loopNode));
-    auto loop = util::AssertedCast<hls::LoopNode>(loopNode);
+    auto loop = util::assertedCast<hls::LoopNode>(loopNode);
 
     auto [forkNode, forkOperation] = rvsdg::TryGetSimpleNodeAndOptionalOp<hls::ForkOperation>(
         *loop->subregion()->result(0)->origin());

@@ -67,7 +67,6 @@ public:
 
     AAAndersenAgnostic,
     AAAndersenRegionAware,
-    AAAndersenTopDownLifetimeAware,
     AASteensgaardAgnostic,
     AASteensgaardRegionAware,
     CommonNodeElimination,
@@ -211,7 +210,6 @@ private:
   {
     inline static const char * AaAndersenAgnostic_ = "AAAndersenAgnostic";
     inline static const char * AaAndersenRegionAware_ = "AAAndersenRegionAware";
-    inline static const char * AaAndersenTopDownLifetimeAware_ = "AAAndersenTopDownLifetimeAware";
     inline static const char * AaSteensgaardAgnostic_ = "AASteensgaardAgnostic";
     inline static const char * AaSteensgaardRegionAware_ = "AASteensgaardRegionAware";
     inline static const char * CommonNodeElimination_ = "CommonNodeElimination";
@@ -414,7 +412,8 @@ public:
         OutputFiles_(""),
         OutputFormat_(OutputFormat::Firrtl),
         ExtractHlsFunction_(false),
-        MemoryLatency_(10)
+        MemoryLatency_(10),
+        dumpRvsdgDotGraphs_(false)
   {
     JLM_ASSERT(MemoryLatency_ > 0);
   }
@@ -428,6 +427,7 @@ public:
   std::string HlsFunction_;
   bool ExtractHlsFunction_;
   size_t MemoryLatency_;
+  bool dumpRvsdgDotGraphs_;
 };
 
 /**

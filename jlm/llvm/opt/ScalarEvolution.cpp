@@ -127,7 +127,7 @@ ScalarEvolution::FindInductionVariables(const rvsdg::ThetaNode & thetaNode)
   InductionVariableSet inductionVariableCandidates{};
   for (const auto & loopVar : loopVars)
   {
-    inductionVariableCandidates.Insert(loopVar.pre);
+    inductionVariableCandidates.insert(loopVar.pre);
   }
   bool changed = false;
   do

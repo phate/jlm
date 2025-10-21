@@ -69,7 +69,7 @@ check_rhls(rvsdg::RvsdgModule & rm)
 {
   auto & graph = rm.Rvsdg();
   auto root = &graph.GetRootRegion();
-  if (root->nnodes() != 1)
+  if (root->numNodes() != 1)
   {
     throw util::Error("Root should have only one node now");
   }
