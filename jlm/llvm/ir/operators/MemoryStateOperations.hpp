@@ -301,6 +301,12 @@ public:
   [[nodiscard]] std::unique_ptr<Operation>
   copy() const override;
 
+  [[nodiscard]] std::vector<MemoryNodeId>
+  getMemoryNodeIds() const noexcept
+  {
+    return MemoryNodeIds_;
+  }
+
   /**
    * Perform the following transformation:
    *
@@ -581,6 +587,12 @@ public:
 
   [[nodiscard]] std::unique_ptr<Operation>
   copy() const override;
+
+  [[nodiscard]] const std::vector<MemoryNodeId> &
+  getMemoryNodeIds() const noexcept
+  {
+    return MemoryNodeIds_;
+  }
 
   /**
    * Perform the following transformation:
