@@ -162,6 +162,26 @@ public:
 
 /** -------------------------------------------------------------------------------------------- **/
 
+
+
+class  LambdaParameterOperation : public jlm::rvsdg::Operation
+{
+public:
+  LambdaParameterOperation(){} //trivial constructor
+  bool operator==(const Operation & other) const noexcept;
+  std::string debug_string() const override;
+  virtual ~LambdaParameterOperation() noexcept override;
+  [[nodiscard]] virtual std::unique_ptr<jlm::rvsdg::Operation>copy() const override;
+};
+
+LambdaParameterOperation::~LambdaParameterOperation() noexcept = default;
+
+bool LambdaParameterOperation::operator==(const Operation & other) const noexcept {return &other == this;}
+std::string LambdaParameterOperation::debug_string() const { return "LambdaParameterOperation";}
+std::unique_ptr<jlm::rvsdg::Operation> LambdaParameterOperation::copy() const { std::cout<<"Attempt to copy singleton"; JLM_ASSERT(false); return nullptr; }
+static LambdaParameterOperation lambdaParamOp;
+
+
 PartialRedundancyElimination::~PartialRedundancyElimination() noexcept = default;
 
 PartialRedundancyElimination::PartialRedundancyElimination(): Transformation("PartialRedundancyElimination"){}
@@ -190,12 +210,10 @@ void PartialRedundancyElimination::TraverseTopDownRecursively(rvsdg::Region& reg
   IndentMan indenter = IndentMan();
   for (rvsdg::Node* node : rvsdg::TopDownTraverser(&reg))
   {
-    MatchType(*node, [this](rvsdg::LambdaNode& lm){
-      for (auto& param : lm.GetFunctionArguments())
-      {
-        auto deps = gvn_man_.DepsFromOutput(param);
-        std::cout << TR_RED << "IN LAMBDA" << TR_RESET;
-        std::cout << TR_GREEN << "deps:" << deps.inputs.size() << TR_RESET;;
+    MatchType(*node, [this, node](rvsdg::LambdaNode& lm){
+      auto params = lm.GetFunctionArguments();
+      for (size_t i = 0; i < params.size() ; i++){
+        gvn_man_.Start(params[i], lambdaParamOp, node).WithIndex(i).End();
       }
     });
 
@@ -208,48 +226,6 @@ void PartialRedundancyElimination::TraverseTopDownRecursively(rvsdg::Region& reg
       }
     });
   }
-}
-
-class  LambdaParameterOperation : public jlm::rvsdg::Operation
-{
-public:
-  LambdaParameterOperation(){} //trivial constructor
-  bool operator==(const Operation & other) const noexcept;
-  std::string debug_string() const override;
-  virtual ~LambdaParameterOperation() noexcept override;
-  [[nodiscard]] virtual std::unique_ptr<jlm::rvsdg::Operation>copy() const override;
-};
-
-LambdaParameterOperation::~LambdaParameterOperation() noexcept = default;
-
-bool LambdaParameterOperation::operator==(const Operation & other) const noexcept {return &other == this;}
-std::string LambdaParameterOperation::debug_string() const { return "LambdaParameterOperation";}
-std::unique_ptr<jlm::rvsdg::Operation> LambdaParameterOperation::copy() const { std::cout<<"Attempt to copy singleton"; JLM_ASSERT(false); return nullptr; }
-static LambdaParameterOperation lambdaParamOp;
-
-GVN_Deps GVN_Manager::DepsFromOutput(rvsdg::Output* output)
-{
-  auto deps = GVN_Deps();
-  deps.op = NULL;
-  if (!output){return deps;}
-  auto owner = output->GetOwner();
-
-  if (std::holds_alternative<rvsdg::Region*>(owner)){
-    std::cout << "Owner is region" << std::endl;
-  }
-  if (std::holds_alternative<rvsdg::Node*>(owner)){
-    std::cout << "Owner is node" << std::endl;
-    rvsdg::Node* n = std::get<rvsdg::Node*>(owner);
-    if (!n){return deps;}
-    jlm::rvsdg::MatchType(*n, [this, &deps, &output](rvsdg::LambdaNode& lm){
-      std::cout << "Lambda node from variant." << std::endl;
-      deps.op = &lambdaParamOp;
-      auto gi = GVN_Input(this->FromIndex( output->index() ));
-      deps.inputs.push_back(gi);
-    });
-  }
-
-  return deps;
 }
 
 void

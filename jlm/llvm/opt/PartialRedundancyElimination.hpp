@@ -301,25 +301,24 @@ namespace jlm::llvm
 typedef size_t GVN_Val;
 
 class GVN_Manager;
-union GVN_Input{
-  static constexpr size_t FL_IS_VALUE = 0x1;
 
-  bool IsValue() const  {return    value_ & FL_IS_VALUE;}
-  bool IsOutput() const {return  !(value_ & FL_IS_VALUE);}
-
-  GVN_Input(rvsdg::Output* o){this->output_ = o;}
-  GVN_Input(GVN_Val v){this->value_ = v;}
-  rvsdg::Output* AsOutput() const {return output_;}
-  GVN_Val AsValue() const {return value_;}
-private:
-  rvsdg::Output* output_;
-  GVN_Val value_;
-};
-
-// A collection of all data required to compute a gvn value for an Output*
+/** \brief A collection of all data required to compute a gvn value for an Output* */
 struct GVN_Deps{
-  rvsdg::Operation* op;
-  std::vector<GVN_Input> inputs;
+  GVN_Deps() = default;
+  rvsdg::Output* output;
+  rvsdg::Operation* op;   // Some edges have
+  rvsdg::Node* node;
+  std::vector<rvsdg::Output*> producers;
+  GVN_Val literal;
+  bool has_literal;
+  void reset(){
+    output = NULL;
+    op = NULL;
+    node = NULL;
+    producers.clear();
+    literal = 0;
+    has_literal = false;
+  }
 };
 
 
@@ -333,29 +332,110 @@ class GVN_Manager
    */
 
 public:
-  GVN_Deps DepsFromOutput(rvsdg::Output* output);
-  GVN_Val FromLit(std::string s)
-  {
-    if (lit_to_gvn_.find(s) == lit_to_gvn_.end()){lit_to_gvn_.insert({s, CreateUniqueGVN()});}
-    return lit_to_gvn_[s];
+  GVN_Manager() = default;
+  inline GVN_Manager& Start(rvsdg::Output* output, rvsdg::Operation& op, rvsdg::Node* node){
+    CheckDepsEmpty();
+    if (!output){throw std::runtime_error("Output pointer was null");}
+    build_deps_.output = output;
+    build_deps_.op = &op;
+    build_deps_.node = node;
+
+    if (op_to_gvn_.find(&op) == op_to_gvn_.end()){
+      op_to_gvn_.insert({&op, CreateUniqueGVN()});
+    }
+
+    return *this;
   }
-  GVN_Val FromIndex(std::size_t index)
-  {
-    if (index_to_gvn_.find(index) == index_to_gvn_.end()){index_to_gvn_.insert({index, CreateUniqueGVN()});}
-    return index_to_gvn_[index];
+  inline GVN_Manager& WithEdge(rvsdg::Output* source){
+    build_deps_.producers.push_back(source);
+    return *this;
   }
-  GVN_Val FromOp(rvsdg::Operation* op)
-  {
-    if (op_to_gvn_.find(op) == op_to_gvn_.end()){op_to_gvn_.insert({op, CreateUniqueGVN()});}
-    return op_to_gvn_[op];
+  inline GVN_Manager& WithStr(std::string& str){
+    CheckLitEmpty();
+    build_deps_.has_literal = true;
+    bool not_created = lit_to_gvn_.find(str) == lit_to_gvn_.end();
+    if (not_created){lit_to_gvn_.insert( {str, CreateUniqueGVN() });}
+    build_deps_.literal = lit_to_gvn_[str];
+    return *this;
+  }
+  inline GVN_Manager& WithIndex(size_t index){
+    CheckLitEmpty();
+    build_deps_.has_literal = true;
+    bool not_created = index_to_gvn_.find(index) == index_to_gvn_.end();
+    if (not_created){index_to_gvn_.insert( {index, CreateUniqueGVN() });}
+    build_deps_.literal = index_to_gvn_[index];
+    return *this;
+  }
+  inline void End(){
+    auto fresh_value = HashDeps(build_deps_);
+
+    std::cout << "FLUSH GVN:" << std::endl;
+    std::cout << "   op: " << build_deps_.op->debug_string() << std::endl;
+    if (build_deps_.node){std::cout << "   node: " << build_deps_.node->DebugString() << std::endl;}
+    std::cout << "   literal: " << build_deps_.literal << std::endl;
+    std::cout << ".........................." << std::endl;
+
+    if (!fresh_value){
+      fresh_value = std::optional<GVN_Val>(CreateUniqueGVN());
+    }
+    //TODO: compare for structural equality here
+    edges_to_gvn_.insert({build_deps_.output, *fresh_value});
+    occurrences_.insert(*fresh_value);
+
+    build_deps_.reset();
   }
 
+
+
 private:
+  GVN_Deps build_deps_;
+  static bool CanHashAsAssociativeCumulativeOp(GVN_Deps& deps)
+  {
+    if (!deps.node){return false;}
+    bool hash_as_ca = false;
+    MatchType(deps.node->GetOperation(), [&hash_as_ca](const rvsdg::BinaryOperation& bin_op){
+      hash_as_ca = bin_op.is_associative() && bin_op.is_commutative();
+    });
+    return hash_as_ca;
+  }
+
+  std::optional<GVN_Val> HashDeps(GVN_Deps& deps)
+  {
+    GVN_Val h = op_to_gvn_[deps.op];
+
+    if (CanHashAsAssociativeCumulativeOp(deps)){
+      for (size_t i = 0 ; i < deps.producers.size() ; i++){
+        auto g = FromEdge(deps.producers[i]);
+        if (!g){ return std::nullopt; }
+        size_t a = static_cast<size_t>(*g);
+        h ^= a;                                // independent of order
+      }
+      return std::optional<GVN_Val>(h);
+    }
+
+    // Default hashing, in order with each edge treated differently based on order
+    for (size_t i = 0 ; i < deps.producers.size() ; i++){
+      auto g = FromEdge(deps.producers[i]);
+      if (!g){ return std::nullopt; }
+      size_t a = static_cast<size_t>(*g);
+      h ^= a * (i+1) + a;                     // dependent on order
+    }
+
+    return std::optional<GVN_Val>(h);
+  }
+
+  std::optional<GVN_Val> FromEdge(rvsdg::Output* producer){
+    if (edges_to_gvn_.find(producer) == edges_to_gvn_.end()){return std::nullopt;}
+    return edges_to_gvn_[producer];
+  }
+
+  void CheckLitEmpty(){if (build_deps_.has_literal){throw std::runtime_error("Maximum one literal supported per Output*");}}
+  void CheckDepsEmpty(){if (build_deps_.op){throw std::runtime_error("Previous GVN value not flushed.");}}
   GVN_Val CreateUniqueGVN()
   {
-    GVN_Val v = random() | GVN_Input::FL_IS_VALUE;   //always set 1 bit so the tagged ptr union above works
+    // All GVN values start here
+    GVN_Val v = random();
     while (occurrences_.count(v) != 0){v = random();}
-    JLM_ASSERT(v & GVN_Input::FL_IS_VALUE);
     occurrences_.insert(v);
     return v;
   }
