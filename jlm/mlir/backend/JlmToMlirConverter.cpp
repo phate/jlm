@@ -725,6 +725,12 @@ JlmToMlirConverter::ConvertSimpleNode(
       auto lambdaStateMerge =
           dynamic_cast<const jlm::llvm::LambdaExitMemoryStateMergeOperation *>(&operation))
   {
+    auto memoryNodeIds = lambdaStateMerge->GetMemoryNodeIds();
+    for (size_t n = 0; n < memoryNodeIds.size(); n++)
+    {
+      JLM_ASSERT(memoryNodeIds[n] == n);
+    }
+
     ::llvm::SmallVector<::mlir::Type> resultTypes;
     for (size_t i = 0; i < lambdaStateMerge->nresults(); i++)
     {

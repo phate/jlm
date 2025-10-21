@@ -218,10 +218,19 @@ MemoryStateSeparation::separateMemoryStates(const rvsdg::LambdaNode & lambdaNode
   entry_states.pop_back();
   state_user.divert_to(common_edge);
   entry_states.push_back(state_result->origin());
-  auto & merged_state =
-      llvm::LambdaExitMemoryStateMergeOperation::Create(*lambdaSubregion, entry_states);
+
+  std::vector<llvm::MemoryNodeId> memoryNodeIds;
+  for (size_t n = 0; n < entry_states.size(); ++n)
+  {
+    memoryNodeIds.push_back(n);
+  }
+
+  auto & lambdaExitMergeNode = llvm::LambdaExitMemoryStateMergeOperation::CreateNode(
+      *lambdaSubregion,
+      entry_states,
+      memoryNodeIds);
   entry_states.pop_back();
-  state_result->divert_to(&merged_state);
+  state_result->divert_to(lambdaExitMergeNode.output(0));
 
   for (auto tp : tracedPointerNodesVector)
   {

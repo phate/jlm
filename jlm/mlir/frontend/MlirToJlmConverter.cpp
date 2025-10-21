@@ -715,12 +715,19 @@ MlirToJlmConverter::ConvertOperation(
         *operands.front(),
         LambdaEntryMemstateSplitOp.getNumResults());
   }
-  else if (
-      auto LambdaExitMemstateMergeOp =
-          ::mlir::dyn_cast<::mlir::rvsdg::LambdaExitMemoryStateMergeOperation>(&mlirOperation))
+  if (::mlir::dyn_cast<::mlir::rvsdg::LambdaExitMemoryStateMergeOperation>(&mlirOperation))
   {
+    std::vector<llvm::MemoryNodeId> memoryNodeIds;
+    for (size_t n = 0; n < inputs.size(); ++n)
+    {
+      memoryNodeIds.push_back(n);
+    }
+
     auto operands = std::vector(inputs.begin(), inputs.end());
-    return { &jlm::llvm::LambdaExitMemoryStateMergeOperation::Create(rvsdgRegion, operands) };
+    return outputs(&llvm::LambdaExitMemoryStateMergeOperation::CreateNode(
+        rvsdgRegion,
+        operands,
+        memoryNodeIds));
   }
   else if (
       auto CallEntryMemstateMergeOp =
